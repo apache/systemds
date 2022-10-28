@@ -117,6 +117,8 @@ public class CPInstructionParser extends InstructionParser
 		String2CPInstructionType.put( "exists"  , CPType.AggregateUnary);
 		String2CPInstructionType.put( "lineage" , CPType.AggregateUnary);
 		String2CPInstructionType.put( "uacd"    , CPType.AggregateUnary);
+		String2CPInstructionType.put( "uacdr"   , CPType.AggregateUnary);
+		String2CPInstructionType.put( "uacdc"   , CPType.AggregateUnary);
 		String2CPInstructionType.put( "uacdap"  , CPType.AggregateUnary);
 		String2CPInstructionType.put( "uacdapr" , CPType.AggregateUnary);
 		String2CPInstructionType.put( "uacdapc" , CPType.AggregateUnary);

@@ -33,17 +33,22 @@ import org.apache.sysds.runtime.functionobjects.ReduceAll;
 import org.apache.sysds.runtime.functionobjects.ReduceCol;
 import org.apache.sysds.runtime.functionobjects.ReduceRow;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
+import org.apache.sysds.runtime.instructions.spark.data.CorrMatrixBlock;
 import org.apache.sysds.runtime.lineage.LineageDedupUtils;
 import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.runtime.matrix.data.LibMatrixCountDistinct;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
+import org.apache.sysds.runtime.matrix.data.sketch.countdistinctapprox.SmallestPriorityQueue;
 import org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator;
 import org.apache.sysds.runtime.matrix.operators.CountDistinctOperator;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 import org.apache.sysds.runtime.matrix.operators.SimpleOperator;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.utils.Explain;
+
+import java.util.HashSet;
+import java.util.Set;
 
 public class AggregateUnaryCPInstruction extends UnaryCPInstruction {
 	// private static final Log LOG = LogFactory.getLog(AggregateUnaryCPInstruction.class.getName());
@@ -81,36 +86,19 @@ public class AggregateUnaryCPInstruction extends UnaryCPInstruction {
 			return new AggregateUnaryCPInstruction(new SimpleOperator(Builtin.getBuiltinFnObject(opcode)),
 				in1, out, AUType.valueOf(opcode.toUpperCase()), opcode, str);
 		} 
-		else if(opcode.equalsIgnoreCase("uacd")){
-			CountDistinctOperator op = new CountDistinctOperator(AUType.COUNT_DISTINCT)
-					.setDirection(Types.Direction.RowCol)
-					.setIndexFunction(ReduceAll.getReduceAllFnObject());
-
-			return new AggregateUnaryCPInstruction(op, in1, out, AUType.COUNT_DISTINCT,
-					opcode, str);
+		else if(opcode.equalsIgnoreCase("uacd")
+				|| opcode.equalsIgnoreCase("uacdr")
+				|| opcode.equalsIgnoreCase("uacdc")){
+			AggregateUnaryOperator aggun = InstructionUtils.parseBasicAggregateUnaryOperator(opcode,
+					Integer.parseInt(parts[3]));
+			return new AggregateUnaryCPInstruction(aggun, in1, out, AUType.COUNT_DISTINCT, opcode, str);
 		}
-		else if(opcode.equalsIgnoreCase("uacdap")){
-			CountDistinctOperator op = new CountDistinctOperator(AUType.COUNT_DISTINCT_APPROX)
-					.setDirection(Types.Direction.RowCol)
-					.setIndexFunction(ReduceAll.getReduceAllFnObject());
-
-			return new AggregateUnaryCPInstruction(op, in1, out, AUType.COUNT_DISTINCT_APPROX,
-					opcode, str);
-		}
-		else if(opcode.equalsIgnoreCase("uacdapr")){
-			CountDistinctOperator op = new CountDistinctOperator(AUType.COUNT_DISTINCT_APPROX)
-					.setDirection(Types.Direction.Row)
-					.setIndexFunction(ReduceCol.getReduceColFnObject());
-
-			return new AggregateUnaryCPInstruction(op, in1, out, AUType.COUNT_DISTINCT_APPROX,
-					opcode, str);
-		}
-		else if(opcode.equalsIgnoreCase("uacdapc")){
-			CountDistinctOperator op = new CountDistinctOperator(AUType.COUNT_DISTINCT_APPROX)
-					.setDirection(Types.Direction.Col)
-					.setIndexFunction(ReduceRow.getReduceRowFnObject());
-
-			return new AggregateUnaryCPInstruction(op, in1, out, AUType.COUNT_DISTINCT_APPROX,
+		else if(opcode.equalsIgnoreCase("uacdap")
+				|| opcode.equalsIgnoreCase("uacdapr")
+				|| opcode.equalsIgnoreCase("uacdapc")){
+			AggregateUnaryOperator aggun = InstructionUtils.parseBasicAggregateUnaryOperator(opcode,
+					Integer.parseInt(parts[3]));
+			return new AggregateUnaryCPInstruction(aggun, in1, out, AUType.COUNT_DISTINCT_APPROX,
 					opcode, str);
 		}
 		else if(opcode.equalsIgnoreCase("uarimax") || opcode.equalsIgnoreCase("uarimin")){
@@ -199,34 +187,18 @@ public class AggregateUnaryCPInstruction extends UnaryCPInstruction {
 				ec.setScalarOutput(output_name, new StringObject(out));
 				break;
 			}
-			case COUNT_DISTINCT: {
-				if( !ec.getVariables().keySet().contains(input1.getName()) )
+			case COUNT_DISTINCT:
+			case COUNT_DISTINCT_APPROX: {
+				if(!ec.getVariables().keySet().contains(input1.getName())) {
 					throw new DMLRuntimeException("Variable '" + input1.getName() + "' does not exist.");
+				}
 				MatrixBlock input = ec.getMatrixInput(input1.getName());
 
 				// Operator type: test and cast
 				if (!(_optr instanceof CountDistinctOperator)) {
 					throw new DMLRuntimeException("Operator should be instance of " + CountDistinctOperator.class.getSimpleName());
 				}
-				CountDistinctOperator op = (CountDistinctOperator) (_optr);
-
-				//TODO add support for row or col count distinct.
-				int res = (int) LibMatrixCountDistinct.estimateDistinctValues(input, op).getValue(0, 0);
-				ec.releaseMatrixInput(input1.getName());
-				ec.setScalarOutput(output_name, new IntObject(res));
-				break;
-			}
-			case COUNT_DISTINCT_APPROX: {
-				if(!ec.getVariables().keySet().contains(input1.getName())) {
-					throw new DMLRuntimeException("Variable '" + input1.getName() + "' does not exist.");
-				}
-
-				MatrixBlock input = ec.getMatrixInput(input1.getName());
-				if (!(_optr instanceof CountDistinctOperator)) {
-					throw new DMLRuntimeException("Operator should be instance of " + CountDistinctOperator.class.getSimpleName());
-				}
-
-				CountDistinctOperator op = (CountDistinctOperator) _optr;  // It is safe to cast at this point
+				CountDistinctOperator op = (CountDistinctOperator) _optr;
 
 				if (op.getDirection().isRowCol()) {
 					long res = (long) LibMatrixCountDistinct.estimateDistinctValues(input, op).getValue(0, 0);

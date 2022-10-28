@@ -23,11 +23,11 @@ import org.apache.sysds.common.Types;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.junit.Test;
 
-public class CountDistinctApproxRow extends CountDistinctRowOrColBase {
+public class CountDistinctRow extends CountDistinctRowOrColBase {
 
-	private final static String TEST_NAME = "countDistinctApproxRow";
-	private final static String TEST_DIR = "functions/countDistinctApprox/";
-	private final static String TEST_CLASS_DIR = TEST_DIR + CountDistinctApproxRow.class.getSimpleName() + "/";
+	private final static String TEST_NAME = "countDistinctRow";
+	private final static String TEST_DIR = "functions/countDistinct/";
+	private final static String TEST_CLASS_DIR = TEST_DIR + CountDistinctRow.class.getSimpleName() + "/";
 
 	@Override
 	protected String getTestClassDir() {
@@ -52,6 +52,7 @@ public class CountDistinctApproxRow extends CountDistinctRowOrColBase {
 	@Override
 	public void setUp() {
 		super.addTestConfiguration();
+		super.setRunSparkTests(false);
 	}
 
 	@Test

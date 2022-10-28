@@ -17,17 +17,18 @@
  * under the License.
  */
 
-package org.apache.sysds.test.functions.countDistinct;
+package org.apache.sysds.test.functions.countDistinctApprox;
 
 import org.apache.sysds.common.Types;
 import org.apache.sysds.runtime.data.SparseBlock;
+import org.apache.sysds.test.functions.countDistinct.CountDistinctRowOrColBase;
 import org.junit.Test;
 
-public class CountDistinctApproxRow extends CountDistinctRowOrColBase {
+public class CountDistinctApproxRowAlias extends CountDistinctRowOrColBase {
 
-	private final static String TEST_NAME = "countDistinctApproxRow";
+	private final static String TEST_NAME = "countDistinctApproxRowAlias";
 	private final static String TEST_DIR = "functions/countDistinctApprox/";
-	private final static String TEST_CLASS_DIR = TEST_DIR + CountDistinctApproxRow.class.getSimpleName() + "/";
+	private final static String TEST_CLASS_DIR = TEST_DIR + CountDistinctApproxRowAlias.class.getSimpleName() + "/";
 
 	@Override
 	protected String getTestClassDir() {
@@ -94,6 +95,21 @@ public class CountDistinctApproxRow extends CountDistinctRowOrColBase {
 
 		int actualDistinctCount = 100;
 		int rows = 10000, cols = 1000;
+		double sparsity = 0.9;
+		double tolerance = actualDistinctCount * this.percentTolerance;
+
+		countDistinctMatrixTest(getDirection(), actualDistinctCount, cols, rows, sparsity, ex, tolerance);
+	}
+
+	/**
+	 * This is a contrived example where size of row/col > 1024, which forces the calculation of a sketch in CP exec mode.
+	 */
+	@Test
+	public void testCPDenseXLarge() {
+		Types.ExecType ex = Types.ExecType.CP;
+
+		int actualDistinctCount = 10000;
+		int rows = 10000, cols = 10000;
 		double sparsity = 0.9;
 		double tolerance = actualDistinctCount * this.percentTolerance;
 

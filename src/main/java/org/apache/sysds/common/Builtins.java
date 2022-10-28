@@ -37,7 +37,7 @@ import org.apache.sysds.common.Types.ReturnType;
  * building SystemDS, these scripts are packaged into the jar as well.
  */
 public enum Builtins {
-	//builtin functions
+	// Builtin functions without parameters
 	ABSTAIN("abstain", true),
 	ABS("abs", false),
 	ACOS("acos", false),
@@ -93,7 +93,6 @@ public enum Builtins {
 	CORRECTTYPOSAPPLY("correctTyposApply", true),
 	COS("cos", false),
 	COSH("cosh", false),
-	COUNT_DISTINCT("countDistinct",false),
 	COV("cov", false),
 	COX("cox", true),
 	CSPLINE("cspline", true),
@@ -305,10 +304,15 @@ public enum Builtins {
 	XGBOOSTPREDICT_CLASS("xgboostPredictClassification", true),
 	XOR("xor", false),
 
-	//parameterized builtin functions
+	// Parameterized functions with parameters
 	AUTODIFF("autoDiff", false, true),
 	CDF("cdf", false, true),
+	COUNT_DISTINCT("countDistinct",false, true),
+	COUNT_DISTINCT_ROW("countDistinctRow",false, true),
+	COUNT_DISTINCT_COL("countDistinctCol",false, true),
 	COUNT_DISTINCT_APPROX("countDistinctApprox", false, true),
+	COUNT_DISTINCT_APPROX_ROW("countDistinctApproxRow", false, true),
+	COUNT_DISTINCT_APPROX_COL("countDistinctApproxCol", false, true),
 	CVLM("cvlm", true, false),
 	GROUPEDAGG("aggregate", "groupedAggregate", false, true),
 	INVCDF("icdf", false, true),

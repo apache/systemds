@@ -19,6 +19,6 @@
 #
 #-------------------------------------------------------------
 
-input = round(rand(rows = $2, cols = $3, min = 0, max = $1 -1, sparsity= $4,  seed = 7))
-res = countDistinct(input)
+input = round(rand(rows = $2, cols = $3, min = 0, max = $1 -1, sparsity= $4, seed = 7))
+res = countDistinctApprox(input, type="KMV")
 write(res, $5, format="text")

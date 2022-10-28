@@ -17,15 +17,16 @@
  * under the License.
  */
 
-package org.apache.sysds.test.functions.countDistinct;
+package org.apache.sysds.test.functions.countDistinctApprox;
 
 import org.apache.sysds.common.Types.ExecType;
+import org.apache.sysds.test.functions.countDistinct.CountDistinctRowColBase;
 import org.junit.Test;
 
 public class CountDistinctApproxRowCol extends CountDistinctRowColBase {
 
 	private final static String TEST_NAME = "countDistinctApproxRowCol";
-	private final static String TEST_DIR = "functions/countDistinct/";
+	private final static String TEST_DIR = "functions/countDistinctApprox/";
 	private final static String TEST_CLASS_DIR = TEST_DIR + CountDistinctApproxRowCol.class.getSimpleName() + "/";
 
 	@Override

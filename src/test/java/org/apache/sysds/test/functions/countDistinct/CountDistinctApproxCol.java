@@ -26,7 +26,7 @@ import org.junit.Test;
 public class CountDistinctApproxCol extends CountDistinctRowOrColBase {
 
 	private final static String TEST_NAME = "countDistinctApproxCol";
-	private final static String TEST_DIR = "functions/countDistinct/";
+	private final static String TEST_DIR = "functions/countDistinctApprox/";
 	private final static String TEST_CLASS_DIR = TEST_DIR + CountDistinctApproxCol.class.getSimpleName() + "/";
 
 	@Override

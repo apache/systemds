@@ -30,6 +30,8 @@ import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
 import org.junit.Test;
 
+import static org.junit.Assume.assumeTrue;
+
 public abstract class CountDistinctRowOrColBase extends CountDistinctBase {
 
 	@Override
@@ -43,6 +45,8 @@ public abstract class CountDistinctRowOrColBase extends CountDistinctBase {
 
 	protected abstract Types.Direction getDirection();
 
+	private boolean runSparkTests = true;
+
 	protected void addTestConfiguration() {
 		TestUtils.clearAssertionInformation();
 		addTestConfiguration(getTestName(), new TestConfiguration(getTestClassDir(), getTestName(), new String[] {"A"}));
@@ -50,19 +54,8 @@ public abstract class CountDistinctRowOrColBase extends CountDistinctBase {
 		this.percentTolerance = 0.2;
 	}
 
-	/**
-	 * This is a contrived example where size of row/col > 1024, which forces the calculation of a sketch.
-	 */
-	@Test
-	public void testCPDenseXLarge() {
-		Types.ExecType ex = Types.ExecType.CP;
-
-		int actualDistinctCount = 10000;
-		int rows = 10000, cols = 10000;
-		double sparsity = 0.9;
-		double tolerance = actualDistinctCount * this.percentTolerance;
-
-		countDistinctMatrixTest(getDirection(), actualDistinctCount, cols, rows, sparsity, ex, tolerance);
+	public void setRunSparkTests(boolean runSparkTests) {
+		this.runSparkTests = runSparkTests;
 	}
 
 	@Test
@@ -91,6 +84,8 @@ public abstract class CountDistinctRowOrColBase extends CountDistinctBase {
 
 	@Test
 	public void testSparkSparseLargeMultiBlockAggregation() {
+		assumeTrue(runSparkTests);
+
 		Types.ExecType execType = Types.ExecType.SPARK;
 
 		int actualDistinctCount = 10;
@@ -103,6 +98,8 @@ public abstract class CountDistinctRowOrColBase extends CountDistinctBase {
 
 	@Test
 	public void testSparkDenseLargeMultiBlockAggregation() {
+		assumeTrue(runSparkTests);
+
 		Types.ExecType execType = Types.ExecType.SPARK;
 
 		int actualDistinctCount = 10;
@@ -115,6 +112,8 @@ public abstract class CountDistinctRowOrColBase extends CountDistinctBase {
 
 	@Test
 	public void testSparkSparseLargeNoneAggregation() {
+		assumeTrue(runSparkTests);
+
 		Types.ExecType execType = Types.ExecType.SPARK;
 
 		int actualDistinctCount = 10;
@@ -127,6 +126,8 @@ public abstract class CountDistinctRowOrColBase extends CountDistinctBase {
 
 	@Test
 	public void testSparkDenseLargeNoneAggregation() {
+		assumeTrue(runSparkTests);
+
 		Types.ExecType execType = Types.ExecType.SPARK;
 
 		int actualDistinctCount = 10;
@@ -145,9 +146,8 @@ public abstract class CountDistinctRowOrColBase extends CountDistinctBase {
 		}
 		blkIn = new MatrixBlock(blkIn, sparseBlockType, true);
 
-		CountDistinctOperator op = new CountDistinctOperator(AggregateUnaryCPInstruction.AUType.COUNT_DISTINCT_APPROX)
-				.setDirection(direction)
-				.setIndexFunction(ReduceCol.getReduceColFnObject());
+		CountDistinctOperator op = new CountDistinctOperator(AggregateUnaryCPInstruction.AUType.COUNT_DISTINCT_APPROX,
+				direction, ReduceCol.getReduceColFnObject());
 
 		MatrixBlock blkOut = LibMatrixCountDistinct.estimateDistinctValues(blkIn, op);
 		double[][] expectedMatrix = getExpectedMatrixRowOrCol(direction, cols, rows, actualDistinctCount);

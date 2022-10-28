@@ -85,7 +85,7 @@ public interface DictionaryFactory {
 				}
 				retB.recomputeNonZeros();
 				retB.examSparsity(true);
-				return new MatrixBlockDictionary(retB);
+				return MatrixBlockDictionary.create(retB);
 			}
 			else {
 
@@ -130,7 +130,7 @@ public interface DictionaryFactory {
 			}
 			m.recomputeNonZeros();
 			m.examSparsity(true);
-			return new MatrixBlockDictionary(m);
+			return MatrixBlockDictionary.create(m);
 		}
 		else if(ubm instanceof MultiColBitmap) {
 			MultiColBitmap mcbm = (MultiColBitmap) ubm;
@@ -166,7 +166,7 @@ public interface DictionaryFactory {
 
 			m.recomputeNonZeros();
 			m.examSparsity(true);
-			return new MatrixBlockDictionary(m);
+			return MatrixBlockDictionary.create(m);
 		}
 		else {
 			double[] dict = new double[nCol * nVal];
@@ -216,7 +216,7 @@ public interface DictionaryFactory {
 			}
 			m.recomputeNonZeros();
 			m.examSparsity(true);
-			return new MatrixBlockDictionary(m);
+			return MatrixBlockDictionary.create(m);
 		}
 
 		final double[] resValues = new double[nRows * nCols];

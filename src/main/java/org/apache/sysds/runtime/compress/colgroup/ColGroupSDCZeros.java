@@ -747,7 +747,7 @@ public class ColGroupSDCZeros extends ASDCZero implements AMapToDataGroup{
 			}
 
 			final ColGroupSDCZeros gc = (ColGroupSDCZeros) g[i];
-			if(!gc._dict.eq(_dict)) {
+			if(!gc._dict.equals(_dict)) {
 				LOG.warn("Not same Dictionaries therefore not appending \n" + _dict + "\n\n" + gc._dict);
 				return null;
 			}

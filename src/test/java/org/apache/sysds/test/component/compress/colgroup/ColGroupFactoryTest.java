@@ -222,19 +222,25 @@ public class ColGroupFactoryTest {
 
 	@Test
 	public void testCompressMultipleTimes() {
-		final int offs = Math.min((int) (mbt.getSparsity() * nRow * nCol), nRow);
-		final EstimationFactors f = new EstimationFactors(Math.min(nRow, offs), nRow, offs, mbt.getSparsity());
-		final List<CompressedSizeInfoColGroup> es = new ArrayList<>();
-		es.add(new CompressedSizeInfoColGroup(cols, f, 312152, ct));
-		es.add(new CompressedSizeInfoColGroup(cols, f, 312152, ct));// second time.
-		final CompressedSizeInfo csi = new CompressedSizeInfo(es);
-		CompressionSettings cs = csb.create();
+		try{
 
-		cs.transposed = true;
-		if(ce != null)
-			ColGroupFactory.compressColGroups(mbt, csi, cs, ce, 4);
-		else
-			ColGroupFactory.compressColGroups(mbt, csi, cs, 4);
+			final int offs = Math.min((int) (mbt.getSparsity() * nRow * nCol), nRow);
+			final EstimationFactors f = new EstimationFactors(Math.min(nRow, offs), nRow, offs, mbt.getSparsity());
+			final List<CompressedSizeInfoColGroup> es = new ArrayList<>();
+			es.add(new CompressedSizeInfoColGroup(cols, f, 312152, ct));
+			es.add(new CompressedSizeInfoColGroup(cols, f, 312152, ct));// second time.
+			final CompressedSizeInfo csi = new CompressedSizeInfo(es);
+			CompressionSettings cs = csb.create();
+	
+			cs.transposed = true;
+			if(ce != null)
+				ColGroupFactory.compressColGroups(mbt, csi, cs, ce, 4);
+			else
+				ColGroupFactory.compressColGroups(mbt, csi, cs, 4);
+		}catch(Exception e){
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
 	}
 
 	private void compare(List<AColGroup> gt) {

@@ -26,6 +26,7 @@ import java.math.BigDecimal;
 import java.math.MathContext;
 import java.util.Arrays;
 
+import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.functionobjects.Builtin;
@@ -51,12 +52,14 @@ public class Dictionary extends ADictionary {
 	protected final double[] _values;
 
 	protected Dictionary(double[] values) {
-		if(values == null || values.length == 0)
-			throw new DMLCompressionException("Invalid construction of dictionary with null array");
 		_values = values;
 	}
 
 	public static Dictionary create(double[] values) {
+		if(values == null)
+			throw new DMLCompressionException("Invalid construction of dictionary with null array");
+		else if(values.length == 0)
+			throw new DMLCompressionException("Invalid construction of dictionary with empty array");
 		boolean nonZero = false;
 		for(double d : values) {
 			if(d != 0) {
@@ -633,17 +636,26 @@ public class Dictionary extends ADictionary {
 
 	@Override
 	public String toString() {
-		StringBuilder sb = new StringBuilder();
-
+		StringBuilder sb = new StringBuilder(_values.length * 3 + 10);
 		sb.append("Dictionary : ");
-		sb.append(Arrays.toString(_values));
+		stringArray(sb, _values);
 		return sb.toString();
+	}
+
+	private static void stringArray(StringBuilder sb, double[] val) {
+		sb.append("[");
+		sb.append(doubleToString(val[0]));
+		for(int i = 1; i < val.length; i++) {
+			sb.append(", ");
+			sb.append(doubleToString(val[i]));
+		}
+		sb.append("]");
 	}
 
 	public String getString(int colIndexes) {
 		StringBuilder sb = new StringBuilder();
 		if(colIndexes == 1)
-			sb.append(Arrays.toString(_values));
+			stringArray(sb, _values);
 		else {
 			sb.append("[\n\t");
 			for(int i = 0; i < _values.length - 1; i++) {
@@ -771,8 +783,8 @@ public class Dictionary extends ADictionary {
 	}
 
 	@Override
-	public boolean isLossy() {
-		return false;
+	public DictType getDictType() {
+		return DictType.Dict;
 	}
 
 	@Override
@@ -858,9 +870,10 @@ public class Dictionary extends ADictionary {
 		int off = 0;
 		for(int i = 0; i < nRow; i++) {
 			for(int j = 0; j < nCol; j++) {
+				final double ref = reference[j];
 				final double v = _values[off];
-				retV[off++] = v + reference[j] == pattern ? replace - reference[j] : v;
-
+				retV[off] = Math.abs(v + ref - pattern) < 0.000001 ? replace - ref : v;
+				off++;
 			}
 		}
 		return create(retV);
@@ -980,27 +993,28 @@ public class Dictionary extends ADictionary {
 
 	@Override
 	public ADictionary rexpandCols(int max, boolean ignore, boolean cast, int nCol) {
-		MatrixBlockDictionary a = getMBDict(nCol);
-		if(a == null)
-			return null;
-		return a.rexpandCols(max, ignore, cast, nCol);
+		if(nCol > 1)
+			throw new DMLCompressionException("Invalid to rexpand the column groups if more than one column");
+		MatrixBlockDictionary m = getMBDict(nCol);
+		return m == null ? null : m.rexpandCols(max, ignore, cast, nCol);
 	}
 
 	@Override
 	public ADictionary rexpandColsWithReference(int max, boolean ignore, boolean cast, int reference) {
-		MatrixBlockDictionary a = getMBDict(1);
-		if(a == null)
-			a = new MatrixBlockDictionary(new MatrixBlock(_values.length, 1, (double) reference));
-		else
-			a = (MatrixBlockDictionary) a.applyScalarOp(new LeftScalarOperator(Plus.getPlusFnObject(), reference));
-		if(a == null)
+		MatrixBlockDictionary m = getMBDict(1);
+		if(m == null)
 			return null;
-		return a.rexpandCols(max, ignore, cast, 1);
+		ADictionary a = m.applyScalarOp(new LeftScalarOperator(Plus.getPlusFnObject(), reference));
+		return a == null ? null : a.rexpandCols(max, ignore, cast, 1);
 	}
 
 	@Override
 	public double getSparsity() {
-		return 1;
+		int zeros = 0;
+		for(double v : _values)
+			if(v == 0.0)
+				zeros++;
+		return OptimizerUtils.getSparsity(_values.length, 1L, _values.length - zeros);
 	}
 
 	@Override
@@ -1066,7 +1080,7 @@ public class Dictionary extends ADictionary {
 	}
 
 	@Override
-	public boolean eq(ADictionary o) {
+	public boolean equals(ADictionary o) {
 		if(o instanceof Dictionary)
 			return Arrays.equals(_values, ((Dictionary) o)._values);
 		else if(o instanceof MatrixBlockDictionary) {

@@ -575,7 +575,7 @@ public class ColGroupSDC extends ASDC implements AMapToDataGroup {
 	public AColGroup append(AColGroup g) {
 		if(g instanceof ColGroupSDC && Arrays.equals(g.getColIndices(), _colIndexes)) {
 			final ColGroupSDC gSDC = (ColGroupSDC) g;
-			if(Arrays.equals(_defaultTuple, gSDC._defaultTuple) && gSDC._dict.eq(_dict)) {
+			if(Arrays.equals(_defaultTuple, gSDC._defaultTuple) && gSDC._dict.equals(_dict)) {
 				final AMapToData nd = _data.append(gSDC._data);
 				final AOffset ofd = _indexes.append(gSDC._indexes, getNumRows());
 				return create(_colIndexes, _numRows + gSDC._numRows, _dict, _defaultTuple, ofd, nd, null);
@@ -600,7 +600,7 @@ public class ColGroupSDC extends ASDC implements AMapToDataGroup {
 			}
 
 			final ColGroupSDC gc = (ColGroupSDC) g[i];
-			if(!gc._dict.eq(_dict)) {
+			if(!gc._dict.equals(_dict)) {
 				LOG.warn("Not same Dictionaries therefore not appending \n" + _dict + "\n\n" + gc._dict);
 				return null;
 			}

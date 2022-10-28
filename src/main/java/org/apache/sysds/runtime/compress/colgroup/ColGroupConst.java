@@ -543,7 +543,7 @@ public class ColGroupConst extends ADictBasedColGroup {
 	@Override
 	public AColGroup append(AColGroup g) {
 		if(g instanceof ColGroupConst && g._colIndexes.length == _colIndexes.length &&
-			((ColGroupConst) g)._dict.eq(_dict))
+			((ColGroupConst) g)._dict.equals(_dict))
 			return this;
 		return null;
 	}
@@ -551,7 +551,7 @@ public class ColGroupConst extends ADictBasedColGroup {
 	@Override
 	public AColGroup appendNInternal(AColGroup[] g) {
 		for(int i = 0; i < g.length; i++)
-			if(!Arrays.equals(_colIndexes, g[i]._colIndexes) || !this._dict.eq(((ColGroupConst) g[i])._dict))
+			if(!Arrays.equals(_colIndexes, g[i]._colIndexes) || !this._dict.equals(((ColGroupConst) g[i])._dict))
 				return null;
 		return this;
 	}

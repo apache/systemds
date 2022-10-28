@@ -18,7 +18,9 @@
  */
 package org.apache.sysds.test.component.compress.dictionary;
 
+import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.DeltaDictionary;
+import org.apache.sysds.runtime.functionobjects.And;
 import org.apache.sysds.runtime.functionobjects.Divide;
 import org.apache.sysds.runtime.functionobjects.Minus;
 import org.apache.sysds.runtime.functionobjects.Multiply;
@@ -119,5 +121,13 @@ public class DeltaDictionaryTest {
 		d = d.applyScalarOp(sop);
 		double[] expected = new double[] {3, 4, 3, 4};
 		Assert.assertArrayEquals(expected, d.getValues(), 0.01);
+	}
+
+	@Test(expected = NotImplementedException.class)
+	public void testNotImplemented() {
+		double scalar = 2;
+		DeltaDictionary d = new DeltaDictionary(new double[] {1, 2, 3, 4}, 2);
+		ScalarOperator sop = new LeftScalarOperator(And.getAndFnObject(), scalar, 1);
+		d = d.applyScalarOp(sop);
 	}
 }

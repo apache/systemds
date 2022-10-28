@@ -497,7 +497,7 @@ public class ColGroupDDC extends APreAgg implements AMapToDataGroup {
 			if(Arrays.equals(g.getColIndices(), _colIndexes)) {
 
 				ColGroupDDC gDDC = (ColGroupDDC) g;
-				if(gDDC._dict.eq(_dict)) {
+				if(gDDC._dict.equals(_dict)) {
 					AMapToData nd = _data.append(gDDC._data);
 					return create(_colIndexes, _dict, nd, null);
 				}
@@ -528,7 +528,7 @@ public class ColGroupDDC extends APreAgg implements AMapToDataGroup {
 			}
 
 			final ColGroupDDC gDDC = (ColGroupDDC) g[i];
-			if(!gDDC._dict.eq(_dict)) {
+			if(!gDDC._dict.equals(_dict)) {
 				LOG.warn("Not same Dictionaries therefore not appending DDC\n" + _dict + "\n\n" + gDDC._dict);
 				return null;
 			}

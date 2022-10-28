@@ -402,8 +402,8 @@ public class QDictionary extends ADictionary {
 	}
 
 	@Override
-	public boolean isLossy() {
-		return false;
+	public DictType getDictType() {
+		return DictType.UInt8;
 	}
 
 	@Override
@@ -597,7 +597,7 @@ public class QDictionary extends ADictionary {
 	}
 
 	@Override
-	public boolean eq(ADictionary o) {
-			throw new NotImplementedException();
+	public boolean equals(ADictionary o) {
+		throw new NotImplementedException();
 	}
 }

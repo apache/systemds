@@ -993,6 +993,8 @@ public class Dictionary extends ADictionary {
 
 	@Override
 	public ADictionary rexpandCols(int max, boolean ignore, boolean cast, int nCol) {
+		if(nCol > 1)
+			throw new DMLCompressionException("Invalid to rexpand the column groups if more than one column");
 		return getMBDict(nCol).rexpandCols(max, ignore, cast, nCol);
 	}
 

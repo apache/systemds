@@ -272,6 +272,26 @@ public class DictionaryTests {
 		}
 	}
 
+	@Test(expected = DMLCompressionException.class)
+	public void rexpandColsException() {
+		if(nCol > 1) {
+			int max = (int) a.aggregate(0, Builtin.getBuiltinFnObject(BuiltinCode.MAX));
+			b.rexpandCols(max + 1, true, false, nCol);
+		}
+		else
+			throw new DMLCompressionException("to test pase");
+	}
+
+	@Test(expected = DMLCompressionException.class)
+	public void rexpandColsExceptionOtherOrder() {
+		if(nCol > 1) {
+			int max = (int) a.aggregate(0, Builtin.getBuiltinFnObject(BuiltinCode.MAX));
+			a.rexpandCols(max + 1, true, false, nCol);
+		}
+		else
+			throw new DMLCompressionException("to test pase");
+	}
+
 	@Test
 	public void rexpandColsWithReference1() {
 		rexpandColsWithReference(1);
@@ -319,6 +339,76 @@ public class DictionaryTests {
 		double as = a.sumSqWithReference(counts, reference);
 		double bs = b.sumSqWithReference(counts, reference);
 		assertEquals(as, bs, 0.0001);
+	}
+
+	@Test
+	public void sliceOutColumnRange() {
+		Random r = new Random(2323);
+		int s = r.nextInt(nCol);
+		int e = r.nextInt(nCol - s) + s + 1;
+		ADictionary ad = a.sliceOutColumnRange(s, e, nCol);
+		ADictionary bd = b.sliceOutColumnRange(s, e, nCol);
+		compare(ad, bd, nRow, e - s);
+	}
+
+	@Test
+	public void contains1() {
+		containsValue(1);
+	}
+
+	@Test
+	public void contains2() {
+		containsValue(2);
+	}
+
+	@Test
+	public void contains100() {
+		containsValue(100);
+	}
+
+	@Test
+	public void contains0() {
+		containsValue(0);
+	}
+
+	@Test
+	public void contains1p1() {
+		containsValue(1.1);
+	}
+
+	public void containsValue(double value) {
+		assertEquals(a.containsValue(value), b.containsValue(value));
+	}
+
+	@Test
+	public void contains1WithReference() {
+		containsValueWithReference(1, getReference(nCol, 3241, 1.0, 1.0));
+	}
+
+	@Test
+	public void contains1WithReference2() {
+		containsValueWithReference(1, getReference(nCol, 3241, 1.0, 1.32));
+	}
+
+	@Test
+	public void contains32WithReference2() {
+		containsValueWithReference(32, getReference(nCol, 3241, -1.0, 1.32));
+	}
+
+	@Test
+	public void contains0WithReference1() {
+		containsValueWithReference(0, getReference(nCol, 3241, 1.0, 1.0));
+	}
+
+	@Test
+	public void contains1WithReferenceMinus1() {
+		containsValueWithReference(1.0, getReference(nCol, 3241, -1.0, -1.0));
+	}
+
+	public void containsValueWithReference(double value, double[] reference) {
+		assertEquals(//
+			a.containsValueWithReference(value, reference), //
+			b.containsValueWithReference(value, reference));
 	}
 
 	private static void compare(ADictionary a, ADictionary b, int nRow, int nCol) {

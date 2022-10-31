@@ -1966,6 +1966,8 @@ public class MatrixBlockDictionary extends ADictionary {
 
 	@Override
 	public ADictionary rexpandCols(int max, boolean ignore, boolean cast, int nCol) {
+		if(nCol > 1)
+			throw new DMLCompressionException("Invalid to rexpand the column groups if more than one column");
 		MatrixBlock ret = LibMatrixReorg.rexpand(_data, new MatrixBlock(), max, false, cast, ignore, 1);
 		return MatrixBlockDictionary.create(ret);
 	}
@@ -1973,10 +1975,7 @@ public class MatrixBlockDictionary extends ADictionary {
 	@Override
 	public ADictionary rexpandColsWithReference(int max, boolean ignore, boolean cast, int reference) {
 		ADictionary a = applyScalarOp(new LeftScalarOperator(Plus.getPlusFnObject(), reference));
-		if(a == null)
-			return null;
-		else
-			return a.rexpandCols(max, ignore, cast, 1);
+		return a == null ? null : a.rexpandCols(max, ignore, cast, 1);
 	}
 
 	@Override

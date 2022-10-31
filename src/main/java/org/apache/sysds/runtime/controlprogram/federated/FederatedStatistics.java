@@ -56,13 +56,13 @@ import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.Event
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.RequestModel;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.TrafficModel;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.UtilizationModel;
+import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.Data;
 import org.apache.sysds.runtime.instructions.cp.ListObject;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
 import org.apache.sysds.runtime.lineage.LineageCacheStatistics;
 import org.apache.sysds.runtime.lineage.LineageItem;
-import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.utils.Statistics;

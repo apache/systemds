@@ -22,9 +22,9 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.apache.wink.json4j.JSONException;
 import org.junit.Test;
 import org.apache.sysds.common.Types;
+import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.runtime.io.FrameReaderJSONLParallel;
 import org.apache.sysds.runtime.io.FrameWriterJSONLParallel;
-import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.test.TestUtils;
 

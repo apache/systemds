@@ -22,7 +22,7 @@ package org.apache.sysds.runtime.transform.encode;
 import java.io.Externalizable;
 
 import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
-import org.apache.sysds.runtime.matrix.data.FrameBlock;
+import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
 /*

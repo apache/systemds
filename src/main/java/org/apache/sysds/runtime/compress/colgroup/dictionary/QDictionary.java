@@ -597,7 +597,7 @@ public class QDictionary extends ADictionary {
 	}
 
 	@Override
-	public boolean eq(ADictionary o) {
+	public boolean equals(ADictionary o) {
 			throw new NotImplementedException();
 	}
 }

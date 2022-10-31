@@ -2096,7 +2096,7 @@ public class MatrixBlockDictionary extends ADictionary {
 	}
 
 	@Override
-	public boolean eq(ADictionary o) {
+	public boolean equals(ADictionary o) {
 		if(o instanceof MatrixBlockDictionary)
 			return _data.equals(((MatrixBlockDictionary) o)._data);
 		else if(o instanceof Dictionary) {

@@ -668,7 +668,7 @@ public abstract class ADictionary implements Serializable {
 	 * @param nRows  The number of rows in total of the column group
 	 * @return The central moment Object
 	 */
-	public CM_COV_Object centralMoment(ValueFunction fn, int[] counts, int nRows) {
+	public final CM_COV_Object centralMoment(ValueFunction fn, int[] counts, int nRows) {
 		return centralMoment(new CM_COV_Object(), fn, counts, nRows);
 	}
 
@@ -694,7 +694,7 @@ public abstract class ADictionary implements Serializable {
 	 * @param nRows  The number of rows in total of the column group
 	 * @return The central moment Object
 	 */
-	public CM_COV_Object centralMomentWithDefault(ValueFunction fn, int[] counts, double def, int nRows) {
+	public final CM_COV_Object centralMomentWithDefault(ValueFunction fn, int[] counts, double def, int nRows) {
 		return centralMomentWithDefault(new CM_COV_Object(), fn, counts, def, nRows);
 	}
 
@@ -722,7 +722,7 @@ public abstract class ADictionary implements Serializable {
 	 * @param nRows     The number of rows in total of the column group
 	 * @return The central moment Object
 	 */
-	public CM_COV_Object centralMomentWithReference(ValueFunction fn, int[] counts, double reference, int nRows) {
+	public final CM_COV_Object centralMomentWithReference(ValueFunction fn, int[] counts, double reference, int nRows) {
 		return centralMomentWithReference(new CM_COV_Object(), fn, counts, reference, nRows);
 	}
 
@@ -890,7 +890,7 @@ public abstract class ADictionary implements Serializable {
 	protected abstract void TSMMToUpperTriangleSparseScaling(SparseBlock left, int[] rowsLeft, int[] colsRight,
 		int[] scale, MatrixBlock result);
 
-	protected String doubleToString(double v) {
+	protected static String doubleToString(double v) {
 		if(v == (long) v)
 			return Long.toString(((long) v));
 		else
@@ -905,11 +905,12 @@ public abstract class ADictionary implements Serializable {
 	}
 
 	@Override
-	public boolean equals(Object o) {
+	public final boolean equals(Object o) {
 		if(o instanceof ADictionary)
-			return eq((ADictionary) o);
+			return equals((ADictionary) o);
 		return false;
 	}
 
-	public abstract boolean eq(ADictionary o);
+
+	public abstract boolean equals(ADictionary o);
 }

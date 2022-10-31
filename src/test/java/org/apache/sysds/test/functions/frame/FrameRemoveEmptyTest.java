@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.sysds.test.component.frame;
+package org.apache.sysds.test.functions.frame;
 
 import static org.junit.Assert.fail;
 
@@ -153,7 +153,7 @@ public class FrameRemoveEmptyTest extends AutomatedTestBase {
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
 		if(rtplatform == Types.ExecMode.SPARK)
 			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
-
+		setOutputBuffering(true);
 		try {
 			// register test configuration
 			TestConfiguration config = getTestConfiguration(testname);

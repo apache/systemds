@@ -28,8 +28,6 @@ import java.io.ObjectOutput;
 import java.io.Serializable;
 import java.lang.ref.SoftReference;
 import java.lang.reflect.InvocationTargetException;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -53,13 +51,16 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.hadoop.io.Writable;
 import org.apache.sysds.api.DMLException;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.codegen.CodegenUtils;
 import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
 import org.apache.sysds.runtime.controlprogram.parfor.util.IDSequence;
+import org.apache.sysds.runtime.frame.data.columns.Array;
+import org.apache.sysds.runtime.frame.data.columns.ArrayFactory;
+import org.apache.sysds.runtime.frame.data.columns.ColumnMetadata;
+import org.apache.sysds.runtime.frame.data.columns.StringArray;
 import org.apache.sysds.runtime.functionobjects.ValueComparisonFunction;
 import org.apache.sysds.runtime.instructions.cp.BooleanObject;
 import org.apache.sysds.runtime.instructions.cp.DoubleObject;
@@ -85,9 +86,10 @@ public class FrameBlock implements CacheBlock, Externalizable {
 	private static final Log LOG = LogFactory.getLog(FrameBlock.class.getName());
 	private static final IDSequence CLASS_ID = new IDSequence();
 
-	public static final int BUFFER_SIZE = 1 * 1000 * 1000; //1M elements, size of default matrix block
+	/** Buffer size variable: 1M elements, size of default matrix block */
+	public static final int BUFFER_SIZE = 1 * 1000 * 1000;
 
-	//internal configuration
+	/** internal configuration */
 	private static final boolean REUSE_RECODE_MAPS = true;
 
 	/** The number of rows of the FrameBlock */
@@ -328,47 +330,46 @@ public class FrameBlock implements CacheBlock, Externalizable {
 	 */
 	public void ensureAllocatedColumns(int numRows) {
 		_msize = -1;
-		//early abort if already allocated
-		if( _coldata != null && _schema.length == _coldata.length ) {
-			//handle special case that to few rows allocated
-			if( _numRows < numRows ) {
-				String[] tmp = new String[getNumColumns()];
-				int len = numRows - _numRows;
-				for(int i=0; i<len; i++)
-					appendRow(tmp);
-			}
-			return;
-		}
-		//allocate column meta data if necessary
+		
+		// allocate column meta data if necessary
 		if( _colmeta == null || _schema.length != _colmeta.length ) {
 			_colmeta = new ColumnMetadata[_schema.length];
 			for( int j=0; j<_schema.length; j++ )
 				_colmeta[j] = new ColumnMetadata(0);
 		}
+
+		// early abort if already allocated
+		if( _coldata != null && _schema.length == _coldata.length ) {
+			//handle special case that to few rows allocated
+			if( _numRows < numRows ) {
+				String[] tmp = new String[getNumColumns()];
+				int len = numRows - _numRows;
+				// TODO: Add append N function.
+				for(int i=0; i<len; i++)
+					appendRow(tmp);
+			}
+			return;
+		}
+
 		//allocate columns if necessary
 		_coldata = new Array[_schema.length];
-		for( int j=0; j<_schema.length; j++ ) {
-			switch( _schema[j] ) {
-				case STRING:  _coldata[j] = new StringArray(new String[numRows]); break;
-				case BOOLEAN: _coldata[j] = new BooleanArray(new boolean[numRows]); break;
-				case INT32:   _coldata[j] = new IntegerArray(new int[numRows]); break;
-				case INT64:   _coldata[j] = new LongArray(new long[numRows]); break;
-				case FP32:   _coldata[j] = new FloatArray(new float[numRows]); break;
-				case FP64:   _coldata[j] = new DoubleArray(new double[numRows]); break;
-				default: throw new RuntimeException("Unsupported value type: "+_schema[j]);
-			}
-		}
+		for( int j=0; j<_schema.length; j++ )
+			_coldata[j] = ArrayFactory.allocate(_schema[j], numRows);
+
 		_numRows = numRows;
 	}
 
 	/**
 	 * Checks for matching column sizes in case of existing columns.
+	 * 
+	 * If the check parses the number of rows is reassigned to the given newLen
 	 *
-	 * @param newlen number of rows to compare with existing number of rows
+	 * @param newLen number of rows to compare with existing number of rows
 	 */
-	public void ensureColumnCompatibility(int newlen) {
-		if( _coldata!=null && _coldata.length > 0 && _numRows != newlen )
-			throw new RuntimeException("Mismatch in number of rows: "+newlen+" (expected: "+_numRows+")");
+	public void ensureColumnCompatibility(int newLen) {
+		if( _coldata!=null && _coldata.length > 0 && _numRows != newLen )
+			throw new RuntimeException("Mismatch in number of rows: "+newLen+" (expected: "+_numRows+")");
+		_numRows = newLen;
 	}
 
 	public static String[] createColNames(int size) {
@@ -384,6 +385,10 @@ public class FrameBlock implements CacheBlock, Externalizable {
 
 	public static String createColName(int i) {
 		return "C" + i;
+	}
+
+	private String createNextColName(){
+		return _schema != null ? createColName(_schema.length) : createColName(0);
 	}
 
 	public boolean isColNamesDefault() {
@@ -491,13 +496,8 @@ public class FrameBlock implements CacheBlock, Externalizable {
 	 */
 	public void appendColumn(String[] col) {
 		ensureColumnCompatibility(col.length);
-		String[] colnames = getColumnNames(); //before schema modification
-		_schema = (ValueType[]) ArrayUtils.add(_schema, ValueType.STRING);
-		_colnames = (String[]) ArrayUtils.add(colnames, createColName(_schema.length));
-		_coldata = (_coldata==null) ? new Array[]{new StringArray(col)} :
-			(Array[]) ArrayUtils.add(_coldata, new StringArray(col));
-		_numRows = col.length;
-		_msize = -1;
+		appendColumnMetaData(ValueType.STRING);
+		_coldata = FrameUtil.add(_coldata, ArrayFactory.create(col));
 	}
 
 	/**
@@ -509,13 +509,8 @@ public class FrameBlock implements CacheBlock, Externalizable {
 	 */
 	public void appendColumn(boolean[] col) {
 		ensureColumnCompatibility(col.length);
-		String[] colnames = getColumnNames(); //before schema modification
-		_schema = (ValueType[]) ArrayUtils.add(_schema, ValueType.BOOLEAN);
-		_colnames = (String[]) ArrayUtils.add(colnames, createColName(_schema.length));
-		_coldata = (_coldata==null) ? new Array[]{new BooleanArray(col)} :
-			(Array[]) ArrayUtils.add(_coldata, new BooleanArray(col));
-		_numRows = col.length;
-		_msize = -1;
+		appendColumnMetaData(ValueType.BOOLEAN);
+		_coldata = FrameUtil.add(_coldata, ArrayFactory.create(col));
 	}
 
 	/**
@@ -527,14 +522,10 @@ public class FrameBlock implements CacheBlock, Externalizable {
 	 */
 	public void appendColumn(int[] col) {
 		ensureColumnCompatibility(col.length);
-		String[] colnames = getColumnNames(); //before schema modification
-		_schema = (ValueType[]) ArrayUtils.add(_schema, ValueType.INT32);
-		_colnames = (String[]) ArrayUtils.add(colnames, createColName(_schema.length));
-		_coldata = (_coldata==null) ? new Array[]{new IntegerArray(col)} :
-			(Array[]) ArrayUtils.add(_coldata, new IntegerArray(col));
-		_numRows = col.length;
-		_msize = -1;
+		appendColumnMetaData(ValueType.INT32);
+		_coldata = FrameUtil.add(_coldata,  ArrayFactory.create(col));
 	}
+
 	/**
 	 * Append a column of value type LONG as the last column of
 	 * the data frame. The given array is wrapped but not copied
@@ -544,13 +535,8 @@ public class FrameBlock implements CacheBlock, Externalizable {
 	 */
 	public void appendColumn(long[] col) {
 		ensureColumnCompatibility(col.length);
-		String[] colnames = getColumnNames(); //before schema modification
-		_schema = (ValueType[]) ArrayUtils.add(_schema, ValueType.INT64);
-		_colnames = (String[]) ArrayUtils.add(colnames, createColName(_schema.length));
-		_coldata = (_coldata==null) ? new Array[]{new LongArray(col)} :
-			(Array[]) ArrayUtils.add(_coldata, new LongArray(col));
-		_numRows = col.length;
-		_msize = -1;
+		appendColumnMetaData(ValueType.INT64);
+		_coldata = FrameUtil.add(_coldata, ArrayFactory.create(col));
 	}
 
 	/**
@@ -562,14 +548,10 @@ public class FrameBlock implements CacheBlock, Externalizable {
 	 */
 	public void appendColumn(float[] col) {
 		ensureColumnCompatibility(col.length);
-		String[] colnames = getColumnNames(); //before schema modification
-		_schema = (ValueType[]) ArrayUtils.add(_schema, ValueType.FP32);
-		_colnames = (String[]) ArrayUtils.add(colnames, createColName(_schema.length));
-		_coldata = (_coldata==null) ? new Array[]{new FloatArray(col)} :
-				(Array[]) ArrayUtils.add(_coldata, new FloatArray(col));
-		_numRows = col.length;
-		_msize = -1;
+		appendColumnMetaData(ValueType.FP32);
+		_coldata = FrameUtil.add(_coldata,  ArrayFactory.create(col));
 	}
+
 	/**
 	 * Append a column of value type DOUBLE as the last column of
 	 * the data frame. The given array is wrapped but not copied
@@ -579,12 +561,29 @@ public class FrameBlock implements CacheBlock, Externalizable {
 	 */
 	public void appendColumn(double[] col) {
 		ensureColumnCompatibility(col.length);
-		String[] colnames = getColumnNames(); //before schema modification
-		_schema = (ValueType[]) ArrayUtils.add(_schema, ValueType.FP64);
-		_colnames = (String[]) ArrayUtils.add(colnames, createColName(_schema.length));
-		_coldata = (_coldata==null) ? new Array[]{new DoubleArray(col)} :
-			(Array[]) ArrayUtils.add(_coldata, new DoubleArray(col));
-		_numRows = col.length;
+		appendColumnMetaData(ValueType.FP64);
+		_coldata = FrameUtil.add(_coldata, ArrayFactory.create(col));
+	}
+
+	/**
+	 * Append the metadata associated with adding a column.
+	 * 
+	 * @param vt The Value type
+	 */
+	private void appendColumnMetaData(ValueType vt){
+		appendColumnMetaData(vt, createNextColName());
+	}
+
+	/**
+	 * Append the metadata associated with adding a column.
+	 * 
+	 * @param vt The Value type
+	 * @param colName The columnName
+	 */
+	private void appendColumnMetaData(ValueType vt, String colName){
+		_schema = (ValueType[]) ArrayUtils.add(_schema, vt);
+		_colnames = (String[]) ArrayUtils.add(getColumnNames(), colName);
+		// Since we append a column we reset the _msize
 		_msize = -1;
 	}
 
@@ -601,7 +600,7 @@ public class FrameBlock implements CacheBlock, Externalizable {
 		ValueType[] tmpSchema = UtilFunctions.nCopies(ncol, ValueType.FP64);
 		Array[] tmpData = new Array[ncol];
 		for( int j=0; j<ncol; j++ )
-			tmpData[j] = new DoubleArray(cols[j]);
+			tmpData[j] = ArrayFactory.create(cols[j]);
 		_colnames = empty ? null : (String[]) ArrayUtils.addAll(getColumnNames(),
 			createColNames(getNumColumns(), ncol)); //before schema modification
 		_schema = empty ? tmpSchema : (ValueType[]) ArrayUtils.addAll(_schema, tmpSchema);
@@ -610,41 +609,19 @@ public class FrameBlock implements CacheBlock, Externalizable {
 		_msize = -1;
 	}
 
-	public void appendColumn(ValueType vt, Array col) {
-		switch (vt) {
-			case STRING:
-				appendColumn(((StringArray) col).get());
-				break;
-			case BOOLEAN:
-				appendColumn(((BooleanArray) col).get());
-				break;
-			case INT32:
-				appendColumn(((IntegerArray) col).get());
-				break;
-			case INT64:
-				appendColumn(((LongArray) col).get());
-				break;
-			case FP32:
-				appendColumn(((FloatArray) col).get());
-				break;
-			case FP64:
-				appendColumn(((DoubleArray) col).get());
-				break;
-			default:
-				throw new RuntimeException("Unsupported value type: " + vt);
-		}
+	/**
+	 * Add a column of already allocated Array type.
+	 * 
+	 * @param col column to add.
+	 */
+	public void appendColumn(Array col) {
+		ensureColumnCompatibility(col.size());
+		appendColumnMetaData(col.getValueType());
+		_coldata = FrameUtil.add(_coldata, col);
 	}
 
 	public Object getColumnData(int c) {
-		switch(_schema[c]) {
-			case STRING:  return ((StringArray)_coldata[c])._data;
-			case BOOLEAN: return ((BooleanArray)_coldata[c])._data;
-			case INT64:   return ((LongArray)_coldata[c])._data;
-			case INT32:   return ((IntegerArray)_coldata[c])._data;
-			case FP64:    return ((DoubleArray)_coldata[c])._data;
-			case FP32:    return ((FloatArray)_coldata[c])._data;
-			default:      return null;
-	 	}
+		return _coldata[c].get();
 	}
 
 	public String getColumnType(int c){
@@ -664,8 +641,6 @@ public class FrameBlock implements CacheBlock, Externalizable {
 	 * It should only be used in columns where the datatype is String.
 	 * Since in other cases it might be faster to return other types.
 	 *
-	 * Note that P
-	 *
 	 * @param c The column index.
 	 * @param r The row index.
 	 * @return The returned byte array.
@@ -673,7 +648,7 @@ public class FrameBlock implements CacheBlock, Externalizable {
 	public byte[] getIndexAsBytes(int c, int r){
 		switch(_schema[c]){
 			case STRING:
-				String[] col = ((StringArray)_coldata[c])._data;
+				String[] col = ((StringArray)_coldata[c]).get();
 				if(col[r] != null)
 					return col[r].getBytes();
 				else
@@ -683,48 +658,16 @@ public class FrameBlock implements CacheBlock, Externalizable {
 		}
 	}
 
-	public byte[] getColumnAsBytes(int c){
-		final int nRow = getNumRows();
-		switch(_schema[c]){
-			case INT64:
-				long[] colLong = ((LongArray)_coldata[c])._data;
-				ByteBuffer longBuffer = ByteBuffer.allocate(8 * nRow);
-				longBuffer.order(ByteOrder.LITTLE_ENDIAN);
-				for(int i = 0; i <  nRow; i++)
-					longBuffer.putLong(colLong[i]);
-				return longBuffer.array();
-			case INT32:
-				int[] colInt = ((IntegerArray)_coldata[c])._data;
-				ByteBuffer intBuffer = ByteBuffer.allocate(4 *  nRow);
-				intBuffer.order(ByteOrder.LITTLE_ENDIAN);
-				for(int i = 0; i < nRow; i++)
-					intBuffer.putInt(colInt[i]);
-				return intBuffer.array();
-			case FP64:
-				double[] colDouble = ((DoubleArray)_coldata[c])._data;
-				ByteBuffer doubleBuffer = ByteBuffer.allocate(8 * nRow);
-				doubleBuffer.order(ByteOrder.nativeOrder());
-				for(int i = 0; i < nRow; i++)
-					doubleBuffer.putDouble(colDouble[i]);
-				return doubleBuffer.array();
-			case FP32:
-				float[] colFloat = ((FloatArray)_coldata[c])._data;
-				ByteBuffer floatBuffer = ByteBuffer.allocate(8 * nRow);
-				floatBuffer.order(ByteOrder.nativeOrder());
-				for(int i = 0; i < nRow; i++)
-					floatBuffer.putFloat(colFloat[i]);
-				return floatBuffer.array();
-			case BOOLEAN:
-				boolean[] colBool = ((BooleanArray)_coldata[c])._data;
-				// over allocating here.. we could maybe bit pack?
-				ByteBuffer booleanBuffer = ByteBuffer.allocate(nRow);
-				booleanBuffer.order(ByteOrder.nativeOrder());
-				for(int i = 0; i < nRow; i++)
-					booleanBuffer.put((byte)(colBool[i]? 1:0));
-				return booleanBuffer.array();
-			default:
-				throw new NotImplementedException();
-		}
+	/**
+	 * Serialize the columns data as byte.
+	 * 
+	 * This serialization is used for transferring the frame to python.
+	 * 
+	 * @param c The column index
+	 * @return The columns data as byte array.
+	 */
+	public byte[] getColumnAsBytes(int c) {
+		return _coldata[c].getAsByteArray(getNumRows());
 	}
 
 	public Array getColumn(int c) {
@@ -922,19 +865,7 @@ public class FrameBlock implements CacheBlock, Externalizable {
 			String name = isDefaultMeta ? createColName(j) : in.readUTF();
 			long ndistinct = isDefaultMeta ? 0 : in.readLong();
 			String mvvalue = isDefaultMeta ? null : in.readUTF();
-			Array arr = null;
-			if( type > 0 ) { //non-empty column
-				switch( vt ) {
-					case STRING:  arr = new StringArray(new String[_numRows]); break;
-					case BOOLEAN: arr = new BooleanArray(new boolean[_numRows]); break;
-					case INT64:     arr = new LongArray(new long[_numRows]); break;
-					case FP64:  arr = new DoubleArray(new double[_numRows]); break;
-					case INT32: arr = new IntegerArray(new int[_numRows]); break;
-					case FP32:  arr = new FloatArray(new float[_numRows]); break;
-					default: throw new IOException("Unsupported value type: "+vt);
-				}
-				arr.readFields(in);
-			}
+			Array arr = type > 0? ArrayFactory.read(in, vt, _numRows): null;
 			_schema[j] = vt;
 			_colnames[j] = name;
 			_colmeta[j] = new ColumnMetadata(ndistinct,
@@ -1424,7 +1355,7 @@ public class FrameBlock implements CacheBlock, Externalizable {
 	public HashMap<String,Long> getRecodeMap(int col) {
 		//probe cache for existing map
 		if( REUSE_RECODE_MAPS ) {
-			SoftReference<HashMap<String,Long>> tmp = _coldata[col]._rcdMapCache;
+			SoftReference<HashMap<String,Long>> tmp = _coldata[col].getCache();
 			HashMap<String,Long> map = (tmp!=null) ? tmp.get() : null;
 			if( map != null ) return map;
 		}
@@ -1442,7 +1373,7 @@ public class FrameBlock implements CacheBlock, Externalizable {
 
 		//put created map into cache
 		if( REUSE_RECODE_MAPS )
-			_coldata[col]._rcdMapCache = new SoftReference<>(map);
+			_coldata[col].setCache(new SoftReference<>(map));
 
 		return map;
 	}
@@ -1643,481 +1574,6 @@ public class FrameBlock implements CacheBlock, Externalizable {
 		}
 	}
 
-	///////
-	// generic, resizable native arrays
-
-	/**
-	 * Base class for generic, resizable array of various value types. We
-	 * use this custom class hierarchy instead of Trove or other libraries
-	 * in order to avoid unnecessary dependencies.
-	 */
-	private abstract static class Array<T> implements Writable {
-		protected SoftReference<HashMap<String,Long>> _rcdMapCache = null;
-
-		protected int _size = 0;
-		protected int newSize() {
-			return Math.max(_size*2, 4);
-		}
-		public abstract T get(int index);
-		public abstract void set(int index, T value);
-		public abstract void set(int rl, int ru, Array value);
-		public abstract void set(int rl, int ru, Array value, int rlSrc);
-		public abstract void setNz(int rl, int ru, Array value);
-		public abstract void append(String value);
-		public abstract void append(T value);
-		@Override
-		public abstract Array clone();
-		public abstract Array slice(int rl, int ru);
-		public abstract void reset(int size);
-
-		@Override
-		public String toString(){
-			return this.getClass().getSimpleName().toString() + ":" + _size;
-		}
-	}
-
-	private static class StringArray extends Array<String> {
-		private String[] _data = null;
-
-		public StringArray(String[] data) {
-			_data = data;
-			_size = _data.length;
-		}
-		public String[] get() { return _data; }
-
-		@Override
-		public String get(int index) {
-			return _data[index];
-		}
-
-		@Override
-		public void set(int index, String value) {
-			_data[index] = value;
-		}
-		@Override
-		public void set(int rl, int ru, Array value) {
-			set(rl, ru, value, 0);
-		}
-		@Override
-		public void set(int rl, int ru, Array value, int rlSrc) {
-			System.arraycopy(((StringArray)value)._data, rlSrc, _data, rl, ru-rl+1);
-		}
-		@Override
-		public void setNz(int rl, int ru, Array value) {
-			String[] data2 = ((StringArray)value)._data;
-			for( int i=rl; i<ru+1; i++ )
-				if( data2[i]!=null )
-					_data[i] = data2[i];
-		}
-		@Override
-		public void append(String value) {
-			if( _data.length <= _size )
-				_data = Arrays.copyOf(_data, newSize());
-			_data[_size++] = value;
-		}
-		@Override
-		public void write(DataOutput out) throws IOException {
-			for( int i=0; i<_size; i++ )
-				out.writeUTF((_data[i]!=null)?_data[i]:"");
-		}
-		@Override
-		public void readFields(DataInput in) throws IOException {
-			_size = _data.length;
-			for( int i=0; i<_size; i++ ) {
-				String tmp = in.readUTF();
-				_data[i] = (!tmp.isEmpty()) ? tmp : null;
-			}
-		}
-		@Override
-		public Array clone() {
-			return new StringArray(Arrays.copyOf(_data, _size));
-		}
-		@Override
-		public Array slice(int rl, int ru) {
-			return new StringArray(Arrays.copyOfRange(_data,rl,ru+1));
-		}
-		@Override
-		public void reset(int size) {
-			if( _data.length < size )
-				_data = new String[size];
-			_size = size;
-		}
-	}
-
-	private static class BooleanArray extends Array<Boolean> {
-		private boolean[] _data = null;
-
-		public BooleanArray(boolean[] data) {
-			_data = data;
-			_size = _data.length;
-		}
-		public boolean[] get() { return _data; }
-
-		@Override
-		public Boolean get(int index) {
-			return _data[index];
-		}
-
-		@Override
-		public void set(int index, Boolean value) {
-			_data[index] = (value!=null) ? value : false;
-		}
-		@Override
-		public void set(int rl, int ru, Array value) {
-			set(rl, ru, value, 0);
-		}
-		@Override
-		public void set(int rl, int ru, Array value, int rlSrc) {
-			System.arraycopy(((BooleanArray)value)._data, rlSrc, _data, rl, ru-rl+1);
-		}
-		@Override
-		public void setNz(int rl, int ru, Array value) {
-			boolean[] data2 = ((BooleanArray)value)._data;
-			for( int i=rl; i<ru+1; i++ )
-				if( data2[i] )
-					_data[i] = data2[i];
-		}
-		@Override
-		public void append(String value) {
-			append(Boolean.parseBoolean(value));
-		}
-		@Override
-		public void append(Boolean value) {
-			if( _data.length <= _size )
-				_data = Arrays.copyOf(_data, newSize());
-			_data[_size++] = (value!=null) ? value : false;
-		}
-		@Override
-		public void write(DataOutput out) throws IOException {
-			for( int i=0; i<_size; i++ )
-				out.writeBoolean(_data[i]);
-		}
-		@Override
-		public void readFields(DataInput in) throws IOException {
-			_size = _data.length;
-			for( int i=0; i<_size; i++ )
-				_data[i] = in.readBoolean();
-		}
-		@Override
-		public Array clone() {
-			return new BooleanArray(Arrays.copyOf(_data, _size));
-		}
-		@Override
-		public Array slice(int rl, int ru) {
-			return new BooleanArray(Arrays.copyOfRange(_data,rl,ru+1));
-		}
-		@Override
-		public void reset(int size) {
-			if( _data.length < size )
-				_data = new boolean[size];
-			_size = size;
-		}
-	}
-
-	private static class LongArray extends Array<Long> {
-		private long[] _data = null;
-
-		public LongArray(long[] data) {
-			_data = data;
-			_size = _data.length;
-		}
-		public long[] get() { return _data; }
-		@Override
-		public Long get(int index) {
-			return _data[index];
-		}
-		@Override
-		public void set(int index, Long value) {
-			_data[index] = (value!=null) ? value : 0L;
-		}
-		@Override
-		public void set(int rl, int ru, Array value) {
-			set(rl, ru, value, 0);
-		}
-		@Override
-		public void set(int rl, int ru, Array value, int rlSrc) {
-			System.arraycopy(((LongArray)value)._data, rlSrc, _data, rl, ru-rl+1);
-		}
-		@Override
-		public void setNz(int rl, int ru, Array value) {
-			long[] data2 = ((LongArray)value)._data;
-			for( int i=rl; i<ru+1; i++ )
-				if( data2[i]!=0 )
-					_data[i] = data2[i];
-		}
-		@Override
-		public void append(String value) {
-			append((value!=null)?Long.parseLong(value.trim()):null);
-		}
-		@Override
-		public void append(Long value) {
-			if( _data.length <= _size )
-				_data = Arrays.copyOf(_data, newSize());
-			_data[_size++] = (value!=null) ? value : 0L;
-		}
-		@Override
-		public void write(DataOutput out) throws IOException {
-			for( int i=0; i<_size; i++ )
-				out.writeLong(_data[i]);
-		}
-		@Override
-		public void readFields(DataInput in) throws IOException {
-			_size = _data.length;
-			for( int i=0; i<_size; i++ )
-				_data[i] = in.readLong();
-		}
-		@Override
-		public Array clone() {
-			return new LongArray(Arrays.copyOf(_data, _size));
-		}
-		@Override
-		public Array slice(int rl, int ru) {
-			return new LongArray(Arrays.copyOfRange(_data,rl,ru+1));
-		}
-		@Override
-		public void reset(int size) {
-			if( _data.length < size )
-				_data = new long[size];
-			_size = size;
-		}
-	}
-
-	private static class IntegerArray extends Array<Integer> {
-		private int[] _data = null;
-
-		public IntegerArray(int[] data) {
-			_data = data;
-			_size = _data.length;
-		}
-		public int[] get() { return _data; }
-
-		@Override
-		public Integer get(int index) {
-			return _data[index];
-		}
-
-		@Override
-		public void set(int index, Integer value) { _data[index] = (value!=null) ? value : 0;}
-		@Override
-		public void set(int rl, int ru, Array value) {
-			set(rl, ru, value, 0);
-		}
-		@Override
-		public void set(int rl, int ru, Array value, int rlSrc) {
-			System.arraycopy(((IntegerArray)value)._data, rlSrc, _data, rl, ru-rl+1);
-		}
-		@Override
-		public void setNz(int rl, int ru, Array value) {
-			int[] data2 = ((IntegerArray)value)._data;
-			for( int i=rl; i<ru+1; i++ )
-				if( data2[i]!=0 )
-					_data[i] = data2[i];
-		}
-		@Override
-		public void append(String value) {
-			append((value!=null)?Integer.parseInt(value.trim()):null);
-		}
-		@Override
-		public void append(Integer value) {
-			if( _data.length <= _size )
-				_data = Arrays.copyOf(_data, newSize());
-			_data[_size++] = (value!=null) ? value : 0;
-		}
-		@Override
-		public void write(DataOutput out) throws IOException {
-			for( int i=0; i<_size; i++ )
-				out.writeLong(_data[i]);
-		}
-		@Override
-		public void readFields(DataInput in) throws IOException {
-			_size = _data.length;
-			for( int i=0; i<_size; i++ )
-				_data[i] = in.readInt();
-		}
-		@Override
-		public Array clone() {
-			return new IntegerArray(Arrays.copyOf(_data, _size));
-		}
-		@Override
-		public Array slice(int rl, int ru) {
-			return new IntegerArray(Arrays.copyOfRange(_data,rl,ru+1));
-		}
-		@Override
-		public void reset(int size) {
-			if( _data.length < size )
-				_data = new int[size];
-			_size = size;
-		}
-	}
-
-	private static class FloatArray extends Array<Float> {
-		private float[] _data = null;
-
-		public FloatArray(float[] data) {
-			_data = data;
-			_size = _data.length;
-		}
-		public float[] get() { return _data; }
-
-		@Override
-		public Float get(int index) {
-			return _data[index];
-		}
-
-		@Override
-		public void set(int index, Float value) { _data[index] = (value!=null) ? value : 0f; }
-
-		@Override
-		public void set(int rl, int ru, Array value) {
-			set(rl,ru, value, 0);
-		}
-		@Override
-		public void set(int rl, int ru, Array value, int rlSrc) {
-			System.arraycopy(((FloatArray)value)._data, rlSrc, _data, rl, ru-rl+1);
-		}
-		@Override
-		public void setNz(int rl, int ru, Array value) {
-			float[] data2 = ((FloatArray)value)._data;
-			for( int i=rl; i<ru+1; i++ )
-				if( data2[i]!=0 )
-					_data[i] = data2[i];
-		}
-		@Override
-		public void append(String value) {	append((value!=null)? Float.parseFloat(value):null); }
-
-		@Override
-		public void append(Float value) {
-			if( _data.length <= _size )
-				_data = Arrays.copyOf(_data, newSize());
-			_data[_size++] = (value!=null) ? value : 0f;
-		}
-		@Override
-		public void write(DataOutput out) throws IOException {
-			for( int i=0; i<_size; i++ )
-				out.writeFloat(_data[i]);
-		}
-		@Override
-		public void readFields(DataInput in) throws IOException {
-			_size = _data.length;
-			for( int i=0; i<_size; i++ )
-				_data[i] = in.readFloat();
-		}
-		@Override
-		public Array clone() {
-			return new FloatArray(Arrays.copyOf(_data, _size));
-		}
-		@Override
-		public Array slice(int rl, int ru) {
-			return new FloatArray(Arrays.copyOfRange(_data,rl,ru+1));
-		}
-		@Override
-		public void reset(int size) {
-			if( _data.length < size )
-				_data = new float[size];
-			_size = size;
-		}
-	}
-
-	private static class DoubleArray extends Array<Double> {
-		private double[] _data = null;
-
-		public DoubleArray(double[] data) {
-			_data = data;
-			_size = _data.length;
-		}
-		public double[] get() { return _data; }
-		@Override
-		public Double get(int index) {
-			return _data[index];
-		}
-		@Override
-		public void set(int index, Double value) {
-			_data[index] = (value!=null) ? value : 0d;
-		}
-		@Override
-		public void set(int rl, int ru, Array value) {
-			set(rl,ru, value, 0);
-		}
-		@Override
-		public void set(int rl, int ru, Array value, int rlSrc) {
-			System.arraycopy(((DoubleArray)value)._data, rlSrc, _data, rl, ru-rl+1);
-		}
-		@Override
-		public void setNz(int rl, int ru, Array value) {
-			double[] data2 = ((DoubleArray)value)._data;
-			for( int i=rl; i<ru+1; i++ )
-				if( data2[i]!=0 )
-					_data[i] = data2[i];
-		}
-		@Override
-		public void append(String value) {
-			append((value!=null)?Double.parseDouble(value):null);
-		}
-		@Override
-		public void append(Double value) {
-			if( _data.length <= _size )
-				_data = Arrays.copyOf(_data, newSize());
-			_data[_size++] = (value!=null) ? value : 0d;
-		}
-		@Override
-		public void write(DataOutput out) throws IOException {
-			for( int i=0; i<_size; i++ )
-				out.writeDouble(_data[i]);
-		}
-		@Override
-		public void readFields(DataInput in) throws IOException {
-			_size = _data.length;
-			for( int i=0; i<_size; i++ )
-				_data[i] = in.readDouble();
-		}
-		@Override
-		public Array clone() {
-			return new DoubleArray(Arrays.copyOf(_data, _size));
-		}
-		@Override
-		public Array slice(int rl, int ru) {
-			return new DoubleArray(Arrays.copyOfRange(_data,rl,ru+1));
-		}
-		@Override
-		public void reset(int size) {
-			if( _data.length < size )
-				_data = new double[size];
-			_size = size;
-		}
-	}
-
-	public static class ColumnMetadata implements Serializable {
-		private static final long serialVersionUID = -90094082422100311L;
-
-		private long _ndistinct = 0;
-		private String _mvValue = null;
-
-		public ColumnMetadata(long ndistinct) {
-			_ndistinct = ndistinct;
-		}
-		public ColumnMetadata(long ndistinct, String mvval) {
-			_ndistinct = ndistinct;
-			_mvValue = mvval;
-		}
-		public ColumnMetadata(ColumnMetadata that) {
-			_ndistinct = that._ndistinct;
-			_mvValue = that._mvValue;
-		}
-
-		public long getNumDistinct() {
-			return _ndistinct;
-		}
-		public void setNumDistinct(long ndistinct) {
-			_ndistinct = ndistinct;
-		}
-		public String getMvValue() {
-			return _mvValue;
-		}
-		public void setMvValue(String mvVal) {
-			_mvValue = mvVal;
-		}
-	}
-
 	private static ValueType isType(String val) {
 		val = val.trim().toLowerCase().replaceAll("\"",  "");
 		if (val.matches("(true|false|t|f|0|1)"))
@@ -2150,7 +1606,7 @@ public class FrameBlock implements CacheBlock, Externalizable {
 		ExecutorService pool = CommonThreadPool.get(cols);
 		ArrayList<DetectValueTypeTask> tasks = new ArrayList<>();
 		for (int i = 0; i < cols; i++) {
-			FrameBlock.Array obj = this.getColumn(i);
+			Array obj = this.getColumn(i);
 			tasks.add(new DetectValueTypeTask(obj,rows, sample));
 		}
 
@@ -2282,7 +1738,7 @@ public class FrameBlock implements CacheBlock, Externalizable {
 				continue;
 			int validLength = (int)feaLen.quickGetValue(0, i);
 			Array obj = this.getColumn(i);
-			for (int j = 0; j < obj._size; j++)
+			for (int j = 0; j < obj.size(); j++)
 			{
 				if(obj.get(j) == null)
 					continue;
@@ -2363,6 +1819,7 @@ public class FrameBlock implements CacheBlock, Externalizable {
 				out.set(i, j, rowToreplicate.get(0, j));
 		return out;
 	}
+
 	public FrameBlock valueSwap(FrameBlock schema) {
 		String[] schemaString = schema.getStringRowIterator().next();
 		String dataValue2 = null;
@@ -2376,7 +1833,7 @@ public class FrameBlock implements CacheBlock, Externalizable {
 		double[] maxColLength = new double[this.getNumColumns()];
 
 		for(int k = 0; k < this.getNumColumns(); k++) {
-			String[] data = ((StringArray) this.getColumn(k))._data;
+			String[] data = ((StringArray) this.getColumn(k)).get();
 
 			double minLength = Arrays.stream(data).filter(Objects::nonNull).mapToDouble(String::length).min().orElse(Double.NaN);
 			double maxLength = Arrays.stream(data).filter(Objects::nonNull).mapToDouble(String::length).max().orElse(Double.NaN);
@@ -2471,7 +1928,7 @@ public class FrameBlock implements CacheBlock, Externalizable {
 			// Execute map function on all cells
 			for(int j = 0; j < getNumColumns(); j++) {
 				Array input = getColumn(j);
-				for(int i = 0; i < input._size; i++)
+				for(int i = 0; i < input.size(); i++)
 					if(input.get(i) != null)
 						output[i][j] = lambdaExpr.apply(String.valueOf(input.get(i)));
 			}
@@ -2484,8 +1941,8 @@ public class FrameBlock implements CacheBlock, Externalizable {
 		for(String[] row : output)
 			Arrays.fill(row, "0.0");
 		Array input = getColumn(0);
-		for(int j = 0; j < input._size - 1; j++) {
-			for(int i = j + 1; i < input._size; i++)
+		for(int j = 0; j < input.size() - 1; j++) {
+			for(int i = j + 1; i < input.size(); i++)
 				if(input.get(i) != null && input.get(j) != null) {
 					output[j][i] = lambdaExpr.apply(String.valueOf(input.get(j)), String.valueOf(input.get(i)));
 				}
@@ -2555,7 +2012,7 @@ public class FrameBlock implements CacheBlock, Externalizable {
 
 		for(int i = 0; i < ret.getNumColumns(); i++){
 			Array colData = ret._coldata[i];
-			for(int j = 0; j < colData._size && (ValueType.isSameTypeString(_schema[i], patternType) || _schema[i] == ValueType.STRING); j++) {
+			for(int j = 0; j < colData.size() && (ValueType.isSameTypeString(_schema[i], patternType) || _schema[i] == ValueType.STRING); j++) {
 				T patternNew =  (T) UtilFunctions.stringToObject(_schema[i], pattern);
 				T replacementNew = (T) UtilFunctions.stringToObject(_schema[i], replacement);
 
@@ -2632,12 +2089,12 @@ public class FrameBlock implements CacheBlock, Externalizable {
 			for(int i = 0; i < getNumColumns(); i++) {
 				Array colData = _coldata[i];
 				ValueType type = _schema[i];
-				boolean isEmpty = IntStream.range(0, colData._size)
+				boolean isEmpty = IntStream.range(0, colData.size())
 					.mapToObj((IntFunction<Object>) colData::get)
 					.allMatch(e -> ArrayUtils.contains(new double[]{0.0, Double.NaN}, UtilFunctions.objectToDoubleSafe(type, e)));
 
 				if(!isEmpty) {
-					ret.appendColumn(_schema[i], _coldata[i]);
+					ret.appendColumn(_coldata[i]);
 					columnMetadata.add(new ColumnMetadata(_colmeta[i]));
 				}
 			}
@@ -2648,7 +2105,7 @@ public class FrameBlock implements CacheBlock, Externalizable {
 			int[] indices = DataConverter.convertVectorToIndexList(select);
 			int k = 0;
 			for(int i : indices) {
-				ret.appendColumn(_schema[i], _coldata[i]);
+				ret.appendColumn(_coldata[i]);
 				columnMetadata.add(new ColumnMetadata(_colmeta[i]));
 				if(_colnames != null)
 					ret._colnames[k++] = _colnames[i];

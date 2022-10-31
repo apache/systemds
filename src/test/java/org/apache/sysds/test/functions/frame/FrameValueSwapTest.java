@@ -61,11 +61,9 @@ public class FrameValueSwapTest extends AutomatedTestBase
 		runValueSwapTest(ExecType.SPARK);
 	}
 
-	private void runValueSwapTest(ExecType et)
-	{
-		setOutputBuffering(true);
+	private void runValueSwapTest(ExecType et){
 		Types.ExecMode platformOld = setExecMode(et);
-
+		setOutputBuffering(true);
 		try {
 			getAndLoadTestConfiguration(TEST_NAME);
 			String HOME = SCRIPT_DIR + TEST_DIR;

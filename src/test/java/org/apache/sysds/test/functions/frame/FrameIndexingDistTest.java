@@ -130,7 +130,7 @@ public class FrameIndexingDistTest extends AutomatedTestBase
 			config = getTestConfiguration("FrameLeftIndexing");
 		else
 			config = getTestConfiguration("FrameRightIndexing");
-			
+		setOutputBuffering(true);
 		try
 		{
 			if(indexingMethod != null) {

@@ -143,7 +143,7 @@ public class FrameConstructorTest extends AutomatedTestBase {
 		Types.ExecMode platformOld = setExecMode(et);
 		boolean oldFlag = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-
+		setOutputBuffering(true);
 		try {
 			//setup testcase
 			getAndLoadTestConfiguration(TEST_NAME);

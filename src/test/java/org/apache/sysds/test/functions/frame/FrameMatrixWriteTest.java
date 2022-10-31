@@ -35,16 +35,13 @@ import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
 
-/**
- * 
- */
 public class FrameMatrixWriteTest extends AutomatedTestBase
 {
 	private final static String TEST_DIR = "functions/frame/";
 	private final static String TEST_NAME1 = "FrameMatrixWrite";
 	private final static String TEST_CLASS_DIR = TEST_DIR + FrameMatrixWriteTest.class.getSimpleName() + "/";
 
-	private final static int rows = 2593;
+	private final static int rows = 1320;
 	private final static int cols1 = 372;
 	private final static int cols2 = 1102;
 	
@@ -114,13 +111,6 @@ public class FrameMatrixWriteTest extends AutomatedTestBase
 		runFrameWriteTest(TEST_NAME1, true, "csv", ExecType.SPARK);
 	}
 	
-	/**
-	 * 
-	 * @param testname
-	 * @param multColBlks
-	 * @param ofmt
-	 * @param et
-	 */
 	private void runFrameWriteTest( String testname, boolean multColBlks, String ofmt, ExecType et)
 	{
 		//rtplatform for MR
@@ -133,7 +123,7 @@ public class FrameMatrixWriteTest extends AutomatedTestBase
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
 		if( rtplatform == ExecMode.SPARK )
 			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
-		
+		setOutputBuffering(true);
 		try
 		{
 			int cols = multColBlks ? cols2 : cols1;
@@ -147,7 +137,7 @@ public class FrameMatrixWriteTest extends AutomatedTestBase
 					String.valueOf(cols), output("B"), ofmt };
 			
 			//run testcase
-			runTest(true, false, null, -1);
+			runTest(null);
 			
 			//generate compare data
 			double[][] A = new double[rows][cols];

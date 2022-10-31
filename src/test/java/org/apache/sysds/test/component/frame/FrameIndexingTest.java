@@ -136,17 +136,20 @@ public class FrameIndexingTest extends AutomatedTestBase
 			}
 			
 			//check basic meta data
-			if( frame3.getNumRows() != mbC.getNumRows() )
+			if(frame3 != null && mbC != null &&  frame3.getNumRows() != mbC.getNumRows() )
 				Assert.fail("Wrong number of rows: "+frame3.getNumRows()+", expected: "+mbC.getNumRows());
 		
 			//check correct values
-			ValueType[] lschema = frame3.getSchema();
-			for( int i=0; i<ru-rl+1; i++ ) 
-				for( int j=0; j<lschema.length; j++ )	{
-					double tmp = UtilFunctions.objectToDouble(lschema[j], frame3.get(i, j));
-					if( tmp != mbC.quickGetValue(i, j) )
-						Assert.fail("Wrong get value for cell ("+i+","+j+"): "+tmp+", expected: "+mbC.quickGetValue(i, j));
-				}		
+			if(frame3 != null && mbC != null){
+				ValueType[] lschema = frame3.getSchema();
+				for( int i=0; i<ru-rl+1; i++ ) {
+					for( int j=0; j<lschema.length; j++ )	{
+						double tmp = UtilFunctions.objectToDouble(lschema[j], frame3.get(i, j));
+						if( tmp != mbC.quickGetValue(i, j) )
+							Assert.fail("Wrong get value for cell ("+i+","+j+"): "+tmp+", expected: "+mbC.quickGetValue(i, j));
+					}		
+				}
+			}
 		}
 		catch(Exception ex) {
 			ex.printStackTrace();

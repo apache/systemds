@@ -102,7 +102,7 @@ public class FrameSerializationTest extends AutomatedTestBase
 				getRandomMatrix(rows, schema.length, -10, 10, 0.9, 8234);
 			
 			//init data frame 
-			if( !empty ) {
+			if( !empty && A != null ) {
 				Object[] row = new Object[schema.length];
 				for( int i=0; i<rows; i++ ) {
 					for( int j=0; j<schema.length; j++ )
@@ -143,7 +143,7 @@ public class FrameSerializationTest extends AutomatedTestBase
 				Assert.fail("Wrong number of rows: "+frame.getNumRows()+", expected: "+numExpected);
 		
 			//check correct values
-			if( !empty ) {
+			if( !empty && A != null ) {
 				for( int i=0; i<rows; i++ ) 
 					for( int j=0; j<schema.length; j++ ) {
 						double tmp = UtilFunctions.objectToDouble(schema[j], frame.get(i, j));

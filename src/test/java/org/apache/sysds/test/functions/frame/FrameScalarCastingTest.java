@@ -92,7 +92,7 @@ public class FrameScalarCastingTest extends AutomatedTestBase
 		{
 			TestConfiguration config = getTestConfiguration(testname);
 			loadTestConfiguration(config);
-			
+			setOutputBuffering(true);
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + testname + ".dml";
 			programArgs = new String[]{"-explain","-args", input("A"),

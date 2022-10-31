@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.sysds.test.component.frame;
+package org.apache.sysds.test.functions.frame;
 
 import java.io.IOException;
 
@@ -153,7 +153,7 @@ public class FrameReadWriteTest extends AutomatedTestBase
 	{
 		boolean oldParText = CompilerConfig.FLAG_PARREADWRITE_TEXT;
 		boolean oldParBin = CompilerConfig.FLAG_PARREADWRITE_BINARY;
-		
+		setOutputBuffering(true);
 		try
 		{
 			CompilerConfig.FLAG_PARREADWRITE_TEXT = parallel;

@@ -119,7 +119,7 @@ public class FrameAppendDistTest extends AutomatedTestBase
 		
 		double sparsity = (sparse) ? sparsity2 : sparsity1; 
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-		
+		setOutputBuffering(true);
 		try
 		{
 			if(forcedAppendMethod != null) {

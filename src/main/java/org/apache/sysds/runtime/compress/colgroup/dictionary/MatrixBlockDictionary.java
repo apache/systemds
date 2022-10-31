@@ -64,21 +64,22 @@ public class MatrixBlockDictionary extends ADictionary {
 		_data = data;
 	}
 
-	public static MatrixBlockDictionary create(MatrixBlock mb){
+	public static MatrixBlockDictionary create(MatrixBlock mb) {
 		return create(mb, true);
 	}
 
 	public static MatrixBlockDictionary create(MatrixBlock mb, boolean check) {
+		if(mb.isEmpty()) 
+			return null;
 		if(check) {
 			mb.examSparsity(true);
-			if(mb.isEmpty())
-				throw new DMLCompressionException("Invalid construction of empty dictionary");
-			else if(mb.isInSparseFormat() && mb.getSparseBlock() instanceof SparseBlockMCSR) {
+			if(mb.isInSparseFormat() && mb.getSparseBlock() instanceof SparseBlockMCSR) {
+				// make CSR sparse block to make it smaller.
 				SparseBlock csr = SparseBlockFactory.copySparseBlock(SparseBlock.Type.CSR, mb.getSparseBlock(), false);
 				mb.setSparseBlock(csr);
 			}
 		}
-		return mb.isEmpty() ? null : new MatrixBlockDictionary(mb);
+		return new MatrixBlockDictionary(mb);
 	}
 
 	public static MatrixBlockDictionary createDictionary(double[] values, int nCol, boolean check) {

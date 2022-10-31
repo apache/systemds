@@ -870,9 +870,10 @@ public class Dictionary extends ADictionary {
 		int off = 0;
 		for(int i = 0; i < nRow; i++) {
 			for(int j = 0; j < nCol; j++) {
+				final double ref = reference[j];
 				final double v = _values[off];
-				retV[off++] = v + reference[j] == pattern ? replace - reference[j] : v;
-
+				retV[off] = Math.abs(v + ref - pattern) < 0.000001 ? replace - ref : v;
+				off++;
 			}
 		}
 		return create(retV);

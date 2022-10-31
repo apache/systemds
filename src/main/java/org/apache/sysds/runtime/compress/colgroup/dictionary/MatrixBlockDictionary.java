@@ -1817,7 +1817,7 @@ public class MatrixBlockDictionary extends ADictionary {
 					int j = 0;
 					for(int k = apos; j < nCol && k < alen; j++) {
 						final double v = aix[k] == j ? avals[k++] + reference[j] : reference[j];
-						retV[off++] = pattern == v ? replace - reference[j] : v - reference[j];
+						retV[off++] = Math.abs(v - pattern) < 0.00001 ? replace - reference[j] : v - reference[j];
 					}
 					for(; j < nCol; j++)
 						retV[off++] = pattern == reference[j] ? replace - reference[j] : 0;
@@ -1829,7 +1829,7 @@ public class MatrixBlockDictionary extends ADictionary {
 			for(int i = 0; i < nRow; i++) {
 				for(int j = 0; j < nCol; j++) {
 					final double v = values[off];
-					retV[off++] = pattern == v + reference[j] ? replace - reference[j] : v;
+					retV[off++] = Math.abs(v + reference[j] - pattern) < 0.00001 ? replace - reference[j] : v;
 				}
 			}
 		}

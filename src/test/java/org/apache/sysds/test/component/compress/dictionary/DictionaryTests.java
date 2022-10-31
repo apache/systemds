@@ -64,6 +64,7 @@ public class DictionaryTests {
 		List<Object[]> tests = new ArrayList<>();
 
 		try {
+			addAll(tests, new double[] {-3, 0.0, 132, 43, 1}, 1);
 			addAll(tests, new double[] {1, 2, 3, 4, 5}, 1);
 			addAll(tests, new double[] {1, 2, 3, 4, 5, 6}, 2);
 			addAll(tests, new double[] {1, 2.2, 3.3, 4.4, 5.5, 6.6}, 3);
@@ -230,6 +231,41 @@ public class DictionaryTests {
 		productWithDefault(1.0, def);
 	}
 
+	@Test
+	public void replace() {
+		final Random rand = new Random(13);
+		final int r = rand.nextInt(nRow);
+		final int c = rand.nextInt(nCol);
+
+		double v = a.getValue(r, c, nCol);
+		double rep = rand.nextDouble();
+
+		ADictionary arep = a.replace(v, rep, nCol);
+		ADictionary brep = b.replace(v, rep, nCol);
+
+		assertEquals(arep.getValue(r, c, nCol), rep, 0.0000001);
+		assertEquals(brep.getValue(r, c, nCol), rep, 0.0000001);
+
+	}
+
+	@Test
+	public void replaceWitReference() {
+		final Random rand = new Random(444);
+		final int r = rand.nextInt(nRow);
+		final int c = rand.nextInt(nCol);
+
+		double[] reference = getReference(nCol, 44, 1.0, 1.0);
+		double before = a.getValue(r, c, nCol);
+		double v = before + 1.0;
+		double rep = rand.nextDouble() * 500;
+
+		ADictionary aRep = a.replaceWithReference(v, rep, reference);
+		ADictionary bRep = b.replaceWithReference(v, rep, reference);
+
+		assertEquals(aRep.getValue(r, c, nCol), bRep.getValue(r, c, nCol), 0.0000001);
+		assertNotEquals(before, aRep.getValue(r, c, nCol), 0.00001);
+	}
+
 	public void productWithDefault(double retV, double[] def) {
 		// Shared
 		final int[] counts = getCounts(nRow, 1324);
@@ -258,8 +294,12 @@ public class DictionaryTests {
 		double[] reference = new double[nCol];
 		Random r = new Random(seed);
 		double diff = max - min;
-		for(int i = 0; i < nCol; i++)
-			reference[i] = r.nextDouble() * diff - min;
+		if(diff == 0)
+			for(int i = 0; i < nCol; i++)
+				reference[i] = max;
+		else
+			for(int i = 0; i < nCol; i++)
+				reference[i] = r.nextDouble() * diff - min;
 		return reference;
 	}
 }

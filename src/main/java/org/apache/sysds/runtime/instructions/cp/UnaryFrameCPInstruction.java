@@ -22,7 +22,7 @@ package org.apache.sysds.runtime.instructions.cp;
 import org.apache.sysds.lops.Lop;
 import org.apache.sysds.runtime.DMLScriptException;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
-import org.apache.sysds.runtime.matrix.data.FrameBlock;
+import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 
 public class UnaryFrameCPInstruction extends UnaryCPInstruction {

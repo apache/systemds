@@ -20,7 +20,7 @@
 package org.apache.sysds.test.functions.builtin.part2;
 
 import org.apache.sysds.common.Types;
-import org.apache.sysds.runtime.matrix.data.FrameBlock;
+import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;

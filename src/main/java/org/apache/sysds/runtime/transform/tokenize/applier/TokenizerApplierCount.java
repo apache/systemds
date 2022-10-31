@@ -20,7 +20,7 @@
 package org.apache.sysds.runtime.transform.tokenize.applier;
 
 import org.apache.sysds.common.Types;
-import org.apache.sysds.runtime.matrix.data.FrameBlock;
+import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.runtime.transform.tokenize.DocumentRepresentation;
 import org.apache.sysds.runtime.transform.tokenize.Token;
 import org.apache.sysds.runtime.util.UtilFunctions;

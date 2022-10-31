@@ -27,7 +27,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import org.apache.sysds.common.Types.ValueType;
-import org.apache.sysds.runtime.matrix.data.FrameBlock;
+import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
 /**

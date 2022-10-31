@@ -19,7 +19,7 @@
 package org.apache.sysds.runtime.instructions.spark.functions;
 
 import org.apache.spark.api.java.function.Function;
-import org.apache.sysds.runtime.matrix.data.FrameBlock;
+import org.apache.sysds.runtime.frame.data.FrameBlock;
 
 /**
  * General purpose copy function for binary block rdds. This function can be used in

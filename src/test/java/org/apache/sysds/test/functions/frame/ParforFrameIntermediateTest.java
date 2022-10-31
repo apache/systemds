@@ -67,7 +67,7 @@ public class ParforFrameIntermediateTest extends AutomatedTestBase
 		if( rtplatform == ExecMode.SPARK 
 			|| rtplatform == ExecMode.HYBRID )
 			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
-		
+		setOutputBuffering(true);
 		try
 		{
 			//setup testcase

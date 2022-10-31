@@ -99,6 +99,7 @@ public class TypeOfTest extends AutomatedTestBase {
 	private void runtypeOfTest(Types.ValueType[] schema, int rows, int cols, ExecType et) {
 		if (et == ExecType.SPARK)
 			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
+		setOutputBuffering(true);
 		try {
 			getAndLoadTestConfiguration(TEST_NAME);
 			String HOME = SCRIPT_DIR + TEST_DIR;

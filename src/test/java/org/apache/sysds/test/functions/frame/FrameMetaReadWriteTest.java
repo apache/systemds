@@ -94,7 +94,7 @@ public class FrameMetaReadWriteTest extends AutomatedTestBase
 			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 	
 		String ofmt = fmt.toString();
-		
+		setOutputBuffering(true);
 		try
 		{
 			TestConfiguration config = getTestConfiguration(TEST_NAME);

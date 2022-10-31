@@ -139,7 +139,7 @@ public class FrameMatrixCastingTest extends AutomatedTestBase
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
 		if( rtplatform == ExecMode.SPARK )
 			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
-		
+		setOutputBuffering(true);
 		try
 		{
 			int cols = multColBlks ? cols2 : cols1;

@@ -75,6 +75,7 @@ public class FrameColumnNamesTest extends AutomatedTestBase {
 	private void runGetColNamesTest(String[] columnNames, ExecType et) {
 		Types.ExecMode platformOld = setExecMode(et);
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
+		setOutputBuffering(true);
 		try {
 			getAndLoadTestConfiguration(TEST_NAME);
 			String HOME = SCRIPT_DIR + TEST_DIR;

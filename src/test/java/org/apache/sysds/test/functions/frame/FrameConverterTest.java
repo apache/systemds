@@ -200,7 +200,7 @@ public class FrameConverterTest extends AutomatedTestBase
 		DMLScript.setGlobalExecMode(ExecMode.SPARK);
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
 		DMLScript.USE_LOCAL_SPARK_CONFIG = true;
-
+		setOutputBuffering(true);
 		try
 		{
 			TestConfiguration config = getTestConfiguration(TEST_NAME);

@@ -130,7 +130,7 @@ public class FrameScalarCastingIntegratedTest extends AutomatedTestBase
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
 		if( rtplatform == ExecMode.SPARK || rtplatform == ExecMode.HYBRID )
 			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
-		
+		setOutputBuffering(true);
 		try
 		{		
 			getAndLoadTestConfiguration(TEST_NAME);

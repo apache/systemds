@@ -84,7 +84,7 @@ public class FrameFunctionTest extends AutomatedTestBase
 	
 		boolean oldIPA = OptimizerUtils.ALLOW_INTER_PROCEDURAL_ANALYSIS;
 		OptimizerUtils.ALLOW_INTER_PROCEDURAL_ANALYSIS = IPA;
-		
+		setOutputBuffering(true);
 		try
 		{
 			//setup testcase

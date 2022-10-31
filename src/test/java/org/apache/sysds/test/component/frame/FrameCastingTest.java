@@ -122,21 +122,25 @@ public class FrameCastingTest extends AutomatedTestBase
 				frame = DataConverter.convertToFrameBlock(mb, schema);	
 			}
 			
-			//check basic meta data
-			if( frame.getNumRows() != rows )
-				Assert.fail("Wrong number of rows: "+frame.getNumRows()+", expected: "+rows);
-		
-			//check correct values
-			ValueType[] lschema = frame.getSchema();
-			for( int i=0; i<rows; i++ ) 
-				for( int j=0; j<lschema.length; j++ )	{
-					double tmp = UtilFunctions.objectToDouble(lschema[j], frame.get(i, j));
-					double tmpm = Double.isNaN(A[i][j]) ? 0.0: A[i][j];
-					tmp = Double.isNaN(tmp) ? 0.0 : tmp;
+			if(frame != null){
 
-					if( tmp != tmpm)
-						Assert.fail("Wrong get value for cell ("+i+","+j+"): "+tmp+", expected: "+A[i][j]);
-				}		
+				//check basic meta data
+				if( frame.getNumRows() != rows )
+					Assert.fail("Wrong number of rows: "+frame.getNumRows()+", expected: "+rows);
+			
+				//check correct values
+				ValueType[] lschema = frame.getSchema();
+				for( int i=0; i<rows; i++ ) {
+					for( int j=0; j<lschema.length; j++ )	{
+						double tmp = UtilFunctions.objectToDouble(lschema[j], frame.get(i, j));
+						double tmpm = Double.isNaN(A[i][j]) ? 0.0: A[i][j];
+						tmp = Double.isNaN(tmp) ? 0.0 : tmp;
+	
+						if( tmp != tmpm)
+							Assert.fail("Wrong get value for cell ("+i+","+j+"): "+tmp+", expected: "+A[i][j]);
+					}		
+				}
+			}
 		}
 		catch(Exception ex) {
 			ex.printStackTrace();

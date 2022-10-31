@@ -995,12 +995,16 @@ public class Dictionary extends ADictionary {
 	public ADictionary rexpandCols(int max, boolean ignore, boolean cast, int nCol) {
 		if(nCol > 1)
 			throw new DMLCompressionException("Invalid to rexpand the column groups if more than one column");
-		return getMBDict(nCol).rexpandCols(max, ignore, cast, nCol);
+		MatrixBlockDictionary m = getMBDict(nCol);
+		return m == null ? null : m.rexpandCols(max, ignore, cast, nCol);
 	}
 
 	@Override
 	public ADictionary rexpandColsWithReference(int max, boolean ignore, boolean cast, int reference) {
-		ADictionary a = getMBDict(1).applyScalarOp(new LeftScalarOperator(Plus.getPlusFnObject(), reference));
+		MatrixBlockDictionary m = getMBDict(1);
+		if(m == null)
+			return null;
+		ADictionary a = m.applyScalarOp(new LeftScalarOperator(Plus.getPlusFnObject(), reference));
 		return a == null ? null : a.rexpandCols(max, ignore, cast, 1);
 	}
 

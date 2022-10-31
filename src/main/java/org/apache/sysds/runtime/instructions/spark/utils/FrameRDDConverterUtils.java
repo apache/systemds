@@ -51,6 +51,7 @@ import org.apache.spark.sql.types.StructType;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject.UpdateType;
+import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.runtime.instructions.spark.data.FrameReblockBuffer;
 import org.apache.sysds.runtime.instructions.spark.data.SerLongWritable;
 import org.apache.sysds.runtime.instructions.spark.data.SerText;
@@ -58,7 +59,6 @@ import org.apache.sysds.runtime.instructions.spark.functions.ConvertFrameBlockTo
 import org.apache.sysds.runtime.instructions.spark.utils.RDDConverterUtils.DataFrameExtractIDFunction;
 import org.apache.sysds.runtime.io.FileFormatPropertiesCSV;
 import org.apache.sysds.runtime.io.IOUtilFunctions;
-import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysds.runtime.matrix.data.Pair;

@@ -35,7 +35,7 @@ import org.apache.sysds.hops.LeftIndexingOp;
 import org.apache.sysds.hops.LeftIndexingOp.LeftIndexingMethod;
 import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.common.Types.ValueType;
-import org.apache.sysds.runtime.matrix.data.FrameBlock;
+import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.util.UtilFunctions;
 import org.apache.sysds.test.AutomatedTestBase;

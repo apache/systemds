@@ -37,6 +37,7 @@ import org.apache.sysds.runtime.data.IndexedTensorBlock;
 import org.apache.sysds.runtime.data.BasicTensorBlock;
 import org.apache.sysds.runtime.data.TensorBlock;
 import org.apache.sysds.runtime.data.TensorIndexes;
+import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue;
 import org.apache.sysds.runtime.instructions.spark.functions.CopyBinaryCellFunction;
 import org.apache.sysds.runtime.instructions.spark.functions.CopyMatrixBlockFunction;
@@ -45,7 +46,6 @@ import org.apache.sysds.runtime.instructions.spark.functions.CopyTensorBlockFunc
 import org.apache.sysds.runtime.instructions.spark.functions.CopyTensorBlockPairFunction;
 import org.apache.sysds.runtime.instructions.spark.functions.FilterNonEmptyBlocksFunction;
 import org.apache.sysds.runtime.instructions.spark.functions.RecomputeNnzFunction;
-import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixCell;
 import org.apache.sysds.runtime.matrix.data.MatrixIndexes;

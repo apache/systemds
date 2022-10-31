@@ -22,7 +22,7 @@ package org.apache.sysds.runtime.controlprogram.parfor;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.FrameObject;
-import org.apache.sysds.runtime.matrix.data.FrameBlock;
+import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.runtime.util.UtilFunctions;
 
 public class ResultMergeFrameLocalMemory extends ResultMerge<FrameObject>

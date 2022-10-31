@@ -20,7 +20,7 @@ package org.apache.sysds.runtime.instructions.spark.functions;
 
 import org.apache.hadoop.io.LongWritable;
 import org.apache.spark.api.java.function.PairFunction;
-import org.apache.sysds.runtime.matrix.data.FrameBlock;
+import org.apache.sysds.runtime.frame.data.FrameBlock;
 
 import scala.Tuple2;
 

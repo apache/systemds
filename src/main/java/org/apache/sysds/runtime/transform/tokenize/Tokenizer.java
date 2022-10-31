@@ -24,7 +24,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.runtime.DMLRuntimeException;
-import org.apache.sysds.runtime.matrix.data.FrameBlock;
+import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.runtime.transform.tokenize.applier.TokenizerApplier;
 import org.apache.sysds.runtime.transform.tokenize.applier.TokenizerApplierCount;
 import org.apache.sysds.runtime.transform.tokenize.applier.TokenizerApplierHash;

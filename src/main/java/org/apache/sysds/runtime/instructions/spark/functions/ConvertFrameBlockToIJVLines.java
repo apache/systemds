@@ -22,7 +22,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 
 import org.apache.spark.api.java.function.FlatMapFunction;
-import org.apache.sysds.runtime.matrix.data.FrameBlock;
+import org.apache.sysds.runtime.frame.data.FrameBlock;
 
 import scala.Tuple2;
 

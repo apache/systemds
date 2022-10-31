@@ -20,7 +20,7 @@
 package org.apache.sysds.runtime.util;
 
 import org.apache.sysds.runtime.DMLRuntimeException;
-import org.apache.sysds.runtime.matrix.data.FrameBlock;
+import org.apache.sysds.runtime.frame.data.FrameBlock;
 
 import java.util.ArrayList;
 import java.util.HashMap;

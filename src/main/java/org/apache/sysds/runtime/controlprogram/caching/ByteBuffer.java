@@ -26,7 +26,7 @@ import java.io.DataOutput;
 import java.io.IOException;
 
 import org.apache.sysds.runtime.data.DenseBlockLDRB;
-import org.apache.sysds.runtime.matrix.data.FrameBlock;
+import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.LocalFileUtils;
 

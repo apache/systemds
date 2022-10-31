@@ -23,7 +23,7 @@ import java.io.IOException;
 
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
-import org.apache.sysds.runtime.matrix.data.FrameBlock;
+import org.apache.sysds.runtime.frame.data.FrameBlock;
 
 /**
  * Base class for all format-specific frame writers. Every writer is required to implement the basic 

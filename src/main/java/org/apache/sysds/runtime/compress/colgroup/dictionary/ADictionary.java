@@ -43,6 +43,10 @@ public abstract class ADictionary implements Serializable {
 
 	protected static final Log LOG = LogFactory.getLog(ADictionary.class.getName());
 
+	public static enum DictType {
+		Delta, Dict, MatrixBlock, UInt8;
+	}
+
 	/**
 	 * Get all the values contained in the dictionary as a linearized double array.
 	 * 
@@ -311,11 +315,11 @@ public abstract class ADictionary implements Serializable {
 	public abstract long getExactSizeOnDisk();
 
 	/**
-	 * Specify if the Dictionary is lossy.
+	 * Get the dictionary type this dictionary is.
 	 * 
-	 * @return A boolean
+	 * @return The Dictionary type this is.
 	 */
-	public abstract boolean isLossy();
+	public abstract DictType getDictType();
 
 	/**
 	 * Get the number of distinct tuples given that the column group has n columns
@@ -910,7 +914,6 @@ public abstract class ADictionary implements Serializable {
 			return equals((ADictionary) o);
 		return false;
 	}
-
 
 	public abstract boolean equals(ADictionary o);
 }

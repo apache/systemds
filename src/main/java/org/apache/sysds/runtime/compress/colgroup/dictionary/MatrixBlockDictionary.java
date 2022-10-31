@@ -69,9 +69,13 @@ public class MatrixBlockDictionary extends ADictionary {
 	}
 
 	public static MatrixBlockDictionary create(MatrixBlock mb, boolean check) {
-		if(mb.isEmpty()) 
+		if(mb == null)
+			throw new DMLCompressionException("Invalid construction of dictionary with null array");
+		else if(mb.getNumRows() == 0 || mb.getNumColumns() == 0)
+			throw new DMLCompressionException("Invalid construction of dictionary with zero rows and/or cols array");
+		else if(mb.isEmpty())
 			return null;
-		if(check) {
+		else if(check) {
 			mb.examSparsity(true);
 			if(mb.isInSparseFormat() && mb.getSparseBlock() instanceof SparseBlockMCSR) {
 				// make CSR sparse block to make it smaller.
@@ -823,8 +827,8 @@ public class MatrixBlockDictionary extends ADictionary {
 	}
 
 	@Override
-	public boolean isLossy() {
-		return false;
+	public DictType getDictType() {
+		return DictType.MatrixBlock;
 	}
 
 	@Override

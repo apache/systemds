@@ -26,6 +26,7 @@ import java.math.BigDecimal;
 import java.math.MathContext;
 import java.util.Arrays;
 
+import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.functionobjects.Builtin;
@@ -51,12 +52,14 @@ public class Dictionary extends ADictionary {
 	protected final double[] _values;
 
 	protected Dictionary(double[] values) {
-		if(values == null || values.length == 0)
-			throw new DMLCompressionException("Invalid construction of dictionary with null array");
 		_values = values;
 	}
 
 	public static Dictionary create(double[] values) {
+		if(values == null)
+			throw new DMLCompressionException("Invalid construction of dictionary with null array");
+		else if(values.length == 0)
+			throw new DMLCompressionException("Invalid construction of dictionary with empty array");
 		boolean nonZero = false;
 		for(double d : values) {
 			if(d != 0) {
@@ -633,17 +636,26 @@ public class Dictionary extends ADictionary {
 
 	@Override
 	public String toString() {
-		StringBuilder sb = new StringBuilder();
-
+		StringBuilder sb = new StringBuilder(_values.length * 3 + 10);
 		sb.append("Dictionary : ");
-		sb.append(Arrays.toString(_values));
+		stringArray(sb, _values);
 		return sb.toString();
+	}
+
+	private static void stringArray(StringBuilder sb, double[] val) {
+		sb.append("[");
+		sb.append(doubleToString(val[0]));
+		for(int i = 1; i < val.length; i++) {
+			sb.append(", ");
+			sb.append(doubleToString(val[i]));
+		}
+		sb.append("]");
 	}
 
 	public String getString(int colIndexes) {
 		StringBuilder sb = new StringBuilder();
 		if(colIndexes == 1)
-			sb.append(Arrays.toString(_values));
+			stringArray(sb, _values);
 		else {
 			sb.append("[\n\t");
 			for(int i = 0; i < _values.length - 1; i++) {
@@ -771,8 +783,8 @@ public class Dictionary extends ADictionary {
 	}
 
 	@Override
-	public boolean isLossy() {
-		return false;
+	public DictType getDictType() {
+		return DictType.Dict;
 	}
 
 	@Override
@@ -1000,7 +1012,11 @@ public class Dictionary extends ADictionary {
 
 	@Override
 	public double getSparsity() {
-		return 1;
+		int zeros = 0;
+		for(double v : _values)
+			if(v == 0.0)
+				zeros++;
+		return OptimizerUtils.getSparsity(_values.length, 1L, _values.length - zeros);
 	}
 
 	@Override

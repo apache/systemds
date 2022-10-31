@@ -33,6 +33,8 @@ import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.MatrixBlockDictionary;
+import org.apache.sysds.runtime.functionobjects.Builtin;
+import org.apache.sysds.runtime.functionobjects.Builtin.BuiltinCode;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.test.TestUtils;
 import org.junit.Test;
@@ -64,6 +66,7 @@ public class DictionaryTests {
 		List<Object[]> tests = new ArrayList<>();
 
 		try {
+			addAll(tests, new double[] {1, 1, 1, 1, 1}, 1);
 			addAll(tests, new double[] {-3, 0.0, 132, 43, 1}, 1);
 			addAll(tests, new double[] {1, 2, 3, 4, 5}, 1);
 			addAll(tests, new double[] {1, 2, 3, 4, 5, 6}, 2);
@@ -236,16 +239,12 @@ public class DictionaryTests {
 		final Random rand = new Random(13);
 		final int r = rand.nextInt(nRow);
 		final int c = rand.nextInt(nCol);
-
-		double v = a.getValue(r, c, nCol);
-		double rep = rand.nextDouble();
-
-		ADictionary arep = a.replace(v, rep, nCol);
-		ADictionary brep = b.replace(v, rep, nCol);
-
-		assertEquals(arep.getValue(r, c, nCol), rep, 0.0000001);
-		assertEquals(brep.getValue(r, c, nCol), rep, 0.0000001);
-
+		final double v = a.getValue(r, c, nCol);
+		final double rep = rand.nextDouble();
+		final ADictionary aRep = a.replace(v, rep, nCol);
+		final ADictionary bRep = b.replace(v, rep, nCol);
+		assertEquals(aRep.getValue(r, c, nCol), rep, 0.0000001);
+		assertEquals(bRep.getValue(r, c, nCol), rep, 0.0000001);
 	}
 
 	@Test
@@ -253,17 +252,79 @@ public class DictionaryTests {
 		final Random rand = new Random(444);
 		final int r = rand.nextInt(nRow);
 		final int c = rand.nextInt(nCol);
-
-		double[] reference = getReference(nCol, 44, 1.0, 1.0);
-		double before = a.getValue(r, c, nCol);
-		double v = before + 1.0;
-		double rep = rand.nextDouble() * 500;
-
-		ADictionary aRep = a.replaceWithReference(v, rep, reference);
-		ADictionary bRep = b.replaceWithReference(v, rep, reference);
-
+		final double[] reference = getReference(nCol, 44, 1.0, 1.0);
+		final double before = a.getValue(r, c, nCol);
+		final double v = before + 1.0;
+		final double rep = rand.nextDouble() * 500;
+		final ADictionary aRep = a.replaceWithReference(v, rep, reference);
+		final ADictionary bRep = b.replaceWithReference(v, rep, reference);
 		assertEquals(aRep.getValue(r, c, nCol), bRep.getValue(r, c, nCol), 0.0000001);
 		assertNotEquals(before, aRep.getValue(r, c, nCol), 0.00001);
+	}
+
+	@Test
+	public void rexpandCols() {
+		if(nCol == 1) {
+			int max = (int) a.aggregate(0, Builtin.getBuiltinFnObject(BuiltinCode.MAX));
+			final ADictionary aR = a.rexpandCols(max + 1, true, false, nCol);
+			final ADictionary bR = b.rexpandCols(max + 1, true, false, nCol);
+			compare(aR, bR, nRow, max + 1);
+		}
+	}
+
+	@Test
+	public void rexpandColsWithReference1() {
+		rexpandColsWithReference(1);
+	}
+
+	@Test
+	public void rexpandColsWithReference33() {
+		rexpandColsWithReference(33);
+	}
+
+	@Test
+	public void rexpandColsWithReference_neg23() {
+		rexpandColsWithReference(-23);
+	}
+
+	@Test
+	public void rexpandColsWithReference_neg1() {
+		rexpandColsWithReference(-1);
+	}
+
+	public void rexpandColsWithReference(int reference) {
+		if(nCol == 1) {
+			int max = (int) a.aggregate(0, Builtin.getBuiltinFnObject(BuiltinCode.MAX));
+
+			final ADictionary aR = a.rexpandColsWithReference(max + 1, true, false, reference);
+			final ADictionary bR = b.rexpandColsWithReference(max + 1, true, false, reference);
+			if(aR == null && bR == null)
+				return; // valid
+			compare(aR, bR, nRow, max + 1);
+		}
+	}
+
+	@Test
+	public void sumSq() {
+		int[] counts = getCounts(nRow, 2323);
+		double as = a.sumSq(counts, nCol);
+		double bs = b.sumSq(counts, nCol);
+		assertEquals(as, bs, 0.0001);
+	}
+
+	@Test
+	public void sumSqWithReference() {
+		int[] counts = getCounts(nRow, 2323);
+		double[] reference = getReference(nCol, 323, -10, 23);
+		double as = a.sumSqWithReference(counts, reference);
+		double bs = b.sumSqWithReference(counts, reference);
+		assertEquals(as, bs, 0.0001);
+	}
+
+	private static void compare(ADictionary a, ADictionary b, int nRow, int nCol) {
+		for(int i = 0; i < nRow; i++)
+			for(int j = 0; j < nCol; j++)
+				assertEquals(a.getValue(i, j, nCol), b.getValue(i, j, nCol), 0.0001);
 	}
 
 	public void productWithDefault(double retV, double[] def) {

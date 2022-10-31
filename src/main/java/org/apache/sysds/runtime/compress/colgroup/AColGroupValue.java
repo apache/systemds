@@ -21,6 +21,7 @@ package org.apache.sysds.runtime.compress.colgroup;
 
 import java.lang.ref.SoftReference;
 
+import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
 import org.apache.sysds.runtime.compress.utils.Util;
 import org.apache.sysds.runtime.functionobjects.Builtin;
@@ -189,11 +190,16 @@ public abstract class AColGroupValue extends ADictBasedColGroup {
 
 	@Override
 	public AColGroup rexpandCols(int max, boolean ignore, boolean cast, int nRows) {
-		ADictionary d = _dict.rexpandCols(max, ignore, cast, _colIndexes.length);
-		if(d == null)
+		try {
+			ADictionary d = _dict.rexpandCols(max, ignore, cast, _colIndexes.length);
+			if(d == null)
+				return ColGroupEmpty.create(max);
+			else
+				return copyAndSet(Util.genColsIndices(max), d);
+		}
+		catch(DMLCompressionException e) {
 			return ColGroupEmpty.create(max);
-		else
-			return copyAndSet(Util.genColsIndices(max), d);
+		}
 	}
 
 	@Override

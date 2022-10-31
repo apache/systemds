@@ -993,22 +993,13 @@ public class Dictionary extends ADictionary {
 
 	@Override
 	public ADictionary rexpandCols(int max, boolean ignore, boolean cast, int nCol) {
-		MatrixBlockDictionary a = getMBDict(nCol);
-		if(a == null)
-			return null;
-		return a.rexpandCols(max, ignore, cast, nCol);
+		return getMBDict(nCol).rexpandCols(max, ignore, cast, nCol);
 	}
 
 	@Override
 	public ADictionary rexpandColsWithReference(int max, boolean ignore, boolean cast, int reference) {
-		MatrixBlockDictionary a = getMBDict(1);
-		if(a == null)
-			a = MatrixBlockDictionary.create(new MatrixBlock(_values.length, 1, (double) reference));
-		else
-			a = (MatrixBlockDictionary) a.applyScalarOp(new LeftScalarOperator(Plus.getPlusFnObject(), reference));
-		if(a == null)
-			return null;
-		return a.rexpandCols(max, ignore, cast, 1);
+		ADictionary a = getMBDict(1).applyScalarOp(new LeftScalarOperator(Plus.getPlusFnObject(), reference));
+		return a == null ? null : a.rexpandCols(max, ignore, cast, 1);
 	}
 
 	@Override

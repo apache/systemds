@@ -2065,12 +2065,14 @@ public class DMLTranslator
 				break;
 
 			case COUNT_DISTINCT_ROW:
+			case UNIQUE_ROW:
 			case COUNT_DISTINCT_APPROX_ROW:
 				currBuiltinOp = new AggUnaryOp(target.getName(), DataType.MATRIX, target.getValueType(),
 						AggOp.valueOf(source.getOpCode().name()), Direction.Row, paramHops.get("data"));
 				break;
 
 			case COUNT_DISTINCT_COL:
+			case UNIQUE_COL:
 			case COUNT_DISTINCT_APPROX_COL:
 				currBuiltinOp = new AggUnaryOp(target.getName(), DataType.MATRIX, target.getValueType(),
 						AggOp.valueOf(source.getOpCode().name()), Direction.Col, paramHops.get("data"));

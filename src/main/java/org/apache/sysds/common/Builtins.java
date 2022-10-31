@@ -344,6 +344,8 @@ public enum Builtins {
 	TRANSFORMENCODE("transformencode", false, true),
 	TRANSFORMMETA("transformmeta", false, true),
 	UNDER_SAMPLING("underSampling", true),
+	UNIQUE_ROW("uniqueRow",false, true),
+	UNIQUE_COL("uniqueCol",false, true),
 	UPPER_TRI("upper.tri", false, true),
 	XDUMMY1("xdummy1", true), //error handling test
 	XDUMMY2("xdummy2", true); //error handling test

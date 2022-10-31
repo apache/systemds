@@ -23,11 +23,11 @@ import org.apache.sysds.common.Types;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.junit.Test;
 
-public class CountDistinctRowAlias extends CountDistinctRowOrColBase {
+public class CountDistinctColAlias1 extends CountDistinctRowOrColBase {
 
-	private final static String TEST_NAME = "countDistinctRowAlias";
+	private final static String TEST_NAME = "countDistinctColAlias1";
 	private final static String TEST_DIR = "functions/countDistinct/";
-	private final static String TEST_CLASS_DIR = TEST_DIR + CountDistinctRowAlias.class.getSimpleName() + "/";
+	private final static String TEST_CLASS_DIR = TEST_DIR + CountDistinctColAlias1.class.getSimpleName() + "/";
 
 	@Override
 	protected String getTestClassDir() {
@@ -46,7 +46,7 @@ public class CountDistinctRowAlias extends CountDistinctRowOrColBase {
 
 	@Override
 	protected Types.Direction getDirection() {
-		return Types.Direction.Row;
+		return Types.Direction.Col;
 	}
 
 	@Override
@@ -60,7 +60,7 @@ public class CountDistinctRowAlias extends CountDistinctRowOrColBase {
 		Types.ExecType ex = Types.ExecType.CP;
 
 		int actualDistinctCount = 10;
-		int rows = 10000, cols = 1000;
+		int rows = 1000, cols = 10000;
 		double sparsity = 0.1;
 		double tolerance = actualDistinctCount * this.percentTolerance;
 
@@ -70,7 +70,7 @@ public class CountDistinctRowAlias extends CountDistinctRowOrColBase {
 	@Test
 	public void testCPSparseLargeCSR() {
 		int actualDistinctCount = 10;
-		int rows = 10000, cols = 1000;
+		int rows = 1000, cols = 10000;
 		double sparsity = 0.1;
 		double tolerance = actualDistinctCount * this.percentTolerance;
 
@@ -81,7 +81,7 @@ public class CountDistinctRowAlias extends CountDistinctRowOrColBase {
 	@Test
 	public void testCPSparseLargeCOO() {
 		int actualDistinctCount = 10;
-		int rows = 10000, cols = 1000;
+		int rows = 1000, cols = 10000;
 		double sparsity = 0.1;
 		double tolerance = actualDistinctCount * this.percentTolerance;
 
@@ -94,7 +94,7 @@ public class CountDistinctRowAlias extends CountDistinctRowOrColBase {
 		Types.ExecType ex = Types.ExecType.CP;
 
 		int actualDistinctCount = 100;
-		int rows = 10000, cols = 1000;
+		int rows = 1000, cols = 10000;
 		double sparsity = 0.9;
 		double tolerance = actualDistinctCount * this.percentTolerance;
 

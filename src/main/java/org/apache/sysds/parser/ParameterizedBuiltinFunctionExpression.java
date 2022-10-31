@@ -248,7 +248,9 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 
 		case COUNT_DISTINCT:
 		case COUNT_DISTINCT_ROW:
+		case UNIQUE_ROW:
 		case COUNT_DISTINCT_COL:
+		case UNIQUE_COL:
 			validateCountDistinct(output, conditional);
 			break;
 

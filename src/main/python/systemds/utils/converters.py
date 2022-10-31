@@ -113,7 +113,7 @@ def pandas_to_frame_block(sds: "SystemDSContext", pd_df: pd.DataFrame):
     try:
         jc_ValueType = jvm.org.apache.sysds.common.Types.ValueType
         jc_String = jvm.java.lang.String
-        jc_FrameBlock = jvm.org.apache.sysds.runtime.matrix.data.FrameBlock
+        jc_FrameBlock = jvm.org.apache.sysds.runtime.frame.data.FrameBlock
         j_valueTypeArray = java_gate.new_array(jc_ValueType, len(schema))
         j_colNameArray = java_gate.new_array(jc_String, len(col_names))
         j_dataArray = java_gate.new_array(jc_String, rows, cols)

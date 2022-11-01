@@ -321,6 +321,9 @@ public class ColGroupFactory {
 		else
 			readToMapDDC(col, map, d);
 
+		if(map.size() == 0)
+			return new ColGroupEmpty(colIndexes);
+		
 		ADictionary dict = DictionaryFactory.create(map);
 		final int nUnique = map.size();
 		final AMapToData resData = MapToFactory.resize(d, nUnique);

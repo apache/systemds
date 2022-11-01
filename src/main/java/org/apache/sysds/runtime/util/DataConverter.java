@@ -50,6 +50,7 @@ import org.apache.sysds.runtime.data.DenseBlockFactory;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.data.TensorBlock;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
+import org.apache.sysds.runtime.frame.data.iterators.IteratorFactory;
 import org.apache.sysds.runtime.instructions.cp.BooleanObject;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.instructions.cp.Data;
@@ -701,7 +702,7 @@ public class DataConverter {
 	public static String[][] convertToStringFrame(FrameBlock frame)
 	{
 		String[][] ret = new String[frame.getNumRows()][];
-		Iterator<String[]> iter = frame.getStringRowIterator();
+		Iterator<String[]> iter = IteratorFactory.getStringRowIterator(frame);
 		for( int i=0; iter.hasNext(); i++ ) {
 			//deep copy output rows due to internal reuse
 			ret[i] = iter.next().clone();
@@ -1276,7 +1277,7 @@ public class DataConverter {
 		if (decimal >= 0)
 			df.setMinimumFractionDigits(decimal);
 
-		Iterator<Object[]> iter = fb.getObjectRowIterator(0, rowLength);
+		Iterator<Object[]> iter = IteratorFactory.getObjectRowIterator(fb, 0, rowLength);
 		while( iter.hasNext() ) {
 			Object[] row = iter.next();
 			for( int j=0; j<colLength; j++ ) {

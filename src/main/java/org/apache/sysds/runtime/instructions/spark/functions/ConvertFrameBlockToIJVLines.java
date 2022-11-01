@@ -23,6 +23,7 @@ import java.util.Iterator;
 
 import org.apache.spark.api.java.function.FlatMapFunction;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
+import org.apache.sysds.runtime.frame.data.iterators.IteratorFactory;
 
 import scala.Tuple2;
 
@@ -49,7 +50,7 @@ public class ConvertFrameBlockToIJVLines implements FlatMapFunction<Tuple2<Long,
 		
 		//convert frame block to list of ijv cell triples
 		StringBuilder sb = new StringBuilder();
-		Iterator<String[]> iter = block.getStringRowIterator();
+		Iterator<String[]> iter = IteratorFactory.getStringRowIterator(block);
 		for( int i=0; iter.hasNext(); i++ ) { //for all rows
 			String rowIndex = Long.toString(rowoffset + i);
 			String[] row = iter.next();

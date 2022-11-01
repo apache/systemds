@@ -61,6 +61,7 @@ import org.apache.sysds.runtime.frame.data.columns.Array;
 import org.apache.sysds.runtime.frame.data.columns.ArrayFactory;
 import org.apache.sysds.runtime.frame.data.columns.ColumnMetadata;
 import org.apache.sysds.runtime.frame.data.columns.StringArray;
+import org.apache.sysds.runtime.frame.data.iterators.IteratorFactory;
 import org.apache.sysds.runtime.functionobjects.ValueComparisonFunction;
 import org.apache.sysds.runtime.instructions.cp.BooleanObject;
 import org.apache.sysds.runtime.instructions.cp.DoubleObject;
@@ -681,137 +682,6 @@ public class FrameBlock implements CacheBlock, Externalizable {
 		_msize = -1;
 	}
 
-	/**
-	 * Get a row iterator over the frame where all fields are encoded
-	 * as strings independent of their value types.
-	 *
-	 * @return string array iterator
-	 */
-	public Iterator<String[]> getStringRowIterator() {
-		return new StringRowIterator(0, _numRows);
-	}
-
-	/**
-	 * Get a row iterator over the frame where all selected fields are
-	 * encoded as strings independent of their value types.
-	 *
-	 * @param cols column selection, 1-based
-	 * @return string array iterator
-	 */
-	public Iterator<String[]> getStringRowIterator(int[] cols) {
-		return new StringRowIterator(0, _numRows, cols);
-	}
-
-	/**
-	 * Get a row iterator over the frame where all selected fields are encoded as strings independent of their value
-	 * types.
-	 *
-	 * @param colID column selection, 1-based
-	 * @return string array iterator
-	 */
-	public Iterator<String[]> getStringRowIterator(int colID) {
-		return new StringRowIterator(0, _numRows, new int[] {colID});
-	}
-
-	/**
-	 * Get a row iterator over the frame where all fields are encoded
-	 * as strings independent of their value types.
-	 *
-	 * @param rl lower row index
-	 * @param ru upper row index
-	 * @return string array iterator
-	 */
-	public Iterator<String[]> getStringRowIterator(int rl, int ru) {
-		return new StringRowIterator(rl, ru);
-	}
-
-	/**
-	 * Get a row iterator over the frame where all selected fields are
-	 * encoded as strings independent of their value types.
-	 *
-	 * @param rl lower row index
-	 * @param ru upper row index
-	 * @param cols column selection, 1-based
-	 * @return string array iterator
-	 */
-	public Iterator<String[]> getStringRowIterator(int rl, int ru, int[] cols) {
-		return new StringRowIterator(rl, ru, cols);
-	}
-
-	/**
-	 * Get a row iterator over the frame where all selected fields are
-	 * encoded as strings independent of their value types.
-	 *
-	 * @param rl lower row index
-	 * @param ru upper row index
-	 * @param colID columnID, 1-based
-	 * @return string array iterator
-	 */
-	public Iterator<String[]> getStringRowIterator(int rl, int ru, int colID) {
-		return new StringRowIterator(rl, ru, new int[] {colID});
-	}
-
-
-	/**
-	 * Get a row iterator over the frame where all fields are encoded
-	 * as boxed objects according to their value types.
-	 *
-	 * @return object array iterator
-	 */
-	public Iterator<Object[]> getObjectRowIterator() {
-		return new ObjectRowIterator(0, _numRows);
-	}
-
-	/**
-	 * Get a row iterator over the frame where all fields are encoded
-	 * as boxed objects according to the value types of the provided
-	 * target schema.
-	 *
-	 * @param schema target schema of objects
-	 * @return object array iterator
-	 */
-	public Iterator<Object[]> getObjectRowIterator(ValueType[] schema) {
-		ObjectRowIterator iter = new ObjectRowIterator(0, _numRows);
-		iter.setSchema(schema);
-		return iter;
-	}
-
-	/**
-	 * Get a row iterator over the frame where all selected fields are
-	 * encoded as boxed objects according to their value types.
-	 *
-	 * @param cols column selection, 1-based
-	 * @return object array iterator
-	 */
-	public Iterator<Object[]> getObjectRowIterator(int[] cols) {
-		return new ObjectRowIterator(0, _numRows, cols);
-	}
-
-	/**
-	 * Get a row iterator over the frame where all fields are encoded
-	 * as boxed objects according to their value types.
-	 *
-	 * @param rl lower row index
-	 * @param ru upper row index
-	 * @return object array iterator
-	 */
-	public Iterator<Object[]> getObjectRowIterator(int rl, int ru) {
-		return new ObjectRowIterator(rl, ru);
-	}
-
-	/**
-	 * Get a row iterator over the frame where all selected fields are
-	 * encoded as boxed objects according to their value types.
-	 *
-	 * @param rl lower row index
-	 * @param ru upper row index
-	 * @param cols column selection, 1-based
-	 * @return object array iterator
-	 */
-	public Iterator<Object[]> getObjectRowIterator(int rl, int ru, int[] cols) {
-		return new ObjectRowIterator(rl, ru, cols);
-	}
-
 	///////
 	// serialization / deserialization (implementation of writable and externalizable)
 	// FIXME for FrameBlock fix write and readFields, it does not work if the Arrays are not yet
@@ -1310,7 +1180,7 @@ public class FrameBlock implements CacheBlock, Externalizable {
 			ret._coldata = new Array[getNumColumns()];
 			for( int j=0; j<getNumColumns(); j++ )
 				ret._coldata[j] = _coldata[j].clone();
-			Iterator<Object[]> iter = that.getObjectRowIterator(_schema);
+			Iterator<Object[]> iter = IteratorFactory.getObjectRowIterator(that, _schema);
 			while( iter.hasNext() )
 				ret.appendRow(iter.next());
 		}
@@ -1480,123 +1350,6 @@ public class FrameBlock implements CacheBlock, Externalizable {
 		return fb;
 	}
 
-	///////
-	// row iterators (over strings and boxed objects)
-
-	private abstract class RowIterator<T> implements Iterator<T[]> {
-		protected final int[] _cols;
-		protected final T[] _curRow;
-		protected final int _maxPos;
-		protected int _curPos = -1;
-
-		protected RowIterator(int rl, int ru) {
-			this(rl, ru, UtilFunctions.getSeqArray(1, getNumColumns(), 1));
-		}
-
-		protected RowIterator(int rl, int ru, int[] cols) {
-			_curRow = createRow(cols.length);
-			_cols = cols;
-			_maxPos = ru;
-			_curPos = rl;
-		}
-
-		@Override
-		public boolean hasNext() {
-			return (_curPos < _maxPos);
-		}
-
-		@Override
-		public void remove() {
-			throw new RuntimeException("RowIterator.remove is unsupported!");
-		}
-
-		protected abstract T[] createRow(int size);
-	}
-
-	private class StringRowIterator extends RowIterator<String> {
-		public StringRowIterator(int rl, int ru) {
-			super(rl, ru);
-		}
-
-		public StringRowIterator(int rl, int ru, int[] cols) {
-			super(rl, ru, cols);
-		}
-
-		@Override
-		protected String[] createRow(int size) {
-			return new String[size];
-		}
-
-		@Override
-		public String[] next( ) {
-			for( int j=0; j<_cols.length; j++ ) {
-				Object tmp = get(_curPos, _cols[j]-1);
-				_curRow[j] = (tmp!=null) ? tmp.toString() : null;
-			}
-			_curPos++;
-			return _curRow;
-		}
-	}
-
-	private class ObjectRowIterator extends RowIterator<Object> {
-		private ValueType[] _tgtSchema = null;
-
-		public ObjectRowIterator(int rl, int ru) {
-			super(rl, ru);
-		}
-
-		public ObjectRowIterator(int rl, int ru, int[] cols) {
-			super(rl, ru, cols);
-		}
-
-		public void setSchema(ValueType[] schema) {
-			_tgtSchema = schema;
-		}
-
-		@Override
-		protected Object[] createRow(int size) {
-			return new Object[size];
-		}
-
-		@Override
-		public Object[] next( ) {
-			for( int j=0; j<_cols.length; j++ )
-				_curRow[j] = getValue(_curPos, _cols[j]-1);
-			_curPos++;
-			return _curRow;
-		}
-
-		private Object getValue(int i, int j) {
-			Object val = get(i, j);
-			if( _tgtSchema != null )
-				val = UtilFunctions.objectToObject(_tgtSchema[j], val);
-			return val;
-		}
-	}
-
-	private static ValueType isType(String val) {
-		val = val.trim().toLowerCase().replaceAll("\"",  "");
-		if (val.matches("(true|false|t|f|0|1)"))
-			return ValueType.BOOLEAN;
-		else if (val.matches("[-+]?\\d+")){
-			long maxValue = Long.parseLong(val);
-			if ((maxValue >= Integer.MIN_VALUE) && (maxValue <= Integer.MAX_VALUE))
-				return ValueType.INT32;
-			else
-				return ValueType.INT64;
-		}
-		else if (val.matches("[-+]?[0-9]*\\.?[0-9]+([eE][-+]?[0-9]+)?")){
-			double maxValue = Double.parseDouble(val);
-			if ((maxValue >= (-Float.MAX_VALUE)) && (maxValue <= Float.MAX_VALUE))
-				return ValueType.FP32;
-			else
-				return ValueType.FP64;
-		}
-		else if (val.equals("infinity") || val.equals("-infinity") || val.equals("nan"))
-			return ValueType.FP64;
-		else return ValueType.STRING;
-	}
-
 	public FrameBlock detectSchemaFromRow(double sampleFraction) {
 		int rows = this.getNumRows();
 		int cols = this.getNumColumns();
@@ -1648,7 +1401,7 @@ public class FrameBlock implements CacheBlock, Externalizable {
 				int randomIndex = ThreadLocalRandom.current().nextInt(0, _rows - 1);
 				String dataValue = ((_obj.get(randomIndex) != null)?_obj.get(randomIndex).toString().trim().replace("\"", "").toLowerCase():null);
 				if(dataValue != null){
-					ValueType current = isType(dataValue);
+					ValueType current = FrameUtil.isType(dataValue);
 					if (current == ValueType.STRING) {
 						state = ValueType.STRING;
 						break;
@@ -1683,7 +1436,7 @@ public class FrameBlock implements CacheBlock, Externalizable {
 		if(this.getNumColumns() != schema.getNumColumns())
 			throw new DMLException("mismatch in number of columns in frame and its schema "+this.getNumColumns()+" != "+schema.getNumColumns());
 
-		String[] schemaString = schema.getStringRowIterator().next(); // extract the schema in String array
+		String[] schemaString = IteratorFactory.getStringRowIterator(this).next(); // extract the schema in String array
 		for (int i = 0; i < this.getNumColumns(); i++) {
 			Array obj = this.getColumn(i);
 			String schemaCol = schemaString[i];
@@ -1705,7 +1458,7 @@ public class FrameBlock implements CacheBlock, Externalizable {
 					continue;
 				String dataValue = obj.get(j).toString().trim().replace("\"", "").toLowerCase() ;
 
-				ValueType dataType = isType(dataValue);
+				ValueType dataType = FrameUtil.isType(dataValue);
 
 				if(!dataType.toString().contains(type) && !(dataType == ValueType.BOOLEAN && type.equals("INT")) &&
 					!(dataType == ValueType.BOOLEAN && type.equals("FP"))){
@@ -1752,8 +1505,8 @@ public class FrameBlock implements CacheBlock, Externalizable {
 	}
 
 	public static FrameBlock mergeSchema(FrameBlock temp1, FrameBlock temp2) {
-		String[] rowTemp1 = temp1.getStringRowIterator().next();
-		String[] rowTemp2 = temp2.getStringRowIterator().next();
+		String[] rowTemp1 = IteratorFactory.getStringRowIterator(temp1).next();
+		String[] rowTemp2 = IteratorFactory.getStringRowIterator(temp2).next();
 
 		if(rowTemp1.length != rowTemp2.length)
 			throw new DMLRuntimeException("Schema dimension "
@@ -1821,7 +1574,7 @@ public class FrameBlock implements CacheBlock, Externalizable {
 	}
 
 	public FrameBlock valueSwap(FrameBlock schema) {
-		String[] schemaString = schema.getStringRowIterator().next();
+		String[] schemaString = IteratorFactory.getStringRowIterator(schema).next();
 		String dataValue2 = null;
 		double minSimScore = 0;
 		int bestIdx = 0;
@@ -1846,7 +1599,7 @@ public class FrameBlock implements CacheBlock, Externalizable {
 				if(this.get(j, i) == null)
 					continue;
 				String dataValue = this.get(j, i).toString().trim().replace("\"", "").toLowerCase();
-				ValueType dataType = isType(dataValue);
+				ValueType dataType = FrameUtil.isType(dataValue);
 
 				String type = dataType.toString().replaceAll("\\d", "");
 				//				get the avergae column length
@@ -1861,7 +1614,7 @@ public class FrameBlock implements CacheBlock, Externalizable {
 							Object item = this.get(j, w);
 							String dataValueProb = (item != null) ? item.toString().trim().replace("\"", "")
 								.toLowerCase() : "0";
-							ValueType dataTypeProb = isType(dataValueProb);
+							ValueType dataTypeProb = FrameUtil.isType(dataValueProb);
 							if(!dataTypeProb.toString().equals(schemaString[w])) {
 								bestIdx = w;
 								break;

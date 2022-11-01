@@ -22,12 +22,11 @@ package org.apache.sysds.test.functions.transform;
 import java.util.HashMap;
 import java.util.Iterator;
 
-import org.junit.Assert;
-import org.junit.Test;
 import org.apache.sysds.common.Types.ExecMode;
-import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.common.Types.ExecType;
+import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
+import org.apache.sysds.runtime.frame.data.iterators.IteratorFactory;
 import org.apache.sysds.runtime.io.FrameReader;
 import org.apache.sysds.runtime.io.FrameReaderFactory;
 import org.apache.sysds.runtime.io.FrameWriter;
@@ -36,6 +35,8 @@ import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
+import org.junit.Assert;
+import org.junit.Test;
 
 /**
  * 
@@ -116,7 +117,7 @@ public class TransformEncodeDecodeTest extends AutomatedTestBase
 			FrameReader reader = FrameReaderFactory.createFrameReader(FileFormat.safeValueOf(fmt));
 			FrameBlock FO = reader.readFrameFromHDFS(output("FO"), 16, 2);
 			HashMap<String,Long> cFA = getCounts(FA, 1);
-			Iterator<String[]> iterFO = FO.getStringRowIterator();
+			Iterator<String[]> iterFO = IteratorFactory.getStringRowIterator(FO);
 			while( iterFO.hasNext() ) {
 				String[] row = iterFO.next();
 				Double expected = (double)cFA.get(row[1]);

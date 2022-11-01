@@ -30,6 +30,7 @@ import org.apache.hadoop.mapred.JobConf;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
+import org.apache.sysds.runtime.frame.data.iterators.IteratorFactory;
 import org.apache.sysds.runtime.util.HDFSTool;
 
 /**
@@ -108,7 +109,7 @@ public class FrameWriterTextCell extends FrameWriter
 			}
 			
 			//write frame row range to output
-			Iterator<String[]> iter = src.getStringRowIterator(rl, ru);
+			Iterator<String[]> iter = IteratorFactory.getStringRowIterator(src, rl, ru);
 			for( int i=rl; iter.hasNext(); i++ ) { //for all rows
 				String rowIndex = Integer.toString(i+1);
 				String[] row = iter.next();

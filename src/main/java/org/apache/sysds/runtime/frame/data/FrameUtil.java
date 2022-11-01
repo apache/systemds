@@ -19,10 +19,11 @@
 
 package org.apache.sysds.runtime.frame.data;
 
+import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.frame.data.columns.Array;
 
-@SuppressWarnings({"rawtypes"})
 public interface FrameUtil {
+	@SuppressWarnings({"rawtypes"})
 	public static Array[] add(Array[] ar, Array e) {
 		if(ar == null)
 			return new Array[] {e};
@@ -30,5 +31,29 @@ public interface FrameUtil {
 		System.arraycopy(ar, 0, ret, 0, ar.length);
 		ret[ar.length] = e;
 		return ret;
+	}
+
+	public static ValueType isType(String val) {
+		val = val.trim().toLowerCase().replaceAll("\"", "");
+		if(val.matches("(true|false|t|f|0|1)"))
+			return ValueType.BOOLEAN;
+		else if(val.matches("[-+]?\\d+")) {
+			long maxValue = Long.parseLong(val);
+			if((maxValue >= Integer.MIN_VALUE) && (maxValue <= Integer.MAX_VALUE))
+				return ValueType.INT32;
+			else
+				return ValueType.INT64;
+		}
+		else if(val.matches("[-+]?[0-9]*\\.?[0-9]+([eE][-+]?[0-9]+)?")) {
+			double maxValue = Double.parseDouble(val);
+			if((maxValue >= (-Float.MAX_VALUE)) && (maxValue <= Float.MAX_VALUE))
+				return ValueType.FP32;
+			else
+				return ValueType.FP64;
+		}
+		else if(val.equals("infinity") || val.equals("-infinity") || val.equals("nan"))
+			return ValueType.FP64;
+		else
+			return ValueType.STRING;
 	}
 }

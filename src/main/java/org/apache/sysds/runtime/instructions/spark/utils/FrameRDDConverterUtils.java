@@ -52,6 +52,7 @@ import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject.UpdateType;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
+import org.apache.sysds.runtime.frame.data.iterators.IteratorFactory;
 import org.apache.sysds.runtime.instructions.spark.data.FrameReblockBuffer;
 import org.apache.sysds.runtime.instructions.spark.data.SerLongWritable;
 import org.apache.sysds.runtime.instructions.spark.data.SerText;
@@ -685,7 +686,7 @@ public class FrameRDDConverterUtils
 			}
 		
 			//handle Frame block data
-			Iterator<String[]> iter = blk.getStringRowIterator();
+			Iterator<String[]> iter = IteratorFactory.getStringRowIterator(blk);
 			while( iter.hasNext() ) {
 				String[] row = iter.next();
 				for(int j=0; j<row.length; j++) {

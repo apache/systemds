@@ -25,13 +25,13 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.apache.commons.lang.ArrayUtils;
 import org.apache.sysds.api.jmlc.Connection;
 import org.apache.sysds.api.jmlc.PreparedScript;
 import org.apache.sysds.api.jmlc.ResultVariables;
 import org.apache.sysds.lops.Lop;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
+import org.apache.sysds.runtime.frame.data.iterators.IteratorFactory;
 import org.apache.sysds.runtime.io.IOUtilFunctions;
 import org.apache.sysds.runtime.transform.TfUtils.TfMethod;
 import org.apache.sysds.runtime.transform.meta.TfMetaUtils;
@@ -39,7 +39,8 @@ import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.runtime.util.HDFSTool;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
-import org.apache.commons.lang.ArrayUtils;
+import org.junit.Assert;
+import org.junit.Test;
 
 public class FrameReadMetaTest extends AutomatedTestBase 
 {
@@ -160,7 +161,7 @@ public class FrameReadMetaTest extends AutomatedTestBase
 		List<Integer> collist = Arrays.asList(ArrayUtils.toObject(
 			TfMetaUtils.parseJsonIDList(spec, M.getColumnNames(), TfMethod.RECODE.toString())));
 		HashMap<String,Long>[] ret = new HashMap[M.getNumColumns()];
-		Iterator<Object[]> iter = M.getObjectRowIterator();
+		Iterator<Object[]> iter = IteratorFactory.getObjectRowIterator(M);
 		while( iter.hasNext() ) {
 			Object[] tmp = iter.next();
 			for( int j=0; j<tmp.length; j++ ) 

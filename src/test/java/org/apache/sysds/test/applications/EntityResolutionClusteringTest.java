@@ -19,19 +19,20 @@
 
 package org.apache.sysds.test.applications;
 
-import org.apache.sysds.common.Types;
-import org.apache.sysds.runtime.frame.data.FrameBlock;
-import org.apache.sysds.test.AutomatedTestBase;
-import org.apache.sysds.test.TestConfiguration;
-import org.junit.Assert;
-import org.junit.Test;
-
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.Arrays;
 import java.util.Iterator;
+
+import org.apache.sysds.common.Types;
+import org.apache.sysds.runtime.frame.data.FrameBlock;
+import org.apache.sysds.runtime.frame.data.iterators.IteratorFactory;
+import org.apache.sysds.test.AutomatedTestBase;
+import org.apache.sysds.test.TestConfiguration;
+import org.junit.Assert;
+import org.junit.Test;
 
 public class EntityResolutionClusteringTest extends AutomatedTestBase {
 	private final static String TEST_NAME = "EntityResolutionClustering";
@@ -99,8 +100,8 @@ public class EntityResolutionClusteringTest extends AutomatedTestBase {
 		FrameBlock predictedPairs = readDMLFrameFromHDFS("B", Types.FileFormat.CSV);
 
 
-		Iterator<Object[]> expectedIter = expectedPairs.getObjectRowIterator();
-		Iterator<Object[]> predictedIter = predictedPairs.getObjectRowIterator();
+		Iterator<Object[]> expectedIter = IteratorFactory.getObjectRowIterator(expectedPairs);
+		Iterator<Object[]> predictedIter = IteratorFactory.getObjectRowIterator(predictedPairs);
 
 		int row = 0;
 		while (expectedIter.hasNext()) {

@@ -19,21 +19,22 @@
 
 package org.apache.sysds.runtime.io;
 
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.mapred.JobConf;
-import org.apache.wink.json4j.JSONException;
-import org.apache.wink.json4j.JSONObject;
-import org.apache.sysds.conf.ConfigurationManager;
-import org.apache.sysds.runtime.DMLRuntimeException;
-import org.apache.sysds.runtime.frame.data.FrameBlock;
-import org.apache.sysds.runtime.util.HDFSTool;
-
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.util.Iterator;
 import java.util.Map;
+
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.mapred.JobConf;
+import org.apache.sysds.conf.ConfigurationManager;
+import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.frame.data.FrameBlock;
+import org.apache.sysds.runtime.frame.data.iterators.IteratorFactory;
+import org.apache.sysds.runtime.util.HDFSTool;
+import org.apache.wink.json4j.JSONException;
+import org.apache.wink.json4j.JSONObject;
 
 public class FrameWriterJSONL
 {
@@ -73,7 +74,7 @@ public class FrameWriterJSONL
 		BufferedWriter bufferedWriter = new BufferedWriter(new OutputStreamWriter(fileSystem.create(path, true)));
 
 		try {
-			Iterator<String[]> stringRowIterator = src.getStringRowIterator(lowerRowBound, upperRowBound);
+			Iterator<String[]> stringRowIterator = IteratorFactory.getStringRowIterator(src, lowerRowBound, upperRowBound);
 			while (stringRowIterator.hasNext()) {
 				String[] row = stringRowIterator.next();
 				bufferedWriter.write(formatToJSONString(row, schemaMap) + "\n");

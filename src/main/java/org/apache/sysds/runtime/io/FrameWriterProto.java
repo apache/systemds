@@ -30,6 +30,7 @@ import org.apache.hadoop.mapred.JobConf;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.protobuf.SysdsProtos;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
+import org.apache.sysds.runtime.frame.data.iterators.IteratorFactory;
 import org.apache.sysds.runtime.util.HDFSTool;
 
 public class FrameWriterProto extends FrameWriter {
@@ -66,7 +67,7 @@ public class FrameWriterProto extends FrameWriter {
 		OutputStream outputStream = fileSystem.create(path, true);
 		SysdsProtos.Frame.Builder frameBuilder = SysdsProtos.Frame.newBuilder();
 		try {
-			Iterator<String[]> stringRowIterator = src.getStringRowIterator(lowerRowBound, upperRowBound);
+			Iterator<String[]> stringRowIterator = IteratorFactory.getStringRowIterator(src, lowerRowBound, upperRowBound);
 			while(stringRowIterator.hasNext()) {
 				String[] row = stringRowIterator.next();
 				frameBuilder.addRowsBuilder().addAllColumnData(Arrays.asList(row));

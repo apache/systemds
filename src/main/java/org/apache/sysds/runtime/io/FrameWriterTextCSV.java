@@ -30,6 +30,7 @@ import org.apache.hadoop.mapred.JobConf;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
+import org.apache.sysds.runtime.frame.data.iterators.IteratorFactory;
 import org.apache.sysds.runtime.transform.TfUtils;
 import org.apache.sysds.runtime.util.HDFSTool;
 
@@ -122,7 +123,7 @@ public class FrameWriterTextCSV extends FrameWriter
 			}
 			
 			// Write data lines
-			Iterator<String[]> iter = src.getStringRowIterator(rl, ru);
+			Iterator<String[]> iter = IteratorFactory.getStringRowIterator(src, rl, ru);
 			while( iter.hasNext() ) {
 				//write row chunk-wise to prevent OOM on large number of columns
 				String[] row = iter.next();

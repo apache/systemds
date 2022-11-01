@@ -28,6 +28,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
+import org.apache.sysds.runtime.frame.data.iterators.IteratorFactory;
 import org.apache.sysds.runtime.io.FrameReader;
 import org.apache.sysds.runtime.io.FrameReaderFactory;
 import org.apache.sysds.test.AutomatedTestBase;
@@ -190,7 +191,7 @@ public class TransformFederatedEncodeDecodeTest extends AutomatedTestBase {
 				// compare matrices (values recoded to identical codes)
 				FrameBlock FO = reader.readFrameFromHDFS(output("FO1"), 15, 2);
 				HashMap<String, Long> cFA = getCounts(A, B);
-				Iterator<String[]> iterFO = FO.getStringRowIterator();
+				Iterator<String[]> iterFO = IteratorFactory.getStringRowIterator(FO);
 				while(iterFO.hasNext()) {
 					String[] row = iterFO.next();
 					Double expected = (double) cFA.get(row[1]);

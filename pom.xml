@@ -583,6 +583,7 @@
 								<exclude>scripts/perftest/temp/**</exclude>
 								<exclude>scripts/tutorials/**</exclude>
 								<exclude>scripts/perftest/logs/**</exclude>
+								<exclude>scripts/monitoring/node_modules/**</exclude>
 								<exclude>.gitignore</exclude>
 								<exclude>src/main/python/.gitignore</exclude>
 								<exclude>.gitmodules</exclude>
@@ -619,6 +620,7 @@
 								<exclude>**/target/**</exclude>
 								<exclude>**/README.md</exclude>
 								<exclude>**/*.svg</exclude>
+								<exclude>**/derby.log</exclude>
 								<!-- Jupyter Notebooks -->
 								<exclude>**/*.ipynb</exclude>
 								<!-- Generated antlr files -->

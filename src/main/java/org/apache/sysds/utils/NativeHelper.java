@@ -29,8 +29,6 @@ import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.io.IOUtilFunctions;
 
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.Vector;
 import java.io.InputStream;
 import java.io.OutputStream;

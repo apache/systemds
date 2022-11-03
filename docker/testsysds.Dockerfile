@@ -62,12 +62,12 @@ RUN apt-get update -qq \
 	https://github.com/AdoptOpenJDK/openjdk11-upstream-binaries/releases/download/jdk-11.0.13%2B8/OpenJDK11U-jdk_x64_linux_11.0.13_8.tar.gz | tar xzf - \
 	&& mv openjdk-11.0.13_8 /usr/lib/jvm/java-11-openjdk-amd64 \
 	&& wget -qO- \
-http://archive.apache.org/dist/maven/maven-3/$MAVEN_VERSION/binaries/apache-maven-$MAVEN_VERSION-bin.tar.gz | tar xzf - \ 
+	http://archive.apache.org/dist/maven/maven-3/$MAVEN_VERSION/binaries/apache-maven-$MAVEN_VERSION-bin.tar.gz | tar xzf - \
 	&& mv apache-maven-$MAVEN_VERSION /usr/lib/mvn \
 	&& apt-get install -y --no-install-recommends \
-	    git \
-       	cmake \
-       	patchelf
+		git \
+		cmake \
+		patchelf
 
 RUN apt-get install -y --no-install-recommends \
 		libssl-dev \

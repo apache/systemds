@@ -58,6 +58,7 @@ public interface ArrayFactory {
 				return new StringArray(new String[nRow]);
 			case BOOLEAN:
 				return new BooleanArray(new boolean[nRow]);
+			case UINT8:
 			case INT32:
 				return new IntegerArray(new int[nRow]);
 			case INT64:

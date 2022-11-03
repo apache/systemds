@@ -303,11 +303,17 @@ public class TestUtils
 	{
 		String line = null;
 		while ((line = inReader.readLine()) != null) {
-			StringTokenizer st = new StringTokenizer(line, " ");
-			int i = Integer.parseInt(st.nextToken());
-			int j = Integer.parseInt(st.nextToken());
-			double v = Double.parseDouble(st.nextToken());
-			values.put(new CellIndex(i, j), v);
+			try{
+
+				StringTokenizer st = new StringTokenizer(line, " ");
+				int i = Integer.parseInt(st.nextToken());
+				int j = Integer.parseInt(st.nextToken());
+				double v = Double.parseDouble(st.nextToken());
+				values.put(new CellIndex(i, j), v);
+			}
+			catch(Exception e){
+				throw new IOException("failed parsing line:" + line,e);
+			}
 		}
 	}
 
@@ -477,11 +483,10 @@ public class TestUtils
 	{
 		HashMap<CellIndex, Double> expectedValues = new HashMap<>();
 
+		Path outDirectory = new Path(filePath);
 		try
 		{
-			Path outDirectory = new Path(filePath);
 			FileSystem fs = IOUtilFunctions.getFileSystem(outDirectory, conf);
-
 			FileStatus[] outFiles = fs.listStatus(outDirectory);
 			for (FileStatus file : outFiles) {
 				FSDataInputStream outIn = fs.open(file.getPath());
@@ -489,7 +494,20 @@ public class TestUtils
 			}
 		}
 		catch (IOException e) {
-			assertTrue("could not read from file " + filePath+": "+e.getMessage(), false);
+			e.printStackTrace();
+			try{
+				FileSystem fs = IOUtilFunctions.getFileSystem(outDirectory, conf);
+				FileStatus[] outFiles = fs.listStatus(outDirectory);
+				String fileContent = "";
+				for (FileStatus file : outFiles) {
+					FSDataInputStream outIn = fs.open(file.getPath());
+					fileContent += new String(outIn.readAllBytes());
+				}
+				fail("could not read from file " + filePath+": "+e.getMessage() + "\ncontent:\n" + fileContent);
+		
+			}catch (IOException e2){
+				fail("could not read from file " + filePath+": "+e.getMessage());
+			}
 		}
 
 		return expectedValues;
@@ -2140,10 +2158,7 @@ public class TestUtils
 	 * </p>
 	 */
 	public static FrameBlock generateRandomFrameBlock(int rows, int cols, ValueType[] schema, Random random){
-		String[] names = new String[cols];
-		for(int i = 0; i < cols; i++)
-			names[i] = schema[i].toString();
-		FrameBlock frameBlock = new FrameBlock(schema, names);
+		FrameBlock frameBlock = new FrameBlock(schema);
 		frameBlock.ensureAllocatedColumns(rows);
 		for(int row = 0; row < rows; row++)
 			for(int col = 0; col < cols; col++)
@@ -2299,6 +2314,7 @@ public class TestUtils
 	 */
 	public static Object generateRandomValueFromValueType(ValueType valueType, Random random){
 		switch (valueType){
+			case UINT8:   return random.nextInt(256);
 			case FP32:	  return random.nextFloat();
 			case FP64:    return random.nextDouble();
 			case INT32:   return random.nextInt();

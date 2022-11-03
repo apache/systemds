@@ -22,6 +22,7 @@ package org.apache.sysds.runtime.frame.data.columns;
 import java.lang.ref.SoftReference;
 import java.util.HashMap;
 
+import org.apache.commons.lang.NotImplementedException;
 import org.apache.hadoop.io.Writable;
 import org.apache.sysds.common.Types.ValueType;
 
@@ -86,7 +87,7 @@ public abstract class Array<T> implements Writable {
 	
 	@Override
 	public String toString() {
-		return this.getClass().getSimpleName().toString() + ":" + _size;
+		return this.getClass().getSimpleName();
 	}
 
 }

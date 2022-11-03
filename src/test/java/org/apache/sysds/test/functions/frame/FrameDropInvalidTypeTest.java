@@ -19,6 +19,13 @@
 
 package org.apache.sysds.test.functions.frame;
 
+import static org.junit.Assert.fail;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.common.Types.ExecType;
@@ -35,11 +42,10 @@ import org.apache.sysds.test.TestUtils;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.util.ArrayList;
-import java.util.Arrays;
+public class FrameDropInvalidTypeTest extends AutomatedTestBase {
 
-public class FrameDropInvalidTypeTest extends AutomatedTestBase
-{
+	protected static final Log LOG = LogFactory.getLog(FrameDropInvalidTypeTest.class.getName());
+	
 	private final static String TEST_NAME = "DropInvalidType";
 	private final static String TEST_DIR = "functions/frame/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + FrameDropInvalidTypeTest.class.getSimpleName() + "/";
@@ -136,14 +142,14 @@ public class FrameDropInvalidTypeTest extends AutomatedTestBase
 			getAndLoadTestConfiguration(TEST_NAME);
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[] {"-args", input("A"), input("M"),
+			programArgs = new String[] {"-args", input("A"), input("M"), //
 				String.valueOf(rows), Integer.toString(cols), output("B")};
-			FrameBlock frame1 = new FrameBlock(schema);
 			FrameWriter writer = FrameWriterFactory.createFrameWriter(FileFormat.CSV);
 			FrameBlock frame2 = new FrameBlock(UtilFunctions.nCopies(cols, Types.ValueType.STRING));
-			String[] meta = new String[]{"FP64", "STRING"};
+			String[] meta = new String[] {"FP64", "STRING"};
 
-			initFrameDataString(frame1); // initialize a frame with one column
+			// initialize a frame with one column
+			FrameBlock frame1 = TestUtils.generateRandomFrameBlock(rows, 1, new ValueType[]{ValueType.FP64}, 132); 
 
 			switch (test) { //Double in String
 				case 1:
@@ -197,15 +203,11 @@ public class FrameDropInvalidTypeTest extends AutomatedTestBase
 					break;
 				}
 			}
-			writer.writeFrameToHDFS(
-				frame1.slice(0, rows - 1, 0, 1, new FrameBlock()),
-				input("A"), rows, schema.length);
-
+			writer.writeFrameToHDFS(frame1, input("A"), rows, schema.length);
 			frame2.appendRow(meta);
 			writer.writeFrameToHDFS(frame2, input("M"), 1, schema.length);
-			runTest(true, false, null, -1);
+			runTest(null);
 			FrameBlock frameout = readDMLFrameFromHDFS("B", FileFormat.BINARY);
-
 			//read output data and compare results
 			ArrayList<Object> data = new ArrayList<>();
 			for (int i = 0; i < frameout.getNumRows(); i++)
@@ -213,10 +215,11 @@ public class FrameDropInvalidTypeTest extends AutomatedTestBase
 
 			int nullNum = Math.toIntExact(data.stream().filter(s -> s == null).count());
 			//verify output schema
-			Assert.assertEquals("Wrong result: " + nullNum + ".", ignore ? 0 : badValues, nullNum);
+			Assert.assertEquals("Wrong result: " + nullNum + ".", ignore ? 0 :  badValues, nullNum);
 		}
 		catch (Exception ex) {
-			throw new RuntimeException(ex);
+			ex.printStackTrace();
+			fail(ex.getMessage());
 		}
 		finally {
 			rtplatform = platformOld;
@@ -225,12 +228,5 @@ public class FrameDropInvalidTypeTest extends AutomatedTestBase
 			OptimizerUtils.ALLOW_AUTO_VECTORIZATION = true;
 			OptimizerUtils.ALLOW_OPERATOR_FUSION = true;
 		}
-	}
-	private  void initFrameDataString(FrameBlock frame1) {
-		double[][] A = getRandomMatrix(rows, 1, Float.MAX_VALUE, Double.MAX_VALUE, 0.7, 2373);
-		double[] tmp6 = new double[rows];
-		for (int i = 0; i < rows; i++)
-			tmp6[i] = (Double) UtilFunctions.doubleToObject(ValueType.FP64, A[i][0], false);
-		frame1.appendColumn(tmp6);
 	}
 }

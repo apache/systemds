@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.sysds.test.functions.binary.frame;
+package org.apache.sysds.test.functions.frame;
 
 import org.apache.sysds.common.Types;
 import org.apache.sysds.common.Types.ExecType;
@@ -80,7 +80,7 @@ public class FrameMapMarginTest extends AutomatedTestBase {
 	private void runDmlMapTest( String expression, int margin, ExecType et)
 	{
 		Types.ExecMode platformOld = setExecMode(et);
-
+		setOutputBuffering(true);
 		try {
 			getAndLoadTestConfiguration(TEST_NAME);
 
@@ -91,7 +91,7 @@ public class FrameMapMarginTest extends AutomatedTestBase {
 			double[][] A = getRandomMatrix(rows, 2, 1, 1, 1, 2);
 			writeInputFrameWithMTD("A", A, true, schemaStrings1, FileFormat.CSV);
 			
-			runTest(true, false, null, -1);
+			runTest(null);
 
 			FrameBlock outputFrame = readDMLFrameFromHDFS("O", FileFormat.CSV);
 

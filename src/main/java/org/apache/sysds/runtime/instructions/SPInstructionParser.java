@@ -240,7 +240,8 @@ public class SPInstructionParser extends InstructionParser
 		String2SPInstructionType.put("libsvmrblk", SPType.LIBSVMReblock);
 
 		// Spark-specific instructions
-		String2SPInstructionType.put( Checkpoint.OPCODE, SPType.Checkpoint);
+		String2SPInstructionType.put( Checkpoint.DEFAULT_CP_OPCODE, SPType.Checkpoint);
+		String2SPInstructionType.put( Checkpoint.ASYNC_CP_OPCODE, SPType.Checkpoint);
 		String2SPInstructionType.put( Compression.OPCODE, SPType.Compression);
 		String2SPInstructionType.put( DeCompression.OPCODE, SPType.DeCompression);
 

@@ -67,7 +67,6 @@ import org.apache.sysds.runtime.instructions.cp.SpoofCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.SqlCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.StringInitCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.TernaryCPInstruction;
-import org.apache.sysds.runtime.instructions.cp.TriggerRemoteOpsCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.UaggOuterChainCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.UnaryCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.VariableCPInstruction;
@@ -481,9 +480,6 @@ public class CPInstructionParser extends InstructionParser
 				
 			case Broadcast:
 				return BroadcastCPInstruction.parseInstruction(str);
-
-			case TrigRemote:
-				return TriggerRemoteOpsCPInstruction.parseInstruction(str);
 
 			default:
 				throw new DMLRuntimeException("Invalid CP Instruction Type: " + cptype );

@@ -247,6 +247,10 @@ public class ConfigurationManager
 		return (getDMLConfig().getBooleanValue(DMLConfig.ASYNC_SPARK_BROADCAST)
 			|| OptimizerUtils.ASYNC_BROADCAST_SPARK);
 	}
+	public static boolean isCheckpointEnabled() {
+		return (getDMLConfig().getBooleanValue(DMLConfig.ASYNC_SPARK_CHECKPOINT)
+			|| OptimizerUtils.ASYNC_CHECKPOINT_SPARK);
+	}
 
 	public static ILinearize.DagLinearization getLinearizationOrder() {
 		if (OptimizerUtils.MAX_PARALLELIZE_ORDER)

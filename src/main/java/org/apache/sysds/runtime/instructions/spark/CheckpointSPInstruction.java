@@ -35,6 +35,7 @@ import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.BooleanObject;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
+import org.apache.sysds.runtime.instructions.cp.TriggerCheckpointTask;
 import org.apache.sysds.runtime.instructions.spark.data.RDDObject;
 import org.apache.sysds.runtime.instructions.spark.functions.CopyFrameBlockFunction;
 import org.apache.sysds.runtime.instructions.spark.functions.CreateSparseBlockFunction;
@@ -43,8 +44,11 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
+import org.apache.sysds.runtime.util.CommonThreadPool;
 import org.apache.sysds.runtime.util.UtilFunctions;
 import org.apache.sysds.utils.Statistics;
+
+import java.util.concurrent.Executors;
 
 public class CheckpointSPInstruction extends UnarySPInstruction {
 	// default storage level
@@ -71,7 +75,20 @@ public class CheckpointSPInstruction extends UnarySPInstruction {
 	@SuppressWarnings("unchecked")
 	public void processInstruction(ExecutionContext ec) {
 		SparkExecutionContext sec = (SparkExecutionContext)ec;
-		
+
+		// Asynchronously trigger count() and persist this RDD
+		// TODO: Synchronize. Avoid double execution
+		if (getOpcode().equals("chkpoint_e")) {  //eager checkpoint
+			// Inplace replace output matrix object with the input matrix object
+			// We will never use the output of the Spark count call
+			ec.setVariable(output.getName(), ec.getCacheableData(input1));
+
+			if (CommonThreadPool.triggerRemoteOPsPool == null)
+				CommonThreadPool.triggerRemoteOPsPool = Executors.newCachedThreadPool();
+			CommonThreadPool.triggerRemoteOPsPool.submit(new TriggerCheckpointTask(ec.getMatrixObject(output)));
+			return;
+		}
+
 		// Step 1: early abort on non-existing or in-memory (cached) inputs
 		// -------
 		// (checkpoints are generated for all read only variables in loops; due to unbounded scoping and 

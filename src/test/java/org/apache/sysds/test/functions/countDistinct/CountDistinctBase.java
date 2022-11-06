@@ -46,17 +46,17 @@ public abstract class CountDistinctBase extends AutomatedTestBase {
 	public abstract void setUp();
 
 	public void countDistinctScalarTest(long numberDistinct, int cols, int rows, double sparsity,
-		Types.ExecType instType, double tolerance) {
+										Types.ExecType instType, double tolerance) {
 		countDistinctTest(Types.Direction.RowCol, numberDistinct, cols, rows, sparsity, instType, tolerance);
 	}
 
 	public void countDistinctMatrixTest(Types.Direction dir, long numberDistinct, int cols, int rows, double sparsity,
-		Types.ExecType instType, double tolerance) {
+										Types.ExecType instType, double tolerance) {
 		countDistinctTest(dir, numberDistinct, cols, rows, sparsity, instType, tolerance);
 	}
 
 	public void countDistinctTest(Types.Direction dir, long numberDistinct, int cols, int rows, double sparsity,
-		Types.ExecType instType, double tolerance) {
+								  Types.ExecType instType, double tolerance) {
 
 		Types.ExecMode platformOld = setExecMode(instType);
 		try {

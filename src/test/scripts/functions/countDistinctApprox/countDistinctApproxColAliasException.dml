@@ -20,5 +20,5 @@
 #-------------------------------------------------------------
 
 input = round(rand(rows = $2, cols = $3, min = 0, max = $1 -1, sparsity= $4, seed = 7))
-res = colCountDistinctApprox(input, type="KMV")
+res = colCountDistinctApprox(input, dir="x", type="KMV")
 write(res, $5, format="text")

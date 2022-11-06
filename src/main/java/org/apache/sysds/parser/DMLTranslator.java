@@ -2064,13 +2064,11 @@ public class DMLTranslator
 						AggOp.valueOf(source.getOpCode().name()), dir, paramHops.get("data"));
 				break;
 
-			case COUNT_DISTINCT_ROW:
 			case COUNT_DISTINCT_APPROX_ROW:
 				currBuiltinOp = new AggUnaryOp(target.getName(), DataType.MATRIX, target.getValueType(),
 						AggOp.valueOf(source.getOpCode().name()), Direction.Row, paramHops.get("data"));
 				break;
 
-			case COUNT_DISTINCT_COL:
 			case COUNT_DISTINCT_APPROX_COL:
 				currBuiltinOp = new AggUnaryOp(target.getName(), DataType.MATRIX, target.getValueType(),
 						AggOp.valueOf(source.getOpCode().name()), Direction.Col, paramHops.get("data"));
@@ -2758,6 +2756,17 @@ public class DMLTranslator
 			setBlockSizeAndRefreshSizeInfo(expr, currBuiltinOp);
 			break;
 		}
+
+		case ROW_COUNT_DISTINCT:
+			currBuiltinOp = new AggUnaryOp(target.getName(), DataType.MATRIX, target.getValueType(),
+					AggOp.valueOf(source.getOpCode().name()), Direction.Row, expr);
+			break;
+
+		case COL_COUNT_DISTINCT:
+			currBuiltinOp = new AggUnaryOp(target.getName(), DataType.MATRIX, target.getValueType(),
+					AggOp.valueOf(source.getOpCode().name()), Direction.Col, expr);
+			break;
+
 		default:
 			throw new ParseException("Unsupported builtin function type: "+source.getOpCode());
 		}

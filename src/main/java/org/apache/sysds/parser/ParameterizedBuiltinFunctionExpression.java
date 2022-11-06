@@ -247,15 +247,16 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 			break;
 
 		case COUNT_DISTINCT:
-		case COUNT_DISTINCT_ROW:
-		case COUNT_DISTINCT_COL:
 			validateCountDistinct(output, conditional);
 			break;
 
 		case COUNT_DISTINCT_APPROX:
+			validateCountDistinctApprox(output, conditional, false);
+			break;
+
 		case COUNT_DISTINCT_APPROX_ROW:
 		case COUNT_DISTINCT_APPROX_COL:
-			validateCountDistinctApprox(output, conditional);
+			validateCountDistinctApprox(output, conditional, true);
 			break;
 
 		default: //always unconditional (because unsupported operation)
@@ -400,7 +401,7 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 		validateAggregationDirection(dataId, output);
 	}
 
-	private void validateCountDistinctApprox(DataIdentifier output, boolean conditional) {
+	private void validateCountDistinctApprox(DataIdentifier output, boolean conditional, boolean isDirectionAlias) {
 		Set<String> validTypeNames = CollectionUtils.asSet("KMV");
 		HashMap<String, Expression> varParams = getVarParams();
 
@@ -411,13 +412,26 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 
 		// Validate the number of parameters
 		String fname = getOpCode().getName();
-		String usageMessage = "function " + fname + " takes at least 1 and at most 3 parameters";
-		if (varParams.size() < 1) {
-			raiseValidateError("Too few parameters: " + usageMessage, conditional);
-		}
+		if (!isDirectionAlias) {
+			// Function is not an alias, so we have to check for all 3 permissible parameters
+			String usageMessage = "function " + fname + " takes at least 1 and at most 3 parameters";
+			if (varParams.size() < 1) {
+				raiseValidateError("Too few parameters: " + usageMessage, conditional);
+			}
 
-		if (varParams.size() > 3) {
-			raiseValidateError("Too many parameters: " + usageMessage, conditional);
+			if (varParams.size() > 3) {
+				raiseValidateError("Too many parameters: " + usageMessage, conditional);
+			}
+		} else {
+			// The direction is fixed for function aliases
+			String usageMessage = "function " + fname + " takes at least 1 and at most 2 parameters";
+			if (varParams.size() < 1) {
+				raiseValidateError("Too few parameters: " + usageMessage, conditional);
+			}
+
+			if (varParams.size() > 2) {
+				raiseValidateError("Too many parameters: " + usageMessage, conditional);
+			}
 		}
 
 		// Check parameter names are valid
@@ -447,20 +461,22 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 			addVarParam("type", new StringIdentifier("KMV", this));
 		}
 
-		checkStringParam(true, fname, "dir", conditional);
-		// Check data value of "dir" parameter
-		validateAggregationDirection(dataId, output);
+		if (!isDirectionAlias) {
+			checkStringParam(true, fname, "dir", conditional);
+			// Check data value of "dir" parameter
+			validateAggregationDirection(dataId, output);
+		}
 	}
 
 	private void validateAggregationDirection(Identifier dataId, DataIdentifier output) {
 		HashMap<String, Expression> varParams = getVarParams();
 		if (varParams.containsKey("dir")) {
-			String directionString = varParams.get("dir").toString().toUpperCase();
+			String inputDirectionString = varParams.get("dir").toString().toUpperCase();
 
 			// Set output type and dimensions based on direction
 
 			// "r" -> count across all rows, resulting in a Mx1 matrix
-			if (directionString.equals(Types.Direction.Row.toString())) {
+			if (inputDirectionString.equals(Types.Direction.Row.toString())) {
 				output.setDataType(DataType.MATRIX);
 				output.setDimensions(dataId.getDim1(), 1);
 				output.setBlocksize(dataId.getBlocksize());
@@ -468,7 +484,7 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 				output.setNnz(dataId.getDim1());
 
 			// "c" -> count across all cols, resulting in a 1xN matrix
-			} else if (directionString.equals(Types.Direction.Col.toString())) {
+			} else if (inputDirectionString.equals(Types.Direction.Col.toString())) {
 				output.setDataType(DataType.MATRIX);
 				output.setDimensions(1, dataId.getDim2());
 				output.setBlocksize(dataId.getBlocksize());
@@ -476,16 +492,16 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 				output.setNnz(dataId.getDim2());
 
 			// "rc" -> count across all rows and cols in input matrix, resulting in a single value
-			} else if (directionString.equals(Types.Direction.RowCol.toString())) {
+			} else if (inputDirectionString.equals(Types.Direction.RowCol.toString())) {
 				output.setDataType(DataType.SCALAR);
 				output.setDimensions(0, 0);
 				output.setBlocksize(0);
 				output.setValueType(ValueType.INT64);
 				output.setNnz(1);
 
-			// unrecognized value for "dir" parameter, should "cr" be valid?
+			// unrecognized value for "dir" parameter
 			} else {
-				raiseValidateError("Invalid argument: " + directionString + " is not recognized");
+				raiseValidateError("Invalid argument: " + inputDirectionString + " is not recognized");
 			}
 		} else {  // default to dir="rc"
 			output.setDataType(DataType.SCALAR);

@@ -31,7 +31,7 @@ public class CountDistinctRowAliasException extends CountDistinctBase {
     @Rule
     public ExpectedException exceptionRule = ExpectedException.none();
 
-    private final static String TEST_NAME = "CountDistinctRowAliasException";
+    private final static String TEST_NAME = "countDistinctRowAliasException";
     private final static String TEST_DIR = "functions/countDistinct/";
     private final static String TEST_CLASS_DIR = TEST_DIR + CountDistinctRowAliasException.class.getSimpleName() + "/";
 

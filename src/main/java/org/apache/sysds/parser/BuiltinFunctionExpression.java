@@ -1606,6 +1606,26 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			else
 				raiseValidateError("Compress/DeCompress instruction not allowed in dml script");
 			break;
+		case ROW_COUNT_DISTINCT:
+			checkNumParameters(1);
+			checkMatrixParam(getFirstExpr());
+			output.setDataType(DataType.MATRIX);
+			output.setDimensions(id.getDim1(), 1);
+			output.setBlocksize (id.getBlocksize());
+			output.setValueType(ValueType.INT64);
+			output.setNnz(id.getDim1());
+			break;
+
+		case COL_COUNT_DISTINCT:
+			checkNumParameters(1);
+			checkMatrixParam(getFirstExpr());
+			output.setDataType(DataType.MATRIX);
+			output.setDimensions(1, id.getDim2());
+			output.setBlocksize (id.getBlocksize());
+			output.setValueType(ValueType.INT64);
+			output.setNnz(id.getDim2());
+			break;
+
 		default:
 			if( isMathFunction() ) {
 				checkMathFunctionParam();
@@ -1637,7 +1657,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			}
 		}
 	}
-	
+
 	private void setBinaryOutputProperties(DataIdentifier output) {
 		DataType dt1 = getFirstExpr().getOutput().getDataType();
 		DataType dt2 = getSecondExpr().getOutput().getDataType();

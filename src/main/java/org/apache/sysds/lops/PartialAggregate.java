@@ -352,10 +352,10 @@ public class PartialAggregate extends Lop
 				}
 			}
 
-			case COUNT_DISTINCT_ROW:
+			case ROW_COUNT_DISTINCT:
 				return "uacdr";
 
-			case COUNT_DISTINCT_COL:
+			case COL_COUNT_DISTINCT:
 				return "uacdc";
 
 			case COUNT_DISTINCT_APPROX: {

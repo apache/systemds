@@ -29,50 +29,50 @@ import org.junit.rules.ExpectedException;
 
 public class CountDistinctApproxColAliasException extends CountDistinctBase {
 
-    @Rule
-    public ExpectedException exceptionRule = ExpectedException.none();
+	@Rule
+	public ExpectedException exceptionRule = ExpectedException.none();
 
-    private final static String TEST_NAME = "countDistinctApproxColAliasException";
-    private final static String TEST_DIR = "functions/countDistinctApprox/";
-    private final static String TEST_CLASS_DIR = TEST_DIR + CountDistinctApproxColAliasException.class.getSimpleName() + "/";
+	private final static String TEST_NAME = "countDistinctApproxColAliasException";
+	private final static String TEST_DIR = "functions/countDistinctApprox/";
+	private final static String TEST_CLASS_DIR = TEST_DIR + CountDistinctApproxColAliasException.class.getSimpleName() + "/";
 
-    private final Types.Direction DIRECTION = Types.Direction.Row;
+	private final Types.Direction DIRECTION = Types.Direction.Row;
 
-    @Override
-    protected String getTestClassDir() {
-        return TEST_CLASS_DIR;
-    }
+	@Override
+	protected String getTestClassDir() {
+		return TEST_CLASS_DIR;
+	}
 
-    @Override
-    protected String getTestName() {
-        return TEST_NAME;
-    }
+	@Override
+	protected String getTestName() {
+		return TEST_NAME;
+	}
 
-    @Override
-    protected String getTestDir() {
-        return TEST_DIR;
-    }
+	@Override
+	protected String getTestDir() {
+		return TEST_DIR;
+	}
 
-    @Override
-    public void setUp() {
-        TestUtils.clearAssertionInformation();
-        addTestConfiguration(getTestName(), new TestConfiguration(getTestClassDir(), getTestName(), new String[] {"A"}));
+	@Override
+	public void setUp() {
+		TestUtils.clearAssertionInformation();
+		addTestConfiguration(getTestName(), new TestConfiguration(getTestClassDir(), getTestName(), new String[] {"A"}));
 
-        this.percentTolerance = 0.2;
-    }
+		this.percentTolerance = 0.2;
+	}
 
-    @Test
-    public void testCPSparseSmall() {
-        exceptionRule.expect(AssertionError.class);
-        exceptionRule.expectMessage("Too many parameters: function colCountDistinctApprox takes at least 1" +
-                " and at most 2 parameters");
+	@Test
+	public void testCPSparseSmall() {
+		exceptionRule.expect(AssertionError.class);
+		exceptionRule.expectMessage("Too many parameters: function colCountDistinctApprox takes at least 1" +
+				" and at most 2 parameters");
 
-        Types.ExecType execType = Types.ExecType.CP;
+		Types.ExecType execType = Types.ExecType.CP;
 
-        int actualDistinctCount = 10;
-        int rows = 1000, cols = 1000;
-        double sparsity = 0.1;
-        double tolerance = actualDistinctCount * this.percentTolerance;
-        countDistinctMatrixTest(DIRECTION, actualDistinctCount, cols, rows, sparsity, execType, tolerance);
-    }
+		int actualDistinctCount = 10;
+		int rows = 1000, cols = 1000;
+		double sparsity = 0.1;
+		double tolerance = actualDistinctCount * this.percentTolerance;
+		countDistinctMatrixTest(DIRECTION, actualDistinctCount, cols, rows, sparsity, execType, tolerance);
+	}
 }

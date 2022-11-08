@@ -100,7 +100,7 @@ jobs:
         pip install --upgrade pip 
         pip install --upgrade pip
         pip install wheel
-        pip install numpy py4j scipy sklearn requests pandas unittest-parallel
+        pip install numpy py4j scipy scikit-learn requests pandas unittest-parallel
 
     - name: Build Python Package
       run: |

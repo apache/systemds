@@ -99,7 +99,8 @@ jobs:
         # Install pip twice to update past the versions.
         pip install --upgrade pip 
         pip install --upgrade pip
-        pip install numpy py4j wheel scipy sklearn requests pandas unittest-parallel
+        pip install wheel
+        pip install numpy py4j scipy sklearn requests pandas unittest-parallel
 
     - name: Build Python Package
       run: |

@@ -65,7 +65,8 @@ jobs:
           "**.functions.dnn.**,**.functions.paramserv.**",
           "**.functions.recompile.**,**.functions.misc.**,**.functions.mlcontext.**",
           "**.functions.nary.**,**.functions.quaternary.**",
-          "**.functions.parfor.**,**.functions.pipelines.**,**.functions.privacy.**", "**.functions.homomorphicEncryption.**"
+          "**.functions.parfor.**,**.functions.pipelines.**,**.functions.privacy.**", 
+          "**.functions.homomorphicEncryption.**",
           "**.functions.unary.scalar.**,**.functions.updateinplace.**,**.functions.vect.**",
           "**.functions.reorg.**,**.functions.rewrite.**,**.functions.ternary.**,**.functions.transform.**",
           "**.functions.unary.matrix.**,**.functions.linearization.**,**.functions.jmlc.**"

@@ -48,6 +48,15 @@
 				<exclude>**/target/**/*</exclude>
 				<exclude>**/temp</exclude>
 				<exclude>**/temp/**/*</exclude>
+				<exclude>scripts/monitoring/.angular/**</exclude>
+				<exclude>scripts/monitoring/node_modules/**</exclude>
+				<exclude>**/obsolete/**</exclude>
+				<exclude>scripts/tutorials/**</exclude>
+				<exclude>scripts/perftest/**</exclude>
+				<exclude>scripts/staging/**</exclude>
+				<exclude>./src/main/python/**</exclude>
+				<!-- exclude docs dir, since it is for webpage and docs are included in src -->
+				<exclude>docs/**</exclude> 
 				<exclude>./src/test/config/hadoop_bin_windows/**</exclude>
 				<exclude>./src/main/cpp/lib/**</exclude>
 				<exclude>pom.xml.versionsBackup</exclude>

@@ -38,8 +38,11 @@
 			<excludes>
 				<exclude>algorithms/obsolete/*</exclude>
 				<exclude>algorithms/obsolete</exclude>
-				<exclude>perftest/**/*</exclude>
-				<exclude>perftest</exclude>
+				<exclude>monitoring/.angular/**</exclude>
+				<exclude>monitoring/node_modules/**</exclude>
+				<exclude>**/obsolete/**</exclude>
+				<exclude>tutorials/**</exclude>
+				<exclude>perftest/**</exclude>
 				<exclude>perftestDeprecated/*</exclude>
 				<exclude>perftestDeprecated</exclude>
 				<exclude>staging/**/*</exclude>

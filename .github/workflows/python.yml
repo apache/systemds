@@ -95,7 +95,11 @@ jobs:
         architecture: 'x64'
   
     - name: Install pip Dependencies
-      run: pip install numpy py4j wheel scipy sklearn requests pandas unittest-parallel
+      run: |
+        # Install pip twice to update past the versions.
+        pip install --upgrade pip 
+        pip install --upgrade pip
+        pip install numpy py4j wheel scipy sklearn requests pandas unittest-parallel
 
     - name: Build Python Package
       run: |

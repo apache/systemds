@@ -27,6 +27,7 @@ import org.apache.sysds.test.TestUtils;
 import org.junit.Assert;
 import org.junit.Test;
 
+@net.jcip.annotations.NotThreadSafe
 public class FederatedCoordinatorIntegrationCRUDTest extends FederatedMonitoringTestBase {
 	private final static String TEST_NAME = "FederatedCoordinatorIntegrationCRUDTest";
 
@@ -77,6 +78,14 @@ public class FederatedCoordinatorIntegrationCRUDTest extends FederatedMonitoring
 	@Test
 	public void testCorrectAmountAddedCoordinatorsForMonitoring() {
 		int numCoordinators = 3;
+		try{
+			// wait a bit to guarantee the coordinators allow connection
+			// and the worker allows.
+			Thread.sleep(3000);
+		}
+		catch(Exception e ){
+			throw new RuntimeException("Did not allow sleep");
+		}
 		var addedCoordinators = addEntities(numCoordinators, Entity.COORDINATOR);
 
 		for (int i = 0; i < numCoordinators; i++) {

@@ -64,7 +64,9 @@ public abstract class MultiTenantTestBase extends AutomatedTestBase {
 		int[] ports = new int[numFedWorkers];
 		for(int counter = 0; counter < numFedWorkers; counter++) {
 			ports[counter] = getRandomAvailablePort();
-			Process tmpProcess = startLocalFedWorker(ports[counter], addArgs);
+			// start process but only wait long for last one.
+			Process tmpProcess = startLocalFedWorker(ports[counter], addArgs, 
+				counter == numFedWorkers-1 ? FED_WORKER_WAIT * 3 : FED_WORKER_WAIT_S);
 			workerProcesses.add(tmpProcess);
 		}
 		return ports;

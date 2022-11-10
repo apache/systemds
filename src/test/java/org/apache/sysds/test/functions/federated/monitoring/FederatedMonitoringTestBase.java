@@ -35,6 +35,7 @@ import org.junit.After;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+@net.jcip.annotations.NotThreadSafe
 public abstract class FederatedMonitoringTestBase extends MultiTenantTestBase {
 	protected Process monitoringProcess;
 	private int monitoringPort;

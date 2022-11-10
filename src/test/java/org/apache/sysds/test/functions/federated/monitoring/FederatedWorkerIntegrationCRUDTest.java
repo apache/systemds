@@ -27,6 +27,7 @@ import org.apache.sysds.test.TestUtils;
 import org.junit.Assert;
 import org.junit.Test;
 
+@net.jcip.annotations.NotThreadSafe
 public class FederatedWorkerIntegrationCRUDTest extends FederatedMonitoringTestBase {
 	private final static String TEST_NAME = "FederatedWorkerIntegrationCRUDTest";
 

@@ -1589,6 +1589,10 @@ public abstract class AutomatedTestBase {
 	 * @return the process associated with the worker.
 	 */
 	protected Process startLocalFedWorker(int port, String[] addArgs) {
+		return startLocalFedWorker(port, addArgs, FED_WORKER_WAIT);
+	}
+
+	protected static Process startLocalFedWorker(int port, String[] addArgs, int sleep) {
 		Process process = null;
 		String separator = System.getProperty("file.separator");
 		String classpath = System.getProperty("java.class.path");
@@ -1600,7 +1604,7 @@ public abstract class AutomatedTestBase {
 		try {
 			process = processBuilder.start();
 			// Give some time to startup the worker.
-			sleep(FED_WORKER_WAIT);
+			sleep(sleep);
 		}
 		catch(IOException | InterruptedException e) {
 			e.printStackTrace();

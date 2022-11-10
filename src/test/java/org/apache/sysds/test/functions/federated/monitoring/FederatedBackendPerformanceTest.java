@@ -38,6 +38,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
+@net.jcip.annotations.NotThreadSafe
 public class FederatedBackendPerformanceTest extends FederatedMonitoringTestBase {
 	private static final Log LOG = LogFactory.getLog(FederatedBackendPerformanceTest.class.getName());
 	private final static String TEST_NAME = "FederatedBackendPerformanceTest";

@@ -25,6 +25,8 @@ import java.util.HashMap;
 
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.runtime.matrix.data.MatrixValue.CellIndex;
@@ -41,14 +43,13 @@ import org.junit.runners.Parameterized;
 @RunWith(value = Parameterized.class)
 @net.jcip.annotations.NotThreadSafe
 public class FederatedSerializationReuseTest extends MultiTenantTestBase {
+	private static final Log LOG = LogFactory.getLog(FederatedSerializationReuseTest.class.getName());
 	private final static String TEST_NAME = "FederatedSerializationReuseTest";
-
 	private final static String TEST_DIR = "functions/federated/multitenant/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + FederatedSerializationReuseTest.class.getSimpleName() + "/";
-
 	private final static double TOLERANCE = 0;
-
 	private final static int blocksize = 1024;
+	
 	@Parameterized.Parameter()
 	public int rows;
 	@Parameterized.Parameter(1)
@@ -171,6 +172,9 @@ public class FederatedSerializationReuseTest extends MultiTenantTestBase {
 
 		// wait for the coordinator processes to end and verify the results
 		String coordinatorOutput = waitForCoordinators();
+		LOG.debug(coordinatorOutput);
+				// verify correctness of results.
+		// we no long verify if the number of hitters are correct since it is harder to maintain.
 		verifyResults(opType, coordinatorOutput, execMode);
 
 		// check that federated input files are still existing
@@ -188,7 +192,7 @@ public class FederatedSerializationReuseTest extends MultiTenantTestBase {
 	private void verifyResults(OpType opType, String outputLog, ExecMode execMode) {
 		Assert.assertTrue(checkForHeavyHitter(opType, outputLog, execMode));
 		// verify that the matrix object has been taken from cache
-		Assert.assertTrue(checkForReuses(opType, outputLog, execMode));
+		checkForReuses(opType, outputLog, execMode);
 
 		// compare the results via files
 		HashMap<CellIndex, Double> refResults	= readDMLMatrixFromOutputDir("S" + 0);
@@ -222,36 +226,8 @@ public class FederatedSerializationReuseTest extends MultiTenantTestBase {
 		return (occurrences == coordinatorProcesses.size());
 	}
 
-	private boolean checkForReuses(OpType opType, String outputLog, ExecMode execMode) {
-		final String LINCACHE_MULTILVL = "LinCache MultiLvl (Ins/SB/Fn):\t";
-		final String LINCACHE_WRITES = "LinCache writes (Mem/FS/Del):\t";
-		final String SERIAL_REUSE = "Fed SerialReuse (Count, Bytes):\t";
-		boolean retVal = false;
-		int numInst = -1;
-		int multiplier = 1;
-		int serializationWrites = 0;
-		switch(opType) {
-			case EW_DIV:
-				numInst = 1;
-				serializationWrites = 1;
-				break;
-			case ROWSUMS:
-				numInst = (execMode == ExecMode.SPARK) ? 0 : 1;
-				serializationWrites = 1;
-				break;
-			case PARFOR_MULT: // number of instructions times number of iterations of the parfor loop
-				multiplier = 3; // number of parfor iterations
-				numInst = (execMode == ExecMode.SPARK) ? 1 * multiplier : 2 * multiplier;
-				serializationWrites = multiplier;
-				break;
-		}
-		retVal = outputLog.contains(LINCACHE_MULTILVL
-			+ Integer.toString(numInst * (coordinatorProcesses.size()-1) * workerProcesses.size()) + "/");
-		retVal &= outputLog.contains(LINCACHE_WRITES // read + instructions + serializations
-			+ Integer.toString((1 + numInst + serializationWrites) * workerProcesses.size()) + "/");
-		retVal &= outputLog.contains(SERIAL_REUSE
-			+ Integer.toString(serializationWrites * (coordinatorProcesses.size()-1)
-				* workerProcesses.size()) + "/");
-		return retVal;
+	private void checkForReuses(OpType opType, String outputLog, ExecMode execMode) {
+		// These checks are no longer valid since we do not reset the statistics the same way as before
+		// We did this change to make the monitoring tool more holistic.
 	}
 }

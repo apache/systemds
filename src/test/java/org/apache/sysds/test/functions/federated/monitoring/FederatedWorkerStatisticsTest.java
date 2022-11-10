@@ -49,6 +49,7 @@ import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
 
+@net.jcip.annotations.NotThreadSafe
 public class FederatedWorkerStatisticsTest extends FederatedMonitoringTestBase {
 	private static final Log LOG = LogFactory.getLog(FederatedWorkerStatisticsTest.class.getName());
 
@@ -69,6 +70,7 @@ public class FederatedWorkerStatisticsTest extends FederatedMonitoringTestBase {
 		TestUtils.clearAssertionInformation();
 		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] {"S"}));
 		workerPorts = startFedWorkers(6);
+
 	}
 
 	@Test
@@ -77,7 +79,7 @@ public class FederatedWorkerStatisticsTest extends FederatedMonitoringTestBase {
 		var model = (StatisticsModel) StatisticsService.getWorkerStatistics(1L, "localhost:" + workerPorts[0]);
 		int retry = 10;
 		while(model == null && retry > 0){
-			Thread.sleep(1000);
+			Thread.sleep(1000 * (11 - retry));
 			model = StatisticsService.getWorkerStatistics(1L, "localhost:" + workerPorts[0]);
 			retry--;
 		}

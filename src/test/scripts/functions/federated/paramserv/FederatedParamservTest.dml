@@ -21,6 +21,7 @@
 
 source("src/test/scripts/functions/federated/paramserv/TwoNN.dml") as TwoNN
 source("src/test/scripts/functions/federated/paramserv/CNN.dml") as CNN
+source("scripts/nn/examples/u-net.dml") as UNet
 
 # create federated input matrices
 features = read($features)
@@ -32,10 +33,28 @@ if($network_type == "TwoNN") {
   [loss_test, accuracy_test] = TwoNN::validate(matrix(0, rows=100, cols=784), matrix(0, rows=100, cols=10), model, list())
   print("[+] test loss: " + loss_test + ", test accuracy: " + accuracy_test + "\n")
 }
-else {
+else if($network_type == "CNN"){
   model = CNN::train_paramserv(features, labels, matrix(0, rows=100, cols=784), matrix(0, rows=100, cols=10), 0, $epochs, $utype, $freq, $batch_size, $scheme, $runtime_balancing, $weighting, $eta, $channels, $hin, $win, $seed)
   print("Test results:")
   hyperparams = list(learning_rate=$eta, C=$channels, Hin=$hin, Win=$win)
   [loss_test, accuracy_test] = CNN::validate(matrix(0, rows=100, cols=784), matrix(0, rows=100, cols=10), model, hyperparams)
   print("[+] test loss: " + loss_test + ", test accuracy: " + accuracy_test + "\n")
+}
+else if($network_type == "UNet"){
+  numFeatures = $channels*$hin*$win
+  numRows = nrow(features)
+  F1 = 2
+
+  x_hw = $hin + 184 # Padded input height and width
+  x_val = matrix(0, rows=numRows, cols=$channels*x_hw*x_hw)
+  y_val = matrix(0, rows=numRows, cols=numFeatures)
+
+  model = UNet::train_paramserv(features, labels, x_val, y_val, $channels, x_hw, x_hw, $epochs, 2, $utype, $freq, $batch_size, $scheme, $eta, $seed, FALSE, F1)
+  print("Test results:")
+  hyperparams = list(learning_rate=$eta, C=$channels, Hin=x_hw, Win=x_hw, K=numFeatures)
+  [loss_test, accuracy_test] = UNet::validate(matrix(0, rows=numRows, cols=$channels*x_hw*x_hw), matrix(0, rows=numRows, cols=numFeatures), model, hyperparams, F1, numRows)
+  print("[+] test loss: " + loss_test + ", test accuracy: " + accuracy_test + "\n")
+}
+else {
+    print("Network type not recognized: " + $network_type)
 }

@@ -25,6 +25,7 @@ import java.util.Collection;
 import java.util.List;
 
 import org.apache.sysds.common.Types.ExecMode;
+import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
@@ -33,6 +34,8 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+
+import static org.junit.Assert.fail;
 
 @RunWith(value = Parameterized.class)
 @net.jcip.annotations.NotThreadSafe
@@ -63,6 +66,7 @@ public class FederatedParamservTest extends AutomatedTestBase {
 			// Network type, number of federated workers, data set size, batch size, epochs, learning rate, update type, update frequency
 			// basic functionality
 
+			{"UNet",	2, 4, 1, 1, 0.01, 		"BSP", "BATCH", "KEEP_DATA_ON_WORKER",	"BASELINE",		"false","BALANCED",		200},
 			{"TwoNN",	2, 4, 1, 4, 0.01, 		"BSP", "BATCH", "KEEP_DATA_ON_WORKER", 	"BASELINE",		"true",	"IMBALANCED",	200},
 			{"CNN", 	2, 4, 1, 4, 0.01, 		"BSP", "EPOCH", "SHUFFLE", 				"NONE", 		"true",	"IMBALANCED", 	200},
 			{"CNN",		2, 4, 1, 4, 0.01, 		"ASP", "BATCH", "REPLICATE_TO_MAX", 	"CYCLE_MIN", 	"true",	"IMBALANCED",	200},
@@ -136,21 +140,29 @@ public class FederatedParamservTest extends AutomatedTestBase {
 
 		int C = 1, Hin = 28, Win = 28;
 		int numLabels = 10;
+		if (_networkType.equals("UNet")){
+			C = 3; Hin = 340; Win = 340;
+			numLabels = C * Hin * Win;
+		}
 
 		ExecMode platformOld = setExecMode(mode);
-
+		List<Integer> ports = new ArrayList<>();
+		List<Thread> threads = new ArrayList<>();
 		try {
 			// start threads
-			List<Integer> ports = new ArrayList<>();
-			List<Thread> threads = new ArrayList<>();
 			for(int i = 0; i < _numFederatedWorkers; i++) {
-				ports.add(getRandomAvailablePort());
-				threads.add(startLocalFedWorkerThread(ports.get(i), FED_WORKER_WAIT_S));
+				int port = getRandomAvailablePort();
+				threads.add(startLocalFedWorkerThread(port, FED_WORKER_WAIT_S));
+				ports.add(port);
+				System.out.println("Worker with port " + port + " started!");
+
+				if ( threads.get(i).isInterrupted() || !threads.get(i).isAlive() )
+					throw new DMLRuntimeException("Federated worker thread dead or interrupted! Port " + port);
 			}
 
 			// generate test data
-			double[][] features = generateDummyMNISTFeatures(_dataSetSize, C, Hin, Win);
-			double[][] labels = generateDummyMNISTLabels(_dataSetSize, numLabels);
+			double[][] features = ParamServTestUtils.generateFeatures(_networkType, _dataSetSize, C, Hin, Win);
+			double[][] labels = ParamServTestUtils.generateLabels(_networkType, _dataSetSize, numLabels, C*Hin*Win, features);
 			String featuresName = "";
 			String labelsName = "";
 
@@ -170,13 +182,10 @@ public class FederatedParamservTest extends AutomatedTestBase {
 				rowFederateLocallyAndWriteInputMatrixWithMTD(labelsName, labels, _numFederatedWorkers, ports, ranges);
 			}
 
-			try {
-				//wait for all workers to be setup
-				Thread.sleep(FED_WORKER_WAIT);
-			}
-			catch(InterruptedException e) {
-				e.printStackTrace();
-			}
+			//wait for all workers to be setup
+			Thread.sleep(FED_WORKER_WAIT);
+			if (threads.stream().anyMatch(t -> !t.isAlive()))
+				throw new DMLRuntimeException("Federated worker thread interrupted!");
 
 			// dml name
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
@@ -202,44 +211,17 @@ public class FederatedParamservTest extends AutomatedTestBase {
 			programArgs = programArgsList.toArray(new String[0]);
 			String log = runTest(null).toString();
 			Assert.assertEquals("Test Failed \n" + log, 0, Statistics.getNoOfExecutedSPInst());
-			
-			// shut down threads
-			for(int i = 0; i < _numFederatedWorkers; i++) {
-				TestUtils.shutdownThreads(threads.get(i));
-			}
+		}
+		catch(InterruptedException e) {
+			e.printStackTrace();
+			fail(e.getMessage());
 		}
 		finally {
+			// shut down threads
+			for ( Thread thread : threads ){
+				TestUtils.shutdownThreads(thread);
+			}
 			resetExecMode(platformOld);
 		}
-	}
-
-	/**
-	 * Generates an feature matrix that has the same format as the MNIST dataset,
-	 * but is completely random and normalized
-	 *
-	 *  @param numExamples Number of examples to generate
-	 *  @param C Channels in the input data
-	 *  @param Hin Height in Pixels of the input data
-	 *  @param Win Width in Pixels of the input data
-	 *  @return a dummy MNIST feature matrix
-	 */
-	private double[][] generateDummyMNISTFeatures(int numExamples, int C, int Hin, int Win) {
-		// Seed -1 takes the time in milliseconds as a seed
-		// Sparsity 1 means no sparsity
-		return getRandomMatrix(numExamples, C*Hin*Win, 0, 1, 1, -1);
-	}
-
-	/**
-	 * Generates an label matrix that has the same format as the MNIST dataset, but is completely random and consists
-	 * of one hot encoded vectors as rows
-	 *
-	 *  @param numExamples Number of examples to generate
-	 *  @param numLabels Number of labels to generate
-	 *  @return a dummy MNIST lable matrix
-	 */
-	private double[][] generateDummyMNISTLabels(int numExamples, int numLabels) {
-		// Seed -1 takes the time in milliseconds as a seed
-		// Sparsity 1 means no sparsity
-		return getRandomMatrix(numExamples, numLabels, 0, 1, 1, -1);
 	}
 }

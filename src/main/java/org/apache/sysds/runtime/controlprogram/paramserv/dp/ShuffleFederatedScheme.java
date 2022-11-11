@@ -64,7 +64,7 @@ public class ShuffleFederatedScheme extends DataPartitionFederatedScheme {
 			try {
 				FederatedResponse response = udfResponse.get();
 				if(!response.isSuccessful())
-					throw new DMLRuntimeException("FederatedDataPartitioner ShuffleFederatedScheme: shuffle UDF returned fail");
+					throw new DMLRuntimeException("FederatedDataPartitioner ShuffleFederatedScheme: shuffle UDF returned fail. Federated worker error message: " + response.getErrorMessage());
 			}
 			catch(Exception e) {
 				throw new DMLRuntimeException("FederatedDataPartitioner ShuffleFederatedScheme: executing shuffle UDF failed" + e.getMessage());

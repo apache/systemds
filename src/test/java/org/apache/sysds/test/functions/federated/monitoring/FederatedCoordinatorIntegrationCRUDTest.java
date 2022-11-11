@@ -19,6 +19,8 @@
 
 package org.apache.sysds.test.functions.federated.monitoring;
 
+import static org.junit.Assert.fail;
+
 import org.apache.commons.lang.StringUtils;
 import org.apache.http.HttpStatus;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.CoordinatorModel;
@@ -43,10 +45,19 @@ public class FederatedCoordinatorIntegrationCRUDTest extends FederatedMonitoring
 
 	@Test
 	public void testCoordinatorAddedForMonitoring() {
-		var addedCoordinators = addEntities(1, Entity.COORDINATOR);
-		var firstCoordinatorStatus = addedCoordinators.get(0).statusCode();
-
-		Assert.assertEquals("Added coordinator status code", HttpStatus.SC_OK, firstCoordinatorStatus);
+		int firstCoordinatorStatus = addEntities(1, Entity.COORDINATOR).get(0).statusCode();
+		int retry = 0;
+		while(HttpStatus.SC_OK !=firstCoordinatorStatus && retry < 3){
+			try{
+				Thread.sleep(1000* (retry + 1));
+			}
+			catch(Exception e){
+				fail(e.getMessage());
+			}
+			retry++;
+			firstCoordinatorStatus = addEntities(1, Entity.COORDINATOR).get(0).statusCode();
+		}
+		Assert.assertEquals("Added coordinator status code was wrong", HttpStatus.SC_OK, firstCoordinatorStatus);
 	}
 
 	@Test

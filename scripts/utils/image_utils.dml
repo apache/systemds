@@ -37,6 +37,26 @@ crop_rgb = function(matrix[double] input, int Hin, int Win, int Hout, int Wout) 
 }
 
 /*
+ * Simple utility to crop image of shape [N, C * Hin * Win] into [N, C * Hout * Wout]
+ * Assumption: Hout < Hin, Wout < Win and input contains values [0, ..]
+ */
+crop_channel = function(matrix[double] input, int Hin, int Win, int Hout, int Wout, int C) return (matrix[double] out) {
+	start_h = ceil((Hin - Hout) / 2)
+	end_h = start_h + Hout - 1
+	start_w = ceil((Win - Wout) / 2)
+	end_w = start_w + Wout - 1
+	mask = matrix(0, rows=Hin, cols=Win)
+	temp_mask = matrix(1, rows=Hout, cols=Wout)
+	mask[start_h:end_h, start_w:end_w] = temp_mask
+	mask = matrix(mask, rows=1, cols=Hin*Win)
+	maskC = mask
+	for ( i in 1:(C-1) ){
+	    maskC = cbind(maskC,mask)
+	}
+	out = removeEmpty(target=(input+1), margin="cols", select=maskC) - 1
+}
+
+/*
  * Simple utility to crop image of shape [N, Hin * Win] into [N, Hout * Wout]
  * Assumption: Hout < Hin, Wout < Win and input contains values [0, ..]
  * 

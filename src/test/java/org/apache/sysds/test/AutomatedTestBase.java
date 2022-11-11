@@ -123,7 +123,7 @@ public abstract class AutomatedTestBase {
 
 	// ms wait time 
 	public static final int FED_WORKER_WAIT = 1000; 
-	public static final int FED_MONITOR_WAIT = 5000; 
+	public static final int FED_MONITOR_WAIT = 10000; 
 	public static final int FED_WORKER_WAIT_S = 50;
 	
 

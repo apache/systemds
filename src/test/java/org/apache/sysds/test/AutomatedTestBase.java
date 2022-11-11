@@ -121,8 +121,10 @@ public abstract class AutomatedTestBase {
 	public static boolean TEST_GPU = false;
 	public static final double GPU_TOLERANCE = 1e-9;
 
-	public static final int FED_WORKER_WAIT = 1000; // in ms
-	public static final int FED_WORKER_WAIT_S = 50; // in ms
+	// ms wait time 
+	public static final int FED_WORKER_WAIT = 1000; 
+	public static final int FED_MONITOR_WAIT = 5000; 
+	public static final int FED_WORKER_WAIT_S = 50;
 	
 
 	// With OpenJDK 8u242 on Windows, the new changes in JDK are not allowing
@@ -1630,7 +1632,7 @@ public abstract class AutomatedTestBase {
 		try {
 			process = processBuilder.start();
 			// Wait till process is started
-			sleep(5000);
+			sleep(FED_MONITOR_WAIT);
 		}
 		catch(IOException | InterruptedException e) {
 			throw new RuntimeException(e);

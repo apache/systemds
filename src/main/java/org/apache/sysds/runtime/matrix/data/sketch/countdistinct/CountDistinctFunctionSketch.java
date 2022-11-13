@@ -9,7 +9,10 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.sketch.CountDistinctSketch;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 public class CountDistinctFunctionSketch extends CountDistinctSketch {
 

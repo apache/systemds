@@ -19,6 +19,8 @@
 
 package org.apache.sysds.test.functions.builtin.part2;
 
+import java.util.HashMap;
+
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.common.Types.ExecType;
@@ -30,8 +32,6 @@ import org.apache.sysds.test.TestUtils;
 import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
-
-import java.util.HashMap;
 
 public class BuiltinMiceTest extends AutomatedTestBase {
 	private final static String TEST_NAME = "mice";
@@ -60,6 +60,7 @@ public class BuiltinMiceTest extends AutomatedTestBase {
 	}
 
 	@Test
+	@Ignore
 	public void testMiceCategoricalCP() {
 		double[][] mask = {{ 1.0, 1.0, 1.0, 1.0, 1.0}};
 		runMiceNominalTest(mask, 3, false, ExecType.CP);

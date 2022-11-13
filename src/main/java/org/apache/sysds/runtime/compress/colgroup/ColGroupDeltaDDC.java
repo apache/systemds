@@ -23,7 +23,7 @@ package org.apache.sysds.runtime.compress.colgroup;
  * Class to encapsulate information about a column group that is first delta encoded then encoded with dense dictionary
  * encoding (DeltaDDC).
  */
-// public class ColGroupDeltaDDC extends ColGroupDDC {
+public class ColGroupDeltaDDC  { // extends ColGroupDDC
 
 // 	private static final long serialVersionUID = -1045556313148564147L;
 
@@ -77,4 +77,4 @@ package org.apache.sysds.runtime.compress.colgroup;
 // 	public AColGroup scalarOperation(ScalarOperator op) {
 // 		return new ColGroupDeltaDDC(_colIndexes, _dict.applyScalarOp(op), _data, getCachedCounts());
 // 	}
-// }
+}

@@ -33,6 +33,7 @@ ENV PATH $JAVA_HOME/bin:$MAVEN_HOME/bin:$PATH
 ENV LANGUAGE en_US:en
 ENV LC_ALL en_US.UTF-8
 ENV LANG en_US.UTF-8
+ENV LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib/
 
 COPY ./src/test/scripts/installDependencies.R installDependencies.R
 COPY ./docker/entrypoint.sh /entrypoint.sh
@@ -61,8 +62,12 @@ RUN apt-get update -qq \
 	https://github.com/AdoptOpenJDK/openjdk11-upstream-binaries/releases/download/jdk-11.0.13%2B8/OpenJDK11U-jdk_x64_linux_11.0.13_8.tar.gz | tar xzf - \
 	&& mv openjdk-11.0.13_8 /usr/lib/jvm/java-11-openjdk-amd64 \
 	&& wget -qO- \
-http://archive.apache.org/dist/maven/maven-3/$MAVEN_VERSION/binaries/apache-maven-$MAVEN_VERSION-bin.tar.gz | tar xzf - \ 
-	&& mv apache-maven-$MAVEN_VERSION /usr/lib/mvn
+	http://archive.apache.org/dist/maven/maven-3/$MAVEN_VERSION/binaries/apache-maven-$MAVEN_VERSION-bin.tar.gz | tar xzf - \
+	&& mv apache-maven-$MAVEN_VERSION /usr/lib/mvn \
+	&& apt-get install -y --no-install-recommends \
+		git \
+		cmake \
+		patchelf
 
 RUN apt-get install -y --no-install-recommends \
 		libssl-dev \
@@ -73,5 +78,12 @@ RUN apt-get install -y --no-install-recommends \
 	&& Rscript installDependencies.R \
 	&& rm -rf installDependencies.R \
 	&& rm -rf /var/lib/apt/lists/*
+
+# SEAL
+RUN wget -qO- https://github.com/microsoft/SEAL/archive/refs/tags/v3.7.0.tar.gz | tar xzf - \
+    && cd SEAL-3.7.0 \
+    && cmake -S . -B build -DBUILD_SHARED_LIBS=ON \
+    && cmake --build build \
+    && cmake --install build
 
 ENTRYPOINT ["/entrypoint.sh"]

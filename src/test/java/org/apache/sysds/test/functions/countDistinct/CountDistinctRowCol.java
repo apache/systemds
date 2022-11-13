@@ -47,9 +47,16 @@ public class CountDistinctRowCol extends CountDistinctRowColBase {
 	}
 
 	@Test
-	public void testSimple1by1() {
+	public void testSimple1by1CP() {
 		// test simple 1 by 1.
 		ExecType ex = ExecType.CP;
+		countDistinctScalarTest(1, 1, 1, 1.0, ex, 0.00001);
+	}
+
+	@Test
+	public void testSimple1by1Spark() {
+		// test simple 1 by 1.
+		ExecType ex = ExecType.SPARK;
 		countDistinctScalarTest(1, 1, 1, 1.0, ex, 0.00001);
 	}
 }

@@ -896,6 +896,7 @@ public class InstructionUtils
 			case "uak+":
 			case"uark+":
 			case "uack+":    return "ak+";
+			case "uacd":
 			case "ua+":
 			case "uar+":
 			case "uac+":     return "a+";

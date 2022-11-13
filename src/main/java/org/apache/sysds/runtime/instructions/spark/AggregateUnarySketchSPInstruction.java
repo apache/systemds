@@ -66,7 +66,14 @@ public class AggregateUnarySketchSPInstruction extends UnarySPInstruction {
         AggBinaryOp.SparkAggType aggtype = AggBinaryOp.SparkAggType.valueOf(parts[3]);
 
         CountDistinctOperator cdop = null;
-        if (opcode.equals("uacdap")) {
+        if (opcode.equals("uacd")) {
+            cdop = new CountDistinctOperator(CountDistinctOperatorTypes.COUNT, Types.Direction.RowCol,
+                    ReduceAll.getReduceAllFnObject(), Hash.HashType.LinearHash);
+        } else if (opcode.equals("uacdr")) {
+            throw new NotImplementedException("uacdr has not been implemented yet");
+        } else if (opcode.equals("uacdc")) {
+            throw new NotImplementedException("uacdc has not been implemented yet");
+        } else if (opcode.equals("uacdap")) {
             cdop = new CountDistinctOperator(CountDistinctOperatorTypes.KMV, Types.Direction.RowCol,
                     ReduceAll.getReduceAllFnObject(), Hash.HashType.LinearHash);
         } else if (opcode.equals("uacdapr")) {

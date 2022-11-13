@@ -28,6 +28,7 @@ import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.instructions.spark.data.CorrMatrixBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.matrix.data.sketch.CountDistinctSketch;
 import org.apache.sysds.runtime.matrix.operators.CountDistinctOperatorTypes;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 import org.apache.sysds.utils.Hash;
@@ -42,7 +43,7 @@ import org.apache.sysds.utils.Hash;
  * TODO: Add multi-threaded version
  *
  */
-public class KMVSketch extends CountDistinctApproxSketch {
+public class KMVSketch extends CountDistinctSketch {
 
 	private static final Log LOG = LogFactory.getLog(KMVSketch.class.getName());
 

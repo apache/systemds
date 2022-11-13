@@ -31,8 +31,22 @@ public abstract class CountDistinctRowColBase extends CountDistinctBase {
 	}
 
 	@Test
+	public void testSparkDenseSmall() {
+		ExecType ex = ExecType.SPARK;
+		double tolerance = baseTolerance + 50 * percentTolerance;
+		countDistinctScalarTest(50, 50, 50, 1.0, ex, tolerance);
+	}
+
+	@Test
 	public void testCPDenseLarge() {
 		ExecType ex = ExecType.CP;
+		double tolerance = baseTolerance + 800 * percentTolerance;
+		countDistinctScalarTest(800, 1000, 1000, 1.0, ex, tolerance);
+	}
+
+	@Test
+	public void testSparkDenseLarge() {
+		ExecType ex = ExecType.SPARK;
 		double tolerance = baseTolerance + 800 * percentTolerance;
 		countDistinctScalarTest(800, 1000, 1000, 1.0, ex, tolerance);
 	}

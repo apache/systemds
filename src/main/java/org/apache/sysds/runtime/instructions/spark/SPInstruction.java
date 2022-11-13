@@ -32,12 +32,12 @@ public abstract class SPInstruction extends Instruction {
 	public enum SPType {
 		MAPMM, MAPMMCHAIN, CPMM, RMM, TSMM, TSMM2, PMM, ZIPMM, PMAPMM, //matrix multiplication instructions
 		MatrixIndexing, Reorg, Binary, Ternary,
-		AggregateUnary, AggregateTernary, Reblock, CSVReblock, LIBSVMReblock,
+		AggregateUnary, AggregateUnarySketch, AggregateTernary, Reblock, CSVReblock, LIBSVMReblock,
 		Builtin, Unary, BuiltinNary, MultiReturnBuiltin, Checkpoint, Compression, DeCompression, Cast,
 		CentralMoment, Covariance, QSort, QPick,
 		ParameterizedBuiltin, MAppend, RAppend, GAppend, GAlignedAppend, Rand,
 		MatrixReshape, Ctable, Quaternary, CumsumAggregate, CumsumOffset, BinUaggChain, UaggOuterChain,
-		Write, SpoofFused, Dnn, AggregateUnarySketch
+		Write, SpoofFused, Dnn
 	}
 
 	protected final SPType _sptype;

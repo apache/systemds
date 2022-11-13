@@ -17,22 +17,21 @@
  * under the License.
  */
 
-package org.apache.sysds.runtime.matrix.data.sketch.countdistinctapprox;
+package org.apache.sysds.runtime.matrix.data.sketch;
 
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.apache.sysds.runtime.matrix.data.sketch.MatrixSketch;
 import org.apache.sysds.runtime.matrix.operators.CountDistinctOperator;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 
 // Package private
-abstract class CountDistinctApproxSketch implements MatrixSketch {
-	CountDistinctOperator op;
+public abstract class CountDistinctSketch implements MatrixSketch {
+	public final CountDistinctOperator op;
 
-	CountDistinctApproxSketch(Operator op) {
+	public CountDistinctSketch(Operator op) {
 		if(!(op instanceof CountDistinctOperator)) {
 			throw new DMLRuntimeException(
-				String.format("Cannot create %s with given operator", CountDistinctApproxSketch.class.getSimpleName()));
+				String.format("Cannot create %s with given operator", CountDistinctSketch.class.getSimpleName()));
 		}
 
 		this.op = (CountDistinctOperator) op;

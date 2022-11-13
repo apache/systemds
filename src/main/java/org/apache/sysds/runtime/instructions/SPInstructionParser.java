@@ -126,14 +126,14 @@ public class SPInstructionParser extends InstructionParser
 		String2SPInstructionType.put( "uac*"    , SPType.AggregateUnary);
 		String2SPInstructionType.put( "uatrace" , SPType.AggregateUnary);
 		String2SPInstructionType.put( "uaktrace", SPType.AggregateUnary);
-		String2SPInstructionType.put( "uacd"    , SPType.AggregateUnary);
-		String2SPInstructionType.put( "uacdr"   , SPType.AggregateUnary);
-		String2SPInstructionType.put( "uacdc"   , SPType.AggregateUnary);
 
 		// Aggregate unary sketch operators
-		String2SPInstructionType.put( "uacdap" , SPType.AggregateUnarySketch);
-		String2SPInstructionType.put( "uacdapr", SPType.AggregateUnarySketch);
-		String2SPInstructionType.put( "uacdapc", SPType.AggregateUnarySketch);
+		String2SPInstructionType.put( "uacd"    , SPType.AggregateUnarySketch);
+		String2SPInstructionType.put( "uacdr"   , SPType.AggregateUnarySketch);
+		String2SPInstructionType.put( "uacdc"   , SPType.AggregateUnarySketch);
+		String2SPInstructionType.put( "uacdap"  , SPType.AggregateUnarySketch);
+		String2SPInstructionType.put( "uacdapr" , SPType.AggregateUnarySketch);
+		String2SPInstructionType.put( "uacdapc" , SPType.AggregateUnarySketch);
 
 		//binary aggregate operators (matrix multiplication operators)
 		String2SPInstructionType.put( "mapmm"      , SPType.MAPMM);

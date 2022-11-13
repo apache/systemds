@@ -48,36 +48,18 @@ to assess how well our model can predict if the income is above or below $50K/yr
 
 Step 1: Load and prepare data
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 First, we get our training and testing data from the built-in DataManager. Since the multiLogReg function requires the
 labels (Y) to be > 0, we add 1 to all labels. This ensures that the smallest label is >= 1. Additionally we will only take
 a fraction of the training and test set into account to speed up the execution.
 
-.. code-block:: python
+.. include:: ../code/guide/end_to_end/part1.py
+  :code: python
+  :start-line: 21
+  :end-line: 51
 
-    from systemds.context import SystemDSContext
-    from systemds.examples.tutorials.adult import DataManager
-
-    sds = SystemDSContext()
-    d = DataManager()
-
-    # limit the sample size
-    train_count = 15000
-    test_count = 5000
-
-    train_data, train_labels, test_data, test_labels = d.get_preprocessed_dataset(interpolate=True, standardize=True, dimred=0.1)
-
-    # Train data
-    X = sds.from_numpy(train_data[:train_count])
-    Y = sds.from_numpy(train_labels[:train_count])
-    Y = Y + 1.0
-
-    # Test data
-    Xt = sds.from_numpy(test_data[:test_count])
-    Yt = sds.from_numpy(test_labels[:test_count])
-    Yt = Yt + 1.0
-
-Here the DataManager contains the code for downloading and setting up NumPy arrays containing the data.
-It is noteworthy that the function get_preprocessed_dataset has options for basic standardization, interpolation, and combining categorical features inside one column whose occurrences are below a certain threshold.
+Here the DataManager contains the code for downloading and setting up either Pandas DataFrames or internal SystemDS Frames,
+for the best performance and no data transfer from pandas to SystemDS it is recommended to read directly from disk into SystemDS.
 
 Step 2: Training
 ~~~~~~~~~~~~~~~~
@@ -85,20 +67,20 @@ Step 2: Training
 Now that we prepared the data, we can use the multiLogReg function. First, we will train the model on our
 training data. Afterward, we can make predictions on the test data and assess the performance of the model.
 
-.. code-block:: python
-
-    from systemds.operator.algorithm import multiLogReg
-    betas = multiLogReg(X, Y)
+.. include:: ../code/guide/end_to_end/part1.py
+  :code: python
+  :start-line: 51
+  :end-line: 54
 
 Note that nothing has been calculated yet. In SystemDS the calculation is executed once compute() is called.
 E.g. betas_res = betas.compute().
 
 We can now use the trained model to make predictions on the test data.
 
-.. code-block:: python
-
-    from systemds.operator.algorithm import multiLogRegPredict
-    [_, y_pred, acc] = multiLogRegPredict(Xt, betas, Yt)
+.. include:: ../code/guide/end_to_end/part1.py
+  :code: python
+  :start-line: 56
+  :end-line: 58
 
 The multiLogRegPredict function has three return values:
     - m, a matrix with the mean probability of correctly classifying each label. We do not use it further in this example.
@@ -113,48 +95,19 @@ which classes the model has difficulties separating.
 The confusionMatrix function takes the predicted labels and the true labels. It then returns the confusion matrix
 for the predictions and the confusion matrix averages of each true class.
 
-.. code-block:: python
-
-    from systemds.operator.algorithm import confusionMatrix
-    confusion_matrix_abs, _ = confusionMatrix(y_pred, Yt).compute()
-    print(confusion_matrix_abs)
+.. include:: ../code/guide/end_to_end/part1.py
+  :code: python
+  :start-line: 59
+  :end-line: 61
 
 Full Script
 ~~~~~~~~~~~
 
 In the full script, some steps are combined to reduce the overall script.
-
-.. code-block:: python
-
-    import numpy as np
-    from systemds.context import SystemDSContext
-    from systemds.examples.tutorials.adult import DataManager
-    from systemds.operator.algorithm import multiLogReg, multiLogRegPredict, confusionMatrix
-
-    sds = SystemDSContext()
-    d = DataManager()
-
-    # limit the sample size
-    train_count = 15000
-    test_count = 5000
-
-    train_data, train_labels, test_data, test_labels = d.get_preprocessed_dataset(interpolate=True, standardize=True, dimred=0.1)
-
-    # Train data
-    X = sds.from_numpy(train_data[:train_count])
-    Y = sds.from_numpy(train_labels[:train_count])
-    Y = Y + 1.0
-
-    # Test data
-    Xt = sds.from_numpy(test_data[:test_count])
-    Yt = sds.from_numpy(test_labels[:test_count])
-    Yt = Yt + 1.0
-
-    betas = multiLogReg(X, Y)
-    [_, y_pred, acc] = multiLogRegPredict(Xt, betas, Yt)
-
-    confusion_matrix_abs, _ = confusionMatrix(y_pred, Yt).compute()
-    print(confusion_matrix_abs)
+.. include:: ../code/guide/end_to_end/part1.py
+  :code: python
+  :start-line: 21
+  :end-line: 64
 
 Level 2
 -------

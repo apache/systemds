@@ -20,6 +20,7 @@
 # -------------------------------------------------------------
 
 import os
+from typing import List
 import zipfile
 
 import pandas as pd
@@ -52,6 +53,18 @@ class DataManager:
         self._train_data_loc = "systemds/examples/tutorials/adult/train_data.csv"
         self._test_data_loc = "systemds/examples/tutorials/adult/test_data.csv"
         self._jspec_loc = "systemds/examples/tutorials/adult/jspec.json"
+
+    def get_preprocessed_dataset(self, sds: SystemDSContext) -> List[pd.DataFrame]:
+        return self.get_train_data(sds), \
+            self.get_train_labels(sds), \
+            self.get_test_data(sds), \
+            self.get_test_labels(sds)
+
+    def get_preprocessed_dataset_pandas(self, sds: SystemDSContext) -> List[pd.DataFrame]:
+        return self.get_train_data_pandas(sds), \
+            self.get_train_labels_pandas(sds), \
+            self.get_test_data_pandas(sds), \
+            self.get_test_labels_pandas(sds)
 
     def get_train_data_pandas(self) -> pd.DataFrame:
         self._get_data(self._train_data_loc)

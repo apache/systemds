@@ -107,7 +107,7 @@ In the full script, some steps are combined to reduce the overall script.
 .. include:: ../code/guide/end_to_end/part1.py
   :code: python
   :start-line: 20
-  :end-line: 64
+  :end-line: 65
 
 Level 2
 -------

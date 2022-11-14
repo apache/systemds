@@ -23,13 +23,30 @@
 
 import logging
 import unittest
+import shutil
 
 logging.getLogger("root").setLevel(50)
 
 
 class TestEndToEnd(unittest.TestCase):
-    def test_algorithms_script(self):
+
+    network_dir: str = "tests/examples/docs_test/end_to_end"
+
+    @classmethod
+    def setUpClass(cls):
+        shutil.rmtree(cls.network_dir, ignore_errors=True)
+
+    @classmethod
+    def tearDownClass(cls):
+        shutil.rmtree(cls.network_dir, ignore_errors=True)
+
+    def test_part_1(self):
         import docs.source.code.guide.end_to_end.part1
+
+
+    def test_part_2(self):
+        import docs.source.code.guide.end_to_end.part2
+
 
 
 if __name__ == "__main__":

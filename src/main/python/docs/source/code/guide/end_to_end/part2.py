@@ -52,7 +52,7 @@ with SystemDSContext() as sds:
 
     # Load custom neural network
     neural_net_src_path = "tests/examples/tutorials/neural_net_source.dml"
-    FFN_package = sds.source(neural_net_src_path, "fnn", print_imported_methods=True)
+    FFN_package = sds.source(neural_net_src_path, "fnn")
 
     epochs = 1
     batch_size = 16
@@ -61,5 +61,5 @@ with SystemDSContext() as sds:
 
     network = FFN_package.train(X, Y, epochs, batch_size, learning_rate, seed)
 
-    FFN_package.save_model(network, '"model/python_FFN/"').compute(verbose=True)
+    network.write('tests/examples/docs_test/end_to_end/').compute()
 

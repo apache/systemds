@@ -59,5 +59,6 @@ with SystemDSContext() as sds:
     # Confusion Matrix
     confusion_matrix_abs, _ = confusionMatrix(y_pred, Yt).compute()
 
-    print("Confusion Matrix")
-    print(confusion_matrix_abs)
+    import logging
+    logging.info("Confusion Matrix")
+    logging.info(confusion_matrix_abs)

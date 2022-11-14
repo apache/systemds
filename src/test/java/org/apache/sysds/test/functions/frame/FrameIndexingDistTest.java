@@ -259,7 +259,6 @@ public class FrameIndexingDistTest extends AutomatedTestBase
 			FrameBlock frameRBlock = readRFrameFromHDFS(file+".csv", FileFormat.CSV, md);
 			ValueType[] schemaOut = outputSchema.get(file);
 			verifyFrameData(frameBlock, frameRBlock, schemaOut);
-			System.out.println("File processed is " + file);
 		}
 	}
 	

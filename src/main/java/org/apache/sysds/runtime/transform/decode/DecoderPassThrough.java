@@ -28,6 +28,7 @@ import java.util.List;
 
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
+import org.apache.sysds.runtime.frame.data.columns.ColumnMetadata;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.UtilFunctions;
 
@@ -107,7 +108,8 @@ public class DecoderPassThrough extends Decoder
 					ix1 ++;
 				}
 				else { //_colList[ix1] > _dcCols[ix2]
-					off += (int)meta.getColumnMetadata()[_dcCols[ix2]-1].getNumDistinct() - 1;
+					ColumnMetadata d =meta.getColumnMetadata()[_dcCols[ix2]-1];
+					off += d.isDefault() ? -1 : d.getNumDistinct() - 1;
 					ix2 ++;
 				}
 			}

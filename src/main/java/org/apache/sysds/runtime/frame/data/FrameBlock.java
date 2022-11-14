@@ -128,37 +128,30 @@ public class FrameBlock implements CacheBlock, Externalizable {
 	}
 
 	public FrameBlock(int ncols, ValueType vt) {
-		this();
-		_schema = UtilFunctions.nCopies(ncols, vt);
-		_colnames = null; //default not materialized
-		_colmeta = new ColumnMetadata[ncols];
-		for( int j=0; j<ncols; j++ )
-			_colmeta[j] = new ColumnMetadata(0);
+		this(UtilFunctions.nCopies(ncols, vt), null, null);
 	}
 
 	public FrameBlock(ValueType[] schema) {
-		this(schema, new String[0][]);
+		this(schema, null, null);
 	}
 
 	public FrameBlock(ValueType[] schema, String[] names) {
-		this(schema, names, new String[0][]);
+		this(schema, names, null);
 	}
 
 	public FrameBlock(ValueType[] schema, String[][] data) {
 		//default column names not materialized
 		this(schema, null, data);
-
 	}
 
 	public FrameBlock(ValueType[] schema, String[] names, String[][] data) {
 		_numRows = 0; //maintained on append
 		_schema = schema;
 		_colnames = names;
-		_colmeta = new ColumnMetadata[_schema.length];
-		for( int j=0; j<_schema.length; j++ )
-			_colmeta[j] = new ColumnMetadata(0);
-		for( int i=0; i<data.length; i++ )
-			appendRow(data[i]);
+		ensureAllocateMeta();
+		if(data != null)
+			for( int i=0; i<data.length; i++ )
+				appendRow(data[i]);
 	}
 
 	/**
@@ -298,8 +291,7 @@ public class FrameBlock implements CacheBlock, Externalizable {
 	}
 
 	public boolean isColumnMetadataDefault(int c) {
-		return _colmeta[c].getMvValue() == null
-			&& _colmeta[c].getNumDistinct() == 0;
+		return _colmeta[c].isDefault();
 	}
 
 	public void setColumnMetadata(ColumnMetadata[] colmeta) {
@@ -333,12 +325,7 @@ public class FrameBlock implements CacheBlock, Externalizable {
 		_msize = -1;
 		
 		// allocate column meta data if necessary
-		if( _colmeta == null || _schema.length != _colmeta.length ) {
-			_colmeta = new ColumnMetadata[_schema.length];
-			for( int j=0; j<_schema.length; j++ )
-				_colmeta[j] = new ColumnMetadata(0);
-		}
-
+		ensureAllocateMeta();
 		// early abort if already allocated
 		if( _coldata != null && _schema.length == _coldata.length ) {
 			//handle special case that to few rows allocated
@@ -358,6 +345,14 @@ public class FrameBlock implements CacheBlock, Externalizable {
 			_coldata[j] = ArrayFactory.allocate(_schema[j], numRows);
 
 		_numRows = numRows;
+	}
+
+	private void ensureAllocateMeta(){
+		if( _colmeta == null || _schema.length != _colmeta.length ) {
+			_colmeta = new ColumnMetadata[_schema.length];
+			for( int j=0; j<_schema.length; j++ )
+				_colmeta[j] = new ColumnMetadata();
+		}
 	}
 
 	/**
@@ -386,10 +381,6 @@ public class FrameBlock implements CacheBlock, Externalizable {
 
 	public static String createColName(int i) {
 		return "C" + i;
-	}
-
-	private String createNextColName(){
-		return _schema != null ? createColName(_schema.length) : createColName(0);
 	}
 
 	public boolean isColNamesDefault() {
@@ -447,7 +438,7 @@ public class FrameBlock implements CacheBlock, Externalizable {
 			if( _colmeta != null ) {
 				for( int i=0; i<_colmeta.length; i++ )
 					if( !isColumnMetadataDefault(i) )
-						_colmeta[i] = new ColumnMetadata(0);
+						_colmeta[i] = new ColumnMetadata();
 			}
 		}
 		if(_coldata != null) {
@@ -572,19 +563,10 @@ public class FrameBlock implements CacheBlock, Externalizable {
 	 * @param vt The Value type
 	 */
 	private void appendColumnMetaData(ValueType vt){
-		appendColumnMetaData(vt, createNextColName());
-	}
-
-	/**
-	 * Append the metadata associated with adding a column.
-	 * 
-	 * @param vt The Value type
-	 * @param colName The columnName
-	 */
-	private void appendColumnMetaData(ValueType vt, String colName){
+		if(_colnames != null)
+			_colnames = (String[]) ArrayUtils.add(getColumnNames(), createColName(_colnames.length+1));
 		_schema = (ValueType[]) ArrayUtils.add(_schema, vt);
-		_colnames = (String[]) ArrayUtils.add(getColumnNames(), colName);
-		// Since we append a column we reset the _msize
+		_colmeta = (ColumnMetadata[]) ArrayUtils.add(getColumnMetadata(), new ColumnMetadata());
 		_msize = -1;
 	}
 
@@ -1084,6 +1066,7 @@ public class FrameBlock implements CacheBlock, Externalizable {
 					ret._coldata[j-cl].set(0, ru-rl, _coldata[j], rl);
 			}
 		}
+
 		return ret;
 	}
 
@@ -1174,7 +1157,7 @@ public class FrameBlock implements CacheBlock, Externalizable {
 			ret._colnames = (_colnames!=null) ? _colnames.clone() : null;
 			ret._colmeta = new ColumnMetadata[getNumColumns()];
 			for( int j=0; j<_schema.length; j++ )
-				ret._colmeta[j] = new ColumnMetadata(0);
+				ret._colmeta[j] = new ColumnMetadata();
 
 			//concatenate data (deep copy first, append second)
 			ret._coldata = new Array[getNumColumns()];
@@ -1436,24 +1419,23 @@ public class FrameBlock implements CacheBlock, Externalizable {
 		if(this.getNumColumns() != schema.getNumColumns())
 			throw new DMLException("mismatch in number of columns in frame and its schema "+this.getNumColumns()+" != "+schema.getNumColumns());
 
-		String[] schemaString = IteratorFactory.getStringRowIterator(this).next(); // extract the schema in String array
+		// extract the schema in String array
+		String[] schemaString = IteratorFactory.getStringRowIterator(schema).next();
 		for (int i = 0; i < this.getNumColumns(); i++) {
 			Array obj = this.getColumn(i);
 			String schemaCol = schemaString[i];
 			String type;
-			if(schemaCol.contains("FP")){
+			if(schemaCol.contains("FP"))
 				type = "FP";
-			} else if (schemaCol.contains("INT")){
+			else if(schemaCol.contains("INT")) 
 				type = "INT";
-			} else if (schemaCol.contains("STRING")){
+			else if(schemaCol.contains("STRING")) 
 				// In case of String columns, don't do any verification or replacements.
 				continue;
-			} else{
+			else 
 				type = schemaCol;
-			}
-
-			for (int j = 0; j < this.getNumRows(); j++)
-			{
+			
+			for (int j = 0; j < this.getNumRows(); j++){
 				if(obj.get(j) == null)
 					continue;
 				String dataValue = obj.get(j).toString().trim().replace("\"", "").toLowerCase() ;
@@ -1882,11 +1864,16 @@ public class FrameBlock implements CacheBlock, Externalizable {
 	public String toString(){
 		StringBuilder sb = new StringBuilder();
 		sb.append("FrameBlock");
+		if(_colnames != null){
+			sb.append("\n");
+			sb.append(Arrays.toString(_colnames));
+		}
 		sb.append("\n");
 		sb.append(Arrays.toString(_schema));
 		sb.append("\n");
+		sb.append(Arrays.toString(_colmeta));
+		sb.append("\n");
 		sb.append(Arrays.toString(_coldata));
-
 		return sb.toString();
 	}
 }

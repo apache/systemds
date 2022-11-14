@@ -19,6 +19,8 @@
 
 package org.apache.sysds.test.functions.frame;
 
+import static org.junit.Assert.fail;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
@@ -162,7 +164,7 @@ public class FrameDropInvalidLengthTest extends AutomatedTestBase {
 			// write expected feature length vector
 			writeInputMatrixWithMTD("M", colInvalidLength, true);
 
-			runTest(true, false, null, -1);
+			runTest(null);
 
 			// compare output
 			FrameBlock frameOut = readDMLFrameFromHDFS("B", Types.FileFormat.BINARY);
@@ -177,7 +179,8 @@ public class FrameDropInvalidLengthTest extends AutomatedTestBase {
 			Assert.assertEquals(expected, nullNum, 1e-5);
 		}
 		catch (Exception ex) {
-			throw new RuntimeException(ex);
+			ex.printStackTrace();
+			fail(ex.getMessage());
 		}
 		finally {
 			rtplatform = platformOld;

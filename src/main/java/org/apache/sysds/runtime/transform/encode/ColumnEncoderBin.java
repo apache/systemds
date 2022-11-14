@@ -165,7 +165,7 @@ public class ColumnEncoderBin extends ColumnEncoder {
 		int endInd = getEndIndex(in.getNumRows(), startInd, blkSize);
 		double[] codes = new double[endInd-startInd];
 		for (int i=startInd; i<endInd; i++) {
-			if (_binMins.length == 0 || _binMaxs.length == 0) {
+			if (_binMins == null || _binMins.length == 0 || _binMaxs.length == 0) {
 				LOG.warn("ColumnEncoderBin: applyValue without bucket boundaries, assign 1");
 				codes[i-startInd] = 1; //robustness in case of missing bins
 				continue;
@@ -343,7 +343,7 @@ public class ColumnEncoderBin extends ColumnEncoder {
 
 	@Override
 	public void initMetaData(FrameBlock meta) {
-		if(meta == null || _binMaxs != null)
+		if(meta == null || _binMaxs != null || meta.getColumnMetadata()[_colID - 1].isDefault())
 			return;
 		// deserialize the frame meta data into internal state
 		int nbins = (int) meta.getColumnMetadata()[_colID - 1].getNumDistinct();

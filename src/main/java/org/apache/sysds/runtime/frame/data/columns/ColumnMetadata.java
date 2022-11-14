@@ -24,29 +24,38 @@ import java.io.Serializable;
 public class ColumnMetadata implements Serializable {
 	private static final long serialVersionUID = -90094082422100311L;
 
-	private long _ndistinct = 0;
+	private static final long DEFAULT_DISTINCT = -1;
+
+	private long _ndistinct = DEFAULT_DISTINCT;
 	private String _mvValue = null;
 
+	/**
+	 * Default constructor
+	 */
+	public ColumnMetadata() {
+
+	}
+
 	public ColumnMetadata(long ndistinct) {
-			_ndistinct = ndistinct;
-		}
+		_ndistinct = ndistinct;
+	}
 
 	public ColumnMetadata(long ndistinct, String mvval) {
-			_ndistinct = ndistinct;
-			_mvValue = mvval;
-		}
+		_ndistinct = ndistinct <= 0 ? DEFAULT_DISTINCT: ndistinct;
+		_mvValue = mvval;
+	}
 
 	public ColumnMetadata(ColumnMetadata that) {
-			_ndistinct = that._ndistinct;
-			_mvValue = that._mvValue;
-		}
+		_ndistinct = that._ndistinct;
+		_mvValue = that._mvValue;
+	}
 
 	public long getNumDistinct() {
 		return _ndistinct;
 	}
 
 	public void setNumDistinct(long ndistinct) {
-		_ndistinct = ndistinct;
+		_ndistinct = ndistinct <= 0 ? DEFAULT_DISTINCT: ndistinct;
 	}
 
 	public String getMvValue() {
@@ -57,4 +66,21 @@ public class ColumnMetadata implements Serializable {
 		_mvValue = mvVal;
 	}
 
+	public boolean isDefault() {
+		return getMvValue() == null && getNumDistinct() == DEFAULT_DISTINCT;
+	}
+
+	@Override
+	public String toString() {
+		StringBuilder sb = new StringBuilder();
+		sb.append(this.getClass().getSimpleName());
+		if(_ndistinct != DEFAULT_DISTINCT) {
+			sb.append(":");
+			sb.append(_ndistinct);
+		}
+		if(_mvValue != null)
+			sb.append("--" + _mvValue);
+
+		return sb.toString();
+	}
 }

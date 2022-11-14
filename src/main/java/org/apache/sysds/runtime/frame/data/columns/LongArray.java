@@ -124,4 +124,14 @@ public class LongArray extends Array<Long> {
 		return ValueType.INT64;
 	}
 
+	@Override
+	public String toString(){
+		StringBuilder sb = new StringBuilder(_data.length * 5 + 2);
+		sb.append(super.toString() + ":[");
+		for(int i = 0; i < _size-1; i++)
+			sb.append(_data[i]  + ",");
+		sb.append(_data[_size-1]);
+		sb.append("]");
+		return sb.toString();
+	}
 }

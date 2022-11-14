@@ -234,7 +234,6 @@ public class ColumnEncoderDummycode extends ColumnEncoder {
 	@Override
 	public void initMetaData(FrameBlock meta) {
 		// initialize domain sizes and output num columns
-		_domainSize = -1;
 		_domainSize = (int) meta.getColumnMetadata()[_colID - 1].getNumDistinct();
 	}
 

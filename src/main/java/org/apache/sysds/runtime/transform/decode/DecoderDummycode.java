@@ -25,8 +25,10 @@ import java.io.ObjectOutput;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
+import org.apache.sysds.runtime.frame.data.columns.ColumnMetadata;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.UtilFunctions;
 
@@ -117,8 +119,9 @@ public class DecoderDummycode extends Decoder
 		_cuPos = new int[_colList.length]; //col upper pos 
 		for( int j=0, off=0; j<_colList.length; j++ ) {
 			int colID = _colList[j];
-			int ndist = (int)meta.getColumnMetadata()[colID-1]
-					.getNumDistinct();
+			ColumnMetadata d = meta.getColumnMetadata()[colID-1];
+			int ndist = d.isDefault() ? 0 : (int)d.getNumDistinct();
+			ndist = ndist < -1 ? 0: ndist;
 			_clPos[j] = off + colID;
 			_cuPos[j] = _clPos[j] + ndist;
 			off += ndist - 1;

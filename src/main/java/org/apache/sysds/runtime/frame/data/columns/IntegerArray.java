@@ -123,4 +123,15 @@ public class IntegerArray extends Array<Integer> {
 	public ValueType getValueType(){
 		return ValueType.INT32;
 	}
+
+	@Override
+	public String toString(){
+		StringBuilder sb = new StringBuilder(_data.length * 5 + 2);
+		sb.append(super.toString() + ":[");
+		for(int i = 0; i < _size-1; i++)
+			sb.append(_data[i]  + ",");
+		sb.append(_data[_size-1]);
+		sb.append("]");
+		return sb.toString();
+	}
 }

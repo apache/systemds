@@ -19,6 +19,8 @@
 
 package org.apache.sysds.test.functions.federated.primitives;
 
+import static org.junit.Assert.fail;
+
 import java.util.Arrays;
 import java.util.Collection;
 
@@ -67,8 +69,10 @@ public class FederatedRightIndexTest extends AutomatedTestBase {
 	@Parameterized.Parameters
 	public static Collection<Object[]> data() {
 		return Arrays.asList(new Object[][] {
-			{20, 10, 1, 1, true}, {20, 10, 3, 5, true},
-			{10, 12, 1, 10, false}});
+			{20, 10, 1, 1, true}, //
+			// {20, 10, 3, 5, true}, //
+			// {10, 12, 1, 10, false} //
+		});
 	}
 
 	private enum IndexType {
@@ -181,10 +185,9 @@ public class FederatedRightIndexTest extends AutomatedTestBase {
 		Thread t4 = startLocalFedWorkerThread(port4);
 
 		rtplatform = execMode;
-		if(rtplatform == ExecMode.SPARK) {
-			System.out.println(7);
+		if(rtplatform == ExecMode.SPARK) 
 			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
-		}
+		
 		TestConfiguration config = availableTestConfigurations.get(TEST_NAME);
 		loadTestConfiguration(config);
 
@@ -207,23 +210,30 @@ public class FederatedRightIndexTest extends AutomatedTestBase {
 			"in_X4=" + TestUtils.federatedAddress(port4, input("X4")), "rows=" + rows, "cols=" + cols, "from=" + from,
 			"to=" + to, "rP=" + Boolean.toString(rowPartitioned).toUpperCase(), "out_S=" + output("S")};
 
-		LOG.debug(runTest(null));
+		try{
 
-		// compare via files
-		compareResults(1e-9, "Stat-DML1", "Stat-DML2");
-
-		Assert.assertTrue(heavyHittersContainsString("fed_rightIndex"));
-
-		// check that federated input files are still existing
-		Assert.assertTrue(HDFSTool.existsFileOnHDFS(input("X1")));
-		Assert.assertTrue(HDFSTool.existsFileOnHDFS(input("X2")));
-		Assert.assertTrue(HDFSTool.existsFileOnHDFS(input("X3")));
-		Assert.assertTrue(HDFSTool.existsFileOnHDFS(input("X4")));
-
-		TestUtils.shutdownThreads(t1, t2, t3, t4);
-
-		rtplatform = platformOld;
-		DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
+			LOG.debug(runTest(null));
+	
+			// compare via files
+			compareResults(1e-9, "Stat-DML1", "Stat-DML2");
+	
+			Assert.assertTrue(heavyHittersContainsString("fed_rightIndex"));
+	
+			// check that federated input files are still existing
+			Assert.assertTrue(HDFSTool.existsFileOnHDFS(input("X1")));
+			Assert.assertTrue(HDFSTool.existsFileOnHDFS(input("X2")));
+			Assert.assertTrue(HDFSTool.existsFileOnHDFS(input("X3")));
+			Assert.assertTrue(HDFSTool.existsFileOnHDFS(input("X4")));
+	
+			TestUtils.shutdownThreads(t1, t2, t3, t4);
+	
+			rtplatform = platformOld;
+			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
+		}
+		catch(Exception e){
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
 
 	}
 }

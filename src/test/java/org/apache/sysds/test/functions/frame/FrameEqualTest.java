@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.sysds.test.functions.binary.frame;
+package org.apache.sysds.test.functions.frame;
 
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types;
@@ -134,7 +134,7 @@ public class FrameEqualTest extends AutomatedTestBase {
 		Types.ExecMode platformOld = setExecMode(et);
 		boolean oldFlag = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-
+		setOutputBuffering(true);
 		try {
 			getAndLoadTestConfiguration(TEST_NAME);
 
@@ -152,7 +152,7 @@ public class FrameEqualTest extends AutomatedTestBase {
 			fullRScriptName = HOME + TEST_NAME + ".R";
 			rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + String.valueOf(type) + " " + expectedDir();
 
-			runTest(true, false, null, -1);
+			runTest(null);
 			runRScript(true);
 
 			//compare matrices

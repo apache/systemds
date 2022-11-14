@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.sysds.test.functions.binary.frame;
+package org.apache.sysds.test.functions.frame;
 
 import org.apache.sysds.common.Types;
 import org.apache.sysds.common.Types.FileFormat;
@@ -120,7 +120,7 @@ public class FrameMapTest extends AutomatedTestBase {
 	private void runDmlMapTest( String expression, TestType type, ExecType et)
 	{
 		Types.ExecMode platformOld = setExecMode(et);
-
+		setOutputBuffering(true);
 		try {
 			getAndLoadTestConfiguration(TEST_NAME);
 
@@ -150,7 +150,7 @@ public class FrameMapTest extends AutomatedTestBase {
 			}
 
 			
-			runTest(true, false, null, -1);
+			runTest(null);
 
 			FrameBlock outputFrame = readDMLFrameFromHDFS("O", FileFormat.CSV);
 			FrameBlock inputFrame = readDMLFrameFromHDFS("I", FileFormat.CSV);

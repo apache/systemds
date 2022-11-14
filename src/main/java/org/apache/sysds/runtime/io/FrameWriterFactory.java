@@ -19,13 +19,16 @@
 
 package org.apache.sysds.runtime.io;
 
-import org.apache.sysds.conf.ConfigurationManager;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.conf.CompilerConfig.ConfigType;
+import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.runtime.DMLRuntimeException;
 
-public class FrameWriterFactory 
-{
+public class FrameWriterFactory {
+	protected static final Log LOG = LogFactory.getLog(FrameWriterFactory.class.getName());
+
 	public static FrameWriter createFrameWriter(FileFormat fmt) {
 		return createFrameWriter(fmt, null);
 	}

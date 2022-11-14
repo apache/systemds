@@ -135,6 +135,12 @@ class Frame(OperationNode):
         """
         return Frame(self.sds_context, "replace", named_input_nodes={"target": self, "pattern": f"'{pattern}'", "replacement": f"'{replacement}'"})
 
+    def to_string(self, **kwargs: Dict[str, VALID_INPUT_TYPES]) -> 'Scalar':
+        """ Converts the input to a string representation.
+        :return: `Scalar` containing the string.
+        """
+        return Scalar(self.sds_context, 'toString', [self], kwargs, output_type=OutputType.STRING)
+
     def __str__(self):
         return "FrameNode"
 

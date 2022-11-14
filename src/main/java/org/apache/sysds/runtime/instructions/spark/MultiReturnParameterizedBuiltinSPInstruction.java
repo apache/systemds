@@ -421,10 +421,12 @@ public class MultiReturnParameterizedBuiltinSPInstruction extends ComputationSPI
 			// compute global mode of categorical feature, i.e., value with highest frequency
 			if(_encoder.getMethod(colix) == MVMethod.GLOBAL_MODE) {
 				HashMap<String, Long> hist = new HashMap<>();
-				while(iter.hasNext()) {
+				while(iter.hasNext() ) {
 					ColumnMetadata cmeta = iter.next();
-					Long tmp = hist.get(cmeta.getMvValue());
-					hist.put(cmeta.getMvValue(), cmeta.getNumDistinct() + ((tmp != null) ? tmp : 0));
+					if(!cmeta.isDefault()){
+						Long tmp = hist.get(cmeta.getMvValue());
+						hist.put(cmeta.getMvValue(), cmeta.getNumDistinct() + ((tmp != null) ? tmp : 0));
+					}
 				}
 				long max = Long.MIN_VALUE;
 				String mode = null;
@@ -442,8 +444,10 @@ public class MultiReturnParameterizedBuiltinSPInstruction extends ComputationSPI
 				int count = 0;
 				while(iter.hasNext()) {
 					ColumnMetadata cmeta = iter.next();
-					kplus.execute2(kbuff, Double.parseDouble(cmeta.getMvValue()));
-					count += cmeta.getNumDistinct();
+					if(!cmeta.isDefault()){
+						kplus.execute2(kbuff, Double.parseDouble(cmeta.getMvValue()));
+						count += cmeta.getNumDistinct();
+					}
 				}
 				if(count > 0)
 					ret.add("-2 " + colix + " " + kbuff._sum / count);

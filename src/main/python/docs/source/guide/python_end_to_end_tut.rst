@@ -118,12 +118,13 @@ For this we will introduce another dml file, which can be used to train a basic 
 Step 1: Obtain data
 ~~~~~~~~~~~~~~~~~~~
 
-For the whole data setup please refer to level 1, Step 1, as these steps are identical.
+For the whole data setup please refer to level 1, Step 1, as these steps are almost identical,
+but instead of preparing the test data, we only prepare the training data.
 
 .. include:: ../code/guide/end_to_end/part2.py
   :code: python
   :start-line: 20
-  :end-line: 51
+  :end-line: 47
 
 Step 2: Load the algorithm
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -134,12 +135,10 @@ This file includes all the necessary functions for training, evaluating, and sto
 The returned object of the source call is further used for calling the functions.
 The file can be found here:
 
-    - :doc:tests/examples/tutorials/neural_net_source.dml
-
 .. include:: ../code/guide/end_to_end/part2.py
   :code: python
-  :start-line: 54
-  :end-line: 55
+  :start-line: 48
+  :end-line: 51
 
 
 Step 3: Training the neural network
@@ -153,8 +152,8 @@ The seed argument ensures that running the code again yields the same results.
 
 .. include:: ../code/guide/end_to_end/part2.py
   :code: python
-  :start-line: 61
-  :end-line: 62
+  :start-line: 52
+  :end-line: 58
 
 
 Step 4: Saving the model
@@ -163,15 +162,28 @@ Step 4: Saving the model
 For later usage, we can save the trained model.
 We only need to specify the name of our model and the file path.
 This call stores the weights and biases of our model.
+Similarly the transformation metadata to transform input data to the model,
+is saved.
 
 .. include:: ../code/guide/end_to_end/part2.py
   :code: python
-  :start-line: 64
+  :start-line: 59
   :end-line: 65
+
+Step 5: Predict on Unseen data
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Once the model is saved along with metadata, it is simple to apply it all to
+unseen data:
+
+.. include:: ../code/guide/end_to_end/part2.py
+  :code: python
+  :start-line: 66
+  :end-line: 77
 
 
 Full Script NN
-~~~~~~~~~~~---
+~~~~~~~~~~~~~~
 
 The complete script now can be seen here:
 
@@ -179,4 +191,4 @@ The complete script now can be seen here:
 .. include:: ../code/guide/end_to_end/part2.py
   :code: python
   :start-line: 20
-  :end-line: 64
+  :end-line: 80

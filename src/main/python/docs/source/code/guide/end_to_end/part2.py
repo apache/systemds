@@ -40,15 +40,11 @@ with SystemDSContext() as sds:
 
     # Transform frames to matrices.
     X, M1 = X_frame.transform_encode(spec=jspec_data)
-    Xt = Xt_frame.transform_apply(spec=jspec_data, meta=M1)
     Y, M2 = Y_frame.transform_encode(spec=jspec_labels)
-    Yt = Yt_frame.transform_apply(spec=jspec_labels, meta=M2)
 
     # Subsample to make training faster
     X = X[0:train_count]
     Y = Y[0:train_count]
-    Xt = Xt[0:test_count]
-    Yt = Yt[0:test_count]
 
     # Load custom neural network
     neural_net_src_path = "tests/examples/tutorials/neural_net_source.dml"
@@ -60,6 +56,26 @@ with SystemDSContext() as sds:
     seed = 42
 
     network = FFN_package.train(X, Y, epochs, batch_size, learning_rate, seed)
+    
+    # Write metadata and trained network to disk.
+    sds.combine(
+        network.write('tests/examples/docs_test/end_to_end/network'),
+        M1.write('tests/examples/docs_test/end_to_end/encode_X'),
+        M2.write('tests/examples/docs_test/end_to_end/encode_Y')
+        ).compute()
 
-    network.write('tests/examples/docs_test/end_to_end/').compute()
+    # Read metadata and trained network and do prediction.
+    M1_r = sds.read('tests/examples/docs_test/end_to_end/encode_X')
+    M2_r = sds.read('tests/examples/docs_test/end_to_end/encode_Y')
+    network_r = sds.read('tests/examples/docs_test/end_to_end/network')
+    Xt = Xt_frame.transform_apply(spec=jspec_data, meta=M1_r)
+    Yt = Yt_frame.transform_apply(spec=jspec_labels, meta=M2_r)
+    Xt = Xt[0:test_count]
+    Yt = Yt[0:test_count]
+    FFN_package_2 = sds.source(neural_net_src_path, "fnn")
+    probs = FFN_package_2.predict(Xt, network_r)
+    accuracy = FFN_package_2.eval(probs, Yt).compute()
 
+    import logging
+    logging.info("accuracy: " + str(accuracy))
+    

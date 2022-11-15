@@ -38,7 +38,7 @@ import numpy as np
 import pandas as pd
 from py4j.java_gateway import GatewayParameters, JavaGateway, Py4JNetworkError
 from systemds.operator import (Frame, List, Matrix, OperationNode, Scalar,
-                               Source)
+                               Source, Combine)
 from systemds.script_building import DMLScript, OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 from systemds.utils.helpers import get_module_dir
@@ -629,6 +629,19 @@ class SystemDSContext(object):
         :return: A List 
         """
         return List(self, unnamed_input_nodes=args, named_input_nodes=kwargs)
+
+    def combine(self, *args: Sequence[VALID_INPUT_TYPES]) -> Combine:
+        """ combine nodes to call compute on multiple operations.
+
+        This is usefull for the case of having multiple writes in one script and wanting 
+        to execute all in one execution reusing intermediates.
+
+        Note this combine does not allow to return anything to the user, so if used,
+        please only use nodes that end with either writing or printing elements.
+
+        :param args: A sequence that will be executed with call to compute() 
+        """
+        return Combine(self, unnamed_input_nodes=args)
 
     def array(self, *args: Sequence[VALID_INPUT_TYPES]) -> List:
         """ Create a List object containing the given nodes.

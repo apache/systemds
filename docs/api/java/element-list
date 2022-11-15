@@ -32,10 +32,12 @@ org.apache.sysds.runtime.compress.colgroup.functional
 org.apache.sysds.runtime.compress.colgroup.insertionsort
 org.apache.sysds.runtime.compress.colgroup.mapping
 org.apache.sysds.runtime.compress.colgroup.offset
+org.apache.sysds.runtime.compress.colgroup.scheme
 org.apache.sysds.runtime.compress.cost
 org.apache.sysds.runtime.compress.estim
 org.apache.sysds.runtime.compress.estim.encoding
 org.apache.sysds.runtime.compress.estim.sample
+org.apache.sysds.runtime.compress.io
 org.apache.sysds.runtime.compress.lib
 org.apache.sysds.runtime.compress.readers
 org.apache.sysds.runtime.compress.utils
@@ -58,6 +60,9 @@ org.apache.sysds.runtime.controlprogram.parfor.opt
 org.apache.sysds.runtime.controlprogram.parfor.stat
 org.apache.sysds.runtime.controlprogram.parfor.util
 org.apache.sysds.runtime.data
+org.apache.sysds.runtime.frame.data
+org.apache.sysds.runtime.frame.data.columns
+org.apache.sysds.runtime.frame.data.iterators
 org.apache.sysds.runtime.functionobjects
 org.apache.sysds.runtime.instructions
 org.apache.sysds.runtime.instructions.cp

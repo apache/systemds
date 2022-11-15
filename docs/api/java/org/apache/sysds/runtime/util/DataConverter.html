@@ -6,15 +6,16 @@
 <title>DataConverter (Apache SystemDS 3.1.0-SNAPSHOT API)</title>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <link rel="stylesheet" type="text/css" href="../../../../../stylesheet.css" title="Style">
-<link rel="stylesheet" type="text/css" href="../../../../../jquery/jquery-ui.css" title="Style">
+<link rel="stylesheet" type="text/css" href="../../../../../jquery/jquery-ui.min.css" title="Style">
+<link rel="stylesheet" type="text/css" href="../../../../../jquery-ui.overrides.css" title="Style">
 <script type="text/javascript" src="../../../../../script.js"></script>
 <script type="text/javascript" src="../../../../../jquery/jszip/dist/jszip.min.js"></script>
 <script type="text/javascript" src="../../../../../jquery/jszip-utils/dist/jszip-utils.min.js"></script>
 <!--[if IE]>
 <script type="text/javascript" src="../../../../../jquery/jszip-utils/dist/jszip-utils-ie.min.js"></script>
 <![endif]-->
-<script type="text/javascript" src="../../../../../jquery/jquery-3.5.1.js"></script>
-<script type="text/javascript" src="../../../../../jquery/jquery-ui.js"></script>
+<script type="text/javascript" src="../../../../../jquery/jquery-3.6.0.min.js"></script>
+<script type="text/javascript" src="../../../../../jquery/jquery-ui.min.js"></script>
 </head>
 <body>
 <script type="text/javascript"><!--
@@ -143,7 +144,7 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <ul class="blockList">
 <li class="blockList">
 <!-- ======== CONSTRUCTOR SUMMARY ======== -->
-<section role="region">
+<section>
 <ul class="blockList">
 <li class="blockList"><a id="constructor.summary">
 <!--   -->
@@ -164,7 +165,7 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 </ul>
 </section>
 <!-- ========== METHOD SUMMARY =========== -->
-<section role="region">
+<section>
 <ul class="blockList">
 <li class="blockList"><a id="method.summary">
 <!--   -->
@@ -237,7 +238,7 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i10" class="altColor">
-<td class="colFirst"><code>static <a href="../matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a></code></td>
+<td class="colFirst"><code>static <a href="../frame/data/FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#convertToFrameBlock(java.lang.String%5B%5D%5B%5D)">convertToFrameBlock</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>[][]&nbsp;data)</code></th>
 <td class="colLast">
 <div class="block">Converts a two dimensions string array into a frame block of
@@ -245,27 +246,27 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 </td>
 </tr>
 <tr id="i11" class="rowColor">
-<td class="colFirst"><code>static <a href="../matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a></code></td>
+<td class="colFirst"><code>static <a href="../frame/data/FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#convertToFrameBlock(java.lang.String%5B%5D%5B%5D,org.apache.sysds.common.Types.ValueType%5B%5D)">convertToFrameBlock</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>[][]&nbsp;data,
                    <a href="../../common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>[]&nbsp;schema)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i12" class="altColor">
-<td class="colFirst"><code>static <a href="../matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a></code></td>
+<td class="colFirst"><code>static <a href="../frame/data/FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#convertToFrameBlock(java.lang.String%5B%5D%5B%5D,org.apache.sysds.common.Types.ValueType%5B%5D,java.lang.String%5B%5D)">convertToFrameBlock</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>[][]&nbsp;data,
                    <a href="../../common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>[]&nbsp;schema,
                    <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>[]&nbsp;colnames)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i13" class="rowColor">
-<td class="colFirst"><code>static <a href="../matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a></code></td>
+<td class="colFirst"><code>static <a href="../frame/data/FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#convertToFrameBlock(org.apache.sysds.runtime.matrix.data.MatrixBlock)">convertToFrameBlock</a></span>&#8203;(<a href="../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;mb)</code></th>
 <td class="colLast">
 <div class="block">Converts a matrix block into a frame block of value type double.</div>
 </td>
 </tr>
 <tr id="i14" class="altColor">
-<td class="colFirst"><code>static <a href="../matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a></code></td>
+<td class="colFirst"><code>static <a href="../frame/data/FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#convertToFrameBlock(org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.common.Types.ValueType)">convertToFrameBlock</a></span>&#8203;(<a href="../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;mb,
                    <a href="../../common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;vt)</code></th>
 <td class="colLast">
@@ -273,7 +274,7 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 </td>
 </tr>
 <tr id="i15" class="rowColor">
-<td class="colFirst"><code>static <a href="../matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a></code></td>
+<td class="colFirst"><code>static <a href="../frame/data/FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#convertToFrameBlock(org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.common.Types.ValueType%5B%5D)">convertToFrameBlock</a></span>&#8203;(<a href="../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;mb,
                    <a href="../../common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>[]&nbsp;schema)</code></th>
 <td class="colLast">&nbsp;</td>
@@ -331,23 +332,23 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 </tr>
 <tr id="i24" class="altColor">
 <td class="colFirst"><code>static <a href="../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#convertToMatrixBlock(org.apache.sysds.runtime.frame.data.FrameBlock)">convertToMatrixBlock</a></span>&#8203;(<a href="../frame/data/FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;frame)</code></th>
+<td class="colLast">
+<div class="block">Converts a frame block with arbitrary schema into a matrix block.</div>
+</td>
+</tr>
+<tr id="i25" class="rowColor">
+<td class="colFirst"><code>static <a href="../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#convertToMatrixBlock(org.apache.sysds.runtime.matrix.data.CTableMap)">convertToMatrixBlock</a></span>&#8203;(<a href="../matrix/data/CTableMap.html" title="class in org.apache.sysds.runtime.matrix.data">CTableMap</a>&nbsp;map)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i25" class="rowColor">
+<tr id="i26" class="altColor">
 <td class="colFirst"><code>static <a href="../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#convertToMatrixBlock(org.apache.sysds.runtime.matrix.data.CTableMap,int,int)">convertToMatrixBlock</a></span>&#8203;(<a href="../matrix/data/CTableMap.html" title="class in org.apache.sysds.runtime.matrix.data">CTableMap</a>&nbsp;map,
                     int&nbsp;rlen,
                     int&nbsp;clen)</code></th>
 <td class="colLast">
 <div class="block">NOTE: this method also ensures the specified matrix dimensions</div>
-</td>
-</tr>
-<tr id="i26" class="altColor">
-<td class="colFirst"><code>static <a href="../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#convertToMatrixBlock(org.apache.sysds.runtime.matrix.data.FrameBlock)">convertToMatrixBlock</a></span>&#8203;(<a href="../matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;frame)</code></th>
-<td class="colLast">
-<div class="block">Converts a frame block with arbitrary schema into a matrix block.</div>
 </td>
 </tr>
 <tr id="i27" class="rowColor">
@@ -358,7 +359,7 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 </tr>
 <tr id="i28" class="altColor">
 <td class="colFirst"><code>static <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>[][]</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#convertToStringFrame(org.apache.sysds.runtime.matrix.data.FrameBlock)">convertToStringFrame</a></span>&#8203;(<a href="../matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;frame)</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#convertToStringFrame(org.apache.sysds.runtime.frame.data.FrameBlock)">convertToStringFrame</a></span>&#8203;(<a href="../frame/data/FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;frame)</code></th>
 <td class="colLast">
 <div class="block">Converts a frame block with arbitrary schema into a two dimensional
  string array.</div>
@@ -530,28 +531,28 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 </tr>
 <tr id="i52" class="altColor">
 <td class="colFirst"><code>static <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a></code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#toString(org.apache.sysds.runtime.frame.data.FrameBlock)">toString</a></span>&#8203;(<a href="../frame/data/FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;fb)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i53" class="rowColor">
+<td class="colFirst"><code>static <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a></code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#toString(org.apache.sysds.runtime.frame.data.FrameBlock,boolean,java.lang.String,java.lang.String,int,int,int)">toString</a></span>&#8203;(<a href="../frame/data/FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;fb,
+        boolean&nbsp;sparse,
+        <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;separator,
+        <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;lineseparator,
+        int&nbsp;rowsToPrint,
+        int&nbsp;colsToPrint,
+        int&nbsp;decimal)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i54" class="altColor">
+<td class="colFirst"><code>static <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#toString(org.apache.sysds.runtime.instructions.cp.ListObject,int,int,boolean,java.lang.String,java.lang.String,int,int,int)">toString</a></span>&#8203;(<a href="../instructions/cp/ListObject.html" title="class in org.apache.sysds.runtime.instructions.cp">ListObject</a>&nbsp;list,
         int&nbsp;rows,
         int&nbsp;cols,
         boolean&nbsp;sparse,
         <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;separator,
         <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;lineSeparator,
-        int&nbsp;rowsToPrint,
-        int&nbsp;colsToPrint,
-        int&nbsp;decimal)</code></th>
-<td class="colLast">&nbsp;</td>
-</tr>
-<tr id="i53" class="rowColor">
-<td class="colFirst"><code>static <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a></code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#toString(org.apache.sysds.runtime.matrix.data.FrameBlock)">toString</a></span>&#8203;(<a href="../matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;fb)</code></th>
-<td class="colLast">&nbsp;</td>
-</tr>
-<tr id="i54" class="altColor">
-<td class="colFirst"><code>static <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a></code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#toString(org.apache.sysds.runtime.matrix.data.FrameBlock,boolean,java.lang.String,java.lang.String,int,int,int)">toString</a></span>&#8203;(<a href="../matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;fb,
-        boolean&nbsp;sparse,
-        <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;separator,
-        <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;lineseparator,
         int&nbsp;rowsToPrint,
         int&nbsp;colsToPrint,
         int&nbsp;decimal)</code></th>
@@ -630,7 +631,7 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <ul class="blockList">
 <li class="blockList">
 <!-- ========= CONSTRUCTOR DETAIL ======== -->
-<section role="region">
+<section>
 <ul class="blockList">
 <li class="blockList"><a id="constructor.detail">
 <!--   -->
@@ -649,7 +650,7 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 </ul>
 </section>
 <!-- ============ METHOD DETAIL ========== -->
-<section role="region">
+<section>
 <ul class="blockList">
 <li class="blockList"><a id="method.detail">
 <!--   -->
@@ -1093,13 +1094,13 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 </dl>
 </li>
 </ul>
-<a id="convertToMatrixBlock(org.apache.sysds.runtime.matrix.data.FrameBlock)">
+<a id="convertToMatrixBlock(org.apache.sysds.runtime.frame.data.FrameBlock)">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
 <h4>convertToMatrixBlock</h4>
-<pre class="methodSignature">public static&nbsp;<a href="../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;convertToMatrixBlock&#8203;(<a href="../matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;frame)</pre>
+<pre class="methodSignature">public static&nbsp;<a href="../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;convertToMatrixBlock&#8203;(<a href="../frame/data/FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;frame)</pre>
 <div class="block">Converts a frame block with arbitrary schema into a matrix block.
  Since matrix block only supports value type double, we do a best
  effort conversion of non-double types which might result in errors
@@ -1112,13 +1113,13 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 </dl>
 </li>
 </ul>
-<a id="convertToStringFrame(org.apache.sysds.runtime.matrix.data.FrameBlock)">
+<a id="convertToStringFrame(org.apache.sysds.runtime.frame.data.FrameBlock)">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
 <h4>convertToStringFrame</h4>
-<pre class="methodSignature">public static&nbsp;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>[][]&nbsp;convertToStringFrame&#8203;(<a href="../matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;frame)</pre>
+<pre class="methodSignature">public static&nbsp;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>[][]&nbsp;convertToStringFrame&#8203;(<a href="../frame/data/FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;frame)</pre>
 <div class="block">Converts a frame block with arbitrary schema into a two dimensional
  string array.</div>
 <dl>
@@ -1135,7 +1136,7 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <ul class="blockList">
 <li class="blockList">
 <h4>convertToFrameBlock</h4>
-<pre class="methodSignature">public static&nbsp;<a href="../matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;convertToFrameBlock&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>[][]&nbsp;data)</pre>
+<pre class="methodSignature">public static&nbsp;<a href="../frame/data/FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;convertToFrameBlock&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>[][]&nbsp;data)</pre>
 <div class="block">Converts a two dimensions string array into a frame block of
  value type string. If the given array is null or of length 0,
  we return an empty frame block.</div>
@@ -1153,7 +1154,7 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <ul class="blockList">
 <li class="blockList">
 <h4>convertToFrameBlock</h4>
-<pre class="methodSignature">public static&nbsp;<a href="../matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;convertToFrameBlock&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>[][]&nbsp;data,
+<pre class="methodSignature">public static&nbsp;<a href="../frame/data/FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;convertToFrameBlock&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>[][]&nbsp;data,
                                              <a href="../../common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>[]&nbsp;schema)</pre>
 </li>
 </ul>
@@ -1163,7 +1164,7 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <ul class="blockList">
 <li class="blockList">
 <h4>convertToFrameBlock</h4>
-<pre class="methodSignature">public static&nbsp;<a href="../matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;convertToFrameBlock&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>[][]&nbsp;data,
+<pre class="methodSignature">public static&nbsp;<a href="../frame/data/FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;convertToFrameBlock&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>[][]&nbsp;data,
                                              <a href="../../common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>[]&nbsp;schema,
                                              <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>[]&nbsp;colnames)</pre>
 </li>
@@ -1174,7 +1175,7 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <ul class="blockList">
 <li class="blockList">
 <h4>convertToFrameBlock</h4>
-<pre class="methodSignature">public static&nbsp;<a href="../matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;convertToFrameBlock&#8203;(<a href="../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;mb)</pre>
+<pre class="methodSignature">public static&nbsp;<a href="../frame/data/FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;convertToFrameBlock&#8203;(<a href="../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;mb)</pre>
 <div class="block">Converts a matrix block into a frame block of value type double.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
@@ -1190,7 +1191,7 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <ul class="blockList">
 <li class="blockList">
 <h4>convertToFrameBlock</h4>
-<pre class="methodSignature">public static&nbsp;<a href="../matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;convertToFrameBlock&#8203;(<a href="../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;mb,
+<pre class="methodSignature">public static&nbsp;<a href="../frame/data/FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;convertToFrameBlock&#8203;(<a href="../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;mb,
                                              <a href="../../common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;vt)</pre>
 <div class="block">Converts a matrix block into a frame block of a given value type.</div>
 <dl>
@@ -1208,7 +1209,7 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <ul class="blockList">
 <li class="blockList">
 <h4>convertToFrameBlock</h4>
-<pre class="methodSignature">public static&nbsp;<a href="../matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;convertToFrameBlock&#8203;(<a href="../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;mb,
+<pre class="methodSignature">public static&nbsp;<a href="../frame/data/FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;convertToFrameBlock&#8203;(<a href="../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;mb,
                                              <a href="../../common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>[]&nbsp;schema)</pre>
 </li>
 </ul>
@@ -1359,22 +1360,22 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 </dl>
 </li>
 </ul>
-<a id="toString(org.apache.sysds.runtime.matrix.data.FrameBlock)">
+<a id="toString(org.apache.sysds.runtime.frame.data.FrameBlock)">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
 <h4>toString</h4>
-<pre class="methodSignature">public static&nbsp;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;toString&#8203;(<a href="../matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;fb)</pre>
+<pre class="methodSignature">public static&nbsp;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;toString&#8203;(<a href="../frame/data/FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;fb)</pre>
 </li>
 </ul>
-<a id="toString(org.apache.sysds.runtime.matrix.data.FrameBlock,boolean,java.lang.String,java.lang.String,int,int,int)">
+<a id="toString(org.apache.sysds.runtime.frame.data.FrameBlock,boolean,java.lang.String,java.lang.String,int,int,int)">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
 <h4>toString</h4>
-<pre class="methodSignature">public static&nbsp;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;toString&#8203;(<a href="../matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;fb,
+<pre class="methodSignature">public static&nbsp;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;toString&#8203;(<a href="../frame/data/FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;fb,
                               boolean&nbsp;sparse,
                               <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;separator,
                               <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;lineseparator,

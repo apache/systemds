@@ -6,15 +6,16 @@
 <title>Decoder (Apache SystemDS 3.1.0-SNAPSHOT API)</title>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <link rel="stylesheet" type="text/css" href="../../../../../../stylesheet.css" title="Style">
-<link rel="stylesheet" type="text/css" href="../../../../../../jquery/jquery-ui.css" title="Style">
+<link rel="stylesheet" type="text/css" href="../../../../../../jquery/jquery-ui.min.css" title="Style">
+<link rel="stylesheet" type="text/css" href="../../../../../../jquery-ui.overrides.css" title="Style">
 <script type="text/javascript" src="../../../../../../script.js"></script>
 <script type="text/javascript" src="../../../../../../jquery/jszip/dist/jszip.min.js"></script>
 <script type="text/javascript" src="../../../../../../jquery/jszip-utils/dist/jszip-utils.min.js"></script>
 <!--[if IE]>
 <script type="text/javascript" src="../../../../../../jquery/jszip-utils/dist/jszip-utils-ie.min.js"></script>
 <![endif]-->
-<script type="text/javascript" src="../../../../../../jquery/jquery-3.5.1.js"></script>
-<script type="text/javascript" src="../../../../../../jquery/jquery-ui.js"></script>
+<script type="text/javascript" src="../../../../../../jquery/jquery-3.6.0.min.js"></script>
+<script type="text/javascript" src="../../../../../../jquery/jquery-ui.min.js"></script>
 </head>
 <body>
 <script type="text/javascript"><!--
@@ -155,7 +156,7 @@ implements <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base
 <ul class="blockList">
 <li class="blockList">
 <!-- ========== METHOD SUMMARY =========== -->
-<section role="region">
+<section>
 <ul class="blockList">
 <li class="blockList"><a id="method.summary">
 <!--   -->
@@ -169,9 +170,9 @@ implements <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base
 <th class="colLast" scope="col">Description</th>
 </tr>
 <tr id="i0" class="altColor">
-<td class="colFirst"><code>abstract <a href="../../matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a></code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#decode(org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.data.FrameBlock)">decode</a></span>&#8203;(<a href="../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;in,
-      <a href="../../matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;out)</code></th>
+<td class="colFirst"><code>abstract <a href="../../frame/data/FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a></code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#decode(org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.frame.data.FrameBlock)">decode</a></span>&#8203;(<a href="../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;in,
+      <a href="../../frame/data/FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;out)</code></th>
 <td class="colLast">
 <div class="block">Block decode API converting a matrix block into a frame block.</div>
 </td>
@@ -188,7 +189,7 @@ implements <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base
 </tr>
 <tr id="i3" class="rowColor">
 <td class="colFirst"><code>abstract void</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#initMetaData(org.apache.sysds.runtime.matrix.data.FrameBlock)">initMetaData</a></span>&#8203;(<a href="../../matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;meta)</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#initMetaData(org.apache.sysds.runtime.frame.data.FrameBlock)">initMetaData</a></span>&#8203;(<a href="../../frame/data/FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;meta)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i4" class="altColor">
@@ -247,7 +248,7 @@ implements <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base
 <ul class="blockList">
 <li class="blockList">
 <!-- ============ METHOD DETAIL ========== -->
-<section role="region">
+<section>
 <ul class="blockList">
 <li class="blockList"><a id="method.detail">
 <!--   -->
@@ -280,14 +281,14 @@ implements <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base
 <pre class="methodSignature">public&nbsp;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>[]&nbsp;getColnames()</pre>
 </li>
 </ul>
-<a id="decode(org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.data.FrameBlock)">
+<a id="decode(org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.frame.data.FrameBlock)">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
 <h4>decode</h4>
-<pre class="methodSignature">public abstract&nbsp;<a href="../../matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;decode&#8203;(<a href="../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;in,
-                                  <a href="../../matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;out)</pre>
+<pre class="methodSignature">public abstract&nbsp;<a href="../../frame/data/FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;decode&#8203;(<a href="../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;in,
+                                  <a href="../../frame/data/FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;out)</pre>
 <div class="block">Block decode API converting a matrix block into a frame block.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
@@ -335,13 +336,13 @@ implements <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base
 </dl>
 </li>
 </ul>
-<a id="initMetaData(org.apache.sysds.runtime.matrix.data.FrameBlock)">
+<a id="initMetaData(org.apache.sysds.runtime.frame.data.FrameBlock)">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
 <h4>initMetaData</h4>
-<pre class="methodSignature">public abstract&nbsp;void&nbsp;initMetaData&#8203;(<a href="../../matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;meta)</pre>
+<pre class="methodSignature">public abstract&nbsp;void&nbsp;initMetaData&#8203;(<a href="../../frame/data/FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;meta)</pre>
 </li>
 </ul>
 <a id="writeExternal(java.io.ObjectOutput)">

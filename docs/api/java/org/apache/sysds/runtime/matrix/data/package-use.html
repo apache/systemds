@@ -6,15 +6,16 @@
 <title>Uses of Package org.apache.sysds.runtime.matrix.data (Apache SystemDS 3.1.0-SNAPSHOT API)</title>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <link rel="stylesheet" type="text/css" href="../../../../../../stylesheet.css" title="Style">
-<link rel="stylesheet" type="text/css" href="../../../../../../jquery/jquery-ui.css" title="Style">
+<link rel="stylesheet" type="text/css" href="../../../../../../jquery/jquery-ui.min.css" title="Style">
+<link rel="stylesheet" type="text/css" href="../../../../../../jquery-ui.overrides.css" title="Style">
 <script type="text/javascript" src="../../../../../../script.js"></script>
 <script type="text/javascript" src="../../../../../../jquery/jszip/dist/jszip.min.js"></script>
 <script type="text/javascript" src="../../../../../../jquery/jszip-utils/dist/jszip-utils.min.js"></script>
 <!--[if IE]>
 <script type="text/javascript" src="../../../../../../jquery/jszip-utils/dist/jszip-utils-ie.min.js"></script>
 <![endif]-->
-<script type="text/javascript" src="../../../../../../jquery/jquery-3.5.1.js"></script>
-<script type="text/javascript" src="../../../../../../jquery/jquery-ui.js"></script>
+<script type="text/javascript" src="../../../../../../jquery/jquery-3.6.0.min.js"></script>
+<script type="text/javascript" src="../../../../../../jquery/jquery-ui.min.js"></script>
 </head>
 <body>
 <script type="text/javascript"><!--
@@ -158,15 +159,23 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
-<th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.compress.cost">org.apache.sysds.runtime.compress.cost</a></th>
+<th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.compress.colgroup.scheme">org.apache.sysds.runtime.compress.colgroup.scheme</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
-<th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.compress.estim">org.apache.sysds.runtime.compress.estim</a></th>
+<th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.compress.cost">org.apache.sysds.runtime.compress.cost</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
+<th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.compress.estim">org.apache.sysds.runtime.compress.estim</a></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
 <th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.compress.estim.encoding">org.apache.sysds.runtime.compress.estim.encoding</a></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.compress.io">org.apache.sysds.runtime.compress.io</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
@@ -214,91 +223,79 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
+<th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.frame.data">org.apache.sysds.runtime.frame.data</a></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
 <th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.functionobjects">org.apache.sysds.runtime.functionobjects</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.instructions.fed">org.apache.sysds.runtime.instructions.fed</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.instructions.gpu.context">org.apache.sysds.runtime.instructions.gpu.context</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.instructions.spark">org.apache.sysds.runtime.instructions.spark</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.instructions.spark.data">org.apache.sysds.runtime.instructions.spark.data</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.instructions.spark.functions">org.apache.sysds.runtime.instructions.spark.functions</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.instructions.spark.utils">org.apache.sysds.runtime.instructions.spark.utils</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.io">org.apache.sysds.runtime.io</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.iogen">org.apache.sysds.runtime.iogen</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.lineage">org.apache.sysds.runtime.lineage</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.matrix.data">org.apache.sysds.runtime.matrix.data</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.matrix.data.sketch">org.apache.sysds.runtime.matrix.data.sketch</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.matrix.data.sketch.countdistinctapprox">org.apache.sysds.runtime.matrix.data.sketch.countdistinctapprox</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.privacy.propagation">org.apache.sysds.runtime.privacy.propagation</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.transform.decode">org.apache.sysds.runtime.transform.decode</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.transform.encode">org.apache.sysds.runtime.transform.encode</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.transform.meta">org.apache.sysds.runtime.transform.meta</a></th>
-<td class="colLast">&nbsp;</td>
-</tr>
-<tr class="altColor">
-<th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.transform.tokenize">org.apache.sysds.runtime.transform.tokenize</a></th>
-<td class="colLast">&nbsp;</td>
-</tr>
-<tr class="rowColor">
-<th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.transform.tokenize.applier">org.apache.sysds.runtime.transform.tokenize.applier</a></th>
-<td class="colLast">&nbsp;</td>
-</tr>
-<tr class="altColor">
-<th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.transform.tokenize.builder">org.apache.sysds.runtime.transform.tokenize.builder</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
 <th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.util">org.apache.sysds.runtime.util</a></th>
-<td class="colLast">&nbsp;</td>
-</tr>
-<tr class="altColor">
-<th class="colFirst" scope="row"><a href="#org.apache.sysds.utils">org.apache.sysds.utils</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 </tbody>
@@ -315,10 +312,6 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tbody>
 <tr class="altColor">
-<th class="colFirst" scope="row"><a href="class-use/FrameBlock.html#org.apache.sysds.api.jmlc">FrameBlock</a></th>
-<td class="colLast">&nbsp;</td>
-</tr>
-<tr class="rowColor">
 <th class="colFirst" scope="row"><a href="class-use/MatrixBlock.html#org.apache.sysds.api.jmlc">MatrixBlock</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
@@ -336,14 +329,10 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tbody>
 <tr class="altColor">
-<th class="colFirst" scope="row"><a href="class-use/FrameBlock.html#org.apache.sysds.api.mlcontext">FrameBlock</a></th>
-<td class="colLast">&nbsp;</td>
-</tr>
-<tr class="rowColor">
 <th class="colFirst" scope="row"><a href="class-use/MatrixBlock.html#org.apache.sysds.api.mlcontext">MatrixBlock</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <th class="colFirst" scope="row"><a href="class-use/MatrixIndexes.html#org.apache.sysds.api.mlcontext">MatrixIndexes</a></th>
 <td class="colLast">
 <div class="block">This represent the indexes to the blocks of the matrix.</div>
@@ -566,6 +555,23 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tbody>
 </table>
 </li>
+<li class="blockList"><a id="org.apache.sysds.runtime.compress.colgroup.scheme">
+<!--   -->
+</a>
+<table class="useSummary">
+<caption><span>Classes in <a href="package-summary.html">org.apache.sysds.runtime.matrix.data</a> used by <a href="../../compress/colgroup/scheme/package-summary.html">org.apache.sysds.runtime.compress.colgroup.scheme</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Class</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<th class="colFirst" scope="row"><a href="class-use/MatrixBlock.html#org.apache.sysds.runtime.compress.colgroup.scheme">MatrixBlock</a></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+</tbody>
+</table>
+</li>
 <li class="blockList"><a id="org.apache.sysds.runtime.compress.cost">
 <!--   -->
 </a>
@@ -613,6 +619,29 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <tr class="altColor">
 <th class="colFirst" scope="row"><a href="class-use/MatrixBlock.html#org.apache.sysds.runtime.compress.estim.encoding">MatrixBlock</a></th>
 <td class="colLast">&nbsp;</td>
+</tr>
+</tbody>
+</table>
+</li>
+<li class="blockList"><a id="org.apache.sysds.runtime.compress.io">
+<!--   -->
+</a>
+<table class="useSummary">
+<caption><span>Classes in <a href="package-summary.html">org.apache.sysds.runtime.matrix.data</a> used by <a href="../../compress/io/package-summary.html">org.apache.sysds.runtime.compress.io</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Class</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<th class="colFirst" scope="row"><a href="class-use/MatrixBlock.html#org.apache.sysds.runtime.compress.io">MatrixBlock</a></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<th class="colFirst" scope="row"><a href="class-use/MatrixIndexes.html#org.apache.sysds.runtime.compress.io">MatrixIndexes</a></th>
+<td class="colLast">
+<div class="block">This represent the indexes to the blocks of the matrix.</div>
+</td>
 </tr>
 </tbody>
 </table>
@@ -720,24 +749,20 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tbody>
 <tr class="altColor">
-<th class="colFirst" scope="row"><a href="class-use/FrameBlock.html#org.apache.sysds.runtime.controlprogram.context">FrameBlock</a></th>
-<td class="colLast">&nbsp;</td>
-</tr>
-<tr class="rowColor">
 <th class="colFirst" scope="row"><a href="class-use/MatrixBlock.html#org.apache.sysds.runtime.controlprogram.context">MatrixBlock</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <th class="colFirst" scope="row"><a href="class-use/MatrixCell.html#org.apache.sysds.runtime.controlprogram.context">MatrixCell</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <th class="colFirst" scope="row"><a href="class-use/MatrixIndexes.html#org.apache.sysds.runtime.controlprogram.context">MatrixIndexes</a></th>
 <td class="colLast">
 <div class="block">This represent the indexes to the blocks of the matrix.</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <th class="colFirst" scope="row"><a href="class-use/Pair.html#org.apache.sysds.runtime.controlprogram.context">Pair</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
@@ -874,6 +899,27 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tbody>
 </table>
 </li>
+<li class="blockList"><a id="org.apache.sysds.runtime.frame.data">
+<!--   -->
+</a>
+<table class="useSummary">
+<caption><span>Classes in <a href="package-summary.html">org.apache.sysds.runtime.matrix.data</a> used by <a href="../../frame/data/package-summary.html">org.apache.sysds.runtime.frame.data</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Class</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<th class="colFirst" scope="row"><a href="class-use/MatrixBlock.html#org.apache.sysds.runtime.frame.data">MatrixBlock</a></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<th class="colFirst" scope="row"><a href="class-use/Pair.html#org.apache.sysds.runtime.frame.data">Pair</a></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+</tbody>
+</table>
+</li>
 <li class="blockList"><a id="org.apache.sysds.runtime.functionobjects">
 <!--   -->
 </a>
@@ -923,10 +969,6 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tbody>
 <tr class="altColor">
-<th class="colFirst" scope="row"><a href="class-use/FrameBlock.html#org.apache.sysds.runtime.instructions.fed">FrameBlock</a></th>
-<td class="colLast">&nbsp;</td>
-</tr>
-<tr class="rowColor">
 <th class="colFirst" scope="row"><a href="class-use/MatrixBlock.html#org.apache.sysds.runtime.instructions.fed">MatrixBlock</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
@@ -961,14 +1003,6 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tbody>
 <tr class="altColor">
-<th class="colFirst" scope="row"><a href="class-use/FrameBlock.html#org.apache.sysds.runtime.instructions.spark">FrameBlock</a></th>
-<td class="colLast">&nbsp;</td>
-</tr>
-<tr class="rowColor">
-<th class="colFirst" scope="row"><a href="class-use/FrameBlock.ColumnMetadata.html#org.apache.sysds.runtime.instructions.spark">FrameBlock.ColumnMetadata</a></th>
-<td class="colLast">&nbsp;</td>
-</tr>
-<tr class="altColor">
 <th class="colFirst" scope="row"><a href="class-use/MatrixBlock.html#org.apache.sysds.runtime.instructions.spark">MatrixBlock</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
@@ -1000,24 +1034,20 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tbody>
 <tr class="altColor">
-<th class="colFirst" scope="row"><a href="class-use/FrameBlock.html#org.apache.sysds.runtime.instructions.spark.data">FrameBlock</a></th>
-<td class="colLast">&nbsp;</td>
-</tr>
-<tr class="rowColor">
 <th class="colFirst" scope="row"><a href="class-use/MatrixBlock.html#org.apache.sysds.runtime.instructions.spark.data">MatrixBlock</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <th class="colFirst" scope="row"><a href="class-use/MatrixIndexes.html#org.apache.sysds.runtime.instructions.spark.data">MatrixIndexes</a></th>
 <td class="colLast">
 <div class="block">This represent the indexes to the blocks of the matrix.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <th class="colFirst" scope="row"><a href="class-use/MatrixValue.html#org.apache.sysds.runtime.instructions.spark.data">MatrixValue</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <th class="colFirst" scope="row"><a href="class-use/Pair.html#org.apache.sysds.runtime.instructions.spark.data">Pair</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
@@ -1035,24 +1065,20 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tbody>
 <tr class="altColor">
-<th class="colFirst" scope="row"><a href="class-use/FrameBlock.html#org.apache.sysds.runtime.instructions.spark.functions">FrameBlock</a></th>
-<td class="colLast">&nbsp;</td>
-</tr>
-<tr class="rowColor">
 <th class="colFirst" scope="row"><a href="class-use/MatrixBlock.html#org.apache.sysds.runtime.instructions.spark.functions">MatrixBlock</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <th class="colFirst" scope="row"><a href="class-use/MatrixCell.html#org.apache.sysds.runtime.instructions.spark.functions">MatrixCell</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <th class="colFirst" scope="row"><a href="class-use/MatrixIndexes.html#org.apache.sysds.runtime.instructions.spark.functions">MatrixIndexes</a></th>
 <td class="colLast">
 <div class="block">This represent the indexes to the blocks of the matrix.</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <th class="colFirst" scope="row"><a href="class-use/WeightedCell.html#org.apache.sysds.runtime.instructions.spark.functions">WeightedCell</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
@@ -1070,24 +1096,20 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tbody>
 <tr class="altColor">
-<th class="colFirst" scope="row"><a href="class-use/FrameBlock.html#org.apache.sysds.runtime.instructions.spark.utils">FrameBlock</a></th>
-<td class="colLast">&nbsp;</td>
-</tr>
-<tr class="rowColor">
 <th class="colFirst" scope="row"><a href="class-use/MatrixBlock.html#org.apache.sysds.runtime.instructions.spark.utils">MatrixBlock</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <th class="colFirst" scope="row"><a href="class-use/MatrixCell.html#org.apache.sysds.runtime.instructions.spark.utils">MatrixCell</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <th class="colFirst" scope="row"><a href="class-use/MatrixIndexes.html#org.apache.sysds.runtime.instructions.spark.utils">MatrixIndexes</a></th>
 <td class="colLast">
 <div class="block">This represent the indexes to the blocks of the matrix.</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <th class="colFirst" scope="row"><a href="class-use/Pair.html#org.apache.sysds.runtime.instructions.spark.utils">Pair</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
@@ -1105,10 +1127,6 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tbody>
 <tr class="altColor">
-<th class="colFirst" scope="row"><a href="class-use/FrameBlock.html#org.apache.sysds.runtime.io">FrameBlock</a></th>
-<td class="colLast">&nbsp;</td>
-</tr>
-<tr class="rowColor">
 <th class="colFirst" scope="row"><a href="class-use/MatrixBlock.html#org.apache.sysds.runtime.io">MatrixBlock</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
@@ -1126,14 +1144,10 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tbody>
 <tr class="altColor">
-<th class="colFirst" scope="row"><a href="class-use/FrameBlock.html#org.apache.sysds.runtime.iogen">FrameBlock</a></th>
-<td class="colLast">&nbsp;</td>
-</tr>
-<tr class="rowColor">
 <th class="colFirst" scope="row"><a href="class-use/MatrixBlock.html#org.apache.sysds.runtime.iogen">MatrixBlock</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <th class="colFirst" scope="row"><a href="class-use/Pair.html#org.apache.sysds.runtime.iogen">Pair</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
@@ -1193,34 +1207,22 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </td>
 </tr>
 <tr class="altColor">
-<th class="colFirst" scope="row"><a href="class-use/FrameBlock.html#org.apache.sysds.runtime.matrix.data">FrameBlock</a></th>
-<td class="colLast">&nbsp;</td>
-</tr>
-<tr class="rowColor">
-<th class="colFirst" scope="row"><a href="class-use/FrameBlock.ColumnMetadata.html#org.apache.sysds.runtime.matrix.data">FrameBlock.ColumnMetadata</a></th>
-<td class="colLast">&nbsp;</td>
-</tr>
-<tr class="altColor">
-<th class="colFirst" scope="row"><a href="class-use/FrameBlock.FrameMapFunction.html#org.apache.sysds.runtime.matrix.data">FrameBlock.FrameMapFunction</a></th>
-<td class="colLast">&nbsp;</td>
-</tr>
-<tr class="rowColor">
 <th class="colFirst" scope="row"><a href="class-use/IJV.html#org.apache.sysds.runtime.matrix.data">IJV</a></th>
 <td class="colLast">
 <div class="block">Helper class for external key/value exchange.</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <th class="colFirst" scope="row"><a href="class-use/LibMatrixBincell.BinaryAccessType.html#org.apache.sysds.runtime.matrix.data">LibMatrixBincell.BinaryAccessType</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <th class="colFirst" scope="row"><a href="class-use/LibMatrixCUDA.html#org.apache.sysds.runtime.matrix.data">LibMatrixCUDA</a></th>
 <td class="colLast">
 <div class="block">All CUDA kernels and library calls are redirected through this class</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <th class="colFirst" scope="row"><a href="class-use/LibMatrixCuDNNConvolutionAlgorithm.html#org.apache.sysds.runtime.matrix.data">LibMatrixCuDNNConvolutionAlgorithm</a></th>
 <td class="colLast">
 <div class="block">This class is a wrapper that contain necessary data structures to invoke 
@@ -1229,7 +1231,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
  It implements autocloseable to simplify the LibMatrixCuDNN code and also avoids potential memory leaks.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <th class="colFirst" scope="row"><a href="class-use/LibMatrixCuDNNPoolingDescriptors.html#org.apache.sysds.runtime.matrix.data">LibMatrixCuDNNPoolingDescriptors</a></th>
 <td class="colLast">
 <div class="block">This class is a wrapper that contain necessary data structures to invoke 
@@ -1238,51 +1240,51 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
  It implements autocloseable to simplify the LibMatrixCuDNN code and also avoids potential memory leaks.</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <th class="colFirst" scope="row"><a href="class-use/LibMatrixDNN.PoolingType.html#org.apache.sysds.runtime.matrix.data">LibMatrixDNN.PoolingType</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <th class="colFirst" scope="row"><a href="class-use/LibMatrixDNNRotate180.Rotate180Worker.html#org.apache.sysds.runtime.matrix.data">LibMatrixDNNRotate180.Rotate180Worker</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <th class="colFirst" scope="row"><a href="class-use/MatrixBlock.html#org.apache.sysds.runtime.matrix.data">MatrixBlock</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <th class="colFirst" scope="row"><a href="class-use/MatrixCell.html#org.apache.sysds.runtime.matrix.data">MatrixCell</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <th class="colFirst" scope="row"><a href="class-use/MatrixIndexes.html#org.apache.sysds.runtime.matrix.data">MatrixIndexes</a></th>
 <td class="colLast">
 <div class="block">This represent the indexes to the blocks of the matrix.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <th class="colFirst" scope="row"><a href="class-use/MatrixValue.html#org.apache.sysds.runtime.matrix.data">MatrixValue</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <th class="colFirst" scope="row"><a href="class-use/Pair.html#org.apache.sysds.runtime.matrix.data">Pair</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <th class="colFirst" scope="row"><a href="class-use/RandomMatrixGenerator.html#org.apache.sysds.runtime.matrix.data">RandomMatrixGenerator</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <th class="colFirst" scope="row"><a href="class-use/RandomMatrixGenerator.PDF.html#org.apache.sysds.runtime.matrix.data">RandomMatrixGenerator.PDF</a></th>
 <td class="colLast">
 <div class="block">Types of Probability density functions</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <th class="colFirst" scope="row"><a href="class-use/TripleIndexes.html#org.apache.sysds.runtime.matrix.data">TripleIndexes</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <th class="colFirst" scope="row"><a href="class-use/WeightedCell.html#org.apache.sysds.runtime.matrix.data">WeightedCell</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
@@ -1351,14 +1353,10 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tbody>
 <tr class="altColor">
-<th class="colFirst" scope="row"><a href="class-use/FrameBlock.html#org.apache.sysds.runtime.transform.decode">FrameBlock</a></th>
-<td class="colLast">&nbsp;</td>
-</tr>
-<tr class="rowColor">
 <th class="colFirst" scope="row"><a href="class-use/MatrixBlock.html#org.apache.sysds.runtime.transform.decode">MatrixBlock</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <th class="colFirst" scope="row"><a href="class-use/Pair.html#org.apache.sysds.runtime.transform.decode">Pair</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
@@ -1376,10 +1374,6 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tbody>
 <tr class="altColor">
-<th class="colFirst" scope="row"><a href="class-use/FrameBlock.html#org.apache.sysds.runtime.transform.encode">FrameBlock</a></th>
-<td class="colLast">&nbsp;</td>
-</tr>
-<tr class="rowColor">
 <th class="colFirst" scope="row"><a href="class-use/MatrixBlock.html#org.apache.sysds.runtime.transform.encode">MatrixBlock</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
@@ -1397,62 +1391,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tbody>
 <tr class="altColor">
-<th class="colFirst" scope="row"><a href="class-use/FrameBlock.html#org.apache.sysds.runtime.transform.meta">FrameBlock</a></th>
-<td class="colLast">&nbsp;</td>
-</tr>
-<tr class="rowColor">
 <th class="colFirst" scope="row"><a href="class-use/Pair.html#org.apache.sysds.runtime.transform.meta">Pair</a></th>
-<td class="colLast">&nbsp;</td>
-</tr>
-</tbody>
-</table>
-</li>
-<li class="blockList"><a id="org.apache.sysds.runtime.transform.tokenize">
-<!--   -->
-</a>
-<table class="useSummary">
-<caption><span>Classes in <a href="package-summary.html">org.apache.sysds.runtime.matrix.data</a> used by <a href="../../transform/tokenize/package-summary.html">org.apache.sysds.runtime.transform.tokenize</a></span><span class="tabEnd">&nbsp;</span></caption>
-<tr>
-<th class="colFirst" scope="col">Class</th>
-<th class="colLast" scope="col">Description</th>
-</tr>
-<tbody>
-<tr class="altColor">
-<th class="colFirst" scope="row"><a href="class-use/FrameBlock.html#org.apache.sysds.runtime.transform.tokenize">FrameBlock</a></th>
-<td class="colLast">&nbsp;</td>
-</tr>
-</tbody>
-</table>
-</li>
-<li class="blockList"><a id="org.apache.sysds.runtime.transform.tokenize.applier">
-<!--   -->
-</a>
-<table class="useSummary">
-<caption><span>Classes in <a href="package-summary.html">org.apache.sysds.runtime.matrix.data</a> used by <a href="../../transform/tokenize/applier/package-summary.html">org.apache.sysds.runtime.transform.tokenize.applier</a></span><span class="tabEnd">&nbsp;</span></caption>
-<tr>
-<th class="colFirst" scope="col">Class</th>
-<th class="colLast" scope="col">Description</th>
-</tr>
-<tbody>
-<tr class="altColor">
-<th class="colFirst" scope="row"><a href="class-use/FrameBlock.html#org.apache.sysds.runtime.transform.tokenize.applier">FrameBlock</a></th>
-<td class="colLast">&nbsp;</td>
-</tr>
-</tbody>
-</table>
-</li>
-<li class="blockList"><a id="org.apache.sysds.runtime.transform.tokenize.builder">
-<!--   -->
-</a>
-<table class="useSummary">
-<caption><span>Classes in <a href="package-summary.html">org.apache.sysds.runtime.matrix.data</a> used by <a href="../../transform/tokenize/builder/package-summary.html">org.apache.sysds.runtime.transform.tokenize.builder</a></span><span class="tabEnd">&nbsp;</span></caption>
-<tr>
-<th class="colFirst" scope="col">Class</th>
-<th class="colLast" scope="col">Description</th>
-</tr>
-<tbody>
-<tr class="altColor">
-<th class="colFirst" scope="row"><a href="class-use/FrameBlock.html#org.apache.sysds.runtime.transform.tokenize.builder">FrameBlock</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 </tbody>
@@ -1476,52 +1415,31 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </td>
 </tr>
 <tr class="rowColor">
-<th class="colFirst" scope="row"><a href="class-use/FrameBlock.html#org.apache.sysds.runtime.util">FrameBlock</a></th>
-<td class="colLast">&nbsp;</td>
-</tr>
-<tr class="altColor">
 <th class="colFirst" scope="row"><a href="class-use/MatrixBlock.html#org.apache.sysds.runtime.util">MatrixBlock</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <th class="colFirst" scope="row"><a href="class-use/MatrixBlockDataInput.html#org.apache.sysds.runtime.util">MatrixBlockDataInput</a></th>
 <td class="colLast">
 <div class="block">Any data input that is intended to support fast deserialization / read
  of entire blocks should implement this interface.</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <th class="colFirst" scope="row"><a href="class-use/MatrixBlockDataOutput.html#org.apache.sysds.runtime.util">MatrixBlockDataOutput</a></th>
 <td class="colLast">
 <div class="block">Any data output that is intended to support fast serialization / write
  of entire blocks should implement this interface.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <th class="colFirst" scope="row"><a href="class-use/MatrixIndexes.html#org.apache.sysds.runtime.util">MatrixIndexes</a></th>
 <td class="colLast">
 <div class="block">This represent the indexes to the blocks of the matrix.</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <th class="colFirst" scope="row"><a href="class-use/Pair.html#org.apache.sysds.runtime.util">Pair</a></th>
-<td class="colLast">&nbsp;</td>
-</tr>
-</tbody>
-</table>
-</li>
-<li class="blockList"><a id="org.apache.sysds.utils">
-<!--   -->
-</a>
-<table class="useSummary">
-<caption><span>Classes in <a href="package-summary.html">org.apache.sysds.runtime.matrix.data</a> used by <a href="../../../utils/package-summary.html">org.apache.sysds.utils</a></span><span class="tabEnd">&nbsp;</span></caption>
-<tr>
-<th class="colFirst" scope="col">Class</th>
-<th class="colLast" scope="col">Description</th>
-</tr>
-<tbody>
-<tr class="altColor">
-<th class="colFirst" scope="row"><a href="class-use/FrameBlock.html#org.apache.sysds.utils">FrameBlock</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 </tbody>

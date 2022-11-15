@@ -6,15 +6,16 @@
 <title>org.apache.sysds.runtime.matrix.data (Apache SystemDS 3.1.0-SNAPSHOT API)</title>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <link rel="stylesheet" type="text/css" href="../../../../../../stylesheet.css" title="Style">
-<link rel="stylesheet" type="text/css" href="../../../../../../jquery/jquery-ui.css" title="Style">
+<link rel="stylesheet" type="text/css" href="../../../../../../jquery/jquery-ui.min.css" title="Style">
+<link rel="stylesheet" type="text/css" href="../../../../../../jquery-ui.overrides.css" title="Style">
 <script type="text/javascript" src="../../../../../../script.js"></script>
 <script type="text/javascript" src="../../../../../../jquery/jszip/dist/jszip.min.js"></script>
 <script type="text/javascript" src="../../../../../../jquery/jszip-utils/dist/jszip-utils.min.js"></script>
 <!--[if IE]>
 <script type="text/javascript" src="../../../../../../jquery/jszip-utils/dist/jszip-utils-ie.min.js"></script>
 <![endif]-->
-<script type="text/javascript" src="../../../../../../jquery/jquery-3.5.1.js"></script>
-<script type="text/javascript" src="../../../../../../jquery/jquery-ui.js"></script>
+<script type="text/javascript" src="../../../../../../jquery/jquery-3.6.0.min.js"></script>
+<script type="text/javascript" src="../../../../../../jquery/jquery-ui.min.js"></script>
 </head>
 <body>
 <script type="text/javascript"><!--
@@ -178,31 +179,19 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
-<th class="colFirst" scope="row"><a href="FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a></th>
-<td class="colLast">&nbsp;</td>
-</tr>
-<tr class="altColor">
-<th class="colFirst" scope="row"><a href="FrameBlock.ColumnMetadata.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock.ColumnMetadata</a></th>
-<td class="colLast">&nbsp;</td>
-</tr>
-<tr class="rowColor">
-<th class="colFirst" scope="row"><a href="FrameBlock.FrameMapFunction.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock.FrameMapFunction</a></th>
-<td class="colLast">&nbsp;</td>
-</tr>
-<tr class="altColor">
 <th class="colFirst" scope="row"><a href="IJV.html" title="class in org.apache.sysds.runtime.matrix.data">IJV</a></th>
 <td class="colLast">
 <div class="block">Helper class for external key/value exchange.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <th class="colFirst" scope="row"><a href="LibCommonsMath.html" title="class in org.apache.sysds.runtime.matrix.data">LibCommonsMath</a></th>
 <td class="colLast">
 <div class="block">Library for matrix operations that need invocation of 
  Apache Commons Math library.</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <th class="colFirst" scope="row"><a href="LibMatrixAgg.html" title="class in org.apache.sysds.runtime.matrix.data">LibMatrixAgg</a></th>
 <td class="colLast">
 <div class="block">MB:
@@ -210,25 +199,25 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
  combinations of dense and sparse representations, and corrections.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <th class="colFirst" scope="row"><a href="LibMatrixBincell.html" title="class in org.apache.sysds.runtime.matrix.data">LibMatrixBincell</a></th>
 <td class="colLast">
 <div class="block">Library for binary cellwise operations (incl arithmetic, relational, etc).</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <th class="colFirst" scope="row"><a href="LibMatrixCUDA.html" title="class in org.apache.sysds.runtime.matrix.data">LibMatrixCUDA</a></th>
 <td class="colLast">
 <div class="block">All CUDA kernels and library calls are redirected through this class</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <th class="colFirst" scope="row"><a href="LibMatrixCuDNN.html" title="class in org.apache.sysds.runtime.matrix.data">LibMatrixCuDNN</a></th>
 <td class="colLast">
 <div class="block">This class contains method that invoke CuDNN operations.</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <th class="colFirst" scope="row"><a href="LibMatrixCuDNNConvolutionAlgorithm.html" title="class in org.apache.sysds.runtime.matrix.data">LibMatrixCuDNNConvolutionAlgorithm</a></th>
 <td class="colLast">
 <div class="block">This class is a wrapper that contain necessary data structures to invoke 
@@ -237,13 +226,13 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
  It implements autocloseable to simplify the LibMatrixCuDNN code and also avoids potential memory leaks.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <th class="colFirst" scope="row"><a href="LibMatrixCuDNNInputRowFetcher.html" title="class in org.apache.sysds.runtime.matrix.data">LibMatrixCuDNNInputRowFetcher</a></th>
 <td class="colLast">
 <div class="block">Performs a slice operation: out = in[(n+1):(n+1), 1:numColumns]</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <th class="colFirst" scope="row"><a href="LibMatrixCuDNNPoolingDescriptors.html" title="class in org.apache.sysds.runtime.matrix.data">LibMatrixCuDNNPoolingDescriptors</a></th>
 <td class="colLast">
 <div class="block">This class is a wrapper that contain necessary data structures to invoke 
@@ -252,60 +241,67 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
  It implements autocloseable to simplify the LibMatrixCuDNN code and also avoids potential memory leaks.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <th class="colFirst" scope="row"><a href="LibMatrixCuDNNRnnAlgorithm.html" title="class in org.apache.sysds.runtime.matrix.data">LibMatrixCuDNNRnnAlgorithm</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <th class="colFirst" scope="row"><a href="LibMatrixCuMatMult.html" title="class in org.apache.sysds.runtime.matrix.data">LibMatrixCuMatMult</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <th class="colFirst" scope="row"><a href="LibMatrixDatagen.html" title="class in org.apache.sysds.runtime.matrix.data">LibMatrixDatagen</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <th class="colFirst" scope="row"><a href="LibMatrixDNN.html" title="class in org.apache.sysds.runtime.matrix.data">LibMatrixDNN</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <th class="colFirst" scope="row"><a href="LibMatrixDNNConv2d.html" title="class in org.apache.sysds.runtime.matrix.data">LibMatrixDNNConv2d</a></th>
 <td class="colLast">
 <div class="block">This class contains the set of operators used for performing conv2d</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <th class="colFirst" scope="row"><a href="LibMatrixDNNHelper.html" title="class in org.apache.sysds.runtime.matrix.data">LibMatrixDNNHelper</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <th class="colFirst" scope="row"><a href="LibMatrixDNNIm2Col.html" title="class in org.apache.sysds.runtime.matrix.data">LibMatrixDNNIm2Col</a></th>
 <td class="colLast">
 <div class="block">This class contains the different implementation of im2col operation</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <th class="colFirst" scope="row"><a href="LibMatrixDNNPooling.html" title="class in org.apache.sysds.runtime.matrix.data">LibMatrixDNNPooling</a></th>
 <td class="colLast">
 <div class="block">This class contains the set of operators used for performing pooling</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <th class="colFirst" scope="row"><a href="LibMatrixDNNRelu.html" title="class in org.apache.sysds.runtime.matrix.data">LibMatrixDNNRelu</a></th>
 <td class="colLast">
 <div class="block">This class contains the different implementation of rotate180 operation</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <th class="colFirst" scope="row"><a href="LibMatrixDNNRelu.ReluBackward.html" title="class in org.apache.sysds.runtime.matrix.data">LibMatrixDNNRelu.ReluBackward</a></th>
 <td class="colLast">
 <div class="block">Performs the operation: (X gt 0) * dout</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <th class="colFirst" scope="row"><a href="LibMatrixDNNRotate180.html" title="class in org.apache.sysds.runtime.matrix.data">LibMatrixDNNRotate180</a></th>
 <td class="colLast">
 <div class="block">This class contains the different implementation of rotate180 operation</div>
+</td>
+</tr>
+<tr class="rowColor">
+<th class="colFirst" scope="row"><a href="LibMatrixEquals.html" title="class in org.apache.sysds.runtime.matrix.data">LibMatrixEquals</a></th>
+<td class="colLast">
+<div class="block">
+ Equals library for MatrixBLocks:</div>
 </td>
 </tr>
 <tr class="altColor">

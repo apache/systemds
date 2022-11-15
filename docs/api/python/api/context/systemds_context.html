@@ -279,6 +279,21 @@ Afterwards capturing will be reset to the state it was before.</p>
 </dd></dl>
 
 <dl class="py method">
+<dt id="systemds.context.SystemDSContext.combine">
+<code class="sig-name descname">combine</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="n">Sequence<span class="p">[</span>Union<span class="p">[</span>DAGNode<span class="p">, </span>str<span class="p">, </span>int<span class="p">, </span>float<span class="p">, </span>bool<span class="p">]</span><span class="p">]</span></span></em><span class="sig-paren">)</span> &#x2192; systemds.operator.nodes.combine.Combine<a class="headerlink" href="#systemds.context.SystemDSContext.combine" title="Permalink to this definition">¶</a></dt>
+<dd><p>combine nodes to call compute on multiple operations.</p>
+<p>This is usefull for the case of having multiple writes in one script and wanting 
+to execute all in one execution reusing intermediates.</p>
+<p>Note this combine does not allow to return anything to the user, so if used,
+please only use nodes that end with either writing or printing elements.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>args</strong> – A sequence that will be executed with call to compute()</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt id="systemds.context.SystemDSContext.dict">
 <code class="sig-name descname">dict</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Dict<span class="p">[</span>str<span class="p">, </span>Union<span class="p">[</span>DAGNode<span class="p">, </span>str<span class="p">, </span>int<span class="p">, </span>float<span class="p">, </span>bool<span class="p">]</span><span class="p">]</span></span></em><span class="sig-paren">)</span> &#x2192; systemds.operator.nodes.list.List<a class="headerlink" href="#systemds.context.SystemDSContext.dict" title="Permalink to this definition">¶</a></dt>
 <dd><p>Create a List object containing the given nodes.</p>

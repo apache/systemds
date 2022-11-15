@@ -6,15 +6,16 @@
 <title>Encoder (Apache SystemDS 3.1.0-SNAPSHOT API)</title>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <link rel="stylesheet" type="text/css" href="../../../../../../stylesheet.css" title="Style">
-<link rel="stylesheet" type="text/css" href="../../../../../../jquery/jquery-ui.css" title="Style">
+<link rel="stylesheet" type="text/css" href="../../../../../../jquery/jquery-ui.min.css" title="Style">
+<link rel="stylesheet" type="text/css" href="../../../../../../jquery-ui.overrides.css" title="Style">
 <script type="text/javascript" src="../../../../../../script.js"></script>
 <script type="text/javascript" src="../../../../../../jquery/jszip/dist/jszip.min.js"></script>
 <script type="text/javascript" src="../../../../../../jquery/jszip-utils/dist/jszip-utils.min.js"></script>
 <!--[if IE]>
 <script type="text/javascript" src="../../../../../../jquery/jszip-utils/dist/jszip-utils-ie.min.js"></script>
 <![endif]-->
-<script type="text/javascript" src="../../../../../../jquery/jquery-3.5.1.js"></script>
-<script type="text/javascript" src="../../../../../../jquery/jquery-ui.js"></script>
+<script type="text/javascript" src="../../../../../../jquery/jquery-3.6.0.min.js"></script>
+<script type="text/javascript" src="../../../../../../jquery/jquery-ui.min.js"></script>
 </head>
 <body>
 <script type="text/javascript"><!--
@@ -140,7 +141,7 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <ul class="blockList">
 <li class="blockList">
 <!-- ========== METHOD SUMMARY =========== -->
-<section role="region">
+<section>
 <ul class="blockList">
 <li class="blockList"><a id="method.summary">
 <!--   -->
@@ -155,7 +156,7 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 </tr>
 <tr id="i0" class="altColor">
 <td class="colFirst"><code>void</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#allocateMetaData(org.apache.sysds.runtime.matrix.data.FrameBlock)">allocateMetaData</a></span>&#8203;(<a href="../../matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;meta)</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#allocateMetaData(org.apache.sysds.runtime.frame.data.FrameBlock)">allocateMetaData</a></span>&#8203;(<a href="../../frame/data/FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;meta)</code></th>
 <td class="colLast">
 <div class="block">Pre-allocate a FrameBlock for metadata collection.</div>
 </td>
@@ -178,21 +179,21 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 </tr>
 <tr id="i3" class="rowColor">
 <td class="colFirst"><code>void</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#buildPartial(org.apache.sysds.runtime.matrix.data.FrameBlock)">buildPartial</a></span>&#8203;(<a href="../../matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;in)</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#buildPartial(org.apache.sysds.runtime.frame.data.FrameBlock)">buildPartial</a></span>&#8203;(<a href="../../frame/data/FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;in)</code></th>
 <td class="colLast">
 <div class="block">Partial build of internal data structures (e.g., in distributed spark operations).</div>
 </td>
 </tr>
 <tr id="i4" class="altColor">
-<td class="colFirst"><code><a href="../../matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a></code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getMetaData(org.apache.sysds.runtime.matrix.data.FrameBlock)">getMetaData</a></span>&#8203;(<a href="../../matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;out)</code></th>
+<td class="colFirst"><code><a href="../../frame/data/FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a></code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getMetaData(org.apache.sysds.runtime.frame.data.FrameBlock)">getMetaData</a></span>&#8203;(<a href="../../frame/data/FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;out)</code></th>
 <td class="colLast">
 <div class="block">Construct a frame block out of the transform meta data.</div>
 </td>
 </tr>
 <tr id="i5" class="rowColor">
 <td class="colFirst"><code>void</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#initMetaData(org.apache.sysds.runtime.matrix.data.FrameBlock)">initMetaData</a></span>&#8203;(<a href="../../matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;meta)</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#initMetaData(org.apache.sysds.runtime.frame.data.FrameBlock)">initMetaData</a></span>&#8203;(<a href="../../frame/data/FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;meta)</code></th>
 <td class="colLast">
 <div class="block">Sets up the required meta data for a subsequent call to apply.</div>
 </td>
@@ -231,7 +232,7 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <ul class="blockList">
 <li class="blockList">
 <!-- ============ METHOD DETAIL ========== -->
-<section role="region">
+<section>
 <ul class="blockList">
 <li class="blockList"><a id="method.detail">
 <!--   -->
@@ -271,13 +272,13 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 </dl>
 </li>
 </ul>
-<a id="allocateMetaData(org.apache.sysds.runtime.matrix.data.FrameBlock)">
+<a id="allocateMetaData(org.apache.sysds.runtime.frame.data.FrameBlock)">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
 <h4>allocateMetaData</h4>
-<pre class="methodSignature">void&nbsp;allocateMetaData&#8203;(<a href="../../matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;meta)</pre>
+<pre class="methodSignature">void&nbsp;allocateMetaData&#8203;(<a href="../../frame/data/FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;meta)</pre>
 <div class="block">Pre-allocate a FrameBlock for metadata collection.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
@@ -285,13 +286,13 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 </dl>
 </li>
 </ul>
-<a id="getMetaData(org.apache.sysds.runtime.matrix.data.FrameBlock)">
+<a id="getMetaData(org.apache.sysds.runtime.frame.data.FrameBlock)">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
 <h4>getMetaData</h4>
-<pre class="methodSignature"><a href="../../matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;getMetaData&#8203;(<a href="../../matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;out)</pre>
+<pre class="methodSignature"><a href="../../frame/data/FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;getMetaData&#8203;(<a href="../../frame/data/FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;out)</pre>
 <div class="block">Construct a frame block out of the transform meta data.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
@@ -301,13 +302,13 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 </dl>
 </li>
 </ul>
-<a id="initMetaData(org.apache.sysds.runtime.matrix.data.FrameBlock)">
+<a id="initMetaData(org.apache.sysds.runtime.frame.data.FrameBlock)">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
 <h4>initMetaData</h4>
-<pre class="methodSignature">void&nbsp;initMetaData&#8203;(<a href="../../matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;meta)</pre>
+<pre class="methodSignature">void&nbsp;initMetaData&#8203;(<a href="../../frame/data/FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;meta)</pre>
 <div class="block">Sets up the required meta data for a subsequent call to apply.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
@@ -325,13 +326,13 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <div class="block">Allocates internal data structures for partial build.</div>
 </li>
 </ul>
-<a id="buildPartial(org.apache.sysds.runtime.matrix.data.FrameBlock)">
+<a id="buildPartial(org.apache.sysds.runtime.frame.data.FrameBlock)">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
 <h4>buildPartial</h4>
-<pre class="methodSignature">void&nbsp;buildPartial&#8203;(<a href="../../matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;in)</pre>
+<pre class="methodSignature">void&nbsp;buildPartial&#8203;(<a href="../../frame/data/FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;in)</pre>
 <div class="block">Partial build of internal data structures (e.g., in distributed spark operations).</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>

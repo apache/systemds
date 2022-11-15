@@ -6,15 +6,16 @@
 <title>StatisticsModel (Apache SystemDS 3.1.0-SNAPSHOT API)</title>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <link rel="stylesheet" type="text/css" href="../../../../../../../../stylesheet.css" title="Style">
-<link rel="stylesheet" type="text/css" href="../../../../../../../../jquery/jquery-ui.css" title="Style">
+<link rel="stylesheet" type="text/css" href="../../../../../../../../jquery/jquery-ui.min.css" title="Style">
+<link rel="stylesheet" type="text/css" href="../../../../../../../../jquery-ui.overrides.css" title="Style">
 <script type="text/javascript" src="../../../../../../../../script.js"></script>
 <script type="text/javascript" src="../../../../../../../../jquery/jszip/dist/jszip.min.js"></script>
 <script type="text/javascript" src="../../../../../../../../jquery/jszip-utils/dist/jszip-utils.min.js"></script>
 <!--[if IE]>
 <script type="text/javascript" src="../../../../../../../../jquery/jszip-utils/dist/jszip-utils-ie.min.js"></script>
 <![endif]-->
-<script type="text/javascript" src="../../../../../../../../jquery/jquery-3.5.1.js"></script>
-<script type="text/javascript" src="../../../../../../../../jquery/jquery-ui.js"></script>
+<script type="text/javascript" src="../../../../../../../../jquery/jquery-3.6.0.min.js"></script>
+<script type="text/javascript" src="../../../../../../../../jquery/jquery-ui.min.js"></script>
 </head>
 <body>
 <script type="text/javascript"><!--
@@ -153,7 +154,7 @@ extends <a href="BaseModel.html" title="class in org.apache.sysds.runtime.contro
 <ul class="blockList">
 <li class="blockList">
 <!-- =========== FIELD SUMMARY =========== -->
-<section role="region">
+<section>
 <ul class="blockList">
 <li class="blockList"><a id="field.summary">
 <!--   -->
@@ -177,16 +178,21 @@ extends <a href="BaseModel.html" title="class in org.apache.sysds.runtime.contro
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
+<td class="colFirst"><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="HeavyHitterModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">HeavyHitterModel</a>&gt;</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#heavyHitters">heavyHitters</a></span></code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="RequestModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">RequestModel</a>&gt;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#requests">requests</a></span></code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="TrafficModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">TrafficModel</a>&gt;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#traffic">traffic</a></span></code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="UtilizationModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">UtilizationModel</a>&gt;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#utilization">utilization</a></span></code></th>
 <td class="colLast">&nbsp;</td>
@@ -203,7 +209,7 @@ extends <a href="BaseModel.html" title="class in org.apache.sysds.runtime.contro
 </ul>
 </section>
 <!-- ======== CONSTRUCTOR SUMMARY ======== -->
-<section role="region">
+<section>
 <ul class="blockList">
 <li class="blockList"><a id="constructor.summary">
 <!--   -->
@@ -220,11 +226,12 @@ extends <a href="BaseModel.html" title="class in org.apache.sysds.runtime.contro
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
-<th class="colConstructorName" scope="row"><code><span class="memberNameLink"><a href="#%3Cinit%3E(java.util.List,java.util.List,java.util.List,java.util.List,java.util.List)">StatisticsModel</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="UtilizationModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">UtilizationModel</a>&gt;&nbsp;utilization,
+<th class="colConstructorName" scope="row"><code><span class="memberNameLink"><a href="#%3Cinit%3E(java.util.List,java.util.List,java.util.List,java.util.List,java.util.List,java.util.List)">StatisticsModel</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="UtilizationModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">UtilizationModel</a>&gt;&nbsp;utilization,
                <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="TrafficModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">TrafficModel</a>&gt;&nbsp;traffic,
                <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="EventModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">EventModel</a>&gt;&nbsp;events,
                <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="DataObjectModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">DataObjectModel</a>&gt;&nbsp;dataObjects,
-               <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="RequestModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">RequestModel</a>&gt;&nbsp;requests)</code></th>
+               <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="RequestModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">RequestModel</a>&gt;&nbsp;requests,
+               <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="HeavyHitterModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">HeavyHitterModel</a>&gt;&nbsp;heavyHitters)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 </table>
@@ -232,7 +239,7 @@ extends <a href="BaseModel.html" title="class in org.apache.sysds.runtime.contro
 </ul>
 </section>
 <!-- ========== METHOD SUMMARY =========== -->
-<section role="region">
+<section>
 <ul class="blockList">
 <li class="blockList"><a id="method.summary">
 <!--   -->
@@ -268,7 +275,7 @@ extends <a href="BaseModel.html" title="class in org.apache.sysds.runtime.contro
 <ul class="blockList">
 <li class="blockList">
 <!-- ============ FIELD DETAIL =========== -->
-<section role="region">
+<section>
 <ul class="blockList">
 <li class="blockList"><a id="field.detail">
 <!--   -->
@@ -313,17 +320,26 @@ extends <a href="BaseModel.html" title="class in org.apache.sysds.runtime.contro
 <a id="requests">
 <!--   -->
 </a>
-<ul class="blockListLast">
+<ul class="blockList">
 <li class="blockList">
 <h4>requests</h4>
 <pre>public&nbsp;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="RequestModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">RequestModel</a>&gt; requests</pre>
+</li>
+</ul>
+<a id="heavyHitters">
+<!--   -->
+</a>
+<ul class="blockListLast">
+<li class="blockList">
+<h4>heavyHitters</h4>
+<pre>public&nbsp;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="HeavyHitterModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">HeavyHitterModel</a>&gt; heavyHitters</pre>
 </li>
 </ul>
 </li>
 </ul>
 </section>
 <!-- ========= CONSTRUCTOR DETAIL ======== -->
-<section role="region">
+<section>
 <ul class="blockList">
 <li class="blockList"><a id="constructor.detail">
 <!--   -->
@@ -338,7 +354,7 @@ extends <a href="BaseModel.html" title="class in org.apache.sysds.runtime.contro
 <pre>public&nbsp;StatisticsModel()</pre>
 </li>
 </ul>
-<a id="&lt;init&gt;(java.util.List,java.util.List,java.util.List,java.util.List,java.util.List)">
+<a id="&lt;init&gt;(java.util.List,java.util.List,java.util.List,java.util.List,java.util.List,java.util.List)">
 <!--   -->
 </a>
 <ul class="blockListLast">
@@ -348,14 +364,15 @@ extends <a href="BaseModel.html" title="class in org.apache.sysds.runtime.contro
                        <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="TrafficModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">TrafficModel</a>&gt;&nbsp;traffic,
                        <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="EventModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">EventModel</a>&gt;&nbsp;events,
                        <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="DataObjectModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">DataObjectModel</a>&gt;&nbsp;dataObjects,
-                       <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="RequestModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">RequestModel</a>&gt;&nbsp;requests)</pre>
+                       <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="RequestModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">RequestModel</a>&gt;&nbsp;requests,
+                       <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="HeavyHitterModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">HeavyHitterModel</a>&gt;&nbsp;heavyHitters)</pre>
 </li>
 </ul>
 </li>
 </ul>
 </section>
 <!-- ============ METHOD DETAIL ========== -->
-<section role="region">
+<section>
 <ul class="blockList">
 <li class="blockList"><a id="method.detail">
 <!--   -->

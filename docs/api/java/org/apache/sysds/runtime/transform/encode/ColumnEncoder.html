@@ -6,15 +6,16 @@
 <title>ColumnEncoder (Apache SystemDS 3.1.0-SNAPSHOT API)</title>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <link rel="stylesheet" type="text/css" href="../../../../../../stylesheet.css" title="Style">
-<link rel="stylesheet" type="text/css" href="../../../../../../jquery/jquery-ui.css" title="Style">
+<link rel="stylesheet" type="text/css" href="../../../../../../jquery/jquery-ui.min.css" title="Style">
+<link rel="stylesheet" type="text/css" href="../../../../../../jquery-ui.overrides.css" title="Style">
 <script type="text/javascript" src="../../../../../../script.js"></script>
 <script type="text/javascript" src="../../../../../../jquery/jszip/dist/jszip.min.js"></script>
 <script type="text/javascript" src="../../../../../../jquery/jszip-utils/dist/jszip-utils.min.js"></script>
 <!--[if IE]>
 <script type="text/javascript" src="../../../../../../jquery/jszip-utils/dist/jszip-utils-ie.min.js"></script>
 <![endif]-->
-<script type="text/javascript" src="../../../../../../jquery/jquery-3.5.1.js"></script>
-<script type="text/javascript" src="../../../../../../jquery/jquery-ui.js"></script>
+<script type="text/javascript" src="../../../../../../jquery/jquery-3.6.0.min.js"></script>
+<script type="text/javascript" src="../../../../../../jquery/jquery-ui.min.js"></script>
 </head>
 <body>
 <script type="text/javascript"><!--
@@ -154,7 +155,7 @@ implements <a href="Encoder.html" title="interface in org.apache.sysds.runtime.t
 <ul class="blockList">
 <li class="blockList">
 <!-- ======== NESTED CLASS SUMMARY ======== -->
-<section role="region">
+<section>
 <ul class="blockList">
 <li class="blockList"><a id="nested.class.summary">
 <!--   -->
@@ -177,7 +178,7 @@ implements <a href="Encoder.html" title="interface in org.apache.sysds.runtime.t
 </ul>
 </section>
 <!-- =========== FIELD SUMMARY =========== -->
-<section role="region">
+<section>
 <ul class="blockList">
 <li class="blockList"><a id="field.summary">
 <!--   -->
@@ -205,7 +206,7 @@ implements <a href="Encoder.html" title="interface in org.apache.sysds.runtime.t
 </ul>
 </section>
 <!-- ========== METHOD SUMMARY =========== -->
-<section role="region">
+<section>
 <ul class="blockList">
 <li class="blockList"><a id="method.summary">
 <!--   -->
@@ -250,7 +251,7 @@ implements <a href="Encoder.html" title="interface in org.apache.sysds.runtime.t
 </tr>
 <tr id="i4" class="altColor">
 <td class="colFirst"><code>void</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#buildPartial(org.apache.sysds.runtime.matrix.data.FrameBlock)">buildPartial</a></span>&#8203;(<a href="../../matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;in)</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#buildPartial(org.apache.sysds.runtime.frame.data.FrameBlock)">buildPartial</a></span>&#8203;(<a href="../../frame/data/FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;in)</code></th>
 <td class="colLast">
 <div class="block">Partial build of internal data structures (e.g., in distributed spark operations).</div>
 </td>
@@ -284,7 +285,7 @@ implements <a href="Encoder.html" title="interface in org.apache.sysds.runtime.t
 </tr>
 <tr id="i10" class="altColor">
 <td class="colFirst"><code><a href="../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getColMapping(org.apache.sysds.runtime.matrix.data.FrameBlock)">getColMapping</a></span>&#8203;(<a href="../../matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;meta)</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getColMapping(org.apache.sysds.runtime.frame.data.FrameBlock)">getColMapping</a></span>&#8203;(<a href="../../frame/data/FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;meta)</code></th>
 <td class="colLast">
 <div class="block">Obtain the column mapping of encoded frames based on the passed meta data frame.</div>
 </td>
@@ -403,7 +404,7 @@ implements <a href="Encoder.html" title="interface in org.apache.sysds.runtime.t
 <!--   -->
 </a>
 <h3>Methods inherited from interface&nbsp;org.apache.sysds.runtime.transform.encode.<a href="Encoder.html" title="interface in org.apache.sysds.runtime.transform.encode">Encoder</a></h3>
-<code><a href="Encoder.html#allocateMetaData(org.apache.sysds.runtime.matrix.data.FrameBlock)">allocateMetaData</a>, <a href="Encoder.html#build(org.apache.sysds.runtime.controlprogram.caching.CacheBlock)">build</a>, <a href="Encoder.html#getMetaData(org.apache.sysds.runtime.matrix.data.FrameBlock)">getMetaData</a>, <a href="Encoder.html#initMetaData(org.apache.sysds.runtime.matrix.data.FrameBlock)">initMetaData</a></code></li>
+<code><a href="Encoder.html#allocateMetaData(org.apache.sysds.runtime.frame.data.FrameBlock)">allocateMetaData</a>, <a href="Encoder.html#build(org.apache.sysds.runtime.controlprogram.caching.CacheBlock)">build</a>, <a href="Encoder.html#getMetaData(org.apache.sysds.runtime.frame.data.FrameBlock)">getMetaData</a>, <a href="Encoder.html#initMetaData(org.apache.sysds.runtime.frame.data.FrameBlock)">initMetaData</a></code></li>
 </ul>
 </li>
 </ul>
@@ -415,7 +416,7 @@ implements <a href="Encoder.html" title="interface in org.apache.sysds.runtime.t
 <ul class="blockList">
 <li class="blockList">
 <!-- ============ FIELD DETAIL =========== -->
-<section role="region">
+<section>
 <ul class="blockList">
 <li class="blockList"><a id="field.detail">
 <!--   -->
@@ -443,7 +444,7 @@ implements <a href="Encoder.html" title="interface in org.apache.sysds.runtime.t
 </ul>
 </section>
 <!-- ============ METHOD DETAIL ========== -->
-<section role="region">
+<section>
 <ul class="blockList">
 <li class="blockList"><a id="method.detail">
 <!--   -->
@@ -529,17 +530,17 @@ implements <a href="Encoder.html" title="interface in org.apache.sysds.runtime.t
 </dl>
 </li>
 </ul>
-<a id="buildPartial(org.apache.sysds.runtime.matrix.data.FrameBlock)">
+<a id="buildPartial(org.apache.sysds.runtime.frame.data.FrameBlock)">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
 <h4>buildPartial</h4>
-<pre class="methodSignature">public&nbsp;void&nbsp;buildPartial&#8203;(<a href="../../matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;in)</pre>
+<pre class="methodSignature">public&nbsp;void&nbsp;buildPartial&#8203;(<a href="../../frame/data/FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;in)</pre>
 <div class="block">Partial build of internal data structures (e.g., in distributed spark operations).</div>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
-<dd><code><a href="Encoder.html#buildPartial(org.apache.sysds.runtime.matrix.data.FrameBlock)">buildPartial</a></code>&nbsp;in interface&nbsp;<code><a href="Encoder.html" title="interface in org.apache.sysds.runtime.transform.encode">Encoder</a></code></dd>
+<dd><code><a href="Encoder.html#buildPartial(org.apache.sysds.runtime.frame.data.FrameBlock)">buildPartial</a></code>&nbsp;in interface&nbsp;<code><a href="Encoder.html" title="interface in org.apache.sysds.runtime.transform.encode">Encoder</a></code></dd>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>in</code> - input frame block</dd>
 </dl>
@@ -601,13 +602,13 @@ implements <a href="Encoder.html" title="interface in org.apache.sysds.runtime.t
 </dl>
 </li>
 </ul>
-<a id="getColMapping(org.apache.sysds.runtime.matrix.data.FrameBlock)">
+<a id="getColMapping(org.apache.sysds.runtime.frame.data.FrameBlock)">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
 <h4>getColMapping</h4>
-<pre class="methodSignature">public&nbsp;<a href="../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;getColMapping&#8203;(<a href="../../matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;meta)</pre>
+<pre class="methodSignature">public&nbsp;<a href="../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;getColMapping&#8203;(<a href="../../frame/data/FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;meta)</pre>
 <div class="block">Obtain the column mapping of encoded frames based on the passed meta data frame.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>

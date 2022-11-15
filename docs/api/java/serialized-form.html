@@ -6,15 +6,16 @@
 <title>Serialized Form (Apache SystemDS 3.1.0-SNAPSHOT API)</title>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <link rel="stylesheet" type="text/css" href="stylesheet.css" title="Style">
-<link rel="stylesheet" type="text/css" href="jquery/jquery-ui.css" title="Style">
+<link rel="stylesheet" type="text/css" href="jquery/jquery-ui.min.css" title="Style">
+<link rel="stylesheet" type="text/css" href="jquery-ui.overrides.css" title="Style">
 <script type="text/javascript" src="script.js"></script>
 <script type="text/javascript" src="jquery/jszip/dist/jszip.min.js"></script>
 <script type="text/javascript" src="jquery/jszip-utils/dist/jszip-utils.min.js"></script>
 <!--[if IE]>
 <script type="text/javascript" src="jquery/jszip-utils/dist/jszip-utils-ie.min.js"></script>
 <![endif]-->
-<script type="text/javascript" src="jquery/jquery-3.5.1.js"></script>
-<script type="text/javascript" src="jquery/jquery-ui.js"></script>
+<script type="text/javascript" src="jquery/jquery-3.6.0.min.js"></script>
+<script type="text/javascript" src="jquery/jquery-ui.min.js"></script>
 </head>
 <body>
 <script type="text/javascript"><!--
@@ -98,7 +99,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <div class="serializedFormContainer">
 <ul class="blockList">
 <li class="blockList">
-<section role="region">
+<section>
 <h2 title="Package">Package&nbsp;org.apache.sysds.api</h2>
 <ul class="blockList">
 <li class="blockList"><a id="org.apache.sysds.api.DMLException">
@@ -114,7 +115,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </section>
 </li>
 <li class="blockList">
-<section role="region">
+<section>
 <h2 title="Package">Package&nbsp;org.apache.sysds.api.mlcontext</h2>
 <ul class="blockList">
 <li class="blockList"><a id="org.apache.sysds.api.mlcontext.MLContextException">
@@ -141,7 +142,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </section>
 </li>
 <li class="blockList">
-<section role="region">
+<section>
 <h2 title="Package">Package&nbsp;org.apache.sysds.hops</h2>
 <ul class="blockList">
 <li class="blockList"><a id="org.apache.sysds.hops.HopsException">
@@ -157,7 +158,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </section>
 </li>
 <li class="blockList">
-<section role="region">
+<section>
 <h2 title="Package">Package&nbsp;org.apache.sysds.hops.fedplanner</h2>
 <ul class="blockList">
 <li class="blockList"><a id="org.apache.sysds.hops.fedplanner.PrivacyConstraintLoader.PrivacyConstraintRetriever">
@@ -184,7 +185,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </section>
 </li>
 <li class="blockList">
-<section role="region">
+<section>
 <h2 title="Package">Package&nbsp;org.apache.sysds.lops</h2>
 <ul class="blockList">
 <li class="blockList"><a id="org.apache.sysds.lops.LopsException">
@@ -200,7 +201,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </section>
 </li>
 <li class="blockList">
-<section role="region">
+<section>
 <h2 title="Package">Package&nbsp;org.apache.sysds.parser</h2>
 <ul class="blockList">
 <li class="blockList"><a id="org.apache.sysds.parser.LanguageException">
@@ -251,7 +252,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </section>
 </li>
 <li class="blockList">
-<section role="region">
+<section>
 <h2 title="Package">Package&nbsp;org.apache.sysds.runtime</h2>
 <ul class="blockList">
 <li class="blockList"><a id="org.apache.sysds.runtime.DMLRuntimeException">
@@ -276,7 +277,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </section>
 </li>
 <li class="blockList">
-<section role="region">
+<section>
 <h2 title="Package">Package&nbsp;org.apache.sysds.runtime.codegen</h2>
 <ul class="blockList">
 <li class="blockList"><a id="org.apache.sysds.runtime.codegen.SpoofCellwise">
@@ -460,7 +461,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </section>
 </li>
 <li class="blockList">
-<section role="region">
+<section>
 <h2 title="Package">Package&nbsp;org.apache.sysds.runtime.compress</h2>
 <ul class="blockList">
 <li class="blockList"><a id="org.apache.sysds.runtime.compress.CompressedMatrixBlock">
@@ -514,7 +515,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </section>
 </li>
 <li class="blockList">
-<section role="region">
+<section>
 <h2 title="Package">Package&nbsp;org.apache.sysds.runtime.compress.colgroup</h2>
 <ul class="blockList">
 <li class="blockList"><a id="org.apache.sysds.runtime.compress.colgroup.AColGroup">
@@ -532,7 +533,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <li class="blockListLast">
 <h4>_colIndexes</h4>
 <pre>int[] _colIndexes</pre>
-<div class="block">The ColGroup Indexes contained in the ColGroup</div>
+<div class="block">The ColGroup indexes contained in the ColGroup</div>
 </li>
 </ul>
 </li>
@@ -567,6 +568,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <li class="blockList">
 <h4>_numRows</h4>
 <pre>int _numRows</pre>
+<div class="block">The number of rows in this column group</div>
 </li>
 <li class="blockList">
 <h4>_ptr</h4>
@@ -576,6 +578,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <li class="blockListLast">
 <h4>_zeros</h4>
 <pre>boolean _zeros</pre>
+<div class="block">If the column group contains unassigned rows.</div>
 </li>
 </ul>
 </li>
@@ -661,6 +664,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <li class="blockListLast">
 <h4>_numRows</h4>
 <pre>int _numRows</pre>
+<div class="block">The number of rows in this column group</div>
 </li>
 </ul>
 </li>
@@ -686,6 +690,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <li class="blockListLast">
 <h4>_numRows</h4>
 <pre>int _numRows</pre>
+<div class="block">The number of rows in this column group</div>
 </li>
 </ul>
 </li>
@@ -926,7 +931,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </section>
 </li>
 <li class="blockList">
-<section role="region">
+<section>
 <h2 title="Package">Package&nbsp;org.apache.sysds.runtime.compress.colgroup.dictionary</h2>
 <ul class="blockList">
 <li class="blockList"><a id="org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary">
@@ -1026,7 +1031,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </section>
 </li>
 <li class="blockList">
-<section role="region">
+<section>
 <h2 title="Package">Package&nbsp;org.apache.sysds.runtime.compress.colgroup.mapping</h2>
 <ul class="blockList">
 <li class="blockList"><a id="org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData">
@@ -1191,7 +1196,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </section>
 </li>
 <li class="blockList">
-<section role="region">
+<section>
 <h2 title="Package">Package&nbsp;org.apache.sysds.runtime.compress.colgroup.offset</h2>
 <ul class="blockList">
 <li class="blockList"><a id="org.apache.sysds.runtime.compress.colgroup.offset.AOffset">
@@ -1287,6 +1292,15 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </li>
 </ul>
 </li>
+<li class="blockList"><a id="org.apache.sysds.runtime.compress.colgroup.offset.OffsetEmpty">
+<!--   -->
+</a>
+<h3>Class <a href="org/apache/sysds/runtime/compress/colgroup/offset/OffsetEmpty.html" title="class in org.apache.sysds.runtime.compress.colgroup.offset">org.apache.sysds.runtime.compress.colgroup.offset.OffsetEmpty</a> extends <a href="org/apache/sysds/runtime/compress/colgroup/offset/AOffset.html" title="class in org.apache.sysds.runtime.compress.colgroup.offset">AOffset</a> implements Serializable</h3>
+<dl class="nameValue">
+<dt>serialVersionUID:</dt>
+<dd>-471610497392221790L</dd>
+</dl>
+</li>
 <li class="blockList"><a id="org.apache.sysds.runtime.compress.colgroup.offset.OffsetSingle">
 <!--   -->
 </a>
@@ -1335,7 +1349,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </section>
 </li>
 <li class="blockList">
-<section role="region">
+<section>
 <h2 title="Package">Package&nbsp;org.apache.sysds.runtime.compress.cost</h2>
 <ul class="blockList">
 <li class="blockList"><a id="org.apache.sysds.runtime.compress.cost.ACostEstimate">
@@ -1505,7 +1519,32 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </section>
 </li>
 <li class="blockList">
-<section role="region">
+<section>
+<h2 title="Package">Package&nbsp;org.apache.sysds.runtime.compress.io</h2>
+<ul class="blockList">
+<li class="blockList"><a id="org.apache.sysds.runtime.compress.io.CompressUnwrap">
+<!--   -->
+</a>
+<h3>Class <a href="org/apache/sysds/runtime/compress/io/CompressUnwrap.html" title="class in org.apache.sysds.runtime.compress.io">org.apache.sysds.runtime.compress.io.CompressUnwrap</a> extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a> implements Serializable</h3>
+<dl class="nameValue">
+<dt>serialVersionUID:</dt>
+<dd>966405324406154236L</dd>
+</dl>
+</li>
+<li class="blockList"><a id="org.apache.sysds.runtime.compress.io.CompressWrap">
+<!--   -->
+</a>
+<h3>Class <a href="org/apache/sysds/runtime/compress/io/CompressWrap.html" title="class in org.apache.sysds.runtime.compress.io">org.apache.sysds.runtime.compress.io.CompressWrap</a> extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a> implements Serializable</h3>
+<dl class="nameValue">
+<dt>serialVersionUID:</dt>
+<dd>966405324406154236L</dd>
+</dl>
+</li>
+</ul>
+</section>
+</li>
+<li class="blockList">
+<section>
 <h2 title="Package">Package&nbsp;org.apache.sysds.runtime.controlprogram</h2>
 <ul class="blockList">
 <li class="blockList"><a id="org.apache.sysds.runtime.controlprogram.ParForProgramBlock.PartitionFormat">
@@ -1536,7 +1575,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </section>
 </li>
 <li class="blockList">
-<section role="region">
+<section>
 <h2 title="Package">Package&nbsp;org.apache.sysds.runtime.controlprogram.caching</h2>
 <ul class="blockList">
 <li class="blockList"><a id="org.apache.sysds.runtime.controlprogram.caching.CacheableData">
@@ -1672,7 +1711,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <li class="blockList"><a id="org.apache.sysds.runtime.controlprogram.caching.FrameObject">
 <!--   -->
 </a>
-<h3>Class <a href="org/apache/sysds/runtime/controlprogram/caching/FrameObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">org.apache.sysds.runtime.controlprogram.caching.FrameObject</a> extends <a href="org/apache/sysds/runtime/controlprogram/caching/CacheableData.html" title="class in org.apache.sysds.runtime.controlprogram.caching">CacheableData</a>&lt;<a href="org/apache/sysds/runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&gt; implements Serializable</h3>
+<h3>Class <a href="org/apache/sysds/runtime/controlprogram/caching/FrameObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">org.apache.sysds.runtime.controlprogram.caching.FrameObject</a> extends <a href="org/apache/sysds/runtime/controlprogram/caching/CacheableData.html" title="class in org.apache.sysds.runtime.controlprogram.caching">CacheableData</a>&lt;<a href="org/apache/sysds/runtime/frame/data/FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&gt; implements Serializable</h3>
 <dl class="nameValue">
 <dt>serialVersionUID:</dt>
 <dd>1755082174281927785L</dd>
@@ -1750,7 +1789,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </section>
 </li>
 <li class="blockList">
-<section role="region">
+<section>
 <h2 title="Package">Package&nbsp;org.apache.sysds.runtime.controlprogram.federated</h2>
 <ul class="blockList">
 <li class="blockList"><a id="org.apache.sysds.runtime.controlprogram.federated.FederatedRequest">
@@ -2136,7 +2175,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </section>
 </li>
 <li class="blockList">
-<section role="region">
+<section>
 <h2 title="Package">Package&nbsp;org.apache.sysds.runtime.controlprogram.federated.monitoring.models</h2>
 <ul class="blockList">
 <li class="blockList"><a id="org.apache.sysds.runtime.controlprogram.federated.monitoring.models.BaseModel">
@@ -2311,6 +2350,38 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </li>
 </ul>
 </li>
+<li class="blockList"><a id="org.apache.sysds.runtime.controlprogram.federated.monitoring.models.HeavyHitterModel">
+<!--   -->
+</a>
+<h3>Class <a href="org/apache/sysds/runtime/controlprogram/federated/monitoring/models/HeavyHitterModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">org.apache.sysds.runtime.controlprogram.federated.monitoring.models.HeavyHitterModel</a> extends <a href="org/apache/sysds/runtime/controlprogram/federated/monitoring/models/BaseModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">BaseModel</a> implements Serializable</h3>
+<dl class="nameValue">
+<dt>serialVersionUID:</dt>
+<dd>1L</dd>
+</dl>
+<ul class="blockList">
+<li class="blockList">
+<h3>Serialized Fields</h3>
+<ul class="blockList">
+<li class="blockList">
+<h4>count</h4>
+<pre><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Long.html?is-external=true" title="class or interface in java.lang" class="externalLink">Long</a> count</pre>
+</li>
+<li class="blockList">
+<h4>duration</h4>
+<pre>double duration</pre>
+</li>
+<li class="blockList">
+<h4>operation</h4>
+<pre><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a> operation</pre>
+</li>
+<li class="blockListLast">
+<h4>workerId</h4>
+<pre><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Long.html?is-external=true" title="class or interface in java.lang" class="externalLink">Long</a> workerId</pre>
+</li>
+</ul>
+</li>
+</ul>
+</li>
 <li class="blockList"><a id="org.apache.sysds.runtime.controlprogram.federated.monitoring.models.RequestModel">
 <!--   -->
 </a>
@@ -2360,6 +2431,10 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <pre><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="org/apache/sysds/runtime/controlprogram/federated/monitoring/models/EventModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">EventModel</a>&gt; events</pre>
 </li>
 <li class="blockList">
+<h4>heavyHitters</h4>
+<pre><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="org/apache/sysds/runtime/controlprogram/federated/monitoring/models/HeavyHitterModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">HeavyHitterModel</a>&gt; heavyHitters</pre>
+</li>
+<li class="blockList">
 <h4>requests</h4>
 <pre><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="org/apache/sysds/runtime/controlprogram/federated/monitoring/models/RequestModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">RequestModel</a>&gt; requests</pre>
 </li>
@@ -2394,6 +2469,10 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <li class="blockList">
 <h4>events</h4>
 <pre>boolean events</pre>
+</li>
+<li class="blockList">
+<h4>heavyHitters</h4>
+<pre>boolean heavyHitters</pre>
 </li>
 <li class="blockList">
 <h4>requests</h4>
@@ -2507,7 +2586,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </section>
 </li>
 <li class="blockList">
-<section role="region">
+<section>
 <h2 title="Package">Package&nbsp;org.apache.sysds.runtime.controlprogram.paramserv</h2>
 <ul class="blockList">
 <li class="blockList"><a id="org.apache.sysds.runtime.controlprogram.paramserv.FederatedPSControlThread">
@@ -2731,7 +2810,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </section>
 </li>
 <li class="blockList">
-<section role="region">
+<section>
 <h2 title="Package">Package&nbsp;org.apache.sysds.runtime.controlprogram.paramserv.dp</h2>
 <ul class="blockList">
 <li class="blockList"><a id="org.apache.sysds.runtime.controlprogram.paramserv.dp.DataPartitionerSparkAggregator">
@@ -2866,7 +2945,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </section>
 </li>
 <li class="blockList">
-<section role="region">
+<section>
 <h2 title="Package">Package&nbsp;org.apache.sysds.runtime.controlprogram.paramserv.homomorphicEncryption</h2>
 <ul class="blockList">
 <li class="blockList"><a id="org.apache.sysds.runtime.controlprogram.paramserv.homomorphicEncryption.PublicKey">
@@ -2893,7 +2972,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </section>
 </li>
 <li class="blockList">
-<section role="region">
+<section>
 <h2 title="Package">Package&nbsp;org.apache.sysds.runtime.controlprogram.parfor</h2>
 <ul class="blockList">
 <li class="blockList"><a id="org.apache.sysds.runtime.controlprogram.parfor.DataPartitionerRemoteSparkMapper">
@@ -3267,7 +3346,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </section>
 </li>
 <li class="blockList">
-<section role="region">
+<section>
 <h2 title="Package">Package&nbsp;org.apache.sysds.runtime.controlprogram.parfor.util</h2>
 <ul class="blockList">
 <li class="blockList"><a id="org.apache.sysds.runtime.controlprogram.parfor.util.PairWritableBlock">
@@ -3322,7 +3401,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </section>
 </li>
 <li class="blockList">
-<section role="region">
+<section>
 <h2 title="Package">Package&nbsp;org.apache.sysds.runtime.data</h2>
 <ul class="blockList">
 <li class="blockList"><a id="org.apache.sysds.runtime.data.BasicTensorBlock">
@@ -3966,7 +4045,88 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </section>
 </li>
 <li class="blockList">
-<section role="region">
+<section>
+<h2 title="Package">Package&nbsp;org.apache.sysds.runtime.frame.data</h2>
+<ul class="blockList">
+<li class="blockList"><a id="org.apache.sysds.runtime.frame.data.FrameBlock">
+<!--   -->
+</a>
+<h3>Class <a href="org/apache/sysds/runtime/frame/data/FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">org.apache.sysds.runtime.frame.data.FrameBlock</a> extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a> implements Serializable</h3>
+<dl class="nameValue">
+<dt>serialVersionUID:</dt>
+<dd>-3993450030207130665L</dd>
+</dl>
+<ul class="blockList">
+<li class="blockList">
+<h3>Serialization Methods</h3>
+<ul class="blockList">
+<li class="blockList">
+<h4>readExternal</h4>
+<pre class="methodSignature">public&nbsp;void&nbsp;readExternal&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/ObjectInput.html?is-external=true" title="class or interface in java.io" class="externalLink">ObjectInput</a>&nbsp;in)
+                  throws <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></pre>
+<dl>
+<dt><span class="throwsLabel">Throws:</span></dt>
+<dd><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></code></dd>
+</dl>
+</li>
+<li class="blockListLast">
+<h4>writeExternal</h4>
+<pre class="methodSignature">public&nbsp;void&nbsp;writeExternal&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/ObjectOutput.html?is-external=true" title="class or interface in java.io" class="externalLink">ObjectOutput</a>&nbsp;out)
+                   throws <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></pre>
+<dl>
+<dt><span class="throwsLabel">Throws:</span></dt>
+<dd><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></code></dd>
+</dl>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="blockList"><a id="org.apache.sysds.runtime.frame.data.FrameBlock.FrameMapFunction">
+<!--   -->
+</a>
+<h3>Class <a href="org/apache/sysds/runtime/frame/data/FrameBlock.FrameMapFunction.html" title="class in org.apache.sysds.runtime.frame.data">org.apache.sysds.runtime.frame.data.FrameBlock.FrameMapFunction</a> extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a> implements Serializable</h3>
+<dl class="nameValue">
+<dt>serialVersionUID:</dt>
+<dd>-8398572153616520873L</dd>
+</dl>
+</li>
+</ul>
+</section>
+</li>
+<li class="blockList">
+<section>
+<h2 title="Package">Package&nbsp;org.apache.sysds.runtime.frame.data.columns</h2>
+<ul class="blockList">
+<li class="blockList"><a id="org.apache.sysds.runtime.frame.data.columns.ColumnMetadata">
+<!--   -->
+</a>
+<h3>Class <a href="org/apache/sysds/runtime/frame/data/columns/ColumnMetadata.html" title="class in org.apache.sysds.runtime.frame.data.columns">org.apache.sysds.runtime.frame.data.columns.ColumnMetadata</a> extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a> implements Serializable</h3>
+<dl class="nameValue">
+<dt>serialVersionUID:</dt>
+<dd>-90094082422100311L</dd>
+</dl>
+<ul class="blockList">
+<li class="blockList">
+<h3>Serialized Fields</h3>
+<ul class="blockList">
+<li class="blockList">
+<h4>_mvValue</h4>
+<pre><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a> _mvValue</pre>
+</li>
+<li class="blockListLast">
+<h4>_ndistinct</h4>
+<pre>long _ndistinct</pre>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</section>
+</li>
+<li class="blockList">
+<section>
 <h2 title="Package">Package&nbsp;org.apache.sysds.runtime.functionobjects</h2>
 <ul class="blockList">
 <li class="blockList"><a id="org.apache.sysds.runtime.functionobjects.And">
@@ -4605,7 +4765,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </section>
 </li>
 <li class="blockList">
-<section role="region">
+<section>
 <h2 title="Package">Package&nbsp;org.apache.sysds.runtime.instructions.cp</h2>
 <ul class="blockList">
 <li class="blockList"><a id="org.apache.sysds.runtime.instructions.cp.BooleanObject">
@@ -4892,7 +5052,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </section>
 </li>
 <li class="blockList">
-<section role="region">
+<section>
 <h2 title="Package">Package&nbsp;org.apache.sysds.runtime.instructions.fed</h2>
 <ul class="blockList">
 <li class="blockList"><a id="org.apache.sysds.runtime.instructions.fed.MultiReturnParameterizedBuiltinFEDInstruction.CreateFrameEncoder">
@@ -4961,7 +5121,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </li>
 <li class="blockList">
 <h4>_meta</h4>
-<pre><a href="org/apache/sysds/runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a> _meta</pre>
+<pre><a href="org/apache/sysds/runtime/frame/data/FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a> _meta</pre>
 </li>
 <li class="blockListLast">
 <h4>_outputID</h4>
@@ -5160,7 +5320,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </section>
 </li>
 <li class="blockList">
-<section role="region">
+<section>
 <h2 title="Package">Package&nbsp;org.apache.sysds.runtime.instructions.spark</h2>
 <ul class="blockList">
 <li class="blockList"><a id="org.apache.sysds.runtime.instructions.spark.AggregateUnarySPInstruction.RDDUAggFunction2">
@@ -5865,7 +6025,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </section>
 </li>
 <li class="blockList">
-<section role="region">
+<section>
 <h2 title="Package">Package&nbsp;org.apache.sysds.runtime.instructions.spark.data</h2>
 <ul class="blockList">
 <li class="blockList"><a id="org.apache.sysds.runtime.instructions.spark.data.BlockPartitioner">
@@ -6084,7 +6244,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </section>
 </li>
 <li class="blockList">
-<section role="region">
+<section>
 <h2 title="Package">Package&nbsp;org.apache.sysds.runtime.instructions.spark.functions</h2>
 <ul class="blockList">
 <li class="blockList"><a id="org.apache.sysds.runtime.instructions.spark.functions.AggregateDropCorrectionFunction">
@@ -6880,7 +7040,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </section>
 </li>
 <li class="blockList">
-<section role="region">
+<section>
 <h2 title="Package">Package&nbsp;org.apache.sysds.runtime.instructions.spark.utils</h2>
 <ul class="blockList">
 <li class="blockList"><a id="org.apache.sysds.runtime.instructions.spark.utils.FrameRDDConverterUtils.LongFrameToLongWritableFrameFunction">
@@ -7001,7 +7161,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </section>
 </li>
 <li class="blockList">
-<section role="region">
+<section>
 <h2 title="Package">Package&nbsp;org.apache.sysds.runtime.io</h2>
 <ul class="blockList">
 <li class="blockList"><a id="org.apache.sysds.runtime.io.FileFormatPropertiesCSV">
@@ -7160,7 +7320,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </section>
 </li>
 <li class="blockList">
-<section role="region">
+<section>
 <h2 title="Package">Package&nbsp;org.apache.sysds.runtime.io.hdf5</h2>
 <ul class="blockList">
 <li class="blockList"><a id="org.apache.sysds.runtime.io.hdf5.H5RuntimeException">
@@ -7176,7 +7336,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </section>
 </li>
 <li class="blockList">
-<section role="region">
+<section>
 <h2 title="Package">Package&nbsp;org.apache.sysds.runtime.iogen</h2>
 <ul class="blockList">
 <li class="blockList"><a id="org.apache.sysds.runtime.iogen.CustomProperties">
@@ -7267,7 +7427,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </section>
 </li>
 <li class="blockList">
-<section role="region">
+<section>
 <h2 title="Package">Package&nbsp;org.apache.sysds.runtime.matrix.data</h2>
 <ul class="blockList">
 <li class="blockList"><a id="org.apache.sysds.runtime.matrix.data.DnnParameters">
@@ -7381,73 +7541,6 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </ul>
 </li>
 </ul>
-</li>
-<li class="blockList"><a id="org.apache.sysds.runtime.matrix.data.FrameBlock">
-<!--   -->
-</a>
-<h3>Class <a href="org/apache/sysds/runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">org.apache.sysds.runtime.matrix.data.FrameBlock</a> extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a> implements Serializable</h3>
-<dl class="nameValue">
-<dt>serialVersionUID:</dt>
-<dd>-3993450030207130665L</dd>
-</dl>
-<ul class="blockList">
-<li class="blockList">
-<h3>Serialization Methods</h3>
-<ul class="blockList">
-<li class="blockList">
-<h4>readExternal</h4>
-<pre class="methodSignature">public&nbsp;void&nbsp;readExternal&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/ObjectInput.html?is-external=true" title="class or interface in java.io" class="externalLink">ObjectInput</a>&nbsp;in)
-                  throws <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></pre>
-<dl>
-<dt><span class="throwsLabel">Throws:</span></dt>
-<dd><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></code></dd>
-</dl>
-</li>
-<li class="blockListLast">
-<h4>writeExternal</h4>
-<pre class="methodSignature">public&nbsp;void&nbsp;writeExternal&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/ObjectOutput.html?is-external=true" title="class or interface in java.io" class="externalLink">ObjectOutput</a>&nbsp;out)
-                   throws <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></pre>
-<dl>
-<dt><span class="throwsLabel">Throws:</span></dt>
-<dd><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></code></dd>
-</dl>
-</li>
-</ul>
-</li>
-</ul>
-</li>
-<li class="blockList"><a id="org.apache.sysds.runtime.matrix.data.FrameBlock.ColumnMetadata">
-<!--   -->
-</a>
-<h3>Class <a href="org/apache/sysds/runtime/matrix/data/FrameBlock.ColumnMetadata.html" title="class in org.apache.sysds.runtime.matrix.data">org.apache.sysds.runtime.matrix.data.FrameBlock.ColumnMetadata</a> extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a> implements Serializable</h3>
-<dl class="nameValue">
-<dt>serialVersionUID:</dt>
-<dd>-90094082422100311L</dd>
-</dl>
-<ul class="blockList">
-<li class="blockList">
-<h3>Serialized Fields</h3>
-<ul class="blockList">
-<li class="blockList">
-<h4>_mvValue</h4>
-<pre><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a> _mvValue</pre>
-</li>
-<li class="blockListLast">
-<h4>_ndistinct</h4>
-<pre>long _ndistinct</pre>
-</li>
-</ul>
-</li>
-</ul>
-</li>
-<li class="blockList"><a id="org.apache.sysds.runtime.matrix.data.FrameBlock.FrameMapFunction">
-<!--   -->
-</a>
-<h3>Class <a href="org/apache/sysds/runtime/matrix/data/FrameBlock.FrameMapFunction.html" title="class in org.apache.sysds.runtime.matrix.data">org.apache.sysds.runtime.matrix.data.FrameBlock.FrameMapFunction</a> extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a> implements Serializable</h3>
-<dl class="nameValue">
-<dt>serialVersionUID:</dt>
-<dd>-8398572153616520873L</dd>
-</dl>
 </li>
 <li class="blockList"><a id="org.apache.sysds.runtime.matrix.data.MatrixBlock">
 <!--   -->
@@ -7617,7 +7710,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </section>
 </li>
 <li class="blockList">
-<section role="region">
+<section>
 <h2 title="Package">Package&nbsp;org.apache.sysds.runtime.matrix.operators</h2>
 <ul class="blockList">
 <li class="blockList"><a id="org.apache.sysds.runtime.matrix.operators.AggregateBinaryOperator">
@@ -7775,7 +7868,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <li class="blockList"><a id="org.apache.sysds.runtime.matrix.operators.CountDistinctOperator">
 <!--   -->
 </a>
-<h3>Class <a href="org/apache/sysds/runtime/matrix/operators/CountDistinctOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">org.apache.sysds.runtime.matrix.operators.CountDistinctOperator</a> extends <a href="org/apache/sysds/runtime/matrix/operators/Operator.html" title="class in org.apache.sysds.runtime.matrix.operators">Operator</a> implements Serializable</h3>
+<h3>Class <a href="org/apache/sysds/runtime/matrix/operators/CountDistinctOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">org.apache.sysds.runtime.matrix.operators.CountDistinctOperator</a> extends <a href="org/apache/sysds/runtime/matrix/operators/AggregateUnaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">AggregateUnaryOperator</a> implements Serializable</h3>
 <dl class="nameValue">
 <dt>serialVersionUID:</dt>
 <dd>7615123453265129670L</dd>
@@ -7791,10 +7884,6 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <li class="blockList">
 <h4>hashType</h4>
 <pre><a href="org/apache/sysds/utils/Hash.HashType.html" title="enum in org.apache.sysds.utils">Hash.HashType</a> hashType</pre>
-</li>
-<li class="blockList">
-<h4>indexFunction</h4>
-<pre><a href="org/apache/sysds/runtime/functionobjects/IndexFunction.html" title="class in org.apache.sysds.runtime.functionobjects">IndexFunction</a> indexFunction</pre>
 </li>
 <li class="blockListLast">
 <h4>operatorType</h4>
@@ -8047,7 +8136,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </section>
 </li>
 <li class="blockList">
-<section role="region">
+<section>
 <h2 title="Package">Package&nbsp;org.apache.sysds.runtime.meta</h2>
 <ul class="blockList">
 <li class="blockList"><a id="org.apache.sysds.runtime.meta.DataCharacteristics">
@@ -8134,7 +8223,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </section>
 </li>
 <li class="blockList">
-<section role="region">
+<section>
 <h2 title="Package">Package&nbsp;org.apache.sysds.runtime.privacy</h2>
 <ul class="blockList">
 <li class="blockList"><a id="org.apache.sysds.runtime.privacy.DMLPrivacyException">
@@ -8180,7 +8269,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </section>
 </li>
 <li class="blockList">
-<section role="region">
+<section>
 <h2 title="Package">Package&nbsp;org.apache.sysds.runtime.transform</h2>
 <ul class="blockList">
 <li class="blockList"><a id="org.apache.sysds.runtime.transform.TfUtils">
@@ -8207,7 +8296,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </section>
 </li>
 <li class="blockList">
-<section role="region">
+<section>
 <h2 title="Package">Package&nbsp;org.apache.sysds.runtime.transform.decode</h2>
 <ul class="blockList">
 <li class="blockList"><a id="org.apache.sysds.runtime.transform.decode.Decoder">
@@ -8388,7 +8477,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </section>
 </li>
 <li class="blockList">
-<section role="region">
+<section>
 <h2 title="Package">Package&nbsp;org.apache.sysds.runtime.transform.encode</h2>
 <ul class="blockList">
 <li class="blockList"><a id="org.apache.sysds.runtime.transform.encode.ColumnEncoder">
@@ -8813,7 +8902,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </section>
 </li>
 <li class="blockList">
-<section role="region">
+<section>
 <h2 title="Package">Package&nbsp;org.apache.sysds.runtime.transform.meta</h2>
 <ul class="blockList">
 <li class="blockList"><a id="org.apache.sysds.runtime.transform.meta.TfOffsetMap">
@@ -8844,7 +8933,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </section>
 </li>
 <li class="blockList">
-<section role="region">
+<section>
 <h2 title="Package">Package&nbsp;org.apache.sysds.runtime.transform.tokenize</h2>
 <ul class="blockList">
 <li class="blockList"><a id="org.apache.sysds.runtime.transform.tokenize.Tokenizer">
@@ -8879,7 +8968,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </section>
 </li>
 <li class="blockList">
-<section role="region">
+<section>
 <h2 title="Package">Package&nbsp;org.apache.sysds.runtime.transform.tokenize.applier</h2>
 <ul class="blockList">
 <li class="blockList"><a id="org.apache.sysds.runtime.transform.tokenize.applier.TokenizerApplier">
@@ -8975,7 +9064,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </section>
 </li>
 <li class="blockList">
-<section role="region">
+<section>
 <h2 title="Package">Package&nbsp;org.apache.sysds.runtime.transform.tokenize.builder</h2>
 <ul class="blockList">
 <li class="blockList"><a id="org.apache.sysds.runtime.transform.tokenize.builder.TokenizerBuilder">
@@ -9047,7 +9136,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </section>
 </li>
 <li class="blockList">
-<section role="region">
+<section>
 <h2 title="Package">Package&nbsp;org.apache.sysds.runtime.util</h2>
 <ul class="blockList">
 <li class="blockList"><a id="org.apache.sysds.runtime.util.FastStringTokenizer">

@@ -6,15 +6,16 @@
 <title>Builtins (Apache SystemDS 3.1.0-SNAPSHOT API)</title>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <link rel="stylesheet" type="text/css" href="../../../../stylesheet.css" title="Style">
-<link rel="stylesheet" type="text/css" href="../../../../jquery/jquery-ui.css" title="Style">
+<link rel="stylesheet" type="text/css" href="../../../../jquery/jquery-ui.min.css" title="Style">
+<link rel="stylesheet" type="text/css" href="../../../../jquery-ui.overrides.css" title="Style">
 <script type="text/javascript" src="../../../../script.js"></script>
 <script type="text/javascript" src="../../../../jquery/jszip/dist/jszip.min.js"></script>
 <script type="text/javascript" src="../../../../jquery/jszip-utils/dist/jszip-utils.min.js"></script>
 <!--[if IE]>
 <script type="text/javascript" src="../../../../jquery/jszip-utils/dist/jszip-utils-ie.min.js"></script>
 <![endif]-->
-<script type="text/javascript" src="../../../../jquery/jquery-3.5.1.js"></script>
-<script type="text/javascript" src="../../../../jquery/jquery-ui.js"></script>
+<script type="text/javascript" src="../../../../jquery/jquery-3.6.0.min.js"></script>
+<script type="text/javascript" src="../../../../jquery/jquery-ui.min.js"></script>
 </head>
 <body>
 <script type="text/javascript"><!--
@@ -158,7 +159,7 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <ul class="blockList">
 <li class="blockList">
 <!-- =========== ENUM CONSTANT SUMMARY =========== -->
-<section role="region">
+<section>
 <ul class="blockList">
 <li class="blockList"><a id="enum.constant.summary">
 <!--   -->
@@ -404,6 +405,22 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 </tr>
 <tr class="altColor">
 <th class="colFirst" scope="row"><code><span class="memberNameLink"><a href="#COUNT_DISTINCT_APPROX">COUNT_DISTINCT_APPROX</a></span></code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<th class="colFirst" scope="row"><code><span class="memberNameLink"><a href="#COUNT_DISTINCT_APPROX_COL">COUNT_DISTINCT_APPROX_COL</a></span></code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<th class="colFirst" scope="row"><code><span class="memberNameLink"><a href="#COUNT_DISTINCT_APPROX_ROW">COUNT_DISTINCT_APPROX_ROW</a></span></code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<th class="colFirst" scope="row"><code><span class="memberNameLink"><a href="#COUNT_DISTINCT_COL">COUNT_DISTINCT_COL</a></span></code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<th class="colFirst" scope="row"><code><span class="memberNameLink"><a href="#COUNT_DISTINCT_ROW">COUNT_DISTINCT_ROW</a></span></code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
@@ -1387,7 +1404,7 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 </ul>
 </section>
 <!-- ========== METHOD SUMMARY =========== -->
-<section role="region">
+<section>
 <ul class="blockList">
 <li class="blockList"><a id="method.summary">
 <!--   -->
@@ -1494,7 +1511,7 @@ the order they are declared.</div>
 <ul class="blockList">
 <li class="blockList">
 <!-- ============ ENUM CONSTANT DETAIL =========== -->
-<section role="region">
+<section>
 <ul class="blockList">
 <li class="blockList"><a id="enum.constant.detail">
 <!--   -->
@@ -1993,15 +2010,6 @@ the order they are declared.</div>
 <li class="blockList">
 <h4>COSH</h4>
 <pre>public static final&nbsp;<a href="Builtins.html" title="enum in org.apache.sysds.common">Builtins</a> COSH</pre>
-</li>
-</ul>
-<a id="COUNT_DISTINCT">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>COUNT_DISTINCT</h4>
-<pre>public static final&nbsp;<a href="Builtins.html" title="enum in org.apache.sysds.common">Builtins</a> COUNT_DISTINCT</pre>
 </li>
 </ul>
 <a id="COV">
@@ -3912,6 +3920,33 @@ the order they are declared.</div>
 <pre>public static final&nbsp;<a href="Builtins.html" title="enum in org.apache.sysds.common">Builtins</a> CDF</pre>
 </li>
 </ul>
+<a id="COUNT_DISTINCT">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>COUNT_DISTINCT</h4>
+<pre>public static final&nbsp;<a href="Builtins.html" title="enum in org.apache.sysds.common">Builtins</a> COUNT_DISTINCT</pre>
+</li>
+</ul>
+<a id="COUNT_DISTINCT_ROW">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>COUNT_DISTINCT_ROW</h4>
+<pre>public static final&nbsp;<a href="Builtins.html" title="enum in org.apache.sysds.common">Builtins</a> COUNT_DISTINCT_ROW</pre>
+</li>
+</ul>
+<a id="COUNT_DISTINCT_COL">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>COUNT_DISTINCT_COL</h4>
+<pre>public static final&nbsp;<a href="Builtins.html" title="enum in org.apache.sysds.common">Builtins</a> COUNT_DISTINCT_COL</pre>
+</li>
+</ul>
 <a id="COUNT_DISTINCT_APPROX">
 <!--   -->
 </a>
@@ -3919,6 +3954,24 @@ the order they are declared.</div>
 <li class="blockList">
 <h4>COUNT_DISTINCT_APPROX</h4>
 <pre>public static final&nbsp;<a href="Builtins.html" title="enum in org.apache.sysds.common">Builtins</a> COUNT_DISTINCT_APPROX</pre>
+</li>
+</ul>
+<a id="COUNT_DISTINCT_APPROX_ROW">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>COUNT_DISTINCT_APPROX_ROW</h4>
+<pre>public static final&nbsp;<a href="Builtins.html" title="enum in org.apache.sysds.common">Builtins</a> COUNT_DISTINCT_APPROX_ROW</pre>
+</li>
+</ul>
+<a id="COUNT_DISTINCT_APPROX_COL">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>COUNT_DISTINCT_APPROX_COL</h4>
+<pre>public static final&nbsp;<a href="Builtins.html" title="enum in org.apache.sysds.common">Builtins</a> COUNT_DISTINCT_APPROX_COL</pre>
 </li>
 </ul>
 <a id="CVLM">
@@ -4231,7 +4284,7 @@ the order they are declared.</div>
 </ul>
 </section>
 <!-- ============ METHOD DETAIL ========== -->
-<section role="region">
+<section>
 <ul class="blockList">
 <li class="blockList"><a id="method.detail">
 <!--   -->

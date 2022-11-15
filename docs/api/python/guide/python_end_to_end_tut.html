@@ -100,19 +100,10 @@
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#level-2">Level 2</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#step-1-metadata-and-reading">Step 1: Metadata and reading</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#step-2-defining-preprocess-operations">Step 2: Defining preprocess operations</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#step-3-applying-the-preprocessing-steps">Step 3: Applying the preprocessing steps</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#step-4-training-and-confusion-matrix">Step 4: Training and confusion matrix</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#id1">Full Script</a></li>
-</ul>
-</li>
-<li class="toctree-l2"><a class="reference internal" href="#level-3">Level 3</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#step-1-obtain-data">Step 1: Obtain data</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#step-2-load-the-algorithm">Step 2: Load the algorithm</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#step-3-training-the-neural-network">Step 3: Training the neural network</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#step-4-saving-the-model">Step 4: Saving the model</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#id2">Full Script</a></li>
 </ul>
 </li>
 </ul>
@@ -207,65 +198,72 @@ For this, we want to use the <a class="reference external" href="https://archive
 The Adult dataset contains attributes like age, workclass, education, marital-status, occupation, race, […] and the labels &gt;50K or &lt;=50K.
 Most of these features are categorical string values, but the dataset also includes continuous features.
 For this, we define three different levels with an increasing level of detail with regard to features provided by SystemDS.
-In the first level, we simply get an already preprocessed dataset from a DatasetManager.
-The second level, shows the built-in preprocessing capabilities of SystemDS.
-With the third level, we want to show how we can integrate custom-built networks or algorithms into our Python program.</p>
+In the first level, shows the built-in preprocessing capabilities of SystemDS.
+With the second level, we want to show how we can integrate custom-built networks or algorithms into our Python program.</p>
 <p>Prerequisite:</p>
 <ul class="simple">
 <li><p><a class="reference internal" href="../getting_started/install.html"><span class="doc">Install SystemDS</span></a></p></li>
 </ul>
 <div class="section" id="level-1">
 <h2>Level 1<a class="headerlink" href="#level-1" title="Permalink to this headline">¶</a></h2>
-<p>This example shows how one can work with NumPy data within the SystemDS framework. More precisely, we will make use of the
-built-in DataManager, Multinomial Logistic Regression function, and the Confusion Matrix function. The dataset used in this
-tutorial is a preprocessed version of the “UCI Adult Data Set”. If you are interested in data preprocessing, take a look at level 2.
+<p>This example shows how one can work the SystemDS framework.
+More precisely, we will make use of the built-in DataManager, Multinomial Logistic Regression function, and the Confusion Matrix function.
+The dataset used in this tutorial is a preprocessed version of the “UCI Adult Data Set”.
 If one wants to skip the explanation then the full script is available at the end of this level.</p>
-<p>We will train a Multinomial Logistic Regression model on the training dataset and subsequently we will use the test dataset
+<p>We will train a Multinomial Logistic Regression model on the training dataset and subsequently use the test dataset
 to assess how well our model can predict if the income is above or below $50K/yr based on the features.</p>
 <div class="section" id="step-1-load-and-prepare-data">
 <h3>Step 1: Load and prepare data<a class="headerlink" href="#step-1-load-and-prepare-data" title="Permalink to this headline">¶</a></h3>
 <p>First, we get our training and testing data from the built-in DataManager. Since the multiLogReg function requires the
 labels (Y) to be &gt; 0, we add 1 to all labels. This ensures that the smallest label is &gt;= 1. Additionally we will only take
 a fraction of the training and test set into account to speed up the execution.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">systemds.context</span> <span class="kn">import</span> <span class="n">SystemDSContext</span>
+<div class="code python highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">systemds.context</span> <span class="kn">import</span> <span class="n">SystemDSContext</span>
 <span class="kn">from</span> <span class="nn">systemds.examples.tutorials.adult</span> <span class="kn">import</span> <span class="n">DataManager</span>
+<span class="kn">from</span> <span class="nn">systemds.operator.algorithm</span> <span class="kn">import</span> <span class="n">multiLogReg</span>
+<span class="kn">from</span> <span class="nn">systemds.operator.algorithm</span> <span class="kn">import</span> <span class="n">multiLogRegPredict</span>
+<span class="kn">from</span> <span class="nn">systemds.operator.algorithm</span> <span class="kn">import</span> <span class="n">confusionMatrix</span>
 
-<span class="n">sds</span> <span class="o">=</span> <span class="n">SystemDSContext</span><span class="p">()</span>
-<span class="n">d</span> <span class="o">=</span> <span class="n">DataManager</span><span class="p">()</span>
+<span class="k">with</span> <span class="n">SystemDSContext</span><span class="p">()</span> <span class="k">as</span> <span class="n">sds</span><span class="p">:</span>
+    <span class="n">d</span> <span class="o">=</span> <span class="n">DataManager</span><span class="p">()</span>
 
-<span class="c1"># limit the sample size</span>
-<span class="n">train_count</span> <span class="o">=</span> <span class="mi">15000</span>
-<span class="n">test_count</span> <span class="o">=</span> <span class="mi">5000</span>
+    <span class="c1"># limit the sample size</span>
+    <span class="n">train_count</span> <span class="o">=</span> <span class="mi">15000</span>
+    <span class="n">test_count</span> <span class="o">=</span> <span class="mi">5000</span>
 
-<span class="n">train_data</span><span class="p">,</span> <span class="n">train_labels</span><span class="p">,</span> <span class="n">test_data</span><span class="p">,</span> <span class="n">test_labels</span> <span class="o">=</span> <span class="n">d</span><span class="o">.</span><span class="n">get_preprocessed_dataset</span><span class="p">(</span><span class="n">interpolate</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">standardize</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">dimred</span><span class="o">=</span><span class="mf">0.1</span><span class="p">)</span>
+    <span class="c1"># Get train and test datasets.</span>
+    <span class="n">X_frame</span><span class="p">,</span> <span class="n">Y_frame</span><span class="p">,</span> <span class="n">Xt_frame</span><span class="p">,</span> <span class="n">Yt_frame</span> <span class="o">=</span> <span class="n">d</span><span class="o">.</span><span class="n">get_preprocessed_dataset</span><span class="p">(</span><span class="n">sds</span><span class="p">)</span>
 
-<span class="c1"># Train data</span>
-<span class="n">X</span> <span class="o">=</span> <span class="n">sds</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">train_data</span><span class="p">[:</span><span class="n">train_count</span><span class="p">])</span>
-<span class="n">Y</span> <span class="o">=</span> <span class="n">sds</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">train_labels</span><span class="p">[:</span><span class="n">train_count</span><span class="p">])</span>
-<span class="n">Y</span> <span class="o">=</span> <span class="n">Y</span> <span class="o">+</span> <span class="mf">1.0</span>
+    <span class="c1"># Transformation specification</span>
+    <span class="n">jspec_data</span> <span class="o">=</span> <span class="n">d</span><span class="o">.</span><span class="n">get_jspec</span><span class="p">(</span><span class="n">sds</span><span class="p">)</span>
+    <span class="n">jspec_labels</span> <span class="o">=</span> <span class="n">sds</span><span class="o">.</span><span class="n">scalar</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;&quot;</span><span class="si">{</span> <span class="p">{</span><span class="s2">&quot;recode&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;income&quot;</span><span class="p">]}</span> <span class="si">}</span><span class="s1">&quot;&#39;</span><span class="p">)</span>
 
-<span class="c1"># Test data</span>
-<span class="n">Xt</span> <span class="o">=</span> <span class="n">sds</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">test_data</span><span class="p">[:</span><span class="n">test_count</span><span class="p">])</span>
-<span class="n">Yt</span> <span class="o">=</span> <span class="n">sds</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">test_labels</span><span class="p">[:</span><span class="n">test_count</span><span class="p">])</span>
-<span class="n">Yt</span> <span class="o">=</span> <span class="n">Yt</span> <span class="o">+</span> <span class="mf">1.0</span>
+    <span class="c1"># Transform frames to matrices.</span>
+    <span class="n">X</span><span class="p">,</span> <span class="n">M1</span> <span class="o">=</span> <span class="n">X_frame</span><span class="o">.</span><span class="n">transform_encode</span><span class="p">(</span><span class="n">spec</span><span class="o">=</span><span class="n">jspec_data</span><span class="p">)</span>
+    <span class="n">Xt</span> <span class="o">=</span> <span class="n">Xt_frame</span><span class="o">.</span><span class="n">transform_apply</span><span class="p">(</span><span class="n">spec</span><span class="o">=</span><span class="n">jspec_data</span><span class="p">,</span> <span class="n">meta</span><span class="o">=</span><span class="n">M1</span><span class="p">)</span>
+    <span class="n">Y</span><span class="p">,</span> <span class="n">M2</span> <span class="o">=</span> <span class="n">Y_frame</span><span class="o">.</span><span class="n">transform_encode</span><span class="p">(</span><span class="n">spec</span><span class="o">=</span><span class="n">jspec_labels</span><span class="p">)</span>
+    <span class="n">Yt</span> <span class="o">=</span> <span class="n">Yt_frame</span><span class="o">.</span><span class="n">transform_apply</span><span class="p">(</span><span class="n">spec</span><span class="o">=</span><span class="n">jspec_labels</span><span class="p">,</span> <span class="n">meta</span><span class="o">=</span><span class="n">M2</span><span class="p">)</span>
+
+    <span class="c1"># Subsample to make training faster</span>
+    <span class="n">X</span> <span class="o">=</span> <span class="n">X</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">train_count</span><span class="p">]</span>
+    <span class="n">Y</span> <span class="o">=</span> <span class="n">Y</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">train_count</span><span class="p">]</span>
+    <span class="n">Xt</span> <span class="o">=</span> <span class="n">Xt</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">test_count</span><span class="p">]</span>
+    <span class="n">Yt</span> <span class="o">=</span> <span class="n">Yt</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">test_count</span><span class="p">]</span>
 </pre></div>
 </div>
-<p>Here the DataManager contains the code for downloading and setting up NumPy arrays containing the data.
-It is noteworthy that the function get_preprocessed_dataset has options for basic standardization, interpolation, and combining categorical features inside one column whose occurrences are below a certain threshold.</p>
+<p>Here the DataManager contains the code for downloading and setting up either Pandas DataFrames or internal SystemDS Frames,
+for the best performance and no data transfer from pandas to SystemDS it is recommended to read directly from disk into SystemDS.</p>
 </div>
 <div class="section" id="step-2-training">
 <h3>Step 2: Training<a class="headerlink" href="#step-2-training" title="Permalink to this headline">¶</a></h3>
 <p>Now that we prepared the data, we can use the multiLogReg function. First, we will train the model on our
 training data. Afterward, we can make predictions on the test data and assess the performance of the model.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">systemds.operator.algorithm</span> <span class="kn">import</span> <span class="n">multiLogReg</span>
-<span class="n">betas</span> <span class="o">=</span> <span class="n">multiLogReg</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">)</span>
+<div class="code python highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="n">betas</span> <span class="o">=</span> <span class="n">multiLogReg</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>Note that nothing has been calculated yet. In SystemDS the calculation is executed once compute() is called.
 E.g. betas_res = betas.compute().</p>
 <p>We can now use the trained model to make predictions on the test data.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">systemds.operator.algorithm</span> <span class="kn">import</span> <span class="n">multiLogRegPredict</span>
-<span class="p">[</span><span class="n">_</span><span class="p">,</span> <span class="n">y_pred</span><span class="p">,</span> <span class="n">acc</span><span class="p">]</span> <span class="o">=</span> <span class="n">multiLogRegPredict</span><span class="p">(</span><span class="n">Xt</span><span class="p">,</span> <span class="n">betas</span><span class="p">,</span> <span class="n">Yt</span><span class="p">)</span>
+<div class="code python highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="p">[</span><span class="n">_</span><span class="p">,</span> <span class="n">y_pred</span><span class="p">,</span> <span class="n">acc</span><span class="p">]</span> <span class="o">=</span> <span class="n">multiLogRegPredict</span><span class="p">(</span><span class="n">Xt</span><span class="p">,</span> <span class="n">betas</span><span class="p">,</span> <span class="n">Yt</span><span class="p">)</span>
 </pre></div>
 </div>
 <dl class="simple">
@@ -283,310 +281,99 @@ E.g. betas_res = betas.compute().</p>
 which classes the model has difficulties separating.
 The confusionMatrix function takes the predicted labels and the true labels. It then returns the confusion matrix
 for the predictions and the confusion matrix averages of each true class.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">systemds.operator.algorithm</span> <span class="kn">import</span> <span class="n">confusionMatrix</span>
-<span class="n">confusion_matrix_abs</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">confusionMatrix</span><span class="p">(</span><span class="n">y_pred</span><span class="p">,</span> <span class="n">Yt</span><span class="p">)</span><span class="o">.</span><span class="n">compute</span><span class="p">()</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">confusion_matrix_abs</span><span class="p">)</span>
+<div class="code python highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="n">confusion_matrix_abs</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">confusionMatrix</span><span class="p">(</span><span class="n">y_pred</span><span class="p">,</span> <span class="n">Yt</span><span class="p">)</span><span class="o">.</span><span class="n">compute</span><span class="p">()</span>
 </pre></div>
 </div>
 </div>
 <div class="section" id="full-script">
 <h3>Full Script<a class="headerlink" href="#full-script" title="Permalink to this headline">¶</a></h3>
 <p>In the full script, some steps are combined to reduce the overall script.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">from</span> <span class="nn">systemds.context</span> <span class="kn">import</span> <span class="n">SystemDSContext</span>
+<div class="code python highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">systemds.context</span> <span class="kn">import</span> <span class="n">SystemDSContext</span>
 <span class="kn">from</span> <span class="nn">systemds.examples.tutorials.adult</span> <span class="kn">import</span> <span class="n">DataManager</span>
-<span class="kn">from</span> <span class="nn">systemds.operator.algorithm</span> <span class="kn">import</span> <span class="n">multiLogReg</span><span class="p">,</span> <span class="n">multiLogRegPredict</span><span class="p">,</span> <span class="n">confusionMatrix</span>
+<span class="kn">from</span> <span class="nn">systemds.operator.algorithm</span> <span class="kn">import</span> <span class="n">multiLogReg</span>
+<span class="kn">from</span> <span class="nn">systemds.operator.algorithm</span> <span class="kn">import</span> <span class="n">multiLogRegPredict</span>
+<span class="kn">from</span> <span class="nn">systemds.operator.algorithm</span> <span class="kn">import</span> <span class="n">confusionMatrix</span>
 
-<span class="n">sds</span> <span class="o">=</span> <span class="n">SystemDSContext</span><span class="p">()</span>
-<span class="n">d</span> <span class="o">=</span> <span class="n">DataManager</span><span class="p">()</span>
+<span class="k">with</span> <span class="n">SystemDSContext</span><span class="p">()</span> <span class="k">as</span> <span class="n">sds</span><span class="p">:</span>
+    <span class="n">d</span> <span class="o">=</span> <span class="n">DataManager</span><span class="p">()</span>
 
-<span class="c1"># limit the sample size</span>
-<span class="n">train_count</span> <span class="o">=</span> <span class="mi">15000</span>
-<span class="n">test_count</span> <span class="o">=</span> <span class="mi">5000</span>
+    <span class="c1"># limit the sample size</span>
+    <span class="n">train_count</span> <span class="o">=</span> <span class="mi">15000</span>
+    <span class="n">test_count</span> <span class="o">=</span> <span class="mi">5000</span>
 
-<span class="n">train_data</span><span class="p">,</span> <span class="n">train_labels</span><span class="p">,</span> <span class="n">test_data</span><span class="p">,</span> <span class="n">test_labels</span> <span class="o">=</span> <span class="n">d</span><span class="o">.</span><span class="n">get_preprocessed_dataset</span><span class="p">(</span><span class="n">interpolate</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">standardize</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">dimred</span><span class="o">=</span><span class="mf">0.1</span><span class="p">)</span>
+    <span class="c1"># Get train and test datasets.</span>
+    <span class="n">X_frame</span><span class="p">,</span> <span class="n">Y_frame</span><span class="p">,</span> <span class="n">Xt_frame</span><span class="p">,</span> <span class="n">Yt_frame</span> <span class="o">=</span> <span class="n">d</span><span class="o">.</span><span class="n">get_preprocessed_dataset</span><span class="p">(</span><span class="n">sds</span><span class="p">)</span>
 
-<span class="c1"># Train data</span>
-<span class="n">X</span> <span class="o">=</span> <span class="n">sds</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">train_data</span><span class="p">[:</span><span class="n">train_count</span><span class="p">])</span>
-<span class="n">Y</span> <span class="o">=</span> <span class="n">sds</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">train_labels</span><span class="p">[:</span><span class="n">train_count</span><span class="p">])</span>
-<span class="n">Y</span> <span class="o">=</span> <span class="n">Y</span> <span class="o">+</span> <span class="mf">1.0</span>
+    <span class="c1"># Transformation specification</span>
+    <span class="n">jspec_data</span> <span class="o">=</span> <span class="n">d</span><span class="o">.</span><span class="n">get_jspec</span><span class="p">(</span><span class="n">sds</span><span class="p">)</span>
+    <span class="n">jspec_labels</span> <span class="o">=</span> <span class="n">sds</span><span class="o">.</span><span class="n">scalar</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;&quot;</span><span class="si">{</span> <span class="p">{</span><span class="s2">&quot;recode&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;income&quot;</span><span class="p">]}</span> <span class="si">}</span><span class="s1">&quot;&#39;</span><span class="p">)</span>
 
-<span class="c1"># Test data</span>
-<span class="n">Xt</span> <span class="o">=</span> <span class="n">sds</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">test_data</span><span class="p">[:</span><span class="n">test_count</span><span class="p">])</span>
-<span class="n">Yt</span> <span class="o">=</span> <span class="n">sds</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">test_labels</span><span class="p">[:</span><span class="n">test_count</span><span class="p">])</span>
-<span class="n">Yt</span> <span class="o">=</span> <span class="n">Yt</span> <span class="o">+</span> <span class="mf">1.0</span>
+    <span class="c1"># Transform frames to matrices.</span>
+    <span class="n">X</span><span class="p">,</span> <span class="n">M1</span> <span class="o">=</span> <span class="n">X_frame</span><span class="o">.</span><span class="n">transform_encode</span><span class="p">(</span><span class="n">spec</span><span class="o">=</span><span class="n">jspec_data</span><span class="p">)</span>
+    <span class="n">Xt</span> <span class="o">=</span> <span class="n">Xt_frame</span><span class="o">.</span><span class="n">transform_apply</span><span class="p">(</span><span class="n">spec</span><span class="o">=</span><span class="n">jspec_data</span><span class="p">,</span> <span class="n">meta</span><span class="o">=</span><span class="n">M1</span><span class="p">)</span>
+    <span class="n">Y</span><span class="p">,</span> <span class="n">M2</span> <span class="o">=</span> <span class="n">Y_frame</span><span class="o">.</span><span class="n">transform_encode</span><span class="p">(</span><span class="n">spec</span><span class="o">=</span><span class="n">jspec_labels</span><span class="p">)</span>
+    <span class="n">Yt</span> <span class="o">=</span> <span class="n">Yt_frame</span><span class="o">.</span><span class="n">transform_apply</span><span class="p">(</span><span class="n">spec</span><span class="o">=</span><span class="n">jspec_labels</span><span class="p">,</span> <span class="n">meta</span><span class="o">=</span><span class="n">M2</span><span class="p">)</span>
 
-<span class="n">betas</span> <span class="o">=</span> <span class="n">multiLogReg</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">)</span>
-<span class="p">[</span><span class="n">_</span><span class="p">,</span> <span class="n">y_pred</span><span class="p">,</span> <span class="n">acc</span><span class="p">]</span> <span class="o">=</span> <span class="n">multiLogRegPredict</span><span class="p">(</span><span class="n">Xt</span><span class="p">,</span> <span class="n">betas</span><span class="p">,</span> <span class="n">Yt</span><span class="p">)</span>
+    <span class="c1"># Subsample to make training faster</span>
+    <span class="n">X</span> <span class="o">=</span> <span class="n">X</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">train_count</span><span class="p">]</span>
+    <span class="n">Y</span> <span class="o">=</span> <span class="n">Y</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">train_count</span><span class="p">]</span>
+    <span class="n">Xt</span> <span class="o">=</span> <span class="n">Xt</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">test_count</span><span class="p">]</span>
+    <span class="n">Yt</span> <span class="o">=</span> <span class="n">Yt</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">test_count</span><span class="p">]</span>
 
-<span class="n">confusion_matrix_abs</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">confusionMatrix</span><span class="p">(</span><span class="n">y_pred</span><span class="p">,</span> <span class="n">Yt</span><span class="p">)</span><span class="o">.</span><span class="n">compute</span><span class="p">()</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">confusion_matrix_abs</span><span class="p">)</span>
+    <span class="c1"># Train model</span>
+    <span class="n">betas</span> <span class="o">=</span> <span class="n">multiLogReg</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+    <span class="c1"># Apply model</span>
+    <span class="p">[</span><span class="n">_</span><span class="p">,</span> <span class="n">y_pred</span><span class="p">,</span> <span class="n">acc</span><span class="p">]</span> <span class="o">=</span> <span class="n">multiLogRegPredict</span><span class="p">(</span><span class="n">Xt</span><span class="p">,</span> <span class="n">betas</span><span class="p">,</span> <span class="n">Yt</span><span class="p">)</span>
+
+    <span class="c1"># Confusion Matrix</span>
+    <span class="n">confusion_matrix_abs</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">confusionMatrix</span><span class="p">(</span><span class="n">y_pred</span><span class="p">,</span> <span class="n">Yt</span><span class="p">)</span><span class="o">.</span><span class="n">compute</span><span class="p">()</span>
+
+    <span class="kn">import</span> <span class="nn">logging</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Confusion Matrix&quot;</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">confusion_matrix_abs</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
 </div>
 <div class="section" id="level-2">
 <h2>Level 2<a class="headerlink" href="#level-2" title="Permalink to this headline">¶</a></h2>
-<p>This part of the tutorial shows an overview of the preprocessing capabilities that SystemDS has to offer.
-We will take an unprocessed dataset using the csv format and read it with SystemDS. Then do the heavy lifting for the preprocessing with SystemDS.
-As mentioned before, we want to use the Adult dataset for this task.
-If one wants to skip the explanation, then the full script is available at the end of this level.</p>
-<div class="section" id="step-1-metadata-and-reading">
-<h3>Step 1: Metadata and reading<a class="headerlink" href="#step-1-metadata-and-reading" title="Permalink to this headline">¶</a></h3>
-<p>First of all, we need to download the dataset and create a mtd-file for specifying different metadata about the dataset.
-We download the train and test dataset from: <a class="reference external" href="https://archive.ics.uci.edu/ml/datasets/adult">https://archive.ics.uci.edu/ml/datasets/adult</a></p>
-<p>The downloaded dataset will be slightly modified for convenience. These modifications entail removing unnecessary newlines at the end of the files and
-adding column names at the top of the files such that the first line looks like:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">age</span><span class="p">,</span><span class="n">workclass</span><span class="p">,</span><span class="n">fnlwgt</span><span class="p">,</span><span class="n">education</span><span class="p">,</span><span class="n">education</span><span class="o">-</span><span class="n">num</span><span class="p">,</span><span class="n">marital</span><span class="o">-</span><span class="n">status</span><span class="p">,</span><span class="n">occupation</span><span class="p">,</span><span class="n">relationship</span><span class="p">,</span><span class="n">race</span><span class="p">,</span><span class="n">sex</span><span class="p">,</span><span class="n">capital</span><span class="o">-</span><span class="n">gain</span><span class="p">,</span><span class="n">capital</span><span class="o">-</span><span class="n">loss</span><span class="p">,</span><span class="n">hours</span><span class="o">-</span><span class="n">per</span><span class="o">-</span><span class="n">week</span><span class="p">,</span><span class="n">native</span><span class="o">-</span><span class="n">country</span><span class="p">,</span><span class="n">income</span>
-</pre></div>
-</div>
-<p>We also delete the line holding the string value Cross validator inside the test dataset.</p>
-<p>After these modifications, we have to define a mtd file for each file we want to read. This mtd file has to be in the same directory as the dataset.
-In this particular example, the dataset is split into two files “train_data.csv” and “test_data.csv”. We want to read both, which means that we will define a mtd file for
-each of them. Those files will be called “train_data.csv.mtd” and “test_data.csv.mtd”.
-In these files, we can define certain properties that the file has and also specify which values are supposed to get treated like missing values.</p>
-<p>The content of the train_data.csv.mtd file is:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
-<span class="s2">&quot;data_type&quot;</span><span class="p">:</span> <span class="s2">&quot;frame&quot;</span><span class="p">,</span>
-<span class="s2">&quot;format&quot;</span><span class="p">:</span> <span class="s2">&quot;csv&quot;</span><span class="p">,</span>
-<span class="s2">&quot;header&quot;</span><span class="p">:</span> <span class="n">true</span><span class="p">,</span>
-<span class="s2">&quot;naStrings&quot;</span><span class="p">:</span> <span class="p">[</span> <span class="s2">&quot;?&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span> <span class="p">],</span>
-<span class="s2">&quot;rows&quot;</span><span class="p">:</span> <span class="mi">32561</span><span class="p">,</span>
-<span class="s2">&quot;cols&quot;</span><span class="p">:</span> <span class="mi">15</span>
-<span class="p">}</span>
-</pre></div>
-</div>
-<p>The “format” of the file is csv, and “header” is set to true because we added the feature names as headers to the csv files.
-The value “data_type” is set to frame, as the preprocessing functions that we use require this datatype.
-The value of “naStrings” is a list of all the string values that should be treated as unknown values during the preprocessing.
-Also, “rows” in our example is set to 32561, as we have this many entries and “cols” is set to 15 as we have 14 features, and one label column inside the files. We will later show how we can split them.</p>
-<p>After these requirements are completed, we have to define a SystemDSContext for reading our dataset. We can do this in the following way:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">sds</span> <span class="o">=</span> <span class="n">SystemDSContext</span><span class="p">()</span>
-
-<span class="n">train_count</span> <span class="o">=</span> <span class="mi">32561</span>
-<span class="n">test_count</span> <span class="o">=</span> <span class="mi">16281</span>
-</pre></div>
-</div>
-<p>With this context we can now define a read operation using the path of the dataset and a schema.
-The schema simply defines the data types for each column.</p>
-<p>As already mentioned, SystemDS supports lazy execution by default, which means that the read operation is only executed after calling the compute() function.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">SCHEMA</span> <span class="o">=</span> <span class="s1">&#39;&quot;DOUBLE,STRING,DOUBLE,STRING,DOUBLE,STRING,STRING,STRING,STRING,STRING,DOUBLE,DOUBLE,DOUBLE,STRING,STRING&quot;&#39;</span>
-
-<span class="n">dataset_path_train</span> <span class="o">=</span> <span class="s2">&quot;adult/train_data.csv&quot;</span>
-<span class="n">dataset_path_test</span> <span class="o">=</span> <span class="s2">&quot;adult/test_data.csv&quot;</span>
-
-<span class="n">F1</span> <span class="o">=</span> <span class="n">sds</span><span class="o">.</span><span class="n">read</span><span class="p">(</span>
-    <span class="n">dataset_path_train</span><span class="p">,</span>
-    <span class="n">schema</span><span class="o">=</span><span class="n">SCHEMA</span>
-<span class="p">)</span>
-<span class="n">F2</span> <span class="o">=</span> <span class="n">sds</span><span class="o">.</span><span class="n">read</span><span class="p">(</span>
-    <span class="n">dataset_path_test</span><span class="p">,</span>
-    <span class="n">schema</span><span class="o">=</span><span class="n">SCHEMA</span>
-<span class="p">)</span>
-</pre></div>
-</div>
-</div>
-<div class="section" id="step-2-defining-preprocess-operations">
-<h3>Step 2: Defining preprocess operations<a class="headerlink" href="#step-2-defining-preprocess-operations" title="Permalink to this headline">¶</a></h3>
-<p>Now that the read operation has been declared, we can define an additional file for the further preprocessing of the dataset.
-For this, we create a .json file that holds information about the operations that will be performed on individual columns.
-For the sake of this tutorial we will use the file “jspec.json” with the following content:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
-<span class="s2">&quot;impute&quot;</span><span class="p">:</span>
-<span class="p">[</span> <span class="p">{</span> <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;age&quot;</span><span class="p">,</span> <span class="s2">&quot;method&quot;</span><span class="p">:</span> <span class="s2">&quot;global_mean&quot;</span> <span class="p">}</span>
- <span class="p">,{</span> <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;workclass&quot;</span> <span class="p">,</span> <span class="s2">&quot;method&quot;</span><span class="p">:</span> <span class="s2">&quot;global_mode&quot;</span> <span class="p">}</span>
- <span class="p">,{</span> <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;fnlwgt&quot;</span><span class="p">,</span> <span class="s2">&quot;method&quot;</span><span class="p">:</span> <span class="s2">&quot;global_mean&quot;</span> <span class="p">}</span>
- <span class="p">,{</span> <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;education&quot;</span><span class="p">,</span> <span class="s2">&quot;method&quot;</span><span class="p">:</span> <span class="s2">&quot;global_mode&quot;</span>  <span class="p">}</span>
- <span class="p">,{</span> <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;education-num&quot;</span><span class="p">,</span> <span class="s2">&quot;method&quot;</span><span class="p">:</span> <span class="s2">&quot;global_mean&quot;</span> <span class="p">}</span>
- <span class="p">,{</span> <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;marital-status&quot;</span>      <span class="p">,</span> <span class="s2">&quot;method&quot;</span><span class="p">:</span> <span class="s2">&quot;global_mode&quot;</span> <span class="p">}</span>
- <span class="p">,{</span> <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;occupation&quot;</span>        <span class="p">,</span> <span class="s2">&quot;method&quot;</span><span class="p">:</span> <span class="s2">&quot;global_mode&quot;</span> <span class="p">}</span>
- <span class="p">,{</span> <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;relationship&quot;</span> <span class="p">,</span> <span class="s2">&quot;method&quot;</span><span class="p">:</span> <span class="s2">&quot;global_mode&quot;</span> <span class="p">}</span>
- <span class="p">,{</span> <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;race&quot;</span>        <span class="p">,</span> <span class="s2">&quot;method&quot;</span><span class="p">:</span> <span class="s2">&quot;global_mode&quot;</span> <span class="p">}</span>
- <span class="p">,{</span> <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;sex&quot;</span>        <span class="p">,</span> <span class="s2">&quot;method&quot;</span><span class="p">:</span> <span class="s2">&quot;global_mode&quot;</span> <span class="p">}</span>
- <span class="p">,{</span> <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;capital-gain&quot;</span><span class="p">,</span> <span class="s2">&quot;method&quot;</span><span class="p">:</span> <span class="s2">&quot;global_mean&quot;</span> <span class="p">}</span>
- <span class="p">,{</span> <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;capital-loss&quot;</span><span class="p">,</span> <span class="s2">&quot;method&quot;</span><span class="p">:</span> <span class="s2">&quot;global_mean&quot;</span> <span class="p">}</span>
- <span class="p">,{</span> <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;hours-per-week&quot;</span><span class="p">,</span> <span class="s2">&quot;method&quot;</span><span class="p">:</span> <span class="s2">&quot;global_mean&quot;</span> <span class="p">}</span>
- <span class="p">,{</span> <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;native-country&quot;</span>        <span class="p">,</span> <span class="s2">&quot;method&quot;</span><span class="p">:</span> <span class="s2">&quot;global_mode&quot;</span> <span class="p">}</span>
-<span class="p">],</span>
-<span class="s2">&quot;bin&quot;</span><span class="p">:</span> <span class="p">[</span> <span class="p">{</span> <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;age&quot;</span>  <span class="p">,</span> <span class="s2">&quot;method&quot;</span><span class="p">:</span> <span class="s2">&quot;equi-width&quot;</span><span class="p">,</span> <span class="s2">&quot;numbins&quot;</span><span class="p">:</span> <span class="mi">3</span> <span class="p">}],</span>
-<span class="s2">&quot;dummycode&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;age&quot;</span><span class="p">,</span> <span class="s2">&quot;workclass&quot;</span><span class="p">,</span> <span class="s2">&quot;education&quot;</span><span class="p">,</span> <span class="s2">&quot;marital-status&quot;</span><span class="p">,</span> <span class="s2">&quot;occupation&quot;</span><span class="p">,</span> <span class="s2">&quot;relationship&quot;</span><span class="p">,</span> <span class="s2">&quot;race&quot;</span><span class="p">,</span> <span class="s2">&quot;sex&quot;</span><span class="p">,</span> <span class="s2">&quot;native-country&quot;</span><span class="p">],</span>
-<span class="s2">&quot;recode&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;income&quot;</span><span class="p">]</span>
-<span class="p">}</span>
-</pre></div>
-</div>
-<p>Our dataset has missing values. An easy way to deal with that circumstance is to use the “impute” option that SystemDS supports.
-We simply pass a list that holds all the relations between column names and the method of interpolation. A more specific example  is the “education” column.
-In the dataset certain entries have missing values for this column. As this is a string feature,
-we can simply define the method as “global_mode” and replace every missing value with the global mode inside this column. It is important to note that
-we first had to define the values of the missing strings in our selected dataset using the .mtd files (naStrings”: [ “?”, “” ]).</p>
-<p>With the “bin” keyword we can discretize continuous values into a small number of bins. Here the column with age values
-is discretized into three age intervals. The only method that is currently supported is equi-width binning.</p>
-<p>The column-level data transformation “dummycode” allows us to one-hot-encode a column.
-In our example we first bin the “age” column into 3 different bins. This means that we now have one column where one entry can belong to one of 3 age groups. After using
-“dummycode”, we transform this one column into 3 different columns, one for each bin.</p>
-<p>At last, we make use of the “recode” transformation for categorical columns, it maps all distinct categories in
-the column into consecutive numbers, starting from 1. In our example we recode the “income” column, which
-transforms it from “&lt;=$50K” and “&gt;$50K” to “1” and “2” respectively.</p>
-<p>Another good resource for further ways of processing is: <a class="reference external" href="https://apache.github.io/systemds/site/dml-language-reference.html">https://apache.github.io/systemds/site/dml-language-reference.html</a></p>
-<p>There we provide different examples for defining jspec’s and what functionality is currently supported.</p>
-<p>After defining the .jspec file we can read it by passing the filepath, data_type and value_type using the following command:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">dataset_jspec</span> <span class="o">=</span> <span class="s2">&quot;adult/jspec.json&quot;</span>
-<span class="n">jspec</span> <span class="o">=</span> <span class="n">sds</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">dataset_jspec</span><span class="p">,</span> <span class="n">data_type</span><span class="o">=</span><span class="s2">&quot;scalar&quot;</span><span class="p">,</span> <span class="n">value_type</span><span class="o">=</span><span class="s2">&quot;string&quot;</span><span class="p">)</span>
-</pre></div>
-</div>
-<p>Finally, we need to define a custom dml file to split the features from the labels and replace certain values, which we will need later.
-We will call this file “preprocess.dml”:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">get_X</span> <span class="o">=</span> <span class="n">function</span><span class="p">(</span><span class="n">matrix</span><span class="p">[</span><span class="n">double</span><span class="p">]</span> <span class="n">X</span><span class="p">,</span> <span class="nb">int</span> <span class="n">start</span><span class="p">,</span> <span class="nb">int</span> <span class="n">stop</span><span class="p">)</span>
-<span class="k">return</span> <span class="p">(</span><span class="n">matrix</span><span class="p">[</span><span class="n">double</span><span class="p">]</span> <span class="n">returnVal</span><span class="p">)</span> <span class="p">{</span>
-<span class="n">returnVal</span> <span class="o">=</span> <span class="n">X</span><span class="p">[</span><span class="n">start</span><span class="p">:</span><span class="n">stop</span><span class="p">,</span><span class="mi">1</span><span class="p">:</span><span class="n">ncol</span><span class="p">(</span><span class="n">X</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
-<span class="p">}</span>
-<span class="n">get_Y</span> <span class="o">=</span> <span class="n">function</span><span class="p">(</span><span class="n">matrix</span><span class="p">[</span><span class="n">double</span><span class="p">]</span> <span class="n">X</span><span class="p">,</span> <span class="nb">int</span> <span class="n">start</span><span class="p">,</span> <span class="nb">int</span> <span class="n">stop</span><span class="p">)</span>
-<span class="k">return</span> <span class="p">(</span><span class="n">matrix</span><span class="p">[</span><span class="n">double</span><span class="p">]</span> <span class="n">returnVal</span><span class="p">)</span> <span class="p">{</span>
-<span class="n">returnVal</span> <span class="o">=</span> <span class="n">X</span><span class="p">[</span><span class="n">start</span><span class="p">:</span><span class="n">stop</span><span class="p">,</span><span class="n">ncol</span><span class="p">(</span><span class="n">X</span><span class="p">):</span><span class="n">ncol</span><span class="p">(</span><span class="n">X</span><span class="p">)]</span>
-<span class="p">}</span>
-<span class="n">replace_value</span> <span class="o">=</span> <span class="n">function</span><span class="p">(</span><span class="n">matrix</span><span class="p">[</span><span class="n">double</span><span class="p">]</span> <span class="n">X</span><span class="p">,</span> <span class="n">double</span> <span class="n">pattern</span> <span class="p">,</span> <span class="n">double</span> <span class="n">replacement</span><span class="p">)</span>
-<span class="k">return</span> <span class="p">(</span><span class="n">matrix</span><span class="p">[</span><span class="n">double</span><span class="p">]</span> <span class="n">returnVal</span><span class="p">)</span> <span class="p">{</span>
-<span class="n">returnVal</span> <span class="o">=</span> <span class="n">replace</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="n">X</span><span class="p">,</span> <span class="n">pattern</span><span class="o">=</span><span class="n">pattern</span><span class="p">,</span> <span class="n">replacement</span><span class="o">=</span><span class="n">replacement</span><span class="p">)</span>
-<span class="p">}</span>
-</pre></div>
-</div>
-<p>The get_X function simply extracts every column except the last one and can also be used to pick certain slices from the dataset.
-The get_Y function only extracts the last column, which in our case holds the labels. Replace_value is used to replace a double value with another double.
-The preprocess.dml file can be read with the following command:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">preprocess_src_path</span> <span class="o">=</span> <span class="s2">&quot;preprocess.dml&quot;</span>
-<span class="n">PREPROCESS_package</span> <span class="o">=</span> <span class="n">sds</span><span class="o">.</span><span class="n">source</span><span class="p">(</span><span class="n">preprocess_src_path</span><span class="p">,</span> <span class="s2">&quot;preprocess&quot;</span><span class="p">,</span> <span class="n">print_imported_methods</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-</pre></div>
-</div>
-<p>The print_imported_methods flag can be used to verify whether every method has been parsed correctly.</p>
-</div>
-<div class="section" id="step-3-applying-the-preprocessing-steps">
-<h3>Step 3: Applying the preprocessing steps<a class="headerlink" href="#step-3-applying-the-preprocessing-steps" title="Permalink to this headline">¶</a></h3>
-<p>Generally speaking, we would use the transform_encode function on the train dataset and with the returned encoding call the transform_apply function on the test dataset.
-In the case of the Adult dataset, we have inconsistent label names inside the test dataset and the train dataset, which is why we will show how we can deal with that using SystemDS.
-First of all, we combine the train and the test dataset by using the rbind() function. This function simply appends the Frame F2 at the end of Frame F1.
-This is necessary to ensure that the encoding is identical between train and test dataset.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">X1</span> <span class="o">=</span> <span class="n">F1</span><span class="o">.</span><span class="n">rbind</span><span class="p">(</span><span class="n">F2</span><span class="p">)</span>
-</pre></div>
-</div>
-<p>In order to use our jspec file we can apply the transform_encode() function. We simply have to pass the read .json file from before.
-In our particular case we obtain the Matrix X1 and the Frame M1 from the operation. X1 holds all the encoded values and M1 holds a mapping between the encoded values
-and all the initial values. Columns that have not been specified in the .json file were not altered.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">X1</span><span class="p">,</span> <span class="n">M1</span> <span class="o">=</span> <span class="n">X1</span><span class="o">.</span><span class="n">transform_encode</span><span class="p">(</span><span class="n">spec</span><span class="o">=</span><span class="n">jspec</span><span class="p">)</span>
-</pre></div>
-</div>
-<p>We now can use the previously parsed dml file for splitting the dataset and unifying the inconsistent labels. It is noteworthy that the
-file is parsed such that we can directly call the function names from the Python API.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">X</span> <span class="o">=</span> <span class="n">PREPROCESS_package</span><span class="o">.</span><span class="n">get_X</span><span class="p">(</span><span class="n">X1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">train_count</span><span class="p">)</span>
-<span class="n">Y</span> <span class="o">=</span> <span class="n">PREPROCESS_package</span><span class="o">.</span><span class="n">get_Y</span><span class="p">(</span><span class="n">X1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">train_count</span><span class="p">)</span>
-
-<span class="n">Xt</span> <span class="o">=</span> <span class="n">PREPROCESS_package</span><span class="o">.</span><span class="n">get_X</span><span class="p">(</span><span class="n">X1</span><span class="p">,</span> <span class="n">train_count</span><span class="p">,</span> <span class="n">train_count</span><span class="o">+</span><span class="n">test_count</span><span class="p">)</span>
-<span class="n">Yt</span> <span class="o">=</span> <span class="n">PREPROCESS_package</span><span class="o">.</span><span class="n">get_Y</span><span class="p">(</span><span class="n">X1</span><span class="p">,</span> <span class="n">train_count</span><span class="p">,</span> <span class="n">train_count</span><span class="o">+</span><span class="n">test_count</span><span class="p">)</span>
-
-<span class="n">Yt</span> <span class="o">=</span> <span class="n">PREPROCESS_package</span><span class="o">.</span><span class="n">replace_value</span><span class="p">(</span><span class="n">Yt</span><span class="p">,</span> <span class="mf">3.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>
-<span class="n">Yt</span> <span class="o">=</span> <span class="n">PREPROCESS_package</span><span class="o">.</span><span class="n">replace_value</span><span class="p">(</span><span class="n">Yt</span><span class="p">,</span> <span class="mf">4.0</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">)</span>
-</pre></div>
-</div>
-</div>
-<div class="section" id="step-4-training-and-confusion-matrix">
-<h3>Step 4: Training and confusion matrix<a class="headerlink" href="#step-4-training-and-confusion-matrix" title="Permalink to this headline">¶</a></h3>
-<p>Now that we prepared the data we can use the multiLogReg function.
-These steps are identical to step 2 and 3 that have already been described in level 1 of this tutorial.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">systemds.operator.algorithm</span> <span class="kn">import</span> <span class="n">multiLogReg</span>
-<span class="kn">from</span> <span class="nn">systemds.operator.algorithm</span> <span class="kn">import</span> <span class="n">confusionMatrix</span>
-<span class="kn">from</span> <span class="nn">systemds.operator.algorithm</span> <span class="kn">import</span> <span class="n">multiLogRegPredict</span>
-<span class="n">betas</span> <span class="o">=</span> <span class="n">multiLogReg</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">)</span>
-<span class="p">[</span><span class="n">_</span><span class="p">,</span> <span class="n">y_pred</span><span class="p">,</span> <span class="n">acc</span><span class="p">]</span> <span class="o">=</span> <span class="n">multiLogRegPredict</span><span class="p">(</span><span class="n">Xt</span><span class="p">,</span> <span class="n">betas</span><span class="p">,</span> <span class="n">Yt</span><span class="p">)</span>
-<span class="n">confusion_matrix_abs</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">confusionMatrix</span><span class="p">(</span><span class="n">y_pred</span><span class="p">,</span> <span class="n">Yt</span><span class="p">)</span><span class="o">.</span><span class="n">compute</span><span class="p">()</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">confusion_matrix_abs</span><span class="p">)</span>
-</pre></div>
-</div>
-</div>
-<div class="section" id="id1">
-<h3>Full Script<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h3>
-<p>The complete script now can be seen here:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">from</span> <span class="nn">systemds.context</span> <span class="kn">import</span> <span class="n">SystemDSContext</span>
-<span class="kn">from</span> <span class="nn">systemds.operator.algorithm</span> <span class="kn">import</span> <span class="n">multiLogReg</span><span class="p">,</span> <span class="n">multiLogRegPredict</span><span class="p">,</span> <span class="n">confusionMatrix</span>
-
-<span class="n">train_count</span> <span class="o">=</span> <span class="mi">32561</span>
-<span class="n">test_count</span> <span class="o">=</span> <span class="mi">16281</span>
-
-<span class="n">dataset_path_train</span> <span class="o">=</span> <span class="s2">&quot;adult/train_data.csv&quot;</span>
-<span class="n">dataset_path_test</span> <span class="o">=</span> <span class="s2">&quot;adult/test_data.csv&quot;</span>
-<span class="n">dataset_jspec</span> <span class="o">=</span> <span class="s2">&quot;adult/jspec.json&quot;</span>
-<span class="n">preprocess_src_path</span> <span class="o">=</span> <span class="s2">&quot;preprocess.dml&quot;</span>
-
-<span class="n">sds</span> <span class="o">=</span> <span class="n">SystemDSContext</span><span class="p">()</span>
-
-<span class="n">SCHEMA</span> <span class="o">=</span> <span class="s1">&#39;&quot;DOUBLE,STRING,DOUBLE,STRING,DOUBLE,STRING,STRING,STRING,STRING,STRING,DOUBLE,DOUBLE,DOUBLE,STRING,STRING&quot;&#39;</span>
-
-<span class="n">F1</span> <span class="o">=</span> <span class="n">sds</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">dataset_path_train</span><span class="p">,</span> <span class="n">schema</span><span class="o">=</span><span class="n">SCHEMA</span><span class="p">)</span>
-<span class="n">F2</span> <span class="o">=</span> <span class="n">sds</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">dataset_path_test</span><span class="p">,</span>  <span class="n">schema</span><span class="o">=</span><span class="n">SCHEMA</span><span class="p">)</span>
-
-<span class="n">jspec</span> <span class="o">=</span> <span class="n">sds</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">dataset_jspec</span><span class="p">,</span> <span class="n">data_type</span><span class="o">=</span><span class="s2">&quot;scalar&quot;</span><span class="p">,</span> <span class="n">value_type</span><span class="o">=</span><span class="s2">&quot;string&quot;</span><span class="p">)</span>
-<span class="n">PREPROCESS_package</span> <span class="o">=</span> <span class="n">sds</span><span class="o">.</span><span class="n">source</span><span class="p">(</span><span class="n">preprocess_src_path</span><span class="p">,</span> <span class="s2">&quot;preprocess&quot;</span><span class="p">,</span> <span class="n">print_imported_methods</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-
-<span class="n">X1</span> <span class="o">=</span> <span class="n">F1</span><span class="o">.</span><span class="n">rbind</span><span class="p">(</span><span class="n">F2</span><span class="p">)</span>
-<span class="n">X1</span><span class="p">,</span> <span class="n">M1</span> <span class="o">=</span> <span class="n">X1</span><span class="o">.</span><span class="n">transform_encode</span><span class="p">(</span><span class="n">spec</span><span class="o">=</span><span class="n">jspec</span><span class="p">)</span>
-
-<span class="n">X</span> <span class="o">=</span> <span class="n">PREPROCESS_package</span><span class="o">.</span><span class="n">get_X</span><span class="p">(</span><span class="n">X1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">train_count</span><span class="p">)</span>
-<span class="n">Y</span> <span class="o">=</span> <span class="n">PREPROCESS_package</span><span class="o">.</span><span class="n">get_Y</span><span class="p">(</span><span class="n">X1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">train_count</span><span class="p">)</span>
-
-<span class="n">Xt</span> <span class="o">=</span> <span class="n">PREPROCESS_package</span><span class="o">.</span><span class="n">get_X</span><span class="p">(</span><span class="n">X1</span><span class="p">,</span> <span class="n">train_count</span><span class="p">,</span> <span class="n">train_count</span><span class="o">+</span><span class="n">test_count</span><span class="p">)</span>
-<span class="n">Yt</span> <span class="o">=</span> <span class="n">PREPROCESS_package</span><span class="o">.</span><span class="n">get_Y</span><span class="p">(</span><span class="n">X1</span><span class="p">,</span> <span class="n">train_count</span><span class="p">,</span> <span class="n">train_count</span><span class="o">+</span><span class="n">test_count</span><span class="p">)</span>
-
-<span class="n">Yt</span> <span class="o">=</span> <span class="n">PREPROCESS_package</span><span class="o">.</span><span class="n">replace_value</span><span class="p">(</span><span class="n">Yt</span><span class="p">,</span> <span class="mf">3.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>
-<span class="n">Yt</span> <span class="o">=</span> <span class="n">PREPROCESS_package</span><span class="o">.</span><span class="n">replace_value</span><span class="p">(</span><span class="n">Yt</span><span class="p">,</span> <span class="mf">4.0</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">)</span>
-
-<span class="n">betas</span> <span class="o">=</span> <span class="n">multiLogReg</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">)</span>
-
-<span class="p">[</span><span class="n">_</span><span class="p">,</span> <span class="n">y_pred</span><span class="p">,</span> <span class="n">acc</span><span class="p">]</span> <span class="o">=</span> <span class="n">multiLogRegPredict</span><span class="p">(</span><span class="n">Xt</span><span class="p">,</span> <span class="n">betas</span><span class="p">,</span> <span class="n">Yt</span><span class="p">)</span>
-
-<span class="n">confusion_matrix_abs</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">confusionMatrix</span><span class="p">(</span><span class="n">y_pred</span><span class="p">,</span> <span class="n">Yt</span><span class="p">)</span><span class="o">.</span><span class="n">compute</span><span class="p">()</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">confusion_matrix_abs</span><span class="p">)</span>
-</pre></div>
-</div>
-</div>
-</div>
-<div class="section" id="level-3">
-<h2>Level 3<a class="headerlink" href="#level-3" title="Permalink to this headline">¶</a></h2>
 <p>In this level we want to show how we can integrate a custom built algorithm using the Python API.
 For this we will introduce another dml file, which can be used to train a basic feed forward network.</p>
 <div class="section" id="step-1-obtain-data">
 <h3>Step 1: Obtain data<a class="headerlink" href="#step-1-obtain-data" title="Permalink to this headline">¶</a></h3>
-<p>For the whole data setup please refer to level 2, Step 1 to 3, as these steps are identical.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">from</span> <span class="nn">systemds.context</span> <span class="kn">import</span> <span class="n">SystemDSContext</span>
+<p>For the whole data setup please refer to level 1, Step 1, as these steps are identical.</p>
+<div class="code python highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">systemds.context</span> <span class="kn">import</span> <span class="n">SystemDSContext</span>
+<span class="kn">from</span> <span class="nn">systemds.examples.tutorials.adult</span> <span class="kn">import</span> <span class="n">DataManager</span>
+<span class="kn">from</span> <span class="nn">systemds.operator.algorithm</span> <span class="kn">import</span> <span class="n">multiLogReg</span>
+<span class="kn">from</span> <span class="nn">systemds.operator.algorithm</span> <span class="kn">import</span> <span class="n">multiLogRegPredict</span>
+<span class="kn">from</span> <span class="nn">systemds.operator.algorithm</span> <span class="kn">import</span> <span class="n">confusionMatrix</span>
 
-<span class="n">train_count</span> <span class="o">=</span> <span class="mi">32561</span>
-<span class="n">test_count</span> <span class="o">=</span> <span class="mi">16281</span>
+<span class="k">with</span> <span class="n">SystemDSContext</span><span class="p">()</span> <span class="k">as</span> <span class="n">sds</span><span class="p">:</span>
+    <span class="n">d</span> <span class="o">=</span> <span class="n">DataManager</span><span class="p">()</span>
 
-<span class="n">dataset_path_train</span> <span class="o">=</span> <span class="s2">&quot;adult/train_data.csv&quot;</span>
-<span class="n">dataset_path_test</span> <span class="o">=</span> <span class="s2">&quot;adult/test_data.csv&quot;</span>
-<span class="n">dataset_jspec</span> <span class="o">=</span> <span class="s2">&quot;adult/jspec.json&quot;</span>
-<span class="n">preprocess_src_path</span> <span class="o">=</span> <span class="s2">&quot;preprocess.dml&quot;</span>
+    <span class="c1"># limit the sample size</span>
+    <span class="n">train_count</span> <span class="o">=</span> <span class="mi">15000</span>
+    <span class="n">test_count</span> <span class="o">=</span> <span class="mi">5000</span>
 
-<span class="n">sds</span> <span class="o">=</span> <span class="n">SystemDSContext</span><span class="p">()</span>
+    <span class="c1"># Get train and test datasets.</span>
+    <span class="n">X_frame</span><span class="p">,</span> <span class="n">Y_frame</span><span class="p">,</span> <span class="n">Xt_frame</span><span class="p">,</span> <span class="n">Yt_frame</span> <span class="o">=</span> <span class="n">d</span><span class="o">.</span><span class="n">get_preprocessed_dataset</span><span class="p">(</span><span class="n">sds</span><span class="p">)</span>
 
-<span class="n">SCHEMA</span> <span class="o">=</span> <span class="s1">&#39;&quot;DOUBLE,STRING,DOUBLE,STRING,DOUBLE,STRING,STRING,STRING,STRING,STRING,DOUBLE,DOUBLE,DOUBLE,STRING,STRING&quot;&#39;</span>
+    <span class="c1"># Transformation specification</span>
+    <span class="n">jspec_data</span> <span class="o">=</span> <span class="n">d</span><span class="o">.</span><span class="n">get_jspec</span><span class="p">(</span><span class="n">sds</span><span class="p">)</span>
+    <span class="n">jspec_labels</span> <span class="o">=</span> <span class="n">sds</span><span class="o">.</span><span class="n">scalar</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;&quot;</span><span class="si">{</span> <span class="p">{</span><span class="s2">&quot;recode&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;income&quot;</span><span class="p">]}</span> <span class="si">}</span><span class="s1">&quot;&#39;</span><span class="p">)</span>
 
-<span class="n">F1</span> <span class="o">=</span> <span class="n">sds</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">dataset_path_train</span><span class="p">,</span> <span class="n">schema</span><span class="o">=</span><span class="n">SCHEMA</span><span class="p">)</span>
-<span class="n">F2</span> <span class="o">=</span> <span class="n">sds</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">dataset_path_test</span><span class="p">,</span>  <span class="n">schema</span><span class="o">=</span><span class="n">SCHEMA</span><span class="p">)</span>
+    <span class="c1"># Transform frames to matrices.</span>
+    <span class="n">X</span><span class="p">,</span> <span class="n">M1</span> <span class="o">=</span> <span class="n">X_frame</span><span class="o">.</span><span class="n">transform_encode</span><span class="p">(</span><span class="n">spec</span><span class="o">=</span><span class="n">jspec_data</span><span class="p">)</span>
+    <span class="n">Xt</span> <span class="o">=</span> <span class="n">Xt_frame</span><span class="o">.</span><span class="n">transform_apply</span><span class="p">(</span><span class="n">spec</span><span class="o">=</span><span class="n">jspec_data</span><span class="p">,</span> <span class="n">meta</span><span class="o">=</span><span class="n">M1</span><span class="p">)</span>
+    <span class="n">Y</span><span class="p">,</span> <span class="n">M2</span> <span class="o">=</span> <span class="n">Y_frame</span><span class="o">.</span><span class="n">transform_encode</span><span class="p">(</span><span class="n">spec</span><span class="o">=</span><span class="n">jspec_labels</span><span class="p">)</span>
+    <span class="n">Yt</span> <span class="o">=</span> <span class="n">Yt_frame</span><span class="o">.</span><span class="n">transform_apply</span><span class="p">(</span><span class="n">spec</span><span class="o">=</span><span class="n">jspec_labels</span><span class="p">,</span> <span class="n">meta</span><span class="o">=</span><span class="n">M2</span><span class="p">)</span>
 
-<span class="n">jspec</span> <span class="o">=</span> <span class="n">sds</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">dataset_jspec</span><span class="p">,</span> <span class="n">data_type</span><span class="o">=</span><span class="s2">&quot;scalar&quot;</span><span class="p">,</span> <span class="n">value_type</span><span class="o">=</span><span class="s2">&quot;string&quot;</span><span class="p">)</span>
-<span class="n">PREPROCESS_package</span> <span class="o">=</span> <span class="n">sds</span><span class="o">.</span><span class="n">source</span><span class="p">(</span><span class="n">preprocess_src_path</span><span class="p">,</span> <span class="s2">&quot;preprocess&quot;</span><span class="p">,</span> <span class="n">print_imported_methods</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-
-<span class="n">X1</span> <span class="o">=</span> <span class="n">F1</span><span class="o">.</span><span class="n">rbind</span><span class="p">(</span><span class="n">F2</span><span class="p">)</span>
-<span class="n">X1</span><span class="p">,</span> <span class="n">M1</span> <span class="o">=</span> <span class="n">X1</span><span class="o">.</span><span class="n">transform_encode</span><span class="p">(</span><span class="n">spec</span><span class="o">=</span><span class="n">jspec</span><span class="p">)</span>
-
-<span class="n">X</span> <span class="o">=</span> <span class="n">PREPROCESS_package</span><span class="o">.</span><span class="n">get_X</span><span class="p">(</span><span class="n">X1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">train_count</span><span class="p">)</span>
-<span class="n">Y</span> <span class="o">=</span> <span class="n">PREPROCESS_package</span><span class="o">.</span><span class="n">get_Y</span><span class="p">(</span><span class="n">X1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">train_count</span><span class="p">)</span>
-
-<span class="n">Xt</span> <span class="o">=</span> <span class="n">PREPROCESS_package</span><span class="o">.</span><span class="n">get_X</span><span class="p">(</span><span class="n">X1</span><span class="p">,</span> <span class="n">train_count</span><span class="p">,</span> <span class="n">train_count</span><span class="o">+</span><span class="n">test_count</span><span class="p">)</span>
-<span class="n">Yt</span> <span class="o">=</span> <span class="n">PREPROCESS_package</span><span class="o">.</span><span class="n">get_Y</span><span class="p">(</span><span class="n">X1</span><span class="p">,</span> <span class="n">train_count</span><span class="p">,</span> <span class="n">train_count</span><span class="o">+</span><span class="n">test_count</span><span class="p">)</span>
-
-<span class="n">Yt</span> <span class="o">=</span> <span class="n">PREPROCESS_package</span><span class="o">.</span><span class="n">replace_value</span><span class="p">(</span><span class="n">Yt</span><span class="p">,</span> <span class="mf">3.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>
-<span class="n">Yt</span> <span class="o">=</span> <span class="n">PREPROCESS_package</span><span class="o">.</span><span class="n">replace_value</span><span class="p">(</span><span class="n">Yt</span><span class="p">,</span> <span class="mf">4.0</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">)</span>
+    <span class="c1"># Subsample to make training faster</span>
+    <span class="n">X</span> <span class="o">=</span> <span class="n">X</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">train_count</span><span class="p">]</span>
+    <span class="n">Y</span> <span class="o">=</span> <span class="n">Y</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">train_count</span><span class="p">]</span>
+    <span class="n">Xt</span> <span class="o">=</span> <span class="n">Xt</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">test_count</span><span class="p">]</span>
+    <span class="n">Yt</span> <span class="o">=</span> <span class="n">Yt</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">test_count</span><span class="p">]</span>
 </pre></div>
 </div>
 </div>
@@ -602,7 +389,7 @@ The file can be found here:</p>
 <li><p>:doc:tests/examples/tutorials/neural_net_source.dml</p></li>
 </ul>
 </div></blockquote>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">FFN_package</span> <span class="o">=</span> <span class="n">sds</span><span class="o">.</span><span class="n">source</span><span class="p">(</span><span class="n">neural_net_src_path</span><span class="p">,</span> <span class="s2">&quot;fnn&quot;</span><span class="p">,</span> <span class="n">print_imported_methods</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
+<div class="code python highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="n">FFN_package</span> <span class="o">=</span> <span class="n">sds</span><span class="o">.</span><span class="n">source</span><span class="p">(</span><span class="n">neural_net_src_path</span><span class="p">,</span> <span class="s2">&quot;fnn&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -613,12 +400,7 @@ The first two arguments are the training features and the target values we want 
 Then we need to set the hyperparameters of the model.
 We choose to train for 1 epoch with a batch size of 16 and a learning rate of 0.01, which are common parameters for neural networks.
 The seed argument ensures that running the code again yields the same results.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">epochs</span> <span class="o">=</span> <span class="mi">1</span>
-<span class="n">batch_size</span> <span class="o">=</span> <span class="mi">16</span>
-<span class="n">learning_rate</span> <span class="o">=</span> <span class="mf">0.01</span>
-<span class="n">seed</span> <span class="o">=</span> <span class="mi">42</span>
-
-<span class="n">network</span> <span class="o">=</span> <span class="n">FFN_package</span><span class="o">.</span><span class="n">train</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">epochs</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">,</span> <span class="n">learning_rate</span><span class="p">,</span> <span class="n">seed</span><span class="p">)</span>
+<div class="code python highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="n">network</span> <span class="o">=</span> <span class="n">FFN_package</span><span class="o">.</span><span class="n">train</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">epochs</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">,</span> <span class="n">learning_rate</span><span class="p">,</span> <span class="n">seed</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -627,57 +409,56 @@ The seed argument ensures that running the code again yields the same results.</
 <p>For later usage, we can save the trained model.
 We only need to specify the name of our model and the file path.
 This call stores the weights and biases of our model.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">FFN_package</span><span class="o">.</span><span class="n">save_model</span><span class="p">(</span><span class="n">network</span><span class="p">,</span> <span class="s1">&#39;&quot;model/python_FFN/&quot;&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">compute</span><span class="p">(</span><span class="n">verbose</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<div class="code python highlight-default notranslate"><div class="highlight"><pre><span></span>
 </pre></div>
 </div>
-</div>
-<div class="section" id="id2">
-<h3>Full Script<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h3>
+<p>Full Script NN
+~~~~~~~~~~~—</p>
 <p>The complete script now can be seen here:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">from</span> <span class="nn">systemds.context</span> <span class="kn">import</span> <span class="n">SystemDSContext</span>
+<div class="code python highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">systemds.context</span> <span class="kn">import</span> <span class="n">SystemDSContext</span>
+<span class="kn">from</span> <span class="nn">systemds.examples.tutorials.adult</span> <span class="kn">import</span> <span class="n">DataManager</span>
+<span class="kn">from</span> <span class="nn">systemds.operator.algorithm</span> <span class="kn">import</span> <span class="n">multiLogReg</span>
+<span class="kn">from</span> <span class="nn">systemds.operator.algorithm</span> <span class="kn">import</span> <span class="n">multiLogRegPredict</span>
+<span class="kn">from</span> <span class="nn">systemds.operator.algorithm</span> <span class="kn">import</span> <span class="n">confusionMatrix</span>
 
-<span class="n">train_count</span> <span class="o">=</span> <span class="mi">32561</span>
-<span class="n">test_count</span> <span class="o">=</span> <span class="mi">16281</span>
+<span class="k">with</span> <span class="n">SystemDSContext</span><span class="p">()</span> <span class="k">as</span> <span class="n">sds</span><span class="p">:</span>
+    <span class="n">d</span> <span class="o">=</span> <span class="n">DataManager</span><span class="p">()</span>
 
-<span class="n">dataset_path_train</span> <span class="o">=</span> <span class="s2">&quot;adult/train_data.csv&quot;</span>
-<span class="n">dataset_path_test</span> <span class="o">=</span> <span class="s2">&quot;adult/test_data.csv&quot;</span>
-<span class="n">dataset_jspec</span> <span class="o">=</span> <span class="s2">&quot;adult/jspec.json&quot;</span>
-<span class="n">preprocess_src_path</span> <span class="o">=</span> <span class="s2">&quot;preprocess.dml&quot;</span>
-<span class="n">neural_net_src_path</span> <span class="o">=</span> <span class="s2">&quot;neural_net_source.dml&quot;</span>
+    <span class="c1"># limit the sample size</span>
+    <span class="n">train_count</span> <span class="o">=</span> <span class="mi">15000</span>
+    <span class="n">test_count</span> <span class="o">=</span> <span class="mi">5000</span>
 
-<span class="n">sds</span> <span class="o">=</span> <span class="n">SystemDSContext</span><span class="p">()</span>
+    <span class="c1"># Get train and test datasets.</span>
+    <span class="n">X_frame</span><span class="p">,</span> <span class="n">Y_frame</span><span class="p">,</span> <span class="n">Xt_frame</span><span class="p">,</span> <span class="n">Yt_frame</span> <span class="o">=</span> <span class="n">d</span><span class="o">.</span><span class="n">get_preprocessed_dataset</span><span class="p">(</span><span class="n">sds</span><span class="p">)</span>
 
-<span class="n">SCHEMA</span> <span class="o">=</span> <span class="s1">&#39;&quot;DOUBLE,STRING,DOUBLE,STRING,DOUBLE,STRING,STRING,STRING,STRING,STRING,DOUBLE,DOUBLE,DOUBLE,STRING,STRING&quot;&#39;</span>
+    <span class="c1"># Transformation specification</span>
+    <span class="n">jspec_data</span> <span class="o">=</span> <span class="n">d</span><span class="o">.</span><span class="n">get_jspec</span><span class="p">(</span><span class="n">sds</span><span class="p">)</span>
+    <span class="n">jspec_labels</span> <span class="o">=</span> <span class="n">sds</span><span class="o">.</span><span class="n">scalar</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;&quot;</span><span class="si">{</span> <span class="p">{</span><span class="s2">&quot;recode&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;income&quot;</span><span class="p">]}</span> <span class="si">}</span><span class="s1">&quot;&#39;</span><span class="p">)</span>
 
-<span class="n">F1</span> <span class="o">=</span> <span class="n">sds</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">dataset_path_train</span><span class="p">,</span> <span class="n">schema</span><span class="o">=</span><span class="n">SCHEMA</span><span class="p">)</span>
-<span class="n">F2</span> <span class="o">=</span> <span class="n">sds</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">dataset_path_test</span><span class="p">,</span>  <span class="n">schema</span><span class="o">=</span><span class="n">SCHEMA</span><span class="p">)</span>
+    <span class="c1"># Transform frames to matrices.</span>
+    <span class="n">X</span><span class="p">,</span> <span class="n">M1</span> <span class="o">=</span> <span class="n">X_frame</span><span class="o">.</span><span class="n">transform_encode</span><span class="p">(</span><span class="n">spec</span><span class="o">=</span><span class="n">jspec_data</span><span class="p">)</span>
+    <span class="n">Xt</span> <span class="o">=</span> <span class="n">Xt_frame</span><span class="o">.</span><span class="n">transform_apply</span><span class="p">(</span><span class="n">spec</span><span class="o">=</span><span class="n">jspec_data</span><span class="p">,</span> <span class="n">meta</span><span class="o">=</span><span class="n">M1</span><span class="p">)</span>
+    <span class="n">Y</span><span class="p">,</span> <span class="n">M2</span> <span class="o">=</span> <span class="n">Y_frame</span><span class="o">.</span><span class="n">transform_encode</span><span class="p">(</span><span class="n">spec</span><span class="o">=</span><span class="n">jspec_labels</span><span class="p">)</span>
+    <span class="n">Yt</span> <span class="o">=</span> <span class="n">Yt_frame</span><span class="o">.</span><span class="n">transform_apply</span><span class="p">(</span><span class="n">spec</span><span class="o">=</span><span class="n">jspec_labels</span><span class="p">,</span> <span class="n">meta</span><span class="o">=</span><span class="n">M2</span><span class="p">)</span>
 
-<span class="n">jspec</span> <span class="o">=</span> <span class="n">sds</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">dataset_jspec</span><span class="p">,</span> <span class="n">data_type</span><span class="o">=</span><span class="s2">&quot;scalar&quot;</span><span class="p">,</span> <span class="n">value_type</span><span class="o">=</span><span class="s2">&quot;string&quot;</span><span class="p">)</span>
-<span class="n">PREPROCESS_package</span> <span class="o">=</span> <span class="n">sds</span><span class="o">.</span><span class="n">source</span><span class="p">(</span><span class="n">preprocess_src_path</span><span class="p">,</span> <span class="s2">&quot;preprocess&quot;</span><span class="p">,</span> <span class="n">print_imported_methods</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="c1"># Subsample to make training faster</span>
+    <span class="n">X</span> <span class="o">=</span> <span class="n">X</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">train_count</span><span class="p">]</span>
+    <span class="n">Y</span> <span class="o">=</span> <span class="n">Y</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">train_count</span><span class="p">]</span>
+    <span class="n">Xt</span> <span class="o">=</span> <span class="n">Xt</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">test_count</span><span class="p">]</span>
+    <span class="n">Yt</span> <span class="o">=</span> <span class="n">Yt</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">test_count</span><span class="p">]</span>
 
-<span class="n">X1</span> <span class="o">=</span> <span class="n">F1</span><span class="o">.</span><span class="n">rbind</span><span class="p">(</span><span class="n">F2</span><span class="p">)</span>
-<span class="n">X1</span><span class="p">,</span> <span class="n">M1</span> <span class="o">=</span> <span class="n">X1</span><span class="o">.</span><span class="n">transform_encode</span><span class="p">(</span><span class="n">spec</span><span class="o">=</span><span class="n">jspec</span><span class="p">)</span>
+    <span class="c1"># Load custom neural network</span>
+    <span class="n">neural_net_src_path</span> <span class="o">=</span> <span class="s2">&quot;tests/examples/tutorials/neural_net_source.dml&quot;</span>
+    <span class="n">FFN_package</span> <span class="o">=</span> <span class="n">sds</span><span class="o">.</span><span class="n">source</span><span class="p">(</span><span class="n">neural_net_src_path</span><span class="p">,</span> <span class="s2">&quot;fnn&quot;</span><span class="p">)</span>
 
-<span class="n">X</span> <span class="o">=</span> <span class="n">PREPROCESS_package</span><span class="o">.</span><span class="n">get_X</span><span class="p">(</span><span class="n">X1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">train_count</span><span class="p">)</span>
-<span class="n">Y</span> <span class="o">=</span> <span class="n">PREPROCESS_package</span><span class="o">.</span><span class="n">get_Y</span><span class="p">(</span><span class="n">X1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">train_count</span><span class="p">)</span>
+    <span class="n">epochs</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">batch_size</span> <span class="o">=</span> <span class="mi">16</span>
+    <span class="n">learning_rate</span> <span class="o">=</span> <span class="mf">0.01</span>
+    <span class="n">seed</span> <span class="o">=</span> <span class="mi">42</span>
 
-<span class="n">Xt</span> <span class="o">=</span> <span class="n">PREPROCESS_package</span><span class="o">.</span><span class="n">get_X</span><span class="p">(</span><span class="n">X1</span><span class="p">,</span> <span class="n">train_count</span><span class="p">,</span> <span class="n">train_count</span><span class="o">+</span><span class="n">test_count</span><span class="p">)</span>
-<span class="n">Yt</span> <span class="o">=</span> <span class="n">PREPROCESS_package</span><span class="o">.</span><span class="n">get_Y</span><span class="p">(</span><span class="n">X1</span><span class="p">,</span> <span class="n">train_count</span><span class="p">,</span> <span class="n">train_count</span><span class="o">+</span><span class="n">test_count</span><span class="p">)</span>
+    <span class="n">network</span> <span class="o">=</span> <span class="n">FFN_package</span><span class="o">.</span><span class="n">train</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">epochs</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">,</span> <span class="n">learning_rate</span><span class="p">,</span> <span class="n">seed</span><span class="p">)</span>
 
-<span class="n">Yt</span> <span class="o">=</span> <span class="n">PREPROCESS_package</span><span class="o">.</span><span class="n">replace_value</span><span class="p">(</span><span class="n">Yt</span><span class="p">,</span> <span class="mf">3.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>
-<span class="n">Yt</span> <span class="o">=</span> <span class="n">PREPROCESS_package</span><span class="o">.</span><span class="n">replace_value</span><span class="p">(</span><span class="n">Yt</span><span class="p">,</span> <span class="mf">4.0</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">)</span>
-
-<span class="n">FFN_package</span> <span class="o">=</span> <span class="n">sds</span><span class="o">.</span><span class="n">source</span><span class="p">(</span><span class="n">neural_net_src_path</span><span class="p">,</span> <span class="s2">&quot;fnn&quot;</span><span class="p">,</span> <span class="n">print_imported_methods</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-
-<span class="n">epochs</span> <span class="o">=</span> <span class="mi">1</span>
-<span class="n">batch_size</span> <span class="o">=</span> <span class="mi">16</span>
-<span class="n">learning_rate</span> <span class="o">=</span> <span class="mf">0.01</span>
-<span class="n">seed</span> <span class="o">=</span> <span class="mi">42</span>
-
-<span class="n">network</span> <span class="o">=</span> <span class="n">FFN_package</span><span class="o">.</span><span class="n">train</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">epochs</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">,</span> <span class="n">learning_rate</span><span class="p">,</span> <span class="n">seed</span><span class="p">)</span>
-
-<span class="n">FFN_package</span><span class="o">.</span><span class="n">save_model</span><span class="p">(</span><span class="n">network</span><span class="p">,</span> <span class="s1">&#39;&quot;model/python_FFN/&quot;&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">compute</span><span class="p">(</span><span class="n">verbose</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">network</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;tests/examples/docs_test/end_to_end/&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">compute</span><span class="p">()</span>
 </pre></div>
 </div>
 </div>

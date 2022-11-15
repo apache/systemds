@@ -6,15 +6,16 @@
 <title>EncoderMVImpute (Apache SystemDS 3.1.0-SNAPSHOT API)</title>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <link rel="stylesheet" type="text/css" href="../../../../../../stylesheet.css" title="Style">
-<link rel="stylesheet" type="text/css" href="../../../../../../jquery/jquery-ui.css" title="Style">
+<link rel="stylesheet" type="text/css" href="../../../../../../jquery/jquery-ui.min.css" title="Style">
+<link rel="stylesheet" type="text/css" href="../../../../../../jquery-ui.overrides.css" title="Style">
 <script type="text/javascript" src="../../../../../../script.js"></script>
 <script type="text/javascript" src="../../../../../../jquery/jszip/dist/jszip.min.js"></script>
 <script type="text/javascript" src="../../../../../../jquery/jszip-utils/dist/jszip-utils.min.js"></script>
 <!--[if IE]>
 <script type="text/javascript" src="../../../../../../jquery/jszip-utils/dist/jszip-utils-ie.min.js"></script>
 <![endif]-->
-<script type="text/javascript" src="../../../../../../jquery/jquery-3.5.1.js"></script>
-<script type="text/javascript" src="../../../../../../jquery/jquery-ui.js"></script>
+<script type="text/javascript" src="../../../../../../jquery/jquery-3.6.0.min.js"></script>
+<script type="text/javascript" src="../../../../../../jquery/jquery-ui.min.js"></script>
 </head>
 <body>
 <script type="text/javascript"><!--
@@ -153,7 +154,7 @@ extends <a href="LegacyEncoder.html" title="class in org.apache.sysds.runtime.tr
 <ul class="blockList">
 <li class="blockList">
 <!-- ======== NESTED CLASS SUMMARY ======== -->
-<section role="region">
+<section>
 <ul class="blockList">
 <li class="blockList"><a id="nested.class.summary">
 <!--   -->
@@ -176,7 +177,7 @@ extends <a href="LegacyEncoder.html" title="class in org.apache.sysds.runtime.tr
 </ul>
 </section>
 <!-- ======== CONSTRUCTOR SUMMARY ======== -->
-<section role="region">
+<section>
 <ul class="blockList">
 <li class="blockList"><a id="constructor.summary">
 <!--   -->
@@ -215,7 +216,7 @@ extends <a href="LegacyEncoder.html" title="class in org.apache.sysds.runtime.tr
 </ul>
 </section>
 <!-- ========== METHOD SUMMARY =========== -->
-<section role="region">
+<section>
 <ul class="blockList">
 <li class="blockList"><a id="method.summary">
 <!--   -->
@@ -230,7 +231,7 @@ extends <a href="LegacyEncoder.html" title="class in org.apache.sysds.runtime.tr
 </tr>
 <tr id="i0" class="altColor">
 <td class="colFirst"><code><a href="../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#apply(org.apache.sysds.runtime.matrix.data.FrameBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock)">apply</a></span>&#8203;(<a href="../../matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;in,
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#apply(org.apache.sysds.runtime.frame.data.FrameBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock)">apply</a></span>&#8203;(<a href="../../frame/data/FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;in,
      <a href="../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;out)</code></th>
 <td class="colLast">
 <div class="block">Encode input data blockwise according to existing transform meta data (transform apply).</div>
@@ -238,14 +239,14 @@ extends <a href="LegacyEncoder.html" title="class in org.apache.sysds.runtime.tr
 </tr>
 <tr id="i1" class="rowColor">
 <td class="colFirst"><code>void</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#build(org.apache.sysds.runtime.matrix.data.FrameBlock)">build</a></span>&#8203;(<a href="../../matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;in)</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#build(org.apache.sysds.runtime.frame.data.FrameBlock)">build</a></span>&#8203;(<a href="../../frame/data/FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;in)</code></th>
 <td class="colLast">
 <div class="block">Build the transform meta data for the given block input.</div>
 </td>
 </tr>
 <tr id="i2" class="altColor">
 <td class="colFirst"><code><a href="../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#encode(org.apache.sysds.runtime.matrix.data.FrameBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock)">encode</a></span>&#8203;(<a href="../../matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;in,
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#encode(org.apache.sysds.runtime.frame.data.FrameBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock)">encode</a></span>&#8203;(<a href="../../frame/data/FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;in,
       <a href="../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;out)</code></th>
 <td class="colLast">
 <div class="block">Block encode: build and apply (transform encode).</div>
@@ -264,8 +265,8 @@ extends <a href="LegacyEncoder.html" title="class in org.apache.sysds.runtime.tr
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i5" class="rowColor">
-<td class="colFirst"><code><a href="../../matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a></code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getMetaData(org.apache.sysds.runtime.matrix.data.FrameBlock)">getMetaData</a></span>&#8203;(<a href="../../matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;out)</code></th>
+<td class="colFirst"><code><a href="../../frame/data/FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a></code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getMetaData(org.apache.sysds.runtime.frame.data.FrameBlock)">getMetaData</a></span>&#8203;(<a href="../../frame/data/FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;out)</code></th>
 <td class="colLast">
 <div class="block">Construct a frame block out of the transform meta data.</div>
 </td>
@@ -292,7 +293,7 @@ extends <a href="LegacyEncoder.html" title="class in org.apache.sysds.runtime.tr
 </tr>
 <tr id="i10" class="altColor">
 <td class="colFirst"><code>void</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#initMetaData(org.apache.sysds.runtime.matrix.data.FrameBlock)">initMetaData</a></span>&#8203;(<a href="../../matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;meta)</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#initMetaData(org.apache.sysds.runtime.frame.data.FrameBlock)">initMetaData</a></span>&#8203;(<a href="../../frame/data/FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;meta)</code></th>
 <td class="colLast">
 <div class="block">Sets up the required meta data for a subsequent call to apply.</div>
 </td>
@@ -340,7 +341,7 @@ extends <a href="LegacyEncoder.html" title="class in org.apache.sysds.runtime.tr
 <!--   -->
 </a>
 <h3>Methods inherited from class&nbsp;org.apache.sysds.runtime.transform.encode.<a href="LegacyEncoder.html" title="class in org.apache.sysds.runtime.transform.encode">LegacyEncoder</a></h3>
-<code><a href="LegacyEncoder.html#buildPartial(org.apache.sysds.runtime.matrix.data.FrameBlock)">buildPartial</a>, <a href="LegacyEncoder.html#getColList()">getColList</a>, <a href="LegacyEncoder.html#getColMapping(org.apache.sysds.runtime.matrix.data.FrameBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock)">getColMapping</a>, <a href="LegacyEncoder.html#initColList(int%5B%5D)">initColList</a>, <a href="LegacyEncoder.html#initColList(org.apache.wink.json4j.JSONArray)">initColList</a>, <a href="LegacyEncoder.html#isApplicable()">isApplicable</a>, <a href="LegacyEncoder.html#isApplicable(int)">isApplicable</a>, <a href="LegacyEncoder.html#prepareBuildPartial()">prepareBuildPartial</a>, <a href="LegacyEncoder.html#setColList(int%5B%5D)">setColList</a>, <a href="LegacyEncoder.html#shiftCols(int)">shiftCols</a>, <a href="LegacyEncoder.html#updateIndexRanges(long%5B%5D,long%5B%5D)">updateIndexRanges</a></code></li>
+<code><a href="LegacyEncoder.html#buildPartial(org.apache.sysds.runtime.frame.data.FrameBlock)">buildPartial</a>, <a href="LegacyEncoder.html#getColList()">getColList</a>, <a href="LegacyEncoder.html#getColMapping(org.apache.sysds.runtime.frame.data.FrameBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock)">getColMapping</a>, <a href="LegacyEncoder.html#initColList(int%5B%5D)">initColList</a>, <a href="LegacyEncoder.html#initColList(org.apache.wink.json4j.JSONArray)">initColList</a>, <a href="LegacyEncoder.html#isApplicable()">isApplicable</a>, <a href="LegacyEncoder.html#isApplicable(int)">isApplicable</a>, <a href="LegacyEncoder.html#prepareBuildPartial()">prepareBuildPartial</a>, <a href="LegacyEncoder.html#setColList(int%5B%5D)">setColList</a>, <a href="LegacyEncoder.html#shiftCols(int)">shiftCols</a>, <a href="LegacyEncoder.html#updateIndexRanges(long%5B%5D,long%5B%5D)">updateIndexRanges</a></code></li>
 </ul>
 <ul class="blockList">
 <li class="blockList"><a id="methods.inherited.from.class.java.lang.Object">
@@ -359,7 +360,7 @@ extends <a href="LegacyEncoder.html" title="class in org.apache.sysds.runtime.tr
 <ul class="blockList">
 <li class="blockList">
 <!-- ========= CONSTRUCTOR DETAIL ======== -->
-<section role="region">
+<section>
 <ul class="blockList">
 <li class="blockList"><a id="constructor.detail">
 <!--   -->
@@ -411,7 +412,7 @@ extends <a href="LegacyEncoder.html" title="class in org.apache.sysds.runtime.tr
 </ul>
 </section>
 <!-- ============ METHOD DETAIL ========== -->
-<section role="region">
+<section>
 <ul class="blockList">
 <li class="blockList"><a id="method.detail">
 <!--   -->
@@ -462,19 +463,19 @@ extends <a href="LegacyEncoder.html" title="class in org.apache.sysds.runtime.tr
 <pre class="methodSignature">public&nbsp;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;getReplacement&#8203;(int&nbsp;colID)</pre>
 </li>
 </ul>
-<a id="encode(org.apache.sysds.runtime.matrix.data.FrameBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock)">
+<a id="encode(org.apache.sysds.runtime.frame.data.FrameBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock)">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
 <h4>encode</h4>
-<pre class="methodSignature">public&nbsp;<a href="../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;encode&#8203;(<a href="../../matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;in,
+<pre class="methodSignature">public&nbsp;<a href="../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;encode&#8203;(<a href="../../frame/data/FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;in,
                           <a href="../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;out)</pre>
-<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="LegacyEncoder.html#encode(org.apache.sysds.runtime.matrix.data.FrameBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock)">LegacyEncoder</a></code></span></div>
+<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="LegacyEncoder.html#encode(org.apache.sysds.runtime.frame.data.FrameBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock)">LegacyEncoder</a></code></span></div>
 <div class="block">Block encode: build and apply (transform encode).</div>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
-<dd><code><a href="LegacyEncoder.html#encode(org.apache.sysds.runtime.matrix.data.FrameBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock)">encode</a></code>&nbsp;in class&nbsp;<code><a href="LegacyEncoder.html" title="class in org.apache.sysds.runtime.transform.encode">LegacyEncoder</a></code></dd>
+<dd><code><a href="LegacyEncoder.html#encode(org.apache.sysds.runtime.frame.data.FrameBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock)">encode</a></code>&nbsp;in class&nbsp;<code><a href="LegacyEncoder.html" title="class in org.apache.sysds.runtime.transform.encode">LegacyEncoder</a></code></dd>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>in</code> - input frame block</dd>
 <dd><code>out</code> - output matrix block</dd>
@@ -483,36 +484,36 @@ extends <a href="LegacyEncoder.html" title="class in org.apache.sysds.runtime.tr
 </dl>
 </li>
 </ul>
-<a id="build(org.apache.sysds.runtime.matrix.data.FrameBlock)">
+<a id="build(org.apache.sysds.runtime.frame.data.FrameBlock)">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
 <h4>build</h4>
-<pre class="methodSignature">public&nbsp;void&nbsp;build&#8203;(<a href="../../matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;in)</pre>
-<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="LegacyEncoder.html#build(org.apache.sysds.runtime.matrix.data.FrameBlock)">LegacyEncoder</a></code></span></div>
+<pre class="methodSignature">public&nbsp;void&nbsp;build&#8203;(<a href="../../frame/data/FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;in)</pre>
+<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="LegacyEncoder.html#build(org.apache.sysds.runtime.frame.data.FrameBlock)">LegacyEncoder</a></code></span></div>
 <div class="block">Build the transform meta data for the given block input. This call modifies and keeps meta data as encoder state.</div>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
-<dd><code><a href="LegacyEncoder.html#build(org.apache.sysds.runtime.matrix.data.FrameBlock)">build</a></code>&nbsp;in class&nbsp;<code><a href="LegacyEncoder.html" title="class in org.apache.sysds.runtime.transform.encode">LegacyEncoder</a></code></dd>
+<dd><code><a href="LegacyEncoder.html#build(org.apache.sysds.runtime.frame.data.FrameBlock)">build</a></code>&nbsp;in class&nbsp;<code><a href="LegacyEncoder.html" title="class in org.apache.sysds.runtime.transform.encode">LegacyEncoder</a></code></dd>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>in</code> - input frame block</dd>
 </dl>
 </li>
 </ul>
-<a id="apply(org.apache.sysds.runtime.matrix.data.FrameBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock)">
+<a id="apply(org.apache.sysds.runtime.frame.data.FrameBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock)">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
 <h4>apply</h4>
-<pre class="methodSignature">public&nbsp;<a href="../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;apply&#8203;(<a href="../../matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;in,
+<pre class="methodSignature">public&nbsp;<a href="../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;apply&#8203;(<a href="../../frame/data/FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;in,
                          <a href="../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;out)</pre>
-<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="LegacyEncoder.html#apply(org.apache.sysds.runtime.matrix.data.FrameBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock)">LegacyEncoder</a></code></span></div>
+<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="LegacyEncoder.html#apply(org.apache.sysds.runtime.frame.data.FrameBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock)">LegacyEncoder</a></code></span></div>
 <div class="block">Encode input data blockwise according to existing transform meta data (transform apply).</div>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
-<dd><code><a href="LegacyEncoder.html#apply(org.apache.sysds.runtime.matrix.data.FrameBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock)">apply</a></code>&nbsp;in class&nbsp;<code><a href="LegacyEncoder.html" title="class in org.apache.sysds.runtime.transform.encode">LegacyEncoder</a></code></dd>
+<dd><code><a href="LegacyEncoder.html#apply(org.apache.sysds.runtime.frame.data.FrameBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock)">apply</a></code>&nbsp;in class&nbsp;<code><a href="LegacyEncoder.html" title="class in org.apache.sysds.runtime.transform.encode">LegacyEncoder</a></code></dd>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>in</code> - input frame block</dd>
 <dd><code>out</code> - output matrix block</dd>
@@ -563,18 +564,18 @@ extends <a href="LegacyEncoder.html" title="class in org.apache.sysds.runtime.tr
 </dl>
 </li>
 </ul>
-<a id="getMetaData(org.apache.sysds.runtime.matrix.data.FrameBlock)">
+<a id="getMetaData(org.apache.sysds.runtime.frame.data.FrameBlock)">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
 <h4>getMetaData</h4>
-<pre class="methodSignature">public&nbsp;<a href="../../matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;getMetaData&#8203;(<a href="../../matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;out)</pre>
-<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="LegacyEncoder.html#getMetaData(org.apache.sysds.runtime.matrix.data.FrameBlock)">LegacyEncoder</a></code></span></div>
+<pre class="methodSignature">public&nbsp;<a href="../../frame/data/FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;getMetaData&#8203;(<a href="../../frame/data/FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;out)</pre>
+<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="LegacyEncoder.html#getMetaData(org.apache.sysds.runtime.frame.data.FrameBlock)">LegacyEncoder</a></code></span></div>
 <div class="block">Construct a frame block out of the transform meta data.</div>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
-<dd><code><a href="LegacyEncoder.html#getMetaData(org.apache.sysds.runtime.matrix.data.FrameBlock)">getMetaData</a></code>&nbsp;in class&nbsp;<code><a href="LegacyEncoder.html" title="class in org.apache.sysds.runtime.transform.encode">LegacyEncoder</a></code></dd>
+<dd><code><a href="LegacyEncoder.html#getMetaData(org.apache.sysds.runtime.frame.data.FrameBlock)">getMetaData</a></code>&nbsp;in class&nbsp;<code><a href="LegacyEncoder.html" title="class in org.apache.sysds.runtime.transform.encode">LegacyEncoder</a></code></dd>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>out</code> - output frame block</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
@@ -582,18 +583,18 @@ extends <a href="LegacyEncoder.html" title="class in org.apache.sysds.runtime.tr
 </dl>
 </li>
 </ul>
-<a id="initMetaData(org.apache.sysds.runtime.matrix.data.FrameBlock)">
+<a id="initMetaData(org.apache.sysds.runtime.frame.data.FrameBlock)">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
 <h4>initMetaData</h4>
-<pre class="methodSignature">public&nbsp;void&nbsp;initMetaData&#8203;(<a href="../../matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;meta)</pre>
-<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="LegacyEncoder.html#initMetaData(org.apache.sysds.runtime.matrix.data.FrameBlock)">LegacyEncoder</a></code></span></div>
+<pre class="methodSignature">public&nbsp;void&nbsp;initMetaData&#8203;(<a href="../../frame/data/FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;meta)</pre>
+<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="LegacyEncoder.html#initMetaData(org.apache.sysds.runtime.frame.data.FrameBlock)">LegacyEncoder</a></code></span></div>
 <div class="block">Sets up the required meta data for a subsequent call to apply.</div>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
-<dd><code><a href="LegacyEncoder.html#initMetaData(org.apache.sysds.runtime.matrix.data.FrameBlock)">initMetaData</a></code>&nbsp;in class&nbsp;<code><a href="LegacyEncoder.html" title="class in org.apache.sysds.runtime.transform.encode">LegacyEncoder</a></code></dd>
+<dd><code><a href="LegacyEncoder.html#initMetaData(org.apache.sysds.runtime.frame.data.FrameBlock)">initMetaData</a></code>&nbsp;in class&nbsp;<code><a href="LegacyEncoder.html" title="class in org.apache.sysds.runtime.transform.encode">LegacyEncoder</a></code></dd>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>meta</code> - frame block</dd>
 </dl>

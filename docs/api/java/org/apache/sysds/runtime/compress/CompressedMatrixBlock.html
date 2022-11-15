@@ -6,15 +6,16 @@
 <title>CompressedMatrixBlock (Apache SystemDS 3.1.0-SNAPSHOT API)</title>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <link rel="stylesheet" type="text/css" href="../../../../../stylesheet.css" title="Style">
-<link rel="stylesheet" type="text/css" href="../../../../../jquery/jquery-ui.css" title="Style">
+<link rel="stylesheet" type="text/css" href="../../../../../jquery/jquery-ui.min.css" title="Style">
+<link rel="stylesheet" type="text/css" href="../../../../../jquery-ui.overrides.css" title="Style">
 <script type="text/javascript" src="../../../../../script.js"></script>
 <script type="text/javascript" src="../../../../../jquery/jszip/dist/jszip.min.js"></script>
 <script type="text/javascript" src="../../../../../jquery/jszip-utils/dist/jszip-utils.min.js"></script>
 <!--[if IE]>
 <script type="text/javascript" src="../../../../../jquery/jszip-utils/dist/jszip-utils-ie.min.js"></script>
 <![endif]-->
-<script type="text/javascript" src="../../../../../jquery/jquery-3.5.1.js"></script>
-<script type="text/javascript" src="../../../../../jquery/jquery-ui.js"></script>
+<script type="text/javascript" src="../../../../../jquery/jquery-3.6.0.min.js"></script>
+<script type="text/javascript" src="../../../../../jquery/jquery-ui.min.js"></script>
 </head>
 <body>
 <script type="text/javascript"><!--
@@ -26,7 +27,7 @@
     catch(err) {
     }
 //-->
-var data = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10,"i10":10,"i11":10,"i12":10,"i13":10,"i14":10,"i15":10,"i16":9,"i17":10,"i18":10,"i19":10,"i20":10,"i21":10,"i22":10,"i23":10,"i24":10,"i25":10,"i26":10,"i27":10,"i28":10,"i29":10,"i30":10,"i31":10,"i32":10,"i33":10,"i34":10,"i35":10,"i36":10,"i37":10,"i38":10,"i39":10,"i40":10,"i41":10,"i42":10,"i43":10,"i44":10,"i45":10,"i46":10,"i47":10,"i48":10,"i49":10,"i50":10,"i51":10,"i52":10,"i53":10,"i54":10,"i55":10,"i56":10,"i57":10,"i58":10,"i59":10,"i60":10,"i61":10,"i62":10,"i63":9,"i64":9,"i65":10,"i66":10,"i67":10,"i68":10,"i69":10,"i70":10,"i71":10,"i72":10,"i73":10,"i74":10,"i75":10,"i76":10,"i77":10,"i78":10,"i79":10,"i80":10,"i81":10,"i82":10,"i83":10,"i84":10,"i85":10,"i86":10,"i87":10,"i88":10,"i89":10,"i90":10,"i91":10,"i92":10,"i93":10,"i94":10,"i95":10,"i96":10,"i97":10,"i98":10,"i99":10,"i100":10,"i101":10,"i102":10,"i103":10,"i104":10,"i105":10,"i106":10,"i107":10,"i108":10,"i109":10,"i110":10,"i111":10,"i112":10,"i113":10,"i114":10,"i115":10,"i116":10,"i117":10,"i118":10,"i119":10,"i120":10,"i121":10,"i122":10,"i123":10,"i124":10,"i125":10,"i126":10,"i127":10,"i128":10,"i129":10,"i130":10,"i131":10,"i132":10};
+var data = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10,"i10":10,"i11":10,"i12":10,"i13":10,"i14":10,"i15":10,"i16":9,"i17":10,"i18":10,"i19":10,"i20":10,"i21":10,"i22":10,"i23":10,"i24":10,"i25":10,"i26":10,"i27":10,"i28":10,"i29":10,"i30":10,"i31":10,"i32":10,"i33":10,"i34":10,"i35":10,"i36":10,"i37":10,"i38":10,"i39":10,"i40":10,"i41":10,"i42":10,"i43":10,"i44":10,"i45":10,"i46":10,"i47":10,"i48":10,"i49":10,"i50":10,"i51":10,"i52":10,"i53":10,"i54":10,"i55":10,"i56":10,"i57":10,"i58":10,"i59":10,"i60":10,"i61":10,"i62":10,"i63":9,"i64":9,"i65":10,"i66":10,"i67":10,"i68":10,"i69":10,"i70":10,"i71":10,"i72":10,"i73":10,"i74":10,"i75":10,"i76":10,"i77":10,"i78":10,"i79":10,"i80":10,"i81":10,"i82":10,"i83":10,"i84":10,"i85":10,"i86":10,"i87":10,"i88":10,"i89":10,"i90":10,"i91":10,"i92":10,"i93":10,"i94":10,"i95":10,"i96":10,"i97":10,"i98":10,"i99":9,"i100":10,"i101":10,"i102":10,"i103":10,"i104":10,"i105":10,"i106":10,"i107":10,"i108":10,"i109":10,"i110":10,"i111":10,"i112":10,"i113":10,"i114":10,"i115":10,"i116":10,"i117":10,"i118":10,"i119":10,"i120":10,"i121":10,"i122":10,"i123":10,"i124":10,"i125":10,"i126":10,"i127":10,"i128":10,"i129":10,"i130":10,"i131":10,"i132":10,"i133":10};
 var tabs = {65535:["t0","All Methods"],1:["t1","Static Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -158,7 +159,7 @@ extends <a href="../matrix/data/MatrixBlock.html" title="class in org.apache.sys
 <ul class="blockList">
 <li class="blockList">
 <!-- ======== NESTED CLASS SUMMARY ======== -->
-<section role="region">
+<section>
 <ul class="blockList">
 <li class="blockList"><a id="nested.class.summary">
 <!--   -->
@@ -182,7 +183,7 @@ extends <a href="../matrix/data/MatrixBlock.html" title="class in org.apache.sys
 </ul>
 </section>
 <!-- =========== FIELD SUMMARY =========== -->
-<section role="region">
+<section>
 <ul class="blockList">
 <li class="blockList"><a id="field.summary">
 <!--   -->
@@ -199,7 +200,7 @@ extends <a href="../matrix/data/MatrixBlock.html" title="class in org.apache.sys
 </ul>
 </section>
 <!-- ======== CONSTRUCTOR SUMMARY ======== -->
-<section role="region">
+<section>
 <ul class="blockList">
 <li class="blockList"><a id="constructor.summary">
 <!--   -->
@@ -223,6 +224,16 @@ extends <a href="../matrix/data/MatrixBlock.html" title="class in org.apache.sys
 </td>
 </tr>
 <tr class="altColor">
+<th class="colConstructorName" scope="row"><code><span class="memberNameLink"><a href="#%3Cinit%3E(int,int,long,boolean,java.util.List)">CompressedMatrixBlock</a></span>&#8203;(int&nbsp;rl,
+                     int&nbsp;cl,
+                     long&nbsp;nnz,
+                     boolean&nbsp;overlapping,
+                     <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="colgroup/AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a>&gt;&nbsp;groups)</code></th>
+<td class="colLast">
+<div class="block">Direct constructor with everything.</div>
+</td>
+</tr>
+<tr class="rowColor">
 <th class="colConstructorName" scope="row"><code><span class="memberNameLink"><a href="#%3Cinit%3E(org.apache.sysds.runtime.compress.CompressedMatrixBlock)">CompressedMatrixBlock</a></span>&#8203;(<a href="CompressedMatrixBlock.html" title="class in org.apache.sysds.runtime.compress">CompressedMatrixBlock</a>&nbsp;that)</code></th>
 <td class="colLast">
 <div class="block">Copy constructor taking that CompressedMatrixBlock and populate this new compressedMatrixBlock with pointers to
@@ -234,7 +245,7 @@ extends <a href="../matrix/data/MatrixBlock.html" title="class in org.apache.sys
 </ul>
 </section>
 <!-- ========== METHOD SUMMARY =========== -->
-<section role="region">
+<section>
 <ul class="blockList">
 <li class="blockList"><a id="method.summary">
 <!--   -->
@@ -324,7 +335,9 @@ extends <a href="../matrix/data/MatrixBlock.html" title="class in org.apache.sys
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#append(org.apache.sysds.runtime.matrix.data.MatrixBlock%5B%5D,org.apache.sysds.runtime.matrix.data.MatrixBlock,boolean)">append</a></span>&#8203;(<a href="../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>[]&nbsp;that,
       <a href="../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;ret,
       boolean&nbsp;cbind)</code></th>
-<td class="colLast">&nbsp;</td>
+<td class="colLast">
+<div class="block">Append that list of matrixes to this matrix.</div>
+</td>
 </tr>
 <tr id="i11" class="rowColor">
 <td class="colFirst"><code>void</code></td>
@@ -977,6 +990,11 @@ extends <a href="../matrix/data/MatrixBlock.html" title="class in org.apache.sys
 </td>
 </tr>
 <tr id="i99" class="rowColor">
+<td class="colFirst"><code>static <a href="CompressedMatrixBlock.html" title="class in org.apache.sysds.runtime.compress">CompressedMatrixBlock</a></code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#read(java.io.DataInput)">read</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/DataInput.html?is-external=true" title="class or interface in java.io" class="externalLink">DataInput</a>&nbsp;in)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i100" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#readExternal(java.io.ObjectInput)">readExternal</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/ObjectInput.html?is-external=true" title="class or interface in java.io" class="externalLink">ObjectInput</a>&nbsp;is)</code></th>
 <td class="colLast">
@@ -984,12 +1002,12 @@ extends <a href="../matrix/data/MatrixBlock.html" title="class in org.apache.sys
  efficient broadcast/rdd de-serialization.</div>
 </td>
 </tr>
-<tr id="i100" class="altColor">
+<tr id="i101" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#readFields(java.io.DataInput)">readFields</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/DataInput.html?is-external=true" title="class or interface in java.io" class="externalLink">DataInput</a>&nbsp;in)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i101" class="rowColor">
+<tr id="i102" class="altColor">
 <td class="colFirst"><code>long</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#recomputeNonZeros()">recomputeNonZeros</a></span>()</code></th>
 <td class="colLast">
@@ -997,13 +1015,13 @@ extends <a href="../matrix/data/MatrixBlock.html" title="class in org.apache.sys
  of the entire matrix block.</div>
 </td>
 </tr>
-<tr id="i102" class="altColor">
+<tr id="i103" class="rowColor">
 <td class="colFirst"><code>long</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#recomputeNonZeros(int,int)">recomputeNonZeros</a></span>&#8203;(int&nbsp;rl,
                  int&nbsp;ru)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i103" class="rowColor">
+<tr id="i104" class="altColor">
 <td class="colFirst"><code>long</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#recomputeNonZeros(int,int,int,int)">recomputeNonZeros</a></span>&#8203;(int&nbsp;rl,
                  int&nbsp;ru,
@@ -1014,7 +1032,7 @@ extends <a href="../matrix/data/MatrixBlock.html" title="class in org.apache.sys
  range of the matrix block.</div>
 </td>
 </tr>
-<tr id="i104" class="altColor">
+<tr id="i105" class="rowColor">
 <td class="colFirst"><code><a href="../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#removeEmptyOperations(org.apache.sysds.runtime.matrix.data.MatrixBlock,boolean,boolean,org.apache.sysds.runtime.matrix.data.MatrixBlock)">removeEmptyOperations</a></span>&#8203;(<a href="../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;ret,
                      boolean&nbsp;rows,
@@ -1022,7 +1040,7 @@ extends <a href="../matrix/data/MatrixBlock.html" title="class in org.apache.sys
                      <a href="../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;select)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i105" class="rowColor">
+<tr id="i106" class="altColor">
 <td class="colFirst"><code><a href="../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#reorgOperations(org.apache.sysds.runtime.matrix.operators.ReorgOperator,org.apache.sysds.runtime.matrix.data.MatrixValue,int,int,int)">reorgOperations</a></span>&#8203;(<a href="../matrix/operators/ReorgOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">ReorgOperator</a>&nbsp;op,
                <a href="../matrix/data/MatrixValue.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixValue</a>&nbsp;ret,
@@ -1031,14 +1049,14 @@ extends <a href="../matrix/data/MatrixBlock.html" title="class in org.apache.sys
                int&nbsp;length)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i106" class="altColor">
+<tr id="i107" class="rowColor">
 <td class="colFirst"><code><a href="../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#replaceOperations(org.apache.sysds.runtime.matrix.data.MatrixValue,double,double)">replaceOperations</a></span>&#8203;(<a href="../matrix/data/MatrixValue.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixValue</a>&nbsp;result,
                  double&nbsp;pattern,
                  double&nbsp;replacement)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i107" class="rowColor">
+<tr id="i108" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#reset(int,int,boolean,long,double)">reset</a></span>&#8203;(int&nbsp;rl,
      int&nbsp;cl,
@@ -1049,7 +1067,7 @@ extends <a href="../matrix/data/MatrixBlock.html" title="class in org.apache.sys
 <div class="block">Internal canonical reset of dense and sparse matrix blocks.</div>
 </td>
 </tr>
-<tr id="i108" class="altColor">
+<tr id="i109" class="rowColor">
 <td class="colFirst"><code><a href="../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#rexpandOperations(org.apache.sysds.runtime.matrix.data.MatrixBlock,double,boolean,boolean,boolean,int)">rexpandOperations</a></span>&#8203;(<a href="../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;ret,
                  double&nbsp;max,
@@ -1059,35 +1077,35 @@ extends <a href="../matrix/data/MatrixBlock.html" title="class in org.apache.sys
                  int&nbsp;k)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i109" class="rowColor">
+<tr id="i110" class="altColor">
 <td class="colFirst"><code><a href="../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#scalarOperations(org.apache.sysds.runtime.matrix.operators.ScalarOperator,org.apache.sysds.runtime.matrix.data.MatrixValue)">scalarOperations</a></span>&#8203;(<a href="../matrix/operators/ScalarOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">ScalarOperator</a>&nbsp;sop,
                 <a href="../matrix/data/MatrixValue.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixValue</a>&nbsp;result)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i110" class="altColor">
+<tr id="i111" class="rowColor">
 <td class="colFirst"><code><a href="../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#seqOperationsInPlace(double,double,double)">seqOperationsInPlace</a></span>&#8203;(double&nbsp;from,
                     double&nbsp;to,
                     double&nbsp;incr)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i111" class="rowColor">
+<tr id="i112" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#setDenseBlock(org.apache.sysds.runtime.data.DenseBlock)">setDenseBlock</a></span>&#8203;(<a href="../data/DenseBlock.html" title="class in org.apache.sysds.runtime.data">DenseBlock</a>&nbsp;dblock)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i112" class="altColor">
+<tr id="i113" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#setOverlapping(boolean)">setOverlapping</a></span>&#8203;(boolean&nbsp;overlapping)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i113" class="rowColor">
+<tr id="i114" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#setSparseBlock(org.apache.sysds.runtime.data.SparseBlock)">setSparseBlock</a></span>&#8203;(<a href="../data/SparseBlock.html" title="class in org.apache.sysds.runtime.data">SparseBlock</a>&nbsp;sblock)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i114" class="altColor">
+<tr id="i115" class="rowColor">
 <td class="colFirst"><code><a href="../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#slice(int,int,int,int,boolean,org.apache.sysds.runtime.controlprogram.caching.CacheBlock)">slice</a></span>&#8203;(int&nbsp;rl,
      int&nbsp;ru,
@@ -1099,7 +1117,7 @@ extends <a href="../matrix/data/MatrixBlock.html" title="class in org.apache.sys
 <div class="block">Method to perform rightIndex operation for a given lower and upper bounds in row and column dimensions.</div>
 </td>
 </tr>
-<tr id="i115" class="rowColor">
+<tr id="i116" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#slice(java.util.ArrayList,org.apache.sysds.runtime.util.IndexRange,int,int,int,int,int)">slice</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/ArrayList.html?is-external=true" title="class or interface in java.util" class="externalLink">ArrayList</a>&lt;<a href="../instructions/spark/data/IndexedMatrixValue.html" title="class in org.apache.sysds.runtime.instructions.spark.data">IndexedMatrixValue</a>&gt;&nbsp;outlist,
      <a href="../util/IndexRange.html" title="class in org.apache.sysds.runtime.util">IndexRange</a>&nbsp;range,
@@ -1112,20 +1130,20 @@ extends <a href="../matrix/data/MatrixBlock.html" title="class in org.apache.sys
 <div class="block">Slice out up to 4 matrixBlocks that are separated by the row and col Cuts.</div>
 </td>
 </tr>
-<tr id="i116" class="altColor">
+<tr id="i117" class="rowColor">
 <td class="colFirst"><code><a href="../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#sortOperations(org.apache.sysds.runtime.matrix.data.MatrixValue,org.apache.sysds.runtime.matrix.data.MatrixBlock)">sortOperations</a></span>&#8203;(<a href="../matrix/data/MatrixValue.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixValue</a>&nbsp;weights,
               <a href="../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;result)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i117" class="rowColor">
+<tr id="i118" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#sortSparseRows()">sortSparseRows</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Sorts all existing sparse rows by column indexes.</div>
 </td>
 </tr>
-<tr id="i118" class="altColor">
+<tr id="i119" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#sortSparseRows(int,int)">sortSparseRows</a></span>&#8203;(int&nbsp;rl,
               int&nbsp;ru)</code></th>
@@ -1134,38 +1152,38 @@ extends <a href="../matrix/data/MatrixBlock.html" title="class in org.apache.sys
  column indexes.</div>
 </td>
 </tr>
-<tr id="i119" class="rowColor">
+<tr id="i120" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#sparseToDense()">sparseToDense</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i120" class="altColor">
+<tr id="i121" class="rowColor">
 <td class="colFirst"><code><a href="CompressedMatrixBlock.html" title="class in org.apache.sysds.runtime.compress">CompressedMatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#squash(int)">squash</a></span>&#8203;(int&nbsp;k)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i121" class="rowColor">
+<tr id="i122" class="altColor">
 <td class="colFirst"><code>double</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#sum()">sum</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Wrapper method for reduceall-sum of a matrix.</div>
 </td>
 </tr>
-<tr id="i122" class="altColor">
+<tr id="i123" class="rowColor">
 <td class="colFirst"><code>double</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#sumSq()">sumSq</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Wrapper method for reduceall-sumSq of a matrix.</div>
 </td>
 </tr>
-<tr id="i123" class="rowColor">
+<tr id="i124" class="altColor">
 <td class="colFirst"><code>double</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#sumWeightForQuantile()">sumWeightForQuantile</a></span>()</code></th>
 <td class="colLast">
 <div class="block">In a given two column matrix, the second column denotes weights.</div>
 </td>
 </tr>
-<tr id="i124" class="altColor">
+<tr id="i125" class="rowColor">
 <td class="colFirst"><code><a href="../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#ternaryOperations(org.apache.sysds.runtime.matrix.operators.TernaryOperator,org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock)">ternaryOperations</a></span>&#8203;(<a href="../matrix/operators/TernaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">TernaryOperator</a>&nbsp;op,
                  <a href="../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;m2,
@@ -1173,7 +1191,7 @@ extends <a href="../matrix/data/MatrixBlock.html" title="class in org.apache.sys
                  <a href="../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;ret)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i125" class="rowColor">
+<tr id="i126" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#toShallowSerializeBlock()">toShallowSerializeBlock</a></span>()</code></th>
 <td class="colLast">
@@ -1181,19 +1199,19 @@ extends <a href="../matrix/data/MatrixBlock.html" title="class in org.apache.sys
  a form that is shallow serializable.</div>
 </td>
 </tr>
-<tr id="i126" class="altColor">
+<tr id="i127" class="rowColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#toString()">toString</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i127" class="rowColor">
+<tr id="i128" class="altColor">
 <td class="colFirst"><code><a href="../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#transposeSelfMatrixMultOperations(org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.lops.MMTSJ.MMTSJType,int)">transposeSelfMatrixMultOperations</a></span>&#8203;(<a href="../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;out,
                                  <a href="../../lops/MMTSJ.MMTSJType.html" title="enum in org.apache.sysds.lops">MMTSJ.MMTSJType</a>&nbsp;tstype,
                                  int&nbsp;k)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i128" class="altColor">
+<tr id="i129" class="rowColor">
 <td class="colFirst"><code><a href="../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#uaggouterchainOperations(org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.operators.BinaryOperator,org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator)">uaggouterchainOperations</a></span>&#8203;(<a href="../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;mbLeft,
                         <a href="../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;mbRight,
@@ -1202,18 +1220,18 @@ extends <a href="../matrix/data/MatrixBlock.html" title="class in org.apache.sys
                         <a href="../matrix/operators/AggregateUnaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">AggregateUnaryOperator</a>&nbsp;uaggOp)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i129" class="rowColor">
+<tr id="i130" class="altColor">
 <td class="colFirst"><code><a href="../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#unaryOperations(org.apache.sysds.runtime.matrix.operators.UnaryOperator,org.apache.sysds.runtime.matrix.data.MatrixValue)">unaryOperations</a></span>&#8203;(<a href="../matrix/operators/UnaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">UnaryOperator</a>&nbsp;op,
                <a href="../matrix/data/MatrixValue.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixValue</a>&nbsp;result)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i130" class="altColor">
+<tr id="i131" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#write(java.io.DataOutput)">write</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/DataOutput.html?is-external=true" title="class or interface in java.io" class="externalLink">DataOutput</a>&nbsp;out)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i131" class="rowColor">
+<tr id="i132" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#writeExternal(java.io.ObjectOutput)">writeExternal</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/ObjectOutput.html?is-external=true" title="class or interface in java.io" class="externalLink">ObjectOutput</a>&nbsp;os)</code></th>
 <td class="colLast">
@@ -1221,7 +1239,7 @@ extends <a href="../matrix/data/MatrixBlock.html" title="class in org.apache.sys
  efficient broadcast/rdd serialization.</div>
 </td>
 </tr>
-<tr id="i132" class="altColor">
+<tr id="i133" class="rowColor">
 <td class="colFirst"><code><a href="../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#zeroOutOperations(org.apache.sysds.runtime.matrix.data.MatrixValue,org.apache.sysds.runtime.util.IndexRange,boolean)">zeroOutOperations</a></span>&#8203;(<a href="../matrix/data/MatrixValue.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixValue</a>&nbsp;result,
                  <a href="../util/IndexRange.html" title="class in org.apache.sysds.runtime.util">IndexRange</a>&nbsp;range,
@@ -1234,7 +1252,7 @@ extends <a href="../matrix/data/MatrixBlock.html" title="class in org.apache.sys
 <!--   -->
 </a>
 <h3>Methods inherited from class&nbsp;org.apache.sysds.runtime.matrix.data.<a href="../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></h3>
-<code><a href="../matrix/data/MatrixBlock.html#aggregateBinaryOperations(org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.operators.AggregateBinaryOperator)">aggregateBinaryOperations</a>, <a href="../matrix/data/MatrixBlock.html#aggregateUnaryOperations(org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator,org.apache.sysds.runtime.matrix.data.MatrixValue,int,org.apache.sysds.runtime.matrix.data.MatrixIndexes)">aggregateUnaryOperations</a>, <a href="../matrix/data/MatrixBlock.html#allocateBlock()">allocateBlock</a>, <a href="../matrix/data/MatrixBlock.html#allocateDenseBlock()">allocateDenseBlock</a>, <a href="../matrix/data/MatrixBlock.html#allocateDenseBlockUnsafe(int,int)">allocateDenseBlockUnsafe</a>, <a href="../matrix/data/MatrixBlock.html#allocateSparseRowsBlock()">allocateSparseRowsBlock</a>, <a href="../matrix/data/MatrixBlock.html#append(org.apache.sysds.runtime.matrix.data.MatrixBlock)">append</a>, <a href="../matrix/data/MatrixBlock.html#append(org.apache.sysds.runtime.matrix.data.MatrixBlock,boolean)">append</a>, <a href="../matrix/data/MatrixBlock.html#append(org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock)">append</a>, <a href="../matrix/data/MatrixBlock.html#append(org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock,boolean)">append</a>, <a href="../matrix/data/MatrixBlock.html#appendRow(int,org.apache.sysds.runtime.data.SparseRow)">appendRow</a>, <a href="../matrix/data/MatrixBlock.html#appendToSparse(org.apache.sysds.runtime.matrix.data.MatrixBlock,int,int)">appendToSparse</a>, <a href="../matrix/data/MatrixBlock.html#binaryOperations(org.apache.sysds.runtime.matrix.operators.BinaryOperator,org.apache.sysds.runtime.matrix.data.MatrixValue)">binaryOperations</a>, <a href="../matrix/data/MatrixBlock.html#chainMatrixMultOperations(org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.lops.MapMultChain.ChainType)">chainMatrixMultOperations</a>, <a href="../matrix/data/MatrixBlock.html#checkCMOperations(org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.operators.CMOperator)">checkCMOperations</a>, <a href="../matrix/data/MatrixBlock.html#checkDimensionsForAppend(org.apache.sysds.runtime.matrix.data.MatrixBlock%5B%5D,boolean)">checkDimensionsForAppend</a>, <a href="../matrix/data/MatrixBlock.html#checkNonZeros()">checkNonZeros</a>, <a href="../matrix/data/MatrixBlock.html#checkSparseRows()">checkSparseRows</a>, <a href="../matrix/data/MatrixBlock.html#checkSparseRows(int,int)">checkSparseRows</a>, <a href="../matrix/data/MatrixBlock.html#cleanupBlock(boolean,boolean)">cleanupBlock</a>, <a href="../matrix/data/MatrixBlock.html#colMax()">colMax</a>, <a href="../matrix/data/MatrixBlock.html#colMin()">colMin</a>, <a href="../matrix/data/MatrixBlock.html#compareTo(java.lang.Object)">compareTo</a>, <a href="../matrix/data/MatrixBlock.html#computeIQMCorrection(double,double,double,double,double,double)">computeIQMCorrection</a>, <a href="../matrix/data/MatrixBlock.html#ctableOperations(org.apache.sysds.runtime.matrix.operators.Operator,org.apache.sysds.runtime.matrix.data.MatrixValue,org.apache.sysds.runtime.matrix.data.MatrixValue,org.apache.sysds.runtime.matrix.data.CTableMap)">ctableOperations</a>, <a href="../matrix/data/MatrixBlock.html#ctableSeqOperations(org.apache.sysds.runtime.matrix.data.MatrixValue,double,org.apache.sysds.runtime.matrix.data.MatrixBlock)">ctableSeqOperations</a>, <a href="../matrix/data/MatrixBlock.html#denseToSparse(boolean)">denseToSparse</a>, <a href="../matrix/data/MatrixBlock.html#equals(java.lang.Object)">equals</a>, <a href="../matrix/data/MatrixBlock.html#estimateSizeDenseInMemory()">estimateSizeDenseInMemory</a>, <a href="../matrix/data/MatrixBlock.html#estimateSizeDenseInMemory(long,long)">estimateSizeDenseInMemory</a>, <a href="../matrix/data/MatrixBlock.html#estimateSizeInMemory(long,long,double)">estimateSizeInMemory</a>, <a href="../matrix/data/MatrixBlock.html#estimateSizeOnDisk(long,long,long)">estimateSizeOnDisk</a>, <a href="../matrix/data/MatrixBlock.html#estimateSizeSparseInMemory()">estimateSizeSparseInMemory</a>, <a href="../matrix/data/MatrixBlock.html#estimateSizeSparseInMemory(long,long,double)">estimateSizeSparseInMemory</a>, <a href="../matrix/data/MatrixBlock.html#estimateSizeSparseInMemory(long,long,double,boolean)">estimateSizeSparseInMemory</a>, <a href="../matrix/data/MatrixBlock.html#estimateSizeSparseInMemory(long,long,double,org.apache.sysds.runtime.data.SparseBlock.Type)">estimateSizeSparseInMemory</a>, <a href="../matrix/data/MatrixBlock.html#estimateSizeSparseInMemory(org.apache.sysds.runtime.data.SparseBlock.Type)">estimateSizeSparseInMemory</a>, <a href="../matrix/data/MatrixBlock.html#evalSparseFormatInMemory(boolean)">evalSparseFormatInMemory</a>, <a href="../matrix/data/MatrixBlock.html#evalSparseFormatInMemory(long,long,long)">evalSparseFormatInMemory</a>, <a href="../matrix/data/MatrixBlock.html#evalSparseFormatInMemory(long,long,long,boolean)">evalSparseFormatInMemory</a>, <a href="../matrix/data/MatrixBlock.html#evalSparseFormatInMemory(org.apache.sysds.runtime.meta.DataCharacteristics)">evalSparseFormatInMemory</a>, <a href="../matrix/data/MatrixBlock.html#evalSparseFormatOnDisk(long,long,long)">evalSparseFormatOnDisk</a>, <a href="../matrix/data/MatrixBlock.html#examSparsity()">examSparsity</a>, <a href="../matrix/data/MatrixBlock.html#getDataCharacteristics()">getDataCharacteristics</a>, <a href="../matrix/data/MatrixBlock.html#getDouble(int,int)">getDouble</a>, <a href="../matrix/data/MatrixBlock.html#getDoubleNaN(int,int)">getDoubleNaN</a>, <a href="../matrix/data/MatrixBlock.html#getExactSerializedSize()">getExactSerializedSize</a>, <a href="../matrix/data/MatrixBlock.html#getHeaderSize()">getHeaderSize</a>, <a href="../matrix/data/MatrixBlock.html#getLength()">getLength</a>, <a href="../matrix/data/MatrixBlock.html#getNonZeros()">getNonZeros</a>, <a href="../matrix/data/MatrixBlock.html#getNumColumns()">getNumColumns</a>, <a href="../matrix/data/MatrixBlock.html#getNumRows()">getNumRows</a>, <a href="../matrix/data/MatrixBlock.html#getSparsity()">getSparsity</a>, <a href="../matrix/data/MatrixBlock.html#getString(int,int)">getString</a>, <a href="../matrix/data/MatrixBlock.html#getValue(int,int)">getValue</a>, <a href="../matrix/data/MatrixBlock.html#groupedAggOperations(org.apache.sysds.runtime.matrix.data.MatrixValue,org.apache.sysds.runtime.matrix.data.MatrixValue,org.apache.sysds.runtime.matrix.data.MatrixValue,int,org.apache.sysds.runtime.matrix.operators.Operator)">groupedAggOperations</a>, <a href="../matrix/data/MatrixBlock.html#hashCode()">hashCode</a>, <a href="../matrix/data/MatrixBlock.html#isEmpty()">isEmpty</a>, <a href="../matrix/data/MatrixBlock.html#isEmptyBlock()">isEmptyBlock</a>, <a href="../matrix/data/MatrixBlock.html#isShallowSerialize()">isShallowSerialize</a>, <a href="../matrix/data/MatrixBlock.html#isThreadSafe(boolean)">isThreadSafe</a>, <a href="../matrix/data/MatrixBlock.html#isVector()">isVector</a>, <a href="../matrix/data/MatrixBlock.html#leftIndexingOperations(org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.util.IndexRange,org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.controlprogram.caching.MatrixObject.UpdateType)">leftIndexingOperations</a>, <a href="../matrix/data/MatrixBlock.html#median()">median</a>, <a href="../matrix/data/MatrixBlock.html#merge(org.apache.sysds.runtime.controlprogram.caching.CacheBlock,boolean)">merge</a>, <a href="../matrix/data/MatrixBlock.html#merge(org.apache.sysds.runtime.matrix.data.MatrixBlock,boolean)">merge</a>, <a href="../matrix/data/MatrixBlock.html#merge(org.apache.sysds.runtime.matrix.data.MatrixBlock,boolean,boolean)">merge</a>, <a href="../matrix/data/MatrixBlock.html#naryOperations(org.apache.sysds.runtime.matrix.operators.Operator,org.apache.sysds.runtime.matrix.data.MatrixBlock%5B%5D,org.apache.sysds.runtime.instructions.cp.ScalarObject%5B%5D,org.apache.sysds.runtime.matrix.data.MatrixBlock)">naryOperations</a>, <a href="../matrix/data/MatrixBlock.html#permutationMatrixMultOperations(org.apache.sysds.runtime.matrix.data.MatrixValue,org.apache.sysds.runtime.matrix.data.MatrixValue,org.apache.sysds.runtime.matrix.data.MatrixValue)">permutationMatrixMultOperations</a>, <a href="../matrix/data/MatrixBlock.html#pickValue(double)">pickValue</a>, <a href="../matrix/data/MatrixBlock.html#prepareAggregateUnaryOutput(org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator,org.apache.sysds.runtime.matrix.data.MatrixValue,int)">prepareAggregateUnaryOutput</a>, <a href="../matrix/data/MatrixBlock.html#quaternaryOperations(org.apache.sysds.runtime.matrix.operators.QuaternaryOperator,org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock)">quaternaryOperations</a>, <a href="../matrix/data/MatrixBlock.html#randOperations(int,int,double,double,double,java.lang.String,long)">randOperations</a>, <a href="../matrix/data/MatrixBlock.html#randOperations(int,int,double,double,double,java.lang.String,long,int)">randOperations</a>, <a href="../matrix/data/MatrixBlock.html#randOperations(org.apache.sysds.runtime.matrix.data.RandomMatrixGenerator,long)">randOperations</a>, <a href="../matrix/data/MatrixBlock.html#randOperations(org.apache.sysds.runtime.matrix.data.RandomMatrixGenerator,long,int)">randOperations</a>, <a href="../matrix/data/MatrixBlock.html#removeEmptyOperations(org.apache.sysds.runtime.matrix.data.MatrixBlock,boolean,boolean)">removeEmptyOperations</a>, <a href="../matrix/data/MatrixBlock.html#reset()">reset</a>, <a href="../matrix/data/MatrixBlock.html#reset(int,int)">reset</a>, <a href="../matrix/data/MatrixBlock.html#reset(int,int,boolean)">reset</a>, <a href="../matrix/data/MatrixBlock.html#reset(int,int,boolean,long)">reset</a>, <a href="../matrix/data/MatrixBlock.html#reset(int,int,double)">reset</a>, <a href="../matrix/data/MatrixBlock.html#reset(int,int,long)">reset</a>, <a href="../matrix/data/MatrixBlock.html#rowSum()">rowSum</a>, <a href="../matrix/data/MatrixBlock.html#rowSum(int)">rowSum</a>, <a href="../matrix/data/MatrixBlock.html#sampleOperations(long,int,boolean,long)">sampleOperations</a>, <a href="../matrix/data/MatrixBlock.html#seqOperations(double,double,double)">seqOperations</a>, <a href="../matrix/data/MatrixBlock.html#setAllNonZeros()">setAllNonZeros</a>, <a href="../matrix/data/MatrixBlock.html#setNonZeros(long)">setNonZeros</a>, <a href="../matrix/data/MatrixBlock.html#setNumColumns(int)">setNumColumns</a>, <a href="../matrix/data/MatrixBlock.html#setNumRows(int)">setNumRows</a>, <a href="../matrix/data/MatrixBlock.html#setValue(int,int,double)">setValue</a>, <a href="../matrix/data/MatrixBlock.html#slice(int,int)">slice</a>, <a href="../matrix/data/MatrixBlock.html#slice(int,int,boolean)">slice</a>, <a href="../matrix/data/MatrixBlock.html#slice(int,int,int,int)">slice</a>, <a href="../matrix/data/MatrixBlock.html#slice(int,int,int,int,boolean)">slice</a>, <a href="../matrix/data/MatrixBlock.html#slice(int,int,int,int,org.apache.sysds.runtime.controlprogram.caching.CacheBlock)">slice</a>, <a href="../matrix/data/MatrixBlock.html#slice(org.apache.sysds.runtime.util.IndexRange,org.apache.sysds.runtime.matrix.data.MatrixBlock)">slice</a>, <a href="../matrix/data/MatrixBlock.html#sortOperations()">sortOperations</a>, <a href="../matrix/data/MatrixBlock.html#sortOperations(org.apache.sysds.runtime.matrix.data.MatrixValue)">sortOperations</a>, <a href="../matrix/data/MatrixBlock.html#sortOperations(org.apache.sysds.runtime.matrix.data.MatrixValue,org.apache.sysds.runtime.matrix.data.MatrixBlock,int)">sortOperations</a>, <a href="../matrix/data/MatrixBlock.html#transposeSelfMatrixMultOperations(org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.lops.MMTSJ.MMTSJType)">transposeSelfMatrixMultOperations</a></code></li>
+<code><a href="../matrix/data/MatrixBlock.html#aggregateBinaryOperations(org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.operators.AggregateBinaryOperator)">aggregateBinaryOperations</a>, <a href="../matrix/data/MatrixBlock.html#aggregateUnaryOperations(org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator,org.apache.sysds.runtime.matrix.data.MatrixValue,int,org.apache.sysds.runtime.matrix.data.MatrixIndexes)">aggregateUnaryOperations</a>, <a href="../matrix/data/MatrixBlock.html#allocateBlock()">allocateBlock</a>, <a href="../matrix/data/MatrixBlock.html#allocateDenseBlock()">allocateDenseBlock</a>, <a href="../matrix/data/MatrixBlock.html#allocateDenseBlockUnsafe(int,int)">allocateDenseBlockUnsafe</a>, <a href="../matrix/data/MatrixBlock.html#allocateSparseRowsBlock()">allocateSparseRowsBlock</a>, <a href="../matrix/data/MatrixBlock.html#append(org.apache.sysds.runtime.matrix.data.MatrixBlock)">append</a>, <a href="../matrix/data/MatrixBlock.html#append(org.apache.sysds.runtime.matrix.data.MatrixBlock,boolean)">append</a>, <a href="../matrix/data/MatrixBlock.html#append(org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock)">append</a>, <a href="../matrix/data/MatrixBlock.html#append(org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock,boolean)">append</a>, <a href="../matrix/data/MatrixBlock.html#appendRow(int,org.apache.sysds.runtime.data.SparseRow)">appendRow</a>, <a href="../matrix/data/MatrixBlock.html#appendToSparse(org.apache.sysds.runtime.matrix.data.MatrixBlock,int,int)">appendToSparse</a>, <a href="../matrix/data/MatrixBlock.html#binaryOperations(org.apache.sysds.runtime.matrix.operators.BinaryOperator,org.apache.sysds.runtime.matrix.data.MatrixValue)">binaryOperations</a>, <a href="../matrix/data/MatrixBlock.html#chainMatrixMultOperations(org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.lops.MapMultChain.ChainType)">chainMatrixMultOperations</a>, <a href="../matrix/data/MatrixBlock.html#checkCMOperations(org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.operators.CMOperator)">checkCMOperations</a>, <a href="../matrix/data/MatrixBlock.html#checkDimensionsForAppend(org.apache.sysds.runtime.matrix.data.MatrixBlock%5B%5D,boolean)">checkDimensionsForAppend</a>, <a href="../matrix/data/MatrixBlock.html#checkNonZeros()">checkNonZeros</a>, <a href="../matrix/data/MatrixBlock.html#checkSparseRows()">checkSparseRows</a>, <a href="../matrix/data/MatrixBlock.html#checkSparseRows(int,int)">checkSparseRows</a>, <a href="../matrix/data/MatrixBlock.html#cleanupBlock(boolean,boolean)">cleanupBlock</a>, <a href="../matrix/data/MatrixBlock.html#colMax()">colMax</a>, <a href="../matrix/data/MatrixBlock.html#colMin()">colMin</a>, <a href="../matrix/data/MatrixBlock.html#compareTo(java.lang.Object)">compareTo</a>, <a href="../matrix/data/MatrixBlock.html#computeIQMCorrection(double,double,double,double,double,double)">computeIQMCorrection</a>, <a href="../matrix/data/MatrixBlock.html#ctableOperations(org.apache.sysds.runtime.matrix.operators.Operator,org.apache.sysds.runtime.matrix.data.MatrixValue,org.apache.sysds.runtime.matrix.data.MatrixValue,org.apache.sysds.runtime.matrix.data.CTableMap)">ctableOperations</a>, <a href="../matrix/data/MatrixBlock.html#ctableSeqOperations(org.apache.sysds.runtime.matrix.data.MatrixValue,double,org.apache.sysds.runtime.matrix.data.MatrixBlock)">ctableSeqOperations</a>, <a href="../matrix/data/MatrixBlock.html#denseToSparse(boolean)">denseToSparse</a>, <a href="../matrix/data/MatrixBlock.html#equals(java.lang.Object)">equals</a>, <a href="../matrix/data/MatrixBlock.html#equals(org.apache.sysds.runtime.matrix.data.MatrixBlock)">equals</a>, <a href="../matrix/data/MatrixBlock.html#estimateSizeDenseInMemory()">estimateSizeDenseInMemory</a>, <a href="../matrix/data/MatrixBlock.html#estimateSizeDenseInMemory(long,long)">estimateSizeDenseInMemory</a>, <a href="../matrix/data/MatrixBlock.html#estimateSizeInMemory(long,long,double)">estimateSizeInMemory</a>, <a href="../matrix/data/MatrixBlock.html#estimateSizeOnDisk(long,long,long)">estimateSizeOnDisk</a>, <a href="../matrix/data/MatrixBlock.html#estimateSizeSparseInMemory()">estimateSizeSparseInMemory</a>, <a href="../matrix/data/MatrixBlock.html#estimateSizeSparseInMemory(long,long,double)">estimateSizeSparseInMemory</a>, <a href="../matrix/data/MatrixBlock.html#estimateSizeSparseInMemory(long,long,double,boolean)">estimateSizeSparseInMemory</a>, <a href="../matrix/data/MatrixBlock.html#estimateSizeSparseInMemory(long,long,double,org.apache.sysds.runtime.data.SparseBlock.Type)">estimateSizeSparseInMemory</a>, <a href="../matrix/data/MatrixBlock.html#estimateSizeSparseInMemory(org.apache.sysds.runtime.data.SparseBlock.Type)">estimateSizeSparseInMemory</a>, <a href="../matrix/data/MatrixBlock.html#evalSparseFormatInMemory(boolean)">evalSparseFormatInMemory</a>, <a href="../matrix/data/MatrixBlock.html#evalSparseFormatInMemory(long,long,long)">evalSparseFormatInMemory</a>, <a href="../matrix/data/MatrixBlock.html#evalSparseFormatInMemory(long,long,long,boolean)">evalSparseFormatInMemory</a>, <a href="../matrix/data/MatrixBlock.html#evalSparseFormatInMemory(org.apache.sysds.runtime.meta.DataCharacteristics)">evalSparseFormatInMemory</a>, <a href="../matrix/data/MatrixBlock.html#evalSparseFormatOnDisk(long,long,long)">evalSparseFormatOnDisk</a>, <a href="../matrix/data/MatrixBlock.html#examSparsity()">examSparsity</a>, <a href="../matrix/data/MatrixBlock.html#getDataCharacteristics()">getDataCharacteristics</a>, <a href="../matrix/data/MatrixBlock.html#getDouble(int,int)">getDouble</a>, <a href="../matrix/data/MatrixBlock.html#getDoubleNaN(int,int)">getDoubleNaN</a>, <a href="../matrix/data/MatrixBlock.html#getExactSerializedSize()">getExactSerializedSize</a>, <a href="../matrix/data/MatrixBlock.html#getHeaderSize()">getHeaderSize</a>, <a href="../matrix/data/MatrixBlock.html#getLength()">getLength</a>, <a href="../matrix/data/MatrixBlock.html#getNonZeros()">getNonZeros</a>, <a href="../matrix/data/MatrixBlock.html#getNumColumns()">getNumColumns</a>, <a href="../matrix/data/MatrixBlock.html#getNumRows()">getNumRows</a>, <a href="../matrix/data/MatrixBlock.html#getSparsity()">getSparsity</a>, <a href="../matrix/data/MatrixBlock.html#getString(int,int)">getString</a>, <a href="../matrix/data/MatrixBlock.html#getValue(int,int)">getValue</a>, <a href="../matrix/data/MatrixBlock.html#groupedAggOperations(org.apache.sysds.runtime.matrix.data.MatrixValue,org.apache.sysds.runtime.matrix.data.MatrixValue,org.apache.sysds.runtime.matrix.data.MatrixValue,int,org.apache.sysds.runtime.matrix.operators.Operator)">groupedAggOperations</a>, <a href="../matrix/data/MatrixBlock.html#hashCode()">hashCode</a>, <a href="../matrix/data/MatrixBlock.html#isEmpty()">isEmpty</a>, <a href="../matrix/data/MatrixBlock.html#isEmptyBlock()">isEmptyBlock</a>, <a href="../matrix/data/MatrixBlock.html#isShallowSerialize()">isShallowSerialize</a>, <a href="../matrix/data/MatrixBlock.html#isThreadSafe(boolean)">isThreadSafe</a>, <a href="../matrix/data/MatrixBlock.html#isVector()">isVector</a>, <a href="../matrix/data/MatrixBlock.html#leftIndexingOperations(org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.util.IndexRange,org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.controlprogram.caching.MatrixObject.UpdateType)">leftIndexingOperations</a>, <a href="../matrix/data/MatrixBlock.html#median()">median</a>, <a href="../matrix/data/MatrixBlock.html#merge(org.apache.sysds.runtime.controlprogram.caching.CacheBlock,boolean)">merge</a>, <a href="../matrix/data/MatrixBlock.html#merge(org.apache.sysds.runtime.matrix.data.MatrixBlock,boolean)">merge</a>, <a href="../matrix/data/MatrixBlock.html#merge(org.apache.sysds.runtime.matrix.data.MatrixBlock,boolean,boolean)">merge</a>, <a href="../matrix/data/MatrixBlock.html#naryOperations(org.apache.sysds.runtime.matrix.operators.Operator,org.apache.sysds.runtime.matrix.data.MatrixBlock%5B%5D,org.apache.sysds.runtime.instructions.cp.ScalarObject%5B%5D,org.apache.sysds.runtime.matrix.data.MatrixBlock)">naryOperations</a>, <a href="../matrix/data/MatrixBlock.html#permutationMatrixMultOperations(org.apache.sysds.runtime.matrix.data.MatrixValue,org.apache.sysds.runtime.matrix.data.MatrixValue,org.apache.sysds.runtime.matrix.data.MatrixValue)">permutationMatrixMultOperations</a>, <a href="../matrix/data/MatrixBlock.html#pickValue(double)">pickValue</a>, <a href="../matrix/data/MatrixBlock.html#prepareAggregateUnaryOutput(org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator,org.apache.sysds.runtime.matrix.data.MatrixValue,int)">prepareAggregateUnaryOutput</a>, <a href="../matrix/data/MatrixBlock.html#quaternaryOperations(org.apache.sysds.runtime.matrix.operators.QuaternaryOperator,org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock)">quaternaryOperations</a>, <a href="../matrix/data/MatrixBlock.html#randOperations(int,int,double,double,double,java.lang.String,long)">randOperations</a>, <a href="../matrix/data/MatrixBlock.html#randOperations(int,int,double,double,double,java.lang.String,long,int)">randOperations</a>, <a href="../matrix/data/MatrixBlock.html#randOperations(org.apache.sysds.runtime.matrix.data.RandomMatrixGenerator,long)">randOperations</a>, <a href="../matrix/data/MatrixBlock.html#randOperations(org.apache.sysds.runtime.matrix.data.RandomMatrixGenerator,long,int)">randOperations</a>, <a href="../matrix/data/MatrixBlock.html#removeEmptyOperations(org.apache.sysds.runtime.matrix.data.MatrixBlock,boolean,boolean)">removeEmptyOperations</a>, <a href="../matrix/data/MatrixBlock.html#reset()">reset</a>, <a href="../matrix/data/MatrixBlock.html#reset(int,int)">reset</a>, <a href="../matrix/data/MatrixBlock.html#reset(int,int,boolean)">reset</a>, <a href="../matrix/data/MatrixBlock.html#reset(int,int,boolean,long)">reset</a>, <a href="../matrix/data/MatrixBlock.html#reset(int,int,double)">reset</a>, <a href="../matrix/data/MatrixBlock.html#reset(int,int,long)">reset</a>, <a href="../matrix/data/MatrixBlock.html#rowSum()">rowSum</a>, <a href="../matrix/data/MatrixBlock.html#rowSum(int)">rowSum</a>, <a href="../matrix/data/MatrixBlock.html#sampleOperations(long,int,boolean,long)">sampleOperations</a>, <a href="../matrix/data/MatrixBlock.html#seqOperations(double,double,double)">seqOperations</a>, <a href="../matrix/data/MatrixBlock.html#setAllNonZeros()">setAllNonZeros</a>, <a href="../matrix/data/MatrixBlock.html#setNonZeros(long)">setNonZeros</a>, <a href="../matrix/data/MatrixBlock.html#setNumColumns(int)">setNumColumns</a>, <a href="../matrix/data/MatrixBlock.html#setNumRows(int)">setNumRows</a>, <a href="../matrix/data/MatrixBlock.html#setValue(int,int,double)">setValue</a>, <a href="../matrix/data/MatrixBlock.html#slice(int,int)">slice</a>, <a href="../matrix/data/MatrixBlock.html#slice(int,int,boolean)">slice</a>, <a href="../matrix/data/MatrixBlock.html#slice(int,int,int,int)">slice</a>, <a href="../matrix/data/MatrixBlock.html#slice(int,int,int,int,boolean)">slice</a>, <a href="../matrix/data/MatrixBlock.html#slice(int,int,int,int,org.apache.sysds.runtime.controlprogram.caching.CacheBlock)">slice</a>, <a href="../matrix/data/MatrixBlock.html#slice(org.apache.sysds.runtime.util.IndexRange,org.apache.sysds.runtime.matrix.data.MatrixBlock)">slice</a>, <a href="../matrix/data/MatrixBlock.html#sortOperations()">sortOperations</a>, <a href="../matrix/data/MatrixBlock.html#sortOperations(org.apache.sysds.runtime.matrix.data.MatrixValue)">sortOperations</a>, <a href="../matrix/data/MatrixBlock.html#sortOperations(org.apache.sysds.runtime.matrix.data.MatrixValue,org.apache.sysds.runtime.matrix.data.MatrixBlock,int)">sortOperations</a>, <a href="../matrix/data/MatrixBlock.html#transposeSelfMatrixMultOperations(org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.lops.MMTSJ.MMTSJType)">transposeSelfMatrixMultOperations</a></code></li>
 </ul>
 <ul class="blockList">
 <li class="blockList"><a id="methods.inherited.from.class.java.lang.Object">
@@ -1253,7 +1271,7 @@ extends <a href="../matrix/data/MatrixBlock.html" title="class in org.apache.sys
 <ul class="blockList">
 <li class="blockList">
 <!-- ========= CONSTRUCTOR DETAIL ======== -->
-<section role="region">
+<section>
 <ul class="blockList">
 <li class="blockList"><a id="constructor.detail">
 <!--   -->
@@ -1289,7 +1307,7 @@ extends <a href="../matrix/data/MatrixBlock.html" title="class in org.apache.sys
 <a id="&lt;init&gt;(org.apache.sysds.runtime.compress.CompressedMatrixBlock)">
 <!--   -->
 </a>
-<ul class="blockListLast">
+<ul class="blockList">
 <li class="blockList">
 <h4>CompressedMatrixBlock</h4>
 <pre>public&nbsp;CompressedMatrixBlock&#8203;(<a href="CompressedMatrixBlock.html" title="class in org.apache.sysds.runtime.compress">CompressedMatrixBlock</a>&nbsp;that)</pre>
@@ -1301,11 +1319,33 @@ extends <a href="../matrix/data/MatrixBlock.html" title="class in org.apache.sys
 </dl>
 </li>
 </ul>
+<a id="&lt;init&gt;(int,int,long,boolean,java.util.List)">
+<!--   -->
+</a>
+<ul class="blockListLast">
+<li class="blockList">
+<h4>CompressedMatrixBlock</h4>
+<pre>public&nbsp;CompressedMatrixBlock&#8203;(int&nbsp;rl,
+                             int&nbsp;cl,
+                             long&nbsp;nnz,
+                             boolean&nbsp;overlapping,
+                             <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="colgroup/AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a>&gt;&nbsp;groups)</pre>
+<div class="block">Direct constructor with everything.</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>rl</code> - Number of rows in the block</dd>
+<dd><code>cl</code> - Number of columns</dd>
+<dd><code>nnz</code> - Number of non zeros</dd>
+<dd><code>overlapping</code> - If the matrix is overlapping</dd>
+<dd><code>groups</code> - The list of column groups</dd>
+</dl>
+</li>
+</ul>
 </li>
 </ul>
 </section>
 <!-- ============ METHOD DETAIL ========== -->
-<section role="region">
+<section>
 <ul class="blockList">
 <li class="blockList"><a id="method.detail">
 <!--   -->
@@ -1646,6 +1686,20 @@ extends <a href="../matrix/data/MatrixBlock.html" title="class in org.apache.sys
 </dl>
 </li>
 </ul>
+<a id="read(java.io.DataInput)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>read</h4>
+<pre class="methodSignature">public static&nbsp;<a href="CompressedMatrixBlock.html" title="class in org.apache.sysds.runtime.compress">CompressedMatrixBlock</a>&nbsp;read&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/DataInput.html?is-external=true" title="class or interface in java.io" class="externalLink">DataInput</a>&nbsp;in)
+                                  throws <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></pre>
+<dl>
+<dt><span class="throwsLabel">Throws:</span></dt>
+<dd><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></code></dd>
+</dl>
+</li>
+</ul>
 <a id="write(java.io.DataOutput)">
 <!--   -->
 </a>
@@ -1757,9 +1811,19 @@ extends <a href="../matrix/data/MatrixBlock.html" title="class in org.apache.sys
 <pre class="methodSignature">public&nbsp;<a href="../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;append&#8203;(<a href="../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>[]&nbsp;that,
                           <a href="../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;ret,
                           boolean&nbsp;cbind)</pre>
+<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="../matrix/data/MatrixBlock.html#append(org.apache.sysds.runtime.matrix.data.MatrixBlock%5B%5D,org.apache.sysds.runtime.matrix.data.MatrixBlock,boolean)">MatrixBlock</a></code></span></div>
+<div class="block">Append that list of matrixes to this matrix.
+ 
+ cbind true makes the matrix "wider" while cbind false make it "taller"</div>
 <dl>
 <dt><span class="overrideSpecifyLabel">Overrides:</span></dt>
 <dd><code><a href="../matrix/data/MatrixBlock.html#append(org.apache.sysds.runtime.matrix.data.MatrixBlock%5B%5D,org.apache.sysds.runtime.matrix.data.MatrixBlock,boolean)">append</a></code>&nbsp;in class&nbsp;<code><a href="../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></dd>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>that</code> - a list of matrices to append in order</dd>
+<dd><code>ret</code> - the output matrix to modify, (is also returned)</dd>
+<dd><code>cbind</code> - if binding on columns or rows</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>the ret MatrixBlock object with the appended result</dd>
 </dl>
 </li>
 </ul>
@@ -1939,17 +2003,20 @@ extends <a href="../matrix/data/MatrixBlock.html" title="class in org.apache.sys
 <div class="block">Method to perform rightIndex operation for a given lower and upper bounds in row and column dimensions.
  Extracted submatrix is returned as "result". Note: This operation is now 0-based.
  
- This means that if you call with rl == ru then you get 1 row output.</div>
+ This means that if you call with rl == ru then you get 1 row output.
+ 
+ If rl or cl less than 0 an exception is thrown
+ If ru or cu greater than or equals to nRows or nCols an exception is thrown</div>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
 <dd><code><a href="../controlprogram/caching/CacheBlock.html#slice(int,int,int,int,boolean,org.apache.sysds.runtime.controlprogram.caching.CacheBlock)">slice</a></code>&nbsp;in interface&nbsp;<code><a href="../controlprogram/caching/CacheBlock.html" title="interface in org.apache.sysds.runtime.controlprogram.caching">CacheBlock</a></code></dd>
 <dt><span class="overrideSpecifyLabel">Overrides:</span></dt>
 <dd><code><a href="../matrix/data/MatrixBlock.html#slice(int,int,int,int,boolean,org.apache.sysds.runtime.controlprogram.caching.CacheBlock)">slice</a></code>&nbsp;in class&nbsp;<code><a href="../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></dd>
 <dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>rl</code> - row lower if this value is below 0 or above the number of rows contained in the matrix an exception is thrown</dd>
-<dd><code>ru</code> - row upper if this value is below rl or above the number of rows contained in the matrix an exception is thrown</dd>
-<dd><code>cl</code> - column lower if this value us below 0 or above the number of columns contained in the matrix an exception is thrown</dd>
-<dd><code>cu</code> - column upper if this value us below cl or above the number of columns contained in the matrix an exception is thrown</dd>
+<dd><code>rl</code> - row lower (inclusive)</dd>
+<dd><code>ru</code> - row upper (inclusive)</dd>
+<dd><code>cl</code> - column lower (inclusive)</dd>
+<dd><code>cu</code> - column upper (inclusive)</dd>
 <dd><code>deep</code> - should perform deep copy, this is relevant in cases where the matrix is in sparse format,
             or the entire matrix is sliced out</dd>
 <dd><code>ret</code> - output sliced out matrix block</dd>

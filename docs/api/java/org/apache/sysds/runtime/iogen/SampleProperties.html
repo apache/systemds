@@ -6,15 +6,16 @@
 <title>SampleProperties (Apache SystemDS 3.1.0-SNAPSHOT API)</title>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <link rel="stylesheet" type="text/css" href="../../../../../stylesheet.css" title="Style">
-<link rel="stylesheet" type="text/css" href="../../../../../jquery/jquery-ui.css" title="Style">
+<link rel="stylesheet" type="text/css" href="../../../../../jquery/jquery-ui.min.css" title="Style">
+<link rel="stylesheet" type="text/css" href="../../../../../jquery-ui.overrides.css" title="Style">
 <script type="text/javascript" src="../../../../../script.js"></script>
 <script type="text/javascript" src="../../../../../jquery/jszip/dist/jszip.min.js"></script>
 <script type="text/javascript" src="../../../../../jquery/jszip-utils/dist/jszip-utils.min.js"></script>
 <!--[if IE]>
 <script type="text/javascript" src="../../../../../jquery/jszip-utils/dist/jszip-utils-ie.min.js"></script>
 <![endif]-->
-<script type="text/javascript" src="../../../../../jquery/jquery-3.5.1.js"></script>
-<script type="text/javascript" src="../../../../../jquery/jquery-ui.js"></script>
+<script type="text/javascript" src="../../../../../jquery/jquery-3.6.0.min.js"></script>
+<script type="text/javascript" src="../../../../../jquery/jquery-ui.min.js"></script>
 </head>
 <body>
 <script type="text/javascript"><!--
@@ -145,7 +146,7 @@ extends <a href="../io/FileFormatProperties.html" title="class in org.apache.sys
 <ul class="blockList">
 <li class="blockList">
 <!-- ======== CONSTRUCTOR SUMMARY ======== -->
-<section role="region">
+<section>
 <ul class="blockList">
 <li class="blockList"><a id="constructor.summary">
 <!--   -->
@@ -162,8 +163,8 @@ extends <a href="../io/FileFormatProperties.html" title="class in org.apache.sys
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
-<th class="colConstructorName" scope="row"><code><span class="memberNameLink"><a href="#%3Cinit%3E(java.lang.String,org.apache.sysds.runtime.matrix.data.FrameBlock)">SampleProperties</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;sampleRaw,
-                <a href="../matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;sampleFrame)</code></th>
+<th class="colConstructorName" scope="row"><code><span class="memberNameLink"><a href="#%3Cinit%3E(java.lang.String,org.apache.sysds.runtime.frame.data.FrameBlock)">SampleProperties</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;sampleRaw,
+                <a href="../frame/data/FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;sampleFrame)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
@@ -176,7 +177,7 @@ extends <a href="../io/FileFormatProperties.html" title="class in org.apache.sys
 </ul>
 </section>
 <!-- ========== METHOD SUMMARY =========== -->
-<section role="region">
+<section>
 <ul class="blockList">
 <li class="blockList"><a id="method.summary">
 <!--   -->
@@ -195,7 +196,7 @@ extends <a href="../io/FileFormatProperties.html" title="class in org.apache.sys
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i1" class="rowColor">
-<td class="colFirst"><code><a href="../matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a></code></td>
+<td class="colFirst"><code><a href="../frame/data/FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getSampleFrame()">getSampleFrame</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
@@ -211,7 +212,7 @@ extends <a href="../io/FileFormatProperties.html" title="class in org.apache.sys
 </tr>
 <tr id="i4" class="altColor">
 <td class="colFirst"><code>void</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#setSampleFrame(org.apache.sysds.runtime.matrix.data.FrameBlock)">setSampleFrame</a></span>&#8203;(<a href="../matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;sampleFrame)</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#setSampleFrame(org.apache.sysds.runtime.frame.data.FrameBlock)">setSampleFrame</a></span>&#8203;(<a href="../frame/data/FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;sampleFrame)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i5" class="rowColor">
@@ -244,7 +245,7 @@ extends <a href="../io/FileFormatProperties.html" title="class in org.apache.sys
 <ul class="blockList">
 <li class="blockList">
 <!-- ========= CONSTRUCTOR DETAIL ======== -->
-<section role="region">
+<section>
 <ul class="blockList">
 <li class="blockList"><a id="constructor.detail">
 <!--   -->
@@ -269,21 +270,21 @@ extends <a href="../io/FileFormatProperties.html" title="class in org.apache.sys
                         <a href="../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;sampleMatrix)</pre>
 </li>
 </ul>
-<a id="&lt;init&gt;(java.lang.String,org.apache.sysds.runtime.matrix.data.FrameBlock)">
+<a id="&lt;init&gt;(java.lang.String,org.apache.sysds.runtime.frame.data.FrameBlock)">
 <!--   -->
 </a>
 <ul class="blockListLast">
 <li class="blockList">
 <h4>SampleProperties</h4>
 <pre>public&nbsp;SampleProperties&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;sampleRaw,
-                        <a href="../matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;sampleFrame)</pre>
+                        <a href="../frame/data/FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;sampleFrame)</pre>
 </li>
 </ul>
 </li>
 </ul>
 </section>
 <!-- ============ METHOD DETAIL ========== -->
-<section role="region">
+<section>
 <ul class="blockList">
 <li class="blockList"><a id="method.detail">
 <!--   -->
@@ -313,7 +314,7 @@ extends <a href="../io/FileFormatProperties.html" title="class in org.apache.sys
 <ul class="blockList">
 <li class="blockList">
 <h4>getSampleFrame</h4>
-<pre class="methodSignature">public&nbsp;<a href="../matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;getSampleFrame()</pre>
+<pre class="methodSignature">public&nbsp;<a href="../frame/data/FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;getSampleFrame()</pre>
 </li>
 </ul>
 <a id="getDataType()">
@@ -334,13 +335,13 @@ extends <a href="../io/FileFormatProperties.html" title="class in org.apache.sys
 <pre class="methodSignature">public&nbsp;void&nbsp;setSampleMatrix&#8203;(<a href="../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;sampleMatrix)</pre>
 </li>
 </ul>
-<a id="setSampleFrame(org.apache.sysds.runtime.matrix.data.FrameBlock)">
+<a id="setSampleFrame(org.apache.sysds.runtime.frame.data.FrameBlock)">
 <!--   -->
 </a>
 <ul class="blockListLast">
 <li class="blockList">
 <h4>setSampleFrame</h4>
-<pre class="methodSignature">public&nbsp;void&nbsp;setSampleFrame&#8203;(<a href="../matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;sampleFrame)</pre>
+<pre class="methodSignature">public&nbsp;void&nbsp;setSampleFrame&#8203;(<a href="../frame/data/FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;sampleFrame)</pre>
 </li>
 </ul>
 </li>

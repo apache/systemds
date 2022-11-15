@@ -6,15 +6,16 @@
 <title>SparseBlockCSR (Apache SystemDS 3.1.0-SNAPSHOT API)</title>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <link rel="stylesheet" type="text/css" href="../../../../../stylesheet.css" title="Style">
-<link rel="stylesheet" type="text/css" href="../../../../../jquery/jquery-ui.css" title="Style">
+<link rel="stylesheet" type="text/css" href="../../../../../jquery/jquery-ui.min.css" title="Style">
+<link rel="stylesheet" type="text/css" href="../../../../../jquery-ui.overrides.css" title="Style">
 <script type="text/javascript" src="../../../../../script.js"></script>
 <script type="text/javascript" src="../../../../../jquery/jszip/dist/jszip.min.js"></script>
 <script type="text/javascript" src="../../../../../jquery/jszip-utils/dist/jszip-utils.min.js"></script>
 <!--[if IE]>
 <script type="text/javascript" src="../../../../../jquery/jszip-utils/dist/jszip-utils-ie.min.js"></script>
 <![endif]-->
-<script type="text/javascript" src="../../../../../jquery/jquery-3.5.1.js"></script>
-<script type="text/javascript" src="../../../../../jquery/jquery-ui.js"></script>
+<script type="text/javascript" src="../../../../../jquery/jquery-3.6.0.min.js"></script>
+<script type="text/javascript" src="../../../../../jquery/jquery-ui.min.js"></script>
 </head>
 <body>
 <script type="text/javascript"><!--
@@ -26,7 +27,7 @@
     catch(err) {
     }
 //-->
-var data = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":9,"i10":10,"i11":10,"i12":10,"i13":10,"i14":10,"i15":10,"i16":10,"i17":10,"i18":10,"i19":10,"i20":10,"i21":10,"i22":10,"i23":10,"i24":10,"i25":10,"i26":10,"i27":10,"i28":10,"i29":10,"i30":10,"i31":10,"i32":10,"i33":10,"i34":10,"i35":10,"i36":10,"i37":10,"i38":10,"i39":10,"i40":10,"i41":10,"i42":10,"i43":10};
+var data = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10,"i10":9,"i11":10,"i12":10,"i13":10,"i14":10,"i15":10,"i16":10,"i17":10,"i18":10,"i19":10,"i20":10,"i21":10,"i22":10,"i23":10,"i24":10,"i25":10,"i26":10,"i27":10,"i28":10,"i29":10,"i30":10,"i31":10,"i32":10,"i33":10,"i34":10,"i35":10,"i36":10,"i37":10,"i38":10,"i39":10,"i40":10,"i41":10,"i42":10,"i43":10,"i44":10};
 var tabs = {65535:["t0","All Methods"],1:["t1","Static Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -137,7 +138,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <li class="blockList">
 <dl>
 <dt>All Implemented Interfaces:</dt>
-<dd><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/Serializable.html?is-external=true" title="class or interface in java.io" class="externalLink">Serializable</a></code></dd>
+<dd><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/Serializable.html?is-external=true" title="class or interface in java.io" class="externalLink">Serializable</a></code>, <code><a href="Block.html" title="interface in org.apache.sysds.runtime.data">Block</a></code></dd>
 </dl>
 <hr>
 <pre>public class <span class="typeNameLabel">SparseBlockCSR</span>
@@ -166,7 +167,7 @@ extends <a href="SparseBlock.html" title="class in org.apache.sysds.runtime.data
 <ul class="blockList">
 <li class="blockList">
 <!-- ======== NESTED CLASS SUMMARY ======== -->
-<section role="region">
+<section>
 <ul class="blockList">
 <li class="blockList"><a id="nested.class.summary">
 <!--   -->
@@ -183,7 +184,7 @@ extends <a href="SparseBlock.html" title="class in org.apache.sysds.runtime.data
 </ul>
 </section>
 <!-- ======== CONSTRUCTOR SUMMARY ======== -->
-<section role="region">
+<section>
 <ul class="blockList">
 <li class="blockList"><a id="constructor.summary">
 <!--   -->
@@ -253,7 +254,7 @@ extends <a href="SparseBlock.html" title="class in org.apache.sysds.runtime.data
 </ul>
 </section>
 <!-- ========== METHOD SUMMARY =========== -->
-<section role="region">
+<section>
 <ul class="blockList">
 <li class="blockList"><a id="method.summary">
 <!--   -->
@@ -336,6 +337,14 @@ extends <a href="SparseBlock.html" title="class in org.apache.sysds.runtime.data
 </td>
 </tr>
 <tr id="i8" class="altColor">
+<td class="colFirst"><code>boolean</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#contains(double)">contains</a></span>&#8203;(double&nbsp;pattern)</code></th>
+<td class="colLast">
+<div class="block">Checks if the block contains at least one value of the given
+ pattern.</div>
+</td>
+</tr>
+<tr id="i9" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#deleteIndexRange(int,int,int)">deleteIndexRange</a></span>&#8203;(int&nbsp;r,
                 int&nbsp;cl,
@@ -344,7 +353,7 @@ extends <a href="SparseBlock.html" title="class in org.apache.sysds.runtime.data
 <div class="block">Deletes all non-zero values of the given column range [cl,cu) in row r.</div>
 </td>
 </tr>
-<tr id="i9" class="rowColor">
+<tr id="i10" class="altColor">
 <td class="colFirst"><code>static long</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#estimateSizeInMemory(long,long,double)">estimateSizeInMemory</a></span>&#8203;(long&nbsp;nrows,
                     long&nbsp;ncols,
@@ -354,14 +363,14 @@ extends <a href="SparseBlock.html" title="class in org.apache.sysds.runtime.data
  with the given dimensions w/o accounting for overallocation.</div>
 </td>
 </tr>
-<tr id="i10" class="altColor">
+<tr id="i11" class="rowColor">
 <td class="colFirst"><code><a href="SparseRow.html" title="class in org.apache.sysds.runtime.data">SparseRow</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#get(int)">get</a></span>&#8203;(int&nbsp;r)</code></th>
 <td class="colLast">
 <div class="block">Get values of row r in the format of a sparse row.</div>
 </td>
 </tr>
-<tr id="i11" class="rowColor">
+<tr id="i12" class="altColor">
 <td class="colFirst"><code>double</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#get(int,int)">get</a></span>&#8203;(int&nbsp;r,
    int&nbsp;c)</code></th>
@@ -369,7 +378,7 @@ extends <a href="SparseBlock.html" title="class in org.apache.sysds.runtime.data
 <div class="block">Get value of matrix cell (r,c).</div>
 </td>
 </tr>
-<tr id="i12" class="altColor">
+<tr id="i13" class="rowColor">
 <td class="colFirst"><code>int[]</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#indexes()">indexes</a></span>()</code></th>
 <td class="colLast">
@@ -377,7 +386,7 @@ extends <a href="SparseBlock.html" title="class in org.apache.sysds.runtime.data
  For use in GPU code</div>
 </td>
 </tr>
-<tr id="i13" class="rowColor">
+<tr id="i14" class="altColor">
 <td class="colFirst"><code>int[]</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#indexes(int)">indexes</a></span>&#8203;(int&nbsp;r)</code></th>
 <td class="colLast">
@@ -385,7 +394,7 @@ extends <a href="SparseBlock.html" title="class in org.apache.sysds.runtime.data
  row r.</div>
 </td>
 </tr>
-<tr id="i14" class="altColor">
+<tr id="i15" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#initSparse(int,int,java.io.DataInput)">initSparse</a></span>&#8203;(int&nbsp;rlen,
           int&nbsp;nnz,
@@ -395,7 +404,7 @@ extends <a href="SparseBlock.html" title="class in org.apache.sysds.runtime.data
  stream of sparse rows (rownnz, jv-pairs*).</div>
 </td>
 </tr>
-<tr id="i15" class="rowColor">
+<tr id="i16" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#initUltraSparse(int,java.io.DataInput)">initUltraSparse</a></span>&#8203;(int&nbsp;nnz,
                <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/DataInput.html?is-external=true" title="class or interface in java.io" class="externalLink">DataInput</a>&nbsp;in)</code></th>
@@ -404,7 +413,7 @@ extends <a href="SparseBlock.html" title="class in org.apache.sysds.runtime.data
  stream of ultra-sparse ijv triples.</div>
 </td>
 </tr>
-<tr id="i16" class="altColor">
+<tr id="i17" class="rowColor">
 <td class="colFirst"><code>boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#isAllocated(int)">isAllocated</a></span>&#8203;(int&nbsp;r)</code></th>
 <td class="colLast">
@@ -412,7 +421,7 @@ extends <a href="SparseBlock.html" title="class in org.apache.sysds.runtime.data
  is already allocated.</div>
 </td>
 </tr>
-<tr id="i17" class="rowColor">
+<tr id="i18" class="altColor">
 <td class="colFirst"><code>boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#isContiguous()">isContiguous</a></span>()</code></th>
 <td class="colLast">
@@ -421,7 +430,7 @@ extends <a href="SparseBlock.html" title="class in org.apache.sysds.runtime.data
  more efficient operations.</div>
 </td>
 </tr>
-<tr id="i18" class="altColor">
+<tr id="i19" class="rowColor">
 <td class="colFirst"><code>boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#isEmpty(int)">isEmpty</a></span>&#8203;(int&nbsp;r)</code></th>
 <td class="colLast">
@@ -429,7 +438,7 @@ extends <a href="SparseBlock.html" title="class in org.apache.sysds.runtime.data
  values.</div>
 </td>
 </tr>
-<tr id="i19" class="rowColor">
+<tr id="i20" class="altColor">
 <td class="colFirst"><code>boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#isThreadSafe()">isThreadSafe</a></span>()</code></th>
 <td class="colLast">
@@ -437,14 +446,14 @@ extends <a href="SparseBlock.html" title="class in org.apache.sysds.runtime.data
  updates if concurrent threads update disjoint rows.</div>
 </td>
 </tr>
-<tr id="i20" class="altColor">
+<tr id="i21" class="rowColor">
 <td class="colFirst"><code>int</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#numRows()">numRows</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Get the number of rows in the sparse block.</div>
 </td>
 </tr>
-<tr id="i21" class="rowColor">
+<tr id="i22" class="altColor">
 <td class="colFirst"><code>int</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#pos(int)">pos</a></span>&#8203;(int&nbsp;r)</code></th>
 <td class="colLast">
@@ -452,7 +461,7 @@ extends <a href="SparseBlock.html" title="class in org.apache.sysds.runtime.data
  by indexes(r) and values(r).</div>
 </td>
 </tr>
-<tr id="i22" class="altColor">
+<tr id="i23" class="rowColor">
 <td class="colFirst"><code>int</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#posFIndexGT(int,int)">posFIndexGT</a></span>&#8203;(int&nbsp;r,
            int&nbsp;c)</code></th>
@@ -460,7 +469,7 @@ extends <a href="SparseBlock.html" title="class in org.apache.sysds.runtime.data
 <div class="block">Get position of first column index greater than column c in row r.</div>
 </td>
 </tr>
-<tr id="i23" class="rowColor">
+<tr id="i24" class="altColor">
 <td class="colFirst"><code>int</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#posFIndexGTE(int,int)">posFIndexGTE</a></span>&#8203;(int&nbsp;r,
             int&nbsp;c)</code></th>
@@ -469,7 +478,7 @@ extends <a href="SparseBlock.html" title="class in org.apache.sysds.runtime.data
  in row r.</div>
 </td>
 </tr>
-<tr id="i24" class="altColor">
+<tr id="i25" class="rowColor">
 <td class="colFirst"><code>int</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#posFIndexLTE(int,int)">posFIndexLTE</a></span>&#8203;(int&nbsp;r,
             int&nbsp;c)</code></th>
@@ -478,14 +487,14 @@ extends <a href="SparseBlock.html" title="class in org.apache.sysds.runtime.data
  in row r.</div>
 </td>
 </tr>
-<tr id="i25" class="rowColor">
+<tr id="i26" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#reset()">reset</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Clears the sparse block by deleting non-zero values.</div>
 </td>
 </tr>
-<tr id="i26" class="altColor">
+<tr id="i27" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#reset(int,int)">reset</a></span>&#8203;(int&nbsp;ennz,
      int&nbsp;maxnnz)</code></th>
@@ -493,7 +502,7 @@ extends <a href="SparseBlock.html" title="class in org.apache.sysds.runtime.data
 <div class="block">Clears the sparse block by deleting non-zero values.</div>
 </td>
 </tr>
-<tr id="i27" class="rowColor">
+<tr id="i28" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#reset(int,int,int)">reset</a></span>&#8203;(int&nbsp;r,
      int&nbsp;ennz,
@@ -502,7 +511,7 @@ extends <a href="SparseBlock.html" title="class in org.apache.sysds.runtime.data
 <div class="block">Clears row r of the sparse block by deleting non-zero values.</div>
 </td>
 </tr>
-<tr id="i28" class="altColor">
+<tr id="i29" class="rowColor">
 <td class="colFirst"><code>int[]</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#rowPointers()">rowPointers</a></span>()</code></th>
 <td class="colLast">
@@ -510,7 +519,7 @@ extends <a href="SparseBlock.html" title="class in org.apache.sysds.runtime.data
  For use in GPU code</div>
 </td>
 </tr>
-<tr id="i29" class="rowColor">
+<tr id="i30" class="altColor">
 <td class="colFirst"><code>boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#set(int,int,double)">set</a></span>&#8203;(int&nbsp;r,
    int&nbsp;c,
@@ -519,7 +528,7 @@ extends <a href="SparseBlock.html" title="class in org.apache.sysds.runtime.data
 <div class="block">Set the value of a matrix cell (r,c).</div>
 </td>
 </tr>
-<tr id="i30" class="altColor">
+<tr id="i31" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#set(int,org.apache.sysds.runtime.data.SparseRow,boolean)">set</a></span>&#8203;(int&nbsp;r,
    <a href="SparseRow.html" title="class in org.apache.sysds.runtime.data">SparseRow</a>&nbsp;row,
@@ -528,7 +537,7 @@ extends <a href="SparseBlock.html" title="class in org.apache.sysds.runtime.data
 <div class="block">Set the values of row r to the given sparse row.</div>
 </td>
 </tr>
-<tr id="i31" class="rowColor">
+<tr id="i32" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#setIndexRange(int,int,int,double%5B%5D,int%5B%5D,int,int)">setIndexRange</a></span>&#8203;(int&nbsp;r,
              int&nbsp;cl,
@@ -542,7 +551,7 @@ extends <a href="SparseBlock.html" title="class in org.apache.sysds.runtime.data
  in row r.</div>
 </td>
 </tr>
-<tr id="i32" class="altColor">
+<tr id="i33" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#setIndexRange(int,int,int,double%5B%5D,int,int)">setIndexRange</a></span>&#8203;(int&nbsp;r,
              int&nbsp;cl,
@@ -555,7 +564,7 @@ extends <a href="SparseBlock.html" title="class in org.apache.sysds.runtime.data
  in row r.</div>
 </td>
 </tr>
-<tr id="i33" class="rowColor">
+<tr id="i34" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#setIndexRange(int,int,int,int,double%5B%5D,int,int)">setIndexRange</a></span>&#8203;(int&nbsp;rl,
              int&nbsp;ru,
@@ -569,7 +578,7 @@ extends <a href="SparseBlock.html" title="class in org.apache.sysds.runtime.data
  range [rl,ru) and [cl,cu).</div>
 </td>
 </tr>
-<tr id="i34" class="altColor">
+<tr id="i35" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#setIndexRange(int,int,int,int,org.apache.sysds.runtime.data.SparseBlock)">setIndexRange</a></span>&#8203;(int&nbsp;rl,
              int&nbsp;ru,
@@ -580,21 +589,21 @@ extends <a href="SparseBlock.html" title="class in org.apache.sysds.runtime.data
 <div class="block">Inserts a sparse block into the row and column range [rl,ru) and [cl,cu).</div>
 </td>
 </tr>
-<tr id="i35" class="rowColor">
+<tr id="i36" class="altColor">
 <td class="colFirst"><code>long</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#size()">size</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Get the number of non-zero values in the sparse block.</div>
 </td>
 </tr>
-<tr id="i36" class="altColor">
+<tr id="i37" class="rowColor">
 <td class="colFirst"><code>int</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#size(int)">size</a></span>&#8203;(int&nbsp;r)</code></th>
 <td class="colLast">
 <div class="block">Get the number of non-zero values in row r.</div>
 </td>
 </tr>
-<tr id="i37" class="rowColor">
+<tr id="i38" class="altColor">
 <td class="colFirst"><code>long</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#size(int,int)">size</a></span>&#8203;(int&nbsp;rl,
     int&nbsp;ru)</code></th>
@@ -603,7 +612,7 @@ extends <a href="SparseBlock.html" title="class in org.apache.sysds.runtime.data
  of [rl, ru).</div>
 </td>
 </tr>
-<tr id="i38" class="altColor">
+<tr id="i39" class="rowColor">
 <td class="colFirst"><code>long</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#size(int,int,int,int)">size</a></span>&#8203;(int&nbsp;rl,
     int&nbsp;ru,
@@ -614,7 +623,7 @@ extends <a href="SparseBlock.html" title="class in org.apache.sysds.runtime.data
  range of [rl/cl, ru/cu);</div>
 </td>
 </tr>
-<tr id="i39" class="rowColor">
+<tr id="i40" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#sort()">sort</a></span>()</code></th>
 <td class="colLast">
@@ -622,19 +631,19 @@ extends <a href="SparseBlock.html" title="class in org.apache.sysds.runtime.data
  and column index.</div>
 </td>
 </tr>
-<tr id="i40" class="altColor">
+<tr id="i41" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#sort(int)">sort</a></span>&#8203;(int&nbsp;r)</code></th>
 <td class="colLast">
 <div class="block">Sort all non-zero value/index pairs of row r column index.</div>
 </td>
 </tr>
-<tr id="i41" class="rowColor">
+<tr id="i42" class="altColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#toString()">toString</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i42" class="altColor">
+<tr id="i43" class="rowColor">
 <td class="colFirst"><code>double[]</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#values()">values</a></span>()</code></th>
 <td class="colLast">
@@ -642,7 +651,7 @@ extends <a href="SparseBlock.html" title="class in org.apache.sysds.runtime.data
  For use in GPU code</div>
 </td>
 </tr>
-<tr id="i43" class="rowColor">
+<tr id="i44" class="altColor">
 <td class="colFirst"><code>double[]</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#values(int)">values</a></span>&#8203;(int&nbsp;r)</code></th>
 <td class="colLast">
@@ -656,14 +665,14 @@ extends <a href="SparseBlock.html" title="class in org.apache.sysds.runtime.data
 <!--   -->
 </a>
 <h3>Methods inherited from class&nbsp;org.apache.sysds.runtime.data.<a href="SparseBlock.html" title="class in org.apache.sysds.runtime.data">SparseBlock</a></h3>
-<code><a href="SparseBlock.html#getIterator()">getIterator</a>, <a href="SparseBlock.html#getIterator(int)">getIterator</a>, <a href="SparseBlock.html#getIterator(int,int)">getIterator</a>, <a href="SparseBlock.html#isAligned(int,org.apache.sysds.runtime.data.SparseBlock)">isAligned</a>, <a href="SparseBlock.html#isAligned(org.apache.sysds.runtime.data.SparseBlock)">isAligned</a></code></li>
+<code><a href="SparseBlock.html#equals(double%5B%5D,int)">equals</a>, <a href="SparseBlock.html#equals(double%5B%5D,int,double)">equals</a>, <a href="SparseBlock.html#equals(java.lang.Object)">equals</a>, <a href="SparseBlock.html#equals(org.apache.sysds.runtime.data.SparseBlock,double)">equals</a>, <a href="SparseBlock.html#getIterator()">getIterator</a>, <a href="SparseBlock.html#getIterator(int)">getIterator</a>, <a href="SparseBlock.html#getIterator(int,int)">getIterator</a>, <a href="SparseBlock.html#isAligned(int,org.apache.sysds.runtime.data.SparseBlock)">isAligned</a>, <a href="SparseBlock.html#isAligned(org.apache.sysds.runtime.data.SparseBlock)">isAligned</a></code></li>
 </ul>
 <ul class="blockList">
 <li class="blockList"><a id="methods.inherited.from.class.java.lang.Object">
 <!--   -->
 </a>
 <h3>Methods inherited from class&nbsp;java.lang.<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a></h3>
-<code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#equals(java.lang.Object)" title="class or interface in java.lang" class="externalLink">equals</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#getClass()" title="class or interface in java.lang" class="externalLink">getClass</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#hashCode()" title="class or interface in java.lang" class="externalLink">hashCode</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#notify()" title="class or interface in java.lang" class="externalLink">notify</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#notifyAll()" title="class or interface in java.lang" class="externalLink">notifyAll</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#wait()" title="class or interface in java.lang" class="externalLink">wait</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#wait(long)" title="class or interface in java.lang" class="externalLink">wait</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#wait(long,int)" title="class or interface in java.lang" class="externalLink">wait</a></code></li>
+<code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#getClass()" title="class or interface in java.lang" class="externalLink">getClass</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#hashCode()" title="class or interface in java.lang" class="externalLink">hashCode</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#notify()" title="class or interface in java.lang" class="externalLink">notify</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#notifyAll()" title="class or interface in java.lang" class="externalLink">notifyAll</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#wait()" title="class or interface in java.lang" class="externalLink">wait</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#wait(long)" title="class or interface in java.lang" class="externalLink">wait</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#wait(long,int)" title="class or interface in java.lang" class="externalLink">wait</a></code></li>
 </ul>
 </li>
 </ul>
@@ -675,7 +684,7 @@ extends <a href="SparseBlock.html" title="class in org.apache.sysds.runtime.data
 <ul class="blockList">
 <li class="blockList">
 <!-- ========= CONSTRUCTOR DETAIL ======== -->
-<section role="region">
+<section>
 <ul class="blockList">
 <li class="blockList"><a id="constructor.detail">
 <!--   -->
@@ -796,7 +805,7 @@ extends <a href="SparseBlock.html" title="class in org.apache.sysds.runtime.data
 </ul>
 </section>
 <!-- ============ METHOD DETAIL ========== -->
-<section role="region">
+<section>
 <ul class="blockList">
 <li class="blockList"><a id="method.detail">
 <!--   -->
@@ -1573,6 +1582,8 @@ extends <a href="SparseBlock.html" title="class in org.apache.sysds.runtime.data
  this call returns 0.</div>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
+<dd><code><a href="Block.html#get(int,int)">get</a></code>&nbsp;in interface&nbsp;<code><a href="Block.html" title="interface in org.apache.sysds.runtime.data">Block</a></code></dd>
+<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
 <dd><code><a href="SparseBlock.html#get(int,int)">get</a></code>&nbsp;in class&nbsp;<code><a href="SparseBlock.html" title="class in org.apache.sysds.runtime.data">SparseBlock</a></code></dd>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>r</code> - row index starting at 0</dd>
@@ -1694,7 +1705,7 @@ extends <a href="SparseBlock.html" title="class in org.apache.sysds.runtime.data
 <a id="checkValidity(int,int,long,boolean)">
 <!--   -->
 </a>
-<ul class="blockListLast">
+<ul class="blockList">
 <li class="blockList">
 <h4>checkValidity</h4>
 <pre class="methodSignature">public&nbsp;boolean&nbsp;checkValidity&#8203;(int&nbsp;rlen,
@@ -1715,6 +1726,27 @@ extends <a href="SparseBlock.html" title="class in org.apache.sysds.runtime.data
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>true if the sparse block is valid wrt the corresponding format
          such as COO, CSR, MCSR.</dd>
+</dl>
+</li>
+</ul>
+<a id="contains(double)">
+<!--   -->
+</a>
+<ul class="blockListLast">
+<li class="blockList">
+<h4>contains</h4>
+<pre class="methodSignature">public&nbsp;boolean&nbsp;contains&#8203;(double&nbsp;pattern)</pre>
+<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="SparseBlock.html#contains(double)">SparseBlock</a></code></span></div>
+<div class="block">Checks if the block contains at least one value of the given
+ pattern. Implementations need to handle NaN patterns as well
+ (note that NaN==NaN yields false).</div>
+<dl>
+<dt><span class="overrideSpecifyLabel">Overrides:</span></dt>
+<dd><code><a href="SparseBlock.html#contains(double)">contains</a></code>&nbsp;in class&nbsp;<code><a href="SparseBlock.html" title="class in org.apache.sysds.runtime.data">SparseBlock</a></code></dd>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>pattern</code> - checked pattern</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>true if pattern appears at least once, otherwise false</dd>
 </dl>
 </li>
 </ul>

@@ -20,13 +20,15 @@
 # -------------------------------------------------------------
 
 from systemds.operator.operation_node import OperationNode
-from systemds.operator.nodes.multi_return import MultiReturn
 from systemds.operator.nodes.scalar import Scalar
 from systemds.operator.nodes.matrix import Matrix
+from systemds.operator.nodes.multi_return import MultiReturn
 from systemds.operator.nodes.frame import Frame
+from systemds.operator.nodes.combine import Combine
 from systemds.operator.nodes.list_access import ListAccess
 from systemds.operator.nodes.list import List
 from systemds.operator.nodes.source import Source
 from systemds.operator import algorithm
 
-__all__ = ["OperationNode", "algorithm", "Scalar", "List", "ListAccess", "Matrix", "Frame", "Source", "MultiReturn"]
+__all__ = ["OperationNode", "algorithm", "Scalar", "List",
+           "ListAccess", "Matrix", "Frame", "Source", "MultiReturn", "Combine"]

@@ -166,12 +166,12 @@ This call stores the weights and biases of our model.
 
 .. include:: ../code/guide/end_to_end/part2.py
   :code: python
-  :start-line: 64
-  :end-line: 65
+  :start-line: 63
+  :end-line: 64
 
 
 Full Script NN
-~~~~~~~~~~~---
+~~~~~~~~~~~~~~
 
 The complete script now can be seen here:
 

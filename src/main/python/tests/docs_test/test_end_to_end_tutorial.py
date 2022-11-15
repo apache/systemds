@@ -25,7 +25,7 @@ import logging
 import shutil
 import unittest
 
-logging.getLogger("root").setLevel(10)
+logging.getLogger("root").setLevel(50)
 
 
 class TestEndToEnd(unittest.TestCase):

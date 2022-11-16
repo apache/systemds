@@ -25,6 +25,7 @@ import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.PairFunction;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.common.Types.CorrectionLocationType;
+import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.hops.AggBinaryOp.SparkAggType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
@@ -43,8 +44,14 @@ import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysds.runtime.matrix.data.OperationsOnMatrixValues;
 import org.apache.sysds.runtime.matrix.operators.AggregateOperator;
 import org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator;
+import org.apache.sysds.runtime.matrix.operators.Operator;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
+import org.apache.sysds.runtime.util.CommonThreadPool;
 import scala.Tuple2;
+
+import java.util.concurrent.Callable;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 public class AggregateUnarySPInstruction extends UnarySPInstruction {
 	private SparkAggType _aggtype = null;
@@ -102,19 +109,36 @@ public class AggregateUnarySPInstruction extends UnarySPInstruction {
 		//perform aggregation if necessary and put output into symbol table
 		if( _aggtype == SparkAggType.SINGLE_BLOCK )
 		{
-			if( auop.sparseSafe )
-				out = out.filter(new FilterNonEmptyBlocksFunction());
+			if (ConfigurationManager.isPrefetchEnabled()) {
+				//Trigger the chain of Spark operations and maintain a future to the result
+				//TODO: Make memory for the future matrix block
+				try {
+					if(CommonThreadPool.triggerRemoteOPsPool == null)
+						CommonThreadPool.triggerRemoteOPsPool = Executors.newCachedThreadPool();
+					RDDAggregateTask task = new RDDAggregateTask(_optr, _aop, in, mc);
+					Future<MatrixBlock> future_out = CommonThreadPool.triggerRemoteOPsPool.submit(task);
+					sec.setMatrixOutput(output.getName(), future_out);
+				}
+				catch(Exception ex) {
+					throw new DMLRuntimeException(ex);
+				}
+			}
 
-			JavaRDD<MatrixBlock> out2 = out.map(
-					new RDDUAggFunction2(auop, mc.getBlocksize()));
-			MatrixBlock out3 = RDDAggregateUtils.aggStable(out2, aggop);
+			else {
+				if( auop.sparseSafe )
+					out = out.filter(new FilterNonEmptyBlocksFunction());
 
-			//drop correction after aggregation
-			out3.dropLastRowsOrColumns(aggop.correction);
+				JavaRDD<MatrixBlock> out2 = out.map(
+						new RDDUAggFunction2(auop, mc.getBlocksize()));
+				MatrixBlock out3 = RDDAggregateUtils.aggStable(out2, aggop);
 
-			//put output block into symbol table (no lineage because single block)
-			//this also includes implicit maintenance of matrix characteristics
-			sec.setMatrixOutput(output.getName(), out3);
+				//drop correction after aggregation
+				out3.dropLastRowsOrColumns(aggop.correction);
+
+				//put output block into symbol table (no lineage because single block)
+				//this also includes implicit maintenance of matrix characteristics
+				sec.setMatrixOutput(output.getName(), out3);
+			}
 		}
 		else //MULTI_BLOCK or NONE
 		{
@@ -335,6 +359,38 @@ public class AggregateUnarySPInstruction extends UnarySPInstruction {
 
 			//output new tuple
 			return out;
+		}
+	}
+
+	private static class RDDAggregateTask implements Callable<MatrixBlock>
+	{
+		Operator _optr;
+		AggregateOperator _aop;
+		JavaPairRDD<MatrixIndexes, MatrixBlock> _in;
+		DataCharacteristics _mc;
+
+		RDDAggregateTask(Operator optr, AggregateOperator aop, JavaPairRDD<MatrixIndexes,
+			MatrixBlock> input, DataCharacteristics dc) {
+			_optr = optr;
+			_aop = aop;
+			_in = input;
+			_mc = dc;
+		}
+
+		@Override
+		public MatrixBlock call() {
+			AggregateUnaryOperator auop = (AggregateUnaryOperator)_optr;
+			JavaPairRDD<MatrixIndexes,MatrixBlock> out = _in;
+			if( auop.sparseSafe )
+				out = out.filter(new FilterNonEmptyBlocksFunction());
+
+			JavaRDD<MatrixBlock> out2 = out.map(
+				new RDDUAggFunction2(auop, _mc.getBlocksize()));
+			MatrixBlock out3 = RDDAggregateUtils.aggStable(out2, _aop);
+
+			//drop correction after aggregation
+			out3.dropLastRowsOrColumns(_aop.correction);
+			return out3;
 		}
 	}
 }

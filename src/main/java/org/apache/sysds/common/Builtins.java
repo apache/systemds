@@ -47,6 +47,7 @@ public enum Builtins {
 	ALS_PREDICT("alsPredict", true),
 	ALS_TOPK_PREDICT("alsTopkPredict", true),
 	APPLY_PIPELINE("apply_pipeline", true),
+	APPLY_SCHEMA("applySchema", false),
 	ARIMA("arima", true),
 	ASIN("asin", false),
 	ATAN("atan", false),

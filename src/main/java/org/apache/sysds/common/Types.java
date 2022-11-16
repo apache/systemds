@@ -315,7 +315,7 @@ public class Types
 
 	// Operations that require 2 operands
 	public enum OpOp2 {
-		AND(true), BITWAND(true), BITWOR(true), BITWSHIFTL(true), BITWSHIFTR(true),
+		AND(true), APPLY_SCHEMA(false), BITWAND(true), BITWOR(true), BITWSHIFTL(true), BITWSHIFTR(true),
 		BITWXOR(true), CBIND(false), CONCAT(false), COV(false), DIV(true),
 		DROP_INVALID_TYPE(false), DROP_INVALID_LENGTH(false), EQUAL(true),
 		FRAME_ROW_REPLICATE(true), GREATER(true), GREATEREQUAL(true), INTDIV(true),
@@ -370,6 +370,7 @@ public class Types
 				case DROP_INVALID_LENGTH: return "dropInvalidLength";
 				case FRAME_ROW_REPLICATE: return "freplicate";
 				case VALUE_SWAP: return "valueSwap";
+				case APPLY_SCHEMA: return "applySchema";
 				default:           return name().toLowerCase();
 			}
 		}
@@ -405,6 +406,7 @@ public class Types
 				case "dropInvalidLength": return DROP_INVALID_LENGTH;
 				case "freplicate": return FRAME_ROW_REPLICATE;
 				case "valueSwap":   return VALUE_SWAP;
+				case "applySchema": return APPLY_SCHEMA;
 				default:            return valueOf(opcode.toUpperCase());
 			}
 		}

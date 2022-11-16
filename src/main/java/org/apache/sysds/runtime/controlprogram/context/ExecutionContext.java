@@ -67,6 +67,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 
 public class ExecutionContext {
@@ -599,6 +600,16 @@ public class ExecutionContext {
 		mo.acquireModify(outputData);
 		mo.setCacheLineage(li);
 		mo.release();
+	}
+
+	public void setMatrixOutput(String varName, Future<MatrixBlock> fmb) {
+		if (isAutoCreateVars() && !containsVariable(varName)) {
+			MatrixObject fmo = new MatrixObjectFuture(Types.ValueType.FP64,
+				OptimizerUtils.getUniqueTempFileName(), fmb);
+		}
+		MatrixObject mo = getMatrixObject(varName);
+		MatrixObjectFuture fmo = new MatrixObjectFuture(mo, fmb);
+		setVariable(varName, fmo);
 	}
 
 	public void setMatrixOutput(String varName, MatrixBlock outputData, UpdateType flag) {

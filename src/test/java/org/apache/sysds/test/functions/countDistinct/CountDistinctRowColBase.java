@@ -59,6 +59,13 @@ public abstract class CountDistinctRowColBase extends CountDistinctBase {
 	}
 
 	@Test
+	public void testSparkDenseXLarge() {
+		ExecType ex = ExecType.SPARK;
+		double tolerance = baseTolerance + 1723 * percentTolerance;
+		countDistinctScalarTest(1723, 5000, 2000, 1.0, ex, tolerance);
+	}
+
+	@Test
 	public void testCPDense1Unique() {
 		ExecType ex = ExecType.CP;
 		double tolerance = 0.00001;

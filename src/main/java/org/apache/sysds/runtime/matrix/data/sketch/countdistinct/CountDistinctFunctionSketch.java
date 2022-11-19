@@ -19,7 +19,6 @@
 
 package org.apache.sysds.runtime.matrix.data.sketch.countdistinct;
 
-import org.apache.commons.lang.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.hops.OptimizerUtils;
@@ -31,7 +30,10 @@ import org.apache.sysds.runtime.matrix.operators.Operator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.OptionalInt;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class CountDistinctFunctionSketch extends CountDistinctSketch {
 
@@ -110,7 +112,7 @@ public class CountDistinctFunctionSketch extends CountDistinctSketch {
 			}
 		}
 
-		MatrixBlock blkOutCorr = serializeInputMatrixBlock(bitMap, maxColumns);
+		MatrixBlock blkOutCorr = serialize(bitMap, maxColumns);
 
 		// The sketch contains all relevant info, so the input matrix can be discarded at this point
 		return new CorrMatrixBlock(blkIn, blkOutCorr);
@@ -121,7 +123,7 @@ public class CountDistinctFunctionSketch extends CountDistinctSketch {
 		return kMask & (n >> startingIndex);
 	}
 
-	private MatrixBlock serializeInputMatrixBlock(Map<Short, Set<Long>> bitMap, int maxWidth) {
+	private MatrixBlock serialize(Map<Short, Set<Long>> bitMap, int maxWidth) {
 
 		// Each row in output matrix corresponds to a key and each column to a fraction value for that key.
 		// The first column will store the exponent value itself:
@@ -150,9 +152,57 @@ public class CountDistinctFunctionSketch extends CountDistinctSketch {
 		return blkOut;
 	}
 
+	private Map<Short, Set<Long>> deserialize(MatrixBlock blkIn) {
+		int R = blkIn.getNumRows();
+		Map<Short, Set<Long>> bitMap = new HashMap<>();
+
+		// row_i: [exponent_i, N_i, fraction_i0, fraction_i1, .., fraction_iN, 0, .., 0]
+		for (int i=0; i<R; ++i) {
+			short key = (short) blkIn.getValue(i, 0);
+			Set<Long> fractions = bitMap.getOrDefault(key, new HashSet<>());
+
+			int C = (int) blkIn.getValue(i, 1);
+			int j = 0;
+			while (j < C) {
+				long fraction = (long) blkIn.getValue(i, j + 2);
+				fractions.add(fraction);
+				++j;
+			}
+
+			bitMap.put(key, fractions);
+		}
+
+		return bitMap;
+	}
+
 	@Override
 	public CorrMatrixBlock union(CorrMatrixBlock arg0, CorrMatrixBlock arg1) {
-		throw new NotImplementedException("MULTI_BLOCK aggregation is not supported yet");
+		MatrixBlock corr0 = arg0.getCorrection();
+		Map<Short, Set<Long>> bitMap0 = deserialize(corr0);
+
+		MatrixBlock corr1 = arg1.getCorrection();
+		Map<Short, Set<Long>> bitMap1 = deserialize(corr1);
+
+		// Map putAll() is not suitable here as it will replace Map values for identical keys.
+		// We will use a custom combiner with stream() and collect() instead.
+		Map<Short, Set<Long>> bitMapOut =
+				Stream.concat(bitMap0.entrySet().stream(), bitMap1.entrySet().stream())
+						.collect(Collectors.toMap(
+								Map.Entry::getKey,
+								Map.Entry::getValue,
+								new BitMapValueCombiner()
+						));
+
+		// Find the maximum column width
+		OptionalInt maxWidthOpt = bitMapOut.values().stream().mapToInt(Set::size).max();
+		if (maxWidthOpt.isEmpty()) {
+			throw new IllegalArgumentException("Corrupt sketch: metadata is invalid");
+		}
+
+		int maxWidth = maxWidthOpt.getAsInt();
+		MatrixBlock blkOutCorr = serialize(bitMapOut, maxWidth);
+
+		return new CorrMatrixBlock(arg0.getValue(), blkOutCorr);
 	}
 
 	@Override

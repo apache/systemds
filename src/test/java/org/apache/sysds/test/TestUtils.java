@@ -69,6 +69,7 @@ import org.apache.sysds.runtime.data.DenseBlockFP64;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.data.TensorBlock;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
+import org.apache.sysds.runtime.frame.data.columns.ColumnMetadata;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.functionobjects.Builtin.BuiltinCode;
 import org.apache.sysds.runtime.io.FrameWriter;
@@ -820,6 +821,47 @@ public class TestUtils
 			}
 		}
 		assertTrue("" + countErrors + " values are not in equal", countErrors == 0);
+	}
+
+	public static void compareFrames(FrameBlock expected, FrameBlock actual, boolean checkMeta) {
+		assertEquals("Number of columns and rows are not equivalent", expected.getNumRows(), actual.getNumRows());
+		assertEquals("Number of columns and rows are not equivalent", expected.getNumColumns(), actual.getNumColumns());
+
+		int rows = expected.getNumRows();
+		int cols = expected.getNumColumns();
+		if(checkMeta) {
+			ColumnMetadata[] expectedMeta = expected.getColumnMetadata();
+			ColumnMetadata[] actualMeta = actual.getColumnMetadata();
+
+			if((expectedMeta == null && actualMeta != null) || (expectedMeta != null && actualMeta == null))
+				fail("wrongly allocated metadata");
+			else if(expectedMeta != null && actualMeta != null) {
+				assertEquals("MetaData not correct size", expectedMeta.length, cols);
+				assertEquals("MetaData not correct size", actualMeta.length, cols);
+				for(int i = 0; i < cols; i++)
+					if(!expectedMeta[i].equals(actualMeta[i]))
+						fail("Meta data not equivalent: " + expectedMeta[i] + "  vs  " + actualMeta[i]);
+			}
+
+			String[] expectedColNames = expected.getColumnNames(false);
+			String[] actualColNames = expected.getColumnNames(false);
+			 if((expectedColNames == null && actualColNames != null) ||
+				(expectedColNames != null && actualColNames == null))
+				fail("wrongly allocated metadata");
+			else if(expectedColNames != null && actualColNames != null) {
+				assertEquals("Column names not correct size", expectedColNames.length, cols);
+				assertEquals("Column names not correct size", actualColNames.length, cols);
+				for(int i = 0; i < cols; i++) {
+					assertEquals("Column names not equivalent", expectedColNames[i], actualColNames[i]);
+				}
+			}
+		}
+
+		for(int i = 0; i < rows; i++) {
+			for(int j = 0; j < cols; j++) {
+				assertEquals("Values not equivalent at: " + i + ", " + j, expected.get(i, j), actual.get(i, j));
+			}
+		}
 	}
 
 	public static void compareScalars(double d1, double d2, double tol) {
@@ -2152,28 +2194,23 @@ public class TestUtils
 		}
 	}
 
-	/**
-	 * <p>
-	 *     Generates a random FrameBlock with given parameters.
-	 * </p>
-	 */
-	public static FrameBlock generateRandomFrameBlock(int rows, int cols, ValueType[] schema, Random random){
+	public static FrameBlock generateRandomFrameBlock(int rows, ValueType[] schema, Random random){
 		FrameBlock frameBlock = new FrameBlock(schema);
 		frameBlock.ensureAllocatedColumns(rows);
 		for(int row = 0; row < rows; row++)
-			for(int col = 0; col < cols; col++)
+			for(int col = 0; col < schema.length; col++)
 				frameBlock.set(row, col, generateRandomValueFromValueType(schema[col], random));
 		return frameBlock;
 	}
 
-	public static FrameBlock generateRandomFrameBlock(int rows, int cols, ValueType[] schema, long seed){
+	public static FrameBlock generateRandomFrameBlock(int rows, ValueType[] schema, long seed){
 		Random random = (seed == -1) ? TestUtils.random : new Random(seed);
-		return generateRandomFrameBlock(rows, cols, schema, random);
+		return generateRandomFrameBlock(rows, schema, random);
 	}
 
 	public static FrameBlock generateRandomFrameBlock(int rows, int cols, long seed){
 		ValueType[] schema = generateRandomSchema(cols, seed);
-		return generateRandomFrameBlock(rows, cols,schema ,seed);
+		return generateRandomFrameBlock(rows, schema ,seed);
 	}
 
 	/**
@@ -2187,11 +2224,15 @@ public class TestUtils
 	 * 				random Object
 	 */
 	public static ValueType[] generateRandomSchema(int size, Random random){
-		final List<ValueType> valueTypes = Collections.unmodifiableList(Arrays.asList(ValueType.FP64, ValueType.INT64, ValueType.BOOLEAN, ValueType.STRING));
+		final List<ValueType> valueTypes = new ArrayList<ValueType>();
+		for(ValueType v : ValueType.values())
+			if(v != ValueType.UNKNOWN)
+				valueTypes.add(v);
+		
 		ValueType[] newSchema = new ValueType[size];
-		for(int i = 0; i < size; i++){
+		for(int i = 0; i < size; i++)
 			newSchema[i] = valueTypes.get(random.nextInt(valueTypes.size()));
-		}
+		
 		return newSchema;
 	}
 

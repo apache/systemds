@@ -24,7 +24,7 @@ import java.lang.ref.SoftReference;
 import org.apache.spark.broadcast.Broadcast;
 import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
 
-public class BroadcastObject<T extends CacheBlock> extends LineageObject {
+public class BroadcastObject<T extends CacheBlock<?>> extends LineageObject {
 	//soft reference storage for graceful cleanup in case of memory pressure
 	private SoftReference<PartitionedBroadcast<T>> _pbcRef; // partitioned broadcast object reference
 	private SoftReference<Broadcast<T>> _npbcRef; // non partitioned broadcast object reference

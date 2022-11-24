@@ -73,7 +73,7 @@ import org.apache.sysds.utils.Statistics;
  * to allow Java garbage collection. If other parts of the system continue
  * keep references to the cache block, its eviction will not release any memory.
  */
-public abstract class CacheableData<T extends CacheBlock> extends Data
+public abstract class CacheableData<T extends CacheBlock<?>> extends Data
 {
 	private static final long serialVersionUID = -413810592207212835L;
 
@@ -1047,7 +1047,7 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 		return (_data.getInMemorySize() <= CACHING_THRESHOLD);
 	}
 	
-	public static boolean isBelowCachingThreshold(CacheBlock data) {
+	public static boolean isBelowCachingThreshold(CacheBlock<?> data) {
 		boolean ret;
 		if (OptimizerUtils.isUMMEnabled())
 			ret = UnifiedMemoryManager.getCacheBlockSize(data) <= CACHING_THRESHOLD;

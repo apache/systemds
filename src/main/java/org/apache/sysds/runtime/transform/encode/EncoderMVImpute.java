@@ -260,7 +260,10 @@ public class EncoderMVImpute extends LegacyEncoder {
 
 		if(_rcList == null)
 			_rcList = new ArrayList<>();
-		List<Integer> rcList = _rcList.stream().filter(ixRange::inColRange).map(i -> (int) (i - (ixRange.colStart - 1)))
+		 
+		List<Integer> rcList = _rcList.stream() //
+			.filter((x) -> ixRange.inColRange((long)x)) //
+			.map(i -> (int) (i - (ixRange.colStart - 1))) //
 			.collect(Collectors.toList());
 
 		return new EncoderMVImpute(colList, mvMethodList, replacementList, meanList, countList, rcList,

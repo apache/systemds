@@ -22,9 +22,9 @@ package org.apache.sysds.runtime.frame.data.columns;
 import java.lang.ref.SoftReference;
 import java.util.HashMap;
 
-import org.apache.commons.lang.NotImplementedException;
 import org.apache.hadoop.io.Writable;
 import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.runtime.frame.data.columns.ArrayFactory.FrameArrayType;
 
 /**
  * generic, resizable native arrays
@@ -35,10 +35,22 @@ import org.apache.sysds.common.Types.ValueType;
 public abstract class Array<T> implements Writable {
 	protected SoftReference<HashMap<String, Long>> _rcdMapCache = null;
 
-	protected int _size = 0;
+	protected int _size;
 
 	protected int newSize() {
 		return Math.max(_size * 2, 4);
+	}
+
+	public final SoftReference<HashMap<String, Long>> getCache(){
+		return _rcdMapCache;
+	}
+	
+	public final void setCache(SoftReference<HashMap<String, Long>> m){
+		_rcdMapCache = m;
+	}
+	
+	public final int size(){
+		return _size;
 	}
 
 	public abstract T get(int index);
@@ -49,18 +61,6 @@ public abstract class Array<T> implements Writable {
 	 * @return The underlying array.
 	 */
 	public abstract Object get();
-
-	public final SoftReference<HashMap<String, Long>> getCache(){
-		return _rcdMapCache;
-	}
-
-	public final void setCache(SoftReference<HashMap<String, Long>> m){
-		_rcdMapCache = m;
-	}
-
-	public final int size(){
-		return _size;
-	}
 
 	public abstract void set(int index, T value);
 
@@ -84,6 +84,17 @@ public abstract class Array<T> implements Writable {
 	public abstract byte[] getAsByteArray(int nRow);
 
 	public abstract ValueType getValueType();
+
+	public abstract FrameArrayType getFrameArrayType();
+
+	/**
+	 * Get in memory size, not counting reference to this object.
+	 * 
+	 * @return the size in memory of this object.
+	 */
+	public abstract long getInMemorySize();
+
+	public abstract long getExactSerializedSize();
 	
 	@Override
 	public String toString() {

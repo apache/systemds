@@ -849,7 +849,7 @@ public class Explain
 				inst instanceof FEDInstruction )
 			tmp = inst.toString();
 
-		if( REPLACE_SPECIAL_CHARACTERS ){
+		if( REPLACE_SPECIAL_CHARACTERS && tmp != null){
 			tmp = tmp.replaceAll(Lop.OPERAND_DELIMITOR, " ");
 			tmp = tmp.replaceAll(Lop.DATATYPE_PREFIX, ".");
 			tmp = tmp.replaceAll(Lop.INSTRUCTION_DELIMITOR, ", ");

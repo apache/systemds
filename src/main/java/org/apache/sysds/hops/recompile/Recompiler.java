@@ -1610,8 +1610,8 @@ public class Recompiler {
 	
 	@SuppressWarnings("unchecked")
 	public static void executeInMemoryReblock(ExecutionContext ec, String varin, String varout, LineageItem litem) {
-		CacheableData<CacheBlock> in = (CacheableData<CacheBlock>) ec.getCacheableData(varin);
-		CacheableData<CacheBlock> out = (CacheableData<CacheBlock>) ec.getCacheableData(varout);
+		CacheableData<CacheBlock<?>> in = (CacheableData<CacheBlock<?>>) ec.getCacheableData(varin);
+		CacheableData<CacheBlock<?>> out = (CacheableData<CacheBlock<?>>) ec.getCacheableData(varout);
 
 		if( in.isFederated() ) {
 			out.setMetaData(in.getMetaData());

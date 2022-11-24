@@ -439,7 +439,7 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 		}
 	}
 
-	private void warnOnTrunction(CacheBlock data, int rows, int cols) {
+	private void warnOnTrunction(CacheBlock<?> data, int rows, int cols) {
 		// warn on truncation because users might not be aware and use toString for verification
 		if((getParam("rows") == null && data.getNumRows() > rows) ||
 			(getParam("cols") == null && data.getNumColumns() > cols)) {

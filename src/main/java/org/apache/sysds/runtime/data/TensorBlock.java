@@ -37,6 +37,7 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.meta.TensorCharacteristics;
+import org.apache.sysds.runtime.util.IndexRange;
 import org.apache.sysds.runtime.util.UtilFunctions;
 
 /**
@@ -47,7 +48,7 @@ import org.apache.sysds.runtime.util.UtilFunctions;
  * The format determines if the <code>TensorBlock</code> uses a <code>BasicTensorBlock</code> or a <code>DataTensorBlock</code>
  * for storing the data.
  */
-public class TensorBlock implements CacheBlock, Externalizable {
+public class TensorBlock implements CacheBlock<TensorBlock>, Externalizable {
 	private static final long serialVersionUID = -8768054067319422277L;
 	
 	private enum SERIALIZED_TYPES {
@@ -283,13 +284,39 @@ public class TensorBlock implements CacheBlock, Externalizable {
 		// TODO Auto-generated method stub
 	}
 
+
 	@Override
-	public CacheBlock slice(int rl, int ru, int cl, int cu, CacheBlock block) {
-		return slice(rl, ru, cl, cu, false, block);
+	public final TensorBlock slice(IndexRange ixrange, TensorBlock ret) {
+		return slice((int) ixrange.rowStart, (int) ixrange.rowEnd, (int) ixrange.colStart, (int) ixrange.colEnd, ret);
 	}
-	
+
 	@Override
-	public CacheBlock slice(int rl, int ru, int cl, int cu, boolean deep, CacheBlock block) {
+	public final TensorBlock slice(int rl, int ru) {
+		return slice(rl, ru, 0, getNumColumns()-1, false, null);
+	}
+
+	@Override
+	public final TensorBlock slice(int rl, int ru, boolean deep) {
+		return slice(rl, ru, 0, getNumColumns()-1, deep, null);
+	}
+
+	@Override
+	public final TensorBlock slice(int rl, int ru, int cl, int cu) {
+		return slice(rl, ru, cl, cu, false, null);
+	}
+
+	@Override
+	public final TensorBlock slice(int rl, int ru, int cl, int cu, TensorBlock ret) {
+		return slice(rl, ru, cl, cu, false, ret);
+	}
+
+	@Override
+	public final TensorBlock slice(int rl, int ru, int cl, int cu, boolean deep) {
+		return slice(rl, ru, cl, cu, deep, null);
+	}
+
+	@Override
+	public TensorBlock slice(int rl, int ru, int cl, int cu, boolean deep, TensorBlock block) {
 		if( !(block instanceof TensorBlock) )
 			throw new RuntimeException("TensorBlock.slice(int,int,int,int,CacheBlock) CacheBlock was no TensorBlock");
 		TensorBlock tb = (TensorBlock) block;
@@ -305,8 +332,8 @@ public class TensorBlock implements CacheBlock, Externalizable {
 	}
 
 	@Override
-	public void merge(CacheBlock that, boolean appendOnly) {
-		// TODO Auto-generated method stub
+	public void merge(TensorBlock that, boolean appendOnly) {
+		throw new NotImplementedException();
 	}
 
 	@Override

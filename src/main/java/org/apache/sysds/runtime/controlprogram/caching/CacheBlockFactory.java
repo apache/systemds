@@ -35,7 +35,7 @@ import org.apache.sysds.runtime.matrix.data.Pair;
  */
 public class CacheBlockFactory 
 {
-	public static CacheBlock newInstance(int code) {
+	public static CacheBlock<?> newInstance(int code) {
 		switch( code ) {
 			case 0: return new MatrixBlock();
 			case 1: return new FrameBlock();
@@ -44,7 +44,17 @@ public class CacheBlockFactory
 		throw new RuntimeException("Unsupported cache block type: "+code);
 	}
 
-	public static int getCode(CacheBlock block) {
+	public static CacheBlock<?> newInstance(CacheBlock<?> block) {
+		if(block instanceof MatrixBlock)
+			return new MatrixBlock();
+		else if(block instanceof FrameBlock)
+			return new FrameBlock();
+		else if(block instanceof TensorBlock)
+			return new TensorBlock();
+		throw new RuntimeException("Unsupported cache block type: " + block.getClass().getName());
+	}
+
+	public static int getCode(CacheBlock<?> block) {
 		if (block instanceof MatrixBlock)
 			return 0;
 		else if (block instanceof FrameBlock)
@@ -54,7 +64,7 @@ public class CacheBlockFactory
 		throw new RuntimeException("Unsupported cache block type: " + block.getClass().getName());
 	}
 
-	public static ArrayList<?> getPairList(CacheBlock block) {
+	public static ArrayList<?> getPairList(CacheBlock<?> block) {
 		int code = getCode(block);
 		switch (code) {
 			case 0: return new ArrayList<Pair<MatrixIndexes, MatrixBlock>>();

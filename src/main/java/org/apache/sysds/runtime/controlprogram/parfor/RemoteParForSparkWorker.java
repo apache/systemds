@@ -63,11 +63,11 @@ public class RemoteParForSparkWorker extends ParWorker implements PairFlatMapFun
 	private final LongAccumulator _aTasks;
 	private final LongAccumulator _aIters;
 
-	private final Map<String, Broadcast<CacheBlock>> _brInputs;
+	private final Map<String, Broadcast<CacheBlock<?>>> _brInputs;
 	
 	public RemoteParForSparkWorker(long jobid, String program, boolean isLocal,
 		HashMap<String, byte[]> clsMap, boolean cpCaching, LongAccumulator atasks, LongAccumulator aiters,
-		Map<String, Broadcast<CacheBlock>> brInputs, boolean cleanCache, Map<String,String> lineage) 
+		Map<String, Broadcast<CacheBlock<?>>> brInputs, boolean cleanCache, Map<String,String> lineage) 
 	{
 		_jobid = jobid;
 		_prog = program;

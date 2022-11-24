@@ -20,11 +20,12 @@
 
 package org.apache.sysds.runtime.util;
 
-import org.apache.sysds.common.Types;
-import org.apache.sysds.runtime.frame.data.FrameBlock;
+import java.util.ArrayList;
+import java.util.Random;
 
-import java.util.*;
-import java.lang.Math;
+import org.apache.sysds.common.Types;
+import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.frame.data.FrameBlock;
 
 
 class LinearRegression {
@@ -102,7 +103,9 @@ public class EMAUtils {
 					lst = triple_exponential_smoothing(data, alpha, beta, gamma, freq);
 				}
 
-				if (i == 0 || lst.rsme < best_cont.rsme) {
+				if(lst == null)
+					throw new DMLRuntimeException("invalid null pointer");
+				else if (i == 0 || lst.rsme < best_cont.rsme) {
 					best_cont = lst;
 					data_list.add(best_cont.values);
 				}

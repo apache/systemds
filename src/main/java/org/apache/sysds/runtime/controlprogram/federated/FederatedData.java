@@ -151,7 +151,7 @@ public class FederatedData {
 		return executeFederatedOperation(request);
 	}
 
-	public synchronized Future<FederatedResponse> initFederatedDataFromLocal(long id, CacheBlock block) {
+	public synchronized Future<FederatedResponse> initFederatedDataFromLocal(long id, CacheBlock<?> block) {
 		if(isInitialized())
 			throw new DMLRuntimeException("Tried to init already initialized data");
 		if(!_dataType.isMatrix() && !_dataType.isFrame())

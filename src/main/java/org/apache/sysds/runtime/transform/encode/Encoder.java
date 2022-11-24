@@ -36,7 +36,7 @@ public interface Encoder extends Externalizable {
 	 *
 	 * @param in input frame block
 	 */
-	void build(CacheBlock in);
+	void build(CacheBlock<?> in);
 
 	/**
 	 * Apply the generated metadata to the FrameBlock and saved the result in out.
@@ -46,7 +46,7 @@ public interface Encoder extends Externalizable {
 	 * @param outputCol is a offset in the output matrix. column in FrameBlock + outputCol = column in out
 	 * @return output matrix block
 	 */
-	MatrixBlock apply(CacheBlock in, MatrixBlock out, int outputCol);
+	MatrixBlock apply(CacheBlock<?> in, MatrixBlock out, int outputCol);
 	
 	/** 
 	 * Pre-allocate a FrameBlock for metadata collection.

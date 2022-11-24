@@ -21,6 +21,7 @@ package org.apache.sysds.runtime.controlprogram.caching;
 
 import org.apache.hadoop.io.Writable;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
+import org.apache.sysds.runtime.util.IndexRange;
 
 
 /**
@@ -28,7 +29,7 @@ import org.apache.sysds.runtime.meta.DataCharacteristics;
  * allows us to keep the buffer pool independent of matrix and frame blocks. 
  * 
  */
-public interface CacheBlock extends Writable 
+public interface CacheBlock <T> extends Writable 
 {
 
 	public int getNumRows();
@@ -84,33 +85,89 @@ public interface CacheBlock extends Writable
 	 * Free unnecessarily allocated empty block.
 	 */
 	public void compactEmptyBlock();
+
+	/**
+	 * Slice a sub block out of the current block and write into the given output block. This method returns the passed
+	 * instance if not null.
+	 * 
+	 * @param ixrange index range inclusive
+	 * @param ret outputBlock
+	 * @return sub-block of cache block
+	 */
+	public CacheBlock<T> slice(IndexRange ixrange, T ret);
 	
 	/**
-	 * Slice a sub block out of the current block and write into the given output block.
-	 * This method returns the passed instance if not null.
+	 * Slice a sub block out of the current block and write into the given output block. This method returns the passed
+	 * instance if not null.
 	 * 
 	 * @param rl row lower
-	 * @param ru row upper
+	 * @param ru row upper inclusive
+	 * @return sub-block of cache block
+	 */
+	public CacheBlock<T> slice(int rl, int ru);
+
+	/**
+	 * Slice a sub block out of the current block and write into the given output block. This method returns the passed
+	 * instance if not null.
+	 * 
+	 * @param rl row lower
+	 * @param ru row upper inclusive
+	 * @param deep enforce deep-copy
+	 * @return sub-block of cache block
+	 */
+	public CacheBlock<T> slice(int rl, int ru, boolean deep);
+
+	/**
+	 * Slice a sub block out of the current block and write into the given output block. This method returns the passed
+	 * instance if not null.
+	 * 
+	 * @param rl row lower
+	 * @param ru row upper inclusive
 	 * @param cl column lower
-	 * @param cu column upper
+	 * @param cu column upper inclusive
+	 * @return sub-block of cache block
+	 */
+	public CacheBlock<T> slice(int rl, int ru, int cl, int cu);
+
+	/**
+	 * Slice a sub block out of the current block and write into the given output block. This method returns the passed
+	 * instance if not null.
+	 * 
+	 * @param rl    row lower
+	 * @param ru    row upper inclusive
+	 * @param cl    column lower
+	 * @param cu    column upper inclusive
 	 * @param block cache block
 	 * @return sub-block of cache block
 	 */
-	public CacheBlock slice(int rl, int ru, int cl, int cu, CacheBlock block);
-	
+	public CacheBlock<T> slice(int rl, int ru, int cl, int cu, T block);
+
 	/**
 	 * Slice a sub block out of the current block and write into the given output block.
 	 * This method returns the passed instance if not null.
 	 * 
-	 * @param rl row lower
-	 * @param ru row upper
+	 * @param rl row lower 
+	 * @param ru row upper inclusive
 	 * @param cl column lower
-	 * @param cu column upper
+	 * @param cu column upper inclusive
+	 * @param deep enforce deep-copy
+	 * @return sub-block of cache block
+	 */
+	public CacheBlock<T> slice(int rl, int ru, int cl, int cu, boolean deep);
+
+	/**
+	 * Slice a sub block out of the current block and write into the given output block.
+	 * This method returns the passed instance if not null.
+	 * 
+	 * @param rl row lower 
+	 * @param ru row upper inclusive
+	 * @param cl column lower
+	 * @param cu column upper inclusive
 	 * @param deep enforce deep-copy
 	 * @param block cache block
 	 * @return sub-block of cache block
 	 */
-	public CacheBlock slice(int rl, int ru, int cl, int cu, boolean deep, CacheBlock block);
+	public CacheBlock<T> slice(int rl, int ru, int cl, int cu, boolean deep, T block);
 	
 	
 	/**
@@ -120,7 +177,7 @@ public interface CacheBlock extends Writable
 	 * @param that cache block
 	 * @param appendOnly ?
 	 */
-	public void merge(CacheBlock that, boolean appendOnly);
+	public void merge(T that, boolean appendOnly);
 
 	/**
 	 * Returns the double value at the passed row and column.
@@ -129,7 +186,7 @@ public interface CacheBlock extends Writable
 	 * @param c column of the value
 	 * @return double value at the passed row and column
 	 */
-	double getDouble(int r, int c);
+	public double getDouble(int r, int c);
 
 	/**
 	 * Returns the double value at the passed row and column.
@@ -138,7 +195,7 @@ public interface CacheBlock extends Writable
 	 * @param c column of the value
 	 * @return double value at the passed row and column
 	 */
-	double getDoubleNaN(int r, int c);
+	public double getDoubleNaN(int r, int c);
 
 	/**
 	 * Returns the string of the value at the passed row and column.
@@ -147,5 +204,5 @@ public interface CacheBlock extends Writable
 	 * @param c column of the value
 	 * @return string of the value at the passed row and column
 	 */
-	String getString(int r, int c);
+	public String getString(int r, int c);
 }

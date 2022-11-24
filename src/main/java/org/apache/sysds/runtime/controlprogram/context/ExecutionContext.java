@@ -639,7 +639,7 @@ public class ExecutionContext {
 		setVariable(varName, fo);
 	}
 
-	public static CacheableData<?> createCacheableData(CacheBlock cb) {
+	public static CacheableData<?> createCacheableData(CacheBlock<?> cb) {
 		if( cb instanceof MatrixBlock )
 			return createMatrixObject((MatrixBlock) cb);
 		else if( cb instanceof FrameBlock )

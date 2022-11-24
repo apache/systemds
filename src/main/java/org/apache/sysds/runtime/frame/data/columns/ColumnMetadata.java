@@ -19,9 +19,16 @@
 
 package org.apache.sysds.runtime.frame.data.columns;
 
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
 import java.io.Serializable;
 
-public class ColumnMetadata implements Serializable {
+import org.apache.hadoop.io.Writable;
+import org.apache.sysds.runtime.io.IOUtilFunctions;
+import org.apache.sysds.utils.MemoryEstimates;
+
+public class ColumnMetadata implements Serializable, Writable {
 	private static final long serialVersionUID = -90094082422100311L;
 
 	private static final long DEFAULT_DISTINCT = -1;
@@ -40,9 +47,9 @@ public class ColumnMetadata implements Serializable {
 		_ndistinct = ndistinct;
 	}
 
-	public ColumnMetadata(long ndistinct, String mvval) {
-		_ndistinct = ndistinct <= 0 ? DEFAULT_DISTINCT: ndistinct;
-		_mvValue = mvval;
+	public ColumnMetadata(long ndistinct, String mvVal) {
+		_ndistinct = ndistinct <= 0 ? DEFAULT_DISTINCT : ndistinct;
+		setMvValue(mvVal);
 	}
 
 	public ColumnMetadata(ColumnMetadata that) {
@@ -55,7 +62,7 @@ public class ColumnMetadata implements Serializable {
 	}
 
 	public void setNumDistinct(long ndistinct) {
-		_ndistinct = ndistinct <= 0 ? DEFAULT_DISTINCT: ndistinct;
+		_ndistinct = ndistinct <= 0 ? DEFAULT_DISTINCT : ndistinct;
 	}
 
 	public String getMvValue() {
@@ -63,11 +70,58 @@ public class ColumnMetadata implements Serializable {
 	}
 
 	public void setMvValue(String mvVal) {
-		_mvValue = mvVal;
+		_mvValue = mvVal == null ? null : mvVal.equals("") ? null : mvVal;
 	}
 
 	public boolean isDefault() {
-		return getMvValue() == null && getNumDistinct() == DEFAULT_DISTINCT;
+		return _mvValue == null && _ndistinct == DEFAULT_DISTINCT;
+	}
+
+	public long getInMemorySize() {
+		long size = 16; // object header
+		size += 8; // long
+		size += MemoryEstimates.stringCost(_mvValue); // string
+		return size;
+	}
+
+	public long getExactSerializedSize(){
+		return 8 + IOUtilFunctions.getUTFSize(getMvValue());
+	}
+
+	@Override
+	public void write(DataOutput out) throws IOException {
+		out.writeLong(_ndistinct);
+		out.writeUTF(_mvValue != null ? _mvValue : "");
+	}
+
+	@Override
+	public void readFields(DataInput in) throws IOException {
+		_ndistinct = in.readLong();
+		_mvValue = in.readUTF();
+		if(_mvValue.equals(""))
+			_mvValue = null;
+	}
+
+	public static ColumnMetadata read(DataInput in) throws IOException {
+		ColumnMetadata ret = new ColumnMetadata();
+		ret.readFields(in);
+		return ret;
+	}
+
+	@Override
+	public boolean equals(Object that) {
+		return that instanceof ColumnMetadata ? equals((ColumnMetadata) that) : false;
+	}
+
+	public boolean equals(ColumnMetadata that) {
+		if(that._ndistinct != this._ndistinct )
+			return false;
+		else if(that._mvValue == null)
+			return this._mvValue == null;
+		else if(this._mvValue == null)
+			return false;
+		else
+			return that._mvValue.equals(this._mvValue);
 	}
 
 	@Override

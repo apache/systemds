@@ -83,12 +83,11 @@ public abstract class ColumnEncoder implements Encoder, Comparable<ColumnEncoder
 	 * @return same as out
 	 *
 	 */
-
-	public MatrixBlock apply(CacheBlock in, MatrixBlock out, int outputCol){
+	public MatrixBlock apply(CacheBlock<?> in, MatrixBlock out, int outputCol){
 		return apply(in, out, outputCol, 0, -1);
 	}
 
-	public MatrixBlock apply(CacheBlock in, MatrixBlock out, int outputCol, int rowStart, int blk){
+	public MatrixBlock apply(CacheBlock<?> in, MatrixBlock out, int outputCol, int rowStart, int blk){
 		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 		if(out.isInSparseFormat())
 			applySparse(in, out, outputCol, rowStart, blk);
@@ -120,9 +119,9 @@ public abstract class ColumnEncoder implements Encoder, Comparable<ColumnEncoder
 		return out;
 	}
 
-	protected abstract double getCode(CacheBlock in, int row);
+	protected abstract double getCode(CacheBlock<?>in, int row);
 
-	protected abstract double[] getCodeCol(CacheBlock in, int startInd, int blkSize);
+	protected abstract double[] getCodeCol(CacheBlock<?> in, int startInd, int blkSize);
 
 
 	/*protected void applySparse(CacheBlock in, MatrixBlock out, int outputCol, int rowStart, int blk){
@@ -134,7 +133,7 @@ public abstract class ColumnEncoder implements Encoder, Comparable<ColumnEncoder
 		}
 	}*/
 
-	protected void applySparse(CacheBlock in, MatrixBlock out, int outputCol, int rowStart, int blk){
+	protected void applySparse(CacheBlock<?> in, MatrixBlock out, int outputCol, int rowStart, int blk){
 		boolean mcsr = MatrixBlock.DEFAULT_SPARSEBLOCK == SparseBlock.Type.MCSR;
 		mcsr = false; //force CSR for transformencode
 		int index = _colID - 1;
@@ -167,7 +166,7 @@ public abstract class ColumnEncoder implements Encoder, Comparable<ColumnEncoder
 		}
 	}*/
 	
-	protected void applyDense(CacheBlock in, MatrixBlock out, int outputCol, int rowStart, int blk){
+	protected void applyDense(CacheBlock<?> in, MatrixBlock out, int outputCol, int rowStart, int blk){
 		// Apply loop tiling to exploit CPU caches
 		double[] codes = getCodeCol(in, rowStart, blk);
 		int rowEnd = getEndIndex(in.getNumRows(), rowStart, blk);
@@ -216,11 +215,11 @@ public abstract class ColumnEncoder implements Encoder, Comparable<ColumnEncoder
 		// do nothing
 	}
 
-	public void build(CacheBlock in, double[] equiHeightMaxs) {
+	public void build(CacheBlock<?> in, double[] equiHeightMaxs) {
 		// do nothing
 	}
 
-	public void build(CacheBlock in, Map<Integer, double[]> equiHeightMaxs) {
+	public void build(CacheBlock<?> in, Map<Integer, double[]> equiHeightMaxs) {
 		// do nothing
 	}
 
@@ -320,7 +319,7 @@ public abstract class ColumnEncoder implements Encoder, Comparable<ColumnEncoder
 	 * complete if all previous tasks are done. This is so that we can use the last task as a dependency for the whole
 	 * build, reducing unnecessary dependencies.
 	 */
-	public List<DependencyTask<?>> getBuildTasks(CacheBlock in) {
+	public List<DependencyTask<?>> getBuildTasks(CacheBlock<?> in) {
 		List<Callable<Object>> tasks = new ArrayList<>();
 		List<List<? extends Callable<?>>> dep = null;
 		int nRows = in.getNumRows();
@@ -339,11 +338,11 @@ public abstract class ColumnEncoder implements Encoder, Comparable<ColumnEncoder
 		return DependencyThreadPool.createDependencyTasks(tasks, dep);
 	}
 
-	public Callable<Object> getBuildTask(CacheBlock in) {
+	public Callable<Object> getBuildTask(CacheBlock<?> in) {
 		throw new DMLRuntimeException("Trying to get the Build task of an Encoder which does not require building");
 	}
 
-	public Callable<Object> getPartialBuildTask(CacheBlock in, int startRow, 
+	public Callable<Object> getPartialBuildTask(CacheBlock<?> in, int startRow, 
 			int blockSize, HashMap<Integer, Object> ret) {
 		throw new DMLRuntimeException(
 			"Trying to get the PartialBuild task of an Encoder which does not support  partial building");
@@ -355,7 +354,7 @@ public abstract class ColumnEncoder implements Encoder, Comparable<ColumnEncoder
 	}
 
 
-	public List<DependencyTask<?>> getApplyTasks(CacheBlock in, MatrixBlock out, int outputCol) {
+	public List<DependencyTask<?>> getApplyTasks(CacheBlock<?> in, MatrixBlock out, int outputCol) {
 		List<Callable<Object>> tasks = new ArrayList<>();
 		List<List<? extends Callable<?>>> dep = null;
 		int[] blockSizes = getBlockSizes(in.getNumRows(), _nApplyPartitions);
@@ -375,12 +374,12 @@ public abstract class ColumnEncoder implements Encoder, Comparable<ColumnEncoder
 	}
 
 	protected ColumnApplyTask<? extends ColumnEncoder>
-			getSparseTask(CacheBlock in, MatrixBlock out, int outputCol, int startRow, int blk){
+			getSparseTask(CacheBlock<?> in, MatrixBlock out, int outputCol, int startRow, int blk){
 		return new ColumnApplyTask<>(this, in, out, outputCol, startRow, blk);
 	}
 
 	protected ColumnApplyTask<? extends ColumnEncoder>
-			getDenseTask(CacheBlock in, MatrixBlock out, int outputCol, int startRow, int blk){
+			getDenseTask(CacheBlock<?> in, MatrixBlock out, int outputCol, int startRow, int blk){
 		return new ColumnApplyTask<>(this, in, out, outputCol, startRow, blk);
 	}
 
@@ -419,17 +418,17 @@ public abstract class ColumnEncoder implements Encoder, Comparable<ColumnEncoder
 	protected static class ColumnApplyTask<T extends ColumnEncoder> implements Callable<Object> {
 
 		protected final T _encoder;
-		protected final CacheBlock _input;
+		protected final CacheBlock<?> _input;
 		protected final MatrixBlock _out;
 		protected final int _outputCol;
 		protected final int _startRow;
 		protected final int _blk;
 
-		protected ColumnApplyTask(T encoder, CacheBlock input, MatrixBlock out, int outputCol){
+		protected ColumnApplyTask(T encoder, CacheBlock<?> input, MatrixBlock out, int outputCol){
 			this(encoder, input, out, outputCol, 0, -1);
 		}
 
-		protected ColumnApplyTask(T encoder, CacheBlock input, MatrixBlock out, int outputCol, int startRow, int blk) {
+		protected ColumnApplyTask(T encoder, CacheBlock<?> input, MatrixBlock out, int outputCol, int startRow, int blk) {
 			_encoder = encoder;
 			_input = input;
 			_out = out;

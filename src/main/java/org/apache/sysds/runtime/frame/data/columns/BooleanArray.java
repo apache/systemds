@@ -27,9 +27,11 @@ import java.nio.ByteOrder;
 import java.util.Arrays;
 
 import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.runtime.frame.data.columns.ArrayFactory.FrameArrayType;
+import org.apache.sysds.utils.MemoryEstimates;
 
 public class BooleanArray extends Array<Boolean> {
-	private boolean[] _data = null;
+	private boolean[] _data;
 
 	public BooleanArray(boolean[] data) {
 		_data = data;
@@ -82,6 +84,7 @@ public class BooleanArray extends Array<Boolean> {
 
 	@Override
 	public void write(DataOutput out) throws IOException {
+		out.writeByte(FrameArrayType.BOOLEAN.ordinal());
 		for(int i = 0; i < _size; i++)
 			out.writeBoolean(_data[i]);
 	}
@@ -123,6 +126,23 @@ public class BooleanArray extends Array<Boolean> {
 	@Override
 	public ValueType getValueType() {
 		return ValueType.BOOLEAN;
+	}
+
+	@Override
+	public FrameArrayType getFrameArrayType(){
+		return FrameArrayType.BOOLEAN;
+	}
+
+	@Override
+	public long getInMemorySize(){
+		long size = 16 ; // object header + object reference
+		size += MemoryEstimates.booleanArrayCost(_data.length);	
+		return size;
+	}
+
+	@Override
+	public long getExactSerializedSize(){
+		return 1 + _data.length;
 	}
 
 	@Override

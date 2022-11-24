@@ -93,7 +93,7 @@ public class QDictionary extends ADictionary {
 
 	public static long getInMemorySize(int valuesCount) {
 		// object + values array + double
-		return 16 + MemoryEstimates.byteArrayCost(valuesCount) + 8;
+		return 16 + (long)MemoryEstimates.byteArrayCost(valuesCount) + 8;
 	}
 
 	@Override

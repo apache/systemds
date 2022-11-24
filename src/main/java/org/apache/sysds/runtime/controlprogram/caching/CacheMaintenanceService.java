@@ -44,7 +44,7 @@ public class CacheMaintenanceService
 			LocalFileUtils.deleteFileIfExists(fname, true);
 	}
 
-	public void serializeData(ByteBuffer bbuff, CacheBlock cb) {
+	public void serializeData(ByteBuffer bbuff, CacheBlock<?> cb) {
 		//sync or async file delete
 		if( CacheableData.CACHING_ASYNC_SERIALIZE )
 			_pool.submit(new CacheMaintenanceService.DataSerializerTask(bbuff, cb));
@@ -85,9 +85,9 @@ public class CacheMaintenanceService
 
 	private static class DataSerializerTask implements Runnable {
 		private ByteBuffer _bbuff = null;
-		private CacheBlock _cb = null;
+		private CacheBlock<?> _cb = null;
 
-		public DataSerializerTask(ByteBuffer bbuff, CacheBlock cb) {
+		public DataSerializerTask(ByteBuffer bbuff, CacheBlock<?> cb) {
 			_bbuff = bbuff;
 			_cb = cb;
 		}

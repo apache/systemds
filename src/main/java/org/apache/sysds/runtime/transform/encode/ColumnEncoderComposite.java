@@ -100,13 +100,13 @@ public class ColumnEncoderComposite extends ColumnEncoder {
 	}
 
 	@Override
-	public void build(CacheBlock in) {
+	public void build(CacheBlock<?> in) {
 		for(ColumnEncoder columnEncoder : _columnEncoders)
 			columnEncoder.build(in);
 	}
 
 	@Override
-	public void build(CacheBlock in, Map<Integer, double[]> equiHeightMaxs) {
+	public void build(CacheBlock<?> in, Map<Integer, double[]> equiHeightMaxs) {
 		for(ColumnEncoder columnEncoder : _columnEncoders)
 			if(columnEncoder instanceof ColumnEncoderBin && ((ColumnEncoderBin) columnEncoder).getBinMethod() == ColumnEncoderBin.BinMethod.EQUI_HEIGHT) {
 				columnEncoder.build(in, equiHeightMaxs.get(columnEncoder.getColID()));
@@ -116,7 +116,7 @@ public class ColumnEncoderComposite extends ColumnEncoder {
 	}
 
 	@Override
-	public List<DependencyTask<?>> getApplyTasks(CacheBlock in, MatrixBlock out, int outputCol) {
+	public List<DependencyTask<?>> getApplyTasks(CacheBlock<?> in, MatrixBlock out, int outputCol) {
 		List<DependencyTask<?>> tasks = new ArrayList<>();
 		List<Integer> sizes = new ArrayList<>();
 		for(int i = 0; i < _columnEncoders.size(); i++) {
@@ -148,12 +148,12 @@ public class ColumnEncoderComposite extends ColumnEncoder {
 
 	@Override
 	protected ColumnApplyTask<? extends ColumnEncoder> 
-		getSparseTask(CacheBlock in, MatrixBlock out, int outputCol, int startRow, int blk) {
+		getSparseTask(CacheBlock<?> in, MatrixBlock out, int outputCol, int startRow, int blk) {
 		throw new NotImplementedException();
 	}
 
 	@Override
-	public List<DependencyTask<?>> getBuildTasks(CacheBlock in) {
+	public List<DependencyTask<?>> getBuildTasks(CacheBlock<?> in) {
 		List<DependencyTask<?>> tasks = new ArrayList<>();
 		Map<Integer[], Integer[]> depMap = null;
 		for(ColumnEncoder columnEncoder : _columnEncoders) {
@@ -199,7 +199,7 @@ public class ColumnEncoderComposite extends ColumnEncoder {
 	}
 
 	@Override
-	public MatrixBlock apply(CacheBlock in, MatrixBlock out, int outputCol, int rowStart, int blk) {
+	public MatrixBlock apply(CacheBlock<?> in, MatrixBlock out, int outputCol, int rowStart, int blk) {
 		try {
 			for(int i = 0; i < _columnEncoders.size(); i++) {
 				if(i == 0) {
@@ -219,12 +219,12 @@ public class ColumnEncoderComposite extends ColumnEncoder {
 	}
 
 	@Override
-	protected double getCode(CacheBlock in, int row) {
+	protected double getCode(CacheBlock<?> in, int row) {
 		throw new DMLRuntimeException("CompositeEncoder does not have a Code");
 	}
 
 	@Override
-	protected double[] getCodeCol(CacheBlock in, int startInd, int blkSize) {
+	protected double[] getCodeCol(CacheBlock<?> in, int startInd, int blkSize) {
 		throw new DMLRuntimeException("CompositeEncoder does not have a Code");
 	}
 
@@ -373,7 +373,7 @@ public class ColumnEncoderComposite extends ColumnEncoder {
 		return false;
 	}
 
-	public void computeRCDMapSizeEstimate(CacheBlock in, int[] sampleIndices) {
+	public void computeRCDMapSizeEstimate(CacheBlock<?> in, int[] sampleIndices) {
 		int estNumDist = 0;
 		for (ColumnEncoder e : _columnEncoders)
 			if (e.getClass().equals(ColumnEncoderRecode.class)) {

@@ -75,9 +75,12 @@ public class MappingTests {
 			tests.add(new Object[] {5, t, 64 + 63, false});
 			tests.add(new Object[] {5, t, 127, false});
 			tests.add(new Object[] {5, t, 128, false});
+			tests.add(new Object[] {4, t, 128, false});
+			tests.add(new Object[] {3, t, 128, false});
 			tests.add(new Object[] {5, t, 129, false});
 			tests.add(new Object[] {7, t, 255, false});
 			tests.add(new Object[] {8, t, 256, false});
+			tests.add(new Object[] {8, t, 257, false});
 			tests.add(new Object[] {5, t, 1234, false});
 			tests.add(new Object[] {5, t, 13, true});
 		}

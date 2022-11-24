@@ -40,6 +40,7 @@ import java.util.ArrayList;
  * Despite various jiras, this issue still showed up in Spark 2.1. 
  * 
  */
+@SuppressWarnings("rawtypes")
 public class PartitionedBroadcast<T extends CacheBlock> implements Serializable
 {
 	private static final long serialVersionUID = 7041959166079438401L;

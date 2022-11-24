@@ -37,7 +37,7 @@ public class transformCustomTest {
 	final FrameBlock data;
 
 	public transformCustomTest() {
-		data = TestUtils.generateRandomFrameBlock(100, 1, new ValueType[] {ValueType.UINT8}, 231);
+		data = TestUtils.generateRandomFrameBlock(100, new ValueType[] {ValueType.UINT8}, 231);
 		data.setSchema(new ValueType[] {ValueType.INT32});
 	}
 

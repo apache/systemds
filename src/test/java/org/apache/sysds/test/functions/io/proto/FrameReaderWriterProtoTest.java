@@ -68,7 +68,7 @@ public class FrameReaderWriterProtoTest {
 	public void testWriteReadFrameBlockWith(int rows, int cols) throws IOException {
 		final Random random = new Random(SEED);
 		Types.ValueType[] schema = TestUtils.generateRandomSchema(cols, random);
-		FrameBlock expectedFrame = TestUtils.generateRandomFrameBlock(rows, cols, schema, random);
+		FrameBlock expectedFrame = TestUtils.generateRandomFrameBlock(rows, schema, random);
 
 		frameWriterProto.writeFrameToHDFS(expectedFrame, FILENAME_SINGLE, rows, cols);
 		FrameBlock actualFrame = frameReaderProto.readFrameFromHDFS(FILENAME_SINGLE, schema, rows, cols);

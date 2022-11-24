@@ -85,11 +85,11 @@ public class MultiColumnEncoder implements Encoder {
 		_columnEncoders = new ArrayList<>();
 	}
 
-	public MatrixBlock encode(CacheBlock in) {
+	public MatrixBlock encode(CacheBlock<?> in) {
 		return encode(in, 1);
 	}
 
-	public MatrixBlock encode(CacheBlock in, int k) {
+	public MatrixBlock encode(CacheBlock<?> in, int k) {
 		MatrixBlock out;
 		deriveNumRowPartitions(in, k);
 		try {
@@ -144,7 +144,7 @@ public class MultiColumnEncoder implements Encoder {
 	 * ApplyTasksWrapperTask:       Wrapper task for an Apply task
 	 * UpdateOutputColTask:         Set starting offsets of the DC columns
 	 */
-	private List<DependencyTask<?>> getEncodeTasks(CacheBlock in, MatrixBlock out, DependencyThreadPool pool) {
+	private List<DependencyTask<?>> getEncodeTasks(CacheBlock<?> in, MatrixBlock out, DependencyThreadPool pool) {
 		List<DependencyTask<?>> tasks = new ArrayList<>();
 		List<DependencyTask<?>> applyTAgg = null;
 		Map<Integer[], Integer[]> depMap = new HashMap<>();
@@ -240,11 +240,11 @@ public class MultiColumnEncoder implements Encoder {
 		return DependencyThreadPool.createDependencyTasks(tasks, deps);
 	}
 
-	public void build(CacheBlock in) {
+	public void build(CacheBlock<?> in) {
 		build(in, 1);
 	}
 
-	public void build(CacheBlock in, int k) {
+	public void build(CacheBlock<?> in, int k) {
 		if(hasLegacyEncoder() && !(in instanceof FrameBlock))
 			throw new DMLRuntimeException("LegacyEncoders do not support non FrameBlock Inputs");
 		if(!_partitionDone) //happens if this method is directly called
@@ -262,7 +262,7 @@ public class MultiColumnEncoder implements Encoder {
 			legacyBuild((FrameBlock) in);
 	}
 
-	public void build(CacheBlock in, int k, Map<Integer, double[]> equiHeightBinMaxs) {
+	public void build(CacheBlock<?> in, int k, Map<Integer, double[]> equiHeightBinMaxs) {
 		if(hasLegacyEncoder() && !(in instanceof FrameBlock))
 			throw new DMLRuntimeException("LegacyEncoders do not support non FrameBlock Inputs");
 		if(!_partitionDone) //happens if this method is directly called
@@ -280,7 +280,7 @@ public class MultiColumnEncoder implements Encoder {
 			legacyBuild((FrameBlock) in);
 	}
 
-	private List<DependencyTask<?>> getBuildTasks(CacheBlock in) {
+	private List<DependencyTask<?>> getBuildTasks(CacheBlock<?> in) {
 		List<DependencyTask<?>> tasks = new ArrayList<>();
 		for(ColumnEncoderComposite columnEncoder : _columnEncoders) {
 			tasks.addAll(columnEncoder.getBuildTasks(in));
@@ -288,7 +288,7 @@ public class MultiColumnEncoder implements Encoder {
 		return tasks;
 	}
 
-	private void buildMT(CacheBlock in, int k) {
+	private void buildMT(CacheBlock<?> in, int k) {
 		DependencyThreadPool pool = new DependencyThreadPool(k);
 		try {
 			pool.submitAllAndWait(getBuildTasks(in));
@@ -308,11 +308,11 @@ public class MultiColumnEncoder implements Encoder {
 	}
 
 
-	public MatrixBlock apply(CacheBlock in) {
+	public MatrixBlock apply(CacheBlock<?> in) {
 		return apply(in, 1);
 	}
 
-	public MatrixBlock apply(CacheBlock in, int k) {
+	public MatrixBlock apply(CacheBlock<?> in, int k) {
 		// domain sizes are not updated if called from transformapply
 		boolean hasUDF = _columnEncoders.stream().anyMatch(e -> e.hasEncoder(ColumnEncoderUDF.class));
 		for(ColumnEncoderComposite columnEncoder : _columnEncoders)
@@ -324,11 +324,11 @@ public class MultiColumnEncoder implements Encoder {
 		return apply(in, out, 0, k);
 	}
 
-	public MatrixBlock apply(CacheBlock in, MatrixBlock out, int outputCol) {
+	public MatrixBlock apply(CacheBlock<?> in, MatrixBlock out, int outputCol) {
 		return apply(in, out, outputCol, 1);
 	}
 
-	public MatrixBlock apply(CacheBlock in, MatrixBlock out, int outputCol, int k) {
+	public MatrixBlock apply(CacheBlock<?> in, MatrixBlock out, int outputCol, int k) {
 		// There should be a encoder for every column
 		if(hasLegacyEncoder() && !(in instanceof FrameBlock))
 			throw new DMLRuntimeException("LegacyEncoders do not support non FrameBlock Inputs");
@@ -366,7 +366,7 @@ public class MultiColumnEncoder implements Encoder {
 		return out;
 	}
 
-	private List<DependencyTask<?>> getApplyTasks(CacheBlock in, MatrixBlock out, int outputCol) {
+	private List<DependencyTask<?>> getApplyTasks(CacheBlock<?> in, MatrixBlock out, int outputCol) {
 		List<DependencyTask<?>> tasks = new ArrayList<>();
 		int offset = outputCol;
 		for(ColumnEncoderComposite e : _columnEncoders) {
@@ -377,7 +377,7 @@ public class MultiColumnEncoder implements Encoder {
 		return tasks;
 	}
 
-	private void applyMT(CacheBlock in, MatrixBlock out, int outputCol, int k) {
+	private void applyMT(CacheBlock<?> in, MatrixBlock out, int outputCol, int k) {
 		DependencyThreadPool pool = new DependencyThreadPool(k);
 		try {
 			if(APPLY_ENCODER_SEPARATE_STAGES) {
@@ -397,7 +397,7 @@ public class MultiColumnEncoder implements Encoder {
 		pool.shutdown();
 	}
 
-	private void deriveNumRowPartitions(CacheBlock in, int k) {
+	private void deriveNumRowPartitions(CacheBlock<?> in, int k) {
 		int[] numBlocks = new int[2];
 		if (k == 1) { //single-threaded
 			numBlocks[0] = 1;
@@ -478,7 +478,7 @@ public class MultiColumnEncoder implements Encoder {
 		//System.out.println("Block count = ["+numBlocks[0]+", "+numBlocks[1]+"], Recode block count = "+rcdNumBuildBlks);
 	}
 
-	private void estimateRCMapSize(CacheBlock in, List<ColumnEncoderComposite> rcList) {
+	private void estimateRCMapSize(CacheBlock<?> in, List<ColumnEncoderComposite> rcList) {
 		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 		// Collect sample row indices
 		int k = OptimizerUtils.getTransformNumThreads();
@@ -506,7 +506,7 @@ public class MultiColumnEncoder implements Encoder {
 	}
 
 	// Estimate total memory overhead of the partial recode maps of all recoders
-	private long getTotalMemOverhead(CacheBlock in, int nBuildpart, List<ColumnEncoderComposite> rcEncoders) {
+	private long getTotalMemOverhead(CacheBlock<?> in, int nBuildpart, List<ColumnEncoderComposite> rcEncoders) {
 		long totMemOverhead = 0;
 		if (nBuildpart == 1) {
 			// Sum the estimated map sizes
@@ -524,7 +524,7 @@ public class MultiColumnEncoder implements Encoder {
 		return totMemOverhead;
 	}
 
-	private static void outputMatrixPreProcessing(MatrixBlock output, CacheBlock input, boolean hasDC) {
+	private static void outputMatrixPreProcessing(MatrixBlock output, CacheBlock<?> input, boolean hasDC) {
 		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 		if(output.isInSparseFormat()) {
 			if (MatrixBlock.DEFAULT_SPARSEBLOCK != SparseBlock.Type.CSR
@@ -1066,10 +1066,10 @@ public class MultiColumnEncoder implements Encoder {
 
 	private static class InitOutputMatrixTask implements Callable<Object> {
 		private final MultiColumnEncoder _encoder;
-		private final CacheBlock _input;
+		private final CacheBlock<?> _input;
 		private final MatrixBlock _output;
 
-		private InitOutputMatrixTask(MultiColumnEncoder encoder, CacheBlock input, MatrixBlock output) {
+		private InitOutputMatrixTask(MultiColumnEncoder encoder, CacheBlock<?> input, MatrixBlock output) {
 			_encoder = encoder;
 			_input = input;
 			_output = output;
@@ -1097,11 +1097,11 @@ public class MultiColumnEncoder implements Encoder {
 	private static class ApplyTasksWrapperTask extends DependencyWrapperTask<Object> {
 		private final ColumnEncoder _encoder;
 		private final MatrixBlock _out;
-		private final CacheBlock _in;
+		private final CacheBlock<?> _in;
 		private int _offset = -1; // offset dude to dummycoding in
 									// previous columns needs to be updated by external task!
 
-		private ApplyTasksWrapperTask(ColumnEncoder encoder, CacheBlock in, 
+		private ApplyTasksWrapperTask(ColumnEncoder encoder, CacheBlock<?> in, 
 				MatrixBlock out, DependencyThreadPool pool) {
 			super(pool);
 			_encoder = encoder;

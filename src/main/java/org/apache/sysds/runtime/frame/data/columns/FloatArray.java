@@ -27,9 +27,11 @@ import java.nio.ByteOrder;
 import java.util.Arrays;
 
 import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.runtime.frame.data.columns.ArrayFactory.FrameArrayType;
+import org.apache.sysds.utils.MemoryEstimates;
 
 public class FloatArray extends Array<Float> {
-	private float[] _data = null;
+	private float[] _data;
 
 	public FloatArray(float[] data) {
 		_data = data;
@@ -82,6 +84,7 @@ public class FloatArray extends Array<Float> {
 
 	@Override
 	public void write(DataOutput out) throws IOException {
+		out.writeByte(FrameArrayType.FP32.ordinal());
 		for(int i = 0; i < _size; i++)
 			out.writeFloat(_data[i]);
 	}
@@ -125,12 +128,29 @@ public class FloatArray extends Array<Float> {
 	}
 
 	@Override
-	public String toString(){
+	public FrameArrayType getFrameArrayType() {
+		return FrameArrayType.FP32;
+	}
+
+	@Override
+	public long getInMemorySize() {
+		long size = 16; // object header + object reference
+		size += MemoryEstimates.floatArrayCost(_data.length);
+		return size;
+	}
+
+	@Override
+	public long getExactSerializedSize() {
+		return 1 + 4 * _data.length;
+	}
+
+	@Override
+	public String toString() {
 		StringBuilder sb = new StringBuilder(_data.length * 5 + 2);
 		sb.append(super.toString() + ":[");
-		for(int i = 0; i < _size-1; i++)
-			sb.append(_data[i]  + ",");
-		sb.append(_data[_size-1]);
+		for(int i = 0; i < _size - 1; i++)
+			sb.append(_data[i] + ",");
+		sb.append(_data[_size - 1]);
 		sb.append("]");
 		return sb.toString();
 	}

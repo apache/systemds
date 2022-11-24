@@ -27,9 +27,11 @@ import java.nio.ByteOrder;
 import java.util.Arrays;
 
 import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.runtime.frame.data.columns.ArrayFactory.FrameArrayType;
+import org.apache.sysds.utils.MemoryEstimates;
 
 public class LongArray extends Array<Long> {
-	private long[] _data = null;
+	private long[] _data;
 
 	public LongArray(long[] data) {
 		_data = data;
@@ -82,6 +84,7 @@ public class LongArray extends Array<Long> {
 
 	@Override
 	public void write(DataOutput out) throws IOException {
+		out.writeByte(FrameArrayType.INT64.ordinal());
 		for(int i = 0; i < _size; i++)
 			out.writeLong(_data[i]);
 	}
@@ -119,18 +122,35 @@ public class LongArray extends Array<Long> {
 		return longBuffer.array();
 	}
 
-	@Override 
-	public ValueType getValueType(){
+	@Override
+	public ValueType getValueType() {
 		return ValueType.INT64;
 	}
 
 	@Override
-	public String toString(){
+	public FrameArrayType getFrameArrayType() {
+		return FrameArrayType.INT64;
+	}
+
+	@Override
+	public long getInMemorySize() {
+		long size = 16; // object header + object reference
+		size += MemoryEstimates.longArrayCost(_data.length);
+		return size;
+	}
+
+	@Override
+	public long getExactSerializedSize() {
+		return 1 + 8 * _data.length;
+	}
+
+	@Override
+	public String toString() {
 		StringBuilder sb = new StringBuilder(_data.length * 5 + 2);
 		sb.append(super.toString() + ":[");
-		for(int i = 0; i < _size-1; i++)
-			sb.append(_data[i]  + ",");
-		sb.append(_data[_size-1]);
+		for(int i = 0; i < _size - 1; i++)
+			sb.append(_data[i] + ",");
+		sb.append(_data[_size - 1]);
 		sb.append("]");
 		return sb.toString();
 	}

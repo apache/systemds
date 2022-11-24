@@ -176,7 +176,7 @@ public class FederatedRequest implements Serializable {
 
 			if (ob instanceof CacheBlock) {
 				try {
-					CacheBlock cb = (CacheBlock)ob;
+					CacheBlock<?> cb = (CacheBlock<?>)ob;
 					long cbsize = LazyWriteBuffer.getCacheBlockSize(cb);
 					DataOutput dout = new CacheDataOutput(new byte[(int)cbsize]);
 					cb.write(dout);
@@ -200,7 +200,7 @@ public class FederatedRequest implements Serializable {
 		if(_data != null) {
 			for(Object obj : _data) {
 				if(obj instanceof CacheBlock)
-					minBufferSize += ((CacheBlock)obj).getExactSerializedSize();
+					minBufferSize += ((CacheBlock<?>)obj).getExactSerializedSize();
 			}
 		}
 		if(_lineageTrace != null)

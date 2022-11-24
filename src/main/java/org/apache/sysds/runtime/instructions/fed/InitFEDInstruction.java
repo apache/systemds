@@ -223,7 +223,7 @@ public class InitFEDInstruction extends FEDInstruction implements LineageTraceab
 		List<Pair<FederatedRange, FederatedData>> feds = new ArrayList<>();
 
 		CacheableData<?> co = ec.getCacheableData(_localObject);
-		CacheBlock cb =  co.acquireReadAndRelease();
+		CacheBlock<?> cb =  co.acquireReadAndRelease();
 
 		if(addresses.getLength() * 2 != ranges.getLength())
 			throw new DMLRuntimeException("Federated read needs twice the amount of addresses as ranges "
@@ -248,7 +248,7 @@ public class InitFEDInstruction extends FEDInstruction implements LineageTraceab
 			throw new DMLRuntimeException("type \"" + type + "\" non valid federated type");
 
 		long[] usedDims = new long[] {0, 0};
-		CacheBlock[] cbs = new CacheBlock[addresses.getLength()];
+		CacheBlock<?>[] cbs = new CacheBlock<?>[addresses.getLength()];
 		for(int i = 0; i < addresses.getLength(); i++) {
 			Data addressData = addresses.getData().get(i);
 			if(addressData instanceof StringObject) {
@@ -282,7 +282,7 @@ public class InitFEDInstruction extends FEDInstruction implements LineageTraceab
 				usedDims[0] = Math.max(usedDims[0], endDims[0]);
 				usedDims[1] = Math.max(usedDims[1], endDims[1]);
 
-				CacheBlock slice = cb instanceof MatrixBlock ? ((MatrixBlock)cb).slice((int) beginDims[0], (int) endDims[0]-1, (int) beginDims[1], (int) endDims[1]-1, true) :
+				CacheBlock<?> slice = cb instanceof MatrixBlock ? ((MatrixBlock)cb).slice((int) beginDims[0], (int) endDims[0]-1, (int) beginDims[1], (int) endDims[1]-1, true) :
 					((FrameBlock)cb).slice((int) beginDims[0], (int) endDims[0]-1, (int) beginDims[1], (int) endDims[1]-1, true, new FrameBlock());
 				cbs[i] = slice;
 
@@ -393,7 +393,7 @@ public class InitFEDInstruction extends FEDInstruction implements LineageTraceab
 		federateMatrix(output, workers, null);
 	}
 
-	public static void federateMatrix(CacheableData<?> output, List<Pair<FederatedRange, FederatedData>> workers, CacheBlock[] blocks) {
+	public static void federateMatrix(CacheableData<?> output, List<Pair<FederatedRange, FederatedData>> workers, CacheBlock<?>[] blocks) {
 
 		List<Pair<FederatedRange, FederatedData>> fedMapping = new ArrayList<>();
 		for(Pair<FederatedRange, FederatedData> e : workers)
@@ -455,7 +455,7 @@ public class InitFEDInstruction extends FEDInstruction implements LineageTraceab
 		federateFrame(output, workers, null);
 	}
 
-	public static void federateFrame(FrameObject output, List<Pair<FederatedRange, FederatedData>> workers, CacheBlock[] blocks) {
+	public static void federateFrame(FrameObject output, List<Pair<FederatedRange, FederatedData>> workers, CacheBlock<?>[] blocks) {
 		List<Pair<FederatedRange, FederatedData>> fedMapping = new ArrayList<>();
 		for(Pair<FederatedRange, FederatedData> e : workers)
 			fedMapping.add(e);

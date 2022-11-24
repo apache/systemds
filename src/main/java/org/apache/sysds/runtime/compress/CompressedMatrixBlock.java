@@ -59,7 +59,6 @@ import org.apache.sysds.runtime.compress.lib.CLALibSquash;
 import org.apache.sysds.runtime.compress.lib.CLALibTSMM;
 import org.apache.sysds.runtime.compress.lib.CLALibUnary;
 import org.apache.sysds.runtime.compress.lib.CLALibUtils;
-import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject.UpdateType;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysds.runtime.data.DenseBlock;
@@ -591,7 +590,7 @@ public class CompressedMatrixBlock extends MatrixBlock {
 	}
 
 	@Override
-	public MatrixBlock slice(int rl, int ru, int cl, int cu, boolean deep, CacheBlock ret) {
+	public MatrixBlock slice(int rl, int ru, int cl, int cu, boolean deep, MatrixBlock ret) {
 		validateSliceArgument(rl, ru, cl, cu);
 		return CLALibSlice.slice(this, rl, ru, cl, cu, deep);
 	}

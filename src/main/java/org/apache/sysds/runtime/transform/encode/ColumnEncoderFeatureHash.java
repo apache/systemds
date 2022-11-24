@@ -65,7 +65,7 @@ public class ColumnEncoderFeatureHash extends ColumnEncoder {
 	}
 
 	@Override
-	protected double getCode(CacheBlock in, int row) {
+	protected double getCode(CacheBlock<?> in, int row) {
 		// hash a single row
 		String key = in.getString(row, _colID - 1);
 		if(key == null)
@@ -73,7 +73,7 @@ public class ColumnEncoderFeatureHash extends ColumnEncoder {
 		return (key.hashCode() % _K) + 1;
 	}
 
-	protected double[] getCodeCol(CacheBlock in, int startInd, int blkSize) {
+	protected double[] getCodeCol(CacheBlock<?> in, int startInd, int blkSize) {
 		// hash a block of rows
 		int endInd = getEndIndex(in.getNumRows(), startInd, blkSize);
 		double codes[] = new double[endInd-startInd];
@@ -94,18 +94,18 @@ public class ColumnEncoderFeatureHash extends ColumnEncoder {
 	}
 
 	@Override
-	public void build(CacheBlock in) {
+	public void build(CacheBlock<?> in) {
 		// do nothing (no meta data other than K)
 	}
 
 	@Override
-	public List<DependencyTask<?>> getBuildTasks(CacheBlock in) {
+	public List<DependencyTask<?>> getBuildTasks(CacheBlock<?> in) {
 		return null;
 	}
 
 	@Override
 	protected ColumnApplyTask<? extends ColumnEncoder> 
-		getSparseTask(CacheBlock in, MatrixBlock out, int outputCol, int startRow, int blk) {
+		getSparseTask(CacheBlock<?> in, MatrixBlock out, int outputCol, int startRow, int blk) {
 		return new FeatureHashSparseApplyTask(this, in, out, outputCol, startRow, blk);
 	}
 
@@ -157,12 +157,12 @@ public class ColumnEncoderFeatureHash extends ColumnEncoder {
 
 	public static class FeatureHashSparseApplyTask extends ColumnApplyTask<ColumnEncoderFeatureHash>{
 
-		public FeatureHashSparseApplyTask(ColumnEncoderFeatureHash encoder, CacheBlock input,
+		public FeatureHashSparseApplyTask(ColumnEncoderFeatureHash encoder, CacheBlock<?> input,
 				MatrixBlock out, int outputCol, int startRow, int blk) {
 			super(encoder, input, out, outputCol, startRow, blk);
 		}
 
-		public FeatureHashSparseApplyTask(ColumnEncoderFeatureHash encoder, CacheBlock input,
+		public FeatureHashSparseApplyTask(ColumnEncoderFeatureHash encoder, CacheBlock<?> input,
 				MatrixBlock out, int outputCol) {
 			super(encoder, input, out, outputCol);
 		}

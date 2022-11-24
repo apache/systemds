@@ -119,7 +119,7 @@ import org.apache.sysds.runtime.util.UtilFunctions;
 import org.apache.sysds.utils.NativeHelper;
 
 
-public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizable {
+public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>, Externalizable {
 	private static final Log LOG = LogFactory.getLog(MatrixBlock.class.getName());
 
 	private static final long serialVersionUID = 7319972089143154056L;
@@ -1781,11 +1781,6 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		}
 	}
 
-	@Override
-	public void merge(CacheBlock that, boolean appendOnly) {
-		merge((MatrixBlock)that, appendOnly);
-	}
-
 	/**
 	 * Merge disjoint: merges all non-zero values of the given input into the current
 	 * matrix block. Note that this method does NOT check for overlapping entries;
@@ -1798,6 +1793,8 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	 * @param that matrix block
 	 * @param appendOnly ?
 	 */
+
+	@Override
 	public void merge(MatrixBlock that, boolean appendOnly) {
 		merge(that, appendOnly, false, true);
 	}
@@ -4029,97 +4026,40 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		return ret;
 	}
 
-	public MatrixBlock slice(IndexRange ixrange, MatrixBlock ret) {
+	@Override
+	public final MatrixBlock slice(IndexRange ixrange, MatrixBlock ret) {
 		return slice(
 			(int)ixrange.rowStart, (int)ixrange.rowEnd, 
 			(int)ixrange.colStart, (int)ixrange.colEnd, true, ret);
 	}
 	
-	/**
-	 * Slice out a block in the range
-	 * 
-	 * @param rl row lower (inclusive)
-	 * @param ru row upper (inclusive)
-	 * @return The sliced out matrix block.
-	 */
+	@Override
 	public final MatrixBlock slice(int rl, int ru) {
 		return slice(rl, ru, 0, clen-1, true, null);
 	}
 
-	/**
-	 * Slice out a block in the range
-	 * 
-	 * @param rl row lower (inclusive)
-	 * @param ru row upper (inclusive)
-	 * @param deep Deep copy or not
-	 * @return The sliced out matrix block.
-	 */
+	@Override
 	public final MatrixBlock slice(int rl, int ru, boolean deep){
 		return slice(rl,ru, 0, clen-1, deep, null);
 	}
-	
-	/**
-	 * Slice out a block in the range
-	 * 
-	 * @param rl row lower (inclusive)
-	 * @param ru row upper (inclusive)
-	 * @param cl column lower (inclusive)
-	 * @param cu column upper (inclusive)
-	 * @return The sliced out matrix block.
-	 */
+
+	@Override
 	public final MatrixBlock slice(int rl, int ru, int cl, int cu){
 		return slice(rl, ru, cl, cu, true, null);
 	}
 
-	/**
-	 * Slice out a block in the range
-	 * 
-	 * @param rl row lower (inclusive)
-	 * @param ru row upper (inclusive)
-	 * @param cl column lower (inclusive)
-	 * @param cu column upper (inclusive)
-	 * @param ret output sliced out matrix block
-	 * @return The sliced out matrix block.
-	 */
 	@Override
-	public final MatrixBlock slice(int rl, int ru, int cl, int cu, CacheBlock ret) {
+	public final MatrixBlock slice(int rl, int ru, int cl, int cu, MatrixBlock ret) {
 		return slice(rl, ru, cl, cu, true, ret);
 	}
 
-	/**
-	 * Slice out a block in the range
-	 * 
-	 * @param rl row lower (inclusive) 
-	 * @param ru row upper (inclusive) 
-	 * @param cl column lower (inclusive)
-	 * @param cu column upper (inclusive)
-	 * @param deep Deep copy or not
-	 * @return The sliced out matrix block.
-	 */
+	@Override
 	public final MatrixBlock slice(int rl, int ru, int cl, int cu, boolean deep){
 		return slice(rl, ru, cl, cu, deep, null);
 	}
 	
-	/**
-	 * Method to perform rightIndex operation for a given lower and upper bounds in row and column dimensions.
-	 * Extracted submatrix is returned as "result". Note: This operation is now 0-based.
-	 * 
-	 * This means that if you call with rl == ru then you get 1 row output.
-	 * 
-	 * If rl or cl less than 0 an exception is thrown
-	 * If ru or cu greater than or equals to nRows or nCols an exception is thrown
-	 * 
-	 * @param rl row lower (inclusive) 
-	 * @param ru row upper (inclusive) 
-	 * @param cl column lower (inclusive)
-	 * @param cu column upper (inclusive)
-	 * @param deep should perform deep copy, this is relevant in cases where the matrix is in sparse format,
-	 *            or the entire matrix is sliced out
-	 * @param ret output sliced out matrix block
-	 * @return matrix block output matrix block
-	 */
 	@Override
-	public MatrixBlock slice(int rl, int ru, int cl, int cu, boolean deep, CacheBlock ret) {
+	public MatrixBlock slice(int rl, int ru, int cl, int cu, boolean deep, MatrixBlock ret) {
 		validateSliceArgument(rl, ru, cl, cu);
 		
 		// Output matrix will have the same sparsity as that of the input matrix.

@@ -98,7 +98,7 @@ public class FederatedResponse implements Serializable {
 		if(_data != null) {
 			for(Object obj : _data) {
 				if(obj instanceof CacheBlock)
-					minBufferSize += ((CacheBlock)obj).getExactSerializedSize();
+					minBufferSize += ((CacheBlock<?>)obj).getExactSerializedSize();
 			}
 		}
 		return minBufferSize;

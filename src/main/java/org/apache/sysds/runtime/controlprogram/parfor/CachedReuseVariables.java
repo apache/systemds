@@ -45,7 +45,8 @@ public class CachedReuseVariables
 		return _data.containsKey(pfid);
 	}
 	
-	public synchronized void reuseVariables(long pfid, LocalVariableMap vars, Collection<String> excludeList, Map<String, Broadcast<CacheBlock>> _brInputs, boolean cleanCache) {
+	public synchronized void reuseVariables(long pfid, LocalVariableMap vars, Collection<String> excludeList,
+		Map<String, Broadcast<CacheBlock<?>>> _brInputs, boolean cleanCache) {
 
 		//fetch the broadcast variables
 		if (ParForProgramBlock.ALLOW_BROADCAST_INPUTS && !containsVars(pfid)) {
@@ -78,10 +79,10 @@ public class CachedReuseVariables
 	}
 
 	@SuppressWarnings("unchecked")
-	private static void loadBroadcastVariables(LocalVariableMap variables, Map<String, Broadcast<CacheBlock>> brInputs) {
-		for( Entry<String, Broadcast<CacheBlock>> e : brInputs.entrySet() ) {
+	private static void loadBroadcastVariables(LocalVariableMap variables, Map<String, Broadcast<CacheBlock<?>>> brInputs) {
+		for( Entry<String, Broadcast<CacheBlock<?>>> e : brInputs.entrySet() ) {
 			Data d = variables.get(e.getKey());
-			CacheableData<CacheBlock> cdcb = (CacheableData<CacheBlock>) d;
+			CacheableData<CacheBlock<?>> cdcb = (CacheableData<CacheBlock<?>>) d;
 			cdcb.acquireModify(e.getValue().getValue());
 			cdcb.setEmptyStatus(); // avoid eviction
 			cdcb.refreshMetaData();

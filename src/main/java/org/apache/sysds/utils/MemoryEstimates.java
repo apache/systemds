@@ -37,8 +37,8 @@ public class MemoryEstimates {
 	 * @param length The length of the array.
 	 * @return The memory estimate in bytes
 	 */
-	public static long bitSetCost(int length) {
-		long size = 0;
+	public static double bitSetCost(long length) {
+		double size = 0;
 		size += 8; // object reference
 		size += longArrayCost(length / 64 + (length % 64 > 0 ? 1 : 0));
 		size += 4; // words in Use
@@ -48,12 +48,24 @@ public class MemoryEstimates {
 	}
 
 	/**
+	 * Get the worst case memory usage of an array of booleans.
+	 * 
+	 * Unfortunately in java booleans are allocated as bytes.
+	 * 
+	 * @param length The length of the array.
+	 * @return The memory estimate in bytes.
+	 */
+	public static double booleanArrayCost(long length) {
+		return byteArrayCost(length);
+	}
+
+	/**
 	 * Get the worst case memory usage of an array of bytes.
 	 * 
 	 * @param length The length of the array.
 	 * @return The memory estimate in bytes
 	 */
-	public static long byteArrayCost(int length) {
+	public static double byteArrayCost(long length) {
 		long size = 0;
 		size += 8; // Byte array Reference
 		size += 20; // Byte array Object header
@@ -62,7 +74,7 @@ public class MemoryEstimates {
 		}
 		else { // byte array pads to next 8 bytes after the first 4.
 			size += length;
-			int diff = (length - 4) % 8;
+			double diff = (length - 4) % 8;
 			if(diff > 0) {
 				size += 8 - diff;
 			}
@@ -76,8 +88,8 @@ public class MemoryEstimates {
 	 * @param length The length of the array.
 	 * @return The memory estimate in bytes
 	 */
-	public static long charArrayCost(int length) {
-		long size = 0;
+	public static double charArrayCost(long length) {
+		double size = 0;
 		size += 8; // char array Reference
 		size += 20; // char array Object header
 		if(length <= 2) { // char array fills out the first 2 chars differently than the later bytes.
@@ -85,7 +97,7 @@ public class MemoryEstimates {
 		}
 		else {
 			size += length * 2;// 2 bytes per char
-			int diff = (length * 2 - 4) % 8;
+			double diff = (length * 2 - 4) % 8;
 			if(diff > 0) {
 				size += 8 - diff; // next object alignment
 			}
@@ -108,11 +120,21 @@ public class MemoryEstimates {
 		}
 		else {
 			size += 4d * length; // offsets 4 bytes per int
-			if(length % 2 == 0) {
+			if(length % 2 == 0)
 				size += 4;
-			}
 		}
 		return size;
+	}
+
+	/**
+	 * Get the worst case memory usage of an array of integers.
+	 * 
+	 * @param length The length of the array.
+	 * @return The memory estimate in bytes.
+	 */
+	public static double floatArrayCost(long length) {
+		// exact same size as intArrayCost
+		return intArrayCost(length);
 	}
 
 	/**
@@ -121,7 +143,7 @@ public class MemoryEstimates {
 	 * @param length The length of the array.
 	 * @return The memory estimate in bytes
 	 */
-	public static double doubleArrayCost(long length) {
+	public static final double doubleArrayCost(long length) {
 		double size = 0;
 		size += 8; // _values double array reference
 		size += 20; // double array object header
@@ -133,14 +155,16 @@ public class MemoryEstimates {
 	/**
 	 * Get the worst case memory usage for an array of objects.
 	 * 
+	 * Note this does not take into account each objects allocated variables, just the objects themselves.
+	 * 
 	 * @param length The length of the array.
 	 * @return The memory estimate in bytes
 	 */
-	public static double objectArrayCost(long length) {
+	public static final double objectArrayCost(long length) {
 		double size = 0;
-		size += 8; // reference to array
-		size += 20; // header
-		size += 4; // padding before first reference
+		size += 8d; // reference to array
+		size += 20d; // header
+		size += 4d; // padding before first reference
 		size += 8d * length; // references to all objects.
 		return size;
 	}
@@ -151,8 +175,49 @@ public class MemoryEstimates {
 	 * @param length The length of the array.
 	 * @return The memory estimate in bytes
 	 */
-	public static double longArrayCost(int length) {
-		return doubleArrayCost(length);
+	public static final double longArrayCost(long length) {
 		// exactly the same size as a double array
+		return doubleArrayCost(length);
 	}
+
+	/**
+	 * Get the worst case memory usage of an array containing strings.
+	 * 
+	 * In case anyone is wondering ... strings are expensive.
+	 * 
+	 * @param strings The strings array.
+	 * @return The array memory cost
+	 */
+	public static final double stringArrayCost(String[] strings) {
+		double size = 0;
+		for(int i = 0; i < strings.length; i++)
+			size += stringCost(strings[i]);
+		return size;
+	}
+
+	/**
+	 * Get the worst case memory usage of a single string.
+	 * 
+	 * In case anyone is wondering ... strings are expensive.
+	 * 
+	 * @param value The String to measure
+	 * @return The size in memory.
+	 */
+	public static double stringCost(String value) {
+		return value == null ? 16 + 8 : stringCost(value.length()); // char array
+	}
+
+	/**
+	 * Get the worst case memory usage of a single string, assuming given length.
+	 * 
+	 * @param length The length of the string
+	 * @return The size in memory
+	 */
+	public static double stringCost(int length) {
+		return 16 // object
+			+ 4 // hash
+			+ 8 // array ref
+			+ 32 + length; // char array
+	}
+
 }

@@ -81,7 +81,7 @@ public class FrameReaderWriterJSONLParallelTest
 		FrameReaderJSONLParallel frameReaderJSONL = new FrameReaderJSONLParallel();
 
 		// Generate Random frameBlock to be written
-		FrameBlock writeBlock = TestUtils.generateRandomFrameBlock(rows, cols, schema, random);
+		FrameBlock writeBlock = TestUtils.generateRandomFrameBlock(rows, schema, random);
 
 		// Write FrameBlock
 		frameWriterJSONL.writeFrameToHDFS(writeBlock, FILENAME_SINGLE, schemaMap, rows,cols);

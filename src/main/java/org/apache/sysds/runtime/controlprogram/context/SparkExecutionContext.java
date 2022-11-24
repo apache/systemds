@@ -622,9 +622,9 @@ public class SparkExecutionContext extends ExecutionContext
 		return rdd;
 	}
 
-	public Broadcast<CacheBlock> broadcastVariable(CacheableData<CacheBlock> cd) {
+	public Broadcast<CacheBlock<?>> broadcastVariable(CacheableData<CacheBlock<?>> cd) {
 		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
-		Broadcast<CacheBlock> brBlock = null;
+		Broadcast<CacheBlock<?>> brBlock = null;
 
 		// reuse existing non partitioned broadcast handle
 		if (cd.getBroadcastHandle() != null && cd.getBroadcastHandle().isNonPartitionedBroadcastValid()) {
@@ -639,7 +639,7 @@ public class SparkExecutionContext extends ExecutionContext
 				CacheableData.addBroadcastSize(-cd.getBroadcastHandle().getSize());
 
 			// read the matrix block
-			CacheBlock cb = cd.acquireRead();
+			CacheBlock<?> cb = cd.acquireRead();
 			cd.release();
 
 			// broadcast a non-empty frame whose size is smaller than 2G
@@ -854,12 +854,12 @@ public class SparkExecutionContext extends ExecutionContext
 		return bret;
 	}
 	
-	private Broadcast<PartitionedBlock<? extends CacheBlock>> createPartitionedBroadcast(
-			PartitionedBlock<? extends CacheBlock> pmb, int numPerPart, int pos) {
+	private Broadcast<PartitionedBlock<? extends CacheBlock<?>>> createPartitionedBroadcast(
+			PartitionedBlock<? extends CacheBlock<?>> pmb, int numPerPart, int pos) {
 		int offset = pos * numPerPart;
 		int numBlks = Math.min(numPerPart, pmb.getNumRowBlocks() * pmb.getNumColumnBlocks() - offset);
-		PartitionedBlock<? extends CacheBlock> tmp = pmb.createPartition(offset, numBlks);
-		Broadcast<PartitionedBlock<? extends CacheBlock>> ret = getSparkContext().broadcast(tmp);
+		PartitionedBlock<? extends CacheBlock<?>> tmp = pmb.createPartition(offset, numBlks);
+		Broadcast<PartitionedBlock<? extends CacheBlock<?>>> ret = getSparkContext().broadcast(tmp);
 		if (!isLocalMaster())
 			tmp.clearBlocks();
 		return ret;

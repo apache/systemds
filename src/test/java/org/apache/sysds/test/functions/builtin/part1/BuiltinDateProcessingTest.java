@@ -258,6 +258,6 @@ public class BuiltinDateProcessingTest extends AutomatedTestBase {
 					frameBlock.set(row, col, defined_strings[col][row]);
 			return frameBlock;
 		}
-		return TestUtils.generateRandomFrameBlock(rows, cols, schema ,TestUtils.getPositiveRandomInt());
+		return TestUtils.generateRandomFrameBlock(rows, schema ,TestUtils.getPositiveRandomInt());
 	}
 }

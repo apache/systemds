@@ -109,8 +109,8 @@ public class LocalFileUtils
 	 * @return cache block (common interface to MatrixBlock and FrameBlock)
 	 * @throws IOException if IOException occurs
 	 */
-	public static CacheBlock readCacheBlockFromLocal(String fname, boolean matrix) throws IOException {
-		return (CacheBlock) readWritableFromLocal(fname, matrix?new MatrixBlock():new FrameBlock());
+	public static CacheBlock<?> readCacheBlockFromLocal(String fname, boolean matrix) throws IOException {
+		return (CacheBlock<?>) readWritableFromLocal(fname, matrix?new MatrixBlock():new FrameBlock());
 	}
 	
 	/**
@@ -216,7 +216,7 @@ public class LocalFileUtils
 	 * @param cb cache block (common interface to matrix block and frame block)
 	 * @throws IOException if IOException occurs
 	 */
-	public static void writeCacheBlockToLocal(String fname, CacheBlock cb) throws IOException {
+	public static void writeCacheBlockToLocal(String fname, CacheBlock<?> cb) throws IOException {
 		writeWritableToLocal(fname, cb);
 	}
 	

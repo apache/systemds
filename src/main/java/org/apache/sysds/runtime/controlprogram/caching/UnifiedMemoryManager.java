@@ -253,10 +253,10 @@ public class UnifiedMemoryManager
 	}
 
 	// Reads a cached object. This is called from cacheabledata implementations
-	public static CacheBlock readBlock(String fname, boolean matrix)
+	public static CacheBlock<?> readBlock(String fname, boolean matrix)
 		throws IOException
 	{
-		CacheBlock cb = null;
+		CacheBlock<?> cb = null;
 		ByteBuffer ldata = null;
 
 		//probe write buffer
@@ -336,7 +336,7 @@ public class UnifiedMemoryManager
 	}
 
 	// Write an object to the cache
-	public static int writeBlock(String fname, CacheBlock cb)
+	public static int writeBlock(String fname, CacheBlock<?> cb)
 		throws IOException
 	{
 		//obtain basic metadata of the cache block
@@ -380,7 +380,7 @@ public class UnifiedMemoryManager
 		return numEvicted;
 	}
 
-	public static long getCacheBlockSize(CacheBlock cb) {
+	public static long getCacheBlockSize(CacheBlock<?> cb) {
 		return cb.isShallowSerialize() ?
 			cb.getInMemorySize() : cb.getExactSerializedSize();
 	}

@@ -80,9 +80,10 @@ import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.runtime.util.EMAUtils;
 import org.apache.sysds.runtime.util.IndexRange;
 import org.apache.sysds.runtime.util.UtilFunctions;
+import org.apache.sysds.utils.MemoryEstimates;
 
 @SuppressWarnings({"rawtypes","unchecked"}) //allow generic native arrays
-public class FrameBlock implements CacheBlock, Externalizable {
+public class FrameBlock implements CacheBlock<FrameBlock>, Externalizable {
 	private static final long serialVersionUID = -3993450030207130665L;
 	private static final Log LOG = LogFactory.getLog(FrameBlock.class.getName());
 	private static final IDSequence CLASS_ID = new IDSequence();
@@ -102,13 +103,14 @@ public class FrameBlock implements CacheBlock, Externalizable {
 	/** The column names of the data frame as an ordered list of strings, allocated on-demand */
 	private String[] _colnames = null;
 
+	/** The column metadata  */
 	private ColumnMetadata[] _colmeta = null;
 
 	/** The data frame data as an ordered list of columns */
 	private Array[] _coldata = null;
 
 	/** Cached size in memory to avoid repeated scans of string columns */
-	long _msize = -1;
+	private long _msize = -1;
 
 	public FrameBlock() {
 		_numRows = 0;
@@ -237,7 +239,6 @@ public class FrameBlock implements CacheBlock, Externalizable {
 	public String[] getColumnNames() {
 		return getColumnNames(true);
 	}
-
 
 	public FrameBlock getColumnNamesAsFrame() {
 		FrameBlock fb = new FrameBlock(getNumColumns(), ValueType.STRING);
@@ -464,6 +465,7 @@ public class FrameBlock implements CacheBlock, Externalizable {
 		for( int j=0; j<row.length; j++ )
 			_coldata[j].append(row[j]);
 		_numRows++;
+		_msize = -1;
 	}
 
 	/**
@@ -607,122 +609,77 @@ public class FrameBlock implements CacheBlock, Externalizable {
 		return _coldata[c].get();
 	}
 
-	public String getColumnType(int c){
-		switch(_schema[c]) {
-			case STRING:  return "String";
-			case BOOLEAN: return "Boolean";
-			case INT64:   return "Long";
-			case INT32:   return "Int";
-			case FP64:    return "Double";
-			case FP32:    return "Float";
-			default:      return null;
-	 	}
+	public ValueType getColumnType(int c){
+		return _schema[c];
 	}
 
-	/**
-	 * Get a specific index as bytes, this method is used to parse the strings into Python.
-	 * It should only be used in columns where the datatype is String.
-	 * Since in other cases it might be faster to return other types.
-	 *
-	 * @param c The column index.
-	 * @param r The row index.
-	 * @return The returned byte array.
-	 */
-	public byte[] getIndexAsBytes(int c, int r){
-		switch(_schema[c]){
-			case STRING:
-				String[] col = ((StringArray)_coldata[c]).get();
-				if(col[r] != null)
-					return col[r].getBytes();
-				else
-					return null;
-			default:
-				throw new NotImplementedException();
-		}
-	}
-
-	/**
-	 * Serialize the columns data as byte.
-	 * 
-	 * This serialization is used for transferring the frame to python.
-	 * 
-	 * @param c The column index
-	 * @return The columns data as byte array.
-	 */
-	public byte[] getColumnAsBytes(int c) {
-		return _coldata[c].getAsByteArray(getNumRows());
-	}
-
-	public Array getColumn(int c) {
+	public Array<?> getColumn(int c) {
 		return _coldata[c];
 	}
 
-	public void setColumn(int c, Array column) {
+	public void setColumn(int c, Array<?> column) {
 		if( _coldata == null )
 			_coldata = new Array[getNumColumns()];
 		_coldata[c] = column;
 		_msize = -1;
 	}
 
-	///////
-	// serialization / deserialization (implementation of writable and externalizable)
-	// FIXME for FrameBlock fix write and readFields, it does not work if the Arrays are not yet
-	// allocated (after fixing remove hack in FederatedWorkerHandler.createFrameEncodeMeta(FederatedRequest) call to
-	// FrameBlock.ensureAllocatedColumns())
-
 	@Override
 	public void write(DataOutput out) throws IOException {
-		boolean isDefaultMeta = isColNamesDefault()
-				&& isColumnMetadataDefault();
-		//write header (rows, cols, default)
+		final boolean isDefaultMeta = isColNamesDefault() && isColumnMetadataDefault();
+		// write header (rows, cols, default)
 		out.writeInt(getNumRows());
 		out.writeInt(getNumColumns());
 		out.writeBoolean(isDefaultMeta);
-		//write columns (value type, data)
-		for( int j=0; j<getNumColumns(); j++ ) {
-			byte type = (byte)_schema[j].ordinal();
-			if( _coldata == null || _coldata[j] == null )
-				type *= -1; //negative to indicate non-existence
+		// write columns (value type, data)
+		for(int j = 0; j < getNumColumns(); j++) {
+			final byte type = getTypeForIO(j);
 			out.writeByte(type);
-			if( !isDefaultMeta ) {
+			if(!isDefaultMeta) {
 				out.writeUTF(getColumnName(j));
-				out.writeLong(_colmeta[j].getNumDistinct());
-				out.writeUTF( (_colmeta[j].getMvValue()!=null) ?
-					_colmeta[j].getMvValue() : "" );
+				_colmeta[j].write(out);
 			}
-			if( type >= 0 )
+			if(type >= 0) // if allocated write column data
 				_coldata[j].write(out);
 		}
 	}
 
+	private byte getTypeForIO(int col) {
+		// ! +1 to allow reflecting around zero if not allocated
+		byte type = (byte) (_schema[col].ordinal() + 1);
+		if(_coldata == null || _coldata[col] == null)
+			type *= -1; // negative to indicate not allocated
+		return type;
+	}
+
+	private ValueType interpretByteAsType(byte type) {
+		return ValueType.values()[Math.abs(type) - 1];
+	}
+
 	@Override
 	public void readFields(DataInput in) throws IOException {
-		//read head (rows, cols)
+		// read head (rows, cols)
 		_numRows = in.readInt();
-		int numCols = in.readInt();
-		boolean isDefaultMeta = in.readBoolean();
-		//allocate schema/meta data arrays
-		_schema = (_schema!=null && _schema.length==numCols) ?
-			_schema : new ValueType[numCols];
-		_colnames = (_colnames != null && _colnames.length==numCols) ?
-			_colnames : new String[numCols];
-		_colmeta = (_colmeta != null && _colmeta.length==numCols) ?
-			_colmeta : new ColumnMetadata[numCols];
-		_coldata = (_coldata!=null && _coldata.length==numCols) ?
-			_coldata : new Array[numCols];
-		//read columns (value type, meta, data)
-		for( int j=0; j<numCols; j++ ) {
+		final int numCols = in.readInt();
+		final boolean isDefaultMeta = in.readBoolean();
+		// allocate schema/meta data arrays
+		_schema = (_schema != null && _schema.length == numCols) ? _schema : new ValueType[numCols];
+		_colnames = (_colnames != null && _colnames.length == numCols) ? _colnames : // if already allocated reuse
+			isDefaultMeta ? null : new String[numCols]; // if meta is default allocate on demand
+		_colmeta = (_colmeta != null && _colmeta.length == numCols) ? _colmeta : new ColumnMetadata[numCols];
+		_coldata = (_coldata != null && _coldata.length == numCols) ? _coldata : new Array[numCols];
+		// read columns (value type, meta, data)
+		for(int j = 0; j < numCols; j++) {
 			byte type = in.readByte();
-			ValueType vt = ValueType.values()[Math.abs(type)];
-			String name = isDefaultMeta ? createColName(j) : in.readUTF();
-			long ndistinct = isDefaultMeta ? 0 : in.readLong();
-			String mvvalue = isDefaultMeta ? null : in.readUTF();
-			Array arr = type > 0? ArrayFactory.read(in, vt, _numRows): null;
-			_schema[j] = vt;
-			_colnames[j] = name;
-			_colmeta[j] = new ColumnMetadata(ndistinct,
-				(mvvalue==null || mvvalue.isEmpty()) ? null : mvvalue);
-			_coldata[j] = arr;
+			_schema[j] = interpretByteAsType(type);
+			if(!isDefaultMeta) { // If not default meta read in meta
+				_colnames[j] = in.readUTF();
+				_colmeta[j] = ColumnMetadata.read(in);
+			}else{
+				_colmeta[j] = new ColumnMetadata(); // must be allocated.
+			}
+			if(type >= 0) // if in allocated column data then read it
+				_coldata[j] = ArrayFactory.read(in, _numRows);
 		}
 		_msize = -1;
 	}
@@ -744,80 +701,55 @@ public class FrameBlock implements CacheBlock, Externalizable {
 
 	@Override
 	public long getInMemorySize() {
-		//reuse previously computed size
-		if( _msize > 0 )
+		// reuse previously computed size
+		if(_msize > 0)
 			return _msize;
 
-		//frame block header
-		long size = 16 + 4; //object, num rows
+		// frame block header
+		long size = 16 + 4 + 4; // object, num rows, msize
 
-		//schema array (overhead and int entries)
-		int clen = getNumColumns();
-		size += 8 + 32 + clen * 4;
+		final int clen = getNumColumns();
 
-		//colname array (overhead and string entries)
-		size += 8 + ((_colnames!=null) ? 32 : 0);
-		for( int j=0; j<clen && _colnames!=null; j++ )
-			size += getInMemoryStringSize(getColumnName(j));
+		// schema array (overhead and int entries)
+		size += MemoryEstimates.byteArrayCost(clen);
 
-		//meta data array (overhead and entries)
-		size += 8 + 32;
-		for( int j=0; j<clen; j++ ) {
-			size += 16 + 8 + 8 //object, long num distinct, ref mv
-				+ getInMemoryStringSize(_colmeta[j].getMvValue());
-		}
+		// col name array (overhead and string entries)
+		size += _colnames == null ? 8 : MemoryEstimates.stringArrayCost(_colnames);
 
-		//data array (overhead and entries)
-		size += 8 + 32 + clen * (16+4+8+32);
-		for( int j=0; j<clen; j++ ) {
-			switch( _schema[j] ) {
-				case BOOLEAN: size += _numRows; break;
-				case INT64:
-				case FP64: size += 8*_numRows; break;
-				case INT32:
-				case FP32: size += 4*_numRows; break;
-				case STRING:
-					StringArray arr = (StringArray)_coldata[j];
-					for( int i=0; i<_numRows; i++ )
-						size += getInMemoryStringSize(arr.get(i));
-					break;
-				default: //not applicable
-			}
-		}
+		// meta data array (overhead and entries)
+		size += MemoryEstimates.objectArrayCost(clen);
+		for(ColumnMetadata mtd : _colmeta)
+			size += mtd == null ? 8 : mtd.getInMemorySize();
+
+		// data array
+		size += MemoryEstimates.objectArrayCost(clen);
+		if(_coldata == null) // not allocated estimate if allocated
+			for(int j = 0; j < clen; j++)
+				ArrayFactory.getInMemorySize(_schema[j], _numRows);
+		else // allocated
+			for(Array<?> aa : _coldata)
+				size += aa.getInMemorySize();
 
 		return _msize = size;
 	}
 
 	@Override
 	public long getExactSerializedSize() {
-		//header: 2xint, boolean
-		long size = 9;
+		// header: 2 x int, boolean
+		long size = 4 + 4 + 1;
 
-		//column sizes
-		boolean isDefaultMeta = isColNamesDefault()
-				&& isColumnMetadataDefault();
-		for( int j=0; j<getNumColumns(); j++ ) {
-			size += 1; //column schema
-			if( !isDefaultMeta ) {
+		size += 1 * getNumColumns(); // column schema
+		// column sizes
+		final boolean isDefaultMeta = isColNamesDefault() && isColumnMetadataDefault();
+		for(int j = 0; j < getNumColumns(); j++) {
+			final byte type = getTypeForIO(j);
+			if(!isDefaultMeta) {
 				size += IOUtilFunctions.getUTFSize(getColumnName(j));
-				size += 8;
-				size += IOUtilFunctions.getUTFSize(_colmeta[j].getMvValue());
+				size += _colmeta[j].getExactSerializedSize();
 			}
-			switch( _schema[j] ) {
-				case BOOLEAN: size += _numRows; break;
-				case INT64:
-				case FP64: size += 8*_numRows; break;
-				case INT32:
-				case FP32: size += 4 * _numRows; break;
-				case STRING:
-					StringArray arr = (StringArray)_coldata[j];
-					for( int i=0; i<_numRows; i++ )
-						size += IOUtilFunctions.getUTFSize(arr.get(i));
-					break;
-				default: //not applicable
-			}
+			if(type >= 0)
+				size += _coldata[j].getExactSerializedSize();
 		}
-
 		return size;
 	}
 
@@ -844,19 +776,6 @@ public class FrameBlock implements CacheBlock, Externalizable {
 	@Override
 	public void compactEmptyBlock() {
 		//do nothing
-	}
-
-	/**
-	 * Returns the in-memory size in bytes of the given string value.
-	 *
-	 * @param value string value
-	 * @return in-memory size of string value
-	 */
-	private static long getInMemoryStringSize(String value) {
-		if( value == null )
-			return 0;
-		return 16 + 4 + 8 //object, hash, array ref
-			+ 32 + value.length();     //char array
 	}
 
 	/**
@@ -994,39 +913,39 @@ public class FrameBlock implements CacheBlock, Externalizable {
 		return ret;
 	}
 
-	public FrameBlock slice(IndexRange ixrange, FrameBlock ret) {
-		return slice(
-				(int)ixrange.rowStart, (int)ixrange.rowEnd,
-				(int)ixrange.colStart, (int)ixrange.colEnd, ret);
+	@Override
+	public final FrameBlock slice(IndexRange ixrange, FrameBlock ret) {
+		return slice((int) ixrange.rowStart, (int) ixrange.rowEnd, (int) ixrange.colStart, (int) ixrange.colEnd, ret);
 	}
 
 	@Override
-	public FrameBlock slice(int rl, int ru, int cl, int cu, CacheBlock retCache) {
-		return slice(rl, ru, cl, cu, false, retCache);
+	public final FrameBlock slice(int rl, int ru) {
+		return slice(rl, ru, 0, getNumColumns()-1, false, null);
 	}
 
-	/**
-	 * Right indexing operations to slice a subframe out of this frame block.
-	 * Note that the existing column value types are preserved.
-	 *
-	 * @param rl row lower index, inclusive, 0-based
-	 * @param ru row upper index, inclusive, 0-based
-	 * @param cl column lower index, inclusive, 0-based
-	 * @param cu column upper index, inclusive, 0-based
-	 * @param deep enforce deep-copy
-	 * @param retCache cache block
-	 * @return frame block
-	 */
 	@Override
-	public FrameBlock slice(int rl, int ru, int cl, int cu, boolean deep, CacheBlock retCache) {
-		FrameBlock ret = (FrameBlock)retCache;
-		// check the validity of bounds
-		if (   rl < 0 || rl >= getNumRows() || ru < rl || ru >= getNumRows()
-			|| cl < 0 || cu >= getNumColumns() || cu < cl || cu >= getNumColumns() ) {
-			throw new DMLRuntimeException("Invalid values for frame indexing: ["+(rl+1)+":"+(ru+1)+"," + (cl+1)+":"+(cu+1)+"] " +
-							"must be within frame dimensions ["+getNumRows()+","+getNumColumns()+"]");
-		}
+	public final FrameBlock slice(int rl, int ru, boolean deep) {
+		return slice(rl, ru, 0, getNumColumns()-1, deep, null);
+	}
 
+	@Override
+	public final FrameBlock slice(int rl, int ru, int cl, int cu) {
+		return slice(rl, ru, cl, cu, false, null);
+	}
+
+	@Override
+	public final FrameBlock slice(int rl, int ru, int cl, int cu, FrameBlock ret) {
+		return slice(rl, ru, cl, cu, false, ret);
+	}
+
+	@Override
+	public final FrameBlock slice(int rl, int ru, int cl, int cu, boolean deep) {
+		return slice(rl, ru, cl, cu, deep, null);
+	}
+
+	@Override
+	public FrameBlock slice(int rl, int ru, int cl, int cu, boolean deep, FrameBlock ret) {
+		validateSliceArgument(rl, ru, cl, cu);
 		//allocate output frame
 		if( ret == null )
 			ret = new FrameBlock();
@@ -1070,42 +989,33 @@ public class FrameBlock implements CacheBlock, Externalizable {
 		return ret;
 	}
 
+	protected void validateSliceArgument(int rl, int ru, int cl, int cu){
+		if (   rl < 0 || rl >= getNumRows() || ru < rl || ru >= getNumRows()
+			|| cl < 0 || cu >= getNumColumns() || cu < cl || cu >= getNumColumns() ) {
+			throw new DMLRuntimeException("Invalid values for frame indexing: ["+(rl+1)+":"+(ru+1)+"," + (cl+1)+":"+(cu+1)+"] " +
+							"must be within frame dimensions ["+getNumRows()+","+getNumColumns()+"]");
+		}
+	}
 
-	public void slice(ArrayList<Pair<Long,FrameBlock>> outlist, IndexRange range, int rowCut)
-	{
-		FrameBlock top=null, bottom=null;
-		Iterator<Pair<Long,FrameBlock>> p=outlist.iterator();
-
-		if(range.rowStart<rowCut)
-			top = p.next().getValue();
-
-		if(range.rowEnd>=rowCut)
-			bottom = p.next().getValue();
-
-		if(getNumRows() > 0)
-		{
-			int r=(int) range.rowStart;
-
-			for(; r<Math.min(rowCut, range.rowEnd+1); r++)
-			{
-				Object[] row = new Object[(int) (range.colEnd-range.colStart+1)];
-				for(int c=(int) range.colStart; c<range.colEnd+1; c++)
-					row[(int) (c-range.colStart)] = get(r,c);
-				top.appendRow(row);
-			}
-
-			for(; r<=range.rowEnd; r++)
-			{
-				Object[] row = new Object[(int) (range.colEnd-range.colStart+1)];
-				for(int c=(int) range.colStart; c<range.colEnd+1; c++)
-					row[(int) (c-range.colStart)] = get(r,c);
-				bottom.appendRow(row);
-			}
+	public void slice(ArrayList<Pair<Long, FrameBlock>> outList, IndexRange range, int rowCut) {
+		if(getNumRows() > 0) {
+			if(outList.size() > 1)
+				throw new NotImplementedException("Not implemented slice of more than 1 block out");
+			int r = (int) range.rowStart;
+			final FrameBlock out = outList.get(0).getValue();
+			if(range.rowStart < rowCut) 
+				slice(r, (int)Math.min(rowCut, range.rowEnd + 1), 
+					(int)range.colStart, (int)range.colEnd,out);
+			
+			if(range.rowEnd >= rowCut) 
+				slice(r, (int)range.rowEnd, 
+					(int)range.colStart, (int)range.colEnd, out);
+			
 		}
 	}
 
 	/**
-	 * Appends the given argument frameblock 'that' to this frameblock by
+	 * Appends the given argument FrameBlock 'that' to this FrameBlock by
 	 * creating a deep copy to prevent side effects. For cbind, the frames
 	 * are appended column-wise (same number of rows), while for rbind the
 	 * frames are appended row-wise (same number of columns).
@@ -1167,6 +1077,8 @@ public class FrameBlock implements CacheBlock, Externalizable {
 			while( iter.hasNext() )
 				ret.appendRow(iter.next());
 		}
+
+		ret._msize = -1;
 		return ret;
 	}
 
@@ -1174,8 +1086,7 @@ public class FrameBlock implements CacheBlock, Externalizable {
 		copy(0, src.getNumRows()-1, 0, src.getNumColumns()-1, src);
 	}
 
-	public void copy(int rl, int ru, int cl, int cu, FrameBlock src)
-	{
+	public void copy(int rl, int ru, int cl, int cu, FrameBlock src) {
 		//allocate columns if necessary
 		ensureAllocatedColumns(ru-rl+1);
 
@@ -1215,7 +1126,7 @@ public class FrameBlock implements CacheBlock, Externalizable {
 
 		//construct recode map
 		HashMap<String,Long> map = new HashMap<>();
-		Array ldata = _coldata[col];
+		Array<?> ldata = _coldata[col];
 		for( int i=0; i<getNumRows(); i++ ) {
 			Object val = ldata.get(i);
 			if( val != null ) {
@@ -1232,8 +1143,8 @@ public class FrameBlock implements CacheBlock, Externalizable {
 	}
 
 	@Override
-	public void merge(CacheBlock that, boolean bDummy) {
-		merge((FrameBlock)that);
+	public void merge(FrameBlock that, boolean bDummy) {
+		merge(that);
 	}
 
 	public void merge(FrameBlock that) {
@@ -1364,8 +1275,7 @@ public class FrameBlock implements CacheBlock, Externalizable {
 		return fb;
 	}
 
-	private static class DetectValueTypeTask implements Callable<String>
-	{
+	private static class DetectValueTypeTask implements Callable<String> {
 		private final Array _obj;
 		private final int _rows;
 		private final int _sampleSize;
@@ -1809,6 +1719,7 @@ public class FrameBlock implements CacheBlock, Externalizable {
 			return new FrameBlock(schema, arr);
 		}
 
+		ret._msize = -1;
 		return ret;
 	}
 
@@ -1857,6 +1768,7 @@ public class FrameBlock implements CacheBlock, Externalizable {
 		columnMetadata.toArray(ret._colmeta);
 		ret.setColumnMetadata(ret._colmeta);
 
+		ret._msize = -1;
 		return ret;
 	}
 

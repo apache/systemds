@@ -27,9 +27,11 @@ import java.nio.ByteOrder;
 import java.util.Arrays;
 
 import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.runtime.frame.data.columns.ArrayFactory.FrameArrayType;
+import org.apache.sysds.utils.MemoryEstimates;
 
 public class IntegerArray extends Array<Integer> {
-	private int[] _data = null;
+	private int[] _data;
 
 	public IntegerArray(int[] data) {
 		_data = data;
@@ -82,8 +84,9 @@ public class IntegerArray extends Array<Integer> {
 
 	@Override
 	public void write(DataOutput out) throws IOException {
+		out.writeByte(FrameArrayType.INT32.ordinal());
 		for(int i = 0; i < _size; i++)
-			out.writeLong(_data[i]);
+			out.writeInt(_data[i]);
 	}
 
 	@Override
@@ -119,18 +122,35 @@ public class IntegerArray extends Array<Integer> {
 		return intBuffer.array();
 	}
 
-	@Override 
-	public ValueType getValueType(){
+	@Override
+	public ValueType getValueType() {
 		return ValueType.INT32;
 	}
 
 	@Override
-	public String toString(){
+	public FrameArrayType getFrameArrayType() {
+		return FrameArrayType.INT32;
+	}
+
+	@Override
+	public long getInMemorySize() {
+		long size = 16; // object header + object reference
+		size += MemoryEstimates.intArrayCost(_data.length);
+		return size;
+	}
+
+	@Override
+	public long getExactSerializedSize() {
+		return 1 + 4 * _data.length;
+	}
+
+	@Override
+	public String toString() {
 		StringBuilder sb = new StringBuilder(_data.length * 5 + 2);
 		sb.append(super.toString() + ":[");
-		for(int i = 0; i < _size-1; i++)
-			sb.append(_data[i]  + ",");
-		sb.append(_data[_size-1]);
+		for(int i = 0; i < _size - 1; i++)
+			sb.append(_data[i] + ",");
+		sb.append(_data[_size - 1]);
 		sb.append("]");
 		return sb.toString();
 	}

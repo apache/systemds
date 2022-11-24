@@ -150,7 +150,7 @@ public class FederatedWorker {
 			if(linReusePossible) {
 				FederatedResponse response = (FederatedResponse)msg;
 				if(response.getData() != null && response.getData().length != 0
-					&& response.getData()[0] instanceof CacheBlock) {
+					&& response.getData()[0] instanceof CacheBlock<?>) {
 					objLI = response.getLineageItem();
 
 					byte[] cachedBytes = LineageCache.reuseSerialization(objLI);

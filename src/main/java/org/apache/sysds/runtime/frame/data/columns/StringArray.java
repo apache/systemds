@@ -26,9 +26,12 @@ import java.util.Arrays;
 
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.runtime.frame.data.columns.ArrayFactory.FrameArrayType;
+import org.apache.sysds.runtime.io.IOUtilFunctions;
+import org.apache.sysds.utils.MemoryEstimates;
 
 public class StringArray extends Array<String> {
-	private String[] _data = null;
+	private String[] _data;
 
 	public StringArray(String[] data) {
 		_data = data;
@@ -76,6 +79,7 @@ public class StringArray extends Array<String> {
 
 	@Override
 	public void write(DataOutput out) throws IOException {
+		out.writeByte(FrameArrayType.STRING.ordinal());
 		for(int i = 0; i < _size; i++)
 			out.writeUTF((_data[i] != null) ? _data[i] : "");
 	}
@@ -111,18 +115,51 @@ public class StringArray extends Array<String> {
 		throw new NotImplementedException("Not Implemented getAsByte for string");
 	}
 
+	/**
+	 * Python interface to extract strings from systemds.
+	 * 
+	 * @param r the index to extract
+	 * @return The value in bytes for py4j
+	 */
+	public byte[] getIndexAsBytes(int r) {
+		if(_data[r] != null)
+			return _data[r].getBytes();
+		else
+			return null;
+	}
+
 	@Override
 	public ValueType getValueType() {
 		return ValueType.STRING;
 	}
 
 	@Override
-	public String toString(){
+	public FrameArrayType getFrameArrayType() {
+		return FrameArrayType.STRING;
+	}
+
+	@Override
+	public long getInMemorySize() {
+		long size = 16; // object header + object reference
+		size += MemoryEstimates.stringArrayCost(_data);
+		return size;
+	}
+
+	@Override
+	public long getExactSerializedSize() {
+		long si = 1; // byte identifier
+		for(String s : _data)
+			si += IOUtilFunctions.getUTFSize(s);
+		return si;
+	}
+
+	@Override
+	public String toString() {
 		StringBuilder sb = new StringBuilder(_data.length * 5 + 2);
 		sb.append(super.toString() + ":[");
-		for(int i = 0; i < _size-1; i++)
-			sb.append(_data[i]  + ",");
-		sb.append(_data[_size-1]);
+		for(int i = 0; i < _size - 1; i++)
+			sb.append(_data[i] + ",");
+		sb.append(_data[_size - 1]);
 		sb.append("]");
 		return sb.toString();
 	}

@@ -64,17 +64,17 @@ public class ColumnEncoderUDF extends ColumnEncoder {
 	}
 
 	@Override
-	public void build(CacheBlock in) {
+	public void build(CacheBlock<?> in) {
 		// do nothing
 	}
 
 	@Override
-	public List<DependencyTask<?>> getBuildTasks(CacheBlock in) {
+	public List<DependencyTask<?>> getBuildTasks(CacheBlock<?> in) {
 		return null;
 	}
 	
 	@Override
-	public void applyDense(CacheBlock in, MatrixBlock out, int outputCol, int rowStart, int blk) {
+	public void applyDense(CacheBlock<?> in, MatrixBlock out, int outputCol, int rowStart, int blk) {
 		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 		//create execution context and input
 		ExecutionContext ec = ExecutionContextFactory.createContext(new Program(new DMLProgram()));
@@ -126,7 +126,7 @@ public class ColumnEncoderUDF extends ColumnEncoder {
 	}
 	
 	@Override
-	protected ColumnApplyTask<ColumnEncoderUDF> getSparseTask(CacheBlock in,
+	protected ColumnApplyTask<ColumnEncoderUDF> getSparseTask(CacheBlock<?> in,
 		MatrixBlock out, int outputCol, int startRow, int blk)
 	{
 		throw new DMLRuntimeException("UDF encoders do not support sparse tasks.");
@@ -157,12 +157,12 @@ public class ColumnEncoderUDF extends ColumnEncoder {
 	}
 
 	@Override
-	protected double getCode(CacheBlock in, int row) {
+	protected double getCode(CacheBlock<?> in, int row) {
 		throw new DMLRuntimeException("UDF encoders only support full column access.");
 	}
 
 	@Override
-	protected double[] getCodeCol(CacheBlock in, int startInd, int blkSize) {
+	protected double[] getCodeCol(CacheBlock<?> in, int startInd, int blkSize) {
 		throw new DMLRuntimeException("UDF encoders only support full column access.");
 	}
 }

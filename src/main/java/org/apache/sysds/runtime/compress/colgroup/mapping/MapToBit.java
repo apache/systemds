@@ -78,7 +78,7 @@ public class MapToBit extends AMapToData {
 
 	@Override
 	public long getInMemorySize() {
-		return getInMemorySize(_data.size());
+		return getInMemorySize(_data.size()-1);
 	}
 
 	public static long getInMemorySize(int dataLength) {

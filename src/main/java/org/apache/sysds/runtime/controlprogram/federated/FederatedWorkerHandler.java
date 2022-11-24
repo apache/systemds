@@ -348,11 +348,11 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 		String filename = (String) request.getParam(0);
 		DataType dt = DataType.valueOf((String) request.getParam(1));
 		return readData(filename, dt, request.getID(), request.getTID(), ecm,
-			request.getNumParams() == 2 ? null : (CacheBlock)request.getParam(2));
+			request.getNumParams() == 2 ? null : (CacheBlock<?>)request.getParam(2));
 	}
 
 	private FederatedResponse readData(String filename, DataType dataType,
-		long id, long tid, ExecutionContextMap ecm, CacheBlock localBlock) {
+		long id, long tid, ExecutionContextMap ecm, CacheBlock<?> localBlock) {
 		MatrixCharacteristics mc = new MatrixCharacteristics();
 		mc.setBlocksize(ConfigurationManager.getBlocksize());
 
@@ -401,10 +401,14 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 
 		if(dataType == Types.DataType.FRAME) { // frame read
 			FrameObject frameObject = (FrameObject) cd;
-			frameObject.acquireRead();
-			frameObject.refreshMetaData(); // get block schema
-			frameObject.release();
-			return new FederatedResponse(ResponseType.SUCCESS, new Object[] {id, frameObject.getSchema(), mc});
+			if(frameObject == null)
+				return new FederatedResponse(ResponseType.ERROR);
+			else{
+				frameObject.acquireRead();
+				frameObject.refreshMetaData(); // get block schema
+				frameObject.release();
+				return new FederatedResponse(ResponseType.SUCCESS, new Object[] {id, frameObject.getSchema(), mc});
+			}
 		}
 		else // matrix read
 			return new FederatedResponse(ResponseType.SUCCESS, new Object[] {id, mc});
@@ -487,7 +491,7 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 		Data data;
 		long size = 0;
 		if(v instanceof CacheBlock) {
-			var block = ExecutionContext.createCacheableData((CacheBlock) v);
+			var block = ExecutionContext.createCacheableData((CacheBlock<?>) v);
 			size = block.getDataSize();
 			data = block;
 		}

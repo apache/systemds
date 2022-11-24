@@ -85,7 +85,7 @@ public class RemoteParForSpark
 			RemoteParForSparkWorker.cleanupCachedVariables(jobid);
 
 		// broadcast the inputs except the result variables
-		Map<String, Broadcast<CacheBlock>> brInputs = null;
+		Map<String, Broadcast<CacheBlock<?>>> brInputs = null;
 		if (ParForProgramBlock.ALLOW_BROADCAST_INPUTS)
 			brInputs = broadcastInputs(sec, brVars);
 		
@@ -120,14 +120,14 @@ public class RemoteParForSpark
 	}
 
 	@SuppressWarnings("unchecked")
-	private static Map<String, Broadcast<CacheBlock>> broadcastInputs(SparkExecutionContext sec, Set<String> brVars) {
+	private static Map<String, Broadcast<CacheBlock<?>>> broadcastInputs(SparkExecutionContext sec, Set<String> brVars) {
 		// construct broadcast objects
-		Map<String, Broadcast<CacheBlock>> result = new HashMap<>();
+		Map<String, Broadcast<CacheBlock<?>>> result = new HashMap<>();
 		for (String key : brVars) {
 			Data var = sec.getVariable(key);
 			if ((var instanceof ScalarObject) || (var instanceof MatrixObject && ((MatrixObject) var).isPartitioned()))
 				continue;
-			result.put(key, sec.broadcastVariable((CacheableData<CacheBlock>) var));
+			result.put(key, sec.broadcastVariable((CacheableData<CacheBlock<?>>) var));
 		}
 		return result;
 	}

@@ -43,14 +43,14 @@ public class ByteBuffer
 	private final long _size;
 	
 	protected byte[]     _bdata = null; //sparse matrix
-	protected CacheBlock _cdata = null; //dense matrix/frame
+	protected CacheBlock<?> _cdata = null; //dense matrix/frame
 	
 	public ByteBuffer( long size ) {
 		_size = size;
 		_serialized = false;
 	}
 
-	public void serializeBlock( CacheBlock cb ) 
+	public void serializeBlock( CacheBlock<?> cb ) 
 		throws IOException
 	{	
 		_shallow = cb.isShallowSerialize(true);
@@ -85,10 +85,10 @@ public class ByteBuffer
 		_serialized = true;
 	}
 
-	public CacheBlock deserializeBlock() 
+	public CacheBlock<?> deserializeBlock() 
 		throws IOException
 	{
-		CacheBlock ret = null;
+		CacheBlock<?> ret = null;
 		
 		if( !_shallow ) { //sparse matrix / string frame
 			DataInput din = _matrix ? new CacheDataInput(_bdata) :
@@ -163,7 +163,7 @@ public class ByteBuffer
 	 * @param cb cache block
 	 * @return true if valid capacity
 	 */
-	public static boolean isValidCapacity( long size, CacheBlock cb )
+	public static boolean isValidCapacity( long size, CacheBlock<?> cb )
 	{
 		if( !cb.isShallowSerialize(true) ) { //SPARSE matrix blocks
 			// since cache blocks are serialized into a byte representation

@@ -102,7 +102,7 @@ public class ColumnEncoderBin extends ColumnEncoder {
 	}
 
 	@Override
-	public void build(CacheBlock in) {
+	public void build(CacheBlock<?> in) {
 		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 		if(!isApplicable())
 			return;
@@ -119,7 +119,7 @@ public class ColumnEncoderBin extends ColumnEncoder {
 			TransformStatistics.incBinningBuildTime(System.nanoTime()-t0);
 	}
 
-	public void build(CacheBlock in, double[] equiHeightMaxs) {
+	public void build(CacheBlock<?> in, double[] equiHeightMaxs) {
 		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 		if(!isApplicable())
 			return;
@@ -135,7 +135,7 @@ public class ColumnEncoderBin extends ColumnEncoder {
 			TransformStatistics.incBinningBuildTime(System.nanoTime()-t0);
 	}
 
-	protected double getCode(CacheBlock in, int row){
+	protected double getCode(CacheBlock<?> in, int row){
 		// find the right bucket for a single row
 		double bin = 0;
 		if( _binMins.length == 0 || _binMaxs.length == 0 ) {
@@ -160,7 +160,7 @@ public class ColumnEncoderBin extends ColumnEncoder {
 	}
 	
 	@Override
-	protected double[] getCodeCol(CacheBlock in, int startInd, int blkSize) {
+	protected double[] getCodeCol(CacheBlock<?> in, int startInd, int blkSize) {
 		// find the right bucket for a block of rows
 		int endInd = getEndIndex(in.getNumRows(), startInd, blkSize);
 		double[] codes = new double[endInd-startInd];
@@ -194,7 +194,7 @@ public class ColumnEncoderBin extends ColumnEncoder {
 		return TransformType.BIN;
 	}
 
-	private static double[] getMinMaxOfCol(CacheBlock in, int colID, int startRow, int blockSize) {
+	private static double[] getMinMaxOfCol(CacheBlock<?> in, int colID, int startRow, int blockSize) {
 		// derive bin boundaries from min/max per column
 		double min = Double.POSITIVE_INFINITY;
 		double max = Double.NEGATIVE_INFINITY;
@@ -208,7 +208,7 @@ public class ColumnEncoderBin extends ColumnEncoder {
 		return new double[] {min, max};
 	}
 
-	private static double[] prepareDataForEqualHeightBins(CacheBlock in, int colID, int startRow, int blockSize) {
+	private static double[] prepareDataForEqualHeightBins(CacheBlock<?> in, int colID, int startRow, int blockSize) {
 		int endRow = getEndIndex(in.getNumRows(), startRow, blockSize);
 		double[] vals = new double[endRow-startRow];
 		for(int i = startRow; i < endRow; i++) {
@@ -224,12 +224,12 @@ public class ColumnEncoderBin extends ColumnEncoder {
 	}
 
 	@Override
-	public Callable<Object> getBuildTask(CacheBlock in) {
+	public Callable<Object> getBuildTask(CacheBlock<?> in) {
 		return new ColumnBinBuildTask(this, in);
 	}
 
 	@Override
-	public Callable<Object> getPartialBuildTask(CacheBlock in, int startRow, int blockSize,
+	public Callable<Object> getPartialBuildTask(CacheBlock<?> in, int startRow, int blockSize,
 			HashMap<Integer, Object> ret) {
 		return new BinPartialBuildTask(in, _colID, startRow, blockSize, _binMethod, ret);
 	}
@@ -290,7 +290,7 @@ public class ColumnEncoderBin extends ColumnEncoder {
 
 	@Override
 	protected ColumnApplyTask<? extends ColumnEncoder> 
-		getSparseTask(CacheBlock in, MatrixBlock out, int outputCol, int startRow, int blk) {
+		getSparseTask(CacheBlock<?> in, MatrixBlock out, int outputCol, int startRow, int blk) {
 		return new BinSparseApplyTask(this, in, out, outputCol);
 	}
 
@@ -393,12 +393,12 @@ public class ColumnEncoderBin extends ColumnEncoder {
 
 	private static class BinSparseApplyTask extends ColumnApplyTask<ColumnEncoderBin> {
 
-		public BinSparseApplyTask(ColumnEncoderBin encoder, CacheBlock input,
+		public BinSparseApplyTask(ColumnEncoderBin encoder, CacheBlock<?> input,
 				MatrixBlock out, int outputCol, int startRow, int blk) {
 			super(encoder, input, out, outputCol, startRow, blk);
 		}
 
-		private BinSparseApplyTask(ColumnEncoderBin encoder, CacheBlock input, MatrixBlock out, int outputCol) {
+		private BinSparseApplyTask(ColumnEncoderBin encoder, CacheBlock<?> input, MatrixBlock out, int outputCol) {
 			super(encoder, input, out, outputCol);
 		}
 
@@ -420,7 +420,7 @@ public class ColumnEncoderBin extends ColumnEncoder {
 
 	private static class BinPartialBuildTask implements Callable<Object> {
 
-		private final CacheBlock _input;
+		private final CacheBlock<?> _input;
 		private final int _blockSize;
 		private final int _startRow;
 		private final int _colID;
@@ -428,7 +428,7 @@ public class ColumnEncoderBin extends ColumnEncoder {
 		private final HashMap<Integer, Object> _partialData;
 
 		// if a pool is passed the task may be split up into multiple smaller tasks.
-		protected BinPartialBuildTask(CacheBlock input, int colID, int startRow, 
+		protected BinPartialBuildTask(CacheBlock<?> input, int colID, int startRow, 
 				int blocksize, BinMethod method, HashMap<Integer, Object> partialData) {
 			_input = input;
 			_blockSize = blocksize;
@@ -552,9 +552,9 @@ public class ColumnEncoderBin extends ColumnEncoder {
 
 	private static class ColumnBinBuildTask implements Callable<Object> {
 		private final ColumnEncoderBin _encoder;
-		private final CacheBlock _input;
+		private final CacheBlock<?> _input;
 
-		protected ColumnBinBuildTask(ColumnEncoderBin encoder, CacheBlock input) {
+		protected ColumnBinBuildTask(ColumnEncoderBin encoder, CacheBlock<?> input) {
 			_encoder = encoder;
 			_input = input;
 		}

@@ -142,29 +142,31 @@ def frame_block_to_pandas(sds: "SystemDSContext", fb: JavaObject):
     df = pd.DataFrame()
 
     for c_index in range(num_cols):
-        d_type = fb.getColumnType(c_index)
-        if d_type == "String":
+        col_array = fb.getColumn(c_index);
+
+        d_type = col_array.getFrameArrayType().toString()
+        if d_type == "STRING":
             ret = []
             for row in range(num_rows):
-                ent = fb.getIndexAsBytes(c_index, row)
+                ent = col_array.getIndexAsBytes(row)
                 if ent:
                     ent = ent.decode()
                     ret.append(ent)
                 else:
                     ret.append(None)
-        elif d_type == "Int":
-            byteArray = fb.getColumnAsBytes(c_index)
+        elif d_type == "INT32":
+            byteArray = fb.getColumn(c_index).getAsByteArray(num_rows)
             ret = np.frombuffer(byteArray, dtype=np.int32)
-        elif d_type == "Long":
-            byteArray = fb.getColumnAsBytes(c_index)
+        elif d_type == "INT64":
+            byteArray = fb.getColumn(c_index).getAsByteArray(num_rows)
             ret = np.frombuffer(byteArray, dtype=np.int64)
-        elif d_type == "Double":
-            byteArray = fb.getColumnAsBytes(c_index)
+        elif d_type == "FP64":
+            byteArray = fb.getColumn(c_index).getAsByteArray(num_rows)
             ret = np.frombuffer(byteArray, dtype=np.float64)
-        elif d_type == "Boolean":
+        elif d_type == "BOOLEAN":
             # TODO maybe it is more efficient to bit pack the booleans.
             # https://stackoverflow.com/questions/5602155/numpy-boolean-array-with-1-bit-entries
-            byteArray = fb.getColumnAsBytes(c_index)
+            byteArray = fb.getColumn(c_index).getAsByteArray(num_rows)
             ret = np.frombuffer(byteArray, dtype=np.dtype("?"))
         else:
             raise NotImplementedError(

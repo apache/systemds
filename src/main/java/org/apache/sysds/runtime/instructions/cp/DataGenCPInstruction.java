@@ -299,7 +299,7 @@ public class DataGenCPInstruction extends UnaryCPInstruction {
 
 	@Override
 	public void processInstruction(ExecutionContext ec) {
-		CacheBlock out = null;
+		CacheBlock<?> out = null;
 		ScalarObject soresScalar = null;
 
 		// process specific datagen operator
@@ -390,8 +390,8 @@ public class DataGenCPInstruction extends UnaryCPInstruction {
 			setCacheBlockOutput(ec, out);
 	}
 
-	private CacheBlock processRandInstruction(ExecutionContext ec) {
-		CacheBlock out;
+	private CacheBlock<?> processRandInstruction(ExecutionContext ec) {
+		CacheBlock<?> out;
 		long lSeed = generateSeed();
 
 		if(output.isTensor())
@@ -405,7 +405,7 @@ public class DataGenCPInstruction extends UnaryCPInstruction {
 		return out;
 	}
 
-	private CacheBlock processRandInstructionMatrix(ExecutionContext ec, long lSeed){
+	private CacheBlock<?> processRandInstructionMatrix(ExecutionContext ec, long lSeed){
 
 		long lrows = ec.getScalarInput(rows).getLongValue();
 		long lcols = ec.getScalarInput(cols).getLongValue();
@@ -426,9 +426,9 @@ public class DataGenCPInstruction extends UnaryCPInstruction {
 			return MatrixBlock.randOperations(getGenerator(lrows, lcols), lSeed, numThreads);
 	}
 
-	private CacheBlock processRandInstructionTensor(ExecutionContext ec, long lSeed) {
+	private CacheBlock<?> processRandInstructionTensor(ExecutionContext ec, long lSeed) {
 		int[] tDims = DataConverter.getTensorDimensions(ec, dims);
-		CacheBlock out = new TensorBlock(output.getValueType(), tDims).allocateBlock();
+		CacheBlock<?> out = new TensorBlock(output.getValueType(), tDims).allocateBlock();
 		TensorBlock outT = (TensorBlock) out;
 		if(minValueStr.equals(maxValueStr)) {
 			if(minMaxAreDoubles)
@@ -477,7 +477,7 @@ public class DataGenCPInstruction extends UnaryCPInstruction {
 			pdfParams);
 	}
 
-	private void setCacheBlockOutput(ExecutionContext ec, CacheBlock out) {
+	private void setCacheBlockOutput(ExecutionContext ec, CacheBlock<?> out) {
 		if(output.isMatrix()) {
 			MatrixBlock outB = (MatrixBlock) out;
 			if(out.getInMemorySize() < OptimizerUtils.SAFE_REP_CHANGE_THRES)

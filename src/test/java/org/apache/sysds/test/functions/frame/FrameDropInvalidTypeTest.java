@@ -149,7 +149,7 @@ public class FrameDropInvalidTypeTest extends AutomatedTestBase {
 			String[] meta = new String[] {"FP64", "STRING"};
 
 			// initialize a frame with one column
-			FrameBlock frame1 = TestUtils.generateRandomFrameBlock(rows, 1, new ValueType[]{ValueType.FP64}, 132); 
+			FrameBlock frame1 = TestUtils.generateRandomFrameBlock(rows,  new ValueType[]{ValueType.FP64}, 132); 
 
 			switch (test) { //Double in String
 				case 1:

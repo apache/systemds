@@ -102,7 +102,8 @@ public class Tokenizer implements Serializable {
 			LOG.debug("Tokenizing with full DAG on " + k + " Threads");
 			try {
 				List<DependencyTask<?>> tokenizeTasks = getTokenizeTasks(in, out, pool);
-				int lastRow = pool.submitAllAndWait(tokenizeTasks).stream().map(s -> s == null? 0 :(Integer)s).max(Integer::compare).get();
+				int lastRow = pool.submitAllAndWait(tokenizeTasks).stream()//
+					.map(s -> s == null? 0 :(Integer)s).max((x,y) -> Integer.compare(x, y)).get();
 				if(lastRow != out.getNumRows()){
 					out = out.slice(0, lastRow - 1, 0, out.getNumColumns() - 1, null);
 				}
@@ -165,7 +166,8 @@ public class Tokenizer implements Serializable {
 			DependencyThreadPool pool = new DependencyThreadPool(k);
 			try{
 				List<DependencyTask<?>> taskList = tokenizerApplier.getApplyTasks(this.internalRepresentation, out);
-				lastRow = pool.submitAllAndWait(taskList).stream().map(s -> (Integer)s).max(Integer::compare).get();
+				lastRow = pool.submitAllAndWait(taskList)//
+					.stream().map(x -> (Integer) x).max((x,y) -> Integer.compare(x, y)).get();
 			}
 			catch(ExecutionException | InterruptedException e) {
 				LOG.error("MT Tokenizer apply failed");

@@ -24,8 +24,13 @@ import java.io.IOException;
 
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.utils.MemoryEstimates;
 
 public interface ArrayFactory {
+
+	public enum FrameArrayType {
+		STRING, BOOLEAN, INT32, INT64, FP32, FP64;
+	}
 
 	public static StringArray create(String[] col) {
 		return new StringArray(col);
@@ -51,8 +56,29 @@ public interface ArrayFactory {
 		return new DoubleArray(col);
 	}
 
-	@SuppressWarnings({"rawtypes"})
-	public static Array allocate(ValueType v, int nRow) {
+	public static long getInMemorySize(ValueType type, int _numRows) {
+		switch(type) {
+			case BOOLEAN:
+				return 16 + (long) MemoryEstimates.booleanArrayCost(_numRows);
+			case INT64:
+				return 16 + (long) MemoryEstimates.longArrayCost(_numRows);
+			case FP64:
+				return 16 + (long) MemoryEstimates.doubleArrayCost(_numRows);
+			case UINT8:
+			case INT32:
+				return 16 + (long) MemoryEstimates.intArrayCost(_numRows);
+			case FP32:
+				return 16 + (long) MemoryEstimates.floatArrayCost(_numRows);
+			case STRING:
+				// cannot be known since strings have dynamic length
+				// lets assume something large to make it somewhat safe.
+				return 16 + (long) MemoryEstimates.stringCost(12) * _numRows;
+			default: // not applicable
+				throw new DMLRuntimeException("Invalid type to estimate size of :" + type);
+		}
+	}
+
+	public static Array<?> allocate(ValueType v, int nRow) {
 		switch(v) {
 			case STRING:
 				return new StringArray(new String[nRow]);
@@ -72,13 +98,10 @@ public interface ArrayFactory {
 		}
 	}
 
-	@SuppressWarnings({"rawtypes"})
-	public static Array read(DataInput in, ValueType v, int nRow) throws IOException {
-		Array arr;
+	public static Array<?> read(DataInput in, int nRow) throws IOException {
+		final FrameArrayType v = FrameArrayType.values()[in.readByte()];
+		Array<?> arr;
 		switch(v) {
-			case STRING:
-				arr = new StringArray(new String[nRow]);
-				break;
 			case BOOLEAN:
 				arr = new BooleanArray(new boolean[nRow]);
 				break;
@@ -94,8 +117,9 @@ public interface ArrayFactory {
 			case FP32:
 				arr = new FloatArray(new float[nRow]);
 				break;
-			default:
-				throw new IOException("Unsupported value type: " + v);
+			default: // String
+				arr = new StringArray(new String[nRow]);
+				break;
 		}
 		arr.readFields(in);
 		return arr;

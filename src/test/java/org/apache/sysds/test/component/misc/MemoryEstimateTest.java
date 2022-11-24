@@ -72,19 +72,19 @@ public class MemoryEstimateTest {
 		switch(arrayToMeasure) {
 			case BYTE:
 				byte[] arrayByte = new byte[length];
-				assertEquals(MemoryEstimates.byteArrayCost(length), measure(arrayByte));
+				assertEquals(MemoryEstimates.byteArrayCost(length), measure(arrayByte), 0.2);
 				break;
 			case CHAR:
 				char[] arrayChar = new char[length];
-				assertEquals(MemoryEstimates.charArrayCost(length), measure(arrayChar));
+				assertEquals(MemoryEstimates.charArrayCost(length), measure(arrayChar), 0.2);
 				break;
 			case INT:
 				int[] arrayInt = new int[length];
-				assertEquals((long)MemoryEstimates.intArrayCost(length), measure(arrayInt));
+				assertEquals(MemoryEstimates.intArrayCost(length), measure(arrayInt), 0.2);
 				break;
 			case DOUBLE:
 				double[] arrayDouble = new double[length];
-				assertEquals((long)MemoryEstimates.doubleArrayCost(length), measure(arrayDouble));
+				assertEquals(MemoryEstimates.doubleArrayCost(length), measure(arrayDouble), 0.2);
 				break;
 			default:
 				System.out.println(arrayToMeasure.getClass().getSimpleName());

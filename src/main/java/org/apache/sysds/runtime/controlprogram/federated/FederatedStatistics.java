@@ -582,7 +582,7 @@ public class FederatedStatistics {
 		fedReuseReadBytesCount.add(data.getDataSize());
 	}
 
-	public static void incFedReuseReadBytesCount(CacheBlock cb) {
+	public static void incFedReuseReadBytesCount(CacheBlock<?> cb) {
 		fedReuseReadBytesCount.add(cb.getInMemorySize());
 	}
 

@@ -60,26 +60,26 @@ public class ColumnEncoderDummycode extends ColumnEncoder {
 	}
 
 	@Override
-	public void build(CacheBlock in) {
+	public void build(CacheBlock<?> in) {
 		// do nothing
 	}
 
 	@Override
-	public List<DependencyTask<?>> getBuildTasks(CacheBlock in) {
+	public List<DependencyTask<?>> getBuildTasks(CacheBlock<?> in) {
 		return null;
 	}
 
 	@Override
-	protected double getCode(CacheBlock in, int row) {
+	protected double getCode(CacheBlock<?> in, int row) {
 		throw new DMLRuntimeException("DummyCoder does not have a code");
 	}
 
 	@Override
-	protected double[] getCodeCol(CacheBlock in, int startInd, int blkSize) {
+	protected double[] getCodeCol(CacheBlock<?> in, int startInd, int blkSize) {
 		throw new DMLRuntimeException("DummyCoder does not have a code");
 	}
 
-	protected void applySparse(CacheBlock in, MatrixBlock out, int outputCol, int rowStart, int blk){
+	protected void applySparse(CacheBlock<?> in, MatrixBlock out, int outputCol, int rowStart, int blk){
 		if (!(in instanceof MatrixBlock)){
 			throw new DMLRuntimeException("ColumnEncoderDummycode called with: " + in.getClass().getSimpleName() +
 					" and not MatrixBlock");
@@ -139,7 +139,7 @@ public class ColumnEncoderDummycode extends ColumnEncoder {
 		}
 	}
 
-	protected void applyDense(CacheBlock in, MatrixBlock out, int outputCol, int rowStart, int blk){
+	protected void applyDense(CacheBlock<?> in, MatrixBlock out, int outputCol, int rowStart, int blk){
 		if (!(in instanceof MatrixBlock)){
 			throw new DMLRuntimeException("ColumnEncoderDummycode called with: " + in.getClass().getSimpleName() +
 					" and not MatrixBlock");
@@ -171,7 +171,7 @@ public class ColumnEncoderDummycode extends ColumnEncoder {
 
 	@Override
 	protected ColumnApplyTask<? extends ColumnEncoder> 
-		getSparseTask(CacheBlock in, MatrixBlock out, int outputCol, int startRow, int blk) {
+		getSparseTask(CacheBlock<?> in, MatrixBlock out, int outputCol, int startRow, int blk) {
 		if (!(in instanceof MatrixBlock)){
 			throw new DMLRuntimeException("ColumnEncoderDummycode called with: " + in.getClass().getSimpleName() +
 					" and not MatrixBlock");

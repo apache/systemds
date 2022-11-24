@@ -113,7 +113,7 @@ public class ColumnEncoderRecode extends ColumnEncoder {
 			putCode(map, key);
 	}
 
-	private static void makeRcdMap(CacheBlock in, HashMap<String, Long> map, int colID, int startRow, int blk) {
+	private static void makeRcdMap(CacheBlock<?> in, HashMap<String, Long> map, int colID, int startRow, int blk) {
 		for(int row = startRow; row < getEndIndex(in.getNumRows(), startRow, blk); row++){
 			String key = in.getString(row, colID - 1);
 			if(key != null && !key.isEmpty() && !map.containsKey(key))
@@ -129,7 +129,7 @@ public class ColumnEncoderRecode extends ColumnEncoder {
 		return (tmp != null) ? tmp : -1;
 	}
 
-	public void computeRCDMapSizeEstimate(CacheBlock in, int[] sampleIndices) {
+	public void computeRCDMapSizeEstimate(CacheBlock<?> in, int[] sampleIndices) {
 		if (getEstMetaSize() != 0)
 			return;
 
@@ -170,7 +170,7 @@ public class ColumnEncoderRecode extends ColumnEncoder {
 	}
 
 	@Override
-	public void build(CacheBlock in) {
+	public void build(CacheBlock<?> in) {
 		if(!isApplicable())
 			return;
 		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
@@ -181,12 +181,12 @@ public class ColumnEncoderRecode extends ColumnEncoder {
 	}
 
 	@Override
-	public Callable<Object> getBuildTask(CacheBlock in) {
+	public Callable<Object> getBuildTask(CacheBlock<?> in) {
 		return new ColumnRecodeBuildTask(this, in);
 	}
 
 	@Override
-	public Callable<Object> getPartialBuildTask(CacheBlock in, int startRow, 
+	public Callable<Object> getPartialBuildTask(CacheBlock<?> in, int startRow, 
 			int blockSize, HashMap<Integer, Object> ret) {
 		return new RecodePartialBuildTask(in, _colID, startRow, blockSize, ret);
 	}
@@ -206,7 +206,7 @@ public class ColumnEncoderRecode extends ColumnEncoder {
 		map.put(key, (long) (map.size() + 1));
 	}
 
-	protected double getCode(CacheBlock in, int r){
+	protected double getCode(CacheBlock<?> in, int r){
 		// lookup for a single row
 		Object okey = in.getString(r, _colID - 1);
 		String key = (okey != null) ? okey.toString() : null;
@@ -217,7 +217,7 @@ public class ColumnEncoderRecode extends ColumnEncoder {
 	}
 	
 	@Override
-	protected double[] getCodeCol(CacheBlock in, int startInd, int blkSize) {
+	protected double[] getCodeCol(CacheBlock<?> in, int startInd, int blkSize) {
 		// lookup for a block of rows
 		int endInd = getEndIndex(in.getNumRows(), startInd, blkSize);
 		double codes[] = new double[endInd-startInd];
@@ -257,7 +257,7 @@ public class ColumnEncoderRecode extends ColumnEncoder {
 
 	@Override
 	protected ColumnApplyTask<? extends ColumnEncoder> 
-		getSparseTask(CacheBlock in, MatrixBlock out, int outputCol, int startRow, int blk){
+		getSparseTask(CacheBlock<?> in, MatrixBlock out, int outputCol, int startRow, int blk){
 		return new RecodeSparseApplyTask(this, in ,out, outputCol, startRow, blk);
 	}
 
@@ -368,11 +368,11 @@ public class ColumnEncoderRecode extends ColumnEncoder {
 
 	private static class RecodeSparseApplyTask extends ColumnApplyTask<ColumnEncoderRecode>{
 
-		public RecodeSparseApplyTask(ColumnEncoderRecode encoder, CacheBlock input, MatrixBlock out, int outputCol) {
+		public RecodeSparseApplyTask(ColumnEncoderRecode encoder, CacheBlock<?> input, MatrixBlock out, int outputCol) {
 			super(encoder, input, out, outputCol);
 		}
 
-		protected RecodeSparseApplyTask(ColumnEncoderRecode encoder, CacheBlock input, MatrixBlock out,
+		protected RecodeSparseApplyTask(ColumnEncoderRecode encoder, CacheBlock<?> input, MatrixBlock out,
 										int outputCol, int startRow, int blk) {
 			super(encoder, input, out, outputCol, startRow, blk);
 		}
@@ -400,13 +400,13 @@ public class ColumnEncoderRecode extends ColumnEncoder {
 
 	private static class RecodePartialBuildTask implements Callable<Object> {
 
-		private final CacheBlock _input;
+		private final CacheBlock<?> _input;
 		private final int _blockSize;
 		private final int _startRow;
 		private final int _colID;
 		private final HashMap<Integer, Object> _partialMaps;
 
-		protected RecodePartialBuildTask(CacheBlock input, int colID, int startRow, 
+		protected RecodePartialBuildTask(CacheBlock<?> input, int colID, int startRow, 
 				int blocksize, HashMap<Integer, Object> partialMaps) {
 			_input = input;
 			_blockSize = blocksize;
@@ -472,9 +472,9 @@ public class ColumnEncoderRecode extends ColumnEncoder {
 	private static class ColumnRecodeBuildTask implements Callable<Object> {
 
 		private final ColumnEncoderRecode _encoder;
-		private final CacheBlock _input;
+		private final CacheBlock<?> _input;
 
-		protected ColumnRecodeBuildTask(ColumnEncoderRecode encoder, CacheBlock input) {
+		protected ColumnRecodeBuildTask(ColumnEncoderRecode encoder, CacheBlock<?> input) {
 			_encoder = encoder;
 			_input = input;
 		}

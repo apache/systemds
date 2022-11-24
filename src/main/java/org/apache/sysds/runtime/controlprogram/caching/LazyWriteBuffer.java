@@ -47,7 +47,7 @@ public class LazyWriteBuffer
 	//maintenance service for synchronous or asynchronous delete of evicted files
 	private static CacheMaintenanceService _fClean;
 	
-	public static int writeBlock(String fname, CacheBlock cb)
+	public static int writeBlock(String fname, CacheBlock<?> cb)
 		throws IOException
 	{
 		//obtain basic meta data of cache block
@@ -131,10 +131,10 @@ public class LazyWriteBuffer
 			_fClean.deleteFile(fname);
 	}
 	
-	public static CacheBlock readBlock(String fname, boolean matrix)
+	public static CacheBlock<?> readBlock(String fname, boolean matrix)
 		throws IOException
 	{
-		CacheBlock cb = null;
+		CacheBlock<?> cb = null;
 		ByteBuffer ldata = null;
 		
 		//probe write buffer
@@ -211,7 +211,7 @@ public class LazyWriteBuffer
 		return _mQueue.size();
 	}
 	
-	public static long getCacheBlockSize(CacheBlock cb) {
+	public static long getCacheBlockSize(CacheBlock<?> cb) {
 		return cb.isShallowSerialize() ?
 			cb.getInMemorySize() : cb.getExactSerializedSize();
 	}

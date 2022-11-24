@@ -43,6 +43,7 @@ import org.apache.sysds.runtime.util.UtilFunctions;
  * variables which are shared by all tasks within an executor.  
  * 
  */
+@SuppressWarnings("rawtypes")
 public class PartitionedBlock<T extends CacheBlock> implements Externalizable
 {
 	private static final long serialVersionUID = 1298817743064415129L;

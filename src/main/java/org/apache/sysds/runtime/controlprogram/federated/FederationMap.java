@@ -39,6 +39,7 @@ import org.apache.sysds.hops.fedplanner.FTypes.FType;
 import org.apache.sysds.lops.RightIndex;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
+import org.apache.sysds.runtime.controlprogram.caching.CacheBlockFactory;
 import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest.RequestType;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
@@ -130,7 +131,7 @@ public class FederationMap {
 			return new FederatedRequest(RequestType.NOOP, data.getFedMapping().getID());
 		// prepare single request for all federated data
 		long id = FederationUtils.getNextFedDataID();
-		CacheBlock cb = data.acquireReadAndRelease();
+		CacheBlock<?> cb = data.acquireReadAndRelease();
 
 		// create new fed mapping for broadcast (a potential overwrite
 		// is fine, because with broadcast all data on all workers)
@@ -171,7 +172,7 @@ public class FederationMap {
 
 		// prepare broadcast id and pin input
 		long id = FederationUtils.getNextFedDataID();
-		CacheBlock cb = data.acquireReadAndRelease();
+		CacheBlock<?> cb = data.acquireReadAndRelease();
 
 		// prepare indexing ranges
 		int[][] ix = new int[_fedMap.size()][];
@@ -223,7 +224,7 @@ public class FederationMap {
 
 		// prepare broadcast id and pin input
 		long id = FederationUtils.getNextFedDataID();
-		CacheBlock cb = data.acquireReadAndRelease();
+		CacheBlock<?> cb = data.acquireReadAndRelease();
 
 		// multi-threaded block slicing and federation request creation
 		FederatedRequest[] ret = new FederatedRequest[ix.length];
@@ -232,7 +233,7 @@ public class FederationMap {
 		return ret;
 	}
 
-	private FederatedRequest sliceBroadcastBlock(int[] ix, long id, CacheBlock cb, LineageItem objLi, boolean isFrame) {
+	private FederatedRequest sliceBroadcastBlock(int[] ix, long id, CacheBlock<?> cb, LineageItem objLi, boolean isFrame) {
 		LineageItem li = null;
 		if(objLi != null) {
 			// manually create a lineage item for indexing to complete the lineage trace for slicing
@@ -244,7 +245,7 @@ public class FederationMap {
 				ru.getLiteralLineageItem(), cl.getLiteralLineageItem(), cu.getLiteralLineageItem()});
 		}
 		FederatedRequest fr = new FederatedRequest(RequestType.PUT_VAR, li, id,
-			cb.slice(ix[0], ix[1], ix[2], ix[3], isFrame ? new FrameBlock() : new MatrixBlock()));
+			cb.slice(ix[0], ix[1], ix[2], ix[3]));
 		return fr;
 	}
 

@@ -46,28 +46,28 @@ public class ColumnEncoderPassThrough extends ColumnEncoder {
 	}
 
 	@Override
-	public void build(CacheBlock in) {
+	public void build(CacheBlock<?> in) {
 		// do nothing
 	}
 
 	@Override
-	public List<DependencyTask<?>> getBuildTasks(CacheBlock in) {
+	public List<DependencyTask<?>> getBuildTasks(CacheBlock<?> in) {
 		return null;
 	}
 
 	@Override
 	protected ColumnApplyTask<? extends ColumnEncoder>
-		getSparseTask(CacheBlock in, MatrixBlock out, int outputCol, int startRow, int blk) {
+		getSparseTask(CacheBlock<?> in, MatrixBlock out, int outputCol, int startRow, int blk) {
 		return new PassThroughSparseApplyTask(this, in, out, outputCol, startRow, blk);
 	}
 
 	@Override
-	protected double getCode(CacheBlock in, int row) {
+	protected double getCode(CacheBlock<?> in, int row) {
 		return in.getDoubleNaN(row, _colID - 1);
 	}
 
 	@Override
-	protected double[] getCodeCol(CacheBlock in, int startInd, int blkSize) {
+	protected double[] getCodeCol(CacheBlock<?> in, int startInd, int blkSize) {
 		int endInd = getEndIndex(in.getNumRows(), startInd, blkSize);
 		double[] codes = new double[endInd-startInd];
 		for (int i=startInd; i<endInd; i++) {
@@ -76,7 +76,7 @@ public class ColumnEncoderPassThrough extends ColumnEncoder {
 		return codes;
 	}
 
-	protected void applySparse(CacheBlock in, MatrixBlock out, int outputCol, int rowStart, int blk){
+	protected void applySparse(CacheBlock<?> in, MatrixBlock out, int outputCol, int rowStart, int blk){
 		//Set<Integer> sparseRowsWZeros = null;
 		ArrayList<Integer> sparseRowsWZeros = null;
 		boolean mcsr = MatrixBlock.DEFAULT_SPARSEBLOCK == SparseBlock.Type.MCSR;
@@ -148,13 +148,13 @@ public class ColumnEncoderPassThrough extends ColumnEncoder {
 	public static class PassThroughSparseApplyTask extends ColumnApplyTask<ColumnEncoderPassThrough>{
 
 
-		protected PassThroughSparseApplyTask(ColumnEncoderPassThrough encoder, CacheBlock input,
+		protected PassThroughSparseApplyTask(ColumnEncoderPassThrough encoder, CacheBlock<?> input,
 				MatrixBlock out, int outputCol) {
 			super(encoder, input, out, outputCol);
 		}
 
 		protected PassThroughSparseApplyTask(ColumnEncoderPassThrough encoder, 
-				CacheBlock input, MatrixBlock out, int outputCol, int startRow, int blk) {
+				CacheBlock<?> input, MatrixBlock out, int outputCol, int startRow, int blk) {
 			super(encoder, input, out, outputCol, startRow, blk);
 		}
 

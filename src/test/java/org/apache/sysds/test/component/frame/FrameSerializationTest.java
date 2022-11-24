@@ -19,142 +19,157 @@
 
 package org.apache.sysds.test.component.frame;
 
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.util.ArrayList;
+import java.util.Collection;
 
-import org.junit.Assert;
-import org.junit.Test;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
-import org.apache.sysds.runtime.util.UtilFunctions;
-import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestUtils;
+import org.apache.sysds.test.component.frame.array.FrameArrayTests;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameters;
 
-public class FrameSerializationTest extends AutomatedTestBase
-{
-	private final static int rows = 2791;
-	private final static ValueType[] schemaStrings = new ValueType[]{ValueType.STRING, ValueType.STRING, ValueType.STRING};	
-	private final static ValueType[] schemaMixed = new ValueType[]{ValueType.STRING, ValueType.FP64, ValueType.INT64, ValueType.BOOLEAN};	
-	
+@RunWith(value = Parameterized.class)
+public class FrameSerializationTest {
+
 	private enum SerType {
-		WRITABLE_SER,
-		JAVA_SER,
-	}
-	
-	@Override
-	public void setUp() {
-		TestUtils.clearAssertionInformation();
+		WRITABLE_SER, JAVA_SER,
 	}
 
-	@Test
-	public void testFrameStringsWritable()  {
-		runFrameSerializeTest(schemaStrings, SerType.WRITABLE_SER, false);
-	}
-	
-	@Test
-	public void testFrameMixedWritable()  {
-		runFrameSerializeTest(schemaMixed, SerType.WRITABLE_SER, false);
-	}
-	
-	@Test
-	public void testFrameStringsJava()  {
-		runFrameSerializeTest(schemaStrings, SerType.JAVA_SER, false);
-	}
-	
-	@Test
-	public void testFrameMixedJava()  {
-		runFrameSerializeTest(schemaMixed, SerType.JAVA_SER, false);
-	}
-	
-	@Test
-	public void testEmptyFrameStringsWritable()  {
-		runFrameSerializeTest(schemaStrings, SerType.WRITABLE_SER, true);
-	}
-	
-	@Test
-	public void testEmptyFrameMixedWritable()  {
-		runFrameSerializeTest(schemaMixed, SerType.WRITABLE_SER, true);
-	}
-	
-	@Test
-	public void testEmptyFrameStringsJava()  {
-		runFrameSerializeTest(schemaStrings, SerType.JAVA_SER, true);
-	}
-	
-	@Test
-	public void testEmptyFrameMixedJava()  {
-		runFrameSerializeTest(schemaMixed, SerType.JAVA_SER, true);
-	}
-	
-	private void runFrameSerializeTest( ValueType[] schema, SerType stype, boolean empty)
-	{
-		try
-		{
-			//init data frame
-			FrameBlock frame = new FrameBlock(schema);
-		
-			//data generation
-			double[][] A = empty ? null :
-				getRandomMatrix(rows, schema.length, -10, 10, 0.9, 8234);
-			
-			//init data frame 
-			if( !empty && A != null ) {
-				Object[] row = new Object[schema.length];
-				for( int i=0; i<rows; i++ ) {
-					for( int j=0; j<schema.length; j++ )
-						A[i][j] = UtilFunctions.objectToDouble(schema[j],
-								row[j] = UtilFunctions.doubleToObject(schema[j], A[i][j]));
-					frame.appendRow(row);
+	private final FrameBlock frame;
+	private final SerType type;
+
+	@Parameters
+	public static Collection<Object[]> data() {
+		ArrayList<Object[]> tests = new ArrayList<>();
+
+		ValueType[] schemaStrings = new ValueType[] {ValueType.STRING, ValueType.STRING, ValueType.STRING};
+		ValueType[] schemaMixed = new ValueType[] {ValueType.STRING, ValueType.FP64, ValueType.INT64, ValueType.BOOLEAN};
+		ValueType[] rand = TestUtils.generateRandomSchema(10, 3);
+		ValueType[] rand2 = TestUtils.generateRandomSchema(10, 4);
+		try {
+			for(ValueType[] sch : new ValueType[][] {schemaStrings, schemaMixed, rand, rand2}) {
+				for(SerType t : SerType.values()) {
+					tests.add(new Object[] {TestUtils.generateRandomFrameBlock(10, sch, 32), t});
+					tests.add(new Object[] {new FrameBlock(sch), t});
+					tests.add(new Object[] {new FrameBlock(sch, FrameArrayTests.generateRandomString(sch.length, 32)), t});
 				}
 			}
-			
-			//core serialization and deserialization
-			if( stype == SerType.WRITABLE_SER ) {
-				//serialization
-				ByteArrayOutputStream bos = new ByteArrayOutputStream();
-				DataOutputStream dos = new DataOutputStream(bos);
-				frame.write(dos);
-				
-				//deserialization
-				ByteArrayInputStream bis = new ByteArrayInputStream(bos.toByteArray());
-				DataInputStream dis = new DataInputStream(bis);
-				frame = new FrameBlock();
-				frame.readFields(dis);
-			}
-			else if( stype == SerType.JAVA_SER ) {
-				//serialization
-				ByteArrayOutputStream bos = new ByteArrayOutputStream();
-				ObjectOutputStream oos = new ObjectOutputStream(bos);
-				oos.writeObject(frame);
-				
-				//deserialization
-				ByteArrayInputStream bis = new ByteArrayInputStream(bos.toByteArray());
-				ObjectInputStream ois = new ObjectInputStream(bis);
-				frame = (FrameBlock) ois.readObject();
-			}
-			
-			//check basic meta data
-			int numExpected = empty ? 0 : rows;
-			if( frame.getNumRows() != numExpected )
-				Assert.fail("Wrong number of rows: "+frame.getNumRows()+", expected: "+numExpected);
-		
-			//check correct values
-			if( !empty && A != null ) {
-				for( int i=0; i<rows; i++ ) 
-					for( int j=0; j<schema.length; j++ ) {
-						double tmp = UtilFunctions.objectToDouble(schema[j], frame.get(i, j));
-						if( tmp != A[i][j] )
-							Assert.fail("Wrong get value for cell ("+i+","+j+"): "+tmp+", expected: "+A[i][j]);
-					}
-			}
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail("failed constructing tests");
+		}
+
+		return tests;
+	}
+
+	public FrameSerializationTest(FrameBlock frame, SerType type) {
+		this.frame = frame;
+		this.type = type;
+	}
+
+	@Test
+	public void serializeTest() {
+		try {
+			// init data frame
+			FrameBlock back;
+			// core serialization and deserialization
+			if(type == SerType.WRITABLE_SER)
+				back = writableSerialize(frame);
+			else // if(stype == SerType.JAVA_SER)
+				back = javaSerialize(frame);
+			TestUtils.compareFrames(frame, back, true);
 		}
 		catch(Exception ex) {
 			ex.printStackTrace();
-			throw new RuntimeException(ex);
+			throw new RuntimeException("Failed serializing : " + frame.toString(), ex);
 		}
+	}
+
+	@Test
+	public void serializeReuse() {
+		// verify that the serialization into already allocated Frame reuse the arrays.
+		try {
+			FrameBlock back = new FrameBlock();
+			back = writableSerialize(frame, back);
+			ValueType[] v1 = back.getSchema();
+			back = writableSerialize(frame, back);
+			ValueType[] v2 = back.getSchema();
+			assertTrue(v1 == v2); // object equivalence !
+			TestUtils.compareFrames(frame, back, true);
+		}
+		catch(Exception ex) {
+			ex.printStackTrace();
+			throw new RuntimeException("Failed serializing : " + frame.toString(), ex);
+		}
+	}
+
+	@Test
+	public void serializeDonNotReuseIfDifferentColumns() {
+		// verify that the serialization into already allocated Frame reuse the arrays.
+		try {
+			if(frame.getNumColumns() == 1 || frame.getNumRows() < 10)
+				return; // not valid test
+			FrameBlock back = new FrameBlock();
+			back = writableSerialize(frame, back);
+			back = back.slice(0, frame.getNumRows()-1 , 0, 0);
+			ValueType[] v1 = back.getSchema();
+			back = writableSerialize(frame, back);
+			ValueType[] v2 = back.getSchema();
+			assertFalse(v1 == v2); // object equivalence !
+			TestUtils.compareFrames(frame, back, true);
+		}
+		catch(Exception ex) {
+			ex.printStackTrace();
+			throw new RuntimeException("Failed serializing : " + frame.toString(), ex);
+		}
+	}
+
+	@Test
+	public void estimateMemory() {
+		// should always be true that in memory size is bigger than serialized size.
+		assertTrue(frame.getInMemorySize() > frame.getExactSerializedSize());
+	}
+
+	private static FrameBlock writableSerialize(FrameBlock in) throws Exception {
+		return writableSerialize(in, new FrameBlock());
+	}
+
+	private static FrameBlock writableSerialize(FrameBlock in, FrameBlock ret) throws Exception {
+		// serialization
+		ByteArrayOutputStream bos = new ByteArrayOutputStream();
+		DataOutputStream dos = new DataOutputStream(bos);
+		in.write(dos);
+
+		// deserialization
+		ByteArrayInputStream bis = new ByteArrayInputStream(bos.toByteArray());
+		DataInputStream dis = new DataInputStream(bis);
+		ret.readFields(dis);
+		return ret;
+	}
+
+	private static FrameBlock javaSerialize(FrameBlock in) throws Exception {
+		// serialization
+		ByteArrayOutputStream bos = new ByteArrayOutputStream();
+		ObjectOutputStream oos = new ObjectOutputStream(bos);
+		oos.writeObject(in);
+
+		// deserialization
+		ByteArrayInputStream bis = new ByteArrayInputStream(bos.toByteArray());
+		ObjectInputStream ois = new ObjectInputStream(bis);
+		return (FrameBlock) ois.readObject();
 	}
 }

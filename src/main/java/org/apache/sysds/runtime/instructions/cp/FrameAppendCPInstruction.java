@@ -19,39 +19,27 @@
 
 package org.apache.sysds.runtime.instructions.cp;
 
-import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 
 public final class FrameAppendCPInstruction extends AppendCPInstruction {
 
-	protected FrameAppendCPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out,
-			AppendType type, String opcode, String istr) {
+	protected FrameAppendCPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, AppendType type,
+		String opcode, String istr) {
 		super(op, in1, in2, out, type, opcode, istr);
 	}
 
 	@Override
-	public void processInstruction(ExecutionContext ec)
-	{
-		//get inputs
+	public void processInstruction(ExecutionContext ec) {
+		// get inputs
 		FrameBlock fin1 = ec.getFrameInput(input1.getName());
 		FrameBlock fin2 = ec.getFrameInput(input2.getName());
-	
-		//check input dimensions
-		if( _type == AppendType.CBIND && fin1.getNumRows() != fin2.getNumRows() ) {
-			throw new DMLRuntimeException("Append-cbind is not possible for input matrices " + input1.getName() + " and " + input2.getName()
-					+ " with different number of rows: "+fin1.getNumRows()+" vs "+fin2.getNumRows());
-		}
-		else if( _type == AppendType.RBIND && fin1.getNumColumns() != fin2.getNumColumns()) {
-			throw new DMLRuntimeException("Append-rbind is not possible for input matrices " + input1.getName() + " and " + input2.getName()
-					+ " with different number of columns: "+fin1.getNumColumns()+" vs "+fin2.getNumColumns());
-		} 
-			
-		//execute append operations (append both inputs to initially empty output)
-		FrameBlock ret = fin1.append(fin2, new FrameBlock(), _type==AppendType.CBIND);
-		
-		//set output and release inputs 
+
+		// execute append operations (append both inputs to initially empty output)
+		FrameBlock ret = fin1.append(fin2, _type == AppendType.CBIND);
+
+		// set output and release inputs
 		ec.setFrameOutput(output.getName(), ret);
 		ec.releaseFrameInput(input1.getName());
 		ec.releaseFrameInput(input2.getName());

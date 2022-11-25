@@ -22,6 +22,7 @@ package org.apache.sysds.runtime.io;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Arrays;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -95,7 +96,8 @@ public abstract class FrameReader {
 		throws IOException {
 		// check schema and column names
 		if(!OptimizerUtils.isValidCPDimensions(schema, names))
-			throw new DMLRuntimeException("Schema and names to be define with equal size.");
+			throw new DMLRuntimeException("Schema and names to be define with equal size.:" +
+				 schema.length + " vs "+ names.length);
 
 		// prepare result frame block
 		FrameBlock ret = new FrameBlock(schema, names);

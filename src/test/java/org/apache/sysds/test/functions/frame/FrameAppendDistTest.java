@@ -23,20 +23,19 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import org.junit.Assert;
-import org.junit.Test;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.common.Types.FileFormat;
+import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.hops.BinaryOp;
 import org.apache.sysds.hops.BinaryOp.AppendMethod;
-import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
-import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.util.UtilFunctions;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
+import org.junit.Assert;
+import org.junit.Test;
 
 public class FrameAppendDistTest extends AutomatedTestBase
 {
@@ -111,7 +110,8 @@ public class FrameAppendDistTest extends AutomatedTestBase
 		commonAppendTest(ExecMode.SPARK, rows1, rows1, cols1d, cols3d, true, AppendMethod.MR_MAPPEND, false);
 	}
 	
-	public void commonAppendTest(ExecMode platform, int rows1, int rows2, int cols1, int cols2, boolean sparse, AppendMethod forcedAppendMethod, boolean rbind)
+	public void commonAppendTest(ExecMode platform, int rows1, int rows2, int cols1, int cols2, boolean sparse,
+		AppendMethod forcedAppendMethod, boolean rbind)
 	{
 		TestConfiguration config = getAndLoadTestConfiguration(TEST_NAME);
 		
@@ -145,11 +145,11 @@ public class FrameAppendDistTest extends AutomatedTestBase
 	
 			//initialize the frame data.
 			ValueType[] lschemaA = genMixSchema(cols1);
-			double[][] A = getRandomMatrix(rows1, cols1, min, max, sparsity, 1111 /*\\System.currentTimeMillis()*/);
+			double[][] A = getRandomMatrix(rows1, cols1, min, max, sparsity, 1111);
 			writeInputFrameWithMTD("A", A, true, lschemaA, FileFormat.BINARY);
 
 			ValueType[] lschemaB = genMixSchema(cols2);
-			double[][] B = getRandomMatrix(rows2, cols2, min, max, sparsity, 2345 /*\\System.currentTimeMillis()*/);
+			double[][] B = getRandomMatrix(rows2, cols2, min, max, sparsity, 2345);
 			writeInputFrameWithMTD("B", B, true, lschemaB, FileFormat.BINARY);
 
 			boolean exceptionExpected = false;
@@ -157,15 +157,14 @@ public class FrameAppendDistTest extends AutomatedTestBase
 			runTest(true, exceptionExpected, null, expectedNumberOfJobs);
 			runRScript(true);
 
-			ValueType[] lschemaAB = UtilFunctions.copyOf(lschemaA, lschemaB);
+			ValueType[] lschemaAB = rbind ? lschemaA : UtilFunctions.copyOf(lschemaA, lschemaB);
 			
 			for(String file: config.getOutputFiles())
 			{
 				FrameBlock frameBlock = readDMLFrameFromHDFS(file, FileFormat.BINARY);
-				MatrixCharacteristics md = new MatrixCharacteristics(frameBlock.getNumRows(), frameBlock.getNumColumns(), -1, -1);
-				FrameBlock frameRBlock = readRFrameFromHDFS(file+".csv", FileFormat.CSV, md);
+				FrameBlock frameRBlock = readRFrameFromHDFS(file + ".csv", FileFormat.CSV, frameBlock.getNumRows(),
+					frameBlock.getNumColumns());
 				verifyFrameData(frameBlock, frameRBlock, lschemaAB);
-				System.out.println("File processed is " + file);
 			}
 		}
 		catch(Exception ex) {
@@ -194,7 +193,8 @@ public class FrameAppendDistTest extends AutomatedTestBase
 		schemaMixedLargeList.addAll(schemaMixedLargeListBool);
 		ValueType[] schemaMixedLarge = new ValueType[schemaMixedLargeList.size()];
 		schemaMixedLarge = schemaMixedLargeList.toArray(schemaMixedLarge);
-		
+		if( schemaMixedLarge.length != cols)
+			throw new RuntimeException("Invalid schema length generated");
 		return schemaMixedLarge;
 	}
 	

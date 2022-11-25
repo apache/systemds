@@ -66,6 +66,7 @@ import org.apache.sysds.parser.DataExpression;
 import org.apache.sysds.parser.ParseException;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.DMLScriptException;
+import org.apache.sysds.runtime.controlprogram.caching.FrameObject;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedData;
@@ -895,21 +896,39 @@ public abstract class AutomatedTestBase {
 	}
 
 	protected static FrameBlock readDMLFrameFromHDFS(String fileName, FileFormat fmt) throws IOException {
-		// read frame data from hdfs
-		String strFrameFileName = baseDirectory + OUTPUT_DIR + fileName;
-		FrameReader reader = FrameReaderFactory.createFrameReader(fmt);
-
-		MatrixCharacteristics md = readDMLMetaDataFile(fileName);
-		return reader.readFrameFromHDFS(strFrameFileName, md.getRows(), md.getCols());
+		return readDMLFrameFromHDFS(fileName, fmt, getMetaData(fileName));
 	}
 
-	protected static FrameBlock readDMLFrameFromHDFS(String fileName, FileFormat fmt, MatrixCharacteristics md)
+	protected static FrameBlock readDMLFrameFromHDFS(String fileName, FileFormat fmt, MetaDataAll meta)
 		throws IOException {
 		// read frame data from hdfs
 		String strFrameFileName = baseDirectory + OUTPUT_DIR + fileName;
 		FrameReader reader = FrameReaderFactory.createFrameReader(fmt);
+		if(meta.getSchema() == null)
+			return reader.readFrameFromHDFS(strFrameFileName,  meta.getDim1(),meta.getDim2());
+		else{
+			ValueType[] schema = FrameObject.parseSchema(meta.getSchema());
+			return reader.readFrameFromHDFS(strFrameFileName, schema,  meta.getDim1(),meta.getDim2());
+		}
+	}
 
+	protected static FrameBlock readDMLFrameFromHDFS(String fileName, FileFormat fmt, MatrixCharacteristics md) throws IOException{
+		// read frame data from hdfs
+		String strFrameFileName = baseDirectory + OUTPUT_DIR + fileName;
+		FrameReader reader = FrameReaderFactory.createFrameReader(fmt);
 		return reader.readFrameFromHDFS(strFrameFileName, md.getRows(), md.getCols());
+	}
+
+	protected static FrameBlock readRFrameFromHDFS(String fileName, FileFormat fmt, MetaDataAll meta)
+		throws IOException {
+		// read frame data from hdfs
+		String strFrameFileName = baseDirectory + EXPECTED_DIR + fileName;
+
+		FileFormatPropertiesCSV fprop = new FileFormatPropertiesCSV();
+		fprop.setHeader(true);
+		FrameReader reader = FrameReaderFactory.createFrameReader(fmt, fprop);
+
+		return reader.readFrameFromHDFS(strFrameFileName, meta.getDim1(),meta.getDim2());
 	}
 
 	protected static FrameBlock readRFrameFromHDFS(String fileName, FileFormat fmt, MatrixCharacteristics md)
@@ -923,6 +942,18 @@ public abstract class AutomatedTestBase {
 
 		return reader.readFrameFromHDFS(strFrameFileName, md.getRows(), md.getCols());
 	}
+
+	protected static FrameBlock readRFrameFromHDFS(String fileName, FileFormat fmt, int nrow, int ncol)
+	throws IOException {
+	// read frame data from hdfs
+	String strFrameFileName = baseDirectory + EXPECTED_DIR + fileName;
+
+	FileFormatPropertiesCSV fprop = new FileFormatPropertiesCSV();
+	fprop.setHeader(true);
+	FrameReader reader = FrameReaderFactory.createFrameReader(fmt, fprop);
+
+	return reader.readFrameFromHDFS(strFrameFileName, nrow, ncol);
+}
 
 	public HashMap<CellIndex, Double> readRScalarFromExpectedDir(String fileName) {
 		if(LOG.isInfoEnabled())
@@ -2305,6 +2336,7 @@ public abstract class AutomatedTestBase {
 	 * @return Spark Session
 	 */
 	public static SparkSession createSystemDSSparkSession(String appName, String master) {
+		SparkExecutionContext.handleIllegalReflectiveAccessSpark();
 		Builder builder = SparkSession.builder();
 		if(appName != null) {
 			builder.appName(appName);

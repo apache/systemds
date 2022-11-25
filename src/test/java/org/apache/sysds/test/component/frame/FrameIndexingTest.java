@@ -32,9 +32,9 @@ import org.apache.sysds.test.TestUtils;
 
 public class FrameIndexingTest extends AutomatedTestBase
 {
-	private final static int rows = 3345;
-	private final static int rl = 234;
-	private final static int ru = 1432;
+	private final static int rows = 100;
+	private final static int rl = 13;
+	private final static int ru = 55;
 	private final static int cl = 0;
 	private final static int cu = 2;
 	

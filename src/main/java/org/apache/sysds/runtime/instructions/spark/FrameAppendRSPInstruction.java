@@ -64,10 +64,13 @@ public class FrameAppendRSPInstruction extends AppendRSPInstruction {
 		sec.addLineageRDD(output.getName(), input1.getName());
 		sec.addLineageRDD(output.getName(), input2.getName());
 		
-		//update schema of output with merged input schemas
-		sec.getFrameObject(output.getName()).setSchema(
-			sec.getFrameObject(input1.getName()).mergeSchemas(
-			sec.getFrameObject(input2.getName())));
+		if(_cbind)
+			//update schema of output with merged input schemas
+			sec.getFrameObject(output.getName()).setSchema(
+				sec.getFrameObject(input1.getName()).mergeSchemas(
+				sec.getFrameObject(input2.getName())));
+		else
+			sec.getFrameObject(output.getName()).setSchema(sec.getFrameObject(input1.getName()).getSchema());
 	}
 
 	private static class ReduceSideColumnsFunction implements Function<Tuple2<FrameBlock, FrameBlock>, FrameBlock> 
@@ -84,7 +87,7 @@ public class FrameAppendRSPInstruction extends AppendRSPInstruction {
 		public FrameBlock call(Tuple2<FrameBlock, FrameBlock> arg0) {
 			FrameBlock left = arg0._1();
 			FrameBlock right = arg0._2();
-			return left.append(right, new FrameBlock(), _cbind);
+			return left.append(right, _cbind);
 		}
 	}
 

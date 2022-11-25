@@ -65,10 +65,13 @@ public class FrameAppendMSPInstruction extends AppendMSPInstruction {
 		sec.addLineageRDD(output.getName(), input1.getName());
 		sec.addLineageBroadcast(output.getName(), input2.getName());
 		
-		//update schema of output with merged input schemas
-		sec.getFrameObject(output.getName()).setSchema(
-			sec.getFrameObject(input1.getName()).mergeSchemas(
-			sec.getFrameObject(input2.getName())));
+		if(_cbind)
+			//update schema of output with merged input schemas
+			sec.getFrameObject(output.getName()).setSchema(
+				sec.getFrameObject(input1.getName()).mergeSchemas(
+				sec.getFrameObject(input2.getName())));
+		else
+			sec.getFrameObject(output.getName()).setSchema(sec.getFrameObject(input1.getName()).getSchema());
 	}
 
 	private static boolean preservesPartitioning( boolean cbind ) {
@@ -117,7 +120,7 @@ public class FrameAppendMSPInstruction extends AppendMSPInstruction {
 				int colix = 1;
 				
 				FrameBlock in2 = _pm.getBlock(rowix, colix);
-				FrameBlock out = in1.append(in2, new FrameBlock(), true); //cbind
+				FrameBlock out = in1.append(in2,  true); //cbind
 				return new Tuple2<>(ix, out);
 			}			
 		}

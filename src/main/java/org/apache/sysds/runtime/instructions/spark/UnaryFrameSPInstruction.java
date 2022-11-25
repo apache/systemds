@@ -24,7 +24,6 @@ import org.apache.spark.api.java.function.Function2;
 import org.apache.spark.api.java.function.PairFunction;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.common.Types.OpOp1;
-import org.apache.sysds.lops.Lop;
 import org.apache.sysds.runtime.DMLScriptException;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
@@ -32,6 +31,7 @@ import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.matrix.operators.Operator;
+
 import scala.Tuple2;
 
 public class UnaryFrameSPInstruction extends UnarySPInstruction {
@@ -78,7 +78,7 @@ public class UnaryFrameSPInstruction extends UnarySPInstruction {
 
 		@Override
 		public Tuple2<Long, FrameBlock> call(Tuple2<Long, FrameBlock> arg0) throws Exception {
-			FrameBlock resultBlock = new FrameBlock(arg0._2.detectSchemaFromRow(Lop.SAMPLE_FRACTION));
+			FrameBlock resultBlock = new FrameBlock(arg0._2.detectSchema());
 			return new Tuple2<>(1L, resultBlock);
 		}
 	}

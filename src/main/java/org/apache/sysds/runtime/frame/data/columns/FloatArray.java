@@ -26,7 +26,9 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Arrays;
 
+import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.frame.data.columns.ArrayFactory.FrameArrayType;
 import org.apache.sysds.utils.MemoryEstimates;
 
@@ -53,8 +55,18 @@ public class FloatArray extends Array<Float> {
 	}
 
 	@Override
+	public void set(int index, double value) {
+		_data[index] = (float)value;
+	}
+
+	@Override
 	public void set(int rl, int ru, Array<Float> value) {
 		set(rl, ru, value, 0);
+	}
+	
+	@Override
+	public void setFromOtherType(int rl, int ru, Array<?> value){
+		throw new NotImplementedException();
 	}
 
 	@Override
@@ -103,7 +115,12 @@ public class FloatArray extends Array<Float> {
 
 	@Override
 	public Array<Float> slice(int rl, int ru) {
-		return new FloatArray(Arrays.copyOfRange(_data, rl, ru + 1));
+		return new FloatArray(Arrays.copyOfRange(_data, rl, ru));
+	}
+
+	@Override
+	public Array<Float> sliceTransform(int rl, int ru, ValueType vt) {
+		return slice(rl, ru);
 	}
 
 	@Override
@@ -128,6 +145,11 @@ public class FloatArray extends Array<Float> {
 	}
 
 	@Override
+	public ValueType analyzeValueType() {
+		return ValueType.FP32;
+	}
+
+	@Override
 	public FrameArrayType getFrameArrayType() {
 		return FrameArrayType.FP32;
 	}
@@ -142,6 +164,50 @@ public class FloatArray extends Array<Float> {
 	@Override
 	public long getExactSerializedSize() {
 		return 1 + 4 * _data.length;
+	}
+
+	@Override
+	protected Array<?> changeTypeBoolean() {
+		boolean[] ret = new boolean[size()];
+		for(int i = 0; i < size(); i++) {
+			if(_data[i] != 0 && _data[i] != 1)
+				throw new DMLRuntimeException(
+					"Unable to change to Boolean from Integer array because of value:" + _data[i]);
+			ret[i] = _data[i] == 0 ? false : true;
+		}
+		return new BooleanArray(ret);
+	}
+
+	@Override
+	protected Array<?> changeTypeDouble() {
+		double[] ret = new double[size()];
+		for(int i = 0; i < size(); i++)
+			ret[i] = (double) _data[i];
+		return new DoubleArray(ret);
+	}
+
+	@Override
+	protected Array<?> changeTypeInteger() {
+		int[] ret = new int[size()];
+		for(int i = 0; i < size(); i++) {
+			if(_data[i] != (int) _data[i])
+				throw new DMLRuntimeException("Unable to change to integer from float array because of value:" + _data[i]);
+			ret[i] = (int) _data[i];
+		}
+		return new IntegerArray(ret);
+	}
+
+	@Override
+	protected Array<?> changeTypeLong() {
+		long[] ret = new long[size()];
+		for(int i = 0; i < size(); i++)
+			ret[i] = (int) _data[i];
+		return new LongArray(ret);
+	}
+
+	@Override
+	protected Array<?> changeTypeFloat() {
+		return clone();
 	}
 
 	@Override

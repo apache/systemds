@@ -19,7 +19,6 @@
 
 package org.apache.sysds.runtime.instructions.cp;
 
-import org.apache.sysds.lops.Lop;
 import org.apache.sysds.runtime.DMLScriptException;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
@@ -40,7 +39,7 @@ public class UnaryFrameCPInstruction extends UnaryCPInstruction {
 		}
 		else if(getOpcode().equals("detectSchema")) {
 			FrameBlock inBlock = ec.getFrameInput(input1.getName());
-			FrameBlock retBlock = inBlock.detectSchemaFromRow(Lop.SAMPLE_FRACTION);
+			FrameBlock retBlock = inBlock.detectSchema();
 			ec.releaseFrameInput(input1.getName());
 			ec.setFrameOutput(output.getName(), retBlock);
 		}

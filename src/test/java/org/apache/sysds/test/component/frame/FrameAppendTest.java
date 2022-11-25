@@ -47,7 +47,7 @@ public class FrameAppendTest extends AutomatedTestBase
 	}
 	
 	@Test
-	public void testFrameStringsStringsRBind()  { //note: ncol(A)=ncol(B)
+	public void testFrameStringsStringsRBind()  {
 		runFrameAppendTest(schemaStrings, schemaStrings, AppendType.RBIND);
 	}
 	
@@ -67,7 +67,7 @@ public class FrameAppendTest extends AutomatedTestBase
 	}
 	
 	@Test
-	public void testFrameMixedMixedRBind()  { //note: ncol(A)=ncol(B)
+	public void testFrameMixedMixedRBind()  {
 		runFrameAppendTest(schemaMixed, schemaMixed, AppendType.RBIND);
 	}
 
@@ -113,7 +113,7 @@ public class FrameAppendTest extends AutomatedTestBase
 			MatrixBlock mbC = mbA.append(mbB, new MatrixBlock(), atype==AppendType.CBIND);
 			
 			//core append operations frame blocks
-			FrameBlock frame3 = frame1.append(frame2, new FrameBlock(), atype==AppendType.CBIND);
+			FrameBlock frame3 = frame1.append(frame2, atype==AppendType.CBIND);
 			
 			//check basic meta data
 			if( frame3.getNumRows() != mbC.getNumRows() )

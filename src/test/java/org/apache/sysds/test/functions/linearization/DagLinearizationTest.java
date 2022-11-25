@@ -39,7 +39,7 @@ public class DagLinearizationTest extends AutomatedTestBase {
 	private final String testNames[] = {"matrixmult_dag_linearization", "csplineCG_dag_linearization",
 		"linear_regression_dag_linearization"};
 
-	private final String testConfigs[] = {"breadth-first", "depth-first", "incorrect", "min-intermediate"};
+	private final String testConfigs[] = {"breadth-first", "depth-first", "min-intermediate", "max-parallelize"};
 
 	private final String testDir = "functions/linearization/";
 

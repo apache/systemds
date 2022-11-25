@@ -18,5 +18,5 @@
 -->
 
 <root>
-    <sysds.compile.linearization>something_incorrect</sysds.compile.linearization>
+    <sysds.compile.linearization>max_parallelize</sysds.compile.linearization>
 </root>

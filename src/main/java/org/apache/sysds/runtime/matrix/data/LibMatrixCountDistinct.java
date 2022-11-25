@@ -31,8 +31,8 @@ import org.apache.sysds.api.DMLException;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.data.*;
 import org.apache.sysds.runtime.instructions.spark.data.CorrMatrixBlock;
-import org.apache.sysds.runtime.matrix.data.sketch.CountDistinctSketch;
-import org.apache.sysds.runtime.matrix.data.sketch.countdistinct.CountDistinctFunctionSketch;
+import org.apache.sysds.runtime.matrix.data.sketch.MatrixSketch;
+import org.apache.sysds.runtime.matrix.data.sketch.SketchFactory;
 import org.apache.sysds.runtime.matrix.data.sketch.countdistinctapprox.KMVSketch;
 import org.apache.sysds.runtime.matrix.operators.CountDistinctOperator;
 import org.apache.sysds.runtime.matrix.operators.CountDistinctOperatorTypes;
@@ -356,36 +356,18 @@ public interface LibMatrixCountDistinct {
 		return distinct.size();
 	}
 
-	static MatrixBlock countDistinctValuesFromSketch(CorrMatrixBlock arg0, CountDistinctOperator op) {
-		if(op.getOperatorType() == CountDistinctOperatorTypes.COUNT)
-			return new CountDistinctFunctionSketch(op).getValueFromSketch(arg0);
-		else if(op.getOperatorType() == CountDistinctOperatorTypes.KMV)
-			return new KMVSketch(op).getValueFromSketch(arg0);
-		else if(op.getOperatorType() == CountDistinctOperatorTypes.HLL)
-			throw new NotImplementedException("Not implemented yet");
-		else
-			throw new NotImplementedException("Not implemented yet");
+	static MatrixBlock countDistinctValuesFromSketch(CountDistinctOperator op, CorrMatrixBlock corrBlkIn) {
+		MatrixSketch sketch = SketchFactory.get(op);
+		return sketch.getValueFromSketch(corrBlkIn);
 	}
 
-	static CorrMatrixBlock createSketch(MatrixBlock blkIn, CountDistinctOperator op) {
-		if(op.getOperatorType() == CountDistinctOperatorTypes.COUNT)
-			return new CountDistinctFunctionSketch(op).create(blkIn);
-		else if(op.getOperatorType() == CountDistinctOperatorTypes.KMV)
-			return new KMVSketch(op).create(blkIn);
-		else if(op.getOperatorType() == CountDistinctOperatorTypes.HLL)
-			throw new NotImplementedException("Not implemented yet");
-		else
-			throw new NotImplementedException("Not implemented yet");
+	static CorrMatrixBlock createSketch(CountDistinctOperator op, MatrixBlock blkIn) {
+		MatrixSketch sketch = SketchFactory.get(op);
+		return sketch.create(blkIn);
 	}
 
-	static CorrMatrixBlock unionSketch(CorrMatrixBlock arg0, CorrMatrixBlock arg1, CountDistinctOperator op) {
-		if(op.getOperatorType() == CountDistinctOperatorTypes.COUNT)
-			return new CountDistinctFunctionSketch(op).union(arg0, arg1);
-		else if(op.getOperatorType() == CountDistinctOperatorTypes.KMV)
-			return new KMVSketch(op).union(arg0, arg1);
-		else if(op.getOperatorType() == CountDistinctOperatorTypes.HLL)
-			throw new NotImplementedException("Not implemented yet");
-		else
-			throw new NotImplementedException("Not implemented yet");
+	static CorrMatrixBlock unionSketch(CountDistinctOperator op, CorrMatrixBlock corrBlkIn0, CorrMatrixBlock corrBlkIn1) {
+		MatrixSketch sketch = SketchFactory.get(op);
+		return sketch.union(corrBlkIn0, corrBlkIn1);
 	}
 }

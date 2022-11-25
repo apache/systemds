@@ -117,7 +117,7 @@ public class AggregateUnarySketchSPInstruction extends UnarySPInstruction {
                     out1.fold(new CorrMatrixBlock(new MatrixBlock()),
                               new AggregateUnarySketchUnionAllFunction(this.op));
 
-            MatrixBlock out3 = LibMatrixCountDistinct.countDistinctValuesFromSketch(out2, this.op);
+            MatrixBlock out3 = LibMatrixCountDistinct.countDistinctValuesFromSketch(this.op, out2);
 
             // put output block into symbol table (no lineage because single block)
             // this also includes implicit maintenance of matrix characteristics
@@ -180,7 +180,7 @@ public class AggregateUnarySketchSPInstruction extends UnarySPInstruction {
             MatrixIndexes ixOut = new MatrixIndexes();
             this.op.indexFn.execute(ixIn, ixOut);
 
-            return LibMatrixCountDistinct.createSketch(blkIn, this.op);
+            return LibMatrixCountDistinct.createSketch(this.op, blkIn);
         }
     }
 
@@ -207,7 +207,7 @@ public class AggregateUnarySketchSPInstruction extends UnarySPInstruction {
                 return arg0;
             }
 
-            return LibMatrixCountDistinct.unionSketch(arg0, arg1, this.op);
+            return LibMatrixCountDistinct.unionSketch(this.op, arg0, arg1);
         }
     }
 
@@ -246,7 +246,7 @@ public class AggregateUnarySketchSPInstruction extends UnarySPInstruction {
         public CorrMatrixBlock call(MatrixBlock arg0)
                 throws Exception {
 
-            return LibMatrixCountDistinct.createSketch(arg0, this.op);
+            return LibMatrixCountDistinct.createSketch(this.op, arg0);
         }
     }
 
@@ -261,8 +261,8 @@ public class AggregateUnarySketchSPInstruction extends UnarySPInstruction {
 
         @Override
         public CorrMatrixBlock call(CorrMatrixBlock arg0, MatrixBlock arg1) throws Exception {
-            CorrMatrixBlock arg1WithCorr = LibMatrixCountDistinct.createSketch(arg1, this.op);
-            return LibMatrixCountDistinct.unionSketch(arg0, arg1WithCorr, this.op);
+            CorrMatrixBlock arg1WithCorr = LibMatrixCountDistinct.createSketch(this.op, arg1);
+            return LibMatrixCountDistinct.unionSketch(this.op, arg0, arg1WithCorr);
         }
     }
 
@@ -277,7 +277,7 @@ public class AggregateUnarySketchSPInstruction extends UnarySPInstruction {
 
         @Override
         public CorrMatrixBlock call(CorrMatrixBlock arg0, CorrMatrixBlock arg1) throws Exception {
-            return LibMatrixCountDistinct.unionSketch(arg0, arg1, this.op);
+            return LibMatrixCountDistinct.unionSketch(this.op, arg0, arg1);
         }
     }
 
@@ -292,7 +292,7 @@ public class AggregateUnarySketchSPInstruction extends UnarySPInstruction {
 
         @Override
         public MatrixBlock call(CorrMatrixBlock arg0) throws Exception {
-            return LibMatrixCountDistinct.countDistinctValuesFromSketch(arg0, this.op);
+            return LibMatrixCountDistinct.countDistinctValuesFromSketch(this.op, arg0);
         }
     }
 }

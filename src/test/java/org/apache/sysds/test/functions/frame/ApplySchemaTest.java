@@ -19,6 +19,8 @@
 
 package org.apache.sysds.test.functions.frame;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.common.Types.ExecType;
@@ -36,15 +38,18 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import java.security.SecureRandom;
-
 public class ApplySchemaTest extends AutomatedTestBase {
+
+	protected static final Log LOG = LogFactory.getLog(ApplySchemaTest.class.getName());
+
 	private final static String TEST_NAME = "applySchema";
 	private final static String TEST_DIR = "functions/frame/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + ApplySchemaTest.class.getSimpleName() + "/";
 
-	private final static int rows = 100;
-	private final static Types.ValueType[] schemaStrings = {Types.ValueType.INT32, Types.ValueType.BOOLEAN, Types.ValueType.FP64};
+	private final static int rows = 10;
+	// constructed schema
+	private final static Types.ValueType[] schemaStrings = {Types.ValueType.INT32, Types.ValueType.BOOLEAN,
+		Types.ValueType.FP64};
 
 	@BeforeClass
 	public static void init() {
@@ -53,70 +58,74 @@ public class ApplySchemaTest extends AutomatedTestBase {
 
 	@AfterClass
 	public static void cleanUp() {
-		if (TEST_CACHE_ENABLED) {
+		if(TEST_CACHE_ENABLED) {
 			TestUtils.clearDirectory(TEST_DATA_DIR + TEST_CLASS_DIR);
 		}
 	}
 
 	enum TestType {
-		STRING_IN_DOUBLE,
-		DOUBLE_IN_INT
+		STRING_IN_DOUBLE, DOUBLE_IN_INT, NONE
 	}
+
 	@Override
 	public void setUp() {
 		TestUtils.clearAssertionInformation();
-		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[]{"S", "F"}));
-		if (TEST_CACHE_ENABLED) {
+		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] {"S", "F"}));
+		if(TEST_CACHE_ENABLED) {
 			setOutAndExpectedDeletionDisabled(true);
 		}
 	}
 
+	// @Test
+	// public void testApplyWithStrings() {
+	// runApplySchemaTest(schemaStrings, rows, schemaStrings.length, TestType.STRING_IN_DOUBLE, 3, ExecType.CP);
+	// }
+
+	// @Test
+	// public void testApplyWithDoublesInInts() {
+	// runApplySchemaTest(schemaStrings, rows, schemaStrings.length, TestType.DOUBLE_IN_INT, 1, ExecType.CP);
+	// }
 
 	@Test
-	public void testapply1CP() {
-		runApplySchemaTest(schemaStrings, rows, schemaStrings.length, TestType.STRING_IN_DOUBLE, 3, ExecType.CP);
+	public void testApplyWithNone() {
+		runApplySchemaTest(schemaStrings, rows, schemaStrings.length, TestType.NONE, 1, ExecType.CP);
 	}
 
-	@Test
-	public void testapplySchema2Spark() {
-		runApplySchemaTest(schemaStrings, rows, schemaStrings.length, TestType.DOUBLE_IN_INT, 1, ExecType.CP);
-	}
-
-
-
-	private void runApplySchemaTest(Types.ValueType[] schema, int rows, int cols, TestType test,  int colNum, ExecType et) {
+	private void runApplySchemaTest(Types.ValueType[] schema, int rows, int cols, TestType test, int colNum,
+		ExecType et) {
 		Types.ExecMode platformOld = setExecMode(et);
 		boolean oldFlag = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-//		setOutputBuffering(true);
+		setOutputBuffering(true);
 		try {
-			
+
 			getAndLoadTestConfiguration(TEST_NAME);
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[]{"-args", input("A"), String.valueOf(rows),
-				Integer.toString(cols), String.valueOf(test), String.valueOf(colNum), output("S"), output("F")};
+			programArgs = new String[] {"-args", input("A"), String.valueOf(rows), Integer.toString(cols),
+				String.valueOf(test), String.valueOf(colNum), output("S"), output("F")};
 			FrameBlock frame1 = new FrameBlock(schema);
 			FrameWriter writer = FrameWriterFactory.createFrameWriter(FileFormat.CSV);
 
-
 			double[][] A = getRandomMatrix(rows, 3, -Float.MAX_VALUE, Float.MAX_VALUE, 0.7, 2373);
 			initFrameDataString(frame1, A, schema, rows, 3);
-			writer.writeFrameToHDFS(frame1.slice(0, rows-1, 0, schema.length-1, new FrameBlock()), input("A"), rows, schema.length);
+			writer.writeFrameToHDFS(frame1.slice(0, rows - 1, 0, schema.length - 1, new FrameBlock()), input("A"), rows,
+				schema.length);
 			runTest(true, false, null, -1);
 
-			FrameBlock detetctedSchema = readDMLFrameFromHDFS("S", FileFormat.BINARY);
+			FrameBlock detectedSchema = readDMLFrameFromHDFS("S", FileFormat.BINARY);
 			FrameBlock changedFrame = readDMLFrameFromHDFS("F", FileFormat.BINARY);
 
-			//verify output schema
-			for (int i = 0; i < schema.length; i++) {
-					Assert.assertEquals("Wrong result column : " + i + ".",
-						detetctedSchema.get(0, i).toString(), changedFrame.getSchema()[i].toString());
-//				System.out.println(detetctedSchema.get(0, i).toString() +" "+changedFrame.getSchema()[i].toString());
+			// verify output schema
+			for(int i = 0; i < schema.length; i++) {
+				String detected = detectedSchema.get(0, i).toString();
+				String applied = changedFrame.getSchema()[i].toString();
+				Assert.assertEquals("Wrong result column : " + i + ".", detected, applied);
+				// System.out.println(detetctedSchema.get(0, i).toString() +" "+changedFrame.getSchema()[i].toString());
 			}
 
 		}
-		catch (Exception ex) {
+		catch(Exception ex) {
 			throw new RuntimeException(ex);
 		}
 		finally {
@@ -128,43 +137,45 @@ public class ApplySchemaTest extends AutomatedTestBase {
 		}
 	}
 
-	public static void initFrameDataString(FrameBlock frame1, double[][] data, Types.ValueType[] lschema, int rows, int cols) {
-		for (int j = 0; j < cols; j++) {
+	public static void initFrameDataString(FrameBlock frame1, double[][] data, Types.ValueType[] lschema, int rows,
+		int cols) {
+		for(int j = 0; j < cols; j++) {
 			Types.ValueType vt = lschema[j];
-			switch (vt) {
+			switch(vt) {
 				case STRING:
 					String[] tmp1 = new String[rows];
-					for (int i = 0; i < rows; i++)
+					for(int i = 0; i < rows; i++)
 						tmp1[i] = (String) UtilFunctions.doubleToObject(vt, data[i][j]);
 					frame1.appendColumn(tmp1);
 					break;
 				case BOOLEAN:
 					boolean[] tmp2 = new boolean[rows];
-					for (int i = 0; i < rows; i++)
+					for(int i = 0; i < rows; i++)
 						data[i][j] = (tmp2[i] = (Boolean) UtilFunctions.doubleToObject(vt, data[i][j], false)) ? 1 : 0;
 					frame1.appendColumn(tmp2);
 					break;
 				case INT32:
 					int[] tmp3 = new int[rows];
-					for (int i = 0; i < rows; i++)
-						data[i][j] = tmp3[i] = (Integer) UtilFunctions.doubleToObject(Types.ValueType.INT32, data[i][j], false);
+					for(int i = 0; i < rows; i++)
+						data[i][j] = tmp3[i] = (Integer) UtilFunctions.doubleToObject(Types.ValueType.INT32, data[i][j],
+							false);
 					frame1.appendColumn(tmp3);
 					break;
 				case INT64:
 					long[] tmp4 = new long[rows];
-					for (int i = 0; i < rows; i++)
+					for(int i = 0; i < rows; i++)
 						data[i][j] = tmp4[i] = (Long) UtilFunctions.doubleToObject(Types.ValueType.INT64, data[i][j], false);
 					frame1.appendColumn(tmp4);
 					break;
 				case FP32:
 					double[] tmp5 = new double[rows];
-					for (int i = 0; i < rows; i++)
+					for(int i = 0; i < rows; i++)
 						tmp5[i] = (Float) UtilFunctions.doubleToObject(vt, data[i][j], false);
 					frame1.appendColumn(tmp5);
 					break;
 				case FP64:
 					double[] tmp6 = new double[rows];
-					for (int i = 0; i < rows; i++)
+					for(int i = 0; i < rows; i++)
 						tmp6[i] = (Double) UtilFunctions.doubleToObject(vt, data[i][j], false);
 					frame1.appendColumn(tmp6);
 					break;

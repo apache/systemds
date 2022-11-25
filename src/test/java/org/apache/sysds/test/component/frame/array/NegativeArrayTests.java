@@ -19,9 +19,12 @@
 
 package org.apache.sysds.test.component.frame.array;
 
+import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.frame.data.columns.Array;
 import org.apache.sysds.runtime.frame.data.columns.ArrayFactory;
+import org.apache.sysds.runtime.frame.data.columns.StringArray;
 import org.junit.Test;
 
 public class NegativeArrayTests {
@@ -31,9 +34,43 @@ public class NegativeArrayTests {
 		ArrayFactory.allocate(ValueType.UNKNOWN, 1324);
 	}
 
-
 	@Test(expected = DMLRuntimeException.class)
 	public void testEstimateMemorySizeInvalid() {
 		ArrayFactory.getInMemorySize(ValueType.UNKNOWN, 0);
+	}
+
+	@Test(expected = DMLRuntimeException.class)
+	public void testChangeTypeToInvalid() {
+		Array<?> a = ArrayFactory.create(new int[] {1, 2, 3});
+		a.changeType(ValueType.UNKNOWN);
+	}
+
+	@Test(expected = NotImplementedException.class)
+	public void testChangeTypeToUInt8() {
+		Array<?> a = ArrayFactory.create(new int[] {1, 2, 3});
+		a.changeType(ValueType.UINT8);
+	}
+
+	@Test(expected = DMLRuntimeException.class)
+	public void getMinMax() {
+		ArrayFactory.create(new int[] {1, 2, 3, 4}).getMinMaxLength();
+	}
+
+	@Test(expected = DMLRuntimeException.class)
+	public void changeTypeBoolean_1() {
+		StringArray a = ArrayFactory.create(new String[] {"1", "10", "0"});
+		a.changeType(ValueType.BOOLEAN);
+	}
+
+	@Test(expected = DMLRuntimeException.class)
+	public void changeTypeBoolean_2() {
+		StringArray a = ArrayFactory.create(new String[] {"1", "-1", "0"});
+		a.changeType(ValueType.BOOLEAN);
+	}
+
+	@Test(expected = DMLRuntimeException.class)
+	public void changeTypeBoolean_3() {
+		StringArray a = ArrayFactory.create(new String[] {"HI", "false", "0"});
+		a.changeType(ValueType.BOOLEAN);
 	}
 }

@@ -19,16 +19,15 @@
 
 package org.apache.sysds.runtime.instructions.cp;
 
-import org.apache.sysds.common.Types;
+import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 
-import java.util.Arrays;
+public class BinaryFrameFrameCPInstruction extends BinaryCPInstruction {
+	// private static final Log LOG = LogFactory.getLog(BinaryFrameFrameCPInstruction.class.getName());
 
-public class BinaryFrameFrameCPInstruction extends BinaryCPInstruction
-{
 	protected BinaryFrameFrameCPInstruction(Operator op, CPOperand in1,
 			CPOperand in2, CPOperand out, String opcode, String istr) {
 		super(CPType.Binary, op, in1, in2, out, opcode, istr);
@@ -60,13 +59,10 @@ public class BinaryFrameFrameCPInstruction extends BinaryCPInstruction
 		}
 		else if(getOpcode().equals("applySchema")) {
 			// apply frame schema from DML
-			Types.ValueType[] schema = new Types.ValueType[inBlock2.getNumColumns()];
+			ValueType[] schema = new ValueType[inBlock2.getNumColumns()];
 			for(int i=0; i<inBlock2.getNumColumns(); i++)
-				schema[i] = Types.ValueType.fromExternalString(inBlock2.get(0, i).toString());
-			FrameBlock out = new FrameBlock(schema);
-			out.copy(inBlock1);
-			out.setSchema(schema);
-			ec.setFrameOutput(output.getName(), out);
+				schema[i] = ValueType.fromExternalString(inBlock2.get(0, i).toString());
+			ec.setFrameOutput(output.getName(), inBlock1.applySchema(schema));
 		}
 		else {
 			// Execute binary operations

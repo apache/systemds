@@ -137,7 +137,7 @@ public class FrameScalarCastingIntegratedTest extends AutomatedTestBase
 		    
 		    String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[]{"-stats", "-args", input("V"), output("R") };
+			programArgs = new String[]{"-stats", "-explain", "-args", input("V"), output("R") };
 			
 			//generate input data
 			switch( vtIn ) {
@@ -150,7 +150,7 @@ public class FrameScalarCastingIntegratedTest extends AutomatedTestBase
 			HDFSTool.writeScalarMetaDataFile(input("V")+".mtd", vtIn);
 			
 			//run tests
-			runTest(true, false, null, -1);
+			runTest(null);
 
 			//compare output 
 			Assert.assertEquals(readDMLMatrixFromOutputDir("R").get(new CellIndex(1,1)), Double.valueOf(1));

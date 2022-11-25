@@ -26,6 +26,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.rdd.RDD;
 import org.apache.spark.sql.Dataset;
@@ -34,9 +36,6 @@ import org.apache.spark.sql.RowFactory;
 import org.apache.spark.sql.types.DataTypes;
 import org.apache.spark.sql.types.StructField;
 import org.apache.spark.sql.types.StructType;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
 import org.apache.sysds.api.mlcontext.FrameFormat;
 import org.apache.sysds.api.mlcontext.FrameMetadata;
 import org.apache.sysds.api.mlcontext.FrameSchema;
@@ -44,15 +43,19 @@ import org.apache.sysds.api.mlcontext.MLResults;
 import org.apache.sysds.api.mlcontext.MatrixFormat;
 import org.apache.sysds.api.mlcontext.MatrixMetadata;
 import org.apache.sysds.api.mlcontext.Script;
-import org.apache.sysds.api.mlcontext.MLContext.ExplainLevel;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.instructions.spark.utils.FrameRDDConverterUtils;
 import org.apache.sysds.runtime.instructions.spark.utils.RDDConverterUtils;
 import org.apache.sysds.test.functions.mlcontext.MLContextTest.CommaSeparatedValueStringToDoubleArrayRow;
+import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
 import scala.collection.Iterator;
 
 public class MLContextFrameTest extends MLContextTestBase {
+
+	protected static final Log LOG = LogFactory.getLog(MLContextFrameTest.class.getName());
 
 	public static enum SCRIPT_TYPE {
 		DML
@@ -67,7 +70,7 @@ public class MLContextFrameTest extends MLContextTestBase {
 	@BeforeClass
 	public static void setUpClass() {
 		MLContextTestBase.setUpClass();
-		ml.setExplainLevel(ExplainLevel.RECOMPILE_HOPS);
+		// ml.setExplainLevel(ExplainLevel.RECOMPILE_HOPS);
 	}
 
 	@Test
@@ -117,7 +120,7 @@ public class MLContextFrameTest extends MLContextTestBase {
 
 	public void testFrame(FrameFormat format, SCRIPT_TYPE script_type, IO_TYPE inputType, IO_TYPE outputType) {
 
-		System.out.println("MLContextTest - Frame JavaRDD<String> for format: " + format + " Script: " + script_type);
+		// System.out.println("MLContextTest - Frame JavaRDD<String> for format: " + format + " Script: " + script_type);
 
 		List<String> listA = new ArrayList<>();
 		List<String> listB = new ArrayList<>();
@@ -216,13 +219,17 @@ public class MLContextFrameTest extends MLContextTestBase {
 		//Validate output schema
 		List<ValueType> lschemaOutA = Arrays.asList(mlResults.getFrameObject("A").getSchema());
 		List<ValueType> lschemaOutC = Arrays.asList(mlResults.getFrameObject("C").getSchema());
-		Assert.assertEquals(ValueType.INT64, lschemaOutA.get(0));
-		Assert.assertEquals(ValueType.STRING, lschemaOutA.get(1));
-		Assert.assertEquals(ValueType.FP64, lschemaOutA.get(2));
-		Assert.assertEquals(ValueType.BOOLEAN, lschemaOutA.get(3));
-		
-		Assert.assertEquals(ValueType.STRING, lschemaOutC.get(0));
-		Assert.assertEquals(ValueType.FP64, lschemaOutC.get(1));
+
+		if(inputType != IO_TYPE.RDD_STR_IJV && inputType != IO_TYPE.JAVA_RDD_STR_IJV){
+
+			Assert.assertEquals(ValueType.INT64, lschemaOutA.get(0));
+			Assert.assertEquals(ValueType.STRING, lschemaOutA.get(1));
+			Assert.assertEquals(ValueType.FP64, lschemaOutA.get(2));
+			Assert.assertEquals(ValueType.BOOLEAN, lschemaOutA.get(3));
+			
+			Assert.assertEquals(ValueType.STRING, lschemaOutC.get(0));
+			Assert.assertEquals(ValueType.FP64, lschemaOutC.get(1));
+		}
 
 		if (outputType == IO_TYPE.JAVA_RDD_STR_CSV) {
 
@@ -349,7 +356,7 @@ public class MLContextFrameTest extends MLContextTestBase {
 
 	@Test
 	public void testOutputFrameDML() {
-		System.out.println("MLContextFrameTest - output frame DML");
+		// System.out.println("MLContextFrameTest - output frame DML");
 
 		String s = "M = read($Min, data_type='frame', format='csv');";
 		String csvFile = baseDirectory + File.separator + "one-two-three-four.csv";
@@ -363,7 +370,7 @@ public class MLContextFrameTest extends MLContextTestBase {
 
 	@Test
 	public void testInputFrameAndMatrixOutputMatrix() {
-		System.out.println("MLContextFrameTest - input frame and matrix, output matrix");
+		// System.out.println("MLContextFrameTest - input frame and matrix, output matrix");
 
 		List<String> dataA = new ArrayList<>();
 		dataA.add("Test1,4.0");
@@ -409,7 +416,7 @@ public class MLContextFrameTest extends MLContextTestBase {
 
 	@Test
 	public void testInputFrameAndMatrixOutputMatrixAndFrame() {
-		System.out.println("MLContextFrameTest - input frame and matrix, output matrix and frame");
+		// System.out.println("MLContextFrameTest - input frame and matrix, output matrix and frame");
 		
 		Row[] rowsA = {RowFactory.create("Doc1", "Feat1", 10), RowFactory.create("Doc1", "Feat2", 20), RowFactory.create("Doc2", "Feat1", 31)};
 
@@ -436,19 +443,19 @@ public class MLContextFrameTest extends MLContextTestBase {
 		Assert.assertEquals(31.0, matrixtA[2][2], 0.0);
 
 		Dataset<Row> dataFrame_tA = results.getMatrix("tA").toDF();
-		System.out.println("Number of matrix tA rows = " + dataFrame_tA.count());
+		// System.out.println("Number of matrix tA rows = " + dataFrame_tA.count());
 		dataFrame_tA.printSchema();
 		dataFrame_tA.show();
 		
 		Dataset<Row> dataFrame_tAM = results.getFrame("tAM").toDF();
-		System.out.println("Number of frame tAM rows = " + dataFrame_tAM.count());
+		// System.out.println("Number of frame tAM rows = " + dataFrame_tAM.count());
 		dataFrame_tAM.printSchema();
 		dataFrame_tAM.show();
 	}
 
 	@Test
 	public void testTransform() {
-		System.out.println("MLContextFrameTest - transform");
+		// System.out.println("MLContextFrameTest - transform");
 		
 		Row[] rowsA = {RowFactory.create("\"`@(\"(!&",2,"20news-bydate-train/comp.os.ms-windows.misc/9979"),
 				RowFactory.create("\"`@(\"\"(!&\"",3,"20news-bydate-train/comp.os.ms-windows.misc/9979")};
@@ -468,73 +475,21 @@ public class MLContextFrameTest extends MLContextTestBase {
 				.in("A", dataFrameA,
 						new FrameMetadata(FrameFormat.CSV, dataFrameA.count(), (long) dataFrameA.columns().length))
 				.out("tA").out("tAM");
-		ml.setExplain(true);
-		ml.setExplainLevel(ExplainLevel.RECOMPILE_HOPS);
+		// ml.setExplain(true);
+		// ml.setExplainLevel(ExplainLevel.RECOMPILE_HOPS);
 		MLResults results = ml.execute(script);
 
 		double[][] matrixtA = results.getMatrixAs2DDoubleArray("tA");
 		Assert.assertEquals(1.0, matrixtA[0][2], 0.0);
 
 		Dataset<Row> dataFrame_tA = results.getMatrix("tA").toDF();
-		System.out.println("Number of matrix tA rows = " + dataFrame_tA.count());
+		// System.out.println("Number of matrix tA rows = " + dataFrame_tA.count());
 		dataFrame_tA.printSchema();
 		dataFrame_tA.show();
 		
 		Dataset<Row> dataFrame_tAM = results.getFrame("tAM").toDF();
-		System.out.println("Number of frame tAM rows = " + dataFrame_tAM.count());
+		// System.out.println("Number of frame tAM rows = " + dataFrame_tAM.count());
 		dataFrame_tAM.printSchema();
 		dataFrame_tAM.show();
 	}
-
-	// NOTE: the ordering of the frame values seem to come out differently here
-	// than in the scala shell,
-	// so this should be investigated or explained.
-	// @Test
-	// public void testInputFrameOutputMatrixAndFrame() {
-	// System.out.println("MLContextFrameTest - input frame, output matrix and
-	// frame");
-	//
-	// List<String> dataA = new ArrayList<String>();
-	// dataA.add("Test1,Test4");
-	// dataA.add("Test2,Test5");
-	// dataA.add("Test3,Test6");
-	// JavaRDD<String> javaRddStringA = sc.parallelize(dataA);
-	//
-	// JavaRDD<Row> javaRddRowA = javaRddStringA.map(new
-	// CommaSeparatedValueStringToRow());
-	//
-	// List<StructField> fieldsA = new ArrayList<StructField>();
-	// fieldsA.add(DataTypes.createStructField("1", DataTypes.StringType,
-	// true));
-	// fieldsA.add(DataTypes.createStructField("2", DataTypes.StringType,
-	// true));
-	// StructType schemaA = DataTypes.createStructType(fieldsA);
-	// DataFrame dataFrameA = spark.createDataFrame(javaRddRowA, schemaA);
-	//
-	// String dmlString = "[tA, tAM] = transformencode (target = A, spec =
-	// \"{ids: true ,recode: [ 1, 2 ]}\");\n";
-	//
-	// Script script = dml(dmlString)
-	// .in("A", dataFrameA,
-	// new FrameMetadata(FrameFormat.CSV, dataFrameA.count(), (long)
-	// dataFrameA.columns().length))
-	// .out("tA", "tAM");
-	// MLResults results = ml.execute(script);
-	// double[][] matrix = results.getMatrixAs2DDoubleArray("tA");
-	// Assert.assertEquals(1.0, matrix[0][0], 0.0);
-	// Assert.assertEquals(1.0, matrix[0][1], 0.0);
-	// Assert.assertEquals(2.0, matrix[1][0], 0.0);
-	// Assert.assertEquals(2.0, matrix[1][1], 0.0);
-	// Assert.assertEquals(3.0, matrix[2][0], 0.0);
-	// Assert.assertEquals(3.0, matrix[2][1], 0.0);
-	//
-	// TODO: Add asserts for frame if ordering is as expected
-	// String[][] frame = results.getFrameAs2DStringArray("tAM");
-	// for (int i = 0; i < frame.length; i++) {
-	// for (int j = 0; j < frame[i].length; j++) {
-	// System.out.println("[" + i + "][" + j + "]:" + frame[i][j]);
-	// }
-	// }
-	// }
-
 }

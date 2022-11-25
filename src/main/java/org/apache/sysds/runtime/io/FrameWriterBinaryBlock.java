@@ -36,13 +36,12 @@ import org.apache.sysds.runtime.util.HDFSTool;
  * Single-threaded frame binary block writer.
  * 
  */
-public class FrameWriterBinaryBlock extends FrameWriter
-{
+public class FrameWriterBinaryBlock extends FrameWriter {
+	// private static final Log LOG = LogFactory.getLog(FrameWriterBinaryBlock.class.getName());
 
 	@Override
 	public final void writeFrameToHDFS( FrameBlock src, String fname, long rlen, long clen )
-		throws IOException, DMLRuntimeException 
-	{
+		throws IOException, DMLRuntimeException {
 		//prepare file access
 		JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());
 		Path path = new Path( fname );

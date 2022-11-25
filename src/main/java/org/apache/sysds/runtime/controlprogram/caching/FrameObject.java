@@ -133,13 +133,17 @@ public class FrameObject extends CacheableData<FrameBlock>
 			if( clen >= 0 ) //known number of cols
 				_schema = UtilFunctions.nCopies(clen, ValueType.STRING);
 		}
-		else {
-			//parse given schema
-			String[] parts = schema.split(DataExpression.DEFAULT_DELIM_DELIMITER);
-			_schema = new ValueType[parts.length];
-			for( int i=0; i<parts.length; i++ )
-				_schema[i] = ValueType.fromExternalString(parts[i].toUpperCase());
-		}
+		else 
+			_schema = parseSchema(schema);
+	}
+
+	public static ValueType[] parseSchema(String schema) {
+		// parse given schema
+		String[] parts = schema.split(DataExpression.DEFAULT_DELIM_DELIMITER);
+		ValueType[] ret = new ValueType[parts.length];
+		for(int i = 0; i < parts.length; i++)
+			ret[i] = ValueType.fromExternalString(parts[i].toUpperCase());
+		return ret;
 	}
 	
 	public void setSchema(ValueType[] schema) {

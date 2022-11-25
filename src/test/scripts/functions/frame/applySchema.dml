@@ -21,19 +21,23 @@
 
 X = read($1, rows=$2, cols=$3, data_type="frame", format="csv", header=FALSE);
 case = $4
-colNum=$5
+colNum = $5
 
 R = detectSchema(X);
 
 if(case == "STRING_IN_DOUBLE")
 {
-  for(i in 1:10)
-    X[i, colNum] = "abc"
+  for(i in 1:colNum)
+    X[1, colNum] = "abc"
 }
+else if(case == "DOUBLE_IN_INT"){
+  for(i in 1:colNum)
+    X[1, colNum] = 0.324
+}
+# Option None do nothing
 
 R = detectSchema(X);
 XT = applySchema(X, R)
 
-print(toString(XT, rows=10))
 write(R, $6, format="binary");
-write(Xt, $7, format="binary");
+write(XT, $7, format="binary");

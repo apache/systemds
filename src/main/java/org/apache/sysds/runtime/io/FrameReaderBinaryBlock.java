@@ -27,8 +27,8 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.mapred.JobConf;
-import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
 
@@ -37,8 +37,10 @@ import org.apache.sysds.runtime.frame.data.FrameBlock;
  * Single-threaded frame binary block reader.
  * 
  */
-public class FrameReaderBinaryBlock extends FrameReader
-{
+public class FrameReaderBinaryBlock extends FrameReader{
+	
+	// private static final Log LOG = LogFactory.getLog(FrameReaderBinaryBlock.class.getName());
+	
 	@Override
 	public final FrameBlock readFrameFromHDFS(String fname, ValueType[] schema, String[] names, long rlen, long clen) 
 		throws IOException, DMLRuntimeException 

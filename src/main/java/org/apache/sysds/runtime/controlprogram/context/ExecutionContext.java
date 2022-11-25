@@ -639,6 +639,7 @@ public class ExecutionContext {
 		if( isAutoCreateVars() && !containsVariable(varName) )
 			setVariable(varName, createFrameObject(outputData));
 		FrameObject fo = getFrameObject(varName);
+		fo.setSchema(outputData.getSchema());
 		fo.acquireModify(outputData);
 		fo.release();
 		setVariable(varName, fo);

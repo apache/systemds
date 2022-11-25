@@ -19,6 +19,8 @@
 
 package org.apache.sysds.test.functions.mlcontext;
 
+import static org.junit.Assert.fail;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -26,28 +28,28 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.types.StructType;
-import org.junit.Assert;
-import org.junit.Test;
 import org.apache.sysds.api.DMLException;
 import org.apache.sysds.api.DMLScript;
-import org.apache.sysds.common.Types.DataType;
-import org.apache.sysds.common.Types.ExecMode;
-import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.api.mlcontext.FrameFormat;
 import org.apache.sysds.api.mlcontext.FrameMetadata;
 import org.apache.sysds.api.mlcontext.FrameSchema;
 import org.apache.sysds.api.mlcontext.MLResults;
 import org.apache.sysds.api.mlcontext.Script;
 import org.apache.sysds.api.mlcontext.ScriptFactory;
+import org.apache.sysds.common.Types.DataType;
+import org.apache.sysds.common.Types.ExecMode;
+import org.apache.sysds.common.Types.FileFormat;
+import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.parser.DataExpression;
 import org.apache.sysds.parser.ParseException;
-import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.runtime.instructions.spark.utils.FrameRDDConverterUtils;
@@ -58,10 +60,14 @@ import org.apache.sysds.runtime.util.HDFSTool;
 import org.apache.sysds.runtime.util.UtilFunctions;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
+import org.junit.Assert;
+import org.junit.Test;
 
 
-public class FrameTest extends MLContextTestBase
-{
+public class FrameTest extends MLContextTestBase{
+
+	protected static final Log LOG = LogFactory.getLog(FrameTest.class.getName());
+
 	private final static String TEST_DIR = "functions/frame/";
 	private final static String TEST_NAME = "FrameGeneral";
 	private final static String TEST_CLASS_DIR = TEST_DIR + FrameTest.class.getSimpleName() + "/";
@@ -329,17 +335,20 @@ public class FrameTest extends MLContextTestBase
 			outputSchema.put("C", schemaC);
 			outputMC.put("C", new MatrixCharacteristics(cRows, cCols, -1, -1));
 			
-			for(String file: config.getOutputFiles())
-			{
-				MatrixCharacteristics md = outputMC.get(file);
-				FrameBlock frameBlock = readDMLFrameFromHDFS(file, iinfo, md);
-				FrameBlock frameRBlock = readRFrameFromHDFS(file+".csv", FileFormat.CSV, md);
-				ValueType[] schemaOut = outputSchema.get(file);
-				verifyFrameData(frameBlock, frameRBlock, schemaOut);
-				System.out.println("File " + file +  " processed successfully.");
-			}
+			try {
+				for(String file : config.getOutputFiles()) {
 
-			System.out.println("Frame MLContext test completed successfully.");
+					MatrixCharacteristics md = outputMC.get(file);
+					FrameBlock frameBlock = readDMLFrameFromHDFS(file, iinfo, md);
+					FrameBlock frameRBlock = readRFrameFromHDFS(file + ".csv", FileFormat.CSV, md);
+					ValueType[] schemaOut = outputSchema.get(file);
+					verifyFrameData(frameBlock, frameRBlock, schemaOut);
+				}
+			}
+			catch(Exception e) {
+				e.printStackTrace();
+				fail(e.getMessage());
+			}
 		}
 		finally {
 			DMLScript.setGlobalExecMode(oldRT);

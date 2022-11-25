@@ -24,6 +24,7 @@ import static org.junit.Assert.assertTrue;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
+import org.apache.sysds.runtime.frame.data.columns.Array;
 import org.apache.sysds.runtime.io.FrameWriterFactory;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
@@ -191,14 +192,16 @@ public class BuiltinEMATest extends AutomatedTestBase {
 			runTest(true, false, null, -1);
 
 			FrameBlock outputFrame = readDMLFrameFromHDFS("O", Types.FileFormat.CSV);
-			String[] values = (String[]) outputFrame.getColumnData(0);
-			Double[] data = new Double[values.length];
-			for (int i = 0; i< values.length; i++) data[i] = Double.valueOf(values[i]);
+			Array<?> values =  outputFrame.getColumn(0);
+			Double[] data = new Double[values.size()];
+			for(int i = 0; i < values.size(); i++)
+				data[i] = Double.valueOf(values.get(i).toString());
 
 
 			assertTrue(calcRMSE(data, reference) <= max_error);
 		}
 		catch (Exception ex) {
+			ex.printStackTrace();
 			throw new RuntimeException(ex);
 		}
 		finally {

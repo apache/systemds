@@ -26,7 +26,9 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Arrays;
 
+import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.frame.data.columns.ArrayFactory.FrameArrayType;
 import org.apache.sysds.utils.MemoryEstimates;
 
@@ -53,8 +55,18 @@ public class IntegerArray extends Array<Integer> {
 	}
 
 	@Override
+	public void set(int index, double value) {
+		_data[index] = (int)value;
+	}
+
+	@Override
 	public void set(int rl, int ru, Array<Integer> value) {
 		set(rl, ru, value, 0);
+	}
+
+	@Override
+	public void setFromOtherType(int rl, int ru, Array<?> value) {
+		throw new NotImplementedException();
 	}
 
 	@Override
@@ -103,10 +115,14 @@ public class IntegerArray extends Array<Integer> {
 
 	@Override
 	public Array<Integer> slice(int rl, int ru) {
-		return new IntegerArray(Arrays.copyOfRange(_data, rl, ru + 1));
+		return new IntegerArray(Arrays.copyOfRange(_data, rl, ru));
 	}
 
 	@Override
+	public Array<Integer> sliceTransform(int rl, int ru, ValueType vt) {
+		return slice(rl, ru);
+	}
+
 	public void reset(int size) {
 		if(_data.length < size)
 			_data = new int[size];
@@ -128,6 +144,11 @@ public class IntegerArray extends Array<Integer> {
 	}
 
 	@Override
+	public ValueType analyzeValueType() {
+		return ValueType.INT32;
+	}
+
+	@Override
 	public FrameArrayType getFrameArrayType() {
 		return FrameArrayType.INT32;
 	}
@@ -142,6 +163,47 @@ public class IntegerArray extends Array<Integer> {
 	@Override
 	public long getExactSerializedSize() {
 		return 1 + 4 * _data.length;
+	}
+
+	@Override
+	protected Array<?> changeTypeBoolean() {
+		boolean[] ret = new boolean[size()];
+		for(int i = 0; i < size(); i++) {
+			if(_data[i] < 0 || _data[i] > 1)
+				throw new DMLRuntimeException(
+					"Unable to change to Boolean from Integer array because of value:" + _data[i]);
+			ret[i] = _data[i] == 0 ? false : true;
+		}
+		return new BooleanArray(ret);
+	}
+
+	@Override
+	protected Array<?> changeTypeDouble() {
+		double[] ret = new double[size()];
+		for(int i = 0; i < size(); i++)
+			ret[i] = (double) _data[i];
+		return new DoubleArray(ret);
+	}
+
+	@Override
+	protected Array<?> changeTypeFloat() {
+		float[] ret = new float[size()];
+		for(int i = 0; i < size(); i++)
+			ret[i] = (float) _data[i];
+		return new FloatArray(ret);
+	}
+
+	@Override
+	protected Array<?> changeTypeInteger() {
+		return clone();
+	}
+
+	@Override
+	protected Array<?> changeTypeLong() {
+		long[] ret = new long[size()];
+		for(int i = 0; i < size(); i++)
+			ret[i] = _data[i];
+		return new LongArray(ret);
 	}
 
 	@Override

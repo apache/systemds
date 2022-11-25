@@ -26,7 +26,10 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Arrays;
 
+import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.frame.data.FrameUtil;
 import org.apache.sysds.runtime.frame.data.columns.ArrayFactory.FrameArrayType;
 import org.apache.sysds.utils.MemoryEstimates;
 
@@ -53,8 +56,18 @@ public class DoubleArray extends Array<Double> {
 	}
 
 	@Override
+	public void set(int index, double value) {
+		_data[index] = value;
+	}
+
+	@Override
 	public void set(int rl, int ru, Array<Double> value) {
 		set(rl, ru, value, 0);
+	}
+
+	@Override
+	public void setFromOtherType(int rl, int ru, Array<?> value) {
+		throw new NotImplementedException();
 	}
 
 	@Override
@@ -103,7 +116,12 @@ public class DoubleArray extends Array<Double> {
 
 	@Override
 	public Array<Double> slice(int rl, int ru) {
-		return new DoubleArray(Arrays.copyOfRange(_data, rl, ru + 1));
+		return new DoubleArray(Arrays.copyOfRange(_data, rl, ru));
+	}
+
+	@Override
+	public Array<Double> sliceTransform(int rl, int ru, ValueType vt) {
+		return slice(rl, ru);
 	}
 
 	@Override
@@ -128,6 +146,54 @@ public class DoubleArray extends Array<Double> {
 	}
 
 	@Override
+	public ValueType analyzeValueType() {
+		ValueType state = FrameUtil.isType(_data[0]);
+		for(int i = 0; i < _size; i++) {
+			ValueType c = FrameUtil.isType(_data[i]);
+			if(state == ValueType.FP64)
+				return ValueType.FP64;
+			switch(state) {
+				case FP32:
+					switch(c) {
+						case FP64:
+							state = c;
+						default:
+					}
+					break;
+				case INT64:
+					switch(c) {
+						case FP64:
+						case FP32:
+							state = c;
+						default:
+					}
+					break;
+				case INT32:
+					switch(c) {
+						case FP64:
+						case FP32:
+						case INT64:
+							state = c;
+						default:
+					}
+					break;
+				case BOOLEAN:
+					switch(c) {
+						case FP64:
+						case FP32:
+						case INT64:
+						case INT32:
+							state = c;
+						default:
+					}
+					break;
+				default:
+			}
+		}
+		return state;
+	}
+
+	@Override
 	public FrameArrayType getFrameArrayType() {
 		return FrameArrayType.FP64;
 	}
@@ -142,6 +208,53 @@ public class DoubleArray extends Array<Double> {
 	@Override
 	public long getExactSerializedSize() {
 		return 1 + 8 * _data.length;
+	}
+
+	@Override
+	protected Array<?> changeTypeBoolean() {
+		boolean[] ret = new boolean[size()];
+		for(int i = 0; i < size(); i++) {
+			// if(_data[i] != 0 && _data[i] != 1)
+			// 	throw new DMLRuntimeException(
+			// 		"Unable to change to Boolean from Integer array because of value:" + _data[i]);
+			ret[i] = _data[i] == 0 ? false : true;
+		}
+		return new BooleanArray(ret);
+	}
+
+	@Override
+	protected Array<?> changeTypeDouble() {
+		return clone();
+	}
+
+	@Override
+	protected Array<?> changeTypeFloat() {
+		float[] ret = new float[size()];
+		for(int i = 0; i < size(); i++)
+			ret[i] = (float) _data[i];
+		return new FloatArray(ret);
+	}
+
+	@Override
+	protected Array<?> changeTypeInteger() {
+		int[] ret = new int[size()];
+		for(int i = 0; i < size(); i++) {
+			if(_data[i] != (int) _data[i])
+				throw new DMLRuntimeException("Unable to change to Integer from Double array because of value:" + _data[i]);
+			ret[i] = (int) _data[i];
+		}
+		return new IntegerArray(ret);
+	}
+
+	@Override
+	protected Array<?> changeTypeLong() {
+		long[] ret = new long[size()];
+		for(int i = 0; i < size(); i++) {
+			if(_data[i] != (long) _data[i])
+				throw new DMLRuntimeException("Unable to change to Long from Double array because of value:" + _data[i]);
+			ret[i] = (long) _data[i];
+		}
+		return new LongArray(ret);
 	}
 
 	@Override

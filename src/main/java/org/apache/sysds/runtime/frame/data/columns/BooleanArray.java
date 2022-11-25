@@ -26,6 +26,7 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Arrays;
 
+import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.frame.data.columns.ArrayFactory.FrameArrayType;
 import org.apache.sysds.utils.MemoryEstimates;
@@ -51,10 +52,20 @@ public class BooleanArray extends Array<Boolean> {
 	public void set(int index, Boolean value) {
 		_data[index] = (value != null) ? value : false;
 	}
+	
+	@Override
+	public void set(int index, double value) {
+		_data[index] = value == 0 ? false : true;
+	}
 
 	@Override
 	public void set(int rl, int ru, Array<Boolean> value) {
 		set(rl, ru, value, 0);
+	}
+
+	@Override
+	public void setFromOtherType(int rl, int ru, Array<?> value){
+		throw new NotImplementedException();
 	}
 
 	@Override
@@ -103,7 +114,12 @@ public class BooleanArray extends Array<Boolean> {
 
 	@Override
 	public Array<Boolean> slice(int rl, int ru) {
-		return new BooleanArray(Arrays.copyOfRange(_data, rl, ru + 1));
+		return new BooleanArray(Arrays.copyOfRange(_data, rl, ru));
+	}
+
+	@Override
+	public Array<Boolean> sliceTransform(int rl, int ru, ValueType vt) {
+		return slice(rl, ru);
 	}
 
 	@Override
@@ -129,20 +145,62 @@ public class BooleanArray extends Array<Boolean> {
 	}
 
 	@Override
-	public FrameArrayType getFrameArrayType(){
+	public ValueType analyzeValueType() {
+		return ValueType.BOOLEAN;
+	}
+
+	@Override
+	public FrameArrayType getFrameArrayType() {
 		return FrameArrayType.BOOLEAN;
 	}
 
 	@Override
-	public long getInMemorySize(){
-		long size = 16 ; // object header + object reference
-		size += MemoryEstimates.booleanArrayCost(_data.length);	
+	public long getInMemorySize() {
+		long size = 16; // object header + object reference
+		size += MemoryEstimates.booleanArrayCost(_data.length);
 		return size;
 	}
 
 	@Override
-	public long getExactSerializedSize(){
+	public long getExactSerializedSize() {
 		return 1 + _data.length;
+	}
+
+	@Override
+	protected Array<?> changeTypeBoolean() {
+		return clone();
+	}
+
+	@Override
+	protected Array<?> changeTypeDouble() {
+		double[] ret = new double[size()];
+		for(int i = 0; i < size(); i++)
+			ret[i] = _data[i] ? 1.0 : 0.0;
+		return new DoubleArray(ret);
+	}
+
+	@Override
+	protected Array<?> changeTypeFloat() {
+		float[] ret = new float[size()];
+		for(int i = 0; i < size(); i++)
+			ret[i] = _data[i] ? 1.0f : 0.0f;
+		return new FloatArray(ret);
+	}
+
+	@Override
+	protected Array<?> changeTypeInteger() {
+		int[] ret = new int[size()];
+		for(int i = 0; i < size(); i++)
+			ret[i] = _data[i] ? 1 : 0;
+		return new IntegerArray(ret);
+	}
+
+	@Override
+	protected Array<?> changeTypeLong() {
+		long[] ret = new long[size()];
+		for(int i = 0; i < size(); i++)
+			ret[i] = _data[i] ? 1L : 0L;
+		return new LongArray(ret);
 	}
 
 	@Override

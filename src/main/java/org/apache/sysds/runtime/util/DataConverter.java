@@ -31,6 +31,8 @@ import java.util.Map.Entry;
 import java.util.StringTokenizer;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.commons.math3.linear.Array2DRowRealMatrix;
 import org.apache.commons.math3.linear.BlockRealMatrix;
 import org.apache.commons.math3.linear.RealMatrix;
@@ -51,6 +53,7 @@ import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.data.TensorBlock;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.runtime.frame.data.iterators.IteratorFactory;
+import org.apache.sysds.runtime.frame.data.lib.FrameFromMatrixBlock;
 import org.apache.sysds.runtime.instructions.cp.BooleanObject;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.instructions.cp.Data;
@@ -80,7 +83,7 @@ import org.apache.sysds.runtime.meta.DataCharacteristics;
  *
  */
 public class DataConverter {
-	// private static final Log LOG = LogFactory.getLog(DataConverter.class.getName());
+	private static final Log LOG = LogFactory.getLog(DataConverter.class.getName());
 	private static final String DELIM = " ";
 
 	//////////////
@@ -765,95 +768,11 @@ public class DataConverter {
 	 * @return frame block
 	 */
 	public static FrameBlock convertToFrameBlock(MatrixBlock mb, ValueType vt) {
-		//create schema and frame block
-		ValueType[] schema = UtilFunctions.nCopies(mb.getNumColumns(), vt);
-		return convertToFrameBlock(mb, schema);
+		return FrameFromMatrixBlock.convertToFrameBlock(mb, vt);
 	}
 
-	public static FrameBlock convertToFrameBlock(MatrixBlock mb, ValueType[] schema)
-	{
-		FrameBlock frame = new FrameBlock(schema);
-		Object[] row = new Object[mb.getNumColumns()];
-
-		if( mb.isInSparseFormat() ) //SPARSE
-		{
-			SparseBlock sblock = mb.getSparseBlock();
-			for( int i=0; i<mb.getNumRows(); i++ ) {
-				Arrays.fill(row, null); //reset
-				if( sblock != null && !sblock.isEmpty(i) ) {
-					int apos = sblock.pos(i);
-					int alen = sblock.size(i);
-					int[] aix = sblock.indexes(i);
-					double[] aval = sblock.values(i);
-					for( int j=apos; j<apos+alen; j++ ) {
-						row[aix[j]] = UtilFunctions.doubleToObject(
-							schema[aix[j]], aval[j]);
-					}
-				}
-				frame.appendRow(row);
-			}
-		}
-		else //DENSE
-		{
-			int dFreq = UtilFunctions.frequency(schema, ValueType.FP64);
-
-			if( schema.length==1 && dFreq==1 && mb.isAllocated() ) {
-				// special case double schema and single columns which
-				// allows for a shallow copy since the physical representation
-				// of row-major matrix and column-major frame match exactly
-				frame.reset();
-				frame.appendColumns(new double[][]{mb.getDenseBlockValues()});
-			}
-			else if( dFreq == schema.length ) {
-				// special case double schema (without cell-object creation,
-				// col pre-allocation, and cache-friendly row-column copy)
-				int m = mb.getNumRows();
-				int n = mb.getNumColumns();
-				double[][] c = new double[n][m];
-				int blocksizeIJ = 32; //blocks of a/c+overhead in L1 cache
-				if( !mb.isEmptyBlock(false) ) {
-					if( mb.getDenseBlock().isContiguous() ) {
-						double[] a = mb.getDenseBlockValues();
-						for( int bi=0; bi<m; bi+=blocksizeIJ )
-							for( int bj=0; bj<n; bj+=blocksizeIJ ) {
-								int bimin = Math.min(bi+blocksizeIJ, m);
-								int bjmin = Math.min(bj+blocksizeIJ, n);
-								for( int i=bi, aix=bi*n; i<bimin; i++, aix+=n )
-									for( int j=bj; j<bjmin; j++ )
-										c[j][i] = a[aix+j];
-							}
-					}
-					else { // large dense blocks
-						DenseBlock a = mb.getDenseBlock();
-						for( int bi=0; bi<m; bi+=blocksizeIJ )
-							for( int bj=0; bj<n; bj+=blocksizeIJ ) {
-								int bimin = Math.min(bi+blocksizeIJ, m);
-								int bjmin = Math.min(bj+blocksizeIJ, n);
-								for( int i=bi; i<bimin; i++ ) {
-									double[] avals = a.values(i);
-									int apos = a.pos(i);
-									for( int j=bj; j<bjmin; j++ )
-										c[j][i] = avals[apos+j];
-								}
-							}
-					}
-				}
-				frame.reset();
-				frame.appendColumns(c);
-			}
-			else {
-				// general case
-				for( int i=0; i<mb.getNumRows(); i++ ) {
-					for( int j=0; j<mb.getNumColumns(); j++ ) {
-						row[j] = UtilFunctions.doubleToObject(
-							schema[j], mb.quickGetValue(i, j));
-					}
-					frame.appendRow(row);
-				}
-			}
-		}
-
-		return frame;
+	public static FrameBlock convertToFrameBlock(MatrixBlock mb, ValueType[] schema){
+		return FrameFromMatrixBlock.convertToFrameBlock(mb, schema);
 	}
 
 	public static TensorBlock convertToTensorBlock(MatrixBlock mb, ValueType vt, boolean toBasicTensor) {

@@ -31,62 +31,50 @@ import org.apache.sysds.runtime.matrix.data.MatrixValue;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
-import org.apache.sysds.utils.Statistics;
-import org.junit.Assert;
 import org.junit.Test;
 
-public class PrefetchRDDTest extends AutomatedTestBase {
-	
+public class MaxParallelizeOrderTest extends AutomatedTestBase {
+
 	protected static final String TEST_DIR = "functions/async/";
-	protected static final String TEST_NAME = "PrefetchRDD";
-	protected static final int TEST_VARIANTS = 3;
-	protected static String TEST_CLASS_DIR = TEST_DIR + PrefetchRDDTest.class.getSimpleName() + "/";
-	
+	protected static final String TEST_NAME = "MaxParallelizeOrder";
+	protected static final int TEST_VARIANTS = 2;
+	protected static String TEST_CLASS_DIR = TEST_DIR + MaxParallelizeOrderTest.class.getSimpleName() + "/";
+
 	@Override
 	public void setUp() {
 		TestUtils.clearAssertionInformation();
-		for( int i=1; i<=TEST_VARIANTS; i++ )
+		for(int i=1; i<=TEST_VARIANTS; i++)
 			addTestConfiguration(TEST_NAME+i, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME+i));
 	}
-	
+
 	@Test
-	public void testAsyncSparkOPs1() {
-		//Single CP consumer. Prefetch Lop has one output.
+	public void testlmds() {
 		runTest(TEST_NAME+"1");
 	}
 
 	@Test
-	public void testAsyncSparkOPs2() {
-		//Two CP consumers. Prefetch Lop has two outputs.
+	public void testl2svm() {
 		runTest(TEST_NAME+"2");
 	}
 
-	@Test
-	public void testAsyncSparkOPs3() {
-		//SP binary consumer, followed by an action. No Prefetch.
-		runTest(TEST_NAME+"3");
-	}
-	
 	public void runTest(String testname) {
 		boolean old_simplification = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
 		boolean old_sum_product = OptimizerUtils.ALLOW_SUM_PRODUCT_REWRITES;
 		boolean old_trans_exec_type = OptimizerUtils.ALLOW_TRANSITIVE_SPARK_EXEC_TYPE;
 		ExecMode oldPlatform = setExecMode(ExecMode.HYBRID);
-		
+
 		long oldmem = InfrastructureAnalyzer.getLocalMaxMemory();
 		long mem = 1024*1024*8;
 		InfrastructureAnalyzer.setLocalMaxMemory(mem);
-		
+
 		try {
-			//OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = false;
-			//OptimizerUtils.ALLOW_SUM_PRODUCT_REWRITES = false;
-			OptimizerUtils.ALLOW_TRANSITIVE_SPARK_EXEC_TYPE = false;
 			getAndLoadTestConfiguration(testname);
 			fullDMLScriptName = getScript();
-			
+
 			List<String> proArgs = new ArrayList<>();
-			
+
 			proArgs.add("-explain");
+			//proArgs.add("recompile_runtime");
 			proArgs.add("-stats");
 			proArgs.add("-args");
 			proArgs.add(output("R"));
@@ -95,24 +83,17 @@ public class PrefetchRDDTest extends AutomatedTestBase {
 			runTest(true, EXCEPTION_NOT_EXPECTED, null, -1);
 			HashMap<MatrixValue.CellIndex, Double> R = readDMLScalarFromOutputDir("R");
 
-			OptimizerUtils.MAX_PARALLELIZE_ORDER = true;
 			OptimizerUtils.ASYNC_PREFETCH_SPARK = true;
+			OptimizerUtils.MAX_PARALLELIZE_ORDER = true;
 			runTest(true, EXCEPTION_NOT_EXPECTED, null, -1);
+			HashMap<MatrixValue.CellIndex, Double> R_mp = readDMLScalarFromOutputDir("R");
 			OptimizerUtils.ASYNC_PREFETCH_SPARK = false;
 			OptimizerUtils.MAX_PARALLELIZE_ORDER = false;
-			HashMap<MatrixValue.CellIndex, Double> R_pf = readDMLScalarFromOutputDir("R");
 
 			//compare matrices
-			boolean matchVal = TestUtils.compareMatrices(R, R_pf, 1e-6, "Origin", "withPrefetch");
+			boolean matchVal = TestUtils.compareMatrices(R, R_mp, 1e-6, "Origin", "withPrefetch");
 			if (!matchVal)
-				System.out.println("Value w/o Prefetch "+R+" w/ Prefetch "+R_pf);
-			//assert Prefetch instructions and number of success.
-			long expected_numPF = !testname.equalsIgnoreCase(TEST_NAME+"3") ? 1 : 0;
-			long expected_successPF = !testname.equalsIgnoreCase(TEST_NAME+"3") ? 1 : 0;
-			long numPF = Statistics.getCPHeavyHitterCount("prefetch");
-			Assert.assertTrue("Violated Prefetch instruction count: "+numPF, numPF == expected_numPF);
-			//long successPF = SparkStatistics.getAsyncPrefetchCount();
-			//Assert.assertTrue("Violated successful Prefetch count: "+successPF, successPF == expected_successPF);
+				System.out.println("Value w/o Prefetch "+R+" w/ Prefetch "+R_mp);
 		} finally {
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = old_simplification;
 			OptimizerUtils.ALLOW_SUM_PRODUCT_REWRITES = old_sum_product;

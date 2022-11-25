@@ -23,6 +23,7 @@ package org.apache.sysds.runtime.instructions.spark;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.function.Function;
+import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.lops.MMTSJ.MMTSJType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
@@ -33,7 +34,12 @@ import org.apache.sysds.runtime.instructions.spark.utils.RDDAggregateUtils;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysds.runtime.matrix.operators.Operator;
+import org.apache.sysds.runtime.util.CommonThreadPool;
 import scala.Tuple2;
+
+import java.util.concurrent.Callable;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 public class TsmmSPInstruction extends UnarySPInstruction {
 	private MMTSJType _type = null;
@@ -61,15 +67,29 @@ public class TsmmSPInstruction extends UnarySPInstruction {
 		
 		//get input
 		JavaPairRDD<MatrixIndexes,MatrixBlock> in = sec.getBinaryMatrixBlockRDDHandleForVariable( input1.getName() );
-		
-		//execute tsmm instruction (always produce exactly one output block)
-		//(this formulation with values() requires --conf spark.driver.maxResultSize=0)
-		JavaRDD<MatrixBlock> tmp = in.map(new RDDTSMMFunction(_type));
-		MatrixBlock out = RDDAggregateUtils.sumStable(tmp);
 
-		//put output block into symbol table (no lineage because single block)
-		//this also includes implicit maintenance of matrix characteristics
-		sec.setMatrixOutput(output.getName(), out);
+		if (ConfigurationManager.isMaxPrallelizeEnabled()) {
+			try {
+				if (CommonThreadPool.triggerRemoteOPsPool == null)
+					CommonThreadPool.triggerRemoteOPsPool = Executors.newCachedThreadPool();
+				TsmmTask task = new TsmmTask(in, _type);
+				Future<MatrixBlock> future_out = CommonThreadPool.triggerRemoteOPsPool.submit(task);
+				sec.setMatrixOutput(output.getName(), future_out);
+			}
+			catch(Exception ex) {
+				throw new DMLRuntimeException(ex);
+			}
+		}
+		else {
+			//execute tsmm instruction (always produce exactly one output block)
+			//(this formulation with values() requires --conf spark.driver.maxResultSize=0)
+			JavaRDD<MatrixBlock> tmp = in.map(new RDDTSMMFunction(_type));
+			MatrixBlock out = RDDAggregateUtils.sumStable(tmp);
+
+			//put output block into symbol table (no lineage because single block)
+			//this also includes implicit maintenance of matrix characteristics
+			sec.setMatrixOutput(output.getName(), out);
+		}
 	}
 
 	private static class RDDTSMMFunction implements Function<Tuple2<MatrixIndexes,MatrixBlock>, MatrixBlock> 
@@ -88,6 +108,23 @@ public class TsmmSPInstruction extends UnarySPInstruction {
 		{
 			//execute transpose-self matrix multiplication
 			return arg0._2().transposeSelfMatrixMultOperations(new MatrixBlock(), _type);
+		}
+	}
+
+	private static class TsmmTask implements Callable<MatrixBlock> {
+		JavaPairRDD<MatrixIndexes, MatrixBlock> _in;
+		MMTSJType _type;
+
+		TsmmTask(JavaPairRDD<MatrixIndexes, MatrixBlock> in, MMTSJType type) {
+			_in = in;
+			_type = type;
+		}
+		@Override
+		public MatrixBlock call() {
+			//execute tsmm instruction (always produce exactly one output block)
+			//(this formulation with values() requires --conf spark.driver.maxResultSize=0)
+			JavaRDD<MatrixBlock> tmp = _in.map(new RDDTSMMFunction(_type));
+			return RDDAggregateUtils.sumStable(tmp);
 		}
 	}
 	

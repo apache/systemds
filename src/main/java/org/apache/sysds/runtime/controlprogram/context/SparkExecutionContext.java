@@ -672,11 +672,11 @@ public class SparkExecutionContext extends ExecutionContext
 		//the broadcasts are created (other than in local mode) in order to avoid 
 		//unnecessary memory requirements during the lifetime of this broadcast handle.
 		
-		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 
 		PartitionedBroadcast<MatrixBlock> bret = null;
 
 		synchronized (mo) {  //synchronize with the async. broadcast thread
+			long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 			//reuse existing broadcast handle
 			if (mo.getBroadcastHandle() != null && mo.getBroadcastHandle().isPartitionedBroadcastValid()) {
 				bret = mo.getBroadcastHandle().getPartitionedBroadcast();
@@ -719,10 +719,10 @@ public class SparkExecutionContext extends ExecutionContext
 					OptimizerUtils.estimatePartitionedSizeExactSparsity(mo.getDataCharacteristics()));
 				CacheableData.addBroadcastSize(mo.getBroadcastHandle().getSize());
 
-				if (DMLScript.STATISTICS) {
-					SparkStatistics.accBroadCastTime(System.nanoTime() - t0);
-					SparkStatistics.incBroadcastCount(1);
-				}
+			}
+			if (DMLScript.STATISTICS) {
+				SparkStatistics.accBroadCastTime(System.nanoTime() - t0);
+				SparkStatistics.incBroadcastCount(1);
 			}
 		}
 		return bret;

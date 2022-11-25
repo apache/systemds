@@ -21,8 +21,10 @@ package org.apache.sysds.lops.compile.linearization;
 
 import java.util.AbstractMap;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -31,30 +33,50 @@ import java.util.stream.Stream;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.sysds.common.Types.ExecType;
+import org.apache.sysds.common.Types.OpOp1;
+import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.conf.DMLConfig;
+import org.apache.sysds.hops.AggBinaryOp.SparkAggType;
 import org.apache.sysds.hops.OptimizerUtils;
+import org.apache.sysds.lops.CSVReBlock;
+import org.apache.sysds.lops.CentralMoment;
+import org.apache.sysds.lops.Checkpoint;
+import org.apache.sysds.lops.CoVariance;
+import org.apache.sysds.lops.GroupedAggregate;
+import org.apache.sysds.lops.GroupedAggregateM;
 import org.apache.sysds.lops.Lop;
+import org.apache.sysds.lops.MMTSJ;
+import org.apache.sysds.lops.MMZip;
+import org.apache.sysds.lops.MapMultChain;
+import org.apache.sysds.lops.ParameterizedBuiltin;
+import org.apache.sysds.lops.PickByCount;
+import org.apache.sysds.lops.ReBlock;
+import org.apache.sysds.lops.SpoofFused;
+import org.apache.sysds.lops.UAggOuterChain;
+import org.apache.sysds.lops.UnaryCP;
 
 /**
  * A interface for the linearization algorithms that order the DAG nodes into a sequence of instructions to execute.
- * 
+ *
  * https://en.wikipedia.org/wiki/Linearizability#Linearization_points
  */
 public interface ILinearize {
 	public static Log LOG = LogFactory.getLog(ILinearize.class.getName());
 
 	public enum DagLinearization {
-		DEPTH_FIRST, BREADTH_FIRST, MIN_INTERMEDIATE
+		DEPTH_FIRST, BREADTH_FIRST, MIN_INTERMEDIATE, MAX_PARALLELIZE
 	}
 
 	public static List<Lop> linearize(List<Lop> v) {
 		try {
 			DMLConfig dmlConfig = ConfigurationManager.getDMLConfig();
-			DagLinearization linearization = DagLinearization
-				.valueOf(dmlConfig.getTextValue(DMLConfig.DAG_LINEARIZATION).toUpperCase());
+			DagLinearization linearization = ConfigurationManager.getLinearizationOrder();
 
 			switch(linearization) {
+				case MAX_PARALLELIZE:
+					return doMaxParallelizeSort(v);
 				case MIN_INTERMEDIATE:
 					return doMinIntermediateSort(v);
 				case BREADTH_FIRST:
@@ -65,7 +87,7 @@ public interface ILinearize {
 			}
 		}
 		catch(Exception e) {
-			LOG.warn("Invalid or failed DAG_LINEARIZATION, fallback to DEPTH_FIRST ordering");
+			LOG.warn("Invalid DAG_LINEARIZATION "+ConfigurationManager.getLinearizationOrder()+", fallback to DEPTH_FIRST ordering");
 			return depthFirst(v);
 		}
 	}
@@ -154,5 +176,182 @@ public interface ILinearize {
 			// Add input lops recursively
 			sortRecursive(result, e.getKey().getInputs(), remaining);
 		}
+	}
+
+	// Place the Spark operation chains first (more expensive to less expensive),
+	// followed by asynchronously triggering operators and CP chains.
+	private static List<Lop> doMaxParallelizeSort(List<Lop> v)
+	{
+		List<Lop> final_v = null;
+		if (v.stream().anyMatch(ILinearize::isSparkAction)) {
+			// Step 1: Collect the Spark roots and #Spark instructions in each subDAG
+			Map<Long, Integer> sparkOpCount = new HashMap<>();
+			List<Lop> roots = v.stream().filter(l -> l.getOutputs().isEmpty()).collect(Collectors.toList());
+			List<Lop> sparkRoots = new ArrayList<>();
+			roots.forEach(r -> collectSparkRoots(r, sparkOpCount, sparkRoots));
+
+			// Step 2: Depth-first linearization. Place the Spark OPs first.
+			// Sort the Spark roots based on number of Spark operators descending
+			ArrayList<Lop> operatorList = new ArrayList<>();
+			Lop[] sortedSPRoots = sparkRoots.toArray(new Lop[0]);
+			Arrays.sort(sortedSPRoots, (l1, l2) -> sparkOpCount.get(l2.getID()) - sparkOpCount.get(l1.getID()));
+			Arrays.stream(sortedSPRoots).forEach(r -> depthFirst(r, operatorList, sparkOpCount, true));
+
+			// Step 3: Place the rest of the operators (CP). Sort the CP roots based on
+			// #Spark operators in ascending order, i.e. execute the independent CP chains first
+			roots.forEach(r -> depthFirst(r, operatorList, sparkOpCount, false));
+			roots.forEach(Lop::resetVisitStatus);
+			final_v = operatorList;
+		}
+		else
+			// Fall back to depth if none of the operators returns results back to local
+			final_v = depthFirst(v);
+
+		// Step 4: Add Prefetch and Broadcast lops if necessary
+		List<Lop> v_pf = ConfigurationManager.isPrefetchEnabled() ? addPrefetchLop(final_v) : final_v;
+		List<Lop> v_bc = ConfigurationManager.isBroadcastEnabled() ? addBroadcastLop(v_pf) : v_pf;
+		// TODO: Merge into a single traversal
+
+		return v_bc;
+	}
+
+	// Gather the Spark operators which return intermediates to local (actions/single_block)
+	// In addition count the number of Spark OPs underneath every Operator
+	private static int collectSparkRoots(Lop root, Map<Long, Integer> sparkOpCount, List<Lop> sparkRoots) {
+		if (sparkOpCount.containsKey(root.getID())) //visited before
+			return sparkOpCount.get(root.getID());
+
+		// Sum Spark operators in the child DAGs
+		int total = 0;
+		for (Lop input : root.getInputs())
+			total += collectSparkRoots(input, sparkOpCount, sparkRoots);
+
+		// Check if this node is Spark
+		total = root.isExecSpark() ? total + 1 : total;
+		sparkOpCount.put(root.getID(), total);
+
+		// Triggering point: Spark operator with all CP consumers
+		if (isSparkAction(root) && root.isAllOutputsCP())
+			sparkRoots.add(root);
+
+		return total;
+	}
+
+	// Place the operators in a depth-first manner, but order
+	// the DAGs based on number of Spark operators
+	private static void depthFirst(Lop root, ArrayList<Lop> opList, Map<Long, Integer> sparkOpCount, boolean sparkFirst) {
+		if (root.isVisited())
+			return;
+
+		if (root.getInputs().isEmpty()) {  //leaf node
+			opList.add(root);
+			root.setVisited();
+			return;
+		}
+		// Sort the inputs based on number of Spark operators
+		Lop[] sortedInputs = root.getInputs().toArray(new Lop[0]);
+		if (sparkFirst) //to place the child DAG with more Spark OPs first
+			Arrays.sort(sortedInputs, (l1, l2) -> sparkOpCount.get(l2.getID()) - sparkOpCount.get(l1.getID()));
+		else //to place the child DAG with more CP OPs first
+			Arrays.sort(sortedInputs, Comparator.comparingInt(l -> sparkOpCount.get(l.getID())));
+
+		for (Lop input : sortedInputs)
+			depthFirst(input, opList, sparkOpCount, sparkFirst);
+
+		opList.add(root);
+		root.setVisited();
+	}
+
+	private static boolean isSparkAction(Lop lop) {
+		return lop.isExecSpark() && (lop.getAggType() == SparkAggType.SINGLE_BLOCK
+			|| lop.getDataType() == DataType.SCALAR || lop instanceof MapMultChain
+			|| lop instanceof PickByCount || lop instanceof MMZip || lop instanceof CentralMoment
+			|| lop instanceof CoVariance || lop instanceof MMTSJ);
+	}
+
+	private static List<Lop> addPrefetchLop(List<Lop> nodes) {
+		List<Lop> nodesWithPrefetch = new ArrayList<>();
+
+		//Find the Spark nodes with all CP outputs
+		for (Lop l : nodes) {
+			nodesWithPrefetch.add(l);
+			if (isPrefetchNeeded(l)) {
+				//TODO: No prefetch if the parent is placed right after the spark OP
+				//or push the parent further to increase parallelism
+				List<Lop> oldOuts = new ArrayList<>(l.getOutputs());
+				//Construct a Prefetch lop that takes this Spark node as a input
+				UnaryCP prefetch = new UnaryCP(l, OpOp1.PREFETCH, l.getDataType(), l.getValueType(), ExecType.CP);
+				for (Lop outCP : oldOuts) {
+					//Rewire l -> outCP to l -> Prefetch -> outCP
+					prefetch.addOutput(outCP);
+					outCP.replaceInput(l, prefetch);
+					l.removeOutput(outCP);
+					//FIXME: Rewire _inputParams when needed (e.g. GroupedAggregate)
+				}
+				//Place it immediately after the Spark lop in the node list
+				nodesWithPrefetch.add(prefetch);
+			}
+		}
+		return nodesWithPrefetch;
+	}
+
+	private static List<Lop> addBroadcastLop(List<Lop> nodes) {
+		List<Lop> nodesWithBroadcast = new ArrayList<>();
+
+		for (Lop l : nodes) {
+			nodesWithBroadcast.add(l);
+			if (isBroadcastNeeded(l)) {
+				List<Lop> oldOuts = new ArrayList<>(l.getOutputs());
+				//Construct a Broadcast lop that takes this Spark node as an input
+				UnaryCP bc = new UnaryCP(l, OpOp1.BROADCAST, l.getDataType(), l.getValueType(), ExecType.CP);
+				//FIXME: Wire Broadcast only with the necessary outputs
+				for (Lop outCP : oldOuts) {
+					//Rewire l -> outCP to l -> Broadcast -> outCP
+					bc.addOutput(outCP);
+					outCP.replaceInput(l, bc);
+					l.removeOutput(outCP);
+					//FIXME: Rewire _inputParams when needed (e.g. GroupedAggregate)
+				}
+				//Place it immediately after the Spark lop in the node list
+				nodesWithBroadcast.add(bc);
+			}
+		}
+		return nodesWithBroadcast;
+	}
+
+	private static boolean isPrefetchNeeded(Lop lop) {
+		// Run Prefetch for a Spark instruction if the instruction is a Transformation
+		// and the output is consumed by only CP instructions.
+		boolean transformOP = lop.getExecType() == ExecType.SPARK && lop.getAggType() != SparkAggType.SINGLE_BLOCK
+				// Always Action operations
+				&& !(lop.getDataType() == DataType.SCALAR)
+				&& !(lop instanceof MapMultChain) && !(lop instanceof PickByCount)
+				&& !(lop instanceof MMZip) && !(lop instanceof CentralMoment)
+				&& !(lop instanceof CoVariance)
+				// Not qualified for prefetching
+				&& !(lop instanceof Checkpoint) && !(lop instanceof ReBlock)
+				&& !(lop instanceof CSVReBlock)
+				// Cannot filter Transformation cases from Actions (FIXME)
+				&& !(lop instanceof MMTSJ) && !(lop instanceof UAggOuterChain)
+				&& !(lop instanceof ParameterizedBuiltin) && !(lop instanceof SpoofFused);
+
+		//FIXME: Rewire _inputParams when needed (e.g. GroupedAggregate)
+		boolean hasParameterizedOut = lop.getOutputs().stream()
+				.anyMatch(out -> ((out instanceof ParameterizedBuiltin)
+					|| (out instanceof GroupedAggregate)
+					|| (out instanceof GroupedAggregateM)));
+		//TODO: support non-matrix outputs
+		return transformOP && !hasParameterizedOut
+				&& lop.isAllOutputsCP() && lop.getDataType() == DataType.MATRIX;
+	}
+
+	private static boolean isBroadcastNeeded(Lop lop) {
+		// Asynchronously broadcast a matrix if that is produced by a CP instruction,
+		// and at least one Spark parent needs to broadcast this intermediate (eg. mapmm)
+		boolean isBc = lop.getOutputs().stream()
+				.anyMatch(out -> (out.getBroadcastInput() == lop));
+		//TODO: Early broadcast objects that are bigger than a single block
+		//return isCP && isBc && lop.getDataTypes() == DataType.Matrix;
+		return isBc && lop.getDataType() == DataType.MATRIX;
 	}
 }

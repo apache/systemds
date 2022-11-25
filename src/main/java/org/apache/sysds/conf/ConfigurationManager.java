@@ -23,6 +23,7 @@ import org.apache.hadoop.mapred.JobConf;
 import org.apache.sysds.conf.CompilerConfig.ConfigType;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.lops.Compression.CompressConfig;
+import org.apache.sysds.lops.compile.linearization.ILinearize;
 
 /**
  * Singleton for accessing the parsed and merged system configuration.
@@ -237,9 +238,23 @@ public class ConfigurationManager
 			|| OptimizerUtils.ASYNC_PREFETCH_SPARK);
 	}
 
+	public static boolean isMaxPrallelizeEnabled() {
+		return (getLinearizationOrder() == ILinearize.DagLinearization.MAX_PARALLELIZE
+			|| OptimizerUtils.MAX_PARALLELIZE_ORDER);
+	}
+
 	public static boolean isBroadcastEnabled() {
 		return (getDMLConfig().getBooleanValue(DMLConfig.ASYNC_SPARK_BROADCAST)
 			|| OptimizerUtils.ASYNC_BROADCAST_SPARK);
+	}
+
+	public static ILinearize.DagLinearization getLinearizationOrder() {
+		if (OptimizerUtils.MAX_PARALLELIZE_ORDER)
+			return ILinearize.DagLinearization.MAX_PARALLELIZE;
+		else
+			return ILinearize.DagLinearization
+			.valueOf(ConfigurationManager.getDMLConfig().getTextValue(DMLConfig.DAG_LINEARIZATION).toUpperCase());
+
 	}
 
 	///////////////////////////////////////

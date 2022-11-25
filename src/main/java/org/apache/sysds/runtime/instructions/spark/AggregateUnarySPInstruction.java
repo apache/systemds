@@ -109,7 +109,7 @@ public class AggregateUnarySPInstruction extends UnarySPInstruction {
 		//perform aggregation if necessary and put output into symbol table
 		if( _aggtype == SparkAggType.SINGLE_BLOCK )
 		{
-			if (ConfigurationManager.isPrefetchEnabled()) {
+			if (ConfigurationManager.isMaxPrallelizeEnabled()) {
 				//Trigger the chain of Spark operations and maintain a future to the result
 				//TODO: Make memory for the future matrix block
 				try {

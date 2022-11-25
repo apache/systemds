@@ -285,6 +285,12 @@ public class OptimizerUtils
 	public static boolean ASYNC_PREFETCH_SPARK = false;
 	public static boolean ASYNC_BROADCAST_SPARK = false;
 
+	/**
+	 * Heuristic-based instruction ordering to maximize inter-operator parallelism.
+	 * Place the Spark operator chains first and trigger them to execute in parallel.
+	 */
+	public static boolean MAX_PARALLELIZE_ORDER = false;
+
 	//////////////////////
 	// Optimizer levels //
 	//////////////////////

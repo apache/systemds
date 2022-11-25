@@ -1,0 +1,69 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+l2norm = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] B, Boolean icpt)
+return (Matrix[Double] loss) {
+  if (icpt)
+    X = cbind(X, matrix(1, nrow(X), 1));
+  loss = as.matrix(sum((y - X%*%B)^2));
+}
+
+M = 100000;
+N = 20;
+sp = 1.0;
+no_lamda = 1;
+
+X = rand(rows=M, cols=N, sparsity=sp, seed=42);
+y = rand(rows=M, cols=1, min=0, max=2, seed=42);
+y = ceil(y);
+
+stp = (0.1 - 0.0001)/no_lamda;
+lamda = 0.0001;
+Rbeta = matrix(0, rows=ncol(X)+1, cols=no_lamda*2);
+Rloss = matrix(0, rows=no_lamda*2, cols=1);
+i = 1;
+
+
+for (l in 1:no_lamda)
+{
+  beta = l2svm(X=X, Y=y, intercept=FALSE, epsilon=1e-12,
+#      lambda = lamda, maxIterations=10, verbose=FALSE);
+      reg = lamda, verbose=FALSE);
+  Rbeta[1:nrow(beta),i] = beta;
+  Rloss[i,] = l2norm(X, y, beta, FALSE);
+  i = i + 1;
+
+  beta = l2svm(X=X, Y=y, intercept=TRUE, epsilon=1e-12,
+#      lambda = lamda, maxIterations=10, verbose=FALSE);
+      reg = lamda, verbose=FALSE);
+  Rbeta[1:nrow(beta),i] = beta;
+  Rloss[i,] = l2norm(X, y, beta, TRUE);
+  i = i + 1;
+
+  lamda = lamda + stp;
+}
+
+leastLoss = rowIndexMin(t(Rloss));
+bestModel = Rbeta[,as.scalar(leastLoss)];
+
+R = sum(bestModel);
+write(R, $1, format="text");
+

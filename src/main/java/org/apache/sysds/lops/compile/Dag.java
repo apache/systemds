@@ -74,7 +74,6 @@ import org.apache.sysds.runtime.instructions.cp.CPInstruction.CPType;
 import org.apache.sysds.runtime.instructions.cp.VariableCPInstruction;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 
-
 /**
  * 
  * Class to maintain a DAG of lops and compile it into 
@@ -193,17 +192,11 @@ public class Dag<N extends Lop>
 		}
 
 		List<Lop> node_v = ILinearize.linearize(nodes);
-		
-		// add Prefetch and broadcast lops, if necessary
-		List<Lop> node_pf = ConfigurationManager.isPrefetchEnabled() ? addPrefetchLop(node_v) : node_v;
-		List<Lop> node_bc = ConfigurationManager.isBroadcastEnabled() ? addBroadcastLop(node_pf) : node_pf;
-		// TODO: Merge via a single traversal of the nodes
-
-		prefetchFederated(node_bc);
+		prefetchFederated(node_v);
 
 		// do greedy grouping of operations
-		ArrayList<Instruction> inst = doPlainInstructionGen(sb, node_bc);
-		
+		ArrayList<Instruction> inst = doPlainInstructionGen(sb, node_v);
+
 		// cleanup instruction (e.g., create packed rmvar instructions)
 		return cleanupInstructions(inst);
 	}

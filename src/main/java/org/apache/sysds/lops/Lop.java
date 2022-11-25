@@ -188,6 +188,14 @@ public abstract class Lop
 		_visited = visited;
 	}
 
+	public void setVisited() {
+		setVisited(VisitStatus.DONE);
+	}
+
+	public boolean isVisited() {
+		return _visited == VisitStatus.DONE;
+	}
+
 	
 	public boolean[] getReachable() {
 		return reachable;
@@ -295,6 +303,10 @@ public abstract class Lop
 			int index = inputs.indexOf(oldInp);
 			inputs.set(index, newInp);
 		}
+	}
+
+	public void removeInput(Lop op) {
+		inputs.remove(op);
 	}
 
 	/**
@@ -414,7 +426,11 @@ public abstract class Lop
 	public void setExecType(ExecType newExecType){
  		lps.setExecType(newExecType);
 	}
-	
+
+	public boolean isExecSpark () {
+		return (lps.getExecType() == ExecType.SPARK);
+	}
+
 	public boolean getProducesIntermediateOutput() {
 		return lps.getProducesIntermediateOutput();
 	}

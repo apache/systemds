@@ -126,8 +126,8 @@ public class MapmmSPInstruction extends AggregateBinarySPInstruction {
 		}
 		
 		//get inputs
-		PartitionedBroadcast<MatrixBlock> in2 = sec.getBroadcastForVariable(bcastVar); 
-		
+		PartitionedBroadcast<MatrixBlock> in2 = sec.getBroadcastForVariable(bcastVar);
+
 		//empty input block filter
 		if( !_outputEmpty )
 			in1 = in1.filter(new FilterNonEmptyBlocksFunction());
@@ -174,6 +174,10 @@ public class MapmmSPInstruction extends AggregateBinarySPInstruction {
 			//update output statistics if not inferred
 			updateBinaryMMOutputDataCharacteristics(sec, true);
 		}
+	}
+
+	public SparkAggType getAggType() {
+		return _aggtype;
 	}
 
 	private static boolean preservesPartitioning(DataCharacteristics mcIn, CacheType type )

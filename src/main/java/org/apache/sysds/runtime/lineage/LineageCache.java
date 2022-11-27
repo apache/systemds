@@ -32,6 +32,7 @@ import org.apache.sysds.parser.Statement;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
+import org.apache.sysds.runtime.controlprogram.context.MatrixObjectFuture;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedStatistics;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedUDF;
@@ -48,6 +49,7 @@ import org.apache.sysds.runtime.instructions.cp.ScalarObject;
 import org.apache.sysds.runtime.instructions.fed.ComputationFEDInstruction;
 import org.apache.sysds.runtime.instructions.gpu.GPUInstruction;
 import org.apache.sysds.runtime.instructions.gpu.context.GPUObject;
+import org.apache.sysds.runtime.instructions.spark.ComputationSPInstruction;
 import org.apache.sysds.runtime.lineage.LineageCacheConfig.LineageCacheStatus;
 import org.apache.sysds.runtime.lineage.LineageCacheConfig.ReuseCacheType;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -91,11 +93,14 @@ public class LineageCache
 		// will always fit in memory and hence can be pinned unconditionally
 		if (LineageCacheConfig.isReusable(inst, ec)) {
 			ComputationCPInstruction cinst = inst instanceof ComputationCPInstruction ? (ComputationCPInstruction)inst : null;
-			ComputationFEDInstruction cfinst = inst instanceof ComputationFEDInstruction ? (ComputationFEDInstruction)inst : null; 
+			ComputationFEDInstruction cfinst = inst instanceof ComputationFEDInstruction ? (ComputationFEDInstruction)inst : null;
+			ComputationSPInstruction cspinst = inst instanceof ComputationSPInstruction ? (ComputationSPInstruction)inst : null;
 			GPUInstruction gpuinst = inst instanceof GPUInstruction ? (GPUInstruction)inst : null;
+			//TODO: Replace with generic type
 				
 			LineageItem instLI = (cinst != null) ? cinst.getLineageItem(ec).getValue()
-					: (cfinst != null) ? cfinst.getLineageItem(ec).getValue() 
+					: (cfinst != null) ? cfinst.getLineageItem(ec).getValue()
+					: (cspinst != null) ? cspinst.getLineageItem(ec).getValue()
 					: gpuinst.getLineageItem(ec).getValue();
 			List<MutablePair<LineageItem, LineageCacheEntry>> liList = null;
 			if (inst instanceof MultiReturnBuiltinCPInstruction) {
@@ -120,10 +125,10 @@ public class LineageCache
 						e = LineageCache.probe(item.getKey()) ? getIntern(item.getKey()) : null;
 					//TODO need to also move execution of compensation plan out of here
 					//(create lazily evaluated entry)
-					if (e == null && LineageCacheConfig.getCacheType().isPartialReuse())
+					if (e == null && LineageCacheConfig.getCacheType().isPartialReuse() && cspinst == null)
 						if( LineageRewriteReuse.executeRewrites(inst, ec) )
 							e = getIntern(item.getKey());
-					//TODO: MultiReturnBuiltin and partial rewrites
+					//TODO: Partial reuse for Spark instructions
 					reuseAll &= (e != null);
 					item.setValue(e);
 					
@@ -134,6 +139,8 @@ public class LineageCache
 							putIntern(item.getKey(), cinst.output.getDataType(), null, null,  0);
 						else if (cfinst != null)
 							putIntern(item.getKey(), cfinst.output.getDataType(), null, null,  0);
+						else if (cspinst != null)
+							putIntern(item.getKey(), cspinst.output.getDataType(), null, null,  0);
 						else if (gpuinst != null)
 							putIntern(item.getKey(), gpuinst._output.getDataType(), null, null,  0);
 						//FIXME: different o/p datatypes for MultiReturnBuiltins.
@@ -155,6 +162,8 @@ public class LineageCache
 						outName = cinst.output.getName();
 					else if (inst instanceof ComputationFEDInstruction)
 						outName = cfinst.output.getName();
+					else if (inst instanceof ComputationSPInstruction)
+						outName = cspinst.output.getName();
 					else if (inst instanceof GPUInstruction)
 						outName = gpuinst._output.getName();
 					
@@ -483,9 +492,14 @@ public class LineageCache
 		if (LineageCacheConfig.isReusable(inst, ec) ) {
 			LineageItem item = ((LineageTraceable) inst).getLineageItem(ec).getValue();
 			//This method is called only to put matrix value
-			MatrixObject mo = inst instanceof ComputationCPInstruction ? 
-					ec.getMatrixObject(((ComputationCPInstruction) inst).output) :
-					ec.getMatrixObject(((ComputationFEDInstruction) inst).output);
+			MatrixObject mo = null;
+			if (inst instanceof ComputationCPInstruction)
+				mo = ec.getMatrixObject(((ComputationCPInstruction) inst).output);
+			else if (inst instanceof ComputationFEDInstruction)
+				mo = ec.getMatrixObject(((ComputationFEDInstruction) inst).output);
+			else if (inst instanceof ComputationSPInstruction)
+				mo = ec.getMatrixObject(((ComputationSPInstruction) inst).output);
+
 			synchronized( _cache ) {
 				putIntern(item, DataType.MATRIX, mo.acquireReadAndRelease(), null, computetime);
 			}
@@ -527,9 +541,12 @@ public class LineageCache
 					liData = Arrays.asList(Pair.of(instLI, ec.getVariable(((GPUInstruction)inst)._output)));
 			}
 			else
-				liData = inst instanceof ComputationCPInstruction ? 
-						Arrays.asList(Pair.of(instLI, ec.getVariable(((ComputationCPInstruction) inst).output))) :
-						Arrays.asList(Pair.of(instLI, ec.getVariable(((ComputationFEDInstruction) inst).output)));
+				if (inst instanceof ComputationCPInstruction)
+					liData = Arrays.asList(Pair.of(instLI, ec.getVariable(((ComputationCPInstruction) inst).output)));
+				else if (inst instanceof ComputationFEDInstruction)
+					liData = Arrays.asList(Pair.of(instLI, ec.getVariable(((ComputationFEDInstruction) inst).output)));
+				else if (inst instanceof ComputationSPInstruction)
+					liData = Arrays.asList(Pair.of(instLI, ec.getVariable(((ComputationSPInstruction) inst).output)));
 
 			if (liGpuObj == null)
 				putValueCPU(inst, liData, computetime);
@@ -552,6 +569,12 @@ public class LineageCache
 
 				if (!(data instanceof MatrixObject) && !(data instanceof ScalarObject)) {
 					// Reusable instructions can return a frame (rightIndex). Remove placeholders.
+					removePlaceholder(item);
+					continue;
+				}
+
+				if (data instanceof MatrixObjectFuture) {
+					// We don't want to call get() on the future immediately after the execution
 					removePlaceholder(item);
 					continue;
 				}
@@ -867,10 +890,12 @@ public class LineageCache
 		
 		CPOperand output = inst instanceof ComputationCPInstruction ? ((ComputationCPInstruction)inst).output 
 				: inst instanceof ComputationFEDInstruction ? ((ComputationFEDInstruction)inst).output
+				: inst instanceof ComputationSPInstruction ? ((ComputationSPInstruction)inst).output
 				: ((GPUInstruction)inst)._output;
 		if (output.isMatrix()) {
 			MatrixObject mo = inst instanceof ComputationCPInstruction ? ec.getMatrixObject(((ComputationCPInstruction)inst).output) 
 				: inst instanceof ComputationFEDInstruction ? ec.getMatrixObject(((ComputationFEDInstruction)inst).output)
+				: inst instanceof ComputationSPInstruction ? ec.getMatrixObject(((ComputationSPInstruction)inst).output)
 				: ec.getMatrixObject(((GPUInstruction)inst)._output);
 			//limit this to full reuse as partial reuse is applicable even for loop dependent operation
 			return !(LineageCacheConfig.getCacheType() == ReuseCacheType.REUSE_FULL  

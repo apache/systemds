@@ -148,7 +148,11 @@ public class CpmmSPInstruction extends AggregateBinarySPInstruction {
 			}
 		}
 	}
-	
+
+	public SparkAggType getAggType() {
+		return _aggtype;
+	}
+
 	private static int getPreferredParJoin(DataCharacteristics mc1, DataCharacteristics mc2, int numPar1, int numPar2) {
 		int defPar = SparkExecutionContext.getDefaultParallelism(true);
 		int maxParIn = Math.max(numPar1, numPar2);

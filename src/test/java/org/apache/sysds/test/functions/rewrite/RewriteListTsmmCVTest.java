@@ -128,7 +128,8 @@ public class RewriteListTsmmCVTest extends AutomatedTestBase
 			if( instType == ExecType.CP )
 				Assert.assertEquals(0, Statistics.getNoOfExecutedSPInst());
 			if( rewrites ) {
-				boolean expectedReuse = lineage && instType == ExecType.CP;
+				//boolean expectedReuse = lineage && instType == ExecType.CP;
+				boolean expectedReuse = lineage;
 				String[] codes = (instType==ExecType.CP) ?
 					new String[]{"rbind","tsmm","ba+*","n+"} :
 					new String[]{"sp_append","sp_tsmm","sp_mapmm","sp_n+"};

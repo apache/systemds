@@ -222,6 +222,10 @@ public class AggregateUnarySPInstruction extends UnarySPInstruction {
 		}
 	}
 
+	public SparkAggType getAggType() {
+		return _aggtype;
+	}
+
 	private static class RDDUAggFunction implements PairFunction<Tuple2<MatrixIndexes, MatrixBlock>, MatrixIndexes, MatrixBlock>
 	{
 		private static final long serialVersionUID = 2672082409287856038L;

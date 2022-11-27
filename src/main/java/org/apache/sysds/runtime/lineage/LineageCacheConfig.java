@@ -53,7 +53,8 @@ public class LineageCacheConfig
 		"uamean", "max", "min", "ifelse", "-", "sqrt", ">", "uak+", "<=",
 		"^", "uamax", "uark+", "uacmean", "eigen", "ctableexpand", "replace",
 		"^2", "uack+", "tak+*", "uacsqk+", "uark+", "n+", "uarimax", "qsort", 
-		"qpick", "transformapply", "uarmax", "n+", "-*", "castdtm", "lowertri", "mapmm"
+		"qpick", "transformapply", "uarmax", "n+", "-*", "castdtm", "lowertri",
+		"mapmm", "cpmm"
 		//TODO: Reuse everything. 
 	};
 	private static String[] REUSE_OPCODES  = new String[] {};
@@ -205,9 +206,8 @@ public class LineageCacheConfig
 		boolean insttype = (inst instanceof ComputationCPInstruction 
 			|| inst instanceof ComputationFEDInstruction
 			|| inst instanceof GPUInstruction
-			|| inst instanceof ComputationSPInstruction)
+			|| (inst instanceof ComputationSPInstruction && isRightSparkOp(inst)))
 			&& !(inst instanceof ListIndexingCPInstruction);
-		boolean isSparkaction = isRightSparkOp(inst);
 		boolean rightop = (ArrayUtils.contains(REUSE_OPCODES, inst.getOpcode())
 			|| (inst.getOpcode().equals("append") && isVectorAppend(inst, ec))
 			|| (inst.getOpcode().startsWith("spoof"))
@@ -215,7 +215,7 @@ public class LineageCacheConfig
 		boolean updateInplace = (inst instanceof MatrixIndexingCPInstruction)
 			&& ec.getMatrixObject(((ComputationCPInstruction)inst).input1).getUpdateType().isInPlace();
 		boolean federatedOutput = false;
-		return insttype && isSparkaction && rightop && !updateInplace && !federatedOutput;
+		return insttype && rightop && !updateInplace && !federatedOutput;
 	}
 	
 	private static boolean isVectorAppend(Instruction inst, ExecutionContext ec) {

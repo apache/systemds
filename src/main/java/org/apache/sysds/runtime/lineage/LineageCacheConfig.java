@@ -21,8 +21,10 @@ package org.apache.sysds.runtime.lineage;
 
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.common.Types;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.conf.DMLConfig;
+import org.apache.sysds.hops.AggBinaryOp;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.instructions.Instruction;
@@ -33,6 +35,11 @@ import org.apache.sysds.runtime.instructions.cp.ListIndexingCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.MatrixIndexingCPInstruction;
 import org.apache.sysds.runtime.instructions.fed.ComputationFEDInstruction;
 import org.apache.sysds.runtime.instructions.gpu.GPUInstruction;
+import org.apache.sysds.runtime.instructions.spark.AggregateUnarySPInstruction;
+import org.apache.sysds.runtime.instructions.spark.ComputationSPInstruction;
+import org.apache.sysds.runtime.instructions.spark.CpmmSPInstruction;
+import org.apache.sysds.runtime.instructions.spark.MapmmSPInstruction;
+import org.apache.sysds.runtime.instructions.spark.TsmmSPInstruction;
 
 import java.util.Comparator;
 
@@ -46,7 +53,8 @@ public class LineageCacheConfig
 		"uamean", "max", "min", "ifelse", "-", "sqrt", ">", "uak+", "<=",
 		"^", "uamax", "uark+", "uacmean", "eigen", "ctableexpand", "replace",
 		"^2", "uack+", "tak+*", "uacsqk+", "uark+", "n+", "uarimax", "qsort", 
-		"qpick", "transformapply", "uarmax", "n+", "-*", "castdtm", "lowertri"
+		"qpick", "transformapply", "uarmax", "n+", "-*", "castdtm", "lowertri",
+		"mapmm", "cpmm"
 		//TODO: Reuse everything. 
 	};
 	private static String[] REUSE_OPCODES  = new String[] {};
@@ -197,7 +205,8 @@ public class LineageCacheConfig
 	public static boolean isReusable (Instruction inst, ExecutionContext ec) {
 		boolean insttype = (inst instanceof ComputationCPInstruction 
 			|| inst instanceof ComputationFEDInstruction
-			|| inst instanceof GPUInstruction)
+			|| inst instanceof GPUInstruction
+			|| (inst instanceof ComputationSPInstruction && isRightSparkOp(inst)))
 			&& !(inst instanceof ListIndexingCPInstruction);
 		boolean rightop = (ArrayUtils.contains(REUSE_OPCODES, inst.getOpcode())
 			|| (inst.getOpcode().equals("append") && isVectorAppend(inst, ec))
@@ -226,6 +235,14 @@ public class LineageCacheConfig
 			long c2 = ec.getMatrixObject(cpinst.input2).getNumColumns();
 			return(c1 == 1 || c2 == 1);
 		}
+		if (inst instanceof ComputationSPInstruction) {
+			ComputationSPInstruction fedinst = (ComputationSPInstruction) inst;
+			if (!fedinst.input1.isMatrix() || !fedinst.input2.isMatrix())
+				return false;
+			long c1 = ec.getMatrixObject(fedinst.input1).getNumColumns();
+			long c2 = ec.getMatrixObject(fedinst.input2).getNumColumns();
+			return(c1 == 1 || c2 == 1);
+		}
 		else { //GPUInstruction
 			GPUInstruction gpuinst = (GPUInstruction)inst;
 			if( !gpuinst._input1.isMatrix() || !gpuinst._input2.isMatrix() )
@@ -234,6 +251,30 @@ public class LineageCacheConfig
 			long c2 = ec.getMatrixObject(gpuinst._input2).getNumColumns();
 			return(c1 == 1 || c2 == 1);
 		}
+	}
+
+	// Check if the Spark instruction returns result back to local
+	private static boolean isRightSparkOp(Instruction inst) {
+		if (!(inst instanceof ComputationSPInstruction))
+			return false;
+
+		boolean spAction = false;
+		if (inst instanceof MapmmSPInstruction &&
+			((MapmmSPInstruction) inst).getAggType() == AggBinaryOp.SparkAggType.SINGLE_BLOCK)
+			spAction = true;
+		else if (inst instanceof TsmmSPInstruction)
+			spAction = true;
+		else if (inst instanceof AggregateUnarySPInstruction &&
+			((AggregateUnarySPInstruction) inst).getAggType() == AggBinaryOp.SparkAggType.SINGLE_BLOCK)
+			spAction = true;
+		else if (inst instanceof CpmmSPInstruction &&
+			((CpmmSPInstruction) inst).getAggType() == AggBinaryOp.SparkAggType.SINGLE_BLOCK)
+			spAction = true;
+		else if (((ComputationSPInstruction) inst).output.getDataType() == Types.DataType.SCALAR)
+			spAction = true;
+		//TODO: include other cases
+
+		return spAction;
 	}
 	
 	public static boolean isOutputFederated(Instruction inst, Data data) {

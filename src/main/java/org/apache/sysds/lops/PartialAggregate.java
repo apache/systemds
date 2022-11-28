@@ -374,6 +374,17 @@ public class PartialAggregate extends Lop
 
 			case COUNT_DISTINCT_APPROX_COL:
 				return "uacdapc";
+
+			case UNIQUE: {
+				switch (dir) {
+					case RowCol: return "unique";
+					case Row: return "uniquer";
+					case Col: return "uniquec";
+					default:
+						throw new LopsException("PartialAggregate.getOpcode() - "
+								+ "Unknown aggregate direction: " + dir);
+				}
+			}
 		}
 		
 		//should never come here for normal compilation

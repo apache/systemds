@@ -26,15 +26,14 @@ import org.apache.sysds.runtime.functionobjects.Plus;
 import org.apache.sysds.runtime.instructions.cp.AggregateUnaryCPInstruction.AUType;
 import org.apache.sysds.utils.Hash.HashType;
 
-public class CountDistinctOperator extends AggregateUnaryOperator {
+public class CountDistinctOperator extends UnarySketchOperator {
 	private static final long serialVersionUID = 7615123453265129670L;
 
 	private final CountDistinctOperatorTypes operatorType;
-	private final Types.Direction direction;
 	private final HashType hashType;
 
 	public CountDistinctOperator(AUType opType, Types.Direction direction, IndexFunction indexFunction) {
-		super(new AggregateOperator(0, Plus.getPlusFnObject()), indexFunction, 1);
+		super(new AggregateOperator(0, Plus.getPlusFnObject()), indexFunction, direction, 1);
 
 		switch(opType) {
 			case COUNT_DISTINCT:
@@ -47,15 +46,13 @@ public class CountDistinctOperator extends AggregateUnaryOperator {
 				throw new DMLRuntimeException(opType + " not supported for CountDistinct Operator");
 		}
 		this.hashType = HashType.LinearHash;
-		this.direction = direction;
 	}
 
 	public CountDistinctOperator(CountDistinctOperatorTypes operatorType, Types.Direction direction,
 								 IndexFunction indexFunction, HashType hashType) {
-		super(new AggregateOperator(0, Plus.getPlusFnObject()), indexFunction, 1);
+		super(new AggregateOperator(0, Plus.getPlusFnObject()), indexFunction, direction, 1);
 
 		this.operatorType = operatorType;
-		this.direction = direction;
 		this.hashType = hashType;
 	}
 
@@ -65,9 +62,5 @@ public class CountDistinctOperator extends AggregateUnaryOperator {
 
 	public HashType getHashType() {
 		return hashType;
-	}
-
-	public Types.Direction getDirection() {
-		return direction;
 	}
 }

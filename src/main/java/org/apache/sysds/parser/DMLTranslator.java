@@ -2041,7 +2041,7 @@ public class DMLTranslator
 				break;
 
 			case COUNT_DISTINCT:
-			case COUNT_DISTINCT_APPROX:
+			case COUNT_DISTINCT_APPROX: {
 				Direction dir = Direction.RowCol;  // Default direction
 				DataType dataType = DataType.SCALAR;  // Default output data type
 
@@ -2063,6 +2063,7 @@ public class DMLTranslator
 				currBuiltinOp = new AggUnaryOp(target.getName(), dataType, target.getValueType(),
 						AggOp.valueOf(source.getOpCode().name()), dir, paramHops.get("data"));
 				break;
+			}
 
 			case COUNT_DISTINCT_APPROX_ROW:
 				currBuiltinOp = new AggUnaryOp(target.getName(), DataType.MATRIX, target.getValueType(),
@@ -2072,6 +2073,26 @@ public class DMLTranslator
 			case COUNT_DISTINCT_APPROX_COL:
 				currBuiltinOp = new AggUnaryOp(target.getName(), DataType.MATRIX, target.getValueType(),
 						AggOp.valueOf(source.getOpCode().name()), Direction.Col, paramHops.get("data"));
+				break;
+
+			case UNIQUE:
+				Direction dir = Direction.RowCol;
+				DataType dataType = DataType.MATRIX;
+
+				LiteralOp dirOp = (LiteralOp) paramHops.get("dir");
+				if (dirOp != null) {
+					String dirString = dirOp.getStringValue().toUpperCase();
+					if (dirString.equals(Direction.RowCol.toString())) {
+						dir = Direction.RowCol;
+					} else if (dirString.equals(Direction.Row.toString())) {
+						dir = Direction.Row;
+					} else if (dirString.equals(Direction.Col.toString())) {
+						dir = Direction.Col;
+					}
+				}
+
+				currBuiltinOp = new AggUnaryOp(target.getName(), dataType, target.getValueType(),
+						AggOp.valueOf(source.getOpCode().name()), dir, paramHops.get("data"));
 				break;
 
 			default:

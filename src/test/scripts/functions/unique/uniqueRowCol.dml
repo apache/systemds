@@ -19,6 +19,6 @@
 #
 #-------------------------------------------------------------
 
-X = read($1);
-R = unique(X = X);
-write(R, $2);
+input = read($1);
+res = unique(input);
+write(res, $2, format="text");

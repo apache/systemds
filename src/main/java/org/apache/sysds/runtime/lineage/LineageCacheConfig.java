@@ -206,7 +206,7 @@ public class LineageCacheConfig
 		boolean insttype = (inst instanceof ComputationCPInstruction 
 			|| inst instanceof ComputationFEDInstruction
 			|| inst instanceof GPUInstruction
-			|| (inst instanceof ComputationSPInstruction && isRightSparkOp(inst)))
+			|| inst instanceof ComputationSPInstruction)
 			&& !(inst instanceof ListIndexingCPInstruction);
 		boolean rightop = (ArrayUtils.contains(REUSE_OPCODES, inst.getOpcode())
 			|| (inst.getOpcode().equals("append") && isVectorAppend(inst, ec))

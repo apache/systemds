@@ -51,15 +51,22 @@ public class LineageReuseSparkTest extends AutomatedTestBase {
 	}
 
 	@Test
-	public void testlmds() {
-		runTest(TEST_NAME+"1");
+	public void testlmdsHB() {
+		runTest(TEST_NAME+"1", ExecMode.HYBRID);
 	}
 
-	public void runTest(String testname) {
+	@Test
+	public void testlmdsSP() {
+		// Only reuse the actions
+		runTest(TEST_NAME+"1", ExecMode.SPARK);
+	}
+
+	public void runTest(String testname, ExecMode execMode) {
 		boolean old_simplification = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
 		boolean old_sum_product = OptimizerUtils.ALLOW_SUM_PRODUCT_REWRITES;
 		boolean old_trans_exec_type = OptimizerUtils.ALLOW_TRANSITIVE_SPARK_EXEC_TYPE;
 		ExecMode oldPlatform = setExecMode(ExecMode.HYBRID);
+		rtplatform = execMode;
 
 		long oldmem = InfrastructureAnalyzer.getLocalMaxMemory();
 		long mem = 1024*1024*8;

@@ -442,6 +442,10 @@ public abstract class CacheableData<T extends CacheBlock<?>> extends Data
 		if( _rddHandle != null )
 			rdd.setBackReference(this);
 	}
+
+	public boolean hasRDDHandle() {
+		return _rddHandle != null && _rddHandle.hasBackReference();
+	}
 	
 	public BroadcastObject<T> getBroadcastHandle() {
 		return _bcHandle;

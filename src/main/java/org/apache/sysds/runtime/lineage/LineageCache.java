@@ -579,6 +579,12 @@ public class LineageCache
 					continue;
 				}
 
+				if (data instanceof MatrixObject && ((MatrixObject) data).hasRDDHandle()) {
+					// Avoid triggering pre-matured Spark instruction chains
+					removePlaceholder(item);
+					continue;
+				}
+
 				if (LineageCacheConfig.isOutputFederated(inst, data)) {
 					// Do not cache federated outputs (in the coordinator)
 					// Cannot skip putting the placeholder as the above is only known after execution

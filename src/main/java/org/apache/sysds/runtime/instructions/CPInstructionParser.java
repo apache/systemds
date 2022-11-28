@@ -122,6 +122,9 @@ public class CPInstructionParser extends InstructionParser
 		String2CPInstructionType.put( "uacdap"  , CPType.AggregateUnary);
 		String2CPInstructionType.put( "uacdapr" , CPType.AggregateUnary);
 		String2CPInstructionType.put( "uacdapc" , CPType.AggregateUnary);
+		String2CPInstructionType.put( "unique"  , CPType.AggregateUnary);
+		String2CPInstructionType.put( "uniquer" , CPType.AggregateUnary);
+		String2CPInstructionType.put( "uniquec" , CPType.AggregateUnary);
 
 		String2CPInstructionType.put( "uaggouterchain", CPType.UaggOuterChain);
 		
@@ -216,7 +219,7 @@ public class CPInstructionParser extends InstructionParser
 		String2CPInstructionType.put( "list",   CPType.BuiltinNary);
 		
 		// Parameterized Builtin Functions
-		String2CPInstructionType.put( "autoDiff" , CPType.ParameterizedBuiltin);
+		String2CPInstructionType.put( "autoDiff" ,      CPType.ParameterizedBuiltin);
 		String2CPInstructionType.put("paramserv",       CPType.ParameterizedBuiltin);
 		String2CPInstructionType.put( "nvlist",         CPType.ParameterizedBuiltin);
 		String2CPInstructionType.put( "cdf",            CPType.ParameterizedBuiltin);

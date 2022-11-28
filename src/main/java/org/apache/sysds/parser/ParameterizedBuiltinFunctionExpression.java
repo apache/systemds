@@ -259,6 +259,10 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 			validateCountDistinctApprox(output, conditional, true);
 			break;
 
+		case UNIQUE:
+			validateUnique(output, conditional);
+			break;
+
 		default: //always unconditional (because unsupported operation)
 			//handle common issue of transformencode
 			if( getOpCode()==Builtins.TRANSFORMENCODE )
@@ -398,7 +402,7 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 
 		checkStringParam(true, fname, "dir", conditional);
 		// Check data value of "dir" parameter
-		validateAggregationDirection(dataId, output);
+		validateCountDistinctAggregationDirection(dataId, output);
 	}
 
 	private void validateCountDistinctApprox(DataIdentifier output, boolean conditional, boolean isDirectionAlias) {
@@ -464,11 +468,11 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 		if (!isDirectionAlias) {
 			checkStringParam(true, fname, "dir", conditional);
 			// Check data value of "dir" parameter
-			validateAggregationDirection(dataId, output);
+			validateCountDistinctAggregationDirection(dataId, output);
 		}
 	}
 
-	private void validateAggregationDirection(Identifier dataId, DataIdentifier output) {
+	private void validateCountDistinctAggregationDirection(Identifier dataId, DataIdentifier output) {
 		HashMap<String, Expression> varParams = getVarParams();
 		if (varParams.containsKey("dir")) {
 			String inputDirectionString = varParams.get("dir").toString().toUpperCase();
@@ -510,6 +514,67 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 			output.setValueType(ValueType.INT64);
 			output.setNnz(1);
 		}
+	}
+
+	private void validateUnique(DataIdentifier output, boolean conditional) {
+		HashMap<String, Expression> varParams = getVarParams();
+
+		// "data" is the only parameter that is allowed to be unnamed
+		if (varParams.containsKey(null)) {
+			varParams.put("data", varParams.remove(null));
+		}
+
+		// Validate the number of parameters
+		String fname = getOpCode().getName();
+		String usageMessage = "function " + fname + " takes at least 1 and at most 2 parameters";
+		if (varParams.size() < 1) {
+			raiseValidateError("Too few parameters: " + usageMessage, conditional);
+		}
+
+		if (varParams.size() > 2) {
+			raiseValidateError("Too many parameters: " + usageMessage, conditional);
+		}
+
+		// Check parameter names are valid
+		Set<String> validParameterNames = CollectionUtils.asSet("data", "dir");
+		checkInvalidParameters(getOpCode(), varParams, validParameterNames);
+
+		// Check parameter expression data types match expected
+		checkDataType(false, fname, "data", DataType.MATRIX, conditional);
+		checkDataValueType(false, fname, "data", DataType.MATRIX, ValueType.FP64, conditional);
+
+		// We need the dimensions of the input matrix to determine the output matrix characteristics
+		// Validate data parameter, lookup previously defined var or resolve expression
+		Identifier dataId = varParams.get("data").getOutput();
+		if (dataId == null) {
+			raiseValidateError("Cannot parse input parameter \"data\" to function " + fname, conditional);
+		}
+
+		checkStringParam(true, fname, "dir", conditional);
+		// Check data value of "dir" parameter
+		validateUniqueAggregationDirection(dataId, output);
+	}
+
+	private void validateUniqueAggregationDirection(Identifier dataId, DataIdentifier output) {
+		HashMap<String, Expression> varParams = getVarParams();
+		if (varParams.containsKey("dir")) {
+			String inputDirectionString = varParams.get("dir").toString().toUpperCase();
+
+			// unrecognized value for "dir" parameter
+			if (!inputDirectionString.equals(Types.Direction.Row.toString())
+					&& !inputDirectionString.equals(Types.Direction.Col.toString())
+					&& !inputDirectionString.equals(Types.Direction.RowCol.toString())) {
+				raiseValidateError("Invalid argument: " + inputDirectionString + " is not recognized");
+			}
+		}
+
+		// rc/r/c -> unique return value is the same as the input in the worst case
+		// default to dir="rc"
+		output.setDataType(DataType.MATRIX);
+		output.setDimensions(dataId.getDim1(), dataId.getDim2());
+		output.setBlocksize(dataId.getBlocksize());
+		output.setValueType(ValueType.FP64);
+		output.setNnz(dataId.getNnz());
 	}
 
 	private void checkStringParam(boolean optional, String fname, String pname, boolean conditional) {

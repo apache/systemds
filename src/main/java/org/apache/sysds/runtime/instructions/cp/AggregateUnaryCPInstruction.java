@@ -20,7 +20,6 @@
 package org.apache.sysds.runtime.instructions.cp;
 
 import org.apache.sysds.api.DMLScript;
-import org.apache.sysds.common.Types;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.runtime.DMLRuntimeException;
@@ -29,33 +28,27 @@ import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.data.BasicTensorBlock;
 import org.apache.sysds.runtime.data.TensorBlock;
 import org.apache.sysds.runtime.functionobjects.Builtin;
-import org.apache.sysds.runtime.functionobjects.ReduceAll;
-import org.apache.sysds.runtime.functionobjects.ReduceCol;
-import org.apache.sysds.runtime.functionobjects.ReduceRow;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
-import org.apache.sysds.runtime.instructions.spark.data.CorrMatrixBlock;
 import org.apache.sysds.runtime.lineage.LineageDedupUtils;
 import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.runtime.matrix.data.LibMatrixCountDistinct;
+import org.apache.sysds.runtime.matrix.data.LibMatrixSketch;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
-import org.apache.sysds.runtime.matrix.data.sketch.countdistinctapprox.SmallestPriorityQueue;
 import org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator;
 import org.apache.sysds.runtime.matrix.operators.CountDistinctOperator;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 import org.apache.sysds.runtime.matrix.operators.SimpleOperator;
+import org.apache.sysds.runtime.matrix.operators.UnarySketchOperator;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.utils.Explain;
-
-import java.util.HashSet;
-import java.util.Set;
 
 public class AggregateUnaryCPInstruction extends UnaryCPInstruction {
 	// private static final Log LOG = LogFactory.getLog(AggregateUnaryCPInstruction.class.getName());
 
 	public enum AUType {
 		NROW, NCOL, LENGTH, EXISTS, LINEAGE, 
-		COUNT_DISTINCT, COUNT_DISTINCT_APPROX,
+		COUNT_DISTINCT, COUNT_DISTINCT_APPROX, UNIQUE,
 		DEFAULT;
 		public boolean isMeta() {
 			return this != DEFAULT;
@@ -107,6 +100,13 @@ public class AggregateUnaryCPInstruction extends UnaryCPInstruction {
 				.parseAggregateUnaryRowIndexOperator(opcode, Integer.parseInt(parts[4]), Integer.parseInt(parts[3]));
 			return new AggregateUnaryCPInstruction(aggun, in1, out, AUType.DEFAULT, opcode, str);
 		}
+		else if(opcode.equalsIgnoreCase("unique")
+				|| opcode.equalsIgnoreCase("uniquer")
+				|| opcode.equalsIgnoreCase("uniquec")){
+			AggregateUnaryOperator aggun = InstructionUtils.parseBasicAggregateUnaryOperator(opcode,
+					Integer.parseInt(parts[3]));
+			return new AggregateUnaryCPInstruction(aggun, in1, out, AUType.UNIQUE, opcode, str);
+		}
 		else { //DEFAULT BEHAVIOR
 			AggregateUnaryOperator aggun = InstructionUtils
 				.parseBasicAggregateUnaryOperator(opcode, Integer.parseInt(parts[3]));
@@ -116,7 +116,7 @@ public class AggregateUnaryCPInstruction extends UnaryCPInstruction {
 	
 	@Override
 	public void processInstruction( ExecutionContext ec ) {
-		String output_name = output.getName();
+		String outputName = output.getName();
 		String opcode = getOpcode();
 		
 		switch( _type ) {
@@ -163,7 +163,7 @@ public class AggregateUnaryCPInstruction extends UnaryCPInstruction {
 				}
 				
 				//create and set output scalar
-				ec.setScalarOutput(output_name, new IntObject(rval));
+				ec.setScalarOutput(outputName, new IntObject(rval));
 				break;
 			}
 			case EXISTS: {
@@ -172,7 +172,7 @@ public class AggregateUnaryCPInstruction extends UnaryCPInstruction {
 					ec.getScalarInput(input1).getStringValue();
 				boolean rval = ec.getVariables().keySet().contains(varName);
 				//create and set output scalar
-				ec.setScalarOutput(output_name, new BooleanObject(rval));
+				ec.setScalarOutput(outputName, new BooleanObject(rval));
 				break;
 			}
 			case LINEAGE: {
@@ -184,7 +184,7 @@ public class AggregateUnaryCPInstruction extends UnaryCPInstruction {
 				LineageItem li = ec.getLineageItem(input1);
 				String out = !DMLScript.LINEAGE_DEDUP ? Explain.explain(li) :
 					Explain.explain(li) + LineageDedupUtils.mergeExplainDedupBlocks(ec);
-				ec.setScalarOutput(output_name, new StringObject(out));
+				ec.setScalarOutput(outputName, new StringObject(out));
 				break;
 			}
 			case COUNT_DISTINCT:
@@ -203,18 +203,38 @@ public class AggregateUnaryCPInstruction extends UnaryCPInstruction {
 				if (op.getDirection().isRowCol()) {
 					long res = (long) LibMatrixCountDistinct.estimateDistinctValues(input, op).getValue(0, 0);
 					ec.releaseMatrixInput(input1.getName());
-					ec.setScalarOutput(output_name, new IntObject(res));
+					ec.setScalarOutput(outputName, new IntObject(res));
 				} else {  // Row/Col
 					// Note that for each row, the max number of distinct values < NNZ < max number of columns = 1000:
 					// Since count distinct approximate estimates are unreliable for values < 1024,
 					// we will force a naive count.
 					MatrixBlock res = LibMatrixCountDistinct.estimateDistinctValues(input, op);
 					ec.releaseMatrixInput(input1.getName());
-					ec.setMatrixOutput(output_name, res);
+					ec.setMatrixOutput(outputName, res);
 				}
 
 				break;
 			}
+
+			case UNIQUE: {
+				if(!ec.getVariables().keySet().contains(input1.getName())) {
+					throw new DMLRuntimeException("Variable '" + input1.getName() + "' does not exist.");
+				}
+				MatrixBlock input = ec.getMatrixInput(input1.getName());
+
+				// Operator type: test and cast
+				if (!(_optr instanceof UnarySketchOperator)) {
+					throw new DMLRuntimeException("Operator should be instance of "
+							+ UnarySketchOperator.class.getSimpleName());
+				}
+				UnarySketchOperator op = (UnarySketchOperator) _optr;
+
+				MatrixBlock res = LibMatrixSketch.getUniqueValues(input, op.getDirection());
+				ec.releaseMatrixInput(input1.getName());
+				ec.setMatrixOutput(outputName, res);
+				break;
+			}
+
 			default: {
 				AggregateUnaryOperator au_op = (AggregateUnaryOperator) _optr;
 				if (input1.getDataType() == DataType.MATRIX) {
@@ -226,10 +246,10 @@ public class AggregateUnaryCPInstruction extends UnaryCPInstruction {
 					ec.releaseMatrixInput(input1.getName());
 					if (output.getDataType() == DataType.SCALAR) {
 						DoubleObject ret = new DoubleObject(resultBlock.getValue(0, 0));
-						ec.setScalarOutput(output_name, ret);
+						ec.setScalarOutput(outputName, ret);
 					} else {
 						// since the computed value is a scalar, allocate a "temp" output matrix
-						ec.setMatrixOutput(output_name, resultBlock);
+						ec.setMatrixOutput(outputName, resultBlock);
 					}
 				} 
 				else if (input1.getDataType() == DataType.TENSOR) {
@@ -240,10 +260,10 @@ public class AggregateUnaryCPInstruction extends UnaryCPInstruction {
 
 					ec.releaseTensorInput(input1.getName());
 					if(output.getDataType() == DataType.SCALAR)
-						ec.setScalarOutput(output_name, ScalarObjectFactory.createScalarObject(
+						ec.setScalarOutput(outputName, ScalarObjectFactory.createScalarObject(
 							input1.getValueType(), resultBlock.get(new int[]{0, 0})));
 					else
-						ec.setTensorOutput(output_name, new TensorBlock(resultBlock));
+						ec.setTensorOutput(outputName, new TensorBlock(resultBlock));
 				}
 				else {
 					throw new DMLRuntimeException(opcode + " only supported on matrix or tensor.");

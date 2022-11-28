@@ -22,6 +22,7 @@ package org.apache.sysds.test.functions.builtin.part2;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.common.Types.ExecType;
+import org.apache.sysds.runtime.lineage.Lineage;
 import org.apache.sysds.runtime.lineage.LineageCacheConfig.ReuseCacheType;
 import org.apache.sysds.runtime.matrix.data.MatrixValue;
 import org.apache.sysds.test.AutomatedTestBase;
@@ -105,6 +106,7 @@ public class BuiltinNaLocfTest extends AutomatedTestBase {
 			double[][] A = getRandomMatrix(rows, cols, -10, 10, 0.6, 7);
 			writeInputMatrixWithMTD("A", A, true);
 
+			Lineage.resetInternalState();
 			runTest(true, false, null, -1);
 			runRScript(true);
 			//compare matrices

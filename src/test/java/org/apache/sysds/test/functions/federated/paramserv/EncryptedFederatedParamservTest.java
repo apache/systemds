@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
 
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.runtime.controlprogram.paramserv.NativeHEHelper;
@@ -35,6 +36,8 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+
+import static org.junit.Assert.fail;
 
 @RunWith(value = Parameterized.class)
 @net.jcip.annotations.NotThreadSafe
@@ -67,6 +70,7 @@ public class EncryptedFederatedParamservTest extends AutomatedTestBase {
 				//{"TwoNN",	4, 60000, 32, 4, 0.01, 	"BSP", "BATCH", "KEEP_DATA_ON_WORKER", 	"NONE" ,		"false","BALANCED",		200},
 
 				// One important point is that we do the model averaging in the case of BSP
+				{"UNet",	2, 4, 1, 1, 0.01, 		"BSP", "BATCH", "KEEP_DATA_ON_WORKER", 	"BASELINE",		"false",	"IMBALANCED",	200},
 				{"TwoNN",	2, 4, 1, 1, 0.01, 		"BSP", "BATCH", "KEEP_DATA_ON_WORKER", 	"BASELINE",		"false",	"IMBALANCED",	200},
 				{"CNN", 	2, 4, 1, 1, 0.01, 		"BSP", "EPOCH", "KEEP_DATA_ON_WORKER",  "BASELINE",		"false",	"IMBALANCED", 	200},
 				//{"TwoNN", 	5, 1000, 100, 1, 0.01, 	"BSP", "BATCH", "KEEP_DATA_ON_WORKER", 	"NONE",			"true",	"BALANCED",		200},
@@ -99,11 +103,7 @@ public class EncryptedFederatedParamservTest extends AutomatedTestBase {
 		int dataSetSize, int batch_size, int epochs, double eta, String utype, String freq,
 		String scheme, String runtime_balancing, String weighting, String data_distribution, int seed)
 	{
-		try {
-			NativeHEHelper.initialize();
-		} catch (Exception e) {
-			throw e;
-		}
+		NativeHEHelper.initialize();
 		_networkType = networkType;
 		_numFederatedWorkers = numFederatedWorkers;
 		_dataSetSize = dataSetSize;
@@ -144,6 +144,10 @@ public class EncryptedFederatedParamservTest extends AutomatedTestBase {
 
 		int C = 1, Hin = 28, Win = 28;
 		int numLabels = 10;
+		if (Objects.equals(_networkType, "UNet")){
+			C = 5;
+			numLabels = C * Hin * Win;
+		}
 
 		ExecMode platformOld = setExecMode(mode);
 
@@ -158,8 +162,8 @@ public class EncryptedFederatedParamservTest extends AutomatedTestBase {
 			}
 
 			// generate test data
-			double[][] features = generateDummyMNISTFeatures(_dataSetSize, C, Hin, Win);
-			double[][] labels = generateDummyMNISTLabels(_dataSetSize, numLabels);
+			double[][] features = generateFeatures(_dataSetSize, C, Hin, Win);
+			double[][] labels = generateLabels(_dataSetSize, numLabels, features);
 			String featuresName = "";
 			String labelsName = "";
 
@@ -213,6 +217,10 @@ public class EncryptedFederatedParamservTest extends AutomatedTestBase {
 
 			programArgs = programArgsList.toArray(new String[0]);
 			String log = runTest(null).toString();
+			System.out.println(log);
+			if (!heavyHittersContainsAllString("paramserv"))
+				fail("The following expected heavy hitters are missing: "
+					+ Arrays.toString(missingHeavyHitters("paramserv")));
 			Assert.assertEquals("Test Failed \n" + log, 0, Statistics.getNoOfExecutedSPInst());
 
 			// shut down threads
@@ -223,6 +231,13 @@ public class EncryptedFederatedParamservTest extends AutomatedTestBase {
 		finally {
 			resetExecMode(platformOld);
 		}
+	}
+
+	private double[][] generateFeatures(int numExamples, int C, int Hin, int Win){
+		if (Objects.equals(_networkType, "UNet"))
+			return generateDummyMedicalImageFeatures(numExamples, C, Hin, Win);
+		else
+			return generateDummyMNISTFeatures(numExamples, C, Hin, Win);
 	}
 
 	/**
@@ -241,8 +256,19 @@ public class EncryptedFederatedParamservTest extends AutomatedTestBase {
 		return getRandomMatrix(numExamples, C*Hin*Win, 0, 1, 1, -1);
 	}
 
+	private double[][] generateDummyMedicalImageFeatures(int numExamples, int C, int Hin, int Win) {
+		return getRandomMatrix(numExamples, C*Hin*Win, -1024, 4096, 1, -1);
+	}
+
+	private double[][] generateLabels(int numExamples, int numLabels, double[][] features) {
+		if (Objects.equals(_networkType, "UNet"))
+			return generateDummyMedicalImageLabels(features);
+		else
+			return generateDummyMNISTLabels(numExamples, numLabels);
+	}
+
 	/**
-	 * Generates an label matrix that has the same format as the MNIST dataset, but is completely random and consists
+	 * Generates a label matrix that has the same format as the MNIST dataset, but is completely random and consists
 	 * of one hot encoded vectors as rows
 	 *
 	 *  @param numExamples Number of examples to generate
@@ -253,5 +279,21 @@ public class EncryptedFederatedParamservTest extends AutomatedTestBase {
 		// Seed -1 takes the time in milliseconds as a seed
 		// Sparsity 1 means no sparsity
 		return getRandomMatrix(numExamples, numLabels, 0, 1, 1, -1);
+	}
+
+	/**
+	 * Return labels as 0 or 1 based on the values in features.
+	 * @param features for which labels are generated
+	 * @return labels
+	 */
+	private double[][] generateDummyMedicalImageLabels(double[][] features) {
+		double split = 1000;
+		double[][] labels = new double[features.length][features[0].length];
+		for ( int i = 0; i < labels.length; i++ ){
+			for ( int j = 0; j < labels[0].length; j++ ){
+				labels[i][j] = (features[i][j] > split) ? 1 : 0;
+			}
+		}
+		return labels;
 	}
 }

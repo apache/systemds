@@ -61,11 +61,11 @@ else if($network_type == "CNN") {
   }
 }
 else if($network_type == "UNet") {
-    #TODO: Load segmentation data and adjust dimensions of input data accordingly and add UNET file and import it
-    model = UNet::train_paramserv(features, labels, matrix(0, rows=100, cols=784), matrix(0, rows=100, cols=10), 0, $epochs, $utype, $freq, $batch_size, $scheme, $runtime_balancing, $weighting, $eta, $channels, $hin, $win, $seed, $modelAvg)
+    #TODO: Load segmentation data and adjust dimensions of input data accordingly and add UNET file and import it. Also, activate HE as the last parameter of train_paramserv call.
+    model = UNet::train_paramserv(features, labels, matrix(0, rows=100, cols=3920), matrix(0, rows=100, cols=3920), $channels, $hin, $win, $epochs, 0, $utype, $freq, $batch_size, $scheme, $eta, $seed, TRUE)
     print("Test results:")
     hyperparams = list(learning_rate=$eta, C=$channels, Hin=$hin, Win=$win)
-    [loss_test, accuracy_test] = UNet::validate(matrix(0, rows=100, cols=784), matrix(0, rows=100, cols=10), model, hyperparams)
+    [loss_test, accuracy_test] = UNet::validate(matrix(0, rows=100, cols=3920), matrix(0, rows=100, cols=3920), model, hyperparams)
     print("[+] test loss: " + loss_test + ", test accuracy: " + accuracy_test + "\n")
 }
 else {

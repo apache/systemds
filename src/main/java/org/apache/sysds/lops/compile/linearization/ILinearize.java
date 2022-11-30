@@ -319,6 +319,31 @@ public interface ILinearize {
 		return nodesWithBroadcast;
 	}
 
+	private static List<Lop> addAsyncEagerCheckpointLop(List<Lop> nodes) {
+		List<Lop> nodesWithCheckpoint = new ArrayList<>();
+		 // Find the Spark action nodes
+		for (Lop l : nodes) {
+			if (isCheckpointNeeded(l)) {
+				List<Lop> oldInputs = new ArrayList<>(l.getInputs());
+				// Place a Checkpoint node just below this node (Spark action)
+				for (Lop in : oldInputs) {
+					if (in.getExecType() != ExecType.SPARK)
+						continue;
+					// Rewire in -> l to in -> Checkpoint -> l
+					//UnaryCP checkpoint = new UnaryCP(in, OpOp1.TRIGREMOTE, in.getDataType(), in.getValueType(), ExecType.CP);
+					Lop checkpoint = new Checkpoint(in, in.getDataType(), in.getValueType(),
+						Checkpoint.getDefaultStorageLevelString(), true);
+					checkpoint.addOutput(l);
+					l.replaceInput(in, checkpoint);
+					in.removeOutput(l);
+					nodesWithCheckpoint.add(checkpoint);
+				}
+			}
+			nodesWithCheckpoint.add(l);
+		}
+		return nodesWithCheckpoint;
+	}
+
 	private static boolean isPrefetchNeeded(Lop lop) {
 		// Run Prefetch for a Spark instruction if the instruction is a Transformation
 		// and the output is consumed by only CP instructions.
@@ -353,5 +378,29 @@ public interface ILinearize {
 		//TODO: Early broadcast objects that are bigger than a single block
 		//return isCP && isBc && lop.getDataTypes() == DataType.Matrix;
 		return isBc && lop.getDataType() == DataType.MATRIX;
+	}
+
+	private static boolean isCheckpointNeeded(Lop lop) {
+		// Place checkpoint_e just before a Spark action (FIXME)
+		boolean actionOP = lop.getExecType() == ExecType.SPARK
+				&& ((lop.getAggType() == SparkAggType.SINGLE_BLOCK)
+				// Always Action operations
+				|| (lop.getDataType() == DataType.SCALAR)
+				|| (lop instanceof MapMultChain) || (lop instanceof PickByCount)
+				|| (lop instanceof MMZip) || (lop instanceof CentralMoment)
+				|| (lop instanceof CoVariance) || (lop instanceof MMTSJ))
+				// Not qualified for Checkpoint
+				&& !(lop instanceof Checkpoint) && !(lop instanceof ReBlock)
+				&& !(lop instanceof CSVReBlock)
+				// Cannot filter Transformation cases from Actions (FIXME)
+				&& !(lop instanceof UAggOuterChain)
+				&& !(lop instanceof ParameterizedBuiltin) && !(lop instanceof SpoofFused);
+
+		//FIXME: Rewire _inputParams when needed (e.g. GroupedAggregate)
+		boolean hasParameterizedOut = lop.getOutputs().stream()
+				.anyMatch(out -> ((out instanceof ParameterizedBuiltin)
+					|| (out instanceof GroupedAggregate)
+					|| (out instanceof GroupedAggregateM)));
+		return actionOP && !hasParameterizedOut;
 	}
 }

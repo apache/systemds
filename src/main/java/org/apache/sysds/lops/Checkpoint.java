@@ -25,6 +25,7 @@ import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 
+import java.util.Arrays;
 
 /**
  * Lop for checkpoint operations. For example, on Spark, the semantic of a checkpoint 
@@ -38,13 +39,15 @@ import org.apache.sysds.runtime.instructions.InstructionUtils;
  */
 public class Checkpoint extends Lop 
 {
-	public static final String OPCODE = "chkpoint"; 
-	 
+	public static final String DEFAULT_CP_OPCODE = "chkpoint";
+	public static final String ASYNC_CP_OPCODE = "chkpoint_e";
+
 	public static final StorageLevel DEFAULT_STORAGE_LEVEL = StorageLevel.MEMORY_AND_DISK();
 	public static final StorageLevel SER_STORAGE_LEVEL = StorageLevel.MEMORY_AND_DISK_SER();
 	public static final boolean CHECKPOINT_SPARSE_CSR = true; 
 
 	private StorageLevel _storageLevel;
+	private boolean _async = false;
 	
 
 	/**
@@ -55,14 +58,20 @@ public class Checkpoint extends Lop
 	 * @param dt data type
 	 * @param vt value type
 	 * @param level storage level
+	 * @param isAsync true if eager and asynchronous checkpoint
 	 */
-	public Checkpoint(Lop input, DataType dt, ValueType vt, String level)  {
+	public Checkpoint(Lop input, DataType dt, ValueType vt, String level, boolean isAsync)  {
 		super(Lop.Type.Checkpoint, dt, vt);
 		addInput(input);
 		input.addOutput(this);
 		
 		_storageLevel = StorageLevel.fromString(level);
+		_async = isAsync;
 		lps.setProperties(inputs, ExecType.SPARK);
+	}
+
+	public Checkpoint(Lop input, DataType dt, ValueType vt, String level)  {
+		this(input, dt, vt, level, false);
 	}
 
 	public StorageLevel getStorageLevel()
@@ -89,7 +98,7 @@ public class Checkpoint extends Lop
 		
 		return InstructionUtils.concatOperands(
 			getExecType().name(),
-			OPCODE,
+			_async ? ASYNC_CP_OPCODE : DEFAULT_CP_OPCODE,
 			getInputs().get(0).prepInputOperand(input1),
 			prepOutputOperand(output),
 			getStorageLevelString(_storageLevel));

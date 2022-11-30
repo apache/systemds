@@ -25,10 +25,10 @@ import org.apache.sysds.lops.Checkpoint;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.utils.stats.SparkStatistics;
 
-public class TriggerRemoteOperationsTask implements Runnable {
+public class TriggerCheckpointTask implements Runnable {
 	MatrixObject _remoteOperationsRoot;
 
-	public TriggerRemoteOperationsTask(MatrixObject mo) {
+	public TriggerCheckpointTask(MatrixObject mo) {
 		_remoteOperationsRoot = mo;
 	}
 
@@ -36,6 +36,7 @@ public class TriggerRemoteOperationsTask implements Runnable {
 	public void run() {
 		boolean triggered = false;
 		synchronized (_remoteOperationsRoot) {
+			// FIXME: Handle double execution
 			if (_remoteOperationsRoot.isPendingRDDOps()) {
 				JavaPairRDD<?, ?> rdd = _remoteOperationsRoot.getRDDHandle().getRDD();
 				rdd.persist(Checkpoint.DEFAULT_STORAGE_LEVEL).count();
@@ -45,6 +46,6 @@ public class TriggerRemoteOperationsTask implements Runnable {
 		}
 
 		if (DMLScript.STATISTICS && triggered)
-			SparkStatistics.incAsyncTriggerRemoteCount(1);
+			SparkStatistics.incAsyncTriggerCheckpointCount(1);
 	}
 }

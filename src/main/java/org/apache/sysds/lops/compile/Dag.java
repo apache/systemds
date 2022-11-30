@@ -237,56 +237,6 @@ public class Dag<N extends Lop>
 		}
 	}
 	
-	private static List<Lop> addPrefetchLop(List<Lop> nodes) {
-		List<Lop> nodesWithPrefetch = new ArrayList<>();
-		
-		//Find the Spark nodes with all CP outputs
-		for (Lop l : nodes) {
-			nodesWithPrefetch.add(l);
-			if (isPrefetchNeeded(l)) {
-				//TODO: No prefetch if the parent is placed right after the spark OP
-				//or push the parent further to increase parallelism
-				List<Lop> oldOuts = new ArrayList<>(l.getOutputs());
-				//Construct a Prefetch lop that takes this Spark node as a input
-				UnaryCP prefetch = new UnaryCP(l, OpOp1.PREFETCH, l.getDataType(), l.getValueType(), ExecType.CP);
-				for (Lop outCP : oldOuts) {
-					//Rewire l -> outCP to l -> Prefetch -> outCP
-					prefetch.addOutput(outCP);
-					outCP.replaceInput(l, prefetch);
-					l.removeOutput(outCP);
-					//FIXME: Rewire _inputParams when needed (e.g. GroupedAggregate)
-				}
-				//Place it immediately after the Spark lop in the node list
-				nodesWithPrefetch.add(prefetch);
-			}
-		}
-		return nodesWithPrefetch;
-	}
-
-	private static List<Lop> addBroadcastLop(List<Lop> nodes) {
-		List<Lop> nodesWithBroadcast = new ArrayList<>();
-		
-		for (Lop l : nodes) {
-			nodesWithBroadcast.add(l);
-			if (isBroadcastNeeded(l)) {
-				List<Lop> oldOuts = new ArrayList<>(l.getOutputs());
-				//Construct a Broadcast lop that takes this Spark node as an input
-				UnaryCP bc = new UnaryCP(l, OpOp1.BROADCAST, l.getDataType(), l.getValueType(), ExecType.CP);
-				//FIXME: Wire Broadcast only with the necessary outputs
-				for (Lop outCP : oldOuts) {
-					//Rewire l -> outCP to l -> Broadcast -> outCP
-					bc.addOutput(outCP);
-					outCP.replaceInput(l, bc);
-					l.removeOutput(outCP);
-					//FIXME: Rewire _inputParams when needed (e.g. GroupedAggregate)
-				}
-				//Place it immediately after the Spark lop in the node list
-				nodesWithBroadcast.add(bc);
-			}
-		}
-		return nodesWithBroadcast;
-	}
-	
 	private ArrayList<Instruction> doPlainInstructionGen(StatementBlock sb, List<Lop> nodes)
 	{
 		//prepare basic instruction sets
@@ -317,42 +267,6 @@ public class Dag<N extends Lop>
 		return dnode.getOperationType().isTransient() 
 			&& input.isDataExecLocation() && ((Data)input).getOperationType().isTransient() 
 			&& dnode.getOutputParameters().getLabel().equals(input.getOutputParameters().getLabel());
-	}
-	
-	private static boolean isPrefetchNeeded(Lop lop) {
-		// Run Prefetch for a Spark instruction if the instruction is a Transformation
-		// and the output is consumed by only CP instructions.
-		boolean transformOP = lop.getExecType() == ExecType.SPARK && lop.getAggType() != SparkAggType.SINGLE_BLOCK
-				// Always Action operations
-				&& !(lop.getDataType() == DataType.SCALAR)
-				&& !(lop instanceof MapMultChain) && !(lop instanceof PickByCount)
-				&& !(lop instanceof MMZip) && !(lop instanceof CentralMoment)
-				&& !(lop instanceof CoVariance) 
-				// Not qualified for prefetching
-				&& !(lop instanceof Checkpoint) && !(lop instanceof ReBlock)
-				&& !(lop instanceof CSVReBlock)
-				// Cannot filter Transformation cases from Actions (FIXME)
-				&& !(lop instanceof MMTSJ) && !(lop instanceof UAggOuterChain)
-				&& !(lop instanceof ParameterizedBuiltin) && !(lop instanceof SpoofFused);
-
-		//FIXME: Rewire _inputParams when needed (e.g. GroupedAggregate)
-		boolean hasParameterizedOut = lop.getOutputs().stream()
-				.anyMatch(out -> ((out instanceof ParameterizedBuiltin) 
-					|| (out instanceof GroupedAggregate)
-					|| (out instanceof GroupedAggregateM)));
-		//TODO: support non-matrix outputs
-		return transformOP && !hasParameterizedOut 
-				&& lop.isAllOutputsCP() && lop.getDataType() == DataType.MATRIX;
-	}
-	
-	private static boolean isBroadcastNeeded(Lop lop) {
-		// Asynchronously broadcast a matrix if that is produced by a CP instruction,
-		// and at least one Spark parent needs to broadcast this intermediate (eg. mapmm)
-		boolean isBc = lop.getOutputs().stream()
-				.anyMatch(out -> (out.getBroadcastInput() == lop));
-		//TODO: Early broadcast objects that are bigger than a single block
-		//return isCP && isBc && lop.getDataTypes() == DataType.Matrix;
-		return isBc && lop.getDataType() == DataType.MATRIX;
 	}
 	
 	private static List<Instruction> deleteUpdatedTransientReadVariables(StatementBlock sb, List<Lop> nodeV) {

@@ -58,6 +58,7 @@ public class Checkpoint extends Lop
 	 * @param dt data type
 	 * @param vt value type
 	 * @param level storage level
+	 * @param isAsync true if eager and asynchronous checkpoint
 	 */
 	public Checkpoint(Lop input, DataType dt, ValueType vt, String level, boolean isAsync)  {
 		super(Lop.Type.Checkpoint, dt, vt);

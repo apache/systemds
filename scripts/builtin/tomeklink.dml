@@ -82,9 +82,11 @@ return (Matrix[Double] nn) {
 get_links = function(Matrix[Double] X, Matrix[Double] y, double majority_label)
 return (Matrix[Double] tomek_links) {
   tomek_links = matrix(-1, 1, 1)
-  nn = get_nn(X)
-  perm = table(seq(1, nrow(y)), nn, nrow(y), nrow(y))
-  nn_labels = perm %*% y
-  links = (y != majority_label) & (nn_labels == majority_label)
-  tomek_links = (table(nn, 1, links, nrow(y), 1) > 0)
+  if(max(y) <= 2 ) {
+    nn = get_nn(X)
+    perm = table(seq(1, nrow(y)), nn, nrow(y), nrow(y))
+    nn_labels = perm %*% y
+    links = (y != majority_label) & (nn_labels == majority_label)
+    tomek_links = (table(nn, 1, links, nrow(y), 1) > 0)
+  }
 }

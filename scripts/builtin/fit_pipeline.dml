@@ -47,7 +47,7 @@ source("scripts/builtin/topk_cleaning.dml") as topk;
 source("scripts/builtin/bandit.dml") as bandit;
 
 s_fit_pipeline = function(Frame[Unknown] trainData, Frame[Unknown] testData, Frame[Unknown] metaData = as.frame("NULL"),
-  Frame[Unknown] pip, Frame[Unknown] applyFunc, Matrix[Double] hp, String evaluationFunc, Matrix[Double] evalFunHp,
+  Frame[Unknown] pip, Frame[Unknown] applyFunc, Matrix[Double] hp, Integer cvk=3, String evaluationFunc, Matrix[Double] evalFunHp,
   Boolean isLastLabel = TRUE, Boolean correctTypos=FALSE)
 return (Matrix[Double] scores, Matrix[Double] cleanTrain, Matrix[Double] cleanTest, List[Unknown] externalState, List[Unknown] iState)
 {
@@ -92,6 +92,11 @@ return (Matrix[Double] scores, Matrix[Double] cleanTrain, Matrix[Double] cleanTe
   hp_matrix = matrix(hp_width, rows=ncol(pip), cols=ncol(hp_width)/ncol(pip))
   pipList = list(ph = pip, hp = hp_matrix, flags = no_of_flag_vars)
 
+  [trainScore, evalFunHp] = bandit::crossV(X=eXtrain, y=eYtrain, cvk=cvk, evalFunHp=evalFunHp,
+      pipList=pipList, metaList=metaList, evalFunc=evaluationFunc)
+  print("train score cv: "+toString(trainScore))
+  
+  
   # # # now test accuracy
   [eXtrain, eYtrain, eXtest, eYtest, a, b, c, d, iState] = executePipeline(pipeline=pip, Xtrain=eXtrain, Ytrain=eYtrain,
     Xtest=eXtest, Ytest=eYtest, metaList=metaList, hyperParameters=hp_matrix, flagsCount=no_of_flag_vars, test=TRUE, verbose=FALSE)
@@ -99,15 +104,15 @@ return (Matrix[Double] scores, Matrix[Double] cleanTrain, Matrix[Double] cleanTe
   if(max(eYtrain) == min(eYtrain)) 
     stop("Y contains only one class")
 
-  score = eval(evaluationFunc, list(X=eXtrain, Y=eYtrain, Xtest=eXtrain, Ytest=eYtrain, Xorig=as.matrix(0), evalFunHp=evalFunHp))
-  trainAccuracy = as.scalar(score[1, 1])
+  # score = eval(evaluationFunc, list(X=eXtrain, Y=eYtrain, Xtest=eXtrain, Ytest=eYtrain, Xorig=as.matrix(0), evalFunHp=evalFunHp))
+  # trainAccuracy = as.scalar(score[1, 1])
   
   score = eval(evaluationFunc, list(X=eXtrain, Y=eYtrain, Xtest=eXtest, Ytest=eYtest, Xorig=as.matrix(0), evalFunHp=evalFunHp))
   testAccuracy = as.scalar(score[1, 1])
   
   scores = matrix(0, rows=1, cols=3)
   scores[1, 1] = dirtyScore
-  scores[1, 2] = trainAccuracy
+  # scores[1, 2] = trainAccuracy
   scores[1, 3] = testAccuracy  
   cleanTrain = cbind(eXtrain, eYtrain)
   cleanTest = cbind(eXtest, eYtest)

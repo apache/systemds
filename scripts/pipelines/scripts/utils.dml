@@ -50,14 +50,116 @@ return (Frame[Unknown] frameblock)
 }
 
 
+# # #######################################################################
+# # # Function for group-wise/stratified sampling from all classes in labelled dataset
+# # # Inputs: The input dataset X, Y  and  sampling ratio between 0 and 1
+# # # Output: sample X and Y
+# # #######################################################################
+# # doSample = function(Matrix[Double] eX, Matrix[Double] eY, Double ratio, Matrix[Double] mask, Frame[String] metaR, Boolean verbose = FALSE)
+  # # return (Matrix[Double] sampledX, Matrix[Double] sampledY, Matrix[Double] filterMask)
+# # {
+  # # print("initial number of rows: " +nrow(eX))
+  # # # # # prepare feature vector for NB
+  # # beta = multiLogReg(X=eX, Y=eY, icpt=1, reg=1e-3, tol=1e-6,  maxi=50, maxii=50, verbose=FALSE);
+  # # [trainProbs, yhat, accuracy] = multiLogRegPredict(eX, beta, eY, FALSE)
+
+  # # # # if the operation is binary make a fixed confidence of 0.9, for multi-class compute kappa
+  # # # threshold = 0
+  # # # if(max(eY) == 2)
+    # # # threshold = quantile(rowMaxs(trainProbs), 0.95)
+  # # kappa = 0.0
+  # # # if(max(eY) <= 2) {
+    # # # kappa = quantile(rowMaxs(trainProbs), 0.95)
+    # # # print("for binary classification")
+  # # # }
+  # # # else {
+    # # # # compute kappa
+    # # classFreA = table(eY, 1, 1, max(eY), 1)
+    # # classFreP = table(yhat, 1, 1, max(eY), 1)
+    # # probA = classFreA/nrow(eY)
+    # # probP = classFreP/nrow(eY)
+    # # condProb = sum(probA * probP)
+    # # kappa = ((accuracy/100) - condProb) / (1 - condProb)
+    # # print("kappa for multi-class"+toString(kappa))
+  # # # }
+  # # print("threshold "+toString(kappa))
+  # # filterMask = rowMaxs(trainProbs) > kappa
+  # # # sampledX = removeEmpty(target = eX, margin = "rows", select=(rowMaxs(trainProbs) < threshold))
+  # # # sampledY = removeEmpty(target = eY, margin = "rows", select=(rowMaxs(trainProbs) < threshold))
+  # # # print("filtered number of rows: " +nrow(sampledX))
+
+  # # mask[1,1] = 0
+    # # # # # stats of wrong
+  # # maxUniques = max(colMaxs(replace(target=eX, pattern=NaN, replacement=1)) * mask)
+  # # print("maxUniques "+maxUniques)
+  # # while(FALSE){}
+  # # stats = matrix(0, rows=maxUniques, cols=ncol(mask))
+  # # metaInfo = frame(0, rows=nrow(metaR), cols = 2*ncol(metaR))
+  # # # m = 1
+  # # for(i in 1:ncol(mask))
+  # # {
+    # # print("meta: "+as.scalar(mask[1, i]))
+    # # if(as.scalar(mask[1, i]) == 1)
+    # # {
+      # # problematic_cats = removeEmpty(target=eX[, i], margin = "rows", select = (yhat != eY))
+      # # problematic_cats_sums = table(problematic_cats, 1)
+      # # stats[1:nrow(problematic_cats_sums), i] = problematic_cats_sums
+      # # stats_rowMax = rowMaxs(stats)
+      # # stats2 = (stats == stats_rowMax) * (stats_rowMax >= 100)
+      # # # colum =  metaR[, i]
+      # # # print("printing meta recoded")
+      # # # print(toString(colum))
+      # # # while(FALSE){}
+      # # # tmpValue = map(colum, "x -> x.toLowerCase()")
+      # # # tmpIndex = map(colum, "x -> x.toLowerCase()")
+      # # # metaInfo[1:nrow(tmpIndex), m] = tmpIndex
+      # # # metaInfo[1:nrow(tmpIndex), m+1] = tmpValue
+      # # # m = m + 2
+    # # }
+  # # }
+  # # filterMask = eX[, 4] == 2 | eX[, 5] == 4 | eX[, 5] == 7 | eX[, 5] == 8
+  # # filterMask = filterMask == 0
+  # # # stats = cbind(seq(1, nrow(stats)), stats, stats_rowMax)
+  # # # stats2 = cbind(seq(1, nrow(stats)), stats2)
+  # # # print("print status: \n"+toString(stats))
+  # # # print("print status 2: \n"+toString(stats2))
+  # # # print("meta infor: \n"+toString(metaInfo, rows=10))
+  # # # # create the filter mask  
+  # # print("rows taken after filtering the categories: "+sum(filterMask))
+  # # MIN_SAMPLE = 1000
+  # # sampledX = eX
+  # # sampledY = eY
+  # # ratio = ifelse(nrow(eY) > 200000, 0.6, ratio)
+  # # sampled = floor(nrow(eX) * ratio)
+  
+  # # if(sampled > MIN_SAMPLE & ratio != 1.0)
+  # # {
+    # # sampleVec = sample(nrow(eX), sampled, FALSE, 23)
+    # # P = table(seq(1, nrow(sampleVec)), sampleVec, nrow(sampleVec), nrow(eX))
+    # # if((nrow(eY) > 1))  # for classification
+    # # {
+      # # sampledX = P %*% eX
+      # # sampledY = P %*% eY
+    # # }
+    # # else if(nrow(eY) == 1) { # for clustering
+      # # sampledX = P %*% eX
+      # # sampledY = eY 
+    # # }
+    # # print("sampled rows "+nrow(sampledY)+" out of "+nrow(eY))
+  # # }
+
+# # }
+
+
 #######################################################################
 # Function for group-wise/stratified sampling from all classes in labelled dataset
 # Inputs: The input dataset X, Y  and  sampling ratio between 0 and 1
 # Output: sample X and Y
 #######################################################################
-doSample = function(Matrix[Double] eX, Matrix[Double] eY, Double ratio, Boolean verbose = FALSE)
+doSample = function(Matrix[Double] eX, Matrix[Double] eY, Double ratio, Matrix[Double] mask, Frame[String] metaR, Boolean verbose = FALSE)
   return (Matrix[Double] sampledX, Matrix[Double] sampledY)
 {
+
   MIN_SAMPLE = 1000
   sampledX = eX
   sampledY = eY
@@ -79,8 +181,68 @@ doSample = function(Matrix[Double] eX, Matrix[Double] eY, Double ratio, Boolean 
     }
     print("sampled rows "+nrow(sampledY)+" out of "+nrow(eY))
   }
-
 }
+
+
+doErrorSample = function(Matrix[Double] eX, Matrix[Double] eY, Double lq, Double uq)
+  return (Matrix[Double] sampledX, Matrix[Double] sampledY)
+{
+  print("initial number of rows: " +nrow(eX))
+  print("quantiles: "+lq+" "+uq)
+  # # # prepare feature vector for NB
+  beta = multiLogReg(X=eX, Y=eY, icpt=1, reg=1e-3, tol=1e-6,  maxi=20, maxii=20, verbose=FALSE);
+  [trainProbs, yhat, accuracy] = multiLogRegPredict(eX, beta, eY, FALSE)
+
+  # kappa = 0.0
+
+  # # compute kappa
+  # classFreA = table(eY, 1, 1, max(eY), 1)
+  # classFreP = table(yhat, 1, 1, max(eY), 1)
+  # probA = classFreA/nrow(eY)
+  # probP = classFreP/nrow(eY)
+  # condProb = sum(probA * probP)
+  # kappa = ((accuracy/100) - condProb) / (1 - condProb)
+  # print("kappa for multi-class"+toString(kappa))
+  # filterMask = rowMaxs(trainProbs) < kappa
+  # threshold = ifelse(sum(filterMask) <= 2, median(rowMaxs(trainProbs)), kappa)
+  # threshold = ifelse(sum(filterMask) <= 2, median(rowMaxs(trainProbs)), kappa)
+  # print("threshold "+toString(threshold))
+
+  print("applying error filter")
+  # sampledX = removeEmpty(target = eX, margin = "rows", select=(rowMaxs(trainProbs) < threshold))
+  # sampledY = removeEmpty(target = eY, margin = "rows", select=(rowMaxs(trainProbs) < threshold))
+  filterMask = rowMaxs(trainProbs) <  quantile(rowMaxs(trainProbs), lq) | rowMaxs(trainProbs) >  quantile(rowMaxs(trainProbs), uq)
+  sampledX = removeEmpty(target = eX, margin = "rows", select=filterMask)
+  sampledY = removeEmpty(target = eY, margin = "rows", select=filterMask)
+  print("sampled rows "+nrow(sampledY)+" out of "+nrow(eY))
+ 
+}
+
+# doErrorSample = function(Matrix[Double] eX, Matrix[Double] eY)
+  # return (Matrix[Double] sampledX, Matrix[Double] sampledY, Matrix[Double] filterMask)
+# {
+  # print("initial number of rows: " +nrow(eX))
+  # # # # prepare feature vector for NB
+  # beta = multiLogReg(X=eX, Y=eY, icpt=1, reg=1e-3, tol=1e-6,  maxi=50, maxii=50, verbose=FALSE);
+  # [trainProbs, yhat, accuracy] = multiLogRegPredict(eX, beta, eY, FALSE)
+  # # # # stats of wrong
+  # maxUniques = max(colMaxs(eX) * mask)
+  # stats = matrix(0, rows=nrow(maxUniques), cols=ncol(mask))
+  # for(i in 1:ncol(mask))
+  # {
+    # if(as.scalar(mask[1, i]) == 1)
+    # {
+      # problematic_cats = removeEmpty(target=eX[, i], margin = rows, select = (yhat != eY))
+      # problematic_cats_sums = table(problematic_cats, 1)
+      # stats[1:nrow(problematic_cats_sums), i] = problematic_cats_sums
+    # }
+  
+  # }
+  # print(toString(stats))
+
+
+# }
+
 
 # #######################################################################
 # # Wrapper of transformencode OHE call, to call inside eval as a function
@@ -132,13 +294,16 @@ stringProcessing = function(Frame[Unknown] data, Matrix[Double] mask,
   Frame[String] schema, Boolean CorrectTypos, List[Unknown] ctx = list(prefix="--"))
 return(Frame[Unknown] data, List[Unknown] distanceMatrix, List[Unknown] dictionary, Matrix[Double] dateColIdx)
 { 
-
+  hasCategory = sum(mask) > 0
   prefix = as.scalar(ctx["prefix"]);
   distanceMatrix = list()
   dictionary = list()
+  
   # step 1 do the case transformations
   print(prefix+" convert strings to lower case");
-  data = map(data, "x -> x.toLowerCase()")
+  if(hasCategory) {
+    data = map(data, "x -> x.toLowerCase()")
+  
   # step 2 fix invalid lengths
   # q0 = 0.05
   # q1 = 0.95
@@ -152,14 +317,15 @@ return(Frame[Unknown] data, List[Unknown] distanceMatrix, List[Unknown] dictiona
   # data = valueSwap(data, schema)
   
   # step 3 drop invalid types
-  print(prefix+" drop values with type mismatch");
-  data = dropInvalidType(data, schema)
+    print(prefix+" drop values with type mismatch");
+    data = dropInvalidType(data, schema)
+  
 
 
-  # step 5 porter stemming on all features
-  print(prefix+" porter-stemming on all features");
-  data = map(data, "x -> PorterStemmer.stem(x)", 0)
-
+    # step 5 porter stemming on all features
+    print(prefix+" porter-stemming on all features");
+    data = map(data, "x -> PorterStemmer.stem(x)", 0)
+  }
   # step 6 typo correction  
   if(CorrectTypos)
   {
@@ -204,13 +370,13 @@ return(Frame[Unknown] data)
   data = map(data, "x -> x.toLowerCase()")
   # step 2 fix invalid lengths
 
-  q0 = 0.05
-  q1 = 0.95
+  # q0 = 0.05
+  # q1 = 0.95
 
-  [data, mask, qlow, qup] = fixInvalidLengths(data, mask, q0, q1)
+  # [data, mask, qlow, qup] = fixInvalidLengths(data, mask, q0, q1)
 
-  # # step 3 fix swap values
-  data = valueSwap(data, schema)
+  # # # step 3 fix swap values
+  # data = valueSwap(data, schema)
 
   # step 3 drop invalid types
   data = dropInvalidType(data, schema)

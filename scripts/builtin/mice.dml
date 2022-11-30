@@ -142,7 +142,7 @@ m_mice= function(Matrix[Double] X, Matrix[Double] cMask, Integer iter = 3,
         }
         else {
           beta = multiLogReg(X=train_X, Y=train_Y, icpt = 1, tol = 0.0001, reg = 0.00001, 
-            maxi = 50, maxii=50, verbose=FALSE)
+            maxi = 20, maxii=20, verbose=FALSE)
           # predicting missing values 
           [prob, pred, acc] = multiLogRegPredict(X=test_X, B=beta, Y = test_Y)
           prob = rowMaxs(prob)

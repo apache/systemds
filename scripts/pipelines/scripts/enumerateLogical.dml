@@ -275,14 +275,15 @@ getOps = function( Frame[string] allOps, Frame[String] refSol, Integer dist, Int
   # # for regression class imbalance operators are also removed
   if(n > 0 & minValue >= 1 & dist <= 15) {
     allOps = map(allOps, "x -> (!x.equals(\"dummycoding\") & !x.equals(\"frequencyEncode\")
-    & !x.equals(\"dbscan\") & !x.equals(\"WoE\") & !x.equals(\"pca\") & !x.equals(\"ppca\"))?x:\"0\"")
+    & !x.equals(\"dbscan\") & !x.equals(\"WoE\") & !x.equals(\"pca\") & !x.equals(\"ppca\") &
+     !x.equals(\"abstain\") & !x.equals(\"underSampling\") & !x.equals(\"flipLabels\") & !x.equals(\"mice\") & !x.equals(\"SMOTE\"))?x:\"0\"")
     ref = frame(["imputeByMean", "winsorize", "scale", "dummycoding"], rows=1, cols=4)
   }
   else {
     allOps = map(allOps, "x -> (!x.equals(\"dummycoding\") & !x.equals(\"frequencyEncode\") & !x.equals(\"tomeklink\")
       & !x.equals(\"dbscan\") & !x.equals(\"WoE\") & !x.equals(\"pca\") & !x.equals(\"ppca\") &
       !x.equals(\"abstain\") & !x.equals(\"underSampling\") & !x.equals(\"flipLabels\") & !x.equals(\"mice\") & !x.equals(\"SMOTE\"))?x:\"0\"") 
-    ref = frame(["imputeByMean", "winsorize", "scale"], rows=1, cols=3)
+    ref = frame(["imputeByMean", "winsorize", "scale", "dummycoding"], rows=1, cols=4)
   }
   if(as.scalar(refSol[1,1]) == "NaN")
     refSol = ref

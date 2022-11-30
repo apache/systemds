@@ -344,7 +344,9 @@ public class MultiReturnParameterizedBuiltinFEDInstruction extends ComputationFE
 				.createEncoder(_spec, colNames, fb.getNumColumns(), null, _offset, _offset + fb.getNumColumns());
 
 			// build necessary structures for encoding
-			encoder.build(fb, OptimizerUtils.getTransformNumThreads()); // FIXME skip equi-height sorting
+			//encoder.build(fb, OptimizerUtils.getTransformNumThreads()); // FIXME skip equi-height sorting
+			// FIXME: Enabling multithreading intermittently hangs
+			encoder.build(fb, 1);
 			fo.release();
 
 			// create federated response
@@ -375,7 +377,9 @@ public class MultiReturnParameterizedBuiltinFEDInstruction extends ComputationFE
 			// offset is applied on the Worker to shift the local encoders to their respective column
 			_encoder.applyColumnOffset();
 			// apply transformation
-			MatrixBlock mbout = _encoder.apply(fb, OptimizerUtils.getTransformNumThreads());
+			//MatrixBlock mbout = _encoder.apply(fb, OptimizerUtils.getTransformNumThreads());
+			// FIXME: Enabling multithreading intermittently hangs
+			MatrixBlock mbout = _encoder.apply(fb, 1);
 
 			// create output matrix object
 			MatrixObject mo = ExecutionContext.createMatrixObject(mbout);

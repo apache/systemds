@@ -284,6 +284,7 @@ public class OptimizerUtils
 	 */
 	public static boolean ASYNC_PREFETCH_SPARK = false;
 	public static boolean ASYNC_BROADCAST_SPARK = false;
+	public static boolean ASYNC_CHECKPOINT_SPARK = false;
 
 	/**
 	 * Heuristic-based instruction ordering to maximize inter-operator parallelism.

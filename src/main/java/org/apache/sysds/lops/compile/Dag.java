@@ -422,16 +422,27 @@ public class Dag<N extends Lop>
 	 * @param delteInst list of instructions
 	 */
 	private static void processConsumersForInputs(Lop node, List<Instruction> inst, List<Instruction> delteInst) {
+		// The asynchronous instructions execute lazily. The inputs to an asynchronous instruction
+		// must live till the outputs of the async. instruction are consumed (i.e. future.get is called)
+		if (node.isAsynchronousOp())
+			return;
+
 		// reduce the consumer count for all input lops
-		// if the count becomes zero, then then variable associated w/ input can be removed
+		// if the count becomes zero, then variable associated w/ input can be removed
 		for(Lop in : node.getInputs() )
 			processConsumers(in, inst, delteInst, null);
 	}
 	
 	private static void processConsumers(Lop node, List<Instruction> inst, List<Instruction> deleteInst, Lop locationInfo) {
 		// reduce the consumer count for all input lops
-		// if the count becomes zero, then then variable associated w/ input can be removed
+		// if the count becomes zero, then variable associated w/ input can be removed
+
 		if ( node.removeConsumer() == 0 ) {
+			// The inputs to the asynchronous input can be safely removed at this point as
+			// the outputs of the asynchronous instruction are consumed.
+			if (node.isAsynchronousOp())
+				processConsumerIfAsync(node, inst, deleteInst);
+
 			if ( node.isDataExecLocation() && ((Data)node).isLiteral() ) {
 				return;
 			}
@@ -449,6 +460,17 @@ public class Dag<N extends Lop>
 			inst.add(currInstr);
 			excludeRemoveInstruction(label, deleteInst);
 		}
+	}
+
+	// Generate rmvar instructions for the inputs of an asynchronous instruction.
+	private static void processConsumerIfAsync(Lop node, List<Instruction> inst, List<Instruction> deleteInst) {
+		if (!node.isAsynchronousOp())
+			return;
+
+		// Temporarily disable the _asynchronous flag to generate rmvars for the inputs
+		node.setAsynchronous(false);
+		processConsumersForInputs(node, inst, deleteInst);
+		node.setAsynchronous(true);
 	}
 	
 	/**

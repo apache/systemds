@@ -150,6 +150,12 @@ public abstract class Lop
 	protected OutputParameters outParams = null;
 
 	protected LopProperties lps = null;
+
+	/**
+	 * Indicates if this lop is a candidate for asynchronous execution.
+	 * Examples include spark unary aggregate, mapmm, prefetch
+	 */
+	protected boolean _asynchronous = false;
 	
 
 	/**
@@ -363,6 +369,14 @@ public abstract class Lop
 	public int removeConsumer() {
 		consumerCount--;
 		return consumerCount;
+	}
+
+	public void setAsynchronous(boolean isAsync) {
+		_asynchronous = isAsync;
+	}
+
+	public boolean isAsynchronousOp() {
+		return _asynchronous;
 	}
 
 	/**

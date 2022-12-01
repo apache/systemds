@@ -21,6 +21,9 @@ package org.apache.sysds.runtime.instructions.spark;
 
 
 import java.util.Iterator;
+import java.util.concurrent.Callable;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.stream.IntStream;
 
 import org.apache.commons.logging.Log;
@@ -30,6 +33,7 @@ import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
 import org.apache.spark.api.java.function.PairFunction;
+import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.hops.AggBinaryOp.SparkAggType;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.lops.MapMult;
@@ -54,6 +58,7 @@ import org.apache.sysds.runtime.matrix.operators.AggregateOperator;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 
+import org.apache.sysds.runtime.util.CommonThreadPool;
 import scala.Tuple2;
 
 public class MapmmSPInstruction extends AggregateBinarySPInstruction {
@@ -135,12 +140,24 @@ public class MapmmSPInstruction extends AggregateBinarySPInstruction {
 		//execute mapmm and aggregation if necessary and put output into symbol table
 		if( _aggtype == SparkAggType.SINGLE_BLOCK )
 		{
-			JavaRDD<MatrixBlock> out = in1.map(new RDDMapMMFunction2(type, in2));
-			MatrixBlock out2 = RDDAggregateUtils.sumStable(out);
-			
-			//put output block into symbol table (no lineage because single block)
-			//this also includes implicit maintenance of matrix characteristics
-			sec.setMatrixOutput(output.getName(), out2);
+			if (ConfigurationManager.isMaxPrallelizeEnabled()) {
+				try {
+					if(CommonThreadPool.triggerRemoteOPsPool == null)
+						CommonThreadPool.triggerRemoteOPsPool = Executors.newCachedThreadPool();
+					RDDMapmmTask task = new  RDDMapmmTask(in1, in2, type);
+					Future<MatrixBlock> future_out = CommonThreadPool.triggerRemoteOPsPool.submit(task);
+					sec.setMatrixOutput(output.getName(), future_out);
+				}
+				catch(Exception ex) { throw new DMLRuntimeException(ex); }
+			}
+			else {
+				JavaRDD<MatrixBlock> out = in1.map(new RDDMapMMFunction2(type, in2));
+				MatrixBlock out2 = RDDAggregateUtils.sumStable(out);
+
+				//put output block into symbol table (no lineage because single block)
+				//this also includes implicit maintenance of matrix characteristics
+				sec.setMatrixOutput(output.getName(), out2);
+			}
 		}
 		else //MULTI_BLOCK or NONE
 		{
@@ -441,6 +458,27 @@ public class MapmmSPInstruction extends AggregateBinarySPInstruction {
 					OperationsOnMatrixValues.matMult(blkIn, _pbc.getBlock((int)ixIn.getColumnIndex(), j),
 						new MatrixBlock(), _op))).iterator();
 			}
+		}
+	}
+
+	private static class RDDMapmmTask implements Callable<MatrixBlock>
+	{
+		JavaPairRDD<MatrixIndexes, MatrixBlock> _in1;
+		PartitionedBroadcast<MatrixBlock> _in2;
+		MapMult.CacheType _type;
+
+		RDDMapmmTask(JavaPairRDD<MatrixIndexes, MatrixBlock> in1, PartitionedBroadcast<MatrixBlock> in2, MapMult.CacheType type) {
+			_in1 = in1;
+			_in2 = in2;
+			_type = type;
+		}
+
+		@Override
+		public MatrixBlock call() {
+			//execute mapmm and aggregation if necessary and put output into symbol table
+			JavaRDD<MatrixBlock> out = _in1.map(new RDDMapMMFunction2(_type, _in2));
+			MatrixBlock out2 = RDDAggregateUtils.sumStable(out);
+			return out2;
 		}
 	}
 }

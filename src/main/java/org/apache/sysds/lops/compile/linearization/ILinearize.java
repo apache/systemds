@@ -183,7 +183,7 @@ public interface ILinearize {
 	private static List<Lop> doMaxParallelizeSort(List<Lop> v)
 	{
 		List<Lop> final_v = null;
-		if (v.stream().anyMatch(ILinearize::isSparkAction)) {
+		if (v.stream().anyMatch(ILinearize::isSparkTriggeringOp)) {
 			// Step 1: Collect the Spark roots and #Spark instructions in each subDAG
 			Map<Long, Integer> sparkOpCount = new HashMap<>();
 			List<Lop> roots = v.stream().filter(l -> l.getOutputs().isEmpty()).collect(Collectors.toList());
@@ -221,7 +221,7 @@ public interface ILinearize {
 		if (sparkOpCount.containsKey(root.getID())) //visited before
 			return sparkOpCount.get(root.getID());
 
-		// Sum Spark operators in the child DAGs
+		// Aggregate #Spark operators in the child DAGs
 		int total = 0;
 		for (Lop input : root.getInputs())
 			total += collectSparkRoots(input, sparkOpCount, sparkRoots);
@@ -230,9 +230,11 @@ public interface ILinearize {
 		total = root.isExecSpark() ? total + 1 : total;
 		sparkOpCount.put(root.getID(), total);
 
-		// Triggering point: Spark operator with all CP consumers
-		if (isSparkAction(root) && root.isAllOutputsCP())
+		// Triggering point: Spark action/operator with all CP consumers
+		if (isSparkTriggeringOp(root)) {
 			sparkRoots.add(root);
+			root.setAsynchronous(true); //candidate for async. execution
+		}
 
 		return total;
 	}
@@ -262,11 +264,11 @@ public interface ILinearize {
 		root.setVisited();
 	}
 
-	private static boolean isSparkAction(Lop lop) {
+	private static boolean isSparkTriggeringOp(Lop lop) {
 		return lop.isExecSpark() && (lop.getAggType() == SparkAggType.SINGLE_BLOCK
 			|| lop.getDataType() == DataType.SCALAR || lop instanceof MapMultChain
 			|| lop instanceof PickByCount || lop instanceof MMZip || lop instanceof CentralMoment
-			|| lop instanceof CoVariance || lop instanceof MMTSJ);
+			|| lop instanceof CoVariance || lop instanceof MMTSJ || lop.isAllOutputsCP());
 	}
 
 	private static List<Lop> addPrefetchLop(List<Lop> nodes) {
@@ -276,11 +278,12 @@ public interface ILinearize {
 		for (Lop l : nodes) {
 			nodesWithPrefetch.add(l);
 			if (isPrefetchNeeded(l)) {
-				//TODO: No prefetch if the parent is placed right after the spark OP
-				//or push the parent further to increase parallelism
 				List<Lop> oldOuts = new ArrayList<>(l.getOutputs());
 				//Construct a Prefetch lop that takes this Spark node as a input
 				UnaryCP prefetch = new UnaryCP(l, OpOp1.PREFETCH, l.getDataType(), l.getValueType(), ExecType.CP);
+				prefetch.setAsynchronous(true);
+				//Reset asynchronous flag for the input if already set (e.g. mapmm -> prefetch)
+				l.setAsynchronous(false);
 				for (Lop outCP : oldOuts) {
 					//Rewire l -> outCP to l -> Prefetch -> outCP
 					prefetch.addOutput(outCP);
@@ -304,6 +307,7 @@ public interface ILinearize {
 				List<Lop> oldOuts = new ArrayList<>(l.getOutputs());
 				//Construct a Broadcast lop that takes this Spark node as an input
 				UnaryCP bc = new UnaryCP(l, OpOp1.BROADCAST, l.getDataType(), l.getValueType(), ExecType.CP);
+				bc.setAsynchronous(true);
 				//FIXME: Wire Broadcast only with the necessary outputs
 				for (Lop outCP : oldOuts) {
 					//Rewire l -> outCP to l -> Broadcast -> outCP

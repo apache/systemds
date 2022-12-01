@@ -37,7 +37,7 @@ public class MaxParallelizeOrderTest extends AutomatedTestBase {
 
 	protected static final String TEST_DIR = "functions/async/";
 	protected static final String TEST_NAME = "MaxParallelizeOrder";
-	protected static final int TEST_VARIANTS = 2;
+	protected static final int TEST_VARIANTS = 4;
 	protected static String TEST_CLASS_DIR = TEST_DIR + MaxParallelizeOrderTest.class.getSimpleName() + "/";
 
 	@Override
@@ -55,6 +55,16 @@ public class MaxParallelizeOrderTest extends AutomatedTestBase {
 	@Test
 	public void testl2svm() {
 		runTest(TEST_NAME+"2");
+	}
+
+	@Test
+	public void testSparkAction() {
+		runTest(TEST_NAME+"3");
+	}
+
+	@Test
+	public void testSparkTransformations() {
+		runTest(TEST_NAME+"4");
 	}
 
 	public void runTest(String testname) {
@@ -85,10 +95,13 @@ public class MaxParallelizeOrderTest extends AutomatedTestBase {
 
 			OptimizerUtils.ASYNC_PREFETCH_SPARK = true;
 			OptimizerUtils.MAX_PARALLELIZE_ORDER = true;
+			if (testname.equalsIgnoreCase(TEST_NAME+"4"))
+				OptimizerUtils.ALLOW_TRANSITIVE_SPARK_EXEC_TYPE = false;
 			runTest(true, EXCEPTION_NOT_EXPECTED, null, -1);
 			HashMap<MatrixValue.CellIndex, Double> R_mp = readDMLScalarFromOutputDir("R");
 			OptimizerUtils.ASYNC_PREFETCH_SPARK = false;
 			OptimizerUtils.MAX_PARALLELIZE_ORDER = false;
+			OptimizerUtils.ALLOW_TRANSITIVE_SPARK_EXEC_TYPE = true;
 
 			//compare matrices
 			boolean matchVal = TestUtils.compareMatrices(R, R_mp, 1e-6, "Origin", "withPrefetch");

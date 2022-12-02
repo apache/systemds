@@ -54,7 +54,7 @@ public class LineageCacheConfig
 		"^", "uamax", "uark+", "uacmean", "eigen", "ctableexpand", "replace",
 		"^2", "uack+", "tak+*", "uacsqk+", "uark+", "n+", "uarimax", "qsort", 
 		"qpick", "transformapply", "uarmax", "n+", "-*", "castdtm", "lowertri",
-		"mapmm", "cpmm"
+		"mapmm", "cpmm", "prefetch"
 		//TODO: Reuse everything. 
 	};
 	private static String[] REUSE_OPCODES  = new String[] {};

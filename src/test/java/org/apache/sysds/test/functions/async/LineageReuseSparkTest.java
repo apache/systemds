@@ -28,6 +28,7 @@ package org.apache.sysds.test.functions.async;
 	import org.apache.sysds.hops.recompile.Recompiler;
 	import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 	import org.apache.sysds.runtime.lineage.Lineage;
+	import org.apache.sysds.runtime.lineage.LineageCacheConfig;
 	import org.apache.sysds.runtime.matrix.data.MatrixValue;
 	import org.apache.sysds.test.AutomatedTestBase;
 	import org.apache.sysds.test.TestConfiguration;
@@ -40,7 +41,7 @@ public class LineageReuseSparkTest extends AutomatedTestBase {
 
 	protected static final String TEST_DIR = "functions/async/";
 	protected static final String TEST_NAME = "LineageReuseSpark";
-	protected static final int TEST_VARIANTS = 1;
+	protected static final int TEST_VARIANTS = 2;
 	protected static String TEST_CLASS_DIR = TEST_DIR + LineageReuseSparkTest.class.getSimpleName() + "/";
 
 	@Override
@@ -52,16 +53,21 @@ public class LineageReuseSparkTest extends AutomatedTestBase {
 
 	@Test
 	public void testlmdsHB() {
-		runTest(TEST_NAME+"1", ExecMode.HYBRID);
+		runTest(TEST_NAME+"1", ExecMode.HYBRID, 1);
 	}
 
 	@Test
 	public void testlmdsSP() {
 		// Only reuse the actions
-		runTest(TEST_NAME+"1", ExecMode.SPARK);
+		runTest(TEST_NAME+"1", ExecMode.SPARK, 1);
 	}
 
-	public void runTest(String testname, ExecMode execMode) {
+	@Test
+	public void testReusePrefetch() {
+		runTest(TEST_NAME+"2", ExecMode.HYBRID, 2);
+	}
+
+	public void runTest(String testname, ExecMode execMode, int testId) {
 		boolean old_simplification = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
 		boolean old_sum_product = OptimizerUtils.ALLOW_SUM_PRODUCT_REWRITES;
 		boolean old_trans_exec_type = OptimizerUtils.ALLOW_TRANSITIVE_SPARK_EXEC_TYPE;
@@ -85,31 +91,52 @@ public class LineageReuseSparkTest extends AutomatedTestBase {
 			programArgs = proArgs.toArray(new String[proArgs.size()]);
 
 			Lineage.resetInternalState();
+			if (testId == 2) enablePrefetch();
 			runTest(true, EXCEPTION_NOT_EXPECTED, null, -1);
+			disablePrefetch();
 			HashMap<MatrixValue.CellIndex, Double> R = readDMLScalarFromOutputDir("R");
-			long numTsmm = Statistics.getCPHeavyHitterCount("sp_tsmm");
-			long numMapmm = Statistics.getCPHeavyHitterCount("sp_mapmm");
+			long numTsmm = 0;
+			long numMapmm = 0;
+			if (testId == 1) {
+				numTsmm = Statistics.getCPHeavyHitterCount("sp_tsmm");
+				numMapmm = Statistics.getCPHeavyHitterCount("sp_mapmm");
+			}
+			long numPrefetch = 0;
+			if (testId == 2) numPrefetch = Statistics.getCPHeavyHitterCount("prefetch");
 
+			proArgs.clear();
 			proArgs.add("-explain");
 			proArgs.add("-stats");
 			proArgs.add("-lineage");
-			proArgs.add("reuse_hybrid");
+			proArgs.add(LineageCacheConfig.ReuseCacheType.REUSE_FULL.name().toLowerCase());
 			proArgs.add("-args");
 			proArgs.add(output("R"));
 			programArgs = proArgs.toArray(new String[proArgs.size()]);
 
 			Lineage.resetInternalState();
+			if (testId == 2) enablePrefetch();
 			runTest(true, EXCEPTION_NOT_EXPECTED, null, -1);
+			disablePrefetch();
 			HashMap<MatrixValue.CellIndex, Double> R_reused = readDMLScalarFromOutputDir("R");
-			long numTsmm_r = Statistics.getCPHeavyHitterCount("sp_tsmm");
-			long numMapmm_r= Statistics.getCPHeavyHitterCount("sp_mapmm");
+			long numTsmm_r = 0;
+			long numMapmm_r = 0;
+			if (testId == 1) {
+				numTsmm_r = Statistics.getCPHeavyHitterCount("sp_tsmm");
+				numMapmm_r = Statistics.getCPHeavyHitterCount("sp_mapmm");
+			}
+			long numPrefetch_r = 0;
+			if (testId == 2) numPrefetch_r = Statistics.getCPHeavyHitterCount("prefetch");
 
 			//compare matrices
 			boolean matchVal = TestUtils.compareMatrices(R, R_reused, 1e-6, "Origin", "withPrefetch");
 			if (!matchVal)
 				System.out.println("Value w/o reuse "+R+" w/ reuse "+R_reused);
-			Assert.assertTrue("Violated sp_tsmm: reuse count: "+numTsmm_r+" < "+numTsmm, numTsmm_r < numTsmm);
-			Assert.assertTrue("Violated sp_mapmm: reuse count: "+numMapmm_r+" < "+numMapmm, numMapmm_r < numMapmm);
+			if (testId == 1) {
+				Assert.assertTrue("Violated sp_tsmm reuse count: " + numTsmm_r + " < " + numTsmm, numTsmm_r < numTsmm);
+				Assert.assertTrue("Violated sp_mapmm reuse count: " + numMapmm_r + " < " + numMapmm, numMapmm_r < numMapmm);
+			}
+			if (testId == 2)
+				Assert.assertTrue("Violated prefetch reuse count: " + numPrefetch_r + " < " + numPrefetch, numPrefetch_r<numPrefetch);
 
 		} finally {
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = old_simplification;
@@ -119,5 +146,17 @@ public class LineageReuseSparkTest extends AutomatedTestBase {
 			InfrastructureAnalyzer.setLocalMaxMemory(oldmem);
 			Recompiler.reinitRecompiler();
 		}
+	}
+
+	private void enablePrefetch() {
+		OptimizerUtils.ALLOW_TRANSITIVE_SPARK_EXEC_TYPE = false;
+		OptimizerUtils.MAX_PARALLELIZE_ORDER = true;
+		OptimizerUtils.ASYNC_PREFETCH_SPARK = true;
+	}
+
+	private void disablePrefetch() {
+		OptimizerUtils.ALLOW_TRANSITIVE_SPARK_EXEC_TYPE = true;
+		OptimizerUtils.MAX_PARALLELIZE_ORDER = false;
+		OptimizerUtils.ASYNC_PREFETCH_SPARK = false;
 	}
 }

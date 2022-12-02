@@ -184,42 +184,14 @@ return(Matrix[Double] X,Integer executeFlag)
   { 
     if(sum(mask) == 0)
       executeFlag = 0
-    else {
+    else if(sum(mask) != ncol(mask)) {
       # take categorical out and remove numerics
       X = removeEmpty(target=X, margin = "cols", select = mask)
     }
+    else X = X
   }
   else X = X
 }
-
-# confirmMeta = function(Matrix[Double] X, Matrix[Double] mask)
-# return (Matrix[Double] X)
-# {
-  # if((sum(mask) > 0) & (ncol(X) == ncol(mask)))
-  # {
-    # # get  the max + 1 for nan replacement
-    # nanMask = is.na(X)
-    # # replace nan
-    # X = replace(target = X, pattern = NaN, replacement = 9999)
-    # # take categorical out
-    # cat = removeEmpty(target=X, margin="cols", select = mask)
-    # # round categorical (if there is any floating  point)
-    # cat = round(cat)
-    # less_than_1_mask = cat < 1
-    # less_than_1 = less_than_1_mask * 9999
-    # cat = (cat * (less_than_1_mask == 0)) +  less_than_1
-    # # reconstruct original X
-    # X = X * (mask == 0)
-    # q = table(seq(1, ncol(cat)), removeEmpty(target=seq(1, ncol(mask)), margin="rows", 
-      # select=t(mask)), ncol(cat), ncol(X))
-    # X = (cat %*% q) + X 
-
-    # # put nan back
-    # nanMask = replace(target = nanMask, pattern = 1, replacement = NaN)
-    # X = X + nanMask
-  # }
-# }
-
 
 confirmData = function(Matrix[Double] nX, Matrix[Double] originalX, Matrix[Double] mask, Integer dataFlag)
 return (Matrix[Double] X)

@@ -286,7 +286,7 @@ run_with_hyperparam = function(Frame[Unknown] ph_pip, Integer r_i = 1, Matrix[Do
     hp = hp[, 2:totalVals]
     applyFunctions = allApplyFunctions[i]
     no_of_res = nrow(hp)
-    print("PIPELINE EXECUTION START ... "+toString(op))
+    # print("PIPELINE EXECUTION START ... "+toString(op))
     hpForPruning = matrix(0, rows=1, cols=ncol(op))
     changesByOp = matrix(0, rows=1, cols=ncol(op))
     metaList2 = metaList; #ensure metaList is no result var
@@ -340,9 +340,6 @@ run_with_hyperparam = function(Frame[Unknown] ph_pip, Integer r_i = 1, Matrix[Do
   output_operator = removeEmpty(target=cbind(output_accuracy, output_pipelines), margin="rows", select = sel)
   changesByPipMatrix = removeEmpty(target=changesByPipMatrix, margin="rows", select = sel)
 }
-
-
-
 
 # extract the hyper-parameters for pipelines
 getHyperparam = function(Frame[Unknown] pipeline, Frame[Unknown]  hpList, Integer no_of_res, Boolean default, Integer seed = -1, Boolean enablePruning)
@@ -560,7 +557,6 @@ return (Double accuracy, Matrix[Double] evalFunHp, Matrix[Double] hpForPruning, 
   allChanges = min(allChanges)
   changesByOp = colMaxs(cvChanges)
   accuracy =  mean(accuracyMatrix)
-  print("mean: \n"+toString(accuracyMatrix))
   print("cv accuracy: "+toString(accuracy))
 }
 
@@ -589,8 +585,6 @@ return(Boolean execute)
   }
   execute = !(changeCount > 0)
 }
-
-
 
 getParamMeta = function(Frame[Unknown] pipeline, Frame[Unknown] hpList)
 return(Frame[Unknown] applyFunc, Matrix[Double] indexes, Matrix[Double] paramCount)

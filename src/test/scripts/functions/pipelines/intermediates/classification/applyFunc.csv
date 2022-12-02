@@ -1,3 +1,3 @@
-forward_fill,imputeByMeanApply,NA,imputeByMedianApply,forward_fill,NA,imputeByMeanApply,dummycodingApply,0,0,0,0,0,0,0,0,0,0
-NA,forward_fill,imputeByMeanApply,imputeByMeanApply,imputeByMedianApply,forward_fill,NA,NA,imputeByMedianApply,forward_fill,NA,imputeByMeanApply,dummycodingApply,0,0,0,0,0
-NA,forward_fill,imputeByMeanApply,imputeByMeanApply,imputeByMedianApply,forward_fill,NA,NA,imputeByMedianApply,forward_fill,NA,imputeByMeanApply,dummycodingApply,0,0,0,0,0
+forward_fill,winsorizeApply,imputeByMedianApply,NA,dummycodingApply,0,0,0,0,0,0,0,0,0,0,0,0,0
+forward_fill,winsorizeApply,imputeByMedianApply,NA,dummycodingApply,0,0,0,0,0,0,0,0,0,0,0,0,0
+forward_fill,winsorizeApply,imputeByMedianApply,NA,winsorizeApply,forward_fill,imputeByMeanApply,dummycodingApply,0,0,0,0,0,0,0,0,0,0

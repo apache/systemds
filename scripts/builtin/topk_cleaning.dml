@@ -80,7 +80,7 @@ s_topk_cleaning = function(Frame[Unknown] dataTrain, Frame[Unknown] dataTest = a
   # TODO why recoding/sampling twice (within getDirtyScore)
   print("---- class-stratified sampling of feature matrix w/ f="+sample);
   if(sum(mask) > ncol(mask)/2 & nrow(eYtrain) >= 10000 & sample == 1.0) 
-    [eXtrain, eYtrain ] = utils::doErrorSample(eXtrain, eYtrain, lq, uq)
+    [eXtrain, eYtrain ] = utils::doErrorSample(eXtrain, eYtrain, lq, uq, 3500)
   else 
     [eXtrain, eYtrain] = utils::doSample(eXtrain, eYtrain, sample, mask, metaR, TRUE)
   t5 = time(); print("---- finalized in: "+(t5-t4)/1e9+"s");
@@ -115,14 +115,14 @@ s_topk_cleaning = function(Frame[Unknown] dataTrain, Frame[Unknown] dataTest = a
   [bestLogical, bestHp, con, refChanges, acc] = lg::enumerateLogical(X=eXtrain, y=eYtrain, Xtest=eXtest, ytest=eYtest,
   initial_population=logical, refSol=refSol, seed = seed,  max_iter=max_iter, metaList = metaList,
   evaluationFunc=evaluationFunc, evalFunHp=evalFunHp, primitives=primitives, param=parameters,
-  dirtyScore = (dirtyScore + expectedIncrease), cv=cv, cvk=cvk, verbose=FALSE, ctx=ctx)
+  dirtyScore = (dirtyScore + expectedIncrease), cv=cv, cvk=cvk, verbose=TRUE, ctx=ctx)
   t6 = time(); print("---- finalized in: "+(t6-t5)/1e9+"s");
   topKPipelines = as.frame("NULL"); topKHyperParams = matrix(0,0,0); topKScores = matrix(0,0,0); applyFunc = as.frame("NULL")
   # write(acc, output+"/acc.csv", format="csv")
   # stop("end of enumlp")
   [topKPipelines, topKHyperParams, topKScores, applyFunc] = bandit(X_train=eXtrain, Y_train=eYtrain, X_test=eXtest, Y_test=eYtest,  metaList=metaList,
     evaluationFunc=evaluationFunc, evalFunHp=evalFunHp, lp=bestLogical, lpHp=bestHp, primitives=primitives, param=parameters, baseLineScore=dirtyScore,
-    k=topK, R=resource_val, cv=cv, cvk=cvk, ref=refChanges, seed=seed, enablePruning = enablePruning, verbose=FALSE);  
+    k=topK, R=resource_val, cv=cv, cvk=cvk, ref=refChanges, seed=seed, enablePruning = enablePruning, verbose=TRUE);  
   t7 = time(); print("-- Cleaning - Enum Physical Pipelines: "+(t7-t6)/1e9+"s");
 }
 

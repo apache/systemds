@@ -23,6 +23,8 @@ import java.util.concurrent.Executors;
 
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
+import org.apache.sysds.runtime.lineage.LineageCacheConfig;
+import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 import org.apache.sysds.runtime.util.CommonThreadPool;
 
@@ -42,8 +44,9 @@ public class PrefetchCPInstruction extends UnaryCPInstruction {
 
 	@Override
 	public void processInstruction(ExecutionContext ec) {
-		//TODO: handle non-matrix objects
+		// TODO: handle non-matrix objects
 		ec.setVariable(output.getName(), ec.getMatrixObject(input1));
+		LineageItem li = !LineageCacheConfig.ReuseCacheType.isNone() ? this.getLineageItem(ec).getValue() : null;
 
 		// Note, a Prefetch instruction doesn't guarantee an asynchronous execution.
 		// If the next instruction which takes this output as an input comes before
@@ -51,6 +54,6 @@ public class PrefetchCPInstruction extends UnaryCPInstruction {
 		// In that case this Prefetch instruction will act like a NOOP. 
 		if (CommonThreadPool.triggerRemoteOPsPool == null)
 			CommonThreadPool.triggerRemoteOPsPool = Executors.newCachedThreadPool();
-		CommonThreadPool.triggerRemoteOPsPool.submit(new TriggerPrefetchTask(ec.getMatrixObject(output)));
+		CommonThreadPool.triggerRemoteOPsPool.submit(new TriggerPrefetchTask(ec.getMatrixObject(output), li));
 	}
 }

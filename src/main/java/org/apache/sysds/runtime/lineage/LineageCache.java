@@ -38,6 +38,7 @@ import org.apache.sysds.runtime.controlprogram.federated.FederatedStatistics;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedUDF;
 import org.apache.sysds.runtime.instructions.CPInstructionParser;
 import org.apache.sysds.runtime.instructions.Instruction;
+import org.apache.sysds.runtime.instructions.cp.BroadcastCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.CPInstruction.CPType;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.instructions.cp.ComputationCPInstruction;
@@ -45,6 +46,7 @@ import org.apache.sysds.runtime.instructions.cp.Data;
 import org.apache.sysds.runtime.instructions.cp.MMTSJCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.MultiReturnBuiltinCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.ParameterizedBuiltinCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.PrefetchCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
 import org.apache.sysds.runtime.instructions.fed.ComputationFEDInstruction;
 import org.apache.sysds.runtime.instructions.gpu.GPUInstruction;
@@ -579,6 +581,10 @@ public class LineageCache
 					continue;
 				}
 
+				if (inst instanceof PrefetchCPInstruction || inst instanceof BroadcastCPInstruction)
+					// For the async. instructions, caching is handled separately by the tasks
+					continue;
+
 				if (data instanceof MatrixObject && ((MatrixObject) data).hasRDDHandle()) {
 					// Avoid triggering pre-matured Spark instruction chains
 					removePlaceholder(item);
@@ -634,6 +640,52 @@ public class LineageCache
 			centry.setGPUValue(gpuObj, computetime);
 			// Maintain order for eviction
 			LineageGPUCacheEviction.addEntry(centry);
+		}
+	}
+
+	public static void putValueAsyncOp(LineageItem instLI, Data data, boolean prefetched, long starttime)
+	{
+		if (ReuseCacheType.isNone())
+			return;
+		if (!prefetched) //prefetching was not successful
+			return;
+
+		synchronized( _cache )
+		{
+			if (!probe(instLI))
+				return;
+
+			long computetime = System.nanoTime() - starttime;
+			LineageCacheEntry centry = _cache.get(instLI);
+			if(!(data instanceof MatrixObject) && !(data instanceof ScalarObject)) {
+				// Reusable instructions can return a frame (rightIndex). Remove placeholders.
+				removePlaceholder(instLI);
+				return;
+			}
+
+			MatrixBlock mb = (data instanceof MatrixObject) ?
+				((MatrixObject)data).acquireReadAndRelease() : null;
+			long size = mb != null ? mb.getInMemorySize() : ((ScalarObject)data).getSize();
+
+			// remove the placeholder if the entry is bigger than the cache.
+			if (size > LineageCacheEviction.getCacheLimit()) {
+				removePlaceholder(instLI);
+				return;
+			}
+
+			// place the data
+			if (data instanceof MatrixObject)
+				centry.setValue(mb, computetime);
+			else if (data instanceof ScalarObject)
+				centry.setValue((ScalarObject)data, computetime);
+
+			if (DMLScript.STATISTICS && LineageCacheEviction._removelist.containsKey(centry._key)) {
+				// Add to missed compute time
+				LineageCacheStatistics.incrementMissedComputeTime(centry._computeTime);
+			}
+
+			//maintain order for eviction
+			LineageCacheEviction.addEntry(centry);
 		}
 	}
 

@@ -22,18 +22,28 @@ package org.apache.sysds.runtime.instructions.cp;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedStatistics;
+import org.apache.sysds.runtime.lineage.LineageCache;
+import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.utils.stats.SparkStatistics;
 
 public class TriggerPrefetchTask implements Runnable {
 	MatrixObject _prefetchMO;
+	LineageItem _inputLi;
 
 	public TriggerPrefetchTask(MatrixObject mo) {
 		_prefetchMO = mo;
+		_inputLi = null;
+	}
+
+	public TriggerPrefetchTask(MatrixObject mo, LineageItem li) {
+		_prefetchMO = mo;
+		_inputLi = li;
 	}
 
 	@Override
 	public void run() {
 		boolean prefetched = false;
+		long t1 = System.nanoTime();
 		synchronized (_prefetchMO) {
 			// Having this check inside the critical section
 			// safeguards against concurrent rmVar.
@@ -44,6 +54,11 @@ public class TriggerPrefetchTask implements Runnable {
 				prefetched = true;
 			}
 		}
+
+		// Save the collected intermediate in the lineage cache
+		if (_inputLi != null)
+			LineageCache.putValueAsyncOp(_inputLi, _prefetchMO, prefetched, t1);
+
 		if (DMLScript.STATISTICS && prefetched) {
 			if (_prefetchMO.isFederated())
 				FederatedStatistics.incAsyncPrefetchCount(1);

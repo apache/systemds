@@ -44,6 +44,7 @@ import org.apache.sysds.lops.CSVReBlock;
 import org.apache.sysds.lops.CentralMoment;
 import org.apache.sysds.lops.Checkpoint;
 import org.apache.sysds.lops.CoVariance;
+import org.apache.sysds.lops.DataGen;
 import org.apache.sysds.lops.GroupedAggregate;
 import org.apache.sysds.lops.GroupedAggregateM;
 import org.apache.sysds.lops.Lop;
@@ -359,7 +360,7 @@ public interface ILinearize {
 				&& !(lop instanceof CoVariance)
 				// Not qualified for prefetching
 				&& !(lop instanceof Checkpoint) && !(lop instanceof ReBlock)
-				&& !(lop instanceof CSVReBlock)
+				&& !(lop instanceof CSVReBlock) && !(lop instanceof DataGen)
 				// Cannot filter Transformation cases from Actions (FIXME)
 				&& !(lop instanceof MMTSJ) && !(lop instanceof UAggOuterChain)
 				&& !(lop instanceof ParameterizedBuiltin) && !(lop instanceof SpoofFused);

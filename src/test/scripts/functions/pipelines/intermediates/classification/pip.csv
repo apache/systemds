@@ -1,3 +1,3 @@
-forward_fill,imputeByMean,underSampling,imputeByMedian,forward_fill,underSampling,imputeByMean,dummycoding,0,0,0,0,0,0,0,0,0,0
-underSampling,forward_fill,imputeByMean,imputeByMean,imputeByMedian,forward_fill,underSampling,underSampling,imputeByMedian,forward_fill,underSampling,imputeByMean,dummycoding,0,0,0,0,0
-underSampling,forward_fill,imputeByMean,imputeByMean,imputeByMedian,forward_fill,underSampling,underSampling,imputeByMedian,forward_fill,underSampling,imputeByMean,dummycoding,0,0,0,0,0
+forward_fill,winsorize,imputeByMedian,tomeklink,dummycoding,0,0,0,0,0,0,0,0,0,0,0,0,0
+forward_fill,winsorize,imputeByMedian,tomeklink,dummycoding,0,0,0,0,0,0,0,0,0,0,0,0,0
+forward_fill,winsorize,imputeByMedian,tomeklink,winsorize,forward_fill,imputeByMean,dummycoding,0,0,0,0,0,0,0,0,0,0

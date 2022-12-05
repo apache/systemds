@@ -145,20 +145,21 @@ public class EncryptedFederatedParamservTest extends AutomatedTestBase {
 		int C = 1, Hin = 28, Win = 28;
 		int numLabels = 10;
 		if (Objects.equals(_networkType, "UNet")){
-			C = 5;
+			C = 3; Hin = 240; Win = 240;
 			numLabels = C * Hin * Win;
 		}
 
 		ExecMode platformOld = setExecMode(mode);
-
+		// start threads
+		List<Integer> ports = new ArrayList<>();
+		List<Thread> threads = new ArrayList<>();
 		try {
-			// start threads
-			List<Integer> ports = new ArrayList<>();
-			List<Thread> threads = new ArrayList<>();
 			for(int i = 0; i < _numFederatedWorkers; i++) {
-				ports.add(getRandomAvailablePort());
-				threads.add(startLocalFedWorkerThread(ports.get(i),
+				int port = getRandomAvailablePort();
+				threads.add(startLocalFedWorkerThread(port,
 						i==(_numFederatedWorkers-1) ? FED_WORKER_WAIT : FED_WORKER_WAIT_S));
+				ports.add(port);
+				System.out.println("Worker with port " + port + " started!");
 			}
 
 			// generate test data
@@ -185,13 +186,8 @@ public class EncryptedFederatedParamservTest extends AutomatedTestBase {
 				rowFederateLocallyAndWriteInputMatrixWithMTD(labelsName, labels, _numFederatedWorkers, ports, ranges, privacyConstraint);
 			}
 
-			try {
-				//wait for all workers to be setup
-				Thread.sleep(FED_WORKER_WAIT);
-			}
-			catch(InterruptedException e) {
-				e.printStackTrace();
-			}
+			//wait for all workers to be setup
+			Thread.sleep(FED_WORKER_WAIT);
 
 			// dml name
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
@@ -222,13 +218,17 @@ public class EncryptedFederatedParamservTest extends AutomatedTestBase {
 				fail("The following expected heavy hitters are missing: "
 					+ Arrays.toString(missingHeavyHitters("paramserv")));
 			Assert.assertEquals("Test Failed \n" + log, 0, Statistics.getNoOfExecutedSPInst());
-
-			// shut down threads
-			for(int i = 0; i < _numFederatedWorkers; i++) {
-				TestUtils.shutdownThreads(threads.get(i));
-			}
+		}
+		catch(InterruptedException e) {
+			e.printStackTrace();
+			fail(e.getMessage());
 		}
 		finally {
+			// shut down threads
+			for ( Thread thread : threads ){
+				TestUtils.shutdownThreads(thread);
+			}
+
 			resetExecMode(platformOld);
 		}
 	}

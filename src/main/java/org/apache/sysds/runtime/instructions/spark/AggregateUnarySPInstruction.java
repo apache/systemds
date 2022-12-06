@@ -39,6 +39,8 @@ import org.apache.sysds.runtime.instructions.spark.functions.AggregateDropCorrec
 import org.apache.sysds.runtime.instructions.spark.functions.FilterDiagMatrixBlocksFunction;
 import org.apache.sysds.runtime.instructions.spark.functions.FilterNonEmptyBlocksFunction;
 import org.apache.sysds.runtime.instructions.spark.utils.RDDAggregateUtils;
+import org.apache.sysds.runtime.lineage.LineageCacheConfig;
+import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysds.runtime.matrix.data.OperationsOnMatrixValues;
@@ -117,7 +119,8 @@ public class AggregateUnarySPInstruction extends UnarySPInstruction {
 						CommonThreadPool.triggerRemoteOPsPool = Executors.newCachedThreadPool();
 					RDDAggregateTask task = new RDDAggregateTask(_optr, _aop, in, mc);
 					Future<MatrixBlock> future_out = CommonThreadPool.triggerRemoteOPsPool.submit(task);
-					sec.setMatrixOutput(output.getName(), future_out);
+					LineageItem li = !LineageCacheConfig.ReuseCacheType.isNone() ? getLineageItem(ec).getValue() : null;
+					sec.setMatrixOutputAndLineage(output.getName(), future_out, li);
 				}
 				catch(Exception ex) {
 					throw new DMLRuntimeException(ex);

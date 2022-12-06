@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.Objects;
 
 import org.apache.sysds.common.Types.ExecMode;
+import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.paramserv.NativeHEHelper;
 import org.apache.sysds.runtime.privacy.PrivacyConstraint;
 import org.apache.sysds.test.AutomatedTestBase;
@@ -145,7 +146,7 @@ public class EncryptedFederatedParamservTest extends AutomatedTestBase {
 		int C = 1, Hin = 28, Win = 28;
 		int numLabels = 10;
 		if (Objects.equals(_networkType, "UNet")){
-			C = 3; Hin = 240; Win = 240;
+			C = 3; Hin = 340; Win = 340;
 			numLabels = C * Hin * Win;
 		}
 
@@ -160,6 +161,14 @@ public class EncryptedFederatedParamservTest extends AutomatedTestBase {
 						i==(_numFederatedWorkers-1) ? FED_WORKER_WAIT : FED_WORKER_WAIT_S));
 				ports.add(port);
 				System.out.println("Worker with port " + port + " started!");
+
+				if ( threads.get(i).isInterrupted() || !threads.get(i).isAlive() ){
+					if (threads.get(i).isInterrupted())
+						System.out.println("Thread is interrupted. Port " + port);
+					if ( !threads.get(i).isAlive() )
+						System.out.println("Thread is not alive. Port: " + port);
+					throw new DMLRuntimeException("Federated worker thread dead or interrupted! Port " + port);
+				}
 			}
 
 			// generate test data

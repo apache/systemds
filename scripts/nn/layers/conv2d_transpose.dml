@@ -200,7 +200,7 @@ init_seed = function(int F, int C, int Hf, int Wf, int seed = -1)
    *  - W: Weights, of shape (F, C*Hf*Wf).
    *  - b: Biases, of shape (F, 1).
    */
-  W = rand(rows=F, cols=C*Hf*Wf, pdf="normal", seed=seed) * sqrt(2.0/(C*Hf*Wf))
+  W = rand(rows=C, cols=F*Hf*Wf, pdf="normal", seed=seed) * sqrt(2.0/(C*Hf*Wf))
   b = matrix(0, rows=F, cols=1)
 }
 

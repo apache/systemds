@@ -37,6 +37,8 @@ import org.apache.sysds.runtime.instructions.spark.functions.FilterNonEmptyBlock
 import org.apache.sysds.runtime.instructions.spark.functions.ReorgMapFunction;
 import org.apache.sysds.runtime.instructions.spark.utils.RDDAggregateUtils;
 import org.apache.sysds.runtime.instructions.spark.utils.SparkUtils;
+import org.apache.sysds.runtime.lineage.LineageCacheConfig;
+import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysds.runtime.matrix.data.OperationsOnMatrixValues;
@@ -113,7 +115,8 @@ public class CpmmSPInstruction extends AggregateBinarySPInstruction {
 						CommonThreadPool.triggerRemoteOPsPool = Executors.newCachedThreadPool();
 					CpmmMatrixVectorTask task = new CpmmMatrixVectorTask(in1, in2);
 					Future<MatrixBlock> future_out = CommonThreadPool.triggerRemoteOPsPool.submit(task);
-					sec.setMatrixOutput(output.getName(), future_out);
+					LineageItem li = !LineageCacheConfig.ReuseCacheType.isNone() ? getLineageItem(ec).getValue() : null;
+					sec.setMatrixOutputAndLineage(output.getName(), future_out, li);
 				}
 				catch(Exception ex) {
 					throw new DMLRuntimeException(ex);

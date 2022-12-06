@@ -46,7 +46,7 @@ public class PrefetchCPInstruction extends UnaryCPInstruction {
 	public void processInstruction(ExecutionContext ec) {
 		// TODO: handle non-matrix objects
 		ec.setVariable(output.getName(), ec.getMatrixObject(input1));
-		LineageItem li = !LineageCacheConfig.ReuseCacheType.isNone() ? this.getLineageItem(ec).getValue() : null;
+		LineageItem li = !LineageCacheConfig.ReuseCacheType.isNone() ? getLineageItem(ec).getValue() : null;
 
 		// Note, a Prefetch instruction doesn't guarantee an asynchronous execution.
 		// If the next instruction which takes this output as an input comes before
@@ -54,6 +54,8 @@ public class PrefetchCPInstruction extends UnaryCPInstruction {
 		// In that case this Prefetch instruction will act like a NOOP. 
 		if (CommonThreadPool.triggerRemoteOPsPool == null)
 			CommonThreadPool.triggerRemoteOPsPool = Executors.newCachedThreadPool();
+		// Saving the lineage item inside the matrix object will replace the pre-attached
+		// lineage item (e.g. mapmm). Hence, passing separately.
 		CommonThreadPool.triggerRemoteOPsPool.submit(new TriggerPrefetchTask(ec.getMatrixObject(output), li));
 	}
 }

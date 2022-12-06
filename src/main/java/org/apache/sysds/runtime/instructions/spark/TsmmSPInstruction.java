@@ -31,6 +31,8 @@ import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.instructions.spark.utils.RDDAggregateUtils;
+import org.apache.sysds.runtime.lineage.LineageCacheConfig;
+import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysds.runtime.matrix.operators.Operator;
@@ -74,7 +76,8 @@ public class TsmmSPInstruction extends UnarySPInstruction {
 					CommonThreadPool.triggerRemoteOPsPool = Executors.newCachedThreadPool();
 				TsmmTask task = new TsmmTask(in, _type);
 				Future<MatrixBlock> future_out = CommonThreadPool.triggerRemoteOPsPool.submit(task);
-				sec.setMatrixOutput(output.getName(), future_out);
+				LineageItem li = !LineageCacheConfig.ReuseCacheType.isNone() ? getLineageItem(ec).getValue() : null;
+				sec.setMatrixOutputAndLineage(output.getName(), future_out, li);
 			}
 			catch(Exception ex) {
 				throw new DMLRuntimeException(ex);

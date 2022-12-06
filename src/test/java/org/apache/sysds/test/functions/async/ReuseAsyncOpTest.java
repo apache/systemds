@@ -19,30 +19,29 @@
 
 package org.apache.sysds.test.functions.async;
 
-	import java.util.ArrayList;
-	import java.util.HashMap;
-	import java.util.List;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 
-	import org.apache.sysds.common.Types.ExecMode;
-	import org.apache.sysds.hops.OptimizerUtils;
-	import org.apache.sysds.hops.recompile.Recompiler;
-	import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
-	import org.apache.sysds.runtime.lineage.Lineage;
-	import org.apache.sysds.runtime.lineage.LineageCacheConfig;
-	import org.apache.sysds.runtime.matrix.data.MatrixValue;
-	import org.apache.sysds.test.AutomatedTestBase;
-	import org.apache.sysds.test.TestConfiguration;
-	import org.apache.sysds.test.TestUtils;
-	import org.apache.sysds.utils.Statistics;
-	import org.junit.Assert;
-	import org.junit.Test;
+import org.apache.sysds.common.Types.ExecMode;
+import org.apache.sysds.hops.OptimizerUtils;
+import org.apache.sysds.hops.recompile.Recompiler;
+import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
+import org.apache.sysds.runtime.lineage.Lineage;
+import org.apache.sysds.runtime.lineage.LineageCacheConfig;
+import org.apache.sysds.runtime.matrix.data.MatrixValue;
+import org.apache.sysds.test.AutomatedTestBase;
+import org.apache.sysds.test.TestConfiguration;
+import org.apache.sysds.test.TestUtils;
+import org.apache.sysds.utils.Statistics;
+import org.junit.Assert;
+import org.junit.Test;
 
-public class LineageReuseSparkTest extends AutomatedTestBase {
-
+public class ReuseAsyncOpTest extends AutomatedTestBase {
 	protected static final String TEST_DIR = "functions/async/";
-	protected static final String TEST_NAME = "LineageReuseSpark";
+	protected static final String TEST_NAME = "ReuseAsyncOp";
 	protected static final int TEST_VARIANTS = 2;
-	protected static String TEST_CLASS_DIR = TEST_DIR + LineageReuseSparkTest.class.getSimpleName() + "/";
+	protected static String TEST_CLASS_DIR = TEST_DIR + ReuseAsyncOpTest.class.getSimpleName() + "/";
 
 	@Override
 	public void setUp() {
@@ -52,14 +51,15 @@ public class LineageReuseSparkTest extends AutomatedTestBase {
 	}
 
 	@Test
-	public void testlmdsHB() {
+	public void testReusePrefetch() {
+		// Reuse prefetch results
 		runTest(TEST_NAME+"1", ExecMode.HYBRID, 1);
 	}
 
 	@Test
-	public void testlmdsSP() {
-		// Only reuse the actions
-		runTest(TEST_NAME+"1", ExecMode.SPARK, 1);
+	public void testlmds() {
+		// Reuse future-based tsmm and mapmm
+		runTest(TEST_NAME+"2", ExecMode.HYBRID, 2);
 	}
 
 	public void runTest(String testname, ExecMode execMode, int testId) {
@@ -86,10 +86,13 @@ public class LineageReuseSparkTest extends AutomatedTestBase {
 			programArgs = proArgs.toArray(new String[proArgs.size()]);
 
 			Lineage.resetInternalState();
+			enableAsync(); //enable max_reuse and prefetch
 			runTest(true, EXCEPTION_NOT_EXPECTED, null, -1);
+			disableAsync();
 			HashMap<MatrixValue.CellIndex, Double> R = readDMLScalarFromOutputDir("R");
 			long numTsmm = Statistics.getCPHeavyHitterCount("sp_tsmm");
 			long numMapmm = Statistics.getCPHeavyHitterCount("sp_mapmm");
+			long numPrefetch = Statistics.getCPHeavyHitterCount("prefetch");
 
 			proArgs.clear();
 			proArgs.add("-explain");
@@ -101,19 +104,25 @@ public class LineageReuseSparkTest extends AutomatedTestBase {
 			programArgs = proArgs.toArray(new String[proArgs.size()]);
 
 			Lineage.resetInternalState();
+			enableAsync(); //enable max_reuse and prefetch
 			runTest(true, EXCEPTION_NOT_EXPECTED, null, -1);
+			disableAsync();
 			HashMap<MatrixValue.CellIndex, Double> R_reused = readDMLScalarFromOutputDir("R");
 			long numTsmm_r = Statistics.getCPHeavyHitterCount("sp_tsmm");
 			long numMapmm_r = Statistics.getCPHeavyHitterCount("sp_mapmm");
+			long numPrefetch_r = Statistics.getCPHeavyHitterCount("prefetch");
 
 			//compare matrices
 			boolean matchVal = TestUtils.compareMatrices(R, R_reused, 1e-6, "Origin", "withPrefetch");
 			if (!matchVal)
 				System.out.println("Value w/o reuse "+R+" w/ reuse "+R_reused);
-			if (testId == 1) {
+			if (testId == 2) {
 				Assert.assertTrue("Violated sp_tsmm reuse count: " + numTsmm_r + " < " + numTsmm, numTsmm_r < numTsmm);
 				Assert.assertTrue("Violated sp_mapmm reuse count: " + numMapmm_r + " < " + numMapmm, numMapmm_r < numMapmm);
 			}
+			if (testId == 1)
+				Assert.assertTrue("Violated prefetch reuse count: " + numPrefetch_r + " < " + numPrefetch, numPrefetch_r<numPrefetch);
+
 		} finally {
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = old_simplification;
 			OptimizerUtils.ALLOW_SUM_PRODUCT_REWRITES = old_sum_product;
@@ -122,5 +131,17 @@ public class LineageReuseSparkTest extends AutomatedTestBase {
 			InfrastructureAnalyzer.setLocalMaxMemory(oldmem);
 			Recompiler.reinitRecompiler();
 		}
+	}
+
+	private void enableAsync() {
+		OptimizerUtils.ALLOW_TRANSITIVE_SPARK_EXEC_TYPE = false;
+		OptimizerUtils.MAX_PARALLELIZE_ORDER = true;
+		OptimizerUtils.ASYNC_PREFETCH_SPARK = true;
+	}
+
+	private void disableAsync() {
+		OptimizerUtils.ALLOW_TRANSITIVE_SPARK_EXEC_TYPE = true;
+		OptimizerUtils.MAX_PARALLELIZE_ORDER = false;
+		OptimizerUtils.ASYNC_PREFETCH_SPARK = false;
 	}
 }

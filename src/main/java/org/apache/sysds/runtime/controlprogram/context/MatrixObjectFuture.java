@@ -22,6 +22,7 @@ package org.apache.sysds.runtime.controlprogram.context;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
+import org.apache.sysds.runtime.lineage.LineageCache;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
 import java.util.concurrent.Future;
@@ -59,8 +60,14 @@ public class MatrixObjectFuture extends MatrixObject
 				throw new DMLRuntimeException("MatrixObject not available to read.");
 			if(_data != null)
 				throw new DMLRuntimeException("_data must be null for future matrix object/block.");
+			MatrixBlock out = null;
 			acquire(false, false);
-			return _futureData.get();
+			long t1 = System.nanoTime();
+			out = _futureData.get();
+			if (hasValidLineage())
+				LineageCache.putValueAsyncOp(getCacheLineage(), this, out, t1);
+				// FIXME: start time should indicate the actual start of the execution
+			return out;
 		}
 
 		catch(Exception e) {

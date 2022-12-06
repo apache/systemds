@@ -602,14 +602,19 @@ public class ExecutionContext {
 		mo.release();
 	}
 
-	public void setMatrixOutput(String varName, Future<MatrixBlock> fmb) {
+	public void setMatrixOutputAndLineage(String varName, Future<MatrixBlock> fmb, LineageItem li) {
 		if (isAutoCreateVars() && !containsVariable(varName)) {
 			MatrixObject fmo = new MatrixObjectFuture(Types.ValueType.FP64,
 				OptimizerUtils.getUniqueTempFileName(), fmb);
 		}
 		MatrixObject mo = getMatrixObject(varName);
 		MatrixObjectFuture fmo = new MatrixObjectFuture(mo, fmb);
+		fmo.setCacheLineage(li);
 		setVariable(varName, fmo);
+	}
+
+	public void setMatrixOutput(String varName, Future<MatrixBlock> fmb) {
+		setMatrixOutputAndLineage(varName, fmb, null);
 	}
 
 	public void setMatrixOutput(String varName, MatrixBlock outputData, UpdateType flag) {

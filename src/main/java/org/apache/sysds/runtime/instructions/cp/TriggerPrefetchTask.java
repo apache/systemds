@@ -24,6 +24,7 @@ import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedStatistics;
 import org.apache.sysds.runtime.lineage.LineageCache;
 import org.apache.sysds.runtime.lineage.LineageItem;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.utils.stats.SparkStatistics;
 
 public class TriggerPrefetchTask implements Runnable {
@@ -43,6 +44,7 @@ public class TriggerPrefetchTask implements Runnable {
 	@Override
 	public void run() {
 		boolean prefetched = false;
+		MatrixBlock mb = null;
 		long t1 = System.nanoTime();
 		synchronized (_prefetchMO) {
 			// Having this check inside the critical section
@@ -50,14 +52,14 @@ public class TriggerPrefetchTask implements Runnable {
 			if (_prefetchMO.isPendingRDDOps() || _prefetchMO.isFederated()) {
 				// TODO: Add robust runtime constraints for federated prefetch
 				// Execute and bring the result to local
-				_prefetchMO.acquireReadAndRelease();
+				mb = _prefetchMO.acquireReadAndRelease();
 				prefetched = true;
 			}
 		}
 
 		// Save the collected intermediate in the lineage cache
-		if (_inputLi != null)
-			LineageCache.putValueAsyncOp(_inputLi, _prefetchMO, prefetched, t1);
+		if (_inputLi != null && mb != null)
+			LineageCache.putValueAsyncOp(_inputLi, _prefetchMO, mb, t1);
 
 		if (DMLScript.STATISTICS && prefetched) {
 			if (_prefetchMO.isFederated())

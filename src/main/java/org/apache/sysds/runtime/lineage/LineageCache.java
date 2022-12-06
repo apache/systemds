@@ -19,6 +19,7 @@
 
 package org.apache.sysds.runtime.lineage;
 
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.sysds.api.DMLScript;
@@ -575,15 +576,12 @@ public class LineageCache
 					continue;
 				}
 
-				if (data instanceof MatrixObjectFuture) {
+				if (data instanceof MatrixObjectFuture || inst instanceof PrefetchCPInstruction) {
 					// We don't want to call get() on the future immediately after the execution
+					// For the async. instructions, caching is handled separately by the tasks
 					removePlaceholder(item);
 					continue;
 				}
-
-				if (inst instanceof PrefetchCPInstruction || inst instanceof BroadcastCPInstruction)
-					// For the async. instructions, caching is handled separately by the tasks
-					continue;
 
 				if (data instanceof MatrixObject && ((MatrixObject) data).hasRDDHandle()) {
 					// Avoid triggering pre-matured Spark instruction chains
@@ -643,49 +641,28 @@ public class LineageCache
 		}
 	}
 
-	public static void putValueAsyncOp(LineageItem instLI, Data data, boolean prefetched, long starttime)
+	// This method is called from inside the asynchronous operators and directly put the output of
+	// an asynchronous instruction into the lineage cache. As the consumers, a different operator,
+	// materializes the intermediate, we skip the placeholder placing logic.
+	public static void putValueAsyncOp(LineageItem instLI, Data data, MatrixBlock mb, long starttime)
 	{
 		if (ReuseCacheType.isNone())
 			return;
-		if (!prefetched) //prefetching was not successful
+		if (!ArrayUtils.contains(LineageCacheConfig.getReusableOpcodes(), instLI.getOpcode()))
 			return;
+		if(!(data instanceof MatrixObject) && !(data instanceof ScalarObject)) {
+			return;
+		}
 
 		synchronized( _cache )
 		{
-			if (!probe(instLI))
-				return;
-
 			long computetime = System.nanoTime() - starttime;
-			LineageCacheEntry centry = _cache.get(instLI);
-			if(!(data instanceof MatrixObject) && !(data instanceof ScalarObject)) {
-				// Reusable instructions can return a frame (rightIndex). Remove placeholders.
-				removePlaceholder(instLI);
-				return;
-			}
+			// Make space, place data and manage queue
+			putIntern(instLI, DataType.MATRIX, mb, null, computetime);
 
-			MatrixBlock mb = (data instanceof MatrixObject) ?
-				((MatrixObject)data).acquireReadAndRelease() : null;
-			long size = mb != null ? mb.getInMemorySize() : ((ScalarObject)data).getSize();
-
-			// remove the placeholder if the entry is bigger than the cache.
-			if (size > LineageCacheEviction.getCacheLimit()) {
-				removePlaceholder(instLI);
-				return;
-			}
-
-			// place the data
-			if (data instanceof MatrixObject)
-				centry.setValue(mb, computetime);
-			else if (data instanceof ScalarObject)
-				centry.setValue((ScalarObject)data, computetime);
-
-			if (DMLScript.STATISTICS && LineageCacheEviction._removelist.containsKey(centry._key)) {
+			if (DMLScript.STATISTICS && LineageCacheEviction._removelist.containsKey(instLI))
 				// Add to missed compute time
-				LineageCacheStatistics.incrementMissedComputeTime(centry._computeTime);
-			}
-
-			//maintain order for eviction
-			LineageCacheEviction.addEntry(centry);
+				LineageCacheStatistics.incrementMissedComputeTime(computetime);
 		}
 	}
 

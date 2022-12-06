@@ -197,6 +197,10 @@ public class LineageCacheConfig
 	public static void setReusableOpcodes(String... ops) {
 		REUSE_OPCODES = ops;
 	}
+
+	public static String[] getReusableOpcodes() {
+		return REUSE_OPCODES;
+	}
 	
 	public static void resetReusableOpcodes() {
 		REUSE_OPCODES = OPCODES;

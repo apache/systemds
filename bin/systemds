@@ -126,7 +126,7 @@ else
       --files $LOG4JPROP \
       --conf spark.network.timeout=512s \
       --num-executors 4 \
-      --executor-memory 64 \
+      --executor-memory 64g \
       --executor-cores 16 "
 fi
 

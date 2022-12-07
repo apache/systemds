@@ -108,6 +108,8 @@ else
   if [ -z "${LOG4JPROP2}" ]; then
     LOG4JPROP=""
   elif [ -z "${SYSTEMDS_DISTRIBUTED_OPTS}" ]; then
+    LOG4JPROP=$LOG4JPROP
+  else
     LOG4JPROP="-Dlog4j.configuration=file:$LOG4JPROP2"
   fi
 fi

@@ -107,7 +107,7 @@ else
   LOG4JPROP2=$(find "$LOG4JPROP")
   if [ -z "${LOG4JPROP2}" ]; then
     LOG4JPROP=""
-  else
+  elif [-z "${SYSTEMDS_DISTRIBUTED_OPTS}" ]; then
     LOG4JPROP="-Dlog4j.configuration=file:$LOG4JPROP2"
   fi
 fi

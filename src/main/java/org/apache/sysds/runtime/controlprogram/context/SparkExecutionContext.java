@@ -22,6 +22,7 @@ package org.apache.sysds.runtime.controlprogram.context;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
+import java.lang.annotation.Target;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -203,11 +204,21 @@ public class SparkExecutionContext extends ExecutionContext
 		return LAZY_SPARKCTX_CREATION;
 	}
 
-	private synchronized static void initSparkContext()
-	{
+	public static void handleIllegalReflectiveAccessSpark(){
+		Module pf = org.apache.spark.unsafe.Platform.class.getModule();
+		Target.class.getModule().addOpens("java.nio", pf);
+
+		Module se = org.apache.spark.util.SizeEstimator.class.getModule();
+		Target.class.getModule().addOpens("java.util", se);
+		Target.class.getModule().addOpens("java.lang", se);
+		Target.class.getModule().addOpens("java.util.concurrent", se);
+	}
+
+	private synchronized static void initSparkContext(){
 		//check for redundant spark context init
 		if( _spctx != null )
 			return;
+		handleIllegalReflectiveAccessSpark();
 
 		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 
@@ -1780,6 +1791,7 @@ public class SparkExecutionContext extends ExecutionContext
 
 		public SparkClusterConfig()
 		{
+			handleIllegalReflectiveAccessSpark();
 			SparkConf sconf = createSystemDSSparkConf();
 			_confOnly = true;
 

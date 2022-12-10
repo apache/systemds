@@ -26,7 +26,7 @@ import org.apache.sysds.runtime.matrix.operators.CountDistinctOperator;
 import org.apache.sysds.runtime.matrix.operators.CountDistinctOperatorTypes;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 
-public class SketchFactory {
+public class MatrixSketchFactory {
 	public static MatrixSketch get(Operator op) {
 		if (op instanceof CountDistinctOperator) {
 			CountDistinctOperator cdop = (CountDistinctOperator) op;

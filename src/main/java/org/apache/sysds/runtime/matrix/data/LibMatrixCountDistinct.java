@@ -36,8 +36,7 @@ import org.apache.sysds.runtime.data.SparseBlockCSR;
 import org.apache.sysds.runtime.data.SparseBlockFactory;
 import org.apache.sysds.runtime.instructions.spark.data.CorrMatrixBlock;
 import org.apache.sysds.runtime.matrix.data.sketch.MatrixSketch;
-import org.apache.sysds.runtime.matrix.data.sketch.SketchFactory;
-import org.apache.sysds.runtime.matrix.data.sketch.countdistinctapprox.KMVSketch;
+import org.apache.sysds.runtime.matrix.data.sketch.MatrixSketchFactory;
 import org.apache.sysds.runtime.matrix.operators.CountDistinctOperator;
 import org.apache.sysds.runtime.matrix.operators.CountDistinctOperatorTypes;
 import org.apache.sysds.utils.Hash.HashType;
@@ -105,7 +104,7 @@ public interface LibMatrixCountDistinct {
 					res = countDistinctValuesNaive(in, op);
 					break;
 				case KMV:
-					res = new KMVSketch(op).getValue(in);
+					res = MatrixSketchFactory.get(op).getValue(in);
 					break;
 				default:
 					throw new DMLException("Invalid estimator type for aggregation: " + LibMatrixCountDistinct.class.getSimpleName());
@@ -361,17 +360,17 @@ public interface LibMatrixCountDistinct {
 	}
 
 	static MatrixBlock countDistinctValuesFromSketch(CountDistinctOperator op, CorrMatrixBlock corrBlkIn) {
-		MatrixSketch sketch = SketchFactory.get(op);
+		MatrixSketch sketch = MatrixSketchFactory.get(op);
 		return sketch.getValueFromSketch(corrBlkIn);
 	}
 
 	static CorrMatrixBlock createSketch(CountDistinctOperator op, MatrixBlock blkIn) {
-		MatrixSketch sketch = SketchFactory.get(op);
+		MatrixSketch sketch = MatrixSketchFactory.get(op);
 		return sketch.create(blkIn);
 	}
 
 	static CorrMatrixBlock unionSketch(CountDistinctOperator op, CorrMatrixBlock corrBlkIn0, CorrMatrixBlock corrBlkIn1) {
-		MatrixSketch sketch = SketchFactory.get(op);
+		MatrixSketch sketch = MatrixSketchFactory.get(op);
 		return sketch.union(corrBlkIn0, corrBlkIn1);
 	}
 }

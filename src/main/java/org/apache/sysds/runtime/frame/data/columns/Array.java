@@ -136,7 +136,14 @@ public abstract class Array<T> implements Writable {
 	 * 
 	 * @return the size in memory of this object.
 	 */
-	public abstract long getInMemorySize();
+	public long getInMemorySize(){
+		return baseMemoryCost(); 
+	}
+
+	public static long baseMemoryCost(){
+		 // Object header , int size, padding, softref.
+		return 16 + 4 + 4 + 8;
+	}
 
 	public abstract long getExactSerializedSize();
 

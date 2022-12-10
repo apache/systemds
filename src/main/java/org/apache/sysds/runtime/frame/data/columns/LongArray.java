@@ -156,7 +156,7 @@ public class LongArray extends Array<Long> {
 
 	@Override
 	public long getInMemorySize() {
-		long size = 16; // object header + object reference
+		long size = super.getInMemorySize() ; // object header + object reference
 		size += MemoryEstimates.longArrayCost(_data.length);
 		return size;
 	}

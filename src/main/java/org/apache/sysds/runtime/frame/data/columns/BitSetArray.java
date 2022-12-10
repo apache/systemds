@@ -24,38 +24,58 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.util.Arrays;
+import java.util.BitSet;
 
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.frame.data.columns.ArrayFactory.FrameArrayType;
 import org.apache.sysds.utils.MemoryEstimates;
 
-public class BooleanArray extends Array<Boolean> {
-	protected boolean[] _data;
+public class BitSetArray extends Array<Boolean> {
+	private BitSet _data;
 
-	public BooleanArray(boolean[] data) {
-		_data = data;
-		_size = _data.length;
+	protected BitSetArray() {
+		// Serialization constructor
 	}
 
-	public boolean[] get() {
+	public BitSetArray(boolean[] data) {
+		_size = data.length;
+		_data = new BitSet(data.length);
+		// set bits.
+		for(int i = 0; i < data.length; i++)
+			if(data[i])
+				_data.set(i);
+
+	}
+
+	public BitSetArray(BitSet data, int size){
+		_size = size;
+		_data = data;
+	}
+
+	public BitSet get() {
 		return _data;
 	}
 
 	@Override
 	public Boolean get(int index) {
-		return _data[index];
+		return _data.get(index);
 	}
 
 	@Override
 	public void set(int index, Boolean value) {
-		_data[index] = (value != null) ? value : false;
+		if(value != null)
+			_data.set(index, value);
+		else
+			_data.set(index, false);
 	}
-	
+
 	@Override
 	public void set(int index, double value) {
-		_data[index] = value == 0 ? false : true;
+		if(value == 0)
+			_data.set(index, false);
+		else
+			_data.set(index, true);
 	}
 
 	@Override
@@ -64,21 +84,34 @@ public class BooleanArray extends Array<Boolean> {
 	}
 
 	@Override
-	public void setFromOtherType(int rl, int ru, Array<?> value){
+	public void setFromOtherType(int rl, int ru, Array<?> value) {
 		throw new NotImplementedException();
 	}
 
 	@Override
 	public void set(int rl, int ru, Array<Boolean> value, int rlSrc) {
-		System.arraycopy(((BooleanArray) value)._data, rlSrc, _data, rl, ru - rl + 1);
+		if(value instanceof BitSetArray) {
+			throw new NotImplementedException();
+		}
+		else {
+			for(int i = rl, off = rlSrc; i < ru; i++, off++)
+				_data.set(i, value.get(off));
+		}
+
 	}
 
 	@Override
 	public void setNz(int rl, int ru, Array<Boolean> value) {
-		boolean[] data2 = ((BooleanArray) value)._data;
-		for(int i = rl; i < ru + 1; i++)
-			if(data2[i])
-				_data[i] = data2[i];
+		if(value instanceof BitSetArray) {
+			throw new NotImplementedException();
+		}
+		else {
+
+			boolean[] data2 = ((BooleanArray) value)._data;
+			for(int i = rl; i < ru + 1; i++)
+				if(data2[i])
+					_data.set(i, data2[i]);
+		}
 	}
 
 	@Override
@@ -88,33 +121,37 @@ public class BooleanArray extends Array<Boolean> {
 
 	@Override
 	public void append(Boolean value) {
-		if(_data.length <= _size)
-			_data = Arrays.copyOf(_data, newSize());
-		_data[_size++] = (value != null) ? value : false;
+		_data.set(_size, value);
+		_size++;
 	}
 
 	@Override
 	public void write(DataOutput out) throws IOException {
-		out.writeByte(FrameArrayType.BOOLEAN.ordinal());
-		for(int i = 0; i < _size; i++)
-			out.writeBoolean(_data[i]);
+		out.writeByte(FrameArrayType.BITSET.ordinal());
+		out.writeInt(_size);
+		long[] internals = _data.toLongArray();
+		out.writeInt(internals.length);
+		for(int i = 0; i < internals.length; i++)
+			out.writeLong(internals[i]);
 	}
 
 	@Override
 	public void readFields(DataInput in) throws IOException {
-		_size = _data.length;
-		for(int i = 0; i < _size; i++)
-			_data[i] = in.readBoolean();
+		_size = in.readInt();
+		long[] internalLong = new long[in.readInt()];
+		for(int i = 0; i < internalLong.length; i++)
+			internalLong[i] = in.readLong();
+		_data = BitSet.valueOf(internalLong);
 	}
 
 	@Override
 	public Array<Boolean> clone() {
-		return new BooleanArray(Arrays.copyOf(_data, _size));
+		return new BitSetArray(BitSet.valueOf(_data.toLongArray()), _size);
 	}
 
 	@Override
 	public Array<Boolean> slice(int rl, int ru) {
-		return new BooleanArray(Arrays.copyOfRange(_data, rl, ru));
+		return new BitSetArray(_data.get(rl, ru), ru - rl);
 	}
 
 	@Override
@@ -124,8 +161,7 @@ public class BooleanArray extends Array<Boolean> {
 
 	@Override
 	public void reset(int size) {
-		if(_data.length < size)
-			_data = new boolean[size];
+		_data = new BitSet();
 		_size = size;
 	}
 
@@ -134,8 +170,9 @@ public class BooleanArray extends Array<Boolean> {
 		// over allocating here.. we could maybe bit pack?
 		ByteBuffer booleanBuffer = ByteBuffer.allocate(nRow);
 		booleanBuffer.order(ByteOrder.nativeOrder());
-		for(int i = 0; i < nRow; i++)
-			booleanBuffer.put((byte) (_data[i] ? 1 : 0));
+		// TODO: fix inefficient transfer 8 x bigger.
+		for(int i = 0; i < nRow; i++) 
+			booleanBuffer.put((byte) (_data.get(i) ? 1 : 0));
 		return booleanBuffer.array();
 	}
 
@@ -156,14 +193,16 @@ public class BooleanArray extends Array<Boolean> {
 
 	@Override
 	public long getInMemorySize() {
-		long size = super.getInMemorySize() ; // object header + object reference
-		size += MemoryEstimates.booleanArrayCost(_data.length);
+		long size = super.getInMemorySize() +  8 ; // object header + object reference
+		size += MemoryEstimates.bitSetCost(_size);
 		return size;
 	}
 
 	@Override
 	public long getExactSerializedSize() {
-		return 1 + _data.length;
+		long size = 1 + 4  + 4;
+		size += _data.toLongArray().length * 8;
+		return size;
 	}
 
 	@Override
@@ -175,7 +214,7 @@ public class BooleanArray extends Array<Boolean> {
 	protected Array<?> changeTypeDouble() {
 		double[] ret = new double[size()];
 		for(int i = 0; i < size(); i++)
-			ret[i] = _data[i] ? 1.0 : 0.0;
+			ret[i] = _data.get(i) ? 1.0 : 0.0;
 		return new DoubleArray(ret);
 	}
 
@@ -183,7 +222,7 @@ public class BooleanArray extends Array<Boolean> {
 	protected Array<?> changeTypeFloat() {
 		float[] ret = new float[size()];
 		for(int i = 0; i < size(); i++)
-			ret[i] = _data[i] ? 1.0f : 0.0f;
+			ret[i] = _data.get(i) ? 1.0f : 0.0f;
 		return new FloatArray(ret);
 	}
 
@@ -191,7 +230,7 @@ public class BooleanArray extends Array<Boolean> {
 	protected Array<?> changeTypeInteger() {
 		int[] ret = new int[size()];
 		for(int i = 0; i < size(); i++)
-			ret[i] = _data[i] ? 1 : 0;
+			ret[i] = _data.get(i) ? 1 : 0;
 		return new IntegerArray(ret);
 	}
 
@@ -199,17 +238,17 @@ public class BooleanArray extends Array<Boolean> {
 	protected Array<?> changeTypeLong() {
 		long[] ret = new long[size()];
 		for(int i = 0; i < size(); i++)
-			ret[i] = _data[i] ? 1L : 0L;
+			ret[i] = _data.get(i) ? 1L : 0L;
 		return new LongArray(ret);
 	}
 
 	@Override
 	public String toString() {
-		StringBuilder sb = new StringBuilder(_data.length * 5 + 2);
+		StringBuilder sb = new StringBuilder(_size * 5 + 2);
 		sb.append(super.toString() + ":[");
 		for(int i = 0; i < _size - 1; i++)
-			sb.append((_data[i] ? 1 : 0) + ",");
-		sb.append(_data[_size - 1] ? 1 : 0);
+			sb.append((_data.get(i) ? 1 : 0) + ",");
+		sb.append(_data.get(_size - 1) ? 1 : 0);
 		sb.append("]");
 		return sb.toString();
 	}

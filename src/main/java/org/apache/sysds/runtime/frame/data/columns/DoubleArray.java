@@ -200,7 +200,7 @@ public class DoubleArray extends Array<Double> {
 
 	@Override
 	public long getInMemorySize() {
-		long size = 16; // object header + object reference
+		long size = super.getInMemorySize(); // object header + object reference
 		size += MemoryEstimates.doubleArrayCost(_data.length);
 		return size;
 	}

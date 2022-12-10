@@ -266,7 +266,7 @@ public class StringArray extends Array<String> {
 
 	@Override
 	public long getInMemorySize() {
-		long size = 16; // object header + object reference
+		long size = super.getInMemorySize(); // object header + object reference
 		size += MemoryEstimates.stringArrayCost(_data);
 		return size;
 	}

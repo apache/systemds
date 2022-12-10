@@ -100,17 +100,16 @@ if [ -z "$LOG4JPROP" ] ; then
   if [ -z "${LOG4JPROP}" ]; then
     LOG4JPROP=""
   else
-    LOG4JPROP="-Dlog4j.configuration=file:$LOG4JPROP"
+    LOG4JPROPFULL="-Dlog4j.configuration=file:$LOG4JPROP"
   fi
 else
   # L4J was set by env var. Unset if that setting is wrong
   LOG4JPROP2=$(find "$LOG4JPROP")
   if [ -z "${LOG4JPROP2}" ]; then
     LOG4JPROP=""
-  elif [ -z "${SYSTEMDS_DISTRIBUTED_OPTS}" ]; then
-    LOG4JPROP=$LOG4JPROP
   else
-    LOG4JPROP="-Dlog4j.configuration=file:$LOG4JPROP2"
+    LOG4JPROP=$LOG4JPROP
+    LOG4JPROPFULL="-Dlog4j.configuration=file:$LOG4JPROP2"
   fi
 fi
 
@@ -434,7 +433,7 @@ if [ $WORKER == 1 ]; then
   CMD=" \
   java $SYSTEMDS_STANDALONE_OPTS \
   -cp $CLASSPATH \
-  $LOG4JPROP \
+  $LOG4JPROPFULL \
   org.apache.sysds.api.DMLScript \
   -w $PORT \
   $CONFIG_FILE \
@@ -449,7 +448,7 @@ elif [ "$FEDMONITORING" == 1 ]; then
   CMD=" \
   java $SYSTEMDS_STANDALONE_OPTS \
   -cp $CLASSPATH \
-  $LOG4JPROP \
+  $LOG4JPROPFULL \
   org.apache.sysds.api.DMLScript \
   -fedMonitoring $PORT \
   $CONFIG_FILE \
@@ -464,7 +463,7 @@ elif [ $SYSDS_DISTRIBUTED == 0 ]; then
   CMD=" \
   java $SYSTEMDS_STANDALONE_OPTS \
   -cp $CLASSPATH \
-  $LOG4JPROP \
+  $LOG4JPROPFULL \
   org.apache.sysds.api.DMLScript \
   -f $SCRIPT_FILE \
   -exec $SYSDS_EXEC_MODE \

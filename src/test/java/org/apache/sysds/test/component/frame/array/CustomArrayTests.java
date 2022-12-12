@@ -178,4 +178,9 @@ public class CustomArrayTests {
 		ValueType t = a.analyzeValueType();
 		assertTrue(t == ValueType.FP32);
 	}
+
+	@Test
+	public void setRangeBitSet(){
+		
+	}
 }

@@ -64,6 +64,8 @@ public class FrameArrayTests {
 				tests.add(new Object[] {create(t, 1, 2), t});
 				tests.add(new Object[] {create(t, 10, 52), t});
 				tests.add(new Object[] {create(t, 80, 22), t});
+				tests.add(new Object[] {create(t, 512, 22), t});
+				tests.add(new Object[] {create(t, 560, 22), t});
 			}
 			// Booleans
 			tests.add(new Object[] {ArrayFactory.create(new String[] {"a", "b", "c"}), FrameArrayType.STRING});
@@ -251,7 +253,65 @@ public class FrameArrayTests {
 			default:
 				throw new NotImplementedException();
 		}
+	}
 
+	@Test
+	public void testSetRange01() {
+		if(a.size() > 2)
+			testSetRange(1, a.size() - 1, 0);
+	}
+
+	@Test
+	public void testSetRange02() {
+		if(a.size() > 2)
+			testSetRange(0, a.size() - 2, 1);
+	}
+
+	@Test
+	public void testSetRange03() {
+		if(a.size() > 64)
+			testSetRange(63, a.size() - 1, 3);
+	}
+
+	@Test
+	public void testSetRange04() {
+		if(a.size() > 64)
+			testSetRange(0, a.size() - 64, 3);
+	}
+
+	@SuppressWarnings("unchecked")
+	public void testSetRange(int start, int end, int off) {
+		try {
+			Array<?> aa = a.clone();
+			switch(a.getFrameArrayType()) {
+				case FP64:
+					((Array<Double>) aa).set(start, end, (Array<Double>) a, off);
+					break;
+				case FP32:
+					((Array<Float>) aa).set(start, end, (Array<Float>) a, off);
+					break;
+				case INT32:
+					((Array<Integer>) aa).set(start, end, (Array<Integer>) a, off);
+					break;
+				case INT64:
+					((Array<Long>) aa).set(start, end, (Array<Long>) a, off);
+					break;
+				case BOOLEAN:
+				case BITSET:
+					((Array<Boolean>) aa).set(start, end, (Array<Boolean>) a, off);
+					break;
+				case STRING:
+					((Array<String>) aa).set(start, end, (Array<String>) a, off);
+					break;
+				default:
+					throw new NotImplementedException();
+			}
+			compareSetSubRange(aa, a, start, end, off);
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
 	}
 
 	@Test
@@ -340,6 +400,12 @@ public class FrameArrayTests {
 		for(int i = 0; i < size; i++) {
 			assumeTrue(sub.get(i).toString().equals(b.get(i + off).toString()));
 		}
+	}
+
+	protected static void compareSetSubRange(Array<?> out, Array<?> in, int rl, int ru, int off ){
+		for(int i = rl; i <=ru; i++)
+			assumeTrue(out.get(i).toString().equals(in.get(i + off).toString()));
+
 	}
 
 	protected static Array<?> serializeAndBack(Array<?> g) {

@@ -91,10 +91,42 @@ public class BitSetArray extends Array<Boolean> {
 	@Override
 	public void set(int rl, int ru, Array<Boolean> value, int rlSrc) {
 		if(value instanceof BitSetArray) {
-			throw new NotImplementedException();
+			BitSet other = (BitSet)value.get();
+			BitSet otherRange = other.get(rlSrc, ru - rl + 1 - rlSrc);
+			long[] otherValues = otherRange.toLongArray();
+			long[] ret = _data.toLongArray();
+
+			final int remainder = rl % 64;
+			int retP = rl / 64;
+			// if(remainder == 0 && ) // lining up hurray
+				// throw new NotImplementedException();
+			// else{ // not lining up. Blame 1000 row blocks.
+				// first mask out previous and then continue
+				// mask by shifting two times (easier than constructing a mask)
+				ret[retP] = (ret[retP] << remainder) >>> remainder;
+
+				// middle full 64 bit overwrite no need to mask first.
+				// do not include last (it has to be specially handled)
+				for(int j = 0; j < otherValues.length - 1; j++){
+					long v = otherValues[j];
+					ret[retP] = ret[retP] ^ (v << remainder);
+					retP++;
+					ret[retP] = v >>>(64 - remainder);
+				}
+				// last mask out previous and remember
+				long v = otherValues[otherValues.length -1];
+				ret[retP] = ret[retP] ^ (v << remainder);
+				retP++;
+				if(retP < ret.length){ // aka there is a remainder
+					long previousLast = ret[retP];
+					ret[retP] = v >>> (64 - remainder);
+					ret[retP] = ret[retP]  ^ previousLast << remainder;
+				}
+			// }
+			_data = BitSet.valueOf(ret); // set data.
 		}
 		else {
-			for(int i = rl, off = rlSrc; i < ru; i++, off++)
+			for(int i = rl, off = rlSrc; i <= ru; i++, off++)
 				_data.set(i, value.get(off));
 		}
 

@@ -21,12 +21,15 @@ package org.apache.sysds.runtime.frame.data.columns;
 
 import java.io.DataInput;
 import java.io.IOException;
+import java.util.BitSet;
 
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.utils.MemoryEstimates;
 
 public interface ArrayFactory {
+
+	public static int bitSetSwitchPoint = 64;
 
 	public enum FrameArrayType {
 		STRING, BOOLEAN, BITSET, INT32, INT64, FP32, FP64;
@@ -38,6 +41,10 @@ public interface ArrayFactory {
 
 	public static BooleanArray create(boolean[] col) {
 		return new BooleanArray(col);
+	}
+
+	public static BitSetArray create(BitSet col, int size) {
+		return new BitSetArray(col, size);
 	}
 
 	public static IntegerArray create(int[] col) {
@@ -59,7 +66,10 @@ public interface ArrayFactory {
 	public static long getInMemorySize(ValueType type, int _numRows) {
 		switch(type) {
 			case BOOLEAN:
-				return Array.baseMemoryCost() + (long) MemoryEstimates.booleanArrayCost(_numRows);
+				if(_numRows > bitSetSwitchPoint)
+					return Array.baseMemoryCost() + 8 + (long) MemoryEstimates.bitSetCost(_numRows);
+				else
+					return Array.baseMemoryCost() + (long) MemoryEstimates.booleanArrayCost(_numRows);
 			case INT64:
 				return Array.baseMemoryCost() + (long) MemoryEstimates.longArrayCost(_numRows);
 			case FP64:
@@ -83,7 +93,10 @@ public interface ArrayFactory {
 			case STRING:
 				return new StringArray(new String[nRow]);
 			case BOOLEAN:
-				return new BooleanArray(new boolean[nRow]);
+				if(nRow > bitSetSwitchPoint)
+					return new BitSetArray(nRow);
+				else
+					return new BooleanArray(new boolean[nRow]);
 			case UINT8:
 			case INT32:
 				return new IntegerArray(new int[nRow]);
@@ -103,7 +116,7 @@ public interface ArrayFactory {
 		Array<?> arr;
 		switch(v) {
 			case BITSET:
-				arr = new BitSetArray();
+				arr = new BitSetArray(nRow);
 				break;
 			case BOOLEAN:
 				arr = new BooleanArray(new boolean[nRow]);

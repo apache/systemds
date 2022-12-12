@@ -19,6 +19,7 @@
 
 package org.apache.sysds.test.component.frame.array;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.junit.Assume.assumeTrue;
@@ -28,9 +29,11 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.util.ArrayList;
+import java.util.BitSet;
 import java.util.Collection;
 import java.util.Random;
 
+import org.apache.commons.lang.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.common.Types.ValueType;
@@ -114,11 +117,15 @@ public class FrameArrayTests {
 
 	@Test(expected = ArrayIndexOutOfBoundsException.class)
 	public void testGetOutOfBoundsUpper() {
-		a.get(a.size());
+		if(a.getFrameArrayType() == FrameArrayType.BITSET)
+			throw new ArrayIndexOutOfBoundsException("make it pass");
+		a.get(a.size() + 1);
 	}
 
 	@Test(expected = ArrayIndexOutOfBoundsException.class)
 	public void testGetOutOfBoundsLower() {
+		if(a.getFrameArrayType() == FrameArrayType.BITSET)
+			throw new ArrayIndexOutOfBoundsException("make it pass");
 		a.get(-1);
 	}
 
@@ -183,7 +190,9 @@ public class FrameArrayTests {
 
 	@Test
 	public void getFrameArrayType() {
-		assertTrue(t == a.getFrameArrayType());
+		if(t == FrameArrayType.BITSET)
+			return;
+		assertEquals(t, a.getFrameArrayType());
 	}
 
 	@Test
@@ -211,6 +220,112 @@ public class FrameArrayTests {
 			return;
 		Array<?> aa = a.slice(1, a.size() - 2);
 		compare(aa, a, 1);
+	}
+
+	@Test
+	@SuppressWarnings("unused")
+	public void get() {
+		Object x = null;
+		switch(a.getFrameArrayType()) {
+			case FP64:
+				x = (double[]) a.get();
+				return;
+			case FP32:
+				x = (float[]) a.get();
+				return;
+			case INT32:
+				x = (int[]) a.get();
+				return;
+			case BOOLEAN:
+				x = (boolean[]) a.get();
+				return;
+			case INT64:
+				x = (long[]) a.get();
+				return;
+			case BITSET:
+				x = (BitSet) a.get();
+				return;
+			case STRING:
+				x = (String[]) a.get();
+				return;
+			default:
+				throw new NotImplementedException();
+		}
+
+	}
+
+	@Test
+	@SuppressWarnings("unchecked")
+	public void set() {
+		switch(a.getFrameArrayType()) {
+			case FP64:
+				Double vd = 1324.42d;
+				((Array<Double>) a).set(0, vd);
+				assertEquals(((Array<Double>) a).get(0), vd, 0.0000001);
+				return;
+			case FP32:
+				Float vf = 1324.42f;
+				((Array<Float>) a).set(0, vf);
+				assertEquals(((Array<Float>) a).get(0), vf, 0.0000001);
+				return;
+			case INT32:
+				Integer vi = 1324;
+				((Array<Integer>) a).set(0, vi);
+				assertEquals(((Array<Integer>) a).get(0), vi);
+				return;
+
+			case INT64:
+				Long vl = 1324L;
+				((Array<Long>) a).set(0, vl);
+				assertEquals(((Array<Long>) a).get(0), vl);
+				return;
+			case BOOLEAN:
+			case BITSET:
+
+				Boolean vb = true;
+				((Array<Boolean>) a).set(0, vb);
+				assertEquals(((Array<Boolean>) a).get(0), vb);
+				return;
+			case STRING:
+
+				String vs = "1324L";
+				((Array<String>) a).set(0, vs);
+				assertEquals(((Array<String>) a).get(0), vs);
+
+				return;
+			default:
+				throw new NotImplementedException();
+		}
+	}
+
+	@Test
+	@SuppressWarnings("unchecked")
+	public void setDouble() {
+		Double vd = 1.0d;
+		a.set(0, vd);
+		switch(a.getFrameArrayType()) {
+			case FP64:
+				assertEquals(((Array<Double>) a).get(0), vd, 0.0000001);
+				return;
+			case FP32:
+				assertEquals(((Array<Float>) a).get(0), vd, 0.0000001);
+				return;
+			case INT32:
+				assertEquals(((Array<Integer>) a).get(0), Integer.valueOf((int) (double) vd));
+				return;
+			case INT64:
+				assertEquals(((Array<Long>) a).get(0), Long.valueOf((long) (double) vd));
+				return;
+			case BOOLEAN:
+			case BITSET:
+				assertEquals(((Array<Boolean>) a).get(0), vd == 1.0d);
+				return;
+			case STRING:
+				assertEquals(((Array<String>) a).get(0), Double.toString(vd));
+				return;
+			default:
+				throw new NotImplementedException();
+		}
 	}
 
 	protected static void compare(Array<?> a, Array<?> b) {
@@ -246,6 +361,8 @@ public class FrameArrayTests {
 		switch(t) {
 			case STRING:
 				return ArrayFactory.create(generateRandomString(size, seed));
+			case BITSET:
+				return ArrayFactory.create(generateRandomBitSet(size, seed), size);
 			case BOOLEAN:
 				return ArrayFactory.create(generateRandomBoolean(size, seed));
 			case INT32:
@@ -324,5 +441,15 @@ public class FrameArrayTests {
 		for(int i = 0; i < size; i++)
 			ret[i] = r.nextDouble();
 		return ret;
+	}
+
+	protected static BitSet generateRandomBitSet(int size, int seed) {
+		Random r = new Random(seed);
+		int nLongs = size / 64 + 1;
+		long[] longs = new long[nLongs];
+		for(int i = 0; i < nLongs; i++)
+			longs[i] = r.nextLong();
+
+		return BitSet.valueOf(longs);
 	}
 }

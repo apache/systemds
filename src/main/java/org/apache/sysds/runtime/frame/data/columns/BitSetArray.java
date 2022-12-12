@@ -34,8 +34,9 @@ import org.apache.sysds.utils.MemoryEstimates;
 public class BitSetArray extends Array<Boolean> {
 	private BitSet _data;
 
-	protected BitSetArray() {
-		// Serialization constructor
+	protected BitSetArray(int size) {
+		_size = size;
+		_data = new BitSet();
 	}
 
 	public BitSetArray(boolean[] data) {
@@ -45,10 +46,9 @@ public class BitSetArray extends Array<Boolean> {
 		for(int i = 0; i < data.length; i++)
 			if(data[i])
 				_data.set(i);
-
 	}
 
-	public BitSetArray(BitSet data, int size){
+	public BitSetArray(BitSet data, int size) {
 		_size = size;
 		_data = data;
 	}
@@ -128,7 +128,6 @@ public class BitSetArray extends Array<Boolean> {
 	@Override
 	public void write(DataOutput out) throws IOException {
 		out.writeByte(FrameArrayType.BITSET.ordinal());
-		out.writeInt(_size);
 		long[] internals = _data.toLongArray();
 		out.writeInt(internals.length);
 		for(int i = 0; i < internals.length; i++)
@@ -137,7 +136,6 @@ public class BitSetArray extends Array<Boolean> {
 
 	@Override
 	public void readFields(DataInput in) throws IOException {
-		_size = in.readInt();
 		long[] internalLong = new long[in.readInt()];
 		for(int i = 0; i < internalLong.length; i++)
 			internalLong[i] = in.readLong();
@@ -171,7 +169,7 @@ public class BitSetArray extends Array<Boolean> {
 		ByteBuffer booleanBuffer = ByteBuffer.allocate(nRow);
 		booleanBuffer.order(ByteOrder.nativeOrder());
 		// TODO: fix inefficient transfer 8 x bigger.
-		for(int i = 0; i < nRow; i++) 
+		for(int i = 0; i < nRow; i++)
 			booleanBuffer.put((byte) (_data.get(i) ? 1 : 0));
 		return booleanBuffer.array();
 	}
@@ -188,19 +186,19 @@ public class BitSetArray extends Array<Boolean> {
 
 	@Override
 	public FrameArrayType getFrameArrayType() {
-		return FrameArrayType.BOOLEAN;
+		return FrameArrayType.BITSET;
 	}
 
 	@Override
 	public long getInMemorySize() {
-		long size = super.getInMemorySize() +  8 ; // object header + object reference
+		long size = super.getInMemorySize() + 8; // object header + object reference
 		size += MemoryEstimates.bitSetCost(_size);
 		return size;
 	}
 
 	@Override
 	public long getExactSerializedSize() {
-		long size = 1 + 4  + 4;
+		long size = 1 + 4;
 		size += _data.toLongArray().length * 8;
 		return size;
 	}

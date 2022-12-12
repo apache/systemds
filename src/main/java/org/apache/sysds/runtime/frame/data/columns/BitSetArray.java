@@ -169,6 +169,7 @@ public class BitSetArray extends Array<Boolean> {
 		ByteBuffer booleanBuffer = ByteBuffer.allocate(nRow);
 		booleanBuffer.order(ByteOrder.nativeOrder());
 		// TODO: fix inefficient transfer 8 x bigger.
+		// We should do bit unpacking on the python side.
 		for(int i = 0; i < nRow; i++)
 			booleanBuffer.put((byte) (_data.get(i) ? 1 : 0));
 		return booleanBuffer.array();

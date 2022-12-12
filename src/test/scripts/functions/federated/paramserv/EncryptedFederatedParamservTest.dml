@@ -61,14 +61,15 @@ else if($network_type == "CNN") {
   }
 }
 else if($network_type == "UNet") {
-    #TODO: Load segmentation data and adjust dimensions of input data accordingly and add UNET file and import it. Also, activate HE as the last parameter of train_paramserv call.
     numFeatures = $channels*$hin*$win
+    numRows = nrow(features)
     F1 = 2
     print("Calling train_paramserv for UNet...")
-    model = UNet::train_paramserv(features, labels, matrix(0, rows=100, cols=numFeatures), matrix(0, rows=100, cols=numFeatures), $channels, $hin, $win, $epochs, 0, $utype, $freq, $batch_size, $scheme, $eta, $seed, FALSE, F1)
+    print("numFeatures=" + numFeatures + " numRows=" + numRows)
+    model = UNet::train_paramserv(features, labels, matrix(0, rows=numRows, cols=numFeatures), matrix(0, rows=numRows, cols=numFeatures), $channels, $hin, $win, $epochs, 0, $utype, $freq, $batch_size, $scheme, $eta, $seed, TRUE, F1)
     print("Test results:")
     hyperparams = list(learning_rate=$eta, C=$channels, Hin=$hin, Win=$win)
-    [loss_test, accuracy_test] = UNet::validate(matrix(0, rows=100, cols=numFeatures), matrix(0, rows=100, cols=numFeatures), model, hyperparams, F1)
+    [loss_test, accuracy_test] = UNet::validate(matrix(0, rows=numRows, cols=numFeatures), matrix(0, rows=numRows, cols=numFeatures), model, hyperparams, F1)
     print("[+] test loss: " + loss_test + ", test accuracy: " + accuracy_test + "\n")
 }
 else {

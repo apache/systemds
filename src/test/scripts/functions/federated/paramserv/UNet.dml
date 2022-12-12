@@ -30,6 +30,7 @@ source("scripts/nn/layers/relu.dml") as relu
 source("scripts/nn/layers/softmax.dml") as softmax
 source("scripts/nn/optim/sgd_momentum.dml") as sgd_momentum
 source("scripts/nn/layers/dropout.dml") as dropout
+source("scripts/utils/image_utils.dml") as img_utils
 
 /*
  * Trains a convolutional net using the "Unet" architecture.
@@ -68,6 +69,8 @@ train_paramserv = function(matrix[double] X, matrix[double] y,
   conv_stride = 1
   pool_stride = 2
   pool_HWf = 2
+  conv_t_HWf = 2
+  conv_t_stride = 2
   pad = 0  # For same dimensions, (Hf - stride) / 2
   F2 = F1 * 2
   F3 = F2 * 2
@@ -104,19 +107,19 @@ train_paramserv = function(matrix[double] X, matrix[double] y,
   [W9, b9] = conv2d::init(F5, F4, Hf, Wf, seed = as.integer(as.scalar(lseed[9])))
   [W10, b10] = conv2d::init(F5, F5, Hf, Wf, seed = as.integer(as.scalar(lseed[10])))
   # First Up-convolution
-  [W11, b11] = conv2d_transpose::init_seed(F4, F5, Hf, Wf, seed = as.integer(as.scalar(lseed[11])))
+  [W11, b11] = conv2d_transpose::init_seed(F4, F5, conv_t_HWf, conv_t_HWf, seed = as.integer(as.scalar(lseed[11])))
   [W12, b12] = conv2d::init(F4, F5, Hf, Wf, seed = as.integer(as.scalar(lseed[12])))
   [W13, b13] = conv2d::init(F4, F4, Hf, Wf, seed = as.integer(as.scalar(lseed[13])))
   # Second Up-convolution
-  [W14, b14] = conv2d_transpose::init_seed(F3, F4, Hf, Wf, seed = as.integer(as.scalar(lseed[14])))
+  [W14, b14] = conv2d_transpose::init_seed(F3, F4, conv_t_HWf, conv_t_HWf, seed = as.integer(as.scalar(lseed[14])))
   [W15, b15] = conv2d::init(F3, F4, Hf, Wf, seed = as.integer(as.scalar(lseed[15])))
   [W16, b16] = conv2d::init(F3, F3, Hf, Wf, seed = as.integer(as.scalar(lseed[16])))
   # Third Up-convolution
-  [W17, b17] = conv2d_transpose::init_seed(F2, F3, Hf, Wf, seed = as.integer(as.scalar(lseed[17])))
+  [W17, b17] = conv2d_transpose::init_seed(F2, F3, conv_t_HWf, conv_t_HWf, seed = as.integer(as.scalar(lseed[17])))
   [W18, b18] = conv2d::init(F2, F3, Hf, Wf, seed = as.integer(as.scalar(lseed[18])))
   [W19, b19] = conv2d::init(F2, F2, Hf, Wf, seed = as.integer(as.scalar(lseed[19])))
   # Fourth Up-convolution
-  [W20, b20] = conv2d_transpose::init_seed(F1, F2, Hf, Wf, seed = as.integer(as.scalar(lseed[20])))
+  [W20, b20] = conv2d_transpose::init_seed(F1, F2, conv_t_HWf, conv_t_HWf, seed = as.integer(as.scalar(lseed[20])))
   [W21, b21] = conv2d::init(F1, F2, Hf, Wf, seed = as.integer(as.scalar(lseed[21])))
   [W22, b22] = conv2d::init(F1, F1, Hf, Wf, seed = as.integer(as.scalar(lseed[22])))
   # Segmentation map
@@ -165,8 +168,8 @@ train_paramserv = function(matrix[double] X, matrix[double] y,
   # Create the hyper parameter list
   params = list(
     learning_rate=learning_rate, mu=mu, decay=decay, C=C, Hin=Hin, Win=Win, Hf=Hf, Wf=Wf,
-    conv_stride=conv_stride, pool_stride=pool_stride, pool_HWf=pool_HWf, pad=pad, lambda=lambda,
-    F1=F1, F2=F2, F3=F3, F4=F4, F5=F5, dropProb=dropProb, dropSeed=dropSeed)
+    conv_stride=conv_stride, pool_stride=pool_stride, pool_HWf=pool_HWf, conv_t_HWf=conv_t_HWf, conv_t_stride=conv_t_stride,
+    pad=pad, lambda=lambda, F1=F1, F2=F2, F3=F3, F4=F4, F5=F5, dropProb=dropProb, dropSeed=dropSeed)
 
   # Use paramserv function
   model_trained = paramserv(model=model_list, features=X, labels=y, val_features=X_val, val_labels=y_val,
@@ -232,6 +235,8 @@ predict = function(matrix[double] X, int C, int Hin, int Win, int batch_size, li
   conv_stride = 1
   pool_stride = 2
   pool_HWf = 2
+  conv_t_HWf = 2
+  conv_t_stride = 2
   pad = 0  # For same dimensions, (Hf - stride) / 2
   F2 = F1 * 2
   F3 = F2 * 2
@@ -279,28 +284,28 @@ predict = function(matrix[double] X, int C, int Hin, int Win, int batch_size, li
     outr9 = relu::forward(outc9)
     [outc10, Houtc10, Woutc10] = conv2d::forward(outr9, W10, b10, F5, Houtc9, Woutc9, Hf, Wf, conv_stride, conv_stride, pad, pad)
     outr10 = relu::forward(outc10)
-    [outc11, Houtc11, Woutc11] = conv2d_transpose::forward(outr10, W11, b11, F5, Houtc10, Woutc10, Hf, Wf, conv_stride, conv_stride, pad, pad, 0, 0)
+    [outc11, Houtc11, Woutc11] = conv2d_transpose::forward(outr10, W11, b11, F5, Houtc10, Woutc10, conv_t_HWf, conv_t_HWf, conv_t_stride, conv_t_stride, pad, pad, 0, 0)
 
     # Up-Convolution
-    outConcat1 = cbind(outc8[,1:ncol(outc11)],outc11)
+    outConcat1 = cbind(img_utils::crop_channel(outr8, Houtc8, Woutc8, Houtc11, Woutc11, F4),outc11)
     [outc12, Houtc12, Woutc12] = conv2d::forward(outConcat1, W12, b12, F5, Houtc11, Woutc11, Hf, Wf, conv_stride, conv_stride, pad, pad)
     outr11 = relu::forward(outc12)
     [outc13, Houtc13, Woutc13] = conv2d::forward(outr11, W13, b13, F4, Houtc12, Woutc12, Hf, Wf, conv_stride, conv_stride, pad, pad)
     outr12 = relu::forward(outc13)
-    [outc14, Houtc14, Woutc14] = conv2d_transpose::forward(outr12, W14, b14, F4, Houtc13, Woutc13, Hf, Wf, conv_stride, conv_stride, pad, pad, 0, 0)
-    outConcat2 = cbind(outc6[,1:ncol(outc14)],outc14)
+    [outc14, Houtc14, Woutc14] = conv2d_transpose::forward(outr12, W14, b14, F4, Houtc13, Woutc13, conv_t_HWf, conv_t_HWf, conv_t_stride, conv_t_stride, pad, pad, 0, 0)
+    outConcat2 = cbind(img_utils::crop_channel(outr6, Houtc6, Woutc6, Houtc14, Woutc14, F3),outc14)
     [outc15, Houtc15, Woutc15] = conv2d::forward(outConcat2, W15, b15, F4, Houtc14, Woutc14, Hf, Wf, conv_stride, conv_stride, pad, pad)
     outr13 = relu::forward(outc15)
     [outc16, Houtc16, Woutc16] = conv2d::forward(outr13, W16, b16, F3, Houtc15, Woutc15, Hf, Wf, conv_stride, conv_stride, pad, pad)
     outr14 = relu::forward(outc16)
-    [outc17, Houtc17, Woutc17] = conv2d_transpose::forward(outr14, W17, b17, F3, Houtc16, Woutc16, Hf, Wf, conv_stride, conv_stride, pad, pad, 0, 0)
-    outConcat3 = cbind(outc4[,1:ncol(outc17)], outc17)
+    [outc17, Houtc17, Woutc17] = conv2d_transpose::forward(outr14, W17, b17, F3, Houtc16, Woutc16, conv_t_HWf, conv_t_HWf, conv_t_stride, conv_t_stride, pad, pad, 0, 0)
+    outConcat3 = cbind(img_utils::crop_channel(outr4, Houtc4, Woutc4, Houtc17, Woutc17, F2), outc17)
     [outc18, Houtc18, Woutc18] = conv2d::forward(outConcat3, W18, b18, F3, Houtc17, Woutc17, Hf, Wf, conv_stride, conv_stride, pad, pad)
     outr15 = relu::forward(outc18)
     [outc19, Houtc19, Woutc19] = conv2d::forward(outr15, W19, b19, F2, Houtc18, Woutc18, Hf, Wf, conv_stride, conv_stride, pad, pad)
     outr16 = relu::forward(outc19)
-    [outc20, Houtc20, Woutc20] = conv2d_transpose::forward(outr16, W20, b20, F2, Houtc19, Woutc19, Hf, Wf, conv_stride, conv_stride, pad, pad, 0, 0)
-    outConcat4 = cbind(outc2[,1:ncol(outc20)], outc20)
+    [outc20, Houtc20, Woutc20] = conv2d_transpose::forward(outr16, W20, b20, F2, Houtc19, Woutc19, conv_t_HWf, conv_t_HWf, conv_t_stride, conv_t_stride, pad, pad, 0, 0)
+    outConcat4 = cbind(img_utils::crop_channel(outr2, Houtc2, Woutc2, Houtc20, Woutc20, F1), outc20)
     [outc21, Houtc21, Woutc21] = conv2d::forward(outConcat4, W21, b21, F2, Houtc20, Woutc20, Hf, Wf, conv_stride, conv_stride, pad, pad)
     outr17 = relu::forward(outc21)
     [outc22, Houtc22, Woutc22] = conv2d::forward(outr17, W22, b22, F1, Houtc21, Woutc21, Hf, Wf, conv_stride, conv_stride, pad, pad)
@@ -327,6 +332,8 @@ gradients = function(list[unknown] model,
         pool_stride = as.integer(as.scalar(hyperparams["pool_stride"]))
         pool_HWf = as.integer(as.scalar(hyperparams["pool_HWf"]))
         conv_stride = as.integer(as.scalar(hyperparams["conv_stride"]))
+        conv_t_HWf = as.integer(as.scalar(hyperparams["conv_t_HWf"]))
+        conv_t_stride = as.integer(as.scalar(hyperparams["conv_t_stride"]))
         pad = as.integer(as.scalar(hyperparams["pad"]))
         lambda = as.double(as.scalar(hyperparams["lambda"]))
         F1 = as.integer(as.scalar(hyperparams["F1"]))
@@ -411,30 +418,31 @@ gradients = function(list[unknown] model,
         outr9 = relu::forward(outc9)
         [outc10, Houtc10, Woutc10] = conv2d::forward(outr9, W10, b10, F5, Houtc9, Woutc9, Hf, Wf, conv_stride, conv_stride, pad, pad)
         outr10 = relu::forward(outc10)
-        [outc11, Houtc11, Woutc11] = conv2d_transpose::forward(outr10, W11, b11, F5, Houtc10, Woutc10, Hf, Wf, conv_stride, conv_stride, pad, pad, 0, 0)
+        [outc11, Houtc11, Woutc11] = conv2d_transpose::forward(outr10, W11, b11, F5, Houtc10, Woutc10, conv_t_HWf, conv_t_HWf, conv_t_stride, conv_t_stride, pad, pad, 0, 0)
 
         # Up-Convolution
         #print("outc8 row: " + nrow(outc8) + " outc8 col: " + ncol(outc8) + " outc11 row: " + nrow(outc11) + " outc11 col: " + ncol(outc11))
-        #TODO: bind the following correctly
-        outConcat1 = cbind(outc8[,1:ncol(outc11)],outc11)
+        outConcat1 = cbind(img_utils::crop_channel(outr8, Houtc8, Woutc8, Houtc11, Woutc11, F4),outc11)
         [outc12, Houtc12, Woutc12] = conv2d::forward(outConcat1, W12, b12, F5, Houtc11, Woutc11, Hf, Wf, conv_stride, conv_stride, pad, pad)
         outr11 = relu::forward(outc12)
         [outc13, Houtc13, Woutc13] = conv2d::forward(outr11, W13, b13, F4, Houtc12, Woutc12, Hf, Wf, conv_stride, conv_stride, pad, pad)
         outr12 = relu::forward(outc13)
-        [outc14, Houtc14, Woutc14] = conv2d_transpose::forward(outr12, W14, b14, F4, Houtc13, Woutc13, Hf, Wf, conv_stride, conv_stride, pad, pad, 0, 0)
-        outConcat2 = cbind(outc6[,1:ncol(outc14)],outc14)
+        [outc14, Houtc14, Woutc14] = conv2d_transpose::forward(outr12, W14, b14, F4, Houtc13, Woutc13, conv_t_HWf, conv_t_HWf, conv_t_stride, conv_t_stride, pad, pad, 0, 0)
+        outConcat2 = cbind(img_utils::crop_channel(outr6, Houtc6, Woutc6, Houtc14, Woutc14, F3),outc14)
         [outc15, Houtc15, Woutc15] = conv2d::forward(outConcat2, W15, b15, F4, Houtc14, Woutc14, Hf, Wf, conv_stride, conv_stride, pad, pad)
         outr13 = relu::forward(outc15)
         [outc16, Houtc16, Woutc16] = conv2d::forward(outr13, W16, b16, F3, Houtc15, Woutc15, Hf, Wf, conv_stride, conv_stride, pad, pad)
         outr14 = relu::forward(outc16)
-        [outc17, Houtc17, Woutc17] = conv2d_transpose::forward(outr14, W17, b17, F3, Houtc16, Woutc16, Hf, Wf, conv_stride, conv_stride, pad, pad, 0, 0)
-        outConcat3 = cbind(outc4[,1:ncol(outc17)], outc17)
+        [outc17, Houtc17, Woutc17] = conv2d_transpose::forward(outr14, W17, b17, F3, Houtc16, Woutc16, conv_t_HWf, conv_t_HWf, conv_t_stride, conv_t_stride, pad, pad, 0, 0)
+        croppedOutr4 = img_utils::crop_channel(outr4, Houtc4, Woutc4, Houtc17, Woutc17, F2)
+        outConcat3 = cbind(croppedOutr4, outc17)
         [outc18, Houtc18, Woutc18] = conv2d::forward(outConcat3, W18, b18, F3, Houtc17, Woutc17, Hf, Wf, conv_stride, conv_stride, pad, pad)
         outr15 = relu::forward(outc18)
         [outc19, Houtc19, Woutc19] = conv2d::forward(outr15, W19, b19, F2, Houtc18, Woutc18, Hf, Wf, conv_stride, conv_stride, pad, pad)
         outr16 = relu::forward(outc19)
-        [outc20, Houtc20, Woutc20] = conv2d_transpose::forward(outr16, W20, b20, F2, Houtc19, Woutc19, Hf, Wf, conv_stride, conv_stride, pad, pad, 0, 0)
-        outConcat4 = cbind(outc2[,1:ncol(outc20)], outc20)
+        [outc20, Houtc20, Woutc20] = conv2d_transpose::forward(outr16, W20, b20, F2, Houtc19, Woutc19, conv_t_HWf, conv_t_HWf, conv_t_stride, conv_t_stride, pad, pad, 0, 0)
+        croppedOutr2 = img_utils::crop_channel(outr2, Houtc2, Woutc2, Houtc20, Woutc20, F1)
+        outConcat4 = cbind(croppedOutr2, outc20)
         [outc21, Houtc21, Woutc21] = conv2d::forward(outConcat4, W21, b21, F2, Houtc20, Woutc20, Hf, Wf, conv_stride, conv_stride, pad, pad)
         outr17 = relu::forward(outc21)
         [outc22, Houtc22, Woutc22] = conv2d::forward(outr17, W22, b22, F1, Houtc21, Woutc21, Hf, Wf, conv_stride, conv_stride, pad, pad)
@@ -462,24 +470,24 @@ gradients = function(list[unknown] model,
         [doutc21, dW22, db22] = conv2d::backward(doutr18, Houtc22, Woutc22, outr17, W22, b22, F1, Houtc21, Woutc21, Hf, Wf, conv_stride, conv_stride, pad, pad)
         doutr17 = relu::backward(doutc21, outc21)
         [doutc20, dW21, db21] = conv2d::backward(doutr17, Houtc21, Woutc21, outConcat4, W21, b21, F2, Houtc20, Woutc20, Hf, Wf, conv_stride, conv_stride, pad, pad)
-        [doutc19, dW20, db20] = conv2d_transpose::backward(doutc20, Houtc20, Woutc20, outr16, W20, b20, F2, Houtc19, Woutc19, Hf, Wf, conv_stride, conv_stride, pad, pad)
+        [doutc19, dW20, db20] = conv2d_transpose::backward(doutc20, Houtc20, Woutc20, outr16, W20, b20, F2, Houtc19, Woutc19, conv_t_HWf, conv_t_HWf, conv_t_stride, conv_t_stride, pad, pad)
         doutr16 = relu::backward(doutc19, outc19)
         [doutc18, dW19, db19] = conv2d::backward(doutr16, Houtc19, Woutc19, outr15, W19, b19, F2, Houtc18, Woutc18, Hf, Wf, conv_stride, conv_stride, pad, pad)
         doutr15 = relu::backward(doutc18, outc18)
         [doutc17, dW18, db18] = conv2d::backward(doutr15, Houtc18, Woutc18, outConcat3, W18, b18, F3, Houtc17, Woutc17, Hf, Wf, conv_stride, conv_stride, pad, pad)
-        [doutc16, dW17, db17] = conv2d_transpose::backward(doutc17, Houtc17, Woutc17, outr14, W17, b17, F3, Houtc16, Woutc16, Hf, Wf, conv_stride, conv_stride, pad, pad)
+        [doutc16, dW17, db17] = conv2d_transpose::backward(doutc17, Houtc17, Woutc17, outr14, W17, b17, F3, Houtc16, Woutc16, conv_t_HWf, conv_t_HWf, conv_t_stride, conv_t_stride, pad, pad)
         doutr14 = relu::backward(doutc16, outc16)
         [doutc15, dW16, db16] = conv2d::backward(doutr14, Houtc16, Woutc16, outr13, W16, b16, F3, Houtc15, Woutc15, Hf, Wf, conv_stride, conv_stride, pad, pad)
         doutr13 = relu::backward(doutc15, outc15)
         [doutc14, dW15, db15] = conv2d::backward(doutr13, Houtc15, Woutc15, outConcat2, W15, b15, F4, Houtc14, Woutc14, Hf, Wf, conv_stride, conv_stride, pad, pad)
-        [doutc13, dW14, db14] = conv2d_transpose::backward(doutc14, Houtc14, Woutc14, outr12, W14, b14, F4, Houtc13, Woutc13, Hf, Wf, conv_stride, conv_stride, pad, pad)
+        [doutc13, dW14, db14] = conv2d_transpose::backward(doutc14, Houtc14, Woutc14, outr12, W14, b14, F4, Houtc13, Woutc13, conv_t_HWf, conv_t_HWf, conv_t_stride, conv_t_stride, pad, pad)
         doutr12 = relu::backward(doutc13, outc13)
         [doutc12, dW13, db13] = conv2d::backward(doutr12, Houtc13, Woutc13, outr12, W13, b13, F4, Houtc12, Woutc12, Hf, Wf, conv_stride, conv_stride, pad, pad)
         doutr11 = relu::backward(doutc12, outc12)
         [doutc11, dW12, db12] = conv2d::backward(doutr11, Houtc12, Woutc12, outConcat1, W12, b12, F5, Houtc11, Woutc11, Hf, Wf, conv_stride, conv_stride, pad, pad)
 
         # Bottom
-        [doutc10, dW11, db11] = conv2d_transpose::backward(doutc11, Houtc11, Woutc11, outr10, W11, b11, F5, Houtc10, Woutc10, Hf, Wf, conv_stride, conv_stride, pad, pad)
+        [doutc10, dW11, db11] = conv2d_transpose::backward(doutc11, Houtc11, Woutc11, outr10, W11, b11, F5, Houtc10, Woutc10, conv_t_HWf, conv_t_HWf, conv_t_stride, conv_t_stride, pad, pad)
         doutr10 = relu::backward(doutc10, outc10)
         [doutc9, dW10, db10] = conv2d::backward(doutr10, Houtc10, Woutc10, outr9, W10, b10, F5, Houtc9, Woutc9, Hf, Wf, conv_stride, conv_stride, pad, pad)
         doutr9 = relu::backward(doutc9, outc9)

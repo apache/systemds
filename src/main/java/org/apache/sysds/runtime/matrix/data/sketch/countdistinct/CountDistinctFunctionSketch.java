@@ -19,8 +19,6 @@
 
 package org.apache.sysds.runtime.matrix.data.sketch.countdistinct;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.instructions.spark.data.CorrMatrixBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -37,7 +35,6 @@ import java.util.stream.Stream;
 
 public class CountDistinctFunctionSketch extends CountDistinctSketch {
 
-	private static final Log LOG = LogFactory.getLog(CountDistinctFunctionSketch.class.getName());
 	public CountDistinctFunctionSketch(Operator op) {
 		super(op);
 	}

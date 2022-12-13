@@ -37,7 +37,6 @@ import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.common.Types.OpOp1;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.conf.ConfigurationManager;
-import org.apache.sysds.conf.DMLConfig;
 import org.apache.sysds.hops.AggBinaryOp.SparkAggType;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.lops.CSVReBlock;
@@ -72,7 +71,6 @@ public interface ILinearize {
 
 	public static List<Lop> linearize(List<Lop> v) {
 		try {
-			DMLConfig dmlConfig = ConfigurationManager.getDMLConfig();
 			DagLinearization linearization = ConfigurationManager.getLinearizationOrder();
 
 			switch(linearization) {
@@ -324,6 +322,7 @@ public interface ILinearize {
 		return nodesWithBroadcast;
 	}
 
+	@SuppressWarnings("unused")
 	private static List<Lop> addAsyncEagerCheckpointLop(List<Lop> nodes) {
 		List<Lop> nodesWithCheckpoint = new ArrayList<>();
 		 // Find the Spark action nodes

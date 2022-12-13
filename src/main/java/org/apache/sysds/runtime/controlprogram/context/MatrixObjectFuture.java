@@ -29,6 +29,7 @@ import java.util.concurrent.Future;
 
 public class MatrixObjectFuture extends MatrixObject
 {
+	private static final long serialVersionUID = 8016955240352642173L;
 	protected Future<MatrixBlock> _futureData;
 
 	public MatrixObjectFuture(ValueType vt, String file, Future<MatrixBlock> fmb) {

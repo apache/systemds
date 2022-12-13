@@ -1154,28 +1154,30 @@ public class ParForProgramBlock extends ForProgramBlock
 	private void exportMatricesToHDFS(ExecutionContext ec, Set<String> excludeNames)  {
 		ParForStatementBlock sb = (ParForStatementBlock)getStatementBlock();
 		
-		if( LIVEVAR_AWARE_EXPORT && sb != null)
-		{
+		if( LIVEVAR_AWARE_EXPORT && sb != null ) {
 			//optimization to prevent unnecessary export of matrices
 			//export only variables that are read in the body
 			VariableSet varsRead = sb.variablesRead();
 			for (String key : ec.getVariables().keySet() ) {
-				if( varsRead.containsVariable(key) && !excludeNames.contains(key) ) {
-					Data d = ec.getVariable(key);
-					if( d.getDataType().isMatrixOrFrame() )
-						((CacheableData<?>)d).exportData(_replicationExport);
-				}
+				if( varsRead.containsVariable(key) && !excludeNames.contains(key) )
+					exportDataToHDFS(ec.getVariable(key), key);
 			}
 		}
 		else {
 			//export all matrices in symbol table
 			for (String key : ec.getVariables().keySet() ) {
-				if( !excludeNames.contains(key) ) {
-					Data d = ec.getVariable(key);
-					if( d.getDataType().isMatrixOrFrame() )
-						((CacheableData<?>)d).exportData(_replicationExport);
-				}
+				if( !excludeNames.contains(key) )
+					exportDataToHDFS(ec.getVariable(key), key);
 			}
+		}
+	}
+	
+	private void exportDataToHDFS(Data data, String key) {
+		if( data.getDataType().isMatrixOrFrame() )
+			((CacheableData<?>)data).exportData(_replicationExport);
+		if( data.getDataType().isList() ) {
+			for( Data ldata : ((ListObject)data).getData() )
+				exportDataToHDFS(ldata, key);
 		}
 	}
 

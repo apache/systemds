@@ -22,7 +22,6 @@ package org.apache.sysds.runtime.io;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Arrays;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;

@@ -1620,7 +1620,7 @@ public class Recompiler {
 		else {
 			//read text input matrix (through buffer pool, matrix object carries all relevant
 			//information including additional arguments for csv reblock)
-			CacheBlock mb = in.acquireRead();
+			CacheBlock<?> mb = in.acquireRead();
 			
 			//set output (incl update matrix characteristics)
 			out.acquireModify(mb);

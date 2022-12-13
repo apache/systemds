@@ -19,7 +19,6 @@
 
 package org.apache.sysds.test.functions.homomorphicEncryption;
 
-import org.apache.sysds.api.DMLException;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.paramserv.NativeHEHelper;

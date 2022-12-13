@@ -258,6 +258,7 @@ public class LineageCacheConfig
 	}
 
 	// Check if the Spark instruction returns result back to local
+	@SuppressWarnings("unused")
 	private static boolean isRightSparkOp(Instruction inst) {
 		if (!(inst instanceof ComputationSPInstruction))
 			return false;

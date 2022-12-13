@@ -25,8 +25,6 @@ import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 
-import java.util.Arrays;
-
 /**
  * Lop for checkpoint operations. For example, on Spark, the semantic of a checkpoint 
  * is to persist an intermediate result into a specific storage level (e.g., mem_only). 

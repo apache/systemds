@@ -19,8 +19,10 @@
 
 package org.apache.sysds.runtime.controlprogram.context;
 
+import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.controlprogram.caching.CacheStatistics;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.lineage.LineageCache;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -52,7 +54,15 @@ public class MatrixObjectFuture extends MatrixObject
 	}
 
 	public MatrixBlock acquireRead() {
-		return acquireReadIntern();
+		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
+		//core internal acquire (synchronized per object)
+		MatrixBlock ret = acquireReadIntern();
+
+		if( DMLScript.STATISTICS ){
+			long t1 = System.nanoTime();
+			CacheStatistics.incrementAcquireRTime(t1-t0);
+		}
+		return ret;
 	}
 
 	private synchronized MatrixBlock acquireReadIntern() {

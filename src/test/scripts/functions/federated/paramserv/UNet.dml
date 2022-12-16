@@ -32,6 +32,43 @@ source("scripts/nn/optim/sgd_momentum.dml") as sgd_momentum
 source("scripts/nn/layers/dropout.dml") as dropout
 source("scripts/utils/image_utils.dml") as img_utils
 
+extrapolate = function(matrix[double] X, int N, int C, int Hin, int Win) return (matrix[double] X_extrapolated, int input_HW){
+    input_HW = Hin + 184 # Assuming filter HW 3 and conv stride 1
+    pad_size = 92 # 184 / 2
+
+    X_extrapolated = matrix(0, rows=N, cols=C*input_HW*input_HW)
+
+    for ( i in 1:C ){
+        start_channel = ((i-1) * Hin * Win)+1
+        end_channel = i * Hin * Win
+        original_channel = X[,start_channel:end_channel]
+        # Iterate through the N rows of X each representing a single channel
+        for ( row in 1:N ){
+            img = matrix(original_channel[row], rows=Hin, cols=Win)
+
+            pad_left = t(rev(t(img[,1:pad_size])))
+            pad_right = t(rev(t(img[,(Win-(pad_size-1)):Win])))
+            pad_top = rev(img[1:(pad_size),])
+            pad_bottom = rev(img[(Hin-(pad_size-1)):Hin,])
+            pad_top_left = rev(pad_left[1:(pad_size),])
+            pad_top_right = rev(pad_right[1:(pad_size),])
+            pad_bottom_left = rev(pad_left[(Hin-(pad_size-1)):Hin,])
+            pad_bottom_right = rev(pad_right[(Hin-(pad_size-1)):Hin])
+
+            pad_left_full = rbind(pad_top_left, pad_left, pad_bottom_left)
+            pad_right_full = rbind(pad_top_right, pad_right, pad_bottom_right)
+            pad_center_full = rbind(pad_top, img, pad_bottom)
+
+            modified_channel = cbind(pad_left_full, pad_center_full, pad_right_full)
+
+            flat_width = input_HW*input_HW
+            start_col = ((i-1)*flat_width)+1
+            end_col = i*flat_width
+            X_extrapolated[row,start_col:end_col] = matrix(modified_channel, rows=1, cols=flat_width)
+        }
+    }
+}
+
 /*
  * Trains a convolutional net using the "Unet" architecture.
  *
@@ -62,6 +99,11 @@ train_paramserv = function(matrix[double] X, matrix[double] y,
     return (list[unknown] model_trained) {
   N = nrow(X) # Number of inputs
   K = ncol(y) # Number of target classes
+  # TODO: Move preprocessing out of this function
+  [X, input_HW] = extrapolate(X, N, C, Hin, Win)
+  [X_val, input_HW_val] = extrapolate(X_val, nrow(X_val), C, Hin, Win)
+  Hin = input_HW
+  Win = input_HW
 
   # Define model network constants
   Hf = 3  # convolution filter height
@@ -565,11 +607,10 @@ gradients = function(list[unknown] model,
         dW22 = dW22 + dW22_reg
         dW23 = dW23 + dW23_reg
 
-
         gradients = list(
-                dW1, dW2, dW3, dW4, dW5, dW6, dW7, dW8, dW9, dW10, dW11, dW12, dW13, dW14, dW15, dW16, dW17, dW18, dW19, dW20, dW21, dW22, dW23,
-                db1, db2, db3, db4, db5, db6, db7, db8, db9, db10, db11, db12, db13, db14, db15, db16, db17, db18, db19, db20, db21, db22, db23
-            )
+            dW1, dW2, dW3, dW4, dW5, dW6, dW7, dW8, dW9, dW10, dW11, dW12, dW13, dW14, dW15, dW16, dW17, dW18, dW19, dW20, dW21, dW22, dW23,
+            db1, db2, db3, db4, db5, db6, db7, db8, db9, db10, db11, db12, db13, db14, db15, db16, db17, db18, db19, db20, db21, db22, db23
+        )
     }
 
 aggregation = function(list[unknown] model,

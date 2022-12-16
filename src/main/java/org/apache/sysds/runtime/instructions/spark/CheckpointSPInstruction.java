@@ -77,10 +77,10 @@ public class CheckpointSPInstruction extends UnarySPInstruction {
 		SparkExecutionContext sec = (SparkExecutionContext)ec;
 
 		// Asynchronously trigger count() and persist this RDD
-		// TODO: Synchronize. Avoid double execution
 		if (getOpcode().equals("chkpoint_e")) {  //eager checkpoint
 			// Inplace replace output matrix object with the input matrix object
 			// We will never use the output of the Spark count call
+			// TODO: Synchronize. Avoid double execution
 			ec.setVariable(output.getName(), ec.getCacheableData(input1));
 
 			if (CommonThreadPool.triggerRemoteOPsPool == null)
@@ -98,6 +98,13 @@ public class CheckpointSPInstruction extends UnarySPInstruction {
 			//add a dummy entry to the input, which will be immediately overwritten by the null output.
 			sec.setVariable( input1.getName(), new BooleanObject(false));
 			sec.setVariable( output.getName(), new BooleanObject(false));
+			return;
+		}
+
+		if (sec.getCacheableData(input1).getRDDHandle().isCheckpointRDD()) {
+			// Do nothing if the RDD is already checkpointed
+			sec.setVariable(output.getName(), sec.getCacheableData(input1.getName()));
+			Statistics.decrementNoOfExecutedSPInst();
 			return;
 		}
 		//-------

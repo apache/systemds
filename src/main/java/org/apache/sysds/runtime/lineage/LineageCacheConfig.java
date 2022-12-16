@@ -54,11 +54,18 @@ public class LineageCacheConfig
 		"^", "uamax", "uark+", "uacmean", "eigen", "ctableexpand", "replace",
 		"^2", "uack+", "tak+*", "uacsqk+", "uark+", "n+", "uarimax", "qsort", 
 		"qpick", "transformapply", "uarmax", "n+", "-*", "castdtm", "lowertri",
-		"mapmm", "cpmm", "prefetch"
+		"mapmm", "cpmm", "rmm", "prefetch", "chkpoint"
 		//TODO: Reuse everything. 
 	};
+
+	private static final String[] OPCODES_CP = new String[] {
+		"cpmm", "rmm"
+		//TODO: Instead mark an instruction to be checkpointed
+	};
+
 	private static String[] REUSE_OPCODES  = new String[] {};
-	
+	private static String[] OPCODES_CHECKPOINTS  = new String[] {};
+
 	public enum ReuseCacheType {
 		REUSE_FULL,
 		REUSE_PARTIAL,
@@ -189,9 +196,10 @@ public class LineageCacheConfig
 	static {
 		//setup static configuration parameters
 		REUSE_OPCODES = OPCODES;
+		OPCODES_CHECKPOINTS = OPCODES_CP;
 		//setSpill(true); 
 		setCachePolicy(LineageCachePolicy.COSTNSIZE);
-		setCompAssRW(true);
+		setCompAssRW(false);
 	}
 
 	public static void setReusableOpcodes(String... ops) {
@@ -200,6 +208,10 @@ public class LineageCacheConfig
 
 	public static String[] getReusableOpcodes() {
 		return REUSE_OPCODES;
+	}
+
+	public static boolean isToPersist(Instruction inst) {
+		return ArrayUtils.contains(OPCODES_CHECKPOINTS, inst.getOpcode());
 	}
 	
 	public static void resetReusableOpcodes() {

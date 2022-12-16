@@ -31,9 +31,11 @@ import org.apache.sysds.lops.MMTSJ.MMTSJType;
 import org.apache.sysds.parser.DataIdentifier;
 import org.apache.sysds.parser.Statement;
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.context.MatrixObjectFuture;
+import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedStatistics;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedUDF;
@@ -51,7 +53,9 @@ import org.apache.sysds.runtime.instructions.cp.ScalarObject;
 import org.apache.sysds.runtime.instructions.fed.ComputationFEDInstruction;
 import org.apache.sysds.runtime.instructions.gpu.GPUInstruction;
 import org.apache.sysds.runtime.instructions.gpu.context.GPUObject;
+import org.apache.sysds.runtime.instructions.spark.CheckpointSPInstruction;
 import org.apache.sysds.runtime.instructions.spark.ComputationSPInstruction;
+import org.apache.sysds.runtime.instructions.spark.data.RDDObject;
 import org.apache.sysds.runtime.lineage.LineageCacheConfig.LineageCacheStatus;
 import org.apache.sysds.runtime.lineage.LineageCacheConfig.ReuseCacheType;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -182,6 +186,14 @@ public class LineageCache
 							return false;  //the executing thread removed this entry from cache
 						else
 							ec.setScalarOutput(outName, so);
+					}
+					else if (e.isRDDPersist()) {
+						//Reuse the RDD which is also persisted in Spark
+						RDDObject rdd = e.getRDDObject();
+						if (rdd == null && e.getCacheStatus() == LineageCacheStatus.NOTCACHED)
+							return false;
+						else
+							((SparkExecutionContext)ec).setRDDHandleForVariable(outName, rdd);
 					}
 					else { //TODO handle locks on gpu objects
 						//shallow copy the cached GPUObj to the output MatrixObject
@@ -520,7 +532,9 @@ public class LineageCache
 			//if (!isMarkedForCaching(inst, ec)) return;
 			List<Pair<LineageItem, Data>> liData = null;
 			GPUObject liGpuObj = null;
+			RDDObject rddObj = null;
 			LineageItem instLI = ((LineageTraceable) inst).getLineageItem(ec).getValue();
+			LineageItem instInputLI = null;
 			if (inst instanceof MultiReturnBuiltinCPInstruction) {
 				liData = new ArrayList<>();
 				MultiReturnBuiltinCPInstruction mrInst = (MultiReturnBuiltinCPInstruction)inst;
@@ -542,6 +556,15 @@ public class LineageCache
 				if (liGpuObj == null)
 					liData = Arrays.asList(Pair.of(instLI, ec.getVariable(((GPUInstruction)inst)._output)));
 			}
+			else if (inst instanceof CheckpointSPInstruction) {
+				// Get the lineage of the instruction being checkpointed
+				instInputLI = ec.getLineageItem(((ComputationSPInstruction)inst).input1);
+				// Get the RDD handle of the persisted RDD
+				CacheableData<?> cd = ec.getCacheableData(((ComputationSPInstruction)inst).output.getName());
+				rddObj = ((CacheableData<?>) cd).getRDDHandle();
+				// Remove the lineage item of the chkpoint instruction
+				removePlaceholder(instLI);
+			}
 			else
 				if (inst instanceof ComputationCPInstruction)
 					liData = Arrays.asList(Pair.of(instLI, ec.getVariable(((ComputationCPInstruction) inst).output)));
@@ -550,10 +573,12 @@ public class LineageCache
 				else if (inst instanceof ComputationSPInstruction)
 					liData = Arrays.asList(Pair.of(instLI, ec.getVariable(((ComputationSPInstruction) inst).output)));
 
-			if (liGpuObj == null)
+			if (liGpuObj == null && rddObj == null)
 				putValueCPU(inst, liData, computetime);
-			else
+			if (liGpuObj != null)
 				putValueGPU(liGpuObj, instLI, computetime);
+			if (rddObj != null)
+				putValueRDD(rddObj, instInputLI, computetime);
 		}
 	}
 	
@@ -579,6 +604,13 @@ public class LineageCache
 					// We don't want to call get() on the future immediately after the execution
 					// For the async. instructions, caching is handled separately by the tasks
 					removePlaceholder(item);
+					continue;
+				}
+
+				if (LineageCacheConfig.isToPersist(inst) && LineageCacheConfig.getCompAssRW()) {
+					// The immediately following instruction must be a checkpoint, which will
+					// fill the rdd in this cache entry.
+					// TODO: Instead check if this instruction is marked for checkpointing
 					continue;
 				}
 
@@ -637,6 +669,23 @@ public class LineageCache
 			centry.setGPUValue(gpuObj, computetime);
 			// Maintain order for eviction
 			LineageGPUCacheEviction.addEntry(centry);
+		}
+	}
+
+	private static void putValueRDD(RDDObject rdd, LineageItem instLI, long computetime) {
+		synchronized( _cache ) {
+			// Not available in the cache indicates this RDD is not marked for caching
+			if (!probe(instLI))
+				return;
+
+			LineageCacheEntry centry = _cache.get(instLI);
+			if (centry.isRDDPersist() && centry.getRDDObject().isCheckpointRDD())
+				// Do nothing if the cached RDD is already checkpointed
+				return;
+
+			centry.setRDDValue(rdd, computetime);
+			// Maintain order for eviction
+			LineageCacheEviction.addEntry(centry);
 		}
 	}
 

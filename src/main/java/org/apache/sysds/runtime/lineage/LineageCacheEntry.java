@@ -25,6 +25,7 @@ import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
 import org.apache.sysds.runtime.instructions.gpu.context.GPUObject;
+import org.apache.sysds.runtime.instructions.spark.data.RDDObject;
 import org.apache.sysds.runtime.lineage.LineageCacheConfig.LineageCacheStatus;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
@@ -42,6 +43,7 @@ public class LineageCacheEntry {
 	private String _outfile = null;
 	protected double score;
 	protected GPUObject _gpuObject;
+	protected RDDObject _rddObject;
 	
 	public LineageCacheEntry(LineageItem key, DataType dt, MatrixBlock Mval, ScalarObject Sval, long computetime) {
 		_key = key;
@@ -90,6 +92,21 @@ public class LineageCacheEntry {
 		}
 	}
 
+	public synchronized RDDObject getRDDObject() {
+		try {
+			//wait until other thread completes operation
+			//in order to avoid redundant computation
+			while(_status == LineageCacheStatus.EMPTY) {
+				wait();
+			}
+			//comes here if data is placed or the entry is removed by the running thread
+			return _rddObject;
+		}
+		catch( InterruptedException ex ) {
+			throw new DMLRuntimeException(ex);
+		}
+	}
+
 	public synchronized byte[] getSerializedBytes() {
 		try {
 			// wait until other thread completes operation
@@ -129,15 +146,19 @@ public class LineageCacheEntry {
 	}
 	
 	public boolean isNullVal() {
-		return(_MBval == null && _SOval == null && _gpuObject == null && _serialBytes == null);
+		return(_MBval == null && _SOval == null && _gpuObject == null && _serialBytes == null && _rddObject == null);
 	}
 	
 	public boolean isMatrixValue() {
-		return _dt.isMatrix();
+		return _dt.isMatrix() && _rddObject == null;
 	}
 
 	public boolean isScalarValue() {
-		return _dt.isScalar();
+		return _dt.isScalar() && _rddObject == null;
+	}
+
+	public boolean isRDDPersist() {
+		return _rddObject != null;
 	}
 
 	public boolean isSerializedBytes() {
@@ -171,6 +192,14 @@ public class LineageCacheEntry {
 		_gpuObject = gpuObj;
 		_computeTime = computetime;
 		_status = isNullVal() ? LineageCacheStatus.EMPTY : LineageCacheStatus.GPUCACHED;
+		//resume all threads waiting for val
+		notifyAll();
+	}
+
+	public synchronized void setRDDValue(RDDObject rdd, long computetime) {
+		_rddObject = rdd;
+		_computeTime = computetime;
+		_status = isNullVal() ? LineageCacheStatus.EMPTY : LineageCacheStatus.CACHED;
 		//resume all threads waiting for val
 		notifyAll();
 	}

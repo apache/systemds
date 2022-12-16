@@ -889,6 +889,11 @@ public class SparkExecutionContext extends ExecutionContext
 		obj.setRDDHandle( rddhandle );
 	}
 
+	public void setRDDHandleForVariable(String varname, RDDObject rddhandle) {
+		CacheableData<?> obj = getCacheableData(varname);
+		obj.setRDDHandle(rddhandle);
+	}
+
 	public static JavaPairRDD<MatrixIndexes,MatrixBlock> toMatrixJavaPairRDD(JavaSparkContext sc, MatrixBlock src, int blen) {
 		return toMatrixJavaPairRDD(sc, src, blen, -1, true);
 	}

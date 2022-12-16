@@ -40,6 +40,7 @@ import org.apache.sysds.runtime.instructions.spark.data.RDDObject;
 import org.apache.sysds.runtime.instructions.spark.functions.CopyFrameBlockFunction;
 import org.apache.sysds.runtime.instructions.spark.functions.CreateSparseBlockFunction;
 import org.apache.sysds.runtime.instructions.spark.utils.SparkUtils;
+import org.apache.sysds.runtime.lineage.LineageCacheConfig;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysds.runtime.matrix.operators.Operator;
@@ -101,7 +102,8 @@ public class CheckpointSPInstruction extends UnarySPInstruction {
 			return;
 		}
 
-		if (sec.getCacheableData(input1).getRDDHandle().isCheckpointRDD()) {
+		if (!LineageCacheConfig.ReuseCacheType.isNone() && sec.getCacheableData(input1).getRDDHandle() != null
+			&& sec.getCacheableData(input1).getRDDHandle().isCheckpointRDD()) {
 			// Do nothing if the RDD is already checkpointed
 			sec.setVariable(output.getName(), sec.getCacheableData(input1.getName()));
 			Statistics.decrementNoOfExecutedSPInst();

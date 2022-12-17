@@ -104,8 +104,6 @@ jobs:
         GPG_KEY_ID="${GPG_KEY_FINGERPRINT: (-8)}"
         export GPG_KEY=$GPG_KEY_ID
         bash $GITHUB_WORKSPACE/dev/release/do-release.sh -n -g
-        cat tag.log
-        cat publish.log
       env:
         DRY_RUN: '1'
         GIT_BRANCH: 'main'

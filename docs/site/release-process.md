@@ -1,4 +1,27 @@
-## Release story
+---
+layout: site
+title: Release Process
+---
+<!--
+{% comment %}
+Licensed to the Apache Software Foundation (ASF) under one or more
+contributor license agreements.  See the NOTICE file distributed with
+this work for additional information regarding copyright ownership.
+The ASF licenses this file to you under the Apache License, Version 2.0
+(the "License"); you may not use this file except in compliance with
+the License.  You may obtain a copy of the License at
+
+http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+{% endcomment %}
+-->
+
+## Release Process
 
 The Apache SystemDS project publishes new version of the software on a regular basis.
 Releases are the interface of the project with the public and most users interact with
@@ -40,10 +63,6 @@ Credential Requirements:
 
 An important part of the software development life cycle (SDLC)
 is ensuring software release follow the ASF approved processes.
-
-The following diagram illustrates the release pipeline
-
-![release pipeline](./flow-1.svg)
 
 The release pipeline consists of the following steps:
   1. Builds the artifacts (binary, zip files) with source code.
@@ -283,7 +302,7 @@ The datasizes are 80MB, 800MB, 8GB, and 80GB.
 
 ## Voting process
 
-Following a successful release candidate vote by  SystemDS PMC members
+Following a successful release candidate vote by SystemDS PMC members and the SystemDS community
 on the dev mailing list, the release candidate shall be approved.
 
 ## Release
@@ -339,20 +358,18 @@ Announce Released version within the project and public.
 #### Apache Mailing List
 
 1. Announce on the dev@ mail list that the release has been completed
-2. Announce on the user@ mail list, listing major improving and contributions
-3. Announce the release on the announce@apache.org mail list. This can only be
-  done from the `@apache.org` email address. This email has to be in plain text.
+2. Announce the release on the announce@apache.org mail list, listing major improving and contributions.
+   This can only be done from the `@apache.org` email address. This email has to be in plain text.
 
 #### Social media
 
-Update Wikipedia article on Apache SystemDS.
+Publish on Twitter on @ApacheSystemDS.
 
 ## Checklist to declare the release process complete
 
-1. Release announce on the user@ mail list
+1. Release announce on the dev@, announce@apache.org mail list
 2. Release recorded in reporter.apache.org
 3. Completion declared on the dev@ mail list
-4. Update Wikipedia Apache SystemDS article
 
 ## Improve the process
 

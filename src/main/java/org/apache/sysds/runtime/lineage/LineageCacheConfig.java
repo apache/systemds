@@ -58,10 +58,11 @@ public class LineageCacheConfig
 		//TODO: Reuse everything. 
 	};
 
-	private static final String[] OPCODES_CP = new String[] {
+	/*private static final String[] OPCODES_CP = new String[] {
 		"cpmm", "rmm"
 		//TODO: Instead mark an instruction to be checkpointed
-	};
+	};*/
+	private static final String[] OPCODES_CP = new String[] {};
 
 	private static String[] REUSE_OPCODES  = new String[] {};
 	private static String[] OPCODES_CHECKPOINTS  = new String[] {};

@@ -30,7 +30,7 @@ SELF=$(cd $(dirname $0) && pwd)
 
 # discussion on optional arguments
 # https://stackoverflow.com/q/18414054
-while getopts ":n:g" opt; do
+while getopts ":ng" opt; do
   case $opt in
     n) DRY_RUN=1 ;;
     g) GITHUB_CI=1 ;;

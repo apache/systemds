@@ -146,7 +146,7 @@ public class FederatedReuseSlicesTest extends MultiTenantTestBase {
 		// empty script name because we don't execute any script, just start the worker
 		fullDMLScriptName = "";
 
-		int[] workerPorts = startFedWorkers(4, new String[]{"-explain","-lineage", "reuse"});
+		int[] workerPorts = startFedWorkers(4, new String[]{"-lineage", "reuse"});
 
 		rtplatform = execMode;
 		if(rtplatform == ExecMode.SPARK) {
@@ -158,7 +158,7 @@ public class FederatedReuseSlicesTest extends MultiTenantTestBase {
 		// start the coordinator processes
 		String scriptName = HOME + TEST_NAME + ".dml";
 		programArgs = new String[] {"-config", CONFIG_DIR + "SystemDS-MultiTenant-config.xml",
-			"-explain","-stats", "100", "-fedStats", "100", "-nvargs",
+			"-lineage", "reuse", "-stats", "100", "-fedStats", "100", "-nvargs",
 			"in_X1=" + TestUtils.federatedAddress(workerPorts[0], input("X1")),
 			"in_X2=" + TestUtils.federatedAddress(workerPorts[1], input("X2")),
 			"in_X3=" + TestUtils.federatedAddress(workerPorts[2], input("X3")),

@@ -199,7 +199,7 @@ public class LineageCacheConfig
 		OPCODES_CHECKPOINTS = OPCODES_CP;
 		//setSpill(true); 
 		setCachePolicy(LineageCachePolicy.COSTNSIZE);
-		setCompAssRW(true);
+		setCompAssRW(false);
 	}
 
 	public static void setReusableOpcodes(String... ops) {

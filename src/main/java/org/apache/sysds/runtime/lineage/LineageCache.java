@@ -607,7 +607,7 @@ public class LineageCache
 					continue;
 				}
 
-				if (LineageCacheConfig.isToPersist(inst)) {
+				if (LineageCacheConfig.isToPersist(inst) && LineageCacheConfig.getCompAssRW()) {
 					// The immediately following instruction must be a checkpoint, which will
 					// fill the rdd in this cache entry.
 					// TODO: Instead check if this instruction is marked for checkpointing

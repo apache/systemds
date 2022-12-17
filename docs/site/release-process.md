@@ -28,7 +28,7 @@ Releases are the interface of the project with the public and most users interac
 the project only through the released software (this is intentional!). Releases are a
 formal offering, which are publicly voted by the SystemDS community.
 
-Releases are executed by a Release Manager, who is one of the project committers.
+Releases are executed by a Release Manager, who is one of the [project committers](https://whimsy.apache.org/roster/committee/systemds).
 
 Release has legal consequences to the team. Make sure to comply with all the procedures
 outlined by the ASF via [Release Policy](https://www.apache.org/legal/release-policy.html) and
@@ -74,8 +74,8 @@ downloading and testing. If it passes their requirements, they vote
 appropriately in the mailing list. The release version metadata is
 updated and the application is deployed to the public release.
 
-## Setting up your environment
 
+## Setting up your environment
 
 
 ## Access to Apache Nexus repository

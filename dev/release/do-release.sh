@@ -33,11 +33,13 @@ SELF=$(cd $(dirname $0) && pwd)
 while getopts ":n" opt; do
   case $opt in
     n) DRY_RUN=1 ;;
+    g) GITHUB_CI=1 ;;
     \?) error "Invalid option: $OPTARG" ;;
   esac
 done
 
 DRY_RUN=${DRY_RUN:-0}
+GITHUB_CI=${GITHUB_CI:-0}
 
 cleanup_repo
 
@@ -65,10 +67,10 @@ fi
 # 
 # are to be used together.
 
+if ! is_github_ci; then
 run_silent "Publish Release Candidates to the Nexus Repo..." "publish.log" \
     "$SELF/release-build.sh" publish-release
-
-cat publish.log
+fi
 
 if is_dry_run; then
   # restore the pom.xml file updated during release step

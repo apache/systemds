@@ -103,7 +103,7 @@ jobs:
         GPG_KEY_FINGERPRINT="$(gpg --list-keys | head -n 4 | tail -n 1 | sed 's/^ *//g')"
         GPG_KEY_ID="${GPG_KEY_FINGERPRINT: (-8)}"
         export GPG_KEY=$GPG_KEY_ID
-        bash $GITHUB_WORKSPACE/dev/release/do-release.sh -n
+        bash $GITHUB_WORKSPACE/dev/release/do-release.sh -n -g
         cat tag.log
         cat publish.log
       env:

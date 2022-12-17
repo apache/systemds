@@ -48,6 +48,8 @@ get_release_info
 run_silent "Creating release tag $RELEASE_TAG..." "tag.log" \
     "$SELF/create-tag.sh"
 
+cat tag.log
+
 # run_silent "Publish Release Candidates to the Nexus Repo..." "publish-snapshot.log" \
 #     "$SELF/release-build.sh" publish-snapshot
 
@@ -65,6 +67,8 @@ fi
 
 run_silent "Publish Release Candidates to the Nexus Repo..." "publish.log" \
     "$SELF/release-build.sh" publish-release
+
+cat publish.log
 
 if is_dry_run; then
   # restore the pom.xml file updated during release step

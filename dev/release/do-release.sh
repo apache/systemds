@@ -68,11 +68,31 @@ fi
 # are to be used together.
 
 if ! is_github_ci; then
-run_silent "Publish Release Candidates to the Nexus Repo..." "publish.log" \
-    "$SELF/release-build.sh" publish-release
+  run_silent "Publish Release Candidates to the Nexus Repo..." "publish.log" \
+      "$SELF/release-build.sh" publish-release
 fi
 
 if is_dry_run; then
   # restore the pom.xml file updated during release step
   git restore pom.xml
+fi
+
+if is_github_ci; then
+  printf "\n Release tag process is done via GITHUB actions \n"
+  exit 0
+fi
+
+if ! is_dry_run; then
+  
+  printf "\n Release candidate artifacts are built and published to repository.apache.org, dist.apache.org \n"
+  printf "\n Voting needs to be done for these artifacts for via the mailing list \n"
+  exit 0
+fi
+
+# Dry run step
+if is_dry_run; then
+  
+  printf "\n Release candidate artifacts are built and published to repository.apache.org, dist.apache.org \n"
+  printf "\n Please delete these artifacts generated with dry run to ensure that the release scripts are generating correct artifacts. \n"
+  exit 0
 fi

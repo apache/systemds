@@ -46,6 +46,10 @@ cleanup_repo
 # Ask for release information
 get_release_info
 
+if is_github_ci; then
+  printf "\n Building via GITHUB actions \n"
+fi
+
 # tag
 run_silent "Creating release tag $RELEASE_TAG..." "tag.log" \
     "$SELF/create-tag.sh"

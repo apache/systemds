@@ -276,3 +276,6 @@ is_dry_run() {
   [[ "$DRY_RUN" = 1 ]]
 }
 
+is_github_ci() {
+  [[ "$GITHUB_CI" = 1 ]]
+}

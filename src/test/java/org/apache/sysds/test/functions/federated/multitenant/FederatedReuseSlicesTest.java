@@ -158,7 +158,7 @@ public class FederatedReuseSlicesTest extends MultiTenantTestBase {
 		// start the coordinator processes
 		String scriptName = HOME + TEST_NAME + ".dml";
 		programArgs = new String[] {"-config", CONFIG_DIR + "SystemDS-MultiTenant-config.xml",
-			"-explian","-stats", "100", "-fedStats", "100", "-nvargs",
+			"-explain","-stats", "100", "-fedStats", "100", "-nvargs",
 			"in_X1=" + TestUtils.federatedAddress(workerPorts[0], input("X1")),
 			"in_X2=" + TestUtils.federatedAddress(workerPorts[1], input("X2")),
 			"in_X3=" + TestUtils.federatedAddress(workerPorts[2], input("X3")),

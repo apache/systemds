@@ -24,6 +24,7 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.util.Arrays;
 import java.util.BitSet;
 
 import org.apache.commons.lang.NotImplementedException;
@@ -31,7 +32,6 @@ import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.frame.data.columns.ArrayFactory.FrameArrayType;
 import org.apache.sysds.utils.MemoryEstimates;
 
-import edu.emory.mathcs.backport.java.util.Arrays;
 
 public class BitSetArray extends Array<Boolean> {
 
@@ -40,7 +40,7 @@ public class BitSetArray extends Array<Boolean> {
 
 	protected BitSetArray(int size) {
 		_size = size;
-		_data = new BitSet();
+		_data = new BitSet(size);
 	}
 
 	public BitSetArray(boolean[] data) {

@@ -306,7 +306,7 @@ public class FrameArrayTests {
 				default:
 					throw new NotImplementedException();
 			}
-			compareSetSubRange(aa, a, start, end, off);
+			compareSetSubRange(aa, a, start, end, off, aa.getValueType());
 		}
 		catch(Exception e) {
 			e.printStackTrace();
@@ -390,21 +390,32 @@ public class FrameArrayTests {
 
 	protected static void compare(Array<?> a, Array<?> b) {
 		int size = a.size();
-		assumeTrue(a.size() == b.size());
+		assertTrue(a.size() == b.size());
 		for(int i = 0; i < size; i++)
-			assumeTrue(a.get(i).toString().equals(b.get(i).toString()));
+			assertTrue(a.get(i).toString().equals(b.get(i).toString()));
 	}
 
 	protected static void compare(Array<?> sub, Array<?> b, int off) {
 		int size = sub.size();
 		for(int i = 0; i < size; i++) {
-			assumeTrue(sub.get(i).toString().equals(b.get(i + off).toString()));
+			assertTrue(sub.get(i).toString().equals(b.get(i + off).toString()));
 		}
 	}
 
-	protected static void compareSetSubRange(Array<?> out, Array<?> in, int rl, int ru, int off ){
-		for(int i = rl; i <=ru; i++)
-			assumeTrue(out.get(i).toString().equals(in.get(i + off).toString()));
+	protected static void compareSetSubRange(Array<?> out, Array<?> in, int rl, int ru, int off, ValueType vt) {
+		switch(vt) {
+			// case FP64:
+			// case FP32:
+				// return;
+			default:
+				for(int i = rl; i <= ru; i++, off++) {
+					String v1 = out.get(i).toString();
+					String v2 = in.get(off).toString();
+
+					assertEquals("i: " + i, v1, v2);
+				}
+
+		}
 
 	}
 

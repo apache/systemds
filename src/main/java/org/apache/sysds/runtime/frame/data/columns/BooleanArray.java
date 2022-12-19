@@ -72,10 +72,9 @@ public class BooleanArray extends Array<Boolean> {
 	public void set(int rl, int ru, Array<Boolean> value, int rlSrc) {
 		if(value instanceof BooleanArray)
 			System.arraycopy(((BooleanArray) value)._data, rlSrc, _data, rl, ru - rl + 1);
-		else{
+		else
 			for(int i = rl, off = rlSrc; i <= ru; i++, off++)
 				_data[i] = value.get(off);
-		}
 	}
 
 	@Override

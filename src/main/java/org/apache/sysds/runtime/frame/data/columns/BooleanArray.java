@@ -70,7 +70,12 @@ public class BooleanArray extends Array<Boolean> {
 
 	@Override
 	public void set(int rl, int ru, Array<Boolean> value, int rlSrc) {
-		System.arraycopy(((BooleanArray) value)._data, rlSrc, _data, rl, ru - rl + 1);
+		if(value instanceof BooleanArray)
+			System.arraycopy(((BooleanArray) value)._data, rlSrc, _data, rl, ru - rl + 1);
+		else{
+			for(int i = rl, off = rlSrc; i <= ru; i++, off++)
+				_data[i] = value.get(off);
+		}
 	}
 
 	@Override

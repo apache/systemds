@@ -20,7 +20,10 @@
 package org.apache.sysds.runtime.instructions.spark;
 
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.spark.api.java.JavaPairRDD;
+import org.apache.spark.storage.StorageLevel;
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysds.runtime.functionobjects.IndexFunction;
@@ -28,15 +31,22 @@ import org.apache.sysds.runtime.functionobjects.ReduceAll;
 import org.apache.sysds.runtime.functionobjects.ReduceCol;
 import org.apache.sysds.runtime.functionobjects.ReduceRow;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
+import org.apache.sysds.runtime.instructions.spark.data.RDDObject;
+import org.apache.sysds.runtime.instructions.spark.utils.SparkUtils;
 import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.runtime.lineage.LineageItemUtils;
 import org.apache.sysds.runtime.lineage.LineageTraceable;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
+
+import java.util.Map;
 
 public abstract class ComputationSPInstruction extends SPInstruction implements LineageTraceable {
 	public CPOperand output;
 	public CPOperand input1, input2, input3;
+	private boolean toPersistAndCache;
 
 	protected ComputationSPInstruction(SPType type, Operator op, CPOperand in1, CPOperand in2, CPOperand out, String opcode, String istr) {
 		super(type, op, opcode, istr);
@@ -44,6 +54,15 @@ public abstract class ComputationSPInstruction extends SPInstruction implements 
 		input2 = in2;
 		input3 = null;
 		output = out;
+	}
+
+	protected ComputationSPInstruction(SPType type, Operator op, CPOperand in1, CPOperand in2, CPOperand out, String opcode, boolean toCache, String istr) {
+		super(type, op, opcode, istr);
+		input1 = in1;
+		input2 = in2;
+		input3 = null;
+		output = out;
+		toPersistAndCache = toCache;
 	}
 
 	protected ComputationSPInstruction(SPType type, Operator op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out, String opcode, String istr) {
@@ -125,6 +144,27 @@ public abstract class ComputationSPInstruction extends SPInstruction implements 
 			else if( ixFn instanceof ReduceRow )
 				mcOut.set(1, mc1.getCols(), mc1.getBlocksize(), mc1.getBlocksize());
 		}
+	}
+
+	public boolean isRDDtoCache() {
+		return toPersistAndCache;
+	}
+
+	public void checkpointRDD(ExecutionContext ec) {
+		if (!toPersistAndCache)
+			return;
+
+		SparkExecutionContext sec = (SparkExecutionContext)ec;
+		CacheableData<?> cd = sec.getCacheableData(output.getName());
+		RDDObject inro =  cd.getRDDHandle();
+		JavaPairRDD<?,?> outrdd = SparkUtils.copyBinaryBlockMatrix((JavaPairRDD<MatrixIndexes, MatrixBlock>)inro.getRDD(), false);
+		//TODO: remove shallow copying as short-circuit collect is disabled if locally cached
+		outrdd = outrdd.persist((StorageLevel.MEMORY_AND_DISK()));
+		RDDObject outro = new RDDObject(outrdd); //create new rdd object
+		outro.setCheckpointRDD(true);            //mark as checkpointed
+		outro.addLineageChild(inro);             //keep lineage to prevent cycles on cleanup
+		cd.setRDDHandle(outro);
+		sec.setVariable(output.getName(), cd);
 	}
 	
 	@Override

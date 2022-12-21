@@ -56,7 +56,12 @@ public abstract class BinarySPInstruction extends ComputationSPInstruction {
 	protected BinarySPInstruction(SPType type, Operator op, CPOperand in1, CPOperand in2, CPOperand out, String opcode, String istr) {
 		super(type, op, in1, in2, out, opcode, istr);
 	}
-	
+
+	protected BinarySPInstruction(SPType type, Operator op, CPOperand in1, CPOperand in2,
+		CPOperand out, String opcode, boolean toCache, String istr) {
+		super(type, op, in1, in2, out, opcode, toCache, istr);
+	}
+
 	public static BinarySPInstruction parseInstruction ( String str ) {
 		CPOperand in1 = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
 		CPOperand in2 = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);

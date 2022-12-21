@@ -39,7 +39,7 @@ public class OutputParameters
 	private long _blocksize = -1;
 	private String _file_name = null;
 	private String _file_label = null;
-	private boolean _linCacheCandidate = true;
+	private boolean _linCacheCandidate = false;
 	private long _compressedSize = -1;
 
 	FileFormat matrix_format = FileFormat.BINARY;
@@ -161,6 +161,10 @@ public class OutputParameters
 	
 	public void setUpdateType(UpdateType update) {
 		_updateType = update;
+	}
+
+	public void setLineageCacheCandidate(boolean reqCaching) {
+		_linCacheCandidate = reqCaching;
 	}
 	
 	public boolean getLinCacheMarking() {

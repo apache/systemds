@@ -476,7 +476,7 @@ public class MatrixObject extends CacheableData<MatrixBlock> {
 		FileFormat fmt = iimd.getFileFormat();
 		MatrixBlock mb = null;
 		try {
-			// prevent unnecessary collect through rdd checkpoint
+			// prevent unnecessary collect through rdd checkpoint (unless lineage cached)
 			if(rdd.allowsShortCircuitCollect()) {
 				lrdd = (RDDObject) rdd.getLineageChilds().get(0);
 			}

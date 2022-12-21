@@ -28,6 +28,7 @@ public abstract class LineageObject
 {
 	//basic lineage information
 	protected int _numRef = -1;
+	protected boolean _lineageCached = false;
 	protected final List<LineageObject> _childs;
 	
 	//N:1 back reference to matrix/frame object
@@ -35,6 +36,7 @@ public abstract class LineageObject
 	
 	protected LineageObject() {
 		_numRef = 0;
+		_lineageCached = false;
 		_childs = new ArrayList<>();
 	}
 	
@@ -48,6 +50,14 @@ public abstract class LineageObject
 	
 	public boolean hasBackReference() {
 		return (_cd != null);
+	}
+
+	public void setLineageCached() {
+		_lineageCached = true;
+	}
+
+	public boolean isInLineageCache() {
+		return _lineageCached;
 	}
 	
 	public void incrementNumReferences() {

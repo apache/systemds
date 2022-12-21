@@ -49,8 +49,9 @@ import java.util.LinkedList;
 
 public class RmmSPInstruction extends AggregateBinarySPInstruction {
 
-	private RmmSPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, String opcode, String istr) {
-		super(SPType.RMM, op, in1, in2, out, opcode, istr);
+	private RmmSPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out,
+		String opcode, boolean toCache, String istr) {
+		super(SPType.RMM, op, in1, in2, out, opcode, toCache, istr);
 	}
 
 	public static RmmSPInstruction parseInstruction( String str ) {
@@ -61,8 +62,9 @@ public class RmmSPInstruction extends AggregateBinarySPInstruction {
 			CPOperand in1 = new CPOperand(parts[1]);
 			CPOperand in2 = new CPOperand(parts[2]);
 			CPOperand out = new CPOperand(parts[3]);
+			boolean toCache = parts.length == 5 ? Boolean.parseBoolean(parts[4]) : false;
 			
-			return new RmmSPInstruction(null, in1, in2, out, opcode, str);
+			return new RmmSPInstruction(null, in1, in2, out, opcode, toCache, str);
 		} 
 		else {
 			throw new DMLRuntimeException("RmmSPInstruction.parseInstruction():: Unknown opcode " + opcode);

@@ -65,7 +65,7 @@ public class FrameLibApplySchema {
 	}
 
 	private FrameBlock apply(int k) {
-		if(k <= 1 && nCol > 1)
+		if(k <= 1 || nCol == 1)
 			applySingleThread();
 		else
 			applyMultiThread(k);
@@ -93,8 +93,7 @@ public class FrameLibApplySchema {
 		}
 		catch(InterruptedException | ExecutionException e) {
 			pool.shutdown();
-			LOG.error("Failed to combine column groups fallback to single thread", e);
-			applySingleThread();
+			throw new DMLRuntimeException("Failed to combine column groups", e);
 		}
 	}
 

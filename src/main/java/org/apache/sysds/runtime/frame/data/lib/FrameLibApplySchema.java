@@ -38,10 +38,21 @@ public class FrameLibApplySchema {
 
 	private final FrameBlock fb;
 	private final ValueType[] schema;
-
 	private final int nCol;
 	private final Array<?>[] columnsIn;
 	private final Array<?>[] columnsOut;
+
+	/**
+	 * Method to create a new FrameBlock where the given schema is applied, k is parallelization degree.
+	 * 
+	 * @param fb     The input block to apply schema to
+	 * @param schema The schema to apply
+	 * @param k      The parallelization degree
+	 * @return A new FrameBlock allocated with new arrays.
+	 */
+	public static FrameBlock applySchema(FrameBlock fb, ValueType[] schema, int k) {
+		return new FrameLibApplySchema(fb, schema).apply(k);
+	}
 
 	private FrameLibApplySchema(FrameBlock fb, ValueType[] schema) {
 		this.fb = fb;
@@ -85,18 +96,6 @@ public class FrameLibApplySchema {
 			LOG.error("Failed to combine column groups fallback to single thread", e);
 			applySingleThread();
 		}
-	}
-
-	/**
-	 * Method to create a new FrameBlock where the given schema is applied, k is parallelization degree.
-	 * 
-	 * @param fb     The input block to apply schema to
-	 * @param schema The schema to apply
-	 * @param k      The parallelization degree
-	 * @return A new FrameBlock allocated with new arrays.
-	 */
-	public static FrameBlock applySchema(FrameBlock fb, ValueType[] schema, int k) {
-		return new FrameLibApplySchema(fb, schema).apply(k);
 	}
 
 	private void verifySize() {

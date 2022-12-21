@@ -23,6 +23,7 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.BitSet;
 
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.common.Types.ValueType;
@@ -266,7 +267,7 @@ public class StringArray extends Array<String> {
 
 	@Override
 	public long getInMemorySize() {
-		long size = 16; // object header + object reference
+		long size = super.getInMemorySize(); // object header + object reference
 		size += MemoryEstimates.stringArrayCost(_data);
 		return size;
 	}
@@ -277,6 +278,11 @@ public class StringArray extends Array<String> {
 		for(String s : _data)
 			si += IOUtilFunctions.getUTFSize(s);
 		return si;
+	}
+
+	@Override
+	protected Array<?> changeTypeBitSet(){
+		return changeTypeBoolean();
 	}
 
 	@Override
@@ -291,6 +297,21 @@ public class StringArray extends Array<String> {
 	}
 
 	protected Array<?> changeTypeBooleanStandard() {
+		if(size() > ArrayFactory.bitSetSwitchPoint)
+			return changeTypeBooleanStandardBitSet();
+		else
+			return changeTypeBooleanStandardArray();
+	}
+
+	protected Array<?> changeTypeBooleanStandardBitSet() {
+		BitSet ret = new BitSet(size());
+		for(int i = 0; i < size(); i++)
+			ret.set(i, Boolean.parseBoolean(_data[i]));
+
+		return new BitSetArray(ret, size());
+	}
+
+	protected Array<?> changeTypeBooleanStandardArray() {
 		boolean[] ret = new boolean[size()];
 		for(int i = 0; i < size(); i++)
 			ret[i] = Boolean.parseBoolean(_data[i]);
@@ -298,6 +319,26 @@ public class StringArray extends Array<String> {
 	}
 
 	protected Array<?> changeTypeBooleanNumeric() {
+		if(size() > ArrayFactory.bitSetSwitchPoint)
+			return changeTypeBooleanStandardBitSet();
+		else
+			return changeTypeBooleanNumericArray();
+	}
+
+	protected Array<?> changeTypeBooleanNumericBitSet() {
+		BitSet ret = new BitSet(size());
+		for(int i = 0; i < size(); i++) {
+			final boolean zero = _data[i].equals("0");
+			final boolean one = _data[i].equals("1");
+			if(zero | one)
+				ret.set(i, one);
+			else
+				throw new DMLRuntimeException("Unable to change to Boolean from String array, value:" + _data[i]);
+		}
+		return new BitSetArray(ret, size());
+	}
+
+	protected Array<?> changeTypeBooleanNumericArray() {
 		boolean[] ret = new boolean[size()];
 		for(int i = 0; i < size(); i++) {
 			final boolean zero = _data[i].equals("0");

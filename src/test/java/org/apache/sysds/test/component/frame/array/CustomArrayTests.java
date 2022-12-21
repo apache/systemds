@@ -19,10 +19,17 @@
 
 package org.apache.sysds.test.component.frame.array;
 
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
+import java.util.BitSet;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.frame.data.columns.ArrayFactory;
+import org.apache.sysds.runtime.frame.data.columns.BitSetArray;
 import org.apache.sysds.runtime.frame.data.columns.BooleanArray;
 import org.apache.sysds.runtime.frame.data.columns.IntegerArray;
 import org.apache.sysds.runtime.frame.data.columns.LongArray;
@@ -31,6 +38,8 @@ import org.apache.sysds.runtime.matrix.data.Pair;
 import org.junit.Test;
 
 public class CustomArrayTests {
+
+	protected static final Log LOG = LogFactory.getLog(CustomArrayTests.class.getName());
 
 	@Test
 	public void getMinMax_1() {
@@ -92,90 +101,391 @@ public class CustomArrayTests {
 	}
 
 	@Test
-	public void analyzeValueTypeStringBoolean(){
-		StringArray a = ArrayFactory.create(new String[]{"1", "0", "0"});
+	public void analyzeValueTypeStringBoolean() {
+		StringArray a = ArrayFactory.create(new String[] {"1", "0", "0"});
 		ValueType t = a.analyzeValueType();
 		assertTrue(t == ValueType.BOOLEAN);
 	}
 
 	@Test
-	public void analyzeValueTypeStringBoolean_withPointZero(){
-		StringArray a = ArrayFactory.create(new String[]{"1.0", "0", "0"});
+	public void analyzeValueTypeStringBoolean_withPointZero() {
+		StringArray a = ArrayFactory.create(new String[] {"1.0", "0", "0"});
 		ValueType t = a.analyzeValueType();
 		assertTrue(t == ValueType.BOOLEAN);
 	}
 
 	@Test
-	public void analyzeValueTypeStringBoolean_withPointZero_2(){
-		StringArray a = ArrayFactory.create(new String[]{"1.00", "0", "0"});
+	public void analyzeValueTypeStringBoolean_withPointZero_2() {
+		StringArray a = ArrayFactory.create(new String[] {"1.00", "0", "0"});
 		ValueType t = a.analyzeValueType();
 		assertTrue(t == ValueType.BOOLEAN);
 	}
 
 	@Test
-	public void analyzeValueTypeStringBoolean_withPointZero_3(){
-		StringArray a = ArrayFactory.create(new String[]{"1.00000000000", "0", "0"});
+	public void analyzeValueTypeStringBoolean_withPointZero_3() {
+		StringArray a = ArrayFactory.create(new String[] {"1.00000000000", "0", "0"});
 		ValueType t = a.analyzeValueType();
 		assertTrue(t == ValueType.BOOLEAN);
 	}
 
 	@Test
-	public void analyzeValueTypeStringInt32(){
-		StringArray a = ArrayFactory.create(new String[]{"13", "131", "-142"});
-		ValueType t = a.analyzeValueType();
-		assertTrue(t == ValueType.INT32);
-	}
-
-
-	@Test
-	public void analyzeValueTypeStringInt32_withPointZero(){
-		StringArray a = ArrayFactory.create(new String[]{"13.0", "131", "-142"});
+	public void analyzeValueTypeStringInt32() {
+		StringArray a = ArrayFactory.create(new String[] {"13", "131", "-142"});
 		ValueType t = a.analyzeValueType();
 		assertTrue(t == ValueType.INT32);
 	}
 
 	@Test
-	public void analyzeValueTypeStringInt32_withPointZero_2(){
-		StringArray a = ArrayFactory.create(new String[]{"13.0000", "131", "-142"});
+	public void analyzeValueTypeStringInt32_withPointZero() {
+		StringArray a = ArrayFactory.create(new String[] {"13.0", "131", "-142"});
 		ValueType t = a.analyzeValueType();
 		assertTrue(t == ValueType.INT32);
 	}
 
-
 	@Test
-	public void analyzeValueTypeStringInt32_withPointZero_3(){
-		StringArray a = ArrayFactory.create(new String[]{"13.00000000000000", "131", "-142"});
+	public void analyzeValueTypeStringInt32_withPointZero_2() {
+		StringArray a = ArrayFactory.create(new String[] {"13.0000", "131", "-142"});
 		ValueType t = a.analyzeValueType();
 		assertTrue(t == ValueType.INT32);
 	}
 
+	@Test
+	public void analyzeValueTypeStringInt32_withPointZero_3() {
+		StringArray a = ArrayFactory.create(new String[] {"13.00000000000000", "131", "-142"});
+		ValueType t = a.analyzeValueType();
+		assertTrue(t == ValueType.INT32);
+	}
 
 	@Test
-	public void analyzeValueTypeStringInt64(){
-		StringArray a = ArrayFactory.create(new String[]{""+ (((long)Integer.MAX_VALUE)  + 10L), "131", "-142"});
+	public void analyzeValueTypeStringInt64() {
+		StringArray a = ArrayFactory.create(new String[] {"" + (((long) Integer.MAX_VALUE) + 10L), "131", "-142"});
 		ValueType t = a.analyzeValueType();
 		assertTrue(t == ValueType.INT64);
 	}
 
-
 	@Test
-	public void analyzeValueTypeStringFP32(){
-		StringArray a = ArrayFactory.create(new String[]{"132", "131.1", "-142"});
+	public void analyzeValueTypeStringFP32() {
+		StringArray a = ArrayFactory.create(new String[] {"132", "131.1", "-142"});
 		ValueType t = a.analyzeValueType();
 		assertTrue(t == ValueType.FP32);
 	}
 
 	@Test
-	public void analyzeValueTypeStringFP64(){
-		StringArray a = ArrayFactory.create(new String[]{"132", "131.0012345678912345", "-142"});
+	public void analyzeValueTypeStringFP64() {
+		StringArray a = ArrayFactory.create(new String[] {"132", "131.0012345678912345", "-142"});
 		ValueType t = a.analyzeValueType();
 		assertTrue(t == ValueType.FP64);
 	}
 
 	@Test
-	public void analyzeValueTypeStringFP32_string(){
-		StringArray a = ArrayFactory.create(new String[]{"\"132\"", "131.1", "-142"});
+	public void analyzeValueTypeStringFP32_string() {
+		StringArray a = ArrayFactory.create(new String[] {"\"132\"", "131.1", "-142"});
 		ValueType t = a.analyzeValueType();
 		assertTrue(t == ValueType.FP32);
 	}
+
+	@Test
+	public void setRangeBitSet_EmptyOther() {
+		try {
+			BitSetArray a = createTrueBitArray(100);
+			BitSetArray o = createFalseBitArray(10);
+
+			a.set(10, 19, o, 0);
+			verifyTrue(a, 0, 10);
+			verifyFalse(a, 10, 20);
+			verifyTrue(a, 20, 100);
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail("failed custom bitset test");
+		}
+
+	}
+
+	@Test
+	public void setRangeBitSet_notEmptyOther() {
+		try {
+			BitSetArray a = createTrueBitArray(30);
+			BitSetArray o = createFalseBitArray(10);
+			o.set(9, true);
+
+			a.set(10, 19, o, 0);
+
+			verifyTrue(a, 0, 10);
+			verifyFalse(a, 10, 19);
+			verifyTrue(a, 19, 30);
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail("failed custom bitset test");
+		}
+
+	}
+
+	@Test
+	public void setRangeBitSet_notEmptyOtherLargerTarget() {
+		try {
+
+			BitSetArray a = createTrueBitArray(256);
+			BitSetArray o = createFalseBitArray(10);
+			o.set(9, true);
+
+			a.set(10, 19, o, 0);
+
+			verifyTrue(a, 0, 10);
+			verifyFalse(a, 10, 19);
+			verifyTrue(a, 19, 256);
+
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail("failed custom bitset test");
+		}
+
+	}
+
+	@Test
+	public void setRangeBitSet_notEmptyOtherLargerTarget_2() {
+		try {
+			BitSetArray a = createTrueBitArray(256);
+			BitSetArray o = createFalseBitArray(10);
+			o.set(9, true);
+
+			a.set(150, 159, o, 0);
+
+			verifyTrue(a, 0, 150);
+			verifyFalse(a, 150, 159);
+			verifyTrue(a, 159, 256);
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail("failed custom bitset test");
+		}
+
+	}
+
+	@Test
+	public void setRangeBitSet_VectorizedKernels() {
+		try {
+
+			BitSetArray a = createTrueBitArray(256);
+			BitSetArray o = createFalseBitArray(66);
+			o.set(65, true);
+
+			a.set(64, 127, o, 0);
+
+			verifyTrue(a, 0, 64);
+			verifyFalse(a, 64, 128);
+			verifyTrue(a, 128, 256);
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail("failed custom bitset test");
+		}
+
+	}
+
+	@Test
+	public void setRangeBitSet_VectorizedKernels_2() {
+		try {
+
+			BitSetArray a = createTrueBitArray(256);
+			BitSetArray o = createFalseBitArray(250);
+			o.set(239, true);
+
+			a.set(64, 255, o, 0);
+			verifyTrue(a, 0, 64);
+			verifyFalse(a, 64, 256);
+
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail("failed custom bitset test");
+		}
+
+	}
+
+	@Test
+	public void setRangeBitSet_VectorizedKernels_3() {
+		try {
+
+			BitSetArray a = createTrueBitArray(256);
+			BitSetArray o = createFalseBitArray(250);
+			o.set(100, true);
+
+			a.set(64, 255, o, 0);
+			assertFalse(a.get(163));
+			assertTrue(a.get(164));
+			assertFalse(a.get(165));
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail("failed custom bitset test");
+		}
+	}
+
+	@Test
+	public void setRangeBitSet_AllButStart() {
+		try {
+
+			BitSetArray a = createTrueBitArray(10);
+			BitSetArray o = createFalseBitArray(250);
+
+			a.set(1, 9, o, 0);
+			assertTrue(a.get(0));
+			verifyFalse(a, 1, 10);
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail("failed custom bitset test");
+		}
+	}
+
+	@Test
+	public void setRangeBitSet_AllButStart_SmallPart() {
+		try {
+
+			BitSetArray a = createTrueBitArray(200);
+			BitSetArray o = createFalseBitArray(250);
+
+			a.set(1, 9, o, 0);// set an entire long
+			assertTrue(a.get(0));
+			verifyFalse(a, 1, 10);
+			verifyTrue(a, 10, 200);
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail("failed custom bitset test");
+		}
+	}
+
+	@Test
+	public void setRangeBitSet_AllButStart_Kernel() {
+		try {
+
+			BitSetArray a = createTrueBitArray(200);
+			BitSetArray o = createFalseBitArray(300);
+
+			a.set(10, 80, o, 0);
+			assertTrue(a.get(0));
+			verifyFalse(a, 10, 80);
+			verifyTrue(a, 81, 200);
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail("failed custom bitset test");
+		}
+	}
+
+	@Test
+	public void setRangeBitSet_AllButStartOffset() {
+		try {
+
+			BitSetArray a = createTrueBitArray(200);
+			BitSetArray o = createFalseBitArray(300);
+
+			a.set(15, 80, o, 0);
+			assertTrue(a.get(0));
+			verifyFalse(a, 15, 80);
+			verifyTrue(a, 81, 200);
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail("failed custom bitset test");
+		}
+	}
+
+	@Test
+	public void setRangeBitSet_AllButStartOffset_2() {
+		try {
+
+			BitSetArray a = createTrueBitArray(200);
+			BitSetArray o = createFalseBitArray(300);
+
+			a.set(30, 80, o, 0);
+			assertTrue(a.get(0));
+			verifyFalse(a, 30, 80);
+			verifyTrue(a, 81, 200);
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail("failed custom bitset test");
+		}
+	}
+
+	@Test
+	public void setRangeBitSet_VectorizedKernel() {
+		try {
+
+			BitSetArray a = createTrueBitArray(200);
+			BitSetArray o = createFalseBitArray(300);
+
+			a.set(0, 80, o, 0);
+			verifyFalse(a, 0, 80);
+			verifyTrue(a, 81, 200);
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail("failed custom bitset test");
+		}
+	}
+
+	@Test
+	public void setRangeBitSet_VectorizedKernel_2() {
+		try {
+
+			BitSetArray a = createTrueBitArray(200);
+			BitSetArray o = createFalseBitArray(300);
+
+			a.set(0, 128, o, 0);
+
+			verifyFalse(a, 0, 128);
+			verifyTrue(a, 129, 200);
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail("failed custom bitset test");
+		}
+	}
+
+	@Test
+	public void setRangeBitSet_VectorizedKernel_3() {
+		try {
+
+			BitSetArray a = createTrueBitArray(200);
+			BitSetArray o = createFalseBitArray(300);
+
+			a.set(0, 129, o, 0);
+
+			verifyFalse(a, 0, 129);
+			verifyTrue(a, 130, 200);
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail("failed custom bitset test");
+		}
+	}
+
+	public static BitSetArray createTrueBitArray(int length) {
+
+		BitSet init = new BitSet();
+		init.set(0, length);
+		BitSetArray a = ArrayFactory.create(init, length);
+		return a;
+	}
+
+	public static BitSetArray createFalseBitArray(int length) {
+		return ArrayFactory.create(new BitSet(), length);
+	}
+
+	public static void verifyFalse(BitSetArray a, int low, int high) {
+		for(int i = low; i < high; i++)
+			assertFalse(a.get(i));
+	}
+
+	public static void verifyTrue(BitSetArray a, int low, int high) {
+		for(int i = low; i < high; i++)
+			assertTrue(a.get(i));
+	}
+
 }

@@ -40,7 +40,7 @@ class TestContextCreation(unittest.TestCase):
         cls.sds.close()
 
     def getM(self):
-        m1 = np.array(np.random.randint(10, size=5*5), dtype=np.int)
+        m1 = np.array(np.random.randint(10, size=5*5), dtype=np.int64)
         m1.shape = (5, 5)
         return m1
 

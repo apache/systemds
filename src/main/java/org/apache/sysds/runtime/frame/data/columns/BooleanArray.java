@@ -32,7 +32,7 @@ import org.apache.sysds.runtime.frame.data.columns.ArrayFactory.FrameArrayType;
 import org.apache.sysds.utils.MemoryEstimates;
 
 public class BooleanArray extends Array<Boolean> {
-	private boolean[] _data;
+	protected boolean[] _data;
 
 	public BooleanArray(boolean[] data) {
 		_data = data;
@@ -70,7 +70,11 @@ public class BooleanArray extends Array<Boolean> {
 
 	@Override
 	public void set(int rl, int ru, Array<Boolean> value, int rlSrc) {
-		System.arraycopy(((BooleanArray) value)._data, rlSrc, _data, rl, ru - rl + 1);
+		if(value instanceof BooleanArray)
+			System.arraycopy(((BooleanArray) value)._data, rlSrc, _data, rl, ru - rl + 1);
+		else
+			for(int i = rl, off = rlSrc; i <= ru; i++, off++)
+				_data[i] = value.get(off);
 	}
 
 	@Override
@@ -156,7 +160,7 @@ public class BooleanArray extends Array<Boolean> {
 
 	@Override
 	public long getInMemorySize() {
-		long size = 16; // object header + object reference
+		long size = super.getInMemorySize() ; // object header + object reference
 		size += MemoryEstimates.booleanArrayCost(_data.length);
 		return size;
 	}
@@ -164,6 +168,11 @@ public class BooleanArray extends Array<Boolean> {
 	@Override
 	public long getExactSerializedSize() {
 		return 1 + _data.length;
+	}
+
+	@Override
+	protected Array<?> changeTypeBitSet() {
+		return new BitSetArray(_data);
 	}
 
 	@Override

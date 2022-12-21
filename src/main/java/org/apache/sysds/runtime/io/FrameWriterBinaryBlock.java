@@ -37,7 +37,7 @@ import org.apache.sysds.runtime.util.HDFSTool;
  * 
  */
 public class FrameWriterBinaryBlock extends FrameWriter {
-	// private static final Log LOG = LogFactory.getLog(FrameWriterBinaryBlock.class.getName());
+	// protected static final Log LOG = LogFactory.getLog(FrameWriterBinaryBlock.class.getName());
 
 	@Override
 	public final void writeFrameToHDFS( FrameBlock src, String fname, long rlen, long clen )
@@ -116,7 +116,6 @@ public class FrameWriterBinaryBlock extends FrameWriter {
 					src.slice( bi, bi+len-1, 0, src.getNumColumns()-1, block );
 					if( bi==0 ) //first block
 						block.setColumnMetadata(src.getColumnMetadata());
-					
 					//append block to sequence file
 					index.set(bi+1);
 					writer.append(index, block);

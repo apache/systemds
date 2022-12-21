@@ -136,7 +136,14 @@ public abstract class Array<T> implements Writable {
 	 * 
 	 * @return the size in memory of this object.
 	 */
-	public abstract long getInMemorySize();
+	public long getInMemorySize(){
+		return baseMemoryCost(); 
+	}
+
+	public static long baseMemoryCost(){
+		 // Object header , int size, padding, softref.
+		return 16 + 4 + 4 + 8;
+	}
 
 	public abstract long getExactSerializedSize();
 
@@ -149,7 +156,10 @@ public abstract class Array<T> implements Writable {
 	public final Array<?> changeType(ValueType t) {
 		switch(t) {
 			case BOOLEAN:
-				return changeTypeBoolean();
+				if(size() > ArrayFactory.bitSetSwitchPoint)
+					return changeTypeBitSet();
+				else
+					return changeTypeBoolean();
 			case FP32:
 				return changeTypeFloat();
 			case FP64:
@@ -167,6 +177,8 @@ public abstract class Array<T> implements Writable {
 				throw new DMLRuntimeException("Not a valid type to change to : " + t);
 		}
 	}
+
+	protected abstract Array<?> changeTypeBitSet();
 
 	protected abstract Array<?> changeTypeBoolean();
 

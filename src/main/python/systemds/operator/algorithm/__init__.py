@@ -162,7 +162,6 @@ from .builtin.tomeklink import tomeklink
 from .builtin.topk_cleaning import topk_cleaning 
 from .builtin.underSampling import underSampling 
 from .builtin.union import union 
-from .builtin.unique import unique 
 from .builtin.univar import univar 
 from .builtin.vectorToCsv import vectorToCsv 
 from .builtin.winsorize import winsorize 
@@ -314,7 +313,6 @@ __all__ = ['WoE',
  'topk_cleaning',
  'underSampling',
  'union',
- 'unique',
  'univar',
  'vectorToCsv',
  'winsorize',

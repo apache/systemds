@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Arrays;
+import java.util.BitSet;
 
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.common.Types.ValueType;
@@ -56,7 +57,7 @@ public class IntegerArray extends Array<Integer> {
 
 	@Override
 	public void set(int index, double value) {
-		_data[index] = (int)value;
+		_data[index] = (int) value;
 	}
 
 	@Override
@@ -155,7 +156,7 @@ public class IntegerArray extends Array<Integer> {
 
 	@Override
 	public long getInMemorySize() {
-		long size = 16; // object header + object reference
+		long size = super.getInMemorySize(); // object header + object reference
 		size += MemoryEstimates.intArrayCost(_data.length);
 		return size;
 	}
@@ -163,6 +164,18 @@ public class IntegerArray extends Array<Integer> {
 	@Override
 	public long getExactSerializedSize() {
 		return 1 + 4 * _data.length;
+	}
+
+	@Override
+	protected Array<?> changeTypeBitSet() {
+		BitSet ret = new BitSet(size());
+		for(int i = 0; i < size(); i++) {
+			if(_data[i] != 0 && _data[i] != 1)
+				throw new DMLRuntimeException(
+					"Unable to change to Boolean from Integer array because of value:" + _data[i]);
+			ret.set(i, _data[i] == 0 ? false : true);
+		}
+		return new BitSetArray(ret, size());
 	}
 
 	@Override

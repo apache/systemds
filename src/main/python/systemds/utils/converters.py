@@ -163,7 +163,7 @@ def frame_block_to_pandas(sds: "SystemDSContext", fb: JavaObject):
         elif d_type == "FP64":
             byteArray = fb.getColumn(c_index).getAsByteArray(num_rows)
             ret = np.frombuffer(byteArray, dtype=np.float64)
-        elif d_type == "BOOLEAN":
+        elif d_type == "BOOLEAN" or d_type == "BITSET":
             # TODO maybe it is more efficient to bit pack the booleans.
             # https://stackoverflow.com/questions/5602155/numpy-boolean-array-with-1-bit-entries
             byteArray = fb.getColumn(c_index).getAsByteArray(num_rows)

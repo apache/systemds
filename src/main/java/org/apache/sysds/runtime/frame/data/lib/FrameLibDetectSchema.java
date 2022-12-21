@@ -34,7 +34,7 @@ import org.apache.sysds.runtime.util.CommonThreadPool;
 import org.apache.sysds.runtime.util.UtilFunctions;
 
 public final class FrameLibDetectSchema {
-	// private static final Log LOG = LogFactory.getLog(FrameBlock.class.getName());
+	// private static final Log LOG = LogFactory.getLog(FrameLibDetectSchema.class.getName());
 
 	private FrameLibDetectSchema() {
 		// private constructor

@@ -51,12 +51,14 @@ import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.codegen.CodegenUtils;
 import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
+import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysds.runtime.controlprogram.parfor.util.IDSequence;
 import org.apache.sysds.runtime.frame.data.columns.Array;
 import org.apache.sysds.runtime.frame.data.columns.ArrayFactory;
 import org.apache.sysds.runtime.frame.data.columns.ColumnMetadata;
 import org.apache.sysds.runtime.frame.data.iterators.IteratorFactory;
 import org.apache.sysds.runtime.frame.data.lib.FrameFromMatrixBlock;
+import org.apache.sysds.runtime.frame.data.lib.FrameLibApplySchema;
 import org.apache.sysds.runtime.frame.data.lib.FrameLibDetectSchema;
 import org.apache.sysds.runtime.functionobjects.ValueComparisonFunction;
 import org.apache.sysds.runtime.instructions.cp.BooleanObject;
@@ -149,6 +151,14 @@ public class FrameBlock implements CacheBlock<FrameBlock>, Externalizable {
 		if(data != null)
 			for( int i=0; i<data.length; i++ )
 				appendRow(data[i]);
+	}
+
+	public FrameBlock(ValueType[] schema, String[] colNames, ColumnMetadata[] meta, Array<?>[] data ){
+		_numRows = data[0].size();
+		_schema = schema;
+		_colnames = colNames;
+		_colmeta = meta; 
+		_coldata = data;
 	}
 
 	/**
@@ -277,6 +287,10 @@ public class FrameBlock implements CacheBlock<FrameBlock>, Externalizable {
 
 	public ColumnMetadata getColumnMetadata(int c) {
 		return _colmeta[c];
+	}
+
+	public Array<?>[] getColumns(){
+		return _coldata;
 	}
 
 	public boolean isColumnMetadataDefault() {
@@ -1733,21 +1747,7 @@ public class FrameBlock implements CacheBlock<FrameBlock>, Externalizable {
 	 * @return A new FrameBlock with the schema applied.
 	 */
 	public FrameBlock applySchema(ValueType[] schema) {
-		if(schema.length != _schema.length)
-			throw new DMLRuntimeException(//
-				"Invalid apply schema with different number of columns expected: " + _schema.length + " got: "
-					+ schema.length);
-		FrameBlock ret = new FrameBlock();
-		final int nCol = getNumColumns();
-		ret._numRows = getNumRows();
-		ret._schema = schema;
-		ret._colnames = _colnames;
-		ret._colmeta = _colmeta;
-		ret._coldata = new Array[nCol];
-		for(int i = 0; i < nCol; i++)
-			ret._coldata[i] = _coldata[i].changeType(schema[i]);
-		ret._msize = -1;
-		return ret;
+		return FrameLibApplySchema.applySchema(this, schema, InfrastructureAnalyzer.getLocalParallelism());
 	}
 
 	@Override

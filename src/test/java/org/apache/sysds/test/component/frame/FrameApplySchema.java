@@ -25,37 +25,142 @@ import static org.junit.Assert.fail;
 import java.util.Random;
 
 import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
-import org.apache.sysds.runtime.frame.data.columns.BooleanArray;
+import org.apache.sysds.runtime.frame.data.lib.FrameLibApplySchema;
 import org.junit.Test;
 
 public class FrameApplySchema {
 
-
 	@Test
-	public void testApplySchema(){
-		try{
+	public void testApplySchemaStringToBoolean() {
+		try {
 
-			FrameBlock fb = genBoolean(10, 2);
-			ValueType[] schema = new ValueType[]{ValueType.BOOLEAN,ValueType.BOOLEAN};
+			FrameBlock fb = genStringContainingBoolean(10, 2);
+			ValueType[] schema = new ValueType[] {ValueType.BOOLEAN, ValueType.BOOLEAN};
 			FrameBlock ret = fb.applySchema(schema);
-			assertTrue(ret.getColumn(0) instanceof BooleanArray);
-			assertTrue(ret.getColumn(1) instanceof BooleanArray);
+			assertTrue(ret.getColumn(0).getValueType() == ValueType.BOOLEAN);
+			assertTrue(ret.getColumn(1).getValueType() == ValueType.BOOLEAN);
 		}
-		catch(Exception e){
+		catch(Exception e) {
 			e.printStackTrace();
 			fail(e.getMessage());
 		}
 	}
 
-	private FrameBlock genBoolean(int row, int col){
+	@Test
+	public void testApplySchemaStringToInt() {
+		try {
+			FrameBlock fb = genStringContainingInteger(10, 2);
+			ValueType[] schema = new ValueType[] {ValueType.INT32, ValueType.INT32};
+			FrameBlock ret = fb.applySchema(schema);
+			assertTrue(ret.getColumn(0).getValueType() == ValueType.INT32);
+			assertTrue(ret.getColumn(1).getValueType() == ValueType.INT32);
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
+	}
+
+	@Test
+	public void testApplySchemaStringToIntSingleCol() {
+		try {
+			FrameBlock fb = genStringContainingInteger(10, 1);
+			ValueType[] schema = new ValueType[] {ValueType.INT32};
+			FrameBlock ret = fb.applySchema(schema);
+			assertTrue(ret.getColumn(0).getValueType() == ValueType.INT32);
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
+	}
+
+	@Test
+	public void testApplySchemaStringToIntDirectCallSingleThread() {
+		try {
+			FrameBlock fb = genStringContainingInteger(10, 3);
+			ValueType[] schema = new ValueType[] {ValueType.INT32, ValueType.INT32, ValueType.INT32};
+			FrameBlock ret = FrameLibApplySchema.applySchema(fb, schema, 1);
+			for(int i = 0; i < ret.getNumColumns(); i++)
+				assertTrue(ret.getColumn(i).getValueType() == ValueType.INT32);
+
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
+	}
+
+	@Test
+	public void testApplySchemaStringToIntDirectCallMultiThread() {
+		try {
+			FrameBlock fb = genStringContainingInteger(10, 3);
+			ValueType[] schema = new ValueType[] {ValueType.INT32, ValueType.INT32, ValueType.INT32};
+			FrameBlock ret = FrameLibApplySchema.applySchema(fb, schema, 3);
+			for(int i = 0; i < ret.getNumColumns(); i++)
+				assertTrue(ret.getColumn(i).getValueType() == ValueType.INT32);
+
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
+	}
+
+
+	@Test
+	public void testApplySchemaStringToIntDirectCallMultiThreadSingleCol() {
+		try {
+			FrameBlock fb = genStringContainingInteger(10, 1);
+			ValueType[] schema = new ValueType[] {ValueType.INT32};
+			FrameBlock ret = FrameLibApplySchema.applySchema(fb, schema, 3);
+			for(int i = 0; i < ret.getNumColumns(); i++)
+				assertTrue(ret.getColumn(i).getValueType() == ValueType.INT32);
+
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
+	}
+
+	@Test(expected = DMLRuntimeException.class)
+	public void testInvalidInput() {
+		FrameBlock fb = genStringContainingInteger(10, 10);
+		ValueType[] schema = new ValueType[] {ValueType.INT32, ValueType.INT32, ValueType.INT32};
+		FrameLibApplySchema.applySchema(fb, schema, 3);
+	}
+
+	@Test(expected = DMLRuntimeException.class)
+	public void testInvalidInput2() {
+		FrameBlock fb = genStringContainingInteger(10, 3);
+		ValueType[] schema = new ValueType[] {ValueType.UNKNOWN, ValueType.INT32, ValueType.INT32};
+		FrameLibApplySchema.applySchema(fb, schema, 3);
+	}
+
+	private FrameBlock genStringContainingInteger(int row, int col) {
 		FrameBlock ret = new FrameBlock();
 		Random r = new Random(31);
-		for(int c = 0; c < col; c ++){
+		for(int c = 0; c < col; c++) {
 			String[] column = new String[row];
-			for(int i = 0; i < row; i ++)
+			for(int i = 0; i < row; i++)
+				column[i] = "" + r.nextInt();
+
+			ret.appendColumn(column);
+		}
+		return ret;
+	}
+
+	private FrameBlock genStringContainingBoolean(int row, int col) {
+		FrameBlock ret = new FrameBlock();
+		Random r = new Random(31);
+		for(int c = 0; c < col; c++) {
+			String[] column = new String[row];
+			for(int i = 0; i < row; i++)
 				column[i] = "" + r.nextBoolean();
-			
+
 			ret.appendColumn(column);
 		}
 		return ret;

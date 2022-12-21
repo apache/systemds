@@ -27,18 +27,18 @@ import java.nio.ByteOrder;
 import java.util.Arrays;
 import java.util.BitSet;
 
-import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.frame.data.columns.ArrayFactory.FrameArrayType;
+import org.apache.sysds.runtime.util.UtilFunctions;
 import org.apache.sysds.utils.MemoryEstimates;
 
 public class LongArray extends Array<Long> {
 	private long[] _data;
 
 	public LongArray(long[] data) {
+		super(data.length);
 		_data = data;
-		_size = _data.length;
 	}
 
 	public long[] get() {
@@ -67,7 +67,9 @@ public class LongArray extends Array<Long> {
 
 	@Override
 	public void setFromOtherType(int rl, int ru, Array<?> value) {
-		throw new NotImplementedException();
+		final ValueType vt = value.getValueType();
+		for(int i = rl; i <= ru; i++)
+			_data[i] = UtilFunctions.objectToLong(vt, value.get(i));
 	}
 
 	@Override
@@ -78,14 +80,24 @@ public class LongArray extends Array<Long> {
 	@Override
 	public void setNz(int rl, int ru, Array<Long> value) {
 		long[] data2 = ((LongArray) value)._data;
-		for(int i = rl; i < ru + 1; i++)
+		for(int i = rl; i <= ru; i++)
 			if(data2[i] != 0)
 				_data[i] = data2[i];
 	}
 
 	@Override
+	public void setFromOtherTypeNz(int rl, int ru, Array<?> value) {
+		final ValueType vt = value.getValueType();
+		for(int i = rl; i <= ru; i++) {
+			long v = UtilFunctions.objectToLong(vt, value.get(i));
+			if(v != 0)
+				_data[i] = v;
+		}
+	}
+
+	@Override
 	public void append(String value) {
-		append((value != null) ? Long.parseLong(value.trim()) : null);
+		append(parseLong(value));
 	}
 
 	@Override
@@ -120,11 +132,6 @@ public class LongArray extends Array<Long> {
 	}
 
 	@Override
-	public Array<Long> sliceTransform(int rl, int ru, ValueType vt) {
-		return slice(rl, ru);
-	}
-
-	@Override
 	public void reset(int size) {
 		if(_data.length < size)
 			_data = new long[size];
@@ -132,10 +139,10 @@ public class LongArray extends Array<Long> {
 	}
 
 	@Override
-	public byte[] getAsByteArray(int nRow) {
-		ByteBuffer longBuffer = ByteBuffer.allocate(8 * nRow);
+	public byte[] getAsByteArray() {
+		ByteBuffer longBuffer = ByteBuffer.allocate(8 * _size);
 		longBuffer.order(ByteOrder.LITTLE_ENDIAN);
-		for(int i = 0; i < nRow; i++)
+		for(int i = 0; i < _size; i++)
 			longBuffer.putLong(_data[i]);
 		return longBuffer.array();
 	}
@@ -168,7 +175,7 @@ public class LongArray extends Array<Long> {
 	}
 
 	@Override
-	protected Array<?> changeTypeBitSet() {
+	protected Array<Boolean> changeTypeBitSet() {
 		BitSet ret = new BitSet(size());
 		for(int i = 0; i < size(); i++) {
 			if(_data[i] != 0 && _data[i] != 1)
@@ -180,7 +187,7 @@ public class LongArray extends Array<Long> {
 	}
 
 	@Override
-	protected Array<?> changeTypeBoolean() {
+	protected Array<Boolean> changeTypeBoolean() {
 		boolean[] ret = new boolean[size()];
 		for(int i = 0; i < size(); i++) {
 			if(_data[i] < 0 || _data[i] > 1)
@@ -192,7 +199,7 @@ public class LongArray extends Array<Long> {
 	}
 
 	@Override
-	protected Array<?> changeTypeDouble() {
+	protected Array<Double> changeTypeDouble() {
 		double[] ret = new double[size()];
 		for(int i = 0; i < size(); i++)
 			ret[i] = (double) _data[i];
@@ -200,7 +207,7 @@ public class LongArray extends Array<Long> {
 	}
 
 	@Override
-	protected Array<?> changeTypeFloat() {
+	protected Array<Float> changeTypeFloat() {
 		float[] ret = new float[size()];
 		for(int i = 0; i < size(); i++)
 			ret[i] = (float) _data[i];
@@ -208,7 +215,7 @@ public class LongArray extends Array<Long> {
 	}
 
 	@Override
-	protected Array<?> changeTypeInteger() {
+	protected Array<Integer> changeTypeInteger() {
 		int[] ret = new int[size()];
 		for(int i = 0; i < size(); i++) {
 			if(_data[i] != (long) (int) _data[i])
@@ -219,8 +226,46 @@ public class LongArray extends Array<Long> {
 	}
 
 	@Override
-	protected Array<?> changeTypeLong() {
+	protected Array<Long> changeTypeLong() {
 		return clone();
+	}
+
+	@Override
+	protected Array<String> changeTypeString() {
+		String[] ret = new String[size()];
+		for(int i = 0; i < size(); i++)
+			ret[i] = get(i).toString();
+		return new StringArray(ret);
+	}
+
+	@Override
+	public void fill(String value) {
+		fill(parseLong(value));
+	}
+
+	@Override
+	public void fill(Long value) {
+		for(int i = 0; i < _size; i++)
+			_data[i] = value;
+	}
+
+	@Override
+	public double getAsDouble(int i) {
+		return _data[i];
+	}
+
+	protected static long parseLong(String s) {
+		if(s == null)
+			return 0;
+		try {
+			return Long.parseLong(s);
+		}
+		catch(NumberFormatException e) {
+			if(s.contains("."))
+				return Long.parseLong(s.split("\\.")[0]);
+			else
+				throw e;
+		}
 	}
 
 	@Override

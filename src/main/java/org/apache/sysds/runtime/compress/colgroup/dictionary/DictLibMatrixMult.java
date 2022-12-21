@@ -426,7 +426,6 @@ public class DictLibMatrixMult {
 	protected static void MMToUpperTriangleDenseDense(double[] left, double[] right, int[] rowsLeft, int[] colsRight,
 		MatrixBlock result) {
 		final int loc = location(rowsLeft, colsRight);
-		// LOG.error("loc:" + loc);
 		if(loc < 0)
 			MMToUpperTriangleDenseDenseAllUpperTriangle(left, right, rowsLeft, colsRight, result);
 		else if(loc > 0)

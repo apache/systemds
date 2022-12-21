@@ -22,10 +22,12 @@ package org.apache.sysds.runtime.instructions.cp;
 import org.apache.sysds.runtime.DMLScriptException;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
-import org.apache.sysds.runtime.matrix.operators.Operator;
+import org.apache.sysds.runtime.matrix.operators.MultiThreadedOperator;
 
 public class UnaryFrameCPInstruction extends UnaryCPInstruction {
-	protected UnaryFrameCPInstruction(Operator op, CPOperand in, CPOperand out, String opcode, String instr) {
+
+	protected UnaryFrameCPInstruction(MultiThreadedOperator op, CPOperand in, CPOperand out, String opcode,
+		String instr) {
 		super(CPType.Unary, op, in, out, opcode, instr);
 	}
 
@@ -39,7 +41,7 @@ public class UnaryFrameCPInstruction extends UnaryCPInstruction {
 		}
 		else if(getOpcode().equals("detectSchema")) {
 			FrameBlock inBlock = ec.getFrameInput(input1.getName());
-			FrameBlock retBlock = inBlock.detectSchema();
+			FrameBlock retBlock = inBlock.detectSchema(((MultiThreadedOperator) _optr).getNumThreads());
 			ec.releaseFrameInput(input1.getName());
 			ec.setFrameOutput(output.getName(), retBlock);
 		}

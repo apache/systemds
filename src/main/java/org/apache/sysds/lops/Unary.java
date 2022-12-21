@@ -164,13 +164,19 @@ public class Unary extends Lop
 		sb.append( OPERAND_DELIMITOR );
 		sb.append( prepOutputOperand(output) );
 		
-		//num threads for cumulative cp ops
-		if( (getExecType() == ExecType.CP || getExecType() == ExecType.FED) && isMultiThreadedOp(operation) ) {
+		if( getExecType() == ExecType.CP || getExecType() == ExecType.FED){
 			sb.append( OPERAND_DELIMITOR );
 			sb.append( _numThreads );
-			sb.append( OPERAND_DELIMITOR );
-			sb.append( _inplace );
+			if( isMultiThreadedOp(operation)){
+
+				sb.append( OPERAND_DELIMITOR );
+				sb.append( _inplace );
+			}
 		}
+
+		// //num threads for cumulative cp ops
+		// if( (getExecType() == ExecType.CP || getExecType() == ExecType.FED) && isMultiThreadedOp(operation) ) {
+		// }
 
 		appendFedOut(sb);
 		

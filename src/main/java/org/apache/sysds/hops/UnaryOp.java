@@ -130,35 +130,31 @@ public class UnaryOp extends MultiThreadedHop
 		//reuse existing lop
 		if( getLops() != null )
 			return getLops();
-			int k;
+		final int k = OptimizerUtils.getConstrainedNumThreads(_maxNumThreads);
 		try {
 			Hop input = getInput().get(0);
 			Lop ret = null;
 			switch(_op){
 				case COMPRESS:
-					k = OptimizerUtils.getConstrainedNumThreads(_maxNumThreads);
 					ret = new Compression(input.constructLops(), getDataType(), getValueType(), optFindExecType(), 0);
 					break;
 				case DECOMPRESS:
-					k = OptimizerUtils.getConstrainedNumThreads(_maxNumThreads);
 					ret = new DeCompression(input.constructLops(), getDataType(), getValueType(), optFindExecType());
 					break;
 				case LOCAL:
 					ret = new Local(input.constructLops(), getDataType(), getValueType());
 					break;
 				default:
+					final boolean isScalarIn = getInput().get(0).getDataType() == DataType.SCALAR;
 					if(getDataType() == DataType.SCALAR // value type casts or matrix to scalar
-						|| (_op == OpOp1.CAST_AS_MATRIX && getInput().get(0).getDataType() == DataType.SCALAR) ||
-						(_op == OpOp1.CAST_AS_FRAME && getInput().get(0).getDataType() == DataType.SCALAR)) {
-						if(_op == OpOp1.IQM) { // special handling IQM
+						|| (_op == OpOp1.CAST_AS_MATRIX && isScalarIn) // cast matrix
+						|| (_op == OpOp1.CAST_AS_FRAME && isScalarIn)) { // cast frame
+						if(_op == OpOp1.IQM)  // special handling IQM
 							ret = constructLopsIQM();
-						}
-						else if(_op == OpOp1.MEDIAN) {
+						else if(_op == OpOp1.MEDIAN) 
 							ret = constructLopsMedian();
-						}
-						else { // general case SCALAR/CAST (always in CP)
-							ret = new UnaryCP(input.constructLops(), _op, getDataType(), getValueType());
-						}
+						else  // general case SCALAR/CAST (always in CP) & always single threaded
+							ret = new UnaryCP(input.constructLops(), _op, getDataType(), getValueType(), k);
 					}
 					else { // general case MATRIX
 						ExecType et = optFindExecType();
@@ -168,13 +164,10 @@ public class UnaryOp extends MultiThreadedHop
 							// TODO additional physical operation if offsets fit in memory
 							ret = constructLopsSparkCumulativeUnary();
 						}
-						else // default unary
-						{
+						else {// default unary
 							final boolean inplace = OptimizerUtils.ALLOW_UNARY_UPDATE_IN_PLACE &&
 								input.getParent().size() == 1 && (!(input instanceof DataOp) || !((DataOp) input).isRead());
 
-							k = isCumulativeUnaryOperation() || isExpensiveUnaryOperation() ?
-								OptimizerUtils.getConstrainedNumThreads(_maxNumThreads) : 1;
 							ret = new Unary(input.constructLops(), _op, getDataType(), getValueType(), et, k, inplace);
 						}
 					}

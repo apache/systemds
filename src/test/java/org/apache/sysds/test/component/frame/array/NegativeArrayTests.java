@@ -24,6 +24,7 @@ import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.frame.data.columns.Array;
 import org.apache.sysds.runtime.frame.data.columns.ArrayFactory;
+import org.apache.sysds.runtime.frame.data.columns.BitSetArray;
 import org.apache.sysds.runtime.frame.data.columns.StringArray;
 import org.junit.Test;
 
@@ -73,4 +74,30 @@ public class NegativeArrayTests {
 		StringArray a = ArrayFactory.create(new String[] {"HI", "false", "0"});
 		a.changeType(ValueType.BOOLEAN);
 	}
+
+	@Test(expected = DMLRuntimeException.class)
+	public void changeTypeBoolean_4() {
+		String[] s = new String[100]; 
+		s[0] = "1";
+		s[1] = "10";
+		StringArray a = ArrayFactory.create(s);
+		a.changeType(ValueType.BOOLEAN);
+	}
+
+
+	@Test(expected = DMLRuntimeException.class)
+	public void invalidConstructionBitArrayToSmall(){
+		new BitSetArray(new long[0], 10 );
+	}
+	
+	@Test(expected = DMLRuntimeException.class)
+	public void invalidConstructionBitArrayToSmall_2(){
+		new BitSetArray(new long[1], 80 );
+	}
+
+	@Test(expected = DMLRuntimeException.class)
+	public void invalidConstructionBitArrayToBig(){
+		new BitSetArray(new long[10], 10 );
+	}
+	
 }

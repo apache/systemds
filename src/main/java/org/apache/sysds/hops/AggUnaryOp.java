@@ -138,7 +138,7 @@ public class AggUnaryOp extends MultiThreadedHop
 				
 					if (getDataType() == DataType.SCALAR) {
 						UnaryCP unary1 = new UnaryCP(agg1, OpOp1.CAST_AS_SCALAR,
-							getDataType(), getValueType());
+							getDataType(), getValueType(), 1);
 						unary1.getOutputParameters().setDimensions(0, 0, 0, -1);
 						setLineNumbers(unary1);
 						agg1 = unary1;
@@ -180,7 +180,7 @@ public class AggUnaryOp extends MultiThreadedHop
 				
 					if (getDataType() == DataType.SCALAR) {
 						UnaryCP unary1 = new UnaryCP(transform1,
-							OpOp1.CAST_AS_SCALAR, getDataType(), getValueType());
+							OpOp1.CAST_AS_SCALAR, getDataType(), getValueType(), 1);
 						unary1.getOutputParameters().setDimensions(0, 0, 0, -1);
 						setLineNumbers(unary1);
 						setLops(unary1);
@@ -200,7 +200,7 @@ public class AggUnaryOp extends MultiThreadedHop
 				
 					if (getDataType() == DataType.SCALAR) {
 						UnaryCP unary1 = new UnaryCP(aggregate, 
-							OpOp1.CAST_AS_SCALAR, getDataType(), getValueType());
+							OpOp1.CAST_AS_SCALAR, getDataType(), getValueType(), 1);
 						unary1.getOutputParameters().setDimensions(0, 0, 0, -1);
 						setLineNumbers(unary1);
 						setLops(unary1);

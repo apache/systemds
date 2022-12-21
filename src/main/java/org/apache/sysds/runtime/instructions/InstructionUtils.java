@@ -23,6 +23,8 @@ import java.util.Arrays;
 import java.util.StringTokenizer;
 
 import org.apache.commons.lang.ArrayUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.common.Types.AggOp;
 import org.apache.sysds.common.Types.CorrectionLocationType;
@@ -108,8 +110,9 @@ import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
 import org.apache.sysds.runtime.matrix.operators.UnarySketchOperator;
 
 
-public class InstructionUtils 
-{
+public class InstructionUtils {
+	protected static final Log LOG = LogFactory.getLog(InstructionUtils.class.getName());
+
 	//thread-local string builders for instruction concatenation (avoid allocation)
 	private static ThreadLocal<StringBuilder> _strBuilders = new ThreadLocal<StringBuilder>() {
 		@Override
@@ -579,6 +582,12 @@ public class InstructionUtils
 		return opcode.equals("!") ?
 			new UnaryOperator(Not.getNotFnObject()) :
 			new UnaryOperator(Builtin.getBuiltinFnObject(opcode));
+	}
+
+	public static UnaryOperator parseUnaryOperator(String opcode, int k) {
+		return opcode.equals("!") ?
+			new UnaryOperator(Not.getNotFnObject(), k) :
+			new UnaryOperator(Builtin.getBuiltinFnObject(opcode), k);
 	}
 
 	public static MultiThreadedOperator parseBinaryOrBuiltinOperator(String opcode, CPOperand in1, CPOperand in2) {
@@ -1240,5 +1249,17 @@ public class InstructionUtils
 		return linst.replace(
 			Lop.OPERAND_DELIMITOR+oldOperand.getName()+Lop.DATATYPE_PREFIX,
 			Lop.OPERAND_DELIMITOR+newOperandName+Lop.DATATYPE_PREFIX);
+	}
+
+	protected static boolean isInteger(String s){
+		if(s.isEmpty()) return false;
+		for(int i = 0; i < s.length(); i++) {
+			 if(i == 0 && s.charAt(i) == '-') {
+				  if(s.length() == 1) return false;
+				  else continue;
+			 }
+			 if(Character.digit(s.charAt(i),10) < 0) return false;
+		}
+		return true;
 	}
 }

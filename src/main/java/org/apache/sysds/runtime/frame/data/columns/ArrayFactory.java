@@ -29,7 +29,7 @@ import org.apache.sysds.utils.MemoryEstimates;
 
 public interface ArrayFactory {
 
-	public static int bitSetSwitchPoint = 64;
+	public final static int bitSetSwitchPoint = 64;
 
 	public enum FrameArrayType {
 		STRING, BOOLEAN, BITSET, INT32, INT64, FP32, FP64;
@@ -67,7 +67,7 @@ public interface ArrayFactory {
 		switch(type) {
 			case BOOLEAN:
 				if(_numRows > bitSetSwitchPoint)
-					return Array.baseMemoryCost() + 8 + (long) MemoryEstimates.bitSetCost(_numRows);
+					return Array.baseMemoryCost() + (long) MemoryEstimates.longArrayCost(_numRows >> 6 + 1);
 				else
 					return Array.baseMemoryCost() + (long) MemoryEstimates.booleanArrayCost(_numRows);
 			case INT64:
@@ -86,6 +86,12 @@ public interface ArrayFactory {
 			default: // not applicable
 				throw new DMLRuntimeException("Invalid type to estimate size of :" + type);
 		}
+	}
+
+	public static Array<?> allocate(ValueType v, int nRow, String val){
+		Array<?> a = allocate(v, nRow);
+		a.fill(val);
+		return a; 
 	}
 
 	public static Array<?> allocate(ValueType v, int nRow) {

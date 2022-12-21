@@ -34,6 +34,10 @@ public class UnaryOperator extends MultiThreadedOperator
 	public UnaryOperator(ValueFunction p) {
 		this(p, 1, false); //default single-threaded
 	}
+
+	public UnaryOperator(ValueFunction p, int k){
+		this(p, k, false); // multithreaded
+	}
 	
 	public UnaryOperator(ValueFunction p, int numThreads, boolean inPlace) {
 		super(p instanceof Builtin &&

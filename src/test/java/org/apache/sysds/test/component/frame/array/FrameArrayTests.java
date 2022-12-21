@@ -64,6 +64,10 @@ public class FrameArrayTests {
 				tests.add(new Object[] {create(t, 1, 2), t});
 				tests.add(new Object[] {create(t, 10, 52), t});
 				tests.add(new Object[] {create(t, 80, 22), t});
+				tests.add(new Object[] {create(t, 124, 22), t});
+				tests.add(new Object[] {create(t, 124, 23), t});
+				tests.add(new Object[] {create(t, 124, 24), t});
+				tests.add(new Object[] {create(t, 130, 24), t});
 				tests.add(new Object[] {create(t, 512, 22), t});
 				tests.add(new Object[] {create(t, 560, 22), t});
 			}
@@ -412,7 +416,7 @@ public class FrameArrayTests {
 					String v1 = out.get(i).toString();
 					String v2 = in.get(off).toString();
 
-					assertEquals("i: " + i, v1, v2);
+					assertEquals("i: " + i + " args: " + rl + " " + ru + " " + (off - i) + " " + out.size(), v1, v2);
 				}
 
 		}

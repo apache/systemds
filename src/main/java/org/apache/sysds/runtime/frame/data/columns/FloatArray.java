@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Arrays;
+import java.util.BitSet;
 
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.common.Types.ValueType;
@@ -56,16 +57,16 @@ public class FloatArray extends Array<Float> {
 
 	@Override
 	public void set(int index, double value) {
-		_data[index] = (float)value;
+		_data[index] = (float) value;
 	}
 
 	@Override
 	public void set(int rl, int ru, Array<Float> value) {
 		set(rl, ru, value, 0);
 	}
-	
+
 	@Override
-	public void setFromOtherType(int rl, int ru, Array<?> value){
+	public void setFromOtherType(int rl, int ru, Array<?> value) {
 		throw new NotImplementedException();
 	}
 
@@ -156,7 +157,7 @@ public class FloatArray extends Array<Float> {
 
 	@Override
 	public long getInMemorySize() {
-		long size = super.getInMemorySize() ; // object header + object reference
+		long size = super.getInMemorySize(); // object header + object reference
 		size += MemoryEstimates.floatArrayCost(_data.length);
 		return size;
 	}
@@ -164,6 +165,18 @@ public class FloatArray extends Array<Float> {
 	@Override
 	public long getExactSerializedSize() {
 		return 1 + 4 * _data.length;
+	}
+
+	@Override
+	protected Array<?> changeTypeBitSet() {
+		BitSet ret = new BitSet(size());
+		for(int i = 0; i < size(); i++) {
+			if(_data[i] != 0 && _data[i] != 1)
+				throw new DMLRuntimeException(
+					"Unable to change to Boolean from Integer array because of value:" + _data[i]);
+			ret.set(i, _data[i] == 0 ? false : true);
+		}
+		return new BitSetArray(ret, size());
 	}
 
 	@Override

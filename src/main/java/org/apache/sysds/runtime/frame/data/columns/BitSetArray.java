@@ -32,10 +32,9 @@ import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.frame.data.columns.ArrayFactory.FrameArrayType;
 import org.apache.sysds.utils.MemoryEstimates;
 
-
 public class BitSetArray extends Array<Boolean> {
 
-	private static boolean useVectorizedKernel = false;
+	private static boolean useVectorizedKernel = true;
 	private BitSet _data;
 
 	protected BitSetArray(int size) {
@@ -48,7 +47,7 @@ public class BitSetArray extends Array<Boolean> {
 		_data = new BitSet(data.length);
 		// set bits.
 		for(int i = 0; i < data.length; i++)
-			if(data[i])
+			if(data[i]) // slightly more efficient to check.
 				_data.set(i);
 	}
 
@@ -68,18 +67,12 @@ public class BitSetArray extends Array<Boolean> {
 
 	@Override
 	public void set(int index, Boolean value) {
-		if(value != null)
-			_data.set(index, value);
-		else
-			_data.set(index, false);
+		_data.set(index, value != null ? value : false);
 	}
 
 	@Override
 	public void set(int index, double value) {
-		if(value == 0)
-			_data.set(index, false);
-		else
-			_data.set(index, true);
+		_data.set(index, value == 0 ? false : true);
 	}
 
 	@Override
@@ -92,6 +85,14 @@ public class BitSetArray extends Array<Boolean> {
 		throw new NotImplementedException();
 	}
 
+	private static long[] toLongArrayPadded(BitSet data, int minLength) {
+		long[] ret = data.toLongArray();
+		final int len = minLength / 64 + 1;
+		if(ret.length != len) // make sure ret have allocated enough longs
+			return Arrays.copyOf(ret, len);
+		return ret;
+	}
+
 	@Override
 	public void set(int rl, int ru, Array<Boolean> value, int rlSrc) {
 		if(useVectorizedKernel && value instanceof BitSetArray && (ru - rl >= 64))
@@ -101,54 +102,112 @@ public class BitSetArray extends Array<Boolean> {
 				_data.set(i, value.get(off));
 	}
 
-	private long[] toLongArrayPadded(int minLength) {
-		long[] ret = _data.toLongArray();
-		if(ret.length * 64 < minLength) // make sure ret have allocated enough longs
-			ret = Arrays.copyOf(ret, minLength / 64 + 1);
+	private void setVectorized(int rl, int ru, BitSetArray value, int rlSrc) {
+		final int rangeLength = ru - rl + 1;
+		final long[] otherValues = toLongArrayPadded(//
+			(BitSet) value.get().get(rlSrc, rangeLength + rlSrc), rangeLength);
+		long[] ret = toLongArrayPadded(_data, size());
+
+		ret = setVectorizedLongs(rl, ru, otherValues, ret);
+		_data = BitSet.valueOf(ret);
+	}
+
+	private static long[] setVectorizedLongs(int rl, int ru, long[] ov, long[] ret) {
+		final long remainder = rl % 64L;
+		if(remainder == 0)
+			return setVectorizedLongsNoOffset(rl, ru, ov, ret);
+		else 
+			return setVectorizedLongsWithOffset(rl, ru, ov, ret);
+	}
+
+	private static long[] setVectorizedLongsNoOffset(int rl, int ru, long[] ov, long[] ret) {
+		final long remainderEnd = (ru + 1) % 64L;
+		final long remainderEndInv = 64L - remainderEnd;
+		int retP = rl / 64;
+
+		// assign all full.
+		for(int j = 0; j < ov.length - 1; j++) {
+			ret[retP] = ov[j];
+			retP++;
+		}
+
+		// handle tail.
+		if(remainderEnd != 0) {
+			// clear ret in the area.
+			final long r = (ret[retP] >>> remainderEnd) << remainderEnd;
+			final long v = (ov[ov.length - 1] << remainderEndInv) >>> remainderEndInv;
+			// assign ret in the area.
+			ret[retP] = r ^ v;
+		}
+		else
+			ret[retP] = ov[ov.length - 1];
 		return ret;
 	}
 
-	private void setVectorized(int rl, int ru, BitSetArray value, int rlSrc) {
-		final BitSet other = (BitSet) value.get();
-		final BitSet otherRange = other.get(rlSrc, ru - rl + 1 - rlSrc);
-		final long[] otherValues = otherRange.toLongArray();
-		if(otherValues.length == 0) { // empty other
-			_data.set(rl, ru + 1, false);
-			return;
-		}
+	private static long[] setVectorizedLongsWithOffset(int rl, int ru, long[] ov, long[] ret) {
+		final long remainder = rl % 64L;
+		final long invRemainder = 64L - remainder;
+		final long remainderEnd = (ru + 1) % 64L;
+		final long remainderEndInv = 64L - remainderEnd;
 
-		final long[] ret = toLongArrayPadded(ru);
-
-		final int remainder = rl % 64;
 		int retP = rl / 64; // pointer for current long to edit
-		if(remainder == 0) // lining up optimize
-			LOG.warn("Not fully effecient lined up case");
+		final int lastP = (ru+1) / 64;
+		final long finalOriginal = ret[lastP]; // original log at the ru location.
 
+		// in this case the longs does not line up, and we therefore need to line them up.
+		// LOG.error(longToBits(ret[retP]));
 		// first mask out previous and then continue
 		// mask by shifting two times (easier than constructing a mask)
-		ret[retP] = (ret[retP] << remainder) >>> remainder;
-
+		ret[retP] = (ret[retP] << invRemainder) >>> invRemainder;
+		// LOG.error(longToBits(ret[retP]));
 		// middle full 64 bit overwrite no need to mask first.
 		// do not include last (it has to be specially handled)
-		for(int j = 0; j < otherValues.length - 1; j++) {
-			long v = otherValues[j];
+		// LOG.error("Forloop");
+		for(int j = 0; j < ov.length - 1; j++) {
+			final long v = ov[j];
+			// LOG.error(longToBits(v));
+			// LOG.error(longToBits((v << remainder)));
 			ret[retP] = ret[retP] ^ (v << remainder);
+			// LOG.error(longToBits(ret[retP]));
 			retP++;
-			ret[retP] = v >>> (64 - remainder);
+			// LOG.error(longToBits(ret[retP]));
+			ret[retP] = v >>> invRemainder;
+			// LOG.error(longToBits(ret[retP]));
 		}
+		// LOG.error("ForLoop end");
 
-		// last mask out previous and remember
-		long v = otherValues[otherValues.length - 1];
-		ret[retP] = ret[retP] ^ (v << remainder);
+		final long v = ov[ov.length - 1];
+		final long last = v << remainder;
+		final long re = ret[retP];
+		// LOG.error(remainderEnd);
+		// LOG.error(remainder);
+		// LOG.error(invRemainder);
+		// LOG.error(longToBits(prevLastExtracted));
+		// LOG.error(longToBits(v));
+		// LOG.error(longToBits(last));
+		// LOG.error(longToBits(re));
+
+		ret[retP] = last ^ re;
+
+		// LOG.error(longToBits(ret[retP]));
+		// ret[retP] = ret[retP] ^ (v << remainder);
 		retP++;
-		if(retP < ret.length) { // aka there is a remainder
-			long previousLast = ret[retP];
-			ret[retP] = v >>> (64 - remainder);
-			ret[retP] = ret[retP] ^ previousLast << remainder;
-		}
+		// LOG.error[]
+		if(retP < ret.length && retP <= lastP) { // aka there is a remainder
+			// LOG.error("Tail tail");
 
-		// set output (self)
-		_data = BitSet.valueOf(ret);
+			// final long previousLast = ret[retP];
+			// LOG.error(longToBits(previousLast));
+			ret[retP] = v >>> invRemainder;
+			// LOG.error(longToBits(ret[retP]));
+			// ret[retP] = ret[retP] ^ (previousLast >>> remainderEnd) << remainderEnd;
+			// LOG.error(longToBits(ret[retP]));
+		}
+		
+		ret[lastP] = (ret[lastP] << remainderEndInv) >>> remainderEndInv;
+		ret[lastP] = ret[lastP] ^ (finalOriginal >>> remainderEnd) << remainderEnd;
+		
+		return ret;
 	}
 
 	@Override
@@ -260,8 +319,19 @@ public class BitSetArray extends Array<Boolean> {
 	}
 
 	@Override
-	protected Array<?> changeTypeBoolean() {
+	protected Array<?> changeTypeBitSet() {
 		return clone();
+	}
+
+	@Override
+	protected Array<?> changeTypeBoolean() {
+		boolean[] ret = new boolean[size()];
+		for(int i = 0; i < size(); i++)
+			// if ever relevant use next set bit instead.
+			// to increase speed, but it should not be the case in general
+			ret[i] = _data.get(i);
+
+		return new BooleanArray(ret);
 	}
 
 	@Override
@@ -304,6 +374,16 @@ public class BitSetArray extends Array<Boolean> {
 			sb.append((_data.get(i) ? 1 : 0) + ",");
 		sb.append(_data.get(_size - 1) ? 1 : 0);
 		sb.append("]");
+		return sb.toString();
+	}
+
+	public static String longToBits(long l) {
+		String bits = Long.toBinaryString(l);
+		StringBuilder sb = new StringBuilder(64);
+		for(int i = 0; i < 64 - bits.length(); i++) {
+			sb.append('0');
+		}
+		sb.append(bits);
 		return sb.toString();
 	}
 }

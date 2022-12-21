@@ -171,6 +171,11 @@ public class BooleanArray extends Array<Boolean> {
 	}
 
 	@Override
+	protected Array<?> changeTypeBitSet() {
+		return new BitSetArray(_data);
+	}
+
+	@Override
 	protected Array<?> changeTypeBoolean() {
 		return clone();
 	}

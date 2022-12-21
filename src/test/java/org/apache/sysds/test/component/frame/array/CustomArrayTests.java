@@ -215,7 +215,6 @@ public class CustomArrayTests {
 	@Test
 	public void setRangeBitSet_notEmptyOther() {
 		try {
-
 			BitSet init = new BitSet();
 			init.set(0, 30);
 			BitSetArray a = ArrayFactory.create(init, 30);
@@ -226,13 +225,10 @@ public class CustomArrayTests {
 			a.set(10, 19, o, 0);
 			for(int i = 0; i < 10; i++)
 				assertTrue(a.get(i));
-
 			for(int i = 10; i < 19; i++)
 				assertFalse(a.get(i));
-
 			for(int i = 19; i < 30; i++)
 				assertTrue(a.get(i));
-
 		}
 		catch(Exception e) {
 			e.printStackTrace();
@@ -284,13 +280,10 @@ public class CustomArrayTests {
 			a.set(150, 159, o, 0);
 			for(int i = 0; i < 150; i++)
 				assertTrue(a.get(i));
-
 			for(int i = 150; i < 159; i++)
 				assertFalse(a.get(i));
-
 			for(int i = 159; i < 256; i++)
 				assertTrue(a.get(i));
-
 		}
 		catch(Exception e) {
 			e.printStackTrace();
@@ -310,7 +303,7 @@ public class CustomArrayTests {
 			other.set(65, true);
 			BitSetArray o = ArrayFactory.create(other, 66);
 
-			a.set(64, 127, o, 0);// set an entire long
+			a.set(64, 127, o, 0);
 			for(int i = 0; i < 64; i++)
 				assertTrue(a.get(i));
 
@@ -339,7 +332,7 @@ public class CustomArrayTests {
 			other.set(239, true);
 			BitSetArray o = ArrayFactory.create(other, 250);
 
-			a.set(64, 255, o, 0);// set an entire long
+			a.set(64, 255, o, 0);
 			for(int i = 0; i < 64; i++)
 				assertTrue(a.get(i));
 
@@ -365,8 +358,7 @@ public class CustomArrayTests {
 			other.set(100, true);
 			BitSetArray o = ArrayFactory.create(other, 250);
 
-			a.set(64, 255, o, 0);// set an entire long
-
+			a.set(64, 255, o, 0);
 			assertFalse(a.get(163));
 			assertTrue(a.get(164));
 			assertFalse(a.get(165));
@@ -385,10 +377,9 @@ public class CustomArrayTests {
 			init.set(0, 10);
 			BitSetArray a = ArrayFactory.create(init, 10);
 			BitSet other = new BitSet();
-			// other.set(9, true);
 			BitSetArray o = ArrayFactory.create(other, 250);
 
-			a.set(1, 9, o, 0);// set an entire long
+			a.set(1, 9, o, 0);
 			assertTrue(a.get(0));
 			for(int i = 1; i < 10; i++)
 				assertFalse(a.get(i));
@@ -430,16 +421,121 @@ public class CustomArrayTests {
 			BitSet init = new BitSet();
 			init.set(0, 200);
 			BitSetArray a = ArrayFactory.create(init, 200);
-			BitSet other = new BitSet();
-			// other.set(9, true);
-			BitSetArray o = ArrayFactory.create(other, 250);
+			BitSetArray o = ArrayFactory.create(new BitSet(), 300);
 
-			a.set(1, 100, o, 0);// set an entire long
+			a.set(10, 80, o, 0);
 			assertTrue(a.get(0));
-			for(int i = 1; i < 100; i++)
+			for(int i = 10; i <= 80; i++)
 				assertFalse(a.get(i));
-			for(int i = 101; i < 200; i++)
-				assertTrue(a.get(i));
+			for(int i = 81; i < 200; i++)
+				assertTrue("i  : " + i, a.get(i));
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail("failed custom bitset test");
+		}
+	}
+
+	@Test
+	public void setRangeBitSet_AllButStartOffset() {
+		try {
+
+			BitSet init = new BitSet();
+			init.set(0, 200);
+			BitSetArray a = ArrayFactory.create(init, 200);
+			BitSetArray o = ArrayFactory.create(new BitSet(), 300);
+
+			a.set(15, 80, o, 0);
+			assertTrue(a.get(0));
+			for(int i = 15; i <= 80; i++)
+				assertFalse(a.get(i));
+			for(int i = 81; i < 200; i++)
+				assertTrue("i  : " + i, a.get(i));
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail("failed custom bitset test");
+		}
+	}
+
+	@Test
+	public void setRangeBitSet_AllButStartOffset_2() {
+		try {
+
+			BitSet init = new BitSet();
+			init.set(0, 200);
+			BitSetArray a = ArrayFactory.create(init, 200);
+			BitSetArray o = ArrayFactory.create(new BitSet(), 300);
+
+			a.set(30, 80, o, 0);
+			assertTrue(a.get(0));
+			for(int i = 30; i <= 80; i++)
+				assertFalse(a.get(i));
+			for(int i = 81; i < 200; i++)
+				assertTrue("i  : " + i, a.get(i));
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail("failed custom bitset test");
+		}
+	}
+
+	@Test
+	public void setRangeBitSet_VectorizedKernel() {
+		try {
+
+			BitSet init = new BitSet();
+			init.set(0, 200);
+			BitSetArray a = ArrayFactory.create(init, 200);
+			BitSetArray o = ArrayFactory.create(new BitSet(), 300);
+
+			a.set(0, 80, o, 0);
+			for(int i = 0; i <= 80; i++)
+				assertFalse(a.get(i));
+			for(int i = 81; i < 200; i++)
+				assertTrue("i  : " + i, a.get(i));
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail("failed custom bitset test");
+		}
+	}
+
+	@Test
+	public void setRangeBitSet_VectorizedKernel_2() {
+		try {
+
+			BitSet init = new BitSet();
+			init.set(0, 200);
+			BitSetArray a = ArrayFactory.create(init, 200);
+			BitSetArray o = ArrayFactory.create(new BitSet(), 300);
+
+			a.set(0, 128, o, 0);
+			for(int i = 0; i <= 128; i++)
+				assertFalse(a.get(i));
+			for(int i = 129; i < 200; i++)
+				assertTrue("i  : " + i, a.get(i));
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail("failed custom bitset test");
+		}
+	}
+
+	@Test
+	public void setRangeBitSet_VectorizedKernel_3() {
+		try {
+
+			BitSet init = new BitSet();
+			init.set(0, 200);
+			BitSetArray a = ArrayFactory.create(init, 200);
+			BitSetArray o = ArrayFactory.create(new BitSet(), 300);
+
+			a.set(0, 129, o, 0);
+			for(int i = 0; i <= 129; i++)
+				assertFalse(a.get(i));
+			for(int i = 130; i < 200; i++)
+				assertTrue("i  : " + i, a.get(i));
 		}
 		catch(Exception e) {
 			e.printStackTrace();

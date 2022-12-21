@@ -156,7 +156,10 @@ public abstract class Array<T> implements Writable {
 	public final Array<?> changeType(ValueType t) {
 		switch(t) {
 			case BOOLEAN:
-				return changeTypeBoolean();
+				if(size() > ArrayFactory.bitSetSwitchPoint)
+					return changeTypeBitSet();
+				else
+					return changeTypeBoolean();
 			case FP32:
 				return changeTypeFloat();
 			case FP64:
@@ -174,6 +177,8 @@ public abstract class Array<T> implements Writable {
 				throw new DMLRuntimeException("Not a valid type to change to : " + t);
 		}
 	}
+
+	protected abstract Array<?> changeTypeBitSet();
 
 	protected abstract Array<?> changeTypeBoolean();
 

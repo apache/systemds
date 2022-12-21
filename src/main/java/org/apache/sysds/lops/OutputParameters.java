@@ -162,6 +162,10 @@ public class OutputParameters
 	public void setUpdateType(UpdateType update) {
 		_updateType = update;
 	}
+
+	public void setLineageCacheCandidate(boolean reqCaching) {
+		_linCacheCandidate = reqCaching;
+	}
 	
 	public boolean getLinCacheMarking() {
 		return _linCacheCandidate;

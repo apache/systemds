@@ -161,6 +161,10 @@ public class LineageCacheEntry {
 		return _rddObject != null;
 	}
 
+	public boolean isGPUObject() {
+		return _gpuObject != null;
+	}
+
 	public boolean isSerializedBytes() {
 		return _dt.isUnknown() && _key.getOpcode().equals(LineageItemUtils.SERIALIZATION_OPCODE);
 	}

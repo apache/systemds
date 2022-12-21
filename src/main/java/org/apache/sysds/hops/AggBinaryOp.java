@@ -217,7 +217,7 @@ public class AggBinaryOp extends MultiThreadedHop {
 						input1.getDim1(), input1.getDim2(), input1.getBlocksize(), input1.getNnz(),
 						input2.getDim1(), input2.getDim2(), input2.getBlocksize(), input2.getNnz(),
 						mmtsj, chain, _hasLeftPMInput, tmmRewrite );
-				//dispatch SPARK lops construction 
+				//dispatch SPARK lops construction
 				switch( _method )
 				{
 					case TSMM:
@@ -790,6 +790,7 @@ public class AggBinaryOp extends MultiThreadedHop {
 			Lop cpmm = new MMCJ(getInput().get(0).constructLops(), getInput().get(1).constructLops(),
 				getDataType(), getValueType(), _outputEmptyBlocks, aggtype, ExecType.SPARK);
 			setOutputDimensions( cpmm );
+			//setMarkForLineageCaching(cpmm);
 			setLineNumbers( cpmm );
 			setLops( cpmm );
 		}
@@ -823,6 +824,7 @@ public class AggBinaryOp extends MultiThreadedHop {
 		Lop rmm = new MMRJ(getInput().get(0).constructLops(),getInput().get(1).constructLops(), 
 			getDataType(), getValueType(), ExecType.SPARK);
 		setOutputDimensions(rmm);
+		//setMarkForLineageCaching(rmm);
 		setLineNumbers( rmm );
 		setLops(rmm);
 	}

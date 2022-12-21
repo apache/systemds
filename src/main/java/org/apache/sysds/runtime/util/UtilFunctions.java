@@ -515,6 +515,90 @@ public class UtilFunctions {
 		}
 	}
 
+	public static float objectToFloat(ValueType vt, Object in) {
+		if(in == null)
+			return Float.NaN;
+		switch(vt) {
+			case FP64:
+				return ((Double) in).floatValue();
+			case FP32:
+				return (Float) in;
+			case INT64:
+				return (Long) in;
+			case INT32:
+				return (Integer) in;
+			case BOOLEAN:
+				return ((Boolean) in) ? 1 : 0;
+			case STRING:
+				return !((String) in).isEmpty() ? Float.parseFloat((String) in) : 0;
+			default:
+				throw new DMLRuntimeException("Unsupported value type: " + vt);
+		}
+	}
+
+	public static int objectToInteger(ValueType vt, Object in) {
+		if(in == null)
+			return 0;
+		switch(vt) {
+			case FP64:
+				return ((Double) in).intValue();
+			case FP32:
+				return ((Float) in).intValue();
+			case INT64:
+				return ((Long) in).intValue();
+			case INT32:
+				return (Integer) in;
+			case BOOLEAN:
+				return ((Boolean) in) ? 1 : 0;
+			case STRING:
+				return !((String) in).isEmpty() ? Integer.parseInt((String) in) : 0;
+			default:
+				throw new DMLRuntimeException("Unsupported value type: " + vt);
+		}
+	}
+
+	public static long objectToLong(ValueType vt, Object in) {
+		if(in == null)
+			return 0;
+		switch(vt) {
+			case FP64:
+				return ((Double) in).longValue();
+			case FP32:
+				return ((Float) in).longValue();
+			case INT64:
+				return (Long) in;
+			case INT32:
+				return (Integer) in;
+			case BOOLEAN:
+				return ((Boolean) in) ? 1 : 0;
+			case STRING:
+				return !((String) in).isEmpty() ? Long.parseLong((String) in) : 0;
+			default:
+				throw new DMLRuntimeException("Unsupported value type: " + vt);
+		}
+	}
+
+	public static boolean objectToBoolean(ValueType vt, Object in) {
+		if(in == null)
+			return false;
+		switch(vt) {
+			case FP64:
+				return ((Double) in) == 1.0;
+			case FP32:
+				return ((Float) in) == 1.0;
+			case INT64:
+				return (Long) in == 1;
+			case INT32:
+				return (Integer) in == 1;
+			case BOOLEAN:
+				return ((Boolean) in);
+			case STRING:
+				return Boolean.parseBoolean((String) in);
+			default:
+				throw new DMLRuntimeException("Unsupported value type: " + vt);
+		}
+	}
+
 	public static String objectToString( Object in ) {
 		return (in !=null) ? in.toString() : null;
 	}

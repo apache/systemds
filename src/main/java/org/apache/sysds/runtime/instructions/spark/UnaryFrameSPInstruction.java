@@ -28,6 +28,7 @@ import org.apache.sysds.runtime.DMLScriptException;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
+import org.apache.sysds.runtime.frame.data.lib.FrameUtil;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.matrix.operators.Operator;
@@ -78,7 +79,7 @@ public class UnaryFrameSPInstruction extends UnarySPInstruction {
 
 		@Override
 		public Tuple2<Long, FrameBlock> call(Tuple2<Long, FrameBlock> arg0) throws Exception {
-			FrameBlock resultBlock = new FrameBlock(arg0._2.detectSchema());
+			FrameBlock resultBlock = new FrameBlock(arg0._2.detectSchema(1));
 			return new Tuple2<>(1L, resultBlock);
 		}
 	}
@@ -88,7 +89,7 @@ public class UnaryFrameSPInstruction extends UnarySPInstruction {
 
 		@Override
 		public FrameBlock call(FrameBlock arg0, FrameBlock arg1) throws Exception {
-			return new FrameBlock(FrameBlock.mergeSchema(arg0, arg1));
+			return new FrameBlock(FrameUtil.mergeSchema(arg0, arg1));
 		}
 	}
 }

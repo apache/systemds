@@ -266,9 +266,6 @@ public abstract class AbstractCompressedUnaryTests extends CompressedTestBase {
 			// matrix-vector compressed
 			MatrixBlock ret2 = cmb.aggregateUnaryOperations(auop, new MatrixBlock(), Math.max(rows, cols), null, inCP);
 
-			// LOG.error(cmb);
-			// LOG.error(ret1 + " " + ret2);
-
 			final int ruc = ret1.getNumRows();
 			final int cuc = ret1.getNumColumns();
 			final int rc = ret2.getNumRows();

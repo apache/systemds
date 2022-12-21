@@ -21,6 +21,8 @@ package org.apache.sysds.runtime.instructions;
 
 import java.util.HashMap;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.common.Types.OpOp1;
 import org.apache.sysds.hops.FunctionOp;
@@ -71,10 +73,10 @@ import org.apache.sysds.runtime.instructions.cp.UaggOuterChainCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.UnaryCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.VariableCPInstruction;
 import org.apache.sysds.runtime.instructions.cpfile.MatrixIndexingCPFileInstruction;
-import org.apache.sysds.runtime.util.UtilFunctions;
 
-public class CPInstructionParser extends InstructionParser 
-{
+public class CPInstructionParser extends InstructionParser {
+	protected static final Log LOG = LogFactory.getLog(CPInstructionParser.class.getName());
+
 	public static final HashMap<String, CPType> String2CPInstructionType;
 	static {
 		String2CPInstructionType = new HashMap<>();
@@ -435,17 +437,12 @@ public class CPInstructionParser extends InstructionParser
 			
 			case Builtin: 
 				String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
-				if ( parts[0].equals("log") || parts[0].equals("log_nz") ) {
-					if ( parts.length == 3 || (parts.length == 5 &&
-						UtilFunctions.isIntegerNumber(parts[3])) ) {
-						// B=log(A), y=log(x)
+				if(parts[0].equals("log") || parts[0].equals("log_nz")) {
+					if(InstructionUtils.isInteger(parts[3])) // B=log(A), y=log(x)
+						// We exploit the fact the number of threads is specified as an integer at parts 3.
 						return UnaryCPInstruction.parseInstruction(str);
-					} else if ( parts.length == 4 || (parts.length == 5 &&
-						UtilFunctions.isIntegerNumber(parts[4])) ) {
-						// B=log(A,10), y=log(x,10)
-						// num threads non-existing for scalar-scalar
+					else // B=log(A,10), y=log(x,10)
 						return BinaryCPInstruction.parseInstruction(str);
-					}
 				}
 				throw new DMLRuntimeException("Invalid Builtin Instruction: " + str );
 			

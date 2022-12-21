@@ -19,6 +19,7 @@
 
 package org.apache.sysds.test.component.frame.array;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -464,6 +465,26 @@ public class CustomArrayTests {
 			e.printStackTrace();
 			fail("failed custom bitset test");
 		}
+	}
+
+	@Test
+	public void LongToBits_0(){
+		assertEquals(BitSetArray.longToBits(0), "0000000000000000000000000000000000000000000000000000000000000000");
+	}
+
+	@Test
+	public void LongToBits_2(){
+		assertEquals(BitSetArray.longToBits(2), "0000000000000000000000000000000000000000000000000000000000000010");
+	}
+
+	@Test
+	public void LongToBits_5(){
+		assertEquals(BitSetArray.longToBits(5), "0000000000000000000000000000000000000000000000000000000000000101");
+	}
+
+	@Test
+	public void LongToBits_minusOne(){
+		assertEquals(BitSetArray.longToBits(-1), "1111111111111111111111111111111111111111111111111111111111111111");
 	}
 
 	public static BitSetArray createTrueBitArray(int length) {

@@ -36,40 +36,58 @@ import org.apache.sysds.runtime.util.UtilFunctions;
 public final class FrameLibDetectSchema {
 	// private static final Log LOG = LogFactory.getLog(FrameLibDetectSchema.class.getName());
 
-	private FrameLibDetectSchema() {
-		// private constructor
+	private final FrameBlock in;
+	// private final double sampleFraction;
+	private final int k;
+
+	private FrameLibDetectSchema(FrameBlock in, double sampleFraction, int k) {
+		this.in = in;
+		// this.sampleFraction = sampleFraction;
+		this.k = k;
 	}
 
-	public static FrameBlock detectSchema(FrameBlock in) {
-		return detectSchema(in, 1.0);
+	public static FrameBlock detectSchema(FrameBlock in, int k) {
+		return new FrameLibDetectSchema(in, 1.0, k).apply();
 	}
 
-	public static FrameBlock detectSchema(FrameBlock in, double sampleFraction) {
-		// LOG.error(Arrays.toString(in.getSchema()));
+	public static FrameBlock detectSchema(FrameBlock in, double sampleFraction, int k) {
+		return new FrameLibDetectSchema(in, sampleFraction, k).apply();
+	}
+
+	private FrameBlock apply() {
 		final int cols = in.getNumColumns();
-		ArrayList<DetectValueTypeTask> tasks = new ArrayList<>(cols);
-		for(int i = 0; i < cols; i++)
-			tasks.add(new DetectValueTypeTask(in.getColumn(i)));
+		final FrameBlock fb = new FrameBlock(UtilFunctions.nCopies(cols, ValueType.STRING));
+		String[] schemaInfo = (k == 1) ? singleThreadApply() : parallelApply();
+		fb.appendRow(schemaInfo);
+		return fb;
+	}
 
-		List<Future<ValueType>> ret;
+	private String[] singleThreadApply() {
+		final int cols = in.getNumColumns();
+		final String[] schemaInfo = new String[cols];
+		for(int i = 0; i < cols; i++) {
+			schemaInfo[i] = in.getColumn(i).analyzeValueType().toString();
+		}
+		return schemaInfo;
+	}
 
-		ExecutorService pool = CommonThreadPool.get(cols);
+	private String[] parallelApply() {
+		final ExecutorService pool = CommonThreadPool.get(k);
 		try {
-			ret = pool.invokeAll(tasks);
-			final FrameBlock fb = new FrameBlock(UtilFunctions.nCopies(cols, ValueType.STRING));
+			final int cols = in.getNumColumns();
+			final ArrayList<DetectValueTypeTask> tasks = new ArrayList<>(cols);
+			for(int i = 0; i < cols; i++)
+				tasks.add(new DetectValueTypeTask(in.getColumn(i)));
+			final List<Future<ValueType>> ret = pool.invokeAll(tasks);
 			final String[] schemaInfo = new String[cols];
 			pool.shutdown();
 			for(int i = 0; i < cols; i++)
 				schemaInfo[i] = ret.get(i).get().toString();
-
-			fb.appendRow(schemaInfo);
-			return fb;
+			return schemaInfo;
 		}
 		catch(ExecutionException | InterruptedException e) {
-			throw new DMLRuntimeException("Exception Interupted or Exception thrown in Detect Schema", e);
-		}
-		finally {
 			pool.shutdown();
+			throw new DMLRuntimeException("Exception interrupted or exception thrown in detectSchema", e);
 		}
 	}
 
@@ -82,7 +100,7 @@ public final class FrameLibDetectSchema {
 
 		@Override
 		public ValueType call() {
-			return  _obj.analyzeValueType();
+			return _obj.analyzeValueType();
 		}
 	}
 

@@ -42,6 +42,8 @@ public class FrameLibApplySchema {
 	private final Array<?>[] columnsIn;
 	private final Array<?>[] columnsOut;
 
+	private final int k;
+
 	/**
 	 * Method to create a new FrameBlock where the given schema is applied, k is parallelization degree.
 	 * 
@@ -51,24 +53,24 @@ public class FrameLibApplySchema {
 	 * @return A new FrameBlock allocated with new arrays.
 	 */
 	public static FrameBlock applySchema(FrameBlock fb, ValueType[] schema, int k) {
-		return new FrameLibApplySchema(fb, schema).apply(k);
+		return new FrameLibApplySchema(fb, schema, k).apply();
 	}
 
-	private FrameLibApplySchema(FrameBlock fb, ValueType[] schema) {
+	private FrameLibApplySchema(FrameBlock fb, ValueType[] schema, int k) {
 		this.fb = fb;
 		this.schema = schema;
+		this.k = k;
 		verifySize();
 		nCol = fb.getNumColumns();
 		columnsIn = fb.getColumns();
 		columnsOut = new Array<?>[nCol];
-
 	}
 
-	private FrameBlock apply(int k) {
+	private FrameBlock apply() {
 		if(k <= 1 || nCol == 1)
 			applySingleThread();
 		else
-			applyMultiThread(k);
+			applyMultiThread();
 
 		final String[] colNames = fb.getColumnNames(false);
 		final ColumnMetadata[] meta = fb.getColumnMetadata();
@@ -80,7 +82,7 @@ public class FrameLibApplySchema {
 			columnsOut[i] = columnsIn[i].changeType(schema[i]);
 	}
 
-	private void applyMultiThread(int k) {
+	private void applyMultiThread() {
 		final ExecutorService pool = CommonThreadPool.get(k);
 		try {
 

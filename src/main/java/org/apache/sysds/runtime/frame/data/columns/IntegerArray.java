@@ -27,18 +27,18 @@ import java.nio.ByteOrder;
 import java.util.Arrays;
 import java.util.BitSet;
 
-import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.frame.data.columns.ArrayFactory.FrameArrayType;
+import org.apache.sysds.runtime.util.UtilFunctions;
 import org.apache.sysds.utils.MemoryEstimates;
 
 public class IntegerArray extends Array<Integer> {
 	private int[] _data;
 
 	public IntegerArray(int[] data) {
+		super(data.length);
 		_data = data;
-		_size = _data.length;
 	}
 
 	public int[] get() {
@@ -67,7 +67,10 @@ public class IntegerArray extends Array<Integer> {
 
 	@Override
 	public void setFromOtherType(int rl, int ru, Array<?> value) {
-		throw new NotImplementedException();
+		final ValueType vt = value.getValueType();
+		for(int i = rl; i <= ru; i++)
+			_data[i] = UtilFunctions.objectToInteger(vt, value.get(i));
+
 	}
 
 	@Override
@@ -78,14 +81,24 @@ public class IntegerArray extends Array<Integer> {
 	@Override
 	public void setNz(int rl, int ru, Array<Integer> value) {
 		int[] data2 = ((IntegerArray) value)._data;
-		for(int i = rl; i < ru + 1; i++)
+		for(int i = rl; i <= ru; i++)
 			if(data2[i] != 0)
 				_data[i] = data2[i];
 	}
 
 	@Override
+	public void setFromOtherTypeNz(int rl, int ru, Array<?> value) {
+		final ValueType vt = value.getValueType();
+		for(int i = rl; i <= ru; i++) {
+			int v = UtilFunctions.objectToInteger(vt, value.get(i));
+			if(v != 0)
+				_data[i] = v;
+		}
+	}
+
+	@Override
 	public void append(String value) {
-		append((value != null) ? Integer.parseInt(value.trim()) : null);
+		append(parseInt(value));
 	}
 
 	@Override
@@ -119,11 +132,6 @@ public class IntegerArray extends Array<Integer> {
 		return new IntegerArray(Arrays.copyOfRange(_data, rl, ru));
 	}
 
-	@Override
-	public Array<Integer> sliceTransform(int rl, int ru, ValueType vt) {
-		return slice(rl, ru);
-	}
-
 	public void reset(int size) {
 		if(_data.length < size)
 			_data = new int[size];
@@ -131,10 +139,10 @@ public class IntegerArray extends Array<Integer> {
 	}
 
 	@Override
-	public byte[] getAsByteArray(int nRow) {
-		ByteBuffer intBuffer = ByteBuffer.allocate(4 * nRow);
+	public byte[] getAsByteArray() {
+		ByteBuffer intBuffer = ByteBuffer.allocate(4 * _size);
 		intBuffer.order(ByteOrder.LITTLE_ENDIAN);
-		for(int i = 0; i < nRow; i++)
+		for(int i = 0; i < _size; i++)
 			intBuffer.putInt(_data[i]);
 		return intBuffer.array();
 	}
@@ -167,7 +175,7 @@ public class IntegerArray extends Array<Integer> {
 	}
 
 	@Override
-	protected Array<?> changeTypeBitSet() {
+	protected Array<Boolean> changeTypeBitSet() {
 		BitSet ret = new BitSet(size());
 		for(int i = 0; i < size(); i++) {
 			if(_data[i] != 0 && _data[i] != 1)
@@ -179,7 +187,7 @@ public class IntegerArray extends Array<Integer> {
 	}
 
 	@Override
-	protected Array<?> changeTypeBoolean() {
+	protected Array<Boolean> changeTypeBoolean() {
 		boolean[] ret = new boolean[size()];
 		for(int i = 0; i < size(); i++) {
 			if(_data[i] < 0 || _data[i] > 1)
@@ -191,7 +199,7 @@ public class IntegerArray extends Array<Integer> {
 	}
 
 	@Override
-	protected Array<?> changeTypeDouble() {
+	protected Array<Double> changeTypeDouble() {
 		double[] ret = new double[size()];
 		for(int i = 0; i < size(); i++)
 			ret[i] = (double) _data[i];
@@ -199,7 +207,7 @@ public class IntegerArray extends Array<Integer> {
 	}
 
 	@Override
-	protected Array<?> changeTypeFloat() {
+	protected Array<Float> changeTypeFloat() {
 		float[] ret = new float[size()];
 		for(int i = 0; i < size(); i++)
 			ret[i] = (float) _data[i];
@@ -207,16 +215,55 @@ public class IntegerArray extends Array<Integer> {
 	}
 
 	@Override
-	protected Array<?> changeTypeInteger() {
+	protected Array<Integer> changeTypeInteger() {
 		return clone();
 	}
 
 	@Override
-	protected Array<?> changeTypeLong() {
+	protected Array<Long> changeTypeLong() {
 		long[] ret = new long[size()];
 		for(int i = 0; i < size(); i++)
 			ret[i] = _data[i];
 		return new LongArray(ret);
+	}
+
+	@Override
+	protected Array<String> changeTypeString() {
+		String[] ret = new String[size()];
+		for(int i = 0; i < size(); i++)
+			ret[i] = get(i).toString();
+		return new StringArray(ret);
+	}
+
+	@Override
+	public void fill(String value) {
+		fill(parseInt(value));
+	}
+
+	@Override
+	public void fill(Integer value) {
+		for(int i = 0; i < _size; i++)
+			_data[i] = value;
+	}
+
+	@Override
+	public double getAsDouble(int i){
+		return _data[i];
+	}
+
+	protected static int parseInt(String s) {
+		if(s == null)
+			return 0;
+		try {
+			return Integer.parseInt(s);
+		}
+		catch(NumberFormatException e) {
+			if(s.contains(".")){
+				return Integer.parseInt(s.split("\\.")[0]);
+			}
+			else
+				throw e;
+		}
 	}
 
 	@Override

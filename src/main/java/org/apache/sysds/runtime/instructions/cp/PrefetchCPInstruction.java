@@ -34,11 +34,12 @@ public class PrefetchCPInstruction extends UnaryCPInstruction {
 	}
 	
 	public static PrefetchCPInstruction parseInstruction (String str) {
-		InstructionUtils.checkNumFields(str, 2);
+		InstructionUtils.checkNumFields(str, 3);
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		String opcode = parts[0];
 		CPOperand in = new CPOperand(parts[1]);
 		CPOperand out = new CPOperand(parts[2]);
+		// int k = Integer.parseInt(parts[3]);
 		return new PrefetchCPInstruction(null, in, out, opcode, str);
 	}
 

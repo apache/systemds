@@ -69,6 +69,18 @@ public abstract class UnaryCPInstruction extends ComputationCPInstruction {
 			else
 				return new UnaryScalarCPInstruction(null, in, out, opcode, str);
 		}
+		else if(parts.length==4){
+			opcode = parseUnaryInstructionWithThreads(str, in, out);
+			int k = Integer.parseInt(parts[3]);
+			if(in.getDataType() == DataType.SCALAR)
+				return new UnaryScalarCPInstruction(InstructionUtils.parseUnaryOperator(opcode, k), in, out, opcode, str);
+			else if(in.getDataType() == DataType.MATRIX)
+				return new UnaryMatrixCPInstruction(
+					LibCommonsMath.isSupportedUnaryOperation(opcode) ? null : InstructionUtils.parseUnaryOperator(opcode, k),
+					in, out, opcode, str);
+			else if(in.getDataType() == DataType.FRAME)
+				return new UnaryFrameCPInstruction(InstructionUtils.parseUnaryOperator(opcode, k), in, out, opcode, str);
+		}
 		else { //2+1, general case
 			opcode = parseUnaryInstruction(str, in, out);
 			
@@ -81,6 +93,15 @@ public abstract class UnaryCPInstruction extends ComputationCPInstruction {
 				return new UnaryFrameCPInstruction(InstructionUtils.parseUnaryOperator(opcode), in, out, opcode, str);
 		}
 		return null;
+	}
+
+	private static String parseUnaryInstructionWithThreads(String instr, CPOperand in, CPOperand out){
+		InstructionUtils.checkNumFields(instr, 3);
+		String[] parts = InstructionUtils.getInstructionPartsWithValueType(instr);
+		String opcode = parts[0];
+		out.split(parts[parts.length-2]);
+		in.split(parts[1]);
+		return opcode;
 	}
 
 	static String parseUnaryInstruction(String instr, CPOperand in, CPOperand out) {

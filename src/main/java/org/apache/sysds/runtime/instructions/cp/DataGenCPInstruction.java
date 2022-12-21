@@ -355,6 +355,7 @@ public class DataGenCPInstruction extends UnaryCPInstruction {
 			}
 			else {
 				String[] data = frame_data.split(DataExpression.DELIM_NA_STRING_SEP);
+
 				int rowLength = (lrows > 0)?data.length/lrows:0;
 				if(data.length != schemaLength && data.length > 1 && rowLength != schemaLength)
 					throw new DMLRuntimeException(
@@ -375,12 +376,9 @@ public class DataGenCPInstruction extends UnaryCPInstruction {
 						outF.appendRow(data1);
 					}
 				}
-				else {
-					String[] data1 = new String[lcols];
-					Arrays.fill(data1, frame_data);
-					for(int i = 0; i < lrows; i++)
-						outF.appendRow(data1);
-				}
+				else 
+					out = new FrameBlock(vt, frame_data, lrows);
+				
 			}
 		}
 

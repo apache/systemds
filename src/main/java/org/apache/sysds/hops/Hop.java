@@ -65,7 +65,7 @@ import org.apache.sysds.runtime.privacy.PrivacyConstraint;
 import org.apache.sysds.runtime.util.UtilFunctions;
 
 public abstract class Hop implements ParseInfo {
-	private static final Log LOG =  LogFactory.getLog(Hop.class.getName());
+	protected static final Log LOG =  LogFactory.getLog(Hop.class.getName());
 
 	public static final long CPThreshold = 2000;
 

@@ -27,19 +27,19 @@ import java.nio.ByteOrder;
 import java.util.Arrays;
 import java.util.BitSet;
 
-import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
-import org.apache.sysds.runtime.frame.data.FrameUtil;
 import org.apache.sysds.runtime.frame.data.columns.ArrayFactory.FrameArrayType;
+import org.apache.sysds.runtime.frame.data.lib.FrameUtil;
+import org.apache.sysds.runtime.util.UtilFunctions;
 import org.apache.sysds.utils.MemoryEstimates;
 
 public class DoubleArray extends Array<Double> {
 	private double[] _data;
 
 	public DoubleArray(double[] data) {
+		super(data.length);
 		_data = data;
-		_size = _data.length;
 	}
 
 	public double[] get() {
@@ -68,7 +68,9 @@ public class DoubleArray extends Array<Double> {
 
 	@Override
 	public void setFromOtherType(int rl, int ru, Array<?> value) {
-		throw new NotImplementedException();
+		final ValueType vt = value.getValueType();
+		for(int i = rl; i <= ru; i++)
+			_data[i] = UtilFunctions.objectToDouble(vt, value.get(i));
 	}
 
 	@Override
@@ -79,14 +81,24 @@ public class DoubleArray extends Array<Double> {
 	@Override
 	public void setNz(int rl, int ru, Array<Double> value) {
 		double[] data2 = ((DoubleArray) value)._data;
-		for(int i = rl; i < ru + 1; i++)
+		for(int i = rl; i <= ru; i++)
 			if(data2[i] != 0)
 				_data[i] = data2[i];
 	}
 
 	@Override
+	public void setFromOtherTypeNz(int rl, int ru, Array<?> value) {
+		final ValueType vt = value.getValueType();
+		for(int i = rl; i <= ru; i++) {
+			double v = UtilFunctions.objectToDouble(vt, value.get(i));
+			if(v != 0)
+				_data[i] = v;
+		}
+	}
+
+	@Override
 	public void append(String value) {
-		append((value != null) ? Double.parseDouble(value) : null);
+		append(parseDouble(value));
 	}
 
 	@Override
@@ -121,11 +133,6 @@ public class DoubleArray extends Array<Double> {
 	}
 
 	@Override
-	public Array<Double> sliceTransform(int rl, int ru, ValueType vt) {
-		return slice(rl, ru);
-	}
-
-	@Override
 	public void reset(int size) {
 		if(_data.length < size)
 			_data = new double[size];
@@ -133,10 +140,10 @@ public class DoubleArray extends Array<Double> {
 	}
 
 	@Override
-	public byte[] getAsByteArray(int nRow) {
-		ByteBuffer doubleBuffer = ByteBuffer.allocate(8 * nRow);
+	public byte[] getAsByteArray() {
+		ByteBuffer doubleBuffer = ByteBuffer.allocate(8 * _size);
 		doubleBuffer.order(ByteOrder.nativeOrder());
-		for(int i = 0; i < nRow; i++)
+		for(int i = 0; i < _size; i++)
 			doubleBuffer.putDouble(_data[i]);
 		return doubleBuffer.array();
 	}
@@ -212,19 +219,19 @@ public class DoubleArray extends Array<Double> {
 	}
 
 	@Override
-	protected Array<?> changeTypeBitSet() {
+	protected Array<Boolean> changeTypeBitSet() {
 		BitSet ret = new BitSet(size());
 		for(int i = 0; i < size(); i++) {
 			if(_data[i] != 0 && _data[i] != 1)
 				throw new DMLRuntimeException(
 					"Unable to change to Boolean from Integer array because of value:" + _data[i]);
-			ret.set(i,  _data[i] == 0 ? false : true);
+			ret.set(i, _data[i] == 0 ? false : true);
 		}
 		return new BitSetArray(ret, size());
 	}
 
 	@Override
-	protected Array<?> changeTypeBoolean() {
+	protected Array<Boolean> changeTypeBoolean() {
 		boolean[] ret = new boolean[size()];
 		for(int i = 0; i < size(); i++) {
 			if(_data[i] != 0 && _data[i] != 1)
@@ -236,12 +243,12 @@ public class DoubleArray extends Array<Double> {
 	}
 
 	@Override
-	protected Array<?> changeTypeDouble() {
+	protected Array<Double> changeTypeDouble() {
 		return clone();
 	}
 
 	@Override
-	protected Array<?> changeTypeFloat() {
+	protected Array<Float> changeTypeFloat() {
 		float[] ret = new float[size()];
 		for(int i = 0; i < size(); i++)
 			ret[i] = (float) _data[i];
@@ -249,7 +256,7 @@ public class DoubleArray extends Array<Double> {
 	}
 
 	@Override
-	protected Array<?> changeTypeInteger() {
+	protected Array<Integer> changeTypeInteger() {
 		int[] ret = new int[size()];
 		for(int i = 0; i < size(); i++) {
 			if(_data[i] != (int) _data[i])
@@ -260,7 +267,7 @@ public class DoubleArray extends Array<Double> {
 	}
 
 	@Override
-	protected Array<?> changeTypeLong() {
+	protected Array<Long> changeTypeLong() {
 		long[] ret = new long[size()];
 		for(int i = 0; i < size(); i++) {
 			if(_data[i] != (long) _data[i])
@@ -268,6 +275,37 @@ public class DoubleArray extends Array<Double> {
 			ret[i] = (long) _data[i];
 		}
 		return new LongArray(ret);
+	}
+
+	@Override
+	protected Array<String> changeTypeString() {
+		String[] ret = new String[size()];
+		for(int i = 0; i < size(); i++)
+			ret[i] = get(i).toString();
+		return new StringArray(ret);
+	}
+
+	@Override
+	public void fill(String value) {
+		fill(parseDouble(value));
+	}
+
+	@Override
+	public void fill(Double value) {
+		for(int i = 0; i < _size; i++)
+			_data[i] = value;
+	}
+
+	@Override
+	public double getAsDouble(int i) {
+		return _data[i];
+	}
+
+	protected static double parseDouble(String value) {
+		if(value == null)
+			return 0.0;
+		else
+			return Double.parseDouble(value);
 	}
 
 	@Override

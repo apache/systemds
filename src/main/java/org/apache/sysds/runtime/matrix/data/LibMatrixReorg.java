@@ -1317,8 +1317,6 @@ public class LibMatrixReorg {
 		int a = m/c;
 		int b = n/c;
 
-		// LOG.error("c2r");
-
 		double[] tmp = memPool.get();
         if(tmp == null) {
             memPool.set(new double[Math.max(m,n)]);
@@ -1633,7 +1631,6 @@ public class LibMatrixReorg {
 				int sji = ((j + i - (off/a)) % m );
 				tmp[sji] = A[i + j];
 			}
-			// LOG.error(Arrays.toString(sjiList));
 			for (int i = j, off = 0; i< m * n; i+= n, off++){
 				A[i] = tmp[off];
 			}

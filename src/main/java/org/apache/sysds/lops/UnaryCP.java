@@ -26,9 +26,9 @@ import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.OpOp1;
 import org.apache.sysds.common.Types.ValueType;
 
-public class UnaryCP extends Lop 
-{
-	private OpOp1 operation;
+public class UnaryCP extends Lop {
+	private final OpOp1 operation;
+	private final int _numThreads;
 
 	/**
 	 * Constructor to perform a scalar operation
@@ -38,22 +38,32 @@ public class UnaryCP extends Lop
 	 * @param dt data type of the output
 	 * @param vt value type of the output
 	 * @param et exec type
+	 * @param k parallelization degree
 	 */
-	public UnaryCP(Lop input, OpOp1 op, DataType dt, ValueType vt, ExecType et) {
+	public UnaryCP(Lop input, OpOp1 op, DataType dt, ValueType vt, ExecType et, int k) {
 		super(Lop.Type.UnaryCP, dt, vt);
 		operation = op;
 		addInput(input);
 		input.addOutput(this);
 		lps.setProperties(inputs, et);
+		_numThreads = k;
+	}
+
+	public UnaryCP(Lop input, OpOp1 op, DataType dt, ValueType vt, ExecType et) {
+		this(input, op, dt, vt, et, 1);
 	}
 	
+	public UnaryCP(Lop input, OpOp1 op, DataType dt, ValueType vt, int k) {
+		this(input, op, dt, vt, ExecType.CP, k);
+	}
+
 	public UnaryCP(Lop input, OpOp1 op, DataType dt, ValueType vt) {
-		this(input, op, dt, vt, ExecType.CP);
+		this(input, op, dt, vt, ExecType.CP, 1);
 	}
 
 	@Override
 	public String toString() {
-		return "Operation: " + operation;
+		return "Operation: " + getInstructions("", "");
 	}
 	
 	private String getOpCode() {
@@ -65,6 +75,7 @@ public class UnaryCP extends Lop
 		return InstructionUtils.concatOperands(
 			getExecType().name(), getOpCode(),
 			getInputs().get(0).prepScalarInputOperand(getExecType()),
-			prepOutputOperand(output));
+			prepOutputOperand(output),
+			Integer.toString(_numThreads));
 	}
 }

@@ -113,9 +113,6 @@ public class JolEstimateRLETest extends JolEstimateTest {
 
 		mb = genRLE(100, 1, 10, 1);
 		tests.add(new Object[] {mb});
-		// mb = genRLE(1, 100, 10, 1);
-		// LOG.error(mb);
-		// tests.add(new Object[] {mb});
 		mb = genRLE(1000, 1, 10, 1312);
 		tests.add(new Object[] {mb});
 		mb = genRLE(10000, 1, 10, 14512);

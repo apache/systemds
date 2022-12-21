@@ -123,10 +123,11 @@ public class BitSetArray extends Array<Boolean> {
 	private static long[] setVectorizedLongsNoOffset(int rl, int ru, long[] ov, long[] ret) {
 		final long remainderEnd = (ru + 1) % 64L;
 		final long remainderEndInv = 64L - remainderEnd;
+		final int last = ov.length -1;
 		int retP = rl / 64;
 
 		// assign all full.
-		for(int j = 0; j < ov.length - 1; j++) {
+		for(int j = 0; j < last; j++) {
 			ret[retP] = ov[j];
 			retP++;
 		}
@@ -135,75 +136,45 @@ public class BitSetArray extends Array<Boolean> {
 		if(remainderEnd != 0) {
 			// clear ret in the area.
 			final long r = (ret[retP] >>> remainderEnd) << remainderEnd;
-			final long v = (ov[ov.length - 1] << remainderEndInv) >>> remainderEndInv;
+			final long v = (ov[last] << remainderEndInv) >>> remainderEndInv;
 			// assign ret in the area.
 			ret[retP] = r ^ v;
 		}
 		else
-			ret[retP] = ov[ov.length - 1];
+			ret[retP] = ov[last];
 		return ret;
 	}
 
 	private static long[] setVectorizedLongsWithOffset(int rl, int ru, long[] ov, long[] ret) {
 		final long remainder = rl % 64L;
 		final long invRemainder = 64L - remainder;
-		final long remainderEnd = (ru + 1) % 64L;
-		final long remainderEndInv = 64L - remainderEnd;
-
-		int retP = rl / 64; // pointer for current long to edit
+		final int last = ov.length -1;
 		final int lastP = (ru+1) / 64;
 		final long finalOriginal = ret[lastP]; // original log at the ru location.
 
-		// in this case the longs does not line up, and we therefore need to line them up.
-		// LOG.error(longToBits(ret[retP]));
+		int retP = rl / 64; // pointer for current long to edit
+		
 		// first mask out previous and then continue
 		// mask by shifting two times (easier than constructing a mask)
 		ret[retP] = (ret[retP] << invRemainder) >>> invRemainder;
-		// LOG.error(longToBits(ret[retP]));
+		
 		// middle full 64 bit overwrite no need to mask first.
 		// do not include last (it has to be specially handled)
-		// LOG.error("Forloop");
-		for(int j = 0; j < ov.length - 1; j++) {
+		for(int j = 0; j < last; j++) {
 			final long v = ov[j];
-			// LOG.error(longToBits(v));
-			// LOG.error(longToBits((v << remainder)));
 			ret[retP] = ret[retP] ^ (v << remainder);
-			// LOG.error(longToBits(ret[retP]));
 			retP++;
-			// LOG.error(longToBits(ret[retP]));
 			ret[retP] = v >>> invRemainder;
-			// LOG.error(longToBits(ret[retP]));
 		}
-		// LOG.error("ForLoop end");
-
-		final long v = ov[ov.length - 1];
-		final long last = v << remainder;
-		final long re = ret[retP];
-		// LOG.error(remainderEnd);
-		// LOG.error(remainder);
-		// LOG.error(invRemainder);
-		// LOG.error(longToBits(prevLastExtracted));
-		// LOG.error(longToBits(v));
-		// LOG.error(longToBits(last));
-		// LOG.error(longToBits(re));
-
-		ret[retP] = last ^ re;
-
-		// LOG.error(longToBits(ret[retP]));
-		// ret[retP] = ret[retP] ^ (v << remainder);
+	
+		ret[retP] = (ov[last] << remainder) ^ ret[retP];
 		retP++;
-		// LOG.error[]
-		if(retP < ret.length && retP <= lastP) { // aka there is a remainder
-			// LOG.error("Tail tail");
-
-			// final long previousLast = ret[retP];
-			// LOG.error(longToBits(previousLast));
-			ret[retP] = v >>> invRemainder;
-			// LOG.error(longToBits(ret[retP]));
-			// ret[retP] = ret[retP] ^ (previousLast >>> remainderEnd) << remainderEnd;
-			// LOG.error(longToBits(ret[retP]));
-		}
+		if(retP < ret.length && retP <= lastP) // aka there is a remainder
+			ret[retP] = ov[last] >>> invRemainder;
 		
+		// reassign everything outside range of ru.
+		final long remainderEnd = (ru + 1) % 64L;
+		final long remainderEndInv = 64L - remainderEnd;
 		ret[lastP] = (ret[lastP] << remainderEndInv) >>> remainderEndInv;
 		ret[lastP] = ret[lastP] ^ (finalOriginal >>> remainderEnd) << remainderEnd;
 		

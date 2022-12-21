@@ -1747,7 +1747,18 @@ public class FrameBlock implements CacheBlock<FrameBlock>, Externalizable {
 	 * @return A new FrameBlock with the schema applied.
 	 */
 	public FrameBlock applySchema(ValueType[] schema) {
-		return FrameLibApplySchema.applySchema(this, schema, InfrastructureAnalyzer.getLocalParallelism());
+		return FrameLibApplySchema.applySchema(this, schema, 1);
+	}
+
+	/**
+	 * Method to create a new FrameBlock where the given schema is applied.
+	 * 
+	 * @param schema of value types.
+	 * @param k parallelization degree
+	 * @return A new FrameBlock with the schema applied.
+	 */
+	public FrameBlock applySchema(ValueType[] schema, int k){
+		return FrameLibApplySchema.applySchema(this, schema, k);
 	}
 
 	@Override

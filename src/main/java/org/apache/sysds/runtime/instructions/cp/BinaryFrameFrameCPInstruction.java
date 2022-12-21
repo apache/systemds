@@ -23,12 +23,12 @@ import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
-import org.apache.sysds.runtime.matrix.operators.Operator;
+import org.apache.sysds.runtime.matrix.operators.MultiThreadedOperator;
 
 public class BinaryFrameFrameCPInstruction extends BinaryCPInstruction {
 	// private static final Log LOG = LogFactory.getLog(BinaryFrameFrameCPInstruction.class.getName());
 
-	protected BinaryFrameFrameCPInstruction(Operator op, CPOperand in1,
+	protected BinaryFrameFrameCPInstruction(MultiThreadedOperator op, CPOperand in1,
 			CPOperand in2, CPOperand out, String opcode, String istr) {
 		super(CPType.Binary, op, in1, in2, out, opcode, istr);
 	}

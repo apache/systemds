@@ -41,12 +41,15 @@ public abstract class BinaryCPInstruction extends ComputationCPInstruction {
 		CPOperand in1 = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
 		CPOperand in2 = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
 		CPOperand out = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
-		String opcode = parseBinaryInstruction(str, in1, in2, out);
+		final String[] parts = parseBinaryInstruction(str, in1, in2, out);
+		final String opcode = parts[0];
 
 		if(!(in1.getDataType() == DataType.FRAME || in2.getDataType() == DataType.FRAME))
 			checkOutputDataType(in1, in2, out);
 		
 		MultiThreadedOperator operator = InstructionUtils.parseBinaryOrBuiltinOperator(opcode, in1, in2);
+		if(parts.length == 5 && operator != null)
+			operator.setNumThreads(Integer.parseInt(parts[4]));
 
 		if (in1.getDataType() == DataType.SCALAR && in2.getDataType() == DataType.SCALAR)
 			return new BinaryScalarScalarCPInstruction(operator, in1, in2, out, opcode, str);
@@ -62,28 +65,16 @@ public abstract class BinaryCPInstruction extends ComputationCPInstruction {
 			return new BinaryMatrixScalarCPInstruction(operator, in1, in2, out, opcode, str);
 	}
 	
-	protected static String parseBinaryInstruction(String instr, CPOperand in1, CPOperand in2, CPOperand out) {
+	private static String[] parseBinaryInstruction(String instr, CPOperand in1, CPOperand in2, CPOperand out) {
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(instr);
-		InstructionUtils.checkNumFields ( parts, 3, 4 );
-		String opcode = parts[0];
+		InstructionUtils.checkNumFields ( parts, 3, 4, 5 );
 		in1.split(parts[1]);
 		in2.split(parts[2]);
 		out.split(parts[3]);
-		return opcode;
+		
+		return parts;
 	}
 	
-	protected static String parseBinaryInstruction(String instr, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out) {
-		String[] parts = InstructionUtils.getInstructionPartsWithValueType(instr);
-		InstructionUtils.checkNumFields ( parts, 4 );
-		
-		String opcode = parts[0];
-		in1.split(parts[1]);
-		in2.split(parts[2]);
-		in3.split(parts[3]);
-		out.split(parts[4]);
-		
-		return opcode;
-	}
 	
 	public Operator getOperator() {
 		return _optr;

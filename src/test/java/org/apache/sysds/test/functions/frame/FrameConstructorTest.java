@@ -19,23 +19,27 @@
 
 package org.apache.sysds.test.functions.frame;
 
+import java.util.Random;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types;
+import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.runtime.io.FrameReaderFactory;
-import org.apache.sysds.runtime.util.DataConverter;
-import org.apache.sysds.test.TestConfiguration;
-import org.junit.Test;
-import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.util.UtilFunctions;
 import org.apache.sysds.test.AutomatedTestBase;
+import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
-
-import java.util.Random;
+import org.junit.Test;
 
 public class FrameConstructorTest extends AutomatedTestBase {
+
+	protected static final Log LOG = LogFactory.getLog(FrameConstructorTest.class.getName());
+
 	private final static String TEST_DIR = "functions/frame/";
 	private final static String TEST_NAME = "FrameConstructorTest";
 	private final static String TEST_CLASS_DIR = TEST_DIR + FrameConstructorTest.class.getSimpleName() + "/";
@@ -151,13 +155,17 @@ public class FrameConstructorTest extends AutomatedTestBase {
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
 			programArgs = new String[] {"-explain", "-args", String.valueOf(type), output("F2")};
 
-			runTest(true, false, null, -1);
+
+			runTest(null);
+
 			FrameBlock fB = FrameReaderFactory
 				.createFrameReader(Types.FileFormat.CSV)
 				.readFrameFromHDFS(output("F2"), rows, cols);
-			String[][] R1 = DataConverter.convertToStringFrame(expectedOutput);
-			String[][] R2 = DataConverter.convertToStringFrame(fB);
-			TestUtils.compareFrames(R1, R2, R1.length, R1[0].length);
+
+			if( type == TestType.MULTI_ROW_DATA)
+				fB = fB.slice(0, expectedOutput.getNumRows() -1);
+
+			TestUtils.compareFramesAsString(expectedOutput, fB, false);
 			int nrow = type == TestType.MULTI_ROW_DATA ? 5 : 40;
 			checkDMLMetaDataFile("F2", new MatrixCharacteristics(nrow, cols));
 		}

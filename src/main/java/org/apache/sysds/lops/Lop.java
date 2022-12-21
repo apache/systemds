@@ -38,7 +38,7 @@ import org.apache.sysds.runtime.privacy.PrivacyConstraint;
 
 public abstract class Lop 
 {
-	private static final Log LOG =  LogFactory.getLog(Lop.class.getName());
+	protected static final Log LOG =  LogFactory.getLog(Lop.class.getName());
 	
 	public enum Type {
 		Data, DataGen,                                      //CP/MR read/write/datagen 

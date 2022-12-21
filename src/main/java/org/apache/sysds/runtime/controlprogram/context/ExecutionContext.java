@@ -933,7 +933,7 @@ public class ExecutionContext {
 	@Override
 	public String toString(){
 		StringBuilder sb = new StringBuilder();
-		sb.append(super.toString());
+		sb.append(this.getClass().getSimpleName().toString());
 		if(_prog != null)
 			sb.append("\nProgram: " + _prog.toString());
 		if(_variables != null)

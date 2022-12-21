@@ -32,7 +32,7 @@ public class BroadcastCPInstruction extends UnaryCPInstruction {
 	}
 	
 	public static BroadcastCPInstruction parseInstruction (String str) {
-		InstructionUtils.checkNumFields(str, 2);
+		InstructionUtils.checkNumFields(str, 2, 3);
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		String opcode = parts[0];
 		CPOperand in = new CPOperand(parts[1]);

@@ -27,18 +27,18 @@ import java.nio.ByteOrder;
 import java.util.Arrays;
 import java.util.BitSet;
 
-import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.frame.data.columns.ArrayFactory.FrameArrayType;
+import org.apache.sysds.runtime.util.UtilFunctions;
 import org.apache.sysds.utils.MemoryEstimates;
 
 public class FloatArray extends Array<Float> {
 	private float[] _data;
 
 	public FloatArray(float[] data) {
+		super(data.length);
 		_data = data;
-		_size = _data.length;
 	}
 
 	public float[] get() {
@@ -67,7 +67,9 @@ public class FloatArray extends Array<Float> {
 
 	@Override
 	public void setFromOtherType(int rl, int ru, Array<?> value) {
-		throw new NotImplementedException();
+		final ValueType vt = value.getValueType();
+		for(int i = rl; i <= ru; i++)
+			_data[i] = UtilFunctions.objectToFloat(vt, value.get(i));
 	}
 
 	@Override
@@ -78,14 +80,24 @@ public class FloatArray extends Array<Float> {
 	@Override
 	public void setNz(int rl, int ru, Array<Float> value) {
 		float[] data2 = ((FloatArray) value)._data;
-		for(int i = rl; i < ru + 1; i++)
+		for(int i = rl; i <= ru; i++)
 			if(data2[i] != 0)
 				_data[i] = data2[i];
 	}
 
 	@Override
+	public void setFromOtherTypeNz(int rl, int ru, Array<?> value) {
+		final ValueType vt = value.getValueType();
+		for(int i = rl; i <= ru; i++) {
+			float v = UtilFunctions.objectToFloat(vt, value.get(i));
+			if(v != 0)
+				_data[i] = v;
+		}
+	}
+
+	@Override
 	public void append(String value) {
-		append((value != null) ? Float.parseFloat(value) : null);
+		append(parseFloat(value));
 	}
 
 	@Override
@@ -120,11 +132,6 @@ public class FloatArray extends Array<Float> {
 	}
 
 	@Override
-	public Array<Float> sliceTransform(int rl, int ru, ValueType vt) {
-		return slice(rl, ru);
-	}
-
-	@Override
 	public void reset(int size) {
 		if(_data.length < size)
 			_data = new float[size];
@@ -132,10 +139,10 @@ public class FloatArray extends Array<Float> {
 	}
 
 	@Override
-	public byte[] getAsByteArray(int nRow) {
-		ByteBuffer floatBuffer = ByteBuffer.allocate(8 * nRow);
+	public byte[] getAsByteArray() {
+		ByteBuffer floatBuffer = ByteBuffer.allocate(8 * _size);
 		floatBuffer.order(ByteOrder.nativeOrder());
-		for(int i = 0; i < nRow; i++)
+		for(int i = 0; i < _size; i++)
 			floatBuffer.putFloat(_data[i]);
 		return floatBuffer.array();
 	}
@@ -168,7 +175,7 @@ public class FloatArray extends Array<Float> {
 	}
 
 	@Override
-	protected Array<?> changeTypeBitSet() {
+	protected Array<Boolean> changeTypeBitSet() {
 		BitSet ret = new BitSet(size());
 		for(int i = 0; i < size(); i++) {
 			if(_data[i] != 0 && _data[i] != 1)
@@ -180,7 +187,7 @@ public class FloatArray extends Array<Float> {
 	}
 
 	@Override
-	protected Array<?> changeTypeBoolean() {
+	protected Array<Boolean> changeTypeBoolean() {
 		boolean[] ret = new boolean[size()];
 		for(int i = 0; i < size(); i++) {
 			if(_data[i] != 0 && _data[i] != 1)
@@ -192,7 +199,7 @@ public class FloatArray extends Array<Float> {
 	}
 
 	@Override
-	protected Array<?> changeTypeDouble() {
+	protected Array<Double> changeTypeDouble() {
 		double[] ret = new double[size()];
 		for(int i = 0; i < size(); i++)
 			ret[i] = (double) _data[i];
@@ -200,7 +207,7 @@ public class FloatArray extends Array<Float> {
 	}
 
 	@Override
-	protected Array<?> changeTypeInteger() {
+	protected Array<Integer> changeTypeInteger() {
 		int[] ret = new int[size()];
 		for(int i = 0; i < size(); i++) {
 			if(_data[i] != (int) _data[i])
@@ -211,7 +218,7 @@ public class FloatArray extends Array<Float> {
 	}
 
 	@Override
-	protected Array<?> changeTypeLong() {
+	protected Array<Long> changeTypeLong() {
 		long[] ret = new long[size()];
 		for(int i = 0; i < size(); i++)
 			ret[i] = (int) _data[i];
@@ -219,8 +226,39 @@ public class FloatArray extends Array<Float> {
 	}
 
 	@Override
-	protected Array<?> changeTypeFloat() {
+	protected Array<Float> changeTypeFloat() {
 		return clone();
+	}
+
+	@Override
+	protected Array<String> changeTypeString() {
+		String[] ret = new String[size()];
+		for(int i = 0; i < size(); i++)
+			ret[i] = get(i).toString();
+		return new StringArray(ret);
+	}
+
+	@Override
+	public void fill(String value) {
+		fill(parseFloat(value));
+	}
+
+	@Override
+	public void fill(Float value) {
+		for(int i = 0; i < _size; i++)
+			_data[i] = value;
+	}
+
+	@Override
+	public double getAsDouble(int i){
+		return _data[i];
+	}
+
+	protected static float parseFloat(String value) {
+		if(value == null)
+			return 0.0f;
+		else
+			return Float.parseFloat(value);
 	}
 
 	@Override

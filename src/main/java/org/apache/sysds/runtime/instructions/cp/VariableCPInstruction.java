@@ -48,17 +48,18 @@ import org.apache.sysds.runtime.instructions.Instruction;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.io.FileFormatProperties;
 import org.apache.sysds.runtime.io.FileFormatPropertiesCSV;
-import org.apache.sysds.runtime.io.FileFormatPropertiesLIBSVM;
 import org.apache.sysds.runtime.io.FileFormatPropertiesHDF5;
+import org.apache.sysds.runtime.io.FileFormatPropertiesLIBSVM;
 import org.apache.sysds.runtime.io.ListReader;
 import org.apache.sysds.runtime.io.ListWriter;
+import org.apache.sysds.runtime.io.WriterHDF5;
 import org.apache.sysds.runtime.io.WriterMatrixMarket;
 import org.apache.sysds.runtime.io.WriterTextCSV;
-import org.apache.sysds.runtime.io.WriterHDF5;
 import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.runtime.lineage.LineageItemUtils;
 import org.apache.sysds.runtime.lineage.LineageTraceable;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.matrix.operators.MultiThreadedOperator;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.meta.MetaData;
@@ -104,7 +105,22 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 		CastAsBooleanVariable,
 		Write,
 		Read,
-		SetFileName,
+		SetFileName;
+
+		public boolean isCast() {
+			switch(this) {
+				case CastAsScalarVariable:
+				case CastAsMatrixVariable:
+				case CastAsFrameVariable:
+				case CastAsListVariable:
+				case CastAsDoubleVariable:
+				case CastAsIntegerVariable:
+				case CastAsBooleanVariable:
+					return true;
+				default:
+					return false;
+			}
+		}
 	}
 
 	private static final IDSequence _uniqueVarID = new IDSequence(true);
@@ -120,11 +136,14 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 	// Frame related members
 	private final String _schema;
 
+	// parallelization degree for non IO related operations
+	private final int k;
+
 	// CSV and LIBSVM related members (used only in createvar instructions)
 	private final FileFormatProperties _formatProperties;
 
 	private VariableCPInstruction(VariableOperationCode op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out,
-			MetaData meta, FileFormatProperties fprops, String schema, UpdateType utype, String sopcode, String istr) {
+			MetaData meta, FileFormatProperties fprops, String schema, UpdateType utype, String sopcode, String istr, int k) {
 		super(CPType.Variable, sopcode, istr);
 		opcode = op;
 		inputs = new ArrayList<>();
@@ -138,11 +157,23 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 		_updateType = utype;
 		_containsPreadPrefix = in1 != null && in1.getName()
 			.contains(org.apache.sysds.lops.Data.PREAD_PREFIX);
+		this.k = k;
+	}
+
+
+	private VariableCPInstruction(VariableOperationCode op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out,
+			MetaData meta, FileFormatProperties fprops, String schema, UpdateType utype, String sopcode, String istr) {
+		this(op ,in1,in2,in3,out,meta, fprops, schema, utype, sopcode, istr, 1);
 	}
 
 	private VariableCPInstruction(VariableOperationCode op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out,
-			String sopcode, String istr) {
-		this(op, in1, in2, in3, out, null, null, null, null, sopcode, istr);
+		String sopcode, String istr) {
+		this(op, in1, in2, in3, out, null, null, null, null, sopcode, istr, 1);
+	}
+
+	private VariableCPInstruction(VariableOperationCode op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out,
+		String sopcode, String istr, int k) {
+		this(op, in1, in2, in3, out, null, null, null, null, sopcode, istr, k);
 	}
 
 	// This version of the constructor is used only in case of CreateVariable
@@ -294,6 +325,8 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 	}
 
 	private static int getArity(VariableOperationCode op) {
+		if(op.isCast())
+			return 3;
 		switch(op) {
 			case Write:
 			case SetFileName:
@@ -326,11 +359,17 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 				throw new DMLRuntimeException("Invalid number of operands in write instruction: " + str);
 		}
 		else {
-			if( voc != VariableOperationCode.RemoveVariable )
-				InstructionUtils.checkNumFields ( parts, getArity(voc) ); // no output
+			try{
+				if( voc != VariableOperationCode.RemoveVariable )
+					InstructionUtils.checkNumFields ( parts, getArity(voc) ); // no output
+			}
+			catch(Exception e){
+				throw new DMLRuntimeException("Invalid number of fields with operation code: " + voc, e);
+			}
 		}
 
 		CPOperand in1=null, in2=null, in3=null, in4=null, out=null;
+		int k = 1;
 
 		switch (voc) {
 
@@ -515,6 +554,7 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 		case CastAsBooleanVariable:
 			in1 = new CPOperand(parts[1]); // first operand is a variable name => string value type
 			out = new CPOperand(parts[2]); // output variable name
+			k = Integer.parseInt(parts[3]); // thread count
 			break;
 
 		case Write:
@@ -562,7 +602,7 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 			break;
 
 		}
-		return new VariableCPInstruction(getVariableOperationCode(opcode), in1, in2, in3, out, opcode, str);
+		return new VariableCPInstruction(getVariableOperationCode(opcode), in1, in2, in3, out, opcode, str, k);
 	}
 
 	@Override
@@ -928,7 +968,7 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 		}
 		else if(getInput1().getDataType()==DataType.MATRIX) { //DataType.FRAME
 			MatrixBlock min = ec.getMatrixInput(getInput1().getName());
-			out = DataConverter.convertToFrameBlock(min);
+			out = DataConverter.convertToFrameBlock(min, k);
 			ec.releaseMatrixInput(getInput1().getName());
 			ec.setFrameOutput(output.getName(), out);
 		}

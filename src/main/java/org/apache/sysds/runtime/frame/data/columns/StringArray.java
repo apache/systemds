@@ -28,8 +28,8 @@ import java.util.BitSet;
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
-import org.apache.sysds.runtime.frame.data.FrameUtil;
 import org.apache.sysds.runtime.frame.data.columns.ArrayFactory.FrameArrayType;
+import org.apache.sysds.runtime.frame.data.lib.FrameUtil;
 import org.apache.sysds.runtime.io.IOUtilFunctions;
 import org.apache.sysds.runtime.matrix.data.Pair;
 import org.apache.sysds.utils.MemoryEstimates;
@@ -38,8 +38,8 @@ public class StringArray extends Array<String> {
 	private String[] _data;
 
 	public StringArray(String[] data) {
+		super(data.length);
 		_data = data;
-		_size = _data.length;
 	}
 
 	public String[] get() {
@@ -68,7 +68,13 @@ public class StringArray extends Array<String> {
 
 	@Override
 	public void setFromOtherType(int rl, int ru, Array<?> value) {
-		throw new NotImplementedException();
+		for(int i = rl; i <= ru; i++) {
+			final Object v = value.get(i);
+			if(v != null)
+				_data[i] = v.toString();
+			else
+				_data[i] = null;
+		}
 	}
 
 	@Override
@@ -79,9 +85,18 @@ public class StringArray extends Array<String> {
 	@Override
 	public void setNz(int rl, int ru, Array<String> value) {
 		String[] data2 = ((StringArray) value)._data;
-		for(int i = rl; i < ru + 1; i++)
+		for(int i = rl; i <= ru; i++)
 			if(data2[i] != null)
 				_data[i] = data2[i];
+	}
+
+	@Override
+	public void setFromOtherTypeNz(int rl, int ru, Array<?> value) {
+		for(int i = rl; i <= ru; i++) {
+			Object v = value.get(i);
+			if(v != null)
+				_data[i] = v.toString();
+		}
 	}
 
 	@Override
@@ -118,71 +133,6 @@ public class StringArray extends Array<String> {
 	}
 
 	@Override
-	public Array<?> sliceTransform(int rl, int ru, ValueType vt) {
-		LOG.error(rl + "  " + ru + "  len: " + _data.length);
-		try {
-			switch(vt) {
-				case BOOLEAN:
-					return sliceTransformBoolean(rl, ru);
-				case INT32:
-					return sliceTransformInt32(rl, ru);
-				case INT64:
-					return sliceTransformInt64(rl, ru);
-				case FP64:
-					return sliceTransformFP64(rl, ru);
-				case FP32:
-					return sliceTransformFP32(rl, ru);
-				default:
-					return slice(rl, ru);
-			}
-		}
-		catch(Exception e) {
-			LOG.error("Failed to slice with transform to " + vt);
-			return slice(rl, ru);
-		}
-	}
-
-	private Array<Boolean> sliceTransformBoolean(int rl, int ru) {
-		boolean[] ret = new boolean[ru - rl];
-		for(int i = rl, off = 0; i < ru; i++, off++) {
-			String val = _data[i].toLowerCase();
-			if(val.matches("true|t|1|1\\.0+")) // if true
-				ret[off] = true;
-			else if(!val.matches("false|f|0|0\\.0+")) // if not false
-				throw new DMLRuntimeException("Invalid transform to boolean on: " + val);
-		}
-		return new BooleanArray(ret);
-	}
-
-	private Array<Integer> sliceTransformInt32(int rl, int ru) {
-		int[] ret = new int[ru - rl];
-		for(int i = rl, off = 0; i < ru; i++, off++)
-			ret[off] = Integer.parseInt(_data[i]);
-		return new IntegerArray(ret);
-	}
-
-	private Array<Long> sliceTransformInt64(int rl, int ru) {
-		long[] ret = new long[ru - rl];
-		for(int i = rl, off = 0; i < ru; i++, off++)
-			ret[off] = Long.parseLong(_data[i]);
-		return new LongArray(ret);
-	}
-
-	private Array<Double> sliceTransformFP64(int rl, int ru) {
-		double[] ret = new double[ru - rl];
-		for(int i = rl, off = 0; i < ru; i++, off++)
-			ret[off] = Double.parseDouble(_data[i]);
-		return new DoubleArray(ret);
-	}
-
-	private Array<Float> sliceTransformFP32(int rl, int ru) {
-		float[] ret = new float[ru - rl];
-		for(int i = rl, off = 0; i < ru; i++, off++)
-			ret[off] = Float.parseFloat(_data[i]);
-		return new FloatArray(ret);
-	}
-
-	@Override
 	public void reset(int size) {
 		if(_data.length < size)
 			_data = new String[size];
@@ -190,7 +140,7 @@ public class StringArray extends Array<String> {
 	}
 
 	@Override
-	public byte[] getAsByteArray(int nRow) {
+	public byte[] getAsByteArray() {
 		throw new NotImplementedException("Not Implemented getAsByte for string");
 	}
 
@@ -281,12 +231,12 @@ public class StringArray extends Array<String> {
 	}
 
 	@Override
-	protected Array<?> changeTypeBitSet(){
+	protected Array<Boolean> changeTypeBitSet() {
 		return changeTypeBoolean();
 	}
 
 	@Override
-	protected Array<?> changeTypeBoolean() {
+	protected Array<Boolean> changeTypeBoolean() {
 		// detect type of transform.
 		if(_data[0].toLowerCase().equals("true") || _data[0].toLowerCase().equals("false"))
 			return changeTypeBooleanStandard();
@@ -296,14 +246,14 @@ public class StringArray extends Array<String> {
 			throw new DMLRuntimeException("Not supported type of Strings to change to Booleans value: " + _data[0]);
 	}
 
-	protected Array<?> changeTypeBooleanStandard() {
+	protected Array<Boolean> changeTypeBooleanStandard() {
 		if(size() > ArrayFactory.bitSetSwitchPoint)
 			return changeTypeBooleanStandardBitSet();
 		else
 			return changeTypeBooleanStandardArray();
 	}
 
-	protected Array<?> changeTypeBooleanStandardBitSet() {
+	protected Array<Boolean> changeTypeBooleanStandardBitSet() {
 		BitSet ret = new BitSet(size());
 		for(int i = 0; i < size(); i++)
 			ret.set(i, Boolean.parseBoolean(_data[i]));
@@ -311,21 +261,21 @@ public class StringArray extends Array<String> {
 		return new BitSetArray(ret, size());
 	}
 
-	protected Array<?> changeTypeBooleanStandardArray() {
+	protected Array<Boolean> changeTypeBooleanStandardArray() {
 		boolean[] ret = new boolean[size()];
 		for(int i = 0; i < size(); i++)
 			ret[i] = Boolean.parseBoolean(_data[i]);
 		return new BooleanArray(ret);
 	}
 
-	protected Array<?> changeTypeBooleanNumeric() {
+	protected Array<Boolean> changeTypeBooleanNumeric() {
 		if(size() > ArrayFactory.bitSetSwitchPoint)
-			return changeTypeBooleanStandardBitSet();
+			return changeTypeBooleanNumericBitSet();
 		else
 			return changeTypeBooleanNumericArray();
 	}
 
-	protected Array<?> changeTypeBooleanNumericBitSet() {
+	protected Array<Boolean> changeTypeBooleanNumericBitSet() {
 		BitSet ret = new BitSet(size());
 		for(int i = 0; i < size(); i++) {
 			final boolean zero = _data[i].equals("0");
@@ -338,7 +288,7 @@ public class StringArray extends Array<String> {
 		return new BitSetArray(ret, size());
 	}
 
-	protected Array<?> changeTypeBooleanNumericArray() {
+	protected Array<Boolean> changeTypeBooleanNumericArray() {
 		boolean[] ret = new boolean[size()];
 		for(int i = 0; i < size(); i++) {
 			final boolean zero = _data[i].equals("0");
@@ -352,7 +302,7 @@ public class StringArray extends Array<String> {
 	}
 
 	@Override
-	protected Array<?> changeTypeDouble() {
+	protected Array<Double> changeTypeDouble() {
 		try {
 			double[] ret = new double[size()];
 			for(int i = 0; i < size(); i++)
@@ -365,7 +315,7 @@ public class StringArray extends Array<String> {
 	}
 
 	@Override
-	protected Array<?> changeTypeFloat() {
+	protected Array<Float> changeTypeFloat() {
 		try {
 			float[] ret = new float[size()];
 			for(int i = 0; i < size(); i++)
@@ -378,7 +328,7 @@ public class StringArray extends Array<String> {
 	}
 
 	@Override
-	protected Array<?> changeTypeInteger() {
+	protected Array<Integer> changeTypeInteger() {
 		try {
 			int[] ret = new int[size()];
 			for(int i = 0; i < size(); i++)
@@ -391,7 +341,7 @@ public class StringArray extends Array<String> {
 	}
 
 	@Override
-	protected Array<?> changeTypeLong() {
+	protected Array<Long> changeTypeLong() {
 		try {
 			long[] ret = new long[size()];
 			for(int i = 0; i < size(); i++)
@@ -404,7 +354,7 @@ public class StringArray extends Array<String> {
 	}
 
 	@Override
-	public Array<?> changeTypeString() {
+	public Array<String> changeTypeString() {
 		return clone();
 	}
 
@@ -421,6 +371,17 @@ public class StringArray extends Array<String> {
 
 		}
 		return new Pair<>(minLength, maxLength);
+	}
+
+	@Override
+	public void fill(String value) {
+		for(int i = 0; i < _size; i++)
+			_data[i] = value;
+	}
+
+	@Override
+	public double getAsDouble(int i){
+		return Double.parseDouble(_data[i]);
 	}
 
 	@Override

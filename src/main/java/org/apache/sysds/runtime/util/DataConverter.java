@@ -754,7 +754,29 @@ public class DataConverter {
 	 * @return frame block of type double
 	 */
 	public static FrameBlock convertToFrameBlock(MatrixBlock mb) {
-		return convertToFrameBlock(mb, ValueType.FP64);
+		return convertToFrameBlock(mb, ValueType.FP64, 1);
+	}
+
+	/**
+	 * Converts a matrix block into a frame block of value type double.
+	 *
+	 * @param mb matrix block
+	 * @param k  parallelization degree
+	 * @return frame block of type double
+	 */
+	public static FrameBlock convertToFrameBlock(MatrixBlock mb, int k) {
+		return convertToFrameBlock(mb, ValueType.FP64, k);
+	}
+
+	/**
+	 * Converts a matrix block into a frame block of value type given.
+	 * 
+	 * @param mb matrix block
+	 * @param vt value type target
+	 * @return frame block of type given
+	 */
+	public static FrameBlock convertToFrameBlock(MatrixBlock mb, ValueType vt) {
+		return FrameFromMatrixBlock.convertToFrameBlock(mb, vt, 1);
 	}
 
 	/**
@@ -762,14 +784,34 @@ public class DataConverter {
 	 *
 	 * @param mb matrix block
 	 * @param vt value type
-	 * @return frame block
+	 * @param k  parallelization degree
+	 * @return a return frame block with the given schema
 	 */
-	public static FrameBlock convertToFrameBlock(MatrixBlock mb, ValueType vt) {
-		return FrameFromMatrixBlock.convertToFrameBlock(mb, vt);
+	public static FrameBlock convertToFrameBlock(MatrixBlock mb, ValueType vt, int k) {
+		return FrameFromMatrixBlock.convertToFrameBlock(mb, vt, k);
 	}
 
-	public static FrameBlock convertToFrameBlock(MatrixBlock mb, ValueType[] schema){
-		return FrameFromMatrixBlock.convertToFrameBlock(mb, schema);
+	/**
+	 * Converts a matrix block into a frame block of with the given schema
+	 * 
+	 * @param mb     matrix block
+	 * @param schema schema
+	 * @return a return frame block with the given schema
+	 */
+	public static FrameBlock convertToFrameBlock(MatrixBlock mb, ValueType[] schema) {
+		return FrameFromMatrixBlock.convertToFrameBlock(mb, schema, 1);
+	}
+
+	/**
+	 * Converts a matrix block into a frame block of with the given schema
+	 * 
+	 * @param mb     matrix block
+	 * @param schema schema
+	 * @param k      parallelization degree
+	 * @return a return frame block with the given schema
+	 */
+	public static FrameBlock convertToFrameBlock(MatrixBlock mb, ValueType[] schema, int k) {
+		return FrameFromMatrixBlock.convertToFrameBlock(mb, schema, k);
 	}
 
 	public static TensorBlock convertToTensorBlock(MatrixBlock mb, ValueType vt, boolean toBasicTensor) {

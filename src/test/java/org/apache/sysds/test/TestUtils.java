@@ -810,16 +810,18 @@ public class TestUtils
 
 	public static void compareFrames(String[][] expectedFrame, String[][] actualFrame, int rows, int cols ) {
 		int countErrors = 0;
-		for (int i = 0; i < rows; i++) {
-			for (int j = 0; j < cols; j++) {
+		StringBuilder sb = new StringBuilder();
+		for (int i = 0; i < rows&& countErrors < 10; i++) {
+			for (int j = 0; j < cols && countErrors < 10; j++) {
 				if( !( (expectedFrame[i][j]==null && actualFrame[i][j]==null) ||
 					expectedFrame[i][j].equals(actualFrame[i][j]) || (expectedFrame[i][j]+".0").equals(actualFrame[i][j])) ) {
-					System.out.println("Expected:" + expectedFrame[i][j] +" vs actual: "+actualFrame[i][j]+" at "+i+" "+j);
+					sb.append("Expected:" + expectedFrame[i][j] +" vs actual: "+actualFrame[i][j]+" at "+i+" "+j + "\n");
 					countErrors++;
 				}
 			}
 		}
-		assertTrue("" + countErrors + " values are not in equal", countErrors == 0);
+		sb.append("at least " + countErrors + " values are not equal" );
+		assertTrue(sb.toString(), countErrors == 0);
 	}
 
 	public static void compareFrames(FrameBlock expected, FrameBlock actual, boolean checkMeta) {
@@ -828,37 +830,59 @@ public class TestUtils
 
 		int rows = expected.getNumRows();
 		int cols = expected.getNumColumns();
-		if(checkMeta) {
-			ColumnMetadata[] expectedMeta = expected.getColumnMetadata();
-			ColumnMetadata[] actualMeta = actual.getColumnMetadata();
-
-			if((expectedMeta == null && actualMeta != null) || (expectedMeta != null && actualMeta == null))
-				fail("wrongly allocated metadata");
-			else if(expectedMeta != null && actualMeta != null) {
-				assertEquals("MetaData not correct size", expectedMeta.length, cols);
-				assertEquals("MetaData not correct size", actualMeta.length, cols);
-				for(int i = 0; i < cols; i++)
-					if(!expectedMeta[i].equals(actualMeta[i]))
-						fail("Meta data not equivalent: " + expectedMeta[i] + "  vs  " + actualMeta[i]);
-			}
-
-			String[] expectedColNames = expected.getColumnNames(false);
-			String[] actualColNames = expected.getColumnNames(false);
-			 if((expectedColNames == null && actualColNames != null) ||
-				(expectedColNames != null && actualColNames == null))
-				fail("wrongly allocated metadata");
-			else if(expectedColNames != null && actualColNames != null) {
-				assertEquals("Column names not correct size", expectedColNames.length, cols);
-				assertEquals("Column names not correct size", actualColNames.length, cols);
-				for(int i = 0; i < cols; i++) {
-					assertEquals("Column names not equivalent", expectedColNames[i], actualColNames[i]);
-				}
-			}
-		}
+		if(checkMeta)
+			checkMetadata(expected, actual);
 
 		for(int i = 0; i < rows; i++) {
 			for(int j = 0; j < cols; j++) {
 				assertEquals("Values not equivalent at: " + i + ", " + j, expected.get(i, j), actual.get(i, j));
+			}
+		}
+	}
+
+	private static void checkMetadata(FrameBlock expected, FrameBlock actual) {
+		int cols = expected.getNumColumns();
+		ColumnMetadata[] expectedMeta = expected.getColumnMetadata();
+		ColumnMetadata[] actualMeta = actual.getColumnMetadata();
+
+		if((expectedMeta == null && actualMeta != null) || (expectedMeta != null && actualMeta == null))
+			fail("wrongly allocated metadata");
+		else if(expectedMeta != null && actualMeta != null) {
+			assertEquals("MetaData not correct size", expectedMeta.length, cols);
+			assertEquals("MetaData not correct size", actualMeta.length, cols);
+			for(int i = 0; i < cols; i++)
+				if(!expectedMeta[i].equals(actualMeta[i]))
+					fail("Meta data not equivalent: " + expectedMeta[i] + "  vs  " + actualMeta[i]);
+		}
+
+		String[] expectedColNames = expected.getColumnNames(false);
+		String[] actualColNames = expected.getColumnNames(false);
+		if((expectedColNames == null && actualColNames != null) || (expectedColNames != null && actualColNames == null))
+			fail("wrongly allocated metadata");
+		else if(expectedColNames != null && actualColNames != null) {
+			assertEquals("Column names not correct size", expectedColNames.length, cols);
+			assertEquals("Column names not correct size", actualColNames.length, cols);
+			for(int i = 0; i < cols; i++) {
+				assertEquals("Column names not equivalent", expectedColNames[i], actualColNames[i]);
+			}
+		}
+
+	}
+
+	public static void compareFramesAsString(FrameBlock expected, FrameBlock actual, boolean checkMeta) {
+		assertEquals("Number of columns and rows are not equivalent", expected.getNumRows(), actual.getNumRows());
+		assertEquals("Number of columns and rows are not equivalent", expected.getNumColumns(), actual.getNumColumns());
+
+		int rows = expected.getNumRows();
+		int cols = expected.getNumColumns();
+
+		if(checkMeta)
+			checkMetadata(expected, actual);
+
+		for(int i = 0; i < rows; i++) {
+			for(int j = 0; j < cols; j++) {
+				assertEquals("Values not equivalent at: " + i + ", " + j, expected.get(i, j).toString(),
+					actual.get(i, j).toString());
 			}
 		}
 	}

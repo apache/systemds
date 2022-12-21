@@ -23,6 +23,7 @@ import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
+import org.apache.sysds.runtime.matrix.operators.MultiThreadedOperator;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 
 public abstract class BinaryCPInstruction extends ComputationCPInstruction {
@@ -45,7 +46,7 @@ public abstract class BinaryCPInstruction extends ComputationCPInstruction {
 		if(!(in1.getDataType() == DataType.FRAME || in2.getDataType() == DataType.FRAME))
 			checkOutputDataType(in1, in2, out);
 		
-		Operator operator = InstructionUtils.parseBinaryOrBuiltinOperator(opcode, in1, in2);
+		MultiThreadedOperator operator = InstructionUtils.parseBinaryOrBuiltinOperator(opcode, in1, in2);
 
 		if (in1.getDataType() == DataType.SCALAR && in2.getDataType() == DataType.SCALAR)
 			return new BinaryScalarScalarCPInstruction(operator, in1, in2, out, opcode, str);

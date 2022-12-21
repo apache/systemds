@@ -23,12 +23,12 @@ import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
-import org.apache.sysds.runtime.matrix.operators.Operator;
+import org.apache.sysds.runtime.matrix.operators.MultiThreadedOperator;
 
 public class BinaryFrameFrameCPInstruction extends BinaryCPInstruction {
 	// private static final Log LOG = LogFactory.getLog(BinaryFrameFrameCPInstruction.class.getName());
 
-	protected BinaryFrameFrameCPInstruction(Operator op, CPOperand in1,
+	protected BinaryFrameFrameCPInstruction(MultiThreadedOperator op, CPOperand in1,
 			CPOperand in2, CPOperand out, String opcode, String istr) {
 		super(CPType.Binary, op, in1, in2, out, opcode, istr);
 	}
@@ -62,7 +62,7 @@ public class BinaryFrameFrameCPInstruction extends BinaryCPInstruction {
 			ValueType[] schema = new ValueType[inBlock2.getNumColumns()];
 			for(int i=0; i<inBlock2.getNumColumns(); i++)
 				schema[i] = ValueType.fromExternalString(inBlock2.get(0, i).toString());
-			ec.setFrameOutput(output.getName(), inBlock1.applySchema(schema));
+			ec.setFrameOutput(output.getName(), inBlock1.applySchema(schema, ((MultiThreadedOperator)getOperator()).getNumThreads()));
 		}
 		else {
 			// Execute binary operations

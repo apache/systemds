@@ -109,6 +109,8 @@ public class MMCJ extends Lop
 		}
 		else
 			sb.append(_type.name());
+		sb.append( OPERAND_DELIMITOR );
+		sb.append(getOutputParameters().getLinCacheMarking());
 		
 		return sb.toString();
 	}

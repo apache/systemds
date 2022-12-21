@@ -53,7 +53,6 @@ import org.apache.sysds.runtime.instructions.cp.ScalarObject;
 import org.apache.sysds.runtime.instructions.fed.ComputationFEDInstruction;
 import org.apache.sysds.runtime.instructions.gpu.GPUInstruction;
 import org.apache.sysds.runtime.instructions.gpu.context.GPUObject;
-import org.apache.sysds.runtime.instructions.spark.CheckpointSPInstruction;
 import org.apache.sysds.runtime.instructions.spark.ComputationSPInstruction;
 import org.apache.sysds.runtime.instructions.spark.data.RDDObject;
 import org.apache.sysds.runtime.lineage.LineageCacheConfig.LineageCacheStatus;
@@ -95,31 +94,10 @@ public class LineageCache
 			return false;
 		
 		boolean reuse = false;
-		//NOTE: the check for computation CP instructions ensures that the output
-		// will always fit in memory and hence can be pinned unconditionally
-		if (LineageCacheConfig.isReusable(inst, ec)) {
-			ComputationCPInstruction cinst = inst instanceof ComputationCPInstruction ? (ComputationCPInstruction)inst : null;
-			ComputationFEDInstruction cfinst = inst instanceof ComputationFEDInstruction ? (ComputationFEDInstruction)inst : null;
-			ComputationSPInstruction cspinst = inst instanceof ComputationSPInstruction ? (ComputationSPInstruction)inst : null;
-			GPUInstruction gpuinst = inst instanceof GPUInstruction ? (GPUInstruction)inst : null;
-			//TODO: Replace with generic type
-				
-			LineageItem instLI = (cinst != null) ? cinst.getLineageItem(ec).getValue()
-					: (cfinst != null) ? cfinst.getLineageItem(ec).getValue()
-					: (cspinst != null) ? cspinst.getLineageItem(ec).getValue()
-					: gpuinst.getLineageItem(ec).getValue();
-			List<MutablePair<LineageItem, LineageCacheEntry>> liList = null;
-			if (inst instanceof MultiReturnBuiltinCPInstruction) {
-				liList = new ArrayList<>();
-				MultiReturnBuiltinCPInstruction mrInst = (MultiReturnBuiltinCPInstruction)inst;
-				for (int i=0; i<mrInst.getNumOutputs(); i++) {
-					String opcode = instLI.getOpcode() + String.valueOf(i);
-					liList.add(MutablePair.of(new LineageItem(opcode, instLI.getInputs()), null));
-				}
-			}
-			else
-				liList = Arrays.asList(MutablePair.of(instLI, null));
-			
+		if (LineageCacheConfig.isReusable(inst, ec))
+		{
+			List<MutablePair<LineageItem, LineageCacheEntry>> liList = getLineageItems(inst, ec);
+
 			//atomic try reuse full/partial and set placeholder, without
 			//obtaining value to avoid blocking in critical section
 			LineageCacheEntry e = null;
@@ -131,49 +109,28 @@ public class LineageCache
 						e = LineageCache.probe(item.getKey()) ? getIntern(item.getKey()) : null;
 					//TODO need to also move execution of compensation plan out of here
 					//(create lazily evaluated entry)
-					if (e == null && LineageCacheConfig.getCacheType().isPartialReuse() && cspinst == null)
+					if (e == null && LineageCacheConfig.getCacheType().isPartialReuse()
+						&& !(inst instanceof ComputationSPInstruction))
 						if( LineageRewriteReuse.executeRewrites(inst, ec) )
 							e = getIntern(item.getKey());
-					//TODO: Partial reuse for Spark instructions
 					reuseAll &= (e != null);
 					item.setValue(e);
 					
 					//create a placeholder if no reuse to avoid redundancy
 					//(e.g., concurrent threads that try to start the computation)
-					if(e == null && isMarkedForCaching(inst, ec)) {
-						if (cinst != null)
-							putIntern(item.getKey(), cinst.output.getDataType(), null, null,  0);
-						else if (cfinst != null)
-							putIntern(item.getKey(), cfinst.output.getDataType(), null, null,  0);
-						else if (cspinst != null)
-							putIntern(item.getKey(), cspinst.output.getDataType(), null, null,  0);
-						else if (gpuinst != null)
-							putIntern(item.getKey(), gpuinst._output.getDataType(), null, null,  0);
-						//FIXME: different o/p datatypes for MultiReturnBuiltins.
-					}
+					if(e == null && isMarkedForCaching(inst, ec))
+						putInternPlaceholder(inst, item.getKey());
 				}
 			}
 			reuse = reuseAll;
 			
 			if(reuse) { //reuse
-				boolean gpuReuse = false;
-				//put reuse value into symbol table (w/ blocking on placeholders)
+				//put reused value into symbol table (w/ blocking on placeholders)
 				for (MutablePair<LineageItem, LineageCacheEntry> entry : liList) {
 					e = entry.getValue();
-					String outName = null;
-					if (inst instanceof MultiReturnBuiltinCPInstruction)
-						outName = ((MultiReturnBuiltinCPInstruction)inst).
-							getOutput(entry.getKey().getOpcode().charAt(entry.getKey().getOpcode().length()-1)-'0').getName(); 
-					else if (inst instanceof ComputationCPInstruction)
-						outName = cinst.output.getName();
-					else if (inst instanceof ComputationFEDInstruction)
-						outName = cfinst.output.getName();
-					else if (inst instanceof ComputationSPInstruction)
-						outName = cspinst.output.getName();
-					else if (inst instanceof GPUInstruction)
-						outName = gpuinst._output.getName();
-					
-					if (e.isMatrixValue() && e._gpuObject == null) {
+					String outName = getOutputName(inst, entry.getKey());
+
+					if (e.isMatrixValue() && !e.isGPUObject()) {
 						MatrixBlock mb = e.getMBValue(); //wait if another thread is executing the same inst.
 						if (mb == null && e.getCacheStatus() == LineageCacheStatus.NOTCACHED)
 							return false;  //the executing thread removed this entry from cache
@@ -190,10 +147,13 @@ public class LineageCache
 					else if (e.isRDDPersist()) {
 						//Reuse the RDD which is also persisted in Spark
 						RDDObject rdd = e.getRDDObject();
+						if (!((SparkExecutionContext) ec).isRDDCached(rdd.getRDD().id()))
+							//Return if the RDD is not cached in the executors
+							return false;
 						if (rdd == null && e.getCacheStatus() == LineageCacheStatus.NOTCACHED)
 							return false;
 						else
-							((SparkExecutionContext)ec).setRDDHandleForVariable(outName, rdd);
+							((SparkExecutionContext) ec).setRDDHandleForVariable(outName, rdd);
 					}
 					else { //TODO handle locks on gpu objects
 						//shallow copy the cached GPUObj to the output MatrixObject
@@ -201,26 +161,15 @@ public class LineageCache
 								ec.getGPUContext(0).shallowCopyGPUObject(e._gpuObject, ec.getMatrixObject(outName)));
 						//Set dirty to true, so that it is later copied to the host for write
 						ec.getMatrixObject(outName).getGPUObject(ec.getGPUContext(0)).setDirty(true);
-						gpuReuse = true;
 					}
-
-					reuse = true;
-
-					if (DMLScript.STATISTICS) //increment saved time
-						LineageCacheStatistics.incrementSavedComputeTime(e._computeTime);
 				}
-				if (DMLScript.STATISTICS) {
-					if (gpuReuse)
-						LineageCacheStatistics.incrementGpuHits();
-					else
-						LineageCacheStatistics.incrementInstHits();
-				}
+				maintainReuseStatistics(inst, liList.get(0).getValue());
 			}
 		}
 		
 		return reuse;
 	}
-	
+
 	public static boolean reuse(List<String> outNames, List<DataIdentifier> outParams, 
 			int numOutputs, LineageItem[] liInputs, String name, ExecutionContext ec)
 	{
@@ -532,9 +481,7 @@ public class LineageCache
 			//if (!isMarkedForCaching(inst, ec)) return;
 			List<Pair<LineageItem, Data>> liData = null;
 			GPUObject liGpuObj = null;
-			RDDObject rddObj = null;
 			LineageItem instLI = ((LineageTraceable) inst).getLineageItem(ec).getValue();
-			LineageItem instInputLI = null;
 			if (inst instanceof MultiReturnBuiltinCPInstruction) {
 				liData = new ArrayList<>();
 				MultiReturnBuiltinCPInstruction mrInst = (MultiReturnBuiltinCPInstruction)inst;
@@ -556,14 +503,9 @@ public class LineageCache
 				if (liGpuObj == null)
 					liData = Arrays.asList(Pair.of(instLI, ec.getVariable(((GPUInstruction)inst)._output)));
 			}
-			else if (inst instanceof CheckpointSPInstruction) {
-				// Get the lineage of the instruction being checkpointed
-				instInputLI = ec.getLineageItem(((ComputationSPInstruction)inst).input1);
-				// Get the RDD handle of the persisted RDD
-				CacheableData<?> cd = ec.getCacheableData(((ComputationSPInstruction)inst).output.getName());
-				rddObj = ((CacheableData<?>) cd).getRDDHandle();
-				// Remove the lineage item of the chkpoint instruction
-				removePlaceholder(instLI);
+			else if (inst instanceof ComputationSPInstruction && ((ComputationSPInstruction) inst).isRDDtoCache()) {
+				putValueRDD(inst, instLI, ec, computetime);
+				return;
 			}
 			else
 				if (inst instanceof ComputationCPInstruction)
@@ -573,12 +515,10 @@ public class LineageCache
 				else if (inst instanceof ComputationSPInstruction)
 					liData = Arrays.asList(Pair.of(instLI, ec.getVariable(((ComputationSPInstruction) inst).output)));
 
-			if (liGpuObj == null && rddObj == null)
+			if (liGpuObj == null)
 				putValueCPU(inst, liData, computetime);
-			if (liGpuObj != null)
+			else
 				putValueGPU(liGpuObj, instLI, computetime);
-			if (rddObj != null)
-				putValueRDD(rddObj, instInputLI, computetime);
 		}
 	}
 	
@@ -604,13 +544,6 @@ public class LineageCache
 					// We don't want to call get() on the future immediately after the execution
 					// For the async. instructions, caching is handled separately by the tasks
 					removePlaceholder(item);
-					continue;
-				}
-
-				if (LineageCacheConfig.isToPersist(inst) && LineageCacheConfig.getCompAssRW()) {
-					// The immediately following instruction must be a checkpoint, which will
-					// fill the rdd in this cache entry.
-					// TODO: Instead check if this instruction is marked for checkpointing
 					continue;
 				}
 
@@ -672,18 +605,21 @@ public class LineageCache
 		}
 	}
 
-	private static void putValueRDD(RDDObject rdd, LineageItem instLI, long computetime) {
+	private static void putValueRDD(Instruction inst, LineageItem instLI, ExecutionContext ec, long computetime) {
 		synchronized( _cache ) {
-			// Not available in the cache indicates this RDD is not marked for caching
 			if (!probe(instLI))
 				return;
+			// Call persist on the output RDD
+			((ComputationSPInstruction) inst).checkpointRDD(ec);
+			// Get the RDD handle of the persisted RDD
+			CacheableData<?> cd = ec.getCacheableData(((ComputationSPInstruction)inst).output.getName());
+			RDDObject rddObj = ((CacheableData<?>) cd).getRDDHandle();
 
 			LineageCacheEntry centry = _cache.get(instLI);
-			if (centry.isRDDPersist() && centry.getRDDObject().isCheckpointRDD())
-				// Do nothing if the cached RDD is already checkpointed
-				return;
-
-			centry.setRDDValue(rdd, computetime);
+			// Set the RDD object in the cache
+			// TODO: Make space in the executors
+			rddObj.setLineageCached();
+			centry.setRDDValue(rddObj, computetime);
 			// Maintain order for eviction
 			LineageCacheEviction.addEntry(centry);
 		}
@@ -879,7 +815,24 @@ public class LineageCache
 
 	
 	//----------------- INTERNAL CACHE LOGIC IMPLEMENTATION --------------//
-	
+
+	private static void putInternPlaceholder(Instruction inst, LineageItem key) {
+		ComputationCPInstruction cinst = inst instanceof ComputationCPInstruction ? (ComputationCPInstruction)inst : null;
+		ComputationFEDInstruction cfinst = inst instanceof ComputationFEDInstruction ? (ComputationFEDInstruction)inst : null;
+		ComputationSPInstruction cspinst = inst instanceof ComputationSPInstruction ? (ComputationSPInstruction)inst : null;
+		GPUInstruction gpuinst = inst instanceof GPUInstruction ? (GPUInstruction)inst : null;
+
+		if (cinst != null)
+			putIntern(key, cinst.output.getDataType(), null, null,  0);
+		else if (cfinst != null)
+			putIntern(key, cfinst.output.getDataType(), null, null,  0);
+		else if (cspinst != null)
+			putIntern(key, cspinst.output.getDataType(), null, null,  0);
+		else if (gpuinst != null)
+			putIntern(key, gpuinst._output.getDataType(), null, null,  0);
+		//FIXME: different o/p datatypes for MultiReturnBuiltins.
+	}
+
 	private static void putIntern(LineageItem key, DataType dt, MatrixBlock Mval, ScalarObject Sval, long computetime) {
 		if (_cache.containsKey(key))
 			//can come here if reuse_partial option is enabled
@@ -1129,5 +1082,71 @@ public class LineageCache
 		}
 		
 		return nflops / (2L * 1024 * 1024 * 1024);
+	}
+
+
+	//----------------- UTILITY FUNCTIONS --------------------//
+
+	private static List<MutablePair<LineageItem, LineageCacheEntry>> getLineageItems(Instruction inst, ExecutionContext ec) {
+		ComputationCPInstruction cinst = inst instanceof ComputationCPInstruction ? (ComputationCPInstruction)inst : null;
+		ComputationFEDInstruction cfinst = inst instanceof ComputationFEDInstruction ? (ComputationFEDInstruction)inst : null;
+		ComputationSPInstruction cspinst = inst instanceof ComputationSPInstruction ? (ComputationSPInstruction)inst : null;
+		GPUInstruction gpuinst = inst instanceof GPUInstruction ? (GPUInstruction)inst : null;
+		//TODO: Replace with generic type
+
+		List<MutablePair<LineageItem, LineageCacheEntry>> liList = null;
+		LineageItem instLI = (cinst != null) ? cinst.getLineageItem(ec).getValue()
+			: (cfinst != null) ? cfinst.getLineageItem(ec).getValue()
+			: (cspinst != null) ? cspinst.getLineageItem(ec).getValue()
+			: gpuinst.getLineageItem(ec).getValue();
+		if (inst instanceof MultiReturnBuiltinCPInstruction) {
+			liList = new ArrayList<>();
+			MultiReturnBuiltinCPInstruction mrInst = (MultiReturnBuiltinCPInstruction)inst;
+			for (int i=0; i<mrInst.getNumOutputs(); i++) {
+				String opcode = instLI.getOpcode() + String.valueOf(i);
+				liList.add(MutablePair.of(new LineageItem(opcode, instLI.getInputs()), null));
+			}
+		}
+		else
+			liList = List.of(MutablePair.of(instLI, null));
+
+		return liList;
+	}
+
+	private static String getOutputName(Instruction inst, LineageItem li) {
+		ComputationCPInstruction cinst = inst instanceof ComputationCPInstruction ? (ComputationCPInstruction)inst : null;
+		ComputationFEDInstruction cfinst = inst instanceof ComputationFEDInstruction ? (ComputationFEDInstruction)inst : null;
+		ComputationSPInstruction cspinst = inst instanceof ComputationSPInstruction ? (ComputationSPInstruction)inst : null;
+		GPUInstruction gpuinst = inst instanceof GPUInstruction ? (GPUInstruction)inst : null;
+
+		String outName = null;
+		if (inst instanceof MultiReturnBuiltinCPInstruction)
+			outName = ((MultiReturnBuiltinCPInstruction)inst).
+				getOutput(li.getOpcode().charAt(li.getOpcode().length()-1)-'0').getName();
+		else if (inst instanceof ComputationCPInstruction)
+			outName = cinst.output.getName();
+		else if (inst instanceof ComputationFEDInstruction)
+			outName = cfinst.output.getName();
+		else if (inst instanceof ComputationSPInstruction)
+			outName = cspinst.output.getName();
+		else if (inst instanceof GPUInstruction)
+			outName = gpuinst._output.getName();
+
+		return outName;
+	}
+	private static void maintainReuseStatistics(Instruction inst, LineageCacheEntry e) {
+		if (!DMLScript.STATISTICS)
+			return;
+
+		LineageCacheStatistics.incrementSavedComputeTime(e._computeTime);
+		if (e.isGPUObject()) LineageCacheStatistics.incrementGpuHits();
+		if (e.isRDDPersist()) LineageCacheStatistics.incrementRDDHits();
+		if (e.isMatrixValue() || e.isScalarValue()) {
+			if (inst instanceof ComputationSPInstruction || inst.getOpcode().equals("prefetch"))
+				// Single_block Spark instructions (sync/async) and prefetch
+				LineageCacheStatistics.incrementSparkCollectHits();
+			else
+				LineageCacheStatistics.incrementInstHits();
+		}
 	}
 }

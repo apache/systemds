@@ -66,8 +66,9 @@ public class CpmmSPInstruction extends AggregateBinarySPInstruction {
 	private final boolean _outputEmptyBlocks;
 	private final SparkAggType _aggtype;
 	
-	private CpmmSPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, boolean outputEmptyBlocks, SparkAggType aggtype, String opcode, String istr) {
-		super(SPType.CPMM, op, in1, in2, out, opcode, istr);
+	private CpmmSPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out,
+		boolean outputEmptyBlocks, SparkAggType aggtype, String opcode, boolean toCache, String istr) {
+		super(SPType.CPMM, op, in1, in2, out, opcode, toCache, istr);
 		_outputEmptyBlocks = outputEmptyBlocks;
 		_aggtype = aggtype;
 	}
@@ -83,7 +84,8 @@ public class CpmmSPInstruction extends AggregateBinarySPInstruction {
 		AggregateBinaryOperator aggbin = InstructionUtils.getMatMultOperator(1);
 		boolean outputEmptyBlocks = Boolean.parseBoolean(parts[4]);
 		SparkAggType aggtype = SparkAggType.valueOf(parts[5]);
-		return new CpmmSPInstruction(aggbin, in1, in2, out, outputEmptyBlocks, aggtype, opcode, str);
+		boolean toCache = parts.length == 7 ? Boolean.parseBoolean(parts[6]) : false;
+		return new CpmmSPInstruction(aggbin, in1, in2, out, outputEmptyBlocks, aggtype, opcode, toCache, str);
 	}
 	
 	@Override

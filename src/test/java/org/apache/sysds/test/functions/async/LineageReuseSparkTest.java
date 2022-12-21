@@ -35,6 +35,7 @@ package org.apache.sysds.test.functions.async;
 	import org.apache.sysds.test.TestUtils;
 	import org.apache.sysds.utils.Statistics;
 	import org.junit.Assert;
+	import org.junit.Ignore;
 	import org.junit.Test;
 
 public class LineageReuseSparkTest extends AutomatedTestBase {
@@ -60,6 +61,13 @@ public class LineageReuseSparkTest extends AutomatedTestBase {
 	public void testlmdsSP() {
 		// Only reuse the actions
 		runTest(TEST_NAME+"1", ExecMode.SPARK, 1);
+	}
+
+	@Ignore
+	@Test
+	public void testlmdsRDD() {
+		// Persist and cache RDDs of shuffle-based Spark operations (eg. rmm, cpmm)
+		runTest(TEST_NAME+"2", ExecMode.HYBRID, 2);
 	}
 
 	public void runTest(String testname, ExecMode execMode, int testId) {
@@ -90,6 +98,7 @@ public class LineageReuseSparkTest extends AutomatedTestBase {
 			HashMap<MatrixValue.CellIndex, Double> R = readDMLScalarFromOutputDir("R");
 			long numTsmm = Statistics.getCPHeavyHitterCount("sp_tsmm");
 			long numMapmm = Statistics.getCPHeavyHitterCount("sp_mapmm");
+			long numRmm = Statistics.getCPHeavyHitterCount("sp_rmm");
 
 			proArgs.clear();
 			proArgs.add("-explain");
@@ -105,6 +114,7 @@ public class LineageReuseSparkTest extends AutomatedTestBase {
 			HashMap<MatrixValue.CellIndex, Double> R_reused = readDMLScalarFromOutputDir("R");
 			long numTsmm_r = Statistics.getCPHeavyHitterCount("sp_tsmm");
 			long numMapmm_r = Statistics.getCPHeavyHitterCount("sp_mapmm");
+			long numRmm_r = Statistics.getCPHeavyHitterCount("sp_rmm");
 
 			//compare matrices
 			boolean matchVal = TestUtils.compareMatrices(R, R_reused, 1e-6, "Origin", "withPrefetch");
@@ -114,6 +124,8 @@ public class LineageReuseSparkTest extends AutomatedTestBase {
 				Assert.assertTrue("Violated sp_tsmm reuse count: " + numTsmm_r + " < " + numTsmm, numTsmm_r < numTsmm);
 				Assert.assertTrue("Violated sp_mapmm reuse count: " + numMapmm_r + " < " + numMapmm, numMapmm_r < numMapmm);
 			}
+			if (testId == 2)
+				Assert.assertTrue("Violated sp_rmm reuse count: " + numRmm_r + " < " + numRmm, numRmm_r < numRmm);
 		} finally {
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = old_simplification;
 			OptimizerUtils.ALLOW_SUM_PRODUCT_REWRITES = old_sum_product;

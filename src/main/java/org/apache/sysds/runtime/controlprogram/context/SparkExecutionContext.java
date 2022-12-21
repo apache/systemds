@@ -1522,7 +1522,9 @@ public class SparkExecutionContext extends ExecutionContext
 		if( lob instanceof RDDObject ) {
 			RDDObject rdd = (RDDObject)lob;
 			int rddID = rdd.getRDD().id();
-			cleanupRDDVariable(rdd.getRDD());
+			//skip unpersisting if locally cached
+			if (!lob.isInLineageCache())
+				cleanupRDDVariable(rdd.getRDD());
 			if( rdd.getHDFSFilename()!=null ) { //deferred file removal
 				HDFSTool.deleteFileWithMTDIfExistOnHDFS(rdd.getHDFSFilename());
 			}

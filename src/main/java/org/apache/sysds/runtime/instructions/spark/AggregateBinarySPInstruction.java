@@ -26,8 +26,12 @@ import org.apache.sysds.runtime.matrix.operators.Operator;
  * Class to group the different MM <code>SPInstruction</code>s together.
  */
 public abstract class AggregateBinarySPInstruction extends BinarySPInstruction {
-	protected AggregateBinarySPInstruction(SPType type, Operator op, CPOperand in1, CPOperand in2, CPOperand out,
-			String opcode, String istr) {
+	protected AggregateBinarySPInstruction(SPType type, Operator op, CPOperand in1, CPOperand in2, CPOperand out, String opcode, String istr) {
 		super(type, op, in1, in2, out, opcode, istr);
+	}
+
+	protected AggregateBinarySPInstruction(SPType type, Operator op, CPOperand in1, CPOperand in2, CPOperand out,
+		String opcode, boolean toCache, String istr) {
+		super(type, op, in1, in2, out, opcode, toCache, istr);
 	}
 }

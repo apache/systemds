@@ -57,6 +57,7 @@ import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysds.runtime.controlprogram.parfor.util.IDSequence;
 import org.apache.sysds.runtime.instructions.fed.FEDInstruction.FederatedOutput;
 import org.apache.sysds.runtime.instructions.gpu.context.GPUContextPool;
+import org.apache.sysds.runtime.lineage.LineageCacheConfig;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
@@ -1233,6 +1234,13 @@ public abstract class Hop implements ParseInfo {
 	protected void setOutputDimensions(Lop lop) {
 		lop.getOutputParameters().setDimensions(
 			getDim1(), getDim2(), getBlocksize(), getNnz(), getUpdateType());
+	}
+
+	protected void setMarkForLineageCaching(Lop lop) {
+		//TODO: set the flag in the HOP via a rewrite
+		//lop.getOutputParameters().setLineageCacheCandidate(requiresLineageCaching());
+		if (!LineageCacheConfig.ReuseCacheType.isNone())
+			lop.getOutputParameters().setLineageCacheCandidate(true);
 	}
 
 	protected void setOutputDimensionsIncludeCompressedSize(Lop lop) {

@@ -41,10 +41,13 @@ public class LineageCacheStatistics {
 	private static final LongAdder _ctimeFSWrite    = new LongAdder();
 	private static final LongAdder _ctimeSaved      = new LongAdder();
 	private static final LongAdder _ctimeMissed     = new LongAdder();
-	// Bellow entries are for specific to gpu lineage cache
+	// Bellow entries are specific to gpu lineage cache
 	private static final LongAdder _numHitsGpu      = new LongAdder();
 	private static final LongAdder _numAsyncEvictGpu= new LongAdder();
 	private static final LongAdder _numSyncEvictGpu = new LongAdder();
+	// Below entries are specific to Spark instructions
+	private static final LongAdder _numHitsRdd      = new LongAdder();
+	private static final LongAdder _numHitsSparkActions = new LongAdder();
 
 	public static void reset() {
 		_numHitsMem.reset();
@@ -64,6 +67,8 @@ public class LineageCacheStatistics {
 		_numHitsGpu.reset();
 		_numAsyncEvictGpu.reset();
 		_numSyncEvictGpu.reset();
+		_numHitsRdd.reset();
+		_numHitsSparkActions.reset();
 	}
 	
 	public static void incrementMemHits() {
@@ -197,6 +202,17 @@ public class LineageCacheStatistics {
 		_numSyncEvictGpu.increment();
 	}
 
+	public static void incrementRDDHits() {
+		// Number of times a persisted RDD are reused.
+		_numHitsRdd.increment();
+	}
+
+	public static void incrementSparkCollectHits() {
+		// Spark instructions that bring intermediate back to local.
+		// Both synchronous and asynchronous (e.g. tsmm, prefetch)
+		_numHitsSparkActions.increment();
+	}
+
 	public static String displayHits() {
 		StringBuilder sb = new StringBuilder();
 		sb.append(_numHitsMem.longValue());
@@ -255,6 +271,14 @@ public class LineageCacheStatistics {
 		sb.append(_numAsyncEvictGpu.longValue());
 		sb.append("/");
 		sb.append(_numSyncEvictGpu.longValue());
+		return sb.toString();
+	}
+
+	public static String displaySparkStats() {
+		StringBuilder sb = new StringBuilder();
+		sb.append(_numHitsSparkActions.longValue());
+		sb.append("/");
+		sb.append(_numHitsRdd.longValue());
 		return sb.toString();
 	}
 }

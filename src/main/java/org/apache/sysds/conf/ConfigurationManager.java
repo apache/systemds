@@ -19,11 +19,18 @@
 
 package org.apache.sysds.conf;
 
+import java.util.concurrent.ExecutorService;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.sysds.conf.CompilerConfig.ConfigType;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.lops.Compression.CompressConfig;
 import org.apache.sysds.lops.compile.linearization.ILinearize;
+import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
+import org.apache.sysds.runtime.io.IOUtilFunctions;
+import org.apache.sysds.runtime.util.CommonThreadPool;
 
 /**
  * Singleton for accessing the parsed and merged system configuration.
@@ -31,8 +38,9 @@ import org.apache.sysds.lops.compile.linearization.ILinearize;
  * NOTE: parallel execution of multiple DML scripts (in the same JVM) with different configurations  
  *       would require changes/extensions of this class. 
  */
-public class ConfigurationManager
-{
+public class ConfigurationManager{
+	private static final Log LOG = LogFactory.getLog(ConfigurationManager.class.getName());
+
 	/** Global cached job conf for read-only operations */
 	private static JobConf _rJob = null; 
 
@@ -56,6 +64,17 @@ public class ConfigurationManager
 		//ConfigManager -> OptimizerUtils -> InfrastructureAnalyer -> ConfigManager 
  		_dmlconf = new DMLConfig();
 		_cconf = new CompilerConfig();
+
+		final ExecutorService pool = CommonThreadPool.get(InfrastructureAnalyzer.getLocalParallelism());
+		pool.submit(() ->{
+			try{
+				IOUtilFunctions.getFileSystem(_rJob);
+			}
+			catch(Exception e){
+				LOG.warn(e.getMessage());
+			}
+		});
+		pool.shutdown();
 	}
 	
 	

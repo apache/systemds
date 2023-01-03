@@ -47,8 +47,11 @@ import org.apache.sysds.lops.DataGen;
 import org.apache.sysds.lops.GroupedAggregate;
 import org.apache.sysds.lops.GroupedAggregateM;
 import org.apache.sysds.lops.Lop;
+import org.apache.sysds.lops.MMCJ;
+import org.apache.sysds.lops.MMRJ;
 import org.apache.sysds.lops.MMTSJ;
 import org.apache.sysds.lops.MMZip;
+import org.apache.sysds.lops.MapMult;
 import org.apache.sysds.lops.MapMultChain;
 import org.apache.sysds.lops.ParameterizedBuiltin;
 import org.apache.sysds.lops.PickByCount;
@@ -190,17 +193,22 @@ public interface ILinearize {
 			roots.forEach(r -> collectSparkRoots(r, sparkOpCount, sparkRoots));
 
 			// Step 2: Depth-first linearization. Place the Spark OPs first.
-			// Sort the Spark roots based on number of Spark operators descending
+			// Maintain the default order (by ID) to trigger independent Spark chains first
 			ArrayList<Lop> operatorList = new ArrayList<>();
-			Lop[] sortedSPRoots = sparkRoots.toArray(new Lop[0]);
-			Arrays.sort(sortedSPRoots, (l1, l2) -> sparkOpCount.get(l2.getID()) - sparkOpCount.get(l1.getID()));
-			Arrays.stream(sortedSPRoots).forEach(r -> depthFirst(r, operatorList, sparkOpCount, true));
+			sparkRoots.forEach(r -> depthFirst(r, operatorList, sparkOpCount, true));
 
 			// Step 3: Place the rest of the operators (CP). Sort the CP roots based on
 			// #Spark operators in ascending order, i.e. execute the independent CP chains first
 			roots.forEach(r -> depthFirst(r, operatorList, sparkOpCount, false));
 			roots.forEach(Lop::resetVisitStatus);
-			final_v = operatorList;
+
+			// Step 4: Add Chkpoint lops after the expensive Spark operators, which
+			// are shared among multiple Spark jobs. Only consider operators with
+			// Spark consumers for now.
+			Map<Long, Integer> operatorJobCount = new HashMap<>();
+			markPersistableSparkOps(sparkRoots, operatorJobCount);
+			final_v = addChkpointLop(operatorList, operatorJobCount);
+			// TODO: A rewrite pass to remove less effective chkpoints
 		}
 		else
 			// Fall back to depth if none of the operators returns results back to local
@@ -209,7 +217,6 @@ public interface ILinearize {
 		// Step 4: Add Prefetch and Broadcast lops if necessary
 		List<Lop> v_pf = ConfigurationManager.isPrefetchEnabled() ? addPrefetchLop(final_v) : final_v;
 		List<Lop> v_bc = ConfigurationManager.isBroadcastEnabled() ? addBroadcastLop(v_pf) : v_pf;
-		// TODO: Merge into a single traversal
 
 		return v_bc;
 	}
@@ -236,6 +243,28 @@ public interface ILinearize {
 		}
 
 		return total;
+	}
+
+	// Count the number of jobs a Spark operator is part of
+	private static void markPersistableSparkOps(List<Lop> sparkRoots, Map<Long, Integer> operatorJobCount) {
+		for (Lop root : sparkRoots) {
+			collectPersistableSparkOps(root, operatorJobCount);
+			root.resetVisitStatus();
+		}
+	}
+
+	private static void collectPersistableSparkOps(Lop root, Map<Long, Integer> operatorJobCount) {
+		if (root.isVisited())
+			return;
+
+		for (Lop input : root.getInputs())
+			collectPersistableSparkOps(input, operatorJobCount);
+
+		// Increment the job counter if this node benefits from persisting
+		if (isPersistableSparkOp(root))
+			operatorJobCount.merge(root.getID(), 1, Integer::sum);
+
+		root.setVisited();
 	}
 
 	// Place the operators in a depth-first manner, but order
@@ -268,6 +297,38 @@ public interface ILinearize {
 			|| lop.getDataType() == DataType.SCALAR || lop instanceof MapMultChain
 			|| lop instanceof PickByCount || lop instanceof MMZip || lop instanceof CentralMoment
 			|| lop instanceof CoVariance || lop instanceof MMTSJ || lop.isAllOutputsCP());
+	}
+
+	// Dictionary of Spark operators which are expensive enough to be
+	// benefited from persisting if shared among jobs.
+	private static boolean isPersistableSparkOp(Lop lop) {
+		return lop.isExecSpark() && (lop instanceof MapMult
+			|| lop instanceof MMCJ || lop instanceof MMRJ
+			|| lop instanceof MMZip);
+	}
+
+	private static List<Lop> addChkpointLop(List<Lop> nodes, Map<Long, Integer> operatorJobCount) {
+		List<Lop> nodesWithChkpt = new ArrayList<>();
+
+		for (Lop l : nodes) {
+			nodesWithChkpt.add(l);
+			if(operatorJobCount.containsKey(l.getID()) && operatorJobCount.get(l.getID()) > 1) {
+				//This operation is expensive and shared between Spark jobs
+				List<Lop> oldOuts = new ArrayList<>(l.getOutputs());
+				//Construct a chkpoint lop that takes this Spark node as a input
+				Lop chkpoint = new Checkpoint(l, l.getDataType(), l.getValueType(),
+					Checkpoint.getDefaultStorageLevelString(), false);
+				for (Lop out : oldOuts) {
+					//Rewire l -> out to l -> chkpoint -> out
+					chkpoint.addOutput(out);
+					out.replaceInput(l, chkpoint);
+					l.removeOutput(out);
+				}
+				//Place it immediately after the Spark lop in the node list
+				nodesWithChkpt.add(chkpoint);
+			}
+		}
+		return nodesWithChkpt;
 	}
 
 	private static List<Lop> addPrefetchLop(List<Lop> nodes) {

@@ -39,9 +39,9 @@ public class FrameLibAppend {
 	 * row-wise (same number of columns).
 	 *
 	 * @param a     FrameBlock to append to
-	 * @param that  frame block to append
+	 * @param b     FrameBlock to append
 	 * @param cbind if true, column append
-	 * @return frame block
+	 * @return frame block of the two blocks combined.
 	 */
 	public static FrameBlock append(FrameBlock a, FrameBlock b, boolean cbind) {
 		if(cbind)
@@ -64,7 +64,7 @@ public class FrameLibAppend {
 
 		// check and enforce unique columns names
 		if(!Arrays.stream(_colnames).allMatch(new HashSet<>()::add))
-			_colnames = null; // set to default of null.
+			_colnames = null; // set to default of null to allocate on demand
 
 		return new FrameBlock(_schema, _colnames, _colmeta, _coldata);
 	}

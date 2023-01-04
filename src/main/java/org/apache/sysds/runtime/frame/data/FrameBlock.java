@@ -31,8 +31,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
@@ -1034,56 +1032,6 @@ public class FrameBlock implements CacheBlock<FrameBlock>, Externalizable {
 	 */
 	public FrameBlock append(FrameBlock that, boolean cbind) {
 		return FrameLibAppend.append(this, that, cbind);
-		
-		// FrameBlock ret = new FrameBlock();
-		// if(cbind) // COLUMN APPEND
-		// {
-		// 	// sanity check row dimension mismatch
-		// 	if(getNumRows() != that.getNumRows()) {
-		// 		throw new DMLRuntimeException(
-		// 			"Incompatible number of rows for cbind: " + that.getNumRows() + " (expected: " + getNumRows() + ")");
-		// 	}
-
-		// 	// allocate output frame
-		// 	ret._numRows = _numRows;
-
-		// 	// concatenate schemas (w/ deep copy to prevent side effects)
-		// 	ret._schema = (ValueType[]) ArrayUtils.addAll(_schema, that._schema);
-		// 	ret._colnames = (String[]) ArrayUtils.addAll(getColumnNames(), that.getColumnNames());
-		// 	ret._colmeta = (ColumnMetadata[]) ArrayUtils.addAll(_colmeta, that._colmeta);
-
-		// 	// check and enforce unique columns names
-		// 	if(!Arrays.stream(ret._colnames).allMatch(new HashSet<>()::add))
-		// 		ret._colnames = createColNames(ret.getNumColumns());
-
-		// 	// concatenate column data (w/ shallow copy which is safe due to copy on write semantics)
-		// 	ret._coldata = (Array[]) ArrayUtils.addAll(_coldata, that._coldata);
-		// }
-		// else // ROW APPEND
-		// {
-		// 	// sanity check column dimension mismatch
-		// 	if(getNumColumns() != that.getNumColumns()) {
-		// 		throw new DMLRuntimeException("Incompatible number of columns for rbind: " + that.getNumColumns()
-		// 			+ " (expected: " + getNumColumns() + ")");
-		// 	}
-		// 	ret._numRows = _numRows; // note set to previous since each row is appended on.
-		// 	ret._schema = _schema.clone();
-		// 	ret._colnames = (_colnames != null) ? _colnames.clone() : null;
-		// 	ret._colmeta = new ColumnMetadata[getNumColumns()];
-		// 	for(int j = 0; j < _schema.length; j++)
-		// 		ret._colmeta[j] = new ColumnMetadata();
-
-		// 	// concatenate data (deep copy first, append second)
-		// 	ret._coldata = new Array[getNumColumns()];
-		// 	for(int j = 0; j < getNumColumns(); j++)
-		// 		ret._coldata[j] = _coldata[j].clone();
-		// 	Iterator<Object[]> iter = IteratorFactory.getObjectRowIterator(that, _schema);
-		// 	while(iter.hasNext())
-		// 		ret.appendRow(iter.next());
-		// }
-
-		// ret._msize = -1;
-		// return ret;
 	}
 
 	public FrameBlock copy() {

@@ -34,6 +34,11 @@ import org.apache.sysds.utils.MemoryEstimates;
 public class BooleanArray extends Array<Boolean> {
 	protected boolean[] _data;
 
+	public BooleanArray(int size) {
+		super(size);
+		_data = new boolean[size];
+	}
+
 	public BooleanArray(boolean[] data) {
 		super(data.length);
 		_data = data;
@@ -119,6 +124,23 @@ public class BooleanArray extends Array<Boolean> {
 	}
 
 	@Override
+	public Array<Boolean> append(Array<Boolean> other) {
+		final int endSize = this._size + other.size();
+		if(other instanceof BooleanArray && endSize < ArrayFactory.bitSetSwitchPoint) {
+			final boolean[] ret = new boolean[endSize];
+			System.arraycopy(_data, 0, ret, 0, this._size);
+			System.arraycopy((boolean[]) other.get(), 0, ret, this._size, other.size());
+			return new BooleanArray(ret);
+		}
+		else {
+			final BooleanArray retBS = new BooleanArray(endSize);
+			retBS.set(0, this._size - 1, this, 0);
+			retBS.set(this._size, endSize - 1, other, 0);
+			return retBS;
+		}
+	}
+
+	@Override
 	public void write(DataOutput out) throws IOException {
 		out.writeByte(FrameArrayType.BOOLEAN.ordinal());
 		for(int i = 0; i < _size; i++)
@@ -144,8 +166,11 @@ public class BooleanArray extends Array<Boolean> {
 
 	@Override
 	public void reset(int size) {
-		if(_data.length < size)
+		if(_data.length < size || _data.length > 2 * size)
 			_data = new boolean[size];
+		else
+			for(int i = 0; i < size; i++)
+				_data[i] = false;
 		_size = size;
 	}
 
@@ -249,7 +274,7 @@ public class BooleanArray extends Array<Boolean> {
 	public void fill(Boolean value) {
 		for(int i = 0; i < _size; i++)
 			_data[i] = value;
-		
+
 	}
 
 	@Override
@@ -264,8 +289,8 @@ public class BooleanArray extends Array<Boolean> {
 	}
 
 	@Override
-	public double getAsDouble(int i){
-		return _data[i] ? 1.0: 0.0;
+	public double getAsDouble(int i) {
+		return _data[i] ? 1.0 : 0.0;
 	}
 
 	protected static boolean parseBoolean(String value) {

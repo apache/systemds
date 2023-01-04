@@ -108,6 +108,15 @@ public class LongArray extends Array<Long> {
 	}
 
 	@Override
+	public LongArray append(Array<Long> other) {
+		final int endSize = this._size + other.size();
+		final long[] ret = new long[endSize];
+		System.arraycopy(_data, 0, ret, 0, this._size);
+		System.arraycopy((long[])other.get(), 0, ret, this._size, other.size());
+		return new LongArray(ret);
+	}
+
+	@Override
 	public void write(DataOutput out) throws IOException {
 		out.writeByte(FrameArrayType.INT64.ordinal());
 		for(int i = 0; i < _size; i++)
@@ -133,8 +142,11 @@ public class LongArray extends Array<Long> {
 
 	@Override
 	public void reset(int size) {
-		if(_data.length < size)
+		if(_data.length < size || _data.length > 2 * size)
 			_data = new long[size];
+			else
+			for(int i = 0; i < size; i++)
+				_data[i] = 0;
 		_size = size;
 	}
 

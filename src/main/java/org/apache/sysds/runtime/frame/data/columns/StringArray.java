@@ -107,6 +107,16 @@ public class StringArray extends Array<String> {
 	}
 
 	@Override
+	public StringArray append(Array<String> other) {
+		final int endSize = this._size + other.size();
+		final String[] ret = new String[endSize];
+		System.arraycopy(_data, 0, ret, 0, this._size);
+		System.arraycopy((String[]) other.get(), 0, ret, this._size, other.size());
+		;
+		return new StringArray(ret);
+	}
+
+	@Override
 	public void write(DataOutput out) throws IOException {
 		out.writeByte(FrameArrayType.STRING.ordinal());
 		for(int i = 0; i < _size; i++)
@@ -134,8 +144,11 @@ public class StringArray extends Array<String> {
 
 	@Override
 	public void reset(int size) {
-		if(_data.length < size)
+		if(_data.length < size || _data.length > 2 * size)
 			_data = new String[size];
+		else
+			for(int i = 0; i < size; i++)
+				_data[i] = null;
 		_size = size;
 	}
 
@@ -380,7 +393,7 @@ public class StringArray extends Array<String> {
 	}
 
 	@Override
-	public double getAsDouble(int i){
+	public double getAsDouble(int i) {
 		return Double.parseDouble(_data[i]);
 	}
 

@@ -173,7 +173,7 @@ public abstract class Array<T> implements Writable {
 	 * @param value array of other type
 	 */
 	public final void setFromOtherTypeNz(Array<?> value) {
-		setFromOtherTypeNz(0, value.size(), value);
+		setFromOtherTypeNz(0, value.size()-1, value);
 	}
 
 	/**
@@ -200,6 +200,17 @@ public abstract class Array<T> implements Writable {
 	 * @param value The value to append
 	 */
 	public abstract void append(T value);
+
+	/**
+	 * append other array, if the other array is fitting in current allocated size use that allocated size, otherwise
+	 * allocate new array to combine the other with this.
+	 * 
+	 * This method should use the set range function, and should be preferred over the append single values.
+	 * 
+	 * @param other The other array of same type to append to this.
+	 * @return The combined arrays.
+	 */
+	public abstract Array<T> append(Array<T> other);
 
 	/**
 	 * Slice out the sub range and return new array with the specified type.

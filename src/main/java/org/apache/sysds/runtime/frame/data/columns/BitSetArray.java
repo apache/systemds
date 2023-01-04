@@ -237,6 +237,15 @@ public class BitSetArray extends Array<Boolean> {
 	}
 
 	@Override
+	public BitSetArray append(Array<Boolean> other) {
+		final int endSize = this._size + other.size();
+		final BitSetArray retBS = new BitSetArray(endSize);
+		retBS.set(0, this._size - 1, this, 0);
+		retBS.set(this._size, endSize - 1, other,0);
+		return retBS;
+	}
+
+	@Override
 	public void append(Boolean value) {
 		if(_data.length * 64 < _size + 1)
 			_data = Arrays.copyOf(_data, newSize());
@@ -447,8 +456,8 @@ public class BitSetArray extends Array<Boolean> {
 	}
 
 	@Override
-	public double getAsDouble(int i){
-		return get(i) ? 1.0: 0.0;
+	public double getAsDouble(int i) {
+		return get(i) ? 1.0 : 0.0;
 	}
 
 	public static String longToBits(long l) {

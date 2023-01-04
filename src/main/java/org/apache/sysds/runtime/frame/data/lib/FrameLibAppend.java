@@ -57,17 +57,15 @@ public class FrameLibAppend {
 			throw new DMLRuntimeException(
 				"Incompatible number of rows for cbind: " + b.getNumRows() + " (expected: " + nRow + ")");
 
-		// concatenate schemas (w/ deep copy to prevent side effects)
-		ValueType[] _schema = addAll(a.getSchema(), b.getSchema());
+		final ValueType[] _schema = addAll(a.getSchema(), b.getSchema());
+		final ColumnMetadata[] _colmeta = addAll(a.getColumnMetadata(), b.getColumnMetadata());
+		final Array<?>[] _coldata = addAll(a.getColumns(), b.getColumns());
 		String[] _colnames = addAll(a.getColumnNames(), b.getColumnNames());
-		ColumnMetadata[] _colmeta = addAll(a.getColumnMetadata(), b.getColumnMetadata());
 
 		// check and enforce unique columns names
 		if(!Arrays.stream(_colnames).allMatch(new HashSet<>()::add))
 			_colnames = null; // set to default of null.
 
-		// concatenate column data (w/ shallow copy which is safe due to copy on write semantics)
-		Array<?>[] _coldata = (Array[]) ArrayUtils.addAll(a.getColumns(), b.getColumns());
 		return new FrameBlock(_schema, _colnames, _colmeta, _coldata);
 	}
 
@@ -75,8 +73,8 @@ public class FrameLibAppend {
 		final int nCol = a.getNumColumns();
 		// sanity check column dimension mismatch
 		if(nCol != b.getNumColumns()) {
-			throw new DMLRuntimeException("Incompatible number of columns for rbind: " + b.getNumColumns() + " (expected: "
-				+ nCol + ")");
+			throw new DMLRuntimeException(
+				"Incompatible number of columns for rbind: " + b.getNumColumns() + " (expected: " + nCol + ")");
 		}
 
 		// ret._schema = a.getSchema().clone();
@@ -86,14 +84,14 @@ public class FrameLibAppend {
 			_colmeta[j] = new ColumnMetadata();
 
 		// concatenate data (deep copy first, append second)
-		ret._coldata = new Array[a.getNumColumns()];
+		Array<?>[] _coldata = new Array[a.getNumColumns()];
 		for(int j = 0; j < a.getNumColumns(); j++)
-			ret._coldata[j] = a._coldata[j].clone();
-		Iterator<Object[]> iter = IteratorFactory.getObjectRowIterator(b, a._schema);
+			_coldata[j] = a.getColumn(j).clone();
+		Iterator<Object[]> iter = IteratorFactory.getObjectRowIterator(b, a.getSchema());
+		FrameBlock ret = new FrameBlock(a.getSchema().clone(), _colnames, _colmeta, _coldata);
 		while(iter.hasNext())
 			ret.appendRow(iter.next());
-
-		return new FrameBlock(a.getSchema().clone(), _colnames, _colmeta, _coldata);
+		return ret;
 	}
 
 	@SuppressWarnings("unchecked")

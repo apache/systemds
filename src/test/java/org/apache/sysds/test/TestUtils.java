@@ -63,6 +63,7 @@ import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.io.SequenceFile.Writer;
 import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.data.DenseBlockFP64;
 import org.apache.sysds.runtime.data.SparseBlock;
@@ -600,7 +601,7 @@ public class TestUtils
 
 	public static boolean readDMLBoolean(String filePath) {
 		try {
-			Boolean b = null;
+			boolean b = false;
 			Path outDirectory = new Path(filePath);
 			FileSystem fs = IOUtilFunctions.getFileSystem(outDirectory, conf);
 			String line;
@@ -613,7 +614,7 @@ public class TestUtils
 					}
 				}
 			}
-			return b.booleanValue();
+			return b;
 		} catch (IOException e) {
 			assertTrue("could not read from file " + filePath, false);
 		}
@@ -1584,20 +1585,15 @@ public class TestUtils
 		}
 	}
 
-	/**
-	 *
-	 * @param vt
-	 * @param in1
-	 * @param inR
-	 * @return
-	 */
 	public static int compareToR(ValueType vt, Object in1, Object inR, double tolerance) {
 		if(in1 == null && (inR == null || (inR.toString().compareTo("NA")==0))) return 0;
 		else if(in1 == null && vt == ValueType.STRING) return -1;
 		else if(inR == null) return 1;
-
 		switch( vt ) {
-			case STRING:  return ((String)in1).compareTo((String)inR);
+			case STRING: 
+				if (in1 == null)
+					throw new DMLRuntimeException("Fail");
+			 	return ((String)in1).compareTo((String)inR);
 			case BOOLEAN:
 				if(in1 == null)
 					return Boolean.FALSE.compareTo(((Boolean)inR).booleanValue());

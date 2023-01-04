@@ -26,6 +26,7 @@ import org.apache.sysds.runtime.controlprogram.caching.CacheStatistics;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.lineage.LineageCache;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.utils.stats.SparkStatistics;
 
 import java.util.concurrent.Future;
 
@@ -61,6 +62,7 @@ public class MatrixObjectFuture extends MatrixObject
 		if( DMLScript.STATISTICS ){
 			long t1 = System.nanoTime();
 			CacheStatistics.incrementAcquireRTime(t1-t0);
+			SparkStatistics.incAsyncSparkOpCount(1);
 		}
 		return ret;
 	}
@@ -91,7 +93,14 @@ public class MatrixObjectFuture extends MatrixObject
 	}
 
 	private synchronized void releaseIntern() {
-		_futureData = null;
+		try {
+			if(isCachingActive() && _futureData.get().getInMemorySize() > CACHING_THRESHOLD)
+				_futureData = null;
+				//TODO: write to disk and other cache maintenance
+		}
+		catch(Exception e) {
+			throw new DMLRuntimeException(e);
+		}
 	}
 
 	public synchronized void clearData(long tid) {

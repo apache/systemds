@@ -117,8 +117,80 @@ public class Types
 					throw new DMLRuntimeException("Unknown value type: "+value);
 			}
 		}
+
 		public static boolean isSameTypeString(ValueType vt1, ValueType vt2) {
 			return vt1.toExternalString().equals(vt2.toExternalString());
+		}
+
+		/**
+		 * Get the highest common type that both ValueTypes can be contained in
+		 * 
+		 * @param a First ValueType
+		 * @param b Second ValueType
+		 * @return The common higest type to represent both
+		 */
+		public static ValueType getHighestCommonType(ValueType a, ValueType b){
+			if(a == b)
+				return a;
+			if(b == UNKNOWN)
+				throw new DMLRuntimeException(
+					"Invalid or not implemented support for comparing valueType of: " + a + " and " + b);
+			
+			switch(a){
+				case STRING:
+					return a;
+				case FP64:
+					switch(b){
+						case STRING:
+							return b;
+						default:
+							return a;
+					}
+				case FP32:
+				switch(b){
+					case STRING:
+					case FP64:
+						return b;
+					default:
+						return a;
+				}
+				case INT64:
+				switch(b){
+					case STRING:
+					case FP64:
+					case FP32:
+						return b;
+					default:
+						return a;
+				}
+				case INT32:
+				switch(b){
+					case STRING:
+					case FP64:
+					case FP32:
+					case INT64:
+						return b;
+					default:
+						return a;
+				}
+				case UINT8:
+				switch(b){
+					case STRING:
+					case FP64:
+					case FP32:
+					case INT64:
+					case INT32:
+						return b;
+					default:
+						return a;
+				}
+				case BOOLEAN:
+					return b; // always higher type in b;
+				case UNKNOWN:
+				default:
+					throw new DMLRuntimeException(
+						"Invalid or not implemented support for comparing valueType of: " + a + " and " + b);
+			}
 		}
 	}
 	

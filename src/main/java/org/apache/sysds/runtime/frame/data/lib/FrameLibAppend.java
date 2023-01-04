@@ -21,15 +21,14 @@ package org.apache.sysds.runtime.frame.data.lib;
 
 import java.util.Arrays;
 import java.util.HashSet;
-import java.util.Iterator;
 
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.runtime.frame.data.columns.Array;
+import org.apache.sysds.runtime.frame.data.columns.ArrayFactory;
 import org.apache.sysds.runtime.frame.data.columns.ColumnMetadata;
-import org.apache.sysds.runtime.frame.data.iterators.IteratorFactory;
 
 public class FrameLibAppend {
 
@@ -52,10 +51,14 @@ public class FrameLibAppend {
 
 	public static FrameBlock appendCbind(FrameBlock a, FrameBlock b) {
 		final int nRow = a.getNumRows();
-		// sanity check row dimension mismatch
-		if(nRow != b.getNumRows())
-			throw new DMLRuntimeException(
-				"Incompatible number of rows for cbind: " + b.getNumRows() + " (expected: " + nRow + ")");
+		final int nRowB = b.getNumRows();
+
+		if(nRow != nRowB)
+			throw new DMLRuntimeException("Incompatible number of rows for cbind: " + nRowB + " expected: " + nRow);
+		else if(a.getNumColumns() == 0)
+			return b;
+		else if(b.getNumColumns() == 0)
+			return a;
 
 		final ValueType[] _schema = addAll(a.getSchema(), b.getSchema());
 		final ColumnMetadata[] _colmeta = addAll(a.getColumnMetadata(), b.getColumnMetadata());
@@ -71,27 +74,30 @@ public class FrameLibAppend {
 
 	public static FrameBlock appendRbind(FrameBlock a, FrameBlock b) {
 		final int nCol = a.getNumColumns();
-		// sanity check column dimension mismatch
-		if(nCol != b.getNumColumns()) {
-			throw new DMLRuntimeException(
-				"Incompatible number of columns for rbind: " + b.getNumColumns() + " (expected: " + nCol + ")");
-		}
+		final int nColB = b.getNumColumns();
+
+		if(nCol != nColB)
+			throw new DMLRuntimeException("Incompatible number of columns for rbind: " + nColB + " expected: " + nCol);
+		else if(a.getNumRows() == 0)
+			return b;
+		else if(b.getNumRows() == 0)
+			return a;
 
 		// ret._schema = a.getSchema().clone();
-		String[] _colnames = (a.getColumnNames(false) != null) ? a.getColumnNames().clone() : null;
-		ColumnMetadata[] _colmeta = new ColumnMetadata[a.getNumColumns()];
+		String[] retColNames = (a.getColumnNames(false) != null) ? a.getColumnNames().clone() : null;
+		ColumnMetadata[] retColMeta = new ColumnMetadata[a.getNumColumns()];
 		for(int j = 0; j < nCol; j++)
-			_colmeta[j] = new ColumnMetadata();
+			retColMeta[j] = new ColumnMetadata();
 
 		// concatenate data (deep copy first, append second)
-		Array<?>[] _coldata = new Array[a.getNumColumns()];
-		for(int j = 0; j < a.getNumColumns(); j++)
-			_coldata[j] = a.getColumn(j).clone();
-		Iterator<Object[]> iter = IteratorFactory.getObjectRowIterator(b, a.getSchema());
-		FrameBlock ret = new FrameBlock(a.getSchema().clone(), _colnames, _colmeta, _coldata);
-		while(iter.hasNext())
-			ret.appendRow(iter.next());
-		return ret;
+		Array<?>[] retCols = new Array[a.getNumColumns()];
+		ValueType[] retSchema = new ValueType[a.getNumColumns()];
+		for(int j = 0; j < a.getNumColumns(); j++) {
+			retCols[j] = ArrayFactory.append(a.getColumn(j), b.getColumn(j));
+			retSchema[j] = retCols[j].getValueType();
+		}
+
+		return new FrameBlock(retSchema, retColNames, retColMeta, retCols);
 	}
 
 	@SuppressWarnings("unchecked")

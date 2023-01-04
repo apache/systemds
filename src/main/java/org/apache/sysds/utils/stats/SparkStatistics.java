@@ -34,6 +34,7 @@ public class SparkStatistics {
 	private static final LongAdder asyncPrefetchCount = new LongAdder();
 	private static final LongAdder asyncBroadcastCount = new LongAdder();
 	private static final LongAdder asyncTriggerCheckpointCount = new LongAdder();
+	private static final LongAdder asyncSparkOpCount = new LongAdder();
 
 	public static boolean createdSparkContext() {
 		return ctxCreateTime > 0;
@@ -80,12 +81,20 @@ public class SparkStatistics {
 		asyncTriggerCheckpointCount.add(c);
 	}
 
+	public static void incAsyncSparkOpCount(long c) {
+		asyncSparkOpCount.add(c);
+	}
+
 	public static long getSparkCollectCount() {
 		return collectCount.longValue();
 	}
 
 	public static long getAsyncPrefetchCount() {
 		return asyncPrefetchCount.longValue();
+	}
+
+	public static long getAsyncSparkOpCount() {
+		return asyncSparkOpCount.longValue();
 	}
 
 	public static long getAsyncBroadcastCount() {
@@ -122,8 +131,8 @@ public class SparkStatistics {
 						parallelizeTime.longValue()*1e-9,
 						broadcastTime.longValue()*1e-9,
 						collectTime.longValue()*1e-9));
-		sb.append("Spark async. count (pf,bc,cp): \t" +
-				String.format("%d/%d/%d.\n", getAsyncPrefetchCount(), getAsyncBroadcastCount(), getasyncTriggerCheckpointCount()));
+		sb.append("Spark async. count (pf,bc,op): \t" +
+				String.format("%d/%d/%d.\n", getAsyncPrefetchCount(), getAsyncBroadcastCount(), getAsyncSparkOpCount()));
 		return sb.toString();
 	}
 }

@@ -17,28 +17,30 @@
  * under the License.
  */
 
-package org.apache.sysds.test.functions.async;
+	package org.apache.sysds.test.functions.async;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
+	import java.util.ArrayList;
+	import java.util.HashMap;
+	import java.util.List;
 
-import org.apache.sysds.common.Types.ExecMode;
-import org.apache.sysds.hops.OptimizerUtils;
-import org.apache.sysds.hops.recompile.Recompiler;
-import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
-import org.apache.sysds.runtime.matrix.data.MatrixValue;
-import org.apache.sysds.test.AutomatedTestBase;
-import org.apache.sysds.test.TestConfiguration;
-import org.apache.sysds.test.TestUtils;
-import org.junit.Test;
+	import org.apache.sysds.common.Types;
+	import org.apache.sysds.hops.OptimizerUtils;
+	import org.apache.sysds.hops.recompile.Recompiler;
+	import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
+	import org.apache.sysds.runtime.matrix.data.MatrixValue;
+	import org.apache.sysds.test.AutomatedTestBase;
+	import org.apache.sysds.test.TestConfiguration;
+	import org.apache.sysds.test.TestUtils;
+	import org.apache.sysds.utils.Statistics;
+	import org.junit.Assert;
+	import org.junit.Test;
 
-public class MaxParallelizeOrderTest extends AutomatedTestBase {
+public class CheckpointSharedOpsTest extends AutomatedTestBase {
 
 	protected static final String TEST_DIR = "functions/async/";
-	protected static final String TEST_NAME = "MaxParallelizeOrder";
-	protected static final int TEST_VARIANTS = 4;
-	protected static String TEST_CLASS_DIR = TEST_DIR + MaxParallelizeOrderTest.class.getSimpleName() + "/";
+	protected static final String TEST_NAME = "CheckpointSharedOps";
+	protected static final int TEST_VARIANTS = 2;
+	protected static String TEST_CLASS_DIR = TEST_DIR + CheckpointSharedOpsTest.class.getSimpleName() + "/";
 
 	@Override
 	public void setUp() {
@@ -48,27 +50,13 @@ public class MaxParallelizeOrderTest extends AutomatedTestBase {
 	}
 
 	@Test
-	public void testlmds() {
+	public void test1() {
+		// Shared cpmm/rmm between two jobs
 		runTest(TEST_NAME+"1");
 	}
 
-	@Test
-	public void testl2svm() {
-		runTest(TEST_NAME+"2");
-	}
-
-	@Test
-	public void testSparkAction() {
-		runTest(TEST_NAME+"3");
-	}
-
-	@Test
-	public void testSparkTransformations() {
-		runTest(TEST_NAME+"4");
-	}
-
 	public void runTest(String testname) {
-		ExecMode oldPlatform = setExecMode(ExecMode.HYBRID);
+		Types.ExecMode oldPlatform = setExecMode(Types.ExecMode.HYBRID);
 
 		long oldmem = InfrastructureAnalyzer.getLocalMaxMemory();
 		long mem = 1024*1024*8;
@@ -89,21 +77,19 @@ public class MaxParallelizeOrderTest extends AutomatedTestBase {
 
 			runTest(true, EXCEPTION_NOT_EXPECTED, null, -1);
 			HashMap<MatrixValue.CellIndex, Double> R = readDMLScalarFromOutputDir("R");
+			long numCP = Statistics.getCPHeavyHitterCount("sp_chkpoint");
 
-			OptimizerUtils.ASYNC_PREFETCH_SPARK = true;
 			OptimizerUtils.MAX_PARALLELIZE_ORDER = true;
-			if (testname.equalsIgnoreCase(TEST_NAME+"4"))
-				OptimizerUtils.ALLOW_TRANSITIVE_SPARK_EXEC_TYPE = false;
 			runTest(true, EXCEPTION_NOT_EXPECTED, null, -1);
 			HashMap<MatrixValue.CellIndex, Double> R_mp = readDMLScalarFromOutputDir("R");
-			OptimizerUtils.ASYNC_PREFETCH_SPARK = false;
+			long numCP_maxp = Statistics.getCPHeavyHitterCount("sp_chkpoint");
 			OptimizerUtils.MAX_PARALLELIZE_ORDER = false;
-			OptimizerUtils.ALLOW_TRANSITIVE_SPARK_EXEC_TYPE = true;
 
 			//compare matrices
 			boolean matchVal = TestUtils.compareMatrices(R, R_mp, 1e-6, "Origin", "withPrefetch");
 			if (!matchVal)
 				System.out.println("Value w/o Prefetch "+R+" w/ Prefetch "+R_mp);
+			Assert.assertTrue("Violated checkpoint count: " + numCP + " < " + numCP_maxp, numCP < numCP_maxp);
 		} finally {
 			resetExecMode(oldPlatform);
 			InfrastructureAnalyzer.setLocalMaxMemory(oldmem);

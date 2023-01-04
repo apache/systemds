@@ -57,8 +57,10 @@ import org.apache.sysds.runtime.frame.data.columns.ArrayFactory;
 import org.apache.sysds.runtime.frame.data.columns.ColumnMetadata;
 import org.apache.sysds.runtime.frame.data.iterators.IteratorFactory;
 import org.apache.sysds.runtime.frame.data.lib.FrameFromMatrixBlock;
+import org.apache.sysds.runtime.frame.data.lib.FrameLibAppend;
 import org.apache.sysds.runtime.frame.data.lib.FrameLibApplySchema;
 import org.apache.sysds.runtime.frame.data.lib.FrameLibDetectSchema;
+import org.apache.sysds.runtime.frame.data.lib.FrameUtil;
 import org.apache.sysds.runtime.functionobjects.ValueComparisonFunction;
 import org.apache.sysds.runtime.instructions.cp.BooleanObject;
 import org.apache.sysds.runtime.instructions.cp.DoubleObject;
@@ -1031,55 +1033,57 @@ public class FrameBlock implements CacheBlock<FrameBlock>, Externalizable {
 	 * @return frame block
 	 */
 	public FrameBlock append(FrameBlock that, boolean cbind) {
-		FrameBlock ret = new FrameBlock();
-		if(cbind) // COLUMN APPEND
-		{
-			// sanity check row dimension mismatch
-			if(getNumRows() != that.getNumRows()) {
-				throw new DMLRuntimeException(
-					"Incompatible number of rows for cbind: " + that.getNumRows() + " (expected: " + getNumRows() + ")");
-			}
+		return FrameLibAppend.append(this, that, cbind);
+		
+		// FrameBlock ret = new FrameBlock();
+		// if(cbind) // COLUMN APPEND
+		// {
+		// 	// sanity check row dimension mismatch
+		// 	if(getNumRows() != that.getNumRows()) {
+		// 		throw new DMLRuntimeException(
+		// 			"Incompatible number of rows for cbind: " + that.getNumRows() + " (expected: " + getNumRows() + ")");
+		// 	}
 
-			// allocate output frame
-			ret._numRows = _numRows;
+		// 	// allocate output frame
+		// 	ret._numRows = _numRows;
 
-			// concatenate schemas (w/ deep copy to prevent side effects)
-			ret._schema = (ValueType[]) ArrayUtils.addAll(_schema, that._schema);
-			ret._colnames = (String[]) ArrayUtils.addAll(getColumnNames(), that.getColumnNames());
-			ret._colmeta = (ColumnMetadata[]) ArrayUtils.addAll(_colmeta, that._colmeta);
+		// 	// concatenate schemas (w/ deep copy to prevent side effects)
+		// 	ret._schema = (ValueType[]) ArrayUtils.addAll(_schema, that._schema);
+		// 	ret._colnames = (String[]) ArrayUtils.addAll(getColumnNames(), that.getColumnNames());
+		// 	ret._colmeta = (ColumnMetadata[]) ArrayUtils.addAll(_colmeta, that._colmeta);
 
-			// check and enforce unique columns names
-			if(!Arrays.stream(ret._colnames).allMatch(new HashSet<>()::add))
-				ret._colnames = createColNames(ret.getNumColumns());
+		// 	// check and enforce unique columns names
+		// 	if(!Arrays.stream(ret._colnames).allMatch(new HashSet<>()::add))
+		// 		ret._colnames = createColNames(ret.getNumColumns());
 
-			// concatenate column data (w/ shallow copy which is safe due to copy on write semantics)
-			ret._coldata = (Array[]) ArrayUtils.addAll(_coldata, that._coldata);
-		}
-		else // ROW APPEND
-		{
-			// sanity check column dimension mismatch
-			if(getNumColumns() != that.getNumColumns()) {
-				throw new DMLRuntimeException("Incompatible number of columns for rbind: " + that.getNumColumns()
-					+ " (expected: " + getNumColumns() + ")");
-			}
-			ret._numRows = _numRows; // note set to previous since each row is appended on.
-			ret._schema = _schema.clone();
-			ret._colnames = (_colnames != null) ? _colnames.clone() : null;
-			ret._colmeta = new ColumnMetadata[getNumColumns()];
-			for(int j = 0; j < _schema.length; j++)
-				ret._colmeta[j] = new ColumnMetadata();
+		// 	// concatenate column data (w/ shallow copy which is safe due to copy on write semantics)
+		// 	ret._coldata = (Array[]) ArrayUtils.addAll(_coldata, that._coldata);
+		// }
+		// else // ROW APPEND
+		// {
+		// 	// sanity check column dimension mismatch
+		// 	if(getNumColumns() != that.getNumColumns()) {
+		// 		throw new DMLRuntimeException("Incompatible number of columns for rbind: " + that.getNumColumns()
+		// 			+ " (expected: " + getNumColumns() + ")");
+		// 	}
+		// 	ret._numRows = _numRows; // note set to previous since each row is appended on.
+		// 	ret._schema = _schema.clone();
+		// 	ret._colnames = (_colnames != null) ? _colnames.clone() : null;
+		// 	ret._colmeta = new ColumnMetadata[getNumColumns()];
+		// 	for(int j = 0; j < _schema.length; j++)
+		// 		ret._colmeta[j] = new ColumnMetadata();
 
-			// concatenate data (deep copy first, append second)
-			ret._coldata = new Array[getNumColumns()];
-			for(int j = 0; j < getNumColumns(); j++)
-				ret._coldata[j] = _coldata[j].clone();
-			Iterator<Object[]> iter = IteratorFactory.getObjectRowIterator(that, _schema);
-			while(iter.hasNext())
-				ret.appendRow(iter.next());
-		}
+		// 	// concatenate data (deep copy first, append second)
+		// 	ret._coldata = new Array[getNumColumns()];
+		// 	for(int j = 0; j < getNumColumns(); j++)
+		// 		ret._coldata[j] = _coldata[j].clone();
+		// 	Iterator<Object[]> iter = IteratorFactory.getObjectRowIterator(that, _schema);
+		// 	while(iter.hasNext())
+		// 		ret.appendRow(iter.next());
+		// }
 
-		ret._msize = -1;
-		return ret;
+		// ret._msize = -1;
+		// return ret;
 	}
 
 	public FrameBlock copy() {
@@ -1133,9 +1137,6 @@ public class FrameBlock implements CacheBlock<FrameBlock>, Externalizable {
 			}
 		}
 	}
-
-	///////
-	// transform specific functionality
 
 	/**
 	 * This function will split every Recode map in the column using delimiter Lop.DATATYPE_PREFIX, as Recode map
@@ -1346,37 +1347,6 @@ public class FrameBlock implements CacheBlock<FrameBlock>, Externalizable {
 		}
 
 		return outBlock;
-	}
-
-	public static FrameBlock mergeSchema(FrameBlock temp1, FrameBlock temp2) {
-		String[] rowTemp1 = IteratorFactory.getStringRowIterator(temp1).next();
-		String[] rowTemp2 = IteratorFactory.getStringRowIterator(temp2).next();
-
-		if(rowTemp1.length != rowTemp2.length)
-			throw new DMLRuntimeException("Schema dimension " + "mismatch: " + rowTemp1.length + " vs " + rowTemp2.length);
-
-		for(int i = 0; i < rowTemp1.length; i++) {
-			// modify schema1 if necessary (different schema2)
-			if(!rowTemp1[i].equals(rowTemp2[i])) {
-				if(rowTemp1[i].equals("STRING") || rowTemp2[i].equals("STRING"))
-					rowTemp1[i] = "STRING";
-				else if(rowTemp1[i].equals("FP64") || rowTemp2[i].equals("FP64"))
-					rowTemp1[i] = "FP64";
-				else if(rowTemp1[i].equals("FP32") &&
-					new ArrayList<>(Arrays.asList("INT64", "INT32", "CHARACTER")).contains(rowTemp2[i]))
-					rowTemp1[i] = "FP32";
-				else if(rowTemp1[i].equals("INT64") &&
-					new ArrayList<>(Arrays.asList("INT32", "CHARACTER")).contains(rowTemp2[i]))
-					rowTemp1[i] = "INT64";
-				else if(rowTemp1[i].equals("INT32") || rowTemp2[i].equals("CHARACTER"))
-					rowTemp1[i] = "INT32";
-			}
-		}
-
-		// create output block one row representing the schema as strings
-		FrameBlock mergedFrame = new FrameBlock(UtilFunctions.nCopies(temp1.getNumColumns(), ValueType.STRING));
-		mergedFrame.appendRow(rowTemp1);
-		return mergedFrame;
 	}
 
 	public void mapInplace(Function<String, String> fun) {

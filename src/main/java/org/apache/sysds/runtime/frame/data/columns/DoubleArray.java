@@ -29,8 +29,8 @@ import java.util.BitSet;
 
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
-import org.apache.sysds.runtime.frame.data.FrameUtil;
 import org.apache.sysds.runtime.frame.data.columns.ArrayFactory.FrameArrayType;
+import org.apache.sysds.runtime.frame.data.lib.FrameUtil;
 import org.apache.sysds.runtime.util.UtilFunctions;
 import org.apache.sysds.utils.MemoryEstimates;
 

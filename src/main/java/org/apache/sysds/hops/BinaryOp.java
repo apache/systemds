@@ -453,7 +453,7 @@ public class BinaryOp extends MultiThreadedHop {
 					getInput().get(0) == getInput().get(1).getInput().get(0);
 			if(isGPUSoftmax) {
 				UnaryCP softmax = new UnaryCP(getInput().get(0).getInput().get(0).constructLops(),
-					OpOp1.SOFTMAX, getDataType(), getValueType(), et, OptimizerUtils.getConstrainedNumThreads(_maxNumThreads));
+					OpOp1.SOFTMAX, getDataType(), getValueType(), et);
 				setOutputDimensions(softmax);
 				setLineNumbers(softmax);
 				setLops(softmax);

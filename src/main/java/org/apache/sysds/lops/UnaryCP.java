@@ -26,10 +26,9 @@ import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.OpOp1;
 import org.apache.sysds.common.Types.ValueType;
 
-public class UnaryCP extends Lop 
-{
-	private OpOp1 operation;
-	private int _numThreads = 1;
+public class UnaryCP extends Lop {
+	private final OpOp1 operation;
+	private final int _numThreads;
 
 	/**
 	 * Constructor to perform a scalar operation
@@ -47,6 +46,7 @@ public class UnaryCP extends Lop
 		addInput(input);
 		input.addOutput(this);
 		lps.setProperties(inputs, et);
+		_numThreads = k;
 	}
 
 	public UnaryCP(Lop input, OpOp1 op, DataType dt, ValueType vt, ExecType et) {

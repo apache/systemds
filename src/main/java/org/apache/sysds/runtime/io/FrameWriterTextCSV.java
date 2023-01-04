@@ -24,8 +24,6 @@ import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.util.Iterator;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapred.JobConf;
@@ -40,9 +38,8 @@ import org.apache.sysds.runtime.util.HDFSTool;
  * Single-threaded frame text csv writer.
  * 
  */
-public class FrameWriterTextCSV extends FrameWriter{
-	protected static final Log LOG = LogFactory.getLog(FrameWriterTextCSV.class.getName());
-
+public class FrameWriterTextCSV extends FrameWriter
+{
 	//blocksize for string concatenation in order to prevent write OOM 
 	//(can be set to very large value to disable blocking)
 	public static final int BLOCKSIZE_J = 32; //32 cells (typically ~512B, should be less than write buffer of 1KB)

@@ -156,27 +156,23 @@ public class Unary extends Lop
 		
 		// Unary operators with one input
 		StringBuilder sb = new StringBuilder();
-		sb.append( getExecType() );
-		sb.append( Lop.OPERAND_DELIMITOR );
-		sb.append( getOpcode() );
-		sb.append( OPERAND_DELIMITOR );
-		sb.append( getInputs().get(0).prepInputOperand(input1) );
-		sb.append( OPERAND_DELIMITOR );
-		sb.append( prepOutputOperand(output) );
-		
-		if( getExecType() == ExecType.CP || getExecType() == ExecType.FED){
-			sb.append( OPERAND_DELIMITOR );
-			sb.append( _numThreads );
-			if( isMultiThreadedOp(operation)){
+		sb.append(getExecType());
+		sb.append(Lop.OPERAND_DELIMITOR);
+		sb.append(getOpcode());
+		sb.append(OPERAND_DELIMITOR);
+		sb.append(getInputs().get(0).prepInputOperand(input1));
+		sb.append(OPERAND_DELIMITOR);
+		sb.append(prepOutputOperand(output));
 
-				sb.append( OPERAND_DELIMITOR );
-				sb.append( _inplace );
+		if(getExecType() == ExecType.CP || getExecType() == ExecType.FED) {
+			sb.append(OPERAND_DELIMITOR);
+			sb.append(_numThreads);
+			if(isMultiThreadedOp(operation)) {
+
+				sb.append(OPERAND_DELIMITOR);
+				sb.append(_inplace);
 			}
 		}
-
-		// //num threads for cumulative cp ops
-		// if( (getExecType() == ExecType.CP || getExecType() == ExecType.FED) && isMultiThreadedOp(operation) ) {
-		// }
 
 		appendFedOut(sb);
 		

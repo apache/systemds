@@ -109,6 +109,15 @@ public class IntegerArray extends Array<Integer> {
 	}
 
 	@Override
+	public IntegerArray append(Array<Integer> other) {
+		final int endSize = this._size + other.size();
+		final int[] ret = new int[endSize];
+		System.arraycopy(_data, 0, ret, 0, this._size);
+		System.arraycopy(_data, 0, ret, this._size, other.size());
+		return new IntegerArray(ret);
+	}
+
+	@Override
 	public void write(DataOutput out) throws IOException {
 		out.writeByte(FrameArrayType.INT32.ordinal());
 		for(int i = 0; i < _size; i++)

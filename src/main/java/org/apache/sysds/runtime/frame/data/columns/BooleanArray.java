@@ -119,6 +119,15 @@ public class BooleanArray extends Array<Boolean> {
 	}
 
 	@Override
+	public BooleanArray append(Array<Boolean> other) {
+		final int endSize = this._size + other.size();
+		final boolean[] ret = new boolean[endSize];
+		System.arraycopy(_data, 0, ret, 0, this._size);
+		System.arraycopy(_data, 0, ret, this._size, other.size());
+		return new BooleanArray(ret);
+	}
+
+	@Override
 	public void write(DataOutput out) throws IOException {
 		out.writeByte(FrameArrayType.BOOLEAN.ordinal());
 		for(int i = 0; i < _size; i++)
@@ -249,7 +258,7 @@ public class BooleanArray extends Array<Boolean> {
 	public void fill(Boolean value) {
 		for(int i = 0; i < _size; i++)
 			_data[i] = value;
-		
+
 	}
 
 	@Override
@@ -264,8 +273,8 @@ public class BooleanArray extends Array<Boolean> {
 	}
 
 	@Override
-	public double getAsDouble(int i){
-		return _data[i] ? 1.0: 0.0;
+	public double getAsDouble(int i) {
+		return _data[i] ? 1.0 : 0.0;
 	}
 
 	protected static boolean parseBoolean(String value) {

@@ -64,7 +64,7 @@ public class FrameAppendTest {
 
 	@Test
 	public void appendSelfRBind() {
-		FrameBlock ff = f.append(f, false);
+		FrameBlock ff = append(f, f, false);
 		final int nRow = f.getNumRows();
 		for(int r = 0; r < ff.getNumRows(); r++)
 			for(int c = 0; c < ff.getNumColumns(); c++)
@@ -73,7 +73,7 @@ public class FrameAppendTest {
 
 	@Test
 	public void appendSelfCBind() {
-		FrameBlock ff = f.append(f, true);
+		FrameBlock ff = append(f, f, true);
 		final int nCol = f.getNumColumns();
 		for(int r = 0; r < ff.getNumRows(); r++)
 			for(int c = 0; c < ff.getNumColumns(); c++)
@@ -84,4 +84,15 @@ public class FrameAppendTest {
 
 	// append null block.
 
+	private static FrameBlock append(FrameBlock a, FrameBlock b, boolean cBind) {
+		try {
+			return a.append(b, cBind);
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			;
+			fail(e.getMessage());
+		}
+		return null;
+	}
 }

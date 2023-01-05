@@ -88,10 +88,10 @@ public interface ArrayFactory {
 		}
 	}
 
-	public static Array<?> allocate(ValueType v, int nRow, String val){
+	public static Array<?> allocate(ValueType v, int nRow, String val) {
 		Array<?> a = allocate(v, nRow);
 		a.fill(val);
-		return a; 
+		return a;
 	}
 
 	public static Array<?> allocate(ValueType v, int nRow) {
@@ -146,4 +146,27 @@ public interface ArrayFactory {
 		arr.readFields(in);
 		return arr;
 	}
+
+	/**
+	 * append arrays to each other, and cast to highest common type if different types.
+	 * 
+	 * @param <C> The type to return, java automatically make this Object, and this is fine.
+	 * @param a   The first array to append to (potentially modifying this a if applicable)
+	 * @param b   THe array to append to a, (not getting modified).
+	 * @return A array containing the concatenation of the two.
+	 */
+	@SuppressWarnings("unchecked")
+	public static <C> Array<C> append(Array<?> a, Array<?> b) {
+
+		// get common highest datatype.
+		final ValueType ta = a.getValueType();
+		final ValueType tb = b.getValueType();
+		final ValueType tc = ValueType.getHighestCommonType(ta, tb);
+
+		Array<C> ac = (Array<C>) (ta != tc ? a.changeType(tc) : a);
+		Array<C> bc = (Array<C>) (tb != tc ? b.changeType(tc) : b);
+
+		return ac.append(bc);
+	}
+
 }

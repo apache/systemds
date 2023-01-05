@@ -108,6 +108,15 @@ public class FloatArray extends Array<Float> {
 	}
 
 	@Override
+	public FloatArray append(Array<Float> other) {
+		final int endSize = this._size + other.size();
+		final float[] ret = new float[endSize];
+		System.arraycopy(_data, 0, ret, 0, this._size);
+		System.arraycopy(_data, 0, ret, this._size, other.size());
+		return new FloatArray(ret);
+	}
+
+	@Override
 	public void write(DataOutput out) throws IOException {
 		out.writeByte(FrameArrayType.FP32.ordinal());
 		for(int i = 0; i < _size; i++)

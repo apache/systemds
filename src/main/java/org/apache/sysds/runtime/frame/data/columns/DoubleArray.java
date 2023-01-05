@@ -109,6 +109,15 @@ public class DoubleArray extends Array<Double> {
 	}
 
 	@Override
+	public DoubleArray append(Array<Double> other) {
+		final int endSize = this._size + other.size();
+		final double[] ret = new double[endSize];
+		System.arraycopy(_data, 0, ret, 0, this._size);
+		System.arraycopy(_data, 0, ret, this._size, other.size());
+		return new DoubleArray(ret);
+	}
+
+	@Override
 	public void write(DataOutput out) throws IOException {
 		out.writeByte(FrameArrayType.FP64.ordinal());
 		for(int i = 0; i < _size; i++)

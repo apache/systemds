@@ -113,7 +113,7 @@ public class IntegerArray extends Array<Integer> {
 		final int endSize = this._size + other.size();
 		final int[] ret = new int[endSize];
 		System.arraycopy(_data, 0, ret, 0, this._size);
-		System.arraycopy(_data, 0, ret, this._size, other.size());
+		System.arraycopy((int[])other.get(), 0, ret, this._size, other.size());
 		return new IntegerArray(ret);
 	}
 

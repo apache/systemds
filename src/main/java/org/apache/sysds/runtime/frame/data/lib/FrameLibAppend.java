@@ -52,9 +52,13 @@ public class FrameLibAppend {
 	public static FrameBlock appendCbind(FrameBlock a, FrameBlock b) {
 		final int nRow = a.getNumRows();
 		final int nRowB = b.getNumRows();
-		// sanity check row dimension mismatch
+
 		if(nRow != nRowB)
 			throw new DMLRuntimeException("Incompatible number of rows for cbind: " + nRowB + " expected: " + nRow);
+		else if(a.getNumColumns() == 0)
+			return b;
+		else if(b.getNumColumns() == 0)
+			return a;
 
 		final ValueType[] _schema = addAll(a.getSchema(), b.getSchema());
 		final ColumnMetadata[] _colmeta = addAll(a.getColumnMetadata(), b.getColumnMetadata());
@@ -71,9 +75,13 @@ public class FrameLibAppend {
 	public static FrameBlock appendRbind(FrameBlock a, FrameBlock b) {
 		final int nCol = a.getNumColumns();
 		final int nColB = b.getNumColumns();
-		// sanity check column dimension mismatch
+
 		if(nCol != nColB)
 			throw new DMLRuntimeException("Incompatible number of columns for rbind: " + nColB + " expected: " + nCol);
+		else if(a.getNumRows() == 0)
+			return b;
+		else if(b.getNumRows() == 0)
+			return a;
 
 		// ret._schema = a.getSchema().clone();
 		String[] retColNames = (a.getColumnNames(false) != null) ? a.getColumnNames().clone() : null;

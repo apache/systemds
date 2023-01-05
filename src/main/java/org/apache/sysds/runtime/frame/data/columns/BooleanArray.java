@@ -34,6 +34,11 @@ import org.apache.sysds.utils.MemoryEstimates;
 public class BooleanArray extends Array<Boolean> {
 	protected boolean[] _data;
 
+	public BooleanArray(int size) {
+		super(size);
+		_data = new boolean[size];
+	}
+
 	public BooleanArray(boolean[] data) {
 		super(data.length);
 		_data = data;
@@ -119,12 +124,26 @@ public class BooleanArray extends Array<Boolean> {
 	}
 
 	@Override
-	public BooleanArray append(Array<Boolean> other) {
+	public Array<Boolean> append(Array<Boolean> other) {
 		final int endSize = this._size + other.size();
-		final boolean[] ret = new boolean[endSize];
-		System.arraycopy(_data, 0, ret, 0, this._size);
-		System.arraycopy(_data, 0, ret, this._size, other.size());
-		return new BooleanArray(ret);
+		if(endSize > ArrayFactory.bitSetSwitchPoint) {
+			final BitSetArray retBS = new BitSetArray(endSize);
+			retBS.set(0, this._size - 1, this, 0);
+			retBS.set(this._size, endSize - 1, other, 0);
+			return retBS;
+		}
+		else if(other instanceof BooleanArray) {
+			final boolean[] ret = new boolean[endSize];
+			System.arraycopy(_data, 0, ret, 0, this._size);
+			System.arraycopy((boolean[]) other.get(), 0, ret, this._size, other.size());
+			return new BooleanArray(ret);
+		}
+		else {
+			final BooleanArray retBS = new BooleanArray(endSize);
+			retBS.set(0, this._size - 1, this, 0);
+			retBS.set(this._size, endSize - 1, other, 0);
+			return retBS;
+		}
 	}
 
 	@Override

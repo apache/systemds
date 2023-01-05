@@ -113,7 +113,7 @@ public class DoubleArray extends Array<Double> {
 		final int endSize = this._size + other.size();
 		final double[] ret = new double[endSize];
 		System.arraycopy(_data, 0, ret, 0, this._size);
-		System.arraycopy(_data, 0, ret, this._size, other.size());
+		System.arraycopy((double[])other.get(), 0, ret, this._size, other.size());
 		return new DoubleArray(ret);
 	}
 

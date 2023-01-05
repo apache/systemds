@@ -112,7 +112,7 @@ public class LongArray extends Array<Long> {
 		final int endSize = this._size + other.size();
 		final long[] ret = new long[endSize];
 		System.arraycopy(_data, 0, ret, 0, this._size);
-		System.arraycopy(_data, 0, ret, this._size, other.size());
+		System.arraycopy((long[])other.get(), 0, ret, this._size, other.size());
 		return new LongArray(ret);
 	}
 

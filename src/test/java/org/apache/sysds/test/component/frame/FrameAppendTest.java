@@ -20,12 +20,16 @@
 package org.apache.sysds.test.component.frame;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.util.ArrayList;
 import java.util.Collection;
 
+import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
+import org.apache.sysds.runtime.util.UtilFunctions;
 import org.apache.sysds.test.TestUtils;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -80,6 +84,90 @@ public class FrameAppendTest {
 				assertEquals(ff.get(r, c).toString(), f.get(r, c % nCol).toString());
 	}
 
+	@Test
+	public void rBindEmptySameScheme() {
+		ValueType[] s = f.getSchema();
+		FrameBlock b = new FrameBlock(s);
+		FrameBlock ff = append(b, f, false);
+		TestUtils.compareFrames(f, ff, true);
+	}
+
+	@Test
+	public void rBindEmpty() {
+		FrameBlock b = new FrameBlock(f.getNumColumns(), ValueType.STRING);
+		FrameBlock ff = append(b, f, false);
+		TestUtils.compareFrames(f, ff, true);
+	}
+
+	@Test
+	public void rBindEmptyAfter() {
+		FrameBlock b = new FrameBlock(f.getNumColumns(), ValueType.STRING);
+		FrameBlock ff = append(f, b, false);
+		TestUtils.compareFrames(f, ff, true);
+	}
+
+	@Test
+	public void rBindEmptyAfterSameScheme() {
+		ValueType[] s = f.getSchema();
+		FrameBlock b = new FrameBlock(s);
+		FrameBlock ff = append(f, b, false);
+		TestUtils.compareFrames(f, ff, true);
+	}
+
+	@Test(expected = DMLRuntimeException.class)
+	public void cBindEmpty() {
+		// must have same number of rows.
+		FrameBlock b = new FrameBlock();
+		b.append(f, true);
+	}
+
+	@Test(expected = DMLRuntimeException.class)
+	public void cBindEmptyAfter() {
+		// must have same number of rows.
+		FrameBlock b = new FrameBlock();
+		f.append(b, true);
+	}
+
+	@Test
+	public void cBindStringColAfter() {
+		// must have same number of rows.
+		FrameBlock b = new FrameBlock(new ValueType[] {ValueType.STRING}, "Hi", f.getNumRows());
+		FrameBlock ff = append(f, b, true);
+		for(int r = 0; r < f.getNumRows(); r++) {
+			for(int c = 0; c < f.getNumColumns(); c++)
+				assertEquals(ff.get(r, c).toString(), f.get(r, c).toString());
+			assertEquals(ff.get(r, f.getNumColumns()).toString(), "Hi");
+		}
+	}
+
+	@Test
+	public void cBindStringCol() {
+		// must have same number of rows.
+		FrameBlock b = new FrameBlock(new ValueType[] {ValueType.STRING}, "Hi", f.getNumRows());
+		FrameBlock ff = append(b, f, true);
+		for(int r = 0; r < f.getNumRows(); r++) {
+			assertEquals(ff.get(r, 0), "Hi");
+			for(int c = 0; c < f.getNumColumns(); c++)
+				assertEquals(ff.get(r, c + 1).toString(), f.get(r, c).toString());
+		}
+	}
+
+	@Test
+	public void rBindZeros() {
+		ValueType[] bools = UtilFunctions.nCopies(f.getNumColumns(), ValueType.BOOLEAN);
+		FrameBlock b = new FrameBlock(bools, "0", 10);
+		FrameBlock ff = append(b, f, false);
+		for(int r = 0; r < 10; r++)
+			for(int c = 0; c < f.getNumColumns(); c++) {
+				String v = ff.get(r, c).toString();
+				assertTrue(v, v.equals("0") || v.equals("0.0") || v.equals("false"));
+			}
+		for(int r = 0; r < f.getNumRows(); r++) {
+			for(int c = 0; c < f.getNumColumns(); c++)
+				assertEquals(ff.get(r + 10, c).toString(), f.get(r, c).toString());
+		}
+	}
+
 	// append other type
 
 	// append null block.
@@ -90,7 +178,6 @@ public class FrameAppendTest {
 		}
 		catch(Exception e) {
 			e.printStackTrace();
-			;
 			fail(e.getMessage());
 		}
 		return null;

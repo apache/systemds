@@ -112,7 +112,8 @@ public class FloatArray extends Array<Float> {
 		final int endSize = this._size + other.size();
 		final float[] ret = new float[endSize];
 		System.arraycopy(_data, 0, ret, 0, this._size);
-		System.arraycopy(_data, 0, ret, this._size, other.size());
+
+		System.arraycopy((float[])other.get(), 0, ret, this._size, other.size());
 		return new FloatArray(ret);
 	}
 

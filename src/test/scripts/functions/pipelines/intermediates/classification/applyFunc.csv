@@ -1,3 +1,3 @@
-forward_fill,winsorizeApply,imputeByMedianApply,NA,dummycodingApply,0,0,0,0,0,0,0,0,0,0,0,0,0
-forward_fill,winsorizeApply,imputeByMedianApply,NA,dummycodingApply,0,0,0,0,0,0,0,0,0,0,0,0,0
-forward_fill,winsorizeApply,imputeByMedianApply,NA,winsorizeApply,forward_fill,imputeByMeanApply,dummycodingApply,0,0,0,0,0,0,0,0,0,0
+outlierBySdApply,winsorizeApply,dummycodingApply,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+normalizeApply,NA,dummycodingApply,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+imputeByMeanApply,outlierBySdApply,dummycodingApply,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0

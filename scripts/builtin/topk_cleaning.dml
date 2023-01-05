@@ -29,7 +29,7 @@ source("scripts/builtin/bandit.dml") as bandit;
 s_topk_cleaning = function(Frame[Unknown] dataTrain, Frame[Unknown] dataTest = as.frame("NULL"), Frame[Unknown] metaData = as.frame("NULL"), Frame[Unknown] primitives,
   Frame[Unknown] parameters, Frame[String] refSol = as.frame("NaN"), String evaluationFunc, Matrix[Double] evalFunHp, Integer topK = 5, Integer resource_val = 20,
   Integer max_iter = 10, Double lq = 0.1, Double uq=0.7, Double sample = 1.0, Double expectedIncrease=1.0, Integer seed = -1, Boolean cv=TRUE, Integer cvk = 2, 
-  Boolean isLastLabel = TRUE,
+  Boolean isLastLabel = TRUE, Integer rowCount = 3700,
   Boolean correctTypos=FALSE, Boolean enablePruning = FALSE)
   return (Frame[Unknown] topKPipelines, Matrix[Double] topKHyperParams, Matrix[Double] topKScores,
     Double dirtyScore, Matrix[Double] evalFunHp, Frame[Unknown] applyFunc)
@@ -43,7 +43,7 @@ s_topk_cleaning = function(Frame[Unknown] dataTrain, Frame[Unknown] dataTest = a
   # prepare meta data
   # # keeping the meta list format if we decide to add more stuff in metadata
   [schema, mask, fdMask, maskY] = prepareMeta(dataTrain, metaData)
-  metaList = list(mask=mask, schema=schema, fd=fdMask, applyFunc=as.frame("null"), distY=0)
+  metaList = list(mask=mask, schema=schema, fd=fdMask, applyFunc=as.frame("null"), distY=0, minFold=0)
   t2 = time(); print("-- Cleaning - Prepare Metadata: "+(t2-t1)/1e9+"s");
     
   # separate the label
@@ -79,8 +79,8 @@ s_topk_cleaning = function(Frame[Unknown] dataTrain, Frame[Unknown] dataTest = a
   # apply sampling on training data for pipeline enumeration
   # TODO why recoding/sampling twice (within getDirtyScore)
   print("---- class-stratified sampling of feature matrix w/ f="+sample);
-  if(sum(mask) > ncol(mask)/2 & nrow(eYtrain) >= 10000 & sample == 1.0) 
-    [eXtrain, eYtrain ] = utils::doErrorSample(eXtrain, eYtrain, lq, uq, 3500)
+  if(nrow(eYtrain) >= rowCount & sample == 1.0 & sum(mask) > ncol(mask)/2)  # & 
+    [eXtrain, eYtrain ] = utils::doErrorSample(eXtrain, eYtrain, lq, uq, rowCount)
   else 
     [eXtrain, eYtrain] = utils::doSample(eXtrain, eYtrain, sample, mask, metaR, TRUE)
   t5 = time(); print("---- finalized in: "+(t5-t4)/1e9+"s");

@@ -126,13 +126,7 @@ public class BooleanArray extends Array<Boolean> {
 	@Override
 	public Array<Boolean> append(Array<Boolean> other) {
 		final int endSize = this._size + other.size();
-		if(endSize > ArrayFactory.bitSetSwitchPoint) {
-			final BitSetArray retBS = new BitSetArray(endSize);
-			retBS.set(0, this._size - 1, this, 0);
-			retBS.set(this._size, endSize - 1, other, 0);
-			return retBS;
-		}
-		else if(other instanceof BooleanArray) {
+		if(other instanceof BooleanArray && endSize < ArrayFactory.bitSetSwitchPoint) {
 			final boolean[] ret = new boolean[endSize];
 			System.arraycopy(_data, 0, ret, 0, this._size);
 			System.arraycopy((boolean[]) other.get(), 0, ret, this._size, other.size());
@@ -172,8 +166,11 @@ public class BooleanArray extends Array<Boolean> {
 
 	@Override
 	public void reset(int size) {
-		if(_data.length < size)
+		if(_data.length < size || _data.length > 2 * size)
 			_data = new boolean[size];
+		else
+			for(int i = 0; i < size; i++)
+				_data[i] = false;
 		_size = size;
 	}
 

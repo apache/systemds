@@ -142,8 +142,11 @@ public class LongArray extends Array<Long> {
 
 	@Override
 	public void reset(int size) {
-		if(_data.length < size)
+		if(_data.length < size || _data.length > 2 * size)
 			_data = new long[size];
+			else
+			for(int i = 0; i < size; i++)
+				_data[i] = 0;
 		_size = size;
 	}
 

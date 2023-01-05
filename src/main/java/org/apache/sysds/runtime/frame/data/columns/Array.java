@@ -173,7 +173,7 @@ public abstract class Array<T> implements Writable {
 	 * @param value array of other type
 	 */
 	public final void setFromOtherTypeNz(Array<?> value) {
-		setFromOtherTypeNz(0, value.size(), value);
+		setFromOtherTypeNz(0, value.size()-1, value);
 	}
 
 	/**

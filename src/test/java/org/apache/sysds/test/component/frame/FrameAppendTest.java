@@ -162,15 +162,25 @@ public class FrameAppendTest {
 				String v = ff.get(r, c).toString();
 				assertTrue(v, v.equals("0") || v.equals("0.0") || v.equals("false"));
 			}
-		for(int r = 0; r < f.getNumRows(); r++) {
+		for(int r = 0; r < f.getNumRows(); r++)
 			for(int c = 0; c < f.getNumColumns(); c++)
 				assertEquals(ff.get(r + 10, c).toString(), f.get(r, c).toString());
-		}
 	}
 
-	// append other type
-
-	// append null block.
+	@Test
+	public void rBindZerosMany() {
+		ValueType[] bools = UtilFunctions.nCopies(f.getNumColumns(), ValueType.BOOLEAN);
+		FrameBlock b = new FrameBlock(bools, "0", 240);
+		FrameBlock ff = append(b, f, false);
+		for(int r = 0; r < 240; r++)
+			for(int c = 0; c < f.getNumColumns(); c++) {
+				String v = ff.get(r, c).toString();
+				assertTrue(v, v.equals("0") || v.equals("0.0") || v.equals("false"));
+			}
+		for(int r = 0; r < f.getNumRows(); r++)
+			for(int c = 0; c < f.getNumColumns(); c++)
+				assertEquals(ff.get(r + 240, c).toString(), f.get(r, c).toString());
+	}
 
 	private static FrameBlock append(FrameBlock a, FrameBlock b, boolean cBind) {
 		try {

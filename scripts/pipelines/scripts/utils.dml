@@ -86,21 +86,24 @@ doSample = function(Matrix[Double] eX, Matrix[Double] eY, Double ratio, Matrix[D
 doErrorSample = function(Matrix[Double] eX, Matrix[Double] eY, Double lq, Double uq, Integer rowCount = 3500)
   return (Matrix[Double] sampledX, Matrix[Double] sampledY)
 {
-  print("initial number of rows: " +nrow(eX))
-  print("quantiles: "+lq+" "+uq)
-  # # # prepare feature vector for NB
-  beta = multiLogReg(X=eX, Y=eY, icpt=1, reg=1e-3, tol=1e-6,  maxi=20, maxii=20, verbose=FALSE);
-  [trainProbs, yhat, accuracy] = multiLogRegPredict(eX, beta, eY, FALSE)
+  print("Error filtering")
+  if(nrow(eY) < rowCount)
+    filterMask = matrix(1, rows=nrow(eY), cols=1)
+  else {
+    # # # prepare feature vector for NB
+    beta = multiLogReg(X=eX, Y=eY, icpt=1, reg=1e-3, tol=1e-6,  maxi=20, maxii=20, verbose=FALSE);
+    [trainProbs, yhat, accuracy] = multiLogRegPredict(eX, beta, eY, FALSE)
 
  
-  print("applying error filter")
-  filterMask = rowMaxs(trainProbs) <  quantile(rowMaxs(trainProbs), lq) | rowMaxs(trainProbs) >  quantile(rowMaxs(trainProbs), uq)
-  delta = 0.001
-  while(sum(filterMask) < rowCount & nrow(eY) > rowCount)
-  {
-    lq = lq + delta
-    uq = uq - delta
+    print("applying error filter")
     filterMask = rowMaxs(trainProbs) <  quantile(rowMaxs(trainProbs), lq) | rowMaxs(trainProbs) >  quantile(rowMaxs(trainProbs), uq)
+    delta = 0.001
+    while(sum(filterMask) < rowCount & nrow(eY) > rowCount)
+    {
+      lq = lq + delta
+      uq = uq - delta
+      filterMask = rowMaxs(trainProbs) <  quantile(rowMaxs(trainProbs), lq) | rowMaxs(trainProbs) >  quantile(rowMaxs(trainProbs), uq)
+    }
   }
   sampledX = removeEmpty(target = eX, margin = "rows", select=filterMask)
   sampledY = removeEmpty(target = eY, margin = "rows", select=filterMask)
@@ -205,18 +208,18 @@ return(Frame[Unknown] data, List[Unknown] distanceMatrix, List[Unknown] dictiona
   }
   # # step 7 convert date to decimal
   dateColIdx = as.matrix(0)
-  isDate = map(data[1:10], "x -> UtilFunctions.isDateColumn(x)")
-  isDate = replace(target = as.matrix(isDate), pattern = NaN, replacement = 0)
-  isDate = (colMaxs(isDate)) & as.matrix(schema == frame("STRING", rows=1, cols=ncol(schema)))
-  if(sum(isDate) > 0) {
-    print(prefix+" changing date to timestamp")
-    dateColIdx = removeEmpty(target = isDate * t(seq(1, ncol(isDate))), margin="cols")
-    for(i in 1:ncol(dateColIdx))
-    {
-      idx = as.scalar(dateColIdx[i])
-      data[, idx] = map(data[, idx], "x -> UtilFunctions.getTimestamp(x)", margin=2)
-    }
-  }
+  # isDate = map(data[1:10], "x -> UtilFunctions.isDateColumn(x)")
+  # isDate = replace(target = as.matrix(isDate), pattern = NaN, replacement = 0)
+  # isDate = (colMaxs(isDate)) & as.matrix(schema == frame("STRING", rows=1, cols=ncol(schema)))
+  # if(sum(isDate) > 0) {
+    # print(prefix+" changing date to timestamp")
+    # dateColIdx = removeEmpty(target = isDate * t(seq(1, ncol(isDate))), margin="cols")
+    # for(i in 1:ncol(dateColIdx))
+    # {
+      # idx = as.scalar(dateColIdx[i])
+      # data[, idx] = map(data[, idx], "x -> UtilFunctions.getTimestamp(x)", margin=2)
+    # }
+  # }
   # TODO add deduplication
   print(prefix+" deduplication via entity resolution");
   
@@ -261,11 +264,11 @@ return(Frame[Unknown] data)
       }
   }
   # # step 7 convert date to decimal
-  if(sum(dateColIdx) > 0) {
-    for(i in 1:ncol(dateColIdx))
-    {
-      idx = as.scalar(dateColIdx[i])
-      data[, idx] = map(data[, idx], "x -> UtilFunctions.getTimestamp(x)", margin=2)
-    }
-  }
+  # if(sum(dateColIdx) > 0) {
+    # for(i in 1:ncol(dateColIdx))
+    # {
+      # idx = as.scalar(dateColIdx[i])
+      # data[, idx] = map(data[, idx], "x -> UtilFunctions.getTimestamp(x)", margin=2)
+    # }
+  # }
 }

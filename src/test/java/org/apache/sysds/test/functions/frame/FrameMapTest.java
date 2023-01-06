@@ -20,8 +20,8 @@
 package org.apache.sysds.test.functions.frame;
 
 import org.apache.sysds.common.Types;
-import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.common.Types.ExecType;
+import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.runtime.io.FileFormatPropertiesCSV;
 import org.apache.sysds.runtime.io.FrameWriterFactory;
@@ -133,12 +133,13 @@ public class FrameMapTest extends AutomatedTestBase {
 				String[][] date = new String[rows2][1];
 				for(int i = 0; i<rows2; i++)
 					date[i][0] = (i%30)+"/"+(i%12)+"/200"+(i%20);
+				FrameBlock a = new FrameBlock(schemaStrings1, date);
 				FrameWriterFactory.createFrameWriter(FileFormat.CSV).
-					writeFrameToHDFS(new FrameBlock(schemaStrings1, date), input("A"), rows2, 1);
+					writeFrameToHDFS(a, input("A"), rows2, 1);
 			}
 			else if(type == TestType.SHERLOCK_PREP) {
 				String[][] data = new String[1][1];
-				data[0][0] =  "\"['Global', 'United States', 'Australia']\"";
+				data[0][0] =  "'Global', 'United States', 'Australia'";
 				FileFormatPropertiesCSV ffp = new FileFormatPropertiesCSV();
 				ffp.setDelim(";");
 				FrameWriterFactory.createFrameWriter(FileFormat.CSV, ffp).
@@ -157,7 +158,7 @@ public class FrameMapTest extends AutomatedTestBase {
 
 			String[] output = (String[])outputFrame.getColumnData(0);
 			String[] input = (String[])inputFrame.getColumnData(0);
-
+			
 			switch (type) {
 				case SPLIT:
 					for(int i = 0; i<input.length; i++)
@@ -177,8 +178,10 @@ public class FrameMapTest extends AutomatedTestBase {
 						TestUtils.compareScalars(String.valueOf(input[i].toUpperCase()), output[i]);
 					break;
 				case DATE_UTILS:
-					for(int i =0; i<input.length; i++)
-						TestUtils.compareScalars(String.valueOf(UtilFunctions.toMillis(input[i])), output[i]);
+					for(int i =0; i<input.length; i++){
+						String c = String.valueOf(UtilFunctions.toMillis(input[i]));
+						TestUtils.compareScalars(c, output[i]);
+					}
 					break;
 				case SHERLOCK_PREP:
 					for(int i =0; i<input.length; i++) 

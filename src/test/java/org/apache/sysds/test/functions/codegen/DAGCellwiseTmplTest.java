@@ -165,7 +165,7 @@ public class DAGCellwiseTmplTest extends AutomatedTestBase
 	@Override
 	protected File getConfigTemplateFile() {
 		// Instrumentation in this test's output log to show custom configuration file used for template.
-		LOG.info("This test case overrides default configuration with " + TEST_CONF_FILE.getPath());
+		LOG.debug("This test case overrides default configuration with " + TEST_CONF_FILE.getPath());
 		return TEST_CONF_FILE;
 	}
 }

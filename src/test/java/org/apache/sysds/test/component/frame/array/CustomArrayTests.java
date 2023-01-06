@@ -168,7 +168,7 @@ public class CustomArrayTests {
 	public void analyzeValueTypeStringFP32() {
 		StringArray a = ArrayFactory.create(new String[] {"132", "131.1", "-142"});
 		ValueType t = a.analyzeValueType();
-		assertTrue(t == ValueType.FP32);
+		assertEquals(ValueType.FP32, t);
 	}
 
 	@Test
@@ -182,7 +182,7 @@ public class CustomArrayTests {
 	public void analyzeValueTypeStringFP32_string() {
 		StringArray a = ArrayFactory.create(new String[] {"\"132\"", "131.1", "-142"});
 		ValueType t = a.analyzeValueType();
-		assertTrue(t == ValueType.FP32);
+		assertEquals(ValueType.STRING, t);
 	}
 
 	@Test
@@ -468,22 +468,22 @@ public class CustomArrayTests {
 	}
 
 	@Test
-	public void LongToBits_0(){
+	public void LongToBits_0() {
 		assertEquals(BitSetArray.longToBits(0), "0000000000000000000000000000000000000000000000000000000000000000");
 	}
 
 	@Test
-	public void LongToBits_2(){
+	public void LongToBits_2() {
 		assertEquals(BitSetArray.longToBits(2), "0000000000000000000000000000000000000000000000000000000000000010");
 	}
 
 	@Test
-	public void LongToBits_5(){
+	public void LongToBits_5() {
 		assertEquals(BitSetArray.longToBits(5), "0000000000000000000000000000000000000000000000000000000000000101");
 	}
 
 	@Test
-	public void LongToBits_minusOne(){
+	public void LongToBits_minusOne() {
 		assertEquals(BitSetArray.longToBits(-1), "1111111111111111111111111111111111111111111111111111111111111111");
 	}
 

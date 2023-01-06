@@ -160,7 +160,6 @@ public class EncoderFactory {
 					HashMap<String, Integer> colPos = getColumnPositions(colnames2);
 					// create temporary meta frame block w/ shallow column copy
 					FrameBlock meta2 = new FrameBlock(meta.getSchema(), colnames2);
-					meta2.setNumRows(meta.getNumRows());
 					for(int i = 0; i < colnames.length; i++) {
 						if(!colPos.containsKey(colnames[i])) {
 							throw new DMLRuntimeException("Column name not found in meta data: " + colnames[i]

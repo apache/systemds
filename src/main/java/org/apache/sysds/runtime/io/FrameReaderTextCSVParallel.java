@@ -37,9 +37,9 @@ import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.mapred.TextInputFormat;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.hops.OptimizerUtils;
+import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.Pair;
-import org.apache.sysds.runtime.transform.TfUtils;
 import org.apache.sysds.runtime.util.CommonThreadPool;
 
 /**
@@ -66,19 +66,19 @@ public class FrameReaderTextCSVParallel extends FrameReaderTextCSV
 
 		try 
 		{
-			ExecutorService pool = CommonThreadPool.get(
-				Math.min(numThreads, splits.length));
+			// get number of threads pool to use the common thread pool.
+			ExecutorService pool = CommonThreadPool.get(numThreads);
 			
 			//compute num rows per split
 			ArrayList<CountRowsTask> tasks = new ArrayList<>();
 			for( int i=0; i<splits.length; i++ )
 				tasks.add(new CountRowsTask(splits[i], informat, job, _props.hasHeader(), i==0));
-			List<Future<Long>> cret = pool.invokeAll(tasks);
+			List<Future<Integer>> cret = pool.invokeAll(tasks);
 
 			//compute row offset per split via cumsum on row counts
 			long offset = 0;
 			List<Long> offsets = new ArrayList<>();
-			for( Future<Long> count : cret ) {
+			for( Future<Integer> count : cret ) {
 				offsets.add(offset);
 				offset += count.get();
 			}
@@ -108,14 +108,14 @@ public class FrameReaderTextCSVParallel extends FrameReaderTextCSV
 		int ncol = IOUtilFunctions.countNumColumnsCSV(splits, informat, job, _props.getDelim());
 		
 		//compute number of rows
-		int nrow = 0;
+		long nrow = 0;
 		ExecutorService pool = CommonThreadPool.get(numThreads);
 		try {
 			ArrayList<CountRowsTask> tasks = new ArrayList<>();
 			for( int i=0; i<splits.length; i++ )
 				tasks.add(new CountRowsTask(splits[i], informat, job, _props.hasHeader(), i==0));
-			List<Future<Long>> cret = pool.invokeAll(tasks);
-			for( Future<Long> count : cret ) 
+			List<Future<Integer>> cret = pool.invokeAll(tasks);
+			for( Future<Integer> count : cret ) 
 				nrow += count.get().intValue();
 		}
 		catch (Exception e) {
@@ -124,10 +124,13 @@ public class FrameReaderTextCSVParallel extends FrameReaderTextCSV
 		finally {
 			pool.shutdown();
 		}
-		return new Pair<>(nrow, ncol);
+		if(nrow > (long)Integer.MAX_VALUE)
+			throw new DMLRuntimeException("invalid read with over Integer number of rows");
+
+		return new Pair<>((int)nrow, ncol);
 	}
 
-	private static class CountRowsTask implements Callable<Long> 
+	private static class CountRowsTask implements Callable<Integer> 
 	{
 		private InputSplit _split = null;
 		private TextInputFormat _informat = null;
@@ -144,29 +147,17 @@ public class FrameReaderTextCSVParallel extends FrameReaderTextCSV
 		}
 
 		@Override
-		public Long call() 
+		public Integer call() 
 			throws Exception 
 		{
-			RecordReader<LongWritable, Text> reader = _informat.getRecordReader(_split, _job, Reporter.NULL);
-			LongWritable key = new LongWritable();
-			Text value = new Text();
-			long nrows = 0;
-			
-			// count rows from the first non-header row
+			RecordReader<LongWritable, Text> reader = _informat.getRecordReader(_split, _job, Reporter.NULL);			
 			try {
-				if ( _firstSplit && _hasHeader )
-					reader.next(key, value);
-				while ( reader.next(key, value) ) {
-					String val = value.toString();
-					nrows += ( val.startsWith(TfUtils.TXMTD_MVPREFIX)
-						|| val.startsWith(TfUtils.TXMTD_NDPREFIX)) ? 0 : 1; 
-				}
+				// it is assumed that if we read parallel number of rows, there are at least two columns.
+				return countLinesInReader(reader, 2 , _firstSplit && _hasHeader);
 			} 
 			finally {
 				IOUtilFunctions.closeSilently(reader);
 			}
-
-			return nrows;
 		}
 	}
 
@@ -195,9 +186,16 @@ public class FrameReaderTextCSVParallel extends FrameReaderTextCSV
 		public Object call() 
 			throws Exception 
 		{
-			readCSVFrameFromInputSplit(_split, _informat, _job, _dest, _dest.getSchema(), 
-					_dest.getColumnNames(), _dest.getNumRows(), _dest.getNumColumns(), _offset, _isFirstSplit);
-			return null;
+			try{
+
+				readCSVFrameFromInputSplit(_split, _informat, _job, _dest, _dest.getSchema(), 
+						_dest.getColumnNames(), _dest.getNumRows(), _dest.getNumColumns(), _offset, _isFirstSplit);
+				return null;
+			}
+			catch(Exception e){
+				e.printStackTrace();
+				throw e;
+			}
 		}
 	}
 }

@@ -62,7 +62,9 @@ public class BinaryFrameFrameCPInstruction extends BinaryCPInstruction {
 			ValueType[] schema = new ValueType[inBlock2.getNumColumns()];
 			for(int i=0; i<inBlock2.getNumColumns(); i++)
 				schema[i] = ValueType.fromExternalString(inBlock2.get(0, i).toString());
-			ec.setFrameOutput(output.getName(), inBlock1.applySchema(schema, ((MultiThreadedOperator)_optr).getNumThreads()));
+			final int k = ((MultiThreadedOperator)_optr).getNumThreads();
+			final FrameBlock out = inBlock1.applySchema(schema, k);
+			ec.setFrameOutput(output.getName(), out);
 		}
 		else {
 			// Execute binary operations

@@ -262,6 +262,10 @@ public class ConfigurationManager{
 			|| OptimizerUtils.MAX_PARALLELIZE_ORDER);
 	}
 
+	public static boolean isParallelIOEnabled(){
+		return getDMLConfig().getBooleanValue(DMLConfig.CP_PARALLEL_IO);
+	}
+
 	public static boolean isBroadcastEnabled() {
 		return (getDMLConfig().getBooleanValue(DMLConfig.ASYNC_SPARK_BROADCAST)
 			|| OptimizerUtils.ASYNC_BROADCAST_SPARK);

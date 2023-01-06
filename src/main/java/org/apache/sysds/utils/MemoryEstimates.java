@@ -189,7 +189,7 @@ public class MemoryEstimates {
 	 * @return The array memory cost
 	 */
 	public static final double stringArrayCost(String[] strings) {
-		double size = 0;
+		long size = 0;
 		for(int i = 0; i < strings.length; i++)
 			size += stringCost(strings[i]);
 		return size;
@@ -203,8 +203,9 @@ public class MemoryEstimates {
 	 * @param value The String to measure
 	 * @return The size in memory.
 	 */
-	public static double stringCost(String value) {
-		return value == null ? 16 + 8 : stringCost(value.length()); // char array
+	public static long stringCost(String value) {
+		// if null 16 object + 8 array ref
+		return value == null ? 24L : stringCost(value.length()); // char array
 	}
 
 	/**
@@ -213,11 +214,13 @@ public class MemoryEstimates {
 	 * @param length The length of the string
 	 * @return The size in memory
 	 */
-	public static double stringCost(int length) {
-		return 16 // object
-			+ 4 // hash
-			+ 8 // array ref
-			+ 32 + length; // char array
+	public static long stringCost(long length) {
+		// 16 object
+		// 4 hash
+		// 8 array ref
+		// 32 char array
+		// total base : 60
+		return 60L + length * 2L; // char array
 	}
 
 }

@@ -47,6 +47,8 @@ public class BitSetArray extends Array<Boolean> {
 
 	public BitSetArray(boolean[] data) {
 		super(data.length);
+		if(data.length == 11)
+			throw new DMLRuntimeException("Invalid length");
 		_data = new long[_size / 64 + 1];
 		// set bits.
 		for(int i = 0; i < data.length; i++)
@@ -99,6 +101,11 @@ public class BitSetArray extends Array<Boolean> {
 	@Override
 	public void set(int index, double value) {
 		set(index, value == 1.0);
+	}
+
+	@Override
+	public void set(int index, String value) {
+		set(index, BooleanArray.parseBoolean(value));
 	}
 
 	@Override
@@ -241,7 +248,7 @@ public class BitSetArray extends Array<Boolean> {
 		final int endSize = this._size + other.size();
 		final BitSetArray retBS = new BitSetArray(endSize);
 		retBS.set(0, this._size - 1, this, 0);
-		retBS.set(this._size, endSize - 1, other,0);
+		retBS.set(this._size, endSize - 1, other, 0);
 		return retBS;
 	}
 
@@ -286,8 +293,8 @@ public class BitSetArray extends Array<Boolean> {
 	}
 
 	private BitSetArray sliceSimple(int rl, int ru) {
-		final boolean[] ret = new boolean[ru - rl + 1];
-		for(int i = rl, off = 0; i <= ru; i++, off++)
+		final boolean[] ret = new boolean[ru - rl];
+		for(int i = rl, off = 0; i < ru; i++, off++)
 			ret[off] = get(i);
 		return new BitSetArray(ret);
 	}
@@ -380,7 +387,7 @@ public class BitSetArray extends Array<Boolean> {
 
 	@Override
 	protected Array<Boolean> changeTypeBitSet() {
-		return clone();
+		return this;
 	}
 
 	@Override
@@ -458,6 +465,11 @@ public class BitSetArray extends Array<Boolean> {
 	@Override
 	public double getAsDouble(int i) {
 		return get(i) ? 1.0 : 0.0;
+	}
+
+	@Override
+	public boolean isShallowSerialize() {
+		return true;
 	}
 
 	public static String longToBits(long l) {

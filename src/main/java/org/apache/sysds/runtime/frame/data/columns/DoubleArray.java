@@ -62,6 +62,11 @@ public class DoubleArray extends Array<Double> {
 	}
 
 	@Override
+	public void set(int index, String value){
+		set(index, parseDouble(value) );
+	}
+
+	@Override
 	public void set(int rl, int ru, Array<Double> value) {
 		set(rl, ru, value, 0);
 	}
@@ -256,7 +261,7 @@ public class DoubleArray extends Array<Double> {
 
 	@Override
 	protected Array<Double> changeTypeDouble() {
-		return clone();
+		return this;
 	}
 
 	@Override
@@ -318,6 +323,11 @@ public class DoubleArray extends Array<Double> {
 			return 0.0;
 		else
 			return Double.parseDouble(value);
+	}
+
+	@Override
+	public boolean isShallowSerialize() {
+		return true;
 	}
 
 	@Override

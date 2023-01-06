@@ -185,32 +185,27 @@ public class FrameObject extends CacheableData<FrameBlock>
 	}
 
 	@Override
-	protected FrameBlock readBlobFromHDFS(String fname, long[] dims)
-		throws IOException
-	{
+	protected FrameBlock readBlobFromHDFS(String fname, long[] dims) throws IOException {
 		long clen = dims[1];
 		MetaDataFormat iimd = (MetaDataFormat) _metaData;
 		DataCharacteristics dc = iimd.getDataCharacteristics();
-		
-		//handle missing schema if necessary
-		ValueType[] lschema = (_schema!=null) ? _schema : 
-			UtilFunctions.nCopies(clen>=1 ? (int)clen : 1, ValueType.STRING);
-		
-		//read the frame block
-		FrameBlock data = null;
-		try {
-			data = isFederated() ? acquireReadAndRelease() :
-				FrameReaderFactory.createFrameReader(iimd.getFileFormat(), getFileFormatProperties())
-					.readFrameFromHDFS(fname, lschema, dc.getRows(), dc.getCols());
-		}
-		catch( DMLRuntimeException ex ) {
-			throw new IOException(ex);
-		}
-		
-		//sanity check correct output
-		if( data == null )
-			throw new IOException("Unable to load frame from file: "+fname);
-		
+
+		// handle missing schema if necessary
+		ValueType[] lschema = (_schema != null) ? _schema : UtilFunctions.nCopies(clen >= 1 ? (int) clen : 1,
+			ValueType.STRING);
+
+		// read the frame block
+		FrameBlock data = isFederated() ? acquireReadAndRelease() : FrameReaderFactory
+			.createFrameReader(iimd.getFileFormat(), getFileFormatProperties())
+			.readFrameFromHDFS(fname, lschema, dc.getRows(), dc.getCols());
+
+		if(iimd.getFileFormat() == FileFormat.CSV)
+			_metaData = _metaData instanceof MetaDataFormat ? new MetaDataFormat(data.getDataCharacteristics(),
+				iimd.getFileFormat()) : new MetaData(data.getDataCharacteristics());
+
+		// sanity check correct output
+		if(data == null)
+			throw new IOException("Unable to load frame from file: " + fname);
 		return data;
 	}
 

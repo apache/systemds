@@ -33,6 +33,8 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Function;
 import java.util.function.IntFunction;
@@ -46,9 +48,11 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.api.DMLException;
 import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.codegen.CodegenUtils;
 import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
+import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysds.runtime.controlprogram.parfor.util.IDSequence;
 import org.apache.sysds.runtime.frame.data.columns.Array;
 import org.apache.sysds.runtime.frame.data.columns.ArrayFactory;
@@ -71,6 +75,7 @@ import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.transform.encode.ColumnEncoderRecode;
+import org.apache.sysds.runtime.util.CommonThreadPool;
 import org.apache.sysds.runtime.util.DMVUtils;
 import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.runtime.util.EMAUtils;
@@ -90,9 +95,6 @@ public class FrameBlock implements CacheBlock<FrameBlock>, Externalizable {
 	/** internal configuration */
 	private static final boolean REUSE_RECODE_MAPS = true;
 
-	/** The number of rows of the FrameBlock */
-	private int _numRows = -1;
-
 	/** The schema of the data frame as an ordered list of value types */
 	private ValueType[] _schema = null;
 
@@ -109,7 +111,6 @@ public class FrameBlock implements CacheBlock<FrameBlock>, Externalizable {
 	private long _msize = -1;
 
 	public FrameBlock() {
-		_numRows = 0;
 	}
 
 	/**
@@ -157,7 +158,6 @@ public class FrameBlock implements CacheBlock<FrameBlock>, Externalizable {
 	}
 
 	public FrameBlock(ValueType[] schema, String[] names, String[][] data) {
-		_numRows = 0; // maintained on append
 		_schema = schema;
 		_colnames = names;
 		ensureAllocateMeta();
@@ -167,7 +167,6 @@ public class FrameBlock implements CacheBlock<FrameBlock>, Externalizable {
 	}
 
 	public FrameBlock(ValueType[] schema, String[] colNames, ColumnMetadata[] meta, Array<?>[] data) {
-		_numRows = data[0].size();
 		_schema = schema;
 		_colnames = colNames;
 		_colmeta = meta;
@@ -181,7 +180,7 @@ public class FrameBlock implements CacheBlock<FrameBlock>, Externalizable {
 	 */
 	@Override
 	public int getNumRows() {
-		return _numRows;
+		return (_coldata == null || _coldata.length == 0 || _coldata[0] == null) ? 0 : _coldata[0].size();
 	}
 
 	@Override
@@ -208,10 +207,6 @@ public class FrameBlock implements CacheBlock<FrameBlock>, Externalizable {
 		if(s != null && s.isEmpty())
 			return null;
 		return s;
-	}
-
-	public void setNumRows(int numRows) {
-		_numRows = numRows;
 	}
 
 	/**
@@ -341,15 +336,15 @@ public class FrameBlock implements CacheBlock<FrameBlock>, Externalizable {
 	 */
 	public void ensureAllocatedColumns(int numRows) {
 		_msize = -1;
-
+		final int nRow = getNumRows();
 		// allocate column meta data if necessary
 		ensureAllocateMeta();
 		// early abort if already allocated
 		if(_coldata != null && _schema.length == _coldata.length) {
 			// handle special case that to few rows allocated
-			if(_numRows < numRows) {
+			if(nRow < numRows) {
 				String[] tmp = new String[getNumColumns()];
-				int len = numRows - _numRows;
+				int len = numRows - nRow;
 				// TODO: Add append N function.
 				for(int i = 0; i < len; i++)
 					appendRow(tmp);
@@ -361,8 +356,6 @@ public class FrameBlock implements CacheBlock<FrameBlock>, Externalizable {
 		_coldata = new Array[_schema.length];
 		for(int j = 0; j < _schema.length; j++)
 			_coldata[j] = ArrayFactory.allocate(_schema[j], numRows);
-
-		_numRows = numRows;
 	}
 
 	private void ensureAllocateMeta() {
@@ -381,9 +374,9 @@ public class FrameBlock implements CacheBlock<FrameBlock>, Externalizable {
 	 * @param newLen number of rows to compare with existing number of rows
 	 */
 	public void ensureColumnCompatibility(int newLen) {
-		if(_coldata != null && _coldata.length > 0 && _numRows != newLen)
-			throw new RuntimeException("Mismatch in number of rows: " + newLen + " (expected: " + _numRows + ")");
-		_numRows = newLen;
+		final int nRow = getNumRows();
+		if(_coldata != null && _coldata.length > 0 && nRow != newLen)
+			throw new RuntimeException("Mismatch in number of rows: " + newLen + " (expected: " + nRow + ")");
 	}
 
 	public static String[] createColNames(int size) {
@@ -447,6 +440,18 @@ public class FrameBlock implements CacheBlock<FrameBlock>, Externalizable {
 		_coldata[c].set(r, UtilFunctions.objectToObject(_schema[c], val));
 	}
 
+	/**
+	 * Sets the value in position (r,c), to the input string value, and at the individual arrays, convert to correct
+	 * type.
+	 * 
+	 * @param r   row index
+	 * @param c   column index
+	 * @param val value to set at specified position
+	 */
+	public void set(int r, int c, String val) {
+		_coldata[c].set(r, val);
+	}
+
 	public void reset(int nrow, boolean clearMeta) {
 		if(clearMeta) {
 			_schema = null;
@@ -477,7 +482,6 @@ public class FrameBlock implements CacheBlock<FrameBlock>, Externalizable {
 		ensureAllocatedColumns(0);
 		for(int j = 0; j < row.length; j++)
 			_coldata[j].append(row[j]);
-		_numRows++;
 		_msize = -1;
 	}
 
@@ -490,7 +494,6 @@ public class FrameBlock implements CacheBlock<FrameBlock>, Externalizable {
 		ensureAllocatedColumns(0);
 		for(int j = 0; j < row.length; j++)
 			_coldata[j].append(row[j]);
-		_numRows++;
 	}
 
 	/**
@@ -596,9 +599,7 @@ public class FrameBlock implements CacheBlock<FrameBlock>, Externalizable {
 																																								// modification
 		_schema = empty ? tmpSchema : (ValueType[]) ArrayUtils.addAll(_schema, tmpSchema);
 		_coldata = empty ? tmpData : (Array[]) ArrayUtils.addAll(_coldata, tmpData);
-		_numRows = cols[0].length;
 		_msize = -1;
-
 	}
 
 	public static FrameBlock convertToFrameBlock(MatrixBlock mb, ValueType[] schema, int k) {
@@ -670,7 +671,7 @@ public class FrameBlock implements CacheBlock<FrameBlock>, Externalizable {
 	@Override
 	public void readFields(DataInput in) throws IOException {
 		// read head (rows, cols)
-		_numRows = in.readInt();
+		final int nRow = in.readInt();
 		final int numCols = in.readInt();
 		final boolean isDefaultMeta = in.readBoolean();
 		// allocate schema/meta data arrays
@@ -691,7 +692,7 @@ public class FrameBlock implements CacheBlock<FrameBlock>, Externalizable {
 				_colmeta[j] = new ColumnMetadata(); // must be allocated.
 			}
 			if(type >= 0) // if in allocated column data then read it
-				_coldata[j] = ArrayFactory.read(in, _numRows);
+				_coldata[j] = ArrayFactory.read(in, nRow);
 		}
 		_msize = -1;
 	}
@@ -718,7 +719,7 @@ public class FrameBlock implements CacheBlock<FrameBlock>, Externalizable {
 			return _msize;
 
 		// frame block header
-		long size = 16 + 4 + 4; // object, num rows, msize
+		double size = 16 + 4; // object, msize
 
 		final int clen = getNumColumns();
 
@@ -735,14 +736,33 @@ public class FrameBlock implements CacheBlock<FrameBlock>, Externalizable {
 
 		// data array
 		size += MemoryEstimates.objectArrayCost(clen);
+
 		if(_coldata == null) // not allocated estimate if allocated
 			for(int j = 0; j < clen; j++)
-				ArrayFactory.getInMemorySize(_schema[j], _numRows);
-		else // allocated
-			for(Array<?> aa : _coldata)
-				size += aa.getInMemorySize();
-
-		return _msize = size;
+				size += ArrayFactory.getInMemorySize(_schema[j], getNumRows());
+		else {// allocated
+			if(getNumRows() > 1000 && getNumColumns() > 10 && ConfigurationManager.isParallelIOEnabled()) {
+				final ExecutorService pool = CommonThreadPool.get(InfrastructureAnalyzer.getLocalParallelism());
+				try {
+					size += pool.submit(() -> {
+						return Arrays.stream(_coldata).parallel() // parallel columns
+							.map(x -> x.getInMemorySize()).reduce(0L, Long::sum);
+					}).get();
+					pool.shutdown();
+				}
+				catch(InterruptedException | ExecutionException e) {
+					pool.shutdown();
+					for(Array<?> aa : _coldata)
+						size += aa.getInMemorySize();
+				}
+			}
+			else {
+				for(Array<?> aa : _coldata)
+					size += aa.getInMemorySize();
+			}
+		}
+		
+		return _msize = (long) size;
 	}
 
 	@Override
@@ -776,7 +796,7 @@ public class FrameBlock implements CacheBlock<FrameBlock>, Externalizable {
 		// is always dense but strings have large array overhead per cell
 		boolean ret = true;
 		for(int j = 0; j < _schema.length && ret; j++)
-			ret &= (_schema[j] != ValueType.STRING);
+			ret &= _coldata[j].isShallowSerialize();
 		return ret;
 	}
 
@@ -896,7 +916,7 @@ public class FrameBlock implements CacheBlock<FrameBlock>, Externalizable {
 		// allocate output frame (incl deep copy schema)
 		if(ret == null)
 			ret = new FrameBlock();
-		ret._numRows = _numRows;
+
 		ret._schema = _schema.clone();
 		ret._colnames = (_colnames != null) ? _colnames.clone() : null;
 		ret._colmeta = _colmeta.clone();
@@ -973,12 +993,11 @@ public class FrameBlock implements CacheBlock<FrameBlock>, Externalizable {
 			if(!isDefNames)
 				ret._colnames[j - cl] = getColumnName(j);
 		}
-		ret._numRows = ru - rl + 1;
 		if(ret._coldata == null)
 			ret._coldata = new Array[numCols];
 
 		// fast-path: shallow copy column indexing
-		if(ret._numRows == _numRows && !deep) {
+		if(ret.getNumRows() == getNumRows() && !deep) {
 			// this shallow copy does not only avoid an array copy, but
 			// also allows for bi-directional reuses of recodemaps
 			for(int j = cl; j <= cu; j++)
@@ -1041,7 +1060,6 @@ public class FrameBlock implements CacheBlock<FrameBlock>, Externalizable {
 	}
 
 	public void copy(FrameBlock src) {
-		_numRows = src._numRows;
 		int nCol = src.getNumColumns();
 		_schema = Arrays.copyOf(src._schema, nCol);
 		if(src._colnames != null)
@@ -1388,7 +1406,7 @@ public class FrameBlock implements CacheBlock<FrameBlock>, Externalizable {
 					// appropriate one by using the similarity score
 					if(probColList.size() > 1) {
 						for(int w : probColList) {
-							int randomIndex = ThreadLocalRandom.current().nextInt(0, _numRows - 1);
+							int randomIndex = ThreadLocalRandom.current().nextInt(0, getNumRows() - 1);
 							Object value = this.get(randomIndex, w);
 							if(value != null) {
 								dataValue2 = value.toString();
@@ -1575,7 +1593,7 @@ public class FrameBlock implements CacheBlock<FrameBlock>, Externalizable {
 
 		if(select == null) {
 			Object[] row = new Object[getNumColumns()];
-			for(int i = 0; i < _numRows; i++) {
+			for(int i = 0; i < getNumRows(); i++) {
 				boolean isEmpty = true;
 				for(int j = 0; j < getNumColumns(); j++) {
 					row[j] = _coldata[j].get(i);
@@ -1648,7 +1666,7 @@ public class FrameBlock implements CacheBlock<FrameBlock>, Externalizable {
 		}
 
 		if(ret.getNumColumns() == 0 && emptyReturn) {
-			String[][] arr = new String[_numRows][];
+			String[][] arr = new String[getNumRows()][];
 			Arrays.fill(arr, new String[] {null});
 			return new FrameBlock(new ValueType[] {ValueType.STRING}, arr);
 		}

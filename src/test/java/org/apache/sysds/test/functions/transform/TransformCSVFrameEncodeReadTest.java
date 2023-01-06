@@ -19,7 +19,8 @@
 
 package org.apache.sysds.test.functions.transform;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
+
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
@@ -143,8 +144,17 @@ public class TransformCSVFrameEncodeReadTest extends AutomatedTestBase
 			FrameBlock fb2 = reader2.readFrameFromHDFS(output("R"), -1L, -1L);
 			String[] fromDisk = DataConverter.toString(fb2).split("\n");
 			String[] printed = stdOut.split("\n");
-			for(int i = 0; i < fromDisk.length; i++)
-				assertEquals(fromDisk[i], printed[i]);
+			boolean equal = true;
+			String err = "";
+			for(int i = 0; i < fromDisk.length; i++){
+				if(! fromDisk[i].equals(printed[i])){
+					err += "\n not equal: \n"+ (fromDisk[i] + "\n" + printed[i]);
+					equal = false;
+				}
+				
+			}
+			if(!equal)
+				fail(err);
 			
 		}
 		catch(Exception ex) {

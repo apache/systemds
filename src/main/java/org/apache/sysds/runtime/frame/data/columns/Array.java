@@ -122,6 +122,14 @@ public abstract class Array<T> implements Writable {
 	public abstract void set(int index, double value);
 
 	/**
+	 * Set index to the given value of the string parsed.
+	 * 
+	 * @param index The index to set
+	 * @param value The value to assign
+	 */
+	public abstract void set(int index, String value);
+
+	/**
 	 * Set range to given arrays value
 	 * 
 	 * @param rl    row lower
@@ -215,7 +223,7 @@ public abstract class Array<T> implements Writable {
 	/**
 	 * Slice out the sub range and return new array with the specified type.
 	 * 
-	 * If the conversion fails fallback to normal slice
+	 * If the conversion fails fallback to normal slice.
 	 * 
 	 * @param rl row start
 	 * @param ru row end (not included)
@@ -389,6 +397,8 @@ public abstract class Array<T> implements Writable {
 	 * @param val the value to fill with.
 	 */
 	public abstract void fill(T val);
+
+	public abstract boolean isShallowSerialize();
 
 	/**
 	 * Overwrite of the java internal clone function for arrays, return a clone of underlying data that is mutable, (not

@@ -21,6 +21,8 @@ package org.apache.sysds.runtime.io;
 
 import java.io.IOException;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
@@ -32,9 +34,8 @@ import org.apache.sysds.runtime.frame.data.FrameBlock;
  * for creating format-specific writers. 
  * 
  */
-public abstract class FrameWriter 
-{
-
+public abstract class FrameWriter {
+	protected static final Log LOG = LogFactory.getLog(FrameWriter.class.getName());
 	public abstract void writeFrameToHDFS( FrameBlock src, String fname, long rlen, long clen )
 		throws IOException, DMLRuntimeException;
 

@@ -112,3 +112,5 @@ scripts/perftest/temp
 scripts/perftest/fed/results
 scripts/perftest/fed/scratch_space
 scripts/perftest/fed/temp
+
+src/test/scripts/functions/iogen/*.raw

@@ -61,6 +61,11 @@ public class IntegerArray extends Array<Integer> {
 	}
 
 	@Override
+	public void set(int index, String value) {
+		set(index, parseInt(value));
+	}
+
+	@Override
 	public void set(int rl, int ru, Array<Integer> value) {
 		set(rl, ru, value, 0);
 	}
@@ -113,7 +118,7 @@ public class IntegerArray extends Array<Integer> {
 		final int endSize = this._size + other.size();
 		final int[] ret = new int[endSize];
 		System.arraycopy(_data, 0, ret, 0, this._size);
-		System.arraycopy((int[])other.get(), 0, ret, this._size, other.size());
+		System.arraycopy((int[]) other.get(), 0, ret, this._size, other.size());
 		return new IntegerArray(ret);
 	}
 
@@ -144,7 +149,7 @@ public class IntegerArray extends Array<Integer> {
 	public void reset(int size) {
 		if(_data.length < size || _data.length > 2 * size)
 			_data = new int[size];
-			else
+		else
 			for(int i = 0; i < size; i++)
 				_data[i] = 0;
 		_size = size;
@@ -228,7 +233,7 @@ public class IntegerArray extends Array<Integer> {
 
 	@Override
 	protected Array<Integer> changeTypeInteger() {
-		return clone();
+		return this;
 	}
 
 	@Override
@@ -259,7 +264,7 @@ public class IntegerArray extends Array<Integer> {
 	}
 
 	@Override
-	public double getAsDouble(int i){
+	public double getAsDouble(int i) {
 		return _data[i];
 	}
 
@@ -270,12 +275,17 @@ public class IntegerArray extends Array<Integer> {
 			return Integer.parseInt(s);
 		}
 		catch(NumberFormatException e) {
-			if(s.contains(".")){
+			if(s.contains(".")) {
 				return Integer.parseInt(s.split("\\.")[0]);
 			}
 			else
 				throw e;
 		}
+	}
+
+	@Override
+	public boolean isShallowSerialize() {
+		return true;
 	}
 
 	@Override

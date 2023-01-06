@@ -41,8 +41,6 @@ import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 
-import java.util.Map;
-
 public abstract class ComputationSPInstruction extends SPInstruction implements LineageTraceable {
 	public CPOperand output;
 	public CPOperand input1, input2, input3;

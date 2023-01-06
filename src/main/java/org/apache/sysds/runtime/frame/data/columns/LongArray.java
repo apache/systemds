@@ -61,6 +61,11 @@ public class LongArray extends Array<Long> {
 	}
 
 	@Override
+	public void set(int index, String value) {
+		set(index, parseLong(value));
+	}
+
+	@Override
 	public void set(int rl, int ru, Array<Long> value) {
 		set(rl, ru, value, 0);
 	}
@@ -112,7 +117,7 @@ public class LongArray extends Array<Long> {
 		final int endSize = this._size + other.size();
 		final long[] ret = new long[endSize];
 		System.arraycopy(_data, 0, ret, 0, this._size);
-		System.arraycopy((long[])other.get(), 0, ret, this._size, other.size());
+		System.arraycopy((long[]) other.get(), 0, ret, this._size, other.size());
 		return new LongArray(ret);
 	}
 
@@ -144,7 +149,7 @@ public class LongArray extends Array<Long> {
 	public void reset(int size) {
 		if(_data.length < size || _data.length > 2 * size)
 			_data = new long[size];
-			else
+		else
 			for(int i = 0; i < size; i++)
 				_data[i] = 0;
 		_size = size;
@@ -239,7 +244,7 @@ public class LongArray extends Array<Long> {
 
 	@Override
 	protected Array<Long> changeTypeLong() {
-		return clone();
+		return this;
 	}
 
 	@Override
@@ -278,6 +283,11 @@ public class LongArray extends Array<Long> {
 			else
 				throw e;
 		}
+	}
+
+	@Override
+	public boolean isShallowSerialize() {
+		return true;
 	}
 
 	@Override

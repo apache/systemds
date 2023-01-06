@@ -64,6 +64,11 @@ public class BooleanArray extends Array<Boolean> {
 	}
 
 	@Override
+	public void set(int index, String value) {
+		set(index, BooleanArray.parseBoolean(value));
+	}
+
+	@Override
 	public void set(int rl, int ru, Array<Boolean> value) {
 		set(rl, ru, value, 0);
 	}
@@ -222,7 +227,7 @@ public class BooleanArray extends Array<Boolean> {
 
 	@Override
 	protected Array<Boolean> changeTypeBoolean() {
-		return clone();
+		return this;
 	}
 
 	@Override
@@ -278,14 +283,8 @@ public class BooleanArray extends Array<Boolean> {
 	}
 
 	@Override
-	public String toString() {
-		StringBuilder sb = new StringBuilder(_data.length * 5 + 2);
-		sb.append(super.toString() + ":[");
-		for(int i = 0; i < _size - 1; i++)
-			sb.append((_data[i] ? 1 : 0) + ",");
-		sb.append(_data[_size - 1] ? 1 : 0);
-		sb.append("]");
-		return sb.toString();
+	public boolean isShallowSerialize() {
+		return true;
 	}
 
 	@Override
@@ -295,5 +294,16 @@ public class BooleanArray extends Array<Boolean> {
 
 	protected static boolean parseBoolean(String value) {
 		return value != null && (Boolean.parseBoolean(value) || value.equals("1") || value.equals("1.0"));
+	}
+
+	@Override
+	public String toString() {
+		StringBuilder sb = new StringBuilder(_data.length * 5 + 2);
+		sb.append(super.toString() + ":[");
+		for(int i = 0; i < _size - 1; i++)
+			sb.append((_data[i] ? 1 : 0) + ",");
+		sb.append(_data[_size - 1] ? 1 : 0);
+		sb.append("]");
+		return sb.toString();
 	}
 }

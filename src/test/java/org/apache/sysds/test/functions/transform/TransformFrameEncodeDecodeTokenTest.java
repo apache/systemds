@@ -86,16 +86,17 @@ public class TransformFrameEncodeDecodeTokenTest extends AutomatedTestBase
 		try
 		{
 			getAndLoadTestConfiguration(TEST_NAME1);
+			setOutputBuffering(true);
 			
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME1 + ".dml";
-			programArgs = new String[]{"-explain","-nvargs", 
+			programArgs = new String[]{"-nvargs", 
 				"DATA=" + DATASET_DIR + DATASET1,
 				"TFSPEC=" + DATASET_DIR+ SPEC1,
 				"TFDATA=" + output("tfout"), "SEP= ",
 				"OFMT=" + ofmt, "OSEP= " };
 	
-			runTest(true, false, null, -1);
+			runTest(null);
 			
 			//read input/output and compare
 			FrameReader reader1 = FrameReaderFactory.createFrameReader(FileFormat.CSV, 

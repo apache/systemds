@@ -21,10 +21,15 @@ package org.apache.sysds.runtime.frame.data.iterators;
 
 import java.util.Iterator;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.runtime.util.UtilFunctions;
 
 public abstract class RowIterator<T> implements Iterator<T[]> {
+
+	protected static final Log LOG = LogFactory.getLog(RowIterator.class.getName());
+
 	protected final FrameBlock _fb;
 	protected final int[] _cols;
 	protected final T[] _curRow;

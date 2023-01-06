@@ -60,6 +60,12 @@ public class FloatArray extends Array<Float> {
 		_data[index] = (float) value;
 	}
 
+
+	@Override
+	public void set(int index, String value){
+		set(index,parseFloat(value) );
+	}
+
 	@Override
 	public void set(int rl, int ru, Array<Float> value) {
 		set(rl, ru, value, 0);
@@ -240,7 +246,7 @@ public class FloatArray extends Array<Float> {
 
 	@Override
 	protected Array<Float> changeTypeFloat() {
-		return clone();
+		return this;
 	}
 
 	@Override
@@ -272,6 +278,11 @@ public class FloatArray extends Array<Float> {
 			return 0.0f;
 		else
 			return Float.parseFloat(value);
+	}
+
+	@Override
+	public boolean isShallowSerialize() {
+		return true;
 	}
 
 	@Override

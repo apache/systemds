@@ -148,6 +148,13 @@ public class FederatedLineageTraceReuseTest extends MultiTenantTestBase {
 
 		int[] workerPorts = startFedWorkers(4, new String[]{"-lineage", "reuse"});
 
+		try {
+			Thread.sleep(4000);
+		}
+		catch(InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		rtplatform = execMode;
 		if(rtplatform == ExecMode.SPARK) {
 			DMLScript.USE_LOCAL_SPARK_CONFIG = true;

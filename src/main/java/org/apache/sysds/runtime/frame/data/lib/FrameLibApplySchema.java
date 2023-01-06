@@ -71,6 +71,13 @@ public class FrameLibApplySchema {
 			applySingleThread();
 		else
 			applyMultiThread();
+		
+		boolean same = true;
+		for(int i = 0; i < columnsIn.length && same; i++)
+			same = columnsIn[i] == columnsOut[i];
+		
+		if(same)
+			return this.fb;
 
 		final String[] colNames = fb.getColumnNames(false);
 		final ColumnMetadata[] meta = fb.getColumnMetadata();

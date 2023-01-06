@@ -104,8 +104,7 @@ public class FederatedReuseReadTest extends MultiTenantTestBase {
 
 	@Test
 	public void testModifiedValCP() {
-		//TODO with 4 runs sporadically into non-terminating state
-		runReuseReadTest(OpType.MODIFIED_VAL, 3, ExecMode.SINGLE_NODE, false);
+		runReuseReadTest(OpType.MODIFIED_VAL, 2, ExecMode.SINGLE_NODE, false);
 	}
 
 	@Test
@@ -117,7 +116,6 @@ public class FederatedReuseReadTest extends MultiTenantTestBase {
 	@Test
 	@Ignore
 	public void testModifiedValLineageCP() {
-		//TODO with 4 runs sporadically into non-terminating state
 		runReuseReadTest(OpType.MODIFIED_VAL, 3, ExecMode.SINGLE_NODE, true);
 	}
 

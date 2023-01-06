@@ -83,7 +83,6 @@ public class FrameLibAppend {
 		else if(b.getNumRows() == 0)
 			return a;
 
-		// ret._schema = a.getSchema().clone();
 		String[] retColNames = (a.getColumnNames(false) != null) ? a.getColumnNames().clone() : null;
 		ColumnMetadata[] retColMeta = new ColumnMetadata[a.getNumColumns()];
 		for(int j = 0; j < nCol; j++)

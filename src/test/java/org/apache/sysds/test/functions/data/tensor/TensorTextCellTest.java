@@ -58,7 +58,7 @@ public class TensorTextCellTest {
 	@Test
 	public void testReadWriteTextCellBasicTensorString() {
 		TensorBlock tb1 = TestUtils.createBasicTensor(ValueType.STRING, 70, 30, 0.7);
-		tb1.set(new int[]{0, 0}, "\"  f  f  \"");
+		tb1.set(new int[]{0, 0}, "  f  f  ");
 		tb1.set(new int[]{69, 29}, "respect");
 		TensorBlock tb2 = writeAndReadBasicTensorTextCell(tb1);
 		TestUtils.compareTensorBlocks(tb1, tb2);
@@ -98,7 +98,7 @@ public class TensorTextCellTest {
 	@Test
 	public void testReadWriteTextCellDataTensorString() {
 		TensorBlock tb1 = TestUtils.createDataTensor(ValueType.STRING, 70, 30, 0.7);
-		tb1.set(new int[]{0, 0}, "\"  f  f  \"");
+		tb1.set(new int[]{0, 0}, "  f  f  ");
 		tb1.set(new int[]{69, 29}, "respect");
 		TensorBlock tb2 = writeAndReadDataTensorTextCell(tb1);
 		TestUtils.compareTensorBlocks(tb1, tb2);
@@ -132,6 +132,7 @@ public class TensorTextCellTest {
 			return reader.readTensorFromHDFS(FILENAME, dims, 1024, tb1.getSchema());
 		}
 		catch (Exception ex) {
+			ex.printStackTrace();
 			throw new DMLRuntimeException(ex);
 		}
 	}

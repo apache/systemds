@@ -442,7 +442,7 @@ public class FrameArrayTests {
 			case STRING:
 
 				String vs = "1324L";
-				((Array<String>) a).set(0, vs);
+				a.set(0,vs);
 				assertEquals(((Array<String>) a).get(0), vs);
 
 				return;
@@ -584,7 +584,7 @@ public class FrameArrayTests {
 	@Test
 	public void setNull() {
 		// should not crash
-		a.set(0, null);
+		a.set(0, (String)null);
 	}
 
 	@Test

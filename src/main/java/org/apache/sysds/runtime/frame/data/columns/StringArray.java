@@ -37,9 +37,16 @@ import org.apache.sysds.utils.MemoryEstimates;
 public class StringArray extends Array<String> {
 	private String[] _data;
 
+	private long materializedSize = -1L;
+
 	public StringArray(String[] data) {
 		super(data.length);
 		_data = data;
+	}
+
+	private StringArray(String[] data, long materializedSize) {
+		this(data);
+		this.materializedSize = materializedSize;
 	}
 
 	public String[] get() {
@@ -54,16 +61,19 @@ public class StringArray extends Array<String> {
 	@Override
 	public void set(int index, String value) {
 		_data[index] = value;
+		materializedSize = -1;
 	}
 
 	@Override
 	public void set(int index, double value) {
 		_data[index] = Double.toString(value);
+		materializedSize = -1;
 	}
 
 	@Override
 	public void set(int rl, int ru, Array<String> value) {
 		set(rl, ru, value, 0);
+		materializedSize = -1;
 	}
 
 	@Override
@@ -75,11 +85,13 @@ public class StringArray extends Array<String> {
 			else
 				_data[i] = null;
 		}
+		materializedSize = -1;
 	}
 
 	@Override
 	public void set(int rl, int ru, Array<String> value, int rlSrc) {
 		System.arraycopy(((StringArray) value)._data, rlSrc, _data, rl, ru - rl + 1);
+		materializedSize = -1;
 	}
 
 	@Override
@@ -88,6 +100,7 @@ public class StringArray extends Array<String> {
 		for(int i = rl; i <= ru; i++)
 			if(data2[i] != null)
 				_data[i] = data2[i];
+		materializedSize = -1;
 	}
 
 	@Override
@@ -97,6 +110,7 @@ public class StringArray extends Array<String> {
 			if(v != null)
 				_data[i] = v.toString();
 		}
+		materializedSize = -1;
 	}
 
 	@Override
@@ -104,6 +118,7 @@ public class StringArray extends Array<String> {
 		if(_data.length <= _size)
 			_data = Arrays.copyOf(_data, newSize());
 		_data[_size++] = value;
+		materializedSize = -1;
 	}
 
 	@Override
@@ -112,7 +127,7 @@ public class StringArray extends Array<String> {
 		final String[] ret = new String[endSize];
 		System.arraycopy(_data, 0, ret, 0, this._size);
 		System.arraycopy((String[]) other.get(), 0, ret, this._size, other.size());
-		;
+		materializedSize = -1;
 		return new StringArray(ret);
 	}
 
@@ -134,7 +149,7 @@ public class StringArray extends Array<String> {
 
 	@Override
 	public Array<String> clone() {
-		return new StringArray(Arrays.copyOf(_data, _size));
+		return new StringArray(Arrays.copyOf(_data, _size), materializedSize);
 	}
 
 	@Override
@@ -150,6 +165,7 @@ public class StringArray extends Array<String> {
 			for(int i = 0; i < size; i++)
 				_data[i] = null;
 		_size = size;
+		materializedSize = -1;
 	}
 
 	@Override
@@ -175,50 +191,56 @@ public class StringArray extends Array<String> {
 		return ValueType.STRING;
 	}
 
+	private static final ValueType getHighest(ValueType state, ValueType c) {
+		switch(state) {
+			case FP32:
+				switch(c) {
+					case FP64:
+						return c;
+					default:
+				}
+				break;
+			case INT64:
+				switch(c) {
+					case FP64:
+					case FP32:
+						return c;
+					default:
+				}
+				break;
+			case INT32:
+				switch(c) {
+					case FP64:
+					case FP32:
+					case INT64:
+						return c;
+					default:
+				}
+				break;
+			case BOOLEAN:
+				switch(c) {
+					case FP64:
+					case FP32:
+					case INT64:
+					case INT32:
+						return c;
+					default:
+				}
+				break;
+			default:
+
+		}
+		return state;
+	}
+
 	@Override
 	public ValueType analyzeValueType() {
 		ValueType state = FrameUtil.isType(_data[0]);
 		for(int i = 1; i < _size; i++) {
-			ValueType c = FrameUtil.isType(_data[i]);
+			ValueType c = FrameUtil.isType(_data[i], state);
 			if(c == ValueType.STRING || c == ValueType.UNKNOWN)
 				return ValueType.STRING;
-			switch(state) {
-				case FP32:
-					switch(c) {
-						case FP64:
-							state = c;
-						default:
-					}
-					break;
-				case INT64:
-					switch(c) {
-						case FP64:
-						case FP32:
-							state = c;
-						default:
-					}
-					break;
-				case INT32:
-					switch(c) {
-						case FP64:
-						case FP32:
-						case INT64:
-							state = c;
-						default:
-					}
-					break;
-				case BOOLEAN:
-					switch(c) {
-						case FP64:
-						case FP32:
-						case INT64:
-						case INT32:
-							state = c;
-						default:
-					}
-					break;
-				default:
-			}
+			state = getHighest(state, c);
 		}
 		return state;
 	}
@@ -230,9 +252,12 @@ public class StringArray extends Array<String> {
 
 	@Override
 	public long getInMemorySize() {
+		if(materializedSize != -1)
+			return materializedSize;
 		long size = super.getInMemorySize(); // object header + object reference
 		size += MemoryEstimates.stringArrayCost(_data);
-		return size;
+		size += 8; // estimated size cache
+		return materializedSize = size;
 	}
 
 	@Override
@@ -368,7 +393,7 @@ public class StringArray extends Array<String> {
 
 	@Override
 	public Array<String> changeTypeString() {
-		return clone();
+		return this;
 	}
 
 	@Override
@@ -390,11 +415,18 @@ public class StringArray extends Array<String> {
 	public void fill(String value) {
 		for(int i = 0; i < _size; i++)
 			_data[i] = value;
+		materializedSize = -1;
 	}
 
 	@Override
 	public double getAsDouble(int i) {
 		return Double.parseDouble(_data[i]);
+	}
+
+	@Override
+	public boolean isShallowSerialize() {
+		long s = getInMemorySize();
+		return s / _size < 100;
 	}
 
 	@Override

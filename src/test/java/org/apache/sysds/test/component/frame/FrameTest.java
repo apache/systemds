@@ -25,10 +25,12 @@ import static org.junit.Assert.fail;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Iterator;
 
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
+import org.apache.sysds.runtime.frame.data.iterators.IteratorFactory;
 import org.apache.sysds.runtime.util.UtilFunctions;
 import org.apache.sysds.test.TestUtils;
 import org.junit.Test;
@@ -37,7 +39,7 @@ import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
 @RunWith(value = Parameterized.class)
-public class FrameAppendTest {
+public class FrameTest {
 	public FrameBlock f;
 
 	@Parameters
@@ -62,7 +64,7 @@ public class FrameAppendTest {
 		return tests;
 	}
 
-	public FrameAppendTest(FrameBlock f) {
+	public FrameTest(FrameBlock f) {
 		this.f = f;
 	}
 
@@ -180,6 +182,18 @@ public class FrameAppendTest {
 		for(int r = 0; r < f.getNumRows(); r++)
 			for(int c = 0; c < f.getNumColumns(); c++)
 				assertEquals(ff.get(r + 240, c).toString(), f.get(r, c).toString());
+	}
+
+	@Test
+	public void testIterator() {
+
+		Iterator<Object[]> it = IteratorFactory.getObjectRowIterator(f);
+
+		for(int r = 0; r < f.getNumRows(); r++){
+			Object[] row = it.next();
+			for(int c = 0; c < f.getNumColumns(); c++)
+				assertEquals(f.get(r, c).toString(), row[c].toString());
+		}
 	}
 
 	private static FrameBlock append(FrameBlock a, FrameBlock b, boolean cBind) {

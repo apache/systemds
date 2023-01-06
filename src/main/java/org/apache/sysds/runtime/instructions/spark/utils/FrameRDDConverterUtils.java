@@ -620,7 +620,6 @@ public class FrameRDDConverterUtils
 			//preallocate physical columns (to avoid re-allocations)
 			fb.ensureAllocatedColumns(_maxRowsPerBlock);
 			fb.reset(0, false); //reset data but keep schema
-			fb.setNumRows(0);   //reset num rows to allow for append
 			
 			//handle meta data
 			if( _colnames != null )

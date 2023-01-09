@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
 
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.test.AutomatedTestBase;
@@ -63,6 +64,8 @@ public class FederatedParamservTest extends AutomatedTestBase {
 			// Network type, number of federated workers, data set size, batch size, epochs, learning rate, update type, update frequency
 			// basic functionality
 
+			{"UNet",	2, 4, 1, 1, 0.01, 		"BSP", "BATCH", "SHUFFLE",		 		"BASELINE",		"false","BALANCED",		200},
+			//{"UNet", 	2, 4, 1, 1, 0.01, 		"BSP", "BATCH", "LOCAL", 				"BASELINE",		"true", "IMBALANCED",	200},
 			{"TwoNN",	2, 4, 1, 4, 0.01, 		"BSP", "BATCH", "KEEP_DATA_ON_WORKER", 	"BASELINE",		"true",	"IMBALANCED",	200},
 			{"CNN", 	2, 4, 1, 4, 0.01, 		"BSP", "EPOCH", "SHUFFLE", 				"NONE", 		"true",	"IMBALANCED", 	200},
 			{"CNN",		2, 4, 1, 4, 0.01, 		"ASP", "BATCH", "REPLICATE_TO_MAX", 	"CYCLE_MIN", 	"true",	"IMBALANCED",	200},
@@ -136,13 +139,16 @@ public class FederatedParamservTest extends AutomatedTestBase {
 
 		int C = 1, Hin = 28, Win = 28;
 		int numLabels = 10;
+		if (_networkType.equals("UNet")){
+			C = 3; Hin = 340; Win = 340;
+			numLabels = C * Hin * Win;
+		}
 
 		ExecMode platformOld = setExecMode(mode);
-
+		List<Integer> ports = new ArrayList<>();
+		List<Thread> threads = new ArrayList<>();
 		try {
 			// start threads
-			List<Integer> ports = new ArrayList<>();
-			List<Thread> threads = new ArrayList<>();
 			for(int i = 0; i < _numFederatedWorkers; i++) {
 				ports.add(getRandomAvailablePort());
 				threads.add(startLocalFedWorkerThread(ports.get(i), FED_WORKER_WAIT_S));
@@ -150,23 +156,29 @@ public class FederatedParamservTest extends AutomatedTestBase {
 
 			// generate test data
 			double[][] features = generateDummyMNISTFeatures(_dataSetSize, C, Hin, Win);
+			double[][] features_extrapolated = generateDummyMNISTFeatures(_dataSetSize, C, Hin+184, Win+184);
 			double[][] labels = generateDummyMNISTLabels(_dataSetSize, numLabels);
 			String featuresName = "";
+			String featuresExName = "";
 			String labelsName = "";
 
 			// federate test data balanced or imbalanced
 			if(_data_distribution.equals("IMBALANCED")) {
 				featuresName = "X_IMBALANCED_" + _numFederatedWorkers;
+				featuresExName = "X_EX_IMBALANCED_" + _numFederatedWorkers;
 				labelsName = "y_IMBALANCED_" + _numFederatedWorkers;
 				double[][] ranges = {{0,1}, {1,4}};
 				rowFederateLocallyAndWriteInputMatrixWithMTD(featuresName, features, _numFederatedWorkers, ports, ranges);
+				rowFederateLocallyAndWriteInputMatrixWithMTD(featuresExName, features_extrapolated, _numFederatedWorkers, ports, ranges, null);
 				rowFederateLocallyAndWriteInputMatrixWithMTD(labelsName, labels, _numFederatedWorkers, ports, ranges);
 			}
 			else {
 				featuresName = "X_BALANCED_" + _numFederatedWorkers;
+				featuresExName = "X_EX_BALANCED_" + _numFederatedWorkers;
 				labelsName = "y_BALANCED_" + _numFederatedWorkers;
 				double[][] ranges = generateBalancedFederatedRowRanges(_numFederatedWorkers, features.length);
 				rowFederateLocallyAndWriteInputMatrixWithMTD(featuresName, features, _numFederatedWorkers, ports, ranges);
+				rowFederateLocallyAndWriteInputMatrixWithMTD(featuresExName, features_extrapolated, _numFederatedWorkers, ports, ranges, null);
 				rowFederateLocallyAndWriteInputMatrixWithMTD(labelsName, labels, _numFederatedWorkers, ports, ranges);
 			}
 
@@ -197,18 +209,18 @@ public class FederatedParamservTest extends AutomatedTestBase {
 					"channels=" + C,
 					"hin=" + Hin,
 					"win=" + Win,
-					"seed=" + _seed));
+					"seed=" + _seed,
+					"features_ex=" + input(featuresExName)));
 
 			programArgs = programArgsList.toArray(new String[0]);
 			String log = runTest(null).toString();
 			Assert.assertEquals("Test Failed \n" + log, 0, Statistics.getNoOfExecutedSPInst());
-			
+		}
+		finally {
 			// shut down threads
 			for(int i = 0; i < _numFederatedWorkers; i++) {
 				TestUtils.shutdownThreads(threads.get(i));
 			}
-		}
-		finally {
 			resetExecMode(platformOld);
 		}
 	}

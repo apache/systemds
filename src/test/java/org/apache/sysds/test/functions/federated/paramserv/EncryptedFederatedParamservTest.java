@@ -71,7 +71,8 @@ public class EncryptedFederatedParamservTest extends AutomatedTestBase {
 				//{"TwoNN",	4, 60000, 32, 4, 0.01, 	"BSP", "BATCH", "KEEP_DATA_ON_WORKER", 	"NONE" ,		"false","BALANCED",		200},
 
 				// One important point is that we do the model averaging in the case of BSP
-				{"UNet",	2, 4, 1, 1, 0.01, 		"BSP", "BATCH", "KEEP_DATA_ON_WORKER", 	"BASELINE",		"false",	"IMBALANCED",	200},
+				{"UNet",	2, 4, 1, 1, 0.01, 		"BSP", "BATCH", "SHUFFLE",		 		"BASELINE",		"false",	"BALANCED",		200},
+				//{"UNet",	2, 4, 1, 1, 0.01, 		"BSP", "BATCH", "KEEP_DATA_ON_WORKER", 	"BASELINE",		"false",	"IMBALANCED",	200},
 				{"TwoNN",	2, 4, 1, 1, 0.01, 		"BSP", "BATCH", "KEEP_DATA_ON_WORKER", 	"BASELINE",		"false",	"IMBALANCED",	200},
 				{"CNN", 	2, 4, 1, 1, 0.01, 		"BSP", "EPOCH", "KEEP_DATA_ON_WORKER",  "BASELINE",		"false",	"IMBALANCED", 	200},
 				//{"TwoNN", 	5, 1000, 100, 1, 0.01, 	"BSP", "BATCH", "KEEP_DATA_ON_WORKER", 	"NONE",			"true",	"BALANCED",		200},
@@ -173,8 +174,10 @@ public class EncryptedFederatedParamservTest extends AutomatedTestBase {
 
 			// generate test data
 			double[][] features = generateFeatures(_dataSetSize, C, Hin, Win);
+			double[][] features_extrapolated = generateFeatures(_dataSetSize, C, Hin+184, Win+184);
 			double[][] labels = generateLabels(_dataSetSize, numLabels, features);
 			String featuresName = "";
+			String featuresExName = "";
 			String labelsName = "";
 
 			PrivacyConstraint privacyConstraint = new PrivacyConstraint(PrivacyConstraint.PrivacyLevel.Private);
@@ -182,16 +185,20 @@ public class EncryptedFederatedParamservTest extends AutomatedTestBase {
 			// federate test data balanced or imbalanced
 			if(_data_distribution.equals("IMBALANCED")) {
 				featuresName = "X_IMBALANCED_" + _numFederatedWorkers;
+				featuresExName = "X_EX_IMBALANCED_" + _numFederatedWorkers;
 				labelsName = "y_IMBALANCED_" + _numFederatedWorkers;
 				double[][] ranges = {{0,1}, {1,4}};
 				rowFederateLocallyAndWriteInputMatrixWithMTD(featuresName, features, _numFederatedWorkers, ports, ranges, privacyConstraint);
+				rowFederateLocallyAndWriteInputMatrixWithMTD(featuresExName, features_extrapolated, _numFederatedWorkers, ports, ranges, null);
 				rowFederateLocallyAndWriteInputMatrixWithMTD(labelsName, labels, _numFederatedWorkers, ports, ranges, privacyConstraint);
 			}
 			else {
 				featuresName = "X_BALANCED_" + _numFederatedWorkers;
+				featuresExName = "X_EX_BALANCED_" + _numFederatedWorkers;
 				labelsName = "y_BALANCED_" + _numFederatedWorkers;
 				double[][] ranges = generateBalancedFederatedRowRanges(_numFederatedWorkers, features.length);
 				rowFederateLocallyAndWriteInputMatrixWithMTD(featuresName, features, _numFederatedWorkers, ports, ranges, privacyConstraint);
+				rowFederateLocallyAndWriteInputMatrixWithMTD(featuresExName, features_extrapolated, _numFederatedWorkers, ports, ranges, null);
 				rowFederateLocallyAndWriteInputMatrixWithMTD(labelsName, labels, _numFederatedWorkers, ports, ranges, privacyConstraint);
 			}
 
@@ -218,7 +225,8 @@ public class EncryptedFederatedParamservTest extends AutomatedTestBase {
 					"hin=" + Hin,
 					"win=" + Win,
 					"seed=" + _seed,
-					"modelAvg=" +  Boolean.toString(modelAvg).toUpperCase()));
+					"modelAvg=" +  Boolean.toString(modelAvg).toUpperCase(),
+					"features_ex=" + input(featuresExName)));
 
 			programArgs = programArgsList.toArray(new String[0]);
 			String log = runTest(null).toString();

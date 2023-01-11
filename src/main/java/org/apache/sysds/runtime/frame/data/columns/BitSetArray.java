@@ -442,6 +442,14 @@ public class BitSetArray extends Array<Boolean> {
 	}
 
 	@Override
+	public Array<Character> changeTypeCharacter() {
+		char[] ret = new char[size()];
+		for(int i = 0; i < size(); i++)
+			ret[i] = (char) (get(i) ? 1 : 0);
+		return new CharArray(ret);
+	}
+
+	@Override
 	public void fill(String value) {
 		fill(BooleanArray.parseBoolean(value));
 	}

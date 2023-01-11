@@ -271,15 +271,21 @@ public class BooleanArray extends Array<Boolean> {
 	}
 
 	@Override
+	public Array<Character> changeTypeCharacter() {
+		char[] ret = new char[size()];
+		for(int i = 0; i < size(); i++)
+			ret[i] = (char) (_data[i] ? 1 : 0);
+		return new CharArray(ret);
+	}
+
+	@Override
 	public void fill(String value) {
 		fill(parseBoolean(value));
 	}
 
 	@Override
 	public void fill(Boolean value) {
-		for(int i = 0; i < _size; i++)
-			_data[i] = value;
-
+		Arrays.fill(_data, value);
 	}
 
 	@Override
@@ -298,7 +304,7 @@ public class BooleanArray extends Array<Boolean> {
 
 	@Override
 	public String toString() {
-		StringBuilder sb = new StringBuilder(_data.length * 5 + 2);
+		StringBuilder sb = new StringBuilder(_data.length + 2);
 		sb.append(super.toString() + ":[");
 		for(int i = 0; i < _size - 1; i++)
 			sb.append((_data[i] ? 1 : 0) + ",");

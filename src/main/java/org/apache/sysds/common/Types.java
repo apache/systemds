@@ -76,7 +76,8 @@ public class Types
 	 */
 	public enum ValueType {
 		UINT8, // Used for parsing in UINT values from numpy.
-		FP32, FP64, INT32, INT64, BOOLEAN, STRING, UNKNOWN;
+		FP32, FP64, INT32, INT64, BOOLEAN, STRING, UNKNOWN,
+		CHARACTER;
 		
 		public boolean isNumeric() {
 			return this == UINT8 || this == INT32 || this == INT64 || this == FP32 || this == FP64;
@@ -85,7 +86,7 @@ public class Types
 			return this == UNKNOWN;
 		}
 		public boolean isPseudoNumeric() {
-			return isNumeric() || this == BOOLEAN;
+			return isNumeric() || this == BOOLEAN || this == CHARACTER;
 		}
 		public String toExternalString() {
 			switch(this) {
@@ -112,6 +113,7 @@ public class Types
 				case "INT":      return INT64;
 				case "BOOLEAN":  return BOOLEAN;
 				case "STRING":   return STRING;
+				case "CHARACTER": return CHARACTER;
 				case "UNKNOWN":  return UNKNOWN;
 				default:
 					throw new DMLRuntimeException("Unknown value type: "+value);
@@ -127,20 +129,23 @@ public class Types
 		 * 
 		 * @param a First ValueType
 		 * @param b Second ValueType
-		 * @return The common higest type to represent both
+		 * @return The common highest type to represent both
 		 */
 		public static ValueType getHighestCommonType(ValueType a, ValueType b){
 			if(a == b)
 				return a;
-			if(b == UNKNOWN)
+			else if(b == UNKNOWN)
 				throw new DMLRuntimeException(
 					"Invalid or not implemented support for comparing valueType of: " + a + " and " + b);
 			
 			switch(a){
+				case CHARACTER:
+					return STRING;
 				case STRING:
 					return a;
 				case FP64:
 					switch(b){
+						case CHARACTER:
 						case STRING:
 							return b;
 						default:
@@ -148,6 +153,7 @@ public class Types
 					}
 				case FP32:
 				switch(b){
+					case CHARACTER:
 					case STRING:
 					case FP64:
 						return b;
@@ -156,6 +162,7 @@ public class Types
 				}
 				case INT64:
 				switch(b){
+					case CHARACTER:
 					case STRING:
 					case FP64:
 					case FP32:
@@ -165,6 +172,7 @@ public class Types
 				}
 				case INT32:
 				switch(b){
+					case CHARACTER:
 					case STRING:
 					case FP64:
 					case FP32:
@@ -175,6 +183,7 @@ public class Types
 				}
 				case UINT8:
 				switch(b){
+					case CHARACTER:
 					case STRING:
 					case FP64:
 					case FP32:

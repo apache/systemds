@@ -29,9 +29,11 @@ import java.util.BitSet;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.frame.data.columns.ArrayFactory;
 import org.apache.sysds.runtime.frame.data.columns.BitSetArray;
 import org.apache.sysds.runtime.frame.data.columns.BooleanArray;
+import org.apache.sysds.runtime.frame.data.columns.CharArray;
 import org.apache.sysds.runtime.frame.data.columns.IntegerArray;
 import org.apache.sysds.runtime.frame.data.columns.LongArray;
 import org.apache.sysds.runtime.frame.data.columns.StringArray;
@@ -485,6 +487,46 @@ public class CustomArrayTests {
 	@Test
 	public void LongToBits_minusOne() {
 		assertEquals(BitSetArray.longToBits(-1), "1111111111111111111111111111111111111111111111111111111111111111");
+	}
+
+	@Test
+	public void charSet() {
+		CharArray a = ArrayFactory.create(new char[2]);
+		a.set(0, "1.0");
+		assertEquals(a.get(0), Character.valueOf((char) 1));
+	}
+
+	@Test(expected = DMLRuntimeException.class)
+	public void charSet_invalid() {
+		CharArray a = ArrayFactory.create(new char[2]);
+		a.set(0, "1.01");
+	}
+
+	@Test(expected = DMLRuntimeException.class)
+	public void charSet_invalid_2() {
+		CharArray a = ArrayFactory.create(new char[2]);
+		a.set(0, "aa");
+	}
+
+	@Test
+	public void charSetDouble() {
+		CharArray a = ArrayFactory.create(new char[2]);
+		a.set(0, 1.0d);
+		assertEquals(a.get(0), Character.valueOf((char) 1));
+	}
+
+	@Test
+	public void charSetDouble_2() {
+		CharArray a = ArrayFactory.create(new char[2]);
+		a.set(0, 0.0d);
+		assertEquals(a.get(0), Character.valueOf((char) 0));
+	}
+
+	@Test
+	public void charSetDouble_3() {
+		CharArray a = ArrayFactory.create(new char[2]);
+		a.set(0, 10.0d);
+		assertEquals(a.get(0), Character.valueOf((char) 10));
 	}
 
 	public static BitSetArray createTrueBitArray(int length) {

@@ -45,6 +45,7 @@ import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.data.TensorIndexes;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
+import org.apache.sysds.runtime.frame.data.columns.CharArray;
 import org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue;
 import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysds.runtime.matrix.data.Pair;
@@ -489,6 +490,7 @@ public class UtilFunctions {
 			case INT64:   return Long.parseLong(in);
 			case FP64:    return Double.parseDouble(in);
 			case FP32:    return Float.parseFloat(in);
+			case CHARACTER: return CharArray.parseChar(in);
 			default: throw new RuntimeException("Unsupported value type: "+vt);
 		}
 	}
@@ -531,6 +533,24 @@ public class UtilFunctions {
 				return ((Boolean) in) ? 1 : 0;
 			case STRING:
 				return !((String) in).isEmpty() ? Float.parseFloat((String) in) : 0;
+			default:
+				throw new DMLRuntimeException("Unsupported value type: " + vt);
+		}
+	}
+
+	public static char objectToCharacter(ValueType vt, Object in){
+		if(in == null)
+			return 0;
+		switch(vt) {
+			case FP64:
+			case FP32:
+			case INT64:
+			case INT32:
+				return in.toString().charAt(0);
+			case BOOLEAN:
+				return ((Boolean) in) ? '1' : '0';
+			case STRING:
+				return !((String) in).isEmpty() ? ((String)in).charAt(0) : 0;
 			default:
 				throw new DMLRuntimeException("Unsupported value type: " + vt);
 		}

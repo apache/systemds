@@ -27,6 +27,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
@@ -40,7 +42,9 @@ import org.junit.runners.Parameterized.Parameters;
 
 @RunWith(value = Parameterized.class)
 public class FrameTest {
-	public FrameBlock f;
+	protected static final Log LOG = LogFactory.getLog(FrameTest.class.getName());
+
+	public final FrameBlock f;
 
 	@Parameters
 	public static Collection<Object[]> data() {
@@ -162,7 +166,7 @@ public class FrameTest {
 		for(int r = 0; r < 10; r++)
 			for(int c = 0; c < f.getNumColumns(); c++) {
 				String v = ff.get(r, c).toString();
-				assertTrue(v, v.equals("0") || v.equals("0.0") || v.equals("false"));
+				assertTrue(v, v.equals("0") || v.equals("0.0") || v.equals("false") || v.equals((char)0 +""));
 			}
 		for(int r = 0; r < f.getNumRows(); r++)
 			for(int c = 0; c < f.getNumColumns(); c++)
@@ -177,7 +181,9 @@ public class FrameTest {
 		for(int r = 0; r < 240; r++)
 			for(int c = 0; c < f.getNumColumns(); c++) {
 				String v = ff.get(r, c).toString();
-				assertTrue(v, v.equals("0") || v.equals("0.0") || v.equals("false"));
+				// LOG.error(v);
+				// LOG.error((int)v.charAt(0));
+				assertTrue(v, v.equals("0") || v.equals("0.0") || v.equals("false") || v.equals((char)0 +""));
 			}
 		for(int r = 0; r < f.getNumRows(); r++)
 			for(int c = 0; c < f.getNumColumns(); c++)
@@ -189,7 +195,7 @@ public class FrameTest {
 
 		Iterator<Object[]> it = IteratorFactory.getObjectRowIterator(f);
 
-		for(int r = 0; r < f.getNumRows(); r++){
+		for(int r = 0; r < f.getNumRows(); r++) {
 			Object[] row = it.next();
 			for(int c = 0; c < f.getNumColumns(); c++)
 				assertEquals(f.get(r, c).toString(), row[c].toString());

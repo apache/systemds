@@ -264,7 +264,7 @@ public class StringArray extends Array<String> {
 
 	@Override
 	public long getExactSerializedSize() {
-		long si = 1 + 8; // byte identifier
+		long si = 1 + 8; // byte identifier and long size
 		for(String s : _data)
 			si += IOUtilFunctions.getUTFSize(s);
 		return si;
@@ -441,9 +441,16 @@ public class StringArray extends Array<String> {
 	}
 
 	@Override
+	public Array<Character> changeTypeCharacter() {
+		char[] ret = new char[size()];
+		for(int i = 0; i < size(); i++)
+			ret[i] = _data[i].charAt(0);
+		return new CharArray(ret);
+	}
+
+	@Override
 	public void fill(String value) {
-		for(int i = 0; i < _size; i++)
-			_data[i] = value;
+		Arrays.fill(_data, value);
 		materializedSize = -1;
 	}
 

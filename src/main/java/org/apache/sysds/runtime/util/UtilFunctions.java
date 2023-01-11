@@ -536,6 +536,24 @@ public class UtilFunctions {
 		}
 	}
 
+	public static char objectToCharacter(ValueType vt, Object in){
+		if(in == null)
+			return 0;
+		switch(vt) {
+			case FP64:
+			case FP32:
+			case INT64:
+			case INT32:
+				return in.toString().charAt(0);
+			case BOOLEAN:
+				return ((Boolean) in) ? '1' : '0';
+			case STRING:
+				return !((String) in).isEmpty() ? ((String)in).charAt(0) : 0;
+			default:
+				throw new DMLRuntimeException("Unsupported value type: " + vt);
+		}
+	}
+
 	public static int objectToInteger(ValueType vt, Object in) {
 		if(in == null)
 			return 0;

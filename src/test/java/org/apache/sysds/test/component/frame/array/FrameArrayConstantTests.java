@@ -71,8 +71,13 @@ public class FrameArrayConstantTests {
 	public void testConstruction() {
 		try {
 			Array<?> a = ArrayFactory.allocate(t, nRow, "0");
-			for(int i = 0; i < nRow; i++)
-				assertEquals(a.getAsDouble(i), 0.0, 0.0000000001);
+			if(a.getValueType() == ValueType.CHARACTER)
+
+				for(int i = 0; i < nRow; i++)
+					assertEquals(a.getAsDouble(i), 48.0, 0.0000000001);
+			else
+				for(int i = 0; i < nRow; i++)
+					assertEquals(a.getAsDouble(i), 0.0, 0.0000000001);
 		}
 		catch(Exception e) {
 			e.printStackTrace();
@@ -84,7 +89,7 @@ public class FrameArrayConstantTests {
 	public void testConstruction_default() {
 		try {
 			Array<?> a = ArrayFactory.allocate(t, nRow);
-			if(t != ValueType.STRING)
+			if(t != ValueType.STRING && t != ValueType.CHARACTER)
 				for(int i = 0; i < nRow; i++)
 					assertEquals(a.getAsDouble(i), 0.0, 0.0000000001);
 		}
@@ -111,7 +116,7 @@ public class FrameArrayConstantTests {
 	public void testConstruction_null() {
 		try {
 			Array<?> a = ArrayFactory.allocate(t, nRow, null);
-			if(t != ValueType.STRING)
+			if(t != ValueType.STRING && t != ValueType.CHARACTER)
 				for(int i = 0; i < nRow; i++)
 					assertEquals(a.getAsDouble(i), 0.0, 0.0000000001);
 		}

@@ -208,6 +208,7 @@ public class FrameDropInvalidTypeTest extends AutomatedTestBase {
 			writer.writeFrameToHDFS(frame2, input("M"), 1, schema.length);
 			runTest(null);
 			FrameBlock frameout = readDMLFrameFromHDFS("B", FileFormat.BINARY);
+			LOG.error(frameout);
 			//read output data and compare results
 			ArrayList<Object> data = new ArrayList<>();
 			for (int i = 0; i < frameout.getNumRows(); i++)

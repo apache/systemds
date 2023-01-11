@@ -262,8 +262,7 @@ public class LongArray extends Array<Long> {
 
 	@Override
 	public void fill(Long value) {
-		for(int i = 0; i < _size; i++)
-			_data[i] = value;
+		Arrays.fill(_data, value);
 	}
 
 	@Override
@@ -283,6 +282,14 @@ public class LongArray extends Array<Long> {
 			else
 				throw e;
 		}
+	}
+
+	@Override
+	public Array<Character> changeTypeCharacter() {
+		char[] ret = new char[size()];
+		for(int i = 0; i < size(); i++)
+			ret[i] = get(i).toString().charAt(0);
+		return new CharArray(ret);
 	}
 
 	@Override

@@ -35,7 +35,8 @@ import org.apache.sysds.runtime.util.UtilFunctions;
 public interface FrameUtil {
 	public static final Log LOG = LogFactory.getLog(FrameUtil.class.getName());
 
-	public static final Pattern booleanPattern = Pattern.compile("([tT]((rue)|(RUE))?|[fF]((alse)|(ALSE))?|0\\.0+|1\\.0+|0|1)");
+	public static final Pattern booleanPattern = Pattern
+		.compile("([tT]((rue)|(RUE))?|[fF]((alse)|(ALSE))?|0\\.0+|1\\.0+|0|1)");
 	public static final Pattern integerFloatPattern = Pattern.compile("[-+]?\\d+(\\.0+)?");
 	public static final Pattern floatPattern = Pattern.compile("[-+]?[0-9]*\\.?[0-9]*([eE][-+]?[0-9]+)?");
 
@@ -72,9 +73,9 @@ public interface FrameUtil {
 			return ValueType.INT64;
 	}
 
-	private static ValueType isIntType(final String val, final int len) {
+	public static ValueType isIntType(final String val, final int len) {
 		if(len <= 22) {
-			if(simpleIntMatch(val, len)){
+			if(simpleIntMatch(val, len)) {
 				if(len < 8)
 					return ValueType.INT32;
 				return intType(Long.parseLong(val));
@@ -88,7 +89,7 @@ public interface FrameUtil {
 		return null;
 	}
 
-	private static ValueType isFloatType(final String val, final int len) {
+	public static ValueType isFloatType(final String val, final int len) {
 
 		if(len <= 25 && floatPattern.matcher(val).matches()) {
 			// return isFloatType(v);
@@ -128,6 +129,7 @@ public interface FrameUtil {
 		switch(minType) {
 			case UNKNOWN:
 			case BOOLEAN:
+			case CHARACTER:
 				if(isBooleanType(val, len) != null)
 					return ValueType.BOOLEAN;
 			case UINT8:
@@ -141,6 +143,8 @@ public interface FrameUtil {
 				r = isFloatType(val, len);
 				if(r != null)
 					return r;
+				if(len == 1)
+					return ValueType.CHARACTER;
 			case STRING:
 				return ValueType.STRING;
 			default:

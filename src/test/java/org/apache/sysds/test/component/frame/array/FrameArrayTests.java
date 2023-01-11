@@ -93,6 +93,10 @@ public class FrameArrayTests {
 			tests.add(new Object[] {ArrayFactory.create(generateRandomTrueFalseString(80, 221)), FrameArrayType.STRING});
 			tests.add(new Object[] {ArrayFactory.create(generateRandomTrueFalseString(150, 221)), FrameArrayType.STRING});
 
+			tests.add(new Object[] {ArrayFactory.create(new char[] {0, 0, 0, 0, 1, 1, 1}), FrameArrayType.CHARACTER});
+			tests.add(new Object[] {ArrayFactory.create(new char[] {'t', 't', 'f', 'f', 'T'}), FrameArrayType.CHARACTER});
+			tests.add(new Object[] {ArrayFactory.create(new char[] {'0', '2', '3', '4', '9'}), FrameArrayType.CHARACTER});
+			tests.add(new Object[] {ArrayFactory.create(generateRandom01chars(150, 221)), FrameArrayType.CHARACTER});
 			// Long to int
 			tests.add(new Object[] {ArrayFactory.create(new long[] {3214, 424, 13, 22, 111, 134}), FrameArrayType.INT64});
 		}
@@ -191,6 +195,11 @@ public class FrameArrayTests {
 		changeType(ValueType.BOOLEAN);
 	}
 
+	@Test
+	public void changeTypeCharacter() {
+		changeType(ValueType.CHARACTER);
+	}
+
 	public void changeType(ValueType t) {
 		try {
 			Array<?> r = a.changeType(t);
@@ -275,6 +284,9 @@ public class FrameArrayTests {
 			case STRING:
 				x = (String[]) a.get();
 				return;
+			case CHARACTER:
+				x = (char[]) a.get();
+				return;
 			default:
 				throw new NotImplementedException();
 		}
@@ -328,6 +340,10 @@ public class FrameArrayTests {
 				case STRING:
 					((Array<String>) aa).set(start, end, (Array<String>) a, off);
 					break;
+				case CHARACTER:
+
+					((Array<Character>) aa).set(start, end, (Array<Character>) a, off);
+					break;
 				default:
 					throw new NotImplementedException();
 			}
@@ -371,6 +387,9 @@ public class FrameArrayTests {
 				case STRING:
 					other = ArrayFactory.create(generateRandomString(otherSize, seed));
 					break;
+				case CHARACTER:
+					other = ArrayFactory.create(generateRandomChar(otherSize, seed));
+					break;
 				default:
 					throw new NotImplementedException();
 			}
@@ -395,6 +414,9 @@ public class FrameArrayTests {
 					break;
 				case STRING:
 					((Array<String>) aa).set(start, end, (Array<String>) other);
+					break;
+				case CHARACTER:
+					((Array<Character>) aa).set(start, end, (Array<Character>) other);
 					break;
 				default:
 					throw new NotImplementedException();
@@ -427,7 +449,6 @@ public class FrameArrayTests {
 				((Array<Integer>) a).set(0, vi);
 				assertEquals(((Array<Integer>) a).get(0), vi);
 				return;
-
 			case INT64:
 				Long vl = 1324L;
 				((Array<Long>) a).set(0, vl);
@@ -435,17 +456,19 @@ public class FrameArrayTests {
 				return;
 			case BOOLEAN:
 			case BITSET:
-
 				Boolean vb = true;
 				((Array<Boolean>) a).set(0, vb);
 				assertEquals(((Array<Boolean>) a).get(0), vb);
 				return;
 			case STRING:
-
 				String vs = "1324L";
 				a.set(0, vs);
 				assertEquals(((Array<String>) a).get(0), vs);
-
+				return;
+			case CHARACTER:
+				Character c = '~';
+				((Array<Character>) a).set(0, c);
+				assertEquals(((Array<Character>) a).get(0), c);
 				return;
 			default:
 				throw new NotImplementedException();
@@ -477,6 +500,9 @@ public class FrameArrayTests {
 			case STRING:
 				assertEquals(((Array<String>) a).get(0), Double.toString(vd));
 				return;
+			case CHARACTER:
+				assertEquals((int) ((Array<Character>) a).get(0), 1);
+				return;
 			default:
 				throw new NotImplementedException();
 		}
@@ -506,6 +532,9 @@ public class FrameArrayTests {
 				return;
 			case STRING:
 				assertEquals(((Array<String>) a).get(0), Double.toString(vd));
+				return;
+			case CHARACTER:
+				assertEquals(((Array<Character>) a).get(0), Character.valueOf((char) 0));
 				return;
 			default:
 				throw new NotImplementedException();
@@ -671,6 +700,16 @@ public class FrameArrayTests {
 				aa.append(vi8s);
 				assertEquals((int) aa.get(aa.size() - 1), vi8);
 				break;
+			case CHARACTER:
+				char vc = '@';
+				String vci = vc + "";
+				aa.append(vci);
+				assertEquals((char) aa.get(aa.size() - 1), vc);
+				vc = (char) 42;
+				vci = vc + "";
+				aa.append(vci);
+				assertEquals((char) aa.get(aa.size() - 1), vc);
+				break;
 			case UNKNOWN:
 			default:
 				throw new DMLRuntimeException("Invalid type");
@@ -703,6 +742,9 @@ public class FrameArrayTests {
 				break;
 			case UINT8:
 				assertEquals((int) aa.get(aa.size() - 1), 0);
+				break;
+			case CHARACTER:
+				assertEquals((char) aa.get(aa.size() - 1), 0);
 				break;
 			case UNKNOWN:
 			default:
@@ -741,6 +783,9 @@ public class FrameArrayTests {
 				case UINT8:
 					assertEquals((int) aa.get(aa.size() - 1), 0);
 					break;
+				case CHARACTER:
+					assertEquals((char) aa.get(aa.size() - 1), 0);
+					break;
 				case UNKNOWN:
 				default:
 					throw new DMLRuntimeException("Invalid type");
@@ -777,6 +822,9 @@ public class FrameArrayTests {
 					break;
 				case STRING:
 					((Array<String>) aa).setNz((Array<String>) a);
+					break;
+				case CHARACTER:
+					((Array<Character>) aa).setNz((Array<Character>) a);
 					break;
 				case UNKNOWN:
 				default:
@@ -916,6 +964,8 @@ public class FrameArrayTests {
 				return ArrayFactory.create(generateRandomFloat(size, seed));
 			case FP64:
 				return ArrayFactory.create(generateRandomDouble(size, seed));
+			case CHARACTER:
+				return ArrayFactory.create(generateRandomChar(size, seed));
 			default:
 				throw new DMLRuntimeException("Unsupported value type: " + t);
 
@@ -946,6 +996,14 @@ public class FrameArrayTests {
 		return ret;
 	}
 
+	public static char[] generateRandom01chars(int size, int seed) {
+		Random r = new Random(seed);
+		char[] ret = new char[size];
+		for(int i = 0; i < size; i++)
+			ret[i] = (char) r.nextInt(1);
+		return ret;
+	}
+
 	public static String[] generateRandomTrueFalseString(int size, int seed) {
 		Random r = new Random(seed);
 		String[] ret = new String[size];
@@ -967,6 +1025,14 @@ public class FrameArrayTests {
 		int[] ret = new int[size];
 		for(int i = 0; i < size; i++)
 			ret[i] = r.nextInt();
+		return ret;
+	}
+
+	protected static char[] generateRandomChar(int size, int seed) {
+		Random r = new Random(seed);
+		char[] ret = new char[size];
+		for(int i = 0; i < size; i++)
+			ret[i] = (char) r.nextInt((int) Character.MAX_VALUE);
 		return ret;
 	}
 

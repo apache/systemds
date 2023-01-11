@@ -62,8 +62,8 @@ public class DoubleArray extends Array<Double> {
 	}
 
 	@Override
-	public void set(int index, String value){
-		set(index, parseDouble(value) );
+	public void set(int index, String value) {
+		set(index, parseDouble(value));
 	}
 
 	@Override
@@ -118,7 +118,7 @@ public class DoubleArray extends Array<Double> {
 		final int endSize = this._size + other.size();
 		final double[] ret = new double[endSize];
 		System.arraycopy(_data, 0, ret, 0, this._size);
-		System.arraycopy((double[])other.get(), 0, ret, this._size, other.size());
+		System.arraycopy((double[]) other.get(), 0, ret, this._size, other.size());
 		return new DoubleArray(ret);
 	}
 
@@ -303,14 +303,21 @@ public class DoubleArray extends Array<Double> {
 	}
 
 	@Override
+	public Array<Character> changeTypeCharacter() {
+		char[] ret = new char[size()];
+		for(int i = 0; i < size(); i++)
+			ret[i] = CharArray.parseChar(get(i).toString());
+		return new CharArray(ret);
+	}
+
+	@Override
 	public void fill(String value) {
 		fill(parseDouble(value));
 	}
 
 	@Override
 	public void fill(Double value) {
-		for(int i = 0; i < _size; i++)
-			_data[i] = value;
+		Arrays.fill(_data, value);
 	}
 
 	@Override

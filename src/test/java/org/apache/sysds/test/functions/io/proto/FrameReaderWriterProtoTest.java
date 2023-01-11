@@ -19,6 +19,8 @@
 
 package org.apache.sysds.test.functions.io.proto;
 
+import static org.junit.Assert.fail;
+
 import java.io.IOException;
 import java.util.Random;
 
@@ -66,16 +68,23 @@ public class FrameReaderWriterProtoTest {
 	}
 
 	public void testWriteReadFrameBlockWith(int rows, int cols) throws IOException {
-		final Random random = new Random(SEED);
-		Types.ValueType[] schema = TestUtils.generateRandomSchema(cols, random);
-		FrameBlock expectedFrame = TestUtils.generateRandomFrameBlock(rows, schema, random);
+		try{
 
-		frameWriterProto.writeFrameToHDFS(expectedFrame, FILENAME_SINGLE, rows, cols);
-		FrameBlock actualFrame = frameReaderProto.readFrameFromHDFS(FILENAME_SINGLE, schema, rows, cols);
-
-		String[][] expected = DataConverter.convertToStringFrame(expectedFrame);
-		String[][] actual = DataConverter.convertToStringFrame(actualFrame);
-
-		TestUtils.compareFrames(expected, actual, rows, cols);
+			final Random random = new Random(SEED);
+			Types.ValueType[] schema = TestUtils.generateRandomSchema(cols, random);
+			FrameBlock expectedFrame = TestUtils.generateRandomFrameBlock(rows, schema, random);
+	
+			frameWriterProto.writeFrameToHDFS(expectedFrame, FILENAME_SINGLE, rows, cols);
+			FrameBlock actualFrame = frameReaderProto.readFrameFromHDFS(FILENAME_SINGLE, schema, rows, cols);
+	
+			String[][] expected = DataConverter.convertToStringFrame(expectedFrame);
+			String[][] actual = DataConverter.convertToStringFrame(actualFrame);
+	
+			TestUtils.compareFrames(expected, actual, rows, cols);
+		}
+		catch(Exception e){
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
 	}
 }

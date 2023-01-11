@@ -32,7 +32,7 @@ public interface ArrayFactory {
 	public final static int bitSetSwitchPoint = 64;
 
 	public enum FrameArrayType {
-		STRING, BOOLEAN, BITSET, INT32, INT64, FP32, FP64;
+		STRING, BOOLEAN, BITSET, INT32, INT64, FP32, FP64, CHARACTER;
 	}
 
 	public static StringArray create(String[] col) {
@@ -63,6 +63,10 @@ public interface ArrayFactory {
 		return new DoubleArray(col);
 	}
 
+	public static CharArray create(char[] col) {
+		return new CharArray(col);
+	}
+
 	public static long getInMemorySize(ValueType type, int _numRows) {
 		switch(type) {
 			case BOOLEAN:
@@ -83,6 +87,8 @@ public interface ArrayFactory {
 				// cannot be known since strings have dynamic length
 				// lets assume something large to make it somewhat safe.
 				return Array.baseMemoryCost() + (long) MemoryEstimates.stringCost(12) * _numRows;
+			case CHARACTER:
+				return Array.baseMemoryCost() + (long) MemoryEstimates.charArrayCost(_numRows);
 			default: // not applicable
 				throw new DMLRuntimeException("Invalid type to estimate size of :" + type);
 		}
@@ -112,6 +118,8 @@ public interface ArrayFactory {
 				return new FloatArray(new float[nRow]);
 			case FP64:
 				return new DoubleArray(new double[nRow]);
+			case CHARACTER:
+				return new CharArray(new char[nRow]);
 			default:
 				throw new DMLRuntimeException("Unsupported value type: " + v);
 		}
@@ -139,7 +147,11 @@ public interface ArrayFactory {
 			case FP32:
 				arr = new FloatArray(new float[nRow]);
 				break;
-			default: // String
+			case CHARACTER:
+				arr = new CharArray(new char[nRow]);
+				break;
+			case STRING:
+			default:
 				arr = new StringArray(new String[nRow]);
 				break;
 		}

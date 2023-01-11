@@ -181,7 +181,7 @@ public abstract class Array<T> implements Writable {
 	 * @param value array of other type
 	 */
 	public final void setFromOtherTypeNz(Array<?> value) {
-		setFromOtherTypeNz(0, value.size()-1, value);
+		setFromOtherTypeNz(0, value.size() - 1, value);
 	}
 
 	/**
@@ -320,6 +320,8 @@ public abstract class Array<T> implements Writable {
 				return changeTypeLong();
 			case STRING:
 				return changeTypeString();
+			case CHARACTER:
+				return changeTypeCharacter();
 			case UNKNOWN:
 			default:
 				throw new DMLRuntimeException("Not a valid type to change to : " + t);
@@ -374,6 +376,13 @@ public abstract class Array<T> implements Writable {
 	 * @return String type of array
 	 */
 	protected abstract Array<String> changeTypeString();
+
+	/**
+	 * Change type to a Character array type
+	 * 
+	 * @return Character type of array
+	 */
+	protected abstract Array<Character> changeTypeCharacter();
 
 	/**
 	 * Get the minimum and maximum length of the contained values as string type.

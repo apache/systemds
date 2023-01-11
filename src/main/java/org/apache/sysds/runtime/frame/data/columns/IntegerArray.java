@@ -253,14 +253,21 @@ public class IntegerArray extends Array<Integer> {
 	}
 
 	@Override
+	public Array<Character> changeTypeCharacter() {
+		char[] ret = new char[size()];
+		for(int i = 0; i < size(); i++)
+			ret[i] = get(i).toString().charAt(0);
+		return new CharArray(ret);
+	}
+
+	@Override
 	public void fill(String value) {
 		fill(parseInt(value));
 	}
 
 	@Override
 	public void fill(Integer value) {
-		for(int i = 0; i < _size; i++)
-			_data[i] = value;
+		Arrays.fill(_data, value);
 	}
 
 	@Override

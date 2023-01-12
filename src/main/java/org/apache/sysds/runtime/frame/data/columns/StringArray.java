@@ -264,7 +264,7 @@ public class StringArray extends Array<String> {
 
 	@Override
 	public long getExactSerializedSize() {
-		long si = 1; // byte identifier
+		long si = 1 + 8; // byte identifier
 		for(String s : _data)
 			si += IOUtilFunctions.getUTFSize(s);
 		return si;

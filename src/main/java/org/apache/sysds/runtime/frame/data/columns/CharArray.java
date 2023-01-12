@@ -283,7 +283,7 @@ public class CharArray extends Array<Character> {
 		return new CharArray(Arrays.copyOf(_data, _size));
 	}
 
-	protected static char parseChar(String value) {
+	public static char parseChar(String value) {
 		if(value == null)
 			return 0;
 		else if(value.length() == 1)

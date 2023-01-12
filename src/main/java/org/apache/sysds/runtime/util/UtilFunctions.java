@@ -45,6 +45,7 @@ import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.data.TensorIndexes;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
+import org.apache.sysds.runtime.frame.data.columns.CharArray;
 import org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue;
 import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysds.runtime.matrix.data.Pair;
@@ -489,6 +490,7 @@ public class UtilFunctions {
 			case INT64:   return Long.parseLong(in);
 			case FP64:    return Double.parseDouble(in);
 			case FP32:    return Float.parseFloat(in);
+			case CHARACTER: return CharArray.parseChar(in);
 			default: throw new RuntimeException("Unsupported value type: "+vt);
 		}
 	}

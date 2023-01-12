@@ -136,7 +136,7 @@ public class FederatedConstructionTest extends AutomatedTestBase {
 		// Run reference dml script with normal matrix
 		fullDMLScriptName = HOME + testFile + "Reference.dml";
 		programArgs = new String[] {"-args", input(inputIdentifier), expected("B")};
-		runTest(true, false, null, -1);
+		runTest(null);
 
 		// reference file should not be written to hdfs
 		rtplatform = execMode;
@@ -147,7 +147,7 @@ public class FederatedConstructionTest extends AutomatedTestBase {
 		programArgs = new String[] {"-nvargs", "in=" + TestUtils.federatedAddress(port, input(inputIdentifier)),
 			"rows=" + rows, "cols=" + cols, "out=" + output("B")};
 
-		runTest(true, false, null, -1);
+		runTest(null);
 		// compare via files
 		if(schema != null)
 			compareResults(schema);

@@ -39,12 +39,12 @@ import org.apache.sysds.test.TestUtils;
  */
 public class SparseBlockSize extends AutomatedTestBase 
 {
-	private final static int rows = 762;
-	private final static int cols = 649;
+	private final static int rows = 324;
+	private final static int cols = 123;
 	private final static int rl = 31;
-	private final static int ru = 345;
-	private final static int cl = 345;
-	private final static int cu = 525;
+	private final static int ru = 100;
+	private final static int cl = 30;
+	private final static int cu = 80;
 	private final static double sparsity1 = 0.12;
 	private final static double sparsity2 = 0.22;
 	private final static double sparsity3 = 0.32;

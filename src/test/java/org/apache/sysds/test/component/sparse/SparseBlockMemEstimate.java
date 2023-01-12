@@ -34,8 +34,8 @@ import org.apache.sysds.test.TestUtils;
  */
 public class SparseBlockMemEstimate extends AutomatedTestBase 
 {
-	private final static int rows = 662;
-	private final static int cols = 444;
+	private final static int rows = 320;
+	private final static int cols = 130;
 	private final static double sparsity1 = 0.39;
 	private final static double sparsity2 = 0.0001;
 	

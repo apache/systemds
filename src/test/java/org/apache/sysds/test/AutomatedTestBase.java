@@ -1797,12 +1797,13 @@ public abstract class AutomatedTestBase {
 		sb.append("\nException : " + e.getClass());
 		sb.append("\nMessage   : " + e.getMessage());
 		for(StackTraceElement ste : e.getStackTrace()) {
-			if(ste.toString().contains("org.junit")) {
-				sb.append("\n   >  ... Stopping Stack Trace at JUnit");
+			String steS = ste.toString();
+			if(steS.contains("org.junit") || steS.contains("jdk.internal.reflect")) {
+				sb.append("\n ... Stopping Stack Trace at JUnit Or JDK");
 				break;
 			}
 			else {
-				sb.append("\n" + level + "  >  " + ste);
+				sb.append("\n  at " + steS);
 			}
 		}
 		if(e.getCause() == null) {

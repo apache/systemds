@@ -122,7 +122,9 @@ public class FastBufferedDataInputStream extends FilterInputStream implements Da
 
 	@Override
 	public float readFloat() throws IOException {
-		throw new IOException("Not supported.");
+		readFully(_buff, 0, 4);
+		int tmp = baToInt(_buff, 0);
+		return Float.intBitsToFloat(tmp);
 	}
 
 	@Override

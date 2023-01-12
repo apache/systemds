@@ -38,6 +38,7 @@ public class FrameLibApplySchema {
 
 	private final FrameBlock fb;
 	private final ValueType[] schema;
+	private final boolean[] nulls;
 	private final int nCol;
 	private final Array<?>[] columnsIn;
 	private final Array<?>[] columnsOut;
@@ -45,7 +46,39 @@ public class FrameLibApplySchema {
 	private final int k;
 
 	/**
-	 * Method to create a new FrameBlock where the given schema is applied, k is parallelization degree.
+	 * Method to create a new FrameBlock where the given schema is applied, k is the parallelization degree.
+	 * 
+	 * @param fb     The input block to apply schema to
+	 * @param schema The schema to apply
+	 * @param k      The parallelization degree
+	 * @return A new FrameBlock allocated with new arrays.
+	 */
+	public static FrameBlock applySchema(FrameBlock fb, FrameBlock schema, int k) {
+		// apply frame schema from DML
+		ValueType[] sv = new ValueType[schema.getNumColumns()];
+		boolean[] nulls = new boolean[schema.getNumColumns()];
+		for(int i = 0; i < schema.getNumColumns(); i++) {
+			final String[] v = schema.get(0, i).toString().split(FrameUtil.SCHEMA_SEPARATOR);
+			nulls[i] = v.length == 2 && v[1].equals("n");
+			sv[i] = ValueType.fromExternalString(v[0]);
+		}
+
+		return new FrameLibApplySchema(fb, sv, nulls, k).apply();
+	}
+
+	/**
+	 * Method to create a new FrameBlock where the given schema is applied.
+	 * 
+	 * @param fb     The input block to apply schema to
+	 * @param schema The schema to apply
+	 * @return A new FrameBlock allocated with new arrays.
+	 */
+	public static FrameBlock applySchema(FrameBlock fb, ValueType[] schema) {
+		return new FrameLibApplySchema(fb, schema, null, 1).apply();
+	}
+
+	/**
+	 * Method to create a new FrameBlock where the given schema is applied, k is the parallelization degree.
 	 * 
 	 * @param fb     The input block to apply schema to
 	 * @param schema The schema to apply
@@ -53,12 +86,13 @@ public class FrameLibApplySchema {
 	 * @return A new FrameBlock allocated with new arrays.
 	 */
 	public static FrameBlock applySchema(FrameBlock fb, ValueType[] schema, int k) {
-		return new FrameLibApplySchema(fb, schema, k).apply();
+		return new FrameLibApplySchema(fb, schema, null, k).apply();
 	}
 
-	private FrameLibApplySchema(FrameBlock fb, ValueType[] schema, int k) {
+	private FrameLibApplySchema(FrameBlock fb, ValueType[] schema, boolean[] nulls, int k) {
 		this.fb = fb;
 		this.schema = schema;
+		this.nulls = nulls;
 		this.k = k;
 		verifySize();
 		nCol = fb.getNumColumns();
@@ -71,11 +105,11 @@ public class FrameLibApplySchema {
 			applySingleThread();
 		else
 			applyMultiThread();
-		
+
 		boolean same = true;
 		for(int i = 0; i < columnsIn.length && same; i++)
 			same = columnsIn[i] == columnsOut[i];
-		
+
 		if(same)
 			return this.fb;
 
@@ -86,7 +120,17 @@ public class FrameLibApplySchema {
 
 	private void applySingleThread() {
 		for(int i = 0; i < nCol; i++)
+			apply(i);
+	}
+
+	private void apply(int i) {
+		if(nulls != null)
+			columnsOut[i] = nulls[i] ? //
+				columnsIn[i].changeTypeWithNulls(schema[i]) : //
+				columnsIn[i].changeType(schema[i]);
+		else
 			columnsOut[i] = columnsIn[i].changeType(schema[i]);
+
 	}
 
 	private void applyMultiThread() {
@@ -95,7 +139,7 @@ public class FrameLibApplySchema {
 
 			pool.submit(() -> {
 				IntStream.rangeClosed(0, nCol - 1).parallel() // parallel columns
-					.forEach(x -> columnsOut[x] = columnsIn[x].changeType(schema[x]));
+					.forEach(x -> apply(x));
 			}).get();
 
 			pool.shutdown();

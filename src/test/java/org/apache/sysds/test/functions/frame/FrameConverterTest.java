@@ -380,17 +380,16 @@ public class FrameConverterTest extends AutomatedTestBase
 	}
 	
 	private static void verifyFrameMatrixData(FrameBlock frame, MatrixBlock matrix) {
-		for ( int i=0; i<frame.getNumRows(); i++ )
-			for( int j=0; j<frame.getNumColumns(); j++ ) {
-				Object val1 = UtilFunctions.doubleToObject(frame.getSchema()[j],
-								UtilFunctions.objectToDouble(frame.getSchema()[j], frame.get(i, j)));
-				Object val2 = UtilFunctions.doubleToObject(frame.getSchema()[j], matrix.getValue(i, j));
-				if(( UtilFunctions.compareTo(frame.getSchema()[j], val1, val2)) != 0)
-					Assert.fail("Frame value for cell ("+ i + "," + j + ") is " + val1 + 
-							", is not same as matrix value " + val2);
+		for(int i = 0; i < matrix.getNumRows(); i++)
+			for(int j = 0; j < matrix.getNumColumns(); j++) {
+				double v1 = frame.getDouble(i, j);
+				double v2 = matrix.getDouble(i, j);
+				double diff = Math.abs(v2 - v1);
+				if(diff > 0.000001d)
+					Assert.fail("Frame value for cell (" + i + "," + j + ") is " + v1 + ", is not same as matrix " + v2);
 			}
 	}
-	
+
 	@SuppressWarnings({ "unchecked"})
 	private static void runConverter(ConvType type, MatrixCharacteristics mc, MatrixCharacteristics mcMatrix,
 		List<ValueType> schema, String fnameIn, String fnameOut) throws IOException

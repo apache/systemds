@@ -49,6 +49,7 @@ public final class FrameIndexingCPInstruction extends IndexingCPInstruction {
 		
 		//right indexing
 		if( opcode.equalsIgnoreCase(RightIndex.OPCODE) ) {
+
 			//execute right indexing operation
 			FrameBlock in = ec.getFrameInput(input1.getName());
 			FrameBlock out = in.slice(ixrange, new FrameBlock());

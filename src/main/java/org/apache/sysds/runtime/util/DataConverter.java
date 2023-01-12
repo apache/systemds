@@ -52,6 +52,7 @@ import org.apache.sysds.runtime.data.TensorBlock;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.runtime.frame.data.iterators.IteratorFactory;
 import org.apache.sysds.runtime.frame.data.lib.FrameFromMatrixBlock;
+import org.apache.sysds.runtime.frame.data.lib.MatrixBlockFromFrame;
 import org.apache.sysds.runtime.instructions.cp.BooleanObject;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.instructions.cp.Data;
@@ -632,64 +633,8 @@ public class DataConverter {
 	 * @param frame frame block
 	 * @return matrix block
 	 */
-	public static MatrixBlock convertToMatrixBlock(FrameBlock frame)
-	{
-		int m = frame.getNumRows();
-		int n = frame.getNumColumns();
-		MatrixBlock mb = new MatrixBlock(m, n, false);
-		mb.allocateDenseBlock();
-
-		ValueType[] schema = frame.getSchema();
-		int dFreq = UtilFunctions.frequency(schema, ValueType.FP64);
-
-		if( dFreq == schema.length ) {
-			// special case double schema (without cell-object creation,
-			// cache-friendly row-column copy)
-			double[][] a = new double[n][];
-			for( int j=0; j<n; j++ )
-				a[j] = (double[])frame.getColumnData(j);
-			int blocksizeIJ = 32; //blocks of a+overhead/c in L1 cache
-			long lnnz = 0;
-			if( mb.getDenseBlock().isContiguous() ) {
-				double[] c = mb.getDenseBlockValues();
-				for( int bi=0; bi<m; bi+=blocksizeIJ )
-					for( int bj=0; bj<n; bj+=blocksizeIJ ) {
-						int bimin = Math.min(bi+blocksizeIJ, m);
-						int bjmin = Math.min(bj+blocksizeIJ, n);
-						for( int i=bi, aix=bi*n; i<bimin; i++, aix+=n )
-							for( int j=bj; j<bjmin; j++ )
-								lnnz += (c[aix+j] = a[j][i]) != 0 ? 1 : 0;
-					}
-			}
-			else {
-				DenseBlock c = mb.getDenseBlock();
-				for( int bi=0; bi<m; bi+=blocksizeIJ )
-					for( int bj=0; bj<n; bj+=blocksizeIJ ) {
-						int bimin = Math.min(bi+blocksizeIJ, m);
-						int bjmin = Math.min(bj+blocksizeIJ, n);
-						for( int i=bi; i<bimin; i++ ) {
-							double[] cvals = c.values(i);
-							int cpos = c.pos(i);
-							for( int j=bj; j<bjmin; j++ )
-								lnnz += (cvals[cpos+j] = a[j][i]) != 0 ? 1 : 0;
-						}
-					}
-			}
-			mb.setNonZeros(lnnz);
-		}
-		else {
-			//general case
-			for( int i=0; i<frame.getNumRows(); i++ )
-				for( int j=0; j<frame.getNumColumns(); j++ ) {
-					mb.appendValue(i, j, UtilFunctions.objectToDouble(
-						schema[j], frame.get(i, j)));
-				}
-		}
-
-		//post-processing
-		mb.examSparsity();
-
-		return mb;
+	public static MatrixBlock convertToMatrixBlock(FrameBlock frame){
+		return MatrixBlockFromFrame.convertToMatrixBlock(frame);
 	}
 
 	/**
@@ -754,7 +699,7 @@ public class DataConverter {
 	 * @return frame block of type double
 	 */
 	public static FrameBlock convertToFrameBlock(MatrixBlock mb) {
-		return convertToFrameBlock(mb, ValueType.FP64, 1);
+		return FrameFromMatrixBlock.convertToFrameBlock(mb, 1);
 	}
 
 	/**
@@ -765,7 +710,7 @@ public class DataConverter {
 	 * @return frame block of type double
 	 */
 	public static FrameBlock convertToFrameBlock(MatrixBlock mb, int k) {
-		return convertToFrameBlock(mb, ValueType.FP64, k);
+		return FrameFromMatrixBlock.convertToFrameBlock(mb, k);
 	}
 
 	/**
@@ -1183,6 +1128,7 @@ public class DataConverter {
 				break;
 			case STRING:
 			case UNKNOWN:
+			case CHARACTER:
 				sb.append("\"").append(tb.get(ix)).append("\"");
 				break;
 		}

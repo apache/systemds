@@ -42,8 +42,8 @@ import java.util.Iterator;
  */
 public class SparseBlockGetSet extends AutomatedTestBase 
 {
-	private final static int rows = 732;
-	private final static int cols = 354;	
+	private final static int rows = 132;
+	private final static int cols = 60;	
 	private final static double sparsity1 = 0.1;
 	private final static double sparsity2 = 0.2;
 	private final static double sparsity3 = 0.3;

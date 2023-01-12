@@ -19,9 +19,12 @@
 
 package org.apache.sysds.test.functions.frame;
 
+import static org.junit.Assert.assertEquals;
+
 import java.util.HashMap;
 
-import static org.junit.Assert.assertEquals;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.common.Types.ExecType;
@@ -29,11 +32,10 @@ import org.apache.sysds.runtime.matrix.data.MatrixValue;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
-import org.junit.Ignore;
 import org.junit.Test;
 
 public class FrameReplaceTest extends AutomatedTestBase {
-	// private static final Log LOG = LogFactory.getLog(FrameReplaceTest.class.getName());
+	protected static final Log LOG = LogFactory.getLog(FrameReplaceTest.class.getName());
 	private final static String TEST_DIR = "functions/frame/";
 	private final static String TEST_NAME = "ReplaceTest";
 	private final static String TEST_CLASS_DIR = TEST_DIR + FrameReplaceTest.class.getSimpleName() + "/";
@@ -50,7 +52,6 @@ public class FrameReplaceTest extends AutomatedTestBase {
 	}
 
 	@Test
-	@Ignore
 	public void testParforFrameIntermediatesSpark() {
 		runReplaceTest(ExecType.SPARK);
 	}

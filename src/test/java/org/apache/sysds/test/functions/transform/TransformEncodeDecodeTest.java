@@ -106,12 +106,12 @@ public class TransformEncodeDecodeTest extends AutomatedTestBase
 			writer.writeFrameToHDFS(FA, input("F"), rows, cols);
 			
 			fullDMLScriptName = SCRIPT_DIR+TEST_DIR+TEST_NAME1 + ".dml";
-			programArgs = new String[]{"-explain","-args", input("F"), fmt, 
+			programArgs = new String[]{"-args", input("F"), fmt, 
 					String.valueOf(rows), String.valueOf(cols), 
 					SCRIPT_DIR+TEST_DIR+SPEC, output("FO") };
 			
 			//run test
-			runTest(true, false, null, -1); 
+			runTest(null); 
 			
 			//compare matrices (values recoded to identical codes)
 			FrameReader reader = FrameReaderFactory.createFrameReader(FileFormat.safeValueOf(fmt));

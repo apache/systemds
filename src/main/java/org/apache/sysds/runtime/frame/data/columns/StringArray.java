@@ -194,6 +194,7 @@ public class StringArray extends Array<String> {
 	}
 
 	private static final ValueType getHighest(ValueType state, ValueType c) {
+
 		switch(state) {
 			case FP32:
 				switch(c) {
@@ -225,26 +226,32 @@ public class StringArray extends Array<String> {
 					case FP32:
 					case INT64:
 					case INT32:
+					case CHARACTER:
 						return c;
 					default:
 				}
 				break;
+			case UNKNOWN:
+				return c;
 			default:
-
 		}
 		return state;
 	}
 
 	@Override
-	public ValueType analyzeValueType() {
-		ValueType state = FrameUtil.isType(_data[0]);
-		for(int i = 1; i < _size; i++) {
-			ValueType c = FrameUtil.isType(_data[i], state);
-			if(c == ValueType.STRING || c == ValueType.UNKNOWN)
-				return ValueType.STRING;
-			state = getHighest(state, c);
+	public Pair<ValueType, Boolean> analyzeValueType() {
+		ValueType state = ValueType.UNKNOWN;
+		boolean nulls = false;
+		for(int i = 0; i < _size; i++) {
+			final ValueType c = FrameUtil.isType(_data[i], state);
+			if(c == ValueType.STRING) // early termination
+				return new Pair<ValueType, Boolean>(ValueType.STRING, false);
+			else if(c == ValueType.UNKNOWN)
+				nulls = true;
+			else
+				state = getHighest(state, c);
 		}
-		return state;
+		return new Pair<ValueType, Boolean>(state, nulls);
 	}
 
 	@Override
@@ -253,9 +260,19 @@ public class StringArray extends Array<String> {
 	}
 
 	@Override
+	public BitSetArray getNulls() {
+		BitSetArray n = new BitSetArray(_size);
+		for(int i = 0; i < _size; i++)
+			if(_data[i] != null)
+				n.set(i, true);
+		return n;
+	}
+
+	@Override
 	public long getInMemorySize() {
 		if(materializedSize != -1)
 			return materializedSize;
+
 		long size = super.getInMemorySize(); // object header + object reference
 		size += MemoryEstimates.stringArrayCost(_data);
 		size += 8; // estimated size cache
@@ -297,16 +314,22 @@ public class StringArray extends Array<String> {
 
 	protected Array<Boolean> changeTypeBooleanStandardBitSet() {
 		BitSet ret = new BitSet(size());
-		for(int i = 0; i < size(); i++)
-			ret.set(i, Boolean.parseBoolean(_data[i]));
+		for(int i = 0; i < size(); i++) {
+			final String s = _data[i];
+			if(s != null)
+				ret.set(i, Boolean.parseBoolean(_data[i]));
+		}
 
 		return new BitSetArray(ret, size());
 	}
 
 	protected Array<Boolean> changeTypeBooleanStandardArray() {
 		boolean[] ret = new boolean[size()];
-		for(int i = 0; i < size(); i++)
-			ret[i] = Boolean.parseBoolean(_data[i]);
+		for(int i = 0; i < size(); i++) {
+			final String s = _data[i];
+			if(s != null)
+				ret[i] = Boolean.parseBoolean(_data[i]);
+		}
 		return new BooleanArray(ret);
 	}
 
@@ -319,15 +342,21 @@ public class StringArray extends Array<String> {
 
 	protected Array<Boolean> changeTypeBooleanCharacterBitSet() {
 		BitSet ret = new BitSet(size());
-		for(int i = 0; i < size(); i++)
-			ret.set(i, isTrueCharacter(_data[i].charAt(0)));
+		for(int i = 0; i < size(); i++) {
+			final String s = _data[i];
+			if(s != null)
+				ret.set(i, isTrueCharacter(_data[i].charAt(0)));
+		}
 		return new BitSetArray(ret, size());
 	}
 
 	protected Array<Boolean> changeTypeBooleanCharacterArray() {
 		boolean[] ret = new boolean[size()];
-		for(int i = 0; i < size(); i++)
-			ret[i] = isTrueCharacter(_data[i].charAt(0));
+		for(int i = 0; i < size(); i++) {
+			final String s = _data[i];
+			if(s != null)
+				ret[i] = isTrueCharacter(_data[i].charAt(0));
+		}
 		return new BooleanArray(ret);
 	}
 
@@ -345,12 +374,16 @@ public class StringArray extends Array<String> {
 	protected Array<Boolean> changeTypeBooleanNumericBitSet() {
 		BitSet ret = new BitSet(size());
 		for(int i = 0; i < size(); i++) {
-			final boolean zero = _data[i].equals("0");
-			final boolean one = _data[i].equals("1");
-			if(zero | one)
-				ret.set(i, one);
-			else
-				throw new DMLRuntimeException("Unable to change to Boolean from String array, value:" + _data[i]);
+			final String s = _data[i];
+			if(s != null) {
+
+				final boolean zero = _data[i].equals("0");
+				final boolean one = _data[i].equals("1");
+				if(zero | one)
+					ret.set(i, one);
+				else
+					throw new DMLRuntimeException("Unable to change to Boolean from String array, value:" + _data[i]);
+			}
 		}
 		return new BitSetArray(ret, size());
 	}
@@ -358,12 +391,16 @@ public class StringArray extends Array<String> {
 	protected Array<Boolean> changeTypeBooleanNumericArray() {
 		boolean[] ret = new boolean[size()];
 		for(int i = 0; i < size(); i++) {
-			final boolean zero = _data[i].equals("0");
-			final boolean one = _data[i].equals("1");
-			if(zero | one)
-				ret[i] = one;
-			else
-				throw new DMLRuntimeException("Unable to change to Boolean from String array, value:" + _data[i]);
+			final String s = _data[i];
+			if(s != null) {
+				final boolean zero = _data[i].equals("0");
+				final boolean one = _data[i].equals("1");
+				if(zero | one)
+					ret[i] = one;
+				else
+					throw new DMLRuntimeException("Unable to change to Boolean from String array, value:" + _data[i]);
+			}
+
 		}
 		return new BooleanArray(ret);
 	}
@@ -372,8 +409,11 @@ public class StringArray extends Array<String> {
 	protected Array<Double> changeTypeDouble() {
 		try {
 			double[] ret = new double[size()];
-			for(int i = 0; i < size(); i++)
-				ret[i] = Double.parseDouble(_data[i]);
+			for(int i = 0; i < size(); i++) {
+				final String s = _data[i];
+				if(s != null)
+					ret[i] = Double.parseDouble(s);
+			}
 			return new DoubleArray(ret);
 		}
 		catch(NumberFormatException e) {
@@ -385,8 +425,11 @@ public class StringArray extends Array<String> {
 	protected Array<Float> changeTypeFloat() {
 		try {
 			float[] ret = new float[size()];
-			for(int i = 0; i < size(); i++)
-				ret[i] = Float.parseFloat(_data[i]);
+			for(int i = 0; i < size(); i++) {
+				final String s = _data[i];
+				if(s != null)
+					ret[i] = Float.parseFloat(s);
+			}
 			return new FloatArray(ret);
 		}
 		catch(NumberFormatException e) {
@@ -398,8 +441,11 @@ public class StringArray extends Array<String> {
 	protected Array<Integer> changeTypeInteger() {
 		try {
 			int[] ret = new int[size()];
-			for(int i = 0; i < size(); i++)
-				ret[i] = Integer.parseInt(_data[i]);
+			for(int i = 0; i < size(); i++) {
+				final String s = _data[i];
+				if(s != null)
+					ret[i] = Integer.parseInt(s);
+			}
 			return new IntegerArray(ret);
 		}
 		catch(NumberFormatException e) {
@@ -411,13 +457,27 @@ public class StringArray extends Array<String> {
 	protected Array<Long> changeTypeLong() {
 		try {
 			long[] ret = new long[size()];
-			for(int i = 0; i < size(); i++)
-				ret[i] = Long.parseLong(_data[i]);
+			for(int i = 0; i < size(); i++) {
+				final String s = _data[i];
+				if(s != null)
+					ret[i] = Long.parseLong(s);
+			}
 			return new LongArray(ret);
 		}
 		catch(NumberFormatException e) {
 			throw new DMLRuntimeException("Unable to change to Long from String array", e);
 		}
+	}
+
+	@Override
+	public Array<Character> changeTypeCharacter() {
+		char[] ret = new char[size()];
+		for(int i = 0; i < size(); i++) {
+			if(_data[i] == null)
+				continue;
+			ret[i] = _data[i].charAt(0);
+		}
+		return new CharArray(ret);
 	}
 
 	@Override
@@ -441,14 +501,6 @@ public class StringArray extends Array<String> {
 	}
 
 	@Override
-	public Array<Character> changeTypeCharacter() {
-		char[] ret = new char[size()];
-		for(int i = 0; i < size(); i++)
-			ret[i] = _data[i].charAt(0);
-		return new CharArray(ret);
-	}
-
-	@Override
 	public void fill(String value) {
 		Arrays.fill(_data, value);
 		materializedSize = -1;
@@ -456,7 +508,12 @@ public class StringArray extends Array<String> {
 
 	@Override
 	public double getAsDouble(int i) {
-		return Double.parseDouble(_data[i]);
+		return _data[i] != null && !_data[i].isEmpty() ? DoubleArray.parseDouble(_data[i]) : 0.0;
+	}
+
+	@Override
+	public double getAsNaNDouble(int i) {
+		return _data[i] != null && !_data[i].isEmpty() ? DoubleArray.parseDouble(_data[i]) : Double.NaN;
 	}
 
 	@Override
@@ -466,12 +523,47 @@ public class StringArray extends Array<String> {
 	}
 
 	@Override
+	public boolean isEmpty() {
+		for(int i = 0; i < _data.length; i++)
+			if(_data[i] != null && !_data[i].equals("0"))
+				return false;
+		return true;
+	}
+
+	@Override
+	public Array<String> select(int[] indices) {
+		final String[] ret = new String[indices.length];
+		for(int i = 0; i < indices.length; i++)
+			ret[i] = _data[indices[i]];
+		return new StringArray(ret);
+	}
+
+	@Override
+	public Array<String> select(boolean[] select, int nTrue) {
+		final String[] ret = new String[nTrue];
+		int k = 0;
+		for(int i = 0; i < select.length; i++)
+			if(select[i])
+				ret[k++] = _data[i];
+		return new StringArray(ret);
+	}
+
+	@Override
+	public void findEmpty(boolean[] select) {
+		for(int i = 0; i < select.length; i++)
+			if(_data[i] != null && !_data[i].equals("0"))
+				select[i] = true;
+	}
+
+	@Override
 	public String toString() {
-		StringBuilder sb = new StringBuilder(_data.length * 5 + 2);
+		StringBuilder sb = new StringBuilder(_size * 5 + 2);
 		sb.append(super.toString() + ":[");
-		for(int i = 0; i < _size - 1; i++)
-			sb.append(_data[i] + ",");
-		sb.append(_data[_size - 1]);
+		if(_size > 0) {
+			for(int i = 0; i < _size - 1; i++)
+				sb.append(_data[i] + ",");
+			sb.append(_data[_size - 1]);
+		}
 		sb.append("]");
 		return sb.toString();
 	}

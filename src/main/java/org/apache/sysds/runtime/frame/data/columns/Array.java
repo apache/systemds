@@ -105,6 +105,10 @@ public abstract class Array<T> implements Writable {
 
 	public abstract double getAsDouble(int i);
 
+	public double getAsNaNDouble(int i) {
+		return getAsDouble(i);
+	}
+
 	/**
 	 * Set index to the given value of same type
 	 * 
@@ -255,11 +259,12 @@ public abstract class Array<T> implements Writable {
 	public abstract ValueType getValueType();
 
 	/**
-	 * Analyze the column to figure out if the value type can be refined to a better type.
+	 * Analyze the column to figure out if the value type can be refined to a better type. The return is in two parts,
+	 * first the type it can be, second if it contains nulls.
 	 * 
-	 * @return A better or equivalent value type to represent the column.
+	 * @return A better or equivalent value type to represent the column, including null information.
 	 */
-	public abstract ValueType analyzeValueType();
+	public abstract Pair<ValueType, Boolean> analyzeValueType();
 
 	/**
 	 * Get the internal FrameArrayType, to specify the encoding of the Types, note there are more Frame Array Types than
@@ -295,6 +300,41 @@ public abstract class Array<T> implements Writable {
 	 */
 	public abstract long getExactSerializedSize();
 
+	public Array<Boolean> getNulls() {
+		return null;
+	}
+
+	public Array<?> changeTypeWithNulls(ValueType t) {
+		final Array<Boolean> nulls = getNulls();
+		if(nulls == null)
+			return changeType(t);
+
+		switch(t) {
+			case BOOLEAN:
+				if(size() > ArrayFactory.bitSetSwitchPoint)
+					return new OptionalArray<Boolean>(changeTypeBitSet(), nulls);
+				else
+					return new OptionalArray<Boolean>(changeTypeBoolean(), nulls);
+			case FP32:
+				return new OptionalArray<Float>(changeTypeFloat(), nulls);
+			case FP64:
+				return new OptionalArray<Double>(changeTypeDouble(), nulls);
+			case UINT8:
+				throw new NotImplementedException();
+			case INT32:
+				return new OptionalArray<Integer>(changeTypeInteger(), nulls);
+			case INT64:
+				return new OptionalArray<Long>(changeTypeLong(), nulls);
+			case CHARACTER:
+				return new OptionalArray<Character>(changeTypeCharacter(), nulls);
+			case STRING:
+			case UNKNOWN:
+			default:
+				return changeTypeString(); // String can contain null
+		}
+
+	}
+
 	/**
 	 * Change the allocated array to a different type. If the type is the same a deep copy is returned for safety.
 	 * 
@@ -324,7 +364,7 @@ public abstract class Array<T> implements Writable {
 				return changeTypeCharacter();
 			case UNKNOWN:
 			default:
-				throw new DMLRuntimeException("Not a valid type to change to : " + t);
+				return changeTypeString();
 		}
 	}
 
@@ -407,7 +447,52 @@ public abstract class Array<T> implements Writable {
 	 */
 	public abstract void fill(T val);
 
+	/**
+	 * analyze if this array can be shallow serialized. to allow caching without modification.
+	 * 
+	 * @return boolean saying true if shallow serialization is available
+	 */
 	public abstract boolean isShallowSerialize();
+
+	/**
+	 * Get if this array is empty, aka filled with empty values.
+	 * 
+	 * @return boolean saying true if empty
+	 */
+	public abstract boolean isEmpty();
+
+	/**
+	 * Slice out the specified indices and return the sub array.
+	 * 
+	 * @param indices The indices to slice out
+	 * @return the sliced out indices in an array format
+	 */
+	public abstract Array<T> select(int[] indices);
+
+	/**
+	 * Slice out the true indices in the select input and return the sub array.
+	 * 
+	 * @param select a boolean vector specifying what to select
+	 * @param nTrue  number of true values inside select
+	 * @return the sliced out indices in an array format
+	 */
+	public abstract Array<T> select(boolean[] select, int nTrue);
+
+	/**
+	 * Find the empty rows, it is assumed that the input is to be only modified to set variables to true.
+	 * 
+	 * @param select Modify this to true in indexes that are not empty.
+	 */
+	public abstract void findEmpty(boolean[] select);
+
+	/**
+	 * Find the filled rows, it is assumed that the input i to be only modified to set variables to true;
+	 * 
+	 * @param select modify this to true in indexes that are empty.
+	 */
+	public void findEmptyInverse(boolean[] select) {
+		throw new NotImplementedException();
+	}
 
 	/**
 	 * Overwrite of the java internal clone function for arrays, return a clone of underlying data that is mutable, (not

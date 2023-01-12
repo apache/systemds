@@ -139,6 +139,15 @@ public class FastBufferedDataOutputStream extends FilterOutputStream implements 
 	}
 
 	@Override
+	public void writeFloat(float v) throws IOException {
+		if (_count+4 > _bufflen)
+			flushBuffer();
+		int tmp = Float.floatToIntBits(v);
+		intToBa(tmp, _buff, _count);
+		_count += 8;
+	}
+
+	@Override
 	public void writeByte(int v) throws IOException {
 		if (_count+1 > _bufflen)
 			flushBuffer();
@@ -165,11 +174,6 @@ public class FastBufferedDataOutputStream extends FilterOutputStream implements 
 
 	@Override
 	public void writeChars(String s) throws IOException {
-		throw new IOException("Not supported.");
-	}
-	
-	@Override
-	public void writeFloat(float v) throws IOException {
 		throw new IOException("Not supported.");
 	}
 

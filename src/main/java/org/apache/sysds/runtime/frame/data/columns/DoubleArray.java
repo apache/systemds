@@ -31,6 +31,7 @@ import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.frame.data.columns.ArrayFactory.FrameArrayType;
 import org.apache.sysds.runtime.frame.data.lib.FrameUtil;
+import org.apache.sysds.runtime.matrix.data.Pair;
 import org.apache.sysds.runtime.util.UtilFunctions;
 import org.apache.sysds.utils.MemoryEstimates;
 
@@ -171,12 +172,13 @@ public class DoubleArray extends Array<Double> {
 	}
 
 	@Override
-	public ValueType analyzeValueType() {
+	public Pair<ValueType, Boolean> analyzeValueType() {
 		ValueType state = FrameUtil.isType(_data[0]);
 		for(int i = 0; i < _size; i++) {
 			ValueType c = FrameUtil.isType(_data[i]);
 			if(state == ValueType.FP64)
-				return ValueType.FP64;
+				return new Pair<ValueType, Boolean>(ValueType.FP64, false);
+
 			switch(state) {
 				case FP32:
 					switch(c) {
@@ -215,7 +217,7 @@ public class DoubleArray extends Array<Double> {
 				default:
 			}
 		}
-		return state;
+		return new Pair<ValueType, Boolean>(state, false);
 	}
 
 	@Override
@@ -325,8 +327,8 @@ public class DoubleArray extends Array<Double> {
 		return _data[i];
 	}
 
-	protected static double parseDouble(String value) {
-		if(value == null)
+	public static double parseDouble(String value) {
+		if(value == null || value.isEmpty())
 			return 0.0;
 		else
 			return Double.parseDouble(value);
@@ -338,12 +340,51 @@ public class DoubleArray extends Array<Double> {
 	}
 
 	@Override
+	public boolean isEmpty() {
+		for(int i = 0; i < _data.length; i++)
+			if(isNotEmpty(i))
+				return false;
+		return true;
+	}
+
+	@Override
+	public Array<Double> select(int[] indices) {
+		final double[] ret = new double[indices.length];
+		for(int i = 0; i < indices.length; i++)
+			ret[i] = _data[indices[i]];
+		return new DoubleArray(ret);
+	}
+
+	@Override
+	public Array<Double> select(boolean[] select, int nTrue) {
+		final double[] ret = new double[nTrue];
+		int k = 0;
+		for(int i = 0; i < select.length; i++)
+			if(select[i])
+				ret[k++] = _data[i];
+		return new DoubleArray(ret);
+	}
+
+	@Override
+	public void findEmpty(boolean[] select) {
+		for(int i = 0; i < select.length; i++)
+			if(isNotEmpty(i))
+				select[i] = true;
+	}
+
+	private final boolean isNotEmpty(int i) {
+		return _data[i] != 0.0 || Double.isNaN(_data[i]);
+	}
+
+	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder(_data.length * 5 + 2);
 		sb.append(super.toString() + ":[");
-		for(int i = 0; i < _size - 1; i++)
-			sb.append(_data[i] + ",");
-		sb.append(_data[_size - 1]);
+		if(_size > 0) {
+			for(int i = 0; i < _size - 1; i++)
+				sb.append(_data[i] + ",");
+			sb.append(_data[_size - 1]);
+		}
 		sb.append("]");
 		return sb.toString();
 	}

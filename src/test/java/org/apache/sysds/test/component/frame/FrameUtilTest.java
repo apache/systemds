@@ -97,12 +97,10 @@ public class FrameUtilTest {
 		assertEquals(ValueType.BOOLEAN, FrameUtil.isType("FALSE", ValueType.UNKNOWN));
 	}
 
-
 	@Test
 	public void testIsTypeMinimumString_1() {
 		assertEquals(ValueType.STRING, FrameUtil.isType("FALSEE", ValueType.UNKNOWN));
 	}
-
 
 	@Test
 	public void testIsTypeMinimumString_2() {
@@ -119,9 +117,126 @@ public class FrameUtilTest {
 		assertEquals(ValueType.STRING, FrameUtil.isType("AAGss", ValueType.UNKNOWN));
 	}
 
-
 	@Test
 	public void testIsTypeMinimumString_5() {
 		assertEquals(ValueType.STRING, FrameUtil.isType("ttrue", ValueType.UNKNOWN));
+	}
+
+	@Test
+	public void testIsIntLongString() {
+		assertEquals(ValueType.STRING, FrameUtil.isType("11111111111111111111111111111"));
+	}
+
+	@Test
+	public void testInfinite() {
+		assertEquals(ValueType.FP64, FrameUtil.isType("infinity"));
+	}
+
+	@Test
+	public void testMinusInfinite() {
+		assertEquals(ValueType.FP64, FrameUtil.isType("-infinity"));
+	}
+
+	@Test
+	public void testNan() {
+		assertEquals(ValueType.FP64, FrameUtil.isType("nan"));
+	}
+
+	@Test
+	public void testEmptyString() {
+		assertEquals(ValueType.UNKNOWN, FrameUtil.isType(""));
+	}
+
+	@Test
+	public void testMinType() {
+		for(ValueType v : ValueType.values())
+			assertEquals(ValueType.STRING, FrameUtil.isType("asbdapjuawijpasu2139591asd", v));
+	}
+
+	@Test
+	public void testNull() {
+		for(ValueType v : ValueType.values())
+			assertEquals(ValueType.UNKNOWN, FrameUtil.isType(null, v));
+	}
+
+	@Test
+	public void testInteger() {
+		assertEquals(ValueType.INT32, FrameUtil.isType("1324"));
+	}
+
+	@Test
+	public void testIntegerMax() {
+		assertEquals(ValueType.INT32, FrameUtil.isType(Integer.MAX_VALUE + ""));
+	}
+
+	@Test
+	public void testIntegerMaxPlus1() {
+		assertEquals(ValueType.INT64, FrameUtil.isType(((long) Integer.MAX_VALUE + 1) + ""));
+	}
+
+	@Test
+	public void testIntegerMin() {
+		assertEquals(ValueType.INT32, FrameUtil.isType(Integer.MIN_VALUE + ""));
+	}
+
+
+	@Test
+	public void testIntegerMinComma() {
+		assertEquals(ValueType.INT32, FrameUtil.isType(Integer.MIN_VALUE + ".0"));
+	}
+
+	@Test
+	public void testIntegerMinMinus1() {
+		assertEquals(ValueType.INT64, FrameUtil.isType(((long) Integer.MIN_VALUE - 1L) + ""));
+	}
+
+	@Test
+	public void testLong() {
+		assertEquals(ValueType.INT64, FrameUtil.isType("3333333333"));
+	}
+
+	@Test
+	public void testCharacter() {
+		assertEquals(ValueType.CHARACTER, FrameUtil.isType("i"));
+	}
+
+	@Test
+	public void testCharacter_2() {
+		assertEquals(ValueType.CHARACTER, FrameUtil.isType("@"));
+	}
+
+	@Test
+	public void testDoubleIsType_1() {
+		assertEquals(ValueType.BOOLEAN, FrameUtil.isType(0.0));
+	}
+
+	@Test
+	public void testDoubleIsType_2() {
+		assertEquals(ValueType.BOOLEAN, FrameUtil.isType(1.0));
+	}
+
+	@Test
+	public void testDoubleIsType_3() {
+		assertEquals(ValueType.INT32, FrameUtil.isType(15.0));
+	}
+
+	@Test
+	public void testDoubleIsType_4() {
+		assertEquals(ValueType.INT32, FrameUtil.isType(-15.0));
+	}
+
+	@Test
+	public void testDoubleIsType_5() {
+		assertEquals(ValueType.INT64, FrameUtil.isType(3333333333.0));
+	}
+
+	@Test
+	public void testDoubleIsType_6() {
+		assertEquals(ValueType.FP32, FrameUtil.isType(33.3));
+	}
+
+	@Test
+	public void testDoubleIsType_7() {
+		assertEquals(ValueType.FP64, FrameUtil.isType(33.231425155253));
 	}
 }

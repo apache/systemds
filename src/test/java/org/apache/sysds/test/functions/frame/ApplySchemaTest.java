@@ -121,7 +121,6 @@ public class ApplySchemaTest extends AutomatedTestBase {
 				String detected = detectedSchema.get(0, i).toString();
 				String applied = changedFrame.getSchema()[i].toString();
 				Assert.assertEquals("Wrong result column : " + i + ".", detected, applied);
-				// System.out.println(detetctedSchema.get(0, i).toString() +" "+changedFrame.getSchema()[i].toString());
 			}
 
 		}

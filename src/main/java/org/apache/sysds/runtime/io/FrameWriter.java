@@ -23,7 +23,6 @@ import java.io.IOException;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
 
@@ -39,14 +38,4 @@ public abstract class FrameWriter {
 	public abstract void writeFrameToHDFS( FrameBlock src, String fname, long rlen, long clen )
 		throws IOException, DMLRuntimeException;
 
-	public static FrameBlock[] createFrameBlocksForReuse( ValueType[] schema, String[] names, long rlen ) {
-		FrameBlock frameBlock[] = new FrameBlock[1];
-		frameBlock[0] = new FrameBlock(schema, names);
-		return frameBlock;
-	}
-
-	public static FrameBlock getFrameBlockForReuse( FrameBlock[] blocks) //TODO do we need this function?
-	{
-		return blocks[ 0 ];
-	}
 }

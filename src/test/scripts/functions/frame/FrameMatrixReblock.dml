@@ -20,6 +20,5 @@
 #-------------------------------------------------------------
 
 A = read($1, rows=$2, cols=$3, data_type="frame", schema="double", format=$5);
-
 B = as.matrix(A);
 write(B, $4, format=$5);

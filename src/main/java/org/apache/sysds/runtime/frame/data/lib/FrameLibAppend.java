@@ -23,6 +23,8 @@ import java.util.Arrays;
 import java.util.HashSet;
 
 import org.apache.commons.lang.ArrayUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
@@ -32,6 +34,7 @@ import org.apache.sysds.runtime.frame.data.columns.ColumnMetadata;
 
 public class FrameLibAppend {
 
+	protected static final Log LOG = LogFactory.getLog(FrameLibAppend.class.getName());
 	/**
 	 * Appends the given argument FrameBlock 'that' to this FrameBlock by creating a deep copy to prevent side effects.
 	 * For cbind, the frames are appended column-wise (same number of rows), while for rbind the frames are appended
@@ -43,10 +46,8 @@ public class FrameLibAppend {
 	 * @return frame block of the two blocks combined.
 	 */
 	public static FrameBlock append(FrameBlock a, FrameBlock b, boolean cbind) {
-		if(cbind)
-			return appendCbind(a, b);
-		else
-			return appendRbind(a, b);
+		FrameBlock ret = cbind ? appendCbind(a, b): appendRbind(a, b);
+		return ret;
 	}
 
 	public static FrameBlock appendCbind(FrameBlock a, FrameBlock b) {

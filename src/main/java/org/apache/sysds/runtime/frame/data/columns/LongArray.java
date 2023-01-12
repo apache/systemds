@@ -27,9 +27,11 @@ import java.nio.ByteOrder;
 import java.util.Arrays;
 import java.util.BitSet;
 
+import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.frame.data.columns.ArrayFactory.FrameArrayType;
+import org.apache.sysds.runtime.matrix.data.Pair;
 import org.apache.sysds.runtime.util.UtilFunctions;
 import org.apache.sysds.utils.MemoryEstimates;
 
@@ -170,8 +172,8 @@ public class LongArray extends Array<Long> {
 	}
 
 	@Override
-	public ValueType analyzeValueType() {
-		return ValueType.INT64;
+	public Pair<ValueType, Boolean> analyzeValueType() {
+		return new Pair<ValueType, Boolean>(ValueType.INT64, false);
 	}
 
 	@Override
@@ -270,7 +272,7 @@ public class LongArray extends Array<Long> {
 		return _data[i];
 	}
 
-	protected static long parseLong(String s) {
+	public static long parseLong(String s) {
 		if(s == null)
 			return 0;
 		try {
@@ -278,7 +280,7 @@ public class LongArray extends Array<Long> {
 		}
 		catch(NumberFormatException e) {
 			if(s.contains("."))
-				return Long.parseLong(s.split("\\.")[0]);
+				return (long) Double.parseDouble(s);
 			else
 				throw e;
 		}
@@ -298,12 +300,45 @@ public class LongArray extends Array<Long> {
 	}
 
 	@Override
+	public boolean isEmpty() {
+		for(int i = 0; i < _data.length; i++)
+			if(_data[i] != 0L)
+				return false;
+		return true;
+	}
+
+	@Override
+	public Array<Long> select(int[] indices) {
+		final long[] ret = new long[indices.length];
+		for(int i = 0; i < indices.length; i++)
+			ret[i] = _data[indices[i]];
+		return new LongArray(ret);
+	}
+
+	@Override
+	public Array<Long> select(boolean[] select, int nTrue) {
+		final long[] ret = new long[nTrue];
+		int k = 0;
+		for(int i = 0; i < select.length; i++)
+			if(select[i])
+				ret[k++] = _data[i];
+		return new LongArray(ret);
+	}
+
+	@Override
+	public void findEmpty(boolean[] select) {
+		throw new NotImplementedException();
+	}
+
+	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder(_data.length * 5 + 2);
 		sb.append(super.toString() + ":[");
-		for(int i = 0; i < _size - 1; i++)
-			sb.append(_data[i] + ",");
-		sb.append(_data[_size - 1]);
+		if(_size > 0) {
+			for(int i = 0; i < _size - 1; i++)
+				sb.append(_data[i] + ",");
+			sb.append(_data[_size - 1]);
+		}
 		sb.append("]");
 		return sb.toString();
 	}

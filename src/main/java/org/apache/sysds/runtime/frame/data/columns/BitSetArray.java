@@ -30,6 +30,7 @@ import java.util.BitSet;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.frame.data.columns.ArrayFactory.FrameArrayType;
+import org.apache.sysds.runtime.matrix.data.Pair;
 import org.apache.sysds.runtime.util.UtilFunctions;
 import org.apache.sysds.utils.MemoryEstimates;
 
@@ -63,7 +64,7 @@ public class BitSetArray extends Array<Boolean> {
 			throw new DMLRuntimeException("Invalid allocation long array must be long enough");
 		if(_data.length > _size / 64 + 1)
 			throw new DMLRuntimeException(
-				"Invalid allocation long array must not be to long" + _data.length + " " + _size + " " + (size / 64 + 1));
+				"Invalid allocation long array must not be to long: " + _data.length + " " + _size + " " + (size / 64 + 1));
 	}
 
 	public BitSetArray(BitSet data, int size) {
@@ -81,6 +82,8 @@ public class BitSetArray extends Array<Boolean> {
 
 	@Override
 	public Boolean get(int index) {
+		if(index >= _size)
+			throw new ArrayIndexOutOfBoundsException(index);
 		int wIdx = index >> 6; // same as divide by 64 bit faster
 		return (_data[wIdx] & (1L << index)) != 0;
 	}
@@ -90,7 +93,7 @@ public class BitSetArray extends Array<Boolean> {
 		set(index, value != null && value);
 	}
 
-	public void set(int index, boolean value) {
+	public synchronized void set(int index, boolean value) {
 		int wIdx = index >> 6; // same as divide by 64 bit faster
 		if(value)
 			_data[wIdx] |= (1L << index);
@@ -268,6 +271,7 @@ public class BitSetArray extends Array<Boolean> {
 	@Override
 	public void write(DataOutput out) throws IOException {
 		out.writeByte(FrameArrayType.BITSET.ordinal());
+		out.writeInt(_size);
 		out.writeInt(_data.length);
 		for(int i = 0; i < _data.length; i++)
 			out.writeLong(_data[i]);
@@ -275,6 +279,7 @@ public class BitSetArray extends Array<Boolean> {
 
 	@Override
 	public void readFields(DataInput in) throws IOException {
+		_size = in.readInt();
 		_data = new long[in.readInt()];
 		for(int i = 0; i < _data.length; i++)
 			_data[i] = in.readLong();
@@ -282,7 +287,7 @@ public class BitSetArray extends Array<Boolean> {
 
 	@Override
 	public BitSetArray clone() {
-		return new BitSetArray(Arrays.copyOf(_data, _data.length), _size);
+		return new BitSetArray(Arrays.copyOf(_data, _size / 64 + 1), _size);
 	}
 
 	@Override
@@ -358,8 +363,8 @@ public class BitSetArray extends Array<Boolean> {
 	}
 
 	@Override
-	public ValueType analyzeValueType() {
-		return ValueType.BOOLEAN;
+	public Pair<ValueType, Boolean> analyzeValueType() {
+		return new Pair<ValueType, Boolean>(ValueType.BOOLEAN, false);
 	}
 
 	@Override
@@ -380,7 +385,7 @@ public class BitSetArray extends Array<Boolean> {
 
 	@Override
 	public long getExactSerializedSize() {
-		long size = 1 + 4;
+		long size = 1 + 4 + 4;
 		size += _data.length * 8;
 		return size;
 	}
@@ -462,10 +467,12 @@ public class BitSetArray extends Array<Boolean> {
 
 	@Override
 	public String toString() {
-		StringBuilder sb = new StringBuilder(_size * 5 + 2);
+		StringBuilder sb = new StringBuilder(_size + 10);
 		sb.append(super.toString() + ":[");
-		for(int i = 0; i < _size; i++)
-			sb.append((get(i) ? 1 : 0));
+		if(_size > 0) {
+			for(int i = 0; i < _size; i++)
+				sb.append((get(i) ? 1 : 0));
+		}
 		sb.append("]");
 		return sb.toString();
 	}
@@ -478,6 +485,48 @@ public class BitSetArray extends Array<Boolean> {
 	@Override
 	public boolean isShallowSerialize() {
 		return true;
+	}
+
+	@Override
+	public boolean isEmpty() {
+		for(int i = 0; i < _data.length; i++){
+			if(_data[i] != 0L)
+				return false;
+		}
+		return true;
+	}
+
+	@Override
+	public Array<Boolean> select(int[] indices) {
+		// TODO vectorize
+		final boolean[] ret = new boolean[indices.length];
+		for(int i = 0; i < indices.length; i++)
+			ret[i] = get(indices[i]);
+		return new BitSetArray(ret);
+	}
+
+	@Override
+	public Array<Boolean> select(boolean[] select, int nTrue) {
+		final boolean[] ret = new boolean[nTrue];
+		int k = 0;
+		for(int i = 0; i < select.length; i++)
+			if(select[i])
+				ret[k++] = get(i);
+		return new BitSetArray(ret);
+	}
+
+	@Override
+	public void findEmpty(boolean[] select) {
+		for(int i = 0; i < select.length; i++)
+			if(get(i))
+				select[i] = true;
+	}
+
+	@Override
+	public void findEmptyInverse(boolean[] select){
+		for(int i = 0; i < select.length; i++)
+			if(!get(i))
+				select[i] = true;
 	}
 
 	public static String longToBits(long l) {

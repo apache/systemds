@@ -29,11 +29,19 @@ import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.runtime.frame.data.columns.Array;
+import org.apache.sysds.runtime.frame.data.columns.BooleanArray;
+import org.apache.sysds.runtime.frame.data.columns.CharArray;
+import org.apache.sysds.runtime.frame.data.columns.DoubleArray;
+import org.apache.sysds.runtime.frame.data.columns.FloatArray;
+import org.apache.sysds.runtime.frame.data.columns.IntegerArray;
+import org.apache.sysds.runtime.frame.data.columns.LongArray;
 import org.apache.sysds.runtime.frame.data.iterators.IteratorFactory;
 import org.apache.sysds.runtime.util.UtilFunctions;
 
 public interface FrameUtil {
 	public static final Log LOG = LogFactory.getLog(FrameUtil.class.getName());
+
+	public static final String SCHEMA_SEPARATOR = "\u00b7";
 
 	public static final Pattern booleanPattern = Pattern
 		.compile("([tT]((rue)|(RUE))?|[fF]((alse)|(ALSE))?|0\\.0+|1\\.0+|0|1)");
@@ -92,15 +100,8 @@ public interface FrameUtil {
 	public static ValueType isFloatType(final String val, final int len) {
 
 		if(len <= 25 && floatPattern.matcher(val).matches()) {
-			// return isFloatType(v);
-			// parse float and double,
-			// and make back to string if equivalent use float.
-			// This is expensive but accurate.
-			float f = Float.parseFloat(val);
-			double d = Double.parseDouble(val);
-			String v1 = Float.toString(f);
-			String v2 = Double.toString(d);
-			if(v1.equals(v2))
+			final double d = Double.parseDouble(val);
+			if(same(d, (float) d))
 				return ValueType.FP32;
 			else
 				return ValueType.FP64;
@@ -108,6 +109,15 @@ public interface FrameUtil {
 		else if(val.equals("infinity") || val.equals("-infinity") || val.equals("nan"))
 			return ValueType.FP64;
 		return null;
+	}
+
+	private static boolean same(double d, float f) {
+		// parse float and double,
+		// and make back to string if equivalent use float.
+		// This is expensive but accurate.
+		String v1 = Float.toString(f);
+		String v2 = Double.toString(d);
+		return v1.equals(v2);
 	}
 
 	/**
@@ -146,9 +156,8 @@ public interface FrameUtil {
 				if(len == 1)
 					return ValueType.CHARACTER;
 			case STRING:
-				return ValueType.STRING;
 			default:
-				throw new DMLRuntimeException("");
+				return ValueType.STRING;
 		}
 	}
 
@@ -165,12 +174,33 @@ public interface FrameUtil {
 			else
 				return ValueType.INT64;
 		}
-		else if((double) ((float) val) == val)
-			// Detecting FP32 could use some extra work.
+		else if(same(val, (float) val))
 			return ValueType.FP32;
+		else
+			return ValueType.FP64;
 
-		return ValueType.FP64;
+	}
 
+	public static ValueType isType(double val, ValueType min) {
+		switch(min) {
+			case BOOLEAN:
+				return isType(val);
+			case INT32:
+			case UINT8:
+			case INT64:
+				if((long) (val) == val) {
+					if((int) val == val)
+						return ValueType.INT32;
+					else
+						return ValueType.INT64;
+				}
+			case FP32:
+				if(same(val, (float) val))
+					return ValueType.FP32;
+			case FP64:
+			default:
+				return ValueType.FP64;
+		}
 	}
 
 	public static FrameBlock mergeSchema(FrameBlock temp1, FrameBlock temp2) {
@@ -204,4 +234,28 @@ public interface FrameUtil {
 		return mergedFrame;
 	}
 
+
+	public static boolean isDefault(String v, ValueType t) {
+		if(v == null)
+			return true;
+		switch(t) {
+			case BOOLEAN:
+				return !BooleanArray.parseBoolean(v);
+			case CHARACTER:
+				return 0 == CharArray.parseChar(v);
+			case FP32:
+				return 0.0f == FloatArray.parseFloat(v);
+			case FP64:
+				return 0.0 == DoubleArray.parseDouble(v);
+			case UINT8:
+			case INT32:
+				return 0 == IntegerArray.parseInt(v);
+			case INT64:
+				return 0L == LongArray.parseLong(v);
+			case UNKNOWN:
+			case STRING:
+			default:
+				return false;
+		}
+	}
 }

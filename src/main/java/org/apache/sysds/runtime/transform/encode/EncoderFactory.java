@@ -19,7 +19,18 @@
 
 package org.apache.sysds.runtime.transform.encode;
 
+import static org.apache.sysds.runtime.util.CollectionUtils.except;
+import static org.apache.sysds.runtime.util.CollectionUtils.unionDistinct;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map.Entry;
+
 import org.apache.commons.lang.ArrayUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
@@ -32,16 +43,8 @@ import org.apache.sysds.utils.stats.TransformStatistics;
 import org.apache.wink.json4j.JSONArray;
 import org.apache.wink.json4j.JSONObject;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map.Entry;
-
-import static org.apache.sysds.runtime.util.CollectionUtils.except;
-import static org.apache.sysds.runtime.util.CollectionUtils.unionDistinct;
-
 public class EncoderFactory {
+	protected static final Log LOG = LogFactory.getLog(EncoderFactory.class.getName());
 
 	public static MultiColumnEncoder createEncoder(String spec, String[] colnames, int clen, FrameBlock meta) {
 		return createEncoder(spec, colnames, UtilFunctions.nCopies(clen, ValueType.STRING), meta);
@@ -155,11 +158,13 @@ public class EncoderFactory {
 			// initialize meta data w/ robustness for superset of cols
 			if(meta != null) {
 				String[] colnames2 = meta.getColumnNames();
+
 				if(!TfMetaUtils.isIDSpec(jSpec) && colnames != null && colnames2 != null &&
 					!ArrayUtils.isEquals(colnames, colnames2)) {
 					HashMap<String, Integer> colPos = getColumnPositions(colnames2);
 					// create temporary meta frame block w/ shallow column copy
 					FrameBlock meta2 = new FrameBlock(meta.getSchema(), colnames2);
+
 					for(int i = 0; i < colnames.length; i++) {
 						if(!colPos.containsKey(colnames[i])) {
 							throw new DMLRuntimeException("Column name not found in meta data: " + colnames[i]

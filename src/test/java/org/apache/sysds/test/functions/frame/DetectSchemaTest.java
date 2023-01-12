@@ -114,8 +114,6 @@ public class DetectSchemaTest extends AutomatedTestBase {
 
 			runTest(null);
 			FrameBlock frame2 = readDMLFrameFromHDFS("B", FileFormat.BINARY);
-			// LOG.error(frame1);
-			// LOG.error(frame2);
 
 			// verify output schema
 			for(int i = 0; i < schema.length; i++) {

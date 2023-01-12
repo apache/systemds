@@ -46,6 +46,7 @@ public class BuiltinImageShearTest extends AutomatedTestBase {
 	@Test
 	public void testImageShearZero() throws Exception {
 		loadTestConfiguration(getTestConfiguration(TEST_NAME));
+		setOutputBuffering(true);
 		double[][] input = TestUtils.readExpectedResource("ImageTransformInput.csv", rows, cols);
 		double[][] reference = input;
 		String HOME = SCRIPT_DIR + TEST_DIR;
@@ -63,6 +64,7 @@ public class BuiltinImageShearTest extends AutomatedTestBase {
 	@Test
 	public void testImageShearPillowX() throws Exception {
 		loadTestConfiguration(getTestConfiguration(TEST_NAME));
+		setOutputBuffering(true);
 		final double fill_value = 128.0;
 		double[][] input = TestUtils.readExpectedResource("ImageTransformInput.csv", rows, cols);
 		double[][] reference = TestUtils.readExpectedResource("ImageTransformShearedX.csv", rows, cols);
@@ -81,6 +83,7 @@ public class BuiltinImageShearTest extends AutomatedTestBase {
 	@Test
 	public void testImageShearPillowY() throws Exception {
 		loadTestConfiguration(getTestConfiguration(TEST_NAME));
+		setOutputBuffering(true);
 		final double fill_value = 128.0;
 		double[][] input = TestUtils.readExpectedResource("ImageTransformInput.csv", rows, cols);
 		double[][] reference = TestUtils.readExpectedResource("ImageTransformShearedY.csv", rows, cols);

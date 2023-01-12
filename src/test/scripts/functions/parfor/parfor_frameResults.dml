@@ -19,14 +19,15 @@
 #
 #-------------------------------------------------------------
 
-F = as.frame(matrix(0,7,1));
-
+# 1 makes the frame a boolean frame that does not allow one to
+# assign other values than 1 and 0
+F = as.frame(matrix(2,7,1));
 parfor(i in 1:nrow(F))
   F[i,1] = as.frame(rowMeans(as.matrix(F[i]))+i);
 
 R1 = matrix(0,0,1)
 for(i in 1:length(F))
-  R1 = rbind(R1, as.matrix(F[i,1]));
+  R1 = rbind(R1, as.matrix(F[i,1]) - 2);
 
 R = as.matrix(sum(R1==seq(1,7)));
 write(R, $3);

@@ -27,6 +27,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.Collection;
@@ -840,6 +841,32 @@ public class FrameArrayTests {
 			for(int i = 1; i < 10; i++) {
 				assertEquals(v, aa.get(i).toString());
 			}
+		}
+	}
+
+
+	@Test
+	public void testSerialization() {
+		try {
+			// Serialize out
+			ByteArrayOutputStream bos = new ByteArrayOutputStream();
+			DataOutputStream fos = new DataOutputStream(bos);
+			a.write(fos);
+
+			// Serialize in
+			ByteArrayInputStream bis = new ByteArrayInputStream(bos.toByteArray());
+			DataInputStream fis = new DataInputStream(bis);
+
+			Array<?> n = ArrayFactory.read(fis, a.size());
+
+			compare(a, n);
+		}
+		catch(IOException e) {
+			throw new RuntimeException("Error in io", e);
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			throw e;
 		}
 	}
 

@@ -64,8 +64,7 @@ public class FederatedParamservTest extends AutomatedTestBase {
 			// Network type, number of federated workers, data set size, batch size, epochs, learning rate, update type, update frequency
 			// basic functionality
 
-			{"UNet",	2, 4, 1, 1, 0.01, 		"BSP", "BATCH", "SHUFFLE",		 		"BASELINE",		"false","BALANCED",		200},
-			//{"UNet", 	2, 4, 1, 1, 0.01, 		"BSP", "BATCH", "LOCAL", 				"BASELINE",		"true", "IMBALANCED",	200},
+			{"UNet",	2, 4, 1, 1, 0.01, 		"BSP", "BATCH", "KEEP_DATA_ON_WORKER",	"BASELINE",		"false","BALANCED",		200},
 			{"TwoNN",	2, 4, 1, 4, 0.01, 		"BSP", "BATCH", "KEEP_DATA_ON_WORKER", 	"BASELINE",		"true",	"IMBALANCED",	200},
 			{"CNN", 	2, 4, 1, 4, 0.01, 		"BSP", "EPOCH", "SHUFFLE", 				"NONE", 		"true",	"IMBALANCED", 	200},
 			{"CNN",		2, 4, 1, 4, 0.01, 		"ASP", "BATCH", "REPLICATE_TO_MAX", 	"CYCLE_MIN", 	"true",	"IMBALANCED",	200},
@@ -169,7 +168,7 @@ public class FederatedParamservTest extends AutomatedTestBase {
 				labelsName = "y_IMBALANCED_" + _numFederatedWorkers;
 				double[][] ranges = {{0,1}, {1,4}};
 				rowFederateLocallyAndWriteInputMatrixWithMTD(featuresName, features, _numFederatedWorkers, ports, ranges);
-				rowFederateLocallyAndWriteInputMatrixWithMTD(featuresExName, features_extrapolated, _numFederatedWorkers, ports, ranges, null);
+				rowFederateLocallyAndWriteInputMatrixWithMTD(featuresExName, features_extrapolated, _numFederatedWorkers, ports, ranges);
 				rowFederateLocallyAndWriteInputMatrixWithMTD(labelsName, labels, _numFederatedWorkers, ports, ranges);
 			}
 			else {
@@ -178,7 +177,7 @@ public class FederatedParamservTest extends AutomatedTestBase {
 				labelsName = "y_BALANCED_" + _numFederatedWorkers;
 				double[][] ranges = generateBalancedFederatedRowRanges(_numFederatedWorkers, features.length);
 				rowFederateLocallyAndWriteInputMatrixWithMTD(featuresName, features, _numFederatedWorkers, ports, ranges);
-				rowFederateLocallyAndWriteInputMatrixWithMTD(featuresExName, features_extrapolated, _numFederatedWorkers, ports, ranges, null);
+				rowFederateLocallyAndWriteInputMatrixWithMTD(featuresExName, features_extrapolated, _numFederatedWorkers, ports, ranges);
 				rowFederateLocallyAndWriteInputMatrixWithMTD(labelsName, labels, _numFederatedWorkers, ports, ranges);
 			}
 

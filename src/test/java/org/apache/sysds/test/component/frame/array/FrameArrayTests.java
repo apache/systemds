@@ -443,7 +443,7 @@ public class FrameArrayTests {
 			case STRING:
 
 				String vs = "1324L";
-				a.set(0,vs);
+				a.set(0, vs);
 				assertEquals(((Array<String>) a).get(0), vs);
 
 				return;
@@ -585,7 +585,7 @@ public class FrameArrayTests {
 	@Test
 	public void setNull() {
 		// should not crash
-		a.set(0, (String)null);
+		a.set(0, (String) null);
 	}
 
 	@Test
@@ -791,17 +791,16 @@ public class FrameArrayTests {
 		compare(aa, a);
 	}
 
-
 	@Test
 	@SuppressWarnings("unchecked")
 	public void testSetNzString() {
 		Array<?> aa = a.clone();
-		Array<String> af = (Array<String>)aa.changeType(ValueType.STRING);
-		try{
+		Array<String> af = (Array<String>) aa.changeType(ValueType.STRING);
+		try {
 
 			aa.setFromOtherTypeNz(af);
 		}
-		catch(Exception e){
+		catch(Exception e) {
 			e.printStackTrace();
 			fail(e.getMessage());
 		}
@@ -813,12 +812,12 @@ public class FrameArrayTests {
 	@SuppressWarnings("unchecked")
 	public void testSetFromString() {
 		Array<?> aa = a.clone();
-		Array<String> af = (Array<String>)aa.changeType(ValueType.STRING);
-		try{
+		Array<String> af = (Array<String>) aa.changeType(ValueType.STRING);
+		try {
 
-			aa.setFromOtherType(0, af.size()-1, af);
+			aa.setFromOtherType(0, af.size() - 1, af);
 		}
-		catch(Exception e){
+		catch(Exception e) {
 			e.printStackTrace();
 			fail(e.getMessage());
 		}
@@ -830,12 +829,12 @@ public class FrameArrayTests {
 	public void resetTestCase() {
 		Array<?> aa = a.clone();
 		aa.reset(10);
-		if(aa.getValueType() == ValueType.STRING){
+		if(aa.getValueType() == ValueType.STRING) {
 			for(int i = 0; i < 10; i++) {
 				assertEquals(null, aa.get(i));
 			}
 		}
-		else{
+		else {
 
 			String v = aa.get(0).toString();
 			for(int i = 1; i < 10; i++) {
@@ -844,22 +843,16 @@ public class FrameArrayTests {
 		}
 	}
 
-
 	@Test
-	public void testSerialization() {
+	public void testSerializationSize() {
 		try {
 			// Serialize out
 			ByteArrayOutputStream bos = new ByteArrayOutputStream();
 			DataOutputStream fos = new DataOutputStream(bos);
 			a.write(fos);
-
-			// Serialize in
-			ByteArrayInputStream bis = new ByteArrayInputStream(bos.toByteArray());
-			DataInputStream fis = new DataInputStream(bis);
-
-			Array<?> n = ArrayFactory.read(fis, a.size());
-
-			compare(a, n);
+			long s = (long) fos.size();
+			long e = a.getExactSerializedSize();
+			assertEquals(s, e);
 		}
 		catch(IOException e) {
 			throw new RuntimeException("Error in io", e);

@@ -19,7 +19,8 @@
 
 package org.apache.sysds.test.functions.transform;
 
-import org.junit.Test;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.common.Types.FileFormat;
@@ -27,13 +28,13 @@ import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.runtime.io.FileFormatPropertiesCSV;
 import org.apache.sysds.runtime.io.FrameReader;
 import org.apache.sysds.runtime.io.FrameReaderFactory;
-import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
+import org.junit.Test;
 
-public class TransformFrameEncodeColmapTest extends AutomatedTestBase 
-{
+public class TransformFrameEncodeColmapTest extends AutomatedTestBase {
+	protected static final Log LOG = LogFactory.getLog(TransformFrameEncodeColmapTest.class.getName());
 	private final static String TEST_NAME1 = "TransformFrameEncodeColmap1";
 	private final static String TEST_NAME2 = "TransformFrameEncodeColmap2";
 	
@@ -109,19 +110,20 @@ public class TransformFrameEncodeColmapTest extends AutomatedTestBase
 		if( !ofmt.equals("csv") )
 			throw new RuntimeException("Unsupported test output format");
 		
+		setOutputBuffering(true);	
 		try
 		{
 			getAndLoadTestConfiguration(testname);
 			
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + testname + ".dml";
-			programArgs = new String[]{"-explain","-nvargs", 
+			programArgs = new String[]{"-nvargs", 
 				"DATA=" + DATASET_DIR + DATASET,
 				"TFSPEC=" + DATASET_DIR + SPEC,
 				"TFDATA=" + output("tfout"), 
 				"OFMT=" + ofmt, "OSEP=," };
 			
-			runTest(true, false, null, -1); 
+			runTest(null);
 			
 			//read input/output and compare
 			FrameReader reader1 = FrameReaderFactory.createFrameReader(FileFormat.CSV, 
@@ -129,11 +131,10 @@ public class TransformFrameEncodeColmapTest extends AutomatedTestBase
 			FrameBlock fb1 = reader1.readFrameFromHDFS(DATASET_DIR + DATASET, -1L, -1L);
 			FrameReader reader2 = FrameReaderFactory.createFrameReader(FileFormat.CSV);
 			FrameBlock fb2 = reader2.readFrameFromHDFS(output("tfout"), -1L, -1L);
-			String[][] R1 = DataConverter.convertToStringFrame(fb1);
-			String[][] R2 = DataConverter.convertToStringFrame(fb2);
-			TestUtils.compareFrames(R1, R2, R1.length, R1[0].length);
+			TestUtils.compareFrames(fb1, fb2, false);
 		}
 		catch(Exception ex) {
+			ex.printStackTrace();
 			throw new RuntimeException(ex);
 		}
 		finally {

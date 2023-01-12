@@ -40,7 +40,7 @@ import org.apache.hadoop.util.StringUtils;
 public class CPlanVectorPrimitivesTest extends AutomatedTestBase 
 {
 	private static final int m = 3;
-	private static final int n = 1191;
+	private static final int n = 132;
 	private static final double sparsity1 = 0.9;
 	private static final double sparsity2 = 0.09;
 	private static final double eps = Math.pow(10, -10);

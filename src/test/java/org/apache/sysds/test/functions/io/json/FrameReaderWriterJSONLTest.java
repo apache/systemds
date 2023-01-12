@@ -19,60 +19,65 @@
 
 package org.apache.sysds.test.functions.io.json;
 
+import static org.junit.Assert.fail;
+
+import java.io.IOException;
+import java.util.Map;
+import java.util.Random;
+
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.wink.json4j.JSONException;
-import org.junit.Test;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.runtime.io.FrameReaderJSONL;
 import org.apache.sysds.runtime.io.FrameWriterJSONL;
 import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.test.TestUtils;
+import org.apache.wink.json4j.JSONException;
+import org.junit.Test;
 
-import java.io.IOException;
-import java.util.Map;
-import java.util.Random;
-
-public class FrameReaderWriterJSONLTest
-{
+public class FrameReaderWriterJSONLTest {
 	private static final String FILENAME_SINGLE = "target/testTemp/functions/data/FrameJSONLTest/testFrameBlock.json";
 
 	@Test
 	public void testWriteReadFrameBlockSingleSingleFromHDFS() throws IOException, JSONException {
-		testWriteReadFrameBlockComplete(1,1, 4669201);
+		testWriteReadFrameBlockComplete(1, 1, 4669201);
 	}
 
 	@Test
 	public void testWriteReadFrameBlockSingleMultipleFromHDFS() throws IOException, JSONException {
-		testWriteReadFrameBlockComplete(1,23, 4669201);
+		testWriteReadFrameBlockComplete(1, 23, 4669201);
 	}
 
 	@Test
 	public void testWriteReadFrameBlockMultipleSingleFromHDFS() throws IOException, JSONException {
-		testWriteReadFrameBlockComplete(21,1, 4669201);
+		testWriteReadFrameBlockComplete(21, 1, 4669201);
 	}
 
 	@Test
 	public void testWriteReadFrameBlockMultipleMultipleFromHDFS() throws IOException, JSONException {
-		testWriteReadFrameBlockComplete(42,35, 4669201);
+		testWriteReadFrameBlockComplete(42, 35, 4669201);
 	}
 
 	@Test
 	public void testWriteReadFrameBlockMultipleMultipleSmallFromHDFS() throws IOException, JSONException {
-		testWriteReadFrameBlockComplete(694,164, 4669201);
+		testWriteReadFrameBlockComplete(694, 164, 4669201);
 	}
 
 	public void testWriteReadFrameBlockComplete(int rows, int cols, long seed) throws IOException, JSONException {
-		Pair<FrameBlock, FrameBlock> writeReadPair = testWriteReadFullFrameBlockFromHDFS(rows, cols, seed);
-		String[][] strWriteBlock = DataConverter.convertToStringFrame(writeReadPair.getLeft());
-		String[][] strReadBlock = DataConverter.convertToStringFrame(writeReadPair.getRight());
-		TestUtils.compareFrames(strWriteBlock, strReadBlock, rows, cols);
+		try {
+			Pair<FrameBlock, FrameBlock> writeReadPair = testWriteReadFullFrameBlockFromHDFS(rows, cols, seed);
+			String[][] strWriteBlock = DataConverter.convertToStringFrame(writeReadPair.getLeft());
+			String[][] strReadBlock = DataConverter.convertToStringFrame(writeReadPair.getRight());
+			TestUtils.compareFrames(strWriteBlock, strReadBlock, rows, cols);
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
 	}
 
-	public Pair<FrameBlock,FrameBlock> testWriteReadFullFrameBlockFromHDFS(int rows, int cols,
-		Types.ValueType[] schema, Map<String, Integer> schemaMap, Random random)
-			throws IOException, JSONException
-	{
+	public Pair<FrameBlock, FrameBlock> testWriteReadFullFrameBlockFromHDFS(int rows, int cols, Types.ValueType[] schema,
+		Map<String, Integer> schemaMap, Random random) throws IOException, JSONException {
 		FrameWriterJSONL frameWriterJSONL = new FrameWriterJSONL();
 		FrameReaderJSONL frameReaderJSONL = new FrameReaderJSONL();
 
@@ -80,7 +85,7 @@ public class FrameReaderWriterJSONLTest
 		FrameBlock writeBlock = TestUtils.generateRandomFrameBlock(rows, schema, random);
 
 		// Write FrameBlock
-		frameWriterJSONL.writeFrameToHDFS(writeBlock, FILENAME_SINGLE, schemaMap, rows,cols);
+		frameWriterJSONL.writeFrameToHDFS(writeBlock, FILENAME_SINGLE, schemaMap, rows, cols);
 
 		// Read FrameBlock
 		FrameBlock readBlock = frameReaderJSONL.readFrameFromHDFS(FILENAME_SINGLE, schema, schemaMap, rows, cols);
@@ -88,8 +93,8 @@ public class FrameReaderWriterJSONLTest
 		return Pair.of(writeBlock, readBlock);
 	}
 
-	public Pair<FrameBlock,FrameBlock> testWriteReadFullFrameBlockFromHDFS(int rows, int cols, long seed)
-			throws IOException, JSONException {
+	public Pair<FrameBlock, FrameBlock> testWriteReadFullFrameBlockFromHDFS(int rows, int cols, long seed)
+		throws IOException, JSONException {
 		Random random = new Random(seed);
 		Map<String, Integer> schemaMap = TestUtils.generateRandomSchemaMap(cols, random);
 		Types.ValueType[] schema = TestUtils.generateRandomSchema(cols, random);

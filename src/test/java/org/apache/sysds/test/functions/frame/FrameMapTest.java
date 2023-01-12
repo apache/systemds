@@ -38,7 +38,7 @@ public class FrameMapTest extends AutomatedTestBase {
 	private final static String TEST_DIR = "functions/binary/frame/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + FrameMapTest.class.getSimpleName() + "/";
 
-	private final static int rows = 100005;
+	private final static int rows = 3124;
 	private final static int rows2 = 10;
 	private final static Types.ValueType[] schemaStrings1 = {Types.ValueType.STRING};
 

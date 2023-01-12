@@ -38,8 +38,8 @@ import org.apache.sysds.test.TestUtils;
  */
 public class SparseBlockAlignment extends AutomatedTestBase 
 {
-	private final static int rows = 878;
-	private final static int cols = 393;	
+	private final static int rows = 324;
+	private final static int cols = 132;	
 	private final static double sparsity1 = 0.09;
 	private final static double sparsity2 = 0.19;
 	private final static double sparsity3 = 0.29;

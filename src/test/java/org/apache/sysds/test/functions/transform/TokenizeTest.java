@@ -201,7 +201,7 @@ public class TokenizeTest extends AutomatedTestBase  {
 //                    new FrameReaderTextCSVParallel( new FileFormatPropertiesCSV() ) :
 //                    new FrameReaderTextCSV( new FileFormatPropertiesCSV()  );
 //            FrameBlock fb2 = reader2.readFrameFromHDFS(output("R"), -1L, -1L);
-//            System.out.println(DataConverter.toString(fb2));
+
         }
         catch(Exception ex) {
             throw new RuntimeException(ex);

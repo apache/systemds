@@ -255,6 +255,8 @@ public class LiteralOp extends Hop
 				return String.valueOf(value_double);
 			case STRING:
 				return value_string;
+			case CHARACTER:
+				return value_string;
 			case UNKNOWN:
 				//do nothing (return null)
 		}

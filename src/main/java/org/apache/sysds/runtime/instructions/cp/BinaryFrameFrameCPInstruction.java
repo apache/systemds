@@ -19,9 +19,9 @@
 
 package org.apache.sysds.runtime.instructions.cp;
 
-import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
+import org.apache.sysds.runtime.frame.data.lib.FrameLibApplySchema;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.MultiThreadedOperator;
 
@@ -58,12 +58,8 @@ public class BinaryFrameFrameCPInstruction extends BinaryCPInstruction {
 			ec.setFrameOutput(output.getName(), retBlock);
 		}
 		else if(getOpcode().equals("applySchema")) {
-			// apply frame schema from DML
-			ValueType[] schema = new ValueType[inBlock2.getNumColumns()];
-			for(int i=0; i<inBlock2.getNumColumns(); i++)
-				schema[i] = ValueType.fromExternalString(inBlock2.get(0, i).toString());
 			final int k = ((MultiThreadedOperator)_optr).getNumThreads();
-			final FrameBlock out = inBlock1.applySchema(schema, k);
+			final FrameBlock out = FrameLibApplySchema.applySchema(inBlock1, inBlock2, k);
 			ec.setFrameOutput(output.getName(), out);
 		}
 		else {

@@ -152,7 +152,7 @@ public abstract class GenerateReaderFrameTest extends AutomatedTestBase {
 				generateRandomNumeric(nrows, types[rnt],min,max,naStrings, sparsity,data,i);
 			}
 	}
-	@SuppressWarnings("unused")
+
 	protected void runGenerateReaderTest() {
 
 		Types.ExecMode oldPlatform = rtplatform;
@@ -180,7 +180,7 @@ public abstract class GenerateReaderFrameTest extends AutomatedTestBase {
 			GenerateReader.GenerateReaderFrame gr = new GenerateReader.GenerateReaderFrame(sampleRaw, sampleFrame);
 
 			FrameReader fr= gr.getReader();
-			FrameBlock grFrame = fr.readFrameFromHDFS(dataPath,schema,names,data.length, clen);
+			fr.readFrameFromHDFS(dataPath,schema,names,data.length, clen);
 		}
 		catch(Exception exception) {
 			exception.printStackTrace();

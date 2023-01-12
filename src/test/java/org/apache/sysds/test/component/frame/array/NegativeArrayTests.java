@@ -19,20 +19,31 @@
 
 package org.apache.sysds.test.component.frame.array;
 
+import static org.junit.Assert.assertEquals;
+
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.frame.data.columns.Array;
 import org.apache.sysds.runtime.frame.data.columns.ArrayFactory;
 import org.apache.sysds.runtime.frame.data.columns.BitSetArray;
+import org.apache.sysds.runtime.frame.data.columns.BooleanArray;
+import org.apache.sysds.runtime.frame.data.columns.CharArray;
+import org.apache.sysds.runtime.frame.data.columns.DoubleArray;
+import org.apache.sysds.runtime.frame.data.columns.FloatArray;
+import org.apache.sysds.runtime.frame.data.columns.IntegerArray;
+import org.apache.sysds.runtime.frame.data.columns.LongArray;
+import org.apache.sysds.runtime.frame.data.columns.OptionalArray;
 import org.apache.sysds.runtime.frame.data.columns.StringArray;
 import org.junit.Test;
 
 public class NegativeArrayTests {
 
-	@Test(expected = DMLRuntimeException.class)
+	@Test
+	@SuppressWarnings("unchecked")
 	public void testAllocateInvalidArray() {
-		ArrayFactory.allocate(ValueType.UNKNOWN, 1324);
+		Array<String> s = (Array<String>) ArrayFactory.allocate(ValueType.UNKNOWN, 42);
+		assertEquals(null, s.get(3));
 	}
 
 	@Test(expected = DMLRuntimeException.class)
@@ -40,16 +51,30 @@ public class NegativeArrayTests {
 		ArrayFactory.getInMemorySize(ValueType.UNKNOWN, 0);
 	}
 
-	@Test(expected = DMLRuntimeException.class)
+	@Test
+	@SuppressWarnings("unchecked")
 	public void testChangeTypeToInvalid() {
 		Array<?> a = ArrayFactory.create(new int[] {1, 2, 3});
-		a.changeType(ValueType.UNKNOWN);
+		Array<String> s = (Array<String>) a.changeType(ValueType.UNKNOWN);
+		s.toString();
 	}
 
 	@Test(expected = NotImplementedException.class)
 	public void testChangeTypeToUInt8() {
 		Array<?> a = ArrayFactory.create(new int[] {1, 2, 3});
 		a.changeType(ValueType.UINT8);
+	}
+
+	@Test(expected = NotImplementedException.class)
+	public void testChangeTypeToUInt8WithNull_noNull() {
+		Array<?> a = ArrayFactory.create(new int[] {1, 2, 3});
+		a.changeTypeWithNulls(ValueType.UINT8);
+	}
+
+	@Test(expected = NotImplementedException.class)
+	public void testChangeTypeToUInt8WithNull() {
+		Array<?> a = ArrayFactory.create(new String[] {"1", "2", null});
+		a.changeTypeWithNulls(ValueType.UINT8);
 	}
 
 	@Test(expected = DMLRuntimeException.class)
@@ -77,27 +102,70 @@ public class NegativeArrayTests {
 
 	@Test(expected = DMLRuntimeException.class)
 	public void changeTypeBoolean_4() {
-		String[] s = new String[100]; 
+		String[] s = new String[100];
 		s[0] = "1";
 		s[1] = "10";
 		StringArray a = ArrayFactory.create(s);
 		a.changeType(ValueType.BOOLEAN);
 	}
 
-
 	@Test(expected = DMLRuntimeException.class)
-	public void invalidConstructionBitArrayToSmall(){
-		new BitSetArray(new long[0], 10 );
-	}
-	
-	@Test(expected = DMLRuntimeException.class)
-	public void invalidConstructionBitArrayToSmall_2(){
-		new BitSetArray(new long[1], 80 );
+	public void invalidConstructionBitArrayToSmall() {
+		new BitSetArray(new long[0], 10);
 	}
 
 	@Test(expected = DMLRuntimeException.class)
-	public void invalidConstructionBitArrayToBig(){
-		new BitSetArray(new long[10], 10 );
+	public void invalidConstructionBitArrayToSmall_2() {
+		new BitSetArray(new long[1], 80);
 	}
-	
+
+	@Test(expected = DMLRuntimeException.class)
+	public void invalidConstructionBitArrayToBig() {
+		new BitSetArray(new long[10], 10);
+	}
+
+	@Test(expected = DMLRuntimeException.class)
+	public void zLenAllocationBoolean() {
+		new BooleanArray(new boolean[0]);
+	}
+
+	@Test(expected = DMLRuntimeException.class)
+	public void zLenAllocationBitSet() {
+		new BitSetArray(new boolean[0]);
+	}
+
+	@Test(expected = DMLRuntimeException.class)
+	public void zLenAllocationChar() {
+		new CharArray(new char[0]);
+	}
+
+	@Test(expected = DMLRuntimeException.class)
+	public void zLenAllocationDouble() {
+		new DoubleArray(new double[0]);
+	}
+
+	@Test(expected = DMLRuntimeException.class)
+	public void zLenAllocationFloat() {
+		new FloatArray(new float[0]);
+	}
+
+	@Test(expected = DMLRuntimeException.class)
+	public void zLenAllocationInteger() {
+		new IntegerArray(new int[0]);
+	}
+
+	@Test(expected = DMLRuntimeException.class)
+	public void zLenAllocationLong() {
+		new LongArray(new long[0]);
+	}
+
+	@Test(expected = DMLRuntimeException.class)
+	public void zLenAllocationOptional() {
+		new OptionalArray<>(new Integer[0]);
+	}
+
+	@Test(expected = DMLRuntimeException.class)
+	public void zLenAllocationString() {
+		new StringArray(new String[0]);
+	}
 }

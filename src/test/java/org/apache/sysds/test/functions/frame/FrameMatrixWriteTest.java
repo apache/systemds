@@ -150,6 +150,7 @@ public class FrameMatrixWriteTest extends AutomatedTestBase
 			TestUtils.compareMatrices(A, B, rows, cols, 0);
 		}
 		catch(Exception ex) {
+			ex.printStackTrace();
 			throw new RuntimeException(ex);
 		}
 		finally {

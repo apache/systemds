@@ -30,6 +30,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.frame.data.columns.Array;
 import org.apache.sysds.runtime.frame.data.columns.ArrayFactory;
 import org.apache.sysds.runtime.frame.data.columns.BitSetArray;
 import org.apache.sysds.runtime.frame.data.columns.BooleanArray;
@@ -106,85 +107,133 @@ public class CustomArrayTests {
 	@Test
 	public void analyzeValueTypeStringBoolean() {
 		StringArray a = ArrayFactory.create(new String[] {"1", "0", "0"});
-		ValueType t = a.analyzeValueType();
-		assertTrue(t == ValueType.BOOLEAN);
+		ValueType t = a.analyzeValueType().getKey();
+		assertEquals(ValueType.BOOLEAN, t);
 	}
 
 	@Test
 	public void analyzeValueTypeStringBoolean_withPointZero() {
 		StringArray a = ArrayFactory.create(new String[] {"1.0", "0", "0"});
-		ValueType t = a.analyzeValueType();
-		assertTrue(t == ValueType.BOOLEAN);
+		ValueType t = a.analyzeValueType().getKey();
+		assertEquals(ValueType.BOOLEAN, t);
 	}
 
 	@Test
 	public void analyzeValueTypeStringBoolean_withPointZero_2() {
 		StringArray a = ArrayFactory.create(new String[] {"1.00", "0", "0"});
-		ValueType t = a.analyzeValueType();
-		assertTrue(t == ValueType.BOOLEAN);
+		ValueType t = a.analyzeValueType().getKey();
+		assertEquals(ValueType.BOOLEAN, t);
 	}
 
 	@Test
 	public void analyzeValueTypeStringBoolean_withPointZero_3() {
 		StringArray a = ArrayFactory.create(new String[] {"1.00000000000", "0", "0"});
-		ValueType t = a.analyzeValueType();
-		assertTrue(t == ValueType.BOOLEAN);
+		ValueType t = a.analyzeValueType().getKey();
+		assertEquals(ValueType.BOOLEAN, t);
 	}
 
 	@Test
 	public void analyzeValueTypeStringInt32() {
 		StringArray a = ArrayFactory.create(new String[] {"13", "131", "-142"});
-		ValueType t = a.analyzeValueType();
-		assertTrue(t == ValueType.INT32);
+		ValueType t = a.analyzeValueType().getKey();
+		assertEquals(ValueType.INT32, t);
 	}
 
 	@Test
 	public void analyzeValueTypeStringInt32_withPointZero() {
 		StringArray a = ArrayFactory.create(new String[] {"13.0", "131", "-142"});
-		ValueType t = a.analyzeValueType();
-		assertTrue(t == ValueType.INT32);
+		ValueType t = a.analyzeValueType().getKey();
+		assertEquals(ValueType.INT32, t);
 	}
 
 	@Test
 	public void analyzeValueTypeStringInt32_withPointZero_2() {
 		StringArray a = ArrayFactory.create(new String[] {"13.0000", "131", "-142"});
-		ValueType t = a.analyzeValueType();
-		assertTrue(t == ValueType.INT32);
+		ValueType t = a.analyzeValueType().getKey();
+		assertEquals(ValueType.INT32, t);
 	}
 
 	@Test
 	public void analyzeValueTypeStringInt32_withPointZero_3() {
 		StringArray a = ArrayFactory.create(new String[] {"13.00000000000000", "131", "-142"});
-		ValueType t = a.analyzeValueType();
-		assertTrue(t == ValueType.INT32);
+		ValueType t = a.analyzeValueType().getKey();
+		assertEquals(ValueType.INT32, t);
 	}
 
 	@Test
 	public void analyzeValueTypeStringInt64() {
 		StringArray a = ArrayFactory.create(new String[] {"" + (((long) Integer.MAX_VALUE) + 10L), "131", "-142"});
-		ValueType t = a.analyzeValueType();
-		assertTrue(t == ValueType.INT64);
+		ValueType t = a.analyzeValueType().getKey();
+		assertEquals(ValueType.INT64, t);
 	}
 
 	@Test
 	public void analyzeValueTypeStringFP32() {
 		StringArray a = ArrayFactory.create(new String[] {"132", "131.1", "-142"});
-		ValueType t = a.analyzeValueType();
+		ValueType t = a.analyzeValueType().getKey();
 		assertEquals(ValueType.FP32, t);
 	}
 
 	@Test
 	public void analyzeValueTypeStringFP64() {
 		StringArray a = ArrayFactory.create(new String[] {"132", "131.0012345678912345", "-142"});
-		ValueType t = a.analyzeValueType();
-		assertTrue(t == ValueType.FP64);
+		ValueType t = a.analyzeValueType().getKey();
+		assertEquals(ValueType.FP64, t);
 	}
 
 	@Test
 	public void analyzeValueTypeStringFP32_string() {
 		StringArray a = ArrayFactory.create(new String[] {"\"132\"", "131.1", "-142"});
-		ValueType t = a.analyzeValueType();
+		ValueType t = a.analyzeValueType().getKey();
 		assertEquals(ValueType.STRING, t);
+	}
+
+	@Test
+	public void analyzeValueTypeCharacter() {
+		StringArray a = ArrayFactory.create(new String[] {"1", "g", "1", "3"});
+		ValueType t = a.analyzeValueType().getKey();
+		assertEquals(ValueType.CHARACTER, t);
+	}
+
+	@Test
+	public void analyzeValueTypeCharacterWithNull() {
+		StringArray a = ArrayFactory.create(new String[] {"1", "g", null, "3"});
+		ValueType t = a.analyzeValueType().getKey();
+		assertEquals(ValueType.CHARACTER, t);
+	}
+
+	@Test
+	public void analyzeValueTypeInteger() {
+		StringArray a = ArrayFactory.create(new String[] {"1", "2", null, "3"});
+		ValueType t = a.analyzeValueType().getKey();
+		assertEquals(ValueType.INT32, t);
+	}
+
+	@Test
+	public void getNulls() {
+		StringArray a = ArrayFactory.create(new String[] {"1", "2", null, "3"});
+		Array<Boolean> n = a.getNulls();
+		verifyNulls(a, n);
+	}
+
+	@Test
+	public void getNulls_2() {
+		StringArray a = ArrayFactory.create(new String[] {"1", "2", "null", "3"});
+		Array<Boolean> n = a.getNulls();
+		verifyNulls(a, n);
+	}
+
+	@Test
+	public void getNulls_3() {
+		StringArray a = ArrayFactory.create(new String[] {null, null, null, "3"});
+		Array<Boolean> n = a.getNulls();
+		verifyNulls(a, n);
+	}
+
+	private static void verifyNulls(Array<?> a, Array<Boolean> n) {
+		for(int i = 0; i < a.size(); i++)
+			assertTrue((a.get(i) == null && !n.get(i)) //
+				|| (a.get(i) != null && n.get(i)));
 	}
 
 	@Test
@@ -551,4 +600,21 @@ public class CustomArrayTests {
 			assertTrue(a.get(i));
 	}
 
+	@Test
+	public void testAppendDifferentTypes_1() {
+		Array<String> a = new StringArray(new String[] {"1", "2", "3"});
+		Array<Integer> b = new IntegerArray(new int[] {4, 5, 6});
+		Array<String> c = ArrayFactory.append(a, b);
+		for(int i = 0; i < c.size(); i++)
+			assertEquals(i + 1, Integer.parseInt(c.get(i)));
+	}
+
+	@Test
+	public void testAppendDifferentTypes_2() {
+		Array<Integer> a = new IntegerArray(new int[] {1, 2, 3});
+		Array<String> b = new StringArray(new String[] {"4", "5", "6"});
+		Array<String> c = ArrayFactory.append(a, b);
+		for(int i = 0; i < c.size(); i++)
+			assertEquals(i + 1, Integer.parseInt(c.get(i)));
+	}
 }

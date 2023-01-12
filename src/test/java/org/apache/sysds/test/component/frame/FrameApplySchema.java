@@ -19,6 +19,7 @@
 
 package org.apache.sysds.test.component.frame;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -38,7 +39,7 @@ public class FrameApplySchema {
 
 			FrameBlock fb = genStringContainingBoolean(10, 2);
 			ValueType[] schema = new ValueType[] {ValueType.BOOLEAN, ValueType.BOOLEAN};
-			FrameBlock ret = fb.applySchema(schema);
+			FrameBlock ret = FrameLibApplySchema.applySchema(fb, schema);
 			assertTrue(ret.getColumn(0).getValueType() == ValueType.BOOLEAN);
 			assertTrue(ret.getColumn(1).getValueType() == ValueType.BOOLEAN);
 		}
@@ -53,7 +54,7 @@ public class FrameApplySchema {
 		try {
 			FrameBlock fb = genStringContainingInteger(10, 2);
 			ValueType[] schema = new ValueType[] {ValueType.INT32, ValueType.INT32};
-			FrameBlock ret = fb.applySchema(schema);
+			FrameBlock ret = FrameLibApplySchema.applySchema(fb, schema);
 			assertTrue(ret.getColumn(0).getValueType() == ValueType.INT32);
 			assertTrue(ret.getColumn(1).getValueType() == ValueType.INT32);
 		}
@@ -68,7 +69,7 @@ public class FrameApplySchema {
 		try {
 			FrameBlock fb = genStringContainingInteger(10, 1);
 			ValueType[] schema = new ValueType[] {ValueType.INT32};
-			FrameBlock ret = fb.applySchema(schema);
+			FrameBlock ret = FrameLibApplySchema.applySchema(fb, schema);
 			assertTrue(ret.getColumn(0).getValueType() == ValueType.INT32);
 		}
 		catch(Exception e) {
@@ -109,7 +110,6 @@ public class FrameApplySchema {
 		}
 	}
 
-
 	@Test
 	public void testApplySchemaStringToIntDirectCallMultiThreadSingleCol() {
 		try {
@@ -133,11 +133,12 @@ public class FrameApplySchema {
 		FrameLibApplySchema.applySchema(fb, schema, 3);
 	}
 
-	@Test(expected = DMLRuntimeException.class)
-	public void testInvalidInput2() {
+	@Test
+	public void testUnkownColumnDefaultToString() {
 		FrameBlock fb = genStringContainingInteger(10, 3);
 		ValueType[] schema = new ValueType[] {ValueType.UNKNOWN, ValueType.INT32, ValueType.INT32};
-		FrameLibApplySchema.applySchema(fb, schema, 3);
+		fb = FrameLibApplySchema.applySchema(fb, schema, 3);
+		assertEquals(ValueType.UNKNOWN, fb.getSchema()[0]);
 	}
 
 	private FrameBlock genStringContainingInteger(int row, int col) {

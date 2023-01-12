@@ -34,9 +34,12 @@ public class IOCompressionTestUtils {
 
 	static final AtomicInteger id = new AtomicInteger(0);
 
-	protected static void deleteDirectory(File file) {
+	public static void deleteDirectory(File file) {
 		synchronized(IOCompressionTestUtils.lock) {
-			for(File subfile : file.listFiles()) {
+			File[] files = file.listFiles();
+			if(files == null)
+				return;
+			for(File subfile :files) {
 				if(subfile.isDirectory())
 					deleteDirectory(subfile);
 				subfile.delete();

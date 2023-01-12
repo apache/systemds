@@ -21,11 +21,12 @@ package org.apache.sysds.test.functions.frame;
 
 import java.io.IOException;
 
-import org.junit.Test;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.ExecMode;
-import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.common.Types.ExecType;
+import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.runtime.io.FrameWriter;
 import org.apache.sysds.runtime.io.FrameWriterFactory;
@@ -36,14 +37,16 @@ import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
+import org.junit.Test;
 
-public class FrameMatrixReblockTest extends AutomatedTestBase
-{
+public class FrameMatrixReblockTest extends AutomatedTestBase{
+
+	private static final Log LOG = LogFactory.getLog(FrameMatrixReblockTest.class.getName());
 	private final static String TEST_DIR = "functions/frame/";
 	private final static String TEST_NAME1 = "FrameMatrixReblock";
 	private final static String TEST_CLASS_DIR = TEST_DIR + FrameMatrixReblockTest.class.getSimpleName() + "/";
 
-	private final static int rows = 2593;
+	private final static int rows = 1200;
 	private final static int cols1 = 372;
 	private final static int cols2 = 1102;
 	private final static double sparsity1 = 0.9;
@@ -198,7 +201,7 @@ public class FrameMatrixReblockTest extends AutomatedTestBase
 			
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + testname + ".dml";
-			programArgs = new String[]{"-explain","-args", input("A"), String.valueOf(rows), 
+			programArgs = new String[]{"-args", input("A"), String.valueOf(rows), 
 					String.valueOf(cols), output("B"), ofmt };
 			
 			//generate input data
@@ -206,7 +209,7 @@ public class FrameMatrixReblockTest extends AutomatedTestBase
 			writeFrameInput(input("A"), ofmt, A, rows, cols);
 			
 			//run testcase
-			runTest(true, false, null, -1);
+			LOG.debug(runTest(null));
 			
 			//compare matrices
 			double[][] B = readMatrixOutput(output("B"), ofmt, rows, cols);

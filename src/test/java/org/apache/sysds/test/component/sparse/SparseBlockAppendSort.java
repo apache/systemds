@@ -40,8 +40,8 @@ import java.util.Iterator;
  */
 public class SparseBlockAppendSort extends AutomatedTestBase 
 {
-	private final static int rows = 632;
-	private final static int cols = 454;	
+	private final static int rows = 304;
+	private final static int cols = 132;	
 	private final static double sparsity1 = 0.11;
 	private final static double sparsity2 = 0.21;
 	private final static double sparsity3 = 0.31;

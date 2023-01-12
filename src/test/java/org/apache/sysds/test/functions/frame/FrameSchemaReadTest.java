@@ -119,7 +119,7 @@ public class FrameSchemaReadTest extends AutomatedTestBase
 			setOutputBuffering(true);
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + testname + ".dml";
-			programArgs = new String[]{"-explain","-args", input("A"), getSchemaString(schema, wildcard), 
+			programArgs = new String[]{"-args", input("A"), getSchemaString(schema, wildcard), 
 					Integer.toString(rows), Integer.toString(schema.length), output("B") };
 			
 			//data generation

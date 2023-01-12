@@ -30,6 +30,7 @@ import java.util.BitSet;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.frame.data.columns.ArrayFactory.FrameArrayType;
+import org.apache.sysds.runtime.matrix.data.Pair;
 import org.apache.sysds.runtime.util.UtilFunctions;
 import org.apache.sysds.utils.MemoryEstimates;
 
@@ -170,8 +171,8 @@ public class IntegerArray extends Array<Integer> {
 	}
 
 	@Override
-	public ValueType analyzeValueType() {
-		return ValueType.INT32;
+	public Pair<ValueType, Boolean> analyzeValueType() {
+		return new Pair<ValueType, Boolean>(ValueType.INT32, false);
 	}
 
 	@Override
@@ -275,16 +276,16 @@ public class IntegerArray extends Array<Integer> {
 		return _data[i];
 	}
 
-	protected static int parseInt(String s) {
+	public static int parseInt(String s) {
 		if(s == null)
 			return 0;
 		try {
 			return Integer.parseInt(s);
 		}
 		catch(NumberFormatException e) {
-			if(s.contains(".")) {
-				return Integer.parseInt(s.split("\\.")[0]);
-			}
+			// we use exceptions as normal behavior here since we want faster default parsing.
+			if(s.contains("."))
+				return (int) Double.parseDouble(s);
 			else
 				throw e;
 		}
@@ -296,12 +297,45 @@ public class IntegerArray extends Array<Integer> {
 	}
 
 	@Override
+	public boolean isEmpty() {
+		for(int i = 0; i < _data.length; i++)
+			if(_data[i] != 0)
+				return false;
+		return true;
+	}
+
+	@Override
+	public Array<Integer> select(int[] indices) {
+		final int[] ret = new int[indices.length];
+		for(int i = 0; i < indices.length; i++)
+			ret[i] = _data[indices[i]];
+		return new IntegerArray(ret);
+	}
+
+	@Override
+	public Array<Integer> select(boolean[] select, int nTrue) {
+		final int[] ret = new int[nTrue];
+		int k = 0;
+		for(int i = 0; i < select.length; i++)
+			if(select[i])
+				ret[k++] = _data[i];
+		return new IntegerArray(ret);
+	}
+
+	@Override
+	public final boolean isNotEmpty(int i) {
+		return _data[i] != 0;
+	}
+
+	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder(_data.length * 5 + 2);
 		sb.append(super.toString() + ":[");
-		for(int i = 0; i < _size - 1; i++)
-			sb.append(_data[i] + ",");
-		sb.append(_data[_size - 1]);
+		if(_size > 0) {
+			for(int i = 0; i < _size - 1; i++)
+				sb.append(_data[i] + ",");
+			sb.append(_data[_size - 1]);
+		}
 		sb.append("]");
 		return sb.toString();
 	}

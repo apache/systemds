@@ -18,6 +18,10 @@
  */
 package org.apache.sysds.test.functions.builtin.part2;
 
+import java.util.HashMap;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.runtime.matrix.data.MatrixValue;
 import org.apache.sysds.test.AutomatedTestBase;
@@ -26,9 +30,9 @@ import org.apache.sysds.test.TestUtils;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import java.util.HashMap;
-
 public class BuiltinMeanImputationTest extends AutomatedTestBase {
+	protected static final Log LOG = LogFactory.getLog(BuiltinMeanImputationTest.class.getName());
+	
 	private final static String TEST_NAME1 = "meanImputation";
 	private final static String TEST_NAME2 = "medianImputation";
 	private final static String TEST_DIR = "functions/builtin/";
@@ -77,12 +81,13 @@ public class BuiltinMeanImputationTest extends AutomatedTestBase {
 			rCmd = "Rscript" + " " + fullRScriptName + " " + DATASET_DIR+"Salaries.csv" + " " + expectedDir();
 
 
-			runTest(true, false, null, -1);
+			LOG.error(runTest(null));
 			runRScript(true);
 
 			//compare matrices
 			HashMap<MatrixValue.CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir("B");
 			HashMap<MatrixValue.CellIndex, Double> rfile  = readRMatrixFromExpectedDir("B");
+
 			TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
 		}
 		finally {

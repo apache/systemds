@@ -270,6 +270,7 @@ public class TransformFrameEncodeMultithreadedTest extends AutomatedTestBase {
 			}
 		}
 		catch(Exception ex) {
+			ex.printStackTrace();
 			throw new RuntimeException(ex);
 		}
 	}

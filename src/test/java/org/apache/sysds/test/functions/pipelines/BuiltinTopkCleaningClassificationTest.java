@@ -74,6 +74,7 @@ public class BuiltinTopkCleaningClassificationTest extends AutomatedTestBase {
 		double split, Types.ExecMode et) {
 
 		Types.ExecMode modeOld = setExecMode(et);
+		setOutputBuffering(true);
 		String HOME = SCRIPT_DIR + TEST_DIR;
 		try {
 			loadTestConfiguration(getTestConfiguration(TEST_NAME));

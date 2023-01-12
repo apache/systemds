@@ -85,6 +85,7 @@ public class BuiltinImagePosterizeTest extends AutomatedTestBase {
 		ExecMode platformOld = setExecMode(instType);
 		disableOutAndExpectedDeletion();
 
+		setOutputBuffering(true);
 		int rows = random.nextInt(1000) + 1;
 		int cols = random.nextInt(1000) + 1;
 		int bits = random.nextInt(7) + 1;

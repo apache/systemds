@@ -26,15 +26,17 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Arrays;
 
+import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.frame.data.columns.ArrayFactory.FrameArrayType;
+import org.apache.sysds.runtime.matrix.data.Pair;
 import org.apache.sysds.runtime.util.UtilFunctions;
 import org.apache.sysds.utils.MemoryEstimates;
 
 public class BooleanArray extends Array<Boolean> {
 	protected boolean[] _data;
 
-	public BooleanArray(int size) {
+	private BooleanArray(int size) {
 		super(size);
 		_data = new boolean[size];
 	}
@@ -195,8 +197,8 @@ public class BooleanArray extends Array<Boolean> {
 	}
 
 	@Override
-	public ValueType analyzeValueType() {
-		return ValueType.BOOLEAN;
+	public Pair<ValueType, Boolean> analyzeValueType() {
+		return new Pair<ValueType, Boolean>(ValueType.BOOLEAN, false);
 	}
 
 	@Override
@@ -298,17 +300,56 @@ public class BooleanArray extends Array<Boolean> {
 		return _data[i] ? 1.0 : 0.0;
 	}
 
-	protected static boolean parseBoolean(String value) {
+	@Override
+	public boolean isEmpty() {
+		for(int i = 0; i < _data.length; i++)
+			if(_data[i])
+				return false;
+		return true;
+	}
+
+	@Override
+	public Array<Boolean> select(int[] indices) {
+		final boolean[] ret = new boolean[indices.length];
+		for(int i = 0; i < indices.length; i++)
+			ret[i] = _data[indices[i]];
+		return new BooleanArray(ret);
+	}
+
+	@Override
+	public Array<Boolean> select(boolean[] select, int nTrue) {
+		final boolean[] ret = new boolean[nTrue];
+		int k = 0;
+		for(int i = 0; i < select.length; i++)
+			if(select[i])
+				ret[k++] = _data[i];
+		return new BooleanArray(ret);
+	}
+
+	@Override
+	public final boolean isNotEmpty(int i) {
+		return _data[i];
+	}
+
+	@Override 
+	public void findEmptyInverse(boolean[] select){
+		throw new NotImplementedException();
+
+	}
+
+	public static boolean parseBoolean(String value) {
 		return value != null && (Boolean.parseBoolean(value) || value.equals("1") || value.equals("1.0"));
 	}
 
 	@Override
 	public String toString() {
-		StringBuilder sb = new StringBuilder(_data.length + 2);
+		StringBuilder sb = new StringBuilder(_data.length * 2 + 10);
 		sb.append(super.toString() + ":[");
-		for(int i = 0; i < _size - 1; i++)
-			sb.append((_data[i] ? 1 : 0) + ",");
-		sb.append(_data[_size - 1] ? 1 : 0);
+		if(_size > 0) {
+			for(int i = 0; i < _size - 1; i++)
+				sb.append((_data[i] ? 1 : 0) + ",");
+			sb.append(_data[_size - 1] ? 1 : 0);
+		}
 		sb.append("]");
 		return sb.toString();
 	}

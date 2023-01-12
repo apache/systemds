@@ -34,8 +34,8 @@ import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.RecordReader;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.mapred.TextInputFormat;
-import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.runtime.transform.TfUtils;
@@ -106,7 +106,7 @@ public class FrameReaderTextCell extends FrameReader
 	protected static void readTextCellFrameFromInputSplit( InputSplit split, TextInputFormat informat, JobConf job, FrameBlock dest)
 		throws IOException
 	{
-		ValueType[] schema = dest.getSchema();
+		
 		int rlen = dest.getNumRows();
 		int clen = dest.getNumColumns();
 		
@@ -129,8 +129,8 @@ public class FrameReaderTextCell extends FrameReader
 					dest.getColumnMetadata(col).setMvValue(TfUtils.desanitizeSpaces(st.nextToken()));
 				else if( row == -2 )
 					dest.getColumnMetadata(col).setNumDistinct(st.nextLong());
-				else
-					dest.set(row, col, UtilFunctions.stringToObject(schema[col], st.nextToken()));
+				else if( row >= 0 )
+					dest.set(row, col, st.nextToken());
 			}
 		}
 		catch(Exception ex) 

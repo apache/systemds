@@ -45,6 +45,7 @@ import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.data.TensorIndexes;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
+import org.apache.sysds.runtime.frame.data.columns.ArrayFactory;
 import org.apache.sysds.runtime.frame.data.columns.CharArray;
 import org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue;
 import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
@@ -481,7 +482,7 @@ public class UtilFunctions {
 	}
 
 	public static Object stringToObject(ValueType vt, String in) {
-		if( in == null )  return null;
+		if( in == null || in.isEmpty() )  return null;
 		switch( vt ) {
 			case STRING:  return in;
 			case BOOLEAN: return Boolean.parseBoolean(in);
@@ -511,8 +512,19 @@ public class UtilFunctions {
 			case INT64:   return (Long)in;
 			case INT32:   return (Integer)in;
 			case BOOLEAN: return ((Boolean)in) ? 1 : 0;
-			case STRING:  return !((String)in).isEmpty() ? Double.parseDouble((String)in) : 0;
-			default: 
+			case STRING:
+				try {
+					return !((String) in).isEmpty() ? Double.parseDouble((String) in) : 0;
+				}
+				catch(NumberFormatException e) {
+					if(in.equals("true"))
+						return 1.0;
+					else if(in.equals("false"))
+						return 0.0;
+					else
+						throw new DMLRuntimeException("failed parsing object to double",e);
+				}
+			default:
 				throw new DMLRuntimeException("Unsupported value type: "+vt);
 		}
 	}
@@ -686,6 +698,8 @@ public class UtilFunctions {
 			default: throw new RuntimeException("Unsupported value type: "+vt);
 		}
 	}
+
+	
 
 	/**
 	 * Compares two version strings of format x.y.z, where x is major,

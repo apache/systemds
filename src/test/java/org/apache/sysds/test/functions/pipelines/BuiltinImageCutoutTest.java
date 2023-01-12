@@ -66,6 +66,7 @@ public class BuiltinImageCutoutTest extends AutomatedTestBase {
 		ExecMode platformOld = setExecMode(instType);
 		disableOutAndExpectedDeletion();
 
+		setOutputBuffering(true);
 		int rows = random.nextInt(1000) + 1;
 		int cols = random.nextInt(1000) + 1;
 		int x = random.nextInt(cols);

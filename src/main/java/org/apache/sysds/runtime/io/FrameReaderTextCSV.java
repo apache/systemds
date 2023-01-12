@@ -88,7 +88,6 @@ public class FrameReaderTextCSV extends FrameReader {
 	@Override
 	public FrameBlock readFrameFromInputStream(InputStream is, ValueType[] schema, String[] names, long rlen, long clen)
 		throws IOException, DMLRuntimeException {
-		LOG.debug("readFrameFromInputStream csv");
 		// allocate output frame block
 		ValueType[] lschema = createOutputSchema(schema, clen);
 		String[] lnames = createOutputNames(names, clen);

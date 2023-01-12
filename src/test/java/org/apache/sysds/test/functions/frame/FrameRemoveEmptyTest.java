@@ -21,6 +21,8 @@ package org.apache.sysds.test.functions.frame;
 
 import static org.junit.Assert.fail;
 
+import java.util.HashMap;
+
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.logging.Log;
@@ -28,6 +30,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
@@ -37,7 +40,7 @@ import org.junit.Test;
 
 public class FrameRemoveEmptyTest extends AutomatedTestBase {
 
-	private static final Log LOG = LogFactory.getLog(FrameRemoveEmptyTest.class.getName());
+	protected static final Log LOG = LogFactory.getLog(FrameRemoveEmptyTest.class.getName());
 
 	private final static String TEST_NAME1 = "removeEmpty1";
 	private final static String TEST_NAME2 = "removeEmpty2";
@@ -163,9 +166,10 @@ public class FrameRemoveEmptyTest extends AutomatedTestBase {
 
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + testname + ".dml";
-			programArgs = new String[] {"-explain", "-args", input("V"), input("I"), margin, output("R")};
+			programArgs = new String[] {"-args", input("V"), input("I"), margin, output("R")};
 
-			Pair<MatrixBlock, MatrixBlock> data = createInputMatrix(margin, bSelectIndex, fullSelect, rows, cols, sparsity);
+			Pair<MatrixBlock, MatrixBlock> data = createInputMatrix(margin, bSelectIndex, fullSelect, rows, cols,
+				sparsity);
 
 			MatrixBlock in = data.getKey();
 			MatrixBlock select = data.getValue();
@@ -174,16 +178,14 @@ public class FrameRemoveEmptyTest extends AutomatedTestBase {
 
 			MatrixBlock expected = fullSelect ? in : in.removeEmptyOperations(new MatrixBlock(), margin.equals("rows"),
 				false, select);
-
-			double[][] out = TestUtils.convertHashMapToDoubleArray(readDMLMatrixFromOutputDir("R"));
-
-			LOG.debug(expected.getNumRows() + "  " + out.length);
+			HashMap<CellIndex, Double> m = readDMLMatrixFromOutputDir("R");
+			double[][] out = TestUtils.convertHashMapToDoubleArray(m, expected.getNumRows(), expected.getNumColumns());
 
 			TestUtils.compareMatrices(expected, out, 0, "");
 		}
 		catch(Exception e) {
 			e.printStackTrace();
-			fail("Failed test because of exception " + e);
+			fail("Failed test because of exception " + e.getMessage());
 		}
 		finally {
 			// reset platform for additional tests

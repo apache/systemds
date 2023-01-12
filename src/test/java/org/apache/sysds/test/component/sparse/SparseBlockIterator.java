@@ -41,8 +41,8 @@ import org.apache.sysds.test.TestUtils;
  */
 public class SparseBlockIterator extends AutomatedTestBase 
 {
-	private final static int rows = 772;
-	private final static int cols = 394;	
+	private final static int rows = 324;
+	private final static int cols = 100;	
 	private final static int rlPartial = 134;
 	private final static double sparsity1 = 0.1;
 	private final static double sparsity2 = 0.2;

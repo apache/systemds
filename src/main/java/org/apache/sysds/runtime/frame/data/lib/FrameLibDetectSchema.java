@@ -30,6 +30,7 @@ import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.runtime.frame.data.columns.Array;
+import org.apache.sysds.runtime.matrix.data.Pair;
 import org.apache.sysds.runtime.util.CommonThreadPool;
 import org.apache.sysds.runtime.util.UtilFunctions;
 
@@ -65,9 +66,9 @@ public final class FrameLibDetectSchema {
 	private String[] singleThreadApply() {
 		final int cols = in.getNumColumns();
 		final String[] schemaInfo = new String[cols];
-		for(int i = 0; i < cols; i++) {
-			schemaInfo[i] = in.getColumn(i).analyzeValueType().toString();
-		}
+		for(int i = 0; i < cols; i++)
+			assign(schemaInfo, in.getColumn(i).analyzeValueType(), i);
+
 		return schemaInfo;
 	}
 
@@ -78,11 +79,12 @@ public final class FrameLibDetectSchema {
 			final ArrayList<DetectValueTypeTask> tasks = new ArrayList<>(cols);
 			for(int i = 0; i < cols; i++)
 				tasks.add(new DetectValueTypeTask(in.getColumn(i)));
-			final List<Future<ValueType>> ret = pool.invokeAll(tasks);
+			final List<Future<Pair<ValueType, Boolean>>> ret = pool.invokeAll(tasks);
 			final String[] schemaInfo = new String[cols];
 			pool.shutdown();
 			for(int i = 0; i < cols; i++)
-				schemaInfo[i] = ret.get(i).get().toString();
+				assign(schemaInfo, ret.get(i).get(), i);
+
 			return schemaInfo;
 		}
 		catch(ExecutionException | InterruptedException e) {
@@ -91,7 +93,15 @@ public final class FrameLibDetectSchema {
 		}
 	}
 
-	private static class DetectValueTypeTask implements Callable<ValueType> {
+	private static void assign(String[] schemaInfo, Pair<ValueType, Boolean> v, int i) {
+
+		if(v.getValue())
+			schemaInfo[i] = v.getKey() + FrameUtil.SCHEMA_SEPARATOR + "n";
+		else
+			schemaInfo[i] = v.getKey().toString();
+	}
+
+	private static class DetectValueTypeTask implements Callable<Pair<ValueType, Boolean>> {
 		private final Array<?> _obj;
 
 		protected DetectValueTypeTask(Array<?> obj) {
@@ -99,7 +109,7 @@ public final class FrameLibDetectSchema {
 		}
 
 		@Override
-		public ValueType call() {
+		public Pair<ValueType, Boolean> call() {
 			return _obj.analyzeValueType();
 		}
 	}

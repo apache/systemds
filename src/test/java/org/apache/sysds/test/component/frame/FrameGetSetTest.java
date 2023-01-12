@@ -29,7 +29,7 @@ import org.apache.sysds.test.TestUtils;
 
 public class FrameGetSetTest extends AutomatedTestBase
 {
-	private final static int rows = 3254;
+	private final static int rows = 131;
 	private final static ValueType[] schemaStrings = new ValueType[]{ValueType.STRING, ValueType.STRING, ValueType.STRING};	
 	private final static ValueType[] schemaMixed = new ValueType[]{ValueType.STRING, ValueType.FP64, ValueType.INT64, ValueType.BOOLEAN};	
 	

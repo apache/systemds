@@ -67,6 +67,7 @@ public class BuiltinImageTranslateTest extends AutomatedTestBase {
 	@Test
 	public void testImageTranslatePillow() throws Exception {
 		loadTestConfiguration(getTestConfiguration(TEST_NAME));
+		setOutputBuffering(true);
 		final int w = 500, h = 135, out_w = 510, out_h = 125, offset_x = 39, offset_y = -13;
 		final double fill_value = 128.0;
 		double[][] input = TestUtils.readExpectedResource("ImageTransformInput.csv", h, w);
@@ -87,6 +88,7 @@ public class BuiltinImageTranslateTest extends AutomatedTestBase {
 	private void runImageTranslateTest(boolean sparse, ExecType instType) {
 		ExecMode platformOld = setExecMode(instType);
 		disableOutAndExpectedDeletion();
+		setOutputBuffering(true);
 
 		try {
 			loadTestConfiguration(getTestConfiguration(TEST_NAME));

@@ -1353,8 +1353,7 @@ public class SparkExecutionContext extends ExecutionContext
 			schema = UtilFunctions.nCopies(clen, ValueType.STRING);
 
 		//create output frame block (w/ lazy allocation)
-		FrameBlock out = new FrameBlock(schema);
-		out.ensureAllocatedColumns(rlen);
+		FrameBlock out = new FrameBlock(schema, rlen);
 
 		List<Tuple2<Long,FrameBlock>> list = rdd.collect();
 

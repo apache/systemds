@@ -19,14 +19,17 @@
 
 package org.apache.sysds.test.functions.frame;
 
-import java.io.IOException;
+import static org.junit.Assert.fail;
 
-import org.junit.Assert;
-import org.junit.Test;
-import org.apache.sysds.conf.CompilerConfig;
-import org.apache.sysds.conf.ConfigurationManager;
+import java.io.IOException;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.conf.CompilerConfig;
+import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.runtime.io.FileFormatPropertiesCSV;
 import org.apache.sysds.runtime.io.FrameReader;
@@ -38,14 +41,17 @@ import org.apache.sysds.runtime.util.UtilFunctions;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
+import org.junit.Test;
 
-@net.jcip.annotations.NotThreadSafe
-public class FrameReadWriteTest extends AutomatedTestBase
-{
+public class FrameReadWriteTest extends AutomatedTestBase {
+	protected static final Log LOG = LogFactory.getLog(FrameReadWriteTest.class.getName());
+
 	private final static String TEST_DIR = "functions/frame/io/";
 	private final static String TEST_NAME = "FrameReadWrite";
 	private final static String TEST_CLASS_DIR = TEST_DIR + FrameReadWriteTest.class.getSimpleName() + "/";
 	
+	private static final AtomicInteger id = new AtomicInteger(0);
+
 	private final static int rows = 1593;
 	private final static ValueType[] schemaStrings = new ValueType[]{ValueType.STRING, ValueType.STRING, ValueType.STRING};	
 	private final static ValueType[] schemaMixed = new ValueType[]{ValueType.STRING, ValueType.FP64, ValueType.INT64, ValueType.BOOLEAN};	
@@ -202,39 +208,42 @@ public class FrameReadWriteTest extends AutomatedTestBase
 		}
 	}
 
-	void verifyFrameData(FrameBlock frame1, FrameBlock frame2)
-	{
-		ValueType[] lschema = frame1.getSchema();
-		for ( int i=0; i<frame1.getNumRows(); i++ )
-			for( int j=0; j<lschema.length; j++ )	{
-				if( UtilFunctions.compareTo(lschema[j], frame1.get(i, j), frame2.get(i, j)) != 0)
-					Assert.fail("Target value for cell ("+ i + "," + j + ") is " + frame1.get(i,  j) + 
-							", is not same as original value " + frame2.get(i, j));
-			}
-	}
 	
-	void writeAndVerifyData(FileFormat fmt, FrameBlock frame1, FrameBlock frame2, FileFormatPropertiesCSV fprop)
-		throws IOException
-	{
-		String fname1 = SCRIPT_DIR + TEST_DIR + "/frameData1";
-		String fname2 = SCRIPT_DIR + TEST_DIR + "/frameData2";
-		
-		//Create reader/writer
-		FrameWriter writer = FrameWriterFactory.createFrameWriter(fmt, fprop);
-		FrameReader reader = FrameReaderFactory.createFrameReader(fmt, fprop);
-		
-		//Write frame data to disk
-		writer.writeFrameToHDFS(frame1, fname1, frame1.getNumRows(), frame1.getNumColumns());
-		writer.writeFrameToHDFS(frame2, fname2, frame2.getNumRows(), frame2.getNumColumns());
-		
-		//Read frame data from disk
-		FrameBlock frame1Read = reader.readFrameFromHDFS(fname1, frame1.getSchema(), frame1.getNumRows(), frame1.getNumColumns());
-		FrameBlock frame2Read = reader.readFrameFromHDFS(fname2, frame2.getSchema(), frame2.getNumRows(), frame2.getNumColumns());
-		
-		// Verify that data read with original frames
-		verifyFrameData(frame1, frame1Read);
-		verifyFrameData(frame2, frame2Read);
-		HDFSTool.deleteFileIfExistOnHDFS(fname1);
-		HDFSTool.deleteFileIfExistOnHDFS(fname2);
+	private void writeAndVerifyData(FileFormat fmt, FrameBlock frame1, FrameBlock frame2, FileFormatPropertiesCSV fprop)
+		throws IOException {
+
+		writeAndVerifyData(fmt, frame1, fprop);
+		writeAndVerifyData(fmt, frame2, fprop);
 	}
+
+	private void writeAndVerifyData(FileFormat fmt, FrameBlock fb, FileFormatPropertiesCSV fprop)
+	throws IOException {
+		try{
+
+			final String fname1 = SCRIPT_DIR + TEST_DIR + "/frameData" + id.incrementAndGet();
+			
+			final ValueType[] schema = fb.getSchema();
+			final int nCol = fb.getNumColumns();
+			final int nRow = fb.getNumRows();
+	
+			//Create reader/writer
+			FrameWriter writer = FrameWriterFactory.createFrameWriter(fmt, fprop);
+			FrameReader reader = FrameReaderFactory.createFrameReader(fmt, fprop);
+	
+			//Write frame data to disk
+			writer.writeFrameToHDFS(fb, fname1, nRow, nCol);
+			
+			//Read frame data from disk
+			FrameBlock frame1Read = reader.readFrameFromHDFS(fname1, schema, nRow, nCol);
+			
+			TestUtils.compareFrames(fb, frame1Read, true);
+	
+			HDFSTool.deleteFileIfExistOnHDFS(fname1);
+		}
+		catch(Exception e){
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
+	}
+
 }

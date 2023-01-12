@@ -21,6 +21,8 @@ package org.apache.sysds.runtime.io;
 
 import java.io.IOException;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
 /**
@@ -30,8 +32,9 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
  * for creating format-specific writers. 
  * 
  */
-public abstract class MatrixWriter 
-{
+public abstract class MatrixWriter {
+	protected static final Log LOG = LogFactory.getLog(MatrixWriter.class.getName());
+	
 	public void writeMatrixToHDFS( MatrixBlock src, String fname, long rlen, long clen, int blen, long nnz ) throws IOException {
 		writeMatrixToHDFS(src, fname, rlen, clen, blen, nnz, false);
 	}

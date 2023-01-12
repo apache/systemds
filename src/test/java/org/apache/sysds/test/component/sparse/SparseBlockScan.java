@@ -38,8 +38,8 @@ import org.apache.sysds.test.TestUtils;
  */
 public class SparseBlockScan extends AutomatedTestBase 
 {
-	private final static int rows = 871;
-	private final static int cols = 295;	
+	private final static int rows = 324;
+	private final static int cols = 131;	
 	private final static double sparsity1 = 0.09;
 	private final static double sparsity2 = 0.19;
 	private final static double sparsity3 = 0.29;

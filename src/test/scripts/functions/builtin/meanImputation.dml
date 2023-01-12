@@ -22,6 +22,7 @@
 X = read($1, data_type="frame", format="csv", header=TRUE, 
   naStrings= ["19"]);
 X = as.matrix(cbind(X[,4],X[,5]))
+print(toString(X))
 Y = imputeByMean(X = X, mask = matrix("1 0", rows=1, cols=2))
 
 write(Y, $2)

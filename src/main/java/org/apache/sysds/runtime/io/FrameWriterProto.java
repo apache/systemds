@@ -70,6 +70,9 @@ public class FrameWriterProto extends FrameWriter {
 			Iterator<String[]> stringRowIterator = IteratorFactory.getStringRowIterator(src, lowerRowBound, upperRowBound);
 			while(stringRowIterator.hasNext()) {
 				String[] row = stringRowIterator.next();
+				for(int i = 0; i < row.length; i++)
+					if(row[i] == null)
+						row[i] = "";
 				frameBuilder.addRowsBuilder().addAllColumnData(Arrays.asList(row));
 			}
 			frameBuilder.build().writeTo(outputStream);

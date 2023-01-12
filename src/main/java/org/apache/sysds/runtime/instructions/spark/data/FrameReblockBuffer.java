@@ -112,12 +112,13 @@ public class FrameReblockBuffer
 			
 			int ci = UtilFunctions.computeCellInBlock(_buff[i].getRow(), _blen);
 			int cj = UtilFunctions.computeCellInBlock(_buff[i].getCol(), _blen);
+			String bv = (String)_buff[i].getObjVal();
 			if( ci == -3 )
-				tmpBlock.getColumnMetadata(cj).setMvValue(_buff[i].getObjVal().toString());
+				tmpBlock.getColumnMetadata(cj).setMvValue(bv);
 			else if( ci == -2 )
-				tmpBlock.getColumnMetadata(cj).setNumDistinct(Long.parseLong(_buff[i].getObjVal().toString()));
+				tmpBlock.getColumnMetadata(cj).setNumDistinct(Long.parseLong(bv));
 			else
-				tmpBlock.set(ci, cj, _buff[i].getObjVal());
+				tmpBlock.set(ci, cj, bv);
 		}
 		
 		//output last block 

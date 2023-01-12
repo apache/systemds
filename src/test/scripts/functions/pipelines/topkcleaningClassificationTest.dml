@@ -123,7 +123,7 @@ return(Matrix[Double] output, Matrix[Double] error)
     trainArgs = list(X=X, Y=Y, intercept=-1, reg=-1, epsilon=-1, maxIterations=1000,  verbose=FALSE);
     dataArgs = list("X", "Y");
     [B1,opt] = gridSearch(X=X, y=Y, train="msvm", predict="accuracyMSVM", numB=(ncol(X)+1)*(nc),
-      params=params, paramValues=paramRanges, dataArgs=dataArgs, trainArgs=trainArgs, cv=TRUE, cvk=3, verbose=TRUE);
+      params=params, paramValues=paramRanges, dataArgs=dataArgs, trainArgs=trainArgs, cv=TRUE, cvk=3, verbose=FALSE);
     evalFunHp = as.matrix(opt) # opt #
     # opt = matrix("2 10 0.001", rows=1, cols=3)
     # evalFunHp = opt

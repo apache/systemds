@@ -69,7 +69,10 @@ import org.apache.sysds.runtime.data.DenseBlockFP64;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.data.TensorBlock;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
+import org.apache.sysds.runtime.frame.data.columns.ArrayFactory;
 import org.apache.sysds.runtime.frame.data.columns.ColumnMetadata;
+import org.apache.sysds.runtime.frame.data.lib.FrameLibApplySchema;
+import org.apache.sysds.runtime.frame.data.lib.FrameUtil;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.functionobjects.Builtin.BuiltinCode;
 import org.apache.sysds.runtime.io.FrameWriter;
@@ -437,18 +440,30 @@ public class TestUtils
 		if(expectedValues.size() != actualValues.size())
 			allKeys.addAll(actualValues.keySet());
 		int countErrors = 0;
+		StringBuilder sb = new StringBuilder();
 		for(CellIndex index : allKeys) {
 			Object expectedValue = expectedValues.get(index);
 			Object actualValue = actualValues.get(index);
-
 			int j = index.column;
+			expectedValue = expectedValue == null ? ArrayFactory.defaultNullValue(schema[j - 1]): expectedValue;
+			actualValue = actualValue == null ? ArrayFactory.defaultNullValue(schema[j - 1]): actualValue;
+			
 			if(UtilFunctions.compareTo(schema[j - 1], expectedValue, actualValue) != 0) {
-				System.out.println(
-					expectedFile + ": " + index + " mismatch: expected " + expectedValue + ", actual " + actualValue);
+				sb.append(expectedFile);
+				sb.append(": ");
+				sb.append(index);
+				sb.append(" mismatch: expected ");
+				sb.append(expectedValue);
+				sb.append(", actual ");
+				sb.append(actualValue);
+				sb.append("\n");
 				countErrors++;
 			}
+			if(countErrors > 20)
+				break;
 		}
-		assertEquals("for file " + actualDir + " " + countErrors + " values are not equal", 0, countErrors);
+		sb.append("for file " + actualDir + " " + countErrors + " at least values are not equal");
+		assertEquals(sb.toString(), 0, countErrors);
 	}
 
 	public static void compareTensorBlocks(TensorBlock tb1, TensorBlock tb2) {
@@ -502,7 +517,8 @@ public class TestUtils
 				String fileContent = "";
 				for (FileStatus file : outFiles) {
 					FSDataInputStream outIn = fs.open(file.getPath());
-					fileContent += new String(outIn.readAllBytes());
+					fileContent += new String(outIn.readNBytes(100));
+					fileContent += "...";
 				}
 				fail("could not read from file " + filePath+": "+e.getMessage() + "\ncontent:\n" + fileContent);
 		
@@ -829,16 +845,37 @@ public class TestUtils
 		assertEquals("Number of columns and rows are not equivalent", expected.getNumRows(), actual.getNumRows());
 		assertEquals("Number of columns and rows are not equivalent", expected.getNumColumns(), actual.getNumColumns());
 
-		int rows = expected.getNumRows();
-		int cols = expected.getNumColumns();
+		final int rows = expected.getNumRows();
+		final int cols = expected.getNumColumns();
 		if(checkMeta)
 			checkMetadata(expected, actual);
 
 		for(int i = 0; i < rows; i++) {
 			for(int j = 0; j < cols; j++) {
-				assertEquals("Values not equivalent at: " + i + ", " + j, expected.get(i, j), actual.get(i, j));
+				final Object a = expected.get(i, j);
+				final Object b = actual.get(i, j);
+				if(!(a == null && b == null)) {
+					try{
+						final String as = a.toString();
+						final String bs = b.toString();
+						boolean equivalent = as.equals(bs) || equivalentHigherTypeFrame(as, bs);
+						assertTrue("Values not equivalent at: " + i + ", " + j + "  : " + as + " vs " + bs, equivalent);
+					}
+					catch (Exception e ){
+						fail(" Values not equivalent at: " + i + ", " + j + "  : " + a + " vs " + b);
+					}
+				}
 			}
 		}
+	}
+
+	private static boolean equivalentHigherTypeFrame(String a, String b) {
+		ValueType at = FrameUtil.isType(a);
+		ValueType bt = FrameUtil.isType(b);
+		ValueType shared = ValueType.getHighestCommonType(at, bt);
+		Object ao = ArrayFactory.parseString(a, shared);
+		Object bo = ArrayFactory.parseString(b, shared);
+		return ao.equals(bo);
 	}
 
 	private static void checkMetadata(FrameBlock expected, FrameBlock actual) {
@@ -1518,7 +1555,7 @@ public class TestUtils
 		int countIdentical = 0;
 		double minerr = Double.MAX_VALUE;
 		double maxerr = -Double.MAX_VALUE;
-
+		
 		for (Entry<CellIndex, Double> e : first.entrySet()) {
 			Double v1 = e.getValue() == null ? 0.0 : e.getValue();
 			Double v2 = second.get(e.getKey());
@@ -1529,12 +1566,11 @@ public class TestUtils
 			if (!compareCellValue(v1, v2, 0, ignoreNaN)) {
 				if (!compareCellValue(v1, v2, tolerance, ignoreNaN)) {
 					countErrorWithinTolerance++;
-					if(LOG.isDebugEnabled()){
-						if(!flag)
-							LOG.debug(e.getKey()+": "+v1+" <--> "+v2);
-						else
-							LOG.debug(e.getKey()+": "+v2+" <--> "+v1);
-					}
+					if(!flag)
+						LOG.error(e.getKey() + ": " + v1 + " <--> " + v2);
+					else
+						LOG.error(e.getKey() + ": " + v2 + " <--> " + v1);
+
 				}
 			} else {
 				countIdentical++;
@@ -2230,6 +2266,13 @@ public class TestUtils
 	public static FrameBlock generateRandomFrameBlock(int rows, int cols, long seed){
 		ValueType[] schema = generateRandomSchema(cols, seed);
 		return generateRandomFrameBlock(rows, schema ,seed);
+	}
+
+	public static FrameBlock generateRandomFrameBlockWithSchemaOfStrings(int rows, int cols, long seed){
+		ValueType[] schema = generateRandomSchema(cols, seed);
+		FrameBlock f =  generateRandomFrameBlock(rows, schema, seed);
+		ValueType[] schemaString = UtilFunctions.nCopies(cols, ValueType.STRING);
+		return FrameLibApplySchema.applySchema(f, schemaString);
 	}
 
 	/**

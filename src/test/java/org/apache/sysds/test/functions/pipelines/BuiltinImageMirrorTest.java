@@ -66,6 +66,7 @@ public class BuiltinImageMirrorTest extends AutomatedTestBase
 	{
 		ExecMode platformOld = setExecMode(instType);
 		
+		setOutputBuffering(true);
 		try
 		{
 			loadTestConfiguration(getTestConfiguration(TEST_NAME));

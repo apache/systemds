@@ -25,7 +25,7 @@ import pandas as pd
 from py4j.java_gateway import JavaClass, JavaGateway, JavaObject, JVMView
 
 
-def numpy_to_matrix_block(sds: 'SystemDSContext', np_arr: np.array):
+def numpy_to_matrix_block(sds, np_arr: np.array):
     """Converts a given numpy array, to internal matrix block representation.
 
     :param sds: The current systemds context.
@@ -80,7 +80,7 @@ def matrix_block_to_numpy(jvm: JVMView, mb: JavaObject):
     )
 
 
-def pandas_to_frame_block(sds: "SystemDSContext", pd_df: pd.DataFrame):
+def pandas_to_frame_block(sds, pd_df: pd.DataFrame):
     """Converts a given numpy array, to internal matrix block representation.
 
     :param sds: The current systemds context.
@@ -134,17 +134,16 @@ def pandas_to_frame_block(sds: "SystemDSContext", pd_df: pd.DataFrame):
         sds.exception_and_close(e)
 
 
-def frame_block_to_pandas(sds: "SystemDSContext", fb: JavaObject):
+def frame_block_to_pandas(sds, fb: JavaObject):
 
     num_rows = fb.getNumRows()
     num_cols = fb.getNumColumns()
-    data = []
     df = pd.DataFrame()
 
     for c_index in range(num_cols):
         col_array = fb.getColumn(c_index);
 
-        d_type = col_array.getFrameArrayType().toString()
+        d_type = col_array.getValueType().toString()
         if d_type == "STRING":
             ret = []
             for row in range(num_rows):
@@ -163,11 +162,14 @@ def frame_block_to_pandas(sds: "SystemDSContext", fb: JavaObject):
         elif d_type == "FP64":
             byteArray = fb.getColumn(c_index).getAsByteArray()
             ret = np.frombuffer(byteArray, dtype=np.float64)
-        elif d_type == "BOOLEAN" or d_type == "BITSET":
+        elif d_type == "BOOLEAN":
             # TODO maybe it is more efficient to bit pack the booleans.
             # https://stackoverflow.com/questions/5602155/numpy-boolean-array-with-1-bit-entries
             byteArray = fb.getColumn(c_index).getAsByteArray()
             ret = np.frombuffer(byteArray, dtype=np.dtype("?"))
+        elif d_type == "CHARACTER":
+            byteArray = fb.getColumn(c_index).getAsByteArray()
+            ret = np.frombuffer(byteArray , dtype=np.char)
         else:
             raise NotImplementedError(
                 f'Not Implemented {d_type} for systemds to pandas parsing')

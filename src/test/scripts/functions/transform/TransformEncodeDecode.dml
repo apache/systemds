@@ -21,9 +21,11 @@
 
 F1 = read($1, data_type="frame", format=$2, rows=$3, cols=$4);
 jspec = read($5, data_type="scalar", value_type="string");
-
+print(toString(F1))
+print(jspec)
 [X, M] = transformencode(target=F1, spec=jspec);
-
+print(toString(X))
+while(FALSE){}
 A = aggregate(target=X[,1], groups=X[,2], fn="count");
 Ag = cbind(A, seq(1,nrow(A)));
 

@@ -60,13 +60,18 @@ public class FrameFromMatrixBlock {
 		this.mb = mb;
 		m = mb.getNumRows();
 		n = mb.getNumColumns();
-		this.schema = schema;
-		this.frame = new FrameBlock(schema);
+
+		this.schema = schema == null ? getSchema(mb) : schema;
+		this.frame = new FrameBlock(this.schema);
 		this.k = k;
 		if(k > 1)
 			pool = CommonThreadPool.get(k);
 		else
 			pool = null;
+	}
+
+	public static FrameBlock convertToFrameBlock(MatrixBlock mb, int k) {
+		return new FrameFromMatrixBlock(mb, null, k).apply();
 	}
 
 	public static FrameBlock convertToFrameBlock(MatrixBlock mb, ValueType vt, int k) {
@@ -75,6 +80,17 @@ public class FrameFromMatrixBlock {
 
 	public static FrameBlock convertToFrameBlock(MatrixBlock mb, ValueType[] schema, int k) {
 		return new FrameFromMatrixBlock(mb, schema, k).apply();
+	}
+
+	private ValueType[] getSchema(MatrixBlock mb) {
+		final int nCol = mb.getNumColumns();
+		final int nRow = mb.getNumRows();
+		ValueType[] schema = UtilFunctions.nCopies(nCol, ValueType.BOOLEAN);
+		for(int r = 0; r < nRow; r++)
+			for(int c = 0; c < nCol; c++)
+				schema[c] = FrameUtil.isType(mb.quickGetValue(r, c), schema[c]);
+
+		return schema;
 	}
 
 	private FrameBlock apply() {
@@ -88,6 +104,9 @@ public class FrameFromMatrixBlock {
 				convertToFrameBlockDense();
 			if(pool != null)
 				pool.shutdown();
+			if(frame.getNumRows() != mb.getNumRows())
+				throw new DMLRuntimeException("Invalid result");
+
 			return frame;
 		}
 		catch(InterruptedException | ExecutionException e) {

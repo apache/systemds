@@ -102,8 +102,8 @@ public class Types
 		public static ValueType fromExternalString(String value) {
 			//for now we support both internal and external strings
 			//until we have completely changed the external types
-			String lvalue = (value != null) ? value.toUpperCase() : null;
-			switch(lvalue) {
+			String lValue = (value != null) ? value.toUpperCase() : null;
+			switch(lValue) {
 				case "FP32":     return FP32;
 				case "FP64":
 				case "DOUBLE":   return FP64;

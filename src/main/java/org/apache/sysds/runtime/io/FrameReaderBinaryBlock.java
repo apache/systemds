@@ -48,7 +48,7 @@ public class FrameReaderBinaryBlock extends FrameReader{
 		//allocate output frame block
 		ValueType[] lschema = createOutputSchema(schema, clen);
 		String[] lnames = createOutputNames(names, clen);
-		FrameBlock ret = createOutputFrameBlock(lschema, lnames, rlen);
+		FrameBlock ret = new FrameBlock(lschema, lnames, (int)rlen);
 		
 		//prepare file access
 		JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());	
@@ -60,7 +60,6 @@ public class FrameReaderBinaryBlock extends FrameReader{
 	
 		//core read (sequential/parallel)
 		readBinaryBlockFrameFromHDFS(path, job, fs, ret, rlen, clen);
-		
 		return ret;
 	}
 	

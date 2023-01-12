@@ -19,28 +19,40 @@
 
 package org.apache.sysds.runtime.io;
 
+// import static org.apache.sysds.runtime.io.FrameReader.LOG;
+// import static org.apache.sysds.runtime.io.FrameReader.checkValidInputFile;
+// import static org.apache.sysds.runtime.io.FrameReader.createOutputFrameBlock;
+// import static org.apache.sysds.runtime.io.FrameReader.createOutputSchema;
+
+import java.io.IOException;
+import java.util.Map;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
-import org.apache.hadoop.mapred.*;
-import org.apache.wink.json4j.JSONArray;
-import org.apache.wink.json4j.JSONException;
-import org.apache.wink.json4j.JSONObject;
+import org.apache.hadoop.mapred.FileInputFormat;
+import org.apache.hadoop.mapred.InputFormat;
+import org.apache.hadoop.mapred.InputSplit;
+import org.apache.hadoop.mapred.JobConf;
+import org.apache.hadoop.mapred.RecordReader;
+import org.apache.hadoop.mapred.Reporter;
+import org.apache.hadoop.mapred.TextInputFormat;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.runtime.util.UtilFunctions;
-
-import java.io.IOException;
-import java.util.Map;
-
-import static org.apache.sysds.runtime.io.FrameReader.*;
+import org.apache.wink.json4j.JSONArray;
+import org.apache.wink.json4j.JSONException;
+import org.apache.wink.json4j.JSONObject;
 
 
-public class FrameReaderJSONL
-{
+public class FrameReaderJSONL {
+	protected static final Log LOG = LogFactory.getLog(FrameReaderJSONL.class.getName());
+
 	public FrameBlock readFrameFromHDFS(String fname, Types.ValueType[] schema, Map<String, Integer> schemaMap,
 		long rlen, long clen) throws IOException, DMLRuntimeException, JSONException
 	{
@@ -51,12 +63,12 @@ public class FrameReaderJSONL
 		FileInputFormat.addInputPath(jobConf, path);
 
 		//check existence and non-empty file
-		checkValidInputFile(fileSystem, path);
+		FrameReader.checkValidInputFile(fileSystem, path);
 
 
-		Types.ValueType[] lschema = createOutputSchema(schema, clen);
+		Types.ValueType[] lschema = FrameReader.createOutputSchema(schema, clen);
 		String[] lnames = createOutputNamesFromSchemaMap(schemaMap);
-		FrameBlock ret = createOutputFrameBlock(lschema, lnames, rlen);
+		FrameBlock ret = FrameReader.createOutputFrameBlock(lschema, lnames, rlen);
 
 		readJSONLFrameFromHDFS(path, jobConf, fileSystem, ret, schema, schemaMap);
 		return ret;
@@ -102,6 +114,7 @@ public class FrameReaderJSONL
 		}
 		return row;
 	}
+
 	// TODO Needs Optimisation! "split" is inefficient
 	private static String getStringFromJSONPath(JSONObject jsonObject, String path) 
 		throws IOException 
@@ -116,7 +129,7 @@ public class FrameReaderJSONL
 				} else if (temp instanceof JSONObject) {
 					temp = ((JSONObject) temp).get(split);
 				} else if (temp instanceof JSONArray) {
-					throw new IOException("Cannot traverse JSON Array in a meaningful manner");
+					throw new IOException("Cannot traverse JSON Array in a meaningful manner " + split);
 				} else {
 					return null;
 				}
@@ -125,12 +138,8 @@ public class FrameReaderJSONL
 				// Value not in JsonObject
 				return null;
 			}
-
 		}
-		if(temp == null){
-			throw new IOException("Could not traverse the JSON path: '" + path + "'!");
-		}
-		return temp.toString();
+		return  temp == null ? null : temp.toString();
 	}
 
 

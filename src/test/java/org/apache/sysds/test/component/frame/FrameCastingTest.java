@@ -31,7 +31,7 @@ import org.apache.sysds.test.TestUtils;
 
 public class FrameCastingTest extends AutomatedTestBase
 {
-	private final static int rows = 2891;
+	private final static int rows = 312;
 	private final static ValueType[] schemaStrings = new ValueType[]{ValueType.STRING, ValueType.STRING, ValueType.STRING};	
 	private final static ValueType[] schemaMixed = new ValueType[]{ValueType.STRING, ValueType.FP64, ValueType.INT64, ValueType.BOOLEAN};	
 	

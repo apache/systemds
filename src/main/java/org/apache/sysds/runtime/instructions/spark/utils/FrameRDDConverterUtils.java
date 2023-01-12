@@ -864,7 +864,7 @@ public class FrameRDDConverterUtils
 				st.reset( strVal );
 				long row = st.nextLong();
 				long col = st.nextLong();
-				Object val = UtilFunctions.stringToObject(_schema[(int)col-1], st.nextToken());
+				String val =  st.nextToken();
 				
 				//flush buffer if necessary
 				if( rbuff.getSize() >= rbuff.getCapacity() )

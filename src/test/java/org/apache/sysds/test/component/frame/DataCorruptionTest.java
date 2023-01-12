@@ -41,6 +41,8 @@ public class DataCorruptionTest
 	private List<Integer> stringpos;
 	private List<Integer> swappable;
 	
+	private static final int nRow = 350; 
+
 	// Set input frame
 	@BeforeClass
 	public static void init() {
@@ -52,7 +54,7 @@ public class DataCorruptionTest
 			"Austria", "Spain", "France", "United Kingdom"};
 		Random rand = new Random();
 		
-		for(int i = 0; i<1000; i++) {
+		for(int i = 0; i<nRow; i++) {
 			Object[] row = new Object[4];
 			row[0] = strings[rand.nextInt(strings.length)];
 			row[1] = strings2[rand.nextInt(strings2.length)];

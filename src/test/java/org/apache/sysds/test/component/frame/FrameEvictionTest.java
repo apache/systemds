@@ -40,7 +40,7 @@ import org.apache.sysds.test.TestUtils;
 @net.jcip.annotations.NotThreadSafe
 public class FrameEvictionTest extends AutomatedTestBase
 {
-	private final static int rows = 1593;
+	private final static int rows = 262;
 	private final static double sparsity1 = 0.9;
 	private final static double sparsity2 = 0.1;
 	

@@ -30,6 +30,7 @@ import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.frame.data.columns.ArrayFactory.FrameArrayType;
 import org.apache.sysds.runtime.frame.data.lib.FrameUtil;
+import org.apache.sysds.runtime.matrix.data.Pair;
 import org.apache.sysds.runtime.util.UtilFunctions;
 
 public class CharArray extends Array<Character> {
@@ -170,8 +171,8 @@ public class CharArray extends Array<Character> {
 	}
 
 	@Override
-	public ValueType analyzeValueType() {
-		return ValueType.CHARACTER;
+	public Pair<ValueType, Boolean> analyzeValueType() {
+		return new Pair<ValueType, Boolean>(ValueType.CHARACTER, false);
 	}
 
 	@Override
@@ -189,8 +190,8 @@ public class CharArray extends Array<Character> {
 		BitSet ret = new BitSet(size());
 		for(int i = 0; i < size(); i++) {
 			if(_data[i] != 0 && _data[i] != 1)
-				throw new DMLRuntimeException("Unable to change to Boolean from char array because of value:" + _data[i]);
-			ret.set(i, _data[i] == 0 ? false : true);
+				throw new DMLRuntimeException("Unable to change to boolean from char array because of value:" + _data[i]);
+			ret.set(i, _data[i] != 0);
 		}
 		return new BitSetArray(ret, size());
 	}
@@ -200,9 +201,8 @@ public class CharArray extends Array<Character> {
 		boolean[] ret = new boolean[size()];
 		for(int i = 0; i < size(); i++) {
 			if(_data[i] != 0 && _data[i] != 1)
-				throw new DMLRuntimeException(
-					"Unable to change to Boolean from Integer array because of value:" + _data[i]);
-			ret[i] = _data[i] == 0 ? false : true;
+				throw new DMLRuntimeException("Unable to change to boolean from char array because of value:" + _data[i]);
+			ret[i] = _data[i] != 0;
 		}
 		return new BooleanArray(ret);
 	}
@@ -225,7 +225,7 @@ public class CharArray extends Array<Character> {
 		try {
 			float[] ret = new float[size()];
 			for(int i = 0; i < size(); i++)
-				ret[i] = Float.parseFloat(_data[i] + "");
+				ret[i] = (int) _data[i];
 			return new FloatArray(ret);
 		}
 		catch(NumberFormatException e) {
@@ -295,15 +295,48 @@ public class CharArray extends Array<Character> {
 	}
 
 	@Override
+	public boolean isEmpty() {
+		for(int i = 0; i < _data.length; i++)
+			if(_data[i] != 0)
+				return false;
+		return true;
+	}
+
+	@Override
+	public Array<Character> select(int[] indices) {
+		final char[] ret = new char[indices.length];
+		for(int i = 0; i < indices.length; i++)
+			ret[i] = _data[indices[i]];
+		return new CharArray(ret);
+	}
+
+	@Override
+	public Array<Character> select(boolean[] select, int nTrue) {
+		final char[] ret = new char[nTrue];
+		int k = 0;
+		for(int i = 0; i < select.length; i++)
+			if(select[i])
+				ret[k++] = _data[i];
+		return new CharArray(ret);
+	}
+
+	@Override
+	public final boolean isNotEmpty(int i) {
+		return _data[i] != 0;
+	}
+	
+	@Override
 	public String toString() {
-		StringBuilder sb = new StringBuilder(_data.length);
+		StringBuilder sb = new StringBuilder(_data.length * 2 + 15);
 		sb.append(super.toString());
 		sb.append(":[");
-		for(int i = 0; i < _size - 1; i++) {
-			sb.append(_data[i]);
-			sb.append(',');
+		if(_size > 0) {
+			for(int i = 0; i < _size - 1; i++) {
+				sb.append(_data[i]);
+				sb.append(',');
+			}
+			sb.append(_data[_size - 1]);
 		}
-		sb.append(_data[_size - 1]);
 		sb.append("]");
 		return sb.toString();
 	}

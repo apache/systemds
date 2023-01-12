@@ -607,6 +607,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			output.setBlocksize(0);
 			switch (id.getValueType()) {
 				case STRING: // TODO think about what we want to get when we sum tensor of strings
+				case CHARACTER: // TODO here also for Characters.
 				case FP64:
 				case FP32:
 					output.setValueType(ValueType.FP64);

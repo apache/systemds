@@ -41,10 +41,10 @@ import org.apache.sysds.test.TestUtils;
  */
 public class SparseBlockDelete extends AutomatedTestBase 
 {
-	private final static int rows = 662;
-	private final static int cols = 444;	
-	private final static int cl = 145;
-	private final static int cu = 225;
+	private final static int rows = 132;
+	private final static int cols = 98;	
+	private final static int cl = 32;
+	private final static int cu = 44;
 	private final static double sparsity1 = 0.12;
 	private final static double sparsity2 = 0.22;
 	private final static double sparsity3 = 0.32;

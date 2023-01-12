@@ -27,10 +27,12 @@ import java.util.Iterator;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapred.JobConf;
+import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.runtime.frame.data.iterators.IteratorFactory;
+import org.apache.sysds.runtime.frame.data.lib.FrameUtil;
 import org.apache.sysds.runtime.util.HDFSTool;
 
 /**
@@ -107,14 +109,15 @@ public class FrameWriterTextCell extends FrameWriter
 						sb.setLength(0);
 					}
 			}
-			
+			ValueType[] schema = src.getSchema();
 			//write frame row range to output
 			Iterator<String[]> iter = IteratorFactory.getStringRowIterator(src, rl, ru);
+
 			for( int i=rl; iter.hasNext(); i++ ) { //for all rows
 				String rowIndex = Integer.toString(i+1);
 				String[] row = iter.next();
 				for( int j=0; j<cols; j++ ) {
-					if( row[j] != null ) {
+					if( !FrameUtil.isDefault(row[j], schema[j]) ) {
 						sb.append( rowIndex );
 						sb.append(' ');
 						sb.append( j+1 );

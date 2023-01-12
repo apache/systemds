@@ -19,14 +19,17 @@
 
 package org.apache.sysds.test.functions.parfor.misc;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
+import org.junit.Assert;
+import org.junit.Test;
 
-public class ParForListFrameResultVarsTest extends AutomatedTestBase 
-{
+public class ParForListFrameResultVarsTest extends AutomatedTestBase {
+	protected static final Log LOG = LogFactory.getLog(ParForListFrameResultVarsTest.class.getName());
+
 	private final static String TEST_DIR = "functions/parfor/";
 	private final static String TEST_NAME1 = "parfor_listResults";
 	private final static String TEST_NAME2 = "parfor_frameResults";
@@ -64,10 +67,10 @@ public class ParForListFrameResultVarsTest extends AutomatedTestBase
 		
 		String HOME = SCRIPT_DIR + TEST_DIR;
 		fullDMLScriptName = HOME + testName + ".dml";
-		programArgs = new String[]{"-explain","-args",
+		programArgs = new String[]{"-args",
 			String.valueOf(rows), String.valueOf(cols), output("R") };
 
-		runTest(true, false, null, -1);
+		LOG.debug(runTest(null));
 		Assert.assertEquals(Double.valueOf(7),
 			readDMLMatrixFromOutputDir("R").get(new CellIndex(1,1)));
 	}

@@ -44,6 +44,7 @@ public class BuiltinImageRotateTest extends AutomatedTestBase {
 	@Test
 	public void testImageRotateZero() throws Exception {
 		loadTestConfiguration(getTestConfiguration(TEST_NAME));
+		setOutputBuffering(true);
 		final int w = 500, h = 135;
 		final double fill_value = 128.0;
 		double[][] input = TestUtils.readExpectedResource("ImageTransformInput.csv", h, w);
@@ -63,6 +64,7 @@ public class BuiltinImageRotateTest extends AutomatedTestBase {
 	@Test
 	public void testImageRotateComplete() throws Exception {
 		loadTestConfiguration(getTestConfiguration(TEST_NAME));
+		setOutputBuffering(true);
 		final int w = 500, h = 135;
 		final double fill_value = 128.0;
 		double[][] input = TestUtils.readExpectedResource("ImageTransformInput.csv", h, w);
@@ -82,6 +84,7 @@ public class BuiltinImageRotateTest extends AutomatedTestBase {
 	@Test
 	public void testImageRotatePillow() throws Exception {
 		loadTestConfiguration(getTestConfiguration(TEST_NAME));
+		setOutputBuffering(true);
 		final int w = 500, h = 135;
 		final double fill_value = 128.0;
 		double[][] input = TestUtils.readExpectedResource("ImageTransformInput.csv", h, w);

@@ -338,6 +338,9 @@ public class MultiColumnEncoder implements Encoder {
 				+ "has a encoder or slice the input accordingly");
 		// TODO smart checks
 		// Block allocation for MT access
+		if(in.getNumRows() == 0)
+			throw new DMLRuntimeException("Invalid input with wrong number or rows");
+
 		boolean hasDC = false;
 		for(ColumnEncoderComposite columnEncoder : _columnEncoders)
 			hasDC = columnEncoder.hasEncoder(ColumnEncoderDummycode.class);

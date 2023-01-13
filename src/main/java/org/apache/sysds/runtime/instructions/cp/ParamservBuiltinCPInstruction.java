@@ -168,20 +168,7 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 		MatrixObject val_labels = (getParam(PS_VAL_LABELS) != null) ? ec.getMatrixObject(getParam(PS_VAL_LABELS)) : null;
 		boolean modelAvg = Boolean.parseBoolean(getParam(PS_MODELAVG));
 
-		// check if we need homomorphic encryption
-		boolean use_homomorphic_encryption_ = getHe();
-		for (int i = 0; i < workerNum; i++) {
-			use_homomorphic_encryption_ = use_homomorphic_encryption_ || checkIsPrivate(result._pFeatures.get(i));
-			use_homomorphic_encryption_ = use_homomorphic_encryption_ || checkIsPrivate(result._pLabels.get(i));
-		}
-		final boolean use_homomorphic_encryption = use_homomorphic_encryption_;
-		if (use_homomorphic_encryption && !modelAvg) {
-			throw new DMLRuntimeException("can't use homomorphic encryption without modelAvg");
-		}
-
-		if (use_homomorphic_encryption && weighting) {
-			throw new DMLRuntimeException("can't use homomorphic encryption with weighting");
-		}
+		final boolean use_homomorphic_encryption = useHomomorphicEncryption(result, workerNum, modelAvg, weighting);
 
 		LocalParamServer ps = (LocalParamServer) createPS(PSModeType.FEDERATED, aggFunc, updateType, freq, workerNum,
 			model, aggServiceEC, getValFunction(), getNumBatchesPerEpoch(runtimeBalancing, result._balanceMetrics),
@@ -234,6 +221,32 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 		} finally {
 			es.shutdownNow();
 		}
+	}
+
+	/**
+	 * Check if homomorphic encryption is needed
+	 * @param result data partition result
+	 * @param workerNum number of workers
+	 * @param modelAvg model average
+	 * @param weighting use weighting
+	 * @return true if homomorphic encryption is needed
+	 */
+	private boolean useHomomorphicEncryption(DataPartitionFederatedScheme.Result result,
+		int workerNum, boolean modelAvg, boolean weighting){
+		boolean use_homomorphic_encryption = getHe();
+		for (int i = 0; i < workerNum; i++) {
+			use_homomorphic_encryption = use_homomorphic_encryption || checkIsPrivate(result._pFeatures.get(i));
+			use_homomorphic_encryption = use_homomorphic_encryption || checkIsPrivate(result._pLabels.get(i));
+		}
+		if ( use_homomorphic_encryption ){
+			if ( !modelAvg )
+				throw new DMLRuntimeException("can't use homomorphic encryption without modelAvg");
+			if ( weighting )
+				throw new DMLRuntimeException("can't use homomorphic encryption with weighting");
+			LOG.info("Homomorphic encryption activated for federated parameter server");
+		}
+
+		return use_homomorphic_encryption;
 	}
 
 	private void runOnSpark(SparkExecutionContext sec, PSModeType mode) {

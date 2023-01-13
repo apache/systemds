@@ -173,11 +173,9 @@ public class EncryptedFederatedParamservTest extends AutomatedTestBase {
 			}
 
 			// generate test data
-			double[][] features = generateFeatures(_dataSetSize, C, Hin, Win);
-			double[][] features_extrapolated = generateFeatures(_dataSetSize, C, Hin+184, Win+184); //Only for UNet
-			double[][] labels = generateLabels(_dataSetSize, numLabels, features);
+			double[][] features = ParamServTestUtils.generateFeatures(_networkType, _dataSetSize, C, Hin, Win);
+			double[][] labels = ParamServTestUtils.generateLabels(_networkType, _dataSetSize, numLabels, C*Hin*Win, features);
 			String featuresName = "";
-			String featuresExName = "";
 			String labelsName = "";
 
 			PrivacyConstraint privacyConstraint = new PrivacyConstraint(PrivacyConstraint.PrivacyLevel.Private);
@@ -185,20 +183,16 @@ public class EncryptedFederatedParamservTest extends AutomatedTestBase {
 			// federate test data balanced or imbalanced
 			if(_data_distribution.equals("IMBALANCED")) {
 				featuresName = "X_IMBALANCED_" + _numFederatedWorkers;
-				featuresExName = "X_EX_IMBALANCED_" + _numFederatedWorkers;
 				labelsName = "y_IMBALANCED_" + _numFederatedWorkers;
 				double[][] ranges = {{0,1}, {1,4}};
 				rowFederateLocallyAndWriteInputMatrixWithMTD(featuresName, features, _numFederatedWorkers, ports, ranges, privacyConstraint);
-				rowFederateLocallyAndWriteInputMatrixWithMTD(featuresExName, features_extrapolated, _numFederatedWorkers, ports, ranges, privacyConstraint);
 				rowFederateLocallyAndWriteInputMatrixWithMTD(labelsName, labels, _numFederatedWorkers, ports, ranges, privacyConstraint);
 			}
 			else {
 				featuresName = "X_BALANCED_" + _numFederatedWorkers;
-				featuresExName = "X_EX_BALANCED_" + _numFederatedWorkers;
 				labelsName = "y_BALANCED_" + _numFederatedWorkers;
 				double[][] ranges = generateBalancedFederatedRowRanges(_numFederatedWorkers, features.length);
 				rowFederateLocallyAndWriteInputMatrixWithMTD(featuresName, features, _numFederatedWorkers, ports, ranges, privacyConstraint);
-				rowFederateLocallyAndWriteInputMatrixWithMTD(featuresExName, features_extrapolated, _numFederatedWorkers, ports, ranges, privacyConstraint);
 				rowFederateLocallyAndWriteInputMatrixWithMTD(labelsName, labels, _numFederatedWorkers, ports, ranges, privacyConstraint);
 			}
 
@@ -225,8 +219,7 @@ public class EncryptedFederatedParamservTest extends AutomatedTestBase {
 					"hin=" + Hin,
 					"win=" + Win,
 					"seed=" + _seed,
-					"modelAvg=" +  Boolean.toString(modelAvg).toUpperCase(),
-					"features_ex=" + input(featuresExName)));
+					"modelAvg=" +  Boolean.toString(modelAvg).toUpperCase()));
 
 			programArgs = programArgsList.toArray(new String[0]);
 			String log = runTest(null).toString();
@@ -248,69 +241,5 @@ public class EncryptedFederatedParamservTest extends AutomatedTestBase {
 
 			resetExecMode(platformOld);
 		}
-	}
-
-	private double[][] generateFeatures(int numExamples, int C, int Hin, int Win){
-		if (Objects.equals(_networkType, "UNet"))
-			return generateDummyMedicalImageFeatures(numExamples, C, Hin, Win);
-		else
-			return generateDummyMNISTFeatures(numExamples, C, Hin, Win);
-	}
-
-	/**
-	 * Generates an feature matrix that has the same format as the MNIST dataset,
-	 * but is completely random and normalized
-	 *
-	 *  @param numExamples Number of examples to generate
-	 *  @param C Channels in the input data
-	 *  @param Hin Height in Pixels of the input data
-	 *  @param Win Width in Pixels of the input data
-	 *  @return a dummy MNIST feature matrix
-	 */
-	private double[][] generateDummyMNISTFeatures(int numExamples, int C, int Hin, int Win) {
-		// Seed -1 takes the time in milliseconds as a seed
-		// Sparsity 1 means no sparsity
-		return getRandomMatrix(numExamples, C*Hin*Win, 0, 1, 1, -1);
-	}
-
-	private double[][] generateDummyMedicalImageFeatures(int numExamples, int C, int Hin, int Win) {
-		return getRandomMatrix(numExamples, C*Hin*Win, -1024, 4096, 1, -1);
-	}
-
-	private double[][] generateLabels(int numExamples, int numLabels, double[][] features) {
-		if (Objects.equals(_networkType, "UNet"))
-			return generateDummyMedicalImageLabels(features);
-		else
-			return generateDummyMNISTLabels(numExamples, numLabels);
-	}
-
-	/**
-	 * Generates a label matrix that has the same format as the MNIST dataset, but is completely random and consists
-	 * of one hot encoded vectors as rows
-	 *
-	 *  @param numExamples Number of examples to generate
-	 *  @param numLabels Number of labels to generate
-	 *  @return a dummy MNIST lable matrix
-	 */
-	private double[][] generateDummyMNISTLabels(int numExamples, int numLabels) {
-		// Seed -1 takes the time in milliseconds as a seed
-		// Sparsity 1 means no sparsity
-		return getRandomMatrix(numExamples, numLabels, 0, 1, 1, -1);
-	}
-
-	/**
-	 * Return labels as 0 or 1 based on the values in features.
-	 * @param features for which labels are generated
-	 * @return labels
-	 */
-	private double[][] generateDummyMedicalImageLabels(double[][] features) {
-		double split = 1000;
-		double[][] labels = new double[features.length][features[0].length];
-		for ( int i = 0; i < labels.length; i++ ){
-			for ( int j = 0; j < labels[0].length; j++ ){
-				labels[i][j] = (features[i][j] > split) ? 1 : 0;
-			}
-		}
-		return labels;
 	}
 }

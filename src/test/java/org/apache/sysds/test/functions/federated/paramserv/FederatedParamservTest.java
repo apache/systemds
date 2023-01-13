@@ -23,7 +23,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
-import java.util.Objects;
 
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.test.AutomatedTestBase;
@@ -154,30 +153,24 @@ public class FederatedParamservTest extends AutomatedTestBase {
 			}
 
 			// generate test data
-			double[][] features = generateDummyMNISTFeatures(_dataSetSize, C, Hin, Win);
-			double[][] features_extrapolated = generateDummyMNISTFeatures(_dataSetSize, C, Hin+184, Win+184);
-			double[][] labels = generateDummyMNISTLabels(_dataSetSize, numLabels);
+			double[][] features = ParamServTestUtils.generateFeatures(_networkType, _dataSetSize, C, Hin, Win);
+			double[][] labels = ParamServTestUtils.generateLabels(_networkType, _dataSetSize, numLabels, C*Hin*Win, features);
 			String featuresName = "";
-			String featuresExName = "";
 			String labelsName = "";
 
 			// federate test data balanced or imbalanced
 			if(_data_distribution.equals("IMBALANCED")) {
 				featuresName = "X_IMBALANCED_" + _numFederatedWorkers;
-				featuresExName = "X_EX_IMBALANCED_" + _numFederatedWorkers;
 				labelsName = "y_IMBALANCED_" + _numFederatedWorkers;
 				double[][] ranges = {{0,1}, {1,4}};
 				rowFederateLocallyAndWriteInputMatrixWithMTD(featuresName, features, _numFederatedWorkers, ports, ranges);
-				rowFederateLocallyAndWriteInputMatrixWithMTD(featuresExName, features_extrapolated, _numFederatedWorkers, ports, ranges);
 				rowFederateLocallyAndWriteInputMatrixWithMTD(labelsName, labels, _numFederatedWorkers, ports, ranges);
 			}
 			else {
 				featuresName = "X_BALANCED_" + _numFederatedWorkers;
-				featuresExName = "X_EX_BALANCED_" + _numFederatedWorkers;
 				labelsName = "y_BALANCED_" + _numFederatedWorkers;
 				double[][] ranges = generateBalancedFederatedRowRanges(_numFederatedWorkers, features.length);
 				rowFederateLocallyAndWriteInputMatrixWithMTD(featuresName, features, _numFederatedWorkers, ports, ranges);
-				rowFederateLocallyAndWriteInputMatrixWithMTD(featuresExName, features_extrapolated, _numFederatedWorkers, ports, ranges);
 				rowFederateLocallyAndWriteInputMatrixWithMTD(labelsName, labels, _numFederatedWorkers, ports, ranges);
 			}
 
@@ -208,8 +201,7 @@ public class FederatedParamservTest extends AutomatedTestBase {
 					"channels=" + C,
 					"hin=" + Hin,
 					"win=" + Win,
-					"seed=" + _seed,
-					"features_ex=" + input(featuresExName)));
+					"seed=" + _seed));
 
 			programArgs = programArgsList.toArray(new String[0]);
 			String log = runTest(null).toString();
@@ -222,35 +214,5 @@ public class FederatedParamservTest extends AutomatedTestBase {
 			}
 			resetExecMode(platformOld);
 		}
-	}
-
-	/**
-	 * Generates an feature matrix that has the same format as the MNIST dataset,
-	 * but is completely random and normalized
-	 *
-	 *  @param numExamples Number of examples to generate
-	 *  @param C Channels in the input data
-	 *  @param Hin Height in Pixels of the input data
-	 *  @param Win Width in Pixels of the input data
-	 *  @return a dummy MNIST feature matrix
-	 */
-	private double[][] generateDummyMNISTFeatures(int numExamples, int C, int Hin, int Win) {
-		// Seed -1 takes the time in milliseconds as a seed
-		// Sparsity 1 means no sparsity
-		return getRandomMatrix(numExamples, C*Hin*Win, 0, 1, 1, -1);
-	}
-
-	/**
-	 * Generates an label matrix that has the same format as the MNIST dataset, but is completely random and consists
-	 * of one hot encoded vectors as rows
-	 *
-	 *  @param numExamples Number of examples to generate
-	 *  @param numLabels Number of labels to generate
-	 *  @return a dummy MNIST lable matrix
-	 */
-	private double[][] generateDummyMNISTLabels(int numExamples, int numLabels) {
-		// Seed -1 takes the time in milliseconds as a seed
-		// Sparsity 1 means no sparsity
-		return getRandomMatrix(numExamples, numLabels, 0, 1, 1, -1);
 	}
 }

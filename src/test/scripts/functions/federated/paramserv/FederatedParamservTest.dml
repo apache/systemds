@@ -21,7 +21,7 @@
 
 source("src/test/scripts/functions/federated/paramserv/TwoNN.dml") as TwoNN
 source("src/test/scripts/functions/federated/paramserv/CNN.dml") as CNN
-source("src/test/scripts/functions/federated/paramserv/UNet.dml") as UNet
+source("scripts/nn/examples/u-net.dml") as UNet
 
 # create federated input matrices
 features = read($features)

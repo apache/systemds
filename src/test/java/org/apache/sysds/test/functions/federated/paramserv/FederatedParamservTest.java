@@ -25,6 +25,7 @@ import java.util.Collection;
 import java.util.List;
 
 import org.apache.sysds.common.Types.ExecMode;
+import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
@@ -148,8 +149,13 @@ public class FederatedParamservTest extends AutomatedTestBase {
 		try {
 			// start threads
 			for(int i = 0; i < _numFederatedWorkers; i++) {
-				ports.add(getRandomAvailablePort());
-				threads.add(startLocalFedWorkerThread(ports.get(i), FED_WORKER_WAIT_S));
+				int port = getRandomAvailablePort();
+				threads.add(startLocalFedWorkerThread(port, FED_WORKER_WAIT_S));
+				ports.add(port);
+				System.out.println("Worker with port " + port + " started!");
+
+				if ( threads.get(i).isInterrupted() || !threads.get(i).isAlive() )
+					throw new DMLRuntimeException("Federated worker thread dead or interrupted! Port " + port);
 			}
 
 			// generate test data

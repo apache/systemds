@@ -28,12 +28,8 @@ import java.util.concurrent.Future;
 
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.LongWritable;
-import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapred.InputSplit;
 import org.apache.hadoop.mapred.JobConf;
-import org.apache.hadoop.mapred.RecordReader;
-import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.mapred.TextInputFormat;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.hops.OptimizerUtils;
@@ -72,7 +68,7 @@ public class FrameReaderTextCSVParallel extends FrameReaderTextCSV
 			//compute num rows per split
 			ArrayList<CountRowsTask> tasks = new ArrayList<>();
 			for( int i=0; i<splits.length; i++ )
-				tasks.add(new CountRowsTask(splits[i], informat, job, _props.hasHeader(), i==0));
+				tasks.add(new CountRowsTask(splits[i], informat, job, _props.hasHeader() && i==0, clen));
 			List<Future<Integer>> cret = pool.invokeAll(tasks);
 
 			//compute row offset per split via cumsum on row counts
@@ -113,7 +109,7 @@ public class FrameReaderTextCSVParallel extends FrameReaderTextCSV
 		try {
 			ArrayList<CountRowsTask> tasks = new ArrayList<>();
 			for( int i=0; i<splits.length; i++ )
-				tasks.add(new CountRowsTask(splits[i], informat, job, _props.hasHeader(), i==0));
+				tasks.add(new CountRowsTask(splits[i], informat, job, _props.hasHeader()&& i==0, ncol));
 			List<Future<Integer>> cret = pool.invokeAll(tasks);
 			for( Future<Integer> count : cret ) 
 				nrow += count.get().intValue();
@@ -130,34 +126,25 @@ public class FrameReaderTextCSVParallel extends FrameReaderTextCSV
 		return new Pair<>((int)nrow, ncol);
 	}
 
-	private static class CountRowsTask implements Callable<Integer> 
-	{
-		private InputSplit _split = null;
-		private TextInputFormat _informat = null;
-		private JobConf _job = null;
-		private boolean _hasHeader = false;
-		private boolean _firstSplit = false;
+	private static class CountRowsTask implements Callable<Integer> {
+		private final InputSplit _split;
+		private final TextInputFormat _informat;
+		private final JobConf _job;
+		private final boolean _hasHeader;
+		private final long _nCol;
 
-		public CountRowsTask(InputSplit split, TextInputFormat informat, JobConf job, boolean hasHeader, boolean first) {
+		public CountRowsTask(InputSplit split, TextInputFormat informat, JobConf job, boolean hasHeader, long nCol) {
 			_split = split;
 			_informat = informat;
 			_job = job;
 			_hasHeader = hasHeader;
-			_firstSplit = first;
+			_nCol = nCol;
 		}
 
 		@Override
-		public Integer call() 
-			throws Exception 
-		{
-			RecordReader<LongWritable, Text> reader = _informat.getRecordReader(_split, _job, Reporter.NULL);			
-			try {
-				// it is assumed that if we read parallel number of rows, there are at least two columns.
-				return countLinesInReader(reader, 2 , _firstSplit && _hasHeader);
-			} 
-			finally {
-				IOUtilFunctions.closeSilently(reader);
-			}
+		public Integer call() throws Exception {
+			return countLinesInReader(_split, _informat, _job, _nCol, _hasHeader);
+
 		}
 	}
 

@@ -208,18 +208,26 @@ public class FrameReaderTextCSV extends FrameReader {
 		// compute number of rows
 		int nrow = 0;
 		for(int i = 0; i < splits.length; i++) {
-			RecordReader<LongWritable, Text> reader = informat.getRecordReader(splits[i], job, Reporter.NULL);
-			try {
-				nrow = countLinesInReader(reader, ncol , i == 0 && _props.hasHeader());
-			}
-			finally {
-				IOUtilFunctions.closeSilently(reader);
-			}
+			boolean header = i == 0 && _props.hasHeader();
+			nrow += countLinesInReader(splits[i], informat, job, ncol, header);
 		}
+
 		return new Pair<>(nrow, ncol);
 	}
 
-	protected static int countLinesInReader(RecordReader<LongWritable, Text> reader, int ncol, boolean header)
+
+	protected static int countLinesInReader(InputSplit split, TextInputFormat inFormat, JobConf job, long ncol,
+		boolean header) throws IOException {
+		RecordReader<LongWritable, Text> reader = inFormat.getRecordReader(split, job, Reporter.NULL);
+		try {
+			return countLinesInReader(reader, ncol, header);
+		}
+		finally {
+			IOUtilFunctions.closeSilently(reader);
+		}
+	}
+
+	protected static int countLinesInReader(RecordReader<LongWritable, Text> reader, long ncol, boolean header)
 		throws IOException {
 		final LongWritable key = new LongWritable();
 		final Text value = new Text();
@@ -231,7 +239,7 @@ public class FrameReaderTextCSV extends FrameReader {
 				reader.next(key, value);
 			while(reader.next(key, value)) {
 				// note the metadata can be located at any row when spark.
-				nrow += containsMetaTag(value.toString()) ? 0 : 1;
+				nrow += containsMetaTag(value) ? 0 : 1;
 			}
 			return nrow;
 		}
@@ -240,8 +248,11 @@ public class FrameReaderTextCSV extends FrameReader {
 		}
 	}
 
-	private final static boolean containsMetaTag(String val) {
-		return val.startsWith(TfUtils.TXMTD_MVPREFIX)//
-			|| val.startsWith(TfUtils.TXMTD_NDPREFIX);
+	private final static boolean containsMetaTag(Text val) {
+		if(val.charAt(0) == '#')
+			return val.find(TfUtils.TXMTD_MVPREFIX) > -1//
+				|| val.find(TfUtils.TXMTD_NDPREFIX) > -1;
+		else 
+			return false;
 	}
 }

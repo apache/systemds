@@ -144,12 +144,14 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 		DataPartitionFederatedScheme.Result result = new FederatedDataPartitioner(federatedPSScheme, seed)
 			.doPartitioning(ec.getMatrixObject(getParam(PS_FEATURES)), ec.getMatrixObject(getParam(PS_LABELS)));
 		int workerNum = result._workerNum;
-		if (DMLScript.STATISTICS)
-			ParamServStatistics.accFedDataPartitioningTime((long) tDataPartitioning.stop());
 
+		if (DMLScript.STATISTICS ){
+			if (tDataPartitioning != null)
+				ParamServStatistics.accFedDataPartitioningTime((long) tDataPartitioning.stop());
+			if (tSetup != null)
+				tSetup.start();
+		}
 
-		if (DMLScript.STATISTICS)
-			tSetup.start();
 		// setup threading
 		BasicThreadFactory factory = new BasicThreadFactory.Builder()
 			.namingPattern("workers-pool-thread-%d").build();

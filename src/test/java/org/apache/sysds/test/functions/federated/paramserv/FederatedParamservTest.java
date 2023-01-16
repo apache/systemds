@@ -35,6 +35,8 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
+import static org.junit.Assert.fail;
+
 @RunWith(value = Parameterized.class)
 @net.jcip.annotations.NotThreadSafe
 public class FederatedParamservTest extends AutomatedTestBase {
@@ -180,13 +182,10 @@ public class FederatedParamservTest extends AutomatedTestBase {
 				rowFederateLocallyAndWriteInputMatrixWithMTD(labelsName, labels, _numFederatedWorkers, ports, ranges);
 			}
 
-			try {
-				//wait for all workers to be setup
-				Thread.sleep(FED_WORKER_WAIT);
-			}
-			catch(InterruptedException e) {
-				e.printStackTrace();
-			}
+			//wait for all workers to be setup
+			Thread.sleep(FED_WORKER_WAIT);
+			if (threads.stream().anyMatch(t -> !t.isAlive()))
+				throw new DMLRuntimeException("Federated worker thread interrupted!");
 
 			// dml name
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
@@ -213,10 +212,14 @@ public class FederatedParamservTest extends AutomatedTestBase {
 			String log = runTest(null).toString();
 			Assert.assertEquals("Test Failed \n" + log, 0, Statistics.getNoOfExecutedSPInst());
 		}
+		catch(InterruptedException e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
 		finally {
 			// shut down threads
-			for(int i = 0; i < _numFederatedWorkers; i++) {
-				TestUtils.shutdownThreads(threads.get(i));
+			for ( Thread thread : threads ){
+				TestUtils.shutdownThreads(thread);
 			}
 			resetExecMode(platformOld);
 		}

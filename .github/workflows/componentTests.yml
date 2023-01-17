@@ -50,7 +50,13 @@ jobs:
         os: [ubuntu-latest]
         java: ['11']
         javadist: ['adopt']
-    name: ${{ matrix.os }}
+        tests: [
+          "**.test.usertest.**",
+          "**.component.c**.**",
+          "**.component.e**.**,**.component.f**.**,**.component.m**.**",
+          "**.component.p**.**,**.component.t**.**"
+        ]
+    name: ${{ matrix.tests }}
     steps:
     - name: Checkout Repository
       uses: actions/checkout@v3
@@ -62,10 +68,16 @@ jobs:
         java-version: ${{ matrix.java }}
         cache: 'maven'
 
-    - name: Component Tests
-      run: ./docker/entrypoint.sh org.apache.sysds.test.component.**
-    
-    - name: User Tests
-      run: ./docker/entrypoint.sh org.apache.sysds.test.usertest.** 
+    - name: Cache Maven Dependencies
+      uses: actions/cache@v3
+      with:
+        path: ~/.m2/repository
+        key: ${{ runner.os }}-maven-test-${{ hashFiles('**/pom.xml') }}
+        restore-keys: |
+          ${{ runner.os }}-maven-test-
+
+    - name: ${{ matrix.tests }}
+      run: ./docker/entrypoint.sh ${{ matrix.tests }}
+
 
 

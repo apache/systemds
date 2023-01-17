@@ -52,9 +52,9 @@ jobs:
         javadist: ['adopt']
         tests: [
           "**.test.usertest.**",
-          "**.component.c**",
-          "**.component.e**,**.component.f**,**.component.m**",
-          "**.component.p**,**.component.t**"
+          "**.component.c**.**",
+          "**.component.e**.**,**.component.f**.**,**.component.m**.**",
+          "**.component.p**.**,**.component.t**.**"
         ]
     name: ${{ matrix.tests }}
     steps:

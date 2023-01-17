@@ -53,7 +53,7 @@ jobs:
         tests: [
           "**.test.usertest.**",
           "**.component.c**",
-          "**.component.estim.**,**.component.f*,**.component.m*",
+          "**.component.e**,**.component.f**,**.component.m**",
           "**.component.p**,**.component.t**"
         ]
     name: ${{ matrix.tests }}

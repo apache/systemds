@@ -28,6 +28,9 @@ import org.apache.sysds.runtime.compress.CompressionStatistics;
 import org.apache.sysds.runtime.compress.SingletonLookupHashMap;
 import org.apache.sysds.runtime.compress.workload.WTreeRoot;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
+import org.apache.sysds.runtime.frame.data.FrameBlock;
+import org.apache.sysds.runtime.frame.data.compress.FrameCompressionStatistics;
+import org.apache.sysds.runtime.frame.data.lib.FrameLibCompress;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.Operator;
@@ -59,8 +62,7 @@ public class CompressionCPInstruction extends ComputationCPInstruction {
 
 	@Override
 	public void processInstruction(ExecutionContext ec) {
-		// Get matrix block input
-		final MatrixBlock in = ec.getMatrixInput(input1.getName());
+		// final MatrixBlock in = ec.getMatrixInput(input1.getName());
 		final SingletonLookupHashMap m = SingletonLookupHashMap.getMap();
 
 		// Get and clear workload tree entry for this compression instruction.
@@ -69,15 +71,30 @@ public class CompressionCPInstruction extends ComputationCPInstruction {
 
 		final int k = OptimizerUtils.getConstrainedNumThreads(-1);
 
-		// Compress the matrix block
-		Pair<MatrixBlock, CompressionStatistics> compResult = CompressedMatrixBlockFactory.compress(in, k, root);
+		if(ec.isMatrixObject(input1.getName()))
+			processMatrixBlockCompression(ec, ec.getMatrixInput(input1.getName()), k, root);
+		else
+			processFrameBlockCompression(ec, ec.getFrameInput(input1.getName()), k, root);
 
+	}
+
+	private void processMatrixBlockCompression(ExecutionContext ec, MatrixBlock in, int k, WTreeRoot root) {
+		Pair<MatrixBlock, CompressionStatistics> compResult = CompressedMatrixBlockFactory.compress(in, k, root);
 		if(LOG.isTraceEnabled())
 			LOG.trace(compResult.getRight());
 		MatrixBlock out = compResult.getLeft();
-
 		// Set output and release input
 		ec.releaseMatrixInput(input1.getName());
 		ec.setMatrixOutput(output.getName(), out);
+	}
+
+	private void processFrameBlockCompression(ExecutionContext ec, FrameBlock in, int k, WTreeRoot root) {
+		Pair<FrameBlock, FrameCompressionStatistics> compResult = FrameLibCompress.compress(in, k, root);
+		if(LOG.isTraceEnabled())
+			LOG.trace(compResult.getRight());
+		FrameBlock out = compResult.getLeft();
+		// Set output and release input
+		ec.releaseFrameInput(input1.getName());
+		ec.setFrameOutput(output.getName(), out);
 	}
 }

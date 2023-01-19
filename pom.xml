@@ -254,6 +254,7 @@
 				<configuration>
 					<source>${java.level}</source>
 					<target>${java.level}</target>
+					<release>${java.level}</release>
 				</configuration>
 			</plugin>
 

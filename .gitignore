@@ -114,3 +114,5 @@ scripts/perftest/fed/scratch_space
 scripts/perftest/fed/temp
 
 src/test/scripts/functions/iogen/*.raw
+src/test/scripts/functions/pipelines/intermediates/regression/*.csv
+src/test/scripts/functions/pipelines/intermediates/regression/*.csv.mtd

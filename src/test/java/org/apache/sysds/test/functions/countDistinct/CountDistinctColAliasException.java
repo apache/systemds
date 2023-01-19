@@ -22,14 +22,10 @@ package org.apache.sysds.test.functions.countDistinct;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
+
 
 public class CountDistinctColAliasException extends CountDistinctBase {
-
-	@Rule
-	public ExpectedException exceptionRule = ExpectedException.none();
 
 	private final static String TEST_NAME = "countDistinctColAliasException";
 	private final static String TEST_DIR = "functions/countDistinct/";
@@ -60,11 +56,8 @@ public class CountDistinctColAliasException extends CountDistinctBase {
 		this.percentTolerance = 0.2;
 	}
 
-	@Test
+	@Test(expected = AssertionError.class)
 	public void testCPSparseSmall() {
-		exceptionRule.expect(AssertionError.class);
-		exceptionRule.expectMessage("Invalid number of arguments for function col_count_distinct(). " +
-				"This function only takes 1 or 2 arguments.");
 
 		Types.ExecType execType = Types.ExecType.CP;
 

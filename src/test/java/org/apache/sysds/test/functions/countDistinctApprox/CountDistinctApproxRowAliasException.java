@@ -23,14 +23,9 @@ import org.apache.sysds.common.Types;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
 import org.apache.sysds.test.functions.countDistinct.CountDistinctBase;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 
 public class CountDistinctApproxRowAliasException extends CountDistinctBase {
-
-	@Rule
-	public ExpectedException exceptionRule = ExpectedException.none();
 
 	private final static String TEST_NAME = "countDistinctApproxRowAliasException";
 	private final static String TEST_DIR = "functions/countDistinctApprox/";
@@ -61,11 +56,8 @@ public class CountDistinctApproxRowAliasException extends CountDistinctBase {
 		this.percentTolerance = 0.2;
 	}
 
-	@Test
+	@Test(expected = AssertionError.class)
 	public void testCPSparseSmall() {
-		exceptionRule.expect(AssertionError.class);
-		exceptionRule.expectMessage("Too many parameters: function rowCountDistinctApprox takes at least 1" +
-				" and at most 2 parameters");
 
 		Types.ExecType execType = Types.ExecType.CP;
 

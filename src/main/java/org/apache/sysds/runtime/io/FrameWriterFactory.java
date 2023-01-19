@@ -33,40 +33,25 @@ public class FrameWriterFactory {
 		return createFrameWriter(fmt, null);
 	}
 
-	public static FrameWriter createFrameWriter( FileFormat fmt, FileFormatProperties props ) {
-		FrameWriter writer = null;
+	public static FrameWriter createFrameWriter(FileFormat fmt, FileFormatProperties props) {
+		boolean textParallel = ConfigurationManager.getCompilerConfigFlag(ConfigType.PARALLEL_CP_WRITE_TEXTFORMATS);
+		boolean binaryParallel = ConfigurationManager.getCompilerConfigFlag(ConfigType.PARALLEL_CP_WRITE_BINARYFORMATS);
 		switch(fmt) {
 			case TEXT:
-				if( ConfigurationManager.getCompilerConfigFlag(ConfigType.PARALLEL_CP_WRITE_TEXTFORMATS) )
-					writer = new FrameWriterTextCellParallel();
-				else
-					writer = new FrameWriterTextCell();
-				break;
-			
+				return textParallel ? new FrameWriterTextCellParallel() : new FrameWriterTextCell();
 			case CSV:
-				if( props!=null && !(props instanceof FileFormatPropertiesCSV) )
+				if(props != null && !(props instanceof FileFormatPropertiesCSV))
 					throw new DMLRuntimeException("Wrong type of file format properties for CSV writer.");
-				if( ConfigurationManager.getCompilerConfigFlag(ConfigType.PARALLEL_CP_WRITE_TEXTFORMATS) )
-					writer = new FrameWriterTextCSVParallel((FileFormatPropertiesCSV)props);
-				else
-					writer = new FrameWriterTextCSV((FileFormatPropertiesCSV)props);
-				break;
-			
+				FileFormatPropertiesCSV fp = (FileFormatPropertiesCSV) props;
+				return textParallel ? new FrameWriterTextCSVParallel(fp) : new FrameWriterTextCSV(fp);
+			case COMPRESSED:
+				return new FrameWriterCompressed(binaryParallel);
 			case BINARY:
-				if( ConfigurationManager.getCompilerConfigFlag(ConfigType.PARALLEL_CP_WRITE_BINARYFORMATS) )
-					writer = new FrameWriterBinaryBlockParallel();
-				else
-					writer = new FrameWriterBinaryBlock();
-				break;
-
+				return binaryParallel ? new FrameWriterBinaryBlockParallel() : new FrameWriterBinaryBlock();
 			case PROTO:
-				// TODO performance improvement: add parallel reader
-				writer = new FrameWriterProto();
-				break;
-			
+				return new FrameWriterProto();
 			default:
 				throw new DMLRuntimeException("Failed to create frame writer for unknown format: " + fmt.toString());
 		}
-		return writer;
 	}
 }

@@ -30,49 +30,29 @@ public class FrameReaderFactory {
 	protected static final Log LOG = LogFactory.getLog(FrameReaderFactory.class.getName());
 
 	public static FrameReader createFrameReader(FileFormat fmt) {
-		if( LOG.isDebugEnabled() )
-			LOG.debug("Creating Frame Reader " + fmt);
 		FileFormatProperties props = (fmt == FileFormat.CSV) ? new FileFormatPropertiesCSV() : null;
 		return createFrameReader(fmt, props);
 	}
 
 	public static FrameReader createFrameReader(FileFormat fmt, FileFormatProperties props) {
-		if( LOG.isDebugEnabled() )
-			LOG.debug("Creating Frame Reader " + fmt + props);
-		FrameReader reader = null;
-
+		boolean textParallel = ConfigurationManager.getCompilerConfigFlag(ConfigType.PARALLEL_CP_READ_TEXTFORMATS);
+		boolean binaryParallel = ConfigurationManager.getCompilerConfigFlag(ConfigType.PARALLEL_CP_READ_BINARYFORMATS);
 		switch(fmt) {
 			case TEXT:
-				if(ConfigurationManager.getCompilerConfigFlag(ConfigType.PARALLEL_CP_READ_TEXTFORMATS))
-					reader = new FrameReaderTextCellParallel();
-				else
-					reader = new FrameReaderTextCell();
-				break;
-
+				return textParallel ? new FrameReaderTextCellParallel() : new FrameReaderTextCell();
 			case CSV:
 				if(props != null && !(props instanceof FileFormatPropertiesCSV))
 					throw new DMLRuntimeException("Wrong type of file format properties for CSV writer.");
-				if(ConfigurationManager.getCompilerConfigFlag(ConfigType.PARALLEL_CP_READ_TEXTFORMATS))
-					reader = new FrameReaderTextCSVParallel((FileFormatPropertiesCSV) props);
-				else
-					reader = new FrameReaderTextCSV((FileFormatPropertiesCSV) props);
-				break;
-
+				FileFormatPropertiesCSV fp = (FileFormatPropertiesCSV) props;
+				return textParallel ? new FrameReaderTextCSVParallel(fp) : new FrameReaderTextCSV(fp);
+			case COMPRESSED: // use same logic as a binary read
 			case BINARY:
-				if(ConfigurationManager.getCompilerConfigFlag(ConfigType.PARALLEL_CP_READ_BINARYFORMATS))
-					reader = new FrameReaderBinaryBlockParallel();
-				else
-					reader = new FrameReaderBinaryBlock();
-				break;
+				return binaryParallel ? new FrameReaderBinaryBlockParallel() : new FrameReaderBinaryBlock();
 			case PROTO:
 				// TODO performance improvement: add parallel reader
-				reader = new FrameReaderProto();
-				break;
-
+				return new FrameReaderProto();
 			default:
 				throw new DMLRuntimeException("Failed to create frame reader for unknown format: " + fmt.toString());
 		}
-
-		return reader;
 	}
 }

@@ -16,21 +16,32 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.sysds.runtime.frame.data.lib;
 
-import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.apache.commons.lang3.tuple.Pair;
-import org.apache.sysds.runtime.compress.workload.WTreeRoot;
+package org.apache.sysds.runtime.io;
+
+import java.io.IOException;
+
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.mapred.JobConf;
+import org.apache.sysds.hops.OptimizerUtils;
+import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
-import org.apache.sysds.runtime.frame.data.compress.FrameCompressionStatistics;
+import org.apache.sysds.runtime.frame.data.lib.FrameLibCompress;
 
-public class FrameLibCompress {
+public class FrameWriterCompressed extends FrameWriterBinaryBlockParallel {
 
-	public static Pair<FrameBlock, FrameCompressionStatistics> compress(FrameBlock in, int k) {
-		return compress(in, k, null);
+	private final boolean parallel;
+
+	public FrameWriterCompressed(boolean parallel) {
+		this.parallel = parallel;
 	}
 
-	public static Pair<FrameBlock, FrameCompressionStatistics> compress(FrameBlock in, int k, WTreeRoot root) {
-		return new ImmutablePair<>(in, new FrameCompressionStatistics());
+	@Override
+	protected void writeBinaryBlockFrameToHDFS(Path path, JobConf job, FrameBlock src, long rlen, long clen)
+		throws IOException, DMLRuntimeException {
+		int k = parallel ? OptimizerUtils.getParallelBinaryWriteParallelism() : 1;
+		FrameBlock compressed = FrameLibCompress.compress(src, k).getLeft();
+		super.writeBinaryBlockFrameToHDFS(path, job, compressed, rlen, clen);
 	}
+
 }

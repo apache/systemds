@@ -150,9 +150,9 @@ public class LineageCache
 						if (!((SparkExecutionContext) ec).isRDDCached(rdd.getRDD().id()))
 							//Return if the RDD is not cached in the executors
 							return false;
-						if (rdd == null && e.getCacheStatus() == LineageCacheStatus.NOTCACHED)
-							return false;
-						else
+						// if (rdd == null && e.getCacheStatus() == LineageCacheStatus.NOTCACHED)
+							// return false;
+						// else
 							((SparkExecutionContext) ec).setRDDHandleForVariable(outName, rdd);
 					}
 					else { //TODO handle locks on gpu objects

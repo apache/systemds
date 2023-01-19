@@ -20,7 +20,6 @@
 package org.apache.sysds.test.component.misc;
 
 import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.fail;
 
 import org.apache.sysds.runtime.io.IOUtilFunctions;
 import org.junit.Test;

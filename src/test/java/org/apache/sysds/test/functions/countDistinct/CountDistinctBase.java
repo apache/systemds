@@ -68,7 +68,7 @@ public abstract class CountDistinctBase extends AutomatedTestBase {
 			programArgs = new String[] {"-args", String.valueOf(numberDistinct), String.valueOf(rows),
 				String.valueOf(cols), String.valueOf(sparsity), outputPath};
 
-			runTest(true, false, null, -1);
+			runTest(null);
 
 			if(dir.isRowCol()) {
 				writeExpectedScalar("A", numberDistinct);

@@ -148,6 +148,7 @@ public abstract class ComputationSPInstruction extends SPInstruction implements 
 		return toPersistAndCache;
 	}
 
+	@SuppressWarnings("unchecked")
 	public void checkpointRDD(ExecutionContext ec) {
 		if (!toPersistAndCache)
 			return;

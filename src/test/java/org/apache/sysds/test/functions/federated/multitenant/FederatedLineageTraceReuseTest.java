@@ -19,6 +19,8 @@
 
 package org.apache.sysds.test.functions.federated.multitenant;
 
+import static org.junit.Assert.fail;
+
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
@@ -132,6 +134,8 @@ public class FederatedLineageTraceReuseTest extends MultiTenantTestBase {
 			c = cols;
 		}
 
+		int[] workerPorts = startFedWorkers(4, new String[]{"-lineage", "reuse"});
+
 		double[][] X1 = getRandomMatrix(r, c, 0, 3, sparsity, 3);
 		double[][] X2 = getRandomMatrix(r, c, 0, 3, sparsity, 7);
 		double[][] X3 = getRandomMatrix(r, c, 0, 3, sparsity, 8);
@@ -146,15 +150,6 @@ public class FederatedLineageTraceReuseTest extends MultiTenantTestBase {
 		// empty script name because we don't execute any script, just start the worker
 		fullDMLScriptName = "";
 
-		int[] workerPorts = startFedWorkers(4, new String[]{"-lineage", "reuse"});
-
-		try {
-			Thread.sleep(4000);
-		}
-		catch(InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
 		rtplatform = execMode;
 		if(rtplatform == ExecMode.SPARK) {
 			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
@@ -193,6 +188,12 @@ public class FederatedLineageTraceReuseTest extends MultiTenantTestBase {
 	}
 
 	private void verifyResults(OpType opType, String outputLog, ExecMode execMode) {
+		try{
+			Thread.sleep(100);
+		}
+		catch(Exception e){
+			fail(e.getMessage());
+		}
 		Assert.assertTrue(checkForHeavyHitter(opType, outputLog, execMode));
 		// verify that the matrix object has been taken from cache
 		Assert.assertTrue(checkForReuses(opType, outputLog, execMode));

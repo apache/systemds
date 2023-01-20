@@ -33,6 +33,8 @@ import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.junit.After;
 
+import com.google.crypto.tink.subtle.Random;
+
 public abstract class MultiTenantTestBase extends AutomatedTestBase {
 	protected ArrayList<Process> workerProcesses = new ArrayList<>();
 	protected ArrayList<Process> coordinatorProcesses = new ArrayList<>();
@@ -66,7 +68,7 @@ public abstract class MultiTenantTestBase extends AutomatedTestBase {
 			ports[counter] = getRandomAvailablePort();
 			// start process but only wait long for last one.
 			Process tmpProcess = startLocalFedWorker(ports[counter], addArgs, 
-				counter == numFedWorkers-1 ? FED_WORKER_WAIT * 3 : FED_WORKER_WAIT_S);
+				counter == numFedWorkers-1 ? (FED_WORKER_WAIT + Random.randInt(1000)) * 3 : FED_WORKER_WAIT_S);
 			workerProcesses.add(tmpProcess);
 		}
 		return ports;

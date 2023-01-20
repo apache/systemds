@@ -19,6 +19,8 @@
 
 package org.apache.sysds.test.functions.federated.multitenant;
 
+import static org.junit.Assert.fail;
+
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
@@ -132,6 +134,8 @@ public class FederatedReuseSlicesTest extends MultiTenantTestBase {
 			c = cols;
 		}
 
+		int[] workerPorts = startFedWorkers(4, new String[]{"-lineage", "reuse"});
+
 		double[][] X1 = getRandomMatrix(r, c, 0, 3, sparsity, 3);
 		double[][] X2 = getRandomMatrix(r, c, 0, 3, sparsity, 7);
 		double[][] X3 = getRandomMatrix(r, c, 0, 3, sparsity, 8);
@@ -146,7 +150,6 @@ public class FederatedReuseSlicesTest extends MultiTenantTestBase {
 		// empty script name because we don't execute any script, just start the worker
 		fullDMLScriptName = "";
 
-		int[] workerPorts = startFedWorkers(4, new String[]{"-lineage", "reuse"});
 
 		rtplatform = execMode;
 		if(rtplatform == ExecMode.SPARK) {
@@ -195,6 +198,12 @@ public class FederatedReuseSlicesTest extends MultiTenantTestBase {
 	}
 
 	private void verifyResults() {
+		try{
+			Thread.sleep(100);
+		}
+		catch(Exception e){
+			fail(e.getMessage());
+		}
 		// compare the results via files
 		HashMap<CellIndex, Double> refResults0	= readDMLMatrixFromOutputDir("S" + 0);
 		HashMap<CellIndex, Double> refResults1	= readDMLMatrixFromOutputDir("S" + 1);

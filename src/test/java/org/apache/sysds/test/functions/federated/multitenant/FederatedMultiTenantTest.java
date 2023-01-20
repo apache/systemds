@@ -19,12 +19,11 @@
 
 package org.apache.sysds.test.functions.federated.multitenant;
 
-import java.lang.Math;
+import static org.junit.Assert.fail;
+
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
-
-import static org.junit.Assert.fail;
 
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -166,6 +165,7 @@ public class FederatedMultiTenantTest extends MultiTenantTestBase {
 			r = rows / 4;
 			c = cols;
 		}
+		int[] workerPorts = startFedWorkers(4);
 
 		double[][] X1 = getRandomMatrix(r, c, 0, 3, 1, 3);
 		double[][] X2 = getRandomMatrix(r, c, 0, 3, 1, 7);
@@ -181,7 +181,6 @@ public class FederatedMultiTenantTest extends MultiTenantTestBase {
 		// empty script name because we don't execute any script, just start the worker
 		fullDMLScriptName = "";
 
-		int[] workerPorts = startFedWorkers(4);
 
 		rtplatform = execMode;
 		if(rtplatform == ExecMode.SPARK) {
@@ -297,6 +296,12 @@ public class FederatedMultiTenantTest extends MultiTenantTestBase {
 	}
 
 	private void verifyResults(OpType opType, String outputLog, ExecMode execMode) {
+		try{
+			Thread.sleep(100);
+		}
+		catch(Exception e){
+			fail(e.getMessage());
+		}
 		Assert.assertTrue(checkForHeavyHitter(opType, outputLog, execMode));
 
 		// compare the results via files

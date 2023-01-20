@@ -19,6 +19,8 @@
 
 package org.apache.sysds.test.functions.federated.multitenant;
 
+import static org.junit.Assert.fail;
+
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
@@ -142,6 +144,8 @@ public class FederatedReuseReadTest extends MultiTenantTestBase {
 			c = cols;
 		}
 
+		int[] workerPorts = startFedWorkers(4, lineage ? new String[]{"-lineage", "reuse"} : null);
+
 		double[][] X1 = getRandomMatrix(r, c, 0, 3, sparsity, 3);
 		double[][] X2 = getRandomMatrix(r, c, 0, 3, sparsity, 7);
 		double[][] X3 = getRandomMatrix(r, c, 0, 3, sparsity, 8);
@@ -156,7 +160,6 @@ public class FederatedReuseReadTest extends MultiTenantTestBase {
 		// empty script name because we don't execute any script, just start the worker
 		fullDMLScriptName = "";
 
-		int[] workerPorts = startFedWorkers(4, lineage ? new String[]{"-lineage", "reuse"} : null);
 
 		rtplatform = execMode;
 		if(rtplatform == ExecMode.SPARK) {
@@ -197,7 +200,14 @@ public class FederatedReuseReadTest extends MultiTenantTestBase {
 	}
 
 	private void verifyResults(OpType opType, String outputLog, ExecMode execMode) {
-		Assert.assertTrue(checkForHeavyHitter(opType, outputLog, execMode));
+		try{
+			Thread.sleep(100);
+		}
+		catch(Exception e){
+			fail(e.getMessage());
+		}
+		Assert.assertTrue("Heavy hitter should include: " + opType + " outputLog:" + outputLog,
+			checkForHeavyHitter(opType, outputLog, execMode));
 		// verify that the matrix object has been taken from cache
 		Assert.assertTrue(outputLog.contains("Fed ReuseRead (Hits, Bytes):\t"
 			+ Integer.toString((coordinatorProcesses.size()-1) * workerProcesses.size()) + "/"));

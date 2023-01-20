@@ -415,6 +415,11 @@ public class HDFSTool
 		writeMetaDataFile(mtdfile, vt, null, DataType.MATRIX, dc, fmt, formatProperties, privacyConstraint);
 	}
 	
+	public static void writeMetaDataFileFrame(String mtdfile, ValueType[] schema,  DataCharacteristics dc,
+		FileFormat fmt) throws IOException {
+		writeMetaDataFile(mtdfile, ValueType.UNKNOWN, schema, DataType.FRAME, dc, fmt, (FileFormatProperties) null);
+	}
+
 	public static void writeMetaDataFile(String mtdfile, ValueType vt, ValueType[] schema, DataType dt, DataCharacteristics dc,
 			FileFormat fmt, FileFormatProperties formatProperties) 
 		throws IOException 

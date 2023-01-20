@@ -22,27 +22,32 @@ package org.apache.sysds.test.functions.transform;
 import java.util.HashMap;
 import java.util.Iterator;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.common.Types.FileFormat;
+import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.runtime.frame.data.iterators.IteratorFactory;
 import org.apache.sysds.runtime.io.FrameReader;
 import org.apache.sysds.runtime.io.FrameReaderFactory;
 import org.apache.sysds.runtime.io.FrameWriter;
 import org.apache.sysds.runtime.io.FrameWriterFactory;
+import org.apache.sysds.runtime.meta.DataCharacteristics;
+import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.util.DataConverter;
+import org.apache.sysds.runtime.util.HDFSTool;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
 import org.junit.Assert;
 import org.junit.Test;
 
-/**
- * 
- */
-public class TransformEncodeDecodeTest extends AutomatedTestBase 
-{
+public class TransformEncodeDecodeTest extends AutomatedTestBase {
+	protected static final Log LOG = LogFactory.getLog(TransformEncodeDecodeTest.class.getName());
+
 	private static final String TEST_NAME1 = "TransformEncodeDecode";
 	private static final String TEST_DIR = "functions/transform/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + TransformEncodeDecodeTest.class.getSimpleName() + "/";
@@ -102,6 +107,8 @@ public class TransformEncodeDecodeTest extends AutomatedTestBase
 			//generate and write input data
 			double[][] A = TestUtils.round(getRandomMatrix(rows, cols, 1, 15, sparse ? sparsity2 : sparsity1, 7)); 
 			FrameBlock FA = DataConverter.convertToFrameBlock(DataConverter.convertToMatrixBlock(A));  
+			DataCharacteristics dc = new MatrixCharacteristics(rows,cols); 
+			HDFSTool.writeMetaDataFileFrame(input("F")+".mtd", FA.getSchema(), dc, FileFormat.safeValueOf(fmt));
 			FrameWriter writer = FrameWriterFactory.createFrameWriter(FileFormat.safeValueOf(fmt));
 			writer.writeFrameToHDFS(FA, input("F"), rows, cols);
 			
@@ -111,7 +118,7 @@ public class TransformEncodeDecodeTest extends AutomatedTestBase
 					SCRIPT_DIR+TEST_DIR+SPEC, output("FO") };
 			
 			//run test
-			runTest(null); 
+			LOG.error(runTest(null)); 
 			
 			//compare matrices (values recoded to identical codes)
 			FrameReader reader = FrameReaderFactory.createFrameReader(FileFormat.safeValueOf(fmt));

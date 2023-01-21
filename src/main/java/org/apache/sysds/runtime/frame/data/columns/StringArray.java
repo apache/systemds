@@ -549,10 +549,8 @@ public class StringArray extends Array<String> {
 	}
 
 	@Override
-	public void findEmpty(boolean[] select) {
-		for(int i = 0; i < select.length; i++)
-			if(_data[i] != null && !_data[i].equals("0"))
-				select[i] = true;
+	public final boolean isNotEmpty(int i) {
+		return _data[i] != null && !_data[i].equals("0");
 	}
 
 	@Override

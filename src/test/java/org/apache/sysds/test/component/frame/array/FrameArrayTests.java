@@ -105,7 +105,13 @@ public class FrameArrayTests {
 			tests.add(new Object[] {ArrayFactory.create(generateRandom01chars(150, 221)), FrameArrayType.CHARACTER});
 			// Long to int
 			tests.add(new Object[] {ArrayFactory.create(new long[] {3214, 424, 13, 22, 111, 134}), FrameArrayType.INT64});
-		}
+
+			tests.add(new Object[] {ArrayFactory.create(new double[] {//
+				Double.NaN, 424, 13, Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY, 134}), FrameArrayType.FP64});
+			tests.add(new Object[] {ArrayFactory.create(new float[] {//
+				Float.NaN, 424, 13, Float.NEGATIVE_INFINITY, Float.POSITIVE_INFINITY, 134}), FrameArrayType.FP32});
+
+			}
 		catch(Exception e) {
 			e.printStackTrace();
 			fail("failed constructing tests");
@@ -376,10 +382,10 @@ public class FrameArrayTests {
 	public void testSetRange(int start, int end, int otherSize, int seed) {
 		try {
 			Array<?> other = create(a.getFrameArrayType(), otherSize, seed);
-			try{
+			try {
 				other = other.changeTypeWithNulls(a.getValueType());
 			}
-			catch(DMLRuntimeException e){
+			catch(DMLRuntimeException e) {
 				return;// all good.
 			}
 
@@ -941,6 +947,19 @@ public class FrameArrayTests {
 		}
 	}
 
+	@Test
+	public void testFindEmpty() {
+		boolean[] select = new boolean[a.size()];
+		a.findEmpty(select);
+		Object d = ArrayFactory.defaultNullValue(a.getValueType());
+		final String errStart = a.getClass().getSimpleName() + " ";
+		for(int i = 0; i < select.length; i++) {
+			if(!select[i])
+				assertTrue(errStart + a.get(i), //
+					(a.get(i) == null) || a.get(i).equals(d) || a.get(i).equals("0"));
+		}
+	}
+
 	protected static void compare(Array<?> a, Array<?> b) {
 		int size = a.size();
 		String err = a.getClass().getSimpleName() + " " + a.getValueType() + " " + b.getClass().getSimpleName() + " "
@@ -1148,7 +1167,6 @@ public class FrameArrayTests {
 		}
 		return ret;
 	}
-
 
 	protected static Double[] generateRandomDoubleOpt(int size, int seed) {
 		Random r = new Random(seed);

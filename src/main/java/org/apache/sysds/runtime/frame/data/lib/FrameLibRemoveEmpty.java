@@ -126,8 +126,8 @@ public class FrameLibRemoveEmpty {
 		final ValueType[] schema = in.getSchema();
 		final String[] colNames = in.getColumnNames(false);
 		if(emptyReturn) { // single null row
-			String[][] arr = new String[1][nCol];
-			Arrays.fill(arr, new String[] {null});
+			String[][] arr = new String[1][];
+			arr[0] = new String[schema.length];
 			return new FrameBlock(schema, colNames, arr);
 		}
 		else // no rows

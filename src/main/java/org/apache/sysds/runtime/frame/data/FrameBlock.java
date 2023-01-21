@@ -135,7 +135,7 @@ public class FrameBlock implements CacheBlock<FrameBlock>, Externalizable {
 	}
 
 	public FrameBlock(ValueType[] schema, int rlen) {
-		this(schema, null,null);
+		this(schema, null, null);
 		_nRow = rlen;
 	}
 
@@ -168,15 +168,25 @@ public class FrameBlock implements CacheBlock<FrameBlock>, Externalizable {
 			appendColumn(ArrayFactory.allocate(schema[i], nRow, constant));
 	}
 
+	/**
+	 * allocate a FrameBlock with the given data arrays. 
+	 * 
+	 * The data is in row major, making the first dimension number of rows.
+	 * second number of columns.
+	 * 
+	 * @param schema the schema to allocate
+	 * @param names The names of the column
+	 * @param data The data.
+	 */
 	public FrameBlock(ValueType[] schema, String[] names, String[][] data) {
 		_schema = schema;
-		if(names != null && schema != null && schema.length != names.length)
-			throw new DMLRuntimeException("Invalid FrameBlock construction");
-
-		_colnames = names;
+		if(names != null){
+			_colnames = names;
+			if(schema.length != names.length)
+				throw new DMLRuntimeException("Invalid FrameBlock construction, invalid schema and names combination");
+		}
 		ensureAllocateMeta();
 		if(data != null) {
-			_nRow = data.length;
 			for(int i = 0; i < data.length; i++)
 				appendRow(data[i]);
 		}
@@ -371,8 +381,9 @@ public class FrameBlock implements CacheBlock<FrameBlock>, Externalizable {
 
 			// allocate columns if necessary
 			_coldata = new Array[_schema.length];
-			for(int j = 0; j < _schema.length; j++)
-				_coldata[j] = ArrayFactory.allocate(_schema[j], numRows);
+			if(numRows > 0)
+				for(int j = 0; j < _schema.length; j++)
+					_coldata[j] = ArrayFactory.allocate(_schema[j], numRows);
 			_nRow = numRows;
 		}
 	}
@@ -394,7 +405,7 @@ public class FrameBlock implements CacheBlock<FrameBlock>, Externalizable {
 	 */
 	public void ensureColumnCompatibility(int newLen) {
 		final int nRow = getNumRows();
-		if(_coldata != null && _coldata.length > 0 && ((nRow == 0) || nRow != newLen)){
+		if(_coldata != null && _coldata.length > 0 && ((nRow == 0) || nRow != newLen)) {
 			throw new RuntimeException("Mismatch in number of rows: " + newLen + " (expected: " + nRow + ")");
 		}
 		_nRow = newLen;
@@ -498,12 +509,25 @@ public class FrameBlock implements CacheBlock<FrameBlock>, Externalizable {
 	/**
 	 * Append a row to the end of the data frame, where all row fields are boxed objects according to the schema.
 	 *
+	 * Append row should be avoided if possible.
+	 * 
 	 * @param row array of objects
 	 */
 	public void appendRow(Object[] row) {
-		ensureAllocatedColumns(0);
-		for(int j = 0; j < row.length; j++)
-			_coldata[j].append(row[j]);
+		if(row.length != _schema.length)
+			throw new DMLRuntimeException("Invalid number of values in rowAppend");
+		if(_nRow == 0) {
+			ensureAllocateMeta();
+			_coldata = new Array[_schema.length];
+			for(int j = 0; j < _schema.length; j++) {
+				_coldata[j] = ArrayFactory.allocate(_schema[j], 1);
+				_coldata[j].set(0, row[j]);
+			}
+		}
+		else {
+			for(int j = 0; j < row.length; j++)
+				_coldata[j].append(row[j]);
+		}
 		_nRow++;
 		_msize = -1;
 	}
@@ -511,12 +535,25 @@ public class FrameBlock implements CacheBlock<FrameBlock>, Externalizable {
 	/**
 	 * Append a row to the end of the data frame, where all row fields are string encoded.
 	 *
+	 * Append row should be avoided if possible
+	 * 
 	 * @param row array of strings
 	 */
 	public void appendRow(String[] row) {
-		ensureAllocatedColumns(0);
-		for(int j = 0; j < row.length; j++)
-			_coldata[j].append(row[j]);
+		if(row.length != _schema.length)
+			throw new DMLRuntimeException("Invalid number of values in rowAppend");
+		else if(_nRow == 0) {
+			ensureAllocateMeta();
+			_coldata = new Array[_schema.length];
+			for(int j = 0; j < _schema.length; j++) {
+				_coldata[j] = ArrayFactory.allocate(_schema[j], 1);
+				_coldata[j].set(0, row[j]);
+			}
+		}
+		else {
+			for(int j = 0; j < row.length; j++)
+				_coldata[j].append(row[j]);
+		}
 		_nRow++;
 		_msize = -1;
 	}
@@ -656,11 +693,11 @@ public class FrameBlock implements CacheBlock<FrameBlock>, Externalizable {
 	}
 
 	public void setColumn(int c, Array<?> column) {
-		if(_coldata == null){
+		if(_coldata == null) {
 			_coldata = new Array[getNumColumns()];
 			_nRow = column.size();
 		}
-		if(column.size()  != _nRow )
+		if(column.size() != _nRow)
 			throw new DMLRuntimeException("Invalid number of rows in set column");
 		_coldata[c] = column;
 		_msize = -1;
@@ -1013,7 +1050,7 @@ public class FrameBlock implements CacheBlock<FrameBlock>, Externalizable {
 		// copy output schema and colnames
 		int numCols = cu - cl + 1;
 		boolean isDefNames = isColNamesDefault();
-		ret._nRow = ru - rl +1;
+		ret._nRow = ru - rl + 1;
 		ret._schema = new ValueType[numCols];
 		ret._colnames = !isDefNames ? new String[numCols] : null;
 		ret._colmeta = new ColumnMetadata[numCols];

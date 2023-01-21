@@ -366,14 +366,8 @@ public class DoubleArray extends Array<Double> {
 	}
 
 	@Override
-	public void findEmpty(boolean[] select) {
-		for(int i = 0; i < select.length; i++)
-			if(isNotEmpty(i))
-				select[i] = true;
-	}
-
-	private final boolean isNotEmpty(int i) {
-		return _data[i] != 0.0 || Double.isNaN(_data[i]);
+	public final boolean isNotEmpty(int i) {
+		return _data[i] != 0.0d;
 	}
 
 	@Override

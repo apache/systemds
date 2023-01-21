@@ -26,7 +26,6 @@ import java.nio.ByteOrder;
 import java.util.Arrays;
 import java.util.BitSet;
 
-import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.frame.data.columns.ArrayFactory.FrameArrayType;
@@ -322,10 +321,10 @@ public class CharArray extends Array<Character> {
 	}
 
 	@Override
-	public void findEmpty(boolean[] select) {
-		throw new NotImplementedException();
+	public final boolean isNotEmpty(int i) {
+		return _data[i] != 0;
 	}
-
+	
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder(_data.length * 2 + 15);

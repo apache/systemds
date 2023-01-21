@@ -46,6 +46,8 @@ public abstract class Array<T> implements Writable {
 
 	protected Array(int size) {
 		_size = size;
+		if(size <= 0)
+			throw new DMLRuntimeException("Invalid zero/negative size of Array");
 	}
 
 	protected int newSize() {
@@ -483,7 +485,13 @@ public abstract class Array<T> implements Writable {
 	 * 
 	 * @param select Modify this to true in indexes that are not empty.
 	 */
-	public abstract void findEmpty(boolean[] select);
+	public final void findEmpty(boolean[] select){
+		for(int i = 0; i < select.length; i++)
+			if(isNotEmpty(i))
+				select[i] = true;
+	}
+
+	public abstract boolean isNotEmpty(int i);
 
 	/**
 	 * Find the filled rows, it is assumed that the input i to be only modified to set variables to true;

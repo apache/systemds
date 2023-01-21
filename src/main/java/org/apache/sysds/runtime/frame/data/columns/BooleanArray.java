@@ -36,7 +36,7 @@ import org.apache.sysds.utils.MemoryEstimates;
 public class BooleanArray extends Array<Boolean> {
 	protected boolean[] _data;
 
-	public BooleanArray(int size) {
+	private BooleanArray(int size) {
 		super(size);
 		_data = new boolean[size];
 	}
@@ -327,10 +327,9 @@ public class BooleanArray extends Array<Boolean> {
 	}
 
 	@Override
-	public void findEmpty(boolean[] select) {
-		throw new NotImplementedException();
+	public final boolean isNotEmpty(int i) {
+		return _data[i];
 	}
-
 
 	@Override 
 	public void findEmptyInverse(boolean[] select){

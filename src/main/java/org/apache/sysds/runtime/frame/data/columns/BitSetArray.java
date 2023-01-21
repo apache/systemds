@@ -42,16 +42,12 @@ public class BitSetArray extends Array<Boolean> {
 	long[] _data;
 
 	protected BitSetArray(int size) {
-		super(size);
-		_data = new long[size / 64 + 1];
+		this(new long[longSize(size)], size);
 	}
 
 	public BitSetArray(boolean[] data) {
 		super(data.length);
-		if(data.length == 11)
-			throw new DMLRuntimeException("Invalid length");
-		_data = new long[_size / 64 + 1];
-		// set bits.
+		_data = new long[longSize(_size)];
 		for(int i = 0; i < data.length; i++)
 			if(data[i]) // slightly more efficient to check.
 				set(i, true);
@@ -62,9 +58,13 @@ public class BitSetArray extends Array<Boolean> {
 		_data = data;
 		if(_size > _data.length * 64)
 			throw new DMLRuntimeException("Invalid allocation long array must be long enough");
-		if(_data.length > _size / 64 + 1)
+		if(_data.length > longSize(_size))
 			throw new DMLRuntimeException(
-				"Invalid allocation long array must not be to long: " + _data.length + " " + _size + " " + (size / 64 + 1));
+				"Invalid allocation long array must not be to long: " + _data.length + " " + _size + " " + (longSize(_size)));
+	}
+
+	private static int longSize(int size){
+		return Math.max(size >> 6, 0) +1;
 	}
 
 	public BitSetArray(BitSet data, int size) {
@@ -489,7 +489,7 @@ public class BitSetArray extends Array<Boolean> {
 
 	@Override
 	public boolean isEmpty() {
-		for(int i = 0; i < _data.length; i++){
+		for(int i = 0; i < _data.length; i++) {
 			if(_data[i] != 0L)
 				return false;
 		}
@@ -516,14 +516,12 @@ public class BitSetArray extends Array<Boolean> {
 	}
 
 	@Override
-	public void findEmpty(boolean[] select) {
-		for(int i = 0; i < select.length; i++)
-			if(get(i))
-				select[i] = true;
+	public final boolean isNotEmpty(int i) {
+		return get(i);
 	}
 
 	@Override
-	public void findEmptyInverse(boolean[] select){
+	public void findEmptyInverse(boolean[] select) {
 		for(int i = 0; i < select.length; i++)
 			if(!get(i))
 				select[i] = true;

@@ -27,6 +27,13 @@ import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.frame.data.columns.Array;
 import org.apache.sysds.runtime.frame.data.columns.ArrayFactory;
 import org.apache.sysds.runtime.frame.data.columns.BitSetArray;
+import org.apache.sysds.runtime.frame.data.columns.BooleanArray;
+import org.apache.sysds.runtime.frame.data.columns.CharArray;
+import org.apache.sysds.runtime.frame.data.columns.DoubleArray;
+import org.apache.sysds.runtime.frame.data.columns.FloatArray;
+import org.apache.sysds.runtime.frame.data.columns.IntegerArray;
+import org.apache.sysds.runtime.frame.data.columns.LongArray;
+import org.apache.sysds.runtime.frame.data.columns.OptionalArray;
 import org.apache.sysds.runtime.frame.data.columns.StringArray;
 import org.junit.Test;
 
@@ -117,4 +124,48 @@ public class NegativeArrayTests {
 		new BitSetArray(new long[10], 10);
 	}
 
+	@Test(expected = DMLRuntimeException.class)
+	public void zLenAllocationBoolean() {
+		new BooleanArray(new boolean[0]);
+	}
+
+	@Test(expected = DMLRuntimeException.class)
+	public void zLenAllocationBitSet() {
+		new BitSetArray(new boolean[0]);
+	}
+
+	@Test(expected = DMLRuntimeException.class)
+	public void zLenAllocationChar() {
+		new CharArray(new char[0]);
+	}
+
+	@Test(expected = DMLRuntimeException.class)
+	public void zLenAllocationDouble() {
+		new DoubleArray(new double[0]);
+	}
+
+	@Test(expected = DMLRuntimeException.class)
+	public void zLenAllocationFloat() {
+		new FloatArray(new float[0]);
+	}
+
+	@Test(expected = DMLRuntimeException.class)
+	public void zLenAllocationInteger() {
+		new IntegerArray(new int[0]);
+	}
+
+	@Test(expected = DMLRuntimeException.class)
+	public void zLenAllocationLong() {
+		new LongArray(new long[0]);
+	}
+
+	@Test(expected = DMLRuntimeException.class)
+	public void zLenAllocationOptional() {
+		new OptionalArray<>(new Integer[0]);
+	}
+
+	@Test(expected = DMLRuntimeException.class)
+	public void zLenAllocationString() {
+		new StringArray(new String[0]);
+	}
 }

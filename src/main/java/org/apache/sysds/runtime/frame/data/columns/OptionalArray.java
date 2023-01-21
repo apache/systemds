@@ -54,7 +54,7 @@ public class OptionalArray<T> extends Array<T> {
 		else // Character
 			_a = (Array<T>) ArrayFactory.allocate(ValueType.CHARACTER, a.length);
 
-		_n = new BitSetArray(a.length);
+		_n = (Array<Boolean>) ArrayFactory.allocate(ValueType.BOOLEAN, a.length);
 		for(int i = 0; i < a.length; i++) {
 			_a.set(i, a[i]);
 			_n.set(i, a[i] != null);
@@ -385,9 +385,8 @@ public class OptionalArray<T> extends Array<T> {
 	}
 
 	@Override
-	public void findEmpty(boolean[] select) {
-		_n.findEmptyInverse(select);
-		_a.findEmpty(select);
+	public final boolean isNotEmpty(int i) {
+		return _n.isNotEmpty(i) && _a.isNotEmpty(i);
 	}
 
 	@Override

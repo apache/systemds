@@ -251,12 +251,19 @@ public class FrameRemoveEmpty {
 
 	@Test
 	public void removeEmptyRowsEmptyInColumnName() {
-		FrameBlock in = getTestCase0();
-		in.setColumnName(1, "HelloThere");
-		FrameBlock out = in.removeEmptyOperations(true, true, null);
-		assertEquals(2, out.getNumColumns());
-		assertEquals(1, out.getNumRows());
-		assertEquals("HelloThere", out.getColumnName(1));
+		try{
+
+			FrameBlock in = getTestCase0();
+			in.setColumnName(1, "HelloThere");
+			FrameBlock out = in.removeEmptyOperations(true, true, null);
+			assertEquals(2, out.getNumColumns());
+			assertEquals(1, out.getNumRows());
+			assertEquals("HelloThere", out.getColumnName(1));
+		}
+		catch(Exception e){
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
 	}
 
 	@Test

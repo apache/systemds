@@ -19,8 +19,6 @@
 
 package org.apache.sysds.runtime.frame.data.iterators;
 
-import java.util.Iterator;
-
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
 
@@ -35,7 +33,7 @@ public interface IteratorFactory {
 	 * @param fb The frame to iterate through
 	 * @return string array iterator
 	 */
-	public static Iterator<String[]> getStringRowIterator(FrameBlock fb) {
+	public static RowIterator<String> getStringRowIterator(FrameBlock fb) {
 		return new StringRowIterator(fb, 0, fb.getNumRows());
 	}
 
@@ -47,7 +45,7 @@ public interface IteratorFactory {
 	 * @param cols column selection, 1-based
 	 * @return string array iterator
 	 */
-	public static Iterator<String[]> getStringRowIterator(FrameBlock fb, int[] cols) {
+	public static RowIterator<String> getStringRowIterator(FrameBlock fb, int[] cols) {
 		return new StringRowIterator(fb, 0, fb.getNumRows(), cols);
 	}
 
@@ -59,7 +57,7 @@ public interface IteratorFactory {
 	 * @param colID column selection, 1-based
 	 * @return string array iterator
 	 */
-	public static Iterator<String[]> getStringRowIterator(FrameBlock fb, int colID) {
+	public static RowIterator<String> getStringRowIterator(FrameBlock fb, int colID) {
 		return new StringRowIterator(fb, 0, fb.getNumRows(), new int[] {colID});
 	}
 
@@ -71,7 +69,7 @@ public interface IteratorFactory {
 	 * @param ru upper row index
 	 * @return string array iterator
 	 */
-	public static Iterator<String[]> getStringRowIterator(FrameBlock fb, int rl, int ru) {
+	public static RowIterator<String> getStringRowIterator(FrameBlock fb, int rl, int ru) {
 		return new StringRowIterator(fb, rl, ru);
 	}
 
@@ -85,7 +83,7 @@ public interface IteratorFactory {
 	 * @param cols column selection, 1-based
 	 * @return string array iterator
 	 */
-	public static Iterator<String[]> getStringRowIterator(FrameBlock fb, int rl, int ru, int[] cols) {
+	public static RowIterator<String> getStringRowIterator(FrameBlock fb, int rl, int ru, int[] cols) {
 		return new StringRowIterator(fb, rl, ru, cols);
 	}
 
@@ -99,7 +97,7 @@ public interface IteratorFactory {
 	 * @param colID columnID, 1-based
 	 * @return string array iterator
 	 */
-	public static Iterator<String[]> getStringRowIterator(FrameBlock fb, int rl, int ru, int colID) {
+	public static RowIterator<String> getStringRowIterator(FrameBlock fb, int rl, int ru, int colID) {
 		return new StringRowIterator(fb, rl, ru, new int[] {colID});
 	}
 
@@ -109,7 +107,7 @@ public interface IteratorFactory {
 	 * @param fb The frame to iterate through
 	 * @return object array iterator
 	 */
-	public static Iterator<Object[]> getObjectRowIterator(FrameBlock fb) {
+	public static RowIterator<Object> getObjectRowIterator(FrameBlock fb) {
 		return new ObjectRowIterator(fb, 0, fb.getNumRows());
 	}
 
@@ -121,7 +119,7 @@ public interface IteratorFactory {
 	 * @param schema target schema of objects
 	 * @return object array iterator
 	 */
-	public static Iterator<Object[]> getObjectRowIterator(FrameBlock fb, ValueType[] schema) {
+	public static RowIterator<Object> getObjectRowIterator(FrameBlock fb, ValueType[] schema) {
 		return new ObjectRowIterator(fb, 0, fb.getNumRows(), schema);
 	}
 
@@ -133,8 +131,19 @@ public interface IteratorFactory {
 	 * @param cols column selection, 1-based
 	 * @return object array iterator
 	 */
-	public static Iterator<Object[]> getObjectRowIterator(FrameBlock fb, int[] cols) {
+	public static RowIterator<Object> getObjectRowIterator(FrameBlock fb, int[] cols) {
 		return new ObjectRowIterator(fb, 0, fb.getNumRows(), cols);
+	}
+
+	/**
+	 * Get a row iterator over the frame where all selected fields are encoded as objects according to their value types.
+	 *
+	 * @param fb    The frame to iterate through
+	 * @param colID column selection, 1-based
+	 * @return object array iterator
+	 */
+	public static RowIterator<Object> getObjectRowIterator(FrameBlock fb, int colID) {
+		return new ObjectRowIterator(fb, 0, fb.getNumRows(), new int[] {colID});
 	}
 
 	/**
@@ -145,7 +154,7 @@ public interface IteratorFactory {
 	 * @param ru upper row index
 	 * @return object array iterator
 	 */
-	public static Iterator<Object[]> getObjectRowIterator(FrameBlock fb, int rl, int ru) {
+	public static RowIterator<Object> getObjectRowIterator(FrameBlock fb, int rl, int ru) {
 		return new ObjectRowIterator(fb, rl, ru);
 	}
 
@@ -159,8 +168,21 @@ public interface IteratorFactory {
 	 * @param cols column selection, 1-based
 	 * @return object array iterator
 	 */
-	public static Iterator<Object[]> getObjectRowIterator(FrameBlock fb, int rl, int ru, int[] cols) {
+	public static RowIterator<Object> getObjectRowIterator(FrameBlock fb, int rl, int ru, int[] cols) {
 		return new ObjectRowIterator(fb, rl, ru, cols);
 	}
 
+		/**
+	 * Get a row iterator over the frame where all selected fields are encoded as boxed objects according to their value
+	 * types.
+	 *
+	 * @param fb   The frame to iterate through
+	 * @param rl   lower row index
+	 * @param ru   upper row index
+	 * @param colID column selection, 1-based
+	 * @return object array iterator
+	 */
+	public static RowIterator<Object> getObjectRowIterator(FrameBlock fb, int rl, int ru, int colID) {
+		return new ObjectRowIterator(fb, rl, ru, new int[] {colID});
+	}
 }

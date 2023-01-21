@@ -23,6 +23,7 @@ import java.util.Iterator;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.runtime.util.UtilFunctions;
 
@@ -41,6 +42,9 @@ public abstract class RowIterator<T> implements Iterator<T[]> {
 	}
 
 	protected RowIterator(FrameBlock fb, int rl, int ru, int[] cols) {
+		if(rl < 0 || ru > fb.getNumRows() || rl > ru)
+			throw new DMLRuntimeException("Invalid range of iterator: " + rl + "->" + ru);
+
 		_fb = fb;
 		_curRow = createRow(cols.length);
 		_cols = cols;
@@ -55,7 +59,7 @@ public abstract class RowIterator<T> implements Iterator<T[]> {
 
 	@Override
 	public void remove() {
-		throw new RuntimeException("RowIterator.remove is unsupported!");
+		throw new DMLRuntimeException("RowIterator.remove() is unsupported!");
 	}
 
 	protected abstract T[] createRow(int size);

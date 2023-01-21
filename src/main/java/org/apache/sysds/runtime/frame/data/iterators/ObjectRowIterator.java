@@ -26,19 +26,19 @@ import org.apache.sysds.runtime.util.UtilFunctions;
 public class ObjectRowIterator extends RowIterator<Object> {
 	private final  ValueType[] _tgtSchema;
 
-	public ObjectRowIterator(FrameBlock fb, int rl, int ru) {
+	protected ObjectRowIterator(FrameBlock fb, int rl, int ru) {
 		this(fb, rl, ru, UtilFunctions.getSeqArray(1, fb.getNumColumns(), 1), null);
 	}
 
-	public ObjectRowIterator(FrameBlock fb, int rl, int ru, ValueType[] schema) {
+	protected ObjectRowIterator(FrameBlock fb, int rl, int ru, ValueType[] schema) {
 		this(fb, rl, ru, UtilFunctions.getSeqArray(1, fb.getNumColumns(), 1), schema);
 	}
 
-	public ObjectRowIterator(FrameBlock fb, int rl, int ru, int[] cols) {
+	protected ObjectRowIterator(FrameBlock fb, int rl, int ru, int[] cols) {
 		this(fb, rl, ru, cols, null);
 	}
 	
-	public ObjectRowIterator(FrameBlock fb, int rl, int ru, int[] cols, ValueType[] schema){
+	protected ObjectRowIterator(FrameBlock fb, int rl, int ru, int[] cols, ValueType[] schema){
 		super(fb, rl, ru, cols);
 		_tgtSchema = schema;
 	}

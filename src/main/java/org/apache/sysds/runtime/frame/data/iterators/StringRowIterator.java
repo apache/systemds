@@ -22,11 +22,11 @@ package org.apache.sysds.runtime.frame.data.iterators;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
 
 public class StringRowIterator extends RowIterator<String> {
-	public StringRowIterator(FrameBlock fb, int rl, int ru) {
+	protected StringRowIterator(FrameBlock fb, int rl, int ru) {
 		super(fb, rl, ru);
 	}
 
-	public StringRowIterator(FrameBlock fb, int rl, int ru, int[] cols) {
+	protected StringRowIterator(FrameBlock fb, int rl, int ru, int[] cols) {
 		super(fb, rl, ru, cols);
 	}
 

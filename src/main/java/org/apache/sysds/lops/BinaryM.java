@@ -76,6 +76,13 @@ public class BinaryM extends Lop
 		return " Operation: " + _operation;
 	}
 
+	@Override
+	public Lop getBroadcastInput() {
+		if (getExecType() != ExecType.SPARK)
+			return null;
+		return inputs.get(1);
+	}
+
 	public OpOp2 getOperationType() {
 		return _operation;
 	}

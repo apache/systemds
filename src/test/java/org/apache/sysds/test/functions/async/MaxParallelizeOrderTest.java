@@ -37,7 +37,7 @@ public class MaxParallelizeOrderTest extends AutomatedTestBase {
 
 	protected static final String TEST_DIR = "functions/async/";
 	protected static final String TEST_NAME = "MaxParallelizeOrder";
-	protected static final int TEST_VARIANTS = 4;
+	protected static final int TEST_VARIANTS = 5;
 	protected static String TEST_CLASS_DIR = TEST_DIR + MaxParallelizeOrderTest.class.getSimpleName() + "/";
 
 	@Override
@@ -65,6 +65,12 @@ public class MaxParallelizeOrderTest extends AutomatedTestBase {
 	@Test
 	public void testSparkTransformations() {
 		runTest(TEST_NAME+"4");
+	}
+
+	@Test
+	public void testPCAlm() {
+		//eigen is an internal function. Outputs of eigen are not in the lop list
+		runTest(TEST_NAME+"5");
 	}
 
 	public void runTest(String testname) {
@@ -101,9 +107,9 @@ public class MaxParallelizeOrderTest extends AutomatedTestBase {
 			OptimizerUtils.ALLOW_TRANSITIVE_SPARK_EXEC_TYPE = true;
 
 			//compare matrices
-			boolean matchVal = TestUtils.compareMatrices(R, R_mp, 1e-6, "Origin", "withPrefetch");
+			boolean matchVal = TestUtils.compareMatrices(R, R_mp, 1e-6, "Origin", "withMaxParallelize");
 			if (!matchVal)
-				System.out.println("Value w/o Prefetch "+R+" w/ Prefetch "+R_mp);
+				System.out.println("Value w/ depth first"+R+" w/ Max Parallelize"+R_mp);
 		} finally {
 			resetExecMode(oldPlatform);
 			InfrastructureAnalyzer.setLocalMaxMemory(oldmem);

@@ -22,6 +22,7 @@ package org.apache.sysds.runtime.instructions.spark;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.function.Function;
+import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
@@ -31,6 +32,8 @@ import org.apache.sysds.runtime.functionobjects.SwapIndex;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.instructions.spark.utils.RDDAggregateUtils;
+import org.apache.sysds.runtime.lineage.LineageCacheConfig;
+import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysds.runtime.matrix.data.OperationsOnMatrixValues;
@@ -38,7 +41,12 @@ import org.apache.sysds.runtime.matrix.operators.AggregateBinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.AggregateOperator;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 import org.apache.sysds.runtime.matrix.operators.ReorgOperator;
+import org.apache.sysds.runtime.util.CommonThreadPool;
 import scala.Tuple2;
+
+import java.util.concurrent.Callable;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 public class ZipmmSPInstruction extends BinarySPInstruction {
 	// internal flag to apply left-transpose rewrite or not
@@ -75,24 +83,39 @@ public class ZipmmSPInstruction extends BinarySPInstruction {
 		//get rdd inputs (for computing r = t(X)%*%y via r = t(t(y)%*%X))
 		JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryMatrixBlockRDDHandleForVariable( input1.getName() ); //X
 		JavaPairRDD<MatrixIndexes,MatrixBlock> in2 = sec.getBinaryMatrixBlockRDDHandleForVariable( input2.getName() ); //y
-		
-		//process core zipmm matrix multiply (in contrast to cpmm, the join over original indexes
-		//preserves the original partitioning and with that potentially unnecessary join shuffle)
-		JavaRDD<MatrixBlock> out = in1.join(in2).values()     // join over original indexes
-				   .map(new ZipMultiplyFunction(_tRewrite));  // compute block multiplications, incl t(y)
-				   
-		//single-block aggregation (guaranteed by zipmm blocksize constraint)
-		MatrixBlock out2 = RDDAggregateUtils.sumStable(out);
-		
-		//final transpose of result (for t(t(y)%*%X))), if transpose rewrite
-		if( _tRewrite ) {
-			ReorgOperator rop = new ReorgOperator(SwapIndex.getSwapIndexFnObject());
-			out2 = out2.reorgOperations(rop, new MatrixBlock(), 0, 0, 0);
+
+		if (ConfigurationManager.isMaxPrallelizeEnabled()) {
+			try {
+				if (CommonThreadPool.triggerRemoteOPsPool == null)
+					CommonThreadPool.triggerRemoteOPsPool = Executors.newCachedThreadPool();
+				ZipmmTask task = new ZipmmTask(in1, in2, _tRewrite);
+				Future<MatrixBlock> future_out = CommonThreadPool.triggerRemoteOPsPool.submit(task);
+				LineageItem li = !LineageCacheConfig.ReuseCacheType.isNone() ? getLineageItem(ec).getValue() : null;
+				sec.setMatrixOutputAndLineage(output.getName(), future_out, li);
+			}
+			catch(Exception ex) {
+				throw new DMLRuntimeException(ex);
+			}
 		}
-		
-		//put output block into symbol table (no lineage because single block)
-		//this also includes implicit maintenance of matrix characteristics
-		sec.setMatrixOutput(output.getName(), out2);
+		else {
+			//process core zipmm matrix multiply (in contrast to cpmm, the join over original indexes
+			//preserves the original partitioning and with that potentially unnecessary join shuffle)
+			JavaRDD<MatrixBlock> out = in1.join(in2).values()     // join over original indexes
+				.map(new ZipMultiplyFunction(_tRewrite));  // compute block multiplications, incl t(y)
+
+			//single-block aggregation (guaranteed by zipmm blocksize constraint)
+			MatrixBlock out2 = RDDAggregateUtils.sumStable(out);
+
+			//final transpose of result (for t(t(y)%*%X))), if transpose rewrite
+			if(_tRewrite) {
+				ReorgOperator rop = new ReorgOperator(SwapIndex.getSwapIndexFnObject());
+				out2 = out2.reorgOperations(rop, new MatrixBlock(), 0, 0, 0);
+			}
+
+			//put output block into symbol table (no lineage because single block)
+			//this also includes implicit maintenance of matrix characteristics
+			sec.setMatrixOutput(output.getName(), out2);
+		}
 	}
 
 	private static class ZipMultiplyFunction implements Function<Tuple2<MatrixBlock,MatrixBlock>, MatrixBlock> 
@@ -123,6 +146,36 @@ public class ZipmmSPInstruction extends BinarySPInstruction {
 			
 			//core matrix multiplication (for t(y)%*%X or t(X)%*%y)
 			return OperationsOnMatrixValues.matMult(tmp, in1, new MatrixBlock(), _abop);
+		}
+	}
+
+	private static class ZipmmTask implements Callable<MatrixBlock> {
+		JavaPairRDD<MatrixIndexes, MatrixBlock> _in1;
+		JavaPairRDD<MatrixIndexes, MatrixBlock> _in2;
+		boolean _tRewrite;
+
+		ZipmmTask(JavaPairRDD<MatrixIndexes, MatrixBlock> in1, JavaPairRDD<MatrixIndexes, MatrixBlock> in2, boolean tRw) {
+			_in1 = in1;
+			_in2 = in2;
+			_tRewrite = tRw;
+		}
+		@Override
+		public MatrixBlock call() {
+			//process core zipmm matrix multiply (in contrast to cpmm, the join over original indexes
+			//preserves the original partitioning and with that potentially unnecessary join shuffle)
+			JavaRDD<MatrixBlock> out = _in1.join(_in2).values()     // join over original indexes
+				.map(new ZipMultiplyFunction(_tRewrite));  // compute block multiplications, incl t(y)
+
+			//single-block aggregation (guaranteed by zipmm blocksize constraint)
+			MatrixBlock out2 = RDDAggregateUtils.sumStable(out);
+
+			//final transpose of result (for t(t(y)%*%X))), if transpose rewrite
+			if( _tRewrite ) {
+				ReorgOperator rop = new ReorgOperator(SwapIndex.getSwapIndexFnObject());
+				out2 = out2.reorgOperations(rop, new MatrixBlock(), 0, 0, 0);
+			}
+
+			return out2;
 		}
 	}
 }

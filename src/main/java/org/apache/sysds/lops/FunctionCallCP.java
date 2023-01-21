@@ -81,6 +81,10 @@ public class FunctionCallCP extends Lop
 	public ArrayList<Lop> getFunctionOutputs() {
 		return _outputLops;
 	}
+
+	public String getFnamespace() {
+		return _fnamespace;
+	}
 	
 	public boolean requiresOutputCreateVar() {
 		return !_fname.equalsIgnoreCase(Builtins.REMOVE.getName());

@@ -44,6 +44,7 @@ import org.apache.sysds.lops.CentralMoment;
 import org.apache.sysds.lops.Checkpoint;
 import org.apache.sysds.lops.CoVariance;
 import org.apache.sysds.lops.DataGen;
+import org.apache.sysds.lops.FunctionCallCP;
 import org.apache.sysds.lops.GroupedAggregate;
 import org.apache.sysds.lops.GroupedAggregateM;
 import org.apache.sysds.lops.Lop;
@@ -59,6 +60,7 @@ import org.apache.sysds.lops.ReBlock;
 import org.apache.sysds.lops.SpoofFused;
 import org.apache.sysds.lops.UAggOuterChain;
 import org.apache.sysds.lops.UnaryCP;
+import org.apache.sysds.parser.DMLProgram;
 
 /**
  * A interface for the linearization algorithms that order the DAG nodes into a sequence of instructions to execute.
@@ -188,17 +190,17 @@ public interface ILinearize {
 		if (v.stream().anyMatch(ILinearize::isSparkTriggeringOp)) {
 			// Step 1: Collect the Spark roots and #Spark instructions in each subDAG
 			Map<Long, Integer> sparkOpCount = new HashMap<>();
-			List<Lop> roots = v.stream().filter(l -> l.getOutputs().isEmpty()).collect(Collectors.toList());
+			List<Lop> roots = v.stream().filter(ILinearize::isRoot).collect(Collectors.toList());
 			List<Lop> sparkRoots = new ArrayList<>();
 			roots.forEach(r -> collectSparkRoots(r, sparkOpCount, sparkRoots));
 
-			// Step 2: Depth-first linearization. Place the Spark OPs first.
-			// Maintain the default order (by ID) to trigger independent Spark chains first
+			// Step 2: Depth-first linearization. Place the CP OPs first to increase broadcast potentials.
+			// Maintain the default order (by ID) to trigger independent Spark jobs first
 			ArrayList<Lop> operatorList = new ArrayList<>();
-			sparkRoots.forEach(r -> depthFirst(r, operatorList, sparkOpCount, true));
+			sparkRoots.forEach(r -> depthFirst(r, operatorList, sparkOpCount, false));
 
 			// Step 3: Place the rest of the operators (CP). Sort the CP roots based on
-			// #Spark operators in ascending order, i.e. execute the independent CP chains first
+			// #Spark operators in ascending order, i.e. execute the independent CP legs first
 			roots.forEach(r -> depthFirst(r, operatorList, sparkOpCount, false));
 			roots.forEach(Lop::resetVisitStatus);
 
@@ -219,6 +221,16 @@ public interface ILinearize {
 		List<Lop> v_bc = ConfigurationManager.isBroadcastEnabled() ? addBroadcastLop(v_pf) : v_pf;
 
 		return v_bc;
+	}
+
+	private static boolean isRoot(Lop lop) {
+		if (lop.getOutputs().isEmpty())
+			return true;
+		if (lop instanceof FunctionCallCP &&
+			((FunctionCallCP) lop).getFnamespace().equalsIgnoreCase(DMLProgram.INTERNAL_NAMESPACE)) {
+			return true;
+		}
+		return false;
 	}
 
 	// Gather the Spark operators which return intermediates to local (actions/single_block)
@@ -258,9 +270,11 @@ public interface ILinearize {
 			return;
 
 		for (Lop input : root.getInputs())
-			collectPersistableSparkOps(input, operatorJobCount);
+			if (root.getBroadcastInput() != input)
+				collectPersistableSparkOps(input, operatorJobCount);
 
 		// Increment the job counter if this node benefits from persisting
+		// and reachable from multiple job roots
 		if (isPersistableSparkOp(root))
 			operatorJobCount.merge(root.getID(), 1, Integer::sum);
 
@@ -296,7 +310,16 @@ public interface ILinearize {
 		return lop.isExecSpark() && (lop.getAggType() == SparkAggType.SINGLE_BLOCK
 			|| lop.getDataType() == DataType.SCALAR || lop instanceof MapMultChain
 			|| lop instanceof PickByCount || lop instanceof MMZip || lop instanceof CentralMoment
-			|| lop instanceof CoVariance || lop instanceof MMTSJ || lop.isAllOutputsCP());
+			|| lop instanceof CoVariance || lop instanceof MMTSJ || lop.isAllOutputsCP())
+			|| isCollectForBroadcast(lop);
+	}
+
+	private static boolean isCollectForBroadcast(Lop lop) {
+		boolean isSparkOp = lop.isExecSpark();
+		boolean isBc = lop.getOutputs().stream()
+			.allMatch(out -> (out.getBroadcastInput() == lop));
+		//TODO: Handle Lops with mixed Spark (broadcast) CP consumers
+		return isSparkOp && isBc && (lop.getDataType() == DataType.MATRIX);
 	}
 
 	// Dictionary of Spark operators which are expensive enough to be
@@ -432,7 +455,8 @@ public interface ILinearize {
 					|| (out instanceof GroupedAggregateM)));
 		//TODO: support non-matrix outputs
 		return transformOP && !hasParameterizedOut
-				&& lop.isAllOutputsCP() && lop.getDataType() == DataType.MATRIX;
+				&& (lop.isAllOutputsCP() || isCollectForBroadcast(lop))
+				&& lop.getDataType() == DataType.MATRIX;
 	}
 
 	private static boolean isBroadcastNeeded(Lop lop) {

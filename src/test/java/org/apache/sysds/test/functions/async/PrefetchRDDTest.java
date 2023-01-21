@@ -39,7 +39,7 @@ public class PrefetchRDDTest extends AutomatedTestBase {
 	
 	protected static final String TEST_DIR = "functions/async/";
 	protected static final String TEST_NAME = "PrefetchRDD";
-	protected static final int TEST_VARIANTS = 3;
+	protected static final int TEST_VARIANTS = 4;
 	protected static String TEST_CLASS_DIR = TEST_DIR + PrefetchRDDTest.class.getSimpleName() + "/";
 	
 	@Override
@@ -66,10 +66,14 @@ public class PrefetchRDDTest extends AutomatedTestBase {
 		//SP binary consumer, followed by an action. No Prefetch.
 		runTest(TEST_NAME+"3");
 	}
-	
+
+	@Test
+	public void testAsyncSparkOPs4() {
+		//SP consumer. Collect to broadcast to the SP consumer. Prefetch.
+		runTest(TEST_NAME+"4");
+	}
+
 	public void runTest(String testname) {
-		boolean old_simplification = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
-		boolean old_sum_product = OptimizerUtils.ALLOW_SUM_PRODUCT_REWRITES;
 		boolean old_trans_exec_type = OptimizerUtils.ALLOW_TRANSITIVE_SPARK_EXEC_TYPE;
 		ExecMode oldPlatform = setExecMode(ExecMode.HYBRID);
 		
@@ -78,8 +82,6 @@ public class PrefetchRDDTest extends AutomatedTestBase {
 		InfrastructureAnalyzer.setLocalMaxMemory(mem);
 		
 		try {
-			//OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = false;
-			//OptimizerUtils.ALLOW_SUM_PRODUCT_REWRITES = false;
 			OptimizerUtils.ALLOW_TRANSITIVE_SPARK_EXEC_TYPE = false;
 			getAndLoadTestConfiguration(testname);
 			fullDMLScriptName = getScript();
@@ -114,8 +116,6 @@ public class PrefetchRDDTest extends AutomatedTestBase {
 			//long successPF = SparkStatistics.getAsyncPrefetchCount();
 			//Assert.assertTrue("Violated successful Prefetch count: "+successPF, successPF == expected_successPF);
 		} finally {
-			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = old_simplification;
-			OptimizerUtils.ALLOW_SUM_PRODUCT_REWRITES = old_sum_product;
 			OptimizerUtils.ALLOW_TRANSITIVE_SPARK_EXEC_TYPE = old_trans_exec_type;
 			resetExecMode(oldPlatform);
 			InfrastructureAnalyzer.setLocalMaxMemory(oldmem);

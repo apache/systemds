@@ -114,12 +114,15 @@ public class FloatArray extends Array<Float> {
 	}
 
 	@Override
-	public FloatArray append(Array<Float> other) {
+	public Array<Float> append(Array<Float> other) {
 		final int endSize = this._size + other.size();
 		final float[] ret = new float[endSize];
 		System.arraycopy(_data, 0, ret, 0, this._size);
 		System.arraycopy((float[]) other.get(), 0, ret, this._size, other.size());
-		return new FloatArray(ret);
+		if(other instanceof OptionalArray)
+			return OptionalArray.appendOther((OptionalArray<Float>) other, new FloatArray(ret));
+		else
+			return new FloatArray(ret);
 	}
 
 	@Override
@@ -280,7 +283,7 @@ public class FloatArray extends Array<Float> {
 	}
 
 	public static float parseFloat(String value) {
-		if(value == null)
+		if(value == null || value.isEmpty())
 			return 0.0f;
 		else
 			return Float.parseFloat(value);
@@ -294,7 +297,7 @@ public class FloatArray extends Array<Float> {
 	@Override
 	public boolean isEmpty() {
 		for(int i = 0; i < _data.length; i++)
-			if(_data[i] != 0.0 || Float.isNaN(_data[i]))
+			if(isNotEmpty(i))
 				return false;
 		return true;
 	}
@@ -326,11 +329,9 @@ public class FloatArray extends Array<Float> {
 	public String toString() {
 		StringBuilder sb = new StringBuilder(_data.length * 5 + 2);
 		sb.append(super.toString() + ":[");
-		if(_size > 0) {
-			for(int i = 0; i < _size - 1; i++)
-				sb.append(_data[i] + ",");
-			sb.append(_data[_size - 1]);
-		}
+		for(int i = 0; i < _size - 1; i++)
+			sb.append(_data[i] + ",");
+		sb.append(_data[_size - 1]);
 		sb.append("]");
 		return sb.toString();
 	}

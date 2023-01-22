@@ -108,20 +108,20 @@ public interface ArrayFactory {
 		switch(v) {
 			case BOOLEAN:
 				if(nRow > bitSetSwitchPoint)
-					return new OptionalArray<>(new BitSetArray(nRow));
+					return new OptionalArray<>(new BitSetArray(nRow), true);
 				else
-					return new OptionalArray<>(new BooleanArray(new boolean[nRow]));
+					return new OptionalArray<>(new BooleanArray(new boolean[nRow]), true);
 			case UINT8:
 			case INT32:
-				return new OptionalArray<>(new IntegerArray(new int[nRow]));
+				return new OptionalArray<>(new IntegerArray(new int[nRow]), true);
 			case INT64:
-				return new OptionalArray<>(new LongArray(new long[nRow]));
+				return new OptionalArray<>(new LongArray(new long[nRow]), true);
 			case FP32:
-				return new OptionalArray<>(new FloatArray(new float[nRow]));
+				return new OptionalArray<>(new FloatArray(new float[nRow]), true);
 			case FP64:
-				return new OptionalArray<>(new DoubleArray(new double[nRow]));
+				return new OptionalArray<>(new DoubleArray(new double[nRow]), true);
 			case CHARACTER:
-				return new OptionalArray<>(new CharArray(new char[nRow]));
+				return new OptionalArray<>(new CharArray(new char[nRow]), true);
 			case UNKNOWN:
 			case STRING:
 			default:
@@ -129,13 +129,17 @@ public interface ArrayFactory {
 		}
 	}
 
+	public static ABooleanArray allocateBoolean(int nRow) {
+		if(nRow > bitSetSwitchPoint)
+			return new BitSetArray(nRow);
+		else
+			return new BooleanArray(new boolean[nRow]);
+	}
+
 	public static Array<?> allocate(ValueType v, int nRow) {
 		switch(v) {
 			case BOOLEAN:
-				if(nRow > bitSetSwitchPoint)
-					return new BitSetArray(nRow);
-				else
-					return new BooleanArray(new boolean[nRow]);
+				return allocateBoolean(nRow);
 			case UINT8:
 			case INT32:
 				return new IntegerArray(new int[nRow]);
@@ -230,8 +234,12 @@ public interface ArrayFactory {
 				target = allocateOptional(src.getValueType(), rlen);
 			else
 				target = allocate(src.getValueType(), rlen);
-
 		}
+		else if(target.getFrameArrayType() != FrameArrayType.OPTIONAL //
+			&& src.getFrameArrayType() == FrameArrayType.OPTIONAL) {
+			target = new OptionalArray<>(target, false);
+		}
+
 		final ValueType ta = target.getValueType();
 		final ValueType tb = src.getValueType();
 		final ValueType tc = ValueType.getHighestCommonType(ta, tb);

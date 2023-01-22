@@ -35,8 +35,11 @@ import org.apache.sysds.runtime.frame.data.columns.ArrayFactory;
 import org.apache.sysds.runtime.frame.data.columns.BitSetArray;
 import org.apache.sysds.runtime.frame.data.columns.BooleanArray;
 import org.apache.sysds.runtime.frame.data.columns.CharArray;
+import org.apache.sysds.runtime.frame.data.columns.DoubleArray;
+import org.apache.sysds.runtime.frame.data.columns.FloatArray;
 import org.apache.sysds.runtime.frame.data.columns.IntegerArray;
 import org.apache.sysds.runtime.frame.data.columns.LongArray;
+import org.apache.sysds.runtime.frame.data.columns.OptionalArray;
 import org.apache.sysds.runtime.frame.data.columns.StringArray;
 import org.apache.sysds.runtime.matrix.data.Pair;
 import org.junit.Test;
@@ -96,12 +99,75 @@ public class CustomArrayTests {
 	}
 
 	@Test
-	public void changeTypeBoolean() {
+	public void changeTypeBoolean1() {
 		StringArray a = ArrayFactory.create(new String[] {"1", "0", "0"});
 		BooleanArray ai = (BooleanArray) a.changeType(ValueType.BOOLEAN);
 		assertTrue(ai.get(0));
 		assertTrue(!ai.get(1));
 		assertTrue(!ai.get(2));
+	}
+
+	@Test
+	public void changeTypeBoolean2() {
+		StringArray a = ArrayFactory.create(new String[] {"1.0", "0.0", "0.0"});
+		BooleanArray ai = (BooleanArray) a.changeType(ValueType.BOOLEAN);
+		assertTrue(ai.get(0));
+		assertTrue(!ai.get(1));
+		assertTrue(!ai.get(2));
+	}
+
+	@Test
+	public void changeTypeBoolean3() {
+		StringArray a = ArrayFactory.create(new String[] {"1", null, "0"});
+		BooleanArray ai = (BooleanArray) a.changeType(ValueType.BOOLEAN);
+		assertTrue(ai.get(0));
+		assertTrue(!ai.get(1));
+		assertTrue(!ai.get(2));
+	}
+
+	@Test
+	public void changeTypeBoolean4() {
+		StringArray a = ArrayFactory.create(new String[] {"1.0", null, "0.0"});
+		BooleanArray ai = (BooleanArray) a.changeType(ValueType.BOOLEAN);
+		assertTrue(ai.get(0));
+		assertTrue(!ai.get(1));
+		assertTrue(!ai.get(2));
+	}
+
+	@Test
+	public void changeTypeBoolean5() {
+		StringArray a = ArrayFactory.create(new String[] {"t", null, "f"});
+		BooleanArray ai = (BooleanArray) a.changeType(ValueType.BOOLEAN);
+		assertTrue(ai.get(0));
+		assertTrue(!ai.get(1));
+		assertTrue(!ai.get(2));
+	}
+
+	@Test
+	public void changeTypeBoolean6() {
+		StringArray a = ArrayFactory.create(new String[] {"true", null, "false"});
+		BooleanArray ai = (BooleanArray) a.changeType(ValueType.BOOLEAN);
+		assertTrue(ai.get(0));
+		assertTrue(!ai.get(1));
+		assertTrue(!ai.get(2));
+	}
+
+	@Test
+	public void changeTypeBoolean7() {
+		StringArray a = ArrayFactory.create(new String[] {"True", null, "False"});
+		BooleanArray ai = (BooleanArray) a.changeType(ValueType.BOOLEAN);
+		assertTrue(ai.get(0));
+		assertTrue(!ai.get(1));
+		assertTrue(!ai.get(2));
+	}
+
+	@Test
+	public void changeTypeBoolean8() {
+		StringArray a = ArrayFactory.create(new String[] {"0.0", null, "1.0"});
+		BooleanArray ai = (BooleanArray) a.changeType(ValueType.BOOLEAN);
+		assertTrue(!ai.get(0));
+		assertTrue(!ai.get(1));
+		assertTrue(ai.get(2));
 	}
 
 	@Test
@@ -207,6 +273,105 @@ public class CustomArrayTests {
 		StringArray a = ArrayFactory.create(new String[] {"1", "2", null, "3"});
 		ValueType t = a.analyzeValueType().getKey();
 		assertEquals(ValueType.INT32, t);
+	}
+
+	@Test
+	public void analyzeValueTypeFromString() {
+		StringArray a = ArrayFactory.create(new String[] {"1.1", "1.2", "1.232132512451241", "3"});
+		ValueType t = a.analyzeValueType().getKey();
+		assertEquals(ValueType.FP64, t);
+	}
+
+	@Test
+	public void analyzeValueTypeFromString2() {
+		StringArray a = ArrayFactory.create(new String[] {"1", "2", "3", "30000000000"});
+		ValueType t = a.analyzeValueType().getKey();
+		assertEquals(ValueType.INT64, t);
+	}
+
+	@Test
+	public void analyzeValueTypeFromString3() {
+		StringArray a = ArrayFactory.create(new String[] {"1", "2", "3", "30000000000", "321321324215.213215"});
+		ValueType t = a.analyzeValueType().getKey();
+		assertEquals(ValueType.FP64, t);
+	}
+
+	@Test
+	public void analyzeValueTypeFromString4() {
+		StringArray a = ArrayFactory.create(new String[] {"1", "2", "3", "30000000000", "1.5"});
+		ValueType t = a.analyzeValueType().getKey();
+		assertEquals(ValueType.FP32, t);
+	}
+
+	@Test
+	public void analyzeValueTypeDouble() {
+		DoubleArray a = ArrayFactory
+			.create(new double[] {3214161624124214.23214d, 32141521421312.2321d, 32135215213.223d});
+		ValueType t = a.analyzeValueType().getKey();
+		assertEquals(ValueType.FP64, t);
+	}
+
+	@Test
+	public void analyzeValueTypeDouble2() {
+		DoubleArray a = ArrayFactory.create(new double[] {1.0d, 32141521421312.2321d, 32135215213.223323d});
+		ValueType t = a.analyzeValueType().getKey();
+		assertEquals(ValueType.FP64, t);
+	}
+
+	@Test
+	public void analyzeValueTypeDouble3() {
+		DoubleArray a = ArrayFactory.create(new double[] {1.0d, 1.1d, 2.2d, 1.0d});
+		ValueType t = a.analyzeValueType().getKey();
+		assertEquals(ValueType.FP32, t);
+	}
+
+	@Test
+	public void analyzeValueTypeDouble4() {
+		DoubleArray a = ArrayFactory.create(new double[] {1.0d, 2.0d, 3.0d, 1.0d});
+		ValueType t = a.analyzeValueType().getKey();
+		assertEquals(ValueType.INT32, t);
+	}
+
+	@Test
+	public void analyzeValueTypeDouble5() {
+		DoubleArray a = ArrayFactory.create(new double[] {10000000000.0d, 20000000000.0d, 30000000000.0d, 1.0d});
+		ValueType t = a.analyzeValueType().getKey();
+		assertEquals(ValueType.INT64, t);
+	}
+
+	@Test
+	public void analyzeValueTypeDouble6() {
+		DoubleArray a = ArrayFactory.create(new double[] {1.0d, 20000000000.0d, 30000000000.0d, 1.0d});
+		ValueType t = a.analyzeValueType().getKey();
+		assertEquals(ValueType.INT64, t);
+	}
+
+	@Test
+	public void analyzeValueTypeDouble7() {
+		DoubleArray a = ArrayFactory.create(new double[] {1.0d, 0.0d, 1.0d});
+		ValueType t = a.analyzeValueType().getKey();
+		assertEquals(ValueType.BOOLEAN, t);
+	}
+
+	@Test
+	public void analyzeValueTypeDouble8() {
+		DoubleArray a = ArrayFactory.create(new double[] {1.0d, 1.1321321312512312d, 2.2d, 1.0d});
+		ValueType t = a.analyzeValueType().getKey();
+		assertEquals(ValueType.FP64, t);
+	}
+
+	@Test
+	public void analyzeValueTypeDouble9() {
+		DoubleArray a = ArrayFactory.create(new double[] {1.1d, 1.1321321312512312d, 2.2d, 1.0d});
+		ValueType t = a.analyzeValueType().getKey();
+		assertEquals(ValueType.FP64, t);
+	}
+
+	@Test
+	public void analyzeValueTypeDouble10() {
+		DoubleArray a = ArrayFactory.create(new double[] {10.d, 1.1d, 2.2d, 1.0d});
+		ValueType t = a.analyzeValueType().getKey();
+		assertEquals(ValueType.FP32, t);
 	}
 
 	@Test
@@ -616,5 +781,203 @@ public class CustomArrayTests {
 		Array<String> c = ArrayFactory.append(a, b);
 		for(int i = 0; i < c.size(); i++)
 			assertEquals(i + 1, Integer.parseInt(c.get(i)));
+	}
+
+	@Test
+	public void testSetRange_1() {
+		Array<Integer> a = new IntegerArray(new int[] {1, 2, 3});
+		Array<Long> b = new LongArray(new long[] {55L});
+		Array<Long> c = ArrayFactory.set(a, b, 2, 2, 3);
+		assertEquals(c.get(0), Long.valueOf(1L));
+		assertEquals(c.get(1), Long.valueOf(2L));
+		assertEquals(c.get(2), Long.valueOf(55L));
+		assertEquals(c.size(), 3);
+	}
+
+	@Test
+	public void testSetRange_2() {
+		Array<Integer> a = new IntegerArray(new int[] {1, 2, 3, 4});
+		Array<Long> b = new LongArray(new long[] {55L});
+		Array<Long> c = ArrayFactory.set(a, b, 2, 2, 3);
+		assertEquals(c.get(0), Long.valueOf(1L));
+		assertEquals(c.get(1), Long.valueOf(2L));
+		assertEquals(c.get(2), Long.valueOf(55L));
+		assertEquals(c.get(3), Long.valueOf(4L));
+		assertEquals(c.size(), 4);
+	}
+
+	@Test
+	public void testSetRange_nullIn() {
+		Array<Integer> a = null;
+		Array<Long> b = new LongArray(new long[] {55L});
+		Array<Long> c = ArrayFactory.set(a, b, 2, 2, 4);
+		assertEquals(c.get(0), Long.valueOf(0L));
+		assertEquals(c.get(1), Long.valueOf(0L));
+		assertEquals(c.get(2), Long.valueOf(55L));
+		assertEquals(c.get(3), Long.valueOf(0L));
+		assertEquals(c.size(), 4);
+	}
+
+	@Test
+	public void testSetOptional_nulInn() {
+		Array<Integer> a = null;
+		Array<Long> b = new OptionalArray<>(new LongArray(new long[] {55L}), false);
+		Array<Long> c = ArrayFactory.set(a, b, 2, 2, 4);
+		assertEquals(c.get(0), null);
+		assertEquals(c.get(1), null);
+		assertEquals(c.get(2), Long.valueOf(55L));
+		assertEquals(c.get(3), null);
+		assertEquals(c.size(), 4);
+	}
+
+	@Test
+	public void testSetBChangeType() {
+		Array<Long> a = new LongArray(new long[] {1, 2, 3, 4});
+		Array<Integer> b = new IntegerArray(new int[] {55});
+		Array<Long> c = ArrayFactory.set(a, b, 2, 2, 4);
+		assertEquals(c.get(0), Long.valueOf(1));
+		assertEquals(c.get(1), Long.valueOf(2));
+		assertEquals(c.get(2), Long.valueOf(55L));
+		assertEquals(c.get(3), Long.valueOf(4));
+		assertEquals(c.size(), 4);
+	}
+
+	@Test
+	public void testSetOptionalB() {
+		try {
+			Array<Long> a = new LongArray(new long[] {1, 2, 3, 4});
+			Array<Integer> b = new OptionalArray<>(new IntegerArray(new int[] {132}),
+				new BooleanArray(new boolean[] {false}));
+			Array<Long> c = ArrayFactory.set(a, b, 2, 2, 4);
+			assertEquals(c.get(0), Long.valueOf(1));
+			assertEquals(c.get(1), Long.valueOf(2));
+			assertEquals(c.get(2), null);
+			assertEquals(c.get(3), Long.valueOf(4));
+			assertEquals(c.size(), 4);
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
+	}
+
+	@Test
+	public void testSetOptionalEmptyB() {
+		Array<Long> a = new OptionalArray<>(new LongArray(new long[] {1, 2, 3, 4}), true);
+		Array<Integer> b = new OptionalArray<>(new IntegerArray(new int[] {132}), false);
+		Array<Long> c = ArrayFactory.set(a, b, 2, 2, 4);
+		assertEquals(c.get(0), null);
+		assertEquals(c.get(1), null);
+		assertEquals(c.get(2), Long.valueOf(132));
+		assertEquals(c.get(3), null);
+		assertEquals(c.size(), 4);
+	}
+
+	@Test
+	public void isEmpty() {
+		for(ValueType t : ValueType.values())
+			assertTrue(ArrayFactory.allocate(t, 10).isEmpty());
+	}
+
+	@Test
+	public void isNotEmpty() {
+		for(ValueType t : ValueType.values())
+			assertFalse(ArrayFactory.allocate(t, 10, "1").isEmpty());
+	}
+
+	@Test
+	public void isEmptyOptional() {
+		assertTrue(new OptionalArray<>(ArrayFactory.allocate(ValueType.INT32, 10, "1"), true).isEmpty());
+	}
+
+	@Test
+	public void isEmptyOptionalFull() {
+		assertFalse(new OptionalArray<>(ArrayFactory.allocate(ValueType.INT32, 10), false).isEmpty());
+	}
+
+	@Test
+	public void isEmptyOptionalBig() {
+		assertTrue(new OptionalArray<>(ArrayFactory.allocate(ValueType.INT32, 200, "1"), true).isEmpty());
+	}
+
+	@Test
+	public void isEmptyOptionalFullBig() {
+		assertFalse(new OptionalArray<>(ArrayFactory.allocate(ValueType.INT32, 200), false).isEmpty());
+	}
+
+	@Test
+	public void allocateOptional() {
+		for(ValueType t : ValueType.values()) {
+			Array<?> a = ArrayFactory.allocateOptional(t, 10);
+			for(int i = 0; i < a.size(); i++) {
+				assertEquals(null, a.get(i));
+			}
+		}
+	}
+
+	@Test
+	public void allocateOptionalLarge() {
+		for(ValueType t : ValueType.values()) {
+			Array<?> a = ArrayFactory.allocateOptional(t, 66);
+			for(int i = 0; i < a.size(); i++) {
+				assertEquals(null, a.get(i));
+			}
+		}
+	}
+
+	@Test
+	public void setNzBooleanDifferentTypesIntoBooleanArray() {
+		BitSetArray a = new BitSetArray(new boolean[] {false, false, false, true, false});
+		BooleanArray b = new BooleanArray(new boolean[] {true, true, false, false, false});
+
+		b.setNz(a);
+		assertTrue(b.get(0));
+		assertTrue(b.get(1));
+		assertFalse(b.get(2));
+		assertTrue(b.get(3));
+		assertFalse(b.get(4));
+	}
+
+	@Test
+	public void setNzBooleanDifferentTypesIntoBitSetArray() {
+		BooleanArray a = new BooleanArray(new boolean[] {false, false, false, true, false});
+		BitSetArray b = new BitSetArray(new boolean[] {true, true, false, false, false});
+
+		b.setNz(a);
+		assertTrue(b.get(0));
+		assertTrue(b.get(1));
+		assertFalse(b.get(2));
+		assertTrue(b.get(3));
+		assertFalse(b.get(4));
+	}
+
+	@Test
+	public void parseDoubleEmpty(){
+		assertEquals(0.0, DoubleArray.parseDouble(""), 0.0);
+	}
+
+	@Test
+	public void parseFloatEmpty(){
+		assertEquals(0.0, FloatArray.parseFloat(""), 0.0);
+	}
+
+	@Test
+	public void parseIntegerEmpty(){
+		assertEquals(0, IntegerArray.parseInt(""));
+	}
+
+	@Test
+	public void parseLongEmpty(){
+		assertEquals(0, LongArray.parseLong(""));
+	}
+
+	@Test
+	public void parseBooleanEmpty(){
+		assertEquals(false, BooleanArray.parseBoolean(""));
+	}
+
+	@Test
+	public void parseBooleanT(){
+		assertEquals(true, BooleanArray.parseBoolean("t"));
 	}
 }

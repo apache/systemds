@@ -26,20 +26,14 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Arrays;
 
-import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.frame.data.columns.ArrayFactory.FrameArrayType;
 import org.apache.sysds.runtime.matrix.data.Pair;
 import org.apache.sysds.runtime.util.UtilFunctions;
 import org.apache.sysds.utils.MemoryEstimates;
 
-public class BooleanArray extends Array<Boolean> {
+public class BooleanArray extends ABooleanArray {
 	protected boolean[] _data;
-
-	private BooleanArray(int size) {
-		super(size);
-		_data = new boolean[size];
-	}
 
 	public BooleanArray(boolean[] data) {
 		super(data.length);
@@ -85,7 +79,7 @@ public class BooleanArray extends Array<Boolean> {
 	@Override
 	public void set(int rl, int ru, Array<Boolean> value, int rlSrc) {
 		if(value instanceof BooleanArray)
-			System.arraycopy(((BooleanArray) value)._data, rlSrc, _data, rl, ru - rl + 1);
+			System.arraycopy((boolean[]) value.get(), rlSrc, _data, rl, ru - rl + 1);
 		else
 			for(int i = rl, off = rlSrc; i <= ru; i++, off++)
 				_data[i] = value.get(off);
@@ -133,16 +127,14 @@ public class BooleanArray extends Array<Boolean> {
 	@Override
 	public Array<Boolean> append(Array<Boolean> other) {
 		final int endSize = this._size + other.size();
-		if(other instanceof BooleanArray && endSize < ArrayFactory.bitSetSwitchPoint) {
-			final boolean[] ret = new boolean[endSize];
-			System.arraycopy(_data, 0, ret, 0, this._size);
-			System.arraycopy((boolean[]) other.get(), 0, ret, this._size, other.size());
-			return new BooleanArray(ret);
+		final ABooleanArray retBS = ArrayFactory.allocateBoolean(endSize);
+		retBS.set(0, this._size - 1, this);
+		if(other instanceof OptionalArray) {
+			retBS.set(this._size, endSize - 1, ((OptionalArray<Boolean>) other)._a);
+			return OptionalArray.appendOther((OptionalArray<Boolean>) other, retBS);
 		}
 		else {
-			final BooleanArray retBS = new BooleanArray(endSize);
-			retBS.set(0, this._size - 1, this, 0);
-			retBS.set(this._size, endSize - 1, other, 0);
+			retBS.set(this._size, endSize - 1, other);
 			return retBS;
 		}
 	}
@@ -162,12 +154,12 @@ public class BooleanArray extends Array<Boolean> {
 	}
 
 	@Override
-	public Array<Boolean> clone() {
+	public ABooleanArray clone() {
 		return new BooleanArray(Arrays.copyOf(_data, _size));
 	}
 
 	@Override
-	public Array<Boolean> slice(int rl, int ru) {
+	public ABooleanArray slice(int rl, int ru) {
 		return new BooleanArray(Arrays.copyOfRange(_data, rl, ru));
 	}
 
@@ -223,12 +215,12 @@ public class BooleanArray extends Array<Boolean> {
 	}
 
 	@Override
-	protected Array<Boolean> changeTypeBitSet() {
+	protected ABooleanArray changeTypeBitSet() {
 		return new BitSetArray(_data);
 	}
 
 	@Override
-	protected Array<Boolean> changeTypeBoolean() {
+	protected ABooleanArray changeTypeBoolean() {
 		return this;
 	}
 
@@ -309,7 +301,15 @@ public class BooleanArray extends Array<Boolean> {
 	}
 
 	@Override
-	public Array<Boolean> select(int[] indices) {
+	public boolean isAllTrue() {
+		for(int i = 0; i < _data.length; i++)
+			if(!_data[i])
+				return false;
+		return true;
+	}
+
+	@Override
+	public ABooleanArray select(int[] indices) {
 		final boolean[] ret = new boolean[indices.length];
 		for(int i = 0; i < indices.length; i++)
 			ret[i] = _data[indices[i]];
@@ -317,7 +317,7 @@ public class BooleanArray extends Array<Boolean> {
 	}
 
 	@Override
-	public Array<Boolean> select(boolean[] select, int nTrue) {
+	public ABooleanArray select(boolean[] select, int nTrue) {
 		final boolean[] ret = new boolean[nTrue];
 		int k = 0;
 		for(int i = 0; i < select.length; i++)
@@ -331,25 +331,19 @@ public class BooleanArray extends Array<Boolean> {
 		return _data[i];
 	}
 
-	@Override 
-	public void findEmptyInverse(boolean[] select){
-		throw new NotImplementedException();
-
-	}
-
 	public static boolean parseBoolean(String value) {
-		return value != null && (Boolean.parseBoolean(value) || value.equals("1") || value.equals("1.0"));
+		return value != null && //
+			!value.isEmpty() && //
+			(Boolean.parseBoolean(value) || value.equals("1") || value.equals("1.0") || value.equals("t"));
 	}
 
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder(_data.length * 2 + 10);
 		sb.append(super.toString() + ":[");
-		if(_size > 0) {
-			for(int i = 0; i < _size - 1; i++)
-				sb.append((_data[i] ? 1 : 0) + ",");
-			sb.append(_data[_size - 1] ? 1 : 0);
-		}
+		for(int i = 0; i < _size - 1; i++)
+			sb.append((_data[i] ? 1 : 0) + ",");
+		sb.append(_data[_size - 1] ? 1 : 0);
 		sb.append("]");
 		return sb.toString();
 	}

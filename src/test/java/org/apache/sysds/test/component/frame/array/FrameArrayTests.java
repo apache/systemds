@@ -43,7 +43,15 @@ import org.apache.sysds.runtime.frame.data.columns.ArrayFactory;
 import org.apache.sysds.runtime.frame.data.columns.ArrayFactory.FrameArrayType;
 import org.apache.sysds.runtime.frame.data.columns.BitSetArray;
 import org.apache.sysds.runtime.frame.data.columns.BooleanArray;
+import org.apache.sysds.runtime.frame.data.columns.CharArray;
+import org.apache.sysds.runtime.frame.data.columns.DoubleArray;
+import org.apache.sysds.runtime.frame.data.columns.FloatArray;
+import org.apache.sysds.runtime.frame.data.columns.IntegerArray;
+import org.apache.sysds.runtime.frame.data.columns.LongArray;
+import org.apache.sysds.runtime.frame.data.columns.OptionalArray;
 import org.apache.sysds.runtime.frame.data.columns.StringArray;
+import org.apache.sysds.runtime.frame.data.lib.FrameLibRemoveEmpty;
+import org.apache.sysds.runtime.matrix.data.Pair;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -71,6 +79,14 @@ public class FrameArrayTests {
 					tests.add(new Object[] {create(t, 124, s), t});
 					tests.add(new Object[] {create(t, 130, s), t});
 					tests.add(new Object[] {create(t, 200, s), t});
+					if(t != FrameArrayType.STRING) {
+						tests.add(new Object[] {createOptional(t, 13, s), FrameArrayType.OPTIONAL});
+						tests.add(new Object[] {createOptional(t, 321, s), FrameArrayType.OPTIONAL});
+					}
+					else {
+						tests.add(new Object[] {createOptional(t, 13, s), FrameArrayType.STRING});
+						tests.add(new Object[] {createOptional(t, 312, s), FrameArrayType.STRING});
+					}
 				}
 			}
 			// Booleans
@@ -98,11 +114,20 @@ public class FrameArrayTests {
 			tests.add(new Object[] {ArrayFactory.create(generateRandomTFString(150, 221)), FrameArrayType.STRING});
 			tests.add(new Object[] {ArrayFactory.create(generateRandomTFString(22, 2)), FrameArrayType.STRING});
 			tests.add(new Object[] {ArrayFactory.create(generateRandomTFString(142, 4)), FrameArrayType.STRING});
+			tests.add(new Object[] {ArrayFactory.create(generateRandomDouble01(90, 32)), FrameArrayType.FP64});
+			tests.add(new Object[] {ArrayFactory.create(generateRandomFloat01(90, 14)), FrameArrayType.FP32});
+			tests.add(new Object[] {ArrayFactory.create(generateRandomInteger01(90, 55)), FrameArrayType.INT32});
+			tests.add(new Object[] {ArrayFactory.create(generateRandomLong01(90, 55)), FrameArrayType.INT64});
+			tests.add(new Object[] {ArrayFactory.create(generateRandomNullZeroString(33, 21)), FrameArrayType.STRING});
+			tests.add(new Object[] {ArrayFactory.create(generateRandomNullZeroString(67, 21)), FrameArrayType.STRING});
+			tests.add(new Object[] {ArrayFactory.create(generateRandomNullFloatString(67, 21)), FrameArrayType.STRING});
+			tests.add(new Object[] {ArrayFactory.create(new String[30]), FrameArrayType.STRING}); // all null
 
 			tests.add(new Object[] {ArrayFactory.create(new char[] {0, 0, 0, 0, 1, 1, 1}), FrameArrayType.CHARACTER});
 			tests.add(new Object[] {ArrayFactory.create(new char[] {'t', 't', 'f', 'f', 'T'}), FrameArrayType.CHARACTER});
 			tests.add(new Object[] {ArrayFactory.create(new char[] {'0', '2', '3', '4', '9'}), FrameArrayType.CHARACTER});
 			tests.add(new Object[] {ArrayFactory.create(generateRandom01chars(150, 221)), FrameArrayType.CHARACTER});
+			tests.add(new Object[] {ArrayFactory.create(generateRandom01chars(67, 221)), FrameArrayType.CHARACTER});
 			// Long to int
 			tests.add(new Object[] {ArrayFactory.create(new long[] {3214, 424, 13, 22, 111, 134}), FrameArrayType.INT64});
 
@@ -111,7 +136,7 @@ public class FrameArrayTests {
 			tests.add(new Object[] {ArrayFactory.create(new float[] {//
 				Float.NaN, 424, 13, Float.NEGATIVE_INFINITY, Float.POSITIVE_INFINITY, 134}), FrameArrayType.FP32});
 
-			}
+		}
 		catch(Exception e) {
 			e.printStackTrace();
 			fail("failed constructing tests");
@@ -427,6 +452,7 @@ public class FrameArrayTests {
 	@Test
 	@SuppressWarnings("unchecked")
 	public void set() {
+		Array<?> a = this.a.clone();
 		switch(a.getValueType()) {
 			case FP64:
 				Double vd = 1324.42d;
@@ -472,6 +498,7 @@ public class FrameArrayTests {
 	@SuppressWarnings("unchecked")
 	public void setDouble() {
 		Double vd = 1.0d;
+		Array<?> a = this.a.clone();
 		a.set(0, vd);
 		switch(a.getValueType()) {
 			case FP64:
@@ -504,6 +531,7 @@ public class FrameArrayTests {
 	@SuppressWarnings("unchecked")
 	public void setDouble_2() {
 		Double vd = 0.0d;
+		Array<?> a = this.a.clone();
 		a.set(0, vd);
 		switch(a.getValueType()) {
 			case FP64:
@@ -604,6 +632,7 @@ public class FrameArrayTests {
 
 	@Test
 	public void setNull() {
+		Array<?> a = this.a.clone();
 		// should not crash
 		a.set(0, (String) null);
 	}
@@ -960,6 +989,323 @@ public class FrameArrayTests {
 		}
 	}
 
+	@Test
+	public void isShallowSerialize() {
+
+		assertTrue(a.toString(), a.isShallowSerialize());
+	}
+
+	@Test
+	public void emptyInverse() {
+		boolean[] inverse = new boolean[a.size()];
+		a.findEmptyInverse(inverse);
+		boolean[] normal = new boolean[a.size()];
+		a.findEmpty(normal);
+		for(int i = 0; i < a.size(); i++) {
+			assertEquals(normal[i], !inverse[i]);
+		}
+	}
+
+	@Test
+	public void getDouble() {
+		try {
+			for(int i = 0; i < a.size(); i++) {
+				double d = a.getAsDouble(i);
+				if(a.get(i) == null)
+					assertEquals(0.0, d, 0.0);
+			}
+		}
+		catch(Exception e) {
+			if(a.getValueType() != ValueType.STRING) {
+				e.printStackTrace();
+				fail(e.getMessage());
+			}
+		}
+	}
+
+	@Test
+	public void getDoubleNaN() {
+		try {
+			for(int i = 0; i < a.size(); i++) {
+				double d = a.getAsNaNDouble(i);
+				if(a.get(i) == null)
+					assertEquals(Double.NaN, d, 0.0);
+			}
+		}
+		catch(Exception e) {
+			if(a.getValueType() != ValueType.STRING) {
+				e.printStackTrace();
+				fail(e.getMessage());
+			}
+		}
+	}
+
+	@Test
+	@SuppressWarnings("unchecked")
+	public void setNullType() {
+		Array<?> aa = a.clone();
+		switch(aa.getValueType()) {
+			case BOOLEAN:
+				((Array<Boolean>) aa).set(0, (Boolean) null);
+				assertTrue(aa.get(0) == null || aa.get(0).equals(Boolean.valueOf(false)));
+				break;
+			case CHARACTER:
+				((Array<Character>) aa).set(0, (Character) null);
+				assertTrue(aa.get(0) == null || aa.get(0).equals(Character.valueOf((char) 0)));
+				break;
+
+			case FP32:
+				((Array<Float>) aa).set(0, (Float) null);
+				assertTrue(aa.get(0) == null || aa.get(0).equals(Float.valueOf(0.0f)));
+				break;
+			case FP64:
+				((Array<Double>) aa).set(0, (Double) null);
+				assertTrue(aa.get(0) == null || aa.get(0).equals(Double.valueOf(0.0d)));
+				break;
+			case INT32:
+				((Array<Integer>) aa).set(0, (Integer) null);
+				assertTrue(aa.get(0) == null || aa.get(0).equals(Integer.valueOf(0)));
+				break;
+			case INT64:
+				((Array<Long>) aa).set(0, (Long) null);
+				assertTrue(aa.get(0) == null || aa.get(0).equals(Long.valueOf(0)));
+				break;
+			case UINT8:
+				((Array<Integer>) aa).set(0, (Integer) null);
+				assertTrue(aa.get(0) == null || aa.get(0).equals(Integer.valueOf(0)));
+				break;
+			default:
+			case STRING:
+			case UNKNOWN:
+				aa.set(0, (String) null);
+				assertTrue(aa.get(0) == null);
+				break;
+		}
+	}
+
+	@Test
+	@SuppressWarnings("unchecked")
+	public void testAppendArray() {
+		Array<?> aa = a.clone();
+
+		switch(a.getValueType()) {
+			case BOOLEAN:
+				aa = ((Array<Boolean>) aa).append(new BooleanArray(new boolean[10]));
+				assertEquals(aa.size(), a.size() + 10);
+				for(int i = 0; i < 10; i++)
+					assertEquals(aa.get(i + a.size()), false);
+				break;
+			case CHARACTER:
+				aa = ((Array<Character>) aa).append(new CharArray(new char[10]));
+				assertEquals(aa.size(), a.size() + 10);
+				for(int i = 0; i < 10; i++)
+					assertEquals(aa.get(i + a.size()), (char) 0);
+				break;
+			case FP32:
+				aa = ((Array<Float>) aa).append(new FloatArray(new float[10]));
+				assertEquals(aa.size(), a.size() + 10);
+				for(int i = 0; i < 10; i++)
+					assertEquals(aa.get(i + a.size()), 0.0f);
+				break;
+			case FP64:
+				aa = ((Array<Double>) aa).append(new DoubleArray(new double[10]));
+				assertEquals(aa.size(), a.size() + 10);
+				for(int i = 0; i < 10; i++)
+					assertEquals(aa.get(i + a.size()), 0.0d);
+				break;
+			case UINT8:
+			case INT32:
+				aa = ((Array<Integer>) aa).append(new IntegerArray(new int[10]));
+				assertEquals(aa.size(), a.size() + 10);
+				for(int i = 0; i < 10; i++)
+					assertEquals(aa.get(i + a.size()), 0);
+				break;
+			case INT64:
+				aa = ((Array<Long>) aa).append(new LongArray(new long[10]));
+				assertEquals(aa.size(), a.size() + 10);
+				for(int i = 0; i < 10; i++)
+					assertEquals(aa.get(i + a.size()), 0L);
+				break;
+			case STRING:
+				aa = ((Array<String>) aa).append(new StringArray(new String[10]));
+				assertEquals(aa.size(), a.size() + 10);
+				for(int i = 0; i < 10; i++)
+					assertEquals(aa.get(i + a.size()), null);
+				break;
+			case UNKNOWN:
+			default:
+				throw new NotImplementedException("Not supported");
+		}
+
+		for(int i = 0; i < a.size(); i++)
+			assertEquals(a.get(i), aa.get(i));
+
+	}
+
+	@Test
+	@SuppressWarnings("unchecked")
+	public void testAppendValue() {
+		Array<?> aa = a.clone();
+		boolean isOptional = aa instanceof OptionalArray;
+		switch(a.getValueType()) {
+			case BOOLEAN:
+				((Array<Boolean>) aa).append((Boolean) null);
+				assertEquals(aa.size(), a.size() + 1);
+				if(!isOptional)
+					assertEquals(aa.get(a.size()), false);
+				break;
+			case CHARACTER:
+				((Array<Character>) aa).append((Character) null);
+				assertEquals(aa.size(), a.size() + 1);
+				if(!isOptional)
+					assertEquals(aa.get(a.size()), (char) 0);
+				break;
+			case FP32:
+				((Array<Float>) aa).append((Float) null);
+				assertEquals(aa.size(), a.size() + 1);
+				if(!isOptional)
+					assertEquals(aa.get(a.size()), 0.0f);
+				break;
+			case FP64:
+				((Array<Double>) aa).append((Double) null);
+				assertEquals(aa.size(), a.size() + 1);
+				if(!isOptional)
+					assertEquals(aa.get(a.size()), 0.0d);
+				break;
+			case UINT8:
+			case INT32:
+				((Array<Integer>) aa).append((Integer) null);
+				assertEquals(aa.size(), a.size() + 1);
+				if(!isOptional)
+					assertEquals(aa.get(a.size()), 0);
+				break;
+			case INT64:
+				((Array<Long>) aa).append((Long) null);
+				assertEquals(aa.size(), a.size() + 1);
+				if(!isOptional)
+					assertEquals(aa.get(a.size()), 0L);
+				break;
+			case STRING:
+				aa.append((String) null);
+				assertEquals(aa.size(), a.size() + 1);
+				if(!isOptional)
+					assertEquals(aa.get(a.size()), null);
+				break;
+			case UNKNOWN:
+			default:
+				throw new NotImplementedException("Not supported");
+		}
+
+		for(int i = 0; i < a.size(); i++)
+			assertEquals(a.get(i), aa.get(i));
+		if(isOptional)
+
+			assertEquals(aa.get(a.size()), null);
+
+	}
+
+	@Test
+	@SuppressWarnings("unchecked")
+	public void testAppendArrayOptional() {
+		Array<?> aa = a.clone();
+
+		switch(a.getValueType()) {
+			case BOOLEAN:
+				try {
+					aa = ((Array<Boolean>) aa).append(new OptionalArray<>(new Boolean[10]));
+				}
+				catch(Exception e) {
+					e.printStackTrace();
+					fail(e.getMessage());
+				}
+				break;
+			case CHARACTER:
+				aa = ((Array<Character>) aa).append(new OptionalArray<>(new Character[10]));
+				break;
+			case FP32:
+				aa = ((Array<Float>) aa).append(new OptionalArray<>(new Float[10]));
+				break;
+			case FP64:
+				aa = ((Array<Double>) aa).append(new OptionalArray<>(new Double[10]));
+				break;
+			case UINT8:
+			case INT32:
+				aa = ((Array<Integer>) aa).append(new OptionalArray<>(new Integer[10]));
+				break;
+			case INT64:
+				aa = ((Array<Long>) aa).append(new OptionalArray<>(new Long[10]));
+				break;
+			case STRING:
+				return; // not relevant
+			case UNKNOWN:
+			default:
+				throw new NotImplementedException("Not supported");
+		}
+
+		assertEquals(aa.size(), a.size() + 10);
+
+		for(int i = 0; i < a.size(); i++)
+			assertEquals(a.get(i), aa.get(i));
+
+		for(int i = 0; i < 10; i++)
+			assertEquals(null, aa.get(i + a.size()));
+	}
+
+	@Test
+	public void testBooleanSelect() {
+		boolean[] select = generateRandomBoolean(a.size(), 31);
+		int nTrue = FrameLibRemoveEmpty.getNumberTrue(select);
+		if(nTrue > 0) {
+			Array<?> aa = a.select(select, nTrue);
+			assertEquals(nTrue, aa.size());
+			int k = 0;
+			for(int i = 0; i < a.size(); i++) {
+				if(select[i]) {
+					assertEquals(a.get(i), aa.get(k++));
+				}
+			}
+		}
+	}
+
+	@Test(expected = DMLRuntimeException.class)
+	public void testBooleanSelectEmpty() {
+		boolean[] select = new boolean[a.size()];
+		a.select(select, 0);
+	}
+
+	@Test
+	public void testIndexSelect() {
+		int[] select = generateRandomIntegerMax(Math.min(a.size(), 10), a.size(), 31);
+
+		Array<?> aa = a.select(select);
+		assertEquals(select.length, aa.size());
+		for(int i = 0; i < select.length; i++) {
+			assertEquals(a.get(select[i]), aa.get(i));
+		}
+	}
+
+	@Test
+	public void changeTypeWithNulls() {
+		try {
+			Pair<ValueType, Boolean> vtb = a.analyzeValueType();
+			ValueType vt = vtb.getKey();
+			boolean containsNull = vtb.getValue();
+			if(vt != a.getValueType() && containsNull) {
+				Array<?> aa = a.changeTypeWithNulls(vt);
+				for(int i = 0; i < aa.size(); i++) {
+					if(a.get(i) == null) {
+						assertEquals(null, aa.get(i));
+					}
+				}
+			}
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			LOG.error(a);
+			fail(e.getMessage());
+		}
+	}
+
 	protected static void compare(Array<?> a, Array<?> b) {
 		int size = a.size();
 		String err = a.getClass().getSimpleName() + " " + a.getValueType() + " " + b.getClass().getSimpleName() + " "
@@ -1010,6 +1356,46 @@ public class FrameArrayTests {
 		}
 	}
 
+	protected static Array<?> createOptional(FrameArrayType t, int size, int seed) {
+		switch(t) {
+			case STRING:
+				return ArrayFactory.create(generateRandomStringOpt(size, seed));
+			case BITSET:
+				// return ArrayFactory.create(generateRandomBitSet(size, seed), size);
+			case BOOLEAN:
+				return ArrayFactory.create(generateRandomBooleanOpt(size, seed));
+			case INT32:
+				return ArrayFactory.create(generateRandomIntegerOpt(size, seed));
+			case INT64:
+				return ArrayFactory.create(generateRandomLongOpt(size, seed));
+			case FP32:
+				return ArrayFactory.create(generateRandomFloatOpt(size, seed));
+			case FP64:
+				return ArrayFactory.create(generateRandomDoubleOpt(size, seed));
+			case CHARACTER:
+				return ArrayFactory.create(generateRandomCharacterOpt(size, seed));
+			case OPTIONAL:
+				Random r = new Random(seed);
+				switch(r.nextInt(7)) {
+					case 0:
+						return ArrayFactory.create(generateRandomIntegerOpt(size, seed));
+					case 1:
+						return ArrayFactory.create(generateRandomLongOpt(size, seed));
+					case 2:
+						return ArrayFactory.create(generateRandomDoubleOpt(size, seed));
+					case 3:
+						return ArrayFactory.create(generateRandomFloatOpt(size, seed));
+					case 4:
+						return ArrayFactory.create(generateRandomCharacterOpt(size, seed));
+					default:
+						return ArrayFactory.create(generateRandomBooleanOpt(size, seed));
+				}
+			default:
+				throw new DMLRuntimeException("Unsupported value type: " + t);
+
+		}
+	}
+
 	protected static Array<?> create(FrameArrayType t, int size, int seed) {
 		switch(t) {
 			case STRING:
@@ -1046,7 +1432,6 @@ public class FrameArrayTests {
 				}
 			default:
 				throw new DMLRuntimeException("Unsupported value type: " + t);
-
 		}
 	}
 
@@ -1068,11 +1453,40 @@ public class FrameArrayTests {
 		return ret;
 	}
 
+	public static String[] generateRandomStringOpt(int size, int seed) {
+		Random r = new Random(seed);
+		String[] ret = new String[size];
+		for(int i = 0; i < size; i++) {
+			if(r.nextBoolean())
+				ret[i] = r.nextInt(99) + "ad " + r.nextInt(99);
+		}
+		return ret;
+	}
+
 	public static String[] generateRandom01String(int size, int seed) {
 		Random r = new Random(seed);
 		String[] ret = new String[size];
 		for(int i = 0; i < size; i++)
 			ret[i] = r.nextInt(1) + "";
+		return ret;
+	}
+
+	public static String[] generateRandomNullZeroString(int size, int seed) {
+		Random r = new Random(seed);
+		String[] ret = new String[size];
+		for(int i = 0; i < size; i++)
+			ret[i] = r.nextBoolean() ? null : "0";
+
+		return ret;
+	}
+
+	//generateRandomNullFloatString
+	public static String[] generateRandomNullFloatString(int size, int seed) {
+		Random r = new Random(seed);
+		String[] ret = new String[size];
+		for(int i = 0; i < size; i++)
+			ret[i] = r.nextBoolean() ? null : r.nextBoolean() ? "1.0" : "0.0";
+
 		return ret;
 	}
 
@@ -1188,6 +1602,22 @@ public class FrameArrayTests {
 		return ret;
 	}
 
+	protected static int[] generateRandomInteger01(int size, int seed) {
+		Random r = new Random(seed);
+		int[] ret = new int[size];
+		for(int i = 0; i < size; i++)
+			ret[i] = r.nextBoolean() ? 1 : 0;
+		return ret;
+	}
+
+	protected static int[] generateRandomIntegerMax(int size, int max, int seed) {
+		Random r = new Random(seed);
+		int[] ret = new int[size];
+		for(int i = 0; i < size; i++)
+			ret[i] = r.nextInt(max);
+		return ret;
+	}
+
 	protected static char[] generateRandomChar(int size, int seed) {
 		Random r = new Random(seed);
 		char[] ret = new char[size];
@@ -1212,6 +1642,14 @@ public class FrameArrayTests {
 		return ret;
 	}
 
+	protected static long[] generateRandomLong01(int size, int seed) {
+		Random r = new Random(seed);
+		long[] ret = new long[size];
+		for(int i = 0; i < size; i++)
+			ret[i] = r.nextBoolean() ? 1L : 0L;
+		return ret;
+	}
+
 	protected static float[] generateRandomFloat(int size, int seed) {
 		Random r = new Random(seed);
 		float[] ret = new float[size];
@@ -1220,11 +1658,27 @@ public class FrameArrayTests {
 		return ret;
 	}
 
+	protected static float[] generateRandomFloat01(int size, int seed) {
+		Random r = new Random(seed);
+		float[] ret = new float[size];
+		for(int i = 0; i < size; i++)
+			ret[i] = r.nextBoolean() ? 1.0f : 0.0f;
+		return ret;
+	}
+
 	protected static double[] generateRandomDouble(int size, int seed) {
 		Random r = new Random(seed);
 		double[] ret = new double[size];
 		for(int i = 0; i < size; i++)
 			ret[i] = r.nextDouble();
+		return ret;
+	}
+
+	protected static double[] generateRandomDouble01(int size, int seed) {
+		Random r = new Random(seed);
+		double[] ret = new double[size];
+		for(int i = 0; i < size; i++)
+			ret[i] = r.nextBoolean() ? 1.0 : 0.0;
 		return ret;
 	}
 
@@ -1237,4 +1691,5 @@ public class FrameArrayTests {
 
 		return BitSet.valueOf(longs);
 	}
+
 }

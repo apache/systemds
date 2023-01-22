@@ -1199,9 +1199,7 @@ public class FrameArrayTests {
 		for(int i = 0; i < a.size(); i++)
 			assertEquals(a.get(i), aa.get(i));
 		if(isOptional)
-
 			assertEquals(aa.get(a.size()), null);
-
 	}
 
 	@Test
@@ -1249,6 +1247,205 @@ public class FrameArrayTests {
 
 		for(int i = 0; i < 10; i++)
 			assertEquals(null, aa.get(i + a.size()));
+	}
+
+	@Test
+	public void fillNull() {
+		Array<?> aa = a.clone();
+		boolean isOptional = aa instanceof OptionalArray;
+		aa.fill((String) null);
+		switch(a.getValueType()) {
+			case BOOLEAN:
+				if(!isOptional)
+
+					for(int i = 0; i < aa.size(); i++)
+						assertEquals(aa.get(i), false);
+				break;
+			case CHARACTER:
+				if(!isOptional)
+					for(int i = 0; i < aa.size(); i++)
+						assertEquals(aa.get(i), (char) 0);
+				break;
+			case FP32:
+				if(!isOptional)
+					for(int i = 0; i < aa.size(); i++)
+						assertEquals(aa.get(i), 0.0f);
+				break;
+			case FP64:
+				if(!isOptional)
+					for(int i = 0; i < aa.size(); i++)
+						assertEquals(aa.get(i), 0.0d);
+				break;
+			case UINT8:
+			case INT32:
+				if(!isOptional)
+					for(int i = 0; i < aa.size(); i++)
+						assertEquals(aa.get(i), 0);
+				break;
+			case INT64:
+				if(!isOptional)
+					for(int i = 0; i < aa.size(); i++)
+						assertEquals(aa.get(i), 0L);
+				break;
+			case STRING:
+				if(!isOptional)
+					for(int i = 0; i < aa.size(); i++)
+						assertEquals(aa.get(i), null);
+				break;
+			case UNKNOWN:
+			default:
+				throw new NotImplementedException("Not supported");
+		}
+
+		if(isOptional)
+			for(int i = 0; i < aa.size(); i++)
+				assertEquals(aa.get(i), null);
+	}
+
+	@Test
+	public void fill1String() {
+		Array<?> aa = a.clone();
+		// boolean isOptional = aa instanceof OptionalArray;
+		aa.fill("1");
+		switch(a.getValueType()) {
+			case BOOLEAN:
+				for(int i = 0; i < aa.size(); i++)
+					assertEquals(aa.get(i), true);
+				break;
+			case CHARACTER:
+				for(int i = 0; i < aa.size(); i++)
+					assertEquals(aa.get(i), '1');
+				break;
+			case FP32:
+				for(int i = 0; i < aa.size(); i++)
+					assertEquals(aa.get(i), 1.0f);
+				break;
+			case FP64:
+				for(int i = 0; i < aa.size(); i++)
+					assertEquals(aa.get(i), 1.0d);
+				break;
+			case UINT8:
+			case INT32:
+				for(int i = 0; i < aa.size(); i++)
+					assertEquals(aa.get(i), 1);
+				break;
+			case INT64:
+				for(int i = 0; i < aa.size(); i++)
+					assertEquals(aa.get(i), 1L);
+				break;
+			case STRING:
+				for(int i = 0; i < aa.size(); i++)
+					assertEquals(aa.get(i), "1");
+				break;
+			case UNKNOWN:
+			default:
+				throw new NotImplementedException("Not supported");
+		}
+	}
+
+	@Test
+	@SuppressWarnings("unchecked")
+	public void fill1Value() {
+		Array<?> aa = a.clone();
+		switch(a.getValueType()) {
+			case BOOLEAN:
+				((Array<Boolean>) aa).fill(true);
+				for(int i = 0; i < aa.size(); i++)
+					assertEquals(aa.get(i), true);
+				break;
+			case CHARACTER:
+				((Array<Character>) aa).fill('1');
+				for(int i = 0; i < aa.size(); i++)
+					assertEquals(aa.get(i), '1');
+				break;
+			case FP32:
+				((Array<Float>) aa).fill(1.0f);
+				for(int i = 0; i < aa.size(); i++)
+					assertEquals(aa.get(i), 1.0f);
+				break;
+			case FP64:
+				((Array<Double>) aa).fill(1.0d);
+				for(int i = 0; i < aa.size(); i++)
+					assertEquals(aa.get(i), 1.0d);
+				break;
+			case UINT8:
+			case INT32:
+				((Array<Integer>) aa).fill(1);
+				for(int i = 0; i < aa.size(); i++)
+					assertEquals(aa.get(i), 1);
+				break;
+			case INT64:
+				((Array<Long>) aa).fill(1L);
+				for(int i = 0; i < aa.size(); i++)
+					assertEquals(aa.get(i), 1L);
+				break;
+			case STRING:
+				aa.fill("1");
+				for(int i = 0; i < aa.size(); i++)
+					assertEquals(aa.get(i), "1");
+				break;
+			case UNKNOWN:
+			default:
+				throw new NotImplementedException("Not supported");
+		}
+	}
+
+	@Test
+	@SuppressWarnings("unchecked")
+	public void fill1ValueNull() {
+		Array<?> aa = a.clone();
+		boolean isOptional = aa instanceof OptionalArray;
+		switch(a.getValueType()) {
+			case BOOLEAN:
+				((Array<Boolean>) aa).fill((Boolean) null);
+				if(!isOptional)
+					for(int i = 0; i < aa.size(); i++)
+						assertEquals(aa.get(i), false);
+				break;
+			case CHARACTER:
+				((Array<Character>) aa).fill((Character) null);
+				if(!isOptional)
+					for(int i = 0; i < aa.size(); i++)
+						assertEquals((int) aa.get(i), 0);
+				break;
+			case FP32:
+				((Array<Float>) aa).fill((Float) null);
+				if(!isOptional)
+					if(!isOptional)
+						for(int i = 0; i < aa.size(); i++)
+							assertEquals(aa.get(i), 0.0f);
+				break;
+			case FP64:
+				((Array<Double>) aa).fill((Double) null);
+				if(!isOptional)
+					for(int i = 0; i < aa.size(); i++)
+						assertEquals(aa.get(i), 0.0d);
+				break;
+			case UINT8:
+			case INT32:
+				((Array<Integer>) aa).fill((Integer) null);
+				if(!isOptional)
+					for(int i = 0; i < aa.size(); i++)
+						assertEquals(aa.get(i), 0);
+				break;
+			case INT64:
+				((Array<Long>) aa).fill((Long) null);
+				if(!isOptional)
+					for(int i = 0; i < aa.size(); i++)
+						assertEquals(aa.get(i), 0L);
+				break;
+			case STRING:
+				aa.fill((String) null);
+				if(!isOptional)
+					for(int i = 0; i < aa.size(); i++)
+						assertEquals(aa.get(i), null);
+				break;
+			case UNKNOWN:
+			default:
+				throw new NotImplementedException("Not supported");
+		}
+		if(isOptional)
+			assertEquals(aa.get(a.size()), null);
 	}
 
 	@Test
@@ -1480,7 +1677,7 @@ public class FrameArrayTests {
 		return ret;
 	}
 
-	//generateRandomNullFloatString
+	// generateRandomNullFloatString
 	public static String[] generateRandomNullFloatString(int size, int seed) {
 		Random r = new Random(seed);
 		String[] ret = new String[size];

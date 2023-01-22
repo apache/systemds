@@ -952,32 +952,95 @@ public class CustomArrayTests {
 	}
 
 	@Test
-	public void parseDoubleEmpty(){
+	public void parseDoubleEmpty() {
 		assertEquals(0.0, DoubleArray.parseDouble(""), 0.0);
 	}
 
 	@Test
-	public void parseFloatEmpty(){
+	public void parseFloatEmpty() {
 		assertEquals(0.0, FloatArray.parseFloat(""), 0.0);
 	}
 
 	@Test
-	public void parseIntegerEmpty(){
+	public void parseIntegerEmpty() {
 		assertEquals(0, IntegerArray.parseInt(""));
 	}
 
 	@Test
-	public void parseLongEmpty(){
+	public void parseLongEmpty() {
 		assertEquals(0, LongArray.parseLong(""));
 	}
 
 	@Test
-	public void parseBooleanEmpty(){
+	public void parseBooleanEmpty() {
 		assertEquals(false, BooleanArray.parseBoolean(""));
 	}
 
 	@Test
-	public void parseBooleanT(){
+	public void parseBooleanT() {
 		assertEquals(true, BooleanArray.parseBoolean("t"));
+	}
+
+	@Test
+	@SuppressWarnings("unchecked")
+	public void optionalAppendNotNull() {
+		Array<Double> a = (Array<Double>) ArrayFactory.allocateOptional(ValueType.FP64, 10);
+		a.append(64.21d);
+		for(int i = 0; i < 10; i++)
+			assertEquals(null, a.get(i));
+		assertEquals(64.21d, a.get(10), 0.0);
+	}
+
+	@Test
+	@SuppressWarnings("unchecked")
+	public void optionalAppendArrayNotOptional() {
+		Array<Double> a = (Array<Double>) ArrayFactory.allocateOptional(ValueType.FP64, 10);
+		Array<Double> b = new DoubleArray(new double[] {0, 1, 2});
+		a = a.append(b);
+		for(int i = 0; i < 10; i++)
+			assertEquals(null, a.get(i));
+		for(int i = 10; i < 13; i++)
+			assertEquals(i - 10, a.get(i), 0.0);
+	}
+
+	@Test
+	@SuppressWarnings("unchecked")
+	public void optionalSetRange() {
+		Array<Double> a = (Array<Double>) ArrayFactory.allocateOptional(ValueType.FP64, 10);
+		Array<Double> b = new DoubleArray(new double[] {0, 1, 2});
+		a.set(3, 5, b, 0);
+
+		for(int i = 0; i < 3; i++)
+			assertEquals(null, a.get(i));
+		for(int i = 3; i < 6; i++)
+			assertEquals(i - 3, a.get(i), 0.0);
+	}
+
+
+	@Test
+	public void optionalChangeToBoolean() {
+		Array<?> a = new OptionalArray<>(new Double[3]).changeTypeWithNulls(ValueType.BOOLEAN);
+		for(int i = 0; i < a.size(); i++)
+			assertEquals(null, a.get(i));
+	}
+
+	@Test
+	public void optionalChangeToBoolean2() {
+		Array<?> a = new OptionalArray<>(new Double[]{1.0, null, null}).changeTypeWithNulls(ValueType.BOOLEAN);
+		assertEquals(true, a.get(0));
+		for(int i = 1; i < a.size(); i++)
+			assertEquals(null, a.get(i));
+	}
+
+	@Test
+	public void optionalChangeToBoolean3() {
+		Array<?> a = new OptionalArray<>(new Double[67]).changeTypeWithNulls(ValueType.BOOLEAN);
+		a.set(0, "true");
+		a.set(a.size()-1, "true");
+		assertEquals(true, a.get(0));
+		assertEquals(true, a.get(a.size()-1));
+		for(int i = 1; i < a.size()-1; i++)
+			assertEquals(null, a.get(i));
+		
 	}
 }

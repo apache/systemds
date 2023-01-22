@@ -40,7 +40,6 @@ import org.apache.sysds.runtime.frame.data.columns.OptionalArray;
 import org.apache.sysds.runtime.frame.data.columns.StringArray;
 import org.junit.Test;
 
-
 public class NegativeArrayTests {
 
 	@Test
@@ -127,7 +126,6 @@ public class NegativeArrayTests {
 		StringArray a = ArrayFactory.create(s);
 		a.changeType(ValueType.BOOLEAN);
 	}
-
 
 	@Test(expected = DMLRuntimeException.class)
 	public void invalidConstructionBitArrayToSmall() {
@@ -243,4 +241,10 @@ public class NegativeArrayTests {
 	public void parseInt() {
 		IntegerArray.parseInt("notANumber");
 	}
+
+	@Test(expected = NotImplementedException.class)
+	public void optionalChangeToUInt8() {
+		new OptionalArray<>(new Double[3]).changeTypeWithNulls(ValueType.UINT8);
+	}
+
 }

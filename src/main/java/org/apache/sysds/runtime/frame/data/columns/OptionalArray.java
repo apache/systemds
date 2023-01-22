@@ -200,6 +200,10 @@ public class OptionalArray<T> extends Array<T> {
 		Array<Boolean> nulls = value.getNulls();
 		if(nulls != null)
 			_n.set(rl, ru, nulls, rlSrc);
+		else{
+			for(int i = rl; i <= ru; i++)
+				_n.set(i, true);
+		}
 	}
 
 	private static <T> Array<T> getBasic(Array<T> value) {

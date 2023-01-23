@@ -24,10 +24,12 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.util.Arrays;
 
+import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.DictionaryFactory;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.MatrixBlockDictionary;
 import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
 import org.apache.sysds.runtime.compress.colgroup.offset.AIterator;
@@ -56,7 +58,7 @@ import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
  * 
  * This column group is handy in cases where sparse unsafe operations is executed on very sparse columns.
  */
-public class ColGroupSDCZeros extends ASDCZero implements AMapToDataGroup{
+public class ColGroupSDCZeros extends ASDCZero implements AMapToDataGroup {
 	private static final long serialVersionUID = -3703199743391937991L;
 
 	/** Pointers to row indexes in the dictionary. Note the dictionary has one extra entry. */
@@ -75,6 +77,10 @@ public class ColGroupSDCZeros extends ASDCZero implements AMapToDataGroup{
 		int[] cachedCounts) {
 		if(dict == null)
 			return new ColGroupEmpty(colIndices);
+		else if(data.getUnique() == 1){
+			MatrixBlock mb = dict.getMBDict(colIndices.length).getMatrixBlock().slice(0,0);
+			return ColGroupSDCSingleZeros.create(colIndices, numRows, MatrixBlockDictionary.create(mb), offsets, null);
+		}
 		else
 			return new ColGroupSDCZeros(colIndices, numRows, dict, offsets, data, cachedCounts);
 	}
@@ -90,7 +96,7 @@ public class ColGroupSDCZeros extends ASDCZero implements AMapToDataGroup{
 	}
 
 	@Override
-	public AMapToData getMapToData(){
+	public AMapToData getMapToData() {
 		return _data;
 	}
 
@@ -714,11 +720,13 @@ public class ColGroupSDCZeros extends ASDCZero implements AMapToDataGroup{
 
 	@Override
 	public AColGroup sliceRows(int rl, int ru) {
+		if(ru > _numRows)
+			throw new DMLRuntimeException("Invalid row range");
 		OffsetSliceInfo off = _indexes.slice(rl, ru);
 		if(off.lIndex == -1)
 			return null;
 		AMapToData newData = _data.slice(off.lIndex, off.uIndex);
-		return new ColGroupSDCZeros(_colIndexes, _numRows, _dict, off.offsetSlice, newData, null);
+		return create(_colIndexes, ru - rl, _dict, off.offsetSlice, newData, null);
 	}
 
 	@Override

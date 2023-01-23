@@ -26,7 +26,7 @@ public class ReaderColumnSelectionDenseSingleBlockTransposed extends ReaderColum
 	private final double[] _data;
 
 	protected ReaderColumnSelectionDenseSingleBlockTransposed(MatrixBlock data, int[] colIndexes, int rl, int ru) {
-		super(colIndexes.clone(), rl, Math.min(ru, data.getNumColumns()) -1 );
+		super(colIndexes.clone(), rl, Math.min(ru, data.getNumColumns()) - 1);
 		_data = data.getDenseBlockValues();
 		for(int i = 0; i < _colIndexes.length; i++)
 			_colIndexes[i] = _colIndexes[i] * data.getNumColumns();
@@ -34,12 +34,19 @@ public class ReaderColumnSelectionDenseSingleBlockTransposed extends ReaderColum
 
 	protected DblArray getNextRow() {
 		boolean empty = true;
-		while(empty && _rl < _ru ) {
+		while(empty && _rl < _ru) {
 			_rl++;
 			for(int i = 0; i < _colIndexes.length; i++) {
 				final double v = _data[_colIndexes[i] + _rl];
-				empty &= v == 0;
-				reusableArr[i] = v;
+				boolean isNan = Double.isNaN(v);
+				if(isNan) {
+					warnNaN();
+					reusableArr[i] = 0;
+				}
+				else {
+					empty &= v == 0;
+					reusableArr[i] = v;
+				}
 			}
 
 		}

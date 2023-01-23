@@ -575,8 +575,16 @@ public class ReadersTestCompareReaders {
 		return subCols;
 	}
 
-	private class DenseBlockFP64Mock extends DenseBlockFP64 {
+	public static MatrixBlock createMock(MatrixBlock d){
+		DenseBlockFP64 a = new DenseBlockFP64Mock(new int[]{d.getNumRows(), d.getNumColumns()}, d.getDenseBlockValues());
+		MatrixBlock b =  new MatrixBlock(d.getNumRows(), d.getNumColumns(), a);
+		b.setNonZeros(d.getNumRows() * d.getNumColumns());
+		return b;
+	}
+
+	protected static class DenseBlockFP64Mock extends DenseBlockFP64 {
 		private static final long serialVersionUID = -3601232958390554672L;
+
 
 		public DenseBlockFP64Mock(int[] dims, double[] data) {
 			super(dims, data);

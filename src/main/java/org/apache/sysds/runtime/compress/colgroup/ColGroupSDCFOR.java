@@ -70,7 +70,10 @@ public class ColGroupSDCFOR extends ASDC implements AMapToDataGroup {
 	private ColGroupSDCFOR(int[] colIndices, int numRows, ADictionary dict, AOffset indexes, AMapToData data,
 		int[] cachedCounts, double[] reference) {
 		super(colIndices, numRows, dict, indexes, cachedCounts);
-		if(data.getUnique() != dict.getNumberOfValues(colIndices.length))
+		// allow for now 1 data unique.
+		if(data.getUnique() == 1)
+			LOG.warn("SDCFor unique is 1, indicate it should have been SDCSingle please add support");
+		else if(data.getUnique() != dict.getNumberOfValues(colIndices.length))
 			throw new DMLCompressionException("Invalid construction of SDCZero group");
 		_data = data;
 		_reference = reference;
@@ -85,8 +88,10 @@ public class ColGroupSDCFOR extends ASDC implements AMapToDataGroup {
 			return ColGroupConst.create(colIndexes, reference);
 		else if(allZero)
 			return ColGroupSDCZeros.create(colIndexes, numRows, dict, offsets, data, cachedCounts);
-		else
-			return new ColGroupSDCFOR(colIndexes, numRows, dict, offsets, data, cachedCounts, reference);
+		// else if(data.getUnique() == 1){
+		// TODO add support for changing to SDCSINGLE.
+		// }
+		return new ColGroupSDCFOR(colIndexes, numRows, dict, offsets, data, cachedCounts, reference);
 	}
 
 	public static AColGroup sparsifyFOR(ColGroupSDC g) {
@@ -437,7 +442,7 @@ public class ColGroupSDCFOR extends ASDC implements AMapToDataGroup {
 		if(off.lIndex == -1)
 			return ColGroupConst.create(_colIndexes, Dictionary.create(_reference));
 		AMapToData newData = _data.slice(off.lIndex, off.uIndex);
-		return new ColGroupSDCFOR(_colIndexes, _numRows, _dict, off.offsetSlice, newData, null, _reference);
+		return create(_colIndexes, ru - rl, _dict, off.offsetSlice, newData, null, _reference);
 	}
 
 	@Override

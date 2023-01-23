@@ -21,10 +21,12 @@ package org.apache.sysds.runtime.compress.colgroup.offset;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.io.Serializable;
+import java.util.Arrays;
 
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.AOffsetsGroup;
 import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
@@ -523,6 +525,36 @@ public abstract class AOffset implements Serializable {
 		return sb.toString();
 	}
 
+	public static AOffset reverse(int numRows, AOffset offsets) {
+		if(numRows < offsets.getOffsetToLast()) {
+			throw new DMLRuntimeException("Invalid number of rows for reverse");
+		}
+
+		int[] newOff = new int[numRows - offsets.getSize()];
+		final AOffsetIterator it = offsets.getOffsetIterator();
+		final int last = offsets.getOffsetToLast();
+		int i = 0;
+		int j = 0;
+
+		while(i < last) {
+			if(i == it.value()) {
+				i++;
+				it.next();
+			}
+			else
+				newOff[j++] = i++;
+		}
+		i++; // last
+		while(i < numRows)
+			newOff[j++] = i++;
+
+		if(j != newOff.length)
+			throw new DMLRuntimeException(
+				"Not assigned all offsets ... something must be wrong:\n" + offsets + "\n" + Arrays.toString(newOff));
+		return OffsetFactory.createOffset(newOff);
+
+	}
+
 	public static final class OffsetSliceInfo {
 		public final int lIndex;
 		public final int uIndex;
@@ -533,6 +565,19 @@ public abstract class AOffset implements Serializable {
 			this.uIndex = u;
 			this.offsetSlice = off;
 		}
+
+		@Override
+		public String toString() {
+			StringBuilder sb = new StringBuilder();
+			sb.append("sliceInfo: ");
+			sb.append(lIndex);
+			sb.append("->");
+			sb.append(uIndex);
+			sb.append("  --  ");
+			sb.append(offsetSlice);
+			return sb.toString();
+		}
+
 	}
 
 	protected static class OffsetCache {

@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.util.BitSet;
 
 import org.apache.commons.lang.NotImplementedException;
+import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.colgroup.AMapToDataGroup;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory.MAP_TYPE;
@@ -52,8 +53,9 @@ public class MapToBit extends AMapToData {
 		_data = d;
 		_size = size;
 		if(_data.isEmpty()) {
-			unique = 1;
-			LOG.warn("Empty bit set should not happen");
+			// unique = 1;
+			throw new DMLRuntimeException("Empty BitSet should not happen it should return MapToZero");
+			// LOG.warn("Empty bit set should not happen");
 		}
 	}
 
@@ -324,7 +326,11 @@ public class MapToBit extends AMapToData {
 
 	@Override
 	public AMapToData slice(int l, int u) {
-		return new MapToBit(getUnique(), _data.get(l, u), u - l);
+		BitSet s = _data.get(l,u);
+		if(s.isEmpty())
+			return new MapToZero(u-l);
+		else 
+			return new MapToBit(getUnique(), s, u - l);
 	}
 
 	@Override

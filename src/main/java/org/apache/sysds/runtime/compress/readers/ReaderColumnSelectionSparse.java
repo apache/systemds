@@ -66,12 +66,20 @@ public class ReaderColumnSelectionSparse extends ReaderColumnSelection {
 		int skip = 0;
 		int j = Arrays.binarySearch(aix, apos, alen, _colIndexes[0]);
 		if(j < 0)
-			j = Math.abs(j+1);
+			j = Math.abs(j + 1);
 
 		while(skip < _colIndexes.length && j < alen) {
 			if(_colIndexes[skip] == aix[j]) {
-				reusableArr[skip] = avals[j];
-				zeroResult = false;
+				final Double v = avals[j];
+				boolean isNan = Double.isNaN(v);
+				if(isNan) {
+					warnNaN();
+					reusableArr[skip] = 0;
+				}
+				else {
+					reusableArr[skip] = avals[j];
+					zeroResult = false;
+				}
 				skip++;
 				j++;
 			}

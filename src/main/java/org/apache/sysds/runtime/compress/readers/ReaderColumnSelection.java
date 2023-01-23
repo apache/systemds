@@ -30,6 +30,8 @@ public abstract class ReaderColumnSelection {
 
 	protected static final Log LOG = LogFactory.getLog(ReaderColumnSelection.class.getName());
 
+	protected static boolean nanEncountered = false;
+
 	protected final int[] _colIndexes;
 	protected final DblArray reusableReturn;
 	protected final double[] reusableArr;
@@ -100,5 +102,12 @@ public abstract class ReaderColumnSelection {
 			throw new DMLCompressionException("Input Block was null");
 		else if(rl >= ru)
 			throw new DMLCompressionException("Invalid inverse range for reader " + rl + " to " + ru);
+	}
+
+	protected void warnNaN(){
+		if(!nanEncountered){
+			LOG.warn("NaN value encountered, replaced by 0 in compression, since nan is not supported");
+			nanEncountered = true;
+		}
 	}
 }

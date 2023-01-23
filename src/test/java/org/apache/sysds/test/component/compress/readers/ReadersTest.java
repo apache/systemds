@@ -20,6 +20,8 @@
 package org.apache.sysds.test.component.compress.readers;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.fail;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -131,5 +133,185 @@ public class ReadersTest {
 		MatrixBlock mb = new MatrixBlock(10, 32, true);
 		mb.allocateDenseBlock();
 		ReaderColumnSelection.createReader(mb, new int[] {0, 1}, false, 10, 9);
+	}
+
+	@Test
+	public void isEmptyNan() {
+		try {
+
+			MatrixBlock mb = new MatrixBlock(10, 5, Double.NaN);
+
+			ReaderColumnSelection reader = ReaderColumnSelection.createReader(mb, new int[] {0, 1}, false, 0,
+				mb.getNumRows());
+			assertEquals(null, reader.nextRow());
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
+	}
+
+	@Test
+	public void isNaN() {
+		try {
+
+			MatrixBlock mb = new MatrixBlock(10, 5, Double.NaN);
+			mb.setValue(1, 1, 3214);
+
+			ReaderColumnSelection reader = ReaderColumnSelection.createReader(mb, new int[] {0, 1}, false, 0,
+				mb.getNumRows());
+			DblArray a = reader.nextRow();
+			assertNotEquals(null, a);
+			assertEquals(3214.0, a.getData()[1], 0.0);
+			assertEquals(0.0, a.getData()[0], 0.0);
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
+	}
+
+	@Test
+	public void isEmptyNanTransposed() {
+		try {
+
+			MatrixBlock mb = new MatrixBlock(10, 5, Double.NaN);
+
+			ReaderColumnSelection reader = ReaderColumnSelection.createReader(mb, new int[] {0, 1}, true, 0,
+				mb.getNumRows());
+			assertEquals(null, reader.nextRow());
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
+	}
+
+	@Test
+	public void isNaNTransposed() {
+		try {
+
+			MatrixBlock mb = new MatrixBlock(10, 5, Double.NaN);
+			mb.setValue(1, 1, 3214);
+
+			ReaderColumnSelection reader = ReaderColumnSelection.createReader(mb, new int[] {0, 1}, true, 0,
+				mb.getNumRows());
+			DblArray a = reader.nextRow();
+			assertNotEquals(null, a);
+			assertEquals(3214.0, a.getData()[1], 0.0);
+			assertEquals(0.0, a.getData()[0], 0.0);
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
+	}
+
+	@Test
+	public void isEmptyNanMultiBlock() {
+		try {
+
+			MatrixBlock mb = ReadersTestCompareReaders.createMock(new MatrixBlock(10, 5, Double.NaN));
+
+			ReaderColumnSelection reader = ReaderColumnSelection.createReader(mb, new int[] {0, 1}, false, 0,
+				mb.getNumRows());
+			assertEquals(null, reader.nextRow());
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
+	}
+
+	@Test
+	public void isNaNMultiBlock() {
+		try {
+
+			MatrixBlock mb = ReadersTestCompareReaders.createMock(new MatrixBlock(10, 5, Double.NaN));
+			mb.setValue(1, 1, 3214);
+
+			ReaderColumnSelection reader = ReaderColumnSelection.createReader(mb, new int[] {0, 1}, false, 0,
+				mb.getNumRows());
+			DblArray a = reader.nextRow();
+			assertNotEquals(null, a);
+			assertEquals(3214.0, a.getData()[1], 0.0);
+			assertEquals(0.0, a.getData()[0], 0.0);
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
+	}
+
+	@Test
+	public void isEmptyNanMultiBlockTransposed() {
+		try {
+
+			MatrixBlock mb = ReadersTestCompareReaders.createMock(new MatrixBlock(10, 5, Double.NaN));
+
+			ReaderColumnSelection reader = ReaderColumnSelection.createReader(mb, new int[] {0, 1}, true, 0,
+				mb.getNumRows());
+			assertEquals(null, reader.nextRow());
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
+	}
+
+	@Test
+	public void isNaNMultiBlockTransposed() {
+		try {
+
+			MatrixBlock mb = ReadersTestCompareReaders.createMock(new MatrixBlock(10, 5, Double.NaN));
+			mb.setValue(1, 1, 3214);
+
+			ReaderColumnSelection reader = ReaderColumnSelection.createReader(mb, new int[] {0, 1}, true, 0,
+				mb.getNumRows());
+			DblArray a = reader.nextRow();
+			assertNotEquals(null, a);
+			assertEquals(3214.0, a.getData()[1], 0.0);
+			assertEquals(0.0, a.getData()[0], 0.0);
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
+	}
+
+	@Test
+	public void isNanSparseBlock() {
+		MatrixBlock mbs = new MatrixBlock(10, 10, true);
+		mbs.setValue(1, 1, 3214);
+		mbs.setValue(0, 0, Double.NaN);
+		mbs.setValue(0, 1, Double.NaN);
+		mbs.setValue(1, 0, Double.NaN);
+
+		ReaderColumnSelection reader = ReaderColumnSelection.createReader(mbs, new int[] {0, 1}, false, 0,
+			mbs.getNumRows());
+
+		DblArray a = reader.nextRow();
+		assertNotEquals(null, a);
+		assertEquals(3214.0, a.getData()[1], 0.0);
+		assertEquals(0.0, a.getData()[0], 0.0);
+		assertEquals(null, reader.nextRow());
+	}
+
+	@Test
+	public void isNanSparseBlockTransposed() {
+		MatrixBlock mbs = new MatrixBlock(10, 10, true);
+		mbs.setValue(1, 1, 3214);
+		mbs.setValue(0, 0, Double.NaN);
+		mbs.setValue(0, 1, Double.NaN);
+		mbs.setValue(1, 0, Double.NaN);
+
+		ReaderColumnSelection reader = ReaderColumnSelection.createReader(mbs, new int[] {0, 1}, true, 0,
+			mbs.getNumRows());
+
+		DblArray a = reader.nextRow();
+		assertNotEquals(null, a);
+		assertEquals(3214.0, a.getData()[1], 0.0);
+		assertEquals(0.0, a.getData()[0], 0.0);
+		assertEquals(null, reader.nextRow());
 	}
 }

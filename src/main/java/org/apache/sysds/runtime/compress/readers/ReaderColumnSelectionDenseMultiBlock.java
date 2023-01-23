@@ -37,8 +37,16 @@ public class ReaderColumnSelectionDenseMultiBlock extends ReaderColumnSelection 
 			_rl++;
 			for(int i = 0; i < _colIndexes.length; i++) {
 				final double v = _data.get(_rl, _colIndexes[i]);
-				empty &= v == 0;
-				reusableArr[i] = v;
+				boolean isNan = Double.isNaN(v);
+				if(isNan){
+					warnNaN();
+					reusableArr[i] = 0;
+				}
+				else{
+					
+					empty &= v == 0 ;
+					reusableArr[i] = v;
+				}
 			}
 		}
 		return empty ? null : reusableReturn;

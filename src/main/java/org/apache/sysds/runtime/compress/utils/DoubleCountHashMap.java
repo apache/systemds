@@ -105,12 +105,18 @@ public class DoubleCountHashMap {
 	 * @return count on key
 	 */
 	public int get(double key) {
-		int ix = hashIndex(key);
-		Bucket l = _data[ix];
-		while(!(l.v.key == key))
-			l = l.n;
-
-		return l.v.count;
+		try{
+			int ix = hashIndex(key);
+			Bucket l = _data[ix];
+			while(!(l.v.key == key))
+				l = l.n;
+	
+			return l.v.count;
+		} catch( Exception e){
+			if(Double.isNaN(key))
+				return get(0.0);
+			throw e;
+		}
 	}
 
 	public int getOrDefault(double key, int def) {

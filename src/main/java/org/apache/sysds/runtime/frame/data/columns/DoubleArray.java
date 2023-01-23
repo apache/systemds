@@ -115,12 +115,15 @@ public class DoubleArray extends Array<Double> {
 	}
 
 	@Override
-	public DoubleArray append(Array<Double> other) {
+	public Array<Double> append(Array<Double> other) {
 		final int endSize = this._size + other.size();
 		final double[] ret = new double[endSize];
 		System.arraycopy(_data, 0, ret, 0, this._size);
 		System.arraycopy((double[]) other.get(), 0, ret, this._size, other.size());
-		return new DoubleArray(ret);
+		if(other instanceof OptionalArray)
+			return OptionalArray.appendOther((OptionalArray<Double>) other, new DoubleArray(ret));
+		else
+			return new DoubleArray(ret);
 	}
 
 	@Override
@@ -175,7 +178,7 @@ public class DoubleArray extends Array<Double> {
 	public Pair<ValueType, Boolean> analyzeValueType() {
 		ValueType state = FrameUtil.isType(_data[0]);
 		for(int i = 0; i < _size; i++) {
-			ValueType c = FrameUtil.isType(_data[i]);
+			ValueType c = FrameUtil.isType(_data[i], state);
 			if(state == ValueType.FP64)
 				return new Pair<ValueType, Boolean>(ValueType.FP64, false);
 
@@ -204,6 +207,7 @@ public class DoubleArray extends Array<Double> {
 						default:
 					}
 					break;
+				default:
 				case BOOLEAN:
 					switch(c) {
 						case FP64:
@@ -214,7 +218,6 @@ public class DoubleArray extends Array<Double> {
 						default:
 					}
 					break;
-				default:
 			}
 		}
 		return new Pair<ValueType, Boolean>(state, false);
@@ -319,6 +322,7 @@ public class DoubleArray extends Array<Double> {
 
 	@Override
 	public void fill(Double value) {
+		value = value != null ? value : 0.0d;
 		Arrays.fill(_data, value);
 	}
 
@@ -374,11 +378,9 @@ public class DoubleArray extends Array<Double> {
 	public String toString() {
 		StringBuilder sb = new StringBuilder(_data.length * 5 + 2);
 		sb.append(super.toString() + ":[");
-		if(_size > 0) {
-			for(int i = 0; i < _size - 1; i++)
-				sb.append(_data[i] + ",");
-			sb.append(_data[_size - 1]);
-		}
+		for(int i = 0; i < _size - 1; i++)
+			sb.append(_data[i] + ",");
+		sb.append(_data[_size - 1]);
 		sb.append("]");
 		return sb.toString();
 	}

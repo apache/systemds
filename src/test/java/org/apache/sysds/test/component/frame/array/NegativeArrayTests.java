@@ -20,6 +20,9 @@
 package org.apache.sysds.test.component.frame.array;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
+
+import java.io.IOException;
 
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.common.Types.ValueType;
@@ -110,6 +113,21 @@ public class NegativeArrayTests {
 	}
 
 	@Test(expected = DMLRuntimeException.class)
+	public void changeTypeBoolean_5() {
+		StringArray a = ArrayFactory.create(new String[] {"0.0", null, "1.1"});
+		a.changeType(ValueType.BOOLEAN);
+	}
+
+	@Test(expected = DMLRuntimeException.class)
+	public void changeTypeBoolean_6() {
+		String[] s = new String[100];
+		s[0] = "1.0";
+		s[1] = "1.2";
+		StringArray a = ArrayFactory.create(s);
+		a.changeType(ValueType.BOOLEAN);
+	}
+
+	@Test(expected = DMLRuntimeException.class)
 	public void invalidConstructionBitArrayToSmall() {
 		new BitSetArray(new long[0], 10);
 	}
@@ -167,5 +185,70 @@ public class NegativeArrayTests {
 	@Test(expected = DMLRuntimeException.class)
 	public void zLenAllocationString() {
 		new StringArray(new String[0]);
+	}
+
+	@Test(expected = DMLRuntimeException.class)
+	public void createOptionalWithOptionalConstructor1() {
+		new OptionalArray<>(new OptionalArray<>(new Integer[1]), false);
+	}
+
+	@Test(expected = DMLRuntimeException.class)
+	public void createOptionalWithOptionalConstructor2() {
+		new OptionalArray<>(new OptionalArray<>(new Integer[1]), new BooleanArray(new boolean[1]));
+	}
+
+	@Test(expected = DMLRuntimeException.class)
+	public void readFields() {
+		try {
+			new OptionalArray<>(new Integer[1]).readFields(null);
+		}
+		catch(IOException e) {
+			fail("not correct exception");
+		}
+	}
+
+	@Test(expected = NullPointerException.class)
+	public void invalidConstructOptional1() {
+		new OptionalArray<>(ArrayFactory.allocate(ValueType.CHARACTER, 10), null);
+	}
+
+	@Test(expected = DMLRuntimeException.class)
+	public void invalidConstructOptional2() {
+		new OptionalArray<>(ArrayFactory.allocate(ValueType.CHARACTER, 10), new BooleanArray(new boolean[3]));
+	}
+
+	@Test(expected = DMLRuntimeException.class)
+	public void invalidConstrucOptionalString1() {
+		new OptionalArray<>(new String[2]);
+	}
+
+	@Test(expected = DMLRuntimeException.class)
+	public void invalidConstrucOptionalString2() {
+		new OptionalArray<>(ArrayFactory.allocate(ValueType.STRING, 10), false);
+	}
+
+	@Test(expected = DMLRuntimeException.class)
+	public void invalidConstrucOptionalString3() {
+		new OptionalArray<>(ArrayFactory.allocate(ValueType.STRING, 10), new BooleanArray(new boolean[10]));
+	}
+
+	@Test(expected = NumberFormatException.class)
+	public void parseLong() {
+		LongArray.parseLong("notANumber");
+	}
+
+	@Test(expected = NumberFormatException.class)
+	public void parseInt() {
+		IntegerArray.parseInt("notANumber");
+	}
+
+	@Test(expected = NotImplementedException.class)
+	public void optionalChangeToUInt8() {
+		new OptionalArray<>(new Double[3]).changeTypeWithNulls(ValueType.UINT8);
+	}
+
+	@Test(expected = NotImplementedException.class)
+	public void byteArrayString(){
+		new StringArray(new String[10]).getAsByteArray();
 	}
 }

@@ -34,7 +34,7 @@ import org.apache.sysds.runtime.matrix.data.Pair;
 import org.apache.sysds.runtime.util.UtilFunctions;
 import org.apache.sysds.utils.MemoryEstimates;
 
-public class BitSetArray extends Array<Boolean> {
+public class BitSetArray extends ABooleanArray {
 
 	private static final boolean useVectorizedKernel = true;
 
@@ -59,12 +59,12 @@ public class BitSetArray extends Array<Boolean> {
 		if(_size > _data.length * 64)
 			throw new DMLRuntimeException("Invalid allocation long array must be long enough");
 		if(_data.length > longSize(_size))
-			throw new DMLRuntimeException(
-				"Invalid allocation long array must not be to long: " + _data.length + " " + _size + " " + (longSize(_size)));
+			throw new DMLRuntimeException("Invalid allocation long array must not be to long: " + _data.length + " "
+				+ _size + " " + (longSize(_size)));
 	}
 
-	private static int longSize(int size){
-		return Math.max(size >> 6, 0) +1;
+	private static int longSize(int size) {
+		return Math.max(size >> 6, 0) + 1;
 	}
 
 	public BitSetArray(BitSet data, int size) {
@@ -247,12 +247,18 @@ public class BitSetArray extends Array<Boolean> {
 	}
 
 	@Override
-	public BitSetArray append(Array<Boolean> other) {
+	public Array<Boolean> append(Array<Boolean> other) {
 		final int endSize = this._size + other.size();
-		final BitSetArray retBS = new BitSetArray(endSize);
-		retBS.set(0, this._size - 1, this, 0);
-		retBS.set(this._size, endSize - 1, other, 0);
-		return retBS;
+		final Array<Boolean> retBS = ArrayFactory.allocateBoolean(endSize);
+		retBS.set(0, this._size - 1, this);
+		if(other instanceof OptionalArray) {
+			retBS.set(this._size, endSize - 1, ((OptionalArray<Boolean>) other)._a);
+			return OptionalArray.appendOther((OptionalArray<Boolean>) other, retBS);
+		}
+		else {
+			retBS.set(this._size, endSize - 1, other);
+			return retBS;
+		}
 	}
 
 	@Override
@@ -461,20 +467,9 @@ public class BitSetArray extends Array<Boolean> {
 
 	@Override
 	public void fill(Boolean value) {
+		value = value != null ? value : false;
 		for(int i = 0; i < _size / 64 + 1; i++)
 			_data[i] = value ? -1L : 0L;
-	}
-
-	@Override
-	public String toString() {
-		StringBuilder sb = new StringBuilder(_size + 10);
-		sb.append(super.toString() + ":[");
-		if(_size > 0) {
-			for(int i = 0; i < _size; i++)
-				sb.append((get(i) ? 1 : 0));
-		}
-		sb.append("]");
-		return sb.toString();
 	}
 
 	@Override
@@ -489,15 +484,22 @@ public class BitSetArray extends Array<Boolean> {
 
 	@Override
 	public boolean isEmpty() {
-		for(int i = 0; i < _data.length; i++) {
+		for(int i = 0; i < _data.length; i++)
 			if(_data[i] != 0L)
 				return false;
-		}
 		return true;
 	}
 
 	@Override
-	public Array<Boolean> select(int[] indices) {
+	public boolean isAllTrue() {
+		for(int i = 0; i < _data.length; i++)
+			if(_data[i] != -1L)
+				return false;
+		return true;
+	}
+
+	@Override
+	public ABooleanArray select(int[] indices) {
 		// TODO vectorize
 		final boolean[] ret = new boolean[indices.length];
 		for(int i = 0; i < indices.length; i++)
@@ -506,7 +508,7 @@ public class BitSetArray extends Array<Boolean> {
 	}
 
 	@Override
-	public Array<Boolean> select(boolean[] select, int nTrue) {
+	public ABooleanArray select(boolean[] select, int nTrue) {
 		final boolean[] ret = new boolean[nTrue];
 		int k = 0;
 		for(int i = 0; i < select.length; i++)
@@ -530,10 +532,20 @@ public class BitSetArray extends Array<Boolean> {
 	public static String longToBits(long l) {
 		String bits = Long.toBinaryString(l);
 		StringBuilder sb = new StringBuilder(64);
-		for(int i = 0; i < 64 - bits.length(); i++) {
+		for(int i = 0; i < 64 - bits.length(); i++)
 			sb.append('0');
-		}
 		sb.append(bits);
+		return sb.toString();
+	}
+
+	@Override
+	public String toString() {
+		StringBuilder sb = new StringBuilder(_size + 10);
+		sb.append(super.toString() + ":[");
+		for(int i = 0; i < _size; i++)
+			sb.append((get(i) ? 1 : 0));
+
+		sb.append("]");
 		return sb.toString();
 	}
 }

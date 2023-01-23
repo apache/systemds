@@ -115,12 +115,15 @@ public class IntegerArray extends Array<Integer> {
 	}
 
 	@Override
-	public IntegerArray append(Array<Integer> other) {
+	public Array<Integer> append(Array<Integer> other) {
 		final int endSize = this._size + other.size();
 		final int[] ret = new int[endSize];
 		System.arraycopy(_data, 0, ret, 0, this._size);
 		System.arraycopy((int[]) other.get(), 0, ret, this._size, other.size());
-		return new IntegerArray(ret);
+		if(other instanceof OptionalArray)
+			return OptionalArray.appendOther((OptionalArray<Integer>) other, new IntegerArray(ret));
+		else
+			return new IntegerArray(ret);
 	}
 
 	@Override
@@ -268,6 +271,7 @@ public class IntegerArray extends Array<Integer> {
 
 	@Override
 	public void fill(Integer value) {
+		value = value != null ? value : 0;
 		Arrays.fill(_data, value);
 	}
 
@@ -277,7 +281,7 @@ public class IntegerArray extends Array<Integer> {
 	}
 
 	public static int parseInt(String s) {
-		if(s == null)
+		if(s == null || s.isEmpty())
 			return 0;
 		try {
 			return Integer.parseInt(s);
@@ -331,11 +335,9 @@ public class IntegerArray extends Array<Integer> {
 	public String toString() {
 		StringBuilder sb = new StringBuilder(_data.length * 5 + 2);
 		sb.append(super.toString() + ":[");
-		if(_size > 0) {
-			for(int i = 0; i < _size - 1; i++)
-				sb.append(_data[i] + ",");
-			sb.append(_data[_size - 1]);
-		}
+		for(int i = 0; i < _size - 1; i++)
+			sb.append(_data[i] + ",");
+		sb.append(_data[_size - 1]);
 		sb.append("]");
 		return sb.toString();
 	}

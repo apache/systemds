@@ -122,12 +122,11 @@ public class StringArray extends Array<String> {
 	}
 
 	@Override
-	public StringArray append(Array<String> other) {
+	public Array<String> append(Array<String> other) {
 		final int endSize = this._size + other.size();
 		final String[] ret = new String[endSize];
 		System.arraycopy(_data, 0, ret, 0, this._size);
 		System.arraycopy((String[]) other.get(), 0, ret, this._size, other.size());
-		materializedSize = -1;
 		return new StringArray(ret);
 	}
 
@@ -294,15 +293,25 @@ public class StringArray extends Array<String> {
 
 	@Override
 	protected Array<Boolean> changeTypeBoolean() {
+		String firstNN = _data[0];
+		int i = 1;
+		while(firstNN == null && i < size()){
+			firstNN = _data[i++];
+		}
+
 		// detect type of transform.
-		if(_data[0].toLowerCase().equals("true") || _data[0].toLowerCase().equals("false"))
+		if(i == size()) // if all null return empty boolean.
+			return ArrayFactory.allocateBoolean(size());
+		else if(firstNN.toLowerCase().equals("true") || firstNN.toLowerCase().equals("false"))
 			return changeTypeBooleanStandard();
-		else if(_data[0].equals("0") || _data[0].equals("1"))
+		else if(firstNN.equals("0") || firstNN.equals("1"))
 			return changeTypeBooleanNumeric();
-		else if(_data[0].toLowerCase().equals("t") || _data[0].toLowerCase().equals("f"))
+		else if(firstNN.equals("0.0") || firstNN.equals("1.0"))
+			return changeTypeBooleanFloat();
+		else if(firstNN.toLowerCase().equals("t") || firstNN.toLowerCase().equals("f"))
 			return changeTypeBooleanCharacter();
 		else
-			throw new DMLRuntimeException("Not supported type of Strings to change to Booleans value: " + _data[0]);
+			throw new DMLRuntimeException("Not supported type of Strings to change to Booleans value: " + firstNN);
 	}
 
 	protected Array<Boolean> changeTypeBooleanStandard() {
@@ -395,6 +404,48 @@ public class StringArray extends Array<String> {
 			if(s != null) {
 				final boolean zero = _data[i].equals("0");
 				final boolean one = _data[i].equals("1");
+				if(zero | one)
+					ret[i] = one;
+				else
+					throw new DMLRuntimeException("Unable to change to Boolean from String array, value:" + _data[i]);
+			}
+
+		}
+		return new BooleanArray(ret);
+	}
+
+	protected Array<Boolean> changeTypeBooleanFloat() {
+		if(size() > ArrayFactory.bitSetSwitchPoint)
+			return changeTypeBooleanFloatBitSet();
+		else
+			return changeTypeBooleanFloatArray();
+	}
+
+
+	protected Array<Boolean> changeTypeBooleanFloatBitSet() {
+		BitSet ret = new BitSet(size());
+		for(int i = 0; i < size(); i++) {
+			final String s = _data[i];
+			if(s != null) {
+
+				final boolean zero = _data[i].equals("0.0");
+				final boolean one = _data[i].equals("1.0");
+				if(zero | one)
+					ret.set(i, one);
+				else
+					throw new DMLRuntimeException("Unable to change to Boolean from String array, value:" + _data[i]);
+			}
+		}
+		return new BitSetArray(ret, size());
+	}
+
+	protected Array<Boolean> changeTypeBooleanFloatArray() {
+		boolean[] ret = new boolean[size()];
+		for(int i = 0; i < size(); i++) {
+			final String s = _data[i];
+			if(s != null) {
+				final boolean zero = _data[i].equals("0.0");
+				final boolean one = _data[i].equals("1.0");
 				if(zero | one)
 					ret[i] = one;
 				else
@@ -519,7 +570,7 @@ public class StringArray extends Array<String> {
 	@Override
 	public boolean isShallowSerialize() {
 		long s = getInMemorySize();
-		return s / _size < 100;
+		return _size < 100 || s / _size < 100;
 	}
 
 	@Override
@@ -557,11 +608,9 @@ public class StringArray extends Array<String> {
 	public String toString() {
 		StringBuilder sb = new StringBuilder(_size * 5 + 2);
 		sb.append(super.toString() + ":[");
-		if(_size > 0) {
-			for(int i = 0; i < _size - 1; i++)
-				sb.append(_data[i] + ",");
-			sb.append(_data[_size - 1]);
-		}
+		for(int i = 0; i < _size - 1; i++)
+			sb.append(_data[i] + ",");
+		sb.append(_data[_size - 1]);
 		sb.append("]");
 		return sb.toString();
 	}

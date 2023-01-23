@@ -279,6 +279,7 @@ public class BooleanArray extends ABooleanArray {
 
 	@Override
 	public void fill(Boolean value) {
+		value = value != null ? value : false;
 		Arrays.fill(_data, value);
 	}
 

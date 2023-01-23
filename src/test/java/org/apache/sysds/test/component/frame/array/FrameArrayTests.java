@@ -1393,59 +1393,67 @@ public class FrameArrayTests {
 	@Test
 	@SuppressWarnings("unchecked")
 	public void fill1ValueNull() {
-		Array<?> aa = a.clone();
-		boolean isOptional = aa instanceof OptionalArray;
-		switch(a.getValueType()) {
-			case BOOLEAN:
-				((Array<Boolean>) aa).fill((Boolean) null);
-				if(!isOptional)
-					for(int i = 0; i < aa.size(); i++)
-						assertEquals(aa.get(i), false);
-				break;
-			case CHARACTER:
-				((Array<Character>) aa).fill((Character) null);
-				if(!isOptional)
-					for(int i = 0; i < aa.size(); i++)
-						assertEquals((int) aa.get(i), 0);
-				break;
-			case FP32:
-				((Array<Float>) aa).fill((Float) null);
-				if(!isOptional)
+		try {
+
+			Array<?> aa = a.clone();
+			boolean isOptional = aa instanceof OptionalArray;
+			switch(a.getValueType()) {
+				case BOOLEAN:
+					((Array<Boolean>) aa).fill((Boolean) null);
 					if(!isOptional)
 						for(int i = 0; i < aa.size(); i++)
-							assertEquals(aa.get(i), 0.0f);
-				break;
-			case FP64:
-				((Array<Double>) aa).fill((Double) null);
-				if(!isOptional)
-					for(int i = 0; i < aa.size(); i++)
-						assertEquals(aa.get(i), 0.0d);
-				break;
-			case UINT8:
-			case INT32:
-				((Array<Integer>) aa).fill((Integer) null);
-				if(!isOptional)
-					for(int i = 0; i < aa.size(); i++)
-						assertEquals(aa.get(i), 0);
-				break;
-			case INT64:
-				((Array<Long>) aa).fill((Long) null);
-				if(!isOptional)
-					for(int i = 0; i < aa.size(); i++)
-						assertEquals(aa.get(i), 0L);
-				break;
-			case STRING:
-				aa.fill((String) null);
-				if(!isOptional)
-					for(int i = 0; i < aa.size(); i++)
-						assertEquals(aa.get(i), null);
-				break;
-			case UNKNOWN:
-			default:
-				throw new NotImplementedException("Not supported");
+							assertEquals(aa.get(i), false);
+					break;
+				case CHARACTER:
+					((Array<Character>) aa).fill((Character) null);
+					if(!isOptional)
+						for(int i = 0; i < aa.size(); i++)
+							assertEquals(aa.get(i), (char)0);
+					break;
+				case FP32:
+					((Array<Float>) aa).fill((Float) null);
+					if(!isOptional)
+						if(!isOptional)
+							for(int i = 0; i < aa.size(); i++)
+								assertEquals(aa.get(i), 0.0f);
+					break;
+				case FP64:
+					((Array<Double>) aa).fill((Double) null);
+					if(!isOptional)
+						for(int i = 0; i < aa.size(); i++)
+							assertEquals(aa.get(i), 0.0d);
+					break;
+				case UINT8:
+				case INT32:
+					((Array<Integer>) aa).fill((Integer) null);
+					if(!isOptional)
+						for(int i = 0; i < aa.size(); i++)
+							assertEquals(aa.get(i), 0);
+					break;
+				case INT64:
+					((Array<Long>) aa).fill((Long) null);
+					if(!isOptional)
+						for(int i = 0; i < aa.size(); i++)
+							assertEquals(aa.get(i), 0L);
+					break;
+				case STRING:
+					aa.fill((String) null);
+					if(!isOptional)
+						for(int i = 0; i < aa.size(); i++)
+							assertEquals(aa.get(i), null);
+					break;
+				case UNKNOWN:
+				default:
+					throw new NotImplementedException("Not supported");
+			}
+			if(isOptional)
+				for(int i = 0; i < aa.size(); i++)
+					assertEquals(aa.get(i), null);
 		}
-		if(isOptional)
-			assertEquals(aa.get(a.size()), null);
+		catch(Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
 	}
 
 	@Test
@@ -1664,7 +1672,7 @@ public class FrameArrayTests {
 		Random r = new Random(seed);
 		String[] ret = new String[size];
 		for(int i = 0; i < size; i++)
-			ret[i] = r.nextInt(1) + "";
+			ret[i] = r.nextInt(2) + "";
 		return ret;
 	}
 
@@ -1691,7 +1699,7 @@ public class FrameArrayTests {
 		Random r = new Random(seed);
 		char[] ret = new char[size];
 		for(int i = 0; i < size; i++)
-			ret[i] = (char) r.nextInt(1);
+			ret[i] = (char) r.nextInt(2);
 		return ret;
 	}
 
@@ -1699,7 +1707,7 @@ public class FrameArrayTests {
 		Random r = new Random(seed);
 		String[] ret = new String[size];
 		for(int i = 0; i < size; i++)
-			ret[i] = r.nextInt(1) == 1 ? "true" : "false";
+			ret[i] = r.nextInt(2) == 1 ? "true" : "false";
 		return ret;
 	}
 
@@ -1707,7 +1715,7 @@ public class FrameArrayTests {
 		Random r = new Random(seed);
 		String[] ret = new String[size];
 		for(int i = 0; i < size; i++)
-			ret[i] = r.nextInt(1) == 1 ? "t" : "f";
+			ret[i] = r.nextInt(2) == 1 ? "t" : "f";
 		return ret;
 	}
 

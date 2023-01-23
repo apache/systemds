@@ -271,6 +271,7 @@ public class IntegerArray extends Array<Integer> {
 
 	@Override
 	public void fill(Integer value) {
+		value = value != null ? value : 0;
 		Arrays.fill(_data, value);
 	}
 

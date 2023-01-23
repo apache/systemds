@@ -467,6 +467,7 @@ public class BitSetArray extends ABooleanArray {
 
 	@Override
 	public void fill(Boolean value) {
+		value = value != null ? value : false;
 		for(int i = 0; i < _size / 64 + 1; i++)
 			_data[i] = value ? -1L : 0L;
 	}

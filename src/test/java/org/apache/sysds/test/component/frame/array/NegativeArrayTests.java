@@ -247,4 +247,8 @@ public class NegativeArrayTests {
 		new OptionalArray<>(new Double[3]).changeTypeWithNulls(ValueType.UINT8);
 	}
 
+	@Test(expected = NotImplementedException.class)
+	public void byteArrayString(){
+		new StringArray(new String[10]).getAsByteArray();
+	}
 }

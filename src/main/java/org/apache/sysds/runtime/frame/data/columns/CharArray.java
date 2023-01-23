@@ -265,8 +265,9 @@ public class CharArray extends Array<Character> {
 	}
 
 	@Override
-	public void fill(Character val) {
-		Arrays.fill(_data, (char) val);
+	public void fill(Character value) {
+		value = value != null ? value : 0;
+		Arrays.fill(_data, value);
 	}
 
 	@Override

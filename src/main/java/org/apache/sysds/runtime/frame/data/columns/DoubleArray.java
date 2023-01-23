@@ -322,6 +322,7 @@ public class DoubleArray extends Array<Double> {
 
 	@Override
 	public void fill(Double value) {
+		value = value != null ? value : 0.0d;
 		Arrays.fill(_data, value);
 	}
 

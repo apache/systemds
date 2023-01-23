@@ -274,6 +274,7 @@ public class FloatArray extends Array<Float> {
 
 	@Override
 	public void fill(Float value) {
+		value = value != null ? value : 0.0f;
 		Arrays.fill(_data, value);
 	}
 

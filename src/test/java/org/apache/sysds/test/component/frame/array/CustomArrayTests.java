@@ -24,8 +24,12 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import java.lang.ref.SoftReference;
+import java.util.Arrays;
 import java.util.BitSet;
+import java.util.HashMap;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.common.Types.ValueType;
@@ -43,6 +47,8 @@ import org.apache.sysds.runtime.frame.data.columns.OptionalArray;
 import org.apache.sysds.runtime.frame.data.columns.StringArray;
 import org.apache.sysds.runtime.matrix.data.Pair;
 import org.junit.Test;
+
+import scala.util.Random;
 
 public class CustomArrayTests {
 
@@ -1016,7 +1022,6 @@ public class CustomArrayTests {
 			assertEquals(i - 3, a.get(i), 0.0);
 	}
 
-
 	@Test
 	public void optionalChangeToBoolean() {
 		Array<?> a = new OptionalArray<>(new Double[3]).changeTypeWithNulls(ValueType.BOOLEAN);
@@ -1026,7 +1031,7 @@ public class CustomArrayTests {
 
 	@Test
 	public void optionalChangeToBoolean2() {
-		Array<?> a = new OptionalArray<>(new Double[]{1.0, null, null}).changeTypeWithNulls(ValueType.BOOLEAN);
+		Array<?> a = new OptionalArray<>(new Double[] {1.0, null, null}).changeTypeWithNulls(ValueType.BOOLEAN);
 		assertEquals(true, a.get(0));
 		for(int i = 1; i < a.size(); i++)
 			assertEquals(null, a.get(i));
@@ -1036,11 +1041,124 @@ public class CustomArrayTests {
 	public void optionalChangeToBoolean3() {
 		Array<?> a = new OptionalArray<>(new Double[67]).changeTypeWithNulls(ValueType.BOOLEAN);
 		a.set(0, "true");
-		a.set(a.size()-1, "true");
+		a.set(a.size() - 1, "true");
 		assertEquals(true, a.get(0));
-		assertEquals(true, a.get(a.size()-1));
-		for(int i = 1; i < a.size()-1; i++)
+		assertEquals(true, a.get(a.size() - 1));
+		for(int i = 1; i < a.size() - 1; i++)
 			assertEquals(null, a.get(i));
-		
+
+	}
+
+	@Test
+	public void isNotShallowSerializeString() {
+		String[] st = new String[102];
+		Arrays.fill(st, StringUtils.repeat("a", 100));
+		assertFalse(ArrayFactory.create(st).isShallowSerialize());
+	}
+
+	@Test
+	public void isEmptyBitSet() {
+		Array<?> a = ArrayFactory.allocateBoolean(132);
+		assertTrue(a.isEmpty());
+		a.set(23, "true");
+		assertFalse(a.isEmpty());
+		a.set(23, "false");
+		assertTrue(a.isEmpty());
+	}
+
+	@Test
+	public void changeTypeBitSet() {
+		Array<?> a = new OptionalArray<>(new Character[324]).changeType(ValueType.BOOLEAN);
+		assertTrue(a.isEmpty());
+	}
+
+	@Test
+	public void rand1() {
+		Random r = new Random(13);
+		for(int i = 0; i < 10; i++) {
+			int g = r.nextInt(2);
+			assertTrue(g == 1 || g == 0);
+		}
+	}
+
+	@Test
+	public void indexAsBytesNull() {
+		assertEquals(new StringArray(new String[10]).getIndexAsBytes(0), null);
+	}
+
+	@Test
+	public void indexAsBytes1() {
+		byte[] b = new StringArray(new String[] {"a"}).getIndexAsBytes(0);
+		String exp = "[97]";
+		assertEquals(exp, Arrays.toString(b));
+	}
+
+	@Test
+	public void indexAsBytes2() {
+		byte[] b = new StringArray(new String[] {"b"}).getIndexAsBytes(0);
+		String exp = "[98]";
+		assertEquals(exp, Arrays.toString(b));
+	}
+
+	@Test
+	public void changeTypeNullsFromStringToFloat() {
+		Array<?> a = new StringArray(new String[] {"0.2", null});
+		Array<?> b = a.changeTypeWithNulls(ValueType.FP32);
+		assertEquals(0.2f, b.get(0));
+		assertEquals(null, b.get(1));
+	}
+
+	@Test
+	public void changeTypeNullsFromStringToDouble() {
+		Array<?> a = new StringArray(new String[] {"0.2", null});
+		Array<?> b = a.changeTypeWithNulls(ValueType.FP64);
+		assertEquals(0.2d, b.get(0));
+		assertEquals(null, b.get(1));
+	}
+
+	@Test
+	public void changeTypeNullsFromStringToInt() {
+		Array<?> a = new StringArray(new String[] {"3241", null});
+		Array<?> b = a.changeTypeWithNulls(ValueType.INT32);
+		assertEquals(3241, b.get(0));
+		assertEquals(null, b.get(1));
+	}
+
+	@Test
+	public void changeTypeNullsFromStringToLong() {
+		Array<?> a = new StringArray(new String[] {"3241", null});
+		Array<?> b = a.changeTypeWithNulls(ValueType.INT64);
+		assertEquals(3241L, b.get(0));
+		assertEquals(null, b.get(1));
+	}
+
+	@Test
+	public void changeTypeNullsFromStringToCharacter() {
+		Array<?> a = new StringArray(new String[] {"a", null});
+		Array<?> b = a.changeTypeWithNulls(ValueType.CHARACTER);
+		assertEquals('a', b.get(0));
+		assertEquals(null, b.get(1));
+	}
+
+	@Test
+	public void changeTypeNullsFromStringToBoolean() {
+		Array<?> a = new StringArray(new String[] {"1", null});
+		Array<?> b = a.changeTypeWithNulls(ValueType.BOOLEAN);
+		assertEquals(true, b.get(0));
+		assertEquals(null, b.get(1));
+	}
+
+	@Test
+	public void mappingCache() {
+		Array<?> a = new StringArray(new String[] {"1", null});
+		assertEquals(null, a.getCache());
+		a.setCache(new SoftReference<HashMap<String, Long>>(null));
+		assertTrue(null != a.getCache());
+		a.setCache(new SoftReference<HashMap<String, Long>>(new HashMap<>()));
+		assertTrue(null != a.getCache());
+		HashMap<String, Long> hm = a.getCache().get();
+		hm.put("1", 0L);
+		hm.put(null, 2L);
+		assertEquals(Long.valueOf(0L), a.getCache().get().get("1"));
 	}
 }

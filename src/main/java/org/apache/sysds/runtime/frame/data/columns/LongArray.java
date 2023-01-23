@@ -266,6 +266,7 @@ public class LongArray extends Array<Long> {
 
 	@Override
 	public void fill(Long value) {
+		value = value != null ? value : 0L;
 		Arrays.fill(_data, value);
 	}
 

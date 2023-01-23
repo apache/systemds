@@ -29,6 +29,7 @@ import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.DictionaryFactory;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.MatrixBlockDictionary;
 import org.apache.sysds.runtime.compress.colgroup.offset.AIterator;
 import org.apache.sysds.runtime.compress.colgroup.offset.AOffset;
 import org.apache.sysds.runtime.compress.colgroup.offset.AOffset.OffsetSliceInfo;
@@ -67,6 +68,11 @@ public class ColGroupSDCSingleZeros extends ASDCZero {
 		int[] cachedCounts) {
 		if(dict == null)
 			return new ColGroupEmpty(colIndices);
+		else if(offsets.getSize() * 2 > numRows + 2) {
+			AOffset rev = AOffset.reverse(numRows, offsets);
+			ADictionary empty = MatrixBlockDictionary.create(new MatrixBlock(1, colIndices.length, true));
+			return ColGroupSDCSingle.create(colIndices, numRows, empty, dict.getValues(), rev, null);
+		}
 		else
 			return new ColGroupSDCSingleZeros(colIndices, numRows, dict, offsets, cachedCounts);
 	}
@@ -802,7 +808,7 @@ public class ColGroupSDCSingleZeros extends ASDCZero {
 		OffsetSliceInfo off = _indexes.slice(rl, ru);
 		if(off.lIndex == -1)
 			return null;
-		return new ColGroupSDCSingleZeros(_colIndexes, _numRows, _dict, off.offsetSlice, null);
+		return create(_colIndexes, ru - rl, _dict, off.offsetSlice, null);
 	}
 
 	@Override

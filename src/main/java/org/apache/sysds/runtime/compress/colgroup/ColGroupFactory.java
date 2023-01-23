@@ -252,7 +252,7 @@ public class ColGroupFactory {
 		final boolean t = cs.transposed;
 
 		// Fast path compressions
-		if(ct == CompressionType.EMPTY && !t)
+		if(ct == CompressionType.EMPTY && (!t || isAllNanTransposed(cg)))
 			return new ColGroupEmpty(colIndexes);
 		else if(ct == CompressionType.UNCOMPRESSED) // don't construct mapping if uncompressed
 			return ColGroupUncompressed.create(colIndexes, in, t);
@@ -323,7 +323,7 @@ public class ColGroupFactory {
 
 		if(map.size() == 0)
 			return new ColGroupEmpty(colIndexes);
-		
+
 		ADictionary dict = DictionaryFactory.create(map);
 		final int nUnique = map.size();
 		final AMapToData resData = MapToFactory.resize(d, nUnique);
@@ -701,6 +701,52 @@ public class ColGroupFactory {
 			final ABitmap ubm = BitmapEncoder.extractBitmap(cols, in, true, entries.length, true);
 			// zero is not the default value fall back to the standard compression path.
 			return compressSDC(cols, nRow, ubm, cs, 1.0);
+		}
+	}
+
+	private boolean isAllNanTransposed(CompressedSizeInfoColGroup cg) {
+		final int[] cols = cg.getColumns();
+		return in.isInSparseFormat() ? isAllNanTransposedSparse(cols) : isAllNanTransposedDense(cols);
+	}
+
+	private boolean isAllNanTransposedSparse(int[] cols) {
+		SparseBlock sb = in.getSparseBlock();
+		for(int c : cols){
+			if(sb.isEmpty(c))
+				continue;
+			double[] vl = sb.values(c);
+			for(double v : vl){
+				if(!Double.isNaN(v))
+					return false;
+			}
+		}
+		return true;
+	}
+
+	private boolean isAllNanTransposedDense(int[] cols) {
+		if(in.getDenseBlock().isContiguous()){
+			double[] vals = in.getDenseBlockValues();
+			for(int c : cols){
+				int off = c *nRow;
+				for(int r = 0; r < nRow; r++ ){
+					if(!Double.isNaN(vals[off + r])){
+						return false;
+					}
+				}
+			}
+			return true;
+		}
+		else{
+			DenseBlock db = in.getDenseBlock();
+			for(int c : cols){
+				double[] vals = db.values(c);
+				int off = db.pos(c);
+				for(int r = 0; r < nRow; r++ ){
+					if(!Double.isNaN(vals[off + r]))
+						return false;
+				}
+			}
+			return true;
 		}
 	}
 

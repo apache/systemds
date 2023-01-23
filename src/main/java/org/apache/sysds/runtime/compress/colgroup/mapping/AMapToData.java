@@ -816,7 +816,6 @@ public abstract class AMapToData implements Serializable {
 	 */
 	public abstract AMapToData slice(int l, int u);
 
-
 	public abstract AMapToData append(AMapToData t);
 
 	public abstract AMapToData appendN(AMapToDataGroup[] d);

@@ -19,8 +19,6 @@
 
 package org.apache.sysds.runtime.compress.estim.encoding;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
@@ -32,8 +30,6 @@ import org.apache.sysds.runtime.compress.utils.IntArrayList;
 
 /** Most common is zero encoding */
 public class SparseEncoding implements IEncode {
-
-	static final Log LOG = LogFactory.getLog(SparseEncoding.class.getName());
 
 	/** A map to the distinct values contained */
 	protected final AMapToData map;

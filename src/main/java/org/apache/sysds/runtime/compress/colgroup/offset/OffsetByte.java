@@ -127,7 +127,7 @@ public class OffsetByte extends AOffset {
 	}
 
 	protected OffsetSliceInfo slice(int lowOff, int highOff, int lowValue, int highValue, int low, int high) {
-		int newSize = high - low - 1;
+		int newSize = high - low +1 ;
 		byte[] newOffsets = Arrays.copyOfRange(offsets, lowOff, highOff);
 		AOffset off = new OffsetByte(newOffsets, lowValue, highValue, newSize, noOverHalf, noZero);
 		return new OffsetSliceInfo(low, high + 1, off);

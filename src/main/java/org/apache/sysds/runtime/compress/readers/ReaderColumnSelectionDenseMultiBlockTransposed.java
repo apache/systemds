@@ -36,9 +36,16 @@ public class ReaderColumnSelectionDenseMultiBlockTransposed extends ReaderColumn
 		while(empty && _rl < _ru) {
 			_rl++;
 			for(int i = 0; i < _colIndexes.length; i++) {
-				double v = _data.get(_colIndexes[i], _rl);
-				empty &= v == 0;
-				reusableArr[i] = v;
+				final double v = _data.get(_colIndexes[i], _rl);
+				boolean isNan = Double.isNaN(v);
+				if(isNan){
+					warnNaN();
+					reusableArr[i] = 0;
+				}
+				else{
+					empty &= v == 0;
+					reusableArr[i] = v;
+				}
 			}
 		}
 		return empty ? null : reusableReturn;

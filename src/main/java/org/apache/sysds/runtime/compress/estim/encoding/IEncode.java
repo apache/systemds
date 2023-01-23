@@ -19,6 +19,8 @@
 
 package org.apache.sysds.runtime.compress.estim.encoding;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.compress.estim.EstimationFactors;
 
@@ -27,6 +29,9 @@ import org.apache.sysds.runtime.compress.estim.EstimationFactors;
  * column groups.
  */
 public interface IEncode {
+
+	public static final Log LOG = LogFactory.getLog(IEncode.class.getName());
+
 	/**
 	 * Combine two encodings, note it should be guaranteed by the caller that the number of unique multiplied does not
 	 * overflow Integer.

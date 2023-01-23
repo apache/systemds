@@ -40,8 +40,15 @@ public class ReaderColumnSelectionDenseSingleBlock extends ReaderColumnSelection
 			final int indexOff = _rl * _numCols;
 			for(int i = 0; i < _colIndexes.length; i++) {
 				double v = _data[indexOff + _colIndexes[i]];
-				empty &= v == 0;
-				reusableArr[i] = v;
+				boolean isNan = Double.isNaN(v);
+				if(isNan){
+					warnNaN();
+					reusableArr[i] = 0;
+				}
+				else{
+					empty &= v == 0;
+					reusableArr[i] = v;
+				}
 			}
 		}
 

@@ -19,6 +19,7 @@
 
 package org.apache.sysds.test.component.frame.array;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -179,6 +180,20 @@ public class ColumnMetadataTests {
 	@Test
 	public void serialize() {
 		assertTrue(d.equals(serializeAndBack(d)));
+	}
+
+	@Test
+	public void serializeSize() {
+		try {
+			ByteArrayOutputStream bos = new ByteArrayOutputStream();
+			DataOutputStream fos = new DataOutputStream(bos);
+			d.write(fos);
+			assertEquals(d.getExactSerializedSize(), (long) fos.size());
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			throw new RuntimeException("Error in io", e);
+		}
 	}
 
 	public static ColumnMetadata serializeAndBack(ColumnMetadata a) {

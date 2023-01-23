@@ -133,7 +133,7 @@ public class FrameLibRemoveEmpty {
 			return new FrameBlock(schema, colNames);
 	}
 
-	private static int getNumberTrue(boolean[] select) {
+	public static int getNumberTrue(boolean[] select) {
 		int i = 0;
 		for(boolean b : select)
 			i += b ? 1 : 0;

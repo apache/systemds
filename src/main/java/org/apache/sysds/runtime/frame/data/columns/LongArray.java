@@ -80,7 +80,7 @@ public class LongArray extends Array<Long> {
 
 	@Override
 	public void set(int rl, int ru, Array<Long> value, int rlSrc) {
-		System.arraycopy(((LongArray) value)._data, rlSrc, _data, rl, ru - rl + 1);
+		System.arraycopy((long[]) value.get(), rlSrc, _data, rl, ru - rl + 1);
 	}
 
 	@Override
@@ -114,12 +114,15 @@ public class LongArray extends Array<Long> {
 	}
 
 	@Override
-	public LongArray append(Array<Long> other) {
+	public Array<Long> append(Array<Long> other) {
 		final int endSize = this._size + other.size();
 		final long[] ret = new long[endSize];
 		System.arraycopy(_data, 0, ret, 0, this._size);
 		System.arraycopy((long[]) other.get(), 0, ret, this._size, other.size());
-		return new LongArray(ret);
+		if(other instanceof OptionalArray)
+			return OptionalArray.appendOther((OptionalArray<Long>) other, new LongArray(ret));
+		else
+			return new LongArray(ret);
 	}
 
 	@Override
@@ -263,6 +266,7 @@ public class LongArray extends Array<Long> {
 
 	@Override
 	public void fill(Long value) {
+		value = value != null ? value : 0L;
 		Arrays.fill(_data, value);
 	}
 
@@ -272,7 +276,7 @@ public class LongArray extends Array<Long> {
 	}
 
 	public static long parseLong(String s) {
-		if(s == null)
+		if(s == null || s.isEmpty())
 			return 0;
 		try {
 			return Long.parseLong(s);
@@ -329,16 +333,13 @@ public class LongArray extends Array<Long> {
 		return _data[i] != 0;
 	}
 
-
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder(_data.length * 5 + 2);
 		sb.append(super.toString() + ":[");
-		if(_size > 0) {
-			for(int i = 0; i < _size - 1; i++)
-				sb.append(_data[i] + ",");
-			sb.append(_data[_size - 1]);
-		}
+		for(int i = 0; i < _size - 1; i++)
+			sb.append(_data[i] + ",");
+		sb.append(_data[_size - 1]);
 		sb.append("]");
 		return sb.toString();
 	}

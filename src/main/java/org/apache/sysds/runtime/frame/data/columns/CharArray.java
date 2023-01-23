@@ -137,7 +137,10 @@ public class CharArray extends Array<Character> {
 		final char[] ret = new char[endSize];
 		System.arraycopy(_data, 0, ret, 0, this._size);
 		System.arraycopy((char[]) other.get(), 0, ret, this._size, other.size());
-		return new CharArray(ret);
+		if(other instanceof OptionalArray)
+			return OptionalArray.appendOther((OptionalArray<Character>) other, new CharArray(ret));
+		else
+			return new CharArray(ret);
 	}
 
 	@Override
@@ -187,50 +190,44 @@ public class CharArray extends Array<Character> {
 
 	@Override
 	protected Array<Boolean> changeTypeBitSet() {
-		BitSet ret = new BitSet(size());
+		final BitSet ret = new BitSet(size());
 		for(int i = 0; i < size(); i++) {
-			if(_data[i] != 0 && _data[i] != 1)
-				throw new DMLRuntimeException("Unable to change to boolean from char array because of value:" + _data[i]);
-			ret.set(i, _data[i] != 0);
+			final int di = (int) _data[i];
+			if(di != 0 && di != 1)
+				throw new DMLRuntimeException("Unable to change to boolean from char array because of value:" //
+					+ _data[i] + " (as int: " + di + ")");
+			ret.set(i, di != 0);
 		}
 		return new BitSetArray(ret, size());
 	}
 
 	@Override
 	protected Array<Boolean> changeTypeBoolean() {
-		boolean[] ret = new boolean[size()];
+		final boolean[] ret = new boolean[size()];
 		for(int i = 0; i < size(); i++) {
-			if(_data[i] != 0 && _data[i] != 1)
-				throw new DMLRuntimeException("Unable to change to boolean from char array because of value:" + _data[i]);
-			ret[i] = _data[i] != 0;
+			final int di = (int) _data[i];
+			if(di != 0 && di != 1)
+				throw new DMLRuntimeException("Unable to change to boolean from char array because of value:" //
+					+ _data[i] + " (as int: " + di + ")");
+			ret[i] = di != 0;
 		}
 		return new BooleanArray(ret);
 	}
 
 	@Override
 	protected Array<Double> changeTypeDouble() {
-		try {
-			double[] ret = new double[size()];
-			for(int i = 0; i < size(); i++)
-				ret[i] = (int) _data[i];
-			return new DoubleArray(ret);
-		}
-		catch(NumberFormatException e) {
-			throw new DMLRuntimeException("Invalid parsing of char to double", e);
-		}
+		double[] ret = new double[size()];
+		for(int i = 0; i < size(); i++)
+			ret[i] = (int) _data[i];
+		return new DoubleArray(ret);
 	}
 
 	@Override
 	protected Array<Float> changeTypeFloat() {
-		try {
-			float[] ret = new float[size()];
-			for(int i = 0; i < size(); i++)
-				ret[i] = (int) _data[i];
-			return new FloatArray(ret);
-		}
-		catch(NumberFormatException e) {
-			throw new DMLRuntimeException("Invalid parsing of char to float", e);
-		}
+		float[] ret = new float[size()];
+		for(int i = 0; i < size(); i++)
+			ret[i] = (int) _data[i];
+		return new FloatArray(ret);
 	}
 
 	@Override
@@ -238,7 +235,6 @@ public class CharArray extends Array<Character> {
 		int[] ret = new int[size()];
 		for(int i = 0; i < size(); i++)
 			ret[i] = (int) _data[i];
-
 		return new IntegerArray(ret);
 	}
 
@@ -269,8 +265,9 @@ public class CharArray extends Array<Character> {
 	}
 
 	@Override
-	public void fill(Character val) {
-		Arrays.fill(_data, (char) val);
+	public void fill(Character value) {
+		value = value != null ? value : 0;
+		Arrays.fill(_data, value);
 	}
 
 	@Override
@@ -324,19 +321,17 @@ public class CharArray extends Array<Character> {
 	public final boolean isNotEmpty(int i) {
 		return _data[i] != 0;
 	}
-	
+
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder(_data.length * 2 + 15);
 		sb.append(super.toString());
 		sb.append(":[");
-		if(_size > 0) {
-			for(int i = 0; i < _size - 1; i++) {
-				sb.append(_data[i]);
-				sb.append(',');
-			}
-			sb.append(_data[_size - 1]);
+		for(int i = 0; i < _size - 1; i++) {
+			sb.append(_data[i]);
+			sb.append(',');
 		}
+		sb.append(_data[_size - 1]);
 		sb.append("]");
 		return sb.toString();
 	}

@@ -166,7 +166,7 @@ public abstract class Array<T> implements Writable {
 	/**
 	 * Set non default values from the value array given
 	 * 
-	 * @param value array of same type
+	 * @param value array of same type and length
 	 */
 	public final void setNz(Array<T> value) {
 		setNz(0, value.size() - 1, value);
@@ -302,12 +302,12 @@ public abstract class Array<T> implements Writable {
 	 */
 	public abstract long getExactSerializedSize();
 
-	public Array<Boolean> getNulls() {
+	public ABooleanArray getNulls() {
 		return null;
 	}
 
 	public Array<?> changeTypeWithNulls(ValueType t) {
-		final Array<Boolean> nulls = getNulls();
+		final ABooleanArray nulls = getNulls();
 		if(nulls == null)
 			return changeType(t);
 
@@ -499,7 +499,9 @@ public abstract class Array<T> implements Writable {
 	 * @param select modify this to true in indexes that are empty.
 	 */
 	public void findEmptyInverse(boolean[] select) {
-		throw new NotImplementedException();
+		for(int i = 0; i < select.length; i++)
+			if(!isNotEmpty(i))
+				select[i] = true;
 	}
 
 	/**

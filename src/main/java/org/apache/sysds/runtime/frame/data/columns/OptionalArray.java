@@ -35,7 +35,7 @@ public class OptionalArray<T> extends Array<T> {
 	/** Underlying values not able to contain null values */
 	protected Array<T> _a;
 	/** A Bitset specifying where there are null, in it false means null */
-	protected Array<Boolean> _n;
+	protected ABooleanArray _n;
 
 	@SuppressWarnings("unchecked")
 	public OptionalArray(T[] a) {
@@ -51,39 +51,44 @@ public class OptionalArray<T> extends Array<T> {
 			_a = (Array<T>) ArrayFactory.allocate(ValueType.FP32, a.length);
 		else if(a instanceof Long[])
 			_a = (Array<T>) ArrayFactory.allocate(ValueType.INT64, a.length);
-		else // Character
+		else if(a instanceof Character[]) // Character
 			_a = (Array<T>) ArrayFactory.allocate(ValueType.CHARACTER, a.length);
+		else
+			throw new DMLRuntimeException("Invalid type for Optional Array: " + a.getClass().getSimpleName());
 
-		_n = (Array<Boolean>) ArrayFactory.allocate(ValueType.BOOLEAN, a.length);
+		_n = ArrayFactory.allocateBoolean(a.length);
 		for(int i = 0; i < a.length; i++) {
 			_a.set(i, a[i]);
 			_n.set(i, a[i] != null);
 		}
-
-		if(_a instanceof OptionalArray)
-			throw new DMLRuntimeException("Not allowed optional optional array");
 	}
 
-	public OptionalArray(Array<T> a) {
+	public OptionalArray(Array<T> a, boolean empty) {
 		super(a.size());
 		if(a instanceof OptionalArray)
 			throw new DMLRuntimeException("Not allowed optional optional array");
+		else if(a instanceof StringArray)
+			throw new DMLRuntimeException("Not allowed StringArray in OptionalArray");
 		_a = a;
-		_n = new BitSetArray(a.size());
+		_n = ArrayFactory.allocateBoolean(a.size());
+		if(!empty)
+			_n.fill(true);
 	}
 
-	public OptionalArray(Array<T> a, Array<Boolean> n) {
+	public OptionalArray(Array<T> a, ABooleanArray n) {
 		super(a.size());
 		if(a instanceof OptionalArray)
 			throw new DMLRuntimeException("Not allowed optional optional array");
+		else if(a instanceof StringArray)
+			throw new DMLRuntimeException("Not allowed StringArray in OptionalArray");
+		if(n.size() != a.size())
+			throw new DMLRuntimeException("Incompatible sizes of arrays for optional array");
 		_a = a;
 		_n = n;
 	}
 
 	@Override
 	public void write(DataOutput out) throws IOException {
-		if(_a instanceof OptionalArray)
-			throw new DMLRuntimeException("Not allowed optional optional array");
 		out.writeByte(FrameArrayType.OPTIONAL.ordinal());
 		_a.write(out);
 		_n.write(out);
@@ -95,24 +100,14 @@ public class OptionalArray<T> extends Array<T> {
 	}
 
 	@Override
-	@SuppressWarnings("unchecked")
 	public void readFields(DataInput in) throws IOException {
-		// throw new DMLRuntimeException("Should not be called");
-		// // (FrameArrayType.OPTIONAL.ordinal());
-		in.readByte();// ignore ordinal
-		_a = (Array<T>) ArrayFactory.read(in, _size);
-		// if(_a instanceof OptionalArray)
-		// throw new DMLRuntimeException("Invalid nested Optional array read");
-		_n = (BitSetArray) ArrayFactory.read(in, _size);
-
+		throw new DMLRuntimeException("Should not be called");
 	}
 
 	@SuppressWarnings("unchecked")
 	protected static OptionalArray<?> readOpt(DataInput in, int nRow) throws IOException {
-		Array<?> a = ArrayFactory.read(in, nRow);
-		Array<Boolean> n = (Array<Boolean>) ArrayFactory.read(in, nRow);
-		if(a instanceof OptionalArray)
-			throw new DMLRuntimeException("Not allowed optional optional array");
+		final Array<?> a = ArrayFactory.read(in, nRow);
+		final ABooleanArray n = (ABooleanArray) ArrayFactory.read(in, nRow);
 		switch(a.getValueType()) {
 			case BOOLEAN:
 				return new OptionalArray<Boolean>((Array<Boolean>) a, n);
@@ -205,6 +200,10 @@ public class OptionalArray<T> extends Array<T> {
 		Array<Boolean> nulls = value.getNulls();
 		if(nulls != null)
 			_n.set(rl, ru, nulls, rlSrc);
+		else{
+			for(int i = rl; i <= ru; i++)
+				_n.set(i, true);
+		}
 	}
 
 	private static <T> Array<T> getBasic(Array<T> value) {
@@ -249,12 +248,20 @@ public class OptionalArray<T> extends Array<T> {
 
 	@Override
 	public Array<T> append(Array<T> other) {
-		BitSetArray otherB = new BitSetArray(other.size());
-		for(int i = 0; i < other.size(); i++)
-			otherB.set(i, other.get(i) != null);
-		Array<Boolean> n = _n.append(otherB);
-		Array<T> a = _a.append(other);
+		OptionalArray<T> otherOpt = (other instanceof OptionalArray) ? //
+			(OptionalArray<T>) other : new OptionalArray<T>(other, false);
+		ABooleanArray n = (ABooleanArray) _n.append(otherOpt._n);
+		Array<T> a = _a.append(otherOpt._a);
 		return new OptionalArray<T>(a, n);
+	}
+
+	public static <T> OptionalArray<T> appendOther(OptionalArray<T> that, Array<T> appended) {
+		final int endSize = appended.size();
+		ABooleanArray nullsThat = that._n;
+		ABooleanArray optsEnd = ArrayFactory.allocateBoolean(endSize);
+		optsEnd.fill(true);
+		optsEnd.set(endSize - that.size(), endSize - 1, nullsThat);
+		return new OptionalArray<T>(appended, optsEnd);
 	}
 
 	@Override
@@ -360,7 +367,7 @@ public class OptionalArray<T> extends Array<T> {
 	}
 
 	@Override
-	public Array<Boolean> getNulls() {
+	public ABooleanArray getNulls() {
 		return _n;
 	}
 
@@ -371,7 +378,7 @@ public class OptionalArray<T> extends Array<T> {
 
 	@Override
 	public boolean isEmpty() {
-		return !_n.isEmpty() && _a.isEmpty();
+		return !_n.isAllTrue();
 	}
 
 	@Override
@@ -422,11 +429,9 @@ public class OptionalArray<T> extends Array<T> {
 	public String toString() {
 		StringBuilder sb = new StringBuilder(_size + 2);
 		sb.append(super.toString() + "<" + _a.getClass().getSimpleName() + ">:[");
-		if(_size > 0) {
-			for(int i = 0; i < _size - 1; i++)
-				sb.append(get(i) + ",");
-			sb.append(get(_size - 1));
-		}
+		for(int i = 0; i < _size - 1; i++)
+			sb.append(get(i) + ",");
+		sb.append(get(_size - 1));
 		sb.append("]");
 		return sb.toString();
 	}

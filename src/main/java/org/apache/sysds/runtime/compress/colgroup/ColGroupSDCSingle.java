@@ -70,25 +70,21 @@ public class ColGroupSDCSingle extends ASDC {
 		final boolean allZero = ColGroupUtils.allZero(defaultTuple);
 		if(dict == null && allZero)
 			return new ColGroupEmpty(colIndexes);
-		else if(dict == null) {
-			if(offsets.getSize() * 2 > numRows + 2) {
-				AOffset rev = AOffset.reverse(numRows, offsets);
-				return ColGroupSDCSingleZeros.create(colIndexes, numRows, Dictionary.create(defaultTuple), rev,
-					cachedCounts);
-			}
-			else
-				return new ColGroupSDCSingle(colIndexes, numRows, null, defaultTuple, offsets, cachedCounts);
+		else if(dict == null && offsets.getSize() * 2 > numRows + 2) {
+			AOffset rev = AOffset.reverse(numRows, offsets);
+			return ColGroupSDCSingleZeros.create(colIndexes, numRows, Dictionary.create(defaultTuple), rev, cachedCounts);
 		}
+		else if(dict == null)
+			return new ColGroupSDCSingle(colIndexes, numRows, null, defaultTuple, offsets, cachedCounts);
 		else if(allZero)
 			return ColGroupSDCSingleZeros.create(colIndexes, numRows, dict, offsets, cachedCounts);
-		else {
-			if(offsets.getSize() * 2.0 > numRows + 2.0) {
-				AOffset rev = AOffset.reverse(numRows, offsets);
-				return new ColGroupSDCSingle(colIndexes, numRows, null, dict.getValues(), rev, null);
-			}
-			else
-				return new ColGroupSDCSingle(colIndexes, numRows, dict, defaultTuple, offsets, cachedCounts);
+		else if(offsets.getSize() * 2 > numRows + 2) {
+			AOffset rev = AOffset.reverse(numRows, offsets);
+			return new ColGroupSDCSingle(colIndexes, numRows, Dictionary.create(defaultTuple), dict.getValues(), rev, null);
 		}
+		else
+			return new ColGroupSDCSingle(colIndexes, numRows, dict, defaultTuple, offsets, cachedCounts);
+
 	}
 
 

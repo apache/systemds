@@ -29,6 +29,7 @@ import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.DictionaryFactory;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.MatrixBlockDictionary;
 import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
 import org.apache.sysds.runtime.compress.colgroup.offset.AIterator;
@@ -76,8 +77,10 @@ public class ColGroupSDCZeros extends ASDCZero implements AMapToDataGroup {
 		int[] cachedCounts) {
 		if(dict == null)
 			return new ColGroupEmpty(colIndices);
-		else if(data.getUnique() == 1)
-			return ColGroupSDCSingleZeros.create(colIndices, numRows, dict, offsets, null);
+		else if(data.getUnique() == 1){
+			MatrixBlock mb = dict.getMBDict(colIndices.length).getMatrixBlock().slice(0,0);
+			return ColGroupSDCSingleZeros.create(colIndices, numRows, MatrixBlockDictionary.create(mb), offsets, null);
+		}
 		else
 			return new ColGroupSDCZeros(colIndices, numRows, dict, offsets, data, cachedCounts);
 	}

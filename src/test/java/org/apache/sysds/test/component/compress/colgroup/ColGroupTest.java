@@ -2156,7 +2156,13 @@ public class ColGroupTest extends ColGroupBase {
 			}
 
 			AColGroup a = base.sliceRows(rl, ru);
+			
 			AColGroup b = other.sliceRows(rl, ru);
+			// LOG.error(rl + " " +ru);
+			// LOG.error(base);
+			// LOG.error(a);
+
+
 			final int newNRow = ru - rl;
 
 			if(a == null || b == null)
@@ -2166,16 +2172,17 @@ public class ColGroupTest extends ColGroupBase {
 				return;
 			assertTrue(a.getColIndices() == base.getColIndices());
 			assertTrue(b.getColIndices() == other.getColIndices());
-			UA_ROW(InstructionUtils.parseBasicAggregateUnaryOperator("uar+", 1), 0, newNRow, a, b, newNRow);
-
+			
 			int nRow = ru - rl;
 			MatrixBlock ot = sparseMB(ru - rl, maxCol);
 			MatrixBlock bt = sparseMB(ru - rl, maxCol);
 			decompressToSparseBlock(a, b, ot, bt, 0, nRow);
-
+			
 			MatrixBlock otd = denseMB(ru - rl, maxCol);
 			MatrixBlock btd = denseMB(ru - rl, maxCol);
 			decompressToDenseBlock(otd, btd, a, b, 0, nRow);
+
+			UA_ROW(InstructionUtils.parseBasicAggregateUnaryOperator("uar+", 1), 0, newNRow, a, b, newNRow);
 
 		}
 		catch(Exception e) {

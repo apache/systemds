@@ -29,6 +29,7 @@ import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.DictionaryFactory;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.MatrixBlockDictionary;
 import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
 import org.apache.sysds.runtime.compress.colgroup.offset.AIterator;
@@ -40,6 +41,7 @@ import org.apache.sysds.runtime.compress.cost.ComputationCostEstimator;
 import org.apache.sysds.runtime.compress.utils.Util;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.instructions.cp.CM_COV_Object;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.CMOperator;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
@@ -86,8 +88,10 @@ public class ColGroupSDC extends ASDC implements AMapToDataGroup {
 			return ColGroupSDCSingle.create(colIndices, numRows, dict, defaultTuple, offsets, null);
 		else if(allZero)
 			return ColGroupSDCZeros.create(colIndices, numRows, dict, offsets, data, cachedCounts);
-		else if(data.getUnique() == 1)
-			return ColGroupSDCSingle.create(colIndices, numRows, dict, defaultTuple, offsets, null);
+		else if(data.getUnique() == 1){
+			MatrixBlock mb = dict.getMBDict(colIndices.length).getMatrixBlock().slice(0,0);
+			return ColGroupSDCSingle.create(colIndices, numRows, MatrixBlockDictionary.create(mb), defaultTuple, offsets, null);
+		}
 		else
 			return new ColGroupSDC(colIndices, numRows, dict, defaultTuple, offsets, data, cachedCounts);
 	}

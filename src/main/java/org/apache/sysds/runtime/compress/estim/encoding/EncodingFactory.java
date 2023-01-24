@@ -22,6 +22,8 @@ package org.apache.sysds.runtime.compress.estim.encoding;
 import java.util.Arrays;
 
 import org.apache.commons.lang.NotImplementedException;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
 import org.apache.sysds.runtime.compress.colgroup.offset.AOffset;
@@ -36,6 +38,8 @@ import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
 public interface EncodingFactory {
+
+	public static final Log LOG = LogFactory.getLog(EncodingFactory.class.getName());
 
 	/**
 	 * Encode a list of columns together from the input matrix, as if it is cocoded.
@@ -131,8 +135,9 @@ public interface EncodingFactory {
 
 		if(nUnique == 1)
 			return new ConstEncoding(m.getNumColumns());
-
-		if(map.getOrDefault(0, -1) > nCol / 4) {
+		else if(nUnique == 0)
+			return new EmptyEncoding();
+		else if(map.getOrDefault(0, -1) > nCol / 4) {
 			map.replaceWithUIDsNoZero();
 			final int zeroCount = map.get(0);
 			final int nV = nCol - zeroCount;
@@ -190,11 +195,12 @@ public interface EncodingFactory {
 		}
 
 		final int nUnique = map.size();
-
 		map.replaceWithUIDs();
 
 		final int nCol = m.getNumColumns();
-		if(alen - apos > nCol / 4) { // return a dense encoding
+		if(nUnique == 0) // only if all NaN
+			return new EmptyEncoding();
+		else if(alen - apos > nCol / 4) { // return a dense encoding
 			// If the row was full but the overall matrix is sparse.
 			final int correct = (alen - apos == m.getNumColumns()) ? 0 : 1;
 			final AMapToData d = MapToFactory.create(nCol, nUnique + correct);
@@ -205,7 +211,6 @@ public interface EncodingFactory {
 					d.set(aix[i], map.get(avals[i]) + correct);
 
 			// the rest is automatically set to zero.
-
 			return new DenseEncoding(d);
 		}
 		else { // return a sparse encoding
@@ -295,7 +300,7 @@ public interface EncodingFactory {
 			final int[] aix = sb.indexes(r);
 			final int index = Arrays.binarySearch(aix, apos, alen, col);
 			if(index >= 0) {
-				double v = sb.values(r)[index];
+				final double v = sb.values(r)[index];
 				if(!Double.isNaN(v)) {
 					offsets.appendValue(r);
 					map.increment(sb.values(r)[index]);
@@ -319,8 +324,11 @@ public interface EncodingFactory {
 			final int[] aix = sb.indexes(r);
 			// Performance hit because of binary search for each row.
 			final int index = Arrays.binarySearch(aix, apos, alen, col);
-			if(index >= 0 && !Double.isNaN(sb.values(r)[index]))
-				d.set(off++, map.get(sb.values(r)[index]));
+			if(index >= 0) {
+				final double v = sb.values(r)[index];
+				if(index >= 0 && !Double.isNaN(v))
+					d.set(off++, map.get(v));
+			}
 		}
 
 		// Iteration 3 of non zero indexes, make a Offset Encoding to know what cells are zero and not.
@@ -395,9 +403,5 @@ public interface EncodingFactory {
 
 	public static SparseEncoding createSparse(AMapToData map, AOffset off, int nRows) {
 		return new SparseEncoding(map, off, nRows);
-	}
-
-	private static double safeNan(double v) {
-		return Double.isNaN(v) ? 0.0 : v;
 	}
 }

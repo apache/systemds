@@ -19,6 +19,7 @@
 
 package org.apache.sysds.test.component.compress.estim.encoding;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -39,6 +40,7 @@ import org.apache.sysds.runtime.compress.estim.encoding.DenseEncoding;
 import org.apache.sysds.runtime.compress.estim.encoding.EncodingFactory;
 import org.apache.sysds.runtime.compress.estim.encoding.IEncode;
 import org.apache.sysds.runtime.compress.estim.encoding.SparseEncoding;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.test.component.compress.offset.OffsetTests;
 import org.junit.Test;
 
@@ -253,5 +255,56 @@ public class EncodeSampleCustom {
 			fail("failed to read:" + path);
 			throw new NotImplementedError();
 		}
+	}
+
+	private static MatrixBlock getSparseNaNMatrix() {
+		MatrixBlock m = new MatrixBlock(100, 100, true);
+		for(int i = 0; i < m.getNumRows(); i++)
+			m.setValue(i, i, Double.NaN);
+		return m;
+	}
+
+	private static MatrixBlock getDenseNaNMatrix() {
+		return new MatrixBlock(100, 100, Double.NaN);
+
+	}
+
+	@Test
+	public void testNaNDense() {
+		MatrixBlock m = getDenseNaNMatrix();
+		IEncode e = EncodingFactory.createFromMatrixBlock(m, false, 0);
+		// Technically it could have returned a sparse Encoding, but nulls, are considered values therefore the branching
+		// is saying that there is values in all cells making it chose a dense encoding.
+		// This is not a problem in the general compression, only in the edge case a entire or most of a column is null
+		assertTrue(e.isDense());
+		assertEquals(1, e.getUnique());
+	}
+
+
+	@Test
+	public void testNaNDenseTransposed() {
+		MatrixBlock m = getDenseNaNMatrix();
+		IEncode e = EncodingFactory.createFromMatrixBlock(m, true, 0);
+		// Technically it could have returned a sparse Encoding, but nulls, are considered values therefore the branching
+		// is saying that there is values in all cells making it chose a dense encoding.
+		// This is not a problem in the general compression, only in the edge case a entire or most of a column is null
+		assertTrue(e.isDense());
+		assertEquals(1, e.getUnique());
+	}
+
+	@Test
+	public void testNaNSparse() {
+		MatrixBlock m = getSparseNaNMatrix();
+		IEncode e = EncodingFactory.createFromMatrixBlock(m, false, 0);
+		assertTrue(!e.isDense());
+		assertEquals(1, e.getUnique());
+	}
+
+	@Test
+	public void testNaNSparseTransposed() {
+		MatrixBlock m = getSparseNaNMatrix();
+		IEncode e = EncodingFactory.createFromMatrixBlock(m, true, 0);
+		assertTrue(!e.isDense());
+		assertEquals(1, e.getUnique());
 	}
 }

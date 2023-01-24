@@ -86,6 +86,8 @@ public class ColGroupSDC extends ASDC implements AMapToDataGroup {
 			return ColGroupSDCSingle.create(colIndices, numRows, dict, defaultTuple, offsets, null);
 		else if(allZero)
 			return ColGroupSDCZeros.create(colIndices, numRows, dict, offsets, data, cachedCounts);
+		else if(data.getUnique() == 1)
+			return ColGroupSDCSingle.create(colIndices, numRows, dict, defaultTuple, offsets, null);
 		else
 			return new ColGroupSDC(colIndices, numRows, dict, defaultTuple, offsets, data, cachedCounts);
 	}
@@ -559,11 +561,13 @@ public class ColGroupSDC extends ASDC implements AMapToDataGroup {
 	@Override
 	public AColGroup sliceRows(int rl, int ru) {
 
+		if(ru > _numRows)
+			throw new DMLRuntimeException("Invalid row range");
 		OffsetSliceInfo off = _indexes.slice(rl, ru);
 		if(off.lIndex == -1)
 			return ColGroupConst.create(_colIndexes, Dictionary.create(_defaultTuple));
 		AMapToData newData = _data.slice(off.lIndex, off.uIndex);
-		return new ColGroupSDC(_colIndexes, _numRows, _dict, _defaultTuple, off.offsetSlice, newData, null);
+		return create(_colIndexes, ru - rl, _dict, _defaultTuple, off.offsetSlice, newData, null);
 	}
 
 	@Override

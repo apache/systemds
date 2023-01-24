@@ -72,7 +72,7 @@ public class ColGroupSDCSingle extends ASDC {
 			return new ColGroupEmpty(colIndexes);
 		else if(dict == null) {
 			if(offsets.getSize() * 2 > numRows + 2) {
-				AOffset rev = reverse(numRows, offsets);
+				AOffset rev = AOffset.reverse(numRows, offsets);
 				return ColGroupSDCSingleZeros.create(colIndexes, numRows, Dictionary.create(defaultTuple), rev,
 					cachedCounts);
 			}
@@ -83,7 +83,7 @@ public class ColGroupSDCSingle extends ASDC {
 			return ColGroupSDCSingleZeros.create(colIndexes, numRows, dict, offsets, cachedCounts);
 		else {
 			if(offsets.getSize() * 2.0 > numRows + 2.0) {
-				AOffset rev = reverse(numRows, offsets);
+				AOffset rev = AOffset.reverse(numRows, offsets);
 				return new ColGroupSDCSingle(colIndexes, numRows, null, dict.getValues(), rev, null);
 			}
 			else
@@ -91,26 +91,6 @@ public class ColGroupSDCSingle extends ASDC {
 		}
 	}
 
-	private static AOffset reverse(int numRows, AOffset offsets) {
-		int[] newOff = new int[numRows - offsets.getSize()];
-		final AOffsetIterator it = offsets.getOffsetIterator();
-		final int last = offsets.getOffsetToLast();
-		int i = 0;
-		int j = 0;
-
-		while(i < last) {
-			if(i == it.value()) {
-				i++;
-				it.next();
-			}
-			else
-				newOff[j++] = i++;
-		}
-		i++; // last
-		while(i < numRows)
-			newOff[j++] = i++;
-		return OffsetFactory.createOffset(newOff);
-	}
 
 	@Override
 	public CompressionType getCompType() {
@@ -569,7 +549,7 @@ public class ColGroupSDCSingle extends ASDC {
 		OffsetSliceInfo off = _indexes.slice(rl, ru);
 		if(off.lIndex == -1)
 			return ColGroupConst.create(_colIndexes, Dictionary.create(_defaultTuple));
-		return new ColGroupSDCSingle(_colIndexes, _numRows, _dict, _defaultTuple, off.offsetSlice, null);
+		return create(_colIndexes, ru -rl, _dict, _defaultTuple, off.offsetSlice, null);
 	}
 
 	@Override

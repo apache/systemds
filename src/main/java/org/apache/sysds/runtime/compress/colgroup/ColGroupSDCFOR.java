@@ -437,7 +437,7 @@ public class ColGroupSDCFOR extends ASDC implements AMapToDataGroup {
 		if(off.lIndex == -1)
 			return ColGroupConst.create(_colIndexes, Dictionary.create(_reference));
 		AMapToData newData = _data.slice(off.lIndex, off.uIndex);
-		return new ColGroupSDCFOR(_colIndexes, _numRows, _dict, off.offsetSlice, newData, null, _reference);
+		return create(_colIndexes, ru - rl, _dict, off.offsetSlice, newData, null, _reference);
 	}
 
 	@Override

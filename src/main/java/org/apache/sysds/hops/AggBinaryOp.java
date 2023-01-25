@@ -543,7 +543,7 @@ public class AggBinaryOp extends MultiThreadedHop {
 		int k = OptimizerUtils.getConstrainedNumThreads(_maxNumThreads);
 		Lop matmultCP = new MMTSJ(getInput().get(mmtsj.isLeft()?1:0).constructLops(),
 			getDataType(), getValueType(), et, mmtsj, false, k);
-		matmultCP.getOutputParameters().setDimensions(getDim1(), getDim2(), getBlocksize(), getNnz(), requiresLineageCaching());
+		matmultCP.getOutputParameters().setDimensions(getDim1(), getDim2(), getBlocksize(), getNnz());
 		setLineNumbers( matmultCP );
 		setLops(matmultCP);
 	}
@@ -790,7 +790,6 @@ public class AggBinaryOp extends MultiThreadedHop {
 			Lop cpmm = new MMCJ(getInput().get(0).constructLops(), getInput().get(1).constructLops(),
 				getDataType(), getValueType(), _outputEmptyBlocks, aggtype, ExecType.SPARK);
 			setOutputDimensions( cpmm );
-			//setMarkForLineageCaching(cpmm);
 			setLineNumbers( cpmm );
 			setLops( cpmm );
 		}

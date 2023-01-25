@@ -44,7 +44,6 @@ import org.apache.sysds.runtime.meta.DataCharacteristics;
 public abstract class ComputationSPInstruction extends SPInstruction implements LineageTraceable {
 	public CPOperand output;
 	public CPOperand input1, input2, input3;
-	private boolean toPersistAndCache;
 
 	protected ComputationSPInstruction(SPType type, Operator op, CPOperand in1, CPOperand in2, CPOperand out, String opcode, String istr) {
 		super(type, op, opcode, istr);
@@ -52,15 +51,6 @@ public abstract class ComputationSPInstruction extends SPInstruction implements 
 		input2 = in2;
 		input3 = null;
 		output = out;
-	}
-
-	protected ComputationSPInstruction(SPType type, Operator op, CPOperand in1, CPOperand in2, CPOperand out, String opcode, boolean toCache, String istr) {
-		super(type, op, opcode, istr);
-		input1 = in1;
-		input2 = in2;
-		input3 = null;
-		output = out;
-		toPersistAndCache = toCache;
 	}
 
 	protected ComputationSPInstruction(SPType type, Operator op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out, String opcode, String istr) {
@@ -144,15 +134,8 @@ public abstract class ComputationSPInstruction extends SPInstruction implements 
 		}
 	}
 
-	public boolean isRDDtoCache() {
-		return toPersistAndCache;
-	}
-
 	@SuppressWarnings("unchecked")
 	public void checkpointRDD(ExecutionContext ec) {
-		if (!toPersistAndCache)
-			return;
-
 		SparkExecutionContext sec = (SparkExecutionContext)ec;
 		CacheableData<?> cd = sec.getCacheableData(output.getName());
 		RDDObject inro =  cd.getRDDHandle();

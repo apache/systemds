@@ -58,7 +58,12 @@ public class LineageCacheConfig
 		//TODO: Reuse everything. 
 	};
 
+	private static final String[] PERSIST_OPCODES = new String[] {
+		"mapmm", "cpmm", "rmm"
+	};
+
 	private static String[] REUSE_OPCODES  = new String[] {};
+	private static String[] CHKPOINT_OPCODES  = new String[] {};
 
 	public enum ReuseCacheType {
 		REUSE_FULL,
@@ -185,11 +190,17 @@ public class LineageCacheConfig
 		return ret;
 	};
 
+
+	//-------------SPARK OPERATION RELATED CONFIGURATIONS--------------//
+
+	protected static boolean ENABLE_LOCAL_ONLY_RDD_CACHING = false;
+
 	//----------------------------------------------------------------//
 
 	static {
 		//setup static configuration parameters
 		REUSE_OPCODES = OPCODES;
+		CHKPOINT_OPCODES = PERSIST_OPCODES;
 		//setSpill(true);
 		setCachePolicy(LineageCachePolicy.COSTNSIZE);
 		setCompAssRW(true);
@@ -258,31 +269,19 @@ public class LineageCacheConfig
 		}
 	}
 
-	// Check if the Spark instruction returns result back to local
-	@SuppressWarnings("unused")
-	private static boolean isRightSparkOp(Instruction inst) {
-		if (!(inst instanceof ComputationSPInstruction))
-			return false;
-
-		boolean spAction = false;
-		if (inst instanceof MapmmSPInstruction &&
-			((MapmmSPInstruction) inst).getAggType() == AggBinaryOp.SparkAggType.SINGLE_BLOCK)
-			spAction = true;
-		else if (inst instanceof TsmmSPInstruction)
-			spAction = true;
-		else if (inst instanceof AggregateUnarySPInstruction &&
-			((AggregateUnarySPInstruction) inst).getAggType() == AggBinaryOp.SparkAggType.SINGLE_BLOCK)
-			spAction = true;
-		else if (inst instanceof CpmmSPInstruction &&
-			((CpmmSPInstruction) inst).getAggType() == AggBinaryOp.SparkAggType.SINGLE_BLOCK)
-			spAction = true;
-		else if (((ComputationSPInstruction) inst).output.getDataType() == Types.DataType.SCALAR)
-			spAction = true;
-		//TODO: include other cases
-
-		return spAction;
+	protected static boolean isReusableRDDType(Instruction inst) {
+		boolean insttype = inst instanceof ComputationSPInstruction;
+		boolean rightOp = ArrayUtils.contains(CHKPOINT_OPCODES, inst.getOpcode());
+		if (rightOp && inst instanceof MapmmSPInstruction
+			&& ((MapmmSPInstruction) inst).getAggType() == AggBinaryOp.SparkAggType.SINGLE_BLOCK)
+			rightOp = false;
+		if (rightOp && inst instanceof CpmmSPInstruction
+			&& ((CpmmSPInstruction) inst).getAggType() == AggBinaryOp.SparkAggType.SINGLE_BLOCK)
+			rightOp = false;
+		return insttype && rightOp;
 	}
-	
+
+
 	public static boolean isOutputFederated(Instruction inst, Data data) {
 		if (!(inst instanceof ComputationFEDInstruction))
 			return false;

@@ -48,6 +48,7 @@ public class LineageCacheStatistics {
 	// Below entries are specific to Spark instructions
 	private static final LongAdder _numHitsRdd      = new LongAdder();
 	private static final LongAdder _numHitsSparkActions = new LongAdder();
+	private static final LongAdder _numHitsRddPersist   = new LongAdder();
 
 	public static void reset() {
 		_numHitsMem.reset();
@@ -69,6 +70,7 @@ public class LineageCacheStatistics {
 		_numSyncEvictGpu.reset();
 		_numHitsRdd.reset();
 		_numHitsSparkActions.reset();
+		_numHitsRddPersist.reset();
 	}
 	
 	public static void incrementMemHits() {
@@ -203,7 +205,7 @@ public class LineageCacheStatistics {
 	}
 
 	public static void incrementRDDHits() {
-		// Number of times a persisted RDD are reused.
+		// Number of times a locally cached (but not persisted) RDD are reused.
 		_numHitsRdd.increment();
 	}
 
@@ -211,6 +213,11 @@ public class LineageCacheStatistics {
 		// Spark instructions that bring intermediate back to local.
 		// Both synchronous and asynchronous (e.g. tsmm, prefetch)
 		_numHitsSparkActions.increment();
+	}
+
+	public static void incrementRDDPersistHits() {
+		// Number of times a locally cached and persisted RDD are reused.
+		_numHitsRddPersist.increment();
 	}
 
 	public static String displayHits() {
@@ -279,6 +286,8 @@ public class LineageCacheStatistics {
 		sb.append(_numHitsSparkActions.longValue());
 		sb.append("/");
 		sb.append(_numHitsRdd.longValue());
+		sb.append("/");
+		sb.append(_numHitsRddPersist.longValue());
 		return sb.toString();
 	}
 }

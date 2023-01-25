@@ -42,7 +42,7 @@ public class LineageReuseSparkTest extends AutomatedTestBase {
 
 	protected static final String TEST_DIR = "functions/async/";
 	protected static final String TEST_NAME = "LineageReuseSpark";
-	protected static final int TEST_VARIANTS = 2;
+	protected static final int TEST_VARIANTS = 3;
 	protected static String TEST_CLASS_DIR = TEST_DIR + LineageReuseSparkTest.class.getSimpleName() + "/";
 
 	@Override
@@ -63,11 +63,15 @@ public class LineageReuseSparkTest extends AutomatedTestBase {
 		runTest(TEST_NAME+"1", ExecMode.SPARK, 1);
 	}
 
-	@Ignore
 	@Test
 	public void testlmdsRDD() {
-		// Persist and cache RDDs of shuffle-based Spark operations (eg. rmm, cpmm)
+		// Cache all RDDs and persist shuffle-based Spark operations (eg. rmm, cpmm)
 		runTest(TEST_NAME+"2", ExecMode.HYBRID, 2);
+	}
+
+	@Test
+	public void testL2svm() {
+		runTest(TEST_NAME+"3", ExecMode.SPARK, 3);
 	}
 
 	public void runTest(String testname, ExecMode execMode, int testId) {
@@ -87,7 +91,7 @@ public class LineageReuseSparkTest extends AutomatedTestBase {
 
 			List<String> proArgs = new ArrayList<>();
 
-			proArgs.add("-explain");
+			//proArgs.add("-explain");
 			proArgs.add("-stats");
 			proArgs.add("-args");
 			proArgs.add(output("R"));
@@ -101,7 +105,8 @@ public class LineageReuseSparkTest extends AutomatedTestBase {
 			long numRmm = Statistics.getCPHeavyHitterCount("sp_rmm");
 
 			proArgs.clear();
-			proArgs.add("-explain");
+			//proArgs.add("-explain");
+			//proArgs.add("recompile_runtime");
 			proArgs.add("-stats");
 			proArgs.add("-lineage");
 			proArgs.add(LineageCacheConfig.ReuseCacheType.REUSE_FULL.name().toLowerCase());
@@ -120,7 +125,7 @@ public class LineageReuseSparkTest extends AutomatedTestBase {
 			boolean matchVal = TestUtils.compareMatrices(R, R_reused, 1e-6, "Origin", "withPrefetch");
 			if (!matchVal)
 				System.out.println("Value w/o reuse "+R+" w/ reuse "+R_reused);
-			if (testId == 1) {
+			if (testId == 1 || testId == 3) {
 				Assert.assertTrue("Violated sp_tsmm reuse count: " + numTsmm_r + " < " + numTsmm, numTsmm_r < numTsmm);
 				Assert.assertTrue("Violated sp_mapmm reuse count: " + numMapmm_r + " < " + numMapmm, numMapmm_r < numMapmm);
 			}

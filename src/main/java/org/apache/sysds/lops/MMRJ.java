@@ -65,7 +65,6 @@ public class MMRJ extends Lop
 			"rmm",
 			getInputs().get(0).prepInputOperand(input1),
 			getInputs().get(1).prepInputOperand(input2),
-			prepOutputOperand(output),
-			Boolean.toString(toCache));
+			prepOutputOperand(output));
 	}
 }

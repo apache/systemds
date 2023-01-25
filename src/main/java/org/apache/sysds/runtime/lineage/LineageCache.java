@@ -145,11 +145,8 @@ public class LineageCache
 							ec.setScalarOutput(outName, so);
 					}
 					else if (e.isRDDPersist()) {
-						//Reuse the RDD which is also persisted in Spark
+						//Reuse the cached RDD (local or persisted at the executors)
 						RDDObject rdd = e.getRDDObject();
-						if (!((SparkExecutionContext) ec).isRDDCached(rdd.getRDD().id()))
-							//Return if the RDD is not cached in the executors
-							return false;
 						((SparkExecutionContext) ec).setRDDHandleForVariable(outName, rdd);
 					}
 					else { //TODO handle locks on gpu objects
@@ -160,7 +157,7 @@ public class LineageCache
 						ec.getMatrixObject(outName).getGPUObject(ec.getGPUContext(0)).setDirty(true);
 					}
 				}
-				maintainReuseStatistics(inst, liList.get(0).getValue());
+				maintainReuseStatistics(ec, inst, liList.get(0).getValue());
 			}
 		}
 		
@@ -500,7 +497,9 @@ public class LineageCache
 				if (liGpuObj == null)
 					liData = Arrays.asList(Pair.of(instLI, ec.getVariable(((GPUInstruction)inst)._output)));
 			}
-			else if (inst instanceof ComputationSPInstruction && ((ComputationSPInstruction) inst).isRDDtoCache()) {
+			else if (inst instanceof ComputationSPInstruction
+				&& (ec.getVariable(((ComputationSPInstruction) inst).output) instanceof MatrixObject)
+				&& (ec.getCacheableData(((ComputationSPInstruction)inst).output.getName())).hasRDDHandle()) {
 				putValueRDD(inst, instLI, ec, computetime);
 				return;
 			}
@@ -509,7 +508,7 @@ public class LineageCache
 					liData = Arrays.asList(Pair.of(instLI, ec.getVariable(((ComputationCPInstruction) inst).output)));
 				else if (inst instanceof ComputationFEDInstruction)
 					liData = Arrays.asList(Pair.of(instLI, ec.getVariable(((ComputationFEDInstruction) inst).output)));
-				else if (inst instanceof ComputationSPInstruction)
+				else if (inst instanceof ComputationSPInstruction) //collects or prefetches
 					liData = Arrays.asList(Pair.of(instLI, ec.getVariable(((ComputationSPInstruction) inst).output)));
 
 			if (liGpuObj == null)
@@ -606,15 +605,37 @@ public class LineageCache
 		synchronized( _cache ) {
 			if (!probe(instLI))
 				return;
-			// Call persist on the output RDD
-			((ComputationSPInstruction) inst).checkpointRDD(ec);
-			// Get the RDD handle of the persisted RDD
+			// Avoid reuse chkpoint, which is unnecessary
+			if (inst.getOpcode().equalsIgnoreCase("chkpoint")) {
+				removePlaceholder(instLI);
+				return;
+			}
+			boolean opToPersist = LineageCacheConfig.isReusableRDDType(inst);
+			// Return if the intermediate is not to be persisted in the executors
+			// and the local only RDD caching is disabled
+			if (!opToPersist && !LineageCacheConfig.ENABLE_LOCAL_ONLY_RDD_CACHING) {
+				removePlaceholder(instLI);
+				return;
+			}
+
+			// Filter out Spark instructions with broadcast input
+			// TODO: This code avoids one crash. Remove once fixed.
+			if (!opToPersist && !allInputsSpark(inst, ec)) {
+				removePlaceholder(instLI);
+				return;
+			}
+
+			// Call persist on the output RDD if required
+			if (opToPersist)
+				((ComputationSPInstruction) inst).checkpointRDD(ec);
+			// Get the RDD handle of the RDD
 			CacheableData<?> cd = ec.getCacheableData(((ComputationSPInstruction)inst).output.getName());
-			RDDObject rddObj = ((CacheableData<?>) cd).getRDDHandle();
+			RDDObject rddObj = cd.getRDDHandle();
 
 			LineageCacheEntry centry = _cache.get(instLI);
 			// Set the RDD object in the cache
 			// TODO: Make space in the executors
+			// TODO: Estimate the actual compute time for this operation
 			rddObj.setLineageCached();
 			centry.setRDDValue(rddObj, computetime);
 			// Maintain order for eviction
@@ -1131,13 +1152,42 @@ public class LineageCache
 
 		return outName;
 	}
-	private static void maintainReuseStatistics(Instruction inst, LineageCacheEntry e) {
+
+	private static boolean allInputsSpark(Instruction inst, ExecutionContext ec) {
+		CPOperand in1 = ((ComputationSPInstruction)inst).input1;
+		CPOperand in2 = ((ComputationSPInstruction)inst).input2;
+		CPOperand in3 = ((ComputationSPInstruction)inst).input3;
+
+		// All inputs must be matrices
+		if ((in1 != null && !in1.isMatrix()) || (in2 != null && !in2.isMatrix()) || (in3 != null && !in3.isMatrix()))
+			return false;
+
+		// Filter out if any input is local
+		if (in1 != null && (!ec.getMatrixObject(in1.getName()).hasRDDHandle() ||
+			ec.getMatrixObject(in1.getName()).hasBroadcastHandle()))
+			return false;
+		if (in2 != null && (!ec.getMatrixObject(in2.getName()).hasRDDHandle() ||
+			ec.getMatrixObject(in2.getName()).hasBroadcastHandle()))
+			return false;
+		if (in3 != null && (!ec.getMatrixObject(in3.getName()).hasRDDHandle() ||
+			ec.getMatrixObject(in3.getName()).hasBroadcastHandle()))
+			return false;
+
+		return true;
+	}
+
+	private static void maintainReuseStatistics(ExecutionContext ec, Instruction inst, LineageCacheEntry e) {
 		if (!DMLScript.STATISTICS)
 			return;
 
 		LineageCacheStatistics.incrementSavedComputeTime(e._computeTime);
 		if (e.isGPUObject()) LineageCacheStatistics.incrementGpuHits();
-		if (e.isRDDPersist()) LineageCacheStatistics.incrementRDDHits();
+		if (e.isRDDPersist()) {
+			if (((SparkExecutionContext) ec).isRDDCached(e.getRDDObject().getRDD().id()))
+				LineageCacheStatistics.incrementRDDPersistHits(); //persisted in the executors
+			else
+				LineageCacheStatistics.incrementRDDHits();  //only locally cached
+		}
 		if (e.isMatrixValue() || e.isScalarValue()) {
 			if (inst instanceof ComputationSPInstruction || inst.getOpcode().equals("prefetch"))
 				// Single_block Spark instructions (sync/async) and prefetch

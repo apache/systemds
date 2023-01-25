@@ -1516,14 +1516,16 @@ public class SparkExecutionContext extends ExecutionContext
 		if( lob.hasBackReference() )
 			return;
 
+		//abort if a RDD is cached locally
+		if (lob.isInLineageCache())
+			return;
+
 		//cleanup current lineage object (from driver/executors)
 		//incl deferred hdfs file removal (only if metadata set by cleanup call)
 		if( lob instanceof RDDObject ) {
 			RDDObject rdd = (RDDObject)lob;
 			int rddID = rdd.getRDD().id();
-			//skip unpersisting if locally cached
-			if (!lob.isInLineageCache())
-				cleanupRDDVariable(rdd.getRDD());
+			cleanupRDDVariable(rdd.getRDD());
 			if( rdd.getHDFSFilename()!=null ) { //deferred file removal
 				HDFSTool.deleteFileWithMTDIfExistOnHDFS(rdd.getHDFSFilename());
 			}

@@ -451,6 +451,10 @@ public abstract class CacheableData<T extends CacheBlock<?>> extends Data
 		return _bcHandle;
 	}
 
+	public boolean hasBroadcastHandle() {
+		return  _bcHandle != null && _bcHandle.hasBackReference();
+	}
+
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	public void setBroadcastHandle( BroadcastObject bc ) {
 		//cleanup potential old back reference

@@ -502,7 +502,7 @@ public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
 			MultiColumnEncoder encoder = EncoderFactory
 				.createEncoder(params.get("spec"), colnames, fo.getSchema(), (int) fo.getNumColumns(), meta);
 			mcOut.setDimension(mcIn.getRows() - ((omap != null) ? omap.getNumRmRows() : 0),
-				(int) fo.getNumColumns() + encoder.getNumExtraCols());
+				(int)encoder.getNumOutCols());
 			Broadcast<MultiColumnEncoder> bmeta = sec.getSparkContext().broadcast(encoder);
 			Broadcast<TfOffsetMap> bomap = (omap != null) ? sec.getSparkContext().broadcast(omap) : null;
 

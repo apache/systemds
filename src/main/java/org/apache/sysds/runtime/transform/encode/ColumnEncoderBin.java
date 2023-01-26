@@ -387,6 +387,15 @@ public class ColumnEncoderBin extends ColumnEncoder {
 		}
 	}
 
+	@Override
+	public String toString() {
+		StringBuilder sb = new StringBuilder();
+		sb.append(getClass().getSimpleName());
+		sb.append(": ");
+		sb.append(_colID);
+		return sb.toString();
+	}
+
 	public enum BinMethod {
 		INVALID, EQUI_WIDTH, EQUI_HEIGHT
 	}

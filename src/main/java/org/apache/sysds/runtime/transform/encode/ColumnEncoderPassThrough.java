@@ -145,6 +145,15 @@ public class ColumnEncoderPassThrough extends ColumnEncoder {
 		// do nothing
 	}
 
+	@Override
+	public String toString() {
+		StringBuilder sb = new StringBuilder();
+		sb.append(getClass().getSimpleName());
+		sb.append(": ");
+		sb.append(_colID);
+		return sb.toString();
+	}
+
 	public static class PassThroughSparseApplyTask extends ColumnApplyTask<ColumnEncoderPassThrough>{
 
 

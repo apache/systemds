@@ -1119,6 +1119,7 @@ public class DataConverter {
 				sb.append(dfFormat(df, value));
 				break;
 			case UINT8:
+			case UINT4:
 			case INT32:
 			case INT64:
 				sb.append(tb.get(ix));

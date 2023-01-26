@@ -399,10 +399,11 @@ public class CompressedMatrixBlock extends MatrixBlock {
 
 	@Override
 	public void write(DataOutput out) throws IOException {
+		// LOG.error(this);
 		if(nonZeros > 0 && getExactSizeOnDisk() > MatrixBlock.estimateSizeOnDisk(rlen, clen, nonZeros)) {
 			// If the size of this matrixBlock is smaller in uncompressed format, then
 			// decompress and save inside an uncompressed column group.
-			MatrixBlock uncompressed = getUncompressed("for smaller serialization");
+			MatrixBlock uncompressed = getUncompressed("smaller serialization size");
 			ColGroupUncompressed cg = (ColGroupUncompressed) ColGroupUncompressed.create(uncompressed);
 			allocateColGroup(cg);
 			nonZeros = cg.getNumberNonZeros(rlen);

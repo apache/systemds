@@ -266,8 +266,20 @@ public class ColumnEncoderDummycode extends ColumnEncoder {
 		return result;
 	}
 
+	@Override
 	public int getDomainSize() {
 		return _domainSize;
+	}
+
+	@Override
+	public String toString() {
+		StringBuilder sb = new StringBuilder();
+		sb.append(getClass().getSimpleName());
+		sb.append(": ");
+		sb.append(_colID);
+		sb.append(" --- DomainSize : ");
+		sb.append(_domainSize);
+		return sb.toString();
 	}
 
 	private static class DummycodeSparseApplyTask extends ColumnApplyTask<ColumnEncoderDummycode> {

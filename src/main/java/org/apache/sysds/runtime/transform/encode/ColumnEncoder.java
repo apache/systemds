@@ -206,6 +206,11 @@ public abstract class ColumnEncoder implements Encoder, Comparable<ColumnEncoder
 		// do nothing
 	}
 
+	public int getDomainSize(){
+		return 1;
+	}
+
+
 	/**
 	 * Partial build of internal data structures (e.g., in distributed spark operations).
 	 *

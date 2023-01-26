@@ -426,6 +426,11 @@ public class OptionalArray<T> extends Array<T> {
 	}
 
 	@Override
+	public boolean containsNull(){
+		return !_n.isAllTrue();
+	}
+
+	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder(_size + 2);
 		sb.append(super.toString() + "<" + _a.getClass().getSimpleName() + ">:[");

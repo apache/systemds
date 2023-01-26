@@ -42,6 +42,7 @@ import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.conf.ConfigurationManager;
+import org.apache.sysds.conf.DMLConfig;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.estim.ComEstSample;
@@ -90,11 +91,21 @@ public class MultiColumnEncoder implements Encoder {
 	}
 
 	public MatrixBlock encode(CacheBlock<?> in, int k) {
-		MatrixBlock out;
+		return encode(in, k, false);
+	}
+
+	public MatrixBlock encode(CacheBlock<?> in, boolean compressedOut) {
+		return encode(in, 1, compressedOut);
+	}
+
+	public MatrixBlock encode(CacheBlock<?> in, int k, boolean compressedOut){
+	
 		deriveNumRowPartitions(in, k);
 		try {
-			if(k > 1 && !MULTI_THREADED_STAGES && !hasLegacyEncoder()) {
-				out = new MatrixBlock();
+			if(isCompressedTransformEncode(in, compressedOut))
+				return CompressedEncode.encode(this, (FrameBlock ) in);
+			else if(k > 1 && !MULTI_THREADED_STAGES && !hasLegacyEncoder()) {
+				MatrixBlock out = new MatrixBlock();
 				DependencyThreadPool pool = new DependencyThreadPool(k);
 				LOG.debug("Encoding with full DAG on " + k + " Threads");
 				try {
@@ -106,6 +117,7 @@ public class MultiColumnEncoder implements Encoder {
 				}
 				pool.shutdown();
 				outputMatrixPostProcessing(out);
+				return out;
 			}
 			else {
 				LOG.debug("Encoding with staged approach on: " + k + " Threads");
@@ -123,16 +135,20 @@ public class MultiColumnEncoder implements Encoder {
 				}
 				// apply meta data
 				t0 = System.nanoTime();
-				out = apply(in, k);
+				MatrixBlock out = apply(in, k);
 				t1 = System.nanoTime();
 				LOG.debug("Elapsed time for apply phase: "+ ((double) t1 - t0) / 1000000 + " ms");
+				return out;
 			}
 		}
 		catch(Exception ex) {
 			LOG.error("Failed transform-encode frame with \n" + this);
 			throw ex;
 		}
-		return out;
+	}
+
+	protected List<ColumnEncoderComposite> getEncoders() {
+		return _columnEncoders;
 	}
 
 	/* TASK DETAILS:
@@ -262,23 +278,23 @@ public class MultiColumnEncoder implements Encoder {
 			legacyBuild((FrameBlock) in);
 	}
 
-	public void build(CacheBlock<?> in, int k, Map<Integer, double[]> equiHeightBinMaxs) {
-		if(hasLegacyEncoder() && !(in instanceof FrameBlock))
-			throw new DMLRuntimeException("LegacyEncoders do not support non FrameBlock Inputs");
-		if(!_partitionDone) //happens if this method is directly called
-			deriveNumRowPartitions(in, k);
-		if(k > 1) {
-			buildMT(in, k);
-		}
-		else {
-			for(ColumnEncoderComposite columnEncoder : _columnEncoders) {
-				columnEncoder.build(in, equiHeightBinMaxs);
-				columnEncoder.updateAllDCEncoders();
-			}
-		}
-		if(hasLegacyEncoder())
-			legacyBuild((FrameBlock) in);
-	}
+	// public void build(CacheBlock<?> in, int k, Map<Integer, double[]> equiHeightBinMaxs) {
+	// 	if(hasLegacyEncoder() && !(in instanceof FrameBlock))
+	// 		throw new DMLRuntimeException("LegacyEncoders do not support non FrameBlock Inputs");
+	// 	if(!_partitionDone) //happens if this method is directly called
+	// 		deriveNumRowPartitions(in, k);
+	// 	if(k > 1) {
+	// 		buildMT(in, k);
+	// 	}
+	// 	else {
+	// 		for(ColumnEncoderComposite columnEncoder : _columnEncoders) {
+	// 			columnEncoder.build(in, equiHeightBinMaxs);
+	// 			columnEncoder.updateAllDCEncoders();
+	// 		}
+	// 	}
+	// 	if(hasLegacyEncoder())
+	// 		legacyBuild((FrameBlock) in);
+	// }
 
 	private List<DependencyTask<?>> getBuildTasks(CacheBlock<?> in) {
 		List<DependencyTask<?>> tasks = new ArrayList<>();
@@ -317,7 +333,7 @@ public class MultiColumnEncoder implements Encoder {
 		boolean hasUDF = _columnEncoders.stream().anyMatch(e -> e.hasEncoder(ColumnEncoderUDF.class));
 		for(ColumnEncoderComposite columnEncoder : _columnEncoders)
 			columnEncoder.updateAllDCEncoders();
-		int numCols = in.getNumColumns() + getNumExtraCols();
+		int numCols = getNumOutCols();
 		long estNNz = (long) in.getNumRows() * (hasUDF ? numCols : (long) in.getNumColumns());
 		boolean sparse = MatrixBlock.evalSparseFormatInMemory(in.getNumRows(), numCols, estNNz) && !hasUDF;
 		MatrixBlock out = new MatrixBlock(in.getNumRows(), numCols, sparse, estNNz);
@@ -654,6 +670,8 @@ public class MultiColumnEncoder implements Encoder {
 		long t0 = System.nanoTime();
 		if(_meta != null)
 			return _meta;
+		if(meta == null)
+			meta = new FrameBlock(_columnEncoders.size(), ValueType.STRING);
 		this.allocateMetaData(meta);
 		if (k > 1) {
 			try {
@@ -854,15 +872,19 @@ public class MultiColumnEncoder implements Encoder {
 		return getEncoderTypes(-1);
 	}
 
-	public int getNumExtraCols() {
-		List<ColumnEncoderDummycode> dc = getColumnEncoders(ColumnEncoderDummycode.class);
-		if(dc.isEmpty()) {
-			return 0;
-		}
-		if(dc.stream().anyMatch(e -> e.getDomainSize() < 0)) {
-			throw new DMLRuntimeException("Trying to get extra columns when DC encoders are not ready");
-		}
-		return dc.stream().map(ColumnEncoderDummycode::getDomainSize).mapToInt(i -> i).sum() - dc.size();
+	public int getNumOutCols() {
+		int sum = 0;
+		for(int i = 0; i < _columnEncoders.size(); i++)
+			sum += _columnEncoders.get(i).getDomainSize();
+		return sum;
+		// List<ColumnEncoderDummycode> dc = getColumnEncoders(ColumnEncoderDummycode.class);
+		// if(dc.isEmpty()) {
+		// 	return 0;
+		// }
+		// if(dc.stream().anyMatch(e -> e.getDomainSize() < 0)) {
+		// 	throw new DMLRuntimeException("Trying to get extra columns when DC encoders are not ready");
+		// }
+		// return dc.stream().map(ColumnEncoderDummycode::getDomainSize).mapToInt(i -> i).sum() - dc.size();
 	}
 
 	public int getNumExtraCols(IndexRange ixRange) {
@@ -998,6 +1020,11 @@ public class MultiColumnEncoder implements Encoder {
 		return hasLegacyEncoder(EncoderMVImpute.class) || hasLegacyEncoder(EncoderOmit.class);
 	}
 
+	public boolean isCompressedTransformEncode(CacheBlock<?> in, boolean enabled){
+		return (enabled || ConfigurationManager.getDMLConfig().getBooleanValue(DMLConfig.COMPRESSED_TRANSFORMENCODE)) &&
+			in instanceof FrameBlock && _colOffset == 0;
+	}
+
 	public <T extends LegacyEncoder> boolean hasLegacyEncoder(Class<T> type) {
 		if(type.equals(EncoderMVImpute.class))
 			return _legacyMVImpute != null;
@@ -1025,6 +1052,22 @@ public class MultiColumnEncoder implements Encoder {
 			_legacyOmit.shiftCols(_colOffset);
 		if(_legacyMVImpute != null)
 			_legacyMVImpute.shiftCols(_colOffset);
+	}
+
+	@Override
+	public String toString() {
+		StringBuilder sb = new StringBuilder();
+		sb.append(this.getClass().getSimpleName());
+		sb.append("\nIs Legacy: ");
+		sb.append(_legacyMVImpute);
+		sb.append("\nEncoders:\n");
+
+		for(int i = 0; i < _columnEncoders.size(); i++) {
+			sb.append(_columnEncoders.get(i));
+			sb.append("\n");
+		}
+
+		return sb.toString();
 	}
 
 	/*
@@ -1081,7 +1124,7 @@ public class MultiColumnEncoder implements Encoder {
 		@Override
 		public Object call() throws Exception {
 			boolean hasUDF = _encoder.getColumnEncoders().stream().anyMatch(e -> e.hasEncoder(ColumnEncoderUDF.class));
-			int numCols = _input.getNumColumns() + _encoder.getNumExtraCols();
+			int numCols = _encoder.getNumOutCols();
 			boolean hasDC = _encoder.getColumnEncoders(ColumnEncoderDummycode.class).size() > 0;
 			long estNNz = (long) _input.getNumRows() * (hasUDF ? numCols : (long) _input.getNumColumns());
 			boolean sparse = MatrixBlock.evalSparseFormatInMemory(_input.getNumRows(), numCols, estNNz) && !hasUDF;

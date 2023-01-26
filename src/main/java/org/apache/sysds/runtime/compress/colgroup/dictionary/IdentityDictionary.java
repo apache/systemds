@@ -47,9 +47,10 @@ public class IdentityDictionary extends ADictionary {
 	private SoftReference<MatrixBlockDictionary> cache = null;
 
 	/**
-	 * Unsafe private constructor that does not check the data validity. USE WITH CAUTION.
+	 * Create a Identity matrix dictionary. It behaves as if allocated a Sparse Matrix block but exploits that the
+	 * structure is known to have certain properties.
 	 * 
-	 * @param data The matrix block data.
+	 * @param nRowCol the number of rows and columns in this identity matrix.
 	 */
 	public IdentityDictionary(int nRowCol) {
 		if(nRowCol <= 0)
@@ -135,7 +136,7 @@ public class IdentityDictionary extends ADictionary {
 
 	@Override
 	public void aggregateColsWithReference(double[] c, Builtin fn, int[] colIndexes, double[] reference, boolean def) {
-	getMBDict().aggregateColsWithReference(c, fn, colIndexes, reference, def);
+		getMBDict().aggregateColsWithReference(c, fn, colIndexes, reference, def);
 	}
 
 	@Override
@@ -367,7 +368,7 @@ public class IdentityDictionary extends ADictionary {
 	@Override
 	public void addToEntryVectorized(double[] v, int f1, int f2, int f3, int f4, int f5, int f6, int f7, int f8, int t1,
 		int t2, int t3, int t4, int t5, int t6, int t7, int t8, int nCol) {
-			getMBDict().addToEntryVectorized(v, f1, f2, f3, f4, f5, f6, f7, f8, t1, t2, t3, t4, t5, t6, t7, t8, nCol);
+		getMBDict().addToEntryVectorized(v, f1, f2, f3, f4, f5, f6, f7, f8, t1, t2, t3, t4, t5, t6, t7, t8, nCol);
 	}
 
 	@Override
@@ -381,17 +382,17 @@ public class IdentityDictionary extends ADictionary {
 
 	@Override
 	public MatrixBlockDictionary getMBDict(int nCol) {
-		if(cache != null){
+		if(cache != null) {
 			MatrixBlockDictionary r = cache.get();
 			if(r != null)
 				return r;
 		}
-		MatrixBlockDictionary  ret = createMBDict();
+		MatrixBlockDictionary ret = createMBDict();
 		cache = new SoftReference<>(ret);
 		return ret;
 	}
 
-	private MatrixBlockDictionary createMBDict(){
+	private MatrixBlockDictionary createMBDict() {
 		MatrixBlock identity = new MatrixBlock(nRowCol, nRowCol, true);
 		for(int i = 0; i < nRowCol; i++)
 			identity.quickSetValue(i, i, 1.0);
@@ -495,10 +496,10 @@ public class IdentityDictionary extends ADictionary {
 
 	@Override
 	public double getSparsity() {
-		//  non-zeros / n cells
+		// non-zeros / n cells
 		// nRowCol / (nRowCol * nRowCol)
 		// simplifies to
-		return 1.0d / (double)nRowCol;
+		return 1.0d / (double) nRowCol;
 	}
 
 	@Override
@@ -558,7 +559,7 @@ public class IdentityDictionary extends ADictionary {
 	@Override
 	protected void TSMMToUpperTriangleSparseScaling(SparseBlock left, int[] rowsLeft, int[] colsRight, int[] scale,
 		MatrixBlock result) {
-	
+
 		getMBDict().TSMMToUpperTriangleSparseScaling(left, rowsLeft, colsRight, scale, result);
 	}
 
@@ -566,7 +567,7 @@ public class IdentityDictionary extends ADictionary {
 	public boolean equals(ADictionary o) {
 		if(o instanceof IdentityDictionary)
 			return ((IdentityDictionary) o).nRowCol == nRowCol;
-		
+
 		MatrixBlock mb = getMBDict().getMatrixBlock();
 		if(o instanceof MatrixBlockDictionary)
 			return mb.equals(((MatrixBlockDictionary) o).getMatrixBlock());

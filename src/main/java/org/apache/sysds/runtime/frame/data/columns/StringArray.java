@@ -24,6 +24,7 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.BitSet;
+import java.util.HashMap;
 
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.common.Types.ValueType;
@@ -32,6 +33,7 @@ import org.apache.sysds.runtime.frame.data.columns.ArrayFactory.FrameArrayType;
 import org.apache.sysds.runtime.frame.data.lib.FrameUtil;
 import org.apache.sysds.runtime.io.IOUtilFunctions;
 import org.apache.sysds.runtime.matrix.data.Pair;
+import org.apache.sysds.runtime.transform.encode.ColumnEncoderRecode;
 import org.apache.sysds.utils.MemoryEstimates;
 
 public class StringArray extends Array<String> {
@@ -580,6 +582,14 @@ public class StringArray extends Array<String> {
 				return false;
 		return true;
 	}
+	
+	@Override
+	public boolean containsNull(){
+		for(int i = 0; i < _data.length; i++)
+			if(_data[i] == null)
+				return true;
+		return false;
+	}
 
 	@Override
 	public Array<String> select(int[] indices) {
@@ -603,6 +613,28 @@ public class StringArray extends Array<String> {
 	public final boolean isNotEmpty(int i) {
 		return _data[i] != null && !_data[i].equals("0");
 	}
+
+	@Override
+	protected HashMap<String, Long> createRecodeMap(){
+		try{
+
+			HashMap<String, Long> map = new HashMap<>();
+			for(int i = 0; i < size(); i++) {
+				Object val = get(i);
+				if(val != null) {
+					String[] tmp = ColumnEncoderRecode.splitRecodeMapEntry(val.toString());
+					map.put(tmp[0], Long.parseLong(tmp[1]));
+				}
+				else // once we hit null return.
+					break;
+			}
+			return map;
+		}
+		catch(Exception e){
+			return super.createRecodeMap();
+		}
+	}
+
 
 	@Override
 	public String toString() {

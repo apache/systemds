@@ -155,6 +155,15 @@ public class ColumnEncoderFeatureHash extends ColumnEncoder {
 		_K = in.readLong();
 	}
 
+	@Override
+	public String toString() {
+		StringBuilder sb = new StringBuilder();
+		sb.append(getClass().getSimpleName());
+		sb.append(": ");
+		sb.append(_colID);
+		return sb.toString();
+	}
+
 	public static class FeatureHashSparseApplyTask extends ColumnApplyTask<ColumnEncoderFeatureHash>{
 
 		public FeatureHashSparseApplyTask(ColumnEncoderFeatureHash encoder, CacheBlock<?> input,

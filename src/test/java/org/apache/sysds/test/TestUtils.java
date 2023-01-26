@@ -842,6 +842,10 @@ public class TestUtils
 	}
 
 	public static void compareFrames(FrameBlock expected, FrameBlock actual, boolean checkMeta) {
+		if(expected == null && actual == null)
+			return;
+		assertTrue("Expected frame was null pointer", expected != null);
+		assertTrue("Actual frame was null pointer", actual != null);
 		assertEquals("Number of columns and rows are not equivalent", expected.getNumRows(), actual.getNumRows());
 		assertEquals("Number of columns and rows are not equivalent", expected.getNumColumns(), actual.getNumColumns());
 
@@ -2417,6 +2421,7 @@ public class TestUtils
 	 */
 	public static Object generateRandomValueFromValueType(ValueType valueType, Random random){
 		switch (valueType){
+			case UINT4:   return random.nextInt(16);
 			case UINT8:   return random.nextInt(256);
 			case FP32:	  return random.nextFloat();
 			case FP64:    return random.nextDouble();

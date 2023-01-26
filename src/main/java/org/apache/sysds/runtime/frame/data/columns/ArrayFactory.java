@@ -82,6 +82,7 @@ public interface ArrayFactory {
 				return Array.baseMemoryCost() + (long) MemoryEstimates.longArrayCost(_numRows);
 			case FP64:
 				return Array.baseMemoryCost() + (long) MemoryEstimates.doubleArrayCost(_numRows);
+			case UINT4:
 			case UINT8:
 			case INT32:
 				return Array.baseMemoryCost() + (long) MemoryEstimates.intArrayCost(_numRows);
@@ -111,6 +112,7 @@ public interface ArrayFactory {
 					return new OptionalArray<>(new BitSetArray(nRow), true);
 				else
 					return new OptionalArray<>(new BooleanArray(new boolean[nRow]), true);
+			case UINT4:
 			case UINT8:
 			case INT32:
 				return new OptionalArray<>(new IntegerArray(new int[nRow]), true);
@@ -140,6 +142,7 @@ public interface ArrayFactory {
 		switch(v) {
 			case BOOLEAN:
 				return allocateBoolean(nRow);
+			case UINT4:
 			case UINT8:
 			case INT32:
 				return new IntegerArray(new int[nRow]);
@@ -261,8 +264,9 @@ public interface ArrayFactory {
 				return FloatArray.parseFloat(s);
 			case FP64:
 				return DoubleArray.parseDouble(s);
-			case INT32:
+			case UINT4:
 			case UINT8:
+			case INT32:
 				return IntegerArray.parseInt(s);
 			case INT64:
 				return LongArray.parseLong(s);

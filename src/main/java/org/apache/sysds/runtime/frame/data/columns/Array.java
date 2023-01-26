@@ -21,6 +21,7 @@ package org.apache.sysds.runtime.frame.data.columns;
 
 import java.lang.ref.SoftReference;
 import java.util.HashMap;
+import java.util.Iterator;
 
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.commons.logging.Log;
@@ -37,9 +38,11 @@ import org.apache.sysds.runtime.matrix.data.Pair;
  */
 public abstract class Array<T> implements Writable {
 	protected static final Log LOG = LogFactory.getLog(Array.class.getName());
+	/** internal configuration */
+	private static final boolean REUSE_RECODE_MAPS = true;
 
 	/** A soft reference to a memorization of this arrays mapping, used in transformEncode */
-	protected SoftReference<HashMap<String, Long>> _rcdMapCache = null;
+	protected SoftReference<HashMap<T, Long>> _rcdMapCache = null;
 
 	/** The current allocated number of elements in this Array */
 	protected int _size;
@@ -59,7 +62,7 @@ public abstract class Array<T> implements Writable {
 	 * 
 	 * @return The cached object
 	 */
-	public final SoftReference<HashMap<String, Long>> getCache() {
+	public final SoftReference<HashMap<T, Long>> getCache() {
 		return _rcdMapCache;
 	}
 
@@ -68,9 +71,42 @@ public abstract class Array<T> implements Writable {
 	 * 
 	 * @param m The element to cache.
 	 */
-	public final void setCache(SoftReference<HashMap<String, Long>> m) {
+	public final void setCache(SoftReference<HashMap<T, Long>> m) {
 		_rcdMapCache = m;
 	}
+
+	public HashMap<T, Long> getRecodeMap() {
+		// probe cache for existing map
+		if(REUSE_RECODE_MAPS) {
+			SoftReference<HashMap<T, Long>> tmp = getCache();
+			HashMap<T, Long> map = (tmp != null) ? tmp.get() : null;
+			if(map != null)
+				return map;
+		}
+
+		// construct recode map
+		HashMap<T, Long> map = createRecodeMap();
+
+		// put created map into cache
+		if(REUSE_RECODE_MAPS)
+			setCache(new SoftReference<>(map));
+
+		return map;
+	}
+
+	
+	protected HashMap<T, Long> createRecodeMap(){
+		HashMap<T, Long> map = new HashMap<>();
+		long id = 0;
+		for(int i = 0; i < size(); i++) {
+			T val = get(i);
+			if(val != null && !map.containsKey(val))
+				map.put(val, id++);
+		}
+		return map;
+	}
+
+
 
 	/**
 	 * Get the number of elements in the array, this does not necessarily reflect the current allocated size.
@@ -306,6 +342,15 @@ public abstract class Array<T> implements Writable {
 		return null;
 	}
 
+	/**
+	 * analyze if the array contains null values.
+	 * 
+	 * @return If the array contains null.
+	 */
+	public boolean containsNull(){
+		return false;
+	}
+
 	public Array<?> changeTypeWithNulls(ValueType t) {
 		final ABooleanArray nulls = getNulls();
 		if(nulls == null)
@@ -321,6 +366,7 @@ public abstract class Array<T> implements Writable {
 				return new OptionalArray<Float>(changeTypeFloat(), nulls);
 			case FP64:
 				return new OptionalArray<Double>(changeTypeDouble(), nulls);
+			case UINT4:
 			case UINT8:
 				throw new NotImplementedException();
 			case INT32:
@@ -354,6 +400,7 @@ public abstract class Array<T> implements Writable {
 				return changeTypeFloat();
 			case FP64:
 				return changeTypeDouble();
+				case UINT4:
 			case UINT8:
 				throw new NotImplementedException();
 			case INT32:
@@ -520,4 +567,26 @@ public abstract class Array<T> implements Writable {
 		return this.getClass().getSimpleName();
 	}
 
+
+	public ArrayIterator getIterator(){
+		return new ArrayIterator();
+	}
+
+	public class ArrayIterator implements Iterator<T> {
+		int index = -1;
+
+		public int getIndex(){
+			return index;
+		}
+
+		@Override
+		public boolean hasNext() {
+			return index < size()-1;
+		}
+
+		@Override
+		public T next() {
+			return get(++index);
+		}
+	}
 }

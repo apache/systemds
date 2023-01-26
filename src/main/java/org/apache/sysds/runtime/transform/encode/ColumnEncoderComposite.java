@@ -107,12 +107,16 @@ public class ColumnEncoderComposite extends ColumnEncoder {
 
 	@Override
 	public void build(CacheBlock<?> in, Map<Integer, double[]> equiHeightMaxs) {
-		for(ColumnEncoder columnEncoder : _columnEncoders)
-			if(columnEncoder instanceof ColumnEncoderBin && ((ColumnEncoderBin) columnEncoder).getBinMethod() == ColumnEncoderBin.BinMethod.EQUI_HEIGHT) {
-				columnEncoder.build(in, equiHeightMaxs.get(columnEncoder.getColID()));
-			} else {
-				columnEncoder.build(in);
-			}
+		if(equiHeightMaxs == null)
+			build(in);
+		else{
+			for(ColumnEncoder columnEncoder : _columnEncoders)
+				if(columnEncoder instanceof ColumnEncoderBin && ((ColumnEncoderBin) columnEncoder).getBinMethod() == ColumnEncoderBin.BinMethod.EQUI_HEIGHT) {
+					columnEncoder.build(in, equiHeightMaxs.get(columnEncoder.getColID()));
+				} else {
+					columnEncoder.build(in);
+				}
+		}
 	}
 
 	@Override
@@ -321,9 +325,7 @@ public class ColumnEncoderComposite extends ColumnEncoder {
 		sb.append("CompositeEncoder(").append(_columnEncoders.size()).append("):\n");
 		for(ColumnEncoder columnEncoder : _columnEncoders) {
 			sb.append("-- ");
-			sb.append(columnEncoder.getClass().getSimpleName());
-			sb.append(": ");
-			sb.append(columnEncoder._colID);
+			sb.append(columnEncoder);
 			sb.append("\n");
 		}
 		return sb.toString();
@@ -410,6 +412,28 @@ public class ColumnEncoderComposite extends ColumnEncoder {
 				}).collect(Collectors.toSet());
 	}
 
+	@Override
+	public int getDomainSize() {
+		return _columnEncoders.stream()//
+			.map(ColumnEncoder::getDomainSize).reduce(Integer::max).get();
+	}
+
+
+	public boolean isRecodeToDummy(){
+		return _columnEncoders.size() == 2 //
+			&& _columnEncoders.get(0) instanceof ColumnEncoderRecode //
+			&& _columnEncoders.get(1) instanceof ColumnEncoderDummycode;
+	}
+
+	public boolean isRecode(){
+		return _columnEncoders.size() == 1 //
+		&& _columnEncoders.get(0) instanceof ColumnEncoderRecode;
+	}
+
+	public boolean isPassThrough(){
+		return _columnEncoders.size() == 1 //
+			&& _columnEncoders.get(0) instanceof ColumnEncoderPassThrough;
+	}
 
 	private static class ColumnCompositeUpdateDCTask implements Callable<Object> {
 

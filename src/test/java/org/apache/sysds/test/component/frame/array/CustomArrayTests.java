@@ -1150,7 +1150,7 @@ public class CustomArrayTests {
 
 	@Test
 	public void mappingCache() {
-		Array<?> a = new StringArray(new String[] {"1", null});
+		Array<String> a = new StringArray(new String[] {"1", null});
 		assertEquals(null, a.getCache());
 		a.setCache(new SoftReference<HashMap<String, Long>>(null));
 		assertTrue(null != a.getCache());

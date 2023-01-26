@@ -71,7 +71,6 @@ import org.apache.sysds.runtime.matrix.data.Pair;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
-import org.apache.sysds.runtime.transform.encode.ColumnEncoderRecode;
 import org.apache.sysds.runtime.util.CommonThreadPool;
 import org.apache.sysds.runtime.util.DMVUtils;
 import org.apache.sysds.runtime.util.EMAUtils;
@@ -87,9 +86,6 @@ public class FrameBlock implements CacheBlock<FrameBlock>, Externalizable {
 
 	/** Buffer size variable: 1M elements, size of default matrix block */
 	public static final int BUFFER_SIZE = 1 * 1000 * 1000;
-
-	/** internal configuration */
-	private static final boolean REUSE_RECODE_MAPS = true;
 
 	/** The schema of the data frame as an ordered list of value types */
 	private ValueType[] _schema = null;
@@ -169,18 +165,17 @@ public class FrameBlock implements CacheBlock<FrameBlock>, Externalizable {
 	}
 
 	/**
-	 * allocate a FrameBlock with the given data arrays. 
+	 * allocate a FrameBlock with the given data arrays.
 	 * 
-	 * The data is in row major, making the first dimension number of rows.
-	 * second number of columns.
+	 * The data is in row major, making the first dimension number of rows. second number of columns.
 	 * 
 	 * @param schema the schema to allocate
-	 * @param names The names of the column
-	 * @param data The data.
+	 * @param names  The names of the column
+	 * @param data   The data.
 	 */
 	public FrameBlock(ValueType[] schema, String[] names, String[][] data) {
 		_schema = schema;
-		if(names != null){
+		if(names != null) {
 			_colnames = names;
 			if(schema.length != names.length)
 				throw new DMLRuntimeException("Invalid FrameBlock construction, invalid schema and names combination");
@@ -821,9 +816,11 @@ public class FrameBlock implements CacheBlock<FrameBlock>, Externalizable {
 							.map(x -> x.getInMemorySize()).reduce(0L, Long::sum);
 					}).get();
 					pool.shutdown();
+
 				}
 				catch(InterruptedException | ExecutionException e) {
 					pool.shutdown();
+					LOG.error(e);
 					for(Array<?> aa : _coldata)
 						size += aa.getInMemorySize();
 				}
@@ -831,6 +828,7 @@ public class FrameBlock implements CacheBlock<FrameBlock>, Externalizable {
 			else {
 				for(Array<?> aa : _coldata)
 					size += aa.getInMemorySize();
+				
 			}
 		}
 		return size;
@@ -1187,34 +1185,8 @@ public class FrameBlock implements CacheBlock<FrameBlock>, Externalizable {
 	 * @param col is the column # from frame data which contains Recode map generated earlier.
 	 * @return map of token and code for every element in the input column of a frame containing Recode map
 	 */
-	public HashMap<String, Long> getRecodeMap(int col) {
-		// probe cache for existing map
-		if(REUSE_RECODE_MAPS) {
-			SoftReference<HashMap<String, Long>> tmp = _coldata[col].getCache();
-			HashMap<String, Long> map = (tmp != null) ? tmp.get() : null;
-			if(map != null)
-				return map;
-		}
-
-		// construct recode map
-		HashMap<String, Long> map = new HashMap<>();
-		Array<?> ldata = _coldata[col];
-		int nRow = _coldata[0].size();
-		if(nRow != _nRow)
-			throw new DMLRuntimeException("Invalid intermediate size:" + nRow + " " + _nRow);
-		for(int i = 0; i < getNumRows(); i++) {
-			Object val = ldata.get(i);
-			if(val != null) {
-				String[] tmp = ColumnEncoderRecode.splitRecodeMapEntry(val.toString());
-				map.put(tmp[0], Long.parseLong(tmp[1]));
-			}
-		}
-
-		// put created map into cache
-		if(REUSE_RECODE_MAPS)
-			_coldata[col].setCache(new SoftReference<>(map));
-
-		return map;
+	public HashMap<Object, Long> getRecodeMap(int col) {
+		return _coldata[col].getRecodeMap();
 	}
 
 	@Override

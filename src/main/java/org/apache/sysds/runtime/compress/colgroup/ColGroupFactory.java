@@ -646,7 +646,10 @@ public class ColGroupFactory {
 
 		// count distinct items frequencies
 		for(int j = apos; j < alen; j++)
-			map.increment(vals[j]);
+			if(!Double.isNaN(vals[j]))
+				map.increment(vals[j]);
+			else
+				map.increment(0);
 
 		DCounts[] entries = map.extractValues();
 		Arrays.sort(entries, Comparator.comparing(x -> -x.count));
@@ -668,7 +671,10 @@ public class ColGroupFactory {
 			else {
 				final AMapToData mapToData = MapToFactory.create((alen - apos), entries.length);
 				for(int j = apos; j < alen; j++)
+				if(!Double.isNaN(vals[j]))
 					mapToData.set(j - apos, map.get(vals[j]));
+				else
+					mapToData.set(j - apos, map.get(0.0));
 				return ColGroupSDCZeros.create(cols, nRow, Dictionary.create(dict), offsets, mapToData, counts);
 			}
 		}

@@ -47,46 +47,144 @@ source("scripts/utils/image_utils.dml") as img_utils
 *  - C: Number of channels of X
 *  - Hin: Height of each element of X
 *  - Win: Width of each element of X
+*  - useParfor: Use parfor loop if true
 *
 *  Outputs:
 *  - X_extrapolated: X padded with extrapolated data
 *  - input_HW: Height and Width of X_extrapolated
 */
-extrapolate = function(matrix[double] X, int N, int C, int Hin, int Win) return (matrix[double] X_extrapolated, int input_HW){
-    input_HW = Hin + 184 # Assuming filter HW 3 and conv stride 1
-    pad_size = 92 # 184 / 2
+extrapolate = function(matrix[double] X, int N, int C, int Hin, int Win, boolean useParfor = TRUE)
+    return (matrix[double] X_extrapolated, int input_HW){
+  input_HW = Hin + 184 # Assuming filter HW 3 and conv stride 1
+  pad_size = 92 # 184 / 2
+  channel_width = input_HW*input_HW
 
-    X_extrapolated = matrix(0, rows=N, cols=C*input_HW*input_HW)
+  if ( useParfor ) {
+    X_extrapolated = extrapolate_images_parfor(X, N, C, Hin, Win, pad_size, channel_width)
+  }
+  else {
+    X_extrapolated = extrapolate_images_for(X, N, C, Hin, Win, pad_size, channel_width)
+  }
+}
 
-    for ( i in 1:C ){
-        start_channel = ((i-1) * Hin * Win)+1
-        end_channel = i * Hin * Win
-        original_channel = X[,start_channel:end_channel]
-        # Iterate through the N rows of X each representing a single channel
-        for ( row in 1:N ){
-            img = matrix(original_channel[row], rows=Hin, cols=Win)
+/*
+* Pad input features X with extrapolated data by mirroring.
+* Only the height and width are padded, no extra channels are added.
+* Dimensions changed from (N,C*Hin*Win) to (N,C*(Hin+184)*(Win+184)).
+*
+* For loop is used when looping over rows.
+*
+*  Inputs:
+*  - X: Features to pad
+*  - N: Number of input elements of X
+*  - C: Number of channels of X
+*  - Hin: Height of each element of X
+*  - Win: Width of each element of X
+*  - pad_size: Pad size for each side of the image
+*  - channel_width: Width of a single channel
+*
+*  Outputs:
+*  - X_extrapolated: X padded with extrapolated data
+*/
+extrapolate_images_for = function(matrix[double] X, int N, int C, int Hin, int Win, int pad_size, int channel_width)
+    return (matrix[double] X_extrapolated){
+  X_extrapolated = matrix(0, rows=N, cols=C*channel_width)
+  for ( row in 1:N ){
+    img = X[row,]
+    X_extrapolated[row,] = extrapolate_image(img, C, Hin, Win, pad_size, channel_width)
+  }
+}
 
-            pad_left = t(rev(t(img[,1:pad_size])))
-            pad_right = t(rev(t(img[,(Win-(pad_size-1)):Win])))
-            pad_top = rev(img[1:(pad_size),])
-            pad_bottom = rev(img[(Hin-(pad_size-1)):Hin,])
-            pad_top_left = rev(pad_left[1:(pad_size),])
-            pad_top_right = rev(pad_right[1:(pad_size),])
-            pad_bottom_left = rev(pad_left[(Hin-(pad_size-1)):Hin,])
-            pad_bottom_right = rev(pad_right[(Hin-(pad_size-1)):Hin])
+/*
+* Pad input features X with extrapolated data by mirroring.
+* Only the height and width are padded, no extra channels are added.
+* Dimensions changed from (N,C*Hin*Win) to (N,C*(Hin+184)*(Win+184)).
+*
+* Parfor loop is used when looping over rows.
+*
+*  Inputs:
+*  - X: Features to pad
+*  - N: Number of input elements of X
+*  - C: Number of channels of X
+*  - Hin: Height of each element of X
+*  - Win: Width of each element of X
+*  - pad_size: Pad size for each side of the image
+*  - channel_width: Width of a single channel
+*
+*  Outputs:
+*  - X_extrapolated: X padded with extrapolated data
+*/
+extrapolate_images_parfor = function(matrix[double] X, int N, int C, int Hin, int Win, int pad_size, int channel_width)
+    return (matrix[double] X_extrapolated){
+  X_extrapolated = matrix(0, rows=N, cols=C*channel_width)
+  parfor ( row in 1:N, check=0 ){
+    img = X[row,]
+    X_extrapolated[row,] = extrapolate_image(img, C, Hin, Win, pad_size, channel_width)
+  }
+}
 
-            pad_left_full = rbind(pad_top_left, pad_left, pad_bottom_left)
-            pad_right_full = rbind(pad_top_right, pad_right, pad_bottom_right)
-            pad_center_full = rbind(pad_top, img, pad_bottom)
+/*
+* Pad input image img with extrapolated data by mirroring.
+* Only the height and width are padded, no extra channels are added.
+* Dimensions changed from (1,C*Hin*Win) to (1,C*(Hin+184)*(Win+184)).
+*
+*
+*  Inputs:
+*  - img: Image of dimension (1,C*Hin*Win) to pad
+*  - C: Number of channels of image
+*  - Hin: Height of image
+*  - Win: Width of image
+*  - pad_size: Pad size for each side of the image
+*  - channel_width: Width of a single channel
+*
+*  Outputs:
+*  - img_extrapolated: image padded with extrapolated data
+*/
+extrapolate_image = function(matrix[double] img, int C, int Hin, int Win, int pad_size, int channel_width)
+    return (matrix[double] img_extrapolated){
+  img_extrapolated = matrix(0, rows=1, cols=C*channel_width)
+  for ( i in 1:C ){
+    start_channel = ((i-1) * Hin * Win)+1
+    end_channel = i * Hin * Win
+    channel_slice = matrix(img[1,start_channel:end_channel], rows=Hin, cols=Win)
+    start_col = ((i-1)*channel_width)+1
+    end_col = i*channel_width
+    img_extrapolated[1,start_col:end_col] = extrapolate_channel(channel_slice, Hin, Win, pad_size, channel_width)
+  }
+}
 
-            modified_channel = cbind(pad_left_full, pad_center_full, pad_right_full)
+/*
+* Pad single channel of input image img with extrapolated data by mirroring.
+* Dimensions changed from (Hin,Win) to (1,(Hin+184)*(Win+184)).
+*
+*
+*  Inputs:
+*  - img: Image of dimension (Hin,Win) to pad
+*  - Hin: Height of image
+*  - Win: Width of image
+*  - pad_size: Pad size for each side of the image
+*  - channel_width: Width of a single channel
+*
+*  Outputs:
+*  - channel_extrapolated: channel of image padded with extrapolated data
+*/
+extrapolate_channel = function(matrix[double] img, int Hin, int Win, int pad_size, int channel_width)
+    return (matrix[double] channel_extrapolated){
+  pad_left = t(rev(t(img[,1:pad_size])))
+  pad_right = t(rev(t(img[,(Win-(pad_size-1)):Win])))
+  pad_top = rev(img[1:(pad_size),])
+  pad_bottom = rev(img[(Hin-(pad_size-1)):Hin,])
+  pad_top_left = rev(pad_left[1:(pad_size),])
+  pad_top_right = rev(pad_right[1:(pad_size),])
+  pad_bottom_left = rev(pad_left[(Hin-(pad_size-1)):Hin,])
+  pad_bottom_right = rev(pad_right[(Hin-(pad_size-1)):Hin])
 
-            flat_width = input_HW*input_HW
-            start_col = ((i-1)*flat_width)+1
-            end_col = i*flat_width
-            X_extrapolated[row,start_col:end_col] = matrix(modified_channel, rows=1, cols=flat_width)
-        }
-    }
+  pad_left_full = rbind(pad_top_left, pad_left, pad_bottom_left)
+  pad_right_full = rbind(pad_top_right, pad_right, pad_bottom_right)
+  pad_center_full = rbind(pad_top, img, pad_bottom)
+
+  modified_channel = cbind(pad_left_full, pad_center_full, pad_right_full)
+  channel_extrapolated = matrix(modified_channel, rows=1, cols=channel_width)
 }
 
 /*

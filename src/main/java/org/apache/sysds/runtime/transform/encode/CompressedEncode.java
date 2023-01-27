@@ -56,55 +56,45 @@ public class CompressedEncode {
 	}
 
 	private MatrixBlock apply() {
-		// LOG.error(enc);
-		// LOG.error(in);
-		List<ColumnEncoderComposite> encs = enc.getColumnEncoders();
+		List<ColumnEncoderComposite> encoders = enc.getColumnEncoders();
 
-		// in.getColumn();
+		List<AColGroup> groups = new ArrayList<>(encoders.size());
 
-		// two parts... build
-		// for(ColumnEncoderComposite c : encs){
-		// c.build(in);
-		// c.updateAllDCEncoders();
-		// }
+		for(ColumnEncoderComposite c : encoders)
+			groups.add(encode(c));
 
-		// LOG.error(enc);
+		int cols = shiftGroups(groups);
 
-		List<AColGroup> groups = new ArrayList<>();
+		MatrixBlock mb = new CompressedMatrixBlock(in.getNumRows(), cols, -1, false, groups);
+		mb.recomputeNonZeros();
+		logging(mb);
+		return mb;
+	}
 
-		for(ColumnEncoderComposite c : encs) {
-			if(c.isRecodeToDummy())
-				groups.add(recodeToDummy(c));
-			else if(c.isRecode())
-				groups.add(recode(c));
-			else if(c.isPassThrough())
-				groups.add(passThrough(c));
-			else
-				throw new NotImplementedException("Not supporting : " + c);
-			// cols += domain;
-		}
-
-		// shift groups
-
+	/**
+	 * Shift the column groups to the correct column numbers.
+	 * 
+	 * @param groups the groups to shift
+	 * @return The total number of columns contained.
+	 */
+	private int shiftGroups(List<AColGroup> groups) {
 		int cols = groups.get(0).getColIndices().length;
 		for(int i = 1; i < groups.size(); i++) {
 			groups.set(i, groups.get(i).shiftColIndices(cols));
 			cols += groups.get(i).getColIndices().length;
 		}
+		return cols;
+	}
 
-		MatrixBlock mb = new CompressedMatrixBlock(in.getNumRows(), cols, -1, false, groups);
-		mb.recomputeNonZeros();
-		LOG.error(String.format("Uncompressed transform encode Dense size:   %16d", mb.estimateSizeDenseInMemory()));
-		LOG.error(String.format("Uncompressed transform encode Sparse size:  %16d", mb.estimateSizeSparseInMemory()));
-		LOG.error(String.format("Compressed transform encode size:           %16d", mb.estimateSizeInMemory()));
-
-		double ratio = Math.min(mb.estimateSizeDenseInMemory(), mb.estimateSizeSparseInMemory()) /
-			mb.estimateSizeInMemory();
-		double denseRatio = mb.estimateSizeDenseInMemory() / mb.estimateSizeInMemory();
-		LOG.error(String.format("Compression ratio: %10.3f", ratio));
-		LOG.error(String.format("Dense ratio:       %10.3f", denseRatio));
-
-		return mb;
+	private AColGroup encode(ColumnEncoderComposite c) {
+		if(c.isRecodeToDummy())
+			return recodeToDummy(c);
+		else if(c.isRecode())
+			return recode(c);
+		else if(c.isPassThrough())
+			return passThrough(c);
+		else
+			throw new NotImplementedException("Not supporting : " + c);
 	}
 
 	@SuppressWarnings("unchecked")
@@ -168,24 +158,11 @@ public class CompressedEncode {
 			else {
 				map.put(null, (long) map.size());
 				vals[map.get(v).intValue()] = a.getAsDouble(i);
-				// throw new NotImplementedException("Not Implemented Null support");
 			}
 		}
 		ADictionary d = Dictionary.create(vals);
-
-		// for(Entry<?, Long> ent : map.entrySet()){
-		// vals[ent.getValue().intValue()] = ent.getValue();
-		// }
-
 		AMapToData m = createMappingAMapToData(a, map);
 		return ColGroupDDC.create(colIndexes, d, m, null);
-		// double[] vals = new double[in.getNumRows()];
-		// // Array<?> a = in.getColumn(colId -1);
-		// for(int i =0 ; i < in.getNumRows();i ++)
-		// vals[i] = a.getAsNaNDouble(i);
-		// MatrixBlock mb = new MatrixBlock(in.getNumRows(), 1, vals);
-		// mb.examSparsity();
-		// return ColGroupUncompressed.create(colIndexes, mb, false);
 	}
 
 	private AMapToData createMappingAMapToData(Array<?> a, HashMap<?, Long> map) {
@@ -198,5 +175,20 @@ public class CompressedEncode {
 			}
 		}
 		return m;
+	}
+
+	private void logging(MatrixBlock mb) {
+		if(LOG.isDebugEnabled()) {
+			LOG.debug(String.format("Uncompressed transform encode Dense size:   %16d", mb.estimateSizeDenseInMemory()));
+			LOG.debug(String.format("Uncompressed transform encode Sparse size:  %16d", mb.estimateSizeSparseInMemory()));
+			LOG.debug(String.format("Compressed transform encode size:           %16d", mb.estimateSizeInMemory()));
+
+			double ratio = Math.min(mb.estimateSizeDenseInMemory(), mb.estimateSizeSparseInMemory()) /
+				mb.estimateSizeInMemory();
+			double denseRatio = mb.estimateSizeDenseInMemory() / mb.estimateSizeInMemory();
+			LOG.debug(String.format("Compression ratio: %10.3f", ratio));
+			LOG.debug(String.format("Dense ratio:       %10.3f", denseRatio));
+		}
+
 	}
 }

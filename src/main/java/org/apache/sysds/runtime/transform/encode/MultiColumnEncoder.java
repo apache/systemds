@@ -261,6 +261,10 @@ public class MultiColumnEncoder implements Encoder {
 	}
 
 	public void build(CacheBlock<?> in, int k) {
+		build(in, k, null);
+	}
+
+	public void build(CacheBlock<?> in, int k, Map<Integer, double[]> equiHeightBinMaxs) {
 		if(hasLegacyEncoder() && !(in instanceof FrameBlock))
 			throw new DMLRuntimeException("LegacyEncoders do not support non FrameBlock Inputs");
 		if(!_partitionDone) //happens if this method is directly called
@@ -270,31 +274,13 @@ public class MultiColumnEncoder implements Encoder {
 		}
 		else {
 			for(ColumnEncoderComposite columnEncoder : _columnEncoders) {
-				columnEncoder.build(in);
+				columnEncoder.build(in, equiHeightBinMaxs);
 				columnEncoder.updateAllDCEncoders();
 			}
 		}
 		if(hasLegacyEncoder())
 			legacyBuild((FrameBlock) in);
 	}
-
-	// public void build(CacheBlock<?> in, int k, Map<Integer, double[]> equiHeightBinMaxs) {
-	// 	if(hasLegacyEncoder() && !(in instanceof FrameBlock))
-	// 		throw new DMLRuntimeException("LegacyEncoders do not support non FrameBlock Inputs");
-	// 	if(!_partitionDone) //happens if this method is directly called
-	// 		deriveNumRowPartitions(in, k);
-	// 	if(k > 1) {
-	// 		buildMT(in, k);
-	// 	}
-	// 	else {
-	// 		for(ColumnEncoderComposite columnEncoder : _columnEncoders) {
-	// 			columnEncoder.build(in, equiHeightBinMaxs);
-	// 			columnEncoder.updateAllDCEncoders();
-	// 		}
-	// 	}
-	// 	if(hasLegacyEncoder())
-	// 		legacyBuild((FrameBlock) in);
-	// }
 
 	private List<DependencyTask<?>> getBuildTasks(CacheBlock<?> in) {
 		List<DependencyTask<?>> tasks = new ArrayList<>();
@@ -877,23 +863,6 @@ public class MultiColumnEncoder implements Encoder {
 		for(int i = 0; i < _columnEncoders.size(); i++)
 			sum += _columnEncoders.get(i).getDomainSize();
 		return sum;
-		// List<ColumnEncoderDummycode> dc = getColumnEncoders(ColumnEncoderDummycode.class);
-		// if(dc.isEmpty()) {
-		// 	return 0;
-		// }
-		// if(dc.stream().anyMatch(e -> e.getDomainSize() < 0)) {
-		// 	throw new DMLRuntimeException("Trying to get extra columns when DC encoders are not ready");
-		// }
-		// return dc.stream().map(ColumnEncoderDummycode::getDomainSize).mapToInt(i -> i).sum() - dc.size();
-	}
-
-	public int getNumExtraCols(IndexRange ixRange) {
-		List<ColumnEncoderDummycode> dc = getColumnEncoders(ColumnEncoderDummycode.class).stream()
-			.filter(dce -> ixRange.inColRange(dce._colID)).collect(Collectors.toList());
-		if(dc.isEmpty()) {
-			return 0;
-		}
-		return dc.stream().map(ColumnEncoderDummycode::getDomainSize).mapToInt(i -> i).sum() - dc.size();
 	}
 
 	public <T extends ColumnEncoder> boolean containsEncoderForID(int colID, Class<T> type) {

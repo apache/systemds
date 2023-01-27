@@ -865,6 +865,15 @@ public class MultiColumnEncoder implements Encoder {
 		return sum;
 	}
 
+	public int getNumExtraCols(IndexRange ixRange) {
+		List<ColumnEncoderDummycode> dc = getColumnEncoders(ColumnEncoderDummycode.class).stream()
+			.filter(dce -> ixRange.inColRange(dce._colID)).collect(Collectors.toList());
+		if(dc.isEmpty()) {
+			return 0;
+		}
+		return dc.stream().map(ColumnEncoderDummycode::getDomainSize).mapToInt(i -> i).sum() - dc.size();
+	}
+
 	public <T extends ColumnEncoder> boolean containsEncoderForID(int colID, Class<T> type) {
 		return getColumnEncoders(type).stream().anyMatch(encoder -> encoder.getColID() == colID);
 	}

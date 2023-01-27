@@ -98,10 +98,10 @@ public class transformCompressed {
 			FrameBlock outNormalMD = encoderNormal.getMetaData(null);
 			
 			
-			LOG.error(outNormal);
-			LOG.error(outCompressed);
-			LOG.error(outCompressedMD);
-			LOG.error(outNormalMD);
+			// LOG.error(outNormal);
+			// LOG.error(outCompressed);
+			// LOG.error(outCompressedMD);
+			// LOG.error(outNormalMD);
 
 			TestUtils.compareMatrices(outNormal, outCompressed, 0, "Not Equal after apply");
 			TestUtils.compareFrames(outNormalMD, outCompressedMD, true);

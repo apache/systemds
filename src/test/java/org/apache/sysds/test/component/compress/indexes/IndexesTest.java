@@ -32,6 +32,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Random;
 
 import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
@@ -64,6 +65,12 @@ public class IndexesTest {
 
 			// two
 			tests.add(new Object[] {new int[] {0, 1}, new TwoIndex(0, 1)});
+			tests.add(new Object[] {new int[] {3214, 44444}, new TwoIndex(3214, 44444)});
+			tests.add(new Object[] {new int[] {3214, 44444}, ColIndexFactory.create(new int[] {3214, 44444})});
+			tests.add(new Object[] {new int[] {3214, 3215}, ColIndexFactory.create(3214, 3216)});
+
+			// array
+			tests.add(create(32, 14));
 		}
 		catch(Exception e) {
 			e.printStackTrace();
@@ -169,7 +176,7 @@ public class IndexesTest {
 
 	@Test
 	public void estimateInMemorySizeIsNotToBig() {
-		assertTrue(MemoryEstimates.intArrayCost(expected.length) > actual.estimateInMemorySize() - 16);
+		assertTrue(MemoryEstimates.intArrayCost(expected.length) >= actual.estimateInMemorySize() - 16);
 	}
 
 	private void shift(int i) {
@@ -200,5 +207,15 @@ public class IndexesTest {
 			assertEquals(expected[i], actual.next());
 		}
 		assertFalse(actual.hasNext());
+	}
+
+	private static Object[] create(int size, int seed) {
+		int[] cols = new int[size];
+		Random r = new Random(seed);
+		cols[0] = r.nextInt(1000) + 1;
+		for(int i = 1; i < size; i++) {
+			cols[i] = cols[i - 1] + r.nextInt(1000) + 1;
+		}
+		return new Object[] {cols, ColIndexFactory.create(cols)};
 	}
 }

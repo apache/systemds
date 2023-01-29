@@ -35,6 +35,8 @@ public interface ColIndexFactory {
 				return new SingleIndex(in.readInt());
 			case TWO:
 				return new TwoIndex(in.readInt(), in.readInt());
+			case ARRAY:
+				return ArrayIndex.read(in);
 			default:
 				throw new DMLCompressionException("Failed reading column index of type: " + t);
 		}
@@ -45,12 +47,16 @@ public interface ColIndexFactory {
 			return new SingleIndex(indexes[0]);
 		else if(indexes.length == 2)
 			return new TwoIndex(indexes[0], indexes[1]);
-		throw new NotImplementedException();
+		else
+			return new ArrayIndex(indexes);
 	}
 
 	public static IColIndex create(int l, int u) {
 		if(u - 1 == l)
 			return new SingleIndex(l);
+		else if(u - 2 == l)
+			return new TwoIndex(l, l + 1);
+
 		throw new NotImplementedException();
 	}
 

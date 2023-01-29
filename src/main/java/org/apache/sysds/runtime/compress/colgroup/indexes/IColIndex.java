@@ -23,23 +23,24 @@ import java.io.DataOutput;
 import java.io.IOException;
 
 /**
- * Class to contain column indexes for the Compression column groups.
+ * Class to contain column indexes for the compression column groups.
  */
 public interface IColIndex {
 
 	public static enum ColIndexType {
-		SINGLE, TWO, ARRAY;
+		SINGLE, TWO, ARRAY, RANGE, UNKNOWN;
 	}
 
 	/**
 	 * Get the size of the index aka, how many columns is contained
 	 * 
-	 * @return The size
+	 * @return The size of the array
 	 */
 	public int size();
 
 	/**
-	 * Get the index at a specific location
+	 * Get the index at a specific location, Note that many of the underlying implementations does not throw exceptions
+	 * on indexes that are completely wrong, so all implementations that use this index should always be well behaved.
 	 * 
 	 * @param i The index to get
 	 * @return the column index at the index.
@@ -56,10 +57,26 @@ public interface IColIndex {
 	 */
 	public IColIndex shift(int i);
 
+	/**
+	 * Write out the IO representation of this column index
+	 * 
+	 * @param out The Output to write into
+	 * @throws IOException IO exceptions in case of for instance not enough disk space
+	 */
 	public void write(DataOutput out) throws IOException;
 
+	/**
+	 * Get the exact size on disk to enable preallocation of the disk output buffer sizes
+	 * 
+	 * @return The exact disk representation size
+	 */
 	public long getExactSizeOnDisk();
 
+	/**
+	 * Get the in memory size of this object.
+	 * 
+	 * @return The memory size of this object
+	 */
 	public long estimateInMemorySize();
 
 	/**

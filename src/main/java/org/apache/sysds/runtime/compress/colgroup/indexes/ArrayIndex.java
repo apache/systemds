@@ -23,7 +23,6 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.utils.MemoryEstimates;
 
 public class ArrayIndex implements IColIndex {
@@ -79,6 +78,20 @@ public class ArrayIndex implements IColIndex {
 
 	@Override
 	public IIterate iterator() {
-		throw new NotImplementedException();
+		return new ArrayIterator();
+	}
+
+	protected class ArrayIterator implements IIterate {
+		int id = 0;
+
+		@Override
+		public int next() {
+			return cols[id++];
+		}
+
+		@Override
+		public boolean hasNext() {
+			return id < cols.length;
+		}
 	}
 }

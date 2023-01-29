@@ -22,7 +22,6 @@ package org.apache.sysds.runtime.compress.colgroup.indexes;
 import java.io.DataInput;
 import java.io.IOException;
 
-import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex.ColIndexType;
 
@@ -37,6 +36,8 @@ public interface ColIndexFactory {
 				return new TwoIndex(in.readInt(), in.readInt());
 			case ARRAY:
 				return ArrayIndex.read(in);
+			case RANGE:
+				return RangeIndex.read(in);
 			default:
 				throw new DMLCompressionException("Failed reading column index of type: " + t);
 		}
@@ -47,22 +48,29 @@ public interface ColIndexFactory {
 			return new SingleIndex(indexes[0]);
 		else if(indexes.length == 2)
 			return new TwoIndex(indexes[0], indexes[1]);
+		else if(RangeIndex.isValidRange(indexes))
+			return new RangeIndex(indexes[0], indexes[0] + indexes.length);
 		else
 			return new ArrayIndex(indexes);
 	}
+
+	
 
 	public static IColIndex create(int l, int u) {
 		if(u - 1 == l)
 			return new SingleIndex(l);
 		else if(u - 2 == l)
 			return new TwoIndex(l, l + 1);
-
-		throw new NotImplementedException();
+		else 
+			return new RangeIndex(l, u);
 	}
 
 	public static IColIndex create(int nCol) {
 		if(nCol == 1)
 			return new SingleIndex(0);
-		throw new NotImplementedException();
+		else if(nCol == 2)
+			return new TwoIndex(0,1);
+		else
+			return new RangeIndex(nCol);
 	}
 }

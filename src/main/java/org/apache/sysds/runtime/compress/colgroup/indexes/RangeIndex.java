@@ -19,45 +19,50 @@
 
 package org.apache.sysds.runtime.compress.colgroup.indexes;
 
+import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-public class TwoIndex implements IColIndex {
-	private final int id1;
-	private final int id2;
+public class RangeIndex implements IColIndex {
+	private final int l;
+	private final int u; // not inclusive
 
-	public TwoIndex(int id1, int id2) {
-		this.id1 = id1;
-		this.id2 = id2;
+	public RangeIndex(int nCol) {
+		l = 0;
+		u = nCol;
+	}
+
+	public RangeIndex(int l, int u) {
+		this.l = l;
+		this.u = u;
 	}
 
 	@Override
 	public int size() {
-		return 2;
+		return u - l;
 	}
 
 	@Override
 	public int get(int i) {
-		if(i == 0)
-			return id1;
-		else
-			return id2;
+		return l + i;
 	}
 
 	@Override
-	public TwoIndex shift(int i) {
-		return new TwoIndex(id1 + i, id2 + i);
+	public IColIndex shift(int i) {
+		return new RangeIndex(l + i, u + i);
 	}
 
 	@Override
-	public IIterate iterator() {
-		return new TwoIterator();
-	}
-
 	public void write(DataOutput out) throws IOException {
-		out.writeByte(ColIndexType.TWO.ordinal());
-		out.writeInt(id1);
-		out.writeInt(id2);
+		out.writeByte(ColIndexType.RANGE.ordinal());
+		out.writeInt(l);
+		out.writeInt(u);
+	}
+
+	public static RangeIndex read(DataInput in) throws IOException {
+		int l = in.readInt();
+		int u = in.readInt();
+		return new RangeIndex(l, u);
 	}
 
 	@Override
@@ -67,24 +72,32 @@ public class TwoIndex implements IColIndex {
 
 	@Override
 	public long estimateInMemorySize() {
-		return 16 + 8; // object, 2x int
+		return 16 + 8;
 	}
 
-	protected class TwoIterator implements IIterate {
-		int id = 0;
+	@Override
+	public IIterate iterator() {
+		return new RangeIterator();
+	}
+
+	protected static boolean isValidRange(int[] indexes) {
+		int len = indexes.length;
+		int first = indexes[0];
+		int last = indexes[indexes.length - 1];
+		return last - first + 1 == len;
+	}
+
+	protected class RangeIterator implements IIterate {
+		int cl = l;
 
 		@Override
 		public int next() {
-			if(id++ == 0)
-				return id1;
-			else
-				return id2;
+			return cl++;
 		}
 
 		@Override
 		public boolean hasNext() {
-			return id < 2;
+			return cl < u;
 		}
 	}
-
 }

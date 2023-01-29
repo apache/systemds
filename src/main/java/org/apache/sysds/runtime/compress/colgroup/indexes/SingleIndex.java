@@ -36,10 +36,7 @@ public class SingleIndex implements IColIndex {
 
 	@Override
 	public int get(int i) {
-		if(i == 0)
-			return idx;
-		else
-			throw new ArrayIndexOutOfBoundsException("Out of bounds at " + i);
+		return idx;
 	}
 
 	@Override

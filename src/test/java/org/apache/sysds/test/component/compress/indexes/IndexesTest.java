@@ -68,9 +68,31 @@ public class IndexesTest {
 			tests.add(new Object[] {new int[] {3214, 44444}, new TwoIndex(3214, 44444)});
 			tests.add(new Object[] {new int[] {3214, 44444}, ColIndexFactory.create(new int[] {3214, 44444})});
 			tests.add(new Object[] {new int[] {3214, 3215}, ColIndexFactory.create(3214, 3216)});
+			tests.add(new Object[] {new int[] {0, 1}, ColIndexFactory.create(2)});
 
 			// array
 			tests.add(create(32, 14));
+			tests.add(create(40, 21));
+			tests.add(new Object[] {//
+				new int[] {0, 1, 2, 3, 4, 5, 6, 7, 8, 9}, //
+				ColIndexFactory.create(0, 10)});
+
+			tests.add(new Object[] {//
+				new int[] {0, 1, 2, 3}, //
+				ColIndexFactory.create(0, 4)});
+
+			tests.add(new Object[] {//
+				new int[] {0, 1, 2, 3}, //
+				ColIndexFactory.create(4)});
+
+			tests.add(new Object[] {//
+				new int[] {0, 1, 2, 3, 4, 5, 6, 7, 8, 9}, //
+				ColIndexFactory.create(10)});
+
+			tests.add(new Object[] {//
+				new int[] {4, 5, 6, 7, 8, 9}, //
+				ColIndexFactory.create(4, 10)});
+
 		}
 		catch(Exception e) {
 			e.printStackTrace();
@@ -144,15 +166,6 @@ public class IndexesTest {
 		assertEquals(expected.length, actual.size());
 	}
 
-	@Test(expected = ArrayIndexOutOfBoundsException.class)
-	public void outOfBounds() {
-		actual.get(expected.length);
-	}
-
-	@Test(expected = ArrayIndexOutOfBoundsException.class)
-	public void negative() {
-		actual.get(-1);
-	}
 
 	@Test
 	public void iterator() {

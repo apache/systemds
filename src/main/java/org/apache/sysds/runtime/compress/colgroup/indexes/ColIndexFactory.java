@@ -54,14 +54,12 @@ public interface ColIndexFactory {
 			return new ArrayIndex(indexes);
 	}
 
-	
-
 	public static IColIndex create(int l, int u) {
 		if(u - 1 == l)
 			return new SingleIndex(l);
 		else if(u - 2 == l)
 			return new TwoIndex(l, l + 1);
-		else 
+		else
 			return new RangeIndex(l, u);
 	}
 
@@ -69,7 +67,7 @@ public interface ColIndexFactory {
 		if(nCol == 1)
 			return new SingleIndex(0);
 		else if(nCol == 2)
-			return new TwoIndex(0,1);
+			return new TwoIndex(0, 1);
 		else
 			return new RangeIndex(nCol);
 	}

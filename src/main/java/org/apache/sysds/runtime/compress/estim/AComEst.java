@@ -30,7 +30,8 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
-import org.apache.sysds.runtime.compress.utils.Util;
+import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
+import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.Timing;
 import org.apache.sysds.runtime.matrix.data.LibMatrixReorg;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -94,7 +95,7 @@ public abstract class AComEst {
 	 * @param colIndexes The columns to group together inside a ColGroup
 	 * @return The CompressedSizeInformation associated with the selected ColGroups.
 	 */
-	public final CompressedSizeInfoColGroup getColGroupInfo(int[] colIndexes) {
+	public final CompressedSizeInfoColGroup getColGroupInfo(IColIndex colIndexes) {
 		return getColGroupInfo(colIndexes, 8, worstCaseUpperBound(colIndexes));
 	}
 
@@ -112,7 +113,8 @@ public abstract class AComEst {
 	 * 
 	 * @return The CompressedSizeInfoColGroup for the given column indexes.
 	 */
-	public abstract CompressedSizeInfoColGroup getColGroupInfo(int[] colIndexes, int estimate, int nrUniqueUpperBound);
+	public abstract CompressedSizeInfoColGroup getColGroupInfo(IColIndex colIndexes, int estimate,
+		int nrUniqueUpperBound);
 
 	/**
 	 * Method for extracting info of specified columns as delta encodings (delta from previous rows values)
@@ -120,7 +122,7 @@ public abstract class AComEst {
 	 * @param colIndexes The columns to group together inside a ColGroup
 	 * @return The CompressedSizeInformation assuming delta encoding of the column.
 	 */
-	public final CompressedSizeInfoColGroup getDeltaColGroupInfo(int[] colIndexes) {
+	public final CompressedSizeInfoColGroup getDeltaColGroupInfo(IColIndex colIndexes) {
 		return getDeltaColGroupInfo(colIndexes, 8, worstCaseUpperBound(colIndexes));
 	}
 
@@ -140,7 +142,7 @@ public abstract class AComEst {
 	 * 
 	 * @return The CompressedSizeInfoColGroup for the given column indexes.
 	 */
-	public abstract CompressedSizeInfoColGroup getDeltaColGroupInfo(int[] colIndexes, int estimate,
+	public abstract CompressedSizeInfoColGroup getDeltaColGroupInfo(IColIndex colIndexes, int estimate,
 		int nrUniqueUpperBound);
 
 	/**
@@ -155,7 +157,7 @@ public abstract class AComEst {
 	 * @return A combined compressed size estimation for the group.
 	 */
 	public final CompressedSizeInfoColGroup combine(CompressedSizeInfoColGroup g1, CompressedSizeInfoColGroup g2) {
-		final int[] combinedColIndexes = Util.combine(g1.getColumns(), g2.getColumns());
+		final IColIndex combinedColIndexes = g1.getColumns().combine(g2.getColumns());
 		return combine(combinedColIndexes, g1, g2);
 	}
 
@@ -171,7 +173,7 @@ public abstract class AComEst {
 	 * @param g2              Second group
 	 * @return A combined compressed size estimation for the columns specified using the combining algorithm
 	 */
-	public final CompressedSizeInfoColGroup combine(int[] combinedColumns, CompressedSizeInfoColGroup g1,
+	public final CompressedSizeInfoColGroup combine(IColIndex combinedColumns, CompressedSizeInfoColGroup g1,
 		CompressedSizeInfoColGroup g2) {
 		final int nRows = g1.getNumRows();
 		// num vals + 1 if the offsets does not contain all this indicate that the columns contains default tuples.
@@ -206,7 +208,7 @@ public abstract class AComEst {
 	 * @param columns The columns to look at
 	 * @return The worst case upper bound.
 	 */
-	protected abstract int worstCaseUpperBound(int[] columns);
+	protected abstract int worstCaseUpperBound(IColIndex columns);
 
 	/**
 	 * Combine two estimated column groups
@@ -217,7 +219,7 @@ public abstract class AComEst {
 	 * @param maxDistinct     The maximum distinct tuples possible to get with the two groups
 	 * @return The combined column group estimate
 	 */
-	protected abstract CompressedSizeInfoColGroup combine(int[] combinedColumns, CompressedSizeInfoColGroup g1,
+	protected abstract CompressedSizeInfoColGroup combine(IColIndex combinedColumns, CompressedSizeInfoColGroup g1,
 		CompressedSizeInfoColGroup g2, int maxDistinct);
 
 	private List<CompressedSizeInfoColGroup> CompressedSizeInfoColGroup(int clen, int k) {
@@ -232,7 +234,7 @@ public abstract class AComEst {
 		if(!_cs.transposed && !_data.isEmpty() && _data.isInSparseFormat())
 			nnzCols = LibMatrixReorg.countNnzPerColumn(_data);
 		for(int col = 0; col < clen; col++)
-			ret.add(getColGroupInfo(new int[] {col}));
+			ret.add(getColGroupInfo(ColIndexFactory.create(col)));
 		return ret;
 	}
 
@@ -283,7 +285,7 @@ public abstract class AComEst {
 		public Object call() {
 			try {
 				for(int c = _cs; c < _ce; c++)
-					_res[c] = getColGroupInfo(new int[] {c});
+					_res[c] = getColGroupInfo(ColIndexFactory.create(c));
 				return null;
 			}
 			catch(Exception e) {

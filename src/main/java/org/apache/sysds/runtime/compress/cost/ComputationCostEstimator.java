@@ -51,7 +51,7 @@ public class ComputationCostEstimator extends ACostEstimate {
 	@Override
 	protected double getCostSafe(CompressedSizeInfoColGroup g) {
 		final int nVals = g.getNumVals();
-		final int nCols = g.getColumns().length;
+		final int nCols = g.getColumns().size();
 		final int nRows = g.getNumRows();
 		// assume that it is never fully sparse
 		final double sparsity = (nCols < 3 || ins.isDensifying()) ? 1 : g.getTupleSparsity() + 1E-10;

@@ -25,10 +25,12 @@ import java.util.Arrays;
 
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
+import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
+import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
+import org.apache.sysds.runtime.compress.colgroup.indexes.IIterate;
 import org.apache.sysds.runtime.compress.colgroup.scheme.EmptyScheme;
 import org.apache.sysds.runtime.compress.colgroup.scheme.ICLAScheme;
 import org.apache.sysds.runtime.compress.cost.ComputationCostEstimator;
-import org.apache.sysds.runtime.compress.utils.Util;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.functionobjects.Builtin;
@@ -48,12 +50,12 @@ public class ColGroupEmpty extends AColGroupCompressed {
 	 * 
 	 * @param colIndices The Colum indexes for the column group.
 	 */
-	public ColGroupEmpty(int[] colIndices) {
+	public ColGroupEmpty(IColIndex colIndices) {
 		super(colIndices);
 	}
 
 	public static ColGroupEmpty create(int nCol) {
-		return new ColGroupEmpty(Util.genColsIndices(nCol));
+		return new ColGroupEmpty(ColIndexFactory.create(nCol));
 	}
 
 	@Override
@@ -86,7 +88,7 @@ public class ColGroupEmpty extends AColGroupCompressed {
 		final double v = op.executeScalar(0);
 		if(v == 0)
 			return this;
-		double[] retV = new double[_colIndexes.length];
+		double[] retV = new double[_colIndexes.size()];
 		Arrays.fill(retV, v);
 		return ColGroupConst.create(_colIndexes, Dictionary.create(retV));
 	}
@@ -96,7 +98,7 @@ public class ColGroupEmpty extends AColGroupCompressed {
 		final double v = op.fn.execute(0);
 		if(v == 0)
 			return this;
-		double[] retV = new double[_colIndexes.length];
+		double[] retV = new double[_colIndexes.size()];
 		Arrays.fill(retV, v);
 		return ColGroupConst.create(_colIndexes, Dictionary.create(retV));
 	}
@@ -106,10 +108,10 @@ public class ColGroupEmpty extends AColGroupCompressed {
 		if(isRowSafe)
 			return this;
 		final ValueFunction fn = op.fn;
-		final double[] retVals = new double[_colIndexes.length];
-		final int lenV = _colIndexes.length;
+		final double[] retVals = new double[_colIndexes.size()];
+		final int lenV = _colIndexes.size();
 		for(int i = 0; i < lenV; i++)
-			retVals[i] = fn.execute(v[_colIndexes[i]], 0);
+			retVals[i] = fn.execute(v[_colIndexes.get(i)], 0);
 		return ColGroupConst.create(_colIndexes, Dictionary.create(retVals));
 	}
 
@@ -118,10 +120,10 @@ public class ColGroupEmpty extends AColGroupCompressed {
 		if(isRowSafe)
 			return this;
 		final ValueFunction fn = op.fn;
-		final double[] retVals = new double[_colIndexes.length];
-		final int lenV = _colIndexes.length;
+		final double[] retVals = new double[_colIndexes.size()];
+		final int lenV = _colIndexes.size();
 		for(int i = 0; i < lenV; i++)
-			retVals[i] = fn.execute(0, v[_colIndexes[i]]);
+			retVals[i] = fn.execute(0, v[_colIndexes.get(i)]);
 		return ColGroupConst.create(_colIndexes, Dictionary.create(retVals));
 	}
 
@@ -157,16 +159,16 @@ public class ColGroupEmpty extends AColGroupCompressed {
 
 	@Override
 	protected AColGroup sliceSingleColumn(int idx) {
-		return new ColGroupEmpty(new int[] {0});
+		return new ColGroupEmpty(ColIndexFactory.create(1));
 	}
 
 	@Override
-	protected AColGroup sliceMultiColumns(int idStart, int idEnd, int[] outputCols) {
+	protected AColGroup sliceMultiColumns(int idStart, int idEnd, IColIndex outputCols) {
 		return new ColGroupEmpty(outputCols);
 	}
 
 	@Override
-	public AColGroup rightMultByMatrix(MatrixBlock right, int[] allCols) {
+	public AColGroup rightMultByMatrix(MatrixBlock right, IColIndex allCols) {
 		return null;
 	}
 
@@ -195,8 +197,11 @@ public class ColGroupEmpty extends AColGroupCompressed {
 
 	@Override
 	protected void computeColMxx(double[] c, Builtin builtin) {
-		for(int colId : _colIndexes)
+		IIterate it = _colIndexes.iterator();
+		while(it.hasNext()) {
+			final int colId = it.next();
 			c[colId] = builtin.execute(c[colId], 0);
+		}
 	}
 
 	@Override
@@ -300,7 +305,7 @@ public class ColGroupEmpty extends AColGroupCompressed {
 	}
 
 	public static ColGroupEmpty read(DataInput in) throws IOException {
-		int[] cols = readCols(in);
+		IColIndex cols = ColIndexFactory.read(in);
 		return new ColGroupEmpty(cols);
 	}
 
@@ -310,13 +315,13 @@ public class ColGroupEmpty extends AColGroupCompressed {
 	}
 
 	@Override
-	protected AColGroup copyAndSet(int[] colIndexes) {
+	protected AColGroup copyAndSet(IColIndex colIndexes) {
 		return new ColGroupEmpty(colIndexes);
 	}
 
 	@Override
 	public AColGroup append(AColGroup g) {
-		if(g instanceof ColGroupEmpty && g._colIndexes.length == _colIndexes.length)
+		if(g instanceof ColGroupEmpty && g._colIndexes.size() == _colIndexes.size())
 			return this;
 		return null;
 	}
@@ -324,7 +329,7 @@ public class ColGroupEmpty extends AColGroupCompressed {
 	@Override
 	public AColGroup appendNInternal(AColGroup[] g) {
 		for(int i = 0; i < g.length; i++)
-			if(!Arrays.equals(_colIndexes, g[i]._colIndexes))
+			if(!_colIndexes.equals(g[i]._colIndexes))
 				return null;
 		return this;
 	}

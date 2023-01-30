@@ -19,6 +19,7 @@
 
 package org.apache.sysds.runtime.compress.readers;
 
+import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.compress.utils.DblArray;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -26,7 +27,7 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 public class ReaderColumnSelectionDenseMultiBlock extends ReaderColumnSelection {
 	private DenseBlock _data;
 
-	protected ReaderColumnSelectionDenseMultiBlock(MatrixBlock data, int[] colIndices, int rl, int ru) {
+	protected ReaderColumnSelectionDenseMultiBlock(MatrixBlock data, IColIndex colIndices, int rl, int ru) {
 		super(colIndices, rl, Math.min(ru, data.getNumRows()) - 1);
 		_data = data.getDenseBlock();
 	}
@@ -35,8 +36,8 @@ public class ReaderColumnSelectionDenseMultiBlock extends ReaderColumnSelection 
 		boolean empty = true;
 		while(empty && _rl < _ru) {
 			_rl++;
-			for(int i = 0; i < _colIndexes.length; i++) {
-				final double v = _data.get(_rl, _colIndexes[i]);
+			for(int i = 0; i < _colIndexes.size(); i++) {
+				final double v = _data.get(_rl, _colIndexes.get(i));
 				boolean isNan = Double.isNaN(v);
 				if(isNan){
 					warnNaN();

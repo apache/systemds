@@ -19,7 +19,6 @@
 
 package org.apache.sysds.runtime.compress.estim;
 
-import java.util.Arrays;
 import java.util.EnumMap;
 import java.util.Map;
 import java.util.Set;
@@ -31,6 +30,7 @@ import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupSizes;
+import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.compress.estim.encoding.IEncode;
 
 /**
@@ -40,7 +40,7 @@ public class CompressedSizeInfoColGroup {
 
 	protected static final Log LOG = LogFactory.getLog(CompressedSizeInfoColGroup.class.getName());
 
-	private final int[] _cols;
+	private final IColIndex _cols;
 	private final EstimationFactors _facts;
 	private final double _minSize;
 	private final CompressionType _bestCompressionType;
@@ -51,7 +51,7 @@ public class CompressedSizeInfoColGroup {
 	 */
 	private IEncode _map;
 
-	public CompressedSizeInfoColGroup(int[] cols, int nVal, int nRow, CompressionType bestCompressionType) {
+	public CompressedSizeInfoColGroup(IColIndex cols, int nVal, int nRow, CompressionType bestCompressionType) {
 		_cols = cols;
 		_facts = new EstimationFactors(nVal, nRow);
 		_minSize = -1;
@@ -60,7 +60,7 @@ public class CompressedSizeInfoColGroup {
 		_sizes.put(bestCompressionType, _minSize);
 	}
 
-	public CompressedSizeInfoColGroup(int[] cols, EstimationFactors facts, CompressionType bestCompressionType) {
+	public CompressedSizeInfoColGroup(IColIndex cols, EstimationFactors facts, CompressionType bestCompressionType) {
 		_cols = cols;
 		_facts = facts;
 		_minSize = -1;
@@ -69,7 +69,7 @@ public class CompressedSizeInfoColGroup {
 		_sizes.put(bestCompressionType, _minSize);
 	}
 
-	public CompressedSizeInfoColGroup(int[] cols, EstimationFactors facts, long minSize,
+	public CompressedSizeInfoColGroup(IColIndex cols, EstimationFactors facts, long minSize,
 		CompressionType bestCompressionType) {
 		_cols = cols;
 		_facts = facts;
@@ -79,11 +79,11 @@ public class CompressedSizeInfoColGroup {
 		_sizes.put(bestCompressionType, _minSize);
 	}
 
-	protected CompressedSizeInfoColGroup(int[] columns, EstimationFactors facts,
+	protected CompressedSizeInfoColGroup(IColIndex columns, EstimationFactors facts,
 		Set<CompressionType> validCompressionTypes, IEncode map) {
 		_cols = columns;
 		_facts = facts;
-		_sizes = calculateCompressionSizes(_cols.length, facts, validCompressionTypes);
+		_sizes = calculateCompressionSizes(_cols.size(), facts, validCompressionTypes);
 
 		CompressionType tmpBestCompressionType = CompressionType.UNCOMPRESSED;
 		double tmpBestCompressionSize = _sizes.getOrDefault(tmpBestCompressionType, Double.MAX_VALUE);
@@ -105,13 +105,13 @@ public class CompressedSizeInfoColGroup {
 	 * @param columns columns
 	 * @param nRows   number of rows
 	 */
-	public CompressedSizeInfoColGroup(int[] columns, int nRows) {
+	public CompressedSizeInfoColGroup(IColIndex columns, int nRows) {
 		_cols = columns;
 		_facts = new EstimationFactors(0, nRows);
 
 		_sizes = new EnumMap<>(CompressionType.class);
 		final CompressionType ct = CompressionType.EMPTY;
-		_sizes.put(ct, (double) ColGroupSizes.estimateInMemorySizeEMPTY(columns.length));
+		_sizes.put(ct, (double) ColGroupSizes.estimateInMemorySizeEMPTY(columns.size()));
 		_bestCompressionType = ct;
 		_minSize = _sizes.get(ct);
 		_map = null;
@@ -163,7 +163,7 @@ public class CompressedSizeInfoColGroup {
 		return _facts.numOffs;
 	}
 
-	public int[] getColumns() {
+	public IColIndex getColumns() {
 		return _cols;
 	}
 
@@ -255,7 +255,7 @@ public class CompressedSizeInfoColGroup {
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		sb.append(this.getClass().getSimpleName());
-		sb.append("cols: " + Arrays.toString(_cols));
+		sb.append("cols: " + _cols);
 		sb.append(String.format(" common: %4.3f", getMostCommonFraction()));
 		sb.append(" Sizes: ");
 		sb.append(_sizes);

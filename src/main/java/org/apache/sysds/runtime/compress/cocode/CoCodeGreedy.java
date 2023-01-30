@@ -27,11 +27,11 @@ import java.util.concurrent.Future;
 
 import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
+import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.compress.cost.ACostEstimate;
 import org.apache.sysds.runtime.compress.estim.AComEst;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfo;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
-import org.apache.sysds.runtime.compress.utils.Util;
 import org.apache.sysds.runtime.util.CommonThreadPool;
 
 public class CoCodeGreedy extends AColumnCoCoder {
@@ -106,7 +106,7 @@ public class CoCodeGreedy extends AColumnCoCoder {
 
 					// Combine the two column groups.
 					// and Memorize the new Combine.
-					final int[] c = Util.combine(c1._indexes, c2._indexes);
+					final IColIndex c = c1._indexes.combine(c2._indexes);
 					final ColIndexes cI = new ColIndexes(c);
 					final CompressedSizeInfoColGroup c1c2Inf = mem.getOrCreate(cI, c1, c2);
 					final double costC1C2 = _cest.getCost(c1c2Inf);
@@ -123,7 +123,7 @@ public class CoCodeGreedy extends AColumnCoCoder {
 							selected2 = c2;
 						}
 						else if((newCostIfJoined < changeInCost ||
-							newCostIfJoined == changeInCost && c1c2Inf.getColumns().length < tmp.getColumns().length)) {
+							newCostIfJoined == changeInCost && c1c2Inf.getColumns().size() < tmp.getColumns().size())) {
 
 							if(selected1 != secondSelected1 && selected2 != secondSelected2) {
 								secondTmp = tmp;
@@ -203,7 +203,7 @@ public class CoCodeGreedy extends AColumnCoCoder {
 
 		@Override
 		public Object call() {
-			final int[] c = Util.combine(_c1._indexes, _c2._indexes);
+			final IColIndex c = _c1._indexes.combine(_c2._indexes);
 			final ColIndexes cI = new ColIndexes(c);
 			mem.getOrCreate(cI, _c1, _c2);
 			return null;

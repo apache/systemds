@@ -19,15 +19,15 @@
 
 package org.apache.sysds.runtime.compress.colgroup;
 
-import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.io.Serializable;
-import java.util.Arrays;
 import java.util.Collection;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
+import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex.SliceResult;
 import org.apache.sysds.runtime.compress.colgroup.scheme.ICLAScheme;
 import org.apache.sysds.runtime.compress.cost.ComputationCostEstimator;
 import org.apache.sysds.runtime.data.DenseBlock;
@@ -39,7 +39,6 @@ import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.CMOperator;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
 import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
-import org.apache.sysds.utils.MemoryEstimates;
 
 /**
  * Abstract Class that is the lowest class type for the Compression framework.
@@ -67,14 +66,14 @@ public abstract class AColGroup implements Serializable {
 	}
 
 	/** The ColGroup indexes contained in the ColGroup */
-	protected final int[] _colIndexes;
+	protected final IColIndex _colIndexes;
 
 	/**
 	 * Main constructor.
 	 * 
 	 * @param colIndices offsets of the columns in the matrix block that make up the group
 	 */
-	protected AColGroup(int[] colIndices) {
+	protected AColGroup(IColIndex colIndices) {
 		_colIndexes = colIndices;
 	}
 
@@ -83,7 +82,7 @@ public abstract class AColGroup implements Serializable {
 	 * 
 	 * @return offsets of the columns in the matrix block that make up the group
 	 */
-	public final int[] getColIndices() {
+	public final IColIndex getColIndices() {
 		return _colIndexes;
 	}
 
@@ -93,7 +92,7 @@ public abstract class AColGroup implements Serializable {
 	 * @return number of columns in this column group
 	 */
 	public final int getNumCols() {
-		return _colIndexes.length;
+		return _colIndexes.size();
 	}
 
 	/**
@@ -107,10 +106,7 @@ public abstract class AColGroup implements Serializable {
 	 * @return A new column group object with the shifted columns
 	 */
 	public final AColGroup shiftColIndices(int offset) {
-		final int[] newIndexes = new int[_colIndexes.length];
-		for(int i = 0; i < _colIndexes.length; i++)
-			newIndexes[i] = _colIndexes[i] + offset;
-		return copyAndSet(newIndexes);
+		return copyAndSet(_colIndexes.shift(offset));
 	}
 
 	/**
@@ -121,7 +117,7 @@ public abstract class AColGroup implements Serializable {
 	 * @param colIndexes the new indexes to use in the copy
 	 * @return a new object with pointers to underlying data.
 	 */
-	protected abstract AColGroup copyAndSet(int[] colIndexes);
+	protected abstract AColGroup copyAndSet(IColIndex colIndexes);
 
 	/**
 	 * Get the upper bound estimate of in memory allocation for the column group.
@@ -130,7 +126,7 @@ public abstract class AColGroup implements Serializable {
 	 */
 	public long estimateInMemorySize() {
 		long size = 16; // object header
-		size += MemoryEstimates.intArrayCost(_colIndexes.length);
+		size += _colIndexes.estimateInMemorySize();
 		return size;
 	}
 
@@ -166,25 +162,7 @@ public abstract class AColGroup implements Serializable {
 	 */
 	protected void write(DataOutput out) throws IOException {
 		out.writeByte(getColGroupType().ordinal());
-		out.writeInt(_colIndexes.length);
-		// write col indices
-		for(int i = 0; i < _colIndexes.length; i++)
-			out.writeInt(_colIndexes[i]);
-	}
-
-	/**
-	 * Read in the columns from the input and return them
-	 * 
-	 * @param in The data source to read from
-	 * @return A new int[] column groups
-	 * @throws IOException If there is some error in reading the input.
-	 */
-	protected static int[] readCols(DataInput in) throws IOException {
-		final int numCols = in.readInt();
-		int[] cols = new int[numCols];
-		for(int i = 0; i < numCols; i++)
-			cols[i] = in.readInt();
-		return cols;
+		_colIndexes.write(out);
 	}
 
 	/**
@@ -196,7 +174,7 @@ public abstract class AColGroup implements Serializable {
 		long ret = 0;
 		ret += 1; // type info (colGroup ordinal)
 		ret += 4; // Number of columns
-		ret += 4 * _colIndexes.length; // column values.
+		ret += _colIndexes.getExactSizeOnDisk();
 		return ret;
 	}
 
@@ -222,7 +200,7 @@ public abstract class AColGroup implements Serializable {
 	 *         returned.
 	 */
 	public final AColGroup sliceColumn(int col) {
-		int idx = Arrays.binarySearch(_colIndexes, col);
+		int idx = _colIndexes.findIndex(col);
 		if(idx >= 0)
 			return sliceSingleColumn(idx);
 		else
@@ -238,24 +216,9 @@ public abstract class AColGroup implements Serializable {
 	 *         contained in the column group
 	 */
 	protected final AColGroup sliceMultiColumns(int cl, int cu) {
-		int idStart = 0;
-		int idEnd = 0;
-		for(int i = 0; i < _colIndexes.length; i++) {
-			if(_colIndexes[i] < cl)
-				idStart++;
-			if(_colIndexes[i] < cu)
-				idEnd++;
-			else
-				break;
-		}
-		int numberOfOutputColumns = idEnd - idStart;
-		if(numberOfOutputColumns > 0) {
-			int[] outputCols = new int[numberOfOutputColumns];
-			int idIt = idStart;
-			for(int i = 0; i < numberOfOutputColumns; i++)
-				outputCols[i] = _colIndexes[idIt++] - cl;
-			return sliceMultiColumns(idStart, idEnd, outputCols);
-		}
+		SliceResult sr = _colIndexes.slice(cl, cu);
+		if(sr.ret != null)
+			return sliceMultiColumns(sr.idStart, sr.idEnd, sr.ret);
 		else
 			return null;
 	}
@@ -284,7 +247,7 @@ public abstract class AColGroup implements Serializable {
 	 * @return value at the row/column position
 	 */
 	public double get(int r, int c) {
-		final int colIdx = Arrays.binarySearch(_colIndexes, c);
+		final int colIdx = _colIndexes.findIndex(c);
 		if(colIdx < 0)
 			return 0;
 		else
@@ -371,7 +334,7 @@ public abstract class AColGroup implements Serializable {
 	 *                full, can be set to null.
 	 * @return The new Column Group or null that is the result of the matrix multiplication.
 	 */
-	public abstract AColGroup rightMultByMatrix(MatrixBlock right, int[] allCols);
+	public abstract AColGroup rightMultByMatrix(MatrixBlock right, IColIndex allCols);
 
 	/**
 	 * Do a transposed self matrix multiplication on the left side t(x) %*% x. but only with this column group.
@@ -490,7 +453,7 @@ public abstract class AColGroup implements Serializable {
 	 * @param outputCols The output columns to extract materialized for ease of implementation
 	 * @return The sliced ColGroup from this. (never null)
 	 */
-	protected abstract AColGroup sliceMultiColumns(int idStart, int idEnd, int[] outputCols);
+	protected abstract AColGroup sliceMultiColumns(int idStart, int idEnd, IColIndex outputCols);
 
 	/**
 	 * Slice range of rows out of the column group and return a new column group only containing the row segment.
@@ -653,7 +616,7 @@ public abstract class AColGroup implements Serializable {
 		sb.append(String.format("%15s", "ColGroupType: "));
 		sb.append(this.getClass().getSimpleName());
 		sb.append(String.format("\n%15s", "Columns: "));
-		sb.append(Arrays.toString(_colIndexes));
+		sb.append(_colIndexes);
 		return sb.toString();
 	}
 }

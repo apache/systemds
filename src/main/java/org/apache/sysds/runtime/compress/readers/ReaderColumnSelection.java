@@ -22,6 +22,7 @@ package org.apache.sysds.runtime.compress.readers;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
+import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.compress.utils.DblArray;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
@@ -32,7 +33,7 @@ public abstract class ReaderColumnSelection {
 
 	protected static boolean nanEncountered = false;
 
-	protected final int[] _colIndexes;
+	protected final IColIndex _colIndexes;
 	protected final DblArray reusableReturn;
 	protected final double[] reusableArr;
 	protected final int _ru;
@@ -40,11 +41,11 @@ public abstract class ReaderColumnSelection {
 	/** rl is used as a pointer to current row */
 	protected int _rl;
 
-	protected ReaderColumnSelection(int[] colIndexes, int rl, int ru) {
+	protected ReaderColumnSelection(IColIndex colIndexes, int rl, int ru) {
 		_colIndexes = colIndexes;
 		_rl = rl;
 		_ru = ru;
-		reusableArr = new double[colIndexes.length];
+		reusableArr = new double[colIndexes.size()];
 		reusableReturn = new DblArray(reusableArr);
 	}
 
@@ -69,13 +70,21 @@ public abstract class ReaderColumnSelection {
 		return _rl;
 	}
 
-	public static ReaderColumnSelection createReader(MatrixBlock rawBlock, int[] colIndices, boolean transposed) {
+	// public static ReaderColumnSelection createReader(MatrixBlock rawBlock, int[] colIndices, boolean transposed){
+	// 	return createReader(rawBlock, ColIndexFactory.create(colIndices), transposed);
+	// }
+
+	public static ReaderColumnSelection createReader(MatrixBlock rawBlock, IColIndex colIndices, boolean transposed) {
 		final int rl = 0;
 		final int ru = transposed ? rawBlock.getNumColumns() : rawBlock.getNumRows();
 		return createReader(rawBlock, colIndices, transposed, rl, ru);
 	}
 
-	public static ReaderColumnSelection createReader(MatrixBlock rawBlock, int[] colIndices, boolean transposed, int rl,
+	// public static ReaderColumnSelection createReader(MatrixBlock rawBlock, int[] colIndices, boolean transposed, int rl, int ru){
+	// 	return createReader(rawBlock, ColIndexFactory.create(colIndices), transposed, rl, ru);
+	// }
+
+	public static ReaderColumnSelection createReader(MatrixBlock rawBlock, IColIndex colIndices, boolean transposed, int rl,
 		int ru) {
 		checkInput(rawBlock, colIndices, rl, ru);
 		rl = rl - 1;
@@ -95,8 +104,8 @@ public abstract class ReaderColumnSelection {
 		return new ReaderColumnSelectionDenseSingleBlock(rawBlock, colIndices, rl, ru);
 	}
 
-	private static void checkInput(final MatrixBlock rawBlock, final int[] colIndices, final int rl, final int ru) {
-		if(colIndices.length <= 1)
+	private static void checkInput(final MatrixBlock rawBlock, final IColIndex colIndices, final int rl, final int ru) {
+		if(colIndices.size() <= 1)
 			throw new DMLCompressionException("Column selection reader should not be done on single column groups");
 		else if(rawBlock.getSparseBlock() == null && rawBlock.getDenseBlock() == null)
 			throw new DMLCompressionException("Input Block was null");

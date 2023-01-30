@@ -29,6 +29,8 @@ import org.apache.sysds.runtime.compress.bitmap.ABitmap;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.DictionaryFactory;
+import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
+import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.compress.colgroup.scheme.ICLAScheme;
 import org.apache.sysds.runtime.compress.cost.ComputationCostEstimator;
 import org.apache.sysds.runtime.data.DenseBlock;
@@ -46,17 +48,17 @@ import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
 public class ColGroupOLE extends AColGroupOffset {
 	private static final long serialVersionUID = 5723227906925121066L;
 
-	private ColGroupOLE(int[] colIndices, int numRows, boolean zero, ADictionary dict, char[] bitmaps, int[] bitmapOffs,
+	private ColGroupOLE(IColIndex colIndices, int numRows, boolean zero, ADictionary dict, char[] bitmaps, int[] bitmapOffs,
 		int[] counts) {
 		super(colIndices, numRows, zero, dict, bitmapOffs, bitmaps, counts);
 	}
 
-	protected static AColGroup create(int[] colIndices, int numRows, boolean zeros, ADictionary dict, char[] bitmaps,
+	protected static AColGroup create(IColIndex colIndices, int numRows, boolean zeros, ADictionary dict, char[] bitmaps,
 		int[] bitmapOffs, int[] counts) {
 		return new ColGroupOLE(colIndices, numRows, zeros, dict, bitmaps, bitmapOffs, counts);
 	}
 
-	protected static AColGroup compressOLE(int[] colIndexes, ABitmap ubm, int nRow, double tupleSparsity) {
+	protected static AColGroup compressOLE(IColIndex colIndexes, ABitmap ubm, int nRow, double tupleSparsity) {
 
 		ADictionary dict = DictionaryFactory.create(ubm, tupleSparsity);
 
@@ -240,7 +242,7 @@ public class ColGroupOLE extends AColGroupOffset {
 	// _data = rbitmaps;
 	// _ptr = rbitmapOffs;
 	// _zeros = false;
-	// _dict = _dict.cloneAndExtend(_colIndexes.length);
+	// _dict = _dict.cloneAndExtend(_colIndexes.size());
 
 	// return new ColGroupOLE(_colIndexes, _numRows, false, rvalues, rbitmaps, rbitmapOffs, getCachedCounts());
 	// }
@@ -256,7 +258,7 @@ public class ColGroupOLE extends AColGroupOffset {
 
 		// // step 1: prepare position and value arrays
 		// int[] apos = skipScan(numVals, rl);
-		// double[] aval = _dict.sumAllRowsToDouble(square, _colIndexes.length);
+		// double[] aval = _dict.sumAllRowsToDouble(square, _colIndexes.size());
 
 		// // step 2: cache conscious row sums via horizontal scans
 		// for(int bi = (rl / blksz) * blksz; bi < ru; bi += blksz2) {
@@ -293,7 +295,7 @@ public class ColGroupOLE extends AColGroupOffset {
 		// // prepare value-to-add for entire value bitmap
 		// int boff = _ptr[k];
 		// int blen = len(k);
-		// double val = _dict.sumRow(k, square, _colIndexes.length);
+		// double val = _dict.sumRow(k, square, _colIndexes.size());
 
 		// // iterate over bitmap blocks and add values
 		// if(val != 0) {
@@ -421,7 +423,7 @@ public class ColGroupOLE extends AColGroupOffset {
 			int slen = _data[boff + bix];
 			for(int blckIx = 1; blckIx <= slen && blckIx < blen; blckIx++) {
 				if(_data[boff + bix + blckIx] == offset)
-					return _dict.getValue(k * _colIndexes.length + colIdx);
+					return _dict.getValue(k * _colIndexes.size() + colIdx);
 				else if(_data[boff + bix + blckIx] > offset)
 					continue;
 			}
@@ -489,7 +491,7 @@ public class ColGroupOLE extends AColGroupOffset {
 	// }
 
 	@Override
-	protected AColGroup allocateRightMultiplication(MatrixBlock right, int[] colIndexes, ADictionary preAgg) {
+	protected AColGroup allocateRightMultiplication(MatrixBlock right, IColIndex colIndexes, ADictionary preAgg) {
 		throw new NotImplementedException();
 	}
 
@@ -503,7 +505,7 @@ public class ColGroupOLE extends AColGroupOffset {
 	protected void computeColMxx(double[] c, Builtin builtin) {
 		throw new NotImplementedException();
 		// if(isZero())
-		// for(int x = 0; x < _colIndexes.length; x++)
+		// for(int x = 0; x < _colIndexes.size(); x++)
 		// c[_colIndexes[x]] = builtin.execute(c[_colIndexes[x]], 0);
 
 		// _dict.aggregateCols(c, builtin, _colIndexes);
@@ -638,7 +640,7 @@ public class ColGroupOLE extends AColGroupOffset {
 	}
 
 	public static ColGroupOLE read(DataInput in, int nRows) throws IOException {
-		int[] cols = readCols(in);
+		IColIndex cols = ColIndexFactory.read(in);
 		ADictionary dict = DictionaryFactory.read(in);
 		int[] ptr = readPointers(in);
 		char[] data = readData(in);
@@ -652,7 +654,7 @@ public class ColGroupOLE extends AColGroupOffset {
 	}
 
 	@Override
-	protected AColGroup copyAndSet(int[] colIndexes, ADictionary newDictionary) {
+	protected AColGroup copyAndSet(IColIndex colIndexes, ADictionary newDictionary) {
 		return create(colIndexes, _numRows, _zeros, newDictionary, _data, _ptr, getCachedCounts());
 	}
 

@@ -21,9 +21,13 @@ package org.apache.sysds.runtime.compress.colgroup.indexes;
 
 import java.io.DataInput;
 import java.io.IOException;
+import java.util.List;
 
+import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
+import org.apache.sysds.runtime.compress.colgroup.AColGroup;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex.ColIndexType;
+import org.apache.sysds.runtime.compress.utils.IntArrayList;
 
 public interface ColIndexFactory {
 
@@ -54,6 +58,10 @@ public interface ColIndexFactory {
 			return new ArrayIndex(indexes);
 	}
 
+	public static IColIndex create(IntArrayList indexes) {
+		throw new NotImplementedException();
+	}
+
 	public static IColIndex create(int l, int u) {
 		if(u - 1 == l)
 			return new SingleIndex(l);
@@ -71,4 +79,22 @@ public interface ColIndexFactory {
 		else
 			return new RangeIndex(nCol);
 	}
+
+	public static IColIndex combine(List<AColGroup> gs) {
+		throw new NotImplementedException();
+		// int numCols = 0;
+		// for(AColGroup g : gs)
+		// numCols += g.getNumCols();
+
+		// int[] resCols = new int[numCols];
+
+		// int index = 0;
+		// for(AColGroup g : gs)
+		// for(int c : g.getColIndices())
+		// resCols[index++] = c;
+
+		// Arrays.sort(resCols);
+		// return resCols;
+	}
+
 }

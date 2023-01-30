@@ -23,6 +23,8 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
+import org.apache.commons.lang.NotImplementedException;
+
 public class RangeIndex implements IColIndex {
 	private final int l;
 	private final int u; // not inclusive
@@ -78,6 +80,56 @@ public class RangeIndex implements IColIndex {
 	@Override
 	public IIterate iterator() {
 		return new RangeIterator();
+	}
+
+	@Override
+	public int findIndex(int i) {
+		if(i >= l && i < u)
+			return i - l;
+		else
+			return -1;
+	}
+
+	@Override
+	public SliceResult slice(int l, int u) {
+		throw new NotImplementedException();
+	}
+
+	@Override
+	public boolean equals(Object other) {
+		throw new NotImplementedException();
+	}
+
+	@Override
+	public boolean equals(IColIndex other) {
+		throw new NotImplementedException();
+	}
+
+	@Override
+	public int hashCode() {
+		throw new NotImplementedException();
+	}
+
+	@Override
+	public boolean contains(IColIndex a, IColIndex b) {
+		throw new NotImplementedException();
+	}
+
+	@Override
+	public IColIndex combine(IColIndex other) {
+		throw new NotImplementedException();
+	}
+	
+	@Override
+	public String toString() {
+		StringBuilder sb = new StringBuilder();
+		sb.append(this.getClass().getSimpleName());
+		sb.append(" [");
+		sb.append(l);
+		sb.append(" -> ");
+		sb.append(u);
+		sb.append("]");
+		return sb.toString();
 	}
 
 	protected static boolean isValidRange(int[] indexes) {

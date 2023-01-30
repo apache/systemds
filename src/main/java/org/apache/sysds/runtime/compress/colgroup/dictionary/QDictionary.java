@@ -24,6 +24,7 @@ import java.io.DataOutput;
 import java.io.IOException;
 
 import org.apache.commons.lang.NotImplementedException;
+import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.functionobjects.ValueFunction;
@@ -284,27 +285,27 @@ public class QDictionary extends ADictionary {
 	}
 
 	@Override
-	public void colSum(double[] c, int[] counts, int[] colIndexes) {
+	public void colSum(double[] c, int[] counts, IColIndex colIndexes) {
 		throw new NotImplementedException("Not Implemented");
 	}
 
 	@Override
-	public void colSumSq(double[] c, int[] counts, int[] colIndexes) {
+	public void colSumSq(double[] c, int[] counts, IColIndex colIndexes) {
 		throw new NotImplementedException("Not Implemented");
 	}
 
 	@Override
-	public void colProduct(double[] res, int[] counts, int[] colIndexes) {
+	public void colProduct(double[] res, int[] counts, IColIndex colIndexes) {
 		throw new NotImplementedException("Not Implemented");
 	}
 
 	@Override
-	public void colProductWithReference(double[] res, int[] counts, int[] colIndexes, double[] reference) {
+	public void colProductWithReference(double[] res, int[] counts, IColIndex colIndexes, double[] reference) {
 		throw new NotImplementedException("Not Implemented");
 	}
 
 	@Override
-	public void colSumSqWithReference(double[] c, int[] counts, int[] colIndexes, double[] reference) {
+	public void colSumSqWithReference(double[] c, int[] counts, IColIndex colIndexes, double[] reference) {
 		throw new NotImplementedException();
 	}
 
@@ -417,12 +418,12 @@ public class QDictionary extends ADictionary {
 	}
 
 	@Override
-	public void aggregateCols(double[] c, Builtin fn, int[] colIndexes) {
+	public void aggregateCols(double[] c, Builtin fn, IColIndex colIndexes) {
 		throw new NotImplementedException();
 	}
 
 	@Override
-	public void aggregateColsWithReference(double[] c, Builtin fn, int[] colIndexes, double[] reference, boolean def) {
+	public void aggregateColsWithReference(double[] c, Builtin fn, IColIndex colIndexes, double[] reference, boolean def) {
 		throw new NotImplementedException();
 	}
 
@@ -432,7 +433,7 @@ public class QDictionary extends ADictionary {
 	}
 
 	@Override
-	public ADictionary preaggValuesFromDense(int numVals, int[] colIndexes, int[] aggregateColumns, double[] b,
+	public ADictionary preaggValuesFromDense(int numVals, IColIndex colIndexes, IColIndex aggregateColumns, double[] b,
 		int cut) {
 		throw new NotImplementedException();
 	}
@@ -463,22 +464,22 @@ public class QDictionary extends ADictionary {
 	}
 
 	@Override
-	public ADictionary binOpLeft(BinaryOperator op, double[] v, int[] colIndexes) {
+	public ADictionary binOpLeft(BinaryOperator op, double[] v, IColIndex colIndexes) {
 		throw new NotImplementedException();
 	}
 
 	@Override
-	public ADictionary binOpLeftAndAppend(BinaryOperator op, double[] v, int[] colIndexes) {
+	public ADictionary binOpLeftAndAppend(BinaryOperator op, double[] v, IColIndex colIndexes) {
 		throw new NotImplementedException();
 	}
 
 	@Override
-	public ADictionary binOpRight(BinaryOperator op, double[] v, int[] colIndexes) {
+	public ADictionary binOpRight(BinaryOperator op, double[] v, IColIndex colIndexes) {
 		throw new NotImplementedException();
 	}
 
 	@Override
-	public ADictionary binOpRightAndAppend(BinaryOperator op, double[] v, int[] colIndexes) {
+	public ADictionary binOpRightAndAppend(BinaryOperator op, double[] v, IColIndex colIndexes) {
 		throw new NotImplementedException();
 	}
 
@@ -488,13 +489,13 @@ public class QDictionary extends ADictionary {
 	}
 
 	@Override
-	public ADictionary binOpLeftWithReference(BinaryOperator op, double[] v, int[] colIndexes, double[] reference,
+	public ADictionary binOpLeftWithReference(BinaryOperator op, double[] v, IColIndex colIndexes, double[] reference,
 		double[] newReference) {
 		throw new NotImplementedException();
 	}
 
 	@Override
-	public ADictionary binOpRightWithReference(BinaryOperator op, double[] v, int[] colIndexes, double[] reference,
+	public ADictionary binOpRightWithReference(BinaryOperator op, double[] v, IColIndex colIndexes, double[] reference,
 		double[] newReference) {
 		throw new NotImplementedException();
 	}
@@ -539,59 +540,59 @@ public class QDictionary extends ADictionary {
 	}
 
 	@Override
-	public void multiplyScalar(double v, double[] ret, int off, int dictIdx, int[] cols) {
+	public void multiplyScalar(double v, double[] ret, int off, int dictIdx, IColIndex cols) {
 		throw new NotImplementedException();
 	}
 
 	@Override
-	protected void TSMMWithScaling(int[] counts, int[] rows, int[] cols, MatrixBlock ret) {
+	protected void TSMMWithScaling(int[] counts, IColIndex rows, IColIndex cols, MatrixBlock ret) {
 		throw new NotImplementedException();
 	}
 
 	@Override
-	protected void MMDict(ADictionary right, int[] rowsLeft, int[] colsRight, MatrixBlock result) {
+	protected void MMDict(ADictionary right, IColIndex rowsLeft, IColIndex colsRight, MatrixBlock result) {
 		throw new NotImplementedException();
 	}
 
 	@Override
-	protected void MMDictDense(double[] left, int[] rowsLeft, int[] colsRight, MatrixBlock result) {
+	protected void MMDictDense(double[] left, IColIndex rowsLeft, IColIndex colsRight, MatrixBlock result) {
 		throw new NotImplementedException();
 	}
 
 	@Override
-	protected void MMDictSparse(SparseBlock left, int[] rowsLeft, int[] colsRight, MatrixBlock result) {
+	protected void MMDictSparse(SparseBlock left, IColIndex rowsLeft, IColIndex colsRight, MatrixBlock result) {
 		throw new NotImplementedException();
 	}
 
 	@Override
-	protected void TSMMToUpperTriangle(ADictionary right, int[] rowsLeft, int[] colsRight, MatrixBlock result) {
+	protected void TSMMToUpperTriangle(ADictionary right, IColIndex rowsLeft, IColIndex colsRight, MatrixBlock result) {
 		throw new NotImplementedException();
 	}
 
 	@Override
-	protected void TSMMToUpperTriangleDense(double[] left, int[] rowsLeft, int[] colsRight, MatrixBlock result) {
+	protected void TSMMToUpperTriangleDense(double[] left, IColIndex rowsLeft, IColIndex colsRight, MatrixBlock result) {
 		throw new NotImplementedException();
 	}
 
 	@Override
-	protected void TSMMToUpperTriangleSparse(SparseBlock left, int[] rowsLeft, int[] colsRight, MatrixBlock result) {
+	protected void TSMMToUpperTriangleSparse(SparseBlock left, IColIndex rowsLeft, IColIndex colsRight, MatrixBlock result) {
 		throw new NotImplementedException();
 	}
 
 	@Override
-	protected void TSMMToUpperTriangleScaling(ADictionary right, int[] rowsLeft, int[] colsRight, int[] scale,
+	protected void TSMMToUpperTriangleScaling(ADictionary right, IColIndex rowsLeft, IColIndex colsRight, int[] scale,
 		MatrixBlock result) {
 		throw new NotImplementedException();
 	}
 
 	@Override
-	protected void TSMMToUpperTriangleDenseScaling(double[] left, int[] rowsLeft, int[] colsRight, int[] scale,
+	protected void TSMMToUpperTriangleDenseScaling(double[] left, IColIndex rowsLeft, IColIndex colsRight, int[] scale,
 		MatrixBlock result) {
 		throw new NotImplementedException();
 	}
 
 	@Override
-	protected void TSMMToUpperTriangleSparseScaling(SparseBlock left, int[] rowsLeft, int[] colsRight, int[] scale,
+	protected void TSMMToUpperTriangleSparseScaling(SparseBlock left, IColIndex rowsLeft, IColIndex colsRight, int[] scale,
 		MatrixBlock result) {
 		throw new NotImplementedException();
 	}

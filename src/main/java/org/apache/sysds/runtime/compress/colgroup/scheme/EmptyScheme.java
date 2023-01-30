@@ -21,6 +21,7 @@ package org.apache.sysds.runtime.compress.colgroup.scheme;
 
 import org.apache.sysds.runtime.compress.colgroup.AColGroup;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupEmpty;
+import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
@@ -42,13 +43,13 @@ public class EmptyScheme implements ICLAScheme {
 	}
 
 	@Override
-	public AColGroup encode(MatrixBlock data, int[] columns) {
+	public AColGroup encode(MatrixBlock data, IColIndex  columns) {
 
-		if(columns.length != g.getColIndices().length)
+		if(columns.size() != g.getColIndices().size())
 			throw new IllegalArgumentException("Invalid columns to encode");
 		final int nCol = data.getNumColumns();
 		final int nRow = data.getNumRows();
-		if(nCol < columns[columns.length - 1]) {
+		if(nCol < columns.get(columns.size() - 1)) {
 			LOG.warn("Invalid to encode matrix with less columns than encode scheme max column");
 			return null;
 		}
@@ -62,18 +63,18 @@ public class EmptyScheme implements ICLAScheme {
 			return encodeGeneric(data, columns, nRow, nCol);
 	}
 
-	private AColGroup encodeDense(final MatrixBlock data, final int[] cols, final int nRow, final int nCol) {
+	private AColGroup encodeDense(final MatrixBlock data, final IColIndex  cols, final int nRow, final int nCol) {
 		final double[] dv = data.getDenseBlockValues();
 		for(int r = 0; r < nRow; r++) {
 			final int off = r * nCol;
-			for(int ci = 0; ci < cols.length; ci++)
-				if(dv[off + cols[ci]] != 0.0)
+			for(int ci = 0; ci < cols.size(); ci++)
+				if(dv[off + cols.get(ci)] != 0.0)
 					return null;
 		}
 		return g;
 	}
 
-	private AColGroup encodeSparse(final MatrixBlock data, final int[] cols, final int nRow, final int nCol) {
+	private AColGroup encodeSparse(final MatrixBlock data, final IColIndex  cols, final int nRow, final int nCol) {
 		SparseBlock sb = data.getSparseBlock();
 		for(int r = 0; r < nRow; r++) {
 			if(sb.isEmpty(r))
@@ -84,29 +85,29 @@ public class EmptyScheme implements ICLAScheme {
 			final int[] aix = sb.indexes(r);
 			int p = 0; // pointer into cols;
 			for(int j = apos; j < alen ; j++) {
-				while(p < cols.length && cols[p] < aix[j])
+				while(p < cols.size() && cols.get(p) < aix[j])
 					p++;
-				if(p < cols.length && aix[j] == cols[p])
+				if(p < cols.size() && aix[j] == cols.get(p))
 					return null;
 
-				if(p >= cols.length)
+				if(p >= cols.size())
 					continue;
 			}
 		}
 		return returnG(cols);
 	}
 
-	private AColGroup encodeGeneric(final MatrixBlock data, final int[] cols, final int nRow, final int nCol) {
+	private AColGroup encodeGeneric(final MatrixBlock data, final IColIndex  cols, final int nRow, final int nCol) {
 		for(int r = 0; r < nRow; r++)
-			for(int ci = 0; ci < cols.length; ci++)
-				if(data.quickGetValue(r, cols[ci]) != 0.0)
+			for(int ci = 0; ci < cols.size(); ci++)
+				if(data.quickGetValue(r, cols.get(ci)) != 0.0)
 					return null;
 		return returnG(cols);
 	}
 
-	private AColGroup returnG(int[] columns) {
+	private AColGroup returnG(IColIndex columns) {
 		if(columns == g.getColIndices())
-			return g;// great!
+			return g; // great!
 		else
 			return new ColGroupEmpty(columns);
 	}

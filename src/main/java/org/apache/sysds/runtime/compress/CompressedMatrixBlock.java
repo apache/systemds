@@ -26,7 +26,6 @@ import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.lang.ref.SoftReference;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.Future;
@@ -357,7 +356,7 @@ public class CompressedMatrixBlock extends MatrixBlock {
 		}
 		else {
 			for(AColGroup group : _colGroups) {
-				final int idx = Arrays.binarySearch(group.getColIndices(), c);
+				final int idx = group.getColIndices().findIndex(c);
 				if(idx >= 0)
 					return group.getIdx(r, idx);
 			}

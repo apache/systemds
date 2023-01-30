@@ -22,7 +22,9 @@ package org.apache.sysds.runtime.compress.colgroup.indexes;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.util.Arrays;
 
+import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.utils.MemoryEstimates;
 
 public class ArrayIndex implements IColIndex {
@@ -79,6 +81,49 @@ public class ArrayIndex implements IColIndex {
 	@Override
 	public IIterate iterator() {
 		return new ArrayIterator();
+	}
+
+	@Override
+	public int findIndex(int i) {
+		return Arrays.binarySearch(cols, i);
+	}
+
+	@Override
+	public SliceResult slice(int l, int u) {
+		throw new NotImplementedException();
+	}
+
+	@Override
+	public boolean equals(Object other) {
+		throw new NotImplementedException();
+	}
+
+	@Override
+	public boolean equals(IColIndex other) {
+		throw new NotImplementedException();
+	}
+
+	@Override
+	public int hashCode() {
+		throw new NotImplementedException();
+	}
+
+	@Override
+	public boolean contains(IColIndex a, IColIndex b) {
+		throw new NotImplementedException();
+	}
+
+	@Override
+	public IColIndex combine(IColIndex other) {
+		throw new NotImplementedException();
+	}
+
+	@Override
+	public String toString() {
+		StringBuilder sb = new StringBuilder();
+		sb.append(this.getClass().getSimpleName());
+		sb.append(Arrays.toString(cols));
+		return sb.toString();
 	}
 
 	protected class ArrayIterator implements IIterate {

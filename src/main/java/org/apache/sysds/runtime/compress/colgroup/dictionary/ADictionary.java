@@ -25,6 +25,7 @@ import java.io.Serializable;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.functionobjects.ValueFunction;
@@ -136,7 +137,7 @@ public abstract class ADictionary implements Serializable {
 	 * @param fn         The function to apply to individual columns
 	 * @param colIndexes The mapping to the target columns from the individual columns
 	 */
-	public abstract void aggregateCols(double[] c, Builtin fn, int[] colIndexes);
+	public abstract void aggregateCols(double[] c, Builtin fn, IColIndex colIndexes);
 
 	/**
 	 * Aggregates the columns into the target double array provided.
@@ -148,7 +149,7 @@ public abstract class ADictionary implements Serializable {
 	 * @param reference  The reference offset values to add to each cell.
 	 * @param def        If the reference should be treated as a tuple as well
 	 */
-	public abstract void aggregateColsWithReference(double[] c, Builtin fn, int[] colIndexes, double[] reference,
+	public abstract void aggregateColsWithReference(double[] c, Builtin fn, IColIndex colIndexes, double[] reference,
 		boolean def);
 
 	/**
@@ -220,7 +221,7 @@ public abstract class ADictionary implements Serializable {
 	 * @param colIndexes The column indexes to consider inside v.
 	 * @return A new dictionary containing the updated values.
 	 */
-	public abstract ADictionary binOpLeft(BinaryOperator op, double[] v, int[] colIndexes);
+	public abstract ADictionary binOpLeft(BinaryOperator op, double[] v, IColIndex colIndexes);
 
 	/**
 	 * Apply binary row operation on the left side with one extra row evaluating with zeros.
@@ -230,7 +231,7 @@ public abstract class ADictionary implements Serializable {
 	 * @param colIndexes The column indexes to consider inside v.
 	 * @return A new dictionary containing the updated values.
 	 */
-	public abstract ADictionary binOpLeftAndAppend(BinaryOperator op, double[] v, int[] colIndexes);
+	public abstract ADictionary binOpLeftAndAppend(BinaryOperator op, double[] v, IColIndex colIndexes);
 
 	/**
 	 * Apply the binary operator such that each value is offset by the reference before application. Then put the result
@@ -246,7 +247,7 @@ public abstract class ADictionary implements Serializable {
 	 * @param newReference The reference value to subtract after operator.
 	 * @return A new dictionary.
 	 */
-	public abstract ADictionary binOpLeftWithReference(BinaryOperator op, double[] v, int[] colIndexes,
+	public abstract ADictionary binOpLeftWithReference(BinaryOperator op, double[] v, IColIndex colIndexes,
 		double[] reference, double[] newReference);
 
 	/**
@@ -257,7 +258,7 @@ public abstract class ADictionary implements Serializable {
 	 * @param colIndexes The column indexes to consider inside v.
 	 * @return A new dictionary containing the updated values.
 	 */
-	public abstract ADictionary binOpRight(BinaryOperator op, double[] v, int[] colIndexes);
+	public abstract ADictionary binOpRight(BinaryOperator op, double[] v, IColIndex colIndexes);
 
 	/**
 	 * Apply binary row operation on the right side with one extra row evaluating with zeros.
@@ -267,7 +268,7 @@ public abstract class ADictionary implements Serializable {
 	 * @param colIndexes The column indexes to consider inside v.
 	 * @return A new dictionary containing the updated values.
 	 */
-	public abstract ADictionary binOpRightAndAppend(BinaryOperator op, double[] v, int[] colIndexes);
+	public abstract ADictionary binOpRightAndAppend(BinaryOperator op, double[] v, IColIndex colIndexes);
 
 	/**
 	 * Apply binary row operation on the right side as with no columns to extract from v.
@@ -291,7 +292,7 @@ public abstract class ADictionary implements Serializable {
 	 * @param newReference The reference value to subtract after operator.
 	 * @return A new dictionary.
 	 */
-	public abstract ADictionary binOpRightWithReference(BinaryOperator op, double[] v, int[] colIndexes,
+	public abstract ADictionary binOpRightWithReference(BinaryOperator op, double[] v, IColIndex colIndexes,
 		double[] reference, double[] newReference);
 
 	/**
@@ -417,7 +418,7 @@ public abstract class ADictionary implements Serializable {
 	 * @param colIndexes The columns indexes of the parent column group, this indicate where to put the column sum into
 	 *                   the c output.
 	 */
-	public abstract void colSum(double[] c, int[] counts, int[] colIndexes);
+	public abstract void colSum(double[] c, int[] counts, IColIndex colIndexes);
 
 	/**
 	 * Get the column sum of the values contained in the dictionary
@@ -427,7 +428,7 @@ public abstract class ADictionary implements Serializable {
 	 * @param colIndexes The columns indexes of the parent column group, this indicate where to put the column sum into
 	 *                   the c output.
 	 */
-	public abstract void colSumSq(double[] c, int[] counts, int[] colIndexes);
+	public abstract void colSumSq(double[] c, int[] counts, IColIndex colIndexes);
 
 	/**
 	 * Get the column sum of the values contained in the dictionary with an offset reference value added to each cell.
@@ -438,7 +439,7 @@ public abstract class ADictionary implements Serializable {
 	 *                   the c output.
 	 * @param reference  The reference values to add to each cell.
 	 */
-	public abstract void colSumSqWithReference(double[] c, int[] counts, int[] colIndexes, double[] reference);
+	public abstract void colSumSqWithReference(double[] c, int[] counts, IColIndex colIndexes, double[] reference);
 
 	/**
 	 * Get the sum of the values contained in the dictionary
@@ -589,8 +590,8 @@ public abstract class ADictionary implements Serializable {
 	 * @param cut              The number of columns in b.
 	 * @return A new dictionary with the pre aggregated values.
 	 */
-	public abstract ADictionary preaggValuesFromDense(final int numVals, final int[] colIndexes,
-		final int[] aggregateColumns, final double[] b, final int cut);
+	public abstract ADictionary preaggValuesFromDense(final int numVals, final IColIndex colIndexes,
+		final IColIndex aggregateColumns, final double[] b, final int cut);
 
 	/**
 	 * Make a copy of the values, and replace all values that match pattern with replacement value. If needed add a new
@@ -651,7 +652,7 @@ public abstract class ADictionary implements Serializable {
 	 * @param counts     The weighted count of individual tuples
 	 * @param colIndexes The column indexes.
 	 */
-	public abstract void colProduct(double[] res, int[] counts, int[] colIndexes);
+	public abstract void colProduct(double[] res, int[] counts, IColIndex colIndexes);
 
 	/**
 	 * Calculate the column product of the dictionary weighted by counts.
@@ -661,7 +662,7 @@ public abstract class ADictionary implements Serializable {
 	 * @param colIndexes The column indexes.
 	 * @param reference  The reference value.
 	 */
-	public abstract void colProductWithReference(double[] res, int[] counts, int[] colIndexes, double[] reference);
+	public abstract void colProductWithReference(double[] res, int[] counts, IColIndex colIndexes, double[] reference);
 
 	/**
 	 * Central moment function to calculate the central moment of this column group. MUST be on a single column
@@ -783,7 +784,7 @@ public abstract class ADictionary implements Serializable {
 	 * @param dictIdx The dictionary entry to multiply.
 	 * @param cols    The columns to multiply into of the output.
 	 */
-	public abstract void multiplyScalar(double v, double[] ret, int off, int dictIdx, int[] cols);
+	public abstract void multiplyScalar(double v, double[] ret, int off, int dictIdx, IColIndex cols);
 
 	/**
 	 * Transpose self matrix multiplication with a scaling factor on each pair of values.
@@ -793,7 +794,7 @@ public abstract class ADictionary implements Serializable {
 	 * @param cols   The col indexes
 	 * @param ret    The output matrix block
 	 */
-	protected abstract void TSMMWithScaling(int[] counts, int[] rows, int[] cols, MatrixBlock ret);
+	protected abstract void TSMMWithScaling(int[] counts, IColIndex rows, IColIndex cols, MatrixBlock ret);
 
 	/**
 	 * Matrix multiplication of dictionaries
@@ -805,7 +806,7 @@ public abstract class ADictionary implements Serializable {
 	 * @param colsRight Offset cols on the right
 	 * @param result    The output matrix block
 	 */
-	protected abstract void MMDict(ADictionary right, int[] rowsLeft, int[] colsRight, MatrixBlock result);
+	protected abstract void MMDict(ADictionary right, IColIndex rowsLeft, IColIndex colsRight, MatrixBlock result);
 
 	/**
 	 * Matrix multiplication of dictionaries left side dense and transposed right side is this.
@@ -815,7 +816,7 @@ public abstract class ADictionary implements Serializable {
 	 * @param colsRight Offset cols on the right
 	 * @param result    The output matrix block
 	 */
-	protected abstract void MMDictDense(double[] left, int[] rowsLeft, int[] colsRight, MatrixBlock result);
+	protected abstract void MMDictDense(double[] left, IColIndex rowsLeft, IColIndex colsRight, MatrixBlock result);
 
 	/**
 	 * Matrix multiplication of dictionaries left side sparse and transposed right side is this.
@@ -825,7 +826,7 @@ public abstract class ADictionary implements Serializable {
 	 * @param colsRight Offset cols on the right
 	 * @param result    The output matrix block
 	 */
-	protected abstract void MMDictSparse(SparseBlock left, int[] rowsLeft, int[] colsRight, MatrixBlock result);
+	protected abstract void MMDictSparse(SparseBlock left, IColIndex rowsLeft, IColIndex colsRight, MatrixBlock result);
 
 	/**
 	 * Matrix multiplication but allocate output in upper triangle and twice if on diagonal, note this is left
@@ -835,7 +836,7 @@ public abstract class ADictionary implements Serializable {
 	 * @param colsRight Offset cols on the right
 	 * @param result    The output matrix block
 	 */
-	protected abstract void TSMMToUpperTriangle(ADictionary right, int[] rowsLeft, int[] colsRight, MatrixBlock result);
+	protected abstract void TSMMToUpperTriangle(ADictionary right, IColIndex rowsLeft, IColIndex colsRight, MatrixBlock result);
 
 	/**
 	 * Matrix multiplication but allocate output in upper triangle and twice if on diagonal, note this is right
@@ -845,7 +846,7 @@ public abstract class ADictionary implements Serializable {
 	 * @param colsRight Offset cols on the right
 	 * @param result    The output matrix block
 	 */
-	protected abstract void TSMMToUpperTriangleDense(double[] left, int[] rowsLeft, int[] colsRight, MatrixBlock result);
+	protected abstract void TSMMToUpperTriangleDense(double[] left, IColIndex rowsLeft, IColIndex colsRight, MatrixBlock result);
 
 	/**
 	 * Matrix multiplication but allocate output in upper triangle and twice if on diagonal, note this is right
@@ -855,7 +856,7 @@ public abstract class ADictionary implements Serializable {
 	 * @param colsRight Offset cols on the right
 	 * @param result    The output matrix block
 	 */
-	protected abstract void TSMMToUpperTriangleSparse(SparseBlock left, int[] rowsLeft, int[] colsRight,
+	protected abstract void TSMMToUpperTriangleSparse(SparseBlock left, IColIndex rowsLeft, IColIndex colsRight,
 		MatrixBlock result);
 
 	/**
@@ -867,7 +868,7 @@ public abstract class ADictionary implements Serializable {
 	 * @param scale     Scale factor
 	 * @param result    The output matrix block
 	 */
-	protected abstract void TSMMToUpperTriangleScaling(ADictionary right, int[] rowsLeft, int[] colsRight, int[] scale,
+	protected abstract void TSMMToUpperTriangleScaling(ADictionary right, IColIndex rowsLeft, IColIndex colsRight, int[] scale,
 		MatrixBlock result);
 
 	/**
@@ -879,7 +880,7 @@ public abstract class ADictionary implements Serializable {
 	 * @param scale     Scale factor
 	 * @param result    The output matrix block
 	 */
-	protected abstract void TSMMToUpperTriangleDenseScaling(double[] left, int[] rowsLeft, int[] colsRight, int[] scale,
+	protected abstract void TSMMToUpperTriangleDenseScaling(double[] left, IColIndex rowsLeft, IColIndex colsRight, int[] scale,
 		MatrixBlock result);
 
 	/**
@@ -891,7 +892,7 @@ public abstract class ADictionary implements Serializable {
 	 * @param scale     Scale factor
 	 * @param result    The output matrix block
 	 */
-	protected abstract void TSMMToUpperTriangleSparseScaling(SparseBlock left, int[] rowsLeft, int[] colsRight,
+	protected abstract void TSMMToUpperTriangleSparseScaling(SparseBlock left, IColIndex rowsLeft, IColIndex colsRight,
 		int[] scale, MatrixBlock result);
 
 	protected static String doubleToString(double v) {
@@ -901,11 +902,13 @@ public abstract class ADictionary implements Serializable {
 			return Double.toString(v);
 	}
 
-	protected static void correctNan(double[] res, int[] colIndexes) {
+	protected static void correctNan(double[] res, IColIndex colIndexes) {
 		// since there is no nan values every in a dictionary, we exploit that
 		// nan oly occur if we multiplied infinity with 0.
-		for(int j = 0; j < colIndexes.length; j++)
-			res[colIndexes[j]] = Double.isNaN(res[colIndexes[j]]) ? 0 : res[colIndexes[j]];
+		for(int j = 0; j < colIndexes.size(); j++){
+			final int cix = colIndexes.get(j);
+			res[cix] = Double.isNaN(res[cix]) ? 0 : res[cix];
+		}
 	}
 
 	@Override

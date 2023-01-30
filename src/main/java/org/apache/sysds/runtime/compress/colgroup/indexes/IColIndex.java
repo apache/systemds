@@ -86,4 +86,48 @@ public interface IColIndex {
 	 */
 	public IIterate iterator();
 
+	/**
+	 * Find the index of the value given return negative if non existing.
+	 * 
+	 * @param i the value to find inside the allocation
+	 * @return The index of the value.
+	 */
+	public int findIndex(int i);
+
+	public SliceResult slice(int l, int u);
+
+	@Override
+	public boolean equals(Object other);
+
+	public boolean equals(IColIndex other);
+
+	@Override
+	public int hashCode();
+
+	public boolean contains(IColIndex a, IColIndex b);
+
+
+	public IColIndex combine(IColIndex other);
+
+	// public boolean contains(ColIndexes a, ColIndexes b) {
+	// 	if(a == null || b == null)
+	// 		return false;
+	// 	int id = _indexes.findIndex(a._indexes.get(0));
+	// 	if(id >= 0)
+	// 		return true;
+	// 	id = _indexes.findIndex(b._indexes.get(0));
+	// 	return id >= 0;
+	// }
+
+	public static class SliceResult {
+		public final int idStart;
+		public final int idEnd;
+		public final IColIndex ret;
+
+		protected SliceResult(int idStart, int idEnd, IColIndex ret) {
+			this.idStart = idStart;
+			this.idEnd = idEnd;
+			this.ret = ret;
+		}
+	}
 }

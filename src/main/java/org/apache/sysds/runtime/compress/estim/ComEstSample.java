@@ -23,6 +23,7 @@ import java.util.Arrays;
 import java.util.Random;
 
 import org.apache.sysds.runtime.compress.CompressionSettings;
+import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.compress.estim.encoding.EncodingFactory;
 import org.apache.sysds.runtime.compress.estim.encoding.IEncode;
 import org.apache.sysds.runtime.compress.estim.sample.SampleEstimatorFactory;
@@ -72,10 +73,10 @@ public class ComEstSample extends AComEst {
 	}
 
 	@Override
-	public CompressedSizeInfoColGroup getColGroupInfo(int[] colIndexes, int estimate, int maxDistinct) {
-		if(_data.isEmpty() || (nnzCols != null && colIndexes.length == 1 && nnzCols[colIndexes[0]] == 0) ||
-			(_cs.transposed && colIndexes.length == 1 && _data.isInSparseFormat() &&
-				_data.getSparseBlock().isEmpty(colIndexes[0])))
+	public CompressedSizeInfoColGroup getColGroupInfo(IColIndex colIndexes, int estimate, int maxDistinct) {
+		if(_data.isEmpty() || (nnzCols != null && colIndexes.size() == 1 && nnzCols[colIndexes.get(0)] == 0) ||
+			(_cs.transposed && colIndexes.size() == 1 && _data.isInSparseFormat() &&
+				_data.getSparseBlock().isEmpty(colIndexes.get(0))))
 			return new CompressedSizeInfoColGroup(colIndexes, getNumRows());
 
 		final IEncode map = EncodingFactory.createFromMatrixBlock(_sample, _transposed, colIndexes);
@@ -83,7 +84,7 @@ public class ComEstSample extends AComEst {
 	}
 
 	@Override
-	public CompressedSizeInfoColGroup getDeltaColGroupInfo(int[] colIndexes, int estimate, int maxDistinct) {
+	public CompressedSizeInfoColGroup getDeltaColGroupInfo(IColIndex colIndexes, int estimate, int maxDistinct) {
 		// Don't use sample when doing estimation of delta encoding, instead we read from the start of the matrix until
 		// sample size. This guarantees that the delta values are actually represented in the full compression
 		final IEncode map = EncodingFactory.createFromMatrixBlockDelta(_data, _transposed, colIndexes, _sampleSize);
@@ -91,30 +92,30 @@ public class ComEstSample extends AComEst {
 	}
 
 	@Override
-	protected int worstCaseUpperBound(int[] columns) {
-		if(getNumColumns() == columns.length)
+	protected int worstCaseUpperBound(IColIndex columns) {
+		if(getNumColumns() == columns.size())
 			return Math.min(getNumRows(), (int) _data.getNonZeros());
 		return getNumRows();
 	}
 
 	@Override
-	protected CompressedSizeInfoColGroup combine(int[] combinedColumns, CompressedSizeInfoColGroup g1,
+	protected CompressedSizeInfoColGroup combine(IColIndex combinedColumns, CompressedSizeInfoColGroup g1,
 		CompressedSizeInfoColGroup g2, int maxDistinct) {
 		final IEncode map = g1.getMap().combine(g2.getMap());
 		return extractInfo(map, combinedColumns, maxDistinct);
 	}
 
-	private CompressedSizeInfoColGroup extractInfo(IEncode map, int[] colIndexes, int maxDistinct) {
+	private CompressedSizeInfoColGroup extractInfo(IEncode map, IColIndex colIndexes, int maxDistinct) {
 		final double spar = _data.getSparsity();
 		final EstimationFactors sampleFacts = map.extractFacts(_sampleSize, spar, spar, _cs);
 		final EstimationFactors em = scaleFactors(sampleFacts, colIndexes, maxDistinct, map.isDense());
 		return new CompressedSizeInfoColGroup(colIndexes, em, _cs.validCompressions, map);
 	}
 
-	private EstimationFactors scaleFactors(EstimationFactors sampleFacts, int[] colIndexes, int maxDistinct,
+	private EstimationFactors scaleFactors(EstimationFactors sampleFacts, IColIndex colIndexes, int maxDistinct,
 		boolean dense) {
 		final int numRows = getNumRows();
-		final int nCol = colIndexes.length;
+		final int nCol = colIndexes.size();
 
 		final double scalingFactor = (double) numRows / _sampleSize;
 
@@ -164,14 +165,14 @@ public class ComEstSample extends AComEst {
 		return Math.max(Math.min(est, Math.min(maxDistinct, numOffs)), 1);
 	}
 
-	private int calculateOffs(EstimationFactors sampleFacts, int numRows, double scalingFactor, int[] colIndexes,
+	private int calculateOffs(EstimationFactors sampleFacts, int numRows, double scalingFactor, IColIndex colIndexes,
 		int nnz) {
 
 		if(getNumColumns() == 1)
 			return nnz;
 		else if(nnzCols != null) {
-			if(colIndexes.length == 1)
-				return nnzCols[colIndexes[0]];
+			if(colIndexes.size() == 1)
+				return nnzCols[colIndexes.get(0)];
 			else {
 				final int emptyTuples = sampleFacts.numRows - sampleFacts.numOffs;
 				final int estOffs = numRows - (int) Math.floor(emptyTuples * scalingFactor);
@@ -223,12 +224,12 @@ public class ComEstSample extends AComEst {
 		return (int) numRuns;
 	}
 
-	private double calculateSparsity(int[] colIndexes, long nnz, double scalingFactor, double sampleValue) {
-		if(colIndexes.length == getNumColumns())
+	private double calculateSparsity(IColIndex colIndexes, long nnz, double scalingFactor, double sampleValue) {
+		if(colIndexes.size() == getNumColumns())
 			return _data.getSparsity();
 		else if(nnzCols != null || (_cs.transposed && _data.isInSparseFormat()) ||
 			(_transposed && _sample.isInSparseFormat()))
-			return (double) nnz / (getNumRows() * colIndexes.length);
+			return (double) nnz / (getNumRows() * colIndexes.size());
 		else if(_sample.isEmpty())
 			// Make a semi safe bet of using the data input sparsity if the sample was empty.
 			return _data.getSparsity();
@@ -236,21 +237,21 @@ public class ComEstSample extends AComEst {
 			return sampleValue;
 	}
 
-	private long calculateNNZ(int[] colIndexes, double scalingFactor) {
-		if(colIndexes.length == getNumColumns())
+	private long calculateNNZ(IColIndex colIndexes, double scalingFactor) {
+		if(colIndexes.size() == getNumColumns())
 			return _data.getNonZeros();
 		else if(_cs.transposed && _data.isInSparseFormat()) {
 			// Use exact if possible
 			long nnzCount = 0;
 			SparseBlock sb = _data.getSparseBlock();
-			for(int i = 0; i < colIndexes.length; i++)
+			for(int i = 0; i < colIndexes.size(); i++)
 				nnzCount += sb.get(i).size();
 			return nnzCount;
 		}
 		else if(nnzCols != null) {
 			long nnz = 0;
-			for(int i = 0; i < colIndexes.length; i++)
-				nnz += nnzCols[colIndexes[i]];
+			for(int i = 0; i < colIndexes.size(); i++)
+				nnz += nnzCols[colIndexes.get(i)];
 			return nnz;
 		}
 		else if(_sample.isEmpty())
@@ -259,13 +260,13 @@ public class ComEstSample extends AComEst {
 			// Fallback to the sample if original is not transposed
 			long nnzCount = 0;
 			SparseBlock sb = _sample.getSparseBlock();
-			for(int i = 0; i < colIndexes.length; i++)
+			for(int i = 0; i < colIndexes.size(); i++)
 				if(!sb.isEmpty(i))
 					nnzCount += sb.get(i).size() * scalingFactor;
 
 			// add one to make sure that Uncompressed columns are considered as containing at least one value.
 			if(nnzCount == 0)
-				nnzCount += colIndexes.length;
+				nnzCount += colIndexes.size();
 			return nnzCount;
 		}
 		else

@@ -22,6 +22,8 @@ package org.apache.sysds.runtime.compress.colgroup.indexes;
 import java.io.DataOutput;
 import java.io.IOException;
 
+import org.apache.commons.lang.NotImplementedException;
+
 public class TwoIndex implements IColIndex {
 	private final int id1;
 	private final int id2;
@@ -68,6 +70,53 @@ public class TwoIndex implements IColIndex {
 	@Override
 	public long estimateInMemorySize() {
 		return 16 + 8; // object, 2x int
+	}
+
+	@Override
+	public int findIndex(int i) {
+		return i == id1 ? 0 : i == id2 ? 1 : -1;
+	}
+
+	@Override
+	public SliceResult slice(int l, int u) {
+		throw new NotImplementedException();
+	}
+
+	@Override
+	public boolean equals(Object other) {
+		throw new NotImplementedException();
+	}
+
+	@Override
+	public boolean equals(IColIndex other) {
+		throw new NotImplementedException();
+	}
+
+	@Override
+	public int hashCode() {
+		throw new NotImplementedException();
+	}
+
+	@Override
+	public boolean contains(IColIndex a, IColIndex b) {
+		throw new NotImplementedException();
+	}
+
+	@Override
+	public IColIndex combine(IColIndex other) {
+		throw new NotImplementedException();
+	}
+
+	@Override
+	public String toString() {
+		StringBuilder sb = new StringBuilder();
+		sb.append(this.getClass().getSimpleName());
+		sb.append(" [");
+		sb.append(id1);
+		sb.append(", ");
+		sb.append(id2);
+		sb.append("]");
+		return sb.toString();
 	}
 
 	protected class TwoIterator implements IIterate {

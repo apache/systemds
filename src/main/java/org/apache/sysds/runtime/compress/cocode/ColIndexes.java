@@ -19,15 +19,15 @@
 
 package org.apache.sysds.runtime.compress.cocode;
 
-import java.util.Arrays;
+import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 
 public class ColIndexes {
-	final int[] _indexes;
+	final IColIndex _indexes;
 	final int _hash;
 
-	public ColIndexes(int[] indexes) {
+	public ColIndexes(IColIndex indexes) {
 		_indexes = indexes;
-		_hash = Arrays.hashCode(_indexes);
+		_hash = _indexes.hashCode();
 	}
 
 	@Override
@@ -38,16 +38,17 @@ public class ColIndexes {
 	@Override
 	public boolean equals(Object that) {
 		ColIndexes thatGrp = (ColIndexes) that;
-		return Arrays.equals(_indexes, thatGrp._indexes);
+		return _indexes.equals(thatGrp._indexes);
 	}
 
 	public boolean contains(ColIndexes a, ColIndexes b) {
+
 		if(a == null || b == null)
 			return false;
-		int id = Arrays.binarySearch(_indexes, a._indexes[0]);
+		int id = _indexes.findIndex(a._indexes.get(0));
 		if(id >= 0)
 			return true;
-		id = Arrays.binarySearch(_indexes, b._indexes[0]);
+		id = _indexes.findIndex(b._indexes.get(0));
 		return id >= 0;
 	}
 }

@@ -19,25 +19,26 @@
 
 package org.apache.sysds.runtime.compress.readers;
 
+import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.compress.utils.DblArray;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
 public class ReaderColumnSelectionDenseSingleBlockTransposed extends ReaderColumnSelection {
 	private final double[] _data;
+	private final int _nColIn;
 
-	protected ReaderColumnSelectionDenseSingleBlockTransposed(MatrixBlock data, int[] colIndexes, int rl, int ru) {
-		super(colIndexes.clone(), rl, Math.min(ru, data.getNumColumns()) - 1);
+	protected ReaderColumnSelectionDenseSingleBlockTransposed(MatrixBlock data, IColIndex colIndexes, int rl, int ru) {
+		super(colIndexes, rl, Math.min(ru, data.getNumColumns()) - 1);
 		_data = data.getDenseBlockValues();
-		for(int i = 0; i < _colIndexes.length; i++)
-			_colIndexes[i] = _colIndexes[i] * data.getNumColumns();
+		_nColIn = data.getNumColumns();
 	}
 
 	protected DblArray getNextRow() {
 		boolean empty = true;
 		while(empty && _rl < _ru) {
 			_rl++;
-			for(int i = 0; i < _colIndexes.length; i++) {
-				final double v = _data[_colIndexes[i] + _rl];
+			for(int i = 0; i < _colIndexes.size(); i++) {
+				final double v = _data[_colIndexes.get(i) * _nColIn + _rl];
 				boolean isNan = Double.isNaN(v);
 				if(isNan) {
 					warnNaN();

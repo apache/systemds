@@ -29,6 +29,8 @@ import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.DictionaryFactory;
+import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
+import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.compress.colgroup.offset.AIterator;
 import org.apache.sysds.runtime.compress.colgroup.offset.AOffset;
 import org.apache.sysds.runtime.compress.colgroup.offset.AOffset.OffsetSliceInfo;
@@ -36,7 +38,6 @@ import org.apache.sysds.runtime.compress.colgroup.offset.AOffsetIterator;
 import org.apache.sysds.runtime.compress.colgroup.offset.OffsetFactory;
 import org.apache.sysds.runtime.compress.colgroup.scheme.ICLAScheme;
 import org.apache.sysds.runtime.compress.cost.ComputationCostEstimator;
-import org.apache.sysds.runtime.compress.utils.Util;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.instructions.cp.CM_COV_Object;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
@@ -58,14 +59,14 @@ public class ColGroupSDCSingle extends ASDC {
 	/** The default value stored in this column group */
 	protected final double[] _defaultTuple;
 
-	private ColGroupSDCSingle(int[] colIndices, int numRows, ADictionary dict, double[] defaultTuple, AOffset offsets,
+	private ColGroupSDCSingle(IColIndex colIndices, int numRows, ADictionary dict, double[] defaultTuple, AOffset offsets,
 		int[] cachedCounts) {
-		super(colIndices, numRows, dict == null ? Dictionary.createNoCheck(new double[colIndices.length]) : dict, offsets,
+		super(colIndices, numRows, dict == null ? Dictionary.createNoCheck(new double[colIndices.size()]) : dict, offsets,
 			cachedCounts);
 		_defaultTuple = defaultTuple;
 	}
 
-	public static AColGroup create(int[] colIndexes, int numRows, ADictionary dict, double[] defaultTuple,
+	public static AColGroup create(IColIndex colIndexes, int numRows, ADictionary dict, double[] defaultTuple,
 		AOffset offsets, int[] cachedCounts) {
 		final boolean allZero = ColGroupUtils.allZero(defaultTuple);
 		if(dict == null && allZero)
@@ -80,13 +81,13 @@ public class ColGroupSDCSingle extends ASDC {
 			return ColGroupSDCSingleZeros.create(colIndexes, numRows, dict, offsets, cachedCounts);
 		else if(offsets.getSize() * 2 > numRows + 2) {
 			AOffset rev = AOffset.reverse(numRows, offsets);
-			return new ColGroupSDCSingle(colIndexes, numRows, Dictionary.create(defaultTuple), dict.getValues(), rev, null);
+			return new ColGroupSDCSingle(colIndexes, numRows, Dictionary.create(defaultTuple), dict.getValues(), rev,
+				null);
 		}
 		else
 			return new ColGroupSDCSingle(colIndexes, numRows, dict, defaultTuple, offsets, cachedCounts);
 
 	}
-
 
 	@Override
 	public CompressionType getCompType() {
@@ -149,8 +150,8 @@ public class ColGroupSDCSingle extends ASDC {
 	@Override
 	protected void computeColMxx(double[] c, Builtin builtin) {
 		_dict.aggregateCols(c, builtin, _colIndexes);
-		for(int x = 0; x < _colIndexes.length; x++)
-			c[_colIndexes[x]] = builtin.execute(c[_colIndexes[x]], _defaultTuple[x]);
+		for(int x = 0; x < _colIndexes.size(); x++)
+			c[_colIndexes.get(x)] = builtin.execute(c[_colIndexes.get(x)], _defaultTuple[x]);
 	}
 
 	@Override
@@ -310,15 +311,15 @@ public class ColGroupSDCSingle extends ASDC {
 	public void computeColSums(double[] c, int nRows) {
 		super.computeColSums(c, nRows);
 		int count = _numRows - _indexes.getSize();
-		for(int x = 0; x < _colIndexes.length; x++)
-			c[_colIndexes[x]] += _defaultTuple[x] * count;
+		for(int x = 0; x < _colIndexes.size(); x++)
+			c[_colIndexes.get(x)] += _defaultTuple[x] * count;
 	}
 
 	@Override
 	protected void computeSumSq(double[] c, int nRows) {
 		super.computeSumSq(c, nRows);
 		int count = _numRows - _indexes.getSize();
-		for(int x = 0; x < _colIndexes.length; x++)
+		for(int x = 0; x < _colIndexes.size(); x++)
 			c[0] += _defaultTuple[x] * _defaultTuple[x] * count;
 	}
 
@@ -326,8 +327,8 @@ public class ColGroupSDCSingle extends ASDC {
 	protected void computeColSumsSq(double[] c, int nRows) {
 		super.computeColSumsSq(c, nRows);
 		int count = _numRows - _indexes.getSize();
-		for(int x = 0; x < _colIndexes.length; x++)
-			c[_colIndexes[x]] += _defaultTuple[x] * _defaultTuple[x] * count;
+		for(int x = 0; x < _colIndexes.size(); x++)
+			c[_colIndexes.get(x)] += _defaultTuple[x] * _defaultTuple[x] * count;
 	}
 
 	@Override
@@ -340,9 +341,9 @@ public class ColGroupSDCSingle extends ASDC {
 	protected void computeColProduct(double[] c, int nRows) {
 		super.computeColProduct(c, nRows);
 		int count = _numRows - _indexes.getSize();
-		for(int x = 0; x < _colIndexes.length; x++) {
-			double v = c[_colIndexes[x]];
-			c[_colIndexes[x]] = v != 0 ? v * Math.pow(_defaultTuple[x], count) : 0;
+		for(int x = 0; x < _colIndexes.size(); x++) {
+			double v = c[_colIndexes.get(x)];
+			c[_colIndexes.get(x)] = v != 0 ? v * Math.pow(_defaultTuple[x], count) : 0;
 		}
 	}
 
@@ -356,7 +357,7 @@ public class ColGroupSDCSingle extends ASDC {
 	public long estimateInMemorySize() {
 		long size = super.estimateInMemorySize();
 		size += _indexes.getInMemorySize();
-		size += 8 * _colIndexes.length;
+		size += 8 * _colIndexes.size();
 		return size;
 	}
 
@@ -382,7 +383,7 @@ public class ColGroupSDCSingle extends ASDC {
 	public AColGroup binaryRowOpLeft(BinaryOperator op, double[] v, boolean isRowSafe) {
 		final double[] newDefaultTuple = new double[_defaultTuple.length];
 		for(int i = 0; i < _defaultTuple.length; i++)
-			newDefaultTuple[i] = op.fn.execute(v[_colIndexes[i]], _defaultTuple[i]);
+			newDefaultTuple[i] = op.fn.execute(v[_colIndexes.get(i)], _defaultTuple[i]);
 		final ADictionary newDict = _dict.binOpLeft(op, v, _colIndexes);
 		return create(_colIndexes, _numRows, newDict, newDefaultTuple, _indexes, getCachedCounts());
 	}
@@ -391,7 +392,7 @@ public class ColGroupSDCSingle extends ASDC {
 	public AColGroup binaryRowOpRight(BinaryOperator op, double[] v, boolean isRowSafe) {
 		final double[] newDefaultTuple = new double[_defaultTuple.length];
 		for(int i = 0; i < _defaultTuple.length; i++)
-			newDefaultTuple[i] = op.fn.execute(_defaultTuple[i], v[_colIndexes[i]]);
+			newDefaultTuple[i] = op.fn.execute(_defaultTuple[i], v[_colIndexes.get(i)]);
 		final ADictionary newDict = _dict.binOpRight(op, v, _colIndexes);
 		return create(_colIndexes, _numRows, newDict, newDefaultTuple, _indexes, getCachedCounts());
 	}
@@ -405,10 +406,10 @@ public class ColGroupSDCSingle extends ASDC {
 	}
 
 	public static ColGroupSDCSingle read(DataInput in, int nRows) throws IOException {
-		int[] cols = readCols(in);
+		IColIndex cols = ColIndexFactory.read(in);
 		ADictionary dict = DictionaryFactory.read(in);
 		AOffset indexes = OffsetFactory.readIn(in);
-		double[] defaultTuple = ColGroupIO.readDoubleArray(cols.length, in);
+		double[] defaultTuple = ColGroupIO.readDoubleArray(cols.size(), in);
 		return new ColGroupSDCSingle(cols, nRows, dict, defaultTuple, indexes, null);
 	}
 
@@ -416,13 +417,13 @@ public class ColGroupSDCSingle extends ASDC {
 	public long getExactSizeOnDisk() {
 		long ret = super.getExactSizeOnDisk();
 		ret += _indexes.getExactSizeOnDisk();
-		ret += 8 * _colIndexes.length; // _default tuple values.
+		ret += 8 * _colIndexes.size(); // _default tuple values.
 		return ret;
 	}
 
 	@Override
 	public AColGroup replace(double pattern, double replace) {
-		ADictionary replaced = _dict.replace(pattern, replace, _colIndexes.length);
+		ADictionary replaced = _dict.replace(pattern, replace, _colIndexes.size());
 		double[] newDefaultTuple = new double[_defaultTuple.length];
 		for(int i = 0; i < _defaultTuple.length; i++)
 			newDefaultTuple[i] = _defaultTuple[i] == pattern ? replace : _defaultTuple[i];
@@ -432,8 +433,8 @@ public class ColGroupSDCSingle extends ASDC {
 
 	@Override
 	public AColGroup extractCommon(double[] constV) {
-		for(int i = 0; i < _colIndexes.length; i++)
-			constV[_colIndexes[i]] += _defaultTuple[i];
+		for(int i = 0; i < _colIndexes.size(); i++)
+			constV[_colIndexes.get(i)] += _defaultTuple[i];
 
 		ADictionary subtractedDict = _dict.subtractTuple(_defaultTuple);
 		return ColGroupSDCSingleZeros.create(_colIndexes, _numRows, subtractedDict, _indexes, getCachedCounts());
@@ -443,7 +444,7 @@ public class ColGroupSDCSingle extends ASDC {
 	public long getNumberNonZeros(int nRows) {
 		long nnz = super.getNumberNonZeros(nRows);
 		final int count = _numRows - _indexes.getSize();
-		for(int x = 0; x < _colIndexes.length; x++)
+		for(int x = 0; x < _colIndexes.size(); x++)
 			nnz += _defaultTuple[x] != 0 ? count : 0;
 		return nnz;
 	}
@@ -455,7 +456,7 @@ public class ColGroupSDCSingle extends ASDC {
 
 	@Override
 	public AColGroup rexpandCols(int max, boolean ignore, boolean cast, int nRows) {
-		ADictionary d = _dict.rexpandCols(max, ignore, cast, _colIndexes.length);
+		ADictionary d = _dict.rexpandCols(max, ignore, cast, _colIndexes.size());
 		final int def = (int) _defaultTuple[0];
 		if(d == null) {
 			if(def <= 0 || def > max)
@@ -463,22 +464,22 @@ public class ColGroupSDCSingle extends ASDC {
 			else {
 				double[] retDef = new double[max];
 				retDef[((int) _defaultTuple[0]) - 1] = 1;
-				return ColGroupSDCSingle.create(Util.genColsIndices(max), nRows, null, retDef, _indexes, null);
+				return ColGroupSDCSingle.create(ColIndexFactory.create(max), nRows, null, retDef, _indexes, null);
 			}
 		}
 		else {
 			if(def <= 0) {
 				if(ignore)
-					return ColGroupSDCSingleZeros.create(Util.genColsIndices(max), nRows, d, _indexes, getCachedCounts());
+					return ColGroupSDCSingleZeros.create(ColIndexFactory.create(max), nRows, d, _indexes, getCachedCounts());
 				else
 					throw new DMLRuntimeException("Invalid content of zero in rexpand");
 			}
 			else if(def > max)
-				return ColGroupSDCSingleZeros.create(Util.genColsIndices(max), nRows, d, _indexes, getCachedCounts());
+				return ColGroupSDCSingleZeros.create(ColIndexFactory.create(max), nRows, d, _indexes, getCachedCounts());
 			else {
 				double[] retDef = new double[max];
 				retDef[((int) _defaultTuple[0]) - 1] = 1;
-				return ColGroupSDCSingle.create(Util.genColsIndices(max), nRows, d, retDef, _indexes, getCachedCounts());
+				return ColGroupSDCSingle.create(ColIndexFactory.create(max), nRows, d, retDef, _indexes, getCachedCounts());
 			}
 		}
 	}
@@ -492,7 +493,7 @@ public class ColGroupSDCSingle extends ASDC {
 	}
 
 	@Override
-	protected AColGroup sliceMultiColumns(int idStart, int idEnd, int[] outputCols) {
+	protected AColGroup sliceMultiColumns(int idStart, int idEnd, IColIndex outputCols) {
 		final AColGroup ret = super.sliceMultiColumns(idStart, idEnd, outputCols);
 		final double[] defTuple = new double[idEnd - idStart];
 		for(int i = idStart, j = 0; i < idEnd; i++, j++)
@@ -536,7 +537,7 @@ public class ColGroupSDCSingle extends ASDC {
 	}
 
 	@Override
-	protected AColGroup allocateRightMultiplicationCommon(double[] common, int[] colIndexes, ADictionary preAgg) {
+	protected AColGroup allocateRightMultiplicationCommon(double[] common, IColIndex colIndexes, ADictionary preAgg) {
 		return create(colIndexes, _numRows, preAgg, common, _indexes, getCachedCounts());
 	}
 
@@ -545,11 +546,11 @@ public class ColGroupSDCSingle extends ASDC {
 		OffsetSliceInfo off = _indexes.slice(rl, ru);
 		if(off.lIndex == -1)
 			return ColGroupConst.create(_colIndexes, Dictionary.create(_defaultTuple));
-		return create(_colIndexes, ru -rl, _dict, _defaultTuple, off.offsetSlice, null);
+		return create(_colIndexes, ru - rl, _dict, _defaultTuple, off.offsetSlice, null);
 	}
 
 	@Override
-	protected AColGroup copyAndSet(int[] colIndexes, ADictionary newDictionary) {
+	protected AColGroup copyAndSet(IColIndex colIndexes, ADictionary newDictionary) {
 		return create(colIndexes, _numRows, newDictionary, _defaultTuple, _indexes, getCachedCounts());
 	}
 
@@ -562,9 +563,8 @@ public class ColGroupSDCSingle extends ASDC {
 	public AColGroup appendNInternal(AColGroup[] g) {
 		int sumRows = getNumRows();
 		for(int i = 1; i < g.length; i++) {
-			if(!Arrays.equals(_colIndexes, g[i]._colIndexes)) {
-				LOG.warn("Not same columns therefore not appending \n" + Arrays.toString(_colIndexes) + "\n\n"
-					+ Arrays.toString(g[i]._colIndexes));
+			if(!_colIndexes.equals(g[i]._colIndexes)) {
+				LOG.warn("Not same columns therefore not appending \n" + _colIndexes + "\n\n" + g[i]._colIndexes);
 				return null;
 			}
 

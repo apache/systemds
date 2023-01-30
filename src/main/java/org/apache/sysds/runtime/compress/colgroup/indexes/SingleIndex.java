@@ -22,7 +22,7 @@ package org.apache.sysds.runtime.compress.colgroup.indexes;
 import java.io.DataOutput;
 import java.io.IOException;
 
-public class SingleIndex implements IColIndex {
+public class SingleIndex extends AColIndex {
 	private final int idx;
 
 	public SingleIndex(int idx) {
@@ -61,7 +61,61 @@ public class SingleIndex implements IColIndex {
 
 	@Override
 	public long estimateInMemorySize() {
+		return estimateInMemorySizeStatic(); 
+	}
+
+	public static long estimateInMemorySizeStatic(){
 		return 16 + 4 + 4; // object, int, and padding
+	}
+
+	@Override
+	public int findIndex(int i) {
+		if(i < idx)
+			return -1;
+		else if(i == idx)
+			return 0;
+		else
+			return -2;
+	}
+
+	@Override
+	public SliceResult slice(int l, int u) {
+		return (l <= idx && u > idx) //
+			? l == 0 ? new SliceResult(0, 1, this) : new SliceResult(0, 1, new SingleIndex(idx - l)) //
+			: new SliceResult(0, 0, null);
+	}
+
+	@Override
+	public boolean equals(IColIndex other) {
+		return other.size() == 1 && other.get(0) == idx;
+	}
+
+	@Override
+	public IColIndex combine(IColIndex other) {
+		if(other instanceof SingleIndex) {
+			int otherV = other.get(0);
+			if(otherV < idx)
+				return new TwoIndex(otherV, idx);
+			else
+				return new TwoIndex(idx, otherV);
+		}
+		else
+			return other.combine(this);
+	}
+
+	@Override
+	public boolean isContiguous(){
+		return true;
+	}
+
+	@Override
+	public String toString() {
+		StringBuilder sb = new StringBuilder();
+		sb.append(this.getClass().getSimpleName());
+		sb.append(" [");
+		sb.append(idx);
+		sb.append("]");
+		return sb.toString();
 	}
 
 	protected class SingleIterator implements IIterate {

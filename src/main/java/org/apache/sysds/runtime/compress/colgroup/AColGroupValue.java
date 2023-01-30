@@ -23,7 +23,8 @@ import java.lang.ref.SoftReference;
 
 import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
-import org.apache.sysds.runtime.compress.utils.Util;
+import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
+import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.instructions.cp.CM_COV_Object;
 import org.apache.sysds.runtime.matrix.operators.CMOperator;
@@ -42,7 +43,7 @@ public abstract class AColGroupValue extends ADictBasedColGroup {
 	 * @param cachedCounts The cached counts of the distinct tuples (can be null since it should be possible to
 	 *                     reconstruct the counts on demand)
 	 */
-	protected AColGroupValue(int[] colIndices, ADictionary dict, int[] cachedCounts) {
+	protected AColGroupValue(IColIndex colIndices, ADictionary dict, int[] cachedCounts) {
 		super(colIndices, dict);
 		if(cachedCounts != null)
 			counts = new SoftReference<>(cachedCounts);
@@ -50,7 +51,7 @@ public abstract class AColGroupValue extends ADictBasedColGroup {
 
 	@Override
 	public int getNumValues() {
-		return _dict.getNumberOfValues(_colIndexes.length);
+		return _dict.getNumberOfValues(_colIndexes.size());
 	}
 
 	/**
@@ -88,7 +89,7 @@ public abstract class AColGroupValue extends ADictBasedColGroup {
 
 	@Override
 	protected void computeSum(double[] c, int nRows) {
-		c[0] += _dict.sum(getCounts(), _colIndexes.length);
+		c[0] += _dict.sum(getCounts(), _colIndexes.size());
 	}
 
 	@Override
@@ -98,7 +99,7 @@ public abstract class AColGroupValue extends ADictBasedColGroup {
 
 	@Override
 	protected void computeSumSq(double[] c, int nRows) {
-		c[0] += _dict.sumSq(getCounts(), _colIndexes.length);
+		c[0] += _dict.sumSq(getCounts(), _colIndexes.size());
 	}
 
 	@Override
@@ -108,7 +109,7 @@ public abstract class AColGroupValue extends ADictBasedColGroup {
 
 	@Override
 	protected void computeProduct(double[] c, int nRows) {
-		_dict.product(c, getCounts(), _colIndexes.length);
+		_dict.product(c, getCounts(), _colIndexes.size());
 	}
 
 	@Override
@@ -118,31 +119,31 @@ public abstract class AColGroupValue extends ADictBasedColGroup {
 
 	@Override
 	protected double[] preAggSumRows() {
-		return _dict.sumAllRowsToDouble(_colIndexes.length);
+		return _dict.sumAllRowsToDouble(_colIndexes.size());
 	}
 
 	@Override
 	protected double[] preAggSumSqRows() {
-		return _dict.sumAllRowsToDoubleSq(_colIndexes.length);
+		return _dict.sumAllRowsToDoubleSq(_colIndexes.size());
 	}
 
 	@Override
 	protected double[] preAggProductRows() {
-		return _dict.productAllRowsToDouble(_colIndexes.length);
+		return _dict.productAllRowsToDouble(_colIndexes.size());
 	}
 
 	@Override
 	protected double[] preAggBuiltinRows(Builtin builtin) {
-		return _dict.aggregateRows(builtin, _colIndexes.length);
+		return _dict.aggregateRows(builtin, _colIndexes.size());
 	}
 
 	@Override
 	protected AColGroup sliceSingleColumn(int idx) {
-		final int[] retIndexes = new int[] {0};
-		if(_colIndexes.length == 1)
+		final IColIndex retIndexes = ColIndexFactory.create(1);
+		if(_colIndexes.size() == 1)
 			return copyAndSet(retIndexes, _dict);
 
-		final ADictionary retDict = _dict.sliceOutColumnRange(idx, idx + 1, _colIndexes.length);
+		final ADictionary retDict = _dict.sliceOutColumnRange(idx, idx + 1, _colIndexes.size());
 		if(retDict == null)
 			return new ColGroupEmpty(retIndexes);
 		else
@@ -151,8 +152,8 @@ public abstract class AColGroupValue extends ADictBasedColGroup {
 	}
 
 	@Override
-	protected AColGroup sliceMultiColumns(int idStart, int idEnd, int[] outputCols) {
-		ADictionary retDict = _dict.sliceOutColumnRange(idStart, idEnd, _colIndexes.length);
+	protected AColGroup sliceMultiColumns(int idStart, int idEnd, IColIndex outputCols) {
+		ADictionary retDict = _dict.sliceOutColumnRange(idStart, idEnd, _colIndexes.size());
 		if(retDict == null)
 			return new ColGroupEmpty(outputCols);
 		return copyAndSet(outputCols, retDict);
@@ -167,7 +168,7 @@ public abstract class AColGroupValue extends ADictBasedColGroup {
 	@Override
 	public long getNumberNonZeros(int nRows) {
 		int[] counts = getCounts();
-		return _dict.getNumberNonZeros(counts, _colIndexes.length);
+		return _dict.getNumberNonZeros(counts, _colIndexes.size());
 	}
 
 	@Override
@@ -179,7 +180,7 @@ public abstract class AColGroupValue extends ADictBasedColGroup {
 
 	@Override
 	public AColGroup replace(double pattern, double replace) {
-		ADictionary replaced = _dict.replace(pattern, replace, _colIndexes.length);
+		ADictionary replaced = _dict.replace(pattern, replace, _colIndexes.size());
 		return copyAndSet(replaced);
 	}
 
@@ -191,11 +192,11 @@ public abstract class AColGroupValue extends ADictBasedColGroup {
 	@Override
 	public AColGroup rexpandCols(int max, boolean ignore, boolean cast, int nRows) {
 		try {
-			ADictionary d = _dict.rexpandCols(max, ignore, cast, _colIndexes.length);
+			ADictionary d = _dict.rexpandCols(max, ignore, cast, _colIndexes.size());
 			if(d == null)
 				return ColGroupEmpty.create(max);
 			else
-				return copyAndSet(Util.genColsIndices(max), d);
+				return copyAndSet(ColIndexFactory.create(max), d);
 		}
 		catch(DMLCompressionException e) {
 			return ColGroupEmpty.create(max);
@@ -207,7 +208,7 @@ public abstract class AColGroupValue extends ADictBasedColGroup {
 		StringBuilder sb = new StringBuilder();
 		sb.append(super.toString());
 		sb.append(String.format("\n%15s%s", "Values: ", _dict.getClass().getSimpleName()));
-		sb.append(_dict.getString(_colIndexes.length));
+		sb.append(_dict.getString(_colIndexes.size()));
 		return sb.toString();
 	}
 

@@ -35,6 +35,9 @@ import org.apache.sysds.runtime.compress.colgroup.AMorphingMMColGroup;
 import org.apache.sysds.runtime.compress.colgroup.APreAgg;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupConst;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupEmpty;
+import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
+import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
+import org.apache.sysds.runtime.compress.colgroup.indexes.IIterate;
 
 public final class CLALibUtils {
 	protected static final Log LOG = LogFactory.getLog(CLALibUtils.class.getName());
@@ -160,35 +163,23 @@ public final class CLALibUtils {
 	}
 
 	private static AColGroup combineConst(List<AColGroup> c) {
-		int[] resCols = combineColIndexes(c);
-
-		double[] values = new double[resCols.length];
+		IColIndex resCols = combineColIndexes(c);
+		double[] values = new double[resCols.size()];
 		for(AColGroup g : c) {
 			final ColGroupConst cg = (ColGroupConst) g;
-			final int[] colIdx = cg.getColIndices();
+			final IColIndex colIdx = cg.getColIndices();
 			final double[] colVals = cg.getValues();
-			for(int i = 0; i < colIdx.length; i++) {
-				int outId = Arrays.binarySearch(resCols, colIdx[i]);
+			for(int i = 0; i < colIdx.size(); i++) {
+				// Find the index in the result columns to add the value into.
+				int outId = resCols.findIndex(colIdx.get(i)); 
 				values[outId] = colVals[i];
 			}
 		}
 		return ColGroupConst.create(resCols, values);
 	}
 
-	private static int[] combineColIndexes(List<AColGroup> gs) {
-		int numCols = 0;
-		for(AColGroup g : gs)
-			numCols += g.getNumCols();
-
-		int[] resCols = new int[numCols];
-
-		int index = 0;
-		for(AColGroup g : gs)
-			for(int c : g.getColIndices())
-				resCols[index++] = c;
-
-		Arrays.sort(resCols);
-		return resCols;
+	private static IColIndex combineColIndexes(List<AColGroup> gs) {
+		return ColIndexFactory.combine(gs);
 	}
 
 	protected static double[] getColSum(List<AColGroup> groups, int nCols, int nRows) {
@@ -197,22 +188,24 @@ public final class CLALibUtils {
 
 	protected static void addEmptyColumn(List<AColGroup> colGroups, int nCols) {
 
-		//	early abort loop
+		// early abort loop
 		for(AColGroup g : colGroups)
-			if(g.getColIndices().length == nCols)
+			if(g.getColIndices().size() == nCols)
 				return; // there is some group that covers everything anyway
 
 		Set<Integer> emptyColumns = new HashSet<>(nCols);
 		for(int i = 0; i < nCols; i++)
 			emptyColumns.add(i);
 
-		for(AColGroup g : colGroups)
-			for(int c : g.getColIndices())
-				emptyColumns.remove(c);
+		for(AColGroup g : colGroups) {
+			IIterate it = g.getColIndices().iterator();
+			while(it.hasNext())
+				emptyColumns.remove(it.next());
+		}
 
 		if(emptyColumns.size() != 0) {
 			int[] emptyColumnsFinal = emptyColumns.stream().mapToInt(Integer::intValue).toArray();
-			colGroups.add(new ColGroupEmpty(emptyColumnsFinal));
+			colGroups.add(new ColGroupEmpty(ColIndexFactory.create(emptyColumnsFinal)));
 		}
 		else
 			return;

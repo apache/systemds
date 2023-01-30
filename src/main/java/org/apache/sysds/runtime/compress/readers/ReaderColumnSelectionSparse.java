@@ -21,6 +21,7 @@ package org.apache.sysds.runtime.compress.readers;
 
 import java.util.Arrays;
 
+import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.compress.utils.DblArray;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -35,7 +36,7 @@ public class ReaderColumnSelectionSparse extends ReaderColumnSelection {
 
 	private final SparseBlock a;
 
-	protected ReaderColumnSelectionSparse(MatrixBlock data, int[] colIndexes, int rl, int ru) {
+	protected ReaderColumnSelectionSparse(MatrixBlock data, IColIndex colIndexes, int rl, int ru) {
 		super(colIndexes, rl, Math.min(ru, data.getNumRows()) - 1);
 		a = data.getSparseBlock();
 	}
@@ -64,12 +65,12 @@ public class ReaderColumnSelectionSparse extends ReaderColumnSelection {
 		final int[] aix = a.indexes(r);
 		final double[] avals = a.values(r);
 		int skip = 0;
-		int j = Arrays.binarySearch(aix, apos, alen, _colIndexes[0]);
+		int j = Arrays.binarySearch(aix, apos, alen, _colIndexes.get(0));
 		if(j < 0)
 			j = Math.abs(j + 1);
 
-		while(skip < _colIndexes.length && j < alen) {
-			if(_colIndexes[skip] == aix[j]) {
+		while(skip < _colIndexes.size() && j < alen) {
+			if(_colIndexes.get(skip) == aix[j]) {
 				final Double v = avals[j];
 				boolean isNan = Double.isNaN(v);
 				if(isNan) {
@@ -83,7 +84,7 @@ public class ReaderColumnSelectionSparse extends ReaderColumnSelection {
 				skip++;
 				j++;
 			}
-			else if(_colIndexes[skip] > aix[j])
+			else if(_colIndexes.get(skip) > aix[j])
 				j++;
 			else
 				reusableArr[skip++] = 0;
@@ -91,7 +92,7 @@ public class ReaderColumnSelectionSparse extends ReaderColumnSelection {
 		if(zeroResult)
 			return true; // skip if no values found were in my cols
 
-		while(skip < _colIndexes.length)
+		while(skip < _colIndexes.size())
 			reusableArr[skip++] = 0;
 
 		return false;

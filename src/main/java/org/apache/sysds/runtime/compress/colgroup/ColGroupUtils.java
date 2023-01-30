@@ -19,6 +19,7 @@
 
 package org.apache.sysds.runtime.compress.colgroup;
 
+import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.compress.utils.DoubleCountHashMap;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.functionobjects.ValueFunction;
@@ -39,12 +40,12 @@ public interface ColGroupUtils {
 	 * @param colIndexes The column indexes to extract
 	 * @return The result as a double array.
 	 */
-	public static double[] binaryDefRowLeft(BinaryOperator op, double[] v, int[] colIndexes) {
+	public static double[] binaryDefRowLeft(BinaryOperator op, double[] v, IColIndex colIndexes) {
 		final ValueFunction fn = op.fn;
-		final int len = colIndexes.length;
+		final int len = colIndexes.size();
 		final double[] ret = new double[len];
 		for(int i = 0; i < len; i++)
-			ret[i] = fn.execute(v[colIndexes[i]], 0);
+			ret[i] = fn.execute(v[colIndexes.get(i)], 0);
 		return ret;
 	}
 
@@ -58,12 +59,12 @@ public interface ColGroupUtils {
 	 * @param colIndexes The column indexes to extract
 	 * @return The result as a double array.
 	 */
-	public static double[] binaryDefRowRight(BinaryOperator op, double[] v, int[] colIndexes) {
+	public static double[] binaryDefRowRight(BinaryOperator op, double[] v, IColIndex colIndexes) {
 		final ValueFunction fn = op.fn;
-		final int len = colIndexes.length;
+		final int len = colIndexes.size();
 		final double[] ret = new double[len];
 		for(int i = 0; i < len; i++)
-			ret[i] = fn.execute(0, v[colIndexes[i]]);
+			ret[i] = fn.execute(0, v[colIndexes.get(i)]);
 		return ret;
 	}
 
@@ -82,25 +83,25 @@ public interface ColGroupUtils {
 			return;
 		else if(tmpResult.isInSparseFormat()) {
 			SparseBlock sb = tmpResult.getSparseBlock();
-			for(int row = 0; row < lhs._colIndexes.length; row++) {
+			for(int row = 0; row < lhs._colIndexes.size(); row++) {
 				if(sb.isEmpty(row))
 					continue;
 				final int apos = sb.pos(row);
 				final int alen = sb.size(row) + apos;
 				final int[] aix = sb.indexes(row);
 				final double[] avals = sb.values(row);
-				final int offRes = lhs._colIndexes[row] * result.getNumColumns();
+				final int offRes = lhs._colIndexes.get(row) * result.getNumColumns();
 				for(int col = apos; col < alen; col++)
-					resV[offRes + rhs._colIndexes[aix[col]]] += avals[col];
+					resV[offRes + rhs._colIndexes.get(aix[col])] += avals[col];
 			}
 		}
 		else {
 			double[] tmpRetV = tmpResult.getDenseBlockValues();
 			for(int row = 0; row < lhs.getNumCols(); row++) {
-				final int offRes = lhs._colIndexes[row] * result.getNumColumns();
+				final int offRes = lhs._colIndexes.get(row) * result.getNumColumns();
 				final int offTmp = row * rhs.getNumCols();
 				for(int col = 0; col < rhs.getNumCols(); col++) {
-					resV[offRes + rhs._colIndexes[col]] += tmpRetV[offTmp + col];
+					resV[offRes + rhs._colIndexes.get(col)] += tmpRetV[offTmp + col];
 				}
 			}
 		}
@@ -205,18 +206,17 @@ public interface ColGroupUtils {
 		}
 	}
 
-	public static void outerProduct(final double[] leftRowSum, final double[] rightColumnSum, final int[] colIdxRight,
+	public static void outerProduct(final double[] leftRowSum, final double[] rightColumnSum, final IColIndex colIdxRight,
 		final double[] result, final int nColR, final int rl, final int ru) {
 		for(int row = rl; row < ru; row++) {
 			final int offOut = nColR * row;
 			final double vLeft = leftRowSum[row];
-			for(int col = 0; col < rightColumnSum.length; col++) {
-				result[offOut + colIdxRight[col]] += vLeft * rightColumnSum[col];
-			}
+			for(int col = 0; col < rightColumnSum.length; col++)
+				result[offOut + colIdxRight.get(col)] += vLeft * rightColumnSum[col];
 		}
 	}
 
-	public static void outerProduct(final double[] leftRowSum, final SparseBlock rightColSum, final int[] colIdxRight,
+	public static void outerProduct(final double[] leftRowSum, final SparseBlock rightColSum, final IColIndex colIdxRight,
 		final double[] result, final int nColR, final int rl, final int ru) {
 		final int alen = rightColSum.size(0);
 		final int[] aix = rightColSum.indexes(0);
@@ -225,7 +225,7 @@ public interface ColGroupUtils {
 			final int offOut = nColR * row;
 			final double vLeft = leftRowSum[row];
 			for(int j = 0; j < alen; j++)
-				result[offOut + colIdxRight[aix[j]]] += vLeft * aval[j];
+				result[offOut + colIdxRight.get(aix[j])] += vLeft * aval[j];
 		}
 	}
 
@@ -276,7 +276,7 @@ public interface ColGroupUtils {
 	}
 
 
-	public static void addMatrixToResult(MatrixBlock tmp, MatrixBlock result, int[] colIndexes, int rl, int ru) {
+	public static void addMatrixToResult(MatrixBlock tmp, MatrixBlock result, IColIndex colIndexes, int rl, int ru) {
 		if(tmp.isEmpty())
 			return;
 		final double[] retV = result.getDenseBlockValues();
@@ -290,16 +290,16 @@ public interface ColGroupUtils {
 				final double[] avals = sb.values(offT);
 				final int offR = row * nColRet;
 				for(int i = apos; i < apos + alen; i++)
-					retV[offR + colIndexes[aix[i]]] += avals[i];
+					retV[offR + colIndexes.get(aix[i])] += avals[i];
 			}
 		}
 		else {
 			final double[] tmpV = tmp.getDenseBlockValues();
-			final int nCol = colIndexes.length;
+			final int nCol = colIndexes.size();
 			for(int row = rl, offT = 0; row < ru; row++, offT += nCol) {
 				final int offR = row * nColRet;
 				for(int col = 0; col < nCol; col++)
-					retV[offR + colIndexes[col]] += tmpV[offT + col];
+					retV[offR + colIndexes.get(col)] += tmpV[offT + col];
 			}
 		}
 	}

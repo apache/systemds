@@ -24,6 +24,7 @@ import java.util.Arrays;
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
 import org.apache.sysds.runtime.compress.colgroup.offset.AOffset;
@@ -49,11 +50,11 @@ public interface EncodingFactory {
 	 * @param rowCols    The list of columns to encode.
 	 * @return An encoded format of the information of the columns.
 	 */
-	public static IEncode createFromMatrixBlock(MatrixBlock m, boolean transposed, int[] rowCols) {
+	public static IEncode createFromMatrixBlock(MatrixBlock m, boolean transposed, IColIndex rowCols) {
 		if(m.isEmpty())
 			return new EmptyEncoding();
-		else if(rowCols.length == 1)
-			return createFromMatrixBlock(m, transposed, rowCols[0]);
+		else if(rowCols.size() == 1)
+			return createFromMatrixBlock(m, transposed, rowCols.get(0));
 		else
 			return createWithReader(m, rowCols, transposed);
 	}
@@ -69,7 +70,7 @@ public interface EncodingFactory {
 	 * @param rowCols    The list of columns to encode
 	 * @return A delta encoded encoding.
 	 */
-	public static IEncode createFromMatrixBlockDelta(MatrixBlock m, boolean transposed, int[] rowCols) {
+	public static IEncode createFromMatrixBlockDelta(MatrixBlock m, boolean transposed, IColIndex rowCols) {
 		throw new NotImplementedException();
 		// final int sampleSize = transposed ? m.getNumColumns() : m.getNumRows();
 		// return createFromMatrixBlockDelta(m, transposed, rowCols, sampleSize);
@@ -87,7 +88,7 @@ public interface EncodingFactory {
 	 * @param sampleSize The number of rows to consider for the delta encoding (from the beginning)
 	 * @return A delta encoded encoding.
 	 */
-	public static IEncode createFromMatrixBlockDelta(MatrixBlock m, boolean transposed, int[] rowCols, int sampleSize) {
+	public static IEncode createFromMatrixBlockDelta(MatrixBlock m, boolean transposed, IColIndex rowCols, int sampleSize) {
 		throw new NotImplementedException();
 	}
 
@@ -336,10 +337,10 @@ public interface EncodingFactory {
 		return new SparseEncoding(d, o, m.getNumRows());
 	}
 
-	private static IEncode createWithReader(MatrixBlock m, int[] rowCols, boolean transposed) {
+	private static IEncode createWithReader(MatrixBlock m, IColIndex rowCols, boolean transposed) {
 		final ReaderColumnSelection reader1 = ReaderColumnSelection.createReader(m, rowCols, transposed);
 		final int nRows = transposed ? m.getNumColumns() : m.getNumRows();
-		final DblArrayCountHashMap map = new DblArrayCountHashMap(16, rowCols.length);
+		final DblArrayCountHashMap map = new DblArrayCountHashMap(16, rowCols.size());
 		final IntArrayList offsets = new IntArrayList();
 		DblArray cellVals = reader1.nextRow();
 
@@ -364,7 +365,7 @@ public interface EncodingFactory {
 
 	}
 
-	private static IEncode createWithReaderDense(MatrixBlock m, DblArrayCountHashMap map, int[] rowCols, int nRows,
+	private static IEncode createWithReaderDense(MatrixBlock m, DblArrayCountHashMap map, IColIndex rowCols, int nRows,
 		boolean transposed, boolean zero) {
 		// Iteration 2,
 		final int unique = map.size() + (zero ? 1 : 0);
@@ -382,7 +383,7 @@ public interface EncodingFactory {
 		return new DenseEncoding(d);
 	}
 
-	private static IEncode createWithReaderSparse(MatrixBlock m, DblArrayCountHashMap map, int[] rowCols,
+	private static IEncode createWithReaderSparse(MatrixBlock m, DblArrayCountHashMap map, IColIndex rowCols,
 		IntArrayList offsets, int nRows, boolean transposed) {
 		final ReaderColumnSelection reader2 = ReaderColumnSelection.createReader(m, rowCols, transposed);
 		DblArray cellVals = reader2.nextRow();

@@ -46,7 +46,7 @@ public class HybridCostEstimator extends ACostEstimate {
 	@Override
 	protected double getCostSafe(CompressedSizeInfoColGroup g) {
 		final double cost = costEstimator.getCostSafe(g);
-		final double denseSize = g.getNumRows() * g.getColumns().length * 8;
+		final double denseSize = g.getNumRows() * g.getColumns().size() * 8;
 		final double compressedSize = memoryCostEstimator.getCostSafe(g);
 		return cost * (compressedSize / denseSize);
 	}

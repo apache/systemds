@@ -27,6 +27,7 @@ import java.util.List;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.CompressionSettings;
+import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.compress.readers.ReaderColumnSelection;
 import org.apache.sysds.runtime.compress.utils.DblArray;
 import org.apache.sysds.runtime.compress.utils.DblArrayIntListHashMap;
@@ -45,7 +46,7 @@ public class BitmapEncoder {
 
 	static Log LOG = LogFactory.getLog(BitmapEncoder.class.getName());
 
-	public static ABitmap extractBitmap(int[] colIndices, MatrixBlock rawBlock, int estimatedNumberOfUniques,
+	public static ABitmap extractBitmap(IColIndex colIndices, MatrixBlock rawBlock, int estimatedNumberOfUniques,
 		CompressionSettings cs) {
 		return extractBitmap(colIndices, rawBlock, cs.transposed, estimatedNumberOfUniques, cs.sortTuplesByFrequency);
 	}
@@ -64,15 +65,15 @@ public class BitmapEncoder {
 	 * @param sortedEntries            Boolean specifying if the entries should be sorted based on frequency of tuples
 	 * @return Uncompressed bitmap representation of the columns specified
 	 */
-	public static ABitmap extractBitmap(int[] colIndices, MatrixBlock rawBlock, boolean transposed,
+	public static ABitmap extractBitmap(IColIndex colIndices, MatrixBlock rawBlock, boolean transposed,
 		int estimatedNumberOfUniques, boolean sortedEntries) {
 		if(rawBlock == null || rawBlock.isEmpty())
 			return null;
 
 		final int numRows = transposed ? rawBlock.getNumColumns() : rawBlock.getNumRows();
 		final int estimatedNumber = Math.max(estimatedNumberOfUniques, 8);
-		if(colIndices.length == 1)
-			return extractBitmapSingleColumn(colIndices[0], rawBlock, numRows, transposed, estimatedNumber, sortedEntries);
+		if(colIndices.size() == 1)
+			return extractBitmapSingleColumn(colIndices.get(0), rawBlock, numRows, transposed, estimatedNumber, sortedEntries);
 		else
 			return extractBitmapMultiColumns(colIndices, rawBlock, numRows, transposed, estimatedNumber, sortedEntries);
 	}
@@ -160,7 +161,7 @@ public class BitmapEncoder {
 		return distinctVals;
 	}
 
-	private static ABitmap extractBitmapMultiColumns(int[] colIndices, MatrixBlock rawBlock, int numRows,
+	private static ABitmap extractBitmapMultiColumns(IColIndex colIndices, MatrixBlock rawBlock, int numRows,
 		boolean transposed, int estimatedUnique, boolean sort) {
 		final DblArrayIntListHashMap map = new DblArrayIntListHashMap(estimatedUnique);
 		final ReaderColumnSelection reader = ReaderColumnSelection.createReader(rawBlock, colIndices, transposed);
@@ -169,7 +170,7 @@ public class BitmapEncoder {
 		while((cellVals = reader.nextRow()) != null)
 			map.appendValue(cellVals, reader.getCurrentRowIndex());
 
-		return makeMultiColBitmap(map, numRows, colIndices.length, sort);
+		return makeMultiColBitmap(map, numRows, colIndices.size(), sort);
 	}
 
 	private static ABitmap makeMultiColBitmap(DblArrayIntListHashMap map, int numRows, int numCols, boolean sort) {

@@ -34,10 +34,11 @@ import org.apache.sysds.runtime.compress.colgroup.AColGroup;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupFactory;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupLinearFunctional;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupUncompressed;
+import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
+import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.compress.estim.ComEstExact;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfo;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
-import org.apache.sysds.runtime.compress.utils.Util;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.DataConverter;
 import org.junit.runner.RunWith;
@@ -87,8 +88,8 @@ public abstract class ColGroupLinearFunctionalBase {
 		if(nRowLeft != lin.getNumRows())
 			fail("Transposed left ColGroup and center ColGroup (`lin`) must have compatible dimensions");
 
-		int[] colIndices = lin.getColIndices();
-		if(colIndices[colIndices.length - 1] > nRowRight)
+		IColIndex colIndices = lin.getColIndices();
+		if(colIndices.get(colIndices.size() - 1) > nRowRight)
 			fail("Right ColGroup must have at least as many rows as the largest column index of center ColGroup (`lin`)");
 
 		this.base = base;
@@ -108,10 +109,10 @@ public abstract class ColGroupLinearFunctionalBase {
 		double[][] data = new double[][] {{1, 2, 3, 4, 5}, {-4, 2, 8, 14, 20}};
 		double[][] dataRight = new double[][] {{1, -2, 23, 7}, {4, 11, -10, -2}};
 		double[][] dataLeft = new double[][] {{8, 3, 7, 12, -3}, {-1, 8, 4, -2, -2}, {3, 4, 2, 0, -1}};
-		int[] colIndexesLeft = new int[] {0, 2};
+		IColIndex colIndexesLeft =  ColIndexFactory.create(new int[] {0, 2});
 
 		double[][] dataLeftCompressed = new double[][] {{8, 4, 0, -4, -8}, {-1, 0, 1, 2, 3}};
-		int[] colIndexesLeftCompressed = new int[] {0};
+		IColIndex colIndexesLeftCompressed =  ColIndexFactory.create(1);
 
 		tests
 			.add(createInitParams(data, true, null, dataLeft, true, colIndexesLeft, false, dataRight, true, null, 0.001));
@@ -126,7 +127,7 @@ public abstract class ColGroupLinearFunctionalBase {
 			null, 0.001));
 
 		tests.add(createInitParams(new double[][] {{1, 2, 3, 4, 5}, {1, 1, 1, 1, 1}, {4, 2, 4, 2, 4}}, true,
-			new int[] {0, 1}, null, true, null, true, dataRight, true, null, 0.001));
+		ColIndexFactory.create(new int[] {0, 1}), null, true, null, true, dataRight, true, null, 0.001));
 
 		tests.add(createInitParams(new double[][] {{1, 2, 3, 4, 5}, {-1, -2, -3, -4, -5}}, true, null, null, true, null,
 			true, dataRight, true, null, 0.001));
@@ -139,9 +140,9 @@ public abstract class ColGroupLinearFunctionalBase {
 			null, 0.001));
 	}
 
-	protected static Object[] createInitParams(double[][] data, boolean isTransposed, int[] colIndexes,
-		double[][] dataLeft, boolean transposedLeft, int[] colIndexesLeft, boolean linCompressLeft, double[][] dataRight,
-		boolean transposedRight, int[] colIndexesRight, double tolerance) {
+	protected static Object[] createInitParams(double[][] data, boolean isTransposed, IColIndex colIndexes,
+		double[][] dataLeft, boolean transposedLeft, IColIndex colIndexesLeft, boolean linCompressLeft, double[][] dataRight,
+		boolean transposedRight, IColIndex colIndexesRight, double tolerance) {
 		if(dataLeft == null)
 			dataLeft = data;
 
@@ -153,13 +154,13 @@ public abstract class ColGroupLinearFunctionalBase {
 		int nColRight = transposedRight ? dataRight.length : dataRight[0].length;
 
 		if(colIndexes == null)
-			colIndexes = Util.genColsIndices(nCol);
+			colIndexes =  ColIndexFactory.create(nCol);
 
 		if(colIndexesLeft == null)
-			colIndexesLeft = Util.genColsIndices(nColLeft);
+			colIndexesLeft =  ColIndexFactory.create(nColLeft);
 
 		if(colIndexesRight == null)
-			colIndexesRight = Util.genColsIndices(nColRight);
+			colIndexesRight =  ColIndexFactory.create(nColRight);
 
 		return new Object[] {cgUncompressed(data, colIndexes, isTransposed),
 			cgLinCompressed(data, colIndexes, isTransposed), cgUncompressed(dataLeft, colIndexesLeft, transposedLeft),
@@ -169,22 +170,22 @@ public abstract class ColGroupLinearFunctionalBase {
 			tolerance};
 	}
 
-	protected static AColGroup cgUncompressed(double[][] data, int[] colIndexes, boolean isTransposed) {
+	protected static AColGroup cgUncompressed(double[][] data, IColIndex colIndexes, boolean isTransposed) {
 		MatrixBlock mbt = DataConverter.convertToMatrixBlock(data);
 		return createColGroup(mbt, colIndexes, isTransposed, AColGroup.CompressionType.UNCOMPRESSED);
 	}
 
 	protected static AColGroup cgLinCompressed(double[][] data, boolean isTransposed) {
 		final int numCols = isTransposed ? data.length : data[0].length;
-		return cgLinCompressed(data, Util.genColsIndices(numCols), isTransposed);
+		return cgLinCompressed(data,  ColIndexFactory.create(numCols), isTransposed);
 	}
 
-	protected static AColGroup cgLinCompressed(double[][] data, int[] colIndexes, boolean isTransposed) {
+	protected static AColGroup cgLinCompressed(double[][] data, IColIndex colIndexes, boolean isTransposed) {
 		MatrixBlock mbt = DataConverter.convertToMatrixBlock(data);
 		return createColGroup(mbt, colIndexes, isTransposed, AColGroup.CompressionType.LinearFunctional);
 	}
 
-	public static AColGroup createColGroup(MatrixBlock mbt, int[] colIndexes, boolean isTransposed,
+	public static AColGroup createColGroup(MatrixBlock mbt, IColIndex colIndexes, boolean isTransposed,
 		AColGroup.CompressionType cgType) {
 		CompressionSettings cs = new CompressionSettingsBuilder().setSamplingRatio(1.0)
 			.setValidCompressions(EnumSet.of(cgType)).create();

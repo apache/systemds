@@ -36,20 +36,6 @@ public abstract class EncodeSampleMultiColTest extends EncodeSampleTest {
 		this.sh = sh;
 	}
 
-	public static int[] genRowCol(int n) {
-		int[] ret = new int[n];
-		for(int i = 0; i < n; i++)
-			ret[i] = i;
-		return ret;
-	}
-
-	public static int[] genRowCol(int s, int n) {
-		int[] ret = new int[n - s];
-		for(int i = s; i < n; i++)
-			ret[i - s] = i;
-		return ret;
-	}
-
 	@Test
 	public void testPartJoinEqualToFullRead() {
 		try {

@@ -27,7 +27,6 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -45,10 +44,11 @@ import org.apache.sysds.runtime.compress.colgroup.ColGroupFactory;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupIO;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupSDC;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupUncompressed;
+import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
+import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfo;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
 import org.apache.sysds.runtime.compress.estim.EstimationFactors;
-import org.apache.sysds.runtime.compress.utils.Util;
 import org.apache.sysds.runtime.data.DenseBlockFP64;
 import org.apache.sysds.runtime.functionobjects.Modulus;
 import org.apache.sysds.runtime.functionobjects.Plus;
@@ -104,9 +104,8 @@ public abstract class ColGroupBase {
 		this.other = other;
 		this.tolerance = 0;
 		this.nRow = nRow;
-		this.maxCol = Arrays.stream(base.getColIndices()).max().getAsInt() + 1;
+		this.maxCol = base.getColIndices().get(base.getNumCols() - 1) + 1;
 	}
-
 
 	protected AColGroup serializeAndBack(AColGroup g) {
 		try {
@@ -125,7 +124,7 @@ public abstract class ColGroupBase {
 		return ColGroupConst.create(v);
 	}
 
-	protected static AColGroup cConst(int[] i, double[] v) {
+	protected static AColGroup cConst(IColIndex i, double[] v) {
 		return ColGroupConst.create(i, v);
 	}
 
@@ -145,19 +144,19 @@ public abstract class ColGroupBase {
 		return t;
 	}
 
-	protected static  MatrixBlock denseMB(int nRow, int nCol) {
+	protected static MatrixBlock denseMB(int nRow, int nCol) {
 		MatrixBlock t = new MatrixBlock(nRow, nCol, false);
 		t.allocateDenseBlock();
 		return t;
 	}
 
-	protected MatrixBlock multiBlockDenseMB(int nCol){
+	protected MatrixBlock multiBlockDenseMB(int nCol) {
 
 		MatrixBlock t = new MatrixBlock(nRow, nCol, false);
 		t.allocateDenseBlock();
 
 		double[] values = t.getDenseBlockValues();
-		DenseBlockFP64Mock m = new DenseBlockFP64Mock(new int[]{nRow, nCol}, values);
+		DenseBlockFP64Mock m = new DenseBlockFP64Mock(new int[] {nRow, nCol}, values);
 
 		return new MatrixBlock(nRow, nCol, m);
 	}
@@ -196,23 +195,23 @@ public abstract class ColGroupBase {
 	protected static void addAll(ArrayList<Object[]> tests, int nRow, int nCol, int nVal, double sparsity, int seed) {
 		final MatrixBlock mbt = TestUtils
 			.ceil(TestUtils.generateTestMatrixBlock(nCol, nRow, 1, nVal + 1, sparsity, seed));
-		int[] cols = Util.genColsIndices(nCol);
+		IColIndex cols = ColIndexFactory.create(nCol);
 		addAll(tests, mbt, cols);
 	}
 
 	protected static void addAll(ArrayList<Object[]> tests, MatrixBlock mbt, int nVal) {
-		final int[] colZero = new int[] {0};
+		final IColIndex colZero = ColIndexFactory.create(1);
 		addAll(tests, mbt, colZero);
 	}
 
-	protected static void addAll(ArrayList<Object[]> tests, MatrixBlock mbt, int[] cols) {
+	protected static void addAll(ArrayList<Object[]> tests, MatrixBlock mbt, IColIndex cols) {
 		final CompressionSettings cs = new CompressionSettingsBuilder().create();
 		cs.transposed = true;
 		addAll(tests, mbt, cols, cs);
 
 	}
 
-	protected static void addAll(ArrayList<Object[]> tests, MatrixBlock mbt, int[] cols, CompressionSettings cs) {
+	protected static void addAll(ArrayList<Object[]> tests, MatrixBlock mbt, IColIndex cols, CompressionSettings cs) {
 
 		try {
 
@@ -274,8 +273,8 @@ public abstract class ColGroupBase {
 			mbrc.quickSetValue(0, i, 100);
 
 		mbrc.recomputeNonZeros();
-		addAll(tests, mbrc, Util.genColsIndices(10));
-		addAll(tests, mbrc, Util.genColsIndices(100));
+		addAll(tests, mbrc, ColIndexFactory.create(10));
+		addAll(tests, mbrc, ColIndexFactory.create(100));
 
 		MatrixBlock mbr2 = new MatrixBlock();
 		mbr2.copy(mbr);
@@ -285,12 +284,12 @@ public abstract class ColGroupBase {
 				mbr2.quickSetValue(j, i, 100 * j);
 
 		mbr2.recomputeNonZeros();
-		addAll(tests, mbr2, Util.genColsIndices(10));
-		addAll(tests, mbr2, Util.genColsIndices(100));
+		addAll(tests, mbr2, ColIndexFactory.create(10));
+		addAll(tests, mbr2, ColIndexFactory.create(100));
 
 		MatrixBlock mbr3 = mbr2.scalarOperations(new RightScalarOperator(Plus.getPlusFnObject(), 1), null);
-		addAll(tests, mbr3, Util.genColsIndices(10));
-		addAll(tests, mbr3, Util.genColsIndices(100));
+		addAll(tests, mbr3, ColIndexFactory.create(10));
+		addAll(tests, mbr3, ColIndexFactory.create(100));
 	}
 
 	protected static void addSingleZeros(ArrayList<Object[]> tests) {
@@ -303,8 +302,8 @@ public abstract class ColGroupBase {
 					mb.quickSetValue(i, j, 100);
 
 			mb.recomputeNonZeros();
-			addAll(tests, mb, Util.genColsIndices(10));
-			addAll(tests, mb, Util.genColsIndices(100));
+			addAll(tests, mb, ColIndexFactory.create(10));
+			addAll(tests, mb, ColIndexFactory.create(100));
 		}
 
 		catch(Exception e) {
@@ -323,9 +322,9 @@ public abstract class ColGroupBase {
 					mb.quickSetValue(i, j, 100);
 
 			mb.recomputeNonZeros();
-			addAll(tests, mb, Util.genColsIndices(1));
-			addAll(tests, mb, Util.genColsIndices(10));
-			addAll(tests, mb, Util.genColsIndices(100));
+			addAll(tests, mb, ColIndexFactory.create(1));
+			addAll(tests, mb, ColIndexFactory.create(10));
+			addAll(tests, mb, ColIndexFactory.create(100));
 
 			MatrixBlock mb2 = new MatrixBlock(100, 100, true);
 
@@ -334,7 +333,7 @@ public abstract class ColGroupBase {
 					mb2.quickSetValue(i, j, 100);
 
 			mb2.recomputeNonZeros();
-			addAll(tests, mb2, Util.genColsIndices(100));
+			addAll(tests, mb2, ColIndexFactory.create(100));
 
 			MatrixBlock mb3 = new MatrixBlock(100, 100, true);
 
@@ -343,7 +342,7 @@ public abstract class ColGroupBase {
 					mb3.quickSetValue(i, j, 100);
 
 			mb3.recomputeNonZeros();
-			addAll(tests, mb3, Util.genColsIndices(100));
+			addAll(tests, mb3, ColIndexFactory.create(100));
 		}
 
 		catch(Exception e) {
@@ -389,7 +388,7 @@ public abstract class ColGroupBase {
 		tests.add(new Object[] {cConst(new double[] {0, 23}), cConst(new double[] {0, 23}), nRowS});
 		tests.add(new Object[] {cConst(new double[] {0, 23, 1}), cConst(new double[] {0, 23, 1}), nRowS});
 
-		int[] oneCol = new int[] {1};
+		IColIndex oneCol = ColIndexFactory.create(new int[] {1});
 		tests.add(new Object[] {cConst(oneCol, new double[] {1}), cConst(oneCol, new double[] {1}), nRowS});
 
 	}
@@ -401,7 +400,7 @@ public abstract class ColGroupBase {
 	}
 
 	protected static void addSDC_CONST_BeforeAndAfter(ArrayList<Object[]> tests) {
-		int[] cols = Util.genColsIndices(10);
+		IColIndex cols = ColIndexFactory.create(10);
 		MatrixBlock mbt = TestUtils.ceil(TestUtils.generateTestMatrixBlock(10, 100, 1, 4, 0.2, 1342));
 		MatrixBlock empty = new MatrixBlock(10, 100, 0.0);
 		MatrixBlock n = empty.append(mbt).append(empty);
@@ -420,7 +419,7 @@ public abstract class ColGroupBase {
 		addAll(tests, n, cols, cs);
 		addAll(tests, m, cols, cs);
 
-		cols = Util.genColsIndices(1);
+		cols = ColIndexFactory.create(1);
 
 		// SDC Single
 		mbt = TestUtils.ceil(TestUtils.generateTestMatrixBlock(1, 100, 1, 1, 0.2, 1342));
@@ -434,58 +433,58 @@ public abstract class ColGroupBase {
 		// SDC Single minus 1
 		mbt = TestUtils.ceil(TestUtils.generateTestMatrixBlock(1, 100, -1, -1, 0.2, 1342));
 		n = empty.append(mbt).append(empty);
-		addAll(tests, n.append(n, false), Util.genColsIndices(2));
+		addAll(tests, n.append(n, false), ColIndexFactory.create(2));
 
 		m = n.scalarOperations(new RightScalarOperator(Plus.getPlusFnObject(), 1), null);
 		addAll(tests, n, cols, cs);
 		addAll(tests, m, cols, cs);
-		addAll(tests, m.append(m, false), Util.genColsIndices(2));
+		addAll(tests, m.append(m, false), ColIndexFactory.create(2));
 
 		// SDC minus range
 		mbt = TestUtils.ceil(TestUtils.generateTestMatrixBlock(1, 100, -3, -1, 0.2, 1342));
 		n = empty.append(mbt).append(empty);
-		addAll(tests, n.append(n, false), Util.genColsIndices(2));
+		addAll(tests, n.append(n, false), ColIndexFactory.create(2));
 
 		m = n.scalarOperations(new RightScalarOperator(Plus.getPlusFnObject(), 1), null);
 		addAll(tests, n, cols, cs);
 		addAll(tests, m, cols, cs);
-		addAll(tests, m.append(m, false), Util.genColsIndices(2));
+		addAll(tests, m.append(m, false), ColIndexFactory.create(2));
 
 		// SDC minus range add More
 		mbt = TestUtils.ceil(TestUtils.generateTestMatrixBlock(1, 100, -3, -1, 0.2, 1342));
 		n = empty.append(mbt).append(empty);
-		addAll(tests, n.append(n, false), Util.genColsIndices(2));
+		addAll(tests, n.append(n, false), ColIndexFactory.create(2));
 
 		m = n.scalarOperations(new RightScalarOperator(Plus.getPlusFnObject(), 4), null);
 		addAll(tests, n, cols, cs);
 		addAll(tests, m, cols, cs);
-		addAll(tests, m.append(m, false), Util.genColsIndices(2));
+		addAll(tests, m.append(m, false), ColIndexFactory.create(2));
 
 		// SDC add in between
 		mbt = TestUtils.ceil(TestUtils.generateTestMatrixBlock(1, 100, -3, -1, 0.2, 1342));
 		n = empty.append(mbt).append(empty);
-		addAll(tests, n.append(n, false), Util.genColsIndices(2));
+		addAll(tests, n.append(n, false), ColIndexFactory.create(2));
 
 		m = n.scalarOperations(new RightScalarOperator(Plus.getPlusFnObject(), 2), null);
 		addAll(tests, n, cols, cs);
 		addAll(tests, m, cols, cs);
-		addAll(tests, m.append(m, false), Util.genColsIndices(2));
+		addAll(tests, m.append(m, false), ColIndexFactory.create(2));
 
 		mbt = TestUtils.ceil(TestUtils.generateTestMatrixBlock(1, 100, 1, 3, 0.2, 1342));
 		n = empty.append(mbt).append(empty);
-		addAll(tests, n.append(n, false), Util.genColsIndices(2));
+		addAll(tests, n.append(n, false), ColIndexFactory.create(2));
 
 		m = n.scalarOperations(new RightScalarOperator(Plus.getPlusFnObject(), -1), null);
 		addAll(tests, n, cols, cs);
 		addAll(tests, m, cols, cs);
-		addAll(tests, m.append(m, false), Util.genColsIndices(2));
+		addAll(tests, m.append(m, false), ColIndexFactory.create(2));
 
 	}
 
 	protected static void addOverCharLong(ArrayList<Object[]> tests) {
 
 		final int len = 300;
-		int[] cols = new int[] {0};
+		IColIndex cols = ColIndexFactory.create(1);
 		MatrixBlock mb;
 
 		MatrixBlock e = new MatrixBlock(1, len / 2, true);
@@ -495,10 +494,9 @@ public abstract class ColGroupBase {
 
 		mb = new MatrixBlock(2, 10 + len, 2.0).append(new MatrixBlock(2, len + 30, 0.0))
 			.append(new MatrixBlock(2, 20 + 2 * len, 2.0));
-		addAll(tests, mb, new int[] {0, 1});
+		addAll(tests, mb, ColIndexFactory.create(2));
 
 	}
-
 
 	@Override
 	public String toString() {

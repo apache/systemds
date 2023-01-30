@@ -30,6 +30,8 @@ import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.DictionaryFactory;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.MatrixBlockDictionary;
+import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
+import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
 import org.apache.sysds.runtime.compress.colgroup.offset.AIterator;
@@ -64,21 +66,21 @@ public class ColGroupSDCZeros extends ASDCZero implements AMapToDataGroup {
 	/** Pointers to row indexes in the dictionary. Note the dictionary has one extra entry. */
 	protected final AMapToData _data;
 
-	private ColGroupSDCZeros(int[] colIndices, int numRows, ADictionary dict, AOffset indexes, AMapToData data,
+	private ColGroupSDCZeros(IColIndex colIndices, int numRows, ADictionary dict, AOffset indexes, AMapToData data,
 		int[] cachedCounts) {
 		super(colIndices, numRows, dict, indexes, cachedCounts);
-		if(data.getUnique() != dict.getNumberOfValues(colIndices.length))
+		if(data.getUnique() != dict.getNumberOfValues(colIndices.size()))
 			throw new DMLCompressionException("Invalid construction of SDCZero group: number uniques: " + data.getUnique()
-				+ " vs." + dict.getNumberOfValues(colIndices.length));
+				+ " vs." + dict.getNumberOfValues(colIndices.size()));
 		_data = data;
 	}
 
-	public static AColGroup create(int[] colIndices, int numRows, ADictionary dict, AOffset offsets, AMapToData data,
+	public static AColGroup create(IColIndex colIndices, int numRows, ADictionary dict, AOffset offsets, AMapToData data,
 		int[] cachedCounts) {
 		if(dict == null)
 			return new ColGroupEmpty(colIndices);
-		else if(data.getUnique() == 1){
-			MatrixBlock mb = dict.getMBDict(colIndices.length).getMatrixBlock().slice(0,0);
+		else if(data.getUnique() == 1) {
+			MatrixBlock mb = dict.getMBDict(colIndices.size()).getMatrixBlock().slice(0, 0);
 			return ColGroupSDCSingleZeros.create(colIndices, numRows, MatrixBlockDictionary.create(mb), offsets, null);
 		}
 		else
@@ -124,19 +126,19 @@ public class ColGroupSDCZeros extends ASDCZero implements AMapToDataGroup {
 		final boolean post = ru > last;
 		final boolean contiguous = db.isContiguous();
 		if(post) {
-			if(contiguous && _colIndexes.length == 1)
+			if(contiguous && _colIndexes.size() == 1)
 				decompressToDenseBlockDenseDictionaryPostSingleColContiguous(db, rl, ru, offR, offC, values, it);
 			else
 				decompressToDenseBlockDenseDictionaryPostGeneric(db, rl, ru, offR, offC, values, it);
 		}
-		else if(contiguous && _colIndexes.length == 1) {
+		else if(contiguous && _colIndexes.size() == 1) {
 			if(db.getDim(1) == 1)
 				decompressToDenseBlockDenseDictionaryPreSingleColOutContiguous(db, ru, offR, offC, values, it, _data);
 			else
 				decompressToDenseBlockDenseDictionaryPreSingleColContiguous(db, rl, ru, offR, offC, values, it);
 		}
 		else {
-			if(_colIndexes.length == db.getDim(1))
+			if(_colIndexes.size() == db.getDim(1))
 				decompressToDenseBlockDenseDictionaryPreAllCols(db, rl, ru, offR, offC, values, it);
 			else
 				decompressToDenseBlockDenseDictionaryPreGeneric(db, rl, ru, offR, offC, values, it);
@@ -149,7 +151,7 @@ public class ColGroupSDCZeros extends ASDCZero implements AMapToDataGroup {
 		final int nCol = db.getDim(1);
 		final double[] c = db.values(0);
 		it.setOff(it.value() + offR);
-		offC += _colIndexes[0];
+		offC += _colIndexes.get(0);
 		while(it.value() < lastOff) {
 			final int off = it.value() * nCol + offC;
 			c[off] += values[_data.getIndex(it.getDataIndex())];
@@ -163,14 +165,14 @@ public class ColGroupSDCZeros extends ASDCZero implements AMapToDataGroup {
 	private void decompressToDenseBlockDenseDictionaryPostGeneric(DenseBlock db, int rl, int ru, int offR, int offC,
 		double[] values, AIterator it) {
 		final int lastOff = _indexes.getOffsetToLast();
-		final int nCol = _colIndexes.length;
+		final int nCol = _colIndexes.size();
 		while(true) {
 			final int idx = offR + it.value();
 			final double[] c = db.values(idx);
 			final int off = db.pos(idx) + offC;
 			final int offDict = _data.getIndex(it.getDataIndex()) * nCol;
 			for(int j = 0; j < nCol; j++)
-				c[off + _colIndexes[j]] += values[offDict + j];
+				c[off + _colIndexes.get(j)] += values[offDict + j];
 			if(it.value() == lastOff)
 				return;
 			it.next();
@@ -196,7 +198,7 @@ public class ColGroupSDCZeros extends ASDCZero implements AMapToDataGroup {
 		final int nCol = db.getDim(1);
 		final double[] c = db.values(0);
 		it.setOff(it.value() + offR);
-		offC += _colIndexes[0];
+		offC += _colIndexes.get(0);
 		while(it.isNotOver(last)) {
 			final int off = it.value() * nCol + offC;
 			c[off] += values[_data.getIndex(it.getDataIndex())];
@@ -207,14 +209,14 @@ public class ColGroupSDCZeros extends ASDCZero implements AMapToDataGroup {
 
 	private void decompressToDenseBlockDenseDictionaryPreGeneric(DenseBlock db, int rl, int ru, int offR, int offC,
 		double[] values, AIterator it) {
-		final int nCol = _colIndexes.length;
+		final int nCol = _colIndexes.size();
 		while(it.isNotOver(ru)) {
 			final int idx = offR + it.value();
 			final double[] c = db.values(idx);
 			final int off = db.pos(idx) + offC;
 			final int offDict = _data.getIndex(it.getDataIndex()) * nCol;
 			for(int j = 0; j < nCol; j++)
-				c[off + _colIndexes[j]] += values[offDict + j];
+				c[off + _colIndexes.get(j)] += values[offDict + j];
 
 			it.next();
 		}
@@ -222,7 +224,7 @@ public class ColGroupSDCZeros extends ASDCZero implements AMapToDataGroup {
 
 	private void decompressToDenseBlockDenseDictionaryPreAllCols(DenseBlock db, int rl, int ru, int offR, int offC,
 		double[] values, AIterator it) {
-		final int nCol = _colIndexes.length;
+		final int nCol = _colIndexes.size();
 		while(it.isNotOver(ru)) {
 			final int idx = offR + it.value();
 			final double[] c = db.values(idx);
@@ -272,7 +274,7 @@ public class ColGroupSDCZeros extends ASDCZero implements AMapToDataGroup {
 			final double[] avals = sb.values(dictIndex);
 			final int[] aix = sb.indexes(dictIndex);
 			for(int j = apos; j < alen; j++)
-				c[off + _colIndexes[aix[j]]] += avals[j];
+				c[off + _colIndexes.get(aix[j])] += avals[j];
 			if(it.value() == last)
 				return;
 			it.next();
@@ -297,7 +299,7 @@ public class ColGroupSDCZeros extends ASDCZero implements AMapToDataGroup {
 			final double[] avals = sb.values(dictIndex);
 			final int[] aix = sb.indexes(dictIndex);
 			for(int j = apos; j < alen; j++)
-				c[off + _colIndexes[aix[j]]] += avals[j];
+				c[off + _colIndexes.get(aix[j])] += avals[j];
 
 			it.next();
 		}
@@ -330,7 +332,7 @@ public class ColGroupSDCZeros extends ASDCZero implements AMapToDataGroup {
 				final double[] avals = sb.values(dictIndex);
 				final int[] aix = sb.indexes(dictIndex);
 				for(int j = apos; j < alen; j++)
-					ret.append(row, _colIndexes[aix[j]] + offC, avals[j]);
+					ret.append(row, _colIndexes.get(aix[j]) + offC, avals[j]);
 				if(it.value() == lastOff)
 					return;
 				it.next();
@@ -351,7 +353,7 @@ public class ColGroupSDCZeros extends ASDCZero implements AMapToDataGroup {
 				final double[] avals = sb.values(dictIndex);
 				final int[] aix = sb.indexes(dictIndex);
 				for(int j = apos; j < alen; j++)
-					ret.append(row, _colIndexes[aix[j]] + offC, avals[j]);
+					ret.append(row, _colIndexes.get(aix[j]) + offC, avals[j]);
 				it.next();
 			}
 			_indexes.cacheIterator(it, ru);
@@ -368,13 +370,13 @@ public class ColGroupSDCZeros extends ASDCZero implements AMapToDataGroup {
 			_indexes.cacheIterator(it, ru);
 		else if(ru > _indexes.getOffsetToLast()) {
 			final int lastOff = _indexes.getOffsetToLast();
-			final int nCol = _colIndexes.length;
+			final int nCol = _colIndexes.size();
 			while(true) {
 				final int row = offR + it.value();
 				final int dx = it.getDataIndex();
 				final int offDict = _data.getIndex(dx) * nCol;
 				for(int j = 0; j < nCol; j++)
-					ret.append(row, _colIndexes[j] + offC, values[offDict + j]);
+					ret.append(row, _colIndexes.get(j) + offC, values[offDict + j]);
 				if(it.value() == lastOff)
 					return;
 				it.next();
@@ -382,13 +384,13 @@ public class ColGroupSDCZeros extends ASDCZero implements AMapToDataGroup {
 		}
 		else {
 
-			final int nCol = _colIndexes.length;
+			final int nCol = _colIndexes.size();
 			while(it.isNotOver(ru)) {
 				final int row = offR + it.value();
 				final int dx = it.getDataIndex();
 				final int offDict = _data.getIndex(dx) * nCol;
 				for(int j = 0; j < nCol; j++)
-					ret.append(row, _colIndexes[j] + offC, values[offDict + j]);
+					ret.append(row, _colIndexes.get(j) + offC, values[offDict + j]);
 
 				it.next();
 			}
@@ -402,13 +404,13 @@ public class ColGroupSDCZeros extends ASDCZero implements AMapToDataGroup {
 		final AIterator it = _indexes.getIterator(r);
 		if(it == null || it.value() != r)
 			return 0;
-		final int nCol = _colIndexes.length;
+		final int nCol = _colIndexes.size();
 		return _dict.getValue(_data.getIndex(it.getDataIndex()) * nCol + colIdx);
 	}
 
 	@Override
 	protected double[] preAggProductRows() {
-		return _dict.productAllRowsToDoubleWithDefault(new double[_colIndexes.length]);
+		return _dict.productAllRowsToDoubleWithDefault(new double[_colIndexes.size()]);
 	}
 
 	@Override
@@ -486,12 +488,12 @@ public class ColGroupSDCZeros extends ASDCZero implements AMapToDataGroup {
 		if(isSparseSafeOp)
 			return create(_colIndexes, _numRows, _dict.applyScalarOp(op), _indexes, _data, getCachedCounts());
 		else if(op.fn instanceof Plus || (op.fn instanceof Minus && op instanceof RightScalarOperator)) {
-			final double[] reference = ColGroupUtils.createReference(_colIndexes.length, val0);
+			final double[] reference = ColGroupUtils.createReference(_colIndexes.size(), val0);
 			return ColGroupSDCFOR.create(_colIndexes, _numRows, _dict, _indexes, _data, getCachedCounts(), reference);
 		}
 		else {
 			final ADictionary newDict = _dict.applyScalarOp(op);
-			final double[] defaultTuple = ColGroupUtils.createReference(_colIndexes.length, val0);
+			final double[] defaultTuple = ColGroupUtils.createReference(_colIndexes.size(), val0);
 			return ColGroupSDC.create(_colIndexes, _numRows, newDict, defaultTuple, _indexes, _data, getCachedCounts());
 		}
 	}
@@ -503,7 +505,7 @@ public class ColGroupSDCZeros extends ASDCZero implements AMapToDataGroup {
 		if(val0 == 0)
 			return create(_colIndexes, _numRows, nDict, _indexes, _data, getCachedCounts());
 		else {
-			final double[] defaultTuple = new double[_colIndexes.length];
+			final double[] defaultTuple = new double[_colIndexes.size()];
 			Arrays.fill(defaultTuple, val0);
 			return ColGroupSDC.create(_colIndexes, _numRows, nDict, defaultTuple, _indexes, _data, getCachedCounts());
 		}
@@ -521,9 +523,9 @@ public class ColGroupSDCZeros extends ASDCZero implements AMapToDataGroup {
 		}
 		else {
 			ADictionary newDict = _dict.binOpLeft(op, v, _colIndexes);
-			double[] defaultTuple = new double[_colIndexes.length];
-			for(int i = 0; i < _colIndexes.length; i++)
-				defaultTuple[i] = op.fn.execute(v[_colIndexes[i]], 0);
+			double[] defaultTuple = new double[_colIndexes.size()];
+			for(int i = 0; i < _colIndexes.size(); i++)
+				defaultTuple[i] = op.fn.execute(v[_colIndexes.get(i)], 0);
 			return ColGroupSDC.create(_colIndexes, _numRows, newDict, defaultTuple, _indexes, _data, getCachedCounts());
 		}
 	}
@@ -540,9 +542,9 @@ public class ColGroupSDCZeros extends ASDCZero implements AMapToDataGroup {
 		}
 		else {
 			ADictionary newDict = _dict.binOpRight(op, v, _colIndexes);
-			double[] defaultTuple = new double[_colIndexes.length];
-			for(int i = 0; i < _colIndexes.length; i++)
-				defaultTuple[i] = op.fn.execute(0, v[_colIndexes[i]]);
+			double[] defaultTuple = new double[_colIndexes.size()];
+			for(int i = 0; i < _colIndexes.size(); i++)
+				defaultTuple[i] = op.fn.execute(0, v[_colIndexes.get(i)]);
 			return ColGroupSDC.create(_colIndexes, _numRows, newDict, defaultTuple, _indexes, _data, getCachedCounts());
 		}
 	}
@@ -555,7 +557,7 @@ public class ColGroupSDCZeros extends ASDCZero implements AMapToDataGroup {
 	}
 
 	public static ColGroupSDCZeros read(DataInput in, int nRows) throws IOException {
-		int[] cols = readCols(in);
+		IColIndex cols = ColIndexFactory.read(in);
 		ADictionary dict = DictionaryFactory.read(in);
 		AOffset indexes = OffsetFactory.readIn(in);
 		AMapToData data = MapToFactory.readIn(in);
@@ -582,12 +584,12 @@ public class ColGroupSDCZeros extends ASDCZero implements AMapToDataGroup {
 
 	@Override
 	public void preAggregateThatDDCStructure(ColGroupDDC that, Dictionary ret) {
-		_data.preAggregateSDCZ_DDC(that._data, that._dict, _indexes, ret, that._colIndexes.length);
+		_data.preAggregateSDCZ_DDC(that._data, that._dict, _indexes, ret, that._colIndexes.size());
 	}
 
 	@Override
 	public void preAggregateThatSDCZerosStructure(ColGroupSDCZeros that, Dictionary ret) {
-		_data.preAggregateSDCZ_SDCZ(that._data, that._dict, that._indexes, _indexes, ret, that._colIndexes.length);
+		_data.preAggregateSDCZ_SDCZ(that._data, that._dict, that._indexes, _indexes, ret, that._colIndexes.size());
 	}
 
 	@Override
@@ -595,7 +597,7 @@ public class ColGroupSDCZeros extends ASDCZero implements AMapToDataGroup {
 		final AIterator itThat = that._indexes.getIterator();
 		// _indexes.getOffsetIterator();
 		final AIterator itThis = _indexes.getIterator();
-		final int nCol = that._colIndexes.length;
+		final int nCol = that._colIndexes.size();
 
 		final int finalOffThis = _indexes.getOffsetToLast();
 		final int finalOffThat = that._indexes.getOffsetToLast();
@@ -630,7 +632,7 @@ public class ColGroupSDCZeros extends ASDCZero implements AMapToDataGroup {
 		final int finalOff = _indexes.getOffsetToLast();
 		final double[] v = ret.getValues();
 		final int nv = that.getNumValues();
-		final int nCol = that._colIndexes.length;
+		final int nCol = that._colIndexes.size();
 		for(int k = 0; k < nv; k++) {
 			final AIterator itThis = _indexes.getIterator();
 			final int blen = that._ptr[k + 1];
@@ -656,10 +658,10 @@ public class ColGroupSDCZeros extends ASDCZero implements AMapToDataGroup {
 
 	@Override
 	public AColGroup replace(double pattern, double replace) {
-		ADictionary replaced = _dict.replace(pattern, replace, _colIndexes.length);
+		ADictionary replaced = _dict.replace(pattern, replace, _colIndexes.size());
 		if(pattern == 0) {
-			double[] defaultTuple = new double[_colIndexes.length];
-			for(int i = 0; i < _colIndexes.length; i++)
+			double[] defaultTuple = new double[_colIndexes.size()];
+			for(int i = 0; i < _colIndexes.size(); i++)
 				defaultTuple[i] = replace;
 			return ColGroupSDC.create(_colIndexes, _numRows, replaced, defaultTuple, _indexes, _data, getCachedCounts());
 		}
@@ -674,8 +676,8 @@ public class ColGroupSDCZeros extends ASDCZero implements AMapToDataGroup {
 
 	@Override
 	protected void computeColProduct(double[] c, int nRows) {
-		for(int i = 0; i < _colIndexes.length; i++)
-			c[_colIndexes[i]] = 0;
+		for(int i = 0; i < _colIndexes.size(); i++)
+			c[_colIndexes.get(i)] = 0;
 	}
 
 	@Override
@@ -692,7 +694,7 @@ public class ColGroupSDCZeros extends ASDCZero implements AMapToDataGroup {
 	}
 
 	@Override
-	protected AColGroup allocateRightMultiplication(MatrixBlock right, int[] colIndexes, ADictionary preAgg) {
+	protected AColGroup allocateRightMultiplication(MatrixBlock right, IColIndex colIndexes, ADictionary preAgg) {
 		if(colIndexes != null && preAgg != null)
 			return create(colIndexes, _numRows, preAgg, _indexes, _data, getCachedCounts());
 		else
@@ -707,8 +709,8 @@ public class ColGroupSDCZeros extends ASDCZero implements AMapToDataGroup {
 
 	@Override
 	protected void computeColMxx(double[] c, Builtin builtin) {
-		for(int x = 0; x < _colIndexes.length; x++)
-			c[_colIndexes[x]] = builtin.execute(c[_colIndexes[x]], 0);
+		for(int x = 0; x < _colIndexes.size(); x++)
+			c[_colIndexes.get(x)] = builtin.execute(c[_colIndexes.get(x)], 0);
 
 		_dict.aggregateCols(c, builtin, _colIndexes);
 	}
@@ -730,7 +732,7 @@ public class ColGroupSDCZeros extends ASDCZero implements AMapToDataGroup {
 	}
 
 	@Override
-	protected AColGroup copyAndSet(int[] colIndexes, ADictionary newDictionary) {
+	protected AColGroup copyAndSet(IColIndex colIndexes, ADictionary newDictionary) {
 		return create(colIndexes, _numRows, newDictionary, _indexes, _data, getCachedCounts());
 	}
 
@@ -743,9 +745,8 @@ public class ColGroupSDCZeros extends ASDCZero implements AMapToDataGroup {
 	public AColGroup appendNInternal(AColGroup[] g) {
 		int sumRows = getNumRows();
 		for(int i = 1; i < g.length; i++) {
-			if(!Arrays.equals(_colIndexes, g[i]._colIndexes)) {
-				LOG.warn("Not same columns therefore not appending \n" + Arrays.toString(_colIndexes) + "\n\n"
-					+ Arrays.toString(g[i]._colIndexes));
+			if(!_colIndexes.equals(g[i]._colIndexes)) {
+				LOG.warn("Not same columns therefore not appending \n" + _colIndexes + "\n\n" + g[i]._colIndexes);
 				return null;
 			}
 

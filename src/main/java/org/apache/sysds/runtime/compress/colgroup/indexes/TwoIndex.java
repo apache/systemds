@@ -21,8 +21,9 @@ package org.apache.sysds.runtime.compress.colgroup.indexes;
 
 import java.io.DataOutput;
 import java.io.IOException;
+import java.util.Arrays;
 
-public class TwoIndex implements IColIndex {
+public class TwoIndex extends AColIndex {
 	private final int id1;
 	private final int id2;
 
@@ -67,7 +68,81 @@ public class TwoIndex implements IColIndex {
 
 	@Override
 	public long estimateInMemorySize() {
-		return 16 + 8; // object, 2x int
+		return estimateInMemorySizeStatic(); // object, 2x int
+	}
+
+	public static long estimateInMemorySizeStatic() {
+		return 16 + 8;
+	}
+
+	@Override
+	public int findIndex(int i) {
+		if(i < id1)
+			return -1;
+		else if(i == id1)
+			return 0;
+		else if(i < id2)
+			return -2;
+		else if(i == id2)
+			return 1;
+		else
+			return -3;
+	}
+
+	@Override
+	public SliceResult slice(int l, int u) {
+		SliceResult ret;
+		if(l <= id1 && u > id2)
+			ret = new SliceResult(0, 2, l == 0 ? this : new TwoIndex(id1 - l, id2 - l));
+		else if(l <= id1 && u > id1)
+			ret = new SliceResult(0, 1, new SingleIndex(id1 - l));
+		else if(l <= id2 && u > id2)
+			ret = new SliceResult(1, 2, new SingleIndex(id2 - l));
+		else
+			ret = new SliceResult(0, 0, null);
+		return ret;
+	}
+
+	@Override
+	public boolean equals(IColIndex other) {
+		return other.size() == 2 && other.get(0) == id1 && other.get(1) == id2;
+	}
+
+	@Override
+	public IColIndex combine(IColIndex other) {
+		if(other instanceof SingleIndex) {
+			int otherV = other.get(0);
+			if(otherV < id1)
+				return new ArrayIndex(new int[] {otherV, id1, id2});
+			else if(otherV < id2)
+				return new ArrayIndex(new int[] {id1, otherV, id2});
+			else
+				return new ArrayIndex(new int[] {id1, id2, otherV});
+		}
+		else if(other instanceof TwoIndex) {
+			int[] vals = new int[] {other.get(0), other.get(1), id1, id2};
+			Arrays.sort(vals);
+			return new ArrayIndex(vals);
+		}
+		else
+			return other.combine(this);
+	}
+
+	@Override
+	public boolean isContiguous() {
+		return id1 + 1 == id2;
+	}
+
+	@Override
+	public String toString() {
+		StringBuilder sb = new StringBuilder();
+		sb.append(this.getClass().getSimpleName());
+		sb.append(" [");
+		sb.append(id1);
+		sb.append(", ");
+		sb.append(id2);
+		sb.append("]");
+		return sb.toString();
 	}
 
 	protected class TwoIterator implements IIterate {

@@ -26,9 +26,10 @@ import java.util.Arrays;
 
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
+import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
+import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.compress.colgroup.scheme.ICLAScheme;
 import org.apache.sysds.runtime.compress.cost.ComputationCostEstimator;
-import org.apache.sysds.runtime.compress.utils.Util;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
@@ -66,7 +67,7 @@ public class ColGroupLinearFunctional extends AColGroupCompressed {
 	 *                    `colIndices.length` entries are the slopes
 	 * @param numRows     Number of rows encoded within this column group.
 	 */
-	private ColGroupLinearFunctional(int[] colIndices, double[] coefficents, int numRows) {
+	private ColGroupLinearFunctional(IColIndex colIndices, double[] coefficents, int numRows) {
 		super(colIndices);
 		this._coefficents = coefficents;
 		this._numRows = numRows;
@@ -81,13 +82,13 @@ public class ColGroupLinearFunctional extends AColGroupCompressed {
 	 * @param numRows     Number of rows encoded within this column group.
 	 * @return A LinearFunctional column group.
 	 */
-	public static AColGroup create(int[] colIndices, double[] coefficents, int numRows) {
-		if(coefficents.length != 2 * colIndices.length)
+	public static AColGroup create(IColIndex colIndices, double[] coefficents, int numRows) {
+		if(coefficents.length != 2 * colIndices.size())
 			throw new DMLCompressionException("Invalid size of values compared to columns");
 
 		boolean allSlopesConstant = true;
-		for(int j = 0; j < colIndices.length; j++) {
-			if(coefficents[colIndices.length + j] != 0) {
+		for(int j = 0; j < colIndices.size(); j++) {
+			if(coefficents[colIndices.size() + j] != 0) {
 				allSlopesConstant = false;
 				break;
 			}
@@ -95,7 +96,7 @@ public class ColGroupLinearFunctional extends AColGroupCompressed {
 
 		if(allSlopesConstant) {
 			boolean allInterceptsZero = true;
-			for(int j = 0; j < colIndices.length; j++) {
+			for(int j = 0; j < colIndices.size(); j++) {
 				if(coefficents[j] != 0) {
 					allInterceptsZero = false;
 					break;
@@ -105,8 +106,8 @@ public class ColGroupLinearFunctional extends AColGroupCompressed {
 			if(allInterceptsZero)
 				return new ColGroupEmpty(colIndices);
 			else {
-				double[] intercepts = new double[colIndices.length];
-				System.arraycopy(coefficents, 0, intercepts, 0, colIndices.length);
+				double[] intercepts = new double[colIndices.size()];
+				System.arraycopy(coefficents, 0, intercepts, 0, colIndices.size());
 				return ColGroupConst.create(colIndices, intercepts);
 			}
 		}
@@ -119,7 +120,7 @@ public class ColGroupLinearFunctional extends AColGroupCompressed {
 	}
 
 	public double getSlopeForColumn(int colIdx) {
-		return this._coefficents[this._colIndexes.length + colIdx];
+		return this._coefficents[this._colIndexes.size() + colIdx];
 	}
 
 	public int getNumRows() {
@@ -192,17 +193,17 @@ public class ColGroupLinearFunctional extends AColGroupCompressed {
 
 			for(int j = 0; j < nCol; j++) {
 				accumulators[j] += getSlopeForColumn(j);
-				c[off + _colIndexes[j]] += accumulators[j];
+				c[off + _colIndexes.get(j)] += accumulators[j];
 			}
 		}
 	}
 
 	@Override
 	public void decompressToSparseBlock(SparseBlock ret, int rl, int ru, int offR, int offC) {
-		final int nCol = _colIndexes.length;
+		final int nCol = _colIndexes.size();
 		for(int i = rl, offT = rl + offR; i < ru; i++, offT++) {
 			for(int j = 0; j < nCol; j++)
-				ret.append(offT, _colIndexes[j] + offC, getIdx(i, j));
+				ret.append(offT, _colIndexes.get(j) + offC, getIdx(i, j));
 		}
 	}
 
@@ -262,11 +263,11 @@ public class ColGroupLinearFunctional extends AColGroupCompressed {
 			// absorb plus/minus into intercept
 			if(left) {
 				for(int col = 0; col < getNumCols(); col++)
-					coefficients_new[col] = op.fn.execute(v[_colIndexes[col]], _coefficents[col]);
+					coefficients_new[col] = op.fn.execute(v[_colIndexes.get(col)], _coefficents[col]);
 			}
 			else {
 				for(int col = 0; col < getNumCols(); col++)
-					coefficients_new[col] = op.fn.execute(_coefficents[col], v[_colIndexes[col]]);
+					coefficients_new[col] = op.fn.execute(_coefficents[col], v[_colIndexes.get(col)]);
 			}
 
 			return create(_colIndexes, coefficients_new, _numRows);
@@ -276,19 +277,19 @@ public class ColGroupLinearFunctional extends AColGroupCompressed {
 			if(left) {
 				for(int col = 0; col < getNumCols(); col++) {
 					// update intercept
-					coefficients_new[col] = op.fn.execute(v[_colIndexes[col]], _coefficents[col]);
+					coefficients_new[col] = op.fn.execute(v[_colIndexes.get(col)], _coefficents[col]);
 					// update slope
-					coefficients_new[col + getNumCols()] = op.fn.execute(v[_colIndexes[col]],
+					coefficients_new[col + getNumCols()] = op.fn.execute(v[_colIndexes.get(col)],
 						_coefficents[col + getNumCols()]);
 				}
 			}
 			else {
 				for(int col = 0; col < getNumCols(); col++) {
 					// update intercept
-					coefficients_new[col] = op.fn.execute(_coefficents[col], v[_colIndexes[col]]);
+					coefficients_new[col] = op.fn.execute(_coefficents[col], v[_colIndexes.get(col)]);
 					// update slope
 					coefficients_new[col + getNumCols()] = op.fn.execute(_coefficents[col + getNumCols()],
-						v[_colIndexes[col]]);
+						v[_colIndexes.get(col)]);
 				}
 			}
 
@@ -323,7 +324,7 @@ public class ColGroupLinearFunctional extends AColGroupCompressed {
 		for(int col = 0; col < getNumCols(); col++) {
 			double intercept = getInterceptForColumn(col);
 			double slope = getSlopeForColumn(col);
-			c[_colIndexes[col]] += nRows * (intercept + (nRows + 1) * slope / 2);
+			c[_colIndexes.get(col)] += nRows * (intercept + (nRows + 1) * slope / 2);
 		}
 	}
 
@@ -347,7 +348,7 @@ public class ColGroupLinearFunctional extends AColGroupCompressed {
 		for(int col = 0; col < getNumCols(); col++) {
 			double intercept = getInterceptForColumn(col);
 			double slope = getSlopeForColumn(col);
-			c[_colIndexes[col]] += nRows * (Math.pow(intercept, 2) + (nRows + 1) * slope * intercept +
+			c[_colIndexes.get(col)] += nRows * (Math.pow(intercept, 2) + (nRows + 1) * slope * intercept +
 				(nRows + 1) * (2 * nRows + 1) * Math.pow(slope, 2) / 6);
 		}
 	}
@@ -367,9 +368,9 @@ public class ColGroupLinearFunctional extends AColGroupCompressed {
 	}
 
 	@Override
-	public AColGroup rightMultByMatrix(MatrixBlock right, int[] allCols) {
+	public AColGroup rightMultByMatrix(MatrixBlock right, IColIndex allCols) {
 		final int nColR = right.getNumColumns();
-		final int[] outputCols = allCols != null ? allCols : Util.genColsIndices(nColR);
+		final IColIndex outputCols = allCols != null ? allCols : ColIndexFactory.create(nColR);
 
 		// TODO: add specialization for sparse/dense matrix blocks
 		MatrixBlock result = new MatrixBlock(_numRows, nColR, false);
@@ -377,9 +378,9 @@ public class ColGroupLinearFunctional extends AColGroupCompressed {
 			double bias_accum = 0.0;
 			double slope_accum = 0.0;
 
-			for(int c = 0; c < _colIndexes.length; c++) {
-				bias_accum += right.getValue(_colIndexes[c], j) * getInterceptForColumn(c);
-				slope_accum += right.getValue(_colIndexes[c], j) * getSlopeForColumn(c);
+			for(int c = 0; c < _colIndexes.size(); c++) {
+				bias_accum += right.getValue(_colIndexes.get(c), j) * getInterceptForColumn(c);
+				slope_accum += right.getValue(_colIndexes.get(c), j) * getSlopeForColumn(c);
 			}
 
 			for(int r = 0; r < _numRows; r++) {
@@ -394,16 +395,16 @@ public class ColGroupLinearFunctional extends AColGroupCompressed {
 	@Override
 	public void tsmm(double[] ret, int numColumns, int nRows) {
 		// runs in O(tCol^2) since dot-products take O(1) time to compute when both vectors are linearly compressed
-		final int tCol = _colIndexes.length;
+		final int tCol = _colIndexes.size();
 
 		final double sumIndices = nRows * (nRows + 1) / 2.0;
 		final double sumSquaredIndices = nRows * (nRows + 1) * (2 * nRows + 1) / 6.0;
 		for(int row = 0; row < tCol; row++) {
 			final double alpha1 = nRows * getInterceptForColumn(row) + sumIndices * getSlopeForColumn(row);
 			final double alpha2 = sumIndices * getInterceptForColumn(row) + sumSquaredIndices * getSlopeForColumn(row);
-			final int offRet = _colIndexes[row] * numColumns;
+			final int offRet = _colIndexes.get(row) * numColumns;
 			for(int col = row; col < tCol; col++) {
-				ret[offRet + _colIndexes[col]] += alpha1 * getInterceptForColumn(col) + alpha2 * getSlopeForColumn(col);
+				ret[offRet + _colIndexes.get(col)] += alpha1 * getInterceptForColumn(col) + alpha2 * getSlopeForColumn(col);
 			}
 		}
 	}
@@ -418,7 +419,7 @@ public class ColGroupLinearFunctional extends AColGroupCompressed {
 		if(lhs instanceof ColGroupEmpty)
 			return;
 
-		MatrixBlock tmpRet = new MatrixBlock(lhs.getNumCols(), _colIndexes.length, 0);
+		MatrixBlock tmpRet = new MatrixBlock(lhs.getNumCols(), _colIndexes.size(), 0);
 
 		if(lhs instanceof ColGroupUncompressed) {
 			ColGroupUncompressed lhsUC = (ColGroupUncompressed) lhs;
@@ -433,7 +434,7 @@ public class ColGroupLinearFunctional extends AColGroupCompressed {
 			}
 
 			MatrixBlock sumMatrix = new MatrixBlock(lhs.getNumCols(), 2, colSumsAndWeightedColSums);
-			MatrixBlock coefficientMatrix = new MatrixBlock(2, _colIndexes.length, _coefficents);
+			MatrixBlock coefficientMatrix = new MatrixBlock(2, _colIndexes.size(), _coefficents);
 
 			LibMatrixMult.matrixMult(sumMatrix, coefficientMatrix, tmpRet);
 		}
@@ -445,8 +446,8 @@ public class ColGroupLinearFunctional extends AColGroupCompressed {
 
 			MatrixBlock weightMatrix = new MatrixBlock(2, 2,
 				new double[] {_numRows, sumIndices, sumIndices, sumSquaredIndices});
-			MatrixBlock coefficientMatrixLhs = new MatrixBlock(2, lhsLF._colIndexes.length, lhsLF._coefficents);
-			MatrixBlock coefficientMatrixRhs = new MatrixBlock(2, _colIndexes.length, _coefficents);
+			MatrixBlock coefficientMatrixLhs = new MatrixBlock(2, lhsLF._colIndexes.size(), lhsLF._coefficents);
+			MatrixBlock coefficientMatrixRhs = new MatrixBlock(2, _colIndexes.size(), _coefficents);
 
 			coefficientMatrixLhs = LibMatrixReorg.transposeInPlace(coefficientMatrixLhs,
 				InfrastructureAnalyzer.getLocalParallelism());
@@ -481,7 +482,7 @@ public class ColGroupLinearFunctional extends AColGroupCompressed {
 	}
 
 	@Override
-	protected AColGroup sliceMultiColumns(int idStart, int idEnd, int[] outputCols) {
+	protected AColGroup sliceMultiColumns(int idStart, int idEnd, IColIndex outputCols) {
 		throw new NotImplementedException();
 	}
 
@@ -516,8 +517,8 @@ public class ColGroupLinearFunctional extends AColGroupCompressed {
 	}
 
 	public static ColGroupLinearFunctional read(DataInput in, int nRows) throws IOException {
-		int[] cols = readCols(in);
-		double[] coefficients = ColGroupIO.readDoubleArray(2 * cols.length, in);
+		IColIndex cols = ColIndexFactory.read(in);
+		double[] coefficients = ColGroupIO.readDoubleArray(2 * cols.size(), in);
 		return new ColGroupLinearFunctional(cols, coefficients, nRows);
 	}
 
@@ -568,13 +569,13 @@ public class ColGroupLinearFunctional extends AColGroupCompressed {
 	protected void computeColProduct(double[] c, int nRows) {
 		for(int col = 0; col < getNumCols(); col++) {
 			if(colContainsValue(col, 0)) {
-				c[_colIndexes[col]] = 0;
+				c[_colIndexes.get(col)] = 0;
 			}
 			else {
 				double intercept = getInterceptForColumn(col);
 				double slope = getSlopeForColumn(col);
 				for(int i = 0; i < nRows; i++) {
-					c[_colIndexes[col]] *= intercept + slope * (i + 1);
+					c[_colIndexes.get(col)] *= intercept + slope * (i + 1);
 				}
 			}
 		}
@@ -610,7 +611,7 @@ public class ColGroupLinearFunctional extends AColGroupCompressed {
 
 	@Override
 	public long estimateInMemorySize() {
-		return ColGroupSizes.estimateInMemorySizeLinearFunctional(getNumCols());
+		return ColGroupSizes.estimateInMemorySizeLinearFunctional(getNumCols(), _colIndexes.isContiguous());
 	}
 
 	@Override
@@ -662,7 +663,7 @@ public class ColGroupLinearFunctional extends AColGroupCompressed {
 	}
 
 	@Override
-	protected AColGroup copyAndSet(int[] colIndexes) {
+	protected AColGroup copyAndSet(IColIndex colIndexes) {
 		return ColGroupLinearFunctional.create(colIndexes, _coefficents, _numRows);
 	}
 

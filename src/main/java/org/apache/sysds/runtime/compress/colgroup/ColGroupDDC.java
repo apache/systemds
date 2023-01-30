@@ -29,6 +29,8 @@ import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.DictionaryFactory;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.MatrixBlockDictionary;
+import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
+import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
 import org.apache.sysds.runtime.compress.colgroup.offset.AOffsetIterator;
@@ -53,12 +55,12 @@ public class ColGroupDDC extends APreAgg implements AMapToDataGroup {
 
 	protected final AMapToData _data;
 
-	private ColGroupDDC(int[] colIndexes, ADictionary dict, AMapToData data, int[] cachedCounts) {
+	private ColGroupDDC(IColIndex  colIndexes, ADictionary dict, AMapToData data, int[] cachedCounts) {
 		super(colIndexes, dict, cachedCounts);
 		_data = data;
 	}
 
-	public static AColGroup create(int[] colIndexes, ADictionary dict, AMapToData data, int[] cachedCounts) {
+	public static AColGroup create(IColIndex colIndexes, ADictionary dict, AMapToData data, int[] cachedCounts) {
 		if(data.getUnique() == 1)
 			return ColGroupConst.create(colIndexes, dict);
 		else if(dict == null)
@@ -89,7 +91,7 @@ public class ColGroupDDC extends APreAgg implements AMapToDataGroup {
 			final int[] aix = sb.indexes(vr);
 			final double[] aval = sb.values(vr);
 			for(int j = apos; j < alen; j++)
-				c[off + _colIndexes[aix[j]]] += aval[j];
+				c[off + _colIndexes.get(aix[j])] += aval[j];
 		}
 	}
 
@@ -97,11 +99,11 @@ public class ColGroupDDC extends APreAgg implements AMapToDataGroup {
 	protected void decompressToDenseBlockDenseDictionary(DenseBlock db, int rl, int ru, int offR, int offC,
 		double[] values) {
 		if(db.isContiguous()) {
-			if(_colIndexes.length == 1 && db.getDim(1) == 1)
+			if(_colIndexes.size() == 1 && db.getDim(1) == 1)
 				decompressToDenseBlockDenseDictSingleColOutContiguous(db, rl, ru, offR, offC, values);
-			else if(_colIndexes.length == 1)
+			else if(_colIndexes.size() == 1)
 				decompressToDenseBlockDenseDictSingleColContiguous(db, rl, ru, offR, offC, values);
-			else if(_colIndexes.length == db.getDim(1)) // offC == 0 implied
+			else if(_colIndexes.size() == db.getDim(1)) // offC == 0 implied
 				decompressToDenseBlockDenseDictAllColumnsContiguous(db, rl, ru, offR, values);
 			else if(offC == 0 && offR == 0)
 				decompressToDenseBlockDenseDictNoOff(db, rl, ru, values);
@@ -118,7 +120,7 @@ public class ColGroupDDC extends APreAgg implements AMapToDataGroup {
 		double[] values) {
 		final double[] c = db.values(0);
 		final int nCols = db.getDim(1);
-		final int colOff = _colIndexes[0] + offC;
+		final int colOff = _colIndexes.get(0) + offC;
 		for(int i = rl, offT = (rl + offR) * nCols + colOff; i < ru; i++, offT += nCols)
 			c[offT] += values[_data.getIndex(i)];
 
@@ -132,14 +134,14 @@ public class ColGroupDDC extends APreAgg implements AMapToDataGroup {
 	private void decompressToDenseBlockDenseDictSingleColOutContiguous(DenseBlock db, int rl, int ru, int offR, int offC,
 		double[] values) {
 		final double[] c = db.values(0);
-		for(int i = rl, offT = rl + offR + _colIndexes[0] + offC; i < ru; i++, offT++)
+		for(int i = rl, offT = rl + offR + _colIndexes.get(0) + offC; i < ru; i++, offT++)
 			c[offT] += values[_data.getIndex(i)];
 	}
 
 	private void decompressToDenseBlockDenseDictAllColumnsContiguous(DenseBlock db, int rl, int ru, int offR,
 		double[] values) {
 		final double[] c = db.values(0);
-		final int nCol = _colIndexes.length;
+		final int nCol = _colIndexes.size();
 		for(int r = rl; r < ru; r++) {
 			final int start = _data.getIndex(r) * nCol;
 			final int end = start + nCol;
@@ -150,38 +152,38 @@ public class ColGroupDDC extends APreAgg implements AMapToDataGroup {
 	}
 
 	private void decompressToDenseBlockDenseDictNoColOffset(DenseBlock db, int rl, int ru, int offR, double[] values) {
-		final int nCol = _colIndexes.length;
+		final int nCol = _colIndexes.size();
 		final int colOut = db.getDim(1);
 		int off = (rl + offR) * colOut;
 		for(int i = rl, offT = rl + offR; i < ru; i++, off += colOut) {
 			final double[] c = db.values(offT);
 			final int rowIndex = _data.getIndex(i) * nCol;
 			for(int j = 0; j < nCol; j++)
-				c[off + _colIndexes[j]] += values[rowIndex + j];
+				c[off + _colIndexes.get(j)] += values[rowIndex + j];
 		}
 	}
 
 	private void decompressToDenseBlockDenseDictNoOff(DenseBlock db, int rl, int ru, double[] values) {
-		final int nCol = _colIndexes.length;
+		final int nCol = _colIndexes.size();
 		final int nColU = db.getDim(1);
 		final double[] c = db.values(0);
 		for(int i = rl; i < ru; i++) {
 			final int off = i * nColU;
 			final int rowIndex = _data.getIndex(i) * nCol;
 			for(int j = 0; j < nCol; j++)
-				c[off + _colIndexes[j]] += values[rowIndex + j];
+				c[off + _colIndexes.get(j)] += values[rowIndex + j];
 		}
 	}
 
 	private void decompressToDenseBlockDenseDictGeneric(DenseBlock db, int rl, int ru, int offR, int offC,
 		double[] values) {
-		final int nCol = _colIndexes.length;
+		final int nCol = _colIndexes.size();
 		for(int i = rl, offT = rl + offR; i < ru; i++, offT++) {
 			final double[] c = db.values(offT);
 			final int off = db.pos(offT) + offC;
 			final int rowIndex = _data.getIndex(i) * nCol;
 			for(int j = 0; j < nCol; j++)
-				c[off + _colIndexes[j]] += values[rowIndex + j];
+				c[off + _colIndexes.get(j)] += values[rowIndex + j];
 		}
 	}
 
@@ -197,24 +199,24 @@ public class ColGroupDDC extends APreAgg implements AMapToDataGroup {
 			final int[] aix = sb.indexes(vr);
 			final double[] aval = sb.values(vr);
 			for(int j = apos; j < alen; j++)
-				ret.append(offT, offC + _colIndexes[aix[j]], aval[j]);
+				ret.append(offT, offC + _colIndexes.get(aix[j]), aval[j]);
 		}
 	}
 
 	@Override
 	protected void decompressToSparseBlockDenseDictionary(SparseBlock ret, int rl, int ru, int offR, int offC,
 		double[] values) {
-		final int nCol = _colIndexes.length;
+		final int nCol = _colIndexes.size();
 		for(int i = rl, offT = rl + offR; i < ru; i++, offT++) {
 			final int rowIndex = _data.getIndex(i) * nCol;
 			for(int j = 0; j < nCol; j++)
-				ret.append(offT, _colIndexes[j] + offC, values[rowIndex + j]);
+				ret.append(offT, _colIndexes.get(j) + offC, values[rowIndex + j]);
 		}
 	}
 
 	@Override
 	public double getIdx(int r, int colIdx) {
-		return _dict.getValue(_data.getIndex(r), colIdx, _colIndexes.length);
+		return _dict.getValue(_data.getIndex(r), colIdx, _colIndexes.size());
 	}
 
 	@Override
@@ -242,7 +244,7 @@ public class ColGroupDDC extends APreAgg implements AMapToDataGroup {
 
 	@Override
 	public void leftMultByMatrixNoPreAgg(MatrixBlock matrix, MatrixBlock result, int rl, int ru, int cl, int cu) {
-		if(_colIndexes.length == 1)
+		if(_colIndexes.size() == 1)
 			leftMultByMatrixNoPreAggSingleCol(matrix, result, rl, ru, cl, cu);
 		else
 			lmMatrixNoPreAggMultiCol(matrix, result, rl, ru, cl, cu);
@@ -266,7 +268,7 @@ public class ColGroupDDC extends APreAgg implements AMapToDataGroup {
 
 	private void lmSparseMatrixNoPreAggSingleCol(SparseBlock sb, int nColM, double[] retV, int nColRet, double[] vals,
 		int rl, int ru) {
-		final int colOut = _colIndexes[0];
+		final int colOut = _colIndexes.get(0);
 
 		for(int r = rl; r < ru; r++) {
 			if(sb.isEmpty(r))
@@ -283,7 +285,7 @@ public class ColGroupDDC extends APreAgg implements AMapToDataGroup {
 
 	private void lmDenseMatrixNoPreAggSingleCol(double[] mV, int nColM, double[] retV, int nColRet, double[] vals,
 		int rl, int ru, int cl, int cu) {
-		final int colOut = _colIndexes[0];
+		final int colOut = _colIndexes.get(0);
 		for(int r = rl; r < ru; r++) {
 			final int offL = r * nColM;
 			final int offR = r * nColRet;
@@ -346,18 +348,18 @@ public class ColGroupDDC extends APreAgg implements AMapToDataGroup {
 
 	@Override
 	public void preAggregateThatDDCStructure(ColGroupDDC that, Dictionary ret) {
-		_data.preAggregateDDC_DDC(that._data, that._dict, ret, that._colIndexes.length);
+		_data.preAggregateDDC_DDC(that._data, that._dict, ret, that._colIndexes.size());
 	}
 
 	@Override
 	public void preAggregateThatSDCZerosStructure(ColGroupSDCZeros that, Dictionary ret) {
-		_data.preAggregateDDC_SDCZ(that._data, that._dict, that._indexes, ret, that._colIndexes.length);
+		_data.preAggregateDDC_SDCZ(that._data, that._dict, that._indexes, ret, that._colIndexes.size());
 	}
 
 	@Override
 	public void preAggregateThatSDCSingleZerosStructure(ColGroupSDCSingleZeros that, Dictionary ret) {
 		final AOffsetIterator itThat = that._indexes.getOffsetIterator();
-		final int nCol = that._colIndexes.length;
+		final int nCol = that._colIndexes.size();
 		final int finalOff = that._indexes.getOffsetToLast();
 		final double[] v = ret.getValues();
 		while(true) {
@@ -371,7 +373,7 @@ public class ColGroupDDC extends APreAgg implements AMapToDataGroup {
 
 	@Override
 	protected void preAggregateThatRLEStructure(ColGroupRLE that, Dictionary ret) {
-		_data.preAggregateDDC_RLE(that._ptr, that._data, that._dict, ret, that._colIndexes.length);
+		_data.preAggregateDDC_RLE(that._ptr, that._data, that._dict, ret, that._colIndexes.size());
 	}
 
 	@Override
@@ -397,7 +399,7 @@ public class ColGroupDDC extends APreAgg implements AMapToDataGroup {
 			final double v0 = op.executeScalar(0);
 			if(v0 == 0)
 				return this;
-			final double[] reference = ColGroupUtils.createReference(_colIndexes.length, v0);
+			final double[] reference = ColGroupUtils.createReference(_colIndexes.size(), v0);
 			return ColGroupDDCFOR.create(_colIndexes, _dict, _data, getCachedCounts(), reference);
 		}
 		return create(_colIndexes, _dict.applyScalarOp(op), _data, getCachedCounts());
@@ -432,7 +434,7 @@ public class ColGroupDDC extends APreAgg implements AMapToDataGroup {
 	}
 
 	public static ColGroupDDC read(DataInput in) throws IOException {
-		int[] cols = AColGroup.readCols(in);
+		IColIndex cols = ColIndexFactory.read(in);
 		ADictionary dict = DictionaryFactory.read(in);
 		AMapToData data = MapToFactory.readIn(in);
 		return new ColGroupDDC(cols, dict, data, null);
@@ -473,7 +475,7 @@ public class ColGroupDDC extends APreAgg implements AMapToDataGroup {
 	}
 
 	@Override
-	protected AColGroup allocateRightMultiplication(MatrixBlock right, int[] colIndexes, ADictionary preAgg) {
+	protected AColGroup allocateRightMultiplication(MatrixBlock right, IColIndex colIndexes, ADictionary preAgg) {
 		if(preAgg != null)
 			return create(colIndexes, preAgg, _data, getCachedCounts());
 		else
@@ -487,14 +489,14 @@ public class ColGroupDDC extends APreAgg implements AMapToDataGroup {
 	}
 
 	@Override
-	protected AColGroup copyAndSet(int[] colIndexes, ADictionary newDictionary) {
+	protected AColGroup copyAndSet(IColIndex colIndexes, ADictionary newDictionary) {
 		return create(colIndexes, newDictionary, _data, getCachedCounts());
 	}
 
 	@Override
 	public AColGroup append(AColGroup g) {
 		if(g instanceof ColGroupDDC) {
-			if(Arrays.equals(g.getColIndices(), _colIndexes)) {
+			if(g.getColIndices().equals(_colIndexes)) {
 
 				ColGroupDDC gDDC = (ColGroupDDC) g;
 				if(gDDC._dict.equals(_dict)) {
@@ -505,8 +507,8 @@ public class ColGroupDDC extends APreAgg implements AMapToDataGroup {
 					LOG.warn("Not same Dictionaries therefore not appending DDC\n" + _dict + "\n\n" + gDDC._dict);
 			}
 			else
-				LOG.warn("Not same columns therefore not appending DDC\n" + Arrays.toString(_colIndexes) + "\n\n"
-					+ Arrays.toString(g.getColIndices()));
+				LOG.warn("Not same columns therefore not appending DDC\n" + _colIndexes + "\n\n"
+					+ g.getColIndices());
 		}
 		else
 			LOG.warn("Not DDC but " + g.getClass().getSimpleName() + ", therefore not appending DDC");
@@ -516,9 +518,9 @@ public class ColGroupDDC extends APreAgg implements AMapToDataGroup {
 	@Override
 	public AColGroup appendNInternal(AColGroup[] g) {
 		for(int i = 1; i < g.length; i++) {
-			if(!Arrays.equals(_colIndexes, g[i]._colIndexes)) {
-				LOG.warn("Not same columns therefore not appending DDC\n" + Arrays.toString(_colIndexes) + "\n\n"
-					+ Arrays.toString(g[i]._colIndexes));
+			if(!_colIndexes.equals( g[i]._colIndexes)) {
+				LOG.warn("Not same columns therefore not appending DDC\n" + _colIndexes + "\n\n"
+					+ g[i]._colIndexes);
 				return null;
 			}
 

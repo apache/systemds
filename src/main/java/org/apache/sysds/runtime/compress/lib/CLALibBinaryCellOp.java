@@ -218,8 +218,8 @@ public class CLALibBinaryCellOp {
 		final int k = op.getNumThreads();
 		final List<AColGroup> newColGroups = new ArrayList<>(oldColGroups.size());
 		final boolean isRowSafe = left ? op.isRowSafeLeft(v) : op.isRowSafeRight(v);
-
-		if(k <= 1)
+	
+		if(k <= 1 || oldColGroups.size() <= 1)
 			binaryMVRowSingleThread(oldColGroups, v, op, left, newColGroups, isRowSafe);
 		else
 			binaryMVRowMultiThread(oldColGroups, v, op, left, newColGroups, isRowSafe, k);

@@ -39,6 +39,8 @@ import org.apache.sysds.runtime.compress.colgroup.ColGroupSDCSingleZeros;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupSDCZeros;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
+import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
+import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.compress.colgroup.scheme.ICLAScheme;
 import org.apache.sysds.runtime.compress.cost.ComputationCostEstimator;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfo;
@@ -187,7 +189,7 @@ public class ColGroupNegativeTests {
 		private static final long serialVersionUID = 8759470530917794282L;
 
 		private FakeAPreAgg() {
-			super(new int[1], Dictionary.createNoCheck(new double[13]), null);
+			super(ColIndexFactory.create(1), Dictionary.createNoCheck(new double[13]), null);
 		}
 
 		@Override
@@ -315,12 +317,6 @@ public class ColGroupNegativeTests {
 		}
 
 		@Override
-		protected AColGroup allocateRightMultiplication(MatrixBlock right, int[] colIndexes, ADictionary preAgg) {
-			// TODO Auto-generated method stub
-			return null;
-		}
-
-		@Override
 		protected double computeMxx(double c, Builtin builtin) {
 			// TODO Auto-generated method stub
 			return 0;
@@ -351,12 +347,6 @@ public class ColGroupNegativeTests {
 		}
 
 		@Override
-		protected AColGroup copyAndSet(int[] colIndexes, ADictionary newDictionary) {
-			// TODO Auto-generated method stub
-			return null;
-		}
-
-		@Override
 		public AColGroup append(AColGroup g) {
 			// TODO Auto-generated method stub
 			return null;
@@ -370,6 +360,18 @@ public class ColGroupNegativeTests {
 
 		@Override
 		public ICLAScheme getCompressionScheme() {
+			// TODO Auto-generated method stub
+			return null;
+		}
+
+		@Override
+		protected AColGroup allocateRightMultiplication(MatrixBlock right, IColIndex colIndexes, ADictionary preAgg) {
+			// TODO Auto-generated method stub
+			return null;
+		}
+
+		@Override
+		protected AColGroup copyAndSet(IColIndex colIndexes, ADictionary newDictionary) {
 			// TODO Auto-generated method stub
 			return null;
 		}
@@ -520,11 +522,6 @@ public class ColGroupNegativeTests {
 		}
 
 		@Override
-		protected AColGroup sliceMultiColumns(int idStart, int idEnd, int[] outputCols) {
-			return null;
-		}
-
-		@Override
 		public boolean containsValue(double pattern) {
 			return false;
 		}
@@ -564,17 +561,6 @@ public class ColGroupNegativeTests {
 		}
 
 		@Override
-		protected AColGroup copyAndSet(int[] colIndexes, ADictionary newDictionary) {
-			return null;
-		}
-
-		@Override
-		protected AColGroup allocateRightMultiplication(MatrixBlock right, int[] colIndexes, ADictionary preAgg) {
-			// TODO Auto-generated method stub
-			return null;
-		}
-
-		@Override
 		public AColGroup sliceRows(int rl, int ru) {
 			// TODO Auto-generated method stub
 			return null;
@@ -594,6 +580,24 @@ public class ColGroupNegativeTests {
 
 		@Override
 		public ICLAScheme getCompressionScheme() {
+			// TODO Auto-generated method stub
+			return null;
+		}
+
+		@Override
+		protected AColGroup allocateRightMultiplication(MatrixBlock right, IColIndex colIndexes, ADictionary preAgg) {
+			// TODO Auto-generated method stub
+			return null;
+		}
+
+		@Override
+		protected AColGroup copyAndSet(IColIndex colIndexes, ADictionary newDictionary) {
+			// TODO Auto-generated method stub
+			return null;
+		}
+
+		@Override
+		protected AColGroup sliceMultiColumns(int idStart, int idEnd, IColIndex outputCols) {
 			// TODO Auto-generated method stub
 			return null;
 		}

@@ -21,6 +21,7 @@ package org.apache.sysds.runtime.compress.utils;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.DenseBlockFP64;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -95,10 +96,10 @@ public interface Util {
 		return ret;
 	}
 
-	public static MatrixBlock extractValues(double[] v, int[] colIndexes) {
-		MatrixBlock rowVector = new MatrixBlock(1, colIndexes.length, false);
-		for(int i = 0; i < colIndexes.length; i++)
-			rowVector.quickSetValue(0, i, v[colIndexes[i]]);
+	public static MatrixBlock extractValues(double[] v, IColIndex colIndexes) {
+		MatrixBlock rowVector = new MatrixBlock(1, colIndexes.size(), false);
+		for(int i = 0; i < colIndexes.size(); i++)
+			rowVector.quickSetValue(0, i, v[colIndexes.get(i)]);
 		return rowVector;
 	}
 }

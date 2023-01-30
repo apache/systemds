@@ -21,6 +21,7 @@ package org.apache.sysds.runtime.compress.colgroup.scheme;
 
 import org.apache.sysds.runtime.compress.colgroup.AColGroup;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupConst;
+import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
@@ -43,16 +44,16 @@ public class ConstScheme implements ICLAScheme {
 	}
 
 	@Override
-	public AColGroup encode(MatrixBlock data, int[] columns) {
-		if(columns.length != g.getColIndices().length)
+	public AColGroup encode(MatrixBlock data, IColIndex columns) {
+		if(columns.size() != g.getColIndices().size())
 			throw new IllegalArgumentException("Invalid columns to encode");
 		return encode(data, columns, g.getValues());
 	}
 
-	private AColGroup encode(final MatrixBlock data, final int[] cols, final double[] values) {
+	private AColGroup encode(final MatrixBlock data, final IColIndex cols, final double[] values) {
 		final int nCol = data.getNumColumns();
 		final int nRow = data.getNumRows();
-		if(nCol < cols[cols.length - 1]) {
+		if(nCol < cols.get(cols.size() - 1)) {
 			LOG.warn("Invalid to encode matrix with less columns than encode scheme max column");
 			return null;
 		}
@@ -68,19 +69,19 @@ public class ConstScheme implements ICLAScheme {
 			return encodeGeneric(data, cols, values, nRow, nCol);
 	}
 
-	private AColGroup encodeDense(final MatrixBlock data, final int[] cols, final double[] values, final int nRow,
+	private AColGroup encodeDense(final MatrixBlock data, final IColIndex cols, final double[] values, final int nRow,
 		final int nCol) {
 		final double[] dv = data.getDenseBlockValues();
 		for(int r = 0; r < nRow; r++) {
 			final int off = r * nCol;
-			for(int ci = 0; ci < cols.length; ci++)
-				if(dv[off + cols[ci]] != values[ci])
+			for(int ci = 0; ci < cols.size(); ci++)
+				if(dv[off + cols.get(ci)] != values[ci])
 					return null;
 		}
 		return returnG(cols);
 	}
 
-	private AColGroup encodeSparse(final MatrixBlock data, final int[] cols, final double[] values, final int nRow,
+	private AColGroup encodeSparse(final MatrixBlock data, final IColIndex cols, final double[] values, final int nRow,
 		final int nCol) {
 		SparseBlock sb = data.getSparseBlock();
 		for(int r = 0; r < nRow; r++) {
@@ -96,31 +97,31 @@ public class ConstScheme implements ICLAScheme {
 				// technically also check for&& p < cols.length
 				// but this verification is indirectly maintained
 				p++;
-			for(int j = apos; j < alen && p < cols.length; j++) {
-				if(aix[j] == cols[p]) {
+			for(int j = apos; j < alen && p < cols.size(); j++) {
+				if(aix[j] == cols.get(p)) {
 					if(aval[j] != values[p])
 						return null;
 					p++;
-					while(p < cols.length && values[p] == 0.0)
+					while(p < cols.size() && values[p] == 0.0)
 						p++;
 				}
-				else if(aix[j] > cols[p])
+				else if(aix[j] > cols.get(p))
 					return null; // not matching
 			}
 		}
 		return returnG(cols);
 	}
 
-	private AColGroup encodeGeneric(final MatrixBlock data, final int[] cols, final double[] values, final int nRow,
+	private AColGroup encodeGeneric(final MatrixBlock data, final IColIndex cols, final double[] values, final int nRow,
 		final int nCol) {
 		for(int r = 0; r < nRow; r++)
-			for(int ci = 0; ci < cols.length; ci++)
-				if(data.quickGetValue(r, cols[ci]) != values[ci])
+			for(int ci = 0; ci < cols.size(); ci++)
+				if(data.quickGetValue(r, cols.get(ci)) != values[ci])
 					return null;
 		return returnG(cols);
 	}
 
-	private AColGroup returnG(int[] columns) {
+	private AColGroup returnG(IColIndex columns) {
 		if(columns == g.getColIndices())
 			return g;// great!
 		else

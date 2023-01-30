@@ -27,6 +27,8 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.bitmap.ABitmap;
 import org.apache.sysds.runtime.compress.bitmap.BitmapEncoder;
+import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
+import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.compress.utils.IntArrayList;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.junit.Test;
@@ -35,10 +37,10 @@ public class BitMapTest {
 	protected static final Log LOG = LogFactory.getLog(BitMapTest.class.getName());
 
 	private final MatrixBlock mb;
-	private final int[] colIndexes;
+	private final IColIndex colIndexes;
 
 	public BitMapTest() {
-		colIndexes = new int[] {0};
+		colIndexes = ColIndexFactory.create(1);
 		mb = new MatrixBlock(10, 1, true);
 		mb.allocateDenseBlock();
 	}

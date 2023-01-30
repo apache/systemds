@@ -36,7 +36,8 @@ import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupConst;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupDDC;
-import org.apache.sysds.runtime.compress.utils.Util;
+import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
+import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.Timing;
 import org.apache.sysds.runtime.functionobjects.Plus;
 import org.apache.sysds.runtime.matrix.data.LibMatrixMult;
@@ -212,7 +213,7 @@ public class CLALibRightMultBy {
 
 	private static boolean RMMSingle(List<AColGroup> filteredGroups, MatrixBlock that, List<AColGroup> retCg) {
 		boolean containsNull = false;
-		final int[] allCols = Util.genColsIndices(that.getNumColumns());
+		final IColIndex allCols = ColIndexFactory.create(that.getNumColumns());
 		for(AColGroup g : filteredGroups) {
 			AColGroup retG = g.rightMultByMatrix(that, allCols);
 			if(retG != null)
@@ -227,7 +228,7 @@ public class CLALibRightMultBy {
 		final ExecutorService pool = CommonThreadPool.get(k);
 		boolean containsNull = false;
 		try {
-			int[] allCols = Util.genColsIndices(that.getNumColumns());
+			final IColIndex allCols = ColIndexFactory.create(that.getNumColumns());
 			List<Callable<AColGroup>> tasks = new ArrayList<>(filteredGroups.size());
 			for(AColGroup g : filteredGroups)
 				tasks.add(new RightMatrixMultTask(g, that, allCols));
@@ -249,9 +250,9 @@ public class CLALibRightMultBy {
 	private static class RightMatrixMultTask implements Callable<AColGroup> {
 		private final AColGroup _colGroup;
 		private final MatrixBlock _b;
-		private final int[] _allCols;
+		private final IColIndex _allCols;
 
-		protected RightMatrixMultTask(AColGroup colGroup, MatrixBlock b, int[] allCols) {
+		protected RightMatrixMultTask(AColGroup colGroup, MatrixBlock b, IColIndex allCols) {
 			_colGroup = colGroup;
 			_b = b;
 			_allCols = allCols;

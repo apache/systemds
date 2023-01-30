@@ -30,6 +30,8 @@ import org.apache.sysds.runtime.compress.bitmap.ABitmap;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.DictionaryFactory;
+import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
+import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.compress.colgroup.offset.AIterator;
 import org.apache.sysds.runtime.compress.colgroup.offset.AOffsetIterator;
 import org.apache.sysds.runtime.compress.colgroup.scheme.ICLAScheme;
@@ -46,12 +48,12 @@ import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
 public class ColGroupRLE extends AColGroupOffset {
 	private static final long serialVersionUID = -1560710477952862791L;
 
-	private ColGroupRLE(int[] colIndexes, int numRows, boolean zeros, ADictionary dict, char[] bitmaps, int[] bitmapOffs,
+	private ColGroupRLE(IColIndex colIndexes, int numRows, boolean zeros, ADictionary dict, char[] bitmaps, int[] bitmapOffs,
 		int[] cachedCounts) {
 		super(colIndexes, numRows, zeros, dict, bitmapOffs, bitmaps, cachedCounts);
 	}
 
-	protected static AColGroup create(int[] colIndexes, int numRows, boolean zeros, ADictionary dict, char[] bitmaps,
+	protected static AColGroup create(IColIndex colIndexes, int numRows, boolean zeros, ADictionary dict, char[] bitmaps,
 		int[] bitmapOffs, int[] cachedCounts) {
 		if(dict == null)
 			return new ColGroupEmpty(colIndexes);
@@ -59,7 +61,7 @@ public class ColGroupRLE extends AColGroupOffset {
 			return new ColGroupRLE(colIndexes, numRows, zeros, dict, bitmaps, bitmapOffs, cachedCounts);
 	}
 
-	protected static AColGroup compressRLE(int[] colIndexes, ABitmap ubm, int nRow, double tupleSparsity) {
+	protected static AColGroup compressRLE(IColIndex colIndexes, ABitmap ubm, int nRow, double tupleSparsity) {
 		ADictionary dict = DictionaryFactory.create(ubm, tupleSparsity);
 
 		// compress the bitmaps
@@ -97,7 +99,7 @@ public class ColGroupRLE extends AColGroupOffset {
 	protected void decompressToDenseBlockDenseDictionary(DenseBlock db, int rl, int ru, int offR, int offC,
 		double[] values) {
 		final int numVals = getNumValues();
-		final int nCol = _colIndexes.length;
+		final int nCol = _colIndexes.size();
 		for(int k = 0; k < numVals; k++) {
 			final int blen = _ptr[k + 1]; // 2 short to handle last differently
 			final skipPair tmp = skipScanVal(k, rl);
@@ -117,7 +119,7 @@ public class ColGroupRLE extends AColGroupOffset {
 						final double[] c = db.values(offT);
 						final int off = db.pos(offT) + offC;
 						for(int j = 0; j < nCol; j++)
-							c[off + _colIndexes[j]] += values[rowIndex + j];
+							c[off + _colIndexes.get(j)] += values[rowIndex + j];
 					}
 					break;
 				}
@@ -126,7 +128,7 @@ public class ColGroupRLE extends AColGroupOffset {
 						final double[] c = db.values(offT);
 						final int off = db.pos(offT) + offC;
 						for(int j = 0; j < nCol; j++)
-							c[off + _colIndexes[j]] += values[rowIndex + j];
+							c[off + _colIndexes.get(j)] += values[rowIndex + j];
 					}
 				}
 			}
@@ -158,7 +160,7 @@ public class ColGroupRLE extends AColGroupOffset {
 						final double[] c = db.values(offT);
 						final int off = db.pos(offT) + offC;
 						for(int j = sbApos; j < sbAlen; j++)
-							c[off + _colIndexes[sbAix[j]]] += sbAval[j];
+							c[off + _colIndexes.get(sbAix[j])] += sbAval[j];
 					}
 					break;
 				}
@@ -168,7 +170,7 @@ public class ColGroupRLE extends AColGroupOffset {
 						final int off = db.pos(offT) + offC;
 
 						for(int j = sbApos; j < sbAlen; j++)
-							c[off + _colIndexes[sbAix[j]]] += sbAval[j];
+							c[off + _colIndexes.get(sbAix[j])] += sbAval[j];
 					}
 				}
 			}
@@ -198,14 +200,14 @@ public class ColGroupRLE extends AColGroupOffset {
 				if(re >= ru) {
 					for(int rix = rsc, offT = rsc + offR; rix < ru; rix++, offT++) {
 						for(int j = sbApos; j < sbAlen; j++)
-							ret.append(offT, _colIndexes[sbAix[j]] + offC, sbAval[j]);
+							ret.append(offT, _colIndexes.get(sbAix[j]) + offC, sbAval[j]);
 					}
 					break;
 				}
 				else {
 					for(int rix = rsc, offT = rsc + offR; rix < re; rix++, offT++) {
 						for(int j = sbApos; j < sbAlen; j++)
-							ret.append(offT, _colIndexes[sbAix[j]] + offC, sbAval[j]);
+							ret.append(offT, _colIndexes.get(sbAix[j]) + offC, sbAval[j]);
 					}
 				}
 			}
@@ -216,7 +218,7 @@ public class ColGroupRLE extends AColGroupOffset {
 	protected void decompressToSparseBlockDenseDictionary(SparseBlock ret, int rl, int ru, int offR, int offC,
 		double[] values) {
 		final int numVals = getNumValues();
-		final int nCol = _colIndexes.length;
+		final int nCol = _colIndexes.size();
 		for(int k = 0; k < numVals; k++) {
 			final int blen = _ptr[k + 1]; // 2 short to handle last differently
 			final skipPair tmp = skipScanVal(k, rl);
@@ -234,14 +236,14 @@ public class ColGroupRLE extends AColGroupOffset {
 				if(re >= ru) {
 					for(int rix = rsc, offT = rsc + offR; rix < ru; rix++, offT++)
 						for(int j = 0; j < nCol; j++)
-							ret.append(offT, _colIndexes[j] + offC, values[rowIndex + j]);
+							ret.append(offT, _colIndexes.get(j) + offC, values[rowIndex + j]);
 
 					break;
 				}
 				else {
 					for(int rix = rsc, offT = rsc + offR; rix < re; rix++, offT++)
 						for(int j = 0; j < nCol; j++)
-							ret.append(offT, _colIndexes[j] + offC, values[rowIndex + j]);
+							ret.append(offT, _colIndexes.get(j) + offC, values[rowIndex + j]);
 
 				}
 			}
@@ -372,14 +374,14 @@ public class ColGroupRLE extends AColGroupOffset {
 		if(_zeros)
 			c[0] = 0;
 		else
-			_dict.product(c, getCounts(), _colIndexes.length);
+			_dict.product(c, getCounts(), _colIndexes.size());
 	}
 
 	@Override
 	protected void computeColProduct(double[] c, int nRows) {
 		if(_zeros)
-			for(int i = 0; i < _colIndexes.length; i++)
-				c[_colIndexes[i]] = 0;
+			for(int i = 0; i < _colIndexes.size(); i++)
+				c[_colIndexes.get(i)] = 0;
 		else
 			_dict.colProduct(c, getCounts(), _colIndexes);
 	}
@@ -587,7 +589,7 @@ public class ColGroupRLE extends AColGroupOffset {
 				int from = start + lstart;
 				int to = start + lstart + llen;
 				if(r >= from && r < to)
-					return _dict.getValue(k * _colIndexes.length + colIdx);
+					return _dict.getValue(k * _colIndexes.size() + colIdx);
 				start += lstart + llen;
 			}
 		}
@@ -707,7 +709,7 @@ public class ColGroupRLE extends AColGroupOffset {
 	}
 
 	@Override
-	protected AColGroup allocateRightMultiplication(MatrixBlock right, int[] colIndexes, ADictionary preAgg) {
+	protected AColGroup allocateRightMultiplication(MatrixBlock right, IColIndex colIndexes, ADictionary preAgg) {
 		if(preAgg == null)
 			return null;
 		return create(colIndexes, _numRows, _zeros, preAgg, _data, _ptr, getCachedCounts());
@@ -723,8 +725,8 @@ public class ColGroupRLE extends AColGroupOffset {
 	@Override
 	protected void computeColMxx(double[] c, Builtin builtin) {
 		if(_zeros)
-			for(int x = 0; x < _colIndexes.length; x++)
-				c[_colIndexes[x]] = builtin.execute(c[_colIndexes[x]], 0);
+			for(int x = 0; x < _colIndexes.size(); x++)
+				c[_colIndexes.get(x)] = builtin.execute(c[_colIndexes.get(x)], 0);
 		_dict.aggregateCols(c, builtin, _colIndexes);
 	}
 
@@ -821,7 +823,7 @@ public class ColGroupRLE extends AColGroupOffset {
 
 	@Override
 	protected void preAggregateThatDDCStructure(ColGroupDDC that, Dictionary ret) {
-		that._data.preAggregateRLE_DDC(_ptr, _data, that._dict, ret, that._colIndexes.length);
+		that._data.preAggregateRLE_DDC(_ptr, _data, that._dict, ret, that._colIndexes.size());
 	}
 
 	@Override
@@ -829,7 +831,7 @@ public class ColGroupRLE extends AColGroupOffset {
 		final int finalOff = that._indexes.getOffsetToLast();
 		final double[] v = ret.getValues();
 		final int nv = getNumValues();
-		final int nCol = that._colIndexes.length;
+		final int nCol = that._colIndexes.size();
 		for(int k = 0; k < nv; k++) {
 			final AIterator itThat = that._indexes.getIterator();
 			final int blen = _ptr[k + 1];
@@ -858,7 +860,7 @@ public class ColGroupRLE extends AColGroupOffset {
 		final int finalOff = that._indexes.getOffsetToLast();
 		final double[] v = ret.getValues();
 		final int nv = getNumValues();
-		final int nCol = that._colIndexes.length;
+		final int nCol = that._colIndexes.size();
 		for(int k = 0; k < nv; k++) {
 			final AOffsetIterator itThat = that._indexes.getOffsetIterator();
 			final int blen = _ptr[k + 1];
@@ -902,7 +904,7 @@ public class ColGroupRLE extends AColGroupOffset {
 		final double[] v = ret.getValues();
 		final int nv = getNumValues();
 		final int tnv = that.getNumValues();
-		final int nCol = that._colIndexes.length;
+		final int nCol = that._colIndexes.size();
 		final int[] skip = new int[tnv];
 		final int[] skipV = new int[tnv];
 		for(int k = 0; k < nv; k++) {
@@ -950,7 +952,7 @@ public class ColGroupRLE extends AColGroupOffset {
 	}
 
 	public static ColGroupRLE read(DataInput in, int nRows) throws IOException {
-		int[] cols = readCols(in);
+		IColIndex cols = ColIndexFactory.read(in);
 		ADictionary dict = DictionaryFactory.read(in);
 		int[] ptr = readPointers(in);
 		char[] data = readData(in);
@@ -964,7 +966,7 @@ public class ColGroupRLE extends AColGroupOffset {
 	}
 
 	@Override
-	protected AColGroup copyAndSet(int[] colIndexes, ADictionary newDictionary) {
+	protected AColGroup copyAndSet(IColIndex colIndexes, ADictionary newDictionary) {
 		return create(colIndexes, _numRows, _zeros, newDictionary, _data, _ptr, getCachedCounts());
 	}
 

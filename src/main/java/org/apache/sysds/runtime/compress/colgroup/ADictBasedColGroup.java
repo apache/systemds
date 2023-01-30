@@ -27,7 +27,8 @@ import java.util.Set;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.MatrixBlockDictionary;
-import org.apache.sysds.runtime.compress.utils.Util;
+import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
+import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -43,7 +44,7 @@ public abstract class ADictBasedColGroup extends AColGroupCompressed {
 	 * @param colIndices The Column indexes
 	 * @param dict       The dictionary to contain the distinct tuples
 	 */
-	protected ADictBasedColGroup(int[] colIndices, ADictionary dict) {
+	protected ADictBasedColGroup(IColIndex colIndices, ADictionary dict) {
 		super(colIndices);
 		_dict = dict;
 		if(dict == null)
@@ -159,15 +160,15 @@ public abstract class ADictBasedColGroup extends AColGroupCompressed {
 	}
 
 	@Override
-	public final AColGroup rightMultByMatrix(MatrixBlock right, int[] allCols) {
+	public final AColGroup rightMultByMatrix(MatrixBlock right, IColIndex allCols) {
 		if(right.isEmpty())
 			return null;
 
 		final int nCol = right.getNumColumns();
 		// make sure allCols is allocated
-		allCols = allCols == null ? Util.genColsIndices(nCol) : allCols;
+		allCols = allCols == null ? ColIndexFactory.create(nCol) : allCols;
 
-		final int[] agCols = (right.isInSparseFormat()) ? // find Cols
+		final IColIndex agCols = (right.isInSparseFormat()) ? // find Cols
 			rightMMGetColsSparse(right.getSparseBlock(), nCol, allCols) : // sparse
 			rightMMGetColsDense(right.getDenseBlockValues(), nCol, allCols, right.getNonZeros()); // dense
 
@@ -181,7 +182,7 @@ public abstract class ADictBasedColGroup extends AColGroupCompressed {
 		return allocateRightMultiplication(right, agCols, preAgg);
 	}
 
-	protected abstract AColGroup allocateRightMultiplication(MatrixBlock right, int[] colIndexes, ADictionary preAgg);
+	protected abstract AColGroup allocateRightMultiplication(MatrixBlock right, IColIndex colIndexes, ADictionary preAgg);
 
 	/**
 	 * Find the minimum number of columns that are effected by the right multiplication
@@ -192,14 +193,14 @@ public abstract class ADictBasedColGroup extends AColGroupCompressed {
 	 * @param nnz     The number of non zero values in b
 	 * @return a list of the column indexes effected in the output column group
 	 */
-	protected int[] rightMMGetColsDense(double[] b, final int nCols, int[] allCols, long nnz) {
+	protected IColIndex rightMMGetColsDense(double[] b, final int nCols, IColIndex allCols, long nnz) {
 		if(nCols > 200 || nnz > (b.length * 0.7)) // just return the int array
 			return allCols;
 		else { // try to do the best we can
 			Set<Integer> aggregateColumnsSet = new HashSet<>();
 
-			for(int k = 0; k < _colIndexes.length; k++) {
-				int rowIdxOffset = _colIndexes[k] * nCols;
+			for(int k = 0; k < _colIndexes.size(); k++) {
+				int rowIdxOffset = _colIndexes.get(k) * nCols;
 				for(int h = 0; h < nCols; h++)
 					if(b[rowIdxOffset + h] != 0.0) {
 						aggregateColumnsSet.add(h);
@@ -214,7 +215,7 @@ public abstract class ADictBasedColGroup extends AColGroupCompressed {
 
 			int[] aggregateColumns = aggregateColumnsSet.stream().mapToInt(x -> x).toArray();
 			Arrays.sort(aggregateColumns);
-			return aggregateColumns;
+			return ColIndexFactory.create(aggregateColumns);
 		}
 	}
 
@@ -225,11 +226,11 @@ public abstract class ADictBasedColGroup extends AColGroupCompressed {
 	 * @param retCols The number of columns contained in the sparse matrix.
 	 * @return a list of the column indexes effected in the output column group
 	 */
-	protected int[] rightMMGetColsSparse(SparseBlock b, int retCols, int[] allCols) {
+	protected IColIndex rightMMGetColsSparse(SparseBlock b, int retCols, IColIndex allCols) {
 		Set<Integer> aggregateColumnsSet = new HashSet<>();
 
-		for(int h = 0; h < _colIndexes.length; h++) {
-			int colIdx = _colIndexes[h];
+		for(int h = 0; h < _colIndexes.size(); h++) {
+			int colIdx = _colIndexes.get(h);
 			if(!b.isEmpty(colIdx)) {
 				int[] sIndexes = b.indexes(colIdx);
 				for(int i = b.pos(colIdx); i < b.size(colIdx) + b.pos(colIdx); i++)
@@ -243,13 +244,13 @@ public abstract class ADictBasedColGroup extends AColGroupCompressed {
 
 		int[] aggregateColumns = aggregateColumnsSet.stream().mapToInt(x -> x).toArray();
 		Arrays.sort(aggregateColumns);
-		return aggregateColumns;
+		return ColIndexFactory.create(aggregateColumns);
 	}
 
-	private ADictionary rightMMPreAggSparse(int numVals, SparseBlock b, int[] aggregateColumns, int cl, int cu) {
-		final double[] ret = new double[numVals * aggregateColumns.length];
-		for(int h = 0; h < _colIndexes.length; h++) {
-			final int colIdx = _colIndexes[h];
+	private ADictionary rightMMPreAggSparse(int numVals, SparseBlock b, IColIndex aggregateColumns, int cl, int cu) {
+		final double[] ret = new double[numVals * aggregateColumns.size()];
+		for(int h = 0; h < _colIndexes.size(); h++) {
+			final int colIdx = _colIndexes.get(h);
 			if(b.isEmpty(colIdx))
 				continue;
 
@@ -257,13 +258,13 @@ public abstract class ADictBasedColGroup extends AColGroupCompressed {
 			final int[] sIndexes = b.indexes(colIdx);
 			int retIdx = 0;
 			for(int i = b.pos(colIdx); i < b.size(colIdx) + b.pos(colIdx); i++) {
-				while(aggregateColumns[retIdx] < sIndexes[i])
+				while(aggregateColumns.get(retIdx) < sIndexes[i])
 					retIdx++;
 				// It is known in this case that the sIndex always correspond to the aggregateColumns.
 				// if(sIndexes[i] == aggregateColumns[retIdx])
 				for(int j = 0, offOrg = h;
-					j < numVals * aggregateColumns.length;
-					j += aggregateColumns.length, offOrg += _colIndexes.length) {
+					j < numVals * aggregateColumns.size();
+					j += aggregateColumns.size(), offOrg += _colIndexes.size()) {
 					ret[j + retIdx] += _dict.getValue(offOrg) * sValues[i];
 				}
 			}
@@ -273,7 +274,7 @@ public abstract class ADictBasedColGroup extends AColGroupCompressed {
 	}
 
 	@Override
-	protected final AColGroup copyAndSet(int[] colIndexes){
+	protected final AColGroup copyAndSet(IColIndex  colIndexes){
 		return copyAndSet(colIndexes, _dict);
 	}
 	
@@ -281,6 +282,6 @@ public abstract class ADictBasedColGroup extends AColGroupCompressed {
 		return copyAndSet(_colIndexes, newDictionary);
 	}
 
-	protected abstract AColGroup copyAndSet(int[] colIndexes, ADictionary newDictionary);
+	protected abstract AColGroup copyAndSet(IColIndex colIndexes, ADictionary newDictionary);
 
 }

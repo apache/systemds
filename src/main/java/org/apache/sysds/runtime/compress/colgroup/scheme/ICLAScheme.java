@@ -22,6 +22,7 @@ package org.apache.sysds.runtime.compress.colgroup.scheme;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup;
+import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
 /**
@@ -61,5 +62,5 @@ public interface ICLAScheme {
 	 *                                  Schemes list of columns.
 	 * @return A compressed column group or null
 	 */
-	public AColGroup encode(MatrixBlock data, int[] columns);
+	public AColGroup encode(MatrixBlock data, IColIndex columns);
 }

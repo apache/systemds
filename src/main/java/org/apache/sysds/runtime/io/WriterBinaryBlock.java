@@ -27,6 +27,7 @@ import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysds.runtime.util.HDFSTool;
@@ -55,6 +56,9 @@ public class WriterBinaryBlock extends MatrixWriter
 		if( HDFSTool.USE_BINARYBLOCK_SERIALIZATION )
 			HDFSTool.addBinaryBlockSerializationFramework( job );
 		
+		if(src instanceof CompressedMatrixBlock)
+			src = CompressedMatrixBlock.getUncompressed(src, "Decompressing for binary write");
+
 		//core write sequential/parallel
 		if( diag )
 			writeDiagBinaryBlockMatrixToHDFS(path, job, fs, src, rlen, clen, blen);

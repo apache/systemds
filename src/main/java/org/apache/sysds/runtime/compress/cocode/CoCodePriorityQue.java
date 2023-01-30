@@ -127,7 +127,7 @@ public class CoCodePriorityQue extends AColumnCoCoder {
 
 				if(costOfJoin < costIndividual) {
 					que.poll();
-					int numColumns = g.getColumns().length;
+					int numColumns = g.getColumns().size();
 					if(numColumns > 128)
 						ret.add(g);
 					else

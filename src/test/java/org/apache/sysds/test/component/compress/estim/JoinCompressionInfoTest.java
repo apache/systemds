@@ -23,6 +23,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.compress.CompressionSettingsBuilder;
+import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
 import org.apache.sysds.runtime.compress.estim.AComEst;
 import org.apache.sysds.runtime.compress.estim.ComEstFactory;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
@@ -97,13 +98,13 @@ public class JoinCompressionInfoTest {
 			cs_estimate.transposed = true;
 
 			final AComEst es = ComEstFactory.createEstimator(mbt, cs_estimate, 1);
-			CompressedSizeInfoColGroup g1 = es.getColGroupInfo(new int[] {0});
-			CompressedSizeInfoColGroup g2 = es.getColGroupInfo(new int[] {1});
+			CompressedSizeInfoColGroup g1 = es.getColGroupInfo(ColIndexFactory.create(new int[] {0}));
+			CompressedSizeInfoColGroup g2 = es.getColGroupInfo(ColIndexFactory.create(new int[] {1}));
 			g1 = es.combine(g1, g2);
-			g2 = es.getColGroupInfo(new int[] {2});
+			g2 = es.getColGroupInfo(ColIndexFactory.create(new int[] {2}));
 
 			CompressedSizeInfoColGroup joined_result = es.combine(g1, g2);
-			CompressedSizeInfoColGroup estimate_full = es.getColGroupInfo(new int[] {0, 1, 2});
+			CompressedSizeInfoColGroup estimate_full = es.getColGroupInfo(ColIndexFactory.create(new int[] {0, 1, 2}));
 
 			Assert.assertEquals(joined_result.getNumVals(), estimate_full.getNumVals());
 		}

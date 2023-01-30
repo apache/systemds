@@ -306,7 +306,7 @@ public class CompressedMatrixBlockFactory {
 			LOG.trace("Logging all individual columns estimated cost:");
 			for(CompressedSizeInfoColGroup g : compressionGroups.getInfo())
 				LOG.trace(String.format("Cost: %8.0f Size: %16d %15s", costEstimator.getCost(g), g.getMinSize(),
-					Arrays.toString(g.getColumns())));
+					g.getColumns()));
 		}
 
 		_stats.estimatedSizeCols = compressionGroups.memoryEstimate();
@@ -526,7 +526,7 @@ public class CompressedMatrixBlockFactory {
 										+ colGroup.estimateInMemorySize()
 										+ ((colGroup instanceof AColGroupValue) ? "  numValues :"
 											+ ((AColGroupValue) colGroup).getNumValues() : "")
-										+ "  colIndexes : " + Arrays.toString(colGroup.getColIndices()));
+										+ "  colIndexes : " + colGroup.getColIndices());
 								}
 							}
 						}

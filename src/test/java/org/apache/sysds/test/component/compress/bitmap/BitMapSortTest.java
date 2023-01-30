@@ -30,8 +30,9 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.bitmap.ABitmap;
 import org.apache.sysds.runtime.compress.bitmap.BitmapEncoder;
+import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
+import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.compress.utils.IntArrayList;
-import org.apache.sysds.runtime.compress.utils.Util;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -53,10 +54,10 @@ public class BitMapSortTest {
 	}
 
 	private final MatrixBlock mb;
-	private final int[] colIndexes;
+	private final IColIndex colIndexes;
 
 	public BitMapSortTest(int cols, int rows, int nUniqueMax, int seed) {
-		colIndexes = Util.genColsIndices(cols);
+		colIndexes = ColIndexFactory.create(cols);
 		mb = new MatrixBlock(rows, cols, true);
 		mb.allocateDenseBlock();
 		double[] vals = mb.getDenseBlockValues();

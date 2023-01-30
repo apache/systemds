@@ -21,18 +21,18 @@ package org.apache.sysds.runtime.compress.colgroup;
 
 import java.io.DataInput;
 import java.io.IOException;
-import java.util.Arrays;
 
 import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.DictionaryFactory;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.MatrixBlockDictionary;
+import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
+import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.compress.colgroup.scheme.ConstScheme;
 import org.apache.sysds.runtime.compress.colgroup.scheme.ICLAScheme;
 import org.apache.sysds.runtime.compress.cost.ComputationCostEstimator;
 import org.apache.sysds.runtime.compress.lib.CLALibLeftMultBy;
-import org.apache.sysds.runtime.compress.utils.Util;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.functionobjects.Builtin;
@@ -53,7 +53,7 @@ public class ColGroupConst extends ADictBasedColGroup {
 	 * @param colIndices The Colum indexes for the column group.
 	 * @param dict       The dictionary containing one tuple for the entire compression.
 	 */
-	private ColGroupConst(int[] colIndices, ADictionary dict) {
+	private ColGroupConst(IColIndex colIndices, ADictionary dict) {
 		super(colIndices, dict);
 	}
 
@@ -65,7 +65,7 @@ public class ColGroupConst extends ADictBasedColGroup {
 	 * @param dict       The dictionary to use
 	 * @return A Colgroup either const or empty.
 	 */
-	protected static AColGroup create(int[] colIndices, ADictionary dict) {
+	protected static AColGroup create(IColIndex colIndices, ADictionary dict) {
 		if(dict == null)
 			return new ColGroupEmpty(colIndices);
 		else
@@ -79,8 +79,7 @@ public class ColGroupConst extends ADictBasedColGroup {
 	 * @return A Constant column group.
 	 */
 	public static AColGroup create(double[] values) {
-		final int[] colIndices = Util.genColsIndices(values.length);
-		return create(colIndices, values);
+		return create(ColIndexFactory.create(values.length), values);
 	}
 
 	/**
@@ -92,12 +91,12 @@ public class ColGroupConst extends ADictBasedColGroup {
 	 * @param value The value contained in all cells.
 	 * @return A Constant column group.
 	 */
-	public static AColGroup create(int[] cols, double value) {
-		if(cols.length == 0)
+	public static AColGroup create(IColIndex cols, double value) {
+		if(cols.size() == 0)
 			throw new DMLCompressionException("Invalid number of columns");
 		else if(value == 0)
 			return new ColGroupEmpty(cols);
-		final int numCols = cols.length;
+		final int numCols = cols.size();
 		double[] values = new double[numCols];
 		for(int i = 0; i < numCols; i++)
 			values[i] = value;
@@ -111,8 +110,8 @@ public class ColGroupConst extends ADictBasedColGroup {
 	 * @param values The value vector that contains all the unique values for each column in the matrix.
 	 * @return A Constant column group.
 	 */
-	public static AColGroup create(int[] cols, double[] values) {
-		if(cols.length != values.length)
+	public static AColGroup create(IColIndex cols, double[] values) {
+		if(cols.size() != values.length)
 			throw new DMLCompressionException("Invalid size of values compared to columns");
 		boolean allZero = true;
 		for(double d : values)
@@ -146,8 +145,7 @@ public class ColGroupConst extends ADictBasedColGroup {
 		else if(numCols != dict.getValues().length)
 			throw new DMLCompressionException(
 				"Invalid construction of const column group with different number of columns in arguments");
-		final int[] colIndices = Util.genColsIndices(numCols);
-		return ColGroupConst.create(colIndices, dict);
+		return ColGroupConst.create(ColIndexFactory.create(numCols), dict);
 	}
 
 	/**
@@ -160,7 +158,7 @@ public class ColGroupConst extends ADictBasedColGroup {
 	public static AColGroup create(int numCols, double value) {
 		if(numCols <= 0)
 			throw new DMLCompressionException("Invalid construction of constant column group with cols: " + numCols);
-		final int[] colIndices = Util.genColsIndices(numCols);
+		final IColIndex colIndices = ColIndexFactory.create(numCols);
 
 		if(value == 0)
 			return new ColGroupEmpty(colIndices);
@@ -223,13 +221,13 @@ public class ColGroupConst extends ADictBasedColGroup {
 			final double[] c = db.values(offT);
 			final int off = db.pos(offT) + offC;
 			for(int j = apos; j < alen; j++)
-				c[off + _colIndexes[aix[j]]] += avals[j];
+				c[off + _colIndexes.get(aix[j])] += avals[j];
 		}
 	}
 
 	protected void decompressToDenseBlockDenseDictionary(DenseBlock db, int rl, int ru, int offR, int offC,
 		double[] values) {
-		if(db.isContiguous() && _colIndexes.length == db.getDim(1) && offC == 0)
+		if(db.isContiguous() && _colIndexes.size() == db.getDim(1) && offC == 0)
 			decompressToDenseBlockAllColumnsContiguous(db, rl, ru, offR, offC);
 		else
 			decompressToDenseBlockGeneric(db, rl, ru, offR, offC);
@@ -244,21 +242,21 @@ public class ColGroupConst extends ADictBasedColGroup {
 
 		for(int i = rl, offT = rl + offR; i < ru; i++, offT++)
 			for(int j = apos; j < alen; j++)
-				ret.append(offT, _colIndexes[aix[j]] + offC, avals[j]);
+				ret.append(offT, _colIndexes.get(aix[j]) + offC, avals[j]);
 
 	}
 
 	protected void decompressToSparseBlockDenseDictionary(SparseBlock ret, int rl, int ru, int offR, int offC,
 		double[] values) {
-		final int nCol = _colIndexes.length;
+		final int nCol = _colIndexes.size();
 		for(int i = rl, offT = rl + offR; i < ru; i++, offT++)
 			for(int j = 0; j < nCol; j++)
-				ret.append(offT, _colIndexes[j] + offC, _dict.getValue(j));
+				ret.append(offT, _colIndexes.get(j) + offC, _dict.getValue(j));
 	}
 
 	private void decompressToDenseBlockAllColumnsContiguous(DenseBlock db, int rl, int ru, int offR, int offC) {
 		final double[] c = db.values(0);
-		final int nCol = _colIndexes.length;
+		final int nCol = _colIndexes.size();
 		final double[] values = _dict.getValues();
 		for(int r = rl; r < ru; r++) {
 			final int offStart = (offR + r) * nCol;
@@ -271,8 +269,8 @@ public class ColGroupConst extends ADictBasedColGroup {
 		for(int i = rl, offT = rl + offR; i < ru; i++, offT++) {
 			final double[] c = db.values(offT);
 			final int off = db.pos(offT) + offC;
-			for(int j = 0; j < _colIndexes.length; j++)
-				c[off + _colIndexes[j]] += _dict.getValue(j);
+			for(int j = 0; j < _colIndexes.size(); j++)
+				c[off + _colIndexes.get(j)] += _dict.getValue(j);
 		}
 	}
 
@@ -320,8 +318,8 @@ public class ColGroupConst extends ADictBasedColGroup {
 	}
 
 	private final void addToCommonDense(double[] constV, double[] values) {
-		for(int i = 0; i < _colIndexes.length; i++)
-			constV[_colIndexes[i]] += values[i];
+		for(int i = 0; i < _colIndexes.size(); i++)
+			constV[_colIndexes.get(i)] += values[i];
 	}
 
 	private final void addToCommonSparse(double[] constV, SparseBlock sb) {
@@ -330,7 +328,7 @@ public class ColGroupConst extends ADictBasedColGroup {
 		final int[] aix = sb.indexes(0);
 		final double[] aval = sb.values(0);
 		for(int i = 0; i < alen; i++)
-			constV[_colIndexes[aix[i]]] += aval[i];
+			constV[_colIndexes.get(aix[i])] += aval[i];
 
 	}
 
@@ -346,7 +344,7 @@ public class ColGroupConst extends ADictBasedColGroup {
 
 	@Override
 	protected void computeSum(double[] c, int nRows) {
-		c[0] += _dict.sum(new int[] {nRows}, _colIndexes.length);
+		c[0] += _dict.sum(new int[] {nRows}, _colIndexes.size());
 	}
 
 	@Override
@@ -356,7 +354,7 @@ public class ColGroupConst extends ADictBasedColGroup {
 
 	@Override
 	protected void computeSumSq(double[] c, int nRows) {
-		c[0] += _dict.sumSq(new int[] {nRows}, _colIndexes.length);
+		c[0] += _dict.sumSq(new int[] {nRows}, _colIndexes.size());
 	}
 
 	@Override
@@ -422,7 +420,7 @@ public class ColGroupConst extends ADictBasedColGroup {
 
 	@Override
 	protected AColGroup sliceSingleColumn(int idx) {
-		int[] colIndexes = new int[] {0};
+		IColIndex colIndexes = ColIndexFactory.create(1);
 		double v = _dict.getValue(idx);
 		if(v == 0)
 			return new ColGroupEmpty(colIndexes);
@@ -433,8 +431,8 @@ public class ColGroupConst extends ADictBasedColGroup {
 	}
 
 	@Override
-	protected AColGroup sliceMultiColumns(int idStart, int idEnd, int[] outputCols) {
-		ADictionary retD = _dict.sliceOutColumnRange(idStart, idEnd, _colIndexes.length);
+	protected AColGroup sliceMultiColumns(int idStart, int idEnd, IColIndex outputCols) {
+		ADictionary retD = _dict.sliceOutColumnRange(idStart, idEnd, _colIndexes.size());
 		return create(outputCols, retD);
 	}
 
@@ -445,18 +443,18 @@ public class ColGroupConst extends ADictBasedColGroup {
 
 	@Override
 	public long getNumberNonZeros(int nRows) {
-		return _dict.getNumberNonZeros(new int[] {nRows}, _colIndexes.length);
+		return _dict.getNumberNonZeros(new int[] {nRows}, _colIndexes.size());
 	}
 
 	@Override
 	public AColGroup replace(double pattern, double replace) {
-		ADictionary replaced = _dict.replace(pattern, replace, _colIndexes.length);
+		ADictionary replaced = _dict.replace(pattern, replace, _colIndexes.size());
 		return create(_colIndexes, replaced);
 	}
 
 	@Override
 	protected void computeProduct(double[] c, int nRows) {
-		_dict.product(c, new int[] {nRows}, _colIndexes.length);
+		_dict.product(c, new int[] {nRows}, _colIndexes.size());
 	}
 
 	@Override
@@ -473,22 +471,22 @@ public class ColGroupConst extends ADictBasedColGroup {
 
 	@Override
 	protected double[] preAggSumRows() {
-		return _dict.sumAllRowsToDouble(_colIndexes.length);
+		return _dict.sumAllRowsToDouble(_colIndexes.size());
 	}
 
 	@Override
 	protected double[] preAggSumSqRows() {
-		return _dict.sumAllRowsToDoubleSq(_colIndexes.length);
+		return _dict.sumAllRowsToDoubleSq(_colIndexes.size());
 	}
 
 	@Override
 	protected double[] preAggProductRows() {
-		return _dict.productAllRowsToDouble(_colIndexes.length);
+		return _dict.productAllRowsToDouble(_colIndexes.size());
 	}
 
 	@Override
 	protected double[] preAggBuiltinRows(Builtin builtin) {
-		return _dict.aggregateRows(builtin, _colIndexes.length);
+		return _dict.aggregateRows(builtin, _colIndexes.size());
 	}
 
 	@Override
@@ -500,7 +498,7 @@ public class ColGroupConst extends ADictBasedColGroup {
 
 	@Override
 	public AColGroup rexpandCols(int max, boolean ignore, boolean cast, int nRows) {
-		ADictionary d = _dict.rexpandCols(max, ignore, cast, _colIndexes.length);
+		ADictionary d = _dict.rexpandCols(max, ignore, cast, _colIndexes.size());
 		if(d == null)
 			return ColGroupEmpty.create(max);
 		else
@@ -513,16 +511,16 @@ public class ColGroupConst extends ADictBasedColGroup {
 		return e.getCost(nRows, 1, nCols, 1, 1.0);
 	}
 
-	protected AColGroup copyAndSet(int[] colIndexes, double[] newDictionary) {
+	protected AColGroup copyAndSet(IColIndex colIndexes, double[] newDictionary) {
 		return create(colIndexes, Dictionary.create(newDictionary));
 	}
 
-	protected AColGroup copyAndSet(int[] colIndexes, ADictionary newDictionary) {
+	protected AColGroup copyAndSet(IColIndex colIndexes, ADictionary newDictionary) {
 		return create(colIndexes, newDictionary);
 	}
 
 	@Override
-	protected AColGroup allocateRightMultiplication(MatrixBlock right, int[] colIndexes, ADictionary preAgg) {
+	protected AColGroup allocateRightMultiplication(MatrixBlock right, IColIndex colIndexes, ADictionary preAgg) {
 		if(colIndexes != null && preAgg != null)
 			return create(colIndexes, preAgg);
 		else
@@ -530,7 +528,7 @@ public class ColGroupConst extends ADictBasedColGroup {
 	}
 
 	public static ColGroupConst read(DataInput in) throws IOException {
-		int[] cols = readCols(in);
+		IColIndex cols = ColIndexFactory.read(in);
 		ADictionary dict = DictionaryFactory.read(in);
 		return new ColGroupConst(cols, dict);
 	}
@@ -542,7 +540,7 @@ public class ColGroupConst extends ADictBasedColGroup {
 
 	@Override
 	public AColGroup append(AColGroup g) {
-		if(g instanceof ColGroupConst && g._colIndexes.length == _colIndexes.length &&
+		if(g instanceof ColGroupConst && g._colIndexes.size() == _colIndexes.size() &&
 			((ColGroupConst) g)._dict.equals(_dict))
 			return this;
 		return null;
@@ -551,7 +549,7 @@ public class ColGroupConst extends ADictBasedColGroup {
 	@Override
 	public AColGroup appendNInternal(AColGroup[] g) {
 		for(int i = 0; i < g.length; i++)
-			if(!Arrays.equals(_colIndexes, g[i]._colIndexes) || !this._dict.equals(((ColGroupConst) g[i])._dict))
+			if(!_colIndexes.equals(g[i]._colIndexes) || !this._dict.equals(((ColGroupConst) g[i])._dict))
 				return null;
 		return this;
 	}
@@ -566,7 +564,7 @@ public class ColGroupConst extends ADictBasedColGroup {
 		StringBuilder sb = new StringBuilder();
 		sb.append(super.toString());
 		sb.append(String.format("\n%15s", "Values: " + _dict.getClass().getSimpleName()));
-		sb.append(_dict.getString(_colIndexes.length));
+		sb.append(_dict.getString(_colIndexes.size()));
 		return sb.toString();
 	}
 

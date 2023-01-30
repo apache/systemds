@@ -31,8 +31,10 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
+import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType;
+import org.apache.sysds.runtime.compress.colgroup.indexes.IIterate;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysds.runtime.util.CommonThreadPool;
@@ -91,11 +93,17 @@ public class CLALibCombine {
 				return combineViaDecompression(m, rlen, clen, blen, k);
 			}
 			final List<AColGroup> gs = cmb.getColGroups();
+			final int off = bc * blen;
 			for(AColGroup g : gs) {
-				final int[] cols = g.getColIndices();
-				final CompressionType t = g.getCompType();
-				for(int c : cols)
-					colTypes[c + bc * blen] = t;
+				try{
+					final IIterate cols = g.getColIndices().iterator();
+					final CompressionType t = g.getCompType();
+					while(cols.hasNext())
+						colTypes[cols.next() + off] = t;
+				}
+				catch(Exception e){
+					throw new DMLCompressionException("Failed combining: " + g.toString());
+				}
 			}
 		}
 
@@ -115,11 +123,13 @@ public class CLALibCombine {
 					return combineViaDecompression(m, rlen, clen, blen, k);
 				}
 				final List<AColGroup> gs = cmb.getColGroups();
+				final int off = bc * blen;
 				for(AColGroup g : gs) {
-					final int[] cols = g.getColIndices();
+					final IIterate cols = g.getColIndices().iterator();
 					final CompressionType t = g.getCompType();
-					for(int c : cols) {
-						if(colTypes[c + bc * blen] != t) {
+					while(cols.hasNext()) {
+						final int c = cols.next();
+						if(colTypes[c + off] != t) {
 							LOG.warn("Not supported different types of column groups to combine."
 								+ "Falling back to decompression of all blocks");
 							return combineViaDecompression(m, rlen, clen, blen, k);
@@ -164,15 +174,15 @@ public class CLALibCombine {
 				final CompressedMatrixBlock cmb = (CompressedMatrixBlock) m.get(lookup);
 				for(AColGroup g : cmb.getColGroups()) {
 					final AColGroup gc = bc > 0 ? g.shiftColIndices(bc * blen) : g;
-					final int[] cols = gc.getColIndices();
+					final int c  = gc.getColIndices().get(0);
 					if(br == 0)
-						finalCols[cols[0]] = new AColGroup[blocksInColumn];
+						finalCols[c] = new AColGroup[blocksInColumn];
 
-					finalCols[cols[0]][br] = gc;
+					finalCols[c][br] = gc;
 				}
 			}
 		}
-		final ExecutorService pool = CommonThreadPool.get(Math.max(Math.min(clen / 500, k),1));
+		final ExecutorService pool = CommonThreadPool.get(Math.max(Math.min(clen / 500, k), 1));
 		try {
 
 			List<AColGroup> finalGroups = pool.submit(() -> {
@@ -184,7 +194,7 @@ public class CLALibCombine {
 						return combineN(x);
 					}).collect(Collectors.toList());
 			}).get();
-			
+
 			pool.shutdown();
 			if(finalGroups.contains(null)) {
 				LOG.warn("Combining via decompression. There was a column group that did not append ");

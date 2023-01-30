@@ -20,6 +20,7 @@
 package org.apache.sysds.runtime.compress.estim;
 
 import org.apache.sysds.runtime.compress.CompressionSettings;
+import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.compress.estim.encoding.EmptyEncoding;
 import org.apache.sysds.runtime.compress.estim.encoding.EncodingFactory;
 import org.apache.sysds.runtime.compress.estim.encoding.IEncode;
@@ -35,7 +36,7 @@ public class ComEstExact extends AComEst {
 	}
 
 	@Override
-	public CompressedSizeInfoColGroup getColGroupInfo(int[] colIndexes, int estimate, int nrUniqueUpperBound) {
+	public CompressedSizeInfoColGroup getColGroupInfo(IColIndex colIndexes, int estimate, int nrUniqueUpperBound) {
 		final IEncode map = EncodingFactory.createFromMatrixBlock(_data, _cs.transposed, colIndexes);
 		if(map instanceof EmptyEncoding)
 			return new CompressedSizeInfoColGroup(colIndexes, getNumRows());
@@ -43,26 +44,26 @@ public class ComEstExact extends AComEst {
 	}
 
 	@Override
-	public CompressedSizeInfoColGroup getDeltaColGroupInfo(int[] colIndexes, int estimate, int nrUniqueUpperBound) {
+	public CompressedSizeInfoColGroup getDeltaColGroupInfo(IColIndex colIndexes, int estimate, int nrUniqueUpperBound) {
 		final IEncode map = EncodingFactory.createFromMatrixBlockDelta(_data, _cs.transposed, colIndexes);
 		return getFacts(map, colIndexes);
 	}
 
 	@Override
-	protected CompressedSizeInfoColGroup combine(int[] combinedColumns, CompressedSizeInfoColGroup g1,
+	protected CompressedSizeInfoColGroup combine(IColIndex combinedColumns, CompressedSizeInfoColGroup g1,
 		CompressedSizeInfoColGroup g2, int maxDistinct) {
 		final IEncode map = g1.getMap().combine(g2.getMap());
 		return getFacts(map, combinedColumns);
 	}
 
-	private CompressedSizeInfoColGroup getFacts(IEncode map, int[] colIndexes) {
+	private CompressedSizeInfoColGroup getFacts(IEncode map, IColIndex colIndexes) {
 		final int _numRows = getNumRows();
 		final EstimationFactors em = map.extractFacts(_numRows, _data.getSparsity(), _data.getSparsity(), _cs);	
 		return new CompressedSizeInfoColGroup(colIndexes, em, _cs.validCompressions, map);
 	}
 
 	@Override
-	protected int worstCaseUpperBound(int[] columns) {
+	protected int worstCaseUpperBound(IColIndex columns) {
 		return getNumRows();
 	}
 

@@ -29,6 +29,7 @@ import org.apache.sysds.runtime.compress.colgroup.ColGroupSDC;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupSDCZeros;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupUtils;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
+import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
 import org.apache.sysds.runtime.compress.colgroup.offset.AIterator;
 import org.apache.sysds.runtime.compress.colgroup.offset.AOffset;
@@ -158,11 +159,11 @@ public class ColGroupMorphingPerformanceCompare {
 				null);
 		}
 
-		protected SDCNoMorph(int[] colIndices, int numRows, ADictionary dict, double[] defaultTuple, AOffset offsets,
+		protected SDCNoMorph(IColIndex colIndices, int numRows, ADictionary dict, double[] defaultTuple, AOffset offsets,
 			AMapToData data, int[] cachedCounts) {
 			super(colIndices, numRows, dict, defaultTuple, offsets, data, cachedCounts);
 
-			MatrixBlock tmp = getDictionary().getMBDict(_colIndexes.length).getMatrixBlock();
+			MatrixBlock tmp = getDictionary().getMBDict(_colIndexes.size()).getMatrixBlock();
 			mbDict = tmp.append(new MatrixBlock(1, defaultTuple.length, defaultTuple), false);
 
 		}

@@ -23,6 +23,7 @@ import static org.junit.Assert.assertTrue;
 
 import org.apache.sysds.runtime.compress.colgroup.AColGroup;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupConst;
+import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
 import org.apache.sysds.runtime.compress.colgroup.scheme.ICLAScheme;
 import org.apache.sysds.runtime.data.DenseBlockFP64;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -35,7 +36,7 @@ public class CLAConstSchemeTest {
 
 	public CLAConstSchemeTest() {
 		g = ColGroupConst.create(//
-			new int[] {1, 3, 5}, // Columns
+			ColIndexFactory.create(new int[] {1, 3, 5}), // Columns
 			new double[] {1.1, 1.2, 1.3} // Values
 		);
 		sh = g.getCompressionScheme();
@@ -133,8 +134,9 @@ public class CLAConstSchemeTest {
 			1.1, 0.2, 1.2, 0.2, 1.3, //
 			1.1, 0.2, 1.2, 0.2, 1.3, //
 			1.1, 0.2, 1.2, 0.2, 1.3, //
-		}), new int[] {0, 2, 4}// other columns
-		) != null);
+		}),
+
+			ColIndexFactory.create(new int[] {0, 2, 4})) != null);
 	}
 
 	@Test
@@ -144,18 +146,17 @@ public class CLAConstSchemeTest {
 			1.1, 0.2, 1.2, 0.2, 1.3, //
 			1.1, 0.2, 1.4, 0.2, 1.3, //
 			1.1, 0.2, 1.2, 0.2, 1.3, //
-		}), new int[] {0, 2, 4}// other columns
-		) == null);
+		}), ColIndexFactory.create(new int[] {0, 2, 4})) == null);
 	}
 
 	@Test(expected = IllegalArgumentException.class)
 	public void testInvalidArgument_1() {
-		sh.encode(null, new int[] {0, 2, 4, 5});
+		sh.encode(null, ColIndexFactory.create(new int[] {0, 2, 4, 5}));
 	}
 
 	@Test(expected = IllegalArgumentException.class)
 	public void testInvalidArgument_2() {
-		sh.encode(null, new int[] {0, 2});
+		sh.encode(null, ColIndexFactory.create(new int[] {0, 2}));
 	}
 
 	@Test
@@ -200,7 +201,7 @@ public class CLAConstSchemeTest {
 		MatrixBlock empty = new MatrixBlock(4, 1000, 0.0);
 		mb = empty.append(mb);
 
-		assertTrue(sh.encode(mb, new int[] {1001, 1003, 1005}) != null);
+		assertTrue(sh.encode(mb, ColIndexFactory.create(new int[] {1001, 1003, 1005})) != null);
 	}
 
 	@Test
@@ -215,7 +216,7 @@ public class CLAConstSchemeTest {
 		MatrixBlock empty = new MatrixBlock(4, 1000, 0.0);
 		MatrixBlock comb = empty.append(mb).append(mb);
 
-		assertTrue(sh.encode(comb, new int[] {1001, 1003, 1005}) != null);
+		assertTrue(sh.encode(comb, ColIndexFactory.create(new int[] {1001, 1003, 1005})) != null);
 	}
 
 	@Test
@@ -230,7 +231,7 @@ public class CLAConstSchemeTest {
 		MatrixBlock empty = new MatrixBlock(4, 1000, 0.0);
 		MatrixBlock comb = empty.append(mb).append(mb);
 
-		assertTrue(sh.encode(comb, new int[] {1001, 1003, 1005}) == null);
+		assertTrue(sh.encode(comb, ColIndexFactory.create(new int[] {1001, 1003, 1005})) == null);
 	}
 
 	@Test
@@ -247,7 +248,7 @@ public class CLAConstSchemeTest {
 		MatrixBlock emptyRow = new MatrixBlock(1, 1006, 0.0);
 		mb = mb.append(emptyRow, false);
 
-		assertTrue(sh.encode(mb, new int[] {1001, 1003, 1005}) == null);
+		assertTrue(sh.encode(mb, ColIndexFactory.create(new int[] {1001, 1003, 1005})) == null);
 	}
 
 	@Test

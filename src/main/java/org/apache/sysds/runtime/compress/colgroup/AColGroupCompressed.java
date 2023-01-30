@@ -23,6 +23,7 @@ import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.DMLScriptException;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.MatrixBlockDictionary;
+import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.functionobjects.Builtin.BuiltinCode;
@@ -45,7 +46,7 @@ public abstract class AColGroupCompressed extends AColGroup {
 
 	private static final long serialVersionUID = 6219835795420081223L;
 
-	protected AColGroupCompressed(int[] colIndices) {
+	protected AColGroupCompressed(IColIndex colIndices) {
 		super(colIndices);
 	}
 
@@ -202,8 +203,8 @@ public abstract class AColGroupCompressed extends AColGroup {
 
 	protected abstract void tsmm(double[] result, int numColumns, int nRows);
 
-	protected static void tsmm(double[] result, int numColumns, int[] counts, ADictionary dict, int[] colIndexes) {
-		dict = dict.getMBDict(colIndexes.length);
+	protected static void tsmm(double[] result, int numColumns, int[] counts, ADictionary dict, IColIndex colIndexes) {
+		dict = dict.getMBDict(colIndexes.size());
 		final MatrixBlock mb = ((MatrixBlockDictionary) dict).getMatrixBlock();
 		if(mb.isInSparseFormat())
 			tsmmSparse(result, numColumns, mb.getSparseBlock(), counts, colIndexes);
@@ -212,23 +213,23 @@ public abstract class AColGroupCompressed extends AColGroup {
 
 	}
 
-	protected static void tsmmDense(double[] result, int numColumns, double[] values, int[] counts, int[] colIndexes) {
-		final int nCol = colIndexes.length;
+	protected static void tsmmDense(double[] result, int numColumns, double[] values, int[] counts, IColIndex colIndexes) {
+		final int nCol = colIndexes.size();
 		final int nRow = counts.length;
 		for(int k = 0; k < nRow; k++) {
 			final int offTmp = nCol * k;
 			final int scale = counts[k];
 			for(int i = 0; i < nCol; i++) {
-				final int offRet = numColumns * colIndexes[i];
+				final int offRet = numColumns * colIndexes.get(i);
 				final double v = values[offTmp + i] * scale;
 				if(v != 0)
 					for(int j = i; j < nCol; j++)
-						result[offRet + colIndexes[j]] += v * values[offTmp + j];
+						result[offRet + colIndexes.get(j)] += v * values[offTmp + j];
 			}
 		}
 	}
 
-	protected static void tsmmSparse(double[] result, int numColumns, SparseBlock sb, int[] counts, int[] colIndexes) {
+	protected static void tsmmSparse(double[] result, int numColumns, SparseBlock sb, int[] counts, IColIndex colIndexes) {
 		for(int row = 0; row < counts.length; row++) {
 			if(sb.isEmpty(row))
 				continue;
@@ -237,10 +238,10 @@ public abstract class AColGroupCompressed extends AColGroup {
 			final int[] aix = sb.indexes(row);
 			final double[] avals = sb.values(row);
 			for(int i = apos; i < apos + alen; i++) {
-				final int offRet = colIndexes[aix[i]] * numColumns;
+				final int offRet = colIndexes.get(aix[i]) * numColumns;
 				final double val = avals[i] * counts[row];
 				for(int j = i; j < apos + alen; j++) {
-					result[offRet + colIndexes[aix[j]]] += val * avals[j];
+					result[offRet + colIndexes.get(aix[j])] += val * avals[j];
 				}
 			}
 		}

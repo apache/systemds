@@ -29,7 +29,8 @@ import org.apache.sysds.runtime.compress.CompressedMatrixBlockFactory;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupEmpty;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupUncompressed;
-import org.apache.sysds.runtime.compress.utils.Util;
+import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
+import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
 public class CLALibAppend {
@@ -80,7 +81,7 @@ public class CLALibAppend {
 		final List<AColGroup> prev = right.getColGroups();
 		final List<AColGroup> newGroup = new ArrayList<>(prev.size() + 1);
 		final int nColL = left.getNumColumns();
-		final int[] colIdx = Util.genColsIndices(nColL);
+		final IColIndex colIdx = ColIndexFactory.create(nColL);
 		final AColGroup g = ColGroupUncompressed.create(colIdx, left, false);
 		newGroup.add(g);
 		for(AColGroup group : prev) {
@@ -100,7 +101,9 @@ public class CLALibAppend {
 		final List<AColGroup> prev = left.getColGroups();
 		final List<AColGroup> newGroup = new ArrayList<>(prev.size() + 1);
 		newGroup.addAll(prev);
-		final int[] colIdx = Util.genColsIndicesOffset(right.getNumColumns(), left.getNumColumns());
+		final int cLenL = left.getNumColumns();
+		final int cLenR = right.getNumColumns();
+		final IColIndex colIdx = ColIndexFactory.create(cLenL, cLenR + cLenL);
 		final AColGroup g = ColGroupUncompressed.create(colIdx, right, false);
 		newGroup.add(g);
 		ret.allocateColGroupList(newGroup);
@@ -158,7 +161,7 @@ public class CLALibAppend {
 		for(AColGroup group : left)
 			ret.getColGroups().add(group);
 
-		for(AColGroup group : right) 
+		for(AColGroup group : right)
 			ret.getColGroups().add(group.shiftColIndices(leftNumCols));
 
 		// meta data maintenance

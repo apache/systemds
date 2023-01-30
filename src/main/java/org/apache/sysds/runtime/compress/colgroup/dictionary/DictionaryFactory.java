@@ -41,7 +41,7 @@ public interface DictionaryFactory {
 	static final Log LOG = LogFactory.getLog(DictionaryFactory.class.getName());
 
 	public enum Type {
-		FP64_DICT, MATRIX_BLOCK_DICT, INT8_DICT, IDENTITY
+		FP64_DICT, MATRIX_BLOCK_DICT, INT8_DICT, IDENTITY, IDENTITY_SLICE,
 	}
 
 	public static ADictionary read(DataInput in) throws IOException {

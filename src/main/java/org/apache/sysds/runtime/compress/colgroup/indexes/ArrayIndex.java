@@ -22,10 +22,11 @@ package org.apache.sysds.runtime.compress.colgroup.indexes;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.util.Arrays;
 
 import org.apache.sysds.utils.MemoryEstimates;
 
-public class ArrayIndex implements IColIndex {
+public class ArrayIndex extends AColIndex {
 	private final int[] cols;
 
 	public ArrayIndex(int[] cols) {
@@ -73,12 +74,107 @@ public class ArrayIndex implements IColIndex {
 
 	@Override
 	public long estimateInMemorySize() {
-		return 16 + (long) MemoryEstimates.intArrayCost(cols.length);
+		return estimateInMemorySizeStatic(cols.length);
+	}
+
+	public static long estimateInMemorySizeStatic(int nCol) {
+		return 16 + (long) MemoryEstimates.intArrayCost(nCol);
 	}
 
 	@Override
 	public IIterate iterator() {
 		return new ArrayIterator();
+	}
+
+	@Override
+	public int findIndex(int i) {
+		return Arrays.binarySearch(cols, i);
+	}
+
+	@Override
+	public boolean isContiguous() {
+		return false;
+	}
+
+	@Override
+	public SliceResult slice(int l, int u) {
+
+		if(l == 0 && u > cols[cols.length - 1])
+			return new SliceResult(0, cols.length, this);
+		int s = Arrays.binarySearch(cols, l);
+		int e = Arrays.binarySearch(cols, u);
+
+		s = s < 0 ? Math.abs(s + 1) : s;
+		e = e < 0 ? Math.abs(e + 1) : e;
+
+		if(s == e)
+			return new SliceResult(0, 0, null);
+
+		int[] retArr = new int[e - s];
+		if(l == 0)
+			retArr = Arrays.copyOfRange(cols, s, e);
+		else
+			for(int i = s, j = 0; i < e; i++, j++)
+				retArr[j] = cols[i] - l;
+
+		SliceResult ret = new SliceResult(s, e, ColIndexFactory.create(retArr));
+
+		return ret;
+	}
+
+	@Override
+	public boolean equals(IColIndex other) {
+		if(other.size() == size()) {
+			if(other instanceof ArrayIndex) {
+				ArrayIndex ot = (ArrayIndex) other;
+				int[] otV = ot.cols;
+				return Arrays.equals(cols, otV);
+			}
+			else if(other instanceof RangeIndex)
+				return other.get(0) == cols[0] && other.get(size() - 1) == cols[size() - 1];
+			else { // generic
+				for(int i = 0; i < size(); i++)
+					if(other.get(i) != cols[i])
+						return false;
+				return true;
+			}
+		}
+		return false;
+	}
+
+	@Override
+	public IColIndex combine(IColIndex other) {
+		final int sr = other.size();
+		final int sl = size();
+		final int[] ret = new int[sr + sl];
+		int pl = 0;
+		int pr = 0;
+		int i = 0;
+		while(pl < sl && pr < sr) {
+			final int vl = get(pl);
+			final int vr = other.get(pr);
+			if(vl < vr) {
+				ret[i++] = vl;
+				pl++;
+			}
+			else {
+				ret[i++] = vr;
+				pr++;
+			}
+		}
+		while(pl < sl)
+			ret[i++] = get(pl++);
+		while(pr < sr)
+			ret[i++] = other.get(pr++);
+		return ColIndexFactory.create(ret);
+	}
+
+	@Override
+	public String toString() {
+		StringBuilder sb = new StringBuilder();
+		sb.append(this.getClass().getSimpleName());
+		sb.append(Arrays.toString(cols));
+		return sb.toString();
 	}
 
 	protected class ArrayIterator implements IIterate {

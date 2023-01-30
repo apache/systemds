@@ -19,7 +19,6 @@
 
 package org.apache.sysds.runtime.compress.estim;
 
-import java.util.Arrays;
 import java.util.EnumMap;
 import java.util.Map;
 import java.util.Set;
@@ -31,6 +30,7 @@ import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupSizes;
+import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.compress.estim.encoding.IEncode;
 
 /**
@@ -40,7 +40,7 @@ public class CompressedSizeInfoColGroup {
 
 	protected static final Log LOG = LogFactory.getLog(CompressedSizeInfoColGroup.class.getName());
 
-	private final int[] _cols;
+	private final IColIndex _cols;
 	private final EstimationFactors _facts;
 	private final double _minSize;
 	private final CompressionType _bestCompressionType;
@@ -51,7 +51,7 @@ public class CompressedSizeInfoColGroup {
 	 */
 	private IEncode _map;
 
-	public CompressedSizeInfoColGroup(int[] cols, int nVal, int nRow, CompressionType bestCompressionType) {
+	public CompressedSizeInfoColGroup(IColIndex cols, int nVal, int nRow, CompressionType bestCompressionType) {
 		_cols = cols;
 		_facts = new EstimationFactors(nVal, nRow);
 		_minSize = -1;
@@ -60,7 +60,7 @@ public class CompressedSizeInfoColGroup {
 		_sizes.put(bestCompressionType, _minSize);
 	}
 
-	public CompressedSizeInfoColGroup(int[] cols, EstimationFactors facts, CompressionType bestCompressionType) {
+	public CompressedSizeInfoColGroup(IColIndex cols, EstimationFactors facts, CompressionType bestCompressionType) {
 		_cols = cols;
 		_facts = facts;
 		_minSize = -1;
@@ -69,7 +69,7 @@ public class CompressedSizeInfoColGroup {
 		_sizes.put(bestCompressionType, _minSize);
 	}
 
-	public CompressedSizeInfoColGroup(int[] cols, EstimationFactors facts, long minSize,
+	public CompressedSizeInfoColGroup(IColIndex cols, EstimationFactors facts, long minSize,
 		CompressionType bestCompressionType) {
 		_cols = cols;
 		_facts = facts;
@@ -79,11 +79,11 @@ public class CompressedSizeInfoColGroup {
 		_sizes.put(bestCompressionType, _minSize);
 	}
 
-	protected CompressedSizeInfoColGroup(int[] columns, EstimationFactors facts,
+	protected CompressedSizeInfoColGroup(IColIndex columns, EstimationFactors facts,
 		Set<CompressionType> validCompressionTypes, IEncode map) {
 		_cols = columns;
 		_facts = facts;
-		_sizes = calculateCompressionSizes(_cols.length, facts, validCompressionTypes);
+		_sizes = calculateCompressionSizes(_cols, facts, validCompressionTypes);
 
 		CompressionType tmpBestCompressionType = CompressionType.UNCOMPRESSED;
 		double tmpBestCompressionSize = _sizes.getOrDefault(tmpBestCompressionType, Double.MAX_VALUE);
@@ -105,13 +105,13 @@ public class CompressedSizeInfoColGroup {
 	 * @param columns columns
 	 * @param nRows   number of rows
 	 */
-	public CompressedSizeInfoColGroup(int[] columns, int nRows) {
+	public CompressedSizeInfoColGroup(IColIndex columns, int nRows) {
 		_cols = columns;
 		_facts = new EstimationFactors(0, nRows);
 
 		_sizes = new EnumMap<>(CompressionType.class);
 		final CompressionType ct = CompressionType.EMPTY;
-		_sizes.put(ct, (double) ColGroupSizes.estimateInMemorySizeEMPTY(columns.length));
+		_sizes.put(ct, (double) ColGroupSizes.estimateInMemorySizeEMPTY(columns.size(), columns.isContiguous()));
 		_bestCompressionType = ct;
 		_minSize = _sizes.get(ct);
 		_map = null;
@@ -163,7 +163,7 @@ public class CompressedSizeInfoColGroup {
 		return _facts.numOffs;
 	}
 
-	public int[] getColumns() {
+	public IColIndex getColumns() {
 		return _cols;
 	}
 
@@ -191,11 +191,11 @@ public class CompressedSizeInfoColGroup {
 		return _facts.numOffs < _facts.numRows;
 	}
 
-	private static EnumMap<CompressionType, Double> calculateCompressionSizes(int numCols, EstimationFactors fact,
+	private static EnumMap<CompressionType, Double> calculateCompressionSizes(IColIndex cols, EstimationFactors fact,
 		Set<CompressionType> validCompressionTypes) {
 		EnumMap<CompressionType, Double> res = new EnumMap<CompressionType, Double>(CompressionType.class);
 		for(CompressionType ct : validCompressionTypes) {
-			double compSize = getCompressionSize(numCols, ct, fact);
+			double compSize = getCompressionSize(cols, ct, fact);
 			if(compSize > 0)
 				res.put(ct, compSize);
 		}
@@ -210,36 +210,41 @@ public class CompressedSizeInfoColGroup {
 		return _bestCompressionType == CompressionType.CONST;
 	}
 
-	private static double getCompressionSize(int numCols, CompressionType ct, EstimationFactors fact) {
+	private static double getCompressionSize(IColIndex cols, CompressionType ct, EstimationFactors fact) {
 		int nv;
+		final int numCols = cols.size();
+		final boolean contiguousColumns = cols.isContiguous();
 		switch(ct) {
 			case LinearFunctional:
-				return ColGroupSizes.estimateInMemorySizeLinearFunctional(numCols);
+				return ColGroupSizes.estimateInMemorySizeLinearFunctional(numCols, contiguousColumns);
 			case DeltaDDC:
 				throw new NotImplementedException();
 			case DDC:
 				nv = fact.numVals + (fact.numOffs < fact.numRows ? 1 : 0);
-				return ColGroupSizes.estimateInMemorySizeDDC(numCols, nv, fact.numRows, fact.tupleSparsity, fact.lossy);
-			case RLE:
-				return ColGroupSizes.estimateInMemorySizeRLE(numCols, fact.numVals, fact.numRuns, fact.numRows,
+				return ColGroupSizes.estimateInMemorySizeDDC(numCols, contiguousColumns, nv, fact.numRows,
 					fact.tupleSparsity, fact.lossy);
+			case RLE:
+				return ColGroupSizes.estimateInMemorySizeRLE(numCols, contiguousColumns, fact.numVals, fact.numRuns,
+					fact.numRows, fact.tupleSparsity, fact.lossy);
 			case OLE:
 				nv = fact.numVals + (fact.zeroIsMostFrequent ? 1 : 0);
-				return ColGroupSizes.estimateInMemorySizeOLE(numCols, nv, fact.numOffs + fact.numVals, fact.numRows,
-					fact.tupleSparsity, fact.lossy);
+				return ColGroupSizes.estimateInMemorySizeOLE(numCols, contiguousColumns, nv, fact.numOffs + fact.numVals,
+					fact.numRows, fact.tupleSparsity, fact.lossy);
 			case UNCOMPRESSED:
-				return ColGroupSizes.estimateInMemorySizeUncompressed(fact.numRows, numCols, fact.overAllSparsity);
+				return ColGroupSizes.estimateInMemorySizeUncompressed(fact.numRows, contiguousColumns, numCols,
+					fact.overAllSparsity);
 			case SDC:
-				return ColGroupSizes.estimateInMemorySizeSDC(numCols, fact.numVals, fact.numRows, fact.largestOff,
-					fact.tupleSparsity, fact.zeroIsMostFrequent, fact.lossy);
+				return ColGroupSizes.estimateInMemorySizeSDC(numCols, contiguousColumns, fact.numVals, fact.numRows,
+					fact.largestOff, fact.tupleSparsity, fact.zeroIsMostFrequent, fact.lossy);
 			case CONST:
 				if(fact.numOffs == fact.numRows && fact.numVals == 1)
-					return ColGroupSizes.estimateInMemorySizeCONST(numCols, fact.tupleSparsity, fact.lossy);
+					return ColGroupSizes.estimateInMemorySizeCONST(numCols, contiguousColumns, fact.tupleSparsity,
+						fact.lossy);
 				else
 					return -1;
 			case EMPTY:
 				if(fact.numOffs == 0)
-					return ColGroupSizes.estimateInMemorySizeEMPTY(numCols);
+					return ColGroupSizes.estimateInMemorySizeEMPTY(numCols, contiguousColumns);
 				else
 					return -1;
 			default:
@@ -255,7 +260,7 @@ public class CompressedSizeInfoColGroup {
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		sb.append(this.getClass().getSimpleName());
-		sb.append("cols: " + Arrays.toString(_cols));
+		sb.append("cols: " + _cols);
 		sb.append(String.format(" common: %4.3f", getMostCommonFraction()));
 		sb.append(" Sizes: ");
 		sb.append(_sizes);

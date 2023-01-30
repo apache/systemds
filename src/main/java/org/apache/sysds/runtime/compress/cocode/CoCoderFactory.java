@@ -23,6 +23,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.sysds.runtime.compress.CompressionSettings;
+import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
+import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.compress.cost.ACostEstimate;
 import org.apache.sysds.runtime.compress.estim.AComEst;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfo;
@@ -76,15 +78,16 @@ public interface CoCoderFactory {
 
 		for(CompressedSizeInfoColGroup g : colInfos.compressionInfo) {
 			if(g.isEmpty())
-				emptyCols.appendValue(g.getColumns()[0]);
+				emptyCols.appendValue(g.getColumns().get(0));
 			else
 				notEmpty.add(g);
 		}
 
 		final int nRow = colInfos.compressionInfo.get(0).getNumRows();
 
+		final IColIndex idx = ColIndexFactory.create(emptyCols);
 		if(notEmpty.isEmpty()) { // if all empty (unlikely but could happen)
-			CompressedSizeInfoColGroup empty = new CompressedSizeInfoColGroup(emptyCols.extractValues(true), nRow);
+			CompressedSizeInfoColGroup empty = new CompressedSizeInfoColGroup(idx, nRow);
 			return new CompressedSizeInfo(empty);
 		}
 
@@ -93,7 +96,7 @@ public interface CoCoderFactory {
 		colInfos = co.coCodeColumns(colInfos, k);
 
 		// add empty columns back as single columns
-		colInfos.compressionInfo.add(new CompressedSizeInfoColGroup(emptyCols.extractValues(true), nRow));
+		colInfos.compressionInfo.add(new CompressedSizeInfoColGroup(idx, nRow));
 		return colInfos;
 	}
 

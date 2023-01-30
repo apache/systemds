@@ -29,11 +29,12 @@ import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.DictionaryFactory;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.MatrixBlockDictionary;
+import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
+import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
 import org.apache.sysds.runtime.compress.colgroup.scheme.ICLAScheme;
 import org.apache.sysds.runtime.compress.cost.ComputationCostEstimator;
-import org.apache.sysds.runtime.compress.utils.Util;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.functionobjects.Divide;
 import org.apache.sysds.runtime.functionobjects.Minus;
@@ -58,13 +59,13 @@ public class ColGroupDDCFOR extends AMorphingMMColGroup {
 	/** Reference values in this column group */
 	protected final double[] _reference;
 
-	private ColGroupDDCFOR(int[] colIndexes, ADictionary dict, double[] reference, AMapToData data, int[] cachedCounts) {
+	private ColGroupDDCFOR(IColIndex colIndexes, ADictionary dict, double[] reference, AMapToData data, int[] cachedCounts) {
 		super(colIndexes, dict, cachedCounts);
 		_data = data;
 		_reference = reference;
 	}
 
-	public static AColGroup create(int[] colIndexes, ADictionary dict, AMapToData data, int[] cachedCounts,
+	public static AColGroup create(IColIndex colIndexes, ADictionary dict, AMapToData data, int[] cachedCounts,
 		double[] reference) {
 		final boolean allZero = ColGroupUtils.allZero(reference);
 		if(dict == null && allZero)
@@ -82,7 +83,7 @@ public class ColGroupDDCFOR extends AMorphingMMColGroup {
 
 	public static AColGroup sparsifyFOR(ColGroupDDC g) {
 		// It is assumed whoever call this does not use an empty Dictionary in g.
-		final int nCol = g.getColIndices().length;
+		final int nCol = g.getColIndices().size();
 		final MatrixBlockDictionary mbd = g._dict.getMBDict(nCol);
 		if(mbd != null) {
 
@@ -107,7 +108,7 @@ public class ColGroupDDCFOR extends AMorphingMMColGroup {
 
 	@Override
 	public double getIdx(int r, int colIdx) {
-		return _dict.getValue(_data.getIndex(r), colIdx, _colIndexes.length) + _reference[colIdx];
+		return _dict.getValue(_data.getIndex(r), colIdx, _colIndexes.size()) + _reference[colIdx];
 	}
 
 	@Override
@@ -136,7 +137,7 @@ public class ColGroupDDCFOR extends AMorphingMMColGroup {
 	public long estimateInMemorySize() {
 		long size = super.estimateInMemorySize();
 		size += _data.getInMemorySize();
-		size += 8 * _colIndexes.length;
+		size += 8 * _colIndexes.size();
 		return size;
 	}
 
@@ -168,7 +169,7 @@ public class ColGroupDDCFOR extends AMorphingMMColGroup {
 	public AColGroup binaryRowOpLeft(BinaryOperator op, double[] v, boolean isRowSafe) {
 		final double[] newRef = new double[_reference.length];
 		for(int i = 0; i < _reference.length; i++)
-			newRef[i] = op.fn.execute(v[_colIndexes[i]], _reference[i]);
+			newRef[i] = op.fn.execute(v[_colIndexes.get(i)], _reference[i]);
 
 		if(op.fn instanceof Plus || op.fn instanceof Minus) // only edit reference
 			return create(_colIndexes, _dict, _data, getCachedCounts(), newRef);
@@ -187,7 +188,7 @@ public class ColGroupDDCFOR extends AMorphingMMColGroup {
 	public AColGroup binaryRowOpRight(BinaryOperator op, double[] v, boolean isRowSafe) {
 		final double[] newRef = new double[_reference.length];
 		for(int i = 0; i < _reference.length; i++)
-			newRef[i] = op.fn.execute(_reference[i], v[_colIndexes[i]]);
+			newRef[i] = op.fn.execute(_reference[i], v[_colIndexes.get(i)]);
 
 		if(op.fn instanceof Plus || op.fn instanceof Minus)// only edit reference
 			return create(_colIndexes, _dict, _data, getCachedCounts(), newRef);
@@ -211,10 +212,10 @@ public class ColGroupDDCFOR extends AMorphingMMColGroup {
 	}
 
 	public static ColGroupDDCFOR read(DataInput in) throws IOException {
-		int[] cols = AColGroup.readCols(in);
+		IColIndex cols = ColIndexFactory.read(in);
 		ADictionary dict = DictionaryFactory.read(in);
 		AMapToData data = MapToFactory.readIn(in);
-		double[] ref = ColGroupIO.readDoubleArray(cols.length, in);
+		double[] ref = ColGroupIO.readDoubleArray(cols.size(), in);
 		return new ColGroupDDCFOR(cols, dict, ref, data, null);
 	}
 
@@ -222,7 +223,7 @@ public class ColGroupDDCFOR extends AMorphingMMColGroup {
 	public long getExactSizeOnDisk() {
 		long ret = super.getExactSizeOnDisk();
 		ret += _data.getExactSizeOnDisk();
-		ret += 8 * _colIndexes.length; // reference values.
+		ret += 8 * _colIndexes.size(); // reference values.
 		return ret;
 	}
 
@@ -281,8 +282,8 @@ public class ColGroupDDCFOR extends AMorphingMMColGroup {
 		// trick, use normal sum
 		super.computeColSums(c, nRows);
 		// and add reference multiplied with number of rows.
-		for(int i = 0; i < _colIndexes.length; i++)
-			c[_colIndexes[i]] += _reference[i] * nRows;
+		for(int i = 0; i < _colIndexes.size(); i++)
+			c[_colIndexes.get(i)] += _reference[i] * nRows;
 	}
 
 	@Override
@@ -332,8 +333,8 @@ public class ColGroupDDCFOR extends AMorphingMMColGroup {
 	}
 
 	@Override
-	protected AColGroup sliceMultiColumns(int idStart, int idEnd, int[] outputCols) {
-		ADictionary retDict = _dict.sliceOutColumnRange(idStart, idEnd, _colIndexes.length);
+	protected AColGroup sliceMultiColumns(int idStart, int idEnd, IColIndex outputCols) {
+		ADictionary retDict = _dict.sliceOutColumnRange(idStart, idEnd, _colIndexes.size());
 		final double[] newDef = new double[idEnd - idStart];
 		for(int i = idStart, j = 0; i < idEnd; i++, j++)
 			newDef[j] = _reference[i];
@@ -342,11 +343,11 @@ public class ColGroupDDCFOR extends AMorphingMMColGroup {
 
 	@Override
 	protected AColGroup sliceSingleColumn(int idx) {
-		final int[] retIndexes = new int[] {0};
-		if(_colIndexes.length == 1) // early abort, only single column already.
+		final IColIndex retIndexes = ColIndexFactory.create(1);
+		if(_colIndexes.size() == 1) // early abort, only single column already.
 			return create(retIndexes, _dict, _data, getCounts(), _reference);
 		final double[] newDef = new double[] {_reference[idx]};
-		final ADictionary retDict = _dict.sliceOutColumnRange(idx, idx + 1, _colIndexes.length);
+		final ADictionary retDict = _dict.sliceOutColumnRange(idx, idx + 1, _colIndexes.size());
 		return create(retIndexes, retDict, _data, getCounts(), newDef);
 
 	}
@@ -363,13 +364,13 @@ public class ColGroupDDCFOR extends AMorphingMMColGroup {
 	@Override
 	public long getNumberNonZeros(int nRows) {
 		// to be safe just assume the worst fully dense for DDCFOR
-		return (long) _colIndexes.length * nRows;
+		return (long) _colIndexes.size() * nRows;
 	}
 
 	@Override
 	public AColGroup extractCommon(double[] constV) {
-		for(int i = 0; i < _colIndexes.length; i++)
-			constV[_colIndexes[i]] += _reference[i];
+		for(int i = 0; i < _colIndexes.size(); i++)
+			constV[_colIndexes.get(i)] += _reference[i];
 		return ColGroupDDC.create(_colIndexes, _dict, _data, getCounts());
 	}
 
@@ -388,7 +389,7 @@ public class ColGroupDDCFOR extends AMorphingMMColGroup {
 			}
 		}
 		else {
-			int[] outCols = Util.genColsIndices(max);
+			IColIndex outCols = ColIndexFactory.create(max);
 			if(def <= 0) {
 				if(ignore)
 					return ColGroupDDC.create(outCols, d, _data, getCachedCounts());
@@ -419,7 +420,7 @@ public class ColGroupDDCFOR extends AMorphingMMColGroup {
 	}
 
 	@Override
-	protected AColGroup allocateRightMultiplicationCommon(double[] common, int[] colIndexes, ADictionary preAgg) {
+	protected AColGroup allocateRightMultiplicationCommon(double[] common, IColIndex colIndexes, ADictionary preAgg) {
 		return create(colIndexes, preAgg, _data, getCachedCounts(), common);
 	}
 
@@ -430,13 +431,13 @@ public class ColGroupDDCFOR extends AMorphingMMColGroup {
 	}
 
 	@Override
-	protected AColGroup copyAndSet(int[] colIndexes, ADictionary newDictionary) {
+	protected AColGroup copyAndSet(IColIndex colIndexes, ADictionary newDictionary) {
 		return create(colIndexes, newDictionary, _data, getCachedCounts(), _reference);
 	}
 
 	@Override
 	public AColGroup append(AColGroup g) {
-		if(g instanceof ColGroupDDCFOR && Arrays.equals(g.getColIndices(), _colIndexes)) {
+		if(g instanceof ColGroupDDCFOR && g.getColIndices().equals(_colIndexes)) {
 			ColGroupDDCFOR gDDC = (ColGroupDDCFOR) g;
 			if(Arrays.equals(_reference , gDDC._reference) && gDDC._dict.equals(_dict)){
 				AMapToData nd = _data.append(gDDC._data);

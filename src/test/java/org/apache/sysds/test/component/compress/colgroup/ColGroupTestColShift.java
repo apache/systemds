@@ -22,7 +22,6 @@ package org.apache.sysds.test.component.compress.colgroup;
 import static org.junit.Assert.assertTrue;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 
 import org.apache.sysds.runtime.compress.colgroup.AColGroup;
@@ -55,7 +54,7 @@ public class ColGroupTestColShift extends ColGroupBase {
 	public void shiftColIndices() {
 		base.shiftColIndices(3);
 		other.shiftColIndices(3);
-		assertTrue(Arrays.equals(base.getColIndices(), other.getColIndices()));
+		assertTrue(base.getColIndices().equals(other.getColIndices()));
 	}
 
 }

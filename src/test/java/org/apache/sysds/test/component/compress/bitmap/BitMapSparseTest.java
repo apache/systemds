@@ -25,6 +25,8 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.bitmap.ABitmap;
 import org.apache.sysds.runtime.compress.bitmap.BitmapEncoder;
+import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
+import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.junit.Test;
 
@@ -41,7 +43,7 @@ public class BitMapSparseTest {
 	@Test
 	public void constructBitMap() {
 		mb.reset();
-		final int[] colIndexes = new int[] {0};
+		final IColIndex colIndexes = ColIndexFactory.create(1);
 		for(int i = 0; i < 10; i++){
 			double v = i % 3;
 			if(v != 0)
@@ -58,7 +60,7 @@ public class BitMapSparseTest {
 	@Test
 	public void constructBitMap_02() {
 		mb.reset();
-		final int[] colIndexes = new int[] {0};
+		final IColIndex colIndexes = ColIndexFactory.create(1);
 		for(int i = 0; i < 10; i++){
 			double v = i % 3;
 			if(v != 0)
@@ -76,7 +78,7 @@ public class BitMapSparseTest {
 	public void constructBitMap_transposed_emptyMatrix() {
 		mb.reset();
 		mb.examSparsity();
-		final int[] colIndexes = new int[] {0};
+		final IColIndex colIndexes = ColIndexFactory.create(1);
 
 		ABitmap m = BitmapEncoder.extractBitmap(colIndexes, mb, true, 3, false);
 		assertEquals(m, null);
@@ -86,7 +88,7 @@ public class BitMapSparseTest {
 	public void constructBitMap_transposed_emptyRow() {
 		mb.reset();
 		mb.examSparsity();
-		final int[] colIndexes = new int[] {0};
+		final IColIndex colIndexes = ColIndexFactory.create(1);
 		mb.appendValue(1, 1, 3241);
 		ABitmap m = BitmapEncoder.extractBitmap(colIndexes, mb, true, 3, false);
 		assertEquals(m, null);

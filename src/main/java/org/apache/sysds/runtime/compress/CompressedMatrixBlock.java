@@ -26,7 +26,6 @@ import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.lang.ref.SoftReference;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.Future;
@@ -357,7 +356,7 @@ public class CompressedMatrixBlock extends MatrixBlock {
 		}
 		else {
 			for(AColGroup group : _colGroups) {
-				final int idx = Arrays.binarySearch(group.getColIndices(), c);
+				final int idx = group.getColIndices().findIndex(c);
 				if(idx >= 0)
 					return group.getIdx(r, idx);
 			}
@@ -399,12 +398,19 @@ public class CompressedMatrixBlock extends MatrixBlock {
 
 	@Override
 	public void write(DataOutput out) throws IOException {
-		// LOG.error(this);
-		if(nonZeros > 0 && getExactSizeOnDisk() > MatrixBlock.estimateSizeOnDisk(rlen, clen, nonZeros)) {
+		final long estimateUncompressed = nonZeros > 0 ? MatrixBlock.estimateSizeOnDisk(rlen, clen,
+			nonZeros) : Long.MAX_VALUE;
+		final long estDisk = nonZeros > 0 ? getExactSizeOnDisk() : Long.MAX_VALUE;
+		if(nonZeros > 0 && estDisk > estimateUncompressed) {
 			// If the size of this matrixBlock is smaller in uncompressed format, then
 			// decompress and save inside an uncompressed column group.
-			MatrixBlock uncompressed = getUncompressed("smaller serialization size");
+			MatrixBlock uncompressed = getUncompressed(
+				"smaller serialization size: compressed: " + estDisk + " vs uncompressed: " + estimateUncompressed);
 			ColGroupUncompressed cg = (ColGroupUncompressed) ColGroupUncompressed.create(uncompressed);
+
+			if( estDisk / 10 > estimateUncompressed){
+				LOG.error(this);
+			}
 			allocateColGroup(cg);
 			nonZeros = cg.getNumberNonZeros(rlen);
 			// clear the soft reference to the decompressed version, since the one column group is perfectly,

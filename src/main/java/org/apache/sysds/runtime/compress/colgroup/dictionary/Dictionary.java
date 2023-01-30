@@ -28,6 +28,7 @@ import java.util.Arrays;
 
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
+import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.functionobjects.Plus;
@@ -241,13 +242,13 @@ public class Dictionary extends ADictionary {
 	}
 
 	@Override
-	public Dictionary binOpRight(BinaryOperator op, double[] v, int[] colIndexes) {
+	public Dictionary binOpRight(BinaryOperator op, double[] v, IColIndex colIndexes) {
 		final ValueFunction fn = op.fn;
 		final double[] retVals = new double[_values.length];
 		final int len = size();
-		final int lenV = colIndexes.length;
+		final int lenV = colIndexes.size();
 		for(int i = 0; i < len; i++)
-			retVals[i] = fn.execute(_values[i], v[colIndexes[i % lenV]]);
+			retVals[i] = fn.execute(_values[i], v[colIndexes.get(i % lenV)]);
 		return create(retVals);
 	}
 
@@ -263,20 +264,20 @@ public class Dictionary extends ADictionary {
 	}
 
 	@Override
-	public ADictionary binOpRightAndAppend(BinaryOperator op, double[] v, int[] colIndexes) {
+	public ADictionary binOpRightAndAppend(BinaryOperator op, double[] v, IColIndex colIndexes) {
 		final ValueFunction fn = op.fn;
-		final double[] retVals = new double[_values.length + colIndexes.length];
-		final int lenV = colIndexes.length;
+		final double[] retVals = new double[_values.length + colIndexes.size()];
+		final int lenV = colIndexes.size();
 		for(int i = 0; i < _values.length; i++)
-			retVals[i] = fn.execute(_values[i], v[colIndexes[i % lenV]]);
+			retVals[i] = fn.execute(_values[i], v[colIndexes.get(i % lenV)]);
 		for(int i = _values.length; i < _values.length; i++)
-			retVals[i] = fn.execute(0, v[colIndexes[i % lenV]]);
+			retVals[i] = fn.execute(0, v[colIndexes.get(i % lenV)]);
 
 		return create(retVals);
 	}
 
 	@Override
-	public Dictionary binOpRightWithReference(BinaryOperator op, double[] v, int[] colIndexes, double[] reference,
+	public Dictionary binOpRightWithReference(BinaryOperator op, double[] v, IColIndex colIndexes, double[] reference,
 		double[] newReference) {
 		final ValueFunction fn = op.fn;
 		final double[] retV = new double[_values.length];
@@ -285,7 +286,7 @@ public class Dictionary extends ADictionary {
 		int off = 0;
 		for(int i = 0; i < nRow; i++) {
 			for(int j = 0; j < nCol; j++) {
-				retV[off] = fn.execute(_values[off] + reference[j], v[colIndexes[j]]) - newReference[j];
+				retV[off] = fn.execute(_values[off] + reference[j], v[colIndexes.get(j)]) - newReference[j];
 				off++;
 			}
 		}
@@ -293,30 +294,30 @@ public class Dictionary extends ADictionary {
 	}
 
 	@Override
-	public final Dictionary binOpLeft(BinaryOperator op, double[] v, int[] colIndexes) {
+	public final Dictionary binOpLeft(BinaryOperator op, double[] v, IColIndex colIndexes) {
 		final ValueFunction fn = op.fn;
 		final double[] retVals = new double[_values.length];
-		final int lenV = colIndexes.length;
+		final int lenV = colIndexes.size();
 		for(int i = 0; i < _values.length; i++)
-			retVals[i] = fn.execute(v[colIndexes[i % lenV]], _values[i]);
+			retVals[i] = fn.execute(v[colIndexes.get(i % lenV)], _values[i]);
 		return create(retVals);
 	}
 
 	@Override
-	public ADictionary binOpLeftAndAppend(BinaryOperator op, double[] v, int[] colIndexes) {
+	public ADictionary binOpLeftAndAppend(BinaryOperator op, double[] v, IColIndex colIndexes) {
 		final ValueFunction fn = op.fn;
-		final double[] retVals = new double[_values.length + colIndexes.length];
-		final int lenV = colIndexes.length;
+		final double[] retVals = new double[_values.length + colIndexes.size()];
+		final int lenV = colIndexes.size();
 		for(int i = 0; i < _values.length; i++)
-			retVals[i] = fn.execute(v[colIndexes[i % lenV]], _values[i]);
+			retVals[i] = fn.execute(v[colIndexes.get(i % lenV)], _values[i]);
 		for(int i = _values.length; i < _values.length; i++)
-			retVals[i] = fn.execute(v[colIndexes[i % lenV]], 0);
+			retVals[i] = fn.execute(v[colIndexes.get(i % lenV)], 0);
 
 		return create(retVals);
 	}
 
 	@Override
-	public Dictionary binOpLeftWithReference(BinaryOperator op, double[] v, int[] colIndexes, double[] reference,
+	public Dictionary binOpLeftWithReference(BinaryOperator op, double[] v, IColIndex colIndexes, double[] reference,
 		double[] newReference) {
 		final ValueFunction fn = op.fn;
 		final double[] retV = new double[_values.length];
@@ -325,7 +326,7 @@ public class Dictionary extends ADictionary {
 		int off = 0;
 		for(int i = 0; i < nRow; i++) {
 			for(int j = 0; j < nCol; j++) {
-				retV[off] = fn.execute(v[colIndexes[j]], _values[off] + reference[j]) - newReference[j];
+				retV[off] = fn.execute(v[colIndexes.get(j)], _values[off] + reference[j]) - newReference[j];
 				off++;
 			}
 		}
@@ -528,65 +529,65 @@ public class Dictionary extends ADictionary {
 	}
 
 	@Override
-	public void colSum(double[] c, int[] counts, int[] colIndexes) {
-		final int nCol = colIndexes.length;
+	public void colSum(double[] c, int[] counts, IColIndex colIndexes) {
+		final int nCol = colIndexes.size();
 		for(int k = 0; k < counts.length; k++) {
 			final int cntk = counts[k];
 			final int off = k * nCol;
 			for(int j = 0; j < nCol; j++)
-				c[colIndexes[j]] += _values[off + j] * cntk;
+				c[colIndexes.get(j)] += _values[off + j] * cntk;
 		}
 	}
 
 	@Override
-	public void colSumSq(double[] c, int[] counts, int[] colIndexes) {
-		final int nCol = colIndexes.length;
+	public void colSumSq(double[] c, int[] counts, IColIndex colIndexes) {
+		final int nCol = colIndexes.size();
 		final int nRow = counts.length;
 		int off = 0;
 		for(int k = 0; k < nRow; k++) {
 			final int cntk = counts[k];
 			for(int j = 0; j < nCol; j++) {
 				final double v = _values[off++];
-				c[colIndexes[j]] += v * v * cntk;
+				c[colIndexes.get(j)] += v * v * cntk;
 			}
 		}
 	}
 
 	@Override
-	public void colProduct(double[] res, int[] counts, int[] colIndexes) {
-		final int nCol = colIndexes.length;
+	public void colProduct(double[] res, int[] counts, IColIndex colIndexes) {
+		final int nCol = colIndexes.size();
 		for(int k = 0; k < counts.length; k++) {
 			final int cntk = counts[k];
 			final int off = k * nCol;
 			for(int j = 0; j < nCol; j++)
-				res[colIndexes[j]] *= Math.pow(_values[off + j], cntk);
+				res[colIndexes.get(j)] *= Math.pow(_values[off + j], cntk);
 		}
 		correctNan(res, colIndexes);
 	}
 
 	@Override
-	public void colProductWithReference(double[] res, int[] counts, int[] colIndexes, double[] reference) {
-		final int nCol = colIndexes.length;
+	public void colProductWithReference(double[] res, int[] counts, IColIndex colIndexes, double[] reference) {
+		final int nCol = colIndexes.size();
 		for(int k = 0; k < counts.length; k++) {
 			final int cntk = counts[k];
 			final int off = k * nCol;
 			for(int j = 0; j < nCol; j++)
-				res[colIndexes[j]] *= Math.pow(_values[off + j] + reference[j], cntk);
+				res[colIndexes.get(j)] *= Math.pow(_values[off + j] + reference[j], cntk);
 		}
 
 		correctNan(res, colIndexes);
 	}
 
 	@Override
-	public void colSumSqWithReference(double[] c, int[] counts, int[] colIndexes, double[] reference) {
-		final int nCol = colIndexes.length;
+	public void colSumSqWithReference(double[] c, int[] counts, IColIndex colIndexes, double[] reference) {
+		final int nCol = colIndexes.size();
 		final int nRow = counts.length;
 		int off = 0;
 		for(int k = 0; k < nRow; k++) {
 			final int cntk = counts[k];
 			for(int j = 0; j < nCol; j++) {
 				final double v = _values[off++] + reference[j];
-				c[colIndexes[j]] += v * v * cntk;
+				c[colIndexes.get(j)] += v * v * cntk;
 			}
 		}
 	}
@@ -803,24 +804,27 @@ public class Dictionary extends ADictionary {
 	}
 
 	@Override
-	public void aggregateCols(double[] c, Builtin fn, int[] colIndexes) {
-		final int nCol = colIndexes.length;
+	public void aggregateCols(double[] c, Builtin fn, IColIndex colIndexes) {
+		final int nCol = colIndexes.size();
 		final int rlen = _values.length / nCol;
 		for(int k = 0; k < rlen; k++)
 			for(int j = 0, valOff = k * nCol; j < nCol; j++)
-				c[colIndexes[j]] = fn.execute(c[colIndexes[j]], _values[valOff + j]);
+				c[colIndexes.get(j)] = fn.execute(c[colIndexes.get(j)], _values[valOff + j]);
 	}
 
 	@Override
-	public void aggregateColsWithReference(double[] c, Builtin fn, int[] colIndexes, double[] reference, boolean def) {
+	public void aggregateColsWithReference(double[] c, Builtin fn, IColIndex colIndexes, double[] reference,
+		boolean def) {
 		final int nCol = reference.length;
 		final int rlen = _values.length / nCol;
 		for(int k = 0; k < rlen; k++)
 			for(int j = 0, valOff = k * nCol; j < nCol; j++)
-				c[colIndexes[j]] = fn.execute(c[colIndexes[j]], _values[valOff + j] + reference[j]);
+				c[colIndexes.get(j)] = fn.execute(c[colIndexes.get(j)], _values[valOff + j] + reference[j]);
 		if(def)
-			for(int i = 0; i < nCol; i++)
-				c[colIndexes[i]] = fn.execute(c[colIndexes[i]], reference[i]);
+			for(int i = 0; i < nCol; i++) {
+				final int cix = colIndexes.get(i);
+				c[cix] = fn.execute(c[cix], reference[i]);
+			}
 	}
 
 	@Override
@@ -838,15 +842,16 @@ public class Dictionary extends ADictionary {
 	}
 
 	@Override
-	public Dictionary preaggValuesFromDense(int numVals, int[] colIndexes, int[] aggregateColumns, double[] b, int cut) {
-		double[] ret = new double[numVals * aggregateColumns.length];
-		for(int k = 0, off = 0; k < numVals * colIndexes.length; k += colIndexes.length, off += aggregateColumns.length) {
-			for(int h = 0; h < colIndexes.length; h++) {
-				int idb = colIndexes[h] * cut;
+	public Dictionary preaggValuesFromDense(int numVals, IColIndex colIndexes, IColIndex aggregateColumns, double[] b,
+		int cut) {
+		double[] ret = new double[numVals * aggregateColumns.size()];
+		for(int k = 0, off = 0; k < numVals * colIndexes.size(); k += colIndexes.size(), off += aggregateColumns.size()) {
+			for(int h = 0; h < colIndexes.size(); h++) {
+				int idb = colIndexes.get(h) * cut;
 				double v = _values[k + h];
 				if(v != 0)
-					for(int i = 0; i < aggregateColumns.length; i++)
-						ret[off + i] += v * b[idb + aggregateColumns[i]];
+					for(int i = 0; i < aggregateColumns.size(); i++)
+						ret[off + i] += v * b[idb + aggregateColumns.get(i)];
 			}
 		}
 		return create(ret);
@@ -1018,64 +1023,65 @@ public class Dictionary extends ADictionary {
 	}
 
 	@Override
-	public void multiplyScalar(double v, double[] ret, int off, int dictIdx, int[] cols) {
-		final int offD = dictIdx * cols.length;
-		for(int i = 0; i < cols.length; i++) {
+	public void multiplyScalar(double v, double[] ret, int off, int dictIdx, IColIndex cols) {
+		final int offD = dictIdx * cols.size();
+		for(int i = 0; i < cols.size(); i++) {
 			double a = v * _values[offD + i];
-			ret[off + cols[i]] += a;
+			ret[off + cols.get(i)] += a;
 		}
 	}
 
 	@Override
-	protected void TSMMWithScaling(int[] counts, int[] rows, int[] cols, MatrixBlock ret) {
+	protected void TSMMWithScaling(int[] counts, IColIndex rows, IColIndex cols, MatrixBlock ret) {
 		DictLibMatrixMult.TSMMDictsDenseWithScaling(_values, rows, cols, counts, ret);
 	}
 
 	@Override
-	protected void MMDict(ADictionary right, int[] rowsLeft, int[] colsRight, MatrixBlock result) {
+	protected void MMDict(ADictionary right, IColIndex rowsLeft, IColIndex colsRight, MatrixBlock result) {
 		right.MMDictDense(_values, rowsLeft, colsRight, result);
 	}
 
 	@Override
-	protected void MMDictDense(double[] left, int[] rowsLeft, int[] colsRight, MatrixBlock result) {
+	protected void MMDictDense(double[] left, IColIndex rowsLeft, IColIndex colsRight, MatrixBlock result) {
 		DictLibMatrixMult.MMDictsDenseDense(left, _values, rowsLeft, colsRight, result);
 	}
 
 	@Override
-	protected void MMDictSparse(SparseBlock left, int[] rowsLeft, int[] colsRight, MatrixBlock result) {
+	protected void MMDictSparse(SparseBlock left, IColIndex rowsLeft, IColIndex colsRight, MatrixBlock result) {
 		DictLibMatrixMult.MMDictsSparseDense(left, _values, rowsLeft, colsRight, result);
 	}
 
 	@Override
-	protected void TSMMToUpperTriangle(ADictionary right, int[] rowsLeft, int[] colsRight, MatrixBlock result) {
+	protected void TSMMToUpperTriangle(ADictionary right, IColIndex rowsLeft, IColIndex colsRight, MatrixBlock result) {
 		right.TSMMToUpperTriangleDense(_values, rowsLeft, colsRight, result);
 	}
 
 	@Override
-	protected void TSMMToUpperTriangleDense(double[] left, int[] rowsLeft, int[] colsRight, MatrixBlock result) {
+	protected void TSMMToUpperTriangleDense(double[] left, IColIndex rowsLeft, IColIndex colsRight, MatrixBlock result) {
 		DictLibMatrixMult.MMToUpperTriangleDenseDense(left, _values, rowsLeft, colsRight, result);
 	}
 
 	@Override
-	protected void TSMMToUpperTriangleSparse(SparseBlock left, int[] rowsLeft, int[] colsRight, MatrixBlock result) {
+	protected void TSMMToUpperTriangleSparse(SparseBlock left, IColIndex rowsLeft, IColIndex colsRight,
+		MatrixBlock result) {
 		DictLibMatrixMult.MMToUpperTriangleSparseDense(left, _values, rowsLeft, colsRight, result);
 	}
 
 	@Override
-	protected void TSMMToUpperTriangleScaling(ADictionary right, int[] rowsLeft, int[] colsRight, int[] scale,
+	protected void TSMMToUpperTriangleScaling(ADictionary right, IColIndex rowsLeft, IColIndex colsRight, int[] scale,
 		MatrixBlock result) {
 		right.TSMMToUpperTriangleDenseScaling(_values, rowsLeft, colsRight, scale, result);
 	}
 
 	@Override
-	protected void TSMMToUpperTriangleDenseScaling(double[] left, int[] rowsLeft, int[] colsRight, int[] scale,
+	protected void TSMMToUpperTriangleDenseScaling(double[] left, IColIndex rowsLeft, IColIndex colsRight, int[] scale,
 		MatrixBlock result) {
 		DictLibMatrixMult.TSMMToUpperTriangleDenseDenseScaling(left, _values, rowsLeft, colsRight, scale, result);
 	}
 
 	@Override
-	protected void TSMMToUpperTriangleSparseScaling(SparseBlock left, int[] rowsLeft, int[] colsRight, int[] scale,
-		MatrixBlock result) {
+	protected void TSMMToUpperTriangleSparseScaling(SparseBlock left, IColIndex rowsLeft, IColIndex colsRight,
+		int[] scale, MatrixBlock result) {
 		DictLibMatrixMult.TSMMToUpperTriangleSparseDenseScaling(left, _values, rowsLeft, colsRight, scale, result);
 	}
 

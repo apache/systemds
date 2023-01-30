@@ -19,9 +19,11 @@
 
 package org.apache.sysds.test.component.compress.colgroup;
 
+import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupConst;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
+import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
 import org.junit.Test;
 
 public class NegativeConstTests {
@@ -36,19 +38,19 @@ public class NegativeConstTests {
 		ColGroupConst.create(0, 14);
 	}
 
-	@Test(expected = DMLCompressionException.class)
+	@Test(expected = DMLRuntimeException.class)
 	public void testConstConstruction_03() {
-		ColGroupConst.create(new int[] {}, 0);
+		ColGroupConst.create(ColIndexFactory.create(0), 0);
 	}
 
 	@Test(expected = DMLCompressionException.class)
 	public void testConstConstruction_05() {
-		ColGroupConst.create(new int[] {0, 1, 2}, new double[] {1, 2});
+		ColGroupConst.create(ColIndexFactory.create(new int[] {0, 1, 2}), new double[] {1, 2});
 	}
 
 	@Test(expected = DMLCompressionException.class)
 	public void testConstConstruction_06() {
-		ColGroupConst.create(new int[] {0, 1}, new double[] {1, 2, 4});
+		ColGroupConst.create(ColIndexFactory.create(new int[] {0, 1}), new double[] {1, 2, 4});
 	}
 
 	@Test(expected = DMLCompressionException.class)
@@ -63,7 +65,7 @@ public class NegativeConstTests {
 
 	@Test
 	public void testConstConstruction_allowed_01() {
-		ColGroupConst.create(new int[] {0, 1, 2, 3}, 0);
+		ColGroupConst.create(ColIndexFactory.create(new int[] {0, 1, 2, 3}), 0);
 	}
 
 	@Test

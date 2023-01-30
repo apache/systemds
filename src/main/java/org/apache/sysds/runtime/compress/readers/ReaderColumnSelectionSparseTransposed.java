@@ -21,6 +21,7 @@ package org.apache.sysds.runtime.compress.readers;
 
 import java.util.Arrays;
 
+import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.compress.utils.DblArray;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -40,14 +41,14 @@ public class ReaderColumnSelectionSparseTransposed extends ReaderColumnSelection
 
 	private boolean atEnd = false;
 
-	protected ReaderColumnSelectionSparseTransposed(MatrixBlock data, int[] colIndexes, int rl, int ru) {
+	protected ReaderColumnSelectionSparseTransposed(MatrixBlock data, IColIndex colIndexes, int rl, int ru) {
 		super(colIndexes, rl, Math.min(ru, data.getNumColumns()));
-		sparsePos = new int[colIndexes.length];
+		sparsePos = new int[_colIndexes.size()];
 		a = data.getSparseBlock();
 		_rl = _rl + 1; // correct row since this iterator use the exact row
 
-		for(int i = 0; i < colIndexes.length; i++) {
-			final int c = _colIndexes[i];
+		for(int i = 0; i < _colIndexes.size(); i++) {
+			final int c = _colIndexes.get(i);
 			if(a.isEmpty(c)) {
 				atEnd = true;
 				sparsePos[i] = -1;
@@ -88,8 +89,8 @@ public class ReaderColumnSelectionSparseTransposed extends ReaderColumnSelection
 			return null;
 		}
 		boolean empty = true;
-		for(int i = 0; i < _colIndexes.length; i++) {
-			final int c = _colIndexes[i];
+		for(int i = 0; i < _colIndexes.size(); i++) {
+			final int c = _colIndexes.get(i);
 			final int sp = sparsePos[i];
 			final int[] aix = a.indexes(c);
 			if(aix[sp] == _rl) {
@@ -119,9 +120,9 @@ public class ReaderColumnSelectionSparseTransposed extends ReaderColumnSelection
 	}
 
 	private void skipToRow() {
-		_rl = a.indexes(_colIndexes[0])[sparsePos[0]];
-		for(int i = 1; i < _colIndexes.length; i++)
-			_rl = Math.min(a.indexes(_colIndexes[i])[sparsePos[i]], _rl);
+		_rl = a.indexes(_colIndexes.get(0))[sparsePos[0]];
+		for(int i = 1; i < _colIndexes.size(); i++)
+			_rl = Math.min(a.indexes(_colIndexes.get(i))[sparsePos[i]], _rl);
 	}
 
 	protected DblArray getNextRowAtEnd() {
@@ -133,8 +134,8 @@ public class ReaderColumnSelectionSparseTransposed extends ReaderColumnSelection
 			return null;
 		}
 
-		for(int i = 0; i < _colIndexes.length; i++) {
-			int c = _colIndexes[i];
+		for(int i = 0; i < _colIndexes.size(); i++) {
+			int c = _colIndexes.get(i);
 			final int sp = sparsePos[i];
 			if(sp != -1) {
 				final int[] aix = a.indexes(c);
@@ -162,11 +163,11 @@ public class ReaderColumnSelectionSparseTransposed extends ReaderColumnSelection
 	private void skipToRowAtEnd() {
 		boolean allDone = true;
 		int mr = _ru;
-		for(int i = 0; i < _colIndexes.length; i++) {
+		for(int i = 0; i < _colIndexes.size(); i++) {
 			final int sp = sparsePos[i];
 			if(sp != -1) {
 				allDone = false;
-				mr = Math.min(a.indexes(_colIndexes[i])[sp], mr);
+				mr = Math.min(a.indexes(_colIndexes.get(i))[sp], mr);
 			}
 			else
 				reusableArr[i] = 0;

@@ -28,6 +28,8 @@ import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.DictionaryFactory;
+import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
+import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
 import org.apache.sysds.runtime.compress.colgroup.offset.AIterator;
@@ -67,19 +69,19 @@ public class ColGroupSDCFOR extends ASDC implements AMapToDataGroup {
 	/** Reference values in this column group */
 	protected final double[] _reference;
 
-	private ColGroupSDCFOR(int[] colIndices, int numRows, ADictionary dict, AOffset indexes, AMapToData data,
+	private ColGroupSDCFOR(IColIndex colIndices, int numRows, ADictionary dict, AOffset indexes, AMapToData data,
 		int[] cachedCounts, double[] reference) {
 		super(colIndices, numRows, dict, indexes, cachedCounts);
 		// allow for now 1 data unique.
 		if(data.getUnique() == 1)
 			LOG.warn("SDCFor unique is 1, indicate it should have been SDCSingle please add support");
-		else if(data.getUnique() != dict.getNumberOfValues(colIndices.length))
+		else if(data.getUnique() != dict.getNumberOfValues(colIndices.size()))
 			throw new DMLCompressionException("Invalid construction of SDCZero group");
 		_data = data;
 		_reference = reference;
 	}
 
-	public static AColGroup create(int[] colIndexes, int numRows, ADictionary dict, AOffset offsets, AMapToData data,
+	public static AColGroup create(IColIndex colIndexes, int numRows, ADictionary dict, AOffset offsets, AMapToData data,
 		int[] cachedCounts, double[] reference) {
 		final boolean allZero = ColGroupUtils.allZero(reference);
 		if(allZero && dict == null)
@@ -141,7 +143,7 @@ public class ColGroupSDCFOR extends ASDC implements AMapToDataGroup {
 		final AIterator it = _indexes.getIterator(r);
 		if(it == null || it.value() != r)
 			return _reference[colIdx];
-		return _dict.getValue(_data.getIndex(it.getDataIndex()), colIdx, _colIndexes.length) + _reference[colIdx];
+		return _dict.getValue(_data.getIndex(it.getDataIndex()), colIdx, _colIndexes.size()) + _reference[colIdx];
 	}
 
 	@Override
@@ -172,7 +174,7 @@ public class ColGroupSDCFOR extends ASDC implements AMapToDataGroup {
 	public AColGroup binaryRowOpLeft(BinaryOperator op, double[] v, boolean isRowSafe) {
 		final double[] newRef = new double[_reference.length];
 		for(int i = 0; i < _reference.length; i++)
-			newRef[i] = op.fn.execute(v[_colIndexes[i]], _reference[i]);
+			newRef[i] = op.fn.execute(v[_colIndexes.get(i)], _reference[i]);
 
 		if(op.fn instanceof Plus || op.fn instanceof Minus) // only edit reference
 			return create(_colIndexes, _numRows, _dict, _indexes, _data, getCachedCounts(), newRef);
@@ -191,7 +193,7 @@ public class ColGroupSDCFOR extends ASDC implements AMapToDataGroup {
 	public AColGroup binaryRowOpRight(BinaryOperator op, double[] v, boolean isRowSafe) {
 		final double[] newRef = new double[_reference.length];
 		for(int i = 0; i < _reference.length; i++)
-			newRef[i] = op.fn.execute(_reference[i], v[_colIndexes[i]]);
+			newRef[i] = op.fn.execute(_reference[i], v[_colIndexes.get(i)]);
 
 		if(op.fn instanceof Plus || op.fn instanceof Minus)// only edit reference
 			return create(_colIndexes, _numRows, _dict, _indexes, _data, getCachedCounts(), newRef);
@@ -216,11 +218,11 @@ public class ColGroupSDCFOR extends ASDC implements AMapToDataGroup {
 	}
 
 	public static ColGroupSDCFOR read(DataInput in, int nRows) throws IOException {
-		int[] cols = readCols(in);
+		IColIndex cols = ColIndexFactory.read(in);
 		ADictionary dict = DictionaryFactory.read(in);
 		AOffset indexes = OffsetFactory.readIn(in);
 		AMapToData data = MapToFactory.readIn(in);
-		double[] reference = ColGroupIO.readDoubleArray(cols.length, in);
+		double[] reference = ColGroupIO.readDoubleArray(cols.size(), in);
 		return new ColGroupSDCFOR(cols, nRows, dict, indexes, data, null, reference);
 	}
 
@@ -229,7 +231,7 @@ public class ColGroupSDCFOR extends ASDC implements AMapToDataGroup {
 		long ret = super.getExactSizeOnDisk();
 		ret += _data.getExactSizeOnDisk();
 		ret += _indexes.getExactSizeOnDisk();
-		ret += 8 * _colIndexes.length; // reference values.
+		ret += 8 * _colIndexes.size(); // reference values.
 		return ret;
 	}
 
@@ -238,7 +240,7 @@ public class ColGroupSDCFOR extends ASDC implements AMapToDataGroup {
 		long size = super.estimateInMemorySize();
 		size += _indexes.getInMemorySize();
 		size += _data.getInMemorySize();
-		size += 8 * _colIndexes.length;
+		size += 8 * _colIndexes.size();
 		return size;
 	}
 
@@ -291,8 +293,8 @@ public class ColGroupSDCFOR extends ASDC implements AMapToDataGroup {
 		// trick, use normal sum
 		super.computeColSums(c, nRows);
 		// and add reference multiplied with number of rows.
-		for(int i = 0; i < _colIndexes.length; i++)
-			c[_colIndexes[i]] += _reference[i] * nRows;
+		for(int i = 0; i < _colIndexes.size(); i++)
+			c[_colIndexes.get(i)] += _reference[i] * nRows;
 	}
 
 	@Override
@@ -309,8 +311,8 @@ public class ColGroupSDCFOR extends ASDC implements AMapToDataGroup {
 		// square sum the dictionary
 		_dict.colSumSqWithReference(c, getCounts(), _colIndexes, _reference);
 		// Square sum of the reference values only for the rows that is not represented in the Offsets.
-		for(int i = 0; i < _colIndexes.length; i++) // correct for the reference sum.
-			c[_colIndexes[i]] += _reference[i] * _reference[i] * (_numRows - _data.size());
+		for(int i = 0; i < _colIndexes.size(); i++) // correct for the reference sum.
+			c[_colIndexes.get(i)] += _reference[i] * _reference[i] * (_numRows - _data.size());
 	}
 
 	@Override
@@ -349,15 +351,15 @@ public class ColGroupSDCFOR extends ASDC implements AMapToDataGroup {
 		_dict.colProductWithReference(c, getCounts(), _colIndexes, _reference);
 		final int count = _numRows - _data.size();
 
-		for(int x = 0; x < _colIndexes.length; x++) {
-			double v = c[_colIndexes[x]];
-			c[_colIndexes[x]] = v != 0 ? v * Math.pow(_reference[x], count) : 0;
+		for(int x = 0; x < _colIndexes.size(); x++) {
+			double v = c[_colIndexes.get(x)];
+			c[_colIndexes.get(x)] = v != 0 ? v * Math.pow(_reference[x], count) : 0;
 		}
 	}
 
 	@Override
-	protected AColGroup sliceMultiColumns(int idStart, int idEnd, int[] outputCols) {
-		ADictionary retDict = _dict.sliceOutColumnRange(idStart, idEnd, _colIndexes.length);
+	protected AColGroup sliceMultiColumns(int idStart, int idEnd, IColIndex outputCols) {
+		ADictionary retDict = _dict.sliceOutColumnRange(idStart, idEnd, _colIndexes.size());
 		final double[] newDef = new double[idEnd - idStart];
 		for(int i = idStart, j = 0; i < idEnd; i++, j++)
 			newDef[j] = _reference[i];
@@ -366,11 +368,11 @@ public class ColGroupSDCFOR extends ASDC implements AMapToDataGroup {
 
 	@Override
 	protected AColGroup sliceSingleColumn(int idx) {
-		final int[] retIndexes = new int[] {0};
-		if(_colIndexes.length == 1) // early abort, only single column already.
+		final IColIndex retIndexes = ColIndexFactory.create(1);
+		if(_colIndexes.size() == 1) // early abort, only single column already.
 			return create(retIndexes, _numRows, _dict, _indexes, _data, getCounts(), _reference);
 		final double[] newDef = new double[] {_reference[idx]};
-		final ADictionary retDict = _dict.sliceOutColumnRange(idx, idx + 1, _colIndexes.length);
+		final ADictionary retDict = _dict.sliceOutColumnRange(idx, idx + 1, _colIndexes.size());
 		return create(retIndexes, _numRows, retDict, _indexes, _data, getCounts(), newDef);
 	}
 
@@ -393,15 +395,15 @@ public class ColGroupSDCFOR extends ASDC implements AMapToDataGroup {
 		final int[] counts = getCounts();
 		final int count = _numRows - _data.size();
 		long c = _dict.getNumberNonZerosWithReference(counts, _reference, nRows);
-		for(int x = 0; x < _colIndexes.length; x++)
+		for(int x = 0; x < _colIndexes.size(); x++)
 			c += _reference[x] != 0 ? count : 0;
 		return c;
 	}
 
 	@Override
 	public AColGroup extractCommon(double[] constV) {
-		for(int i = 0; i < _colIndexes.length; i++)
-			constV[_colIndexes[i]] += _reference[i];
+		for(int i = 0; i < _colIndexes.size(); i++)
+			constV[_colIndexes.get(i)] += _reference[i];
 		return ColGroupSDCZeros.create(_colIndexes, _numRows, _dict, _indexes, _data, getCounts());
 	}
 
@@ -432,7 +434,7 @@ public class ColGroupSDCFOR extends ASDC implements AMapToDataGroup {
 	}
 
 	@Override
-	protected AColGroup allocateRightMultiplicationCommon(double[] common, int[] colIndexes, ADictionary preAgg) {
+	protected AColGroup allocateRightMultiplicationCommon(double[] common, IColIndex colIndexes, ADictionary preAgg) {
 		return create(colIndexes, _numRows, preAgg, _indexes, _data, getCachedCounts(), common);
 	}
 
@@ -446,7 +448,7 @@ public class ColGroupSDCFOR extends ASDC implements AMapToDataGroup {
 	}
 
 	@Override
-	protected AColGroup copyAndSet(int[] colIndexes, ADictionary newDictionary) {
+	protected AColGroup copyAndSet(IColIndex colIndexes, ADictionary newDictionary) {
 		return create(colIndexes, _numRows, newDictionary, _indexes, _data, getCachedCounts(), _reference);
 	}
 
@@ -459,9 +461,8 @@ public class ColGroupSDCFOR extends ASDC implements AMapToDataGroup {
 	public AColGroup appendNInternal(AColGroup[] g) {
 		int sumRows = getNumRows();
 		for(int i = 1; i < g.length; i++) {
-			if(!Arrays.equals(_colIndexes, g[i]._colIndexes)) {
-				LOG.warn("Not same columns therefore not appending \n" + Arrays.toString(_colIndexes) + "\n\n"
-					+ Arrays.toString(g[i]._colIndexes));
+			if(!_colIndexes.equals(g[i]._colIndexes)) {
+				LOG.warn("Not same columns therefore not appending \n" + _colIndexes + "\n\n" + g[i]._colIndexes);
 				return null;
 			}
 

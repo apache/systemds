@@ -25,6 +25,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.compress.CompressionSettingsBuilder;
+import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
 import org.apache.sysds.runtime.compress.estim.AComEst;
 import org.apache.sysds.runtime.compress.estim.ComEstFactory;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -52,7 +53,7 @@ public class SampleEstimatorTest {
 	@Test
 	public void compressedSizeInfoEstimatorSample_90() {
 		// Overrule to exact when over 80%
-		testSampleEstimateIsAtMaxEstimatedElementsInEachColumnsProduct(0.9, 1.0); 
+		testSampleEstimateIsAtMaxEstimatedElementsInEachColumnsProduct(0.9, 1.0);
 	}
 
 	@Test
@@ -102,12 +103,12 @@ public class SampleEstimatorTest {
 
 		cs_estimate.transposed = true;
 
-		final AComEst estimate = ComEstFactory.createEstimator(mbt, cs_estimate, (int)(ratio * mbt.getNumColumns()) ,1);
-		final int estimate_1 = estimate.getColGroupInfo(new int[] {0}).getNumVals() + 1;
-		final int estimate_2 = estimate.getColGroupInfo(new int[] {1}).getNumVals() + 1;
+		final AComEst estimate = ComEstFactory.createEstimator(mbt, cs_estimate, (int) (ratio * mbt.getNumColumns()), 1);
+		final int estimate_1 = estimate.getColGroupInfo(ColIndexFactory.create(new int[] {0})).getNumVals() + 1;
+		final int estimate_2 = estimate.getColGroupInfo(ColIndexFactory.create(new int[] {1})).getNumVals() + 1;
 
-		final int estimate_full = estimate.getColGroupInfo(new int[] {0, 1}, estimate_1, estimate_1 * estimate_2)
-			.getNumVals();
+		final int estimate_full = estimate
+			.getColGroupInfo(ColIndexFactory.create(new int[] {0, 1}), estimate_1, estimate_1 * estimate_2).getNumVals();
 		assertTrue(
 			"Estimate of all columns should be upper bounded by distinct of each column multiplied: " + estimate_full
 				+ " * " + tolerance + " <= " + estimate_1 * estimate_2,

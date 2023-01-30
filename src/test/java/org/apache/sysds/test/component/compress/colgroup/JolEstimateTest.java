@@ -34,6 +34,8 @@ import org.apache.sysds.runtime.compress.colgroup.AColGroup;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupFactory;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupSizes;
+import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
+import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.compress.estim.AComEst;
 import org.apache.sysds.runtime.compress.estim.ComEstExact;
 import org.apache.sysds.runtime.compress.estim.ComEstFactory;
@@ -62,7 +64,7 @@ public abstract class JolEstimateTest {
 	private static final CompressionSettingsBuilder csb = new CompressionSettingsBuilder().setMinimumSampleSize(100)
 		.setSeed(seed);
 
-	private final int[] colIndexes;
+	private final IColIndex colIndexes;
 	private final MatrixBlock mbt;
 
 	public abstract CompressionType getCT();
@@ -73,9 +75,7 @@ public abstract class JolEstimateTest {
 
 	public JolEstimateTest(MatrixBlock mbt) {
 		this.mbt = mbt;
-		colIndexes = new int[mbt.getNumRows()];
-		for(int x = 0; x < mbt.getNumRows(); x++)
-			colIndexes[x] = x;
+		colIndexes = ColIndexFactory.create(mbt.getNumRows());
 
 		mbt.recomputeNonZeros();
 		mbt.examSparsity();
@@ -166,30 +166,30 @@ public abstract class JolEstimateTest {
 			final int estimateNUniques = cInfo.getNumVals();
 
 			final double estimateCSI = (cg.getCompType() == CompressionType.CONST) ? ColGroupSizes
-				.estimateInMemorySizeCONST(cg.getNumCols(), 1.0, false) : cInfo.getCompressionSize(cg.getCompType());
+				.estimateInMemorySizeCONST(cg.getNumCols(),true, 1.0, false) : cInfo.getCompressionSize(cg.getCompType());
 			final double minTolerance = actualSize * tolerance *
 				(ratio < 1 && mbt.getSparsity() < 0.8 ? mbt.getSparsity() + 0.2 : 1);
 			double maxTolerance = actualSize / tolerance;
 			if(cg.getNumValues() > sampleSize / 2)
-				maxTolerance += Math.abs(cg.getNumValues() - estimateNUniques ) * 8 * mbt.getNumRows();
-			
+				maxTolerance += Math.abs(cg.getNumValues() - estimateNUniques) * 8 * mbt.getNumRows();
+
 			if(cg.getCompType() == CompressionType.SDC)
 				maxTolerance += 8 * mbt.getNumRows();
-			
+
 			if(cg.getCompType() == CompressionType.RLE)
-			maxTolerance += 8 * (mbt.getNumColumns() / Character.MAX_VALUE) * cg.getNumValues();
+				maxTolerance += 8 * (mbt.getNumColumns() / Character.MAX_VALUE) * cg.getNumValues();
 
 			final boolean withinToleranceOnSize = minTolerance <= estimateCSI && estimateCSI <= maxTolerance;
 
 			if(!withinToleranceOnSize) {
 				final String rangeString = String.format("%.0f <= %.0f <= %.0f , Actual Size %d", minTolerance, estimateCSI,
 					maxTolerance, actualSize);
-				String message = "CSI Sampled estimate size is not in tolerance range \n" + rangeString + "\nActual number uniques:"
-				+ actualNumberUnique + " estimated Uniques: " + estimateNUniques + "\nSampleSize of total rows:: "
-				+ sampleSize + " " + mbt.getNumColumns() + "\n" + cInfo + "\n";
+				String message = "CSI Sampled estimate size is not in tolerance range \n" + rangeString
+					+ "\nActual number uniques:" + actualNumberUnique + " estimated Uniques: " + estimateNUniques
+					+ "\nSampleSize of total rows:: " + sampleSize + " " + mbt.getNumColumns() + "\n" + cInfo + "\n";
 				if(mbt.getNumColumns() < 1000)
 					message += mbt;
-				
+
 				fail(message + "\n" + cg);
 			}
 

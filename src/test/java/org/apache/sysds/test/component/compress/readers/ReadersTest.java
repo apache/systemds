@@ -26,6 +26,7 @@ import static org.junit.Assert.fail;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
+import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
 import org.apache.sysds.runtime.compress.readers.ReaderColumnSelection;
 import org.apache.sysds.runtime.compress.utils.DblArray;
 import org.apache.sysds.runtime.compress.utils.DblArrayCountHashMap;
@@ -40,14 +41,14 @@ public class ReadersTest {
 	@Test(expected = DMLCompressionException.class)
 	public void testDenseSingleCol() {
 		MatrixBlock mb = TestUtils.generateTestMatrixBlock(10, 1, 1, 1, 0.5, 21342);
-		ReaderColumnSelection.createReader(mb, new int[] {0}, false);
+		ReaderColumnSelection.createReader(mb,ColIndexFactory.create( 1), false);
 	}
 
 	@Test
 	public void testDenseMultiCol() {
 		MatrixBlock mb = TestUtils.generateTestMatrixBlock(10, 1, 1, 1, 0.5, 21342);
 		MatrixBlock mbc = mb.append(mb, null);
-		ReaderColumnSelection r = ReaderColumnSelection.createReader(mbc, new int[] {0, 1}, false);
+		ReaderColumnSelection r = ReaderColumnSelection.createReader(mbc, ColIndexFactory.create(2), false);
 		DblArray d = null;
 		DblArrayCountHashMap map = new DblArrayCountHashMap(4, 2);
 
@@ -64,7 +65,7 @@ public class ReadersTest {
 	public void testDenseMultiColSparseRight() {
 		MatrixBlock mb = TestUtils.generateTestMatrixBlock(10, 1, 1, 1, 0.5, 21342);
 		MatrixBlock mbc = mb.append(new MatrixBlock(10, 1, true), null);
-		ReaderColumnSelection r = ReaderColumnSelection.createReader(mbc, new int[] {0, 1}, false);
+		ReaderColumnSelection r = ReaderColumnSelection.createReader(mbc, ColIndexFactory.create(2), false);
 		DblArray d = null;
 		DblArrayCountHashMap map = new DblArrayCountHashMap(4, 2);
 
@@ -80,7 +81,7 @@ public class ReadersTest {
 	public void testDenseMultiColSparseLeft() {
 		MatrixBlock mb = TestUtils.generateTestMatrixBlock(10, 1, 1, 1, 0.5, 21342);
 		MatrixBlock mbc = new MatrixBlock(10, 1, true).append(mb, null);
-		ReaderColumnSelection r = ReaderColumnSelection.createReader(mbc, new int[] {0, 1}, false);
+		ReaderColumnSelection r = ReaderColumnSelection.createReader(mbc, ColIndexFactory.create(2), false);
 		DblArray d = null;
 		DblArrayCountHashMap map = new DblArrayCountHashMap(4, 2);
 
@@ -106,7 +107,7 @@ public class ReadersTest {
 		mb.setValue(1, 0, 3);
 		mb.setValue(2, 1, 5);
 
-		ReaderColumnSelection r = ReaderColumnSelection.createReader(mb, new int[] {0, 1}, false);
+		ReaderColumnSelection r = ReaderColumnSelection.createReader(mb, ColIndexFactory.create(2), false);
 		DblArray d = null;
 		DblArrayCountHashMap map = new DblArrayCountHashMap(4, 2);
 
@@ -120,19 +121,19 @@ public class ReadersTest {
 
 	@Test(expected = DMLCompressionException.class)
 	public void testEmpty() {
-		ReaderColumnSelection.createReader(new MatrixBlock(), new int[] {0, 1}, false);
+		ReaderColumnSelection.createReader(new MatrixBlock(), ColIndexFactory.create(2), false);
 	}
 
 	@Test(expected = DMLCompressionException.class)
 	public void testInvalidRange() {
-		ReaderColumnSelection.createReader(new MatrixBlock(), new int[] {0, 1}, false, 10, 9);
+		ReaderColumnSelection.createReader(new MatrixBlock(), ColIndexFactory.create(2), false, 10, 9);
 	}
 
 	@Test(expected = DMLCompressionException.class)
 	public void testInvalidRange_02() {
 		MatrixBlock mb = new MatrixBlock(10, 32, true);
 		mb.allocateDenseBlock();
-		ReaderColumnSelection.createReader(mb, new int[] {0, 1}, false, 10, 9);
+		ReaderColumnSelection.createReader(mb, ColIndexFactory.create(2), false, 10, 9);
 	}
 
 	@Test
@@ -141,7 +142,7 @@ public class ReadersTest {
 
 			MatrixBlock mb = new MatrixBlock(10, 5, Double.NaN);
 
-			ReaderColumnSelection reader = ReaderColumnSelection.createReader(mb, new int[] {0, 1}, false, 0,
+			ReaderColumnSelection reader = ReaderColumnSelection.createReader(mb, ColIndexFactory.create(2), false, 0,
 				mb.getNumRows());
 			assertEquals(null, reader.nextRow());
 		}
@@ -158,7 +159,7 @@ public class ReadersTest {
 			MatrixBlock mb = new MatrixBlock(10, 5, Double.NaN);
 			mb.setValue(1, 1, 3214);
 
-			ReaderColumnSelection reader = ReaderColumnSelection.createReader(mb, new int[] {0, 1}, false, 0,
+			ReaderColumnSelection reader = ReaderColumnSelection.createReader(mb, ColIndexFactory.create(2), false, 0,
 				mb.getNumRows());
 			DblArray a = reader.nextRow();
 			assertNotEquals(null, a);
@@ -177,7 +178,7 @@ public class ReadersTest {
 
 			MatrixBlock mb = new MatrixBlock(10, 5, Double.NaN);
 
-			ReaderColumnSelection reader = ReaderColumnSelection.createReader(mb, new int[] {0, 1}, true, 0,
+			ReaderColumnSelection reader = ReaderColumnSelection.createReader(mb, ColIndexFactory.create(2), true, 0,
 				mb.getNumRows());
 			assertEquals(null, reader.nextRow());
 		}
@@ -194,7 +195,7 @@ public class ReadersTest {
 			MatrixBlock mb = new MatrixBlock(10, 5, Double.NaN);
 			mb.setValue(1, 1, 3214);
 
-			ReaderColumnSelection reader = ReaderColumnSelection.createReader(mb, new int[] {0, 1}, true, 0,
+			ReaderColumnSelection reader = ReaderColumnSelection.createReader(mb, ColIndexFactory.create(2), true, 0,
 				mb.getNumRows());
 			DblArray a = reader.nextRow();
 			assertNotEquals(null, a);
@@ -213,7 +214,7 @@ public class ReadersTest {
 
 			MatrixBlock mb = ReadersTestCompareReaders.createMock(new MatrixBlock(10, 5, Double.NaN));
 
-			ReaderColumnSelection reader = ReaderColumnSelection.createReader(mb, new int[] {0, 1}, false, 0,
+			ReaderColumnSelection reader = ReaderColumnSelection.createReader(mb, ColIndexFactory.create(2), false, 0,
 				mb.getNumRows());
 			assertEquals(null, reader.nextRow());
 		}
@@ -230,7 +231,7 @@ public class ReadersTest {
 			MatrixBlock mb = ReadersTestCompareReaders.createMock(new MatrixBlock(10, 5, Double.NaN));
 			mb.setValue(1, 1, 3214);
 
-			ReaderColumnSelection reader = ReaderColumnSelection.createReader(mb, new int[] {0, 1}, false, 0,
+			ReaderColumnSelection reader = ReaderColumnSelection.createReader(mb, ColIndexFactory.create(2), false, 0,
 				mb.getNumRows());
 			DblArray a = reader.nextRow();
 			assertNotEquals(null, a);
@@ -249,7 +250,7 @@ public class ReadersTest {
 
 			MatrixBlock mb = ReadersTestCompareReaders.createMock(new MatrixBlock(10, 5, Double.NaN));
 
-			ReaderColumnSelection reader = ReaderColumnSelection.createReader(mb, new int[] {0, 1}, true, 0,
+			ReaderColumnSelection reader = ReaderColumnSelection.createReader(mb, ColIndexFactory.create(2), true, 0,
 				mb.getNumRows());
 			assertEquals(null, reader.nextRow());
 		}
@@ -266,7 +267,7 @@ public class ReadersTest {
 			MatrixBlock mb = ReadersTestCompareReaders.createMock(new MatrixBlock(10, 5, Double.NaN));
 			mb.setValue(1, 1, 3214);
 
-			ReaderColumnSelection reader = ReaderColumnSelection.createReader(mb, new int[] {0, 1}, true, 0,
+			ReaderColumnSelection reader = ReaderColumnSelection.createReader(mb, ColIndexFactory.create(2), true, 0,
 				mb.getNumRows());
 			DblArray a = reader.nextRow();
 			assertNotEquals(null, a);
@@ -287,7 +288,7 @@ public class ReadersTest {
 		mbs.setValue(0, 1, Double.NaN);
 		mbs.setValue(1, 0, Double.NaN);
 
-		ReaderColumnSelection reader = ReaderColumnSelection.createReader(mbs, new int[] {0, 1}, false, 0,
+		ReaderColumnSelection reader = ReaderColumnSelection.createReader(mbs, ColIndexFactory.create(2), false, 0,
 			mbs.getNumRows());
 
 		DblArray a = reader.nextRow();
@@ -305,7 +306,7 @@ public class ReadersTest {
 		mbs.setValue(0, 1, Double.NaN);
 		mbs.setValue(1, 0, Double.NaN);
 
-		ReaderColumnSelection reader = ReaderColumnSelection.createReader(mbs, new int[] {0, 1}, true, 0,
+		ReaderColumnSelection reader = ReaderColumnSelection.createReader(mbs, ColIndexFactory.create(2), true, 0,
 			mbs.getNumRows());
 
 		DblArray a = reader.nextRow();

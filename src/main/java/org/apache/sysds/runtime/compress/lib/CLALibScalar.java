@@ -36,6 +36,7 @@ import org.apache.sysds.runtime.compress.colgroup.ColGroupConst;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupEmpty;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupOLE;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupUncompressed;
+import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.functionobjects.Divide;
 import org.apache.sysds.runtime.functionobjects.Minus;
 import org.apache.sysds.runtime.functionobjects.Multiply;
@@ -118,10 +119,10 @@ public class CLALibScalar {
 			else if(grp instanceof ColGroupConst) {
 				final ColGroupConst g = (ColGroupConst) grp;
 				final double[] gv = g.getValues();
-				final int[] colIdx = grp.getColIndices();
+				final IColIndex colIdx = grp.getColIndices();
 				if(constV != null)
-					for(int i = 0; i < colIdx.length; i++)
-						constV[colIdx[i]] += gv[i];
+					for(int i = 0; i < colIdx.size(); i++)
+						constV[colIdx.get(i)] += gv[i];
 			}
 			else
 				newColGroups.add(grp);
@@ -141,9 +142,9 @@ public class CLALibScalar {
 			else if(grp instanceof ColGroupConst) {
 				final ColGroupConst g = (ColGroupConst) grp;
 				final double[] gv = g.getValues();
-				final int[] colIdx = grp.getColIndices();
-				for(int i = 0; i < colIdx.length; i++)
-					constV[colIdx[i]] -= gv[i];
+				final IColIndex colIdx = grp.getColIndices();
+				for(int i = 0; i < colIdx.size(); i++)
+					constV[colIdx.get(i)] -= gv[i];
 			}
 			else
 				newColGroups.add(grp.scalarOperation(new RightScalarOperator(Multiply.getMultiplyFnObject(), -1)));
@@ -190,7 +191,7 @@ public class CLALibScalar {
 				tasks.add(new ScalarTask(uc, sop));
 			}
 			else {
-				int nv = grp.getNumValues() * grp.getColIndices().length;
+				int nv = grp.getNumValues() * grp.getNumCols();
 				if(nv < MINIMUM_PARALLEL_SIZE && !(grp instanceof ColGroupOLE)) {
 					small.add(grp);
 				}

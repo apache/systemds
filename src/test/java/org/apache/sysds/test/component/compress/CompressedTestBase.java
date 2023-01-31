@@ -48,6 +48,8 @@ import org.apache.sysds.runtime.compress.colgroup.AColGroup;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupFactory;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupUncompressed;
+import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
+import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.compress.cost.ACostEstimate;
 import org.apache.sysds.runtime.compress.cost.CostEstimatorBuilder;
 import org.apache.sysds.runtime.compress.cost.CostEstimatorFactory;
@@ -186,7 +188,7 @@ public abstract class CompressedTestBase extends TestBase {
 						colIndexes[x] = y;
 					}
 
-					CompressedSizeInfoColGroup cgi = ComEstFactory.createEstimator(mb, cs, _k).getColGroupInfo(colIndexes);
+					CompressedSizeInfoColGroup cgi = ComEstFactory.createEstimator(mb, cs, _k).getColGroupInfo(ColIndexFactory.create(colIndexes));
 					CompressedSizeInfo csi = new CompressedSizeInfo(cgi);
 
 					ACostEstimate ce = CostEstimatorFactory.create(cs, ceb, mb.getNumRows(), mb.getNumColumns(),
@@ -211,9 +213,7 @@ public abstract class CompressedTestBase extends TestBase {
 					 * In case only Uncompressed and Const colgroups are available. filter the big tests from uncompressed
 					 * colgroup tests since the functionality should be verified even with smaller matrices
 					 */
-					int[] colIndexes = new int[mb.getNumColumns()];
-					for(int i = 0; i < colIndexes.length; i++)
-						colIndexes[i] = i;
+					IColIndex colIndexes = ColIndexFactory.create(mb.getNumColumns());
 					cmb = new CompressedMatrixBlock(mb.getNumRows(), mb.getNumColumns());
 					((CompressedMatrixBlock) cmb).allocateColGroup(ColGroupUncompressed.create(colIndexes, mb, false));
 

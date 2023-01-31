@@ -104,30 +104,75 @@ public interface IColIndex {
 	@Override
 	public int hashCode();
 
+	/**
+	 * This contains method is not strict since it only verifies one element is contained from each a and b.
+	 * 
+	 * @param a one array to contain at least one value from
+	 * @param b another array to contain at least one value from
+	 * @return if the other arrays contain values from this array
+	 */
 	public boolean contains(IColIndex a, IColIndex b);
 
+	/**
+	 * This contains both a and b ... it is strict because it verifies all cells.
+	 * 
+	 * Note it returns false if there are more elements in this than the sum of a and b.
+	 * 
+	 * @param a one other array to contain
+	 * @param b another array to contain
+	 * @return if this array contains both a and b
+	 */
+	public boolean containsStrict(IColIndex a, IColIndex b);
 
+	/**
+	 * combine the indexes of this colIndex with another, it is expected that all calls to this contains unique indexes,
+	 * and no copies of values.
+	 * 
+	 * @param other The other array
+	 * @return The combined array
+	 */
 	public IColIndex combine(IColIndex other);
 
-	// public boolean contains(ColIndexes a, ColIndexes b) {
-	// 	if(a == null || b == null)
-	// 		return false;
-	// 	int id = _indexes.findIndex(a._indexes.get(0));
-	// 	if(id >= 0)
-	// 		return true;
-	// 	id = _indexes.findIndex(b._indexes.get(0));
-	// 	return id >= 0;
-	// }
+	/**
+	 * Get if these columns are contiguous, meaning all indexes are integers at increments of 1.
+	 * 
+	 * ex:
+	 * 
+	 * 1,2,3,4,5,6 is contiguous
+	 * 
+	 * 1,3,4 is not.
+	 * 
+	 * 
+	 * @return If the Columns are contiguous.
+	 */
+	public boolean isContiguous();
 
+	/** A Class for slice results containing indexes for the slicing of dictionaries, and the resulting column index */
 	public static class SliceResult {
+		/** Start index to slice inside the dictionary */
 		public final int idStart;
+		/** End index (not inclusive) to slice inside the dictionary */
 		public final int idEnd;
+		/** The already modified column index to return on slices */
 		public final IColIndex ret;
 
 		protected SliceResult(int idStart, int idEnd, IColIndex ret) {
 			this.idStart = idStart;
 			this.idEnd = idEnd;
 			this.ret = ret;
+		}
+
+		@Override
+		public String toString() {
+			StringBuilder sb = new StringBuilder(50);
+			sb.append("SliceResult:[");
+			sb.append(idStart);
+			sb.append("-");
+			sb.append(idEnd);
+			sb.append(" ");
+			sb.append(ret);
+			sb.append("]");
+			return sb.toString();
 		}
 	}
 }

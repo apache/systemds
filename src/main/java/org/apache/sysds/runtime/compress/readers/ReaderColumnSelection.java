@@ -70,19 +70,12 @@ public abstract class ReaderColumnSelection {
 		return _rl;
 	}
 
-	// public static ReaderColumnSelection createReader(MatrixBlock rawBlock, int[] colIndices, boolean transposed){
-	// 	return createReader(rawBlock, ColIndexFactory.create(colIndices), transposed);
-	// }
-
 	public static ReaderColumnSelection createReader(MatrixBlock rawBlock, IColIndex colIndices, boolean transposed) {
 		final int rl = 0;
 		final int ru = transposed ? rawBlock.getNumColumns() : rawBlock.getNumRows();
 		return createReader(rawBlock, colIndices, transposed, rl, ru);
 	}
 
-	// public static ReaderColumnSelection createReader(MatrixBlock rawBlock, int[] colIndices, boolean transposed, int rl, int ru){
-	// 	return createReader(rawBlock, ColIndexFactory.create(colIndices), transposed, rl, ru);
-	// }
 
 	public static ReaderColumnSelection createReader(MatrixBlock rawBlock, IColIndex colIndices, boolean transposed, int rl,
 		int ru) {
@@ -106,7 +99,7 @@ public abstract class ReaderColumnSelection {
 
 	private static void checkInput(final MatrixBlock rawBlock, final IColIndex colIndices, final int rl, final int ru) {
 		if(colIndices.size() <= 1)
-			throw new DMLCompressionException("Column selection reader should not be done on single column groups");
+			throw new DMLCompressionException("Column selection reader should not be done on single column groups: " + colIndices);
 		else if(rawBlock.getSparseBlock() == null && rawBlock.getDenseBlock() == null)
 			throw new DMLCompressionException("Input Block was null");
 		else if(rl >= ru)

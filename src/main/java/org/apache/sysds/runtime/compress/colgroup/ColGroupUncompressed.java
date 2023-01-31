@@ -160,7 +160,8 @@ public class ColGroupUncompressed extends AColGroup {
 
 	@Override
 	public long estimateInMemorySize() {
-		return ColGroupSizes.estimateInMemorySizeUncompressed(_data.getNumRows(), getNumCols(), _data.getSparsity());
+		return ColGroupSizes.estimateInMemorySizeUncompressed(_data.getNumRows(), _colIndexes.isContiguous(),
+			getNumCols(), _data.getSparsity());
 	}
 
 	@Override

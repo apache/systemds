@@ -29,11 +29,12 @@ import org.apache.sysds.runtime.compress.CompressionSettingsBuilder;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupFactory;
+import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
+import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.compress.colgroup.scheme.ICLAScheme;
 import org.apache.sysds.runtime.compress.estim.ComEstExact;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfo;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
-import org.apache.sysds.runtime.compress.utils.Util;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.test.TestUtils;
 import org.junit.Test;
@@ -47,7 +48,7 @@ public class CLADDCSchemeTest {
 	public CLADDCSchemeTest() {
 		src = TestUtils.round(TestUtils.generateTestMatrixBlock(1023, 3, 0, 3, 0.9, 7));
 
-		int[] colIndexes = Util.genColsIndices(3);
+		IColIndex colIndexes =  ColIndexFactory.create(3);
 		CompressionSettings cs = new CompressionSettingsBuilder().setSamplingRatio(1.0)
 			.setValidCompressions(EnumSet.of(CompressionType.DDC)).create();
 		final CompressedSizeInfoColGroup cgi = new ComEstExact(src, cs).getColGroupInfo(colIndexes);
@@ -60,12 +61,12 @@ public class CLADDCSchemeTest {
 
 	@Test(expected = IllegalArgumentException.class)
 	public void testInvalidColumnApply() {
-		sh.encode(null, new int[] {1, 2});
+		sh.encode(null, ColIndexFactory.create(new int[] {1, 2}));
 	}
 
 	@Test(expected = IllegalArgumentException.class)
 	public void testInvalidColumnApply_2() {
-		sh.encode(null, new int[] {1, 2, 5, 5});
+		sh.encode(null,  ColIndexFactory.create(new int[] {1, 2, 5, 5}));
 	}
 
 	@Test(expected = NullPointerException.class)
@@ -86,37 +87,37 @@ public class CLADDCSchemeTest {
 	@Test
 	public void testEncodeSparseDifferentColumns() {
 		assertTrue(sh.encode(TestUtils.round(TestUtils.generateTestMatrixBlock(2, 100, 0, 3, 0.01, 7)),
-			new int[] {13, 16, 30}) != null);
+		ColIndexFactory.create(new int[] {13, 16, 30})) != null);
 	}
 
 	@Test
 	public void testEncodeSparseDifferentColumns2() {
 		assertTrue(sh.encode(TestUtils.round(TestUtils.generateTestMatrixBlock(2, 100, 0, 3, 0.01, 7)),
-			new int[] {15, 16, 99}) != null);
+		ColIndexFactory.create(new int[] {15, 16, 99})) != null);
 	}
 
 	@Test
 	public void testEncodeSparseDifferentColumns3() {
 		assertTrue(sh.encode(TestUtils.round(TestUtils.generateTestMatrixBlock(2, 100, 0, 3, 0.01, 7)),
-			new int[] {15, 86, 99}) != null);
+		ColIndexFactory.create(new int[] {15, 86, 99})) != null);
 	}
 
 	@Test
 	public void testEncodeDenseDifferentColumns() {
 		assertTrue(sh.encode(TestUtils.round(TestUtils.generateTestMatrixBlock(2, 100, 0, 3, 0.86, 7)),
-			new int[] {13, 16, 30}) != null);
+		ColIndexFactory.create(new int[] {13, 16, 30})) != null);
 	}
 
 	@Test
 	public void testEncodeDenseDifferentColumns2() {
 		assertTrue(sh.encode(TestUtils.round(TestUtils.generateTestMatrixBlock(2, 100, 0, 3, 0.86, 7)),
-			new int[] {15, 16, 99}) != null);
+		ColIndexFactory.create(new int[] {15, 16, 99})) != null);
 	}
 
 	@Test
 	public void testEncodeDenseDifferentColumns3() {
 		assertTrue(sh.encode(TestUtils.round(TestUtils.generateTestMatrixBlock(2, 100, 0, 3, 0.86, 7)),
-			new int[] {15, 86, 99}) != null);
+		ColIndexFactory.create(new int[] {15, 86, 99})) != null);
 	}
 
 	@Test

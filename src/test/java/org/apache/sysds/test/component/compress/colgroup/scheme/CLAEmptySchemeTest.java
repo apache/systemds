@@ -23,6 +23,7 @@ import static org.junit.Assert.assertTrue;
 
 import org.apache.sysds.runtime.compress.colgroup.AColGroup;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupEmpty;
+import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
 import org.apache.sysds.runtime.compress.colgroup.scheme.ICLAScheme;
 import org.apache.sysds.runtime.data.DenseBlockFP64;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -35,7 +36,7 @@ public class CLAEmptySchemeTest {
 
 	public CLAEmptySchemeTest() {
 		g = new ColGroupEmpty(//
-			new int[] {1, 3, 5} // Columns
+		ColIndexFactory.create(new int[] {1, 3, 5}) // Columns
 		);
 		sh = g.getCompressionScheme();
 	}
@@ -132,7 +133,7 @@ public class CLAEmptySchemeTest {
 			1.1, 0.2, 1.2, 0.2, 1.3, //
 			1.1, 0.2, 1.2, 0.2, 1.3, //
 			1.1, 0.2, 1.2, 0.2, 1.3, //
-		}), new int[] {0, 2, 4}// other columns
+		}), ColIndexFactory.create( new int[] {0, 2, 4})// other columns
 		) == null);
 	}
 
@@ -143,7 +144,7 @@ public class CLAEmptySchemeTest {
 			0.0, 1.1, 0.0, 0.2, 0.0, 1.2, 0.2, 1.3, //
 			0.0, 1.1, 0.0, 0.2, 0.0, 1.2, 0.2, 1.3, //
 			0.0, 1.1, 0.0, 0.2, 0.0, 1.2, 0.2, 1.3, //
-		}), new int[] {0, 2, 4}// other columns
+		}),  ColIndexFactory.create(new int[] {0, 2, 4})// other columns
 		) != null);
 	}
 
@@ -154,18 +155,18 @@ public class CLAEmptySchemeTest {
 			1.1, 0.2, 1.2, 0.2, 1.3, //
 			1.1, 0.2, 1.4, 0.2, 1.3, //
 			1.1, 0.2, 1.2, 0.2, 1.3, //
-		}), new int[] {0, 2, 4}// other columns
+		}),  ColIndexFactory.create(new int[] {0, 2, 4})// other columns
 		) == null);
 	}
 
 	@Test(expected = IllegalArgumentException.class)
 	public void testInvalidArgument_1() {
-		sh.encode(null, new int[] {0, 2, 4, 5});
+		sh.encode(null, ColIndexFactory.create( new int[] {0, 2, 4, 5}));
 	}
 
 	@Test(expected = IllegalArgumentException.class)
 	public void testInvalidArgument_2() {
-		sh.encode(null, new int[] {0, 2});
+		sh.encode(null, ColIndexFactory.create( new int[] {0, 2}));
 	}
 
 	@Test
@@ -195,7 +196,7 @@ public class CLAEmptySchemeTest {
 		MatrixBlock empty = new MatrixBlock(4, 1000, 0.0);
 		mb = mb.append(empty);
 
-		assertTrue(sh.encode(mb, new int[] {100, 102, 999}) != null);
+		assertTrue(sh.encode(mb,  ColIndexFactory.create(new int[] {100, 102, 999})) != null);
 	}
 
 	@Test
@@ -210,7 +211,7 @@ public class CLAEmptySchemeTest {
 		MatrixBlock empty = new MatrixBlock(4, 1000, 0.0);
 		mb = mb.append(empty);
 
-		assertTrue(sh.encode(mb, new int[] {1, 4, 5}) == null);
+		assertTrue(sh.encode(mb,  ColIndexFactory.create(new int[] {1, 4, 5})) == null);
 	}
 
 	@Test
@@ -240,7 +241,7 @@ public class CLAEmptySchemeTest {
 		MatrixBlock empty = new MatrixBlock(4, 1000, 0.0);
 		mb = empty.append(mb);
 
-		assertTrue(sh.encode(mb, new int[] {1001, 1003, 1005}) != null);
+		assertTrue(sh.encode(mb,  ColIndexFactory.create(new int[] {1001, 1003, 1005})) != null);
 	}
 
 	@Test
@@ -255,7 +256,7 @@ public class CLAEmptySchemeTest {
 		MatrixBlock empty = new MatrixBlock(4, 1000, 0.0);
 		MatrixBlock comb = empty.append(mb).append(mb);
 
-		assertTrue(sh.encode(comb, new int[] {1001, 1003, 1005}) != null);
+		assertTrue(sh.encode(comb,  ColIndexFactory.create(new int[] {1001, 1003, 1005})) != null);
 	}
 
 	@Test
@@ -270,7 +271,7 @@ public class CLAEmptySchemeTest {
 		MatrixBlock empty = new MatrixBlock(4, 1000, 0.0);
 		MatrixBlock comb = empty.append(mb).append(mb);
 
-		assertTrue(sh.encode(comb, new int[] {1001, 1003, 1005}) != null);
+		assertTrue(sh.encode(comb,  ColIndexFactory.create(new int[] {1001, 1003, 1005})) != null);
 	}
 
 	@Test
@@ -287,7 +288,7 @@ public class CLAEmptySchemeTest {
 		MatrixBlock emptyRow = new MatrixBlock(1, 1006, 0.0);
 		mb = mb.append(emptyRow, false);
 
-		assertTrue(sh.encode(mb, new int[] {44, 45, 999}) != null);
+		assertTrue(sh.encode(mb,  ColIndexFactory.create(new int[] {44, 45, 999})) != null);
 	}
 
 	@Test
@@ -299,7 +300,7 @@ public class CLAEmptySchemeTest {
 	@Test
 	public void testEmptyOtherColumns() {
 		MatrixBlock empty = new MatrixBlock(4, 1000, 0.0);
-		assertTrue(sh.encode(empty, new int[] {33, 34, 99}) != null);
+		assertTrue(sh.encode(empty,  ColIndexFactory.create(new int[] {33, 34, 99})) != null);
 	}
 
 	@Test

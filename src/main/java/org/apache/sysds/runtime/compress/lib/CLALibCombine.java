@@ -31,6 +31,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
+import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IIterate;
@@ -93,10 +94,15 @@ public class CLALibCombine {
 			}
 			final List<AColGroup> gs = cmb.getColGroups();
 			for(AColGroup g : gs) {
-				final IIterate cols = g.getColIndices().iterator();
-				final CompressionType t = g.getCompType();
-				while(cols.hasNext())
-					colTypes[cols.next() + bc * blen] = t;
+				try{
+					final IIterate cols = g.getColIndices().iterator();
+					final CompressionType t = g.getCompType();
+					while(cols.hasNext())
+						colTypes[cols.next() + bc * blen] = t;
+				}
+				catch(Exception e){
+					throw new DMLCompressionException("Failed combining: " + g.toString());
+				}
 			}
 		}
 

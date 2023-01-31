@@ -23,9 +23,9 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-import org.apache.commons.lang.NotImplementedException;
+import org.apache.sysds.runtime.compress.utils.IntArrayList;
 
-public class RangeIndex implements IColIndex {
+public class RangeIndex extends AColIndex {
 	private final int l;
 	private final int u; // not inclusive
 
@@ -74,6 +74,10 @@ public class RangeIndex implements IColIndex {
 
 	@Override
 	public long estimateInMemorySize() {
+		return estimateInMemorySizeStatic();
+	}
+
+	public static long estimateInMemorySizeStatic() {
 		return 16 + 8;
 	}
 
@@ -84,42 +88,81 @@ public class RangeIndex implements IColIndex {
 
 	@Override
 	public int findIndex(int i) {
-		if(i >= l && i < u)
+		if(i < l)
+			return -1;
+		else if(i < u)
 			return i - l;
 		else
-			return -1;
+			return -1 * u - 1 + l;
 	}
 
 	@Override
 	public SliceResult slice(int l, int u) {
-		throw new NotImplementedException();
-	}
 
-	@Override
-	public boolean equals(Object other) {
-		throw new NotImplementedException();
+		if(u <= this.l)
+			return new SliceResult(0, 0, null);
+		else if(l >= this.u)
+			return new SliceResult(0, 0, null);
+		else if(l <= this.l && u >= this.u)
+			return new SliceResult(0, size(), new RangeIndex(this.l - l, this.u - l));
+		else {
+			int offL = Math.max(l, this.l) - this.l;
+			int offR = Math.min(u, this.u) - this.l;
+			return new SliceResult(offL, offR, new RangeIndex(Math.max(l, this.l) - l, Math.min(u, this.u) - l));
+		}
 	}
 
 	@Override
 	public boolean equals(IColIndex other) {
-		throw new NotImplementedException();
-	}
-
-	@Override
-	public int hashCode() {
-		throw new NotImplementedException();
-	}
-
-	@Override
-	public boolean contains(IColIndex a, IColIndex b) {
-		throw new NotImplementedException();
+		if(other instanceof RangeIndex) {
+			RangeIndex ot = (RangeIndex) other;
+			return ot.l == l && ot.u == u;
+		}
+		else
+			return other.equals(this);
 	}
 
 	@Override
 	public IColIndex combine(IColIndex other) {
-		throw new NotImplementedException();
+		if(other.size() == 1) {
+			int v = other.get(0);
+			if(v + 1 == l)
+				return new RangeIndex(l - 1, u);
+			else if(v == u)
+				return new RangeIndex(l, u + 1);
+		}
+
+		final int sr = other.size();
+		final int sl = size();
+		final int[] ret = new int[sr + sl];
+
+		int pl = 0;
+		int pr = 0;
+		int i = 0;
+		while(pl < sl && pr < sr) {
+			final int vl = get(pl);
+			final int vr = other.get(pr);
+			if(vl < vr) {
+				ret[i++] = vl;
+				pl++;
+			}
+			else {
+				ret[i++] = vr;
+				pr++;
+			}
+		}
+		while(pl < sl)
+			ret[i++] = get(pl++);
+		while(pr < sr)
+			ret[i++] = other.get(pr++);
+		return ColIndexFactory.create(ret);
 	}
-	
+
+	@Override
+	public boolean isContiguous(){
+		return true;
+	}
+
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
@@ -136,6 +179,13 @@ public class RangeIndex implements IColIndex {
 		int len = indexes.length;
 		int first = indexes[0];
 		int last = indexes[indexes.length - 1];
+		return last - first + 1 == len;
+	}
+
+	protected static boolean isValidRange(IntArrayList indexes) {
+		int len = indexes.size();
+		int first = indexes.get(0);
+		int last = indexes.get(indexes.size() - 1);
 		return last - first + 1 == len;
 	}
 

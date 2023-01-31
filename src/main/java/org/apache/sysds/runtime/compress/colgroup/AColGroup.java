@@ -173,7 +173,6 @@ public abstract class AColGroup implements Serializable {
 	public long getExactSizeOnDisk() {
 		long ret = 0;
 		ret += 1; // type info (colGroup ordinal)
-		ret += 4; // Number of columns
 		ret += _colIndexes.getExactSizeOnDisk();
 		return ret;
 	}

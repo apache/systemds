@@ -21,9 +21,10 @@ package org.apache.sysds.runtime.compress.colgroup.indexes;
 
 import java.io.DataInput;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.List;
 
-import org.apache.commons.lang.NotImplementedException;
+import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex.ColIndexType;
@@ -48,6 +49,8 @@ public interface ColIndexFactory {
 	}
 
 	public static IColIndex create(int[] indexes) {
+		if(indexes.length <= 0)
+			throw new DMLRuntimeException("Invalid length to create index from : " + indexes.length);
 		if(indexes.length == 1)
 			return new SingleIndex(indexes[0]);
 		else if(indexes.length == 2)
@@ -59,11 +62,23 @@ public interface ColIndexFactory {
 	}
 
 	public static IColIndex create(IntArrayList indexes) {
-		throw new NotImplementedException();
+		final int s = indexes.size();
+		if(s <= 0)
+			throw new DMLRuntimeException("Invalid length to create index from " + indexes);
+		else if(s == 1)
+			return new SingleIndex(indexes.get(0));
+		else if(s == 2)
+			return new TwoIndex(indexes.get(0), indexes.get(1));
+		else if(RangeIndex.isValidRange(indexes))
+			return new RangeIndex(indexes.get(0), indexes.get(0) + s);
+		else
+			return new ArrayIndex(indexes.extractValues(true));
 	}
 
 	public static IColIndex create(int l, int u) {
-		if(u - 1 == l)
+		if(u - l <= 0)
+			throw new DMLRuntimeException("Invalid range: " + l + " " + u);
+		else if(u - 1 == l)
 			return new SingleIndex(l);
 		else if(u - 2 == l)
 			return new TwoIndex(l, l + 1);
@@ -72,7 +87,9 @@ public interface ColIndexFactory {
 	}
 
 	public static IColIndex create(int nCol) {
-		if(nCol == 1)
+		if(nCol <= 0)
+			throw new DMLRuntimeException("Invalid size of index columns must be above 0");
+		else if(nCol == 1)
 			return new SingleIndex(0);
 		else if(nCol == 2)
 			return new TwoIndex(0, 1);
@@ -80,21 +97,33 @@ public interface ColIndexFactory {
 			return new RangeIndex(nCol);
 	}
 
+	public static long estimateMemoryCost(int nCol, boolean contiguous){
+		if(nCol == 1)
+			return SingleIndex.estimateInMemorySizeStatic();
+		else if (nCol == 2)
+			return TwoIndex.estimateInMemorySizeStatic();
+		else if(contiguous)
+			return RangeIndex.estimateInMemorySizeStatic();
+		else
+			return ArrayIndex.estimateInMemorySizeStatic(nCol);
+	}
+
 	public static IColIndex combine(List<AColGroup> gs) {
-		throw new NotImplementedException();
-		// int numCols = 0;
-		// for(AColGroup g : gs)
-		// numCols += g.getNumCols();
+		int numCols = 0;
+		for(AColGroup g : gs)
+			numCols += g.getNumCols();
 
-		// int[] resCols = new int[numCols];
+		int[] resCols = new int[numCols];
 
-		// int index = 0;
-		// for(AColGroup g : gs)
-		// for(int c : g.getColIndices())
-		// resCols[index++] = c;
+		int index = 0;
+		for(AColGroup g : gs) {
+			final IIterate it = g.getColIndices().iterator();
+			while(it.hasNext())
+				resCols[index++] = it.next();
+		}
 
-		// Arrays.sort(resCols);
-		// return resCols;
+		Arrays.sort(resCols);
+		return create(resCols);
 	}
 
 }

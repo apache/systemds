@@ -30,8 +30,8 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
-import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
+import org.apache.sysds.runtime.compress.colgroup.indexes.SingleIndex;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.Timing;
 import org.apache.sysds.runtime.matrix.data.LibMatrixReorg;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -234,7 +234,7 @@ public abstract class AComEst {
 		if(!_cs.transposed && !_data.isEmpty() && _data.isInSparseFormat())
 			nnzCols = LibMatrixReorg.countNnzPerColumn(_data);
 		for(int col = 0; col < clen; col++)
-			ret.add(getColGroupInfo(ColIndexFactory.create(col)));
+			ret.add(getColGroupInfo(new SingleIndex(col)));
 		return ret;
 	}
 
@@ -285,7 +285,7 @@ public abstract class AComEst {
 		public Object call() {
 			try {
 				for(int c = _cs; c < _ce; c++)
-					_res[c] = getColGroupInfo(ColIndexFactory.create(c));
+					_res[c] = getColGroupInfo(new SingleIndex(c));
 				return null;
 			}
 			catch(Exception e) {

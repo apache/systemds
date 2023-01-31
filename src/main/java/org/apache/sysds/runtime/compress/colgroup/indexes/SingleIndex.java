@@ -22,9 +22,7 @@ package org.apache.sysds.runtime.compress.colgroup.indexes;
 import java.io.DataOutput;
 import java.io.IOException;
 
-import org.apache.commons.lang.NotImplementedException;
-
-public class SingleIndex implements IColIndex {
+public class SingleIndex extends AColIndex {
 	private final int idx;
 
 	public SingleIndex(int idx) {
@@ -63,46 +61,55 @@ public class SingleIndex implements IColIndex {
 
 	@Override
 	public long estimateInMemorySize() {
+		return estimateInMemorySizeStatic(); 
+	}
+
+	public static long estimateInMemorySizeStatic(){
 		return 16 + 4 + 4; // object, int, and padding
 	}
 
 	@Override
-	public int findIndex(int i){
-		return i == idx ? 0 : -1;
+	public int findIndex(int i) {
+		if(i < idx)
+			return -1;
+		else if(i == idx)
+			return 0;
+		else
+			return -2;
 	}
 
 	@Override
 	public SliceResult slice(int l, int u) {
-		throw new NotImplementedException();
-	}
-
-	@Override
-	public boolean equals(Object other) {
-		throw new NotImplementedException();
+		return (l <= idx && u > idx) //
+			? l == 0 ? new SliceResult(0, 1, this) : new SliceResult(0, 1, new SingleIndex(idx - l)) //
+			: new SliceResult(0, 0, null);
 	}
 
 	@Override
 	public boolean equals(IColIndex other) {
-		throw new NotImplementedException();
-	}
-
-	@Override
-	public int hashCode() {
-		throw new NotImplementedException();
-	}
-
-	@Override
-	public boolean contains(IColIndex a, IColIndex b) {
-		throw new NotImplementedException();
+		return other.size() == 1 && other.get(0) == idx;
 	}
 
 	@Override
 	public IColIndex combine(IColIndex other) {
-		throw new NotImplementedException();
+		if(other instanceof SingleIndex) {
+			int otherV = other.get(0);
+			if(otherV < idx)
+				return new TwoIndex(otherV, idx);
+			else
+				return new TwoIndex(idx, otherV);
+		}
+		else
+			return other.combine(this);
 	}
 
 	@Override
-	public String toString(){
+	public boolean isContiguous(){
+		return true;
+	}
+
+	@Override
+	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		sb.append(this.getClass().getSimpleName());
 		sb.append(" [");

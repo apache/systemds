@@ -34,11 +34,15 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Random;
 
+import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.compress.colgroup.indexes.ArrayIndex;
 import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
+import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex.SliceResult;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IIterate;
 import org.apache.sysds.runtime.compress.colgroup.indexes.SingleIndex;
 import org.apache.sysds.runtime.compress.colgroup.indexes.TwoIndex;
+import org.apache.sysds.runtime.compress.utils.IntArrayList;
 import org.apache.sysds.utils.MemoryEstimates;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -93,6 +97,19 @@ public class IndexesTest {
 				new int[] {4, 5, 6, 7, 8, 9}, //
 				ColIndexFactory.create(4, 10)});
 
+				tests.add(createWithArray(1, 323));
+			tests.add(createWithArray(2, 1414));
+			tests.add(createWithArray(144, 32));
+			tests.add(createWithArray(13, 23));
+			tests.add(createWithArray(145, 14));
+			tests.add(createWithArray(23, 51515));
+			tests.add(createWithArray(66, 132));
+			tests.add(createRangeWithArray(66, 132));
+			tests.add(createRangeWithArray(32, 132));
+			tests.add(createRangeWithArray(13, 132));
+			tests.add(createRangeWithArray(4, 132));
+			tests.add(createRangeWithArray(2, 132));
+			tests.add(createRangeWithArray(1, 132));
 		}
 		catch(Exception e) {
 			e.printStackTrace();
@@ -166,7 +183,6 @@ public class IndexesTest {
 		assertEquals(expected.length, actual.size());
 	}
 
-
 	@Test
 	public void iterator() {
 		compare(expected, actual.iterator());
@@ -185,6 +201,100 @@ public class IndexesTest {
 	@Test
 	public void shift2() {
 		shift(1342);
+	}
+
+	@Test
+	public void slice() {
+		SliceResult sr = actual.slice(-10, expected[expected.length - 1] + 1);
+		String errStr = actual.toString();
+		assertEquals(errStr, 0, sr.idStart);
+		assertEquals(errStr, expected.length, sr.idEnd);
+		assertEquals(errStr, expected[0] + 10, sr.ret.get(0));
+	}
+
+	@Test
+	public void slice_1() {
+		if(expected[0] > 1) {
+
+			SliceResult sr = actual.slice(1, expected[expected.length - 1] + 1);
+			String errStr = actual.toString();
+			assertEquals(errStr, 0, sr.idStart);
+			assertEquals(errStr, expected.length, sr.idEnd);
+			assertEquals(errStr, expected[0] - 1, sr.ret.get(0));
+		}
+	}
+
+	@Test
+	public void slice_2() {
+		if(expected[0] <= 1) {
+
+			SliceResult sr = actual.slice(1, expected[expected.length - 1] + 1);
+			String errStr = actual.toString();
+			if(sr.ret != null) {
+				assertEquals(errStr, 1, sr.idStart);
+				assertEquals(errStr, expected.length, sr.idEnd);
+				assertEquals(errStr, expected[1] - 1, sr.ret.get(0));
+			}
+		}
+	}
+
+	@Test
+	public void equals() {
+		assertEquals(actual, ColIndexFactory.create(expected));
+	}
+
+	@Test
+	public void combineSingleOneAbove() {
+		IColIndex b = new SingleIndex(expected[expected.length - 1] + 1);
+		IColIndex c = actual.combine(b);
+		assertTrue(c.containsStrict(actual, b));
+		assertTrue(c.containsStrict(b, actual));
+	}
+
+	@Test
+	public void combineSingleOneBellow() {
+		IColIndex b = new SingleIndex(expected[0] - 1);
+		IColIndex c = actual.combine(b);
+		assertTrue(c.containsStrict(actual, b));
+		assertTrue(c.containsStrict(b, actual));
+	}
+
+	@Test
+	public void combineSingleHighAbove() {
+		IColIndex b = new SingleIndex(expected[expected.length - 1] + 1342);
+		IColIndex c = actual.combine(b);
+		assertTrue(c.containsStrict(actual, b));
+		assertTrue(c.containsStrict(b, actual));
+	}
+
+	@Test
+	public void combineTwoAbove() {
+		int oa = expected[expected.length - 1] + 1;
+		IColIndex b = new TwoIndex(oa, oa + 1);
+		IColIndex c = actual.combine(b);
+		assertTrue(c.containsStrict(actual, b));
+		assertTrue(c.containsStrict(b, actual));
+	}
+
+	@Test
+	public void combineTwoAround() {
+		IColIndex b = new TwoIndex(expected[0] - 1, expected[expected.length - 1] + 1);
+		IColIndex c = actual.combine(b);
+		assertTrue(c.containsStrict(actual, b));
+		assertTrue(c.containsStrict(b, actual));
+	}
+
+	@Test
+	public void combineTwoBellow() {
+		IColIndex b = new TwoIndex(expected[0] - 2, expected[0] - 1);
+		IColIndex c = actual.combine(b);
+		assertTrue(c.containsStrict(actual, b));
+		assertTrue(c.containsStrict(b, actual));
+	}
+
+	@Test
+	public void hashCodeEquals() {
+		assertEquals(actual.hashCode(), ColIndexFactory.create(expected).hashCode());
 	}
 
 	@Test
@@ -230,5 +340,31 @@ public class IndexesTest {
 			cols[i] = cols[i - 1] + r.nextInt(1000) + 1;
 		}
 		return new Object[] {cols, ColIndexFactory.create(cols)};
+	}
+
+	private static Object[] createWithArray(int size, int seed) {
+		IntArrayList cols = new IntArrayList();
+		Random r = new Random(seed);
+		cols.appendValue(r.nextInt(1000) + 1);
+		for(int i = 1; i < size; i++) {
+			int prev = cols.get(i - 1);
+			cols.appendValue(r.nextInt(1000) + 1 + prev);
+		}
+		return new Object[] {cols.extractValues(true), ColIndexFactory.create(cols)};
+	}
+
+	private static Object[] createRangeWithArray(int size, int seed) {
+		IntArrayList cols = new IntArrayList();
+		Random r = new Random(seed);
+		cols.appendValue(r.nextInt(1000) + 1);
+		for(int i = 1; i < size; i++) {
+			int prev = cols.get(i - 1);
+			cols.appendValue(1 + prev);
+		}
+		IColIndex ret = ColIndexFactory.create(cols);
+		if(! (ret instanceof ArrayIndex))
+			return new Object[] {cols.extractValues(true), ret};
+		else
+			throw new DMLRuntimeException("Invalid construction of range array");
 	}
 }

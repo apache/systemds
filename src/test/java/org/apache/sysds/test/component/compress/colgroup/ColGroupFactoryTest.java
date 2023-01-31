@@ -19,7 +19,7 @@
 
 package org.apache.sysds.test.component.compress.colgroup;
 
-import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 import java.util.ArrayList;
@@ -31,13 +31,14 @@ import org.apache.sysds.runtime.compress.CompressionSettingsBuilder;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupFactory;
+import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
+import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.compress.cost.ACostEstimate;
 import org.apache.sysds.runtime.compress.cost.ComputationCostEstimator;
 import org.apache.sysds.runtime.compress.cost.DistinctCostEstimator;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfo;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
 import org.apache.sysds.runtime.compress.estim.EstimationFactors;
-import org.apache.sysds.runtime.compress.utils.Util;
 import org.apache.sysds.runtime.data.DenseBlockFP64;
 import org.apache.sysds.runtime.matrix.data.LibMatrixReorg;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -59,7 +60,7 @@ public class ColGroupFactoryTest {
 	private final CompressionType ct;
 	private final List<AColGroup> g;
 
-	private final int[] cols;
+	private final IColIndex cols;
 
 	@Parameters
 	public static Collection<Object[]> data() {
@@ -158,9 +159,9 @@ public class ColGroupFactoryTest {
 		ACostEstimate cce = new ComputationCostEstimator(2, 2, 2, 2, 2, 2, 2, 2, true);
 		ACostEstimate dce = new DistinctCostEstimator(mb.getNumRows(), csb.create(), mb.getSparsity());
 
-		int[] cols = Util.genColsIndices(nCols);
-		int[] cols2 = Util.genColsIndices(1, nCols);
-		int[] cols3 = new int[] {nCols - 1};
+		IColIndex cols =  ColIndexFactory.create(nCols);
+		IColIndex cols2 =  ColIndexFactory.create(1, nCols);
+		IColIndex cols3 =  ColIndexFactory.create(new int[] {nCols - 1});
 		try {
 			for(CompressionType ct : CompressionType.values()) {
 				if(ct == CompressionType.DeltaDDC)
@@ -183,7 +184,7 @@ public class ColGroupFactoryTest {
 	}
 
 	public ColGroupFactoryTest(MatrixBlock mb, MatrixBlock mbt, ACostEstimate ce, CompressionSettingsBuilder csb,
-		CompressionType ct, int[] cols) {
+		CompressionType ct, IColIndex cols) {
 		this.mb = mb;
 		this.nRow = mb.getNumRows();
 		this.nCol = mb.getNumColumns();
@@ -249,7 +250,7 @@ public class ColGroupFactoryTest {
 	}
 
 	private void compare(AColGroup gtt, AColGroup gg) {
-		assertArrayEquals(gtt.getColIndices(), gg.getColIndices());
+		assertEquals(gtt.getColIndices(), gg.getColIndices());
 	}
 
 	private List<AColGroup> compST() {

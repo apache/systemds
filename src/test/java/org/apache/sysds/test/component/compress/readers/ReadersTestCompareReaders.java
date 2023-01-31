@@ -26,6 +26,8 @@ import java.util.Collection;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
+import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.compress.readers.ReaderColumnSelection;
 import org.apache.sysds.runtime.compress.readers.ReaderColumnSelectionDenseMultiBlock;
 import org.apache.sysds.runtime.compress.readers.ReaderColumnSelectionDenseMultiBlockTransposed;
@@ -56,7 +58,7 @@ public class ReadersTestCompareReaders {
 	public final MatrixBlock mMockLarge;
 	public final MatrixBlock mMockLargeTransposed;
 
-	public final int[] cols;
+	public final IColIndex cols;
 
 	@Parameters
 	public static Collection<Object[]> data() {
@@ -327,9 +329,9 @@ public class ReadersTestCompareReaders {
 	@Test
 	public void testCompareDenseTransposedSparseBasedOnValueOffsets() {
 		final SparseBlock sb = tsm.getSparseBlock();
-		final int[] idx = sb.indexes(cols[0]);
-		final int apos = sb.pos(cols[0]);
-		final int alen = sb.size(cols[0]) + apos;
+		final int[] idx = sb.indexes(cols.get(0));
+		final int apos = sb.pos(cols.get(0));
+		final int alen = sb.size(cols.get(0)) + apos;
 		if(alen - apos > 2) {
 			final int end = idx[idx.length - 1];
 			final int start = Math.max(0, end - 2);
@@ -344,9 +346,9 @@ public class ReadersTestCompareReaders {
 	@Test
 	public void testCompareDenseTransposedSparseBasedOnValueOffsetsTwoLast() {
 		SparseBlock sb = tsm.getSparseBlock();
-		final int[] idx = sb.indexes(cols[0]);
-		final int apos = sb.pos(cols[0]);
-		final int alen = sb.size(cols[0]) + apos;
+		final int[] idx = sb.indexes(cols.get(0));
+		final int apos = sb.pos(cols.get(0));
+		final int alen = sb.size(cols.get(0)) + apos;
 		if(alen - apos > 2) {
 
 			final int end = idx[alen - 1];
@@ -360,9 +362,9 @@ public class ReadersTestCompareReaders {
 	@Test
 	public void testCompareDenseTransposedSparseBasedOnValueOffsetsOnLast() {
 		SparseBlock sb = tsm.getSparseBlock();
-		final int[] idx = sb.indexes(cols[0]);
-		final int apos = sb.pos(cols[0]);
-		final int alen = sb.size(cols[0]) + apos;
+		final int[] idx = sb.indexes(cols.get(0));
+		final int apos = sb.pos(cols.get(0));
+		final int alen = sb.size(cols.get(0)) + apos;
 		if(alen - apos > 2) {
 
 			final int end = tsm.getNumColumns();
@@ -376,9 +378,9 @@ public class ReadersTestCompareReaders {
 	@Test
 	public void testCompareDenseTransposedSparseBasedOnValueOffsetsTwoFirst() {
 		SparseBlock sb = tsm.getSparseBlock();
-		final int[] idx = sb.indexes(cols[0]);
-		final int apos = sb.pos(cols[0]);
-		final int alen = sb.size(cols[0]) + apos;
+		final int[] idx = sb.indexes(cols.get(0));
+		final int apos = sb.pos(cols.get(0));
+		final int alen = sb.size(cols.get(0)) + apos;
 		if(alen - apos > 2) {
 
 			final int start = idx[apos];
@@ -561,30 +563,26 @@ public class ReadersTestCompareReaders {
 		}
 	}
 
-	private int[] createColIdx(int start, int end) {
-		int[] subCols = new int[end - start];
-		for(int i = start; i < end; i++)
-			subCols[i - start] = i;
-		return subCols;
+	private IColIndex createColIdx(int start, int end) {
+		return ColIndexFactory.create(start, end);
 	}
 
-	private int[] createColIdx(int start, int end, int skip) {
+	private IColIndex createColIdx(int start, int end, int skip) {
 		int[] subCols = new int[(end - start) / skip];
 		for(int i = start; i < end; i += skip)
 			subCols[(i - start) / skip] = i;
-		return subCols;
+		return ColIndexFactory.create(subCols);
 	}
 
-	public static MatrixBlock createMock(MatrixBlock d){
-		DenseBlockFP64 a = new DenseBlockFP64Mock(new int[]{d.getNumRows(), d.getNumColumns()}, d.getDenseBlockValues());
-		MatrixBlock b =  new MatrixBlock(d.getNumRows(), d.getNumColumns(), a);
+	public static MatrixBlock createMock(MatrixBlock d) {
+		DenseBlockFP64 a = new DenseBlockFP64Mock(new int[] {d.getNumRows(), d.getNumColumns()}, d.getDenseBlockValues());
+		MatrixBlock b = new MatrixBlock(d.getNumRows(), d.getNumColumns(), a);
 		b.setNonZeros(d.getNumRows() * d.getNumColumns());
 		return b;
 	}
 
 	protected static class DenseBlockFP64Mock extends DenseBlockFP64 {
 		private static final long serialVersionUID = -3601232958390554672L;
-
 
 		public DenseBlockFP64Mock(int[] dims, double[] data) {
 			super(dims, data);

@@ -611,7 +611,7 @@ public class ColGroupLinearFunctional extends AColGroupCompressed {
 
 	@Override
 	public long estimateInMemorySize() {
-		return ColGroupSizes.estimateInMemorySizeLinearFunctional(getNumCols());
+		return ColGroupSizes.estimateInMemorySizeLinearFunctional(getNumCols(), _colIndexes.isContiguous());
 	}
 
 	@Override

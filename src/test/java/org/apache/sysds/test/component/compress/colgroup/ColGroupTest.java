@@ -46,13 +46,14 @@ import org.apache.sysds.runtime.compress.colgroup.ColGroupFactory;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupRLE;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupSDCSingleZeros;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupUncompressed;
+import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
+import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.compress.colgroup.scheme.ICLAScheme;
 import org.apache.sysds.runtime.compress.cost.ComputationCostEstimator;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfo;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
 import org.apache.sysds.runtime.compress.estim.EstimationFactors;
 import org.apache.sysds.runtime.compress.lib.CLALibLeftMultBy;
-import org.apache.sysds.runtime.compress.utils.Util;
 import org.apache.sysds.runtime.data.DenseBlockFP64;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.functionobjects.Builtin.BuiltinCode;
@@ -91,7 +92,7 @@ public class ColGroupTest extends ColGroupBase {
 
 	@Test
 	public void getColIndices() {
-		assertTrue(Arrays.equals(base.getColIndices(), other.getColIndices()));
+		assertTrue(base.getColIndices().equals(other.getColIndices()));
 	}
 
 	@Test
@@ -499,8 +500,8 @@ public class ColGroupTest extends ColGroupBase {
 	@Test
 	public void sliceColumnContained() {
 		try {
-			final AColGroup bs = base.sliceColumn(base.getColIndices()[0]);
-			final AColGroup os = other.sliceColumn(other.getColIndices()[0]);
+			final AColGroup bs = base.sliceColumn(base.getColIndices().get(0));
+			final AColGroup os = other.sliceColumn(other.getColIndices().get(0));
 			if(bs == os) // if null return
 				return;
 			compareDecompressSubPartOffsetSparse(bs, os);
@@ -1812,7 +1813,7 @@ public class ColGroupTest extends ColGroupBase {
 
 	public void rightMultWithAllCols(MatrixBlock right) {
 		try {
-			final int[] cols = Util.genColsIndices(right.getNumColumns());
+			final IColIndex cols =  ColIndexFactory.create(right.getNumColumns());
 			AColGroup b = base.rightMultByMatrix(right, cols);
 			AColGroup o = other.rightMultByMatrix(right, cols);
 			if(!(b == null && o == null))
@@ -1928,7 +1929,7 @@ public class ColGroupTest extends ColGroupBase {
 	protected static AColGroup getColGroup(MatrixBlock mbt, CompressionType ct, int nRow) {
 		try {
 
-			int[] cols = Util.genColsIndices(mbt.getNumRows());
+			final IColIndex cols =  ColIndexFactory.create(mbt.getNumRows());
 			final List<CompressedSizeInfoColGroup> es = new ArrayList<>();
 			final EstimationFactors f = new EstimationFactors(nRow, nRow, mbt.getSparsity());
 			es.add(new CompressedSizeInfoColGroup(cols, f, 321452, ct));
@@ -1978,8 +1979,8 @@ public class ColGroupTest extends ColGroupBase {
 	}
 
 	protected MatrixBlock allocateLMMOut(AColGroup g) {
-		final int[] gci = g.getColIndices();
-		final int maxLeft = gci[gci.length - 1] + 1;
+		final IColIndex gci = g.getColIndices();
+		final int maxLeft = gci.get(gci.size() - 1) + 1;
 
 		MatrixBlock ret = new MatrixBlock(maxLeft, maxCol, false);
 		ret.allocateDenseBlock();
@@ -2000,7 +2001,7 @@ public class ColGroupTest extends ColGroupBase {
 
 	@Test(expected = DMLCompressionException.class)
 	public void tsmmEmpty() {
-		tsmmColGroup(new ColGroupEmpty(new int[] {1, 3, 10}));
+		tsmmColGroup(new ColGroupEmpty( ColIndexFactory.create(new int[] {1, 3, 10})));
 		throw new DMLCompressionException("The output is verified correct just ignore not implemented");
 	}
 
@@ -2077,8 +2078,8 @@ public class ColGroupTest extends ColGroupBase {
 	}
 
 	protected MatrixBlock allocateTSMMOut(AColGroup g) {
-		final int[] gci = g.getColIndices();
-		final int max = Math.max(gci[gci.length - 1] + 1, maxCol);
+		final IColIndex gci = g.getColIndices();
+		final int max = Math.max(gci.get(gci.size() - 1) + 1, maxCol);
 
 		MatrixBlock ret = new MatrixBlock(max, max, false);
 		ret.allocateDenseBlock();

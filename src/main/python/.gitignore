@@ -22,3 +22,5 @@ tests/list/tmp
 tests/algorithms/readwrite/
 tests/examples/tutorials/model
 tests/lineage/temp
+
+python_venv/

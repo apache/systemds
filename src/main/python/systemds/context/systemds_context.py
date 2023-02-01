@@ -175,7 +175,7 @@ class SystemDSContext(object):
                     [os.path.join(lib_cp, '*'), systemds_cp])
             else:
                 raise ValueError(
-                    "Invalid setup at SYSTEMDS_ROOT env variable path")
+                    "Invalid setup at SYSTEMDS_ROOT env variable path " + lib_cp)
         else:
             lib1 = os.path.join(root, "lib", "*")
             lib2 = os.path.join(root, "lib")

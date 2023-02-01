@@ -24,7 +24,7 @@ from generator.generator import (
     PythonAPIFunctionGenerator,
     PythonAPIDocumentationGenerator
 )
-from generator.parser import FunctionParser
+from generator.dml_parser import FunctionParser
 
 __all__ = [
     PythonAPIFileGenerator,

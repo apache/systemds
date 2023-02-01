@@ -24,7 +24,7 @@ import os
 import re
 import sys
 import traceback
-from parser import FunctionParser
+from dml_parser import FunctionParser
 from typing import List, Tuple
 
 
@@ -74,7 +74,7 @@ class PythonAPIFileGenerator(object):
         with open(target_file, "w") as new_script:
             new_script.write(self.licence)
             new_script.write(self.generated_by)
-            new_script.write((self.generated_from + dml_file + "\n").replace(
+            new_script.write((self.generated_from + dml_file.replace("\\", "/") + "\n").replace(
                 "../", "").replace("src/main/python/generator/", ""))
             new_script.write(self.imports)
             new_script.write(file_content)

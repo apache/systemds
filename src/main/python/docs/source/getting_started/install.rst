@@ -50,7 +50,7 @@ please make sure this is the case.
 Source
 ------
 
-To Install from source involves three steps.
+To Install from source involves multiple steps.
 
 Install Dependencies 
 
@@ -60,6 +60,13 @@ Install Dependencies
 
 Once installed you please verify your version numbers. 
 Additionally you have to install a few python packages.
+We sugest to create a new virtual environment using virtualenv. 
+All commands are run inside src/python/.
+We asume that in the following scripts python==python3
+
+  python -m venv python_venv 
+
+
 Note depending on your installation you might need to use pip3 instead of pip::
 
   pip install numpy py4j wheel requests

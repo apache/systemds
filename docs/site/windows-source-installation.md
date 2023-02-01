@@ -27,7 +27,6 @@ These instructions will help you build Apache SystemDS from source code, which i
 and algorithms development. The following conventions will be used to refer to directories on your machine:
 
 * `<USER_HOME>` is your home directory.
-* `<JDK_18_HOME>` is the root directory for the 1.8 JDK.
 * `<MAVEN_HOME>` is the root directory for the Apache Maven source code.
 * `<SYSTEMDS_HOME>` is the root directory for the SystemDS source code.
 * `<SPARK_HOME>` is the root directory for the Apache Spark source code.

@@ -24,29 +24,45 @@ limitations under the License.
 This guide helps in the install and setup of SystemDS from source code.
 
 - [Windows Guide](#windows)
-- [Ubuntu/Linux Guide](#ubuntu-2004)
+- [Ubuntu/Linux Guide](#ubuntu-2204)
 - [Mac Guide](#mac)
 
-## Windows
-
-[Developer Guide](windows-source-installation)
+Once the individual versions is set up skip to the common part of building the system.
 
 ---
 
-## Ubuntu 20.04
+## Install
 
-### Java and Maven
+---
 
-First setup java and maven to compile the system note that the java version is 1.8.
+### Windows
+
+First setup java and maven to compile the system note the java version is 11, we suggest using Java OpenJDK 11.
+
+- <https://openjdk.org/>
+- <https://maven.apache.org/download.cgi?.>
+
+Setup your environment variables with JAVA_HOME and MAVEN_HOME. Using these variables add the JAVA_HOME/bin and MAVEN_HOME/bin to the path environment variable. An example of setting it for java can be found here: <https://www.thewindowsclub.com/set-java_home-in-windows-10>
+
+To run the system we also have to setup some Hadoop and spark specific libraries. These can be found in the SystemDS repository. To add this, simply take out the files, or add 'src/test/config/hadoop_bin_windows/bin' to PATH. Just like for JAVA_HOME set a HADOOP_HOME to the environment variable without the bin part, and add the %HADOOP_HOME%/bin to path.
+
+Finally if you want to run systemds from command line, add a SYSTEMDS_ROOT that points to the repository root, and add the bin folder to the path.
+
+To make the build go faster set the IDE or environment variables for java: '-Xmx16g -Xms16g -Xmn1600m'. Here set the memory to something close to max memory of the device you are using.
+
+To start editing the files remember to import the code style formatting into the IDE, to keep the changes of the files consistent.
+
+A suggested starting point would be to run some of the component tests from your IDE.
+
+---
+
+### Ubuntu 22.04
+
+First setup java and maven to compile the system note that the java version is 11.
 
 ```bash
-sudo apt install openjdk-8-jdk-headless
+sudo apt install openjdk-11-jdk
 sudo apt install maven
-```
-
-Note: To update the `java` command to `openjdk-8` run:
-```sh
-update-alternatives --set java /usr/lib/jvm/java-8-openjdk-amd64/jre/bin/java
 ```
 
 Verify the install with:
@@ -59,9 +75,10 @@ mvn -version
 This should return something like:
 
 ```bash
-openjdk version "1.8.0_252"
-OpenJDK Runtime Environment (build 1.8.0_252-8u252-b09-1ubuntu1-b09)
-OpenJDK 64-Bit Server VM (build 25.252-b09, mixed mode)
+openjdk 11.0.17 2022-10-18
+OpenJDK Runtime Environment (build 11.0.17+8-post-Ubuntu-1ubuntu220.04)
+OpenJDK 64-Bit Server VM (build 11.0.17+8-post-Ubuntu-1ubuntu220.04, mixed mode, sharing)
+
 Apache Maven 3.6.3
 Maven home: /usr/share/maven
 Java version: 1.8.0_252, vendor: Private Build, runtime: /usr/lib/jvm/java-8-openjdk-amd64/jre
@@ -69,9 +86,9 @@ Default locale: en_US, platform encoding: UTF-8
 OS name: "linux", version: "5.4.0-37-generic", arch: "amd64", family: "unix"
 ```
 
-### Testing
+#### Testing
 
-R is required to be install to run the test suite, since many tests are constructed to comprare output with common R packages.
+R is required to be install to run the test suite, since many tests are constructed to compare output with common R packages.
 One option to install this is to follow the guide on the following link: <https://linuxize.com/post/how-to-install-r-on-ubuntu-20-04/>
 
 At the time of writing the commands to install R 4.0.2 are:
@@ -83,25 +100,23 @@ sudo add-apt-repository 'deb https://cloud.r-project.org/bin/linux/ubuntu focal-
 sudo apt install r-base
 ```
 
-Optionally, you need to install the R depedencies for integration tests, like this:
+Optionally, you need to install the R dependencies for integration tests, like this:
 (use `sudo` mode if the script couldn't write to local R library)
 
 ```bash
 Rscript ./src/test/scripts/installDependencies.R
 ```
 
-See [Build the project](#Build%20the%20project) to compile the code from here.
-
 ---
 
-## MAC
+### MAC
 
 Prerequisite install homebrew on the device.
 
 ```bash
 # To allow relative paths:
 brew install coreutils
-# To install open jdk 8.
+# To install open jdk 11.
 brew tap adoptopenjdk/openjdk
 brew cask install adoptopenjdk8
 # Install maven to enable compilation of SystemDS.
@@ -115,37 +130,26 @@ java --version
 mvn --version
 ```
 
-This should print something like:
+This should print java version.
+
+Note that if you have multiple __java__ versions installed then you have to change the used version to 11, on __both java and javadoc__. This is done by setting the environment variable JAVA_HOME to the install path of open JDK 11 :
 
 ```bash
-Java version: 1.8.0_242, vendor: AdoptOpenJDK, runtime: /Library/Java/JavaVirtualMachines/adoptopenjdk-8.jdk/Contents/Home/jre
-Default locale: ru_UA, platform encoding: UTF-8
-OS name: "mac os x", version: "10.15.5", arch: "x86_64", family: "mac"
-
-Apache Maven 3.6.3 (cecedd343002696d0abb50b32b541b8a6ba2883f)
-Maven home: /usr/local/Cellar/maven/3.6.3_1/libexec
-```
-
-Note that if you have multiple __java__ versions installed then you have to change the used version to 8, on __both java and javadoc__. This is done by setting the environment variable JAVA_HOME to the install path of open JDK 8 :
-
-``` bash
-export JAVA_HOME=`/usr/libexec/java_home -v 1.8`
+export JAVA_HOME=`/usr/libexec/java_home -v 11`
 ```
 
 For running all tests [r-base](https://cran.r-project.org/bin/macosx/) has to be installed as well since this is used as a secondary system to verify the correctness of our code, but it is not a requirement to enable building the project.
 
-Optionally, you need to install the R depedencies for integration tests, like this:
+Optionally, you need to install the R dependencies for integration tests, like this:
 (use `sudo` mode if the script couldn't write to local R library)
 
 ```bash
 Rscript ./src/test/scripts/installDependencies.R
 ```
 
-See [Build the project](#Build%20the%20project) to compile the code from here.
-
 ---
 
-## Build the project
+## 2. Build the project
 
 To compile the project use:
 

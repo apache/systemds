@@ -24,7 +24,6 @@ source("src/test/scripts/functions/federated/paramserv/TwoNNModelAvg.dml") as Tw
 source("src/test/scripts/functions/federated/paramserv/CNN.dml") as CNN
 source("src/test/scripts/functions/federated/paramserv/CNNModelAvg.dml") as CNNModelAvg
 source("scripts/nn/examples/u-net.dml") as UNet
-source("scripts/builtin/toOneHot.dml") as OneHot
 
 
 # create federated input matrices

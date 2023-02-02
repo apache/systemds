@@ -52,10 +52,10 @@ else if($network_type == "UNet"){
   M = numFeatures
   labels_one_hot = cbind((labels - 1) * -1, labels) # (N,KCHW) encoded labels
 
-  model = UNet::train_paramserv(features, labels_one_hot, x_val, y_val, $channels, x_hw, x_hw, $epochs, 2, $utype, $freq, $batch_size, $scheme, $eta, $seed, M, K, FALSE, F1)
+  model = UNet::train_paramserv(features, labels_one_hot, x_val, y_val, $channels, x_hw, x_hw, $epochs, 0, $utype, $freq, $batch_size, $scheme, $eta, $seed, M, K, FALSE, F1)
   print("Test results:")
   hyperparams = list(learning_rate=$eta, C=$channels, Hin=x_hw, Win=x_hw, M=numFeatures, K=K)
-  [loss_test, accuracy_test] = UNet::validate(matrix(0, rows=numRows, cols=$channels*x_hw*x_hw), matrix(0, rows=numRows, cols=numFeatures), model, hyperparams, F1, $batch_size)
+  [loss_test, accuracy_test] = UNet::validate(matrix(0, rows=numRows, cols=$channels*x_hw*x_hw), matrix(0, rows=numRows, cols=numFeatures*2), model, hyperparams, F1, $batch_size)
   print("[+] test loss: " + loss_test + ", test accuracy: " + accuracy_test + "\n")
 }
 else {

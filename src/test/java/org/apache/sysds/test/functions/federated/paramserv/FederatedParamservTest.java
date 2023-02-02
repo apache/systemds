@@ -141,7 +141,7 @@ public class FederatedParamservTest extends AutomatedTestBase {
 		int C = 1, Hin = 28, Win = 28;
 		int numLabels = 10;
 		if (_networkType.equals("UNet")){
-			C = 3; Hin = 340; Win = 340;
+			C = 3; Hin = 196; Win = 196;
 			numLabels = C * Hin * Win;
 		}
 

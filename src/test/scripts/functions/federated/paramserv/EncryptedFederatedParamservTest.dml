@@ -24,6 +24,7 @@ source("src/test/scripts/functions/federated/paramserv/TwoNNModelAvg.dml") as Tw
 source("src/test/scripts/functions/federated/paramserv/CNN.dml") as CNN
 source("src/test/scripts/functions/federated/paramserv/CNNModelAvg.dml") as CNNModelAvg
 source("scripts/nn/examples/u-net.dml") as UNet
+source("scripts/builtin/toOneHot.dml") as OneHot
 
 
 # create federated input matrices
@@ -67,12 +68,15 @@ else if($network_type == "UNet") {
 
     x_hw = $hin + 184 # Padded input height and width
     x_val = matrix(0, rows=numRows, cols=$channels*x_hw*x_hw)
-    y_val = matrix(0, rows=numRows, cols=numFeatures)
+    y_val = matrix(0, rows=numRows, cols=numFeatures*2)
+    K = 2
+    M = numFeatures
+    labels_one_hot = cbind((labels - 1) * -1, labels)
 
-    model = UNet::train_paramserv(features, labels, x_val, y_val, $channels, x_hw, x_hw, $epochs, 0, $utype, $freq, $batch_size, $scheme, $eta, $seed, TRUE, F1)
+    model = UNet::train_paramserv(features, labels_one_hot, x_val, y_val, $channels, x_hw, x_hw, $epochs, 0, $utype, $freq, $batch_size, $scheme, $eta, $seed, M, K, TRUE, F1)
     print("Test results:")
-    hyperparams = list(learning_rate=$eta, C=$channels, Hin=x_hw, Win=x_hw, K=numFeatures)
-    [loss_test, accuracy_test] = UNet::validate(matrix(0, rows=numRows, cols=$channels*x_hw*x_hw), matrix(0, rows=numRows, cols=numFeatures), model, hyperparams, F1, $batch_size)
+    hyperparams = list(learning_rate=$eta, C=$channels, Hin=x_hw, Win=x_hw, M=numFeatures, K=K)
+    [loss_test, accuracy_test] = UNet::validate(matrix(0, rows=numRows, cols=$channels*x_hw*x_hw), matrix(0, rows=numRows, cols=numFeatures*2), model, hyperparams, F1, $batch_size)
     print("[+] test loss: " + loss_test + ", test accuracy: " + accuracy_test + "\n")
 }
 else {

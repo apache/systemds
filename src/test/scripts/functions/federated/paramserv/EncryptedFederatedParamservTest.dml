@@ -71,7 +71,7 @@ else if($network_type == "UNet") {
     y_val = matrix(0, rows=numRows, cols=numFeatures*2)
     K = 2
     M = numFeatures
-    labels_one_hot = cbind((labels - 1) * -1, labels)
+    labels_one_hot = cbind((labels - 1) * -1, labels) # (N,KCHW) encoded labels
 
     model = UNet::train_paramserv(features, labels_one_hot, x_val, y_val, $channels, x_hw, x_hw, $epochs, 0, $utype, $freq, $batch_size, $scheme, $eta, $seed, M, K, TRUE, F1)
     print("Test results:")

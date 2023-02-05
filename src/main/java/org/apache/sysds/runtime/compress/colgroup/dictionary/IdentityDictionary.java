@@ -335,7 +335,10 @@ public class IdentityDictionary extends ADictionary {
 
 	@Override
 	public ADictionary sliceOutColumnRange(int idxStart, int idxEnd, int previousNumberOfColumns) {
-		return new IdentityDictionarySlice(nRowCol, idxStart, idxEnd);
+		if(idxStart == 0 && idxEnd == nRowCol)
+			return new IdentityDictionary(nRowCol);
+		else
+			return new IdentityDictionarySlice(nRowCol, idxStart, idxEnd);
 	}
 
 	@Override

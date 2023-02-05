@@ -120,7 +120,7 @@ public class IdentityDictionarySlice extends IdentityDictionary {
 
 	@Override
 	public int getNumberOfValues(int ncol) {
-		return ncol;
+		return nRowCol;
 	}
 
 	@Override

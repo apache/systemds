@@ -100,8 +100,11 @@ public abstract class Array<T> implements Writable {
 		long id = 0;
 		for(int i = 0; i < size(); i++) {
 			T val = get(i);
-			if(val != null && !map.containsKey(val))
-				map.put(val, id++);
+			if(val != null){
+				Long v = map.putIfAbsent(val, id);
+				if(v == null)
+					id++;
+			}
 		}
 		return map;
 	}

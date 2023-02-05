@@ -306,7 +306,7 @@ public class IndexesTest {
 		compare(expected, actual.shift(i), i);
 	}
 
-	private static void compare(int[] expected, IColIndex actual) {
+	public static void compare(int[] expected, IColIndex actual) {
 		assertEquals(expected.length, actual.size());
 		for(int i = 0; i < expected.length; i++)
 			assertEquals(expected[i], actual.get(i));

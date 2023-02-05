@@ -101,8 +101,9 @@ public class CLALibAppend {
 		final List<AColGroup> prev = left.getColGroups();
 		final List<AColGroup> newGroup = new ArrayList<>(prev.size() + 1);
 		newGroup.addAll(prev);
-		final IColIndex colIdx = ColIndexFactory.create(left.getNumColumns(),
-			right.getNumColumns() + left.getNumColumns());
+		final int cLenL = left.getNumColumns();
+		final int cLenR = right.getNumColumns();
+		final IColIndex colIdx = ColIndexFactory.create(cLenL, cLenR + cLenL);
 		final AColGroup g = ColGroupUncompressed.create(colIdx, right, false);
 		newGroup.add(g);
 		ret.allocateColGroupList(newGroup);

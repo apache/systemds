@@ -34,6 +34,7 @@ import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex.SliceResult;
 import org.apache.sysds.runtime.compress.colgroup.indexes.RangeIndex;
 import org.apache.sysds.runtime.compress.colgroup.indexes.SingleIndex;
 import org.apache.sysds.runtime.compress.colgroup.indexes.TwoIndex;
+import org.apache.sysds.runtime.compress.utils.Util;
 import org.junit.Test;
 import org.mockito.Mockito;
 
@@ -574,4 +575,20 @@ public class CustomIndexTest {
 		assertEquals(new RangeIndex(1, 7), com);
 	}
 
+	@Test
+	public void compareOld() {
+		final int r = 4;
+		final int l = 10;
+		final int[] colIdx1 = Util.genColsIndicesOffset(r, l);
+		final IColIndex colIdx2 = ColIndexFactory.create(l, r + l);
+		IndexesTest.compare(colIdx1, colIdx2);
+	}
+
+	@Test
+	public void compareOld2(){
+		final int domain = 32;
+		int[] colIndexes = Util.genColsIndices(0, domain);
+		IColIndex colIndexes2 = ColIndexFactory.create(0, domain);
+		IndexesTest.compare(colIndexes, colIndexes2);
+	}
 }

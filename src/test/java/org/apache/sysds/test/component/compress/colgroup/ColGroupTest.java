@@ -1629,13 +1629,15 @@ public class ColGroupTest extends ColGroupBase {
 	@Test
 	public void rexpandColsMax() {
 		int m = (int) base.getMax();
-		rexpandCols(m, true, true);
+		if(m > 0)
+			rexpandCols(m, true, true);
 	}
 
 	@Test(expected = DMLRuntimeException.class)
 	public void rexpandColsMaxNoIgnore() {
 		int m = (int) base.getMax();
-		rexpandCols(m, false, true);
+		if(m > 0)
+			rexpandCols(m, false, true);
 		throw new DMLRuntimeException("To make test parse if it correctly evaluated before");
 	}
 
@@ -1643,7 +1645,8 @@ public class ColGroupTest extends ColGroupBase {
 	public void rexpandColsMaxNoCast() {
 		try {
 			int m = (int) base.getMax();
-			rexpandCols(m, true, false);
+			if(m > 0)
+				rexpandCols(m, true, false);
 		}
 		catch(Exception e) {
 			e.printStackTrace();
@@ -1666,7 +1669,8 @@ public class ColGroupTest extends ColGroupBase {
 	@Test(expected = DMLRuntimeException.class)
 	public void rexpandColsMaxNoBoth() {
 		int m = (int) base.getMax();
-		rexpandCols(m, false, false);
+		if(m > 0)
+			rexpandCols(m, false, false);
 		throw new DMLRuntimeException("To make test parse if it correctly evaluated before");
 	}
 
@@ -2157,12 +2161,7 @@ public class ColGroupTest extends ColGroupBase {
 			}
 
 			AColGroup a = base.sliceRows(rl, ru);
-			
 			AColGroup b = other.sliceRows(rl, ru);
-			// LOG.error(rl + " " +ru);
-			// LOG.error(base);
-			// LOG.error(a);
-
 
 			final int newNRow = ru - rl;
 

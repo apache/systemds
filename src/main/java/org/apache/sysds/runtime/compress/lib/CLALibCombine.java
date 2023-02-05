@@ -93,12 +93,13 @@ public class CLALibCombine {
 				return combineViaDecompression(m, rlen, clen, blen, k);
 			}
 			final List<AColGroup> gs = cmb.getColGroups();
+			final int off = bc * blen;
 			for(AColGroup g : gs) {
 				try{
 					final IIterate cols = g.getColIndices().iterator();
 					final CompressionType t = g.getCompType();
 					while(cols.hasNext())
-						colTypes[cols.next() + bc * blen] = t;
+						colTypes[cols.next() + off] = t;
 				}
 				catch(Exception e){
 					throw new DMLCompressionException("Failed combining: " + g.toString());
@@ -122,12 +123,13 @@ public class CLALibCombine {
 					return combineViaDecompression(m, rlen, clen, blen, k);
 				}
 				final List<AColGroup> gs = cmb.getColGroups();
+				final int off = bc * blen;
 				for(AColGroup g : gs) {
 					final IIterate cols = g.getColIndices().iterator();
 					final CompressionType t = g.getCompType();
 					while(cols.hasNext()) {
 						final int c = cols.next();
-						if(colTypes[c + bc * blen] != t) {
+						if(colTypes[c + off] != t) {
 							LOG.warn("Not supported different types of column groups to combine."
 								+ "Falling back to decompression of all blocks");
 							return combineViaDecompression(m, rlen, clen, blen, k);

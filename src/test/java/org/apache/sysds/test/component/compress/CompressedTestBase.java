@@ -188,7 +188,8 @@ public abstract class CompressedTestBase extends TestBase {
 						colIndexes[x] = y;
 					}
 
-					CompressedSizeInfoColGroup cgi = ComEstFactory.createEstimator(mb, cs, _k).getColGroupInfo(ColIndexFactory.create(colIndexes));
+					CompressedSizeInfoColGroup cgi = ComEstFactory.createEstimator(mb, cs, _k)
+						.getColGroupInfo(ColIndexFactory.create(colIndexes));
 					CompressedSizeInfo csi = new CompressedSizeInfo(cgi);
 
 					ACostEstimate ce = CostEstimatorFactory.create(cs, ceb, mb.getNumRows(), mb.getNumColumns(),
@@ -407,7 +408,7 @@ public abstract class CompressedTestBase extends TestBase {
 			ov, null, null});
 
 		CompressionSettingsBuilder sb = csb().setCostType(CostType.W_TREE);
-		InstructionTypeCounter itc = new InstructionTypeCounter(10, 10, 0, 100, 10, 0, 0, 10,  false);
+		InstructionTypeCounter itc = new InstructionTypeCounter(10, 10, 0, 100, 10, 0, 0, 10, false);
 		CostEstimatorBuilder csb = new CostEstimatorBuilder(itc);
 		SparsityType st = SparsityType.THIRTY;
 		ValueType vt = ValueType.ONE_HOT;

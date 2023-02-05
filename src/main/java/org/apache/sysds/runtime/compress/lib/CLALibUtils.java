@@ -164,14 +164,14 @@ public final class CLALibUtils {
 
 	private static AColGroup combineConst(List<AColGroup> c) {
 		IColIndex resCols = combineColIndexes(c);
-
 		double[] values = new double[resCols.size()];
 		for(AColGroup g : c) {
 			final ColGroupConst cg = (ColGroupConst) g;
 			final IColIndex colIdx = cg.getColIndices();
 			final double[] colVals = cg.getValues();
 			for(int i = 0; i < colIdx.size(); i++) {
-				int outId = colIdx.findIndex(colIdx.get(i)); // a little confusing but correct ... find index of value...
+				// Find the index in the result columns to add the value into.
+				int outId = resCols.findIndex(colIdx.get(i)); 
 				values[outId] = colVals[i];
 			}
 		}

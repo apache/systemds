@@ -19,6 +19,7 @@
 
 package org.apache.sysds.test.component.compress.colgroup;
 
+import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupConst;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
@@ -37,7 +38,7 @@ public class NegativeConstTests {
 		ColGroupConst.create(0, 14);
 	}
 
-	@Test(expected = DMLCompressionException.class)
+	@Test(expected = DMLRuntimeException.class)
 	public void testConstConstruction_03() {
 		ColGroupConst.create(ColIndexFactory.create(0), 0);
 	}

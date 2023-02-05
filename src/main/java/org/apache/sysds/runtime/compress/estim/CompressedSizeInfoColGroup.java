@@ -216,32 +216,35 @@ public class CompressedSizeInfoColGroup {
 		final boolean contiguousColumns = cols.isContiguous();
 		switch(ct) {
 			case LinearFunctional:
-				return ColGroupSizes.estimateInMemorySizeLinearFunctional(numCols,contiguousColumns);
+				return ColGroupSizes.estimateInMemorySizeLinearFunctional(numCols, contiguousColumns);
 			case DeltaDDC:
 				throw new NotImplementedException();
 			case DDC:
 				nv = fact.numVals + (fact.numOffs < fact.numRows ? 1 : 0);
-				return ColGroupSizes.estimateInMemorySizeDDC(numCols,contiguousColumns, nv, fact.numRows, fact.tupleSparsity, fact.lossy);
-			case RLE:
-				return ColGroupSizes.estimateInMemorySizeRLE(numCols,contiguousColumns, fact.numVals, fact.numRuns, fact.numRows,
+				return ColGroupSizes.estimateInMemorySizeDDC(numCols, contiguousColumns, nv, fact.numRows,
 					fact.tupleSparsity, fact.lossy);
+			case RLE:
+				return ColGroupSizes.estimateInMemorySizeRLE(numCols, contiguousColumns, fact.numVals, fact.numRuns,
+					fact.numRows, fact.tupleSparsity, fact.lossy);
 			case OLE:
 				nv = fact.numVals + (fact.zeroIsMostFrequent ? 1 : 0);
-				return ColGroupSizes.estimateInMemorySizeOLE(numCols,contiguousColumns, nv, fact.numOffs + fact.numVals, fact.numRows,
-					fact.tupleSparsity, fact.lossy);
+				return ColGroupSizes.estimateInMemorySizeOLE(numCols, contiguousColumns, nv, fact.numOffs + fact.numVals,
+					fact.numRows, fact.tupleSparsity, fact.lossy);
 			case UNCOMPRESSED:
-				return ColGroupSizes.estimateInMemorySizeUncompressed(fact.numRows,contiguousColumns, numCols, fact.overAllSparsity);
+				return ColGroupSizes.estimateInMemorySizeUncompressed(fact.numRows, contiguousColumns, numCols,
+					fact.overAllSparsity);
 			case SDC:
-				return ColGroupSizes.estimateInMemorySizeSDC(numCols,contiguousColumns, fact.numVals, fact.numRows, fact.largestOff,
-					fact.tupleSparsity, fact.zeroIsMostFrequent, fact.lossy);
+				return ColGroupSizes.estimateInMemorySizeSDC(numCols, contiguousColumns, fact.numVals, fact.numRows,
+					fact.largestOff, fact.tupleSparsity, fact.zeroIsMostFrequent, fact.lossy);
 			case CONST:
 				if(fact.numOffs == fact.numRows && fact.numVals == 1)
-					return ColGroupSizes.estimateInMemorySizeCONST(numCols,contiguousColumns, fact.tupleSparsity, fact.lossy);
+					return ColGroupSizes.estimateInMemorySizeCONST(numCols, contiguousColumns, fact.tupleSparsity,
+						fact.lossy);
 				else
 					return -1;
 			case EMPTY:
 				if(fact.numOffs == 0)
-					return ColGroupSizes.estimateInMemorySizeEMPTY(numCols,contiguousColumns);
+					return ColGroupSizes.estimateInMemorySizeEMPTY(numCols, contiguousColumns);
 				else
 					return -1;
 			default:

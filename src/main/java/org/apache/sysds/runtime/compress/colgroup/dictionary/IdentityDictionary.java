@@ -316,6 +316,7 @@ public class IdentityDictionary extends ADictionary {
 
 	@Override
 	public double sum(int[] counts, int ncol) {
+		// number of rows, change this.
 		double s = 0.0;
 		for(int v : counts)
 			s += v;

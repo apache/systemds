@@ -103,7 +103,7 @@ public class MultiColumnEncoder implements Encoder {
 		deriveNumRowPartitions(in, k);
 		try {
 			if(isCompressedTransformEncode(in, compressedOut))
-				return CompressedEncode.encode(this, (FrameBlock ) in);
+				return CompressedEncode.encode(this, (FrameBlock ) in, k);
 			else if(k > 1 && !MULTI_THREADED_STAGES && !hasLegacyEncoder()) {
 				MatrixBlock out = new MatrixBlock();
 				DependencyThreadPool pool = new DependencyThreadPool(k);

@@ -22,6 +22,10 @@ package org.apache.sysds.runtime.transform.encode;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.commons.logging.Log;
@@ -29,6 +33,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.conf.DMLConfig;
+import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupDDC;
@@ -44,35 +49,71 @@ import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.runtime.frame.data.columns.Array;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.util.CommonThreadPool;
+
 public class CompressedEncode {
 	protected static final Log LOG = LogFactory.getLog(CompressedEncode.class.getName());
 
+	/** The encoding scheme plan */
 	private final MultiColumnEncoder enc;
+	/** The Input FrameBlock */
 	private final FrameBlock in;
+	/** The thread count of the instruction */
+	private final int k;
 
-	private CompressedEncode(MultiColumnEncoder enc, FrameBlock in) {
+	private CompressedEncode(MultiColumnEncoder enc, FrameBlock in, int k) {
 		this.enc = enc;
 		this.in = in;
+		this.k = k;
 	}
 
-	public static MatrixBlock encode(MultiColumnEncoder enc, FrameBlock in) {
-		return new CompressedEncode(enc, in).apply();
+	public static MatrixBlock encode(MultiColumnEncoder enc, FrameBlock in, int k) {
+		return new CompressedEncode(enc, in, k).apply();
 	}
 
 	private MatrixBlock apply() {
-		List<ColumnEncoderComposite> encoders = enc.getColumnEncoders();
-
-		List<AColGroup> groups = new ArrayList<>(encoders.size());
-
-		for(ColumnEncoderComposite c : encoders)
-			groups.add(encode(c));
-
-		int cols = shiftGroups(groups);
-
-		MatrixBlock mb = new CompressedMatrixBlock(in.getNumRows(), cols, -1, false, groups);
+		final List<AColGroup> groups = isParallel() ? multiThread() : singleThread();
+		final int cols = shiftGroups(groups);
+		final MatrixBlock mb = new CompressedMatrixBlock(in.getNumRows(), cols, -1, false, groups);
 		mb.recomputeNonZeros();
 		logging(mb);
 		return mb;
+	}
+
+	private boolean isParallel() {
+		return k > 1 && enc.getEncoders().size() > 1;
+	}
+
+	private List<AColGroup> singleThread() {
+		List<ColumnEncoderComposite> encoders = enc.getColumnEncoders();
+
+		List<AColGroup> groups = new ArrayList<>(encoders.size());
+		for(ColumnEncoderComposite c : encoders)
+			groups.add(encode(c));
+		return groups;
+	}
+
+	private List<AColGroup> multiThread() {
+		List<ColumnEncoderComposite> encoders = enc.getColumnEncoders();
+
+		final ExecutorService pool = CommonThreadPool.get(k);
+		try {
+			List<EncodeTask> tasks = new ArrayList<>(encoders.size());
+
+			for(ColumnEncoderComposite c : encoders)
+				tasks.add(new EncodeTask(c));
+
+			List<AColGroup> groups = new ArrayList<>(encoders.size());
+			for(Future<AColGroup> t : pool.invokeAll(tasks))
+				groups.add(t.get());
+
+			pool.shutdown();
+			return groups;
+		}
+		catch(InterruptedException | ExecutionException ex) {
+			pool.shutdown();
+			throw new DMLRuntimeException("Failed parallel compressed transform encode", ex);
+		}
 	}
 
 	/**
@@ -153,14 +194,14 @@ public class CompressedEncode {
 		Array<?> a = in.getColumn(colId - 1);
 		HashMap<Object, Long> map = (HashMap<Object, Long>) a.getRecodeMap();
 		final int blockSz = ConfigurationManager.getDMLConfig().getIntValue(DMLConfig.DEFAULT_BLOCK_SIZE);
-		if(map.size()  >= blockSz){
+		if(map.size() >= blockSz) {
 			double[] vals = (double[]) a.changeType(ValueType.FP64).get();
 			MatrixBlock col = new MatrixBlock(a.size(), 1, vals);
 			col.recomputeNonZeros();
 			// lets make it an uncompressed column group.
 			return ColGroupUncompressed.create(colIndexes, col, false);
 		}
-		else{
+		else {
 
 			double[] vals = new double[map.size() + (a.containsNull() ? 1 : 0)];
 			for(int i = 0; i < a.size(); i++) {
@@ -173,7 +214,7 @@ public class CompressedEncode {
 					vals[map.get(v).intValue()] = a.getAsDouble(i);
 				}
 			}
-	
+
 			ADictionary d = Dictionary.create(vals);
 			AMapToData m = createMappingAMapToData(a, map);
 			return ColGroupDDC.create(colIndexes, d, m, null);
@@ -191,6 +232,19 @@ public class CompressedEncode {
 			}
 		}
 		return m;
+	}
+
+	private class EncodeTask implements Callable<AColGroup> {
+
+		ColumnEncoderComposite c;
+
+		protected EncodeTask(ColumnEncoderComposite c) {
+			this.c = c;
+		}
+
+		public AColGroup call() throws Exception {
+			return encode(c);
+		}
 	}
 
 	private void logging(MatrixBlock mb) {

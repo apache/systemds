@@ -45,7 +45,7 @@ public abstract class ADictionary implements Serializable {
 	protected static final Log LOG = LogFactory.getLog(ADictionary.class.getName());
 
 	public static enum DictType {
-		Delta, Dict, MatrixBlock, UInt8, Identity;
+		Delta, Dict, MatrixBlock, UInt8, Identity, IdentitySlice;
 	}
 
 	/**

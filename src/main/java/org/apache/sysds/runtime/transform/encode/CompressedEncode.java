@@ -26,9 +26,13 @@ import java.util.List;
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.conf.ConfigurationManager;
+import org.apache.sysds.conf.DMLConfig;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupDDC;
+import org.apache.sysds.runtime.compress.colgroup.ColGroupUncompressed;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.IdentityDictionary;
@@ -40,7 +44,6 @@ import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.runtime.frame.data.columns.Array;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-
 public class CompressedEncode {
 	protected static final Log LOG = LogFactory.getLog(CompressedEncode.class.getName());
 
@@ -149,21 +152,33 @@ public class CompressedEncode {
 		int colId = c._colID;
 		Array<?> a = in.getColumn(colId - 1);
 		HashMap<Object, Long> map = (HashMap<Object, Long>) a.getRecodeMap();
-
-		double[] vals = new double[map.size() + (a.containsNull() ? 1 : 0)];
-		for(int i = 0; i < a.size(); i++) {
-			Object v = a.get(i);
-			if(map.containsKey(v)) {
-				vals[map.get(v).intValue()] = a.getAsDouble(i);
-			}
-			else {
-				map.put(null, (long) map.size());
-				vals[map.get(v).intValue()] = a.getAsDouble(i);
-			}
+		final int blockSz = ConfigurationManager.getDMLConfig().getIntValue(DMLConfig.DEFAULT_BLOCK_SIZE);
+		if(map.size()  >= blockSz){
+			double[] vals = (double[]) a.changeType(ValueType.FP64).get();
+			MatrixBlock col = new MatrixBlock(a.size(), 1, vals);
+			col.recomputeNonZeros();
+			// lets make it an uncompressed column group.
+			return ColGroupUncompressed.create(colIndexes, col, false);
 		}
-		ADictionary d = Dictionary.create(vals);
-		AMapToData m = createMappingAMapToData(a, map);
-		return ColGroupDDC.create(colIndexes, d, m, null);
+		else{
+
+			double[] vals = new double[map.size() + (a.containsNull() ? 1 : 0)];
+			for(int i = 0; i < a.size(); i++) {
+				Object v = a.get(i);
+				if(map.containsKey(v)) {
+					vals[map.get(v).intValue()] = a.getAsDouble(i);
+				}
+				else {
+					map.put(null, (long) map.size());
+					vals[map.get(v).intValue()] = a.getAsDouble(i);
+				}
+			}
+	
+			ADictionary d = Dictionary.create(vals);
+			AMapToData m = createMappingAMapToData(a, map);
+			return ColGroupDDC.create(colIndexes, d, m, null);
+		}
+
 	}
 
 	private AMapToData createMappingAMapToData(Array<?> a, HashMap<?, Long> map) {
@@ -190,6 +205,5 @@ public class CompressedEncode {
 			LOG.debug(String.format("Compression ratio: %10.3f", ratio));
 			LOG.debug(String.format("Dense ratio:       %10.3f", denseRatio));
 		}
-
 	}
 }

@@ -27,7 +27,6 @@ import java.util.Arrays;
 
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.runtime.DMLRuntimeException;
-import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.functionobjects.Builtin;
@@ -39,96 +38,77 @@ import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
 import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
 
-public class IdentityDictionary extends ADictionary {
+public class IdentityDictionarySlice extends IdentityDictionary {
 
 	private static final long serialVersionUID = 2535887782150955098L;
 
-	protected final int nRowCol;
-
-	protected SoftReference<MatrixBlockDictionary> cache = null;
+	private final int l;
+	private final int u;
 
 	/**
-	 * Create a Identity matrix dictionary. It behaves as if allocated a Sparse Matrix block but exploits that the
+	 * Create a Identity matrix dictionary slice. It behaves as if allocated a Sparse Matrix block but exploits that the
 	 * structure is known to have certain properties.
 	 * 
 	 * @param nRowCol the number of rows and columns in this identity matrix.
+	 * @param l       the index lower to start at
+	 * @param u       the index upper to end at (not inclusive)
 	 */
-	public IdentityDictionary(int nRowCol) {
-		if(nRowCol <= 0)
-			throw new DMLCompressionException("Invalid Identity Dictionary");
-		this.nRowCol = nRowCol;
+	public IdentityDictionarySlice(int nRowCol, int l, int u) {
+		super(nRowCol);
+		if(u > nRowCol || l < 0 || l >= u)
+			throw new DMLRuntimeException("Invalid slice Identity: " + nRowCol + " range: " + l + "--" + u);
+		this.l = l;
+		this.u = u;
 	}
 
 	@Override
 	public double[] getValues() {
 		LOG.warn("Should not call getValues on Identity Dictionary");
-
-		double[] ret = new double[nRowCol * nRowCol];
-		for(int i = 0; i < nRowCol; i++) {
-			ret[(i * nRowCol) + i] = 1;
+		int nCol = u - l;
+		double[] ret = new double[nCol * nRowCol];
+		for(int i = l; i < u; i++) {
+			ret[(i * nCol) + i] = 1;
 		}
 		return ret;
 	}
 
 	@Override
 	public double getValue(int i) {
-		final int nCol = nRowCol;
-		final int row = i / nCol;
-		if(row > nRowCol)
-			return 0;
-		final int col = i % nCol;
-		return row == col ? 1 : 0;
+		throw new NotImplementedException();
+		// final int nCol = nRowCol;
+		// final int row = i / nCol;
+		// if(row > nRowCol)
+		// return 0;
+		// final int col = i % nCol;
+		// return row == col ? 1 : 0;
 	}
 
 	@Override
-	public double getValue(int r, int c, int nCol) {
-		return r == c ? 1 : 0;
+	public final double getValue(int r, int c, int nCol) {
+		throw new NotImplementedException();
+		// return r == c ? 1 : 0;
 	}
 
 	@Override
 	public long getInMemorySize() {
-		return 4 + 4 + 8; // int + padding + softReference
+		return getInMemorySize(nRowCol);
 	}
 
 	public static long getInMemorySize(int numberColumns) {
-		return 4 + 4 + 8;
-	}
-
-	@Override
-	public double aggregate(double init, Builtin fn) {
-		if(fn.getBuiltinCode() == BuiltinCode.MAX)
-			return fn.execute(init, 1);
-		else if(fn.getBuiltinCode() == BuiltinCode.MIN)
-			return fn.execute(init, 0);
-		else
-			throw new NotImplementedException();
-	}
-
-	@Override
-	public double aggregateWithReference(double init, Builtin fn, double[] reference, boolean def) {
-		return getMBDict().aggregateWithReference(init, fn, reference, def);
+		// int * 3 + padding + softReference
+		return 12 + 4 + 8;
 	}
 
 	@Override
 	public double[] aggregateRows(Builtin fn, int nCol) {
 		double[] ret = new double[nRowCol];
-		Arrays.fill(ret, fn.execute(1, 0));
+		Arrays.fill(ret, l, u, fn.execute(1, 0));
 		return ret;
 	}
 
 	@Override
-	public double[] aggregateRowsWithDefault(Builtin fn, double[] defaultTuple) {
-		return getMBDict().aggregateRowsWithDefault(fn, defaultTuple);
-	}
-
-	@Override
-	public double[] aggregateRowsWithReference(Builtin fn, double[] reference) {
-		return getMBDict().aggregateRowsWithReference(fn, reference);
-	}
-
-	@Override
 	public void aggregateCols(double[] c, Builtin fn, IColIndex colIndexes) {
-		for(int i = 0; i < nRowCol; i++) {
+		for(int i = 0; i < u - l; i++) {
 			final int idx = colIndexes.get(i);
 			c[idx] = fn.execute(c[idx], 0);
 			c[idx] = fn.execute(c[idx], 1);
@@ -136,106 +116,31 @@ public class IdentityDictionary extends ADictionary {
 	}
 
 	@Override
-	public void aggregateColsWithReference(double[] c, Builtin fn, IColIndex colIndexes, double[] reference,
-		boolean def) {
-		getMBDict().aggregateColsWithReference(c, fn, colIndexes, reference, def);
-	}
-
-	@Override
-	public ADictionary applyScalarOp(ScalarOperator op) {
-		return getMBDict().applyScalarOp(op);
-	}
-
-	@Override
-	public ADictionary applyScalarOpAndAppend(ScalarOperator op, double v0, int nCol) {
-
-		return getMBDict().applyScalarOpAndAppend(op, v0, nCol);
-	}
-
-	@Override
-	public ADictionary applyUnaryOp(UnaryOperator op) {
-		return getMBDict().applyUnaryOp(op);
-	}
-
-	@Override
-	public ADictionary applyUnaryOpAndAppend(UnaryOperator op, double v0, int nCol) {
-		return getMBDict().applyUnaryOpAndAppend(op, v0, nCol);
-	}
-
-	@Override
-	public ADictionary applyScalarOpWithReference(ScalarOperator op, double[] reference, double[] newReference) {
-		return getMBDict().applyScalarOpWithReference(op, reference, newReference);
-	}
-
-	@Override
-	public ADictionary applyUnaryOpWithReference(UnaryOperator op, double[] reference, double[] newReference) {
-		return getMBDict().applyUnaryOpWithReference(op, reference, newReference);
-	}
-
-	@Override
-	public ADictionary binOpLeft(BinaryOperator op, double[] v, IColIndex colIndexes) {
-		return getMBDict().binOpLeft(op, v, colIndexes);
-	}
-
-	@Override
-	public ADictionary binOpLeftAndAppend(BinaryOperator op, double[] v, IColIndex colIndexes) {
-		return getMBDict().binOpLeftAndAppend(op, v, colIndexes);
-	}
-
-	@Override
-	public ADictionary binOpLeftWithReference(BinaryOperator op, double[] v, IColIndex colIndexes, double[] reference,
-		double[] newReference) {
-		return getMBDict().binOpLeftWithReference(op, v, colIndexes, reference, newReference);
-
-	}
-
-	@Override
-	public ADictionary binOpRight(BinaryOperator op, double[] v, IColIndex colIndexes) {
-		return getMBDict().binOpRight(op, v, colIndexes);
-	}
-
-	@Override
-	public ADictionary binOpRightAndAppend(BinaryOperator op, double[] v, IColIndex colIndexes) {
-		return getMBDict().binOpRightAndAppend(op, v, colIndexes);
-	}
-
-	@Override
-	public ADictionary binOpRight(BinaryOperator op, double[] v) {
-		return getMBDict().binOpRight(op, v);
-	}
-
-	@Override
-	public ADictionary binOpRightWithReference(BinaryOperator op, double[] v, IColIndex colIndexes, double[] reference,
-		double[] newReference) {
-		return getMBDict().binOpRightWithReference(op, v, colIndexes, reference, newReference);
-	}
-
-	@Override
 	public ADictionary clone() {
-		return new IdentityDictionary(nRowCol);
+		return new IdentityDictionarySlice(nRowCol, l, u);
 	}
 
 	@Override
 	public DictType getDictType() {
-		return DictType.Identity;
+		return DictType.IdentitySlice;
 	}
 
 	@Override
 	public int getNumberOfValues(int ncol) {
-		return nRowCol;
+		return ncol;
 	}
 
 	@Override
 	public double[] sumAllRowsToDouble(int nrColumns) {
 		double[] ret = new double[nRowCol];
-		Arrays.fill(ret, 1);
+		Arrays.fill(ret, l, u, 1.0);
 		return ret;
 	}
 
 	@Override
 	public double[] sumAllRowsToDoubleWithDefault(double[] defaultTuple) {
 		double[] ret = new double[nRowCol];
-		Arrays.fill(ret, 1);
+		Arrays.fill(ret, l, u, 1.0);
 		for(int i = 0; i < defaultTuple.length; i++)
 			ret[i] += defaultTuple[i];
 		return ret;
@@ -244,7 +149,7 @@ public class IdentityDictionary extends ADictionary {
 	@Override
 	public double[] sumAllRowsToDoubleWithReference(double[] reference) {
 		double[] ret = new double[nRowCol];
-		Arrays.fill(ret, 1);
+		Arrays.fill(ret, l, u, 1.0);
 		for(int i = 0; i < reference.length; i++)
 			ret[i] += reference[i] * nRowCol;
 		return ret;
@@ -253,18 +158,8 @@ public class IdentityDictionary extends ADictionary {
 	@Override
 	public double[] sumAllRowsToDoubleSq(int nrColumns) {
 		double[] ret = new double[nRowCol];
-		Arrays.fill(ret, 1);
+		Arrays.fill(ret, l, u, 1);
 		return ret;
-	}
-
-	@Override
-	public double[] sumAllRowsToDoubleSqWithDefault(double[] defaultTuple) {
-		return getMBDict().sumAllRowsToDoubleSqWithDefault(defaultTuple);
-	}
-
-	@Override
-	public double[] sumAllRowsToDoubleSqWithReference(double[] reference) {
-		return getMBDict().sumAllRowsToDoubleSqWithReference(reference);
 	}
 
 	@Override
@@ -275,11 +170,6 @@ public class IdentityDictionary extends ADictionary {
 	@Override
 	public double[] productAllRowsToDoubleWithDefault(double[] defaultTuple) {
 		return new double[nRowCol];
-	}
-
-	@Override
-	public double[] productAllRowsToDoubleWithReference(double[] reference) {
-		return getMBDict().productAllRowsToDoubleWithReference(reference);
 	}
 
 	@Override
@@ -304,22 +194,11 @@ public class IdentityDictionary extends ADictionary {
 	}
 
 	@Override
-	public void colProductWithReference(double[] res, int[] counts, IColIndex colIndexes, double[] reference) {
-		getMBDict().colProductWithReference(res, counts, colIndexes, reference);
-
-	}
-
-	@Override
-	public void colSumSqWithReference(double[] c, int[] counts, IColIndex colIndexes, double[] reference) {
-		getMBDict().colSumSqWithReference(c, counts, colIndexes, reference);
-	}
-
-	@Override
 	public double sum(int[] counts, int ncol) {
 		// number of rows, change this.
 		double s = 0.0;
-		for(int v : counts)
-			s += v;
+		for(int i = l; i < u; i++)
+			s += counts[i];
 		return s;
 	}
 
@@ -328,14 +207,10 @@ public class IdentityDictionary extends ADictionary {
 		return sum(counts, ncol);
 	}
 
-	@Override
-	public double sumSqWithReference(int[] counts, double[] reference) {
-		return getMBDict().sumSqWithReference(counts, reference);
-	}
 
 	@Override
 	public ADictionary sliceOutColumnRange(int idxStart, int idxEnd, int previousNumberOfColumns) {
-		return new IdentityDictionarySlice(nRowCol, idxStart, idxEnd);
+		throw new NotImplementedException("Slice of identity slice ??? this is getting a bit ridiculous");
 	}
 
 	@Override
@@ -343,45 +218,15 @@ public class IdentityDictionary extends ADictionary {
 		return pattern == 0.0 || pattern == 1.0;
 	}
 
-	@Override
-	public boolean containsValueWithReference(double pattern, double[] reference) {
-		return getMBDict().containsValueWithReference(pattern, reference);
-	}
 
 	@Override
 	public long getNumberNonZeros(int[] counts, int nCol) {
 		return (long) sum(counts, nCol);
 	}
 
-	@Override
-	public long getNumberNonZerosWithReference(int[] counts, double[] reference, int nRows) {
-		return getMBDict().getNumberNonZerosWithReference(counts, reference, nRows);
-	}
-
-	@Override
-	public void addToEntry(final double[] v, final int fr, final int to, final int nCol) {
-		getMBDict().addToEntry(v, fr, to, nCol);
-	}
-
-	@Override
-	public void addToEntry(final double[] v, final int fr, final int to, final int nCol, int rep) {
-		getMBDict().addToEntry(v, fr, to, nCol, rep);
-	}
-
-	@Override
-	public void addToEntryVectorized(double[] v, int f1, int f2, int f3, int f4, int f5, int f6, int f7, int f8, int t1,
-		int t2, int t3, int t4, int t5, int t6, int t7, int t8, int nCol) {
-		getMBDict().addToEntryVectorized(v, f1, f2, f3, f4, f5, f6, f7, f8, t1, t2, t3, t4, t5, t6, t7, t8, nCol);
-	}
-
-	@Override
-	public ADictionary subtractTuple(double[] tuple) {
-		return getMBDict().subtractTuple(tuple);
-	}
 
 	public MatrixBlockDictionary getMBDict() {
-		throw new DMLRuntimeException("Do not make MB Dict");
-		// return getMBDict(nRowCol);
+		return getMBDict(nRowCol);
 	}
 
 	@Override
@@ -396,9 +241,10 @@ public class IdentityDictionary extends ADictionary {
 		return ret;
 	}
 
+
 	private MatrixBlockDictionary createMBDict() {
-		MatrixBlock identity = new MatrixBlock(nRowCol, nRowCol, true);
-		for(int i = 0; i < nRowCol; i++)
+		MatrixBlock identity = new MatrixBlock(nRowCol, u - l, true);
+		for(int i = l; i < u; i++)
 			identity.quickSetValue(i, i, 1.0);
 
 		return new MatrixBlockDictionary(identity);

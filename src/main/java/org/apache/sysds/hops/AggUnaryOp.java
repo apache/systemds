@@ -385,9 +385,12 @@ public class AggUnaryOp extends MultiThreadedHop
 			_etype = ExecType.SPARK;
 		}
 
-		//mark for recompile (forever)
-		setRequiresRecompileIfNecessary();
-		
+		//ensure cp exec type for single-node operations
+		if( _op == AggOp.UNIQUE ) {
+			_etype = ExecType.CP;
+		} else {
+			setRequiresRecompileIfNecessary();
+		}
 		return _etype;
 	}
 

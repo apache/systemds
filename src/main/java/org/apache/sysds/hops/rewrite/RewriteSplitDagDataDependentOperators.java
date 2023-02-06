@@ -26,6 +26,7 @@ import java.util.HashSet;
 import java.util.List;
 
 import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.common.Types.AggOp;
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.common.Types.OpOp1;
 import org.apache.sysds.common.Types.OpOp3;
@@ -321,7 +322,8 @@ public class RewriteSplitDagDataDependentOperators extends StatementBlockRewrite
 			|| (HopRewriteUtils.isParameterBuiltinOp(hop, ParamBuiltinOp.GROUPEDAGG) 
 				&& !((ParameterizedBuiltinOp)hop).isKnownNGroups() && !noSplitRequired)
 			|| ((HopRewriteUtils.isUnary(hop, OpOp1.COMPRESS) || hop.requiresCompression()) &&
-				(!HopRewriteUtils.hasOnlyWriteParents(hop, true, true)));
+				(!HopRewriteUtils.hasOnlyWriteParents(hop, true, true)))
+			|| (HopRewriteUtils.isAggUnaryOp(hop, AggOp.UNIQUE) & !noSplitRequired);
 		//note: for compression we probe for write parents (part of noSplitRequired) directly
 		// because we want to split even if the dimensions are known 
 	}

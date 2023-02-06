@@ -111,6 +111,7 @@ public class ColumnMetadataTests {
 	}
 
 	@Test
+	@SuppressWarnings("unlikely-arg-type")
 	public void equalsObject() {
 		assertTrue(d.equals((Object) new ColumnMetadata(d)));
 		assertFalse(d.equals(1324));

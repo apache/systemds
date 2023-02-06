@@ -51,6 +51,7 @@ public enum Builtins {
 	ARIMA("arima", true),
 	ASIN("asin", false),
 	ATAN("atan", false),
+	AUC("auc", true),
 	AUTOENCODER2LAYER("autoencoder_2layer", true),
 	AVG_POOL("avg_pool", false),
 	AVG_POOL_BACKWARD("avg_pool_backward", false),

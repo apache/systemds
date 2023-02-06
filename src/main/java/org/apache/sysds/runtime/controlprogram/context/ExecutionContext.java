@@ -602,6 +602,7 @@ public class ExecutionContext {
 		mo.release();
 	}
 
+	@SuppressWarnings("unused")
 	public void setMatrixOutputAndLineage(String varName, Future<MatrixBlock> fmb, LineageItem li) {
 		if (isAutoCreateVars() && !containsVariable(varName)) {
 			//FIXME without adding this fmo object here to the symbol table

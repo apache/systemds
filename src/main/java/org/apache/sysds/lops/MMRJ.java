@@ -59,7 +59,7 @@ public class MMRJ extends Lop
 
 	@Override
 	public String getInstructions(String input1, String input2, String output) {
-		boolean toCache = getOutputParameters().getLinCacheMarking();
+		// FIXME boolean toCache = getOutputParameters().getLinCacheMarking();
 		return InstructionUtils.concatOperands(
 			getExecType().name(),
 			"rmm",

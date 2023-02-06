@@ -26,6 +26,7 @@ import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
+import org.apache.sysds.utils.Statistics;
 
 public class BuiltinAucTest extends AutomatedTestBase
 {
@@ -106,7 +107,7 @@ public class BuiltinAucTest extends AutomatedTestBase
 	
 	private void runAucTest(double auc, double[] Y, double[] P)
 	{
-		ExecMode platformOld = setExecMode(ExecMode.SINGLE_NODE);
+		ExecMode platformOld = setExecMode(ExecMode.HYBRID);
 
 		try
 		{
@@ -122,9 +123,10 @@ public class BuiltinAucTest extends AutomatedTestBase
 			//execute test
 			runTest(true, false, null, -1);
 
-			//compare matrices 
+			//compare auc and proper plans w/o spark instructions
 			double val = readDMLMatrixFromOutputDir("C").get(new CellIndex(1,1));
 			Assert.assertEquals("Incorrect values: ", auc, val, eps);
+			Assert.assertEquals(0, Statistics.getNoOfExecutedSPInst());
 		}
 		finally {
 			rtplatform = platformOld;

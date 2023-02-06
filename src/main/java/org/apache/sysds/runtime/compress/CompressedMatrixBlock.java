@@ -288,8 +288,14 @@ public class CompressedMatrixBlock extends MatrixBlock {
 			nonZeros = clen * rlen;
 		else {
 			long nnz = 0;
-			for(AColGroup g : _colGroups)
-				nnz += g.getNumberNonZeros(rlen);
+			for(AColGroup g : _colGroups) {
+				try {
+					nnz += g.getNumberNonZeros(rlen);
+				}
+				catch(Exception e) {
+					throw new DMLCompressionException("failed to get number of nonzeros in colgroup: " + g, e);
+				}
+			}
 			nonZeros = nnz;
 		}
 
@@ -408,7 +414,7 @@ public class CompressedMatrixBlock extends MatrixBlock {
 				"smaller serialization size: compressed: " + estDisk + " vs uncompressed: " + estimateUncompressed);
 			ColGroupUncompressed cg = (ColGroupUncompressed) ColGroupUncompressed.create(uncompressed);
 
-			if( estDisk / 10 > estimateUncompressed){
+			if(estDisk / 10 > estimateUncompressed) {
 				LOG.error(this);
 			}
 			allocateColGroup(cg);

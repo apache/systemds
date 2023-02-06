@@ -72,7 +72,8 @@ public class CompressedEncode {
 	}
 
 	private MatrixBlock apply() {
-		final List<AColGroup> groups = isParallel() ? multiThread() : singleThread();
+		final List<ColumnEncoderComposite> encoders = enc.getColumnEncoders();
+		final List<AColGroup> groups = isParallel() ? multiThread(encoders) : singleThread(encoders);
 		final int cols = shiftGroups(groups);
 		final MatrixBlock mb = new CompressedMatrixBlock(in.getNumRows(), cols, -1, false, groups);
 		mb.recomputeNonZeros();
@@ -84,17 +85,14 @@ public class CompressedEncode {
 		return k > 1 && enc.getEncoders().size() > 1;
 	}
 
-	private List<AColGroup> singleThread() {
-		List<ColumnEncoderComposite> encoders = enc.getColumnEncoders();
-
+	private List<AColGroup> singleThread(List<ColumnEncoderComposite> encoders) {
 		List<AColGroup> groups = new ArrayList<>(encoders.size());
 		for(ColumnEncoderComposite c : encoders)
 			groups.add(encode(c));
 		return groups;
 	}
 
-	private List<AColGroup> multiThread() {
-		List<ColumnEncoderComposite> encoders = enc.getColumnEncoders();
+	private List<AColGroup> multiThread(List<ColumnEncoderComposite> encoders) {
 
 		final ExecutorService pool = CommonThreadPool.get(k);
 		try {
@@ -149,7 +147,6 @@ public class CompressedEncode {
 		HashMap<?, Long> map = a.getRecodeMap();
 		int domain = map.size();
 
-		// int domain = c.getDomainSize();
 		IColIndex colIndexes = ColIndexFactory.create(0, domain);
 
 		ADictionary d = new IdentityDictionary(colIndexes.size());
@@ -202,7 +199,6 @@ public class CompressedEncode {
 			return ColGroupUncompressed.create(colIndexes, col, false);
 		}
 		else {
-
 			double[] vals = new double[map.size() + (a.containsNull() ? 1 : 0)];
 			for(int i = 0; i < a.size(); i++) {
 				Object v = a.get(i);
@@ -227,9 +223,8 @@ public class CompressedEncode {
 		Array<?>.ArrayIterator it = a.getIterator();
 		while(it.hasNext()) {
 			Object v = it.next();
-			if(v != null) {
+			if(v != null)
 				m.set(it.getIndex(), map.get(v).intValue());
-			}
 		}
 		return m;
 	}

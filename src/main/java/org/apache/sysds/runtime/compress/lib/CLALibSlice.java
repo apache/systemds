@@ -24,6 +24,7 @@ import java.util.List;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupConst;
@@ -43,9 +44,15 @@ public class CLALibSlice {
 	 */
 	public static List<MatrixBlock> sliceBlocks(CompressedMatrixBlock cmb, int blen) {
 		final List<MatrixBlock> mbs = new ArrayList<>();
-		for(int b = 0; b < cmb.getNumRows(); b += blen)
-			mbs.add(sliceRowsCompressed(cmb, b, Math.min(b + blen, cmb.getNumRows()) - 1));
-		return mbs;
+		try{
+
+			for(int b = 0; b < cmb.getNumRows(); b += blen)
+				mbs.add(sliceRowsCompressed(cmb, b, Math.min(b + blen, cmb.getNumRows()) - 1));
+				return mbs;
+		}
+		catch(Exception e){
+			throw new DMLRuntimeException("Failed to slice blocks to block length: "+ blen, e);
+		}
 	}
 
 	public static MatrixBlock slice(CompressedMatrixBlock cmb, int rl, int ru, int cl, int cu, boolean deep) {

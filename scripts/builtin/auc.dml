@@ -49,12 +49,48 @@ m_auc = function(Matrix[Double] Y, Matrix[Double] P)
   # convert -1/1 to 0/1 if necessary
   if( minv < 0 )
     Y = (Y+1) != 0;
+
+  # compute true and false positive rates per unique threshold
+  [tpr, fpr] = cumsumROC(Y, P);
+
+  # compute AUC via Trapezoidal rule
+  nd = nrow(tpr);
+  auc = as.scalar(tpr[1] * fpr[1])
+      + sum((fpr[2:nd]-fpr[1:(nd-1)]) * (tpr[2:nd]+tpr[1:(nd-1)])/2);
+}
+
+cumsumROC = function(Matrix[Double] Y, Matrix[Double] P)
+  return(Matrix[Double] tpr, Matrix[Double] fpr)
+{
   pos = sum(Y);
   neg = nrow(Y) - pos;
 
   # compute ROC curve for distinct threshold scores
   # (cut-offs > and <= choosen to match R-pROC-package behavior)
-  # TODO vectorize via ordering + cumsum (but indexes of unique missing)
+  # vectorized implementation via cumsum of ordered scores P
+  YP = order(target=cbind(Y, P), by=2);
+  oY = YP[,1]; oP = YP[,2];
+  tp = pos - cumsum(oY); # true positives until certain threshold (row)
+  fp = cumsum(!oY);      # false positives until certain threshold
+
+  # indicator of unique thresholds for at end of range
+  uI = (oP != rbind(oP[2:nrow(oP)],as.matrix(0)));
+
+  # extract true/false positves for unique thresholds
+  tp = removeEmpty(target=tp, margin="rows", select=uI);
+  fp = removeEmpty(target=fp, margin="rows", select=uI);
+  tpr = tp / pos; # true positive rate, increasing
+  fpr = fp / neg; # false postive rate, increasing
+}
+
+naiveROC = function(Matrix[Double] Y, Matrix[Double] P)
+  return(Matrix[Double] tpr, Matrix[Double] fpr)
+{
+  pos = sum(Y);
+  neg = nrow(Y) - pos;
+
+  # compute ROC curve for distinct threshold scores
+  # (cut-offs > and <= choosen to match R-pROC-package behavior)
   dP = order(target=unique(P)); # distinct P thresholds, increasing
   nd = nrow(dP)
   tp = matrix(0, nd, 1);
@@ -63,10 +99,6 @@ m_auc = function(Matrix[Double] Y, Matrix[Double] P)
     tp[i] = sum(P>dP[i] & Y)
     fp[i] = sum(P<=dP[i] & !Y)
   }
-  tpr = tp / pos; # true positive rate, increasing
-  fpr = fp / neg; # false postive rate, increasing
-
-  # compute AUC via Trapezoidal rule
-  auc = as.scalar(tpr[1] * fpr[1])
-      + sum((fpr[2:nd]-fpr[1:(nd-1)]) * (tpr[2:nd]+tpr[1:(nd-1)])/2);
+  tpr = tp / pos; # true positive rate, decreasing
+  fpr = fp / neg; # false postive rate, decreasing
 }

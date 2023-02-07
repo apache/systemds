@@ -50,6 +50,12 @@ public class BuiltinAucTest extends AutomatedTestBase
 	}
 	
 	@Test
+	public void testPerfectSeparationOrderedDups() {
+		runAucTest(1.0, new double[]{0,0,0,0,0,0,1,1,1,1,1,1},
+			new double[]{0.1,0.2,0.3,0.1,0.2,0.3,0.4,0.55,0.56,0.4,0.55,0.56});
+	}
+	
+	@Test
 	public void testPerfectSeparationUnordered() {
 		runAucTest(1.0, new double[]{0,1,0,1,0,1},
 			new double[]{0.1,0.5,0.2,0.55,0.3,0.56});

@@ -401,6 +401,10 @@ public abstract class Lop
 	public long getID() {
 		return lps.getID();
 	}
+
+	public void setNewID() {
+		lps.setNewID();
+	}
 	
 	public int getLevel() {
 		return lps.getLevel();

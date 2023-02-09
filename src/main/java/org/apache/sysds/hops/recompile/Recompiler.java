@@ -59,6 +59,7 @@ import org.apache.sysds.hops.rewrite.HopRewriteUtils;
 import org.apache.sysds.hops.rewrite.ProgramRewriter;
 import org.apache.sysds.lops.Lop;
 import org.apache.sysds.lops.compile.Dag;
+import org.apache.sysds.lops.rewrite.LopRewriter;
 import org.apache.sysds.parser.DMLProgram;
 import org.apache.sysds.parser.DataExpression;
 import org.apache.sysds.parser.ForStatementBlock;
@@ -130,6 +131,10 @@ public class Recompiler {
 	private static ThreadLocal<ProgramRewriter> _rewriter = new ThreadLocal<ProgramRewriter>() {
 		@Override protected ProgramRewriter initialValue() { return new ProgramRewriter(false, true); }
 	};
+
+	private static ThreadLocal<LopRewriter> _lopRewriter = new ThreadLocal<LopRewriter>() {
+		@Override protected LopRewriter initialValue() {return new LopRewriter();}
+	};
 	
 	public enum ResetType {
 		RESET,
@@ -145,6 +150,7 @@ public class Recompiler {
 	 */
 	public static void reinitRecompiler() {
 		_rewriter.set(new ProgramRewriter(false, true));
+		_lopRewriter.set(new LopRewriter());
 	}
 	
 	public static ArrayList<Instruction> recompileHopsDag( StatementBlock sb, ArrayList<Hop> hops, 
@@ -305,6 +311,7 @@ public class Recompiler {
 		boolean codegen = ConfigurationManager.isCodegenEnabled()
 			&& !(forceEt && et == null ) //not on reset
 			&& SpoofCompiler.RECOMPILE_CODEGEN;
+		boolean rewrittenHops = false;
 		
 		// prepare hops dag for recompile
 		if( !inplace ){ 
@@ -352,6 +359,7 @@ public class Recompiler {
 				Hop.resetVisitStatus(hops);
 				for( Hop hopRoot : hops )
 					rUpdateStatistics( hopRoot, ec.getVariables() );
+				rewrittenHops = true;
 			}
 			
 			// refresh memory estimates (based on updated stats,
@@ -382,11 +390,18 @@ public class Recompiler {
 		rSetMaxParallelism(hops, maxK);
 		
 		// construct lops
-		Dag<Lop> dag = new Dag<>();
+		ArrayList<Lop> lops = new ArrayList<>();
 		for( Hop hopRoot : hops ){
-			Lop lops = hopRoot.constructLops();
-			lops.addToDag(dag);
+			lops.add(hopRoot.constructLops());
 		}
+
+		// dynamic lop rewrites for the updated hop DAGs
+		if (rewrittenHops)
+			_lopRewriter.get().rewriteLopDAG(lops);
+
+		Dag<Lop> dag = new Dag<>();
+		for (Lop l : lops)
+			l.addToDag(dag);
 		
 		// generate runtime instructions (incl piggybacking)
 		ArrayList<Instruction> newInst = dag

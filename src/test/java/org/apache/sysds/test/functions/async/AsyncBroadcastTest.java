@@ -71,8 +71,6 @@ public class AsyncBroadcastTest extends AutomatedTestBase {
 		InfrastructureAnalyzer.setLocalMaxMemory(mem);
 		
 		try {
-			//OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = false;
-			//OptimizerUtils.ALLOW_SUM_PRODUCT_REWRITES = false;
 			OptimizerUtils.ALLOW_TRANSITIVE_SPARK_EXEC_TYPE = false;
 			getAndLoadTestConfiguration(testname);
 			fullDMLScriptName = getScript();
@@ -88,11 +86,9 @@ public class AsyncBroadcastTest extends AutomatedTestBase {
 			runTest(true, EXCEPTION_NOT_EXPECTED, null, -1);
 			HashMap<MatrixValue.CellIndex, Double> R = readDMLScalarFromOutputDir("R");
 
-			OptimizerUtils.MAX_PARALLELIZE_ORDER = true;
 			OptimizerUtils.ASYNC_BROADCAST_SPARK = true;
 			runTest(true, EXCEPTION_NOT_EXPECTED, null, -1);
 			OptimizerUtils.ASYNC_BROADCAST_SPARK = false;
-			OptimizerUtils.MAX_PARALLELIZE_ORDER = false;
 			HashMap<MatrixValue.CellIndex, Double> R_bc = readDMLScalarFromOutputDir("R");
 
 			//compare matrices

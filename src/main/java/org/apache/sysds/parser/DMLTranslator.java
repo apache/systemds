@@ -78,6 +78,7 @@ import org.apache.sysds.hops.rewrite.ProgramRewriter;
 import org.apache.sysds.lops.Lop;
 import org.apache.sysds.lops.LopsException;
 import org.apache.sysds.lops.compile.Dag;
+import org.apache.sysds.lops.rewrite.LopRewriter;
 import org.apache.sysds.parser.PrintStatement.PRINTTYPE;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.BasicProgramBlock;
@@ -312,6 +313,11 @@ public class DMLTranslator
 				codgenHopsDAG(dmlp);
 		}
 	}
+
+	public void rewriteLopDAG(DMLProgram dmlp) {
+		LopRewriter rewriter = new LopRewriter();
+		rewriter.rewriteProgramLopDAGs(dmlp);
+	}
 	
 	public void codgenHopsDAG(DMLProgram dmlp) {
 		SpoofCompiler.generateCode(dmlp);
@@ -482,7 +488,7 @@ public class DMLTranslator
 	}
 	
 	public ProgramBlock createRuntimeProgramBlock(Program prog, StatementBlock sb, DMLConfig config) {
-		Dag<Lop> dag = null; 
+		Dag<Lop> dag = null;
 		Dag<Lop> pred_dag = null;
 
 		ArrayList<Instruction> instruct;

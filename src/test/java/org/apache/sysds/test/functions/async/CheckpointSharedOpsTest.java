@@ -79,11 +79,11 @@ public class CheckpointSharedOpsTest extends AutomatedTestBase {
 			HashMap<MatrixValue.CellIndex, Double> R = readDMLScalarFromOutputDir("R");
 			long numCP = Statistics.getCPHeavyHitterCount("sp_chkpoint");
 
-			OptimizerUtils.MAX_PARALLELIZE_ORDER = true;
+			OptimizerUtils.ASYNC_CHECKPOINT_SPARK = true;
 			runTest(true, EXCEPTION_NOT_EXPECTED, null, -1);
 			HashMap<MatrixValue.CellIndex, Double> R_mp = readDMLScalarFromOutputDir("R");
 			long numCP_maxp = Statistics.getCPHeavyHitterCount("sp_chkpoint");
-			OptimizerUtils.MAX_PARALLELIZE_ORDER = false;
+			OptimizerUtils.ASYNC_CHECKPOINT_SPARK = false;
 
 			//compare matrices
 			boolean matchVal = TestUtils.compareMatrices(R, R_mp, 1e-6, "Origin", "withPrefetch");

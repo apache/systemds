@@ -66,7 +66,7 @@ public class UnaryCP extends Lop {
 		return "Operation: " + getInstructions("", "");
 	}
 	
-	private String getOpCode() {
+	public String getOpCode() {
 		return operation.toString();
 	}
 

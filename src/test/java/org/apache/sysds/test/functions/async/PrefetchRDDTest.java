@@ -97,7 +97,6 @@ public class PrefetchRDDTest extends AutomatedTestBase {
 			runTest(true, EXCEPTION_NOT_EXPECTED, null, -1);
 			HashMap<MatrixValue.CellIndex, Double> R = readDMLScalarFromOutputDir("R");
 
-			OptimizerUtils.MAX_PARALLELIZE_ORDER = true;
 			OptimizerUtils.ASYNC_PREFETCH_SPARK = true;
 			runTest(true, EXCEPTION_NOT_EXPECTED, null, -1);
 			OptimizerUtils.ASYNC_PREFETCH_SPARK = false;

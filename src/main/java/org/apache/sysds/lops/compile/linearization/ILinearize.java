@@ -34,7 +34,6 @@ import java.util.stream.Stream;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.common.Types.ExecType;
-import org.apache.sysds.common.Types.OpOp1;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.hops.AggBinaryOp.SparkAggType;
@@ -43,24 +42,19 @@ import org.apache.sysds.lops.CSVReBlock;
 import org.apache.sysds.lops.CentralMoment;
 import org.apache.sysds.lops.Checkpoint;
 import org.apache.sysds.lops.CoVariance;
-import org.apache.sysds.lops.DataGen;
-import org.apache.sysds.lops.FunctionCallCP;
 import org.apache.sysds.lops.GroupedAggregate;
 import org.apache.sysds.lops.GroupedAggregateM;
 import org.apache.sysds.lops.Lop;
-import org.apache.sysds.lops.MMCJ;
-import org.apache.sysds.lops.MMRJ;
 import org.apache.sysds.lops.MMTSJ;
 import org.apache.sysds.lops.MMZip;
-import org.apache.sysds.lops.MapMult;
 import org.apache.sysds.lops.MapMultChain;
+import org.apache.sysds.lops.OperatorOrderingUtils;
 import org.apache.sysds.lops.ParameterizedBuiltin;
 import org.apache.sysds.lops.PickByCount;
 import org.apache.sysds.lops.ReBlock;
 import org.apache.sysds.lops.SpoofFused;
 import org.apache.sysds.lops.UAggOuterChain;
 import org.apache.sysds.lops.UnaryCP;
-import org.apache.sysds.parser.DMLProgram;
 
 /**
  * A interface for the linearization algorithms that order the DAG nodes into a sequence of instructions to execute.
@@ -187,15 +181,17 @@ public interface ILinearize {
 	private static List<Lop> doMaxParallelizeSort(List<Lop> v)
 	{
 		List<Lop> final_v = null;
-		if (v.stream().anyMatch(ILinearize::isSparkTriggeringOp)) {
+		// Fallback to default depth-first if all operators are CP
+		if (v.stream().anyMatch(ILinearize::isDistributedOp)) {
 			// Step 1: Collect the Spark roots and #Spark instructions in each subDAG
 			Map<Long, Integer> sparkOpCount = new HashMap<>();
-			List<Lop> roots = v.stream().filter(ILinearize::isRoot).collect(Collectors.toList());
+			List<Lop> roots = v.stream().filter(OperatorOrderingUtils::isLopRoot).collect(Collectors.toList());
 			List<Lop> sparkRoots = new ArrayList<>();
-			roots.forEach(r -> collectSparkRoots(r, sparkOpCount, sparkRoots));
+			roots.forEach(r -> OperatorOrderingUtils.collectSparkRoots(r, sparkOpCount, sparkRoots));
 
-			// Step 2: Depth-first linearization. Place the CP OPs first to increase broadcast potentials.
+			// Step 2: Depth-first linearization of Spark roots.
 			// Maintain the default order (by ID) to trigger independent Spark jobs first
+			// This allows parallel execution of the jobs in the cluster
 			ArrayList<Lop> operatorList = new ArrayList<>();
 			sparkRoots.forEach(r -> depthFirst(r, operatorList, sparkOpCount, false));
 
@@ -204,81 +200,12 @@ public interface ILinearize {
 			roots.forEach(r -> depthFirst(r, operatorList, sparkOpCount, false));
 			roots.forEach(Lop::resetVisitStatus);
 
-			// Step 4: Add Chkpoint lops after the expensive Spark operators, which
-			// are shared among multiple Spark jobs. Only consider operators with
-			// Spark consumers for now.
-			Map<Long, Integer> operatorJobCount = new HashMap<>();
-			markPersistableSparkOps(sparkRoots, operatorJobCount);
-			final_v = addChkpointLop(operatorList, operatorJobCount);
-			// TODO: A rewrite pass to remove less effective chkpoints
+			final_v = operatorList;
 		}
 		else
-			// Fall back to depth if none of the operators returns results back to local
 			final_v = depthFirst(v);
 
-		// Step 4: Add Prefetch and Broadcast lops if necessary
-		List<Lop> v_pf = ConfigurationManager.isPrefetchEnabled() ? addPrefetchLop(final_v) : final_v;
-		List<Lop> v_bc = ConfigurationManager.isBroadcastEnabled() ? addBroadcastLop(v_pf) : v_pf;
-
-		return v_bc;
-	}
-
-	private static boolean isRoot(Lop lop) {
-		if (lop.getOutputs().isEmpty())
-			return true;
-		if (lop instanceof FunctionCallCP &&
-			((FunctionCallCP) lop).getFnamespace().equalsIgnoreCase(DMLProgram.INTERNAL_NAMESPACE)) {
-			return true;
-		}
-		return false;
-	}
-
-	// Gather the Spark operators which return intermediates to local (actions/single_block)
-	// In addition count the number of Spark OPs underneath every Operator
-	private static int collectSparkRoots(Lop root, Map<Long, Integer> sparkOpCount, List<Lop> sparkRoots) {
-		if (sparkOpCount.containsKey(root.getID())) //visited before
-			return sparkOpCount.get(root.getID());
-
-		// Aggregate #Spark operators in the child DAGs
-		int total = 0;
-		for (Lop input : root.getInputs())
-			total += collectSparkRoots(input, sparkOpCount, sparkRoots);
-
-		// Check if this node is Spark
-		total = root.isExecSpark() ? total + 1 : total;
-		sparkOpCount.put(root.getID(), total);
-
-		// Triggering point: Spark action/operator with all CP consumers
-		if (isSparkTriggeringOp(root)) {
-			sparkRoots.add(root);
-			root.setAsynchronous(true); //candidate for async. execution
-		}
-
-		return total;
-	}
-
-	// Count the number of jobs a Spark operator is part of
-	private static void markPersistableSparkOps(List<Lop> sparkRoots, Map<Long, Integer> operatorJobCount) {
-		for (Lop root : sparkRoots) {
-			collectPersistableSparkOps(root, operatorJobCount);
-			root.resetVisitStatus();
-		}
-	}
-
-	private static void collectPersistableSparkOps(Lop root, Map<Long, Integer> operatorJobCount) {
-		if (root.isVisited())
-			return;
-
-		for (Lop input : root.getInputs())
-			if (root.getBroadcastInput() != input)
-				collectPersistableSparkOps(input, operatorJobCount);
-
-		// Increment the job counter if this node benefits from persisting
-		// and reachable from multiple job roots
-		if (isPersistableSparkOp(root))
-			operatorJobCount.merge(root.getID(), 1, Integer::sum);
-
-		root.setVisited();
+		return final_v;
 	}
 
 	// Place the operators in a depth-first manner, but order
@@ -306,104 +233,11 @@ public interface ILinearize {
 		root.setVisited();
 	}
 
-	private static boolean isSparkTriggeringOp(Lop lop) {
-		return lop.isExecSpark() && (lop.getAggType() == SparkAggType.SINGLE_BLOCK
-			|| lop.getDataType() == DataType.SCALAR || lop instanceof MapMultChain
-			|| lop instanceof PickByCount || lop instanceof MMZip || lop instanceof CentralMoment
-			|| lop instanceof CoVariance || lop instanceof MMTSJ || lop.isAllOutputsCP())
-			|| isCollectForBroadcast(lop);
-	}
-
-	private static boolean isCollectForBroadcast(Lop lop) {
-		boolean isSparkOp = lop.isExecSpark();
-		boolean isBc = lop.getOutputs().stream()
-			.allMatch(out -> (out.getBroadcastInput() == lop));
-		//TODO: Handle Lops with mixed Spark (broadcast) CP consumers
-		return isSparkOp && isBc && (lop.getDataType() == DataType.MATRIX);
-	}
-
-	// Dictionary of Spark operators which are expensive enough to be
-	// benefited from persisting if shared among jobs.
-	private static boolean isPersistableSparkOp(Lop lop) {
-		return lop.isExecSpark() && (lop instanceof MapMult
-			|| lop instanceof MMCJ || lop instanceof MMRJ
-			|| lop instanceof MMZip);
-	}
-
-	private static List<Lop> addChkpointLop(List<Lop> nodes, Map<Long, Integer> operatorJobCount) {
-		List<Lop> nodesWithChkpt = new ArrayList<>();
-
-		for (Lop l : nodes) {
-			nodesWithChkpt.add(l);
-			if(operatorJobCount.containsKey(l.getID()) && operatorJobCount.get(l.getID()) > 1) {
-				//This operation is expensive and shared between Spark jobs
-				List<Lop> oldOuts = new ArrayList<>(l.getOutputs());
-				//Construct a chkpoint lop that takes this Spark node as a input
-				Lop chkpoint = new Checkpoint(l, l.getDataType(), l.getValueType(),
-					Checkpoint.getDefaultStorageLevelString(), false);
-				for (Lop out : oldOuts) {
-					//Rewire l -> out to l -> chkpoint -> out
-					chkpoint.addOutput(out);
-					out.replaceInput(l, chkpoint);
-					l.removeOutput(out);
-				}
-				//Place it immediately after the Spark lop in the node list
-				nodesWithChkpt.add(chkpoint);
-			}
-		}
-		return nodesWithChkpt;
-	}
-
-	private static List<Lop> addPrefetchLop(List<Lop> nodes) {
-		List<Lop> nodesWithPrefetch = new ArrayList<>();
-
-		//Find the Spark nodes with all CP outputs
-		for (Lop l : nodes) {
-			nodesWithPrefetch.add(l);
-			if (isPrefetchNeeded(l)) {
-				List<Lop> oldOuts = new ArrayList<>(l.getOutputs());
-				//Construct a Prefetch lop that takes this Spark node as a input
-				UnaryCP prefetch = new UnaryCP(l, OpOp1.PREFETCH, l.getDataType(), l.getValueType(), ExecType.CP);
-				prefetch.setAsynchronous(true);
-				//Reset asynchronous flag for the input if already set (e.g. mapmm -> prefetch)
-				l.setAsynchronous(false);
-				for (Lop outCP : oldOuts) {
-					//Rewire l -> outCP to l -> Prefetch -> outCP
-					prefetch.addOutput(outCP);
-					outCP.replaceInput(l, prefetch);
-					l.removeOutput(outCP);
-					//FIXME: Rewire _inputParams when needed (e.g. GroupedAggregate)
-				}
-				//Place it immediately after the Spark lop in the node list
-				nodesWithPrefetch.add(prefetch);
-			}
-		}
-		return nodesWithPrefetch;
-	}
-
-	private static List<Lop> addBroadcastLop(List<Lop> nodes) {
-		List<Lop> nodesWithBroadcast = new ArrayList<>();
-
-		for (Lop l : nodes) {
-			nodesWithBroadcast.add(l);
-			if (isBroadcastNeeded(l)) {
-				List<Lop> oldOuts = new ArrayList<>(l.getOutputs());
-				//Construct a Broadcast lop that takes this Spark node as an input
-				UnaryCP bc = new UnaryCP(l, OpOp1.BROADCAST, l.getDataType(), l.getValueType(), ExecType.CP);
-				bc.setAsynchronous(true);
-				//FIXME: Wire Broadcast only with the necessary outputs
-				for (Lop outCP : oldOuts) {
-					//Rewire l -> outCP to l -> Broadcast -> outCP
-					bc.addOutput(outCP);
-					outCP.replaceInput(l, bc);
-					l.removeOutput(outCP);
-					//FIXME: Rewire _inputParams when needed (e.g. GroupedAggregate)
-				}
-				//Place it immediately after the Spark lop in the node list
-				nodesWithBroadcast.add(bc);
-			}
-		}
-		return nodesWithBroadcast;
+	private static boolean isDistributedOp(Lop lop) {
+		return lop.isExecSpark()
+			|| (lop instanceof UnaryCP
+			&& (((UnaryCP) lop).getOpCode().equalsIgnoreCase("prefetch")
+			|| ((UnaryCP) lop).getOpCode().equalsIgnoreCase("broadcast")));
 	}
 
 	@SuppressWarnings("unused")
@@ -430,43 +264,6 @@ public interface ILinearize {
 			nodesWithCheckpoint.add(l);
 		}
 		return nodesWithCheckpoint;
-	}
-
-	private static boolean isPrefetchNeeded(Lop lop) {
-		// Run Prefetch for a Spark instruction if the instruction is a Transformation
-		// and the output is consumed by only CP instructions.
-		boolean transformOP = lop.getExecType() == ExecType.SPARK && lop.getAggType() != SparkAggType.SINGLE_BLOCK
-				// Always Action operations
-				&& !(lop.getDataType() == DataType.SCALAR)
-				&& !(lop instanceof MapMultChain) && !(lop instanceof PickByCount)
-				&& !(lop instanceof MMZip) && !(lop instanceof CentralMoment)
-				&& !(lop instanceof CoVariance)
-				// Not qualified for prefetching
-				&& !(lop instanceof Checkpoint) && !(lop instanceof ReBlock)
-				&& !(lop instanceof CSVReBlock) && !(lop instanceof DataGen)
-				// Cannot filter Transformation cases from Actions (FIXME)
-				&& !(lop instanceof MMTSJ) && !(lop instanceof UAggOuterChain)
-				&& !(lop instanceof ParameterizedBuiltin) && !(lop instanceof SpoofFused);
-
-		//FIXME: Rewire _inputParams when needed (e.g. GroupedAggregate)
-		boolean hasParameterizedOut = lop.getOutputs().stream()
-				.anyMatch(out -> ((out instanceof ParameterizedBuiltin)
-					|| (out instanceof GroupedAggregate)
-					|| (out instanceof GroupedAggregateM)));
-		//TODO: support non-matrix outputs
-		return transformOP && !hasParameterizedOut
-				&& (lop.isAllOutputsCP() || isCollectForBroadcast(lop))
-				&& lop.getDataType() == DataType.MATRIX;
-	}
-
-	private static boolean isBroadcastNeeded(Lop lop) {
-		// Asynchronously broadcast a matrix if that is produced by a CP instruction,
-		// and at least one Spark parent needs to broadcast this intermediate (eg. mapmm)
-		boolean isBc = lop.getOutputs().stream()
-				.anyMatch(out -> (out.getBroadcastInput() == lop));
-		//TODO: Early broadcast objects that are bigger than a single block
-		//return isCP && isBc && lop.getDataTypes() == DataType.Matrix;
-		return isBc && lop.getDataType() == DataType.MATRIX;
 	}
 
 	private static boolean isCheckpointNeeded(Lop lop) {

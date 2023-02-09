@@ -54,6 +54,7 @@ public class LopProperties
 	}
 	
 	public long getID() { return ID; }
+	public void setNewID() { ID = UniqueLopID.getNextID(); }
 	public int getLevel() { return level; }
 	public void setLevel( int l ) { level = l; }
 	

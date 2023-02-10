@@ -21,40 +21,39 @@ package org.apache.sysds.runtime.matrix.data;
 
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.common.Types;
-import org.apache.sysds.hops.OptimizerUtils;
 
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.List;
 
 public class LibMatrixSketch {
 
-	private enum MatrixShape {
-		SKINNY,  // rows > cols
-		WIDE,    // rows < cols
-	}
-
 	public static MatrixBlock getUniqueValues(MatrixBlock blkIn, Types.Direction dir) {
+		//similar to R's unique, this operation takes a matrix and computes the
+		//unique values (or rows in case of multiple column inputs)
+		
+		int rlen = blkIn.getNumRows();
+		int clen = blkIn.getNumColumns();
 
-		int R = blkIn.getNumRows();
-		int C = blkIn.getNumColumns();
-		List<HashSet<Double>> hashSets = new ArrayList<>();
-
-		MatrixShape matrixShape = (R >= C)? MatrixShape.SKINNY : MatrixShape.WIDE;
-		MatrixBlock blkOut;
-		switch (dir)
-		{
+		MatrixBlock blkOut = null;
+		switch (dir) {
 			case RowCol:
+				if( clen != 1 )
+					throw new NotImplementedException("Unique only support single-column vectors yet");
+				// TODO optimize for dense/sparse/compressed (once multi-column support added)
+				
+				// obtain set of unique items (dense input vector)
 				HashSet<Double> hashSet = new HashSet<>();
-				// TODO optimize for sparse and compressed inputs
-				for (int i=0; i<R; ++i) {
-					for (int j=0; j<C; ++j) {
-						hashSet.add(blkIn.getValue(i, j));
-					}
+				for( int i=0; i<rlen; i++ ) {
+					hashSet.add(blkIn.quickGetValue(i, 0));
 				}
-				hashSets.add(hashSet);
-				blkOut = serializeRowCol(hashSets, dir, matrixShape);
+				
+				// allocate output block and place values
+				int rlen2 = hashSet.size();
+				blkOut = new MatrixBlock(rlen2, 1, false).allocateBlock();
+				Iterator<Double> iter = hashSet.iterator();
+				for( int i=0; i<rlen2; i++ ) {
+					blkOut.quickSetValue(i, 0, iter.next());
+				}
 				break;
 
 			case Row:
@@ -63,53 +62,6 @@ public class LibMatrixSketch {
 
 			default:
 				throw new IllegalArgumentException("Unrecognized direction: " + dir);
-		}
-
-		return blkOut;
-	}
-
-	private static MatrixBlock serializeRowCol(List<HashSet<Double>> hashSets, Types.Direction dir, MatrixShape matrixShape) {
-
-		if (dir != Types.Direction.RowCol) {
-			throw new IllegalArgumentException("Unrecognized direction: " + dir);
-		}
-
-		MatrixBlock blkOut;
-
-		if (hashSets.isEmpty()) {
-			throw new IllegalArgumentException("Corrupt sketch: metadata cannot be empty");
-		}
-
-		int R, C;
-		HashSet<Double> hashSet = hashSets.get(0);
-		Iterator<Double> iter = hashSet.iterator();
-
-		if (hashSet.size() <= OptimizerUtils.DEFAULT_BLOCKSIZE) {
-			if (matrixShape == MatrixShape.SKINNY) {
-				// Rx1 column vector
-				R = hashSet.size();
-				C = 1;
-			} else {  // WIDE
-				// 1xC row vector
-				R = 1;
-				C = hashSet.size();
-			}
-		} else {
-			if (matrixShape == MatrixShape.SKINNY) {
-				R = OptimizerUtils.DEFAULT_BLOCKSIZE;
-				C = (hashSet.size() / OptimizerUtils.DEFAULT_BLOCKSIZE) + 1;
-			} else {  // WIDE
-				R = (hashSet.size() / OptimizerUtils.DEFAULT_BLOCKSIZE) + 1;
-				C = OptimizerUtils.DEFAULT_BLOCKSIZE;
-			}
-		}
-
-		blkOut = new MatrixBlock(R, C, false);
-		for (int i=0; i<R; ++i) {
-			// C is guaranteed to be > 0
-			for (int j=0; j<C; ++j) {
-				blkOut.setValue(i, j, iter.next());
-			}
 		}
 
 		return blkOut;

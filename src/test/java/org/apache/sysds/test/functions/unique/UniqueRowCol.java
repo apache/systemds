@@ -66,80 +66,8 @@ public class UniqueRowCol extends UniqueBase {
 
 	@Test
 	public void testWideSmallCP() {
-		double[][] inputMatrix = {{1,1,6,9,4,2,0,9,0,0,4,4}};
+		double[][] inputMatrix = {{1},{1},{6},{9},{4},{2},{0},{9},{0},{0},{4},{4}};
 		double[][] expectedMatrix = {{1,6,9,4,2,0}};
-		uniqueTest(inputMatrix, expectedMatrix, Types.ExecType.CP, 0.0);
-	}
-
-	@Test
-	public void testSquareLargeCP() {
-		double[][] inputMatrix = new double[1000][1000];
-		// Input is a 1000 x 1000 matrix:
-		// [1, 1, ..., 1, 2, 2, .., 2]
-		// [1, 1, ..., 1, 2, 2, .., 2]
-		// ..
-		// [1, 1, ..., 1, 2, 2, .., 2]
-		// [2, 2, ..., 2, 1, 1, .., 1]
-		// [2, 2, ..., 2, 1, 1, .., 1]
-		// ..
-		// [2, 2, ..., 2, 1, 1, .., 1]
-		for (int i=0; i<500; ++i) {
-			for (int j=0; j<500; ++j) {
-				inputMatrix[i][j] = 1;
-				inputMatrix[i+500][j+500] = 1;
-			}
-		}
-		for (int i=500; i<1000; ++i) {
-			for (int j=0; j<500; ++j) {
-				inputMatrix[i][j] = 2;
-				inputMatrix[i-500][j+500] = 2;
-			}
-		}
-		// Expect the output to be a skinny matrix due to the following condition in code:
-		// (R >= C)? LibMatrixSketch.MatrixShape.SKINNY : LibMatrixSketch.MatrixShape.WIDE;
-		double[][] expectedMatrix = {{1},{2}};
-		uniqueTest(inputMatrix, expectedMatrix, Types.ExecType.CP, 0.0);
-	}
-
-	@Test
-	public void testSkinnyLargeCP() {
-		double[][] inputMatrix = new double[2000][2];
-		// Input is a 2000 x 2 matrix:
-		// [1, 2]
-		// [1, 2]
-		// ..
-		// [1, 2]
-		// [2, 1]
-		// [2, 1]
-		// ..
-		// [2, 1]
-		for (int i=0; i<1000; ++i) {
-			inputMatrix[i][0] = 1;
-			inputMatrix[i][1] = 2;
-		}
-		for (int i=1000; i<2000; ++i) {
-			inputMatrix[i][0] = 2;
-			inputMatrix[i][1] = 1;
-		}
-		double[][] expectedMatrix = {{1}, {2}};
-		uniqueTest(inputMatrix, expectedMatrix, Types.ExecType.CP, 0.0);
-	}
-
-	@Test
-	public void testWideLargeCP() {
-		double[][] inputMatrix = new double[2][2000];
-		// Input is a 2 x 2000 matrix:
-		// [1, 1, ..., 1, 2, 2, .., 2]
-		// [2, 2, ..., 2, 1, 1, .., 1]
-		for (int j=0; j<1000; ++j) {
-			inputMatrix[0][j] = 1;
-			inputMatrix[1][j+1000] = 1;
-		}
-		for (int j=1000; j<2000; ++j) {
-			inputMatrix[0][j] = 2;
-			inputMatrix[1][j-1000] = 2;
-		}
-		double[][] expectedMatrix = {{1,2}};
 		uniqueTest(inputMatrix, expectedMatrix, Types.ExecType.CP, 0.0);
 	}
 }

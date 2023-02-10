@@ -1947,8 +1947,8 @@ public abstract class AutomatedTestBase {
 				TestUtils.compareDMLScalarWithJavaScalar(javaFile, dmlFile, epsilon);
 			}
 			else {
-				TestUtils
-					.compareDMLMatrixWithJavaMatrixRowsOutOfOrder(comparisonFiles[i], outputDirectories[i], epsilon);
+				TestUtils.compareDMLMatrixWithJavaMatrixRowsOutOfOrder(
+					comparisonFiles[i], outputDirectories[i], epsilon);
 			}
 		}
 	}

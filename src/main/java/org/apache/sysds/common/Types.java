@@ -606,7 +606,13 @@ public class Types
 		public boolean isRead() {
 			return this == TRANSIENTREAD || this == PERSISTENTREAD;
 		}
-		
+		public boolean isTransientRead() {
+			return this == TRANSIENTREAD;
+		}
+		public boolean isTransientWrite() {
+			return this == TRANSIENTWRITE;
+		}
+
 		@Override
 		public String toString() {
 			switch(this) {

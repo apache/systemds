@@ -474,7 +474,13 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 	@Override
 	public Pair<String, LineageItem> getLineageItem(ExecutionContext ec) {
 		String opcode = getOpcode();
-		if(opcode.equalsIgnoreCase("groupedagg")) {
+		if(opcode.equalsIgnoreCase("contains")) {
+			CPOperand target = getTargetOperand();
+			CPOperand pattern = getFP64Literal("pattern");
+			return Pair.of(output.getName(),
+				new LineageItem(getOpcode(), LineageItemUtils.getLineage(ec, target, pattern)));
+		}
+		else if(opcode.equalsIgnoreCase("groupedagg")) {
 			CPOperand target = getTargetOperand();
 			CPOperand groups = new CPOperand(params.get(Statement.GAGG_GROUPS), ValueType.FP64, DataType.MATRIX);
 			String wt = params.containsKey(Statement.GAGG_WEIGHTS) ? params.get(Statement.GAGG_WEIGHTS) : String

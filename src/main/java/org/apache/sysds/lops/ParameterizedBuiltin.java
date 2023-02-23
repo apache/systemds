@@ -131,13 +131,6 @@ public class ParameterizedBuiltin extends Lop
 				
 				break;
 			
-			case REPLACE: {
-				sb.append( "replace" );
-				sb.append( OPERAND_DELIMITOR );
-				sb.append(compileGenericParamMap(_inputParams));
-				break;
-			}
-			
 			case LOWER_TRI: {
 				sb.append( "lowertri" );
 				sb.append( OPERAND_DELIMITOR );
@@ -174,11 +167,14 @@ public class ParameterizedBuiltin extends Lop
 
 				break;
 
+			case CONTAINS:
+			case REPLACE:
 			case TOKENIZE:
 			case TRANSFORMAPPLY:
 			case TRANSFORMDECODE:
 			case TRANSFORMCOLMAP:
-			case TRANSFORMMETA:{ 
+			case TRANSFORMMETA:
+			case PARAMSERV: { 
 				sb.append(_operation.name().toLowerCase()); //opcode
 				sb.append(OPERAND_DELIMITOR);
 				sb.append(compileGenericParamMap(_inputParams));
@@ -202,14 +198,7 @@ public class ParameterizedBuiltin extends Lop
 				sb.append(compileGenericParamMap(_inputParams));
 				break;
 			}
-
-			case PARAMSERV: {
-				sb.append("paramserv");
-				sb.append(OPERAND_DELIMITOR);
-				sb.append(compileGenericParamMap(_inputParams));
-				break;
-			}
-				
+			
 			default:
 				throw new LopsException(this.printErrorLocation() + "In ParameterizedBuiltin Lop, Unknown operation: " + _operation);
 		}

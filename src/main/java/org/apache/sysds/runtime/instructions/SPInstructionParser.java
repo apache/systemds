@@ -275,7 +275,8 @@ public class SPInstructionParser extends InstructionParser
 		String2SPInstructionType.put( "isinf", SPType.Unary);
 
 		// Parameterized Builtin Functions
-		String2SPInstructionType.put( "autoDiff"   , SPType.ParameterizedBuiltin);
+		String2SPInstructionType.put( "autoDiff",       SPType.ParameterizedBuiltin);
+		String2SPInstructionType.put( "contains",       SPType.ParameterizedBuiltin);
 		String2SPInstructionType.put( "groupedagg",     SPType.ParameterizedBuiltin);
 		String2SPInstructionType.put( "mapgroupedagg",  SPType.ParameterizedBuiltin);
 		String2SPInstructionType.put( "rmempty",        SPType.ParameterizedBuiltin);

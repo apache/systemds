@@ -138,13 +138,14 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 		}
 		else if(opcode.equalsIgnoreCase("rmempty") || opcode.equalsIgnoreCase("replace") ||
 			opcode.equalsIgnoreCase("rexpand") || opcode.equalsIgnoreCase("lowertri") ||
-			opcode.equalsIgnoreCase("uppertri")) {
+			opcode.equalsIgnoreCase("uppertri") ) {
 			func = ParameterizedBuiltin.getParameterizedBuiltinFnObject(opcode);
 			return new ParameterizedBuiltinCPInstruction(new SimpleOperator(func), paramsMap, out, opcode, str);
 		}
-		else if(opcode.equals("transformapply") || opcode.equals("transformdecode") ||
-			opcode.equals("transformcolmap") || opcode.equals("transformmeta") || opcode.equals("tokenize") ||
-			opcode.equals("toString") || opcode.equals("nvlist") || opcode.equals("autoDiff")) {
+		else if(opcode.equals("transformapply") || opcode.equals("transformdecode")
+			|| opcode.equalsIgnoreCase("contains") || opcode.equals("transformcolmap")
+			|| opcode.equals("transformmeta") || opcode.equals("tokenize")
+			|| opcode.equals("toString") || opcode.equals("nvlist") || opcode.equals("autoDiff")) {
 			return new ParameterizedBuiltinCPInstruction(null, paramsMap, out, opcode, str);
 		}
 		else if("paramserv".equals(opcode)) {
@@ -235,6 +236,14 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 					ec.releaseMatrixInput(params.get("select"));
 			}
 		}
+		else if(opcode.equalsIgnoreCase("contains")) {
+			String varName = params.get("target");
+			MatrixBlock target = ec.getMatrixInput(varName);
+			double pattern = Double.parseDouble(params.get("pattern"));
+			boolean ret = target.containsValue(pattern);
+			ec.releaseMatrixInput(varName);
+			ec.setScalarOutput(output.getName(), new BooleanObject(ret));
+		}
 		else if(opcode.equalsIgnoreCase("replace")) {
 			if(ec.isFrameObject(params.get("target"))){
 				FrameBlock target = ec.getFrameInput(params.get("target"));
@@ -255,7 +264,6 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 					ec.setMatrixOutput(output.getName(), ret);
 				targetObj.release();
 			}
-			
 		}
 		else if(opcode.equals("lowertri") || opcode.equals("uppertri")) {
 			MatrixBlock target = ec.getMatrixInput(params.get("target"));

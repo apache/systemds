@@ -202,6 +202,10 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 			validateReplace(output, conditional);
 			break;
 		
+		case CONTAINS:
+			validateContains(output, conditional);
+			break;
+		
 		case ORDER:
 			validateOrder(output, conditional);
 			break;
@@ -725,28 +729,24 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 		output.setDimensions(in.getDim1(), in.getDim2());
 	}
 	
+	private void validateContains(DataIdentifier output, boolean conditional) {
+		//check existence and correctness of arguments
+		Expression target = getVarParam("target");
+		checkTargetParam(target, conditional);
+		checkScalarParam("contains", "pattern", conditional);
+		
+		//set boolean scalar 
+		output.setBooleanProperties();
+	}
+	
 	private void validateReplace(DataIdentifier output, boolean conditional) {
 		//check existence and correctness of arguments
 		Expression target = getVarParam("target");
 		if( target.getOutput().getDataType() != DataType.FRAME ){
 			checkTargetParam(target, conditional);
 		}
-		
-		Expression pattern = getVarParam("pattern");
-		if( pattern==null ) {
-			raiseValidateError("Named parameter 'pattern' missing. Please specify the replacement pattern.", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
-		}
-		else if( pattern.getOutput().getDataType() != DataType.SCALAR ){				
-			raiseValidateError("Replacement pattern 'pattern' is of type '"+pattern.getOutput().getDataType()+"'. Please, specify a scalar replacement pattern.", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
-		}	
-		
-		Expression replacement = getVarParam("replacement");
-		if( replacement==null ) {
-			raiseValidateError("Named parameter 'replacement' missing. Please specify the replacement value.", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
-		}
-		else if( replacement.getOutput().getDataType() != DataType.SCALAR ){	
-			raiseValidateError("Replacement value 'replacement' is of type '"+replacement.getOutput().getDataType()+"'. Please, specify a scalar replacement value.", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
-		}	
+		checkScalarParam("replace", "pattern", conditional);
+		checkScalarParam("replace", "replacement", conditional);
 		
 		// Output is a matrix with same dims as input
 		output.setDataType(target.getOutput().getDataType());
@@ -755,6 +755,19 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 		else
 			output.setValueType(ValueType.FP64);
 		output.setDimensions(target.getOutput().getDim1(), target.getOutput().getDim2());
+	}
+	
+	private void checkScalarParam(String group, String param, boolean conditional) {
+		Expression eparam = getVarParam(param);
+		if( eparam==null ) {
+			raiseValidateError("Named parameter '"+param+"' missing. Please specify the "+group+" pattern.",
+				conditional, LanguageErrorCodes.INVALID_PARAMETERS);
+		}
+		else if( eparam.getOutput().getDataType() != DataType.SCALAR ){
+			raiseValidateError(group + " parameter '"+param+"' is of type '"
+				+ eparam.getOutput().getDataType()+"'. Please, specify a scalar "+param+".",
+				conditional, LanguageErrorCodes.INVALID_PARAMETERS);
+		}
 	}
 
 	private void validateOrder(DataIdentifier output, boolean conditional) {

@@ -2007,6 +2007,7 @@ public class DMLTranslator
 					target.getValueType(), source.getOpCode(), paramHops);
 				break;
 			
+			case CONTAINS:
 			case GROUPEDAGG:
 			case RMEMPTY:
 			case REPLACE:

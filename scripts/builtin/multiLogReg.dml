@@ -59,10 +59,10 @@ m_multiLogReg = function(Matrix[Double] X, Matrix[Double] Y, Int icpt = 2,
   D = ncol (X);
 
   # Robustness for datasets with missing values (causing NaN gradients)
-  numNaNs = sum(isNaN(X))
-  if( numNaNs > 0 ) {
+  hasNaNs = contains(target=X, pattern=NaN);
+  if( hasNaNs > 0 ) {
     if(verbose)
-      print("multiLogReg: matrix X contains "+numNaNs+" missing values, replacing with 0.")
+      print("multiLogReg: matrix X contains "+sum(isNaN(X))+" missing values, replacing with 0.")
     X = replace(target=X, pattern=NaN, replacement=0);
   }
 

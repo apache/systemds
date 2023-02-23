@@ -58,9 +58,11 @@ import org.apache.sysds.runtime.controlprogram.federated.FederatedUDF;
 import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
 import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
 import org.apache.sysds.runtime.controlprogram.federated.MatrixLineagePair;
+import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest.RequestType;
 import org.apache.sysds.runtime.functionobjects.ParameterizedBuiltin;
 import org.apache.sysds.runtime.functionobjects.ValueFunction;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
+import org.apache.sysds.runtime.instructions.cp.BooleanObject;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.instructions.cp.Data;
 import org.apache.sysds.runtime.instructions.cp.ParameterizedBuiltinCPInstruction;
@@ -85,8 +87,8 @@ public class ParameterizedBuiltinFEDInstruction extends ComputationFEDInstructio
 	protected final HashMap<String, String> params;
 
 	private static final String[] PARAM_BUILTINS = new String[]{
-		"replace", "rmempty", "lowertri", "uppertri", "transformdecode", "transformapply", "tokenize"};
-
+		"contains", "replace", "rmempty", "lowertri", "uppertri",
+		"transformdecode", "transformapply", "tokenize"};
 
 	protected ParameterizedBuiltinFEDInstruction(Operator op, HashMap<String, String> paramsMap, CPOperand out,
 		String opcode, String istr) {
@@ -110,7 +112,8 @@ public class ParameterizedBuiltinFEDInstruction extends ComputationFEDInstructio
 			ValueFunction func = ParameterizedBuiltin.getParameterizedBuiltinFnObject(opcode);
 			return new ParameterizedBuiltinFEDInstruction(new SimpleOperator(func), paramsMap, out, opcode, str);
 		}
-		else if(opcode.equals("transformapply") || opcode.equals("transformdecode") || opcode.equals("tokenize")) {
+		else if(opcode.equals("transformapply") || opcode.equals("transformdecode")
+			|| opcode.equals("tokenize") || opcode.equals("contains") ) {
 			return new ParameterizedBuiltinFEDInstruction(null, paramsMap, out, opcode, str);
 		}
 		else {
@@ -140,15 +143,17 @@ public class ParameterizedBuiltinFEDInstruction extends ComputationFEDInstructio
 		return paramMap;
 	}
 
-	public static ParameterizedBuiltinFEDInstruction parseInstruction(ParameterizedBuiltinCPInstruction inst,
-		ExecutionContext ec) {
+	public static ParameterizedBuiltinFEDInstruction parseInstruction(
+		ParameterizedBuiltinCPInstruction inst, ExecutionContext ec)
+	{
 		if(ArrayUtils.contains(PARAM_BUILTINS, inst.getOpcode()) && inst.getTarget(ec).isFederatedExcept(FType.BROADCAST))
 			return ParameterizedBuiltinFEDInstruction.parseInstruction(inst);
 		return null;
 	}
 
-	public static ParameterizedBuiltinFEDInstruction parseInstruction(ParameterizedBuiltinSPInstruction inst,
-		ExecutionContext ec) {
+	public static ParameterizedBuiltinFEDInstruction parseInstruction(
+		ParameterizedBuiltinSPInstruction inst, ExecutionContext ec)
+	{
 		if( inst.getOpcode().equalsIgnoreCase("replace") && inst.getTarget(ec).isFederatedExcept(FType.BROADCAST) )
 			return ParameterizedBuiltinFEDInstruction.parseInstruction(inst);
 		return null;
@@ -167,13 +172,21 @@ public class ParameterizedBuiltinFEDInstruction extends ComputationFEDInstructio
 	@Override
 	public void processInstruction(ExecutionContext ec) {
 		String opcode = getOpcode();
-		if(opcode.equalsIgnoreCase("replace")) {
+		if(opcode.equalsIgnoreCase("contains")) {
+			FederationMap map = getTarget(ec).getFedMapping();
+			FederatedRequest fr1 = FederationUtils.callInstruction(instString,
+				output, new CPOperand[] {getTargetOperand()}, new long[] {map.getID()});
+			FederatedRequest fr2 = new FederatedRequest(RequestType.GET_VAR, fr1.getID());
+			Future<FederatedResponse>[] tmp = map.execute(getTID(), fr1, fr2);
+			boolean ret = FederationUtils.aggBooleanScalar(tmp);
+			ec.setVariable(output.getName(), new BooleanObject(ret));
+		}
+		else if(opcode.equalsIgnoreCase("replace")) {
 			// similar to unary federated instructions, get federated input
 			// execute instruction, and derive federated output matrix
 			CacheableData<?> mo = getTarget(ec);
-			FederatedRequest fr1 = FederationUtils.callInstruction(instString,
-				output,
-				new CPOperand[] {getTargetOperand()},
+			FederatedRequest fr1 = FederationUtils.callInstruction(
+				instString, output, new CPOperand[] {getTargetOperand()},
 				new long[] {mo.getFedMapping().getID()});
 			Future<FederatedResponse>[] ret = mo.getFedMapping().execute(getTID(), true, fr1);
 

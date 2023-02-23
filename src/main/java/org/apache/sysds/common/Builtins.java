@@ -310,6 +310,7 @@ public enum Builtins {
 	// Parameterized functions with parameters
 	AUTODIFF("autoDiff", false, true),
 	CDF("cdf", false, true),
+	CONTAINS("contains", false, true),
 	COUNT_DISTINCT("countDistinct",false, true),
 	COUNT_DISTINCT_APPROX("countDistinctApprox", false, true),
 	COUNT_DISTINCT_APPROX_ROW("rowCountDistinctApprox", false, true),

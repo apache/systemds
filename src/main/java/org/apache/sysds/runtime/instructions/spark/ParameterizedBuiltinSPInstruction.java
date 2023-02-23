@@ -47,6 +47,7 @@ import org.apache.sysds.runtime.functionobjects.KahanPlus;
 import org.apache.sysds.runtime.functionobjects.ParameterizedBuiltin;
 import org.apache.sysds.runtime.functionobjects.ValueFunction;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
+import org.apache.sysds.runtime.instructions.cp.BooleanObject;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue;
 import org.apache.sysds.runtime.instructions.spark.data.LazyIterableIterator;
@@ -168,6 +169,9 @@ public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
 				opcode.equalsIgnoreCase("transformdecode")) {
 				func = ParameterizedBuiltin.getParameterizedBuiltinFnObject(opcode);
 				return new ParameterizedBuiltinSPInstruction(new SimpleOperator(func), paramsMap, out, opcode, str);
+			}
+			else if(opcode.equalsIgnoreCase("contains")) {
+				return new ParameterizedBuiltinSPInstruction(null, paramsMap, out, opcode, str);
 			}
 			else {
 				throw new DMLRuntimeException("Unknown opcode (" + opcode + ") for ParameterizedBuiltin Instruction.");
@@ -363,6 +367,17 @@ public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
 				sec.setMatrixOutput(output.getName(), out);
 			}
 		}
+		else if(opcode.equalsIgnoreCase("contains")) {
+			JavaPairRDD<MatrixIndexes, MatrixBlock> in1 = sec
+				.getBinaryMatrixBlockRDDHandleForVariable(params.get("target"));
+			
+			// execute contains operation 
+			double pattern = Double.parseDouble(params.get("pattern"));
+			Double ret = in1.values() //num blocks containing pattern
+				.map(new RDDContainsFunction(pattern))
+				.reduce((a,b) -> a+b);
+			ec.setScalarOutput(output.getName(), new BooleanObject(ret>0));
+		}
 		else if(opcode.equalsIgnoreCase("replace")) {
 			if(sec.isFrameObject(params.get("target"))){
 				params.get("target");
@@ -395,7 +410,6 @@ public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
 					mcIn.getBlocksize(),
 					(pattern != 0 && replacement != 0) ? mcIn.getNonZeros() : -1);
 			}
-
 		}
 		else if(opcode.equalsIgnoreCase("lowertri") || opcode.equalsIgnoreCase("uppertri")) {
 			JavaPairRDD<MatrixIndexes, MatrixBlock> in1 = sec
@@ -564,6 +578,20 @@ public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
 		@Override
 		public MatrixBlock call(MatrixBlock arg0) {
 			return arg0.replaceOperations(new MatrixBlock(), _pattern, _replacement);
+		}
+	}
+	
+	public static class RDDContainsFunction implements Function<MatrixBlock, Double> {
+		private static final long serialVersionUID = 6576713401901671659L;
+		private final double _pattern;
+
+		public RDDContainsFunction(double pattern) {
+			_pattern = pattern;
+		}
+
+		@Override
+		public Double call(MatrixBlock arg0) {
+			return arg0.containsValue(_pattern) ? 1d : 0d;
 		}
 	}
 

@@ -123,7 +123,7 @@ public class FederatedLogRegTest extends AutomatedTestBase {
 		Assert.assertTrue("contains fed_ba+*", heavyHittersContainsString("fed_ba+*"));
 		Assert.assertTrue("contains fed_uar", heavyHittersContainsString("fed_uark+", "fed_uarsqk+"));
 		Assert.assertTrue("contains fed_mmchain & r'", heavyHittersContainsString("fed_mmchain", "fed_r'"));
-		Assert.assertTrue("contains fed_isnan", heavyHittersContainsString("fed_isnan"));
+		Assert.assertTrue("contains fed_contains", heavyHittersContainsString("fed_contains"));
 		
 		// check that federated input files are still existing
 		Assert.assertTrue(HDFSTool.existsFileOnHDFS(input("X1")));

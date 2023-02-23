@@ -487,7 +487,19 @@ public class FederationUtils {
 			throw new DMLRuntimeException(ex);
 		}
 	}
-
+	
+	public static boolean aggBooleanScalar(Future<FederatedResponse>[] tmp) {
+		boolean ret = false;
+		try {
+			for( Future<FederatedResponse> fr : tmp )
+				ret |= ((ScalarObject)fr.get().getData()[0]).getBooleanValue();
+		}
+		catch (Exception e) {
+			throw new DMLRuntimeException(e);
+		}
+		return ret;
+	}
+	
 	public static MatrixBlock aggMatrix(AggregateUnaryOperator aop, Future<FederatedResponse>[] ffr, FederationMap map) {
 		if (aop.isRowAggregate() && map.getType() == FType.ROW)
 			return bind(ffr, false);

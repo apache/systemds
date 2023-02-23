@@ -222,6 +222,7 @@ public class CPInstructionParser extends InstructionParser {
 		
 		// Parameterized Builtin Functions
 		String2CPInstructionType.put( "autoDiff" ,      CPType.ParameterizedBuiltin);
+		String2CPInstructionType.put( "contains",       CPType.ParameterizedBuiltin);
 		String2CPInstructionType.put("paramserv",       CPType.ParameterizedBuiltin);
 		String2CPInstructionType.put( "nvlist",         CPType.ParameterizedBuiltin);
 		String2CPInstructionType.put( "cdf",            CPType.ParameterizedBuiltin);

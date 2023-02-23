@@ -181,7 +181,8 @@ public class ParameterizedBuiltinOp extends MultiThreadedHop {
 			case REXPAND: {
 				constructLopsRExpand(inputlops, et);
 				break;
-			} 
+			}
+			case CONTAINS:
 			case CDF:
 			case INVCDF: 
 			case REPLACE:

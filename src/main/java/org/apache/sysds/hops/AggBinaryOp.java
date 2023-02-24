@@ -417,8 +417,9 @@ public class AggBinaryOp extends MultiThreadedHop {
 			if( _etype == ExecType.CP
 				&& checkMapMultChain() != ChainType.NONE
 				&& OptimizerUtils.getLocalMemBudget() < 
-				getInput().get(0).getInput().get(0).getOutputMemEstimate() )
+				getInput().get(0).getInput().get(0).getOutputMemEstimate() ) {
 				_etype = ExecType.SPARK;
+			}
 			
 			//check for valid CP dimensions and matrix size
 			checkAndSetInvalidCPDimsAndSize();
@@ -426,9 +427,10 @@ public class AggBinaryOp extends MultiThreadedHop {
 		
 		//spark-specific decision refinement (execute binary aggregate w/ left or right spark input and 
 		//single parent also in spark because it's likely cheap and reduces data transfer)
+		MMTSJType mmtsj = checkTransposeSelf(); //determine tsmm pattern
 		if( transitive && _etype == ExecType.CP && _etypeForced != ExecType.CP 
-			&& (isApplicableForTransitiveSparkExecType(true) 
-			|| isApplicableForTransitiveSparkExecType(false)) )
+			&& ((!mmtsj.isLeft() && isApplicableForTransitiveSparkExecType(true))
+			|| ( !mmtsj.isRight() && isApplicableForTransitiveSparkExecType(false))) )
 		{
 			//pull binary aggregate into spark 
 			_etype = ExecType.SPARK;

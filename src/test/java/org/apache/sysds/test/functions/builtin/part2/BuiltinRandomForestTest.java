@@ -19,7 +19,6 @@
 
 package org.apache.sysds.test.functions.builtin.part2;
 
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -51,34 +50,29 @@ public class BuiltinRandomForestTest extends AutomatedTestBase
 	@Parameterized.Parameter(1)
 	public int cols;
 	@Parameterized.Parameter(2)
-	public int bins;
-	@Parameterized.Parameter(3)
 	public int depth;
-	@Parameterized.Parameter(4)
+	@Parameterized.Parameter(3)
 	public int num_leaf;
-	@Parameterized.Parameter(5)
+	@Parameterized.Parameter(4)
 	public int num_trees;
-	@Parameterized.Parameter(6)
+	@Parameterized.Parameter(5)
 	public String impurity;
 	
 	@Parameterized.Parameters
 	public static Collection<Object[]> data() {
 		return Arrays.asList(new Object[][] {
-			//TODO fix randomForest script (currently indexing issues)
-			{2000, 7, 4, 7, 10, 1, "Gini"},
-			{2000, 7, 4, 7, 10, 1, "entropy"},
-			{2000, 7, 4, 3, 5, 3, "Gini"},
-			{2000, 7, 4, 3, 5, 3, "entropy"},
+			{2000, 7, 7, 10, 1, "gini"},
+			{2000, 7, 7, 10, 1, "entropy"},
+			{1000, 7, 7, 10, 4, "gini"},
+			{1000, 7, 7, 10, 4, "entropy"},
 		});
 	}
 
-	@Ignore
 	@Test
 	public void testRandomForestSinglenode() {
 		runRandomForestTest(ExecMode.SINGLE_NODE);
 	}
 	
-	@Ignore
 	@Test
 	public void testRandomForestHybrid() {
 		runRandomForestTest(ExecMode.HYBRID);
@@ -95,7 +89,7 @@ public class BuiltinRandomForestTest extends AutomatedTestBase
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
 			programArgs = new String[]{"-args",
-				input("X"), input("Y"), String.valueOf(bins),
+				input("X"), input("Y"),
 				String.valueOf(depth), String.valueOf(num_leaf),
 				String.valueOf(num_trees), impurity, output("B") };
 

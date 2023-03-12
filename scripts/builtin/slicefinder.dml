@@ -27,8 +27,8 @@
 #
 # INPUT:
 # ---------------------------------------------------------------------------------------
-# X        Recoded dataset into Matrix
-# e        Trained model
+# X        Feature matrix in recoded/binned representation
+# e        Error vector of trained model
 # k        Number of subsets required
 # maxL     maximum level L (conjunctions of L predicates), 0 unlimited
 # minSup   minimum support (min number of rows per slice)

@@ -19,16 +19,25 @@
 #
 #-------------------------------------------------------------
 
-X = read($1);
+F = as.frame(read($1));
 Y = read($2);
-R = matrix(1, rows=ncol(X), cols = 3);
-bins = $3;
-depth = $4;
-num_leafs = $5;
-num_trees = $6;
-impurity = $7;
+depth = $3;
+num_leafs = $4;
+num_trees = $5;
+impurity = $6;
 
-[M, C, S_map, C_map] = randomForest(X=X, Y=Y, R=R, bins=bins, depth=depth,
-  num_leaf=num_leafs, num_trees=num_trees, impurity=impurity);
+jspec = "{ids: true, bin: ["
+  + "{id: 1, method: equi-width, numbins: 10},"
+  + "{id: 2, method: equi-width, numbins: 10},"
+  + "{id: 3, method: equi-width, numbins: 10},"
+  + "{id: 4, method: equi-width, numbins: 10},"
+  + "{id: 5, method: equi-width, numbins: 10},"
+  + "{id: 6, method: equi-width, numbins: 10},"
+  + "{id: 7, method: equi-width, numbins: 10}]}";
+[X,D] = transformencode(target=F, spec=jspec);
 
-write(M, $8);
+R = matrix(1, rows=1, cols=ncol(X));
+M = randomForest(X=X, y=Y, ctypes=R, num_trees=num_trees, seed=7,
+  max_depth=depth, min_leaf=num_leafs, impurity=impurity, verbose=TRUE);
+
+write(M, $7);

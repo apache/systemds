@@ -53,7 +53,8 @@ public class AsBooleanVsAsLogicalTest extends AutomatedTestBase {
 			setOutputBuffering(true);
 			String out = runTest(null).toString();
 			LOG.debug(out);
-			assertTrue(out.contains("TRUE\nFALSE\nFALSE"));
+			assertTrue(out.contains("TRUE\nFALSE\nFALSE")
+				|| out.contains("TRUE\r\nFALSE\r\nFALSE"));
 		}
 		catch(Exception e){
 			e.printStackTrace();

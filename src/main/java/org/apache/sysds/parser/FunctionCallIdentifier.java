@@ -20,7 +20,10 @@
 package org.apache.sysds.parser;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.apache.sysds.common.Builtins;
 import org.apache.sysds.common.Types.DataType;
@@ -149,6 +152,15 @@ public class FunctionCallIdentifier extends DataIdentifier
 		for( Expression expDef : fstmt.getInputDefaults() ) {
 			if( expDef != null )
 				expDef.validateExpression(ids, constVars, conditional);
+		}
+		// check existence/correctness of named parameters
+		if( hasNamed ) {
+			Set<String> params = Arrays
+				.stream(fstmt.getInputParamNames()).collect(Collectors.toSet());
+			for( ParameterExpression paramExpr : _paramExprs )
+				if(!params.contains(paramExpr.getName()))
+					raiseValidateError("Named function call parameter '"+paramExpr.getName()+"'"
+						+ " does not exist in signature of function '"+fstmt.getName()+"'.");
 		}
 		
 		// Step 7: constant propagation into function call statement

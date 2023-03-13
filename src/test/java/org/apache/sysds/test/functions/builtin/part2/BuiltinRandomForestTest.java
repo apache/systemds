@@ -35,7 +35,7 @@ import org.apache.sysds.test.TestUtils;
 @net.jcip.annotations.NotThreadSafe
 public class BuiltinRandomForestTest extends AutomatedTestBase
 {
-	private final static String TEST_NAME = "RandomForest";
+	private final static String TEST_NAME = "randomForestTest";
 	private final static String TEST_DIR = "functions/builtin/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + BuiltinRandomForestTest.class.getSimpleName() + "/";
 	

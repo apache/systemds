@@ -282,6 +282,8 @@ public class PredicateRecompileTest extends AutomatedTestBase
 						4 - ((evalExpr||constFold)?4:0) :
 						3 - ((evalExpr||constFold)?3:0));
 						//+ ((!testname.equals(TEST_NAME2)&&!(evalExpr||constFold))?1:0); //loop checkpoint
+					if(testname.equals(TEST_NAME4))
+						expected += (evalExpr||constFold)?0:1;
 					Assert.assertEquals("Unexpected number of executed Spark instructions.",
 						expected, Statistics.getNoOfExecutedSPInst());
 				}
@@ -291,6 +293,8 @@ public class PredicateRecompileTest extends AutomatedTestBase
 						4 - ((evalExpr||constFold)?1:0) :
 						3 - ((evalExpr||constFold)?1:0));
 						//+ (!testname.equals(TEST_NAME2)?1:0); //loop checkpoint
+					if(testname.equals(TEST_NAME4))
+						expected += 1;
 					Assert.assertEquals("Unexpected number of executed Spark instructions.", 
 						expected, Statistics.getNoOfExecutedSPInst());
 				}

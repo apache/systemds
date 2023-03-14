@@ -130,15 +130,15 @@ public class SparsityRecompileTest extends AutomatedTestBase
 			
 			//CHECK compiled Spark jobs
 			int expectNumCompiled = (testname.equals(TEST_NAME2)?3:4) //-1 for if
-				+ (testname.equals(TEST_NAME4)?3:0);//(+2 resultmerge, 1 sum)
+				+ (testname.equals(TEST_NAME4)?1:0);//(+2 resultmerge, 1 sum)
 			Assert.assertEquals("Unexpected number of compiled Spark jobs.", 
 				expectNumCompiled, Statistics.getNoOfCompiledSPInst());
 		
 			//CHECK executed Spark jobs
 			int expectNumExecuted = recompile ?
-				((testname.equals(TEST_NAME4))?2:0) : //(+2 resultmerge)
+				((testname.equals(TEST_NAME4))?0:0) : //(+2 resultmerge)
 				(testname.equals(TEST_NAME2)?3:4) //reblock + 3 (-1 for if)
-					+ ((testname.equals(TEST_NAME4))?3:0); //(+2 resultmerge, 1 sum) 
+					+ ((testname.equals(TEST_NAME4))?1:0); //(+2 resultmerge, 1 sum) 
 			Assert.assertEquals("Unexpected number of executed Spark jobs.", 
 				expectNumExecuted, Statistics.getNoOfExecutedSPInst());
 			

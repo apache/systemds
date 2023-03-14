@@ -589,8 +589,15 @@ public class ParForProgramBlock extends ForProgramBlock
 		//early exit on num iterations (e.g., for invalid loop bounds)
 		_numIterations = UtilFunctions.getSeqLength( 
 			from0.getDoubleValue(), to0.getDoubleValue(), incr0.getDoubleValue(), false);
+		// avoid unnecessary optimization/initialization, and issue with simplification rewrites
+		// (e.g., rewriting leftindexing into a result variable, to assignment)
 		if( _numIterations <= 0 )
-			return; //avoid unnecessary optimization/initialization
+			return; 
+		if( _numIterations == 1 ) {
+			//fallback to basic for loop.
+			super.execute(ec);
+			return;
+		}
 		
 		IntObject from = new IntObject(from0.getLongValue());
 		IntObject to = new IntObject(to0.getLongValue());

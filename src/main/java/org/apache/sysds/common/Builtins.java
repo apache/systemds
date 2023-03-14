@@ -197,6 +197,7 @@ public enum Builtins {
 	LMCG("lmCG", true),
 	LMDS("lmDS", true),
 	LMPREDICT("lmPredict", true),
+	LMPREDICT_STATS("lmPredictStats", true),
 	LOCAL("local", false),
 	LOG("log", false),
 	LOGSUMEXP("logSumExp", true),

@@ -53,8 +53,7 @@ m_randomForestPredict = function(Matrix[Double] X, Matrix[Double] y = matrix(0,0
 
   # scoring of num_tree decision trees
   Ytmp = matrix(0, rows=nrow(M), cols=nrow(X));
-  # TODO parfor issue with decisionTreePredict
-  for(i in 1:nrow(M)) {
+  parfor(i in 1:nrow(M)) {
     if( verbose )
       print("randomForest: start scoring tree "+i+"/"+nrow(M)+".");
 
@@ -82,24 +81,10 @@ m_randomForestPredict = function(Matrix[Double] X, Matrix[Double] y = matrix(0,0
 
   # summary statistics
   if( yExists & verbose ) {
-    if( classify ) {
-      accuracy = sum(yhat == y) / nrow(y) * 100;
-      print("Accuracy (%): " + accuracy);
-    }
-    else {
-      # TODO eliminate redundancy with lmPredict
-      y_residual = y - yhat;
-      avg_res = sum(y_residual) / nrow(y);
-      ss_res = sum(y_residual^2);
-      ss_avg_res = ss_res - nrow(y) * avg_res^2;
-      R2 = 1 - ss_res / (sum(y^2) - nrow(y) * (sum(y)/nrow(y))^2);
-      print("\nAccuracy:" +
-            "\n--sum(y) = " + sum(y) +
-            "\n--sum(yhat) = " + sum(yhat) +
-            "\n--AVG_RES_Y: " + avg_res +
-            "\n--SS_AVG_RES_Y: " + ss_avg_res +
-            "\n--R2: " + R2 );
-    }
+    if( classify )
+      print("Accuracy (%): " + (sum(yhat == y) / nrow(y) * 100));
+    else
+      lmPredictStats(yhat, y);
   }
 
   if(verbose) {

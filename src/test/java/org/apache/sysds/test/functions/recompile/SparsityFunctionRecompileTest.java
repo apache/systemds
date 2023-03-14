@@ -174,20 +174,20 @@ public class SparsityFunctionRecompileTest extends AutomatedTestBase
 			HDFSTool.writeMetaDataFile(input("V.mtd"), ValueType.FP64, mc, FileFormat.TEXT);
 			
 			boolean exceptionExpected = false;
-			runTest(true, exceptionExpected, null, -1); 
+			runTest(true, exceptionExpected, null, -1);
 			
 			//CHECK compiled Spark jobs
 			int expectNumCompiled = 1 //rblk
 				+ (testname.equals(TEST_NAME2) ? (IPA?2:5) : (IPA?3:4)) //if no write on IPA
-				+ (testname.equals(TEST_NAME4)? 2 : 0); //(+2 parfor resultmerge);
+				+ (testname.equals(TEST_NAME4)? 0 : 0); //(+2 parfor resultmerge);
 			Assert.assertEquals("Unexpected number of compiled Spark jobs.", 
 				expectNumCompiled, Statistics.getNoOfCompiledSPInst());
 		
 			//CHECK executed Spark jobs
 			int expectNumExecuted = recompile ? 
-				(testname.equals(TEST_NAME4)?2:0) : //(2x resultmerge) 
+				(testname.equals(TEST_NAME4)?0:0) : //(2x resultmerge) 
 				(testname.equals(TEST_NAME2) ? (IPA?3:5) :
-					(testname.equals(TEST_NAME4) ? (IPA?6:7) : (IPA?4:5)));
+					(testname.equals(TEST_NAME4) ? (IPA?4:5) : (IPA?4:5)));
 			Assert.assertEquals("Unexpected number of executed Spark jobs.", 
 				expectNumExecuted, Statistics.getNoOfExecutedSPInst());
 

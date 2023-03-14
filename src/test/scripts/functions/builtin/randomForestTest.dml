@@ -39,5 +39,6 @@ jspec = "{ids: true, bin: ["
 R = matrix(1, rows=1, cols=ncol(X));
 M = randomForest(X=X, y=Y, ctypes=R, num_trees=num_trees, seed=7,
   max_depth=depth, min_leaf=num_leafs, impurity=impurity, verbose=TRUE);
+randomForestPredict(X=X, y=Y, ctypes=R, M=M, verbose=TRUE);
 
 write(M, $7);

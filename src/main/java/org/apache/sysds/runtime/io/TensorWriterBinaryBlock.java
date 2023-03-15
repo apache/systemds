@@ -19,18 +19,18 @@
 
 package org.apache.sysds.runtime.io;
 
+import java.io.IOException;
+import java.util.Arrays;
+
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.SequenceFile;
+import org.apache.hadoop.io.SequenceFile.Writer;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.runtime.data.TensorBlock;
 import org.apache.sysds.runtime.data.TensorIndexes;
 import org.apache.sysds.runtime.util.HDFSTool;
-
-import java.io.IOException;
-import java.util.Arrays;
 
 public class TensorWriterBinaryBlock extends TensorWriter {
 	//TODO replication
@@ -60,12 +60,12 @@ public class TensorWriterBinaryBlock extends TensorWriter {
 		writeBinaryBlockTensorToSequenceFile(path, job, fs, src, blen, 0, src.getNumRows());
 	}
 
-	@SuppressWarnings("deprecation")
 	protected static void writeBinaryBlockTensorToSequenceFile(Path path, JobConf job, FileSystem fs, TensorBlock src,
-			int blen, int rl, int ru)
-			throws IOException
-	{
-		try(SequenceFile.Writer writer = new SequenceFile.Writer(fs, job, path, TensorIndexes.class, TensorBlock.class)) {
+		int blen, int rl, int ru) throws IOException {
+		
+		final Writer writer = IOUtilFunctions.getSeqWriterTensor(path,  job,1);
+
+		try{
 			int[] dims = src.getDims();
 			// bound check
 			for (int i = 0; i < dims.length; i++) {
@@ -107,6 +107,8 @@ public class TensorWriterBinaryBlock extends TensorWriter {
 
 				writer.append(indx, block);
 			}
+		}finally{
+			IOUtilFunctions.closeSilently(writer);
 		}
 	}
 }

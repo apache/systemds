@@ -46,6 +46,8 @@ import org.apache.hadoop.fs.LocalFileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.PathFilter;
 import org.apache.hadoop.io.LongWritable;
+import org.apache.hadoop.io.SequenceFile;
+import org.apache.hadoop.io.SequenceFile.Writer;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapred.FileSplit;
 import org.apache.hadoop.mapred.InputFormat;
@@ -56,6 +58,12 @@ import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.mapred.TextInputFormat;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.data.TensorBlock;
+import org.apache.sysds.runtime.data.TensorIndexes;
+import org.apache.sysds.runtime.frame.data.FrameBlock;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.matrix.data.MatrixCell;
+import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysds.runtime.transform.TfUtils;
 import org.apache.sysds.runtime.util.LocalFileUtils;
 import org.apache.sysds.runtime.util.UtilFunctions;
@@ -728,5 +736,33 @@ public class IOUtilFunctions
 			}
 			return nrows;
 		}
+	}
+
+	public static Writer getSeqWriter(Path path, Configuration job, int replication) throws IOException {
+		return SequenceFile.createWriter(job, Writer.file(path), Writer.bufferSize(4096),
+			Writer.replication((short) (replication > 0 ? replication : 1)),
+			Writer.compression(SequenceFile.CompressionType.NONE), Writer.keyClass(MatrixIndexes.class),
+			Writer.valueClass(MatrixBlock.class));
+	}
+
+	public static Writer getSeqWriterFrame(Path path, Configuration job, int replication) throws IOException {
+		return SequenceFile.createWriter(job, Writer.file(path), Writer.bufferSize(4096),
+			Writer.keyClass(LongWritable.class), Writer.valueClass(FrameBlock.class),
+			Writer.compression(SequenceFile.CompressionType.NONE),
+			Writer.replication((short) (replication > 0 ? replication : 1)));
+	}
+
+	public static Writer getSeqWriterTensor(Path path, Configuration job, int replication) throws IOException {
+		return SequenceFile.createWriter(job, Writer.file(path), Writer.bufferSize(4096),
+		Writer.replication((short) (replication > 0 ? replication : 1)),
+		Writer.compression(SequenceFile.CompressionType.NONE), Writer.keyClass(TensorIndexes.class),
+		Writer.valueClass(TensorBlock.class));
+	}
+
+	public static Writer getSeqWriterCell(Path path, Configuration job, int replication) throws IOException {
+		return SequenceFile.createWriter(job, Writer.file(path), Writer.bufferSize(4096),
+			Writer.replication((short) (replication > 0 ? replication : 1)),
+			Writer.compression(SequenceFile.CompressionType.NONE), Writer.keyClass(MatrixIndexes.class),
+			Writer.valueClass(MatrixCell.class));
 	}
 }

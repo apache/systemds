@@ -24,7 +24,6 @@ import java.io.IOException;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.LongWritable;
-import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.io.SequenceFile.Writer;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.sysds.conf.ConfigurationManager;
@@ -84,10 +83,7 @@ public class FrameWriterBinaryBlock extends FrameWriter {
 	protected static void writeBinaryBlockFrameToSequenceFile(Path path, JobConf job, FileSystem fs, FrameBlock src,
 		int blen, int rl, int ru) throws IOException {
 		// 1) create sequence file writer
-		SequenceFile.Writer writer = SequenceFile.createWriter(job, Writer.file(path), Writer.bufferSize(4096),
-			Writer.blockSize(4096), Writer.keyClass(LongWritable.class), Writer.valueClass(FrameBlock.class),
-			Writer.compression(SequenceFile.CompressionType.NONE), Writer.replication((short) 1));
-
+		final Writer writer = IOUtilFunctions.getSeqWriterFrame(path, job, 1);
 		final int rlen = src.getNumRows();
 		final int clen = src.getNumColumns();
 		try {

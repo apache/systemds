@@ -23,18 +23,14 @@ import java.io.File;
 import java.util.Iterator;
 
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.SequenceFile;
+import org.apache.hadoop.io.SequenceFile.Writer;
 import org.apache.hadoop.io.Writable;
 import org.apache.spark.api.java.function.VoidFunction;
 import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.runtime.controlprogram.parfor.util.PairWritableBlock;
 import org.apache.sysds.runtime.io.IOUtilFunctions;
-import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
-import org.apache.sysds.runtime.util.HDFSTool;
 
 import scala.Tuple2;
 
@@ -51,7 +47,6 @@ public class DataPartitionerRemoteSparkReducer implements VoidFunction<Tuple2<Lo
 	}
 
 	@Override
-	@SuppressWarnings({ "deprecation" })
 	public void call(Tuple2<Long, Iterable<Writable>> arg0)
 		throws Exception 
 	{
@@ -62,14 +57,9 @@ public class DataPartitionerRemoteSparkReducer implements VoidFunction<Tuple2<Lo
 		//write entire partition to binary block sequence file
 		//create sequence file writer
 		Configuration job = new Configuration(ConfigurationManager.getCachedJobConf());
-		job.setInt(HDFSTool.DFS_REPLICATION, _replication);
 		Path path = new Path(_fnameNew + File.separator + key);
-		
-		SequenceFile.Writer writer = null;
+		final Writer writer = IOUtilFunctions.getSeqWriter(path, job, _replication);
 		try {
-			FileSystem fs = IOUtilFunctions.getFileSystem(path, job);
-			writer = new SequenceFile.Writer(fs, job, path, MatrixIndexes.class, MatrixBlock.class);
-			
 			//write individual blocks unordered to output
 			while( valueList.hasNext() ) {
 				PairWritableBlock pair = (PairWritableBlock) valueList.next();

@@ -19,10 +19,21 @@
 
 package org.apache.sysds.runtime.controlprogram.parfor;
 
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.Map.Entry;
+
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.SequenceFile;
+import org.apache.hadoop.io.SequenceFile.Writer;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapred.FileInputFormat;
 import org.apache.hadoop.mapred.InputSplit;
@@ -49,16 +60,6 @@ import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.runtime.util.FastStringTokenizer;
 import org.apache.sysds.runtime.util.HDFSTool;
 import org.apache.sysds.runtime.util.LocalFileUtils;
-
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.IOException;
-import java.io.OutputStreamWriter;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.Map.Entry;
 
 /**
  * 
@@ -475,23 +476,23 @@ public class ResultMergeLocalFile extends ResultMergeMatrix
 		}
 	}	
 
-	@SuppressWarnings("deprecation")
 	private void createBinaryBlockResultFile( String fnameStaging, String fnameStagingCompare, String fnameNew, MetaDataFormat metadata, boolean withCompare ) 
 		throws IOException, DMLRuntimeException
 	{
 		JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());
 		Path path = new Path( fnameNew );	
-		FileSystem fs = IOUtilFunctions.getFileSystem(path, job);
 		
 		DataCharacteristics mc = metadata.getDataCharacteristics();
 		long rlen = mc.getRows();
 		long clen = mc.getCols();
 		int blen = mc.getBlocksize();
 		
-		try(SequenceFile.Writer writer = new SequenceFile.Writer(fs, job, path, MatrixIndexes.class, MatrixBlock.class))
-		{
+		Writer writer = IOUtilFunctions.getSeqWriter(path, job, 1);
+
+		try {
 			MatrixIndexes indexes = new MatrixIndexes();
-			for(long brow = 1; brow <= (long)Math.ceil(rlen/(double)blen); brow++)
+			for(long brow = 1; brow <= (long)Math.ceil(rlen/(double)blen); brow++){
+
 				for(long bcol = 1; bcol <= (long)Math.ceil(clen/(double)blen); bcol++)
 				{
 					File dir = new File(fnameStaging+"/"+brow+"_"+bcol);
@@ -555,6 +556,10 @@ public class ResultMergeLocalFile extends ResultMergeMatrix
 					indexes.setIndexes(brow, bcol);
 					writer.append(indexes, mb);
 				}
+			}
+		}
+		finally {
+			IOUtilFunctions.closeSilently(writer);
 		}
 	}
 

@@ -68,15 +68,14 @@ public class WriterBinaryBlock extends MatrixWriter {
 	}
 
 	@Override
-	@SuppressWarnings("deprecation")
+	// @SuppressWarnings("deprecation")
 	public final void writeEmptyMatrixToHDFS(String fname, long rlen, long clen, int blen)
 		throws IOException, DMLRuntimeException {
 		JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());
 		Path path = new Path(fname);
 		FileSystem fs = IOUtilFunctions.getFileSystem(path, job);
-		SequenceFile.Writer writer = null;
+		final Writer writer = getWriter(path, job);
 		try {
-			writer = new SequenceFile.Writer(fs, job, path, MatrixIndexes.class, MatrixBlock.class);
 			MatrixIndexes index = new MatrixIndexes(1, 1);
 			MatrixBlock block = new MatrixBlock((int) Math.max(Math.min(rlen, blen), 1),
 				(int) Math.max(Math.min(clen, blen), 1), true);
@@ -101,13 +100,9 @@ public class WriterBinaryBlock extends MatrixWriter {
 		int rlen = src.getNumRows();
 		int clen = src.getNumColumns();
 
-		// Writer.replication((short)(_replication > 0 ? _replication : 1)),
-		final Writer writer = SequenceFile.createWriter(job, Writer.file(path), Writer.bufferSize(4096),
-			Writer.compression(SequenceFile.CompressionType.NONE), Writer.keyClass(MatrixIndexes.class),
-			Writer.valueClass(MatrixBlock.class));
+		final Writer writer = getWriter(path, job);
 
-		try {
-			// 2) bound check for src block
+		try { // 2) bound check for src block
 			if(src.getNumRows() > rlen || src.getNumColumns() > clen) {
 				throw new IOException("Matrix block [1:" + src.getNumRows() + ",1:" + src.getNumColumns() + "] "
 					+ "out of overall matrix range [1:" + rlen + ",1:" + clen + "].");
@@ -116,19 +111,18 @@ public class WriterBinaryBlock extends MatrixWriter {
 			// 3) reblock and write
 			MatrixIndexes indexes = new MatrixIndexes();
 
-			if(rlen <= blen && clen <= blen && rl == 0) // opt for single block
-			{
+			if(rlen <= blen && clen <= blen && rl == 0) { // opt for single block
 				// directly write single block
 				indexes.setIndexes(1, 1);
 				writer.append(indexes, src);
 			}
-			else // general case
-			{
+			else {
+				// general case
 				// initialize blocks for reuse (at most 4 different blocks required)
 				MatrixBlock[] blocks = createMatrixBlocksForReuse(rlen, clen, blen, sparse, src.getNonZeros());
 
-				// create and write subblocks of matrix
-				for(int blockRow = rl / blen; blockRow < (int) Math.ceil(ru / (double) blen); blockRow++)
+				// create and write sub-blocks of matrix
+				for(int blockRow = rl / blen; blockRow < (int) Math.ceil(ru / (double) blen); blockRow++) {
 					for(int blockCol = 0; blockCol < (int) Math.ceil(src.getNumColumns() / (double) blen); blockCol++) {
 						int maxRow = (blockRow * blen + blen < src.getNumRows()) ? blen : src.getNumRows() - blockRow * blen;
 						int maxCol = (blockCol * blen + blen < src.getNumColumns()) ? blen : src.getNumColumns() -
@@ -150,6 +144,7 @@ public class WriterBinaryBlock extends MatrixWriter {
 						// reset block for later reuse
 						block.reset();
 					}
+				}
 			}
 		}
 		finally {
@@ -157,25 +152,11 @@ public class WriterBinaryBlock extends MatrixWriter {
 		}
 	}
 
-	@SuppressWarnings("deprecation")
 	protected final void writeDiagBinaryBlockMatrixToHDFS(Path path, JobConf job, FileSystem fs, MatrixBlock src,
 		long rlen, long clen, int blen) throws IOException, DMLRuntimeException {
 		boolean sparse = src.isInSparseFormat();
 
-		// 1) create sequence file writer, with right replication factor
-		// (config via MRConfigurationNames.DFS_REPLICATION not possible since sequence file internally calls
-		// fs.getDefaultReplication())
-		SequenceFile.Writer writer = null;
-		if(_replication > 0) // if replication specified (otherwise default)
-		{
-			// copy of SequenceFile.Writer(fs, job, path, MatrixIndexes.class, MatrixBlock.class), except for replication
-			writer = new SequenceFile.Writer(fs, job, path, MatrixIndexes.class, MatrixBlock.class,
-				job.getInt(HDFSTool.IO_FILE_BUFFER_SIZE, 4096), (short) _replication, fs.getDefaultBlockSize(), null,
-				new SequenceFile.Metadata());
-		}
-		else {
-			writer = new SequenceFile.Writer(fs, job, path, MatrixIndexes.class, MatrixBlock.class);
-		}
+		final Writer writer = getWriter(path, job);
 
 		try {
 			// 2) bound check for src block
@@ -187,28 +168,26 @@ public class WriterBinaryBlock extends MatrixWriter {
 			// 3) reblock and write
 			MatrixIndexes indexes = new MatrixIndexes();
 
-			if(rlen <= blen && clen <= blen) // opt for single block
-			{
+			if(rlen <= blen && clen <= blen) { // opt for single block
 				// directly write single block
 				indexes.setIndexes(1, 1);
 				writer.append(indexes, src);
 			}
-			else // general case
-			{
+			else { // general case
 				// initialize blocks for reuse (at most 4 different blocks required)
 				MatrixBlock[] blocks = createMatrixBlocksForReuse(rlen, clen, blen, sparse, src.getNonZeros());
 				MatrixBlock emptyBlock = new MatrixBlock();
 
 				// create and write subblocks of matrix
-				for(int blockRow = 0; blockRow < (int) Math.ceil(src.getNumRows() / (double) blen); blockRow++)
+				for(int blockRow = 0; blockRow < (int) Math.ceil(src.getNumRows() / (double) blen); blockRow++) {
+
 					for(int blockCol = 0; blockCol < (int) Math.ceil(src.getNumColumns() / (double) blen); blockCol++) {
 						int maxRow = (blockRow * blen + blen < src.getNumRows()) ? blen : src.getNumRows() - blockRow * blen;
 						int maxCol = (blockCol * blen + blen < src.getNumColumns()) ? blen : src.getNumColumns() -
 							blockCol * blen;
 						MatrixBlock block = null;
 
-						if(blockRow == blockCol) // block on diagonal
-						{
+						if(blockRow == blockCol) { // block on diagonal
 							int row_offset = blockRow * blen;
 							int col_offset = blockCol * blen;
 
@@ -218,8 +197,7 @@ public class WriterBinaryBlock extends MatrixWriter {
 							// copy submatrix to block
 							src.slice(row_offset, row_offset + maxRow - 1, col_offset, col_offset + maxCol - 1, block);
 						}
-						else // empty block (not on diagonal)
-						{
+						else { // empty block (not on diagonal)
 							block = emptyBlock;
 							block.reset(maxRow, maxCol);
 						}
@@ -232,10 +210,19 @@ public class WriterBinaryBlock extends MatrixWriter {
 						if(blockRow != blockCol)
 							block.reset();
 					}
+				}
 			}
 		}
 		finally {
 			IOUtilFunctions.closeSilently(writer);
 		}
 	}
+
+	private Writer getWriter(Path path, JobConf job) throws IOException{
+		return SequenceFile.createWriter(job, Writer.file(path), Writer.bufferSize(4096),
+		Writer.replication((short) (_replication > 0 ? _replication : 1)),
+		Writer.compression(SequenceFile.CompressionType.NONE), Writer.keyClass(MatrixIndexes.class),
+		Writer.valueClass(MatrixBlock.class));
+	}
+
 }

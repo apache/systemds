@@ -59,7 +59,6 @@ import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.io.SequenceFile.Writer;
 import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.common.Types.ValueType;
@@ -2647,49 +2646,52 @@ public class TestUtils
 	}
 
 
-	/* Write a scalar value to a file */
+	/**
+	 * Write scalar to file
+	 * 
+	 * @param file  File to write to
+	 * @param value Value to write
+	 */
 	public static void writeTestScalar(String file, double value) {
 		try {
 			DataOutputStream out = new DataOutputStream(new FileOutputStream(file));
-			try( PrintWriter pw = new PrintWriter(out) ) {
+			try(PrintWriter pw = new PrintWriter(out)) {
 				pw.println(value);
 			}
-		} catch (IOException e) {
-			fail("unable to write test scalar (" + file + "): " + e.getMessage());
 		}
-	}
-
-	public static void writeTestScalar(String file, long value) {
-		try {
-			DataOutputStream out = new DataOutputStream(new FileOutputStream(file));
-			try( PrintWriter pw = new PrintWriter(out) ) {
-				pw.println(value);
-			}
-		} catch (IOException e) {
+		catch(IOException e) {
 			fail("unable to write test scalar (" + file + "): " + e.getMessage());
 		}
 	}
 
 	/**
-	 * <p>
+	 * Write scalar to file
+	 * 
+	 * @param file  File to write to
+	 * @param value Value to write
+	 */
+	public static void writeTestScalar(String file, long value) {
+		try {
+			DataOutputStream out = new DataOutputStream(new FileOutputStream(file));
+			try(PrintWriter pw = new PrintWriter(out)) {
+				pw.println(value);
+			}
+		}
+		catch(IOException e) {
+			fail("unable to write test scalar (" + file + "): " + e.getMessage());
+		}
+	}
+
+	/**
 	 * Writes a matrix to a file using the binary cells format.
-	 * </p>
-	 *
-	 * @param file
-	 *            file name
-	 * @param matrix
-	 *            matrix
+	 * 
+	 * @param file   file name
+	 * @param matrix matrix
 	 */
 	public static void writeBinaryTestMatrixCells(String file, double[][] matrix) {
 		try {
-			SequenceFile.Writer writer = null;
+			final Writer writer = IOUtilFunctions.getSeqWriterCell(new Path(file), conf, 1);
 			try {
-				Path path = new Path(file);
-				Writer.Option filePath = Writer.file(path);
-				Writer.Option keyClass = Writer.keyClass(MatrixIndexes.class);
-				Writer.Option valueClass = Writer.valueClass(MatrixBlock.class);
-				Writer.Option compression = Writer.compression(SequenceFile.CompressionType.NONE);
-				writer = SequenceFile.createWriter(conf, filePath, keyClass, valueClass, compression);
 				MatrixIndexes index = new MatrixIndexes();
 				MatrixCell value = new MatrixCell();
 				for (int i = 0; i < matrix.length; i++) {
@@ -2712,55 +2714,44 @@ public class TestUtils
 	}
 
 	/**
-	 * <p>
-	 * Writes a matrix to a file using the binary blocks format.
-	 * </p>
+	 *  Writes a matrix to a file using the binary blocks format. 
 	 *
-	 * @param file
-	 *            file name
-	 * @param matrix
-	 *            matrix
-	 * @param rowsInBlock
-	 *            rows in block
-	 * @param colsInBlock
-	 *            columns in block
-	 * @param sparseFormat
-	 *            sparse format
+	 * @param file         file name
+	 * @param matrix       matrix
+	 * @param rowsInBlock  rows in block
+	 * @param colsInBlock  columns in block
+	 * @param sparseFormat sparse format
 	 */
 	public static void writeBinaryTestMatrixBlocks(String file, double[][] matrix, int rowsInBlock, int colsInBlock,
 			boolean sparseFormat) {
-		SequenceFile.Writer writer = null;
 
 		try {
-			Path path = new Path(file);
-			Writer.Option filePath = Writer.file(path);
-			Writer.Option keyClass = Writer.keyClass(MatrixIndexes.class);
-			Writer.Option valueClass = Writer.valueClass(MatrixBlock.class);
-			Writer.Option compression = Writer.compression(SequenceFile.CompressionType.NONE);
-			writer = SequenceFile.createWriter(conf, filePath, keyClass, valueClass, compression);
-			MatrixIndexes index = new MatrixIndexes();
-			MatrixBlock value = new MatrixBlock();
-			for (int i = 0; i < matrix.length; i += rowsInBlock) {
-				int rows = Math.min(rowsInBlock, (matrix.length - i));
-				for (int j = 0; j < matrix[i].length; j += colsInBlock) {
-					int cols = Math.min(colsInBlock, (matrix[i].length - j));
-					index.setIndexes(((i / rowsInBlock) + 1), ((j / colsInBlock) + 1));
-					value.reset(rows, cols, sparseFormat);
-					for (int k = 0; k < rows; k++) {
-						for (int l = 0; l < cols; l++) {
-							value.setValue(k, l, matrix[i + k][j + l]);
+			final Writer writer = IOUtilFunctions.getSeqWriter(new Path(file), conf, 1);
+			try{
+				MatrixIndexes index = new MatrixIndexes();
+				MatrixBlock value = new MatrixBlock();
+				for (int i = 0; i < matrix.length; i += rowsInBlock) {
+					int rows = Math.min(rowsInBlock, (matrix.length - i));
+					for (int j = 0; j < matrix[i].length; j += colsInBlock) {
+						int cols = Math.min(colsInBlock, (matrix[i].length - j));
+						index.setIndexes(((i / rowsInBlock) + 1), ((j / colsInBlock) + 1));
+						value.reset(rows, cols, sparseFormat);
+						for (int k = 0; k < rows; k++) {
+							for (int l = 0; l < cols; l++) {
+								value.setValue(k, l, matrix[i + k][j + l]);
+							}
 						}
+						writer.append(index, value);
 					}
-					writer.append(index, value);
 				}
+			}
+			finally {
+				IOUtilFunctions.closeSilently(writer);
 			}
 		}
 		catch (IOException e) {
 			e.printStackTrace();
 			fail("unable to write test matrix: " + e.getMessage());
-		}
-		finally {
-			IOUtilFunctions.closeSilently(writer);
 		}
 	}
 

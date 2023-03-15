@@ -31,6 +31,7 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.SequenceFile;
+import org.apache.hadoop.io.SequenceFile.Writer;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapred.FileInputFormat;
 import org.apache.hadoop.mapred.InputSplit;
@@ -374,17 +375,17 @@ public class DataPartitionerLocal extends DataPartitioner
 	// read/write in different formats //
 	/////////////////////////////////////
 	
-	@SuppressWarnings({ "deprecation"})
+	// @SuppressWarnings({ "deprecation"})
 	public void writeBinaryBlockSequenceFileToHDFS( JobConf job, String dir, String lpdir, boolean threadsafe ) 
 		throws IOException
 	{
 		long key = getKeyFromFilePath(lpdir);
 		Path path =  new Path(dir+"/"+key);
-		SequenceFile.Writer writer = null;
 		
-		try {
-			FileSystem fs = IOUtilFunctions.getFileSystem(path, job);
-			writer = new SequenceFile.Writer(fs, job, path, MatrixIndexes.class, MatrixBlock.class); //beware ca 50ms
+		//beware ca 50ms
+		final Writer writer = IOUtilFunctions.getSeqWriter(path, job, 1);
+		
+		try {	
 			String[] fnameBlocks = new File( lpdir ).list();
 			for( String fnameBlock : fnameBlocks  )
 			{
@@ -410,18 +411,14 @@ public class DataPartitionerLocal extends DataPartitioner
 		}
 	}
 	
-	@SuppressWarnings({ "deprecation" })
 	public void writeBinaryCellSequenceFileToHDFS( JobConf job, String dir, String lpdir ) 
 		throws IOException
 	{
 		long key = getKeyFromFilePath(lpdir);
 		Path path =  new Path(dir+"/"+key);
-		SequenceFile.Writer writer = null;
+		final Writer writer = IOUtilFunctions.getSeqWriterCell(path, job, 1);
 		
 		try {
-			FileSystem fs = IOUtilFunctions.getFileSystem(path, job);
-			writer = new SequenceFile.Writer(fs, job, path, MatrixIndexes.class, MatrixCell.class); //beware ca 50ms
-			
 			MatrixIndexes indexes = new MatrixIndexes();
 			MatrixCell cell = new MatrixCell();
 			

@@ -35,7 +35,7 @@ github:
     # Enable issues management
     issues: false
     # Enable projects for project management boards
-    projects: false
+    projects: true
     # Enable wiki for documentation
     wiki: false
     

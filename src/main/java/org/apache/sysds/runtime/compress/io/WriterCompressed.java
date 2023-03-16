@@ -123,9 +123,9 @@ public final class WriterCompressed extends MatrixWriter {
 
 		// Make Writer (New interface)
 		final Writer w = SequenceFile.createWriter(job, Writer.file(path), Writer.bufferSize(4096),
-			Writer.blockSize(4096), Writer.keyClass(MatrixIndexes.class), Writer.valueClass(CompressedWriteBlock.class),
+			Writer.keyClass(MatrixIndexes.class), Writer.valueClass(CompressedWriteBlock.class),
 			Writer.compression(SequenceFile.CompressionType.NONE), // No Compression type on disk
-			 Writer.replication((short) 1));
+			Writer.replication((short) 1));
 
 		final int rlen = src.getNumRows();
 		final int clen = src.getNumColumns();
@@ -162,9 +162,8 @@ public final class WriterCompressed extends MatrixWriter {
 			final int sC = bc * blen;
 			final int mC = Math.min(sC + blen, clen) - 1;
 			if(b instanceof CompressedMatrixBlock) {
-				final CompressedMatrixBlock mc = //mC == clen - 1 ? (CompressedMatrixBlock) b :
-				 CLALibSlice
-					.sliceColumns((CompressedMatrixBlock) b, sC, mC); // slice columns!
+				final CompressedMatrixBlock mc = // mC == clen - 1 ? (CompressedMatrixBlock) b :
+					CLALibSlice.sliceColumns((CompressedMatrixBlock) b, sC, mC); // slice columns!
 
 				final List<MatrixBlock> blocks = CLALibSlice.sliceBlocks(mc, blen); // Slice compressed blocks
 				for(int br = 0; br * blen < rlen; br++) {

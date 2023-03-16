@@ -23,7 +23,6 @@ import java.io.IOException;
 
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.io.SequenceFile.Writer;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.sysds.conf.ConfigurationManager;
@@ -68,13 +67,12 @@ public class WriterBinaryBlock extends MatrixWriter {
 	}
 
 	@Override
-	// @SuppressWarnings("deprecation")
 	public final void writeEmptyMatrixToHDFS(String fname, long rlen, long clen, int blen)
 		throws IOException, DMLRuntimeException {
 		JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());
 		Path path = new Path(fname);
 		FileSystem fs = IOUtilFunctions.getFileSystem(path, job);
-		final Writer writer = getWriter(path, job);
+		final Writer writer = IOUtilFunctions.getSeqWriter(path, job, _replication);
 		try {
 			MatrixIndexes index = new MatrixIndexes(1, 1);
 			MatrixBlock block = new MatrixBlock((int) Math.max(Math.min(rlen, blen), 1),
@@ -100,7 +98,7 @@ public class WriterBinaryBlock extends MatrixWriter {
 		int rlen = src.getNumRows();
 		int clen = src.getNumColumns();
 
-		final Writer writer = getWriter(path, job);
+		final Writer writer = IOUtilFunctions.getSeqWriter(path, job, _replication);
 
 		try { // 2) bound check for src block
 			if(src.getNumRows() > rlen || src.getNumColumns() > clen) {
@@ -156,7 +154,7 @@ public class WriterBinaryBlock extends MatrixWriter {
 		long rlen, long clen, int blen) throws IOException, DMLRuntimeException {
 		boolean sparse = src.isInSparseFormat();
 
-		final Writer writer = getWriter(path, job);
+		final Writer writer = IOUtilFunctions.getSeqWriter(path, job, _replication);
 
 		try {
 			// 2) bound check for src block
@@ -217,12 +215,4 @@ public class WriterBinaryBlock extends MatrixWriter {
 			IOUtilFunctions.closeSilently(writer);
 		}
 	}
-
-	private Writer getWriter(Path path, JobConf job) throws IOException{
-		return SequenceFile.createWriter(job, Writer.file(path), Writer.bufferSize(4096),
-		Writer.replication((short) (_replication > 0 ? _replication : 1)),
-		Writer.compression(SequenceFile.CompressionType.NONE), Writer.keyClass(MatrixIndexes.class),
-		Writer.valueClass(MatrixBlock.class));
-	}
-
 }

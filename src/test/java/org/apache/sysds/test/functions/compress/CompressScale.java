@@ -76,7 +76,7 @@ public class CompressScale extends AutomatedTestBase {
 		int min, int max, int scale, int center) {
 
 		Types.ExecMode platformOld = setExecMode(instType);
-		setOutputBuffering(true); //otherwise test fails in local
+		setOutputBuffering(true);
 		try {
 
 			fullDMLScriptName = SCRIPT_DIR + "/" + getTestDir() + getTestName() + ".dml";

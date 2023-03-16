@@ -212,8 +212,8 @@ public class FullIfElseTest extends AutomatedTestBase
 		runIfElseTest(true, true, true, true, ExecType.SPARK);
 	}
 
-	private void runIfElseTest(boolean matrix1, boolean matrix2, boolean matrix3, boolean sparse, ExecType et)
-	{
+	private void runIfElseTest(boolean matrix1, boolean matrix2, boolean matrix3, boolean sparse, ExecType et){
+		setOutputBuffering(true);
 		//rtplatform for MR
 		ExecMode platformOld = rtplatform;
 		switch( et ){
@@ -248,7 +248,7 @@ public class FullIfElseTest extends AutomatedTestBase
 			writeInputMatrixWithMTD("C", C, true);
 			
 			//run test cases
-			runTest(true, false, null, -1);
+			runTest(null);
 			runRScript(true); 
 			
 			//compare output matrices 

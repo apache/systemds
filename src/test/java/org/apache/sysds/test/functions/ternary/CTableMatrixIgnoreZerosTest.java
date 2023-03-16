@@ -111,8 +111,8 @@ public class CTableMatrixIgnoreZerosTest extends AutomatedTestBase
 		runCTableTest(false, true, ExecType.CP);
 	}
 	
-	private void runCTableTest( boolean rewrite, boolean sparse, ExecType et)
-	{
+	private void runCTableTest( boolean rewrite, boolean sparse, ExecType et){
+		setOutputBuffering(true); 
 		String TEST_NAME = TEST_NAME1;
 		
 		//rtplatform for MR
@@ -149,7 +149,7 @@ public class CTableMatrixIgnoreZerosTest extends AutomatedTestBase
 			double[][] A = getRandomMatrix(rows, cols, 1, 10, sparsity, 7); 
 			writeInputMatrixWithMTD("A", A, true);
 	
-			runTest(true, false, null, -1); 
+			runTest(null); 
 			runRScript(true); 
 			
 			//compare matrices 

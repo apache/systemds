@@ -20,6 +20,7 @@
 package org.apache.sysds.hops.rewrite;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import org.apache.sysds.common.Types.OpOpData;
 import org.apache.sysds.hops.DataOp;
@@ -27,61 +28,72 @@ import org.apache.sysds.hops.Hop;
 import org.apache.sysds.hops.OptimizerUtils;
 
 /**
- * Rule: BlockSizeAndReblock. For all statement blocks, determine
- * "optimal" block size, and place reblock Hops. For now, we just
- * use BlockSize 1K x 1K and do reblock after Persistent Reads and
- * before Persistent Writes.
+ * Rule: Inject checkpointing on reading in data in all cases where the operand is used in more than one operation.
  */
-public class RewriteInjectSparkPReadCheckpointing extends HopRewriteRule
-{
+public class RewriteInjectSparkPReadCheckpointing extends HopRewriteRule {
 	@Override
 	public ArrayList<Hop> rewriteHopDAGs(ArrayList<Hop> roots, ProgramRewriteStatus state) {
-		if(  !OptimizerUtils.isSparkExecutionMode()  ) 
+		if(!OptimizerUtils.isSparkExecutionMode())
 			return roots;
-		
-		if( roots == null )
+
+		if(roots == null)
 			return null;
 
-		//top-level hops never modified
-		for( Hop h : roots ) 
+		// top-level hops never modified
+		for(Hop h : roots)
 			rInjectCheckpointAfterPRead(h);
-		
+
 		return roots;
 	}
 
 	@Override
 	public Hop rewriteHopDAG(Hop root, ProgramRewriteStatus state) {
-		//not applicable to predicates (we do not allow persistent reads there)
+		// not applicable to predicates (we do not allow persistent reads there)
 		return root;
 	}
 
-	private void rInjectCheckpointAfterPRead( Hop hop ) 
-	{
+	private void rInjectCheckpointAfterPRead(Hop hop) {
 		if(hop.isVisited())
 			return;
-		
 		// Inject checkpoints after persistent reads (for binary matrices only), or
 		// after reblocks that cause expensive shuffling. However, carefully avoid
-		// unnecessary frame checkpoints (e.g., binary data or csv that do not cause 
+		// unnecessary frame checkpoints (e.g., binary data or csv that do not cause
 		// shuffle) in order to prevent excessive garbage collection due to possibly
 		// many small string objects. An alternative would be serialized caching.
 		boolean isMatrix = hop.getDataType().isMatrix();
-		boolean isPRead = hop instanceof DataOp  && ((DataOp)hop).getOp()==OpOpData.PERSISTENTREAD;
-		boolean isFrameException = hop.getDataType().isFrame() && isPRead && !((DataOp)hop).getFileFormat().isIJV();
-		
-		if( (isMatrix && isPRead) || (hop.requiresReblock() && !isFrameException) ) {
-			//make given hop for checkpointing (w/ default storage level)
-			//note: we do not recursively process childs here in order to prevent unnecessary checkpoints
-			hop.setRequiresCheckpoint(true);
+		boolean isPRead = hop instanceof DataOp && ((DataOp) hop).getOp() == OpOpData.PERSISTENTREAD;
+		boolean isFrameException = hop.getDataType().isFrame() && isPRead && !((DataOp) hop).getFileFormat().isIJV();
+
+		// if the only operation performed is an action then do not add chkpoint
+		if((isMatrix && isPRead) || (hop.requiresReblock() && !isFrameException)) {
+			boolean isActionOnly = isActionOnly(hop, hop.getParent());
+			// make given hop for checkpointing (w/ default storage level)
+			// note: we do not recursively process children here in order to prevent unnecessary checkpoints
+			
+			if(!isActionOnly)
+				hop.setRequiresCheckpoint(true);
+			
 		}
 		else {
-			if( hop.getInput() != null ) {
-				//process all childs (prevent concurrent modification by index access)
-				for( int i=0; i<hop.getInput().size(); i++ )
-					rInjectCheckpointAfterPRead( hop.getInput().get(i) );
+			if(hop.getInput() != null) {
+				// process all children (prevent concurrent modification by index access)
+				for(int i = 0; i < hop.getInput().size(); i++)
+					rInjectCheckpointAfterPRead(hop.getInput().get(i));
 			}
 		}
-		
+
 		hop.setVisited();
+	}
+
+	private boolean isActionOnly(Hop hop, List<Hop> parents) {
+		// if the number of consumers of this hop is equal to 1 and no more
+		// then do not cache block unless that one operation is transient write
+		if(parents.size() == 1) {
+			return !( parents.get(0) instanceof DataOp && //
+				((DataOp) parents.get(0)).getOp() == OpOpData.TRANSIENTWRITE);
+		}
+		else
+			return false;
+
 	}
 }

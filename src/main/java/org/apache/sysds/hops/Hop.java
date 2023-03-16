@@ -64,6 +64,10 @@ import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.privacy.PrivacyConstraint;
 import org.apache.sysds.runtime.util.UtilFunctions;
 
+/**
+ * Hop is a High level operator, that is the first intermediate representation compiled from the definitions supplied in
+ * DML.
+ */
 public abstract class Hop implements ParseInfo {
 	protected static final Log LOG =  LogFactory.getLog(Hop.class.getName());
 
@@ -81,11 +85,15 @@ public abstract class Hop implements ParseInfo {
 	protected PrivacyConstraint _privacyConstraint = null;
 	protected UpdateType _updateType = UpdateType.COPY;
 
+	/** The output Hops that are connected to this Hop */
 	protected ArrayList<Hop> _parent = new ArrayList<>();
+	/** The input Hops that are connected to this Hop */
 	protected ArrayList<Hop> _input = new ArrayList<>();
 
-	protected ExecType _etype = null; //currently used exec type
-	protected ExecType _etypeForced = null; //exec type forced via platform or external optimizer
+	/** Currently used exec type */
+	protected ExecType _etype = null; 
+	/** Exec type forced via platform or external optimizer */
+	protected ExecType _etypeForced = null; 
 
 	/**
 	 * Field defining if the output of the operation should be federated.
@@ -93,8 +101,11 @@ public abstract class Hop implements ParseInfo {
 	 * If it is lout, the output should be retrieved by the coordinator.
 	 */
 	protected FederatedOutput _federatedOutput = FederatedOutput.NONE;
+	/** The Federated Cost of this Hop */
 	protected FederatedCost _federatedCost = new FederatedCost();
+	/** The estimated number of repetitions of this Hop*/
 	protected double repetitions = 1;
+	/** Boolean specifying if the repetition count is updated/assigned */
 	protected boolean repetitionsUpdated = false;
 
 	/**
@@ -105,7 +116,7 @@ public abstract class Hop implements ParseInfo {
 	 */
 	protected boolean activatePrefetch;
 	
-	// Estimated size for the output produced from this Hop in bytes
+	/** Estimated size for the output produced from this Hop in bytes */
 	protected double _outputMemEstimate = OptimizerUtils.INVALID_SIZE;
 	
 	// Estimated size for the entire operation represented by this Hop

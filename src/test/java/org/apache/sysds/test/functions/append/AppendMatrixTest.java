@@ -178,7 +178,7 @@ public class AppendMatrixTest extends AutomatedTestBase
 			writeInputMatrix("B", B, true);
 			
 			int expectedCompiled = platform==ExecMode.SINGLE_NODE ?
-				0 : 6; //2x(rblk+chkpt), append, write
+				0 : 4; //2x(rblk), append, write
 			
 			runTest(true, false, null, expectedCompiled);
 			runRScript(true);

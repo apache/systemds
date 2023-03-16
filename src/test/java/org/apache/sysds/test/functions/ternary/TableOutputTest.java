@@ -86,8 +86,8 @@ public class TableOutputTest extends AutomatedTestBase
 		runTableOutputTest(ExecType.CP, -5);
 	}
 	
-	private void runTableOutputTest( ExecType et, int delta)
-	{
+	private void runTableOutputTest(ExecType et, int delta) {
+		setOutputBuffering(true);
 		//rtplatform for MR
 		ExecMode platformOld = rtplatform;
 
@@ -124,7 +124,7 @@ public class TableOutputTest extends AutomatedTestBase
 			double[][] B = TestUtils.floor(getRandomMatrix(rows, 1, 1, maxVal2, 1.0, -1)); 
 			writeInputMatrixWithMTD("B", B, true);
 			
-			runTest(true, false, null, -1); 
+			runTest(null); 
 			runRScript(true); 
 			
 			//compare matrices 

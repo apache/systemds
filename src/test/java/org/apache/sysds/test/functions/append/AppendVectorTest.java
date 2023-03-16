@@ -106,7 +106,7 @@ public class AppendVectorTest extends AutomatedTestBase
 			writeInputMatrix("B", B, true);
 			
 			boolean exceptionExpected = false;
-			int numExpectedJobs = (platform == ExecMode.SINGLE_NODE) ? 0 : 6;
+			int numExpectedJobs = (platform == ExecMode.SINGLE_NODE) ? 0 : 4;
 			
 			runTest(true, exceptionExpected, null, numExpectedJobs);
 			Assert.assertEquals("Wrong number of executed Spark jobs.",

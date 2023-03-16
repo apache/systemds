@@ -78,14 +78,9 @@ public class CovarianceWeightsTest extends AutomatedTestBase
 		runCovarianceTest(true, ExecType.SPARK);
 	}
 	
-	/**
-	 * 
-	 * @param sparseM1
-	 * @param sparseM2
-	 * @param instType
-	 */
 	private void runCovarianceTest( boolean sparse, ExecType et)
 	{
+		setOutputBuffering(true);
 		//rtplatform for MR
 		ExecMode platformOld = rtplatform;
 		switch( et ){
@@ -121,7 +116,7 @@ public class CovarianceWeightsTest extends AutomatedTestBase
 			double[][] C = getRandomMatrix(rows, 1, 1, 1, 1.0, 8623); 
 			writeInputMatrixWithMTD("C", C, true);	
 			
-			runTest(true, false, null, -1); 
+			runTest(null); 
 			runRScript(true); 
 			
 			//compare matrices 

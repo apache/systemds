@@ -153,8 +153,8 @@ public class QuantileWeightsTest extends AutomatedTestBase
 		runQuantileTest(TEST_NAME3, -1, true, ExecType.SPARK);
 	}
 	
-	private void runQuantileTest( String TEST_NAME, double p, boolean sparse, ExecType et)
-	{
+	private void runQuantileTest( String TEST_NAME, double p, boolean sparse, ExecType et){
+		setOutputBuffering(true);
 		//rtplatform for MR
 		ExecMode platformOld = rtplatform;
 		switch( et ){
@@ -186,7 +186,7 @@ public class QuantileWeightsTest extends AutomatedTestBase
 			double[][] W = getRandomMatrix(rows, 1, 1, 1, 1.0, 1); 
 			writeInputMatrixWithMTD("W", W, true);
 			
-			runTest(true, false, null, -1); 
+			runTest(null); 
 			runRScript(true); 
 			
 			//compare matrices 

@@ -82,6 +82,7 @@ src/test/scripts/**/expected
 
 # Working directory and scratch space
 temp/*
+temp
 scratch_space/
 
 # Ruby

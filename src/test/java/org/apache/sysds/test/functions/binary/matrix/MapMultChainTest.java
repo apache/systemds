@@ -21,19 +21,24 @@ package org.apache.sysds.test.functions.binary.matrix;
 
 import java.util.HashMap;
 
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.common.Types.ExecMode;
-import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.common.Types.ExecType;
+import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
+import org.apache.sysds.test.functions.rewrite.RewriteSPCheckpoint;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
-public class MapMultChainTest extends AutomatedTestBase 
-{
+public class MapMultChainTest extends AutomatedTestBase {
+
+	protected static final Log LOG = LogFactory.getLog(RewriteSPCheckpoint.class.getName());
+
 	private final static String TEST_NAME1 = "MapMultChain";
 	private final static String TEST_NAME2 = "MapMultChainWeights";
 	private final static String TEST_NAME3 = "MapMultChainWeights2";
@@ -199,6 +204,7 @@ public class MapMultChainTest extends AutomatedTestBase
 	
 	private void runMapMultChainTest( String testname, boolean sparse, boolean sumProductRewrites, ExecType instType)
 	{
+		setOutputBuffering(true);
 		ExecMode platformOld = setExecMode(instType);
 		
 		//rewrite
@@ -214,7 +220,7 @@ public class MapMultChainTest extends AutomatedTestBase
 			
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[]{"-stats","-args", 
+			programArgs = new String[]{"-explain","-stats","-args", 
 				input("X"), input("v"), input("w"), output("R")};
 			
 			fullRScriptName = HOME + TEST_NAME + ".R";
@@ -230,7 +236,7 @@ public class MapMultChainTest extends AutomatedTestBase
 				writeInputMatrixWithMTD("w", w, true);
 			}
 			
-			runTest(true, false, null, -1); 
+			runTest(null);
 			runRScript(true); 
 			
 			//compare matrices 
@@ -239,9 +245,12 @@ public class MapMultChainTest extends AutomatedTestBase
 			TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
 			
 			//check compiled/executed jobs
-			int numInputs = testname.equals(TEST_NAME1) ? 2 : 3;
-			int expectedNumCompiled = numInputs + ((instType==ExecType.SPARK) ? 
-				(numInputs + (sumProductRewrites?2:((numInputs==2)?4:5))):0);
+			int numInputs = (testname.equals(TEST_NAME1) ? 2 : 3 );
+			int expectedNumCompiled = numInputs + 
+				// If spark
+				// The +1 can be removed if we update the checkpointing rewrite to go thorugh blocks
+				// /hops/rewrite/RewriteInjectSparkPReadCheckpointing.java 
+				((instType == ExecType.SPARK) ? (1+ (sumProductRewrites ? 2 : ((numInputs==2)?4:5))):0);
 			checkNumCompiledSparkInst(expectedNumCompiled); 
 			checkNumExecutedSparkInst(expectedNumCompiled 
 				- ((instType==ExecType.CP)?numInputs:0));

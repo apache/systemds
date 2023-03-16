@@ -316,6 +316,7 @@ public class ABATernaryAggregateTest extends AutomatedTestBase
 	
 	private void runTernaryAggregateTest(String testname, boolean sparse, boolean vectors, boolean rewrites, ExecType et)
 	{
+		setOutputBuffering(true);
 		//rtplatform for MR
 		ExecMode platformOld = rtplatform;
 		switch( et ){
@@ -350,7 +351,7 @@ public class ABATernaryAggregateTest extends AutomatedTestBase
 			writeInputMatrixWithMTD("A", A, true);
 			
 			//run test cases
-			runTest(true, false, null, -1); 
+			runTest(null); 
 			runRScript(true); 
 			
 			//compare output matrices 

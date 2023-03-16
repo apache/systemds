@@ -181,10 +181,9 @@ public class TernaryAggregateTest extends AutomatedTestBase
 		runTernaryAggregateTest(TEST_NAME2, true, false, false, ExecType.CP);
 	}
 	
-	
-	
 	private void runTernaryAggregateTest(String testname, boolean sparse, boolean vectors, boolean rewrites, ExecType et)
 	{
+		setOutputBuffering(true);
 		//rtplatform for MR
 		ExecMode platformOld = rtplatform;
 		switch( et ){
@@ -220,7 +219,7 @@ public class TernaryAggregateTest extends AutomatedTestBase
 			writeInputMatrixWithMTD("A", A, true);
 			
 			//run test cases
-			runTest(true, false, null, -1); 
+			runTest(null); 
 			runRScript(true); 
 			
 			//compare output matrices 

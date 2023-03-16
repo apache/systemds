@@ -28,10 +28,6 @@ import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
 
-/**
- * 
- * 
- */
 public class RewriteSlicedMatrixMultTest extends AutomatedTestBase 
 {
 	

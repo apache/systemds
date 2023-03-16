@@ -125,15 +125,10 @@ public class CentralMomentWeightsTest extends AutomatedTestBase
 	{
 		runCentralMomentTest(4, true, ExecType.SPARK);
 	}
-	
-	/**
-	 * 
-	 * @param sparseM1
-	 * @param sparseM2
-	 * @param instType
-	 */
+
 	private void runCentralMomentTest( int order, boolean sparse, ExecType et)
 	{
+		setOutputBuffering(true); 
 		//rtplatform for MR
 		ExecMode platformOld = rtplatform;
 		switch( et ){

@@ -21,16 +21,18 @@ package org.apache.sysds.test.functions.ternary;
 
 import java.util.HashMap;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.ExecMode;
-import org.apache.sysds.hops.TernaryOp;
 import org.apache.sysds.common.Types.ExecType;
+import org.apache.sysds.hops.TernaryOp;
 import org.apache.sysds.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
+import org.junit.Assert;
+import org.junit.Test;
 
 /**
  * This test investigates the specific Hop-Lop rewrite ctable(seq(1,nrow(X)),X).
@@ -44,8 +46,10 @@ import org.apache.sysds.test.TestUtils;
  *   matrix cell.
  * 
  */
-public class CTableSequenceTest extends AutomatedTestBase 
-{
+public class CTableSequenceTest extends AutomatedTestBase {
+
+	protected static final Log LOG = LogFactory.getLog(CTableSequenceTest.class.getName());
+
 	private final static String TEST_NAME1 = "CTableSequenceLeft";
 	private final static String TEST_NAME2 = "CTableSequenceRight";
 	
@@ -144,8 +148,9 @@ public class CTableSequenceTest extends AutomatedTestBase
 		runCTableSequenceTest(true, false, true, ExecType.CP);
 	}
 	
-	private void runCTableSequenceTest(boolean rewrite, boolean left, boolean withAgg, ExecType et)
-	{
+	private void runCTableSequenceTest(boolean rewrite, boolean left, boolean withAgg, ExecType et){
+		setOutputBuffering(true);
+
 		String TEST_NAME = left ? TEST_NAME1 : TEST_NAME2;
 		ExecMode platformOld = rtplatform;
 		boolean rewriteOld = TernaryOp.ALLOW_CTABLE_SEQUENCE_REWRITES;
@@ -168,7 +173,7 @@ public class CTableSequenceTest extends AutomatedTestBase
 			
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[]{"-stats","-args", input("A"),
+			programArgs = new String[]{"-explain","-stats","-args", input("A"),
 				Integer.toString(rows),
 				Integer.toString(1),
 				Integer.toString(withAgg?1:0),
@@ -181,7 +186,7 @@ public class CTableSequenceTest extends AutomatedTestBase
 			double[][] A = TestUtils.floor(getRandomMatrix(rows, 1, 1, maxVal, 1.0, 7)); 
 			writeInputMatrix("A", A, true);
 	
-			runTest(true, false, null, -1);
+			runTest(null);
 			runRScript(true);
 			
 			//compare matrices 
@@ -191,7 +196,7 @@ public class CTableSequenceTest extends AutomatedTestBase
 			
 			//w/ rewrite: 4 instead of 6 because seq and aggregation are not required for ctable_expand
 			//2 for CP due to reblock jobs for input and table
-			int expectedNumCompiled = ((et==ExecType.CP) ? 2 : 5)+(withAgg ? 1 : 0);
+			int expectedNumCompiled = ((et==ExecType.CP) ? 2 : 4)+(withAgg ? 1 : 0);
 			checkNumCompiledSparkInst(expectedNumCompiled);
 			Assert.assertEquals(left & rewrite,
 				heavyHittersContainsSubString("ctableexpand"));

@@ -55,9 +55,8 @@
 m_decisionTreePredict = function(Matrix[Double] M, Matrix[Double] X, String strategy)
   return (Matrix[Double] Y) 
 {
-  if (strategy == "TT") {
-    Y = predict_TT(M, X)
-  } 
+  if( strategy == "TT" )
+    Y = predict_TT(M, X);
   else {
     print ("No such strategy" + strategy)
     Y = matrix("0", rows=0, cols=0)
@@ -67,35 +66,29 @@ m_decisionTreePredict = function(Matrix[Double] M, Matrix[Double] X, String stra
 predict_TT = function (Matrix[Double] M, Matrix[Double] X) 
   return (Matrix[Double] Y)
 {
-  Y = matrix(0, rows=1, cols=nrow(X))
-  n = ncol(M)
-  tree_depth = ceiling(log(n+1,2)) # max depth of complete binary tree
+  # initialization of model tensors and parameters
   [N_L, N_R, N_F, N_T] = createNodeTensors(M)
+  nr = nrow(X); n = ncol(M);
+  tree_depth = ceiling(log(n+1,2)) # max depth
 
-  parfor (k in 1:nrow(X)){
-    # iterate over every sample in X matrix
-    sample = X[k,]
-    current_node = 1
-    cnt = 1
-    while (cnt < tree_depth){
-      feature_id = as.scalar(N_F[1, current_node])
-      feature = as.scalar(sample[,feature_id]) # select feature from sample data
-      threshold = as.scalar(N_T[1, current_node])
-
-      if (feature < threshold){
-        # move on to left child node
-        next_node = as.scalar(N_L[1, current_node])
-      } else {
-        # move on to right child node
-        next_node = as.scalar(N_R[1, current_node])
-      }
-      current_node = next_node
-      cnt +=1
-    }
-
-    class = M[4, current_node]
-    Y[1, k] = class
+  Ti = matrix(1, nr, 1); # current nodes (start at root)
+  noChange = FALSE; i = 1;
+  while( !noChange & i < tree_depth) {
+    P = table(seq(1,nr), Ti, nr, n);
+    TF = P %*% t(N_F); # get node feature indexes
+    Tv = rowSums(X * table(seq(1,nr),TF,nr,ncol(X))); # get feature values
+    Tt = P %*% t(N_T); # get node thresholds
+    TL = P %*% t(N_L); # get node left paths
+    TR = P %*% t(N_R); # get node right paths
+    # pick left or right path for each record separately
+    Ti_new = ifelse(Tv < Tt, TL, TR);
+    noChange = (sum(Ti != Ti_new) == 0);
+    i = i + 1;
+    Ti = Ti_new;
   }
+
+  # extract classes
+  Y = t(table(seq(1,nr), Ti, nr, n) %*%  t(M[4,]));
 }
 
 createNodeTensors = function( Matrix[Double] M )
@@ -105,40 +98,13 @@ createNodeTensors = function( Matrix[Double] M )
   I = M[2,] # list of node offsets to their left children
   n_nodes  = ncol(N)
 
-  N_L = matrix(0, rows=1, cols=n_nodes)
-  N_R = matrix(0, rows=1, cols=n_nodes)
-  N_F = matrix(0, rows=1, cols=n_nodes)
-  N_T = matrix(0, rows=1, cols=n_nodes)
+  # left/right child node ids, default self-id
+  P1 = table(seq(1,ncol(N)), seq(1,ncol(I))+t(I[1,]));
+  N_L = ifelse(I[1,]!=0, t(P1 %*% t(N)), t(seq(1, n_nodes)));
+  P2 = table(seq(1,ncol(N)), t(N_L+1), ncol(N), ncol(N));
+  N_R = ifelse(I[1,]!=0, t(P2 %*% t(N)), t(seq(1, n_nodes)));
 
-  parfor (i in 1:n_nodes){
-    # if the node is an internal node, add its left and right child to the N_L and N_R tensor, respectively
-    if (as.scalar(I[1,i]) != 0){
-      offset = as.scalar(I[1, i])
-      leftChild = as.scalar(N[1, i+offset])
-      N_L[1, i] = N[1, i+offset]
-      rightChild = leftChild + 1
-
-      if (as.scalar(I[1, leftChild]) == 0 & as.scalar(I[1, rightChild]) != 0){
-        rightChild = i
-      }
-      N_R[1, i] = N[1, rightChild]        
-    } else {
-      N_L[1, i] = as.matrix(i)
-      N_R[1, i] = as.matrix(i)
-    }
-
-    # if the node is an internal node, add index of the feature it evaluates
-    if (as.scalar(M[3,i]) != 0){
-      N_F[1, i] = M[3,i]    
-    } else {
-      N_F[1, i] = as.matrix(1)
-    }
-
-    # if the node is an internal node, add the threshold of the feature it evaluates
-    if (as.scalar(M[6,i]) != 0){
-      N_T[1, i] = M[6,i]    
-    } else {
-      N_T[1, i] = as.matrix(0)
-    }
-  }
+  # node feature IDs (positions) and threshold values
+  N_F = ifelse(M[3,]!=0, M[3,], 1);
+  N_T = M[6,]; # threshold values for inner nodes, otherwise 0
 }

@@ -42,13 +42,23 @@ public class BuiltinDecisionTreePredictTest extends AutomatedTestBase {
 	}
 
 	@Test
-	public void testDecisionTreePredictDefaultCP() {
+	public void testDecisionTreeTTPredictDefaultCP() {
 		runDecisionTreePredict(true, ExecType.CP, "TT");
 	}
 
 	@Test
-	public void testDecisionTreePredictSP() {
+	public void testDecisionTreeTTPredictSP() {
 		runDecisionTreePredict(true, ExecType.SPARK, "TT");
+	}
+	
+	@Test
+	public void testDecisionTreeGEMMPredictDefaultCP() {
+		runDecisionTreePredict(true, ExecType.CP, "GEMM");
+	}
+
+	@Test
+	public void testDecisionTreeGEMMPredictSP() {
+		runDecisionTreePredict(true, ExecType.SPARK, "GEMM");
 	}
 
 	private void runDecisionTreePredict(boolean defaultProb, ExecType instType, String strategy) {

@@ -20,12 +20,13 @@
 
 package org.apache.sysds.runtime.data;
 
-import org.apache.sysds.common.Warnings;
+import java.util.Arrays;
+
+import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.common.Warnings;
 import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.runtime.util.UtilFunctions;
-
-import java.util.Arrays;
 
 public class DenseBlockString extends DenseBlockDRB {
 	private static final long serialVersionUID = 7071870563356352352L;
@@ -59,6 +60,11 @@ public class DenseBlockString extends DenseBlockDRB {
 	@Override
 	public boolean isNumeric(ValueType vt) {
 		return false;
+	}
+
+	@Override
+	public void resetNoFill(int rlen, int[] odims){
+		throw new NotImplementedException();
 	}
 
 	@Override

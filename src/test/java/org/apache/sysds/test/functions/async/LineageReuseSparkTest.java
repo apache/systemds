@@ -74,6 +74,8 @@ public class LineageReuseSparkTest extends AutomatedTestBase {
 	}
 
 	public void runTest(String testname, ExecMode execMode, int testId) {
+		setOutputBuffering(true);
+		
 		boolean old_simplification = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
 		boolean old_sum_product = OptimizerUtils.ALLOW_SUM_PRODUCT_REWRITES;
 		boolean old_trans_exec_type = OptimizerUtils.ALLOW_TRANSITIVE_SPARK_EXEC_TYPE;
@@ -92,6 +94,7 @@ public class LineageReuseSparkTest extends AutomatedTestBase {
 
 			//proArgs.add("-explain");
 			proArgs.add("-stats");
+			proArgs.add("-explain");
 			proArgs.add("-args");
 			proArgs.add(output("R"));
 			programArgs = proArgs.toArray(new String[proArgs.size()]);

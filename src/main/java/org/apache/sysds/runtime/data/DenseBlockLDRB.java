@@ -21,9 +21,10 @@
 package org.apache.sysds.runtime.data;
 
 
-import org.apache.sysds.runtime.util.UtilFunctions;
-
 import java.util.stream.IntStream;
+
+import org.apache.commons.lang.NotImplementedException;
+import org.apache.sysds.runtime.util.UtilFunctions;
 
 /**
  * Dense Large Row Blocks have multiple 1D arrays (blocks), which contain complete rows.
@@ -88,6 +89,11 @@ public abstract class DenseBlockLDRB extends DenseBlock
 		_blen = newBlockSize;
 		_rlen = rlen;
 		_odims = odims;
+	}
+
+	@Override
+	public void resetNoFill(int rlen, int[] odims){
+		throw new NotImplementedException();
 	}
 
 	@Override

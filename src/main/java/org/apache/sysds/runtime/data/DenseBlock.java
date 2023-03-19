@@ -156,6 +156,11 @@ public abstract class DenseBlock implements Serializable, Block
 	 */
 	public abstract void reset(int rlen, int[] odims, double v);
 	
+	public final void resetNoFill(int rlen, int clen){
+		resetNoFill(rlen, new int[]{clen});
+	}
+
+	public abstract void resetNoFill(int rlen, int[] odims);
 	
 	public static double estimateMemory(long nrows, long ncols){
 		long size = 16; // object

@@ -2012,12 +2012,10 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 		}
 	}
 
-	private void readDenseBlock(DataInput in)
-		throws IOException, DMLRuntimeException
-	{
-		if( !allocateDenseBlock(false) ) //allocate block
-			denseBlock.reset(rlen, clen);
-		
+	private void readDenseBlock(DataInput in) throws IOException, DMLRuntimeException {
+		// allocate dense block resets the block if already allocated.
+		allocateDenseBlock(true);
+
 		DenseBlock a = getDenseBlock();
 		long nnz = 0;
 		if( in instanceof MatrixBlockDataInput ) { //fast deserialize

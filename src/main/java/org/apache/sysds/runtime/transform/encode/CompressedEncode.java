@@ -146,18 +146,12 @@ public class CompressedEncode {
 		Array<?> a = in.getColumn(colId - 1);
 		HashMap<?, Long> map = a.getRecodeMap();
 		int domain = map.size();
-
 		IColIndex colIndexes = ColIndexFactory.create(0, domain);
-
 		ADictionary d = new IdentityDictionary(colIndexes.size());
-
 		AMapToData m = createMappingAMapToData(a, map);
-
 		List<ColumnEncoder> r = c.getEncoders();
 		r.set(0, new ColumnEncoderRecode(colId, (HashMap<Object, Long>) map));
-
 		return ColGroupDDC.create(colIndexes, d, m, null);
-
 	}
 
 	@SuppressWarnings("unchecked")

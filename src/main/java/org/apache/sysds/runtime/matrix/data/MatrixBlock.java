@@ -387,18 +387,21 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 	public boolean allocateDenseBlock(boolean clearNNZ) {
 		//allocate block if non-existing or too small (guaranteed to be 0-initialized),
 		long limit = (long)rlen * clen;
-		boolean reset = (denseBlock == null || denseBlock.capacity() < limit);
-		if( denseBlock == null )
-			denseBlock = DenseBlockFactory.createDenseBlock(rlen, clen);
-		else if( denseBlock.capacity() < limit )
-			denseBlock.reset(rlen, clen);
-		
 		//clear nnz if necessary
 		if( clearNNZ )
 			nonZeros = 0;
 		sparse = false;
+
+		if( denseBlock == null ){
+			denseBlock = DenseBlockFactory.createDenseBlock(rlen, clen);
+			return true;
+		}
+		else if( denseBlock.capacity() < limit ){
+			denseBlock.reset(rlen, clen);
+			return true;
+		}
 		
-		return reset;
+		return false;
 	}
 
 	public final boolean allocateSparseRowsBlock() {
@@ -2012,13 +2015,13 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 		}
 	}
 
-	private void readDenseBlock(DataInput in)
-		throws IOException, DMLRuntimeException
-	{
-		if( !allocateDenseBlock(false) ) //allocate block
-			denseBlock.reset(rlen, clen);
-		
+	private void readDenseBlock(DataInput in) throws IOException, DMLRuntimeException {
+		// allocate dense block resets the block if already allocated.
+		allocateDenseBlock(true);
 		DenseBlock a = getDenseBlock();
+		if(a.getDim(0) != rlen || a.getDim(1) != clen)
+			a.resetNoFill(rlen, clen); // reset the dimensions of a if incorrect.
+		
 		long nnz = 0;
 		if( in instanceof MatrixBlockDataInput ) { //fast deserialize
 			MatrixBlockDataInput mbin = (MatrixBlockDataInput)in;

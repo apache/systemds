@@ -20,13 +20,13 @@
 
 package org.apache.sysds.runtime.data;
 
-import org.apache.sysds.common.Warnings;
-import org.apache.sysds.common.Types.ValueType;
-import org.apache.sysds.runtime.util.DataConverter;
-import org.apache.sysds.runtime.util.UtilFunctions;
-
 import java.util.BitSet;
 import java.util.stream.IntStream;
+
+import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.common.Warnings;
+import org.apache.sysds.runtime.util.DataConverter;
+import org.apache.sysds.runtime.util.UtilFunctions;
 
 public class DenseBlockLBool extends DenseBlockLDRB
 {
@@ -63,6 +63,7 @@ public class DenseBlockLBool extends DenseBlockLDRB
 	public boolean isNumeric(ValueType vt) {
 		return ValueType.BOOLEAN == vt;
 	}
+
 
 	@Override
 	public boolean isContiguous() {

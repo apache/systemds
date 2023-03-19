@@ -19,12 +19,13 @@
 
 package org.apache.sysds.runtime.data;
 
-import org.apache.sysds.common.Warnings;
+import java.util.Arrays;
+
+import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.common.Warnings;
 import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.runtime.util.UtilFunctions;
-
-import java.util.Arrays;
 
 public class DenseBlockLFP32 extends DenseBlockLDRB
 {
@@ -60,6 +61,11 @@ public class DenseBlockLFP32 extends DenseBlockLDRB
 	@Override
 	public boolean isNumeric(ValueType vt) {
 		return ValueType.FP32 == vt;
+	}
+
+	@Override
+	public void resetNoFill(int rlen, int[] odims){
+		throw new NotImplementedException();
 	}
 
 	@Override

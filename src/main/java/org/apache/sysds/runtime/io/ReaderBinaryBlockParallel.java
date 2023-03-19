@@ -29,6 +29,7 @@ import java.util.concurrent.Future;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.SequenceFile;
+import org.apache.hadoop.io.SequenceFile.Reader;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.hops.OptimizerUtils;
@@ -150,7 +151,7 @@ public class ReaderBinaryBlockParallel extends ReaderBinaryBlock
 			long lnnz = 0; //aggregate block nnz
 			
 			//directly read from sequence files (individual partfiles)
-			SequenceFile.Reader reader = new SequenceFile
+			final Reader reader = new SequenceFile
 				.Reader(_job, SequenceFile.Reader.file(_path));
 			
 			try

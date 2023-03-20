@@ -126,6 +126,7 @@ public class LineageCacheConfig
 	private static LineageCachePolicy _cachepolicy = null;
 	// Weights for scoring components (computeTime/size, LRU timestamp, DAG height)
 	protected static double[] WEIGHTS = {1, 0, 0};
+	public static boolean GPU2HOSTEVICTION = false;
 	public static boolean CONCURRENTGPUEVICTION = false;
 	public static volatile boolean STOPBACKGROUNDEVICTION = false;
 

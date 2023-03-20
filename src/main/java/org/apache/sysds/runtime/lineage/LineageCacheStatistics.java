@@ -45,6 +45,7 @@ public class LineageCacheStatistics {
 	private static final LongAdder _numHitsGpu      = new LongAdder();
 	private static final LongAdder _numAsyncEvictGpu= new LongAdder();
 	private static final LongAdder _numSyncEvictGpu = new LongAdder();
+	private static final LongAdder _evtimeGpu       = new LongAdder();
 	// Below entries are specific to Spark instructions
 	private static final LongAdder _numHitsRdd      = new LongAdder();
 	private static final LongAdder _numHitsSparkActions = new LongAdder();
@@ -65,6 +66,7 @@ public class LineageCacheStatistics {
 		_ctimeFSWrite.reset();
 		_ctimeSaved.reset();
 		_ctimeMissed.reset();
+		_evtimeGpu.reset();
 		_numHitsGpu.reset();
 		_numAsyncEvictGpu.reset();
 		_numSyncEvictGpu.reset();
@@ -204,6 +206,11 @@ public class LineageCacheStatistics {
 		_numSyncEvictGpu.increment();
 	}
 
+	public static void incrementEvictTimeGpu(long delta) {
+		// Total time spent on evicting from GPU to main memory or deleting from GPU lineage cache
+		_evtimeGpu.add(delta);
+	}
+
 	public static void incrementRDDHits() {
 		// Number of times a locally cached (but not persisted) RDD are reused.
 		_numHitsRdd.increment();
@@ -278,6 +285,12 @@ public class LineageCacheStatistics {
 		sb.append(_numAsyncEvictGpu.longValue());
 		sb.append("/");
 		sb.append(_numSyncEvictGpu.longValue());
+		return sb.toString();
+	}
+
+	public static String displayGpuEvictTime() {
+		StringBuilder sb = new StringBuilder();
+		sb.append(String.format("%.3f", ((double)_evtimeGpu.longValue())/1000000000)); //in sec
 		return sb.toString();
 	}
 

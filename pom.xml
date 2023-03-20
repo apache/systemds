@@ -56,7 +56,8 @@
 		<java.level>11</java.level>
 		<java.version>{java.level}</java.version>
 		<!-->Testing settings<!-->
-		<maven.test.skip>true</maven.test.skip>
+		<maven.test.skip>false</maven.test.skip>
+		<test>org.apache.sysds.test.usertest.**</test>
 		<test-parallel>classes</test-parallel>
 		<test-threadCount>2</test-threadCount>
 		<test-forkCount>1C</test-forkCount>
@@ -250,7 +251,7 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
-				<version>3.8.1</version> <!--$NO-MVN-MAN-VER$-->
+				<version>3.11.0</version> <!--$NO-MVN-MAN-VER$-->
 				<configuration>
 					<source>${java.level}</source>
 					<target>${java.level}</target>
@@ -262,7 +263,7 @@
 				<!-- unit tests -->
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-surefire-plugin</artifactId>
-				<version>3.0.0-M5</version>
+				<version>3.0.0-M9</version>
 				<configuration>
 					<skipTests>${maven.test.skip}</skipTests>
 					<parallel>${test-parallel}</parallel>
@@ -272,11 +273,10 @@
 					<reuseForks>false</reuseForks>
 					<!-- <reportFormat>brief</reportFormat> -->
 					<trimStackTrace>true</trimStackTrace>
-					<showSuccess>false</showSuccess>
 					<rerunFailingTestsCount>${rerun.failing.tests.count}</rerunFailingTestsCount>
-					<systemProperties>
+					<systemPropertyVariables>
 						<log4j.configurationFile>file:src/test/resources/log4j.properties</log4j.configurationFile>
-					</systemProperties>
+					</systemPropertyVariables>
 				</configuration>
 			</plugin>
 
@@ -345,7 +345,7 @@
 			<plugin>
 				<groupId>org.jacoco</groupId>
 				<artifactId>jacoco-maven-plugin</artifactId>
-				<version>0.8.7</version>
+				<version>0.8.8</version>
 				<configuration>
 					<includes>
 						<include>${jacoco.include}</include>
@@ -369,15 +369,9 @@
 			</plugin>
 
 			<plugin>
-				<groupId>org.eluder.coveralls</groupId>
-				<artifactId>coveralls-maven-plugin</artifactId>
-				<version>4.3.0</version>
-			</plugin>
-
-			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-javadoc-plugin</artifactId>
-				<version>3.2.0</version>
+				<version>3.5.0</version>
 				<configuration>
 					<quiet>true</quiet>
 					<!-- Skip java docs creation if not explicitly asked, to create use -P distribution-->
@@ -765,7 +759,7 @@
 					<plugin>
 						<groupId>org.apache.maven.plugins</groupId>
 						<artifactId>maven-remote-resources-plugin</artifactId>
-						<version>1.4</version>
+						<version>3.0.0</version>
 						<executions>
 							<execution>
 								<goals>

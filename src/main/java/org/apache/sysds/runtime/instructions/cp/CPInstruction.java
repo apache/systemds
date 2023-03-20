@@ -19,7 +19,6 @@
 
 package org.apache.sysds.runtime.instructions.cp;
 
-import java.util.concurrent.Executors;
 
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.DataType;
@@ -32,10 +31,7 @@ import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.instructions.CPInstructionParser;
 import org.apache.sysds.runtime.instructions.Instruction;
 import org.apache.sysds.runtime.instructions.fed.FEDInstructionUtils;
-import org.apache.sysds.runtime.instructions.gpu.context.GPUContextPool;
-import org.apache.sysds.runtime.instructions.gpu.context.GPUMemoryEviction;
 import org.apache.sysds.runtime.lineage.LineageCacheConfig;
-import org.apache.sysds.runtime.lineage.LineageGPUCacheEviction;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 import org.apache.sysds.runtime.privacy.propagation.PrivacyPropagator;
 
@@ -108,29 +104,17 @@ public abstract class CPInstruction extends Instruction
 		}
 		
 		tmp = PrivacyPropagator.preprocessInstruction(tmp, ec);
-		
-		//Submit a task for the eviction thread. The stopping criteria are a passed
-		//eviction count and STOPBACKGROUNDEVICTION flag. STOPBACKGROUNDEVICTION flag
-		//is set to true in the post processing of CPU instruction to stop eviction.
-		if (!LineageCacheConfig.ReuseCacheType.isNone() && DMLScript.USE_ACCELERATOR
-			&& LineageCacheConfig.CONCURRENTGPUEVICTION && ec.getNumGPUContexts()>0 
-			&& !(tmp instanceof VariableCPInstruction) && !(tmp instanceof FunctionCallCPInstruction)) {
-			long availableMem = ec.getGPUContext(0).getAvailableMemory(); //TODO: multi-gpu
-			long almostFull = (long) (0.2 * GPUContextPool.initialGPUMemBudget());
-
-			if (availableMem < almostFull) { //80% full
-				if (LineageGPUCacheEviction.gpuEvictionThread == null)
-					LineageGPUCacheEviction.gpuEvictionThread = Executors.newSingleThreadExecutor();
-				LineageCacheConfig.STOPBACKGROUNDEVICTION = false;
-				LineageGPUCacheEviction.gpuEvictionThread.submit(new GPUMemoryEviction());
-			}
-		}
-		
 		return tmp;
 	}
 
 	@Override 
 	public abstract void processInstruction(ExecutionContext ec);
+
+	@Override
+	public void postprocessInstruction(ExecutionContext ec) {
+		if (DMLScript.LINEAGE_DEBUGGER)
+			ec.maintainLineageDebuggerInfo(this);
+	}
 	
 	/**
 	 * Takes a delimited string of instructions, and replaces ALL placeholder labels 
@@ -156,17 +140,7 @@ public abstract class CPInstruction extends Instruction
 		}
 		return updateInstList.toString();
 	}
-	@Override
-	public void postprocessInstruction(ExecutionContext ec) {
-		//Stop the eviction thread if not done yet evicting the given count.
-		if (!LineageCacheConfig.ReuseCacheType.isNone() && DMLScript.USE_ACCELERATOR
-			&& LineageCacheConfig.CONCURRENTGPUEVICTION)
-			LineageCacheConfig.STOPBACKGROUNDEVICTION = true;
-		
-		if (DMLScript.LINEAGE_DEBUGGER)
-			ec.maintainLineageDebuggerInfo(this);
-	}
-	
+
 	/** 
 	 * Replaces ALL placeholder strings (such as ##mVar2## and ##Var5##) in a single instruction.
 	 *  

@@ -27,7 +27,7 @@ X1 = X;
 y1 = y;
 S1 = 0;
 # fill half of the cache
-for (i in 1:15) {
+for (i in 1:20) {
   R = X1 * y1;
   X1 = cbind(X1, rand(rows=10000, cols=1, seed=42));
   y1 = cbind(y1, rand(rows=10000, cols=1, seed=42));
@@ -40,7 +40,7 @@ X2 = X;
 y2 = y;
 S2 = 0;
 # reuse (saves cache pollution)
-for (i in 1:15) {
+for (i in 1:20) {
   R = X2 * y2;
   X2 = cbind(X2, rand(rows=10000, cols=1, seed=42));
   y2 = cbind(y2, rand(rows=10000, cols=1, seed=42));
@@ -50,7 +50,7 @@ for (i in 1:15) {
 S[,2] = S2;
 
 # generate eviction
-for (i in 1:15) {
+for (i in 1:20) {
   R = X1 * y1;
   X1 = cbind(X1, rand(rows=10000, cols=1, seed=42));
   y1 = cbind(y1, rand(rows=10000, cols=1, seed=42));

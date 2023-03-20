@@ -25,7 +25,7 @@ S = matrix(0, rows=1, cols=1);
 
 S1 = 0;
 # fill the cache and generate eviction
-for (i in 1:30) {
+for (i in 1:40) {
   R = X * y;
   X = cbind(X, rand(rows=10000, cols=1, seed=42));
   y = cbind(y, rand(rows=10000, cols=1, seed=42));

@@ -152,4 +152,10 @@ public class LineageGPUCacheEviction
 		updateSize(size, false);
 	}
 
+	public static void removeFromDeviceCache(LineageCacheEntry entry, String instName, boolean alreadyCopied) {
+		long size = entry.getGPUObject().getSizeOnDevice();
+		LineageCache.removeEntry(entry._key);
+		updateSize(size, false);
+	}
+
 }

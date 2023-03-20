@@ -24,6 +24,7 @@ import java.util.HashMap;
 import java.util.List;
 
 import org.apache.sysds.runtime.lineage.Lineage;
+import org.apache.sysds.runtime.lineage.LineageCacheConfig;
 import org.apache.sysds.runtime.matrix.data.MatrixValue;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
@@ -79,6 +80,8 @@ public class GPULineageCacheEvictionTest extends AutomatedTestBase{
 		
 		// reset clears the lineage cache held memory from the last run
 		Lineage.resetInternalState();
+		boolean gpu2Mem = LineageCacheConfig.GPU2HOSTEVICTION;
+		LineageCacheConfig.GPU2HOSTEVICTION = true;
 		//run the test
 		runTest(true, EXCEPTION_NOT_EXPECTED, null, -1);
 		HashMap<MatrixValue.CellIndex, Double> R_orig = readDMLMatrixFromOutputDir("R");
@@ -95,6 +98,7 @@ public class GPULineageCacheEvictionTest extends AutomatedTestBase{
 		//run the test
 		runTest(true, EXCEPTION_NOT_EXPECTED, null, -1);
 		AutomatedTestBase.TEST_GPU = false;
+		LineageCacheConfig.GPU2HOSTEVICTION = gpu2Mem;
 		HashMap<MatrixValue.CellIndex, Double> R_reused = readDMLMatrixFromOutputDir("R");
 
 		//compare results 

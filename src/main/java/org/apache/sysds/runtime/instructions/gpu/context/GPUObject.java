@@ -1064,8 +1064,10 @@ public class GPUObject {
 	 * @throws DMLRuntimeException if error occurs
 	 */
 	synchronized public void clearData(String opcode, boolean eager) throws DMLRuntimeException {
-		if (isLineageCached)
+		if (isLineageCached) {
+			setDirty(false);
 			return;
+		}
 
 		if(LOG.isTraceEnabled()) {
 			LOG.trace("GPU : clearData on " + this + ", GPUContext=" + getGPUContext());

@@ -19,18 +19,20 @@
 
 package org.apache.sysds.test.component.tensor;
 
+import static org.junit.Assert.fail;
+
 import org.apache.commons.lang.NotImplementedException;
-import org.junit.Assert;
-import org.junit.Test;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.DenseBlockFactory;
 import org.apache.sysds.runtime.data.DenseBlockLBool;
 import org.apache.sysds.runtime.data.DenseBlockLFP32;
 import org.apache.sysds.runtime.data.DenseBlockLFP64;
-import org.apache.sysds.runtime.data.DenseBlockLString;
 import org.apache.sysds.runtime.data.DenseBlockLInt32;
 import org.apache.sysds.runtime.data.DenseBlockLInt64;
+import org.apache.sysds.runtime.data.DenseBlockLString;
+import org.junit.Assert;
+import org.junit.Test;
 
 public class DenseBlockConstIndexingTest 
 {
@@ -81,9 +83,16 @@ public class DenseBlockConstIndexingTest
 
 	@Test
 	public void testIndexDenseBlock2StringConst() {
-		DenseBlock db = getDenseBlock2(ValueType.STRING);
-		db.set(new int[]{1,3}, "hello");
-		Assert.assertEquals("hello", db.getString(new int[]{1,3}));
+		try{
+
+			DenseBlock db = getDenseBlock2(ValueType.STRING);
+			db.set(new int[]{1,3}, "hello");
+			Assert.assertEquals("hello", db.getString(new int[]{1,3}));
+		}
+		catch(Exception e){
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
 	}
 
 	@Test

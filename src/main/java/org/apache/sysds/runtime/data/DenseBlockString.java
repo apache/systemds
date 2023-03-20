@@ -63,11 +63,6 @@ public class DenseBlockString extends DenseBlockDRB {
 	}
 
 	@Override
-	public void reset(int rlen, int[] odims, double v){
-		throw new NotImplementedException();
-	}
-
-	@Override
 	public void resetNoFill(int rlen, int[] odims){
 		throw new NotImplementedException();
 	}

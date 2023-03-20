@@ -71,6 +71,16 @@ public class DenseBlockFP64 extends DenseBlockDRB
 		_rlen = rlen;
 		_odims = odims;
 	}
+
+	@Override
+	public void resetNoFill(int rlen, int[] odims){
+		int len = rlen * odims[0];
+		if( len > capacity() )
+			_data = new double[len];
+		
+		_rlen = rlen;
+		_odims = odims;
+	}
 	
 	public static double estimateMemory(long nrows, long ncols) {
 		if( (double)nrows + ncols > Long.MAX_VALUE )

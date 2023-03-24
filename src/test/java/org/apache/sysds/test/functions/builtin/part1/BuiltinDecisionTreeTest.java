@@ -60,30 +60,28 @@ public class BuiltinDecisionTreeTest extends AutomatedTestBase {
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
 			programArgs = new String[] {"-args", input("X"), input("Y"), input("R"), output("M")};
 
-			double[][] Y = {{1.0}, {0.0}, {0.0}, {1.0}, {0.0}};
-
-			double[][] X = {{4.5, 4.0, 3.0, 2.8, 3.5}, {1.9, 2.4, 1.0, 3.4, 2.9}, {2.0, 1.1, 1.0, 4.9, 3.4},
-				{2.3, 5.0, 2.0, 1.4, 1.8}, {2.1, 1.1, 3.0, 1.0, 1.9},};
+			double[][] Y = {{2.0}, {1.0}, {1.0}, {2.0}, {1.0}};
+			double[][] X = {
+				{3, 1, 2, 1, 5}, 
+				{2, 1, 2, 2, 4}, 
+				{1, 1, 1, 3, 3},
+				{4, 2, 1, 4, 2}, 
+				{2, 2, 1, 5, 1},};
+			double[][] R = {{1.0, 1.0, 2.0, 1.0, 1.0, 1.0},};
 			writeInputMatrixWithMTD("X", X, true);
 			writeInputMatrixWithMTD("Y", Y, true);
-
-			double[][] R = {{1.0, 1.0, 3.0, 1.0, 1.0},};
 			writeInputMatrixWithMTD("R", R, true);
 
 			runTest(true, false, null, -1);
 
 			HashMap<MatrixValue.CellIndex, Double> actual_M = readDMLMatrixFromOutputDir("M");
 			HashMap<MatrixValue.CellIndex, Double> expected_M = new HashMap<>();
-			expected_M.put(new MatrixValue.CellIndex(1, 1), 1.0);
-			expected_M.put(new MatrixValue.CellIndex(1, 3), 3.0);
-			expected_M.put(new MatrixValue.CellIndex(3, 1), 2.0);
-			expected_M.put(new MatrixValue.CellIndex(1, 2), 2.0);
-			expected_M.put(new MatrixValue.CellIndex(2, 1), 1.0);
-			expected_M.put(new MatrixValue.CellIndex(5, 1), 1.0);
-			expected_M.put(new MatrixValue.CellIndex(4, 1), 1.0);
-			expected_M.put(new MatrixValue.CellIndex(5, 3), 1.0);
-			expected_M.put(new MatrixValue.CellIndex(5, 2), 1.0);
-			expected_M.put(new MatrixValue.CellIndex(6, 1), 3.2);
+			expected_M.put(new MatrixValue.CellIndex(1, 1), 1.0); //split feature 1
+			expected_M.put(new MatrixValue.CellIndex(1, 2), 2.0); // <= 2
+			expected_M.put(new MatrixValue.CellIndex(1, 3), 0.0); //left leaf node
+			expected_M.put(new MatrixValue.CellIndex(1, 4), 1.0); // class 1
+			expected_M.put(new MatrixValue.CellIndex(1, 5), 0.0); //right leaf node
+			expected_M.put(new MatrixValue.CellIndex(1, 6), 2.0); // class 2
 
 			TestUtils.compareMatrices(expected_M, actual_M, eps, "Expected-DML", "Actual-DML");
 		}

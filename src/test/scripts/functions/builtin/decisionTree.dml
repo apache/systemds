@@ -21,6 +21,9 @@
 
 X = read($1);
 Y = read($2);
-R = read($3)
-M = decisionTree(X = X, Y = Y, R = R);
+R = read($3);
+
+M = decisionTree(X = X, y = Y, ctypes = R,
+  max_features=1, min_split=4, min_leaf=2, verbose=TRUE);
+
 write(M, $4);

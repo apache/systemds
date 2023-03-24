@@ -31,6 +31,7 @@
 # X               Feature matrix in recoded/binned representation
 # y               Label matrix in recoded/binned representation
 # ctypes          Row-Vector of column types [1 scale/ordinal, 2 categorical]
+#                 of shape 1-by-(ncol(X)+1), where the last entry is the y type
 # num_trees       Number of trees to be learned in the random forest model
 # sample_frac     Sample fraction of examples for each tree in the forest
 # feature_frac    Sample fraction of features for each tree in the forest
@@ -78,8 +79,8 @@ m_randomForest = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] cty
     print("randomForest: initialize with num_trees=" + num_trees + ", sample_frac=" + sample_frac
       + ", feature_frac=" + feature_frac + ", impurity=" + impurity + ", seed=" + seed + ".");
   }
-  if(ncol(ctypes) != ncol(X))
-    stop("randomForest: inconsistent num features and col types: "+ncol(X)+" vs "+ncol(ctypes)+".");
+  if(ncol(ctypes) != ncol(X)+1)
+    stop("randomForest: inconsistent num features (incl. label) and col types: "+ncol(X)+" vs "+ncol(ctypes)+".");
   if(sum(y <= 0) != 0)
     stop("randomForest: y is not properly recoded and binned (contiguous positive integers).");
   if(max(y) == 1)
@@ -89,7 +90,7 @@ m_randomForest = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] cty
   randSeeds = rand(rows = 3 * num_trees, cols = 1, seed=lseed, min=0, max=1e9);
 
   # training of num_tree decision trees
-  M = matrix(0, rows=num_trees, cols=2^max_depth-1);
+  M = matrix(0, rows=num_trees, cols=2*(2^max_depth-1));
   F = matrix(0, rows=num_trees, cols=ncol(X));
   parfor(i in 1:num_trees) {
     if( verbose )
@@ -115,8 +116,8 @@ m_randomForest = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] cty
     # step 3: train decision tree
     t2 = time();
     si3 = as.integer(as.scalar(randSeeds[3*(i-1)+3,1]));
-    Mtemp = decisionTree(X=Xi, Y=yi, R=ctypes, depth=max_depth);
-    # TODO add min_leaf=min_leaf, max_features = max_features, impurity=impurity, seed=si3, verbose=verbose);
+    Mtemp = decisionTree(X=Xi, y=yi, ctypes=ctypes, max_depth=max_depth,
+      min_leaf=min_leaf, max_features=max_features, impurity=impurity, seed=si3, verbose=verbose);
     M[i,1:length(Mtemp)] = matrix(Mtemp, rows=1, cols=length(Mtemp));
     if( verbose )
       print("-- ["+i+"] trained decision tree in "+(time()-t2)/1e9+" seconds.");

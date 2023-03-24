@@ -21,5 +21,6 @@
 
 M = read($1);
 X = read($2);
-Y = decisionTreePredict(M = M, X = X, strategy = $3);
+# FIXME reordering of M and X yields wrong passing
+Y = decisionTreePredict(M=M, X=X, ctypes=matrix(2,1,ncol(X)+1), strategy=$3);
 write(Y, $4);

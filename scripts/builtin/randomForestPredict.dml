@@ -43,7 +43,7 @@ m_randomForestPredict = function(Matrix[Double] X, Matrix[Double] y = matrix(0,0
   return(Matrix[Double] yhat)
 {
   t1 = time();
-  classify = FALSE; # TODO as.scalar(ctypes[1,ncol(X)+1]) == 2;
+  classify = as.scalar(ctypes[1,ncol(X)+1]) == 2;
   yExists = (nrow(X)==nrow(y));
 
   if(verbose) {
@@ -63,7 +63,7 @@ m_randomForestPredict = function(Matrix[Double] X, Matrix[Double] y = matrix(0,0
 
     # step 2: score decision tree
     t2 = time();
-    ret = decisionTreePredict(X=Xi, M=M[i,], strategy="TT");
+    ret = decisionTreePredict(X=Xi, M=M[i,ncol(X)+1:ncol(M)], ctypes=ctypes, strategy="TT");
     Ytmp[i,1:nrow(ret)] = t(ret);
     if( verbose )
       print("-- ["+i+"] scored decision tree in "+(time()-t2)/1e9+" seconds.");

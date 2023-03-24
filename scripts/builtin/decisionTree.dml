@@ -19,424 +19,193 @@
 #
 #-------------------------------------------------------------
 
-# Builtin script implementing classification trees with scale and categorical features
+# This script implements decision trees for recoded and binned categorical and
+# numerical input features. We train a single CART (classification and
+# regression tree) decision trees depending on the provided labels y, either
+# classification (majority vote per leaf) or regression (average per leaf).
 #
 # INPUT:
-# ----------------------------------------------------------------------------------------------
-# X         Feature matrix X; note that X needs to be both recoded and dummy coded
-# Y         Label matrix Y; note that Y needs to be both recoded and dummy coded
-# R         Matrix R which for each feature in X contains the following information
-#           - R[1,]: Row Vector which indicates if feature vector is scalar or categorical. 1 indicates
-#           a scalar feature vector, other positive Integers indicate the number of categories
-#           If R is not provided by default all variables are assumed to be scale
-# bins      Number of equiheight bins per scale feature to choose thresholds
-# depth     Maximum depth of the learned tree
-# verbose   boolean specifying if the algorithm should print information while executing
-# ----------------------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+# X               Feature matrix in recoded/binned representation
+# y               Label matrix in recoded/binned representation
+# ctypes          Row-Vector of column types [1 scale/ordinal, 2 categorical]
+#                 of shape 1-by-(ncol(X)+1), where the last entry is the y type
+# max_depth       Maximum depth of the learned tree (stopping criterion)
+# min_leaf        Minimum number of samples in leaf nodes (stopping criterion)
+# min_split       Minimum number of samples in leaf for attempting a split
+# max_features    Parameter controlling the number of features used as split
+#                 candidates at tree nodes: m = ceil(num_features^max_features)
+# impurity        Impurity measure: entropy, gini (default)
+# seed            Fixed seed for randomization of samples and split candidates
+# verbose         Flag indicating verbose debug output
+# ------------------------------------------------------------------------------
 #
 # OUTPUT:
-# -------------------------------------------------------------------------------------------
-# M      Matrix M where each column corresponds to a node in the learned tree and each row
-#        contains the following information:
-#        M[1,j]: id of node j (in a complete binary tree)
-#        M[2,j]: Offset (no. of columns) to left child of j if j is an internal node, otherwise 0
-#        M[3,j]: Feature index of the feature (scale feature id if the feature is scale or
-#        categorical feature id if the feature is categorical)
-#        that node j looks at if j is an internal node, otherwise 0
-#        M[4,j]: Type of the feature that node j looks at if j is an internal node: holds
-#        the same information as R input vector
-#        M[5,j]: If j is an internal node: 1 if the feature chosen for j is scale,
-#        otherwise the size of the subset of values
-#        stored in rows 6,7,... if j is categorical
-#        If j is a leaf node: number of misclassified samples reaching at node j
-#        M[6:,j]: If j is an internal node: Threshold the example's feature value is compared
-#        to is stored at M[6,j] if the feature chosen for j is scale,
-#        otherwise if the feature chosen for j is categorical rows 6,7,... depict the value subset chosen for j
-#        If j is a leaf node 1 if j is impure and the number of samples at j > threshold, otherwise 0
-# -------------------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+# M              Matrix M containing the learne trees, in linearized form
+#                For example, give a feature matrix with features [a,b,c,d]
+#                and the following trees, M would look as follows:
+#
+#                (L1)               |d<5|
+#                                  /     \
+#                (L2)           P1:2    |a<7|
+#                                       /   \
+#                (L3)                 P2:2 P3:1
+#
+#                --> M :=
+#                [[4, 5, 0, 2, 1, 7, 0, 0, 0, 0, 0, 2, 0, 1]]
+#                 |(L1)| |  (L2)   | |        (L3)         |
+# ------------------------------------------------------------------------------
 
-m_decisionTree = function(
-  Matrix[Double] X,
-  Matrix[Double] Y,
-  Matrix[Double] R,
-  Integer bins = 10,
-  Integer depth = 20,
-  Boolean verbose = FALSE
-) return (Matrix[Double] M) {
-  if (verbose) {
-    print("Executing Decision Tree:")
+m_decisionTree = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] ctypes,
+    Int max_depth = 10, Int min_leaf = 20, Int min_split = 50, Double max_features = 0.5,
+    String impurity = "gini", Int seed = -1, Boolean verbose = FALSE)
+  return(Matrix[Double] M)
+{
+  t1 = time();
+
+  # initialize input data and basic statistics
+  m = nrow(X); n = ncol(X);
+  classify = (as.scalar(ctypes[1,n+1]) == 2);
+  fdom = colMaxs(X);                  # num distinct per feature
+  foffb = t(cumsum(t(fdom))) - fdom;  # feature begin
+  foffe = t(cumsum(t(fdom)))          # feature end
+  rix = matrix(seq(1,m)%*%matrix(1,1,n), m*n, 1)
+  cix = matrix(X + foffb, m*n, 1);
+  X2 = table(rix, cix, 1, m, as.scalar(foffe[,n]), FALSE); #one-hot encoded
+  y2 = table(seq(1,m), y);
+  cnt = colSums(X2);
+  I = matrix(1, rows=nrow(X), cols=1);
+
+  if( verbose ) {
+    print("decisionTree: initialize with max_depth=" + max_depth + ", max_features="
+      + max_features + ", impurity=" + impurity + ", seed=" + seed + ".");
+    print("decisionTree: basic statistics:");
+    print("-- impurity: " + computeImpurity(y2, I, impurity) );
+    print("-- minCount: " + min(cnt));
+    print("-- maxCount: " + max(cnt));
   }
-  node_queue = matrix(1, rows=1, cols=1)     # Add first Node
-  impurity_queue = matrix(1, rows=1, cols=1)
-  use_cols_queue = matrix(1, rows=ncol(X), cols=1)   # Add fist bool Vector with all cols <=> (use all cols)
-  use_rows_queue = matrix(1, rows=nrow(X), cols=1)   # Add fist bool Vector with all rows <=> (use all rows)
-  queue_length = 1
-  M = matrix(0, rows = 0, cols = 0)
-  while (queue_length > 0) {
-    [node_queue, node] = dataQueuePop(node_queue)
-    [use_rows_queue, use_rows_vector] = dataQueuePop(use_rows_queue)
-    [use_cols_queue, use_cols_vector] = dataQueuePop(use_cols_queue)
 
-    available_rows = calcAvailable(use_rows_vector)
-    available_cols = calcAvailable(use_cols_vector)
-    [impurity_queue, parent_impurity] = dataQueuePop(impurity_queue)
-    create_child_nodes_flag = FALSE
-      if (verbose) {
-        print("Popped Node:  " + as.scalar(node))
-        print("Rows:     " + toString(t(use_rows_vector)))
-        print("Cols:     " + toString(t(use_cols_vector)))
-        print("Available Rows:   " + available_rows)
-        print("Available Cols:   " + available_cols)
-        print("Parent impurity:  " + as.scalar(parent_impurity))
-      }
-  
-    node_depth = calculateNodeDepth(node)
-    used_col = 0.0
-    if (node_depth < depth & available_rows > 1 & available_cols > 0 & as.scalar(parent_impurity) > 0) {
-      [impurity, used_col, threshold, type] = calcBestSplittingCriteria(X, Y, R, use_rows_vector, use_cols_vector, bins)
-      create_child_nodes_flag = impurity < as.scalar(parent_impurity)
-        if (verbose) {
-      print("Current impurity:   " + impurity)
-      print("Current threshold:  "+ toString(t(threshold)))
-        }
-    }
-    if (verbose) {
+  # queue-based node splitting
+  M = matrix(0, rows=1, cols=2*(2^max_depth-1))
+  queue = list(list(1,I)); # node IDs / data indicators
+  maxPath = 1;
+  while( length(queue) > 0 ) {
+    # pop next node from queue for splitting
+    [queue, node0] = remove(queue, 1);
+    node = as.list(node0);
+    nID = as.scalar(node[1]);
+    nI = as.matrix(node[2]);
+    if(verbose)
+      print("decisionTree: attempting split of node "+nID+" ("+sum(nI)+" rows)");
 
-     print("Current column:   " + used_col)
-     print("Current type:   " + type)
-    }
-    if (create_child_nodes_flag) {
-      [left, right] = calculateChildNodes(node)
-      node_queue = dataQueuePush(left, right, node_queue)
+    # find best split attribute
+    nSeed = ifelse(seed==-1, seed, seed*nID);
+    [f, v, IDleft, Ileft, IDright, Iright] = findBestSplit(
+      X2, y2, foffb, foffe, nID, nI, min_leaf, max_features, impurity, nSeed);
+    validSplit = sum(Ileft) >= min_leaf & sum(Iright) >= min_leaf;
+    if(verbose)
+      print("-- best split: "+f+":"+v+" -> valid="+validSplit);
+    if( validSplit )
+      M[, 2*nID-1:2*nID] = t(as.matrix(list(f,v)));
+    else
+      M[, 2*nID] = computeLeafLabel(y2, nI, classify);
+    maxPath = max(maxPath, floor(log(nID,2)+1));
 
-      [new_use_cols_vector, left_use_rows_vector, right_use_rows_vector] = splitData(X, use_rows_vector, use_cols_vector, used_col, threshold, type)
-      use_rows_queue = dataQueuePush(left_use_rows_vector, right_use_rows_vector, use_rows_queue)
-      use_cols_queue = dataQueuePush(new_use_cols_vector, new_use_cols_vector, use_cols_queue)
-
-      impurity_queue = dataQueuePush(matrix(impurity, rows = 1, cols = 1), matrix(impurity, rows = 1, cols = 1), impurity_queue)
-      offset = dataQueueLength(node_queue) - 1
-      M = outputMatrixBind(M, node, offset, used_col, R, threshold)
-    } else {
-      M = outputMatrixBind(M, node, 0.0, used_col, R, matrix(0, rows = 1, cols = 1))
-    }
-    queue_length = dataQueueLength(node_queue)# -- user-defined function calls not supported in relational expressions
-
-    if (verbose) {
-      print("New QueueLen:   " + queue_length)
-      print("")
+    # split data, finalize or recurse
+    if( validSplit ) {
+      if( sum(Ileft) >= min_split & floor(log(IDleft,2))+2 < max_depth )
+        queue = append(queue, list(IDleft,Ileft));
+      else
+        M[,2*IDleft] = computeLeafLabel(y2, Ileft, classify)
+      if( sum(Iright) >= min_split & floor(log(IDright,2))+2 < max_depth )
+        queue = append(queue, list(IDright,Iright));
+      else
+        M[,2*IDright] = computeLeafLabel(y2, Iright, classify)
+      maxPath = max(maxPath, floor(log(IDleft,2)+1));
     }
   }
-}
 
-dataQueueLength = function(Matrix[Double] queue)  return (Double len) {
-  len = ncol(queue)
-}
+  # summary and encoding
+  M = M[1, 1:2*(2^maxPath-1)];
 
-dataQueuePop = function(Matrix[Double] queue)  return (Matrix[Double] new_queue, Matrix[Double] node) {
-  node = matrix(queue[,1], rows=1, cols=nrow(queue))   # reshape to force the creation of a new object
-  node = matrix(node, rows=nrow(queue), cols=1)    # reshape to force the creation of a new object
-  len = dataQueueLength(queue)
-  if (len < 2) {
-    new_queue = matrix(0,0,0)
-  } else {
-    new_queue = matrix(queue[,2:ncol(queue)], rows=nrow(queue), cols=ncol(queue)-1)
+  if(verbose) {
+    print("decisionTree: final constructed tree (linearized):");
+    print("--" + toString(M));
   }
 }
 
-dataQueuePush = function(Matrix[Double] left, Matrix[Double] right, Matrix[Double] queue)  return (Matrix[Double] new_queue) {
-  len = dataQueueLength(queue)
-  if(len <= 0) {
-    new_queue = cbind(left, right)
-  } else {
-    new_queue = cbind(queue, left, right)
+findBestSplit = function(Matrix[Double] X2, Matrix[Double] y2, Matrix[Double] foffb, Matrix[Double] foffe,
+    Int ID, Matrix[Double] I, Int min_leaf, Double max_features, String impurity, Int seed)
+  return(Int f, Int v, Int IDleft, Matrix[Double] Ileft, Int IDright, Matrix[Double] Iright)
+{
+  # sample features iff max_features < 1
+  n = ncol(foffb);
+  numI = sum(I);
+  feat = seq(1,n);
+  if( max_features < 1.0 ) {
+    rI = rand(rows=n, cols=1, seed=seed) <= (n^max_features/n);
+    feat = removeEmpty(target=feat, margin="rows", select=rI);
   }
-}
 
-dataVectorLength = function(Matrix[Double] vector)  return (Double len) {
-  len = nrow(vector)
-}
-
-dataColVectorLength = function(Matrix[Double] vector)  return (Double len) {
-  len = ncol(vector)
-}
-
-dataVectorGet = function(Matrix[Double] vector, Double index)  return (Double value) {
-  value = as.scalar(vector[index, 1])
-}
-
-dataVectorSet = function(Matrix[Double] vector, Double index, Double data) return (Matrix[Double] new_vector) {
-  vector[index, 1] = data
-  new_vector = vector
-}
-
-calcAvailable = function(Matrix[Double] vector) return(Double available_elements){
-  len = dataVectorLength(vector)
-  available_elements = 0.0
-  for (index in 1:len) {
-    element = dataVectorGet(vector, index)
-    if(element > 0.0) {
-      available_elements = available_elements + 1.0
+  # evaluate features and feature splits
+  # (both categorical and numerical are treated similarly by
+  # finding a cutoff point in the recoded/binned representation)
+  R = matrix(0, rows=3, cols=nrow(feat));
+  parfor( i in 1:nrow(feat) ) {
+    f = as.scalar(feat[i]);
+    beg = as.scalar(foffb[1,f])+1;
+    end = as.scalar(foffe[1,f]);
+    bestig = 0.0; bestv = -1;
+    for(j in beg:end-1 ) { # lte semantics
+       # construct predicate 0/1 vector
+       p = table(seq(beg, j), 1, ncol(X2), 1);
+       # find rows that match at least one value and appear in I
+       Ileft = ((X2 %*% p) * I) != 0;
+       Iright = I * (Ileft==0);
+       # compute information gain
+       ig = computeImpurity(y2, I, impurity)
+            - sum(Ileft)/numI * computeImpurity(y2, Ileft, impurity)
+            - sum(Iright)/numI * computeImpurity(y2, Iright, impurity);
+       # track best split value and index, incl validity
+       if( ig > bestig & sum(Ileft) >= min_leaf & sum(Iright) >= min_leaf ) {
+          bestig = ig;
+          bestv = j;
+       }
     }
+    R[,i] = as.matrix(list(f, bestig, bestv));
   }
+  ix = as.scalar(rowIndexMax(R[2,]));
+
+  # extract indicators and IDs
+  IDleft = 2 * ID;
+  IDright= 2 * ID + 1;
+  f = as.integer(as.scalar(feat[ix,1]));
+  beg = as.scalar(foffb[1,f]);
+  v = as.integer(as.scalar(R[3,ix])-beg);
+  while(FALSE){} # TODO make beg automatically known
+  p = table(seq(beg+1, beg+v), 1, ncol(X2), 1);
+  Ileft = ((X2 %*% p) * I) != 0;
+  Iright = I * (Ileft==0);
 }
 
-calculateNodeDepth = function(Matrix[Double] node)  return(Double depth) {
-  depth = log(as.scalar(node), 2) + 1
+computeImpurity = function(Matrix[Double] y2, Matrix[Double] I, String impurity)
+  return(Double score)
+{
+  f = colSums(y2 * I) / sum(I); # rel. freq. per category/bin
+  score = 0.0;
+  if( impurity == "gini" )
+    score = 1 - sum(f^2); # sum(f*(1-f));
+  else if( impurity == "entropy" )
+    score = sum(-f * log(f));
+  else
+    stop("decisionTree: unsupported impurity measure: "+impurity);
 }
 
-calculateChildNodes = function(Matrix[Double] node)  return(Matrix[Double] left, Matrix[Double] right) {
-  left = node * 2.0
-  right = node * 2.0 + 1.0
-}
-
-getTypeOfCol = function(Matrix[Double] R, Double col)  return(Double type) {  # 1..scalar,  2..categorical
-  type = as.scalar(R[1, col])
-}
-
-extrapolateOrderedScalarFeatures = function(
-  Matrix[Double] X,
-  Matrix[Double] use_rows_vector,
-  Double col) return (Matrix[Double] feature_vector) {
-  feature_vector = matrix(1, rows = 1, cols = 1)
-  len = nrow(X)
-  first_time = TRUE
-  for(row in 1:len) {
-    use_feature = dataVectorGet(use_rows_vector, row)
-    if (use_feature != 0) {
-      if(first_time) {
-        feature_vector[1,1] = X[row, col]
-        first_time = FALSE
-      } else {
-        feature_vector = rbind(feature_vector, X[row, col])
-      }
-    }
-  }
-  feature_vector = order(target=feature_vector, by=1, decreasing=FALSE, index.return=FALSE)
-}
-
-calcPossibleThresholdsScalar = function(
-  Matrix[Double] X,
-  Matrix[Double] use_rows_vector,
-  Double col,
-  int bins) return (Matrix[Double] thresholds) {
-  ordered_features = extrapolateOrderedScalarFeatures(X, use_rows_vector, col)
-  ordered_features_len = dataVectorLength(ordered_features)
-  thresholds = matrix(1, rows = 1, cols = ordered_features_len - 1)
-  virtual_length = min(ordered_features_len, 20)
-  step_length = ordered_features_len / virtual_length
-  if (ordered_features_len > 1) {
-    for (index in 1:(virtual_length - 1)) {
-      real_index = index * step_length
-      mean = (dataVectorGet(ordered_features, real_index) + dataVectorGet(ordered_features, real_index + 1)) / 2
-      thresholds[1, index] = mean
-    }
-  }
-}
-
-calcPossibleThresholdsCategory = function(Double type) return (Matrix[Double] thresholds) {
-  numberThresholds = 2 ^ type
-  thresholds = matrix(-1, rows = type, cols = numberThresholds)
-  toggleFactor = numberThresholds / 2
-
-  for (index in 1:type) {
-    beginCols = 1
-    endCols = toggleFactor
-    iterations = numberThresholds / toggleFactor / 2
-    for (it in 1:iterations) {
-      category_val = type - index + 1
-      thresholds[index, beginCols:endCols] = matrix(category_val, rows = 1, cols = toggleFactor)
-      endCols = endCols + 2 * toggleFactor
-      beginCols = beginCols + 2 * toggleFactor
-    }
-    toggleFactor = toggleFactor / 2
-    iterations = numberThresholds / toggleFactor / 2
-  }
-  ncol = ncol(thresholds)
-  if (ncol > 2.0) {
-    thresholds = cbind(thresholds[,2:ncol-2], thresholds[,ncol-1])
-  }
-}
-
-calcGiniImpurity = function(Double num_true, Double num_false) return (Double impurity) {
-  prop_true = num_true / (num_true + num_false)
-  prop_false = num_false / (num_true + num_false)
-  impurity = 1 - (prop_true ^ 2) - (prop_false ^ 2)
-}
-
-calcImpurity = function(
-  Matrix[Double] X,
-  Matrix[Double] Y,
-  Matrix[Double] use_rows_vector,
-  Double col,
-  Double type,
-  int bins) return (Double impurity, Matrix[Double] threshold) {
-
-  is_scalar_type = typeIsScalar(type)
-  if (is_scalar_type) {
-    possible_thresholds = calcPossibleThresholdsScalar(X, use_rows_vector, col, bins)
-  } else {
-    possible_thresholds = calcPossibleThresholdsCategory(type)
-  }
-  len_thresholds = ncol(possible_thresholds)
-  impurity = 1
-  threshold = matrix(0, rows=1, cols=1)
-  for (index in 1:len_thresholds) {
-    [false_rows, true_rows] = splitRowsVector(X, use_rows_vector, col, possible_thresholds[, index], type)
-    num_true_positive = 0; num_false_positive = 0; num_true_negative = 0; num_false_negative = 0
-    len = dataVectorLength(use_rows_vector)
-    for (c_row in 1:len) {
-      true_row_data = dataVectorGet(true_rows, c_row)
-      false_row_data = dataVectorGet(false_rows, c_row)
-      if (true_row_data != 0 & false_row_data == 0) { # IT'S POSITIVE!
-        if (as.scalar(Y[c_row, 1]) != 0) {
-          num_true_positive = num_true_positive + 1
-        } else {
-          num_false_positive = num_false_positive + 1
-        }
-      } else if (true_row_data == 0 & false_row_data != 0) { # IT'S NEGATIVE
-        if (as.scalar(Y[c_row, 1]) != 0.0) {
-          num_false_negative = num_false_negative + 1
-        } else {
-          num_true_negative = num_true_negative + 1
-        }
-      }
-    }
-    impurity_positive_branch = calcGiniImpurity(num_true_positive, num_false_positive)
-    impurity_negative_branch = calcGiniImpurity(num_true_negative, num_false_negative)
-    num_samples = num_true_positive + num_false_positive + num_true_negative + num_false_negative
-    num_negative = num_true_negative + num_false_negative
-    num_positive = num_true_positive + num_false_positive
-    c_impurity = num_positive / num_samples * impurity_positive_branch + num_negative / num_samples * impurity_negative_branch
-    if (c_impurity <= impurity) {
-      impurity = c_impurity
-      threshold = possible_thresholds[, index]
-    }
-  }
-}
-
-calcBestSplittingCriteria = function(
-  Matrix[Double] X,
-  Matrix[Double] Y,
-  Matrix[Double] R,
-  Matrix[Double] use_rows_vector,
-  Matrix[Double] use_cols_vector,
-  int bins)  return (Double impurity, Double used_col, Matrix[Double] threshold, Double type) {
-
-  impurity = 1
-  used_col = 1
-  threshold = matrix(0, 1, 1)
-  type = 1
-  # -- user-defined function calls not supported for iterable predicates
-  len = dataVectorLength(use_cols_vector)
-  for (c_col in 1:len) {
-    use_feature = dataVectorGet(use_cols_vector, c_col)
-    if (use_feature != 0) {
-      c_type = getTypeOfCol(R, c_col)
-      [c_impurity, c_threshold] = calcImpurity(X, Y, use_rows_vector, c_col, c_type, bins)
-      if(c_impurity <= impurity) {
-        impurity = c_impurity
-        used_col = c_col
-        threshold = c_threshold
-        type = c_type
-      }
-    }
-  }
-}
-
-typeIsScalar = function(Double type) return(Boolean b) {
-  b = type == 1.0
-}
-
-splitRowsVector = function(
-  Matrix[Double] X,
-  Matrix[Double] use_rows_vector,
-  Double col,
-  Matrix[Double] threshold,
-  Double type
-) return (Matrix[Double] false_use_rows_vector, Matrix[Double] true_use_rows_vector) {
-  type_is_scalar = typeIsScalar(type)
-  false_use_rows_vector = use_rows_vector
-  true_use_rows_vector = use_rows_vector
-
-  if (type_is_scalar) {
-    scalar_threshold = as.scalar(threshold[1,1])
-    len = dataVectorLength(use_rows_vector)
-    for (c_row in 1:len) {
-      row_enabled = dataVectorGet(use_rows_vector, c_row)
-      if (row_enabled != 0) {
-      if (as.scalar(X[c_row, col]) > scalar_threshold) {
-        false_use_rows_vector = dataVectorSet(false_use_rows_vector, c_row, 0.0)
-      } else {
-        true_use_rows_vector = dataVectorSet(true_use_rows_vector, c_row, 0.0)
-      }
-      }
-    }
-  } else {
-    len = dataVectorLength(use_rows_vector)
-    for (c_row in 1:len) {
-      row_enabled = dataVectorGet(use_rows_vector, c_row)
-      if (row_enabled != 0) {
-        categories_len = dataColVectorLength(threshold)
-        move_sample_to_true_set = FALSE
-        for (category_col_index in 1:categories_len) {
-          desired_category = as.scalar(X[c_row, col])
-          if(desired_category != -1) {
-            category_of_threshold = threshold[type - desired_category + 1, category_col_index]
-            move_sample_to_true_set = as.scalar(X[c_row, col]) == as.scalar(category_of_threshold)
-          } else {
-            #Todo: has category -1 to be considered?
-            move_sample_to_true_set = TRUE
-          }
-        }
-        if (move_sample_to_true_set) {
-          false_use_rows_vector = dataVectorSet(false_use_rows_vector, c_row, 0.0)
-        } else {
-          true_use_rows_vector = dataVectorSet(true_use_rows_vector, c_row, 0.0)
-        }
-      }
-    }
-  }
-}
-
-splitData = function(
-  Matrix[Double] X,
-  Matrix[Double] use_rows_vector,
-  Matrix[Double] use_cols_vector,
-  Double col,
-  Matrix[Double] threshold,
-  Double type
-) return (Matrix[Double] new_use_cols_vector, Matrix[Double] false_use_rows_vector, Matrix[Double] true_use_rows_vector) {
-  new_use_cols_vector = dataVectorSet(use_cols_vector, col, 0.0)
-  [false_use_rows_vector, true_use_rows_vector] = splitRowsVector(X, use_rows_vector, col, threshold, type)
-}
-
-outputMatrixBind = function(
-  Matrix[Double] M,
-  Matrix[Double] node,
-  Double offset,
-  Double used_col,
-  Matrix[Double] R,
-  Matrix[Double] threshold
-) return (Matrix[Double] new_M) {
-  col = matrix(0, rows = 5, cols = 1)
-  col[1, 1] = node[1, 1]
-  col[2, 1] = offset
-  col[3, 1] = used_col
-  if (used_col >= 1.0) { col[4, 1] = R[1, used_col] }
-  col[5, 1] = nrow(threshold)
-  col = rbind(col, threshold)
-
-  if (ncol(M) == 0 & nrow(M) == 0) {
-    new_M = col
-  } else {
-    row_difference = nrow(M) - nrow(col)
-  if (row_difference < 0.0) {
-    buffer = matrix(-1, rows = -row_difference, cols = ncol(M))
-    M = rbind(M, buffer)
-  } else if (row_difference > 0.0) {
-    buffer = matrix(-1, rows = row_difference, cols = 1)
-    col = rbind(col, buffer)
-  }
-    new_M = cbind(M, col)
-  }
+computeLeafLabel = function(Matrix[Double] y2, Matrix[Double] I, Boolean classify)
+  return(Double label)
+{
+  f = colSums(y2 * I) / sum(I);
+  label = ifelse(classify,
+    as.scalar(rowIndexMax(f)), sum(t(f)*seq(1,ncol(f))));
 }

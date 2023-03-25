@@ -46,7 +46,6 @@ m_decisionTreePredict = function(Matrix[Double] X, Matrix[Double] y = matrix(0,0
     Matrix[Double] ctypes, Matrix[Double] M, String strategy="TT", Boolean verbose = FALSE)
   return (Matrix[Double] yhat)
 {
-    print(toString(M))
   if( strategy == "TT" )
     yhat = predict_TT(M, X);
   else if( strategy == "GEMM" )

@@ -57,6 +57,7 @@ public class RewriteAddChkpointLop extends LopRewriteRule
 		Map<Long, Integer> operatorJobCount = new HashMap<>();
 		markPersistableSparkOps(sparkRoots, operatorJobCount);
 		// TODO: A rewrite pass to remove less effective chkpoints
+		@SuppressWarnings("unused")
 		List<Lop> nodesWithChkpt = addChkpointLop(lops, operatorJobCount);
 		//New node is added inplace in the Lop DAG
 		return List.of(sb);

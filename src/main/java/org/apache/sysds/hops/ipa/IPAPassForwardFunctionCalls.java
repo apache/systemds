@@ -55,7 +55,7 @@ public class IPAPassForwardFunctionCalls extends IPAPass
 			
 			//step 1: basic application filter: simple forwarding call
 			if( fstmt.getBody().size() != 1 || !singleFunctionOp(fstmt.getBody().get(0).getHops())
-				|| !hasOnlySimplyArguments((FunctionOp)fstmt.getBody().get(0).getHops().get(0)))
+				|| !hasOnlySimpleArguments((FunctionOp)fstmt.getBody().get(0).getHops().get(0)))
 				continue;
 			if( LOG.isDebugEnabled() )
 				LOG.debug("IPA: Forward-function-call candidate L1: '"+fkey+"'");
@@ -96,7 +96,7 @@ public class IPAPassForwardFunctionCalls extends IPAPass
 		return hops.get(0) instanceof FunctionOp;
 	}
 	
-	private static boolean hasOnlySimplyArguments(FunctionOp fop) {
+	private static boolean hasOnlySimpleArguments(FunctionOp fop) {
 		return fop.getInput().stream().allMatch(h -> h instanceof LiteralOp 
 			|| HopRewriteUtils.isData(h, OpOpData.TRANSIENTREAD));
 	}
@@ -127,15 +127,17 @@ public class IPAPassForwardFunctionCalls extends IPAPass
 		for( int i=0; i<call2.getInput().size(); i++ )
 			probe.put(call2.getInputVariableNames()[i], call2.getInput().get(i));
 		
-		//construct new inputs for call1
+		//construct new named inputs for call1 (in right order)
+		ArrayList<String> varNames = new ArrayList<>();
 		ArrayList<Hop> inputs = new ArrayList<>();
 		for( int i=0; i<call1.getInput().size(); i++ )
 			if( probe.containsKey(call1.getInputVariableNames()[i]) ) {
+				varNames.add(call1.getInputVariableNames()[i]);
 				inputs.add( (probe.get(call1.getInputVariableNames()[i]) instanceof LiteralOp) ? 
 					probe.get(call1.getInputVariableNames()[i]) : call1.getInput().get(i));
 			}
 		HopRewriteUtils.removeAllChildReferences(call1);
 		call1.addAllInputs(inputs);
-		call1.setInputVariableNames(call2.getInputVariableNames());
+		call1.setInputVariableNames(varNames.toArray(new String[0]));
 	}
 }

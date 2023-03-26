@@ -19,32 +19,66 @@
 
 package org.apache.sysds.runtime.lineage;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.ExecutorService;
+import java.util.stream.Collectors;
 
+import jcuda.Pointer;
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.instructions.gpu.context.GPUContext;
 import org.apache.sysds.runtime.instructions.gpu.context.GPUContextPool;
-import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
 public class LineageGPUCacheEviction 
 {
 	private static long _currentCacheSize = 0;
 	private static long GPU_CACHE_LIMIT; //limit in bytes
+	private static GPUContext _gpuContext = null;
 	private static long _startTimestamp = 0;
 	public static ExecutorService gpuEvictionThread = null;
+
+	// Weighted queue of freed pointers.
 	private static TreeSet<LineageCacheEntry> weightedQueue = new TreeSet<>(LineageCacheConfig.LineageCacheComparator);
+	private static HashMap<Pointer, Integer> livePointers = new HashMap<>();
+	private static HashMap<Pointer, LineageCacheEntry> GPUCacheEntries = new HashMap<>();
 
 	protected static void resetEviction() {
-		while(!weightedQueue.isEmpty()) {
-			LineageCacheEntry e = weightedQueue.pollFirst();
-			e._gpuObject.setIsLinCached(false);
-			e._gpuObject.clearData(null, true);
-		}
 		_currentCacheSize = 0;
 		gpuEvictionThread = null;
 		//LineageCacheConfig.CONCURRENTGPUEVICTION = false;
 		weightedQueue.clear();
+		livePointers.clear();
+		GPUCacheEntries.clear();
+	}
+
+	public static void setGPUContext(GPUContext gpuCtx) {
+		_gpuContext = gpuCtx;
+	}
+
+	protected static GPUContext getGPUContext() {
+		return _gpuContext;
+	}
+
+	protected static long getPointerSize(Pointer ptr) {
+		return _gpuContext.getMemoryManager().getSizeAllocatedGPUPointer(ptr);
+	}
+
+	protected static void incrementLiveCount(Pointer ptr) {
+		//TODO: move from free list to live list
+		if(livePointers.merge(ptr, 1, Integer::sum) == 1)
+			weightedQueue.remove(GPUCacheEntries.get(ptr));
+	}
+
+	public static void decrementLiveCount(Pointer ptr) {
+		// Decrement and remove if the live counte becomes 0
+		if(livePointers.compute(ptr, (k, v) -> v==1 ? null : v-1) == null)
+			weightedQueue.add(GPUCacheEntries.get(ptr));
+	}
+
+	public static boolean probeLiveCachedPointers(Pointer ptr) {
+		return livePointers.containsKey(ptr);
 	}
 
 	//---------------- COSTING RELATED METHODS -----------------
@@ -88,7 +122,9 @@ public class LineageGPUCacheEviction
 
 		// TODO: Separate removelist, starttimestamp, score and weights from CPU cache
 		entry.computeScore(LineageCacheEviction._removelist);
-		weightedQueue.add(entry);
+		//weightedQueue.add(entry);
+		livePointers.put(entry.getGPUPointer(), 1);
+		GPUCacheEntries.put(entry.getGPUPointer(), entry);
 	}
 	
 	public static boolean isGPUCacheEmpty() {
@@ -127,8 +163,29 @@ public class LineageGPUCacheEviction
 	protected static long getGPUCacheLimit() {
 		return GPU_CACHE_LIMIT;
 	}
+
+	public static int numPointersCached() {
+		return livePointers.size() + weightedQueue.size();
+	}
+
+	public static long totalMemoryCached() {
+		long totLive = livePointers.keySet().stream()
+			.mapToLong(ptr -> _gpuContext.getMemoryManager().getSizeAllocatedGPUPointer(ptr)).sum();
+		long totFree = weightedQueue.stream()
+			.mapToLong(en -> _gpuContext.getMemoryManager().getSizeAllocatedGPUPointer(en.getGPUPointer())).sum();
+		return totLive + totFree;
+	}
+
+	public static Set<Pointer> getAllCachedPointers() {
+		//livePointers.keySet() + weightedQueue.stream().map()
+		Set<Pointer> cachedPointers = weightedQueue.stream()
+			.map(LineageCacheEntry::getGPUPointer)
+			.collect(Collectors.toSet());
+		cachedPointers.addAll(livePointers.keySet());
+		return cachedPointers;
+	}
 	
-	public static void copyToHostCache(LineageCacheEntry entry, String instName, boolean alreadyCopied) {
+	/*public static void copyToHostCache(LineageCacheEntry entry, String instName, boolean alreadyCopied) {
 		// TODO: move to the shadow buffer. Convert to double precision only when reused.
 		long t0 = System.nanoTime();
 		MatrixBlock mb = alreadyCopied ? entry._gpuObject.getMatrixObject().acquireReadAndRelease()
@@ -150,12 +207,14 @@ public class LineageGPUCacheEviction
 		LineageCacheEviction.addEntry(entry);
 		// manage space in gpu cache
 		updateSize(size, false);
-	}
+	}*/
 
 	public static void removeFromDeviceCache(LineageCacheEntry entry, String instName, boolean alreadyCopied) {
-		long size = entry.getGPUObject().getSizeOnDevice();
+		//long size = entry.getGPUObject().getSizeOnDevice();
+		long size = _gpuContext.getMemoryManager().getSizeAllocatedGPUPointer(entry.getGPUPointer());
 		LineageCache.removeEntry(entry._key);
 		updateSize(size, false);
+		GPUCacheEntries.remove(entry.getGPUPointer());
 	}
 
 }

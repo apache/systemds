@@ -50,7 +50,7 @@ public class GPUMemoryEviction implements Runnable
 		// Stop if 1) Evicted the request number of entries, 2) The parallel
 		// CPU instruction is ended, and 3) No non-live entries left in the cache.
 		long t0 =  DMLScript.STATISTICS ? System.nanoTime() : 0;
-		while (!LineageGPUCacheEviction.isGPUCacheEmpty()) 
+		/*while (!LineageGPUCacheEviction.isGPUCacheEmpty())
 		{
 			if (LineageCacheConfig.STOPBACKGROUNDEVICTION)
 				// This logic reduces #evictions if the cpu instructions is so small
@@ -135,7 +135,7 @@ public class GPUMemoryEviction implements Runnable
 				LineageCacheStatistics.incrementGpuAsyncEvicts();
 			}
 			count++;
-		}
+		}*/
 
 		// Add the locked entries back to the eviction queue
 		if (!lockedOrLiveEntries.isEmpty())

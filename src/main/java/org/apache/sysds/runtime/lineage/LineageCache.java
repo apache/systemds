@@ -19,6 +19,7 @@
 
 package org.apache.sysds.runtime.lineage;
 
+import jcuda.Pointer;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.commons.lang3.tuple.Pair;
@@ -151,10 +152,14 @@ public class LineageCache
 					}
 					else { //TODO handle locks on gpu objects
 						//shallow copy the cached GPUObj to the output MatrixObject
-						ec.getMatrixObject(outName).setGPUObject(ec.getGPUContext(0), 
-								ec.getGPUContext(0).shallowCopyGPUObject(e._gpuObject, ec.getMatrixObject(outName)));
+						//Create a GPUObject with the cached pointer
+						GPUObject gpuObj = new GPUObject(ec.getGPUContext(0),
+							ec.getMatrixObject(outName), e.getGPUPointer());
+						ec.getMatrixObject(outName).setGPUObject(ec.getGPUContext(0), gpuObj);
 						//Set dirty to true, so that it is later copied to the host for write
 						ec.getMatrixObject(outName).getGPUObject(ec.getGPUContext(0)).setDirty(true);
+						//Increment the live count for this pointer
+						LineageGPUCacheEviction.incrementLiveCount(e.getGPUPointer());
 					}
 				}
 				maintainReuseStatistics(ec, inst, liList.get(0).getValue());
@@ -474,7 +479,7 @@ public class LineageCache
 		if (LineageCacheConfig.isReusable(inst, ec) ) {
 			//if (!isMarkedForCaching(inst, ec)) return;
 			List<Pair<LineageItem, Data>> liData = null;
-			GPUObject liGpuObj = null;
+			Pointer gpuPtr = null;
 			LineageItem instLI = ((LineageTraceable) inst).getLineageItem(ec).getValue();
 			if (inst instanceof MultiReturnBuiltinCPInstruction) {
 				liData = new ArrayList<>();
@@ -489,12 +494,13 @@ public class LineageCache
 			else if (inst instanceof GPUInstruction) {
 				// TODO: gpu multiretrun instructions
 				Data gpudata = ec.getVariable(((GPUInstruction) inst)._output);
-				liGpuObj = gpudata instanceof MatrixObject ? 
-						ec.getMatrixObject(((GPUInstruction)inst)._output).getGPUObject(ec.getGPUContext(0)) : null;
+				gpuPtr = gpudata instanceof MatrixObject ?
+						ec.getMatrixObject(((GPUInstruction)inst)._output).
+							getGPUObject(ec.getGPUContext(0)).getDensePointer() : null;
 
 				// Scalar gpu intermediates is always copied back to host. 
 				// No need to cache the GPUobj for scalar intermediates.
-				if (liGpuObj == null)
+				if (gpuPtr == null)
 					liData = Arrays.asList(Pair.of(instLI, ec.getVariable(((GPUInstruction)inst)._output)));
 			}
 			else if (inst instanceof ComputationSPInstruction
@@ -511,10 +517,10 @@ public class LineageCache
 				else if (inst instanceof ComputationSPInstruction) //collects or prefetches
 					liData = Arrays.asList(Pair.of(instLI, ec.getVariable(((ComputationSPInstruction) inst).output)));
 
-			if (liGpuObj == null)
+			if (gpuPtr == null)
 				putValueCPU(inst, liData, computetime);
 			else
-				putValueGPU(liGpuObj, instLI, computetime);
+				putValueGPU(gpuPtr, instLI, computetime);
 		}
 	}
 	
@@ -588,14 +594,14 @@ public class LineageCache
 		}
 	}
 	
-	private static void putValueGPU(GPUObject gpuObj, LineageItem instLI, long computetime) {
+	private static void putValueGPU(Pointer gpuPtr, LineageItem instLI, long computetime) {
 		synchronized( _cache ) {
 			LineageCacheEntry centry = _cache.get(instLI);
 			// Update the total size of lineage cached gpu objects
 			// The eviction is handled by the unified gpu memory manager
-			LineageGPUCacheEviction.updateSize(gpuObj.getSizeOnDevice(), true);
+			LineageGPUCacheEviction.updateSize(LineageGPUCacheEviction.getPointerSize(gpuPtr), true);
 			// Set the GPUOject in the cache
-			centry.setGPUValue(gpuObj, computetime);
+			centry.setGPUValue(gpuPtr, computetime);
 			// Maintain order for eviction
 			LineageGPUCacheEviction.addEntry(centry);
 		}

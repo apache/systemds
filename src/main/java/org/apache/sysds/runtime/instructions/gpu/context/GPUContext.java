@@ -283,15 +283,6 @@ public class GPUContext {
 		GPUObject ret = new GPUObject(this, source, mo);
 		getMemoryManager().getGPUMatrixMemoryManager().addGPUObject(ret);
 
-		// Maintain the linked list of GPUObjects that point to same memory region
-		if (!LineageCacheConfig.ReuseCacheType.isNone()) {
-			if (source.lineageCachedChainHead == null)
-				source.lineageCachedChainHead = source;
-			if (source.nextLineageCachedEntry != null)
-				ret.nextLineageCachedEntry = source.nextLineageCachedEntry;
-			source.nextLineageCachedEntry = ret;
-			ret.lineageCachedChainHead = source;
-		}
 		return ret;
 	}
 

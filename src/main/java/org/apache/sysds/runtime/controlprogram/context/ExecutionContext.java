@@ -51,7 +51,9 @@ import org.apache.sysds.runtime.instructions.gpu.context.CSRPointer;
 import org.apache.sysds.runtime.instructions.gpu.context.GPUContext;
 import org.apache.sysds.runtime.instructions.gpu.context.GPUObject;
 import org.apache.sysds.runtime.lineage.Lineage;
+import org.apache.sysds.runtime.lineage.LineageCacheConfig;
 import org.apache.sysds.runtime.lineage.LineageDebugger;
+import org.apache.sysds.runtime.lineage.LineageGPUCacheEviction;
 import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.Pair;
@@ -183,7 +185,11 @@ public class ExecutionContext {
 	 */
 	public void setGPUContexts(List<GPUContext> gpuContexts){
 		_gpuContexts = gpuContexts;
+		// Set the single-GPU context in the lineage cache
+		if (!LineageCacheConfig.ReuseCacheType.isNone())
+			LineageGPUCacheEviction.setGPUContext(gpuContexts.get(0));
 	}
+
 
 	/**
 	 * Gets the list of GPUContexts

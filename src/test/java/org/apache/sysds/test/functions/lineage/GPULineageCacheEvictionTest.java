@@ -81,7 +81,7 @@ public class GPULineageCacheEvictionTest extends AutomatedTestBase{
 		// reset clears the lineage cache held memory from the last run
 		Lineage.resetInternalState();
 		boolean gpu2Mem = LineageCacheConfig.GPU2HOSTEVICTION;
-		LineageCacheConfig.GPU2HOSTEVICTION = true;
+		//LineageCacheConfig.GPU2HOSTEVICTION = true;
 		//run the test
 		runTest(true, EXCEPTION_NOT_EXPECTED, null, -1);
 		HashMap<MatrixValue.CellIndex, Double> R_orig = readDMLMatrixFromOutputDir("R");

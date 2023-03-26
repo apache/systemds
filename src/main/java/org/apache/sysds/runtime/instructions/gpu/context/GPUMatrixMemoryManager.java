@@ -120,12 +120,11 @@ public class GPUMatrixMemoryManager {
 	 * Get pointers from the first memory sections "Matrix Memory"
 	 * @param locked return locked pointers if true
 	 * @param dirty return dirty pointers if true
-	 * @param lineageCached return cached pointer if true
 	 * @return set of pointers
 	 */
-	Set<Pointer> getPointers(boolean locked, boolean dirty, boolean lineageCached) {
+	Set<Pointer> getPointers(boolean locked, boolean dirty) {
 		return gpuObjects.stream()
-			.filter(gObj -> gObj.isLocked() == locked && gObj.isDirty() == dirty || gObj.isLinCached() == lineageCached)
+			.filter(gObj -> gObj.isLocked() == locked && gObj.isDirty() == dirty)
 			.flatMap(gObj -> getPointers(gObj).stream()).collect(Collectors.toSet());
 	}
 	
@@ -137,7 +136,7 @@ public class GPUMatrixMemoryManager {
 	 */
 	void clearAllUnlocked(String opcode) throws DMLRuntimeException {
 		Set<GPUObject> unlockedGPUObjects = gpuObjects.stream()
-				.filter(gpuObj -> !gpuObj.isLocked() && !gpuObj.isLinCached()).collect(Collectors.toSet());
+				.filter(gpuObj -> !gpuObj.isLocked()).collect(Collectors.toSet());
 		if(unlockedGPUObjects.size() > 0) {
 			if(LOG.isWarnEnabled())
 				LOG.warn("Clearing all unlocked matrices (count=" + unlockedGPUObjects.size() + ").");

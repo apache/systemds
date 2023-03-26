@@ -21,6 +21,7 @@ package org.apache.sysds.runtime.lineage;
 
 import java.util.Map;
 
+import jcuda.Pointer;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
@@ -42,7 +43,8 @@ public class LineageCacheEntry {
 	protected LineageItem _origItem;
 	private String _outfile = null;
 	protected double score;
-	protected GPUObject _gpuObject;
+	protected Pointer _gpuPointer;
+
 	protected RDDObject _rddObject;
 	
 	public LineageCacheEntry(LineageItem key, DataType dt, MatrixBlock Mval, ScalarObject Sval, long computetime) {
@@ -55,7 +57,7 @@ public class LineageCacheEntry {
 		_nextEntry = null;
 		_origItem = null;
 		_outfile = null;
-		_gpuObject = null;
+		_gpuPointer = null;
 	}
 	
 	protected synchronized void setCacheStatus(LineageCacheStatus st) {
@@ -140,13 +142,13 @@ public class LineageCacheEntry {
 			size += _MBval.getInMemorySize();
 		if (_SOval != null)
 			size += _SOval.getSize();
-		if (_gpuObject != null)
-			size += _gpuObject.getSizeOnDevice();
+		if (_gpuPointer!= null)
+			size += LineageGPUCacheEviction.getPointerSize(_gpuPointer);
 		return size;
 	}
 	
 	public boolean isNullVal() {
-		return(_MBval == null && _SOval == null && _gpuObject == null && _serialBytes == null && _rddObject == null);
+		return(_MBval == null && _SOval == null && _gpuPointer == null && _serialBytes == null && _rddObject == null);
 	}
 	
 	public boolean isMatrixValue() {
@@ -162,7 +164,7 @@ public class LineageCacheEntry {
 	}
 
 	public boolean isGPUObject() {
-		return _gpuObject != null;
+		return _gpuPointer != null;
 	}
 
 	public boolean isSerializedBytes() {
@@ -171,7 +173,7 @@ public class LineageCacheEntry {
 
 	public synchronized void setValue(MatrixBlock val, long computetime) {
 		_MBval = val;
-		_gpuObject = null;  //Matrix block and gpu object cannot coexist
+		_gpuPointer = null;  //Matrix block and gpu pointer cannot coexist
 		_computeTime = computetime;
 		_status = isNullVal() ? LineageCacheStatus.EMPTY : LineageCacheStatus.CACHED;
 		//resume all threads waiting for val
@@ -184,16 +186,15 @@ public class LineageCacheEntry {
 
 	public synchronized void setValue(ScalarObject val, long computetime) {
 		_SOval = val;
-		_gpuObject = null;  //scalar and gpu object cannot coexist
+		_gpuPointer = null;  //scalar and gpu pointer cannot coexist
 		_computeTime = computetime;
 		_status = isNullVal() ? LineageCacheStatus.EMPTY : LineageCacheStatus.CACHED;
 		//resume all threads waiting for val
 		notifyAll();
 	}
 	
-	public synchronized void setGPUValue(GPUObject gpuObj, long computetime) {
-		gpuObj.setIsLinCached(true);
-		_gpuObject = gpuObj;
+	public synchronized void setGPUValue(Pointer ptr, long computetime) {
+		_gpuPointer = ptr;
 		_computeTime = computetime;
 		_status = isNullVal() ? LineageCacheStatus.EMPTY : LineageCacheStatus.GPUCACHED;
 		//resume all threads waiting for val
@@ -216,8 +217,8 @@ public class LineageCacheEntry {
 		notifyAll();
 	}
 	
-	public synchronized GPUObject getGPUObject() {
-		return _gpuObject;
+	public synchronized Pointer getGPUPointer() {
+		return _gpuPointer;
 	}
 	
 	protected synchronized void setNullValues() {

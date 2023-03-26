@@ -102,27 +102,6 @@ public class GPUObject {
 	 */
 	final ShadowBuffer shadowBuffer;
 	
-	/**
-	 * whether cached in lineage cache
-	 */
-	private boolean isLineageCached = false;
-	
-	/**
-	 * whether remove variable is called on this object.
-	 * True -> live; False -> not-live
-	 */
-	private boolean rmVarPending = false;
-	
-	/**
-	 * Next GPUObject that points to the same lineage cached GPU pointer
-	 */
-	public GPUObject lineageCachedChainHead = null;
-	
-	/**
-	 * Head of the linked list of GPUObjects that point to the same lineage cached GPU pointer
-	 */
-	public GPUObject nextLineageCachedEntry = null;
-	
 	// ----------------------------------------------------------------------
 	// Methods used to access, set and check jcudaDenseMatrixPtr
 	
@@ -466,13 +445,20 @@ public class GPUObject {
 		this.shadowBuffer = new ShadowBuffer(this);
 	}
 
+	public GPUObject(GPUContext gCtx, MatrixObject mat, Pointer ptr) {
+		gpuContext = gCtx;
+		this.mat = mat;
+		setDensePointer(ptr);
+		isSparse = false;
+		this.shadowBuffer = new ShadowBuffer(this);
+	}
+
 	public GPUObject(GPUContext gCtx, GPUObject that, MatrixObject mat) {
 		dirty = that.dirty;
 		readLocks.reset();
 		writeLock = false;
 		timestamp = new AtomicLong(that.timestamp.get());
 		isSparse = that.isSparse;
-		isLineageCached = that.isLineageCached;
 		if (!that.isDensePointerNull())
 			setDensePointer(that.getDensePointer());
 		if (that.getJcudaSparseMatrixPtr() != null)
@@ -991,7 +977,7 @@ public class GPUObject {
 			tmp.allocateDenseBlock();
 			LibMatrixCUDA.cudaSupportFunctions.deviceToHost(getGPUContext(),
 						getDensePointer(), tmp.getDenseBlockValues(), instName, isEviction);
-			if(eagerDelete && !isLinCached())
+			if(eagerDelete)
 				clearData(instName, true);
 			tmp.recomputeNonZeros();
 		} else {
@@ -1003,7 +989,7 @@ public class GPUObject {
 			int[] rowPtr = new int[rows + 1];
 			int[] colInd = new int[nnz];
 			CSRPointer.copyPtrToHost(getJcudaSparseMatrixPtr(), rows, nnz, rowPtr, colInd);
-			if(eagerDelete && !isLinCached())
+			if(eagerDelete)
 				clearData(instName, true);
 			SparseBlockCSR sparseBlock = new SparseBlockCSR(rowPtr, colInd, values, nnz);
 			tmp = new MatrixBlock(rows, cols, nnz, sparseBlock);
@@ -1064,11 +1050,6 @@ public class GPUObject {
 	 * @throws DMLRuntimeException if error occurs
 	 */
 	synchronized public void clearData(String opcode, boolean eager) throws DMLRuntimeException {
-		if (isLineageCached) {
-			setDirty(false);
-			return;
-		}
-
 		if(LOG.isTraceEnabled()) {
 			LOG.trace("GPU : clearData on " + this + ", GPUContext=" + getGPUContext());
 		}
@@ -1082,13 +1063,10 @@ public class GPUObject {
 		shadowBuffer.clearShadowPointer();
 		jcudaSparseMatrixPtr = null;
 		resetReadWriteLock();
-		setrmVarPending(false);
 		getGPUContext().getMemoryManager().removeGPUObject(this);
 	}
 	
 	public void clearGPUObject() {
-		if (isLineageCached)
-			return;
 		if(LOG.isTraceEnabled())
 			LOG.trace("GPU : clearData on " + this + ", GPUContext=" + getGPUContext());
 
@@ -1096,7 +1074,6 @@ public class GPUObject {
 		shadowBuffer.clearShadowPointer();
 		jcudaSparseMatrixPtr = null;
 		resetReadWriteLock();
-		setrmVarPending(false);
 		getGPUContext().getMemoryManager().removeGPUObject(this);
 	}
 
@@ -1118,22 +1095,6 @@ public class GPUObject {
 		return dirty;
 	}
 	
-	public void setIsLinCached(boolean val) {
-		isLineageCached = val;
-	}
-
-	public boolean isLinCached() {
-		return isLineageCached;
-	}
-	
-	public void setrmVarPending(boolean val) {
-		rmVarPending = val;
-	}
-	
-	public boolean isrmVarPending() {
-		return rmVarPending;
-	}
-
 	@Override
 	public String toString() {
 		final StringBuilder sb = new StringBuilder("GPUObject{");

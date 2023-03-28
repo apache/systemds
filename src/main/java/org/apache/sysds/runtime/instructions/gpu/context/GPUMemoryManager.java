@@ -290,37 +290,17 @@ public class GPUMemoryManager {
 			}
 		}
 		
-		// Step 5: Evict gpu intermediates from lineage cache
-		// This can create holes. However, evicting rmVarpending objects might right away make the required space
-		// TODO: Size dependent eviction logic (CostNSize is one)
+		// Step 5.1: Recycle, delete or evict gpu intermediates from lineage cache
 		if (A == null && !LineageCacheConfig.ReuseCacheType.isNone()) {
-			long currentAvailableMemory = allocator.getAvailableMemory();
-			List<LineageCacheEntry> lockedAndLiveList = new ArrayList<>();
 			long t0 =  DMLScript.STATISTICS ? System.nanoTime() : 0;
-			while (A == null && !LineageGPUCacheEviction.isGPUCacheEmpty()) {
-				LineageCacheEntry le = LineageGPUCacheEviction.pollFirstEntry();
-
-				// First remove the gpuobj chains that don't contain any live and dirty objects.
-				// TODO: Handle dirty objects separately. Copy them back to the host
-
-				// Check and continue if the pointer is live
-				// Note: all locked entries are live
-				Pointer ptr = le.getGPUPointer();
-				if (LineageGPUCacheEviction.probeLiveCachedPointers(ptr)) {
-					lockedAndLiveList.add(le);
-					continue;
-				}
-				currentAvailableMemory += getSizeAllocatedGPUPointer(ptr);
-
-				if (!LineageCacheConfig.GPU2HOSTEVICTION) {
+			// Recycle a cached pointer if exactly matches the required size
+			LineageCacheEntry le = LineageGPUCacheEviction.pollFirstFreeEntry(size);
+			if (le != null) {
+				if(!LineageCacheConfig.GPU2HOSTEVICTION) {
+					A = le.getGPUPointer(); //recycle
 					LineageGPUCacheEviction.removeFromDeviceCache(le, opcode, false);
-					// Recycle the pointer if matches the required size
-					if (getSizeAllocatedGPUPointer(ptr) == size) {
-						A = ptr;
-						continue;
-					}
-					else
-						free(opcode, ptr, true);
+					if (DMLScript.STATISTICS)
+						LineageCacheStatistics.incrementGpuRecycle();
 				}
 				/*else {
 					// Copy from device cache to CPU lineage cache if not already copied
@@ -328,18 +308,35 @@ public class GPUMemoryManager {
 					if(DMLScript.STATISTICS)
 						LineageCacheStatistics.incrementGpuSyncEvicts();
 				}*/
-
-				if(currentAvailableMemory >= size)
-					// This doesn't guarantee allocation due to fragmented freed memory
-					A = cudaMallocNoWarn(tmpA, size, null); 
 			}
+			// TODO: Handle live (dirty) objects separately. Copy them back to the host
 
-			// Add the locked entries back to the eviction queue
-			if (!lockedAndLiveList.isEmpty())
-				LineageGPUCacheEviction.addEntryList(lockedAndLiveList);
 			if (DMLScript.STATISTICS)
 				LineageCacheStatistics.incrementEvictTimeGpu(System.nanoTime() - t0);
+		}
 
+		// Step 5.2: Use a non-exact sized pointer
+		if (A == null && !LineageCacheConfig.ReuseCacheType.isNone()) {
+			long t0 =  DMLScript.STATISTICS ? System.nanoTime() : 0;
+			long freedSize = 0;
+			while (A == null && !LineageGPUCacheEviction.isGPUCacheFreeQEmpty()) {
+				// Deallocate a non-exact matched entry from the cached free lists
+				LineageCacheEntry le = LineageGPUCacheEviction.pollFistFreeNotExact(size);
+				if(le != null) {
+					freedSize += getSizeAllocatedGPUPointer(le.getGPUPointer());
+					if(!LineageCacheConfig.GPU2HOSTEVICTION) {
+						LineageGPUCacheEviction.removeFromDeviceCache(le, opcode, false);
+						guardedCudaFree(le.getGPUPointer()); //free
+						if (DMLScript.STATISTICS)
+							LineageCacheStatistics.incrementGpuDel();
+					}
+					// TODO: else evict to the host cache
+					if (freedSize > size)
+						A = cudaMallocNoWarn(tmpA, size, "recycle non-exact match of lineage cache");
+				}
+			}
+			if (DMLScript.STATISTICS)
+				LineageCacheStatistics.incrementEvictTimeGpu(System.nanoTime() - t0);
 			if (A == null)
 				LOG.warn("cudaMalloc failed after Lineage GPU cache eviction.");
 		}
@@ -497,8 +494,10 @@ public class GPUMemoryManager {
 	 * @throws DMLRuntimeException if error occurs
 	 */
 	public void free(String opcode, Pointer toFree, boolean eager) throws DMLRuntimeException {
+		// Do not deallocate if the pointer is cached.
 		if (!LineageCacheConfig.ReuseCacheType.isNone()
 			&& LineageGPUCacheEviction.probeLiveCachedPointers(toFree)) {
+			// Move the pointer to the free list inside lineage cache
 			LineageGPUCacheEviction.decrementLiveCount(toFree);
 			return;
 		}

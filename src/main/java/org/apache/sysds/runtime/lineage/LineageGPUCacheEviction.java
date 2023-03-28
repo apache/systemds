@@ -19,8 +19,11 @@
 
 package org.apache.sysds.runtime.lineage;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.ExecutorService;
@@ -40,15 +43,19 @@ public class LineageGPUCacheEviction
 	public static ExecutorService gpuEvictionThread = null;
 
 	// Weighted queue of freed pointers.
-	private static TreeSet<LineageCacheEntry> weightedQueue = new TreeSet<>(LineageCacheConfig.LineageCacheComparator);
+	private static HashMap<Long, TreeSet<LineageCacheEntry>> freeQueues = new HashMap<>();
+
+	// Pointers and live counts associated
 	private static HashMap<Pointer, Integer> livePointers = new HashMap<>();
+
+	// All cached pointers mapped to the corresponding lineage cache entries
 	private static HashMap<Pointer, LineageCacheEntry> GPUCacheEntries = new HashMap<>();
 
 	protected static void resetEviction() {
 		_currentCacheSize = 0;
 		gpuEvictionThread = null;
 		//LineageCacheConfig.CONCURRENTGPUEVICTION = false;
-		weightedQueue.clear();
+		freeQueues.clear();
 		livePointers.clear();
 		GPUCacheEntries.clear();
 	}
@@ -66,15 +73,19 @@ public class LineageGPUCacheEviction
 	}
 
 	protected static void incrementLiveCount(Pointer ptr) {
-		//TODO: move from free list to live list
+		// Move from free list (if exists) to live list
 		if(livePointers.merge(ptr, 1, Integer::sum) == 1)
-			weightedQueue.remove(GPUCacheEntries.get(ptr));
+			freeQueues.get(getPointerSize(ptr)).remove(GPUCacheEntries.get(ptr));
 	}
 
 	public static void decrementLiveCount(Pointer ptr) {
-		// Decrement and remove if the live counte becomes 0
-		if(livePointers.compute(ptr, (k, v) -> v==1 ? null : v-1) == null)
-			weightedQueue.add(GPUCacheEntries.get(ptr));
+		// Decrement and move to the free list if the live count becomes 0
+		if(livePointers.compute(ptr, (k, v) -> v==1 ? null : v-1) == null) {
+			long size = getPointerSize(ptr);
+			if (!freeQueues.containsKey(size))
+				freeQueues.put(size, new TreeSet<>(LineageCacheConfig.LineageCacheComparator));
+			freeQueues.get(size).add(GPUCacheEntries.get(ptr));
+		}
 	}
 
 	public static boolean probeLiveCachedPointers(Pointer ptr) {
@@ -122,29 +133,55 @@ public class LineageGPUCacheEviction
 
 		// TODO: Separate removelist, starttimestamp, score and weights from CPU cache
 		entry.computeScore(LineageCacheEviction._removelist);
-		//weightedQueue.add(entry);
+		// The pointer must be live at this moment
 		livePointers.put(entry.getGPUPointer(), 1);
 		GPUCacheEntries.put(entry.getGPUPointer(), entry);
 	}
 	
 	public static boolean isGPUCacheEmpty() {
-		return weightedQueue.isEmpty();
+		return (freeQueues.isEmpty() && livePointers.isEmpty());
 	}
 
-	public static LineageCacheEntry pollFirstEntry() {
-		return weightedQueue.pollFirst();
+	public static boolean isGPUCacheFreeQEmpty() {
+		return freeQueues.isEmpty();
 	}
 
-	public static LineageCacheEntry peekFirstEntry() {
-		return weightedQueue.first();
+	// Remove and return the cached free pointer with exact size
+	public static LineageCacheEntry pollFirstFreeEntry(long size) {
+		TreeSet<LineageCacheEntry> freeList = freeQueues.get(size);
+		if (freeList != null && freeList.isEmpty())
+			freeQueues.remove(size); //remove if empty
+
+		// Poll the first pointer from the queue
+		if (freeList != null && !freeList.isEmpty())
+			return freeList.pollFirst();
+		return null;
+	}
+
+	// Remove and return the minimum non-exact sized pointer.
+	// If no bigger sized pointer available, return one from the highest sized list
+	public static LineageCacheEntry pollFistFreeNotExact(long size) {
+		// Assuming no exact match
+		List<Long> sortedSizes = new ArrayList<>(freeQueues.keySet());
+		// If the asked size is bigger than all, return a pointer of the highest size available
+		long maxSize = sortedSizes.get(sortedSizes.size()-1);
+		if (size > maxSize)
+			return pollFirstFreeEntry(maxSize);
+		// Return a pointer of the next biggest size
+		for (long fSize : sortedSizes) {
+			if (fSize >= size)
+				return pollFirstFreeEntry(fSize);
+		}
+		return null;
+	}
+
+	public static LineageCacheEntry peekFirstFreeEntry(long size) {
+		return freeQueues.get(size).first();
 	}
 	
-	public static void removeEntry(LineageCacheEntry e) {
-		weightedQueue.remove(e);
-	}
-
-	public static void addEntryList(List<LineageCacheEntry> entryList) {
-		weightedQueue.addAll(entryList);
+	public static void removeFreeEntry(LineageCacheEntry e) {
+		long size = getPointerSize(e.getGPUPointer());
+		freeQueues.get(size).remove(e);
 	}
 
 	//---------------- CACHE SPACE MANAGEMENT METHODS -----------------//
@@ -165,22 +202,23 @@ public class LineageGPUCacheEviction
 	}
 
 	public static int numPointersCached() {
-		return livePointers.size() + weightedQueue.size();
+		return livePointers.size() + freeQueues.values().stream().mapToInt(TreeSet::size).sum();
 	}
 
 	public static long totalMemoryCached() {
 		long totLive = livePointers.keySet().stream()
 			.mapToLong(ptr -> _gpuContext.getMemoryManager().getSizeAllocatedGPUPointer(ptr)).sum();
-		long totFree = weightedQueue.stream()
-			.mapToLong(en -> _gpuContext.getMemoryManager().getSizeAllocatedGPUPointer(en.getGPUPointer())).sum();
+		long totFree = 0;
+		for (Map.Entry<Long, TreeSet<LineageCacheEntry>> entry : freeQueues.entrySet())
+			totFree += entry.getKey() * entry.getValue().size();
 		return totLive + totFree;
 	}
 
 	public static Set<Pointer> getAllCachedPointers() {
-		//livePointers.keySet() + weightedQueue.stream().map()
-		Set<Pointer> cachedPointers = weightedQueue.stream()
-			.map(LineageCacheEntry::getGPUPointer)
-			.collect(Collectors.toSet());
+		Set<Pointer> cachedPointers = new HashSet<>();
+		for (Map.Entry<Long, TreeSet<LineageCacheEntry>> entry : freeQueues.entrySet())
+			cachedPointers.addAll(entry.getValue().stream()
+				.map(LineageCacheEntry::getGPUPointer).collect(Collectors.toSet()));
 		cachedPointers.addAll(livePointers.keySet());
 		return cachedPointers;
 	}

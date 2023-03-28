@@ -45,6 +45,8 @@ public class LineageCacheStatistics {
 	private static final LongAdder _numHitsGpu      = new LongAdder();
 	private static final LongAdder _numAsyncEvictGpu= new LongAdder();
 	private static final LongAdder _numSyncEvictGpu = new LongAdder();
+	private static final LongAdder _numRecycleGpu   = new LongAdder();
+	private static final LongAdder _numDelGpu       = new LongAdder();
 	private static final LongAdder _evtimeGpu       = new LongAdder();
 	// Below entries are specific to Spark instructions
 	private static final LongAdder _numHitsRdd      = new LongAdder();
@@ -70,6 +72,8 @@ public class LineageCacheStatistics {
 		_numHitsGpu.reset();
 		_numAsyncEvictGpu.reset();
 		_numSyncEvictGpu.reset();
+		_numRecycleGpu.reset();
+		_numDelGpu.reset();
 		_numHitsRdd.reset();
 		_numHitsSparkActions.reset();
 		_numHitsRddPersist.reset();
@@ -206,6 +210,16 @@ public class LineageCacheStatistics {
 		_numSyncEvictGpu.increment();
 	}
 
+	public static void incrementGpuRecycle() {
+		// Number of gpu cached pointers recycled
+		_numRecycleGpu.increment();
+	}
+
+	public static void incrementGpuDel() {
+		// Number of gpu cached pointers deleted to make space
+		_numDelGpu.increment();
+	}
+
 	public static void incrementEvictTimeGpu(long delta) {
 		// Total time spent on evicting from GPU to main memory or deleting from GPU lineage cache
 		_evtimeGpu.add(delta);
@@ -285,6 +299,14 @@ public class LineageCacheStatistics {
 		sb.append(_numAsyncEvictGpu.longValue());
 		sb.append("/");
 		sb.append(_numSyncEvictGpu.longValue());
+		return sb.toString();
+	}
+
+	public static String displayGpuPointerStats() {
+		StringBuilder sb = new StringBuilder();
+		sb.append(_numRecycleGpu.longValue());
+		sb.append("/");
+		sb.append(_numDelGpu.longValue());
 		return sb.toString();
 	}
 

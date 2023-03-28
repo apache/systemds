@@ -135,13 +135,13 @@ public class GPUMemoryEviction implements Runnable
 				LineageCacheStatistics.incrementGpuAsyncEvicts();
 			}
 			count++;
-		}*/
+		}
 
 		// Add the locked entries back to the eviction queue
 		if (!lockedOrLiveEntries.isEmpty())
 			LineageGPUCacheEviction.addEntryList(lockedOrLiveEntries);
 		
 		if (DMLScript.STATISTICS) //TODO: dedicated statistics for lineage
-			GPUStatistics.cudaEvictTime.add(System.nanoTime() - t0);
+			GPUStatistics.cudaEvictTime.add(System.nanoTime() - t0); */
 	}
 }

@@ -37,7 +37,6 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
-import org.apache.sysds.runtime.lineage.LineageCacheConfig;
 import org.apache.sysds.utils.GPUStatistics;
 
 import jcuda.Pointer;

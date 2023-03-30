@@ -333,6 +333,8 @@ public class GPUMemoryManager {
 					// TODO: else evict to the host cache
 					if (freedSize > size)
 						A = cudaMallocNoWarn(tmpA, size, "recycle non-exact match of lineage cache");
+					// Else, deallocate another free pointer. We are calling pollFistFreeNotExact with
+					// the same size (not with freedSize-size) to reduce potentials for creating holes
 				}
 			}
 			if (DMLScript.STATISTICS)

@@ -101,7 +101,7 @@ public class GPUObject {
 	 * Shadow buffer instance
 	 */
 	final ShadowBuffer shadowBuffer;
-	
+
 	// ----------------------------------------------------------------------
 	// Methods used to access, set and check jcudaDenseMatrixPtr
 	
@@ -791,6 +791,7 @@ public class GPUObject {
 		setSparseMatrixCudaPointer(tmp);
 	}
 
+	// Method to find the estimated size of this GPU Object in the device
 	public long getSizeOnDevice() {
 		long GPUSize = 0;
 		long rlen = mat.getNumRows();
@@ -803,6 +804,11 @@ public class GPUObject {
 			GPUSize = getDatatypeSizeOf(rlen * clen);
 		}
 		return GPUSize;
+	}
+
+	// Method to find the allocated size of this GPU Object in the device
+	public long getAllocatedSize() {
+		return gpuContext.getMemoryManager().getSizeAllocatedGPUPointer(getDensePointer());
 	}
 
 	void copyFromHostToDevice(String opcode) {

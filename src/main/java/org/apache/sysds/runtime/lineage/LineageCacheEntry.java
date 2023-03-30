@@ -25,10 +25,11 @@ import jcuda.Pointer;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
-import org.apache.sysds.runtime.instructions.gpu.context.GPUObject;
 import org.apache.sysds.runtime.instructions.spark.data.RDDObject;
 import org.apache.sysds.runtime.lineage.LineageCacheConfig.LineageCacheStatus;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.meta.DataCharacteristics;
+import org.apache.sysds.runtime.meta.MetaData;
 
 public class LineageCacheEntry {
 	protected final LineageItem _key;
@@ -43,7 +44,7 @@ public class LineageCacheEntry {
 	protected LineageItem _origItem;
 	private String _outfile = null;
 	protected double score;
-	protected Pointer _gpuPointer;
+	protected GPUPointer _gpuPointer;
 
 	protected RDDObject _rddObject;
 	
@@ -124,6 +125,21 @@ public class LineageCacheEntry {
 		}
 	}
 
+	public synchronized Pointer getGPUPointer() {
+		try {
+			//wait until other thread completes operation
+			//in order to avoid redundant computation
+			while(_status == LineageCacheStatus.EMPTY) {
+				wait();
+			}
+			//comes here if data is placed or the entry is removed by the running thread
+			return _gpuPointer.getPointer();
+		}
+		catch( InterruptedException ex ) {
+			throw new DMLRuntimeException(ex);
+		}
+	}
+
 	public synchronized LineageCacheStatus getCacheStatus() {
 		return _status;
 	}
@@ -142,8 +158,8 @@ public class LineageCacheEntry {
 			size += _MBval.getInMemorySize();
 		if (_SOval != null)
 			size += _SOval.getSize();
-		if (_gpuPointer!= null)
-			size += LineageGPUCacheEviction.getPointerSize(_gpuPointer);
+		if (_gpuPointer != null)
+			size += _gpuPointer.getPointerSize();
 		return size;
 	}
 	
@@ -164,7 +180,7 @@ public class LineageCacheEntry {
 	}
 
 	public boolean isGPUObject() {
-		return _gpuPointer != null;
+		return _gpuPointer!= null;
 	}
 
 	public boolean isSerializedBytes() {
@@ -173,7 +189,7 @@ public class LineageCacheEntry {
 
 	public synchronized void setValue(MatrixBlock val, long computetime) {
 		_MBval = val;
-		_gpuPointer = null;  //Matrix block and gpu pointer cannot coexist
+		_gpuPointer = null;  //Matrix block and gpu object cannot coexist
 		_computeTime = computetime;
 		_status = isNullVal() ? LineageCacheStatus.EMPTY : LineageCacheStatus.CACHED;
 		//resume all threads waiting for val
@@ -186,15 +202,15 @@ public class LineageCacheEntry {
 
 	public synchronized void setValue(ScalarObject val, long computetime) {
 		_SOval = val;
-		_gpuPointer = null;  //scalar and gpu pointer cannot coexist
+		_gpuPointer = null;  //scalar and gpu object cannot coexist
 		_computeTime = computetime;
 		_status = isNullVal() ? LineageCacheStatus.EMPTY : LineageCacheStatus.CACHED;
 		//resume all threads waiting for val
 		notifyAll();
 	}
 	
-	public synchronized void setGPUValue(Pointer ptr, long computetime) {
-		_gpuPointer = ptr;
+	public synchronized void setGPUValue(Pointer ptr, long size, MetaData md, long computetime) {
+		_gpuPointer = new GPUPointer(ptr, size, md);
 		_computeTime = computetime;
 		_status = isNullVal() ? LineageCacheStatus.EMPTY : LineageCacheStatus.GPUCACHED;
 		//resume all threads waiting for val
@@ -216,11 +232,22 @@ public class LineageCacheEntry {
 		// resume all threads waiting for val
 		notifyAll();
 	}
-	
-	public synchronized Pointer getGPUPointer() {
-		return _gpuPointer;
+
+	public synchronized void copyValueFrom(LineageCacheEntry src, long computetime) {
+		_MBval = src._MBval;
+		_SOval = src._SOval;
+		_gpuPointer = src._gpuPointer;
+		_rddObject = src._rddObject;
+		_computeTime = src._computeTime;
+		_status = isNullVal() ? LineageCacheStatus.EMPTY : LineageCacheStatus.CACHED;
+		// resume all threads waiting for val
+		notifyAll();
 	}
-	
+
+	public synchronized DataCharacteristics getDataCharacteristics() {
+		return _gpuPointer.getDataCharacteristics();
+	}
+
 	protected synchronized void setNullValues() {
 		_MBval = null;
 		_SOval = null;
@@ -292,5 +319,29 @@ public class LineageCacheEntry {
 		double w3 = LineageCacheConfig.WEIGHTS[2];
 		// Generate scores
 		score = w1*(((double)_computeTime)/getSize()) + w2*getTimestamp() + w3*(((double)1)/getDagHeight());
+	}
+
+	static class GPUPointer {
+		private Pointer _pointer;
+		private long _allocatedSize; //bytes
+		private MetaData _metadata;
+
+		public GPUPointer(Pointer pointer, long size, MetaData metadata) {
+			_pointer = pointer;
+			_allocatedSize = size;
+			_metadata = metadata;
+		}
+
+		protected long getPointerSize() {
+			return _allocatedSize;
+		}
+
+		protected Pointer getPointer() {
+			return _pointer;
+		}
+
+		protected DataCharacteristics getDataCharacteristics() {
+			return _metadata.getDataCharacteristics();
+		}
 	}
 }

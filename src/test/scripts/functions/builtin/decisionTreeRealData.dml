@@ -1,0 +1,40 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+F = read($1, data_type="frame", format="csv", header=TRUE,
+  naStrings= ["NA", "null","  ","NaN", "nan", "", " ", "_nan_", "inf", "?", "NAN", "99999", "99999.00"]);
+tfspec = read($2, data_type="scalar", value_type="string");
+
+R = matrix("1 1 2 2 1 1 1 2 1 2 2 2", rows=1, cols=12)
+
+[X, meta] = transformencode(target=F, spec=tfspec);
+Y = X[, ncol(X)]
+X = X[, 1:ncol(X)-1]
+X = imputeByMode(X);
+
+M = decisionTree(X=X, y=Y, ctypes=R, max_features=1, min_split=8, min_leaf=5, verbose=TRUE);
+yhat = decisionTreePredict(X=X, y=Y, ctypes=R,  M=M)
+
+acc = as.matrix(mean(yhat == Y))
+err = 1-(acc);
+print("accuracy of DT: "+as.scalar(acc))
+
+write(acc, $3);

@@ -60,13 +60,14 @@ predict_TT = function (Matrix[Double] M, Matrix[Double] X)
   return (Matrix[Double] yhat)
 {
   # initialization of model tensors and parameters
-  [N_L, N_R, N_F, N_T, C] = createTTNodeTensors(M)
+  [N, N_L, N_R, N_F, N_T, C] = createTTNodeTensors(M)
   nr = nrow(X); n = ncol(N_L);
-  tree_depth = ceiling(log(max(N_L)+1,2)) # max depth
+  tree_depth = ceiling(log(max(N)+1,2)) # max depth
+
 
   Ti = matrix(1, nr, 1); # current nodes (start at root)
   noChange = FALSE; i = 1;
-  while( !noChange & i < tree_depth) {
+  while( !noChange & i <= tree_depth) {
     P = table(seq(1,nr), Ti, nr, n);
     TF = P %*% t(N_F); # get node feature indexes
     Tv = rowSums(X * table(seq(1,nr),TF,nr,ncol(X))); # get feature values
@@ -95,19 +96,23 @@ predict_GEMM = function (Matrix[Double] M, Matrix[Double] X)
 }
 
 createTTNodeTensors = function( Matrix[Double] M )
-  return ( Matrix[Double] N_L, Matrix[Double] N_R, Matrix[Double] N_F, Matrix[Double] N_T, Matrix[Double] C)
+  return (Matrix[Double] N, Matrix[Double] N_L, Matrix[Double] N_R,
+          Matrix[Double] N_F, Matrix[Double] N_T, Matrix[Double] C)
 {
   # all tree nodes (inner and leaf nodes)
   M2 = matrix(M, rows=ncol(M)/2, cols=2);
-
   NID = seq(1, nrow(M2));
   nI = (M2[,1]!=0 | M2[,2]!=0)
+  cnI = cumsum(nI);
   N = t(removeEmpty(target=NID, margin="rows", select=nI));
   n_nodes = ncol(N)
 
   # left/right child node ids, default self-id
   N_L = t(removeEmpty(target=ifelse(M2[,1]!=0, 2*NID, NID), margin="rows", select=nI));
   N_R = t(removeEmpty(target=ifelse(M2[,1]!=0, 2*NID+1, NID), margin="rows", select=nI));
+  # recoding to node vector positions (removed non-existing nodes)
+  N_L = t(table(seq(1,n_nodes), t(N_L), n_nodes, nrow(M2)) %*% cnI);
+  N_R = t(table(seq(1,n_nodes), t(N_R), n_nodes, nrow(M2)) %*% cnI);
 
   # node feature IDs (positions) and threshold values
   N_F = t(removeEmpty(target=ifelse(M2[,1]!=0, M2[,1], 1), margin="rows", select=nI));

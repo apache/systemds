@@ -609,6 +609,13 @@ public abstract class AColGroup implements Serializable {
 	 */
 	public abstract ICLAScheme getCompressionScheme();
 
+	/**
+	 * Clear variables that can be recomputed from the allocation of this columngroup.
+	 */
+	public void clear(){
+		// do nothing
+	}
+
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();

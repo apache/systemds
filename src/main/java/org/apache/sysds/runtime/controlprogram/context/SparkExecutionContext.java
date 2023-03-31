@@ -1110,11 +1110,10 @@ public class SparkExecutionContext extends ExecutionContext
 		// trigger pending RDD operations and collect blocks
 		List<Tuple2<MatrixIndexes, MatrixBlock>> list = rdd.collect();
 		out = IOUtilFunctions.get(fout); // wait for allocation
-		
 		LongAdder aNnz = new LongAdder();
 		// copy blocks one-at-a-time into output matrix block
 		blockPartitionsToMatrixBlock(list, out, aNnz,  blen);
-		
+
 		// post-processing output matrix
 		if(sparse)
 			out.sortSparseRows();

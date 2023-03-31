@@ -71,6 +71,12 @@ m_pca = function(Matrix[Double] X, Integer K=2, Boolean center=TRUE, Boolean sca
   # Construct new data set by treating computed dominant eigenvectors as the basis vectors
   Xout = X %*% evec_dominant;
   Clusters = evec_dominant;
-  # # replace infinity with zero
-  Xout = replace(target=Xout, pattern=1/0, replacement=0);
+
+  # Check if the output contains infinity
+  # This is to avoid spark pulling back the dataset for replace.
+  containsInf = contains(target=Xout, pattern=1/0)
+  if(containsInf){
+    # replace infinity with zero
+    Xout = replace(target=Xout, pattern=1/0, replacement=0);
+  }
 }

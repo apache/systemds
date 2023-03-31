@@ -60,6 +60,16 @@ public class OffsetByte extends AOffset {
 	}
 
 	@Override
+	protected AIterator getIteratorFromIndexOff(int row,  int dataIndex, int offIdx){
+		if(noOverHalf)
+			return new IterateByteOffsetNoOverHalf(dataIndex, row);
+		else if(noZero)
+			return new IterateByteOffsetNoZero(dataIndex, row);
+		else
+			return new IterateByteOffset( offIdx, dataIndex,row);
+	}
+
+	@Override
 	public AOffsetIterator getOffsetIterator() {
 		if(noOverHalf)
 			return new OffsetByteIteratorNoOverHalf();

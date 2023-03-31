@@ -23,6 +23,7 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
+import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
 
 public class OffsetTwo extends AOffset {
@@ -41,6 +42,11 @@ public class OffsetTwo extends AOffset {
 	@Override
 	public AIterator getIterator() {
 		return new IterateTwo();
+	}
+
+	@Override
+	protected AIterator getIteratorFromIndexOff(int row,  int dataIndex, int offIdx){
+		throw new NotImplementedException();
 	}
 
 	@Override

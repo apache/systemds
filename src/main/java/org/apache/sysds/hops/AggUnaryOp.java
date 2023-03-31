@@ -337,6 +337,28 @@ public class AggUnaryOp extends MultiThreadedHop
 	}
 	
 
+	private boolean inputAlreadySpark(){
+		return (!(getInput(0) instanceof DataOp)  //input is not checkpoint
+		&& getInput(0).optFindExecType() == ExecType.SPARK);
+	}
+
+	private boolean inputOnlyRDD(){
+		return (getInput(0) instanceof DataOp && ((DataOp)getInput(0)).hasOnlyRDD());
+	} 
+
+	private boolean onlyOneParent(){
+		return getInput(0).getParent().size()==1;
+	}
+
+	private boolean allParentsSpark(){
+		return getInput(0).getParent().stream().filter(h -> h != this)
+					.allMatch(h -> h.optFindExecType(false) == ExecType.SPARK);
+	}
+
+	private boolean inputDoesNotRequreAggregation(){
+		return !requiresAggregation(getInput(0), _direction);
+	}
+
 	@Override
 	protected ExecType optFindExecType(boolean transitive) {
 		
@@ -351,17 +373,14 @@ public class AggUnaryOp extends MultiThreadedHop
 		}
 		else
 		{
-			if ( OptimizerUtils.isMemoryBasedOptLevel() ) 
-			{
+			if ( OptimizerUtils.isMemoryBasedOptLevel()) {
 				_etype = findExecTypeByMemEstimate();
 			}
 			// Choose CP, if the input dimensions are below threshold or if the input is a vector
-			else if ( getInput().get(0).areDimsBelowThreshold() || getInput().get(0).isVector() )
-			{
+			else if(getInput().get(0).areDimsBelowThreshold() || getInput().get(0).isVector()) {
 				_etype = ExecType.CP;
 			}
-			else 
-			{
+			else {
 				_etype = REMOTE;
 			}
 			
@@ -372,14 +391,14 @@ public class AggUnaryOp extends MultiThreadedHop
 		//spark-specific decision refinement (execute unary aggregate w/ spark input and 
 		//single parent also in spark because it's likely cheap and reduces data transfer)
 		//we also allow multiple parents, if all other parents are already in Spark mode
-		if( transitive && _etype == ExecType.CP && _etypeForced != ExecType.CP
-			&& ((!(getInput(0) instanceof DataOp)  //input is not checkpoint
-				&& getInput(0).optFindExecType() == ExecType.SPARK)
-				|| (getInput(0) instanceof DataOp && ((DataOp)getInput(0)).hasOnlyRDD()))
-			&& (getInput(0).getParent().size()==1 //uagg is only parent, or 
-				|| getInput(0).getParent().stream().filter(h -> h != this)
-					.allMatch(h -> h.optFindExecType(false) == ExecType.SPARK)
-				|| !requiresAggregation(getInput(0), _direction)) ) //w/o agg
+
+		boolean shouldEvaluateIfSpark =  transitive && _etype == ExecType.CP && _etypeForced != ExecType.CP;
+
+		// LOG.error(" p1 " + shouldEvaluateIfSpark + "  " + inputAlreadySpark() + "  " + inputOnlyRDD() + "  "
+		// 	+ onlyOneParent() + "  " + allParentsSpark() + "  " + inputDoesNotRequreAggregation());
+		if( shouldEvaluateIfSpark
+			&& (inputAlreadySpark() || inputOnlyRDD())
+			&& (onlyOneParent() || allParentsSpark() || inputDoesNotRequreAggregation() )) //w/o agg
 		{
 			//pull unary aggregate into spark 
 			_etype = ExecType.SPARK;

@@ -169,6 +169,8 @@ public class ColGroupUncompressed extends AColGroup {
 		// _data is never empty
 		if(_data.isInSparseFormat())
 			decompressToDenseBlockSparseData(db, rl, ru, offR, offC);
+		else if(_colIndexes.size() == db.getDim(1))
+			decompressToDenseBlockDenseDataAllColumns(db, rl, ru, offR);
 		else
 			decompressToDenseBlockDenseData(db, rl, ru, offR, offC);
 	}
@@ -183,6 +185,19 @@ public class ColGroupUncompressed extends AColGroup {
 			final int off = db.pos(offT) + offC;
 			for(int j = 0; j < nCol; j++)
 				c[off + _colIndexes.get(j)] += values[offS + j];
+		}
+	}
+
+	private void decompressToDenseBlockDenseDataAllColumns(DenseBlock db, int rl, int ru, int offR) {
+		int offT = rl + offR;
+		final int nCol = _colIndexes.size();
+		final double[] values = _data.getDenseBlockValues();
+		int offS = rl * nCol;
+		for(int row = rl; row < ru; row++, offT++, offS += nCol) {
+			final double[] c = db.values(offT);
+			final int off = db.pos(offT);
+			for(int j = 0; j < nCol; j++)
+				c[off + j] += values[offS + j];
 		}
 	}
 

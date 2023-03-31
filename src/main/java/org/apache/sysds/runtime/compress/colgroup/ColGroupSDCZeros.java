@@ -113,7 +113,7 @@ public class ColGroupSDCZeros extends ASDCZero implements AMapToDataGroup {
 			_indexes.cacheIterator(it, ru);
 		else {
 			decompressToDenseBlockDenseDictionaryWithProvidedIterator(db, rl, ru, offR, offC, values, it);
-			_indexes.cacheIterator(it, ru);
+			// _indexes.cacheIterator(it, ru);
 		}
 	}
 
@@ -128,6 +128,8 @@ public class ColGroupSDCZeros extends ASDCZero implements AMapToDataGroup {
 		if(post) {
 			if(contiguous && _colIndexes.size() == 1)
 				decompressToDenseBlockDenseDictionaryPostSingleColContiguous(db, rl, ru, offR, offC, values, it);
+			else if(contiguous && _colIndexes.size() == db.getDim(1)) // OffC == 0 implied
+			   decompressToDenseBlockDenseDictioanryPostAllCols(db, rl, ru, offR, values, it);
 			else
 				decompressToDenseBlockDenseDictionaryPostGeneric(db, rl, ru, offR, offC, values, it);
 		}
@@ -145,7 +147,7 @@ public class ColGroupSDCZeros extends ASDCZero implements AMapToDataGroup {
 		}
 	}
 
-	private void decompressToDenseBlockDenseDictionaryPostSingleColContiguous(DenseBlock db, int rl, int ru, int offR,
+	private final  void decompressToDenseBlockDenseDictionaryPostSingleColContiguous(DenseBlock db, int rl, int ru, int offR,
 		int offC, double[] values, AIterator it) {
 		final int lastOff = _indexes.getOffsetToLast() + offR;
 		final int nCol = db.getDim(1);
@@ -162,7 +164,25 @@ public class ColGroupSDCZeros extends ASDCZero implements AMapToDataGroup {
 		it.setOff(it.value() - offR);
 	}
 
-	private void decompressToDenseBlockDenseDictionaryPostGeneric(DenseBlock db, int rl, int ru, int offR, int offC,
+
+	private final void decompressToDenseBlockDenseDictioanryPostAllCols(DenseBlock db, int rl, int ru, int offR,
+		double[] values, AIterator it) {
+		final int lastOff = _indexes.getOffsetToLast();
+		final int nCol = _colIndexes.size();
+		while(true) {
+			final int idx = offR + it.value();
+			final double[] c = db.values(idx);
+			final int off = db.pos(idx);
+			final int offDict = _data.getIndex(it.getDataIndex()) * nCol;
+			for(int j = 0; j < nCol; j++)
+				c[off + j] += values[offDict + j];
+			if(it.value() == lastOff)
+				return;
+			it.next();
+		}
+	}
+
+	private final void decompressToDenseBlockDenseDictionaryPostGeneric(DenseBlock db, int rl, int ru, int offR, int offC,
 		double[] values, AIterator it) {
 		final int lastOff = _indexes.getOffsetToLast();
 		final int nCol = _colIndexes.size();

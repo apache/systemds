@@ -19,6 +19,8 @@
 
 package org.apache.sysds.runtime.instructions.cp;
 
+import java.util.Arrays;
+
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
@@ -44,6 +46,9 @@ public abstract class BinaryCPInstruction extends ComputationCPInstruction {
 		final String[] parts = parseBinaryInstruction(str, in1, in2, out);
 		final String opcode = parts[0];
 
+		if(parts.length == 5 || parts.length == 6)
+			LOG.error(Arrays.toString(parts));
+
 		if(!(in1.getDataType() == DataType.FRAME || in2.getDataType() == DataType.FRAME))
 			checkOutputDataType(in1, in2, out);
 		
@@ -67,7 +72,7 @@ public abstract class BinaryCPInstruction extends ComputationCPInstruction {
 	
 	private static String[] parseBinaryInstruction(String instr, CPOperand in1, CPOperand in2, CPOperand out) {
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(instr);
-		InstructionUtils.checkNumFields ( parts, 3, 4, 5 );
+		InstructionUtils.checkNumFields ( parts, 3, 4, 5, 6 );
 		in1.split(parts[1]);
 		in2.split(parts[2]);
 		out.split(parts[3]);

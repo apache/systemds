@@ -23,6 +23,8 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
+import org.apache.commons.lang.NotImplementedException;
+
 public class OffsetSingle extends AOffset {
 	private static final long serialVersionUID = -614636669776415032L;
 
@@ -35,6 +37,11 @@ public class OffsetSingle extends AOffset {
 	@Override
 	public AIterator getIterator() {
 		return new IterateSingle();
+	}
+
+	@Override
+	protected AIterator getIteratorFromIndexOff(int row,  int dataIndex, int offIdx){
+		throw new NotImplementedException();
 	}
 
 	@Override

@@ -1600,14 +1600,25 @@ public class LibMatrixBincell {
 			return; 
 		}
 		
-		if(m1ret.sparse && m2.sparse)
-			safeBinaryInPlaceSparse(m1ret, m2, op);
-		else if(!m1ret.sparse && !m2.sparse)
-			safeBinaryInPlaceDense(m1ret, m2, op);
-		else if(m2.sparse && (op.fn instanceof Plus || op.fn instanceof Minus))
-			safeBinaryInPlaceDenseSparseAdd(m1ret, m2, op);
-		else //GENERIC
-			safeBinaryInPlaceGeneric(m1ret, m2, op);
+		if(m1ret.getNumRows() > 1 && m2.getNumRows() == 1){ // Matrix, RowVector
+			if(m2.sparse)
+				throw new NotImplementedException("The Vector part of inplace should not happen at the moment");
+			
+			if(m1ret.sparse)
+				safeBinaryInPlaceSparseVector(m1ret,m2,op);
+			else
+				safeBinaryInPlaceDenseVector(m1ret,m2,op);
+		}
+		else{ // Matrix Matrix
+			if(m1ret.sparse && m2.sparse)
+				safeBinaryInPlaceSparse(m1ret, m2, op);
+			else if(!m1ret.sparse && !m2.sparse)
+				safeBinaryInPlaceDense(m1ret, m2, op);
+			else if(m2.sparse && (op.fn instanceof Plus || op.fn instanceof Minus))
+				safeBinaryInPlaceDenseSparseAdd(m1ret, m2, op);
+			else //GENERIC
+				safeBinaryInPlaceGeneric(m1ret, m2, op);
+		}
 	}
 	
 	private static void safeBinaryInPlaceSparse(MatrixBlock m1ret, MatrixBlock m2, BinaryOperator op) {
@@ -1665,6 +1676,28 @@ public class LibMatrixBincell {
 		m1ret.recomputeNonZeros();
 	}
 
+	
+	private static void safeBinaryInPlaceSparseVector(MatrixBlock m1ret, MatrixBlock m2, BinaryOperator op) {
+
+		if(m1ret.isEmpty()) // early termination... it is empty and safe... just stop.
+			return;
+		final SparseBlock sb = m1ret.getSparseBlock();
+		final double[] b = m2.getDenseBlockValues();
+		final int rlen = m1ret.rlen;
+		for(int r = 0; r < rlen; r++){
+			if(sb.isEmpty(r))
+				continue;
+			final int apos = sb.pos(r);
+			final int alen = sb.size(r) + apos;
+			final double[] avals = sb.values(r);
+			final int[] aix = sb.indexes(r);
+			for(int k = apos; k < alen; k++) 
+				avals[k] = op.fn.execute(avals[k], b[aix[k]]);
+		}
+	}
+
+	
+
 	private static void safeBinaryInPlaceDense(MatrixBlock m1ret, MatrixBlock m2, BinaryOperator op) {
 		//prepare outputs
 		m1ret.allocateDenseBlock();
@@ -1701,6 +1734,27 @@ public class LibMatrixBincell {
 			}
 		}
 		
+		m1ret.setNonZeros(lnnz);
+	}
+
+
+	private static void safeBinaryInPlaceDenseVector(MatrixBlock m1ret, MatrixBlock m2, BinaryOperator op) {
+		//prepare outputs
+		m1ret.allocateDenseBlock();
+		DenseBlock a = m1ret.getDenseBlock();
+		double[] b = m2.getDenseBlockValues();
+		final int rlen = m1ret.rlen;
+		final int clen = m1ret.clen;
+		
+		long lnnz = 0;
+		for(int r = 0; r < rlen; r++) {
+			double[] avals = a.values(r);
+			for(int c = 0, ix = a.pos(r); c < clen; c++, ix++) {
+				double tmp = op.fn.execute(avals[ix], b[ix % clen]);
+				lnnz += (avals[ix] = tmp) != 0 ? 1 : 0;
+			}
+		}
+
 		m1ret.setNonZeros(lnnz);
 	}
 	

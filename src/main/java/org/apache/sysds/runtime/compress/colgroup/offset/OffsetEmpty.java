@@ -37,6 +37,11 @@ public class OffsetEmpty extends AOffset {
 	}
 
 	@Override
+	protected AIterator getIteratorFromIndexOff(int row,  int dataIndex, int offIdx){
+		return null;
+	}
+
+	@Override
 	public AOffsetIterator getOffsetIterator() {
 		return null;
 	}

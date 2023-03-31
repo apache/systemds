@@ -147,7 +147,7 @@ public abstract class AColGroupCompressed extends AColGroup {
 	private final void sumSq(IndexFunction idx, double[] c, int nRows, int rl, int ru, double[] preAgg) {
 		if(idx instanceof ReduceAll)
 			computeSumSq(c, nRows);
-		else if(idx instanceof ReduceCol)
+		else if(idx instanceof ReduceCol) // This call works becasuse the preAgg is correctly the sumsq.
 			computeRowSums(c, rl, ru, preAgg);
 		else if(idx instanceof ReduceRow)
 			computeColSumsSq(c, nRows);

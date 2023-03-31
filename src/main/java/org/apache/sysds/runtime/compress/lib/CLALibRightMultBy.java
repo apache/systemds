@@ -79,11 +79,7 @@ public class CLALibRightMultBy {
 			}
 
 			final CompressedMatrixBlock retC = RMMOverlapping(m1, m2, k);
-			// final double cs = retC.getInMemorySize();
-			// final double us = MatrixBlock.estimateSizeDenseInMemory(rr, rc);
-			// if(cs > us)
-			// return retC.getUncompressed("Overlapping rep to big: " + cs + " vs uncompressed " + us);
-			// else
+
 			if(retC.isEmpty())
 				return retC;
 			else {
@@ -192,7 +188,7 @@ public class CLALibRightMultBy {
 		final Timing time = new Timing(true);
 
 		ret = asyncRet(f);
-		CLALibDecompress.decompressDenseMultiThread(ret, retCg, constV, 0, k);
+		CLALibDecompress.decompressDenseMultiThread(ret, retCg, constV, 0, k, true);
 
 		if(DMLScript.STATISTICS) {
 			final double t = time.stop();

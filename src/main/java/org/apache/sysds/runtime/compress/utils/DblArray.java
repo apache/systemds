@@ -74,11 +74,7 @@ public class DblArray {
 	}
 
 	private static boolean dblArrEq(double[] a, double[] b) {
-		// it is assumed that the arrays always is same size.
-		for(int i = 0; i < a.length; i++)
-			if(a[i] != b[i])
-				return false;
-		return true;
+		return Arrays.equals(a, b);
 	}
 
 	@Override

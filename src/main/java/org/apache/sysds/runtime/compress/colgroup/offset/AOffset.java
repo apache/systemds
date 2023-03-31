@@ -21,6 +21,7 @@ package org.apache.sysds.runtime.compress.colgroup.offset;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.io.Serializable;
+import java.lang.ref.SoftReference;
 import java.util.Arrays;
 
 import org.apache.commons.lang.NotImplementedException;
@@ -57,6 +58,12 @@ public abstract class AOffset implements Serializable {
 		}
 	};
 
+	/** The skiplist stride size, aka how many indexes skipped for each index. */
+	protected static final int skipStride = 1000;
+
+	/** SoftReference of the skip list to be dematerialized on memory pressure */
+	private SoftReference<OffsetCacheV2[]> skipList = null;
+
 	/**
 	 * Get an iterator of the offsets while also maintaining the data index pointer.
 	 * 
@@ -71,6 +78,12 @@ public abstract class AOffset implements Serializable {
 	 */
 	public abstract AOffsetIterator getOffsetIterator();
 
+	private AIterator getIteratorFromSkipList(OffsetCacheV2 c) {
+		return getIteratorFromIndexOff(c.row, c.dataIndex, c.offIndex);
+	}
+
+	protected abstract AIterator getIteratorFromIndexOff(int row, int dataIndex, int offIdx);
+
 	/**
 	 * Get an iterator that is pointing at a specific offset.
 	 * 
@@ -82,21 +95,57 @@ public abstract class AOffset implements Serializable {
 			return getIterator();
 		else if(row > getOffsetToLast())
 			return null;
-
-		// Try the cache first.
-		OffsetCache c = cacheRow.get();
-
+		final OffsetCache c = cacheRow.get();
 		if(c != null && c.row == row)
 			return c.it.clone();
-		else {
-			AIterator it = null;
-			// Use the cached iterator if it is closer to the queried row.
-			it = c != null && c.row < row ? c.it.clone() : getIterator();
-			it.skipTo(row);
-			// cache this new iterator.
-			cacheIterator(it.clone(), row);
-			return it;
+		else if(getLength() < skipStride)
+			return getIteratorSmallOffset(row);
+		else
+			return getIteratorLargeOffset(row);
+	}
+
+	private AIterator getIteratorSmallOffset(int row) {
+		AIterator it = getIterator();
+		it.skipTo(row);
+		cacheIterator(it.clone(), row);
+		return it;
+	}
+
+	private AIterator getIteratorLargeOffset(int row) {
+		if(skipList == null || skipList.get() == null)
+			constructSkipList();
+		final OffsetCacheV2[] skip = skipList.get();
+		int idx = 0;
+		while(idx < skip.length && skip[idx] != null && skip[idx].row <= row)
+			idx++;
+
+		final AIterator it = idx == 0 ? getIterator() : getIteratorFromSkipList(skip[idx - 1]);
+		it.skipTo(row);
+		cacheIterator(it.clone(), row);
+		return it;
+	}
+
+	private synchronized void constructSkipList() {
+		if(skipList != null && skipList.get() != null)
+			return;
+
+		// not actual accurate but applicable.
+		final int skipSize = getLength() / skipStride + 1;
+		if(skipSize == 0)
+			return;
+
+		final OffsetCacheV2[] skipListTmp = new OffsetCacheV2[skipSize];
+		final AIterator it = getIterator();
+
+		final int last = getOffsetToLast();
+		int skipListIdx = 0;
+		while(it.value() < last) {
+			for(int i = 0; i < skipStride && it.value() < last; i++)
+				it.next();
+			skipListTmp[skipListIdx++] = new OffsetCacheV2(it.value(), it.getDataIndex(), it.getOffsetsIndex());
 		}
+
+		skipList = new SoftReference<>(skipListTmp);
 	}
 
 	/**
@@ -587,6 +636,23 @@ public abstract class AOffset implements Serializable {
 		protected OffsetCache(AIterator it, int row) {
 			this.it = it;
 			this.row = row;
+		}
+	}
+
+	protected static class OffsetCacheV2 {
+		protected final int row;
+		protected final int offIndex;
+		protected final int dataIndex;
+
+		protected OffsetCacheV2(int row, int dataIndex, int offIndex) {
+			this.row = row;
+			this.dataIndex = dataIndex;
+			this.offIndex = offIndex;
+		}
+
+		@Override
+		public String toString() {
+			return "r" + row + " d" + dataIndex + " o" + offIndex;
 		}
 	}
 }

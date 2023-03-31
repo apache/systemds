@@ -95,16 +95,16 @@ public class ReaderColumnSelectionSparseTransposed extends ReaderColumnSelection
 			final int[] aix = a.indexes(c);
 			if(aix[sp] == _rl) {
 				final double[] avals = a.values(c);
-				double v = avals[sp];
-				boolean isNan = Double.isNaN(v);
-				if(isNan) {
-					warnNaN();
-					reusableArr[i] = 0;
-				}
-				else {
-					empty = false;
-					reusableArr[i] = avals[sp];
-				}
+				// double v = avals[sp];
+				// boolean isNan = Double.isNaN(v);
+				// if(isNan) {
+				// warnNaN();
+				// reusableArr[i] = 0;
+				// }
+				// else {
+				empty = false;
+				reusableArr[i] = avals[sp];
+				// }
 				final int spa = sparsePos[i]++;
 				final int len = a.size(c) + a.pos(c) - 1;
 				if(spa >= len || aix[spa] >= _ru) {
@@ -116,7 +116,7 @@ public class ReaderColumnSelectionSparseTransposed extends ReaderColumnSelection
 				reusableArr[i] = 0;
 		}
 
-		return empty ? getNextRow(): reusableReturn;
+		return empty ? getNextRow() : reusableReturn;
 	}
 
 	private void skipToRow() {
@@ -142,14 +142,14 @@ public class ReaderColumnSelectionSparseTransposed extends ReaderColumnSelection
 				if(aix[sp] == _rl) {
 					final double[] avals = a.values(c);
 					final double v = avals[sp];
-					boolean isNan = Double.isNaN(v);
-					if(isNan) {
-						warnNaN();
-						reusableArr[i] = 0;
-					}
-					else {
-						reusableArr[i] = v;
-					}
+					// boolean isNan = Double.isNaN(v);
+					// if(isNan) {
+					// warnNaN();
+					// reusableArr[i] = 0;
+					// }
+					// else {
+					reusableArr[i] = v;
+					// }
 					if(++sparsePos[i] >= a.size(c) + a.pos(c))
 						sparsePos[i] = -1;
 				}

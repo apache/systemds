@@ -228,7 +228,7 @@ public class ColGroupConst extends ADictBasedColGroup {
 	protected void decompressToDenseBlockDenseDictionary(DenseBlock db, int rl, int ru, int offR, int offC,
 		double[] values) {
 		if(db.isContiguous() && _colIndexes.size() == db.getDim(1) && offC == 0)
-			decompressToDenseBlockAllColumnsContiguous(db, rl, ru, offR, offC);
+			decompressToDenseBlockAllColumnsContiguous(db, rl + offR, ru + offR);
 		else
 			decompressToDenseBlockGeneric(db, rl, ru, offR, offC);
 	}
@@ -254,15 +254,14 @@ public class ColGroupConst extends ADictBasedColGroup {
 				ret.append(offT, _colIndexes.get(j) + offC, _dict.getValue(j));
 	}
 
-	private void decompressToDenseBlockAllColumnsContiguous(DenseBlock db, int rl, int ru, int offR, int offC) {
+	private final  void decompressToDenseBlockAllColumnsContiguous(final DenseBlock db, final int rl, final int ru) {
 		final double[] c = db.values(0);
 		final int nCol = _colIndexes.size();
 		final double[] values = _dict.getValues();
-		for(int r = rl; r < ru; r++) {
-			final int offStart = (offR + r) * nCol;
-			for(int vOff = 0, off = offStart; vOff < nCol; vOff++, off++)
-				c[off] += values[vOff];
-		}
+		final int start = rl * nCol;
+		final int end = ru * nCol;
+		for(int i = start; i < end; i++)
+			c[i] += values[i % nCol]; 
 	}
 
 	private void decompressToDenseBlockGeneric(DenseBlock db, int rl, int ru, int offR, int offC) {

@@ -94,7 +94,7 @@ public class ExtractBlockForBinaryReblock implements PairFlatMapFunction<Tuple2<
 				if( aligned ) {
 					if(in instanceof CompressedMatrixBlock){
 						blk.allocateSparseRowsBlock(false);
-							CLALibDecompress.decompressTo((CompressedMatrixBlock) in, blk, cixi- aixi, cixj-aixj, 1);
+							CLALibDecompress.decompressTo((CompressedMatrixBlock) in, blk, cixi- aixi, cixj-aixj, 1, true);
 					}else{
 						blk.appendToSparse(in, cixi, cixj);
 						blk.setNonZeros(in.getNonZeros());

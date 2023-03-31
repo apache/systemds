@@ -57,6 +57,7 @@ docs/_site
 src/test/scripts/**/*.dmlt
 src/test/scripts/functions/mlcontextin/
 src/test/java/org/apache/sysds/test/component/compress/io/files
+src/test/java/org/apache/sysds/test/component/compress/io/filesIOSpark/*
 .factorypath
 
 # Excluded sources

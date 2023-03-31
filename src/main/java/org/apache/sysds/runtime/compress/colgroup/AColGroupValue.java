@@ -204,6 +204,11 @@ public abstract class AColGroupValue extends ADictBasedColGroup {
 	}
 
 	@Override
+	public void clear(){
+		counts = null;
+	}
+
+	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		sb.append(super.toString());

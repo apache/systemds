@@ -60,6 +60,16 @@ public class OffsetByte extends AOffset {
 	}
 
 	@Override
+	protected AIterator getIteratorFromIndexOff(int row, int dataIndex, int offIdx) {
+		if(noOverHalf)
+			return new IterateByteOffsetNoOverHalf(dataIndex, row);
+		else if(noZero)
+			return new IterateByteOffsetNoZero(dataIndex, row);
+		else
+			return new IterateByteOffset(offIdx, dataIndex, row);
+	}
+
+	@Override
 	public AOffsetIterator getOffsetIterator() {
 		if(noOverHalf)
 			return new OffsetByteIteratorNoOverHalf();
@@ -127,7 +137,7 @@ public class OffsetByte extends AOffset {
 	}
 
 	protected OffsetSliceInfo slice(int lowOff, int highOff, int lowValue, int highValue, int low, int high) {
-		int newSize = high - low +1 ;
+		int newSize = high - low + 1;
 		byte[] newOffsets = Arrays.copyOfRange(offsets, lowOff, highOff);
 		AOffset off = new OffsetByte(newOffsets, lowValue, highValue, newSize, noOverHalf, noZero);
 		return new OffsetSliceInfo(low, high + 1, off);
@@ -161,7 +171,7 @@ public class OffsetByte extends AOffset {
 		}
 
 		final byte[] ret = new byte[totalLength];
-		
+
 		int p = 0;
 		int remainderLast = 0;
 		int size = 0;

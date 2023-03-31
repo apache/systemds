@@ -111,7 +111,7 @@ public abstract class AIterator {
 	}
 
 	@Override
-	public String toString(){
+	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		sb.append(this.getClass().getSimpleName());
 		sb.append(" v:" + value() + " d:" + getDataIndex() + " o:" + getOffsetsIndex());

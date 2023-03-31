@@ -255,7 +255,7 @@ public class CompressedMatrixBlock extends MatrixBlock {
 
 	@Override
 	public void putInto(MatrixBlock target, int rowOffset, int colOffset, boolean sparseCopyShallow) {
-		CLALibDecompress.decompressTo(this, target, rowOffset, colOffset, 1);
+		CLALibDecompress.decompressTo(this, target, rowOffset, colOffset, 1, false);
 	}
 
 	/**
@@ -617,7 +617,8 @@ public class CompressedMatrixBlock extends MatrixBlock {
 
 	@Override
 	public boolean containsValue(double pattern) {
-		if(isOverlapping())
+		// Only if pattern is a finite value and overlapping then decompress.
+		if(isOverlapping() && Double.isFinite(pattern)) 
 			return getUncompressed("ContainsValue").containsValue(pattern);
 		else {
 			for(AColGroup g : _colGroups)
@@ -1069,6 +1070,11 @@ public class CompressedMatrixBlock extends MatrixBlock {
 
 	public void clearSoftReferenceToDecompressed() {
 		decompressedVersion = null;
+	}
+
+	public void clearCounts(){
+		for(AColGroup a : _colGroups)
+			a.clear();
 	}
 
 	@Override

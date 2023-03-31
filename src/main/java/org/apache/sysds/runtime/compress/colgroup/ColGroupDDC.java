@@ -99,11 +99,12 @@ public class ColGroupDDC extends APreAgg implements AMapToDataGroup {
 	protected void decompressToDenseBlockDenseDictionary(DenseBlock db, int rl, int ru, int offR, int offC,
 		double[] values) {
 		if(db.isContiguous()) {
-			if(_colIndexes.size() == 1 && db.getDim(1) == 1)
+			final int nCol = db.getDim(1);
+			if(_colIndexes.size() == 1 && nCol == 1)
 				decompressToDenseBlockDenseDictSingleColOutContiguous(db, rl, ru, offR, offC, values);
 			else if(_colIndexes.size() == 1)
 				decompressToDenseBlockDenseDictSingleColContiguous(db, rl, ru, offR, offC, values);
-			else if(_colIndexes.size() == db.getDim(1)) // offC == 0 implied
+			else if(_colIndexes.size() == nCol) // offC == 0 implied
 				decompressToDenseBlockDenseDictAllColumnsContiguous(db, rl, ru, offR, values);
 			else if(offC == 0 && offR == 0)
 				decompressToDenseBlockDenseDictNoOff(db, rl, ru, values);
@@ -116,7 +117,7 @@ public class ColGroupDDC extends APreAgg implements AMapToDataGroup {
 			decompressToDenseBlockDenseDictGeneric(db, rl, ru, offR, offC, values);
 	}
 
-	private void decompressToDenseBlockDenseDictSingleColContiguous(DenseBlock db, int rl, int ru, int offR, int offC,
+	private final void decompressToDenseBlockDenseDictSingleColContiguous(DenseBlock db, int rl, int ru, int offR, int offC,
 		double[] values) {
 		final double[] c = db.values(0);
 		final int nCols = db.getDim(1);
@@ -131,14 +132,14 @@ public class ColGroupDDC extends APreAgg implements AMapToDataGroup {
 		return _data;
 	}
 
-	private void decompressToDenseBlockDenseDictSingleColOutContiguous(DenseBlock db, int rl, int ru, int offR, int offC,
+	private final void decompressToDenseBlockDenseDictSingleColOutContiguous(DenseBlock db, int rl, int ru, int offR, int offC,
 		double[] values) {
 		final double[] c = db.values(0);
 		for(int i = rl, offT = rl + offR + _colIndexes.get(0) + offC; i < ru; i++, offT++)
 			c[offT] += values[_data.getIndex(i)];
 	}
 
-	private void decompressToDenseBlockDenseDictAllColumnsContiguous(DenseBlock db, int rl, int ru, int offR,
+	private final void decompressToDenseBlockDenseDictAllColumnsContiguous(DenseBlock db, int rl, int ru, int offR,
 		double[] values) {
 		final double[] c = db.values(0);
 		final int nCol = _colIndexes.size();
@@ -151,7 +152,7 @@ public class ColGroupDDC extends APreAgg implements AMapToDataGroup {
 		}
 	}
 
-	private void decompressToDenseBlockDenseDictNoColOffset(DenseBlock db, int rl, int ru, int offR, double[] values) {
+	private final void decompressToDenseBlockDenseDictNoColOffset(DenseBlock db, int rl, int ru, int offR, double[] values) {
 		final int nCol = _colIndexes.size();
 		final int colOut = db.getDim(1);
 		int off = (rl + offR) * colOut;
@@ -163,7 +164,7 @@ public class ColGroupDDC extends APreAgg implements AMapToDataGroup {
 		}
 	}
 
-	private void decompressToDenseBlockDenseDictNoOff(DenseBlock db, int rl, int ru, double[] values) {
+	private final void decompressToDenseBlockDenseDictNoOff(DenseBlock db, int rl, int ru, double[] values) {
 		final int nCol = _colIndexes.size();
 		final int nColU = db.getDim(1);
 		final double[] c = db.values(0);
@@ -175,7 +176,7 @@ public class ColGroupDDC extends APreAgg implements AMapToDataGroup {
 		}
 	}
 
-	private void decompressToDenseBlockDenseDictGeneric(DenseBlock db, int rl, int ru, int offR, int offC,
+	private final void decompressToDenseBlockDenseDictGeneric(DenseBlock db, int rl, int ru, int offR, int offC,
 		double[] values) {
 		final int nCol = _colIndexes.size();
 		for(int i = rl, offT = rl + offR; i < ru; i++, offT++) {

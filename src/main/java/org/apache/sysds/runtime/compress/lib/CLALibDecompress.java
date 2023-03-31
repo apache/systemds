@@ -59,7 +59,7 @@ public class CLALibDecompress {
 		return ret;
 	}
 
-	public static void decompressTo(CompressedMatrixBlock cmb, MatrixBlock ret, int rowOffset, int colOffset, int k) {
+	public static void decompressTo(CompressedMatrixBlock cmb, MatrixBlock ret, int rowOffset, int colOffset, int k, boolean countNNz) {
 		Timing time = new Timing(true);
 		if(cmb.getNumColumns() + colOffset > ret.getNumColumns() || cmb.getNumRows() + rowOffset > ret.getNumRows()) {
 			LOG.warn(
@@ -93,7 +93,8 @@ public class CLALibDecompress {
 				LOG.trace("decompressed block w/ k=" + k + " in " + t + "ms.");
 		}
 
-		ret.recomputeNonZeros();
+		if(countNNz)
+			ret.recomputeNonZeros();
 	}
 
 	private static void decompressToSparseBlock(CompressedMatrixBlock cmb, MatrixBlock ret, int rowOffset,
@@ -189,7 +190,7 @@ public class CLALibDecompress {
 			ret.setNonZeros(nonZeros);
 		}
 		else
-			decompressDenseMultiThread(ret, filteredGroups, nRows, blklen, constV, eps, k);
+			decompressDenseMultiThread(ret, filteredGroups, nRows, blklen, constV, eps, k, overlapping);
 
 		ret.examSparsity();
 		return ret;
@@ -250,27 +251,34 @@ public class CLALibDecompress {
 		}
 	}
 
-	protected static void decompressDenseMultiThread(MatrixBlock ret, List<AColGroup> groups, double[] constV, int k) {
+	protected static void decompressDenseMultiThread(MatrixBlock ret, List<AColGroup> groups, double[] constV, int k, boolean overlapping) {
 		final int nRows = ret.getNumRows();
 		final double eps = getEps(constV);
 		final int blklen = Math.max(nRows / k, 512);
-		decompressDenseMultiThread(ret, groups, nRows, blklen, constV, eps, k);
+		decompressDenseMultiThread(ret, groups, nRows, blklen, constV, eps, k, overlapping);
 	}
 
 	protected static void decompressDenseMultiThread(MatrixBlock ret, List<AColGroup> groups, double[] constV,
-		double eps, int k) {
+		double eps, int k, boolean overlapping) {
 		final int nRows = ret.getNumRows();
 		final int blklen = Math.max(nRows / k, 512);
-		decompressDenseMultiThread(ret, groups, nRows, blklen, constV, eps, k);
+		decompressDenseMultiThread(ret, groups, nRows, blklen, constV, eps, k, overlapping);
 	}
 
 	private static void decompressDenseMultiThread(MatrixBlock ret, List<AColGroup> filteredGroups, int rlen, int blklen,
-		double[] constV, double eps, int k) {
+		double[] constV, double eps, int k, boolean overlapping) {
 		final ExecutorService pool = CommonThreadPool.get(k);
 		try {
-			final ArrayList<DecompressDenseTask> tasks = new ArrayList<>();
-			for(int i = 0; i < rlen; i += blklen)
-				tasks.add(new DecompressDenseTask(filteredGroups, ret, eps, i, Math.min(i + blklen, rlen), constV));
+			final ArrayList<Callable<Long>> tasks = new ArrayList<>();
+			if(overlapping || constV != null){
+				for(int i = 0; i < rlen; i += blklen)
+					tasks.add(new DecompressDenseTask(filteredGroups, ret, eps, i, Math.min(i + blklen, rlen), constV));
+			}
+			else{
+				for(int i = 0; i < rlen; i += blklen)
+					for(AColGroup g : filteredGroups)
+						tasks.add(new DecompressDenseSingleColTask(g, ret, eps, i, Math.min(i + blklen, rlen), null));
+			}
 
 			long nnz = 0;
 			for(Future<Long> rt : pool.invokeAll(tasks))
@@ -357,6 +365,50 @@ public class CLALibDecompress {
 					if(_constV != null)
 						addVector(_ret, _constV, _eps, b, e);
 					nnz += _ret.recomputeNonZeros(b, e - 1);
+				}
+
+				return nnz;
+			}
+			catch(Exception e) {
+				e.printStackTrace();
+				throw new DMLCompressionException("Failed dense decompression", e);
+			}
+		}
+	}
+
+	private static class DecompressDenseSingleColTask implements Callable<Long> {
+		private final AColGroup _grp;
+		private final MatrixBlock _ret;
+		private final double _eps;
+		private final int _rl;
+		private final int _ru;
+		private final int _blklen;
+		private final double[] _constV;
+
+		protected DecompressDenseSingleColTask(AColGroup grp, MatrixBlock ret, double eps, int rl, int ru,
+			double[] constV) {
+			_grp = grp;
+			_ret = ret;
+			_eps = eps;
+			_rl = rl;
+			_ru = ru;
+			_blklen = 32768 / ret.getNumColumns();
+			_constV = constV;
+		}
+
+		@Override
+		public Long call() {
+			try {
+
+				long nnz = 0;
+				for(int b = _rl; b < _ru; b += _blklen) {
+					final int e = Math.min(b + _blklen, _ru);
+					// for(AColGroup grp : _colGroups)
+						_grp.decompressToDenseBlock(_ret.getDenseBlock(), b, e);
+
+					if(_constV != null)
+						addVector(_ret, _constV, _eps, b, e);
+					// nnz += _ret.recomputeNonZeros(b, e - 1);
 				}
 
 				return nnz;

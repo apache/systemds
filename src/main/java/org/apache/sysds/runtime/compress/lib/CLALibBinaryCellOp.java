@@ -33,6 +33,7 @@ import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlockFactory;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup;
+import org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType;
 import org.apache.sysds.runtime.compress.colgroup.ASDCZero;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupConst;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
@@ -218,7 +219,7 @@ public class CLALibBinaryCellOp {
 		final int k = op.getNumThreads();
 		final List<AColGroup> newColGroups = new ArrayList<>(oldColGroups.size());
 		final boolean isRowSafe = left ? op.isRowSafeLeft(v) : op.isRowSafeRight(v);
-	
+
 		if(k <= 1 || oldColGroups.size() <= 1)
 			binaryMVRowSingleThread(oldColGroups, v, op, left, newColGroups, isRowSafe);
 		else
@@ -314,7 +315,7 @@ public class CLALibBinaryCellOp {
 		if(smallestSize == Integer.MAX_VALUE) {
 			// if there was no smallest colgroup
 			ADictionary newDict = MatrixBlockDictionary.create(m2);
-			if(newDict != null)	
+			if(newDict != null)
 				newColGroups.add(ColGroupConst.create(nCol, newDict));
 		}
 		else {
@@ -465,14 +466,10 @@ public class CLALibBinaryCellOp {
 
 		@Override
 		public Integer call() {
-			final int _blklen = 32768 / _ret.getNumColumns();
+			final int _blklen = Math.max(16384 / _ret.getNumColumns(), 64);
 			final List<AColGroup> groups = _m1.getColGroups();
 
-			final AIterator[] its = new AIterator[groups.size()];
-
-			for(int i = 0; i < groups.size(); i++)
-				if(groups.get(i) instanceof ASDCZero)
-					its[i] = ((ASDCZero) groups.get(i)).getIterator(_rl);
+			final AIterator[] its = getIterators(groups, _rl);
 
 			for(int r = _rl; r < _ru; r += _blklen)
 				processBlock(r, Math.min(r + _blklen, _ru), groups, its);
@@ -483,30 +480,24 @@ public class CLALibBinaryCellOp {
 		private final void processBlock(final int rl, final int ru, final List<AColGroup> groups, final AIterator[] its) {
 			// unsafe decompress, since we count nonzeros afterwards.
 			final DenseBlock db = _ret.getDenseBlock();
-			for(int i = 0; i < groups.size(); i++) {
-				final AColGroup g = groups.get(i);
-				// AColGroup g = _groups.get(i);
-				if(g instanceof ASDCZero)
-					((ASDCZero) g).decompressToDenseBlock(db, rl, ru, 0, 0, its[i]);
-				else
-					g.decompressToDenseBlock(db, rl, ru, 0, 0);
-			}
+			decompressToSubBlock(rl, ru, db, groups, its);
 
 			if(_m2.isInSparseFormat())
 				throw new NotImplementedException("Not Implemented sparse Format execution for MM.");
-			else {
-				int offset = rl * _m1.getNumColumns();
-				double[] _retDense = _ret.getDenseBlockValues();
-				double[] _m2Dense = _m2.getDenseBlockValues();
-				for(int row = rl; row < ru; row++) {
-					double vr = _m2Dense[row];
-					for(int col = 0; col < _m1.getNumColumns(); col++) {
-						double v = _op.fn.execute(_retDense[offset], vr);
-						_retDense[offset] = v;
-						offset++;
-					}
-				}
+			else
+				processDense(rl, ru);
+		}
 
+		private final void processDense(final int rl, final int ru) {
+			int offset = rl * _m1.getNumColumns();
+			final double[] _retDense = _ret.getDenseBlockValues();
+			final double[] _m2Dense = _m2.getDenseBlockValues();
+			for(int row = rl; row < ru; row++) {
+				final double vr = _m2Dense[row];
+				for(int col = 0; col < _m1.getNumColumns(); col++) {
+					_retDense[offset] = _op.fn.execute(_retDense[offset], vr);
+					offset++;
+				}
 			}
 		}
 	}
@@ -534,13 +525,8 @@ public class CLALibBinaryCellOp {
 		@Override
 		public Long call() {
 			final List<AColGroup> groups = _m1.getColGroups();
-			final int _blklen = Math.max(65536 * 2 / _ret.getNumColumns() / groups.size(), 64);
-
-			final AIterator[] its = new AIterator[groups.size()];
-
-			for(int i = 0; i < groups.size(); i++)
-				if(groups.get(i) instanceof ASDCZero)
-					its[i] = ((ASDCZero) groups.get(i)).getIterator(_rl);
+			final int _blklen = Math.max(16384 / _ret.getNumColumns() / groups.size(), 64);
+			final AIterator[] its = getIterators(groups, _rl);
 
 			long nnz = 0;
 			for(int r = _rl; r < _ru; r += _blklen) {
@@ -555,94 +541,113 @@ public class CLALibBinaryCellOp {
 		private final void processBlock(final int rl, final int ru, final List<AColGroup> groups, final AIterator[] its) {
 			// unsafe decompress, since we count nonzeros afterwards.
 			final DenseBlock db = _ret.getDenseBlock();
-			for(int i = 0; i < groups.size(); i++) {
-				final AColGroup g = groups.get(i);
-				// AColGroup g = _groups.get(i);
-				if(g instanceof ASDCZero)
-					((ASDCZero) g).decompressToDenseBlock(db, rl, ru, 0, 0, its[i]);
-				else
-					g.decompressToDenseBlock(db, rl, ru, 0, 0);
-			}
+			decompressToSubBlock(rl, ru, db, groups, its);
 
+			if(_left)
+				processLeft(rl, ru);
+			else
+				processRight(rl, ru);
+		}
+
+		private final void processLeft(final int rl, final int ru) {
+			// all exec should have ret on right side
+			if(_m2.isInSparseFormat())
+				processLeftSparse(rl, ru);
+			else
+				processLeftDense(rl, ru);
+		}
+
+		private final void processLeftSparse(final int rl, final int ru) {
 			final DenseBlock rv = _ret.getDenseBlock();
 			final int cols = _ret.getNumColumns();
-			if(_left) {
-				// all exec should have ret on right side
-				if(_m2.isInSparseFormat()) {
-					final SparseBlock m2sb = _m2.getSparseBlock();
-					for(int r = rl; r < ru; r++) {
-						final double[] retV = rv.values(r);
-						int off = rv.pos(r);
-						if(m2sb.isEmpty(r)) {
-							for(int c = off; c < cols + off; c++)
-								retV[c] = _op.fn.execute(retV[c], 0);
-						}
-						else {
-							final int apos = m2sb.pos(r);
-							final int alen = m2sb.size(r) + apos;
-							final int[] aix = m2sb.indexes(r);
-							final double[] avals = m2sb.values(r);
-							int j = 0;
-							for(int k = apos; j < cols && k < alen; j++, off++) {
-								final double v = aix[k] == j ? avals[k++] : 0;
-								retV[off] = _op.fn.execute(v, retV[off]);
-							}
-
-							for(; j < cols; j++)
-								retV[off] = _op.fn.execute(0, retV[off]);
-						}
-					}
+			final SparseBlock m2sb = _m2.getSparseBlock();
+			for(int r = rl; r < ru; r++) {
+				final double[] retV = rv.values(r);
+				int off = rv.pos(r);
+				if(m2sb.isEmpty(r)) {
+					for(int c = off; c < cols + off; c++)
+						retV[c] = _op.fn.execute(retV[c], 0);
 				}
 				else {
-					DenseBlock m2db = _m2.getDenseBlock();
-					for(int r = rl; r < ru; r++) {
-						double[] retV = rv.values(r);
-						double[] m2V = m2db.values(r);
-
-						int off = rv.pos(r);
-						for(int c = off; c < cols + off; c++)
-							retV[c] = _op.fn.execute(m2V[c], retV[c]);
+					final int apos = m2sb.pos(r);
+					final int alen = m2sb.size(r) + apos;
+					final int[] aix = m2sb.indexes(r);
+					final double[] avals = m2sb.values(r);
+					int j = 0;
+					for(int k = apos; j < cols && k < alen; j++, off++) {
+						final double v = aix[k] == j ? avals[k++] : 0;
+						retV[off] = _op.fn.execute(v, retV[off]);
 					}
+
+					for(; j < cols; j++)
+						retV[off] = _op.fn.execute(0, retV[off]);
 				}
 			}
-			else {
-				// all exec should have ret on left side
-				if(_m2.isInSparseFormat()) {
-					final SparseBlock m2sb = _m2.getSparseBlock();
-					for(int r = rl; r < ru; r++) {
-						final double[] retV = rv.values(r);
-						int off = rv.pos(r);
-						if(m2sb.isEmpty(r)) {
-							for(int c = off; c < cols + off; c++)
-								retV[c] = _op.fn.execute(retV[c], 0);
-						}
-						else {
-							final int apos = m2sb.pos(r);
-							final int alen = m2sb.size(r) + apos;
-							final int[] aix = m2sb.indexes(r);
-							final double[] avals = m2sb.values(r);
-							int j = 0;
-							for(int k = apos; j < cols && k < alen; j++, off++) {
-								final double v = aix[k] == j ? avals[k++] : 0;
-								retV[off] = _op.fn.execute(retV[off], v);
-							}
+		}
 
-							for(; j < cols; j++)
-								retV[off] = _op.fn.execute(retV[off], 0);
-						}
-					}
+		private final void processLeftDense(final int rl, final int ru) {
+			final DenseBlock rv = _ret.getDenseBlock();
+			final int cols = _ret.getNumColumns();
+			DenseBlock m2db = _m2.getDenseBlock();
+			for(int r = rl; r < ru; r++) {
+				double[] retV = rv.values(r);
+				double[] m2V = m2db.values(r);
+
+				int off = rv.pos(r);
+				for(int c = off; c < cols + off; c++)
+					retV[c] = _op.fn.execute(m2V[c], retV[c]);
+			}
+		}
+
+		private final void processRight(final int rl, final int ru) {
+			// all exec should have ret on left side
+			if(_m2.isInSparseFormat())
+				processRightSparse(rl, ru);
+			else
+				processRightDense(rl, ru);
+		}
+
+		private final void processRightSparse(final int rl, final int ru) {
+			final DenseBlock rv = _ret.getDenseBlock();
+			final int cols = _ret.getNumColumns();
+
+			final SparseBlock m2sb = _m2.getSparseBlock();
+			for(int r = rl; r < ru; r++) {
+				final double[] retV = rv.values(r);
+				int off = rv.pos(r);
+				if(m2sb.isEmpty(r)) {
+					for(int c = off; c < cols + off; c++)
+						retV[c] = _op.fn.execute(retV[c], 0);
 				}
 				else {
-					final DenseBlock m2db = _m2.getDenseBlock();
-					for(int r = rl; r < ru; r++) {
-						final double[] retV = rv.values(r);
-						final double[] m2V = m2db.values(r);
-
-						int off = rv.pos(r);
-						for(int c = off; c < cols + off; c++)
-							retV[c] = _op.fn.execute(retV[c], m2V[c]);
+					final int apos = m2sb.pos(r);
+					final int alen = m2sb.size(r) + apos;
+					final int[] aix = m2sb.indexes(r);
+					final double[] avals = m2sb.values(r);
+					int j = 0;
+					for(int k = apos; j < cols && k < alen; j++, off++) {
+						final double v = aix[k] == j ? avals[k++] : 0;
+						retV[off] = _op.fn.execute(retV[off], v);
 					}
+
+					for(; j < cols; j++)
+						retV[off] = _op.fn.execute(retV[off], 0);
 				}
+			}
+
+		}
+
+		private final void processRightDense(final int rl, final int ru) {
+			final DenseBlock rv = _ret.getDenseBlock();
+			final int cols = _ret.getNumColumns();
+			final DenseBlock m2db = _m2.getDenseBlock();
+			for(int r = rl; r < ru; r++) {
+				final double[] retV = rv.values(r);
+				final double[] m2V = m2db.values(r);
+
+				int off = rv.pos(r);
+				for(int c = off; c < cols + off; c++)
+					retV[c] = _op.fn.execute(retV[c], m2V[c]);
 			}
 		}
 	}
@@ -725,5 +730,27 @@ public class CLALibBinaryCellOp {
 		public AColGroup call() {
 			return _group.binaryRowOpRight(_op, _v, _isRowSafe);
 		}
+	}
+
+	protected static void decompressToSubBlock(final int rl, final int ru, final DenseBlock db,
+		final List<AColGroup> groups, final AIterator[] its) {
+		for(int i = 0; i < groups.size(); i++) {
+			final AColGroup g = groups.get(i);
+			if(g.getCompType() == CompressionType.SDC)
+				((ASDCZero) g).decompressToDenseBlock(db, rl, ru, 0, 0, its[i]);
+			else
+				g.decompressToDenseBlock(db, rl, ru, 0, 0);
+		}
+	}
+
+	protected static AIterator[] getIterators(final List<AColGroup> groups, final int rl) {
+		final AIterator[] its = new AIterator[groups.size()];
+		for(int i = 0; i < groups.size(); i++) {
+
+			final AColGroup g = groups.get(i);
+			if(g.getCompType() == CompressionType.SDC)
+				its[i] = ((ASDCZero) g).getIterator(rl);
+		}
+		return its;
 	}
 }

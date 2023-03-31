@@ -51,6 +51,14 @@ public class OffsetChar extends AOffset {
 	}
 
 	@Override
+	protected AIterator getIteratorFromIndexOff(int row, int dataIndex, int offIdx) {
+		if(noZero)
+			return new IterateCharOffset(dataIndex, offIdx, row);
+		else
+			return new IterateCharOffsetNoZero(dataIndex, row);
+	}
+
+	@Override
 	public AOffsetIterator getOffsetIterator() {
 		if(noZero)
 			return new OffsetCharIteratorNoZero();
@@ -133,7 +141,7 @@ public class OffsetChar extends AOffset {
 	}
 
 	@Override
-	protected int getLength(){
+	protected int getLength() {
 		return offsets.length;
 	}
 

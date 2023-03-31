@@ -31,7 +31,8 @@
 # ctypes          Row-Vector of column types [1 scale/ordinal, 2 categorical]
 #                 of shape 1-by-(ncol(X)+1), where the last entry is the y type
 # max_depth       Maximum depth of the learned tree (stopping criterion)
-# min_leaf        Minimum number of samples in leaf nodes (stopping criterion)
+# min_leaf        Minimum number of samples in leaf nodes (stopping criterion),
+#                 odd number recommended to avoid 50/50 leaf label decisions
 # min_split       Minimum number of samples in leaf for attempting a split
 # max_features    Parameter controlling the number of features used as split
 #                 candidates at tree nodes: m = ceil(num_features^max_features)
@@ -64,9 +65,18 @@ m_decisionTree = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] cty
 {
   t1 = time();
 
+  # validation checks
+  if( max_depth > 32 )
+    stop("decisionTree: invalid max_depth > 32: "+max_depth);
+  if( sum(X<=0) != 0 )
+    stop("decisionTree: feature matrix X is not properly recoded/binned.");
+  if( sum(y<=0) != 0 )
+    stop("decisionTree: label vector y is not properly recoded/binned.");
+
   # initialize input data and basic statistics
   m = nrow(X); n = ncol(X);
   classify = (as.scalar(ctypes[1,n+1]) == 2);
+
   fdom = colMaxs(X);                  # num distinct per feature
   foffb = t(cumsum(t(fdom))) - fdom;  # feature begin
   foffe = t(cumsum(t(fdom)))          # feature end
@@ -82,8 +92,8 @@ m_decisionTree = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] cty
       + max_features + ", impurity=" + impurity + ", seed=" + seed + ".");
     print("decisionTree: basic statistics:");
     print("-- impurity: " + computeImpurity(y2, I, impurity) );
-    print("-- minCount: " + min(cnt));
-    print("-- maxCount: " + max(cnt));
+    print("-- minFeatureCount: " + min(cnt));
+    print("-- maxFeatureCount: " + max(cnt));
   }
 
   # queue-based node splitting
@@ -105,11 +115,11 @@ m_decisionTree = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] cty
       X2, y2, foffb, foffe, nID, nI, min_leaf, max_features, impurity, nSeed);
     validSplit = sum(Ileft) >= min_leaf & sum(Iright) >= min_leaf;
     if(verbose)
-      print("-- best split: "+f+":"+v+" -> valid="+validSplit);
+      print("-- best split: f"+f+" <= "+v+" --> valid="+validSplit);
     if( validSplit )
       M[, 2*nID-1:2*nID] = t(as.matrix(list(f,v)));
     else
-      M[, 2*nID] = computeLeafLabel(y2, nI, classify);
+      M[, 2*nID] = computeLeafLabel(y2, nI, classify, verbose);
     maxPath = max(maxPath, floor(log(nID,2)+1));
 
     # split data, finalize or recurse
@@ -117,11 +127,11 @@ m_decisionTree = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] cty
       if( sum(Ileft) >= min_split & floor(log(IDleft,2))+2 < max_depth )
         queue = append(queue, list(IDleft,Ileft));
       else
-        M[,2*IDleft] = computeLeafLabel(y2, Ileft, classify)
+        M[,2*IDleft] = computeLeafLabel(y2, Ileft, classify, verbose)
       if( sum(Iright) >= min_split & floor(log(IDright,2))+2 < max_depth )
         queue = append(queue, list(IDright,Iright));
       else
-        M[,2*IDright] = computeLeafLabel(y2, Iright, classify)
+        M[,2*IDright] = computeLeafLabel(y2, Iright, classify, verbose)
       maxPath = max(maxPath, floor(log(IDleft,2)+1));
     }
   }
@@ -183,10 +193,15 @@ findBestSplit = function(Matrix[Double] X2, Matrix[Double] y2, Matrix[Double] fo
   f = as.integer(as.scalar(feat[ix,1]));
   beg = as.scalar(foffb[1,f]);
   v = as.integer(as.scalar(R[3,ix])-beg);
-  while(FALSE){} # TODO make beg automatically known
-  p = table(seq(beg+1, beg+v), 1, ncol(X2), 1);
-  Ileft = ((X2 %*% p) * I) != 0;
-  Iright = I * (Ileft==0);
+  if( max(R[2,]) > 0 ) {
+    p = table(seq(beg+1, beg+v), 1, ncol(X2), 1);
+    Ileft = ((X2 %*% p) * I) != 0;
+    Iright = I * (Ileft==0);
+  }
+  else { # no information gain
+    Ileft = as.matrix(0);
+    Iright = as.matrix(0);
+  }
 }
 
 computeImpurity = function(Matrix[Double] y2, Matrix[Double] I, String impurity)
@@ -202,10 +217,12 @@ computeImpurity = function(Matrix[Double] y2, Matrix[Double] I, String impurity)
     stop("decisionTree: unsupported impurity measure: "+impurity);
 }
 
-computeLeafLabel = function(Matrix[Double] y2, Matrix[Double] I, Boolean classify)
+computeLeafLabel = function(Matrix[Double] y2, Matrix[Double] I, Boolean classify, Boolean verbose)
   return(Double label)
 {
   f = colSums(y2 * I) / sum(I);
   label = ifelse(classify,
     as.scalar(rowIndexMax(f)), sum(t(f)*seq(1,ncol(f))));
+  if(verbose)
+    print("-- leaf node label: " + label +" ("+sum(I)*max(f)+"/"+sum(I)+")");
 }

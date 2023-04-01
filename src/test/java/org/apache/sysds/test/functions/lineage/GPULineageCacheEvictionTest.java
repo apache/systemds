@@ -38,8 +38,8 @@ import jcuda.runtime.cudaError;
 public class GPULineageCacheEvictionTest extends AutomatedTestBase{
 	
 	protected static final String TEST_DIR = "functions/lineage/";
-	protected static final String TEST_NAME1 = "GPUCacheEviction1"; 
-	protected static final String TEST_NAME2 = "GPUCacheEviction2"; 
+	protected static final String TEST_NAME = "GPUCacheEviction";
+	protected static final int TEST_VARIANTS = 3;
 	protected String TEST_CLASS_DIR = TEST_DIR + GPULineageCacheEvictionTest.class.getSimpleName() + "/";
 	
 	@BeforeClass
@@ -51,18 +51,23 @@ public class GPULineageCacheEvictionTest extends AutomatedTestBase{
 	@Override
 	public void setUp() {
 		TestUtils.clearAssertionInformation();
-		addTestConfiguration( TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] {"R"}) );
-		addTestConfiguration( TEST_NAME2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[] {"R"}) );
+		for( int i=1; i<=TEST_VARIANTS; i++ )
+			addTestConfiguration(TEST_NAME+i, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME+i));
 	}
 	
 	@Test
-	public void eviction() {  // generate eviction
-		testLineageTraceExec(TEST_NAME2);
+	public void eviction() {  //generate eviction
+		testLineageTraceExec(TEST_NAME+"2");
 	}
 
 	@Test
-	public void reuseAndEviction() {  // reuse and eviction
-		testLineageTraceExec(TEST_NAME1);
+	public void reuseAndEviction() {  //reuse and eviction
+		testLineageTraceExec(TEST_NAME+"1");
+	}
+
+	@Test
+	public void miniBatchEviction() {  //neural network-style workload
+		testLineageTraceExec(TEST_NAME+"3");
 	}
 
 

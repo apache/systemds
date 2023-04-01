@@ -170,6 +170,7 @@ public class LineageCache
 		return reuse;
 	}
 
+	// Reuse function and statement block outputs
 	public static boolean reuse(List<String> outNames, List<DataIdentifier> outParams, 
 			int numOutputs, LineageItem[] liInputs, String name, ExecutionContext ec)
 	{
@@ -216,11 +217,24 @@ public class LineageCache
 					((MatrixObject)boundValue).acquireModify(e.getMBValue());
 					((MatrixObject)boundValue).release();
 				}
-				else {
+				else if (e.isGPUObject()) {
+					MetaDataFormat md = new MetaDataFormat(e.getDataCharacteristics(), FileFormat.BINARY);
+					boundValue = new MatrixObject(ValueType.FP64, boundVarName, md);
+					//Create a GPUObject with the cached pointer
+					GPUObject gpuObj = new GPUObject(ec.getGPUContext(0),
+						((MatrixObject)boundValue), e.getGPUPointer());
+					//Set dirty to true, so that it is later copied to the host for write
+					gpuObj.setDirty(true);
+					((MatrixObject) boundValue).setGPUObject(ec.getGPUContext(0), gpuObj);
+					//Increment the live count for this pointer
+					LineageGPUCacheEviction.incrementLiveCount(e.getGPUPointer());
+				}
+				else if (e.isScalarValue()) {
 					boundValue = e.getSOValue();
 					if (boundValue == null && e.getCacheStatus() == LineageCacheStatus.NOTCACHED)
 						return false;  //the executing thread removed this entry from cache
 				}
+				//TODO: support reusing RDD output of functions
 
 				funcOutputs.put(boundVarName, boundValue);
 				LineageItem orig = e._origItem;

@@ -24,10 +24,13 @@ import java.util.HashMap;
 import java.util.List;
 
 import org.apache.sysds.runtime.lineage.Lineage;
+import org.apache.sysds.runtime.lineage.LineageCacheConfig;
+import org.apache.sysds.runtime.lineage.LineageCacheStatistics;
 import org.apache.sysds.runtime.matrix.data.MatrixValue;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
+import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -37,8 +40,8 @@ import jcuda.runtime.cudaError;
 public class GPUFullReuseTest extends AutomatedTestBase{
 	
 	protected static final String TEST_DIR = "functions/lineage/";
-	protected static final String TEST_NAME1 = "FullReuseGPU1"; 
-	protected static final String TEST_NAME2 = "LineageTraceGPU1"; 
+	protected static final String TEST_NAME = "LineageReuseGPU";
+	protected static final int TEST_VARIANTS = 4;
 	protected String TEST_CLASS_DIR = TEST_DIR + GPUFullReuseTest.class.getSimpleName() + "/";
 	
 	@BeforeClass
@@ -51,20 +54,30 @@ public class GPUFullReuseTest extends AutomatedTestBase{
 	@Override
 	public void setUp() {
 		TestUtils.clearAssertionInformation();
-		addTestConfiguration( TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] {"R"}) );
-		addTestConfiguration( TEST_NAME2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[] {"R"}) );
+		for( int i=1; i<=TEST_VARIANTS; i++ )
+			addTestConfiguration(TEST_NAME+i, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME+i));
 	}
 	
 	@Test
 	public void ReuseAggBin() {           //reuse AggregateBinary and sum
-		testLineageTraceExec(TEST_NAME1);
+		testLineageTraceExec(TEST_NAME+"1");
 	}
 
 	@Test
 	public void ReuseSimpleHLM() {        //hyper-parameter tuning over LM (simple)
-		testLineageTraceExec(TEST_NAME2);
+		testLineageTraceExec(TEST_NAME+"2");
 	}
-	
+
+	@Test
+	public void ReuseFunction() {         //multi-level reuse for GPU
+		testLineageTraceExec(TEST_NAME+"3");
+	}
+
+	@Test
+	public void ReuseGridSearchLM() {     //grid search HO for LM
+		testLineageTraceExec(TEST_NAME+"4");
+	}
+
 	private void testLineageTraceExec(String testname) {
 		System.out.println("------------ BEGIN " + testname + "------------");
 		getAndLoadTestConfiguration(testname);
@@ -84,7 +97,7 @@ public class GPUFullReuseTest extends AutomatedTestBase{
 		
 		proArgs.add("-stats");
 		proArgs.add("-lineage");
-		proArgs.add("reuse_full");
+		proArgs.add(LineageCacheConfig.ReuseCacheType.REUSE_MULTILEVEL.name().toLowerCase());
 		proArgs.add("-args");
 		proArgs.add(output("R"));
 		programArgs = proArgs.toArray(new String[proArgs.size()]);
@@ -98,6 +111,10 @@ public class GPUFullReuseTest extends AutomatedTestBase{
 
 		//compare results 
 		TestUtils.compareMatrices(R_orig, R_reused, 1e-6, "Origin", "Reused");
+
+		if( testname.endsWith("3") ) { //function reuse
+			Assert.assertEquals(1L, LineageCacheStatistics.getMultiLevelFnHits());
+		}
 	}
 }
 

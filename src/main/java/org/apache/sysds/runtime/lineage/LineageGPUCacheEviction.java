@@ -84,6 +84,7 @@ public class LineageGPUCacheEviction
 			long size = getPointerSize(ptr);
 			if (!freeQueues.containsKey(size))
 				freeQueues.put(size, new TreeSet<>(LineageCacheConfig.LineageCacheComparator));
+				//FIXME: Multiple entries can point to same pointer due to multi-level reuse
 			freeQueues.get(size).add(GPUCacheEntries.get(ptr));
 		}
 	}

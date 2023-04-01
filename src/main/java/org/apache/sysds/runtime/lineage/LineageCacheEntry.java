@@ -168,11 +168,11 @@ public class LineageCacheEntry {
 	}
 	
 	public boolean isMatrixValue() {
-		return _dt.isMatrix() && _rddObject == null;
+		return _dt.isMatrix() && _rddObject == null && _gpuPointer == null;
 	}
 
 	public boolean isScalarValue() {
-		return _dt.isScalar() && _rddObject == null;
+		return _dt.isScalar() && _rddObject == null && _gpuPointer == null;
 	}
 
 	public boolean isRDDPersist() {

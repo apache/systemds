@@ -63,7 +63,7 @@ m_multiLogRegPredict = function(Matrix[Double] X, Matrix[Double] B, Matrix[Doubl
   predicted_Y = rowIndexMax(M); # extract the class labels
 
   if(nrow(Y) != 0)
-    accuracy = sum((predicted_Y - Y) == 0) / nrow(Y) * 100;
+    accuracy = (sum((predicted_Y - Y) == 0) / nrow(Y))*100;
   
   if(verbose)
     print("Accuracy (%): " + accuracy);

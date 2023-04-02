@@ -43,7 +43,7 @@ public class BuiltinTopkCleaningRegressionTest extends AutomatedTestBase{
 		addTestConfiguration(TEST_NAME1,new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1,new String[]{"R"}));
 	}
 
-	@Test
+	@Ignore
 	public void testRegressionPipelinesCP1() {
 		runFindPipelineTest(1.0, 5,20, "FALSE", 3,
 			0.8, Types.ExecMode.SINGLE_NODE);

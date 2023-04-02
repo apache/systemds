@@ -32,10 +32,10 @@
 # indexes  indexes
 # ----------------------------------------------------------------------------------------
 
-m_vectorToCsv = function(Matrix[Double] mask)
+m_vectorToCsv = function(Matrix[Double] mask = as.matrix(0), Integer n=1)
 return (String indexes){
 
-  vector  = mask * t(seq(1, ncol(mask)))
+  vector  = mask * t(seq(1, n))
   vector = removeEmpty(target = vector, margin = "cols")
   if(nrow(vector) >  ncol(vector))
     vector = t(vector)

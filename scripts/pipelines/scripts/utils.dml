@@ -184,8 +184,8 @@ return(Frame[Unknown] data, List[Unknown] distanceMatrix, List[Unknown] dictiona
   # data = valueSwap(data, schema)
   
   # step 3 drop invalid types
-    print(prefix+" drop values with type mismatch");
-    data = dropInvalidType(data, schema)
+    # print(prefix+" drop values with type mismatch");
+    # data = dropInvalidType(data, schema)
   
 
 
@@ -246,7 +246,7 @@ return(Frame[Unknown] data)
   # data = valueSwap(data, schema)
 
   # step 3 drop invalid types
-  data = dropInvalidType(data, schema)
+  # data = dropInvalidType(data, schema)
 
 
   # step 5 porter stemming on all features

@@ -72,7 +72,7 @@ m_miceApply = function(Matrix[Double] X, Matrix[Double] meta, Double threshold, 
   n = nrow(X1)
   
   # compute index of categorical features
-  index = vectorToCsv(mask)
+  index = vectorToCsv(mask, ncol(mask))
   # specifications for one-hot encoding of categorical features
   jspecDC = "{ids:true, dummycode:["+index+"]}";
   

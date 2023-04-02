@@ -57,7 +57,8 @@ m_bandit = function(Matrix[Double] X_train, Matrix[Double] Y_train, Matrix[Doubl
   totalPruneCount = 0
   FLAG_VARIABLE = 5
   pipelines_executed = 0
-  HYPERPARAM_LENGTH = ((ncol(lp) + 2) * FLAG_VARIABLE * 3) + 1 ## num of col in logical * 5 meat flag vars * max hyperparam per op + 1 accuracy col
+  maxValueInParam = max(as.matrix(param[, 3]))
+  HYPERPARAM_LENGTH = ((ncol(lp) + 2) * FLAG_VARIABLE * maxValueInParam) + 1 ## num of col in logical * 5 meat flag vars * max hyperparam per op + 1 accuracy col
   bestPipeline = frame("", rows=1, cols=1)
   bestHyperparams = as.matrix(0)
   bestAccuracy = as.matrix(0)
@@ -111,7 +112,7 @@ m_bandit = function(Matrix[Double] X_train, Matrix[Double] Y_train, Matrix[Doubl
       configurations = configurations[1:n_i, ]
       pipelines_executed = pipelines_executed + (n_i * r_i)
       [outPip,outHp, pruneCount] = run_with_hyperparam(ph_pip=configurations, r_i=r_i, X=X_train, Y=Y_train, Xtest=X_test, Ytest=Y_test, metaList=metaList,
-        evaluationFunc=evaluationFunc, evalFunHp=evalFunHp, param=param, cv=cv, cvk=cvk, ref=ref, seed = seed, enablePruning=enablePruning)
+        evaluationFunc=evaluationFunc, evalFunHp=evalFunHp, param=param, maxOpCount=maxValueInParam, cv=cv, cvk=cvk, ref=ref, seed = seed, enablePruning=enablePruning)
       totalPruneCount = totalPruneCount + pruneCount
       # sort the pipelines by order of accuracy decreasing
       IX = order(target = outPip, by = 1, decreasing=TRUE, index.return=TRUE)
@@ -214,19 +215,21 @@ get_physical_configurations = function(Frame[String] logical, Scalar[int] numCon
 # # this method will call the execute pipelines with their hyper-parameters
 run_with_hyperparam = function(Frame[Unknown] ph_pip, Integer r_i = 1, Matrix[Double] X, Matrix[Double] Y,
   Matrix[Double] Xtest, Matrix[Double] Ytest, List[Unknown] metaList, String evaluationFunc, Matrix[Double] evalFunHp,
-  Frame[Unknown] param, Boolean cv = FALSE,  Integer cvk = 2, Double ref = 0, Integer seed = -1, Boolean enablePruning = FALSE, Boolean default = FALSE)
+  Frame[Unknown] param, Boolean cv = FALSE,  Integer maxOpCount=3, Integer cvk = 2, Double ref = 0, Integer seed = -1, Boolean enablePruning = FALSE, Boolean default = FALSE)
   return (Matrix[Double] output_operator, Matrix[Double] output_hyperparam, Integer pruneCount, Matrix[Double] changesByPipMatrix)
 {
   # # # TODO there is a partial overlap but it is negligible so we will not rewrite the scripts but lineage based reuse will get rid of it
+  tfspec=as.scalar(metaList["tfspec"])
+  mask=as.matrix(metaList["mask"])
   changesByPipMatrix = matrix(0, rows=nrow(ph_pip) * r_i, cols=1)
   pruneCount = 0
-  output_hp = matrix(0, nrow(ph_pip)*r_i, (ncol(ph_pip)) * 5 * 3)
+  output_hp = matrix(0, nrow(ph_pip)*r_i, (ncol(ph_pip)) * 5 * maxOpCount)
   output_accuracy = matrix(0, nrow(ph_pip)*r_i, 1)
   output_pipelines = matrix(0, nrow(ph_pip)*r_i, 3)
   # rows in validation set
   ids = as.matrix(ph_pip[, 1:2])
   ph_pip = ph_pip[, 3:ncol(ph_pip)]
-  inputHpMatrix = matrix(0, nrow(ph_pip)*r_i, (ncol(ph_pip)) * 5 * 3 + 1)
+  inputHpMatrix = matrix(0, nrow(ph_pip)*r_i, (ncol(ph_pip)) * 5 * maxOpCount + 1)
   # prepare the pipelines and resources
   allPipelines = frame(0, rows = nrow(ph_pip) * r_i, cols=ncol(ph_pip))
   allApplyFunctions = frame(0, rows = nrow(ph_pip) * r_i, cols=ncol(ph_pip))
@@ -286,7 +289,7 @@ run_with_hyperparam = function(Frame[Unknown] ph_pip, Integer r_i = 1, Matrix[Do
     hp = hp[, 2:totalVals]
     applyFunctions = allApplyFunctions[i]
     no_of_res = nrow(hp)
-    # print("PIPELINE EXECUTION START ... "+toString(op))
+    print("PIPELINE EXECUTION START ... "+toString(op))
     hpForPruning = matrix(0, rows=1, cols=ncol(op))
     changesByOp = matrix(0, rows=1, cols=ncol(op))
     metaList2 = metaList; #ensure metaList is no result var
@@ -317,7 +320,7 @@ run_with_hyperparam = function(Frame[Unknown] ph_pip, Integer r_i = 1, Matrix[Do
         else if(changesByPip < ref)
           print("prunningAlert 2: not training the model due to minimum changes")
         else 
-          evalFunOutput = eval(evaluationFunc, list(X=eXtrain, Y=eYtrain, Xtest=eXtest, Ytest=eYtest, Xorig=as.matrix(0), evalFunHp=evalFunHp))
+          evalFunOutput = eval(evaluationFunc, list(X=eXtrain, Y=eYtrain, Xtest=eXtest, Ytest=eYtest, Xorig=mask, evalFunHp=evalFunHp, tfspec=tfspec))
           accuracy = as.scalar(evalFunOutput[1, 1])
       }
 
@@ -506,12 +509,13 @@ crossV = function(Matrix[double] X, Matrix[double] y, Integer cvk, Matrix[Double
   Matrix[Double] hpForPruning = as.matrix(0), Matrix[Double] changesByOp = as.matrix(0), String evalFunc, Double ref = 0) 
 return (Double accuracy, Matrix[Double] evalFunHp, Matrix[Double] hpForPruning, Matrix[Double] changesByOp, Double allChanges)
 {
-
+  tfspec = as.scalar(metaList['tfspec'])
   # # in the below condition we compute the hp using cv method on train dataset
-  if(is.na(as.scalar(evalFunHp[1,1]))) {
-    forEvalHp = eval(evalFunc, list(X=X, Y=y, Xtest=X, Ytest=y, Xorig=as.matrix(0), evalFunHp=evalFunHp))
+  if(is.na(as.scalar(evalFunHp[1,1])) & tfspec=="NA") {
+    forEvalHp = eval(evalFunc, list(X=X, Y=y, Xtest=X, Ytest=y, Xorig=as.matrix(0), evalFunHp=evalFunHp, tfspec=tfspec))
     evalFunHp = forEvalHp[1, 2:ncol(forEvalHp)]
   } 
+  mask = as.matrix(metaList['mask'])
   changesByPip = 0
   cvChanges = matrix(0, rows=cvk, cols=ncol(changesByOp))
   accuracyMatrix = matrix(0, cvk, 1)
@@ -547,9 +551,9 @@ return (Double accuracy, Matrix[Double] evalFunHp, Matrix[Double] hpForPruning, 
       allChanges[i] = changesByPip
     }
     if(changesByPip < ref)
-      print("prunning alert 2: no training the model due to minimum changes")
+      print("pruning alert 2: no training the model due to minimum changes")
     else { 
-      res = eval(evalFunc, list(X=trainX, Y=trainy, Xtest=testX, Ytest=testy, Xorig=as.matrix(0), evalFunHp=evalFunHp))
+      res = eval(evalFunc, list(X=trainX, Y=trainy, Xtest=testX, Ytest=testy, Xorig=mask , evalFunHp=evalFunHp, tfspec=tfspec))
       accuracyMatrix[i] = res[1, 1]
     }
     

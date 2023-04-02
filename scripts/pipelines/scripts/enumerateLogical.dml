@@ -55,7 +55,7 @@ source("scripts/builtin/bandit.dml") as bandit;
 enumerateLogical = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] Xtest, Matrix[Double] ytest,
   Frame[Unknown] initial_population, Frame[String] refSol = as.frame("NaN"), Integer seed = -1, Integer max_iter=10,
   List[Unknown] metaList, String evaluationFunc, Matrix[Double] evalFunHp,
-  Frame[Unknown] primitives, Frame[Unknown] param, Double dirtyScore = 79, Boolean cv=FALSE, Boolean cvk=3,
+  Frame[Unknown] primitives, Frame[Unknown] param, Double dirtyScore = 79, Boolean cv=FALSE, Boolean cvk=3, Boolean OHE = TRUE,
   Boolean verbose, List[Unknown] ctx=list(prefix="----"))
 return (Frame[Unknown] outputPip, Matrix[Double] outputHp, boolean converged, Double refChanges, Frame[Unknown] acc)
 {
@@ -90,11 +90,12 @@ return (Frame[Unknown] outputPip, Matrix[Double] outputHp, boolean converged, Do
   ROWS = (max_iter+1)*(nrow(pipelines))
   finalOutputFrame = frame(0, rows=ROWS, cols=max_iter*2)
   # num of max operations * max hp per operation * no of flag + buffer for pipeline no and acc
-  maxParam = ncol(finalOutputFrame) * max(as.matrix(param[, 3])) * FLAGS + 2 
+  maxValueInParam = max(as.matrix(param[, 3]))
+  maxParam = ncol(finalOutputFrame) * maxValueInParam * FLAGS + 2 
   finalOutputMatrix = matrix(0, rows=ROWS, cols=maxParam)
   
   # # if the data has categorical columns then add the dummycode operation
-  if(sum(mask) > 0)
+  if(sum(mask) > 0 & OHE)
   {
     dummyEncode = frame("dummycoding", rows=nrow(pipelines), cols=1)
     pipelines[, 2] = dummyEncode
@@ -121,7 +122,7 @@ return (Frame[Unknown] outputPip, Matrix[Double] outputHp, boolean converged, Do
     # # # execute the physical pipelines
     [outPip, outHp, p, refChanges] = bandit::run_with_hyperparam(ph_pip=cbind(as.frame(id), population),
       X=X, Y=y, Xtest=Xtest, Ytest=ytest, metaList=metaList, evaluationFunc=evaluationFunc, evalFunHp=evalFunHp, param=param,
-      cv=cv, cvk=cvk, seed=seed, default=TRUE)
+      maxOpCount=maxValueInParam, cv=cv, cvk=cvk, seed=seed, default=TRUE)
     
     # # sort the configurations score-wise
     actPip = cbind(as.frame(outPip[, 1]), as.frame(refChanges))
@@ -174,7 +175,7 @@ return (Frame[Unknown] outputPip, Matrix[Double] outputHp, boolean converged, Do
         idx2 = min(max(pipRand), idx + 1)
         top2 = removeEmpty(target=topk[idx2], margin="cols")
         # # # keep the tail "dummycode" operation from transitions
-        if(sum(mask) > 0) {
+        if(sum(mask) > 0 & OHE) {
           tail = top[, ncol(top)]
           tail2 = top2[, ncol(top2)]
           top = top[, 1:ncol(top) - 1]
@@ -192,7 +193,7 @@ return (Frame[Unknown] outputPip, Matrix[Double] outputHp, boolean converged, Do
           c1 = crossover(top, top2, seed)
         
         # # # put back the tail operation 
-        if(sum(mask) > 0)
+        if(sum(mask) > 0 & OHE)
           c1 = cbind(c1, tail)
         children[i, 1:ncol(c1)] = c1
       }
@@ -215,7 +216,7 @@ return (Frame[Unknown] outputPip, Matrix[Double] outputHp, boolean converged, Do
 
   outputPip = outputPip[,3:ncol(outputPip)]
   # # # prepare the hyp output
-  hpLength = ((ncol(outputPip) + 2) * FLAGS * 3) + 1 
+  hpLength = ((ncol(outputPip) + 2) * FLAGS * maxValueInParam) + 1 
   outputHp = finalOutputMatrix[, 1:hpLength]
   outputHp = order(target = outputHp, by = 1, decreasing=FALSE)
 }

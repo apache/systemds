@@ -34,9 +34,9 @@ output=$output
 testCV = as.logical($testCV)
 trainTestSplit = as.double($split)
 cvk = as.integer($cvk)
-
+tfspec = read("D:/Workspace/Development/Systemml/src/test/resources/datasets/Salaries.json", data_type="scalar", value_type="string");
 split = nrow(F) * trainTestSplit
-  evalFunc = "evalRegression"
+  evalFunc = "evalRegressionDT"
 if(testCV) {
   trainData = F[1:split,]
   testData = frame("", rows=0, cols=0)
@@ -47,10 +47,10 @@ else {
 }
 
 # # # split in train/test 70/30
-#matrix("1 1e-6 1e-9 1000", rows=1, cols=4)
-[topKPipelines, topKHyperParams, topKScores, baseLineScore, evalFunHp, applyFunc] = topk_cleaning(dataTrain=trainData, dataTest=testData, 
-  primitives=primitives, parameters=param, evaluationFunc=evalFunc, evalFunHp=as.matrix(NaN),
-  topK=topK, resource_val=resources, cv=testCV, cvk=cvk, sample=sample, isLastLabel=TRUE, correctTypos=FALSE)
+[topKPipelines, topKHyperParams, topKScores, baseLineScore, evalFunHp, applyFunc] = topk_cleaning(dataTrain=trainData, dataTest=testData,primitives=primitives, parameters=param, 
+  refSol = frame(["imputeByMean", "scale"], rows=1, cols=2), tfspec=tfspec,
+  evaluationFunc=evalFunc, evalFunHp=as.matrix(NaN),topK=topK, resource_val=resources, enablePruning=TRUE, OHE=FALSE,
+  expectedIncrease=1, seed = 23, max_iter=10, cv=testCV, cvk=cvk, sample=sample, isLastLabel=TRUE, correctTypos=FALSE) 
 
 write(topKPipelines, output+"/pip.csv", format="csv")
 write(topKHyperParams, output+"/hp.csv", format="csv")
@@ -65,7 +65,7 @@ write(result, $O)
 # UDF for evaluation  
 # choice of parameters provided by API, X, Y, clone_X, evalFunHp (hyper-param), trainML (boolean for optimizing hp internally or passed by externally )
 evalRegression = function(Matrix[Double] X, Matrix[Double] Y, Matrix[Double] Xtest, Matrix[Double] Ytest, Matrix[Double] Xorig=as.matrix(0),
-  Matrix[Double] evalFunHp)
+  Matrix[Double] evalFunHp, String tfspec="NA")
 return(Matrix[Double] output)
 {
   if(is.na(as.scalar(evalFunHp[1,1])))
@@ -97,4 +97,57 @@ wmape = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] B) return (M
   # print("WMAPO: "+(1 - (sum(abs((pred - y)/(pred + y)))/nrow(y))))
   WMAPE = 1 - (sum(abs((pred - y)/(pred + y)))/nrow(y)) #this will give the lose into range of [0,1]
   loss = ifelse(is.na(as.matrix(WMAPE)), as.matrix(0), as.matrix(WMAPE))  
+}
+
+
+
+evalRegressionDT = function(Matrix[Double] X, Matrix[Double] Y, Matrix[Double] Xtest, Matrix[Double] Ytest, Matrix[Double] Xorig=as.matrix(0),
+  Matrix[Double] evalFunHp, String tfspec)
+return(Matrix[Double] output)
+{
+  
+  [X, meta] = transformencode(target=as.frame(X), spec=tfspec);
+  Xtest = transformapply(target=as.frame(Xtest), spec = tfspec, meta=meta)
+  X = imputeByMode(X);
+  Xtest = imputeByMode(Xtest);
+  X = replace(target=X, pattern=0, replacement=1)
+  Xtest = replace(target=Xtest, pattern=0, replacement=1)
+  
+  print("column minimums \n"+toString(colMins(X)))
+  R = cbind(Xorig, as.matrix(0)) + 1
+  print(toString(R))
+  if(min(Y) == max(Y))
+  {
+    accuracy = as.matrix(0)
+    a = 0
+  }
+  else {
+    M = decisionTree(X = X, y = Y, ctypes = R,  max_features=1, min_split=4, min_leaf=2, verbose=FALSE);
+    accuracy = Rsquared(X=Xtest, y=Ytest, M=M, R=R, jspec=tfspec, meta=meta);
+  }
+  output = cbind(accuracy, evalFunHp)
+}
+
+# accuracyDT = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] M, Matrix[Double] R) 
+  # return (Matrix[Double] acc, Matrix[Double] err) {
+  # yhat = decisionTreePredict(X=X, ctypes=R,  M=M)
+  # acc = as.matrix(mean(yhat == y))
+  # err = 1-(acc);
+# }
+
+Rsquared = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] M, Matrix[Double] R, String jspec, Frame[Unknown] meta) return (Matrix[Double] gain) {
+  # loss = as.matrix(sum((y - X%*%B)^2));
+  yhat = decisionTreePredict(X=X, ctypes=R,  M=M) #, B=B, ytest=y, verbose = TRUE);
+  print("predicted bins: "+toString(yhat))
+  while(FALSE){}
+  decoded = transformdecode(target=cbind(X, yhat), spec=jspec, meta=meta)
+  pred = as.matrix(decoded[, ncol(decoded)])
+  print("prediction: "+toString(yhat))
+  while(FALSE){}
+  Rsqu = sum((y - pred)^2)/sum((y - mean(y))^2) #this will give the lose into range of [0,1]
+  Rsqu = 1 - (Rsqu)
+  # adjRsqu = 1 - (((n - 1)/(n - k - 1)) * (1 - Rsqu))
+  print("Rs: "+Rsqu)
+  while(FALSE){}
+  gain = ifelse(is.na(as.matrix(Rsqu)), as.matrix(0), as.matrix(Rsqu))  
 }

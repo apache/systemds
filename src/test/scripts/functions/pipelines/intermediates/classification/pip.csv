@@ -1,3 +1,3 @@
-outlierBySd,winsorize,dummycoding,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
-normalize,abstain,dummycoding,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
-imputeByMean,outlierBySd,dummycoding,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+forward_fill,tomeklink,imputeByMedian,winsorize,dummycoding,0,0,0,0,0,0,0,0,0,0,0,0,0
+forward_fill,tomeklink,winsorize,dummycoding,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+imputeByMean,tomeklink,imputeByMedian,winsorize,dummycoding,0,0,0,0,0,0,0,0,0,0,0,0,0

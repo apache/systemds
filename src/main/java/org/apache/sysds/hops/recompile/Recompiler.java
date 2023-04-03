@@ -27,6 +27,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map.Entry;
 
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -62,6 +63,7 @@ import org.apache.sysds.lops.compile.Dag;
 import org.apache.sysds.lops.rewrite.LopRewriter;
 import org.apache.sysds.parser.DMLProgram;
 import org.apache.sysds.parser.DataExpression;
+import org.apache.sysds.parser.DataIdentifier;
 import org.apache.sysds.parser.ForStatementBlock;
 import org.apache.sysds.parser.IfStatementBlock;
 import org.apache.sysds.parser.ParseInfo;
@@ -136,6 +138,12 @@ public class Recompiler {
 		@Override protected LopRewriter initialValue() {return new LopRewriter();}
 	};
 	
+	// additional reused objects to avoid repeated, incremental reallocation on deepCopyDags
+	private static ThreadLocal<HashMap<Long,Hop>> _memoHop = new ThreadLocal<HashMap<Long,Hop>>() {
+		@Override protected HashMap<Long,Hop> initialValue() { return new HashMap<>(); }
+		@Override public HashMap<Long,Hop> get() { var tmp = super.get(); tmp.clear(); return tmp; }
+	};
+	
 	public enum ResetType {
 		RESET,
 		RESET_KNOWN_DIMS,
@@ -166,7 +174,7 @@ public class Recompiler {
 		
 		// replace thread ids in new instructions
 		if( ProgramBlock.isThreadID(tid) ) //only in parfor context
-			newInst = ProgramConverter.createDeepCopyInstructionSet(newInst, tid, -1, null, null, null, false, false);
+			newInst = ProgramConverter.createShallowCopyInstructionSet(newInst, tid);
 		
 		// remove writes if called through mlcontext or jmlc 
 		if( ec.getVariables().getRegisteredOutputs() != null )
@@ -198,7 +206,7 @@ public class Recompiler {
 		
 		// replace thread ids in new instructions
 		if( ProgramBlock.isThreadID(tid) ) //only in parfor context
-			newInst = ProgramConverter.createDeepCopyInstructionSet(newInst, tid, -1, null, null, null, false, false);
+			newInst = ProgramConverter.createShallowCopyInstructionSet(newInst, tid);
 		
 		// explain recompiled instructions
 		if( DMLScript.EXPLAIN == ExplainType.RECOMPILE_RUNTIME )
@@ -220,7 +228,7 @@ public class Recompiler {
 		
 		// replace thread ids in new instructions
 		if( ProgramBlock.isThreadID(tid) ) //only in parfor context
-			newInst = ProgramConverter.createDeepCopyInstructionSet(newInst, tid, -1, null, null, null, false, false);
+			newInst = ProgramConverter.createShallowCopyInstructionSet(newInst, tid);
 		
 		// explain recompiled hops / instructions
 		if( DMLScript.EXPLAIN == ExplainType.RECOMPILE_RUNTIME )
@@ -242,7 +250,7 @@ public class Recompiler {
 
 		// replace thread ids in new instructions
 		if( ProgramBlock.isThreadID(tid) ) //only in parfor context
-			newInst = ProgramConverter.createDeepCopyInstructionSet(newInst, tid, -1, null, null, null, false, false);
+			newInst = ProgramConverter.createShallowCopyInstructionSet(newInst, tid);
 		
 		// explain recompiled hops / instructions
 		if( DMLScript.EXPLAIN == ExplainType.RECOMPILE_RUNTIME )
@@ -390,7 +398,7 @@ public class Recompiler {
 		rSetMaxParallelism(hops, maxK);
 		
 		// construct lops
-		ArrayList<Lop> lops = new ArrayList<>();
+		ArrayList<Lop> lops = new ArrayList<>(hops.size());
 		for( Hop hopRoot : hops ){
 			lops.add(hopRoot.constructLops());
 		}
@@ -564,7 +572,7 @@ public class Recompiler {
 		try {
 			//note: need memo table over all independent DAGs in order to 
 			//account for shared transient reads (otherwise more instructions generated)
-			HashMap<Long, Hop> memo = new HashMap<>(); //orig ID, new clone
+			HashMap<Long, Hop> memo = _memoHop.get(); //orig ID, new clone
 			for( Hop hopRoot : hops )
 				ret.add(rDeepCopyHopsDag(hopRoot, memo));
 		}
@@ -585,7 +593,7 @@ public class Recompiler {
 		Hop ret = null;
 		
 		try {
-			HashMap<Long, Hop> memo = new HashMap<>(); //orig ID, new clone
+			HashMap<Long, Hop> memo = _memoHop.get(); //orig ID, new clone
 			ret = rDeepCopyHopsDag(hops, memo);
 		}
 		catch(Exception ex) {
@@ -955,8 +963,7 @@ public class Recompiler {
 	private static MatrixObject createOutputMatrix(long dim1, long dim2, long nnz) {
 		MatrixObject moOut = new MatrixObject(ValueType.FP64, null);
 		int blksz = ConfigurationManager.getBlocksize();
-		DataCharacteristics mc = new MatrixCharacteristics(
-				dim1, dim2, blksz, nnz);
+		DataCharacteristics mc = new MatrixCharacteristics(dim1, dim2, blksz, nnz);
 		MetaDataFormat meta = new MetaDataFormat(mc,null);
 		moOut.setMetaData(meta);
 		return moOut;
@@ -1140,19 +1147,12 @@ public class Recompiler {
 	 * @param callVars  Map of variables eligible for propagation.
 	 * @param sb  DML statement block.
 	 */
-	public static void removeUpdatedScalars( LocalVariableMap callVars, StatementBlock sb )
-	{
-		if( sb != null )
-		{
+	public static void removeUpdatedScalars( LocalVariableMap callVars, StatementBlock sb ) {
+		if( sb != null ) {
 			//remove updated scalar variables from constants
-			for( String varname : sb.variablesUpdated().getVariables().keySet() )
-			{
-				Data dat = callVars.get(varname);
-				if( dat != null && dat.getDataType() == DataType.SCALAR )
-				{
-					callVars.remove(varname);
-				}
-			}
+			for( Entry<String, DataIdentifier> v : sb.variablesUpdated().getVariables().entrySet() )
+				if( v.getValue().getDataType().isScalar() )
+					callVars.remove(v.getKey());
 		}
 	}
 	

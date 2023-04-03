@@ -52,7 +52,8 @@ public class BuiltinDecisionTreeRealDataTest extends AutomatedTestBase {
 
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[] {"-args", data, tfspec, output("R")};
+			programArgs = new String[] {"-stats",
+				"-args", data, tfspec, output("R")};
 
 			runTest(true, false, null, -1);
 

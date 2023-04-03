@@ -1267,44 +1267,18 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 	}
 
 	public static Instruction prepareCopyInstruction(String srcVar, String destVar) {
-		StringBuilder sb = new StringBuilder();
-		sb.append("CP");
-		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append("cpvar");
-		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append(srcVar);
-		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append(destVar);
-		return parseInstruction(sb.toString());
+		return parseInstruction(
+			InstructionUtils.concatOperands("CP", "cpvar", srcVar, destVar));
 	}
 
 	public static Instruction prepMoveInstruction(String srcVar, String destFileName, String format) {
-		StringBuilder sb = new StringBuilder();
-		sb.append("CP");
-		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append("mvvar");
-		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append(srcVar);
-		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append(destFileName);
-		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append(format);
-		String str = sb.toString();
-		return parseInstruction(str);
+		return parseInstruction(
+			InstructionUtils.concatOperands("CP", "mvvar", srcVar, destFileName, format));
 	}
 
 	public static Instruction prepMoveInstruction(String srcVar, String destVar) {
-		// example: mvvar tempA A
-		StringBuilder sb = new StringBuilder();
-		sb.append("CP");
-		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append("mvvar");
-		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append(srcVar);
-		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append(destVar);
-		String str = sb.toString();
-		return parseInstruction(str);
+		return parseInstruction(
+			InstructionUtils.concatOperands("CP", "mvvar", srcVar, destVar));
 	}
 
 	private static String getBasicCreatevarString(String varName, String fileName, boolean fNameOverride, DataType dt, String format) {
@@ -1313,22 +1287,10 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 		boolean lfNameOverride = fNameOverride && !ConfigurationManager
 			.getCompilerConfigFlag(ConfigType.IGNORE_TEMPORARY_FILENAMES);
 
-		StringBuilder sb = new StringBuilder();
-		sb.append("CP");
-		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append("createvar");
-		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append(varName);
-		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append(fileName);		// Constant CREATEVAR_FILE_NAME_VAR_POS is used to find a position of filename within a string generated through this function.
-									// If this position of filename within this string changes then constant CREATEVAR_FILE_NAME_VAR_POS to be updated.
-		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append(lfNameOverride);
-		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append(dt.toString());
-		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append(format);
-		return sb.toString();
+		// Constant CREATEVAR_FILE_NAME_VAR_POS is used to find a position of filename within a string generated through this function.
+		// If this position of filename within this string changes then constant CREATEVAR_FILE_NAME_VAR_POS to be updated.
+		return InstructionUtils.concatOperands(
+			"CP", "createvar", varName, fileName, String.valueOf(lfNameOverride), dt.toString(), format);
 	}
 
 	public static Instruction prepCreatevarInstruction(String varName, String fileName, boolean fNameOverride, String format) {
@@ -1336,47 +1298,18 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 	}
 
 	public static Instruction prepCreatevarInstruction(String varName, String fileName, boolean fNameOverride, DataType dt, String format, DataCharacteristics mc, UpdateType update) {
-		StringBuilder sb = new StringBuilder();
-		sb.append(getBasicCreatevarString(varName, fileName, fNameOverride, dt, format));
-
-		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append(mc.getRows());
-		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append(mc.getCols());
-		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append(mc.getBlocksize());
-		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append(mc.getNonZeros());
-		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append(update.toString().toLowerCase());
-
-		return parseInstruction(sb.toString());
+		return parseInstruction(InstructionUtils.concatOperands(
+			getBasicCreatevarString(varName, fileName, fNameOverride, dt, format),
+			String.valueOf(mc.getRows()), String.valueOf(mc.getCols()), String.valueOf(mc.getBlocksize()),
+			String.valueOf(mc.getNonZeros()), update.toString().toLowerCase()));
 	}
 
 	public static Instruction prepCreatevarInstruction(String varName, String fileName, boolean fNameOverride, DataType dt, String format, DataCharacteristics mc, UpdateType update, boolean hasHeader, String delim, boolean sparse) {
-		StringBuilder sb = new StringBuilder();
-		sb.append(getBasicCreatevarString(varName, fileName, fNameOverride, dt, format));
-
-		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append(mc.getRows());
-		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append(mc.getCols());
-		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append(mc.getBlocksize());
-		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append(mc.getNonZeros());
-		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append(update.toString().toLowerCase());
-
-		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append(hasHeader);
-		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append(delim);
-		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append(sparse);
-
-		String str = sb.toString();
-		return parseInstruction(str);
+		return parseInstruction(InstructionUtils.concatOperands(
+			getBasicCreatevarString(varName, fileName, fNameOverride, dt, format),
+			String.valueOf(mc.getRows()), String.valueOf(mc.getCols()), String.valueOf(mc.getBlocksize()),
+			String.valueOf(mc.getNonZeros()), update.toString().toLowerCase(),
+			String.valueOf(hasHeader), delim, String.valueOf(sparse)));
 	}
 
 	@Override
@@ -1393,10 +1326,10 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 			int iPos2 = StringUtils.indexOf(instString, Lop.OPERAND_DELIMITOR, iPos+1);
 
 			StringBuilder sb = new StringBuilder();
-			sb.append(instString.substring(0,iPos+1));			// It takes first part before file name.
+			sb.append(instString.substring(0,iPos+1)); // It takes first part before file name.
 			// This will replace 'pattern' with 'replace' string from file name.
 			sb.append(ProgramConverter.saveReplaceFilenameThreadID(instString.substring(iPos+1, iPos2+1), pattern, replace));
-			sb.append(instString.substring(iPos2+1));			// It takes last part after file name.
+			sb.append(instString.substring(iPos2+1)); // It takes last part after file name.
 
 			instString = sb.toString();
 		}

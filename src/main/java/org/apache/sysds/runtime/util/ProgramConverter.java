@@ -466,6 +466,15 @@ public class ProgramConverter
 		return tmp;
 	}
 
+	public static ArrayList<Instruction> createShallowCopyInstructionSet(ArrayList<Instruction> insts, long pid) {
+		ArrayList<Instruction> ret = new ArrayList<>();
+		for( Instruction inst : insts ) {
+			//save replacement of thread id references in instructions
+			ret.add(saveReplaceThreadID( inst, Lop.CP_ROOT_THREAD_ID, Lop.CP_CHILD_THREAD+pid));
+		}
+		return ret;
+	}
+	
 	public static Instruction cloneInstruction( Instruction oInst, long pid, boolean plain, boolean cpFunctions ) 
 	{
 		Instruction inst = null;
@@ -1723,6 +1732,7 @@ public class ProgramConverter
 
 	//////////
 	// CUSTOM SAFE LITERAL REPLACEMENT
+	
 	
 	/**
 	 * In-place replacement of thread ids in filenames, functions names etc

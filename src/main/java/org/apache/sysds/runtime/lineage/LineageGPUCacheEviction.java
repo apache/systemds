@@ -110,6 +110,7 @@ public class LineageGPUCacheEviction
 		return _startTimestamp;
 	}
 	
+	@SuppressWarnings("unused")
 	private static void adjustD2HTransferSpeed(double sizeByte, double copyTime) {
 		double sizeMB = sizeByte / (1024*1024);
 		double newTSpeed = sizeMB / copyTime;  //bandwidth (MB/sec) + java overhead

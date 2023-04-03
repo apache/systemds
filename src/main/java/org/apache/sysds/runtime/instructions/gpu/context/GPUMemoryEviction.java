@@ -23,11 +23,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.sysds.api.DMLScript;
-import org.apache.sysds.runtime.lineage.LineageCacheConfig;
 import org.apache.sysds.runtime.lineage.LineageCacheEntry;
-import org.apache.sysds.runtime.lineage.LineageCacheStatistics;
-import org.apache.sysds.runtime.lineage.LineageGPUCacheEviction;
-import org.apache.sysds.utils.GPUStatistics;
 
 public class GPUMemoryEviction implements Runnable 
 {
@@ -41,6 +37,7 @@ public class GPUMemoryEviction implements Runnable
 		numEvicts = 0;
 	}
 
+	@SuppressWarnings("unused")
 	@Override
 	public void run() {
 		//long currentAvailableMemory = allocator.getAvailableMemory();

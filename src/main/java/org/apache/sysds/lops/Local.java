@@ -22,6 +22,7 @@ package org.apache.sysds.lops;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.runtime.instructions.InstructionUtils;
 
 public class Local extends Lop {
 	public static final String OPCODE = "local";
@@ -40,15 +41,9 @@ public class Local extends Lop {
 
 	@Override
 	public String getInstructions(String input1, String output) {
-		StringBuilder sb = new StringBuilder();
-		sb.append(getExecType());
-		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append(OPCODE);
-		sb.append(OPERAND_DELIMITOR);
-		sb.append(getInputs().get(0).prepInputOperand(input1));
-		sb.append(OPERAND_DELIMITOR);
-		sb.append(prepOutputOperand(output));
-		
-		return sb.toString();
+		return InstructionUtils.concatOperands(
+			getExecType().name(), OPCODE,
+			getInputs().get(0).prepInputOperand(input1),
+			prepOutputOperand(output));
 	}
 }

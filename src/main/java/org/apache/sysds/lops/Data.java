@@ -27,6 +27,7 @@ import org.apache.sysds.common.Types.OpOpData;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.parser.DataExpression;
+import org.apache.sysds.runtime.instructions.InstructionUtils;
 
 /**
  * Lop to represent data objects. Data objects represent matrices, vectors, 
@@ -404,7 +405,7 @@ public class Data extends Lop
 
 			OutputParameters oparams = getOutputParameters();
 
-			StringBuilder sb = new StringBuilder();
+			StringBuilder sb = InstructionUtils.getStringBuilder();
 			sb.append( "CP" );
 			sb.append( OPERAND_DELIMITOR );
 			sb.append( "createvar" );

@@ -121,6 +121,12 @@ public class InstructionUtils {
 		}
 	};
 	
+	public static StringBuilder getStringBuilder() {
+		StringBuilder sb = _strBuilders.get();
+		sb.setLength(0); //reuse allocated space
+		return sb;
+	}
+	
 	public static int checkNumFields( String str, int expected ) {
 		//note: split required for empty tokens
 		int numParts = str.split(Instruction.OPERAND_DELIM).length;

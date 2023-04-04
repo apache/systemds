@@ -20,7 +20,7 @@
 package org.apache.sysds.lops;
 
 import org.apache.sysds.hops.AggBinaryOp.SparkAggType;
- 
+import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.common.Types.ExecType;
 
 import org.apache.sysds.common.Types.DataType;
@@ -90,7 +90,7 @@ public class RightIndex extends Lop
 	
 	@Override
 	public String getInstructions(String input, String rowl, String rowu, String coll, String colu, String output) {
-		StringBuilder sb = new StringBuilder();
+		StringBuilder sb = InstructionUtils.getStringBuilder();
 		sb.append( getExecType() );
 		sb.append( OPERAND_DELIMITOR );
 		sb.append( getOpcode() );

@@ -26,6 +26,7 @@ import java.util.Map.Entry;
 import org.apache.sysds.common.Types.ExecType;
 
 import org.apache.sysds.parser.Statement;
+import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.ValueType;
 
@@ -102,7 +103,7 @@ public class GroupedAggregate extends Lop
 	 */
 	@Override
 	public String getInstructions(String output) {
-		StringBuilder sb = new StringBuilder();
+		StringBuilder sb = InstructionUtils.getStringBuilder();
 		
 		sb.append( getExecType() );
 		sb.append( Lop.OPERAND_DELIMITOR );

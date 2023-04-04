@@ -1255,7 +1255,7 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 	}
 
 	public static Instruction prepareRemoveInstruction(String... varNames) {
-		StringBuilder sb = new StringBuilder();
+		StringBuilder sb = InstructionUtils.getStringBuilder();
 		sb.append("CP");
 		sb.append(Lop.OPERAND_DELIMITOR);
 		sb.append("rmvar");

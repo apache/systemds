@@ -28,6 +28,7 @@ import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.ParamBuiltinOp;
 import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.runtime.instructions.InstructionUtils;
 
 
 /**
@@ -86,7 +87,7 @@ public class ParameterizedBuiltin extends Lop
 	@Override
 	public String getInstructions(String output)
 	{
-		StringBuilder sb = new StringBuilder();
+		StringBuilder sb = InstructionUtils.getStringBuilder();
 		sb.append( getExecType() );
 		sb.append( Lop.OPERAND_DELIMITOR );
 
@@ -224,7 +225,7 @@ public class ParameterizedBuiltin extends Lop
 	
 	@Override
 	public String toString() {
-		StringBuilder sb = new StringBuilder();
+		StringBuilder sb = InstructionUtils.getStringBuilder();
 		sb.append(_operation.toString());
 
 		if( !getInputs().isEmpty() )
@@ -243,7 +244,7 @@ public class ParameterizedBuiltin extends Lop
 	}
 	
 	private static String compileGenericParamMap(HashMap<String, Lop> params) {
-		StringBuilder sb = new StringBuilder();		
+		StringBuilder sb = InstructionUtils.getStringBuilder();
 		for ( Entry<String, Lop> e : params.entrySet() ) {
 			sb.append(e.getKey());
 			sb.append(NAME_VALUE_SEPARATOR);

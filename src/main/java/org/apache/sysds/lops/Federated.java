@@ -22,6 +22,8 @@ package org.apache.sysds.lops;
 
 import java.util.HashMap;
 
+import org.apache.sysds.runtime.instructions.InstructionUtils;
+
 import static org.apache.sysds.common.Types.DataType;
 import static org.apache.sysds.common.Types.ValueType;
 import static org.apache.sysds.parser.DataExpression.FED_ADDRESSES;
@@ -70,20 +72,12 @@ public class Federated extends Lop {
 
 	@Override
 	public String getInstructions(String type, String addresses, String ranges, String object, String output) {
-		StringBuilder sb = new StringBuilder("FED");
-		sb.append(OPERAND_DELIMITOR);
-		sb.append("fedinit");
-		sb.append(OPERAND_DELIMITOR);
-		sb.append(_type.prepScalarInputOperand(type));
-		sb.append(OPERAND_DELIMITOR);
-		sb.append(_addresses.prepScalarInputOperand(addresses));
-		sb.append(OPERAND_DELIMITOR);
-		sb.append(_ranges.prepScalarInputOperand(ranges));
-		sb.append(OPERAND_DELIMITOR);
-		sb.append(_localObject.prepScalarInputOperand(object));
-		sb.append(OPERAND_DELIMITOR);
-		sb.append(prepOutputOperand(output));
-		return sb.toString();
+		return InstructionUtils.concatOperands(
+			"FED", "fedinit", _type.prepScalarInputOperand(type),
+			_addresses.prepScalarInputOperand(addresses),
+			_ranges.prepScalarInputOperand(ranges),
+			_localObject.prepScalarInputOperand(object),
+			prepOutputOperand(output));
 	}
 	
 	@Override

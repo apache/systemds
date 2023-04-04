@@ -262,12 +262,12 @@ public class Dag<N extends Lop>
 			LOG.trace("In delete updated variables");
 
 		// CANDIDATE list of variables which could have been updated in this statement block 
-		HashMap<String, Lop> labelNodeMapping = new HashMap<>();
+		HashMap<String, Lop> labelNodeMapping = new HashMap<>(nodeV.size());
 		
 		// ACTUAL list of variables whose value is updated, AND the old value of the variable 
 		// is no longer accessible/used.
-		HashSet<String> updatedLabels = new HashSet<>();
-		HashMap<String, Lop> updatedLabelsLineNum =  new HashMap<>();
+		HashSet<String> updatedLabels = new HashSet<>(nodeV.size());
+		HashMap<String, Lop> updatedLabelsLineNum =  new HashMap<>(nodeV.size());
 		
 		// first capture all transient read variables
 		for ( Lop node : nodeV ) {
@@ -307,9 +307,8 @@ public class Dag<N extends Lop>
 		}
 		
 		// generate RM instructions
-		Instruction rm_inst = null;
 		for ( String label : updatedLabels ) {
-			rm_inst = VariableCPInstruction.prepareRemoveInstruction(label);
+			Instruction rm_inst = VariableCPInstruction.prepareRemoveInstruction(label);
 			rm_inst.setLocation(updatedLabelsLineNum.get(label));
 			if( LOG.isTraceEnabled() )
 				LOG.trace(rm_inst.toString());

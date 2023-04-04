@@ -22,6 +22,7 @@ package org.apache.sysds.lops;
 import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.runtime.instructions.InstructionUtils;
 
 
 /**
@@ -120,7 +121,7 @@ public class Ctable extends Lop
 	@Override
 	public String getInstructions(String input1, String input2, String input3, String output)
 	{
-		StringBuilder sb = new StringBuilder();
+		StringBuilder sb = InstructionUtils.getStringBuilder();
 		sb.append( getExecType() );
 		sb.append( Lop.OPERAND_DELIMITOR );
 		if( operation != Ctable.OperationTypes.CTABLE_EXPAND_SCALAR_WEIGHT )
@@ -144,7 +145,7 @@ public class Ctable extends Lop
 			getInputs().get(2).prepInputOperand(input3));
 		sb.append( OPERAND_DELIMITOR );
 		
-		if ( this.getInputs().size() > 3 ) {
+		if ( getInputs().size() > 3 ) {
 			sb.append(getInputs().get(3).getOutputParameters().getLabel());
 			sb.append(LITERAL_PREFIX);
 			sb.append((getInputs().get(3).getType() == Type.Data && ((Data)getInputs().get(3)).isLiteral()) );
@@ -166,7 +167,7 @@ public class Ctable extends Lop
 			sb.append(true);
 			sb.append( OPERAND_DELIMITOR ); 
 		}
-		sb.append( this.prepOutputOperand(output));
+		sb.append( prepOutputOperand(output));
 		
 		sb.append( OPERAND_DELIMITOR );
 		sb.append( _ignoreZeros );

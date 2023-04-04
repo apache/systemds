@@ -20,6 +20,7 @@
 package org.apache.sysds.lops;
 
 import org.apache.sysds.parser.DataExpression;
+import org.apache.sysds.runtime.instructions.InstructionUtils;
 
 import java.util.HashMap;
 
@@ -50,7 +51,7 @@ public class Sql extends Lop {
 	
 	@Override
 	public String getInstructions(String input1, String input2, String input3, String input4, String output) {
-		StringBuilder sb = new StringBuilder();
+		StringBuilder sb = InstructionUtils.getStringBuilder();
 		// TODO spark
 		sb.append("CP");
 		sb.append(OPERAND_DELIMITOR);

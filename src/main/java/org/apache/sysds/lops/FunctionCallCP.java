@@ -26,6 +26,7 @@ import org.apache.sysds.hops.FunctionOp;
 import org.apache.sysds.hops.Hop;
 import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.parser.DMLProgram;
+import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.common.Builtins;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.ValueType;
@@ -127,7 +128,7 @@ public class FunctionCallCP extends Lop
 			return getInstructionsMultipleReturnBuiltins(inputs, outputs);
 		}
 
-		StringBuilder inst = new StringBuilder();
+		StringBuilder inst = InstructionUtils.getStringBuilder();
 		inst.append(getExecType());
 		
 		inst.append(Lop.OPERAND_DELIMITOR); 

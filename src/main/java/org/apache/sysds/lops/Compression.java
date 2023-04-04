@@ -22,6 +22,7 @@ package org.apache.sysds.lops;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.runtime.instructions.InstructionUtils;
 
 public class Compression extends Lop {
 	public static final String OPCODE = "compress";
@@ -55,7 +56,7 @@ public class Compression extends Lop {
 
 	@Override
 	public String getInstructions(String input1, String output) {
-		StringBuilder sb = new StringBuilder();
+		StringBuilder sb = InstructionUtils.getStringBuilder();
 		sb.append(getExecType());
 		sb.append(Lop.OPERAND_DELIMITOR);
 		sb.append(OPCODE);

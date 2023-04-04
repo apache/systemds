@@ -82,19 +82,19 @@ public class CentralMoment extends Lop
 	public String getInstructions(String input1, String input2, String input3, String output) {
 		StringBuilder sb = InstructionUtils.getStringBuilder();
 		if( input3 == null ) {
-			sb.append(InstructionUtils.concatOperands(
+			InstructionUtils.concatOperands(sb,
 				getExecType().toString(), "cm",
 				getInputs().get(0).prepInputOperand(input1),
 				getInputs().get((input3!=null)?2:1).prepScalarInputOperand(getExecType()),
-				prepOutputOperand(output)));
+				prepOutputOperand(output));
 		}
 		else {
-			sb.append(InstructionUtils.concatOperands(
+			InstructionUtils.concatOperands(sb,
 				getExecType().toString(), "cm",
 				getInputs().get(0).prepInputOperand(input1),
 				getInputs().get(1).prepInputOperand(input2),
 				getInputs().get((input3!=null)?2:1).prepScalarInputOperand(getExecType()),
-				prepOutputOperand(output)));
+				prepOutputOperand(output));
 		}
 		if( getExecType() == ExecType.CP || getExecType() == ExecType.FED ) {
 			sb.append(OPERAND_DELIMITOR);

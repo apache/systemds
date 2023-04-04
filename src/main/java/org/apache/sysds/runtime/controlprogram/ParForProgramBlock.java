@@ -359,6 +359,7 @@ public class ParForProgramBlock extends ForProgramBlock
 	protected long _ID = -1;
 	protected int _IDPrefix = -1;
 	protected boolean _monitorReport = false;
+	protected int _numRuns = -1;
 	
 	// local parworker data
 	protected HashMap<Long,ArrayList<ProgramBlock>> _pbcache = null;
@@ -422,6 +423,7 @@ public class ParForProgramBlock extends ForProgramBlock
 		
 		//created profiling report after parfor exec
 		_monitorReport = _monitor;
+		_numRuns = 0;
 		
 		//materialized meta data (reused for all invocations)
 		_hasFunctions = ProgramRecompiler.containsAtLeastOneFunction(this);
@@ -574,7 +576,7 @@ public class ParForProgramBlock extends ForProgramBlock
 	public void execute(ExecutionContext ec)
 	{
 		ParForStatementBlock sb = (ParForStatementBlock)getStatementBlock();
-
+		
 		// evaluate from, to, incr only once (assumption: known at for entry)
 		ScalarObject from0 = executePredicateInstructions(1, _fromInstructions, ec, false);
 		ScalarObject to0   = executePredicateInstructions(2, _toInstructions, ec, false);
@@ -608,7 +610,7 @@ public class ParForProgramBlock extends ForProgramBlock
 		///////
 		if( _optMode != POptMode.NONE ) {
 			OptimizationWrapper.setLogLevel(_optLogLevel); //set optimizer log level
-			OptimizationWrapper.optimize(_optMode, sb, this, ec, _monitor); //core optimize
+			OptimizationWrapper.optimize(_optMode, sb, this, ec, _monitor, _numRuns); //core optimize
 		}
 
 		///////
@@ -704,6 +706,7 @@ public class ParForProgramBlock extends ForProgramBlock
 		//print profiling report (only if top-level parfor because otherwise in parallel context)
 		if( _monitorReport )
 			LOG.info("\n"+StatisticMonitor.createReport());
+		_numRuns ++;
 		
 		//reset flags/modifications made by optimizer
 		//TODO reset of hop parallelism constraint (e.g., ba+*)

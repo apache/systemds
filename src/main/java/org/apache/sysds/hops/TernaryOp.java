@@ -24,6 +24,7 @@ import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.OpOp2;
 import org.apache.sysds.common.Types.OpOp3;
 import org.apache.sysds.common.Types.OpOpDG;
+import org.apache.sysds.common.Types.OpOpData;
 import org.apache.sysds.common.Types.ParamBuiltinOp;
 import org.apache.sysds.common.Types.ReOrgOp;
 import org.apache.sysds.common.Types.ValueType;
@@ -346,8 +347,8 @@ public class TernaryOp extends MultiThreadedHop
 		setLineNumbers(plusmult);
 		setLops(plusmult);
 		
-		if( _op==OpOp3.IFELSE && getInput(0).getDataType().isScalar() )
-			setRequiresRecompile(); //good chance of removing ops
+		if( _op==OpOp3.IFELSE && HopRewriteUtils.isData(getInput(0), OpOpData.TRANSIENTREAD, DataType.SCALAR))
+			setRequiresRecompile(); //good chance of removing ops via literal replacements + rewrites
 	}
 	
 	@Override
@@ -518,7 +519,7 @@ public class TernaryOp extends MultiThreadedHop
 		// additional condition: when execType=CP and additional dimension inputs 
 		// are provided (and those values are unknown at initial compile time).
 		setRequiresRecompileIfNecessary();
-		if( ConfigurationManager.isDynamicRecompilation() && !dimsKnown(true) 
+		if( ConfigurationManager.isDynamicRecompilation() && !dimsKnown() 
 			&& _etype == ExecType.CP && _dimInputsPresent) {
 			setRequiresRecompile();
 		}
@@ -572,10 +573,8 @@ public class TernaryOp extends MultiThreadedHop
 						
 						// if output dimensions are provided, update _dim1 and _dim2
 						if( getInput().size() >= 5 ) {
-							if( getInput().get(3) instanceof LiteralOp )
-								setDim1( HopRewriteUtils.getIntValueSafe((LiteralOp)getInput().get(3)) );
-							if( getInput().get(4) instanceof LiteralOp )
-								setDim2( HopRewriteUtils.getIntValueSafe((LiteralOp)getInput().get(4)) );
+							refreshRowsParameterInformation(getInput(3));
+							refreshColsParameterInformation(getInput(4));
 						}
 					}
 

@@ -1133,6 +1133,10 @@ public class HopRewriteUtils {
 		return hop instanceof DataOp && ((DataOp)hop).getOp()==type;
 	}
 	
+	public static boolean isData(Hop hop, OpOpData type, DataType dt) {
+		return isData(hop, type) && hop.getDataType()==dt;
+	}
+	
 	public static boolean isBinaryMatrixColVectorOperation(Hop hop) {
 		return hop instanceof BinaryOp 
 			&& hop.getInput().get(0).getDataType().isMatrix() && hop.getInput().get(1).getDataType().isMatrix()

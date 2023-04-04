@@ -29,6 +29,7 @@ import org.apache.sysds.hops.rewrite.HopRewriteUtils;
 import org.apache.sysds.lops.DataGen;
 import org.apache.sysds.lops.Lop;
 import org.apache.sysds.common.Types.ExecType;
+import org.apache.sysds.common.Types.OpOp3;
 import org.apache.sysds.parser.DataExpression;
 import org.apache.sysds.parser.DataIdentifier;
 import org.apache.sysds.parser.Statement;
@@ -348,16 +349,15 @@ public class DataGenOp extends MultiThreadedHop
 		}
 		else if (_op == OpOpDG.SEQ ) 
 		{
+			//bounds computation
 			input1 = getInput().get(_paramIndexMap.get(Statement.SEQ_FROM));
 			input2 = getInput().get(_paramIndexMap.get(Statement.SEQ_TO)); 
 			input3 = getInput().get(_paramIndexMap.get(Statement.SEQ_INCR)); 
 
 			double from = computeBoundsInformation(input1);
 			boolean fromKnown = (from != Double.MAX_VALUE);
-			
 			double to = computeBoundsInformation(input2);
 			boolean toKnown = (to != Double.MAX_VALUE);
-			
 			double incr = computeBoundsInformation(input3);
 			boolean incrKnown = (incr != Double.MAX_VALUE);
 			if(  fromKnown && toKnown && incr == 1) {
@@ -369,6 +369,14 @@ public class DataGenOp extends MultiThreadedHop
 				setDim1(UtilFunctions.getSeqLength(from, to, incr, false));
 				setDim2(1);
 				_incr = incr;
+			}
+			
+			//leverage high-probability information of output
+			if( getDim1() == -1 && getParent().size() == 1 ) {
+				Hop p = getParent().get(0);
+				p.refreshSizeInformation();
+				setDim1((HopRewriteUtils.isTernary(p, OpOp3.CTABLE)
+					&& p.getDim1() >= 0 ) ? p.getDim1() : -1);
 			}
 		}
 		else if (_op == OpOpDG.TIME ) {

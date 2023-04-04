@@ -135,14 +135,14 @@ public class ParameterizedBuiltin extends Lop
 			case LOWER_TRI: {
 				sb.append( "lowertri" );
 				sb.append( OPERAND_DELIMITOR );
-				sb.append(compileGenericParamMap(_inputParams));
+				compileGenericParamMap(sb, _inputParams);
 				break;
 			}
 			
 			case UPPER_TRI: {
 				sb.append( "uppertri" );
 				sb.append( OPERAND_DELIMITOR );
-				sb.append(compileGenericParamMap(_inputParams));
+				compileGenericParamMap(sb, _inputParams);
 				break;
 			}
 			
@@ -178,25 +178,25 @@ public class ParameterizedBuiltin extends Lop
 			case PARAMSERV: { 
 				sb.append(_operation.name().toLowerCase()); //opcode
 				sb.append(OPERAND_DELIMITOR);
-				sb.append(compileGenericParamMap(_inputParams));
+				compileGenericParamMap(sb, _inputParams);
 				break;
 			}
 			case AUTODIFF: {
 				sb.append("autoDiff"); //opcode
 				sb.append(OPERAND_DELIMITOR);
-				sb.append(compileGenericParamMap(_inputParams));
+				compileGenericParamMap(sb, _inputParams);
 				break;
 			}
 			case LIST: {
 				sb.append("nvlist"); //opcode
 				sb.append(OPERAND_DELIMITOR);
-				sb.append(compileGenericParamMap(_inputParams));
+				compileGenericParamMap(sb, _inputParams);
 				break;
 			}
 			case TOSTRING: {
 				sb.append("toString"); //opcode
 				sb.append(OPERAND_DELIMITOR);
-				sb.append(compileGenericParamMap(_inputParams));
+				compileGenericParamMap(sb, _inputParams);
 				break;
 			}
 			
@@ -243,8 +243,7 @@ public class ParameterizedBuiltin extends Lop
 		return sb.toString();
 	}
 	
-	private static String compileGenericParamMap(HashMap<String, Lop> params) {
-		StringBuilder sb = InstructionUtils.getStringBuilder();
+	private static void compileGenericParamMap(StringBuilder sb, HashMap<String, Lop> params) {
 		for ( Entry<String, Lop> e : params.entrySet() ) {
 			sb.append(e.getKey());
 			sb.append(NAME_VALUE_SEPARATOR);
@@ -254,7 +253,5 @@ public class ParameterizedBuiltin extends Lop
 				sb.append( e.getValue().prepScalarLabel() );
 			sb.append(OPERAND_DELIMITOR);
 		}
-		
-		return sb.toString();
 	}
 }

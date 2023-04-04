@@ -24,6 +24,7 @@ import org.apache.sysds.common.Types.ExecType;
 
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.runtime.instructions.InstructionUtils;
 
 public class PMMJ extends Lop 
 {
@@ -80,7 +81,7 @@ public class PMMJ extends Lop
 	@Override
 	public String getInstructions(String input_index1, String input_index2, String input_index3, String output_index) 
 	{	
-		StringBuilder sb = new StringBuilder();
+		StringBuilder sb = InstructionUtils.getStringBuilder();
 		
 		sb.append(getExecType());
 		sb.append(Lop.OPERAND_DELIMITOR);

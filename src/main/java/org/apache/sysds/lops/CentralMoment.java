@@ -80,7 +80,7 @@ public class CentralMoment extends Lop
 	 */
 	@Override
 	public String getInstructions(String input1, String input2, String input3, String output) {
-		StringBuilder sb = new StringBuilder();
+		StringBuilder sb = InstructionUtils.getStringBuilder();
 		if( input3 == null ) {
 			sb.append(InstructionUtils.concatOperands(
 				getExecType().toString(), "cm",

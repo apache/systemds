@@ -23,6 +23,7 @@ import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.common.Types.AggOp;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.runtime.instructions.InstructionUtils;
 
 public class CumulativeOffsetBinary extends Lop 
 {
@@ -89,24 +90,17 @@ public class CumulativeOffsetBinary extends Lop
 	@Override
 	public String getInstructions(String input1, String input2, String output)
 	{
-		StringBuilder sb = new StringBuilder();
-		sb.append( getExecType() );
-		sb.append( OPERAND_DELIMITOR );
-		sb.append( getOpcode() );
-		sb.append( OPERAND_DELIMITOR );
-		sb.append( getInputs().get(0).prepInputOperand(input1) );
-		sb.append( OPERAND_DELIMITOR );
-		sb.append( getInputs().get(1).prepInputOperand(input2) );
-		sb.append( OPERAND_DELIMITOR );
-		sb.append( this.prepOutputOperand(output) );
+		String inst = InstructionUtils.concatOperands(
+			getExecType().name(), getOpcode(),
+			getInputs().get(0).prepInputOperand(input1),
+			getInputs().get(1).prepInputOperand(input2),
+			prepOutputOperand(output) );
 		
 		if( getExecType() == ExecType.SPARK ) {
-			sb.append( OPERAND_DELIMITOR );
-			sb.append( _initValue );
-			sb.append( OPERAND_DELIMITOR );
-			sb.append( _broadcast );
+			inst = InstructionUtils.concatOperands(inst,
+				String.valueOf(_initValue), String.valueOf(_broadcast) );
 		}
 		
-		return sb.toString();
+		return inst;
 	}
 }

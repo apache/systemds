@@ -338,13 +338,16 @@ public class TernaryOp extends MultiThreadedHop
 			k= OptimizerUtils.getConstrainedNumThreads( _maxNumThreads );
 		
 		Ternary plusmult = new Ternary(_op,
-			getInput().get(0).constructLops(),
-			getInput().get(1).constructLops(),
-			getInput().get(2).constructLops(), 
+			getInput(0).constructLops(),
+			getInput(1).constructLops(),
+			getInput(2).constructLops(), 
 			getDataType(),getValueType(), et, k );
 		setOutputDimensions(plusmult);
 		setLineNumbers(plusmult);
 		setLops(plusmult);
+		
+		if( _op==OpOp3.IFELSE && getInput(0).getDataType().isScalar() )
+			setRequiresRecompile(); //good chance of removing ops
 	}
 	
 	@Override

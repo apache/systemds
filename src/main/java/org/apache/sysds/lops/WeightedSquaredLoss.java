@@ -24,6 +24,7 @@ import org.apache.sysds.common.Types.ExecType;
 
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.runtime.instructions.InstructionUtils;
 
 public class WeightedSquaredLoss extends Lop 
 {
@@ -68,7 +69,7 @@ public class WeightedSquaredLoss extends Lop
 	@Override
 	public String getInstructions(String input1, String input2, String input3, String input4, String output)
 	{
-		StringBuilder sb = new StringBuilder();
+		StringBuilder sb = InstructionUtils.getStringBuilder();
 		
 		sb.append(getExecType());
 		

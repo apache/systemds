@@ -25,6 +25,7 @@ import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.OpOpN;
 import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.runtime.instructions.InstructionUtils;
 
 /**
  * Lop to perform an operation on a variable number of operands.
@@ -88,21 +89,15 @@ public class Nary extends Lop {
 	 */
 	@Override
 	public String getInstructions(String[] inputs, String output) {
-		String opString = getOpcode();
-
-		StringBuilder sb = new StringBuilder();
-
+		StringBuilder sb = InstructionUtils.getStringBuilder();
 		sb.append(getExecType());
 		sb.append(Lop.OPERAND_DELIMITOR);
-
-		sb.append(opString);
+		sb.append(getOpcode());
 		sb.append(OPERAND_DELIMITOR);
-
 		for( int i=0; i<inputs.length; i++ ) {
 			sb.append(getInputs().get(i).prepInputOperand(inputs[i]));
 			sb.append(OPERAND_DELIMITOR);
 		}
-
 		sb.append(prepOutputOperand(output));
 
 		return sb.toString();

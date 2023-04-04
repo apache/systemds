@@ -89,8 +89,9 @@ public class OptimizationWrapper
 	 * @param pb parfor program block
 	 * @param ec execution context
 	 * @param monitor ?
+	 * @param numRuns number of optimizations performed so far
 	 */
-	public static void optimize( POptMode type, ParForStatementBlock sb, ParForProgramBlock pb, ExecutionContext ec, boolean monitor ) 
+	public static void optimize( POptMode type, ParForStatementBlock sb, ParForProgramBlock pb, ExecutionContext ec, boolean monitor, int numRuns ) 
 	{
 		Timing time = new Timing(true);
 		
@@ -103,7 +104,7 @@ public class OptimizationWrapper
 		double cm = InfrastructureAnalyzer.getCmMax() * OptimizerUtils.MEM_UTIL_FACTOR; 
 		
 		//execute optimizer
-		optimize( type, ck, cm, sb, pb, ec, monitor );
+		optimize( type, ck, cm, sb, pb, ec, monitor, numRuns );
 		
 		double timeVal = time.stop();
 		LOG.debug("ParFOR Opt: Finished optimization for PARFOR("+pb.getID()+") in "+timeVal+"ms.");
@@ -118,7 +119,7 @@ public class OptimizationWrapper
 	}
 
 	@SuppressWarnings("unused")
-	private static void optimize( POptMode otype, int ck, double cm, ParForStatementBlock sb, ParForProgramBlock pb, ExecutionContext ec, boolean monitor ) 
+	private static void optimize( POptMode otype, int ck, double cm, ParForStatementBlock sb, ParForProgramBlock pb, ExecutionContext ec, boolean monitor, int numRuns ) 
 	{
 		Timing time = new Timing(true);
 		
@@ -160,7 +161,6 @@ public class OptimizationWrapper
 			catch(Exception ex){
 				throw new DMLRuntimeException(ex);
 			}
-			
 			
 			//program rewrites (e.g., constant folding, branch removal) according to replaced literals
 			try {
@@ -225,7 +225,7 @@ public class OptimizationWrapper
 		LOG.trace("ParFOR Opt: Created cost estimator ("+cmtype+")");
 		
 		//core optimize
-		opt.optimize(sb, pb, tree, est, ec);
+		opt.optimize(sb, pb, tree, est, numRuns, ec);
 		LOG.debug("ParFOR Opt: Optimized plan (after optimization): \n" + tree.explain(false));
 		
 		//assert plan correctness
@@ -238,7 +238,7 @@ public class OptimizationWrapper
 				throw new DMLRuntimeException("Failed to check program correctness.", ex);
 			}
 		}
-		
+
 		long ltime = (long) time.stop();
 		LOG.trace("ParFOR Opt: Optimized plan in "+ltime+"ms.");
 		if( DMLScript.STATISTICS )

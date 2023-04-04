@@ -62,10 +62,11 @@ public abstract class Optimizer
 	 * @param pb parfor program block
 	 * @param plan  complete plan of a top-level parfor
 	 * @param est cost estimator
+	 * @param numRuns
 	 * @param ec execution context
 	 * @return true if plan changed, false otherwise
 	 */
-	public abstract boolean optimize(ParForStatementBlock sb, ParForProgramBlock pb, OptTree plan, CostEstimator est, ExecutionContext ec);
+	public abstract boolean optimize(ParForStatementBlock sb, ParForProgramBlock pb, OptTree plan, CostEstimator est, int numRuns, ExecutionContext ec);
 	
 	public abstract PlanInputType getPlanInputType();
 

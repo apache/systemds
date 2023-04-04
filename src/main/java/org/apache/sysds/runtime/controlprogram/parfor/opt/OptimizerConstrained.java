@@ -75,7 +75,7 @@ public class OptimizerConstrained extends OptimizerRuleBased {
 	 * (no use of sb, direct change of pb).
 	 */
 	@Override
-	public boolean optimize(ParForStatementBlock sb, ParForProgramBlock pb, OptTree plan, CostEstimator est, ExecutionContext ec)
+	public boolean optimize(ParForStatementBlock sb, ParForProgramBlock pb, OptTree plan, CostEstimator est, int numRuns, ExecutionContext ec)
 	{
 		LOG.debug("--- "+getOptMode()+" OPTIMIZER -------");
 		_cost = est;
@@ -179,7 +179,8 @@ public class OptimizerConstrained extends OptimizerRuleBased {
 			super.rewriteSetInPlaceResultIndexing(pn, _cost, ec.getVariables(), inplaceResultVars, ec);
 
 			//rewrite 17: checkpoint injection for parfor loop body
-			super.rewriteInjectSparkLoopCheckpointing( pn );
+			if( numRuns <= 0 ) //only on first
+				super.rewriteInjectSparkLoopCheckpointing( pn );
 
 			//rewrite 18: repartition read-only inputs for zipmm 
 			super.rewriteInjectSparkRepartition( pn, ec.getVariables() );

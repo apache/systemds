@@ -281,8 +281,9 @@ public class SparkUtils
 	
 	public static long getNonZeros(JavaPairRDD<MatrixIndexes, MatrixBlock> input) {
 		//note: avoid direct lambda expression due reduce unnecessary GC overhead
-		return input.filter(new FilterNonEmptyBlocksFunction())
+		return input
 			.values().mapPartitions(new RecomputeNnzFunction()).reduce((a,b)->a+b);
+		// .filter(new FilterNonEmptyBlocksFunction())
 	}
 
 	public static void postprocessUltraSparseOutput(MatrixObject mo, DataCharacteristics mcOut) {

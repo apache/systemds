@@ -56,13 +56,13 @@ public abstract class Optimizer
 	}
 
 	/**
-	 * Optimize
+	 * Optimize the parfor statement block
 	 * 
 	 * @param sb parfor statement block
 	 * @param pb parfor program block
 	 * @param plan  complete plan of a top-level parfor
 	 * @param est cost estimator
-	 * @param numRuns
+	 * @param numRuns Number of runs 
 	 * @param ec execution context
 	 * @return true if plan changed, false otherwise
 	 */

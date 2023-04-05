@@ -69,11 +69,12 @@ m_decisionTree = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] cty
   if( max_depth > 32 )
     stop("decisionTree: invalid max_depth > 32: "+max_depth);
   if( sum(X<=0) != 0 )
-    stop("decisionTree: feature matrix X is not properly recoded/binned.");
+    stop("decisionTree: feature matrix X is not properly recoded/binned: "+sum(X<=0));
   if( sum(y<=0) != 0 )
-    stop("decisionTree: label vector y is not properly recoded/binned.");
+    stop("decisionTree: label vector y is not properly recoded/binned: "+sum(y<=0));
 
   # initialize input data and basic statistics
+  # (we keep y2 and the indicates I in transposed form for sparsity exploitation)
   m = nrow(X); n = ncol(X);
   classify = (as.scalar(ctypes[1,n+1]) == 2);
 
@@ -83,9 +84,9 @@ m_decisionTree = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] cty
   rix = matrix(seq(1,m)%*%matrix(1,1,n), m*n, 1)
   cix = matrix(X + foffb, m*n, 1);
   X2 = table(rix, cix, 1, m, as.scalar(foffe[,n]), FALSE); #one-hot encoded
-  y2 = table(seq(1,m), y);
+  y2 = t(table(seq(1,m), y));
   cnt = colSums(X2);
-  I = matrix(1, rows=nrow(X), cols=1);
+  I = matrix(1, rows=1, cols=nrow(X));
 
   if( verbose ) {
     print("decisionTree: initialize with max_depth=" + max_depth + ", max_features="
@@ -171,7 +172,7 @@ findBestSplit = function(Matrix[Double] X2, Matrix[Double] y2, Matrix[Double] fo
        # construct predicate 0/1 vector
        p = table(seq(beg, j), 1, ncol(X2), 1);
        # find rows that match at least one value and appear in I
-       Ileft = ((X2 %*% p) * I) != 0;
+       Ileft = (t(X2 %*% p) * I) != 0;
        Iright = I * (Ileft==0);
        # compute information gain
        ig = computeImpurity(y2, I, impurity)
@@ -195,7 +196,7 @@ findBestSplit = function(Matrix[Double] X2, Matrix[Double] y2, Matrix[Double] fo
   v = as.integer(as.scalar(R[3,ix])-beg);
   if( max(R[2,]) > 0 ) {
     p = table(seq(beg+1, beg+v), 1, ncol(X2), 1);
-    Ileft = ((X2 %*% p) * I) != 0;
+    Ileft = (t(X2 %*% p) * I) != 0;
     Iright = I * (Ileft==0);
   }
   else { # no information gain
@@ -207,7 +208,7 @@ findBestSplit = function(Matrix[Double] X2, Matrix[Double] y2, Matrix[Double] fo
 computeImpurity = function(Matrix[Double] y2, Matrix[Double] I, String impurity)
   return(Double score)
 {
-  f = colSums(y2 * I) / sum(I); # rel. freq. per category/bin
+  f = rowSums(y2 * I) / sum(I); # rel. freq. per category/bin
   score = 0.0;
   if( impurity == "gini" )
     score = 1 - sum(f^2); # sum(f*(1-f));
@@ -220,9 +221,9 @@ computeImpurity = function(Matrix[Double] y2, Matrix[Double] I, String impurity)
 computeLeafLabel = function(Matrix[Double] y2, Matrix[Double] I, Boolean classify, Boolean verbose)
   return(Double label)
 {
-  f = colSums(y2 * I) / sum(I);
+  f = rowSums(y2 * I) / sum(I);
   label = ifelse(classify,
-    as.scalar(rowIndexMax(f)), sum(t(f)*seq(1,ncol(f))));
+    as.scalar(rowIndexMax(t(f))), sum(f*seq(1,nrow(f))));
   if(verbose)
     print("-- leaf node label: " + label +" ("+sum(I)*max(f)+"/"+sum(I)+")");
 }

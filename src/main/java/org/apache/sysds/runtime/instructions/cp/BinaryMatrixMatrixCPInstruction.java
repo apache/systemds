@@ -63,6 +63,7 @@ public class BinaryMatrixMatrixCPInstruction extends BinaryCPInstruction {
 
 		if(compressedLeft || compressedRight)
 			LOG.error("Not supporting inplace Compressed yet");
+			
 		if(inplace && !(compressedLeft || compressedRight)){
 			
 			inBlock1 = LibMatrixBincell.bincellOpInPlaceRight(inBlock1, inBlock2, (BinaryOperator) _optr);

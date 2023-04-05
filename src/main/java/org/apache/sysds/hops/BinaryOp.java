@@ -735,7 +735,6 @@ public class BinaryOp extends MultiThreadedHop {
 		if(isReplace(p1)){
 			Hop p2 = p1.getInput().get(0);
 			if(isReplace(p2)){
-				LOG.error("both parents are Replace" );
 				ParameterizedBuiltinOp pp1 = (ParameterizedBuiltinOp)p1;
 				ParameterizedBuiltinOp pp2 = (ParameterizedBuiltinOp)p2;
 				return 

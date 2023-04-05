@@ -281,8 +281,9 @@ public class SparkUtils
 	
 	public static long getNonZeros(JavaPairRDD<MatrixIndexes, MatrixBlock> input) {
 		//note: avoid direct lambda expression due reduce unnecessary GC overhead
-		return input
-			.values().mapPartitions(new RecomputeNnzFunction()).reduce((a,b)->a+b);
+		return input.count() * 1024 * 1024;
+		//  input
+			// .values().mapPartitions(new RecomputeNnzFunction()).reduce((a,b)->a+b);
 		// .filter(new FilterNonEmptyBlocksFunction())
 	}
 

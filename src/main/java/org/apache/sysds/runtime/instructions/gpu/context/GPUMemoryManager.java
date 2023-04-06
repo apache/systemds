@@ -297,16 +297,19 @@ public class GPUMemoryManager {
 			if (le != null) {
 				if(!LineageCacheConfig.GPU2HOSTEVICTION) {
 					A = le.getGPUPointer(); //recycle
-					LineageGPUCacheEviction.removeFromDeviceCache(le, opcode, false);
+					LineageGPUCacheEviction.removeFromDeviceCache(le, le.getGPUPointer(), true);
 					if (DMLScript.STATISTICS)
 						LineageCacheStatistics.incrementGpuRecycle();
 				}
-				/*else {
-					// Copy from device cache to CPU lineage cache if not already copied
-					LineageGPUCacheEviction.copyToHostCache(le, opcode, copied);
+				else {
+					// Copy from device cache to CPU lineage cache
+					// TODO: Copy conditionally (if score > theta)
+					Pointer copiedPtr = LineageGPUCacheEviction.copyToHostCache(le);
+					LineageGPUCacheEviction.removeFromDeviceCache(le, copiedPtr, false);
+					A = copiedPtr;
 					if(DMLScript.STATISTICS)
 						LineageCacheStatistics.incrementGpuSyncEvicts();
-				}*/
+				}
 			}
 			// TODO: Handle live (dirty) objects separately. Copy them back to the host
 
@@ -324,12 +327,19 @@ public class GPUMemoryManager {
 				if(le != null) {
 					freedSize += getSizeAllocatedGPUPointer(le.getGPUPointer());
 					if(!LineageCacheConfig.GPU2HOSTEVICTION) {
-						LineageGPUCacheEviction.removeFromDeviceCache(le, opcode, false);
+						LineageGPUCacheEviction.removeFromDeviceCache(le, le.getGPUPointer(), true);
 						guardedCudaFree(le.getGPUPointer()); //free
 						if (DMLScript.STATISTICS)
 							LineageCacheStatistics.incrementGpuDel();
 					}
-					// TODO: else evict to the host cache
+					else {
+						// Copy from device cache to CPU lineage cache
+						Pointer copiedPtr = LineageGPUCacheEviction.copyToHostCache(le);
+						LineageGPUCacheEviction.removeFromDeviceCache(le, copiedPtr, false);
+						guardedCudaFree(copiedPtr); //free
+						if(DMLScript.STATISTICS)
+							LineageCacheStatistics.incrementGpuSyncEvicts();
+					}
 					if (freedSize > size)
 						A = cudaMallocNoWarn(tmpA, size, "recycle non-exact match of lineage cache");
 					// Else, deallocate another free pointer. We are calling pollFistFreeNotExact with

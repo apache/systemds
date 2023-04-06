@@ -78,13 +78,13 @@ m_decisionTree = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] cty
   m = nrow(X); n = ncol(X);
   classify = (as.scalar(ctypes[1,n+1]) == 2);
 
-  fdom = colMaxs(X);                  # num distinct per feature
+  fdom = max(colMaxs(X),2);           # num distinct per feature
   foffb = t(cumsum(t(fdom))) - fdom;  # feature begin
   foffe = t(cumsum(t(fdom)))          # feature end
   rix = matrix(seq(1,m)%*%matrix(1,1,n), m*n, 1)
   cix = matrix(X + foffb, m*n, 1);
   X2 = table(rix, cix, 1, m, as.scalar(foffe[,n]), FALSE); #one-hot encoded
-  y2 = t(table(seq(1,m), y));
+  y2 = table(seq(1,m), y);
   cnt = colSums(X2);
   I = matrix(1, rows=1, cols=nrow(X));
 
@@ -92,7 +92,7 @@ m_decisionTree = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] cty
     print("decisionTree: initialize with max_depth=" + max_depth + ", max_features="
       + max_features + ", impurity=" + impurity + ", seed=" + seed + ".");
     print("decisionTree: basic statistics:");
-    print("-- impurity: " + computeImpurity(y2, I, impurity) );
+    print("-- impurity: " + as.scalar(computeImpurity(y2, I, impurity)));
     print("-- minFeatureCount: " + min(cnt));
     print("-- maxFeatureCount: " + max(cnt));
   }
@@ -164,26 +164,30 @@ findBestSplit = function(Matrix[Double] X2, Matrix[Double] y2, Matrix[Double] fo
   # finding a cutoff point in the recoded/binned representation)
   R = matrix(0, rows=3, cols=nrow(feat));
   parfor( i in 1:nrow(feat) ) {
-    f = as.scalar(feat[i]);
-    beg = as.scalar(foffb[1,f])+1;
-    end = as.scalar(foffe[1,f]);
-    bestig = 0.0; bestv = -1;
-    for(j in beg:end-1 ) { # lte semantics
-       # construct predicate 0/1 vector
-       p = table(seq(beg, j), 1, ncol(X2), 1);
-       # find rows that match at least one value and appear in I
-       Ileft = (t(X2 %*% p) * I) != 0;
-       Iright = I * (Ileft==0);
-       # compute information gain
-       ig = computeImpurity(y2, I, impurity)
-            - sum(Ileft)/numI * computeImpurity(y2, Ileft, impurity)
-            - sum(Iright)/numI * computeImpurity(y2, Iright, impurity);
-       # track best split value and index, incl validity
-       if( ig > bestig & sum(Ileft) >= min_leaf & sum(Iright) >= min_leaf ) {
-          bestig = ig;
-          bestv = j;
-       }
-    }
+    f = as.scalar(feat[i]);        # feature
+    beg = as.scalar(foffb[1,f])+1; # feature start in X2
+    end = as.scalar(foffe[1,f]);   # feature end in X2
+    belen = end-beg;
+    while(FALSE){} # make beg/end known
+
+    # construct 0/1 predicate vectors with <= semantics
+    # find rows that match at least one value and appear in I
+    # (vectorized evaluation, each column in P is a split candidate)
+    P = matrix(0, ncol(X2), belen+1);
+    P[beg:end-1,1:belen+1] = upper.tri(target=matrix(1,belen,belen+1), diag=TRUE);
+    Ileft = (t(X2 %*% P) * I) != 0;
+    Iright = (Ileft==0) * I;
+
+    # compute information gain for all split candidates
+    ig = as.scalar(computeImpurity(y2, I, impurity))
+         - rowSums(Ileft)/numI * computeImpurity(y2, Ileft, impurity)
+         - rowSums(Iright)/numI * computeImpurity(y2, Iright, impurity);
+    ig = replace(target=ig, pattern=NaN, replacement=0);
+
+    # track best split value and index, incl validity
+    valid = (rowSums(Ileft)>=min_leaf) & (rowSums(Iright)>=min_leaf);
+    bestig = max(valid*ig);
+    bestv = ifelse(bestig>0, nrow(valid)-as.scalar(rowIndexMax(t(rev(valid*ig))))+beg, -1);
     R[,i] = as.matrix(list(f, bestig, bestv));
   }
   ix = as.scalar(rowIndexMax(R[2,]));
@@ -206,14 +210,14 @@ findBestSplit = function(Matrix[Double] X2, Matrix[Double] y2, Matrix[Double] fo
 }
 
 computeImpurity = function(Matrix[Double] y2, Matrix[Double] I, String impurity)
-  return(Double score)
+  return(Matrix[Double] score)
 {
-  f = rowSums(y2 * I) / sum(I); # rel. freq. per category/bin
-  score = 0.0;
+  f = (I %*% y2) / rowSums(I); # rel. freq. per category/bin
+  score = matrix(0, nrow(I), 1);
   if( impurity == "gini" )
-    score = 1 - sum(f^2); # sum(f*(1-f));
+    score = 1 - rowSums(f^2); # sum(f*(1-f));
   else if( impurity == "entropy" )
-    score = sum(-f * log(f));
+    score = rowSums(-f * log(f));
   else
     stop("decisionTree: unsupported impurity measure: "+impurity);
 }
@@ -221,9 +225,9 @@ computeImpurity = function(Matrix[Double] y2, Matrix[Double] I, String impurity)
 computeLeafLabel = function(Matrix[Double] y2, Matrix[Double] I, Boolean classify, Boolean verbose)
   return(Double label)
 {
-  f = rowSums(y2 * I) / sum(I);
+  f = (I %*% y2) / sum(I);
   label = ifelse(classify,
-    as.scalar(rowIndexMax(t(f))), sum(f*seq(1,nrow(f))));
+    as.scalar(rowIndexMax(f)), sum(t(f)*seq(1,ncol(f))));
   if(verbose)
     print("-- leaf node label: " + label +" ("+sum(I)*max(f)+"/"+sum(I)+")");
 }

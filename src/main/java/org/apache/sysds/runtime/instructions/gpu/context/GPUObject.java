@@ -886,6 +886,8 @@ public class GPUObject {
 			if (copyToDevice) {
 				CSRPointer.copyToDevice(getGPUContext(), getJcudaSparseMatrixPtr(),
 					tmp.getNumRows(), tmp.getNonZeros(), rowPtr, colInd, values);
+				if (DMLScript.STATISTICS)
+					GPUStatistics.cudaToDevCount.add(3);
 			}
 		} else {
 			double[] data = tmp.getDenseBlockValues();
@@ -906,6 +908,8 @@ public class GPUObject {
 				// Copy dense block
 				// H2D now only measures the time taken to do 
 				LibMatrixCUDA.cudaSupportFunctions.hostToDevice(getGPUContext(), data, getDensePointer(), opcode);
+				if (DMLScript.STATISTICS)
+					GPUStatistics.cudaToDevCount.add(1);
 			}
 		}
 
@@ -913,8 +917,6 @@ public class GPUObject {
 
 		if (DMLScript.STATISTICS)
 			GPUStatistics.cudaToDevTime.add(System.nanoTime() - start);
-		if (DMLScript.STATISTICS)
-			GPUStatistics.cudaToDevCount.add(1);
 	}
 
 	public static int toIntExact(long l) {
@@ -1012,42 +1014,6 @@ public class GPUObject {
 		dirty = false;
 	}
 	
-	// Copy and convert to a MatrixBlock, and return
-	public MatrixBlock evictFromDeviceToHostMB(String instName, boolean eagerDelete) throws DMLRuntimeException {
-		if(LOG.isTraceEnabled()) {
-			LOG.trace("GPU : copyFromDeviceToHost, on " + this + ", GPUContext=" + getGPUContext());
-		}
-		MatrixBlock tmp = null;
-		if (!isDensePointerNull()) {
-			tmp = new MatrixBlock(toIntExact(mat.getNumRows()), toIntExact(mat.getNumColumns()), false);
-			tmp.allocateDenseBlock();
-			LibMatrixCUDA.cudaSupportFunctions.deviceToHost(getGPUContext(),
-						getDensePointer(), tmp.getDenseBlockValues(), instName, true);
-			//if(eagerDelete)
-			//	clearData(instName, true);
-			tmp.recomputeNonZeros();
-		} else {
-			int rows = toIntExact(mat.getNumRows());
-			int cols = toIntExact(mat.getNumColumns());
-			int nnz = toIntExact(getJcudaSparseMatrixPtr().nnz);
-			double[] values = new double[nnz];
-			LibMatrixCUDA.cudaSupportFunctions.deviceToHost(getGPUContext(), getJcudaSparseMatrixPtr().val, values, instName, true);
-			int[] rowPtr = new int[rows + 1];
-			int[] colInd = new int[nnz];
-			CSRPointer.copyPtrToHost(getJcudaSparseMatrixPtr(), rows, nnz, rowPtr, colInd);
-			//if(eagerDelete)
-			//	clearData(instName, true);
-			SparseBlockCSR sparseBlock = new SparseBlockCSR(rowPtr, colInd, values, nnz);
-			tmp = new MatrixBlock(rows, cols, nnz, sparseBlock);
-		}
-		//mat.acquireModify(tmp);
-		//mat.release();
-		//dirty = false;
-		//isLineageCached = false;
-		return tmp;
-	}
-
-
 	/**
 	 * Clears the data associated with this {@link GPUObject} instance
 	 *

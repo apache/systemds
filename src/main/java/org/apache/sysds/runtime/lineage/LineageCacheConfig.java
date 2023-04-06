@@ -106,7 +106,7 @@ public class LineageCacheConfig
 	public static double FSREAD_SPARSE = 400;
 	public static double FSWRITE_DENSE = 450;
 	public static double FSWRITE_SPARSE = 225;
-	public static double D2HCOPY = 1500;
+	public static double D2HCOPYBANDWIDTH = 1500; //MB/sec
 	public static double D2HMAXBANDWIDTH = 8192;
 	
 	private enum CachedItemHead {

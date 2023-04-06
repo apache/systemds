@@ -183,6 +183,12 @@ public class LineageCacheEntry {
 		return _gpuPointer!= null;
 	}
 
+	public synchronized boolean isDensePointer() {
+		if (!isGPUObject())
+			return false;
+		return _gpuPointer.isDensepointer();
+	}
+
 	public boolean isSerializedBytes() {
 		return _dt.isUnknown() && _key.getOpcode().equals(LineageItemUtils.SERIALIZATION_OPCODE);
 	}
@@ -342,6 +348,11 @@ public class LineageCacheEntry {
 
 		protected DataCharacteristics getDataCharacteristics() {
 			return _metadata.getDataCharacteristics();
+		}
+
+		protected boolean isDensepointer() {
+			return true;
+			// TODO: Support sparse pointer caching
 		}
 	}
 }

@@ -33,6 +33,11 @@ import jcuda.Pointer;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.instructions.gpu.context.GPUContext;
 import org.apache.sysds.runtime.instructions.gpu.context.GPUContextPool;
+import org.apache.sysds.runtime.matrix.data.LibMatrixCUDA;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.meta.DataCharacteristics;
+
+import static org.apache.sysds.runtime.instructions.gpu.context.GPUObject.toIntExact;
 
 public class LineageGPUCacheEviction 
 {
@@ -115,13 +120,12 @@ public class LineageGPUCacheEviction
 		double sizeMB = sizeByte / (1024*1024);
 		double newTSpeed = sizeMB / copyTime;  //bandwidth (MB/sec) + java overhead
 
-		// FIXME: A D2H copy lazily executes previous kernels
 		if (newTSpeed > LineageCacheConfig.D2HMAXBANDWIDTH)
 			return;  //filter out errorneous measurements (~ >8GB/sec)
 		// Perform exponential smoothing.
 		double smFactor = 0.5;  //smoothing factor
-		LineageCacheConfig.D2HCOPY = (smFactor * newTSpeed) + ((1-smFactor) * LineageCacheConfig.D2HCOPY);
-		//System.out.println("size_t: "+sizeMB+ " speed_t: "+newTSpeed + " estimate_t+1: "+LineageCacheConfig.D2HCOPY);
+		LineageCacheConfig.D2HCOPYBANDWIDTH = (smFactor * newTSpeed) + ((1-smFactor) * LineageCacheConfig.D2HCOPYBANDWIDTH);
+		//System.out.println("size_t: "+sizeMB+ " speed_t: "+newTSpeed + " estimate_t+1: "+LineageCacheConfig.D2HCOPYBANDWIDTH);
 	}
 
 	//--------------- CACHE MAINTENANCE & LOOKUP FUNCTIONS --------------//
@@ -224,37 +228,67 @@ public class LineageGPUCacheEviction
 		cachedPointers.addAll(livePointers.keySet());
 		return cachedPointers;
 	}
-	
-	/*public static void copyToHostCache(LineageCacheEntry entry, String instName, boolean alreadyCopied) {
-		// TODO: move to the shadow buffer. Convert to double precision only when reused.
-		long t0 = System.nanoTime();
-		MatrixBlock mb = alreadyCopied ? entry._gpuObject.getMatrixObject().acquireReadAndRelease()
-				: entry._gpuObject.evictFromDeviceToHostMB(instName, false);
-		long t1 = System.nanoTime();
-		adjustD2HTransferSpeed(((double)entry._gpuObject.getSizeOnDevice()), ((double)(t1-t0))/1000000000);
-		long size = mb.getInMemorySize();
-		// make space in the host memory for the data TODO: synchronize
-		if (!LineageCacheEviction.isBelowThreshold(size)) {
-			synchronized (LineageCache.getLineageCache()) {
-				LineageCacheEviction.makeSpace(LineageCache.getLineageCache(), size);
-			}
-		}
-		// FIXME: updateSize outside of synchronized is problematic, but eliminates waiting for background eviction
-		LineageCacheEviction.updateSize(size, true);
-		// place the data and set gpu object to null in the cache entry
-		entry.setValue(mb);
-		// maintain order for eviction of host cache. FIXME: synchronize
-		LineageCacheEviction.addEntry(entry);
-		// manage space in gpu cache
-		updateSize(size, false);
-	}*/
 
-	public static void removeFromDeviceCache(LineageCacheEntry entry, String instName, boolean alreadyCopied) {
-		//long size = entry.getGPUObject().getSizeOnDevice();
-		long size = _gpuContext.getMemoryManager().getSizeAllocatedGPUPointer(entry.getGPUPointer());
-		LineageCache.removeEntry(entry._key);
+	// Copy an intermediate from GPU cache to host cache
+	// TODO: move to the shadow buffer. Convert to double precision only when reused.
+	public static Pointer copyToHostCache(LineageCacheEntry entry) {
+		// Memcopy from the GPU pointer to a matrix block
+		long t0 = System.nanoTime();
+		MatrixBlock mb = pointerToMatrixBlock(entry);
+		long t1 = System.nanoTime();
+		// Adjust the estimated D2H bandwidth
+		adjustD2HTransferSpeed(((double)entry.getSize()), ((double)(t1-t0))/1000000000);
+		Pointer ptr = entry.getGPUPointer();
+		long size = mb.getInMemorySize();
+		synchronized(LineageCache.getLineageCache()) {
+			// Make space in the host cache for the data
+			if(!LineageCacheEviction.isBelowThreshold(size)) {
+				synchronized(LineageCache.getLineageCache()) {
+					LineageCacheEviction.makeSpace(LineageCache.getLineageCache(), size);
+				}
+			}
+			LineageCacheEviction.updateSize(size, true);
+			// Place the data and set gpu object to null in the cache entry
+			entry.setValue(mb);
+			// Maintain order for eviction of host cache.
+			LineageCacheEviction.addEntry(entry);
+		}
+		return ptr;
+	}
+
+	private static MatrixBlock pointerToMatrixBlock(LineageCacheEntry le) {
+		MatrixBlock ret = null;
+		DataCharacteristics dc = le.getDataCharacteristics();
+		if (le.isDensePointer()) {
+			ret = new MatrixBlock(toIntExact(dc.getRows()), toIntExact(dc.getCols()), false);
+			ret.allocateDenseBlock();
+			// copy to the host
+			LibMatrixCUDA.cudaSupportFunctions.deviceToHost(getGPUContext(),
+				le.getGPUPointer(), ret.getDenseBlockValues(), null, true);
+			ret.recomputeNonZeros();
+		} /*else {
+			int rows = toIntExact(dc.getRows());
+			int cols = toIntExact(dc.getCols());
+			int nnz = toIntExact(le.getGPUPointer().nnz);
+			double[] values = new double[nnz];
+			LibMatrixCUDA.cudaSupportFunctions.deviceToHost(getGPUContext(), le.getGPUPointer().val, values, null, true);
+			int[] rowPtr = new int[rows + 1];
+			int[] colInd = new int[nnz];
+			CSRPointer.copyPtrToHost(le.getGPUPointer(), rows, nnz, rowPtr, colInd);
+			SparseBlockCSR sparseBlock = new SparseBlockCSR(rowPtr, colInd, values, nnz);
+			ret = new MatrixBlock(rows, cols, nnz, sparseBlock);
+		}*/
+		//mat.acquireModify(tmp);
+		//mat.release();
+		return ret;
+	}
+
+	public static void removeFromDeviceCache(LineageCacheEntry entry, Pointer ptr, boolean removeFromCache) {
+		long size = _gpuContext.getMemoryManager().getSizeAllocatedGPUPointer(ptr);
+		if (removeFromCache)
+			LineageCache.removeEntry(entry._key);
 		updateSize(size, false);
-		GPUCacheEntries.remove(entry.getGPUPointer());
+		GPUCacheEntries.remove(ptr);
 	}
 
 }

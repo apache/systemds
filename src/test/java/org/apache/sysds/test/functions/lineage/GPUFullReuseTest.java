@@ -84,6 +84,7 @@ public class GPUFullReuseTest extends AutomatedTestBase{
 
 		AutomatedTestBase.TEST_GPU = true;  //adds '-gpu'
 		List<String> proArgs = new ArrayList<>();
+		proArgs.add("-explain");
 		proArgs.add("-stats");
 		proArgs.add("-args");
 		proArgs.add(output("R"));
@@ -94,7 +95,8 @@ public class GPUFullReuseTest extends AutomatedTestBase{
 		//run the test
 		runTest(true, EXCEPTION_NOT_EXPECTED, null, -1);
 		HashMap<MatrixValue.CellIndex, Double> R_orig = readDMLMatrixFromOutputDir("R");
-		
+
+		proArgs.clear();
 		proArgs.add("-stats");
 		proArgs.add("-lineage");
 		proArgs.add(LineageCacheConfig.ReuseCacheType.REUSE_MULTILEVEL.name().toLowerCase());

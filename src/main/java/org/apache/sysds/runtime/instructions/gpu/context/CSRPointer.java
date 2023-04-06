@@ -178,9 +178,6 @@ public class CSRPointer {
 	 */
 	public static void copyToDevice(GPUContext gCtx, CSRPointer dest, int rows, long nnz, int[] rowPtr, int[] colInd, double[] values) {
 		CSRPointer r = dest;
-		long t0 = 0;
-		if (DMLScript.STATISTICS)
-			t0 = System.nanoTime();
 		r.nnz = nnz;
 		if(rows < 0) throw new DMLRuntimeException("Incorrect input parameter: rows=" + rows);
 		if(nnz < 0) throw new DMLRuntimeException("Incorrect input parameter: nnz=" + nnz);
@@ -190,10 +187,10 @@ public class CSRPointer {
 		LibMatrixCUDA.cudaSupportFunctions.hostToDevice(gCtx, values, r.val, null);
 		cudaMemcpy(r.rowPtr, Pointer.to(rowPtr), getIntSizeOf(rows + 1), cudaMemcpyHostToDevice);
 		cudaMemcpy(r.colInd, Pointer.to(colInd), getIntSizeOf(nnz), cudaMemcpyHostToDevice);
-		if (DMLScript.STATISTICS)
-			GPUStatistics.cudaToDevTime.add(System.nanoTime() - t0);
-		if (DMLScript.STATISTICS)
-			GPUStatistics.cudaToDevCount.add(3);
+		//if (DMLScript.STATISTICS)
+		//	GPUStatistics.cudaToDevTime.add(System.nanoTime() - t0);
+		//if (DMLScript.STATISTICS)
+		//	GPUStatistics.cudaToDevCount.add(3);
 	}
 	
 	/**

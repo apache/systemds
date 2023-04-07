@@ -87,7 +87,7 @@ backward = function(matrix[double] dout, matrix[double] X, matrix[double] w0, ma
 
 
   # Second term -> V(i,f) * (X(i))^2
-  # Xt = t( X^2 ) %*% dout  # shape (d,1)
+  Xt = t( X^2 ) %*% dout  # shape (d,1)
 
   # code with loops
   # g_V2 = Xt[1,] %*% V[1,]
@@ -97,9 +97,7 @@ backward = function(matrix[double] dout, matrix[double] X, matrix[double] w0, ma
   # }
   
   # vectorized code
-  X_squared = X^2
-  Xt = t(X_squared) %*% dout
-  g_V2 = Xt %*% V
+  g_V2 = t(Xt) %*% V
 
   xv = X %*% V
 

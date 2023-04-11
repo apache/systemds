@@ -24,6 +24,7 @@ import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
+import org.apache.sysds.utils.Statistics;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -42,10 +43,22 @@ public class BuiltinDecisionTreeRealDataTest extends AutomatedTestBase {
 
 	@Test
 	public void testDecisionTreeTitanic() {
-		runDecisionTree(TITANIC_DATA, TITANIC_TFSPEC, 0.875, ExecType.CP);
+		runDecisionTree(TITANIC_DATA, TITANIC_TFSPEC, 0.875, 1, ExecType.CP);
+	}
+	
+	@Test
+	public void testRandomForestTitanic1() {
+		//one tree with sample_frac=1 should be equivalent to decision tree
+		runDecisionTree(TITANIC_DATA, TITANIC_TFSPEC, 0.875, 2, ExecType.CP);
+	}
+	
+	@Test
+	public void testRandomForestTitanic8() {
+		//8 trees with sample fraction 0.125 each, accuracy 0.785 due to randomness
+		runDecisionTree(TITANIC_DATA, TITANIC_TFSPEC, 0.793, 9, ExecType.CP);
 	}
 
-	private void runDecisionTree(String data, String tfspec, double minAcc, ExecType instType) {
+	private void runDecisionTree(String data, String tfspec, double minAcc, int dt, ExecType instType) {
 		Types.ExecMode platformOld = setExecMode(instType);
 		try {
 			loadTestConfiguration(getTestConfiguration(TEST_NAME));
@@ -53,12 +66,13 @@ public class BuiltinDecisionTreeRealDataTest extends AutomatedTestBase {
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
 			programArgs = new String[] {"-stats",
-				"-args", data, tfspec, output("R")};
+				"-args", data, tfspec, String.valueOf(dt), output("R")};
 
 			runTest(true, false, null, -1);
 
 			double acc = readDMLMatrixFromOutputDir("R").get(new CellIndex(1,1));
 			Assert.assertTrue(acc >= minAcc);
+			Assert.assertEquals(0, Statistics.getNoOfExecutedSPInst());
 		}
 		finally {
 			rtplatform = platformOld;

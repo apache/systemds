@@ -234,6 +234,9 @@ public class ReorgSPInstruction extends UnarySPInstruction {
 				boolean ixret = sec.getScalarInput(_ixret).getBooleanValue();
 				mcOut.set(mc1.getRows(), ixret?1:mc1.getCols(), mc1.getBlocksize(), mc1.getBlocksize());
 			}
+			else { //e.g., rev
+				mcOut.set(mc1);
+			}
 		}
 		
 		//infer initially unknown nnz from input
@@ -241,7 +244,7 @@ public class ReorgSPInstruction extends UnarySPInstruction {
 			boolean sortIx = getOpcode().equalsIgnoreCase("rsort") && sec.getScalarInput(_ixret.getName(), _ixret.getValueType(), _ixret.isLiteral()).getBooleanValue();			
 			if( sortIx )
 				mcOut.setNonZeros(mc1.getRows());
-			else //default (r', rdiag, rsort data)
+			else //default (r', rdiag, rev, rsort data)
 				mcOut.setNonZeros(mc1.getNonZeros());
 		}
 	}

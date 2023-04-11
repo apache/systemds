@@ -226,8 +226,8 @@ computeLeafLabel = function(Matrix[Double] y2, Matrix[Double] I, Boolean classif
   return(Double label)
 {
   f = (I %*% y2) / sum(I);
-  label = ifelse(classify,
-    as.scalar(rowIndexMax(f)), sum(t(f)*seq(1,ncol(f))));
+  label = as.scalar(ifelse(classify,
+    rowIndexMax(f), f %*% seq(1,ncol(f))));
   if(verbose)
     print("-- leaf node label: " + label +" ("+sum(I)*max(f)+"/"+sum(I)+")");
 }

@@ -593,7 +593,10 @@ public class ProgramConverter
 				ret.setReadVariables( sb.variablesRead() );
 				
 				//deep copy hops dag for concurrent recompile
-				ArrayList<Hop> hops = Recompiler.deepCopyHopsDag( sb.getHops() );
+				ArrayList<Hop> hops = sb.getHops();
+				synchronized(hops) { // guard concurrent recompile
+					hops = Recompiler.deepCopyHopsDag( hops );
+				}
 				if( !plain )
 					Recompiler.updateFunctionNames( hops, pid );
 				ret.setHops( hops );

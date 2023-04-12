@@ -37,7 +37,7 @@
     <sysds.cp.parallel.io>true</sysds.cp.parallel.io>
 
     <!-- enalbe multi-threaded transformencode and apply -->
-    <sysds.parallel.encode>false</sysds.parallel.encode>
+    <sysds.parallel.encode>true</sysds.parallel.encode>
 
     <!-- synchronization barrier between transformencode build and apply -->
     <sysds.parallel.encode.staged>false</sysds.parallel.encode.staged>

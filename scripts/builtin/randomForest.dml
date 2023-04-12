@@ -40,6 +40,8 @@
 # min_split       Minimum number of samples in leaf for attempting a split
 # max_features    Parameter controlling the number of features used as split
 #                 candidates at tree nodes: m = ceil(num_features^max_features)
+# max_values      Parameter controlling the number of values per feature used
+#                 as split candidates: nb = ceil(num_values^max_values)
 # impurity        Impurity measure: entropy, gini (default)
 # seed            Fixed seed for randomization of samples and split candidates
 # verbose         Flag indicating verbose debug output
@@ -69,7 +71,8 @@
 
 m_randomForest = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] ctypes,
     Int num_trees = 16, Double sample_frac = 0.1, Double feature_frac = 1.0,
-    Int max_depth = 10, Int min_leaf = 20, Int min_split = 50, Double max_features = 0.5,
+    Int max_depth = 10, Int min_leaf = 20, Int min_split = 50,
+    Double max_features = 0.5, Double max_values = 1.0,
     String impurity = "gini", Int seed = -1, Boolean verbose = FALSE)
   return(Matrix[Double] M)
 {
@@ -123,7 +126,8 @@ m_randomForest = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] cty
     t2 = time();
     si3 = as.integer(as.scalar(randSeeds[3*(i-1)+3,1]));
     Mtemp = decisionTree(X=Xi, y=yi, ctypes=ctypes, max_depth=max_depth, min_split=min_split,
-      min_leaf=min_leaf, max_features=max_features, impurity=impurity, seed=si3, verbose=verbose);
+      min_leaf=min_leaf, max_features=max_features, max_values=max_values,
+      impurity=impurity, seed=si3, verbose=verbose);
     M[i,1:length(Mtemp)] = matrix(Mtemp, rows=1, cols=length(Mtemp));
     if( verbose )
       print("-- ["+i+"] trained decision tree in "+(time()-t2)/1e9+" seconds.");

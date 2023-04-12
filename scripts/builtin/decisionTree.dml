@@ -36,6 +36,8 @@
 # min_split       Minimum number of samples in leaf for attempting a split
 # max_features    Parameter controlling the number of features used as split
 #                 candidates at tree nodes: m = ceil(num_features^max_features)
+# max_values      Parameter controlling the number of values per feature used
+#                 as split candidates: nb = ceil(num_values^max_values)
 # impurity        Impurity measure: entropy, gini (default)
 # seed            Fixed seed for randomization of samples and split candidates
 # verbose         Flag indicating verbose debug output
@@ -59,7 +61,8 @@
 # ------------------------------------------------------------------------------
 
 m_decisionTree = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] ctypes,
-    Int max_depth = 10, Int min_leaf = 20, Int min_split = 50, Double max_features = 0.5,
+    Int max_depth = 10, Int min_leaf = 20, Int min_split = 50,
+    Double max_features = 0.5, Double max_values = 1.0,
     String impurity = "gini", Int seed = -1, Boolean verbose = FALSE)
   return(Matrix[Double] M)
 {
@@ -113,7 +116,7 @@ m_decisionTree = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] cty
     # find best split attribute
     nSeed = ifelse(seed==-1, seed, seed*nID);
     [f, v, IDleft, Ileft, IDright, Iright] = findBestSplit(
-      X2, y2, foffb, foffe, nID, nI, min_leaf, max_features, impurity, nSeed);
+      X2, y2, foffb, foffe, nID, nI, min_leaf, max_features, max_values, impurity, nSeed);
     validSplit = sum(Ileft) >= min_leaf & sum(Iright) >= min_leaf;
     if(verbose)
       print("-- best split: f"+f+" <= "+v+" --> valid="+validSplit);
@@ -147,7 +150,7 @@ m_decisionTree = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] cty
 }
 
 findBestSplit = function(Matrix[Double] X2, Matrix[Double] y2, Matrix[Double] foffb, Matrix[Double] foffe,
-    Int ID, Matrix[Double] I, Int min_leaf, Double max_features, String impurity, Int seed)
+    Int ID, Matrix[Double] I, Int min_leaf, Double max_features, Double max_values, String impurity, Int seed)
   return(Int f, Int v, Int IDleft, Matrix[Double] Ileft, Int IDright, Matrix[Double] Iright)
 {
   # sample features iff max_features < 1
@@ -173,8 +176,15 @@ findBestSplit = function(Matrix[Double] X2, Matrix[Double] y2, Matrix[Double] fo
     # construct 0/1 predicate vectors with <= semantics
     # find rows that match at least one value and appear in I
     # (vectorized evaluation, each column in P is a split candidate)
-    P = matrix(0, ncol(X2), belen+1);
-    P[beg:end-1,1:belen+1] = upper.tri(target=matrix(1,belen,belen+1), diag=TRUE);
+    fP = upper.tri(target=matrix(1,belen,belen+1), diag=TRUE);
+    vI = seq(1,belen+1);
+    if( max_values < 1.0 & ncol(fP)>10 ) {
+      rI2 = rand(rows=ncol(fP), cols=1, seed=seed) <= (ncol(fP)^max_values/ncol(fP));
+      fP = removeEmpty(target=fP, margin="cols", select=t(rI2));
+      vI = removeEmpty(target=vI, margin="rows", select=rI2);
+    }
+    P = matrix(0, ncol(X2), ncol(fP));
+    P[beg:end-1,1:ncol(fP)] = fP;
     Ileft = (t(X2 %*% P) * I) != 0;
     Iright = (Ileft==0) * I;
 
@@ -188,6 +198,8 @@ findBestSplit = function(Matrix[Double] X2, Matrix[Double] y2, Matrix[Double] fo
     valid = (rowSums(Ileft)>=min_leaf) & (rowSums(Iright)>=min_leaf);
     bestig = max(valid*ig);
     bestv = ifelse(bestig>0, nrow(valid)-as.scalar(rowIndexMax(t(rev(valid*ig))))+beg, -1);
+    if( bestv >= 0 )
+      bestv = as.scalar(vI[bestv-beg+1,1])+beg-1;
     R[,i] = as.matrix(list(f, bestig, bestv));
   }
   ix = as.scalar(rowIndexMax(R[2,]));

@@ -42,23 +42,40 @@ public class BuiltinDecisionTreeRealDataTest extends AutomatedTestBase {
 	}
 
 	@Test
-	public void testDecisionTreeTitanic() {
-		runDecisionTree(TITANIC_DATA, TITANIC_TFSPEC, 0.875, 1, ExecType.CP);
+	public void testDecisionTreeTitanic_MaxV1() {
+		runDecisionTree(TITANIC_DATA, TITANIC_TFSPEC, 0.875, 1, 1.0, ExecType.CP);
 	}
 	
 	@Test
-	public void testRandomForestTitanic1() {
+	public void testRandomForestTitanic1_MaxV1() {
 		//one tree with sample_frac=1 should be equivalent to decision tree
-		runDecisionTree(TITANIC_DATA, TITANIC_TFSPEC, 0.875, 2, ExecType.CP);
+		runDecisionTree(TITANIC_DATA, TITANIC_TFSPEC, 0.875, 2, 1.0, ExecType.CP);
 	}
 	
 	@Test
-	public void testRandomForestTitanic8() {
+	public void testRandomForestTitanic8_MaxV1() {
 		//8 trees with sample fraction 0.125 each, accuracy 0.785 due to randomness
-		runDecisionTree(TITANIC_DATA, TITANIC_TFSPEC, 0.793, 9, ExecType.CP);
+		runDecisionTree(TITANIC_DATA, TITANIC_TFSPEC, 0.793, 9, 1.0, ExecType.CP);
+	}
+	
+	@Test
+	public void testDecisionTreeTitanic_MaxV06() {
+		runDecisionTree(TITANIC_DATA, TITANIC_TFSPEC, 0.871, 1, 0.6, ExecType.CP);
+	}
+	
+	@Test
+	public void testRandomForestTitanic1_MaxV06() {
+		//one tree with sample_frac=1 should be equivalent to decision tree
+		runDecisionTree(TITANIC_DATA, TITANIC_TFSPEC, 0.871, 2, 0.6, ExecType.CP);
+	}
+	
+	@Test
+	public void testRandomForestTitanic8_MaxV06() {
+		//8 trees with sample fraction 0.125 each, accuracy 0.785 due to randomness
+		runDecisionTree(TITANIC_DATA, TITANIC_TFSPEC, 0.793, 9, 0.6, ExecType.CP);
 	}
 
-	private void runDecisionTree(String data, String tfspec, double minAcc, int dt, ExecType instType) {
+	private void runDecisionTree(String data, String tfspec, double minAcc, int dt, double maxV, ExecType instType) {
 		Types.ExecMode platformOld = setExecMode(instType);
 		try {
 			loadTestConfiguration(getTestConfiguration(TEST_NAME));
@@ -66,7 +83,7 @@ public class BuiltinDecisionTreeRealDataTest extends AutomatedTestBase {
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
 			programArgs = new String[] {"-stats",
-				"-args", data, tfspec, String.valueOf(dt), output("R")};
+				"-args", data, tfspec, String.valueOf(dt), String.valueOf(maxV), output("R")};
 
 			runTest(true, false, null, -1);
 

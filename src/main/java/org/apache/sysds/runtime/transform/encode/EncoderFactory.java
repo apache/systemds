@@ -20,6 +20,7 @@
 package org.apache.sysds.runtime.transform.encode;
 
 import static org.apache.sysds.runtime.util.CollectionUtils.except;
+import static org.apache.sysds.runtime.util.CollectionUtils.intersect;
 import static org.apache.sysds.runtime.util.CollectionUtils.unionDistinct;
 
 import java.util.ArrayList;
@@ -87,8 +88,13 @@ public class EncoderFactory {
 			List<Integer> dcIDs = Arrays.asList(ArrayUtils
 				.toObject(TfMetaUtils.parseJsonIDList(jSpec, colnames, TfMethod.DUMMYCODE.toString(), minCol, maxCol)));
 			List<Integer> binIDs = TfMetaUtils.parseBinningColIDs(jSpec, colnames, minCol, maxCol);
-			// note: any dummycode column requires recode as preparation, unless it follows binning
-			rcIDs = except(unionDistinct(rcIDs, except(dcIDs, binIDs)), haIDs);
+			// NOTE: any dummycode column requires recode as preparation, unless the dummycode
+			// column follows binning or feature hashing
+			rcIDs = unionDistinct(rcIDs, except(except(dcIDs, binIDs), haIDs));
+			// Error out if the first level encoders have overlaps
+			if (intersect(rcIDs, binIDs, haIDs))
+				throw new DMLRuntimeException("More than one encoders (recode, binning, hashing) on one column is not allowed");
+
 			List<Integer> ptIDs = except(except(UtilFunctions.getSeqList(1, clen, 1), unionDistinct(rcIDs, haIDs)),
 				binIDs);
 			List<Integer> oIDs = Arrays.asList(ArrayUtils
@@ -96,7 +102,8 @@ public class EncoderFactory {
 			List<Integer> mvIDs = Arrays.asList(ArrayUtils.toObject(
 				TfMetaUtils.parseJsonObjectIDList(jSpec, colnames, TfMethod.IMPUTE.toString(), minCol, maxCol)));
 			List<Integer> udfIDs = TfMetaUtils.parseUDFColIDs(jSpec, colnames, minCol, maxCol);
-			
+
+
 			// create individual encoders
 			if(!rcIDs.isEmpty())
 				for(Integer id : rcIDs)

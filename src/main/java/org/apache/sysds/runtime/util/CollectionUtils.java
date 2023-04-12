@@ -20,7 +20,9 @@
 package org.apache.sysds.runtime.util;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -100,6 +102,27 @@ public class CollectionUtils {
 		for( T item : tmp2 )
 			if( probe.contains(item) )
 				return true;
+		return false;
+	}
+
+	@SafeVarargs
+	public static <T> boolean intersect(Collection<T>... inputs) {
+		//remove empty collections
+		Collection<T>[] nonEmpty = Arrays.stream(inputs).filter(l -> !l.isEmpty()).toArray(Collection[]::new);
+		if (nonEmpty.length == 0)
+			return false;
+
+		//order the lists based on size (ascending)
+		Arrays.sort(nonEmpty, Comparator.comparingInt(Collection::size));
+		//maintain a central hash table of seen items
+		Set<T> probe = (nonEmpty[0] instanceof HashSet) ? (Set<T>) nonEmpty[0] : new HashSet<>(nonEmpty[0]);
+		for (int i=1; i<nonEmpty.length; i++) {
+			for (T item : nonEmpty[i])
+				//if the item is in the seen set, return true
+				if (probe.contains(item))
+					return true;
+			probe.addAll(inputs[i]);
+		}
 		return false;
 	}
 	

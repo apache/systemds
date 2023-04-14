@@ -26,6 +26,7 @@
 # ------------------------------------------------------------------------------
 # yhat     column vector of predicted response values y
 # ytest    column vector of actual response values y
+# lm       indicator if used for linear regression model
 # ------------------------------------------------------------------------------
 #
 # OUTPUT:
@@ -33,14 +34,17 @@
 # R        column vector holding avg_res, ss_avg_res, and R2
 # ------------------------------------------------------------------------------
 
-m_lmPredictStats = function(Matrix[Double] yhat, Matrix[Double] ytest)
+m_lmPredictStats = function(Matrix[Double] yhat, Matrix[Double] ytest, Boolean lm)
   return (Matrix[Double] R)
 {
   y_residual = ytest - yhat;
   avg_res = sum(y_residual) / nrow(ytest);
   ss_res = sum(y_residual^2);
   ss_avg_res = ss_res - nrow(ytest) * avg_res^2;
-  R2 = 1 - ss_res / (sum(ytest^2) - nrow(ytest) * (sum(ytest)/nrow(ytest))^2);
+  if( lm )
+    R2 = 1 - ss_res / (sum(ytest^2) - nrow(ytest) * (sum(ytest)/nrow(ytest))^2);
+  else
+    R2 = sum((yhat - mean(ytest))^2) / sum((ytest - mean(ytest))^2)
   print("\nAccuracy:" +
         "\n--sum(ytest) = " + sum(ytest) +
         "\n--sum(yhat) = " + sum(yhat) +

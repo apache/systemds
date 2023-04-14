@@ -38,10 +38,9 @@ public class BuiltinDecisionTreeRealDataTest extends AutomatedTestBase {
 	private final static String WINE_DATA = DATASET_DIR + "wine/winequality-red-white.csv";
 	private final static String WINE_TFSPEC = DATASET_DIR + "wine/tfspec.json";
 
-	
 	@Override
 	public void setUp() {
-		for(int i=1; i<=2; i++)
+		for(int i=1; i<=3; i++)
 			addTestConfiguration(TEST_NAME+i, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] {"R"}));
 	}
 
@@ -86,8 +85,19 @@ public class BuiltinDecisionTreeRealDataTest extends AutomatedTestBase {
 	
 	@Test
 	public void testRandomForestWine_MaxV1() {
-		//one tree with sample_frac=1 should be equivalent to decision tree
 		runDecisionTree(2, WINE_DATA, WINE_TFSPEC, 0.989, 2, 1.0, ExecType.CP);
+	}
+	
+	@Test
+	public void testDecisionTreeWineReg_MaxV1() {
+		//for regression we compare R2 and use rss to optimize
+		runDecisionTree(3, WINE_DATA, WINE_TFSPEC, 0.369, 1, 1.0, ExecType.CP);
+	}
+	
+	@Test
+	public void testRandomForestWineReg_MaxV1() {
+		//for regression we compare R2 and use rss to optimize
+		runDecisionTree(3, WINE_DATA, WINE_TFSPEC, 0.369, 2, 1.0, ExecType.CP);
 	}
 
 	private void runDecisionTree(int test, String data, String tfspec, double minAcc, int dt, double maxV, ExecType instType) {

@@ -37,9 +37,10 @@ import static org.apache.sysds.runtime.util.CollectionUtils.unionDistinct;
 public class DecoderFactory 
 {
 	public enum DecoderType {
+		Bin,
 		Dummycode, 
 		PassThrough,
-		Recode
+		Recode,
 	};
 	
 	public static Decoder createDecoder(String spec, String[] colnames, ValueType[] schema, FrameBlock meta) {
@@ -65,14 +66,15 @@ public class DecoderFactory
 			JSONObject jSpec = new JSONObject(spec);
 			List<Decoder> ldecoders = new ArrayList<>();
 			
-			//create decoders 'recode', 'dummy' and 'pass-through'
+			//create decoders 'bin', 'recode', 'dummy' and 'pass-through'
+			List<Integer> binIDs = TfMetaUtils.parseBinningColIDs(jSpec, colnames, minCol, maxCol);
 			List<Integer> rcIDs = Arrays.asList(ArrayUtils.toObject(
 					TfMetaUtils.parseJsonIDList(jSpec, colnames, TfMethod.RECODE.toString(), minCol, maxCol)));
 			List<Integer> dcIDs = Arrays.asList(ArrayUtils.toObject(
 					TfMetaUtils.parseJsonIDList(jSpec, colnames, TfMethod.DUMMYCODE.toString(), minCol, maxCol)));
 			rcIDs = unionDistinct(rcIDs, dcIDs);
 			int len = dcIDs.isEmpty() ? Math.min(meta.getNumColumns(), clen) : meta.getNumColumns();
-			List<Integer> ptIDs = except(UtilFunctions.getSeqList(1, len, 1), rcIDs);
+			List<Integer> ptIDs = except(except(UtilFunctions.getSeqList(1, len, 1), rcIDs), binIDs);
 			
 			//create default schema if unspecified (with double columns for pass-through)
 			if( schema == null ) {
@@ -81,6 +83,10 @@ public class DecoderFactory
 					schema[col-1] = ValueType.FP64;
 			}
 			
+			if( !binIDs.isEmpty() ) {
+				ldecoders.add(new DecoderBin(schema, 
+					ArrayUtils.toPrimitive(binIDs.toArray(new Integer[0]))));
+			}
 			if( !dcIDs.isEmpty() ) {
 				ldecoders.add(new DecoderDummycode(schema, 
 					ArrayUtils.toPrimitive(dcIDs.toArray(new Integer[0]))));

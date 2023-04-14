@@ -86,7 +86,7 @@ s_topk_cleaning = function(Frame[Unknown] dataTrain, Frame[Unknown] dataTest = a
   # [eXtrain, eXtest, metaList] = featureDrop(eXtrain, eXtest, metaList, cv)
   # apply sampling on training data for pipeline enumeration
   print("---- class-stratified sampling of feature matrix w/ f="+sample+" samples="+nrow(eYtrain));
-  if(nrow(eYtrain) >= 10000 & sample == 1.0 )  # 
+  if(nrow(eYtrain) >= 10000 & sample == 1.0 & (sum(mask) > 0 | OHE == FALSE))  #  (sum(mask) > 0 | OHE == FALSE)
     [eXtrain, eYtrain ] = utils::doErrorSample(eXtrain, eYtrain, lq, uq, rowCount)
   else 
     [eXtrain, eYtrain] = utils::doSample(eXtrain, eYtrain, sample, mask, metaR, TRUE)
@@ -194,13 +194,14 @@ return(Double dirtyScore, Matrix[Double] evalFunHp)
   dschema = detectSchema(X)
   tfspec = as.scalar(metaList['tfspec'])
   dmask = matrix(0, rows=1, cols=ncol(dschema))
+  
   for(i in 1:ncol(dschema))
-    if(as.scalar(dschema[1, i]) == "STRING" | as.scalar(dschema[1, i]) == "BOOLEAN")
+    if(as.scalar(dschema[1, i]) == "STRING")
       dmask[1, i] = 1
  
   prefix = as.scalar(ctx["prefix"]);
   mask = as.matrix(metaList['mask'])
-  mask = ifelse(sum(mask == dmask) < ncol(mask), dmask, mask)
+  mask = ifelse(sum(mask) < sum(dmask), dmask, mask)
   [eXtrain, eXtest] = recodeData(X, Xtest, mask, cv, "recode")
   eXtrain = imputeByMean(eXtrain, mask) 
   eXtest = imputeByMean(eXtest, mask) 

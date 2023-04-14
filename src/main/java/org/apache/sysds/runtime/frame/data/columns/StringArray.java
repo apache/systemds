@@ -576,7 +576,7 @@ public class StringArray extends Array<String> {
 				if (FrameUtil.isType(value.toString(), ValueType.BOOLEAN) == ValueType.BOOLEAN)
 					return (value.equals("true")?  1:  0 );
 				else
-					throw new DMLRuntimeException("Type mismatch String found when Double expected");
+					throw new DMLRuntimeException("Type mismatch String found when Double expected "+value);
 			}
 
 		}

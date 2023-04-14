@@ -3,5 +3,9 @@
   "recode":[1,2,5],
   "bin":[
     {"id":3, "method":"equi-width", "numbins":10},
-    {"id":4, "method":"equi-width", "numbins":10}]
+    {"id":4, "method":"equi-width", "numbins":10},
+    {"id":6, "method":"equi-width", "numbins":10}
+
+  ]
 }
+

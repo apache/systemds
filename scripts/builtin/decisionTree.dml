@@ -38,7 +38,7 @@
 #                 candidates at tree nodes: m = ceil(num_features^max_features)
 # max_values      Parameter controlling the number of values per feature used
 #                 as split candidates: nb = ceil(num_values^max_values)
-# impurity        Impurity measure: entropy, gini (default)
+# impurity        Impurity measure: entropy, gini (default), rss (regression)
 # seed            Fixed seed for randomization of samples and split candidates
 # verbose         Flag indicating verbose debug output
 # ------------------------------------------------------------------------------
@@ -72,7 +72,9 @@ m_decisionTree = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] cty
   if( max_depth > 32 )
     stop("decisionTree: invalid max_depth > 32: "+max_depth);
   if( sum(X<=0) != 0 )
-    stop("decisionTree: feature matrix X is not properly recoded/binned: "+sum(X<=0));
+    stop("decisionTree: feature matrix X is not properly recoded/binned (values <= 0): "+sum(X<=0));
+  if( sum(abs(X-round(X))>1e-14) != 0 )
+    stop("decisionTree: feature matrix X is not properly recoded/binned (non-integer): "+sum(abs(X-round(X))>1e-14));
   if( sum(y<=0) != 0 )
     stop("decisionTree: label vector y is not properly recoded/binned: "+sum(y<=0));
 
@@ -230,6 +232,11 @@ computeImpurity = function(Matrix[Double] y2, Matrix[Double] I, String impurity)
     score = 1 - rowSums(f^2); # sum(f*(1-f));
   else if( impurity == "entropy" )
     score = rowSums(-f * log(f));
+  else if( impurity == "rss" ) { # residual sum of squares
+    yhat = f %*% seq(1,ncol(f));                # yhat
+    res = outer(yhat, t(rowIndexMax(y2)), "-"); # yhat-y
+    score = rowSums((I * res)^2);               # sum((yhat-y)^2)
+  }
   else
     stop("decisionTree: unsupported impurity measure: "+impurity);
 }

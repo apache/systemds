@@ -44,5 +44,5 @@ m_lmPredict = function(Matrix[Double] X, Matrix[Double] B,
   yhat = X %*% B[1:ncol(X),] + intercept;
 
   if( verbose )
-    lmPredictStats(yhat, ytest);
+    lmPredictStats(yhat, ytest, TRUE);
 }

@@ -84,7 +84,7 @@ m_randomForestPredict = function(Matrix[Double] X, Matrix[Double] y = matrix(0,0
     if( classify )
       print("Accuracy (%): " + (sum(yhat == y) / nrow(y) * 100));
     else
-      lmPredictStats(yhat, y);
+      lmPredictStats(yhat, y, FALSE);
   }
 
   if(verbose) {

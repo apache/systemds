@@ -42,7 +42,7 @@
 #                 candidates at tree nodes: m = ceil(num_features^max_features)
 # max_values      Parameter controlling the number of values per feature used
 #                 as split candidates: nb = ceil(num_values^max_values)
-# impurity        Impurity measure: entropy, gini (default)
+# impurity        Impurity measure: entropy, gini (default), rss (regression)
 # seed            Fixed seed for randomization of samples and split candidates
 # verbose         Flag indicating verbose debug output
 # ------------------------------------------------------------------------------

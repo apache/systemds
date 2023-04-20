@@ -73,7 +73,7 @@ jobs:
       with:
         name: application-tests-${{ matrix.os }}
         path: target/*.exec
-        retention_days: 1
+        retention-days: 1
 
   component_tests:
     runs-on: ${{ matrix.os }}
@@ -118,7 +118,7 @@ jobs:
       with:
         name: component-tests-${{ matrix.os }}-java-${{ matrix.java }}-${{ matrix.javadist }}-${{ matrix.tests }}
         path: target/*.exec
-        retention_days: 1
+        retention-days: 1
 
   functions_tests:
     runs-on: ${{ matrix.os }}
@@ -176,7 +176,7 @@ jobs:
       with:
         name: functions-tests-${{ matrix.os }}-${{ matrix.tests }}
         path: target/*.exec
-        retention_days: 1
+        retention-days: 1
 
   determine_test_coverage:
     name: Determine Test Coverage

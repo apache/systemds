@@ -61,11 +61,20 @@ jobs:
         key: ${{ runner.os }}-maven-test-${{ hashFiles('**/pom.xml') }}
         restore-keys: |
           ${{ runner.os }}-maven-test-
+
     - name: Run all Application Tests
       uses: ./.github/action/
       id: test
       with:
         test-to-run: org.apache.sysds.test.applications.**
+
+    - name: Save Java Test Coverage as Artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: application-tests-${{ matrix.os }}
+        path: target/*.exec
+        retention_days: 1
+
   component_tests:
     runs-on: ${{ matrix.os }}
     timeout-minutes: 30
@@ -103,6 +112,14 @@ jobs:
 
     - name: ${{ matrix.tests }}
       run: ./docker/entrypoint.sh ${{ matrix.tests }}
+
+    - name: Save Java Test Coverage as Artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: component-tests-${{ matrix.os }}-java-${{ matrix.java }}-${{ matrix.javadist }}-${{ matrix.tests }}
+        path: target/*.exec
+        retention_days: 1
+
   functions_tests:
     runs-on: ${{ matrix.os }}
     timeout-minutes: 90
@@ -153,4 +170,27 @@ jobs:
       id: test
       with:
         test-to-run: ${{ matrix.tests }}
+
+    - name: Save Java Test Coverage as Artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: functions-tests-${{ matrix.os }}-${{ matrix.tests }}
+        path: target/*.exec
+        retention_days: 1
+
+  determine_test_coverage:
+    name: Determine Test Coverage
+    runs-on: ubuntu-latest
+    needs: [
+      applications_tests,
+      component_tests,
+      functions_tests
+      ]
+    steps:
+      - name: Download all Jacoco Artifacts
+        uses: actions/download-artifact@v3
+        with:
+          path: target/*.exec
+      - name: Display filetree
+        run: ls -R
 

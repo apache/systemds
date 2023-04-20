@@ -1,0 +1,156 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+name: Java Testing Workflow
+
+on:
+  push:
+    paths-ignore:
+      - 'docs/**'
+      - '*.md'
+      - '*.html'
+      - 'src/main/python/**'
+      - 'dev/**'
+    branches:
+      - main
+  pull_request:
+    paths-ignore:
+      - 'docs/**'
+      - '*.md'
+      - '*.html'
+      - 'src/main/python/**'
+      - 'dev/**'
+    branches:
+      - main
+
+jobs:
+  applications_tests:
+    name: ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v3
+
+    - name: Cache Maven Dependencies
+      uses: actions/cache@v3
+      with:
+        path: ~/.m2/repository
+        key: ${{ runner.os }}-maven-test-${{ hashFiles('**/pom.xml') }}
+        restore-keys: |
+          ${{ runner.os }}-maven-test-
+    - name: Run all Application Tests
+      uses: ./.github/action/
+      id: test
+      with:
+        test-to-run: org.apache.sysds.test.applications.**
+  component_tests:
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]
+        java: ['11']
+        javadist: ['adopt']
+        tests: [
+          "**.test.usertest.**",
+          "**.component.c**.**",
+          "**.component.e**.**,**.component.f**.**,**.component.m**.**",
+          "**.component.p**.**,**.component.t**.**"
+        ]
+    name: ${{ matrix.tests }}
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v3
+
+    - name: Setup Java ${{ matrix.java }} ${{ matrix.javadist }}
+      uses: actions/setup-java@v3
+      with:
+        distribution: ${{ matrix.javadist }}
+        java-version: ${{ matrix.java }}
+        cache: 'maven'
+
+    - name: Cache Maven Dependencies
+      uses: actions/cache@v3
+      with:
+        path: ~/.m2/repository
+        key: ${{ runner.os }}-maven-test-${{ hashFiles('**/pom.xml') }}
+        restore-keys: |
+          ${{ runner.os }}-maven-test-
+
+    - name: ${{ matrix.tests }}
+      run: ./docker/entrypoint.sh ${{ matrix.tests }}
+  functions_tests:
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        tests: [
+          "**.functions.a**.**,**.functions.binary.frame.**,**.functions.binary.matrix.**,**.functions.binary.scalar.**,**.functions.binary.tensor.**",
+          "**.functions.blocks.**,**.functions.data.rand.**,",
+          "**.functions.countDistinct.**,**.functions.countDistinctApprox.**,**.functions.data.misc.**,**.functions.lineage.**",
+          "**.functions.compress.**,**.functions.data.tensor.**,**.functions.codegenalg.parttwo.**,**.functions.codegen.**,**.functions.caching.**",
+          "**.functions.binary.matrix_full_cellwise.**,**.functions.binary.matrix_full_other.**",
+          "**.functions.federated.algorithms.**,**.functions.federated.io.**,**.functions.federated.paramserv.**",
+          "**.functions.federated.primitives.**,**.functions.federated.transform.**",
+          "**.functions.federated.monitoring.**,**.functions.federated.multitenant.**",
+          "**.functions.federated.codegen.**,**.functions.federated.FederatedTestObjectConstructor",
+          "**.functions.codegenalg.partone.**",
+          "**.functions.builtin.part1.**",
+          "**.functions.builtin.part2.**",
+          "**.functions.frame.**,**.functions.indexing.**,**.functions.io.**,**.functions.iogen.**",
+          "**.functions.dnn.**",
+          "**.functions.paramserv.**",
+          "**.functions.recompile.**,**.functions.misc.**,**.functions.mlcontext.**",
+          "**.functions.nary.**,**.functions.quaternary.**",
+          "**.functions.parfor.**",
+          "**.functions.pipelines.**,**.functions.privacy.**", 
+          "**.functions.homomorphicEncryption.**",
+          "**.functions.unary.scalar.**,**.functions.updateinplace.**,**.functions.vect.**",
+          "**.functions.reorg.**,**.functions.rewrite.**,**.functions.ternary.**,**.functions.transform.**",
+          "**.functions.unary.matrix.**,**.functions.linearization.**,**.functions.jmlc.**"
+          ]
+        os: [ubuntu-latest]
+    name: ${{ matrix.tests }}
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v3
+
+    - name: Cache Maven Dependencies
+      uses: actions/cache@v3
+      with:
+        path: ~/.m2/repository
+        key: ${{ runner.os }}-maven-test-${{ hashFiles('**/pom.xml') }}
+        restore-keys: |
+          ${{ runner.os }}-maven-test-
+
+    - name: ${{ matrix.tests }}
+      uses: ./.github/action/
+      id: test
+      with:
+        test-to-run: ${{ matrix.tests }}
+

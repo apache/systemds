@@ -113,10 +113,19 @@ jobs:
     - name: ${{ matrix.tests }}
       run: ./docker/entrypoint.sh ${{ matrix.tests }}
 
+    - name: Clean Github Artifact Name of Asterisks
+      run: |
+        ARTIFACT_NAME="component-tests"
+        ARTIFACT_NAME+="-${{ matrix.os }}"
+        ARTIFACT_NAME+="-java-${{ matrix.java }}"
+        ARTIFACT_NAME+="-${{ matrix.javadist }}"
+        ARTIFACT_NAME+="-${{ matrix.tests }}"
+        ARTIFACT_NAME=${ARTIFACT_NAME//\*/-} >> $GITHUB_ENV
+
     - name: Save Java Test Coverage as Artifact
       uses: actions/upload-artifact@v3
       with:
-        name: component-tests-${{ matrix.os }}-java-${{ matrix.java }}-${{ matrix.javadist }}-${{ matrix.tests }}
+        name: ${{ env.ARTIFACT_NAME }}
         path: target/*.exec
         retention-days: 1
 
@@ -170,11 +179,17 @@ jobs:
       id: test
       with:
         test-to-run: ${{ matrix.tests }}
+    - name: Clean Github Artifact Name of Asterisks
+      run: |
+        ARTIFACT_NAME="function-tests"
+        ARTIFACT_NAME+="-${{ matrix.os }}"
+        ARTIFACT_NAME+="-${{ matrix.tests }}"
+        ARTIFACT_NAME=${ARTIFACT_NAME//\*/-} >> $GITHUB_ENV
 
     - name: Save Java Test Coverage as Artifact
       uses: actions/upload-artifact@v3
       with:
-        name: functions-tests-${{ matrix.os }}-${{ matrix.tests }}
+        name: ${{ env.ARTIFACT_NAME }}
         path: target/*.exec
         retention-days: 1
 

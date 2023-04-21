@@ -129,6 +129,9 @@ jobs:
     - name: Display dir of target
       run: ls target
 
+    - name: Process Classes 
+      run: mvn process-classes
+
     - name: Generate Code Coverage Report
       run: mvn jacoco:report
 

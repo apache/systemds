@@ -19,58 +19,98 @@
 #
 #-------------------------------------------------------------
 
-# The function Principal Component Analysis (PCA) is used for dimensionality reduction
+# This builtin defines PCA that is a technique to reduce the number of Principal components (Dimensions)
+# to a lower number of dimensions.
+# 
+# This implementation is based on calculating eigenvectors on the covariance matrix of the input:
+#
+# An example of calling in DML:
+# 
+# .. code-block::
+# 
+#   data = read($1)
+#   [data_reduced, clusters] = pca(data=data, K=4, onlyClusters=TRUE)
+#   print(clusters)
+#
+#
+# An example in a ML pipeline containing PCA:
+#
+# .. code-block::
+#   
+#   X = read($1)
+#   [X_reduced, clusters] = pca(data=X, K=4)
+#   Y = read($2)
+#   bias = l2svm(X=X, Y=Y)
+#   X_test = read($3)
+#   [y_predict_normal, Y_predict_rounded] = l2svmPredict(X=X_test, W=bias)
+#   write($5, Y_predict_rounded)
+#
 #
 # INPUT:
 # -------------------------------------------------------------------------------------------
-# X       Input feature matrix
-# K       Number of reduced dimensions (i.e., columns)
-# Center  Indicates whether or not to center the feature matrix
-# Scale   Indicates whether or not to scale the feature matrix
+# X             Input feature matrix
+# K             Number of reduced dimensions (i.e., columns)
+# center        Indicates whether or not to center the feature matrix
+# scale         Indicates whether or not to scale the feature matrix
+# onlyClusters  Indicate if only the clusters should be calculated and returned
+#               not the application of the clusters on X
 # -------------------------------------------------------------------------------------------
 #
 # OUTPUT:
 # -------------------------------------------------------------------------------------------------
 # Xout         Output feature matrix with K columns
-# Clusters     Output dominant eigen vectors (can be used for projections)
+# Clusters     Output dominant eigen vectors sorted by influence
 # Centering    The column means of the input, subtracted to construct the PCA
 # ScaleFactor  The Scaling of the values, to make each dimension same size.
 # -------------------------------------------------------------------------------------------------
 
-m_pca = function(Matrix[Double] X, Integer K=2, Boolean center=TRUE, Boolean scale=TRUE)
+m_pca = function(Matrix[Double] X, Integer K=2, Boolean center=TRUE, Boolean scale=TRUE, Boolean onlyClusters= FALSE)
   return (Matrix[Double] Xout, Matrix[Double] Clusters, Matrix[Double] Centering, Matrix[Double] ScaleFactor) 
 {
-  if(K > ncol(X)) {
-    print("PCA: invalid parameter value, the value of k should not be greater than the no. of columns in X ")
-    print("setting k = ncol(X)")
-    K = ncol(X)
-  }
   N = nrow(X);
   D = ncol(X);
+
+  if(K > D) {
+    print("PCA: invalid parameter value, the value of k should not be greater than the no. of columns in X ")
+    print("setting k = ncol(X)")
+    K = D
+  }
 
   # perform z-scoring (centering and scaling)
   [X, Centering, ScaleFactor] = scale(X, center, scale);
 
-  # co-variance matrix
   mu = colSums(X)/N;
-  C = (t(X) %*% X)/(N-1) - (N/(N-1))*t(mu) %*% mu;
+
+  # co-variance matrix
+  C = (t(X) %*% X)/(N-1)
+  
+  # Correction 
+  C = C - (N/(N-1))*t(mu) %*% mu;
 
   # compute eigen vectors and values
   [evalues, evectors] = eigen(C);
 
-  decreasing_Idx = order(target=evalues,by=1,decreasing=TRUE,index.return=TRUE);
-  diagmat = table(seq(1,D),decreasing_Idx);
-  # sorts eigenvalues by decreasing order
-  evalues = diagmat %*% evalues;
-  # sorts eigenvectors column-wise in the order of decreasing eigenvalues
+  # Sort eigenvalues by decreasing order
+  decreasing_Idx = order(target=evalues, by=1, decreasing=TRUE, index. return=TRUE);
+  diagmat = table(seq(1,D), decreasing_Idx);
+  # sorts eigenvectors column-wise in the order of decreasing eigen values
   evectors = evectors %*% diagmat;
 
-  eval_dominant = evalues[1:K, 1];
-  evec_dominant = evectors[,1:K];
+  # Slice out the number of requested K eigenvectors
+  Clusters = evectors[,1:K];
 
-  # Construct new data set by treating computed dominant eigenvectors as the basis vectors
-  Xout = X %*% evec_dominant;
-  Clusters = evec_dominant;
-  # # replace infinity with zero
-  Xout = replace(target=Xout, pattern=1/0, replacement=0);
+  Xout = matrix(0, rows=0, cols=0)
+    # Construct new data set by treating the computed eigenvectors as the basis vectors
+  if(!onlyClusters){
+    Xout = X %*% Clusters;
+    # Check if the output contains infinity
+    # This is to avoid spark pulling back the dataset for replace.
+    containsInf = contains(target=Xout, pattern=1/0)
+
+    if(containsInf){
+      # replace infinity with zero
+      Xout = replace(target=Xout, pattern=1/0, replacement=0);
+    }
+  }
+  
 }

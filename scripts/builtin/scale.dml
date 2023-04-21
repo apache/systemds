@@ -20,56 +20,51 @@
 #-------------------------------------------------------------
 
 # This function scales and center individual features in the input matrix (column wise.) using z-score to scale the values.
+# This transformation is sometimes also called scale and shift, but it is shifted first and then subsequently scaled.
+#
+# The method is not resistant to inputs containing NaN nor overflows of doubles, but handle it by guaranteeing that
+# no extra NaN values are introduced and columns that contain NaN will not be scaled or shifted.
 #
 # INPUT:
 # --------------------------------------------------------------------------------------
 # X       Input feature matrix
-# center  Indicates whether or not to center the feature matrix
-# scale   Indicates whether or not to scale the feature matrix
+# center  Indicates to center the feature matrix
+# scale   Indicates to scale the feature matrix according to z-score
 # --------------------------------------------------------------------------------------
 #
 # OUTPUT:
 # -------------------------------------------------------------------------------------------
-# Y            Output feature matrix with K columns
+# Out          Output feature matrix scaled and shifted
 # Centering    The column means of the input, subtracted if Center was TRUE
-# ScaleFactor  The Scaling of the values, to make each dimension have similar value ranges
+# ScaleFactor  The scaling of the values, to make each dimension have similar value ranges
 # -------------------------------------------------------------------------------------------
 
 m_scale = function(Matrix[Double] X, Boolean center=TRUE, Boolean scale=TRUE) 
-  return (Matrix[Double] out, Matrix[Double] Centering, Matrix[Double] ScaleFactor) 
+  return (Matrix[Double] Out, Matrix[Double] Centering, Matrix[Double] ScaleFactor) 
 {
+  # Allocate the Centering and ScaleFactor as empty matrices,
+  # to return something on the function call.
+  Centering = matrix(0, rows=0, cols=0)
+  ScaleFactor = matrix(0, rows= 0, cols=0)
+
   if(center){
-    # ColMean = colMeans(replace(target=X, pattern=NaN, replacement=0))
-    ColMean = colMeans(X)
-    X =  X - ColMean
-  }
-  else {
-    # Allocate the ColMean as an empty matrix,
-    # to return something on the function call.
-    ColMean = matrix(0,rows=0,cols=0)
+    Centering = colMeans(X)
+    # Replace entries with Nan with 0 to avoid introducing more NaN values.
+    Centering = replace(target=Centering, pattern=NaN, replacement=0);
+    X = X - Centering
   }
 
   if (scale) {
     N = nrow(X)
-    # ScaleFactor = sqrt(colSums(replace(target=X, pattern=NaN, replacement=0)^2)/(N-1))
-    ScaleFactor = sqrt(colSums(X^2)/(N-1))
+    ScaleFactor = sqrt(colSums(X^2) / (N - 1))
 
     # Replace entries in the scale factor that are 0 and NaN with 1.
     # To avoid division by 0 or NaN, introducing NaN to the ouput.
-    # ScaleFactor = replace(target=ScaleFactor,
-      # pattern=NaN, replacement=1);
-    ScaleFactor = replace(target=ScaleFactor,
-      pattern=0, replacement=1);
-
+    ScaleFactor = replace(target=ScaleFactor, pattern=NaN, replacement=1);
+    ScaleFactor = replace(target=ScaleFactor, pattern=0, replacement=1);
     X = X / ScaleFactor
-
-  }
-  else{
-    # Allocate the Scale factor as an empty matrix,
-    # to return something on the function call.
-    ScaleFactor = matrix(0, rows= 0, cols=0)
   }
 
-  out = X
-  Centering = ColMean
+  # assign output to the returned value.
+  Out = X
 }

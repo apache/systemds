@@ -21,6 +21,7 @@ package org.apache.sysds.runtime.compress.readers;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.compress.utils.DblArray;
@@ -36,6 +37,7 @@ public abstract class ReaderColumnSelection {
 	protected final IColIndex _colIndexes;
 	protected final DblArray reusableReturn;
 	protected final double[] reusableArr;
+	/** The row index to stop the reading at */
 	protected final int _ru;
 
 	/** rl is used as a pointer to current row */
@@ -76,11 +78,17 @@ public abstract class ReaderColumnSelection {
 		return createReader(rawBlock, colIndices, transposed, rl, ru);
 	}
 
-
-	public static ReaderColumnSelection createReader(MatrixBlock rawBlock, IColIndex colIndices, boolean transposed, int rl,
-		int ru) {
+	public static ReaderColumnSelection createReader(MatrixBlock rawBlock, IColIndex colIndices, boolean transposed,
+		int rl, int ru) {
 		checkInput(rawBlock, colIndices, rl, ru);
 		rl = rl - 1;
+		if(rawBlock.isEmpty()){
+			// rawBlock.recomputeNonZeros();
+			LOG.error(rawBlock);
+			// if(rawBlock.getNonZeros() > 0)
+				throw new DMLRuntimeException("Invalid execution. since the number of non zeros is incorrect");
+			// return new ReaderColumnSelectionEmpty(rawBlock, colIndices, rl, ru, transposed);
+		}
 
 		if(transposed) {
 			if(rawBlock.isInSparseFormat())
@@ -99,15 +107,16 @@ public abstract class ReaderColumnSelection {
 
 	private static void checkInput(final MatrixBlock rawBlock, final IColIndex colIndices, final int rl, final int ru) {
 		if(colIndices.size() <= 1)
-			throw new DMLCompressionException("Column selection reader should not be done on single column groups: " + colIndices);
+			throw new DMLCompressionException(
+				"Column selection reader should not be done on single column groups: " + colIndices);
 		else if(rawBlock.getSparseBlock() == null && rawBlock.getDenseBlock() == null)
 			throw new DMLCompressionException("Input Block was null");
 		else if(rl >= ru)
 			throw new DMLCompressionException("Invalid inverse range for reader " + rl + " to " + ru);
 	}
 
-	protected void warnNaN(){
-		if(!nanEncountered){
+	protected void warnNaN() {
+		if(!nanEncountered) {
 			LOG.warn("NaN value encountered, replaced by 0 in compression, since nan is not supported");
 			nanEncountered = true;
 		}

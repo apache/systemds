@@ -35,6 +35,8 @@ import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang.NotImplementedException;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
@@ -43,6 +45,7 @@ import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.DenseBlockFactory;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.data.SparseBlockCSR;
+import org.apache.sysds.runtime.data.SparseBlockMCSR;
 import org.apache.sysds.runtime.data.SparseRowVector;
 import org.apache.sysds.runtime.functionobjects.DiagIndex;
 import org.apache.sysds.runtime.functionobjects.RevIndex;
@@ -71,7 +74,7 @@ import org.apache.sysds.runtime.util.UtilFunctions;
  */
 public class LibMatrixReorg {
 
-	// private static final Log LOG = LogFactory.getLog(LibMatrixReorg.class.getName());
+	protected static final Log LOG = LogFactory.getLog(LibMatrixReorg.class.getName());
 
 	//minimum number of elements for multi-threaded execution
 	public static long PAR_NUMCELL_THRESHOLD = 1024*1024; //1M
@@ -145,8 +148,12 @@ public class LibMatrixReorg {
 		}
 	}
 
-	public static MatrixBlock transpose(MatrixBlock in){
-		return transpose(in, new MatrixBlock(in.getNumColumns(), in.getNumRows(), in.isInSparseFormat()));
+	public static MatrixBlock transpose(MatrixBlock in) {
+		final int clen = in.getNumColumns();
+		final int rlen = in.getNumRows();
+		final long nnz = in.getNonZeros();
+		final boolean sparseOut = MatrixBlock.evalSparseFormatInMemory(clen, rlen, nnz, true);
+		return transpose(in, new MatrixBlock(clen, rlen, sparseOut));
 	}
 
 	public static MatrixBlock transpose( MatrixBlock in, MatrixBlock out ) {
@@ -195,28 +202,44 @@ public class LibMatrixReorg {
 		return out;
 	}
 
-	public static MatrixBlock transpose(MatrixBlock in, int k){
-		return transpose(in, new MatrixBlock(in.getNumColumns(), in.getNumRows(), in.isInSparseFormat()), k);
+	public static MatrixBlock transpose(MatrixBlock in, int k) {
+		final int clen = in.getNumColumns();
+		final int rlen = in.getNumRows();
+		final long nnz = in.getNonZeros();
+		final boolean sparseOut = MatrixBlock.evalSparseFormatInMemory(clen, rlen, nnz, true);
+		return transpose(in, new MatrixBlock(clen, rlen, sparseOut), k);
 	}
-	
+
 	public static MatrixBlock transpose( MatrixBlock in, MatrixBlock out, int k ) {
 		return transpose(in, out, k, false);
 	}
 	
 	public static MatrixBlock transpose(MatrixBlock in, MatrixBlock out, int k, boolean allowCSR) {
 		// redirect small or special cases to sequential execution
-		if(in.isEmptyBlock(false) || ((long) in.rlen * (long) in.clen < PAR_NUMCELL_THRESHOLD) || k == 1
+		if(in.isEmptyBlock(false) 
+			|| ((long) in.rlen * (long) in.clen < PAR_NUMCELL_THRESHOLD)
+			|| k <= 1
 			|| (SHALLOW_COPY_REORG && !in.sparse && !out.sparse && (in.rlen == 1 || in.clen == 1))
-			|| (in.sparse && !out.sparse && in.rlen == 1) || (!in.sparse && out.sparse && in.rlen == 1)
+			|| (in.sparse && !out.sparse && in.rlen == 1) 
+			|| (!in.sparse && out.sparse && in.rlen == 1)
 			|| (in.sparse && out.sparse && in.nonZeros < Math.max(in.rlen, in.clen)) //ultra-sparse
-			|| (!in.sparse && out.sparse) ) {
+			) {
+				// || (!in.sparse && out.sparse) 
 			return transpose(in, out);
 		}
 		// set meta data and allocate output arrays (if required)
 		out.nonZeros = in.nonZeros;
+
+		if(!in.sparse && out.sparse){
+			// special case dense to sparse is differnt than others because appending to sparse rows.
+			transposeDenseToSparse(in, out, k);
+			return out;
+		}
+
+		// Timing time = new Timing(true);
+
 		// CSR is only allowed in the transposed output if the number of non zeros is counted in the columns
 		allowCSR = allowCSR && out.nonZeros < (long) Integer.MAX_VALUE && in.clen <= 4096;
-		// Timing time = new Timing(true);
 
 		if(out.sparse && allowCSR) {
 			int size = (int) out.nonZeros;
@@ -229,7 +252,7 @@ public class LibMatrixReorg {
 
 		// core multi-threaded transpose
 		try {
-			ExecutorService pool = CommonThreadPool.get(k);
+			final ExecutorService pool = CommonThreadPool.get(k);
 			// pre-processing (compute nnz per column once for sparse)
 			int[] cnt = null;
 			// filter matrices with many columns since the CountNnzTask would return
@@ -272,17 +295,13 @@ public class LibMatrixReorg {
 		return out;
 	}
 
-	public static int[] countNNZColumns(MatrixBlock in, int k, ExecutorService pool) {
-		try {
-			int[] cnt = null;
-			List<Future<int[]>> rtasks = countNNZColumnsFuture(in,k,pool);
-			for(Future<int[]> rtask : rtasks)
-				cnt = mergeNnzCounts(cnt, rtask.get());
-			return cnt;
-		}
-		catch(InterruptedException | ExecutionException e) {
-			throw new DMLRuntimeException(e);
-		}
+	public static int[] countNNZColumns(MatrixBlock in, int k, ExecutorService pool) 
+		throws InterruptedException, ExecutionException {
+		int[] cnt = null;
+		List<Future<int[]>> rtasks = countNNZColumnsFuture(in, k, pool);
+		for(Future<int[]> rtask : rtasks)
+			cnt = mergeNnzCounts(cnt, rtask.get());
+		return cnt;
 	}
 
 	public static List<Future<int[]>> countNNZColumnsFuture(MatrixBlock in, int k, ExecutorService pool) throws InterruptedException {
@@ -300,7 +319,7 @@ public class LibMatrixReorg {
 			out = new MatrixBlock(in.getNumColumns(), in.getNumRows(), true);
 		else if(in.isInSparseFormat()) {
 			// If input is sparse use default implementation and allocate a new matrix.
-			out = transpose(in, new MatrixBlock(in.getNumColumns(), in.getNumRows(), true), k);
+			out = transpose(in, new MatrixBlock(in.getNumColumns(), in.getNumRows(), true), k, true);
 		}
 		else {
 			transposeInPlaceDense(in, k);
@@ -918,46 +937,102 @@ public class LibMatrixReorg {
 		}
 	}
 
-	private static void transposeDenseToSparse(MatrixBlock in, MatrixBlock out)
-	{
-		//NOTE: called only in sequential execution
-		
+	private static void transposeDenseToSparse(MatrixBlock in, MatrixBlock out){
+		transposeDenseToSparse(in, out, 1);
+	}
+
+	private static void transposeDenseToSparse(MatrixBlock in, MatrixBlock out, int k){
+		if( out.rlen == 1 ) 
+			transposeDenseToSparseVV(in,out);
+		else
+			transposeDenseToSparseMM(in, out, k);
+	}
+
+	private static void transposeDenseToSparseVV(MatrixBlock in, MatrixBlock out){
+		final int m = in.rlen;
+		final DenseBlock a = in.getDenseBlock();
+		out.allocateSparseRowsBlock(false);
+		final SparseBlock c = out.getSparseBlock();
+		c.set(0, new SparseRowVector((int)in.nonZeros, a.valuesAt(0), m), false);
+	}
+
+	private static void transposeDenseToSparseMM(MatrixBlock in, MatrixBlock out, int k){
 		final int m = in.rlen;
 		final int n = in.clen;
 		final int m2 = out.rlen;
 		final int n2 = out.clen;
 		final int ennz2 = (int) (in.nonZeros/m2); 
-		
-		DenseBlock a = in.getDenseBlock();
-		SparseBlock c = out.getSparseBlock();
-		
-		if( out.rlen == 1 ) //VECTOR-VECTOR
-		{
-			//allocate row once by nnz, copy non-zeros
-			c.set(0, new SparseRowVector((int)in.nonZeros, a.valuesAt(0), m), false);
+		final DenseBlock a = in.getDenseBlock();
+
+		final SparseRowVector[] rows = new SparseRowVector[m2];
+		for(int j = 0; j < m2; j++)
+			rows[j] = new SparseRowVector(ennz2, n2);
+
+		if(k <= 1)
+			transposeDenseToSparseMMRange(a, rows, 0, m, 0, n);
+		else {
+			final ExecutorService pool = CommonThreadPool.get(k);
+			try {
+				final ArrayList<TransposeDenseToSparseTask> tasks = new ArrayList<>();
+				final int rbz = Math.max(1, m2 / k);
+				for(int i = 0; i < m2; i += rbz) 
+					tasks.add(new TransposeDenseToSparseTask(a, rows, 0, m, i, Math.min(i + rbz, n)));
+				for(Future<Object> task : pool.invokeAll(tasks))
+					task.get();
+				pool.shutdown();
+			}
+			catch(Exception ex) {
+				pool.shutdown();
+				throw new DMLRuntimeException(ex);
+			}
 		}
-		else //general case: MATRIX-MATRIX
-		{
-			//blocking according to typical L2 cache sizes 
-			final int blocksizeI = 128;
-			final int blocksizeJ = 128;
-			
-			//blocked execution
-			for( int bi = 0; bi<m; bi+=blocksizeI ) {
-				int bimin = Math.min(bi+blocksizeI, m);
-				for( int bj = 0; bj<n; bj+=blocksizeJ ) {
-					int bjmin = Math.min(bj+blocksizeJ, n);
-					//core transpose operation
-					for( int i=bi; i<bimin; i++ ) {
-						double[] avals = a.values(i);
-						int aix = a.pos(i);
-						for( int j=bj; j<bjmin; j++ ) {
-							c.allocate(j, ennz2, n2); 
-							c.append(j, i, avals[aix+j]);
-						}
-					}
+
+		SparseBlock c = new SparseBlockMCSR(rows, false);
+		out.setSparseBlock(c);
+	}
+
+
+
+	private static void transposeDenseToSparseMMRange(DenseBlock a, SparseRowVector[] rows, int rl, int ru, int cl, int cu){
+		//blocking according to typical L2 cache sizes 
+		final int blocksizeI = 128;
+		final int blocksizeJ = 128;
+		for( int bi = rl; bi< ru; bi+=blocksizeI ) {
+			final int bimin = Math.min(bi+blocksizeI, ru);
+			for( int bj = cl; bj<cu; bj+=blocksizeJ ) {
+				final int bjmin = Math.min(bj+blocksizeJ, cu);
+				//core transpose operation
+				for( int i=bi; i<bimin; i++ ) {
+					final double[] avals = a.values(i);
+					final int aix = a.pos(i);
+					for( int j=bj; j<bjmin; j++ )
+						rows[j].append(i, avals[aix+j]);
 				}
 			}
+		}
+	}
+
+	private static class TransposeDenseToSparseTask implements Callable<Object>{
+		private DenseBlock a; 
+		private SparseRowVector[] rows;
+		private int rl; 
+		private int ru; 
+		private int cl; 
+		private int cu;
+
+		protected TransposeDenseToSparseTask(DenseBlock a, SparseRowVector[] rows, int rl, int ru, int cl, int cu){
+			this.a = a;
+			this.rows = rows;
+			this.rl = rl;
+			this.ru = ru;
+			this.cl = cl;
+			this.cu = cu;
+		}
+
+		@Override
+		public Object call(){
+			transposeDenseToSparseMMRange(a,rows,rl,ru, cl,cu);
+			return null;
 		}
 	}
 

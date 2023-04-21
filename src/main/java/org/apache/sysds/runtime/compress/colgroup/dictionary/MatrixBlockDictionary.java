@@ -318,8 +318,10 @@ public class MatrixBlockDictionary extends ADictionary {
 	public void aggregateCols(double[] c, Builtin fn, IColIndex colIndexes) {
 		if(_data.isInSparseFormat()) {
 			MatrixBlock t = LibMatrixReorg.transpose(_data);
-			if(!t.isInSparseFormat()) // highly unlikely.
-				throw new NotImplementedException("Not implemented aggregate Cols on dense transposed dict.");
+			if(!t.isInSparseFormat()){
+				LOG.warn("Transpose for aggregating of columns");
+				t.denseToSparse(true);
+			} 
 
 			SparseBlock sbt = t.getSparseBlock();
 

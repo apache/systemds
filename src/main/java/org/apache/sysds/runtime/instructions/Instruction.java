@@ -38,7 +38,7 @@ public abstract class Instruction
 		FEDERATED
 	}
 	
-	private static final Log LOG = LogFactory.getLog(Instruction.class.getName());
+	protected static final Log LOG = LogFactory.getLog(Instruction.class.getName());
 	protected final Operator _optr;
 
 	protected Instruction(Operator _optr){

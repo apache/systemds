@@ -30,14 +30,14 @@ import org.apache.sysds.common.Types.ValueType;
 
 
 /**
- * Lop to perform binary operation. Both inputs must be matrices or vectors. 
- * Example - A = B + C, where B and C are matrices or vectors.
+ * Lop to perform binary operation. Both inputs must be matrices, vectors or scalars. 
+ * Example - A = B + C.
  */
-
 public class Binary extends Lop 
 {
 	private OpOp2 operation;
 	private final int _numThreads;
+	private final boolean inplace;
 	
 	/**
 	 * Constructor to perform a binary operation.
@@ -55,9 +55,14 @@ public class Binary extends Lop
 	}
 	
 	public Binary(Lop input1, Lop input2, OpOp2 op, DataType dt, ValueType vt, ExecType et, int k) {
+		this(input1, input2, op, dt, vt, et, k, false);
+	}
+
+	public Binary(Lop input1, Lop input2, OpOp2 op, DataType dt, ValueType vt, ExecType et, int k, boolean inplace) {
 		super(Lop.Type.Binary, dt, vt);
 		init(input1, input2, op, dt, vt, et);
 		_numThreads = k;
+		this.inplace = inplace; 
 	}
 	
 	private void init(Lop input1, Lop input2, OpOp2 op, DataType dt, ValueType vt, ExecType et)  {
@@ -106,6 +111,9 @@ public class Binary extends Lop
 			ret = InstructionUtils.concatOperands(ret, String.valueOf(_numThreads));
 		else if( getExecType() == ExecType.FED )
 			ret = InstructionUtils.concatOperands(ret, String.valueOf(_numThreads), _fedOutput.name());
+
+		if (getExecType() == ExecType.CP && inplace)
+			ret = InstructionUtils.concatOperands(ret, "InPlace");
 
 		return ret;
 	}

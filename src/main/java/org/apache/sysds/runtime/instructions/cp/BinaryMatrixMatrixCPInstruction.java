@@ -53,7 +53,7 @@ public class BinaryMatrixMatrixCPInstruction extends BinaryCPInstruction {
 			}
 		}
 		else{
-			throw new DMLRuntimeException("Invalid call to BinaryMatrixMatrixCPInstruction with non BinaryOperator: " + op);
+			inplace = false;
 		}
 	}
 

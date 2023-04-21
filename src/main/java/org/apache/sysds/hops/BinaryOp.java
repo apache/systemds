@@ -19,6 +19,8 @@
 
 package org.apache.sysds.hops;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.AggOp;
 import org.apache.sysds.common.Types.DataType;
@@ -27,6 +29,7 @@ import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.common.Types.OpOp1;
 import org.apache.sysds.common.Types.OpOp2;
 import org.apache.sysds.common.Types.OpOpDnn;
+import org.apache.sysds.common.Types.ParamBuiltinOp;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.hops.rewrite.HopRewriteUtils;
@@ -52,21 +55,21 @@ import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 
 
-/* Binary (cell operations): aij + bij
+/** Binary (cell operations): aij + bij
  * 		Properties: 
  * 			Symbol: *, -, +, ...
  * 			2 Operands
  * 		Semantic: align indices (sort), then perform operation
  */
-
 public class BinaryOp extends MultiThreadedHop {
-	// private static final Log LOG =  LogFactory.getLog(BinaryOp.class.getName());
+	protected static final Log LOG =  LogFactory.getLog(BinaryOp.class.getName());
 
 	//we use the full remote memory budget (but reduced by sort buffer), 
 	public static final double APPEND_MEM_MULTIPLIER = 1.0;
 
 	private OpOp2 op;
 	private boolean outer = false;
+	private boolean inplace = false;
 	
 	public static AppendMethod FORCED_APPEND_METHOD = null;
 	public static MMBinaryMethod FORCED_BINARY_METHOD = null;
@@ -125,6 +128,10 @@ public class BinaryOp extends MultiThreadedHop {
 	
 	public boolean isOuter(){
 		return outer;
+	}
+
+	public boolean isInplace(){
+		return inplace;
 	}
 	
 	@Override
@@ -435,7 +442,7 @@ public class BinaryOp extends MultiThreadedHop {
 			else { //general case
 				tmp = new Binary(getInput(0).constructLops(), getInput(1).constructLops(),
 					op, getDataType(), getValueType(), et,
-					OptimizerUtils.getConstrainedNumThreads(_maxNumThreads));
+					OptimizerUtils.getConstrainedNumThreads(_maxNumThreads), inplace);
 			}
 			
 			setOutputDimensions(tmp);
@@ -477,7 +484,7 @@ public class BinaryOp extends MultiThreadedHop {
 				else
 					binary = new Binary(getInput(0).constructLops(), getInput(1).constructLops(),
 						op, getDataType(), getValueType(), et,
-						OptimizerUtils.getConstrainedNumThreads(_maxNumThreads));
+						OptimizerUtils.getConstrainedNumThreads(_maxNumThreads), inplace);
 
 				setOutputDimensions(binary);
 				setLineNumbers(binary);
@@ -700,6 +707,44 @@ public class BinaryOp extends MultiThreadedHop {
 		return true;
 	}
 	
+	private static boolean isReplace(Hop h) {
+		return h instanceof ParameterizedBuiltinOp && //
+			((ParameterizedBuiltinOp) h).getOp() == ParamBuiltinOp.REPLACE;
+	}
+
+	private static boolean isReplaceWithPattern(ParameterizedBuiltinOp h, double pattern, double replace) {
+		Hop pat = h.getParameterHop("pattern");
+		Hop rep = h.getParameterHop("replacement");
+		if(pat instanceof LiteralOp && rep instanceof LiteralOp) {
+			double patOb = ((LiteralOp) pat).getDoubleValue();
+			double repOb = ((LiteralOp) rep).getDoubleValue();
+			return ((Double.isNaN(pattern) && Double.isNaN(patOb)) // is both NaN
+				|| Double.compare(pattern, patOb) == 0) // Is equivalent pattern
+				&& Double.compare(replace, repOb) == 0; // is equivalent replace.
+		}
+		return false;
+	}
+
+	private static boolean doesNotContainNanAndInf(Hop p1) {
+		if(isReplace(p1)) {
+			Hop p2 = p1.getInput().get(0);
+			if(isReplace(p2)) {
+				ParameterizedBuiltinOp pp1 = (ParameterizedBuiltinOp) p1;
+				ParameterizedBuiltinOp pp2 = (ParameterizedBuiltinOp) p2;
+				return (isReplaceWithPattern(pp1, Double.NaN, 1) && isReplaceWithPattern(pp2, 0, 1)) ||
+					(isReplaceWithPattern(pp2, Double.NaN, 1) && isReplaceWithPattern(pp1, 0, 1));
+			}
+		}
+		return false;
+	}
+
+	private boolean memOfInputIsLessThanBudget() {
+		final double in1Memory = getInput().get(0).getMemEstimate();
+		final double in2Memory = getInput().get(1).getMemEstimate();
+		final double budget = OptimizerUtils.getLocalMemBudget();
+		return in1Memory + in2Memory < budget;
+	}
+
 	@Override
 	protected ExecType optFindExecType(boolean transitive) {
 		
@@ -755,20 +800,34 @@ public class BinaryOp extends MultiThreadedHop {
 			checkAndSetInvalidCPDimsAndSize();
 		}
 
-		//spark-specific decision refinement (execute unary scalar w/ spark input and 
-		//single parent also in spark because it's likely cheap and reduces intermediates)
-		if( transitive && _etype == ExecType.CP && _etypeForced != ExecType.CP && _etypeForced != ExecType.FED
-			&& getDataType().isMatrix() && (dt1.isScalar() || dt2.isScalar()) 
-			&& supportsMatrixScalarOperations()                          //scalar operations
-			&& !(getInput().get(dt1.isScalar()?1:0) instanceof DataOp)   //input is not checkpoint
-			&& getInput().get(dt1.isScalar()?1:0).getParent().size()==1  //unary scalar is only parent
-			&& !HopRewriteUtils.isSingleBlock(getInput().get(dt1.isScalar()?1:0)) //single block triggered exec
-			&& getInput().get(dt1.isScalar()?1:0).optFindExecType() == ExecType.SPARK )
-		{
-			//pull unary scalar operation into spark 
+		//spark-specific decision refinement (execute unary scalar w/ spark input and
+		// single parent also in spark because it's likely cheap and reduces intermediates)
+		if(transitive && _etype == ExecType.CP && _etypeForced != ExecType.CP && _etypeForced != ExecType.FED &&
+			getDataType().isMatrix() // output should be a matrix
+			&& (dt1.isScalar() || dt2.isScalar()) // one side should be scalar
+			&& supportsMatrixScalarOperations() // scalar operations
+			&& !(getInput().get(dt1.isScalar() ? 1 : 0) instanceof DataOp) // input is not checkpoint
+			&& getInput().get(dt1.isScalar() ? 1 : 0).getParent().size() == 1 // unary scalar is only parent
+			&& !HopRewriteUtils.isSingleBlock(getInput().get(dt1.isScalar() ? 1 : 0)) // single block triggered exec
+			&& getInput().get(dt1.isScalar() ? 1 : 0).optFindExecType() == ExecType.SPARK) {
+			// pull unary scalar operation into spark
 			_etype = ExecType.SPARK;
 		}
-		
+
+		if( transitive && _etypeForced != ExecType.SPARK && _etypeForced != ExecType.FED && //
+			getDataType().isMatrix() // Output is a matrix
+			&& op == OpOp2.DIV // Operation is division
+			&& dt1.isMatrix() // Left hand side is a Matrix
+			// right hand side is a scalar or a vector.
+			&& (dt2.isScalar() || (dt2.isMatrix() & getInput().get(1).isVector())) //
+			&& memOfInputIsLessThanBudget() //
+			&& getInput().get(0).getExecType() != ExecType.SPARK // Is not already a spark operation
+			&& doesNotContainNanAndInf(getInput().get(1)) // Guaranteed not to densify the operation
+		) {
+			inplace = true;
+			_etype = ExecType.CP;
+		}
+
 		//ensure cp exec type for single-node operations
 		if ( op == OpOp2.SOLVE ) {
 			if (isGPUEnabled())

@@ -94,7 +94,7 @@ jobs:
       uses: actions/upload-artifact@v3
       with:
         name: ${{ env.ARTIFACT_NAME }}
-        path: target
+        path: target/jacoco.exec
         retention-days: 1
 
   determine_test_coverage:

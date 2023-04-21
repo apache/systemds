@@ -79,7 +79,6 @@ public class TransposeCSRTest {
 	@Test
 	public void testEstimation() {
 		try {
-
 			LibMatrixReorg.PAR_NUMCELL_THRESHOLD = 100;
 			MatrixBlock ret1 = LibMatrixReorg.transpose(in,
 				new MatrixBlock(in.getNumColumns(), in.getNumRows(), in.isInSparseFormat()), k, false);

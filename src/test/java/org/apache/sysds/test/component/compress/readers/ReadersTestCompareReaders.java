@@ -117,7 +117,13 @@ public class ReadersTestCompareReaders {
 			sm = m2;
 		}
 
+		if(!sm.isInSparseFormat())
+			sm.denseToSparse(true);
+		if(m.isInSparseFormat())
+			m.sparseToDense();
+
 		MatrixBlock tin = LibMatrixReorg.transpose(in);
+
 		MatrixBlock m2t = new MatrixBlock();
 		m2t.copy(tin);
 		final boolean isSparseTIn = in.isInSparseFormat();
@@ -132,11 +138,22 @@ public class ReadersTestCompareReaders {
 			tsm = m2t;
 		}
 
+		if(tm.isInSparseFormat())
+			tm.sparseToDense();
+		if(!tsm.isInSparseFormat())
+			tsm.denseToSparse(true);
+
+		MatrixBlock tmd = new MatrixBlock();
+		tmd.copy(tm);
+		tmd.sparseToDense();
+
 		mMockLarge = new MatrixBlock(m.getNumRows(), m.getNumColumns(),
 			new DenseBlockFP64Mock(new int[] {m.getNumRows(), m.getNumColumns()}, m.getDenseBlockValues()));
+		mMockLarge.setNonZeros(m.getNonZeros());
 
-		mMockLargeTransposed = new MatrixBlock(tm.getNumRows(), tm.getNumColumns(),
-			new DenseBlockFP64Mock(new int[] {tm.getNumRows(), tm.getNumColumns()}, tm.getDenseBlockValues()));
+		mMockLargeTransposed = new MatrixBlock(tmd.getNumRows(), tmd.getNumColumns(),
+			new DenseBlockFP64Mock(new int[] {tmd.getNumRows(), tmd.getNumColumns()}, tmd.getDenseBlockValues()));
+		mMockLargeTransposed.setNonZeros(tm.getNonZeros());
 
 	}
 
@@ -144,7 +161,8 @@ public class ReadersTestCompareReaders {
 	public void testCompareSparseDense() {
 		ReaderColumnSelection a = ReaderColumnSelection.createReader(m, cols, false);
 		ReaderColumnSelection b = ReaderColumnSelection.createReader(sm, cols, false);
-		if(b instanceof ReaderColumnSelectionSparse && a instanceof ReaderColumnSelectionDenseSingleBlock)
+		if((b instanceof ReaderColumnSelectionSparse && a instanceof ReaderColumnSelectionDenseSingleBlock) ||
+			(m.isEmpty() || sm.isEmpty()))
 			compareReaders(a, b);
 		else
 			fail("Incorrect type of reader");
@@ -202,7 +220,7 @@ public class ReadersTestCompareReaders {
 	public void testCompareDenseTransposedDense() {
 		ReaderColumnSelection a = ReaderColumnSelection.createReader(m, cols, false);
 		ReaderColumnSelection b = ReaderColumnSelection.createReader(tm, cols, true);
-		if(b instanceof ReaderColumnSelectionDenseSingleBlockTransposed)
+		if((b instanceof ReaderColumnSelectionDenseSingleBlockTransposed) || (m.isEmpty() || tm.isEmpty()))
 			compareReaders(a, b);
 		else
 			fail("Incorrect type of reader");
@@ -248,7 +266,7 @@ public class ReadersTestCompareReaders {
 	public void testCompareDenseTransposedSparse() {
 		ReaderColumnSelection a = ReaderColumnSelection.createReader(m, cols, false);
 		ReaderColumnSelection b = ReaderColumnSelection.createReader(tsm, cols, true);
-		if(b instanceof ReaderColumnSelectionSparseTransposed)
+		if((b instanceof ReaderColumnSelectionSparseTransposed) || (m.isEmpty() || tsm.isEmpty()))
 			compareReaders(a, b);
 		else
 			fail("Incorrect type of reader");
@@ -473,13 +491,20 @@ public class ReadersTestCompareReaders {
 
 	@Test
 	public void testCompareDenseTransposedLargeFewRowsFromEnd() {
-		final int nRow = m.getNumRows();
-		if(nRow > 30) {
-			final int end = m.getNumRows() - 10;
-			final int start = end - 10;
-			ReaderColumnSelection a = ReaderColumnSelection.createReader(m, cols, false, start, end);
-			ReaderColumnSelection b = ReaderColumnSelection.createReader(mMockLargeTransposed, cols, true, start, end);
-			compareReaders(a, b, start, end);
+		try {
+
+			final int nRow = m.getNumRows();
+			if(nRow > 30) {
+				final int end = m.getNumRows() - 10;
+				final int start = end - 10;
+				ReaderColumnSelection a = ReaderColumnSelection.createReader(m, cols, false, start, end);
+				ReaderColumnSelection b = ReaderColumnSelection.createReader(mMockLargeTransposed, cols, true, start, end);
+				compareReaders(a, b, start, end);
+			}
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
 		}
 	}
 

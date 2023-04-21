@@ -36,6 +36,7 @@ public abstract class ReaderColumnSelection {
 	protected final IColIndex _colIndexes;
 	protected final DblArray reusableReturn;
 	protected final double[] reusableArr;
+	/** The row index to stop the reading at */
 	protected final int _ru;
 
 	/** rl is used as a pointer to current row */
@@ -76,11 +77,14 @@ public abstract class ReaderColumnSelection {
 		return createReader(rawBlock, colIndices, transposed, rl, ru);
 	}
 
-
-	public static ReaderColumnSelection createReader(MatrixBlock rawBlock, IColIndex colIndices, boolean transposed, int rl,
-		int ru) {
+	public static ReaderColumnSelection createReader(MatrixBlock rawBlock, IColIndex colIndices, boolean transposed,
+		int rl, int ru) {
 		checkInput(rawBlock, colIndices, rl, ru);
 		rl = rl - 1;
+		if(rawBlock.isEmpty()) {
+			LOG.warn("It is likely an error occurred when reading an empty block. But we do support it!");
+			return new ReaderColumnSelectionEmpty(rawBlock, colIndices, rl, ru, transposed);
+		}
 
 		if(transposed) {
 			if(rawBlock.isInSparseFormat())
@@ -99,15 +103,16 @@ public abstract class ReaderColumnSelection {
 
 	private static void checkInput(final MatrixBlock rawBlock, final IColIndex colIndices, final int rl, final int ru) {
 		if(colIndices.size() <= 1)
-			throw new DMLCompressionException("Column selection reader should not be done on single column groups: " + colIndices);
+			throw new DMLCompressionException(
+				"Column selection reader should not be done on single column groups: " + colIndices);
 		else if(rawBlock.getSparseBlock() == null && rawBlock.getDenseBlock() == null)
 			throw new DMLCompressionException("Input Block was null");
 		else if(rl >= ru)
 			throw new DMLCompressionException("Invalid inverse range for reader " + rl + " to " + ru);
 	}
 
-	protected void warnNaN(){
-		if(!nanEncountered){
+	protected void warnNaN() {
+		if(!nanEncountered) {
 			LOG.warn("NaN value encountered, replaced by 0 in compression, since nan is not supported");
 			nanEncountered = true;
 		}

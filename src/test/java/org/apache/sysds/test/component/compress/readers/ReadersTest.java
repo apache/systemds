@@ -41,7 +41,7 @@ public class ReadersTest {
 	@Test(expected = DMLCompressionException.class)
 	public void testDenseSingleCol() {
 		MatrixBlock mb = TestUtils.generateTestMatrixBlock(10, 1, 1, 1, 0.5, 21342);
-		ReaderColumnSelection.createReader(mb,ColIndexFactory.create( 1), false);
+		ReaderColumnSelection.createReader(mb, ColIndexFactory.create(1), false);
 	}
 
 	@Test

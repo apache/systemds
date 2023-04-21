@@ -451,7 +451,7 @@ public class LibMatrixBincell {
 							|| (clen1 == 1 && rlen2 == 1 ) );              //VV
 
 		if( !isValid ) {
-			throw new RuntimeException("Block sizes are not matched for binary " +
+			throw new DMLRuntimeException("Block sizes are not matched for binary " +
 					"cell operations: " + rlen1 + "x" + clen1 + " vs " + rlen2 + "x" + clen2);
 		}
 	}

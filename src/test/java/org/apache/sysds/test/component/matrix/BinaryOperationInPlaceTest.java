@@ -19,6 +19,10 @@
 
 package org.apache.sysds.test.component.matrix;
 
+import static org.junit.Assert.fail;
+
+import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.functionobjects.Divide;
 import org.apache.sysds.runtime.functionobjects.Plus;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
@@ -30,36 +34,118 @@ public class BinaryOperationInPlaceTest {
 	public void testPlus() {
 		MatrixBlock m1 = TestUtils.generateTestMatrixBlock(10, 10, 0, 10, 1.0, 1);
 		MatrixBlock m2 = TestUtils.generateTestMatrixBlock(10, 10, 0, 10, 1.0, 2);
-		execute(m1,m2);
+		executePlus(m1, m2);
 	}
 
 	@Test
 	public void testPlus_emptyInplace() {
-		MatrixBlock m1 = new MatrixBlock(10,10,false);
+		MatrixBlock m1 = new MatrixBlock(10, 10, false);
 		MatrixBlock m2 = TestUtils.generateTestMatrixBlock(10, 10, 0, 10, 1.0, 2);
-		execute(m1,m2);
+		executePlus(m1, m2);
 	}
 
-	@Test 
-	public void testPlus_emptyOther(){
+	@Test
+	public void testPlus_emptyOther() {
 		MatrixBlock m1 = TestUtils.generateTestMatrixBlock(10, 10, 0, 10, 1.0, 1);
-		MatrixBlock m2 = new MatrixBlock(10,10,false);
-		execute(m1,m2);
+		MatrixBlock m2 = new MatrixBlock(10, 10, false);
+		executePlus(m1, m2);
 	}
 
-	@Test 
+	@Test
 	public void testPlus_emptyInplace_butAllocatedDense() {
-		MatrixBlock m1 = new MatrixBlock(10,10,false);
+		MatrixBlock m1 = new MatrixBlock(10, 10, false);
 		m1.allocateDenseBlock();
 		MatrixBlock m2 = TestUtils.generateTestMatrixBlock(10, 10, 0, 10, 1.0, 2);
-		execute(m1,m2);
+		executePlus(m1, m2);
 	}
 
-	private void execute(MatrixBlock m1, MatrixBlock m2){
+	@Test
+	public void testDivide(){
+		MatrixBlock m1 = TestUtils.generateTestMatrixBlock(10, 10, 0, 10, 1.0, 1);
+		MatrixBlock m2 = TestUtils.generateTestMatrixBlock(10, 10, 0, 10, 1.0, 2);
+		executeDivide(m1, m2);
+	}
+
+	@Test
+	public void testDivide_matrixVector(){
+		MatrixBlock m1 = TestUtils.generateTestMatrixBlock(100, 10, 0, 10, 1.0, 1);
+		MatrixBlock m2 = TestUtils.generateTestMatrixBlock(1, 10, 0, 10, 1.0, 2);
+		executeDivide(m1, m2);
+	}
+
+	@Test(expected = DMLRuntimeException.class)
+	public void testDivide_Invalid_1(){
+		MatrixBlock m1 = TestUtils.generateTestMatrixBlock(100, 10, 0, 10, 1.0, 1);
+		MatrixBlock m2 = TestUtils.generateTestMatrixBlock(1, 11, 0, 10, 1.0, 2);
+		executeDivide(m1, m2);
+	}
+
+	@Test(expected = DMLRuntimeException.class)
+	public void testDivide_Invalid_2(){
+		try{
+
+			MatrixBlock m1 = TestUtils.generateTestMatrixBlock(100, 10, 0, 10, 1.0, 1);
+			MatrixBlock m2 = TestUtils.generateTestMatrixBlock(1, 9, 0, 10, 1.0, 2);
+			executeDivide(m1, m2);
+		}
+		catch(DMLRuntimeException e){
+			throw e;
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
+	}
+
+	@Test
+	public void testDivide_matrixVector_emptyVector(){
+		try{
+
+			MatrixBlock m1 = TestUtils.generateTestMatrixBlock(100, 10, 0, 10, 1.0, 1);
+			MatrixBlock m2 = new MatrixBlock(1, 10, 0.0);
+			executeDivide(m1, m2);
+		}
+		catch(DMLRuntimeException e){
+			throw e;
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
+	}
+
+	@Test
+	public void testDivide_matrixVector_sparseBoth(){
+		try{
+
+			MatrixBlock m1 = TestUtils.generateTestMatrixBlock(100, 1000, 0, 10, 0.2, 1);
+			MatrixBlock m2 = TestUtils.generateTestMatrixBlock(1, 1000, 0, 10, 0.2, 1);
+			m1.examSparsity();
+			m2.examSparsity();
+			executeDivide(m1, m2);
+		}
+		catch(DMLRuntimeException e){
+			throw e;
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
+	}
+
+	private void executeDivide(MatrixBlock m1, MatrixBlock m2){
+		BinaryOperator op = new BinaryOperator(Divide.getDivideFnObject());
+		testInplace(m1, m2, op);
+	}
+
+	private void executePlus(MatrixBlock m1, MatrixBlock m2) {
 		BinaryOperator op = new BinaryOperator(Plus.getPlusFnObject());
+		testInplace(m1, m2, op);
+	}
+
+	private void testInplace(MatrixBlock m1, MatrixBlock m2, BinaryOperator op) {
 		MatrixBlock ret1 = m1.binaryOperations(op, m2);
 		m1.binaryOperationsInPlace(op, m2);
-
 		TestUtils.compareMatricesBitAvgDistance(ret1, m1, 0, 0, "Result is incorrect for inplace op");
 	}
 }

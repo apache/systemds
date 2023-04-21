@@ -19,7 +19,6 @@
 
 package org.apache.sysds.runtime.instructions.cp;
 
-import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
@@ -73,7 +72,7 @@ public class BinaryMatrixMatrixCPInstruction extends BinaryCPInstruction {
 
 		if(inplace && !(compressedLeft || compressedRight)){
 			
-			inBlock1 = LibMatrixBincell.bincellOpInPlaceRight(inBlock1, inBlock2, (BinaryOperator) _optr);
+			inBlock1 = LibMatrixBincell.bincellOpInPlace(inBlock1, inBlock2, (BinaryOperator) _optr);
 
 			// Release the memory occupied by input matrices
 			ec.releaseMatrixInput(input1.getName(), input2.getName());

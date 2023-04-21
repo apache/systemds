@@ -67,7 +67,7 @@ public abstract class BinaryCPInstruction extends ComputationCPInstruction {
 	
 	private static String[] parseBinaryInstruction(String instr, CPOperand in1, CPOperand in2, CPOperand out) {
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(instr);
-		InstructionUtils.checkNumFields ( parts, 3, 4, 5 );
+		InstructionUtils.checkNumFields ( parts, 3, 4, 5, 6 );
 		in1.split(parts[1]);
 		in2.split(parts[2]);
 		out.split(parts[3]);

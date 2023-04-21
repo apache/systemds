@@ -734,6 +734,18 @@ public class ParameterizedBuiltinOp extends MultiThreadedHop {
 			_etype = ExecType.CP;
 		}
 
+		// If previous instructions were in spark force aggregating
+		// parameterized operations to be executed in spark
+		if ( transitive && _etype == ExecType.CP && _etypeForced != ExecType.CP) {
+			switch(_op) {
+				case CONTAINS: // only apply for contains instruction
+					if(getTargetHop().optFindExecType() == ExecType.SPARK)
+						_etype = ExecType.SPARK;
+				default:
+					// do nothing
+			}
+		}
+
 		//mark for recompile (forever)
 		setRequiresRecompileIfNecessary();
 		

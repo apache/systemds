@@ -19,22 +19,41 @@
 
 package org.apache.sysds.runtime.instructions.cp;
 
+import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.matrix.data.LibCommonsMath;
+import org.apache.sysds.runtime.matrix.data.LibMatrixBincell;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 
 public class BinaryMatrixMatrixCPInstruction extends BinaryCPInstruction {
 
+	private final boolean inplace;
+
 	protected BinaryMatrixMatrixCPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, String opcode,
 		String istr) {
 		super(CPType.Binary, op, in1, in2, out, opcode, istr);
 		if(op instanceof BinaryOperator) {
+
 			String[] parts = InstructionUtils.getInstructionParts(istr);
-			((BinaryOperator) op).setNumThreads(Integer.parseInt(parts[parts.length - 1]));
+			if(parts.length == 5){
+				((BinaryOperator) op).setNumThreads(Integer.parseInt(parts[parts.length - 1]));
+				inplace = false;
+			}
+			else{
+
+				((BinaryOperator) op).setNumThreads(Integer.parseInt(parts[parts.length - 2]));
+				if(parts[parts.length-1].equals("InPlace"))
+					inplace = true;
+				else 
+					inplace = false;
+			}
+		}
+		else{
+			throw new DMLRuntimeException("Invalid call to BinaryMatrixMatrixCPInstruction with non BinaryOperator: " + op);
 		}
 	}
 
@@ -49,23 +68,39 @@ public class BinaryMatrixMatrixCPInstruction extends BinaryCPInstruction {
 
 		MatrixBlock retBlock;
 
-		if(LibCommonsMath.isSupportedMatrixMatrixOperation(getOpcode()) && !compressedLeft && !compressedRight)
-			retBlock = LibCommonsMath.matrixMatrixOperations(inBlock1, inBlock2, getOpcode());
-		else {
-			// Perform computation using input matrices, and produce the result matrix
-			BinaryOperator bop = (BinaryOperator) _optr;
-			if(!compressedLeft && compressedRight)
-				retBlock = ((CompressedMatrixBlock) inBlock2).binaryOperationsLeft(bop, inBlock1, new MatrixBlock());
-			else
-				retBlock = inBlock1.binaryOperations(bop, inBlock2, new MatrixBlock());
+		if(inplace && (compressedLeft || compressedRight))
+			LOG.error("Not supporting inplace compressed binary operations yet");
+
+		if(inplace && !(compressedLeft || compressedRight)){
+			
+			inBlock1 = LibMatrixBincell.bincellOpInPlaceRight(inBlock1, inBlock2, (BinaryOperator) _optr);
+
+			// Release the memory occupied by input matrices
+			ec.releaseMatrixInput(input1.getName(), input2.getName());
+
+			// Cleanup the inplace metadata input.
+			ec.removeVariable(input1.getName());
+			retBlock = inBlock1;
+		}
+		else{
+			if(LibCommonsMath.isSupportedMatrixMatrixOperation(getOpcode()) && !compressedLeft && !compressedRight)
+				retBlock = LibCommonsMath.matrixMatrixOperations(inBlock1, inBlock2, getOpcode());
+			else {
+				// Perform computation using input matrices, and produce the result matrix
+				BinaryOperator bop = (BinaryOperator) _optr;
+				if(!compressedLeft && compressedRight)
+					retBlock = ((CompressedMatrixBlock) inBlock2).binaryOperationsLeft(bop, inBlock1, new MatrixBlock());
+				else
+					retBlock = inBlock1.binaryOperations(bop, inBlock2, new MatrixBlock());
+			}
+			// Release the memory occupied by input matrices
+			ec.releaseMatrixInput(input1.getName(), input2.getName());
+			// Ensure right dense/sparse output representation (guarded by released input memory)
+			if(checkGuardedRepresentationChange(inBlock1, inBlock2, retBlock))
+				retBlock.examSparsity();
 		}
 
-		// Release the memory occupied by input matrices
-		ec.releaseMatrixInput(input1.getName(), input2.getName());
 
-		// Ensure right dense/sparse output representation (guarded by released input memory)
-		if(checkGuardedRepresentationChange(inBlock1, inBlock2, retBlock))
-			retBlock.examSparsity();
 
 		// Attach result matrix with MatrixObject associated with output_name
 		ec.setMatrixOutput(output.getName(), retBlock);

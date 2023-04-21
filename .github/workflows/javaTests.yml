@@ -94,7 +94,7 @@ jobs:
       uses: actions/upload-artifact@v3
       with:
         name: ${{ env.ARTIFACT_NAME }}
-        path: target/*.exec
+        path: target
         retention-days: 1
 
   determine_test_coverage:
@@ -118,7 +118,22 @@ jobs:
     - name: Download all Jacoco Artifacts
       uses: actions/download-artifact@v3
       with:
-        path: target/*.exec
-    - name: Display filetree
-      run: ls -R
+        path: target
 
+    - name: Display filetree of target
+      run: ls -R target
+
+    - name: Merge Jacoco Artifacts
+      run: mvn jacoco:merge
+
+    - name: Display dir of target
+      run: ls target
+
+    - name: Generate Code Coverage Report
+      run: mvn jacoco:report
+
+    - name: Upload Jacoco Report Artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: Java Code Coverage (Jacoco)
+        path: target/site/jacoco

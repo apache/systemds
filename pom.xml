@@ -350,6 +350,16 @@
 					<includes>
 						<include>${jacoco.include}</include>
 					</includes>
+					<output>file</output>
+					<destFile>${project.build.directory}/jacoco.exec</destFile>
+					<fileSets>
+					  <fileSet>
+					    <directory>${project.build.directory}</directory>
+					    <includes>
+						    <include>*/jacoco.exec</include>
+					    </includes>
+					  </fileSet>
+					</fileSets>
 				</configuration>
 				<executions>
 					<execution>

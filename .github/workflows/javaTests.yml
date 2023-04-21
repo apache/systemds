@@ -82,7 +82,7 @@ jobs:
 
     - name: Clean Github Artifact Name of Asterisks
       run: |
-        ARTIFACT_NAME="component-tests"
+        ARTIFACT_NAME="jacoco-component-tests"
         ARTIFACT_NAME+="-${{ matrix.os }}"
         ARTIFACT_NAME+="-java-${{ matrix.java }}"
         ARTIFACT_NAME+="-${{ matrix.javadist }}"
@@ -120,14 +120,13 @@ jobs:
       with:
         path: target
 
-    - name: Display filetree of target
-      run: ls -R target
+    - name: Clean up Jacoco Artifacts
+      uses: geekyeggo/delete-artifact@v2
+      with:
+        name: jacoco*
 
     - name: Merge Jacoco Artifacts
       run: mvn jacoco:merge
-
-    - name: Display dir of target
-      run: ls target
 
     - name: Process Classes 
       run: mvn process-classes

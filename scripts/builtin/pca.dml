@@ -64,7 +64,9 @@
 # ScaleFactor  The Scaling of the values, to make each dimension same size.
 # -------------------------------------------------------------------------------------------------
 
-m_pca = function(Matrix[Double] X, Integer K=2, Boolean center=TRUE, Boolean scale=TRUE, Boolean onlyClusters= FALSE)
+
+m_pca = function(Matrix[Double] X, Integer K=2, Boolean center=TRUE, Boolean scale=TRUE, Boolean onlyClusters=FALSE)
+# m_pca = function(Matrix[Double] X, Integer K=2, Boolean center=TRUE, Boolean scale=TRUE)
   return (Matrix[Double] Xout, Matrix[Double] Clusters, Matrix[Double] Centering, Matrix[Double] ScaleFactor) 
 {
   N = nrow(X);
@@ -81,36 +83,35 @@ m_pca = function(Matrix[Double] X, Integer K=2, Boolean center=TRUE, Boolean sca
 
   mu = colSums(X)/N;
 
-  # co-variance matrix
-  C = (t(X) %*% X)/(N-1)
+  # co-variance matrix minus correction
+  C = (t(X) %*% X)/(N-1)  - (N/(N-1))*t(mu) %*% mu;
   
-  # Correction 
-  C = C - (N/(N-1))*t(mu) %*% mu;
-
   # compute eigen vectors and values
-  [evalues, evectors] = eigen(C);
+  [eigen_values, eigen_vectors] = eigen(C);
 
   # Sort eigenvalues by decreasing order
-  decreasing_Idx = order(target=evalues, by=1, decreasing=TRUE, index. return=TRUE);
-  diagmat = table(seq(1,D), decreasing_Idx);
+  decreasing_Idx = order(target=eigen_values, by=1, decreasing=TRUE, index.return=TRUE);
+  diagonal_matrix = table(seq(1,D), decreasing_Idx);
+
   # sorts eigenvectors column-wise in the order of decreasing eigen values
-  evectors = evectors %*% diagmat;
+  sorted_eigenvectors = eigen_vectors %*% diagonal_matrix;
 
   # Slice out the number of requested K eigenvectors
-  Clusters = evectors[,1:K];
+  Clusters = sorted_eigenvectors[,1:K];
 
-  Xout = matrix(0, rows=0, cols=0)
-    # Construct new data set by treating the computed eigenvectors as the basis vectors
-  if(!onlyClusters){
+  # Construct new data set by treating the computed eigenvectors as the basis vectors
+  if(onlyClusters){
+    Xout = matrix(0, rows=0, cols=0)
+  }
+  else{
     Xout = X %*% Clusters;
     # Check if the output contains infinity
     # This is to avoid spark pulling back the dataset for replace.
-    containsInf = contains(target=Xout, pattern=1/0)
+    containsInf = contains(target=Xout, pattern=1/0);
 
     if(containsInf){
       # replace infinity with zero
       Xout = replace(target=Xout, pattern=1/0, replacement=0);
     }
   }
-  
 }

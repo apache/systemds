@@ -32,7 +32,7 @@ rix = matrix(seq(1,m)%*%matrix(1,1,n), m*n, 1)
 cix = matrix(X + foffb, m*n, 1);
 X2 = table(rix, cix); #one-hot encoded
 
-[PC, V] = pca(X=X2, K=k, center=TRUE, scale=TRUE, onlyClusters=FALSE)
+[PC, V] = pca(X=X2, K=k, center=TRUE, scale=TRUE, onlyComponents=FALSE)
 
 write(PC, $3)
 write(V, $4)

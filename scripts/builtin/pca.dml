@@ -19,26 +19,28 @@
 #
 #-------------------------------------------------------------
 
-# This builtin defines PCA that is a technique to reduce the number of Principal components (Dimensions)
-# to a lower number of dimensions.
-# 
-# This implementation is based on calculating eigenvectors on the covariance matrix of the input:
+# This builtin defines PCA that is a technique to reduce the
+# number of Principal components (Dimensions)# to a lower
+# number of dimensions.
+#
+# This implementation is based on calculating eigenvectors on
+# the covariance matrix of the input:
 #
 # An example of calling in DML:
-# 
+#
 # .. code-block::
-# 
+#
 #   data = read($1)
-#   [data_reduced, clusters] = pca(data=data, K=4, onlyClusters=TRUE)
-#   print(clusters)
+#   [data_reduced, Components] = pca(data=data, K=4, onlyComponents=TRUE)
+#   print(Components)
 #
 #
 # An example in a ML pipeline containing PCA:
 #
 # .. code-block::
-#   
+#
 #   X = read($1)
-#   [X_reduced, clusters] = pca(data=X, K=4)
+#   [X_reduced, Components] = pca(data=X, K=4)
 #   Y = read($2)
 #   bias = l2svm(X=X, Y=Y)
 #   X_test = read($3)
@@ -47,33 +49,36 @@
 #
 #
 # INPUT:
-# -------------------------------------------------------------------------------------------
-# X             Input feature matrix
-# K             Number of reduced dimensions (i.e., columns)
-# center        Indicates whether or not to center the feature matrix
-# scale         Indicates whether or not to scale the feature matrix
-# onlyClusters  Indicate if only the clusters should be calculated and returned
-#               not the application of the clusters on X
-# -------------------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+# X               Input feature matrix
+# K               Number of components returned
+# center          Indicates whether or not to center the feature matrix
+# scale           Indicates whether or not to scale the feature matrix
+# onlyComponents  Indicate if only the components should be calculated and returned
+#                 not the application of the components on X
+# ------------------------------------------------------------------------------
 #
 # OUTPUT:
-# -------------------------------------------------------------------------------------------------
-# Xout         Output feature matrix with K columns
-# Clusters     Output dominant eigen vectors sorted by influence
+# ---------------------------------------------------------------------------
+# XReduced     Output feature matrix with K columns
+# Components   Output dominant eigen vectors sorted by influence
 # Centering    The column means of the input, subtracted to construct the PCA
-# ScaleFactor  The Scaling of the values, to make each dimension same size.
-# -------------------------------------------------------------------------------------------------
+# ScaleFactor  The scaling of the values, to make each dimension same size.
+# ---------------------------------------------------------------------------
 
-
-m_pca = function(Matrix[Double] X, Integer K=2, Boolean center=TRUE, Boolean scale=TRUE, Boolean onlyClusters=FALSE)
-  return (Matrix[Double] Xout, Matrix[Double] Clusters, Matrix[Double] Centering, Matrix[Double] ScaleFactor) 
+m_pca = function(Matrix[Double] X, Integer K=2,
+  Boolean center=TRUE, Boolean scale=TRUE,
+  Boolean onlyComponents=FALSE)
+  return (Matrix[Double] XReduced, Matrix[Double] Components,
+  Matrix[Double] Centering, Matrix[Double] ScaleFactor) 
 {
   N = nrow(X);
   D = ncol(X);
 
   if(K > D) {
-    print("PCA: invalid parameter value, the value of k should not be greater than the no. of columns in X ")
-    print("setting k = ncol(X)")
+    print("PCA: invalid parameter value")
+    print("K should not be greater than the number of columns in X")
+    print("setting K = ncol(X)")
     K = D
   }
 
@@ -83,7 +88,7 @@ m_pca = function(Matrix[Double] X, Integer K=2, Boolean center=TRUE, Boolean sca
   mu = colSums(X)/N;
 
   # co-variance matrix minus correction
-  C = (t(X) %*% X)/(N-1)  - (N/(N-1))*t(mu) %*% mu;
+  C = (t(X) %*% X)/(N-1) - (N/(N-1))*t(mu) %*% mu;
   
   # compute eigen vectors and values
   [eigen_values, eigen_vectors] = eigen(C);
@@ -96,21 +101,22 @@ m_pca = function(Matrix[Double] X, Integer K=2, Boolean center=TRUE, Boolean sca
   sorted_eigenvectors = eigen_vectors %*% diagonal_matrix;
 
   # Slice out the number of requested K eigenvectors
-  Clusters = sorted_eigenvectors[,1:K];
+  Components = sorted_eigenvectors[,1:K];
 
-  # Construct new data set by treating the computed eigenvectors as the basis vectors
-  if(onlyClusters){
-    Xout = matrix(0, rows=0, cols=0)
+  if(onlyComponents){
+    # If only the components are wanted, we return XReduced as empty.
+    XReduced = matrix(0, rows=0, cols=0)
   }
   else{
-    Xout = X %*% Clusters;
+    # Construct new data set by treating the computed eigenvectors as the basis vectors
+    XReduced = X %*% Components;
     # Check if the output contains infinity
     # This is to avoid spark pulling back the dataset for replace.
-    containsInf = contains(target=Xout, pattern=1/0);
+    containsInf = contains(target=XReduced, pattern=1/0);
 
     if(containsInf){
       # replace infinity with zero
-      Xout = replace(target=Xout, pattern=1/0, replacement=0);
+      XReduced = replace(target=XReduced, pattern=1/0, replacement=0);
     }
   }
 }

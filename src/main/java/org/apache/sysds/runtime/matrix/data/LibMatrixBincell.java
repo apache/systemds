@@ -38,6 +38,7 @@ import org.apache.sysds.runtime.data.SparseBlockFactory;
 import org.apache.sysds.runtime.data.SparseBlockMCSR;
 import org.apache.sysds.runtime.data.SparseRow;
 import org.apache.sysds.runtime.data.SparseRowVector;
+import org.apache.sysds.runtime.functionobjects.And;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.functionobjects.Builtin.BuiltinCode;
 import org.apache.sysds.runtime.functionobjects.Divide;
@@ -1589,38 +1590,73 @@ public class LibMatrixBincell {
 	}
 
 	private static void safeBinaryInPlace(MatrixBlock m1ret, MatrixBlock m2, BinaryOperator op) {
-		//early abort on skip and empty 
-		if( (m1ret.isEmpty() && m2.isEmpty() )
-			|| (op.fn instanceof Plus && m2.isEmpty())
-			|| (op.fn instanceof Minus && m2.isEmpty()))
+		// early abort on skip and empty 
+		final boolean PoM = op.fn instanceof Plus || op.fn instanceof Minus;
+		if((m1ret.isEmpty() && m2.isEmpty()) 
+			|| (PoM && m2.isEmpty())){
+			final boolean isEquals = op.fn instanceof Equals 
+				|| op.fn instanceof LessThanEquals
+				|| op.fn instanceof GreaterThanEquals;
+
+			if(isEquals)
+				m1ret.reset(m1ret.rlen, m1ret.clen, 1);
 			return; // skip entire empty block
-		//special case: start aggregation
-		else if( op.fn instanceof Plus && m1ret.isEmpty() ){
+		}
+		else if(m2.isEmpty() && // empty other side
+			(op.fn instanceof Multiply || (op.fn instanceof And))) {
+			m1ret.reset(m1ret.rlen, m1ret.clen, 0);
+			return;
+		}
+		
+		if(m1ret.getNumRows() > 1 && m2.getNumRows() == 1)
+			safeBinaryInPlaceMatrixRowVector(m1ret, m2, op);
+		else
+			safeBinaryInPlaceMatrixMatrix(m1ret, m2, op);
+	}
+	
+	private static void safeBinaryInPlaceMatrixRowVector(MatrixBlock m1ret, MatrixBlock m2, BinaryOperator op) {
+
+		if(m1ret.sparse) {
+			if(m2.isInSparseFormat() && !op.isRowSafeLeft(m2))
+				throw new DMLRuntimeException("Invalid row safety of inplace row operation: " + op);
+			else if(m2.isEmpty())
+				safeBinaryInPlaceSparseConst(m1ret, 0.0, op);
+			else if(m2.sparse)
+				throw new NotImplementedException("Not made sparse vector inplace to sparse " + op);
+			else
+				safeBinaryInPlaceSparseVector(m1ret, m2, op);
+		}
+		else{
+			if(!m1ret.isAllocated()) {
+				LOG.warn("Allocating inplace output block");
+				m1ret.allocateBlock();
+			}
+	
+			if(m2.isEmpty())
+				safeBinaryInPlaceDenseConst(m1ret, 0.0, op);
+			else if(m2.sparse)
+				throw new NotImplementedException("Not made sparse vector inplace to dense " + op);
+			else
+				safeBinaryInPlaceDenseVector(m1ret, m2, op);
+		}
+	}
+
+	private static void safeBinaryInPlaceMatrixMatrix(MatrixBlock m1ret, MatrixBlock m2, BinaryOperator op){
+		if( op.fn instanceof Plus && m1ret.isEmpty() ){
 			m1ret.copy(m2);
 			return; 
 		}
-		
-		if(m1ret.getNumRows() > 1 && m2.getNumRows() == 1){ // Matrix, RowVector
-			if(m2.sparse)
-				throw new NotImplementedException("The Vector part of inplace should not happen at the moment");
-			
-			if(m1ret.sparse)
-				safeBinaryInPlaceSparseVector(m1ret,m2,op);
-			else
-				safeBinaryInPlaceDenseVector(m1ret,m2,op);
-		}
-		else{ // Matrix Matrix
-			if(m1ret.sparse && m2.sparse)
-				safeBinaryInPlaceSparse(m1ret, m2, op);
-			else if(!m1ret.sparse && !m2.sparse)
-				safeBinaryInPlaceDense(m1ret, m2, op);
-			else if(m2.sparse && (op.fn instanceof Plus || op.fn instanceof Minus))
-				safeBinaryInPlaceDenseSparseAdd(m1ret, m2, op);
-			else //GENERIC
-				safeBinaryInPlaceGeneric(m1ret, m2, op);
-		}
+		if(m1ret.sparse && m2.sparse)
+			safeBinaryInPlaceSparse(m1ret, m2, op);
+		else if(!m1ret.sparse && !m2.sparse)
+			safeBinaryInPlaceDense(m1ret, m2, op);
+		else if(m2.sparse && (op.fn instanceof Plus || op.fn instanceof Minus))
+			safeBinaryInPlaceDenseSparseAdd(m1ret, m2, op);
+		else 
+			safeBinaryInPlaceGeneric(m1ret, m2, op);
 	}
-	
+
+
 	private static void safeBinaryInPlaceSparse(MatrixBlock m1ret, MatrixBlock m2, BinaryOperator op) {
 		//allocation and preparation (note: for correctness and performance, this 
 		//implementation requires the lhs in MCSR and hence we explicitly convert)
@@ -1636,6 +1672,9 @@ public class LibMatrixBincell {
 		final int rlen = m1ret.rlen;
 		final int clen = m1ret.clen;
 		
+		final boolean compact = (op.fn instanceof Multiply || op.fn instanceof And );
+		final boolean mcsr = c instanceof SparseBlockMCSR;
+
 		if( c!=null && b!=null ) {
 			for(int r=0; r<rlen; r++) {
 				if(c.isEmpty(r) && b.isEmpty(r))
@@ -1656,6 +1695,8 @@ public class LibMatrixBincell {
 					mergeForSparseBinary(op, old.values(), old.indexes(), 0, 
 						old.size(), b.values(r), b.indexes(r), b.pos(r), b.size(r), r, m1ret);
 				}
+				if(compact && mcsr && !c.isEmpty(r))
+					c.get(r).compact();
 			}
 		}
 		else if( c == null ) { //lhs empty
@@ -1671,12 +1712,29 @@ public class LibMatrixBincell {
 				if( c.isEmpty(r) ) continue;
 				zeroRightForSparseBinary(op, r, m1ret);
 			}
+
 		}
 		
 		m1ret.recomputeNonZeros();
 	}
 
-	
+	private static void safeBinaryInPlaceSparseConst(MatrixBlock m1ret, double m2, BinaryOperator op) {
+
+		if(m1ret.isEmpty()) // early termination... it is empty and safe... just stop.
+			return;
+		final SparseBlock sb = m1ret.getSparseBlock();
+		final int rlen = m1ret.rlen;
+		for(int r = 0; r < rlen; r++){
+			if(sb.isEmpty(r))
+				continue;
+			final int apos = sb.pos(r);
+			final int alen = sb.size(r) + apos;
+			final double[] avals = sb.values(r);
+			for(int k = apos; k < alen; k++) 
+				avals[k] = op.fn.execute(avals[k], m2);
+		}
+	}
+
 	private static void safeBinaryInPlaceSparseVector(MatrixBlock m1ret, MatrixBlock m2, BinaryOperator op) {
 
 		if(m1ret.isEmpty()) // early termination... it is empty and safe... just stop.
@@ -1684,6 +1742,10 @@ public class LibMatrixBincell {
 		final SparseBlock sb = m1ret.getSparseBlock();
 		final double[] b = m2.getDenseBlockValues();
 		final int rlen = m1ret.rlen;
+
+		final boolean compact = (op.fn instanceof Multiply || op.fn instanceof And ) //
+			&& op.isIntroducingZerosRight(m2);
+		final boolean mcsr = sb instanceof SparseBlockMCSR;
 		for(int r = 0; r < rlen; r++){
 			if(sb.isEmpty(r))
 				continue;
@@ -1693,10 +1755,18 @@ public class LibMatrixBincell {
 			final int[] aix = sb.indexes(r);
 			for(int k = apos; k < alen; k++) 
 				avals[k] = op.fn.execute(avals[k], b[aix[k]]);
+			
+			if(compact && mcsr){
+				SparseRow sr = sb.get(r);
+				if(sr instanceof SparseRowVector)
+					((SparseRowVector)sr).setSize(avals.length);
+				sr.compact();
+			}
+		}
+		if(compact && !mcsr){
+			((SparseBlockCSR)sb).compact();
 		}
 	}
-
-	
 
 	private static void safeBinaryInPlaceDense(MatrixBlock m1ret, MatrixBlock m2, BinaryOperator op) {
 		//prepare outputs
@@ -1737,6 +1807,24 @@ public class LibMatrixBincell {
 		m1ret.setNonZeros(lnnz);
 	}
 
+	private static void safeBinaryInPlaceDenseConst(MatrixBlock m1ret, double m2, BinaryOperator op) {
+		//prepare outputs
+		m1ret.allocateDenseBlock();
+		DenseBlock a = m1ret.getDenseBlock();
+		final int rlen = m1ret.rlen;
+		final int clen = m1ret.clen;
+		
+		long lnnz = 0;
+		for(int r = 0; r < rlen; r++) {
+			double[] avals = a.values(r);
+			for(int c = 0, ix = a.pos(r); c < clen; c++, ix++) {
+				double tmp = op.fn.execute(avals[ix], m2);
+				lnnz += (avals[ix] = tmp) != 0 ? 1 : 0;
+			}
+		}
+
+		m1ret.setNonZeros(lnnz);
+	}
 
 	private static void safeBinaryInPlaceDenseVector(MatrixBlock m1ret, MatrixBlock m2, BinaryOperator op) {
 		//prepare outputs
@@ -1754,7 +1842,6 @@ public class LibMatrixBincell {
 				lnnz += (avals[ix] = tmp) != 0 ? 1 : 0;
 			}
 		}
-
 		m1ret.setNonZeros(lnnz);
 	}
 	

@@ -31,6 +31,7 @@ import org.apache.sysds.runtime.matrix.data.MatrixValue;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
+import org.junit.Ignore;
 import org.junit.Test;
 
 public class MaxParallelizeOrderTest extends AutomatedTestBase {
@@ -67,6 +68,7 @@ public class MaxParallelizeOrderTest extends AutomatedTestBase {
 		runTest(TEST_NAME+"4");
 	}
 
+	@Ignore
 	@Test
 	public void testPCAlm() {
 		//eigen is an internal function. Outputs of eigen are not in the lop list

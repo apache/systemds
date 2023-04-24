@@ -38,3 +38,8 @@ a lot of things about this and revisiting this (and using SIMD for sparsity awar
 ## Changes
 
 Due to the dependency of at least JDK17, there are changes to `pom.xml`, run script `systemds` and, of course, `LibMatrixMult.java`.
+
+## Note
+
+The pom file repeatedly gets flagged for old version of various libraries, therefore we renamed the file to avoid this inconvenience.
+and we introduced a string in the beginning of the file making it not compile as a pom file.

@@ -21,14 +21,10 @@ package org.apache.sysds.runtime.data;
 
 import java.util.Arrays;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.util.SortUtils;
 import org.apache.sysds.runtime.util.UtilFunctions;
 
 public final class SparseRowVector extends SparseRow{
-	protected static final Log LOG = LogFactory.getLog(SparseRowVector.class.getName());
-	
 	private static final long serialVersionUID = 2971077474424464992L;
 
 	//initial capacity of any created sparse row
@@ -457,11 +453,6 @@ public final class SparseRowVector extends SparseRow{
 				indexes[nnz] = indexes[i];
 				nnz++;
 			}
-		// Cleanup previous values... not needed strictly
-		// for(int i = nnz; i < values.length; i++){
-		// 	values[i] = 0;
-		// 	indexes[i] = 0;
-		// }
 		size = nnz; //adjust row size
 	}
 

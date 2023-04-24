@@ -36,24 +36,21 @@ public class BinaryMatrixMatrixCPInstruction extends BinaryCPInstruction {
 		String istr) {
 		super(CPType.Binary, op, in1, in2, out, opcode, istr);
 		if(op instanceof BinaryOperator) {
-
-			String[] parts = InstructionUtils.getInstructionParts(istr);
-			if(parts.length == 5){
+			final String[] parts = InstructionUtils.getInstructionParts(istr);
+			if(parts.length == 5) {
 				((BinaryOperator) op).setNumThreads(Integer.parseInt(parts[parts.length - 1]));
 				inplace = false;
 			}
-			else{
-
+			else {
 				((BinaryOperator) op).setNumThreads(Integer.parseInt(parts[parts.length - 2]));
-				if(parts[parts.length-1].equals("InPlace"))
+				if(parts[parts.length - 1].equals("InPlace"))
 					inplace = true;
-				else 
+				else
 					inplace = false;
 			}
 		}
-		else{
+		else
 			inplace = false;
-		}
 	}
 
 	@Override
@@ -70,18 +67,15 @@ public class BinaryMatrixMatrixCPInstruction extends BinaryCPInstruction {
 		if(inplace && (compressedLeft || compressedRight))
 			LOG.error("Not supporting inplace compressed binary operations yet");
 
-		if(inplace && !(compressedLeft || compressedRight)){
-			
+		if(inplace && !(compressedLeft || compressedRight)) {
 			inBlock1 = LibMatrixBincell.bincellOpInPlace(inBlock1, inBlock2, (BinaryOperator) _optr);
-
 			// Release the memory occupied by input matrices
 			ec.releaseMatrixInput(input1.getName(), input2.getName());
-
 			// Cleanup the inplace metadata input.
 			ec.removeVariable(input1.getName());
 			retBlock = inBlock1;
 		}
-		else{
+		else {
 			if(LibCommonsMath.isSupportedMatrixMatrixOperation(getOpcode()) && !compressedLeft && !compressedRight)
 				retBlock = LibCommonsMath.matrixMatrixOperations(inBlock1, inBlock2, getOpcode());
 			else {
@@ -98,8 +92,6 @@ public class BinaryMatrixMatrixCPInstruction extends BinaryCPInstruction {
 			if(checkGuardedRepresentationChange(inBlock1, inBlock2, retBlock))
 				retBlock.examSparsity();
 		}
-
-
 
 		// Attach result matrix with MatrixObject associated with output_name
 		ec.setMatrixOutput(output.getName(), retBlock);

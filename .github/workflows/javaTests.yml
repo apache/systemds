@@ -220,11 +220,6 @@ jobs:
       with:
         path: target
 
-    - name: Clean up Jacoco Artifacts
-      uses: geekyeggo/delete-artifact@v2
-      with:
-        name: jacoco*
-
     - name: Merge Jacoco Artifacts
       run: mvn jacoco:merge
 

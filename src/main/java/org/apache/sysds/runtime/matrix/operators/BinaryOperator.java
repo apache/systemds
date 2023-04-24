@@ -201,13 +201,13 @@ public class BinaryOperator extends MultiThreadedOperator {
 	}
 
 	/**
-	 * Check if zero is returned at arbitrary input
+	 * Check if zero is returned at arbitrary input. The verification is done via two different values that hopefully do
+	 * not return 0 in both instances unless the operation really have a tendency to return zero.
 	 * 
 	 * @param v The value to check if returns zero
 	 * @return if the evaluation return zero
 	 */
 	private boolean introduceZeroLeft(double v) {
-		// check if zero is returned in case arbitrary input
 		return 0 == fn.execute(v, 11.42) && 0 == fn.execute(v, -11.22);
 	}
 
@@ -281,13 +281,13 @@ public class BinaryOperator extends MultiThreadedOperator {
 	}
 
 	/**
-	 * Check if zero is returned at arbitrary input
+	 * Check if zero is returned at arbitrary input. The verification is done via two different values that hopefully do
+	 * not return 0 in both instances unless the operation really have a tendency to return zero.
 	 * 
 	 * @param v The value to check if returns zero
 	 * @return if the evaluation return zero
 	 */
 	private boolean introduceZeroRight(double v) {
-		// check if zero is returned in case arbitrary input
 		return 0 == fn.execute(11.42, v) && 0 == fn.execute(-11.22, v);
 	}
 

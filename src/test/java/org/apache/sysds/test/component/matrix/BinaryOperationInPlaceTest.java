@@ -235,7 +235,6 @@ public class BinaryOperationInPlaceTest {
 		executeLT(m1, m2);
 	}
 
-
 	@Test
 	public void testPlus_matrixMatrix_SparseDense() {
 		MatrixBlock m1 = TestUtils.generateTestMatrixBlock(100, 100, 0, 10, 0.1, 1);
@@ -259,8 +258,6 @@ public class BinaryOperationInPlaceTest {
 		assertTrue(m1.isInSparseFormat());
 		executeDivide(m1, m2);
 	}
-
-
 
 	private void executeDivide(MatrixBlock m1, MatrixBlock m2) {
 		BinaryOperator op = new BinaryOperator(Divide.getDivideFnObject());

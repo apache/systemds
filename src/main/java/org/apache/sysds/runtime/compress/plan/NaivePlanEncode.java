@@ -76,7 +76,7 @@ public class NaivePlanEncode implements IPlanEncode {
 			List<EncodeTask> t = new ArrayList<>(schemes.length);
 			for(int i = 0; i < schemes.length; i++)
 				t.add(new EncodeTask(in, schemes[i]));
-			int i = 0;
+
 			List<AColGroup> groups = new ArrayList<>(schemes.length);
 			for(Future<AColGroup> f : pool.invokeAll(t))
 				groups.add(f.get());

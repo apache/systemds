@@ -1569,10 +1569,12 @@ public class TestUtils
 			if (!compareCellValue(v1, v2, 0, ignoreNaN)) {
 				if (!compareCellValue(v1, v2, tolerance, ignoreNaN)) {
 					countErrorWithinTolerance++;
-					if(!flag)
-						LOG.error(e.getKey() + ": " + v1 + " <--> " + v2);
-					else
-						LOG.error(e.getKey() + ": " + v2 + " <--> " + v1);
+					if(countErrorWithinTolerance < 10){
+						if(!flag)
+							LOG.error(e.getKey() + ": " + v1 + " <--> " + v2);
+						else
+							LOG.error(e.getKey() + ": " + v2 + " <--> " + v1);
+					}
 
 				}
 			} else {

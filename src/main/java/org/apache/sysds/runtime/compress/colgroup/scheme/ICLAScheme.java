@@ -26,7 +26,7 @@ import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
 /**
- * Abstract class for a scheme instance.
+ * Interface for a scheme instance.
  * 
  * Instances of this class has the purpose of encoding the minimum values required to reproduce a compression scheme,
  * and apply it to unseen data.
@@ -43,24 +43,49 @@ public interface ICLAScheme {
 
 	/**
 	 * Encode the given matrix block into the scheme provided in the instance.
+	 * 	 
 	 * 
-	 * The method returns null, if it is impossible to encode the input data with the given scheme.
+	 * The method is unsafe in the sense that if the encoding scheme does not fit, there is no guarantee that an error is
+	 * thrown. To guarantee the encoding scheme, first use update on the matrix block and used the returned scheme to
+	 * ensure consistency.
 	 * 
 	 * @param data The data to encode
-	 * @return A compressed column group or null.
+	 * @throws IllegalArgumentException In the case the columns argument number of columns does not corelate with the
+	 *                                  schemes list of columns.
+	 * @return A compressed column group forced to use the scheme provided.
 	 */
 	public AColGroup encode(MatrixBlock data);
 
 	/**
 	 * Encode a given matrix block into the scheme provided in the instance but overwrite what columns to use.
 	 * 
-	 * The method returns null, if it is impossible to encode the input data with the given scheme.
+	 * The method is unsafe in the sense that if the encoding scheme does not fit, there is no guarantee that an error is
+	 * thrown. To guarantee the encoding scheme, first use update on the matrix block and used the returned scheme to
+	 * ensure consistency.
 	 * 
 	 * @param data    The data to encode
 	 * @param columns The columns to apply the scheme to, but must be of same number than the encoded scheme
-	 * @throws IllegalArgumentException In the case the columns argument number of columns doesent corelate with the
-	 *                                  Schemes list of columns.
-	 * @return A compressed column group or null
+	 * @throws IllegalArgumentException In the case the columns argument number of columns does not corelate with the
+	 *                                  schemes list of columns.
+	 * @return A compressed column group forced to use the scheme provided.
 	 */
 	public AColGroup encode(MatrixBlock data, IColIndex columns);
+
+	/**
+	 * Update the encoding scheme to enable compression of the given data.
+	 * 
+	 * @param data The data to update into the scheme
+	 * @return A updated scheme 
+	 */
+	public ICLAScheme update(MatrixBlock data);
+
+	/**
+	 * Update the encoding scheme to enable compression of the given data.
+	 * 
+	 * @param data    The data to update into the scheme
+	 * @param columns The columns to extract the data from
+	 * @return A updated scheme 
+	 */
+	public ICLAScheme update(MatrixBlock data, IColIndex columns);
+
 }

@@ -16,25 +16,31 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.sysds.runtime.compress.utils;
 
-public class DCounts {
-	final public double key;
-	public int count;
-	public int id;
+package org.apache.sysds.runtime.compress.plan;
 
-	public DCounts(double key, int id) {
-		this.key = key;
-		this.id = id;
-		count = 1;
-	}
+import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
-	public void inc() {
-		count++;
-	}
+/**
+ * Interface for constructing an compression plan that is able to compress sequences of matrix blocks with the same
+ * scheme
+ */
+public interface IPlanEncode {
 
-	@Override
-	public String toString() {
-		return "[" + key + ", " + count + "]";
-	}
+	/**
+	 * Encode a given matrix block subject to the plan given, while erroring out in case of breaking compression
+	 * 
+	 * @param in The matrix block to encode
+	 * @return A Compressed Matrix block with the safe scheme applied.
+	 */
+	public CompressedMatrixBlock encode(MatrixBlock in);
+
+	/**
+	 * Given a block expand the plan to enable encoding of the given block.
+	 * 
+	 * @param in The bock
+	 */
+	public void expandPlan(MatrixBlock in);
+
 }

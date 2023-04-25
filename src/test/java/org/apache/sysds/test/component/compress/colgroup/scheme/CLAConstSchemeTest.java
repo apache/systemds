@@ -47,23 +47,7 @@ public class CLAConstSchemeTest {
 		assertTrue(sh != null);
 	}
 
-	@Test
-	public void testToSmallMatrix() {
-		assertTrue(sh.encode(new MatrixBlock(1, 3, new double[] {//
-			1.1, 1.2, 1.3})) == null);
-	}
 
-	@Test
-	public void testWrongValuesSingleRow() {
-		assertTrue(sh.encode(new MatrixBlock(1, 5, new double[] {//
-			0.0, 1.1, 0.2, 1.2, 0.2, 1.2})) == null);
-	}
-
-	@Test
-	public void testWrongValuesSingleRowV2() {
-		assertTrue(sh.encode(new MatrixBlock(1, 5, new double[] {//
-			0.0, 1.0, 0.2, 1.2, 0.2, 1.3})) == null);
-	}
 
 	@Test
 	public void testValidEncodeSingleRow() {
@@ -107,25 +91,8 @@ public class CLAConstSchemeTest {
 		})) != null);
 	}
 
-	@Test
-	public void testInvalidEncodeValueMultiRowMultiError() {
-		assertTrue(sh.encode(new MatrixBlock(4, 6, new double[] {//
-			0.0, 1.1, 0.2, 1.2, 0.2, 1.3, //
-			0.0, 1.1, 0.2, 1.2, 0.2, 1.3, //
-			0.0, 1.1, 0.2, 1.2, 0.2, 1.4, //
-			0.0, 1.1, 0.2, 1.2, 0.2, 1.3, //
-		})) == null);
-	}
 
-	@Test
-	public void testInvalidEncodeMultiRow() {
-		assertTrue(sh.encode(new MatrixBlock(4, 6, new double[] {//
-			0.0, 1.3, 0.2, 1.2, 0.2, 1.3, //
-			0.0, 1.1, 0.2, 1.2, 0.2, 1.3, //
-			0.0, 1.1, 0.2, 1.2, 0.2, 1.4, //
-			0.0, 1.1, 0.2, 1.2, 0.2, 1.3, //
-		})) == null);
-	}
+
 
 	@Test
 	public void testEncodeOtherColumns() {
@@ -134,20 +101,10 @@ public class CLAConstSchemeTest {
 			1.1, 0.2, 1.2, 0.2, 1.3, //
 			1.1, 0.2, 1.2, 0.2, 1.3, //
 			1.1, 0.2, 1.2, 0.2, 1.3, //
-		}),
-
-			ColIndexFactory.create(new int[] {0, 2, 4})) != null);
+		}), ColIndexFactory.create(new int[] {0, 2, 4})) != null);
 	}
 
-	@Test
-	public void testEncodeOtherColumnsInvalid() {
-		assertTrue(sh.encode(new MatrixBlock(4, 5, new double[] {//
-			1.1, 0.2, 1.2, 0.2, 1.3, //
-			1.1, 0.2, 1.2, 0.2, 1.3, //
-			1.1, 0.2, 1.4, 0.2, 1.3, //
-			1.1, 0.2, 1.2, 0.2, 1.3, //
-		}), ColIndexFactory.create(new int[] {0, 2, 4})) == null);
-	}
+
 
 	@Test(expected = IllegalArgumentException.class)
 	public void testInvalidArgument_1() {
@@ -174,20 +131,6 @@ public class CLAConstSchemeTest {
 		assertTrue(sh.encode(mb) != null);
 	}
 
-	@Test
-	public void testSparse_invalid() {
-		MatrixBlock mb = new MatrixBlock(4, 6, new double[] {//
-			0.0, 1.1, 0.2, 1.2, 0.2, 1.3, //
-			0.0, 1.1, 0.2, 1.2, 0.2, 1.3, //
-			0.0, 1.1, 0.2, 1.2, 0.2, 1.3, //
-			0.0, 1.1, 0.2, 1.2, 0.2, 1.3, //
-		});
-
-		MatrixBlock empty = new MatrixBlock(4, 1000, 0.0);
-		mb = empty.append(mb);
-
-		assertTrue(sh.encode(mb) == null);
-	}
 
 	@Test
 	public void testSparseValidCustom() {
@@ -219,43 +162,9 @@ public class CLAConstSchemeTest {
 		assertTrue(sh.encode(comb, ColIndexFactory.create(new int[] {1001, 1003, 1005})) != null);
 	}
 
-	@Test
-	public void testSparseValidCustom3Invalid() {
-		MatrixBlock mb = new MatrixBlock(4, 6, new double[] {//
-			0.0, 1.1, 0.2, 1.2, 0.2, 1.3, //
-			0.0, 1.1, 0.2, 1.33, 0.2, 1.3, //
-			0.0, 1.1, 0.2, 1.2, 0.2, 1.3, //
-			0.0, 1.1, 0.2, 1.2, 0.2, 1.3, //
-		});
 
-		MatrixBlock empty = new MatrixBlock(4, 1000, 0.0);
-		MatrixBlock comb = empty.append(mb).append(mb);
 
-		assertTrue(sh.encode(comb, ColIndexFactory.create(new int[] {1001, 1003, 1005})) == null);
-	}
 
-	@Test
-	public void testSparseEmptyRowInvalid() {
-		MatrixBlock mb = new MatrixBlock(4, 6, new double[] {//
-			0.0, 1.1, 0.2, 1.2, 0.2, 1.3, //
-			0.0, 1.1, 0.2, 1.2, 0.2, 1.3, //
-			0.0, 1.1, 0.2, 1.2, 0.2, 1.3, //
-			0.0, 1.1, 0.2, 1.2, 0.2, 1.3, //
-		});
-
-		MatrixBlock empty = new MatrixBlock(4, 1000, 0.0);
-		mb = empty.append(mb);
-		MatrixBlock emptyRow = new MatrixBlock(1, 1006, 0.0);
-		mb = mb.append(emptyRow, false);
-
-		assertTrue(sh.encode(mb, ColIndexFactory.create(new int[] {1001, 1003, 1005})) == null);
-	}
-
-	@Test
-	public void testEmpty() {
-		MatrixBlock empty = new MatrixBlock(4, 1000, 0.0);
-		assertTrue(sh.encode(empty) == null);
-	}
 
 	@Test
 	public void testGenericNonContinuosBlockValid() {
@@ -270,18 +179,7 @@ public class CLAConstSchemeTest {
 		assertTrue(sh.encode(mb) != null);
 	}
 
-	@Test
-	public void testGenericNonContinuosBlockInValid() {
-		MatrixBlock mb = new MatrixBlock(4, 6, //
-			new DenseBlockFP64Mock(new int[] {4, 6}, new double[] {//
-				0.2, 1.1, 0.4, 1.2, 0.3, 1.3, //
-				0.0, 1.1, 0.2, 1.2, 0.2, 1.3, //
-				0.0, 1.1, 0.2, 1.2, 0.1, 1.3, //
-				0.2, 1.22, 0.4, 1.2, 0.1, 1.3, //
-			}));
-		mb.recomputeNonZeros();
-		assertTrue(sh.encode(mb) == null);
-	}
+
 
 	@Test(expected = NullPointerException.class)
 	public void testNull() {

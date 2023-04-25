@@ -550,7 +550,7 @@ public class ColGroupDDC extends APreAgg implements AMapToDataGroup {
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		sb.append(super.toString());
-		sb.append(String.format("\n%15s ", "Data: "));
+		sb.append(String.format("\n%15s", "Data: "));
 		sb.append(_data);
 		return sb.toString();
 	}

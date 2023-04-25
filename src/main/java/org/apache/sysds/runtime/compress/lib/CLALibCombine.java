@@ -43,25 +43,27 @@ public class CLALibCombine {
 
 	protected static final Log LOG = LogFactory.getLog(CLALibCombine.class.getName());
 
+	/**
+	 * Combine the map of index matrix blocks into a single MatrixBlock.
+	 * 
+	 * The intension is that the combining is able to resolve differences in the different MatrixBlocks allocation.
+	 * 
+	 * @param m The map of Index to MatrixBLocks
+	 * @param k The parallelization degree allowed for this operation
+	 * @return The combined matrix.
+	 */
 	public static MatrixBlock combine(Map<MatrixIndexes, MatrixBlock> m, int k) {
-		// Dynamically find rlen, clen and blen;
-		// assume that the blen is the same in all blocks.
-		// assume that all blocks are there ...
 		final MatrixIndexes lookup = new MatrixIndexes(1, 1);
 		MatrixBlock b = m.get(lookup);
+		if(b == null)
+			throw new DMLCompressionException("Invalid map to combine does not contain the top left map MatrixBlock");
 		final int blen = Math.max(b.getNumColumns(), b.getNumRows());
 
-		long rows = 0;
-		while((b = m.get(lookup)) != null) {
-			rows += b.getNumRows();
-			lookup.setIndexes(lookup.getRowIndex() + 1, 1);
-		}
-		lookup.setIndexes(1, 1);
-		long cols = 0;
-		while((b = m.get(lookup)) != null) {
-			cols += b.getNumColumns();
-			lookup.setIndexes(1, lookup.getColumnIndex() + 1);
-		}
+		// Dynamically find rlen, clen and blen;
+		final long rows = findRLength(m, b);
+		// TODO utilize the known size of m to extrapolate how many row blocks there are
+		// and only use the last rowblock to calculate the total number of rows.
+		final long cols = findCLength(m, b);
 
 		return combine(m, lookup, (int) rows, (int) cols, blen, k);
 	}
@@ -69,6 +71,26 @@ public class CLALibCombine {
 	public static MatrixBlock combine(Map<MatrixIndexes, MatrixBlock> m, int rlen, int clen, int blen, int k) {
 		final MatrixIndexes lookup = new MatrixIndexes();
 		return combine(m, lookup, rlen, clen, blen, k);
+	}
+
+	private static long findRLength(Map<MatrixIndexes, MatrixBlock> m, MatrixBlock b) {
+		final MatrixIndexes lookup = new MatrixIndexes(1, 1);
+		long rows = 0;
+		while((b = m.get(lookup)) != null) {
+			rows += b.getNumRows();
+			lookup.setIndexes(lookup.getRowIndex() + 1, 1);
+		}
+		return rows;
+	}
+
+	private static long findCLength(Map<MatrixIndexes, MatrixBlock> m, MatrixBlock b) {
+		final MatrixIndexes lookup = new MatrixIndexes(1, 1);
+		long cols = 0;
+		while((b = m.get(lookup)) != null) {
+			cols += b.getNumColumns();
+			lookup.setIndexes(1, lookup.getColumnIndex() + 1);
+		}
+		return cols;
 	}
 
 	private static MatrixBlock combine(final Map<MatrixIndexes, MatrixBlock> m, final MatrixIndexes lookup,
@@ -95,13 +117,13 @@ public class CLALibCombine {
 			final List<AColGroup> gs = cmb.getColGroups();
 			final int off = bc * blen;
 			for(AColGroup g : gs) {
-				try{
+				try {
 					final IIterate cols = g.getColIndices().iterator();
 					final CompressionType t = g.getCompType();
 					while(cols.hasNext())
 						colTypes[cols.next() + off] = t;
 				}
-				catch(Exception e){
+				catch(Exception e) {
 					throw new DMLCompressionException("Failed combining: " + g.toString());
 				}
 			}
@@ -174,7 +196,7 @@ public class CLALibCombine {
 				final CompressedMatrixBlock cmb = (CompressedMatrixBlock) m.get(lookup);
 				for(AColGroup g : cmb.getColGroups()) {
 					final AColGroup gc = bc > 0 ? g.shiftColIndices(bc * blen) : g;
-					final int c  = gc.getColIndices().get(0);
+					final int c = gc.getColIndices().get(0);
 					if(br == 0)
 						finalCols[c] = new AColGroup[blocksInColumn];
 

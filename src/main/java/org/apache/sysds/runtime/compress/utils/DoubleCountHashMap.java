@@ -23,6 +23,7 @@ import java.util.Arrays;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.sysds.runtime.compress.utils.ACount.DCounts;
 
 public class DoubleCountHashMap {
 
@@ -112,6 +113,27 @@ public class DoubleCountHashMap {
 				l = l.n;
 	
 			return l.v.count;
+		} catch( Exception e){
+			if(Double.isNaN(key))
+				return get(0.0);
+			throw e;
+		}
+	}
+
+		/**
+	 * Get the ID behind the key, if it does not exist -1 is returned.
+	 * 
+	 * @param key The key array
+	 * @return The Id or -1
+	 */
+	public int getId(double key) {
+		try{
+			int ix = hashIndex(key);
+			Bucket l = _data[ix];
+			while(!(l.v.key == key))
+				l = l.n;
+	
+			return l.v.id;
 		} catch( Exception e){
 			if(Double.isNaN(key))
 				return get(0.0);

@@ -16,25 +16,54 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+
 package org.apache.sysds.runtime.compress.utils;
 
-public class DArrCounts {
-	public final DblArray key;
+public abstract class ACount {
 	public int count;
 	public int id;
 
-	public DArrCounts(DblArray key, int id) {
-		this.key = key;
-		this.id = id;
-		count = 1;
-	}
-
-	public void inc() {
-		count++;
-	}
+	protected abstract Object K();
 
 	@Override
-	public String toString() {
-		return "[" + key + ", " + count + "]";
+	public final String toString() {
+		return "[K:" + K() + ", <ID:" + id + ",C:" + count + ">]";
+	}
+
+	public static class DArrCounts extends ACount {
+		public final DblArray key;
+
+		public DArrCounts(DblArray key, int id) {
+			this.key = key;
+			this.id = id;
+			count = 1;
+		}
+
+		public void inc() {
+			count++;
+		}
+
+		protected Object K() {
+			return key;
+		}
+	}
+
+	public static class DCounts extends ACount {
+		final public double key;
+
+		public DCounts(double key, int id) {
+			this.key = key;
+			this.id = id;
+			count = 1;
+		}
+
+		public void inc() {
+			count++;
+		}
+
+		protected Object K() {
+			return key;
+		}
+
 	}
 }

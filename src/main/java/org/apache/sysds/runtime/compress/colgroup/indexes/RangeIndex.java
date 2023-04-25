@@ -167,7 +167,7 @@ public class RangeIndex extends AColIndex {
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		sb.append(this.getClass().getSimpleName());
-		sb.append(" [");
+		sb.append("[");
 		sb.append(l);
 		sb.append(" -> ");
 		sb.append(u);

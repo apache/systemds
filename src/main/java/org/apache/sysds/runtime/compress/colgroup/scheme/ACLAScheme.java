@@ -19,30 +19,39 @@
 
 package org.apache.sysds.runtime.compress.colgroup.scheme;
 
-import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup;
-import org.apache.sysds.runtime.compress.colgroup.ColGroupEmpty;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
-public class EmptyScheme extends ACLAScheme {
+public abstract class ACLAScheme implements ICLAScheme {
+	protected final IColIndex cols;
 
-	protected EmptyScheme(ColGroupEmpty g) {
-		super(g.getColIndices());
+	protected ACLAScheme(IColIndex cols) {
+		this.cols = cols;
 	}
 
-	public static EmptyScheme create(ColGroupEmpty g) {
-		return new EmptyScheme(g);
-	}
-
-	@Override
-	public ICLAScheme update(MatrixBlock data, IColIndex columns) {
-		throw new NotImplementedException();
+	protected IColIndex getColIndices() {
+		return cols;
 	}
 
 	@Override
-	public AColGroup encode(MatrixBlock data, IColIndex columns) {
-		validate(data, columns);
-		return new ColGroupEmpty(columns);
+	public AColGroup encode(MatrixBlock data) {
+		return encode(data, getColIndices());
 	}
+
+	@Override
+	public ICLAScheme update(MatrixBlock data) {
+		return update(data, getColIndices());
+	}
+
+	protected final void validate(MatrixBlock data, IColIndex columns) throws IllegalArgumentException {
+		if(columns.size() != cols.size())
+			throw new IllegalArgumentException(
+				"Invalid number of columns to encode expected: " + cols.size() + " but got: " + columns.size());
+
+		final int nCol = data.getNumColumns();
+		if(nCol < cols.get(cols.size() - 1))
+			throw new IllegalArgumentException("Invalid columns to encode with max col:" + nCol+ " list of columns: "+ columns);
+	}
+
 }

@@ -46,8 +46,14 @@ public abstract class ReaderColumnSelection {
 		_colIndexes = colIndexes;
 		_rl = rl;
 		_ru = ru;
-		reusableArr = new double[colIndexes.size()];
-		reusableReturn = new DblArray(reusableArr);
+		if(colIndexes != null) {
+			reusableArr = new double[colIndexes.size()];
+			reusableReturn = new DblArray(reusableArr);
+		}
+		else {
+			reusableArr = null;
+			reusableReturn = null;
+		}
 	}
 
 	/**
@@ -105,8 +111,6 @@ public abstract class ReaderColumnSelection {
 		if(colIndices.size() <= 1)
 			throw new DMLCompressionException(
 				"Column selection reader should not be done on single column groups: " + colIndices);
-		else if(rawBlock.getSparseBlock() == null && rawBlock.getDenseBlock() == null)
-			throw new DMLCompressionException("Input Block was null");
 		else if(rl >= ru)
 			throw new DMLCompressionException("Invalid inverse range for reader " + rl + " to " + ru);
 	}

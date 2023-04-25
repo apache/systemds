@@ -21,10 +21,12 @@ package org.apache.sysds.test.functions.frame;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
+
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types;
-import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.common.Types.ExecType;
+import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.runtime.io.FileFormatPropertiesCSV;
 import org.apache.sysds.runtime.io.FrameWriter;
@@ -37,7 +39,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
-import edu.emory.mathcs.backport.java.util.Collections;
 
 @RunWith(value = Parameterized.class)
 @net.jcip.annotations.NotThreadSafe

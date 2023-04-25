@@ -62,7 +62,7 @@
 		<test-threadCount>2</test-threadCount>
 		<test-forkCount>1C</test-forkCount>
 		<rerun.failing.tests.count>2</rerun.failing.tests.count>
-		<jacoco.skip>true</jacoco.skip>
+		<jacoco.skip>false</jacoco.skip>
 		<jacoco.include>**</jacoco.include>
 		<automatedtestbase.outputbuffering>false</automatedtestbase.outputbuffering>
 		<argLine>-Xms3000m -Xmx3000m -Xmn300m</argLine>
@@ -345,24 +345,27 @@
 			<plugin>
 				<groupId>org.jacoco</groupId>
 				<artifactId>jacoco-maven-plugin</artifactId>
-				<version>0.8.8</version>
+				<version>0.8.9</version>
 				<configuration>
 					<includes>
 						<include>${jacoco.include}</include>
 					</includes>
+					<output>file</output>
+					<destFile>${project.build.directory}/jacoco.exec</destFile>
+					<fileSets>
+					  <fileSet>
+					    <directory>${project.build.directory}</directory>
+					    <includes>
+						    <include>*/jacoco.exec</include>
+					    </includes>
+					  </fileSet>
+					</fileSets>
 				</configuration>
 				<executions>
 					<execution>
 						<id>default-prepare-agent</id>
 						<goals>
 							<goal>prepare-agent</goal>
-						</goals>
-					</execution>
-					<execution>
-						<id>generate-code-coverage-report</id>
-						<phase>test</phase>
-						<goals>
-							<goal>report</goal>
 						</goals>
 					</execution>
 				</executions>

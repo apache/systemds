@@ -124,7 +124,6 @@ public final class WriterCompressed extends MatrixWriter {
 		final int k = OptimizerUtils.getParallelTextWriteParallelism();
 		final int rlen = src.getNumRows();
 		final int clen = src.getNumColumns();
-
 		// Try to compress!
 		if(!(src instanceof CompressedMatrixBlock))
 			src = CompressedMatrixBlockFactory.compress(src, k).getLeft();
@@ -172,24 +171,26 @@ public final class WriterCompressed extends MatrixWriter {
 
 	private void writeMultiBlockCompressed(String fname, MatrixBlock b, final int rlen, final int clen, final int blen,
 		int k) throws IOException {
+
 		setupWrite(fname);
 		final ExecutorService pool = CommonThreadPool.get(k);
-		int i = 0;
+		final ArrayList<WriteTask> tasks = new ArrayList<>();
 		try {
+			int i = 0;
 			for(int bc = 0; bc * blen < clen; bc++) {// column blocks
 				final int sC = bc * blen;
 				final int mC = Math.min(sC + blen, clen) - 1;
 				final CompressedMatrixBlock mc = CLALibSlice.sliceColumns((CompressedMatrixBlock) b, sC, mC);
 				final List<MatrixBlock> blocks = CLALibSlice.sliceBlocks(mc, blen); // Slice compressed blocks
-
-				final ArrayList<WriteTask> tasks = new ArrayList<>();
-				for(int br = 0; br * blen < rlen; br++) // row blocks
-					tasks.add(new WriteTask(fname, i, blocks.get(br), new MatrixIndexes(br + 1, bc + 1)));
-
-				for(Future<Object> f : pool.invokeAll(tasks))
-					f.get();
-				pool.shutdown();
+				final int blocksPerThread = Math.max(1, blocks.size() / k);
+				for(int block = 0; block < blocks.size(); block += blocksPerThread, i++) {
+					final Path newPath = new Path(fname, IOUtilFunctions.getPartFileName(i));
+					tasks.add(new WriteTask(newPath, blocks, bc, block, Math.min(blocks.size(), block + blocksPerThread)));
+				}
 			}
+			for(Future<Object> f : pool.invokeAll(tasks))
+				f.get();
+			pool.shutdown();
 		}
 		catch(Exception e) {
 			pool.shutdown();
@@ -207,6 +208,10 @@ public final class WriterCompressed extends MatrixWriter {
 
 	private static Writer getWriter(String fname) throws IOException {
 		final Path path = new Path(fname);
+		return getWriter(path);
+	}
+
+	private static Writer getWriter(Path path) throws IOException {
 		final JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());
 		HDFSTool.deleteFileIfExistOnHDFS(path, job);
 		return SequenceFile.createWriter(job, Writer.file(path), Writer.bufferSize(4096),
@@ -217,28 +222,41 @@ public final class WriterCompressed extends MatrixWriter {
 
 	private static void cleanup(String fname) throws IOException {
 		final Path path = new Path(fname);
+		cleanup(path);
+	}
+
+	private static void cleanup(Path path) throws IOException {
 		final JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());
 		final FileSystem fs = IOUtilFunctions.getFileSystem(path, job);
 		IOUtilFunctions.deleteCrcFilesFromLocalFileSystem(fs, path);
 	}
 
 	private static class WriteTask implements Callable<Object> {
-		final String fname;
-		final CompressedWriteBlock blk;
-		final MatrixIndexes indexes;
+		final Path path;
+		final List<MatrixBlock> blocks;
+		final int bc;
+		final int bl;
+		final int bu;
 
-		private WriteTask(String fname, int i, MatrixBlock blk, MatrixIndexes indexes) {
-			this.fname = fname + "/" + IOUtilFunctions.getPartFileName(i++);
-			this.blk = new CompressedWriteBlock(blk);
-			this.indexes = indexes;
+		private WriteTask(Path path, List<MatrixBlock> blocks, int bc, int bl, int bu) {
+			this.path = path;
+			this.blocks = blocks;
+			// +1 for one indexed
+			this.bl = bl + 1;
+			this.bu = bu + 1;
+			this.bc = bc + 1;
 		}
 
 		@Override
 		public Object call() throws Exception {
-			final Writer w = getWriter(fname);
-			w.append(indexes, blk);
+			final Writer w = getWriter(path);
+			for(int b = bl; b < bu; b++) {
+				MatrixIndexes index = new MatrixIndexes(b, bc);
+				CompressedWriteBlock blk = new CompressedWriteBlock(blocks.get(b - 1));
+				w.append(index, blk);
+			}
 			IOUtilFunctions.closeSilently(w);
-			cleanup(fname);
+			cleanup(path);
 			return null;
 		}
 	}

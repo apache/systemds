@@ -115,7 +115,6 @@ public class WriterBinaryBlockParallel extends WriterBinaryBlock
 			_rl = rl;
 			_ru = ru;
 			_blen = blen;
-			_blen = blen;
 		}
 	
 		@Override

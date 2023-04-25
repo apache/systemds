@@ -34,9 +34,10 @@ public class EncodePerformanceTest {
 	protected static final Log LOG = LogFactory.getLog(EncodePerformanceTest.class.getName());
 
 	public static void main(String[] args) {
+		// manually run test
 		MatrixBlock mb = TestUtils.generateTestMatrixBlock(1000, 300, 1, 1, 0.5, 235);
-		IPlanEncode plan = CompressionPlanFactory.nCols(mb.getNumColumns(),10, CompressionType.DDC, 16);
-		// testExpand(mb, plan);
+		IPlanEncode plan = CompressionPlanFactory.nCols(mb.getNumColumns(), 10, CompressionType.DDC, 16);
+		testExpand(mb, plan);
 		testEncode(mb, plan);
 	}
 

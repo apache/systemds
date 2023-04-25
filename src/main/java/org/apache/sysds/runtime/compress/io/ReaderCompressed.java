@@ -74,9 +74,10 @@ public final class ReaderCompressed extends MatrixReader {
 		throws IOException {
 
 		final Map<MatrixIndexes, MatrixBlock> data = new HashMap<>();
-
-		for(Path subPath : IOUtilFunctions.getSequenceFilePaths(fs, path))
+		
+		for(Path subPath : IOUtilFunctions.getSequenceFilePaths(fs, path)){
 			read(subPath, job, data);
+		}
 
 		if(data.size() == 1)
 			return data.entrySet().iterator().next().getValue();
@@ -94,9 +95,9 @@ public final class ReaderCompressed extends MatrixReader {
 			MatrixIndexes key = new MatrixIndexes();
 			CompressedWriteBlock value = new CompressedWriteBlock();
 
+			
 			while(reader.next(key, value)) {
 				final MatrixBlock g = value.get();
-
 				if(g instanceof CompressedMatrixBlock)
 					data.put(key, g);
 				else if(g.isEmpty())

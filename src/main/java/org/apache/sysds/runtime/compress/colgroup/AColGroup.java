@@ -619,7 +619,7 @@ public abstract class AColGroup implements Serializable {
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
-		sb.append(String.format("%15s", "ColGroupType: "));
+		sb.append(String.format("%15s", "Type: "));
 		sb.append(this.getClass().getSimpleName());
 		sb.append(String.format("\n%15s", "Columns: "));
 		sb.append(_colIndexes);

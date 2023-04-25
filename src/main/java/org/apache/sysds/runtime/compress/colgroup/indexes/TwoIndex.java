@@ -137,7 +137,7 @@ public class TwoIndex extends AColIndex {
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		sb.append(this.getClass().getSimpleName());
-		sb.append(" [");
+		sb.append("[");
 		sb.append(id1);
 		sb.append(", ");
 		sb.append(id2);

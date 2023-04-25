@@ -825,7 +825,7 @@ public abstract class AMapToData implements Serializable {
 		final int sz = size();
 		StringBuilder sb = new StringBuilder();
 		sb.append(this.getClass().getSimpleName());
-		sb.append(" [");
+		sb.append("[");
 		for(int i = 0; i < sz - 1; i++)
 			sb.append(getIndex(i) + ", ");
 		sb.append(getIndex(sz - 1));

@@ -20,29 +20,37 @@
 package org.apache.sysds.runtime.compress.colgroup.scheme;
 
 import org.apache.commons.lang.NotImplementedException;
-import org.apache.sysds.runtime.compress.colgroup.AColGroup;
-import org.apache.sysds.runtime.compress.colgroup.ColGroupEmpty;
+import org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
-import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
-public class EmptyScheme extends ACLAScheme {
-
-	protected EmptyScheme(ColGroupEmpty g) {
-		super(g.getColIndices());
-	}
-
-	public static EmptyScheme create(ColGroupEmpty g) {
-		return new EmptyScheme(g);
-	}
-
-	@Override
-	public ICLAScheme update(MatrixBlock data, IColIndex columns) {
-		throw new NotImplementedException();
-	}
-
-	@Override
-	public AColGroup encode(MatrixBlock data, IColIndex columns) {
-		validate(data, columns);
-		return new ColGroupEmpty(columns);
+public class SchemeFactory {
+	public static ICLAScheme create(IColIndex columns, CompressionType type) {
+		switch(type) {
+			case CONST:
+				return ConstScheme.create(columns);
+			case DDC:
+				return DDCScheme.create(columns);
+			case DDCFOR:
+				break;
+			case DeltaDDC:
+				break;
+			case EMPTY:
+				break;
+			case LinearFunctional:
+				break;
+			case OLE:
+				break;
+			case RLE:
+				break;
+			case SDC:
+				break;
+			case SDCFOR:
+				break;
+			case UNCOMPRESSED:
+				break;
+			default:
+				break;
+		}
+		throw new NotImplementedException("Not Implemented scheme for plan of type: " + type);
 	}
 }

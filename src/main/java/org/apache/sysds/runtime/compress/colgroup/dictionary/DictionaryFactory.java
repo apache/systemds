@@ -30,7 +30,7 @@ import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.bitmap.ABitmap;
 import org.apache.sysds.runtime.compress.bitmap.Bitmap;
 import org.apache.sysds.runtime.compress.bitmap.MultiColBitmap;
-import org.apache.sysds.runtime.compress.utils.DArrCounts;
+import org.apache.sysds.runtime.compress.utils.ACount.DArrCounts;
 import org.apache.sysds.runtime.compress.utils.DblArrayCountHashMap;
 import org.apache.sysds.runtime.compress.utils.DoubleCountHashMap;
 import org.apache.sysds.runtime.data.SparseBlock;

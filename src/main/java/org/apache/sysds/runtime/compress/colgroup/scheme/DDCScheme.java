@@ -19,41 +19,17 @@
 
 package org.apache.sysds.runtime.compress.colgroup.scheme;
 
-import org.apache.sysds.runtime.compress.colgroup.AColGroup;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupDDC;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
-import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
-import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
-import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
-import org.apache.sysds.runtime.compress.readers.ReaderColumnSelection;
-import org.apache.sysds.runtime.compress.utils.DblArray;
-import org.apache.sysds.runtime.compress.utils.DblArrayCountHashMap;
-import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
-public class DDCScheme implements ICLAScheme {
+public abstract class DDCScheme extends ACLAScheme {
 
-	final private IColIndex cols;
-	final private int nUnique;
-	final private DblArrayCountHashMap map;
-	final private ADictionary dict;
+	// TODO make it into a soft refrence
+	protected ADictionary lastDict;
 
-	private DDCScheme(ColGroupDDC g) {
-		this.cols = g.getColIndices();
-		this.nUnique = g.getNumValues();
-		this.dict = g.getDictionary();
-		final MatrixBlock mbDict = dict.getMBDict(this.cols.size()).getMatrixBlock();
-		final int dictRows = mbDict.getNumRows();
-		final int dictCols = mbDict.getNumColumns();
-
-		// Read the mapping data and materialize map.
-		map = new DblArrayCountHashMap(dictRows, dictCols);
-		final ReaderColumnSelection r = ReaderColumnSelection.createReader(mbDict, //
-			ColIndexFactory.create(dictCols), false, 0, dictRows);
-		DblArray d = null;
-		while((d = r.nextRow()) != null)
-			map.increment(d);
-
+	protected DDCScheme(IColIndex cols) {
+		super(cols);
 	}
 
 	/**
@@ -62,36 +38,36 @@ public class DDCScheme implements ICLAScheme {
 	 * @param g A DDC Column group
 	 * @return A DDC Compression scheme
 	 */
-	public static ICLAScheme create(ColGroupDDC g) {
-		if(g.getColIndices().size() == 1)
-			return null;
-		return new DDCScheme(g);
+	public static DDCScheme create(ColGroupDDC g) {
+		return g.getNumCols() == 1 ? new DDCSchemeSC(g) : new DDCSchemeMC(g);
+	}
+
+	/**
+	 * Create a scheme for the DDC compression given a list of columns.
+	 * 
+	 * @param cols The columns to compress
+	 * @return A DDC Compression scheme
+	 */
+	public static DDCScheme create(IColIndex cols) {
+		return cols.size() == 1 ? new DDCSchemeSC(cols) : new DDCSchemeMC(cols);
 	}
 
 	@Override
-	public AColGroup encode(MatrixBlock data) {
-		return encode(data, cols);
+	protected final IColIndex getColIndices() {
+		return cols;
 	}
 
+	protected abstract Object getMap();
+
 	@Override
-	public AColGroup encode(MatrixBlock data, IColIndex columns) {
-		if(columns.size() != cols.size())
-			throw new IllegalArgumentException("Invalid columns to encode");
-		final int nRow = data.getNumRows();
-		final ReaderColumnSelection reader = ReaderColumnSelection.createReader(//
-			data, columns, false, 0, nRow);
-		final AMapToData d = MapToFactory.create(nRow,nUnique);
-
-		DblArray cellVals;
-		while((cellVals = reader.nextRow()) != null) {
-			final int row = reader.getCurrentRowIndex();
-			final int id = map.getId(cellVals);
-			if(id == -1)
-				return null;
-			d.set(row, id);
-		}
-
-		return ColGroupDDC.create(columns, dict, d, null);
+	public final String toString() {
+		StringBuilder sb = new StringBuilder();
+		sb.append(this.getClass().getSimpleName());
+		sb.append("\nCols: ");
+		sb.append(cols);
+		sb.append("\nMap:  ");
+		sb.append(getMap());
+		return sb.toString();
 	}
 
 }

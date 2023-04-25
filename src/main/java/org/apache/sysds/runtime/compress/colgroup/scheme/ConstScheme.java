@@ -19,113 +19,45 @@
 
 package org.apache.sysds.runtime.compress.colgroup.scheme;
 
+import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupConst;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
-import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
-public class ConstScheme implements ICLAScheme {
+public class ConstScheme extends ACLAScheme {
 
-	/** The instance of a constant column group that in all cases here would be returned to be the same */
-	final ColGroupConst g;
+	final double[] vals;
+	boolean initialized = false;
 
-	protected ConstScheme(ColGroupConst g) {
-		this.g = g;
+	private ConstScheme(IColIndex cols, double[] vals, boolean initialized) {
+		super(cols);
+		this.vals = vals;
+		this.initialized = initialized;
 	}
 
 	public static ICLAScheme create(ColGroupConst g) {
-		return new ConstScheme(g);
+		return new ConstScheme(g.getColIndices(), g.getValues(), true);
+	}
+
+	public static ICLAScheme create(IColIndex cols) {
+		return new ConstScheme(cols, new double[cols.size()], false);
 	}
 
 	@Override
-	public AColGroup encode(MatrixBlock data) {
-		return encode(data, g.getColIndices(), g.getValues());
+	protected IColIndex getColIndices() {
+		return cols;
+	}
+
+	@Override
+	public ICLAScheme update(MatrixBlock data, IColIndex columns) {
+		throw new NotImplementedException();
 	}
 
 	@Override
 	public AColGroup encode(MatrixBlock data, IColIndex columns) {
-		if(columns.size() != g.getColIndices().size())
-			throw new IllegalArgumentException("Invalid columns to encode");
-		return encode(data, columns, g.getValues());
-	}
-
-	private AColGroup encode(final MatrixBlock data, final IColIndex cols, final double[] values) {
-		final int nCol = data.getNumColumns();
-		final int nRow = data.getNumRows();
-		if(nCol < cols.get(cols.size() - 1)) {
-			LOG.warn("Invalid to encode matrix with less columns than encode scheme max column");
-			return null;
-		}
-		else if(data.isEmpty()) {
-			LOG.warn("Invalid to encode an empty matrix into constant column group");
-			return null; // Invalid to encode this.
-		}
-		else if(data.isInSparseFormat())
-			return encodeSparse(data, cols, values, nRow, nCol);
-		else if(data.getDenseBlock().isContiguous())
-			return encodeDense(data, cols, values, nRow, nCol);
-		else
-			return encodeGeneric(data, cols, values, nRow, nCol);
-	}
-
-	private AColGroup encodeDense(final MatrixBlock data, final IColIndex cols, final double[] values, final int nRow,
-		final int nCol) {
-		final double[] dv = data.getDenseBlockValues();
-		for(int r = 0; r < nRow; r++) {
-			final int off = r * nCol;
-			for(int ci = 0; ci < cols.size(); ci++)
-				if(dv[off + cols.get(ci)] != values[ci])
-					return null;
-		}
-		return returnG(cols);
-	}
-
-	private AColGroup encodeSparse(final MatrixBlock data, final IColIndex cols, final double[] values, final int nRow,
-		final int nCol) {
-		SparseBlock sb = data.getSparseBlock();
-		for(int r = 0; r < nRow; r++) {
-			if(sb.isEmpty(r))
-				return null;
-
-			final int apos = sb.pos(r);
-			final int alen = apos + sb.size(r);
-			final double[] aval = sb.values(r);
-			final int[] aix = sb.indexes(r);
-			int p = 0; // pointer into cols;
-			while(values[p] == 0.0)
-				// technically also check for&& p < cols.length
-				// but this verification is indirectly maintained
-				p++;
-			for(int j = apos; j < alen && p < cols.size(); j++) {
-				if(aix[j] == cols.get(p)) {
-					if(aval[j] != values[p])
-						return null;
-					p++;
-					while(p < cols.size() && values[p] == 0.0)
-						p++;
-				}
-				else if(aix[j] > cols.get(p))
-					return null; // not matching
-			}
-		}
-		return returnG(cols);
-	}
-
-	private AColGroup encodeGeneric(final MatrixBlock data, final IColIndex cols, final double[] values, final int nRow,
-		final int nCol) {
-		for(int r = 0; r < nRow; r++)
-			for(int ci = 0; ci < cols.size(); ci++)
-				if(data.quickGetValue(r, cols.get(ci)) != values[ci])
-					return null;
-		return returnG(cols);
-	}
-
-	private AColGroup returnG(IColIndex columns) {
-		if(columns == g.getColIndices())
-			return g;// great!
-		else
-			return ColGroupConst.create(columns, g.getValues());
+		validate(data, columns);
+		return ColGroupConst.create(columns, vals);
 	}
 
 }

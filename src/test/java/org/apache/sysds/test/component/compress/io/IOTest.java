@@ -141,7 +141,7 @@ public class IOTest {
 	}
 
 	protected static void writeAndRead(MatrixBlock mb, int blen) throws Exception {
-		try{
+		try {
 
 			String filename = getName();
 			WriterCompressed.writeCompressedMatrixToHDFS(mb, filename, blen);
@@ -150,7 +150,7 @@ public class IOTest {
 			MatrixBlock mbr = IOCompressionTestUtils.read(filename);
 			IOCompressionTestUtils.verifyEquivalence(mb, mbr);
 		}
-		catch(Exception e){
+		catch(Exception e) {
 			e.printStackTrace();
 			throw e;
 		}

@@ -24,6 +24,7 @@ import java.util.Arrays;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.sysds.runtime.compress.utils.ACount.DArrCounts;
 
 public class DblArrayCountHashMap {
 
@@ -81,6 +82,23 @@ public class DblArrayCountHashMap {
 				return addNewBucket(ix, key);
 			else if(l.v.key.equals(key)) {
 				l.v.count++;
+				return l.v.id;
+			}
+			else
+				l = l.n;
+		}
+	}
+
+	public int increment(DblArray key, int count) {
+		final int hash = key.hashCode();
+		final int ix = indexFor(hash, _data.length);
+
+		Bucket l = _data[ix];
+		while(true) {
+			if(l == null)
+				return addNewBucket(ix, key);
+			else if(l.v.key.equals(key)) {
+				l.v.count += count;
 				return l.v.id;
 			}
 			else
@@ -234,9 +252,18 @@ public class DblArrayCountHashMap {
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		sb.append(this.getClass().getSimpleName());
-		for(int i = 0; i < _data.length; i++)
-			if(_data[i] != null)
-				sb.append(", " + _data[i]);
+		if(_size == 0) {
+			sb.append(" []");
+			return sb.toString();
+		}
+		sb.append(" [");
+		for(int i = 1; i < _data.length; i++)
+			if(_data[i] != null) {
+				sb.append(_data[i]);
+				sb.append(", ");
+			}
+		sb.setLength(sb.length() - 2);
+		sb.append("]");
 		return sb.toString();
 	}
 

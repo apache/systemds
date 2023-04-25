@@ -36,7 +36,7 @@ public class CLAEmptySchemeTest {
 
 	public CLAEmptySchemeTest() {
 		g = new ColGroupEmpty(//
-		ColIndexFactory.create(new int[] {1, 3, 5}) // Columns
+			ColIndexFactory.create(new int[] {1, 3, 5}) // Columns
 		);
 		sh = g.getCompressionScheme();
 	}
@@ -46,22 +46,10 @@ public class CLAEmptySchemeTest {
 		assertTrue(sh != null);
 	}
 
-	@Test
+	@Test(expected = IllegalArgumentException.class)
 	public void testToSmallMatrix() {
-		assertTrue(sh.encode(new MatrixBlock(1, 3, new double[] {//
-			1.1, 1.2, 1.3})) == null);
-	}
-
-	@Test
-	public void testWrongValuesSingleRow() {
-		assertTrue(sh.encode(new MatrixBlock(1, 6, new double[] {//
-			0.0, 1.1, 0.2, 1.2, 0.2, 1.2})) == null);
-	}
-
-	@Test
-	public void testWrongValuesSingleRowV2() {
-		assertTrue(sh.encode(new MatrixBlock(1, 6, new double[] {//
-			0.0, 1.0, 0.2, 1.2, 0.2, 1.3})) == null);
+		sh.encode(new MatrixBlock(1, 3, new double[] {//
+			1.1, 1.2, 1.3}));
 	}
 
 	@Test
@@ -87,16 +75,6 @@ public class CLAEmptySchemeTest {
 	}
 
 	@Test
-	public void testInvalidEncodeMultiRowsValue() {
-		assertTrue(sh.encode(new MatrixBlock(4, 8, new double[] {//
-			0.0, 0.0, 0.2, 0.0, 1.2, 0.0, 0.2, 1.3, //
-			0.0, 0.0, 0.2, 0.0, 1.2, 0.0, 0.2, 1.3, //
-			0.0, 0.0, 0.2, 0.0, 1.2, 0.0, 0.2, 1.3, //
-			0.0, 0.0, 0.2, 0.0, 1.2, 0.0, 0.2, 1.3, //
-		})) != null);
-	}
-
-	@Test
 	public void testValidEncodeMultiRowDifferentValuesOtherColumns() {
 		assertTrue(sh.encode(new MatrixBlock(4, 12, new double[] {//
 			0.2, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.1, 0.4, 1.2, 0.3, 1.3, //
@@ -107,66 +85,24 @@ public class CLAEmptySchemeTest {
 	}
 
 	@Test
-	public void testInvalidEncodeValueMultiRowMultiError() {
-		assertTrue(sh.encode(new MatrixBlock(4, 6, new double[] {//
-			0.0, 1.1, 0.2, 1.2, 0.2, 1.3, //
-			0.0, 1.1, 0.2, 1.2, 0.2, 1.3, //
-			0.0, 1.1, 0.2, 1.2, 0.2, 1.4, //
-			0.0, 1.1, 0.2, 1.2, 0.2, 1.3, //
-		})) == null);
-	}
-
-	@Test
-	public void testInvalidEncodeMultiRow() {
-		assertTrue(sh.encode(new MatrixBlock(4, 6, new double[] {//
-			0.0, 1.3, 0.2, 1.2, 0.2, 1.3, //
-			0.0, 1.1, 0.2, 1.2, 0.2, 1.3, //
-			0.0, 1.1, 0.2, 1.2, 0.2, 1.4, //
-			0.0, 1.1, 0.2, 1.2, 0.2, 1.3, //
-		})) == null);
-	}
-
-	@Test
-	public void testEncodeOtherColumns() {
-		assertTrue(sh.encode(new MatrixBlock(4, 5, new double[] {//
-			1.1, 0.2, 1.2, 0.2, 1.3, //
-			1.1, 0.2, 1.2, 0.2, 1.3, //
-			1.1, 0.2, 1.2, 0.2, 1.3, //
-			1.1, 0.2, 1.2, 0.2, 1.3, //
-		}), ColIndexFactory.create( new int[] {0, 2, 4})// other columns
-		) == null);
-	}
-
-	@Test
 	public void testEncodeOtherColumnsValid() {
 		assertTrue(sh.encode(new MatrixBlock(4, 8, new double[] {//
 			0.0, 1.1, 0.0, 0.2, 0.0, 1.2, 0.2, 1.3, //
 			0.0, 1.1, 0.0, 0.2, 0.0, 1.2, 0.2, 1.3, //
 			0.0, 1.1, 0.0, 0.2, 0.0, 1.2, 0.2, 1.3, //
 			0.0, 1.1, 0.0, 0.2, 0.0, 1.2, 0.2, 1.3, //
-		}),  ColIndexFactory.create(new int[] {0, 2, 4})// other columns
+		}), ColIndexFactory.create(new int[] {0, 2, 4})// other columns
 		) != null);
-	}
-
-	@Test
-	public void testEncodeOtherColumnsInvalid() {
-		assertTrue(sh.encode(new MatrixBlock(4, 5, new double[] {//
-			1.1, 0.2, 1.2, 0.2, 1.3, //
-			1.1, 0.2, 1.2, 0.2, 1.3, //
-			1.1, 0.2, 1.4, 0.2, 1.3, //
-			1.1, 0.2, 1.2, 0.2, 1.3, //
-		}),  ColIndexFactory.create(new int[] {0, 2, 4})// other columns
-		) == null);
 	}
 
 	@Test(expected = IllegalArgumentException.class)
 	public void testInvalidArgument_1() {
-		sh.encode(null, ColIndexFactory.create( new int[] {0, 2, 4, 5}));
+		sh.encode(null, ColIndexFactory.create(new int[] {0, 2, 4, 5}));
 	}
 
 	@Test(expected = IllegalArgumentException.class)
 	public void testInvalidArgument_2() {
-		sh.encode(null, ColIndexFactory.create( new int[] {0, 2}));
+		sh.encode(null, ColIndexFactory.create(new int[] {0, 2}));
 	}
 
 	@Test
@@ -196,22 +132,7 @@ public class CLAEmptySchemeTest {
 		MatrixBlock empty = new MatrixBlock(4, 1000, 0.0);
 		mb = mb.append(empty);
 
-		assertTrue(sh.encode(mb,  ColIndexFactory.create(new int[] {100, 102, 999})) != null);
-	}
-
-	@Test
-	public void testSpars_InsideInvalid() {
-		MatrixBlock mb = new MatrixBlock(4, 6, new double[] {//
-			0.01, 0.0, 0.2, 0.0, 0.2, 0.0, //
-			0.01, 0.0, 0.2, 0.0, 0.2, 0.0, //
-			0.01, 0.0, 0.2, 0.0, 0.2, 0.0, //
-			0.01, 0.0, 0.2, 0.0, 0.2, 0.0, //
-		});
-
-		MatrixBlock empty = new MatrixBlock(4, 1000, 0.0);
-		mb = mb.append(empty);
-
-		assertTrue(sh.encode(mb,  ColIndexFactory.create(new int[] {1, 4, 5})) == null);
+		assertTrue(sh.encode(mb, ColIndexFactory.create(new int[] {100, 102, 999})) != null);
 	}
 
 	@Test
@@ -241,7 +162,7 @@ public class CLAEmptySchemeTest {
 		MatrixBlock empty = new MatrixBlock(4, 1000, 0.0);
 		mb = empty.append(mb);
 
-		assertTrue(sh.encode(mb,  ColIndexFactory.create(new int[] {1001, 1003, 1005})) != null);
+		assertTrue(sh.encode(mb, ColIndexFactory.create(new int[] {1001, 1003, 1005})) != null);
 	}
 
 	@Test
@@ -256,7 +177,7 @@ public class CLAEmptySchemeTest {
 		MatrixBlock empty = new MatrixBlock(4, 1000, 0.0);
 		MatrixBlock comb = empty.append(mb).append(mb);
 
-		assertTrue(sh.encode(comb,  ColIndexFactory.create(new int[] {1001, 1003, 1005})) != null);
+		assertTrue(sh.encode(comb, ColIndexFactory.create(new int[] {1001, 1003, 1005})) != null);
 	}
 
 	@Test
@@ -271,7 +192,7 @@ public class CLAEmptySchemeTest {
 		MatrixBlock empty = new MatrixBlock(4, 1000, 0.0);
 		MatrixBlock comb = empty.append(mb).append(mb);
 
-		assertTrue(sh.encode(comb,  ColIndexFactory.create(new int[] {1001, 1003, 1005})) != null);
+		assertTrue(sh.encode(comb, ColIndexFactory.create(new int[] {1001, 1003, 1005})) != null);
 	}
 
 	@Test
@@ -288,7 +209,7 @@ public class CLAEmptySchemeTest {
 		MatrixBlock emptyRow = new MatrixBlock(1, 1006, 0.0);
 		mb = mb.append(emptyRow, false);
 
-		assertTrue(sh.encode(mb,  ColIndexFactory.create(new int[] {44, 45, 999})) != null);
+		assertTrue(sh.encode(mb, ColIndexFactory.create(new int[] {44, 45, 999})) != null);
 	}
 
 	@Test
@@ -300,7 +221,7 @@ public class CLAEmptySchemeTest {
 	@Test
 	public void testEmptyOtherColumns() {
 		MatrixBlock empty = new MatrixBlock(4, 1000, 0.0);
-		assertTrue(sh.encode(empty,  ColIndexFactory.create(new int[] {33, 34, 99})) != null);
+		assertTrue(sh.encode(empty, ColIndexFactory.create(new int[] {33, 34, 99})) != null);
 	}
 
 	@Test
@@ -314,19 +235,6 @@ public class CLAEmptySchemeTest {
 			}));
 		mb.recomputeNonZeros();
 		assertTrue(sh.encode(mb) != null);
-	}
-
-	@Test
-	public void testGenericNonContinuosBlockInValid() {
-		MatrixBlock mb = new MatrixBlock(4, 6, //
-			new DenseBlockFP64Mock(new int[] {4, 6}, new double[] {//
-				0.2, 1.1, 0.4, 1.2, 0.3, 1.3, //
-				0.0, 1.1, 0.2, 1.2, 0.2, 1.3, //
-				0.0, 1.1, 0.2, 1.2, 0.1, 1.3, //
-				0.2, 1.22, 0.4, 1.2, 0.1, 1.3, //
-			}));
-		mb.recomputeNonZeros();
-		assertTrue(sh.encode(mb) == null);
 	}
 
 	@Test(expected = NullPointerException.class)

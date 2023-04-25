@@ -52,6 +52,13 @@
 		<jcuda.version>10.2.0</jcuda.version>
 		<slf4j.version>1.7.36</slf4j.version>
 		<log4j.version>2.17.2</log4j.version>
+		<maven-clean-plugin.version>3.2.0</maven-clean-plugin.version>
+		<maven-surefire-plugin.version>3.0.0</maven-surefire-plugin.version>
+		<maven-remote-resources-plugin.version>3.0.0</maven-remote-resources-plugin.version>
+		<maven-javadoc-plugin.version>3.5.0</maven-javadoc-plugin.version>
+		<maven-gpg-plugin.version>3.0.1</maven-gpg-plugin.version>
+		<maven-assembly-plugin.version>3.5.0</maven-assembly-plugin.version>
+		<maven-dependency-plugin.version>3.5.0</maven-dependency-plugin.version>
 		<!-- Set java compile level via argument, ex: 1.8 1.9 10 11-->
 		<java.level>11</java.level>
 		<java.version>{java.level}</java.version>
@@ -156,6 +163,7 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-dependency-plugin</artifactId>
+				<version>${maven-dependency-plugin.version}</version>
 				<executions>
 					<execution>
 						<id>unpack</id>
@@ -195,7 +203,7 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-shade-plugin</artifactId>
-				<version>2.3</version>
+				<version>3.4.1</version>
 				<executions>
 					<execution>
 						<phase>package</phase>
@@ -240,6 +248,8 @@
 								<exclude>META-INF/*.SF</exclude>
 								<exclude>META-INF/*.DSA</exclude>
 								<exclude>META-INF/*.RSA</exclude>
+								<exclude>META-INF/DEPENDENCIES</exclude>
+								<exclude>META-INF/MANIFEST.MF</exclude>
 								<exclude>META-INF/LICENSE</exclude>
 								<exclude>META-INF/NOTICE</exclude>
 							</excludes>
@@ -251,7 +261,7 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
-				<version>3.11.0</version> <!--$NO-MVN-MAN-VER$-->
+				<version>3.11.0</version>
 				<configuration>
 					<source>${java.level}</source>
 					<target>${java.level}</target>
@@ -263,7 +273,7 @@
 				<!-- unit tests -->
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-surefire-plugin</artifactId>
-				<version>3.0.0-M9</version>
+				<version>${maven-surefire-plugin.version}</version>
 				<configuration>
 					<skipTests>${maven.test.skip}</skipTests>
 					<parallel>${test-parallel}</parallel>
@@ -282,6 +292,7 @@
 
 			<plugin>
 				<artifactId>maven-clean-plugin</artifactId>
+				<version>${maven-clean-plugin.version}</version>
 				<executions>
 					<execution>
 						<id>clean-original-jar</id>
@@ -301,38 +312,22 @@
 							</filesets>
 						</configuration>
 					</execution>
-					<execution>
-						<!-- remove antlr tokens files during initialize phase so antlr4 -->
-						<!-- plugin can regenerate them during generate-sources phase -->
-						<!-- <id>remove-antlr-tokens-files</id>
-						<phase>initialize</phase>
-						<goals>
-							<goal>clean</goal>
-						</goals>
-						<configuration>
-							<filesets>
-								<fileset>
-									<directory>src/main/java</directory>
-									<includes>
-										<include>*.tokens</include>
-									</includes>
-								</fileset>
-							</filesets>
-						</configuration> -->
-					</execution>
 				</executions>
 			</plugin>
 
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-antrun-plugin</artifactId>
+				<version>3.1.0</version>
 				<executions>
 					<execution>
 						<id>copy</id>
 						<phase>package</phase>
 						<configuration>
 							<target name="copy and rename JAR">
-								<copy file="${project.build.directory}/${project.artifactId}-${project.version}.jar" tofile="${project.build.directory}/SystemDS.jar" />
+								<copy 
+								file="${project.build.directory}/${project.artifactId}-${project.version}.jar" 
+								tofile="${project.build.directory}/SystemDS.jar" />
 							</target>
 						</configuration>
 						<goals>
@@ -345,7 +340,7 @@
 			<plugin>
 				<groupId>org.jacoco</groupId>
 				<artifactId>jacoco-maven-plugin</artifactId>
-				<version>0.8.9</version>
+				<version>0.8.10</version>
 				<configuration>
 					<includes>
 						<include>${jacoco.include}</include>
@@ -374,7 +369,7 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-javadoc-plugin</artifactId>
-				<version>3.5.0</version>
+				<version>${maven-javadoc-plugin.version}</version>
 				<configuration>
 					<quiet>true</quiet>
 					<!-- Skip java docs creation if not explicitly asked, to create use -P distribution-->
@@ -385,7 +380,7 @@
 			<plugin>
 				<groupId>org.codehaus.mojo</groupId>
 				<artifactId>properties-maven-plugin</artifactId>
-				<version>1.0.0</version>
+				<version>1.1.0</version>
 				<executions>
 					<execution>
 						<phase>generate-resources</phase>
@@ -477,7 +472,7 @@
 											<pluginExecutionFilter>
 												<groupId>org.apache.maven.plugins</groupId>
 												<artifactId>maven-remote-resources-plugin</artifactId>
-												<versionRange>[1.4,)</versionRange>
+												<version>${maven-remote-resources-plugin.version}</version>
 												<goals>
 													<goal>process</goal>
 												</goals>
@@ -490,7 +485,7 @@
 											<pluginExecutionFilter>
 												<groupId>org.apache.maven.plugins</groupId>
 												<artifactId>maven-clean-plugin</artifactId>
-												<versionRange>[3.0.0,)</versionRange>
+												<version>${maven-clean-plugin.version}</version>
 												<goals>
 													<goal>clean</goal>
 												</goals>
@@ -503,7 +498,7 @@
 											<pluginExecutionFilter>
 												<groupId>org.apache.maven.plugins</groupId>
 												<artifactId>maven-dependency-plugin</artifactId>
-												<versionRange>[2.10,)</versionRange>
+												<version>${maven-dependency-plugin.version}</version>
 												<goals>
 													<goal>copy-dependencies</goal>
 												</goals>
@@ -529,7 +524,7 @@
 					<plugin>
 						<groupId>org.apache.rat</groupId>
 						<artifactId>apache-rat-plugin</artifactId>
-						<version>0.12</version>
+						<version>0.15</version>
 						<executions>
 							<execution>
 								<phase>package</phase>
@@ -662,11 +657,11 @@
 					<plugin>
 						<groupId>org.antlr</groupId>
 						<artifactId>antlr4-maven-plugin</artifactId>
+						<version>${antlr.version}</version>
 						<configuration>
 							<sourceDirectory>${basedir}/src/main/java</sourceDirectory>
 							<outputDirectory>${basedir}/src/main/java</outputDirectory>
 						</configuration>
-						<version>${antlr.version}</version>
 						<executions>
 							<execution>
 								<id>antlr</id>
@@ -689,6 +684,7 @@
 				<plugins>
 					<plugin>
 						<artifactId>maven-assembly-plugin</artifactId>
+						<version>${maven-assembly-plugin.version}</version>
 						<configuration>
 							<tarLongFileMode>posix</tarLongFileMode>
 						</configuration>
@@ -741,7 +737,7 @@
 
 					<plugin>
 						<artifactId>maven-gpg-plugin</artifactId>
-						<version>3.0.1</version>
+						<version>${maven-gpg-plugin.version}</version>
 						<executions>
 							<execution>
 								<phase>verify</phase>
@@ -762,7 +758,7 @@
 					<plugin>
 						<groupId>org.apache.maven.plugins</groupId>
 						<artifactId>maven-remote-resources-plugin</artifactId>
-						<version>3.0.0</version>
+						<version>${maven-remote-resources-plugin.version}</version>
 						<executions>
 							<execution>
 								<goals>
@@ -781,9 +777,8 @@
 					<plugin>
 						<groupId>org.apache.maven.plugins</groupId>
 						<artifactId>maven-javadoc-plugin</artifactId>
-						<version>3.2.0</version>
+						<version>${maven-javadoc-plugin.version}</version>
 						<configuration>
-							<!-- https://maven.apache.org/plugins/maven-javadoc-plugin/javadoc-mojo.html -->
 							<excludePackageNames>*.protobuf</excludePackageNames>
 							<notimestamp>true</notimestamp>
 							<failOnWarnings>true</failOnWarnings>
@@ -812,6 +807,7 @@
 					<plugin>
 						<groupId>org.apache.maven.plugins</groupId>
 						<artifactId>maven-gpg-plugin</artifactId>
+						<version>${maven-gpg-plugin.version}</version>
 						<configuration>
 							<skip>true</skip>
 						</configuration>
@@ -1404,18 +1400,16 @@
 			<version>0.10.9</version>
 		</dependency>
 
-		<!-- https://mvnrepository.com/artifact/org.apache.maven.plugins/maven-javadoc-plugin -->
 		<dependency>
 			<groupId>org.apache.maven.plugins</groupId>
 			<artifactId>maven-javadoc-plugin</artifactId>
-			<version>3.2.0</version>
+			<version>${maven-javadoc-plugin.version}</version>
 		</dependency>
 
-		<!-- https://mvnrepository.com/artifact/org.apache.maven.plugins/maven-gpg-plugin -->
 		<dependency>
 			<groupId>org.apache.maven.plugins</groupId>
 			<artifactId>maven-gpg-plugin</artifactId>
-			<version>1.6</version>
+			<version>${maven-gpg-plugin.version}</version>
 		</dependency>
 
 		<!-- https://developers.google.com/protocol-buffers/docs/reference/java -->
@@ -1434,7 +1428,7 @@
 		<dependency>
 			<groupId>org.apache.maven.plugins</groupId>
 			<artifactId>maven-assembly-plugin</artifactId>
-			<version>3.3.0</version>
+			<version>${maven-assembly-plugin.version}</version>
 		</dependency>
 
 		<dependency>

@@ -21,9 +21,11 @@ package org.apache.sysds.runtime.controlprogram.context;
 
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.CacheStatistics;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
+import org.apache.sysds.runtime.controlprogram.caching.UnifiedMemoryManager;
 import org.apache.sysds.runtime.lineage.LineageCache;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.utils.stats.SparkStatistics;
@@ -71,32 +73,20 @@ public class MatrixObjectFuture extends MatrixObject
 		try {
 			if(!isAvailableToRead())
 				throw new DMLRuntimeException("MatrixObject not available to read.");
-			if(_data != null)
-				throw new DMLRuntimeException("_data must be null for future matrix object/block.");
+			if (_futureData == null)
+				return super.acquireRead(); //moved to _data
+
+			if (OptimizerUtils.isUMMEnabled())
+				//track and make space in the UMM
+				UnifiedMemoryManager.pin(this);
+
 			MatrixBlock out = null;
-			acquire(false, false);
 			long t1 = System.nanoTime();
 			out = _futureData.get();
 			if (hasValidLineage())
 				LineageCache.putValueAsyncOp(getCacheLineage(), this, out, t1);
 				// FIXME: start time should indicate the actual start of the execution
-			return out;
-		}
-
-		catch(Exception e) {
-			throw new DMLRuntimeException(e);
-		}
-	}
-
-	public void release() {
-		releaseIntern();
-	}
-
-	private synchronized void releaseIntern() {
-		try {
-			if(isCachingActive() && _futureData.get().getInMemorySize() > CACHING_THRESHOLD)
-				_futureData = null;
-				//TODO: write to disk and other cache maintenance
+			return acquireModify(out);
 		}
 		catch(Exception e) {
 			throw new DMLRuntimeException(e);

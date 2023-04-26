@@ -541,8 +541,8 @@
 								<exclude>scripts/perftest/logs/**</exclude>
 								<exclude>scripts/monitoring/node_modules/**</exclude>
 								<exclude>.repository/</exclude>
-								<exclude>.idea/</exclude>
-								<exclude>.mvn/**</exclude>
+								<exclude>.idea</exclude>
+								<exclude>.mvn</exclude>
 								<exclude>.git</exclude>
 								<exclude>.settings</exclude>
 								<exclude>.classpath</exclude>

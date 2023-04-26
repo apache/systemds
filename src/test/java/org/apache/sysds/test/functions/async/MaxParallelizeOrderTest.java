@@ -68,7 +68,6 @@ public class MaxParallelizeOrderTest extends AutomatedTestBase {
 		runTest(TEST_NAME+"4");
 	}
 
-	@Ignore
 	@Test
 	public void testPCAlm() {
 		//eigen is an internal function. Outputs of eigen are not in the lop list

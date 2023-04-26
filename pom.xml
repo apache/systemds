@@ -540,9 +540,6 @@
 								<exclude>scripts/tutorials/**</exclude>
 								<exclude>scripts/perftest/logs/**</exclude>
 								<exclude>scripts/monitoring/node_modules/**</exclude>
-								<exclude>.gitignore</exclude>
-								<exclude>src/main/python/.gitignore</exclude>
-								<exclude>.gitmodules</exclude>
 								<exclude>.repository/</exclude>
 								<exclude>.idea/</exclude>
 								<exclude>.mvn/**</exclude>
@@ -558,7 +555,6 @@
 								<exclude>**/systemds.egg-info/**</exclude>
 								<exclude>docs/api/**/*</exclude>
 								<exclude>docs/_site/**/*</exclude>
-								<exclude>docs/site/run_issues.md</exclude>
 								<exclude>docs/.jekyll-cache/**/*</exclude>
 								<exclude>docs/css/bootstrap.min.css</exclude>
 								<exclude>docs/css/pygments-default.css</exclude>
@@ -575,7 +571,6 @@
 								<exclude>**/part-*</exclude>
 								<exclude>**/*.keep</exclude>
 								<exclude>**/target/**</exclude>
-								<exclude>**/README.md</exclude>
 								<exclude>**/*.svg</exclude>
 								<exclude>**/derby.log</exclude>
 								<!-- Jupyter Notebooks -->

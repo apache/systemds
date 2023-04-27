@@ -472,7 +472,7 @@
 											<pluginExecutionFilter>
 												<groupId>org.apache.maven.plugins</groupId>
 												<artifactId>maven-remote-resources-plugin</artifactId>
-												<version>${maven-remote-resources-plugin.version}</version>
+												<versionRange>(,${maven-remote-resources-plugin.version}]</versionRange>
 												<goals>
 													<goal>process</goal>
 												</goals>
@@ -485,7 +485,7 @@
 											<pluginExecutionFilter>
 												<groupId>org.apache.maven.plugins</groupId>
 												<artifactId>maven-clean-plugin</artifactId>
-												<version>${maven-clean-plugin.version}</version>
+												<versionRange>(,${maven-clean-plugin.version}]</versionRange>
 												<goals>
 													<goal>clean</goal>
 												</goals>
@@ -498,7 +498,7 @@
 											<pluginExecutionFilter>
 												<groupId>org.apache.maven.plugins</groupId>
 												<artifactId>maven-dependency-plugin</artifactId>
-												<version>${maven-dependency-plugin.version}</version>
+												<versionRange>(,${maven-dependency-plugin.version}]</versionRange>
 												<goals>
 													<goal>copy-dependencies</goal>
 												</goals>

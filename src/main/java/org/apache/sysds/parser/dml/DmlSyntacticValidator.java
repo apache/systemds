@@ -25,8 +25,8 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -34,12 +34,14 @@ import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.ErrorNode;
 import org.antlr.v4.runtime.tree.TerminalNode;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Builtins;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.ValueType;
-import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.conf.CompilerConfig.ConfigType;
+import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.parser.AssignmentStatement;
 import org.apache.sysds.parser.BinaryExpression;
 import org.apache.sysds.parser.BooleanExpression;
@@ -53,6 +55,7 @@ import org.apache.sysds.parser.DataExpression;
 import org.apache.sysds.parser.DataIdentifier;
 import org.apache.sysds.parser.DoubleIdentifier;
 import org.apache.sysds.parser.Expression;
+import org.apache.sysds.parser.Expression.DataOp;
 import org.apache.sysds.parser.ExpressionList;
 import org.apache.sysds.parser.ForStatement;
 import org.apache.sysds.parser.FunctionCallIdentifier;
@@ -79,7 +82,6 @@ import org.apache.sysds.parser.Statement;
 import org.apache.sysds.parser.StatementBlock;
 import org.apache.sysds.parser.StringIdentifier;
 import org.apache.sysds.parser.WhileStatement;
-import org.apache.sysds.parser.Expression.DataOp;
 import org.apache.sysds.parser.dml.DmlParser.AccumulatorAssignmentStatementContext;
 import org.apache.sysds.parser.dml.DmlParser.AddSubExpressionContext;
 import org.apache.sysds.parser.dml.DmlParser.AssignmentStatementContext;
@@ -135,6 +137,7 @@ import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.util.UtilFunctions;
 
 public class DmlSyntacticValidator implements DmlListener {
+	protected static final Log LOG = LogFactory.getLog(DmlSyntacticValidator.class.getName());
 
 	private static final String DEF_WORK_DIR = ".";
 	
@@ -654,7 +657,7 @@ public class DmlSyntacticValidator implements DmlListener {
 		
 		//construct output map of all functions
 		if(dict == null)
-			throw new RuntimeException("Failed function load: "+name+" "+namespace);
+			throw new RuntimeException("Failed function load: " + name + " " + namespace + "\n" + filePath);
 		return dict.getFunctions();
 	}
 

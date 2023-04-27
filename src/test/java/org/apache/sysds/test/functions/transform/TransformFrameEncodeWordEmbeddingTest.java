@@ -40,7 +40,7 @@ public class TransformFrameEncodeWordEmbeddingTest extends AutomatedTestBase
         {
             int rows = 100;
             int cols = 100;
-            TestConfiguration config = getTestConfiguration(testname); //availableTestConfigurations.get(testname);
+            TestConfiguration config = getTestConfiguration(testname);
             config.addVariable("rows", rows);
             config.addVariable("cols", cols);
             loadTestConfiguration(config);

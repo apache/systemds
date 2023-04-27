@@ -51,6 +51,7 @@ import org.apache.sysds.lops.PickByCount;
 import org.apache.sysds.lops.SortKeys;
 import org.apache.sysds.lops.Unary;
 import org.apache.sysds.lops.UnaryCP;
+import org.apache.sysds.runtime.lineage.LineageCacheConfig;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 
@@ -814,7 +815,8 @@ public class BinaryOp extends MultiThreadedHop {
 			_etype = ExecType.SPARK;
 		}
 
-		if( transitive && _etypeForced != ExecType.SPARK && _etypeForced != ExecType.FED && //
+		if( OptimizerUtils.ALLOW_BINARY_UPDATE_IN_PLACE &&
+			transitive && _etypeForced != ExecType.SPARK && _etypeForced != ExecType.FED &&
 			getDataType().isMatrix() // Output is a matrix
 			&& op == OpOp2.DIV // Operation is division
 			&& dt1.isMatrix() // Left hand side is a Matrix
@@ -823,6 +825,7 @@ public class BinaryOp extends MultiThreadedHop {
 			&& memOfInputIsLessThanBudget() //
 			&& getInput().get(0).getExecType() != ExecType.SPARK // Is not already a spark operation
 			&& doesNotContainNanAndInf(getInput().get(1)) // Guaranteed not to densify the operation
+			&& LineageCacheConfig.ReuseCacheType.isNone() // Inplace update corrupts the already cached input matrix block
 		) {
 			inplace = true;
 			_etype = ExecType.CP;

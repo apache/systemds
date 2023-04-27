@@ -27,6 +27,7 @@ import org.apache.sysds.hops.AggBinaryOp;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.instructions.Instruction;
+import org.apache.sysds.runtime.instructions.cp.BinaryMatrixMatrixCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.ComputationCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.Data;
 import org.apache.sysds.runtime.instructions.cp.DataGenCPInstruction;
@@ -228,6 +229,8 @@ public class LineageCacheConfig
 			|| (inst instanceof DataGenCPInstruction) && ((DataGenCPInstruction) inst).isMatrixCall());
 		boolean updateInplace = (inst instanceof MatrixIndexingCPInstruction)
 			&& ec.getMatrixObject(((ComputationCPInstruction)inst).input1).getUpdateType().isInPlace();
+		updateInplace = updateInplace || ((inst instanceof BinaryMatrixMatrixCPInstruction)
+			&& ((BinaryMatrixMatrixCPInstruction) inst).isInPlace());
 		boolean federatedOutput = false;
 		return insttype && rightop && !updateInplace && !federatedOutput;
 	}

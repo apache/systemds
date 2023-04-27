@@ -215,7 +215,14 @@ public class OptimizerUtils
 	 */
 	//TODO enabling it by default requires modifications in lineage-based reuse
 	public static boolean ALLOW_UNARY_UPDATE_IN_PLACE = false;
-	
+
+	/**
+	 * Enables update-in-place for binary operators if the first input
+	 * has no consumers. In this case we directly write the output
+	 * values back to the first input block.
+	 */
+	public static boolean ALLOW_BINARY_UPDATE_IN_PLACE = false;
+
 	/**
 	 * Replace eval second-order function calls with normal function call
 	 * if the function name is a known string (after constant propagation).

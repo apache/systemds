@@ -53,6 +53,10 @@ public class BinaryMatrixMatrixCPInstruction extends BinaryCPInstruction {
 			inplace = false;
 	}
 
+	public boolean isInPlace() {
+		return inplace;
+	}
+
 	@Override
 	public void processInstruction(ExecutionContext ec) {
 		// Read input matrices

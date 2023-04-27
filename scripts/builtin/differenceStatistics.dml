@@ -1,0 +1,91 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+# Prints the difference statistics of two matrices given, to indicate how
+# they are different. This can be used for instance in comparison of lossy
+# compression techniques, that reduce the fidelity of the data. 
+#
+# INPUT:
+# --------------------------------------------------------------------------------
+# X        First Matrix to compare
+# Y        Second Matrix to compare
+# --------------------------------------------------------------------------------
+
+m_differenceStatistics = function(Matrix[Double] X, Matrix[Double] Y)  {
+
+  P = matrix("0.0 0.01 0.1 0.25 0.5 0.75 0.90 0.99 1.0", rows= 9, cols=1)
+  print("quantiles are: " + toString(target=P, linesep=" "))
+  
+  # Mean Square Error
+  [MSE, SEQ] = mse(X=X, Y=Y, P=P)
+  print("                Mean Square Error: " + toString(as.scalar(MSE)))
+  print("            Quantile Square Error: " + toString(target=SEQ , linesep=" "))
+
+  # Root Mean Square Error
+  [RMSE, RSEQ] = rmse(X=X, Y=Y, P=P)
+  print("           Root Mean Square Error: " + toString(as.scalar(RMSE)))
+  print("       Quantile Root Square Error: " + toString(target=RSEQ , linesep=" "))
+
+  # Normalized Root Mean Square Error
+  [NRMSE, NRSEQ] = nrmse(X=X, Y=Y, P=P)
+  print("Normalized Root Mean Square Error: " + toString(as.scalar(NRMSE)))
+  print("  Quantile Norm Root Square Error: " + toString(target=NRSEQ , linesep=" "))
+
+  # Mean Absolute Error
+  [MAE, AEQ] = mae(X=X, Y=Y, P=P)
+  print("              Mean Absolute Error: " + toString(as.scalar(MAE)))
+  print("          Quantile Absolute Error: " + toString(target=AEQ , linesep=" "))
+
+  # Mean Absolute Percentage Error
+  [MAPE, APEQ] = mape(X=X, Y=Y, P=P)
+  print("   Mean Absolute percentage Error: " + toString(as.scalar(MAPE)))
+  print("                     Quantile APE: " + toString(target=APEQ , linesep=" "))
+
+  # Symmetric Mean Absolute Percentage Error 
+  [sMAPE, sAPEQ] = smape(X=X, Y=Y, P=P)
+  print("symmetric Mean Absolute per Error: " + toString(as.scalar(sMAPE)))
+  print("          Quantile symmetric MAPE: " + toString(target=sAPEQ , linesep=" "))
+
+  # Modified Symmetric Mean Absolute Percentage Error
+  [msMAPE, msAPEQ] = msmape(X=X, Y=Y, P=P)
+  print("          modified symmetric MAPE: " + toString(as.scalar(msMAPE)))
+  print(" Quantile modified symmetric MAPE: " + toString(target=msAPEQ , linesep=" "))
+
+
+  # Peak Signal to Noise Ratio
+  PSNR = psnr(X=X, Y=Y)
+  print("       Peak Signal to Noise Ratio: " + toString(target=PSNR , linesep=" "))
+
+
+  # Standard deviation
+  sd_Y = sd(Y)
+  sd_X = sd(X)
+  sd_diff = abs(sd_Y - sd_X)
+  print("  Standard Deviation Values (X,Y): (" + toString(sd_X) + ", " + toString(sd_Y) + ")")
+  print("    Standard Deviation Difference: " + toString(sd_diff))
+
+  skew_x = skewness(X)
+  skew_y = skewness(Y)
+  skew_diff = abs(skew_y - skew_x)
+  print("                Skew Values (X,Y): (" + toString(target=skew_x, linesep=" ") + ", " + toString(target=skew_y, linesep=" ") + ")")
+  print("                  Skew Difference: " + toString(skew_diff))
+
+}

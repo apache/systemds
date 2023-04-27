@@ -20,10 +20,6 @@ public class TransformFrameEncodeWordEmbeddingTest extends AutomatedTestBase
     private final static String TEST_DIR = "functions/transform/";
     private final static String TEST_CLASS_DIR = TEST_DIR + TransformFrameEncodeWordEmbeddingTest.class.getSimpleName() + "/";
 
-    //dataset and transform tasks without missing values
-    private final static String DATASET = "RandomMatrixForWordEmbeddings.csv";
-    private final static String DATASET1 = "RandomMatrixForWordEmbeddings.csv";
-
     @Override
     public void setUp() {
         TestUtils.clearAssertionInformation();
@@ -120,8 +116,7 @@ public class TransformFrameEncodeWordEmbeddingTest extends AutomatedTestBase
             Map<String,Integer> map = new HashMap<>();
             for (int i = 0; i < strings.size(); i++) {
                 map.put(strings.get(i), i);
-                bw.write(strings.get(i) + Lop.DATATYPE_PREFIX + (i+1));
-                bw.newLine();
+                bw.write(strings.get(i) + Lop.DATATYPE_PREFIX + (i+1) + "\n");
             }
             return map;
         } catch (IOException e) {

@@ -332,7 +332,7 @@ public class AggUnaryOp extends MultiThreadedHop
 		if( _direction == Direction.Col && dc.colsKnown() )
 			ret = new MatrixCharacteristics(1, dc.getCols(), -1, -1);
 		else if( _direction == Direction.Row && dc.rowsKnown() )
-			ret = new MatrixCharacteristics(dc.getRows(), 1, -1 -1);
+			ret = new MatrixCharacteristics(dc.getRows(), 1, -1, -1);
 		return ret;
 	}
 	

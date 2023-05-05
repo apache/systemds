@@ -37,7 +37,6 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.matrix.data.LibMatrixCUDA;
-import org.apache.sysds.utils.GPUStatistics;
 import org.apache.sysds.utils.Statistics;
 
 import jcuda.Pointer;

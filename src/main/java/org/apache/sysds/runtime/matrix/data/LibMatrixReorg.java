@@ -2575,6 +2575,7 @@ public class LibMatrixReorg {
 		return rix.stream().collect(Collectors.toMap(ix -> ix, ix -> createResultBlock(ix, nnz, rix.size(), mcOut)));
 	}
 	
+	@SuppressWarnings("unused")
 	private static MatrixBlock createResultBlock(MatrixIndexes ix, long nnz, int nBlocks, DataCharacteristics mcOut) {
 		//compute indexes
 		long bi = ix.getRowIndex();

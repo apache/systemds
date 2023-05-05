@@ -106,6 +106,7 @@ public class CollectionUtils {
 	}
 
 	@SafeVarargs
+	@SuppressWarnings("unchecked")
 	public static <T> boolean intersect(Collection<T>... inputs) {
 		//remove empty collections
 		Collection<T>[] nonEmpty = Arrays.stream(inputs).filter(l -> !l.isEmpty()).toArray(Collection[]::new);

@@ -56,6 +56,7 @@
 		<maven-surefire-plugin.version>3.0.0</maven-surefire-plugin.version>
 		<maven-remote-resources-plugin.version>3.0.0</maven-remote-resources-plugin.version>
 		<maven-javadoc-plugin.version>3.5.0</maven-javadoc-plugin.version>
+		<maven-javadoc-plugin.version2>3.2.0</maven-javadoc-plugin.version2>
 		<maven-gpg-plugin.version>3.0.1</maven-gpg-plugin.version>
 		<maven-assembly-plugin.version>3.5.0</maven-assembly-plugin.version>
 		<maven-dependency-plugin.version>3.5.0</maven-dependency-plugin.version>
@@ -772,7 +773,7 @@
 					<plugin>
 						<groupId>org.apache.maven.plugins</groupId>
 						<artifactId>maven-javadoc-plugin</artifactId>
-						<version>${maven-javadoc-plugin.version}</version>
+						<version>${maven-javadoc-plugin.version2}</version>
 						<configuration>
 							<excludePackageNames>*.protobuf</excludePackageNames>
 							<notimestamp>true</notimestamp>

@@ -72,7 +72,6 @@ public class FrameColumnNamesTest extends AutomatedTestBase {
 		runGetColNamesTest(_columnNames, ExecType.SPARK);
 	}
 
-	@SuppressWarnings("unchecked")
 	private void runGetColNamesTest(String[] columnNames, ExecType et) {
 		Types.ExecMode platformOld = setExecMode(et);
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;

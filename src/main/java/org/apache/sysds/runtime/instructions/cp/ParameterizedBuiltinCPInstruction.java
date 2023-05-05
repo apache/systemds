@@ -227,10 +227,13 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 
 				// compute the result
 				boolean emptyReturn = Boolean.parseBoolean(params.get("empty.return").toLowerCase());
-				MatrixBlock soresBlock = target.removeEmptyOperations(new MatrixBlock(), margin.equals("rows"), emptyReturn, select);
+				MatrixBlock ret = target.removeEmptyOperations(new MatrixBlock(), margin.equals("rows"), emptyReturn, select);
 
 				// release locks
-				ec.setMatrixOutput(output.getName(), soresBlock);
+				if( target == ret ) //short-circuit (avoid buffer pool pollution)
+					ec.setVariable(output.getName(), ec.getVariable(params.get("target")));
+				else
+					ec.setMatrixOutput(output.getName(), ret);
 				ec.releaseMatrixInput(params.get("target"));
 				if(params.containsKey("select"))
 					ec.releaseMatrixInput(params.get("select"));

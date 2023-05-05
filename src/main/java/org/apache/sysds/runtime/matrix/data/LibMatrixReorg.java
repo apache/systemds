@@ -661,6 +661,12 @@ public class LibMatrixReorg {
 			return ret;
 		}
 		
+		// short-circuit for select-all (shallow-copy input)
+		if( select != null && (select.nonZeros == (rows?in.rlen:in.clen)) ) {
+			return in;
+		}
+		
+		// core removeEmpty
 		if( rows )
 			return removeEmptyRows(in, ret, select, emptyReturn);
 		else //cols

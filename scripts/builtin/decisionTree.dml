@@ -162,6 +162,8 @@ findBestSplit = function(Matrix[Double] X2, Matrix[Double] y2, Matrix[Double] fo
   if( max_features < 1.0 ) {
     rI = rand(rows=n, cols=1, seed=seed) <= (n^max_features/n);
     feat = removeEmpty(target=feat, margin="rows", select=rI);
+    if( sum(feat) == 0 ) #sample at least one
+      feat[1,1] = round(rand(rows=1, cols=1, min=1, max=n));
   }
 
   # evaluate features and feature splits

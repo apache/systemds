@@ -27,6 +27,7 @@ import org.apache.sysds.parser.StatementBlock;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -44,7 +45,7 @@ public class RewriteAddChkpointLop extends LopRewriteRule
 			return List.of(sb);
 
 		// Collect the Spark roots and #Spark instructions in each subDAG
-		List<Lop> sparkRoots = new ArrayList<>();
+		HashSet<Lop> sparkRoots = new HashSet<>();
 		Map<Long, Integer> sparkOpCount = new HashMap<>();
 		List<Lop> roots = lops.stream().filter(OperatorOrderingUtils::isLopRoot).collect(Collectors.toList());
 		roots.forEach(r -> OperatorOrderingUtils.collectSparkRoots(r, sparkOpCount, sparkRoots));
@@ -55,10 +56,10 @@ public class RewriteAddChkpointLop extends LopRewriteRule
 		// shared among multiple Spark jobs. Only consider operators with
 		// Spark consumers for now.
 		Map<Long, Integer> operatorJobCount = new HashMap<>();
-		markPersistableSparkOps(sparkRoots, operatorJobCount);
-		// TODO: A rewrite pass to remove less effective chkpoints
-		@SuppressWarnings("unused")
-		List<Lop> nodesWithChkpt = addChkpointLop(lops, operatorJobCount);
+		//markPersistableSparkOps(sparkRoots, operatorJobCount);
+		OperatorOrderingUtils.markSharedSparkOps(sparkRoots, operatorJobCount);
+		// TODO: A rewrite pass to remove less effective checkpoints
+		addChkpointLop(lops, operatorJobCount);
 		//New node is added inplace in the Lop DAG
 		return List.of(sb);
 	}
@@ -68,12 +69,13 @@ public class RewriteAddChkpointLop extends LopRewriteRule
 		return sbs;
 	}
 
-	private static List<Lop> addChkpointLop(List<Lop> nodes, Map<Long, Integer> operatorJobCount) {
-		List<Lop> nodesWithChkpt = new ArrayList<>();
-
+	private void addChkpointLop(List<Lop> nodes, Map<Long, Integer> operatorJobCount) {
 		for (Lop l : nodes) {
-			nodesWithChkpt.add(l);
-			if(operatorJobCount.containsKey(l.getID()) && operatorJobCount.get(l.getID()) > 1) {
+			// Increment the job counter if this node benefits from persisting
+			// and reachable from multiple job roots
+			if(operatorJobCount.containsKey(l.getID())
+				&& operatorJobCount.get(l.getID()) > 1
+				&& OperatorOrderingUtils.isPersistableSparkOp(l)) {
 				// This operation is expensive and shared between Spark jobs
 				List<Lop> oldOuts = new ArrayList<>(l.getOutputs());
 				// Construct a chkpoint lop that takes this Spark node as a input
@@ -85,34 +87,7 @@ public class RewriteAddChkpointLop extends LopRewriteRule
 					out.replaceInput(l, chkpoint);
 					l.removeOutput(out);
 				}
-				// Place it immediately after the Spark lop in the node list
-				nodesWithChkpt.add(chkpoint);
 			}
 		}
-		return nodesWithChkpt;
-	}
-
-	// Count the number of jobs a Spark operator is part of
-	private static void markPersistableSparkOps(List<Lop> sparkRoots, Map<Long, Integer> operatorJobCount) {
-		for (Lop root : sparkRoots) {
-			collectPersistableSparkOps(root, operatorJobCount);
-			root.resetVisitStatus();
-		}
-	}
-
-	private static void collectPersistableSparkOps(Lop root, Map<Long, Integer> operatorJobCount) {
-		if (root.isVisited())
-			return;
-
-		for (Lop input : root.getInputs())
-			if (root.getBroadcastInput() != input)
-				collectPersistableSparkOps(input, operatorJobCount);
-
-		// Increment the job counter if this node benefits from persisting
-		// and reachable from multiple job roots
-		if (OperatorOrderingUtils.isPersistableSparkOp(root))
-			operatorJobCount.merge(root.getID(), 1, Integer::sum);
-
-		root.setVisited();
 	}
 }

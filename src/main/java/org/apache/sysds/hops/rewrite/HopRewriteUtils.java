@@ -1553,6 +1553,29 @@ public class HopRewriteUtils {
 		return sb instanceof WhileStatementBlock
 			|| sb instanceof ForStatementBlock; //incl parfor
 	}
+
+	// Return true if this loop contains only basic blocks
+	public static boolean isLastLevelLoopStatementBlock (StatementBlock sb) {
+		if (!isLoopStatementBlock(sb))
+			return false;
+		if (sb instanceof WhileStatementBlock) {
+			WhileStatement wstmt = (WhileStatement) sb.getStatement(0);
+			if (wstmt.getBody().isEmpty())
+				return false;
+			for(StatementBlock csb : wstmt.getBody())
+				if (!isLastLevelStatementBlock(csb))
+					return false;
+		}
+		else if (sb instanceof ForStatementBlock) {
+			ForStatement fstmt = (ForStatement) sb.getStatement(0);
+			if (fstmt.getBody().isEmpty())
+				return false;
+			for(StatementBlock csb : fstmt.getBody())
+				if(!isLastLevelStatementBlock(csb))
+					return false;
+		}
+		return true;
+	}
 	
 	public static long getMaxNrowInput(Hop hop) {
 		return getMaxInputDim(hop, true);

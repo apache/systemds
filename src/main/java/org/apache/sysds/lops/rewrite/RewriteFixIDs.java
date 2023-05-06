@@ -20,8 +20,12 @@
 package org.apache.sysds.lops.rewrite;
 
 import org.apache.sysds.conf.ConfigurationManager;
+import org.apache.sysds.hops.rewrite.HopRewriteUtils;
 import org.apache.sysds.lops.Lop;
+import org.apache.sysds.parser.ForStatement;
 import org.apache.sysds.parser.StatementBlock;
+import org.apache.sysds.parser.WhileStatement;
+import org.apache.sysds.parser.WhileStatementBlock;
 
 import java.util.List;
 
@@ -35,12 +39,16 @@ public class RewriteFixIDs extends LopRewriteRule
 			&& !ConfigurationManager.isCheckpointEnabled())
 			return List.of(sb);
 
-		// Reset the IDs in a depth-first manner
-		if (sb.getLops() != null && !sb.getLops().isEmpty()) {
-			for (Lop root : sb.getLops())
-				assignNewID(root);
-			sb.getLops().forEach(Lop::resetVisitStatus);
+		if (HopRewriteUtils.isLastLevelLoopStatementBlock(sb)) {
+			// Some rewrites add new Lops in the last-level loop body
+			StatementBlock csb = sb instanceof WhileStatementBlock
+				? ((WhileStatement) sb.getStatement(0)).getBody().get(0)
+				: ((ForStatement) sb.getStatement(0)).getBody().get(0);
+			assignNewIDStatementBlock(csb);
 		}
+		else
+			assignNewIDStatementBlock(sb);
+
 		return List.of(sb);
 	}
 
@@ -49,7 +57,16 @@ public class RewriteFixIDs extends LopRewriteRule
 		return sbs;
 	}
 
-	private void assignNewID(Lop lop) {
+	private void assignNewIDStatementBlock(StatementBlock sb) {
+		// Reset the IDs in a depth-first manner
+		if (sb.getLops() != null && !sb.getLops().isEmpty()) {
+			for (Lop root : sb.getLops())
+				assignNewIDLop(root);
+			sb.getLops().forEach(Lop::resetVisitStatus);
+		}
+	}
+
+	private void assignNewIDLop(Lop lop) {
 		if (lop.isVisited())
 			return;
 
@@ -59,7 +76,7 @@ public class RewriteFixIDs extends LopRewriteRule
 			return;
 		}
 		for (Lop input : lop.getInputs())
-			assignNewID(input);
+			assignNewIDLop(input);
 
 		lop.setNewID();
 		lop.setVisited();

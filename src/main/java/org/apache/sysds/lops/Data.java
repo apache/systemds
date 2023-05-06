@@ -240,6 +240,14 @@ public class Data extends Lop
 			&& !literal_var;
 	}
 
+	public boolean isTransientWrite() {
+		return _op == OpOpData.TRANSIENTWRITE;
+	}
+
+	public boolean isTransientRead() {
+		return _op == OpOpData.TRANSIENTREAD;
+	}
+
 	/**
 	 * Method to get CP instructions for reading/writing scalars and matrices from/to HDFS.
 	 * This method generates CP read/write instructions.

@@ -25,6 +25,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -186,8 +187,9 @@ public interface ILinearize {
 			// Step 1: Collect the Spark roots and #Spark instructions in each subDAG
 			Map<Long, Integer> sparkOpCount = new HashMap<>();
 			List<Lop> roots = v.stream().filter(OperatorOrderingUtils::isLopRoot).collect(Collectors.toList());
-			List<Lop> sparkRoots = new ArrayList<>();
+			HashSet<Lop> sparkRoots = new HashSet<>();
 			roots.forEach(r -> OperatorOrderingUtils.collectSparkRoots(r, sparkOpCount, sparkRoots));
+			sparkRoots.forEach(sr -> sr.setAsynchronous(true));
 
 			// Step 2: Depth-first linearization of Spark roots.
 			// Maintain the default order (by ID) to trigger independent Spark jobs first

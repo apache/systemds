@@ -42,39 +42,6 @@ on:
       - main
 
 jobs:
-  applications_tests:
-    name: ${{ matrix.os }}
-    runs-on: ${{ matrix.os }}
-    timeout-minutes: 90
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest]
-    steps:
-    - name: Checkout Repository
-      uses: actions/checkout@v3
-
-    - name: Cache Maven Dependencies
-      uses: actions/cache@v3
-      with:
-        path: ~/.m2/repository
-        key: ${{ runner.os }}-maven-test-${{ hashFiles('**/pom.xml') }}
-        restore-keys: |
-          ${{ runner.os }}-maven-test-
-
-    - name: Run all Application Tests
-      uses: ./.github/action/
-      id: test
-      with:
-        test-to-run: org.apache.sysds.test.applications.**
-
-    - name: Save Java Test Coverage as Artifact
-      uses: actions/upload-artifact@v3
-      with:
-        name: jacoco-application-tests-${{ matrix.os }}
-        path: target/jacoco.exec
-        retention-days: 1
-
   component_tests:
     runs-on: ${{ matrix.os }}
     timeout-minutes: 30
@@ -137,6 +104,7 @@ jobs:
       fail-fast: false
       matrix:
         tests: [
+          "org.apache.sysds.test.applications.**",
           "**.functions.a**.**,**.functions.binary.frame.**,**.functions.binary.matrix.**,**.functions.binary.scalar.**,**.functions.binary.tensor.**",
           "**.functions.blocks.**,**.functions.data.rand.**,",
           "**.functions.countDistinct.**,**.functions.countDistinctApprox.**,**.functions.data.misc.**,**.functions.lineage.**",

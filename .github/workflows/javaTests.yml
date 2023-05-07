@@ -140,6 +140,11 @@ jobs:
     - name: Generate Code Coverage Report
       run: mvn jacoco:report
 
+    - name: Delete Artifacts
+      run: |
+        pip install requests
+        python delete-artifacts.py -t ${{ secrets.GITHUB_TOKEN }}
+
     - name: Upload Jacoco Report Artifact
       uses: actions/upload-artifact@v3
       with:

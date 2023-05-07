@@ -146,7 +146,22 @@ jobs:
         python delete-artifacts.py -t ${{ secrets.GITHUB_TOKEN }}
 
     - name: Upload Jacoco Report Artifact
+      if: github.repository_owner == 'apache'
       uses: actions/upload-artifact@v3
       with:
         name: Java Code Coverage (Jacoco)
         path: target/site/jacoco
+    - name: Upload Jacoco Report Artifact PR
+      if: (github.ref_name != 'main')
+      uses: actions/upload-artifact@v3
+      with:
+        name: Java Code Coverage (Jacoco)
+        path: target/site/jacoco
+        retention-days: 7
+    - name: Upload Jacoco Report Artifact Main
+      if: (github.repository_owner == 'apache') && (github.ref_name == 'main')
+      uses: actions/upload-artifact@v3
+      with:
+        name: Java Code Coverage (Jacoco)
+        path: target/site/jacoco
+        retention-days: 30

@@ -144,6 +144,9 @@ jobs:
       run: |
         pip install requests
         python .github/workflows/delete_artifacts.py -t ${{ secrets.GITHUB_TOKEN }}
+      env:
+        GITHUB_RUN_ID: ${{ vars.GITHUB_RUN_ID }}
+        GITHUB_REPOSITORY: ${{ vars.GITHUB_REPOSITORY }}
 
     - name: Upload Jacoco Report Artifact
       if: github.repository_owner == 'apache'

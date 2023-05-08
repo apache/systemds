@@ -49,8 +49,6 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest]
-        java: ['11']
-        javadist: ['adopt']
         tests: [
           "org.apache.sysds.test.applications.**",
           "**.test.usertest.**",
@@ -81,25 +79,11 @@ jobs:
           "**.functions.reorg.**,**.functions.rewrite.**,**.functions.ternary.**,**.functions.transform.**",
           "**.functions.unary.matrix.**,**.functions.linearization.**,**.functions.jmlc.**"
         ]
-    name: ${{ matrix.os }} Java ${{ matrix.java }} ${{ matrix.javadist }} ${{ matrix.tests }}
+    name: ${{ matrix.os }} ${{ matrix.tests }}
     steps:
     - name: Checkout Repository
       uses: actions/checkout@v3
 
-    - name: Setup Java ${{ matrix.java }} ${{ matrix.javadist }}
-      uses: actions/setup-java@v3
-      with:
-        distribution: ${{ matrix.javadist }}
-        java-version: ${{ matrix.java }}
-        cache: 'maven'
-
-    - name: Cache Maven Dependencies
-      uses: actions/cache@v3
-      with:
-        path: ~/.m2/repository
-        key: ${{ runner.os }}-maven-test-${{ hashFiles('**/pom.xml') }}
-        restore-keys: |
-          ${{ runner.os }}-maven-test-
 
     - name: ${{ matrix.tests }}
       uses: ./.github/action/

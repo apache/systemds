@@ -19,7 +19,7 @@
 #
 #-------------------------------------------------------------
 
-name: Java Testing Workflow
+name: Java Test
 
 on:
   push:
@@ -81,7 +81,7 @@ jobs:
           "**.functions.reorg.**,**.functions.rewrite.**,**.functions.ternary.**,**.functions.transform.**",
           "**.functions.unary.matrix.**,**.functions.linearization.**,**.functions.jmlc.**"
         ]
-    name: ${{ matrix.tests }}
+    name: ${{ matrix.os }} Java ${{ matrix.java }} ${{ matrix.javadist }} ${{ matrix.tests }}
     steps:
     - name: Checkout Repository
       uses: actions/checkout@v3

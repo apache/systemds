@@ -102,7 +102,10 @@ jobs:
           ${{ runner.os }}-maven-test-
 
     - name: ${{ matrix.tests }}
-      run: ./docker/entrypoint.sh ${{ matrix.tests }}
+      uses: ./.github/action/
+      id: test
+      with:
+        test-to-run: ${{ matrix.tests }}
 
     - name: Clean Github Artifact Name of Asterisks
       run: |

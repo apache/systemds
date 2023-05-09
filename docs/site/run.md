@@ -62,6 +62,8 @@ systemds hello.dml
 rm hello.dml
 ```
 
+If you are running MacOS and encounter an error message similar to `realpath: illegal option -- -` when executing `systemds hello.dml`. You may try to replace the system-wide command `realpath` with the homebrew version `grealpath` that comes with the `coreutils`. Alternatively, you may change all occurrences within the script accordingly, i.e., by prepending a `g` to avoid any side effects.
+
 ## Running a real first example
 
 To see SystemDS in action a simple example using the `Univar-stats.dml`

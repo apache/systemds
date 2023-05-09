@@ -19,7 +19,7 @@
 #
 #-------------------------------------------------------------
 
-name: Java Testing Workflow
+name: Java Test
 
 on:
   push:
@@ -42,101 +42,19 @@ on:
       - main
 
 jobs:
-  applications_tests:
-    name: ${{ matrix.os }}
+  java_tests:
     runs-on: ${{ matrix.os }}
     timeout-minutes: 90
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest]
-    steps:
-    - name: Checkout Repository
-      uses: actions/checkout@v3
-
-    - name: Cache Maven Dependencies
-      uses: actions/cache@v3
-      with:
-        path: ~/.m2/repository
-        key: ${{ runner.os }}-maven-test-${{ hashFiles('**/pom.xml') }}
-        restore-keys: |
-          ${{ runner.os }}-maven-test-
-
-    - name: Run all Application Tests
-      uses: ./.github/action/
-      id: test
-      with:
-        test-to-run: org.apache.sysds.test.applications.**
-
-    - name: Save Java Test Coverage as Artifact
-      uses: actions/upload-artifact@v3
-      with:
-        name: jacoco-application-tests-${{ matrix.os }}
-        path: target/jacoco.exec
-        retention-days: 1
-
-  component_tests:
-    runs-on: ${{ matrix.os }}
-    timeout-minutes: 30
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest]
-        java: ['11']
-        javadist: ['adopt']
         tests: [
+          "org.apache.sysds.test.applications.**",
           "**.test.usertest.**",
           "**.component.c**.**",
           "**.component.e**.**,**.component.f**.**,**.component.m**.**",
-          "**.component.p**.**,**.component.t**.**"
-        ]
-    name: ${{ matrix.tests }}
-    steps:
-    - name: Checkout Repository
-      uses: actions/checkout@v3
-
-    - name: Setup Java ${{ matrix.java }} ${{ matrix.javadist }}
-      uses: actions/setup-java@v3
-      with:
-        distribution: ${{ matrix.javadist }}
-        java-version: ${{ matrix.java }}
-        cache: 'maven'
-
-    - name: Cache Maven Dependencies
-      uses: actions/cache@v3
-      with:
-        path: ~/.m2/repository
-        key: ${{ runner.os }}-maven-test-${{ hashFiles('**/pom.xml') }}
-        restore-keys: |
-          ${{ runner.os }}-maven-test-
-
-    - name: ${{ matrix.tests }}
-      run: ./docker/entrypoint.sh ${{ matrix.tests }}
-
-    - name: Clean Github Artifact Name of Asterisks
-      run: |
-        ARTIFACT_NAME="jacoco-component-tests"
-        ARTIFACT_NAME+="-${{ matrix.os }}"
-        ARTIFACT_NAME+="-java-${{ matrix.java }}"
-        ARTIFACT_NAME+="-${{ matrix.javadist }}"
-        ARTIFACT_NAME+="-${{ matrix.tests }}"
-        ARTIFACT_NAME=${ARTIFACT_NAME//\*/x} # replace * with x
-        echo "ARTIFACT_NAME=$ARTIFACT_NAME" >> $GITHUB_ENV
-
-    - name: Save Java Test Coverage as Artifact
-      uses: actions/upload-artifact@v3
-      with:
-        name: ${{ env.ARTIFACT_NAME }}
-        path: target/jacoco.exec
-        retention-days: 1
-
-  functions_tests:
-    runs-on: ${{ matrix.os }}
-    timeout-minutes: 90
-    strategy:
-      fail-fast: false
-      matrix:
-        tests: [
+          "**.component.p**.**,**.component.t**.**",
           "**.functions.a**.**,**.functions.binary.frame.**,**.functions.binary.matrix.**,**.functions.binary.scalar.**,**.functions.binary.tensor.**",
           "**.functions.blocks.**,**.functions.data.rand.**,",
           "**.functions.countDistinct.**,**.functions.countDistinctApprox.**,**.functions.data.misc.**,**.functions.lineage.**",
@@ -160,30 +78,25 @@ jobs:
           "**.functions.unary.scalar.**,**.functions.updateinplace.**,**.functions.vect.**",
           "**.functions.reorg.**,**.functions.rewrite.**,**.functions.ternary.**,**.functions.transform.**",
           "**.functions.unary.matrix.**,**.functions.linearization.**,**.functions.jmlc.**"
-          ]
-        os: [ubuntu-latest]
+        ]
     name: ${{ matrix.tests }}
     steps:
     - name: Checkout Repository
       uses: actions/checkout@v3
 
-    - name: Cache Maven Dependencies
-      uses: actions/cache@v3
-      with:
-        path: ~/.m2/repository
-        key: ${{ runner.os }}-maven-test-${{ hashFiles('**/pom.xml') }}
-        restore-keys: |
-          ${{ runner.os }}-maven-test-
 
     - name: ${{ matrix.tests }}
       uses: ./.github/action/
       id: test
       with:
         test-to-run: ${{ matrix.tests }}
+
     - name: Clean Github Artifact Name of Asterisks
       run: |
-        ARTIFACT_NAME="jacoco-function-tests"
+        ARTIFACT_NAME="jacoco-component-tests"
         ARTIFACT_NAME+="-${{ matrix.os }}"
+        ARTIFACT_NAME+="-java-${{ matrix.java }}"
+        ARTIFACT_NAME+="-${{ matrix.javadist }}"
         ARTIFACT_NAME+="-${{ matrix.tests }}"
         ARTIFACT_NAME=${ARTIFACT_NAME//\*/x} # replace * with x
         echo "ARTIFACT_NAME=$ARTIFACT_NAME" >> $GITHUB_ENV
@@ -199,9 +112,7 @@ jobs:
     name: Determine Test Coverage
     runs-on: ubuntu-latest
     needs: [
-      applications_tests,
-      component_tests,
-      functions_tests
+      java_tests
       ]
     steps:
     - name: Checkout Repository

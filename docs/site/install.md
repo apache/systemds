@@ -23,9 +23,13 @@ limitations under the License.
 
 This guide helps in the install and setup of SystemDS from source code.
 
-- [Windows Guide](#windows)
-- [Ubuntu/Linux Guide](#ubuntu-2204)
-- [Mac Guide](#mac)
+- [Install](#install)
+  - [Windows](#windows)
+  - [Ubuntu 22.04](#ubuntu-2204)
+    - [Testing](#testing)
+  - [MAC](#mac)
+- [2. Build the project](#2-build-the-project)
+- [3. Run A Component Test](#3-run-a-component-test)
 
 Once the individual versions is set up skip to the common part of building the system.
 
@@ -118,7 +122,7 @@ Prerequisite install homebrew on the device.
 brew install coreutils
 # To install open jdk 11.
 brew tap adoptopenjdk/openjdk
-brew cask install adoptopenjdk8
+brew cask install adoptopenjdk11
 # Install maven to enable compilation of SystemDS.
 brew install maven
 ```
@@ -169,5 +173,17 @@ mvn package -P distribution
 The first time you package the system it will take longer since maven will download the dependencies.
 But successive compiles should become faster.
 
+## 3. Run A Component Test
+
+As an example here is how to run the component matrix tests from command line via maven.
+
+```bash
+mvn test -Dtest="**.component.matrix.**"
+```
+
+To run other tests simply specify other packages by modifying the
+test argument part of the command.
+
 Now everything is setup and ready to go!
-To execute dml scripts look at [Execute SystemDS](run)
+
+To execute dml scripts look at [Execute SystemDS](run), this step is not needed to develop in systemds, but it helps setting up the command-line execution of systemds.

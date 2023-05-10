@@ -41,6 +41,26 @@ def randomForest(X: Matrix,
      and optionally subset of features (columns). During tree construction, split
      candidates are additionally chosen on a sample of remaining features.
     
+     .. code-block::
+    
+       For example, given a feature matrix with features [a,b,c,d]
+       and the following two trees, M (the output) would look as follows:
+    
+       (L1)          |a<7|                   |d<5|
+                    /     \                 /     \
+       (L2)     |c<3|     |b<4|         |a<7|     P3:2
+                /   \     /   \         /   \
+       (L3)   P1:2 P2:1 P3:1 P4:2     P1:2 P2:1
+       --> M :=
+       [[1, 7, 3, 3, 2, 4, 0, 2, 0, 1, 0, 1, 0, 2],  (1st tree)
+        [4, 5, 1, 7, 0, 2, 0, 2, 0, 1, 0, 0, 0, 0]]  (2nd tree)
+        |(L1)| |  (L2)   | |        (L3)         |
+    
+       With feature sampling (feature_frac < 1), each tree is
+       prefixed by a one-hot vector of sampled features
+       (e.g., [1,1,1,0] if we sampled a,b,c of the four features)
+    
+    
     
     
     :param X: Feature matrix in recoded/binned representation
@@ -60,21 +80,7 @@ def randomForest(X: Matrix,
     :param impurity: Impurity measure: entropy, gini (default), rss (regression)
     :param seed: Fixed seed for randomization of samples and split candidates
     :param verbose: Flag indicating verbose debug output
-    :return: Matrix M containing the learned trees, in linearized form
-        For example, give a feature matrix with features [a,b,c,d]
-        and the following two trees, M would look as follows:
-        (L1)          |a<7|                   |d<5|
-        /     \                 /     \
-        (L2)     |c<3|     |b<4|         |a<7|     P3:2
-        /   \     /   \         /   \
-        (L3)   P1:2 P2:1 P3:1 P4:2     P1:2 P2:1
-        --> M :=
-        [[1, 7, 3, 3, 2, 4, 0, 2, 0, 1, 0, 1, 0, 2],  (1st tree)
-        [4, 5, 1, 7, 0, 2, 0, 2, 0, 1, 0, 0, 0, 0]]  (2nd tree)
-        |(L1)| |  (L2)   | |        (L3)         |
-        With feature sampling (feature_frac < 1), each tree is
-        prefixed by a one-hot vector of sampled features
-        (e.g., [1,1,1,0] if we sampled a,b,c of the four features)
+    :return: Matrix M containing the learned trees, in linearized form.
     """
 
     params_dict = {'X': X, 'y': y, 'ctypes': ctypes}

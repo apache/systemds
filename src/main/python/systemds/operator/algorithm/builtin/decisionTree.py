@@ -39,6 +39,23 @@ def decisionTree(X: Matrix,
      regression tree) decision trees depending on the provided labels y, either
      classification (majority vote per leaf) or regression (average per leaf).
     
+     .. code-block::
+    
+       For example, give a feature matrix with features [a,b,c,d]
+       and the following trees, M would look as follows:
+    
+       (L1)               |d<5|
+                         /     \
+       (L2)           P1:2    |a<7|
+                              /   \
+       (L3)                 P2:2 P3:1
+    
+       --> M :=
+       [[4, 5, 0, 2, 1, 7, 0, 0, 0, 0, 0, 2, 0, 1]]
+        |(L1)| |  (L2)   | |        (L3)         |
+    
+    
+    
     
     
     :param X: Feature matrix in recoded/binned representation
@@ -56,17 +73,7 @@ def decisionTree(X: Matrix,
     :param impurity: Impurity measure: entropy, gini (default), rss (regression)
     :param seed: Fixed seed for randomization of samples and split candidates
     :param verbose: Flag indicating verbose debug output
-    :return: Matrix M containing the learne trees, in linearized form
-        For example, give a feature matrix with features [a,b,c,d]
-        and the following trees, M would look as follows:
-        (L1)               |d<5|
-        /     \
-        (L2)           P1:2    |a<7|
-        /   \
-        (L3)                 P2:2 P3:1
-        --> M :=
-        [[4, 5, 0, 2, 1, 7, 0, 0, 0, 0, 0, 2, 0, 1]]
-        |(L1)| |  (L2)   | |        (L3)         |
+    :return: Matrix M containing the learned trees, in linearized form
     """
 
     params_dict = {'X': X, 'y': y, 'ctypes': ctypes}

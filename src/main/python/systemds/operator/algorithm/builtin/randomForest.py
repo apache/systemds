@@ -30,66 +30,55 @@ from systemds.utils.consts import VALID_INPUT_TYPES
 
 
 def randomForest(X: Matrix,
-                 Y: Matrix,
-                 R: Matrix,
+                 y: Matrix,
+                 ctypes: Matrix,
                  **kwargs: Dict[str, VALID_INPUT_TYPES]):
     """
-     This script implement classification random forest with both scale and categorical features.
+     This script implements random forest for recoded and binned categorical and
+     numerical input features. In detail, we train multiple CART (classification
+     and regression trees) decision trees in parallel and use them as an ensemble.
+     classifier/regressor. Each tree is trained on a sample of observations (rows)
+     and optionally subset of features (columns). During tree construction, split
+     candidates are additionally chosen on a sample of remaining features.
     
     
     
-    :param X: Feature matrix X; note that X needs to be both recoded and dummy coded
-    :param Y: Label matrix Y; note that Y needs to be both recoded and dummy coded
-    :param R: Matrix which for each feature in X contains the following information
-        - R[,1]: column ids       TODO pass recorded and binned
-        - R[,2]: start indices
-        - R[,3]: end indices
-        If R is not provided by default all variables are assumed to be scale
-    :param bins: Number of equiheight bins per scale feature to choose thresholds
-    :param depth: Maximum depth of the learned tree
-    :param num_leaf: Number of samples when splitting stops and a leaf node is added
-    :param num_samples: Number of samples at which point we switch to in-memory subtree building
+    :param X: Feature matrix in recoded/binned representation
+    :param y: Label matrix in recoded/binned representation
+    :param ctypes: Row-Vector of column types [1 scale/ordinal, 2 categorical]
+        of shape 1-by-(ncol(X)+1), where the last entry is the y type
     :param num_trees: Number of trees to be learned in the random forest model
-    :param subsamp_rate: Parameter controlling the size of each tree in the forest; samples are selected from a
-        Poisson distribution with parameter subsamp_rate (the default value is 1.0)
-    :param feature_subset: Parameter that controls the number of feature used as candidates for splitting at each tree node
-        as a power of number of features in the dataset;
-        by default square root of features (i.e., feature_subset = 0.5) are used at each tree node
-    :param impurity: Impurity measure: entropy or Gini (the default)
-    :return: Matrix M containing the learned tree, where each column corresponds to a node
-        in the learned tree and each row contains the following information:
-        M[1,j]: id of node j (in a complete binary tree)
-        M[2,j]: tree id to which node j belongs
-        M[3,j]: Offset (no. of columns) to left child of j
-        M[4,j]: Feature index of the feature that node j looks at if j is an internal node, otherwise 0
-        M[5,j]: Type of the feature that node j looks at if j is an internal node: 1 for scale and 2
-        for categorical features,
-        otherwise the label that leaf node j is supposed to predict
-        M[6,j]: 1 if j is an internal node and the feature chosen for j is scale, otherwise the
-        size of the subset of values
-        stored in rows 7,8,... if j is categorical
-        M[7:,j]: Only applicable for internal nodes. Threshold the example's feature value is
-        compared to is stored at M[7,j] if the feature chosen for j is scale;
-        If the feature chosen for j is categorical rows 7,8,... depict the value subset chosen for j
-    :return: Matrix C containing the number of times samples are chosen in each tree of the random forest
-    :return: Mappings from scale feature ids to global feature ids
-    :return: Mappings from categorical feature ids to global feature ids
+    :param sample_frac: Sample fraction of examples for each tree in the forest
+    :param feature_frac: Sample fraction of features for each tree in the forest
+    :param max_depth: Maximum depth of the learned tree (stopping criterion)
+    :param min_leaf: Minimum number of samples in leaf nodes (stopping criterion)
+    :param min_split: Minimum number of samples in leaf for attempting a split
+    :param max_features: Parameter controlling the number of features used as split
+        candidates at tree nodes: m = ceil(num_features^max_features)
+    :param max_values: Parameter controlling the number of values per feature used
+        as split candidates: nb = ceil(num_values^max_values)
+    :param impurity: Impurity measure: entropy, gini (default), rss (regression)
+    :param seed: Fixed seed for randomization of samples and split candidates
+    :param verbose: Flag indicating verbose debug output
+    :return: Matrix M containing the learned trees, in linearized form
+        For example, give a feature matrix with features [a,b,c,d]
+        and the following two trees, M would look as follows:
+        (L1)          |a<7|                   |d<5|
+        /     \                 /     \
+        (L2)     |c<3|     |b<4|         |a<7|     P3:2
+        /   \     /   \         /   \
+        (L3)   P1:2 P2:1 P3:1 P4:2     P1:2 P2:1
+        --> M :=
+        [[1, 7, 3, 3, 2, 4, 0, 2, 0, 1, 0, 1, 0, 2],  (1st tree)
+        [4, 5, 1, 7, 0, 2, 0, 2, 0, 1, 0, 0, 0, 0]]  (2nd tree)
+        |(L1)| |  (L2)   | |        (L3)         |
+        With feature sampling (feature_frac < 1), each tree is
+        prefixed by a one-hot vector of sampled features
+        (e.g., [1,1,1,0] if we sampled a,b,c of the four features)
     """
 
-    params_dict = {'X': X, 'Y': Y, 'R': R}
+    params_dict = {'X': X, 'y': y, 'ctypes': ctypes}
     params_dict.update(kwargs)
-    
-    vX_0 = Matrix(X.sds_context, '')
-    vX_1 = Matrix(X.sds_context, '')
-    vX_2 = Matrix(X.sds_context, '')
-    vX_3 = Matrix(X.sds_context, '')
-    output_nodes = [vX_0, vX_1, vX_2, vX_3, ]
-
-    op = MultiReturn(X.sds_context, 'randomForest', output_nodes, named_input_nodes=params_dict)
-
-    vX_0._unnamed_input_nodes = [op]
-    vX_1._unnamed_input_nodes = [op]
-    vX_2._unnamed_input_nodes = [op]
-    vX_3._unnamed_input_nodes = [op]
-
-    return op
+    return Matrix(X.sds_context,
+        'randomForest',
+        named_input_nodes=params_dict)

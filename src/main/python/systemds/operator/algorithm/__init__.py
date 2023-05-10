@@ -31,6 +31,7 @@ from .builtin.alsPredict import alsPredict
 from .builtin.alsTopkPredict import alsTopkPredict 
 from .builtin.apply_pipeline import apply_pipeline 
 from .builtin.arima import arima 
+from .builtin.auc import auc 
 from .builtin.autoencoder_2layer import autoencoder_2layer 
 from .builtin.bandit import bandit 
 from .builtin.bivar import bivar 
@@ -110,6 +111,7 @@ from .builtin.lm import lm
 from .builtin.lmCG import lmCG 
 from .builtin.lmDS import lmDS 
 from .builtin.lmPredict import lmPredict 
+from .builtin.lmPredictStats import lmPredictStats 
 from .builtin.logSumExp import logSumExp 
 from .builtin.matrixProfile import matrixProfile 
 from .builtin.mcc import mcc 
@@ -137,6 +139,7 @@ from .builtin.pcaTransform import pcaTransform
 from .builtin.pnmf import pnmf 
 from .builtin.ppca import ppca 
 from .builtin.randomForest import randomForest 
+from .builtin.randomForestPredict import randomForestPredict 
 from .builtin.scale import scale 
 from .builtin.scaleApply import scaleApply 
 from .builtin.scaleMinMax import scaleMinMax 
@@ -182,6 +185,7 @@ __all__ = ['WoE',
  'alsTopkPredict',
  'apply_pipeline',
  'arima',
+ 'auc',
  'autoencoder_2layer',
  'bandit',
  'bivar',
@@ -261,6 +265,7 @@ __all__ = ['WoE',
  'lmCG',
  'lmDS',
  'lmPredict',
+ 'lmPredictStats',
  'logSumExp',
  'matrixProfile',
  'mcc',
@@ -288,6 +293,7 @@ __all__ = ['WoE',
  'pnmf',
  'ppca',
  'randomForest',
+ 'randomForestPredict',
  'scale',
  'scaleApply',
  'scaleMinMax',

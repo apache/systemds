@@ -41,8 +41,8 @@ def slicefinder(X: Matrix,
     
     
     
-    :param X: Recoded dataset into Matrix
-    :param e: Trained model
+    :param X: Feature matrix in recoded/binned representation
+    :param e: Error vector of trained model
     :param k: Number of subsets required
     :param maxL: maximum level L (conjunctions of L predicates), 0 unlimited
     :param minSup: minimum support (min number of rows per slice)

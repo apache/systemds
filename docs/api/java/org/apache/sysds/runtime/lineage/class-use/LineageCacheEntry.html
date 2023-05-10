@@ -135,12 +135,17 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>static <a href="../LineageCacheEntry.html" title="class in org.apache.sysds.runtime.lineage">LineageCacheEntry</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">LineageGPUCacheEviction.</span><code><span class="memberNameLink"><a href="../LineageGPUCacheEviction.html#peekFirstEntry()">peekFirstEntry</a></span>()</code></th>
+<th class="colSecond" scope="row"><span class="typeNameLabel">LineageGPUCacheEviction.</span><code><span class="memberNameLink"><a href="../LineageGPUCacheEviction.html#peekFirstFreeEntry(long)">peekFirstFreeEntry</a></span>&#8203;(long&nbsp;size)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code>static <a href="../LineageCacheEntry.html" title="class in org.apache.sysds.runtime.lineage">LineageCacheEntry</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">LineageGPUCacheEviction.</span><code><span class="memberNameLink"><a href="../LineageGPUCacheEviction.html#pollFirstEntry()">pollFirstEntry</a></span>()</code></th>
+<th class="colSecond" scope="row"><span class="typeNameLabel">LineageGPUCacheEviction.</span><code><span class="memberNameLink"><a href="../LineageGPUCacheEviction.html#pollFirstFreeEntry(long)">pollFirstFreeEntry</a></span>&#8203;(long&nbsp;size)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>static <a href="../LineageCacheEntry.html" title="class in org.apache.sysds.runtime.lineage">LineageCacheEntry</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">LineageGPUCacheEviction.</span><code><span class="memberNameLink"><a href="../LineageGPUCacheEviction.html#pollFistFreeNotExact(long)">pollFistFreeNotExact</a></span>&#8203;(long&nbsp;size)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 </tbody>
@@ -169,30 +174,26 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tbody>
 <tr class="altColor">
+<td class="colFirst"><code>static jcuda.Pointer</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">LineageGPUCacheEviction.</span><code><span class="memberNameLink"><a href="../LineageGPUCacheEviction.html#copyToHostCache(org.apache.sysds.runtime.lineage.LineageCacheEntry)">copyToHostCache</a></span>&#8203;(<a href="../LineageCacheEntry.html" title="class in org.apache.sysds.runtime.lineage">LineageCacheEntry</a>&nbsp;entry)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">LineageCacheEntry.</span><code><span class="memberNameLink"><a href="../LineageCacheEntry.html#copyValueFrom(org.apache.sysds.runtime.lineage.LineageCacheEntry,long)">copyValueFrom</a></span>&#8203;(<a href="../LineageCacheEntry.html" title="class in org.apache.sysds.runtime.lineage">LineageCacheEntry</a>&nbsp;src,
+             long&nbsp;computetime)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
 <td class="colFirst"><code>static void</code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">LineageGPUCacheEviction.</span><code><span class="memberNameLink"><a href="../LineageGPUCacheEviction.html#removeEntry(org.apache.sysds.runtime.lineage.LineageCacheEntry)">removeEntry</a></span>&#8203;(<a href="../LineageCacheEntry.html" title="class in org.apache.sysds.runtime.lineage">LineageCacheEntry</a>&nbsp;e)</code></th>
+<th class="colSecond" scope="row"><span class="typeNameLabel">LineageGPUCacheEviction.</span><code><span class="memberNameLink"><a href="../LineageGPUCacheEviction.html#removeFreeEntry(org.apache.sysds.runtime.lineage.LineageCacheEntry)">removeFreeEntry</a></span>&#8203;(<a href="../LineageCacheEntry.html" title="class in org.apache.sysds.runtime.lineage">LineageCacheEntry</a>&nbsp;e)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>static void</code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">LineageGPUCacheEviction.</span><code><span class="memberNameLink"><a href="../LineageGPUCacheEviction.html#removeFromDeviceCache(org.apache.sysds.runtime.lineage.LineageCacheEntry,java.lang.String,boolean)">removeFromDeviceCache</a></span>&#8203;(<a href="../LineageCacheEntry.html" title="class in org.apache.sysds.runtime.lineage">LineageCacheEntry</a>&nbsp;entry,
-                     <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName,
-                     boolean&nbsp;alreadyCopied)</code></th>
-<td class="colLast">&nbsp;</td>
-</tr>
-</tbody>
-</table>
-<table class="useSummary">
-<caption><span>Method parameters in <a href="../package-summary.html">org.apache.sysds.runtime.lineage</a> with type arguments of type <a href="../LineageCacheEntry.html" title="class in org.apache.sysds.runtime.lineage">LineageCacheEntry</a></span><span class="tabEnd">&nbsp;</span></caption>
-<tr>
-<th class="colFirst" scope="col">Modifier and Type</th>
-<th class="colSecond" scope="col">Method</th>
-<th class="colLast" scope="col">Description</th>
-</tr>
-<tbody>
-<tr class="altColor">
-<td class="colFirst"><code>static void</code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">LineageGPUCacheEviction.</span><code><span class="memberNameLink"><a href="../LineageGPUCacheEviction.html#addEntryList(java.util.List)">addEntryList</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="../LineageCacheEntry.html" title="class in org.apache.sysds.runtime.lineage">LineageCacheEntry</a>&gt;&nbsp;entryList)</code></th>
+<th class="colSecond" scope="row"><span class="typeNameLabel">LineageGPUCacheEviction.</span><code><span class="memberNameLink"><a href="../LineageGPUCacheEviction.html#removeFromDeviceCache(org.apache.sysds.runtime.lineage.LineageCacheEntry,jcuda.Pointer,boolean)">removeFromDeviceCache</a></span>&#8203;(<a href="../LineageCacheEntry.html" title="class in org.apache.sysds.runtime.lineage">LineageCacheEntry</a>&nbsp;entry,
+                     jcuda.Pointer&nbsp;ptr,
+                     boolean&nbsp;removeFromCache)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 </tbody>

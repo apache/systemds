@@ -27,7 +27,7 @@
     catch(err) {
     }
 //-->
-var data = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10};
+var data = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10,"i10":10};
 var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -148,6 +148,14 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <hr>
 <pre>public class <span class="typeNameLabel">BinaryOperator</span>
 extends <a href="MultiThreadedOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">MultiThreadedOperator</a></pre>
+<div class="block">BinaryOperator class for operations that have two inputs.
+ 
+ For instance
+ 
+ <pre>
+BinaryOperator op = new BinaryOperator(Plus.getPlusFnObject());
+double r = op.execute(5.0, 8.2)
+ </pre></div>
 <dl>
 <dt><span class="seeLabel">See Also:</span></dt>
 <dd><a href="../../../../../../serialized-form.html#org.apache.sysds.runtime.matrix.operators.BinaryOperator">Serialized Form</a></dd>
@@ -247,15 +255,61 @@ extends <a href="MultiThreadedOperator.html" title="class in org.apache.sysds.ru
 </tr>
 <tr id="i2" class="altColor">
 <td class="colFirst"><code>boolean</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#isRowSafeLeft(double%5B%5D)">isRowSafeLeft</a></span>&#8203;(double[]&nbsp;row)</code></th>
-<td class="colLast">&nbsp;</td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#isIntroducingZerosLeft(double%5B%5D)">isIntroducingZerosLeft</a></span>&#8203;(double[]&nbsp;row)</code></th>
+<td class="colLast">
+<div class="block">Check if the operation returns zeros if the input is contained in row.</div>
+</td>
 </tr>
 <tr id="i3" class="rowColor">
 <td class="colFirst"><code>boolean</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#isRowSafeRight(double%5B%5D)">isRowSafeRight</a></span>&#8203;(double[]&nbsp;row)</code></th>
-<td class="colLast">&nbsp;</td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#isIntroducingZerosLeft(org.apache.sysds.runtime.matrix.data.MatrixBlock)">isIntroducingZerosLeft</a></span>&#8203;(<a href="../data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;row)</code></th>
+<td class="colLast">
+<div class="block">Check if the operation returns zeros if the input is contained in row.</div>
+</td>
 </tr>
 <tr id="i4" class="altColor">
+<td class="colFirst"><code>boolean</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#isIntroducingZerosRight(double%5B%5D)">isIntroducingZerosRight</a></span>&#8203;(double[]&nbsp;row)</code></th>
+<td class="colLast">
+<div class="block">Check if the operation returns zeros if the input is contained in row.</div>
+</td>
+</tr>
+<tr id="i5" class="rowColor">
+<td class="colFirst"><code>boolean</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#isIntroducingZerosRight(org.apache.sysds.runtime.matrix.data.MatrixBlock)">isIntroducingZerosRight</a></span>&#8203;(<a href="../data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;row)</code></th>
+<td class="colLast">
+<div class="block">Check if the operation returns zeros if the input is contained in row.</div>
+</td>
+</tr>
+<tr id="i6" class="altColor">
+<td class="colFirst"><code>boolean</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#isRowSafeLeft(double%5B%5D)">isRowSafeLeft</a></span>&#8203;(double[]&nbsp;row)</code></th>
+<td class="colLast">
+<div class="block">Check if the operation returns zeros if the input zero.</div>
+</td>
+</tr>
+<tr id="i7" class="rowColor">
+<td class="colFirst"><code>boolean</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#isRowSafeLeft(org.apache.sysds.runtime.matrix.data.MatrixBlock)">isRowSafeLeft</a></span>&#8203;(<a href="../data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;row)</code></th>
+<td class="colLast">
+<div class="block">Check if the operation returns zeros if the input zero.</div>
+</td>
+</tr>
+<tr id="i8" class="altColor">
+<td class="colFirst"><code>boolean</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#isRowSafeRight(double%5B%5D)">isRowSafeRight</a></span>&#8203;(double[]&nbsp;row)</code></th>
+<td class="colLast">
+<div class="block">Check if the operation returns zeros if the input zero.</div>
+</td>
+</tr>
+<tr id="i9" class="rowColor">
+<td class="colFirst"><code>boolean</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#isRowSafeRight(org.apache.sysds.runtime.matrix.data.MatrixBlock)">isRowSafeRight</a></span>&#8203;(<a href="../data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;row)</code></th>
+<td class="colLast">
+<div class="block">Check if the operation returns zeros if the input zero.</div>
+</td>
+</tr>
+<tr id="i10" class="altColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#toString()">toString</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
@@ -380,6 +434,61 @@ extends <a href="MultiThreadedOperator.html" title="class in org.apache.sysds.ru
 <li class="blockList">
 <h4>isRowSafeLeft</h4>
 <pre class="methodSignature">public&nbsp;boolean&nbsp;isRowSafeLeft&#8203;(double[]&nbsp;row)</pre>
+<div class="block">Check if the operation returns zeros if the input zero.</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>row</code> - The values to check</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>If the output is always zero if other value is zero</dd>
+</dl>
+</li>
+</ul>
+<a id="isRowSafeLeft(org.apache.sysds.runtime.matrix.data.MatrixBlock)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>isRowSafeLeft</h4>
+<pre class="methodSignature">public&nbsp;boolean&nbsp;isRowSafeLeft&#8203;(<a href="../data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;row)</pre>
+<div class="block">Check if the operation returns zeros if the input zero.</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>row</code> - The values to check</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>If the output is always zero if other value is zero</dd>
+</dl>
+</li>
+</ul>
+<a id="isIntroducingZerosLeft(org.apache.sysds.runtime.matrix.data.MatrixBlock)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>isIntroducingZerosLeft</h4>
+<pre class="methodSignature">public&nbsp;boolean&nbsp;isIntroducingZerosLeft&#8203;(<a href="../data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;row)</pre>
+<div class="block">Check if the operation returns zeros if the input is contained in row.</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>row</code> - The values to check</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>If the output contains zeros</dd>
+</dl>
+</li>
+</ul>
+<a id="isIntroducingZerosLeft(double[])">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>isIntroducingZerosLeft</h4>
+<pre class="methodSignature">public&nbsp;boolean&nbsp;isIntroducingZerosLeft&#8203;(double[]&nbsp;row)</pre>
+<div class="block">Check if the operation returns zeros if the input is contained in row.</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>row</code> - The values to check</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>If the output contains zeros</dd>
+</dl>
 </li>
 </ul>
 <a id="isRowSafeRight(double[])">
@@ -389,6 +498,61 @@ extends <a href="MultiThreadedOperator.html" title="class in org.apache.sysds.ru
 <li class="blockList">
 <h4>isRowSafeRight</h4>
 <pre class="methodSignature">public&nbsp;boolean&nbsp;isRowSafeRight&#8203;(double[]&nbsp;row)</pre>
+<div class="block">Check if the operation returns zeros if the input zero.</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>row</code> - The values to check</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>If the output is always zero if other value is zero</dd>
+</dl>
+</li>
+</ul>
+<a id="isRowSafeRight(org.apache.sysds.runtime.matrix.data.MatrixBlock)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>isRowSafeRight</h4>
+<pre class="methodSignature">public&nbsp;boolean&nbsp;isRowSafeRight&#8203;(<a href="../data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;row)</pre>
+<div class="block">Check if the operation returns zeros if the input zero.</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>row</code> - The values to check</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>If the output is always zero if other value is zero</dd>
+</dl>
+</li>
+</ul>
+<a id="isIntroducingZerosRight(org.apache.sysds.runtime.matrix.data.MatrixBlock)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>isIntroducingZerosRight</h4>
+<pre class="methodSignature">public&nbsp;boolean&nbsp;isIntroducingZerosRight&#8203;(<a href="../data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;row)</pre>
+<div class="block">Check if the operation returns zeros if the input is contained in row.</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>row</code> - The values to check</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>If the output contains zeros</dd>
+</dl>
+</li>
+</ul>
+<a id="isIntroducingZerosRight(double[])">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>isIntroducingZerosRight</h4>
+<pre class="methodSignature">public&nbsp;boolean&nbsp;isIntroducingZerosRight&#8203;(double[]&nbsp;row)</pre>
+<div class="block">Check if the operation returns zeros if the input is contained in row.</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>row</code> - The values to check</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>If the output contains zeros</dd>
+</dl>
 </li>
 </ul>
 <a id="toString()">

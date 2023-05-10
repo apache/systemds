@@ -238,10 +238,11 @@ extends <a href="OptimizerRuleBased.html" title="class in org.apache.sysds.runti
 </tr>
 <tr id="i1" class="rowColor">
 <td class="colFirst"><code>boolean</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#optimize(org.apache.sysds.parser.ParForStatementBlock,org.apache.sysds.runtime.controlprogram.ParForProgramBlock,org.apache.sysds.runtime.controlprogram.parfor.opt.OptTree,org.apache.sysds.runtime.controlprogram.parfor.opt.CostEstimator,org.apache.sysds.runtime.controlprogram.context.ExecutionContext)">optimize</a></span>&#8203;(<a href="../../../../parser/ParForStatementBlock.html" title="class in org.apache.sysds.parser">ParForStatementBlock</a>&nbsp;sb,
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#optimize(org.apache.sysds.parser.ParForStatementBlock,org.apache.sysds.runtime.controlprogram.ParForProgramBlock,org.apache.sysds.runtime.controlprogram.parfor.opt.OptTree,org.apache.sysds.runtime.controlprogram.parfor.opt.CostEstimator,int,org.apache.sysds.runtime.controlprogram.context.ExecutionContext)">optimize</a></span>&#8203;(<a href="../../../../parser/ParForStatementBlock.html" title="class in org.apache.sysds.parser">ParForStatementBlock</a>&nbsp;sb,
         <a href="../../ParForProgramBlock.html" title="class in org.apache.sysds.runtime.controlprogram">ParForProgramBlock</a>&nbsp;pb,
         <a href="OptTree.html" title="class in org.apache.sysds.runtime.controlprogram.parfor.opt">OptTree</a>&nbsp;plan,
         <a href="CostEstimator.html" title="class in org.apache.sysds.runtime.controlprogram.parfor.opt">CostEstimator</a>&nbsp;est,
+        int&nbsp;numRuns,
         <a href="../../context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec)</code></th>
 <td class="colLast">
 <div class="block">Main optimization procedure.</div>
@@ -317,7 +318,7 @@ extends <a href="OptimizerRuleBased.html" title="class in org.apache.sysds.runti
 </dl>
 </li>
 </ul>
-<a id="optimize(org.apache.sysds.parser.ParForStatementBlock,org.apache.sysds.runtime.controlprogram.ParForProgramBlock,org.apache.sysds.runtime.controlprogram.parfor.opt.OptTree,org.apache.sysds.runtime.controlprogram.parfor.opt.CostEstimator,org.apache.sysds.runtime.controlprogram.context.ExecutionContext)">
+<a id="optimize(org.apache.sysds.parser.ParForStatementBlock,org.apache.sysds.runtime.controlprogram.ParForProgramBlock,org.apache.sysds.runtime.controlprogram.parfor.opt.OptTree,org.apache.sysds.runtime.controlprogram.parfor.opt.CostEstimator,int,org.apache.sysds.runtime.controlprogram.context.ExecutionContext)">
 <!--   -->
 </a>
 <ul class="blockListLast">
@@ -327,6 +328,7 @@ extends <a href="OptimizerRuleBased.html" title="class in org.apache.sysds.runti
                         <a href="../../ParForProgramBlock.html" title="class in org.apache.sysds.runtime.controlprogram">ParForProgramBlock</a>&nbsp;pb,
                         <a href="OptTree.html" title="class in org.apache.sysds.runtime.controlprogram.parfor.opt">OptTree</a>&nbsp;plan,
                         <a href="CostEstimator.html" title="class in org.apache.sysds.runtime.controlprogram.parfor.opt">CostEstimator</a>&nbsp;est,
+                        int&nbsp;numRuns,
                         <a href="../../context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec)</pre>
 <div class="block">Main optimization procedure.
 
@@ -334,12 +336,13 @@ extends <a href="OptimizerRuleBased.html" title="class in org.apache.sysds.runti
  (no use of sb, direct change of pb).</div>
 <dl>
 <dt><span class="overrideSpecifyLabel">Overrides:</span></dt>
-<dd><code><a href="OptimizerRuleBased.html#optimize(org.apache.sysds.parser.ParForStatementBlock,org.apache.sysds.runtime.controlprogram.ParForProgramBlock,org.apache.sysds.runtime.controlprogram.parfor.opt.OptTree,org.apache.sysds.runtime.controlprogram.parfor.opt.CostEstimator,org.apache.sysds.runtime.controlprogram.context.ExecutionContext)">optimize</a></code>&nbsp;in class&nbsp;<code><a href="OptimizerRuleBased.html" title="class in org.apache.sysds.runtime.controlprogram.parfor.opt">OptimizerRuleBased</a></code></dd>
+<dd><code><a href="OptimizerRuleBased.html#optimize(org.apache.sysds.parser.ParForStatementBlock,org.apache.sysds.runtime.controlprogram.ParForProgramBlock,org.apache.sysds.runtime.controlprogram.parfor.opt.OptTree,org.apache.sysds.runtime.controlprogram.parfor.opt.CostEstimator,int,org.apache.sysds.runtime.controlprogram.context.ExecutionContext)">optimize</a></code>&nbsp;in class&nbsp;<code><a href="OptimizerRuleBased.html" title="class in org.apache.sysds.runtime.controlprogram.parfor.opt">OptimizerRuleBased</a></code></dd>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>sb</code> - parfor statement block</dd>
 <dd><code>pb</code> - parfor program block</dd>
 <dd><code>plan</code> - complete plan of a top-level parfor</dd>
 <dd><code>est</code> - cost estimator</dd>
+<dd><code>numRuns</code> - Number of runs</dd>
 <dd><code>ec</code> - execution context</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>true if plan changed, false otherwise</dd>

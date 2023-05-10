@@ -32,16 +32,23 @@ from systemds.utils.consts import VALID_INPUT_TYPES
 def scale(X: Matrix,
           **kwargs: Dict[str, VALID_INPUT_TYPES]):
     """
-     This function scales and center individual features in the input matrix (column wise.) using z-score to scale the values.
+     This function scales and center individual features in the input
+     matrix (column wise.) using z-score to scale the values.
+     The transformation is sometimes also called scale and shift,
+     but it is shifted first and then subsequently scaled.
+    
+     The method is not resistant to inputs containing NaN nor overflows
+     of doubles, but handle it by guaranteeing that no extra NaN values
+     are introduced and columns that contain NaN will not be scaled or shifted.
     
     
     
     :param X: Input feature matrix
-    :param center: Indicates whether or not to center the feature matrix
-    :param scale: Indicates whether or not to scale the feature matrix
-    :return: Output feature matrix with K columns
+    :param center: Indicates to center the feature matrix
+    :param scale: Indicates to scale the feature matrix according to z-score
+    :return: Output feature matrix scaled and shifted
     :return: The column means of the input, subtracted if Center was TRUE
-    :return: The Scaling of the values, to make each dimension have similar value ranges
+    :return: The scaling of the values, to make each dimension have similar value ranges
     """
 
     params_dict = {'X': X}

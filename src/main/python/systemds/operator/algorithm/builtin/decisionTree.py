@@ -30,43 +30,46 @@ from systemds.utils.consts import VALID_INPUT_TYPES
 
 
 def decisionTree(X: Matrix,
-                 Y: Matrix,
-                 R: Matrix,
+                 y: Matrix,
+                 ctypes: Matrix,
                  **kwargs: Dict[str, VALID_INPUT_TYPES]):
     """
-     Builtin script implementing classification trees with scale and categorical features
+     This script implements decision trees for recoded and binned categorical and
+     numerical input features. We train a single CART (classification and
+     regression tree) decision trees depending on the provided labels y, either
+     classification (majority vote per leaf) or regression (average per leaf).
     
     
     
-    :param X: Feature matrix X; note that X needs to be both recoded and dummy coded
-    :param Y: Label matrix Y; note that Y needs to be both recoded and dummy coded
-    :param R: Matrix R which for each feature in X contains the following information
-        - R[1,]: Row Vector which indicates if feature vector is scalar or categorical. 1 indicates
-        a scalar feature vector, other positive Integers indicate the number of categories
-        If R is not provided by default all variables are assumed to be scale
-    :param bins: Number of equiheight bins per scale feature to choose thresholds
-    :param depth: Maximum depth of the learned tree
-    :param verbose: boolean specifying if the algorithm should print information while executing
-    :return: Matrix M where each column corresponds to a node in the learned tree and each row
-        contains the following information:
-        M[1,j]: id of node j (in a complete binary tree)
-        M[2,j]: Offset (no. of columns) to left child of j if j is an internal node, otherwise 0
-        M[3,j]: Feature index of the feature (scale feature id if the feature is scale or
-        categorical feature id if the feature is categorical)
-        that node j looks at if j is an internal node, otherwise 0
-        M[4,j]: Type of the feature that node j looks at if j is an internal node: holds
-        the same information as R input vector
-        M[5,j]: If j is an internal node: 1 if the feature chosen for j is scale,
-        otherwise the size of the subset of values
-        stored in rows 6,7,... if j is categorical
-        If j is a leaf node: number of misclassified samples reaching at node j
-        M[6:,j]: If j is an internal node: Threshold the example's feature value is compared
-        to is stored at M[6,j] if the feature chosen for j is scale,
-        otherwise if the feature chosen for j is categorical rows 6,7,... depict the value subset chosen for j
-        If j is a leaf node 1 if j is impure and the number of samples at j > threshold, otherwise 0
+    :param X: Feature matrix in recoded/binned representation
+    :param y: Label matrix in recoded/binned representation
+    :param ctypes: Row-Vector of column types [1 scale/ordinal, 2 categorical]
+        of shape 1-by-(ncol(X)+1), where the last entry is the y type
+    :param max_depth: Maximum depth of the learned tree (stopping criterion)
+    :param min_leaf: Minimum number of samples in leaf nodes (stopping criterion),
+        odd number recommended to avoid 50/50 leaf label decisions
+    :param min_split: Minimum number of samples in leaf for attempting a split
+    :param max_features: Parameter controlling the number of features used as split
+        candidates at tree nodes: m = ceil(num_features^max_features)
+    :param max_values: Parameter controlling the number of values per feature used
+        as split candidates: nb = ceil(num_values^max_values)
+    :param impurity: Impurity measure: entropy, gini (default), rss (regression)
+    :param seed: Fixed seed for randomization of samples and split candidates
+    :param verbose: Flag indicating verbose debug output
+    :return: Matrix M containing the learne trees, in linearized form
+        For example, give a feature matrix with features [a,b,c,d]
+        and the following trees, M would look as follows:
+        (L1)               |d<5|
+        /     \
+        (L2)           P1:2    |a<7|
+        /   \
+        (L3)                 P2:2 P3:1
+        --> M :=
+        [[4, 5, 0, 2, 1, 7, 0, 0, 0, 0, 0, 2, 0, 1]]
+        |(L1)| |  (L2)   | |        (L3)         |
     """
 
-    params_dict = {'X': X, 'Y': Y, 'R': R}
+    params_dict = {'X': X, 'y': y, 'ctypes': ctypes}
     params_dict.update(kwargs)
     return Matrix(X.sds_context,
         'decisionTree',

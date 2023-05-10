@@ -139,8 +139,8 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <hr>
 <pre>public class <span class="typeNameLabel">Binary</span>
 extends <a href="Lop.html" title="class in org.apache.sysds.lops">Lop</a></pre>
-<div class="block">Lop to perform binary operation. Both inputs must be matrices or vectors. 
- Example - A = B + C, where B and C are matrices or vectors.</div>
+<div class="block">Lop to perform binary operation. Both inputs must be matrices, vectors or scalars. 
+ Example - A = B + C.</div>
 </li>
 </ul>
 </div>
@@ -213,6 +213,17 @@ extends <a href="Lop.html" title="class in org.apache.sysds.lops">Lop</a></pre>
       <a href="../common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;vt,
       <a href="../common/Types.ExecType.html" title="enum in org.apache.sysds.common">Types.ExecType</a>&nbsp;et,
       int&nbsp;k)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<th class="colConstructorName" scope="row"><code><span class="memberNameLink"><a href="#%3Cinit%3E(org.apache.sysds.lops.Lop,org.apache.sysds.lops.Lop,org.apache.sysds.common.Types.OpOp2,org.apache.sysds.common.Types.DataType,org.apache.sysds.common.Types.ValueType,org.apache.sysds.common.Types.ExecType,int,boolean)">Binary</a></span>&#8203;(<a href="Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input1,
+      <a href="Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input2,
+      <a href="../common/Types.OpOp2.html" title="enum in org.apache.sysds.common">Types.OpOp2</a>&nbsp;op,
+      <a href="../common/Types.DataType.html" title="enum in org.apache.sysds.common">Types.DataType</a>&nbsp;dt,
+      <a href="../common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;vt,
+      <a href="../common/Types.ExecType.html" title="enum in org.apache.sysds.common">Types.ExecType</a>&nbsp;et,
+      int&nbsp;k,
+      boolean&nbsp;inplace)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 </table>
@@ -319,7 +330,7 @@ extends <a href="Lop.html" title="class in org.apache.sysds.lops">Lop</a></pre>
 <a id="&lt;init&gt;(org.apache.sysds.lops.Lop,org.apache.sysds.lops.Lop,org.apache.sysds.common.Types.OpOp2,org.apache.sysds.common.Types.DataType,org.apache.sysds.common.Types.ValueType,org.apache.sysds.common.Types.ExecType,int)">
 <!--   -->
 </a>
-<ul class="blockListLast">
+<ul class="blockList">
 <li class="blockList">
 <h4>Binary</h4>
 <pre>public&nbsp;Binary&#8203;(<a href="Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input1,
@@ -329,6 +340,22 @@ extends <a href="Lop.html" title="class in org.apache.sysds.lops">Lop</a></pre>
               <a href="../common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;vt,
               <a href="../common/Types.ExecType.html" title="enum in org.apache.sysds.common">Types.ExecType</a>&nbsp;et,
               int&nbsp;k)</pre>
+</li>
+</ul>
+<a id="&lt;init&gt;(org.apache.sysds.lops.Lop,org.apache.sysds.lops.Lop,org.apache.sysds.common.Types.OpOp2,org.apache.sysds.common.Types.DataType,org.apache.sysds.common.Types.ValueType,org.apache.sysds.common.Types.ExecType,int,boolean)">
+<!--   -->
+</a>
+<ul class="blockListLast">
+<li class="blockList">
+<h4>Binary</h4>
+<pre>public&nbsp;Binary&#8203;(<a href="Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input1,
+              <a href="Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input2,
+              <a href="../common/Types.OpOp2.html" title="enum in org.apache.sysds.common">Types.OpOp2</a>&nbsp;op,
+              <a href="../common/Types.DataType.html" title="enum in org.apache.sysds.common">Types.DataType</a>&nbsp;dt,
+              <a href="../common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;vt,
+              <a href="../common/Types.ExecType.html" title="enum in org.apache.sysds.common">Types.ExecType</a>&nbsp;et,
+              int&nbsp;k,
+              boolean&nbsp;inplace)</pre>
 </li>
 </ul>
 </li>

@@ -301,9 +301,8 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 </td>
 </tr>
 <tr id="i18" class="altColor">
-<td class="colFirst"><code><a href="../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#evictFromDeviceToHostMB(java.lang.String,boolean)">evictFromDeviceToHostMB</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName,
-                       boolean&nbsp;eagerDelete)</code></th>
+<td class="colFirst"><code>long</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getAllocatedSize()">getAllocatedSize</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i19" class="rowColor">
@@ -989,6 +988,15 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <pre class="methodSignature">public&nbsp;long&nbsp;getSizeOnDevice()</pre>
 </li>
 </ul>
+<a id="getAllocatedSize()">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>getAllocatedSize</h4>
+<pre class="methodSignature">public&nbsp;long&nbsp;getAllocatedSize()</pre>
+</li>
+</ul>
 <a id="toIntExact(long)">
 <!--   -->
 </a>
@@ -996,21 +1004,6 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <li class="blockList">
 <h4>toIntExact</h4>
 <pre class="methodSignature">public static&nbsp;int&nbsp;toIntExact&#8203;(long&nbsp;l)</pre>
-</li>
-</ul>
-<a id="evictFromDeviceToHostMB(java.lang.String,boolean)">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>evictFromDeviceToHostMB</h4>
-<pre class="methodSignature">public&nbsp;<a href="../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;evictFromDeviceToHostMB&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName,
-                                           boolean&nbsp;eagerDelete)
-                                    throws <a href="../../../DMLRuntimeException.html" title="class in org.apache.sysds.runtime">DMLRuntimeException</a></pre>
-<dl>
-<dt><span class="throwsLabel">Throws:</span></dt>
-<dd><code><a href="../../../DMLRuntimeException.html" title="class in org.apache.sysds.runtime">DMLRuntimeException</a></code></dd>
-</dl>
 </li>
 </ul>
 <a id="clearData(java.lang.String,boolean)">

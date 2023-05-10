@@ -27,7 +27,7 @@
     catch(err) {
     }
 //-->
-var data = {"i0":9,"i1":9,"i2":9,"i3":9,"i4":9,"i5":9,"i6":9,"i7":9,"i8":9,"i9":9,"i10":9,"i11":9,"i12":9};
+var data = {"i0":9,"i1":9,"i2":9,"i3":9,"i4":9,"i5":9,"i6":9,"i7":9,"i8":9,"i9":9,"i10":9,"i11":9,"i12":9,"i13":9,"i14":9};
 var tabs = {65535:["t0","All Methods"],1:["t1","Static Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -199,8 +199,8 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <th class="colLast" scope="col">Description</th>
 </tr>
 <tr id="i0" class="altColor">
-<td class="colFirst"><code>static void</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#addEntryList(java.util.List)">addEntryList</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="LineageCacheEntry.html" title="class in org.apache.sysds.runtime.lineage">LineageCacheEntry</a>&gt;&nbsp;entryList)</code></th>
+<td class="colFirst"><code>static jcuda.Pointer</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#copyToHostCache(org.apache.sysds.runtime.lineage.LineageCacheEntry)">copyToHostCache</a></span>&#8203;(<a href="LineageCacheEntry.html" title="class in org.apache.sysds.runtime.lineage">LineageCacheEntry</a>&nbsp;entry)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i1" class="rowColor">
@@ -219,50 +219,60 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i4" class="altColor">
+<td class="colFirst"><code>static boolean</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#isGPUCacheFreeQEmpty()">isGPUCacheFreeQEmpty</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i5" class="rowColor">
 <td class="colFirst"><code>static int</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#numPointersCached()">numPointersCached</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i5" class="rowColor">
-<td class="colFirst"><code>static <a href="LineageCacheEntry.html" title="class in org.apache.sysds.runtime.lineage">LineageCacheEntry</a></code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#peekFirstEntry()">peekFirstEntry</a></span>()</code></th>
-<td class="colLast">&nbsp;</td>
-</tr>
 <tr id="i6" class="altColor">
 <td class="colFirst"><code>static <a href="LineageCacheEntry.html" title="class in org.apache.sysds.runtime.lineage">LineageCacheEntry</a></code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#pollFirstEntry()">pollFirstEntry</a></span>()</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#peekFirstFreeEntry(long)">peekFirstFreeEntry</a></span>&#8203;(long&nbsp;size)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i7" class="rowColor">
+<td class="colFirst"><code>static <a href="LineageCacheEntry.html" title="class in org.apache.sysds.runtime.lineage">LineageCacheEntry</a></code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#pollFirstFreeEntry(long)">pollFirstFreeEntry</a></span>&#8203;(long&nbsp;size)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i8" class="altColor">
+<td class="colFirst"><code>static <a href="LineageCacheEntry.html" title="class in org.apache.sysds.runtime.lineage">LineageCacheEntry</a></code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#pollFistFreeNotExact(long)">pollFistFreeNotExact</a></span>&#8203;(long&nbsp;size)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i9" class="rowColor">
 <td class="colFirst"><code>static boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#probeLiveCachedPointers(jcuda.Pointer)">probeLiveCachedPointers</a></span>&#8203;(jcuda.Pointer&nbsp;ptr)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i8" class="altColor">
-<td class="colFirst"><code>static void</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#removeEntry(org.apache.sysds.runtime.lineage.LineageCacheEntry)">removeEntry</a></span>&#8203;(<a href="LineageCacheEntry.html" title="class in org.apache.sysds.runtime.lineage">LineageCacheEntry</a>&nbsp;e)</code></th>
-<td class="colLast">&nbsp;</td>
-</tr>
-<tr id="i9" class="rowColor">
-<td class="colFirst"><code>static void</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#removeFromDeviceCache(org.apache.sysds.runtime.lineage.LineageCacheEntry,java.lang.String,boolean)">removeFromDeviceCache</a></span>&#8203;(<a href="LineageCacheEntry.html" title="class in org.apache.sysds.runtime.lineage">LineageCacheEntry</a>&nbsp;entry,
-                     <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName,
-                     boolean&nbsp;alreadyCopied)</code></th>
-<td class="colLast">&nbsp;</td>
-</tr>
 <tr id="i10" class="altColor">
+<td class="colFirst"><code>static void</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#removeFreeEntry(org.apache.sysds.runtime.lineage.LineageCacheEntry)">removeFreeEntry</a></span>&#8203;(<a href="LineageCacheEntry.html" title="class in org.apache.sysds.runtime.lineage">LineageCacheEntry</a>&nbsp;e)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i11" class="rowColor">
+<td class="colFirst"><code>static void</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#removeFromDeviceCache(org.apache.sysds.runtime.lineage.LineageCacheEntry,jcuda.Pointer,boolean)">removeFromDeviceCache</a></span>&#8203;(<a href="LineageCacheEntry.html" title="class in org.apache.sysds.runtime.lineage">LineageCacheEntry</a>&nbsp;entry,
+                     jcuda.Pointer&nbsp;ptr,
+                     boolean&nbsp;removeFromCache)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i12" class="altColor">
 <td class="colFirst"><code>static void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#setGPUContext(org.apache.sysds.runtime.instructions.gpu.context.GPUContext)">setGPUContext</a></span>&#8203;(<a href="../instructions/gpu/context/GPUContext.html" title="class in org.apache.sysds.runtime.instructions.gpu.context">GPUContext</a>&nbsp;gpuCtx)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i11" class="rowColor">
+<tr id="i13" class="rowColor">
 <td class="colFirst"><code>static void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#setGPULineageCacheLimit()">setGPULineageCacheLimit</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Set the max constraint for the lineage cache in GPU</div>
 </td>
 </tr>
-<tr id="i12" class="altColor">
+<tr id="i14" class="altColor">
 <td class="colFirst"><code>static long</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#totalMemoryCached()">totalMemoryCached</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
@@ -375,40 +385,49 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <pre class="methodSignature">public static&nbsp;boolean&nbsp;isGPUCacheEmpty()</pre>
 </li>
 </ul>
-<a id="pollFirstEntry()">
+<a id="isGPUCacheFreeQEmpty()">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
-<h4>pollFirstEntry</h4>
-<pre class="methodSignature">public static&nbsp;<a href="LineageCacheEntry.html" title="class in org.apache.sysds.runtime.lineage">LineageCacheEntry</a>&nbsp;pollFirstEntry()</pre>
+<h4>isGPUCacheFreeQEmpty</h4>
+<pre class="methodSignature">public static&nbsp;boolean&nbsp;isGPUCacheFreeQEmpty()</pre>
 </li>
 </ul>
-<a id="peekFirstEntry()">
+<a id="pollFirstFreeEntry(long)">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
-<h4>peekFirstEntry</h4>
-<pre class="methodSignature">public static&nbsp;<a href="LineageCacheEntry.html" title="class in org.apache.sysds.runtime.lineage">LineageCacheEntry</a>&nbsp;peekFirstEntry()</pre>
+<h4>pollFirstFreeEntry</h4>
+<pre class="methodSignature">public static&nbsp;<a href="LineageCacheEntry.html" title="class in org.apache.sysds.runtime.lineage">LineageCacheEntry</a>&nbsp;pollFirstFreeEntry&#8203;(long&nbsp;size)</pre>
 </li>
 </ul>
-<a id="removeEntry(org.apache.sysds.runtime.lineage.LineageCacheEntry)">
+<a id="pollFistFreeNotExact(long)">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
-<h4>removeEntry</h4>
-<pre class="methodSignature">public static&nbsp;void&nbsp;removeEntry&#8203;(<a href="LineageCacheEntry.html" title="class in org.apache.sysds.runtime.lineage">LineageCacheEntry</a>&nbsp;e)</pre>
+<h4>pollFistFreeNotExact</h4>
+<pre class="methodSignature">public static&nbsp;<a href="LineageCacheEntry.html" title="class in org.apache.sysds.runtime.lineage">LineageCacheEntry</a>&nbsp;pollFistFreeNotExact&#8203;(long&nbsp;size)</pre>
 </li>
 </ul>
-<a id="addEntryList(java.util.List)">
+<a id="peekFirstFreeEntry(long)">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
-<h4>addEntryList</h4>
-<pre class="methodSignature">public static&nbsp;void&nbsp;addEntryList&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="LineageCacheEntry.html" title="class in org.apache.sysds.runtime.lineage">LineageCacheEntry</a>&gt;&nbsp;entryList)</pre>
+<h4>peekFirstFreeEntry</h4>
+<pre class="methodSignature">public static&nbsp;<a href="LineageCacheEntry.html" title="class in org.apache.sysds.runtime.lineage">LineageCacheEntry</a>&nbsp;peekFirstFreeEntry&#8203;(long&nbsp;size)</pre>
+</li>
+</ul>
+<a id="removeFreeEntry(org.apache.sysds.runtime.lineage.LineageCacheEntry)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>removeFreeEntry</h4>
+<pre class="methodSignature">public static&nbsp;void&nbsp;removeFreeEntry&#8203;(<a href="LineageCacheEntry.html" title="class in org.apache.sysds.runtime.lineage">LineageCacheEntry</a>&nbsp;e)</pre>
 </li>
 </ul>
 <a id="numPointersCached()">
@@ -438,15 +457,24 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <pre class="methodSignature">public static&nbsp;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/Set.html?is-external=true" title="class or interface in java.util" class="externalLink">Set</a>&lt;jcuda.Pointer&gt;&nbsp;getAllCachedPointers()</pre>
 </li>
 </ul>
-<a id="removeFromDeviceCache(org.apache.sysds.runtime.lineage.LineageCacheEntry,java.lang.String,boolean)">
+<a id="copyToHostCache(org.apache.sysds.runtime.lineage.LineageCacheEntry)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>copyToHostCache</h4>
+<pre class="methodSignature">public static&nbsp;jcuda.Pointer&nbsp;copyToHostCache&#8203;(<a href="LineageCacheEntry.html" title="class in org.apache.sysds.runtime.lineage">LineageCacheEntry</a>&nbsp;entry)</pre>
+</li>
+</ul>
+<a id="removeFromDeviceCache(org.apache.sysds.runtime.lineage.LineageCacheEntry,jcuda.Pointer,boolean)">
 <!--   -->
 </a>
 <ul class="blockListLast">
 <li class="blockList">
 <h4>removeFromDeviceCache</h4>
 <pre class="methodSignature">public static&nbsp;void&nbsp;removeFromDeviceCache&#8203;(<a href="LineageCacheEntry.html" title="class in org.apache.sysds.runtime.lineage">LineageCacheEntry</a>&nbsp;entry,
-                                         <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName,
-                                         boolean&nbsp;alreadyCopied)</pre>
+                                         jcuda.Pointer&nbsp;ptr,
+                                         boolean&nbsp;removeFromCache)</pre>
 </li>
 </ul>
 </li>

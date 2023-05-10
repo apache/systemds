@@ -184,11 +184,12 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 </tr>
 <tr id="i1" class="rowColor">
 <td class="colFirst"><code>static void</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#decompressTo(org.apache.sysds.runtime.compress.CompressedMatrixBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock,int,int,int)">decompressTo</a></span>&#8203;(<a href="../CompressedMatrixBlock.html" title="class in org.apache.sysds.runtime.compress">CompressedMatrixBlock</a>&nbsp;cmb,
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#decompressTo(org.apache.sysds.runtime.compress.CompressedMatrixBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock,int,int,int,boolean)">decompressTo</a></span>&#8203;(<a href="../CompressedMatrixBlock.html" title="class in org.apache.sysds.runtime.compress">CompressedMatrixBlock</a>&nbsp;cmb,
             <a href="../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;ret,
             int&nbsp;rowOffset,
             int&nbsp;colOffset,
-            int&nbsp;k)</code></th>
+            int&nbsp;k,
+            boolean&nbsp;countNNz)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 </table>
@@ -244,7 +245,7 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
                                      int&nbsp;k)</pre>
 </li>
 </ul>
-<a id="decompressTo(org.apache.sysds.runtime.compress.CompressedMatrixBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock,int,int,int)">
+<a id="decompressTo(org.apache.sysds.runtime.compress.CompressedMatrixBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock,int,int,int,boolean)">
 <!--   -->
 </a>
 <ul class="blockListLast">
@@ -254,7 +255,8 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
                                 <a href="../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;ret,
                                 int&nbsp;rowOffset,
                                 int&nbsp;colOffset,
-                                int&nbsp;k)</pre>
+                                int&nbsp;k,
+                                boolean&nbsp;countNNz)</pre>
 </li>
 </ul>
 </li>

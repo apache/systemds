@@ -27,7 +27,7 @@
     catch(err) {
     }
 //-->
-var data = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10};
+var data = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10};
 var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -208,41 +208,48 @@ extends <a href="ADictBasedColGroup.html" title="class in org.apache.sysds.runti
 </tr>
 <tr id="i1" class="rowColor">
 <td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#clear()">clear</a></span>()</code></th>
+<td class="colLast">
+<div class="block">Clear variables that can be recomputed from the allocation of this columngroup.</div>
+</td>
+</tr>
+<tr id="i2" class="altColor">
+<td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#computeColSums(double%5B%5D,int)">computeColSums</a></span>&#8203;(double[]&nbsp;c,
               int&nbsp;nRows)</code></th>
 <td class="colLast">
 <div class="block">Compute the column sum</div>
 </td>
 </tr>
-<tr id="i2" class="altColor">
+<tr id="i3" class="rowColor">
 <td class="colFirst"><code>long</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#estimateInMemorySize()">estimateInMemorySize</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Get the upper bound estimate of in memory allocation for the column group.</div>
 </td>
 </tr>
-<tr id="i3" class="rowColor">
+<tr id="i4" class="altColor">
 <td class="colFirst"><code>int[]</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getCounts()">getCounts</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Returns the counts of values inside the dictionary.</div>
 </td>
 </tr>
-<tr id="i4" class="altColor">
+<tr id="i5" class="rowColor">
 <td class="colFirst"><code>long</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getNumberNonZeros(int)">getNumberNonZeros</a></span>&#8203;(int&nbsp;nRows)</code></th>
 <td class="colLast">
 <div class="block">Get the number of nonZeros contained in this column group.</div>
 </td>
 </tr>
-<tr id="i5" class="rowColor">
+<tr id="i6" class="altColor">
 <td class="colFirst"><code>int</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getNumValues()">getNumValues</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Obtain number of distinct tuples in contained sets of values associated with this column group.</div>
 </td>
 </tr>
-<tr id="i6" class="altColor">
+<tr id="i7" class="rowColor">
 <td class="colFirst"><code><a href="AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#replace(double,double)">replace</a></span>&#8203;(double&nbsp;pattern,
        double&nbsp;replace)</code></th>
@@ -250,7 +257,7 @@ extends <a href="ADictBasedColGroup.html" title="class in org.apache.sysds.runti
 <div class="block">Make a copy of the column group values, and replace all values that match pattern with replacement value.</div>
 </td>
 </tr>
-<tr id="i7" class="rowColor">
+<tr id="i8" class="altColor">
 <td class="colFirst"><code><a href="AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#rexpandCols(int,boolean,boolean,int)">rexpandCols</a></span>&#8203;(int&nbsp;max,
            boolean&nbsp;ignore,
@@ -260,7 +267,7 @@ extends <a href="ADictBasedColGroup.html" title="class in org.apache.sysds.runti
 <div class="block">Expand the column group to multiple columns.</div>
 </td>
 </tr>
-<tr id="i8" class="altColor">
+<tr id="i9" class="rowColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#toString()">toString</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
@@ -468,6 +475,21 @@ extends <a href="ADictBasedColGroup.html" title="class in org.apache.sysds.runti
 <dd><code>nRows</code> - The number of rows in the column group.</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>A new column group containing max number of columns.</dd>
+</dl>
+</li>
+</ul>
+<a id="clear()">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>clear</h4>
+<pre class="methodSignature">public&nbsp;void&nbsp;clear()</pre>
+<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="AColGroup.html#clear()">AColGroup</a></code></span></div>
+<div class="block">Clear variables that can be recomputed from the allocation of this columngroup.</div>
+<dl>
+<dt><span class="overrideSpecifyLabel">Overrides:</span></dt>
+<dd><code><a href="AColGroup.html#clear()">clear</a></code>&nbsp;in class&nbsp;<code><a href="AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a></code></dd>
 </dl>
 </li>
 </ul>

@@ -209,11 +209,12 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 </tr>
 <tr id="i0" class="altColor">
 <td class="colFirst"><code>static void</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#optimize(org.apache.sysds.runtime.controlprogram.ParForProgramBlock.POptMode,org.apache.sysds.parser.ParForStatementBlock,org.apache.sysds.runtime.controlprogram.ParForProgramBlock,org.apache.sysds.runtime.controlprogram.context.ExecutionContext,boolean)">optimize</a></span>&#8203;(<a href="../../ParForProgramBlock.POptMode.html" title="enum in org.apache.sysds.runtime.controlprogram">ParForProgramBlock.POptMode</a>&nbsp;type,
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#optimize(org.apache.sysds.runtime.controlprogram.ParForProgramBlock.POptMode,org.apache.sysds.parser.ParForStatementBlock,org.apache.sysds.runtime.controlprogram.ParForProgramBlock,org.apache.sysds.runtime.controlprogram.context.ExecutionContext,boolean,int)">optimize</a></span>&#8203;(<a href="../../ParForProgramBlock.POptMode.html" title="enum in org.apache.sysds.runtime.controlprogram">ParForProgramBlock.POptMode</a>&nbsp;type,
         <a href="../../../../parser/ParForStatementBlock.html" title="class in org.apache.sysds.parser">ParForStatementBlock</a>&nbsp;sb,
         <a href="../../ParForProgramBlock.html" title="class in org.apache.sysds.runtime.controlprogram">ParForProgramBlock</a>&nbsp;pb,
         <a href="../../context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec,
-        boolean&nbsp;monitor)</code></th>
+        boolean&nbsp;monitor,
+        int&nbsp;numRuns)</code></th>
 <td class="colLast">
 <div class="block">Called once per top-level parfor (during runtime, on parfor execute)
  in order to optimize the specific parfor program block.</div>
@@ -290,7 +291,7 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <!--   -->
 </a>
 <h3>Method Detail</h3>
-<a id="optimize(org.apache.sysds.runtime.controlprogram.ParForProgramBlock.POptMode,org.apache.sysds.parser.ParForStatementBlock,org.apache.sysds.runtime.controlprogram.ParForProgramBlock,org.apache.sysds.runtime.controlprogram.context.ExecutionContext,boolean)">
+<a id="optimize(org.apache.sysds.runtime.controlprogram.ParForProgramBlock.POptMode,org.apache.sysds.parser.ParForStatementBlock,org.apache.sysds.runtime.controlprogram.ParForProgramBlock,org.apache.sysds.runtime.controlprogram.context.ExecutionContext,boolean,int)">
 <!--   -->
 </a>
 <ul class="blockList">
@@ -300,7 +301,8 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
                             <a href="../../../../parser/ParForStatementBlock.html" title="class in org.apache.sysds.parser">ParForStatementBlock</a>&nbsp;sb,
                             <a href="../../ParForProgramBlock.html" title="class in org.apache.sysds.runtime.controlprogram">ParForProgramBlock</a>&nbsp;pb,
                             <a href="../../context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec,
-                            boolean&nbsp;monitor)</pre>
+                            boolean&nbsp;monitor,
+                            int&nbsp;numRuns)</pre>
 <div class="block">Called once per top-level parfor (during runtime, on parfor execute)
  in order to optimize the specific parfor program block.
  
@@ -312,6 +314,7 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <dd><code>pb</code> - parfor program block</dd>
 <dd><code>ec</code> - execution context</dd>
 <dd><code>monitor</code> - ?</dd>
+<dd><code>numRuns</code> - number of optimizations performed so far</dd>
 </dl>
 </li>
 </ul>

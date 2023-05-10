@@ -1259,10 +1259,15 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <li class="blockList">
 <h3>Serialized Fields</h3>
 <ul class="blockList">
-<li class="blockListLast">
+<li class="blockList">
 <h4>cacheRow</h4>
 <pre><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/ThreadLocal.html?is-external=true" title="class or interface in java.lang" class="externalLink">ThreadLocal</a>&lt;org.apache.sysds.runtime.compress.colgroup.offset.AOffset.OffsetCache&gt; cacheRow</pre>
 <div class="block">Thread local cache for a single recently used Iterator, this is used for cache blocking</div>
+</li>
+<li class="blockListLast">
+<h4>skipList</h4>
+<pre><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/ref/SoftReference.html?is-external=true" title="class or interface in java.lang.ref" class="externalLink">SoftReference</a>&lt;org.apache.sysds.runtime.compress.colgroup.offset.AOffset.OffsetCacheV2[]&gt; skipList</pre>
+<div class="block">SoftReference of the skip list to be dematerialized on memory pressure</div>
 </li>
 </ul>
 </li>
@@ -1586,6 +1591,22 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <dl class="nameValue">
 <dt>serialVersionUID:</dt>
 <dd>966405324406154236L</dd>
+</dl>
+</li>
+</ul>
+</section>
+</li>
+<li class="blockList">
+<section>
+<h2 title="Package">Package&nbsp;org.apache.sysds.runtime.compress.utils</h2>
+<ul class="blockList">
+<li class="blockList"><a id="org.apache.sysds.runtime.compress.utils.CompressRDDClean">
+<!--   -->
+</a>
+<h3>Class <a href="org/apache/sysds/runtime/compress/utils/CompressRDDClean.html" title="class in org.apache.sysds.runtime.compress.utils">org.apache.sysds.runtime.compress.utils.CompressRDDClean</a> extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a> implements Serializable</h3>
+<dl class="nameValue">
+<dt>serialVersionUID:</dt>
+<dd>-704403012606821854L</dd>
 </dl>
 </li>
 </ul>
@@ -8439,6 +8460,40 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
                    throws <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></pre>
 <div class="block">Redirects the default java serialization via externalizable to our default
  hadoop writable serialization for efficient broadcast/rdd serialization.</div>
+<dl>
+<dt><span class="throwsLabel">Throws:</span></dt>
+<dd><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></code> - if IOException occurs</dd>
+</dl>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="blockList"><a id="org.apache.sysds.runtime.transform.decode.DecoderBin">
+<!--   -->
+</a>
+<h3>Class <a href="org/apache/sysds/runtime/transform/decode/DecoderBin.html" title="class in org.apache.sysds.runtime.transform.decode">org.apache.sysds.runtime.transform.decode.DecoderBin</a> extends <a href="org/apache/sysds/runtime/transform/decode/Decoder.html" title="class in org.apache.sysds.runtime.transform.decode">Decoder</a> implements Serializable</h3>
+<dl class="nameValue">
+<dt>serialVersionUID:</dt>
+<dd>-3784249774608228805L</dd>
+</dl>
+<ul class="blockList">
+<li class="blockList">
+<h3>Serialization Methods</h3>
+<ul class="blockList">
+<li class="blockList">
+<h4>readExternal</h4>
+<pre class="methodSignature">public&nbsp;void&nbsp;readExternal&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/ObjectInput.html?is-external=true" title="class or interface in java.io" class="externalLink">ObjectInput</a>&nbsp;in)
+                  throws <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></pre>
+<dl>
+<dt><span class="throwsLabel">Throws:</span></dt>
+<dd><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></code> - if IOException occur</dd>
+</dl>
+</li>
+<li class="blockListLast">
+<h4>writeExternal</h4>
+<pre class="methodSignature">public&nbsp;void&nbsp;writeExternal&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/ObjectOutput.html?is-external=true" title="class or interface in java.io" class="externalLink">ObjectOutput</a>&nbsp;out)
+                   throws <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></pre>
 <dl>
 <dt><span class="throwsLabel">Throws:</span></dt>
 <dd><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></code> - if IOException occurs</dd>

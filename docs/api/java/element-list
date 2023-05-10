@@ -41,6 +41,7 @@ org.apache.sysds.runtime.compress.estim.encoding
 org.apache.sysds.runtime.compress.estim.sample
 org.apache.sysds.runtime.compress.io
 org.apache.sysds.runtime.compress.lib
+org.apache.sysds.runtime.compress.plan
 org.apache.sysds.runtime.compress.readers
 org.apache.sysds.runtime.compress.utils
 org.apache.sysds.runtime.compress.workload

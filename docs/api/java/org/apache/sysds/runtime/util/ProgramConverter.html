@@ -27,7 +27,7 @@
     catch(err) {
     }
 //-->
-var data = {"i0":9,"i1":9,"i2":9,"i3":9,"i4":9,"i5":9,"i6":9,"i7":9,"i8":9,"i9":9,"i10":9,"i11":9,"i12":9,"i13":9,"i14":9,"i15":9,"i16":9,"i17":9,"i18":9,"i19":9,"i20":9,"i21":9,"i22":9,"i23":9,"i24":9,"i25":9,"i26":9,"i27":9,"i28":9,"i29":9,"i30":9,"i31":9,"i32":9};
+var data = {"i0":9,"i1":9,"i2":9,"i3":9,"i4":9,"i5":9,"i6":9,"i7":9,"i8":9,"i9":9,"i10":9,"i11":9,"i12":9,"i13":9,"i14":9,"i15":9,"i16":9,"i17":9,"i18":9,"i19":9,"i20":9,"i21":9,"i22":9,"i23":9,"i24":9,"i25":9,"i26":9,"i27":9,"i28":9,"i29":9,"i30":9,"i31":9,"i32":9,"i33":9};
 var tabs = {65535:["t0","All Methods"],1:["t1","Static Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -539,6 +539,12 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i15" class="rowColor">
+<td class="colFirst"><code>static <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/ArrayList.html?is-external=true" title="class or interface in java.util" class="externalLink">ArrayList</a>&lt;<a href="../instructions/Instruction.html" title="class in org.apache.sysds.runtime.instructions">Instruction</a>&gt;</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#createShallowCopyInstructionSet(java.util.ArrayList,long)">createShallowCopyInstructionSet</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/ArrayList.html?is-external=true" title="class or interface in java.util" class="externalLink">ArrayList</a>&lt;<a href="../instructions/Instruction.html" title="class in org.apache.sysds.runtime.instructions">Instruction</a>&gt;&nbsp;insts,
+                               long&nbsp;pid)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i16" class="altColor">
 <td class="colFirst"><code>static <a href="../../parser/StatementBlock.html" title="class in org.apache.sysds.parser">StatementBlock</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#createStatementBlockCopy(org.apache.sysds.parser.StatementBlock,long,boolean,boolean)">createStatementBlockCopy</a></span>&#8203;(<a href="../../parser/StatementBlock.html" title="class in org.apache.sysds.parser">StatementBlock</a>&nbsp;sb,
                         long&nbsp;pid,
@@ -546,13 +552,13 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
                         boolean&nbsp;forceDeepCopy)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i16" class="altColor">
+<tr id="i17" class="rowColor">
 <td class="colFirst"><code>static <a href="../../parser/WhileStatementBlock.html" title="class in org.apache.sysds.parser">WhileStatementBlock</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#createWhileStatementBlockCopy(org.apache.sysds.parser.WhileStatementBlock,boolean)">createWhileStatementBlockCopy</a></span>&#8203;(<a href="../../parser/WhileStatementBlock.html" title="class in org.apache.sysds.parser">WhileStatementBlock</a>&nbsp;sb,
                              boolean&nbsp;forceDeepCopy)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i17" class="rowColor">
+<tr id="i18" class="altColor">
 <td class="colFirst"><code>static <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a>[]</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#parseDataObject(java.lang.String)">parseDataObject</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;in)</code></th>
 <td class="colLast">
@@ -560,32 +566,32 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
  related symbol tables can be hierarchically structured.</div>
 </td>
 </tr>
-<tr id="i18" class="altColor">
+<tr id="i19" class="rowColor">
 <td class="colFirst"><code>static <a href="../controlprogram/parfor/ParForBody.html" title="class in org.apache.sysds.runtime.controlprogram.parfor">ParForBody</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#parseParForBody(java.lang.String,int)">parseParForBody</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;in,
                int&nbsp;id)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i19" class="rowColor">
+<tr id="i20" class="altColor">
 <td class="colFirst"><code>static <a href="../controlprogram/parfor/ParForBody.html" title="class in org.apache.sysds.runtime.controlprogram.parfor">ParForBody</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#parseParForBody(java.lang.String,int,boolean)">parseParForBody</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;in,
                int&nbsp;id,
                boolean&nbsp;inSpark)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i20" class="altColor">
+<tr id="i21" class="rowColor">
 <td class="colFirst"><code>static <a href="../controlprogram/Program.html" title="class in org.apache.sysds.runtime.controlprogram">Program</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#parseProgram(java.lang.String,int)">parseProgram</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;in,
             int&nbsp;id)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i21" class="rowColor">
+<tr id="i22" class="altColor">
 <td class="colFirst"><code>static <a href="../controlprogram/paramserv/SparkPSBody.html" title="class in org.apache.sysds.runtime.controlprogram.paramserv">SparkPSBody</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#parseSparkPSBody(java.lang.String,int)">parseSparkPSBody</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;in,
                 int&nbsp;id)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i22" class="altColor">
+<tr id="i23" class="rowColor">
 <td class="colFirst"><code>static <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/ArrayList.html?is-external=true" title="class or interface in java.util" class="externalLink">ArrayList</a>&lt;<a href="../controlprogram/ProgramBlock.html" title="class in org.apache.sysds.runtime.controlprogram">ProgramBlock</a>&gt;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#rcreateDeepCopyProgramBlocks(java.util.ArrayList,long,int,java.util.Set,java.util.Set,boolean,boolean)">rcreateDeepCopyProgramBlocks</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/ArrayList.html?is-external=true" title="class or interface in java.util" class="externalLink">ArrayList</a>&lt;<a href="../controlprogram/ProgramBlock.html" title="class in org.apache.sysds.runtime.controlprogram">ProgramBlock</a>&gt;&nbsp;childBlocks,
                             long&nbsp;pid,
@@ -599,59 +605,59 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
  specified parallel worker in order to avoid conflicts between parworkers.</div>
 </td>
 </tr>
-<tr id="i23" class="rowColor">
+<tr id="i24" class="altColor">
 <td class="colFirst"><code>static <a href="../../parser/StatementBlock.html" title="class in org.apache.sysds.parser">StatementBlock</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#rCreateDeepCopyStatementBlock(org.apache.sysds.parser.StatementBlock)">rCreateDeepCopyStatementBlock</a></span>&#8203;(<a href="../../parser/StatementBlock.html" title="class in org.apache.sysds.parser">StatementBlock</a>&nbsp;sb)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i24" class="altColor">
+<tr id="i25" class="rowColor">
 <td class="colFirst"><code>static <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#saveReplaceFilenameThreadID(java.lang.String,java.lang.String,java.lang.String)">saveReplaceFilenameThreadID</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;fname,
                            <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;pattern,
                            <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;replace)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i25" class="rowColor">
+<tr id="i26" class="altColor">
 <td class="colFirst"><code>static <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#serializeDataObject(java.lang.String,org.apache.sysds.runtime.instructions.cp.Data)">serializeDataObject</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;key,
                    <a href="../instructions/cp/Data.html" title="class in org.apache.sysds.runtime.instructions.cp">Data</a>&nbsp;dat)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i26" class="altColor">
+<tr id="i27" class="rowColor">
 <td class="colFirst"><code>static <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#serializeList(java.util.List)">serializeList</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&gt;&nbsp;elements)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i27" class="rowColor">
+<tr id="i28" class="altColor">
 <td class="colFirst"><code>static <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#serializeList(java.util.List,java.lang.String)">serializeList</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&gt;&nbsp;elements,
              <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;delim)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i28" class="altColor">
+<tr id="i29" class="rowColor">
 <td class="colFirst"><code>static <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#serializeParForBody(org.apache.sysds.runtime.controlprogram.parfor.ParForBody)">serializeParForBody</a></span>&#8203;(<a href="../controlprogram/parfor/ParForBody.html" title="class in org.apache.sysds.runtime.controlprogram.parfor">ParForBody</a>&nbsp;body)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i29" class="rowColor">
+<tr id="i30" class="altColor">
 <td class="colFirst"><code>static <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#serializeParForBody(org.apache.sysds.runtime.controlprogram.parfor.ParForBody,java.util.HashMap)">serializeParForBody</a></span>&#8203;(<a href="../controlprogram/parfor/ParForBody.html" title="class in org.apache.sysds.runtime.controlprogram.parfor">ParForBody</a>&nbsp;body,
                    <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/HashMap.html?is-external=true" title="class or interface in java.util" class="externalLink">HashMap</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>,&#8203;byte[]&gt;&nbsp;clsMap)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i30" class="altColor">
+<tr id="i31" class="rowColor">
 <td class="colFirst"><code>static <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#serializeProgram(org.apache.sysds.runtime.controlprogram.Program,java.util.ArrayList,java.util.HashMap)">serializeProgram</a></span>&#8203;(<a href="../controlprogram/Program.html" title="class in org.apache.sysds.runtime.controlprogram">Program</a>&nbsp;prog,
                 <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/ArrayList.html?is-external=true" title="class or interface in java.util" class="externalLink">ArrayList</a>&lt;<a href="../controlprogram/ProgramBlock.html" title="class in org.apache.sysds.runtime.controlprogram">ProgramBlock</a>&gt;&nbsp;pbs,
                 <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/HashMap.html?is-external=true" title="class or interface in java.util" class="externalLink">HashMap</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>,&#8203;byte[]&gt;&nbsp;clsMap)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i31" class="rowColor">
+<tr id="i32" class="altColor">
 <td class="colFirst"><code>static <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#serializeResultVariables(java.util.List)">serializeResultVariables</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="../../parser/ParForStatementBlock.ResultVar.html" title="class in org.apache.sysds.parser">ParForStatementBlock.ResultVar</a>&gt;&nbsp;vars)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i32" class="altColor">
+<tr id="i33" class="rowColor">
 <td class="colFirst"><code>static <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#serializeSparkPSBody(org.apache.sysds.runtime.controlprogram.paramserv.SparkPSBody,java.util.HashMap)">serializeSparkPSBody</a></span>&#8203;(<a href="../controlprogram/paramserv/SparkPSBody.html" title="class in org.apache.sysds.runtime.controlprogram.paramserv">SparkPSBody</a>&nbsp;body,
                     <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/HashMap.html?is-external=true" title="class or interface in java.util" class="externalLink">HashMap</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>,&#8203;byte[]&gt;&nbsp;clsMap)</code></th>
@@ -1450,6 +1456,16 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>list of instructions</dd>
 </dl>
+</li>
+</ul>
+<a id="createShallowCopyInstructionSet(java.util.ArrayList,long)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>createShallowCopyInstructionSet</h4>
+<pre class="methodSignature">public static&nbsp;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/ArrayList.html?is-external=true" title="class or interface in java.util" class="externalLink">ArrayList</a>&lt;<a href="../instructions/Instruction.html" title="class in org.apache.sysds.runtime.instructions">Instruction</a>&gt;&nbsp;createShallowCopyInstructionSet&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/ArrayList.html?is-external=true" title="class or interface in java.util" class="externalLink">ArrayList</a>&lt;<a href="../instructions/Instruction.html" title="class in org.apache.sysds.runtime.instructions">Instruction</a>&gt;&nbsp;insts,
+                                                                     long&nbsp;pid)</pre>
 </li>
 </ul>
 <a id="cloneInstruction(org.apache.sysds.runtime.instructions.Instruction,long,boolean,boolean)">

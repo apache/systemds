@@ -24,6 +24,7 @@
 <ul>
 <li><a href="org/apache/sysds/runtime/compress/bitmap/ABitmap.html" title="class in org.apache.sysds.runtime.compress.bitmap">ABitmap</a></li>
 <li><a href="org/apache/sysds/runtime/frame/data/columns/ABooleanArray.html" title="class in org.apache.sysds.runtime.frame.data.columns">ABooleanArray</a></li>
+<li><a href="org/apache/sysds/runtime/compress/colgroup/scheme/ACLAScheme.html" title="class in org.apache.sysds.runtime.compress.colgroup.scheme">ACLAScheme</a></li>
 <li><a href="org/apache/sysds/runtime/compress/colgroup/AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a></li>
 <li><a href="org/apache/sysds/runtime/compress/colgroup/AColGroup.CompressionType.html" title="enum in org.apache.sysds.runtime.compress.colgroup">AColGroup.CompressionType</a></li>
 <li><a href="org/apache/sysds/runtime/compress/colgroup/AColGroupCompressed.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroupCompressed</a></li>
@@ -33,6 +34,9 @@
 <li><a href="org/apache/sysds/runtime/compress/cocode/AColumnCoCoder.html" title="class in org.apache.sysds.runtime.compress.cocode">AColumnCoCoder</a></li>
 <li><a href="org/apache/sysds/runtime/compress/estim/AComEst.html" title="class in org.apache.sysds.runtime.compress.estim">AComEst</a></li>
 <li><a href="org/apache/sysds/runtime/compress/cost/ACostEstimate.html" title="class in org.apache.sysds.runtime.compress.cost">ACostEstimate</a></li>
+<li><a href="org/apache/sysds/runtime/compress/utils/ACount.html" title="class in org.apache.sysds.runtime.compress.utils">ACount</a></li>
+<li><a href="org/apache/sysds/runtime/compress/utils/ACount.DArrCounts.html" title="class in org.apache.sysds.runtime.compress.utils">ACount.DArrCounts</a></li>
+<li><a href="org/apache/sysds/runtime/compress/utils/ACount.DCounts.html" title="class in org.apache.sysds.runtime.compress.utils">ACount.DCounts</a></li>
 <li><a href="org/apache/sysds/runtime/compress/colgroup/ADictBasedColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">ADictBasedColGroup</a></li>
 <li><a href="org/apache/sysds/runtime/compress/colgroup/dictionary/ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></li>
 <li><a href="org/apache/sysds/runtime/compress/colgroup/dictionary/ADictionary.DictType.html" title="enum in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary.DictType</a></li>
@@ -294,6 +298,7 @@
 <li><a href="org/apache/sysds/lops/Compression.html" title="class in org.apache.sysds.lops">Compression</a></li>
 <li><a href="org/apache/sysds/lops/Compression.CompressConfig.html" title="enum in org.apache.sysds.lops">Compression.CompressConfig</a></li>
 <li><a href="org/apache/sysds/runtime/instructions/cp/CompressionCPInstruction.html" title="class in org.apache.sysds.runtime.instructions.cp">CompressionCPInstruction</a></li>
+<li><a href="org/apache/sysds/runtime/compress/plan/CompressionPlanFactory.html" title="class in org.apache.sysds.runtime.compress.plan">CompressionPlanFactory</a></li>
 <li><a href="org/apache/sysds/runtime/compress/CompressionSettings.html" title="class in org.apache.sysds.runtime.compress">CompressionSettings</a></li>
 <li><a href="org/apache/sysds/runtime/compress/CompressionSettingsBuilder.html" title="class in org.apache.sysds.runtime.compress">CompressionSettingsBuilder</a></li>
 <li><a href="org/apache/sysds/runtime/instructions/spark/CompressionSPInstruction.html" title="class in org.apache.sysds.runtime.instructions.spark">CompressionSPInstruction</a></li>
@@ -301,6 +306,7 @@
 <li><a href="org/apache/sysds/runtime/instructions/spark/CompressionSPInstruction.CompressionWorkloadFunction.html" title="class in org.apache.sysds.runtime.instructions.spark">CompressionSPInstruction.CompressionWorkloadFunction</a></li>
 <li><a href="org/apache/sysds/runtime/instructions/spark/CompressionSPInstruction.SizeFunction.html" title="class in org.apache.sysds.runtime.instructions.spark">CompressionSPInstruction.SizeFunction</a></li>
 <li><a href="org/apache/sysds/runtime/compress/CompressionStatistics.html" title="class in org.apache.sysds.runtime.compress">CompressionStatistics</a></li>
+<li><a href="org/apache/sysds/runtime/compress/utils/CompressRDDClean.html" title="class in org.apache.sysds.runtime.compress.utils">CompressRDDClean</a></li>
 <li><a href="org/apache/sysds/runtime/compress/io/CompressUnwrap.html" title="class in org.apache.sysds.runtime.compress.io">CompressUnwrap</a></li>
 <li><a href="org/apache/sysds/runtime/compress/io/CompressWrap.html" title="class in org.apache.sysds.runtime.compress.io">CompressWrap</a></li>
 <li><a href="org/apache/sysds/runtime/compress/cost/ComputationCostEstimator.html" title="class in org.apache.sysds.runtime.compress.cost">ComputationCostEstimator</a></li>
@@ -393,7 +399,6 @@
 <li><a href="org/apache/sysds/parser/dml/CustomErrorListener.ParseIssueType.html" title="enum in org.apache.sysds.parser.dml">CustomErrorListener.ParseIssueType</a></li>
 <li><a href="org/apache/sysds/runtime/iogen/CustomProperties.html" title="class in org.apache.sysds.runtime.iogen">CustomProperties</a></li>
 <li><a href="org/apache/sysds/lops/compile/Dag.html" title="class in org.apache.sysds.lops.compile">Dag</a></li>
-<li><a href="org/apache/sysds/runtime/compress/utils/DArrCounts.html" title="class in org.apache.sysds.runtime.compress.utils">DArrCounts</a></li>
 <li><a href="org/apache/sysds/lops/Data.html" title="class in org.apache.sysds.lops">Data</a></li>
 <li><a href="org/apache/sysds/runtime/instructions/cp/Data.html" title="class in org.apache.sysds.runtime.instructions.cp">Data</a></li>
 <li><a href="org/apache/sysds/utils/DataAugmentation.html" title="class in org.apache.sysds.utils">DataAugmentation</a></li>
@@ -426,10 +431,12 @@
 <li><a href="org/apache/sysds/runtime/compress/utils/DblArrayIntListHashMap.html" title="class in org.apache.sysds.runtime.compress.utils">DblArrayIntListHashMap</a></li>
 <li><a href="org/apache/sysds/runtime/compress/utils/DblArrayIntListHashMap.DArrayIListEntry.html" title="class in org.apache.sysds.runtime.compress.utils">DblArrayIntListHashMap.DArrayIListEntry</a></li>
 <li><a href="org/apache/sysds/runtime/controlprogram/paramserv/dp/DCLocalScheme.html" title="class in org.apache.sysds.runtime.controlprogram.paramserv.dp">DCLocalScheme</a></li>
-<li><a href="org/apache/sysds/runtime/compress/utils/DCounts.html" title="class in org.apache.sysds.runtime.compress.utils">DCounts</a></li>
 <li><a href="org/apache/sysds/runtime/controlprogram/paramserv/dp/DCSparkScheme.html" title="class in org.apache.sysds.runtime.controlprogram.paramserv.dp">DCSparkScheme</a></li>
 <li><a href="org/apache/sysds/runtime/compress/colgroup/scheme/DDCScheme.html" title="class in org.apache.sysds.runtime.compress.colgroup.scheme">DDCScheme</a></li>
+<li><a href="org/apache/sysds/runtime/compress/colgroup/scheme/DDCSchemeMC.html" title="class in org.apache.sysds.runtime.compress.colgroup.scheme">DDCSchemeMC</a></li>
+<li><a href="org/apache/sysds/runtime/compress/colgroup/scheme/DDCSchemeSC.html" title="class in org.apache.sysds.runtime.compress.colgroup.scheme">DDCSchemeSC</a></li>
 <li><a href="org/apache/sysds/runtime/transform/decode/Decoder.html" title="class in org.apache.sysds.runtime.transform.decode">Decoder</a></li>
+<li><a href="org/apache/sysds/runtime/transform/decode/DecoderBin.html" title="class in org.apache.sysds.runtime.transform.decode">DecoderBin</a></li>
 <li><a href="org/apache/sysds/runtime/transform/decode/DecoderComposite.html" title="class in org.apache.sysds.runtime.transform.decode">DecoderComposite</a></li>
 <li><a href="org/apache/sysds/runtime/transform/decode/DecoderDummycode.html" title="class in org.apache.sysds.runtime.transform.decode">DecoderDummycode</a></li>
 <li><a href="org/apache/sysds/runtime/transform/decode/DecoderFactory.html" title="class in org.apache.sysds.runtime.transform.decode">DecoderFactory</a></li>
@@ -871,6 +878,7 @@
 <li><a href="org/apache/sysds/hops/ipa/IPAPassRemoveUnusedFunctions.html" title="class in org.apache.sysds.hops.ipa">IPAPassRemoveUnusedFunctions</a></li>
 <li><a href="org/apache/sysds/hops/ipa/IPAPassReplaceEvalFunctionCalls.html" title="class in org.apache.sysds.hops.ipa">IPAPassReplaceEvalFunctionCalls</a></li>
 <li><a href="org/apache/sysds/hops/ipa/IPAPassRewriteFederatedPlan.html" title="class in org.apache.sysds.hops.ipa">IPAPassRewriteFederatedPlan</a></li>
+<li><a href="org/apache/sysds/runtime/compress/plan/IPlanEncode.html" title="interface in org.apache.sysds.runtime.compress.plan"><span class="interfaceName">IPlanEncode</span></a></li>
 <li><a href="org/apache/sysds/runtime/controlprogram/federated/monitoring/repositories/IRepository.html" title="interface in org.apache.sysds.runtime.controlprogram.federated.monitoring.repositories"><span class="interfaceName">IRepository</span></a></li>
 <li><a href="org/apache/sysds/runtime/instructions/spark/functions/IsBlockInList.html" title="class in org.apache.sysds.runtime.instructions.spark.functions">IsBlockInList</a></li>
 <li><a href="org/apache/sysds/runtime/instructions/spark/functions/IsBlockInRange.html" title="class in org.apache.sysds.runtime.instructions.spark.functions">IsBlockInRange</a></li>
@@ -1118,6 +1126,7 @@
 <li><a href="org/apache/sysds/runtime/instructions/spark/MultiReturnParameterizedBuiltinSPInstruction.TransformEncodeGroupFunction.html" title="class in org.apache.sysds.runtime.instructions.spark">MultiReturnParameterizedBuiltinSPInstruction.TransformEncodeGroupFunction</a></li>
 <li><a href="org/apache/sysds/hops/MultiThreadedHop.html" title="class in org.apache.sysds.hops">MultiThreadedHop</a></li>
 <li><a href="org/apache/sysds/runtime/matrix/operators/MultiThreadedOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">MultiThreadedOperator</a></li>
+<li><a href="org/apache/sysds/runtime/compress/plan/NaivePlanEncode.html" title="class in org.apache.sysds.runtime.compress.plan">NaivePlanEncode</a></li>
 <li><a href="org/apache/sysds/lops/Nary.html" title="class in org.apache.sysds.lops">Nary</a></li>
 <li><a href="org/apache/sysds/hops/NaryOp.html" title="class in org.apache.sysds.hops">NaryOp</a></li>
 <li><a href="org/apache/sysds/runtime/controlprogram/paramserv/NativeHEHelper.html" title="class in org.apache.sysds.runtime.controlprogram.paramserv">NativeHEHelper</a></li>
@@ -1336,6 +1345,7 @@
 <li><a href="org/apache/sysds/runtime/compress/readers/ReaderColumnSelectionDenseMultiBlockTransposed.html" title="class in org.apache.sysds.runtime.compress.readers">ReaderColumnSelectionDenseMultiBlockTransposed</a></li>
 <li><a href="org/apache/sysds/runtime/compress/readers/ReaderColumnSelectionDenseSingleBlock.html" title="class in org.apache.sysds.runtime.compress.readers">ReaderColumnSelectionDenseSingleBlock</a></li>
 <li><a href="org/apache/sysds/runtime/compress/readers/ReaderColumnSelectionDenseSingleBlockTransposed.html" title="class in org.apache.sysds.runtime.compress.readers">ReaderColumnSelectionDenseSingleBlockTransposed</a></li>
+<li><a href="org/apache/sysds/runtime/compress/readers/ReaderColumnSelectionEmpty.html" title="class in org.apache.sysds.runtime.compress.readers">ReaderColumnSelectionEmpty</a></li>
 <li><a href="org/apache/sysds/runtime/compress/readers/ReaderColumnSelectionSparse.html" title="class in org.apache.sysds.runtime.compress.readers">ReaderColumnSelectionSparse</a></li>
 <li><a href="org/apache/sysds/runtime/compress/readers/ReaderColumnSelectionSparseTransposed.html" title="class in org.apache.sysds.runtime.compress.readers">ReaderColumnSelectionSparseTransposed</a></li>
 <li><a href="org/apache/sysds/runtime/compress/io/ReaderCompressed.html" title="class in org.apache.sysds.runtime.compress.io">ReaderCompressed</a></li>
@@ -1410,6 +1420,7 @@
 <li><a href="org/apache/sysds/api/jmlc/ResultVariables.html" title="class in org.apache.sysds.api.jmlc">ResultVariables</a></li>
 <li><a href="org/apache/sysds/runtime/functionobjects/RevIndex.html" title="class in org.apache.sysds.runtime.functionobjects">RevIndex</a></li>
 <li><a href="org/apache/sysds/lops/rewrite/RewriteAddBroadcastLop.html" title="class in org.apache.sysds.lops.rewrite">RewriteAddBroadcastLop</a></li>
+<li><a href="org/apache/sysds/lops/rewrite/RewriteAddChkpointInLoop.html" title="class in org.apache.sysds.lops.rewrite">RewriteAddChkpointInLoop</a></li>
 <li><a href="org/apache/sysds/lops/rewrite/RewriteAddChkpointLop.html" title="class in org.apache.sysds.lops.rewrite">RewriteAddChkpointLop</a></li>
 <li><a href="org/apache/sysds/lops/rewrite/RewriteAddPrefetchLop.html" title="class in org.apache.sysds.lops.rewrite">RewriteAddPrefetchLop</a></li>
 <li><a href="org/apache/sysds/hops/rewrite/RewriteAlgebraicSimplificationDynamic.html" title="class in org.apache.sysds.hops.rewrite">RewriteAlgebraicSimplificationDynamic</a></li>
@@ -1456,6 +1467,7 @@
 <li><a href="org/apache/sysds/runtime/instructions/cp/ScalarObject.html" title="class in org.apache.sysds.runtime.instructions.cp">ScalarObject</a></li>
 <li><a href="org/apache/sysds/runtime/instructions/cp/ScalarObjectFactory.html" title="class in org.apache.sysds.runtime.instructions.cp">ScalarObjectFactory</a></li>
 <li><a href="org/apache/sysds/runtime/matrix/operators/ScalarOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">ScalarOperator</a></li>
+<li><a href="org/apache/sysds/runtime/compress/colgroup/scheme/SchemeFactory.html" title="class in org.apache.sysds.runtime.compress.colgroup.scheme">SchemeFactory</a></li>
 <li><a href="org/apache/sysds/api/mlcontext/Script.html" title="class in org.apache.sysds.api.mlcontext">Script</a></li>
 <li><a href="org/apache/sysds/api/mlcontext/ScriptExecutor.html" title="class in org.apache.sysds.api.mlcontext">ScriptExecutor</a></li>
 <li><a href="org/apache/sysds/api/ScriptExecutorUtils.html" title="class in org.apache.sysds.api">ScriptExecutorUtils</a></li>

@@ -179,7 +179,9 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <td class="colFirst"><code>static <a href="../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#combine(java.util.Map,int)">combine</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/Map.html?is-external=true" title="class or interface in java.util" class="externalLink">Map</a>&lt;<a href="../../matrix/data/MatrixIndexes.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixIndexes</a>,&#8203;<a href="../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&gt;&nbsp;m,
        int&nbsp;k)</code></th>
-<td class="colLast">&nbsp;</td>
+<td class="colLast">
+<div class="block">Combine the map of index matrix blocks into a single MatrixBlock.</div>
+</td>
 </tr>
 <tr id="i1" class="rowColor">
 <td class="colFirst"><code>static <a href="../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
@@ -241,6 +243,16 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <h4>combine</h4>
 <pre class="methodSignature">public static&nbsp;<a href="../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;combine&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/Map.html?is-external=true" title="class or interface in java.util" class="externalLink">Map</a>&lt;<a href="../../matrix/data/MatrixIndexes.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixIndexes</a>,&#8203;<a href="../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&gt;&nbsp;m,
                                   int&nbsp;k)</pre>
+<div class="block">Combine the map of index matrix blocks into a single MatrixBlock.
+ 
+ The intension is that the combining is able to resolve differences in the different MatrixBlocks allocation.</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>m</code> - The map of Index to MatrixBLocks</dd>
+<dd><code>k</code> - The parallelization degree allowed for this operation</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>The combined matrix.</dd>
+</dl>
 </li>
 </ul>
 <a id="combine(java.util.Map,int,int,int,int)">

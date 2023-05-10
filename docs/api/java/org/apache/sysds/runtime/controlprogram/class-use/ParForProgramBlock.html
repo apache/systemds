@@ -155,11 +155,12 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code>static void</code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">OptimizationWrapper.</span><code><span class="memberNameLink"><a href="../parfor/opt/OptimizationWrapper.html#optimize(org.apache.sysds.runtime.controlprogram.ParForProgramBlock.POptMode,org.apache.sysds.parser.ParForStatementBlock,org.apache.sysds.runtime.controlprogram.ParForProgramBlock,org.apache.sysds.runtime.controlprogram.context.ExecutionContext,boolean)">optimize</a></span>&#8203;(<a href="../ParForProgramBlock.POptMode.html" title="enum in org.apache.sysds.runtime.controlprogram">ParForProgramBlock.POptMode</a>&nbsp;type,
+<th class="colSecond" scope="row"><span class="typeNameLabel">OptimizationWrapper.</span><code><span class="memberNameLink"><a href="../parfor/opt/OptimizationWrapper.html#optimize(org.apache.sysds.runtime.controlprogram.ParForProgramBlock.POptMode,org.apache.sysds.parser.ParForStatementBlock,org.apache.sysds.runtime.controlprogram.ParForProgramBlock,org.apache.sysds.runtime.controlprogram.context.ExecutionContext,boolean,int)">optimize</a></span>&#8203;(<a href="../ParForProgramBlock.POptMode.html" title="enum in org.apache.sysds.runtime.controlprogram">ParForProgramBlock.POptMode</a>&nbsp;type,
         <a href="../../../parser/ParForStatementBlock.html" title="class in org.apache.sysds.parser">ParForStatementBlock</a>&nbsp;sb,
         <a href="../ParForProgramBlock.html" title="class in org.apache.sysds.runtime.controlprogram">ParForProgramBlock</a>&nbsp;pb,
         <a href="../context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec,
-        boolean&nbsp;monitor)</code></th>
+        boolean&nbsp;monitor,
+        int&nbsp;numRuns)</code></th>
 <td class="colLast">
 <div class="block">Called once per top-level parfor (during runtime, on parfor execute)
  in order to optimize the specific parfor program block.</div>
@@ -167,21 +168,23 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>abstract boolean</code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">Optimizer.</span><code><span class="memberNameLink"><a href="../parfor/opt/Optimizer.html#optimize(org.apache.sysds.parser.ParForStatementBlock,org.apache.sysds.runtime.controlprogram.ParForProgramBlock,org.apache.sysds.runtime.controlprogram.parfor.opt.OptTree,org.apache.sysds.runtime.controlprogram.parfor.opt.CostEstimator,org.apache.sysds.runtime.controlprogram.context.ExecutionContext)">optimize</a></span>&#8203;(<a href="../../../parser/ParForStatementBlock.html" title="class in org.apache.sysds.parser">ParForStatementBlock</a>&nbsp;sb,
+<th class="colSecond" scope="row"><span class="typeNameLabel">Optimizer.</span><code><span class="memberNameLink"><a href="../parfor/opt/Optimizer.html#optimize(org.apache.sysds.parser.ParForStatementBlock,org.apache.sysds.runtime.controlprogram.ParForProgramBlock,org.apache.sysds.runtime.controlprogram.parfor.opt.OptTree,org.apache.sysds.runtime.controlprogram.parfor.opt.CostEstimator,int,org.apache.sysds.runtime.controlprogram.context.ExecutionContext)">optimize</a></span>&#8203;(<a href="../../../parser/ParForStatementBlock.html" title="class in org.apache.sysds.parser">ParForStatementBlock</a>&nbsp;sb,
         <a href="../ParForProgramBlock.html" title="class in org.apache.sysds.runtime.controlprogram">ParForProgramBlock</a>&nbsp;pb,
         <a href="../parfor/opt/OptTree.html" title="class in org.apache.sysds.runtime.controlprogram.parfor.opt">OptTree</a>&nbsp;plan,
         <a href="../parfor/opt/CostEstimator.html" title="class in org.apache.sysds.runtime.controlprogram.parfor.opt">CostEstimator</a>&nbsp;est,
+        int&nbsp;numRuns,
         <a href="../context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec)</code></th>
 <td class="colLast">
-<div class="block">Optimize</div>
+<div class="block">Optimize the parfor statement block</div>
 </td>
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code>boolean</code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">OptimizerConstrained.</span><code><span class="memberNameLink"><a href="../parfor/opt/OptimizerConstrained.html#optimize(org.apache.sysds.parser.ParForStatementBlock,org.apache.sysds.runtime.controlprogram.ParForProgramBlock,org.apache.sysds.runtime.controlprogram.parfor.opt.OptTree,org.apache.sysds.runtime.controlprogram.parfor.opt.CostEstimator,org.apache.sysds.runtime.controlprogram.context.ExecutionContext)">optimize</a></span>&#8203;(<a href="../../../parser/ParForStatementBlock.html" title="class in org.apache.sysds.parser">ParForStatementBlock</a>&nbsp;sb,
+<th class="colSecond" scope="row"><span class="typeNameLabel">OptimizerConstrained.</span><code><span class="memberNameLink"><a href="../parfor/opt/OptimizerConstrained.html#optimize(org.apache.sysds.parser.ParForStatementBlock,org.apache.sysds.runtime.controlprogram.ParForProgramBlock,org.apache.sysds.runtime.controlprogram.parfor.opt.OptTree,org.apache.sysds.runtime.controlprogram.parfor.opt.CostEstimator,int,org.apache.sysds.runtime.controlprogram.context.ExecutionContext)">optimize</a></span>&#8203;(<a href="../../../parser/ParForStatementBlock.html" title="class in org.apache.sysds.parser">ParForStatementBlock</a>&nbsp;sb,
         <a href="../ParForProgramBlock.html" title="class in org.apache.sysds.runtime.controlprogram">ParForProgramBlock</a>&nbsp;pb,
         <a href="../parfor/opt/OptTree.html" title="class in org.apache.sysds.runtime.controlprogram.parfor.opt">OptTree</a>&nbsp;plan,
         <a href="../parfor/opt/CostEstimator.html" title="class in org.apache.sysds.runtime.controlprogram.parfor.opt">CostEstimator</a>&nbsp;est,
+        int&nbsp;numRuns,
         <a href="../context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec)</code></th>
 <td class="colLast">
 <div class="block">Main optimization procedure.</div>
@@ -189,10 +192,11 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>boolean</code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">OptimizerRuleBased.</span><code><span class="memberNameLink"><a href="../parfor/opt/OptimizerRuleBased.html#optimize(org.apache.sysds.parser.ParForStatementBlock,org.apache.sysds.runtime.controlprogram.ParForProgramBlock,org.apache.sysds.runtime.controlprogram.parfor.opt.OptTree,org.apache.sysds.runtime.controlprogram.parfor.opt.CostEstimator,org.apache.sysds.runtime.controlprogram.context.ExecutionContext)">optimize</a></span>&#8203;(<a href="../../../parser/ParForStatementBlock.html" title="class in org.apache.sysds.parser">ParForStatementBlock</a>&nbsp;sb,
+<th class="colSecond" scope="row"><span class="typeNameLabel">OptimizerRuleBased.</span><code><span class="memberNameLink"><a href="../parfor/opt/OptimizerRuleBased.html#optimize(org.apache.sysds.parser.ParForStatementBlock,org.apache.sysds.runtime.controlprogram.ParForProgramBlock,org.apache.sysds.runtime.controlprogram.parfor.opt.OptTree,org.apache.sysds.runtime.controlprogram.parfor.opt.CostEstimator,int,org.apache.sysds.runtime.controlprogram.context.ExecutionContext)">optimize</a></span>&#8203;(<a href="../../../parser/ParForStatementBlock.html" title="class in org.apache.sysds.parser">ParForStatementBlock</a>&nbsp;sb,
         <a href="../ParForProgramBlock.html" title="class in org.apache.sysds.runtime.controlprogram">ParForProgramBlock</a>&nbsp;pb,
         <a href="../parfor/opt/OptTree.html" title="class in org.apache.sysds.runtime.controlprogram.parfor.opt">OptTree</a>&nbsp;plan,
         <a href="../parfor/opt/CostEstimator.html" title="class in org.apache.sysds.runtime.controlprogram.parfor.opt">CostEstimator</a>&nbsp;est,
+        int&nbsp;numRuns,
         <a href="../context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec)</code></th>
 <td class="colLast">
 <div class="block">Main optimization procedure.</div>

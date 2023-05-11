@@ -110,15 +110,15 @@
 </pre></div>
 </div>
 <p>SystemDS is a java-project, the <cite>pip</cite> package contains all the necessary <cite>jars</cite>,
-but you will need java version 8 installed. Do not use an older or newer
+but you will need java version 11 installed. Do not use an older or newer
 version of java, because SystemDS is non compatible with other java versions.</p>
 <p>Check the output of <code class="docutils literal notranslate"><span class="pre">java</span> <span class="pre">-version</span></code>. The output should look similar to:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">openjdk</span> <span class="n">version</span> <span class="s2">&quot;1.8.0_242&quot;</span>
-<span class="n">OpenJDK</span> <span class="n">Runtime</span> <span class="n">Environment</span> <span class="p">(</span><span class="n">build</span> <span class="mf">1.8.0_242</span><span class="o">-</span><span class="n">b08</span><span class="p">)</span>
-<span class="n">OpenJDK</span> <span class="mi">64</span><span class="o">-</span><span class="n">Bit</span> <span class="n">Server</span> <span class="n">VM</span> <span class="p">(</span><span class="n">build</span> <span class="mf">25.242</span><span class="o">-</span><span class="n">b08</span><span class="p">,</span> <span class="n">mixed</span> <span class="n">mode</span><span class="p">)</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">openjdk</span> <span class="n">version</span> <span class="s2">&quot;11.0.18&quot;</span> <span class="mi">2023</span><span class="o">-</span><span class="mi">01</span><span class="o">-</span><span class="mi">17</span>
+<span class="n">OpenJDK</span> <span class="n">Runtime</span> <span class="n">Environment</span> <span class="p">(</span><span class="n">build</span> <span class="mf">11.0.18</span><span class="o">+</span><span class="mi">10</span><span class="o">-</span><span class="n">post</span><span class="o">-</span><span class="n">Ubuntu</span><span class="o">-</span><span class="mi">0</span><span class="n">ubuntu122</span><span class="mf">.04</span><span class="p">)</span>
+<span class="n">OpenJDK</span> <span class="mi">64</span><span class="o">-</span><span class="n">Bit</span> <span class="n">Server</span> <span class="n">VM</span> <span class="p">(</span><span class="n">build</span> <span class="mf">11.0.18</span><span class="o">+</span><span class="mi">10</span><span class="o">-</span><span class="n">post</span><span class="o">-</span><span class="n">Ubuntu</span><span class="o">-</span><span class="mi">0</span><span class="n">ubuntu122</span><span class="mf">.04</span><span class="p">,</span> <span class="n">mixed</span> <span class="n">mode</span><span class="p">,</span> <span class="n">sharing</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>The important part is in the first line <code class="docutils literal notranslate"><span class="pre">openjdk</span> <span class="pre">version</span> <span class="pre">&quot;1.8.0_xxx&quot;</span></code>,
+<p>The important part is in the first line <code class="docutils literal notranslate"><span class="pre">openjdk</span> <span class="pre">version</span> <span class="pre">&quot;11.xx&quot;</span></code>,
 please make sure this is the case.</p>
 </section>
 <section id="source">
@@ -128,13 +128,13 @@ please make sure this is the case.</p>
 <ul class="simple">
 <li><p><a class="reference external" href="https://maven.apache.org/">Maven</a></p></li>
 <li><p><a class="reference external" href="https://www.python.org/downloads/">Python 3.6+</a> and</p></li>
-<li><p><a class="reference external" href="https://openjdk.java.net/install/">OpenJDK 1.8 Java</a></p></li>
+<li><p><a class="reference external" href="https://openjdk.java.net/install/">OpenJDK 11.xxx Java</a></p></li>
 </ul>
 <p>Once installed you please verify your version numbers.
 Additionally you have to install a few python packages.
-We sugest to create a new virtual environment using virtualenv.
+We suggest to create a new virtual environment using virtual env.
 All commands are run inside src/main/python/.
-We asume that in the following scripts python==python3</p>
+We assume that in the following scripts python==python3</p>
 <blockquote>
 <div><p>python -m venv python_venv</p>
 </div></blockquote>

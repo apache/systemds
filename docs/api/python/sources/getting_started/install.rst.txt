@@ -34,16 +34,16 @@ Installation is quite simple with `pip`, just execute the following command::
   pip install systemds
 
 SystemDS is a java-project, the `pip` package contains all the necessary `jars`,
-but you will need java version 8 installed. Do not use an older or newer
+but you will need java version 11 installed. Do not use an older or newer
 version of java, because SystemDS is non compatible with other java versions.
 
 Check the output of ``java -version``. The output should look similar to::
 
-  openjdk version "1.8.0_242"
-  OpenJDK Runtime Environment (build 1.8.0_242-b08)
-  OpenJDK 64-Bit Server VM (build 25.242-b08, mixed mode)
+  openjdk version "11.0.18" 2023-01-17
+  OpenJDK Runtime Environment (build 11.0.18+10-post-Ubuntu-0ubuntu122.04)
+  OpenJDK 64-Bit Server VM (build 11.0.18+10-post-Ubuntu-0ubuntu122.04, mixed mode, sharing)
 
-The important part is in the first line ``openjdk version "1.8.0_xxx"``,
+The important part is in the first line ``openjdk version "11.xx"``,
 please make sure this is the case.
 
 
@@ -56,13 +56,13 @@ Install Dependencies
 
 - `Maven <https://maven.apache.org/>`_ 
 - `Python 3.6+ <https://www.python.org/downloads/>`_ and
-- `OpenJDK 1.8 Java <https://openjdk.java.net/install/>`_
+- `OpenJDK 11.xxx Java <https://openjdk.java.net/install/>`_
 
 Once installed you please verify your version numbers. 
 Additionally you have to install a few python packages.
-We sugest to create a new virtual environment using virtualenv. 
+We suggest to create a new virtual environment using virtual env. 
 All commands are run inside src/main/python/.
-We asume that in the following scripts python==python3
+We assume that in the following scripts python==python3
 
   python -m venv python_venv 
 

@@ -217,11 +217,6 @@ public class IdentityDictionarySlice extends IdentityDictionary {
 		return (long) sum(counts, nCol);
 	}
 
-
-	public MatrixBlockDictionary getMBDict() {
-		return getMBDict(nRowCol);
-	}
-
 	@Override
 	public MatrixBlockDictionary getMBDict(int nCol) {
 		if(cache != null) {

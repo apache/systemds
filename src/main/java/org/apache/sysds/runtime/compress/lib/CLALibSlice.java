@@ -21,14 +21,19 @@ package org.apache.sysds.runtime.compress.lib;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupConst;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.util.CommonThreadPool;
 
 public class CLALibSlice {
 
@@ -39,13 +44,16 @@ public class CLALibSlice {
 	 * 
 	 * @param cmb  The input block to slice.
 	 * @param blen The length of the blocks.
+	 * @param k    The parallelization degree used
 	 * @return A list containing CompressedMatrixBlocks or MatrixBlocks
 	 */
-	public static List<MatrixBlock> sliceBlocks(CompressedMatrixBlock cmb, int blen) {
-		final List<MatrixBlock> mbs = new ArrayList<>();
-		for(int b = 0; b < cmb.getNumRows(); b += blen)
-			mbs.add(sliceRowsCompressed(cmb, b, Math.min(b + blen, cmb.getNumRows()) - 1));
-		return mbs;
+	public static List<MatrixBlock> sliceBlocks(CompressedMatrixBlock cmb, int blen, int k) {
+
+		if(k <= 1)
+			return sliceBlocksSingleThread(cmb, blen);
+		else
+			return sliceBlocksMultiThread(cmb, blen, k);
+
 	}
 
 	public static MatrixBlock slice(CompressedMatrixBlock cmb, int rl, int ru, int cl, int cu, boolean deep) {
@@ -57,6 +65,34 @@ public class CLALibSlice {
 			return sliceRows(cmb, rl, ru, deep);
 		else
 			return sliceInternal(cmb, rl, ru, cl, cu, deep);
+	}
+
+	private static List<MatrixBlock> sliceBlocksSingleThread(CompressedMatrixBlock cmb, int blen) {
+		final List<MatrixBlock> mbs = new ArrayList<>();
+		for(int b = 0; b < cmb.getNumRows(); b += blen)
+			mbs.add(sliceRowsCompressed(cmb, b, Math.min(b + blen, cmb.getNumRows()) - 1));
+		return mbs;
+	}
+
+	private static List<MatrixBlock> sliceBlocksMultiThread(CompressedMatrixBlock cmb, int blen, int k) {
+		// final List<MatrixBlock> mbs = new ArrayList<>();
+
+		final ExecutorService pool = CommonThreadPool.get(k);
+		try {
+			final ArrayList<SliceTask> tasks = new ArrayList<>();
+
+			for(int b = 0; b < cmb.getNumRows(); b += blen)
+				tasks.add(new SliceTask(cmb, b, blen));
+			final List<MatrixBlock> mbs = new ArrayList<>(tasks.size());
+			for(Future<MatrixBlock> f : pool.invokeAll(tasks))
+				mbs.add(f.get());
+			pool.shutdown();
+			return mbs;
+		}
+		catch(Exception e) {
+			pool.shutdown();
+			throw new DMLRuntimeException("Failed slicing compressed matrix block", e);
+		}
 	}
 
 	private static MatrixBlock sliceInternal(CompressedMatrixBlock cmb, int rl, int ru, int cl, int cu, boolean deep) {
@@ -147,5 +183,22 @@ public class CLALibSlice {
 		ret.recomputeNonZeros();
 		ret.setOverlapping(cmb.isOverlapping());
 		return ret;
+	}
+
+	private static class SliceTask implements Callable<MatrixBlock> {
+		private final CompressedMatrixBlock cmb;
+		private final int b;
+		private final int blen;
+
+		private SliceTask(CompressedMatrixBlock cmb, int b, int blen) {
+			this.cmb = cmb;
+			this.b = b;
+			this.blen = blen;
+		}
+
+		@Override
+		public MatrixBlock call() throws Exception {
+			return sliceRowsCompressed(cmb, b, Math.min(b + blen, cmb.getNumRows()) - 1);
+		}
 	}
 }

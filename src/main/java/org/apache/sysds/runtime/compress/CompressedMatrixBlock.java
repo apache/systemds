@@ -404,16 +404,18 @@ public class CompressedMatrixBlock extends MatrixBlock {
 		if(nonZeros > 0 && estDisk > estimateUncompressed) {
 			// If the size of this matrixBlock is smaller in uncompressed format, then
 			// decompress and save inside an uncompressed column group.
-			MatrixBlock uncompressed = getUncompressed(
-				"smaller serialization size: compressed: " + estDisk + " vs uncompressed: " + estimateUncompressed);
-			ColGroupUncompressed cg = (ColGroupUncompressed) ColGroupUncompressed.create(uncompressed);
-
-			if( estDisk / 10 > estimateUncompressed){
-				LOG.error(this);
-			}
+			final String message = "smaller serialization size: compressed: " + estDisk + " vs uncompressed: "
+				+ estimateUncompressed;
+			final MatrixBlock uncompressed = getUncompressed(message);
+			uncompressed.examSparsity(true);
+			// Here only Empty or Uncompressed should be returned.
+			AColGroup cg = ColGroupUncompressed.create(uncompressed);
 			allocateColGroup(cg);
-			nonZeros = cg.getNumberNonZeros(rlen);
-			// clear the soft reference to the decompressed version, since the one column group is perfectly,
+			// update non zeros, if not fully correct in compressed block
+			nonZeros = cg.getNumberNonZeros(rlen); 
+
+			// Clear the soft reference to the decompressed version,
+			// since the one column group is perfectly,
 			// representing the decompressed version.
 			clearSoftReferenceToDecompressed();
 		}
@@ -618,7 +620,7 @@ public class CompressedMatrixBlock extends MatrixBlock {
 	@Override
 	public boolean containsValue(double pattern) {
 		// Only if pattern is a finite value and overlapping then decompress.
-		if(isOverlapping() && Double.isFinite(pattern)) 
+		if(isOverlapping() && Double.isFinite(pattern))
 			return getUncompressed("ContainsValue").containsValue(pattern);
 		else {
 			for(AColGroup g : _colGroups)
@@ -1072,7 +1074,7 @@ public class CompressedMatrixBlock extends MatrixBlock {
 		decompressedVersion = null;
 	}
 
-	public void clearCounts(){
+	public void clearCounts() {
 		for(AColGroup a : _colGroups)
 			a.clear();
 	}

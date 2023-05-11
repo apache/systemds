@@ -26,10 +26,10 @@ import java.lang.ref.SoftReference;
 import java.util.Arrays;
 
 import org.apache.commons.lang.NotImplementedException;
-import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.data.SparseBlock;
+import org.apache.sysds.runtime.data.SparseBlockFactory;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.functionobjects.Builtin.BuiltinCode;
 import org.apache.sysds.runtime.functionobjects.ValueFunction;
@@ -61,13 +61,13 @@ public class IdentityDictionary extends ADictionary {
 
 	@Override
 	public double[] getValues() {
-		LOG.warn("Should not call getValues on Identity Dictionary");
-
-		double[] ret = new double[nRowCol * nRowCol];
-		for(int i = 0; i < nRowCol; i++) {
-			ret[(i * nRowCol) + i] = 1;
-		}
-		return ret;
+		throw new DMLCompressionException("Invalid to materialize identity Matrix Please Implement alternative");
+		// LOG.warn("Should not call getValues on Identity Dictionary");
+		// double[] ret = new double[nRowCol * nRowCol];
+		// for(int i = 0; i < nRowCol; i++) {
+		// 	ret[(i * nRowCol) + i] = 1;
+		// }
+		// return ret;
 	}
 
 	@Override
@@ -383,8 +383,7 @@ public class IdentityDictionary extends ADictionary {
 	}
 
 	public MatrixBlockDictionary getMBDict() {
-		throw new DMLRuntimeException("Do not make MB Dict");
-		// return getMBDict(nRowCol);
+		return getMBDict(nRowCol);
 	}
 
 	@Override
@@ -400,10 +399,8 @@ public class IdentityDictionary extends ADictionary {
 	}
 
 	private MatrixBlockDictionary createMBDict() {
-		MatrixBlock identity = new MatrixBlock(nRowCol, nRowCol, true);
-		for(int i = 0; i < nRowCol; i++)
-			identity.quickSetValue(i, i, 1.0);
-
+		final SparseBlock sb = SparseBlockFactory.createIdentityMatrix(nRowCol);
+		final MatrixBlock identity = new MatrixBlock(nRowCol, nRowCol, nRowCol,  sb);
 		return new MatrixBlockDictionary(identity);
 	}
 

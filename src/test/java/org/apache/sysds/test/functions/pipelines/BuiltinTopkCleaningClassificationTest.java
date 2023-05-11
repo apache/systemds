@@ -83,7 +83,7 @@ public class BuiltinTopkCleaningClassificationTest extends AutomatedTestBase {
 				"metaData="+meta, "primitives="+PRIMITIVES, "parameters="+PARAM, "topk="+ topk, "rv="+ resources, "expectedIncrease="+inc,
 				"max_iter="+10, "sample="+sample, "testCV="+cv, "cvk="+cvk, "split="+split, "output="+OUTPUT, "O="+output("O")};
 
-			runTest(true, EXCEPTION_NOT_EXPECTED, null, -1);
+			runTest(null);
 
 			//expected loss smaller than default invocation
 			Assert.assertTrue(TestUtils.readDMLBoolean(output("O")));

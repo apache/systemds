@@ -561,12 +561,38 @@ public class StringArray extends Array<String> {
 
 	@Override
 	public double getAsDouble(int i) {
-		return _data[i] != null && !_data[i].isEmpty() ? DoubleArray.parseDouble(_data[i]) : 0.0;
+		if(_data[i] != null && !_data[i].isEmpty()){
+			return getAsDouble(_data[i]);
+		}
+		else{
+			return 0.0;
+		}
 	}
 
 	@Override
 	public double getAsNaNDouble(int i) {
-		return _data[i] != null && !_data[i].isEmpty() ? DoubleArray.parseDouble(_data[i]) : Double.NaN;
+		if(_data[i] != null && !_data[i].isEmpty()){
+			return getAsDouble(_data[i]);
+		}
+		else{
+			return Double.NaN;
+		}
+	}
+
+	private static double getAsDouble(String s){
+		try{
+
+			return DoubleArray.parseDouble(s);
+		}
+		catch(Exception e){
+			String ls = s.toLowerCase();
+			if(ls.equals("true") || ls.equals("t"))
+				return 1;
+			else if (ls.equals("false") || ls.equals("f"))
+				return 0;
+			else
+				throw new DMLRuntimeException("Unable to change to double: " + s, e);
+		}
 	}
 
 	@Override

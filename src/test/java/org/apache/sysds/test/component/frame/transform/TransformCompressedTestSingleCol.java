@@ -21,6 +21,9 @@ package org.apache.sysds.test.component.frame.transform;
 
 import static org.junit.Assert.fail;
 
+import java.util.ArrayList;
+import java.util.Collection;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.common.Types.ValueType;
@@ -30,20 +33,49 @@ import org.apache.sysds.runtime.transform.encode.EncoderFactory;
 import org.apache.sysds.runtime.transform.encode.MultiColumnEncoder;
 import org.apache.sysds.test.TestUtils;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameters;
 
-public class transformCustomTest {
-	protected static final Log LOG = LogFactory.getLog(transformCustomTest.class.getName());
+@RunWith(value = Parameterized.class)
+public class TransformCompressedTestSingleCol {
+	protected static final Log LOG = LogFactory.getLog(TransformCompressedTestSingleCol.class.getName());
 
-	final FrameBlock data;
+	private final FrameBlock data;
+	private final int k;
 
-	public transformCustomTest() {
-		data = TestUtils.generateRandomFrameBlock(100, new ValueType[] {ValueType.UINT8}, 231);
-		data.setSchema(new ValueType[] {ValueType.INT32});
+	public TransformCompressedTestSingleCol(FrameBlock data, int k) {
+		this.data = data;
+		this.k = k;
+	}
+
+	@Parameters
+	public static Collection<Object[]> data() {
+		final ArrayList<Object[]> tests = new ArrayList<>();
+		final int[] threads = new int[] {1, 4};
+		try {
+
+			FrameBlock data = TestUtils.generateRandomFrameBlock(100, new ValueType[] {ValueType.UINT4}, 231);
+			data.setSchema(new ValueType[] {ValueType.INT32});
+			for(int k : threads) {
+				tests.add(new Object[] {data, k});
+			}
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
+		return tests;
 	}
 
 	@Test
 	public void testRecode() {
 		test("{recode:[C1]}");
+	}
+
+	@Test
+	public void testDummyCode() {
+		test("{dummycode:[C1]}");
 	}
 
 	@Test
@@ -71,16 +103,32 @@ public class transformCustomTest {
 		test("{ids:true, bin:[{id:1, method:equi-height, numbins:10}]}");
 	}
 
+	@Test
+	public void passThrough() {
+		test("{ids:true}");
+	}
+
+	@Test
+	public void testBinToDummy() {
+		test("{ids:true, bin:[{id:1, method:equi-height, numbins:10}], dummycode:[1] }");
+	}
+
 	public void test(String spec) {
 		try {
 
 			FrameBlock meta = null;
-			MultiColumnEncoder encoder = EncoderFactory.createEncoder(spec, data.getColumnNames(), data.getNumColumns(),
-				meta);
-			MatrixBlock out = encoder.encode(data);
-			MatrixBlock out2 = encoder.apply(data);
+			MultiColumnEncoder encoderCompressed = EncoderFactory.createEncoder(spec, data.getColumnNames(),
+				data.getNumColumns(), meta);
 
-			TestUtils.compareMatrices(out, out2, 0, "Not Equal after apply");
+			MatrixBlock outCompressed = encoderCompressed.encode(data, k, true);
+			FrameBlock outCompressedMD = encoderCompressed.getMetaData(null);
+			MultiColumnEncoder encoderNormal = EncoderFactory.createEncoder(spec, data.getColumnNames(),
+				data.getNumColumns(), meta);
+			MatrixBlock outNormal = encoderNormal.encode(data, k);
+			FrameBlock outNormalMD = encoderNormal.getMetaData(null);
+
+			TestUtils.compareMatrices(outNormal, outCompressed, 0, "Not Equal after apply");
+			TestUtils.compareFrames(outNormalMD, outCompressedMD, true);
 		}
 		catch(Exception e) {
 			e.printStackTrace();

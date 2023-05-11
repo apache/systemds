@@ -435,6 +435,17 @@ public class ColumnEncoderComposite extends ColumnEncoder {
 			&& _columnEncoders.get(0) instanceof ColumnEncoderPassThrough;
 	}
 
+	public boolean isBin(){
+		return _columnEncoders.size() == 1//
+			&& _columnEncoders.get(0) instanceof ColumnEncoderBin;
+	}
+
+	public boolean isBinToDummy(){
+		return _columnEncoders.size() == 2//
+			&& _columnEncoders.get(0) instanceof ColumnEncoderBin//
+			&& _columnEncoders.get(1) instanceof ColumnEncoderDummycode;
+	}
+
 	private static class ColumnCompositeUpdateDCTask implements Callable<Object> {
 
 		private final ColumnEncoderComposite _encoder;

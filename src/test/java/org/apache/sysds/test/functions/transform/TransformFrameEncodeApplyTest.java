@@ -19,8 +19,8 @@
 
 package org.apache.sysds.test.functions.transform;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.common.Types.FileFormat;
@@ -30,8 +30,12 @@ import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
 import org.apache.sysds.utils.Statistics;
+import org.junit.Assert;
+import org.junit.Test;
 
 public class TransformFrameEncodeApplyTest extends AutomatedTestBase {
+	protected static final Log LOG = LogFactory.getLog(TransformFrameEncodeApplyTest.class.getName());
+
 	private final static String TEST_NAME1 = "TransformFrameEncodeApply";
 	private final static String TEST_DIR = "functions/transform/";
 	private final static String TEST_CLASS_DIR = TEST_DIR + TransformFrameEncodeApplyTest.class.getSimpleName() + "/";
@@ -462,14 +466,17 @@ public class TransformFrameEncodeApplyTest extends AutomatedTestBase {
 				}
 			} else if (type == TransformType.BIN_HEIGHT_DUMMY) {
 				Assert.assertEquals(14, R1[0].length);
-				for(int i=0; i<7; i++) {
-					for(int j=0; j<4; j++) { //check dummy coded
-						Assert.assertEquals((j==BIN_HEIGHT_col3[i]-1)?
-								1:0, R1[i][2+j], 1e-8);
+				// LOG.error(DataConverter.convertToMatrixBlock(R1).slice(0,6));
+				for(int i = 0; i < 7; i++) {// first 7 rows.
+					// LOG.error(Arrays.toString(BIN_HEIGHT_col3));
+					// Check the columns specifically that were dummy coded.
+					for(int j = 0; j < 4; j++) { // check dummy coded
+						double val = j == BIN_HEIGHT_col3[i] - 1 ? 1 : 0;
+						Assert.assertEquals(val, R1[i][2 + j], 1e-8);
 					}
-					for(int j=0; j<3; j++) { //check dummy coded
-						Assert.assertEquals((j==BIN_HEIGHT_col8[i]-1)?
-								1:0, R1[i][10+j], 1e-8);
+					for(int j = 0; j < 3; j++) { // check dummy coded
+						double val = j == BIN_HEIGHT_col8[i] - 1 ? 1 : 0;
+						Assert.assertEquals(val, R1[i][10 + j], 1e-8);
 					}
 				}
 			} else if (type == TransformType.IMPUTE){

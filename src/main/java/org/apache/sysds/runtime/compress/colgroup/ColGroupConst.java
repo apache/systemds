@@ -26,6 +26,7 @@ import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.DictionaryFactory;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.IdentityDictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.MatrixBlockDictionary;
 import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
@@ -305,7 +306,14 @@ public class ColGroupConst extends ADictBasedColGroup {
 	 * @param constV The output columns.
 	 */
 	public final void addToCommon(double[] constV) {
-		if(_dict instanceof MatrixBlockDictionary) {
+		if(_dict instanceof IdentityDictionary){
+			MatrixBlock mb = ((IdentityDictionary) _dict).getMBDict().getMatrixBlock();
+			if(mb.isInSparseFormat())
+				addToCommonSparse(constV, mb.getSparseBlock());
+			else
+				addToCommonDense(constV, mb.getDenseBlockValues());
+		}
+		else if(_dict instanceof MatrixBlockDictionary) {
 			MatrixBlock mb = ((MatrixBlockDictionary) _dict).getMatrixBlock();
 			if(mb.isInSparseFormat())
 				addToCommonSparse(constV, mb.getSparseBlock());

@@ -113,7 +113,7 @@ public class ColGroupSDCZeros extends ASDCZero implements AMapToDataGroup {
 			_indexes.cacheIterator(it, ru);
 		else {
 			decompressToDenseBlockDenseDictionaryWithProvidedIterator(db, rl, ru, offR, offC, values, it);
-			_indexes.cacheIterator(it, ru);
+			// _indexes.cacheIterator(it, ru);
 		}
 	}
 
@@ -322,7 +322,7 @@ public class ColGroupSDCZeros extends ASDCZero implements AMapToDataGroup {
 
 			it.next();
 		}
-		_indexes.cacheIterator(it, ru);
+		// _indexes.cacheIterator(it, ru);
 	}
 
 	@Override

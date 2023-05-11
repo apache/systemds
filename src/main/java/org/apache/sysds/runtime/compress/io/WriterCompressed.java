@@ -180,8 +180,10 @@ public final class WriterCompressed extends MatrixWriter {
 			for(int bc = 0; bc * blen < clen; bc++) {// column blocks
 				final int sC = bc * blen;
 				final int mC = Math.min(sC + blen, clen) - 1;
+				// slice out the current columns
 				final CompressedMatrixBlock mc = CLALibSlice.sliceColumns((CompressedMatrixBlock) b, sC, mC);
-				final List<MatrixBlock> blocks = CLALibSlice.sliceBlocks(mc, blen); // Slice compressed blocks
+				// slice out row blocks in this.
+				final List<MatrixBlock> blocks = CLALibSlice.sliceBlocks(mc, blen, k); // Slice compressed blocks
 				final int blocksPerThread = Math.max(1, blocks.size() / k);
 				for(int block = 0; block < blocks.size(); block += blocksPerThread, i++) {
 					final Path newPath = new Path(fname, IOUtilFunctions.getPartFileName(i));

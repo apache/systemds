@@ -19,15 +19,14 @@
 
 package org.apache.sysds.lops;
 
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Map;
+
 import org.apache.sysds.common.Types;
 import org.apache.sysds.hops.AggBinaryOp;
 import org.apache.sysds.parser.DMLProgram;
 import org.apache.sysds.parser.StatementBlock;
-
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
 
 public class OperatorOrderingUtils
 {

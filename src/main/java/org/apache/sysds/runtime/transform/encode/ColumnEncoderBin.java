@@ -19,6 +19,8 @@
 
 package org.apache.sysds.runtime.transform.encode;
 
+import static org.apache.sysds.runtime.util.UtilFunctions.getEndIndex;
+
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
@@ -27,7 +29,6 @@ import java.util.HashMap;
 import java.util.PriorityQueue;
 import java.util.concurrent.Callable;
 
-import static org.apache.sysds.runtime.util.UtilFunctions.getEndIndex;
 import org.apache.commons.lang3.tuple.MutableTriple;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.lops.Lop;
@@ -137,57 +138,66 @@ public class ColumnEncoderBin extends ColumnEncoder {
 
 	protected double getCode(CacheBlock<?> in, int row){
 		// find the right bucket for a single row
-		double bin = 0;
 		if( _binMins.length == 0 || _binMaxs.length == 0 ) {
 			LOG.warn("ColumnEncoderBin: applyValue without bucket boundaries, assign 1");
 			return 1; //robustness in case of missing bins
 		}
 		// Returns NaN if value is missing, so can't be assigned a Bin
 		double inVal = in.getDoubleNaN(row, _colID - 1);
-		if (Double.isNaN(inVal) || inVal < _binMins[0] || inVal > _binMaxs[_binMaxs.length-1])
-			return Double.NaN;
-		if (_binMethod == BinMethod.EQUI_HEIGHT) {
-			int ix = Arrays.binarySearch(_binMaxs, inVal);
-			bin = ((ix < 0) ? Math.abs(ix + 1) : ix) + 1;
-		}
-		if (_binMethod == BinMethod.EQUI_WIDTH) {
-			//TODO: Skip computing bin boundaries for equi-width
-			double binWidth = (_binMaxs[_binMaxs.length - 1] - _binMins[0]) / _numBin;
-			double code = Math.ceil((inVal - _binMins[0]) / binWidth);
-			bin = (code == 0) ? code + 1 : code;
-		}
-		return bin;
+		return getCodeIndex(inVal);
 	}
 	
 	@Override
 	protected double[] getCodeCol(CacheBlock<?> in, int startInd, int blkSize) {
 		// find the right bucket for a block of rows
-		int endInd = getEndIndex(in.getNumRows(), startInd, blkSize);
-		double[] codes = new double[endInd-startInd];
+		final int endInd = getEndIndex(in.getNumRows(), startInd, blkSize);
+		final double[] codes = new double[endInd - startInd];
+		if (_binMins == null || _binMins.length == 0 || _binMaxs.length == 0) {
+			LOG.warn("ColumnEncoderBin: applyValue without bucket boundaries, assign 1");
+			Arrays.fill(codes,  startInd, endInd, 1.0);
+			return codes;
+		}
 		for (int i=startInd; i<endInd; i++) {
-			if (_binMins == null || _binMins.length == 0 || _binMaxs.length == 0) {
-				LOG.warn("ColumnEncoderBin: applyValue without bucket boundaries, assign 1");
-				codes[i-startInd] = 1; //robustness in case of missing bins
-				continue;
-			}
 			double inVal = in.getDoubleNaN(i, _colID - 1);
-			if (Double.isNaN(inVal) || inVal < _binMins[0] || inVal > _binMaxs[_binMaxs.length-1]) {
-				codes[i-startInd] = Double.NaN;
-				continue;
-			}
-			if (_binMethod == BinMethod.EQUI_HEIGHT) {
-				int ix = Arrays.binarySearch(_binMaxs, inVal);
-				codes[i-startInd] = ((ix < 0) ? Math.abs(ix + 1) : ix) + 1;
-			}
-			if (_binMethod == BinMethod.EQUI_WIDTH) {
-				//TODO: Skip computing bin boundaries for equi-width
-				double binWidth = (_binMaxs[_binMaxs.length - 1] - _binMins[0]) / _numBin;
-				double bin = Math.ceil((inVal - _binMins[0]) / binWidth);
-				codes[i - startInd] = bin == 0 ? bin + 1 : bin;
-			}
+			codes[i- startInd] = getCodeIndex(inVal);
 		}
 		return codes;
 	}
+
+	protected double getCodeIndex(double inVal){
+		// throw new NotImplementedException("Intensional");
+		if (Double.isNaN(inVal) || inVal < _binMins[0] || inVal > _binMaxs[_binMaxs.length-1]){
+			return Double.NaN;
+		}
+		else if (_binMethod == BinMethod.EQUI_HEIGHT) {
+			final int ix = Arrays.binarySearch(_binMaxs, inVal);
+
+			if(ix < 0) // somewhere in between values
+			   // +2 because negative values are found from binary search.
+				// plus 2 to correct for the absolute value of that.
+				return Math.abs(ix + 1) + 1;
+			else if (ix == 0) // If first bucket boundary add it there.
+				return 1;
+			else 
+				// precisely at boundaries default to lower bucket
+				// This is done to avoid using an extra bucket for max value.
+				return Math.min(ix + 1, _binMaxs.length);
+		}
+		else { //if (_binMethod == BinMethod.EQUI_WIDTH) {
+			final double max = _binMaxs[_binMaxs.length-1];
+			final double min = _binMins[0];
+
+			if(max == min){
+				return 1;
+			}
+
+			//TODO: Skip computing bin boundaries for equi-width
+			double binWidth = (max - min) / _numBin;
+			double code = Math.ceil((inVal - min) / binWidth);
+			return (code == 0) ? code + 1 : code;
+		}
+	}
+
 
 	@Override
 	protected TransformType getTransformType() {
@@ -393,6 +403,16 @@ public class ColumnEncoderBin extends ColumnEncoder {
 		sb.append(getClass().getSimpleName());
 		sb.append(": ");
 		sb.append(_colID);
+		sb.append(" --- Method: " + _binMethod + " num Bin: " + _numBin);
+		if(_binMethod == BinMethod.EQUI_WIDTH){
+
+				sb.append("\n---- BinMin: "+ Arrays.toString(_binMins));
+				sb.append("\n---- BinMax: "+ Arrays.toString(_binMaxs));
+		}
+		else{
+
+			sb.append(" --- MinMax: "+ _colMins + " " + _colMaxs);
+		}
 		return sb.toString();
 	}
 

@@ -96,10 +96,11 @@ public class ColGroupSDCSingleZeros extends ASDCZero {
 		if(it == null)
 			return;
 		else if(it.value() >= ru)
-			_indexes.cacheIterator(it, ru);
+			return;
+			// _indexes.cacheIterator(it, ru);
 		else {
 			decompressToDenseBlockDenseDictionaryWithProvidedIterator(db, rl, ru, offR, offC, values, it);
-			_indexes.cacheIterator(it, ru);
+			// _indexes.cacheIterator(it, ru);
 		}
 	}
 

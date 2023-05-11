@@ -111,11 +111,9 @@ public class MultiColumnEncoder implements Encoder {
 				try {
 					pool.submitAllAndWait(getEncodeTasks(in, out, pool));
 				}
-				catch(ExecutionException | InterruptedException e) {
-					LOG.error("MT Column encode failed");
-					e.printStackTrace();
+				finally{
+					pool.shutdown();
 				}
-				pool.shutdown();
 				outputMatrixPostProcessing(out);
 				return out;
 			}
@@ -142,8 +140,7 @@ public class MultiColumnEncoder implements Encoder {
 			}
 		}
 		catch(Exception ex) {
-			LOG.error("Failed transform-encode frame with \n" + this);
-			throw ex;
+			throw new DMLRuntimeException("Failed transform-encode frame with encoder:\n" + this, ex);
 		}
 	}
 

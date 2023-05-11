@@ -177,20 +177,18 @@ public class CLALibDecompress {
 		if(k == 1) {
 			if(ret.isInSparseFormat()) {
 				decompressSparseSingleThread(ret, filteredGroups, nRows, blklen);
-				ret.setNonZeros(nonZeros);
 			}
 			else {
 				decompressDenseSingleThread(ret, filteredGroups, nRows, blklen, constV, eps, nonZeros, overlapping);
-				ret.recomputeNonZeros();
-				// ret.setNonZeros(nonZeros == -1 || overlapping ? ret.recomputeNonZeros() : nonZeros);
 			}
 		}
 		else if(ret.isInSparseFormat()) {
 			decompressSparseMultiThread(ret, filteredGroups, nRows, blklen, k);
-			ret.setNonZeros(nonZeros);
 		}
-		else
+		else{
 			decompressDenseMultiThread(ret, filteredGroups, nRows, blklen, constV, eps, k, overlapping);
+		}
+		ret.recomputeNonZeros();
 
 		ret.examSparsity();
 		return ret;

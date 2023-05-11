@@ -36,6 +36,7 @@ import org.apache.sysds.conf.DMLConfig;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup;
+import org.apache.sysds.runtime.compress.colgroup.ColGroupConst;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupDDC;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupUncompressed;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
@@ -136,6 +137,10 @@ public class CompressedEncode {
 			return recode(c);
 		else if(c.isPassThrough())
 			return passThrough(c);
+		else if(c.isBin())
+			return bin(c);
+		else if(c.isBinToDummy())
+			return binToDummy(c);
 		else
 			throw new NotImplementedException("Not supporting : " + c);
 	}
@@ -147,11 +152,82 @@ public class CompressedEncode {
 		HashMap<?, Long> map = a.getRecodeMap();
 		int domain = map.size();
 		IColIndex colIndexes = ColIndexFactory.create(0, domain);
+		if(domain == 1)
+			return ColGroupConst.create(colIndexes, new double[] {1});
 		ADictionary d = new IdentityDictionary(colIndexes.size());
 		AMapToData m = createMappingAMapToData(a, map);
 		List<ColumnEncoder> r = c.getEncoders();
 		r.set(0, new ColumnEncoderRecode(colId, (HashMap<Object, Long>) map));
 		return ColGroupDDC.create(colIndexes, d, m, null);
+	}
+
+	private AColGroup bin(ColumnEncoderComposite c) {
+		final int colId = c._colID;
+		final Array<?> a = in.getColumn(colId - 1);
+		final boolean containsNull = a.containsNull();
+		final List<ColumnEncoder> r = c.getEncoders();
+		final ColumnEncoderBin b = (ColumnEncoderBin) r.get(0);
+		b.build(in);
+		final IColIndex colIndexes = ColIndexFactory.create(1);
+
+		ADictionary d = createIncrementingVector(b._numBin, containsNull);
+		AMapToData m = binEncode(a, b, containsNull);
+
+		AColGroup ret = ColGroupDDC.create(colIndexes, d, m, null);
+		try{
+
+			ret.getNumberNonZeros(a.size());
+		}
+		catch(Exception e){
+			throw new DMLRuntimeException("Failed binning \n\n" + a + "\n" + b + "\n" + d + "\n" + m,e);
+		}
+		return ret;
+	}
+
+	private AMapToData binEncode(Array<?> a, ColumnEncoderBin b, boolean containsNull) {
+		AMapToData m = MapToFactory.create(a.size(), b._numBin + (containsNull ? 1 : 0));
+		if(containsNull) {
+			for(int i = 0; i < a.size(); i++) {
+				double v = a.getAsNaNDouble(i);
+				if(Double.isNaN(v))
+					m.set(i, b._numBin);
+				else
+					m.set(i, (int) b.getCodeIndex(v) - 1);
+			}
+		}
+		else {
+			for(int i = 0; i < a.size(); i++)
+				m.set(i, (int) b.getCodeIndex(a.getAsDouble(i)) - 1);
+		}
+		return m;
+	}
+
+	private MatrixBlockDictionary createIncrementingVector(int nVals, boolean NaN) {
+
+		MatrixBlock bins = new MatrixBlock(nVals + (NaN ? 1 : 0), 1, false);
+		for(int i = 0; i < nVals; i++)
+			bins.quickSetValue(i, 0, i + 1);
+		if(NaN)
+			bins.quickSetValue(nVals, 0, Double.NaN);
+
+		return MatrixBlockDictionary.create(bins);
+
+	}
+
+	private AColGroup binToDummy(ColumnEncoderComposite c) {
+		final int colId = c._colID;
+		final Array<?> a = in.getColumn(colId - 1);
+		final boolean containsNull = a.containsNull();
+		final List<ColumnEncoder> r = c.getEncoders();
+		final ColumnEncoderBin b = (ColumnEncoderBin) r.get(0);
+		b.build(in);
+
+		IColIndex colIndexes = ColIndexFactory.create(0, b._numBin + (containsNull ? 1 : 0));
+		ADictionary d = new IdentityDictionary(colIndexes.size());
+		AMapToData m = binEncode(a, b, containsNull);
+		AColGroup ret = ColGroupDDC.create(colIndexes, d, m, null);
+		ret.getNumberNonZeros(a.size());
+		return ret;
 	}
 
 	@SuppressWarnings("unchecked")
@@ -163,6 +239,8 @@ public class CompressedEncode {
 
 		// int domain = c.getDomainSize();
 		IColIndex colIndexes = ColIndexFactory.create(1);
+		if(domain == 1)
+			return ColGroupConst.create(colIndexes, new double[] {1});
 		MatrixBlock incrementing = new MatrixBlock(domain, 1, false);
 		for(int i = 0; i < domain; i++)
 			incrementing.quickSetValue(i, 0, i + 1);

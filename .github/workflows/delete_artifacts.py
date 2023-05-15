@@ -20,10 +20,12 @@
 #-------------------------------------------------------------
 
 import argparse
+import logging
 import math
 import os
 import requests
 
+logging.basicConfig(level=logging.INFO)
 
 def list_workflow_artifacts(
     owner_repo: str,
@@ -61,10 +63,12 @@ def delete_artifact(
     url_base = "https://api.github.com"
     url = f"{url_base}/repos/{owner_repo}/actions/artifacts/{artifact_id}"
 
+    logging.info(f"Deleting artifact at url: {url}")
     return requests.delete(url=url, headers=headers)
 
 
 if __name__ == "__main__":
+    logging.info("Running delete-artifacts.py")
     parser = argparse.ArgumentParser(description="Deletes Artifacts")
     parser.add_argument(
         "-t",
@@ -89,6 +93,14 @@ if __name__ == "__main__":
     )
 
     args = parser.parse_args()
+    if args.token is None:
+        logging.info(f"--token: is not set! Aborting")
+        exit(1)
+    else:
+        logging.info(f"--token: is set, continue")
+    logging.info(f"--owner-repository: {args.owner_repo}")
+    logging.info(f"--run-id: {args.run_id}")
+
 
     page = 1
     items_per_page = 85
@@ -103,16 +115,17 @@ if __name__ == "__main__":
     resp_dict = resp.json()
     artifacts_count = resp_dict.get("total_count")
     artifact_ids = [x.get("id") for x in resp_dict.get("artifacts")]
+    logging.info(f"Artifacts count: {len(artifact_ids)} of {artifacts_count}")
 
     if items_per_page < artifacts_count:
         pages = math.ceil(artifacts_count / items_per_page)
+        logging.info(f"Pagecount to retrieve: {pages}")
         for page in range(2, pages + 1):
             resp = list_workflow_artifacts(
                 owner_repo=args.owner_repo,
                 run_id=args.run_id,
                 token=args.token,
-                page=page,
-                per_page=items_per_page,
+                page=page, per_page=items_per_page,
             )
             [artifact_ids.append(x.get("id")) for x in resp.json().get("artifacts")]
 

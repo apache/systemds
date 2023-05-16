@@ -20,6 +20,7 @@
 package org.apache.sysds.runtime.transform.encode;
 
 import static org.apache.sysds.runtime.util.UtilFunctions.getEndIndex;
+
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
@@ -28,6 +29,7 @@ import java.util.List;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
+import org.apache.sysds.runtime.frame.data.columns.Array;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.DependencyTask;
 import org.apache.sysds.runtime.util.UtilFunctions;
@@ -66,29 +68,35 @@ public class ColumnEncoderFeatureHash extends ColumnEncoder {
 
 	@Override
 	protected double getCode(CacheBlock<?> in, int row) {
-		// hash a single row
-		String key = in.getString(row, _colID - 1);
-		if(key == null)
-			return Double.NaN;
-		return (key.hashCode() % _K) + 1;
+		if(in instanceof FrameBlock){
+			Array<?> a = ((FrameBlock)in).getColumn(_colID -1);
+			return getCode(a, row);
+		}
+		else{ // default
+			// hash a single row
+			String key = in.getString(row, _colID - 1);
+			if(key == null)
+				return Double.NaN;
+			return (key.hashCode() % _K) + 1;
+		}
+	}
+
+	protected double getCode(Array<?> a, int row){
+		return Math.abs(a.hashDouble(row) % _K + 1);
 	}
 
 	protected double[] getCodeCol(CacheBlock<?> in, int startInd, int blkSize) {
 		// hash a block of rows
 		int endInd = getEndIndex(in.getNumRows(), startInd, blkSize);
 		double codes[] = new double[endInd-startInd];
-		for (int i=startInd; i<endInd; i++) {
-			String key = in.getString(i, _colID - 1);
-			if(key == null || key.isEmpty())
-				codes[i-startInd] = Double.NaN;
-			else {
-				// Calculate non-negative modulo
-				//double mod = key.hashCode() % _K > 0 ? key.hashCode() % _K : _K + key.hashCode() % _K;
-				double mod = (key.hashCode() % _K) + 1;
-				if (mod < 0)
-					mod += _K;
-				codes[i - startInd] = mod;
-			}
+		if( in instanceof FrameBlock) {
+			Array<?> a = ((FrameBlock) in).getColumn(_colID-1);
+			for(int i = startInd; i < endInd; i++) 
+				codes[i - startInd] = getCode(a, i);
+		}
+		else {// default
+			for(int i = startInd; i < endInd; i++)
+				codes[i - startInd] = getCode(in, i);
 		}
 		return codes;
 	}

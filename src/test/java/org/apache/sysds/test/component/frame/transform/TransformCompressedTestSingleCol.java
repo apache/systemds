@@ -113,19 +113,29 @@ public class TransformCompressedTestSingleCol {
 		test("{ids:true, bin:[{id:1, method:equi-height, numbins:10}], dummycode:[1] }");
 	}
 
+	@Test
+	public void testHash(){
+		test("{ids:true, hash:[1], K:10}");
+	}
+
+	@Test
+	public void testHashToDummy(){
+		test("{ids:true, hash:[1], K:10, dummycode:[1]}");
+	}
+
 	public void test(String spec) {
 		try {
 
 			FrameBlock meta = null;
-			MultiColumnEncoder encoderCompressed = EncoderFactory.createEncoder(spec, data.getColumnNames(),
-				data.getNumColumns(), meta);
-
-			MatrixBlock outCompressed = encoderCompressed.encode(data, k, true);
-			FrameBlock outCompressedMD = encoderCompressed.getMetaData(null);
 			MultiColumnEncoder encoderNormal = EncoderFactory.createEncoder(spec, data.getColumnNames(),
 				data.getNumColumns(), meta);
 			MatrixBlock outNormal = encoderNormal.encode(data, k);
 			FrameBlock outNormalMD = encoderNormal.getMetaData(null);
+
+			MultiColumnEncoder encoderCompressed = EncoderFactory.createEncoder(spec, data.getColumnNames(),
+				data.getNumColumns(), meta);
+			MatrixBlock outCompressed = encoderCompressed.encode(data, k, true);
+			FrameBlock outCompressedMD = encoderCompressed.getMetaData(null);
 
 			TestUtils.compareMatrices(outNormal, outCompressed, 0, "Not Equal after apply");
 			TestUtils.compareFrames(outNormalMD, outCompressedMD, true);

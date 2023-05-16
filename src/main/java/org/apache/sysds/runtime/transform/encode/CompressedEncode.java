@@ -141,6 +141,10 @@ public class CompressedEncode {
 			return bin(c);
 		else if(c.isBinToDummy())
 			return binToDummy(c);
+		else if(c.isHash())
+			return hash(c);
+		else if(c.isHashToDummy())
+			return hashToDummy(c);
 		else
 			throw new NotImplementedException("Not supporting : " + c);
 	}
@@ -174,12 +178,12 @@ public class CompressedEncode {
 		AMapToData m = binEncode(a, b, containsNull);
 
 		AColGroup ret = ColGroupDDC.create(colIndexes, d, m, null);
-		try{
+		try {
 
 			ret.getNumberNonZeros(a.size());
 		}
-		catch(Exception e){
-			throw new DMLRuntimeException("Failed binning \n\n" + a + "\n" + b + "\n" + d + "\n" + m,e);
+		catch(Exception e) {
+			throw new DMLRuntimeException("Failed binning \n\n" + a + "\n" + b + "\n" + d + "\n" + m, e);
 		}
 		return ret;
 	}
@@ -299,6 +303,58 @@ public class CompressedEncode {
 				m.set(it.getIndex(), map.get(v).intValue());
 		}
 		return m;
+	}
+
+	private AMapToData createHashMappingAMapToData(Array<?> a, int k) {
+		AMapToData m = MapToFactory.create(a.size(), k);
+		for(int i = 0; i < a.size(); i++) {
+			double h = a.hashDouble(i);
+			if(Double.isNaN(h)) {
+				m.set(i, k);
+			}
+			else {
+				m.set(i, (int) h % k);
+			}
+		}
+		return m;
+	}
+
+	private AColGroup hash(ColumnEncoderComposite c) {
+		int colId = c._colID;
+		Array<?> a = in.getColumn(colId - 1);
+		ColumnEncoderFeatureHash CEHash = (ColumnEncoderFeatureHash) c.getEncoders().get(0);
+
+		// HashMap<?, Long> map = a.getRecodeMap();
+		int domain = (int) CEHash.getK();
+		boolean nulls = a.containsNull();
+		IColIndex colIndexes = ColIndexFactory.create(0, 1);
+		if(domain == 1)
+			return ColGroupConst.create(colIndexes, new double[] {1});
+
+			MatrixBlock incrementing = new MatrixBlock(domain, 1, false);
+			for(int i = 0; i < domain; i++)
+				incrementing.quickSetValue(i, 0, i + 1);
+	
+			ADictionary d = MatrixBlockDictionary.create(incrementing);
+
+		AMapToData m = createHashMappingAMapToData(a, domain + (nulls ? 1 : 0));
+		return ColGroupDDC.create(colIndexes, d, m, null);
+	}
+
+	private AColGroup hashToDummy(ColumnEncoderComposite c) {
+		int colId = c._colID;
+		Array<?> a = in.getColumn(colId - 1);
+		ColumnEncoderFeatureHash CEHash = (ColumnEncoderFeatureHash) c.getEncoders().get(0);
+
+		// HashMap<?, Long> map = a.getRecodeMap();
+		int domain = (int) CEHash.getK();
+		boolean nulls = a.containsNull();
+		IColIndex colIndexes = ColIndexFactory.create(0, domain + (nulls ? 1 : 0));
+		if(domain == 1)
+			return ColGroupConst.create(colIndexes, new double[] {1});
+		ADictionary d = new IdentityDictionary(colIndexes.size());
+		AMapToData m = createHashMappingAMapToData(a, domain + (nulls ? 1 : 0));
+		return ColGroupDDC.create(colIndexes, d, m, null);
 	}
 
 	private class EncodeTask implements Callable<AColGroup> {

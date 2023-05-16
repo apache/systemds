@@ -326,6 +326,12 @@ public class FloatArray extends Array<Float> {
 		return _data[i] != 0.0f;
 	}
 
+
+	@Override
+	public double hashDouble(int idx){
+		return Float.hashCode(_data[idx]);
+	}
+
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder(_data.length * 5 + 2);

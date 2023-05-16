@@ -331,6 +331,12 @@ public class IntegerArray extends Array<Integer> {
 		return _data[i] != 0;
 	}
 
+
+	@Override
+	public double hashDouble(int idx){
+		return Integer.hashCode(_data[idx]);
+	}
+
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder(_data.length * 5 + 2);

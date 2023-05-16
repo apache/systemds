@@ -430,6 +430,15 @@ public class OptionalArray<T> extends Array<T> {
 		return !_n.isAllTrue();
 	}
 
+
+	@Override
+	public double hashDouble(int idx){
+		if(_n.get(idx))
+			return _a.hashDouble(idx);
+		else
+			return Double.NaN;
+	}
+
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder(_size + 2);

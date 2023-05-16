@@ -539,6 +539,11 @@ public class BitSetArray extends ABooleanArray {
 	}
 
 	@Override
+	public double hashDouble(int idx){
+		return get(idx) ? 1.0 : 0.0;
+	}
+
+	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder(_size + 10);
 		sb.append(super.toString() + ":[");

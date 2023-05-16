@@ -333,6 +333,12 @@ public class LongArray extends Array<Long> {
 		return _data[i] != 0;
 	}
 
+
+	@Override
+	public double hashDouble(int idx){
+		return Long.hashCode(_data[idx]);
+	}
+
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder(_data.length * 5 + 2);

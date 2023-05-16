@@ -1408,7 +1408,7 @@ public class FrameArrayTests {
 					((Array<Character>) aa).fill((Character) null);
 					if(!isOptional)
 						for(int i = 0; i < aa.size(); i++)
-							assertEquals(aa.get(i), (char)0);
+							assertEquals(aa.get(i), (char) 0);
 					break;
 				case FP32:
 					((Array<Float>) aa).fill((Float) null);
@@ -1565,8 +1565,7 @@ public class FrameArrayTests {
 		switch(t) {
 			case STRING:
 				return ArrayFactory.create(generateRandomStringOpt(size, seed));
-			case BITSET:
-				// return ArrayFactory.create(generateRandomBitSet(size, seed), size);
+			case BITSET:// not a thing
 			case BOOLEAN:
 				return ArrayFactory.create(generateRandomBooleanOpt(size, seed));
 			case INT32:

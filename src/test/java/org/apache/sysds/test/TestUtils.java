@@ -52,6 +52,7 @@ import java.util.StringTokenizer;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
@@ -68,8 +69,11 @@ import org.apache.sysds.runtime.data.DenseBlockFP64;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.data.TensorBlock;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
+import org.apache.sysds.runtime.frame.data.columns.Array;
 import org.apache.sysds.runtime.frame.data.columns.ArrayFactory;
 import org.apache.sysds.runtime.frame.data.columns.ColumnMetadata;
+import org.apache.sysds.runtime.frame.data.columns.OptionalArray;
+import org.apache.sysds.runtime.frame.data.columns.StringArray;
 import org.apache.sysds.runtime.frame.data.lib.FrameLibApplySchema;
 import org.apache.sysds.runtime.frame.data.lib.FrameUtil;
 import org.apache.sysds.runtime.functionobjects.Builtin;
@@ -2266,6 +2270,146 @@ public class TestUtils
 	public static FrameBlock generateRandomFrameBlock(int rows, ValueType[] schema, long seed){
 		Random random = (seed == -1) ? TestUtils.random : new Random(seed);
 		return generateRandomFrameBlock(rows, schema, random);
+	}
+
+	public static FrameBlock generateRandomFrameBlock(int rows, ValueType[] schema, long seed, double nullChance){
+		Random random = (seed == -1) ? TestUtils.random : new Random(seed);
+
+		FrameBlock frameBlock = new FrameBlock();
+		for(int col = 0; col < schema.length; col++){
+			Array<?> column = generateColumn(rows, schema[col], random, nullChance);
+			frameBlock.appendColumn(column);
+		}
+		return frameBlock;
+	}
+
+	@SuppressWarnings("unchecked")
+	private static Array<?> generateColumn(int rows, ValueType type, Random rand, double nullChance) {
+		if(nullChance == 0) {
+			switch(type) {
+				case BOOLEAN:
+					Array<Boolean> a = (Array<Boolean>) ArrayFactory.allocate(type, rows);
+					for(int r = 0; r < rows; r++)
+						a.set(r, rand.nextBoolean());
+					return a;
+				case CHARACTER:
+					Array<Character> c = (Array<Character>) ArrayFactory.allocate(type, rows);
+					for(int r = 0; r < rows; r++)
+						c.set(r, rand.nextInt(Character.MAX_VALUE));
+					return c;
+				case FP32:
+					Array<Float> f = (Array<Float>) ArrayFactory.allocate(type, rows);
+					for(int r = 0; r < rows; r++)
+						f.set(r, rand.nextFloat());
+					return f;
+				case FP64:
+					Array<Double> d = (Array<Double>) ArrayFactory.allocate(type, rows);
+					for(int r = 0; r < rows; r++)
+						d.set(r, rand.nextDouble());
+					return d;
+				case INT32:
+				case UINT4:
+				case UINT8:
+					Array<Integer> i = (Array<Integer>) ArrayFactory.allocate(type, rows);
+					int limit = type == ValueType.UINT4 ? 16 : type == ValueType.UINT8 ? 256 : Integer.MAX_VALUE;
+					for(int r = 0; r < rows; r++)
+						i.set(r, rand.nextInt(limit));
+					return i;
+				case INT64:
+					Array<Long> l = (Array<Long>) ArrayFactory.allocate(type, rows);
+					for(int r = 0; r < rows; r++)
+						l.set(r, rand.nextLong());
+					return l;
+				case STRING:
+					StringArray s = (StringArray) ArrayFactory.allocate(type, rows);
+					for(int r = 0; r < rows; r++) {
+						String st = random.ints('a', 'z' + 1).limit(10)
+							.collect(StringBuilder::new, StringBuilder::appendCodePoint, StringBuilder::append).toString();
+						s.set(r, st);
+					}
+					return s;
+				case UNKNOWN:
+				default:
+					throw new NotImplementedException();
+			}
+
+		}
+		else {
+			switch(type) {
+				case BOOLEAN:
+					OptionalArray<Boolean> a = (OptionalArray<Boolean>) ArrayFactory.allocateOptional(type, rows);
+					for(int r = 0; r < rows; r++) {
+						if(rand.nextDouble() < nullChance)
+							a.set(r, (Boolean) null);
+						else
+							a.set(r, rand.nextBoolean());
+					}
+					return a;
+				case CHARACTER:
+					OptionalArray<Character> c = (OptionalArray<Character>) ArrayFactory.allocateOptional(type, rows);
+					for(int r = 0; r < rows; r++) {
+						if(rand.nextDouble() < nullChance)
+							c.set(r, (Character) null);
+						else
+							c.set(r, rand.nextInt(Character.MAX_VALUE));
+					}
+					return c;
+				case FP32:
+					OptionalArray<Float> f = (OptionalArray<Float>) ArrayFactory.allocateOptional(type, rows);
+					for(int r = 0; r < rows; r++) {
+						if(rand.nextDouble() < nullChance)
+							f.set(r, (Float) null);
+						else
+							f.set(r, rand.nextFloat());
+					}
+					return f;
+				case FP64:
+					OptionalArray<Double> d = (OptionalArray<Double>) ArrayFactory.allocateOptional(type, rows);
+					for(int r = 0; r < rows; r++) {
+						if(rand.nextDouble() < nullChance)
+							d.set(r, (Double) null);
+						else
+							d.set(r, rand.nextDouble());
+					}
+					return d;
+				case INT32:
+				case UINT4:
+				case UINT8:
+					Array<Integer> i = (Array<Integer>) ArrayFactory.allocateOptional(type, rows);
+					int limit = type == ValueType.UINT4 ? 16 : type == ValueType.UINT8 ? 256 : Integer.MAX_VALUE;
+					for(int r = 0; r < rows; r++) {
+						if(rand.nextDouble() < nullChance)
+							i.set(r, (Integer) null);
+						else
+							i.set(r, rand.nextInt(limit));
+					}
+					return i;
+				case INT64:
+					OptionalArray<Long> l = (OptionalArray<Long>) ArrayFactory.allocateOptional(type, rows);
+					for(int r = 0; r < rows; r++) {
+						if(rand.nextDouble() < nullChance)
+							l.set(r, (Long) null);
+						else
+							l.set(r, rand.nextLong());
+					}
+					return l;
+				case STRING:
+					StringArray s = (StringArray) ArrayFactory.allocateOptional(type, rows);
+					for(int r = 0; r < rows; r++) {
+						if(rand.nextDouble() < nullChance)
+							s.set(r, (String) null);
+						else {
+							String st = random.ints('a', 'z' + 1).limit(10)
+								.collect(StringBuilder::new, StringBuilder::appendCodePoint, StringBuilder::append).toString();
+							s.set(r, st);
+						}
+					}
+					return s;
+				case UNKNOWN:
+				default:
+					throw new NotImplementedException();
+			}
+		}
 	}
 
 	public static FrameBlock generateRandomFrameBlock(int rows, int cols, long seed){

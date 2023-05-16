@@ -339,6 +339,11 @@ public class BooleanArray extends ABooleanArray {
 	}
 
 	@Override
+	public double hashDouble(int idx){
+		return get(idx) ? 1.0 : 0.0;
+	}
+
+	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder(_data.length * 2 + 10);
 		sb.append(super.toString() + ":[");

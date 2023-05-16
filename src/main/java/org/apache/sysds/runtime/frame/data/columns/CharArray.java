@@ -323,6 +323,11 @@ public class CharArray extends Array<Character> {
 	}
 
 	@Override
+	public double hashDouble(int idx){
+		return Character.hashCode(_data[idx]);
+	}
+
+	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder(_data.length * 2 + 15);
 		sb.append(super.toString());

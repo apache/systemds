@@ -222,7 +222,7 @@ public class ColumnEncoderBin extends ColumnEncoder {
 		int endRow = getEndIndex(in.getNumRows(), startRow, blockSize);
 		double[] vals = new double[endRow-startRow];
 		for(int i = startRow; i < endRow; i++) {
-			double inVal = in.getDouble(i, colID - 1);
+			double inVal = in.getDoubleNaN(i, colID - 1);
 			//FIXME current NaN handling introduces 0s and thus
 			// impacts the computation of bin boundaries
 			if(Double.isNaN(inVal))
@@ -404,15 +404,15 @@ public class ColumnEncoderBin extends ColumnEncoder {
 		sb.append(": ");
 		sb.append(_colID);
 		sb.append(" --- Method: " + _binMethod + " num Bin: " + _numBin);
-		if(_binMethod == BinMethod.EQUI_WIDTH){
-
-				sb.append("\n---- BinMin: "+ Arrays.toString(_binMins));
-				sb.append("\n---- BinMax: "+ Arrays.toString(_binMaxs));
-		}
-		else{
-
-			sb.append(" --- MinMax: "+ _colMins + " " + _colMaxs);
-		}
+		// if(_binMethod == BinMethod.EQUI_WIDTH) {
+		sb.append("\n---- BinMin: " + Arrays.toString(_binMins));
+		sb.append("\n---- BinMax: " + Arrays.toString(_binMaxs));
+		// }
+		// else {
+		// // sb.append(" --- MinMax: "+ _colMins + " " + _colMaxs);
+		// sb.append("\n---- BinMin: " + Arrays.toString(_binMins));
+		// sb.append("\n---- BinMax: " + Arrays.toString(_binMaxs));
+		// }
 		return sb.toString();
 	}
 

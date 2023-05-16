@@ -446,6 +446,17 @@ public class ColumnEncoderComposite extends ColumnEncoder {
 			&& _columnEncoders.get(1) instanceof ColumnEncoderDummycode;
 	}
 
+	public boolean isHash() {
+		return _columnEncoders.size() == 1//
+			&& _columnEncoders.get(0) instanceof ColumnEncoderFeatureHash;//
+	}
+
+	public boolean isHashToDummy() {
+		return _columnEncoders.size() == 2//
+			&& _columnEncoders.get(0) instanceof ColumnEncoderFeatureHash//
+			&& _columnEncoders.get(1) instanceof ColumnEncoderDummycode;
+	}
+
 	private static class ColumnCompositeUpdateDCTask implements Callable<Object> {
 
 		private final ColumnEncoderComposite _encoder;

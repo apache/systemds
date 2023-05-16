@@ -570,6 +570,14 @@ public abstract class Array<T> implements Writable {
 		return this.getClass().getSimpleName();
 	}
 
+	/**
+	 * Hash the given index of the array.
+	 * It is allowed to return NaN on null elements.
+	 * 
+	 * @param idx The index to hash
+	 * @return The hash value of that index.
+	 */
+	public abstract double hashDouble(int idx);
 
 	public ArrayIterator getIterator(){
 		return new ArrayIterator();

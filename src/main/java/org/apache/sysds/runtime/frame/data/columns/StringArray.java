@@ -661,6 +661,13 @@ public class StringArray extends Array<String> {
 		}
 	}
 
+	@Override
+	public double hashDouble(int idx){
+		if(_data[idx] != null)
+			return _data[idx].hashCode();
+		else
+			return Double.NaN;
+	}
 
 	@Override
 	public String toString() {

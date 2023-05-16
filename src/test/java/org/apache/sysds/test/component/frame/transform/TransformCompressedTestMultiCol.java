@@ -113,6 +113,16 @@ public class TransformCompressedTestMultiCol {
 			"{ids:true, bin:[{id:1, method:equi-height, numbins:10},{id:2, method:equi-height, numbins:10},{id:3, method:equi-height, numbins:40}], dummycode:[1,2,3] }");
 	}
 
+	@Test
+	public void testHash(){
+		test("{ids:true, hash:[1,2,3], K:10}");
+	}
+
+	@Test
+	public void testHashToDummy(){
+		test("{ids:true, hash:[1,2,3], K:10, dummycode:[1,2]}");
+	}
+
 	public void test(String spec) {
 		try {
 

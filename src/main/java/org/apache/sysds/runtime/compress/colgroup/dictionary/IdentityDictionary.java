@@ -44,6 +44,7 @@ public class IdentityDictionary extends ADictionary {
 	private static final long serialVersionUID = 2535887782150955098L;
 
 	protected final int nRowCol;
+	protected final boolean withEmpty;
 
 	protected SoftReference<MatrixBlockDictionary> cache = null;
 
@@ -57,7 +58,24 @@ public class IdentityDictionary extends ADictionary {
 		if(nRowCol <= 0)
 			throw new DMLCompressionException("Invalid Identity Dictionary");
 		this.nRowCol = nRowCol;
+		this.withEmpty = false;
 	}
+
+
+	/**
+	 * Create an Identity matrix dictionary, It behaves as if allocated a Sparse Matrix block but exploits that the
+	 * structure is known to have certain properties.
+	 * 
+	 * @param nRowCol the number of rows and columns in this identity matrix.
+	 * @param 
+	 */
+	public IdentityDictionary(int nRowCol, boolean withEmpty){
+		if(nRowCol <= 0)
+			throw new DMLCompressionException("Invalid Identity Dictionary");
+		this.nRowCol = nRowCol;
+		this.withEmpty = withEmpty;
+	}
+
 
 	@Override
 	public double[] getValues() {
@@ -222,7 +240,7 @@ public class IdentityDictionary extends ADictionary {
 
 	@Override
 	public int getNumberOfValues(int ncol) {
-		return nRowCol;
+		return nRowCol + (withEmpty ?  1 : 0)  ;
 	}
 
 	@Override
@@ -399,9 +417,17 @@ public class IdentityDictionary extends ADictionary {
 	}
 
 	private MatrixBlockDictionary createMBDict() {
-		final SparseBlock sb = SparseBlockFactory.createIdentityMatrix(nRowCol);
-		final MatrixBlock identity = new MatrixBlock(nRowCol, nRowCol, nRowCol,  sb);
-		return new MatrixBlockDictionary(identity);
+		if(withEmpty){
+			final SparseBlock sb = SparseBlockFactory.createIdentityMatrixWithEmptyRow(nRowCol);
+			final MatrixBlock identity = new MatrixBlock(nRowCol + 1, nRowCol, nRowCol,  sb);
+			return new MatrixBlockDictionary(identity);
+		}
+		else{
+
+			final SparseBlock sb = SparseBlockFactory.createIdentityMatrix(nRowCol);
+			final MatrixBlock identity = new MatrixBlock(nRowCol , nRowCol, nRowCol,  sb);
+			return new MatrixBlockDictionary(identity);
+		}
 	}
 
 	@Override

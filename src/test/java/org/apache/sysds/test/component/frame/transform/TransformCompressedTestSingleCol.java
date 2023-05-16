@@ -56,10 +56,12 @@ public class TransformCompressedTestSingleCol {
 		try {
 
 			FrameBlock data = TestUtils.generateRandomFrameBlock(100, new ValueType[] {ValueType.UINT4}, 231);
-			data.setSchema(new ValueType[] {ValueType.INT32});
-			for(int k : threads) {
+			for(int k : threads)
 				tests.add(new Object[] {data, k});
-			}
+
+			data = TestUtils.generateRandomFrameBlock(100, new ValueType[] {ValueType.UINT4}, 231, 0.2);
+			for(int k : threads)
+				tests.add(new Object[] {data, k});
 		}
 		catch(Exception e) {
 			e.printStackTrace();
@@ -114,12 +116,12 @@ public class TransformCompressedTestSingleCol {
 	}
 
 	@Test
-	public void testHash(){
+	public void testHash() {
 		test("{ids:true, hash:[1], K:10}");
 	}
 
 	@Test
-	public void testHashToDummy(){
+	public void testHashToDummy() {
 		test("{ids:true, hash:[1], K:10, dummycode:[1]}");
 	}
 
@@ -136,7 +138,9 @@ public class TransformCompressedTestSingleCol {
 				data.getNumColumns(), meta);
 			MatrixBlock outCompressed = encoderCompressed.encode(data, k, true);
 			FrameBlock outCompressedMD = encoderCompressed.getMetaData(null);
-
+			// LOG.error(data.slice(0,10));
+			// LOG.error(outNormal.slice(0,10));
+			// LOG.error(outCompressed.slice(0,10));
 			TestUtils.compareMatrices(outNormal, outCompressed, 0, "Not Equal after apply");
 			TestUtils.compareFrames(outNormalMD, outCompressedMD, true);
 		}

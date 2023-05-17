@@ -43,10 +43,6 @@ public class ColumnEncoderBin extends ColumnEncoder {
 	public static final String NBINS_PREFIX = "nbins";
 	private static final long serialVersionUID = 1917445005206076078L;
 
-	public int getNumBin() {
-		return _numBin;
-	}
-
 	protected int _numBin = -1;
 	private BinMethod _binMethod = BinMethod.EQUI_WIDTH;
 
@@ -73,6 +69,10 @@ public class ColumnEncoderBin extends ColumnEncoder {
 		_numBin = numBin;
 		_binMins = binMins;
 		_binMaxs = binMaxs;
+	}
+
+	public int getNumBin() {
+		return _numBin;
 	}
 
 	public double getColMins() {
@@ -404,15 +404,8 @@ public class ColumnEncoderBin extends ColumnEncoder {
 		sb.append(": ");
 		sb.append(_colID);
 		sb.append(" --- Method: " + _binMethod + " num Bin: " + _numBin);
-		// if(_binMethod == BinMethod.EQUI_WIDTH) {
 		sb.append("\n---- BinMin: " + Arrays.toString(_binMins));
 		sb.append("\n---- BinMax: " + Arrays.toString(_binMaxs));
-		// }
-		// else {
-		// // sb.append(" --- MinMax: "+ _colMins + " " + _colMaxs);
-		// sb.append("\n---- BinMin: " + Arrays.toString(_binMins));
-		// sb.append("\n---- BinMax: " + Arrays.toString(_binMaxs));
-		// }
 		return sb.toString();
 	}
 

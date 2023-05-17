@@ -20,7 +20,6 @@
 package org.apache.sysds.runtime.compress.lib;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -112,7 +111,7 @@ public final class CLALibUtils {
 			else
 				filteredGroups.add(g);
 		}
-		return returnGroupIfFiniteNumbers(groups, filteredGroups, constV);
+		return filteredGroups;
 	}
 
 	protected static void filterGroupsAndSplitPreAgg(List<AColGroup> groups, double[] constV,
@@ -148,14 +147,6 @@ public final class CLALibUtils {
 			else
 				noPreAggGroups.add(g);
 		}
-	}
-
-	private static List<AColGroup> returnGroupIfFiniteNumbers(List<AColGroup> groups, List<AColGroup> filteredGroups,
-		double[] constV) {
-		for(double v : constV)
-			if(!Double.isFinite(v))
-				throw new NotImplementedException("Not handling if the values are not finite: " + Arrays.toString(constV));
-		return filteredGroups;
 	}
 
 	private static AColGroup combineEmpty(List<AColGroup> e) {

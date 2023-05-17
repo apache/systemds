@@ -262,6 +262,10 @@ public class ConfigurationManager{
 			|| OptimizerUtils.MAX_PARALLELIZE_ORDER);
 	}
 
+	public static boolean isAutoLinearizationEnabled() {
+		return OptimizerUtils.COST_BASED_ORDERING;
+	}
+
 	public static boolean isParallelIOEnabled(){
 		return getDMLConfig().getBooleanValue(DMLConfig.CP_PARALLEL_IO);
 	}
@@ -276,7 +280,9 @@ public class ConfigurationManager{
 	}
 
 	public static ILinearize.DagLinearization getLinearizationOrder() {
-		if (OptimizerUtils.MAX_PARALLELIZE_ORDER)
+		if (OptimizerUtils.COST_BASED_ORDERING)
+			return ILinearize.DagLinearization.AUTO;
+		else if (OptimizerUtils.MAX_PARALLELIZE_ORDER)
 			return ILinearize.DagLinearization.MAX_PARALLELIZE;
 		else
 			return ILinearize.DagLinearization

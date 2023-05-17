@@ -299,6 +299,12 @@ public class OptimizerUtils
 	 */
 	public static boolean MAX_PARALLELIZE_ORDER = false;
 
+	/**
+	 * Cost-based instruction ordering to minimize total execution time under
+	 * the constraint of available memory.
+	 */
+	public static boolean COST_BASED_ORDERING = false;
+
 	//////////////////////
 	// Optimizer levels //
 	//////////////////////

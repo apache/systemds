@@ -36,6 +36,7 @@ import org.apache.sysds.common.Types.OpOp2;
 import org.apache.sysds.common.Types.OpOpData;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.conf.ConfigurationManager;
+import org.apache.sysds.hops.cost.ComputeCost;
 import org.apache.sysds.hops.cost.FederatedCost;
 import org.apache.sysds.hops.recompile.Recompiler;
 import org.apache.sysds.hops.recompile.Recompiler.ResetType;
@@ -410,6 +411,11 @@ public abstract class Hop implements ParseInfo {
 			getLops().setFederatedOutput(_federatedOutput);
 		if ( prefetchActivated() )
 			getLops().activatePrefetch();
+
+		//propagate compute and memory estimates to lops
+		//FIXME: Compute cost. Handle multiple Lops from one Hop case
+		if (ConfigurationManager.isAutoLinearizationEnabled())
+			setMemoryAndComputeEstimates(getLops());
 		
 		//Step 1: construct reblock lop if required (output of hop)
 		constructAndSetReblockLopIfRequired();
@@ -1695,6 +1701,12 @@ public abstract class Hop implements ParseInfo {
 	
 	protected void setPrivacy(Lop lop) {
 		lop.setPrivacyConstraint(getPrivacy());
+	}
+
+	protected void setMemoryAndComputeEstimates(Lop lop) {
+		lop.setMemoryEstimates(getOutputMemEstimate(), getMemEstimate(),
+			getIntermediateMemEstimate(), getSpBroadcastSize());
+		lop.setComputeEstimate(ComputeCost.getHOPComputeCost(this));
 	}
 
 	/**

@@ -62,11 +62,11 @@ import org.apache.sysds.lops.UnaryCP;
  *
  * https://en.wikipedia.org/wiki/Linearizability#Linearization_points
  */
-public interface ILinearize {
+public class ILinearize {
 	public static Log LOG = LogFactory.getLog(ILinearize.class.getName());
 
 	public enum DagLinearization {
-		DEPTH_FIRST, BREADTH_FIRST, MIN_INTERMEDIATE, MAX_PARALLELIZE
+		DEPTH_FIRST, BREADTH_FIRST, MIN_INTERMEDIATE, MAX_PARALLELIZE, AUTO
 	}
 
 	public static List<Lop> linearize(List<Lop> v) {
@@ -76,6 +76,8 @@ public interface ILinearize {
 			switch(linearization) {
 				case MAX_PARALLELIZE:
 					return doMaxParallelizeSort(v);
+				case AUTO:
+					return CostBasedLinearize.getBestOrder(v);
 				case MIN_INTERMEDIATE:
 					return doMinIntermediateSort(v);
 				case BREADTH_FIRST:

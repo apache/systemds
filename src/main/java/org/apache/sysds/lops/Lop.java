@@ -27,6 +27,7 @@ import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.hops.AggBinaryOp.SparkAggType;
 import org.apache.sysds.common.Types.ExecType;
+import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.lops.compile.Dag;
 import org.apache.sysds.runtime.instructions.fed.FEDInstruction.FederatedOutput;
 import org.apache.sysds.runtime.privacy.PrivacyConstraint;
@@ -155,7 +156,34 @@ public abstract class Lop
 	 * Examples include spark unary aggregate, mapmm, prefetch
 	 */
 	protected boolean _asynchronous = false;
-	
+
+	/**
+	 * Estimated size for the output produced by this Lop in bytes.
+	 */
+	protected double _outputMemEstimate = OptimizerUtils.INVALID_SIZE;
+
+	/*
+	 * Estimated size for the entire operation represented by this Lop
+	 * It includes the memory required for all inputs as well as the output
+	 * For Spark collects, _memEstimate equals _outputMemEstimate.
+	 */
+	protected double _memEstimate = OptimizerUtils.INVALID_SIZE;
+
+	/**
+	 * Estimated size for the intermediates produced by this Lop in bytes.
+	 */
+	protected double _processingMemEstimate = 0;
+
+	/**
+	 * Estimated size for the broadcast partitions.
+	 */
+	protected double _spBroadcastMemEstimate = 0;
+
+	/*
+	 * Compute cost for this Lop based on the number of floating point operations per
+	 * output cell and the total number of output cells.
+	 */
+	protected double _computeCost = 0;
 
 	/**
 	 * Constructor to be invoked by base class.
@@ -310,6 +338,14 @@ public abstract class Lop
 		}
 	}
 
+	public void replaceAllInputs(ArrayList<Lop> newInputs) {
+		inputs = newInputs;
+	}
+
+	public void replaceAllOutputs(ArrayList<Lop> newOutputs) {
+		outputs = newOutputs;
+	}
+
 	public void removeInput(Lop op) {
 		inputs.remove(op);
 	}
@@ -376,6 +412,29 @@ public abstract class Lop
 
 	public boolean isAsynchronousOp() {
 		return _asynchronous;
+	}
+
+	public void setMemoryEstimates(double outMem, double totMem, double interMem, double bcMem) {
+		_outputMemEstimate = outMem;
+		_memEstimate = totMem;
+		_processingMemEstimate = interMem;
+		_spBroadcastMemEstimate = bcMem;
+	}
+
+	public double getTotalMemoryEstimate() {
+		return _memEstimate;
+	}
+
+	public double getOutputMemoryEstimate() {
+		return _outputMemEstimate;
+	}
+
+	public void setComputeEstimate(double compCost) {
+		_computeCost = compCost;
+	}
+
+	public double getComputeEstimate() {
+		return _computeCost;
 	}
 
 	/**

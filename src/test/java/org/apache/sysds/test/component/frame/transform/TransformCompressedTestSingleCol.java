@@ -54,14 +54,18 @@ public class TransformCompressedTestSingleCol {
 		final ArrayList<Object[]> tests = new ArrayList<>();
 		final int[] threads = new int[] {1, 4};
 		try {
+			FrameBlock[] blocks = new FrameBlock[] {
+				TestUtils.generateRandomFrameBlock(100, new ValueType[] {ValueType.UINT4}, 231),
+				TestUtils.generateRandomFrameBlock(100, new ValueType[] {ValueType.UINT4}, 231, 0.2),
+				TestUtils.generateRandomFrameBlock(100, new ValueType[] {ValueType.UINT4}, 231, 1.0),
+				TestUtils.generateRandomFrameBlock(100, new ValueType[] {ValueType.UINT4}, 231, 1.0),
+				// Above block size of number of unique elements
+				TestUtils.generateRandomFrameBlock(1200, new ValueType[] {ValueType.FP32}, 231, 0.1),};
 
-			FrameBlock data = TestUtils.generateRandomFrameBlock(100, new ValueType[] {ValueType.UINT4}, 231);
-			for(int k : threads)
-				tests.add(new Object[] {data, k});
-
-			data = TestUtils.generateRandomFrameBlock(100, new ValueType[] {ValueType.UINT4}, 231, 0.2);
-			for(int k : threads)
-				tests.add(new Object[] {data, k});
+			blocks[3].set(40, 0, "14");
+			for(FrameBlock block : blocks)
+				for(int k : threads)
+					tests.add(new Object[] {block, k});
 		}
 		catch(Exception e) {
 			e.printStackTrace();
@@ -121,8 +125,18 @@ public class TransformCompressedTestSingleCol {
 	}
 
 	@Test
+	public void testHashDomain1() {
+		test("{ids:true, hash:[1], K:1}");
+	}
+
+	@Test
 	public void testHashToDummy() {
 		test("{ids:true, hash:[1], K:10, dummycode:[1]}");
+	}
+
+	@Test
+	public void testHashToDummyDomain1() {
+		test("{ids:true, hash:[1], K:1, dummycode:[1]}");
 	}
 
 	public void test(String spec) {

@@ -91,9 +91,6 @@ import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.runtime.util.UtilFunctions;
 import org.junit.Assert;
 
-//import jcuda.runtime.JCuda;
-
-
 /**
  * <p>
  * Provides methods to easily create tests. Implemented methods can be used for
@@ -106,8 +103,7 @@ import org.junit.Assert;
  * <li>clean up</li>
  * </ul>
  */
-public class TestUtils
-{
+public class TestUtils {
 
 	private static final Log LOG = LogFactory.getLog(TestUtils.class.getName());
 
@@ -1604,16 +1600,6 @@ public class TestUtils
 		return false;
 	}
 
-
-	/**
-	 *
-	 * @param vt
-	 * @param in1
-	 * @param in2
-	 * @param tolerance
-	 *
-	 * @return
-	 */
 	public static int compareTo(ValueType vt, Object in1, Object in2, double tolerance) {
 		if(in1 == null && in2 == null) return 0;
 		else if(in1 == null) return -1;
@@ -1659,12 +1645,6 @@ public class TestUtils
 		}
 	}
 
-	/**
-	 * Converts a 2D array into a sparse hashmap matrix.
-	 *
-	 * @param matrix
-	 * @return
-	 */
 	public static HashMap<CellIndex, Double> convert2DDoubleArrayToHashMap(double[][] matrix) {
 		HashMap<CellIndex, Double> hmMatrix = new HashMap<>();
 		for (int i = 0; i < matrix.length; i++) {
@@ -1677,11 +1657,6 @@ public class TestUtils
 		return hmMatrix;
 	}
 
-	/**
-	 * Method to convert a hashmap of matrix entries into a double array
-	 * @param matrix
-	 * @return
-	 */
 	public static double[][] convertHashMapToDoubleArray(HashMap <CellIndex, Double> matrix) {
 		int max_rows = -1, max_cols= -1;
 		for(CellIndex ix : matrix.keySet()) {
@@ -1701,12 +1676,6 @@ public class TestUtils
 		return ret_arr;
 	}
 
-	/**
-	 * Converts a 2D double array into a 1D double array.
-	 *
-	 * @param array
-	 * @return
-	 */
 	public static double[] convert2Dto1DDoubleArray(double[][] array) {
 		double[] ret = new double[array.length * array[0].length];
 		int c = 0;

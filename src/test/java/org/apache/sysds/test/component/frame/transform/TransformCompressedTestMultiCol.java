@@ -22,6 +22,7 @@ package org.apache.sysds.test.component.frame.transform;
 import static org.junit.Assert.fail;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 
 import org.apache.commons.logging.Log;
@@ -55,24 +56,37 @@ public class TransformCompressedTestMultiCol {
 		final int[] threads = new int[] {1, 4};
 		try {
 
-			FrameBlock data = TestUtils.generateRandomFrameBlock(100, new ValueType[] {ValueType.UINT4, ValueType.UINT8, ValueType.UINT4}, 231);
-			data.setSchema(new ValueType[] {ValueType.INT32, ValueType.INT32, ValueType.INT32});
-			for(int k : threads) {
-				tests.add(new Object[] {data, k});
+			ValueType[] kPlusCols = new ValueType[1002];
+
+			Arrays.fill(kPlusCols, ValueType.BOOLEAN);
+
+			FrameBlock[] blocks = new FrameBlock[] {//
+				TestUtils.generateRandomFrameBlock(100, //
+					new ValueType[] {ValueType.UINT4, ValueType.UINT8, ValueType.UINT4}, 231), //
+				TestUtils.generateRandomFrameBlock(100, //
+					new ValueType[] {ValueType.BOOLEAN, ValueType.UINT8, ValueType.UINT4}, 231), //
+				new FrameBlock(new ValueType[] {ValueType.BOOLEAN, ValueType.INT32, ValueType.INT32}, 100), //
+				TestUtils.generateRandomFrameBlock(100, //
+					new ValueType[] {ValueType.UINT4, ValueType.BOOLEAN, ValueType.FP32}, 231, 0.2),
+				TestUtils.generateRandomFrameBlock(432, //
+					new ValueType[] {ValueType.UINT4, ValueType.BOOLEAN, ValueType.FP32}, 231, 0.2),
+				TestUtils.generateRandomFrameBlock(100, //
+					new ValueType[] {ValueType.UINT4, ValueType.BOOLEAN, ValueType.FP32}, 231, 0.9),
+				TestUtils.generateRandomFrameBlock(100, //
+					new ValueType[] {ValueType.UINT4, ValueType.BOOLEAN, ValueType.FP32}, 231, 0.99),
+
+				TestUtils.generateRandomFrameBlock(5, kPlusCols, 322),
+				TestUtils.generateRandomFrameBlock(1020, kPlusCols, 322),
+
+			};
+			blocks[2].ensureAllocatedColumns(100);
+
+			for(FrameBlock block : blocks) {
+				for(int k : threads) {
+					tests.add(new Object[] {block, k});
+				}
 			}
 
-			FrameBlock data2 = TestUtils.generateRandomFrameBlock(100, new ValueType[] {ValueType.BOOLEAN, ValueType.UINT8, ValueType.UINT4}, 231);
-			data2.setSchema(new ValueType[] {ValueType.BOOLEAN, ValueType.INT32, ValueType.INT32});
-			for(int k : threads) {
-				tests.add(new Object[] {data2, k});
-			}
-
-			FrameBlock data3 = new FrameBlock(
-				new ValueType[] {ValueType.BOOLEAN, ValueType.INT32, ValueType.INT32}, 100) ;
-			data3.ensureAllocatedColumns(100);
-			for(int k : threads) 
-				tests.add(new Object[] {data3, k});
-			
 		}
 		catch(Exception e) {
 			e.printStackTrace();
@@ -114,12 +128,12 @@ public class TransformCompressedTestMultiCol {
 	}
 
 	@Test
-	public void testHash(){
+	public void testHash() {
 		test("{ids:true, hash:[1,2,3], K:10}");
 	}
 
 	@Test
-	public void testHashToDummy(){
+	public void testHashToDummy() {
 		test("{ids:true, hash:[1,2,3], K:10, dummycode:[1,2]}");
 	}
 
@@ -136,7 +150,6 @@ public class TransformCompressedTestMultiCol {
 				data.getNumColumns(), meta);
 			MatrixBlock outNormal = encoderNormal.encode(data, k);
 			FrameBlock outNormalMD = encoderNormal.getMetaData(null);
-
 
 			TestUtils.compareMatrices(outNormal, outCompressed, 0, "Not Equal after apply");
 			TestUtils.compareFrames(outNormalMD, outCompressedMD, true);

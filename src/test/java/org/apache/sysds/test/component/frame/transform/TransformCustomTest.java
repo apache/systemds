@@ -21,11 +21,20 @@ package org.apache.sysds.test.component.frame.transform;
 
 import static org.junit.Assert.fail;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import org.apache.commons.lang.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.transform.encode.ColumnEncoder;
+import org.apache.sysds.runtime.transform.encode.ColumnEncoderComposite;
+import org.apache.sysds.runtime.transform.encode.ColumnEncoderDummycode;
+import org.apache.sysds.runtime.transform.encode.ColumnEncoderPassThrough;
+import org.apache.sysds.runtime.transform.encode.CompressedEncode;
 import org.apache.sysds.runtime.transform.encode.EncoderFactory;
 import org.apache.sysds.runtime.transform.encode.MultiColumnEncoder;
 import org.apache.sysds.test.TestUtils;
@@ -69,6 +78,19 @@ public class TransformCustomTest {
 	@Test
 	public void testBin5() {
 		test("{ids:true, bin:[{id:1, method:equi-height, numbins:10}]}");
+	}
+
+	@Test(expected = NotImplementedException.class)
+	public void testInvalidEncodeCompressed() throws Exception {
+		List<ColumnEncoderComposite> columnEncoders = new ArrayList<>();
+		List<ColumnEncoder> encoders = new ArrayList<>();
+		// create a nonsense sequence of encoders.
+		encoders.add(new ColumnEncoderDummycode());
+		encoders.add(new ColumnEncoderPassThrough());
+		encoders.add(new ColumnEncoderDummycode());
+		columnEncoders.add(new ColumnEncoderComposite(encoders));
+		MultiColumnEncoder enc = new MultiColumnEncoder(columnEncoders);
+		CompressedEncode.encode(enc, data, 1);
 	}
 
 	public void test(String spec) {

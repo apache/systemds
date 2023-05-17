@@ -112,7 +112,7 @@ public final class CLALibUtils {
 			else
 				filteredGroups.add(g);
 		}
-		return returnGroupIfFiniteNumbers(groups, filteredGroups, constV);
+		return filteredGroups;
 	}
 
 	protected static void filterGroupsAndSplitPreAgg(List<AColGroup> groups, double[] constV,
@@ -150,13 +150,13 @@ public final class CLALibUtils {
 		}
 	}
 
-	private static List<AColGroup> returnGroupIfFiniteNumbers(List<AColGroup> groups, List<AColGroup> filteredGroups,
-		double[] constV) {
-		for(double v : constV)
-			if(!Double.isFinite(v))
-				throw new NotImplementedException("Not handling if the values are not finite: " + Arrays.toString(constV));
-		return filteredGroups;
-	}
+	// private static List<AColGroup> returnGroupIfFiniteNumbers(List<AColGroup> groups, List<AColGroup> filteredGroups,
+	// 	double[] constV) {
+	// 	// for(double v : constV)
+	// 	// 	if(!Double.isFinite(v))
+	// 	// 		throw new NotImplementedException("Not handling if the values are not finite: " + Arrays.toString(constV));
+	// 	return filteredGroups;
+	// }
 
 	private static AColGroup combineEmpty(List<AColGroup> e) {
 		return new ColGroupEmpty(combineColIndexes(e));

@@ -44,8 +44,8 @@ import org.apache.sysds.utils.stats.TransformStatistics;
 import org.apache.wink.json4j.JSONArray;
 import org.apache.wink.json4j.JSONObject;
 
-public class EncoderFactory {
-	protected static final Log LOG = LogFactory.getLog(EncoderFactory.class.getName());
+public interface EncoderFactory {
+	final static Log LOG = LogFactory.getLog(EncoderFactory.class.getName());
 
 	public static MultiColumnEncoder createEncoder(String spec, String[] colnames, int clen, FrameBlock meta) {
 		return createEncoder(spec, colnames, UtilFunctions.nCopies(clen, ValueType.STRING), meta);

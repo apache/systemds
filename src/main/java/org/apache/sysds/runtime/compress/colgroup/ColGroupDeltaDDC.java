@@ -78,15 +78,3 @@ public class ColGroupDeltaDDC  { // extends ColGroupDDC
 // 		return new ColGroupDeltaDDC(_colIndexes, _dict.applyScalarOp(op), _data, getCachedCounts());
 // 	}
 }
-
-
-
-/*
-
-
-   ADDITIONAL COMMENTS
-   @VP
-
-
-
- */

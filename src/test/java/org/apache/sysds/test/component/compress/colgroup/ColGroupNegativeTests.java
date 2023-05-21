@@ -375,6 +375,18 @@ public class ColGroupNegativeTests {
 			// TODO Auto-generated method stub
 			return null;
 		}
+
+		@Override
+		public AColGroup recompress() {
+			// TODO Auto-generated method stub
+			throw new UnsupportedOperationException("Unimplemented method 'recompress'");
+		}
+
+		@Override
+		public CompressedSizeInfoColGroup getCompressionInfo(int nRow) {
+			// TODO Auto-generated method stub
+			throw new UnsupportedOperationException("Unimplemented method 'getCompressionInfo'");
+		}
 	}
 
 	private class FakeDictBasedColGroup extends ADictBasedColGroup {
@@ -600,6 +612,18 @@ public class ColGroupNegativeTests {
 		protected AColGroup sliceMultiColumns(int idStart, int idEnd, IColIndex outputCols) {
 			// TODO Auto-generated method stub
 			return null;
+		}
+
+		@Override
+		public AColGroup recompress() {
+			// TODO Auto-generated method stub
+			throw new UnsupportedOperationException("Unimplemented method 'recompress'");
+		}
+
+		@Override
+		public CompressedSizeInfoColGroup getCompressionInfo(int nRow) {
+			// TODO Auto-generated method stub
+			throw new UnsupportedOperationException("Unimplemented method 'getCompressionInfo'");
 		}
 	}
 }

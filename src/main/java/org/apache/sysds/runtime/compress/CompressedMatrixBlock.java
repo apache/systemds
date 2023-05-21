@@ -56,6 +56,7 @@ import org.apache.sysds.runtime.compress.lib.CLALibScalar;
 import org.apache.sysds.runtime.compress.lib.CLALibSlice;
 import org.apache.sysds.runtime.compress.lib.CLALibSquash;
 import org.apache.sysds.runtime.compress.lib.CLALibTSMM;
+import org.apache.sysds.runtime.compress.lib.CLALibTernaryOp;
 import org.apache.sysds.runtime.compress.lib.CLALibUnary;
 import org.apache.sysds.runtime.compress.lib.CLALibUtils;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject.UpdateType;
@@ -63,9 +64,6 @@ import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyze
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.data.SparseRow;
-import org.apache.sysds.runtime.functionobjects.MinusMultiply;
-import org.apache.sysds.runtime.functionobjects.PlusMultiply;
-import org.apache.sysds.runtime.functionobjects.TernaryValueFunction.ValueFunctionWithConstant;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.CM_COV_Object;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
@@ -73,7 +71,6 @@ import org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue;
 import org.apache.sysds.runtime.matrix.data.CTableMap;
 import org.apache.sysds.runtime.matrix.data.IJV;
 import org.apache.sysds.runtime.matrix.data.LibMatrixDatagen;
-import org.apache.sysds.runtime.matrix.data.LibMatrixTercell;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysds.runtime.matrix.data.MatrixValue;
@@ -575,21 +572,6 @@ public class CompressedMatrixBlock extends MatrixBlock {
 		return tmp.reorgOperations(op, ret, startRow, startColumn, length);
 	}
 
-	@Override
-	public String toString() {
-		StringBuilder sb = new StringBuilder();
-		sb.append("CompressedMatrixBlock:");
-		sb.append("\nCols:" + getNumColumns() + " Rows:" + getNumRows() + " Overlapping: " + isOverlapping() + " nnz: "
-			+ nonZeros);
-		if(_colGroups != null)
-			for(AColGroup cg : _colGroups) {
-				sb.append("\n" + cg);
-			}
-		else
-			sb.append("\nEmptyColGroups");
-		return sb.toString();
-	}
-
 	public boolean isOverlapping() {
 		return _colGroups.size() != 1 && overlappingColGroups;
 	}
@@ -881,54 +863,7 @@ public class CompressedMatrixBlock extends MatrixBlock {
 
 	@Override
 	public MatrixBlock ternaryOperations(TernaryOperator op, MatrixBlock m2, MatrixBlock m3, MatrixBlock ret) {
-
-		// prepare inputs
-		final int r1 = getNumRows();
-		final int r2 = m2.getNumRows();
-		final int r3 = m3.getNumRows();
-		final int c1 = getNumColumns();
-		final int c2 = m2.getNumColumns();
-		final int c3 = m3.getNumColumns();
-		final boolean s1 = (r1 == 1 && c1 == 1);
-		final boolean s2 = (r2 == 1 && c2 == 1);
-		final boolean s3 = (r3 == 1 && c3 == 1);
-		final double d1 = s1 ? quickGetValue(0, 0) : Double.NaN;
-		final double d2 = s2 ? m2.quickGetValue(0, 0) : Double.NaN;
-		final double d3 = s3 ? m3.quickGetValue(0, 0) : Double.NaN;
-		final int m = Math.max(Math.max(r1, r2), r3);
-		final int n = Math.max(Math.max(c1, c2), c3);
-
-		ternaryOperationCheck(s1, s2, s3, m, r1, r2, r3, n, c1, c2, c3);
-
-		final boolean PM_Or_MM = (op.fn instanceof PlusMultiply || op.fn instanceof MinusMultiply);
-		if(PM_Or_MM && ((s2 && d2 == 0) || (s3 && d3 == 0))) {
-			ret = new CompressedMatrixBlock();
-			ret.copy(this);
-			return ret;
-		}
-
-		if(m2 instanceof CompressedMatrixBlock)
-			m2 = ((CompressedMatrixBlock) m2).getUncompressed("Ternary Operator arg2 " + op.fn.getClass().getSimpleName(),
-				op.getNumThreads());
-		if(m3 instanceof CompressedMatrixBlock)
-			m3 = ((CompressedMatrixBlock) m3).getUncompressed("Ternary Operator arg3 " + op.fn.getClass().getSimpleName(),
-				op.getNumThreads());
-
-		if(s2 != s3 && (op.fn instanceof PlusMultiply || op.fn instanceof MinusMultiply)) {
-			// SPECIAL CASE for sparse-dense combinations of common +* and -*
-			BinaryOperator bop = ((ValueFunctionWithConstant) op.fn).setOp2Constant(s2 ? d2 : d3);
-			bop.setNumThreads(op.getNumThreads());
-			ret = CLALibBinaryCellOp.binaryOperationsRight(bop, this, s2 ? m3 : m2, ret);
-		}
-		else {
-			final boolean sparseOutput = evalSparseFormatInMemory(m, n, (s1 ? m * n * (d1 != 0 ? 1 : 0) : getNonZeros()) +
-				Math.min(s2 ? m * n : m2.getNonZeros(), s3 ? m * n : m3.getNonZeros()));
-			ret.reset(m, n, sparseOutput);
-			final MatrixBlock thisUncompressed = getUncompressed("Ternary Operation not supported");
-			LibMatrixTercell.tercellOp(thisUncompressed, m2, m3, ret, op);
-			ret.examSparsity();
-		}
-		return ret;
+		return CLALibTernaryOp.ternaryOperations(this, op, m2, m3, ret);
 	}
 
 	@Override
@@ -1292,5 +1227,20 @@ public class CompressedMatrixBlock extends MatrixBlock {
 	@Override
 	public void allocateAndResetSparseBlock(boolean clearNNZ, SparseBlock.Type stype) {
 		throw new DMLCompressionException("Invalid to allocate block on a compressed MatrixBlock");
+	}
+
+	@Override
+	public String toString() {
+		StringBuilder sb = new StringBuilder();
+		sb.append("CompressedMatrixBlock:");
+		sb.append("\nCols:" + getNumColumns() + " Rows:" + getNumRows() + " Overlapping: " + isOverlapping() + " nnz: "
+			+ nonZeros);
+		if(_colGroups != null)
+			for(AColGroup cg : _colGroups) {
+				sb.append("\n" + cg);
+			}
+		else
+			sb.append("\nEmptyColGroups");
+		return sb.toString();
 	}
 }

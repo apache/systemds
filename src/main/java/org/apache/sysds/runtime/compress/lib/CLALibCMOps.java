@@ -28,7 +28,12 @@ import org.apache.sysds.runtime.matrix.data.LibMatrixAgg;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.CMOperator;
 
-public class CLALibCMOps {
+public final class CLALibCMOps {
+
+	private CLALibCMOps() {
+		// private constructor
+	}
+
 	public static CM_COV_Object centralMoment(CompressedMatrixBlock cmb, CMOperator op) {
 		MatrixBlock.checkCMOperations(cmb, op);
 		if(cmb.isEmpty())

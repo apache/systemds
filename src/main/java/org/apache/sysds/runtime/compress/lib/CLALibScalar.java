@@ -48,10 +48,13 @@ import org.apache.sysds.runtime.matrix.operators.RightScalarOperator;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
 import org.apache.sysds.runtime.util.CommonThreadPool;
 
-public class CLALibScalar {
-
+public final class CLALibScalar {
 	private static final Log LOG = LogFactory.getLog(CLALibScalar.class.getName());
 	private static final int MINIMUM_PARALLEL_SIZE = 8096;
+
+	private CLALibScalar() {
+		// private constructor
+	}
 
 	public static MatrixBlock scalarOperations(ScalarOperator sop, CompressedMatrixBlock m1, MatrixValue result) {
 		if(isInvalidForCompressedOutput(m1, sop)) {

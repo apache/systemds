@@ -42,8 +42,12 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.util.CommonThreadPool;
 
-public class CLALibLeftMultBy {
+public final class CLALibLeftMultBy {
 	private static final Log LOG = LogFactory.getLog(CLALibLeftMultBy.class.getName());
+
+	private CLALibLeftMultBy(){
+		// private constructor
+	}
 
 	/**
 	 * Left multiplication with a CompressedMatrixBlock on the right following the equation:

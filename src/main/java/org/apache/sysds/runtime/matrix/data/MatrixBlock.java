@@ -2987,7 +2987,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 		return ret;
 	}
 
-	protected static void ternaryOperationCheck(boolean s1, boolean s2, boolean s3, int m, int r1, int r2, int r3, int n, int c1, int c2, int c3){
+	public static void ternaryOperationCheck(boolean s1, boolean s2, boolean s3, int m, int r1, int r2, int r3, int n, int c1, int c2, int c3){
 		//error handling 
 		if( (!s1 && (r1 != m || c1 != n))
 		|| (!s2 && (r2 != m || c2 != n))

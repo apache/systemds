@@ -46,8 +46,12 @@ import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.util.CommonThreadPool;
 import org.apache.sysds.utils.DMLCompressionStatistics;
 
-public class CLALibRightMultBy {
+public final class CLALibRightMultBy {
 	private static final Log LOG = LogFactory.getLog(CLALibRightMultBy.class.getName());
+
+	private CLALibRightMultBy(){
+		// private constructor
+	}
 
 	public static MatrixBlock rightMultByMatrix(CompressedMatrixBlock m1, MatrixBlock m2, MatrixBlock ret, int k) {
 		final boolean allowOverlap = ConfigurationManager.getDMLConfig()

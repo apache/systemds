@@ -28,8 +28,12 @@ import org.apache.sysds.runtime.matrix.data.LibMatrixReorg;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.ReorgOperator;
 
-public class CLALibMatrixMult {
+public final class CLALibMatrixMult {
 	private static final Log LOG = LogFactory.getLog(CLALibMatrixMult.class.getName());
+
+	private CLALibMatrixMult(){
+		// private constructor
+	}
 
 	public static MatrixBlock matrixMult(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, int k) {
 		return matrixMultiply(m1, m2, ret, k, false, false);

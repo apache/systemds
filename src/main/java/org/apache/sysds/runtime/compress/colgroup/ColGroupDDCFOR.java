@@ -35,6 +35,7 @@ import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
 import org.apache.sysds.runtime.compress.colgroup.scheme.ICLAScheme;
 import org.apache.sysds.runtime.compress.cost.ComputationCostEstimator;
+import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.functionobjects.Divide;
 import org.apache.sysds.runtime.functionobjects.Minus;
@@ -59,7 +60,8 @@ public class ColGroupDDCFOR extends AMorphingMMColGroup {
 	/** Reference values in this column group */
 	protected final double[] _reference;
 
-	private ColGroupDDCFOR(IColIndex colIndexes, ADictionary dict, double[] reference, AMapToData data, int[] cachedCounts) {
+	private ColGroupDDCFOR(IColIndex colIndexes, ADictionary dict, double[] reference, AMapToData data,
+		int[] cachedCounts) {
 		super(colIndexes, dict, cachedCounts);
 		_data = data;
 		_reference = reference;
@@ -439,7 +441,7 @@ public class ColGroupDDCFOR extends AMorphingMMColGroup {
 	public AColGroup append(AColGroup g) {
 		if(g instanceof ColGroupDDCFOR && g.getColIndices().equals(_colIndexes)) {
 			ColGroupDDCFOR gDDC = (ColGroupDDCFOR) g;
-			if(Arrays.equals(_reference , gDDC._reference) && gDDC._dict.equals(_dict)){
+			if(Arrays.equals(_reference, gDDC._reference) && gDDC._dict.equals(_dict)) {
 				AMapToData nd = _data.append(gDDC._data);
 				return create(_colIndexes, _dict, nd, null, _reference);
 			}
@@ -455,6 +457,16 @@ public class ColGroupDDCFOR extends AMorphingMMColGroup {
 	@Override
 	public ICLAScheme getCompressionScheme() {
 		return null;
+	}
+
+	@Override
+	public AColGroup recompress() {
+		return this;
+	}
+
+	@Override
+	public CompressedSizeInfoColGroup getCompressionInfo(int nRow) {
+		throw new NotImplementedException();
 	}
 
 	@Override

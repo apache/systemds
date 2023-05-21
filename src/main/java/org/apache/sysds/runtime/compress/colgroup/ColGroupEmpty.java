@@ -31,6 +31,7 @@ import org.apache.sysds.runtime.compress.colgroup.indexes.IIterate;
 import org.apache.sysds.runtime.compress.colgroup.scheme.EmptyScheme;
 import org.apache.sysds.runtime.compress.colgroup.scheme.ICLAScheme;
 import org.apache.sysds.runtime.compress.cost.ComputationCostEstimator;
+import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.functionobjects.Builtin;
@@ -337,5 +338,15 @@ public class ColGroupEmpty extends AColGroupCompressed {
 	@Override
 	public ICLAScheme getCompressionScheme() {
 		return EmptyScheme.create(this);
+	}
+
+	@Override
+	public AColGroup recompress() {
+		return this;
+	}
+
+	@Override
+	public CompressedSizeInfoColGroup getCompressionInfo(int nRow) {
+		return new CompressedSizeInfoColGroup(_colIndexes, 0, nRow, CompressionType.CONST);
 	}
 }

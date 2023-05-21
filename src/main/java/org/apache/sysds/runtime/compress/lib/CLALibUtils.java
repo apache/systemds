@@ -41,6 +41,10 @@ import org.apache.sysds.runtime.compress.colgroup.indexes.IIterate;
 public final class CLALibUtils {
 	protected static final Log LOG = LogFactory.getLog(CLALibUtils.class.getName());
 
+	private CLALibUtils() {
+		// private constructor
+	}
+
 	/**
 	 * Combine all column groups that are constant types, this include empty and const.
 	 * 

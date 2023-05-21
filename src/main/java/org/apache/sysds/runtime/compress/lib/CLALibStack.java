@@ -39,9 +39,12 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysds.runtime.util.CommonThreadPool;
 
-public class CLALibCombine {
+public final class CLALibStack {
+	protected static final Log LOG = LogFactory.getLog(CLALibStack.class.getName());
 
-	protected static final Log LOG = LogFactory.getLog(CLALibCombine.class.getName());
+	private CLALibStack() {
+		// private constructor
+	}
 
 	/**
 	 * Combine the map of index matrix blocks into a single MatrixBlock.

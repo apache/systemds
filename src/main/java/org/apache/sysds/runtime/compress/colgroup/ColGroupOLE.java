@@ -33,6 +33,7 @@ import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.compress.colgroup.scheme.ICLAScheme;
 import org.apache.sysds.runtime.compress.cost.ComputationCostEstimator;
+import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.functionobjects.Builtin;
@@ -48,8 +49,8 @@ import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
 public class ColGroupOLE extends AColGroupOffset {
 	private static final long serialVersionUID = 5723227906925121066L;
 
-	private ColGroupOLE(IColIndex colIndices, int numRows, boolean zero, ADictionary dict, char[] bitmaps, int[] bitmapOffs,
-		int[] counts) {
+	private ColGroupOLE(IColIndex colIndices, int numRows, boolean zero, ADictionary dict, char[] bitmaps,
+		int[] bitmapOffs, int[] counts) {
 		super(colIndices, numRows, zero, dict, bitmapOffs, bitmaps, counts);
 	}
 
@@ -673,4 +674,13 @@ public class ColGroupOLE extends AColGroupOffset {
 		return null;
 	}
 
+	@Override
+	public AColGroup recompress() {
+		return this;
+	}
+
+	@Override
+	public CompressedSizeInfoColGroup getCompressionInfo(int nRow) {
+		throw new NotImplementedException();
+	}
 }

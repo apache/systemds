@@ -35,9 +35,12 @@ import org.apache.sysds.runtime.matrix.data.LibMatrixReorg;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 
-public interface CLALibMMChain {
-
+public final class CLALibMMChain {
 	static final Log LOG = LogFactory.getLog(CLALibMMChain.class.getName());
+
+	private CLALibMMChain() {
+		// private constructor
+	}
 
 	public static MatrixBlock mmChain(CompressedMatrixBlock x, MatrixBlock v, MatrixBlock w, MatrixBlock out,
 		ChainType ctype, int k) {

@@ -39,6 +39,7 @@ import org.apache.sysds.runtime.compress.colgroup.offset.AOffsetIterator;
 import org.apache.sysds.runtime.compress.colgroup.offset.OffsetFactory;
 import org.apache.sysds.runtime.compress.colgroup.scheme.ICLAScheme;
 import org.apache.sysds.runtime.compress.cost.ComputationCostEstimator;
+import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.functionobjects.Builtin;
@@ -97,7 +98,7 @@ public class ColGroupSDCSingleZeros extends ASDCZero {
 			return;
 		else if(it.value() >= ru)
 			return;
-			// _indexes.cacheIterator(it, ru);
+		// _indexes.cacheIterator(it, ru);
 		else {
 			decompressToDenseBlockDenseDictionaryWithProvidedIterator(db, rl, ru, offR, offC, values, it);
 			// _indexes.cacheIterator(it, ru);
@@ -852,6 +853,16 @@ public class ColGroupSDCSingleZeros extends ASDCZero {
 	@Override
 	public ICLAScheme getCompressionScheme() {
 		return null;
+	}
+
+	@Override
+	public AColGroup recompress() {
+		return this;
+	}
+
+	@Override
+	public CompressedSizeInfoColGroup getCompressionInfo(int nRow) {
+		throw new NotImplementedException();
 	}
 
 	@Override

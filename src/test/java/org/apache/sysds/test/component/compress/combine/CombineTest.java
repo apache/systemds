@@ -33,7 +33,7 @@ import org.apache.sysds.runtime.compress.CompressedMatrixBlockFactory;
 import org.apache.sysds.runtime.compress.CompressionSettingsBuilder;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType;
-import org.apache.sysds.runtime.compress.lib.CLALibCombine;
+import org.apache.sysds.runtime.compress.lib.CLALibStack;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysds.test.TestUtils;
@@ -55,7 +55,7 @@ public class CombineTest {
 		data.put(new MatrixIndexes(2, 1), m1);
 
 		try {
-			MatrixBlock c = CLALibCombine.combine(data, 100 * 2, 10, 100, k);
+			MatrixBlock c = CLALibStack.combine(data, 100 * 2, 10, 100, k);
 			assertTrue("The result is not in compressed format", c instanceof CompressedMatrixBlock);
 			assertEquals(0.0, c.sum(), 0.0);
 		}
@@ -76,7 +76,7 @@ public class CombineTest {
 		data.put(new MatrixIndexes(2, 1), m1);
 
 		try {
-			MatrixBlock c = CLALibCombine.combine(data, 100 * 2, 10, 100, k);
+			MatrixBlock c = CLALibStack.combine(data, 100 * 2, 10, 100, k);
 			assertTrue("The result is not in compressed format", c instanceof CompressedMatrixBlock);
 			assertEquals(0.0, c.sum(), 100.0 * 10.0 * 2);
 		}

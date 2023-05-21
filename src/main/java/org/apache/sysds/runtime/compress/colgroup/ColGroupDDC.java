@@ -37,6 +37,7 @@ import org.apache.sysds.runtime.compress.colgroup.offset.AOffsetIterator;
 import org.apache.sysds.runtime.compress.colgroup.scheme.DDCScheme;
 import org.apache.sysds.runtime.compress.colgroup.scheme.ICLAScheme;
 import org.apache.sysds.runtime.compress.cost.ComputationCostEstimator;
+import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.functionobjects.Builtin;
@@ -55,7 +56,7 @@ public class ColGroupDDC extends APreAgg implements AMapToDataGroup {
 
 	protected final AMapToData _data;
 
-	private ColGroupDDC(IColIndex  colIndexes, ADictionary dict, AMapToData data, int[] cachedCounts) {
+	private ColGroupDDC(IColIndex colIndexes, ADictionary dict, AMapToData data, int[] cachedCounts) {
 		super(colIndexes, dict, cachedCounts);
 		_data = data;
 	}
@@ -117,8 +118,8 @@ public class ColGroupDDC extends APreAgg implements AMapToDataGroup {
 			decompressToDenseBlockDenseDictGeneric(db, rl, ru, offR, offC, values);
 	}
 
-	private final void decompressToDenseBlockDenseDictSingleColContiguous(DenseBlock db, int rl, int ru, int offR, int offC,
-		double[] values) {
+	private final void decompressToDenseBlockDenseDictSingleColContiguous(DenseBlock db, int rl, int ru, int offR,
+		int offC, double[] values) {
 		final double[] c = db.values(0);
 		final int nCols = db.getDim(1);
 		final int colOff = _colIndexes.get(0) + offC;
@@ -128,12 +129,12 @@ public class ColGroupDDC extends APreAgg implements AMapToDataGroup {
 	}
 
 	@Override
-	public AMapToData getMapToData(){
+	public AMapToData getMapToData() {
 		return _data;
 	}
 
-	private final void decompressToDenseBlockDenseDictSingleColOutContiguous(DenseBlock db, int rl, int ru, int offR, int offC,
-		double[] values) {
+	private final void decompressToDenseBlockDenseDictSingleColOutContiguous(DenseBlock db, int rl, int ru, int offR,
+		int offC, double[] values) {
 		final double[] c = db.values(0);
 		for(int i = rl, offT = rl + offR + _colIndexes.get(0) + offC; i < ru; i++, offT++)
 			c[offT] += values[_data.getIndex(i)];
@@ -152,7 +153,8 @@ public class ColGroupDDC extends APreAgg implements AMapToDataGroup {
 		}
 	}
 
-	private final void decompressToDenseBlockDenseDictNoColOffset(DenseBlock db, int rl, int ru, int offR, double[] values) {
+	private final void decompressToDenseBlockDenseDictNoColOffset(DenseBlock db, int rl, int ru, int offR,
+		double[] values) {
 		final int nCol = _colIndexes.size();
 		final int colOut = db.getDim(1);
 		int off = (rl + offR) * colOut;
@@ -508,8 +510,7 @@ public class ColGroupDDC extends APreAgg implements AMapToDataGroup {
 					LOG.warn("Not same Dictionaries therefore not appending DDC\n" + _dict + "\n\n" + gDDC._dict);
 			}
 			else
-				LOG.warn("Not same columns therefore not appending DDC\n" + _colIndexes + "\n\n"
-					+ g.getColIndices());
+				LOG.warn("Not same columns therefore not appending DDC\n" + _colIndexes + "\n\n" + g.getColIndices());
 		}
 		else
 			LOG.warn("Not DDC but " + g.getClass().getSimpleName() + ", therefore not appending DDC");
@@ -519,9 +520,8 @@ public class ColGroupDDC extends APreAgg implements AMapToDataGroup {
 	@Override
 	public AColGroup appendNInternal(AColGroup[] g) {
 		for(int i = 1; i < g.length; i++) {
-			if(!_colIndexes.equals( g[i]._colIndexes)) {
-				LOG.warn("Not same columns therefore not appending DDC\n" + _colIndexes + "\n\n"
-					+ g[i]._colIndexes);
+			if(!_colIndexes.equals(g[i]._colIndexes)) {
+				LOG.warn("Not same columns therefore not appending DDC\n" + _colIndexes + "\n\n" + g[i]._colIndexes);
 				return null;
 			}
 
@@ -540,10 +540,19 @@ public class ColGroupDDC extends APreAgg implements AMapToDataGroup {
 		return create(_colIndexes, _dict, nd, null);
 	}
 
-
 	@Override
 	public ICLAScheme getCompressionScheme() {
 		return DDCScheme.create(this);
+	}
+
+	@Override
+	public AColGroup recompress() {
+		return this;
+	}
+
+	@Override
+	public CompressedSizeInfoColGroup getCompressionInfo(int nRow) {
+		throw new NotImplementedException();
 	}
 
 	@Override

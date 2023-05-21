@@ -35,7 +35,7 @@ import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlockFactory;
-import org.apache.sysds.runtime.compress.lib.CLALibCombine;
+import org.apache.sysds.runtime.compress.lib.CLALibStack;
 import org.apache.sysds.runtime.io.IOUtilFunctions;
 import org.apache.sysds.runtime.io.MatrixReader;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -82,7 +82,7 @@ public final class ReaderCompressed extends MatrixReader {
 		if(data.size() == 1)
 			return data.entrySet().iterator().next().getValue();
 		else
-			return CLALibCombine.combine(data, OptimizerUtils.getParallelTextWriteParallelism());
+			return CLALibStack.combine(data, OptimizerUtils.getParallelTextWriteParallelism());
 	}
 
 	private static void read(Path path, JobConf job, Map<MatrixIndexes, MatrixBlock> data) throws IOException {

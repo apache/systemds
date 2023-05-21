@@ -30,6 +30,7 @@ import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex.SliceResult;
 import org.apache.sysds.runtime.compress.colgroup.scheme.ICLAScheme;
 import org.apache.sysds.runtime.compress.cost.ComputationCostEstimator;
+import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.instructions.cp.CM_COV_Object;
@@ -610,11 +611,26 @@ public abstract class AColGroup implements Serializable {
 	public abstract ICLAScheme getCompressionScheme();
 
 	/**
-	 * Clear variables that can be recomputed from the allocation of this columngroup.
+	 * Clear variables that can be recomputed from the allocation of this column group.
 	 */
-	public void clear(){
+	public void clear() {
 		// do nothing
 	}
+
+	/**
+	 * Recompress this column group into a new column group.
+	 * 
+	 * @return A new or the same column group depending on optimization goal.
+	 */
+	public abstract AColGroup recompress();
+
+	/**
+	 * Get the compression info for this column group.
+	 * 
+	 * @param nRow The number of rows in this column group.
+	 * @return The compression info for this group.
+	 */
+	public abstract CompressedSizeInfoColGroup getCompressionInfo(int nRow);
 
 	@Override
 	public String toString() {

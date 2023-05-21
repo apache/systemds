@@ -19,37 +19,17 @@
 
 package org.apache.sysds.runtime.compress.lib;
 
-import java.util.ArrayList;
-import java.util.List;
-
+import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
-import org.apache.sysds.runtime.compress.colgroup.AColGroup;
 
-/**
- * Squash or recompress is processing each column group and trying to find a better compressed representation for each.
- */
-public final class CLALibSquash {
+public final class CLALibCombineGroups {
 
-	private CLALibSquash() {
+	private CLALibCombineGroups() {
 		// private constructor
 	}
 
-	/**
-	 * Squash or recompress is process each column group in the given Compressed Matrix Block and tries to recompress
-	 * each column.
-	 * 
-	 * @param m The input compressed matrix
-	 * @param k The parallelization degree allowed in this process
-	 * @return A replaced Compressed Matrix Block, note the old block is also modified
-	 */
-	public static CompressedMatrixBlock squash(CompressedMatrixBlock m, int k) {
-		List<AColGroup> before = m.getColGroups();
-		List<AColGroup> groups = new ArrayList<>(before.size());
-
-		for(AColGroup g : before)
-			groups.add(g.recompress());
-
-		m.allocateColGroupList(groups);
-		return m;
+	public static CompressedMatrixBlock combine(CompressedMatrixBlock cmb, int k) {
+		throw new NotImplementedException();
 	}
+
 }

@@ -24,6 +24,7 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.util.Arrays;
 
+import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
@@ -40,6 +41,7 @@ import org.apache.sysds.runtime.compress.colgroup.offset.AOffset.OffsetSliceInfo
 import org.apache.sysds.runtime.compress.colgroup.offset.OffsetFactory;
 import org.apache.sysds.runtime.compress.colgroup.scheme.ICLAScheme;
 import org.apache.sysds.runtime.compress.cost.ComputationCostEstimator;
+import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.functionobjects.Builtin;
@@ -793,6 +795,15 @@ public class ColGroupSDCZeros extends ASDCZero implements AMapToDataGroup {
 	}
 
 	@Override
+	public AColGroup recompress() {
+		return this;
+	}
+
+	@Override
+	public CompressedSizeInfoColGroup getCompressionInfo(int nRow) {
+		throw new NotImplementedException();
+	}
+
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		sb.append(super.toString());

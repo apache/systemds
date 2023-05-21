@@ -33,6 +33,7 @@ import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.compress.colgroup.scheme.ConstScheme;
 import org.apache.sysds.runtime.compress.colgroup.scheme.ICLAScheme;
 import org.apache.sysds.runtime.compress.cost.ComputationCostEstimator;
+import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
 import org.apache.sysds.runtime.compress.lib.CLALibLeftMultBy;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
@@ -564,6 +565,16 @@ public class ColGroupConst extends ADictBasedColGroup {
 	@Override
 	public ICLAScheme getCompressionScheme() {
 		return ConstScheme.create(this);
+	}
+
+	@Override
+	public  AColGroup recompress(){
+		return this;
+	}
+
+	@Override
+	public CompressedSizeInfoColGroup getCompressionInfo(int nRow){
+		return new CompressedSizeInfoColGroup(_colIndexes, 1, nRow, CompressionType.CONST);
 	}
 
 	@Override

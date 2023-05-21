@@ -24,12 +24,14 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.util.Collection;
 
+import org.apache.commons.lang.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex.SliceResult;
 import org.apache.sysds.runtime.compress.colgroup.scheme.ICLAScheme;
 import org.apache.sysds.runtime.compress.cost.ComputationCostEstimator;
+import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.instructions.cp.CM_COV_Object;
@@ -610,11 +612,36 @@ public abstract class AColGroup implements Serializable {
 	public abstract ICLAScheme getCompressionScheme();
 
 	/**
-	 * Clear variables that can be recomputed from the allocation of this columngroup.
+	 * Clear variables that can be recomputed from the allocation of this column group.
 	 */
-	public void clear(){
+	public void clear() {
 		// do nothing
 	}
+
+	/**
+	 * Recompress this column group into a new column group.
+	 * 
+	 * @return A new or the same column group depending on optimization goal.
+	 */
+	public abstract AColGroup recompress();
+
+	/**
+	 * Recompress this column group into a new column group of the given type.
+	 * 
+	 * @param ct The compressionType that the column group should morph into
+	 * @return A new column group
+	 */
+	public AColGroup morph(CompressionType ct){
+		throw new NotImplementedException();
+	}
+
+	/**
+	 * Get the compression info for this column group.
+	 * 
+	 * @param nRow The number of rows in this column group.
+	 * @return The compression info for this group.
+	 */
+	public abstract CompressedSizeInfoColGroup getCompressionInfo(int nRow);
 
 	@Override
 	public String toString() {

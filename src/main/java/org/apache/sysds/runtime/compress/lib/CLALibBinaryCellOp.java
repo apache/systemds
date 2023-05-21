@@ -59,9 +59,12 @@ import org.apache.sysds.runtime.matrix.operators.RightScalarOperator;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
 import org.apache.sysds.runtime.util.CommonThreadPool;
 
-public class CLALibBinaryCellOp {
-
+public final class CLALibBinaryCellOp {
 	private static final Log LOG = LogFactory.getLog(CLALibBinaryCellOp.class.getName());
+
+	private CLALibBinaryCellOp() {
+		// empty private constructor.
+	}
 
 	public static MatrixBlock binaryOperationsRight(BinaryOperator op, CompressedMatrixBlock m1, MatrixBlock that,
 		MatrixBlock result) {

@@ -1029,7 +1029,7 @@ public class TestUtils {
 
 	public static void compareMatricesBitAvgDistance(MatrixBlock expectedMatrix, MatrixBlock actualMatrix,
 		long maxUnitsOfLeastPrecision, long maxAvgDistance) {
-		compareMatricesBitAvgDistance(expectedMatrix, actualMatrix, maxUnitsOfLeastPrecision, maxAvgDistance);
+		compareMatricesBitAvgDistance(expectedMatrix, actualMatrix, maxUnitsOfLeastPrecision, maxAvgDistance, "");
 	}
 
 	public static void compareMatricesBitAvgDistance(MatrixBlock expectedMatrix, MatrixBlock actualMatrix,

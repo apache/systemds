@@ -36,6 +36,7 @@ import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.compress.CompressionSettingsBuilder;
 import org.apache.sysds.runtime.compress.cocode.CoCoderFactory;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType;
+import org.apache.sysds.runtime.compress.colgroup.insertionsort.InsertionSorterFactory.SORT_TYPE;
 import org.apache.sysds.runtime.compress.cost.CostEstimatorFactory;
 import org.apache.sysds.runtime.compress.estim.sample.SampleEstimatorFactory.EstimationType;
 import org.apache.sysds.runtime.functionobjects.Multiply;
@@ -141,7 +142,8 @@ public class CompressedSingleTests {
 			.setAllowSharedDictionary(true).setColumnPartitioner(CoCoderFactory.PartitionerType.BIN_PACKING)
 			.setMaxColGroupCoCode(3).setEstimationType(EstimationType.ShlosserJackknifeEstimator).clearValidCompression()
 			.setSamplingRatio(0.2).setSeed(1342).setCoCodePercentage(0.22).setMinimumSampleSize(1342)
-			.setCostType(CostEstimatorFactory.CostType.MEMORY);
+			.setCostType(CostEstimatorFactory.CostType.MEMORY).setMinimumCompressionRatio(2.2)
+			.setSDCSortType(SORT_TYPE.MERGE);
 		CompressionSettings s = b.create();
 		b = b.copySettings(s);
 	}

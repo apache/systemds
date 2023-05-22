@@ -35,7 +35,6 @@ import org.apache.sysds.runtime.compress.colgroup.ColGroupEmpty;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupFactory;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupUncompressed;
 import org.apache.sysds.runtime.compress.cost.ACostEstimate;
-import org.apache.sysds.runtime.compress.cost.ComputationCostEstimator;
 import org.apache.sysds.runtime.compress.cost.CostEstimatorBuilder;
 import org.apache.sysds.runtime.compress.cost.CostEstimatorFactory;
 import org.apache.sysds.runtime.compress.cost.InstructionTypeCounter;
@@ -162,6 +161,7 @@ public class CompressedMatrixBlockFactory {
 	}
 
 	public static void compressAsync(ExecutionContext ec, String varName, InstructionTypeCounter ins) {
+		LOG.debug("Compressing Async");
 		CompletableFuture.runAsync(() -> {
 			// method call or code to be asynch.
 			CacheableData<?> data = ec.getCacheableData(varName);
@@ -258,15 +258,16 @@ public class CompressedMatrixBlockFactory {
 		AColGroup cg = ColGroupConst.create(numCols, value);
 		block.allocateColGroup(cg);
 		block.recomputeNonZeros();
-		if(block.getNumRows() == 0 || block.getNumColumns() == 0)
+		if(block.getNumRows() <= 0) // NCols is already checked
 			throw new DMLCompressionException("Invalid size of allocated constant compressed matrix block");
 
 		return block;
 	}
 
 	private Pair<MatrixBlock, CompressionStatistics> compressMatrix() {
-
-		if(mb instanceof CompressedMatrixBlock) // Redundant compression
+		if(mb.getNonZeros() < 0)
+			throw new DMLCompressionException("Invalid to compress matrices with unknown nonZeros");
+		else if(mb instanceof CompressedMatrixBlock) // Redundant compression
 			return recompress((CompressedMatrixBlock) mb);
 
 		_stats.denseSize = MatrixBlock.estimateSizeInMemory(mb.getNumRows(), mb.getNumColumns(), 1.0);
@@ -305,16 +306,18 @@ public class CompressedMatrixBlockFactory {
 		if(LOG.isTraceEnabled()) {
 			LOG.trace("Logging all individual columns estimated cost:");
 			for(CompressedSizeInfoColGroup g : compressionGroups.getInfo())
-				LOG.trace(
-					String.format("Cost: %8.0f Size: %16d %15s", costEstimator.getCost(g), g.getMinSize(), g.getColumns()));
+				LOG.trace(String.format("Cost: %8.0f Size: %16.0f %15s", costEstimator.getCost(g), g.getMinSize(),
+					g.getColumns()));
 		}
 
 		_stats.estimatedSizeCols = compressionGroups.memoryEstimate();
 		_stats.estimatedCostCols = costEstimator.getCost(compressionGroups);
 
 		logPhase();
-		final int nCols = compSettings.transposed ? mb.getNumRows() : mb.getNumColumns();
-		final double scale = (costEstimator instanceof ComputationCostEstimator) ? ((double) nCols) / 2 : 1;
+		// final int nRows = mb.getNumRows();
+		final int nCols = mb.getNumColumns();
+		// Assume the scaling of cocoding is at maximum square root good relative to number of columns.
+		final double scale = Math.sqrt(nCols);
 		final double threshold = _stats.estimatedCostCols / scale;
 
 		if(threshold < _stats.originalCost) {
@@ -389,12 +392,19 @@ public class CompressedMatrixBlockFactory {
 				break;
 			default:
 				if(mb.isInSparseFormat()) {
-					boolean haveManyColumns = mb.getNumColumns() > 10000;
-					boolean isNnzLowAndVerySparse = mb.getNonZeros() < 1000 && mb.getSparsity() < 0.4;
-					boolean isAboveRowNumbers = mb.getNumRows() > 500000 && mb.getSparsity() < 0.4;
-					boolean isAboveThreadToColumnRatio = compressionGroups.getNumberColGroups() > mb.getNumColumns() / 30;
-					compSettings.transposed = haveManyColumns || isNnzLowAndVerySparse ||
-						(isAboveRowNumbers && isAboveThreadToColumnRatio);
+					if(mb.getNumColumns() > 10000)
+						// many sparse columns we have to...
+						compSettings.transposed = true;
+					else if(mb.getNonZeros() < 1000)
+						// low nnz trivial to transpose
+						compSettings.transposed = true;
+					else {
+						// is enough rows to make it usable
+						boolean isAboveRowNumbers = mb.getNumRows() > 500000;
+						// Make sure that it is not more efficient to extract the rows.
+						boolean isAboveThreadToColumnRatio = compressionGroups.getNumberColGroups() > mb.getNumColumns() / 30;
+						compSettings.transposed = isAboveRowNumbers && isAboveThreadToColumnRatio;
+					}
 				}
 				else
 					compSettings.transposed = false;
@@ -434,27 +444,19 @@ public class CompressedMatrixBlockFactory {
 		if(compSettings.isInSparkInstruction)
 			res.clearSoftReferenceToDecompressed();
 
-		final long oldNNZ = mb.getNonZeros();
-		if(oldNNZ <= 0L)
-			res.recomputeNonZeros();
-		else
-			res.setNonZeros(oldNNZ);
+		res.setNonZeros(mb.getNonZeros());
 
 		logPhase();
 	}
 
 	private Pair<MatrixBlock, CompressionStatistics> abortCompression() {
 		LOG.warn("Compression aborted at phase: " + phase);
-
-		if(compSettings.transposed)
-			LibMatrixReorg.transposeInPlace(mb, k);
-
 		return new ImmutablePair<>(mb, _stats);
 	}
 
 	private Pair<MatrixBlock, CompressionStatistics> recompress(CompressedMatrixBlock cmb) {
 		LOG.debug("Recompressing an already compressed MatrixBlock");
-		LOG.error("Not Implemented Recompress yet");
+		LOG.warn("Not Implemented Recompress yet");
 		return new ImmutablePair<>(cmb, null);
 		// _stats.originalSize = cmb.getInMemorySize();
 		// CompressedMatrixBlock combined = CLALibCombineGroups.combine(cmb, k);
@@ -501,6 +503,7 @@ public class CompressedMatrixBlockFactory {
 						LOG.debug("--compressed initial actual size:" + _stats.compressedInitialSize);
 						break;
 					case 4:
+					default:
 						LOG.debug("--num col groups:    " + res.getColGroups().size());
 						LOG.debug("--compression phase  " + phase + " Cleanup   : " + getLastTimePhase());
 						LOG.debug("--col groups types   " + _stats.getGroupsTypesString());
@@ -541,7 +544,6 @@ public class CompressedMatrixBlockFactory {
 								}
 							}
 						}
-					default:
 				}
 			}
 		}

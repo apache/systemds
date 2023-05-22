@@ -26,6 +26,8 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.api.DMLOptions;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.parser.DMLProgram;
@@ -44,6 +46,7 @@ import org.junit.runners.Parameterized.Parameters;
 
 @RunWith(value = Parameterized.class)
 public class WorkloadTest {
+	protected static final Log LOG = LogFactory.getLog(WorkloadTest.class.getName());
 
 	private static final String basePath = "src/test/scripts/component/compress/workload/";
 	private static final String testFile = "src/test/resources/component/compress/1-1.csv";
@@ -108,9 +111,9 @@ public class WorkloadTest {
 		tests.add(new Object[] {0, 0, 0, 0, 0, 0, 2, 0, false, true, "functions/scale_onlySide.dml", args});
 		tests.add(new Object[] {0, 0, 0, 0, 0, 0, 6, 0, true, false, "functions/scale_onlySide.dml", args});
 
-//		TODO these tests are failing
-//		tests.add(new Object[] {0, 0, 0, 0, 1, 1, 8, 0, true, false, "functions/pca.dml", args});
-//		tests.add(new Object[] {0, 0, 0, 0, 1, 1, 5, 0, true, true, "functions/pca.dml", args});
+		// TODO these tests are failing
+		// tests.add(new Object[] {0, 0, 0, 0, 1, 1, 8, 0, true, false, "functions/pca.dml", args});
+		// tests.add(new Object[] {0, 0, 0, 0, 1, 1, 5, 0, true, true, "functions/pca.dml", args});
 
 		args = new HashMap<>();
 		args.put("$1", testFile);
@@ -205,7 +208,17 @@ public class WorkloadTest {
 		Assert.assertEquals(errorString + "Should Compresss", shouldCompress, ceb.shouldTryToCompress());
 	}
 
-	private static WTreeRoot getWorkloadTree(DMLProgram prog) {
+	public static WTreeRoot getWorkloadTree(String name, Map<String, String> args) {
+		DMLProgram prog = parse(name, args);
+		DMLTranslator dmlt = new DMLTranslator(prog);
+		dmlt.liveVariableAnalysis(prog);
+		dmlt.validateParseTree(prog);
+		dmlt.constructHops(prog);
+
+		return getWorkloadTree(prog);
+	}
+
+	public static WTreeRoot getWorkloadTree(DMLProgram prog) {
 		Map<Long, WTreeRoot> c = WorkloadAnalyzer.getAllCandidateWorkloads(prog);
 		Assert.assertEquals(c.size(), 1);
 		for(long k : c.keySet())
@@ -213,7 +226,11 @@ public class WorkloadTest {
 		throw new DMLRuntimeException("There was no Workload");
 	}
 
-	private DMLProgram parse(String name) {
+	public DMLProgram parse(String name) {
+		return parse(name, args);
+	}
+
+	public static DMLProgram parse(String name, Map<String, String> args) {
 		try {
 			boolean isFile = true;
 			String filePath = basePath + name;

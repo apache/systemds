@@ -258,15 +258,16 @@ public class CompressedMatrixBlockFactory {
 		AColGroup cg = ColGroupConst.create(numCols, value);
 		block.allocateColGroup(cg);
 		block.recomputeNonZeros();
-		if(block.getNumRows() == 0 || block.getNumColumns() == 0)
+		if(block.getNumRows() <= 0) // NCols is already checked
 			throw new DMLCompressionException("Invalid size of allocated constant compressed matrix block");
 
 		return block;
 	}
 
 	private Pair<MatrixBlock, CompressionStatistics> compressMatrix() {
-
-		if(mb instanceof CompressedMatrixBlock) // Redundant compression
+		if(mb.getNonZeros() < 0)
+			throw new DMLCompressionException("Invalid to compress matrices with unknown nonZeros");
+		else if(mb instanceof CompressedMatrixBlock) // Redundant compression
 			return recompress((CompressedMatrixBlock) mb);
 
 		_stats.denseSize = MatrixBlock.estimateSizeInMemory(mb.getNumRows(), mb.getNumColumns(), 1.0);
@@ -305,17 +306,17 @@ public class CompressedMatrixBlockFactory {
 		if(LOG.isTraceEnabled()) {
 			LOG.trace("Logging all individual columns estimated cost:");
 			for(CompressedSizeInfoColGroup g : compressionGroups.getInfo())
-				LOG.trace(
-					String.format("Cost: %8.0f Size: %16.0f %15s", costEstimator.getCost(g), g.getMinSize(), g.getColumns()));
+				LOG.trace(String.format("Cost: %8.0f Size: %16.0f %15s", costEstimator.getCost(g), g.getMinSize(),
+					g.getColumns()));
 		}
 
 		_stats.estimatedSizeCols = compressionGroups.memoryEstimate();
 		_stats.estimatedCostCols = costEstimator.getCost(compressionGroups);
 
 		logPhase();
-		final int nCols = compSettings.transposed ? mb.getNumRows() : mb.getNumColumns();
+		final int nCols = mb.getNumRows();
 		// Assume the scaling of cocoding is at maximum square root good relative to number of columns.
-		final double scale =  Math.sqrt(nCols); 
+		final double scale = Math.sqrt(nCols);
 		final double threshold = _stats.estimatedCostCols / scale;
 
 		if(threshold < _stats.originalCost) {
@@ -435,27 +436,19 @@ public class CompressedMatrixBlockFactory {
 		if(compSettings.isInSparkInstruction)
 			res.clearSoftReferenceToDecompressed();
 
-		final long oldNNZ = mb.getNonZeros();
-		if(oldNNZ <= 0L)
-			res.recomputeNonZeros();
-		else
-			res.setNonZeros(oldNNZ);
+		res.setNonZeros(mb.getNonZeros());
 
 		logPhase();
 	}
 
 	private Pair<MatrixBlock, CompressionStatistics> abortCompression() {
 		LOG.warn("Compression aborted at phase: " + phase);
-
-		if(compSettings.transposed)
-			LibMatrixReorg.transposeInPlace(mb, k);
-
 		return new ImmutablePair<>(mb, _stats);
 	}
 
 	private Pair<MatrixBlock, CompressionStatistics> recompress(CompressedMatrixBlock cmb) {
 		LOG.debug("Recompressing an already compressed MatrixBlock");
-		LOG.error("Not Implemented Recompress yet");
+		LOG.warn("Not Implemented Recompress yet");
 		return new ImmutablePair<>(cmb, null);
 		// _stats.originalSize = cmb.getInMemorySize();
 		// CompressedMatrixBlock combined = CLALibCombineGroups.combine(cmb, k);

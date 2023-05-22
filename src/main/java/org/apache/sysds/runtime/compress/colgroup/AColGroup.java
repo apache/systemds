@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.util.Collection;
 
+import org.apache.commons.lang.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
@@ -623,6 +624,16 @@ public abstract class AColGroup implements Serializable {
 	 * @return A new or the same column group depending on optimization goal.
 	 */
 	public abstract AColGroup recompress();
+
+	/**
+	 * Recompress this column group into a new column group of the given type.
+	 * 
+	 * @param ct The compressionType that the column group should morph into
+	 * @return A new column group
+	 */
+	public AColGroup morph(CompressionType ct){
+		throw new NotImplementedException();
+	}
 
 	/**
 	 * Get the compression info for this column group.

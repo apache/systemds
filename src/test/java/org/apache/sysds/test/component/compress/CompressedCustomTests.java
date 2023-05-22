@@ -22,11 +22,15 @@ package org.apache.sysds.test.component.compress;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlockFactory;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.junit.Test;
 
 public class CompressedCustomTests {
+	protected static final Log LOG = LogFactory.getLog(CompressedCustomTests.class.getName());
+
 	@Test
 	public void compressNaNDense() {
 		MatrixBlock m = new MatrixBlock(100, 100, Double.NaN);

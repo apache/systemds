@@ -35,7 +35,6 @@ import org.apache.sysds.runtime.compress.colgroup.ColGroupEmpty;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupFactory;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupUncompressed;
 import org.apache.sysds.runtime.compress.cost.ACostEstimate;
-import org.apache.sysds.runtime.compress.cost.ComputationCostEstimator;
 import org.apache.sysds.runtime.compress.cost.CostEstimatorBuilder;
 import org.apache.sysds.runtime.compress.cost.CostEstimatorFactory;
 import org.apache.sysds.runtime.compress.cost.InstructionTypeCounter;
@@ -162,6 +161,7 @@ public class CompressedMatrixBlockFactory {
 	}
 
 	public static void compressAsync(ExecutionContext ec, String varName, InstructionTypeCounter ins) {
+		LOG.debug("Compressing Async");
 		CompletableFuture.runAsync(() -> {
 			// method call or code to be asynch.
 			CacheableData<?> data = ec.getCacheableData(varName);
@@ -306,7 +306,7 @@ public class CompressedMatrixBlockFactory {
 			LOG.trace("Logging all individual columns estimated cost:");
 			for(CompressedSizeInfoColGroup g : compressionGroups.getInfo())
 				LOG.trace(
-					String.format("Cost: %8.0f Size: %16d %15s", costEstimator.getCost(g), g.getMinSize(), g.getColumns()));
+					String.format("Cost: %8.0f Size: %16.0f %15s", costEstimator.getCost(g), g.getMinSize(), g.getColumns()));
 		}
 
 		_stats.estimatedSizeCols = compressionGroups.memoryEstimate();
@@ -314,7 +314,8 @@ public class CompressedMatrixBlockFactory {
 
 		logPhase();
 		final int nCols = compSettings.transposed ? mb.getNumRows() : mb.getNumColumns();
-		final double scale = (costEstimator instanceof ComputationCostEstimator) ? ((double) nCols) / 2 : 1;
+		// Assume the scaling of cocoding is at maximum square root good relative to number of columns.
+		final double scale =  Math.sqrt(nCols); 
 		final double threshold = _stats.estimatedCostCols / scale;
 
 		if(threshold < _stats.originalCost) {
@@ -501,6 +502,7 @@ public class CompressedMatrixBlockFactory {
 						LOG.debug("--compressed initial actual size:" + _stats.compressedInitialSize);
 						break;
 					case 4:
+					default:
 						LOG.debug("--num col groups:    " + res.getColGroups().size());
 						LOG.debug("--compression phase  " + phase + " Cleanup   : " + getLastTimePhase());
 						LOG.debug("--col groups types   " + _stats.getGroupsTypesString());
@@ -541,7 +543,6 @@ public class CompressedMatrixBlockFactory {
 								}
 							}
 						}
-					default:
 				}
 			}
 		}

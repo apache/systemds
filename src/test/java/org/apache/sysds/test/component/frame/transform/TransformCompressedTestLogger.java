@@ -22,13 +22,10 @@ package org.apache.sysds.test.component.frame.transform;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.log4j.Appender;
-import org.apache.log4j.AppenderSkeleton;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.log4j.spi.LoggingEvent;
@@ -38,6 +35,8 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.transform.encode.CompressedEncode;
 import org.apache.sysds.runtime.transform.encode.EncoderFactory;
 import org.apache.sysds.runtime.transform.encode.MultiColumnEncoder;
+import org.apache.sysds.test.LoggingUtils;
+import org.apache.sysds.test.LoggingUtils.TestAppender;
 import org.apache.sysds.test.TestUtils;
 import org.junit.Test;
 
@@ -65,28 +64,22 @@ public class TransformCompressedTestLogger {
 	}
 
 	public void test(String spec) {
-		final TestAppender appender = new TestAppender();
-		final Logger logger = Logger.getRootLogger();
-		Appender consoleLogger = (Appender) logger.getAllAppenders().nextElement();
+		final TestAppender appender = LoggingUtils.overwrite();
+
 		try {
 			Logger.getLogger(CompressedEncode.class).setLevel(Level.DEBUG);
-			
-			
+
 			FrameBlock meta = null;
-			logger.removeAppender(consoleLogger);
-			logger.addAppender(appender);
 			MultiColumnEncoder encoderCompressed = EncoderFactory.createEncoder(spec, data.getColumnNames(),
-			data.getNumColumns(), meta);
+				data.getNumColumns(), meta);
 			MatrixBlock outCompressed = encoderCompressed.encode(data, true);
 			FrameBlock outCompressedMD = encoderCompressed.getMetaData(null);
 			MultiColumnEncoder encoderNormal = EncoderFactory.createEncoder(spec, data.getColumnNames(),
-			data.getNumColumns(), meta);
+				data.getNumColumns(), meta);
 			MatrixBlock outNormal = encoderNormal.encode(data);
 			FrameBlock outNormalMD = encoderNormal.getMetaData(null);
-			logger.removeAppender(appender);
-			logger.addAppender(consoleLogger);
 
-			final List<LoggingEvent> log = appender.getLog();
+			final List<LoggingEvent> log = LoggingUtils.reinsert(appender);
 			assertTrue(log.get(3).getMessage().toString().contains("Compression ratio"));
 			TestUtils.compareMatrices(outNormal, outCompressed, 0, "Not Equal after apply");
 			TestUtils.compareFrames(outNormalMD, outCompressedMD, true);
@@ -96,32 +89,9 @@ public class TransformCompressedTestLogger {
 			fail(e.getMessage());
 		}
 		finally {
-			logger.removeAppender(appender);
-			logger.addAppender(consoleLogger);
+			LoggingUtils.reinsert(appender);
 		}
 
 	}
 
-	class TestAppender extends AppenderSkeleton {
-		private final List<LoggingEvent> log = new ArrayList<LoggingEvent>();
-
-		@Override
-		public boolean requiresLayout() {
-			return false;
-		}
-
-		@Override
-		protected void append(final LoggingEvent loggingEvent) {
-			log.add(loggingEvent);
-		}
-
-		@Override
-		public void close() {
-		}
-
-		public List<LoggingEvent> getLog() {
-			return new ArrayList<LoggingEvent>(log);
-		}
-
-	}
 }

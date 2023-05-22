@@ -100,7 +100,7 @@ public final class CLALibStack {
 		final int rlen, final int clen, final int blen, final int k) {
 
 		if(rlen < blen) // Shortcut, in case file only contains one block in r length.
-			return CombiningColumnGroups(m, lookup, rlen, clen, blen, k);
+			return combineColumnGroups(m, lookup, rlen, clen, blen, k);
 
 		final CompressionType[] colTypes = new CompressionType[clen];
 		// Look through the first blocks in to the top.
@@ -164,7 +164,7 @@ public final class CLALibStack {
 			}
 		}
 
-		return CombiningColumnGroups(m, lookup, rlen, clen, blen, k);
+		return combineColumnGroups(m, lookup, rlen, clen, blen, k);
 	}
 
 	private static MatrixBlock combineViaDecompression(final Map<MatrixIndexes, MatrixBlock> m, final int rlen,
@@ -186,7 +186,7 @@ public final class CLALibStack {
 	}
 
 	// It is known all of the matrices are Compressed and they are non overlapping.
-	private static MatrixBlock CombiningColumnGroups(final Map<MatrixIndexes, MatrixBlock> m, final MatrixIndexes lookup,
+	private static MatrixBlock combineColumnGroups(final Map<MatrixIndexes, MatrixBlock> m, final MatrixIndexes lookup,
 		final int rlen, final int clen, final int blen, int k) {
 
 		final AColGroup[][] finalCols = new AColGroup[clen][]; // temp array for combining
@@ -202,8 +202,13 @@ public final class CLALibStack {
 					final int c = gc.getColIndices().get(0);
 					if(br == 0)
 						finalCols[c] = new AColGroup[blocksInColumn];
-
+					else if(finalCols[c] == null) {
+						LOG.warn("Combining via decompression. There was an column"
+							+ " assigned not assigned in block 1 indicating spark compression");
+						return combineViaDecompression(m, rlen, clen, blen, k);
+					}
 					finalCols[c][br] = gc;
+
 				}
 			}
 		}

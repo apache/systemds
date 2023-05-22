@@ -19,14 +19,19 @@
 
 package org.apache.sysds.runtime.compress.lib;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.matrix.data.LibMatrixReorg;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.UtilFunctions;
 
-public class CLALibRexpand {
+public final class CLALibRexpand {
+	protected static final Log LOG = LogFactory.getLog(CLALibRexpand.class.getName());
 
-	// private static final Log LOG = LogFactory.getLog(CLALibReExpand.class.getName());
+	private CLALibRexpand(){
+		// private constructor
+	}
 
 	public static MatrixBlock rexpand(CompressedMatrixBlock in, MatrixBlock ret, double max, boolean rows, boolean cast,
 		boolean ignore, int k) {

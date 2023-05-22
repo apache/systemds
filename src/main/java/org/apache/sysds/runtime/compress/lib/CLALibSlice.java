@@ -35,9 +35,12 @@ import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.CommonThreadPool;
 
-public class CLALibSlice {
-
+public final class CLALibSlice {
 	protected static final Log LOG = LogFactory.getLog(CLALibSlice.class.getName());
+
+	private CLALibSlice() {
+		// private constructor
+	}
 
 	/**
 	 * Slice blocks of compressed matrices from the compressed representation.

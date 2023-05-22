@@ -67,9 +67,13 @@ import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.util.CommonThreadPool;
 import org.apache.sysds.utils.DMLCompressionStatistics;
 
-public class CLALibCompAgg {
+public final class CLALibCompAgg {
 	private static final Log LOG = LogFactory.getLog(CLALibCompAgg.class.getName());
 	private static final long MIN_PAR_AGG_THRESHOLD = 8 * 1024;
+
+	private CLALibCompAgg(){
+		// private constructor
+	}
 
 	public static MatrixBlock aggregateUnary(CompressedMatrixBlock inputMatrix, MatrixBlock result,
 		AggregateUnaryOperator op, int blen, MatrixIndexes indexesIn, boolean inCP) {

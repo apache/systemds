@@ -44,6 +44,8 @@ import org.apache.sysds.runtime.compress.estim.AComEst;
 import org.apache.sysds.runtime.compress.estim.ComEstFactory;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfo;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
+import org.apache.sysds.runtime.compress.lib.CLALibCombineGroups; 
+import org.apache.sysds.runtime.compress.lib.CLALibSquash;
 import org.apache.sysds.runtime.compress.workload.WTreeRoot;
 import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
@@ -267,7 +269,7 @@ public class CompressedMatrixBlockFactory {
 	private Pair<MatrixBlock, CompressionStatistics> compressMatrix() {
 
 		if(mb instanceof CompressedMatrixBlock) // Redundant compression
-			return returnSelf();
+			return recompress((CompressedMatrixBlock) mb);
 
 		_stats.denseSize = MatrixBlock.estimateSizeInMemory(mb.getNumRows(), mb.getNumColumns(), 1.0);
 		_stats.originalSize = mb.getInMemorySize();
@@ -305,8 +307,8 @@ public class CompressedMatrixBlockFactory {
 		if(LOG.isTraceEnabled()) {
 			LOG.trace("Logging all individual columns estimated cost:");
 			for(CompressedSizeInfoColGroup g : compressionGroups.getInfo())
-				LOG.trace(String.format("Cost: %8.0f Size: %16d %15s", costEstimator.getCost(g), g.getMinSize(),
-					g.getColumns()));
+				LOG.trace(
+					String.format("Cost: %8.0f Size: %16d %15s", costEstimator.getCost(g), g.getMinSize(), g.getColumns()));
 		}
 
 		_stats.estimatedSizeCols = compressionGroups.memoryEstimate();
@@ -452,6 +454,15 @@ public class CompressedMatrixBlockFactory {
 		return new ImmutablePair<>(mb, _stats);
 	}
 
+	private Pair<MatrixBlock, CompressionStatistics> recompress(CompressedMatrixBlock cmb) {
+		LOG.debug("Recompressing an already compressed MatrixBlock");
+		_stats.originalSize = cmb.getInMemorySize();
+		CompressedMatrixBlock combined = CLALibCombineGroups.combine(cmb, k);
+		CompressedMatrixBlock squashed = CLALibSquash.squash(combined, k);
+		_stats.compressedSize = squashed.getInMemorySize();
+		return new ImmutablePair<>(squashed, _stats);
+	}
+
 	private void logPhase() {
 		setNextTimePhase(time.stop());
 		DMLCompressionStatistics.addCompressionTime(getLastTimePhase(), phase);
@@ -557,11 +568,6 @@ public class CompressedMatrixBlockFactory {
 		phase = 4;
 		logPhase();
 		return new ImmutablePair<>(res, _stats);
-	}
-
-	private Pair<MatrixBlock, CompressionStatistics> returnSelf() {
-		LOG.info("MatrixBlock already compressed or is Empty");
-		return new ImmutablePair<>(mb, null);
 	}
 
 	private static String constructNrColumnString(List<AColGroup> cg) {

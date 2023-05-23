@@ -264,9 +264,11 @@ public interface DictionaryFactory {
 	/**
 	 * Combine the dictionaries
 	 * 
-	 * @param a Left side dictionary
-	 * @param b Right side dictionary
-	 * @return Combined
+	 * @param a   Left side dictionary
+	 * @param nca Number of columns left dictionary
+	 * @param b   Right side dictionary
+	 * @param ncb Number of columns right dictionary
+	 * @return A combined dictionary
 	 */
 	public static ADictionary combineDense(ADictionary a, int nca, ADictionary b, int ncb) {
 		final int ra = a.getNumberOfValues(nca);

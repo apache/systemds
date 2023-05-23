@@ -38,6 +38,8 @@ import org.apache.sysds.runtime.compress.colgroup.scheme.DDCScheme;
 import org.apache.sysds.runtime.compress.colgroup.scheme.ICLAScheme;
 import org.apache.sysds.runtime.compress.cost.ComputationCostEstimator;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
+import org.apache.sysds.runtime.compress.estim.encoding.EncodingFactory;
+import org.apache.sysds.runtime.compress.estim.encoding.IEncode;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.functionobjects.Builtin;
@@ -51,7 +53,7 @@ import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
 /**
  * Class to encapsulate information about a column group that is encoded with dense dictionary encoding (DDC).
  */
-public class ColGroupDDC extends APreAgg implements AMapToDataGroup {
+public class ColGroupDDC extends APreAgg implements IMapToDataGroup {
 	private static final long serialVersionUID = -5769772089913918987L;
 
 	protected final AMapToData _data;
@@ -536,7 +538,7 @@ public class ColGroupDDC extends APreAgg implements AMapToDataGroup {
 				return null;
 			}
 		}
-		AMapToData nd = _data.appendN(Arrays.copyOf(g, g.length, AMapToDataGroup[].class));
+		AMapToData nd = _data.appendN(Arrays.copyOf(g, g.length, IMapToDataGroup[].class));
 		return create(_colIndexes, _dict, nd, null);
 	}
 
@@ -553,6 +555,16 @@ public class ColGroupDDC extends APreAgg implements AMapToDataGroup {
 	@Override
 	public CompressedSizeInfoColGroup getCompressionInfo(int nRow) {
 		throw new NotImplementedException();
+	}
+
+	@Override
+	public IEncode getEncoding() {
+		return EncodingFactory.create(_data);
+	}
+
+	@Override
+	protected AColGroup fixColIndexes(IColIndex newColIndex, int[] reordering) {
+		return ColGroupDDC.create(newColIndex, _dict.reorder(reordering), _data, getCachedCounts());
 	}
 
 	@Override

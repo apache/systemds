@@ -318,10 +318,10 @@ public class MatrixBlockDictionary extends ADictionary {
 	public void aggregateCols(double[] c, Builtin fn, IColIndex colIndexes) {
 		if(_data.isInSparseFormat()) {
 			MatrixBlock t = LibMatrixReorg.transpose(_data);
-			if(!t.isInSparseFormat()){
+			if(!t.isInSparseFormat()) {
 				LOG.warn("Transpose for aggregating of columns");
 				t.denseToSparse(true);
-			} 
+			}
 
 			SparseBlock sbt = t.getSparseBlock();
 
@@ -353,7 +353,8 @@ public class MatrixBlockDictionary extends ADictionary {
 	}
 
 	@Override
-	public void aggregateColsWithReference(double[] c, Builtin fn, IColIndex colIndexes, double[] reference, boolean def) {
+	public void aggregateColsWithReference(double[] c, Builtin fn, IColIndex colIndexes, double[] reference,
+		boolean def) {
 		final int nCol = _data.getNumColumns();
 		final int nRow = _data.getNumRows();
 
@@ -2063,7 +2064,8 @@ public class MatrixBlockDictionary extends ADictionary {
 	}
 
 	@Override
-	protected void TSMMToUpperTriangleSparse(SparseBlock left, IColIndex rowsLeft, IColIndex colsRight, MatrixBlock result) {
+	protected void TSMMToUpperTriangleSparse(SparseBlock left, IColIndex rowsLeft, IColIndex colsRight,
+		MatrixBlock result) {
 		if(_data.isInSparseFormat())
 			DictLibMatrixMult.MMToUpperTriangleSparseSparse(left, _data.getSparseBlock(), rowsLeft, colsRight, result);
 		else
@@ -2091,8 +2093,8 @@ public class MatrixBlockDictionary extends ADictionary {
 	}
 
 	@Override
-	protected void TSMMToUpperTriangleSparseScaling(SparseBlock left, IColIndex rowsLeft, IColIndex colsRight, int[] scale,
-		MatrixBlock result) {
+	protected void TSMMToUpperTriangleSparseScaling(SparseBlock left, IColIndex rowsLeft, IColIndex colsRight,
+		int[] scale, MatrixBlock result) {
 		if(_data.isInSparseFormat())
 			DictLibMatrixMult.TSMMToUpperTriangleSparseSparseScaling(left, _data.getSparseBlock(), rowsLeft, colsRight,
 				scale, result);
@@ -2115,4 +2117,24 @@ public class MatrixBlockDictionary extends ADictionary {
 		return false;
 	}
 
+	@Override
+	public ADictionary cbind(ADictionary that, int nCol) {
+		return cbind(that.getMBDict(nCol).getMatrixBlock());
+	}
+
+	private ADictionary cbind(MatrixBlock that) {
+		return new MatrixBlockDictionary(_data.append(that));
+	}
+
+	@Override
+	public ADictionary reorder(int[] reorder) {
+		MatrixBlock ret = new MatrixBlock(_data.getNumRows(), _data.getNumColumns(), _data.getNonZeros());
+
+		// TODO add sparse exploitation.
+		for(int r = 0; r < _data.getNumRows(); r++)
+			for(int c = 0; c < _data.getNumColumns(); c++)
+				ret.quickSetValue(r, c, _data.quickGetValue(r, reorder[c]));
+
+		return create(ret, false);
+	}
 }

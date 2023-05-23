@@ -26,7 +26,7 @@ import java.util.BitSet;
 
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.runtime.DMLRuntimeException;
-import org.apache.sysds.runtime.compress.colgroup.AMapToDataGroup;
+import org.apache.sysds.runtime.compress.colgroup.IMapToDataGroup;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory.MAP_TYPE;
 import org.apache.sysds.utils.MemoryEstimates;
@@ -352,9 +352,9 @@ public class MapToBit extends AMapToData {
 	}
 
 	@Override
-	public AMapToData appendN(AMapToDataGroup[] d) {
+	public AMapToData appendN(IMapToDataGroup[] d) {
 		int p = 0; // pointer
-		for(AMapToDataGroup gd : d)
+		for(IMapToDataGroup gd : d)
 			p += gd.getMapToData().size();
 		final long[] ret = new long[(p - 1) / 64 + 1];
 		long[] or = _data.toLongArray();

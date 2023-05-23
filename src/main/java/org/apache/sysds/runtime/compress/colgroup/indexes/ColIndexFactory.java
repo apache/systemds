@@ -24,6 +24,8 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup;
@@ -31,6 +33,7 @@ import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex.ColIndexType
 import org.apache.sysds.runtime.compress.utils.IntArrayList;
 
 public interface ColIndexFactory {
+	public static final Log LOG = LogFactory.getLog(ColIndexFactory.class.getName());
 
 	public static IColIndex read(DataInput in) throws IOException {
 		final ColIndexType t = ColIndexType.values()[in.readByte()];
@@ -46,6 +49,10 @@ public interface ColIndexFactory {
 			default:
 				throw new DMLCompressionException("Failed reading column index of type: " + t);
 		}
+	}
+
+	public static IColIndex createI(int... indexes) {
+		return create(indexes);
 	}
 
 	public static IColIndex create(int[] indexes) {
@@ -97,10 +104,10 @@ public interface ColIndexFactory {
 			return new RangeIndex(nCol);
 	}
 
-	public static long estimateMemoryCost(int nCol, boolean contiguous){
+	public static long estimateMemoryCost(int nCol, boolean contiguous) {
 		if(nCol == 1)
 			return SingleIndex.estimateInMemorySizeStatic();
-		else if (nCol == 2)
+		else if(nCol == 2)
 			return TwoIndex.estimateInMemorySizeStatic();
 		else if(contiguous)
 			return RangeIndex.estimateInMemorySizeStatic();
@@ -124,6 +131,53 @@ public interface ColIndexFactory {
 
 		Arrays.sort(resCols);
 		return create(resCols);
+	}
+
+	public static IColIndex combine(AColGroup a, AColGroup b) {
+		return combine(a.getColIndices(), b.getColIndices());
+	}
+
+	public static IColIndex combine(IColIndex a, IColIndex b) {
+		final int numCols = a.size() + b.size();
+		final int[] resCols = new int[numCols];
+		int index = 0;
+		final IIterate ita = a.iterator();
+		while(ita.hasNext())
+			resCols[index++] = ita.next();
+		final IIterate itb = b.iterator();
+		while(itb.hasNext())
+			resCols[index++] = itb.next();
+		Arrays.sort(resCols);
+		return create(resCols);
+	}
+
+	/**
+	 * Provide a mapping from a to the combined columns shifted over to column positions in the combined.
+	 * 
+	 * It is assumed that the caller always input an a that is contained in comb. it is not verified in the call that it
+	 * is correct.
+	 * 
+	 * @param comb The combined indexes
+	 * @param a    The indexes to look up
+	 * @return A column index mapping.
+	 */
+	public static IColIndex getColumnMapping(IColIndex comb, IColIndex a) {
+
+		// naive scan entire a, there are options that make this faster depending on what comb look like
+		// but this is most commonly not relevant.
+		final int numCols = a.size();
+		final int[] ret = new int[numCols];
+		final IIterate itc = comb.iterator();
+		final IIterate ita = a.iterator();
+		int index = 0;
+		while(ita.hasNext()) {
+			while(itc.v() < ita.v())
+				itc.next();
+			ret[index++] = itc.i();
+			ita.next();
+		}
+
+		return create(ret);
 	}
 
 }

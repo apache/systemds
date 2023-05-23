@@ -20,6 +20,7 @@
 package org.apache.sysds.runtime.compress.estim.encoding;
 
 import org.apache.sysds.runtime.compress.CompressionSettings;
+import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
 import org.apache.sysds.runtime.compress.colgroup.offset.AIterator;
@@ -54,11 +55,25 @@ public class SparseEncoding implements IEncode {
 			SparseEncoding es = (SparseEncoding) e;
 			if(es.off == off && es.map == map)
 				return this;
-			return combineSparse((SparseEncoding) e);
+			return combineSparse(es);
 		}
 		else
 			return e.combine(this);
 
+	}
+
+	@Override
+	public IEncode combineNoResize(IEncode e) {
+		if(e instanceof EmptyEncoding || e instanceof ConstEncoding)
+			return this;
+		else if(e instanceof SparseEncoding) {
+			SparseEncoding es = (SparseEncoding) e;
+			if(es.off == off && es.map == map)
+				return this;
+			return combineSparseNoResize(es);
+		}
+		else
+			throw new DMLCompressionException("Not allowed other to be dense");
 	}
 
 	protected IEncode combineSparse(SparseEncoding e) {
@@ -97,6 +112,43 @@ public class SparseEncoding implements IEncode {
 				retMap.set(retOff.get(i), tmpVals.get(i) + 1);
 			return new DenseEncoding(retMap);
 		}
+	}
+
+	private IEncode combineSparseNoResize(SparseEncoding e) {
+		// for now just use the dense... and lets continue.
+		// TODO add sparse combine with sparse output.
+		return combineSparseNoResizeDense(e);
+	}
+
+	private IEncode combineSparseNoResizeDense(SparseEncoding e) {
+
+		final int fl = off.getOffsetToLast();
+		final int fr = e.off.getOffsetToLast();
+		final AIterator itl = off.getIterator();
+		final AIterator itr = e.off.getIterator();
+		final int nVl = getUnique();
+		final int nVr = e.getUnique();
+
+		final AMapToData retMap = MapToFactory.create(nRows, (nVl + 1) * (nVr + 1));
+		int il = itl.value();
+		// parse through one side set all values into the dense.
+		while(il < fl) {
+			retMap.set(il, map.getIndex(itl.getDataIndex()) + 1);
+			il = itl.next();
+		}
+		retMap.set(fl, map.getIndex(itl.getDataIndex()) + 1);
+
+		int ir = itr.value();
+		// parse through other side set all values with offset based on what already is there.
+		while(ir < fr) {
+			final int vl = retMap.getIndex(ir); // probably 0
+			final int vr = e.map.getIndex(itr.getDataIndex()) + 1;
+			retMap.set(ir, vl + vr * nVl);
+			ir = itr.next();
+		}
+		retMap.set(fr, retMap.getIndex(fr) + (e.map.getIndex(itr.getDataIndex()) + 1) * nVl);
+
+		return new DenseEncoding(retMap);
 	}
 
 	private static int combineSparse(AMapToData lMap, AMapToData rMap, AIterator itl, AIterator itr,
@@ -325,6 +377,14 @@ public class SparseEncoding implements IEncode {
 
 	public AOffset getOffsets() {
 		return off;
+	}
+
+	public AMapToData getMap() {
+		return map;
+	}
+
+	public int getNumRows() {
+		return nRows;
 	}
 
 	@Override

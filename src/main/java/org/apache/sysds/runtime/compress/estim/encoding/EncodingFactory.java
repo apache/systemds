@@ -24,6 +24,8 @@ import java.util.Arrays;
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.sysds.runtime.compress.colgroup.ColGroupConst;
+import org.apache.sysds.runtime.compress.colgroup.ColGroupEmpty;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
@@ -113,6 +115,22 @@ public interface EncodingFactory {
 			return createFromSparse(m, rowCol);
 		else
 			return createFromDense(m, rowCol);
+	}
+
+	public static IEncode create(ColGroupConst c){
+		return new ConstEncoding(-1);
+	}
+
+	public static IEncode create(ColGroupEmpty c){
+		return new EmptyEncoding();
+	}
+
+	public static IEncode create(AMapToData d){
+		return new DenseEncoding(d);
+	}
+
+	public static IEncode create(AMapToData d, AOffset i, int nRow){
+		return new SparseEncoding(d, i, nRow);
 	}
 
 	private static IEncode createFromDenseTransposed(MatrixBlock m, int row) {

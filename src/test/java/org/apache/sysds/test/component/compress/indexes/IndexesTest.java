@@ -97,7 +97,7 @@ public class IndexesTest {
 				new int[] {4, 5, 6, 7, 8, 9}, //
 				ColIndexFactory.create(4, 10)});
 
-				tests.add(createWithArray(1, 323));
+			tests.add(createWithArray(1, 323));
 			tests.add(createWithArray(2, 1414));
 			tests.add(createWithArray(144, 32));
 			tests.add(createWithArray(13, 23));
@@ -244,6 +244,12 @@ public class IndexesTest {
 	}
 
 	@Test
+	public void isContiguous() {
+		boolean c = expected[expected.length - 1] - expected[0] + 1 == expected.length;
+		assertEquals(c, actual.isContiguous());
+	}
+
+	@Test
 	public void combineSingleOneAbove() {
 		IColIndex b = new SingleIndex(expected[expected.length - 1] + 1);
 		IColIndex c = actual.combine(b);
@@ -327,6 +333,7 @@ public class IndexesTest {
 	private static void compare(int[] expected, IIterate actual) {
 		for(int i = 0; i < expected.length; i++) {
 			assertTrue(actual.hasNext());
+			assertEquals(i, actual.i());
 			assertEquals(expected[i], actual.next());
 		}
 		assertFalse(actual.hasNext());
@@ -343,6 +350,11 @@ public class IndexesTest {
 	}
 
 	private static Object[] createWithArray(int size, int seed) {
+		IntArrayList cols = randomInc(size, seed);
+		return new Object[] {cols.extractValues(true), ColIndexFactory.create(cols)};
+	}
+
+	public static IntArrayList randomInc(int size, int seed) {
 		IntArrayList cols = new IntArrayList();
 		Random r = new Random(seed);
 		cols.appendValue(r.nextInt(1000) + 1);
@@ -350,7 +362,7 @@ public class IndexesTest {
 			int prev = cols.get(i - 1);
 			cols.appendValue(r.nextInt(1000) + 1 + prev);
 		}
-		return new Object[] {cols.extractValues(true), ColIndexFactory.create(cols)};
+		return cols;
 	}
 
 	private static Object[] createRangeWithArray(int size, int seed) {
@@ -362,7 +374,7 @@ public class IndexesTest {
 			cols.appendValue(1 + prev);
 		}
 		IColIndex ret = ColIndexFactory.create(cols);
-		if(! (ret instanceof ArrayIndex))
+		if(!(ret instanceof ArrayIndex))
 			return new Object[] {cols.extractValues(true), ret};
 		else
 			throw new DMLRuntimeException("Invalid construction of range array");

@@ -49,8 +49,8 @@ import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
 public class ColGroupRLE extends AColGroupOffset {
 	private static final long serialVersionUID = -1560710477952862791L;
 
-	private ColGroupRLE(IColIndex colIndexes, int numRows, boolean zeros, ADictionary dict, char[] bitmaps, int[] bitmapOffs,
-		int[] cachedCounts) {
+	private ColGroupRLE(IColIndex colIndexes, int numRows, boolean zeros, ADictionary dict, char[] bitmaps,
+		int[] bitmapOffs, int[] cachedCounts) {
 		super(colIndexes, numRows, zeros, dict, bitmapOffs, bitmaps, cachedCounts);
 	}
 
@@ -886,7 +886,7 @@ public class ColGroupRLE extends AColGroupOffset {
 	}
 
 	@Override
-	protected boolean sameIndexStructure(AColGroupCompressed that) {
+	public boolean sameIndexStructure(AColGroupCompressed that) {
 		if(that.getCompType() == this.getCompType()) {
 			final ColGroupRLE rle = (ColGroupRLE) that;
 			return rle._ptr == this._ptr && rle._data == this._data;
@@ -993,6 +993,11 @@ public class ColGroupRLE extends AColGroupOffset {
 
 	@Override
 	public CompressedSizeInfoColGroup getCompressionInfo(int nRow) {
+		throw new NotImplementedException();
+	}
+
+	@Override
+	protected AColGroup fixColIndexes(IColIndex newColIndex, int[] reordering) {
 		throw new NotImplementedException();
 	}
 

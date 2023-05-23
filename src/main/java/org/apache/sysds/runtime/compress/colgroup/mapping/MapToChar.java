@@ -26,7 +26,7 @@ import java.util.Arrays;
 import java.util.BitSet;
 
 import org.apache.commons.lang.NotImplementedException;
-import org.apache.sysds.runtime.compress.colgroup.AMapToDataGroup;
+import org.apache.sysds.runtime.compress.colgroup.IMapToDataGroup;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory.MAP_TYPE;
 import org.apache.sysds.utils.MemoryEstimates;
 
@@ -254,9 +254,9 @@ public class MapToChar extends AMapToData {
 	}
 
 	@Override
-	public AMapToData appendN(AMapToDataGroup[] d) {
+	public AMapToData appendN(IMapToDataGroup[] d) {
 		int p = 0; // pointer
-		for(AMapToDataGroup gd : d)
+		for(IMapToDataGroup gd : d)
 			p += gd.getMapToData().size();
 		final char[] ret = Arrays.copyOf(_data, p);
 

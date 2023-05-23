@@ -206,8 +206,8 @@ public interface ColGroupUtils {
 		}
 	}
 
-	public static void outerProduct(final double[] leftRowSum, final double[] rightColumnSum, final IColIndex colIdxRight,
-		final double[] result, final int nColR, final int rl, final int ru) {
+	public static void outerProduct(final double[] leftRowSum, final double[] rightColumnSum,
+		final IColIndex colIdxRight, final double[] result, final int nColR, final int rl, final int ru) {
 		for(int row = rl; row < ru; row++) {
 			final int offOut = nColR * row;
 			final double vLeft = leftRowSum[row];
@@ -216,8 +216,8 @@ public interface ColGroupUtils {
 		}
 	}
 
-	public static void outerProduct(final double[] leftRowSum, final SparseBlock rightColSum, final IColIndex colIdxRight,
-		final double[] result, final int nColR, final int rl, final int ru) {
+	public static void outerProduct(final double[] leftRowSum, final SparseBlock rightColSum,
+		final IColIndex colIdxRight, final double[] result, final int nColR, final int rl, final int ru) {
 		final int alen = rightColSum.size(0);
 		final int[] aix = rightColSum.indexes(0);
 		final double[] aval = rightColSum.values(0);
@@ -275,7 +275,6 @@ public interface ColGroupUtils {
 				ref[i] = counters[i].getMostFrequent();
 	}
 
-
 	public static void addMatrixToResult(MatrixBlock tmp, MatrixBlock result, IColIndex colIndexes, int rl, int ru) {
 		if(tmp.isEmpty())
 			return;
@@ -302,6 +301,13 @@ public interface ColGroupUtils {
 					retV[offR + colIndexes.get(col)] += tmpV[offT + col];
 			}
 		}
+	}
+
+	public static double[] reorderDefault(double[] vals, int[] reordering){
+		double[] ret = new double[vals.length];
+		for(int i = 0; i < vals.length; i++)
+			ret[i] = vals[reordering[i]];
+		return ret; 
 	}
 
 }

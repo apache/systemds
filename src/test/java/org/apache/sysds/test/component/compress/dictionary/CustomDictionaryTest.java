@@ -152,4 +152,5 @@ public class CustomDictionaryTest {
 	public void createZeroRowMatrixBlock() {
 		MatrixBlockDictionary.create(new MatrixBlock(0, 10, 10.0));
 	}
+
 }

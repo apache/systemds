@@ -42,6 +42,8 @@ import org.apache.sysds.runtime.compress.colgroup.offset.OffsetFactory;
 import org.apache.sysds.runtime.compress.colgroup.scheme.ICLAScheme;
 import org.apache.sysds.runtime.compress.cost.ComputationCostEstimator;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
+import org.apache.sysds.runtime.compress.estim.encoding.EncodingFactory;
+import org.apache.sysds.runtime.compress.estim.encoding.IEncode;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.functionobjects.Builtin;
@@ -62,7 +64,7 @@ import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
  * 
  * This column group is handy in cases where sparse unsafe operations is executed on very sparse columns.
  */
-public class ColGroupSDCZeros extends ASDCZero implements AMapToDataGroup {
+public class ColGroupSDCZeros extends ASDCZero implements IMapToDataGroup {
 	private static final long serialVersionUID = -3703199743391937991L;
 
 	/** Pointers to row indexes in the dictionary. Note the dictionary has one extra entry. */
@@ -599,6 +601,10 @@ public class ColGroupSDCZeros extends ASDCZero implements AMapToDataGroup {
 			ColGroupSDCZeros th = (ColGroupSDCZeros) that;
 			return th._indexes == _indexes && th._data == _data;
 		}
+		else if(that instanceof ColGroupSDC) {
+			ColGroupSDC th = (ColGroupSDC) that;
+			return th._indexes == _indexes && th._data == _data;
+		}
 		else
 			return false;
 	}
@@ -783,7 +789,7 @@ public class ColGroupSDCZeros extends ASDCZero implements AMapToDataGroup {
 			}
 			sumRows += gc.getNumRows();
 		}
-		AMapToData nd = _data.appendN(Arrays.copyOf(g, g.length, AMapToDataGroup[].class));
+		AMapToData nd = _data.appendN(Arrays.copyOf(g, g.length, IMapToDataGroup[].class));
 		AOffset no = _indexes.appendN(Arrays.copyOf(g, g.length, AOffsetsGroup[].class), getNumRows());
 
 		return create(_colIndexes, sumRows, _dict, no, nd, null);
@@ -802,6 +808,17 @@ public class ColGroupSDCZeros extends ASDCZero implements AMapToDataGroup {
 	@Override
 	public CompressedSizeInfoColGroup getCompressionInfo(int nRow) {
 		throw new NotImplementedException();
+	}
+
+	@Override
+	public IEncode getEncoding() {
+		return EncodingFactory.create(_data, _indexes, _numRows);
+	}
+
+	@Override
+	protected AColGroup fixColIndexes(IColIndex newColIndex, int[] reordering) {
+		return ColGroupSDCZeros.create(newColIndex, getNumRows(), _dict.reorder(reordering), _indexes, _data,
+			getCachedCounts());
 	}
 
 	public String toString() {

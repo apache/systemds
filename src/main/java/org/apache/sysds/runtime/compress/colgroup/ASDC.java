@@ -30,7 +30,7 @@ import org.apache.sysds.runtime.compress.colgroup.offset.AOffset;
  * This column group is handy in cases where sparse unsafe operations is executed on very sparse columns. Then the zeros
  * would be materialized in the group without any overhead.
  */
-public abstract class ASDC extends AMorphingMMColGroup implements AOffsetsGroup {
+public abstract class ASDC extends AMorphingMMColGroup implements AOffsetsGroup , IContainDefaultTuple {
 	private static final long serialVersionUID = 769993538831949086L;
 
 	/** Sparse row indexes for the data */
@@ -47,8 +47,6 @@ public abstract class ASDC extends AMorphingMMColGroup implements AOffsetsGroup 
 	public int getNumRows() {
 		return _numRows;
 	}
-
-	public abstract double[] getDefaultTuple();
 
 	@Override
 	public AOffset getOffsets() {

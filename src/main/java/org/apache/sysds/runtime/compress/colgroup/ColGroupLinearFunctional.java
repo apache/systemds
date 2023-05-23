@@ -664,7 +664,7 @@ public class ColGroupLinearFunctional extends AColGroupCompressed {
 	}
 
 	@Override
-	protected AColGroup copyAndSet(IColIndex colIndexes) {
+	public AColGroup copyAndSet(IColIndex colIndexes) {
 		return ColGroupLinearFunctional.create(colIndexes, _coefficents, _numRows);
 	}
 
@@ -684,13 +684,23 @@ public class ColGroupLinearFunctional extends AColGroupCompressed {
 	}
 
 	@Override
-	public AColGroup recompress(){
+	public AColGroup recompress() {
 		return this;
 	}
 
 	@Override
-	public CompressedSizeInfoColGroup getCompressionInfo(int nRow){
+	public CompressedSizeInfoColGroup getCompressionInfo(int nRow) {
 		throw new NotImplementedException("Not Implemented Compressed SizeInfo for Linear col group");
+	}
+
+	@Override
+	public boolean sameIndexStructure(AColGroupCompressed that) {
+		throw new NotImplementedException();
+	}
+
+	@Override
+	protected AColGroup fixColIndexes(IColIndex newColIndex, int[] reordering) {
+		throw new NotImplementedException();
 	}
 
 }

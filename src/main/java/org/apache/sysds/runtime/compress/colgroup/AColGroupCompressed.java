@@ -86,6 +86,8 @@ public abstract class AColGroupCompressed extends AColGroup {
 
 	protected abstract double[] preAggBuiltinRows(Builtin builtin);
 
+	public abstract boolean sameIndexStructure(AColGroupCompressed that);
+
 	public double[] preAggRows(ValueFunction fn) {
 		// final ValueFunction fn = op.aggOp.increOp.fn;
 		if(fn instanceof KahanPlusSq)

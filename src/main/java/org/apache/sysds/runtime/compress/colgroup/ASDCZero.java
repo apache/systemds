@@ -28,7 +28,7 @@ import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
-public abstract class ASDCZero extends APreAgg implements AOffsetsGroup {
+public abstract class ASDCZero extends APreAgg implements AOffsetsGroup, IContainDefaultTuple {
 	private static final long serialVersionUID = -69266306137398807L;
 
 	/** Sparse row indexes for the data */
@@ -214,5 +214,10 @@ public abstract class ASDCZero extends APreAgg implements AOffsetsGroup {
 	@Override
 	public AOffset getOffsets() {
 		return _indexes;
+	}
+
+	@Override
+	public double[] getDefaultTuple() {
+		return new double[_colIndexes.size()];
 	}
 }

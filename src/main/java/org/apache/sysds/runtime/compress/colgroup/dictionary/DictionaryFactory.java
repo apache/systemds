@@ -30,6 +30,12 @@ import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.bitmap.ABitmap;
 import org.apache.sysds.runtime.compress.bitmap.Bitmap;
 import org.apache.sysds.runtime.compress.bitmap.MultiColBitmap;
+import org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType;
+import org.apache.sysds.runtime.compress.colgroup.AColGroupCompressed;
+import org.apache.sysds.runtime.compress.colgroup.ColGroupEmpty;
+import org.apache.sysds.runtime.compress.colgroup.IContainADictionary;
+import org.apache.sysds.runtime.compress.colgroup.IContainDefaultTuple;
+import org.apache.sysds.runtime.compress.lib.CLALibCombineGroups;
 import org.apache.sysds.runtime.compress.utils.ACount.DArrCounts;
 import org.apache.sysds.runtime.compress.utils.DblArrayCountHashMap;
 import org.apache.sysds.runtime.compress.utils.DoubleCountHashMap;
@@ -229,5 +235,243 @@ public interface DictionaryFactory {
 	public static ADictionary create(DoubleCountHashMap map) {
 		final double[] resValues = map.getDictionary();
 		return Dictionary.create(resValues);
+	}
+
+	public static ADictionary combineDictionaries(AColGroupCompressed a, AColGroupCompressed b) {
+		if(a instanceof ColGroupEmpty && b instanceof ColGroupEmpty)
+			return null; // null return is handled elsewhere.
+
+		CompressionType ac = a.getCompType();
+		CompressionType bc = b.getCompType();
+
+		boolean ae = a instanceof IContainADictionary;
+		boolean be = b instanceof IContainADictionary;
+
+		if(ae && be) {
+
+			ADictionary ad = ((IContainADictionary) a).getDictionary();
+			ADictionary bd = ((IContainADictionary) b).getDictionary();
+			if(ac.isConst()) {
+				if(bc.isConst()) {
+					return new Dictionary(CLALibCombineGroups.constructDefaultTuple(a, b));
+				}
+				else if(bc.isDense()) {
+					final double[] at = ((IContainDefaultTuple) a).getDefaultTuple();
+					return combineConstSparseSparseRet(at, bd, b.getNumCols());
+				}
+			}
+			else if(ac.isDense()) {
+				if(bc.isConst()) {
+					final double[] bt = ((IContainDefaultTuple) b).getDefaultTuple();
+					return combineSparseConstSparseRet(ad, a.getNumCols(), bt);
+				}
+				else if(bc.isDense())
+					return combineFullDictionaries(ad, a.getNumCols(), bd, b.getNumCols());
+				else if(bc.isSDC()) {
+					double[] tuple = ((IContainDefaultTuple) b).getDefaultTuple();
+					return combineSDCRight(ad, a.getNumCols(), bd, tuple);
+				}
+			}
+			else if(ac.isSDC()) {
+				if(bc.isSDC()) {
+					final double[] at = ((IContainDefaultTuple) a).getDefaultTuple();
+					final double[] bt = ((IContainDefaultTuple) b).getDefaultTuple();
+					return combineSDC(ad, at, bd, bt);
+				}
+			}
+		}
+		throw new NotImplementedException("Not supporting combining dense: " + a + " " + b);
+	}
+
+	public static ADictionary combineDictionariesSparse(AColGroupCompressed a, AColGroupCompressed b) {
+		CompressionType ac = a.getCompType();
+		CompressionType bc = b.getCompType();
+
+		if(ac.isSDC()) {
+			ADictionary ad = ((IContainADictionary) a).getDictionary();
+			if(bc.isConst()) {
+				double[] bt = ((IContainDefaultTuple) b).getDefaultTuple();
+				return combineSparseConstSparseRet(ad, a.getNumCols(), bt);
+			}
+			else if(bc.isSDC()) {
+				ADictionary bd = ((IContainADictionary) b).getDictionary();
+				if(a.sameIndexStructure(b)) {
+					return ad.cbind(bd, b.getNumCols());
+				}
+
+				// real combine extract default and combine like dense but with default before.
+
+			}
+		}
+		else if(ac.isConst()) {
+			double[] at = ((IContainDefaultTuple) a).getDefaultTuple();
+			if(bc.isSDC()) {
+				ADictionary bd = ((IContainADictionary) b).getDictionary();
+				return combineConstSparseSparseRet(at, bd, b.getNumCols());
+			}
+		}
+
+		throw new NotImplementedException("Not supporting combining dense: " + a + " " + b);
+	}
+
+	/**
+	 * Combine the dictionaries as if the dictionaries contain the full spectrum of the data contained.
+	 * 
+	 * @param a   Left side dictionary
+	 * @param nca Number of columns left dictionary
+	 * @param b   Right side dictionary
+	 * @param ncb Number of columns right dictionary
+	 * @return A combined dictionary
+	 */
+	public static ADictionary combineFullDictionaries(ADictionary a, int nca, ADictionary b, int ncb) {
+		final int ra = a.getNumberOfValues(nca);
+		final int rb = b.getNumberOfValues(ncb);
+
+		MatrixBlock ma = a.getMBDict(nca).getMatrixBlock();
+		MatrixBlock mb = b.getMBDict(ncb).getMatrixBlock();
+
+		if(ra == 1 && rb == 1)
+			return new MatrixBlockDictionary(ma.append(mb));
+
+		MatrixBlock out = new MatrixBlock(ra * rb, nca + ncb, false);
+
+		out.allocateBlock();
+
+		for(int r = 0; r < out.getNumRows(); r++) {
+			int ia = r % ra;
+			int ib = r / ra;
+			for(int c = 0; c < nca; c++)
+				out.quickSetValue(r, c, ma.quickGetValue(ia, c));
+
+			for(int c = 0; c < ncb; c++)
+				out.quickSetValue(r, c + nca, mb.quickGetValue(ib, c));
+
+		}
+		return new MatrixBlockDictionary(out);
+	}
+
+	public static ADictionary combineSDCRight(ADictionary a, int nca, ADictionary b, double[] tub) {
+		final int ncb = tub.length;
+		final int ra = a.getNumberOfValues(nca);
+		final int rb = b.getNumberOfValues(ncb);
+
+		MatrixBlock ma = a.getMBDict(nca).getMatrixBlock();
+		MatrixBlock mb = b.getMBDict(ncb).getMatrixBlock();
+
+		MatrixBlock out = new MatrixBlock(ra * (rb + 1), nca + ncb, false);
+
+		out.allocateBlock();
+
+		for(int r = 0; r < ra; r++) {
+
+			for(int c = 0; c < nca; c++)
+				out.quickSetValue(r, c, ma.quickGetValue(r, c));
+			for(int c = 0; c < ncb; c++)
+				out.quickSetValue(0, c + nca, tub[c]);
+		}
+
+		for(int r = ra; r < out.getNumRows(); r++) {
+			int ia = r % ra;
+			int ib = r / ra - 1;
+			for(int c = 0; c < nca; c++) // all good.
+				out.quickSetValue(r, c, ma.quickGetValue(ia, c));
+
+			for(int c = 0; c < ncb; c++)
+				out.quickSetValue(r, c + nca, mb.quickGetValue(ib, c));
+
+		}
+		return new MatrixBlockDictionary(out);
+	}
+
+	public static ADictionary combineSDC(ADictionary a, double[] tua, ADictionary b, double[] tub) {
+		final int nca = tua.length;
+		final int ncb = tub.length;
+		final int ra = a.getNumberOfValues(nca);
+		final int rb = b.getNumberOfValues(ncb);
+
+		MatrixBlock ma = a.getMBDict(nca).getMatrixBlock();
+		MatrixBlock mb = b.getMBDict(ncb).getMatrixBlock();
+
+		MatrixBlock out = new MatrixBlock((ra + 1) * (rb + 1), nca + ncb, false);
+
+		out.allocateBlock();
+
+		// 0 row both default tuples
+
+		for(int c = 0; c < nca; c++)
+			out.quickSetValue(0, c, tua[c]);
+
+		for(int c = 0; c < ncb; c++)
+			out.quickSetValue(0, c + nca, tub[c]);
+
+		// default case for b and all cases for a.
+		for(int r = 1; r < ra + 1; r++) {
+			for(int c = 0; c < nca; c++)
+				out.quickSetValue(r, c, ma.quickGetValue(r - 1, c));
+			for(int c = 0; c < ncb; c++)
+				out.quickSetValue(r, c + nca, tub[c]);
+		}
+
+		for(int r = ra + 1; r < out.getNumRows(); r++) {
+			int ia = r % (ra + 1) - 1;
+			int ib = r / (ra + 1) - 1;
+
+			if(ia == -1)
+				for(int c = 0; c < nca; c++)
+					out.quickSetValue(r, c, tua[c]);
+			else
+				for(int c = 0; c < nca; c++)
+					out.quickSetValue(r, c, ma.quickGetValue(ia, c));
+
+			for(int c = 0; c < ncb; c++) // all good here.
+				out.quickSetValue(r, c + nca, mb.quickGetValue(ib, c));
+
+		}
+
+		return new MatrixBlockDictionary(out);
+	}
+
+	public static ADictionary combineSparseConstSparseRet(ADictionary a, int nca, double[] tub) {
+		final int ncb = tub.length;
+		final int ra = a.getNumberOfValues(nca);
+
+		MatrixBlock ma = a.getMBDict(nca).getMatrixBlock();
+
+		MatrixBlock out = new MatrixBlock(ra, nca + ncb, false);
+
+		out.allocateBlock();
+
+		// default case for b and all cases for a.
+		for(int r = 0; r < ra; r++) {
+			for(int c = 0; c < nca; c++)
+				out.quickSetValue(r, c, ma.quickGetValue(r, c));
+			for(int c = 0; c < ncb; c++)
+				out.quickSetValue(r, c + nca, tub[c]);
+		}
+
+		return new MatrixBlockDictionary(out);
+
+	}
+
+	public static ADictionary combineConstSparseSparseRet(double[] tua, ADictionary b, int ncb) {
+		final int nca = tua.length;
+		final int rb = b.getNumberOfValues(ncb);
+
+		MatrixBlock mb = b.getMBDict(ncb).getMatrixBlock();
+
+		MatrixBlock out = new MatrixBlock(rb, nca + ncb, false);
+
+		out.allocateBlock();
+
+		// default case for b and all cases for a.
+		for(int r = 0; r < rb; r++) {
+			for(int c = 0; c < nca; c++)
+				out.quickSetValue(r, c, tua[c]);
+			for(int c = 0; c < ncb; c++)
+				out.quickSetValue(r, c + nca, mb.quickGetValue(r, c));
+		}
+
+		return new MatrixBlockDictionary(out);
+
 	}
 }

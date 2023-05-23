@@ -85,7 +85,7 @@ public class NegativeConstTests {
 
 	@Test(expected = NullPointerException.class)
 	public void testConstConstruction_null_02() {
-		ColGroupConst.create(null, null);
+		ColGroupConst.create(null, (double[])null);
 	}
 
 	@Test(expected = NullPointerException.class)

@@ -17,39 +17,10 @@
  * under the License.
  */
 
-package org.apache.sysds.runtime.compress.colgroup.indexes;
+package org.apache.sysds.runtime.compress.colgroup;
 
-/**
- * Class to iterate through the columns of a IColIndex.
- * 
- * When initialized it should be at index -1 and then at the call to next you get the first value
- */
-public interface IIterate {
-	/**
-	 * Get next index
-	 * 
-	 * @return the index.
-	 */
-	public int next();
+import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
 
-	/**
-	 * Get if the index has a next index.
-	 * 
-	 * @return the next index.
-	 */
-	public boolean hasNext();
-
-	/**
-	 * Get current value
-	 * 
-	 * @return the value pointing at.
-	 */
-	public int v();
-
-	/**
-	 * Get current index
-	 * 
-	 * @return The index currently pointed at
-	 */
-	public int i();
+public interface IContainADictionary {
+	public ADictionary getDictionary();
 }

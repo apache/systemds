@@ -140,8 +140,6 @@ public abstract class APreAgg extends AColGroupValue {
 
 	protected abstract void preAggregateThatRLEStructure(ColGroupRLE that, Dictionary ret);
 
-	protected abstract boolean sameIndexStructure(AColGroupCompressed that);
-
 	public int getPreAggregateSize() {
 		return getNumValues();
 	}

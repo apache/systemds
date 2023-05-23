@@ -69,7 +69,7 @@ public class ColGroupConst extends ADictBasedColGroup {
 	 * @param dict       The dictionary to use
 	 * @return A Colgroup either const or empty.
 	 */
-	protected static AColGroup create(IColIndex colIndices, ADictionary dict) {
+	public static AColGroup create(IColIndex colIndices, ADictionary dict) {
 		if(dict == null)
 			return new ColGroupEmpty(colIndices);
 		else

@@ -255,14 +255,14 @@ public interface DictionaryFactory {
 		CompressionType ac = a.getCompType();
 		CompressionType bc = b.getCompType();
 		if(ac.isDense() && bc.isDense()) {
-			return combineDense(a.getDictionary(), a.getNumCols(), b.getDictionary(), b.getNumCols());
+			return combineFullDictionaries(a.getDictionary(), a.getNumCols(), b.getDictionary(), b.getNumCols());
 		}
 
 		throw new NotImplementedException();
 	}
 
 	/**
-	 * Combine the dictionaries
+	 * Combine the dictionaries as if the dictionaries contain the full spectrum of the data contained.
 	 * 
 	 * @param a   Left side dictionary
 	 * @param nca Number of columns left dictionary
@@ -270,7 +270,7 @@ public interface DictionaryFactory {
 	 * @param ncb Number of columns right dictionary
 	 * @return A combined dictionary
 	 */
-	public static ADictionary combineDense(ADictionary a, int nca, ADictionary b, int ncb) {
+	public static ADictionary combineFullDictionaries(ADictionary a, int nca, ADictionary b, int ncb) {
 		final int ra = a.getNumberOfValues(nca);
 		final int rb = b.getNumberOfValues(ncb);
 

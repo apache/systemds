@@ -25,12 +25,16 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup;
 import org.apache.sysds.runtime.compress.colgroup.AColGroupCompressed;
+import org.apache.sysds.runtime.compress.colgroup.ColGroupConst;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupDDC;
+import org.apache.sysds.runtime.compress.colgroup.ColGroupEmpty;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.DictionaryFactory;
 import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
+import org.apache.sysds.runtime.compress.estim.encoding.ConstEncoding;
 import org.apache.sysds.runtime.compress.estim.encoding.DenseEncoding;
+import org.apache.sysds.runtime.compress.estim.encoding.EmptyEncoding;
 import org.apache.sysds.runtime.compress.estim.encoding.EncodingFactory;
 import org.apache.sysds.runtime.compress.estim.encoding.IEncode;
 
@@ -51,6 +55,8 @@ public final class CLALibCombineGroups {
 	/**
 	 * Combine the column groups A and B together.
 	 * 
+	 * The number of rows should be equal, and it is not verified so there will be unexpected behavior in such cases.
+	 * 
 	 * @param a The first group to combine.
 	 * @param b The second group to combine.
 	 * @return A new column group containing the two.
@@ -68,9 +74,17 @@ public final class CLALibCombineGroups {
 				ADictionary cd = DictionaryFactory.combineDictionaries(ac, bc);
 				return ColGroupDDC.create(combinedColumns, cd, ced.getMap(), null);
 			}
+			else if(ce instanceof EmptyEncoding) {
+				return new ColGroupEmpty(combinedColumns);
+			}
+			else if(ce instanceof ConstEncoding) {
+				ADictionary cd = DictionaryFactory.combineDictionaries(ac, bc);
+				return ColGroupConst.create(combinedColumns, cd);
+			}
 		}
 
-		throw new NotImplementedException();
+		throw new NotImplementedException(
+			"Not implemented combine for " + a.getClass().getSimpleName() + " - " + b.getClass().getSimpleName());
 
 	}
 

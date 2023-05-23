@@ -35,7 +35,7 @@ public class CombineTest {
 			ADictionary a = Dictionary.create(new double[] {1.2});
 			ADictionary b = Dictionary.create(new double[] {1.4});
 
-			ADictionary c = DictionaryFactory.combineDense(a, 1, b, 1);
+			ADictionary c = DictionaryFactory.combineFullDictionaries(a, 1, b, 1);
 
 			assertEquals(c.getValue(0, 0, 2), 1.2, 0.0);
 			assertEquals(c.getValue(0, 1, 2), 1.4, 0.0);
@@ -52,7 +52,7 @@ public class CombineTest {
 			ADictionary a = Dictionary.create(new double[] {1.2, 1.3});
 			ADictionary b = Dictionary.create(new double[] {1.4});
 
-			ADictionary c = DictionaryFactory.combineDense(a, 1, b, 1);
+			ADictionary c = DictionaryFactory.combineFullDictionaries(a, 1, b, 1);
 
 			assertEquals(c.getValue(0, 0, 2), 1.2, 0.0);
 			assertEquals(c.getValue(0, 1, 2), 1.4, 0.0);
@@ -71,7 +71,7 @@ public class CombineTest {
 			ADictionary a = Dictionary.create(new double[] {1.2, 1.3});
 			ADictionary b = Dictionary.create(new double[] {1.4, 1.5});
 
-			ADictionary c = DictionaryFactory.combineDense(a, 1, b, 1);
+			ADictionary c = DictionaryFactory.combineFullDictionaries(a, 1, b, 1);
 
 			assertEquals(c.getValue(0, 0, 2), 1.2, 0.0);
 			assertEquals(c.getValue(0, 1, 2), 1.4, 0.0);
@@ -86,5 +86,5 @@ public class CombineTest {
 			e.printStackTrace();
 			fail(e.getMessage());
 		}
-	}
+	}	
 }

@@ -97,10 +97,10 @@ public interface ColIndexFactory {
 			return new RangeIndex(nCol);
 	}
 
-	public static long estimateMemoryCost(int nCol, boolean contiguous){
+	public static long estimateMemoryCost(int nCol, boolean contiguous) {
 		if(nCol == 1)
 			return SingleIndex.estimateInMemorySizeStatic();
-		else if (nCol == 2)
+		else if(nCol == 2)
 			return TwoIndex.estimateInMemorySizeStatic();
 		else if(contiguous)
 			return RangeIndex.estimateInMemorySizeStatic();
@@ -121,6 +121,26 @@ public interface ColIndexFactory {
 			while(it.hasNext())
 				resCols[index++] = it.next();
 		}
+
+		Arrays.sort(resCols);
+		return create(resCols);
+	}
+
+	public static IColIndex combine(AColGroup a, AColGroup b){
+		return combine(a.getColIndices(), b.getColIndices());
+	}
+
+	public static IColIndex combine(IColIndex a, IColIndex b) {
+		int numCols = a.size() + b.size();
+
+		int[] resCols = new int[numCols];
+		int index = 0;
+		final IIterate ita = a.iterator();
+		while(ita.hasNext())
+			resCols[index++] = ita.next();
+		final IIterate itb = a.iterator();
+		while(itb.hasNext())
+			resCols[index++] = itb.next();
 
 		Arrays.sort(resCols);
 		return create(resCols);

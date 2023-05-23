@@ -35,6 +35,11 @@ public class EmptyEncoding implements IEncode {
 	}
 
 	@Override
+	public IEncode combineNoResize(IEncode e){
+		return e;
+	}
+
+	@Override
 	public int getUnique() {
 		return 1;
 	}

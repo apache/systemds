@@ -30,6 +30,10 @@ import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.bitmap.ABitmap;
 import org.apache.sysds.runtime.compress.bitmap.Bitmap;
 import org.apache.sysds.runtime.compress.bitmap.MultiColBitmap;
+import org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType;
+import org.apache.sysds.runtime.compress.colgroup.AColGroupCompressed;
+import org.apache.sysds.runtime.compress.colgroup.ADictBasedColGroup;
+import org.apache.sysds.runtime.compress.colgroup.ColGroupEmpty;
 import org.apache.sysds.runtime.compress.utils.ACount.DArrCounts;
 import org.apache.sysds.runtime.compress.utils.DblArrayCountHashMap;
 import org.apache.sysds.runtime.compress.utils.DoubleCountHashMap;
@@ -230,4 +234,66 @@ public interface DictionaryFactory {
 		final double[] resValues = map.getDictionary();
 		return Dictionary.create(resValues);
 	}
+
+	public static ADictionary combineDictionaries(AColGroupCompressed a, AColGroupCompressed b) {
+		boolean ae = a instanceof ColGroupEmpty;
+		boolean be = b instanceof ColGroupEmpty;
+
+		if(ae && be)
+			return null;
+		else if(ae)
+			return ((ADictBasedColGroup) b).getDictionary();
+		else if(be)
+			return ((ADictBasedColGroup) a).getDictionary();
+		else
+			return combineDictionariesDictBased((ADictBasedColGroup) a, (ADictBasedColGroup) b);
+
+	}
+
+	public static ADictionary combineDictionariesDictBased(ADictBasedColGroup a, ADictBasedColGroup b) {
+
+		CompressionType ac = a.getCompType();
+		CompressionType bc = b.getCompType();
+		if(ac.isDense() && bc.isDense()) {
+			return combineDense(a.getDictionary(), a.getNumCols(), b.getDictionary(), b.getNumCols());
+		}
+
+		throw new NotImplementedException();
+	}
+
+	/**
+	 * Combine the dictionaries
+	 * 
+	 * @param a Left side dictionary
+	 * @param b Right side dictionary
+	 * @return Combined
+	 */
+	public static ADictionary combineDense(ADictionary a, int nca, ADictionary b, int ncb) {
+		final int ra = a.getNumberOfValues(nca);
+		final int rb = b.getNumberOfValues(ncb);
+
+		MatrixBlock ma = a.getMBDict(nca).getMatrixBlock();
+		MatrixBlock mb = b.getMBDict(ncb).getMatrixBlock();
+
+		if(ra == 1 && rb == 1)
+			return new MatrixBlockDictionary(ma.append(mb));
+
+		MatrixBlock out = new MatrixBlock(ra * rb, nca + ncb, false);
+
+		out.allocateBlock();
+
+		for(int r = 0; r < out.getNumRows(); r++) {
+			int ia = r % ra;
+			int ib = r / ra;
+			for(int c = 0; c < nca; c++)
+				out.quickSetValue(r, c, ma.quickGetValue(ia, c));
+
+			// LOG.error(out);
+			for(int c = 0; c < ncb; c++)
+				out.quickSetValue(r, c + nca, mb.quickGetValue(ib, c));
+
+		}
+		return new MatrixBlockDictionary(out);
+	}
+
 }

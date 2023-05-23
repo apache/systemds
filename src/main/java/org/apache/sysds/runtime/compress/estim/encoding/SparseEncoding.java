@@ -19,7 +19,9 @@
 
 package org.apache.sysds.runtime.compress.estim.encoding;
 
+import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.runtime.compress.CompressionSettings;
+import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
 import org.apache.sysds.runtime.compress.colgroup.offset.AIterator;
@@ -54,11 +56,25 @@ public class SparseEncoding implements IEncode {
 			SparseEncoding es = (SparseEncoding) e;
 			if(es.off == off && es.map == map)
 				return this;
-			return combineSparse((SparseEncoding) e);
+			return combineSparse(es);
 		}
 		else
 			return e.combine(this);
 
+	}
+
+	@Override
+	public IEncode combineNoResize(IEncode e) {
+		if(e instanceof EmptyEncoding || e instanceof ConstEncoding)
+			return this;
+		else if(e instanceof SparseEncoding) {
+			SparseEncoding es = (SparseEncoding) e;
+			if(es.off == off && es.map == map)
+				return this;
+			return combineSparseNoResize(es);
+		}
+		else
+			throw new DMLCompressionException("Not allowed other to be dense");
 	}
 
 	protected IEncode combineSparse(SparseEncoding e) {
@@ -97,6 +113,10 @@ public class SparseEncoding implements IEncode {
 				retMap.set(retOff.get(i), tmpVals.get(i) + 1);
 			return new DenseEncoding(retMap);
 		}
+	}
+
+	private IEncode combineSparseNoResize(SparseEncoding e) {
+		throw new NotImplementedException();
 	}
 
 	private static int combineSparse(AMapToData lMap, AMapToData rMap, AIterator itl, AIterator itr,

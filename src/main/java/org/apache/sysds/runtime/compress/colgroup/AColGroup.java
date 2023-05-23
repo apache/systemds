@@ -32,6 +32,8 @@ import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex.SliceResult;
 import org.apache.sysds.runtime.compress.colgroup.scheme.ICLAScheme;
 import org.apache.sysds.runtime.compress.cost.ComputationCostEstimator;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
+import org.apache.sysds.runtime.compress.estim.encoding.IEncode;
+import org.apache.sysds.runtime.compress.lib.CLALibCombineGroups;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.instructions.cp.CM_COV_Object;
@@ -55,6 +57,11 @@ public abstract class AColGroup implements Serializable {
 	/** Public super types of compression ColGroups supported */
 	public static enum CompressionType {
 		UNCOMPRESSED, RLE, OLE, DDC, CONST, EMPTY, SDC, SDCFOR, DDCFOR, DeltaDDC, LinearFunctional;
+
+
+		public boolean isDense(){
+			return this == DDC || this == CONST || this == DDCFOR;
+		}
 	}
 
 	/**
@@ -631,7 +638,7 @@ public abstract class AColGroup implements Serializable {
 	 * @param ct The compressionType that the column group should morph into
 	 * @return A new column group
 	 */
-	public AColGroup morph(CompressionType ct){
+	public AColGroup morph(CompressionType ct) {
 		throw new NotImplementedException();
 	}
 
@@ -642,6 +649,24 @@ public abstract class AColGroup implements Serializable {
 	 * @return The compression info for this group.
 	 */
 	public abstract CompressedSizeInfoColGroup getCompressionInfo(int nRow);
+
+	/**
+	 * Combine this column group with another
+	 * 
+	 * @param other The other column group to combine with.
+	 * @return A combined representation as a column group.
+	 */
+	public AColGroup combine(AColGroup other) {
+		return CLALibCombineGroups.combine(this, other);
+	}
+
+	/**
+	 * Get encoding of this column group.
+	 * @return The encoding of the index structure.
+	 */
+	public IEncode getEncoding(){
+		throw new NotImplementedException();
+	}
 
 	@Override
 	public String toString() {

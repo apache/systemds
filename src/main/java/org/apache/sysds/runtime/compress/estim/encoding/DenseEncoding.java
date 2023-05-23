@@ -22,6 +22,7 @@ package org.apache.sysds.runtime.compress.estim.encoding;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
@@ -45,6 +46,16 @@ public class DenseEncoding implements IEncode {
 			return combineSparse((SparseEncoding) e);
 		else
 			return combineDense((DenseEncoding) e);
+	}
+
+	@Override
+	public IEncode combineNoResize(IEncode e) {
+		if(e instanceof EmptyEncoding || e instanceof ConstEncoding)
+			return this;
+		else if(e instanceof SparseEncoding)
+			throw new NotImplementedException();
+		else
+			return combineDenseNoResize((DenseEncoding) e);
 	}
 
 	protected DenseEncoding combineSparse(SparseEncoding e) {
@@ -126,6 +137,27 @@ public class DenseEncoding implements IEncode {
 			return combineDenseWithMapToData(lm, rm, size, nVL, ret, maxUnique);
 	}
 
+	private DenseEncoding combineDenseNoResize(final DenseEncoding other) {
+		if(map == other.map)
+			return this; // same object
+
+		final AMapToData lm = map;
+		final AMapToData rm = other.map;
+
+		final int nVL = lm.getUnique();
+		final int nVR = rm.getUnique();
+		final int size = map.size();
+		final int maxUnique = nVL * nVR;
+
+		final AMapToData ret = MapToFactory.create(size, maxUnique);
+
+		for(int r = 0; r < size; r++)
+			ret.set(r, lm.getIndex(r) + rm.getIndex(r) * nVL);
+		// there can be less unique.
+
+		return new DenseEncoding(ret);
+	}
+
 	protected final DenseEncoding combineDenseWithHashMap(final AMapToData lm, final AMapToData rm, final int size,
 		final int nVL, final AMapToData ret) {
 		final Map<Integer, Integer> m = new HashMap<>(size);
@@ -133,7 +165,6 @@ public class DenseEncoding implements IEncode {
 		for(int r = 0; r < size; r++)
 			addValHashMap(lm.getIndex(r) + rm.getIndex(r) * nVL, r, m, ret);
 		return new DenseEncoding(MapToFactory.resize(ret, m.size()));
-
 	}
 
 	protected final DenseEncoding combineDenseWithMapToData(final AMapToData lm, final AMapToData rm, final int size,
@@ -177,7 +208,7 @@ public class DenseEncoding implements IEncode {
 		for(int i = 0; i < counts.length; i++)
 			if(counts[i] > largestOffs)
 				largestOffs = counts[i];
-		
+
 		if(cs.isRLEAllowed())
 			return new EstimationFactors(map.getUnique(), nRows, largestOffs, counts, 0, nRows, map.countRuns(), false,
 				false, matrixSparsity, tupleSparsity);
@@ -185,6 +216,10 @@ public class DenseEncoding implements IEncode {
 			return new EstimationFactors(map.getUnique(), nRows, largestOffs, counts, 0, nRows, false, false,
 				matrixSparsity, tupleSparsity);
 
+	}
+
+	public AMapToData getMap() {
+		return map;
 	}
 
 	@Override

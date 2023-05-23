@@ -34,6 +34,8 @@ import org.apache.sysds.runtime.compress.colgroup.scheme.ConstScheme;
 import org.apache.sysds.runtime.compress.colgroup.scheme.ICLAScheme;
 import org.apache.sysds.runtime.compress.cost.ComputationCostEstimator;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
+import org.apache.sysds.runtime.compress.estim.encoding.EncodingFactory;
+import org.apache.sysds.runtime.compress.estim.encoding.IEncode;
 import org.apache.sysds.runtime.compress.lib.CLALibLeftMultBy;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
@@ -256,14 +258,14 @@ public class ColGroupConst extends ADictBasedColGroup {
 				ret.append(offT, _colIndexes.get(j) + offC, _dict.getValue(j));
 	}
 
-	private final  void decompressToDenseBlockAllColumnsContiguous(final DenseBlock db, final int rl, final int ru) {
+	private final void decompressToDenseBlockAllColumnsContiguous(final DenseBlock db, final int rl, final int ru) {
 		final double[] c = db.values(0);
 		final int nCol = _colIndexes.size();
 		final double[] values = _dict.getValues();
 		final int start = rl * nCol;
 		final int end = ru * nCol;
 		for(int i = start; i < end; i++)
-			c[i] += values[i % nCol]; 
+			c[i] += values[i % nCol];
 	}
 
 	private void decompressToDenseBlockGeneric(DenseBlock db, int rl, int ru, int offR, int offC) {
@@ -307,7 +309,7 @@ public class ColGroupConst extends ADictBasedColGroup {
 	 * @param constV The output columns.
 	 */
 	public final void addToCommon(double[] constV) {
-		if(_dict instanceof IdentityDictionary){
+		if(_dict instanceof IdentityDictionary) {
 			MatrixBlock mb = ((IdentityDictionary) _dict).getMBDict().getMatrixBlock();
 			if(mb.isInSparseFormat())
 				addToCommonSparse(constV, mb.getSparseBlock());
@@ -568,13 +570,18 @@ public class ColGroupConst extends ADictBasedColGroup {
 	}
 
 	@Override
-	public  AColGroup recompress(){
+	public AColGroup recompress() {
 		return this;
 	}
 
 	@Override
-	public CompressedSizeInfoColGroup getCompressionInfo(int nRow){
+	public CompressedSizeInfoColGroup getCompressionInfo(int nRow) {
 		return new CompressedSizeInfoColGroup(_colIndexes, 1, nRow, CompressionType.CONST);
+	}
+
+	@Override
+	public IEncode getEncoding() {
+		return EncodingFactory.create(this);
 	}
 
 	@Override

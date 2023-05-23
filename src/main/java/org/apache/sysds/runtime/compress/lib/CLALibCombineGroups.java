@@ -20,9 +20,25 @@
 package org.apache.sysds.runtime.compress.lib;
 
 import org.apache.commons.lang.NotImplementedException;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
+import org.apache.sysds.runtime.compress.colgroup.AColGroup;
+import org.apache.sysds.runtime.compress.colgroup.AColGroupCompressed;
+import org.apache.sysds.runtime.compress.colgroup.ColGroupDDC;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.DictionaryFactory;
+import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
+import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
+import org.apache.sysds.runtime.compress.estim.encoding.DenseEncoding;
+import org.apache.sysds.runtime.compress.estim.encoding.EncodingFactory;
+import org.apache.sysds.runtime.compress.estim.encoding.IEncode;
 
+/**
+ * Library functions to combine column groups inside a compressed matrix.
+ */
 public final class CLALibCombineGroups {
+	protected static final Log LOG = LogFactory.getLog(CLALibCombineGroups.class.getName());
 
 	private CLALibCombineGroups() {
 		// private constructor
@@ -30,6 +46,32 @@ public final class CLALibCombineGroups {
 
 	public static CompressedMatrixBlock combine(CompressedMatrixBlock cmb, int k) {
 		throw new NotImplementedException();
+	}
+
+	/**
+	 * Combine the column groups A and B together.
+	 * 
+	 * @param a The first group to combine.
+	 * @param b The second group to combine.
+	 * @return A new column group containing the two.
+	 */
+	public static AColGroup combine(AColGroup a, AColGroup b) {
+		IColIndex combinedColumns = ColIndexFactory.combine(a, b);
+
+		if(a instanceof AColGroupCompressed && b instanceof AColGroupCompressed) {
+			AColGroupCompressed ac = (AColGroupCompressed) a;
+			AColGroupCompressed bc = (AColGroupCompressed) b;
+			IEncode ce = EncodingFactory.combine(a, b);
+
+			if(ce instanceof DenseEncoding) {
+				DenseEncoding ced = (DenseEncoding) ce;
+				ADictionary cd = DictionaryFactory.combineDictionaries(ac, bc);
+				return ColGroupDDC.create(combinedColumns, cd, ced.getMap(), null);
+			}
+		}
+
+		throw new NotImplementedException();
+
 	}
 
 }

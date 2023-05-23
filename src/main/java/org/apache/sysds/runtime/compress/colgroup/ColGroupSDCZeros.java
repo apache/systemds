@@ -42,6 +42,8 @@ import org.apache.sysds.runtime.compress.colgroup.offset.OffsetFactory;
 import org.apache.sysds.runtime.compress.colgroup.scheme.ICLAScheme;
 import org.apache.sysds.runtime.compress.cost.ComputationCostEstimator;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
+import org.apache.sysds.runtime.compress.estim.encoding.EncodingFactory;
+import org.apache.sysds.runtime.compress.estim.encoding.IEncode;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.functionobjects.Builtin;
@@ -802,6 +804,11 @@ public class ColGroupSDCZeros extends ASDCZero implements AMapToDataGroup {
 	@Override
 	public CompressedSizeInfoColGroup getCompressionInfo(int nRow) {
 		throw new NotImplementedException();
+	}
+
+	@Override
+	public IEncode getEncoding() {
+		return EncodingFactory.create(_data, _indexes, _numRows);
 	}
 
 	public String toString() {

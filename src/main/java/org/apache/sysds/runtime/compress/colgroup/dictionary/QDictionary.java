@@ -94,7 +94,7 @@ public class QDictionary extends ADictionary {
 
 	public static long getInMemorySize(int valuesCount) {
 		// object + values array + double
-		return 16 + (long)MemoryEstimates.byteArrayCost(valuesCount) + 8;
+		return 16 + (long) MemoryEstimates.byteArrayCost(valuesCount) + 8;
 	}
 
 	@Override
@@ -423,7 +423,8 @@ public class QDictionary extends ADictionary {
 	}
 
 	@Override
-	public void aggregateColsWithReference(double[] c, Builtin fn, IColIndex colIndexes, double[] reference, boolean def) {
+	public void aggregateColsWithReference(double[] c, Builtin fn, IColIndex colIndexes, double[] reference,
+		boolean def) {
 		throw new NotImplementedException();
 	}
 
@@ -575,7 +576,8 @@ public class QDictionary extends ADictionary {
 	}
 
 	@Override
-	protected void TSMMToUpperTriangleSparse(SparseBlock left, IColIndex rowsLeft, IColIndex colsRight, MatrixBlock result) {
+	protected void TSMMToUpperTriangleSparse(SparseBlock left, IColIndex rowsLeft, IColIndex colsRight,
+		MatrixBlock result) {
 		throw new NotImplementedException();
 	}
 
@@ -592,13 +594,23 @@ public class QDictionary extends ADictionary {
 	}
 
 	@Override
-	protected void TSMMToUpperTriangleSparseScaling(SparseBlock left, IColIndex rowsLeft, IColIndex colsRight, int[] scale,
-		MatrixBlock result) {
+	protected void TSMMToUpperTriangleSparseScaling(SparseBlock left, IColIndex rowsLeft, IColIndex colsRight,
+		int[] scale, MatrixBlock result) {
 		throw new NotImplementedException();
 	}
 
 	@Override
 	public boolean equals(ADictionary o) {
+		throw new NotImplementedException();
+	}
+
+	@Override
+	public ADictionary cbind(ADictionary that, int nCol) {
+		throw new NotImplementedException();
+	}
+
+	@Override
+	public ADictionary reorder(int[] reorder) {
 		throw new NotImplementedException();
 	}
 }

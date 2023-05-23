@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.util.Arrays;
 
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
 import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
@@ -32,6 +33,8 @@ import org.apache.sysds.runtime.compress.colgroup.scheme.EmptyScheme;
 import org.apache.sysds.runtime.compress.colgroup.scheme.ICLAScheme;
 import org.apache.sysds.runtime.compress.cost.ComputationCostEstimator;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
+import org.apache.sysds.runtime.compress.estim.encoding.EncodingFactory;
+import org.apache.sysds.runtime.compress.estim.encoding.IEncode;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.functionobjects.Builtin;
@@ -43,7 +46,7 @@ import org.apache.sysds.runtime.matrix.operators.CMOperator;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
 import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
 
-public class ColGroupEmpty extends AColGroupCompressed {
+public class ColGroupEmpty extends AColGroupCompressed implements IContainADictionary, IContainDefaultTuple {
 	private static final long serialVersionUID = -2307677253622099958L;
 
 	/**
@@ -316,7 +319,7 @@ public class ColGroupEmpty extends AColGroupCompressed {
 	}
 
 	@Override
-	protected AColGroup copyAndSet(IColIndex colIndexes) {
+	public AColGroup copyAndSet(IColIndex colIndexes) {
 		return new ColGroupEmpty(colIndexes);
 	}
 
@@ -349,4 +352,30 @@ public class ColGroupEmpty extends AColGroupCompressed {
 	public CompressedSizeInfoColGroup getCompressionInfo(int nRow) {
 		return new CompressedSizeInfoColGroup(_colIndexes, 0, nRow, CompressionType.CONST);
 	}
+
+	@Override
+	public IEncode getEncoding() {
+		return EncodingFactory.create(this);
+	}
+
+	@Override
+	public ADictionary getDictionary() {
+		return null;
+	}
+
+	@Override
+	public double[] getDefaultTuple() {
+		return new double[getNumCols()];
+	}
+
+	@Override
+	public boolean sameIndexStructure(AColGroupCompressed that) {
+		return that instanceof ColGroupEmpty || that instanceof ColGroupConst;
+	}
+
+	@Override
+	protected AColGroup fixColIndexes(IColIndex newColIndex, int[] reordering) {
+		return new ColGroupEmpty(newColIndex);
+	}
+
 }

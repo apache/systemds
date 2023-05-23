@@ -31,6 +31,7 @@ import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.DictionaryFactory;
 import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
+import org.apache.sysds.runtime.compress.colgroup.mapping.MapToZero;
 import org.apache.sysds.runtime.compress.colgroup.offset.AIterator;
 import org.apache.sysds.runtime.compress.colgroup.offset.AOffset;
 import org.apache.sysds.runtime.compress.colgroup.offset.AOffset.OffsetSliceInfo;
@@ -39,6 +40,8 @@ import org.apache.sysds.runtime.compress.colgroup.offset.OffsetFactory;
 import org.apache.sysds.runtime.compress.colgroup.scheme.ICLAScheme;
 import org.apache.sysds.runtime.compress.cost.ComputationCostEstimator;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
+import org.apache.sysds.runtime.compress.estim.encoding.EncodingFactory;
+import org.apache.sysds.runtime.compress.estim.encoding.IEncode;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.instructions.cp.CM_COV_Object;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
@@ -598,6 +601,31 @@ public class ColGroupSDCSingle extends ASDC {
 	@Override
 	public CompressedSizeInfoColGroup getCompressionInfo(int nRow) {
 		throw new NotImplementedException();
+	}
+
+	@Override
+	public IEncode getEncoding() {
+		return EncodingFactory.create(new MapToZero(getCounts()[0]), _indexes, _numRows);
+	}
+
+	@Override
+	public boolean sameIndexStructure(AColGroupCompressed that) {
+		if(that instanceof ColGroupSDCSingleZeros) {
+			ColGroupSDCSingleZeros th = (ColGroupSDCSingleZeros) that;
+			return th._indexes == _indexes;
+		}
+		else if(that instanceof ColGroupSDCSingle) {
+			ColGroupSDCSingle th = (ColGroupSDCSingle) that;
+			return th._indexes == _indexes;
+		}
+		else
+			return false;
+	}
+
+	@Override
+	protected AColGroup fixColIndexes(IColIndex newColIndex, int[] reordering) {
+		return ColGroupSDCSingle.create(newColIndex, getNumRows(), _dict.reorder(reordering),
+			ColGroupUtils.reorderDefault(_defaultTuple, reordering), _indexes,  getCachedCounts());
 	}
 
 	@Override

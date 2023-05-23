@@ -621,7 +621,7 @@ public class ColGroupOLE extends AColGroupOffset {
 	}
 
 	@Override
-	protected boolean sameIndexStructure(AColGroupCompressed that) {
+	public boolean sameIndexStructure(AColGroupCompressed that) {
 		throw new NotImplementedException();
 	}
 
@@ -683,4 +683,10 @@ public class ColGroupOLE extends AColGroupOffset {
 	public CompressedSizeInfoColGroup getCompressionInfo(int nRow) {
 		throw new NotImplementedException();
 	}
+
+	@Override
+	protected AColGroup fixColIndexes(IColIndex newColIndex, int[] reordering) {
+		throw new NotImplementedException();
+	}
+
 }

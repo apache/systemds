@@ -42,6 +42,8 @@ import org.apache.sysds.runtime.compress.colgroup.offset.OffsetFactory;
 import org.apache.sysds.runtime.compress.colgroup.scheme.ICLAScheme;
 import org.apache.sysds.runtime.compress.cost.ComputationCostEstimator;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
+import org.apache.sysds.runtime.compress.estim.encoding.EncodingFactory;
+import org.apache.sysds.runtime.compress.estim.encoding.IEncode;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.instructions.cp.CM_COV_Object;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -57,7 +59,7 @@ import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
  * This column group is handy in cases where sparse unsafe operations is executed on very sparse columns. Then the zeros
  * would be materialized in the group without any overhead.
  */
-public class ColGroupSDC extends ASDC implements AMapToDataGroup {
+public class ColGroupSDC extends ASDC implements IMapToDataGroup {
 	private static final long serialVersionUID = 769993538831949086L;
 
 	/** Pointers to row indexes in the dictionary. */
@@ -617,7 +619,7 @@ public class ColGroupSDC extends ASDC implements AMapToDataGroup {
 			}
 			sumRows += gc.getNumRows();
 		}
-		AMapToData nd = _data.appendN(Arrays.copyOf(g, g.length, AMapToDataGroup[].class));
+		AMapToData nd = _data.appendN(Arrays.copyOf(g, g.length, IMapToDataGroup[].class));
 		AOffset no = _indexes.appendN(Arrays.copyOf(g, g.length, AOffsetsGroup[].class), getNumRows());
 
 		return create(_colIndexes, sumRows, _dict, _defaultTuple, no, nd, null);
@@ -636,6 +638,31 @@ public class ColGroupSDC extends ASDC implements AMapToDataGroup {
 	@Override
 	public CompressedSizeInfoColGroup getCompressionInfo(int nRow) {
 		throw new NotImplementedException();
+	}
+
+	@Override
+	public IEncode getEncoding() {
+		return EncodingFactory.create(_data, _indexes, _numRows);
+	}
+
+	@Override
+	protected AColGroup fixColIndexes(IColIndex newColIndex, int[] reordering) {
+		return ColGroupSDC.create(newColIndex, getNumRows(), _dict.reorder(reordering),
+			ColGroupUtils.reorderDefault(_defaultTuple, reordering), _indexes, _data, getCachedCounts());
+	}
+
+	@Override
+	public boolean sameIndexStructure(AColGroupCompressed that) {
+		if(that instanceof ColGroupSDCZeros) {
+			ColGroupSDCZeros th = (ColGroupSDCZeros) that;
+			return th._indexes == _indexes && th._data == _data;
+		}
+		else if(that instanceof ColGroupSDC) {
+			ColGroupSDC th = (ColGroupSDC) that;
+			return th._indexes == _indexes && th._data == _data;
+		}
+		else
+			return false;
 	}
 
 	@Override

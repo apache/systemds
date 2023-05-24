@@ -34,6 +34,7 @@ import org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType;
 import org.apache.sysds.runtime.compress.colgroup.AColGroupCompressed;
 import org.apache.sysds.runtime.compress.colgroup.ADictBasedColGroup;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupEmpty;
+import org.apache.sysds.runtime.compress.colgroup.IContainDefaultTuple;
 import org.apache.sysds.runtime.compress.utils.ACount.DArrCounts;
 import org.apache.sysds.runtime.compress.utils.DblArrayCountHashMap;
 import org.apache.sysds.runtime.compress.utils.DoubleCountHashMap;
@@ -257,6 +258,13 @@ public interface DictionaryFactory {
 		if(ac.isDense() && bc.isDense()) {
 			return combineFullDictionaries(a.getDictionary(), a.getNumCols(), b.getDictionary(), b.getNumCols());
 		}
+		else if(ac.isSDC() && bc.isSDC()) {
+			throw new NotImplementedException("Not supporting constructing new Dictionary based on two SDC");
+		}
+		else if(ac.isDense() && bc.isSDC()) {
+			double[] tuple = ((IContainDefaultTuple) b).getDefaultTuple();
+			return combineSDCRight(a.getDictionary(), a.getNumCols(), b.getDictionary(), tuple);
+		}
 
 		throw new NotImplementedException();
 	}
@@ -290,7 +298,6 @@ public interface DictionaryFactory {
 			for(int c = 0; c < nca; c++)
 				out.quickSetValue(r, c, ma.quickGetValue(ia, c));
 
-			// LOG.error(out);
 			for(int c = 0; c < ncb; c++)
 				out.quickSetValue(r, c + nca, mb.quickGetValue(ib, c));
 
@@ -298,4 +305,36 @@ public interface DictionaryFactory {
 		return new MatrixBlockDictionary(out);
 	}
 
+	public static ADictionary combineSDCRight(ADictionary a, int nca, ADictionary b, double[] tub) {
+		final int ncb = tub.length;
+		final int ra = a.getNumberOfValues(nca);
+		final int rb = b.getNumberOfValues(ncb);
+
+		MatrixBlock ma = a.getMBDict(nca).getMatrixBlock();
+		MatrixBlock mb = b.getMBDict(ncb).getMatrixBlock();
+
+		// if(ra == 1 && rb == 1)
+		// return new MatrixBlockDictionary(ma.append(mb));
+
+		MatrixBlock out = new MatrixBlock(ra * (rb + 1), nca + ncb, false);
+
+		out.allocateBlock();
+
+		for(int r = 0; r < ra; r++)
+			for(int c = 0; c < nca; c++)
+				out.quickSetValue(r, c, ma.quickGetValue(r, c));
+		
+
+		for(int r = ra; r < out.getNumRows(); r++) {
+			int ia = r % ra;
+			int ib = r / ra - 1;
+			for(int c = 0; c < nca; c++) // all good.
+				out.quickSetValue(r, c, ma.quickGetValue(ia, c));
+
+			for(int c = 0; c < ncb; c++)
+				out.quickSetValue(r, c + nca, mb.quickGetValue(ib, c));
+
+		}
+		return new MatrixBlockDictionary(out);
+	}
 }

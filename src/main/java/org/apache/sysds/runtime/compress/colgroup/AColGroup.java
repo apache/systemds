@@ -60,7 +60,11 @@ public abstract class AColGroup implements Serializable {
 
 
 		public boolean isDense(){
-			return this == DDC || this == CONST || this == DDCFOR;
+			return this == DDC || this == CONST || this == DDCFOR || this== DDCFOR;
+		}
+
+		public boolean isSDC(){
+			return this== SDC;
 		}
 	}
 

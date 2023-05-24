@@ -26,7 +26,7 @@ import java.util.Arrays;
 import java.util.BitSet;
 
 import org.apache.commons.lang.NotImplementedException;
-import org.apache.sysds.runtime.compress.colgroup.AMapToDataGroup;
+import org.apache.sysds.runtime.compress.colgroup.IMapToDataGroup;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory.MAP_TYPE;
 import org.apache.sysds.utils.MemoryEstimates;
 
@@ -244,7 +244,7 @@ public class MapToCharPByte extends AMapToData {
 	}
 
 	@Override
-	public AMapToData appendN(AMapToDataGroup[] d){
+	public AMapToData appendN(IMapToDataGroup[] d){
 		throw new NotImplementedException();
 	}
 }

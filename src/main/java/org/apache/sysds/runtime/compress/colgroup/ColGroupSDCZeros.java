@@ -64,7 +64,7 @@ import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
  * 
  * This column group is handy in cases where sparse unsafe operations is executed on very sparse columns.
  */
-public class ColGroupSDCZeros extends ASDCZero implements AMapToDataGroup {
+public class ColGroupSDCZeros extends ASDCZero implements IMapToDataGroup {
 	private static final long serialVersionUID = -3703199743391937991L;
 
 	/** Pointers to row indexes in the dictionary. Note the dictionary has one extra entry. */
@@ -785,7 +785,7 @@ public class ColGroupSDCZeros extends ASDCZero implements AMapToDataGroup {
 			}
 			sumRows += gc.getNumRows();
 		}
-		AMapToData nd = _data.appendN(Arrays.copyOf(g, g.length, AMapToDataGroup[].class));
+		AMapToData nd = _data.appendN(Arrays.copyOf(g, g.length, IMapToDataGroup[].class));
 		AOffset no = _indexes.appendN(Arrays.copyOf(g, g.length, AOffsetsGroup[].class), getNumRows());
 
 		return create(_colIndexes, sumRows, _dict, no, nd, null);

@@ -21,6 +21,6 @@ package org.apache.sysds.runtime.compress.colgroup;
 
 import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
 
-public interface AMapToDataGroup {
+public interface IMapToDataGroup {
 	public AMapToData getMapToData();
 }

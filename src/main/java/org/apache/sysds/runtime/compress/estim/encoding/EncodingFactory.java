@@ -134,11 +134,11 @@ public interface EncodingFactory {
 		return new SparseEncoding(d, i, nRow);
 	}
 
-	public static IEncode combine(AColGroup a, AColGroup b){
-		IEncode ae = a.getEncoding();
-		IEncode be = b.getEncoding();
-		return ae.combineNoResize(be);
-	}
+	// public static IEncode combine(AColGroup a, AColGroup b){
+	// 	IEncode ae = a.getEncoding();
+	// 	IEncode be = b.getEncoding();
+	// 	return ae.combineNoResize(be);
+	// }
 
 	private static IEncode createFromDenseTransposed(MatrixBlock m, int row) {
 		final DenseBlock db = m.getDenseBlock();

@@ -36,8 +36,8 @@ import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.compress.estim.encoding.ConstEncoding;
 import org.apache.sysds.runtime.compress.estim.encoding.DenseEncoding;
 import org.apache.sysds.runtime.compress.estim.encoding.EmptyEncoding;
-import org.apache.sysds.runtime.compress.estim.encoding.EncodingFactory;
 import org.apache.sysds.runtime.compress.estim.encoding.IEncode;
+import org.apache.sysds.runtime.compress.estim.encoding.SparseEncoding;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
@@ -87,7 +87,14 @@ public final class CLALibCombineGroups {
 
 	private static AColGroup combineCompressed(IColIndex combinedColumns, AColGroupCompressed ac,
 		AColGroupCompressed bc) {
-		IEncode ce = EncodingFactory.combine(ac, bc);
+		IEncode ae = ac.getEncoding();
+		IEncode be = bc.getEncoding();
+		if(ae instanceof SparseEncoding && !(be instanceof SparseEncoding)) {
+			// the order must be sparse second unless both sparse.
+			return combineCompressed(combinedColumns, bc, ac);
+		}
+
+		IEncode ce = ae.combineNoResize(be);
 
 		if(ce instanceof DenseEncoding) {
 			DenseEncoding ced = (DenseEncoding) ce;

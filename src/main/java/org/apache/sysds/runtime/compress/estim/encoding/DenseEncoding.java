@@ -22,7 +22,6 @@ package org.apache.sysds.runtime.compress.estim.encoding;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
@@ -53,7 +52,7 @@ public class DenseEncoding implements IEncode {
 		if(e instanceof EmptyEncoding || e instanceof ConstEncoding)
 			return this;
 		else if(e instanceof SparseEncoding)
-			throw new NotImplementedException();
+			return combineSparseNoResize((SparseEncoding) e);
 		else
 			return combineDenseNoResize((DenseEncoding) e);
 	}
@@ -64,12 +63,23 @@ public class DenseEncoding implements IEncode {
 		final int nVl = getUnique();
 
 		// temp result
+		final AMapToData ret = assignSparse(e);
+		// Iteration 2 reassign indexes.
+		if(maxUnique + nVl > size)
+			return combineSparseHashMap(ret);
+		else
+			return combineSparseMapToData(ret, maxUnique, nVl);
+	}
+
+	private AMapToData assignSparse(SparseEncoding e) {
+		final int maxUnique = e.getUnique() * getUnique();
+		final int size = map.size();
+		final int nVl = getUnique();
+		// temp result
 		final AMapToData ret = MapToFactory.create(size, maxUnique);
 
 		// Iteration 1 copy dense data.
 		ret.copy(map);
-
-		// Iterate through indexes that are in the sparse encoding
 		final AIterator itr = e.off.getIterator();
 		final int fr = e.off.getOffsetToLast();
 
@@ -79,12 +89,7 @@ public class DenseEncoding implements IEncode {
 			ir = itr.next();
 		}
 		ret.set(fr, ret.getIndex(fr) + ((e.map.getIndex(itr.getDataIndex()) + 1) * nVl));
-
-		// Iteration 2 reassign indexes.
-		if(maxUnique + nVl > size)
-			return combineSparseHashMap(ret);
-		else
-			return combineSparseMapToData(ret, maxUnique, nVl);
+		return ret;
 	}
 
 	private final DenseEncoding combineSparseHashMap(final AMapToData ret) {
@@ -156,6 +161,10 @@ public class DenseEncoding implements IEncode {
 		// there can be less unique.
 
 		return new DenseEncoding(ret);
+	}
+
+	private DenseEncoding combineSparseNoResize(final SparseEncoding other) {
+		return new DenseEncoding(assignSparse(other));
 	}
 
 	protected final DenseEncoding combineDenseWithHashMap(final AMapToData lm, final AMapToData rm, final int size,

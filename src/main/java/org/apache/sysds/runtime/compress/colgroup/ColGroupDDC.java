@@ -53,7 +53,7 @@ import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
 /**
  * Class to encapsulate information about a column group that is encoded with dense dictionary encoding (DDC).
  */
-public class ColGroupDDC extends APreAgg implements AMapToDataGroup {
+public class ColGroupDDC extends APreAgg implements IMapToDataGroup {
 	private static final long serialVersionUID = -5769772089913918987L;
 
 	protected final AMapToData _data;
@@ -538,7 +538,7 @@ public class ColGroupDDC extends APreAgg implements AMapToDataGroup {
 				return null;
 			}
 		}
-		AMapToData nd = _data.appendN(Arrays.copyOf(g, g.length, AMapToDataGroup[].class));
+		AMapToData nd = _data.appendN(Arrays.copyOf(g, g.length, IMapToDataGroup[].class));
 		return create(_colIndexes, _dict, nd, null);
 	}
 

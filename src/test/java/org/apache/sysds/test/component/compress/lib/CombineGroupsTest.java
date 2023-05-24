@@ -25,6 +25,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlockFactory;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup;
@@ -38,6 +40,7 @@ import org.junit.runners.Parameterized.Parameters;
 
 @RunWith(value = Parameterized.class)
 public class CombineGroupsTest {
+	protected static final Log LOG = LogFactory.getLog(CombineGroupsTest.class.getName());
 
 	final MatrixBlock a;
 	final MatrixBlock b;
@@ -66,6 +69,12 @@ public class CombineGroupsTest {
 			MatrixBlock e = new MatrixBlock(100, 1, 0);
 			CompressedMatrixBlock ec = com(e); // empty
 
+			MatrixBlock s = TestUtils.generateTestMatrixBlock(100, 1, 1, 1, 0.05, 123);
+			CompressedMatrixBlock sc = com(s); // SDCZeroSingle
+			
+			// MatrixBlock s2 = TestUtils.generateTestMatrixBlock(100, 1, 0, 3, 0.2, 321);
+			// CompressedMatrixBlock s2c = com(s2); // SDCZero
+
 			MatrixBlock u = TestUtils.generateTestMatrixBlock(100, 1, 0, 1, 1.0, 2315);
 			CompressedMatrixBlock uuc = ucom(u);
 
@@ -73,20 +82,26 @@ public class CombineGroupsTest {
 			tests.add(new Object[] {a, b, ac, bc});
 
 			// Empty and Const cases.
-			tests.add(new Object[] {a, c, ac, cc});
-			tests.add(new Object[] {a, e, ac, ec});
+			tests.add(new Object[] {a, c, ac, cc}); // const ddc
 			tests.add(new Object[] {c, a, cc, ac});
+			tests.add(new Object[] {a, e, ac, ec}); // empty ddc
 			tests.add(new Object[] {e, a, ec, ac});
-			tests.add(new Object[] {e, e, ec, ec});
-			tests.add(new Object[] {c, c, cc, cc});
-			tests.add(new Object[] {c, e, cc, ec});
+			tests.add(new Object[] {c, e, cc, ec}); // empty const
 			tests.add(new Object[] {e, c, ec, cc});
+			tests.add(new Object[] {e, e, ec, ec}); // empty empty
+			tests.add(new Object[] {c, c, cc, cc}); // const const
 
 			// Uncompressed Case
 			tests.add(new Object[] {a, b, ac, buc}); // compressable uncompressed group
 			tests.add(new Object[] {b, a, buc, ac});
-			tests.add(new Object[] {a, u, ac, uuc}); // uncompressable input
+			tests.add(new Object[] {a, u, ac, uuc}); // incompressable input
 			tests.add(new Object[] {u, a, uuc, ac});
+			tests.add(new Object[] {u, u, uuc, uuc}); // both sides incompressable
+
+			// SDC cases
+			tests.add(new Object[] {s, a, sc, ac});
+			tests.add(new Object[] {a, s, ac, sc});
+
 		}
 		catch(Exception e) {
 			e.printStackTrace();

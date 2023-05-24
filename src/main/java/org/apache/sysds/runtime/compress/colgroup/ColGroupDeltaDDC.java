@@ -19,11 +19,271 @@
 
 package org.apache.sysds.runtime.compress.colgroup;
 
+
+import org.apache.commons.lang.NotImplementedException;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.DeltaDictionary;
+import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
+import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
+import org.apache.sysds.runtime.compress.colgroup.scheme.ICLAScheme;
+import org.apache.sysds.runtime.compress.cost.ComputationCostEstimator;
+import org.apache.sysds.runtime.data.DenseBlock;
+import org.apache.sysds.runtime.data.SparseBlock;
+import org.apache.sysds.runtime.functionobjects.Builtin;
+import org.apache.sysds.runtime.instructions.cp.CM_COV_Object;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
+import org.apache.sysds.runtime.matrix.operators.CMOperator;
+import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
+import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
+
 /**
  * Class to encapsulate information about a column group that is first delta encoded then encoded with dense dictionary
  * encoding (DeltaDDC).
  */
-public class ColGroupDeltaDDC  { // extends ColGroupDDC
+public class ColGroupDeltaDDC extends AColGroupCompressed implements AMapToDataGroup  {
+
+    private static final long serialVersionUID = -1045556313148564147L;
+    private AMapToData _data;
+    private DeltaDictionary _dict;
+    //TODO Confirm if casting from ADictionary to DeltaDictionary is reasonable
+    private ColGroupDeltaDDC(IColIndex colIndexes, ADictionary dict, AMapToData data) {
+        super(colIndexes);
+        _data = data;
+        _dict = (DeltaDictionary) dict;
+    }
+
+    //TODO Confirm if other parameters for constructors are required, such as cachedCounts
+    public static AColGroup create(IColIndex colIndexes, ADictionary dict, AMapToData data) {
+        if(data.getUnique() == 1)
+            return ColGroupConst.create(colIndexes, dict);
+        else if(dict == null)
+            return new ColGroupEmpty(colIndexes);
+        else
+            return new ColGroupDeltaDDC(colIndexes, dict, data);
+    }
+
+
+    @Override
+    protected AColGroup copyAndSet(IColIndex colIndexes) {
+        throw new NotImplementedException();
+    }
+
+    @Override
+    public double getIdx(int r, int colIdx) {
+        throw new NotImplementedException();
+    }
+
+    @Override
+    public int getNumValues() {
+        throw new NotImplementedException();
+    }
+
+    @Override
+    public CompressionType getCompType() {
+        throw new NotImplementedException();
+    }
+
+    @Override
+    protected ColGroupType getColGroupType() {
+        throw new NotImplementedException();
+    }
+
+    @Override
+    public void decompressToDenseBlock(DenseBlock db, int rl, int ru, int offR, int offC) {
+        throw new NotImplementedException();
+    }
+
+    @Override
+    public void decompressToSparseBlock(SparseBlock sb, int rl, int ru, int offR, int offC) {
+        throw new NotImplementedException();
+    }
+
+    @Override
+    public AColGroup rightMultByMatrix(MatrixBlock right, IColIndex allCols) {
+        throw new NotImplementedException();
+    }
+
+    @Override
+    public void leftMultByMatrixNoPreAgg(MatrixBlock matrix, MatrixBlock result, int rl, int ru, int cl, int cu) {
+        throw new NotImplementedException();
+    }
+
+    @Override
+    public void leftMultByAColGroup(AColGroup lhs, MatrixBlock result, int nRows) {
+        throw new NotImplementedException();
+    }
+
+    @Override
+    public void tsmmAColGroup(AColGroup other, MatrixBlock result) {
+        throw new NotImplementedException();
+    }
+
+    @Override
+    public AColGroup scalarOperation(ScalarOperator op) {
+        throw new NotImplementedException();
+    }
+
+    @Override
+    public AColGroup binaryRowOpLeft(BinaryOperator op, double[] v, boolean isRowSafe) {
+        throw new NotImplementedException();
+    }
+
+    @Override
+    public AColGroup binaryRowOpRight(BinaryOperator op, double[] v, boolean isRowSafe) {
+        throw new NotImplementedException();
+    }
+
+    @Override
+    protected AColGroup sliceSingleColumn(int idx) {
+        throw new NotImplementedException();
+    }
+
+    @Override
+    protected AColGroup sliceMultiColumns(int idStart, int idEnd, IColIndex outputCols) {
+        throw new NotImplementedException();
+    }
+
+    @Override
+    public AColGroup sliceRows(int rl, int ru) {
+        throw new NotImplementedException();
+    }
+
+    @Override
+    public boolean containsValue(double pattern) {
+        throw new NotImplementedException();
+    }
+
+    @Override
+    public long getNumberNonZeros(int nRows) {
+        throw new NotImplementedException();
+    }
+
+    @Override
+    public AColGroup replace(double pattern, double replace) {
+        throw new NotImplementedException();
+    }
+
+    @Override
+    public void computeColSums(double[] c, int nRows) {
+        throw new NotImplementedException();
+    }
+
+    @Override
+    public CM_COV_Object centralMoment(CMOperator op, int nRows) {
+        throw new NotImplementedException();
+    }
+
+    @Override
+    public AColGroup rexpandCols(int max, boolean ignore, boolean cast, int nRows) {
+        throw new NotImplementedException();
+    }
+
+    @Override
+    public double getCost(ComputationCostEstimator e, int nRows) {
+        throw new NotImplementedException();
+    }
+
+    @Override
+    public AColGroup unaryOperation(UnaryOperator op) {
+        throw new NotImplementedException();
+    }
+
+    @Override
+    public AColGroup append(AColGroup g) {
+        throw new NotImplementedException();
+    }
+
+    @Override
+    protected AColGroup appendNInternal(AColGroup[] groups) {
+        throw new NotImplementedException();
+    }
+
+    @Override
+    public ICLAScheme getCompressionScheme() {
+        throw new NotImplementedException();
+    }
+
+    @Override
+    protected double computeMxx(double c, Builtin builtin) {
+        throw new NotImplementedException();
+    }
+
+    @Override
+    protected void computeColMxx(double[] c, Builtin builtin) {
+        throw new NotImplementedException();
+    }
+
+    @Override
+    protected void computeSum(double[] c, int nRows) {
+        throw new NotImplementedException();
+    }
+
+    @Override
+    protected void computeSumSq(double[] c, int nRows) {
+        throw new NotImplementedException();
+    }
+
+    @Override
+    protected void computeColSumsSq(double[] c, int nRows) {
+        throw new NotImplementedException();
+    }
+
+    @Override
+    protected void computeRowSums(double[] c, int rl, int ru, double[] preAgg) {
+        throw new NotImplementedException();
+    }
+
+    @Override
+    protected void computeRowMxx(double[] c, Builtin builtin, int rl, int ru, double[] preAgg) {
+        throw new NotImplementedException();
+    }
+
+    @Override
+    protected void computeProduct(double[] c, int nRows) {
+        throw new NotImplementedException();
+    }
+
+    @Override
+    protected void computeRowProduct(double[] c, int rl, int ru, double[] preAgg) {
+        throw new NotImplementedException();
+    }
+
+    @Override
+    protected void computeColProduct(double[] c, int nRows) {
+        throw new NotImplementedException();
+    }
+
+    @Override
+    protected double[] preAggSumRows() {
+        throw new NotImplementedException();
+    }
+
+    @Override
+    protected double[] preAggSumSqRows() {
+        throw new NotImplementedException();
+    }
+
+    @Override
+    protected double[] preAggProductRows() {
+        throw new NotImplementedException();
+    }
+
+    @Override
+    protected double[] preAggBuiltinRows(Builtin builtin) {
+        throw new NotImplementedException();
+    }
+
+    @Override
+    protected void tsmm(double[] result, int numColumns, int nRows) {
+        throw new NotImplementedException();
+    }
+
+    @Override
+    public AMapToData getMapToData() {
+        throw new NotImplementedException();
+    }
+
 
 // 	private static final long serialVersionUID = -1045556313148564147L;
 

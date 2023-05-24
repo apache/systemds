@@ -66,6 +66,9 @@ public class CombineGroupsTest {
 			MatrixBlock e = new MatrixBlock(100, 1, 0);
 			CompressedMatrixBlock ec = com(e); // empty
 
+			MatrixBlock u = TestUtils.generateTestMatrixBlock(100, 1, 0, 1, 1.0, 2315);
+			CompressedMatrixBlock uuc = ucom(u);
+
 			// Default DDC case
 			tests.add(new Object[] {a, b, ac, bc});
 
@@ -80,7 +83,10 @@ public class CombineGroupsTest {
 			tests.add(new Object[] {e, c, ec, cc});
 
 			// Uncompressed Case
-			tests.add(new Object[] {a, b, ac, buc});
+			tests.add(new Object[] {a, b, ac, buc}); // compressable uncompressed group
+			tests.add(new Object[] {b, a, buc, ac});
+			tests.add(new Object[] {a, u, ac, uuc}); // uncompressable input
+			tests.add(new Object[] {u, a, uuc, ac});
 		}
 		catch(Exception e) {
 			e.printStackTrace();
@@ -105,12 +111,11 @@ public class CombineGroupsTest {
 			// combined.
 			MatrixBlock c = a.append(b);
 			CompressedMatrixBlock cc = appendNoMerge();
-		
 
 			TestUtils.compareMatricesBitAvgDistance(c, cc, 0, 0, "Not the same verification");
 			CompressedMatrixBlock ccc = (CompressedMatrixBlock) cc;
 			List<AColGroup> groups = ccc.getColGroups();
-			if(groups.size() > 1){
+			if(groups.size() > 1) {
 
 				AColGroup cg = CLALibCombineGroups.combine(groups.get(0), groups.get(1));
 				ccc.allocateColGroup(cg);
@@ -125,15 +130,13 @@ public class CombineGroupsTest {
 
 	}
 
-
-	private CompressedMatrixBlock appendNoMerge(){
+	private CompressedMatrixBlock appendNoMerge() {
 		CompressedMatrixBlock cc = new CompressedMatrixBlock(ac.getNumRows(), ac.getNumColumns() + bc.getNumColumns());
 		appendColGroups(cc, ac.getColGroups(), bc.getColGroups(), ac.getNumColumns());
 		cc.setNonZeros(ac.getNonZeros() + bc.getNonZeros());
 		cc.setOverlapping(ac.isOverlapping() || bc.isOverlapping());
 		return cc;
 	}
-
 
 	private static void appendColGroups(CompressedMatrixBlock ret, List<AColGroup> left, List<AColGroup> right,
 		int leftNumCols) {

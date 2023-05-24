@@ -23,9 +23,12 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.List;
 
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
+import org.apache.sysds.runtime.compress.CompressedMatrixBlockFactory;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.DictLibMatrixMult;
@@ -807,7 +810,20 @@ public class ColGroupUncompressed extends AColGroup {
 
 	@Override
 	public AColGroup recompress() {
-		return this;
+		MatrixBlock mb = CompressedMatrixBlockFactory.compress(_data).getLeft();
+		if(mb instanceof CompressedMatrixBlock) {
+			CompressedMatrixBlock cmb = (CompressedMatrixBlock) mb;
+			List<AColGroup> gs = cmb.getColGroups();
+			if(gs.size() > 1) {
+				LOG.error("The uncompressed column group did compress into multiple groups");
+				return this;
+			}
+			else {
+				return gs.get(0).copyAndSet(_colIndexes);
+			}
+		}
+		else
+			return this;
 	}
 
 	@Override

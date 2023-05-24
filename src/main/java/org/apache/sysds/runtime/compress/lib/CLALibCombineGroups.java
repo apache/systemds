@@ -28,6 +28,7 @@ import org.apache.sysds.runtime.compress.colgroup.AColGroupCompressed;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupConst;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupDDC;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupEmpty;
+import org.apache.sysds.runtime.compress.colgroup.ColGroupUncompressed;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.DictionaryFactory;
 import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
@@ -37,6 +38,8 @@ import org.apache.sysds.runtime.compress.estim.encoding.DenseEncoding;
 import org.apache.sysds.runtime.compress.estim.encoding.EmptyEncoding;
 import org.apache.sysds.runtime.compress.estim.encoding.EncodingFactory;
 import org.apache.sysds.runtime.compress.estim.encoding.IEncode;
+import org.apache.sysds.runtime.data.DenseBlock;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
 /**
  * Library functions to combine column groups inside a compressed matrix.
@@ -64,27 +67,62 @@ public final class CLALibCombineGroups {
 	public static AColGroup combine(AColGroup a, AColGroup b) {
 		IColIndex combinedColumns = ColIndexFactory.combine(a, b);
 
-		if(a instanceof AColGroupCompressed && b instanceof AColGroupCompressed) {
-			AColGroupCompressed ac = (AColGroupCompressed) a;
-			AColGroupCompressed bc = (AColGroupCompressed) b;
-			IEncode ce = EncodingFactory.combine(a, b);
+		// try to recompress a and b if uncompressed
+		if(a instanceof ColGroupUncompressed)
+			a = a.recompress();
 
-			if(ce instanceof DenseEncoding) {
-				DenseEncoding ced = (DenseEncoding) ce;
-				ADictionary cd = DictionaryFactory.combineDictionaries(ac, bc);
-				return ColGroupDDC.create(combinedColumns, cd, ced.getMap(), null);
-			}
-			else if(ce instanceof EmptyEncoding) {
-				return new ColGroupEmpty(combinedColumns);
-			}
-			else if(ce instanceof ConstEncoding) {
-				ADictionary cd = DictionaryFactory.combineDictionaries(ac, bc);
-				return ColGroupConst.create(combinedColumns, cd);
-			}
-		}
+		if(b instanceof ColGroupUncompressed)
+			b = b.recompress();
+
+		if(a instanceof AColGroupCompressed && b instanceof AColGroupCompressed)
+			return combineCompressed(combinedColumns, (AColGroupCompressed) a, (AColGroupCompressed) b);
+		else if(a instanceof ColGroupUncompressed || b instanceof ColGroupUncompressed)
+			// either side is uncompressed
+			return combineUC(combinedColumns, a, b);
 
 		throw new NotImplementedException(
 			"Not implemented combine for " + a.getClass().getSimpleName() + " - " + b.getClass().getSimpleName());
+
+	}
+
+	private static AColGroup combineCompressed(IColIndex combinedColumns, AColGroupCompressed ac,
+		AColGroupCompressed bc) {
+		IEncode ce = EncodingFactory.combine(ac, bc);
+
+		if(ce instanceof DenseEncoding) {
+			DenseEncoding ced = (DenseEncoding) ce;
+			ADictionary cd = DictionaryFactory.combineDictionaries(ac, bc);
+			return ColGroupDDC.create(combinedColumns, cd, ced.getMap(), null);
+		}
+		else if(ce instanceof EmptyEncoding) {
+			return new ColGroupEmpty(combinedColumns);
+		}
+		else if(ce instanceof ConstEncoding) {
+			ADictionary cd = DictionaryFactory.combineDictionaries(ac, bc);
+			return ColGroupConst.create(combinedColumns, cd);
+		}
+
+		throw new NotImplementedException(
+			"Not implemented combine for " + ac.getClass().getSimpleName() + " - " + bc.getClass().getSimpleName());
+
+	}
+
+	private static AColGroup combineUC(IColIndex combinedColumns, AColGroup a, AColGroup b) {
+		int nRow = a instanceof ColGroupUncompressed ? //
+			((ColGroupUncompressed) a).getData().getNumRows() : //
+			((ColGroupUncompressed) b).getData().getNumRows();
+		// step 1 decompress both into target uncompressed MatrixBlock;
+		MatrixBlock target = new MatrixBlock(nRow, combinedColumns.size(), false);
+		target.allocateBlock();
+		DenseBlock db = target.getDenseBlock();
+
+		// TODO: shift over columns.
+		a.decompressToDenseBlock(db, 0, nRow, 0, 0);
+		b.decompressToDenseBlock(db, 0, nRow, 0, 0);
+
+		target.recomputeNonZeros();
+
+		return ColGroupUncompressed.create(combinedColumns, target, false);
 
 	}
 

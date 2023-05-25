@@ -255,15 +255,23 @@ public interface DictionaryFactory {
 
 		CompressionType ac = a.getCompType();
 		CompressionType bc = b.getCompType();
-		if(ac.isDense() && bc.isDense()) {
-			return combineFullDictionaries(a.getDictionary(), a.getNumCols(), b.getDictionary(), b.getNumCols());
+		if(ac.isDense()) {
+			if(bc.isDense())
+				return combineFullDictionaries(a.getDictionary(), a.getNumCols(), b.getDictionary(), b.getNumCols());
+			else if(bc.isSDC()) {
+
+				double[] tuple = ((IContainDefaultTuple) b).getDefaultTuple();
+				return combineSDCRight(a.getDictionary(), a.getNumCols(), b.getDictionary(), tuple);
+			}
+
 		}
-		else if(ac.isSDC() && bc.isSDC()) {
-			throw new NotImplementedException("Not supporting constructing new Dictionary based on two SDC");
-		}
-		else if(ac.isDense() && bc.isSDC()) {
-			double[] tuple = ((IContainDefaultTuple) b).getDefaultTuple();
-			return combineSDCRight(a.getDictionary(), a.getNumCols(), b.getDictionary(), tuple);
+		else if(ac.isSDC()){
+			if(bc.isSDC()){
+				double[] at = ((IContainDefaultTuple) a).getDefaultTuple();
+				double[] bt = ((IContainDefaultTuple) b).getDefaultTuple();
+				return combineSDC(a.getDictionary(), at, b.getDictionary(), bt);
+
+			}
 		}
 
 		throw new NotImplementedException();
@@ -313,17 +321,17 @@ public interface DictionaryFactory {
 		MatrixBlock ma = a.getMBDict(nca).getMatrixBlock();
 		MatrixBlock mb = b.getMBDict(ncb).getMatrixBlock();
 
-		// if(ra == 1 && rb == 1)
-		// return new MatrixBlockDictionary(ma.append(mb));
-
 		MatrixBlock out = new MatrixBlock(ra * (rb + 1), nca + ncb, false);
 
 		out.allocateBlock();
 
-		for(int r = 0; r < ra; r++)
+		for(int r = 0; r < ra; r++) {
+
 			for(int c = 0; c < nca; c++)
 				out.quickSetValue(r, c, ma.quickGetValue(r, c));
-		
+			for(int c = 0; c < ncb; c++)
+				out.quickSetValue(0, c + nca, tub[c]);
+		}
 
 		for(int r = ra; r < out.getNumRows(); r++) {
 			int ia = r % ra;
@@ -335,6 +343,54 @@ public interface DictionaryFactory {
 				out.quickSetValue(r, c + nca, mb.quickGetValue(ib, c));
 
 		}
+		return new MatrixBlockDictionary(out);
+	}
+
+	public static ADictionary combineSDC(ADictionary a, double[] tua, ADictionary b, double[] tub) {
+		final int nca = tua.length;
+		final int ncb = tub.length;
+		final int ra = a.getNumberOfValues(nca);
+		final int rb = b.getNumberOfValues(ncb);
+
+		MatrixBlock ma = a.getMBDict(nca).getMatrixBlock();
+		MatrixBlock mb = b.getMBDict(ncb).getMatrixBlock();
+
+		MatrixBlock out = new MatrixBlock((ra + 1) * (rb + 1), nca + ncb, false);
+
+		out.allocateBlock();
+
+		// 0 row both default tuples
+
+		for(int c = 0; c < nca; c++)
+			out.quickSetValue(0, c, tua[c]);
+
+		for(int c = 0; c < ncb; c++)
+			out.quickSetValue(0, c + nca, tub[c]);
+
+		// default case for b and all cases for a.
+		for(int r = 1; r < ra + 1; r++) {
+			for(int c = 0; c < nca; c++)
+				out.quickSetValue(r, c, ma.quickGetValue(r - 1, c));
+			for(int c = 0; c < ncb; c++)
+				out.quickSetValue(r, c + nca, tub[c]);
+		}
+
+		for(int r = ra + 1; r < out.getNumRows(); r++) {
+			int ia = r % (ra + 1) - 1;
+			int ib = r / (ra + 1) - 1;
+
+			if(ia == -1)
+				for(int c = 0; c < nca; c++)
+					out.quickSetValue(r, c, tua[c]);
+			else
+				for(int c = 0; c < nca; c++)
+					out.quickSetValue(r, c, ma.quickGetValue(ia, c));
+
+			for(int c = 0; c < ncb; c++) // all good here.
+				out.quickSetValue(r, c + nca, mb.quickGetValue(ib, c));
+
+		}
+
 		return new MatrixBlockDictionary(out);
 	}
 }

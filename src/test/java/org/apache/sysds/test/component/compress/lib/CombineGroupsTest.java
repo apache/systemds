@@ -59,9 +59,11 @@ public class CombineGroupsTest {
 		List<Object[]> tests = new ArrayList<>();
 
 		try {
-			MatrixBlock a = TestUtils.generateTestMatrixBlock(100, 1, 1, 1, 0.5, 230);
+			MatrixBlock a = TestUtils.generateTestMatrixBlock(100, 1, 100, 103, 0.5, 230);
+			a = TestUtils.ceil(a);
 			CompressedMatrixBlock ac = com(a);
-			MatrixBlock b = TestUtils.generateTestMatrixBlock(100, 1, 1, 1, 0.5, 132);
+			MatrixBlock b = TestUtils.generateTestMatrixBlock(100, 1, 13, 15, 0.5, 132);
+			b = TestUtils.ceil(b);
 			CompressedMatrixBlock bc = com(b);
 			CompressedMatrixBlock buc = ucom(b); // uncompressed col group
 			MatrixBlock c = new MatrixBlock(100, 1, 1.34);
@@ -69,11 +71,13 @@ public class CombineGroupsTest {
 			MatrixBlock e = new MatrixBlock(100, 1, 0);
 			CompressedMatrixBlock ec = com(e); // empty
 
-			MatrixBlock s = TestUtils.generateTestMatrixBlock(100, 1, 1, 1, 0.05, 123);
+			MatrixBlock s = TestUtils.generateTestMatrixBlock(100, 1, 1, 3, 0.05, 123);
+			s = TestUtils.ceil(s);
 			CompressedMatrixBlock sc = com(s); // SDCZeroSingle
 
-			// MatrixBlock s2 = TestUtils.generateTestMatrixBlock(100, 1, 0, 3, 0.2, 321);
-			// CompressedMatrixBlock s2c = com(s2); // SDCZero
+			MatrixBlock s2 = TestUtils.generateTestMatrixBlock(100, 1, 0, 3, 0.2, 321);
+			s2 = TestUtils.ceil(s2);
+			CompressedMatrixBlock s2c = com(s2); // SDCZero
 
 			MatrixBlock u = TestUtils.generateTestMatrixBlock(100, 1, 0, 1, 1.0, 2315);
 			CompressedMatrixBlock uuc = ucom(u);
@@ -101,6 +105,11 @@ public class CombineGroupsTest {
 			// SDC cases
 			tests.add(new Object[] {s, a, sc, ac});
 			tests.add(new Object[] {a, s, ac, sc});
+			tests.add(new Object[] {s2, a, s2c, ac});
+			tests.add(new Object[] {a, s2, ac, s2c});
+
+			tests.add(new  Object[] {s, s, sc, sc} );
+			tests.add(new  Object[] {s, s2, sc, s2c} );
 
 		}
 		catch(Exception e) {

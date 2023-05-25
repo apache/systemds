@@ -201,5 +201,15 @@ public class RangeIndex extends AColIndex {
 		public boolean hasNext() {
 			return cl < u;
 		}
+
+		@Override
+		public int v(){
+			return cl;
+		}
+
+		@Override
+		public int i(){
+			return cl - l;
+		}
 	}
 }

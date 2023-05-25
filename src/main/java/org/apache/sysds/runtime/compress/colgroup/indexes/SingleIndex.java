@@ -131,6 +131,16 @@ public class SingleIndex extends AColIndex {
 		public boolean hasNext() {
 			return !taken;
 		}
+
+		@Override
+		public int v(){
+			return idx;
+		}
+
+		@Override
+		public int i(){
+			return 0;
+		}
 	}
 
 }

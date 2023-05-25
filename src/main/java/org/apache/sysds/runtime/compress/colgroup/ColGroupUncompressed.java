@@ -832,6 +832,11 @@ public class ColGroupUncompressed extends AColGroup {
 	}
 
 	@Override
+	public AColGroup copyAndSet(IColIndex colIndexes) {
+		return ColGroupUncompressed.create(_data, colIndexes);
+	}
+
+	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		sb.append(super.toString());
@@ -848,10 +853,5 @@ public class ColGroupUncompressed extends AColGroup {
 			sb.append(" don't print uncompressed matrix because it is to big.");
 
 		return sb.toString();
-	}
-
-	@Override
-	protected AColGroup copyAndSet(IColIndex colIndexes) {
-		return ColGroupUncompressed.create(_data, colIndexes);
 	}
 }

@@ -130,7 +130,7 @@ public abstract class AColGroup implements Serializable {
 	 * @param colIndexes the new indexes to use in the copy
 	 * @return a new object with pointers to underlying data.
 	 */
-	protected abstract AColGroup copyAndSet(IColIndex colIndexes);
+	public abstract AColGroup copyAndSet(IColIndex colIndexes);
 
 	/**
 	 * Get the upper bound estimate of in memory allocation for the column group.

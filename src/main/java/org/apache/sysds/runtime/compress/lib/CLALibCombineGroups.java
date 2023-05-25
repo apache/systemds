@@ -123,9 +123,10 @@ public final class CLALibCombineGroups {
 		target.allocateBlock();
 		DenseBlock db = target.getDenseBlock();
 
-		// TODO: shift over columns.
-		a.decompressToDenseBlock(db, 0, nRow, 0, 0);
-		b.decompressToDenseBlock(db, 0, nRow, 0, 0);
+		IColIndex aTempCols = ColIndexFactory.getColumnMapping(combinedColumns, a.getColIndices());
+		a.copyAndSet(aTempCols).decompressToDenseBlock(db, 0, nRow, 0, 0);
+		IColIndex bTempCols = ColIndexFactory.getColumnMapping(combinedColumns, b.getColIndices());
+		b.copyAndSet(bTempCols).decompressToDenseBlock(db, 0, nRow, 0, 0);
 
 		target.recomputeNonZeros();
 

@@ -664,7 +664,7 @@ public class ColGroupLinearFunctional extends AColGroupCompressed {
 	}
 
 	@Override
-	protected AColGroup copyAndSet(IColIndex colIndexes) {
+	public AColGroup copyAndSet(IColIndex colIndexes) {
 		return ColGroupLinearFunctional.create(colIndexes, _coefficents, _numRows);
 	}
 

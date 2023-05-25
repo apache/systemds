@@ -189,5 +189,15 @@ public class ArrayIndex extends AColIndex {
 		public boolean hasNext() {
 			return id < cols.length;
 		}
+
+		@Override
+		public int v(){
+			return cols[id];
+		}
+		
+		@Override
+		public int i(){
+			return id;
+		}
 	}
 }

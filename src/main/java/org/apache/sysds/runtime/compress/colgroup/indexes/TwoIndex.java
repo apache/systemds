@@ -160,6 +160,16 @@ public class TwoIndex extends AColIndex {
 		public boolean hasNext() {
 			return id < 2;
 		}
+
+		@Override
+		public int v() {
+			return id == 0 ? id1 : id2;
+		}
+
+		@Override
+		public int i() {
+			return id;
+		}
 	}
 
 }

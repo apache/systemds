@@ -38,6 +38,8 @@ import org.apache.sysds.runtime.compress.utils.Util;
 import org.junit.Test;
 import org.mockito.Mockito;
 
+import scala.util.Random;
+
 public class CustomIndexTest {
 	@Test
 	public void testSingeSlice1() {
@@ -585,10 +587,139 @@ public class CustomIndexTest {
 	}
 
 	@Test
-	public void compareOld2(){
+	public void compareOld2() {
 		final int domain = 32;
 		int[] colIndexes = Util.genColsIndices(0, domain);
 		IColIndex colIndexes2 = ColIndexFactory.create(0, domain);
 		IndexesTest.compare(colIndexes, colIndexes2);
+	}
+
+	@Test
+	public void getCombine_1() {
+		IColIndex a = ColIndexFactory.createI(1, 2, 3);
+		IColIndex b = ColIndexFactory.createI(4, 5, 6);
+		IColIndex c = ColIndexFactory.combine(a, b);
+		assertTrue(c.equals(ColIndexFactory.createI(1, 2, 3, 4, 5, 6)));
+	}
+
+	@Test
+	public void getCombine_2() {
+		IColIndex a = ColIndexFactory.createI(1, 3);
+		IColIndex b = ColIndexFactory.createI(4, 5, 6);
+		IColIndex c = ColIndexFactory.combine(a, b);
+		assertTrue(c.equals(ColIndexFactory.createI(1, 3, 4, 5, 6)));
+	}
+
+	@Test
+	public void getCombine_3() {
+		IColIndex a = ColIndexFactory.createI(1, 3);
+		IColIndex b = ColIndexFactory.createI(2, 5, 6);
+		IColIndex c = ColIndexFactory.combine(a, b);
+		assertTrue(c.equals(ColIndexFactory.createI(1, 2, 3, 5, 6)));
+	}
+
+	@Test
+	public void getCombine_4() {
+		IColIndex a = ColIndexFactory.createI(1, 3);
+		IColIndex b = ColIndexFactory.createI(0, 2, 6);
+		IColIndex c = ColIndexFactory.combine(a, b);
+		assertTrue(c.equals(ColIndexFactory.createI(0, 1, 2, 3, 6)));
+	}
+
+	@Test
+	public void getMapping_1() {
+		IColIndex c = ColIndexFactory.createI(1, 2, 3);
+		IColIndex a = ColIndexFactory.createI(1);
+		IColIndex am = ColIndexFactory.getColumnMapping(c, a);
+		assertTrue(am.equals(ColIndexFactory.createI(0)));
+	}
+
+	@Test
+	public void getMapping_2() {
+		IColIndex c = ColIndexFactory.createI(1, 2, 3);
+		IColIndex a = ColIndexFactory.createI(2);
+		IColIndex am = ColIndexFactory.getColumnMapping(c, a);
+		assertTrue(am.equals(ColIndexFactory.createI(1)));
+	}
+
+	@Test
+	public void getMapping_3() {
+		IColIndex c = ColIndexFactory.createI(1, 3);
+		IColIndex a = ColIndexFactory.createI(3);
+		IColIndex am = ColIndexFactory.getColumnMapping(c, a);
+		assertTrue(am.equals(ColIndexFactory.createI(1)));
+	}
+
+	@Test
+	public void getMapping_4() {
+		IColIndex c = ColIndexFactory.createI(1, 2, 3);
+		IColIndex a = ColIndexFactory.createI(3);
+		IColIndex am = ColIndexFactory.getColumnMapping(c, a);
+		assertTrue(am.equals(ColIndexFactory.createI(2)));
+	}
+
+	@Test
+	public void getMapping_5() {
+		IColIndex c = ColIndexFactory.createI(1, 2, 3);
+		IColIndex a = ColIndexFactory.createI(2, 3);
+		IColIndex am = ColIndexFactory.getColumnMapping(c, a);
+		assertTrue(am.equals(ColIndexFactory.createI(1, 2)));
+	}
+
+	@Test
+	public void getMapping_6() {
+		IColIndex c = ColIndexFactory.createI(1, 10, 100, 1000);
+		IColIndex a = ColIndexFactory.createI(10, 1000);
+		IColIndex am = ColIndexFactory.getColumnMapping(c, a);
+		assertTrue(am.equals(ColIndexFactory.createI(1, 3)));
+	}
+
+	@Test
+	public void rangeIndexSameEstimationCost() {
+		assertEquals(ColIndexFactory.estimateMemoryCost(10000, true), ColIndexFactory.estimateMemoryCost(1000000, true));
+	}
+
+	@Test
+	public void rangeIndexSameEstimationCost2() {
+		assertEquals(ColIndexFactory.estimateMemoryCost(134, true), ColIndexFactory.estimateMemoryCost(4215, true));
+	}
+
+	@Test
+	public void rangeIndexSameEstimationCost3() {
+		assertEquals(ColIndexFactory.estimateMemoryCost(1000000, true), ColIndexFactory.estimateMemoryCost(4215, true));
+	}
+
+	@Test
+	public void rangeIndexSameEstimationCost4() {
+		assertTrue(ColIndexFactory.estimateMemoryCost(2, true) <= ColIndexFactory.estimateMemoryCost(4215, true));
+	}
+
+	@Test
+	public void rangeIndexSameEstimationCost5() {
+		assertTrue(ColIndexFactory.estimateMemoryCost(1, true) <= ColIndexFactory.estimateMemoryCost(4215, true));
+	}
+
+	@Test
+	public void rangeIndexSameEstimationCost6() {
+		assertTrue(ColIndexFactory.estimateMemoryCost(1, true) <= ColIndexFactory.estimateMemoryCost(2, true));
+	}
+
+	@Test
+	public void rangeIndexSameEstimationCost7() {
+		assertTrue(ColIndexFactory.estimateMemoryCost(1, false) <= ColIndexFactory.estimateMemoryCost(2, false));
+	}
+
+	@Test
+	public void rangeIndexSameEstimationCost8() {
+		assertTrue(ColIndexFactory.estimateMemoryCost(10000, true) < ColIndexFactory.estimateMemoryCost(20, false));
+	}
+
+	@Test
+	public void estimateVSActual() {
+		Random r = new Random(134);
+		for(int i = 1; i < 50; i++) {
+			IColIndex rl = ColIndexFactory.create(IndexesTest.randomInc(i, r.nextInt()));
+			assertEquals(ColIndexFactory.estimateMemoryCost(i, false), rl.estimateInMemorySize());
+		}
 	}
 }

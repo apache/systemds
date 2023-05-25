@@ -295,7 +295,7 @@ public abstract class ADictBasedColGroup extends AColGroupCompressed {
 	}
 
 	@Override
-	protected final AColGroup copyAndSet(IColIndex  colIndexes){
+	public final AColGroup copyAndSet(IColIndex  colIndexes){
 		return copyAndSet(colIndexes, _dict);
 	}
 	

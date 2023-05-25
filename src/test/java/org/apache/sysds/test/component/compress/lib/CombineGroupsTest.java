@@ -71,7 +71,7 @@ public class CombineGroupsTest {
 
 			MatrixBlock s = TestUtils.generateTestMatrixBlock(100, 1, 1, 1, 0.05, 123);
 			CompressedMatrixBlock sc = com(s); // SDCZeroSingle
-			
+
 			// MatrixBlock s2 = TestUtils.generateTestMatrixBlock(100, 1, 0, 3, 0.2, 321);
 			// CompressedMatrixBlock s2c = com(s2); // SDCZero
 
@@ -125,7 +125,7 @@ public class CombineGroupsTest {
 
 			// combined.
 			MatrixBlock c = a.append(b);
-			CompressedMatrixBlock cc = appendNoMerge();
+			CompressedMatrixBlock cc = appendNoMerge(ac, bc);
 
 			TestUtils.compareMatricesBitAvgDistance(c, cc, 0, 0, "Not the same verification");
 			CompressedMatrixBlock ccc = (CompressedMatrixBlock) cc;
@@ -145,11 +145,37 @@ public class CombineGroupsTest {
 
 	}
 
-	private CompressedMatrixBlock appendNoMerge() {
-		CompressedMatrixBlock cc = new CompressedMatrixBlock(ac.getNumRows(), ac.getNumColumns() + bc.getNumColumns());
-		appendColGroups(cc, ac.getColGroups(), bc.getColGroups(), ac.getNumColumns());
-		cc.setNonZeros(ac.getNonZeros() + bc.getNonZeros());
-		cc.setOverlapping(ac.isOverlapping() || bc.isOverlapping());
+	@Test
+	public void combineWithExtraColumnBefore() {
+		try {
+			MatrixBlock e = new MatrixBlock(a.getNumRows(), 2, true);
+			// combined.
+			MatrixBlock c = e.append(a).append(b);
+			CompressedMatrixBlock ec = CompressedMatrixBlockFactory.createConstant(a.getNumRows(), 2, 0.0);
+			CompressedMatrixBlock cc = appendNoMerge(ec, appendNoMerge(ac, bc));
+
+			TestUtils.compareMatricesBitAvgDistance(c, cc, 0, 0, "Not the same verification");
+			CompressedMatrixBlock ccc = (CompressedMatrixBlock) cc;
+			List<AColGroup> groups = ccc.getColGroups();
+			if(groups.size() > 1) {
+
+				AColGroup cg = CLALibCombineGroups.combine(groups.get(1), groups.get(2));
+				ccc.allocateColGroup(cg);
+				TestUtils.compareMatricesBitAvgDistance(c, ccc, 0, 0, "Not the same combined");
+			}
+
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
+	}
+
+	private static CompressedMatrixBlock appendNoMerge(CompressedMatrixBlock a, CompressedMatrixBlock b) {
+		CompressedMatrixBlock cc = new CompressedMatrixBlock(a.getNumRows(), a.getNumColumns() + b.getNumColumns());
+		appendColGroups(cc, a.getColGroups(), b.getColGroups(), a.getNumColumns());
+		cc.setNonZeros(a.getNonZeros() + b.getNonZeros());
+		cc.setOverlapping(a.isOverlapping() || b.isOverlapping());
 		return cc;
 	}
 

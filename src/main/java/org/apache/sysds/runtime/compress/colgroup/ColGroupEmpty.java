@@ -318,7 +318,7 @@ public class ColGroupEmpty extends AColGroupCompressed {
 	}
 
 	@Override
-	protected AColGroup copyAndSet(IColIndex colIndexes) {
+	public AColGroup copyAndSet(IColIndex colIndexes) {
 		return new ColGroupEmpty(colIndexes);
 	}
 

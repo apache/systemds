@@ -28,14 +28,20 @@ import static org.mockito.Mockito.when;
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.sysds.runtime.compress.colgroup.AColGroup;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType;
+import org.apache.sysds.runtime.compress.colgroup.AColGroupCompressed;
 import org.apache.sysds.runtime.compress.colgroup.ADictBasedColGroup;
+import org.apache.sysds.runtime.compress.colgroup.ColGroupConst;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupDDC;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupEmpty;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupSDC;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.DictionaryFactory;
+import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
+import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
+import org.apache.sysds.runtime.compress.colgroup.offset.OffsetFactory;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.test.TestUtils;
 import org.junit.Test;
@@ -293,5 +299,207 @@ public class CombineTest {
 		ADictBasedColGroup s = mock(ColGroupSDC.class);
 		when(s.getCompType()).thenReturn(CompressionType.SDC);
 		DictionaryFactory.combineDictionaries(m, s);
+	}
+
+	@Test(expected = NotImplementedException.class)
+	public void combineNotImplemented6() {
+		AColGroupCompressed m = mock(AColGroupCompressed.class);
+		when(m.getCompType()).thenReturn(CompressionType.UNCOMPRESSED);
+		AColGroupCompressed s = mock(ColGroupSDC.class);
+		when(s.getCompType()).thenReturn(CompressionType.SDC);
+		DictionaryFactory.combineDictionaries(s, m);
+	}
+
+	@Test(expected = NotImplementedException.class)
+	public void combineNotImplemented7() {
+		AColGroupCompressed m = mock(AColGroupCompressed.class);
+		when(m.getCompType()).thenReturn(CompressionType.UNCOMPRESSED);
+		AColGroupCompressed s = mock(AColGroupCompressed.class);
+		when(s.getCompType()).thenReturn(CompressionType.UNCOMPRESSED);
+		DictionaryFactory.combineDictionaries(s, m);
+	}
+
+	@Test(expected = NotImplementedException.class)
+	public void combineNotImplemented8() {
+		AColGroupCompressed m = mock(AColGroupCompressed.class);
+		when(m.getCompType()).thenReturn(CompressionType.UNCOMPRESSED);
+		AColGroupCompressed s = mock(ColGroupSDC.class);
+		when(s.getCompType()).thenReturn(CompressionType.SDC);
+		DictionaryFactory.combineDictionaries(m, s);
+	}
+
+	@Test(expected = NotImplementedException.class)
+	public void combineNotImplemented9() {
+		AColGroupCompressed m = mock(ColGroupConst.class);
+		when(m.getCompType()).thenReturn(CompressionType.CONST);
+		AColGroupCompressed s = mock(ColGroupSDC.class);
+		when(s.getCompType()).thenReturn(CompressionType.SDC);
+		DictionaryFactory.combineDictionaries(m, s);
+	}
+
+	@Test(expected = NotImplementedException.class)
+	public void combineNotImplementedSparse1() {
+		ADictBasedColGroup m = mock(ADictBasedColGroup.class);
+		when(m.getCompType()).thenReturn(CompressionType.UNCOMPRESSED);
+		ADictBasedColGroup s = mock(ColGroupSDC.class);
+		when(s.getCompType()).thenReturn(CompressionType.SDC);
+		DictionaryFactory.combineDictionariesSparse(m, s);
+	}
+
+	@Test(expected = NotImplementedException.class)
+	public void combineNotImplementedSparse2() {
+		ADictBasedColGroup m = mock(ADictBasedColGroup.class);
+		when(m.getCompType()).thenReturn(CompressionType.UNCOMPRESSED);
+		ADictBasedColGroup s = mock(ColGroupSDC.class);
+		when(s.getCompType()).thenReturn(CompressionType.SDC);
+		DictionaryFactory.combineDictionariesSparse(s, m);
+	}
+
+	@Test(expected = NotImplementedException.class)
+	public void combineNotImplementedSparse3() {
+		ADictBasedColGroup m = mock(ColGroupSDC.class);
+		when(m.getCompType()).thenReturn(CompressionType.SDC);
+		ADictBasedColGroup s = mock(ColGroupDDC.class);
+		when(s.getCompType()).thenReturn(CompressionType.DDC);
+		DictionaryFactory.combineDictionariesSparse(s, m);
+	}
+
+	@Test(expected = NotImplementedException.class)
+	public void combineNotImplementedSparse4() {
+		ADictBasedColGroup m = mock(ColGroupConst.class);
+		when(m.getCompType()).thenReturn(CompressionType.CONST);
+		ADictBasedColGroup s = mock(ColGroupDDC.class);
+		when(s.getCompType()).thenReturn(CompressionType.DDC);
+		DictionaryFactory.combineDictionariesSparse(s, m);
+	}
+
+	@Test(expected = NotImplementedException.class)
+	public void combineNotImplementedSparse5() {
+		ADictBasedColGroup m = mock(ColGroupSDC.class);
+		when(m.getCompType()).thenReturn(CompressionType.SDC);
+		ADictBasedColGroup s = mock(ColGroupDDC.class);
+		when(s.getCompType()).thenReturn(CompressionType.DDC);
+		DictionaryFactory.combineDictionariesSparse(s, m);
+	}
+
+	@Test(expected = NotImplementedException.class)
+	public void combineNotImplementedSparse6() {
+		ADictBasedColGroup m = mock(ColGroupConst.class);
+		when(m.getCompType()).thenReturn(CompressionType.CONST);
+		ADictBasedColGroup s = mock(ColGroupDDC.class);
+		when(s.getCompType()).thenReturn(CompressionType.DDC);
+		DictionaryFactory.combineDictionariesSparse(m, s);
+	}
+
+	@Test
+	public void sparseSparseConst1() {
+		try {
+			ADictionary a = Dictionary.create(new double[] {3, 2, 7, 8});
+			// ADictionary b = Dictionary.create(new double[] {4, 4, 9, 5});
+
+			double[] bd = new double[] {0, 2};
+
+			ADictionary c = DictionaryFactory.combineSparseConstSparseRet(a, 2, bd);
+			MatrixBlock ret = c.getMBDict(2).getMatrixBlock();
+
+			MatrixBlock exp = new MatrixBlock(2, 4, new double[] {//
+				3, 2, 0, 2, //
+				7, 8, 0, 2,});
+			TestUtils.compareMatricesBitAvgDistance(ret, exp, 0, 0);
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
+	}
+
+	@Test
+	public void sparseSparseConst2() {
+		try {
+			ADictionary a = Dictionary.create(new double[] {3, 2, 7, 8});
+			// ADictionary b = Dictionary.create(new double[] {4, 4, 9, 5});
+
+			double[] bd = new double[] {0, 2};
+
+			ADictionary c = DictionaryFactory.combineSparseConstSparseRet(a, 1, bd);
+			MatrixBlock ret = c.getMBDict(2).getMatrixBlock();
+
+			MatrixBlock exp = new MatrixBlock(2, 3, new double[] {//
+				3, 0, 2, //
+				2, 0, 2, //
+				7, 0, 2, //
+				8, 0, 2,});
+			TestUtils.compareMatricesBitAvgDistance(ret, exp, 0, 0);
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
+	}
+
+	@Test
+	public void testEmpty() {
+		try {
+			ADictionary d = Dictionary.create(new double[] {3, 2, 7, 8});
+			AColGroup a = ColGroupDDC.create(ColIndexFactory.create(2), d, MapToFactory.create(10, 2), null);
+			ColGroupEmpty b = new ColGroupEmpty(ColIndexFactory.create(4));
+
+			ADictionary c = DictionaryFactory.combineDictionaries((AColGroupCompressed) a, (AColGroupCompressed) b);
+			MatrixBlock ret = c.getMBDict(2).getMatrixBlock();
+
+			MatrixBlock exp = new MatrixBlock(2, 6, new double[] {//
+				3, 2, 0, 0, 0, 0, //
+				7, 8, 0, 0, 0, 0,});
+			TestUtils.compareMatricesBitAvgDistance(ret, exp, 0, 0);
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
+	}
+
+	@Test
+	public void combineDictionariesSparse1() {
+		try {
+			ADictionary d = Dictionary.create(new double[] {3, 2, 7, 8});
+			AColGroup a = ColGroupSDC.create(ColIndexFactory.create(2), 500, d, new double[] {1, 2},
+				OffsetFactory.createOffset(new int[] {3, 4}), MapToFactory.create(10, 2), null);
+			ColGroupEmpty b = new ColGroupEmpty(ColIndexFactory.create(4));
+
+			ADictionary c = DictionaryFactory.combineDictionariesSparse((AColGroupCompressed) a, (AColGroupCompressed) b);
+			MatrixBlock ret = c.getMBDict(2).getMatrixBlock();
+
+			MatrixBlock exp = new MatrixBlock(2, 6, new double[] {//
+				3, 2, 0, 0, 0, 0, //
+				7, 8, 0, 0, 0, 0,});
+			TestUtils.compareMatricesBitAvgDistance(ret, exp, 0, 0);
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
+	}
+
+
+	@Test
+	public void combineDictionariesSparse2() {
+		try {
+			ADictionary d = Dictionary.create(new double[] {3, 2, 7, 8});
+			AColGroup b = ColGroupSDC.create(ColIndexFactory.create(2), 500, d, new double[] {1, 2},
+				OffsetFactory.createOffset(new int[] {3, 4}), MapToFactory.create(10, 2), null);
+			ColGroupEmpty a = new ColGroupEmpty(ColIndexFactory.create(4));
+
+			ADictionary c = DictionaryFactory.combineDictionariesSparse((AColGroupCompressed) a, (AColGroupCompressed) b);
+			MatrixBlock ret = c.getMBDict(2).getMatrixBlock();
+
+			MatrixBlock exp = new MatrixBlock(2, 6, new double[] {//
+				0, 0, 0, 0, 3, 2, //
+				0, 0, 0, 0, 7, 8,});
+			TestUtils.compareMatricesBitAvgDistance(ret, exp, 0, 0);
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
 	}
 }

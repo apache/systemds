@@ -143,7 +143,7 @@ public final class CLALibCombineGroups {
 
 	}
 
-	private static double[] constructDefaultTuple(AColGroupCompressed ac, AColGroupCompressed bc) {
+	public static double[] constructDefaultTuple(AColGroupCompressed ac, AColGroupCompressed bc) {
 		double[] ret = new double[ac.getNumCols() + bc.getNumCols()];
 		if(ac instanceof IContainDefaultTuple ){
 			double[] defa = ((IContainDefaultTuple)ac).getDefaultTuple();

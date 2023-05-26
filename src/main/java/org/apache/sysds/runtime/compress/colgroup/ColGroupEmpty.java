@@ -26,7 +26,6 @@ import java.util.Arrays;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
-import org.apache.sysds.runtime.compress.colgroup.dictionary.MatrixBlockDictionary;
 import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IIterate;
@@ -361,7 +360,7 @@ public class ColGroupEmpty extends AColGroupCompressed implements IContainADicti
 
 	@Override
 	public ADictionary getDictionary() {
-		return MatrixBlockDictionary.create(new MatrixBlock(getNumCols(), 1, true), false);
+		return null;
 	}
 
 	@Override

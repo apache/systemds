@@ -34,7 +34,9 @@ import org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType;
 import org.apache.sysds.runtime.compress.colgroup.AColGroupCompressed;
 import org.apache.sysds.runtime.compress.colgroup.ADictBasedColGroup;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupEmpty;
+import org.apache.sysds.runtime.compress.colgroup.IContainADictionary;
 import org.apache.sysds.runtime.compress.colgroup.IContainDefaultTuple;
+import org.apache.sysds.runtime.compress.lib.CLALibCombineGroups;
 import org.apache.sysds.runtime.compress.utils.ACount.DArrCounts;
 import org.apache.sysds.runtime.compress.utils.DblArrayCountHashMap;
 import org.apache.sysds.runtime.compress.utils.DoubleCountHashMap;
@@ -237,18 +239,49 @@ public interface DictionaryFactory {
 	}
 
 	public static ADictionary combineDictionaries(AColGroupCompressed a, AColGroupCompressed b) {
-		boolean ae = a instanceof ColGroupEmpty;
-		boolean be = b instanceof ColGroupEmpty;
+		if(a instanceof ColGroupEmpty && b instanceof ColGroupEmpty)
+			return null; // null return is handled elsewhere.
 
-		if(ae && be)
-			return null;
-		else if(ae)
-			return ((ADictBasedColGroup) b).getDictionary();
-		else if(be)
-			return ((ADictBasedColGroup) a).getDictionary();
-		else
-			return combineDictionariesDictBased((ADictBasedColGroup) a, (ADictBasedColGroup) b);
+		CompressionType ac = a.getCompType();
+		CompressionType bc = b.getCompType();
 
+		boolean ae = a instanceof IContainADictionary;
+		boolean be = b instanceof IContainADictionary;
+
+		if(ae && be) {
+
+			ADictionary ad = ((IContainADictionary) a).getDictionary();
+			ADictionary bd = ((IContainADictionary) b).getDictionary();
+			if(ac.isConst()) {
+				if(bc.isConst()) {
+					return new Dictionary(CLALibCombineGroups.constructDefaultTuple(a, b));
+				}
+				else if(bc.isDense()) {
+					final double[] at = ((IContainDefaultTuple) a).getDefaultTuple();
+					return combineConstSparseSparseRet(at, bd, b.getNumCols());
+				}
+			}
+			else if(ac.isDense()) {
+				if(bc.isConst()) {
+					final double[] bt = ((IContainDefaultTuple) b).getDefaultTuple();
+					return combineSparseConstSparseRet(ad, a.getNumCols(), bt);
+				}
+				else if(bc.isDense())
+					return combineFullDictionaries(ad, a.getNumCols(), bd, b.getNumCols());
+				else if(bc.isSDC()) {
+					double[] tuple = ((IContainDefaultTuple) b).getDefaultTuple();
+					return combineSDCRight(ad, a.getNumCols(), bd, tuple);
+				}
+			}
+			else if(ac.isSDC()) {
+				if(bc.isSDC()) {
+					final double[] at = ((IContainDefaultTuple) a).getDefaultTuple();
+					final double[] bt = ((IContainDefaultTuple) b).getDefaultTuple();
+					return combineSDC(ad, at, bd, bt);
+				}
+			}
+		}
+		throw new NotImplementedException("Not supporting combining dense: " + a + " " + b);
 	}
 
 	public static ADictionary combineDictionariesSparse(AColGroupCompressed a, AColGroupCompressed b) {
@@ -258,43 +291,18 @@ public interface DictionaryFactory {
 		if(ac.isSDC()) {
 			if(bc.isConst()) {
 				double[] bt = ((IContainDefaultTuple) b).getDefaultTuple();
-				return combineSparseConstSparseRet(((ADictBasedColGroup)a).getDictionary(), a.getNumCols(), bt);
+				return combineSparseConstSparseRet(((ADictBasedColGroup) a).getDictionary(), a.getNumCols(), bt);
 			}
 		}
 		else if(ac.isConst()) {
 			double[] at = ((IContainDefaultTuple) a).getDefaultTuple();
 			if(bc.isSDC()) {
-				return combineConstSparseSparseRet(at, ((ADictBasedColGroup)b).getDictionary(), b.getNumCols());
+				return combineConstSparseSparseRet(at, ((ADictBasedColGroup) b).getDictionary(), b.getNumCols());
 			}
 		}
 
 		throw new NotImplementedException("Not supporting combining dense: " + a + " " + b);
 	}
-
-	private static ADictionary combineDictionariesDictBased(ADictBasedColGroup a, ADictBasedColGroup b) {
-
-		CompressionType ac = a.getCompType();
-		CompressionType bc = b.getCompType();
-		if(ac.isDense()) {
-			if(bc.isDense())
-				return combineFullDictionaries(a.getDictionary(), a.getNumCols(), b.getDictionary(), b.getNumCols());
-			else if(bc.isSDC()) {
-				double[] tuple = ((IContainDefaultTuple) b).getDefaultTuple();
-				return combineSDCRight(a.getDictionary(), a.getNumCols(), b.getDictionary(), tuple);
-			}
-		}
-		else if(ac.isSDC()) {
-			if(bc.isSDC()) {
-				double[] at = ((IContainDefaultTuple) a).getDefaultTuple();
-				double[] bt = ((IContainDefaultTuple) b).getDefaultTuple();
-				return combineSDC(a.getDictionary(), at, b.getDictionary(), bt);
-
-			}
-		}
-
-		throw new NotImplementedException("Not supporting combining dense: " + a + " " + b);
-	}
-
 
 	/**
 	 * Combine the dictionaries as if the dictionaries contain the full spectrum of the data contained.
@@ -424,7 +432,7 @@ public interface DictionaryFactory {
 		out.allocateBlock();
 
 		// default case for b and all cases for a.
-		for(int r = 0; r < ra + 1; r++) {
+		for(int r = 0; r < ra; r++) {
 			for(int c = 0; c < nca; c++)
 				out.quickSetValue(r, c, ma.quickGetValue(r, c));
 			for(int c = 0; c < ncb; c++)

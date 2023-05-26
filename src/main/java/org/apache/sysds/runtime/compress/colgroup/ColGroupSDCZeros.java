@@ -84,6 +84,9 @@ public class ColGroupSDCZeros extends ASDCZero implements IMapToDataGroup {
 		if(dict == null)
 			return new ColGroupEmpty(colIndices);
 		else if(data.getUnique() == 1) {
+			LOG.error(dict);
+			LOG.error(data.getUnique());
+			LOG.error(colIndices.size());
 			MatrixBlock mb = dict.getMBDict(colIndices.size()).getMatrixBlock().slice(0, 0);
 			return ColGroupSDCSingleZeros.create(colIndices, numRows, MatrixBlockDictionary.create(mb), offsets, null);
 		}

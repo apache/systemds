@@ -58,13 +58,16 @@ public abstract class AColGroup implements Serializable {
 	public static enum CompressionType {
 		UNCOMPRESSED, RLE, OLE, DDC, CONST, EMPTY, SDC, SDCFOR, DDCFOR, DeltaDDC, LinearFunctional;
 
-
-		public boolean isDense(){
-			return this == DDC || this == CONST || this == DDCFOR || this== DDCFOR;
+		public boolean isDense() {
+			return this == DDC || this == CONST || this == DDCFOR || this == DDCFOR;
 		}
 
-		public boolean isSDC(){
-			return this== SDC;
+		public boolean isConst() {
+			return this == CONST || this == EMPTY;
+		}
+
+		public boolean isSDC() {
+			return this == SDC;
 		}
 	}
 
@@ -666,9 +669,10 @@ public abstract class AColGroup implements Serializable {
 
 	/**
 	 * Get encoding of this column group.
+	 * 
 	 * @return The encoding of the index structure.
 	 */
-	public IEncode getEncoding(){
+	public IEncode getEncoding() {
 		throw new NotImplementedException();
 	}
 

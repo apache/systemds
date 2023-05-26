@@ -71,14 +71,7 @@ public class CombineGroupsTest {
 			MatrixBlock e = new MatrixBlock(100, 1, 0);
 			CompressedMatrixBlock ec = com(e); // empty
 
-			MatrixBlock s = TestUtils.generateTestMatrixBlock(100, 1, 1, 3, 0.05, 123);
-			s = TestUtils.ceil(s);
-			CompressedMatrixBlock sc = com(s); // SDCZeroSingle
-
-			MatrixBlock s2 = TestUtils.generateTestMatrixBlock(100, 1, 0, 3, 0.2, 321);
-			s2 = TestUtils.ceil(s2);
-			CompressedMatrixBlock s2c = com(s2); // SDCZero
-
+			
 			MatrixBlock u = TestUtils.generateTestMatrixBlock(100, 1, 0, 1, 1.0, 2315);
 			CompressedMatrixBlock uuc = ucom(u);
 
@@ -102,14 +95,29 @@ public class CombineGroupsTest {
 			tests.add(new Object[] {u, a, uuc, ac});
 			tests.add(new Object[] {u, u, uuc, uuc}); // both sides incompressable
 
+			
+			MatrixBlock s = TestUtils.generateTestMatrixBlock(100, 1, 1, 3, 0.05, 123);
+			s = TestUtils.ceil(s);
+			CompressedMatrixBlock sc = com(s); // SDCZeroSingle
+
+			MatrixBlock s2 = TestUtils.generateTestMatrixBlock(100, 1, 0, 3, 0.2, 321);
+			s2 = TestUtils.ceil(s2);
+			CompressedMatrixBlock s2c = com(s2); // SDCZero
+
 			// SDC cases
 			tests.add(new Object[] {s, a, sc, ac});
 			tests.add(new Object[] {a, s, ac, sc});
 			tests.add(new Object[] {s2, a, s2c, ac});
 			tests.add(new Object[] {a, s2, ac, s2c});
 
-			tests.add(new  Object[] {s, s, sc, sc} );
-			tests.add(new  Object[] {s, s2, sc, s2c} );
+			tests.add(new Object[] {s, s, sc, sc});
+			tests.add(new Object[] {s, s2, sc, s2c});
+
+			// empty and const SDC
+			tests.add(new Object[] {s, e, sc, ec});
+			tests.add(new Object[] {s, c, sc, cc});
+			tests.add(new Object[] {e, s, ec, sc});
+			tests.add(new Object[] {c, s, cc, sc});
 
 		}
 		catch(Exception e) {

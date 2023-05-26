@@ -28,7 +28,9 @@ import org.apache.sysds.runtime.compress.colgroup.AColGroupCompressed;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupConst;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupDDC;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupEmpty;
+import org.apache.sysds.runtime.compress.colgroup.ColGroupSDC;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupUncompressed;
+import org.apache.sysds.runtime.compress.colgroup.IContainDefaultTuple;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.DictionaryFactory;
 import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
@@ -108,6 +110,13 @@ public final class CLALibCombineGroups {
 			ADictionary cd = DictionaryFactory.combineDictionaries(ac, bc);
 			return ColGroupConst.create(combinedColumns, cd);
 		}
+		else if(ce instanceof SparseEncoding) {
+			SparseEncoding sed = (SparseEncoding) ce;
+			ADictionary cd = DictionaryFactory.combineDictionariesSparse(ac, bc);
+			double[] defaultTuple = constructDefaultTuple((AColGroupCompressed) ac, (AColGroupCompressed) bc);
+			return ColGroupSDC.create(combinedColumns, sed.getNumRows(), cd, defaultTuple, sed.getOffsets(), sed.getMap(),
+				null);
+		}
 
 		throw new NotImplementedException(
 			"Not implemented combine for " + ac.getClass().getSimpleName() + " - " + bc.getClass().getSimpleName());
@@ -132,6 +141,19 @@ public final class CLALibCombineGroups {
 
 		return ColGroupUncompressed.create(combinedColumns, target, false);
 
+	}
+
+	private static double[] constructDefaultTuple(AColGroupCompressed ac, AColGroupCompressed bc) {
+		double[] ret = new double[ac.getNumCols() + bc.getNumCols()];
+		if(ac instanceof IContainDefaultTuple ){
+			double[] defa = ((IContainDefaultTuple)ac).getDefaultTuple();
+			System.arraycopy(defa, 0, ret, 0, defa.length);
+		}
+		if(bc instanceof IContainDefaultTuple){
+			double[] defb = ((IContainDefaultTuple)bc).getDefaultTuple();
+			System.arraycopy(defb, 0, ret, ac.getNumCols(), defb.length);
+		}
+		return ret;
 	}
 
 }

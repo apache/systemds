@@ -34,7 +34,7 @@ import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
-public abstract class ADictBasedColGroup extends AColGroupCompressed {
+public abstract class ADictBasedColGroup extends AColGroupCompressed implements IContainADictionary {
 	private static final long serialVersionUID = -3737025296618703668L;
 	/** Distinct value tuples associated with individual bitmaps. */
 	protected final ADictionary _dict;
@@ -59,9 +59,9 @@ public abstract class ADictBasedColGroup extends AColGroupCompressed {
 
 	@Override
 	public final void decompressToDenseBlock(DenseBlock db, int rl, int ru, int offR, int offC) {
-		if(_dict instanceof IdentityDictionary){
+		if(_dict instanceof IdentityDictionary) {
 
-			final MatrixBlockDictionary md = ((IdentityDictionary)_dict).getMBDict();
+			final MatrixBlockDictionary md = ((IdentityDictionary) _dict).getMBDict();
 			final MatrixBlock mb = md.getMatrixBlock();
 			// The dictionary is never empty.
 			if(mb.isInSparseFormat())
@@ -84,9 +84,9 @@ public abstract class ADictBasedColGroup extends AColGroupCompressed {
 
 	@Override
 	public final void decompressToSparseBlock(SparseBlock sb, int rl, int ru, int offR, int offC) {
-		if(_dict instanceof IdentityDictionary){
+		if(_dict instanceof IdentityDictionary) {
 
-			final MatrixBlockDictionary md = ((IdentityDictionary)_dict).getMBDict();
+			final MatrixBlockDictionary md = ((IdentityDictionary) _dict).getMBDict();
 			final MatrixBlock mb = md.getMatrixBlock();
 			// The dictionary is never empty.
 			if(mb.isInSparseFormat())
@@ -203,7 +203,8 @@ public abstract class ADictBasedColGroup extends AColGroupCompressed {
 		return allocateRightMultiplication(right, agCols, preAgg);
 	}
 
-	protected abstract AColGroup allocateRightMultiplication(MatrixBlock right, IColIndex colIndexes, ADictionary preAgg);
+	protected abstract AColGroup allocateRightMultiplication(MatrixBlock right, IColIndex colIndexes,
+		ADictionary preAgg);
 
 	/**
 	 * Find the minimum number of columns that are effected by the right multiplication
@@ -295,10 +296,10 @@ public abstract class ADictBasedColGroup extends AColGroupCompressed {
 	}
 
 	@Override
-	public final AColGroup copyAndSet(IColIndex  colIndexes){
+	public final AColGroup copyAndSet(IColIndex colIndexes) {
 		return copyAndSet(colIndexes, _dict);
 	}
-	
+
 	protected final AColGroup copyAndSet(ADictionary newDictionary) {
 		return copyAndSet(_colIndexes, newDictionary);
 	}

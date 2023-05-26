@@ -379,6 +379,14 @@ public class SparseEncoding implements IEncode {
 		return off;
 	}
 
+	public AMapToData getMap() {
+		return map;
+	}
+
+	public int getNumRows() {
+		return nRows;
+	}
+
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();

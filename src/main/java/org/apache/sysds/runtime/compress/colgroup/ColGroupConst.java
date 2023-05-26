@@ -47,7 +47,7 @@ import org.apache.sysds.runtime.matrix.operators.CMOperator;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
 import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
 
-public class ColGroupConst extends ADictBasedColGroup {
+public class ColGroupConst extends ADictBasedColGroup implements IContainDefaultTuple{
 
 	private static final long serialVersionUID = -7387793538322386611L;
 
@@ -591,6 +591,11 @@ public class ColGroupConst extends ADictBasedColGroup {
 		sb.append(String.format("\n%15s", "Values: " + _dict.getClass().getSimpleName()));
 		sb.append(_dict.getString(_colIndexes.size()));
 		return sb.toString();
+	}
+
+	@Override
+	public double[] getDefaultTuple() {
+		return _dict.getValues();
 	}
 
 }

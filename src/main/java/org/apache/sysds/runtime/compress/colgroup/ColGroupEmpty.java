@@ -24,7 +24,9 @@ import java.io.IOException;
 import java.util.Arrays;
 
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.MatrixBlockDictionary;
 import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IIterate;
@@ -45,7 +47,7 @@ import org.apache.sysds.runtime.matrix.operators.CMOperator;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
 import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
 
-public class ColGroupEmpty extends AColGroupCompressed {
+public class ColGroupEmpty extends AColGroupCompressed implements IContainADictionary, IContainDefaultTuple {
 	private static final long serialVersionUID = -2307677253622099958L;
 
 	/**
@@ -353,7 +355,17 @@ public class ColGroupEmpty extends AColGroupCompressed {
 	}
 
 	@Override
-	public IEncode getEncoding(){
+	public IEncode getEncoding() {
 		return EncodingFactory.create(this);
+	}
+
+	@Override
+	public ADictionary getDictionary() {
+		return MatrixBlockDictionary.create(new MatrixBlock(getNumCols(), 1, true), false);
+	}
+
+	@Override
+	public double[] getDefaultTuple() {
+		return new double[getNumCols()];
 	}
 }

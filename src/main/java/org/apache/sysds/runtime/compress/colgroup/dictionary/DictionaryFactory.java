@@ -251,7 +251,27 @@ public interface DictionaryFactory {
 
 	}
 
-	public static ADictionary combineDictionariesDictBased(ADictBasedColGroup a, ADictBasedColGroup b) {
+	public static ADictionary combineDictionariesSparse(AColGroupCompressed a, AColGroupCompressed b) {
+		CompressionType ac = a.getCompType();
+		CompressionType bc = b.getCompType();
+
+		if(ac.isSDC()) {
+			if(bc.isConst()) {
+				double[] bt = ((IContainDefaultTuple) b).getDefaultTuple();
+				return combineSparseConstSparseRet(((ADictBasedColGroup)a).getDictionary(), a.getNumCols(), bt);
+			}
+		}
+		else if(ac.isConst()) {
+			double[] at = ((IContainDefaultTuple) a).getDefaultTuple();
+			if(bc.isSDC()) {
+				return combineConstSparseSparseRet(at, ((ADictBasedColGroup)b).getDictionary(), b.getNumCols());
+			}
+		}
+
+		throw new NotImplementedException("Not supporting combining dense: " + a + " " + b);
+	}
+
+	private static ADictionary combineDictionariesDictBased(ADictBasedColGroup a, ADictBasedColGroup b) {
 
 		CompressionType ac = a.getCompType();
 		CompressionType bc = b.getCompType();
@@ -259,14 +279,12 @@ public interface DictionaryFactory {
 			if(bc.isDense())
 				return combineFullDictionaries(a.getDictionary(), a.getNumCols(), b.getDictionary(), b.getNumCols());
 			else if(bc.isSDC()) {
-
 				double[] tuple = ((IContainDefaultTuple) b).getDefaultTuple();
 				return combineSDCRight(a.getDictionary(), a.getNumCols(), b.getDictionary(), tuple);
 			}
-
 		}
-		else if(ac.isSDC()){
-			if(bc.isSDC()){
+		else if(ac.isSDC()) {
+			if(bc.isSDC()) {
 				double[] at = ((IContainDefaultTuple) a).getDefaultTuple();
 				double[] bt = ((IContainDefaultTuple) b).getDefaultTuple();
 				return combineSDC(a.getDictionary(), at, b.getDictionary(), bt);
@@ -274,8 +292,9 @@ public interface DictionaryFactory {
 			}
 		}
 
-		throw new NotImplementedException();
+		throw new NotImplementedException("Not supporting combining dense: " + a + " " + b);
 	}
+
 
 	/**
 	 * Combine the dictionaries as if the dictionaries contain the full spectrum of the data contained.
@@ -392,5 +411,49 @@ public interface DictionaryFactory {
 		}
 
 		return new MatrixBlockDictionary(out);
+	}
+
+	public static ADictionary combineSparseConstSparseRet(ADictionary a, int nca, double[] tub) {
+		final int ncb = tub.length;
+		final int ra = a.getNumberOfValues(nca);
+
+		MatrixBlock ma = a.getMBDict(nca).getMatrixBlock();
+
+		MatrixBlock out = new MatrixBlock(ra, nca + ncb, false);
+
+		out.allocateBlock();
+
+		// default case for b and all cases for a.
+		for(int r = 0; r < ra + 1; r++) {
+			for(int c = 0; c < nca; c++)
+				out.quickSetValue(r, c, ma.quickGetValue(r, c));
+			for(int c = 0; c < ncb; c++)
+				out.quickSetValue(r, c + nca, tub[c]);
+		}
+
+		return new MatrixBlockDictionary(out);
+
+	}
+
+	public static ADictionary combineConstSparseSparseRet(double[] tua, ADictionary b, int ncb) {
+		final int nca = tua.length;
+		final int rb = b.getNumberOfValues(ncb);
+
+		MatrixBlock mb = b.getMBDict(ncb).getMatrixBlock();
+
+		MatrixBlock out = new MatrixBlock(rb, nca + ncb, false);
+
+		out.allocateBlock();
+
+		// default case for b and all cases for a.
+		for(int r = 0; r < rb; r++) {
+			for(int c = 0; c < nca; c++)
+				out.quickSetValue(r, c, tua[c]);
+			for(int c = 0; c < ncb; c++)
+				out.quickSetValue(r, c + nca, mb.quickGetValue(r, c));
+		}
+
+		return new MatrixBlockDictionary(out);
+
 	}
 }

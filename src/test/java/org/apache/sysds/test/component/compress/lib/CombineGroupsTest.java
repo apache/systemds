@@ -62,11 +62,13 @@ public class CombineGroupsTest {
 			int[] nCols = new int[] {1, 2, 5};
 			for(int nCol : nCols) {
 
-				MatrixBlock a = TestUtils.generateTestMatrixBlock(100, nCol, 100, 103, 0.5, 230);
+				MatrixBlock a = TestUtils.generateTestMatrixBlock(100, 1, 100, 103, 0.5, 230);
 				a = TestUtils.ceil(a);
+				a = cbindN(a, nCol);
 				CompressedMatrixBlock ac = com(a);
-				MatrixBlock b = TestUtils.generateTestMatrixBlock(100, nCol, 13, 15, 0.5, 132);
+				MatrixBlock b = TestUtils.generateTestMatrixBlock(100, 1, 13, 15, 0.5, 132);
 				b = TestUtils.ceil(b);
+				b = cbindN(b, nCol);
 				CompressedMatrixBlock bc = com(b);
 				CompressedMatrixBlock buc = ucom(b); // uncompressed col group
 				MatrixBlock c = new MatrixBlock(100, nCol, 1.34);
@@ -74,7 +76,8 @@ public class CombineGroupsTest {
 				MatrixBlock e = new MatrixBlock(100, nCol, 0);
 				CompressedMatrixBlock ec = com(e); // empty
 
-				MatrixBlock u = TestUtils.generateTestMatrixBlock(100, nCol, 0, 1, 1.0, 2315);
+				MatrixBlock u = TestUtils.generateTestMatrixBlock(100, 1, 0, 1, 1.0, 2315);
+				u = cbindN(u, nCol);
 				CompressedMatrixBlock uuc = ucom(u);
 
 				// Default DDC case
@@ -97,12 +100,14 @@ public class CombineGroupsTest {
 				tests.add(new Object[] {u, a, uuc, ac});
 				tests.add(new Object[] {u, u, uuc, uuc}); // both sides incompressable
 
-				MatrixBlock s = TestUtils.generateTestMatrixBlock(100, nCol, 1, 3, 0.05, 123);
+				MatrixBlock s = TestUtils.generateTestMatrixBlock(100, 1, 1, 3, 0.10, 123);
 				s = TestUtils.ceil(s);
+				s = cbindN(s, nCol);
 				CompressedMatrixBlock sc = com(s); // SDCZeroSingle
 
-				MatrixBlock s2 = TestUtils.generateTestMatrixBlock(100, nCol, 0, 3, 0.2, 321);
+				MatrixBlock s2 = TestUtils.generateTestMatrixBlock(100, 1, 0, 3, 0.2, 321);
 				s2 = TestUtils.ceil(s2);
+				s2 = cbindN(s2, nCol);
 				CompressedMatrixBlock s2c = com(s2); // SDCZero
 
 				// SDC cases
@@ -230,7 +235,7 @@ public class CombineGroupsTest {
 			List<AColGroup> groups = ccc.getColGroups();
 			if(groups.size() > 1) {
 
-				AColGroup cg = CLALibCombineGroups.combine(groups.get(1), groups.get(2));
+				AColGroup cg = CLALibCombineGroups.combine(groups.get(0), groups.get(2));
 				ccc.allocateColGroup(cg);
 				TestUtils.compareMatricesBitAvgDistance(c, ccc, 0, 0, "Not the same combined");
 			}
@@ -255,7 +260,7 @@ public class CombineGroupsTest {
 			List<AColGroup> groups = ccc.getColGroups();
 			if(groups.size() > 1) {
 
-				AColGroup cg = CLALibCombineGroups.combine(groups.get(1), groups.get(2));
+				AColGroup cg = CLALibCombineGroups.combine(groups.get(0), groups.get(1));
 				ccc.allocateColGroup(cg);
 				TestUtils.compareMatricesBitAvgDistance(c, ccc, 0, 0, "Not the same combined");
 			}
@@ -269,7 +274,32 @@ public class CombineGroupsTest {
 
 	@Test
 	public void combineMixingColumnIndexes(){
+		
+		try {
 
+			// combined.
+			MatrixBlock c = a.append(b);
+			CompressedMatrixBlock cc = appendNoMerge(ac, bc);
+			
+			TestUtils.compareMatricesBitAvgDistance(c, cc, 0, 0, "Not the same verification");
+			CompressedMatrixBlock ccc = (CompressedMatrixBlock) cc;
+			List<AColGroup> groups = ccc.getColGroups();
+			LOG.error(groups.size());
+			if(groups.size() >  2)
+				LOG.error(groups);
+			if(groups.size() > 1) {
+
+				AColGroup cg = CLALibCombineGroups.combine(groups.get(0), groups.get(1));
+				ccc.allocateColGroup(cg);
+				TestUtils.compareMatricesBitAvgDistance(c, ccc, 0, 0, "Not the same combined");
+			}
+			// LOG.error("\n" + groups + " \n\n" + ccc);
+			
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
 	}
 
 	private static CompressedMatrixBlock appendNoMerge(CompressedMatrixBlock a, CompressedMatrixBlock b) {
@@ -292,5 +322,13 @@ public class CombineGroupsTest {
 		for(AColGroup group : right)
 			ret.getColGroups().add(group.shiftColIndices(leftNumCols));
 
+	}
+
+	private static MatrixBlock cbindN(MatrixBlock a , int n){
+		MatrixBlock b = a;
+		for(int i = 1; i < n ; i++){
+			b = b.append(a);
+		}
+		return b;
 	}
 }

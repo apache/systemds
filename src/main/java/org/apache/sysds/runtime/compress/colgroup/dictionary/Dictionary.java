@@ -26,7 +26,6 @@ import java.math.BigDecimal;
 import java.math.MathContext;
 import java.util.Arrays;
 
-import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
@@ -1102,6 +1101,9 @@ public class Dictionary extends ADictionary {
 
 	@Override
 	public ADictionary cbind(ADictionary that, int nCol){
-		throw new NotImplementedException();
+		int nRowThat = that.getNumberOfValues(nCol);
+		int nColThis = _values.length / nRowThat;
+		MatrixBlockDictionary mbd = getMBDict(nColThis);
+		return mbd.cbind(that, nCol);
 	}
 }

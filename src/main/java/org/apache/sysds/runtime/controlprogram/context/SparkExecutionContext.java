@@ -1695,9 +1695,12 @@ public class SparkExecutionContext extends ExecutionContext
 		return jsc.sc().getPersistentRDDs().contains(rddID);
 	}
 
-	public boolean isRDDCached( int rddID ) {
+	public static boolean isRDDCached( int rddID ) {
+		if (!isSparkContextCreated())
+			return false;
+
+		JavaSparkContext jsc = _spctx;
 		//check that rdd is marked for caching
-		JavaSparkContext jsc = getSparkContext();
 		if( !jsc.sc().getPersistentRDDs().contains(rddID) ) {
 			return false;
 		}
@@ -1708,6 +1711,31 @@ public class SparkExecutionContext extends ExecutionContext
 				return info.isCached();
 		}
 		return false;
+	}
+
+	public static long getMemCachedRDDSize(int rddID) {
+		if (!isSparkContextCreated())
+			return 0;
+
+		JavaSparkContext jsc = _spctx;
+		//check that rdd is marked for caching
+		if( !jsc.sc().getPersistentRDDs().contains(rddID) )
+			return 0;
+
+		for (RDDInfo info : jsc.sc().getRDDStorageInfo()) {
+			if (info.id() == rddID && info.isCached())
+				return info.memSize(); //total size summing all executors
+		}
+		return 0;
+	}
+
+	public static long getStorageSpaceUsed() {
+		//return the sum of the sizes of the cached RDDs in all executors
+		if (!isSparkContextCreated())
+			return 0;
+
+		JavaSparkContext jsc = _spctx;
+		return Arrays.stream(jsc.sc().getRDDStorageInfo()).mapToLong(RDDInfo::memSize).sum();
 	}
 
 	///////////////////////////////////////////

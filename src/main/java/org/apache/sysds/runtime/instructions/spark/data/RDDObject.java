@@ -40,6 +40,10 @@ public class RDDObject extends LineageObject
 	public JavaPairRDD<?,?> getRDD() {
 		return _rddHandle;
 	}
+
+	public void setRDD(JavaPairRDD<?,?> rddHandle) {
+		_rddHandle = rddHandle;
+	}
 	
 	public void setCheckpointRDD( boolean flag ) {
 		_checkpointed = flag;

@@ -52,6 +52,8 @@ public class LineageCacheStatistics {
 	private static final LongAdder _numHitsRdd      = new LongAdder();
 	private static final LongAdder _numHitsSparkActions = new LongAdder();
 	private static final LongAdder _numHitsRddPersist   = new LongAdder();
+	private static final LongAdder _numRddPersist   = new LongAdder();
+	private static final LongAdder _numRddUnpersist   = new LongAdder();
 
 	public static void reset() {
 		_numHitsMem.reset();
@@ -77,6 +79,8 @@ public class LineageCacheStatistics {
 		_numHitsRdd.reset();
 		_numHitsSparkActions.reset();
 		_numHitsRddPersist.reset();
+		_numRddPersist.reset();
+		_numRddUnpersist.reset();
 	}
 	
 	public static void incrementMemHits() {
@@ -241,6 +245,16 @@ public class LineageCacheStatistics {
 		_numHitsRddPersist.increment();
 	}
 
+	public static void incrementRDDPersists() {
+		// Number of RDDs marked for persistence
+		_numRddPersist.increment();
+	}
+
+	public static void incrementRDDUnpersists() {
+		// Number of RDDs unpersisted due the due to memory pressure
+		_numRddUnpersist.increment();
+	}
+
 	public static String displayHits() {
 		StringBuilder sb = new StringBuilder();
 		sb.append(_numHitsMem.longValue());
@@ -316,7 +330,13 @@ public class LineageCacheStatistics {
 		return sb.toString();
 	}
 
-	public static String displaySparkStats() {
+	public static boolean ifGpuStats() {
+		return (_numHitsGpu.longValue() + _numAsyncEvictGpu.longValue()
+			+ _numSyncEvictGpu.longValue() + _numRecycleGpu.longValue()
+			+ _numDelGpu.longValue() + _evtimeGpu.longValue()) != 0;
+	}
+
+	public static String displaySparkHits() {
 		StringBuilder sb = new StringBuilder();
 		sb.append(_numHitsSparkActions.longValue());
 		sb.append("/");
@@ -324,5 +344,18 @@ public class LineageCacheStatistics {
 		sb.append("/");
 		sb.append(_numHitsRddPersist.longValue());
 		return sb.toString();
+	}
+
+	public static String displaySparkPersist() {
+		StringBuilder sb = new StringBuilder();
+		sb.append(_numRddPersist.longValue());
+		sb.append("/");
+		sb.append(_numRddUnpersist.longValue());
+		return sb.toString();
+	}
+
+	public static boolean ifSparkStats() {
+		return (_numHitsSparkActions.longValue() + _numHitsRdd.longValue()
+		+ _numHitsRddPersist.longValue() + _numRddUnpersist.longValue()) != 0;
 	}
 }

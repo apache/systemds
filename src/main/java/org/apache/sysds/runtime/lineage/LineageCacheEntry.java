@@ -24,6 +24,7 @@ import java.util.Map;
 import jcuda.Pointer;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
 import org.apache.sysds.runtime.instructions.spark.data.RDDObject;
 import org.apache.sysds.runtime.lineage.LineageCacheConfig.LineageCacheStatus;
@@ -160,6 +161,9 @@ public class LineageCacheEntry {
 			size += _SOval.getSize();
 		if (_gpuPointer != null)
 			size += _gpuPointer.getPointerSize();
+		if (_rddObject != null)
+			//Return total cached size in the executors
+			size += SparkExecutionContext.getMemCachedRDDSize(_rddObject.getRDD().id());
 		return size;
 	}
 	
@@ -173,6 +177,10 @@ public class LineageCacheEntry {
 
 	public boolean isScalarValue() {
 		return _dt.isScalar() && _rddObject == null && _gpuPointer == null;
+	}
+
+	public boolean isLocalObject() {
+		return isMatrixValue() || isScalarValue();
 	}
 
 	public boolean isRDDPersist() {
@@ -226,7 +234,8 @@ public class LineageCacheEntry {
 	public synchronized void setRDDValue(RDDObject rdd, long computetime) {
 		_rddObject = rdd;
 		_computeTime = computetime;
-		_status = isNullVal() ? LineageCacheStatus.EMPTY : LineageCacheStatus.CACHED;
+		//_status = isNullVal() ? LineageCacheStatus.EMPTY : LineageCacheStatus.CACHED;
+		_status = isNullVal() ? LineageCacheStatus.EMPTY : LineageCacheStatus.TOPERSISTRDD;
 		//resume all threads waiting for val
 		notifyAll();
 	}
@@ -292,18 +301,41 @@ public class LineageCacheEntry {
 
 		// Update score to emulate computeTime scaling by #misses
 		if (removeList.containsKey(_key) && LineageCacheConfig.isCostNsize()) {
-			//score = score * (1 + removeList.get(_key));
 			double w1 = LineageCacheConfig.WEIGHTS[0];
 			int missCount = 1 + removeList.get(_key);
-			score = score + (w1*(((double)_computeTime)/getSize()) * missCount);
+			long size = getSize();
+			if (isLocalObject())
+				score = score + (w1*(((double)_computeTime)/getSize()) * missCount);
 		}
 	}
-	
-	protected synchronized void updateScore() {
-		// Update score to emulate computeTime scaling by cache hit
-		//score *= 2;
+
+	protected synchronized void initiateScoreSpark(Map<LineageItem, Integer> removeList, long estimatedSize) {
+		// Set timestamp
+		_timestamp =  System.currentTimeMillis() - LineageCacheEviction.getStartTimestamp();
+		if (_timestamp < 0)
+			throw new DMLRuntimeException ("Execution timestamp shouldn't be -ve. Key: "+_key);
+
+		// Gather the weights for scoring components
 		double w1 = LineageCacheConfig.WEIGHTS[0];
-		score = score + w1*(((double)_computeTime)/getSize());
+		double w2 = LineageCacheConfig.WEIGHTS[1];
+		double w3 = LineageCacheConfig.WEIGHTS[2];
+		// Generate initial score
+		int computeGroup = LineageCacheConfig.getComputeGroup(_key.getOpcode());
+		int refCount = Math.max(_rddObject.getMaxReferenceCount(), 1);
+		score = w1*(((double)computeGroup*refCount)/estimatedSize) + w2*getTimestamp() + w3*(((double)1)/getDagHeight());
+	}
+	
+	protected synchronized void updateScore(boolean add) {
+		// Update score to emulate computeTime scaling by cache hit
+		double w1 = LineageCacheConfig.WEIGHTS[0];
+		long size = getSize();
+		int sign = add ? 1: -1;
+		 if(isLocalObject())
+			 score = score + sign * w1 * (((double) _computeTime) / size);
+		 if(isRDDPersist() && size != 0) {  //size == 0 means not persisted yet
+			 int computeGroup = LineageCacheConfig.getComputeGroup(_key.getOpcode());
+			 score = score + sign * w1 * (((double) computeGroup) / size);
+		 }
 	}
 	
 	protected synchronized long getTimestamp() {
@@ -324,7 +356,14 @@ public class LineageCacheEntry {
 		double w2 = LineageCacheConfig.WEIGHTS[1];
 		double w3 = LineageCacheConfig.WEIGHTS[2];
 		// Generate scores
-		score = w1*(((double)_computeTime)/getSize()) + w2*getTimestamp() + w3*(((double)1)/getDagHeight());
+		long size = getSize();
+		if (isLocalObject())
+			score = w1*(((double)_computeTime)/size) + w2*getTimestamp() + w3*(((double)1)/getDagHeight());
+		if (isRDDPersist() && size != 0) {  //size == 0 means not persisted yet
+			int computeGroup = LineageCacheConfig.getComputeGroup(_key.getOpcode());
+			int refCount = Math.max(_rddObject.getMaxReferenceCount(), 1);
+			score = w1*(((double)computeGroup*refCount)/size) + w2*getTimestamp() + w3*(((double)1)/getDagHeight());
+		}
 	}
 
 	static class GPUPointer {

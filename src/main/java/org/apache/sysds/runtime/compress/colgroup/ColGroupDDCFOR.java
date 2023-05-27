@@ -477,6 +477,11 @@ public class ColGroupDDCFOR extends AMorphingMMColGroup {
 	}
 
 	@Override
+	public boolean sameIndexStructure(AColGroupCompressed that) {
+		return that instanceof ColGroupDDCFOR && ((ColGroupDDCFOR) that)._data == _data;
+	}
+
+	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		sb.append(super.toString());

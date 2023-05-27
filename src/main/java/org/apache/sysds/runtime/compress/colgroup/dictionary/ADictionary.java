@@ -836,7 +836,8 @@ public abstract class ADictionary implements Serializable {
 	 * @param colsRight Offset cols on the right
 	 * @param result    The output matrix block
 	 */
-	protected abstract void TSMMToUpperTriangle(ADictionary right, IColIndex rowsLeft, IColIndex colsRight, MatrixBlock result);
+	protected abstract void TSMMToUpperTriangle(ADictionary right, IColIndex rowsLeft, IColIndex colsRight,
+		MatrixBlock result);
 
 	/**
 	 * Matrix multiplication but allocate output in upper triangle and twice if on diagonal, note this is right
@@ -846,7 +847,8 @@ public abstract class ADictionary implements Serializable {
 	 * @param colsRight Offset cols on the right
 	 * @param result    The output matrix block
 	 */
-	protected abstract void TSMMToUpperTriangleDense(double[] left, IColIndex rowsLeft, IColIndex colsRight, MatrixBlock result);
+	protected abstract void TSMMToUpperTriangleDense(double[] left, IColIndex rowsLeft, IColIndex colsRight,
+		MatrixBlock result);
 
 	/**
 	 * Matrix multiplication but allocate output in upper triangle and twice if on diagonal, note this is right
@@ -868,8 +870,8 @@ public abstract class ADictionary implements Serializable {
 	 * @param scale     Scale factor
 	 * @param result    The output matrix block
 	 */
-	protected abstract void TSMMToUpperTriangleScaling(ADictionary right, IColIndex rowsLeft, IColIndex colsRight, int[] scale,
-		MatrixBlock result);
+	protected abstract void TSMMToUpperTriangleScaling(ADictionary right, IColIndex rowsLeft, IColIndex colsRight,
+		int[] scale, MatrixBlock result);
 
 	/**
 	 * Matrix multiplication but allocate output in upper triangle and twice if on diagonal, note this is right
@@ -880,8 +882,8 @@ public abstract class ADictionary implements Serializable {
 	 * @param scale     Scale factor
 	 * @param result    The output matrix block
 	 */
-	protected abstract void TSMMToUpperTriangleDenseScaling(double[] left, IColIndex rowsLeft, IColIndex colsRight, int[] scale,
-		MatrixBlock result);
+	protected abstract void TSMMToUpperTriangleDenseScaling(double[] left, IColIndex rowsLeft, IColIndex colsRight,
+		int[] scale, MatrixBlock result);
 
 	/**
 	 * Matrix multiplication but allocate output in upper triangle and twice if on diagonal, note this is right
@@ -895,6 +897,15 @@ public abstract class ADictionary implements Serializable {
 	protected abstract void TSMMToUpperTriangleSparseScaling(SparseBlock left, IColIndex rowsLeft, IColIndex colsRight,
 		int[] scale, MatrixBlock result);
 
+	/**
+	 * Cbind this dictionary with that dictionary
+	 * 
+	 * @param that the right hand side dictionary to cbind
+	 * @param nCol the right hand side number of columns
+	 * @return The combined dictionary
+	 */
+	public abstract ADictionary cbind(ADictionary that, int nCol);
+
 	protected static String doubleToString(double v) {
 		if(v == (long) v)
 			return Long.toString(((long) v));
@@ -905,7 +916,7 @@ public abstract class ADictionary implements Serializable {
 	protected static void correctNan(double[] res, IColIndex colIndexes) {
 		// since there is no nan values every in a dictionary, we exploit that
 		// nan oly occur if we multiplied infinity with 0.
-		for(int j = 0; j < colIndexes.size(); j++){
+		for(int j = 0; j < colIndexes.size(); j++) {
 			final int cix = colIndexes.get(j);
 			res[cix] = Double.isNaN(res[cix]) ? 0 : res[cix];
 		}

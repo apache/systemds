@@ -367,4 +367,9 @@ public class ColGroupEmpty extends AColGroupCompressed implements IContainADicti
 	public double[] getDefaultTuple() {
 		return new double[getNumCols()];
 	}
+
+	@Override
+	public boolean sameIndexStructure(AColGroupCompressed that) {
+		return that instanceof ColGroupEmpty || that instanceof ColGroupConst;
+	}
 }

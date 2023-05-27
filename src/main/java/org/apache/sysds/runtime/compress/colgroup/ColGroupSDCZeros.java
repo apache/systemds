@@ -604,6 +604,10 @@ public class ColGroupSDCZeros extends ASDCZero implements IMapToDataGroup {
 			ColGroupSDCZeros th = (ColGroupSDCZeros) that;
 			return th._indexes == _indexes && th._data == _data;
 		}
+		else if(that instanceof ColGroupSDC){
+			ColGroupSDC th = (ColGroupSDC) that;
+			return th._indexes == _indexes && th._data == _data;
+		}
 		else
 			return false;
 	}

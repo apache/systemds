@@ -503,8 +503,18 @@ public class ColGroupSDCFOR extends ASDC implements IMapToDataGroup {
 	}
 
 	@Override
-	public IEncode getEncoding(){
+	public IEncode getEncoding() {
 		return EncodingFactory.create(_data, _indexes, _numRows);
+	}
+
+	@Override
+	public boolean sameIndexStructure(AColGroupCompressed that) {
+		if(that instanceof ColGroupSDCFOR) {
+			ColGroupSDCFOR th = (ColGroupSDCFOR) that;
+			return th._indexes == _indexes && th._data == _data;
+		}
+		else
+			return false;
 	}
 
 	@Override

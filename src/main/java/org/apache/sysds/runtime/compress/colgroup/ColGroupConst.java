@@ -47,7 +47,7 @@ import org.apache.sysds.runtime.matrix.operators.CMOperator;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
 import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
 
-public class ColGroupConst extends ADictBasedColGroup implements IContainDefaultTuple{
+public class ColGroupConst extends ADictBasedColGroup implements IContainDefaultTuple {
 
 	private static final long serialVersionUID = -7387793538322386611L;
 
@@ -585,17 +585,22 @@ public class ColGroupConst extends ADictBasedColGroup implements IContainDefault
 	}
 
 	@Override
+	public boolean sameIndexStructure(AColGroupCompressed that) {
+		return that instanceof ColGroupEmpty || that instanceof ColGroupConst;
+	}
+
+	@Override
+	public double[] getDefaultTuple() {
+		return _dict.getValues();
+	}
+
+	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		sb.append(super.toString());
 		sb.append(String.format("\n%15s", "Values: " + _dict.getClass().getSimpleName()));
 		sb.append(_dict.getString(_colIndexes.size()));
 		return sb.toString();
-	}
-
-	@Override
-	public double[] getDefaultTuple() {
-		return _dict.getValues();
 	}
 
 }

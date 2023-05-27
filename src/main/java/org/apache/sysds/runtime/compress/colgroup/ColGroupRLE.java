@@ -886,7 +886,7 @@ public class ColGroupRLE extends AColGroupOffset {
 	}
 
 	@Override
-	protected boolean sameIndexStructure(AColGroupCompressed that) {
+	public boolean sameIndexStructure(AColGroupCompressed that) {
 		if(that.getCompType() == this.getCompType()) {
 			final ColGroupRLE rle = (ColGroupRLE) that;
 			return rle._ptr == this._ptr && rle._data == this._data;

@@ -621,7 +621,7 @@ public class ColGroupOLE extends AColGroupOffset {
 	}
 
 	@Override
-	protected boolean sameIndexStructure(AColGroupCompressed that) {
+	public boolean sameIndexStructure(AColGroupCompressed that) {
 		throw new NotImplementedException();
 	}
 

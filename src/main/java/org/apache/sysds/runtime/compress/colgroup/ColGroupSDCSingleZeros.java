@@ -590,6 +590,10 @@ public class ColGroupSDCSingleZeros extends ASDCZero {
 			ColGroupSDCSingleZeros th = (ColGroupSDCSingleZeros) that;
 			return th._indexes == _indexes;
 		}
+		else if(that instanceof ColGroupSDCSingle) {
+			ColGroupSDCSingle th = (ColGroupSDCSingle) that;
+			return th._indexes == _indexes;
+		}
 		else
 			return false;
 	}

@@ -59,65 +59,67 @@ public class CombineGroupsTest {
 		List<Object[]> tests = new ArrayList<>();
 
 		try {
-			MatrixBlock a = TestUtils.generateTestMatrixBlock(100, 1, 100, 103, 0.5, 230);
-			a = TestUtils.ceil(a);
-			CompressedMatrixBlock ac = com(a);
-			MatrixBlock b = TestUtils.generateTestMatrixBlock(100, 1, 13, 15, 0.5, 132);
-			b = TestUtils.ceil(b);
-			CompressedMatrixBlock bc = com(b);
-			CompressedMatrixBlock buc = ucom(b); // uncompressed col group
-			MatrixBlock c = new MatrixBlock(100, 1, 1.34);
-			CompressedMatrixBlock cc = com(c); // const
-			MatrixBlock e = new MatrixBlock(100, 1, 0);
-			CompressedMatrixBlock ec = com(e); // empty
+			int[] nCols = new int[] {1, 2, 5};
+			for(int nCol : nCols) {
 
-			
-			MatrixBlock u = TestUtils.generateTestMatrixBlock(100, 1, 0, 1, 1.0, 2315);
-			CompressedMatrixBlock uuc = ucom(u);
+				MatrixBlock a = TestUtils.generateTestMatrixBlock(100, nCol, 100, 103, 0.5, 230);
+				a = TestUtils.ceil(a);
+				CompressedMatrixBlock ac = com(a);
+				MatrixBlock b = TestUtils.generateTestMatrixBlock(100, nCol, 13, 15, 0.5, 132);
+				b = TestUtils.ceil(b);
+				CompressedMatrixBlock bc = com(b);
+				CompressedMatrixBlock buc = ucom(b); // uncompressed col group
+				MatrixBlock c = new MatrixBlock(100, nCol, 1.34);
+				CompressedMatrixBlock cc = com(c); // const
+				MatrixBlock e = new MatrixBlock(100, nCol, 0);
+				CompressedMatrixBlock ec = com(e); // empty
 
-			// Default DDC case
-			tests.add(new Object[] {a, b, ac, bc});
+				MatrixBlock u = TestUtils.generateTestMatrixBlock(100, nCol, 0, 1, 1.0, 2315);
+				CompressedMatrixBlock uuc = ucom(u);
 
-			// Empty and Const cases.
-			tests.add(new Object[] {a, c, ac, cc}); // const ddc
-			tests.add(new Object[] {c, a, cc, ac});
-			tests.add(new Object[] {a, e, ac, ec}); // empty ddc
-			tests.add(new Object[] {e, a, ec, ac});
-			tests.add(new Object[] {c, e, cc, ec}); // empty const
-			tests.add(new Object[] {e, c, ec, cc});
-			tests.add(new Object[] {e, e, ec, ec}); // empty empty
-			tests.add(new Object[] {c, c, cc, cc}); // const const
+				// Default DDC case
+				tests.add(new Object[] {a, b, ac, bc});
 
-			// Uncompressed Case
-			tests.add(new Object[] {a, b, ac, buc}); // compressable uncompressed group
-			tests.add(new Object[] {b, a, buc, ac});
-			tests.add(new Object[] {a, u, ac, uuc}); // incompressable input
-			tests.add(new Object[] {u, a, uuc, ac});
-			tests.add(new Object[] {u, u, uuc, uuc}); // both sides incompressable
+				// Empty and Const cases.
+				tests.add(new Object[] {a, c, ac, cc}); // const ddc
+				tests.add(new Object[] {c, a, cc, ac});
+				tests.add(new Object[] {a, e, ac, ec}); // empty ddc
+				tests.add(new Object[] {e, a, ec, ac});
+				tests.add(new Object[] {c, e, cc, ec}); // empty const
+				tests.add(new Object[] {e, c, ec, cc});
+				tests.add(new Object[] {e, e, ec, ec}); // empty empty
+				tests.add(new Object[] {c, c, cc, cc}); // const const
 
-			
-			MatrixBlock s = TestUtils.generateTestMatrixBlock(100, 1, 1, 3, 0.05, 123);
-			s = TestUtils.ceil(s);
-			CompressedMatrixBlock sc = com(s); // SDCZeroSingle
+				// Uncompressed Case
+				tests.add(new Object[] {a, b, ac, buc}); // compressable uncompressed group
+				tests.add(new Object[] {b, a, buc, ac});
+				tests.add(new Object[] {a, u, ac, uuc}); // incompressable input
+				tests.add(new Object[] {u, a, uuc, ac});
+				tests.add(new Object[] {u, u, uuc, uuc}); // both sides incompressable
 
-			MatrixBlock s2 = TestUtils.generateTestMatrixBlock(100, 1, 0, 3, 0.2, 321);
-			s2 = TestUtils.ceil(s2);
-			CompressedMatrixBlock s2c = com(s2); // SDCZero
+				MatrixBlock s = TestUtils.generateTestMatrixBlock(100, nCol, 1, 3, 0.05, 123);
+				s = TestUtils.ceil(s);
+				CompressedMatrixBlock sc = com(s); // SDCZeroSingle
 
-			// SDC cases
-			tests.add(new Object[] {s, a, sc, ac});
-			tests.add(new Object[] {a, s, ac, sc});
-			tests.add(new Object[] {s2, a, s2c, ac});
-			tests.add(new Object[] {a, s2, ac, s2c});
+				MatrixBlock s2 = TestUtils.generateTestMatrixBlock(100, nCol, 0, 3, 0.2, 321);
+				s2 = TestUtils.ceil(s2);
+				CompressedMatrixBlock s2c = com(s2); // SDCZero
 
-			tests.add(new Object[] {s, s, sc, sc});
-			tests.add(new Object[] {s, s2, sc, s2c});
+				// SDC cases
+				tests.add(new Object[] {s, a, sc, ac});
+				tests.add(new Object[] {a, s, ac, sc});
+				tests.add(new Object[] {s2, a, s2c, ac});
+				tests.add(new Object[] {a, s2, ac, s2c});
 
-			// empty and const SDC
-			tests.add(new Object[] {s, e, sc, ec});
-			tests.add(new Object[] {s, c, sc, cc});
-			tests.add(new Object[] {e, s, ec, sc});
-			tests.add(new Object[] {c, s, cc, sc});
+				tests.add(new Object[] {s, s, sc, sc});
+				tests.add(new Object[] {s, s2, sc, s2c});
+
+				// empty and const SDC
+				tests.add(new Object[] {s, e, sc, ec});
+				tests.add(new Object[] {s, c, sc, cc});
+				tests.add(new Object[] {e, s, ec, sc});
+				tests.add(new Object[] {c, s, cc, sc});
+			}
 
 		}
 		catch(Exception e) {
@@ -163,7 +165,7 @@ public class CombineGroupsTest {
 	}
 
 	@Test
-	public void combineWithExtraColumnBefore() {
+	public void combineWithExtraEmptyColumnsBefore() {
 		try {
 			MatrixBlock e = new MatrixBlock(a.getNumRows(), 2, true);
 			// combined.
@@ -186,6 +188,88 @@ public class CombineGroupsTest {
 			e.printStackTrace();
 			fail(e.getMessage());
 		}
+	}
+
+	@Test
+	public void combineWithExtraConstColumnsBefore() {
+		try {
+			MatrixBlock e = new MatrixBlock(a.getNumRows(), 2, 1.0);
+			// combined.
+			MatrixBlock c = e.append(a).append(b);
+			CompressedMatrixBlock ec = CompressedMatrixBlockFactory.createConstant(a.getNumRows(), 2, 1.0);
+			CompressedMatrixBlock cc = appendNoMerge(ec, appendNoMerge(ac, bc));
+
+			TestUtils.compareMatricesBitAvgDistance(c, cc, 0, 0, "Not the same verification");
+			CompressedMatrixBlock ccc = (CompressedMatrixBlock) cc;
+			List<AColGroup> groups = ccc.getColGroups();
+			if(groups.size() > 1) {
+
+				AColGroup cg = CLALibCombineGroups.combine(groups.get(1), groups.get(2));
+				ccc.allocateColGroup(cg);
+				TestUtils.compareMatricesBitAvgDistance(c, ccc, 0, 0, "Not the same combined");
+			}
+
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
+	}
+
+	@Test
+	public void combineWithExtraConstColumnsBetween() {
+		try {
+			MatrixBlock e = new MatrixBlock(a.getNumRows(), 2, 1.0);
+			// combined.
+			MatrixBlock c = a.append(e).append(b);
+			CompressedMatrixBlock ec = CompressedMatrixBlockFactory.createConstant(a.getNumRows(), 2, 1.0);
+			CompressedMatrixBlock cc = appendNoMerge(ac, appendNoMerge(ec, bc));
+
+			TestUtils.compareMatricesBitAvgDistance(c, cc, 0, 0, "Not the same verification");
+			CompressedMatrixBlock ccc = (CompressedMatrixBlock) cc;
+			List<AColGroup> groups = ccc.getColGroups();
+			if(groups.size() > 1) {
+
+				AColGroup cg = CLALibCombineGroups.combine(groups.get(1), groups.get(2));
+				ccc.allocateColGroup(cg);
+				TestUtils.compareMatricesBitAvgDistance(c, ccc, 0, 0, "Not the same combined");
+			}
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
+	}
+
+	@Test
+	public void combineWithExtraConstColumnsAfter() {
+		try {
+			MatrixBlock e = new MatrixBlock(a.getNumRows(), 2, 1.0);
+			// combined.
+			MatrixBlock c = a.append(b).append(e);
+			CompressedMatrixBlock ec = CompressedMatrixBlockFactory.createConstant(a.getNumRows(), 2, 1.0);
+			CompressedMatrixBlock cc = appendNoMerge(ac, appendNoMerge(bc, ec));
+
+			TestUtils.compareMatricesBitAvgDistance(c, cc, 0, 0, "Not the same verification");
+			CompressedMatrixBlock ccc = (CompressedMatrixBlock) cc;
+			List<AColGroup> groups = ccc.getColGroups();
+			if(groups.size() > 1) {
+
+				AColGroup cg = CLALibCombineGroups.combine(groups.get(1), groups.get(2));
+				ccc.allocateColGroup(cg);
+				TestUtils.compareMatricesBitAvgDistance(c, ccc, 0, 0, "Not the same combined");
+			}
+
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
+	}
+
+	@Test
+	public void combineMixingColumnIndexes(){
+
 	}
 
 	private static CompressedMatrixBlock appendNoMerge(CompressedMatrixBlock a, CompressedMatrixBlock b) {

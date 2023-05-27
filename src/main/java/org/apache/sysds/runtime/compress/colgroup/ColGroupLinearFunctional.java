@@ -693,4 +693,8 @@ public class ColGroupLinearFunctional extends AColGroupCompressed {
 		throw new NotImplementedException("Not Implemented Compressed SizeInfo for Linear col group");
 	}
 
+	@Override
+	public boolean sameIndexStructure(AColGroupCompressed that) {
+		throw new NotImplementedException();
+	}
 }

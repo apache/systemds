@@ -32,7 +32,6 @@ import org.apache.sysds.runtime.compress.bitmap.Bitmap;
 import org.apache.sysds.runtime.compress.bitmap.MultiColBitmap;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType;
 import org.apache.sysds.runtime.compress.colgroup.AColGroupCompressed;
-import org.apache.sysds.runtime.compress.colgroup.ADictBasedColGroup;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupEmpty;
 import org.apache.sysds.runtime.compress.colgroup.IContainADictionary;
 import org.apache.sysds.runtime.compress.colgroup.IContainDefaultTuple;
@@ -289,15 +288,26 @@ public interface DictionaryFactory {
 		CompressionType bc = b.getCompType();
 
 		if(ac.isSDC()) {
+			ADictionary ad = ((IContainADictionary) a).getDictionary();
 			if(bc.isConst()) {
 				double[] bt = ((IContainDefaultTuple) b).getDefaultTuple();
-				return combineSparseConstSparseRet(((ADictBasedColGroup) a).getDictionary(), a.getNumCols(), bt);
+				return combineSparseConstSparseRet(ad, a.getNumCols(), bt);
+			}
+			else if(bc.isSDC()) {
+				ADictionary bd = ((IContainADictionary) b).getDictionary();
+				if(a.sameIndexStructure(b)) {
+					return ad.cbind(bd, b.getNumCols());
+				}
+
+				// real combine extract default and combine like dense but with default before.
+
 			}
 		}
 		else if(ac.isConst()) {
 			double[] at = ((IContainDefaultTuple) a).getDefaultTuple();
 			if(bc.isSDC()) {
-				return combineConstSparseSparseRet(at, ((ADictBasedColGroup) b).getDictionary(), b.getNumCols());
+				ADictionary bd = ((IContainADictionary) b).getDictionary();
+				return combineConstSparseSparseRet(at, bd, b.getNumCols());
 			}
 		}
 

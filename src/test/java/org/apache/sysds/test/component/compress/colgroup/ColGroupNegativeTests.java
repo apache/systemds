@@ -218,7 +218,7 @@ public class ColGroupNegativeTests {
 		}
 
 		@Override
-		protected boolean sameIndexStructure(AColGroupCompressed that) {
+		public boolean sameIndexStructure(AColGroupCompressed that) {
 			return false;
 		}
 
@@ -624,6 +624,12 @@ public class ColGroupNegativeTests {
 		public CompressedSizeInfoColGroup getCompressionInfo(int nRow) {
 			// TODO Auto-generated method stub
 			throw new UnsupportedOperationException("Unimplemented method 'getCompressionInfo'");
+		}
+
+		@Override
+		public boolean sameIndexStructure(AColGroupCompressed that) {
+			// TODO Auto-generated method stub
+			throw new UnsupportedOperationException("Unimplemented method 'sameIndexStructure'");
 		}
 	}
 }

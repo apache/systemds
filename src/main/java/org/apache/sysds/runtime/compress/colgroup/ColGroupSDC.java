@@ -645,6 +645,21 @@ public class ColGroupSDC extends ASDC implements IMapToDataGroup {
 		return EncodingFactory.create(_data, _indexes, _numRows);
 	}
 
+
+	@Override
+	public boolean sameIndexStructure(AColGroupCompressed that) {
+		if(that instanceof ColGroupSDCZeros) {
+			ColGroupSDCZeros th = (ColGroupSDCZeros) that;
+			return th._indexes == _indexes && th._data == _data;
+		}
+		else if(that instanceof ColGroupSDC){
+			ColGroupSDC th = (ColGroupSDC) that;
+			return th._indexes == _indexes && th._data == _data;
+		}
+		else
+			return false;
+	}
+
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();

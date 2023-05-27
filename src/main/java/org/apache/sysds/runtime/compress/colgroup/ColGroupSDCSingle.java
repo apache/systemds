@@ -609,6 +609,20 @@ public class ColGroupSDCSingle extends ASDC {
 	}
 
 	@Override
+	public boolean sameIndexStructure(AColGroupCompressed that) {
+		if(that instanceof ColGroupSDCSingleZeros) {
+			ColGroupSDCSingleZeros th = (ColGroupSDCSingleZeros) that;
+			return th._indexes == _indexes;
+		}
+		else if(that instanceof ColGroupSDCSingle) {
+			ColGroupSDCSingle th = (ColGroupSDCSingle) that;
+			return th._indexes == _indexes;
+		}
+		else
+			return false;
+	}
+
+	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		sb.append(super.toString());

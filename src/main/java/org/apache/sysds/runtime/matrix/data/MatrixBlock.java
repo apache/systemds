@@ -2564,6 +2564,10 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 			return estimateSizeDenseInMemory(nrows, ncols);
 	}
 
+	public static long estimateSizeInMemory(DataCharacteristics dc) {
+		return estimateSizeInMemory(dc.getRows(), dc.getCols(), dc.getSparsity());
+	}
+
 	public long estimateSizeDenseInMemory() {
 		return estimateSizeDenseInMemory(rlen, clen);
 	}

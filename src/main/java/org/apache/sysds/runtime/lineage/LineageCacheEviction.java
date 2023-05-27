@@ -90,7 +90,7 @@ public class LineageCacheEviction
 		// FIXME: avoid when called from partial reuse methods
 		if (LineageCacheConfig.isCostNsize()) {
 			if (weightedQueue.remove(entry)) {
-				entry.updateScore();
+				entry.updateScore(true);
 				weightedQueue.add(entry);
 			}
 		}

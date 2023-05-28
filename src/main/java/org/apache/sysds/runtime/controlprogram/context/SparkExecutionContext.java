@@ -1804,9 +1804,10 @@ public class SparkExecutionContext extends ExecutionContext
 	 */
 	public static class SparkClusterConfig
 	{
-		//broadcasts are stored in mem-and-disk in data space, this config
-		//defines the fraction of data space to be used as broadcast budget
-		private static final double BROADCAST_DATA_FRACTION = 0.35;
+		//broadcasts are stored in mem-and-disk in storage space, this config
+		//defines the fraction of min storage space to be used as broadcast budget
+		private static final double BROADCAST_DATA_FRACTION = 0.70;
+		private static final double BROADCAST_DATA_FRACTION_LEGACY = 0.35;
 
 		//forward private config from Spark's UnifiedMemoryManager.scala (>1.6)
 		private static final long RESERVED_SYSTEM_MEMORY_BYTES = 300 * 1024 * 1024;
@@ -1894,7 +1895,7 @@ public class SparkExecutionContext extends ExecutionContext
 			double dataFrac = sconf.getDouble("spark.storage.memoryFraction", 0.6); //default 60%
 			_memDataMinFrac = dataFrac;
 			_memDataMaxFrac = dataFrac;
-			_memBroadcastFrac = dataFrac * BROADCAST_DATA_FRACTION; //default 18%
+			_memBroadcastFrac = dataFrac * BROADCAST_DATA_FRACTION_LEGACY; //default 18%
 
 			//analyze spark degree of parallelism
 			analyzeSparkParallelismConfiguation(sconf);
@@ -1910,10 +1911,14 @@ public class SparkExecutionContext extends ExecutionContext
 					- RESERVED_SYSTEM_MEMORY_BYTES;
 
 			//get data and shuffle memory ratios (defaults not specified in job conf)
-			_memDataMinFrac = sconf.getDouble("spark.memory.storageFraction", 0.5); //default 50%
-			_memDataMaxFrac = sconf.getDouble("spark.memory.fraction", 0.6); //default 60%
-			_memBroadcastFrac = _memDataMaxFrac * BROADCAST_DATA_FRACTION; //default 21%
-			
+			//first get the unified memory fraction (60%) comprising execution and storage
+			double unifiedMem = sconf.getDouble("spark.memory.fraction", 0.6);
+			//minimum default storage expressed as 50% of unified memory (= 30% of heap)
+			_memDataMinFrac = unifiedMem * sconf.getDouble("spark.memory.storageFraction", 0.5);
+			//storage memory can expand and take up the full unified memory
+			_memDataMaxFrac = unifiedMem;
+			//Heuristic-based broadcast fraction (70% of min storage = 21% of heap)
+			_memBroadcastFrac = _memDataMinFrac * BROADCAST_DATA_FRACTION;
 			//analyze spark degree of parallelism
 			analyzeSparkParallelismConfiguation(sconf);
 		}

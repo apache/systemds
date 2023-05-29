@@ -31,7 +31,9 @@ jobs:
   on-success:
     runs-on: ubuntu-latest
     permissions:
+      # write permissions required for deleting artifacts
       actions: write
+    # only run after successful jobs since some tests require retries
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
     steps:
     - name: Checkout Repository

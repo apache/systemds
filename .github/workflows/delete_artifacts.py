@@ -157,4 +157,4 @@ if __name__ == "__main__":
             artifact_id=artifact_id,
             token=args.token,
         )
-        logging.info(f"{resp.status_code=}")
+        resp.raise_for_status()

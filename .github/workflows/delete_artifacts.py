@@ -24,6 +24,7 @@ import logging
 import math
 import os
 import requests
+import re
 
 logging.basicConfig(level=logging.INFO)
 
@@ -91,6 +92,13 @@ if __name__ == "__main__":
         default=os.getenv("GITHUB_RUN_ID"),
         help="Defaults to envvar 'GITHUB_RUN_ID'",
     )
+    parser.add_argument(
+        "-a",
+        "--artifact-name",
+        type=str,
+        default=".*",
+        help="Provide a regex to filter artifacts of a given name expression"
+    )
 
     args = parser.parse_args()
     if args.token is None:
@@ -127,7 +135,10 @@ if __name__ == "__main__":
                 token=args.token,
                 page=page, per_page=items_per_page,
             )
-            [artifact_ids.append(x.get("id")) for x in resp.json().get("artifacts")]
+            for artifact in resp.json().get("artifacts"):
+                name = artifact.get("name")
+                if re.fullmatch(args.artifact_name, name):
+                    artifact_ids.append(artifact.get("id"))
 
     for artifact_id in artifact_ids:
         delete_artifact(

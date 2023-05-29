@@ -1,0 +1,22 @@
+name: Cleanup transient artifacts
+
+on: 
+  workflow_run:
+    workflows: [Java Test]
+    types: 
+      - completed
+
+jobs:
+  on-success:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    steps:
+    - name: Delete Artifacts
+      run: |
+        pip install requests
+        python .github/workflows/delete_artifacts.py -t ${{ secrets.GITHUB_TOKEN }} -a "transient_.*"
+      env:
+        GITHUB_RUN_ID: ${{ github.event.workflow_run.workflow_id }}
+        GITHUB_REPOSITORY: ${{ vars.GITHUB_REPOSITORY }}
+
+

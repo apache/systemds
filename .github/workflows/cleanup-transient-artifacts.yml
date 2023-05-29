@@ -37,10 +37,12 @@ jobs:
 
     - name: Delete Artifacts
       run: |
-        pip install requests
-        python .github/workflows/delete_artifacts.py -t ${{ secrets.GITHUB_TOKEN }} -a "transient_.*"
+        python .github/workflows/delete_artifacts.py \
+          -t ${{ secrets.GITHUB_TOKEN }} \
+          -a "transient_.*" \
+          -r ${{ github.event.workflow_run.workflow_id }}
+
       env:
-        GITHUB_RUN_ID: ${{ github.event.workflow_run.workflow_id }}
         GITHUB_REPOSITORY: ${{ vars.GITHUB_REPOSITORY }}
 
 

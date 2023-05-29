@@ -108,7 +108,7 @@ if __name__ == "__main__":
         logging.info(f"--token: is set, continue")
     logging.info(f"--owner-repository: {args.owner_repo}")
     logging.info(f"--run-id: {args.run_id}")
-
+    logging.info(f"--artifact-name: {args.artifact_name}")
 
     page = 1
     items_per_page = 85
@@ -138,7 +138,10 @@ if __name__ == "__main__":
             for artifact in resp.json().get("artifacts"):
                 name = artifact.get("name")
                 if re.fullmatch(args.artifact_name, name):
+                    logging.info(f"fullmatch: {name} ")
                     artifact_ids.append(artifact.get("id"))
+                else:
+                    logging.info(f"no match: {name}")
 
     for artifact_id in artifact_ids:
         delete_artifact(

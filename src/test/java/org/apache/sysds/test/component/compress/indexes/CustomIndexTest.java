@@ -24,8 +24,10 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
+import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup;
 import org.apache.sysds.runtime.compress.colgroup.indexes.ArrayIndex;
 import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
@@ -721,5 +723,85 @@ public class CustomIndexTest {
 			IColIndex rl = ColIndexFactory.create(IndexesTest.randomInc(i, r.nextInt()));
 			assertEquals(ColIndexFactory.estimateMemoryCost(i, false), rl.estimateInMemorySize());
 		}
+	}
+
+	@Test(expected = DMLCompressionException.class)
+	public void rangeReordering() {
+		ColIndexFactory.create(0, 10).getReorderingIndex();
+	}
+
+	@Test(expected = DMLCompressionException.class)
+	public void rangeSort() {
+		ColIndexFactory.create(0, 10).sort();
+	}
+
+	@Test
+	public void rangeIsSorted() {
+		assertTrue(ColIndexFactory.create(0, 10).isSorted());
+	}
+
+	@Test(expected = DMLCompressionException.class)
+	public void oneReordering() {
+		ColIndexFactory.createI(0).getReorderingIndex();
+	}
+
+	@Test(expected = DMLCompressionException.class)
+	public void oneSort() {
+		ColIndexFactory.createI(10).sort();
+	}
+
+	@Test
+	public void oneIsSorted() {
+		assertTrue(ColIndexFactory.createI(10).isSorted());
+	}
+
+	@Test
+	public void twoReordering1() {
+		assertTrue(Arrays.equals(new int[] {0, 1}, ColIndexFactory.createI(1, 10).getReorderingIndex()));
+	}
+
+	@Test
+	public void twoReordering2() {
+		assertTrue(Arrays.equals(new int[] {1, 0}, ColIndexFactory.createI(10, 1).getReorderingIndex()));
+	}
+
+	@Test
+	public void twoSort2() {
+		assertTrue(ColIndexFactory.createI(1, 10).equals(ColIndexFactory.createI(10, 1).sort()));
+	}
+
+	@Test
+	public void twoSort1() {
+		assertTrue(ColIndexFactory.createI(1, 10).equals(ColIndexFactory.createI(1, 10).sort()));
+	}
+
+	@Test
+	public void twoSorted1() {
+		assertTrue(ColIndexFactory.createI(0, 10).isSorted());
+	}
+
+	@Test
+	public void twoSorted2() {
+		assertFalse(ColIndexFactory.createI(10, -1).isSorted());
+	}
+
+	@Test
+	public void isSortedArray1() {
+		assertTrue(ColIndexFactory.createI(0, 1, 5, 7, 9).isSorted());
+	}
+
+	@Test
+	public void isSortedArray2() {
+		assertFalse(ColIndexFactory.createI(0, 1, 5, 3, 9).isSorted());
+	}
+
+	@Test
+	public void isSortedArray3() {
+		assertFalse(ColIndexFactory.createI(0, 1, 5, 9, -13).isSorted());
+	}
+
+	@Test
+	public void isSortedArray4() {
+		assertFalse(ColIndexFactory.createI(0, 1, 0, 1, 0).isSorted());
 	}
 }

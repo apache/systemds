@@ -683,4 +683,10 @@ public class ColGroupOLE extends AColGroupOffset {
 	public CompressedSizeInfoColGroup getCompressionInfo(int nRow) {
 		throw new NotImplementedException();
 	}
+
+	@Override
+	protected AColGroup fixColIndexes(IColIndex newColIndex, int[] reordering) {
+		throw new NotImplementedException();
+	}
+
 }

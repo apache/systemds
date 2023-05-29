@@ -676,6 +676,18 @@ public abstract class AColGroup implements Serializable {
 		throw new NotImplementedException();
 	}
 
+	public AColGroup sortColumnIndexes() {
+		if(_colIndexes.isSorted())
+			return this;
+		else {
+			int[] reorderingIndex = _colIndexes.getReorderingIndex();
+			IColIndex ni = _colIndexes.sort();
+			return fixColIndexes(ni, reorderingIndex);
+		}
+	}
+
+	protected abstract AColGroup fixColIndexes(IColIndex newColIndex, int[] reordering);
+
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();

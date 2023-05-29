@@ -1106,4 +1106,18 @@ public class Dictionary extends ADictionary {
 		MatrixBlockDictionary mbd = getMBDict(nColThis);
 		return mbd.cbind(that, nCol);
 	}
+
+	@Override
+	public ADictionary reorder(int[] reorder){
+		double[] retV = new double[_values.length];
+		Dictionary ret = new Dictionary(retV);
+		int nRows = _values.length / reorder.length;
+
+		for(int r = 0; r < nRows; r++){
+			int off = r * reorder.length;
+			for(int c = 0; c < reorder.length; c++)
+				retV[off + c] = _values[off + reorder[c]];
+		}
+		return ret;
+	}
 }

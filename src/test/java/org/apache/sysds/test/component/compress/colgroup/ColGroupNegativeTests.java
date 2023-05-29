@@ -387,6 +387,12 @@ public class ColGroupNegativeTests {
 			// TODO Auto-generated method stub
 			throw new UnsupportedOperationException("Unimplemented method 'getCompressionInfo'");
 		}
+
+		@Override
+		protected AColGroup fixColIndexes(IColIndex newColIndex, int[] reordering) {
+			// TODO Auto-generated method stub
+			throw new UnsupportedOperationException("Unimplemented method 'fixColIndexes'");
+		}
 	}
 
 	private class FakeDictBasedColGroup extends ADictBasedColGroup {
@@ -630,6 +636,12 @@ public class ColGroupNegativeTests {
 		public boolean sameIndexStructure(AColGroupCompressed that) {
 			// TODO Auto-generated method stub
 			throw new UnsupportedOperationException("Unimplemented method 'sameIndexStructure'");
+		}
+
+		@Override
+		protected AColGroup fixColIndexes(IColIndex newColIndex, int[] reordering) {
+			// TODO Auto-generated method stub
+			throw new UnsupportedOperationException("Unimplemented method 'fixColIndexes'");
 		}
 	}
 }

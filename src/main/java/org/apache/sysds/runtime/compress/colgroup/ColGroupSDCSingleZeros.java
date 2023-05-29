@@ -599,6 +599,12 @@ public class ColGroupSDCSingleZeros extends ASDCZero {
 	}
 
 	@Override
+	protected AColGroup fixColIndexes(IColIndex newColIndex, int[] reordering) {
+		return ColGroupSDCSingleZeros.create(newColIndex, getNumRows(), _dict.reorder(reordering), _indexes,
+			getCachedCounts());
+	}
+
+	@Override
 	public void preAggregateThatDDCStructure(ColGroupDDC that, Dictionary ret) {
 		final AOffsetIterator itThis = _indexes.getOffsetIterator();
 		final int nCol = that._colIndexes.size();

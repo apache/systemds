@@ -24,12 +24,16 @@ import static org.junit.Assert.fail;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Random;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlockFactory;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup;
+import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
+import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
+import org.apache.sysds.runtime.compress.colgroup.indexes.IIterate;
 import org.apache.sysds.runtime.compress.lib.CLALibCombineGroups;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.test.TestUtils;
@@ -273,28 +277,35 @@ public class CombineGroupsTest {
 	}
 
 	@Test
-	public void combineMixingColumnIndexes(){
-		
-		try {
+	public void combineMixingColumnIndexes() {
 
+		try {
+			if(a.getNumColumns() + b.getNumColumns() == 2)
+				return; // not relevant test
 			// combined.
 			MatrixBlock c = a.append(b);
 			CompressedMatrixBlock cc = appendNoMerge(ac, bc);
-			
+
 			TestUtils.compareMatricesBitAvgDistance(c, cc, 0, 0, "Not the same verification");
+			// mix columns...
+			int[] mix = new int[c.getNumColumns()];
+			inc(mix);
+			shuffle(mix, 13);
+			c = applyShuffle(c, mix);
+			cc = applyCompressedShuffle(cc, mix);
+			TestUtils.compareMatricesBitAvgDistance(c, cc, 0, 0, "Not the same after shuffle verification: " + c + "  " + cc);
+
 			CompressedMatrixBlock ccc = (CompressedMatrixBlock) cc;
 			List<AColGroup> groups = ccc.getColGroups();
-			LOG.error(groups.size());
-			if(groups.size() >  2)
-				LOG.error(groups);
 			if(groups.size() > 1) {
 
 				AColGroup cg = CLALibCombineGroups.combine(groups.get(0), groups.get(1));
+
 				ccc.allocateColGroup(cg);
-				TestUtils.compareMatricesBitAvgDistance(c, ccc, 0, 0, "Not the same combined");
+				TestUtils.compareMatricesBitAvgDistance(c, ccc, 0, 0, "Not the same combined " );
 			}
 			// LOG.error("\n" + groups + " \n\n" + ccc);
-			
+
 		}
 		catch(Exception e) {
 			e.printStackTrace();
@@ -324,11 +335,61 @@ public class CombineGroupsTest {
 
 	}
 
-	private static MatrixBlock cbindN(MatrixBlock a , int n){
+	private static MatrixBlock cbindN(MatrixBlock a, int n) {
 		MatrixBlock b = a;
-		for(int i = 1; i < n ; i++){
+		for(int i = 1; i < n; i++) {
 			b = b.append(a);
 		}
 		return b;
+	}
+
+	private static void inc(int[] ar) {
+		for(int i = 0; i < ar.length; i++) {
+			ar[i] = i;
+		}
+	}
+
+	private static void shuffle(int[] ar, int seed) {
+		Random r = new Random();
+		for(int i = 0; i < ar.length; i++) {
+			int f = r.nextInt(ar.length);
+			int t = r.nextInt(ar.length);
+			int tmp = ar[t];
+			ar[t] = ar[f];
+			ar[f] = tmp;
+		}
+	}
+
+	private static MatrixBlock applyShuffle(MatrixBlock a, int[] mix) {
+		MatrixBlock ret = new MatrixBlock(a.getNumRows(), a.getNumColumns(), a.getNonZeros());
+		for(int r = 0; r < a.getNumRows(); r++)
+			for(int c = 0; c < a.getNumColumns(); c++)
+				ret.quickSetValue(r, mix[c], a.quickGetValue(r, c));
+		return ret;
+	}
+
+	private static CompressedMatrixBlock applyCompressedShuffle(CompressedMatrixBlock a, int[] mix) {
+		List<AColGroup> in = a.getColGroups();
+		List<AColGroup> out = new ArrayList<>();
+		for(AColGroup g : in)
+			out.add(moveCols(g, mix));
+		a.allocateColGroupList(out);
+		a.clearSoftReferenceToDecompressed();
+		return a;
+	}
+
+	private static AColGroup moveCols(AColGroup g, int[] mix) {
+		IColIndex gi = g.getColIndices();
+		int[] newIndexes = new int[gi.size()];
+
+		IIterate it = gi.iterator();
+		while(it.hasNext()) {
+			newIndexes[it.i()] = mix[it.v()];
+			it.next();
+		}
+
+		g = g.copyAndSet(ColIndexFactory.create(newIndexes));
+		g = g.sortColumnIndexes();
+		return g;
 	}
 }

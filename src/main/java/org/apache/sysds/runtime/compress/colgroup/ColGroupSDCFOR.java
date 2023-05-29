@@ -518,6 +518,11 @@ public class ColGroupSDCFOR extends ASDC implements IMapToDataGroup {
 	}
 
 	@Override
+	protected AColGroup fixColIndexes(IColIndex newColIndex, int[] reordering) {
+		throw new NotImplementedException();
+	}
+
+	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		sb.append(super.toString());

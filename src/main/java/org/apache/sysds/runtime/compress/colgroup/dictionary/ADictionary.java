@@ -929,5 +929,7 @@ public abstract class ADictionary implements Serializable {
 		return false;
 	}
 
+	public abstract ADictionary reorder(int[] reorder);
+
 	public abstract boolean equals(ADictionary o);
 }

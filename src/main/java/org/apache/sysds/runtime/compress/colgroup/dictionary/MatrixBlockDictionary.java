@@ -2125,4 +2125,16 @@ public class MatrixBlockDictionary extends ADictionary {
 	private ADictionary cbind(MatrixBlock that) {
 		return new MatrixBlockDictionary(_data.append(that));
 	}
+
+	@Override
+	public ADictionary reorder(int[] reorder) {
+		MatrixBlock ret = new MatrixBlock(_data.getNumRows(), _data.getNumColumns(), _data.getNonZeros());
+
+		// TODO add sparse exploitation.
+		for(int r = 0; r < _data.getNumRows(); r++)
+			for(int c = 0; c < _data.getNumColumns(); c++)
+				ret.quickSetValue(r, c, _data.quickGetValue(r, reorder[c]));
+
+		return create(ret, false);
+	}
 }

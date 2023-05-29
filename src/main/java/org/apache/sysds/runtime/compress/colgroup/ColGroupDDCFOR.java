@@ -482,6 +482,11 @@ public class ColGroupDDCFOR extends AMorphingMMColGroup {
 	}
 
 	@Override
+	protected AColGroup fixColIndexes(IColIndex newColIndex, int[] reordering) {
+		throw new NotImplementedException();
+	}
+
+	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		sb.append(super.toString());

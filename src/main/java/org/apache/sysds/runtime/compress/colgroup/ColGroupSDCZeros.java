@@ -84,9 +84,6 @@ public class ColGroupSDCZeros extends ASDCZero implements IMapToDataGroup {
 		if(dict == null)
 			return new ColGroupEmpty(colIndices);
 		else if(data.getUnique() == 1) {
-			LOG.error(dict);
-			LOG.error(data.getUnique());
-			LOG.error(colIndices.size());
 			MatrixBlock mb = dict.getMBDict(colIndices.size()).getMatrixBlock().slice(0, 0);
 			return ColGroupSDCSingleZeros.create(colIndices, numRows, MatrixBlockDictionary.create(mb), offsets, null);
 		}
@@ -604,7 +601,7 @@ public class ColGroupSDCZeros extends ASDCZero implements IMapToDataGroup {
 			ColGroupSDCZeros th = (ColGroupSDCZeros) that;
 			return th._indexes == _indexes && th._data == _data;
 		}
-		else if(that instanceof ColGroupSDC){
+		else if(that instanceof ColGroupSDC) {
 			ColGroupSDC th = (ColGroupSDC) that;
 			return th._indexes == _indexes && th._data == _data;
 		}
@@ -816,6 +813,12 @@ public class ColGroupSDCZeros extends ASDCZero implements IMapToDataGroup {
 	@Override
 	public IEncode getEncoding() {
 		return EncodingFactory.create(_data, _indexes, _numRows);
+	}
+
+	@Override
+	protected AColGroup fixColIndexes(IColIndex newColIndex, int[] reordering) {
+		return ColGroupSDCZeros.create(newColIndex, getNumRows(), _dict.reorder(reordering), _indexes, _data,
+			getCachedCounts());
 	}
 
 	public String toString() {

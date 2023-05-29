@@ -623,6 +623,12 @@ public class ColGroupSDCSingle extends ASDC {
 	}
 
 	@Override
+	protected AColGroup fixColIndexes(IColIndex newColIndex, int[] reordering) {
+		return ColGroupSDCSingle.create(newColIndex, getNumRows(), _dict.reorder(reordering),
+			ColGroupUtils.reorderDefault(_defaultTuple, reordering), _indexes,  getCachedCounts());
+	}
+
+	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		sb.append(super.toString());

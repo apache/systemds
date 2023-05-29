@@ -372,4 +372,10 @@ public class ColGroupEmpty extends AColGroupCompressed implements IContainADicti
 	public boolean sameIndexStructure(AColGroupCompressed that) {
 		return that instanceof ColGroupEmpty || that instanceof ColGroupConst;
 	}
+
+	@Override
+	protected AColGroup fixColIndexes(IColIndex newColIndex, int[] reordering) {
+		return new ColGroupEmpty(newColIndex);
+	}
+
 }

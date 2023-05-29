@@ -563,6 +563,11 @@ public class ColGroupDDC extends APreAgg implements IMapToDataGroup {
 	}
 
 	@Override
+	protected AColGroup fixColIndexes(IColIndex newColIndex, int[] reordering) {
+		return ColGroupDDC.create(newColIndex, _dict.reorder(reordering), _data, getCachedCounts());
+	}
+
+	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		sb.append(super.toString());

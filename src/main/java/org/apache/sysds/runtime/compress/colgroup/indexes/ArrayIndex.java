@@ -23,6 +23,7 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.stream.IntStream;
 
 import org.apache.sysds.utils.MemoryEstimates;
 
@@ -177,6 +178,31 @@ public class ArrayIndex extends AColIndex {
 		return sb.toString();
 	}
 
+	@Override
+	public int[] getReorderingIndex() {
+		int[] sortedIndices = IntStream.range(0, cols.length).boxed()//
+			.sorted((i, j) -> Integer.valueOf(cols[i]).compareTo(cols[j]))//
+			.mapToInt(ele -> ele).toArray();
+		return sortedIndices;
+	}
+
+	@Override
+	public boolean isSorted() {
+		for(int i = 1; i < cols.length; i++)
+			if(cols[i - 1] > cols[i])
+				return false;
+
+		return true;
+	}
+
+	@Override
+	public IColIndex sort() {
+		int[] ret = new int[cols.length];
+		System.arraycopy(cols, 0, ret, 0, cols.length);
+		Arrays.sort(ret);
+		return ColIndexFactory.create(ret);
+	}
+
 	protected class ArrayIterator implements IIterate {
 		int id = 0;
 
@@ -191,12 +217,12 @@ public class ArrayIndex extends AColIndex {
 		}
 
 		@Override
-		public int v(){
+		public int v() {
 			return cols[id];
 		}
-		
+
 		@Override
-		public int i(){
+		public int i() {
 			return id;
 		}
 	}

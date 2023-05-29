@@ -837,6 +837,16 @@ public class ColGroupUncompressed extends AColGroup {
 	}
 
 	@Override
+	protected AColGroup fixColIndexes(IColIndex newColIndex, int[] reordering) {
+		MatrixBlock ret = new MatrixBlock(_data.getNumRows(), _data.getNumColumns(), _data.getNonZeros());
+		// TODO add sparse optmization
+		for(int r = 0; r < _data.getNumRows(); r++)
+			for(int c = 0; c < _data.getNumColumns(); c++)
+				ret.quickSetValue(r, c, _data.quickGetValue(r, reordering[c]));
+		return create(newColIndex, ret, false);
+	}
+
+	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		sb.append(super.toString());

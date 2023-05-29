@@ -617,4 +617,9 @@ public class IdentityDictionary extends ADictionary {
 		throw new NotImplementedException();
 	}
 
+	@Override
+	public ADictionary reorder(int[] reorder) {
+		return getMBDict().reorder(reorder);
+	}
+
 }

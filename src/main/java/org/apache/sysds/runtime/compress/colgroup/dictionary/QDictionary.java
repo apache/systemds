@@ -608,4 +608,9 @@ public class QDictionary extends ADictionary {
 	public ADictionary cbind(ADictionary that, int nCol) {
 		throw new NotImplementedException();
 	}
+
+	@Override
+	public ADictionary reorder(int[] reorder) {
+		throw new NotImplementedException();
+	}
 }

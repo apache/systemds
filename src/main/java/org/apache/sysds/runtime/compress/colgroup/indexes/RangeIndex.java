@@ -23,6 +23,7 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
+import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.utils.IntArrayList;
 
 public class RangeIndex extends AColIndex {
@@ -159,7 +160,7 @@ public class RangeIndex extends AColIndex {
 	}
 
 	@Override
-	public boolean isContiguous(){
+	public boolean isContiguous() {
 		return true;
 	}
 
@@ -176,17 +177,40 @@ public class RangeIndex extends AColIndex {
 	}
 
 	protected static boolean isValidRange(int[] indexes) {
-		int len = indexes.length;
-		int first = indexes[0];
-		int last = indexes[indexes.length - 1];
-		return last - first + 1 == len;
+		return isValidRange(indexes, indexes.length);
 	}
 
 	protected static boolean isValidRange(IntArrayList indexes) {
-		int len = indexes.size();
-		int first = indexes.get(0);
-		int last = indexes.get(indexes.size() - 1);
-		return last - first + 1 == len;
+		return isValidRange(indexes.extractValues(), indexes.size());
+	}
+
+	private static boolean isValidRange(final int[] indexes, final int length) {
+		int len = length;
+		int first = indexes[0];
+		int last = indexes[length - 1];
+		if(last - first + 1 == len) {
+			for(int i = 1; i < length; i++)
+				if(indexes[i - 1] > indexes[i])
+					return false;
+			return true;
+		}
+		else
+			return false;
+	}
+
+	@Override
+	public int[] getReorderingIndex() {
+		throw new DMLCompressionException("not valid to get reordering Index for range");
+	}
+
+	@Override
+	public boolean isSorted() {
+		return true;
+	}
+
+	@Override
+	public IColIndex sort() {
+		throw new DMLCompressionException("range is always sorted");
 	}
 
 	protected class RangeIterator implements IIterate {
@@ -203,12 +227,12 @@ public class RangeIndex extends AColIndex {
 		}
 
 		@Override
-		public int v(){
+		public int v() {
 			return cl;
 		}
 
 		@Override
-		public int i(){
+		public int i() {
 			return cl - l;
 		}
 	}

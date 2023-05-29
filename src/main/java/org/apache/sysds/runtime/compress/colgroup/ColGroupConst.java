@@ -594,6 +594,11 @@ public class ColGroupConst extends ADictBasedColGroup implements IContainDefault
 		return _dict.getValues();
 	}
 
+	@Override 
+	protected AColGroup fixColIndexes(IColIndex newColIndex, int[] reordering){
+		return ColGroupConst.create(newColIndex, _dict.reorder(reordering));
+	}
+
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();

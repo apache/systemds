@@ -641,10 +641,15 @@ public class ColGroupSDC extends ASDC implements IMapToDataGroup {
 	}
 
 	@Override
-	public IEncode getEncoding(){
+	public IEncode getEncoding() {
 		return EncodingFactory.create(_data, _indexes, _numRows);
 	}
 
+	@Override
+	protected AColGroup fixColIndexes(IColIndex newColIndex, int[] reordering) {
+		return ColGroupSDC.create(newColIndex, getNumRows(), _dict.reorder(reordering),
+			ColGroupUtils.reorderDefault(_defaultTuple, reordering), _indexes, _data, getCachedCounts());
+	}
 
 	@Override
 	public boolean sameIndexStructure(AColGroupCompressed that) {
@@ -652,7 +657,7 @@ public class ColGroupSDC extends ASDC implements IMapToDataGroup {
 			ColGroupSDCZeros th = (ColGroupSDCZeros) that;
 			return th._indexes == _indexes && th._data == _data;
 		}
-		else if(that instanceof ColGroupSDC){
+		else if(that instanceof ColGroupSDC) {
 			ColGroupSDC th = (ColGroupSDC) that;
 			return th._indexes == _indexes && th._data == _data;
 		}

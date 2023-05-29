@@ -32,6 +32,9 @@ jobs:
     runs-on: ubuntu-latest
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
     steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v3
+
     - name: Delete Artifacts
       run: |
         pip install requests
@@ -39,5 +42,6 @@ jobs:
       env:
         GITHUB_RUN_ID: ${{ github.event.workflow_run.workflow_id }}
         GITHUB_REPOSITORY: ${{ vars.GITHUB_REPOSITORY }}
+
 
 

@@ -152,8 +152,9 @@ if __name__ == "__main__":
                     logging.info(f"no match: {name}")
 
     for artifact_id in artifact_ids:
-        delete_artifact(
+        resp = delete_artifact(
             owner_repo=args.owner_repo,
             artifact_id=artifact_id,
             token=args.token,
         )
+        logging.info(f"{resp.status_code=}")

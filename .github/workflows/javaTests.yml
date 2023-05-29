@@ -69,7 +69,7 @@ jobs:
 
     - name: Clean Github Artifact Name of Asterisks
       run: |
-        ARTIFACT_NAME="jacoco-component-tests"
+        ARTIFACT_NAME="transient_jacoco"
         ARTIFACT_NAME+="-${{ matrix.os }}"
         ARTIFACT_NAME+="-java-${{ matrix.java }}"
         ARTIFACT_NAME+="-${{ matrix.javadist }}"

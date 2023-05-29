@@ -40,7 +40,7 @@ jobs:
         python .github/workflows/delete_artifacts.py \
           -t ${{ secrets.GITHUB_TOKEN }} \
           -a "transient_.*" \
-          -r ${{ github.event.workflow_run.workflow_id }}
+          -r ${{ github.event.workflow_run.id }}
 
       env:
         GITHUB_REPOSITORY: ${{ vars.GITHUB_REPOSITORY }}

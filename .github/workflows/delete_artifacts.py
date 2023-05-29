@@ -122,7 +122,15 @@ if __name__ == "__main__":
 
     resp_dict = resp.json()
     artifacts_count = resp_dict.get("total_count")
-    artifact_ids = [x.get("id") for x in resp_dict.get("artifacts")]
+    artifact_ids = []
+    for artifact in resp_dict.get("artifacts"):
+        name = artifact.get("name")
+        if re.fullmatch(args.artifact_name, name):
+            logging.info(f"fullmatch: {name} ")
+            artifact_ids.append(artifact.get("id"))
+        else:
+            logging.info(f"no match: {name}")
+
     logging.info(f"Artifacts count: {len(artifact_ids)} of {artifacts_count}")
 
     if items_per_page < artifacts_count:

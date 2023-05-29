@@ -19,6 +19,7 @@
 
 package org.apache.sysds.test.component.compress.lib;
 
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.util.ArrayList;
@@ -293,18 +294,18 @@ public class CombineGroupsTest {
 			shuffle(mix, 13);
 			c = applyShuffle(c, mix);
 			cc = applyCompressedShuffle(cc, mix);
-			TestUtils.compareMatricesBitAvgDistance(c, cc, 0, 0, "Not the same after shuffle verification: " + c + "  " + cc);
+			TestUtils.compareMatricesBitAvgDistance(c, cc, 0, 0, "Not the same after shuffle verification: ");
 
 			CompressedMatrixBlock ccc = (CompressedMatrixBlock) cc;
 			List<AColGroup> groups = ccc.getColGroups();
 			if(groups.size() > 1) {
 
 				AColGroup cg = CLALibCombineGroups.combine(groups.get(0), groups.get(1));
+				assertTrue(cg.getColIndices().isSorted());
 
 				ccc.allocateColGroup(cg);
 				TestUtils.compareMatricesBitAvgDistance(c, ccc, 0, 0, "Not the same combined " );
 			}
-			// LOG.error("\n" + groups + " \n\n" + ccc);
 
 		}
 		catch(Exception e) {

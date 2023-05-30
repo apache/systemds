@@ -19,6 +19,8 @@
 
 package org.apache.sysds.test.functions.compress.configuration;
 
+import static org.junit.Assert.fail;
+
 import java.io.File;
 
 import org.apache.sysds.common.Types.ExecType;
@@ -189,7 +191,7 @@ public class CompressForce extends CompressBase {
 		// be aware that with multiple blocks it is likely that the small blocks
 		// initially compress, but is to large for overlapping state therefor will decompress.
 		// In this test it decompress the second small block but keeps the first in overlapping state.
-		compressTest(1110, 10, 1.0, ExecType.SPARK, 1, 6, 1, 1, 1, "mmr_sum_plus_2");
+		compressTest(1110, 10, 1.0, ExecType.SPARK, 1, 6, 1, 1, 2, "mmr_sum_plus_2");
 	}
 
 	@Test
@@ -198,10 +200,15 @@ public class CompressForce extends CompressBase {
 	}
 
 	@Test
-	@Ignore
+	// @Ignore
 	public void testMatrixMultLeftSum_SP_SmallerThanLeft() {
-		// see task: https://issues.apache.org/jira/browse/SYSTEMDS-3038
-		runTest(1500, 1, 0, 1, ExecType.SPARK, "mml_sum");
+		try{
+			runTest(1500, 1, 2, 1, ExecType.SPARK, "mml_sum");
+		}
+		catch(Exception e){
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
 	}
 
 	@Test

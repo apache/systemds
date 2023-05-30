@@ -21,7 +21,6 @@ package org.apache.sysds.runtime.compress.colgroup;
 
 
 import org.apache.commons.lang.NotImplementedException;
-import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.DeltaDictionary;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
@@ -46,21 +45,22 @@ public class ColGroupDeltaDDC extends AColGroupCompressed implements AMapToDataG
     private static final long serialVersionUID = -1045556313148564147L;
     private AMapToData _data;
     private DeltaDictionary _dict;
-    //TODO Confirm if casting from ADictionary to DeltaDictionary is reasonable
-    private ColGroupDeltaDDC(IColIndex colIndexes, ADictionary dict, AMapToData data) {
+
+    //TODO (optional): create an abstract class ADeltaDictionary
+    private ColGroupDeltaDDC(IColIndex colIndexes, DeltaDictionary dict, AMapToData data) {
         super(colIndexes);
         _data = data;
-        _dict = (DeltaDictionary) dict;
+        _dict =  dict;
     }
 
-    //TODO Confirm if other parameters for constructors are required, such as cachedCounts
-    public static AColGroup create(IColIndex colIndexes, ADictionary dict, AMapToData data) {
-        if(data.getUnique() == 1)
-            return ColGroupConst.create(colIndexes, dict);
-        else if(dict == null)
+    //TODO (optional): create an abstract class ADeltaDictionary
+    public static AColGroup create(IColIndex colIndexes, DeltaDictionary dict, AMapToData data) {
+        // TODO : If my understanding is correct, the DeltaDictionary will contain deltas in _values, therefore, the only delta contained in that case is zero, and we are dealing with a matrix which is "constant" in a sense that all elements are the same.
+        // TODO : _data will contain actual indexes. Deltas will be mapped to indexes.
+        if (dict.getValues().length == 1 && dict.getValue(0)==0) {
             return new ColGroupEmpty(colIndexes);
-        else
-            return new ColGroupDeltaDDC(colIndexes, dict, data);
+        }
+        return new ColGroupDeltaDDC(colIndexes, dict, data);
     }
 
 

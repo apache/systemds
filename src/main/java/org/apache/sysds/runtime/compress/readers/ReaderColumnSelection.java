@@ -19,6 +19,7 @@
 
 package org.apache.sysds.runtime.compress.readers;
 
+import org.apache.commons.lang.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
@@ -106,29 +107,11 @@ public abstract class ReaderColumnSelection {
 			return new ReaderColumnSelectionDenseMultiBlock(rawBlock, colIndices, rl, ru);
 		return new ReaderColumnSelectionDenseSingleBlock(rawBlock, colIndices, rl, ru);
 	}
+
 	//TODO Add ReaderColumnSelectionDenseDeltaSingleBlock to the method
 	public static ReaderColumnSelection createDeltaReader(MatrixBlock rawBlock, IColIndex colIndices, boolean transposed,
 													 int rl, int ru) {
-		checkInput(rawBlock, colIndices, rl, ru);
-		rl = rl - 1;
-		if(rawBlock.isEmpty()) {
-			LOG.warn("It is likely an error occurred when reading an empty block. But we do support it!");
-			return new ReaderColumnSelectionEmpty(rawBlock, colIndices, rl, ru, transposed);
-		}
-
-		if(transposed) {
-			if(rawBlock.isInSparseFormat())
-				return new ReaderColumnSelectionSparseTransposed(rawBlock, colIndices, rl, ru);
-			else if(rawBlock.getDenseBlock().numBlocks() > 1)
-				return new ReaderColumnSelectionDenseMultiBlockTransposed(rawBlock, colIndices, rl, ru);
-			else
-				return new ReaderColumnSelectionDenseSingleBlockTransposed(rawBlock, colIndices, rl, ru);
-		}
-		if(rawBlock.isInSparseFormat())
-			return new ReaderColumnSelectionSparse(rawBlock, colIndices, rl, ru);
-		else if(rawBlock.getDenseBlock().numBlocks() > 1)
-			return new ReaderColumnSelectionDenseMultiBlock(rawBlock, colIndices, rl, ru);
-		return new ReaderColumnSelectionDenseSingleBlock(rawBlock, colIndices, rl, ru);
+		throw new NotImplementedException();
 	}
 
 	private static void checkInput(final MatrixBlock rawBlock, final IColIndex colIndices, final int rl, final int ru) {

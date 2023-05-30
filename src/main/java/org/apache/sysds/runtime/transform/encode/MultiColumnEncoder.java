@@ -325,6 +325,11 @@ public class MultiColumnEncoder implements Encoder {
 		return apply(in, out, 0, k);
 	}
 
+	public void updateAllDCEncoders(){
+		for(ColumnEncoderComposite columnEncoder : _columnEncoders)
+			columnEncoder.updateAllDCEncoders();
+	}
+
 	public MatrixBlock apply(CacheBlock<?> in, MatrixBlock out, int outputCol) {
 		return apply(in, out, outputCol, 1);
 	}

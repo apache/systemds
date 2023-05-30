@@ -371,6 +371,7 @@ public abstract class ColumnEncoder implements Encoder, Comparable<ColumnEncoder
 		List<Callable<Object>> tasks = new ArrayList<>();
 		List<List<? extends Callable<?>>> dep = null;
 		int[] blockSizes = getBlockSizes(in.getNumRows(), _nApplyPartitions);
+
 		for(int startRow = 0, i = 0; i < blockSizes.length; startRow+=blockSizes[i], i++){
 			if(out.isInSparseFormat())
 				tasks.add(getSparseTask(in, out, outputCol, startRow, blockSizes[i]));
@@ -421,7 +422,7 @@ public abstract class ColumnEncoder implements Encoder, Comparable<ColumnEncoder
 	}
 
 	public enum EncoderType {
-		Recode, FeatureHash, PassThrough, Bin, Dummycode, Omit, MVImpute, Composite
+		Recode, FeatureHash, PassThrough, Bin, Dummycode, Omit, MVImpute, Composite, WordEmbedding,
 	}
 
 	/*

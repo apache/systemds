@@ -58,8 +58,10 @@ import org.apache.sysds.runtime.instructions.spark.functions.ExtractGroupNWeight
 import org.apache.sysds.runtime.instructions.spark.functions.PerformGroupByAggInCombiner;
 import org.apache.sysds.runtime.instructions.spark.functions.PerformGroupByAggInReducer;
 import org.apache.sysds.runtime.instructions.spark.functions.ReplicateVectorFunction;
+import org.apache.sysds.runtime.instructions.spark.utils.FrameRDDAggregateUtils;
 import org.apache.sysds.runtime.instructions.spark.utils.FrameRDDConverterUtils;
 import org.apache.sysds.runtime.instructions.spark.utils.RDDAggregateUtils;
+import org.apache.sysds.runtime.instructions.spark.utils.RDDConverterUtils;
 import org.apache.sysds.runtime.instructions.spark.utils.SparkUtils;
 import org.apache.sysds.runtime.matrix.data.LibMatrixReorg;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -77,6 +79,7 @@ import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.transform.TfUtils.TfMethod;
 import org.apache.sysds.runtime.transform.decode.Decoder;
 import org.apache.sysds.runtime.transform.decode.DecoderFactory;
+import org.apache.sysds.runtime.transform.encode.ColumnEncoderComposite;
 import org.apache.sysds.runtime.transform.encode.EncoderFactory;
 import org.apache.sysds.runtime.transform.encode.MultiColumnEncoder;
 import org.apache.sysds.runtime.transform.meta.TfMetaUtils;
@@ -500,6 +503,8 @@ public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
 			JavaPairRDD<Long, FrameBlock> in = (JavaPairRDD<Long, FrameBlock>) sec.getRDDHandleForFrameObject(fo,
 				FileFormat.BINARY);
 			FrameBlock meta = sec.getFrameInput(params.get("meta"));
+			MatrixBlock embeddings = params.get("embedding") != null ? ec.getMatrixInput(params.get("embedding")) : null;
+
 			DataCharacteristics mcIn = sec.getDataCharacteristics(params.get("target"));
 			DataCharacteristics mcOut = sec.getDataCharacteristics(output.getName());
 			String[] colnames = !TfMetaUtils.isIDSpec(params.get("spec")) ? in.lookup(1L).get(0)
@@ -514,20 +519,36 @@ public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
 
 			// create encoder broadcast (avoiding replication per task)
 			MultiColumnEncoder encoder = EncoderFactory
-				.createEncoder(params.get("spec"), colnames, fo.getSchema(), (int) fo.getNumColumns(), meta);
-			mcOut.setDimension(mcIn.getRows() - ((omap != null) ? omap.getNumRmRows() : 0), encoder.getNumOutCols());
+				.createEncoder(params.get("spec"), colnames, fo.getSchema(), (int) fo.getNumColumns(), meta, embeddings);
+			encoder.updateAllDCEncoders();
+			mcOut.setDimension(mcIn.getRows() - ((omap != null) ? omap.getNumRmRows() : 0),
+				(int)encoder.getNumOutCols());
 			Broadcast<MultiColumnEncoder> bmeta = sec.getSparkContext().broadcast(encoder);
 			Broadcast<TfOffsetMap> bomap = (omap != null) ? sec.getSparkContext().broadcast(omap) : null;
 
 			// execute transform apply
-			JavaPairRDD<Long, FrameBlock> tmp = in.mapToPair(new RDDTransformApplyFunction(bmeta, bomap));
-			JavaPairRDD<MatrixIndexes, MatrixBlock> out = FrameRDDConverterUtils
-				.binaryBlockToMatrixBlock(tmp, mcOut, mcOut);
+			JavaPairRDD<MatrixIndexes, MatrixBlock> out;
+			Tuple2<Boolean, Integer> aligned = FrameRDDAggregateUtils.checkRowAlignment(in, -1);
+			if(aligned._1 && mcOut.getCols() <= aligned._2) {
+				//Blocks are aligned & nr of Col is below Block length (necessary for matrix-matrix reblock)
+				JavaPairRDD<Long, MatrixBlock> tmp = in.mapToPair(new RDDTransformApplyFunction2(bmeta, bomap));
+				mcIn.setBlocksize(aligned._2);
+				mcIn.setDimension(mcIn.getRows(), mcOut.getCols());
+				JavaPairRDD<MatrixIndexes, MatrixBlock> tmp2 = tmp.mapToPair((PairFunction<Tuple2<Long, MatrixBlock>, MatrixIndexes, MatrixBlock>) in12 ->
+						new Tuple2<>(new MatrixIndexes(UtilFunctions.computeBlockIndex(in12._1, aligned._2),1), in12._2));
+				out = RDDConverterUtils.binaryBlockToBinaryBlock(tmp2, mcIn, mcOut);
+				//out = RDDConverterUtils.matrixBlockToAlignedMatrixBlock(tmp, mcOut, mcOut);
+			} else {
+				JavaPairRDD<Long, FrameBlock> tmp = in.mapToPair(new RDDTransformApplyFunction(bmeta, bomap));
+				out = FrameRDDConverterUtils.binaryBlockToMatrixBlock(tmp, mcOut, mcOut);
+			}
 
 			// set output and maintain lineage/output characteristics
 			sec.setRDDHandleForVariable(output.getName(), out);
 			sec.addLineageRDD(output.getName(), params.get("target"));
 			ec.releaseFrameInput(params.get("meta"));
+			if(params.get("embedding") != null)
+				ec.releaseMatrixInput(params.get("embedding"));
 		}
 		else if(opcode.equalsIgnoreCase("transformdecode")) {
 			// get input RDD and meta data
@@ -908,7 +929,6 @@ public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
 			// execute block transform apply
 			MultiColumnEncoder encoder = _bencoder.getValue();
 			MatrixBlock tmp = encoder.apply(blk);
-
 			// remap keys
 			if(_omap != null) {
 				key = _omap.getValue().getOffset(key);
@@ -918,6 +938,8 @@ public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
 			return new Tuple2<>(key, DataConverter.convertToFrameBlock(tmp));
 		}
 	}
+
+
 
 	public static class RDDTransformApplyOffsetFunction implements PairFunction<Tuple2<Long, FrameBlock>, Long, Long> {
 		private static final long serialVersionUID = 3450977356721057440L;
@@ -952,6 +974,35 @@ public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
 			}
 
 			return new Tuple2<>(key, rmRows);
+		}
+	}
+
+	public static class RDDTransformApplyFunction2 implements PairFunction<Tuple2<Long, FrameBlock>, Long, MatrixBlock> {
+		private static final long serialVersionUID = 5759813006068230916L;
+
+		private Broadcast<MultiColumnEncoder> _bencoder = null;
+		private Broadcast<TfOffsetMap> _omap = null;
+
+		public RDDTransformApplyFunction2(Broadcast<MultiColumnEncoder> bencoder, Broadcast<TfOffsetMap> omap) {
+			_bencoder = bencoder;
+			_omap = omap;
+		}
+
+		@Override
+		public Tuple2<Long, MatrixBlock> call(Tuple2<Long, FrameBlock> in) throws Exception {
+			long key = in._1();
+			FrameBlock blk = in._2();
+
+			// execute block transform apply
+			MultiColumnEncoder encoder = _bencoder.getValue();
+			MatrixBlock tmp = encoder.apply(blk);
+			// remap keys
+			if(_omap != null) {
+				key = _omap.getValue().getOffset(key);
+			}
+
+			// convert to frameblock to reuse frame-matrix reblock
+			return new Tuple2<>(key, tmp);
 		}
 	}
 

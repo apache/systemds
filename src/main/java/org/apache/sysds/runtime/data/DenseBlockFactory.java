@@ -81,6 +81,7 @@ public abstract class DenseBlockFactory
 				switch(vt) {
 					case FP32: return new DenseBlockFP32(dims);
 					case FP64: return new DenseBlockFP64(dims);
+					case WEFP64: return new DenseBlockFP64DEDUP(dims);
 					case INT32: return new DenseBlockInt32(dims);
 					case INT64: return new DenseBlockInt64(dims);
 					case BOOLEAN: return new DenseBlockBool(dims);

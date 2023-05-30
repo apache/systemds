@@ -37,11 +37,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
-public class TransformFrameEncodeWordEmbeddingTest extends AutomatedTestBase
+public class TransformFrameEncodeWordEmbedding1Test extends AutomatedTestBase
 {
     private final static String TEST_NAME1 = "TransformFrameEncodeWordEmbeddings";
     private final static String TEST_DIR = "functions/transform/";
-    private final static String TEST_CLASS_DIR = TEST_DIR + TransformFrameEncodeWordEmbeddingTest.class.getSimpleName() + "/";
+    private final static String TEST_CLASS_DIR = TEST_DIR + TransformFrameEncodeWordEmbedding1Test.class.getSimpleName() + "/";
 
     @Override
     public void setUp() {
@@ -61,7 +61,7 @@ public class TransformFrameEncodeWordEmbeddingTest extends AutomatedTestBase
         try
         {
             int rows = 100;
-            int cols = 100;
+            int cols = 300;
             getAndLoadTestConfiguration(testname);
             fullDMLScriptName = getScript();
 
@@ -72,7 +72,7 @@ public class TransformFrameEncodeWordEmbeddingTest extends AutomatedTestBase
             // Generate the dictionary by assigning unique ID to each distinct token
             Map<String,Integer> map = writeDictToCsvFile(strings, baseDirectory + INPUT_DIR + "dict");
             // Create the dataset by repeating and shuffling the distinct tokens
-            List<String> stringsColumn = shuffleAndMultiplyStrings(strings, 10);
+            List<String> stringsColumn = shuffleAndMultiplyStrings(strings, 320);
             writeStringsToCsvFile(stringsColumn, baseDirectory + INPUT_DIR + "data");
 
             programArgs = new String[]{"-stats","-args", input("embeddings"), input("data"), input("dict"), output("result")};

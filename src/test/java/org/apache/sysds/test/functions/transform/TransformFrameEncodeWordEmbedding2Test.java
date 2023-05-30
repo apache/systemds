@@ -42,18 +42,18 @@ import java.util.Random;
 public class TransformFrameEncodeWordEmbedding2Test extends AutomatedTestBase
 {
     private final static String TEST_NAME1 = "TransformFrameEncodeWordEmbeddings2";
-    private final static String TEST_NAME2 = "TransformFrameEncodeWordEmbeddings2MultiCols1";
-    private final static String TEST_NAME3 = "TransformFrameEncodeWordEmbeddings2MultiCols2";
+    private final static String TEST_NAME2a = "TransformFrameEncodeWordEmbeddings2MultiCols1";
+    private final static String TEST_NAME2b = "TransformFrameEncodeWordEmbeddings2MultiCols2";
 
     private final static String TEST_DIR = "functions/transform/";
-    private final static String TEST_CLASS_DIR = TEST_DIR + TransformFrameEncodeWordEmbeddingTest.class.getSimpleName() + "/";
+    private final static String TEST_CLASS_DIR = TEST_DIR + TransformFrameEncodeWordEmbedding1Test.class.getSimpleName() + "/";
 
     @Override
     public void setUp() {
         TestUtils.clearAssertionInformation();
         addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_DIR, TEST_NAME1));
-        addTestConfiguration(TEST_NAME2, new TestConfiguration(TEST_DIR, TEST_NAME2));
-        addTestConfiguration(TEST_NAME3, new TestConfiguration(TEST_DIR, TEST_NAME3));
+        addTestConfiguration(TEST_NAME2a, new TestConfiguration(TEST_DIR, TEST_NAME2a));
+        addTestConfiguration(TEST_NAME2b, new TestConfiguration(TEST_DIR, TEST_NAME2b));
     }
 
     @Test
@@ -64,13 +64,57 @@ public class TransformFrameEncodeWordEmbedding2Test extends AutomatedTestBase
     @Test
     @Ignore
     public void testNonRandomTransformToWordEmbeddings2Cols() {
-        runTransformTest(TEST_NAME2, ExecMode.SINGLE_NODE);
+        runTransformTest(TEST_NAME2a, ExecMode.SINGLE_NODE);
     }
 
     @Test
     @Ignore
     public void testRandomTransformToWordEmbeddings4Cols() {
-        runTransformTestMultiCols(TEST_NAME3, ExecMode.SINGLE_NODE);
+        runTransformTestMultiCols(TEST_NAME2b, ExecMode.SINGLE_NODE);
+    }
+
+    @Test
+    @Ignore
+    public void runBenchmark(){
+        runBenchmark(TEST_NAME1, ExecMode.SINGLE_NODE);
+    }
+
+
+    private void runBenchmark(String testname, ExecMode rt)
+    {
+        //set runtime platform
+        ExecMode rtold = setExecMode(rt);
+        try
+        {
+            int rows = 100;
+            int cols = 300;
+            getAndLoadTestConfiguration(testname);
+            fullDMLScriptName = getScript();
+
+            // Generate random embeddings for the distinct tokens
+            double[][] a = createRandomMatrix("embeddings", rows, cols, 0, 10, 1, new Date().getTime());
+
+            // Generate random distinct tokens
+            List<String> strings = generateRandomStrings(rows, 10);
+
+            // Generate the dictionary by assigning unique ID to each distinct token
+            Map<String,Integer> map = writeDictToCsvFile(strings, baseDirectory + INPUT_DIR + "dict");
+
+            // Create the dataset by repeating and shuffling the distinct tokens
+            List<String> stringsColumn = shuffleAndMultiplyStrings(strings, 320);
+            writeStringsToCsvFile(stringsColumn, baseDirectory + INPUT_DIR + "data");
+
+            //run script
+            programArgs = new String[]{"-stats","-args", input("embeddings"), input("data"), input("dict"), output("result")};
+            runTest(true, EXCEPTION_NOT_EXPECTED, null, -1);
+        }
+        catch(Exception ex) {
+            throw new RuntimeException(ex);
+
+        }
+        finally {
+            resetExecMode(rtold);
+        }
     }
 
     private void runTransformTest(String testname, ExecMode rt)
@@ -80,7 +124,7 @@ public class TransformFrameEncodeWordEmbedding2Test extends AutomatedTestBase
         try
         {
             int rows = 100;
-            int cols = 100;
+            int cols = 300;
             getAndLoadTestConfiguration(testname);
             fullDMLScriptName = getScript();
 
@@ -107,10 +151,6 @@ public class TransformFrameEncodeWordEmbedding2Test extends AutomatedTestBase
             // Compare results
             HashMap<MatrixValue.CellIndex, Double> res_actual = readDMLMatrixFromOutputDir("result");
             double[][] resultActualDouble = TestUtils.convertHashMapToDoubleArray(res_actual);
-            //System.out.println("Actual Result [" + resultActualDouble.length + "x" + resultActualDouble[0].length + "]:");
-            //print2DimDoubleArray(resultActualDouble);
-            //System.out.println("\nExpected Result [" + res_expected.length + "x" + res_expected[0].length + "]:");
-            //print2DimDoubleArray(res_expected);
             TestUtils.compareMatrices(resultActualDouble, res_expected, 1e-6);
         }
         catch(Exception ex) {

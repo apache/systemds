@@ -35,12 +35,14 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.stream.IntStream;
 
+import org.apache.commons.lang.NotImplementedException;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.concurrent.ConcurrentUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.commons.math3.random.Well1024a;
 import org.apache.hadoop.io.DataInputBuffer;
+import org.apache.sysds.common.Types;
 import org.apache.sysds.common.Types.BlockType;
 import org.apache.sysds.common.Types.CorrectionLocationType;
 import org.apache.sysds.conf.ConfigurationManager;
@@ -383,8 +385,12 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 			allocateDenseBlock();
 		return this;
 	}
-	
-	public boolean allocateDenseBlock(boolean clearNNZ) {
+
+	public boolean allocateDenseBlock(boolean clearNNZ){
+		return allocateDenseBlock(clearNNZ, false);
+	}
+
+	public boolean allocateDenseBlock(boolean clearNNZ, boolean containsDuplicates) {
 		//allocate block if non-existing or too small (guaranteed to be 0-initialized),
 		long limit = (long)rlen * clen;
 		//clear nnz if necessary
@@ -393,7 +399,10 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 		sparse = false;
 
 		if( denseBlock == null ){
-			denseBlock = DenseBlockFactory.createDenseBlock(rlen, clen);
+			if(containsDuplicates)
+				denseBlock = DenseBlockFactory.createDenseBlock(Types.ValueType.WEFP64, new int[]{rlen, clen});
+			else
+				denseBlock = DenseBlockFactory.createDenseBlock(rlen, clen);
 			return true;
 		}
 		else if( denseBlock.capacity() < limit ){
@@ -666,6 +675,17 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 			denseBlock.set(r, c, v);
 			if( v==0 )
 				nonZeros--;
+		}
+	}
+
+	public void quickSetRow(int r, double[] values){
+		if(sparse)
+			throw new NotImplementedException();
+		else{
+			//allocate and init dense block (w/o overwriting nnz)
+			allocateDenseBlock(false);
+			nonZeros += UtilFunctions.computeNnz(values, 0, values.length) - denseBlock.countNonZeros(r);
+			denseBlock.set(r, values);
 		}
 	}
 

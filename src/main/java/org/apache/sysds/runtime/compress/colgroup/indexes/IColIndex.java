@@ -170,6 +170,14 @@ public interface IColIndex {
 	 */
 	public IColIndex sort();
 
+	/**
+	 * Analyze if this column group contain the given column id
+	 * 
+	 * @param i id to search for
+	 * @return if it is contained
+	 */
+	public boolean contains(int i);
+
 	/** A Class for slice results containing indexes for the slicing of dictionaries, and the resulting column index */
 	public static class SliceResult {
 		/** Start index to slice inside the dictionary */

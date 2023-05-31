@@ -39,7 +39,6 @@ import org.apache.sysds.runtime.compress.colgroup.offset.AOffsetIterator;
 import org.apache.sysds.runtime.compress.colgroup.offset.OffsetFactory;
 import org.apache.sysds.runtime.compress.colgroup.scheme.ICLAScheme;
 import org.apache.sysds.runtime.compress.cost.ComputationCostEstimator;
-import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
 import org.apache.sysds.runtime.compress.estim.encoding.EncodingFactory;
 import org.apache.sysds.runtime.compress.estim.encoding.IEncode;
 import org.apache.sysds.runtime.functionobjects.Builtin;
@@ -599,13 +598,13 @@ public class ColGroupSDCSingle extends ASDC {
 	}
 
 	@Override
-	public CompressedSizeInfoColGroup getCompressionInfo(int nRow) {
-		throw new NotImplementedException();
+	public IEncode getEncoding() {
+		return EncodingFactory.create(new MapToZero(getCounts()[0]), _indexes, _numRows);
 	}
 
 	@Override
-	public IEncode getEncoding() {
-		return EncodingFactory.create(new MapToZero(getCounts()[0]), _indexes, _numRows);
+	public int getNumberOffsets() {
+		return getCounts()[0];
 	}
 
 	@Override
@@ -625,7 +624,7 @@ public class ColGroupSDCSingle extends ASDC {
 	@Override
 	protected AColGroup fixColIndexes(IColIndex newColIndex, int[] reordering) {
 		return ColGroupSDCSingle.create(newColIndex, getNumRows(), _dict.reorder(reordering),
-			ColGroupUtils.reorderDefault(_defaultTuple, reordering), _indexes,  getCachedCounts());
+			ColGroupUtils.reorderDefault(_defaultTuple, reordering), _indexes, getCachedCounts());
 	}
 
 	@Override

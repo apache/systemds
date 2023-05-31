@@ -26,18 +26,40 @@ import java.io.IOException;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.utils.IntArrayList;
 
+/**
+ * A Range index that contain a lower and upper bound of the indexes that is symbolize.
+ * 
+ * The upper bound is not inclusive
+ */
 public class RangeIndex extends AColIndex {
+	/** Lower bound inclusive */
 	private final int l;
-	private final int u; // not inclusive
+	/** Upper bound not inclusive */
+	private final int u;
 
+	/**
+	 * Construct an range index from 0 until the given nCol, not inclusive
+	 * 
+	 * @param nCol The upper index not included
+	 */
 	public RangeIndex(int nCol) {
-		l = 0;
-		u = nCol;
+		this(0, nCol);
 	}
 
+	/** Construct an range index */
+
+	/**
+	 * Construct an range index with lower and upper values given.
+	 * 
+	 * @param l lower index
+	 * @param u Upper index
+	 */
 	public RangeIndex(int l, int u) {
 		this.l = l;
 		this.u = u;
+
+		if(l >= u)
+			throw new DMLCompressionException("Invalid construction of Range Index with l: " + l + " u: " + u);
 	}
 
 	@Override
@@ -211,6 +233,11 @@ public class RangeIndex extends AColIndex {
 	@Override
 	public IColIndex sort() {
 		throw new DMLCompressionException("range is always sorted");
+	}
+
+	@Override
+	public boolean contains(int i) {
+		return l <= i && i < u;
 	}
 
 	protected class RangeIterator implements IIterate {

@@ -79,7 +79,7 @@ public class CompressedSizeInfoColGroup {
 		_sizes.put(bestCompressionType, _minSize);
 	}
 
-	protected CompressedSizeInfoColGroup(IColIndex columns, EstimationFactors facts,
+	public CompressedSizeInfoColGroup(IColIndex columns, EstimationFactors facts,
 		Set<CompressionType> validCompressionTypes, IEncode map) {
 		_cols = columns;
 		_facts = facts;

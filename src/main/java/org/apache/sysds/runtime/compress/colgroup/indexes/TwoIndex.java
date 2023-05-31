@@ -155,6 +155,11 @@ public class TwoIndex extends AColIndex {
 	}
 
 	@Override
+	public boolean contains(int i) {
+		return i == id1 || i == id2;
+	}
+
+	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		sb.append(this.getClass().getSimpleName());

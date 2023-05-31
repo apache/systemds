@@ -191,7 +191,6 @@ public class ArrayIndex extends AColIndex {
 		for(int i = 1; i < cols.length; i++)
 			if(cols[i - 1] > cols[i])
 				return false;
-
 		return true;
 	}
 
@@ -201,6 +200,12 @@ public class ArrayIndex extends AColIndex {
 		System.arraycopy(cols, 0, ret, 0, cols.length);
 		Arrays.sort(ret);
 		return ColIndexFactory.create(ret);
+	}
+
+	@Override
+	public boolean contains(int i) {
+		int id = Arrays.binarySearch(cols, 0, cols.length, i);
+		return id >= 0;
 	}
 
 	protected class ArrayIterator implements IIterate {

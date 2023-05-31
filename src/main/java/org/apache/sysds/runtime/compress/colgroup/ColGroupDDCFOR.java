@@ -36,6 +36,7 @@ import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
 import org.apache.sysds.runtime.compress.colgroup.scheme.ICLAScheme;
 import org.apache.sysds.runtime.compress.cost.ComputationCostEstimator;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
+import org.apache.sysds.runtime.compress.estim.EstimationFactors;
 import org.apache.sysds.runtime.compress.estim.encoding.EncodingFactory;
 import org.apache.sysds.runtime.compress.estim.encoding.IEncode;
 import org.apache.sysds.runtime.functionobjects.Builtin;
@@ -468,7 +469,8 @@ public class ColGroupDDCFOR extends AMorphingMMColGroup {
 
 	@Override
 	public CompressedSizeInfoColGroup getCompressionInfo(int nRow) {
-		throw new NotImplementedException();
+		EstimationFactors ef = new EstimationFactors(getNumValues(), _data.size(), _data.size(), _dict.getSparsity());
+		return new CompressedSizeInfoColGroup(_colIndexes, ef, nRow, getCompType());
 	}
 
 	@Override

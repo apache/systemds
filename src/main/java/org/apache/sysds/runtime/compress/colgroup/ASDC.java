@@ -22,6 +22,8 @@ package org.apache.sysds.runtime.compress.colgroup;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.compress.colgroup.offset.AOffset;
+import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
+import org.apache.sysds.runtime.compress.estim.EstimationFactors;
 
 /**
  * Column group that sparsely encodes the dictionary values. The idea is that all values is encoded with indexes except
@@ -51,5 +53,13 @@ public abstract class ASDC extends AMorphingMMColGroup implements AOffsetsGroup 
 	@Override
 	public AOffset getOffsets() {
 		return _indexes;
+	}
+
+	public abstract int getNumberOffsets();
+
+	@Override
+	public final CompressedSizeInfoColGroup getCompressionInfo(int nRow) {
+		EstimationFactors ef = new EstimationFactors(getNumValues(), _numRows, getNumberOffsets(), _dict.getSparsity());
+		return new CompressedSizeInfoColGroup(_colIndexes, ef, nRow, getCompType());
 	}
 }

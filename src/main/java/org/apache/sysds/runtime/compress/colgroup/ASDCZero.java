@@ -24,6 +24,8 @@ import org.apache.sysds.runtime.compress.colgroup.dictionary.MatrixBlockDictiona
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.compress.colgroup.offset.AIterator;
 import org.apache.sysds.runtime.compress.colgroup.offset.AOffset;
+import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
+import org.apache.sysds.runtime.compress.estim.EstimationFactors;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -216,8 +218,16 @@ public abstract class ASDCZero extends APreAgg implements AOffsetsGroup, IContai
 		return _indexes;
 	}
 
+	public abstract int getNumberOffsets();
+
 	@Override
 	public double[] getDefaultTuple() {
 		return new double[_colIndexes.size()];
+	}
+
+	@Override
+	public final CompressedSizeInfoColGroup getCompressionInfo(int nRow) {
+		EstimationFactors ef = new EstimationFactors(getNumValues(), _numRows, getNumberOffsets(), _dict.getSparsity());
+		return new CompressedSizeInfoColGroup(_colIndexes, ef, nRow, getCompType());
 	}
 }

@@ -222,7 +222,7 @@ public abstract class AComEst {
 	protected abstract CompressedSizeInfoColGroup combine(IColIndex combinedColumns, CompressedSizeInfoColGroup g1,
 		CompressedSizeInfoColGroup g2, int maxDistinct);
 
-	private List<CompressedSizeInfoColGroup> CompressedSizeInfoColGroup(int clen, int k) {
+	protected List<CompressedSizeInfoColGroup> CompressedSizeInfoColGroup(int clen, int k) {
 		if(k <= 1)
 			return CompressedSizeInfoColGroupSingleThread(clen);
 		else

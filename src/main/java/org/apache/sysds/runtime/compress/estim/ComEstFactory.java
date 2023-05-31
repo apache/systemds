@@ -21,6 +21,7 @@ package org.apache.sysds.runtime.compress.estim;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
@@ -36,6 +37,9 @@ public interface ComEstFactory {
 	 * @return A new CompressionSizeEstimator used to extract information of column groups
 	 */
 	public static AComEst createEstimator(MatrixBlock data, CompressionSettings cs, int k) {
+		if(data instanceof CompressedMatrixBlock)
+			return createCompressedEstimator((CompressedMatrixBlock) data, cs);
+
 		final int nRows = cs.transposed ? data.getNumColumns() : data.getNumRows();
 		final int nCols = cs.transposed ? data.getNumRows() : data.getNumColumns();
 		final double sparsity = data.getSparsity();
@@ -54,14 +58,12 @@ public interface ComEstFactory {
 	 * @param k          The parallelization degree
 	 * @return A new CompressionSizeEstimator used to extract information of column groups
 	 */
-	public static AComEst createEstimator(MatrixBlock data, CompressionSettings cs, int sampleSize,
-		int k) {
+	public static AComEst createEstimator(MatrixBlock data, CompressionSettings cs, int sampleSize, int k) {
 		final int nRows = cs.transposed ? data.getNumColumns() : data.getNumRows();
 		return createEstimator(data, cs, sampleSize, k, nRows);
 	}
 
-	private static AComEst createEstimator(MatrixBlock data, CompressionSettings cs, int sampleSize,
-		int k, int nRows) {
+	private static AComEst createEstimator(MatrixBlock data, CompressionSettings cs, int sampleSize, int k, int nRows) {
 		if(sampleSize >= (double) nRows * 0.8) // if sample size is larger than 80% use entire input as sample.
 			return createExactEstimator(data, cs);
 		else
@@ -73,8 +75,12 @@ public interface ComEstFactory {
 		return new ComEstExact(data, cs);
 	}
 
-	private static ComEstSample createSampleEstimator(MatrixBlock data, CompressionSettings cs,
-		int sampleSize, int k) {
+	private static ComEstCompressed createCompressedEstimator(CompressedMatrixBlock data, CompressionSettings cs) {
+		LOG.debug("Using Compressed Estimator");
+		return new ComEstCompressed(data, cs);
+	}
+
+	private static ComEstSample createSampleEstimator(MatrixBlock data, CompressionSettings cs, int sampleSize, int k) {
 		LOG.debug("Using sample size: " + sampleSize);
 		return new ComEstSample(data, cs, sampleSize, k);
 	}

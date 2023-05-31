@@ -126,6 +126,11 @@ public class SingleIndex extends AColIndex {
 	}
 
 	@Override
+	public boolean contains(int i) {
+		return i == idx;
+	}
+
+	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		sb.append(this.getClass().getSimpleName());

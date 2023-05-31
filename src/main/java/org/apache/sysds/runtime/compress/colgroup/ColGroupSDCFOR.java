@@ -39,7 +39,6 @@ import org.apache.sysds.runtime.compress.colgroup.offset.AOffset.OffsetSliceInfo
 import org.apache.sysds.runtime.compress.colgroup.offset.OffsetFactory;
 import org.apache.sysds.runtime.compress.colgroup.scheme.ICLAScheme;
 import org.apache.sysds.runtime.compress.cost.ComputationCostEstimator;
-import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
 import org.apache.sysds.runtime.compress.estim.encoding.EncodingFactory;
 import org.apache.sysds.runtime.compress.estim.encoding.IEncode;
 import org.apache.sysds.runtime.functionobjects.Builtin;
@@ -498,11 +497,6 @@ public class ColGroupSDCFOR extends ASDC implements IMapToDataGroup {
 	}
 
 	@Override
-	public CompressedSizeInfoColGroup getCompressionInfo(int nRow) {
-		throw new NotImplementedException();
-	}
-
-	@Override
 	public IEncode getEncoding() {
 		return EncodingFactory.create(_data, _indexes, _numRows);
 	}
@@ -520,6 +514,11 @@ public class ColGroupSDCFOR extends ASDC implements IMapToDataGroup {
 	@Override
 	protected AColGroup fixColIndexes(IColIndex newColIndex, int[] reordering) {
 		throw new NotImplementedException();
+	}
+
+	@Override
+	public int getNumberOffsets() {
+		return _data.size();
 	}
 
 	@Override

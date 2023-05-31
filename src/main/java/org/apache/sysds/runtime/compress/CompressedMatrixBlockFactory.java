@@ -457,6 +457,19 @@ public class CompressedMatrixBlockFactory {
 	private Pair<MatrixBlock, CompressionStatistics> recompress(CompressedMatrixBlock cmb) {
 		LOG.debug("Recompressing an already compressed MatrixBlock");
 		LOG.warn("Not Implemented Recompress yet");
+
+		classifyPhase();
+		// informationExtractor = ComEstFactory.createEstimator(mb, compSettings, k);
+
+		// compressionGroups = informationExtractor.computeCompressedSizeInfos(k);
+
+		// _stats.estimatedSizeCols = compressionGroups.memoryEstimate();
+		// _stats.estimatedCostCols = costEstimator.getCost(compressionGroups);
+
+		// logPhase();
+
+
+
 		return new ImmutablePair<>(cmb, null);
 		// _stats.originalSize = cmb.getInMemorySize();
 		// CompressedMatrixBlock combined = CLALibCombineGroups.combine(cmb, k);

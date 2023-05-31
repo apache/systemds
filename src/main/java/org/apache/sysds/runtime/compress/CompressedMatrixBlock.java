@@ -227,6 +227,23 @@ public class CompressedMatrixBlock extends MatrixBlock {
 	}
 
 	/**
+	 * Get the column group allocated and associated with a specific column Id;
+	 * 
+	 * There is some search involved in this since we do not know where to look for the column and which Column group
+	 * contains the value.
+	 * 
+	 * @param id The column id or number we try to find
+	 * @return The column group for that column
+	 */
+	public AColGroup getColGroupForColumn(int id) {
+		for(AColGroup g : _colGroups) {
+			if(g.getColIndices().contains(id))
+				return g;
+		}
+		return null;
+	}
+
+	/**
 	 * Decompress block into a MatrixBlock
 	 * 
 	 * @param k degree of parallelism
@@ -409,7 +426,7 @@ public class CompressedMatrixBlock extends MatrixBlock {
 			AColGroup cg = ColGroupUncompressed.create(uncompressed);
 			allocateColGroup(cg);
 			// update non zeros, if not fully correct in compressed block
-			nonZeros = cg.getNumberNonZeros(rlen); 
+			nonZeros = cg.getNumberNonZeros(rlen);
 
 			// Clear the soft reference to the decompressed version,
 			// since the one column group is perfectly,

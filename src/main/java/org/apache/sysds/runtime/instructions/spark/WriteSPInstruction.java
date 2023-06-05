@@ -144,8 +144,8 @@ public class WriteSPInstruction extends SPInstruction implements LineageTraceabl
 		SparkExecutionContext sec = (SparkExecutionContext) ec;
 
 		//get filename (literal or variable expression)
-		String fname = ec.getScalarInput(input2.getName(), ValueType.STRING, input2.isLiteral()).getStringValue();
-		String desc = ec.getScalarInput(input4.getName(), ValueType.STRING, input4.isLiteral()).getStringValue();
+		String fname = ec.getScalarInput(input2).getStringValue();
+		String desc = ec.getScalarInput(input4).getStringValue();
 		formatProperties.setDescription(desc);
 
 		ValueType[] schema = (input1.getDataType()==DataType.FRAME) ?
@@ -157,7 +157,8 @@ public class WriteSPInstruction extends SPInstruction implements LineageTraceabl
 			HDFSTool.deleteFileIfExistOnHDFS( fname );
 
 			//prepare output info according to meta data
-			FileFormat fmt = FileFormat.safeValueOf(input3.getName());
+			String fmtStr = ec.getScalarInput(input3).getStringValue();
+			FileFormat fmt = FileFormat.safeValueOf(fmtStr);
 
 			//core matrix/frame write
 			switch( input1.getDataType() ) {
@@ -214,7 +215,9 @@ public class WriteSPInstruction extends SPInstruction implements LineageTraceabl
 				throw new IOException("Write of matrices with zero rows or columns"
 					+ " not supported ("+mc.getRows()+"x"+mc.getCols()+").");
 			}
-
+			FileFormatProperties fprop = (formatProperties instanceof FileFormatPropertiesCSV) ?
+				formatProperties : new FileFormatPropertiesCSV(); //for dynamic format strings
+			
 			//piggyback nnz computation on actual write
 			LongAccumulator aNnz = null;
 			if( !mc.nnzKnown() ) {
@@ -223,7 +226,7 @@ public class WriteSPInstruction extends SPInstruction implements LineageTraceabl
 			}
 
 			JavaRDD<String> out = RDDConverterUtils.binaryBlockToCsv(
-				in1, mc, (FileFormatPropertiesCSV) formatProperties, true);
+				in1, mc, (FileFormatPropertiesCSV) fprop, true);
 
 			customSaveTextFile(out, fname, false);
 
@@ -233,7 +236,7 @@ public class WriteSPInstruction extends SPInstruction implements LineageTraceabl
 		else if( fmt == FileFormat.BINARY ) {
 			//reblock output if needed
 			int blen = Integer.parseInt(input4.getName());
-			boolean nonDefaultBlen = ConfigurationManager.getBlocksize() != blen;
+			boolean nonDefaultBlen = ConfigurationManager.getBlocksize() != blen && blen > 0;
 			if( nonDefaultBlen )
 				in1 = RDDConverterUtils.binaryBlockToBinaryBlock(in1, mc,
 					new MatrixCharacteristics(mc).setBlocksize(blen));

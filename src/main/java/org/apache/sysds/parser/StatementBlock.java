@@ -1092,18 +1092,19 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 		if (s.getExprParam(DataExpression.FORMAT_TYPE)!= null )
 		{
 	 		Expression formatTypeExpr = s.getExprParam(DataExpression.FORMAT_TYPE);
-			if (!(formatTypeExpr instanceof StringIdentifier)){
-				raiseValidateError("IO statement parameter " + DataExpression.FORMAT_TYPE
-						+ " can only be a string with one of following values: binary, text, mm, csv.", false, LanguageErrorCodes.INVALID_PARAMETERS);
+			if( formatTypeExpr instanceof StringIdentifier ) {
+		 		String ft = formatTypeExpr.toString();
+				try {
+					s.getIdentifier().setFileFormat(FileFormat.safeValueOf(ft));
+				}
+				catch(Exception ex) {
+					raiseValidateError("IO statement parameter " + DataExpression.FORMAT_TYPE
+						+ " can only be a string with one of following values: binary, text, mm, csv, libsvm, jsonl;"
+						+ " invalid format: '"+ft+"'.", false, LanguageErrorCodes.INVALID_PARAMETERS);
+				}
 			}
-			String ft = formatTypeExpr.toString();
-			try {
-				s.getIdentifier().setFileFormat(FileFormat.safeValueOf(ft));
-			}
-			catch(Exception ex) {
-				raiseValidateError("IO statement parameter " + DataExpression.FORMAT_TYPE
-					+ " can only be a string with one of following values: binary, text, mm, csv, libsvm, jsonl;"
-					+ " invalid format: '"+ft+"'.", false, LanguageErrorCodes.INVALID_PARAMETERS);
+			else {
+				s.getIdentifier().setFileFormat(FileFormat.UNKNOWN);
 			}
 		}
 		//case of unspecified format parameter, use default

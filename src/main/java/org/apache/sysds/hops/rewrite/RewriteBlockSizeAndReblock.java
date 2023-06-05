@@ -82,8 +82,8 @@ public class RewriteBlockSizeAndReblock extends HopRewriteRule
 			
 			// if block size does not match
 			if(   (dop.getDataType() == DataType.MATRIX && (dop.getBlocksize() != blocksize))
-				||(dop.getDataType() == DataType.FRAME && OptimizerUtils.isSparkExecutionMode() && (dop.getFileFormat()==FileFormat.TEXT
-						  || dop.getFileFormat()==FileFormat.CSV)) )
+				||(dop.getDataType() == DataType.FRAME && OptimizerUtils.isSparkExecutionMode() 
+				&& (dop.getFileFormat()==FileFormat.TEXT || dop.getFileFormat()==FileFormat.CSV)) )
 			{
 				if( dop.getOp() == OpOpData.PERSISTENTREAD)
 				{

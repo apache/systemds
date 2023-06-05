@@ -1299,7 +1299,7 @@ public class DataExpression extends DataIdentifier
 		case WRITE:
 			
 			// for CSV format, if no delimiter specified THEN set default ","
-			if (getVarParam(FORMAT_TYPE) == null || getVarParam(FORMAT_TYPE).toString().equalsIgnoreCase(FileFormat.CSV.toString())){
+			if (getVarParam(FORMAT_TYPE) == null || checkFormatType(FileFormat.CSV) ){
 				if (getVarParam(DELIM_DELIMITER) == null) {
 					addVarParam(DELIM_DELIMITER, new StringIdentifier(DEFAULT_DELIM_DELIMITER, this));
 				}
@@ -1312,28 +1312,28 @@ public class DataExpression extends DataIdentifier
 			}
 			
 			// for LIBSVM format, add the default separators if not specified
-			if (getVarParam(FORMAT_TYPE) == null || getVarParam(FORMAT_TYPE).toString().equalsIgnoreCase(FileFormat.LIBSVM.toString())) {
-					if(getVarParam(DELIM_DELIMITER) == null) {
-						addVarParam(DELIM_DELIMITER, new StringIdentifier(DEFAULT_DELIM_DELIMITER, this));
-					}
-					if(getVarParam(LIBSVM_INDEX_DELIM) == null) {
-						addVarParam(LIBSVM_INDEX_DELIM, new StringIdentifier(DEFAULT_LIBSVM_INDEX_DELIM, this));
-					}
-					if(getVarParam(DELIM_SPARSE) == null) {
-						addVarParam(DELIM_SPARSE, new BooleanIdentifier(DEFAULT_DELIM_SPARSE, this));
-					}
+			if (getVarParam(FORMAT_TYPE) == null || checkFormatType(FileFormat.LIBSVM)) {
+				if(getVarParam(DELIM_DELIMITER) == null) {
+					addVarParam(DELIM_DELIMITER, new StringIdentifier(DEFAULT_DELIM_DELIMITER, this));
 				}
+				if(getVarParam(LIBSVM_INDEX_DELIM) == null) {
+					addVarParam(LIBSVM_INDEX_DELIM, new StringIdentifier(DEFAULT_LIBSVM_INDEX_DELIM, this));
+				}
+				if(getVarParam(DELIM_SPARSE) == null) {
+					addVarParam(DELIM_SPARSE, new BooleanIdentifier(DEFAULT_DELIM_SPARSE, this));
+				}
+			}
 			
 			//validate read filename
 			if (getVarParam(FORMAT_TYPE) == null || FileFormat.isTextFormat(getVarParam(FORMAT_TYPE).toString()))
 				getOutput().setBlocksize(-1);
-			else if (getVarParam(FORMAT_TYPE).toString().equalsIgnoreCase(FileFormat.BINARY.toString()) || getVarParam(FORMAT_TYPE).toString().equalsIgnoreCase(FileFormat.COMPRESSED.toString())) {
+			else if (checkFormatType(FileFormat.BINARY, FileFormat.COMPRESSED, FileFormat.UNKNOWN)) {
 				if( getVarParam(ROWBLOCKCOUNTPARAM)!=null )
 					getOutput().setBlocksize(Integer.parseInt(getVarParam(ROWBLOCKCOUNTPARAM).toString()));
 				else
 					getOutput().setBlocksize(ConfigurationManager.getBlocksize());
 			}
-			else
+			else if( getVarParam(FORMAT_TYPE) instanceof StringIdentifier ) //literal format
 				raiseValidateError("Invalid format " + getVarParam(FORMAT_TYPE)
 					+ " in statement: " + toString(), conditional);
 			break;
@@ -2189,6 +2189,12 @@ public class DataExpression extends DataIdentifier
 		}
 	}
 	
+	private boolean checkFormatType(FileFormat... fmts) {
+		String fmtStr = getVarParam(FORMAT_TYPE).toString();
+		return Arrays.stream(fmts)
+			.anyMatch(fmt -> fmtStr.equalsIgnoreCase(fmt.toString()));
+	}
+	
 	private boolean checkValueType(Expression expr, ValueType vt) {
 		return (vt == ValueType.STRING && expr instanceof StringIdentifier)
 			|| (vt == ValueType.FP64 && (expr instanceof DoubleIdentifier || expr instanceof IntIdentifier))
@@ -2328,7 +2334,7 @@ public class DataExpression extends DataIdentifier
 	
 	public boolean isCSVReadWithUnknownSize() {
 		Expression format = getVarParam(FORMAT_TYPE);
-		if( _opcode == DataOp.READ && format!=null && format.toString().equalsIgnoreCase(FileFormat.CSV.toString()) ) {
+		if( _opcode == DataOp.READ && format!=null && checkFormatType(FileFormat.CSV) ) {
 			Expression rows = getVarParam(READROWPARAM);
 			Expression cols = getVarParam(READCOLPARAM);
 			return (rows==null || Long.parseLong(rows.toString())<0)
@@ -2339,7 +2345,7 @@ public class DataExpression extends DataIdentifier
 	
 	public boolean isLIBSVMReadWithUnknownSize() {
 		Expression format = getVarParam(FORMAT_TYPE);
-		if (_opcode == DataOp.READ && format != null && format.toString().equalsIgnoreCase(FileFormat.LIBSVM.toString())) {
+		if (_opcode == DataOp.READ && format != null && checkFormatType(FileFormat.LIBSVM)) {
 			Expression rows = getVarParam(READROWPARAM);
 			Expression cols = getVarParam(READCOLPARAM);
 			return (rows == null || Long.parseLong(rows.toString()) < 0) 

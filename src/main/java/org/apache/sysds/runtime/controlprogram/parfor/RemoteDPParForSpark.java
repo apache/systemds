@@ -156,7 +156,7 @@ public class RemoteDPParForSpark
 			//get input rdd, avoid unnecessary caching if input is checkpoint and not cached yet
 			//to reduce memory pressure for shuffle and subsequent 
 			JavaPairRDD<MatrixIndexes,MatrixBlock> in = sec.getBinaryMatrixBlockRDDHandleForVariable(matrixvar);
-			if( mo.getRDDHandle().isCheckpointRDD() && !sec.isRDDCached(in.id()) )
+			if( mo.getRDDHandle().isCheckpointRDD() && !SparkExecutionContext.isRDDCached(in.id()) )
 				in = (JavaPairRDD<MatrixIndexes,MatrixBlock>)((RDDObject)
 						mo.getRDDHandle().getLineageChilds().get(0)).getRDD();
 			

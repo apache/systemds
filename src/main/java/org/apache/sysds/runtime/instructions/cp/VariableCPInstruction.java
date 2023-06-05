@@ -915,8 +915,7 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 				break;
 			}
 			case SCALAR: {
-				ScalarObject scalarInput = ec.getScalarInput(
-					getInput1().getName(), getInput1().getValueType(), getInput1().isLiteral());
+				ScalarObject scalarInput = ec.getScalarInput(getInput1());
 				MatrixBlock out = new MatrixBlock(scalarInput.getDoubleValue());
 				ec.setMatrixOutput(output.getName(), out);
 				break;

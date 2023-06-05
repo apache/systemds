@@ -303,7 +303,6 @@ public class LineageCacheEntry {
 		if (removeList.containsKey(_key) && LineageCacheConfig.isCostNsize()) {
 			double w1 = LineageCacheConfig.WEIGHTS[0];
 			int missCount = 1 + removeList.get(_key);
-			long size = getSize();
 			if (isLocalObject())
 				score = score + (w1*(((double)_computeTime)/getSize()) * missCount);
 		}

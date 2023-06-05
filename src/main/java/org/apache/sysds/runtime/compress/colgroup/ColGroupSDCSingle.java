@@ -24,7 +24,6 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.util.Arrays;
 
-import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
@@ -114,12 +113,6 @@ public class ColGroupSDCSingle extends ASDC {
 			return _defaultTuple[colIdx];
 		else
 			return _dict.getValue(colIdx);
-	}
-
-	@Override
-	public ADictionary getDictionary() {
-		throw new NotImplementedException(
-			"Not implemented getting the dictionary out, and i think we should consider removing the option");
 	}
 
 	@Override

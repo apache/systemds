@@ -35,6 +35,8 @@ public class CompressionStatistics {
 	public long originalSize;
 	/** Size if the input is dense */
 	public long denseSize;
+	/** Size if the input is sparse */
+	public long sparseSize;
 	/** Estimated size of compressing individual columns */
 	public long estimatedSizeCols;
 	/** Estimated size of compressing after co-coding */

@@ -555,8 +555,9 @@ public class ColGroupDDC extends APreAgg implements IMapToDataGroup {
 
 	@Override
 	public CompressedSizeInfoColGroup getCompressionInfo(int nRow) {
+		IEncode enc = getEncoding();
 		EstimationFactors ef = new EstimationFactors(getNumValues(), _data.size(), _data.size(), _dict.getSparsity());
-		return new CompressedSizeInfoColGroup(_colIndexes, ef, nRow, getCompType());
+		return new CompressedSizeInfoColGroup(_colIndexes, ef, estimateInMemorySize(), getCompType(), enc);
 	}
 
 	@Override

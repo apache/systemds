@@ -22,6 +22,7 @@ package org.apache.sysds.runtime.compress.colgroup.dictionary;
 import java.io.DataInput;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Map;
 
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.commons.logging.Log;
@@ -238,6 +239,11 @@ public interface DictionaryFactory {
 	}
 
 	public static ADictionary combineDictionaries(AColGroupCompressed a, AColGroupCompressed b) {
+		return combineDictionaries(a, b, null);
+	}
+
+	public static ADictionary combineDictionaries(AColGroupCompressed a, AColGroupCompressed b,
+		Map<Integer, Integer> filter) {
 		if(a instanceof ColGroupEmpty && b instanceof ColGroupEmpty)
 			return null; // null return is handled elsewhere.
 
@@ -266,23 +272,31 @@ public interface DictionaryFactory {
 					return combineSparseConstSparseRet(ad, a.getNumCols(), bt);
 				}
 				else if(bc.isDense())
-					return combineFullDictionaries(ad, a.getNumCols(), bd, b.getNumCols());
+					return combineFullDictionaries(ad, a.getNumCols(), bd, b.getNumCols(), filter);
 				else if(bc.isSDC()) {
 					double[] tuple = ((IContainDefaultTuple) b).getDefaultTuple();
-					return combineSDCRight(ad, a.getNumCols(), bd, tuple);
+					return combineSDCRight(ad, a.getNumCols(), bd, tuple, filter);
 				}
 			}
 			else if(ac.isSDC()) {
 				if(bc.isSDC()) {
 					final double[] at = ((IContainDefaultTuple) a).getDefaultTuple();
 					final double[] bt = ((IContainDefaultTuple) b).getDefaultTuple();
-					return combineSDC(ad, at, bd, bt);
+					return combineSDC(ad, at, bd, bt, filter);
 				}
 			}
 		}
 		throw new NotImplementedException("Not supporting combining dense: " + a + " " + b);
 	}
 
+	/**
+	 * Combine the dictionaries assuming a sparse combination where each dictionary can be a SDC containing a default
+	 * element that have to be introduced into the combined dictionary.
+	 * 
+	 * @param a A Dictionary can be SDC or const
+	 * @param b A Dictionary can be Const or SDC.
+	 * @return The combined dictionary
+	 */
 	public static ADictionary combineDictionariesSparse(AColGroupCompressed a, AColGroupCompressed b) {
 		CompressionType ac = a.getCompType();
 		CompressionType bc = b.getCompType();
@@ -298,9 +312,7 @@ public interface DictionaryFactory {
 				if(a.sameIndexStructure(b)) {
 					return ad.cbind(bd, b.getNumCols());
 				}
-
 				// real combine extract default and combine like dense but with default before.
-
 			}
 		}
 		else if(ac.isConst()) {
@@ -315,7 +327,7 @@ public interface DictionaryFactory {
 	}
 
 	/**
-	 * Combine the dictionaries as if the dictionaries contain the full spectrum of the data contained.
+	 * Combine the dictionaries as if the dictionaries contain the full spectrum of the combined data.
 	 * 
 	 * @param a   Left side dictionary
 	 * @param nca Number of columns left dictionary
@@ -324,6 +336,22 @@ public interface DictionaryFactory {
 	 * @return A combined dictionary
 	 */
 	public static ADictionary combineFullDictionaries(ADictionary a, int nca, ADictionary b, int ncb) {
+		return combineFullDictionaries(a, nca, b, ncb, null);
+	}
+
+	/**
+	 * Combine the dictionaries as if the dictionaries only contain the values in the specified filter.
+	 * 
+	 * @param a      Left side dictionary
+	 * @param nca    Number of columns left dictionary
+	 * @param b      Right side dictionary
+	 * @param ncb    Number of columns right dictionary
+	 * @param filter The mapping filter to not include all possible combinations in the output, this filter is allowed to
+	 *               be null, that means the output is defaulting back to a full combine
+	 * @return A combined dictionary
+	 */
+	public static ADictionary combineFullDictionaries(ADictionary a, int nca, ADictionary b, int ncb,
+		Map<Integer, Integer> filter) {
 		final int ra = a.getNumberOfValues(nca);
 		final int rb = b.getNumberOfValues(ncb);
 
@@ -333,24 +361,45 @@ public interface DictionaryFactory {
 		if(ra == 1 && rb == 1)
 			return new MatrixBlockDictionary(ma.append(mb));
 
-		MatrixBlock out = new MatrixBlock(ra * rb, nca + ncb, false);
+		MatrixBlock out = new MatrixBlock(filter != null ? filter.size() : ra * rb, nca + ncb, false);
 
 		out.allocateBlock();
 
-		for(int r = 0; r < out.getNumRows(); r++) {
-			int ia = r % ra;
-			int ib = r / ra;
-			for(int c = 0; c < nca; c++)
-				out.quickSetValue(r, c, ma.quickGetValue(ia, c));
+		if(filter != null) {
+			for(int r : filter.keySet()) {
+				int o = filter.get(r);
+				int ia = r % ra;
+				int ib = r / ra;
+				for(int c = 0; c < nca; c++)
+					out.quickSetValue(o, c, ma.quickGetValue(ia, c));
 
-			for(int c = 0; c < ncb; c++)
-				out.quickSetValue(r, c + nca, mb.quickGetValue(ib, c));
+				for(int c = 0; c < ncb; c++)
+					out.quickSetValue(o, c + nca, mb.quickGetValue(ib, c));
 
+			}
+		}
+		else {
+
+			for(int r = 0; r < out.getNumRows(); r++) {
+				int ia = r % ra;
+				int ib = r / ra;
+				for(int c = 0; c < nca; c++)
+					out.quickSetValue(r, c, ma.quickGetValue(ia, c));
+
+				for(int c = 0; c < ncb; c++)
+					out.quickSetValue(r, c + nca, mb.quickGetValue(ib, c));
+
+			}
 		}
 		return new MatrixBlockDictionary(out);
 	}
 
 	public static ADictionary combineSDCRight(ADictionary a, int nca, ADictionary b, double[] tub) {
+		return combineSDCRight(a, nca, b, tub, null);
+	}
+
+	public static ADictionary combineSDCRight(ADictionary a, int nca, ADictionary b, double[] tub,
+		Map<Integer, Integer> filter) {
 		final int ncb = tub.length;
 		final int ra = a.getNumberOfValues(nca);
 		final int rb = b.getNumberOfValues(ncb);
@@ -384,6 +433,13 @@ public interface DictionaryFactory {
 	}
 
 	public static ADictionary combineSDC(ADictionary a, double[] tua, ADictionary b, double[] tub) {
+		return combineSDC(a, tua, b, tub, null);
+	}
+
+	public static ADictionary combineSDC(ADictionary a, double[] tua, ADictionary b, double[] tub,
+		Map<Integer, Integer> filter) {
+		if(filter != null)
+			throw new NotImplementedException();
 		final int nca = tua.length;
 		final int ncb = tub.length;
 		final int ra = a.getNumberOfValues(nca);

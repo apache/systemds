@@ -427,7 +427,7 @@ public class DnnGPUInstruction extends GPUInstruction {
 		MatrixObject ret = getDenseMatrixOutputForGPUInstruction(ec, _output.getName(), image.getNumRows(), image.getNumColumns());
 		
 		if(phase.equalsIgnoreCase("train")) {
-			double exponentialAverageFactor = 1-ec.getScalarInput(_input8.getName(), _input8.getValueType(), _input8.isLiteral()).getDoubleValue();
+			double exponentialAverageFactor = 1-ec.getScalarInput(_input8).getDoubleValue();
 			MatrixObject retRunningMean = getDenseMatrixOutputForGPUInstruction(ec, _output2.getName(), runningMean.getNumRows(), runningMean.getNumColumns());
 			MatrixObject retRunningVar = getDenseMatrixOutputForGPUInstruction(ec, _output3.getName(), runningVar.getNumRows(), runningVar.getNumColumns());
 			MatrixObject resultSaveMean = getDenseMatrixOutputForGPUInstruction(ec, _output4.getName(), runningMean.getNumRows(), runningMean.getNumColumns());
@@ -469,8 +469,8 @@ public class DnnGPUInstruction extends GPUInstruction {
 		MatrixObject runningMean = getMatrixInputForGPUInstruction(ec, _input4.getName());
 		MatrixObject runningVar = getMatrixInputForGPUInstruction(ec, _input5.getName());
 		
-		double epsilon = ec.getScalarInput(_input6.getName(), _input6.getValueType(), _input6.isLiteral()).getDoubleValue();
-		double exponentialAverageFactor = 1-ec.getScalarInput(_input7.getName(), _input7.getValueType(), _input7.isLiteral()).getDoubleValue();
+		double epsilon = ec.getScalarInput(_input6).getDoubleValue();
+		double exponentialAverageFactor = 1-ec.getScalarInput(_input7).getDoubleValue();
 		
 		MatrixObject ret = getDenseMatrixOutputForGPUInstruction(ec, _output.getName(), image.getNumRows(), image.getNumColumns());
 		MatrixObject retRunningMean = getDenseMatrixOutputForGPUInstruction(ec, _output2.getName(), runningMean.getNumRows(), runningMean.getNumColumns());
@@ -502,7 +502,7 @@ public class DnnGPUInstruction extends GPUInstruction {
 		MatrixObject bias = getMatrixInputForGPUInstruction(ec, _input3.getName());
 		MatrixObject runningMean = getMatrixInputForGPUInstruction(ec, _input4.getName());
 		MatrixObject runningVar = getMatrixInputForGPUInstruction(ec, _input5.getName());
-		double epsilon = ec.getScalarInput(_input6.getName(), _input6.getValueType(), _input6.isLiteral()).getDoubleValue();
+		double epsilon = ec.getScalarInput(_input6).getDoubleValue();
 		
 		MatrixObject ret = getDenseMatrixOutputForGPUInstruction(ec, _output.getName(), image.getNumRows(), image.getNumColumns());
 		LibMatrixCuDNN.batchNormalizationForwardInference(ec.getGPUContext(0), getExtendedOpcode(), 
@@ -563,8 +563,8 @@ public class DnnGPUInstruction extends GPUInstruction {
 	private void processChannelSumsInstruction(ExecutionContext ec) {
 		GPUStatistics.incrementNoOfExecutedGPUInst();
 		MatrixObject input = getMatrixInputForGPUInstruction(ec, _input1.getName());
-		int C = (int) ec.getScalarInput(_input2.getName(), _input2.getValueType(), _input2.isLiteral()).getLongValue();
-		int HW = (int) ec.getScalarInput(_input3.getName(), _input3.getValueType(), _input3.isLiteral()).getLongValue();
+		int C = (int) ec.getScalarInput(_input2).getLongValue();
+		int HW = (int) ec.getScalarInput(_input3).getLongValue();
 		if(C*HW != input.getNumColumns()) {
 			throw new DMLRuntimeException("Expected rows*cols" + C + "*" + HW + " to be equal to number of columns of input " + input.getNumColumns());
 		}
@@ -658,7 +658,7 @@ public class DnnGPUInstruction extends GPUInstruction {
 		ec.releaseMatrixInputForGPUInstruction(_input1.getName());
 		
 		Pointer c0Pointer = LibMatrixCUDA.getDensePointer(gCtx, getMatrixInputForGPUInstruction(ec, _input5.getName()), instructionName);
-		boolean return_sequences = ec.getScalarInput(_input6.getName(), _input6.getValueType(), _input6.isLiteral()).getBooleanValue();
+		boolean return_sequences = ec.getScalarInput(_input6).getBooleanValue();
 		
 		// LibMatrixCuDNN.lstm(ec, gCtx, instructionName, 
 				// cudnnInput, cudnnWPointer, out0Pointer, c0Pointer, return_sequences, _output.getName(), _output2.getName(), N, M, D, T);
@@ -710,7 +710,7 @@ public class DnnGPUInstruction extends GPUInstruction {
 		ec.releaseMatrixInputForGPUInstruction(_input2.getName());
 		ec.releaseMatrixInputForGPUInstruction(_input3.getName());
 		
-		boolean return_sequences = ec.getScalarInput(_input6.getName(), _input6.getValueType(), _input6.isLiteral()).getBooleanValue();
+		boolean return_sequences = ec.getScalarInput(_input6).getBooleanValue();
 		
 		// Beause the matrices are released immediately, the output for transpose need not be taken into account
 		MatrixObject X = getMatrixInputForGPUInstruction(ec, _input1.getName());

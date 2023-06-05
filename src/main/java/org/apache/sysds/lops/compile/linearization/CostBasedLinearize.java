@@ -213,6 +213,7 @@ public class CostBasedLinearize
 			return _order;
 		}
 
+		@SuppressWarnings("unused")
 		protected double getComputeCost() {
 			return _computeCost;
 		}

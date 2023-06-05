@@ -351,7 +351,7 @@ public class DnnCPInstruction extends UnaryCPInstruction {
 		MatrixBlock runningVar = ec.getMatrixInput(_in5.getName());
 		String phase = ec.getScalarInput(_in6).getStringValue();
 		double epsilon = ec.getScalarInput(_in7).getDoubleValue();
-		double mu = ec.getScalarInput(_in8.getName(), _in8.getValueType(), _in8.isLiteral()).getDoubleValue();
+		double mu = ec.getScalarInput(_in8).getDoubleValue();
 		
 		MatrixBlock ret = new MatrixBlock(image.getNumRows(), image.getNumColumns(), false).allocateBlock();
 		MatrixBlock retRunningMean = new MatrixBlock(runningMean.getNumRows(), runningMean.getNumColumns(), false).allocateBlock();

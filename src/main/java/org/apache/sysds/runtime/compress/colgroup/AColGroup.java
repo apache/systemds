@@ -36,6 +36,7 @@ import org.apache.sysds.runtime.compress.estim.encoding.IEncode;
 import org.apache.sysds.runtime.compress.lib.CLALibCombineGroups;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
+import org.apache.sysds.runtime.functionobjects.Plus;
 import org.apache.sysds.runtime.instructions.cp.CM_COV_Object;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator;
@@ -418,17 +419,29 @@ public abstract class AColGroup implements Serializable {
 	 * Perform a binary row operation.
 	 * 
 	 * @param op        The operation to execute
-	 * @param v         The vector of values to apply, should be same length as dictionary length.
+	 * @param v         The vector of values to apply the values contained should be at least the length of the highest
+	 *                  value in the column index
 	 * @param isRowSafe True if the binary op is applied to an entire zero row and all results are zero
 	 * @return A updated column group with the new values.
 	 */
 	public abstract AColGroup binaryRowOpLeft(BinaryOperator op, double[] v, boolean isRowSafe);
 
 	/**
+	 * Short hand add operator call on column group to add a row vector to the column group
+	 * 
+	 * @param v The vector to add
+	 * @return A new column group where the vector is added.
+	 */
+	public AColGroup addVector(double[] v) {
+		return binaryRowOpRight(new BinaryOperator(Plus.getPlusFnObject(), 1), v, false);
+	}
+
+	/**
 	 * Perform a binary row operation.
 	 * 
 	 * @param op        The operation to execute
-	 * @param v         The vector of values to apply, should be same length as dictionary length.
+	 * @param v         The vector of values to apply the values contained should be at least the length of the highest
+	 *                  value in the column index
 	 * @param isRowSafe True if the binary op is applied to an entire zero row and all results are zero
 	 * @return A updated column group with the new values.
 	 */

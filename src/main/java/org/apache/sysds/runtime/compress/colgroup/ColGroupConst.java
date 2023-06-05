@@ -34,6 +34,7 @@ import org.apache.sysds.runtime.compress.colgroup.scheme.ConstScheme;
 import org.apache.sysds.runtime.compress.colgroup.scheme.ICLAScheme;
 import org.apache.sysds.runtime.compress.cost.ComputationCostEstimator;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
+import org.apache.sysds.runtime.compress.estim.EstimationFactors;
 import org.apache.sysds.runtime.compress.estim.encoding.EncodingFactory;
 import org.apache.sysds.runtime.compress.estim.encoding.IEncode;
 import org.apache.sysds.runtime.compress.lib.CLALibLeftMultBy;
@@ -576,7 +577,8 @@ public class ColGroupConst extends ADictBasedColGroup implements IContainDefault
 
 	@Override
 	public CompressedSizeInfoColGroup getCompressionInfo(int nRow) {
-		return new CompressedSizeInfoColGroup(_colIndexes, 1, nRow, CompressionType.CONST);
+		EstimationFactors ef = new EstimationFactors(1, 1, 1, _dict.getSparsity());
+		return new CompressedSizeInfoColGroup(_colIndexes, ef, estimateInMemorySize(), CompressionType.CONST, getEncoding());
 	}
 
 	@Override
@@ -594,8 +596,8 @@ public class ColGroupConst extends ADictBasedColGroup implements IContainDefault
 		return _dict.getValues();
 	}
 
-	@Override 
-	protected AColGroup fixColIndexes(IColIndex newColIndex, int[] reordering){
+	@Override
+	protected AColGroup fixColIndexes(IColIndex newColIndex, int[] reordering) {
 		return ColGroupConst.create(newColIndex, _dict.reorder(reordering));
 	}
 

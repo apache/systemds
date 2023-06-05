@@ -34,6 +34,7 @@ import org.apache.sysds.runtime.compress.colgroup.AMorphingMMColGroup;
 import org.apache.sysds.runtime.compress.colgroup.APreAgg;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupConst;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupEmpty;
+import org.apache.sysds.runtime.compress.colgroup.IFrameOfReferenceGroup;
 import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IIterate;
@@ -91,6 +92,29 @@ public final class CLALibUtils {
 			if(g instanceof AMorphingMMColGroup || g instanceof ColGroupConst || g instanceof ColGroupEmpty || g.isEmpty())
 				return true;
 		return false;
+	}
+
+	/**
+	 * Detect if the list of groups contains FOR.
+	 * 
+	 * @param groups the groups
+	 * @return If it contains FOR.
+	 */
+	protected static boolean shouldFilterFOR(List<AColGroup> groups) {
+		for(AColGroup g : groups)
+			if(g instanceof IFrameOfReferenceGroup)
+				return true;
+		return false;
+	}
+
+	protected static List<AColGroup> filterFOR(List<AColGroup> groups, double[] constV) {
+		if(constV == null)
+			return groups;
+		final List<AColGroup> filteredGroups = new ArrayList<>();
+		for(AColGroup g : groups)
+			if(g instanceof IFrameOfReferenceGroup)
+				filteredGroups.add(((IFrameOfReferenceGroup) g).extractCommon(constV));
+		return filteredGroups;
 	}
 
 	/**
@@ -166,7 +190,7 @@ public final class CLALibUtils {
 			final double[] colVals = cg.getValues();
 			for(int i = 0; i < colIdx.size(); i++) {
 				// Find the index in the result columns to add the value into.
-				int outId = resCols.findIndex(colIdx.get(i)); 
+				int outId = resCols.findIndex(colIdx.get(i));
 				values[outId] = colVals[i];
 			}
 		}

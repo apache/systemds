@@ -197,7 +197,6 @@ public abstract class AMorphingMMColGroup extends AColGroupValue {
 	protected abstract AColGroup allocateRightMultiplicationCommon(double[] common, IColIndex colIndexes,
 		ADictionary preAgg);
 
-	/** extract common value from group and return non morphing group */
 	/**
 	 * extract common value from group and return non morphing group
 	 * 

@@ -178,6 +178,14 @@ public interface IColIndex {
 	 */
 	public boolean contains(int i);
 
+	/**
+	 * Analyze if this column group contain any of the given column Ids.
+	 * 
+	 * @param idx A List of indexes
+	 * @return If it is contained
+	 */
+	public boolean containsAny(IColIndex idx);
+
 	/** A Class for slice results containing indexes for the slicing of dictionaries, and the resulting column index */
 	public static class SliceResult {
 		/** Start index to slice inside the dictionary */

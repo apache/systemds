@@ -184,7 +184,6 @@ public abstract class AComEst {
 		final int worstCase = worstCaseUpperBound(combinedColumns);
 		// Get max number of tuples based on the above.
 		final long max = Math.min((long) g1V * g2V, worstCase);
-
 		if(max > 1000000) // set the max combination to a million distinct
 			return null; // This combination is clearly not a good idea return null to indicate that.
 		else if(g1.getMap() == null || g2.getMap() == null)

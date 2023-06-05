@@ -1,0 +1,5 @@
+imputeByMean,imputeByMean,imputeByFd,outlierBySd,dummycoding,0,0,0,0,0,0,0,0,0,0,0,0,0
+outlierBySd,imputeByFd,outlierBySd,dummycoding,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+fillDefault,imputeByMean,imputeByFd,outlierBySd,dummycoding,0,0,0,0,0,0,0,0,0,0,0,0,0
+outlierByIQR,imputeByFd,outlierBySd,dummycoding,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+fillDefault,outlierByIQR,imputeByFd,outlierBySd,dummycoding,0,0,0,0,0,0,0,0,0,0,0,0,0

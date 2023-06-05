@@ -33,6 +33,7 @@ import org.apache.sysds.runtime.compress.colgroup.scheme.EmptyScheme;
 import org.apache.sysds.runtime.compress.colgroup.scheme.ICLAScheme;
 import org.apache.sysds.runtime.compress.cost.ComputationCostEstimator;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
+import org.apache.sysds.runtime.compress.estim.EstimationFactors;
 import org.apache.sysds.runtime.compress.estim.encoding.EncodingFactory;
 import org.apache.sysds.runtime.compress.estim.encoding.IEncode;
 import org.apache.sysds.runtime.data.DenseBlock;
@@ -350,7 +351,8 @@ public class ColGroupEmpty extends AColGroupCompressed implements IContainADicti
 
 	@Override
 	public CompressedSizeInfoColGroup getCompressionInfo(int nRow) {
-		return new CompressedSizeInfoColGroup(_colIndexes, 0, nRow, CompressionType.CONST);
+		EstimationFactors ef = new EstimationFactors(getNumValues(), 1, 0, 0.0);
+		return new CompressedSizeInfoColGroup(_colIndexes, ef, estimateInMemorySize(), CompressionType.CONST, getEncoding());
 	}
 
 	@Override

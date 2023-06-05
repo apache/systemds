@@ -62,7 +62,7 @@ import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
  * with no modifications.
  * 
  */
-public class ColGroupSDCFOR extends ASDC implements IMapToDataGroup {
+public class ColGroupSDCFOR extends ASDC implements IMapToDataGroup , IFrameOfReferenceGroup{
 
 	private static final long serialVersionUID = 3883228464052204203L;
 

@@ -66,4 +66,13 @@ public abstract class AColIndex implements IColIndex {
 			res = 31 * res + it.next();
 		return res;
 	}
+
+	@Override
+	public boolean containsAny(IColIndex idx) {
+		IIterate it = idx.iterator();
+		while(it.hasNext())
+			if(contains(it.next()))
+				return true;
+		return false;
+	}
 }

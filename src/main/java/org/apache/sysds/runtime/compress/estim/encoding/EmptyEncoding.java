@@ -19,10 +19,16 @@
 
 package org.apache.sysds.runtime.compress.estim.encoding;
 
+import java.util.Map;
+
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.compress.estim.EstimationFactors;
 
-/** Empty encoding for cases where the entire group of columns is zero */
+/**
+ * Empty encoding for cases where the entire group of columns is zero
+ */
 public class EmptyEncoding implements IEncode {
 
 	// empty constructor
@@ -35,8 +41,8 @@ public class EmptyEncoding implements IEncode {
 	}
 
 	@Override
-	public IEncode combineNoResize(IEncode e){
-		return e;
+	public Pair<IEncode, Map<Integer, Integer>> combineWithMap(IEncode e) {
+		return new ImmutablePair<>(e, null);
 	}
 
 	@Override

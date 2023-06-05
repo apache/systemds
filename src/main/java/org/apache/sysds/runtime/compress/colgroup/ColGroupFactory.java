@@ -32,6 +32,7 @@ import java.util.concurrent.Future;
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.bitmap.ABitmap;
@@ -53,6 +54,7 @@ import org.apache.sysds.runtime.compress.colgroup.offset.OffsetFactory;
 import org.apache.sysds.runtime.compress.cost.ACostEstimate;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfo;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
+import org.apache.sysds.runtime.compress.lib.CLALibCombineGroups;
 import org.apache.sysds.runtime.compress.readers.ReaderColumnSelection;
 import org.apache.sysds.runtime.compress.utils.ACount.DCounts;
 import org.apache.sysds.runtime.compress.utils.DblArray;
@@ -149,15 +151,17 @@ public class ColGroupFactory {
 
 	private List<AColGroup> compress() {
 		try {
-			List<AColGroup> ret = compressExecute();
-			if(pool != null)
-				pool.shutdown();
-			return ret;
+			if(in instanceof CompressedMatrixBlock)
+				return CLALibCombineGroups.combine((CompressedMatrixBlock) in, csi, pool);
+			else
+				return compressExecute();
 		}
 		catch(Exception e) {
+			throw new DMLCompressionException("Compression Failed", e);
+		}
+		finally {
 			if(pool != null)
 				pool.shutdown();
-			throw new DMLCompressionException("Compression Failed", e);
 		}
 	}
 

@@ -35,6 +35,7 @@ import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlockFactory;
+import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.lib.CLALibStack;
 import org.apache.sysds.runtime.io.IOUtilFunctions;
 import org.apache.sysds.runtime.io.MatrixReader;
@@ -78,6 +79,8 @@ public final class ReaderCompressed extends MatrixReader {
 		for(Path subPath : IOUtilFunctions.getSequenceFilePaths(fs, path)){
 			read(subPath, job, data);
 		}
+		if(data.containsValue(null))
+			throw new DMLCompressionException("Invalid read data contains null:");
 
 		if(data.size() == 1)
 			return data.entrySet().iterator().next().getValue();

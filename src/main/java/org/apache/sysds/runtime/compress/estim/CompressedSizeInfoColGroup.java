@@ -79,6 +79,16 @@ public class CompressedSizeInfoColGroup {
 		_sizes.put(bestCompressionType, _minSize);
 	}
 
+	public CompressedSizeInfoColGroup(IColIndex columns, EstimationFactors facts, long minSize, CompressionType bestCompression, IEncode map){
+		_cols = columns;
+		_facts = facts;
+		_minSize = minSize;
+		_bestCompressionType = bestCompression;
+		_sizes = new EnumMap<>(CompressionType.class);
+		_sizes.put(bestCompression, _minSize);
+		_map = map;
+	}
+
 	public CompressedSizeInfoColGroup(IColIndex columns, EstimationFactors facts,
 		Set<CompressionType> validCompressionTypes, IEncode map) {
 		_cols = columns;
@@ -260,12 +270,11 @@ public class CompressedSizeInfoColGroup {
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		sb.append(this.getClass().getSimpleName());
-		sb.append("cols: " + _cols);
+		sb.append(" cols: " + _cols);
 		sb.append(String.format(" common: %4.3f", getMostCommonFraction()));
-		sb.append(" Sizes: ");
-		sb.append(_sizes);
+		sb.append(" Sizes: " + _sizes);
 		sb.append(" facts: " + _facts);
-		// sb.append("\n" + _map);
+		sb.append(" mapIsNull: " + (_map == null));
 		return sb.toString();
 	}
 

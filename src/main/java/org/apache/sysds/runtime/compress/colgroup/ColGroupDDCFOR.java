@@ -54,7 +54,7 @@ import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
 /**
  * Class to encapsulate information about a column group that is encoded with dense dictionary encoding (DDC).
  */
-public class ColGroupDDCFOR extends AMorphingMMColGroup {
+public class ColGroupDDCFOR extends AMorphingMMColGroup implements IFrameOfReferenceGroup {
 	private static final long serialVersionUID = -5769772089913918987L;
 
 	/** Pointers to row indexes in the dictionary */
@@ -469,8 +469,9 @@ public class ColGroupDDCFOR extends AMorphingMMColGroup {
 
 	@Override
 	public CompressedSizeInfoColGroup getCompressionInfo(int nRow) {
+		IEncode enc = getEncoding();
 		EstimationFactors ef = new EstimationFactors(getNumValues(), _data.size(), _data.size(), _dict.getSparsity());
-		return new CompressedSizeInfoColGroup(_colIndexes, ef, nRow, getCompType());
+		return new CompressedSizeInfoColGroup(_colIndexes, ef, estimateInMemorySize(), getCompType(), enc);
 	}
 
 	@Override

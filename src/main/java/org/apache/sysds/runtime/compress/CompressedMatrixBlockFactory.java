@@ -267,10 +267,13 @@ public class CompressedMatrixBlockFactory {
 	private Pair<MatrixBlock, CompressionStatistics> compressMatrix() {
 		if(mb.getNonZeros() < 0)
 			throw new DMLCompressionException("Invalid to compress matrices with unknown nonZeros");
-		else if(mb instanceof CompressedMatrixBlock) // Redundant compression
-			return recompress((CompressedMatrixBlock) mb);
+		else if(mb instanceof CompressedMatrixBlock && ((CompressedMatrixBlock) mb).isOverlapping()) {
+			LOG.warn("Unsupported recompression of overlapping compression");
+			return new ImmutablePair<>(mb, null);
+		}
 
 		_stats.denseSize = MatrixBlock.estimateSizeInMemory(mb.getNumRows(), mb.getNumColumns(), 1.0);
+		_stats.sparseSize = MatrixBlock.estimateSizeSparseInMemory(mb.getNumRows(), mb.getNumColumns(), mb.getSparsity());
 		_stats.originalSize = mb.getInMemorySize();
 		_stats.originalCost = costEstimator.getCost(mb);
 
@@ -427,19 +430,21 @@ public class CompressedMatrixBlockFactory {
 		final double ratio = _stats.getRatio();
 		final double denseRatio = _stats.getDenseRatio();
 
+		_stats.setColGroupsCounts(res.getColGroups());
 		if(ratio < 1 && denseRatio < 100.0) {
 			LOG.info("--dense size:        " + _stats.denseSize);
 			LOG.info("--original size:     " + _stats.originalSize);
 			LOG.info("--compressed size:   " + _stats.compressedSize);
 			LOG.info("--compression ratio: " + ratio);
+			LOG.debug("--col groups types   " + _stats.getGroupsTypesString());
+			LOG.debug("--col groups sizes   " + _stats.getGroupsSizesString());
+			logLengths();
 			LOG.info("Abort block compression because compression ratio is less than 1.");
 			res = null;
 			setNextTimePhase(time.stop());
 			DMLCompressionStatistics.addCompressionTime(getLastTimePhase(), phase);
 			return;
 		}
-
-		_stats.setColGroupsCounts(res.getColGroups());
 
 		if(compSettings.isInSparkInstruction)
 			res.clearSoftReferenceToDecompressed();
@@ -452,30 +457,6 @@ public class CompressedMatrixBlockFactory {
 	private Pair<MatrixBlock, CompressionStatistics> abortCompression() {
 		LOG.warn("Compression aborted at phase: " + phase);
 		return new ImmutablePair<>(mb, _stats);
-	}
-
-	private Pair<MatrixBlock, CompressionStatistics> recompress(CompressedMatrixBlock cmb) {
-		LOG.debug("Recompressing an already compressed MatrixBlock");
-		LOG.warn("Not Implemented Recompress yet");
-
-		classifyPhase();
-		// informationExtractor = ComEstFactory.createEstimator(mb, compSettings, k);
-
-		// compressionGroups = informationExtractor.computeCompressedSizeInfos(k);
-
-		// _stats.estimatedSizeCols = compressionGroups.memoryEstimate();
-		// _stats.estimatedCostCols = costEstimator.getCost(compressionGroups);
-
-		// logPhase();
-
-
-
-		return new ImmutablePair<>(cmb, null);
-		// _stats.originalSize = cmb.getInMemorySize();
-		// CompressedMatrixBlock combined = CLALibCombineGroups.combine(cmb, k);
-		// CompressedMatrixBlock squashed = CLALibSquash.squash(combined, k);
-		// _stats.compressedSize = squashed.getInMemorySize();
-		// return new ImmutablePair<>(squashed, _stats);
 	}
 
 	private void logPhase() {
@@ -492,6 +473,9 @@ public class CompressedMatrixBlockFactory {
 						LOG.debug("--Seed used for comp : " + compSettings.seed);
 						LOG.debug("--compression phase " + phase + " Classify  : " + getLastTimePhase());
 						LOG.debug("--Individual Columns Estimated Compression: " + _stats.estimatedSizeCols);
+						if(mb instanceof CompressedMatrixBlock) {
+							LOG.debug("--Recompressing already compressed MatrixBlock");
+						}
 						break;
 					case 1:
 						LOG.debug("--compression phase " + phase + " Grouping  : " + getLastTimePhase());
@@ -521,7 +505,9 @@ public class CompressedMatrixBlockFactory {
 						LOG.debug("--compression phase  " + phase + " Cleanup   : " + getLastTimePhase());
 						LOG.debug("--col groups types   " + _stats.getGroupsTypesString());
 						LOG.debug("--col groups sizes   " + _stats.getGroupsSizesString());
+						LOG.debug("--input was compressed " + (mb instanceof CompressedMatrixBlock));
 						LOG.debug(String.format("--dense size:        %16d", _stats.denseSize));
+						LOG.debug(String.format("--sparse size:       %16d", _stats.sparseSize));
 						LOG.debug(String.format("--original size:     %16d", _stats.originalSize));
 						LOG.debug(String.format("--compressed size:   %16d", _stats.compressedSize));
 						LOG.debug(String.format("--compression ratio: %4.3f", _stats.getRatio()));
@@ -534,33 +520,37 @@ public class CompressedMatrixBlockFactory {
 							LOG.debug(
 								String.format("--relative cost:     %1.4f", (_stats.compressedCost / _stats.originalCost)));
 						}
-						if(compressionGroups != null && compressionGroups.getInfo().size() < 1000) {
-							int[] lengths = new int[res.getColGroups().size()];
-							int i = 0;
-							for(AColGroup colGroup : res.getColGroups())
-								lengths[i++] = colGroup.getNumValues();
-
-							LOG.debug("--compressed colGroup dictionary sizes: " + Arrays.toString(lengths));
-							LOG.debug(
-								"--compressed colGroup nr columns      : " + constructNrColumnString(res.getColGroups()));
-						}
-						if(LOG.isTraceEnabled()) {
-							for(AColGroup colGroup : res.getColGroups()) {
-								if(colGroup.estimateInMemorySize() < 1000)
-									LOG.trace(colGroup);
-								else {
-									LOG.trace("--colGroups type       : " + colGroup.getClass().getSimpleName() + " size: "
-										+ colGroup.estimateInMemorySize()
-										+ ((colGroup instanceof AColGroupValue) ? "  numValues :"
-											+ ((AColGroupValue) colGroup).getNumValues() : "")
-										+ "  colIndexes : " + colGroup.getColIndices());
-								}
-							}
-						}
+						logLengths();
 				}
 			}
 		}
 		phase++;
+	}
+
+	private void logLengths() {
+		if(compressionGroups != null && compressionGroups.getInfo().size() < 1000) {
+			int[] lengths = new int[res.getColGroups().size()];
+			int i = 0;
+			for(AColGroup colGroup : res.getColGroups())
+				lengths[i++] = colGroup.getNumValues();
+
+			LOG.debug("--compressed colGroup dictionary sizes: " + Arrays.toString(lengths));
+			LOG.debug("--compressed colGroup nr columns      : " + constructNrColumnString(res.getColGroups()));
+		}
+		if(LOG.isTraceEnabled()) {
+			for(AColGroup colGroup : res.getColGroups()) {
+				if(colGroup.estimateInMemorySize() < 1000)
+					LOG.trace(colGroup);
+				else {
+					LOG.trace(
+						"--colGroups type       : " + colGroup.getClass().getSimpleName() + " size: "
+							+ colGroup.estimateInMemorySize()
+							+ ((colGroup instanceof AColGroupValue) ? "  numValues :"
+								+ ((AColGroupValue) colGroup).getNumValues() : "")
+							+ "  colIndexes : " + colGroup.getColIndices());
+				}
+			}
+		}
 	}
 
 	private void setNextTimePhase(double time) {

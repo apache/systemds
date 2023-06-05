@@ -19,6 +19,10 @@
 
 package org.apache.sysds.runtime.compress.estim.encoding;
 
+import java.util.Map;
+
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
@@ -29,7 +33,10 @@ import org.apache.sysds.runtime.compress.colgroup.offset.OffsetFactory;
 import org.apache.sysds.runtime.compress.estim.EstimationFactors;
 import org.apache.sysds.runtime.compress.utils.IntArrayList;
 
-/** Most common is zero encoding */
+/**
+ * A Encoding that contain a default value that is not encoded and every other value is encoded in the map. The logic is
+ * similar to the SDC column group.
+ */
 public class SparseEncoding implements IEncode {
 
 	/** A map to the distinct values contained */
@@ -63,14 +70,14 @@ public class SparseEncoding implements IEncode {
 	}
 
 	@Override
-	public IEncode combineNoResize(IEncode e) {
+	public Pair<IEncode, Map<Integer, Integer>> combineWithMap(IEncode e) {
 		if(e instanceof EmptyEncoding || e instanceof ConstEncoding)
-			return this;
+			return new ImmutablePair<>(this, null);
 		else if(e instanceof SparseEncoding) {
 			SparseEncoding es = (SparseEncoding) e;
 			if(es.off == off && es.map == map)
-				return this;
-			return combineSparseNoResize(es);
+				return new ImmutablePair<>(this, null);
+			return new ImmutablePair<>(combineSparseNoResize(es), null);
 		}
 		else
 			throw new DMLCompressionException("Not allowed other to be dense");

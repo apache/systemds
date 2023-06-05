@@ -275,7 +275,7 @@ public class CompressedLoggingTests {
 				if(l.getMessage().toString().contains("--colGroups type"))
 					return;
 			}
-			fail("Log did not contain Compressed Size");
+			fail("Log did not contain colgroups type");
 		}
 		catch(Exception e) {
 			e.printStackTrace();
@@ -303,7 +303,7 @@ public class CompressedLoggingTests {
 				if(l.getMessage().toString().contains("--colGroups type"))
 					return;
 			}
-			fail("Log did not contain Compressed Size");
+			fail("Log did not contain colgroups type");
 		}
 		catch(Exception e) {
 			e.printStackTrace();
@@ -331,7 +331,7 @@ public class CompressedLoggingTests {
 				if(l.getMessage().toString().contains("Empty input to compress"))
 					return;
 			}
-			fail("Log Did not contain Empty");
+			fail("Log did not contain Empty");
 		}
 		catch(Exception e) {
 			e.printStackTrace();
@@ -349,17 +349,15 @@ public class CompressedLoggingTests {
 
 		try {
 			Logger.getLogger(CompressedMatrixBlockFactory.class).setLevel(Level.DEBUG);
-			MatrixBlock mb = TestUtils.generateTestMatrixBlock(10, 1000, 1, 1, 0.0, 235);
-			mb = TestUtils.round(mb);
+			MatrixBlock mb = TestUtils.generateTestMatrixBlock(100, 3, 1, 1, 0.5, 235);
 			MatrixBlock m2 = CompressedMatrixBlockFactory.compress(mb).getLeft();
 			CompressedMatrixBlockFactory.compress(m2).getLeft();
 			final List<LoggingEvent> log = LoggingUtils.reinsert(appender);
 			for(LoggingEvent l : log) {
-				// LOG.error(l.getMessage());
 				if(l.getMessage().toString().contains("Recompressing"))
 					return;
 			}
-			fail("Log Did not contain Recompressing");
+			fail("Log did not contain Recompressing");
 		}
 		catch(Exception e) {
 			e.printStackTrace();
@@ -390,7 +388,7 @@ public class CompressedLoggingTests {
 				if(l.getMessage().toString().contains("Abort block compression"))
 					return;
 			}
-			fail("Log Did not contain Recompressing");
+			fail("Log did not contain abort block compression");
 		}
 		catch(Exception e) {
 			e.printStackTrace();
@@ -415,7 +413,7 @@ public class CompressedLoggingTests {
 				if(l.getMessage().toString().contains("CompressionSettings"))
 					return;
 			}
-			fail("failed to get Compressionsetting to log");
+			fail("failed to get Compression setting to log");
 		}
 		catch(Exception e) {
 			e.printStackTrace();
@@ -439,7 +437,7 @@ public class CompressedLoggingTests {
 				if(l.getMessage().toString().contains("Estimation Type"))
 					return;
 			}
-			fail("failed to get Compressionsetting to log");
+			fail("failed to get estimation type");
 		}
 		catch(Exception e) {
 			e.printStackTrace();

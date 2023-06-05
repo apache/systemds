@@ -22,11 +22,12 @@ package org.apache.sysds.runtime.compress.estim;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
+import org.apache.sysds.runtime.compress.estim.encoding.IEncode;
+import org.apache.sysds.runtime.compress.lib.CLALibCombineGroups;
 
 public class ComEstCompressed extends AComEst {
 
@@ -66,14 +67,26 @@ public class ComEstCompressed extends AComEst {
 			AColGroup g = cData.getColGroupForColumn(id);
 			return g.getNumValues();
 		}
-		else
-			throw new UnsupportedOperationException("Unimplemented method 'worstCaseUpperBound'");
+		else {
+			List<AColGroup> groups = CLALibCombineGroups.findGroupsInIndex(columns, cData.getColGroups());
+			int nVals = 1;
+			for(AColGroup g : groups)
+				nVals *= g.getNumValues();
+
+			return Math.min(_data.getNumRows(), nVals);
+		}
 	}
 
 	@Override
 	protected CompressedSizeInfoColGroup combine(IColIndex combinedColumns, CompressedSizeInfoColGroup g1,
 		CompressedSizeInfoColGroup g2, int maxDistinct) {
-		throw new UnsupportedOperationException("Unimplemented method 'combine'");
+		final IEncode map = g1.getMap().combine(g2.getMap());
+		return getFacts(map, combinedColumns);
 	}
 
+	protected CompressedSizeInfoColGroup getFacts(IEncode map, IColIndex colIndexes) {
+		final int _numRows = getNumRows();
+		final EstimationFactors em = map.extractFacts(_numRows, _data.getSparsity(), _data.getSparsity(), _cs);
+		return new CompressedSizeInfoColGroup(colIndexes, em, _cs.validCompressions, map);
+	}
 }

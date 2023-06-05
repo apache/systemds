@@ -19,6 +19,9 @@
 
 package org.apache.sysds.runtime.compress.estim.encoding;
 
+import java.util.Map;
+
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.CompressionSettings;
@@ -42,13 +45,13 @@ public interface IEncode {
 	public IEncode combine(IEncode e);
 
 	/**
-	 * Combine two encodings without resizing the output. meaning the mapping of the indexes should be consistant with 
+	 * Combine two encodings without resizing the output. meaning the mapping of the indexes should be consistent with 
 	 * left hand side Dictionary indexes and right hand side indexes.
 	 * 
 	 * @param e The other side to combine with 
 	 * @return The combined encoding
 	 */
-	public IEncode combineNoResize(IEncode e);
+	public Pair<IEncode, Map<Integer,Integer>> combineWithMap(IEncode e);
 
 	/**
 	 * Get the number of unique values in this encoding

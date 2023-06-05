@@ -192,6 +192,7 @@ public final class CLALibStack {
 		final AColGroup[][] finalCols = new AColGroup[clen][]; // temp array for combining
 		final int blocksInColumn = (rlen - 1) / blen + 1;
 
+
 		// Add all the blocks into linear structure.
 		for(int br = 0; br * blen < rlen; br++) {
 			for(int bc = 0; bc * blen < clen; bc++) {
@@ -208,24 +209,28 @@ public final class CLALibStack {
 						return combineViaDecompression(m, rlen, clen, blen, k);
 					}
 					finalCols[c][br] = gc;
+					if(br != 0 && (finalCols[c][0] == null || !finalCols[c][br].getColIndices().equals(finalCols[c][0].getColIndices()))){
+						LOG.warn("Combining via decompression. There was an column with different index");
+						return combineViaDecompression(m, rlen, clen, blen, k);
+					}
 
 				}
 			}
 		}
+
+
 		final ExecutorService pool = CommonThreadPool.get(Math.max(Math.min(clen / 500, k), 1));
 		try {
 
 			List<AColGroup> finalGroups = pool.submit(() -> {
 				return Arrays//
 					.stream(finalCols)//
-					.filter(x -> x != null)//
+					.filter(x -> x != null)// filter all columns that are contained in other groups.
 					.parallel()//
 					.map(x -> {
 						return combineN(x);
 					}).collect(Collectors.toList());
 			}).get();
-
-			pool.shutdown();
 			if(finalGroups.contains(null)) {
 				LOG.warn("Combining via decompression. There was a column group that did not append ");
 				return combineViaDecompression(m, rlen, clen, blen, k);
@@ -233,12 +238,20 @@ public final class CLALibStack {
 			return new CompressedMatrixBlock(rlen, clen, -1, false, finalGroups);
 		}
 		catch(InterruptedException | ExecutionException e) {
-			pool.shutdown();
 			throw new DMLRuntimeException("Failed to combine column groups", e);
+		}
+		finally {
+			pool.shutdown();
 		}
 	}
 
 	private static AColGroup combineN(AColGroup[] groups) {
-		return AColGroup.appendN(groups);
+		try {
+			return AColGroup.appendN(groups);
+
+		}
+		catch(Exception e) {
+			throw new DMLCompressionException("Failed to combine groups:\n" + Arrays.toString(groups), e);
+		}
 	}
 }

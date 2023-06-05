@@ -52,7 +52,6 @@ public class BuiltinFitPipelineTest extends AutomatedTestBase {
 		String HOME = SCRIPT_DIR+"functions/pipelines/";
 		Types.ExecMode modeOld = setExecMode(et);
 
-		setOutputBuffering(true);
 		try {
 			loadTestConfiguration(getTestConfiguration(TEST_NAME1));
 			fullDMLScriptName = HOME + TEST_NAME1 + ".dml";

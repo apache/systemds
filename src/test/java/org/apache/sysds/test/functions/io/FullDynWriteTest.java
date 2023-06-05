@@ -38,9 +38,9 @@ import org.apache.sysds.test.TestUtils;
 
 public class FullDynWriteTest extends AutomatedTestBase
 {
-	
 	private final static String TEST_NAME1 = "DynWriteScalar";
 	private final static String TEST_NAME2 = "DynWriteMatrix";
+	private final static String TEST_NAME3 = "DynWriteMatrix2";
 	private final static String TEST_DIR = "functions/io/";
 	private final static String TEST_CLASS_DIR = TEST_DIR + FullDynWriteTest.class.getSimpleName() + "/";
 	private final static double eps = 1e-10;
@@ -55,47 +55,105 @@ public class FullDynWriteTest extends AutomatedTestBase
 	
 	
 	@Override
-	public void setUp() 
-	{
+	public void setUp() {
 		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] { "B" }) );
 		addTestConfiguration(TEST_NAME2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[] { "B" }) );
+		addTestConfiguration(TEST_NAME3, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME3, new String[] { "B" }) );
 	}
 
 	@Test
-	public void testScalarCP() 
-	{
-		runDynamicWriteTest( Type.Scalar, FileFormat.TEXT, ExecType.CP);
+	public void testScalarCP() {
+		runDynamicWriteTest(Type.Scalar, FileFormat.TEXT, ExecType.CP);
 	}
 	
 	@Test
-	public void testMatrixTextCP() 
-	{
-		runDynamicWriteTest( Type.Matrix, FileFormat.TEXT, ExecType.CP);
+	public void testMatrixTextCP() {
+		runDynamicWriteTest(Type.Matrix, FileFormat.TEXT, ExecType.CP);
 	}
 	
 	@Test
-	public void testMatrixCSVCP() 
-	{
-		runDynamicWriteTest( Type.Matrix, FileFormat.CSV, ExecType.CP);
+	public void testMatrixCSVCP() {
+		runDynamicWriteTest(Type.Matrix, FileFormat.CSV, ExecType.CP);
 	}
 	
 	@Test
-	public void testMatrixMMCP() 
-	{
-		runDynamicWriteTest( Type.Matrix, FileFormat.MM, ExecType.CP);
+	public void testMatrixMMCP() {
+		runDynamicWriteTest(Type.Matrix, FileFormat.MM, ExecType.CP);
 	}
 	
 	@Test
-	public void testMatrixBinaryCP() 
-	{
-		runDynamicWriteTest( Type.Matrix, FileFormat.BINARY, ExecType.CP);
+	public void testMatrixBinaryCP() {
+		runDynamicWriteTest(Type.Matrix, FileFormat.BINARY, ExecType.CP);
 	}
 	
-	private void runDynamicWriteTest( Type type, FileFormat fmt, ExecType et )
-	{		
-		String TEST_NAME = (type==Type.Scalar) ? TEST_NAME1 : TEST_NAME2;
-		ExecMode platformOld = rtplatform;
-		rtplatform = ExecMode.HYBRID;
+	@Test
+	public void testMatrixTextSP() {
+		runDynamicWriteTest(Type.Matrix, FileFormat.TEXT, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testMatrixCSVSP() {
+		runDynamicWriteTest(Type.Matrix, FileFormat.CSV, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testMatrixMMSP() {
+		runDynamicWriteTest(Type.Matrix, FileFormat.MM, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testMatrixBinarySP() {
+		runDynamicWriteTest(Type.Matrix, FileFormat.BINARY, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testMatrixDynTextCP() {
+		runDynamicWriteTest(Type.Matrix, TEST_NAME3, FileFormat.TEXT, ExecType.CP);
+	}
+	
+	@Test
+	public void testMatrixDynCSVCP() {
+		runDynamicWriteTest(Type.Matrix, TEST_NAME3, FileFormat.CSV, ExecType.CP);
+	}
+	
+	@Test
+	public void testMatrixDynMMCP() {
+		runDynamicWriteTest(Type.Matrix, TEST_NAME3, FileFormat.MM, ExecType.CP);
+	}
+	
+	@Test
+	public void testMatrixDynBinaryCP() {
+		runDynamicWriteTest(Type.Matrix, TEST_NAME3, FileFormat.BINARY, ExecType.CP);
+	}
+	
+	@Test
+	public void testMatrixDynTextSP() {
+		runDynamicWriteTest(Type.Matrix, TEST_NAME3, FileFormat.TEXT, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testMatrixDynCSVSP() {
+		runDynamicWriteTest(Type.Matrix, TEST_NAME3, FileFormat.CSV, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testMatrixDynMMSP() {
+		runDynamicWriteTest(Type.Matrix, TEST_NAME3, FileFormat.MM, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testMatrixDynBinarySP() {
+		runDynamicWriteTest(Type.Matrix, TEST_NAME3, FileFormat.BINARY, ExecType.SPARK);
+	}
+	
+	private void runDynamicWriteTest( Type type, FileFormat fmt, ExecType et ) {
+		runDynamicWriteTest(type, TEST_NAME2, fmt, et);
+	}
+	
+	private void runDynamicWriteTest( Type type, String test, FileFormat fmt, ExecType et )
+	{
+		String TEST_NAME = (type==Type.Scalar) ? TEST_NAME1 : test;
+		ExecMode platformOld = setExecMode(et);
 		
 		TestConfiguration config = getTestConfiguration(TEST_NAME);
 		config.addVariable("rows", rows);

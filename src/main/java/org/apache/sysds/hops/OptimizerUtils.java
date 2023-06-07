@@ -305,6 +305,11 @@ public class OptimizerUtils
 	 */
 	public static boolean COST_BASED_ORDERING = false;
 
+	/**
+	 * Rule-based operator placement policy for GPU.
+	 */
+	public static boolean RULE_BASED_GPU_EXEC = false;
+
 	//////////////////////
 	// Optimizer levels //
 	//////////////////////

@@ -306,6 +306,10 @@ public abstract class Lop
 		return inputs;
 	}
 
+	public Lop getInput(int index) {
+		return inputs.get(index);
+	}
+
 	/**
 	 * Method to get output of Lops
 	 * 
@@ -503,8 +507,17 @@ public abstract class Lop
  		lps.setExecType(newExecType);
 	}
 
+
 	public boolean isExecSpark () {
 		return (lps.getExecType() == ExecType.SPARK);
+	}
+
+	public boolean isExecGPU () {
+		return (lps.getExecType() == ExecType.GPU);
+	}
+
+	public boolean isExecCP () {
+		return (lps.getExecType() == ExecType.CP);
 	}
 
 	public boolean getProducesIntermediateOutput() {
@@ -531,7 +544,19 @@ public abstract class Lop
 	public OutputParameters getOutputParameters() {
 		return outParams;
 	}
-	
+
+	public long getNumRows() {
+		return getOutputParameters().getNumRows();
+	}
+
+	public long getNumCols() {
+		return getOutputParameters().getNumCols();
+	}
+
+	public long getNnz() {
+		return getOutputParameters().getNnz();
+	}
+
 	/**
 	 * Method to get aggregate type if applicable.
 	 * This method is overridden by the Lops with aggregate types (e.g. MapMult)
@@ -736,6 +761,25 @@ public abstract class Lop
 			}
 		}
 		return outCP;
+	}
+
+	/**
+	 * Function that determines if all the outputs of a LOP are of GPU execution types
+	 *
+	 * @return true if all outputs are CP
+	 */
+	public boolean isAllOutputsGPU() {
+		if (outputs.isEmpty())
+			return false;
+
+		boolean outGPU = true;
+		for (Lop out : getOutputs()) {
+			if (out.getExecType() != ExecType.GPU) {
+				outGPU = false;
+				break;
+			}
+		}
+		return outGPU;
 	}
 
 	/**

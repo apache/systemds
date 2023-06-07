@@ -24,6 +24,7 @@ import java.util.concurrent.ExecutorService;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.mapred.JobConf;
+import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.conf.CompilerConfig.ConfigType;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.lops.Compression.CompressConfig;
@@ -277,6 +278,12 @@ public class ConfigurationManager{
 	public static boolean isCheckpointEnabled() {
 		return (getDMLConfig().getBooleanValue(DMLConfig.ASYNC_SPARK_CHECKPOINT)
 			|| OptimizerUtils.ASYNC_CHECKPOINT_SPARK);
+	}
+
+	public static boolean isRuleBasedGPUPlacement() {
+		return (DMLScript.USE_ACCELERATOR &&
+			(getDMLConfig().getBooleanValue(DMLConfig.GPU_RULE_BASED_PLACEMENT)
+			|| OptimizerUtils.RULE_BASED_GPU_EXEC));
 	}
 
 	public static ILinearize.DagLinearization getLinearizationOrder() {

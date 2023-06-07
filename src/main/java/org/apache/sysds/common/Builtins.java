@@ -180,7 +180,7 @@ public enum Builtins {
 	IQM("interQuartileMean", false),
 	ISNA("is.na", "isNA", false),
 	ISNAN("is.nan", "isNaN", false),
-	ISINF("is.infinite", false),
+	ISINF("is.infinite", "isInf", false),
 	KM("km", true),
 	KMEANS("kmeans", true),
 	KMEANSPREDICT("kmeansPredict", true),

@@ -132,7 +132,7 @@ public class DMLConfig
 	/** Asynchronous triggering of Spark OPs and operator placement **/
 	public static final String ASYNC_SPARK_PREFETCH = "sysds.async.prefetch";  // boolean: enable asynchronous prefetching spark intermediates
 	public static final String ASYNC_SPARK_BROADCAST = "sysds.async.broadcast";  // boolean: enable asynchronous broadcasting CP intermediates
-	public static final String ASYNC_SPARK_CHECKPOINT = "sysds.async.checkpoint";  // boolean: enable asynchronous persisting of Spark intermediates
+	public static final String ASYNC_SPARK_CHECKPOINT = "sysds.async.checkpoint";  // boolean: enable compile-time persisting of Spark intermediates
 	//internal config
 	public static final String DEFAULT_SHARED_DIR_PERMISSION = "777"; //for local fs and DFS
 	

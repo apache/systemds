@@ -115,6 +115,9 @@
     <!-- Allocator to use to allocate GPU device memory. Supported values are cuda, unified_memory (default: cuda) -->
     <sysds.gpu.memory.allocator>cuda</sysds.gpu.memory.allocator>
 
+    <!-- If rule-based operator placement for GPU enabled -->
+    <sysds.gpu.place.rulebased>false</sysds.gpu.place.rulebased>
+
     <!-- enables disk spilling for lineage cache -->
     <sysds.lineage.cachespill>true</sysds.lineage.cachespill>
 
@@ -147,5 +150,8 @@
 
     <!-- Asynchronously trigger broadcast (CP intermediate) -->
     <sysds.async.broadcast>false</sysds.async.broadcast>
+
+    <!-- Compile-time synchronous/asynchronous checkpoint placement -->
+    <sysds.async.checkpoint>false</sysds.async.checkpoint>
 
 </root>

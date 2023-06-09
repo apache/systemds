@@ -28,9 +28,8 @@
 # P     Probability of the set of outputs
 # --------------------------------------------------------------------------------------------
 
-hmmPredict = function(Matrix[Double] X, k) 
-    return (Matrix[double] O) 
+m_hmmPredict = function(Matrix[Double] X, Integer k) return (Matrix[Double] p)
 {
-    O = matrix(0.0, rows=1, cols=k)
+    p = matrix(0.0, rows=1, cols=k)
 }    
 

@@ -28,9 +28,7 @@
 # P     Probability of the set of outputs
 # --------------------------------------------------------------------------------------------
 
-hmm = function(Matrix[Double] X) 
-    return (scalar p) 
+m_hmm = function(Matrix[Double] X) return (Double p) 
 {
     p = 0.0
-    return p
 }    

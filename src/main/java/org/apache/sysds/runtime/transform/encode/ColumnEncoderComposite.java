@@ -319,6 +319,12 @@ public class ColumnEncoderComposite extends ColumnEncoder {
 			columnEncoder.initMetaData(out);
 	}
 
+	//pass down init to actual encoders, only ColumnEncoderWordEmbedding has actually implemented the init method
+	public void initEmbeddings(MatrixBlock embeddings){
+		for(ColumnEncoder columnEncoder : _columnEncoders)
+			columnEncoder.initEmbeddings(embeddings);
+	}
+
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();

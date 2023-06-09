@@ -32,6 +32,8 @@ public class TransformStatistics {
 	//private static final LongAdder applyTime = new LongAdder();
 	private static final LongAdder recodeApplyTime = new LongAdder();
 	private static final LongAdder dummyCodeApplyTime = new LongAdder();
+
+	private static final LongAdder wordEmbeddingApplyTime = new LongAdder();
 	private static final LongAdder passThroughApplyTime = new LongAdder();
 	private static final LongAdder featureHashingApplyTime = new LongAdder();
 	private static final LongAdder binningApplyTime = new LongAdder();
@@ -53,6 +55,10 @@ public class TransformStatistics {
 
 	public static void incDummyCodeApplyTime(long t) {
 		dummyCodeApplyTime.add(t);
+	}
+
+	public static void incWordEmbeddingApplyTime(long t){
+		wordEmbeddingApplyTime.add(t);
 	}
 
 	public static void incBinningApplyTime(long t) {
@@ -112,7 +118,7 @@ public class TransformStatistics {
 		return dummyCodeApplyTime.longValue() + binningApplyTime.longValue() +
 				featureHashingApplyTime.longValue() + passThroughApplyTime.longValue() +
 				recodeApplyTime.longValue() + UDFApplyTime.longValue() +
-				omitApplyTime.longValue() + imputeApplyTime.longValue();
+				omitApplyTime.longValue() + imputeApplyTime.longValue() + wordEmbeddingApplyTime.longValue();
 	}
 
 	public static void reset() {
@@ -163,6 +169,9 @@ public class TransformStatistics {
 			if(dummyCodeApplyTime.longValue() > 0)
 				sb.append("\tDummyCode apply time:\t").append(String.format("%.3f",
 					dummyCodeApplyTime.longValue()*1e-9)).append(" sec.\n");
+			if(wordEmbeddingApplyTime.longValue() > 0)
+				sb.append("\tWordEmbedding apply time:\t").append(String.format("%.3f",
+						wordEmbeddingApplyTime.longValue()*1e-9)).append(" sec.\n");
 			if(featureHashingApplyTime.longValue() > 0)
 				sb.append("\tHashing apply time:\t").append(String.format("%.3f",
 					featureHashingApplyTime.longValue()*1e-9)).append(" sec.\n");

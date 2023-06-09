@@ -65,8 +65,13 @@ public abstract class ColumnEncoder implements Encoder, Comparable<ColumnEncoder
 	protected int _nBuildPartitions = 0;
 	protected int _nApplyPartitions = 0;
 
+	//Override in ColumnEncoderWordEmbedding
+	public void initEmbeddings(MatrixBlock embeddings){
+		return;
+	}
+
 	protected enum TransformType{
-		BIN, RECODE, DUMMYCODE, FEATURE_HASH, PASS_THROUGH, UDF, N_A
+		BIN, RECODE, DUMMYCODE, FEATURE_HASH, PASS_THROUGH, UDF, WORD_EMBEDDING, N_A
 	}
 
 	protected ColumnEncoder(int colID) {
@@ -105,6 +110,9 @@ public abstract class ColumnEncoder implements Encoder, Comparable<ColumnEncoder
 					break;
 				case DUMMYCODE:
 					TransformStatistics.incDummyCodeApplyTime(t);
+					break;
+				case WORD_EMBEDDING:
+					TransformStatistics.incWordEmbeddingApplyTime(t);
 					break;
 				case FEATURE_HASH:
 					TransformStatistics.incFeatureHashingApplyTime(t);

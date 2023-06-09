@@ -49,6 +49,7 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 	public static final String TF_FN_PARAM_DATA = "target";
 	public static final String TF_FN_PARAM_MTD2 = "meta";
 	public static final String TF_FN_PARAM_SPEC = "spec";
+	public static final String TF_FN_PARAM_EMBD = "embedding";
 	public static final String LINEAGE_TRACE = "lineage";
 	public static final String TF_FN_PARAM_MTD = "transformPath"; //NOTE MB: for backwards compatibility
 	
@@ -617,11 +618,14 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 		//validate data / metadata (recode maps)
 		checkDataType(false, "transformapply", TF_FN_PARAM_DATA, DataType.FRAME, conditional);
 		checkDataType(false, "transformapply", TF_FN_PARAM_MTD2, DataType.FRAME, conditional);
-		
+
 		//validate specification
 		checkDataValueType(false, "transformapply", TF_FN_PARAM_SPEC, DataType.SCALAR, ValueType.STRING, conditional);
 		validateTransformSpec(TF_FN_PARAM_SPEC, conditional);
-		
+
+		//validate additional argument for word_embeddings tranform
+		checkDataType(true, "transformapply", TF_FN_PARAM_EMBD, DataType.MATRIX, conditional);
+
 		//set output dimensions
 		output.setDataType(DataType.MATRIX);
 		output.setValueType(ValueType.FP64);

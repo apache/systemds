@@ -193,7 +193,7 @@ public class Dag<N extends Lop>
 	 */
 	private boolean inputNeedsPrefetch(Lop input, Lop lop){
 		return input.prefetchActivated() && lop.getExecType() != ExecType.FED
-			&& input.getFederatedOutput().isForcedFederated();
+			&& input.getFederatedOutput() != null && input.getFederatedOutput().isForcedFederated();
 	}
 
 	/**

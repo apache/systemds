@@ -105,13 +105,17 @@ public class RewriteAddPrefetchLop extends LopRewriteRule
 			&& !(lop instanceof MMTSJ) && !(lop instanceof UAggOuterChain)
 			&& !(lop instanceof ParameterizedBuiltin) && !(lop instanceof SpoofFused);
 
+		// Exclude List consumers. List is just a metadata handle.
+		boolean anyOutputList = lop.getOutputs().stream()
+			.anyMatch(out -> out.getDataType() == Types.DataType.LIST);
+
 		//FIXME: Rewire _inputParams when needed (e.g. GroupedAggregate)
 		boolean hasParameterizedOut = lop.getOutputs().stream()
 			.anyMatch(out -> ((out instanceof ParameterizedBuiltin)
 				|| (out instanceof GroupedAggregate)
 				|| (out instanceof GroupedAggregateM)));
 		//TODO: support non-matrix outputs
-		return transformOP && !hasParameterizedOut
+		return transformOP && !hasParameterizedOut && !anyOutputList
 			&& (lop.isAllOutputsCP() || OperatorOrderingUtils.isCollectForBroadcast(lop))
 			&& lop.getDataType() == Types.DataType.MATRIX;
 	}

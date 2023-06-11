@@ -39,7 +39,7 @@ public class PrefetchRDDTest extends AutomatedTestBase {
 	
 	protected static final String TEST_DIR = "functions/async/";
 	protected static final String TEST_NAME = "PrefetchRDD";
-	protected static final int TEST_VARIANTS = 4;
+	protected static final int TEST_VARIANTS = 5;
 	protected static String TEST_CLASS_DIR = TEST_DIR + PrefetchRDDTest.class.getSimpleName() + "/";
 	
 	@Override
@@ -71,6 +71,12 @@ public class PrefetchRDDTest extends AutomatedTestBase {
 	public void testAsyncSparkOPs4() {
 		//SP consumer. Collect to broadcast to the SP consumer. Prefetch.
 		runTest(TEST_NAME+"4");
+	}
+
+	@Test
+	public void testAsyncSparkOPs5() {
+		//List type consumer. No Prefetch.
+		runTest(TEST_NAME+"5");
 	}
 
 	public void runTest(String testname) {
@@ -108,7 +114,10 @@ public class PrefetchRDDTest extends AutomatedTestBase {
 			if (!matchVal)
 				System.out.println("Value w/o Prefetch "+R+" w/ Prefetch "+R_pf);
 			//assert Prefetch instructions and number of success.
-			long expected_numPF = !testname.equalsIgnoreCase(TEST_NAME+"3") ? 1 : 0;
+			long expected_numPF = 1;
+			if (testname.equalsIgnoreCase(TEST_NAME+"3")
+				|| testname.equalsIgnoreCase(TEST_NAME+"5"))
+				expected_numPF = 0;
 			//long expected_successPF = !testname.equalsIgnoreCase(TEST_NAME+"3") ? 1 : 0;
 			long numPF = Statistics.getCPHeavyHitterCount("prefetch");
 			Assert.assertTrue("Violated Prefetch instruction count: "+numPF, numPF == expected_numPF);

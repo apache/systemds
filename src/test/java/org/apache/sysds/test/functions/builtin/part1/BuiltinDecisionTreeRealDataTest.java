@@ -37,10 +37,12 @@ public class BuiltinDecisionTreeRealDataTest extends AutomatedTestBase {
 	private final static String TITANIC_TFSPEC = DATASET_DIR + "titanic/tfspec.json";
 	private final static String WINE_DATA = DATASET_DIR + "wine/winequality-red-white.csv";
 	private final static String WINE_TFSPEC = DATASET_DIR + "wine/tfspec.json";
+	private final static String EEG_DATA = DATASET_DIR + "EEG.csv";
+	private final static String EEG_TFSPEC = DATASET_DIR + "EEG_tfspec.json";
 
 	@Override
 	public void setUp() {
-		for(int i=1; i<=3; i++)
+		for(int i=1; i<=4; i++)
 			addTestConfiguration(TEST_NAME+i, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] {"R"}));
 	}
 
@@ -99,12 +101,24 @@ public class BuiltinDecisionTreeRealDataTest extends AutomatedTestBase {
 		//for regression we compare R2 and use rss to optimize
 		runDecisionTree(3, WINE_DATA, WINE_TFSPEC, 0.369, 2, 1.0, ExecType.CP);
 	}
+	
+	@Test
+	public void testDecisionTreeEEG_MaxV1() {
+		//for regression we compare R2 and use rss to optimize
+		runDecisionTree(4, EEG_DATA, EEG_TFSPEC, 0.62, 1, 1.0, ExecType.CP);
+	}
+	
+	@Test
+	public void testRandomForestEEG_MaxV1() {
+		//for regression we compare R2 and use rss to optimize
+		runDecisionTree(4, EEG_DATA, EEG_TFSPEC, 0.62, 2, 1.0, ExecType.CP);
+	}
 
 	private void runDecisionTree(int test, String data, String tfspec, double minAcc, int dt, double maxV, ExecType instType) {
 		Types.ExecMode platformOld = setExecMode(instType);
 		try {
 			loadTestConfiguration(getTestConfiguration(TEST_NAME+test));
-
+			
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + (TEST_NAME+test) + ".dml";
 			programArgs = new String[] {"-stats",

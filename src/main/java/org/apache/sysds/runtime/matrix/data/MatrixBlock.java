@@ -399,10 +399,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 		sparse = false;
 
 		if( denseBlock == null ){
-			if(containsDuplicates)
-				denseBlock = DenseBlockFactory.createDenseBlock(Types.ValueType.WEFP64, new int[]{rlen, clen});
-			else
-				denseBlock = DenseBlockFactory.createDenseBlock(rlen, clen);
+			denseBlock = DenseBlockFactory.createDenseBlock(rlen, clen, containsDuplicates);
 			return true;
 		}
 		else if( denseBlock.capacity() < limit ){

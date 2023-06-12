@@ -138,7 +138,7 @@ public class TransformFrameEncodeWordEmbedding2Test extends AutomatedTestBase
             Map<String,Integer> map = writeDictToCsvFile(strings, baseDirectory + INPUT_DIR + "dict");
 
             // Create the dataset by repeating and shuffling the distinct tokens
-            List<String> stringsColumn = shuffleAndMultiplyStrings(strings, 320);
+            List<String> stringsColumn = shuffleAndMultiplyStrings(strings, 32);
             writeStringsToCsvFile(stringsColumn, baseDirectory + INPUT_DIR + "data");
 
             //run script

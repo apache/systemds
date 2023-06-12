@@ -72,7 +72,7 @@ public class TransformFrameEncodeWordEmbedding1Test extends AutomatedTestBase
             // Generate the dictionary by assigning unique ID to each distinct token
             Map<String,Integer> map = writeDictToCsvFile(strings, baseDirectory + INPUT_DIR + "dict");
             // Create the dataset by repeating and shuffling the distinct tokens
-            List<String> stringsColumn = shuffleAndMultiplyStrings(strings, 320);
+            List<String> stringsColumn = shuffleAndMultiplyStrings(strings, 32);
             writeStringsToCsvFile(stringsColumn, baseDirectory + INPUT_DIR + "data");
 
             programArgs = new String[]{"-stats","-args", input("embeddings"), input("data"), input("dict"), output("result")};

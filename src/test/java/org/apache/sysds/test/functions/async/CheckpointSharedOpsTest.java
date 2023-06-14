@@ -96,8 +96,7 @@ public class CheckpointSharedOpsTest extends AutomatedTestBase {
 			if (!matchVal)
 				System.out.println("Value w/o Checkpoint "+R+" w/ Checkpoint "+R_mp);
 			//compare checkpoint instruction count
-			if (!testname.equalsIgnoreCase(TEST_NAME+"2"))
-				Assert.assertTrue("Violated checkpoint count: " + numCP + " < " + numCP_maxp, numCP < numCP_maxp);
+			Assert.assertTrue("Violated checkpoint count: " + numCP + " < " + numCP_maxp, numCP < numCP_maxp);
 		} finally {
 			resetExecMode(oldPlatform);
 			InfrastructureAnalyzer.setLocalMaxMemory(oldmem);

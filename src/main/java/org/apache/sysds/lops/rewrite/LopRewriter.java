@@ -69,8 +69,8 @@ public class LopRewriter
 			rRewriteLop(fsb);
 	}
 
-	public ArrayList<Lop> rewriteLopDAG(ArrayList<Lop> lops) {
-		StatementBlock sb = new StatementBlock();
+	public ArrayList<Lop> rewriteLopDAG(StatementBlock sb, ArrayList<Lop> lops) {
+		//StatementBlock sb = new StatementBlock();
 		sb.setLops(lops);
 		return rRewriteLop(sb).get(0).getLops();
 	}

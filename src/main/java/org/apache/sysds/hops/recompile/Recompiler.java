@@ -404,8 +404,8 @@ public class Recompiler {
 		}
 
 		// dynamic lop rewrites for the updated hop DAGs
-		if (rewrittenHops)
-			_lopRewriter.get().rewriteLopDAG(lops);
+		if (rewrittenHops && sb != null)
+			_lopRewriter.get().rewriteLopDAG(sb, lops);
 
 		Dag<Lop> dag = new Dag<>();
 		for (Lop l : lops)

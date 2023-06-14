@@ -25,6 +25,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.stream.Collectors;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -64,6 +65,7 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 	private boolean _requiresRecompile = false;
 	private boolean _splitDag = false;
 	private boolean _nondeterministic = false;
+	private HashMap<Lop.Type, List<Lop.Type>> _checkpointPositions = null;
 
 	protected double repetitions = 1;
 	public final static double DEFAULT_LOOP_REPETITIONS = 10;
@@ -1392,5 +1394,21 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 	
 	public boolean isNondeterministic() {
 		return _nondeterministic;
+	}
+
+	public void setCheckpointPosition(Lop input, List<Lop> outputs) {
+		// FIXME: Type is not the best key as many Lops may have the same types
+		Lop.Type inputT = input.getType();
+		List<Lop.Type> outputsT = outputs.stream().map(Lop::getType).collect(Collectors.toList());
+
+		if (_checkpointPositions == null)
+			_checkpointPositions = new HashMap<>();
+		if (!_checkpointPositions.containsKey(inputT)) {
+			_checkpointPositions.put(inputT, outputsT);
+		}
+	}
+
+	public HashMap<Lop.Type, List<Lop.Type>> getCheckpointPositions() {
+		return _checkpointPositions;
 	}
 }

@@ -81,7 +81,7 @@ public class RewriteAddChkpointInLoop extends LopRewriteRule
 			return List.of(sb);
 
 		// Add checkpoint Lops after the shared operators
-		addChkpointLop(lops, operatorJobCount);
+		addChkpointLop(lops, operatorJobCount, csb);
 		// TODO: A rewrite pass to remove less effective checkpoints
 		return List.of(sb);
 	}
@@ -91,7 +91,7 @@ public class RewriteAddChkpointInLoop extends LopRewriteRule
 		return sbs;
 	}
 
-	private void addChkpointLop(List<Lop> nodes, Map<Long, Integer> operatorJobCount) {
+	private void addChkpointLop(List<Lop> nodes, Map<Long, Integer> operatorJobCount, StatementBlock sb) {
 		for (Lop l : nodes) {
 			if(operatorJobCount.containsKey(l.getID()) && operatorJobCount.get(l.getID()) > 1) {
 				// TODO: Check if this lop leads to one of those variables
@@ -106,6 +106,8 @@ public class RewriteAddChkpointInLoop extends LopRewriteRule
 					out.replaceInput(l, checkpoint);
 					l.removeOutput(out);
 				}
+				// Save the checkpoint position for the recompiler
+				sb.setCheckpointPosition(l, oldOuts);
 			}
 		}
 	}

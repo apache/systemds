@@ -35,6 +35,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.stream.IntStream;
 
+import org.apache.commons.lang.NotImplementedException;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.concurrent.ConcurrentUtils;
 import org.apache.commons.logging.Log;
@@ -383,8 +384,12 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 			allocateDenseBlock();
 		return this;
 	}
-	
-	public boolean allocateDenseBlock(boolean clearNNZ) {
+
+	public boolean allocateDenseBlock(boolean clearNNZ){
+		return allocateDenseBlock(clearNNZ, false);
+	}
+
+	public boolean allocateDenseBlock(boolean clearNNZ, boolean containsDuplicates) {
 		//allocate block if non-existing or too small (guaranteed to be 0-initialized),
 		long limit = (long)rlen * clen;
 		//clear nnz if necessary
@@ -393,7 +398,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 		sparse = false;
 
 		if( denseBlock == null ){
-			denseBlock = DenseBlockFactory.createDenseBlock(rlen, clen);
+			denseBlock = DenseBlockFactory.createDenseBlock(rlen, clen, containsDuplicates);
 			return true;
 		}
 		else if( denseBlock.capacity() < limit ){
@@ -666,6 +671,17 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 			denseBlock.set(r, c, v);
 			if( v==0 )
 				nonZeros--;
+		}
+	}
+
+	public void quickSetRow(int r, double[] values){
+		if(sparse)
+			throw new NotImplementedException();
+		else{
+			//allocate and init dense block (w/o overwriting nnz)
+			allocateDenseBlock(false);
+			nonZeros += UtilFunctions.computeNnz(values, 0, values.length) - denseBlock.countNonZeros(r);
+			denseBlock.set(r, values);
 		}
 	}
 

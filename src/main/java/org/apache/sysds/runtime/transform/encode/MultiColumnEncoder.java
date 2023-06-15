@@ -343,9 +343,13 @@ public class MultiColumnEncoder implements Encoder {
 			throw new DMLRuntimeException("Invalid input with wrong number or rows");
 
 		boolean hasDC = false;
-		for(ColumnEncoderComposite columnEncoder : _columnEncoders)
-			hasDC = columnEncoder.hasEncoder(ColumnEncoderDummycode.class);
-		outputMatrixPreProcessing(out, in, hasDC);
+		boolean hasWE = false;
+		for(ColumnEncoderComposite columnEncoder : _columnEncoders) {
+			hasDC |= columnEncoder.hasEncoder(ColumnEncoderDummycode.class);
+			hasWE |= columnEncoder.hasEncoder(ColumnEncoderWordEmbedding.class);
+		}
+		//hasWE = false;
+		outputMatrixPreProcessing(out, in, hasDC, hasWE);
 		if(k > 1) {
 			if(!_partitionDone) //happens if this method is directly called
 				deriveNumRowPartitions(in, k);
@@ -533,7 +537,7 @@ public class MultiColumnEncoder implements Encoder {
 		return totMemOverhead;
 	}
 
-	private static void outputMatrixPreProcessing(MatrixBlock output, CacheBlock<?> input, boolean hasDC) {
+	private static void outputMatrixPreProcessing(MatrixBlock output, CacheBlock<?> input, boolean hasDC, boolean hasWE) {
 		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 		if(output.isInSparseFormat()) {
 			if (MatrixBlock.DEFAULT_SPARSEBLOCK != SparseBlock.Type.CSR
@@ -580,7 +584,7 @@ public class MultiColumnEncoder implements Encoder {
 		}
 		else {
 			// Allocate dense block and set nnz to total #entries
-			output.allocateBlock();
+			output.allocateDenseBlock(true, hasWE);
 			//output.setAllNonZeros();
 		}
 
@@ -1119,12 +1123,13 @@ public class MultiColumnEncoder implements Encoder {
 		@Override
 		public Object call() throws Exception {
 			boolean hasUDF = _encoder.getColumnEncoders().stream().anyMatch(e -> e.hasEncoder(ColumnEncoderUDF.class));
+			boolean hasWE = _encoder.getColumnEncoders().stream().anyMatch(e -> e.hasEncoder(ColumnEncoderWordEmbedding.class));
 			int numCols = _encoder.getNumOutCols();
 			boolean hasDC = _encoder.getColumnEncoders(ColumnEncoderDummycode.class).size() > 0;
 			long estNNz = (long) _input.getNumRows() * (hasUDF ? numCols : (long) _input.getNumColumns());
 			boolean sparse = MatrixBlock.evalSparseFormatInMemory(_input.getNumRows(), numCols, estNNz) && !hasUDF;
 			_output.reset(_input.getNumRows(), numCols, sparse, estNNz);
-			outputMatrixPreProcessing(_output, _input, hasDC);
+			outputMatrixPreProcessing(_output, _input, hasDC, hasWE);
 			return null;
 		}
 

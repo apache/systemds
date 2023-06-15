@@ -1738,7 +1738,7 @@ public class LibMatrixMult
 			int alen = a.size(i);
 			int[] aixs = a.indexes(i);
 			double[] avals = a.values(i);
-			if( alen==1 ) { 
+			if( alen==1 ) {
 				//row selection (now aggregation) with potential scaling
 				int aix = aixs[apos];
 				int lnnz = 0;

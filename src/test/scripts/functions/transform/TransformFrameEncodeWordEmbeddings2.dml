@@ -20,7 +20,7 @@
 #-------------------------------------------------------------
 
 # Read the pre-trained word embeddings
-E = read($1, rows=100, cols=100, format="text");
+E = read($1, rows=100, cols=300, format="text");
 # Read the token sequence (1K) w/ 100 distinct tokens
 Data = read($2, data_type="frame", format="csv");
 # Read the recode map for the distinct tokens
@@ -28,7 +28,6 @@ Meta = read($3, data_type="frame", format="csv");
 
 jspec = "{ids: true, word_embedding: [1]}";
 Data_enc = transformapply(target=Data, spec=jspec, meta=Meta, embedding=E);
-
 write(Data_enc, $4, format="text");
 
 

@@ -114,13 +114,13 @@ public interface EncoderFactory {
 			// column follows binning or feature hashing
 			rcIDs = unionDistinct(rcIDs, except(except(dcIDs, binIDs), haIDs));
 			// NOTE: Word Embeddings requires recode as preparation
-			rcIDs = unionDistinct(rcIDs, weIDs);
+			//rcIDs = unionDistinct(rcIDs, weIDs);
 			// Error out if the first level encoders have overlaps
-			if (intersect(rcIDs, binIDs, haIDs))
-				throw new DMLRuntimeException("More than one encoders (recode, binning, hashing) on one column is not allowed");
+			if (intersect(rcIDs, binIDs, haIDs, weIDs))
+				throw new DMLRuntimeException("More than one encoders (recode, binning, hashing, word_embedding) on one column is not allowed");
 
-			List<Integer> ptIDs = except(except(UtilFunctions.getSeqList(1, clen, 1), unionDistinct(rcIDs, haIDs)),
-				binIDs);
+			List<Integer> ptIDs = except(except(except(UtilFunctions.getSeqList(1, clen, 1), unionDistinct(rcIDs, haIDs)),
+				binIDs), weIDs);
 			List<Integer> oIDs = Arrays.asList(ArrayUtils
 				.toObject(TfMetaUtils.parseJsonIDList(jSpec, colnames, TfMethod.OMIT.toString(), minCol, maxCol)));
 			List<Integer> mvIDs = Arrays.asList(ArrayUtils.toObject(

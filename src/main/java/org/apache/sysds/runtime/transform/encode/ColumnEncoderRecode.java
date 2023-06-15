@@ -88,6 +88,15 @@ public class ColumnEncoderRecode extends ColumnEncoder {
 	 * @return string array of token and code
 	 */
 	public static String[] splitRecodeMapEntry(String value) {
+		// remove " chars from string (if the string contains comma in the csv file, then it must contained by double quotes)
+		/*if(value.contains("\"")){
+			//remove just last and first appearance
+			int firstIndex = value.indexOf("\"");
+			int lastIndex = value.lastIndexOf("\"");
+			if (firstIndex != lastIndex)
+				value = value.substring(0, firstIndex) + value.substring(firstIndex + 1, lastIndex) + value.substring(lastIndex + 1);
+		}*/
+
 		// Instead of using splitCSV which is forcing string with RFC-4180 format,
 		// using Lop.DATATYPE_PREFIX separator to split token and code
 		int pos = value.lastIndexOf(Lop.DATATYPE_PREFIX);

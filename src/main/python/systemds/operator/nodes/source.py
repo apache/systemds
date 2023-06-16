@@ -162,9 +162,17 @@ class Source(OperationNode):
         lines = []
         with open(path) as file:
             insideBracket = 0
+            insideComment = False
             for l in file.readlines():
                 ls = l.strip()
                 if len(ls) == 0 or ls[0] == '#':
+                    continue
+                elif insideComment:
+                    if ls.endswith("*/"):
+                        insideComment = False
+                        continue
+                elif ls.startswith("/*"):
+                    insideComment = True
                     continue
                 elif insideBracket > 0:
                     for c in ls:

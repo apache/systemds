@@ -49,7 +49,7 @@ public class BuiltinHMMPredictTest extends AutomatedTestBase
 	}
 
 	@Test    
-	public void testHMMPredictSingleCP() {
+	public void testHMMPredictSpark() {
 		runHMMPredictTest(ExecType.SPARK);
 	}
 	
@@ -70,15 +70,17 @@ public class BuiltinHMMPredictTest extends AutomatedTestBase
 			programArgs = new String[]{
 					"-nvargs", "X=" + input("X"), "k=" + inpu("k"), "Y=" + output("Y")};
 
-
-			"""			
+			
 			//generate actual datasets
 			double[][] X = getRandomMatrix(rows, cols);
 			Integer k = 
 			writeInputMatrixWithMTD("X", X, true);
-			"""
+			setOutputBuffering(true);
 
-			runTest(true, false, null, -1);
+			String stdout = runTest(null).toString();
+
+			
+			//runTest(true, false, null, -1);
 		}
 		finally {
 			rtplatform = platformOld;

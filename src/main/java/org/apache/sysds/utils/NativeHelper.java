@@ -416,4 +416,7 @@ public class NativeHelper {
 	// different tradeoffs. In current implementation, we always use GetPrimitiveArrayCritical as it has proven to be
 	// fastest. We can revisit this decision later and hence I would not recommend removing this method.
 	private static native void setMaxNumThreads(int numThreads);
+
+	//test interface for native binding
+	public static native void testNativeBindingWithDgemm(char transa, char transb, int m, int n, int k, double alpha, double[] A, int lda, double[] B, int ldb, double beta, double[] C, int ldc);
 }

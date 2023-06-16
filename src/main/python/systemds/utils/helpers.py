@@ -64,10 +64,10 @@ def get_slice_string(i):
             raise NotImplementedError("Not Implemented slice with dynamic end")
         else:
             # + 1 since R and systemDS is 1 indexed.
-            return f'{i.start+1}:{i.stop}'
+            return f'{i.start + 1}:{i.stop}'
     else:
         # + 1 since R and systemDS is 1 indexed.
-        sliceIns = i+1
+        sliceIns = i + 1
     return sliceIns
 
 
@@ -77,5 +77,12 @@ def check_is_empty_slice(i):
 
 def check_no_less_than_zero(i: list):
     for x in i:
-        if(x < 0):
+        if (x < 0):
             raise ValueError("Negative index not supported in systemds")
+
+
+def get_path_to_script_layers() -> str:
+    root = os.environ.get("SYSTEMDS_ROOT")
+    if root is None:
+        root = get_module_dir()
+    return os.path.join(root, "scripts", "nn", "layers")

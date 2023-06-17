@@ -26,36 +26,47 @@ then
 fi
 
 CMD=${1:-systemds}
-BASE=${2:-"temp"}/dimensionreduction
-MAXMEM=${3:-80}
+DATADIR=${2:-"temp"}/io
+MAXMEM=${3:-1}
 
-FORMAT="binary"
+FORMAT="csv" # can be csv, mm, text, binary
 
-echo "-- Generating Dimension Reduction data." >> results/times.txt;
+echo "-- Generating IO data." >> results/times.txt;
+
+
+#generate XS scenarios (10MB)
+if [ $MAXMEM -ge 1 ]; then
+  ${CMD} -f ../utils/generateData.dml --nvargs Path=${DATADIR}/X500_250_dense R=500 C=250 Fmt=$FORMAT &
+fi
+
+#generate XS scenarios (10MB)
+if [ $MAXMEM -ge 10 ]; then
+  ${CMD} -f ../utils/generateData.dml --nvargs Path=${DATADIR}/X5k_250_dense R=5000 C=250 Fmt=$FORMAT &
+fi
 
 #generate XS scenarios (80MB)
 if [ $MAXMEM -ge 80 ]; then
-  ${CMD} -f ../datagen/genRandData4PCA.dml --nvargs R=5000 C=2000 OUT=$BASE/pcaData5k_2k_dense FMT=$FORMAT &
+  ${CMD} -f ../utils/generateData.dml --nvargs Path=${DATADIR}/X10k_1k_dense R=10000 C=1000 Fmt=$FORMAT &
 fi
 
 #generate S scenarios (800MB)
 if [ $MAXMEM -ge 800 ]; then
-  ${CMD} -f ../datagen/genRandData4PCA.dml --nvargs R=50000 C=2000 OUT=$BASE/pcaData50k_2k_dense FMT=$FORMAT &
+  ${CMD} -f ../utils/generateData.dml --nvargs Path=${DATADIR}/X100k_1k_dense R=100000 C=1000 Fmt=$FORMAT &
 fi
 
 #generate M scenarios (8GB)
 if [ $MAXMEM -ge 8000 ]; then
-  ${CMD} -f ../datagen/genRandData4PCA.dml --nvargs R=500000 C=2000 OUT=$BASE/pcaData500k_2k_dense FMT=$FORMAT &
+  ${CMD} -f ../utils/generateData.dml --nvargs Path=${DATADIR}/X1M_1k_dense R=1000000 C=1000 Fmt=$FORMAT &
 fi
 
 #generate L scenarios (80GB)
 if [ $MAXMEM -ge 80000 ]; then
-  ${CMD} -f ../datagen/genRandData4PCA.dml --nvargs R=5000000 C=2000 OUT=$BASE/pcaData5M_2k_dense FMT=$FORMAT
+  ${CMD} -f ../utils/generateData.dml --nvargs Path=${DATADIR}/X10M_1k_dense R=10000000 C=1000 Fmt=$FORMAT &
 fi
 
 #generate XL scenarios (800GB)
 if [ $MAXMEM -ge 800000 ]; then
-  ${CMD} -f ${EXTRADOT}./datagen/genRandData4PCA.dml --nvargs R=50000000 C=2000 OUT=$BASE/pcaData50M_2k_dense FMT=$FORMAT
+  ${CMD} -f ../utils/generateData.dml --nvargs Path=${DATADIR}/X100M_1k_dense R=100000000 C=1000 Fmt=$FORMAT &
 fi
 
 wait

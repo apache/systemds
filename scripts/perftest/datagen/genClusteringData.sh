@@ -25,9 +25,9 @@ then
   exit 1;
 fi
 
-CMD=$1
-BASE=$2/clustering
-MAXMEM=$3
+CMD=${1:-systemds}
+BASE=${2:-"temp"}/clustering
+MAXMEM=${3:-80}
 
 FORMAT="binary" 
 DENSE_SP=0.9

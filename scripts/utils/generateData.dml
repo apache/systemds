@@ -45,6 +45,7 @@ minVal = ifdef($Min, 0)
 maxVal = ifdef($Max, 10)
 pdFunc = ifdef($Pdf, "uniform")
 pathUse = ifdef($Path, "/user/bigr/randomData")
+format = ifdef($Fmt, "csv")
 
 A = rand(rows=numRows, cols=numCols, sparsity=sparsityParam, min=minVal, max=maxVal, pdf="uniform");
-write(A, pathUse, format="csv");
+write(A, pathUse, format=format);

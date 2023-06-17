@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #-------------------------------------------------------------
 #
 # Licensed to the Apache Software Foundation (ASF) under one
@@ -8,9 +8,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -19,37 +19,36 @@
 # under the License.
 #
 #-------------------------------------------------------------
+
 if [ "$(basename $PWD)" != "perftest" ];
 then
   echo "Please execute scripts from directory 'perftest'"
   exit 1;
 fi
 
-CMD=${1:-systemds}
-BASE=${2:-"temp"}/dimensionreduction
-MAXMEM=${3:-80}
 
-FILENAME=$0
-err_report() {
-  echo "Error in $FILENAME on line $1"
-}
-trap 'err_report $LINENO' ERR
+CMD=$1
+DATA=$2
+REPEAT=${3:-1}
+VTYPE=${4:-"double"}
+DTYPE=${5:-"matrix"}
 
-DATA=()
-if [ $MAXMEM -ge 80 ]; then DATA+=("5k_2k_dense"); fi
-if [ $MAXMEM -ge 800 ]; then DATA+=("50k_2k_dense"); fi
-if [ $MAXMEM -ge 8000 ]; then DATA+=("500k_2k_dense"); fi
-if [ $MAXMEM -ge 80000 ]; then DATA+=("5M_2k_dense"); fi
-if [ $MAXMEM -ge 800000 ]; then DATA+=("50M_2k_dense"); fi
-
-echo "RUN DIMENSION REDUCTION EXPERIMENTS: " $(date) >> results/times.txt;
-
-# run all dimension reduction algorithms on all datasets
-for d in ${DATA[@]}
-do 
-   echo "-- Running Dimension Reduction on "$d >> results/times.txt;
-   ./runPCA.sh ${BASE}/pcaData${d} ${BASE} ${COMMAND} &> logs/runPCA_${d}.out;
-
+cp "${DATA}.mtd" "${DATA}.mtd.backup"
+sed -i "s/\"data_type\":.*$/\"data_type\": \"${DTYPE}\",/" "${DATA}.mtd"
+sed -i "s/\"value_type\":.*$/\"value_type\": \"${VTYPE}\",/" "${DATA}.mtd"
+tstart=$(date +%s.%N)
+printf "%-10s " "$VTYPE: " >> results/times.txt;
+printf "%-16s " "read.dml; " >> results/times.txt;
+for n in $(seq $REPEAT)
+do
+  ${CMD} -f ./scripts/read.dml \
+    --config conf/SystemDS-config.xml \
+    --stats \
+    --nvargs INPUT="$DATA"
 done
 
-echo -e "\n\n" >> results/times.txt
+duration=$(echo "$(date +%s.%N) - $tstart" | bc)
+printf "%s\n" "$duration" >> results/times.txt
+rm "${DATA}.mtd"
+mv "${DATA}.mtd.backup" "${DATA}.mtd"
+

@@ -31,7 +31,6 @@ MAXMEM=$3
 
 if [ "$TEMPFOLDER" == "" ]; then TEMPFOLDER=temp ; fi
 BASE=${TEMPFOLDER}/multinomial
-BASE0=${TEMPFOLDER}/binomial
 MAXITR=20
 
 FILENAME=$0

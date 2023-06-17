@@ -127,6 +127,9 @@ echo -e "\n\n" >> results/times.txt
 ./runAllDimensionReduction.sh ${CMD} ${TEMPFOLDER} ${MAXMEM}
 ./runAllALS.sh ${CMD} ${TEMPFOLDER} ${MAXMEM}
 
+### IO Benchmarks:
+./runAllIO.sh ${CMD} ${TEMPFOLDER} ${MAXMEM}
+
 # TODO The following benchmarks have yet to be written. The decision tree algorithms additionally need to be fixed.
 # add stepwise Linear 
 # add stepwise GLM

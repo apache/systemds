@@ -1384,6 +1384,14 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 				li = new LineageItem(getOpcode(), LineageItemUtils.getLineage(ec, getInput1()));
 				break;
 			}
+			case CastAsListVariable:
+				varname = getOutputVariableName();
+				ListObject lobj = ec.getListObject(getInput1());
+				if (lobj.getLength() != 1 || !(lobj.getData(0) instanceof ListObject))
+					li = new LineageItem(getOpcode(), LineageItemUtils.getLineage(ec, getInput1()));
+				else
+					li = new LineageItem(getOpcode(), new LineageItem[] {lobj.getLineageItem(0)});
+				break;
 			case RemoveVariable:
 			case MoveVariable:
 			default:

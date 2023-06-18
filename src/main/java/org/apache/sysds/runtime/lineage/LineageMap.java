@@ -180,7 +180,8 @@ public class LineageMap {
 				case CastAsIntegerVariable:
 				case CastAsScalarVariable:
 				case CastAsMatrixVariable:
-				case CastAsFrameVariable: {
+				case CastAsFrameVariable:
+				case CastAsListVariable: {
 					addLineageItem(li);
 					break;
 				}

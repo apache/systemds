@@ -1195,22 +1195,40 @@ public class RandSPInstruction extends UnarySPInstruction {
 	@Override
 	public Pair<String, LineageItem> getLineageItem(ExecutionContext ec) {
 		String tmpInstStr = instString;
-		if (getSeed() == DataGenOp.UNSPECIFIED_SEED) {
-			//generate pseudo-random seed (because not specified)
-			if (runtimeSeed == null)
-				runtimeSeed = (minValue == maxValue && sparsity == 1) ?
-					DataGenOp.UNSPECIFIED_SEED : DataGenOp.generateRandomSeed();
-			int position = (_method == OpOpDG.RAND) ? SEED_POSITION_RAND :
-				(_method == OpOpDG.SAMPLE) ? SEED_POSITION_SAMPLE : 0;
-			tmpInstStr = InstructionUtils.replaceOperand(
-				tmpInstStr, position, String.valueOf(runtimeSeed));
-			if( !rows.isLiteral() )
-				tmpInstStr = InstructionUtils.replaceOperand(tmpInstStr, 2,
-					new CPOperand(ec.getScalarInput(rows)).getLineageLiteral());
-			if( !cols.isLiteral() )
-				tmpInstStr = InstructionUtils.replaceOperand(tmpInstStr, 3,
-					new CPOperand(ec.getScalarInput(cols)).getLineageLiteral());
+		switch(_method) {
+			case RAND: {
+				tmpInstStr = InstructionUtils.replaceOperandName(tmpInstStr);
+				if(getSeed() == DataGenOp.UNSPECIFIED_SEED) {
+					//generate pseudo-random seed (because not specified)
+					if(runtimeSeed == null)
+						runtimeSeed = (minValue == maxValue && sparsity == 1) ? DataGenOp.UNSPECIFIED_SEED : DataGenOp.generateRandomSeed();
+					int position = (_method == OpOpDG.RAND) ? SEED_POSITION_RAND : (_method == OpOpDG.SAMPLE) ? SEED_POSITION_SAMPLE : 0;
+					tmpInstStr = InstructionUtils.replaceOperand(tmpInstStr, position, String.valueOf(runtimeSeed));
+					if(!rows.isLiteral())
+						tmpInstStr = InstructionUtils.replaceOperand(tmpInstStr, 2, new CPOperand(ec.getScalarInput(rows)).getLineageLiteral());
+					if(!cols.isLiteral())
+						tmpInstStr = InstructionUtils.replaceOperand(tmpInstStr, 3, new CPOperand(ec.getScalarInput(cols)).getLineageLiteral());
+				}
+				break;
+			}
+			case SEQ: {
+				tmpInstStr = InstructionUtils.replaceOperandName(tmpInstStr);
+				CPOperand blkSize = new CPOperand(String.valueOf(blocksize), ValueType.INT64, DataType.SCALAR, true);
+				tmpInstStr = InstructionUtils.replaceOperand(tmpInstStr, 4, blkSize.getLineageLiteral());
+				tmpInstStr = replaceNonLiteral(tmpInstStr, seq_from, 5, ec);
+				tmpInstStr = replaceNonLiteral(tmpInstStr, seq_to, 6, ec);
+				tmpInstStr = replaceNonLiteral(tmpInstStr, seq_incr, 7, ec);
+				break;
+			}
+			default:
+				throw new DMLRuntimeException("Unsupported Spark datagen op: " + _method);
 		}
 		return Pair.of(output.getName(), new LineageItem(tmpInstStr, getOpcode()));
+	}
+
+	private static String replaceNonLiteral(String inst, CPOperand op, int pos, ExecutionContext ec) {
+		if(!op.isLiteral())
+			inst = InstructionUtils.replaceOperand(inst, pos, new CPOperand(ec.getScalarInput(op)).getLineageLiteral());
+		return inst;
 	}
 }

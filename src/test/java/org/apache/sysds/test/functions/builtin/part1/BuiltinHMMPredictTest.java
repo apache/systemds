@@ -19,6 +19,7 @@
 
 package org.apache.sysds.test.functions.builtin.part1;
 
+import java.util.Random;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.common.Types.ExecType;
@@ -68,13 +69,18 @@ public class BuiltinHMMPredictTest extends AutomatedTestBase
 
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
 			programArgs = new String[]{
-					"-nvargs", "X=" + input("X"), "k=" + inpu("k"), "Y=" + output("Y")};
+					"-nvargs", "X=" + input("X"), "k=" + input("k"), "Y=" + output("Y")};
 
 			
 			//generate actual datasets
 			double[][] X = getRandomMatrix(rows, cols);
-			Integer k = 
+			Integer k = random.nextInt(range) + 1;
+
 			writeInputMatrixWithMTD("X", X, true);
+
+			//TODO: Compare outputs? What is the output of the 
+			// function supposed to be compared against? How?
+			
 			setOutputBuffering(true);
 
 			String stdout = runTest(null).toString();

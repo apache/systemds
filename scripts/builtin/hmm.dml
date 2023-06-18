@@ -28,7 +28,60 @@
 # P     Probability of the set of outputs
 # --------------------------------------------------------------------------------------------
 
-m_hmm = function(Matrix[Double] X) return (Double p) 
+m_hmm = function(Matrix[Double] X, String model="N") return (Matrix[Double] P, Matrix[Double] A, Matrix[Double] B) 
 {
-    p = 0.0
-}    
+    """
+    if(model != "N" & model != "S")
+        # N is for number model and S for string model
+        stop("model not supported, should be in S or N");
+
+    if (model == "S")
+    """
+
+    # change later
+    n_states = 5
+
+    [P, A, B] = fit(X, n_states)
+}
+
+fit = function(Matrix[Double] X, Integer n_states) return (Matrix[Double] P, Matrix[Double] A, Matrix[Double] B) 
+{
+    # probability of the state at timestep 1
+    init_prob = matrix(1/n_states, rows=1, cols=n_states)
+    
+    # probabilities of transition from one one state to another
+    A = matrix(1/n_states, rows=n_states, cols=n_states)
+
+    
+
+    # probabilities of a state producing an output
+    B = matrix(1/ncol(X), rows=n_states, cols=ncol(X))
+
+    for (i in 1:20) {
+        if (i == 1)
+            init_prob = matrix(1/n_states, rows=1, cols=n_states)
+            A = matrix(1/n_states, rows=n_states, cols=n_states)
+            B = matrix(1/ncol(X), rows=n_states, cols=ncol(X))
+            
+        alpha = forward(init_prob, B, X)
+        beta = backward(B, A, X)
+
+        initial_prob, A, B = calc_init_prob(alpha, beta)
+    }
+}
+
+forward = function(Matrix[Double] init_prob, Matrix[Double] B, Matrix[Double] X) return (Matrix[Double] alpha)
+{
+
+
+}
+
+
+backward = function(Matrix[Double] B, Matrix[Double] A, Matrix[Double] X) return (Matrix[Double] alpha)
+{   
+
+}
+
+calc_init_prob = function() return (Matrix[Double] init_prob, Matrix[Double] A, Matrix[Double] B)
+{
+}

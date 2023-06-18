@@ -20,6 +20,7 @@
 
 from typing import Union
 
+PATH_TO_LAYERS_SCRIPT = '../../../../../scripts/nn/layers/'
 MODULE_NAME = 'systemds'
 VALID_INPUT_TYPES = Union['DAGNode', str, int, float, bool]
 BINARY_OPERATIONS = ['+', '-', '/', '//', '*', '<', '<=', '>', '>=', '==', '!=', '%*%']

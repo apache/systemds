@@ -32,6 +32,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.Map;
 import java.util.Scanner;
@@ -45,6 +46,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.util.GenericOptionsParser;
+import org.apache.log4j.Logger;
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.conf.CompilerConfig;
 import org.apache.sysds.conf.ConfigurationManager;
@@ -67,6 +69,7 @@ import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContextFactory;
 import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
+import org.apache.sysds.runtime.controlprogram.federated.CompressedFederatedWorker;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedData;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedWorker;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.FederatedMonitoringServer;
@@ -202,6 +205,8 @@ public class DMLScript
 	 */
 	public static void main(String[] args)
 	{
+		Logger log = Logger.getLogger(DMLScript.class);
+		log.info(Arrays.toString(args));
 		try{
 			Configuration conf = new Configuration(ConfigurationManager.getCachedJobConf());
 			String[] otherArgs = new GenericOptionsParser(conf, args).getRemainingArgs();
@@ -293,6 +298,12 @@ public class DMLScript
 			if(dmlOptions.fedWorker) {
 				loadConfiguration(fnameOptConfig);
 				new FederatedWorker(dmlOptions.fedWorkerPort, dmlOptions.debug);
+				return true;
+			}
+
+			if(dmlOptions.fedCompressedWorker) {
+				loadConfiguration(fnameOptConfig);
+				new CompressedFederatedWorker(dmlOptions.fedWorkerPort, dmlOptions.debug);
 				return true;
 			}
 

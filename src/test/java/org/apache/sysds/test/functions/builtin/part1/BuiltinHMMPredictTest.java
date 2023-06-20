@@ -71,10 +71,19 @@ public class BuiltinHMMPredictTest extends AutomatedTestBase
 			programArgs = new String[]{
 					"-nvargs", "X=" + input("X"), "k=" + input("k"), "Y=" + output("Y")};
 
-			
+
 			//generate actual datasets
-			double[][] X = getRandomMatrix(rows, cols);
-			Integer k = random.nextInt(range) + 1;
+			// Random random = new Random();
+			// Integer k = random.nextInt(10) + 1;
+
+			//generate actual datasets
+			//Output generated from https://en.wikipedia.org/wiki/Hidden_Markov_model#Weather_guessing_game
+			// C(Clean) -> 0, W(Walk) -> 1, S(Shop) -> 2
+
+			double[][] X = {{0, 0, 1, 
+							2, 1, 1, 
+							1, 0, 0, 1}
+            				};
 
 			writeInputMatrixWithMTD("X", X, true);
 
@@ -86,7 +95,7 @@ public class BuiltinHMMPredictTest extends AutomatedTestBase
 			String stdout = runTest(null).toString();
 
 			
-			//runTest(true, false, null, -1);
+			runTest(true, false, null, -1);
 		}
 		finally {
 			rtplatform = platformOld;

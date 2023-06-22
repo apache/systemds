@@ -20,7 +20,7 @@
 #-------------------------------------------------------------
 
 # Imports
-source("staging/NCF.dml") as NCF
+source("../../staging/NCF.dml") as NCF
 
 K_train = 1000; # number of training samples
 K_val = 100; # number of validation samples

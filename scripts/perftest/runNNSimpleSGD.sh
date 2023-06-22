@@ -48,7 +48,7 @@ ${CMD} -f scripts/nnSimpleSGD-train.dml \
   --nvargs X=${X} Y=${Y} B=${BASE} fmt="csv" epochs=${EPOCHS} &>logs/nnSimpleSGD-train_${LOGIDENTIFIER}_${EPOCHS}.out
 
 ttrain=$(echo "$(date +%s.%N) - $tstart - .4" | bc)
-echo "simple neural network trained with SGD on "$1": "$ttrain >>results/times.txt
+echo "simple neural network trained with SGD on "$5": "$ttrain >>results/times.txt
 
 #predict
 tstart=$(date +%s.%N)
@@ -59,4 +59,4 @@ ${CMD} -f scripts/nnSimpleSGD-predict.dml \
   # --nvargs fmt=csv X=$1_test B=${BASE} Y=$2_test
 
 tpredict=$(echo "$(date +%s.%N) - $tstart - .4" | bc)
-echo "simple neural network trained with SGD predicted on "$1": "$tpredict >>results/times.txt
+echo "simple neural network trained with SGD predicted on "$5": "$tpredict >>results/times.txt

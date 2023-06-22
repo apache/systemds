@@ -110,7 +110,8 @@ echo -e "\n\n" >> results/times.txt
 #./datagen/genClusteringData.sh ${CMD} ${TEMPFOLDER} ${MAXMEM} &> logs/genClusteringData.out
 #./datagen/genDimensionReductionData.sh ${CMD} ${TEMPFOLDER} ${MAXMEM} &> logs/genDimensionReductionData.out
 #./datagen/genALSData.sh ${CMD} ${TEMPFOLDER} ${MAXMEM} &> logs/genALSData.out
-./datagen/genNNData.sh ${CMD} ${TEMPFOLDER} ${MAXMEM} &> logs/genNNData.out
+#./datagen/genNNData.sh ${CMD} ${TEMPFOLDER} ${MAXMEM} &> logs/genNNData.out
+./datagen/genNCFData.sh ${CMD} ${TEMPFOLDER} ${MAXMEM} &> logs/genNCFData.out
 
 ### Micro Benchmarks:
 #./MatrixMult.sh ${CMD}
@@ -127,7 +128,8 @@ echo -e "\n\n" >> results/times.txt
 #./runAllClustering.sh ${CMD} ${TEMPFOLDER} ${MAXMEM}
 #./runAllDimensionReduction.sh ${CMD} ${TEMPFOLDER} ${MAXMEM}
 #./runAllALS.sh ${CMD} ${TEMPFOLDER} ${MAXMEM}
-./runAllNN.sh ${CMD} ${TEMPFOLDER} ${MAXMEM}
+#./runAllNN.sh ${CMD} ${TEMPFOLDER} ${MAXMEM}
+./runAllNCF.sh ${CMD} ${TEMPFOLDER} ${MAXMEM}
 
 # TODO The following benchmarks have yet to be written. The decision tree algorithms additionally need to be fixed.
 # add stepwise Linear 

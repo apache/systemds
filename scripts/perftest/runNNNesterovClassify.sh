@@ -48,7 +48,7 @@ ${CMD} -f scripts/nnNesterovClassify-train.dml \
   --nvargs X=${X} Y=${Y} B=${BASE} fmt="csv" epochs=${EPOCHS} &>logs/nnNesterovClassify-train_${LOGIDENTIFIER}_${EPOCHS}.out
 
 ttrain=$(echo "$(date +%s.%N) - $tstart - .4" | bc)
-echo "nesterov momentum neural network trained with SGD on "$1": "$ttrain >>results/times.txt
+echo "nesterov momentum neural network trained with SGD on "$5": "$ttrain >>results/times.txt
 
 #predict
 tstart=$(date +%s.%N)
@@ -59,4 +59,4 @@ ${CMD} -f scripts/nnNesterovClassify-predict.dml \
   #--nvargs fmt=csv X=$1_test B=${BASE}/b Y=$2_test M=${BASE}/m O=${BASE}/out.csv &>logs/nnNesterovClassify-predict_${LOGIDENTIFIER}.out
 
 tpredict=$(echo "$(date +%s.%N) - $tstart - .4" | bc)
-echo "nesterov momentum neural network trained with SGD predicted on "$1": "$tpredict >>results/times.txt
+echo "nesterov momentum neural network trained with SGD predicted on "$5": "$tpredict >>results/times.txt

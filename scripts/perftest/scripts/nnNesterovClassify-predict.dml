@@ -7,7 +7,7 @@ source("../../nn/layers/softmax.dml") as softmax
 source("../../nn/optim/sgd_nesterov.dml") as sgd_nesterov
 
 X = read($X)
-Y = read($Y) 
+Y = read($Y)
 
 W1 = read(""+$B+"/w1_nesterov_classify")
 W2 = read(""+$B+"/w2_nesterov_classify")

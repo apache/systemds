@@ -55,8 +55,8 @@ iters = 1024 / batch_size
 for (e in 1:epochs) {
   for(i in 1:iters) {
     # Get next batch
-    X_batch = X[i:i+batch_size-1,]
-    y_batch = y[i:i+batch_size-1,]
+    X_batch = X[(i-1)*batch_size+1:i*batch_size,]
+    y_batch = Y[(i-1)*batch_size+1:i*batch_size,]
 
     # Compute forward pass
     out1 = affine::forward(X_batch, W1, b1)
@@ -131,8 +131,8 @@ iters = 1024 / batch_size
 for (e in 1:epochs) {
   for(i in 1:iters) {
     # Get next batch
-    X_batch = X[i:i+batch_size-1,]
-    y_batch = y[i:i+batch_size-1,]
+    X_batch = X[(i-1)*batch_size+1:i*batch_size,]
+    y_batch = Y[(i-1)*batch_size+1:i*batch_size,]
 
     # Compute forward pass
     ## layer 1:

@@ -36,6 +36,7 @@ Y=$2
 BASE=$3
 CMD=$4
 LOGIDENTIFIER=$5
+EPOCHS=$6
 
 echo "running simple sgd neural network"
 
@@ -44,7 +45,7 @@ tstart=$(date +%s.%N)
 ${CMD} -f scripts/nnSimpleSGD-train.dml \
   --config conf/SystemDS-config.xml \
   --stats \
-  --nvargs X=${X} Y=${Y} B=${BASE} fmt="csv" &>logs/nnSimpleSGD-train_${LOGIDENTIFIER}.out
+  --nvargs X=${X} Y=${Y} B=${BASE} fmt="csv" epochs=${EPOCHS} &>logs/nnSimpleSGD-train_${LOGIDENTIFIER}_${EPOCHS}.out
 
 ttrain=$(echo "$(date +%s.%N) - $tstart - .4" | bc)
 echo "simple neural network trained with SGD on "$1": "$ttrain >>results/times.txt
@@ -54,7 +55,7 @@ tstart=$(date +%s.%N)
 ${CMD} -f scripts/nnSimpleSGD-predict.dml \
   --config conf/SystemDS-config.xml \
   --stats \
-  --nvargs fmt="csv" X=${X} Y=${Y} B=${BASE} &>logs/nnSimpleSGD-predict_${LOGIDENTIFIER}.out
+  --nvargs fmt="csv" X=${X} Y=${Y} B=${BASE} &>logs/nnSimpleSGD-predict_${LOGIDENTIFIER}_${EPOCHS}.out
   # --nvargs fmt=csv X=$1_test B=${BASE} Y=$2_test
 
 tpredict=$(echo "$(date +%s.%N) - $tstart - .4" | bc)

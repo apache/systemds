@@ -32,7 +32,7 @@ TEMPFOLDER="temp"
 
 # Max memory of data to be benchmarked
 # Possible values: 80/80MB, 800/800MB, 8000/8000MB/8GB, 80000/80000MB/80GB, 800000/800000MB/800GB
-MAXMEM=80
+MAXMEM=800
 
 # Set properties
 export LOG4JPROP='conf/log4j-off.properties'

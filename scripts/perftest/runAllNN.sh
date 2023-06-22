@@ -75,8 +75,8 @@ for d in ${DATA[@]}; do #"_KDD"
 
   # Classification tasks
   for f in "runNNNesterovClassify"; do
-    echo "-- Running "$f" on "$d" (all configs)" >>results/times.txt
-    ./${f}.sh ${BASE}/X${d}_class ${BASE}/Y${d}_class ${BASE} ${COMMAND} &>logs/${f}_${d}.out
+    echo "-- Running "$f" on "$d"" >>results/times.txt
+    ./${f}.sh ${BASE}/X${d}_class ${BASE}/Y${d}_class ${BASE} ${COMMAND} ${d} &>logs/${f}_${d}.out
   done
 done
 

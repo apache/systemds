@@ -4,6 +4,7 @@ source("../../nn/layers/l2_loss.dml") as l2_loss
 source("../../nn/layers/relu.dml") as relu
 source("../../nn/optim/sgd.dml") as sgd
 
+# read input data
 X = read($X)
 Y = read($Y)
 fmt = ifdef($fmt, "csv")

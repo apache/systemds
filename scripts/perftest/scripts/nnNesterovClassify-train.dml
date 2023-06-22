@@ -6,22 +6,20 @@ source("../../nn/layers/relu.dml") as relu
 source("../../nn/layers/softmax.dml") as softmax
 source("../../nn/optim/sgd_nesterov.dml") as sgd_nesterov
 
-# Generate input data
-N = 1024 # num examples
-D = 100 # num features
-t = 5 # num targets
-X = rand(rows=N, cols=D, pdf="normal")
-classes = round(rand(rows=N, cols=1, min=1, max=t, pdf="uniform"))
-y = matrix(0, rows=N, cols=t)
-parfor (i in 1:N) {
-  y[i, as.scalar(classes[i,1])] = 1  # one-hot encoding
-}
+# read input data
+X = read($X)
+Y = read($Y)
+fmt = ifdef($fmt, "csv")
+
+N = nrow(X)
+D = ncol(X)
+t = ncol(Y)
 
 # Create network:
 # affine1 -> relu1 -> dropout1 -> affine2 -> relu2 -> dropout2 -> affine3 -> softmax
-H1 = 64 # number of neurons in 1st hidden layer
-H2 = 64 # number of neurons in 2nd hidden layer
-p = 0.5  # dropout probability
+H1 = ifdef($H1, 64) # number of neurons in 1st hidden layer
+H2 = ifdef($H2, 64) # number of neurons in 2nd hidden layer
+p = ifdef($dropout_prob, 0.5)  # dropout probability
 [W1, b1] = affine::init(D, H1, -1)
 [W2, b2] = affine::init(H1, H2, -1)
 [W3, b3] = affine::init(H2, t, -1)
@@ -36,14 +34,14 @@ vW3 = sgd_nesterov::init(W3); vb3 = sgd_nesterov::init(b3)
 
 # Optimize
 print("Starting optimization")
-batch_size = 64
-epochs = 10
-iters = 1024 / batch_size
+batch_size = ifdef($batch_size, 64)
+epochs = ifdef($epochs, 10)
+iters = N / batch_size
 for (e in 1:epochs) {
   for(i in 1:iters) {
     # Get next batch
     X_batch = X[i:i+batch_size-1,]
-    y_batch = y[i:i+batch_size-1,]
+    y_batch = Y[i:i+batch_size-1,]
 
     # Compute forward pass
     ## layer 1:
@@ -90,3 +88,12 @@ for (e in 1:epochs) {
   # Decay learning rate
   lr = lr * decay
 }
+
+# save params
+write(W1,""+$B+"/w1_nesterov_classify",format=fmt)
+write(W2,""+$B+"/w2_nesterov_classify",format=fmt)
+write(W3,""+$B+"/w3_nesterov_classify",format=fmt)
+write(b1,""+$B+"/b1_nesterov_classify",format=fmt)
+write(b2,""+$B+"/b2_nesterov_classify",format=fmt)
+write(b3,""+$B+"/b3_nesterov_classify",format=fmt)
+write(p,""+$B+"/p_nesterov_classify",format=fmt)

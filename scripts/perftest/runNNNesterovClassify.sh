@@ -31,8 +31,11 @@ if [ "$(basename $PWD)" != "perftest" ]; then
   exit 1
 fi
 
-CMD=$4
+X=$1
+Y=$2
 BASE=$3
+CMD=$4
+LOGIDENTIFIER=$5
 
 echo "running sgd nn classifier with nesterov momentum"
 
@@ -41,7 +44,7 @@ tstart=$(date +%s.%N)
 ${CMD} -f scripts/nnNesterovClassify-train.dml \
   --config conf/SystemDS-config.xml \
   --stats \
-  --nvargs X=$1 Y=$2 B=${BASE}/b fmt="csv"
+  --nvargs X=${X} Y=${Y} B=${BASE} fmt="csv" &>logs/nnNesterovClassify-train_${LOGIDENTIFIER}.out
 
 ttrain=$(echo "$(date +%s.%N) - $tstart - .4" | bc)
 echo "nesterov momentum neural network trained with SGD on "$1": "$ttrain >>results/times.txt
@@ -51,7 +54,8 @@ tstart=$(date +%s.%N)
 ${CMD} -f scripts/nnNesterovClassify-predict.dml \
   --config conf/SystemDS-config.xml \
   --stats \
-  --nvargs fmt=csv X=$1_test B=${BASE}/b Y=$2_test M=${BASE}/m O=${BASE}/out.csv
+  --nvargs X=${X} Y=${Y} B=${BASE} fmt="csv" &>logs/nnNesterovClassify-predict_${LOGIDENTIFIER}.out
+  #--nvargs fmt=csv X=$1_test B=${BASE}/b Y=$2_test M=${BASE}/m O=${BASE}/out.csv &>logs/nnNesterovClassify-predict_${LOGIDENTIFIER}.out
 
 tpredict=$(echo "$(date +%s.%N) - $tstart - .4" | bc)
 echo "nesterov momentum neural network trained with SGD predicted on "$1": "$tpredict >>results/times.txt

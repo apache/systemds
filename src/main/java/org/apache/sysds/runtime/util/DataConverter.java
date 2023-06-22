@@ -1341,6 +1341,13 @@ public class DataConverter {
 		return ret;
 	}
 
+	public static double[] toDouble(boolean[] data, int len) {
+		double[] ret = new double[len];
+		for(int i=0; i<len; i++)
+			ret[i] = data[i] ? 1 : 0;
+		return ret;
+	}
+
 	public static double[] toDouble(String[] data) {
 		double[] ret = new double[data.length];
 		for(int i=0; i<data.length; i++)

@@ -868,6 +868,13 @@ public class UtilFunctions {
 		return lnnz;
 	}
 
+	public static int computeNnz(boolean[] a, int ai, int len) {
+		int lnnz = 0;
+		for( int i=ai; i<ai+len; i++ )
+			lnnz += a[i] ? 1 : 0;
+		return lnnz;
+	}
+
 	public static int computeNnz(String[] a, int ai, int len) {
 		int lnnz = 0;
 		for( int k=ai; k<ai+len; k++ )

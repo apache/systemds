@@ -54,7 +54,7 @@ t = num_targets # num targets
 X = rand(rows=N, cols=D, pdf="normal")
 classes = round(rand(rows=N, cols=1, min=1, max=t, pdf="uniform"))
 Y = matrix(0, rows=N, cols=t)
-parfor (i in 1:N) {
+for (i in 1:N) { # todo: using parfor here should be fine, but crashes?
   Y[i, as.scalar(classes[i,1])] = 1  # one-hot encoding
 }
 

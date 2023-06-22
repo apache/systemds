@@ -39,11 +39,11 @@ err_report() {
 trap 'err_report $LINENO' ERR
 
 DATA=() # todo .. which data is needed? does the ALS data work?
-if [ $MAXMEM -ge 80 ]; then DATA+=("10k_1k_dense" "10k_1k_sparse"); fi
-if [ $MAXMEM -ge 800 ]; then DATA+=("100k_1k_dense" "100k_1k_sparse"); fi
-if [ $MAXMEM -ge 8000 ]; then DATA+=("1M_1k_dense" "1M_1k_sparse"); fi
-if [ $MAXMEM -ge 80000 ]; then DATA+=("10M_1k_dense" "10M_1k_sparse"); fi
-if [ $MAXMEM -ge 800000 ]; then DATA+=("100M_1k_dense" "100M_1k_sparse"); fi
+if [ $MAXMEM -ge 80 ]; then DATA+=("X1024_100_1_reg" "Y1024_100_1_reg" "X1024_100_1_class"); fi
+if [ $MAXMEM -ge 800 ]; then DATA+=("X1024_100_1_reg" "Y1024_100_1_reg"); fi
+if [ $MAXMEM -ge 8000 ]; then DATA+=("X1024_100_1_reg" "Y1024_100_1_reg"); fi
+if [ $MAXMEM -ge 80000 ]; then DATA+=("X1024_100_1_reg" "Y1024_100_1_reg"); fi
+if [ $MAXMEM -ge 800000 ]; then DATA+=("X1024_100_1_reg" "Y1024_100_1_reg"); fi
 
 echo "RUN NEURAL NETWORK EXPERIMENTS" $(date) >>results/times.txt
 

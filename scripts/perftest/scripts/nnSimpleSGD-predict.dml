@@ -4,58 +4,23 @@ source("../../nn/layers/l2_loss.dml") as l2_loss
 source("../../nn/layers/relu.dml") as relu
 source("../../nn/optim/sgd.dml") as sgd
 
-# todo scrap this and write it to use given weights to make a prediction
+X = read($X)
+Y = read($Y)
 
-# Generate input data
-N = 1024 # num examples   # todo parameterize this based on given data
-D = 100 # num features
-t = 1 # num targets
-X = rand(rows=N, cols=D, pdf="normal")  # todo get this data from outside
-y = rand(rows=N, cols=t)
 
-# Create 2-layer network:
+# Create 2-layer network based on read params:
 ## affine1 -> relu1 -> affine2
-M = 64 # number of neurons  # todo parameterize this
-[W1, b1] = affine::init(D, M, -1)
-[W2, b2] = affine::init(M, t, -1)
+W1 = read(""+$B+"/w1_simple_sgd")
+W2 = read(""+$B+"/w2_simple_sgd")
+b1 = read(""+$B+"/b1_simple_sgd")
+b2 = read(""+$B+"/b2_simple_sgd")
 
-# Initialize optimizer
-lr = 0.05  # learning rate
-mu = 0.9  # momentum
-decay = 0.99  # learning rate decay constant
+# make prediction for given X
+out1 = affine::forward(X, W1, b1)
+outr1 = relu::forward(out1)
+out2 = affine::forward(outr1, W2, b2)
 
-# Optimize
-print("Starting optimization")
-batch_size = 32
-epochs = 5
-iters = 1024 / batch_size
-for (e in 1:epochs) {
-  for(i in 1:iters) {
-    # Get next batch
-    X_batch = X[i:i+batch_size-1,]
-    y_batch = y[i:i+batch_size-1,]
+# check accuracy
+loss = l2_loss::forward(out2, Y)
 
-    # Compute forward pass
-    out1 = affine::forward(X_batch, W1, b1)
-    outr1 = relu::forward(out1)
-    out2 = affine::forward(outr1, W2, b2)
-
-    # Compute loss
-    loss = l2_loss::forward(out2, y_batch)
-    print("L2 loss: " + loss)
-
-    # Compute backward pass
-    dout2 = l2_loss::backward(out2, y_batch)
-    [doutr1, dW2, db2] = affine::backward(dout2, outr1, W2, b2)
-    dout1 = relu::backward(doutr1, out1)
-    [dX_batch, dW1, db1] = affine::backward(dout1, X_batch, W1, b1)
-
-    # Optimize with vanilla SGD
-    W1 = sgd::update(W1, dW1, lr)
-    b1 = sgd::update(b1, db1, lr)
-    W2 = sgd::update(W2, dW2, lr)
-    b2 = sgd::update(b2, db2, lr)
-  }
-  # Decay learning rate
-  lr = lr * decay
-}  # todo save learned params
+print("Got loss of " + loss)

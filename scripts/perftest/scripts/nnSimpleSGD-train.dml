@@ -4,16 +4,17 @@ source("../../nn/layers/l2_loss.dml") as l2_loss
 source("../../nn/layers/relu.dml") as relu
 source("../../nn/optim/sgd.dml") as sgd
 
-# Generate input data
-N = 1024 # num examples   # todo parameterize this based on given data
-D = 100 # num features
-t = 1 # num targets
-X = rand(rows=N, cols=D, pdf="normal")  # todo get this data from outside
-y = rand(rows=N, cols=t)
+X = read($X)
+Y = read($Y)
+fmt = ifdef($fmt, "csv")
+
+N = nrow(X)
+D = ncol(X)
+t = ncol(Y)
 
 # Create 2-layer network:
 ## affine1 -> relu1 -> affine2
-M = 64 # number of neurons  # todo parameterize this
+M = ifdef($M, 64) # number of neurons  # todo parameterize this
 [W1, b1] = affine::init(D, M, -1)
 [W2, b2] = affine::init(M, t, -1)
 
@@ -24,14 +25,14 @@ decay = 0.99  # learning rate decay constant
 
 # Optimize
 print("Starting optimization")
-batch_size = 32
-epochs = 5
-iters = 1024 / batch_size
+batch_size = ifdef($batch_size, 32)
+epochs = ifdef($epochs, 5)
+iters = N / batch_size
 for (e in 1:epochs) {
   for(i in 1:iters) {
     # Get next batch
     X_batch = X[i:i+batch_size-1,]
-    y_batch = y[i:i+batch_size-1,]
+    y_batch = Y[i:i+batch_size-1,]
 
     # Compute forward pass
     out1 = affine::forward(X_batch, W1, b1)
@@ -56,4 +57,9 @@ for (e in 1:epochs) {
   }
   # Decay learning rate
   lr = lr * decay
-}  # todo save learned params
+}
+# save params
+write(W1,""+$B+"/w1_simple_sgd",format=fmt)
+write(W2,""+$B+"/w2_simple_sgd",format=fmt)
+write(b1,""+$B+"/b1_simple_sgd",format=fmt)
+write(b2,""+$B+"/b2_simple_sgd",format=fmt)

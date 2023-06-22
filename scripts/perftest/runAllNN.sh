@@ -38,12 +38,12 @@ err_report() {
 }
 trap 'err_report $LINENO' ERR
 
-DATA=() # todo .. which data is needed? does the ALS data work?
-if [ $MAXMEM -ge 80 ]; then DATA+=("X1024_100_1_reg" "Y1024_100_1_reg" "X1024_100_1_class"); fi
-if [ $MAXMEM -ge 800 ]; then DATA+=("X1024_100_1_reg" "Y1024_100_1_reg"); fi
-if [ $MAXMEM -ge 8000 ]; then DATA+=("X1024_100_1_reg" "Y1024_100_1_reg"); fi
-if [ $MAXMEM -ge 80000 ]; then DATA+=("X1024_100_1_reg" "Y1024_100_1_reg"); fi
-if [ $MAXMEM -ge 800000 ]; then DATA+=("X1024_100_1_reg" "Y1024_100_1_reg"); fi
+DATA=() # todo .. which data is needed?
+if [ $MAXMEM -ge 80 ]; then DATA+=("1024_100_1"); fi
+if [ $MAXMEM -ge 800 ]; then DATA+=("3072_300_1" ); fi
+if [ $MAXMEM -ge 8000 ]; then DATA+=("9216_900_1"); fi
+if [ $MAXMEM -ge 80000 ]; then DATA+=("27648_2700_1"); fi
+if [ $MAXMEM -ge 800000 ]; then DATA+=("82944_8200_1"); fi
 
 echo "RUN NEURAL NETWORK EXPERIMENTS" $(date) >>results/times.txt
 
@@ -69,14 +69,14 @@ for d in ${DATA[@]}; do #"_KDD"
 
   # Regression tasks
   for f in "runNNSimpleSGD"; do
-    echo "-- Running "$f" on "$d" (all configs)" >>results/times.txt
-    ./${f}.sh ${BASE}/X${d} ${BASE}/y${d} ${BASE} ${COMMAND} &>logs/${f}_${d}.out
+    echo "-- Running "$f" on "$d"" >>results/times.txt
+    ./${f}.sh ${BASE}/X${d}_reg ${BASE}/Y${d}_reg ${BASE} ${COMMAND} ${d} &>logs/${f}_${d}.out
   done
 
   # Classification tasks
   for f in "runNNNesterovClassify"; do
     echo "-- Running "$f" on "$d" (all configs)" >>results/times.txt
-    ./${f}.sh ${BASE}/X${d} ${BASE}/y${d} ${BASE} ${COMMAND} &>logs/${f}_${d}.out
+    ./${f}.sh ${BASE}/X${d}_class ${BASE}/Y${d}_class ${BASE} ${COMMAND} &>logs/${f}_${d}.out
   done
 done
 

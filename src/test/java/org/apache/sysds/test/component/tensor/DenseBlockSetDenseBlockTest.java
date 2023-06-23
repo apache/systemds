@@ -20,18 +20,10 @@
 package org.apache.sysds.test.component.tensor;
 
 import org.apache.commons.lang.NotImplementedException;
+import org.apache.sysds.runtime.data.*;
 import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysds.common.Types.ValueType;
-import org.apache.sysds.runtime.data.DenseBlock;
-import org.apache.sysds.runtime.data.DenseBlockFactory;
-import org.apache.sysds.runtime.data.DenseBlockLBool;
-import org.apache.sysds.runtime.data.DenseBlockLFP32;
-import org.apache.sysds.runtime.data.DenseBlockLFP64;
-import org.apache.sysds.runtime.data.DenseBlockLString;
-import org.apache.sysds.runtime.data.DenseBlockLInt32;
-import org.apache.sysds.runtime.data.DenseBlockLInt64;
-import org.apache.sysds.runtime.data.DenseBlockString;
 
 
 public class DenseBlockSetDenseBlockTest
@@ -58,6 +50,15 @@ public class DenseBlockSetDenseBlockTest
 	public void testDenseBlock2BoolSetDenseBlock() {
 		DenseBlock db = getDenseBlock2(ValueType.BOOLEAN);
 		DenseBlock dbSet = getDenseBlock2(ValueType.BOOLEAN);
+		dbSet.set(1);
+		db.set(dbSet);
+		compareDenseBlocks(db, dbSet);
+	}
+
+	@Test
+	public void testDenseBlock2TrueBoolSetDenseBlock() {
+		DenseBlock db = getDenseBlock2(ValueType.TRUE_BOOLEAN);
+		DenseBlock dbSet = getDenseBlock2(ValueType.TRUE_BOOLEAN);
 		dbSet.set(1);
 		db.set(dbSet);
 		compareDenseBlocks(db, dbSet);
@@ -170,6 +171,15 @@ public class DenseBlockSetDenseBlockTest
 	public void testDenseBlock3BoolSetDenseBlock() {
 		DenseBlock db = getDenseBlock3(ValueType.BOOLEAN);
 		DenseBlock dbSet = getDenseBlock3(ValueType.BOOLEAN);
+		dbSet.set(1);
+		db.set(dbSet);
+		compareDenseBlocks(db, dbSet);
+	}
+
+	@Test
+	public void testDenseBlock3TrueBoolSetDenseBlock() {
+		DenseBlock db = getDenseBlock3(ValueType.TRUE_BOOLEAN);
+		DenseBlock dbSet = getDenseBlock3(ValueType.TRUE_BOOLEAN);
 		dbSet.set(1);
 		db.set(dbSet);
 		compareDenseBlocks(db, dbSet);

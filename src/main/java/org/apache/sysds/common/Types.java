@@ -76,7 +76,7 @@ public class Types
 	 */
 	public enum ValueType {
 		UINT4, UINT8, // Used for parsing in UINT values from numpy.
-		FP32, FP64, INT32, INT64, BOOLEAN, STRING, UNKNOWN,
+		FP32, FP64, INT32, INT64, BOOLEAN, TRUE_BOOLEAN, STRING, UNKNOWN,
 		CHARACTER;
 		
 		public boolean isNumeric() {

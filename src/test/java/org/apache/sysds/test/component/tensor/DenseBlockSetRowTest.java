@@ -20,18 +20,10 @@
 package org.apache.sysds.test.component.tensor;
 
 import org.apache.commons.lang.NotImplementedException;
+import org.apache.sysds.runtime.data.*;
 import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysds.common.Types.ValueType;
-import org.apache.sysds.runtime.data.DenseBlock;
-import org.apache.sysds.runtime.data.DenseBlockBool;
-import org.apache.sysds.runtime.data.DenseBlockFactory;
-import org.apache.sysds.runtime.data.DenseBlockLBool;
-import org.apache.sysds.runtime.data.DenseBlockLFP32;
-import org.apache.sysds.runtime.data.DenseBlockLFP64;
-import org.apache.sysds.runtime.data.DenseBlockLString;
-import org.apache.sysds.runtime.data.DenseBlockLInt32;
-import org.apache.sysds.runtime.data.DenseBlockLInt64;
 
 public class DenseBlockSetRowTest {
 	@Test
@@ -49,6 +41,12 @@ public class DenseBlockSetRowTest {
 	@Test
 	public void testDenseBlock2BoolRow() {
 		DenseBlock db = getDenseBlock2(ValueType.BOOLEAN);
+		checkRow(setRow(db));
+	}
+
+	@Test
+	public void testDenseBlock2TrueBoolRow() {
+		DenseBlock db = getDenseBlock2(ValueType.TRUE_BOOLEAN);
 		checkRow(setRow(db));
 	}
 
@@ -121,6 +119,12 @@ public class DenseBlockSetRowTest {
 	@Test
 	public void testDenseBlock3BoolRow() {
 		DenseBlock db = getDenseBlock3(ValueType.BOOLEAN);
+		checkRow(setRow(db));
+	}
+
+	@Test
+	public void testDenseBlock3TrueBoolRow() {
+		DenseBlock db = getDenseBlock3(ValueType.TRUE_BOOLEAN);
 		checkRow(setRow(db));
 	}
 
@@ -246,7 +250,7 @@ public class DenseBlockSetRowTest {
 	}
 
 	private static void checkRow(DenseBlock db) {
-		boolean isBool = (db instanceof DenseBlockBool) || (db instanceof DenseBlockLBool);
+		boolean isBool = (db instanceof DenseBlockBool) || (db instanceof DenseBlockLBool) || (db instanceof DenseBlockTrueBool);
 		if (db.numDims() == 3) {
 			int dim1 = 5, dim2 = 7;
 			for (int i = 0; i < dim1; i++)

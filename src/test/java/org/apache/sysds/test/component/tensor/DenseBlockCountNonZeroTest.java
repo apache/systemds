@@ -53,6 +53,12 @@ public class DenseBlockCountNonZeroTest {
 	}
 
 	@Test
+	public void testIndexDenseBlock2TrueBoolCountNonZero() {
+		DenseBlock db = getDenseBlock2(ValueType.TRUE_BOOLEAN);
+		checkFullNnz2(db);
+	}
+
+	@Test
 	public void testIndexDenseBlock2Int32CountNonZero() {
 		DenseBlock db = getDenseBlock2(ValueType.INT32);
 		checkFullNnz2(db);
@@ -121,6 +127,12 @@ public class DenseBlockCountNonZeroTest {
 	@Test
 	public void testIndexDenseBlock3BoolCountNonZero() {
 		DenseBlock db = getDenseBlock3(ValueType.BOOLEAN);
+		checkFullNnz3(db);
+	}
+
+	@Test
+	public void testIndexDenseBlock3TrueBoolCountNonZero() {
+		DenseBlock db = getDenseBlock3(ValueType.TRUE_BOOLEAN);
 		checkFullNnz3(db);
 	}
 

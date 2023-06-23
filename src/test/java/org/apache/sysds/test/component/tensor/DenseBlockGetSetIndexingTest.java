@@ -20,18 +20,10 @@
 package org.apache.sysds.test.component.tensor;
 
 import org.apache.commons.lang.NotImplementedException;
+import org.apache.sysds.runtime.data.*;
 import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysds.common.Types.ValueType;
-import org.apache.sysds.runtime.data.DenseBlock;
-import org.apache.sysds.runtime.data.DenseBlockBool;
-import org.apache.sysds.runtime.data.DenseBlockFactory;
-import org.apache.sysds.runtime.data.DenseBlockLBool;
-import org.apache.sysds.runtime.data.DenseBlockLFP32;
-import org.apache.sysds.runtime.data.DenseBlockLFP64;
-import org.apache.sysds.runtime.data.DenseBlockLString;
-import org.apache.sysds.runtime.data.DenseBlockLInt32;
-import org.apache.sysds.runtime.data.DenseBlockLInt64;
 
 
 public class DenseBlockGetSetIndexingTest
@@ -51,6 +43,12 @@ public class DenseBlockGetSetIndexingTest
 	@Test
 	public void testIndexDenseBlock2BoolSetGetCell() {
 		DenseBlock db = getDenseBlock2(ValueType.BOOLEAN);
+		checkSequence(setSequence(db));
+	}
+
+	@Test
+	public void testIndexDenseBlock2TrueBoolSetGetCell() {
+		DenseBlock db = getDenseBlock2(ValueType.TRUE_BOOLEAN);
 		checkSequence(setSequence(db));
 	}
 	
@@ -123,6 +121,12 @@ public class DenseBlockGetSetIndexingTest
 	@Test
 	public void testIndexDenseBlock3BoolSetGetCell() {
 		DenseBlock db = getDenseBlock3(ValueType.BOOLEAN);
+		checkSequence(setSequence(db));
+	}
+
+	@Test
+	public void testIndexDenseBlock3TrueBoolSetGetCell() {
+		DenseBlock db = getDenseBlock3(ValueType.TRUE_BOOLEAN);
 		checkSequence(setSequence(db));
 	}
 	
@@ -234,7 +238,7 @@ public class DenseBlockGetSetIndexingTest
 	}
 	
 	private static void checkSequence(DenseBlock db) {
-		boolean isBool = (db instanceof DenseBlockBool) || (db instanceof DenseBlockLBool);
+		boolean isBool = (db instanceof DenseBlockBool) || (db instanceof DenseBlockLBool) || (db instanceof DenseBlockTrueBool);
 		if( db.numDims() == 3 ) {
 			int dim12 = 5*7;
 			int dim1 = 5, dim2 = 7;

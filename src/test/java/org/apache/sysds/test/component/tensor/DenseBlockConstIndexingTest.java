@@ -62,6 +62,16 @@ public class DenseBlockConstIndexingTest
 			for(int j=0; j<5; j++)
 				Assert.assertEquals(1, db.get(i, j), 0);
 	}
+
+	@Test
+	public void testIndexDenseBlock2TrueBoolConst() {
+		DenseBlock db = getDenseBlock2(ValueType.TRUE_BOOLEAN);
+		db.set(7.3);
+		for(int i=0; i<db.numRows(); i++)
+			for(int j=0; j<5; j++) {
+				Assert.assertEquals(1, db.get(i, j), 0);
+			}
+	}
 	
 	@Test
 	public void testIndexDenseBlock2Int32Const() {
@@ -170,6 +180,16 @@ public class DenseBlockConstIndexingTest
 	@Test
 	public void testIndexDenseBlock3BoolConst() {
 		DenseBlock db = getDenseBlock3(ValueType.BOOLEAN);
+		db.set(7.3);
+		for(int i=0; i<db.numRows(); i++)
+			for(int j=0; j<5; j++)
+				for(int k=0; k<7; k++)
+					Assert.assertEquals(1, db.get(new int[]{i,j,k}), 0);
+	}
+
+	@Test
+	public void testIndexDenseBlock3TrueBoolConst() {
+		DenseBlock db = getDenseBlock3(ValueType.TRUE_BOOLEAN);
 		db.set(7.3);
 		for(int i=0; i<db.numRows(); i++)
 			for(int j=0; j<5; j++)

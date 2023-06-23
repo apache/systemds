@@ -20,17 +20,10 @@
 package org.apache.sysds.test.component.tensor;
 
 import org.apache.commons.lang.NotImplementedException;
+import org.apache.sysds.runtime.data.*;
 import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysds.common.Types.ValueType;
-import org.apache.sysds.runtime.data.DenseBlock;
-import org.apache.sysds.runtime.data.DenseBlockFactory;
-import org.apache.sysds.runtime.data.DenseBlockLBool;
-import org.apache.sysds.runtime.data.DenseBlockLFP32;
-import org.apache.sysds.runtime.data.DenseBlockLFP64;
-import org.apache.sysds.runtime.data.DenseBlockLString;
-import org.apache.sysds.runtime.data.DenseBlockLInt32;
-import org.apache.sysds.runtime.data.DenseBlockLInt64;
 
 
 public class DenseBlockConstructionTest 
@@ -78,6 +71,21 @@ public class DenseBlockConstructionTest
 		Assert.assertEquals(0, db.countNonZeros());
 		Assert.assertEquals(DenseBlock.Type.DRB,
 			DenseBlockFactory.getDenseBlockType(db));
+	}
+
+	@Test
+	public void testMetaDenseBlock2TrueBool() {
+		DenseBlock db = getDenseBlock2(ValueType.TRUE_BOOLEAN);
+		Assert.assertEquals(3, db.numRows());
+		Assert.assertTrue(db.isNumeric());
+		Assert.assertTrue(db.isContiguous());
+		Assert.assertEquals(1, db.numBlocks());
+		Assert.assertEquals(3, db.blockSize());
+		Assert.assertEquals(3*5, db.size());
+		Assert.assertTrue(3*5 <= db.capacity());
+		Assert.assertEquals(0, db.countNonZeros());
+		Assert.assertEquals(DenseBlock.Type.DRB,
+				DenseBlockFactory.getDenseBlockType(db));
 	}
 
 	@Test
@@ -258,6 +266,21 @@ public class DenseBlockConstructionTest
 		Assert.assertEquals(0, db.countNonZeros());
 		Assert.assertEquals(DenseBlock.Type.DRB,
 			DenseBlockFactory.getDenseBlockType(db));
+	}
+
+	@Test
+	public void testMetaDenseBlock3TrueBool() {
+		DenseBlock db = getDenseBlock3(ValueType.TRUE_BOOLEAN);
+		Assert.assertEquals(3, db.numRows());
+		Assert.assertTrue(db.isNumeric());
+		Assert.assertTrue(db.isContiguous());
+		Assert.assertEquals(1, db.numBlocks());
+		Assert.assertEquals(3, db.blockSize());
+		Assert.assertEquals(3*5*7, db.size());
+		Assert.assertTrue(3*5*7 <= db.capacity());
+		Assert.assertEquals(0, db.countNonZeros());
+		Assert.assertEquals(DenseBlock.Type.DRB,
+				DenseBlockFactory.getDenseBlockType(db));
 	}
 	
 	@Test

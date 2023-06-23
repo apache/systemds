@@ -61,6 +61,10 @@ public abstract class DenseBlockFactory
 		return new DenseBlockBool(dims, data);
 	}
 
+	public static DenseBlock createDenseBlock(boolean[] data, int[] dims) {
+		return new DenseBlockTrueBool(dims, data);
+	}
+
 	public static DenseBlock createDenseBlock(String[] data, int[] dims) {
 		return new DenseBlockString(dims, data);
 	}
@@ -115,6 +119,7 @@ public abstract class DenseBlockFactory
 					case INT32: return new DenseBlockInt32(dims);
 					case INT64: return new DenseBlockInt64(dims);
 					case BOOLEAN: return new DenseBlockBool(dims);
+					case TRUE_BOOLEAN: return new DenseBlockTrueBool(dims);
 					case STRING: return new DenseBlockString(dims);
 					default:
 						throw new DMLRuntimeException("Unsupported dense block value type: "+vt.name());

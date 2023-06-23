@@ -16,11 +16,39 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
+#
 # -------------------------------------------------------------
+import os.path
 
-from typing import Union
+from systemds.context import SystemDSContext
+from systemds.operator import Matrix, Source
+from systemds.utils.helpers import get_path_to_script_layers
 
-MODULE_NAME = 'systemds'
-VALID_INPUT_TYPES = Union['DAGNode', str, int, float, bool]
-BINARY_OPERATIONS = ['+', '-', '/', '//', '*', '<', '<=', '>', '>=', '==', '!=', '%*%']
-VALID_ARITHMETIC_TYPES = Union['DAGNode', int, float]
+
+class ReLU:
+    _sds_context: SystemDSContext
+    _source: Source
+    _X: Matrix
+
+    def __init__(self):
+        self._sds_context = SystemDSContext()
+        path = get_path_to_script_layers()
+        path = os.path.join(path, "relu.dml")
+        self._source = self._sds_context.source(path, "relu")
+
+    def forward(self, X):
+        """
+        X: input matrix
+        return out: output matrix
+        """
+        self._X = X
+        out = self._source.forward(X)
+        return out
+
+    def backward(self, dout):
+        """
+        dout: gradient of output, passed from the upstream
+        return dX: gradient of input
+        """
+        dX = self._source.backward(dout, self._X)
+        return dX

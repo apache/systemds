@@ -18,12 +18,11 @@
 # under the License.
 #
 # -------------------------------------------------------------
+import os
 
 from systemds.context import SystemDSContext
 from systemds.operator import Matrix, Source, MultiReturn
-from systemds.utils.consts import PATH_TO_LAYERS_SCRIPT
-
-PATH = PATH_TO_LAYERS_SCRIPT + "affine.dml"
+from systemds.utils.helpers import get_path_to_script_layers
 
 
 class Affine:
@@ -39,7 +38,9 @@ class Affine:
         m: number of neuron
         """
         self._sds_context = SystemDSContext()
-        self._source = self._sds_context.source(PATH, "affine")
+        path = get_path_to_script_layers()
+        path = os.path.join(path, "affine.dml")
+        self._source = self._sds_context.source(path, "affine")
         self.weight = Matrix(self._sds_context, '')
         self.bias = Matrix(self._sds_context, '')
 

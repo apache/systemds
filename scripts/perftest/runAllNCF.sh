@@ -51,10 +51,10 @@ for d in ${DATA[@]}; do #"_KDD"
   for f in "runNCF"; do
     echo "-- Running "$f" on "$d" for 5 epochs" >>results/times.txt
     ./${f}.sh ${BASE}/Tt${d} ${BASE}/Tv${d} ${BASE}/It${d} ${BASE}/Iv${d} ${BASE}/Ut${d} ${BASE}/Uv${d} \
-      ${BASE} ${COMMAND} ${d} 5 &>logs/${f}_${d}_5.out
+      ${BASE} "${COMMAND}" ${d} 5 &>logs/${f}_${d}_5.out
     echo "-- Running "$f" on "$d" for 50 epochs" >>results/times.txt
     ./${f}.sh ${BASE}/Tt${d} ${BASE}/Tv${d} ${BASE}/It${d} ${BASE}/Iv${d} ${BASE}/Ut${d} ${BASE}/Uv${d} \
-      ${BASE} ${COMMAND} ${d} 50 &>logs/${f}_${d}_50.out
+      ${BASE} "${COMMAND}" ${d} 50 &>logs/${f}_${d}_50.out
   done
 done
 

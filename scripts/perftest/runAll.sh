@@ -20,10 +20,9 @@
 #
 #-------------------------------------------------------------
 
-if [ "$(basename $PWD)" != "perftest" ];
-then
+if [ "$(basename $PWD)" != "perftest" ]; then
   echo "Please execute scripts from directory 'perftest'"
-  exit 1;
+  exit 1
 fi
 
 # Command to be executed
@@ -32,7 +31,7 @@ TEMPFOLDER="temp"
 
 # Max memory of data to be benchmarked
 # Possible values: 80/80MB, 800/800MB, 8000/8000MB/8GB, 80000/80000MB/80GB, 800000/800000MB/800GB
-MAXMEM=800
+MAXMEM=80
 
 # Set properties
 export LOG4JPROP='conf/log4j-off.properties'
@@ -85,22 +84,26 @@ MAXMEM=${MAXMEM%"MB"}; MAXMEM=${MAXMEM/GB/"000"}
 
 # Possible lines to initialize Intel MKL, depending on version and install location
 if [ -d ~/intel ] && [ -d ~/intel/bin ] && [ -f ~/intel/bin/compilervars.sh ]; then
-    . ~/intel/bin/compilervars.sh intel64
+  . ~/intel/bin/compilervars.sh intel64
 elif [ -d /opt ] && [ -d /opt/intel ] && [ -d /opt/intel/bin ]; then
-    . /opt/intel/bin/compilervars.sh intel64
+  . /opt/intel/bin/compilervars.sh intel64
 fi
 
 # make dirs if not exsisting
-mkdir -p logs 
-mkdir -p results 
+mkdir -p logs
+mkdir -p results
 mkdir -p temp
+
+# Flags for tests of components in nn
+DO_TESTS_FOR_NN=true # toggle execution of datagen for as well as tests of nn components themselves
+USE_GPU_FOR_NN=true  # toggle gpu usage for nn tests
 
 # init time measurement
 
 rm -f results/times.txt
-date +"%Y-%m-%d-%T" >> results/times.txt
-echo -e "\n$HOSTNAME" >> results/times.txt
-echo -e "\n\n" >> results/times.txt
+date +"%Y-%m-%d-%T" >>results/times.txt
+echo -e "\n$HOSTNAME" >>results/times.txt
+echo -e "\n\n" >>results/times.txt
 
 ## Data Gen
 #./datagen/genBinomialData.sh ${CMD} ${TEMPFOLDER} ${MAXMEM} &> logs/genBinomialData.out
@@ -110,8 +113,12 @@ echo -e "\n\n" >> results/times.txt
 #./datagen/genClusteringData.sh ${CMD} ${TEMPFOLDER} ${MAXMEM} &> logs/genClusteringData.out
 #./datagen/genDimensionReductionData.sh ${CMD} ${TEMPFOLDER} ${MAXMEM} &> logs/genDimensionReductionData.out
 #./datagen/genALSData.sh ${CMD} ${TEMPFOLDER} ${MAXMEM} &> logs/genALSData.out
-#./datagen/genNNData.sh ${CMD} ${TEMPFOLDER} ${MAXMEM} &> logs/genNNData.out
-./datagen/genNCFData.sh ${CMD} ${TEMPFOLDER} ${MAXMEM} &> logs/genNCFData.out
+
+# Data for tests of nn components
+if [ "$DO_TESTS_FOR_NN" = true ]; then
+  ./datagen/genNNData.sh ${CMD} ${TEMPFOLDER} ${MAXMEM} &>logs/genNNData.out
+  ./datagen/genNCFData.sh ${CMD} ${TEMPFOLDER} ${MAXMEM} &>logs/genNCFData.out
+fi
 
 ### Micro Benchmarks:
 #./MatrixMult.sh ${CMD}
@@ -128,11 +135,22 @@ echo -e "\n\n" >> results/times.txt
 #./runAllClustering.sh ${CMD} ${TEMPFOLDER} ${MAXMEM}
 #./runAllDimensionReduction.sh ${CMD} ${TEMPFOLDER} ${MAXMEM}
 #./runAllALS.sh ${CMD} ${TEMPFOLDER} ${MAXMEM}
-#./runAllNN.sh ${CMD} ${TEMPFOLDER} ${MAXMEM}
-./runAllNCF.sh ${CMD} ${TEMPFOLDER} ${MAXMEM}
+
+# Tests of nn components
+if [ "$DO_TESTS_FOR_NN" = true ]; then
+  # take care of toggle to use/not to use gpu for nn tests by conditionally adding the -gpu execution flag onto the CMD variable
+  NN_CMD=$CMD
+  if [ "$USE_GPU_FOR_NN" = true ]; then
+    NN_CMD="${CMD} -gpu"
+  fi
+  # NOTICE: remember to pass the command variable as a quoted string!
+  # otherwise the command (eg. `systemds -gpu` without quotes) will be split into two variables in subscripts when USE_GPU_FOR_NN is set
+  ./runAllNN.sh "${NN_CMD}" ${TEMPFOLDER} ${MAXMEM}
+  ./runAllNCF.sh "${NN_CMD}" ${TEMPFOLDER} ${MAXMEM} # currently broken: staging/NCF.dml and any dml that sources it die on launch
+fi
 
 # TODO The following benchmarks have yet to be written. The decision tree algorithms additionally need to be fixed.
-# add stepwise Linear 
+# add stepwise Linear
 # add stepwise GLM
 #./runAllTrees.sh $CMD $TEMPFOLDER
 # add randomForest

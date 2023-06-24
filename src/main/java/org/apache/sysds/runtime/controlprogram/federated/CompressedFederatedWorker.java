@@ -6,6 +6,8 @@ import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
+import io.netty.handler.codec.compression.JdkZlibDecoder;
+import io.netty.handler.codec.compression.JdkZlibEncoder;
 import io.netty.handler.codec.serialization.ClassResolvers;
 import io.netty.handler.codec.serialization.ObjectDecoder;
 import io.netty.handler.codec.serialization.ObjectEncoder;
@@ -18,6 +20,7 @@ import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.conf.DMLConfig;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
+import org.apache.sysds.runtime.controlprogram.federated.compression.CompressionEncoder;
 import org.apache.sysds.runtime.controlprogram.paramserv.NetworkTrafficCounter;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.Timing;
@@ -119,6 +122,7 @@ public class CompressedFederatedWorker {
 
         @Override
         protected void encode(ChannelHandlerContext ctx, Serializable msg, ByteBuf out) throws Exception {
+            log.info("Encoding: " + msg);
             LineageItem objLI = null;
             boolean linReusePossible = (!LineageCacheConfig.ReuseCacheType.isNone() && msg instanceof FederatedResponse);
             if(linReusePossible) {
@@ -169,11 +173,16 @@ public class CompressedFederatedWorker {
                     if(ssl)
                         cp.addLast(cont2.newHandler(ch.alloc()));
                     cp.addLast("NetworkTrafficCounter", new NetworkTrafficCounter(FederatedStatistics::logWorkerTraffic));
+                    cp.addLast("ZlibDecoder", new JdkZlibDecoder());
                     cp.addLast("ObjectDecoder",
                             new ObjectDecoder(Integer.MAX_VALUE,
                                     ClassResolvers.weakCachingResolver(ClassLoader.getSystemClassLoader())));
                     cp.addLast("ObjectEncoder", new ObjectEncoder());
+                    // This line adds the compression
+                    // cp.addLast("CompressionHandler", new CompressionHandler());
+                    // What does this line do???
                     cp.addLast(FederationUtils.decoder(), new FederatedWorker.FederatedResponseEncoder());
+                    cp.addLast("ZlibEncoder", new CompressionEncoder());
                     cp.addLast(new FederatedWorkerHandler(_flt, _frc, _fan, networkTimer));
                 }
             };

@@ -54,7 +54,6 @@ COPY . /usr/src/systemds
 
 # Separate the build process and deletion into a different step after COPY
 RUN cd /usr/src/systemds/ && \
-	mvn --no-transfer-progress clean package -P distribution && \
 	rm -r .git && \
 	rm -r .github && \
 	rm -r target/javadoc** && \
@@ -68,8 +67,7 @@ RUN cd /usr/src/systemds/ && \
 	rm -r src && \
 	rm -r /usr/lib/mvn && \
 	rm -r CONTRIBUTING.md && \
-	rm -r pom.xml && \
-	rm -r ~/.m2
+	rm -r pom.xml
 
 COPY docker/mountFolder/main.dml /input/main.dml
 

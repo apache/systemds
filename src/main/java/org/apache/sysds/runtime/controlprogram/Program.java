@@ -24,11 +24,13 @@ import java.util.HashMap;
 import java.util.Map.Entry;
 
 import org.apache.commons.lang.NotImplementedException;
+import org.apache.log4j.Logger;
 import org.apache.sysds.parser.DMLProgram;
 import org.apache.sysds.parser.FunctionDictionary;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.DMLScriptException;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
+import org.apache.sysds.runtime.controlprogram.federated.compression.CompressionEncoder;
 
 public class Program 
 {

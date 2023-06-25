@@ -31,11 +31,6 @@ public class DenseBlockTrueBool extends DenseBlockDRB{
     private static final long serialVersionUID = -6741205568083878338L;
     private boolean[] _data;
 
-    /**
-     * Can be toggled to use boolean arithmetics when this denseblock is used as result matrix.
-     */
-    private boolean useBooleanArithmetics = true;
-
     public DenseBlockTrueBool(int[] dims) {
         super(dims);
         reset(_rlen, _odims, 0);

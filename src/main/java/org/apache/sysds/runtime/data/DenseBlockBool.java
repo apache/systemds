@@ -162,6 +162,11 @@ public class DenseBlockBool extends DenseBlockDRB
 		_data.set(pos(r, c), v != 0);
 		return this;
 	}
+
+	public DenseBlock set(int r, int c, boolean v) {
+		_data.set(pos(r, c), v);
+		return this;
+	}
 	
 	@Override
 	public DenseBlock set(DenseBlock db) {

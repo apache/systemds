@@ -1403,18 +1403,34 @@ public class LibMatrixBincell {
 			//general case
 			else {
 				// if ValueFunction is comparison, return matrix is true boolean and boolean arithmetics are activated, use boolean arithmetics
-				if (op.fn instanceof ValueComparisonFunction &&
-						ret.denseBlock != null &&
-						ret.getDenseBlock() instanceof DenseBlockTrueBool){
-					for(int r=rl; r<ru; r++)
-						for(int c=0; c<clen; c++) {
-							double v1 = m1.quickGetValue(r, c);
-							double v2 = m2.quickGetValue(r, c);
-							boolean vb = ((ValueComparisonFunction) op.fn).compare( v1, v2 );
-							ret.allocateDenseBlock(false);
-							((DenseBlockTrueBool) ret.getDenseBlock()).set(r,c,vb);
-							lnnz += vb ? 1 : 0;
-						}
+				if (op.fn instanceof ValueComparisonFunction &&	ret.denseBlock != null && (ret.getDenseBlock() instanceof DenseBlockTrueBool || ret.getDenseBlock() instanceof DenseBlockBool) ){
+					//TODO: Optimize casting to boolean denseblock types :/
+					if(ret.getDenseBlock() instanceof DenseBlockTrueBool){
+						for(int r=rl; r<ru; r++)
+							for(int c=0; c<clen; c++) {
+								double v1 = m1.quickGetValue(r, c);
+								double v2 = m2.quickGetValue(r, c);
+								boolean vb = ((ValueComparisonFunction) op.fn).compare( v1, v2 );
+
+								//react what is happening in appendValuePlain()
+								ret.allocateDenseBlock(false);
+								((DenseBlockTrueBool) ret.getDenseBlock()).set(r,c,vb);
+								lnnz += vb ? 1 : 0;
+							}
+					} else {
+						for(int r=rl; r<ru; r++)
+							for(int c=0; c<clen; c++) {
+								double v1 = m1.quickGetValue(r, c);
+								double v2 = m2.quickGetValue(r, c);
+								boolean vb = ((ValueComparisonFunction) op.fn).compare( v1, v2 );
+
+								//react what is happening in appendValuePlain()
+								ret.allocateDenseBlock(false);
+								((DenseBlockBool) ret.getDenseBlock()).set(r,c,vb);
+								lnnz += vb ? 1 : 0;
+							}
+					}
+
 				} else {
 					for(int r=rl; r<ru; r++)
 						for(int c=0; c<clen; c++) {

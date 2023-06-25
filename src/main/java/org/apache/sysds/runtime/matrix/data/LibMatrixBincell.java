@@ -32,13 +32,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.runtime.DMLRuntimeException;
-import org.apache.sysds.runtime.data.DenseBlock;
-import org.apache.sysds.runtime.data.SparseBlock;
-import org.apache.sysds.runtime.data.SparseBlockCSR;
-import org.apache.sysds.runtime.data.SparseBlockFactory;
-import org.apache.sysds.runtime.data.SparseBlockMCSR;
-import org.apache.sysds.runtime.data.SparseRow;
-import org.apache.sysds.runtime.data.SparseRowVector;
+import org.apache.sysds.runtime.data.*;
 import org.apache.sysds.runtime.functionobjects.*;
 import org.apache.sysds.runtime.functionobjects.Builtin.BuiltinCode;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
@@ -1408,18 +1402,18 @@ public class LibMatrixBincell {
 			}
 			//general case
 			else {
-				// if return matrix is boolean and ValueFunction is comparison , use boolean arithmetics
-				if (op.fn instanceof ValueComparisonFunction && ret.denseBlock != null && ret.denseBlock.isNumeric(Types.ValueType.TRUE_BOOLEAN) ){
+				// if ValueFunction is comparison, return matrix is true boolean and boolean arithmetics are activated, use boolean arithmetics
+				if (op.fn instanceof ValueComparisonFunction &&
+						ret.denseBlock != null &&
+						ret.getDenseBlock() instanceof DenseBlockTrueBool){
 					for(int r=rl; r<ru; r++)
 						for(int c=0; c<clen; c++) {
 							double v1 = m1.quickGetValue(r, c);
 							double v2 = m2.quickGetValue(r, c);
-
-							// make double for now, so we don't have to add boolean to abstract DenseBlock
-							// will be stored as boolean by set function of DenseBlock Boolean implementation
-							double v = ((ValueComparisonFunction) op.fn).compare( v1, v2 ) ? 1.0 : 0.0 ;
-							ret.appendValuePlain(r, c, v);
-							lnnz += (v!=0) ? 1 : 0;
+							boolean vb = ((ValueComparisonFunction) op.fn).compare( v1, v2 );
+							ret.allocateDenseBlock(false);
+							((DenseBlockTrueBool) ret.getDenseBlock()).set(r,c,vb);
+							lnnz += vb ? 1 : 0;
 						}
 				} else {
 					for(int r=rl; r<ru; r++)

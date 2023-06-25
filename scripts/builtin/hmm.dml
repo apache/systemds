@@ -52,8 +52,6 @@ fit = function(Matrix[Double] X, Integer n_states) return (Matrix[Double] P, Mat
     # probabilities of transition from one one state to another
     A = matrix(1/n_states, rows=n_states, cols=n_states)
 
-    
-
     # probabilities of a state producing an output
     B = matrix(1/ncol(X), rows=n_states, cols=ncol(X))
 
@@ -72,16 +70,16 @@ fit = function(Matrix[Double] X, Integer n_states) return (Matrix[Double] P, Mat
 
 forward = function(Matrix[Double] init_prob, Matrix[Double] B, Matrix[Double] X) return (Matrix[Double] alpha)
 {
-
-
+    alpha = rand(rows=nrow(A), cols = ncol(A))
 }
 
 
-backward = function(Matrix[Double] B, Matrix[Double] A, Matrix[Double] X) return (Matrix[Double] alpha)
+backward = function(Matrix[Double] B, Matrix[Double] A, Matrix[Double] X) return (Matrix[Double] beta)
 {   
-
+    beta = rand(rows=nrow(A), cols=ncol(A))
 }
 
-calc_init_prob = function() return (Matrix[Double] init_prob, Matrix[Double] A, Matrix[Double] B)
+calc_init_prob = function(Matrix[Double] alpha, Matrix[Double] beta) return (Matrix[Double] pie)
 {
+    pie = rand(rows=nrow(alpha), cols=ncol(beta))
 }

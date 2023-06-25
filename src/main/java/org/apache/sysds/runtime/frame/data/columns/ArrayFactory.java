@@ -78,6 +78,8 @@ public interface ArrayFactory {
 					return Array.baseMemoryCost() + (long) MemoryEstimates.longArrayCost(_numRows >> 6 + 1);
 				else
 					return Array.baseMemoryCost() + (long) MemoryEstimates.booleanArrayCost(_numRows);
+			case TRUE_BOOLEAN:
+				return Array.baseMemoryCost() + (long) MemoryEstimates.booleanArrayCost(_numRows);
 			case INT64:
 				return Array.baseMemoryCost() + (long) MemoryEstimates.longArrayCost(_numRows);
 			case FP64:

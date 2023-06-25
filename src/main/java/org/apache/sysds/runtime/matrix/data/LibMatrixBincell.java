@@ -1409,7 +1409,7 @@ public class LibMatrixBincell {
 			//general case
 			else {
 				// if return matrix is boolean and ValueFunction is comparison , use boolean arithmetics
-				if (ret.denseBlock.isNumeric(Types.ValueType.TRUE_BOOLEAN) && op.fn instanceof ValueComparisonFunction){
+				if (op.fn instanceof ValueComparisonFunction && ret.denseBlock != null && ret.denseBlock.isNumeric(Types.ValueType.TRUE_BOOLEAN) ){
 					for(int r=rl; r<ru; r++)
 						for(int c=0; c<clen; c++) {
 							double v1 = m1.quickGetValue(r, c);

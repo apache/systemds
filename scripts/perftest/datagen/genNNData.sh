@@ -57,8 +57,8 @@ if [ $MAXMEM -ge 80 ]; then
   ${CMD} -f ../datagen/genRandData4LogisticRegression.dml --args \
     ${REG_SAMPLES} \
     ${REG_FEATURES} \
-    5 \
-    5 \
+    1 \
+    1 \
     ${DATADIR}/w${REG_SAMPLES}_${REG_FEATURES}_reg_dense \
     ${DATADIR}/X${REG_SAMPLES}_${REG_FEATURES}_reg_dense \
     ${DATADIR}/Y${REG_SAMPLES}_${REG_FEATURES}_reg_dense \
@@ -72,8 +72,8 @@ if [ $MAXMEM -ge 80 ]; then
   ${CMD} -f ../datagen/genRandData4LogisticRegression.dml --args \
     ${REG_SAMPLES} \
     ${REG_FEATURES} \
-    5 \
-    5 \
+    1 \
+    1 \
     ${DATADIR}/w${REG_SAMPLES}_${REG_FEATURES}_reg_sparse \
     ${DATADIR}/X${REG_SAMPLES}_${REG_FEATURES}_reg_sparse \
     ${DATADIR}/Y${REG_SAMPLES}_${REG_FEATURES}_reg_sparse \

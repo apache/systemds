@@ -31,7 +31,7 @@ TEMPFOLDER="temp"
 
 # Max memory of data to be benchmarked
 # Possible values: 80/80MB, 800/800MB, 8000/8000MB/8GB, 80000/80000MB/80GB, 800000/800000MB/800GB
-MAXMEM=80
+MAXMEM=800
 
 # Set properties
 export LOG4JPROP='conf/log4j-off.properties'
@@ -96,7 +96,7 @@ mkdir -p temp
 
 # Flags for tests of components in nn
 DO_TESTS_FOR_NN=true # toggle execution of datagen for as well as tests of nn components themselves
-USE_GPU_FOR_NN=true  # toggle gpu usage for nn tests
+USE_GPU_FOR_NN=false # toggle gpu usage for nn tests
 
 # init time measurement
 
@@ -138,15 +138,10 @@ fi
 
 # Tests of nn components
 if [ "$DO_TESTS_FOR_NN" = true ]; then
-  # take care of toggle to use/not to use gpu for nn tests by conditionally adding the -gpu execution flag onto the CMD variable
-  NN_CMD=$CMD
-  if [ "$USE_GPU_FOR_NN" = true ]; then
-    NN_CMD="${CMD} -gpu"
-  fi
   # NOTICE: remember to pass the command variable as a quoted string!
   # otherwise the command (eg. `systemds -gpu` without quotes) will be split into two variables in subscripts when USE_GPU_FOR_NN is set
-  ./runAllNN.sh "${NN_CMD}" ${TEMPFOLDER} ${MAXMEM}
-  ./runAllNCF.sh "${NN_CMD}" ${TEMPFOLDER} ${MAXMEM} # currently broken: staging/NCF.dml and any dml that sources it die on launch
+  ./runAllNN.sh "${CMD}" ${TEMPFOLDER} ${MAXMEM} ${USE_GPU_FOR_NN}
+  ./runAllNCF.sh "${CMD}" ${TEMPFOLDER} ${MAXMEM} ${USE_GPU_FOR_NN} # currently broken: staging/NCF.dml and any dml that sources it die on launch
 fi
 
 # TODO The following benchmarks have yet to be written. The decision tree algorithms additionally need to be fixed.

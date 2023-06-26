@@ -37,6 +37,12 @@ BASE=$3
 CMD=$4
 LOGIDENTIFIER=$5
 EPOCHS=$6
+USEGPU=$7
+
+FLAGS="--stats"
+if [ "$USEGPU" = true ]; then
+  FLAGS="${FLAGS} --gpu"
+fi
 
 echo "running sgd nn classifier with nesterov momentum"
 
@@ -44,7 +50,7 @@ echo "running sgd nn classifier with nesterov momentum"
 tstart=$(date +%s.%N)
 ${CMD} -f scripts/nnNesterovClassify-train.dml \
   --config conf/SystemDS-config.xml \
-  --stats \
+  ${FLAGS} \
   --nvargs X=${X} Y=${Y} B=${BASE} fmt="csv" epochs=${EPOCHS} &>logs/nnNesterovClassify-train_${LOGIDENTIFIER}_${EPOCHS}.out
 
 ttrain=$(echo "$(date +%s.%N) - $tstart - .4" | bc)
@@ -54,7 +60,7 @@ echo "nesterov momentum neural network trained with SGD on "$5": "$ttrain >>resu
 tstart=$(date +%s.%N)
 ${CMD} -f scripts/nnNesterovClassify-predict.dml \
   --config conf/SystemDS-config.xml \
-  --stats \
+  ${FLAGS} \
   --nvargs X=${X} Y=${Y} B=${BASE} fmt="csv" &>logs/nnNesterovClassify-predict_${LOGIDENTIFIER}_${EPOCHS}.out
   #--nvargs fmt=csv X=$1_test B=${BASE}/b Y=$2_test M=${BASE}/m O=${BASE}/out.csv &>logs/nnNesterovClassify-predict_${LOGIDENTIFIER}.out
 

@@ -41,12 +41,20 @@ BASE=$7
 CMD=$8
 LOGIDENTIFIER=$9
 EPOCHS=${10}
+USEGPU=${11}
+
+FLAGS="--stats"
+if [ "$USEGPU" = true ]; then
+  FLAGS="${FLAGS} --gpu"
+fi
+
+
 
 echo "running NCF"
 echo \
 ${CMD} -f scripts/NCF-train.dml \
   --config conf/SystemDS-config.xml \
-  --stats \
+  ${FLAGS} \
   --nvargs B=${BASE} fmt="csv" \
     targets_train=${TTrain} \
     targets_val=${TVal} \
@@ -59,7 +67,7 @@ ${CMD} -f scripts/NCF-train.dml \
 tstart=$(date +%s.%N)
 ${CMD} -f scripts/NCF-train.dml \
   --config conf/SystemDS-config.xml \
-  --stats \
+  ${FLAGS} \
   --nvargs B=${BASE} fmt="csv" \
     targets_train=${TTrain} \
     targets_val=${TVal} \
@@ -77,7 +85,7 @@ echo "NCF trained on "$9": "$ttrain >>results/times.txt
 tstart=$(date +%s.%N)
 ${CMD} -f scripts/NCF-predict.dml \
   --config conf/SystemDS-config.xml \
-  --stats \
+  ${FLAGS} \
   --nvargs B=${BASE} fmt="csv" epochs=${EPOCHS} \
     items=${ITrain} \
     users=${UTrain} \
@@ -92,7 +100,7 @@ echo "NCF predicted on training data "$9": "$tpredict >>results/times.txt
 tstart=$(date +%s.%N)
 ${CMD} -f scripts/NCF-predict.dml \
   --config conf/SystemDS-config.xml \
-  --stats \
+  ${FLAGS} \
   --nvargs B=${BASE} fmt="csv" epochs=${EPOCHS} \
     items=${IVal} \
     users=${UVal} \

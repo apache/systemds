@@ -27,6 +27,7 @@ fi
 COMMAND=$1
 TEMPFOLDER=$2
 MAXMEM=$3
+USEGPU=$4
 
 if [ "$TEMPFOLDER" == "" ]; then TEMPFOLDER=temp; fi
 BASE=${TEMPFOLDER}/nn
@@ -51,17 +52,17 @@ for d in ${DATA[@]}; do #"_KDD"
   # Regression tasks
   for f in "runNNSimpleSGD"; do
     echo "-- Running "$f" on "$d" for 5 epochs" >>results/times.txt
-    ./${f}.sh ${BASE}/X${d}_reg ${BASE}/Y${d}_reg ${BASE} "${COMMAND}" ${d} 5 &>logs/${f}_${d}_5.out
+    ./${f}.sh ${BASE}/X${d}_reg ${BASE}/Y${d}_reg ${BASE} "${COMMAND}" ${d} 5 ${USEGPU} &>logs/${f}_${d}_5.out
     echo "-- Running "$f" on "$d" for 50 epochs" >>results/times.txt
-    ./${f}.sh ${BASE}/X${d}_reg ${BASE}/Y${d}_reg ${BASE} "${COMMAND}" ${d} 50 &>logs/${f}_${d}_50.out
+    ./${f}.sh ${BASE}/X${d}_reg ${BASE}/Y${d}_reg ${BASE} "${COMMAND}" ${d} 50 ${USEGPU} &>logs/${f}_${d}_50.out
   done
 
   # Classification tasks
   for f in "runNNNesterovClassify"; do
     echo "-- Running "$f" on "$d" for 10 epochs" >>results/times.txt
-    ./${f}.sh ${BASE}/X${d}_class ${BASE}/Y${d}_class ${BASE} "${COMMAND}" ${d} 10 &>logs/${f}_${d}_10.out
+    ./${f}.sh ${BASE}/X${d}_class ${BASE}/Y${d}_class ${BASE} "${COMMAND}" ${d} 10 ${USEGPU} &>logs/${f}_${d}_10.out
     echo "-- Running "$f" on "$d" for 100 epochs" >>results/times.txt
-    ./${f}.sh ${BASE}/X${d}_class ${BASE}/Y${d}_class ${BASE} "${COMMAND}" ${d} 100 &>logs/${f}_${d}_100.out
+    ./${f}.sh ${BASE}/X${d}_class ${BASE}/Y${d}_class ${BASE} "${COMMAND}" ${d} 100 ${USEGPU} &>logs/${f}_${d}_100.out
   done
 done
 

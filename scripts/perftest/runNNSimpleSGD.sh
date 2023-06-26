@@ -37,6 +37,12 @@ BASE=$3
 CMD=$4
 LOGIDENTIFIER=$5
 EPOCHS=$6
+USEGPU=$7
+
+FLAGS="--stats"
+if [ "$USEGPU" = true ]; then
+  FLAGS="${FLAGS} --gpu"
+fi
 
 echo "running simple sgd neural network"
 
@@ -44,7 +50,7 @@ echo "running simple sgd neural network"
 tstart=$(date +%s.%N)
 ${CMD} -f scripts/nnSimpleSGD-train.dml \
   --config conf/SystemDS-config.xml \
-  --stats \
+  ${FLAGS} \
   --nvargs X=${X} Y=${Y} B=${BASE} fmt="csv" epochs=${EPOCHS} &>logs/nnSimpleSGD-train_${LOGIDENTIFIER}_${EPOCHS}.out
 
 ttrain=$(echo "$(date +%s.%N) - $tstart - .4" | bc)
@@ -54,7 +60,7 @@ echo "simple neural network trained with SGD on "$5": "$ttrain >>results/times.t
 tstart=$(date +%s.%N)
 ${CMD} -f scripts/nnSimpleSGD-predict.dml \
   --config conf/SystemDS-config.xml \
-  --stats \
+  ${FLAGS} \
   --nvargs fmt="csv" X=${X} Y=${Y} B=${BASE} &>logs/nnSimpleSGD-predict_${LOGIDENTIFIER}_${EPOCHS}.out
   # --nvargs fmt=csv X=$1_test B=${BASE} Y=$2_test
 

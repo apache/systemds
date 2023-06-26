@@ -31,12 +31,12 @@ MAXMEM=$3
 
 FORMAT="csv" # can be csv, mm, text, binary
 
-echo "-- Generating NCF data." >> results/times.txt;
-#generate XS scenarios (80MB)
 BASE_ktrain=1000
 BASE_kval=100
 BASE_nitems=50
 BASE_nusers=60
+echo "-- Generating NCF data." >> results/times.txt;
+#generate XS scenarios (80MB)
 if [ $MAXMEM -ge 80 ]; then
   MULTIPLIER=1
   KTRAIN=$(echo "$BASE_ktrain * $MULTIPLIER" | bc)

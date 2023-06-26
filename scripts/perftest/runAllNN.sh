@@ -39,30 +39,84 @@ err_report() {
 }
 trap 'err_report $LINENO' ERR
 
-DATA=() # todo .. which data is needed?
-if [ $MAXMEM -ge 80 ]; then DATA+=("1024_100_1"); fi
-if [ $MAXMEM -ge 800 ]; then DATA+=("3072_300_1"); fi
-if [ $MAXMEM -ge 8000 ]; then DATA+=("9216_900_1"); fi
-if [ $MAXMEM -ge 80000 ]; then DATA+=("27648_2700_1"); fi
-if [ $MAXMEM -ge 800000 ]; then DATA+=("82944_8200_1"); fi
+BASE_REG_SAMPLES=1024 # these should be kept in sync with the ones set in genNNData, so that file names are in sync!
+BASE_REG_FEATRUES=100
+BASE_CLASS_SAMPLES=1024
+BASE_CLASS_FEATURES=100
+BASE_CLASS_CLASSES=5
+
+REG_DATA=()   # todo .. which data is needed?
+CLASS_DATA=() # todo .. which data is needed?
+if [ $MAXMEM -ge 80 ]; then
+  MULTIPLIER=1
+  REG_SAMPLES=$(echo "$BASE_REG_SAMPLES * $MULTIPLIER" | bc)
+  REG_FEATURES=$(echo "$BASE_REG_FEATRUES * $MULTIPLIER" | bc)
+  CLASS_SAMPLES=$(echo "$BASE_CLASS_SAMPLES * $MULTIPLIER" | bc)
+  CLASS_FEATURES=$(echo "$BASE_CLASS_FEATURES * $MULTIPLIER" | bc)
+  CLASS_CLASSES=$(echo "$BASE_CLASS_CLASSES * $MULTIPLIER" | bc)
+  REG_DATA+=(${REG_SAMPLES}_${REG_FEATURES}_reg_dense ${REG_SAMPLES}_${REG_FEATURES}_reg_sparse)
+  CLASS_DATA+=(${CLASS_SAMPLES}_${CLASS_FEATURES}_${CLASS_CLASSES}_class_dense ${CLASS_SAMPLES}_${CLASS_FEATURES}_${CLASS_CLASSES}_class_sparse)
+fi
+if [ $MAXMEM -ge 800 ]; then
+  MULTIPLIER=3
+  REG_SAMPLES=$(echo "$BASE_REG_SAMPLES * $MULTIPLIER" | bc)
+  REG_FEATURES=$(echo "$BASE_REG_FEATRUES * $MULTIPLIER" | bc)
+  CLASS_SAMPLES=$(echo "$BASE_CLASS_SAMPLES * $MULTIPLIER" | bc)
+  CLASS_FEATURES=$(echo "$BASE_CLASS_FEATURES * $MULTIPLIER" | bc)
+  CLASS_CLASSES=$(echo "$BASE_CLASS_CLASSES * $MULTIPLIER" | bc)
+  REG_DATA+=(${REG_SAMPLES}_${REG_FEATURES}_reg_dense ${REG_SAMPLES}_${REG_FEATURES}_reg_sparse)
+  CLASS_DATA+=(${CLASS_SAMPLES}_${CLASS_FEATURES}_${CLASS_CLASSES}_class_dense ${CLASS_SAMPLES}_${CLASS_FEATURES}_${CLASS_CLASSES}_class_sparse)
+fi
+if [ $MAXMEM -ge 8000 ]; then
+  MULTIPLIER=9
+  REG_SAMPLES=$(echo "$BASE_REG_SAMPLES * $MULTIPLIER" | bc)
+  REG_FEATURES=$(echo "$BASE_REG_FEATRUES * $MULTIPLIER" | bc)
+  CLASS_SAMPLES=$(echo "$BASE_CLASS_SAMPLES * $MULTIPLIER" | bc)
+  CLASS_FEATURES=$(echo "$BASE_CLASS_FEATURES * $MULTIPLIER" | bc)
+  CLASS_CLASSES=$(echo "$BASE_CLASS_CLASSES * $MULTIPLIER" | bc)
+  REG_DATA+=(${REG_SAMPLES}_${REG_FEATURES}_reg_dense ${REG_SAMPLES}_${REG_FEATURES}_reg_sparse)
+  CLASS_DATA+=(${CLASS_SAMPLES}_${CLASS_FEATURES}_${CLASS_CLASSES}_class_dense ${CLASS_SAMPLES}_${CLASS_FEATURES}_${CLASS_CLASSES}_class_sparse)
+fi
+if [ $MAXMEM -ge 80000 ]; then
+  MULTIPLIER=27
+  REG_SAMPLES=$(echo "$BASE_REG_SAMPLES * $MULTIPLIER" | bc)
+  REG_FEATURES=$(echo "$BASE_REG_FEATRUES * $MULTIPLIER" | bc)
+  CLASS_SAMPLES=$(echo "$BASE_CLASS_SAMPLES * $MULTIPLIER" | bc)
+  CLASS_FEATURES=$(echo "$BASE_CLASS_FEATURES * $MULTIPLIER" | bc)
+  CLASS_CLASSES=$(echo "$BASE_CLASS_CLASSES * $MULTIPLIER" | bc)
+  REG_DATA+=(${REG_SAMPLES}_${REG_FEATURES}_reg_dense ${REG_SAMPLES}_${REG_FEATURES}_reg_sparse)
+  CLASS_DATA+=(${CLASS_SAMPLES}_${CLASS_FEATURES}_${CLASS_CLASSES}_class_dense ${CLASS_SAMPLES}_${CLASS_FEATURES}_${CLASS_CLASSES}_class_sparse)
+fi
+if [ $MAXMEM -ge 800000 ]; then
+  MULTIPLIER=81
+  REG_SAMPLES=$(echo "$BASE_REG_SAMPLES * $MULTIPLIER" | bc)
+  REG_FEATURES=$(echo "$BASE_REG_FEATRUES * $MULTIPLIER" | bc)
+  CLASS_SAMPLES=$(echo "$BASE_CLASS_SAMPLES * $MULTIPLIER" | bc)
+  CLASS_FEATURES=$(echo "$BASE_CLASS_FEATURES * $MULTIPLIER" | bc)
+  CLASS_CLASSES=$(echo "$BASE_CLASS_CLASSES * $MULTIPLIER" | bc)
+  REG_DATA+=(${REG_SAMPLES}_${REG_FEATURES}_reg_dense ${REG_SAMPLES}_${REG_FEATURES}_reg_sparse)
+  CLASS_DATA+=(${CLASS_SAMPLES}_${CLASS_FEATURES}_${CLASS_CLASSES}_class_dense ${CLASS_SAMPLES}_${CLASS_FEATURES}_${CLASS_CLASSES}_class_sparse)
+fi
 
 echo "RUN NEURAL NETWORK EXPERIMENTS" $(date) >>results/times.txt
 
-for d in ${DATA[@]}; do #"_KDD"
+for d in ${REG_DATA[@]}; do #"_KDD"
   # Regression tasks
   for f in "runNNSimpleSGD"; do
     echo "-- Running "$f" on "$d" for 5 epochs" >>results/times.txt
-    ./${f}.sh ${BASE}/X${d}_reg ${BASE}/Y${d}_reg ${BASE} "${COMMAND}" ${d} 5 ${USEGPU} &>logs/${f}_${d}_5.out
+    ./${f}.sh ${BASE}/X${d} ${BASE}/Y${d} ${BASE} "${COMMAND}" ${d} 5 ${USEGPU} &>logs/${f}_${d}_5.out
     echo "-- Running "$f" on "$d" for 50 epochs" >>results/times.txt
-    ./${f}.sh ${BASE}/X${d}_reg ${BASE}/Y${d}_reg ${BASE} "${COMMAND}" ${d} 50 ${USEGPU} &>logs/${f}_${d}_50.out
+    ./${f}.sh ${BASE}/X${d} ${BASE}/Y${d} ${BASE} "${COMMAND}" ${d} 50 ${USEGPU} &>logs/${f}_${d}_50.out
   done
+done
 
+for d in ${CLASS_DATA[@]}; do
   # Classification tasks
   for f in "runNNNesterovClassify"; do
     echo "-- Running "$f" on "$d" for 10 epochs" >>results/times.txt
-    ./${f}.sh ${BASE}/X${d}_class ${BASE}/Y${d}_class ${BASE} "${COMMAND}" ${d} 10 ${USEGPU} &>logs/${f}_${d}_10.out
+    ./${f}.sh ${BASE}/X${d} ${BASE}/Y${d} ${BASE} "${COMMAND}" ${d} 10 ${USEGPU} &>logs/${f}_${d}_10.out
     echo "-- Running "$f" on "$d" for 100 epochs" >>results/times.txt
-    ./${f}.sh ${BASE}/X${d}_class ${BASE}/Y${d}_class ${BASE} "${COMMAND}" ${d} 100 ${USEGPU} &>logs/${f}_${d}_100.out
+    ./${f}.sh ${BASE}/X${d} ${BASE}/Y${d} ${BASE} "${COMMAND}" ${d} 100 ${USEGPU} &>logs/${f}_${d}_100.out
   done
 done
 

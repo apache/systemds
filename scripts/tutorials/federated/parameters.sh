@@ -29,15 +29,23 @@ export PATH="$SYSTEMDS_ROOT/bin:$PATH"
 
 ## Logging variables:
 # Set logging properties for the system
+# Off disable the logging
 export LOG4JPROP='conf/log4j-off.properties'
 # export LOG4JPROP='conf/log4j-debug.properties'
 # export LOG4JPROP='conf/log4j-info.properties'
+
+# Set the system to start up on quiet mode, to not print excessively on every execution.
 export SYSDS_QUIET=1
+
+
+# Set the addresses of your federated workers.
 
 # address=("tango" "delta" "india" "echo")
 # address=("tango" "delta")
 
 address=("localhost" "localhost" "localhost" "localhost")
+
+# We assume for the scripts to work that each worker have a unique port
 ports=("8001" "8002" "8003" "8004")
 numWorkers=${#address[@]}
 
@@ -46,6 +54,8 @@ numWorkers=${#address[@]}
 remoteDir="github/federatedTutorial-v3/"
 
 # configuration:
+# This define the configuration file to be used for the execution.
+# Change this to enable different settings of SystemDS
 conf="def"
 # conf="ssl"
 

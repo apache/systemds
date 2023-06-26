@@ -538,7 +538,6 @@
 							<excludes>
 								<exclude>scripts/perftest/results/**</exclude>
 								<exclude>scripts/perftest/temp/**</exclude>
-								<exclude>scripts/tutorials/**</exclude>
 								<exclude>scripts/perftest/logs/**</exclude>
 								<exclude>scripts/monitoring/node_modules/**</exclude>
 								<exclude>.repository/</exclude>

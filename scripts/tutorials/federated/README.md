@@ -28,7 +28,7 @@ Before you begin look trough the parameters.sh file, and change the variables to
 The default parameters are set to execute a four worker setup on localhost.
 If you have access to other machines simply change the address list to the remote locations, either using IP addresses, or aliases.
 
-Also note the memory settings, and set these appropriately
+Also note the memory settings, and set these appropriately such that you do not run out of memory for local execution of 5 parallel java processes.
 
 Before going further it is expected that you have setup the default install of SystemDS described in: <http://apache.github.io/systemds/site/install>
 
@@ -72,25 +72,48 @@ Next we download and split the dataset into partitions that the different federa
 The expected output is:
 
 ```txt
-Me:~/github/federatedTutorial$ ./setup.sh
-Generating data/mnist_features_2_1.data
+Me:~/.../scripts/tutorials/federated$ ./setup.sh
+Generating data/mnist_features_4_1.data
+Generating data/mnist_labels_4_1.data
+Generating data/mnist_labels_hot_4_1.data
+Generating data/mnist_test_features_4_1.data
+Generating data/mnist_test_labels_4_1.data
+Generating data/mnist_test_labels_hot_4_1.data
 SystemDS Statistics:
-Total execution time:           0.672 sec.
+Total execution time:           0.892 sec.
 
-Generating data/mnist_labels_2_1.data
 SystemDS Statistics:
-Total execution time:           0.109 sec.
+Total execution time:           0.943 sec.
+
+SystemDS Statistics:
+Total execution time:           0.732 sec.
+
+SystemDS Statistics:
+Total execution time:           0.992 sec.
+
+SystemDS Statistics:
+Total execution time:           1.227 sec.
+
+SystemDS Statistics:
+Total execution time:           1.274 sec.
 ```
 
 and the data folder should contain the following:
 
 ```txt
-Me:~/github/federatedTutorial$ ls data
-fed_mnist_features_1.json      fed_mnist_labels_1.json.mtd  mnist_features_2_1.data      mnist_features.data.mtd    mnist_labels_2_2.data      mnist_test_features.data.mtd
-fed_mnist_features_1.json.mtd  fed_mnist_labels_2.json      mnist_features_2_1.data.mtd  mnist_labels_1_1.data      mnist_labels_2_2.data.mtd  mnist_test_labels.data
-fed_mnist_features_2.json      fed_mnist_labels_2.json.mtd  mnist_features_2_2.data      mnist_labels_1_1.data.mtd  mnist_labels.data          mnist_test_labels.data.mtd
-fed_mnist_features_2.json.mtd  mnist_features_1_1.data      mnist_features_2_2.data.mtd  mnist_labels_2_1.data      mnist_labels.data.mtd
-fed_mnist_labels_1.json        mnist_features_1_1.data.mtd  mnist_features.data          mnist_labels_2_1.data.mtd  mnist_test_features.data
+Me:~/.../scripts/tutorials/federated$ ls data
+fed_mnist_features_4.json             mnist_features_4_1.data      mnist_labels_4_2.data          mnist_labels_hot_4_3.data         mnist_test_features_4_4.data      mnist_test_labels.data
+fed_mnist_features_4.json.mtd         mnist_features_4_1.data.mtd  mnist_labels_4_2.data.mtd      mnist_labels_hot_4_3.data.mtd     mnist_test_features_4_4.data.mtd  mnist_test_labels.data.mtd
+fed_mnist_labels_4.json               mnist_features_4_2.data      mnist_labels_4_3.data          mnist_labels_hot_4_4.data         mnist_test_features.data          mnist_test_labels_hot_4_1.data
+fed_mnist_labels_4.json.mtd           mnist_features_4_2.data.mtd  mnist_labels_4_3.data.mtd      mnist_labels_hot_4_4.data.mtd     mnist_test_features.data.mtd      mnist_test_labels_hot_4_1.data.mtd
+fed_mnist_labels_hot_4.json           mnist_features_4_3.data      mnist_labels_4_4.data          mnist_labels_hot.data             mnist_test_labels_4_1.data        mnist_test_labels_hot_4_2.data
+fed_mnist_labels_hot_4.json.mtd       mnist_features_4_3.data.mtd  mnist_labels_4_4.data.mtd      mnist_labels_hot.data.mtd         mnist_test_labels_4_1.data.mtd    mnist_test_labels_hot_4_2.data.mtd
+fed_mnist_test_features_4.json        mnist_features_4_4.data      mnist_labels.data              mnist_test_features_4_1.data      mnist_test_labels_4_2.data        mnist_test_labels_hot_4_3.data
+fed_mnist_test_features_4.json.mtd    mnist_features_4_4.data.mtd  mnist_labels.data.mtd          mnist_test_features_4_1.data.mtd  mnist_test_labels_4_2.data.mtd    mnist_test_labels_hot_4_3.data.mtd
+fed_mnist_test_labels_4.json          mnist_features.data          mnist_labels_hot_4_1.data      mnist_test_features_4_2.data      mnist_test_labels_4_3.data        mnist_test_labels_hot_4_4.data
+fed_mnist_test_labels_4.json.mtd      mnist_features.data.mtd      mnist_labels_hot_4_1.data.mtd  mnist_test_features_4_2.data.mtd  mnist_test_labels_4_3.data.mtd    mnist_test_labels_hot_4_4.data.mtd
+fed_mnist_test_labels_hot_4.json      mnist_labels_4_1.data        mnist_labels_hot_4_2.data      mnist_test_features_4_3.data      mnist_test_labels_4_4.data        mnist_test_labels_hot.data
+fed_mnist_test_labels_hot_4.json.mtd  mnist_labels_4_1.data.mtd    mnist_labels_hot_4_2.data.mtd  mnist_test_features_4_3.data.mtd  mnist_test_labels_4_4.data.mtd    mnist_test_labels_hot.data.mtd
 ```
 
 ## Step 4: Start Workers
@@ -104,19 +127,38 @@ Now everything is setup, simply start the workers using the startAllWorkers scri
 output:
 
 ```txt
-Me:~/github/federatedTutorial$ ./startAllWorkers.sh
+Me:~/.../scripts/tutorials/federated$ ./startAllWorkers.sh
 Starting Workers.
+Starting monitoring
+/home/baunsgaard/github/systemds
+Starting worker XPS-15-7590 8003 def
+Starting UI
 Starting worker XPS-15-7590 8002 def
 Starting worker XPS-15-7590 8001 def
+Starting worker XPS-15-7590 8004 def
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100   130  100    79  100    51     87     56 --:--:-- --:--:-- --:--:--   144
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100   130  100    79  100    51   7380   4764 --:--:-- --:--:-- --:--:-- 13000
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100   130  100    79  100    51   8005   5168 --:--:-- --:--:-- --:--:-- 14444
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100   130  100    79  100    51   6462   4171 --:--:-- --:--:-- --:--:-- 10833
+A Monitoring tool is started at http://localhost:4200
 ```
 
-The workers will start and some temporary files will be created containing the PID for the worker, to enable specific termination of the worker after experimentation is done. Note that you can run the algorithm multiple times with the same workers.
+The workers will start and some temporary files will be created containing the PID for the worker, to enable specific termination of the worker after experimentation is done.
+Note that you can run the algorithm multiple times with the same workers.
 
 ```txt
-Me:~/github/federatedTutorial$ ls tmp/worker/
-XPS-15-7590-8001  XPS-15-7590-8002
-Me:~/github/federatedTutorial$ cat tmp/worker/XPS-15-7590-8001
-13850
+Me:~/.../scripts/tutorials/federated$ ls tmp/worker
+XPS-15-7590-8001  XPS-15-7590-8002  XPS-15-7590-8003  XPS-15-7590-8004
+Me:~/.../scripts/tutorials/federated$ cat tmp/worker/XPS-15-7590-8001
+32528
 ```
 
 Also worth noting is that all the output from the federated worker is concatenated to: results/fed/workerlog/
@@ -139,7 +181,7 @@ Note these process will just continue running in the background so have to be ma
 
 ## Step 6: run algorithms
 
-This tutorial is using different scripts depending on what is outcommented in the run.sh.
+This tutorial is using different scripts depending on what is out commented in the run.sh.
 
 Please go into this file and enable which specific script you want to run.
 
@@ -238,7 +280,7 @@ Me:~/.../scripts/tutorials/federated$ ./stopAllWorkers.sh
 Stopping workers XPS-15-7590
 Stopping Monitoring 
 STOP NPM manually!! Process ID:
-62870q
+62870
 ```
 
 As specified by the output npm is still running and have to be manually stopped.

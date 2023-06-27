@@ -184,7 +184,10 @@ public class StatisticsService {
 		}
 
 		for (var heavyHitterEntry: aggFedStats.heavyHitters.entrySet()) {
-			var newHH = new HeavyHitterModel(workerId, heavyHitterEntry.getKey(), heavyHitterEntry.getValue().getValue(), heavyHitterEntry.getValue().getLeft());
+			var newHH = new HeavyHitterModel(workerId, //
+				heavyHitterEntry.getKey(), 
+				heavyHitterEntry.getValue().getValue(),// 
+				heavyHitterEntry.getValue().getLeft());
 			heavyHitters.add(newHH);
 		}
 
@@ -215,20 +218,21 @@ public class StatisticsService {
 		if (matcher.find()) {
 			String host = matcher.group(2);
 			String portStr = matcher.group(3);
-			int port = 80;
-
-			if (portStr != null && !portStr.isBlank() && !portStr.isEmpty())
-				port = Integer.parseInt(portStr.replace(":", ""));
-
-			InetSocketAddress isa = new InetSocketAddress(host, port);
-			FederatedRequest frUDF = new FederatedRequest(FederatedRequest.RequestType.EXEC_UDF, -1,
-					new FederatedStatistics.FedStatsCollectFunction());
 
 			try {
+				// Force us to use the port specified.
+				int port = Integer.parseInt(portStr.replace(":", ""));
+
+				InetSocketAddress isa = new InetSocketAddress(host, port);
+				FederatedRequest frUDF = new FederatedRequest(FederatedRequest.RequestType.EXEC_UDF, -1,
+					new FederatedStatistics.FedStatsCollectFunction());
+
 				result = FederatedData.executeFederatedOperation(isa, frUDF);
-			} catch(DMLRuntimeException dre) {
+			}
+			catch(DMLRuntimeException dre) {
 				throw dre; // caused by offline federated workers
-			} catch (Exception e) {
+			}
+			catch(Exception e) {
 				throw new RuntimeException(e);
 			}
 		}

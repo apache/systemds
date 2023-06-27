@@ -38,6 +38,7 @@ import java.util.concurrent.atomic.LongAdder;
 
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.log4j.Logger;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
@@ -68,6 +69,9 @@ import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.utils.Statistics;
 
 public class FederatedStatistics {
+	protected static Logger LOG = Logger.getLogger(FederatedStatistics.class);
+
+
 	// stats of the federated worker on the coordinator site
 	private static Set<Pair<String, Integer>> _fedWorkerAddresses = new HashSet<>();
 	private static final LongAdder readCount = new LongAdder();
@@ -477,17 +481,13 @@ public class FederatedStatistics {
 
 	public static List<TrafficModel> getCoordinatorsTrafficBytes() {
 		var result = new ArrayList<>(coordinatorsTrafficBytes);
-
 		coordinatorsTrafficBytes.clear();
-
 		return result;
 	}
 
 	public static List<EventModel> getWorkerEvents() {
 		var result = new ArrayList<>(workerEvents);
-
 		workerEvents.clear();
-
 		return result;
 	}
 	public static List<RequestModel> getWorkerRequests() {
@@ -501,6 +501,7 @@ public class FederatedStatistics {
 	public static void addEvent(EventModel event) {
 		workerEvents.add(event);
 	}
+
 	public static void addWorkerRequest(RequestModel request) {
 		if (!workerFederatedRequests.containsKey(request.type)) {
 			workerFederatedRequests.put(request.type, request);
@@ -508,9 +509,11 @@ public class FederatedStatistics {
 
 		workerFederatedRequests.get(request.type).count++;
 	}
+
 	public static void addDataObject(DataObjectModel dataObject) {
 		workerDataObjects.put(dataObject.varName, dataObject);
 	}
+
 	public static void removeDataObjects() {
 		workerDataObjects.clear();
 	}
@@ -664,6 +667,7 @@ public class FederatedStatistics {
 		public FederatedResponse execute(ExecutionContext ec, Data... data) {
 			FedStatsCollection fedStats = new FedStatsCollection();
 			fedStats.collectStats();
+			// LOG.error(fedStats);
 			return new FederatedResponse(FederatedResponse.ResponseType.SUCCESS, fedStats);
 		}
 
@@ -674,7 +678,20 @@ public class FederatedStatistics {
 	}
 
 	public static class FedStatsCollection implements Serializable {
+		// TODO fix this class to use shallow pointers.
 		private static final long serialVersionUID = 1L;
+
+		private CacheStatsCollection cacheStats = new CacheStatsCollection();
+		public double jitCompileTime = 0;
+		public UtilizationModel utilization = new UtilizationModel(0.0, 0.0);
+		private GCStatsCollection gcStats = new GCStatsCollection();
+		private LineageCacheStatsCollection linCacheStats = new LineageCacheStatsCollection();
+		private MultiTenantStatsCollection mtStats = new MultiTenantStatsCollection();
+		public HashMap<String, Pair<Long, Double>> heavyHitters = new HashMap<>();
+		public List<TrafficModel> coordinatorsTrafficBytes = new ArrayList<>();
+		public List<EventModel> workerEvents = new ArrayList<>();
+		public List<DataObjectModel> workerDataObjects = new ArrayList<>();
+		public List<RequestModel> workerRequests = new ArrayList<>();
 
 		private void collectStats() {
 			cacheStats.collectStats();
@@ -850,17 +867,23 @@ public class FederatedStatistics {
 			private long serializationReuseBytes = 0;
 		}
 
-		private CacheStatsCollection cacheStats = new CacheStatsCollection();
-		public double jitCompileTime = 0;
-		public UtilizationModel utilization = new UtilizationModel(0.0, 0.0);
-		private GCStatsCollection gcStats = new GCStatsCollection();
-		private LineageCacheStatsCollection linCacheStats = new LineageCacheStatsCollection();
-		private MultiTenantStatsCollection mtStats = new MultiTenantStatsCollection();
-		public HashMap<String, Pair<Long, Double>> heavyHitters = new HashMap<>();
-		public List<TrafficModel> coordinatorsTrafficBytes = new ArrayList<>();
-		public List<EventModel> workerEvents = new ArrayList<>();
-		public List<DataObjectModel> workerDataObjects = new ArrayList<>();
+		@Override
+		public String toString() {
+			StringBuilder sb = new StringBuilder();
+			sb.append("FedStatsCollection: ");
+			sb.append(" cacheStats " + cacheStats);
+			sb.append(" jit " + jitCompileTime);
+			sb.append(" utilization " + utilization);
+			sb.append(" gcStats " + gcStats);
+			sb.append(" linCacheStats " + linCacheStats);
+			sb.append(" mtStats " + mtStats);
+			sb.append(" heavyHitters " + heavyHitters);
+			sb.append(" coordinatorsTrafficBytes " + coordinatorsTrafficBytes);
+			sb.append(" workerEvents " + workerEvents);
+			sb.append(" workerDataObjects " + workerDataObjects);
+			sb.append(" workerRequests " + workerRequests);
+			return sb.toString();
+		}
 
-		public List<RequestModel> workerRequests = new ArrayList<>();
 	}
 }

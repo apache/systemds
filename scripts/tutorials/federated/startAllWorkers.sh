@@ -38,9 +38,15 @@ done
 ./scripts/startMonitoring.sh
 
 for index in ${!address[*]}; do
+    # curl \
+    #     --header "Content-Type: application/json" \
+    #     --data "{\"name\":\"Worker - ${ports[$index]}\",\"address\":\"${address[$index]}:${ports[$index]}\"}" \
+    #     http://localhost:8080/workers > /dev/null
+
+    ## Always localhost because we have firewall up.
     curl \
         --header "Content-Type: application/json" \
-        --data "{\"name\":\"Worker - ${ports[$index]}\",\"address\":\"${address[$index]}:${ports[$index]}\"}" \
+        --data "{\"name\":\"Worker - ${ports[$index]}\",\"address\":\"localhost:${ports[$index]}\"}" \
         http://localhost:8080/workers > /dev/null
 done
 

@@ -38,8 +38,8 @@ fi
 
 ## Install remotes
 for index in ${!address[*]}; do
+    echo "Installing for: ${address[$index]}"
     if [ "${address[$index]}" != "localhost" ]; then
-        echo "Installing for: ${address[$index]}"
         # Install SystemDS on system.
         ssh -T ${address[$index]} "
         mkdir -p github;

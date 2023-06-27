@@ -81,6 +81,7 @@ wait
 # Distribute the slices to individual workers.
 for index in ${!address[@]}; do
     if [ "${address[$index]}" != "localhost" ]; then
+        sleep 0.2
         echo "Syncronize and distribute data partitions."
         ## File ID is the federated Indentification number
         fileId=$((index + 1))

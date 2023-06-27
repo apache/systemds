@@ -31,19 +31,19 @@ source parameters.sh
 
 
 # Execute a Linear model algorithm
-# systemds code/exp/lm.dml \
-#     -config conf/$conf.xml \
-#     -stats 100 \
-#     -debug \
-#     -args $x $y_hot TRUE "results/fed_mnist_${numWorkers}.res" \
-#     -fedMonitoringAddress "http://localhost:8080" 
+systemds code/exp/lm.dml \
+    -config conf/$conf.xml \
+    -stats 100 \
+    -debug \
+    -args $x $y_hot TRUE "results/fed_mnist_${numWorkers}.res" \
+    -fedMonitoringAddress "http://localhost:8080" 
 
 # Execute a Multi Log Regression model, do prediction and print confusion matrix
-systemds code/exp/mLogReg.dml \
-    -config conf/$conf.xml \
-    -stats 30 \
-    -args $x $y $xt $yt TRUE \
-    -fedMonitoringAddress "http://localhost:8080" 
+# systemds code/exp/mLogReg.dml \
+#     -config conf/$conf.xml \
+#     -stats 30 \
+#     -args $x $y $xt $yt TRUE \
+#     -fedMonitoringAddress "http://localhost:8080" 
 
 # Execute locally to compare
 # systemds code/exp/mLogReg.dml \

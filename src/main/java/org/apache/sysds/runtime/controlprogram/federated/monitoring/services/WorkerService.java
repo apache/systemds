@@ -41,6 +41,7 @@ import org.apache.sysds.runtime.controlprogram.federated.monitoring.repositories
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.repositories.IRepository;
 
 public class WorkerService {
+	
 	private static final IRepository entityRepository = new DerbyRepository();
 	// { workerId, { workerAddress, workerStatus } }
 	private static final Map<Long, Pair<String, Boolean>> cachedWorkers = new HashMap<>();

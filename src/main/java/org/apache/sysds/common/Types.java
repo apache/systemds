@@ -113,7 +113,7 @@ public class Types
 				case "INT32":    return INT32;
 				case "INT64":
 				case "INT":      return INT64;
-				case "BOOLEAN":  return BITSET;
+				case "BITSET":  return BITSET;
 				case "STRING":   return STRING;
 				case "CHARACTER": return CHARACTER;
 				case "UNKNOWN":  return UNKNOWN;

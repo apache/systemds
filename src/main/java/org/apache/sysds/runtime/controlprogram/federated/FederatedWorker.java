@@ -27,12 +27,14 @@ import java.util.concurrent.TimeUnit;
 
 import javax.net.ssl.SSLException;
 
+import io.netty.handler.codec.compression.JdkZlibDecoder;
 import org.apache.log4j.Logger;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.conf.DMLConfig;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
+import org.apache.sysds.runtime.controlprogram.federated.compression.CompressionEncoder;
 import org.apache.sysds.runtime.controlprogram.paramserv.NetworkTrafficCounter;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysds.runtime.lineage.LineageCache;
@@ -195,9 +197,11 @@ public class FederatedWorker {
 					if(ssl)
 						cp.addLast(cont2.newHandler(ch.alloc()));
 					cp.addLast("NetworkTrafficCounter", new NetworkTrafficCounter(FederatedStatistics::logWorkerTraffic));
+					cp.addLast("ZlibDecoder", new JdkZlibDecoder());
 					cp.addLast("ObjectDecoder",
 						new ObjectDecoder(Integer.MAX_VALUE,
 							ClassResolvers.weakCachingResolver(ClassLoader.getSystemClassLoader())));
+					cp.addLast("ZlibEncoder", new CompressionEncoder());
 					cp.addLast("ObjectEncoder", new ObjectEncoder());
 					cp.addLast(FederationUtils.decoder(), new FederatedResponseEncoder());
 					cp.addLast(new FederatedWorkerHandler(_flt, _frc, _fan, networkTimer));

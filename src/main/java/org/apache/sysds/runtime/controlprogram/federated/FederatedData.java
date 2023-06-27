@@ -29,6 +29,7 @@ import java.util.concurrent.Future;
 
 import javax.net.ssl.SSLException;
 
+import io.netty.handler.codec.compression.JdkZlibDecoder;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.common.Types;
@@ -37,6 +38,7 @@ import org.apache.sysds.conf.DMLConfig;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest.RequestType;
+import org.apache.sysds.runtime.controlprogram.federated.compression.CompressionEncoder;
 import org.apache.sysds.runtime.controlprogram.paramserv.NetworkTrafficCounter;
 import org.apache.sysds.runtime.meta.MetaData;
 
@@ -213,7 +215,12 @@ public class FederatedData {
 					cp.addLast(createSSLHandler(ch, address));
 				if(timeout > -1)
 					cp.addLast(new ReadTimeoutHandler(timeout));
-				cp.addLast(FederationUtils.decoder(), new FederatedRequestEncoder(), handler);
+				// cp.addLast(FederationUtils.decoder(), new FederatedRequestEncoder(), handler);
+				cp.addLast(new JdkZlibDecoder());
+				cp.addLast(FederationUtils.decoder());
+				cp.addLast(new CompressionEncoder());
+				cp.addLast(new FederatedRequestEncoder());
+				cp.addLast(handler);
 			}
 		};
 	}

@@ -38,8 +38,8 @@ fi
 
 ## Install remotes
 for index in ${!address[*]}; do
+    echo "Installing for: ${address[$index]}"
     if [ "${address[$index]}" != "localhost" ]; then
-        echo "Installing for: ${address[$index]}"
         # Install SystemDS on system.
         ssh -T ${address[$index]} "
         mkdir -p github;
@@ -48,11 +48,13 @@ for index in ${!address[*]}; do
         cd systemds;
         git reset --hard origin/master > /dev/null 2>&1;
         git pull > /dev/null 2>&1; 
-        mvn clean package  -P distribution > /dev/null 2>&1;
+        mvn clean package  -P distribution | grep -E 'BUILD SUCCESS|BUILD FA';
         echo 'Installed Systemds on' \$HOSTNAME;
         cd \$HOME
         mkdir -p ${remoteDir}
         " &
+        # git merge FETCH_HEAD > /dev/null 2>&1;
+        # git fetch origin pull/1852/head  > /dev/null 2>&1;
     fi
 done
 

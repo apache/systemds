@@ -124,6 +124,7 @@ public class DMLConfig
 	public static final String FEDERATED_PAR_INST = "sysds.federated.par_inst";
 	public static final String FEDERATED_PAR_CONN = "sysds.federated.par_conn";
 	public static final String FEDERATED_READCACHE = "sysds.federated.readcache";
+	public static final String FEDERATED_COMPRESSION = "sysds.federated.compression";
 	public static final String PRIVACY_CONSTRAINT_MOCK = "sysds.federated.priv_mock";
 	/** Trigger frequency of the collecting and parsing statistics process on registered workers for monitoring in seconds */
 	public static final String FEDERATED_MONITOR_FREQUENCY = "sysds.federated.monitorFreq";
@@ -204,6 +205,7 @@ public class DMLConfig
 		_defaultVals.put(FEDERATED_PAR_INST,     "-1"); // vcores
 		_defaultVals.put(FEDERATED_READCACHE,    "true"); // vcores
 		_defaultVals.put(FEDERATED_MONITOR_FREQUENCY, "3");
+		_defaultVals.put(FEDERATED_COMPRESSION, "none");
 		_defaultVals.put(PRIVACY_CONSTRAINT_MOCK, null);
 		_defaultVals.put(ASYNC_SPARK_PREFETCH,   "false" );
 		_defaultVals.put(ASYNC_SPARK_BROADCAST,  "false" );
@@ -460,7 +462,7 @@ public class DMLConfig
 			PRINT_GPU_MEMORY_INFO, AVAILABLE_GPUS, SYNCHRONIZE_GPU, EAGER_CUDA_FREE, GPU_RULE_BASED_PLACEMENT,
 			FLOATING_POINT_PRECISION, GPU_EVICTION_POLICY, LOCAL_SPARK_NUM_THREADS, EVICTION_SHADOW_BUFFERSIZE,
 			GPU_MEMORY_ALLOCATOR, GPU_MEMORY_UTILIZATION_FACTOR, USE_SSL_FEDERATED_COMMUNICATION,
-			DEFAULT_FEDERATED_INITIALIZATION_TIMEOUT, FEDERATED_TIMEOUT, FEDERATED_MONITOR_FREQUENCY,
+			DEFAULT_FEDERATED_INITIALIZATION_TIMEOUT, FEDERATED_TIMEOUT, FEDERATED_MONITOR_FREQUENCY, FEDERATED_COMPRESSION,
 			ASYNC_SPARK_PREFETCH, ASYNC_SPARK_BROADCAST, ASYNC_SPARK_CHECKPOINT
 		}; 
 		

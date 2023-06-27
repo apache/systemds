@@ -19,6 +19,8 @@
 
 package org.apache.sysds.runtime.controlprogram.federated.monitoring.controllers;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.Request;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.Response;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.WorkerModel;
@@ -28,6 +30,8 @@ import org.apache.sysds.runtime.controlprogram.federated.monitoring.services.Wor
 import io.netty.handler.codec.http.FullHttpResponse;
 
 public class WorkerController implements IController {
+	private static final Log LOG = LogFactory.getLog(WorkerController.class.getName());
+
 	private final WorkerService workerService = new WorkerService();
 
 	@Override
@@ -74,12 +78,12 @@ public class WorkerController implements IController {
 	public FullHttpResponse get(Request request, Long objectId) {
 		var result = workerService.get(objectId);
 
-		if (result == null) {
+		if (result == null) 
 			return Response.notFound(Constants.NOT_FOUND_MSG);
-		}
-
+		
 		result.setOnlineStatus(workerService.getWorkerOnlineStatus(result.id));
-
+		if(LOG.isDebugEnabled())
+			LOG.debug("Get: " + result);
 		return Response.ok(result.toString());
 	}
 
@@ -87,9 +91,11 @@ public class WorkerController implements IController {
 	public FullHttpResponse getAll(Request request) {
 		var workers = workerService.getAll();
 
-		for (var worker: workers) {
+		for (var worker: workers) 
 			worker.setOnlineStatus(workerService.getWorkerOnlineStatus(worker.id));
-		}
+		
+		if(LOG.isDebugEnabled())
+			LOG.debug("Get All: " + workers);
 
 		return Response.ok(workers.toString());
 	}

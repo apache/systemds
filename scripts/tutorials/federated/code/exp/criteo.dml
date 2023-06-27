@@ -1,4 +1,3 @@
-#!/usr/bin/env bash
 #-------------------------------------------------------------
 #
 # Licensed to the Apache Software Foundation (ASF) under one
@@ -20,19 +19,28 @@
 #
 #-------------------------------------------------------------
 
-source parameters.sh
+# create federated matrix
+N = 1000000; 
+M = 40;
+data = federated(type="frame",
+    addresses=list("localhost:8001/./data/criteo_day21_1M_cleaned",
+                   "localhost:8002/./data/criteo_day21_1M_cleaned",
+                   "localhost:8003/./data/criteo_day21_1M_cleaned"),
+    ranges=   list(list(0,0),list(N/3,M),
+                   list(N/3,0),list((N/3)*2,M),
+                   list((N/3)*2,0),list(N, M))
+)
 
-# Synchronize code and setup.
-for index in ${!address[*]}; do
-    sleep 0.2
-    # echo "${address[$index]}"
-    if [  "${address[$index]}" != "localhost" ]; then
-        # Make the required directiories
-        ssh -A ${address[$index]} "mkdir -p ${remoteDir}; cd ${remoteDir}; mkdir -p results; mkdir -p data" &
-        # Syncronize the configuration and scripts(start and stop worker).
-        rsync -avhq -e ssh conf scripts parameters.sh ${address[$index]}:$remoteDir &
-        ## Get Results
-        rsync -avhq -e ssh ${address[$index]}:$remoteDir/results . &
-    fi
-done
-wait
+# transform encode
+jspec1 = read("code/exp/criteo_spec1.json", data_type="scalar", value_type="string");
+[X0, M] = transformencode(target=data, spec=jspec1);
+
+
+y = X0[,1] + 1; 
+X = X0[,2:ncol(X0)]
+B = multiLogReg(X=X, Y=y, icpt=2, maxi=30, verbose=TRUE);
+
+## done
+[m, pred, acc] = multiLogRegPredict(X=X, B=B, Y=y, verbose=TRUE)
+[co, avg] = confusionMatrix(P=pred, Y=y)
+print(toString(avg))

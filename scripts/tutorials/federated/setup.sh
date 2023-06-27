@@ -70,6 +70,7 @@ datasets="mnist_features mnist_labels mnist_labels_hot mnist_test_features mnist
 for name in $datasets; do
     if [[ ! -f "data/${name}_${numWorkers}_1.data.mtd" ]]; then
         echo "Generating data/${name}_${numWorkers}_1.data"
+        sleep 0.2
         systemds code/dataGen/slice.dml \
             -config conf/def.xml \
             -args $name $numWorkers &
@@ -81,12 +82,23 @@ wait
 # Distribute the slices to individual workers.
 for index in ${!address[@]}; do
     if [ "${address[$index]}" != "localhost" ]; then
+        sleep 0.2
         echo "Syncronize and distribute data partitions."
         ## File ID is the federated Indentification number
         fileId=$((index + 1))
         # ssh -q ${address[$index]} [[ -f "${remoteDir}/data/mnist_features_${numWorkers}_${fileId}.data" ]] &&
         #     echo "Skipping transfer since ${address[$index]} already have the file" ||
         rsync -ah -e ssh --include="**_${numWorkers}_${fileId}.da**" --exclude='*' data/ ${address[$index]}:$remoteDir/data/ &
+
+        if [[ -f "data/adult.data" ]]; then
+            sleep 0.1
+            rsync -ah -e ssh --include="adult.dat**" data/ ${address[$index]}:$remoteDir/data/ &
+        fi
+
+        if [[ -f "data/criteo_day21_1M_cleaned" ]]; then
+            sleep 0.1
+            rsync -ah -e ssh --include="criteo_day21_1M_cleane**" data/ ${address[$index]}:$remoteDir/data/ &
+        fi
     fi
 done
 

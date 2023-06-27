@@ -23,8 +23,14 @@
 source parameters.sh
 
 for index in ${!address[*]}; do
-    echo ${ports[$index]}: ${address[$index]}:${ports[$index]}
-    ssh -f -N -L ${ports[$index]}:${address[$index]}:${ports[$index]} ${address[$index]} &
+    if [ "${address[$index]}" == "localhost" ]; then
+        echo No Port forward for localhost
+    else
+        echo ${ports[$index]}: ${address[$index]}:${ports[$index]}
+        ssh -f -N -L ${ports[$index]}:${address[$index]}:${ports[$index]} ${address[$index]} &
+        mkdir -p tmp/worker/
+        echo $! > tmp/worker/pF$HOSTNAME-${address[$index]}
+    fi
 done
 
 wait

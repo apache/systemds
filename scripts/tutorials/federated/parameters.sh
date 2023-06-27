@@ -21,7 +21,6 @@
 #-------------------------------------------------------------
 
 # Memory allowed to be used by each worker and coordinator
-export SYSTEMDS_STANDALONE_OPTS="-Xmx4g -Xms4g -Xmn400m"
 # Path to the systemds clone of the repository.
 export SYSTEMDS_ROOT="$HOME/github/systemds"
 # Add SystemDS bin to path
@@ -37,17 +36,29 @@ export LOG4JPROP='conf/log4j-off.properties'
 # Set the system to start up on quiet mode, to not print excessively on every execution.
 export SYSDS_QUIET=1
 
+# export COMMAND='java -Xmx8g -Xms8g -cp "./lib/*;./SystemDS_old.jar" org.apache.sysds.api.DMLScript -f'
 
 # Set the addresses of your federated workers.
-
-# address=("tango" "delta" "india" "echo")
-# address=("tango" "delta")
-
+# address=("so007" "so004" "so005" "so006")
 address=("localhost" "localhost" "localhost" "localhost")
 
 # We assume for the scripts to work that each worker have a unique port
 ports=("8001" "8002" "8003" "8004")
 numWorkers=${#address[@]}
+
+# Set memory usage:
+addressesString=${address// /|}
+## if distributed set memory higher!
+if [[ "$addressesString" == *"so0"* ]]; then 
+    export SYSTEMDS_STANDALONE_OPTS="-Xmx16g -Xms16g -Xmn1600m"
+else 
+    export SYSTEMDS_STANDALONE_OPTS="-Xmx4g -Xms4g -Xmn400m"
+fi
+
+if [[ $HOSTNAME == *"so0"* ]]; then 
+    ## Set scale out nodes memory higher!
+    export SYSTEMDS_STANDALONE_OPTS="-Xmx230g -Xms230g -Xmn23000m"
+fi 
 
 # If remote workers are used make and use this directory on the sites.
 # Note this is a directory relative to the $home on the sites.

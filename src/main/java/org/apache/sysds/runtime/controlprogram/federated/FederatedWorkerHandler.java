@@ -663,6 +663,8 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 		// get function and input parameters
 		try {
 			FederatedUDF udf = (FederatedUDF) request.getParam(0);
+			if(LOG.isDebugEnabled())
+				LOG.debug(udf);
 
 			eventStage.operation = udf.getClass().getSimpleName();
 

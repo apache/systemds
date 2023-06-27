@@ -29,8 +29,11 @@ import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.conf.DMLConfig;
+import org.apache.sysds.runtime.controlprogram.federated.monitoring.controllers.WorkerController;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.DataObjectModel;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.HeavyHitterModel;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.RequestModel;
@@ -41,6 +44,7 @@ import org.apache.sysds.runtime.controlprogram.federated.monitoring.repositories
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.repositories.IRepository;
 
 public class WorkerService {
+	protected static final Log LOG = LogFactory.getLog(WorkerController.class.getName());
 	private static final IRepository entityRepository = new DerbyRepository();
 	// { workerId, { workerAddress, workerStatus } }
 	private static final Map<Long, Pair<String, Boolean>> cachedWorkers = new HashMap<>();
@@ -141,15 +145,14 @@ public class WorkerService {
 				});
 			}
 			if (stats.events != null) {
-				for (var eventEntity: stats.events) {
-					if (eventEntity.coordinatorId > 0) {
+				for(var eventEntity : stats.events) {
+					if(eventEntity.coordinatorId > 0) {
 						CompletableFuture.runAsync(() -> {
 							var eventId = entityRepository.createEntity(eventEntity);
-
-							for (var stageEntity : eventEntity.stages) {
+							for(var stageEntity : eventEntity.stages) {
 								stageEntity.eventId = eventId;
-
-								entityRepository.createEntity(stageEntity);
+								if(stageEntity != null)
+									entityRepository.createEntity(stageEntity);
 							}
 						});
 					}

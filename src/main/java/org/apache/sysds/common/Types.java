@@ -96,7 +96,8 @@ public class Types
 				case UINT8:
 				case INT32:
 				case INT64:   return "INT";
-				case BITSET: return "BOOLEAN";
+				case BITSET:  return "BITSET";
+				case BOOLEAN: return "BOOLEAN";
 				default:      return toString();
 			}
 		}
@@ -114,6 +115,7 @@ public class Types
 				case "INT64":
 				case "INT":      return INT64;
 				case "BITSET":  return BITSET;
+				case "BOOLEAN":  return BOOLEAN;
 				case "STRING":   return STRING;
 				case "CHARACTER": return CHARACTER;
 				case "UNKNOWN":  return UNKNOWN;

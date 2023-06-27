@@ -27,7 +27,7 @@ import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.runtime.util.UtilFunctions;
 
-public class DenseBlockBoolBitset extends DenseBlockDRB
+public class DenseBlockBoolBitset extends DenseBlockBool
 {
 	private static final long serialVersionUID = -2228057308997136969L;
 	
@@ -163,6 +163,7 @@ public class DenseBlockBoolBitset extends DenseBlockDRB
 		return this;
 	}
 
+	@Override
 	public DenseBlock set(int r, int c, boolean v) {
 		_data.set(pos(r, c), v);
 		return this;
@@ -215,6 +216,11 @@ public class DenseBlockBoolBitset extends DenseBlockDRB
 	public DenseBlock set(int[] ix, String v) {
 		_data.set(pos(ix), Boolean.parseBoolean(v));
 		return this;
+	}
+
+	@Override
+	public boolean getBoolean(int r, int c) {
+		return _data.get(pos(r,c));
 	}
 
 	@Override

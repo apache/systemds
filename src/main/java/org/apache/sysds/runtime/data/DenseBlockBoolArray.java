@@ -26,7 +26,7 @@ import org.apache.sysds.runtime.util.UtilFunctions;
 
 import java.util.Arrays;
 
-public class DenseBlockBoolArray extends DenseBlockDRB{
+public class DenseBlockBoolArray extends DenseBlockBool{
 
     private static final long serialVersionUID = -6741205568083878338L;
     private boolean[] _data;
@@ -159,6 +159,7 @@ public class DenseBlockBoolArray extends DenseBlockDRB{
         return this;
     }
 
+    @Override
     public DenseBlock set(int r, int c, boolean v) {
         _data[pos(r, c)] = v;
         return this;
@@ -228,6 +229,7 @@ public class DenseBlockBoolArray extends DenseBlockDRB{
         return this;
     }
 
+    @Override
     public boolean getBoolean(int r, int c){
         return _data[pos(r,c)];
     }

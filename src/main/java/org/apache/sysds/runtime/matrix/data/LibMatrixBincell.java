@@ -1401,35 +1401,9 @@ public class LibMatrixBincell {
 			}
 			//general case
 			else {
-				// if ValueFunction is comparison, return matrix is true boolean and boolean arithmetics are activated, use boolean arithmetics
-				if (op.fn instanceof ValueComparisonFunction &&	ret.denseBlock != null && (ret.getDenseBlock() instanceof DenseBlockBoolArray || ret.getDenseBlock() instanceof DenseBlockBoolBitset) ){
-					//TODO: Optimize casting to boolean denseblock types :/
-					if(ret.getDenseBlock() instanceof DenseBlockBoolArray){
-						for(int r=rl; r<ru; r++)
-							for(int c=0; c<clen; c++) {
-								double v1 = m1.quickGetValue(r, c);
-								double v2 = m2.quickGetValue(r, c);
-								boolean vb = ((ValueComparisonFunction) op.fn).compare( v1, v2 );
-
-								//react what is happening in appendValuePlain()
-								ret.allocateDenseBlock(false);
-								((DenseBlockBoolArray) ret.getDenseBlock()).set(r,c,vb);
-								lnnz += vb ? 1 : 0;
-							}
-					} else {
-						for(int r=rl; r<ru; r++)
-							for(int c=0; c<clen; c++) {
-								double v1 = m1.quickGetValue(r, c);
-								double v2 = m2.quickGetValue(r, c);
-								boolean vb = ((ValueComparisonFunction) op.fn).compare( v1, v2 );
-
-								//react what is happening in appendValuePlain()
-								ret.allocateDenseBlock(false);
-								((DenseBlockBoolBitset) ret.getDenseBlock()).set(r,c,vb);
-								lnnz += vb ? 1 : 0;
-							}
-					}
-
+				// if return matrix is boolean or bitset, use boolean arithmetics
+				if (ret.denseBlock != null && ret.getDenseBlock() instanceof DenseBlockBool ){
+					lnnz = computeAsBoolean(m1, m2, ret, op, rl, ru);
 				} else {
 					for(int r=rl; r<ru; r++)
 						for(int c=0; c<clen; c++) {
@@ -1447,6 +1421,48 @@ public class LibMatrixBincell {
 		return lnnz;
 	}
 
+	/**
+	 * EXPERIMENTAL
+	 * Runs operations that return booleans and actually uses boolean arithmetics and boolean matrices.
+	 * @param m1 input matrix 1
+	 * @param m2 input matrix 2
+	 * @param ret result matrix
+	 * @param op operator that returns boolean values
+	 * @return lnnz
+	 */
+	private static long computeAsBoolean(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, BinaryOperator op, int rl, int ru){
+		int clen = m1.clen;
+		long lnnz = 0;
+		boolean isAndOrXor = op.fn instanceof And || op.fn instanceof Or || op.fn instanceof Xor;
+		boolean isValueComparisonFunction = op.fn instanceof ValueComparisonFunction;
+
+		for(int r=rl; r<ru; r++)
+			for(int c=0; c<clen; c++) {
+
+				boolean vb;
+
+				if(isValueComparisonFunction){
+					double v1 = m1.quickGetValue(r, c);
+					double v2 = m2.quickGetValue(r, c);
+					vb = ((ValueComparisonFunction) op.fn).compare( v1, v2 );
+				} else if (isAndOrXor) {
+					boolean vb1 = ((DenseBlockBool)m1.denseBlock).getBoolean(r,c);
+					boolean vb2 = ((DenseBlockBool)m2.denseBlock).getBoolean(r,c);
+					vb = op.fn.execute(vb1, vb2);
+				} else {
+					throw new RuntimeException("Currently there is no support for boolean computation with operator of type "+op.fn.getClass().getSimpleName());
+				}
+
+				//reenact what is happening in appendValuePlain()
+				ret.allocateDenseBlock(false);
+				((DenseBlockBool) ret.getDenseBlock()).set(r,c,vb);
+
+				lnnz += vb ? 1 : 0;
+			}
+
+
+		return lnnz;
+	}
 	private static long safeBinaryScalar(MatrixBlock m1, MatrixBlock ret, ScalarOperator op, int rl, int ru) {
 		//early abort possible since sparsesafe
 		if( m1.isEmptyBlock(false) ) {

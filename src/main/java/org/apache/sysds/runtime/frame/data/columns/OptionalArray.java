@@ -42,7 +42,7 @@ public class OptionalArray<T> extends Array<T> {
 		super(a.length);
 
 		if(a instanceof Boolean[])
-			_a = (Array<T>) ArrayFactory.allocate(ValueType.BOOLEAN, a.length);
+			_a = (Array<T>) ArrayFactory.allocate(ValueType.BITSET, a.length);
 		else if(a instanceof Integer[])
 			_a = (Array<T>) ArrayFactory.allocate(ValueType.INT32, a.length);
 		else if(a instanceof Double[])
@@ -109,7 +109,7 @@ public class OptionalArray<T> extends Array<T> {
 		final Array<?> a = ArrayFactory.read(in, nRow);
 		final ABooleanArray n = (ABooleanArray) ArrayFactory.read(in, nRow);
 		switch(a.getValueType()) {
-			case BOOLEAN:
+			case BITSET:
 				return new OptionalArray<Boolean>((Array<Boolean>) a, n);
 			case FP32:
 				return new OptionalArray<Float>((Array<Float>) a, n);
@@ -400,7 +400,7 @@ public class OptionalArray<T> extends Array<T> {
 	public Array<?> changeTypeWithNulls(ValueType t) {
 
 		switch(t) {
-			case BOOLEAN:
+			case BITSET:
 				if(size() > ArrayFactory.bitSetSwitchPoint)
 					return changeTypeBitSet();
 				else

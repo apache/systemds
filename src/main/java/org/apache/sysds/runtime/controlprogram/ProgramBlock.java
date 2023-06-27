@@ -218,7 +218,7 @@ public abstract class ProgramBlock implements ParseInfo {
 		// check and correct scalar ret type (incl save double to int)
 		if(retType != null && retType != ret.getValueType())
 			switch(retType) {
-				case BOOLEAN:
+				case BITSET:
 					ret = new BooleanObject(ret.getBooleanValue());
 					break;
 				case INT64:

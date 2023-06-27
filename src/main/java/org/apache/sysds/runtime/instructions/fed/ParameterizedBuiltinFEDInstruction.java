@@ -370,10 +370,10 @@ public class ParameterizedBuiltinFEDInstruction extends ComputationFEDInstructio
 			LineageItem[] liUdfInputs = Arrays.stream(getInputIDs())
 				.mapToObj(id -> ec.getLineage().get(String.valueOf(id))).toArray(LineageItem[]::new);
 			CPOperand slice = new CPOperand(Arrays.toString(_slice), ValueType.STRING, DataType.SCALAR, true);
-			CPOperand rowFed = new CPOperand(String.valueOf(_rowFed), ValueType.BOOLEAN, DataType.SCALAR, true);
-			CPOperand lower = new CPOperand(String.valueOf(_lower), ValueType.BOOLEAN, DataType.SCALAR, true);
-			CPOperand diag = new CPOperand(String.valueOf(_diag), ValueType.BOOLEAN, DataType.SCALAR, true);
-			CPOperand values = new CPOperand(String.valueOf(_values), ValueType.BOOLEAN, DataType.SCALAR, true);
+			CPOperand rowFed = new CPOperand(String.valueOf(_rowFed), ValueType.BITSET, DataType.SCALAR, true);
+			CPOperand lower = new CPOperand(String.valueOf(_lower), ValueType.BITSET, DataType.SCALAR, true);
+			CPOperand diag = new CPOperand(String.valueOf(_diag), ValueType.BITSET, DataType.SCALAR, true);
+			CPOperand values = new CPOperand(String.valueOf(_values), ValueType.BITSET, DataType.SCALAR, true);
 			LineageItem[] otherInputs = LineageItemUtils.getLineage(ec, slice, rowFed, lower, diag, values);
 			LineageItem[] liInputs = Stream.concat(Arrays.stream(liUdfInputs), Arrays.stream(otherInputs))
 				.toArray(LineageItem[]::new);

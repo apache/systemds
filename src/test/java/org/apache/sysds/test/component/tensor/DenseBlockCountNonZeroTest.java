@@ -20,17 +20,11 @@
 package org.apache.sysds.test.component.tensor;
 
 import org.apache.commons.lang.NotImplementedException;
+import org.apache.sysds.runtime.data.*;
 import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysds.common.Types.ValueType;
-import org.apache.sysds.runtime.data.DenseBlock;
-import org.apache.sysds.runtime.data.DenseBlockFactory;
-import org.apache.sysds.runtime.data.DenseBlockLBool;
-import org.apache.sysds.runtime.data.DenseBlockLFP32;
-import org.apache.sysds.runtime.data.DenseBlockLFP64;
-import org.apache.sysds.runtime.data.DenseBlockLString;
-import org.apache.sysds.runtime.data.DenseBlockLInt32;
-import org.apache.sysds.runtime.data.DenseBlockLInt64;
+import org.apache.sysds.runtime.data.DenseBlockLBoolBitset;
 
 
 public class DenseBlockCountNonZeroTest {
@@ -48,13 +42,13 @@ public class DenseBlockCountNonZeroTest {
 
 	@Test
 	public void testIndexDenseBlock2BoolCountNonZero() {
-		DenseBlock db = getDenseBlock2(ValueType.BOOLEAN);
+		DenseBlock db = getDenseBlock2(ValueType.BITSET);
 		checkFullNnz2(db);
 	}
 
 	@Test
 	public void testIndexDenseBlock2TrueBoolCountNonZero() {
-		DenseBlock db = getDenseBlock2(ValueType.TRUE_BOOLEAN);
+		DenseBlock db = getDenseBlock2(ValueType.BOOLEAN);
 		checkFullNnz2(db);
 	}
 
@@ -90,7 +84,7 @@ public class DenseBlockCountNonZeroTest {
 
 	@Test
 	public void testIndexDenseBlockLarge2BoolCountNonZero() {
-		DenseBlock db = getDenseBlockLarge2(ValueType.BOOLEAN);
+		DenseBlock db = getDenseBlockLarge2(ValueType.BITSET);
 		checkFullNnz2(db);
 	}
 
@@ -126,13 +120,13 @@ public class DenseBlockCountNonZeroTest {
 
 	@Test
 	public void testIndexDenseBlock3BoolCountNonZero() {
-		DenseBlock db = getDenseBlock3(ValueType.BOOLEAN);
+		DenseBlock db = getDenseBlock3(ValueType.BITSET);
 		checkFullNnz3(db);
 	}
 
 	@Test
 	public void testIndexDenseBlock3TrueBoolCountNonZero() {
-		DenseBlock db = getDenseBlock3(ValueType.TRUE_BOOLEAN);
+		DenseBlock db = getDenseBlock3(ValueType.BOOLEAN);
 		checkFullNnz3(db);
 	}
 
@@ -168,7 +162,7 @@ public class DenseBlockCountNonZeroTest {
 
 	@Test
 	public void testIndexDenseBlockLarge3BoolCountNonZero() {
-		DenseBlock db = getDenseBlockLarge3(ValueType.BOOLEAN);
+		DenseBlock db = getDenseBlockLarge3(ValueType.BITSET);
 		checkFullNnz3(db);
 	}
 
@@ -205,8 +199,8 @@ public class DenseBlockCountNonZeroTest {
 				return new DenseBlockLFP32(dims);
 			case FP64:
 				return new DenseBlockLFP64(dims);
-			case BOOLEAN:
-				return new DenseBlockLBool(dims);
+			case BITSET:
+				return new DenseBlockLBoolBitset(dims);
 			case INT32:
 				return new DenseBlockLInt32(dims);
 			case INT64:
@@ -225,8 +219,8 @@ public class DenseBlockCountNonZeroTest {
 				return new DenseBlockLFP32(dims);
 			case FP64:
 				return new DenseBlockLFP64(dims);
-			case BOOLEAN:
-				return new DenseBlockLBool(dims);
+			case BITSET:
+				return new DenseBlockLBoolBitset(dims);
 			case INT32:
 				return new DenseBlockLInt32(dims);
 			case INT64:

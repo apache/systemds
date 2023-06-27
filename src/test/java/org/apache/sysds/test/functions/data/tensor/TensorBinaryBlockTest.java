@@ -52,7 +52,7 @@ public class TensorBinaryBlockTest {
 
 	@Test
 	public void testReadWriteBinaryBlockBasicTensorBoolean() {
-		testReadWriteBinaryBlockBasicTensor(ValueType.BOOLEAN);
+		testReadWriteBinaryBlockBasicTensor(ValueType.BITSET);
 	}
 
 	@Test
@@ -88,7 +88,7 @@ public class TensorBinaryBlockTest {
 
 	@Test
 	public void testReadWriteBinaryBlockDataTensorBoolean() {
-		testReadWriteBinaryBlockDataTensor(ValueType.BOOLEAN);
+		testReadWriteBinaryBlockDataTensor(ValueType.BITSET);
 	}
 
 	@Test

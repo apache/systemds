@@ -1127,7 +1127,7 @@ public class RandSPInstruction extends UnarySPInstruction {
 			else {
 				switch (_vt) {
 					case STRING:
-					case BOOLEAN:
+					case BITSET:
 						tb.set(_min);
 						break;
 					case INT64:

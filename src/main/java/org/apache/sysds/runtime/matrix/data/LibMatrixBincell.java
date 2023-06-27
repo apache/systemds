@@ -30,7 +30,6 @@ import java.util.concurrent.Future;
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.sysds.common.Types;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.data.*;
 import org.apache.sysds.runtime.functionobjects.*;
@@ -1403,9 +1402,9 @@ public class LibMatrixBincell {
 			//general case
 			else {
 				// if ValueFunction is comparison, return matrix is true boolean and boolean arithmetics are activated, use boolean arithmetics
-				if (op.fn instanceof ValueComparisonFunction &&	ret.denseBlock != null && (ret.getDenseBlock() instanceof DenseBlockTrueBool || ret.getDenseBlock() instanceof DenseBlockBool) ){
+				if (op.fn instanceof ValueComparisonFunction &&	ret.denseBlock != null && (ret.getDenseBlock() instanceof DenseBlockBoolArray || ret.getDenseBlock() instanceof DenseBlockBoolBitset) ){
 					//TODO: Optimize casting to boolean denseblock types :/
-					if(ret.getDenseBlock() instanceof DenseBlockTrueBool){
+					if(ret.getDenseBlock() instanceof DenseBlockBoolArray){
 						for(int r=rl; r<ru; r++)
 							for(int c=0; c<clen; c++) {
 								double v1 = m1.quickGetValue(r, c);
@@ -1414,7 +1413,7 @@ public class LibMatrixBincell {
 
 								//react what is happening in appendValuePlain()
 								ret.allocateDenseBlock(false);
-								((DenseBlockTrueBool) ret.getDenseBlock()).set(r,c,vb);
+								((DenseBlockBoolArray) ret.getDenseBlock()).set(r,c,vb);
 								lnnz += vb ? 1 : 0;
 							}
 					} else {
@@ -1426,7 +1425,7 @@ public class LibMatrixBincell {
 
 								//react what is happening in appendValuePlain()
 								ret.allocateDenseBlock(false);
-								((DenseBlockBool) ret.getDenseBlock()).set(r,c,vb);
+								((DenseBlockBoolBitset) ret.getDenseBlock()).set(r,c,vb);
 								lnnz += vb ? 1 : 0;
 							}
 					}

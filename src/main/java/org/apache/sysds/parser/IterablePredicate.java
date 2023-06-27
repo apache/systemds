@@ -191,7 +191,7 @@ public class IterablePredicate extends Expression
 		
 		Identifier ident = expr.getOutput();
 		if( ident.getDataType() == DataType.MATRIX ||
-			(ident.getDataType() == DataType.SCALAR && (ident.getValueType() == ValueType.BOOLEAN || 
+			(ident.getDataType() == DataType.SCALAR && (ident.getValueType() == ValueType.BITSET ||
 			ident.getValueType() == ValueType.STRING)) )
 		{
 			throw new LanguageException(this.printErrorLocation() + "expression in iterable predicate in for loop '" + expr.toString() + "' must return a numeric scalar");

@@ -109,7 +109,7 @@ public class FederatedConstructionTest extends AutomatedTestBase {
 		List<Types.ValueType> schemaList = new ArrayList<>(Collections.nCopies(cols / 4, Types.ValueType.STRING));
 		schemaList.addAll(Collections.nCopies(cols / 4, Types.ValueType.FP64));
 		schemaList.addAll(Collections.nCopies(cols / 4, Types.ValueType.INT64));
-		schemaList.addAll(Collections.nCopies(cols / 4, Types.ValueType.BOOLEAN));
+		schemaList.addAll(Collections.nCopies(cols / 4, Types.ValueType.BITSET));
 
 		Types.ValueType[] schema = new Types.ValueType[cols];
 		schemaList.toArray(schema);

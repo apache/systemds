@@ -49,7 +49,7 @@ public class LibTensorAgg {
 	 */
 	public static boolean satisfiesMultiThreadingConstraints(BasicTensorBlock in, int k) {
 		// TODO more conditions depending on operation
-		return k > 1 && in._vt != Types.ValueType.BOOLEAN;
+		return k > 1 && in._vt != Types.ValueType.BITSET;
 	}
 
 	/**
@@ -224,7 +224,7 @@ public class LibTensorAgg {
 			throw new DMLRuntimeException("Sparse aggregation not implemented for Tensor");
 		}
 		switch (in.getValueType()) {
-			case BOOLEAN: {
+			case BITSET: {
 				//TODO switch to no-op nnz meta data once available
 				out.set(0, 0, in.getDenseBlock().countNonZeros());
 				break;

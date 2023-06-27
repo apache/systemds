@@ -471,7 +471,7 @@ public class UtilFunctions {
 		if( Double.isNaN(in) && sparse) return null;
 		switch( vt ) {
 			case STRING:  return String.valueOf(in);
-			case BOOLEAN: return (in!=0);
+			case BITSET: return (in!=0);
 			case INT32:   return UtilFunctions.toInt(in);
 			case INT64:   return UtilFunctions.toLong(in);
 			case FP32:    return ((float)in);
@@ -484,7 +484,7 @@ public class UtilFunctions {
 		if( in == null || in.isEmpty() )  return null;
 		switch( vt ) {
 			case STRING:  return in;
-			case BOOLEAN: return Boolean.parseBoolean(in);
+			case BITSET: return Boolean.parseBoolean(in);
 			case UINT4:
 			case UINT8:
 			case INT32:   return Integer.parseInt(in);
@@ -511,7 +511,7 @@ public class UtilFunctions {
 			case FP32:    return (Float)in;
 			case INT64:   return (Long)in;
 			case INT32:   return (Integer)in;
-			case BOOLEAN: return ((Boolean)in) ? 1 : 0;
+			case BITSET: return ((Boolean)in) ? 1 : 0;
 			case STRING:
 				try {
 					return !((String) in).isEmpty() ? Double.parseDouble((String) in) : 0;
@@ -541,7 +541,7 @@ public class UtilFunctions {
 				return (Long) in;
 			case INT32:
 				return (Integer) in;
-			case BOOLEAN:
+			case BITSET:
 				return ((Boolean) in) ? 1 : 0;
 			case STRING:
 				return !((String) in).isEmpty() ? Float.parseFloat((String) in) : 0;
@@ -559,7 +559,7 @@ public class UtilFunctions {
 			case INT64:
 			case INT32:
 				return in.toString().charAt(0);
-			case BOOLEAN:
+			case BITSET:
 				return ((Boolean) in) ? '1' : '0';
 			case STRING:
 				return !((String) in).isEmpty() ? ((String)in).charAt(0) : 0;
@@ -580,7 +580,7 @@ public class UtilFunctions {
 				return ((Long) in).intValue();
 			case INT32:
 				return (Integer) in;
-			case BOOLEAN:
+			case BITSET:
 				return ((Boolean) in) ? 1 : 0;
 			case STRING:
 				return !((String) in).isEmpty() ? Integer.parseInt((String) in) : 0;
@@ -601,7 +601,7 @@ public class UtilFunctions {
 				return (Long) in;
 			case INT32:
 				return (Integer) in;
-			case BOOLEAN:
+			case BITSET:
 				return ((Boolean) in) ? 1 : 0;
 			case STRING:
 				return !((String) in).isEmpty() ? Long.parseLong((String) in) : 0;
@@ -622,7 +622,7 @@ public class UtilFunctions {
 				return (Long) in == 1;
 			case INT32:
 				return (Integer) in == 1;
-			case BOOLEAN:
+			case BITSET:
 				return ((Boolean) in);
 			case STRING:
 				return Boolean.parseBoolean((String) in);
@@ -669,7 +669,7 @@ public class UtilFunctions {
 			|| in instanceof Float && vt == ValueType.FP32
 			|| in instanceof Long && vt == ValueType.INT64
 			|| in instanceof Integer && vt == ValueType.INT32
-			|| in instanceof Boolean && vt == ValueType.BOOLEAN
+			|| in instanceof Boolean && vt == ValueType.BITSET
 			|| in instanceof String && vt == ValueType.STRING )
 			return in; //quick path to avoid double parsing
 		else
@@ -691,7 +691,7 @@ public class UtilFunctions {
  
 		switch( vt ) {
 			case STRING:  return ((String)in1).compareTo((String)in2);
-			case BOOLEAN: return ((Boolean)in1).compareTo((Boolean)in2);
+			case BITSET: return ((Boolean)in1).compareTo((Boolean)in2);
 			case INT64:   return ((Long)in1).compareTo((Long)in2);
 			case INT32:   return ((Integer)in1).compareTo((Integer)in2);
 			case FP64:    return ((Double)in1).compareTo((Double)in2);
@@ -1264,7 +1264,7 @@ public class UtilFunctions {
 			case FP64:    return random.nextDouble();
 			case INT32:   return random.nextInt();
 			case INT64:   return random.nextLong();
-			case BOOLEAN: return random.nextBoolean();
+			case BITSET: return random.nextBoolean();
 			case STRING:
 				return random.ints('a', 'z' + 1).limit(10)
 					.collect(StringBuilder::new, StringBuilder::appendCodePoint, StringBuilder::append)
@@ -1294,7 +1294,7 @@ public class UtilFunctions {
 			else if (schemaValues[i].equalsIgnoreCase("INT32"))
 				vt[i] = ValueType.INT32;
 			else if (schemaValues[i].equalsIgnoreCase("BOOLEAN"))
-				vt[i] = ValueType.BOOLEAN;
+				vt[i] = ValueType.BITSET;
 			else
 				throw new DMLRuntimeException("Invalid column schema. Allowed values are STRING, FP64, FP32, INT64, INT32 and Boolean");
 		}

@@ -1607,7 +1607,7 @@ public class TestUtils {
 
 		switch( vt ) {
 			case STRING:  return ((String)in1).compareTo((String)in2);
-			case BOOLEAN: return ((Boolean)in1).compareTo((Boolean)in2);
+			case BITSET: return ((Boolean)in1).compareTo((Boolean)in2);
 			case INT64:     return ((Long)in1).compareTo((Long)in2);
 			case FP64:
 				return (Math.abs((Double)in1-(Double)in2) < tolerance)?0:
@@ -1625,7 +1625,7 @@ public class TestUtils {
 				if (in1 == null)
 					throw new DMLRuntimeException("Fail");
 			 	return ((String)in1).compareTo((String)inR);
-			case BOOLEAN:
+			case BITSET:
 				if(in1 == null)
 					return Boolean.FALSE.compareTo(((Boolean)inR).booleanValue());
 				else
@@ -2256,7 +2256,7 @@ public class TestUtils {
 	private static Array<?> generateColumn(int rows, ValueType type, Random rand, double nullChance) {
 		if(nullChance == 0) {
 			switch(type) {
-				case BOOLEAN:
+				case BITSET:
 					Array<Boolean> a = (Array<Boolean>) ArrayFactory.allocate(type, rows);
 					for(int r = 0; r < rows; r++)
 						a.set(r, rand.nextBoolean());
@@ -2305,7 +2305,7 @@ public class TestUtils {
 		}
 		else {
 			switch(type) {
-				case BOOLEAN:
+				case BITSET:
 					OptionalArray<Boolean> a = (OptionalArray<Boolean>) ArrayFactory.allocateOptional(type, rows);
 					for(int r = 0; r < rows; r++) {
 						if(rand.nextDouble() < nullChance)
@@ -2541,7 +2541,7 @@ public class TestUtils {
 			case FP64:    return random.nextDouble();
 			case INT32:   return random.nextInt();
 			case INT64:   return random.nextLong();
-			case BOOLEAN: return random.nextBoolean();
+			case BITSET: return random.nextBoolean();
 			case STRING:
 				return random.ints('a', 'z' + 1)
 						.limit(10)

@@ -58,11 +58,11 @@ public abstract class DenseBlockFactory
 	}
 
 	public static DenseBlock createDenseBlock(BitSet data, int[] dims) {
-		return new DenseBlockBool(dims, data);
+		return new DenseBlockBoolBitset(dims, data);
 	}
 
 	public static DenseBlock createDenseBlock(boolean[] data, int[] dims) {
-		return new DenseBlockTrueBool(dims, data);
+		return new DenseBlockBoolArray(dims, data);
 	}
 
 	public static DenseBlock createDenseBlock(String[] data, int[] dims) {
@@ -118,8 +118,8 @@ public abstract class DenseBlockFactory
 					case FP64: return new DenseBlockFP64(dims);
 					case INT32: return new DenseBlockInt32(dims);
 					case INT64: return new DenseBlockInt64(dims);
-					case BOOLEAN: return new DenseBlockBool(dims);
-					case TRUE_BOOLEAN: return new DenseBlockTrueBool(dims);
+					case BITSET: return new DenseBlockBoolBitset(dims);
+					case BOOLEAN: return new DenseBlockBoolArray(dims);
 					case STRING: return new DenseBlockString(dims);
 					default:
 						throw new DMLRuntimeException("Unsupported dense block value type: "+vt.name());
@@ -128,7 +128,7 @@ public abstract class DenseBlockFactory
 				switch(vt) {
 					case FP32: return new DenseBlockLFP32(dims);
 					case FP64: return new DenseBlockLFP64(dims);
-					case BOOLEAN: return new DenseBlockLBool(dims);
+					case BITSET: return new DenseBlockLBoolBitset(dims);
 					case INT32: return new DenseBlockLInt32(dims);
 					case INT64: return new DenseBlockLInt64(dims);
 					case STRING: return new DenseBlockLString(dims);

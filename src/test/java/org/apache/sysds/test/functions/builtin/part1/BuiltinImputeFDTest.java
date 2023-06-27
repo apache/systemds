@@ -43,7 +43,7 @@ public class BuiltinImputeFDTest extends AutomatedTestBase {
 	private final static int cols = 4;
 	private final static double epsilon = 0.0000000001;
 
-	private final static Types.ValueType[] schema = {Types.ValueType.BOOLEAN, Types.ValueType.STRING, Types.ValueType.STRING, Types.ValueType.FP64};
+	private final static Types.ValueType[] schema = {Types.ValueType.BITSET, Types.ValueType.STRING, Types.ValueType.STRING, Types.ValueType.FP64};
 
 	@Override
 	public void setUp() {
@@ -105,7 +105,7 @@ public class BuiltinImputeFDTest extends AutomatedTestBase {
 		long[] l = new long[rows];
 		String[] s1 = null, s2 = null;
 		for (int i = 0; i < rows; i++) {
-			data[i][1] = (b[i] = (Boolean) UtilFunctions.doubleToObject(Types.ValueType.BOOLEAN, data[i][1], false)) ? 1 : 0;
+			data[i][1] = (b[i] = (Boolean) UtilFunctions.doubleToObject(Types.ValueType.BITSET, data[i][1], false)) ? 1 : 0;
 			l[i] = (Long) UtilFunctions.doubleToObject(Types.ValueType.INT64, data[i][2], false);
 		}
 		switch (test)
@@ -133,7 +133,7 @@ public class BuiltinImputeFDTest extends AutomatedTestBase {
 		String[] s2 = {"Austria", "Austria", "Austria", "India", "India", "India","India", "Pakistan", "Pakistan", "Pakistan", "Austria"};
 		long[] l = new long[rows];
 		for (int i = 0; i < rows; i++) {
-			data[i][1] = (b[i] = (Boolean) UtilFunctions.doubleToObject(Types.ValueType.BOOLEAN, data[i][1], false)) ? 1 : 0;
+			data[i][1] = (b[i] = (Boolean) UtilFunctions.doubleToObject(Types.ValueType.BITSET, data[i][1], false)) ? 1 : 0;
 			l[i] = (Long) UtilFunctions.doubleToObject(Types.ValueType.INT64, data[i][2], false);
 		}
 		frame1.appendColumn(b);

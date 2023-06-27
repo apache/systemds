@@ -58,22 +58,22 @@ public class TransformCompressedTestMultiCol {
 
 			ValueType[] kPlusCols = new ValueType[1002];
 
-			Arrays.fill(kPlusCols, ValueType.BOOLEAN);
+			Arrays.fill(kPlusCols, ValueType.BITSET);
 
 			FrameBlock[] blocks = new FrameBlock[] {//
 				TestUtils.generateRandomFrameBlock(100, //
 					new ValueType[] {ValueType.UINT4, ValueType.UINT8, ValueType.UINT4}, 231), //
 				TestUtils.generateRandomFrameBlock(100, //
-					new ValueType[] {ValueType.BOOLEAN, ValueType.UINT8, ValueType.UINT4}, 231), //
-				new FrameBlock(new ValueType[] {ValueType.BOOLEAN, ValueType.INT32, ValueType.INT32}, 100), //
+					new ValueType[] {ValueType.BITSET, ValueType.UINT8, ValueType.UINT4}, 231), //
+				new FrameBlock(new ValueType[] {ValueType.BITSET, ValueType.INT32, ValueType.INT32}, 100), //
 				TestUtils.generateRandomFrameBlock(100, //
-					new ValueType[] {ValueType.UINT4, ValueType.BOOLEAN, ValueType.FP32}, 231, 0.2),
+					new ValueType[] {ValueType.UINT4, ValueType.BITSET, ValueType.FP32}, 231, 0.2),
 				TestUtils.generateRandomFrameBlock(432, //
-					new ValueType[] {ValueType.UINT4, ValueType.BOOLEAN, ValueType.FP32}, 231, 0.2),
+					new ValueType[] {ValueType.UINT4, ValueType.BITSET, ValueType.FP32}, 231, 0.2),
 				TestUtils.generateRandomFrameBlock(100, //
-					new ValueType[] {ValueType.UINT4, ValueType.BOOLEAN, ValueType.FP32}, 231, 0.9),
+					new ValueType[] {ValueType.UINT4, ValueType.BITSET, ValueType.FP32}, 231, 0.9),
 				TestUtils.generateRandomFrameBlock(100, //
-					new ValueType[] {ValueType.UINT4, ValueType.BOOLEAN, ValueType.FP32}, 231, 0.99),
+					new ValueType[] {ValueType.UINT4, ValueType.BITSET, ValueType.FP32}, 231, 0.99),
 
 				TestUtils.generateRandomFrameBlock(5, kPlusCols, 322),
 				TestUtils.generateRandomFrameBlock(1020, kPlusCols, 322),

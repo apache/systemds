@@ -1725,7 +1725,7 @@ public class DmlSyntacticValidator implements DmlListener {
 		}
 		else if( (shortVt && valueType.equals("bool"))
 			|| valueType.equals("boolean") || valueType.equals("Boolean")) {
-			dataId.setValueType(ValueType.BOOLEAN);
+			dataId.setValueType(ValueType.BITSET);
 		}
 		else if( (shortVt && valueType.equals("float") )
 			|| valueType.equals("double") || valueType.equals("Double")) {

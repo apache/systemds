@@ -48,8 +48,8 @@ public class ColumnEncoderSerializationTest extends AutomatedTestBase
 		Types.ValueType.STRING, Types.ValueType.STRING, Types.ValueType.STRING, Types.ValueType.STRING,
 		Types.ValueType.STRING, Types.ValueType.STRING, Types.ValueType.STRING, Types.ValueType.STRING};
 	private final static Types.ValueType[] schemaMixed = new Types.ValueType[]{
-		Types.ValueType.STRING, Types.ValueType.FP64, Types.ValueType.INT64, Types.ValueType.BOOLEAN,
-		Types.ValueType.STRING, Types.ValueType.FP64, Types.ValueType.INT64, Types.ValueType.BOOLEAN};
+		Types.ValueType.STRING, Types.ValueType.FP64, Types.ValueType.INT64, Types.ValueType.BITSET,
+		Types.ValueType.STRING, Types.ValueType.FP64, Types.ValueType.INT64, Types.ValueType.BITSET};
 
 
 	public enum TransformType {

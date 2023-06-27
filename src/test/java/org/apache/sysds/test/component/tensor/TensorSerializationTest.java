@@ -54,7 +54,7 @@ public class TensorSerializationTest
 	
 	@Test
 	public void testSerializeBasicTensorBoolean() {
-		testSerializeBasicTensor(ValueType.BOOLEAN);
+		testSerializeBasicTensor(ValueType.BITSET);
 	}
 
 	@Test
@@ -79,7 +79,7 @@ public class TensorSerializationTest
 
 	@Test
 	public void testSerializeDataTensorBoolean() {
-		testSerializeDataTensor(ValueType.BOOLEAN);
+		testSerializeDataTensor(ValueType.BITSET);
 	}
 
 	private static void testSerializeBasicTensor(ValueType vt) {

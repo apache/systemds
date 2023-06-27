@@ -29,7 +29,7 @@ public class BooleanObject extends ScalarObject
 	private final boolean _value;
 	
 	public BooleanObject(boolean val){
-		super(ValueType.BOOLEAN);
+		super(ValueType.BITSET);
 		_value = val;
 	}
 

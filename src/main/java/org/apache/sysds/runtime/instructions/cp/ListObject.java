@@ -468,7 +468,7 @@ public class ListObject extends Data implements Externalizable {
 					switch (valueType) {
 						case INT64:     so = new IntObject(Long.parseLong(value)); break;
 						case FP64:  	so = new DoubleObject(Double.parseDouble(value)); break;
-						case BOOLEAN: 	so = new BooleanObject(Boolean.parseBoolean(value)); break;
+						case BITSET: 	so = new BooleanObject(Boolean.parseBoolean(value)); break;
 						case STRING:  	so = new StringObject(value); break;
 						default:
 							throw new DMLRuntimeException("Unable to parse valuetype " + valueType);

@@ -208,7 +208,7 @@ public class DoubleArray extends Array<Double> {
 					}
 					break;
 				default:
-				case BOOLEAN:
+				case BITSET:
 					switch(c) {
 						case FP64:
 						case FP32:

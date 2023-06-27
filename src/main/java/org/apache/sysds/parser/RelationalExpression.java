@@ -160,7 +160,7 @@ public class RelationalExpression extends Expression
 		else if(isLeftFrame && isRightFrame) {
 			output.setDataType(DataType.FRAME);
 			output.setDimensions(_left.getOutput().getDim1(), _left.getOutput().getDim2());
-			output.setValueType(ValueType.BOOLEAN);
+			output.setValueType(ValueType.BITSET);
 		}
 		else if( isLeftFrame || isRightFrame ) {
 			raiseValidateError("Unsupported relational expression for mixed types "

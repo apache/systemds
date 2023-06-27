@@ -26,12 +26,12 @@ import org.apache.sysds.runtime.util.UtilFunctions;
 
 import java.util.Arrays;
 
-public class DenseBlockTrueBool extends DenseBlockDRB{
+public class DenseBlockBoolArray extends DenseBlockDRB{
 
     private static final long serialVersionUID = -6741205568083878338L;
     private boolean[] _data;
 
-    public DenseBlockTrueBool(int[] dims) {
+    public DenseBlockBoolArray(int[] dims) {
         super(dims);
         reset(_rlen, _odims, 0);
     }
@@ -41,7 +41,7 @@ public class DenseBlockTrueBool extends DenseBlockDRB{
         _data = new boolean[length];
     }
 
-    public DenseBlockTrueBool(int[] dims, boolean[] data) {
+    public DenseBlockBoolArray(int[] dims, boolean[] data) {
         super(dims);
         _data = data;
     }
@@ -53,7 +53,7 @@ public class DenseBlockTrueBool extends DenseBlockDRB{
 
     @Override
     public boolean isNumeric(ValueType vt) {
-        return ValueType.TRUE_BOOLEAN == vt;
+        return ValueType.BOOLEAN == vt;
     }
 
 

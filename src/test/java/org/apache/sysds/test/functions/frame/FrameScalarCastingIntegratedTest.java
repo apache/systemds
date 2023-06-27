@@ -55,7 +55,7 @@ public class FrameScalarCastingIntegratedTest extends AutomatedTestBase
 	
 	@Test
 	public void testFrameBooleanCP0() { 
-		runFrameScalarCastingTest(ValueType.BOOLEAN, ExecMode.SINGLE_NODE); 
+		runFrameScalarCastingTest(ValueType.BITSET, ExecMode.SINGLE_NODE);
 	}
 	
 	@Test
@@ -75,7 +75,7 @@ public class FrameScalarCastingIntegratedTest extends AutomatedTestBase
 	
 	@Test
 	public void testFrameBooleanCP1() { 
-		runFrameScalarCastingTest(ValueType.BOOLEAN, ExecMode.HYBRID); 
+		runFrameScalarCastingTest(ValueType.BITSET, ExecMode.HYBRID);
 	}
 	
 	@Test
@@ -95,7 +95,7 @@ public class FrameScalarCastingIntegratedTest extends AutomatedTestBase
 	
 	@Test
 	public void testFrameBooleanCP2() { 
-		runFrameScalarCastingTest(ValueType.BOOLEAN, ExecMode.HYBRID); 
+		runFrameScalarCastingTest(ValueType.BITSET, ExecMode.HYBRID);
 	}
 	
 	@Test
@@ -115,7 +115,7 @@ public class FrameScalarCastingIntegratedTest extends AutomatedTestBase
 	
 	@Test
 	public void testFrameBooleanSP() { 
-		runFrameScalarCastingTest(ValueType.BOOLEAN, ExecMode.SPARK); 
+		runFrameScalarCastingTest(ValueType.BITSET, ExecMode.SPARK);
 	}
 	
 	@Test
@@ -143,7 +143,7 @@ public class FrameScalarCastingIntegratedTest extends AutomatedTestBase
 			switch( vtIn ) {
 				case STRING: HDFSTool.writeStringToHDFS("foo", input("V")); break;
 				case INT64: HDFSTool.writeIntToHDFS(7, input("V")); break;
-				case BOOLEAN: HDFSTool.writeBooleanToHDFS(true, input("V")); break;
+				case BITSET: HDFSTool.writeBooleanToHDFS(true, input("V")); break;
 				case FP64: HDFSTool.writeDoubleToHDFS(7.3, input("V")); break;
 				default: throw new RuntimeException("Unsupported type: "+vtIn);
 			}

@@ -52,7 +52,7 @@ public class TensorBinaryBlockParallelTest {
 	
 	@Test
 	public void testReadWriteBinaryBlockParallelBasicTensorBoolean() {
-		testReadWriteBinaryBlockParallelBasicTensor(ValueType.BOOLEAN);
+		testReadWriteBinaryBlockParallelBasicTensor(ValueType.BITSET);
 	}
 	
 	@Test
@@ -88,7 +88,7 @@ public class TensorBinaryBlockParallelTest {
 	
 	@Test
 	public void testReadWriteBinaryBlockParallelDataTensorBoolean() {
-		testReadWriteBinaryBlockParallelDataTensor(ValueType.BOOLEAN);
+		testReadWriteBinaryBlockParallelDataTensor(ValueType.BITSET);
 	}
 	
 	@Test

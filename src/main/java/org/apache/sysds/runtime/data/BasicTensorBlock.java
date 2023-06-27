@@ -312,7 +312,7 @@ public class BasicTensorBlock implements Serializable {
 					return _denseBlock.getLong(ix);
 				case INT32:
 					return (int) _denseBlock.getLong(ix);
-				case BOOLEAN:
+				case BITSET:
 					return _denseBlock.get(ix) != 0;
 				case STRING:
 					return _denseBlock.getString(ix);

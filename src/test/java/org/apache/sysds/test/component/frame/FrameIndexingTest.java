@@ -39,7 +39,7 @@ public class FrameIndexingTest extends AutomatedTestBase
 	private final static int cu = 2;
 	
 	private final static ValueType[] schemaStrings = new ValueType[]{ValueType.STRING, ValueType.STRING, ValueType.STRING};	
-	private final static ValueType[] schemaMixed = new ValueType[]{ValueType.STRING, ValueType.FP64, ValueType.INT64, ValueType.BOOLEAN};	
+	private final static ValueType[] schemaMixed = new ValueType[]{ValueType.STRING, ValueType.FP64, ValueType.INT64, ValueType.BITSET};
 	
 	private enum IXType {
 		RIX,

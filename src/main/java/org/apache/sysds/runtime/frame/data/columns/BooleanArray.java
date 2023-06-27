@@ -185,12 +185,12 @@ public class BooleanArray extends ABooleanArray {
 
 	@Override
 	public ValueType getValueType() {
-		return ValueType.BOOLEAN;
+		return ValueType.BITSET;
 	}
 
 	@Override
 	public Pair<ValueType, Boolean> analyzeValueType() {
-		return new Pair<ValueType, Boolean>(ValueType.BOOLEAN, false);
+		return new Pair<ValueType, Boolean>(ValueType.BITSET, false);
 	}
 
 	@Override

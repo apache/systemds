@@ -40,8 +40,8 @@ public class FrameFromMatrixBlockTest {
 	public void toBoolean() {
 		try {
 			MatrixBlock mb = new MatrixBlock(10, 3, 1.0);
-			FrameBlock fb = FrameFromMatrixBlock.convertToFrameBlock(mb, ValueType.BOOLEAN, 1);
-			verifyEquivalence(mb, fb, ValueType.BOOLEAN);
+			FrameBlock fb = FrameFromMatrixBlock.convertToFrameBlock(mb, ValueType.BITSET, 1);
+			verifyEquivalence(mb, fb, ValueType.BITSET);
 		}
 		catch(Exception e) {
 			e.printStackTrace();
@@ -52,22 +52,22 @@ public class FrameFromMatrixBlockTest {
 	@Test
 	public void toBooleanEmpty() {
 		MatrixBlock mb = new MatrixBlock(10, 3, 0.0);
-		FrameBlock fb = FrameFromMatrixBlock.convertToFrameBlock(mb, ValueType.BOOLEAN, 1);
-		verifyEquivalence(mb, fb, ValueType.BOOLEAN);
+		FrameBlock fb = FrameFromMatrixBlock.convertToFrameBlock(mb, ValueType.BITSET, 1);
+		verifyEquivalence(mb, fb, ValueType.BITSET);
 	}
 
 	@Test
 	public void toBooleanSparse() {
 		MatrixBlock mb = TestUtils.generateTestMatrixBlock(100, 100, 1, 1, 0.2, 213);
-		FrameBlock fb = FrameFromMatrixBlock.convertToFrameBlock(mb, ValueType.BOOLEAN, 1);
-		verifyEquivalence(mb, fb, ValueType.BOOLEAN);
+		FrameBlock fb = FrameFromMatrixBlock.convertToFrameBlock(mb, ValueType.BITSET, 1);
+		verifyEquivalence(mb, fb, ValueType.BITSET);
 	}
 
 	@Test
 	public void toBooleanVerySparse() {
 		MatrixBlock mb = TestUtils.generateTestMatrixBlock(100, 100, 1, 1, 0.001, 213);
-		FrameBlock fb = FrameFromMatrixBlock.convertToFrameBlock(mb, ValueType.BOOLEAN, 1);
-		verifyEquivalence(mb, fb, ValueType.BOOLEAN);
+		FrameBlock fb = FrameFromMatrixBlock.convertToFrameBlock(mb, ValueType.BITSET, 1);
+		verifyEquivalence(mb, fb, ValueType.BITSET);
 	}
 
 	@Test
@@ -80,8 +80,8 @@ public class FrameFromMatrixBlockTest {
 	@Test
 	public void singleColShortcutToBoolean() {
 		MatrixBlock mb = TestUtils.generateTestMatrixBlock(100, 1, 1, 1, 0.2, 213);
-		FrameBlock fb = FrameFromMatrixBlock.convertToFrameBlock(mb, ValueType.BOOLEAN, 1);
-		verifyEquivalence(mb, fb, ValueType.BOOLEAN);
+		FrameBlock fb = FrameFromMatrixBlock.convertToFrameBlock(mb, ValueType.BITSET, 1);
+		verifyEquivalence(mb, fb, ValueType.BITSET);
 	}
 
 	@Test
@@ -101,8 +101,8 @@ public class FrameFromMatrixBlockTest {
 	@Test
 	public void toBooleanDenseParallel() {
 		MatrixBlock mb = TestUtils.generateTestMatrixBlock(1000, 100, 1, 1, 0.5, 213);
-		FrameBlock fb = FrameFromMatrixBlock.convertToFrameBlock(mb, ValueType.BOOLEAN, 4);
-		verifyEquivalence(mb, fb, ValueType.BOOLEAN);
+		FrameBlock fb = FrameFromMatrixBlock.convertToFrameBlock(mb, ValueType.BITSET, 4);
+		verifyEquivalence(mb, fb, ValueType.BITSET);
 	}
 
 	@Test
@@ -122,8 +122,8 @@ public class FrameFromMatrixBlockTest {
 	@Test
 	public void toBooleanDenseMultiBlock() {
 		MatrixBlock mb = mock(TestUtils.generateTestMatrixBlock(100, 10, 1, 1, 0.7, 213));
-		FrameBlock fb = FrameFromMatrixBlock.convertToFrameBlock(mb, ValueType.BOOLEAN, 1);
-		verifyEquivalence(mb, fb, ValueType.BOOLEAN);
+		FrameBlock fb = FrameFromMatrixBlock.convertToFrameBlock(mb, ValueType.BITSET, 1);
+		verifyEquivalence(mb, fb, ValueType.BITSET);
 	}
 
 	@Test

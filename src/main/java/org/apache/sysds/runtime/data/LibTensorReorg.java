@@ -96,8 +96,8 @@ public class LibTensorReorg {
 			//we don't need to create a copy, given our copy on write semantics.
 			//however, note that with update in-place this would be an invalid optimization
 			DenseBlock denseBlock = in._denseBlock;
-			if (denseBlock instanceof DenseBlockBool) {
-				DenseBlockBool specificBlock = (DenseBlockBool) denseBlock;
+			if (denseBlock instanceof DenseBlockBoolBitset) {
+				DenseBlockBoolBitset specificBlock = (DenseBlockBoolBitset) denseBlock;
 				out._denseBlock = DenseBlockFactory.createDenseBlock(specificBlock.getData(), dims);
 			} else if (denseBlock instanceof DenseBlockString) {
 				DenseBlockString specificBlock = (DenseBlockString) denseBlock;

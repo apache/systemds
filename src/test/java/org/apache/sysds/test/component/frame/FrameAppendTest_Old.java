@@ -35,7 +35,7 @@ public class FrameAppendTest_Old extends AutomatedTestBase {
 	private final static ValueType[] schemaStrings = new ValueType[] {ValueType.STRING, ValueType.STRING,
 		ValueType.STRING};
 	private final static ValueType[] schemaMixed = new ValueType[] {ValueType.STRING, ValueType.FP64, ValueType.INT64,
-		ValueType.BOOLEAN};
+		ValueType.BITSET};
 
 	@Override
 	public void setUp() {

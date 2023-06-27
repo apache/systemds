@@ -40,13 +40,13 @@ public class DenseBlockIncrementTest {
 
 	@Test
 	public void testIndexDenseBlock2BoolCountNonZero() {
-		DenseBlock db = getDenseBlock2(ValueType.BOOLEAN);
+		DenseBlock db = getDenseBlock2(ValueType.BITSET);
 		checkIncrement2(db);
 	}
 
 	@Test
 	public void testIndexDenseBlock2TrueBoolCountNonZero() {
-		DenseBlock db = getDenseBlock2(ValueType.TRUE_BOOLEAN);
+		DenseBlock db = getDenseBlock2(ValueType.BOOLEAN);
 		checkIncrement2(db);
 	}
 
@@ -85,7 +85,7 @@ public class DenseBlockIncrementTest {
 
 	@Test
 	public void testIndexDenseBlockLarge2BoolCountNonZero() {
-		DenseBlock db = getDenseBlockLarge2(ValueType.BOOLEAN);
+		DenseBlock db = getDenseBlockLarge2(ValueType.BITSET);
 		checkIncrement2(db);
 	}
 
@@ -121,8 +121,8 @@ public class DenseBlockIncrementTest {
 				return new DenseBlockLFP32(dims);
 			case FP64:
 				return new DenseBlockLFP64(dims);
-			case BOOLEAN:
-				return new DenseBlockLBool(dims);
+			case BITSET:
+				return new DenseBlockLBoolBitset(dims);
 			case INT32:
 				return new DenseBlockLInt32(dims);
 			case INT64:
@@ -151,7 +151,7 @@ public class DenseBlockIncrementTest {
 				db.incr(i, j, -1);
 			}
 		}
-		if (db instanceof DenseBlockBool || db instanceof DenseBlockLBool || db instanceof DenseBlockTrueBool) {
+		if (db instanceof DenseBlockBoolBitset || db instanceof DenseBlockLBoolBitset || db instanceof DenseBlockBoolArray) {
 			Assert.assertEquals(3 * 5, db.countNonZeros());
 		} else {
 			Assert.assertEquals(0, db.countNonZeros());
@@ -165,7 +165,7 @@ public class DenseBlockIncrementTest {
 		Assert.assertEquals(3 * 5, db.countNonZeros());
 		for (int i = 0; i < 3; i++) {
 			for (int j = 0; j < 5; j++) {
-				if (db instanceof DenseBlockBool || db instanceof DenseBlockLBool || db instanceof DenseBlockTrueBool) {
+				if (db instanceof DenseBlockBoolBitset || db instanceof DenseBlockLBoolBitset || db instanceof DenseBlockBoolArray) {
 					Assert.assertEquals(1, db.get(i, j), 0);
 				} else {
 					Assert.assertEquals(10, db.get(i, j), 0);

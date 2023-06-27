@@ -126,10 +126,10 @@ public class MLContextFrameTest extends MLContextTestBase {
 		List<String> listB = new ArrayList<>();
 		FrameMetadata fmA = null, fmB = null;
 		Script script = null;
-		ValueType[] schemaA = { ValueType.INT64, ValueType.STRING, ValueType.FP64, ValueType.BOOLEAN };
+		ValueType[] schemaA = { ValueType.INT64, ValueType.STRING, ValueType.FP64, ValueType.BITSET};
 		List<ValueType> lschemaA = Arrays.asList(schemaA);
 		FrameSchema fschemaA = new FrameSchema(lschemaA);
-		ValueType[] schemaB = { ValueType.STRING, ValueType.FP64, ValueType.BOOLEAN };
+		ValueType[] schemaB = { ValueType.STRING, ValueType.FP64, ValueType.BITSET};
 		List<ValueType> lschemaB = Arrays.asList(schemaB);
 		FrameSchema fschemaB = new FrameSchema(lschemaB);
 
@@ -225,7 +225,7 @@ public class MLContextFrameTest extends MLContextTestBase {
 			Assert.assertEquals(ValueType.INT64, lschemaOutA.get(0));
 			Assert.assertEquals(ValueType.STRING, lschemaOutA.get(1));
 			Assert.assertEquals(ValueType.FP64, lschemaOutA.get(2));
-			Assert.assertEquals(ValueType.BOOLEAN, lschemaOutA.get(3));
+			Assert.assertEquals(ValueType.BITSET, lschemaOutA.get(3));
 			
 			Assert.assertEquals(ValueType.STRING, lschemaOutC.get(0));
 			Assert.assertEquals(ValueType.FP64, lschemaOutC.get(1));

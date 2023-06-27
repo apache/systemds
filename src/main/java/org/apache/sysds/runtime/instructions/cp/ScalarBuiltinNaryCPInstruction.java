@@ -75,7 +75,7 @@ public class ScalarBuiltinNaryCPInstruction extends BuiltinNaryCPInstruction imp
 					case FP64:
 						objects[i - 1] = scalarObject.getDoubleValue();
 						break;
-					case BOOLEAN:
+					case BITSET:
 						objects[i - 1] = scalarObject.getBooleanValue();
 						break;
 					case STRING:

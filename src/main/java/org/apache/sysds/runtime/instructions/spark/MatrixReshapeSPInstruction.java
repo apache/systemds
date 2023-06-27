@@ -87,7 +87,7 @@ public class MatrixReshapeSPInstruction extends UnarySPInstruction
 		//get parameters
 		long rows = ec.getScalarInput(_opRows).getLongValue(); //save cast
 		long cols = ec.getScalarInput(_opCols).getLongValue(); //save cast
-		boolean byRow = ec.getScalarInput(_opByRow.getName(), ValueType.BOOLEAN, _opByRow.isLiteral()).getBooleanValue();
+		boolean byRow = ec.getScalarInput(_opByRow.getName(), ValueType.BITSET, _opByRow.isLiteral()).getBooleanValue();
 
 		DataCharacteristics mcIn = sec.getDataCharacteristics(input1.getName());
 		DataCharacteristics mcOut = sec.getDataCharacteristics(output.getName());

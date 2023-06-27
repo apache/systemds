@@ -40,13 +40,13 @@ public class DenseBlockSetRowTest {
 
 	@Test
 	public void testDenseBlock2BoolRow() {
-		DenseBlock db = getDenseBlock2(ValueType.BOOLEAN);
+		DenseBlock db = getDenseBlock2(ValueType.BITSET);
 		checkRow(setRow(db));
 	}
 
 	@Test
 	public void testDenseBlock2TrueBoolRow() {
-		DenseBlock db = getDenseBlock2(ValueType.TRUE_BOOLEAN);
+		DenseBlock db = getDenseBlock2(ValueType.BOOLEAN);
 		checkRow(setRow(db));
 	}
 
@@ -82,7 +82,7 @@ public class DenseBlockSetRowTest {
 
 	@Test
 	public void testDenseBlockLarge2BoolRow() {
-		DenseBlock db = getDenseBlockLarge2(ValueType.BOOLEAN);
+		DenseBlock db = getDenseBlockLarge2(ValueType.BITSET);
 		checkRow(setRow(db));
 	}
 
@@ -118,13 +118,13 @@ public class DenseBlockSetRowTest {
 
 	@Test
 	public void testDenseBlock3BoolRow() {
-		DenseBlock db = getDenseBlock3(ValueType.BOOLEAN);
+		DenseBlock db = getDenseBlock3(ValueType.BITSET);
 		checkRow(setRow(db));
 	}
 
 	@Test
 	public void testDenseBlock3TrueBoolRow() {
-		DenseBlock db = getDenseBlock3(ValueType.TRUE_BOOLEAN);
+		DenseBlock db = getDenseBlock3(ValueType.BOOLEAN);
 		checkRow(setRow(db));
 	}
 
@@ -160,7 +160,7 @@ public class DenseBlockSetRowTest {
 
 	@Test
 	public void testDenseBlockLarge3BoolRow() {
-		DenseBlock db = getDenseBlockLarge3(ValueType.BOOLEAN);
+		DenseBlock db = getDenseBlockLarge3(ValueType.BITSET);
 		checkRow(setRow(db));
 	}
 
@@ -197,8 +197,8 @@ public class DenseBlockSetRowTest {
 				return new DenseBlockLFP32(dims);
 			case FP64:
 				return new DenseBlockLFP64(dims);
-			case BOOLEAN:
-				return new DenseBlockLBool(dims);
+			case BITSET:
+				return new DenseBlockLBoolBitset(dims);
 			case INT32:
 				return new DenseBlockLInt32(dims);
 			case INT64:
@@ -217,8 +217,8 @@ public class DenseBlockSetRowTest {
 				return new DenseBlockLFP32(dims);
 			case FP64:
 				return new DenseBlockLFP64(dims);
-			case BOOLEAN:
-				return new DenseBlockLBool(dims);
+			case BITSET:
+				return new DenseBlockLBoolBitset(dims);
 			case INT32:
 				return new DenseBlockLInt32(dims);
 			case INT64:
@@ -250,7 +250,7 @@ public class DenseBlockSetRowTest {
 	}
 
 	private static void checkRow(DenseBlock db) {
-		boolean isBool = (db instanceof DenseBlockBool) || (db instanceof DenseBlockLBool) || (db instanceof DenseBlockTrueBool);
+		boolean isBool = (db instanceof DenseBlockBoolBitset) || (db instanceof DenseBlockLBoolBitset) || (db instanceof DenseBlockBoolArray);
 		if (db.numDims() == 3) {
 			int dim1 = 5, dim2 = 7;
 			for (int i = 0; i < dim1; i++)

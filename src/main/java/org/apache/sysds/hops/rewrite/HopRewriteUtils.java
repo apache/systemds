@@ -105,7 +105,7 @@ public class HopRewriteUtils {
 		switch( op.getValueType() ) {
 			case FP64:    return op.getDoubleValue() != 0; 
 			case INT64:   return op.getLongValue()   != 0;
-			case BOOLEAN: return op.getBooleanValue();
+			case BITSET: return op.getBooleanValue();
 			default: throw new HopsException("Invalid boolean value: "+op.getValueType());
 		}
 	}
@@ -115,7 +115,7 @@ public class HopRewriteUtils {
 			switch( op.getValueType() ) {
 				case FP64:    return op.getDoubleValue() != 0; 
 				case INT64:   return op.getLongValue()   != 0;
-				case BOOLEAN: return op.getBooleanValue();
+				case BITSET: return op.getBooleanValue();
 				default: throw new HopsException("Invalid boolean value: "+op.getValueType());
 			}
 		}
@@ -131,7 +131,7 @@ public class HopRewriteUtils {
 			case STRING:
 			case FP64:    return op.getDoubleValue(); 
 			case INT64:   return op.getLongValue();
-			case BOOLEAN: return op.getBooleanValue() ? 1 : 0;
+			case BITSET: return op.getBooleanValue() ? 1 : 0;
 			default: throw new HopsException("Invalid double value: "+op.getValueType());
 		}
 	}
@@ -140,7 +140,7 @@ public class HopRewriteUtils {
 		switch( op.getValueType() ) {
 			case FP64:  return op.getDoubleValue(); 
 			case INT64:     return op.getLongValue();
-			case BOOLEAN: return op.getBooleanValue() ? 1 : 0;
+			case BITSET: return op.getBooleanValue() ? 1 : 0;
 			default: return Double.MAX_VALUE;
 		}
 	}
@@ -160,7 +160,7 @@ public class HopRewriteUtils {
 			case FP64:  return UtilFunctions.toLong(op.getDoubleValue());
 			case STRING:
 			case INT64:     return op.getLongValue();
-			case BOOLEAN: return op.getBooleanValue() ? 1 : 0;
+			case BITSET: return op.getBooleanValue() ? 1 : 0;
 			default: throw new HopsException("Invalid int value: "+op.getValueType());
 		}
 	}
@@ -173,7 +173,7 @@ public class HopRewriteUtils {
 		switch( op.getValueType() ) {
 			case FP64:    return UtilFunctions.toLong(op.getDoubleValue());
 			case INT64:   return op.getLongValue();
-			case BOOLEAN: return op.getBooleanValue() ? 1 : 0;
+			case BITSET: return op.getBooleanValue() ? 1 : 0;
 			default: return Long.MAX_VALUE;
 		}
 	}
@@ -196,7 +196,7 @@ public class HopRewriteUtils {
 	public static boolean isLiteralOfValue( Hop hop, boolean val ) {
 		try {
 			return (hop instanceof LiteralOp 
-				&& (hop.getValueType()==ValueType.BOOLEAN)
+				&& (hop.getValueType()==ValueType.BITSET)
 				&& ((LiteralOp)hop).getBooleanValue()==val);
 		}
 		catch(HopsException ex) {
@@ -655,7 +655,7 @@ public class HopRewriteUtils {
 			mainInput.getValueType(), op, input1, input2);
 		//cleanup value type for relational operations
 		if( bop.isPPredOperation() && bop.getDataType().isScalar() )
-			bop.setValueType(ValueType.BOOLEAN);
+			bop.setValueType(ValueType.BITSET);
 		bop.setOuterVectorOperation(outer);
 		bop.setBlocksize(mainInput.getBlocksize());
 		copyLineNumbers(mainInput, bop);

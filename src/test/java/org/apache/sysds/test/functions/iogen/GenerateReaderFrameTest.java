@@ -50,9 +50,9 @@ public abstract class GenerateReaderFrameTest extends AutomatedTestBase {
 		Types.ValueType.INT64,
 		Types.ValueType.FP32,
 		Types.ValueType.FP64,
-		Types.ValueType.BOOLEAN};
+		Types.ValueType.BITSET};
 
-	protected Types.ValueType[] types1= { Types.ValueType.BOOLEAN};
+	protected Types.ValueType[] types1= { Types.ValueType.BITSET};
 
 	protected abstract String getTestName();
 
@@ -78,7 +78,7 @@ public abstract class GenerateReaderFrameTest extends AutomatedTestBase {
 	protected String defaultValue(Types.ValueType vt){
 		switch(vt){
 			case STRING: return "";
-			case BOOLEAN: return null;
+			case BITSET: return null;
 			case FP32:
 			case FP64:
 			case INT32:
@@ -117,7 +117,7 @@ public abstract class GenerateReaderFrameTest extends AutomatedTestBase {
 					case INT64: o = UtilFunctions.objectToObject(type,(long)randomData[i][0]); break;
 					case FP32: o = UtilFunctions.objectToObject(type,(float)randomData[i][0]); break;
 					case FP64: o = UtilFunctions.objectToObject(type,randomData[i][0]); break;
-					case BOOLEAN: Boolean b= randomData[i][0] >0 ? true: null; o = UtilFunctions.objectToObject(type, b); break;
+					case BITSET: Boolean b= randomData[i][0] >0 ? true: null; o = UtilFunctions.objectToObject(type, b); break;
 				}
 				String s = UtilFunctions.objectToString(o);
 				data[i][colIndex] = s;
@@ -148,7 +148,7 @@ public abstract class GenerateReaderFrameTest extends AutomatedTestBase {
 
 			if(types[rnt] == Types.ValueType.STRING)
 				generateRandomString(nrows,100,naStrings,sparsity,data,i);
-			else if(types[rnt].isNumeric() || types[rnt] == Types.ValueType.BOOLEAN)
+			else if(types[rnt].isNumeric() || types[rnt] == Types.ValueType.BITSET)
 				generateRandomNumeric(nrows, types[rnt],min,max,naStrings, sparsity,data,i);
 			}
 	}

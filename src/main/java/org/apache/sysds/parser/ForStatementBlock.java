@@ -386,7 +386,7 @@ public class ForStatementBlock extends StatementBlock
 				case INT64:
 					ret = new IntIdentifier((IntIdentifier) constValue, expr);
 					break;
-				case BOOLEAN:
+				case BITSET:
 					ret = new IntIdentifier(
 							new BooleanObject(((BooleanIdentifier) constValue).getValue()).getLongValue(), expr);
 					break;

@@ -42,7 +42,7 @@ public class TypeOfTest extends AutomatedTestBase {
 	private static final String TEST_CLASS_DIR = TEST_DIR + TypeOfTest.class.getSimpleName() + "/";
 
 	private final static Types.ValueType[] schemaStrings = new Types.ValueType[]{Types.ValueType.STRING, Types.ValueType.STRING, Types.ValueType.STRING};
-	private final static Types.ValueType[] schemaMixed = new Types.ValueType[]{Types.ValueType.STRING, Types.ValueType.FP64, Types.ValueType.INT64, Types.ValueType.BOOLEAN};
+	private final static Types.ValueType[] schemaMixed = new Types.ValueType[]{Types.ValueType.STRING, Types.ValueType.FP64, Types.ValueType.INT64, Types.ValueType.BITSET};
 
 	private final static int rows = 50;
 

@@ -202,7 +202,7 @@ public abstract class Identifier extends Expression
 	
 	public void setBooleanProperties(){
 		_dataType = DataType.SCALAR;
-		_valueType = ValueType.BOOLEAN;
+		_valueType = ValueType.BITSET;
 		_dim1 = 0;
 		_dim2 = 0;
 		_blocksize = 0;
@@ -222,7 +222,7 @@ public abstract class Identifier extends Expression
 	
 	
 	public boolean isScalarBoolean(){
-		return (_valueType == ValueType.BOOLEAN) && (_dataType == DataType.SCALAR);
+		return (_valueType == ValueType.BITSET) && (_dataType == DataType.SCALAR);
 	}
 	
 	public boolean dimsKnown(){

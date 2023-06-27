@@ -72,7 +72,7 @@ public class UnaryScalarCPInstruction extends UnaryCPInstruction {
 			UnaryOperator dop = (UnaryOperator) _optr;
 			if ( so instanceof IntObject && output.getValueType() == ValueType.INT64 )
 				sores = new IntObject((long)dop.fn.execute(so.getLongValue()));
-			else if( so instanceof BooleanObject && output.getValueType() == ValueType.BOOLEAN )
+			else if( so instanceof BooleanObject && output.getValueType() == ValueType.BITSET)
 				sores = new BooleanObject(dop.fn.execute(so.getBooleanValue()));
 			else
 				sores = new DoubleObject(dop.fn.execute(so.getDoubleValue()));

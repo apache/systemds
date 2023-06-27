@@ -85,7 +85,7 @@ public class FrameFromMatrixBlock {
 	private ValueType[] getSchema(MatrixBlock mb) {
 		final int nCol = mb.getNumColumns();
 		final int nRow = mb.getNumRows();
-		ValueType[] schema = UtilFunctions.nCopies(nCol, ValueType.BOOLEAN);
+		ValueType[] schema = UtilFunctions.nCopies(nCol, ValueType.BITSET);
 		for(int r = 0; r < nRow; r++)
 			for(int c = 0; c < nCol; c++)
 				schema[c] = FrameUtil.isType(mb.quickGetValue(r, c), schema[c]);

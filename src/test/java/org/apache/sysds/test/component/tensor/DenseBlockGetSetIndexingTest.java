@@ -42,13 +42,13 @@ public class DenseBlockGetSetIndexingTest
 	
 	@Test
 	public void testIndexDenseBlock2BoolSetGetCell() {
-		DenseBlock db = getDenseBlock2(ValueType.BOOLEAN);
+		DenseBlock db = getDenseBlock2(ValueType.BITSET);
 		checkSequence(setSequence(db));
 	}
 
 	@Test
 	public void testIndexDenseBlock2TrueBoolSetGetCell() {
-		DenseBlock db = getDenseBlock2(ValueType.TRUE_BOOLEAN);
+		DenseBlock db = getDenseBlock2(ValueType.BOOLEAN);
 		checkSequence(setSequence(db));
 	}
 	
@@ -84,7 +84,7 @@ public class DenseBlockGetSetIndexingTest
 
 	@Test
 	public void testIndexDenseBlockLarge2BoolSetGetCell() {
-		DenseBlock db = getDenseBlockLarge2(ValueType.BOOLEAN);
+		DenseBlock db = getDenseBlockLarge2(ValueType.BITSET);
 		checkSequence(setSequence(db));
 	}
 
@@ -120,13 +120,13 @@ public class DenseBlockGetSetIndexingTest
 	
 	@Test
 	public void testIndexDenseBlock3BoolSetGetCell() {
-		DenseBlock db = getDenseBlock3(ValueType.BOOLEAN);
+		DenseBlock db = getDenseBlock3(ValueType.BITSET);
 		checkSequence(setSequence(db));
 	}
 
 	@Test
 	public void testIndexDenseBlock3TrueBoolSetGetCell() {
-		DenseBlock db = getDenseBlock3(ValueType.TRUE_BOOLEAN);
+		DenseBlock db = getDenseBlock3(ValueType.BOOLEAN);
 		checkSequence(setSequence(db));
 	}
 	
@@ -162,7 +162,7 @@ public class DenseBlockGetSetIndexingTest
 
 	@Test
 	public void testIndexDenseBlockLarge3BoolSetGetCell() {
-		DenseBlock db = getDenseBlockLarge3(ValueType.BOOLEAN);
+		DenseBlock db = getDenseBlockLarge3(ValueType.BITSET);
 		checkSequence(setSequence(db));
 	}
 
@@ -197,7 +197,7 @@ public class DenseBlockGetSetIndexingTest
 		switch (vt) {
 			case FP32: return new DenseBlockLFP32(dims);
 			case FP64: return new DenseBlockLFP64(dims);
-			case BOOLEAN: return new DenseBlockLBool(dims);
+			case BITSET: return new DenseBlockLBoolBitset(dims);
 			case INT32: return new DenseBlockLInt32(dims);
 			case INT64: return new DenseBlockLInt64(dims);
 			case STRING: return new DenseBlockLString(dims);
@@ -210,7 +210,7 @@ public class DenseBlockGetSetIndexingTest
 		switch (vt) {
 			case FP32: return new DenseBlockLFP32(dims);
 			case FP64: return new DenseBlockLFP64(dims);
-			case BOOLEAN: return new DenseBlockLBool(dims);
+			case BITSET: return new DenseBlockLBoolBitset(dims);
 			case INT32: return new DenseBlockLInt32(dims);
 			case INT64: return new DenseBlockLInt64(dims);
 			case STRING: return new DenseBlockLString(dims);
@@ -238,7 +238,7 @@ public class DenseBlockGetSetIndexingTest
 	}
 	
 	private static void checkSequence(DenseBlock db) {
-		boolean isBool = (db instanceof DenseBlockBool) || (db instanceof DenseBlockLBool) || (db instanceof DenseBlockTrueBool);
+		boolean isBool = (db instanceof DenseBlockBoolBitset) || (db instanceof DenseBlockLBoolBitset) || (db instanceof DenseBlockBoolArray);
 		if( db.numDims() == 3 ) {
 			int dim12 = 5*7;
 			int dim1 = 5, dim2 = 7;

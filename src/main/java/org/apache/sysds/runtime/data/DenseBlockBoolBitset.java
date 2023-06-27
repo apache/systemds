@@ -27,13 +27,13 @@ import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.runtime.util.UtilFunctions;
 
-public class DenseBlockBool extends DenseBlockDRB
+public class DenseBlockBoolBitset extends DenseBlockDRB
 {
 	private static final long serialVersionUID = -2228057308997136969L;
 	
 	private BitSet _data;
 
-	public DenseBlockBool(int[] dims) {
+	public DenseBlockBoolBitset(int[] dims) {
 		super(dims);
 		reset(_rlen, _odims, 0);
 	}
@@ -43,12 +43,12 @@ public class DenseBlockBool extends DenseBlockDRB
 		_data = new BitSet(length);
 	}
 
-	public DenseBlockBool(int[] dims, BitSet data) {
+	public DenseBlockBoolBitset(int[] dims, BitSet data) {
 		super(dims);
 		_data = data;
 	}
 
-	public DenseBlockBool(int[] dims, boolean[] data) {
+	public DenseBlockBoolBitset(int[] dims, boolean[] data) {
 		super(dims);
 		_data = new BitSet(data.length);
 		for(int i=0; i<data.length; i++)
@@ -67,7 +67,7 @@ public class DenseBlockBool extends DenseBlockDRB
 	
 	@Override
 	public boolean isNumeric(ValueType vt) {
-		return ValueType.BOOLEAN == vt;
+		return ValueType.BITSET == vt;
 	}
 	
 	@Override

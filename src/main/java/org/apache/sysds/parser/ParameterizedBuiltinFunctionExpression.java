@@ -848,7 +848,7 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 		}
 		
 		Expression empty = getVarParam("empty.return");
-		if( empty!=null && (!empty.getOutput().getDataType().isScalar() || empty.getOutput().getValueType() != ValueType.BOOLEAN) ){
+		if( empty!=null && (!empty.getOutput().getDataType().isScalar() || empty.getOutput().getValueType() != ValueType.BITSET) ){
 			raiseValidateError("Boolean parameter 'empty.return' is of type "+empty.getOutput().getDataType()
 				+"["+empty.getOutput().getValueType()+"].", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
 		}
@@ -987,7 +987,7 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 	}
 	
 	private void checkOptionalBooleanParam(Expression param, String name, boolean conditional) {
-		if( param!=null && (!param.getOutput().getDataType().isScalar() || param.getOutput().getValueType() != ValueType.BOOLEAN) ){
+		if( param!=null && (!param.getOutput().getDataType().isScalar() || param.getOutput().getValueType() != ValueType.BITSET) ){
 			raiseValidateError("Boolean parameter '"+name+"' is of type "+param.getOutput().getDataType()
 				+"["+param.getOutput().getValueType()+"].", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
 		}

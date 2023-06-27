@@ -40,8 +40,8 @@ public class FrameEqualTest extends AutomatedTestBase {
 	private static final String TEST_CLASS_DIR = TEST_DIR + FrameEqualTest.class.getSimpleName() + "/";
 
 	private final static int rows = 100;
-	private final static Types.ValueType[] schemaStrings1 = {Types.ValueType.FP64, Types.ValueType.BOOLEAN, Types.ValueType.INT64, Types.ValueType.STRING, Types.ValueType.STRING, Types.ValueType.FP64};
-	private final static Types.ValueType[] schemaStrings2 = {Types.ValueType.INT64, Types.ValueType.BOOLEAN, Types.ValueType.FP32, Types.ValueType.FP64, Types.ValueType.STRING, Types.ValueType.FP32};
+	private final static Types.ValueType[] schemaStrings1 = {Types.ValueType.FP64, Types.ValueType.BITSET, Types.ValueType.INT64, Types.ValueType.STRING, Types.ValueType.STRING, Types.ValueType.FP64};
+	private final static Types.ValueType[] schemaStrings2 = {Types.ValueType.INT64, Types.ValueType.BITSET, Types.ValueType.FP32, Types.ValueType.FP64, Types.ValueType.STRING, Types.ValueType.FP32};
 
 	public enum TestType {
 		GREATER, LESS, EQUALS, NOT_EQUALS, GREATER_EQUALS, LESS_EQUALS,

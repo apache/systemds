@@ -52,7 +52,7 @@ public class TensorTextCellTest {
 
 	@Test
 	public void testReadWriteTextCellBasicTensorBoolean() {
-		testReadWriteTextCellBasicTensor(ValueType.BOOLEAN);
+		testReadWriteTextCellBasicTensor(ValueType.BITSET);
 	}
 
 	@Test
@@ -92,7 +92,7 @@ public class TensorTextCellTest {
 
 	@Test
 	public void testReadWriteTextCellDataTensorBoolean() {
-		testReadWriteTextCellDataTensor(ValueType.BOOLEAN);
+		testReadWriteTextCellDataTensor(ValueType.BITSET);
 	}
 
 	@Test

@@ -430,7 +430,7 @@ public class DataGenCPInstruction extends UnaryCPInstruction {
 		if(minValueStr.equals(maxValueStr)) {
 			if(minMaxAreDoubles)
 				outT.set(minValue);
-			else if(output.getValueType() == ValueType.STRING || output.getValueType() == ValueType.BOOLEAN)
+			else if(output.getValueType() == ValueType.STRING || output.getValueType() == ValueType.BITSET)
 				outT.set(minValueStr);
 			else
 				throw new DMLRuntimeException("Rand instruction cannot fill numeric tensor with non numeric elements.");

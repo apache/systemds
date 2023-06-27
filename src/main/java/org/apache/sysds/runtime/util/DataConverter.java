@@ -1124,7 +1124,7 @@ public class DataConverter {
 			case INT64:
 				sb.append(tb.get(ix));
 				break;
-			case BOOLEAN:
+			case BITSET:
 				sb.append(((Boolean) tb.get(ix)).toString().toUpperCase());
 				break;
 			case STRING:
@@ -1190,7 +1190,7 @@ public class DataConverter {
 					sb.append(String.valueOf(row[j]));
 				else if( fb.getSchema()[j] == ValueType.FP64 )
 					sb.append(dfFormat(df, (Double)row[j]));
-				else if( fb.getSchema()[j] == ValueType.BOOLEAN )
+				else if( fb.getSchema()[j] == ValueType.BITSET)
 					sb.append(new BooleanObject((Boolean)row[j])
 						.getLanguageSpecificStringValue());
 				else

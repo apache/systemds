@@ -156,7 +156,7 @@ public class GenerateRandomFrame extends AutomatedTestBase {
 					row1.append(separator).append(c + firstIndex).append(indexSeparator).append(data[r][c]);
 				}
 				else {
-					if(schema[c].isNumeric() || schema[c] == Types.ValueType.BOOLEAN){
+					if(schema[c].isNumeric() || schema[c] == Types.ValueType.BITSET){
 						dataLibSVM[indexRow][c] = "0";
 					}
 					else if(schema[c] == Types.ValueType.STRING)
@@ -172,7 +172,7 @@ public class GenerateRandomFrame extends AutomatedTestBase {
 					row2.append(separator).append(c + firstIndex).append(indexSeparator).append(data[r][c]);
 				}
 				else {
-					if(schema[c].isNumeric() || schema[c] == Types.ValueType.BOOLEAN){
+					if(schema[c].isNumeric() || schema[c] == Types.ValueType.BITSET){
 						dataLibSVM[indexRow][c] = "0";
 					}
 					else if(schema[c] == Types.ValueType.STRING)

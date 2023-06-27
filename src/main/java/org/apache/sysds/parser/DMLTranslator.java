@@ -1439,7 +1439,7 @@ public class DMLTranslator
 		
 		DataIdentifier target = new DataIdentifier(Expression.getTempName());
 		target.setDataType(DataType.SCALAR);
-		target.setValueType(ValueType.BOOLEAN);
+		target.setValueType(ValueType.BITSET);
 		target.setParseInfo(passedSB);
 		Hop predicateHops = null;
 		Expression predicate = cp.getPredicate();
@@ -1806,12 +1806,12 @@ public class DMLTranslator
 			}
 			else if(left.getDataType() == DataType.FRAME || right.getDataType() == DataType.FRAME) {
 				target.setDataType(DataType.FRAME);
-				target.setValueType(ValueType.BOOLEAN);
+				target.setValueType(ValueType.BITSET);
 			}
 			else {
 				// Added to support scalar relational comparison
 				target.setDataType(DataType.SCALAR);
-				target.setValueType(ValueType.BOOLEAN);
+				target.setValueType(ValueType.BITSET);
 			}
 		}
 		
@@ -1859,7 +1859,7 @@ public class DMLTranslator
 		if (target == null)
 			target = createTarget(source);
 		if( target.getDataType().isScalar() )
-			target.setValueType(ValueType.BOOLEAN);
+			target.setValueType(ValueType.BITSET);
 		
 		if (source.getRight() == null) {
 			Hop currUop = new UnaryOp(target.getName(), target.getDataType(), target.getValueType(), OpOp1.NOT, left);
@@ -2561,7 +2561,7 @@ public class DMLTranslator
 			currBuiltinOp = new UnaryOp(target.getName(), target.getDataType(), ValueType.INT64, OpOp1.CAST_AS_INT, expr);
 			break;
 		case CAST_AS_BOOLEAN:
-			currBuiltinOp = new UnaryOp(target.getName(), target.getDataType(), ValueType.BOOLEAN, OpOp1.CAST_AS_BOOLEAN, expr);
+			currBuiltinOp = new UnaryOp(target.getName(), target.getDataType(), ValueType.BITSET, OpOp1.CAST_AS_BOOLEAN, expr);
 			break;
 		case LOCAL:
 			currBuiltinOp = new UnaryOp(target.getName(), target.getDataType(), ValueType.FP64, OpOp1.LOCAL, expr);
@@ -2708,7 +2708,7 @@ public class DMLTranslator
 			else if ( in.length == 3 )
 			{
 				// check if the third argument is "replace" or "seed"
-				if ( expr3.getValueType() == ValueType.BOOLEAN ) 
+				if ( expr3.getValueType() == ValueType.BITSET)
 				{
 					tmpparams.put(DataExpression.RAND_PDF, expr3);
 					tmpparams.put(DataExpression.RAND_SEED, new LiteralOp(DataGenOp.UNSPECIFIED_SEED) );

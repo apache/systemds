@@ -616,7 +616,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 				case INT32:
 				case UINT8:
 				case UINT4:
-				case BOOLEAN:
+				case BITSET:
 					output.setValueType(ValueType.INT64);
 					break;
 				case UNKNOWN:
@@ -779,7 +779,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			//output.setDataType(id.getDataType()); //TODO whenever we support multiple matrix value types, currently noop.
 			output.setDimensions(0, 0);
 			output.setBlocksize(0);
-			output.setValueType(ValueType.BOOLEAN);
+			output.setValueType(ValueType.BITSET);
 			break;
 			
 		case IFELSE:
@@ -966,7 +966,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			output.setDataType(DataType.SCALAR);
 			output.setDimensions(0, 0);
 			output.setBlocksize(0);
-			output.setValueType(ValueType.BOOLEAN);
+			output.setValueType(ValueType.BITSET);
 			break;
 		
 		// Contingency tables
@@ -1270,20 +1270,20 @@ public class BuiltinFunctionExpression extends DataIdentifier
 				checkNumParameters(4);
 				if (in[3].getOutput().getValueType() != ValueType.INT64) 
 					throw new LanguageException("Fourth argument, seed, to sample() must be an integer value.");
-				if (in[2].getOutput().getValueType() != ValueType.BOOLEAN ) 
+				if (in[2].getOutput().getValueType() != ValueType.BITSET)
 					throw new LanguageException("Third argument to sample() must either denote replacement policy (boolean) or seed (integer).");
 			}
 			else if(in.length == 3) 
 			{
 				checkNumParameters(3);
-				if (in[2].getOutput().getValueType() != ValueType.BOOLEAN 
+				if (in[2].getOutput().getValueType() != ValueType.BITSET
 						&& in[2].getOutput().getValueType() != ValueType.INT64 ) 
 					throw new LanguageException("Third argument to sample() must either denote replacement policy (boolean) or seed (integer).");
 			}
 			
 			if ( check && in.length >= 3 
 					&& isConstant(in[2]) 
-					&& in[2].getOutput().getValueType() == ValueType.BOOLEAN  
+					&& in[2].getOutput().getValueType() == ValueType.BITSET
 					&& !((BooleanIdentifier)in[2]).getValue() )
 				throw new LanguageException("Sample (size=" + ((ConstIdentifier)in[0]).getLongValue() 
 						+ ") larger than population (size=" + ((ConstIdentifier)in[1]).getLongValue() 
@@ -2030,7 +2030,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 				return Builtins.CAST_AS_DOUBLE;
 			case INT64:
 				return Builtins.CAST_AS_INT;
-			case BOOLEAN:
+			case BITSET:
 				return Builtins.CAST_AS_BOOLEAN;
 			default:
 				throw new LanguageException("No cast for value type "+vt);

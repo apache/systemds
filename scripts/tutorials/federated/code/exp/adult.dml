@@ -1,0 +1,46 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+# create federated matrix
+N = 32561
+M = 15
+data = federated(type="frame",
+    addresses=list("localhost:8001/./data/adult.data",
+                   "localhost:8002/./data/adult.data",
+                   "localhost:8003/./data/adult.data"),
+    ranges=   list(list(0,0),list(N/3,M),
+                   list(N/3,0),list((N/3)*2,M),
+                   list((N/3)*2,0),list(N, M))
+)
+
+# transform encode
+jspec1 = read("code/exp/adult_spec1.json", data_type="scalar", value_type="string")
+[X0, M] = transformencode(target=data, spec=jspec1)
+
+# model training
+y = X0[,ncol(X0)]
+X = X0[,2:(ncol(X0)-1)]
+B = multiLogReg(X=X, Y=y, icpt=2, verbose=TRUE)
+
+# Predicting
+[m, pred, acc] = multiLogRegPredict(X=X, B=B, Y=y, verbose=TRUE)
+[co, avg] = confusionMatrix(P=pred, Y=y)
+print(toString(avg))

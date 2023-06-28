@@ -30,12 +30,14 @@ export PATH="$SYSTEMDS_ROOT/bin:$PATH"
 ## Logging variables:
 # Set logging properties for the system
 # Off disable the logging
-# export LOG4JPROP='conf/log4j-off.properties'
-export LOG4JPROP='conf/log4j-debug.properties'
+export LOG4JPROP='conf/log4j-off.properties'
+# export LOG4JPROP='conf/log4j-debug.properties'
 # export LOG4JPROP='conf/log4j-info.properties'
 
 # Set the system to start up on quiet mode, to not print excessively on every execution.
 export SYSDS_QUIET=1
+
+# export COMMAND='java -Xmx8g -Xms8g -cp "./lib/*;./SystemDS_old.jar" org.apache.sysds.api.DMLScript -f'
 
 # Set the addresses of your federated workers.
 address=("so007" "so004" "so005" "so006")

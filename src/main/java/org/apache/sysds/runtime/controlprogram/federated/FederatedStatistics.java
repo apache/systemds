@@ -71,7 +71,6 @@ import org.apache.sysds.utils.Statistics;
 public class FederatedStatistics {
 	protected static Logger LOG = Logger.getLogger(FederatedStatistics.class);
 
-
 	// stats of the federated worker on the coordinator site
 	private static Set<Pair<String, Integer>> _fedWorkerAddresses = new HashSet<>();
 	private static final LongAdder readCount = new LongAdder();
@@ -92,7 +91,7 @@ public class FederatedStatistics {
 
 	// stats on the federated worker itself
 	private static final LongAdder fedLookupTableGetCount = new LongAdder();
-	private static final LongAdder fedLookupTableGetTime = new LongAdder(); // in milli sec
+	private static final LongAdder fedLookupTableGetTime = new LongAdder(); // msec
 	private static final LongAdder fedLookupTableEntryCount = new LongAdder();
 	private static final LongAdder fedReuseReadHitCount = new LongAdder();
 	private static final LongAdder fedReuseReadBytesCount = new LongAdder();
@@ -727,6 +726,20 @@ public class FederatedStatistics {
 		protected static class CacheStatsCollection implements Serializable {
 			private static final long serialVersionUID = 1L;
 
+			private long memHits = 0;
+			private long linHits = 0;
+			private long fsBuffHits = 0;
+			private long fsHits = 0;
+			private long hdfsHits = 0;
+			private long linWrites = 0;
+			private long fsBuffWrites = 0;
+			private long fsWrites = 0;
+			private long hdfsWrites = 0;
+			private double acqRTime = 0;
+			private double acqMTime = 0;
+			private double rlsTime = 0;
+			private double expTime = 0;
+
 			private void collectStats() {
 				memHits = CacheStatistics.getMemHits();
 				linHits = CacheStatistics.getLinHits();
@@ -737,10 +750,10 @@ public class FederatedStatistics {
 				fsBuffWrites = CacheStatistics.getFSBuffWrites();
 				fsWrites = CacheStatistics.getFSWrites();
 				hdfsWrites = CacheStatistics.getHDFSWrites();
-				acqRTime = ((double)CacheStatistics.getAcquireRTime()) / 1000000000; // in sec
-				acqMTime = ((double)CacheStatistics.getAcquireMTime()) / 1000000000; // in sec
-				rlsTime = ((double)CacheStatistics.getReleaseTime()) / 1000000000; // in sec
-				expTime = ((double)CacheStatistics.getExportTime()) / 1000000000; // in sec
+				acqRTime = ((double) CacheStatistics.getAcquireRTime()) / 1000000000; // in sec
+				acqMTime = ((double) CacheStatistics.getAcquireMTime()) / 1000000000; // in sec
+				rlsTime = ((double) CacheStatistics.getReleaseTime()) / 1000000000; // in sec
+				expTime = ((double) CacheStatistics.getExportTime()) / 1000000000; // in sec
 			}
 
 			private void aggregate(CacheStatsCollection that) {
@@ -759,19 +772,25 @@ public class FederatedStatistics {
 				expTime += that.expTime;
 			}
 
-			private long memHits = 0;
-			private long linHits = 0;
-			private long fsBuffHits = 0;
-			private long fsHits = 0;
-			private long hdfsHits = 0;
-			private long linWrites = 0;
-			private long fsBuffWrites = 0;
-			private long fsWrites = 0;
-			private long hdfsWrites = 0;
-			private double acqRTime = 0;
-			private double acqMTime = 0;
-			private double rlsTime = 0;
-			private double expTime = 0;
+			@Override
+			public String toString() {
+				StringBuilder sb = new StringBuilder();
+				sb.append("CacheStatsCollection:");
+				sb.append("\tmemHits:" + memHits);
+				sb.append("\tlinHits:" + linHits);
+				sb.append("\tfsBuffHits:" + fsBuffHits);
+				sb.append("\tfsHits:" + fsHits);
+				sb.append("\thdfsHits:" + hdfsHits);
+				sb.append("\tlinWrites:" + linWrites);
+				sb.append("\tfsBuffWrites:" + fsBuffWrites);
+				sb.append("\tfsWrites:" + fsWrites);
+				sb.append("\thdfsWrites:" + hdfsWrites);
+				sb.append("\tacqRTime:" + acqRTime);
+				sb.append("\tacqMTime:" + acqMTime);
+				sb.append("\trlsTime:" + rlsTime);
+				sb.append("\texpTime:" + expTime);
+				return sb.toString();
+			}
 		}
 
 		protected static class GCStatsCollection implements Serializable {
@@ -793,6 +812,16 @@ public class FederatedStatistics {
 
 		protected static class LineageCacheStatsCollection implements Serializable {
 			private static final long serialVersionUID = 1L;
+
+			private long numHitsMem = 0;
+			private long numHitsFS = 0;
+			private long numHitsDel = 0;
+			private long numHitsInst = 0;
+			private long numHitsSB = 0;
+			private long numHitsFunc = 0;
+			private long numWritesMem = 0;
+			private long numWritesFS = 0;
+			private long numMemDel = 0;
 
 			private void collectStats() {
 				numHitsMem = LineageCacheStatistics.getMemHits();
@@ -818,19 +847,34 @@ public class FederatedStatistics {
 				numMemDel += that.numMemDel;
 			}
 
-			private long numHitsMem = 0;
-			private long numHitsFS = 0;
-			private long numHitsDel = 0;
-			private long numHitsInst = 0;
-			private long numHitsSB = 0;
-			private long numHitsFunc = 0;
-			private long numWritesMem = 0;
-			private long numWritesFS = 0;
-			private long numMemDel = 0;
+			@Override
+			public String toString() {
+				StringBuilder sb = new StringBuilder();
+				sb.append("numHitsMem: " + numHitsMem);
+				sb.append("\tnumHitsFS: " + numHitsFS);
+				sb.append("\tnumHitsDel: " + numHitsDel);
+				sb.append("\tnumHitsInst: " + numHitsInst);
+				sb.append("\tnumHitsSB: " + numHitsSB);
+				sb.append("\tnumHitsFunc: " + numHitsFunc);
+				sb.append("\tnumWritesMem: " + numWritesMem);
+				sb.append("\tnumWritesFS: " + numWritesFS);
+				sb.append("\tnumMemDel: " + numMemDel);
+				return sb.toString();
+			}
 		}
 
 		protected static class MultiTenantStatsCollection implements Serializable {
 			private static final long serialVersionUID = 1L;
+
+			private long fLTGetCount = 0;
+			private double fLTGetTime = 0;
+			private long fLTEntryCount = 0;
+			private long reuseReadHits = 0;
+			private long reuseReadBytes = 0;
+			private long putLineageCount = 0;
+			private long putLineageItems = 0;
+			private long serializationReuseCount = 0;
+			private long serializationReuseBytes = 0;
 
 			private void collectStats() {
 				fLTGetCount = getFedLookupTableGetCount();
@@ -856,32 +900,24 @@ public class FederatedStatistics {
 				serializationReuseBytes += that.serializationReuseBytes;
 			}
 
-			private long fLTGetCount = 0;
-			private double fLTGetTime = 0;
-			private long fLTEntryCount = 0;
-			private long reuseReadHits = 0;
-			private long reuseReadBytes = 0;
-			private long putLineageCount = 0;
-			private long putLineageItems = 0;
-			private long serializationReuseCount = 0;
-			private long serializationReuseBytes = 0;
 		}
 
 		@Override
 		public String toString() {
 			StringBuilder sb = new StringBuilder();
-			sb.append("FedStatsCollection: ");
-			sb.append(" cacheStats " + cacheStats);
-			sb.append(" jit " + jitCompileTime);
-			sb.append(" utilization " + utilization);
-			sb.append(" gcStats " + gcStats);
-			sb.append(" linCacheStats " + linCacheStats);
-			sb.append(" mtStats " + mtStats);
-			sb.append(" heavyHitters " + heavyHitters);
-			sb.append(" coordinatorsTrafficBytes " + coordinatorsTrafficBytes);
-			sb.append(" workerEvents " + workerEvents);
-			sb.append(" workerDataObjects " + workerDataObjects);
-			sb.append(" workerRequests " + workerRequests);
+			sb.append("\nFedStatsCollection: ");
+			sb.append("\ncacheStats " + cacheStats);
+			sb.append("\njit " + jitCompileTime);
+			sb.append("\nutilization " + utilization);
+			sb.append("\ngcStats " + gcStats);
+			sb.append("\nlinCacheStats " + linCacheStats);
+			sb.append("\nmtStats " + mtStats);
+			sb.append("\nheavyHitters " + heavyHitters);
+			sb.append("\ncoordinatorsTrafficBytes " + coordinatorsTrafficBytes);
+			sb.append("\nworkerEvents " + workerEvents);
+			sb.append("\nworkerDataObjects " + workerDataObjects);
+			sb.append("\nworkerRequests " + workerRequests);
+			sb.append("\n\n");
 			return sb.toString();
 		}
 

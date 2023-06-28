@@ -48,7 +48,7 @@ for index in ${!address[*]}; do
         cd systemds;
         git reset --hard origin/master > /dev/null 2>&1;
         git pull > /dev/null 2>&1; 
-        git fetch origin pull/1852/head  > /dev/null 2>&1;;
+        git fetch origin pull/1852/head  > /dev/null 2>&1;
         git merge FETCH_HEAD > /dev/null 2>&1;
         mvn clean package  -P distribution | grep -E 'BUILD SUCCESS|BUILD FA';
         echo 'Installed Systemds on' \$HOSTNAME;

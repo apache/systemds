@@ -38,8 +38,8 @@ export LOG4JPROP='conf/log4j-debug.properties'
 export SYSDS_QUIET=1
 
 # Set the addresses of your federated workers.
-# address=("so007" "so004" "so005" "so006")
-address=("localhost" "localhost" "localhost" "localhost")
+address=("so007" "so004" "so005" "so006")
+# address=("localhost" "localhost" "localhost" "localhost")
 
 # We assume for the scripts to work that each worker have a unique port
 ports=("8001" "8002" "8003" "8004")

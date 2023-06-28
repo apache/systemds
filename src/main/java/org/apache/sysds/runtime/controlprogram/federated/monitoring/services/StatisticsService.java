@@ -29,6 +29,8 @@ import java.util.concurrent.Future;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedData;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest;
@@ -50,6 +52,7 @@ import org.apache.sysds.runtime.controlprogram.federated.monitoring.repositories
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.repositories.IRepository;
 
 public class StatisticsService {
+	private static final Log LOG = LogFactory.getLog(StatisticsService.class.getName());
 
 	private static final IRepository entityRepository = new DerbyRepository();
 
@@ -196,11 +199,26 @@ public class StatisticsService {
 
 	private static void setCoordinatorId(CoordinatorConnectionModel entity) {
 		List<CoordinatorModel> coordinators = new ArrayList<>();
-		var monitoringKey = entity.getCoordinatorHostId();
+		String monitoringKey = entity.getCoordinatorHostId();
+		// LOG.error(monitoringKey);
 
 		if (monitoringKey != null) {
 			coordinators = entityRepository.getAllEntitiesByField(Constants.ENTITY_MONITORING_KEY_COL, monitoringKey, CoordinatorModel.class);
 		}
+		if(coordinators.isEmpty()){
+			int processID = Integer.parseInt(monitoringKey.split("-")[1]);
+			coordinators = entityRepository.getAllEntities(CoordinatorModel.class);
+			for(CoordinatorModel c : coordinators){
+				if(c.processId == processID){
+					entity.coordinatorId = c.id;
+					return;
+				}
+			}
+			// LOG.error(entityRepository.getAllEntities(CoordinatorModel.class));
+			// if()
+		}
+
+		LOG.error(coordinators);
 
 		if (!coordinators.isEmpty()) {
 			entity.coordinatorId = coordinators.get(0).id;

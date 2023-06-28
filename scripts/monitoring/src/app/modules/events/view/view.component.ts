@@ -61,9 +61,7 @@ export class ViewWorkerEventsComponent {
 
 		this.fedSiteService.getStatisticsPolling(id, this.stopPollingStatistics).subscribe(stats => {
 			this.statistics = stats;
-
-			const timeframe = this.getTimeframe();
-			const minVal = this.getLastSeconds(timeframe[1], 3);
+			console.log(stats)
 
 			const coordinatorNames = this.getCoordinatorNames();
 
@@ -73,7 +71,7 @@ export class ViewWorkerEventsComponent {
 					const canvas: any = document.createElement("canvas");
 					canvas.width = 400;
 					eventSectionEle.appendChild(canvas);
-
+					Chart.defaults.font.size = 24;
 					this.eventTimelineChart[coordinatorName] = new Chart(canvas.getContext('2d'), {
 						type: 'bar',
 						data: {
@@ -115,14 +113,14 @@ export class ViewWorkerEventsComponent {
 									display: true,
 									text: `Event timeline of worker with respect to coordinator ${coordinatorName}`
 								}
+								
 							},
 							scales: {
 								x: {
 									min: 0,
 									ticks: {
 										callback: function(value, index, ticks) {
-											// @ts-ignore
-											return new Date(minVal + value).toLocaleTimeString();
+											return value + " ms";
 										}
 									},
 									stacked: true
@@ -138,42 +136,6 @@ export class ViewWorkerEventsComponent {
 
 			this.updateEventTimeline();
 		});
-	}
-
-	private getLastSeconds(time: number, seconds: number): number {
-		const benchmark = new Date(time);
-
-		const back = new Date(time);
-		back.setSeconds(benchmark.getSeconds() - seconds)
-
-		return back.getTime();
-	}
-
-	private getTimeframe() {
-		const coordinatorNames = this.getCoordinatorNames();
-		let minTime = 0;
-		let maxTime = 0;
-
-		coordinatorNames.forEach(c => {
-			const coordinatorEvents = this.statistics.events.filter(e => e.coordinatorName === c);
-
-			for (const event of coordinatorEvents) {
-				for (const stage of event.stages) {
-					let startTime = new Date(stage.startTime).getTime();
-					let endTime = new Date(stage.endTime).getTime();
-
-					if (startTime < minTime) {
-						minTime = startTime;
-					}
-
-					if (endTime > maxTime) {
-						maxTime = endTime;
-					}
-				}
-			}
-		})
-
-		return [minTime, maxTime];
 	}
 
 	private getCoordinatorNames() {

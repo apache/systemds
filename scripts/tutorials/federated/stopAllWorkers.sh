@@ -36,6 +36,7 @@ for index in ${!address[*]}; do
     fi
 done
 
+./scripts/stopWorker.sh
 ./scripts/stopMonitoring.sh 
 
 wait

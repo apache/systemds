@@ -31,6 +31,7 @@ public class EventModel extends CoordinatorConnectionModel {
 
 	private static final String JsonFormat = "{" +
 			"\"coordinatorName\": \"%s\"," +
+			"\"coordinatorId\": %d," +
 			"\"stages\": [%s]" +
 			"}";
 
@@ -43,16 +44,16 @@ public class EventModel extends CoordinatorConnectionModel {
 		this.stages = new ArrayList<>();
 	}
 
-	public EventModel(final Long workerId, final Long coordinatorId) {
-		this(-1L, workerId, coordinatorId);
-	}
+	// public EventModel(final Long workerId, final Long coordinatorId) {
+	// 	this(-1L, workerId, coordinatorId);
+	// }
 
-	public EventModel(final Long id, final Long workerId, final Long coordinatorId) {
-		this.id = id;
-		this.workerId = workerId;
-		this.coordinatorId = coordinatorId;
-		this.stages = new ArrayList<>();
-	}
+	// public EventModel(final Long id, final Long workerId, final Long coordinatorId) {
+	// 	this.id = id;
+	// 	this.workerId = workerId;
+	// 	this.coordinatorId = coordinatorId;
+	// 	this.stages = new ArrayList<>();
+	// }
 
 	public void setCoordinatorName(String name) {
 		this.coordinatorName = name;
@@ -64,6 +65,6 @@ public class EventModel extends CoordinatorConnectionModel {
 				.map(EventStageModel::toString)
 				.collect(Collectors.joining(","));
 
-		return String.format(JsonFormat, this.coordinatorName, stagesStr);
+		return String.format(JsonFormat, this.coordinatorName, this.coordinatorId, stagesStr);
 	}
 }

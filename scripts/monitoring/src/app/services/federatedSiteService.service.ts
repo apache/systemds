@@ -94,11 +94,11 @@ export class FederatedSiteService {
 	}
 
 	public getStatisticsPolling(workerId: number, stopPolling: Subject<any>): Observable<Statistics> {
-		return timer(1, 3000).pipe(
+		return timer(1, 1000).pipe(
 			switchMap(() => this.getStatistics(workerId)),
-		retry(),
-		share(),
-		takeUntil(stopPolling)
+			retry(),
+			share(),
+			takeUntil(stopPolling)
 		);
 	}
 }

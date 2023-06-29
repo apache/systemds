@@ -41,6 +41,7 @@ public class LineageCacheStatistics {
 	private static final LongAdder _ctimeFSWrite    = new LongAdder();
 	private static final LongAdder _ctimeSaved      = new LongAdder();
 	private static final LongAdder _ctimeMissed     = new LongAdder();
+	private static final LongAdder _ctimeProbe      = new LongAdder();
 	// Bellow entries are specific to gpu lineage cache
 	private static final LongAdder _numHitsGpu      = new LongAdder();
 	private static final LongAdder _numAsyncEvictGpu= new LongAdder();
@@ -70,6 +71,7 @@ public class LineageCacheStatistics {
 		_ctimeFSWrite.reset();
 		_ctimeSaved.reset();
 		_ctimeMissed.reset();
+		_ctimeProbe.reset();
 		_evtimeGpu.reset();
 		_numHitsGpu.reset();
 		_numAsyncEvictGpu.reset();
@@ -191,6 +193,10 @@ public class LineageCacheStatistics {
 		_ctimeMissed.add(delta);
 	}
 
+	public static void incrementProbeTime(long delta) {
+		_ctimeProbe.add(delta);
+	}
+
 	public static long getMultiLevelFnHits() {
 		return _numHitsFunc.longValue();
 	}
@@ -303,6 +309,8 @@ public class LineageCacheStatistics {
 		sb.append(String.format("%.3f", ((double)_ctimeSaved.longValue())/1000000000)); //in sec
 		sb.append("/");
 		sb.append(String.format("%.3f", ((double)_ctimeMissed.longValue())/1000000000)); //in sec
+		sb.append("/");
+		sb.append(String.format("%.3f", ((double)_ctimeProbe.longValue())/1000000000)); //in sec
 		return sb.toString();
 	}
 

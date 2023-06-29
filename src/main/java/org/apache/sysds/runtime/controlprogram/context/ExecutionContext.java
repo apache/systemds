@@ -167,6 +167,7 @@ public class ExecutionContext {
 	}
 
 	/**
+	 *
 	 * Get the i-th GPUContext
 	 * @param index index of the GPUContext
 	 * @return a valid GPUContext or null if the indexed GPUContext does not exist.
@@ -923,6 +924,18 @@ public class ExecutionContext {
 		if( _lineage == null )
 			throw new DMLRuntimeException("Lineage Trace unavailable.");
 		return _lineage.getOrCreate(input);
+	}
+
+	public void replaceLineageItem(String varname, LineageItem li) {
+		if (!LineageCacheConfig.isLineageTraceReuse())
+			return;
+		if( _lineage == null )
+			throw new DMLRuntimeException("Lineage Trace unavailable.");
+		if (_lineage.get(varname) == null)
+			throw new DMLRuntimeException("Lineage item does not exist for "+varname);
+		//Passed lineage trace should be equivalent to the live lineage trace
+		//corresponding to varname. Replacing reduces memory and probing overheads.
+		_lineage.set(varname, li);
 	}
 	
 	private static String getNonExistingVarError(String varname) {

@@ -108,7 +108,8 @@ public class LineageCache
 				//try to reuse full or partial intermediates (CPU and FED only)
 				for (MutablePair<LineageItem,LineageCacheEntry> item : liList) {
 					if (LineageCacheConfig.getCacheType().isFullReuse())
-						e = LineageCache.probe(item.getKey()) ? getIntern(item.getKey()) : null;
+						//e = LineageCache.probe(item.getKey()) ? getIntern(item.getKey()) : null;
+						e = getIntern(item.getKey()); //avoid double probing (containsKey + get)
 					//TODO need to also move execution of compensation plan out of here
 					//(create lazily evaluated entry)
 					if (e == null && LineageCacheConfig.getCacheType().isPartialReuse()
@@ -162,6 +163,7 @@ public class LineageCache
 								//Even not persisted, reuse the rdd locally for shuffle operations
 								if (!LineageCacheConfig.isShuffleOp(inst))
 									return false;
+
 								((SparkExecutionContext) ec).setRDDHandleForVariable(outName, rdd);
 								break;
 							case PERSISTEDRDD:
@@ -184,6 +186,8 @@ public class LineageCache
 						//Increment the live count for this pointer
 						LineageGPUCacheEviction.incrementLiveCount(e.getGPUPointer());
 					}
+					//Replace the live lineage trace with the cached one (if not parfor, dedup)
+					ec.replaceLineageItem(outName, e._key);
 				}
 				maintainReuseStatistics(ec, inst, liList.get(0).getValue());
 			}
@@ -444,6 +448,7 @@ public class LineageCache
 		if (!p && DMLScript.STATISTICS && LineageCacheEviction._removelist.containsKey(key))
 			// The sought entry was in cache but removed later 
 			LineageCacheStatistics.incrementDelHits();
+
 		return p;
 	}
 
@@ -949,9 +954,11 @@ public class LineageCache
 	}
 	
 	private static LineageCacheEntry getIntern(LineageItem key) {
-		// This method is called only when entry is present either in cache or in local FS.
 		LineageCacheEntry e = _cache.get(key);
-		if (e != null && e.getCacheStatus() != LineageCacheStatus.SPILLED) {
+		if (e == null)
+			return null;
+
+		if (e.getCacheStatus() != LineageCacheStatus.SPILLED) {
 			if (DMLScript.STATISTICS)
 				// Increment hit count.
 				LineageCacheStatistics.incrementMemHits();
@@ -1222,6 +1229,7 @@ public class LineageCache
 		//TODO: Replace with generic type
 
 		List<MutablePair<LineageItem, LineageCacheEntry>> liList = null;
+		//FIXME: Replace getLineageItem with get/getOrCreate to avoid creating a new LI object
 		LineageItem instLI = (cinst != null) ? cinst.getLineageItem(ec).getValue()
 			: (cfinst != null) ? cfinst.getLineageItem(ec).getValue()
 			: (cspinst != null) ? cspinst.getLineageItem(ec).getValue()

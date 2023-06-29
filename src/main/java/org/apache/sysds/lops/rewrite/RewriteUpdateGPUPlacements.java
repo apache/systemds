@@ -31,7 +31,6 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 public class RewriteUpdateGPUPlacements extends LopRewriteRule
 {

@@ -28,6 +28,7 @@ import java.util.Set;
 import java.util.StringTokenizer;
 
 import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
+import org.apache.sysds.runtime.controlprogram.caching.CacheableData.CacheStatus;
 import org.apache.sysds.runtime.controlprogram.parfor.util.IDSequence;
 import org.apache.sysds.runtime.instructions.cp.Data;
 import org.apache.sysds.runtime.instructions.cp.ListObject;
@@ -156,6 +157,14 @@ public class LocalVariableMap implements Cloneable
 	public long countPinnedData() {
 		return localMap.values().stream()
 			.filter(d -> (d instanceof CacheableData)).count();
+	}
+	
+	public void releasePinnedData() {
+		localMap.values().stream()
+			.filter(d -> (d instanceof CacheableData))
+			.map(d -> (CacheableData<?>) d)
+			.filter(d -> d.getStatus() == CacheStatus.READ)
+			.forEach(d -> d.release());
 	}
 	
 	public String serialize() {

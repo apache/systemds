@@ -44,3 +44,6 @@ B = multiLogReg(X=X, Y=y, icpt=2, verbose=TRUE)
 [m, pred, acc] = multiLogRegPredict(X=X, B=B, Y=y, verbose=TRUE)
 [co, avg] = confusionMatrix(P=pred, Y=y)
 print(toString(avg))
+
+# v = auc(Y=y, P=X%*%B)
+# print("AUC : " + v)

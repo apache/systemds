@@ -86,7 +86,8 @@ train_paramserv = function(matrix[double] X, matrix[double] Y,
   # Use paramserv function
   model_trained = paramserv(model=model_list, features=X, labels=Y, val_features=X_val,
     val_labels=Y_val, upd="./code/network/CNN.dml::gradients", agg="./code/network/CNN.dml::aggregation", mode=mode,
-    utype=utype, freq=freq, epochs=epochs, batchsize=batch_size, k=workers, hyperparams=params, checkpointing="NONE")
+    utype=utype, freq=freq, epochs=epochs, batchsize=batch_size, k=workers, hyperparams=params, checkpointing="NONE",
+    nbatches=32)
 }
 
 predict = function(matrix[double] X, int batch_size, list[unknown] model)

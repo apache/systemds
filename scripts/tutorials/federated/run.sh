@@ -55,7 +55,18 @@ source parameters.sh
 #     -args $x $y_hot $xt $yt_hot \
 #     -fedMonitoringAddress "http://localhost:8080"
 
+systemds code/exp/CNNLong.dml \
+    -stats \
+    -args $x $y_hot $xt $yt_hot \
+    -fedMonitoringAddress "http://localhost:8080"
+
 # systemds code/exp/sumRepeat.dml \
+#     -config conf/$conf.xml \
+#     -stats 30 \
+#     -args $x 100 \
+#     -fedMonitoringAddress "http://localhost:8080"
+
+# systemds code/exp/aggRepeat.dml \
 #     -config conf/$conf.xml \
 #     -stats 30 \
 #     -args $x 100 \
@@ -64,11 +75,10 @@ source parameters.sh
 # systemds code/exp/adult.dml \
 #     -config conf/$conf.xml \
 #     -stats 30 \
+#     -debug \
 #     -fedMonitoringAddress "http://localhost:8080"
 
-systemds code/exp/criteo.dml \
-    -config conf/$conf.xml \
-    -stats 30 \
-    -fedMonitoringAddress "http://localhost:8080"
-
-
+# systemds code/exp/criteo.dml \
+#     -config conf/$conf.xml \
+#     -stats 30 \
+#     -fedMonitoringAddress "http://localhost:8080"

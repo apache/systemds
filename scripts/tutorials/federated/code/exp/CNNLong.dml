@@ -19,25 +19,29 @@
 #
 #-------------------------------------------------------------
 
-# create federated matrix
-N = 1000000; 
-M = 40;
-data = federated(type="frame",
-    addresses=list("localhost:8001/./data/criteo_day21_1M_cleaned",
-                   "localhost:8002/./data/criteo_day21_1M_cleaned",
-                   "localhost:8003/./data/criteo_day21_1M_cleaned"),
-    ranges=   list(list(0,0),list(N/3,M),
-                   list(N/3,0),list((N/3)*2,M),
-                   list((N/3)*2,0),list(N, M))
-)
+X = read($1) / 255
+Y = read($2)
 
-# transform encode
-jspec1 = read("code/exp/criteo_spec1.json", data_type="scalar", value_type="string");
-[X0, M] = transformencode(target=data, spec=jspec1);
+Xt = read($3) / 255
+Yt = read($4)
 
+epochs = 100
+learning_rate = 0.1
+utype = "BSP"
+# freq = "EPOCH"
+freq= "NBATCHES"
+# freq="BATCH"
+batch_size = 128
+scheme = "DISJOINT_CONTIGUOUS"
+mode = "LOCAL"
+seed = -1
 
-y = X0[,1] + 1; 
-X = X0[,2:ncol(X0)]
-B = multiLogReg(X=X, Y=y, icpt=2, maxi=30, verbose=TRUE);
+source("code/network/CNN.dml") as CNN
 
-## done
+model = CNN::train_paramserv(X, Y, epochs, utype, freq, batch_size, scheme, mode, learning_rate, seed)
+
+probs_test = CNN::predict(Xt, batch_size, model)
+[loss_test, acc] = CNN::eval(probs_test, Yt)
+
+print("Test loss: " + loss_test + " acc: " + acc)
+

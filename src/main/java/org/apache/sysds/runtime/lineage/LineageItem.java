@@ -25,6 +25,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Stack;
 
+import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.parfor.util.IDSequence;
 import org.apache.sysds.runtime.util.UtilFunctions;
@@ -269,8 +270,8 @@ public class LineageItem {
 		Stack<LineageItem> s2 = new Stack<>();
 		s1.push(this);
 		s2.push(that);
-		//boolean ret = false;
 		boolean ret = true;
+		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 		while (!s1.empty() && !s2.empty()) {
 			LineageItem li1 = s1.pop();
 			LineageItem li2 = s2.pop();
@@ -356,6 +357,8 @@ public class LineageItem {
 				}
 			li1.setVisited();
 		}
+		if (DMLScript.STATISTICS) //increment probing time
+			LineageCacheStatistics.incrementProbeTime(System.nanoTime() - t0);
 		return ret;
 	}
 	

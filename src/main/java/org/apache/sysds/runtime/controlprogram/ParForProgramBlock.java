@@ -84,6 +84,7 @@ import org.apache.sysds.runtime.instructions.cp.ScalarObject;
 import org.apache.sysds.runtime.instructions.cp.StringObject;
 import org.apache.sysds.runtime.instructions.cp.VariableCPInstruction;
 import org.apache.sysds.runtime.lineage.Lineage;
+import org.apache.sysds.runtime.lineage.LineageCacheConfig;
 import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.runtime.lineage.LineageItemUtils;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
@@ -800,6 +801,7 @@ public class ParForProgramBlock extends ForProgramBlock
 				StatisticMonitor.putPFStat(_ID, Stat.PARFOR_INIT_TASKS_T, time.stop());
 			
 			// Step 3) join all threads (wait for finished work)
+			LineageCacheConfig.setReuseLineageTraces(false); //disable lineage trace reuse
 			for( Thread thread : threads )
 				thread.join();
 			
@@ -823,6 +825,7 @@ public class ParForProgramBlock extends ForProgramBlock
 				.map(w -> w.getExecutionContext().getLineage())
 				.toArray(Lineage[]::new);
 			mergeLineage(ec, lineages);
+			//LineageCacheConfig.setReuseLineageTraces(true);
 
 			//consolidate results into global symbol table
 			consolidateAndCheckResults( ec, numIterations, numCreatedTasks,
@@ -900,6 +903,7 @@ public class ParForProgramBlock extends ForProgramBlock
 		exportMatricesToHDFS(ec, brVars);
 		
 		// Step 3) submit Spark parfor job (no lazy evaluation, since collect on result)
+		LineageCacheConfig.setReuseLineageTraces(false); //disable lineage trace reuse
 		boolean topLevelPF = OptimizerUtils.isTopLevelParFor();
 		RemoteParForJobReturn ret = RemoteParForSpark.runJob(_ID, program,
 			clsMap, tasks, ec, brVars, _resultVars, _enableCPCaching, _numThreads, topLevelPF);
@@ -913,6 +917,7 @@ public class ParForProgramBlock extends ForProgramBlock
 		
 		//lineage maintenance
 		mergeLineage(ec, ret.getLineages());
+		//LineageCacheConfig.setReuseLineageTraces(true);
 		// TODO: remove duplicate lineage items in ec.getLineage()
 		
 		//consolidate results into global symbol table

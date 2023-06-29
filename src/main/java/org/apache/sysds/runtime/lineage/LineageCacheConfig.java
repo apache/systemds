@@ -50,11 +50,11 @@ public class LineageCacheConfig
 	private static final String[] OPCODES = new String[] {
 		"tsmm", "ba+*", "*", "/", "+", "||", "nrow", "ncol", "round", "exp", "log",
 		"rightIndex", "leftIndex", "groupedagg", "r'", "solve", "spoof",
-		"uamean", "max", "min", "ifelse", "-", "sqrt", ">", "uak+", "<=",
+		"uamean", "max", "min", "ifelse", "-", "sqrt", "<", ">", "uak+", "<=",
 		"^", "uamax", "uark+", "uacmean", "eigen", "ctableexpand", "replace",
-		"^2", "uack+", "tak+*", "uacsqk+", "uark+", "n+", "uarimax", "qsort", 
+		"^2", "*2", "uack+", "tak+*", "uacsqk+", "uark+", "n+", "uarimax", "qsort",
 		"qpick", "transformapply", "uarmax", "n+", "-*", "castdtm", "lowertri",
-		"prefetch", "mapmm"
+		"prefetch", "mapmm", "contains", "mmchain", "mapmmchain", "+*"
 		//TODO: Reuse everything.
 	};
 
@@ -70,7 +70,7 @@ public class LineageCacheConfig
 
 	// Relatively inexpensive instructions.
 	private static final String[] PERSIST_OPCODES2 = new String[] {
-		"mapmm"
+		"mapmm,"
 	};
 
 	private static String[] REUSE_OPCODES  = new String[] {};
@@ -104,6 +104,7 @@ public class LineageCacheConfig
 	private static CachedItemTail _itemT = null;
 	private static boolean _compilerAssistedRW = false;
 	private static boolean _onlyEstimate = false;
+	private static boolean _reuseLineageTraces = true;
 
 	//-------------DISK SPILLING RELATED CONFIGURATIONS--------------//
 
@@ -366,6 +367,14 @@ public class LineageCacheConfig
 	
 	public static boolean getCompAssRW() {
 		return _compilerAssistedRW;
+	}
+
+	public static void setReuseLineageTraces(boolean reuseTrace) {
+		_reuseLineageTraces = reuseTrace;
+	}
+
+	public static boolean isLineageTraceReuse() {
+		return _reuseLineageTraces;
 	}
 
 	public static void setCachePolicy(LineageCachePolicy policy) {

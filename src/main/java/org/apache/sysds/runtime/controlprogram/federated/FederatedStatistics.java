@@ -666,7 +666,6 @@ public class FederatedStatistics {
 		public FederatedResponse execute(ExecutionContext ec, Data... data) {
 			FedStatsCollection fedStats = new FedStatsCollection();
 			fedStats.collectStats();
-			LOG.error(fedStats);
 			return new FederatedResponse(FederatedResponse.ResponseType.SUCCESS, fedStats);
 		}
 

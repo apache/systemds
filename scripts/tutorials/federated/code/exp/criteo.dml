@@ -37,11 +37,33 @@ jspec1 = read("code/exp/criteo_spec1.json", data_type="scalar", value_type="stri
 
 
 y = X0[,1] + 1; 
+
+# print(toString(unique(y)))
+
 X = X0[,2:ncol(X0)]
-B = multiLogReg(X=X, Y=y, icpt=2, maxi=30, verbose=TRUE);
-B = multiLogRegPredict(X=X, B=B, Y=y, verbose=TRUE)
+B = multiLogReg(X=X, Y=y, icpt=2, maxi=2, verbose=TRUE);
 
 # Predicting
 [m, pred, acc] = multiLogRegPredict(X=X, B=B, Y=y, verbose=TRUE)
+
+# dim = max(max(y),max(pred))
+
+# print(toString(unique(y)))
+
+# print(toString(unique(pred)))
+
+# a = table(pred, dim)
+
+# print(toString(a))
+# b = table(y, dim)
+# print(toString(b))
+
+# confusionSum = table(pred, y,  dim, dim)
+
+
+# print(toString(confusionSum))
+# print(toString(colSums(y)))
 [co, avg] = confusionMatrix(P=pred, Y=y)
+
+# print(toString(colSums(avg)))
 print(toString(avg))

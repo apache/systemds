@@ -605,7 +605,7 @@ public class DMLScript
 		if(debug)
 			LOG.debug("DML script: \n" + dmlScriptString);
 		if(info)
-			LOG.info("Process id:  " + IDHandler.obtainProcessID());
+			LOG.info("Process id:  " + IDHandler.getProcessID());
 	}
 
 	private static void registerForMonitoring() {
@@ -622,7 +622,7 @@ public class DMLScript
 				// TODO fix and replace localhost identifyer with hostname in federated instructions SYSTEMDS-3440
 				// https://issues.apache.org/jira/browse/SYSTEMDS-3440
 				model.host = "localhost"; 
-				model.processId = Long.parseLong(IDHandler.obtainProcessID());
+				model.processId = Long.parseLong(IDHandler.getProcessID());
 
 				String requestBody = objectMapper
 						.writerWithDefaultPrettyPrinter()

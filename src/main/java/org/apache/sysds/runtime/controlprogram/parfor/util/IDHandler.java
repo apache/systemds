@@ -21,6 +21,10 @@ package org.apache.sysds.runtime.controlprogram.parfor.util;
 
 import java.lang.management.ManagementFactory;
 import java.net.InetAddress;
+import java.net.NetworkInterface;
+import java.net.SocketException;
+import java.net.UnknownHostException;
+import java.util.Enumeration;
 
 /**
  * Functionalities for extracting numeric IDs from Hadoop taskIDs and other
@@ -77,12 +81,8 @@ public class IDHandler
 		String uuid = null;
 
 		try {
-			String pid = obtainProcessID();
-
-			//get ip address
-			InetAddress addr = InetAddress.getLocalHost();
-			String host = addr.getHostAddress();
-
+			String pid = getProcessID();
+			String host = getIPAddress(false);
 			uuid = pid + "_" + host;
 		}
 		catch(Exception ex) {
@@ -92,7 +92,7 @@ public class IDHandler
 		return uuid;
 	}
 
-	public static String obtainProcessID() {
+	public static String getProcessID() {
 		//get process id
 		String pname = ManagementFactory.getRuntimeMXBean().getName(); //pid@hostname
 		String pid = pname.split("@")[0];
@@ -100,6 +100,29 @@ public class IDHandler
 		// import java.lang.ProcessHandle;
 		// pid = ProcessHandle.current().pid();
 		return pid;
+	}
+	
+	public static String getIPAddress(boolean noLocal) throws SocketException, UnknownHostException {
+		// a host might have many network interfaces, in order to extract the
+		// best IP we explicitly filter out 192.168.0.x, 127.0.0.1, and network interfaces
+		String ipAddr = null;
+		if( noLocal ) {
+			Enumeration<NetworkInterface> e = NetworkInterface.getNetworkInterfaces();
+			while(e.hasMoreElements()) {
+				Enumeration<InetAddress> ee = e.nextElement().getInetAddresses();
+				while (ee.hasMoreElements()) {
+					String tmp = ee.nextElement().getHostAddress();
+					if( tmp!=null && !tmp.contains("192.168.0.") && !tmp.contains("127.0.0.1") && !tmp.contains(":") )
+						ipAddr = tmp;
+				}
+			}
+		}
+		
+		if( ipAddr == null ) {
+			//default, which might give local network addresses (e.g., 192.168.0.xxx)
+			ipAddr = InetAddress.getLocalHost().getHostAddress();
+		}
+		return ipAddr;
 	}
 
 	private static long extractID( String taskID, int maxlen ) {

@@ -42,7 +42,7 @@ public class FederatedLocalData extends FederatedData {
 		_fwh = new FederatedWorkerHandler(_flt, _frc, _fan);
 
 		_data = data;
-		long pid = Long.valueOf(IDHandler.obtainProcessID());
+		long pid = Long.valueOf(IDHandler.getProcessID());
 		ExecutionContextMap ecm = _flt.getECM(FederatedLookupTable.NOHOST, pid);
 		synchronized(ecm) {
 			ecm.get(-1).setVariable(Long.toString(id), _data);

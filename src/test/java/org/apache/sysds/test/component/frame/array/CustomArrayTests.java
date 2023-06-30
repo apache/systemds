@@ -28,17 +28,21 @@ import java.lang.ref.SoftReference;
 import java.util.Arrays;
 import java.util.BitSet;
 import java.util.HashMap;
+import java.util.Map;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
+import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.runtime.frame.data.columns.Array;
 import org.apache.sysds.runtime.frame.data.columns.ArrayFactory;
 import org.apache.sysds.runtime.frame.data.columns.BitSetArray;
 import org.apache.sysds.runtime.frame.data.columns.BooleanArray;
 import org.apache.sysds.runtime.frame.data.columns.CharArray;
+import org.apache.sysds.runtime.frame.data.columns.DDCArray;
 import org.apache.sysds.runtime.frame.data.columns.DoubleArray;
 import org.apache.sysds.runtime.frame.data.columns.FloatArray;
 import org.apache.sysds.runtime.frame.data.columns.IntegerArray;
@@ -1152,13 +1156,178 @@ public class CustomArrayTests {
 	public void mappingCache() {
 		Array<String> a = new StringArray(new String[] {"1", null});
 		assertEquals(null, a.getCache());
-		a.setCache(new SoftReference<HashMap<String, Long>>(null));
+		a.setCache(new SoftReference<Map<String, Long>>(null));
 		assertTrue(null != a.getCache());
-		a.setCache(new SoftReference<HashMap<String, Long>>(new HashMap<>()));
+		a.setCache(new SoftReference<Map<String, Long>>(new HashMap<>()));
 		assertTrue(null != a.getCache());
-		HashMap<String, Long> hm = a.getCache().get();
+		Map<String, Long> hm = a.getCache().get();
 		hm.put("1", 0L);
 		hm.put(null, 2L);
 		assertEquals(Long.valueOf(0L), a.getCache().get().get("1"));
+	}
+
+	@Test
+	public void DDCCompress() {
+		try {
+			Array<String> a = ArrayFactory.create(FrameArrayTests.generateRandomStringNUniqueLength(100, 32, 2, 2000));
+			Array<String> ddc = DDCArray.compressToDDC(a);
+			FrameArrayTests.compare(a, ddc);
+			assertTrue(a.getInMemorySize() > ddc.getInMemorySize());
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
+	}
+
+	@Test
+	public void DDCCompressMemSize() {
+		try {
+			Array<String> a = ArrayFactory.create(FrameArrayTests.generateRandomStringNUniqueLength(100, 32, 5, 2000));
+			Array<String> ddc = DDCArray.compressToDDC(a);
+			assertTrue(a.getInMemorySize() > ddc.getInMemorySize());
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
+	}
+
+	@Test
+	public void DDCCompressAbort() {
+		try {
+			Array<String> a = ArrayFactory.create(FrameArrayTests.generateRandomStringNUniqueLength(100, 32, 100, 2000));
+			Array<String> ddc = DDCArray.compressToDDC(a);
+			assertFalse(ddc instanceof DDCArray);
+			// when abort keep original
+			assertEquals(a, ddc);
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
+	}
+
+	@Test(expected = DMLRuntimeException.class)
+	public void DDCCompressInvalid() {
+		FrameBlock.debug = true; // should be fine in general to set while testing
+		Array<Boolean> b = ArrayFactory.create(new boolean[4]);
+		new DDCArray<Boolean>(b, MapToFactory.create(10, 10));
+	}
+
+	@Test
+	public void DDCCompressSerialize() {
+		try {
+			Array<String> a = ArrayFactory.create(FrameArrayTests.generateRandomStringNUniqueLength(100, 32, 5, 2000));
+			Array<String> ddc = DDCArray.compressToDDC(a);
+
+			Array<?> ddcs = FrameArrayTests.serializeAndBack(ddc);
+			FrameArrayTests.compare(a, ddcs);
+
+			assertTrue(a.getInMemorySize() > ddc.getInMemorySize());
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
+	}
+
+	@Test(expected = DMLRuntimeException.class)
+	public void DDCInvalidReadFields() {
+		try {
+			Array<String> a = ArrayFactory.create(FrameArrayTests.generateRandomStringNUniqueLength(100, 32, 5, 2000));
+			Array<String> ddc = DDCArray.compressToDDC(a);
+			ddc.readFields(null);
+		}
+		catch(Exception e) {
+			throw new DMLRuntimeException(e);
+		}
+	}
+
+	@Test(expected = DMLRuntimeException.class)
+	public void DDCget() {
+		Array<String> a = ArrayFactory.create(FrameArrayTests.generateRandomStringNUniqueLength(100, 32, 5, 2000));
+		Array<String> ddc = DDCArray.compressToDDC(a);
+		ddc.get();
+	}
+
+	@Test
+	public void DDCHash() {
+		Array<Float> a = ArrayFactory.create(FrameArrayTests.generateRandomFloatNUniqueLengthOpt(100, 32, 5));
+		Array<Float> ddc = DDCArray.compressToDDC(a);
+		for(int i = 0; i < a.size(); i++) {
+			Double aa = a.hashDouble(i);
+			Double bb = ddc.hashDouble(i);
+			if(aa.isNaN() && bb.isNaN())
+				// all good
+				continue;
+			else {
+				assertEquals(a.hashDouble(i), ddc.hashDouble(i), 0.0);
+			}
+		}
+	}
+
+	@Test
+	public void hashDoubleOnString() {
+		Array<String> a = ArrayFactory.create(FrameArrayTests.generateRandom01String(100, 32));
+		for(int i = 0; i < a.size(); i++) {
+			assertEquals(a.hashDouble(i), (double) a.get(i).hashCode(), 0.0);
+		}
+	}
+
+	@Test
+	public void hashDoubleOnChar() {
+		Array<Character> a = ArrayFactory.create(FrameArrayTests.generateRandom01chars(5, 32));
+		for(int i = 0; i < a.size(); i++) {
+			assertEquals(a.hashDouble(i), (double) a.get(i).hashCode(), 0.0);
+		}
+	}
+
+	@Test
+	public void hashDoubleOnInt() {
+		Array<Integer> a = ArrayFactory.create(FrameArrayTests.generateRandomInt8(5, 32));
+		for(int i = 0; i < a.size(); i++) {
+			assertEquals(a.hashDouble(i), (double) a.get(i).hashCode(), 0.0);
+		}
+	}
+
+	@Test
+	public void hashDoubleOnLong() {
+		Array<Long> a = ArrayFactory.create(FrameArrayTests.generateRandomLong(5, 32));
+		for(int i = 0; i < a.size(); i++) {
+			assertEquals(a.hashDouble(i), (double) a.get(i).hashCode(), 0.0);
+		}
+	}
+
+	@Test
+	public void hashDoubleOnFloat() {
+		Array<Float> a = ArrayFactory.create(FrameArrayTests.generateRandomFloat(5, 32));
+		for(int i = 0; i < a.size(); i++) {
+			assertEquals(a.hashDouble(i), (double) a.get(i).hashCode(), 0.0);
+		}
+	}
+
+	@Test
+	public void hashDoubleOnBoolean() {
+		Array<Boolean> a = ArrayFactory.create(FrameArrayTests.generateRandomBoolean(5, 32));
+		for(int i = 0; i < a.size(); i++) {
+			assertEquals(a.hashDouble(i), a.get(i) ? 1 : 0, 0.0);
+		}
+	}
+
+	@Test
+	public void hashDoubleOnBitSet() {
+		Array<Boolean> a = ArrayFactory.create(FrameArrayTests.generateRandomBitSet(324, 32), 324);
+		for(int i = 0; i < a.size(); i++) {
+			assertEquals(a.hashDouble(i), a.get(i) ? 1 : 0, 0.0);
+		}
+	}
+
+	@Test
+	public void hashDoubleOnStringNull() {
+		Array<String> a = ArrayFactory.create(new String[4]);
+		for(int i = 0; i < a.size(); i++) {
+			assertEquals(a.hashDouble(i), Double.NaN, 0.0);
+		}
 	}
 }

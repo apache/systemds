@@ -19,18 +19,19 @@
 
 package org.apache.sysds.runtime.transform.encode;
 
+import static org.apache.sysds.runtime.util.UtilFunctions.getEndIndex;
+
+import java.util.HashMap;
+import java.util.Map;
+
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
-import java.util.HashMap;
-
-import static org.apache.sysds.runtime.util.UtilFunctions.getEndIndex;
-
 public class ColumnEncoderWordEmbedding extends ColumnEncoder {
     private MatrixBlock _wordEmbeddings;
-    private HashMap<Object, Long> _rcdMap;
+    private Map<Object, Long> _rcdMap;
     private HashMap<String, double[]> _embMap;
 
     private long lookupRCDMap(Object key) {

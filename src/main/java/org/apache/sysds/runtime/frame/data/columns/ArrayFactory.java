@@ -32,7 +32,7 @@ public interface ArrayFactory {
 	public final static int bitSetSwitchPoint = 64;
 
 	public enum FrameArrayType {
-		STRING, BOOLEAN, BITSET, INT32, INT64, FP32, FP64, CHARACTER, OPTIONAL;
+		STRING, BOOLEAN, BITSET, INT32, INT64, FP32, FP64, CHARACTER, OPTIONAL, DDC;
 	}
 
 	public static StringArray create(String[] col) {
@@ -188,6 +188,8 @@ public interface ArrayFactory {
 				break;
 			case OPTIONAL:
 				return OptionalArray.readOpt(in, nRow);
+			case DDC:
+				return DDCArray.read(in);
 			default: // String
 				arr = new StringArray(new String[nRow]);
 				break;

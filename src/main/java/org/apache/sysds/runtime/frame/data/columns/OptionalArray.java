@@ -33,9 +33,9 @@ import org.apache.sysds.runtime.util.UtilFunctions;
 public class OptionalArray<T> extends Array<T> {
 
 	/** Underlying values not able to contain null values */
-	protected Array<T> _a;
+	protected final Array<T> _a;
 	/** A Bitset specifying where there are null, in it false means null */
-	protected ABooleanArray _n;
+	protected final ABooleanArray _n;
 
 	@SuppressWarnings("unchecked")
 	public OptionalArray(T[] a) {

@@ -224,7 +224,13 @@ public class PartitionedBlock<T extends CacheBlock> implements Externalizable
 	}
 	
 	public void clearBlocks() {
-		_partBlocks = null;
+		//note: a clear of blocks is invalid here because although Spark
+		//serializes the blocks on broadcast(), they are lazily shipped
+		//to the executors. Since the serialized version is only stored
+		//on a weak reference, the original blocks are still necessary
+		//in case a garbage collection happens before the actual broadcast.
+		
+		//_partBlocks = null;
 	}
 
 	/**

@@ -83,9 +83,11 @@ public class FrameBlock implements CacheBlock<FrameBlock>, Externalizable {
 	private static final Log LOG = LogFactory.getLog(FrameBlock.class.getName());
 	private static final long serialVersionUID = -3993450030207130665L;
 	private static final IDSequence CLASS_ID = new IDSequence();
-
 	/** Buffer size variable: 1M elements, size of default matrix block */
 	public static final int BUFFER_SIZE = 1 * 1000 * 1000;
+
+	/** If debugging is enabled for the FrameBlocks in stable state*/
+	public static boolean debug = false;
 
 	/** The schema of the data frame as an ordered list of value types */
 	private ValueType[] _schema = null;
@@ -828,7 +830,7 @@ public class FrameBlock implements CacheBlock<FrameBlock>, Externalizable {
 			else {
 				for(Array<?> aa : _coldata)
 					size += aa.getInMemorySize();
-				
+
 			}
 		}
 		return size;
@@ -1185,7 +1187,7 @@ public class FrameBlock implements CacheBlock<FrameBlock>, Externalizable {
 	 * @param col is the column # from frame data which contains Recode map generated earlier.
 	 * @return map of token and code for every element in the input column of a frame containing Recode map
 	 */
-	public HashMap<Object, Long> getRecodeMap(int col) {
+	public Map<Object, Long> getRecodeMap(int col) {
 		return _coldata[col].getRecodeMap();
 	}
 

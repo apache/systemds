@@ -93,6 +93,26 @@ public abstract class AMapToData implements Serializable {
 	public abstract int getIndex(int n);
 
 	/**
+	 * Shortcut method to support Long objects, not really efficient but for the purpose of reusing code.
+	 * 
+	 * @param n The index to set.
+	 * @param v The value to set.
+	 */
+	public void set(int n, Long v) {
+		set(n, (int) (long) v);
+	}
+
+	/**
+	 * Shortcut method to support Integer objects, not really efficient but for the purpose of reusing code.
+	 * 
+	 * @param n The index to set.
+	 * @param v The value to set.
+	 */
+	public void set(int n, Integer v) {
+		set(n, (int) v);
+	}
+
+	/**
 	 * Set the index to the value.
 	 * 
 	 * NOTE! The value should be representable inside the map. This requirement is not checked.

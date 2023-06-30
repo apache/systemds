@@ -39,7 +39,7 @@ public class BitSetArray extends ABooleanArray {
 	private static final boolean useVectorizedKernel = true;
 
 	/** Vectorized "words" containing all the bits set */
-	long[] _data;
+	protected long[] _data;
 
 	protected BitSetArray(int size) {
 		this(new long[longSize(size)], size);

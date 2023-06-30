@@ -22,6 +22,7 @@ package org.apache.sysds.runtime.frame.data.columns;
 import java.lang.ref.SoftReference;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
 
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.commons.logging.Log;
@@ -42,7 +43,7 @@ public abstract class Array<T> implements Writable {
 	private static final boolean REUSE_RECODE_MAPS = true;
 
 	/** A soft reference to a memorization of this arrays mapping, used in transformEncode */
-	protected SoftReference<HashMap<T, Long>> _rcdMapCache = null;
+	protected SoftReference<Map<T, Long>> _rcdMapCache = null;
 
 	/** The current allocated number of elements in this Array */
 	protected int _size;
@@ -62,7 +63,7 @@ public abstract class Array<T> implements Writable {
 	 * 
 	 * @return The cached object
 	 */
-	public final SoftReference<HashMap<T, Long>> getCache() {
+	public final SoftReference<Map<T, Long>> getCache() {
 		return _rcdMapCache;
 	}
 
@@ -71,21 +72,21 @@ public abstract class Array<T> implements Writable {
 	 * 
 	 * @param m The element to cache.
 	 */
-	public final void setCache(SoftReference<HashMap<T, Long>> m) {
+	public final void setCache(SoftReference<Map<T, Long>> m) {
 		_rcdMapCache = m;
 	}
 
-	public HashMap<T, Long> getRecodeMap() {
+	public Map<T, Long> getRecodeMap() {
 		// probe cache for existing map
 		if(REUSE_RECODE_MAPS) {
-			SoftReference<HashMap<T, Long>> tmp = getCache();
-			HashMap<T, Long> map = (tmp != null) ? tmp.get() : null;
+			SoftReference<Map<T, Long>> tmp = getCache();
+			Map<T, Long> map = (tmp != null) ? tmp.get() : null;
 			if(map != null)
 				return map;
 		}
 
 		// construct recode map
-		HashMap<T, Long> map = createRecodeMap();
+		Map<T, Long> map = createRecodeMap();
 
 		// put created map into cache
 		if(REUSE_RECODE_MAPS)
@@ -94,9 +95,12 @@ public abstract class Array<T> implements Writable {
 		return map;
 	}
 
-	
-	protected HashMap<T, Long> createRecodeMap(){
-		HashMap<T, Long> map = new HashMap<>();
+	/**
+	 * Recreate the recode map from what is already there.
+	 * @return
+	 */
+	protected Map<T, Long> createRecodeMap(){
+		Map<T, Long> map = new HashMap<>();
 		long id = 0;
 		for(int i = 0; i < size(); i++) {
 			T val = get(i);
@@ -110,6 +114,23 @@ public abstract class Array<T> implements Writable {
 	}
 
 
+	/**
+	 * Get the dictionary of the contained values, including null.
+	 * 
+	 * @return a dictionary containing all unique values.
+	 */
+	protected Map<T, Integer> getDictionary(){
+		Map<T, Integer> dict = new HashMap<>();
+		int id = 0;
+		for(int i = 0 ; i < size(); i ++){
+			T val = get(i);
+			Integer v = dict.putIfAbsent(val, id);
+			if(v== null)
+				id++;
+		}
+
+		return dict;
+	}
 
 	/**
 	 * Get the number of elements in the array, this does not necessarily reflect the current allocated size.
@@ -255,7 +276,7 @@ public abstract class Array<T> implements Writable {
 	public abstract void append(T value);
 
 	/**
-	 * append other array, if the other array is fitting in current allocated size use that allocated size, otherwise
+	 * Append other array, if the other array is fitting in current allocated size use that allocated size, otherwise
 	 * allocate new array to combine the other with this.
 	 * 
 	 * This method should use the set range function, and should be preferred over the append single values.

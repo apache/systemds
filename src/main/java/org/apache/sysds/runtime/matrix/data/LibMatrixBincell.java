@@ -1423,7 +1423,7 @@ public class LibMatrixBincell {
 
 	/**
 	 * EXPERIMENTAL
-	 * Runs operations that return booleans and actually uses boolean arithmetics and boolean matrices.
+	 * Runs operations that return booleans and uses boolean arithmetics and boolean matrices.
 	 * @param m1 input matrix 1
 	 * @param m2 input matrix 2
 	 * @param ret result matrix
@@ -1433,7 +1433,10 @@ public class LibMatrixBincell {
 	private static long computeAsBoolean(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, BinaryOperator op, int rl, int ru){
 		int clen = m1.clen;
 		long lnnz = 0;
-		boolean isAndOrXor = op.fn instanceof And || op.fn instanceof Or || op.fn instanceof Xor;
+
+		//currently operators that have boolean as input and output have to use one of DenseBlockBool
+		boolean canRunAndOrXorAsFullBoolean = (op.fn instanceof And || op.fn instanceof Or || op.fn instanceof Xor) && m1.denseBlock instanceof DenseBlockBool && m2.denseBlock instanceof DenseBlockBool;
+
 		boolean isValueComparisonFunction = op.fn instanceof ValueComparisonFunction;
 
 		for(int r=rl; r<ru; r++)
@@ -1445,12 +1448,13 @@ public class LibMatrixBincell {
 					double v1 = m1.quickGetValue(r, c);
 					double v2 = m2.quickGetValue(r, c);
 					vb = ((ValueComparisonFunction) op.fn).compare( v1, v2 );
-				} else if (isAndOrXor) {
+				} else if (canRunAndOrXorAsFullBoolean) {
 					boolean vb1 = ((DenseBlockBool)m1.denseBlock).getBoolean(r,c);
 					boolean vb2 = ((DenseBlockBool)m2.denseBlock).getBoolean(r,c);
 					vb = op.fn.execute(vb1, vb2);
 				} else {
-					throw new RuntimeException("Currently there is no support for boolean computation with operator of type "+op.fn.getClass().getSimpleName());
+					throw new RuntimeException("Currently there is no support for full boolean computation with operator of type "+op.fn.getClass().getSimpleName()
+							+" for input typ "+m1.denseBlock.getClass().getSimpleName()+" and output type "+ret.denseBlock.getClass().getSimpleName());
 				}
 
 				//reenact what is happening in appendValuePlain()

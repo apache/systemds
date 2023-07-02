@@ -1051,8 +1051,8 @@ public class Dag<N extends Lop>
 					&& inst1.getInput1().getName().equals(
 						((VariableCPInstruction)inst2).getInput1().getName()) ) {
 					//remove unnecessary rmvar before mvvar
-					Instruction last = ret.get(ret.size()-1);
-					if( last instanceof VariableCPInstruction
+					Instruction last = ret.size()>0 ? ret.get(ret.size()-1) : null;
+					if( last != null && last instanceof VariableCPInstruction
 						&& ((VariableCPInstruction)last).isRemoveVariableNoFile()
 						&& ((VariableCPInstruction)last).getInputs().size() == 1
 						&& ((VariableCPInstruction)last).getInput1().getName().equals(inst1.getInput2().getName()))

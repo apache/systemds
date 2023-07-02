@@ -259,6 +259,10 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 		return opcode == VariableOperationCode.RemoveVariable
 			|| opcode == VariableOperationCode.RemoveVariableAndFile;
 	}
+	
+	public boolean isMoveVariable() {
+		return opcode == VariableOperationCode.MoveVariable;
+	}
 
 	public boolean isAssignVariable() {
 		return opcode == VariableOperationCode.AssignVariable;

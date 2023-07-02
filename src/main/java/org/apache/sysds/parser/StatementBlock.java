@@ -974,7 +974,10 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 		}
 		// CASE: target NOT indexed identifier
 		else if (!(target instanceof IndexedIdentifier)){
-			target.setProperties(source.getOutput());
+			if( as.isAccumulator() && ids.containsVariable(target.getName()) )
+				target.setProperties(ids.getVariable(target.getName()));
+			else
+				target.setProperties(source.getOutput());
 			if (source.getOutput() instanceof IndexedIdentifier)
 				target.setDimensions(source.getOutput().getDim1(), source.getOutput().getDim2());
 		}

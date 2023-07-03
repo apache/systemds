@@ -28,8 +28,59 @@
 # P     Probability of the set of outputs
 # --------------------------------------------------------------------------------------------
 
-m_hmmPredict = function(Matrix[Double] X, Integer k) return (Matrix[Double] p)
+choose_value = function (matrix[double] prob_dist) return (double val)
 {
-    p = matrix(0.0, rows=1, cols=k)
+    #useful for selecting output or states given probability distribution
+    
+    #choosing using cumulative distribution
+    cum_prob = cumsum(prob_dist)
+    
+    R = rand(rows=1, cols=1, min=0, max=1)
+    
+    #adding 1 to colsum because indexing starts from 1
+    val = as.scalar(colSums(cum_prob <= R) + 1)
+}
+
+get_all_states = function (matrix[double] A, matrix[double] ip, integer k) return (matrix[double] states)
+{
+    init_state = choose_value(ip)
+    states = matrix(0, rows=k, cols=1)
+    states[1, 1] = init_state
+    s = init_state
+    
+    for (i in 2:k) {
+        next_state = choose_value(t(A[s, ])) 
+        states[i, 1] = next_state
+        s = next_state
+    }
+}
+
+get_outputs = function (matrix[double] B, matrix[double] states) return (matrix[double] outputs)
+{
+    outputs = matrix(0, rows=nrow(states), cols=1)
+    for (i in 1:nrow(states)) {
+        s = as.scalar(states[i, 1])
+        outputs[i, 1] = choose_value(t(B[s, ]))
+    }
+}
+
+m_hmmPredict = function(Matrix[Double] X, Integer k) return (Matrix[Double] outputs)
+{
+    /*
+    A, B, ip = hmm(X)
+
+    The above would be the function call to obtain model parameters. 
+    Instead, the following has dummy model parameters to for the functions to work
+    */
+
+    n_states = 3
+    n_outputs = 3
+    
+    A = matrix(1/n_states, rows=n_states, cols=n_states)
+    B = matrix(1/n_outputs, rows=n_states, cols=n_outputs)
+    ip = matrix(1/n_states, rows=n_states, cols=1)
+
+    states = get_all_states(A, ip, k)
+    outputs = get_outputs(B, states)
 }    
 

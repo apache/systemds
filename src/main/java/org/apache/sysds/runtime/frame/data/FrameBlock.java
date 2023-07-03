@@ -86,7 +86,7 @@ public class FrameBlock implements CacheBlock<FrameBlock>, Externalizable {
 	/** Buffer size variable: 1M elements, size of default matrix block */
 	public static final int BUFFER_SIZE = 1 * 1000 * 1000;
 
-	/** If debugging is enabled for the FrameBlocks in stable state*/
+	/** If debugging is enabled for the FrameBlocks in stable state */
 	public static boolean debug = false;
 
 	/** The schema of the data frame as an ordered list of value types */
@@ -195,6 +195,55 @@ public class FrameBlock implements CacheBlock<FrameBlock>, Externalizable {
 		_colmeta = meta;
 		_coldata = data;
 		_nRow = data[0].size();
+	}
+
+	/**
+	 * Create a FrameBlock containing columns of the specified arrays
+	 * 
+	 * @param data The column data contained
+	 */
+	public FrameBlock(Array<?>[] data) {
+		_schema = new ValueType[data.length];
+		for(int i = 0; i < data.length; i++)
+			_schema[i] = data[i].getValueType();
+
+		_colnames = null;
+		ensureAllocateMeta();
+		_coldata = data;
+		_nRow = data[0].size();
+
+		if(debug) {
+			for(int i = 0; i < data.length; i++) {
+				if(data[i].size() != getNumRows())
+					throw new DMLRuntimeException(
+						"Invalid Frame allocation with different size arrays " + data[i].size() + " vs " + getNumRows());
+			}
+		}
+	}
+
+	/**
+	 * Create a FrameBlock containing columns of the specified arrays and names
+	 * 
+	 * @param data     The column data contained
+	 * @param colnames The column names of the contained columns
+	 */
+	public FrameBlock(Array<?>[] data, String[] colnames) {
+		_schema = new ValueType[data.length];
+		for(int i = 0; i < data.length; i++)
+			_schema[i] = data[i].getValueType();
+
+		_colnames = colnames;
+		ensureAllocateMeta();
+		_coldata = data;
+		_nRow = data[0].size();
+
+		if(debug) {
+			for(int i = 0; i < data.length; i++) {
+				if(data[i].size() != getNumRows())
+					throw new DMLRuntimeException(
+						"Invalid Frame allocation with different size arrays " + data[i].size() + " vs " + getNumRows());
+			}
+		}
 	}
 
 	/**

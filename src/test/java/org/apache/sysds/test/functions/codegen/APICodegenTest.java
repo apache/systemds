@@ -23,21 +23,20 @@ import static org.apache.sysds.api.mlcontext.ScriptFactory.dml;
 
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaSparkContext;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Test;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.api.jmlc.Connection;
 import org.apache.sysds.api.jmlc.PreparedScript;
 import org.apache.sysds.api.mlcontext.MLContext;
 import org.apache.sysds.api.mlcontext.Script;
-import org.apache.sysds.conf.DMLConfig;
 import org.apache.sysds.conf.CompilerConfig.ConfigType;
+import org.apache.sysds.conf.DMLConfig;
 import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.test.AutomatedTestBase;
-import org.apache.sysds.utils.Statistics;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Test;
 
 
 public class APICodegenTest extends AutomatedTestBase
@@ -85,12 +84,13 @@ public class APICodegenTest extends AutomatedTestBase
 				pscript.setMatrix("X", mX, false);
 				pscript.executeScript();
 				conn.close();
-				System.out.println(Statistics.display());
+				// System.out.println(Statistics.display());
 			}
 			else {
 				SparkConf conf = SparkExecutionContext.createSystemDSSparkConf()
 					.setAppName("MLContextTest").setMaster("local");
 				JavaSparkContext sc = new JavaSparkContext(conf);
+				MLContext.welcomePrint = true;
 				MLContext ml = new MLContext(sc);
 				ml.setConfigProperty(DMLConfig.CODEGEN, "true");
 				ml.setStatistics(true);

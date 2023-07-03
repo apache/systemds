@@ -28,6 +28,7 @@ import java.util.Arrays;
 
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.frame.data.columns.ArrayFactory.FrameArrayType;
+import org.apache.sysds.runtime.frame.data.compress.ArrayCompressionStatistics;
 import org.apache.sysds.runtime.matrix.data.Pair;
 import org.apache.sysds.runtime.util.UtilFunctions;
 import org.apache.sysds.utils.MemoryEstimates;
@@ -339,8 +340,14 @@ public class BooleanArray extends ABooleanArray {
 	}
 
 	@Override
-	public double hashDouble(int idx){
+	public double hashDouble(int idx) {
 		return get(idx) ? 1.0 : 0.0;
+	}
+
+	@Override
+	public ArrayCompressionStatistics statistics(int nSamples) {
+		// Unlikely to compress so lets just say... no
+		return null;
 	}
 
 	@Override

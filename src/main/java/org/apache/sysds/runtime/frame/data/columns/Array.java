@@ -23,6 +23,7 @@ import java.lang.ref.SoftReference;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.commons.logging.Log;
@@ -30,7 +31,9 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.io.Writable;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.compress.estim.sample.SampleEstimatorFactory;
 import org.apache.sysds.runtime.frame.data.columns.ArrayFactory.FrameArrayType;
+import org.apache.sysds.runtime.frame.data.compress.ArrayCompressionStatistics;
 import org.apache.sysds.runtime.matrix.data.Pair;
 
 /**
@@ -97,14 +100,15 @@ public abstract class Array<T> implements Writable {
 
 	/**
 	 * Recreate the recode map from what is already there.
+	 * 
 	 * @return
 	 */
-	protected Map<T, Long> createRecodeMap(){
+	protected Map<T, Long> createRecodeMap() {
 		Map<T, Long> map = new HashMap<>();
 		long id = 0;
 		for(int i = 0; i < size(); i++) {
 			T val = get(i);
-			if(val != null){
+			if(val != null) {
 				Long v = map.putIfAbsent(val, id);
 				if(v == null)
 					id++;
@@ -113,19 +117,18 @@ public abstract class Array<T> implements Writable {
 		return map;
 	}
 
-
 	/**
 	 * Get the dictionary of the contained values, including null.
 	 * 
 	 * @return a dictionary containing all unique values.
 	 */
-	protected Map<T, Integer> getDictionary(){
+	protected Map<T, Integer> getDictionary() {
 		Map<T, Integer> dict = new HashMap<>();
 		int id = 0;
-		for(int i = 0 ; i < size(); i ++){
+		for(int i = 0; i < size(); i++) {
 			T val = get(i);
 			Integer v = dict.putIfAbsent(val, id);
-			if(v== null)
+			if(v == null)
 				id++;
 		}
 
@@ -371,7 +374,7 @@ public abstract class Array<T> implements Writable {
 	 * 
 	 * @return If the array contains null.
 	 */
-	public boolean containsNull(){
+	public boolean containsNull() {
 		return false;
 	}
 
@@ -424,7 +427,7 @@ public abstract class Array<T> implements Writable {
 				return changeTypeFloat();
 			case FP64:
 				return changeTypeDouble();
-				case UINT4:
+			case UINT4:
 			case UINT8:
 				throw new NotImplementedException();
 			case INT32:
@@ -556,7 +559,7 @@ public abstract class Array<T> implements Writable {
 	 * 
 	 * @param select Modify this to true in indexes that are not empty.
 	 */
-	public final void findEmpty(boolean[] select){
+	public final void findEmpty(boolean[] select) {
 		for(int i = 0; i < select.length; i++)
 			if(isNotEmpty(i))
 				select[i] = true;
@@ -592,28 +595,57 @@ public abstract class Array<T> implements Writable {
 	}
 
 	/**
-	 * Hash the given index of the array.
-	 * It is allowed to return NaN on null elements.
+	 * Hash the given index of the array. It is allowed to return NaN on null elements.
 	 * 
 	 * @param idx The index to hash
 	 * @return The hash value of that index.
 	 */
 	public abstract double hashDouble(int idx);
 
-	public ArrayIterator getIterator(){
+	public ArrayIterator getIterator() {
 		return new ArrayIterator();
+	}
+
+	public ArrayCompressionStatistics statistics(int nSamples) {
+
+		Map<T, Integer> d = new HashMap<>();
+		for(int i = 0; i < nSamples; i++) {
+			// super inefficient, but startup
+			T key = get(i);
+			if(d.containsKey(key))
+				d.put(key, d.get(key) + 1);
+			else
+				d.put(key, 1);
+		}
+
+		final int[] freq = new int[d.size()];
+		int id = 0;
+		for(Entry<T, Integer> e : d.entrySet())
+			freq[id++] = e.getValue();
+
+		int estDistinct = SampleEstimatorFactory.distinctCount(freq, size(), nSamples);
+		long memSize = getInMemorySize(); // uncompressed size
+		int memSizePerElement = (int) ((memSize * 8L) / size());
+
+		long ddcSize = DDCArray.estimateInMemorySize(memSizePerElement, estDistinct, size());
+
+		if(ddcSize < memSize)
+			return new ArrayCompressionStatistics(memSizePerElement, //
+				estDistinct, true, FrameArrayType.DDC, memSize, ddcSize);
+
+		return null;
 	}
 
 	public class ArrayIterator implements Iterator<T> {
 		int index = -1;
 
-		public int getIndex(){
+		public int getIndex() {
 			return index;
 		}
 
 		@Override
 		public boolean hasNext() {
-			return index < size()-1;
+			return index < size() - 1;
 		}
 
 		@Override

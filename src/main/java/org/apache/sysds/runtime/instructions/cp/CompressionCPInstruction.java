@@ -29,7 +29,6 @@ import org.apache.sysds.runtime.compress.SingletonLookupHashMap;
 import org.apache.sysds.runtime.compress.workload.WTreeRoot;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
-import org.apache.sysds.runtime.frame.data.compress.FrameCompressionStatistics;
 import org.apache.sysds.runtime.frame.data.lib.FrameLibCompress;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -89,12 +88,9 @@ public class CompressionCPInstruction extends ComputationCPInstruction {
 	}
 
 	private void processFrameBlockCompression(ExecutionContext ec, FrameBlock in, int k, WTreeRoot root) {
-		Pair<FrameBlock, FrameCompressionStatistics> compResult = FrameLibCompress.compress(in, k, root);
-		if(LOG.isTraceEnabled())
-			LOG.trace(compResult.getRight());
-		FrameBlock out = compResult.getLeft();
+		FrameBlock compResult = FrameLibCompress.compress(in, k, root);
 		// Set output and release input
 		ec.releaseFrameInput(input1.getName());
-		ec.setFrameOutput(output.getName(), out);
+		ec.setFrameOutput(output.getName(), compResult);
 	}
 }

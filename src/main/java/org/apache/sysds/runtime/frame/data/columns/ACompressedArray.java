@@ -20,6 +20,7 @@
 package org.apache.sysds.runtime.frame.data.columns;
 
 import org.apache.sysds.runtime.compress.DMLCompressionException;
+import org.apache.sysds.runtime.frame.data.compress.ArrayCompressionStatistics;
 
 /**
  * A Compressed Array, in general does not allow us to set or modify the array.
@@ -100,6 +101,12 @@ public abstract class ACompressedArray<T> extends Array<T> {
 	@Override
 	public void reset(int size) {
 		throw new DMLCompressionException("Invalid to reset compressed array");
+	}
+
+	@Override
+	public ArrayCompressionStatistics statistics(int nSamples) {
+		// already compressed
+		return null;
 	}
 
 }

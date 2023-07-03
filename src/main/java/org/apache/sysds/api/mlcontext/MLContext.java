@@ -73,6 +73,9 @@ public class MLContext implements ConfigurableAPI
 	 */
 	private static MLContext activeMLContext = null;
 
+	/** Welcome message */
+	public static boolean welcomePrint = false;
+
 	/**
 	 * Contains cleanup methods used by MLContextProxy.
 	 */
@@ -262,8 +265,9 @@ public class MLContext implements ConfigurableAPI
 			}
 		}
 
-		if (activeMLContext == null) {
+		if (!welcomePrint) {
 			System.out.println(MLContextUtil.welcomeMessage());
+			welcomePrint = true;
 		}
 		
 		this.spark = spark;

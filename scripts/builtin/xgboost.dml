@@ -148,7 +148,7 @@ calculateNewPredictions = function(Matrix[Double] X, Integer sml_type, Matrix[Do
 # INPUT:    curr_M: The current M matrix with the current tree
 # INPUT:    current_node: the start node of the current tree
 # OUTPUT:   output_value: the prediction for the current sample at the current tree
-getOutputValueForEntry = function(Matrix[Double] row_vector, 
+getOutputValueForEntry = function(Matrix[Double] row_vector,
   Matrix[Double] curr_M, Matrix[Double] current_node)
   return (Double output_value)
 {
@@ -506,9 +506,7 @@ calcAvailableRows = function(Matrix[Double] vector)
 dataQueuePop = function(Matrix[Double] queue)
   return (Matrix[Double] new_queue, Matrix[Double] node_vec)
 {
-  node_vec = queue[,1] + 7 #TODO workaround variable cleanup
-  while(FALSE){}
-  node_vec = node_vec - 7;
+  node_vec = queue[,1];
   if (ncol(queue) < 2)
     new_queue = matrix(0,0,0)
   else

@@ -442,7 +442,7 @@ public class IndexingOp extends Hop
 		Hop input5 = getInput().get(4);
 		return HopRewriteUtils.isLiteralOfValue(input4, 1)
 			&& ((HopRewriteUtils.isUnary(input5, OpOp1.NCOL) && input5.getInput().get(0) == input1 )
-			|| (HopRewriteUtils.isLiteralOfValue(input5, input1.getDim2())&& input1.getDim1()>0));
+			|| (HopRewriteUtils.isLiteralOfValue(input5, input1.getDim2())&& input1.getDim2()>0));
 	}
 	
 	@Override

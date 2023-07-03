@@ -58,7 +58,7 @@ get_all_states = function (matrix[double] A, matrix[double] ip, integer k) retur
 get_outputs = function (matrix[double] B, matrix[double] states) return (matrix[double] outputs)
 {
     outputs = matrix(0, rows=nrow(states), cols=1)
-    for (i in 1:nrow(states)) {
+    parfor (i in 1:nrow(states)) {
         s = as.scalar(states[i, 1])
         outputs[i, 1] = choose_value(t(B[s, ]))
     }
@@ -82,5 +82,5 @@ m_hmmPredict = function(Matrix[Double] X, Integer k) return (Matrix[Double] outp
 
     states = get_all_states(A, ip, k)
     outputs = get_outputs(B, states)
-}    
+}
 

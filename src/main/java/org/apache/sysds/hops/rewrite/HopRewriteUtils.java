@@ -1321,10 +1321,11 @@ public class HopRewriteUtils {
 		//starting row and column ranges of 1 in order to guard against
 		//invalid modifications in the presence of invalid index ranges
 		//(e.g., X[,2] on a column vector needs to throw an error)
-		return isEqualSize(hop, hop.getInput().get(0))
-			&& !(hop.getDim1()==1 && hop.getDim2()==1)
-			&& isLiteralOfValue(hop.getInput().get(1), 1)  //rl
-			&& isLiteralOfValue(hop.getInput().get(3), 1); //cl
+		return ((IndexingOp)hop).isAllRowsAndCols()
+			|| (isEqualSize(hop, hop.getInput().get(0))
+				&& !(hop.getDim1()==1 && hop.getDim2()==1)
+				&& isLiteralOfValue(hop.getInput().get(1), 1)  //rl
+				&& isLiteralOfValue(hop.getInput().get(3), 1)); //cl
 	}
 	
 	public static boolean isScalarMatrixBinaryMult( Hop hop ) {

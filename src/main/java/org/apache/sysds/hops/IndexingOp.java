@@ -423,6 +423,10 @@ public class IndexingOp extends Hop
 		}
 	}
 	
+	public boolean isAllRowsAndCols() {
+		return isAllRows() && isAllCols();
+	}
+	
 	public boolean isAllRows() {
 		Hop input1 = getInput().get(0);
 		Hop input2 = getInput().get(1);

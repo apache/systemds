@@ -57,8 +57,8 @@ public class DDCArray<T> extends ACompressedArray<T> {
 	}
 
 	private static <V, K> Map<V, K> invert(Map<K, V> map) {
-		Map<V, K> invMap = new HashMap<V,K>();
-		for( Entry<K,V> e : map.entrySet())
+		Map<V, K> invMap = new HashMap<V, K>();
+		for(Entry<K, V> e : map.entrySet())
 			invMap.put(e.getValue(), e.getKey());
 		return invMap;
 	}
@@ -82,14 +82,12 @@ public class DDCArray<T> extends ACompressedArray<T> {
 		if(rcd.size() > arr.size() / 2)
 			return arr;
 
-		
 		Array<T> ar;
-		
-		if( rcd.keySet().contains(null))
-			ar =  (Array<T>) ArrayFactory.allocateOptional(arr.getValueType(), rcd.size());
+
+		if(rcd.keySet().contains(null))
+			ar = (Array<T>) ArrayFactory.allocateOptional(arr.getValueType(), rcd.size());
 		else
 			ar = (Array<T>) ArrayFactory.allocate(arr.getValueType(), rcd.size());
-		
 
 		Map<Integer, T> rcdInv = invert(rcd);
 		for(int i = 0; i < rcd.size(); i++)
@@ -279,6 +277,12 @@ public class DDCArray<T> extends ACompressedArray<T> {
 	@Override
 	public long getInMemorySize() {
 		return super.getInMemorySize() + map.getInMemorySize() + dict.getInMemorySize();
+	}
+
+	@Override
+	protected Map<T, Integer> getDictionary() {
+		// Nice shortcut!
+		return dict.getDictionary();
 	}
 
 	@Override

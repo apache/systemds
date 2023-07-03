@@ -35,7 +35,7 @@ import org.apache.sysds.runtime.util.UtilFunctions;
 
 public class CharArray extends Array<Character> {
 
-	protected char[] _data;
+	private char[] _data;
 
 	public CharArray(char[] data) {
 		super(data.length);

@@ -1995,6 +1995,7 @@ public class FrameArrayTests {
 	}
 
 	public static String[] generateRandomStringNUniqueLengthOpt(int size, int seed, int nUnique, int stringLength) {
+		nUnique = Math.max(1, nUnique);
 		String[] rands = generateRandomStringLength(nUnique, seed, stringLength);
 		rands[rands.length - 1] = null;
 		Random r = new Random(seed + 1);

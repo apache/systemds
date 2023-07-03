@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -16,19 +16,39 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.sysds.runtime.frame.data.lib;
+
+package org.apache.sysds.runtime.frame.data.compress;
 
 import org.apache.sysds.runtime.compress.workload.WTreeRoot;
-import org.apache.sysds.runtime.frame.data.FrameBlock;
-import org.apache.sysds.runtime.frame.data.compress.CompressedFrameBlockFactory;
 
-public class FrameLibCompress {
+public class FrameCompressionSettingsBuilder {
 
-	public static FrameBlock compress(FrameBlock in, int k) {
-		return compress(in, k, null);
+	private float sampleRatio;
+	private int k;
+	private WTreeRoot wt;
+
+	public FrameCompressionSettingsBuilder() {
+		this.sampleRatio = 0.1f;
+		this.k = 1;
+		this.wt = null;
 	}
 
-	public static FrameBlock compress(FrameBlock in, int k, WTreeRoot root) {
-		return CompressedFrameBlockFactory.compress(in, k, root);
+	public FrameCompressionSettingsBuilder wTreeRoot(WTreeRoot wt) {
+		this.wt = wt;
+		return this;
+	}
+
+	public FrameCompressionSettingsBuilder threads(int k) {
+		this.k = k;
+		return this;
+	}
+
+	public FrameCompressionSettingsBuilder sampleRatio(float sampleRatio) {
+		this.sampleRatio = sampleRatio;
+		return this;
+	}
+
+	public FrameCompressionSettings create() {
+		return new FrameCompressionSettings(sampleRatio, k, wt);
 	}
 }

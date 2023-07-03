@@ -22,22 +22,23 @@
 # This script implements the hidden markov model method
 # INPUT:
 # --------------------------------------------------------------------------------------------
-# X         Set of outputs
+# X         Output of hmm of last n timestep
+# k         Number of timesteps to predict the output for
 # OUTPUT:
 # --------------------------------------------------------------------------------------------
-# P     Probability of the set of outputs
+# outputs   Output of hmm for k timesteps
 # --------------------------------------------------------------------------------------------
 
 choose_value = function (matrix[double] prob_dist) return (double val)
 {
-    #useful for selecting output or states given probability distribution
-    
-    #choosing using cumulative distribution
+    # for selecting output or states given probability distribution
+
+    # choosing using cumulative distribution
     cum_prob = cumsum(prob_dist)
     
     R = rand(rows=1, cols=1, min=0, max=1)
     
-    #adding 1 to colsum because indexing starts from 1
+    # adding 1 to colsum because indexing starts from 1
     val = as.scalar(colSums(cum_prob <= R) + 1)
 }
 
@@ -83,4 +84,3 @@ m_hmmPredict = function(Matrix[Double] X, Integer k) return (Matrix[Double] outp
     states = get_all_states(A, ip, k)
     outputs = get_outputs(B, states)
 }
-

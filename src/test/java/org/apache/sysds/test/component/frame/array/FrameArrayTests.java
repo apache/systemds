@@ -19,10 +19,6 @@
 
 package org.apache.sysds.test.component.frame.array;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
@@ -33,6 +29,9 @@ import java.util.BitSet;
 import java.util.Collection;
 import java.util.Random;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -49,6 +48,7 @@ import org.apache.sysds.runtime.frame.data.columns.FloatArray;
 import org.apache.sysds.runtime.frame.data.columns.IntegerArray;
 import org.apache.sysds.runtime.frame.data.columns.LongArray;
 import org.apache.sysds.runtime.frame.data.columns.OptionalArray;
+import org.apache.sysds.runtime.frame.data.columns.RaggedArray;
 import org.apache.sysds.runtime.frame.data.columns.StringArray;
 import org.apache.sysds.runtime.frame.data.lib.FrameLibRemoveEmpty;
 import org.apache.sysds.runtime.matrix.data.Pair;
@@ -265,6 +265,8 @@ public class FrameArrayTests {
 	public void getFrameArrayType() {
 		if(t == FrameArrayType.BITSET)
 			return;
+		if(t == FrameArrayType.OPTIONAL && a.getFrameArrayType()==FrameArrayType.RAGGED)
+			return;
 		assertEquals(t, a.getFrameArrayType());
 	}
 
@@ -323,6 +325,7 @@ public class FrameArrayTests {
 				return;
 			case CHARACTER:
 				x = (char[]) a.get();
+			case RAGGED:
 			case OPTIONAL:
 				try {
 					a.get();
@@ -741,7 +744,7 @@ public class FrameArrayTests {
 		Array<?> aa = a.clone();
 
 		aa.append((String) null);
-		if(a.getFrameArrayType() == FrameArrayType.OPTIONAL)
+		if(a.getFrameArrayType() == FrameArrayType.OPTIONAL || a.getFrameArrayType() == FrameArrayType.RAGGED)
 			assertEquals((String) aa.get(aa.size() - 1), null);
 		else {
 			switch(a.getValueType()) {
@@ -782,7 +785,7 @@ public class FrameArrayTests {
 
 		for(int i = 0; i < 60; i++)
 			aa.append((String) null);
-		if(a.getFrameArrayType() == FrameArrayType.OPTIONAL)
+		if(a.getFrameArrayType() == FrameArrayType.OPTIONAL || a.getFrameArrayType() == FrameArrayType.RAGGED)
 			assertEquals((String) aa.get(aa.size() - 1), null);
 		else {
 			switch(a.getValueType()) {
@@ -937,7 +940,7 @@ public class FrameArrayTests {
 
 			Array<?> aa = a.clone();
 			aa.reset(10);
-			if(aa.getValueType() == ValueType.STRING || aa.getFrameArrayType() == FrameArrayType.OPTIONAL) {
+			if(aa.getValueType() == ValueType.STRING || aa.getFrameArrayType() == FrameArrayType.OPTIONAL || aa.getFrameArrayType() == FrameArrayType.RAGGED) {
 				for(int i = 0; i < 10; i++) {
 					assertEquals(null, aa.get(i));
 				}
@@ -1146,7 +1149,7 @@ public class FrameArrayTests {
 	@SuppressWarnings("unchecked")
 	public void testAppendValue() {
 		Array<?> aa = a.clone();
-		boolean isOptional = aa instanceof OptionalArray;
+		boolean isOptional = aa instanceof OptionalArray || aa instanceof RaggedArray;
 		switch(a.getValueType()) {
 			case BOOLEAN:
 				((Array<Boolean>) aa).append((Boolean) null);
@@ -1252,7 +1255,7 @@ public class FrameArrayTests {
 	@Test
 	public void fillNull() {
 		Array<?> aa = a.clone();
-		boolean isOptional = aa instanceof OptionalArray;
+		boolean isOptional = aa instanceof OptionalArray || aa instanceof RaggedArray;
 		aa.fill((String) null);
 		switch(a.getValueType()) {
 			case BOOLEAN:
@@ -1396,7 +1399,7 @@ public class FrameArrayTests {
 		try {
 
 			Array<?> aa = a.clone();
-			boolean isOptional = aa instanceof OptionalArray;
+			boolean isOptional = aa instanceof OptionalArray || aa instanceof RaggedArray;
 			switch(a.getValueType()) {
 				case BOOLEAN:
 					((Array<Boolean>) aa).fill((Boolean) null);
@@ -1578,6 +1581,22 @@ public class FrameArrayTests {
 				return ArrayFactory.create(generateRandomDoubleOpt(size, seed));
 			case CHARACTER:
 				return ArrayFactory.create(generateRandomCharacterOpt(size, seed));
+			case RAGGED:
+				Random rand = new Random(seed);
+				switch(rand.nextInt(7)) {
+					case 0:
+						return ArrayFactory.create(generateRandomIntegerOpt(size, seed), size);
+					case 1:
+						return ArrayFactory.create(generateRandomLongOpt(size, seed), size);
+					case 2:
+						return ArrayFactory.create(generateRandomDoubleOpt(size, seed), size);
+					case 3:
+						return ArrayFactory.create(generateRandomFloatOpt(size, seed), size);
+					case 4:
+						return ArrayFactory.create(generateRandomCharacterOpt(size, seed), size);
+					default:
+						return ArrayFactory.create(generateRandomBooleanOpt(size, seed), size);
+				}
 			case OPTIONAL:
 				Random r = new Random(seed);
 				switch(r.nextInt(7)) {
@@ -1618,6 +1637,23 @@ public class FrameArrayTests {
 				return ArrayFactory.create(generateRandomDouble(size, seed));
 			case CHARACTER:
 				return ArrayFactory.create(generateRandomChar(size, seed));
+			case RAGGED:
+				Random rand = new Random(seed);
+				switch(rand.nextInt(7)) {
+					case 0:
+						return ArrayFactory.create(generateRandomIntegerOpt(size, seed), size);
+					case 1:
+						return ArrayFactory.create(generateRandomLongOpt(size, seed), size);
+					case 2:
+						return ArrayFactory.create(generateRandomDoubleOpt(size, seed), size);
+					case 3:
+						return ArrayFactory.create(generateRandomFloatOpt(size, seed), size);
+					case 4:
+						return ArrayFactory.create(generateRandomCharacterOpt(size, seed), size);
+					default:
+						return ArrayFactory.create(generateRandomBooleanOpt(size, seed), size);
+				}
+
 			case OPTIONAL:
 				Random r = new Random(seed);
 				switch(r.nextInt(7)) {

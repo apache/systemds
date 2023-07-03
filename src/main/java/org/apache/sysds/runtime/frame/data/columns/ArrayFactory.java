@@ -32,7 +32,7 @@ public interface ArrayFactory {
 	public final static int bitSetSwitchPoint = 64;
 
 	public enum FrameArrayType {
-		STRING, BOOLEAN, BITSET, INT32, INT64, FP32, FP64, CHARACTER, OPTIONAL;
+		STRING, BOOLEAN, BITSET, INT32, INT64, FP32, FP64, CHARACTER, RAGGED, OPTIONAL;
 	}
 
 	public static StringArray create(String[] col) {
@@ -69,6 +69,9 @@ public interface ArrayFactory {
 
 	public static <T> OptionalArray<T> create(T[] col) {
 		return new OptionalArray<T>(col);
+	}
+	public static <T> RaggedArray<T> create(T[] col, int m) {
+		return new RaggedArray<T>(col, m);
 	}
 
 	public static long getInMemorySize(ValueType type, int _numRows) {

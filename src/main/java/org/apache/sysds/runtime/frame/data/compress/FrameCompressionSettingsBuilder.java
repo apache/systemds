@@ -16,10 +16,20 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+
 package org.apache.sysds.runtime.frame.data.compress;
 
-public class FrameCompressionStatistics {
+public class FrameCompressionSettingsBuilder {
 
-	
+	public float sampleRatio;
+	public int k;
 
+	public FrameCompressionSettingsBuilder() {
+		this.sampleRatio = 0.1f;
+		this.k = 1;
+	}
+
+	public FrameCompressionSettings create() {
+		return new FrameCompressionSettings(sampleRatio, k);
+	}
 }

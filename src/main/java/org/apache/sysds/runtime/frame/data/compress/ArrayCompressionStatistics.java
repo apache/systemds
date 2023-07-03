@@ -16,10 +16,16 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+
 package org.apache.sysds.runtime.frame.data.compress;
 
-public class FrameCompressionStatistics {
+public class ArrayCompressionStatistics {
 
-	
+	public final int bitPerValue;
+	public final int nUnique;
 
+	public ArrayCompressionStatistics(int bitPerValue, int nUnique) {
+		this.bitPerValue = bitPerValue;
+		this.nUnique = nUnique;
+	}
 }

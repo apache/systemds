@@ -16,10 +16,31 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+
 package org.apache.sysds.runtime.frame.data.compress;
 
-public class FrameCompressionStatistics {
+import org.apache.commons.lang.NotImplementedException;
+import org.apache.sysds.runtime.frame.data.FrameBlock;
 
-	
+public class CompressedFrameBlockFactory {
+
+	private final FrameBlock in;
+	private final FrameCompressionSettings cs;
+	private final ArrayCompressionStatistics[] stats;
+
+	private CompressedFrameBlockFactory(FrameBlock fb, FrameCompressionSettings cs) {
+		this.in = fb;
+		this.cs = cs;
+		this.stats = new ArrayCompressionStatistics[in.getNumColumns()];
+	}
+
+	public static FrameBlock compress(FrameBlock fb) {
+		FrameCompressionSettings cs = new FrameCompressionSettingsBuilder().create();
+		return new CompressedFrameBlockFactory(fb, cs).compressFrame();
+	}
+
+	private FrameBlock compressFrame() {
+		throw new NotImplementedException();
+	}
 
 }

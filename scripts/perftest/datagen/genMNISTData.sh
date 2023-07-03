@@ -29,35 +29,100 @@ CMD=$1
 DATADIR=$2/mnist
 MAXMEM=$3
 
-FORMAT="text" # can be csv, mm, text, binary
+FORMAT="csv" # can be csv, mm, text, binary
 
 echo "-- Generating MNIST data." >> results/times.txt;
 #make sure whole MNIST is available
 ../datagen/getMNISTDataset.sh ${DATADIR}
 
+MNIST_train_filename="mnist_train.csv"
+MNIST_test_filename="mnist_test.csv"
+
+max_size_ordinal=4
+min_num_examples_train=12000
+max_num_examples_train=60000
+span_num_examples_train=$(echo "${max_num_examples_train} - ${min_num_examples_train}" | bc)
+min_num_examples_test=2000
+max_num_examples_test=10000
+span_num_examples_test=$(echo "${max_num_examples_test} - ${min_num_examples_test}" | bc)
 #generate XS scenarios (80MB) by producing a subset of MNIST
 if [ $MAXMEM -ge 80 ]; then
-  echo "placeholder"
+  size_ordinal=0
+  percent_size=$(echo "${size_ordinal} / ${max_size_ordinal}" | bc)
+  target_num_train=$(python -c "from math import floor; print( ${min_num_examples_train} + floor(${span_num_examples_train} * ${percent_size}))")  # todo couldn't work out how to do this using bc so using slower python calls instead
+  target_num_test=$(python -c "from math import floor; print( ${min_num_examples_test} + floor(${span_num_examples_test} * ${percent_size}))")
+  ${CMD} -f ../datagen/extractMNISTData.dml --nvargs \
+    file_mnist_train=${DATADIR}/${MNIST_train_filename} \
+    file_mnist_test=${DATADIR}/${MNIST_test_filename} \
+    file_out_train=${DATADIR}/MNIST_train_${target_num_train} \
+    file_out_test=${DATADIR}/MNIST_test_${target_num_test} \
+    num_train=${target_num_train} \
+    num_test=${target_num_test} \
+    fmt=${FORMAT} &
 fi
 
 #generate S scenarios (800MB)
 if [ $MAXMEM -ge 800 ]; then
-  echo "placeholder"
+  size_ordinal=1
+  percent_size=$(echo "${size_ordinal} / ${max_size_ordinal}" | bc)
+  target_num_train=$(python -c "from math import floor; print( ${min_num_examples_train} + floor(${span_num_examples_train} * ${percent_size}))")
+  target_num_test=$(python -c "from math import floor; print( ${min_num_examples_test} + floor(${span_num_examples_test} * ${percent_size}))")
+  ${CMD} -f ../datagen/extractMNISTData.dml --nvargs \
+    file_mnist_train=${DATADIR}/${MNIST_train_filename} \
+    file_mnist_test=${DATADIR}/${MNIST_test_filename} \
+    file_out_train=${DATADIR}/MNIST_train_${target_num_train} \
+    file_out_test=${DATADIR}/MNIST_test_${target_num_test} \
+    num_train=${target_num_train} \
+    num_test=${target_num_test} \
+    fmt=${FORMAT} &
 fi
 
 #generate M scenarios (8GB)
 if [ $MAXMEM -ge 8000 ]; then
-  echo "placeholder"
+  size_ordinal=2
+  percent_size=$(echo "${size_ordinal} / ${max_size_ordinal}" | bc)
+  target_num_train=$(python -c "from math import floor; print( ${min_num_examples_train} + floor(${span_num_examples_train} * ${percent_size}))")
+  target_num_test=$(python -c "from math import floor; print( ${min_num_examples_test} + floor(${span_num_examples_test} * ${percent_size}))")
+  ${CMD} -f ../datagen/extractMNISTData.dml --nvargs \
+    file_mnist_train=${DATADIR}/${MNIST_train_filename} \
+    file_mnist_test=${DATADIR}/${MNIST_test_filename} \
+    file_out_train=${DATADIR}/MNIST_train_${target_num_train} \
+    file_out_test=${DATADIR}/MNIST_test_${target_num_test} \
+    num_train=${target_num_train} \
+    num_test=${target_num_test} \
+    fmt=${FORMAT} &
 fi
 
 #generate L scenarios (80GB)
 if [ $MAXMEM -ge 80000 ]; then
-  echo "placeholder"
+  size_ordinal=3
+  percent_size=$(echo "${size_ordinal} / ${max_size_ordinal}" | bc)
+  target_num_train=$(python -c "from math import floor; print( ${min_num_examples_train} + floor(${span_num_examples_train} * ${percent_size}))")
+  target_num_test=$(python -c "from math import floor; print( ${min_num_examples_test} + floor(${span_num_examples_test} * ${percent_size}))")
+  ${CMD} -f ../datagen/extractMNISTData.dml --nvargs \
+    file_mnist_train=${DATADIR}/${MNIST_train_filename} \
+    file_mnist_test=${DATADIR}/${MNIST_test_filename} \
+    file_out_train=${DATADIR}/MNIST_train_${target_num_train} \
+    file_out_test=${DATADIR}/MNIST_test_${target_num_test} \
+    num_train=${target_num_train} \
+    num_test=${target_num_test} \
+    fmt=${FORMAT} &
 fi
 
 #generate XL scenarios (800GB)
 if [ $MAXMEM -ge 800000 ]; then
-  echo "placeholder"
+  size_ordinal=4
+  percent_size=$(echo "${size_ordinal} / ${max_size_ordinal}" | bc)
+  target_num_train=$(python -c "from math import floor; print( ${min_num_examples_train} + floor(${span_num_examples_train} * ${percent_size}))")
+  target_num_test=$(python -c "from math import floor; print( ${min_num_examples_test} + floor(${span_num_examples_test} * ${percent_size}))")
+  ${CMD} -f ../datagen/extractMNISTData.dml --nvargs \
+    file_mnist_train=${DATADIR}/${MNIST_train_filename} \
+    file_mnist_test=${DATADIR}/${MNIST_test_filename} \
+    file_out_train=${DATADIR}/MNIST_train_${target_num_train} \
+    file_out_test=${DATADIR}/MNIST_test_${target_num_test} \
+    num_train=${target_num_train} \
+    num_test=${target_num_test} \
+    fmt=${FORMAT} &
 fi
 
 wait

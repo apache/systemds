@@ -238,7 +238,7 @@ public class FunctionCallCPInstruction extends CPInstruction {
 
 			//cleanup existing data bound to output variable name
 			Data exdata = ec.removeVariable(boundVarName);
-			if( exdata != boundValue )
+			if( exdata != boundValue && !retVars.hasReferences(boundValue) )
 				ec.cleanupDataObject(exdata);
 			
 			//add/replace data in symbol table

@@ -24,6 +24,7 @@
 # --------------------------------------------------------------------------------------------
 # X         Output of hmm of last n timestep
 # k         Number of timesteps to predict the output for
+# model     'd' for discrete outputs and 'c' for continuos
 # OUTPUT:
 # --------------------------------------------------------------------------------------------
 # outputs   Output of hmm for k timesteps
@@ -65,13 +66,16 @@ get_outputs = function (matrix[double] B, matrix[double] states) return (matrix[
     }
 }
 
-m_hmmPredict = function(Matrix[Double] X, Integer k) return (Matrix[Double] outputs)
+m_hmmPredict = function(Matrix[Double] X, Integer k, model='d') return (Matrix[Double] outputs)
 {
     /*
     A, B, ip = hmm(X)
 
     The above would be the function call to obtain model parameters. 
     Instead, the following has dummy model parameters to for the functions to work
+
+    Also only discrete model implemented, need to discretize the cotinous outputs
+    to work with the continous model
     */
 
     n_states = 3

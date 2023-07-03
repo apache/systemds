@@ -25,42 +25,48 @@ import numpy as np
 
 from systemds.context import SystemDSContext
 
-from systemds.operator.nn_nodes.affine import Affine
-
-dim = 6
-n = 10
-m = 5
-np.random.seed(11)
-X = np.random.rand(n, dim)
-
-np.random.seed(10)
-W = np.random.rand(dim, m)
-b = np.random.rand(m)
+from systemds.operator.nn.relu import ReLU
 
 
-class TestAffine(unittest.TestCase):
+class TestRelu(unittest.TestCase):
     sds: SystemDSContext = None
 
     @classmethod
     def setUpClass(cls):
         cls.sds = SystemDSContext()
+        cls.X = np.array([0, -1, -2, 2, 3, -5])
+        cls.dout = np.array([0, 1, 2, 3, 4, 5])
 
     @classmethod
     def tearDownClass(cls):
         cls.sds.close()
 
-    def test_affine(self):
-        Xm = self.sds.from_numpy(X)
-        Wm = self.sds.from_numpy(W)
-        bm = self.sds.from_numpy(b)
+    def test_forward(self):
+        relu = ReLU(self.sds)
+        # forward
+        Xm = self.sds.from_numpy(self.X)
+        out = relu.forward(Xm).compute().flatten()
+        expected = np.array([0, 0, 0, 2, 3, 0])
+        self.assertTrue(np.allclose(out, expected))
 
-        affine = Affine(dim, m, 10)
-        out = affine.forward(Xm)
-        print(out.compute())
-        print(out.script_str)
-        dout = self.sds.from_numpy(np.random.rand(n, m))
-        dX, dW, db = affine.backward(dout)
-        assert True
+        # test static
+        sout = ReLU.forward(Xm).compute().flatten()
+        self.assertTrue(np.allclose(sout, expected))
+
+    def test_backward(self):
+        relu = ReLU(self.sds)
+        # forward
+        Xm = self.sds.from_numpy(self.X)
+        out = relu.forward(Xm)
+        # backward
+        doutm = self.sds.from_numpy(self.dout)
+        dx = relu.backward(doutm).compute().flatten()
+        expected = np.array([0, 0, 0, 3, 4, 0], dtype=np.double)
+        self.assertTrue(np.allclose(dx, expected))
+
+        # test static
+        sdx = ReLU.backward(doutm, Xm).compute().flatten()
+        self.assertTrue(np.allclose(sdx, expected))
 
 
 if __name__ == '__main__':

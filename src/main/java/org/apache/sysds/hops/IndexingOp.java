@@ -433,7 +433,7 @@ public class IndexingOp extends Hop
 		Hop input3 = getInput().get(2);
 		return HopRewriteUtils.isLiteralOfValue(input2, 1)
 			&& ((HopRewriteUtils.isUnary(input3, OpOp1.NROW) && input3.getInput().get(0) == input1 )
-			|| HopRewriteUtils.isLiteralOfValue(input3, input1.getDim1()));
+			|| (HopRewriteUtils.isLiteralOfValue(input3, input1.getDim1()) && input1.getDim1()>0));
 	}
 	
 	public boolean isAllCols() {
@@ -442,7 +442,7 @@ public class IndexingOp extends Hop
 		Hop input5 = getInput().get(4);
 		return HopRewriteUtils.isLiteralOfValue(input4, 1)
 			&& ((HopRewriteUtils.isUnary(input5, OpOp1.NCOL) && input5.getInput().get(0) == input1 )
-			|| HopRewriteUtils.isLiteralOfValue(input5, input1.getDim2()));
+			|| (HopRewriteUtils.isLiteralOfValue(input5, input1.getDim2())&& input1.getDim1()>0));
 	}
 	
 	@Override

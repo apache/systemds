@@ -5134,6 +5134,10 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 			return ret;
 		if( !containsValue(pattern) )
 			return this; //avoid allocation + copy
+		if( isEmpty() && pattern==0 ) {
+			ret.reset(rlen, clen, replacement);
+			return ret;
+		}
 		
 		boolean NaNpattern = Double.isNaN(pattern);
 		if( sparse ) //SPARSE

@@ -52,8 +52,9 @@ public class BuiltinXgBoostTest_classification extends AutomatedTestBase {
 
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[]{"-args", input("X"), input("y"), input("R"), input("sml_type"),
-					input("num_trees"), output("M")};
+			programArgs = new String[]{"-explain", "-args",
+				input("X"), input("y"), input("R"), input("sml_type"),
+				input("num_trees"), output("M")};
 
 			double[][] y = {
 					{1.0},

@@ -20,6 +20,7 @@
 package org.apache.sysds.runtime.frame.data.compress;
 
 import org.apache.commons.lang.NotImplementedException;
+import org.apache.sysds.runtime.compress.workload.WTreeRoot;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
 
 public class CompressedFrameBlockFactory {
@@ -37,6 +38,10 @@ public class CompressedFrameBlockFactory {
 	public static FrameBlock compress(FrameBlock fb) {
 		FrameCompressionSettings cs = new FrameCompressionSettingsBuilder().create();
 		return new CompressedFrameBlockFactory(fb, cs).compressFrame();
+	}
+
+	public static FrameBlock compress(FrameBlock fb, int k, WTreeRoot root) {
+		throw new NotImplementedException();
 	}
 
 	private FrameBlock compressFrame() {

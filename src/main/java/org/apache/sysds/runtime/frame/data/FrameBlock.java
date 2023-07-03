@@ -86,7 +86,7 @@ public class FrameBlock implements CacheBlock<FrameBlock>, Externalizable {
 	/** Buffer size variable: 1M elements, size of default matrix block */
 	public static final int BUFFER_SIZE = 1 * 1000 * 1000;
 
-	/** If debugging is enabled for the FrameBlocks in stable state*/
+	/** If debugging is enabled for the FrameBlocks in stable state */
 	public static boolean debug = false;
 
 	/** The schema of the data frame as an ordered list of value types */
@@ -195,6 +195,10 @@ public class FrameBlock implements CacheBlock<FrameBlock>, Externalizable {
 		_colmeta = meta;
 		_coldata = data;
 		_nRow = data[0].size();
+	}
+
+	public FrameBlock(Array<?>[] data) {
+		throw new NotImplementedException();
 	}
 
 	/**

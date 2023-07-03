@@ -19,12 +19,15 @@
 
 package org.apache.sysds.test.component.frame.compress;
 
-import org.apache.sysds.runtime.frame.data.compress.FrameCompressionStatistics;
+import org.apache.sysds.runtime.frame.data.FrameBlock;
+import org.apache.sysds.runtime.frame.data.columns.Array;
 import org.junit.Test;
 
 public class FrameCompressTest {
 	@Test
 	public void testCompressionStatisticsConstruction() {
-		new FrameCompressionStatistics();
+		Array<?>[] data = new Array<?>[5];
+		FrameBlock a = new FrameBlock(data);
+
 	}
 }

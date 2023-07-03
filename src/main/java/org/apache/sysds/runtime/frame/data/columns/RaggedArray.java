@@ -24,7 +24,6 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.util.Arrays;
 
-import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.frame.data.columns.ArrayFactory.FrameArrayType;
 import org.apache.sysds.runtime.matrix.data.Pair;
@@ -53,6 +52,11 @@ public class RaggedArray<T> extends Array<T> {
 		this._a = ArrayFactory.create(a);
 	}
 
+	public RaggedArray(Array<T> a, int m) {
+		super(m);
+		this._a = a;
+	}
+
 	@Override
 	public void write(DataOutput out) throws IOException {
 		_a.write(out);
@@ -65,17 +69,29 @@ public class RaggedArray<T> extends Array<T> {
 
 	@Override
 	public T get(int index) {
+		if (index > super._size || index < 0)
+			throw new ArrayIndexOutOfBoundsException("Index " + index + " out of bounds " + super._size);
 		return index < _a._size ? _a.get(index) : null;
+
+	}
+
+	protected Array<T> getInnerArray(){
+		return _a;
 	}
 
 	@Override
 	public Object get() {
-		throw new NotImplementedException("Unimplemented method Object 'get'");
+		return _a.get();
 	}
 
 	@Override
 	public double getAsDouble(int i) {
 		return i < _a._size ? _a.getAsDouble(i) : Double.NaN;
+	}
+
+	@Override
+	public double getAsNaNDouble(int i) {
+		return i < _a._size ? _a.getAsNaNDouble(i) : Double.NaN;
 	}
 
 	@Override
@@ -105,13 +121,25 @@ public class RaggedArray<T> extends Array<T> {
 	@Override
 	public void set(int rl, int ru, Array<T> value) {
 		if(rl >= 0 && rl < _a._size && ru < _a._size)
-			_a.set(rl, ru, value);
+			if(value instanceof RaggedArray)
+				_a.set(rl, ru, ((RaggedArray) value).getInnerArray());
+			else if(_a.getClass() == value.getClass())
+				_a.set(rl, ru, value);
+			else
+				throw new RuntimeException("RaggedArray set: value type should be same to RaggedArray type " + _a.getClass());
 	}
+
 
 	@Override
 	public void set(int rl, int ru, Array<T> value, int rlSrc) {
-		if(rl >= 0 && rlSrc >= 0 && rl < _a._size && ru < _a._size)
-			_a.set(rl, ru, value);
+		if(rl >= 0 && rl < _a._size && ru < _a._size)
+			if(value instanceof RaggedArray)
+				_a.set(rl, ru, ((RaggedArray) value).getInnerArray(), rlSrc);
+			else if(_a.getClass() == value.getClass())
+				_a.set(rl, ru, value, rlSrc);
+			else
+				throw new RuntimeException("RaggedArray set: value type should be same to RaggedArray type " + _a.getClass());
+
 	}
 
 	@Override
@@ -129,15 +157,18 @@ public class RaggedArray<T> extends Array<T> {
 	@Override
 	public void append(String value) {
 		_a.append(value);
+		super._size += 1;
 	}
 
 	@Override
 	public void append(T value) {
 		_a.append(value);
+		super._size += 1;
 	}
 
 	@Override
 	public Array<T> append(Array<T> other) {
+		super._size += other._size;
 		return _a.append(other);
 	}
 
@@ -153,6 +184,7 @@ public class RaggedArray<T> extends Array<T> {
 	@Override
 	public void reset(int size) {
 		_a.reset(size);
+		super._size = size;
 	}
 
 	@Override
@@ -172,7 +204,7 @@ public class RaggedArray<T> extends Array<T> {
 
 	@Override
 	public FrameArrayType getFrameArrayType() {
-		return _a.getFrameArrayType();
+		return FrameArrayType.RAGGED;
 	}
 
 	@Override
@@ -247,12 +279,16 @@ public class RaggedArray<T> extends Array<T> {
 
 	@Override
 	public Array<T> select(boolean[] select, int nTrue) {
-		T[] ret = (T[]) new Object[nTrue];
+		Array<T> ret = _a.getFrameArrayType() == FrameArrayType.OPTIONAL ?
+			(Array<T>) ArrayFactory.allocateOptional(_a.getValueType(), nTrue) :
+			(Array<T>) ArrayFactory.allocate(_a.getValueType(), nTrue);
 		int k = 0;
-		for(int i = 0; i < Math.max(select.length, _a.size()); i++) {
-			ret[k++] = _a.get(i);
+		for(int i = 0; i < _a.size(); i++) {
+			if(select[i])
+				ret.set(k++, _a.get(i));
 		}
-		return ArrayFactory.create(ret);
+
+		return ret;
 	}
 
 	@Override
@@ -262,7 +298,7 @@ public class RaggedArray<T> extends Array<T> {
 
 	@Override
 	public Array<T> clone() {
-		return _a.clone();
+		return new RaggedArray<>(_a.clone(), super._size);
 	}
 
 	@Override

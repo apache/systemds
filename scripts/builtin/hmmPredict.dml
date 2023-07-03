@@ -30,7 +30,7 @@
 # outputs   Output of hmm for k timesteps
 # --------------------------------------------------------------------------------------------
 
-choose_value = function (matrix[double] prob_dist) return (double val)
+choose_value = function (Matrix[Double] prob_dist) return (Double val)
 {
     # for selecting output or states given probability distribution
 
@@ -43,7 +43,7 @@ choose_value = function (matrix[double] prob_dist) return (double val)
     val = as.scalar(colSums(cum_prob <= R) + 1)
 }
 
-get_all_states = function (matrix[double] A, matrix[double] ip, integer k) return (matrix[double] states)
+get_all_states = function (Matrix[Double] A, Matrix[Double] ip, integer k) return (Matrix[Double] states)
 {
     init_state = choose_value(ip)
     states = matrix(0, rows=k, cols=1)
@@ -57,7 +57,7 @@ get_all_states = function (matrix[double] A, matrix[double] ip, integer k) retur
     }
 }
 
-get_outputs = function (matrix[double] B, matrix[double] states) return (matrix[double] outputs)
+get_outputs = function (Matrix[Double] B, Matrix[Double] states) return (Matrix[Double] outputs)
 {
     outputs = matrix(0, rows=nrow(states), cols=1)
     parfor (i in 1:nrow(states)) {
@@ -66,7 +66,7 @@ get_outputs = function (matrix[double] B, matrix[double] states) return (matrix[
     }
 }
 
-m_hmmPredict = function(Matrix[Double] X, Integer k, model='d') return (Matrix[Double] outputs)
+m_hmmPredict = function (Matrix[Double] X, Integer k) return (Matrix[Double] outputs)
 {
     /*
     A, B, ip = hmm(X)

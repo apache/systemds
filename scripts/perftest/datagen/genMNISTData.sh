@@ -38,8 +38,8 @@ echo "-- Generating MNIST data." >>results/times.txt
 #make sure whole MNIST is available
 ../datagen/getMNISTDataset.sh ${DATADIR}
 
-MNIST_train_filename="mnist_train.csv"
-MNIST_test_filename="mnist_test.csv"
+mnist_train_filename="mnist_train.csv"
+mnist_test_filename="mnist_test.csv"
 
 max_size_ordinal=4
 min_num_examples_train=12000
@@ -50,18 +50,20 @@ max_num_examples_test=10000
 span_num_examples_test=$(echo "${max_num_examples_test} - ${min_num_examples_test}" | bc)
 #generate XS scenarios (80MB) by producing a subset of MNIST
 if [ $MAXMEM -ge 80 ]; then
+  echo "doing size one"
   size_ordinal=0
-  percent_size=$(echo "${size_ordinal} / ${max_size_ordinal}" | bc)
+  percent_size=$(echo "scale=10; ${size_ordinal} / ${max_size_ordinal}" | bc)
   # these python calls are here to show what the equivalent computations for the target_num variables do .. only difference is that printf $0.f doesnt round the float value down like floor but just truncates it to produce an integer value
   # target_num_train=$(python -c "from math import floor; print(${min_num_examples_train} + floor(${span_num_examples_train} * ${percent_size}))")
   target_num_train=$(echo "${min_num_examples_train} + $(printf "%.0f" "$(echo "${span_num_examples_train} * ${percent_size}" | bc)")" | bc)
   # target_num_test=$(python -c "from math import floor; print(${min_num_examples_test} + floor(${span_num_examples_test} * ${percent_size}))")
   target_num_test=$(echo "${min_num_examples_test} + $(printf "%.0f" "$(echo "${span_num_examples_test} * ${percent_size}" | bc)")" | bc)
+  echo $size_ordinal $percent_size $target_num_train $target_num_test
   ${CMD} -f ../datagen/extractMNISTData.dml --nvargs \
-    file_mnist_train=${DATADIR}/${MNIST_train_filename} \
-    file_mnist_test=${DATADIR}/${MNIST_test_filename} \
-    file_out_train=${DATADIR}/MNIST_train_${target_num_train} \
-    file_out_test=${DATADIR}/MNIST_test_${target_num_test} \
+    mnist_train=${DATADIR}/${mnist_train_filename} \
+    mnist_test=${DATADIR}/${mnist_test_filename} \
+    out_train=${DATADIR}/mnist_train_${target_num_train} \
+    out_test=${DATADIR}/mnist_test_${target_num_test} \
     num_train=${target_num_train} \
     num_test=${target_num_test} \
     fmt=${FORMAT} &
@@ -69,15 +71,17 @@ fi
 
 #generate S scenarios (800MB)
 if [ $MAXMEM -ge 800 ]; then
+  echo "doing size two"
   size_ordinal=1
-  percent_size=$(echo "${size_ordinal} / ${max_size_ordinal}" | bc)
+  percent_size=$(echo "scale=10; ${size_ordinal} / ${max_size_ordinal}" | bc)
   target_num_train=$(echo "${min_num_examples_train} + $(printf "%.0f" "$(echo "${span_num_examples_train} * ${percent_size}" | bc)")" | bc)
   target_num_test=$(echo "${min_num_examples_test} + $(printf "%.0f" "$(echo "${span_num_examples_test} * ${percent_size}" | bc)")" | bc)
+  echo $size_ordinal $percent_size $target_num_train $target_num_test
   ${CMD} -f ../datagen/extractMNISTData.dml --nvargs \
-    file_mnist_train=${DATADIR}/${MNIST_train_filename} \
-    file_mnist_test=${DATADIR}/${MNIST_test_filename} \
-    file_out_train=${DATADIR}/MNIST_train_${target_num_train} \
-    file_out_test=${DATADIR}/MNIST_test_${target_num_test} \
+    mnist_train=${DATADIR}/${mnist_train_filename} \
+    mnist_test=${DATADIR}/${mnist_test_filename} \
+    out_train=${DATADIR}/mnist_train_${target_num_train} \
+    out_test=${DATADIR}/mnist_test_${target_num_test} \
     num_train=${target_num_train} \
     num_test=${target_num_test} \
     fmt=${FORMAT} &
@@ -86,14 +90,14 @@ fi
 #generate M scenarios (8GB)
 if [ $MAXMEM -ge 8000 ]; then
   size_ordinal=2
-  percent_size=$(echo "${size_ordinal} / ${max_size_ordinal}" | bc)
+  percent_size=$(echo "scale=10; ${size_ordinal} / ${max_size_ordinal}" | bc)
   target_num_train=$(echo "${min_num_examples_train} + $(printf "%.0f" "$(echo "${span_num_examples_train} * ${percent_size}" | bc)")" | bc)
   target_num_test=$(echo "${min_num_examples_test} + $(printf "%.0f" "$(echo "${span_num_examples_test} * ${percent_size}" | bc)")" | bc)
   ${CMD} -f ../datagen/extractMNISTData.dml --nvargs \
-    file_mnist_train=${DATADIR}/${MNIST_train_filename} \
-    file_mnist_test=${DATADIR}/${MNIST_test_filename} \
-    file_out_train=${DATADIR}/MNIST_train_${target_num_train} \
-    file_out_test=${DATADIR}/MNIST_test_${target_num_test} \
+    mnist_train=${DATADIR}/${mnist_train_filename} \
+    mnist_test=${DATADIR}/${mnist_test_filename} \
+    out_train=${DATADIR}/mnist_train_${target_num_train} \
+    out_test=${DATADIR}/mnist_test_${target_num_test} \
     num_train=${target_num_train} \
     num_test=${target_num_test} \
     fmt=${FORMAT} &
@@ -102,14 +106,14 @@ fi
 #generate L scenarios (80GB)
 if [ $MAXMEM -ge 80000 ]; then
   size_ordinal=3
-  percent_size=$(echo "${size_ordinal} / ${max_size_ordinal}" | bc)
+  percent_size=$(echo "scale=10; ${size_ordinal} / ${max_size_ordinal}" | bc)
   target_num_train=$(echo "${min_num_examples_train} + $(printf "%.0f" "$(echo "${span_num_examples_train} * ${percent_size}" | bc)")" | bc)
   target_num_test=$(echo "${min_num_examples_test} + $(printf "%.0f" "$(echo "${span_num_examples_test} * ${percent_size}" | bc)")" | bc)
   ${CMD} -f ../datagen/extractMNISTData.dml --nvargs \
-    file_mnist_train=${DATADIR}/${MNIST_train_filename} \
-    file_mnist_test=${DATADIR}/${MNIST_test_filename} \
-    file_out_train=${DATADIR}/MNIST_train_${target_num_train} \
-    file_out_test=${DATADIR}/MNIST_test_${target_num_test} \
+    mnist_train=${DATADIR}/${mnist_train_filename} \
+    mnist_test=${DATADIR}/${mnist_test_filename} \
+    out_train=${DATADIR}/mnist_train_${target_num_train} \
+    out_test=${DATADIR}/mnist_test_${target_num_test} \
     num_train=${target_num_train} \
     num_test=${target_num_test} \
     fmt=${FORMAT} &
@@ -118,14 +122,14 @@ fi
 #generate XL scenarios (800GB)
 if [ $MAXMEM -ge 800000 ]; then
   size_ordinal=4
-  percent_size=$(echo "${size_ordinal} / ${max_size_ordinal}" | bc)
+  percent_size=$(echo "scale=10; ${size_ordinal} / ${max_size_ordinal}" | bc)
   target_num_train=$(echo "${min_num_examples_train} + $(printf "%.0f" "$(echo "${span_num_examples_train} * ${percent_size}" | bc)")" | bc)
   target_num_test=$(echo "${min_num_examples_test} + $(printf "%.0f" "$(echo "${span_num_examples_test} * ${percent_size}" | bc)")" | bc)
   ${CMD} -f ../datagen/extractMNISTData.dml --nvargs \
-    file_mnist_train=${DATADIR}/${MNIST_train_filename} \
-    file_mnist_test=${DATADIR}/${MNIST_test_filename} \
-    file_out_train=${DATADIR}/MNIST_train_${target_num_train} \
-    file_out_test=${DATADIR}/MNIST_test_${target_num_test} \
+    mnist_train=${DATADIR}/${mnist_train_filename} \
+    mnist_test=${DATADIR}/${mnist_test_filename} \
+    out_train=${DATADIR}/mnist_train_${target_num_train} \
+    out_test=${DATADIR}/mnist_test_${target_num_test} \
     num_train=${target_num_train} \
     num_test=${target_num_test} \
     fmt=${FORMAT} &

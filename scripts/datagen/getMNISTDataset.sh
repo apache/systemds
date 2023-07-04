@@ -23,7 +23,8 @@
 BASE=$1
 if [ "$BASE" = "" ]; then BASE=$PWD; fi
 RET=$PWD
-cd $BASE || exit
+if [ ! -d "$BASE" ]; then mkdir "$BASE"; fi
+cd "$BASE" || exit
 
 echo "Downloading"
 if [ ! -f "mnist_train.csv.zip" ]; then wget --no-check-certificate https://github.com/phoebetronic/mnist/raw/main/mnist_train.csv.zip; fi
@@ -33,5 +34,33 @@ echo "Unzipping"
 unzip -u mnist_train.csv.zip
 unzip -u mnist_test.csv.zip
 
-cd $RET || exit
+# have to create metadata for these external csv files
+
+echo '{
+          "data_type": "matrix",
+          "value_type": "double",
+          "rows": 60000,
+          "cols": 785,
+          "nnz": 0,
+          "format": "csv",
+          "author": "anon",
+          "header": false,
+          "sep": ",",
+          "created": "2023-06-26 18:35:22 CEST"
+      }' > mnist_train.csv.mtd
+
+echo '{
+          "data_type": "matrix",
+          "value_type": "double",
+          "rows": 10000,
+          "cols": 785,
+          "nnz": 0,
+          "format": "csv",
+          "author": "nobody",
+          "header": false,
+          "sep": ",",
+          "created": "2023-06-26 18:35:22 CEST"
+      }' > mnist_test.csv.mtd
+
+cd "$RET" || exit
 echo "Done"

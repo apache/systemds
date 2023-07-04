@@ -50,13 +50,14 @@ fmt                   = ifdef ($fmt, "csv");
 mnist_train = read(file_mnist_train);
 mnist_test  = read(file_mnist_test);
 
+# stay in bounds
 num_train = min(num_train, nrow(mnist_train));
 num_test  = min(num_test, nrow(mnist_test));
 
 # targets
 # todo add shuffle?
-out_train = mnist_train[,1:num_train];
-out_test  = mnist_test[,1:num_test];
+out_train = mnist_train[1:num_train,];
+out_test  = mnist_test[1:num_test,];
 
 
 print ("Writing out the resulting dataset...");
@@ -64,5 +65,5 @@ print ("Writing out the resulting dataset...");
 write (out_train, file_out_train, format=fmt);
 write (out_test, file_out_test, format=fmt);
 
-print ("DONE: MNIST EXTRACTOR GENERATOR SCRIPT");
+print ("DONE: MNIST EXTRACTOR SCRIPT");
 

@@ -8,9 +8,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -19,11 +19,14 @@
 # under the License.
 #
 #-------------------------------------------------------------
-if [ "$(basename $PWD)" != "perftest" ];
-then
+if [ "$(basename $PWD)" != "perftest" ]; then
   echo "Please execute scripts from directory 'perftest'"
-  exit 1;
+  exit 1
 fi
+
+# this sets the dot as the separating character in floating point numbers ie. their string representation
+# this avoids an error where bc outputs results dot-separated but printf may expect floats comma-separated if the system default says so
+export LC_NUMERIC="en_US.UTF-8"
 
 CMD=$1
 DATADIR=$2/mnist
@@ -31,7 +34,7 @@ MAXMEM=$3
 
 FORMAT="csv" # can be csv, mm, text, binary
 
-echo "-- Generating MNIST data." >> results/times.txt;
+echo "-- Generating MNIST data." >>results/times.txt
 #make sure whole MNIST is available
 ../datagen/getMNISTDataset.sh ${DATADIR}
 
@@ -49,8 +52,11 @@ span_num_examples_test=$(echo "${max_num_examples_test} - ${min_num_examples_tes
 if [ $MAXMEM -ge 80 ]; then
   size_ordinal=0
   percent_size=$(echo "${size_ordinal} / ${max_size_ordinal}" | bc)
-  target_num_train=$(python -c "from math import floor; print( ${min_num_examples_train} + floor(${span_num_examples_train} * ${percent_size}))")  # todo couldn't work out how to do this using bc so using slower python calls instead
-  target_num_test=$(python -c "from math import floor; print( ${min_num_examples_test} + floor(${span_num_examples_test} * ${percent_size}))")
+  # these python calls are here to show what the equivalent computations for the target_num variables do .. only difference is that printf $0.f doesnt round the float value down like floor but just truncates it to produce an integer value
+  # target_num_train=$(python -c "from math import floor; print(${min_num_examples_train} + floor(${span_num_examples_train} * ${percent_size}))")
+  target_num_train=$(echo "${min_num_examples_train} + $(printf "%.0f" "$(echo "${span_num_examples_train} * ${percent_size}" | bc)")" | bc)
+  # target_num_test=$(python -c "from math import floor; print(${min_num_examples_test} + floor(${span_num_examples_test} * ${percent_size}))")
+  target_num_test=$(echo "${min_num_examples_test} + $(printf "%.0f" "$(echo "${span_num_examples_test} * ${percent_size}" | bc)")" | bc)
   ${CMD} -f ../datagen/extractMNISTData.dml --nvargs \
     file_mnist_train=${DATADIR}/${MNIST_train_filename} \
     file_mnist_test=${DATADIR}/${MNIST_test_filename} \
@@ -65,8 +71,8 @@ fi
 if [ $MAXMEM -ge 800 ]; then
   size_ordinal=1
   percent_size=$(echo "${size_ordinal} / ${max_size_ordinal}" | bc)
-  target_num_train=$(python -c "from math import floor; print( ${min_num_examples_train} + floor(${span_num_examples_train} * ${percent_size}))")
-  target_num_test=$(python -c "from math import floor; print( ${min_num_examples_test} + floor(${span_num_examples_test} * ${percent_size}))")
+  target_num_train=$(echo "${min_num_examples_train} + $(printf "%.0f" "$(echo "${span_num_examples_train} * ${percent_size}" | bc)")" | bc)
+  target_num_test=$(echo "${min_num_examples_test} + $(printf "%.0f" "$(echo "${span_num_examples_test} * ${percent_size}" | bc)")" | bc)
   ${CMD} -f ../datagen/extractMNISTData.dml --nvargs \
     file_mnist_train=${DATADIR}/${MNIST_train_filename} \
     file_mnist_test=${DATADIR}/${MNIST_test_filename} \
@@ -81,8 +87,8 @@ fi
 if [ $MAXMEM -ge 8000 ]; then
   size_ordinal=2
   percent_size=$(echo "${size_ordinal} / ${max_size_ordinal}" | bc)
-  target_num_train=$(python -c "from math import floor; print( ${min_num_examples_train} + floor(${span_num_examples_train} * ${percent_size}))")
-  target_num_test=$(python -c "from math import floor; print( ${min_num_examples_test} + floor(${span_num_examples_test} * ${percent_size}))")
+  target_num_train=$(echo "${min_num_examples_train} + $(printf "%.0f" "$(echo "${span_num_examples_train} * ${percent_size}" | bc)")" | bc)
+  target_num_test=$(echo "${min_num_examples_test} + $(printf "%.0f" "$(echo "${span_num_examples_test} * ${percent_size}" | bc)")" | bc)
   ${CMD} -f ../datagen/extractMNISTData.dml --nvargs \
     file_mnist_train=${DATADIR}/${MNIST_train_filename} \
     file_mnist_test=${DATADIR}/${MNIST_test_filename} \
@@ -97,8 +103,8 @@ fi
 if [ $MAXMEM -ge 80000 ]; then
   size_ordinal=3
   percent_size=$(echo "${size_ordinal} / ${max_size_ordinal}" | bc)
-  target_num_train=$(python -c "from math import floor; print( ${min_num_examples_train} + floor(${span_num_examples_train} * ${percent_size}))")
-  target_num_test=$(python -c "from math import floor; print( ${min_num_examples_test} + floor(${span_num_examples_test} * ${percent_size}))")
+  target_num_train=$(echo "${min_num_examples_train} + $(printf "%.0f" "$(echo "${span_num_examples_train} * ${percent_size}" | bc)")" | bc)
+  target_num_test=$(echo "${min_num_examples_test} + $(printf "%.0f" "$(echo "${span_num_examples_test} * ${percent_size}" | bc)")" | bc)
   ${CMD} -f ../datagen/extractMNISTData.dml --nvargs \
     file_mnist_train=${DATADIR}/${MNIST_train_filename} \
     file_mnist_test=${DATADIR}/${MNIST_test_filename} \
@@ -113,8 +119,8 @@ fi
 if [ $MAXMEM -ge 800000 ]; then
   size_ordinal=4
   percent_size=$(echo "${size_ordinal} / ${max_size_ordinal}" | bc)
-  target_num_train=$(python -c "from math import floor; print( ${min_num_examples_train} + floor(${span_num_examples_train} * ${percent_size}))")
-  target_num_test=$(python -c "from math import floor; print( ${min_num_examples_test} + floor(${span_num_examples_test} * ${percent_size}))")
+  target_num_train=$(echo "${min_num_examples_train} + $(printf "%.0f" "$(echo "${span_num_examples_train} * ${percent_size}" | bc)")" | bc)
+  target_num_test=$(echo "${min_num_examples_test} + $(printf "%.0f" "$(echo "${span_num_examples_test} * ${percent_size}" | bc)")" | bc)
   ${CMD} -f ../datagen/extractMNISTData.dml --nvargs \
     file_mnist_train=${DATADIR}/${MNIST_train_filename} \
     file_mnist_test=${DATADIR}/${MNIST_test_filename} \

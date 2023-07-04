@@ -61,7 +61,7 @@ public interface FrameUtil {
 
 	private static ValueType isBooleanType(final String val, int len) {
 		if(val.length() <= 16 && booleanPattern.matcher(val).matches())
-			return ValueType.BITSET;
+			return ValueType.BOOLEAN;
 		return null;
 	}
 
@@ -138,10 +138,10 @@ public interface FrameUtil {
 		ValueType r = null;
 		switch(minType) {
 			case UNKNOWN:
-			case BITSET:
+			case BOOLEAN:
 			case CHARACTER:
 				if(isBooleanType(val, len) != null)
-					return ValueType.BITSET;
+					return ValueType.BOOLEAN;
 			case UINT8:
 			case INT32:
 			case INT64:
@@ -162,12 +162,12 @@ public interface FrameUtil {
 	}
 
 	public static ValueType isType(String val) {
-		return isType(val, ValueType.BITSET);
+		return isType(val, ValueType.BOOLEAN);
 	}
 
 	public static ValueType isType(double val) {
 		if(val == 1.0d || val == 0.0d)
-			return ValueType.BITSET;
+			return ValueType.BOOLEAN;
 		else if((long) (val) == val) {
 			if((int) val == val)
 				return ValueType.INT32;
@@ -183,7 +183,7 @@ public interface FrameUtil {
 
 	public static ValueType isType(double val, ValueType min) {
 		switch(min) {
-			case BITSET:
+			case BOOLEAN:
 				return isType(val);
 			case INT32:
 			case UINT8:
@@ -239,7 +239,7 @@ public interface FrameUtil {
 		if(v == null)
 			return true;
 		switch(t) {
-			case BITSET:
+			case BOOLEAN:
 				return !BooleanArray.parseBoolean(v);
 			case CHARACTER:
 				return 0 == CharArray.parseChar(v);

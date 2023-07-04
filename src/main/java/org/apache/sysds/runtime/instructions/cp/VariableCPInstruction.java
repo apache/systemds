@@ -386,7 +386,7 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 			// file name
 			in2 = new CPOperand(parts[2], ValueType.STRING, DataType.SCALAR);
 			// file name override flag (always literal)
-			in3 = new CPOperand(parts[3], ValueType.BITSET, DataType.SCALAR);
+			in3 = new CPOperand(parts[3], ValueType.BOOLEAN, DataType.SCALAR);
 
 			// format
 			String fmt = parts[5];
@@ -544,7 +544,7 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 			in1 = new CPOperand(parts[1]);
 			in2 = new CPOperand(parts[2]);
 			// second argument must be a boolean
-			if ( in2.getValueType() != ValueType.BITSET)
+			if ( in2.getValueType() != ValueType.BOOLEAN)
 				throw new DMLRuntimeException("Unexpected value type for second argument in: " + str);
 			break;
 

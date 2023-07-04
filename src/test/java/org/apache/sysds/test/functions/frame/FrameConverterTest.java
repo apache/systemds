@@ -77,12 +77,12 @@ public class FrameConverterTest extends AutomatedTestBase
 	private final static int rows = 1593;
 	
 	private final static ValueType[] schemaStrings = new ValueType[]{ValueType.STRING, ValueType.STRING, ValueType.STRING};	
-	private final static ValueType[] schemaMixed = new ValueType[]{ValueType.STRING, ValueType.FP64, ValueType.INT64, ValueType.BITSET};
+	private final static ValueType[] schemaMixed = new ValueType[]{ValueType.STRING, ValueType.FP64, ValueType.INT64, ValueType.BOOLEAN};
 
 	private final static List<ValueType> schemaMixedLargeListStr = Collections.nCopies(200, ValueType.STRING);
 	private final static List<ValueType> schemaMixedLargeListDble  = Collections.nCopies(200, ValueType.FP64);
 	private final static List<ValueType> schemaMixedLargeListInt  = Collections.nCopies(200, ValueType.INT64);
-	private final static List<ValueType> schemaMixedLargeListBool  = Collections.nCopies(200, ValueType.BITSET);
+	private final static List<ValueType> schemaMixedLargeListBool  = Collections.nCopies(200, ValueType.BOOLEAN);
 	
 	private static final List<ValueType> schemaMixedLargeList = CollectionUtils.asList(
 		schemaMixedLargeListStr, schemaMixedLargeListDble, schemaMixedLargeListInt, schemaMixedLargeListBool);

@@ -77,10 +77,10 @@ public class WhileProgramBlock extends ProgramBlock
 				WhileStatementBlock wsb = (WhileStatementBlock)_sb;
 				Hop predicateOp = wsb.getPredicateHops();
 				boolean recompile = wsb.requiresPredicateRecompilation();
-				result = (BooleanObject) executePredicate(_predicate, predicateOp, recompile, ValueType.BITSET, ec);
+				result = (BooleanObject) executePredicate(_predicate, predicateOp, recompile, ValueType.BOOLEAN, ec);
 			}
 			else
-				result = (BooleanObject) executePredicate(_predicate, null, false, ValueType.BITSET, ec);
+				result = (BooleanObject) executePredicate(_predicate, null, false, ValueType.BOOLEAN, ec);
 		}
 		catch(Exception ex) {
 			throw new DMLRuntimeException(this.printBlockErrorLocation() + "Failed to evaluate the while predicate.", ex);

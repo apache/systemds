@@ -1124,7 +1124,7 @@ public class ParForProgramBlock extends ForProgramBlock
 				{
 					case SCALAR:
 						switch( valuetype ) {
-							case BITSET: dataObj = new BooleanObject(false); break;
+							case BOOLEAN: dataObj = new BooleanObject(false); break;
 							case INT64:     dataObj = new IntObject(-1);        break;
 							case FP64:  dataObj = new DoubleObject(-1d);    break;
 							case STRING:  dataObj = new StringObject("-1");   break;

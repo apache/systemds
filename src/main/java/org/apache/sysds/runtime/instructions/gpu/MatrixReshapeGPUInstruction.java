@@ -74,7 +74,7 @@ public class MatrixReshapeGPUInstruction extends GPUInstruction {
 	public void processInstruction(ExecutionContext ec) {
 		int rows = (int)ec.getScalarInput(_opRows).getLongValue(); //save cast
 		int cols = (int)ec.getScalarInput(_opCols).getLongValue(); //save cast
-		BooleanObject byRow = (BooleanObject) ec.getScalarInput(_opByRow.getName(), ValueType.BITSET, _opByRow.isLiteral());
+		BooleanObject byRow = (BooleanObject) ec.getScalarInput(_opByRow.getName(), ValueType.BOOLEAN, _opByRow.isLiteral());
 		
 		GPUStatistics.incrementNoOfExecutedGPUInst();
 		String instName = getExtendedOpcode();

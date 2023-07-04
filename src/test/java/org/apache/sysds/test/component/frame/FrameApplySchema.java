@@ -38,10 +38,10 @@ public class FrameApplySchema {
 		try {
 
 			FrameBlock fb = genStringContainingBoolean(10, 2);
-			ValueType[] schema = new ValueType[] {ValueType.BITSET, ValueType.BITSET};
+			ValueType[] schema = new ValueType[] {ValueType.BOOLEAN, ValueType.BOOLEAN};
 			FrameBlock ret = FrameLibApplySchema.applySchema(fb, schema);
-			assertTrue(ret.getColumn(0).getValueType() == ValueType.BITSET);
-			assertTrue(ret.getColumn(1).getValueType() == ValueType.BITSET);
+			assertTrue(ret.getColumn(0).getValueType() == ValueType.BOOLEAN);
+			assertTrue(ret.getColumn(1).getValueType() == ValueType.BOOLEAN);
 		}
 		catch(Exception e) {
 			e.printStackTrace();

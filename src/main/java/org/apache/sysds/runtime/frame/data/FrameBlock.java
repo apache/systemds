@@ -575,7 +575,7 @@ public class FrameBlock implements CacheBlock<FrameBlock>, Externalizable {
 	 */
 	public void appendColumn(boolean[] col) {
 		ensureColumnCompatibility(col.length);
-		appendColumnMetaData(ValueType.BITSET);
+		appendColumnMetaData(ValueType.BOOLEAN);
 		_coldata = FrameUtil.add(_coldata, ArrayFactory.create(col));
 	}
 
@@ -949,7 +949,7 @@ public class FrameBlock implements CacheBlock<FrameBlock>, Externalizable {
 				}
 			}
 		}
-		return new FrameBlock(UtilFunctions.nCopies(frameBlock.getNumColumns(), ValueType.BITSET), outputData);
+		return new FrameBlock(UtilFunctions.nCopies(frameBlock.getNumColumns(), ValueType.BOOLEAN), outputData);
 	}
 
 	private static boolean checkAndSetEmpty(FrameBlock fb1, FrameBlock fb2, String[][] out, int r, int c) {
@@ -1324,8 +1324,8 @@ public class FrameBlock implements CacheBlock<FrameBlock>, Externalizable {
 
 				ValueType dataType = FrameUtil.isType(dataValue);
 
-				if(!dataType.toString().contains(type) && !(dataType == ValueType.BITSET && type.equals("INT")) &&
-					!(dataType == ValueType.BITSET && type.equals("FP"))) {
+				if(!dataType.toString().contains(type) && !(dataType == ValueType.BOOLEAN && type.equals("INT")) &&
+					!(dataType == ValueType.BOOLEAN && type.equals("FP"))) {
 					LOG.warn("Datatype detected: " + dataType + " where expected: " + schemaString[i] + " col: " + (i + 1)
 						+ ", row:" + (j + 1));
 
@@ -1435,8 +1435,8 @@ public class FrameBlock implements CacheBlock<FrameBlock>, Externalizable {
 				String type = dataType.toString().replaceAll("\\d", "");
 				// get the avergae column length
 				if(!dataType.toString().contains(schemaString[i]) &&
-					!(dataType == ValueType.BITSET && schemaString[i].equals("INT")) &&
-					!(dataType == ValueType.BITSET && schemaString[i].equals("FP")) &&
+					!(dataType == ValueType.BOOLEAN && schemaString[i].equals("INT")) &&
+					!(dataType == ValueType.BOOLEAN && schemaString[i].equals("FP")) &&
 					!(dataType.toString().contains("INT") && schemaString[i].equals("FP"))) {
 					LOG.warn("conflict " + dataType + " " + schemaString[i] + " " + dataValue);
 					// check the other column with satisfy the data type of this value
@@ -1601,10 +1601,10 @@ public class FrameBlock implements CacheBlock<FrameBlock>, Externalizable {
 
 		boolean NaNp = "NaN".equals(pattern);
 		boolean NaNr = "NaN".equals(replacement);
-		ValueType patternType = UtilFunctions.isBoolean(pattern) ? ValueType.BITSET : (NumberUtils.isCreatable(pattern) |
+		ValueType patternType = UtilFunctions.isBoolean(pattern) ? ValueType.BOOLEAN : (NumberUtils.isCreatable(pattern) |
 			NaNp ? (UtilFunctions.isIntegerNumber(pattern) ? ValueType.INT64 : ValueType.FP64) : ValueType.STRING);
 		ValueType replacementType = UtilFunctions
-			.isBoolean(replacement) ? ValueType.BITSET : (NumberUtils.isCreatable(replacement) |
+			.isBoolean(replacement) ? ValueType.BOOLEAN : (NumberUtils.isCreatable(replacement) |
 				NaNr ? (UtilFunctions.isIntegerNumber(replacement) ? ValueType.INT64 : ValueType.FP64) : ValueType.STRING);
 
 		if(patternType != replacementType || !ValueType.isSameTypeString(patternType, replacementType))

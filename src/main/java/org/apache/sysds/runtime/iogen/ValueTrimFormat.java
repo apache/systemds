@@ -73,7 +73,7 @@ public class ValueTrimFormat implements Comparable<ValueTrimFormat> {
 				s.append(c);
 			NString = s.toString();
 		}
-		else if(vt != Types.ValueType.STRING && vt != Types.ValueType.BITSET) {
+		else if(vt != Types.ValueType.STRING && vt != Types.ValueType.BOOLEAN) {
 			throw new RuntimeException("Don't support  value type format!");
 		}
 	}
@@ -132,7 +132,7 @@ public class ValueTrimFormat implements Comparable<ValueTrimFormat> {
 			return actualValue == null || ((String) actualValue).length() == 0;
 		else if(this.valueType.isNumeric())
 			return getDoubleActualValue() == 0;
-		else if(this.valueType == Types.ValueType.BITSET)
+		else if(this.valueType == Types.ValueType.BOOLEAN)
 			return actualValue == null || !((Boolean) actualValue);
 		return true;
 	}
@@ -147,7 +147,7 @@ public class ValueTrimFormat implements Comparable<ValueTrimFormat> {
 			N = new char[] {'0'};
 			NString = null;
 		}
-		else if(this.valueType == Types.ValueType.BITSET)
+		else if(this.valueType == Types.ValueType.BOOLEAN)
 			actualValue = null;
 	}
 
@@ -173,7 +173,7 @@ public class ValueTrimFormat implements Comparable<ValueTrimFormat> {
 		int len = -1;
 		if(vt == Types.ValueType.STRING )
 			len = vtf.getStringOfActualValue().length();
-		else if(vt == Types.ValueType.BITSET)
+		else if(vt == Types.ValueType.BOOLEAN)
 			len = 1;
 		return len;
 	}

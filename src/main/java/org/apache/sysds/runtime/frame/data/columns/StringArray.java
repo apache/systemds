@@ -222,7 +222,7 @@ public class StringArray extends Array<String> {
 					default:
 				}
 				break;
-			case BITSET:
+			case BOOLEAN:
 				switch(c) {
 					case FP64:
 					case FP32:

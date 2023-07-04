@@ -48,7 +48,7 @@ public class ApplySchemaTest extends AutomatedTestBase {
 
 	private final static int rows = 10;
 	// constructed schema
-	private final static Types.ValueType[] schemaStrings = {Types.ValueType.INT32, Types.ValueType.BITSET,
+	private final static Types.ValueType[] schemaStrings = {Types.ValueType.INT32, Types.ValueType.BOOLEAN,
 		Types.ValueType.FP64};
 
 	@BeforeClass
@@ -147,7 +147,7 @@ public class ApplySchemaTest extends AutomatedTestBase {
 						tmp1[i] = (String) UtilFunctions.doubleToObject(vt, data[i][j]);
 					frame1.appendColumn(tmp1);
 					break;
-				case BITSET:
+				case BOOLEAN:
 					boolean[] tmp2 = new boolean[rows];
 					for(int i = 0; i < rows; i++)
 						data[i][j] = (tmp2[i] = (Boolean) UtilFunctions.doubleToObject(vt, data[i][j], false)) ? 1 : 0;

@@ -76,7 +76,7 @@ public class Types
 	 */
 	public enum ValueType {
 		UINT4, UINT8, // Used for parsing in UINT values from numpy.
-		FP32, FP64, INT32, INT64, BITSET, BOOLEAN, STRING, UNKNOWN,
+		FP32, FP64, INT32, INT64, BOOLEAN, STRING, UNKNOWN,
 		CHARACTER;
 		
 		public boolean isNumeric() {
@@ -86,7 +86,7 @@ public class Types
 			return this == UNKNOWN;
 		}
 		public boolean isPseudoNumeric() {
-			return isNumeric() || this == BITSET || this == CHARACTER;
+			return isNumeric() || this == BOOLEAN || this == CHARACTER;
 		}
 		public String toExternalString() {
 			switch(this) {
@@ -96,7 +96,6 @@ public class Types
 				case UINT8:
 				case INT32:
 				case INT64:   return "INT";
-				case BITSET:  return "BITSET";
 				case BOOLEAN: return "BOOLEAN";
 				default:      return toString();
 			}
@@ -114,7 +113,6 @@ public class Types
 				case "INT32":    return INT32;
 				case "INT64":
 				case "INT":      return INT64;
-				case "BITSET":  return BITSET;
 				case "BOOLEAN":  return BOOLEAN;
 				case "STRING":   return STRING;
 				case "CHARACTER": return CHARACTER;
@@ -197,7 +195,7 @@ public class Types
 					default:
 						return a;
 				}
-				case BITSET:
+				case BOOLEAN:
 					return b; // always higher type in b;
 				case UNKNOWN:
 				default:

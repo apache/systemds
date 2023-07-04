@@ -42,13 +42,13 @@ public class DenseBlockGetSetIndexingTest
 	
 	@Test
 	public void testIndexDenseBlock2BoolSetGetCell() {
-		DenseBlock db = getDenseBlock2(ValueType.BITSET);
+		DenseBlock db = getDenseBlock2(ValueType.BOOLEAN);
 		checkSequence(setSequence(db));
 	}
 
 	@Test
 	public void testIndexDenseBlock2TrueBoolSetGetCell() {
-		DenseBlock db = getDenseBlock2(ValueType.BOOLEAN);
+		DenseBlock db = new DenseBlockBoolArray(new int[] {3,5});
 		checkSequence(setSequence(db));
 	}
 	
@@ -84,7 +84,7 @@ public class DenseBlockGetSetIndexingTest
 
 	@Test
 	public void testIndexDenseBlockLarge2BoolSetGetCell() {
-		DenseBlock db = getDenseBlockLarge2(ValueType.BITSET);
+		DenseBlock db = getDenseBlockLarge2(ValueType.BOOLEAN);
 		checkSequence(setSequence(db));
 	}
 
@@ -120,13 +120,13 @@ public class DenseBlockGetSetIndexingTest
 	
 	@Test
 	public void testIndexDenseBlock3BoolSetGetCell() {
-		DenseBlock db = getDenseBlock3(ValueType.BITSET);
+		DenseBlock db = getDenseBlock3(ValueType.BOOLEAN);
 		checkSequence(setSequence(db));
 	}
 
 	@Test
 	public void testIndexDenseBlock3TrueBoolSetGetCell() {
-		DenseBlock db = getDenseBlock3(ValueType.BOOLEAN);
+		DenseBlock db = new DenseBlockBoolArray(new int[] {3,5,7});
 		checkSequence(setSequence(db));
 	}
 	
@@ -162,7 +162,7 @@ public class DenseBlockGetSetIndexingTest
 
 	@Test
 	public void testIndexDenseBlockLarge3BoolSetGetCell() {
-		DenseBlock db = getDenseBlockLarge3(ValueType.BITSET);
+		DenseBlock db = getDenseBlockLarge3(ValueType.BOOLEAN);
 		checkSequence(setSequence(db));
 	}
 
@@ -197,7 +197,7 @@ public class DenseBlockGetSetIndexingTest
 		switch (vt) {
 			case FP32: return new DenseBlockLFP32(dims);
 			case FP64: return new DenseBlockLFP64(dims);
-			case BITSET: return new DenseBlockLBoolBitset(dims);
+			case BOOLEAN: return new DenseBlockLBoolBitset(dims);
 			case INT32: return new DenseBlockLInt32(dims);
 			case INT64: return new DenseBlockLInt64(dims);
 			case STRING: return new DenseBlockLString(dims);
@@ -210,7 +210,7 @@ public class DenseBlockGetSetIndexingTest
 		switch (vt) {
 			case FP32: return new DenseBlockLFP32(dims);
 			case FP64: return new DenseBlockLFP64(dims);
-			case BITSET: return new DenseBlockLBoolBitset(dims);
+			case BOOLEAN: return new DenseBlockLBoolBitset(dims);
 			case INT32: return new DenseBlockLInt32(dims);
 			case INT64: return new DenseBlockLInt64(dims);
 			case STRING: return new DenseBlockLString(dims);

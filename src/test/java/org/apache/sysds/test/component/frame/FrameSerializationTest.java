@@ -56,7 +56,7 @@ public class FrameSerializationTest {
 		ArrayList<Object[]> tests = new ArrayList<>();
 
 		ValueType[] schemaStrings = new ValueType[] {ValueType.STRING, ValueType.STRING, ValueType.STRING};
-		ValueType[] schemaMixed = new ValueType[] {ValueType.STRING, ValueType.FP64, ValueType.INT64, ValueType.BITSET};
+		ValueType[] schemaMixed = new ValueType[] {ValueType.STRING, ValueType.FP64, ValueType.INT64, ValueType.BOOLEAN};
 		ValueType[] rand = TestUtils.generateRandomSchema(10, 3);
 		ValueType[] rand2 = TestUtils.generateRandomSchema(10, 4);
 		try {

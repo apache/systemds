@@ -307,7 +307,7 @@ public class FrameRDDConverterUtils
 				case STRING:  dt = DataTypes.StringType; break;
 				case FP64:  dt = DataTypes.DoubleType; break;
 				case INT64:     dt = DataTypes.LongType; break;
-				case BITSET: dt = DataTypes.BooleanType; break;
+				case BOOLEAN: dt = DataTypes.BooleanType; break;
 				default:      dt = DataTypes.StringType;
 					LOG.warn("Using default type String for " + schema.toString());
 			}
@@ -348,7 +348,7 @@ public class FrameRDDConverterUtils
 				|| structType.dataType() == DataTypes.IntegerType)
 				fschema[pos++] = ValueType.INT64;
 			else if(structType.dataType() == DataTypes.BooleanType)
-				fschema[pos++] = ValueType.BITSET;
+				fschema[pos++] = ValueType.BOOLEAN;
 			else if(structType.dataType() instanceof VectorUDT) {
 				if( containsVect )
 					throw new RuntimeException("Found invalid second vector column.");

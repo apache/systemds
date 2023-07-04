@@ -88,7 +88,7 @@ public class ReshapeFEDInstruction extends UnaryFEDInstruction {
 		if(output.getDataType() == Types.DataType.MATRIX) {
 			MatrixObject mo1 = ec.getMatrixObject(input1);
 			BooleanObject byRow = (BooleanObject) ec
-				.getScalarInput(_opByRow.getName(), Types.ValueType.BITSET, _opByRow.isLiteral());
+				.getScalarInput(_opByRow.getName(), Types.ValueType.BOOLEAN, _opByRow.isLiteral());
 			int rows = (int) ec.getScalarInput(_opRows).getLongValue();
 			int cols = (int) ec.getScalarInput(_opCols).getLongValue();
 

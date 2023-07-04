@@ -42,13 +42,13 @@ public class DenseBlockCountNonZeroTest {
 
 	@Test
 	public void testIndexDenseBlock2BoolCountNonZero() {
-		DenseBlock db = getDenseBlock2(ValueType.BITSET);
+		DenseBlock db = getDenseBlock2(ValueType.BOOLEAN);
 		checkFullNnz2(db);
 	}
 
 	@Test
 	public void testIndexDenseBlock2TrueBoolCountNonZero() {
-		DenseBlock db = getDenseBlock2(ValueType.BOOLEAN);
+		DenseBlock db = new DenseBlockBoolArray(new int[] {3,5});
 		checkFullNnz2(db);
 	}
 
@@ -84,7 +84,7 @@ public class DenseBlockCountNonZeroTest {
 
 	@Test
 	public void testIndexDenseBlockLarge2BoolCountNonZero() {
-		DenseBlock db = getDenseBlockLarge2(ValueType.BITSET);
+		DenseBlock db = getDenseBlockLarge2(ValueType.BOOLEAN);
 		checkFullNnz2(db);
 	}
 
@@ -120,13 +120,13 @@ public class DenseBlockCountNonZeroTest {
 
 	@Test
 	public void testIndexDenseBlock3BoolCountNonZero() {
-		DenseBlock db = getDenseBlock3(ValueType.BITSET);
+		DenseBlock db = getDenseBlock3(ValueType.BOOLEAN);
 		checkFullNnz3(db);
 	}
 
 	@Test
 	public void testIndexDenseBlock3TrueBoolCountNonZero() {
-		DenseBlock db = getDenseBlock3(ValueType.BOOLEAN);
+		DenseBlock db = new DenseBlockBoolArray(new int[] {3,5,7});
 		checkFullNnz3(db);
 	}
 
@@ -162,7 +162,7 @@ public class DenseBlockCountNonZeroTest {
 
 	@Test
 	public void testIndexDenseBlockLarge3BoolCountNonZero() {
-		DenseBlock db = getDenseBlockLarge3(ValueType.BITSET);
+		DenseBlock db = getDenseBlockLarge3(ValueType.BOOLEAN);
 		checkFullNnz3(db);
 	}
 
@@ -199,7 +199,7 @@ public class DenseBlockCountNonZeroTest {
 				return new DenseBlockLFP32(dims);
 			case FP64:
 				return new DenseBlockLFP64(dims);
-			case BITSET:
+			case BOOLEAN:
 				return new DenseBlockLBoolBitset(dims);
 			case INT32:
 				return new DenseBlockLInt32(dims);
@@ -219,7 +219,7 @@ public class DenseBlockCountNonZeroTest {
 				return new DenseBlockLFP32(dims);
 			case FP64:
 				return new DenseBlockLFP64(dims);
-			case BITSET:
+			case BOOLEAN:
 				return new DenseBlockLBoolBitset(dims);
 			case INT32:
 				return new DenseBlockLInt32(dims);

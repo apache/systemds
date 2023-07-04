@@ -40,7 +40,7 @@ public abstract class ScalarObjectFactory
 		switch( vt ) {
 			case INT64:   return new IntObject(UtilFunctions.parseToLong(value));
 			case FP64:    return new DoubleObject(Double.parseDouble(value));
-			case BITSET: return new BooleanObject(Boolean.parseBoolean(value));
+			case BOOLEAN: return new BooleanObject(Boolean.parseBoolean(value));
 			case STRING:  return new StringObject(value);
 			default: throw new RuntimeException("Unsupported scalar value type: "+vt.name());
 		}
@@ -49,7 +49,7 @@ public abstract class ScalarObjectFactory
 	public static ScalarObject createScalarObject(ValueType vt, Object obj) {
 		//TODO add new scalar object for extended type system
 		switch( vt ) {
-			case BITSET: return new BooleanObject((Boolean)obj);
+			case BOOLEAN: return new BooleanObject((Boolean)obj);
 			case INT64:   return new IntObject((Long)obj);
 			case INT32:   return new IntObject((Integer)obj);
 			case FP64:    return new DoubleObject((Double)obj);
@@ -63,7 +63,7 @@ public abstract class ScalarObjectFactory
 		switch( vt ) {
 			case INT64:     return new IntObject(UtilFunctions.toLong(value));
 			case FP64:  return new DoubleObject(value);
-			case BITSET: return new BooleanObject(value != 0);
+			case BOOLEAN: return new BooleanObject(value != 0);
 			case STRING:  return new StringObject(String.valueOf(value));
 			default: throw new RuntimeException("Unsupported scalar value type: "+vt.name());
 		}
@@ -73,7 +73,7 @@ public abstract class ScalarObjectFactory
 		switch( vt ) {
 			case FP64:    return castToDouble(so);
 			case INT64:   return castToLong(so);
-			case BITSET: return new BooleanObject(so.getBooleanValue());
+			case BOOLEAN: return new BooleanObject(so.getBooleanValue());
 			case STRING:  return new StringObject(so.getStringValue());
 			default: throw new RuntimeException("Unsupported scalar value type: "+vt.name());
 		}
@@ -87,7 +87,7 @@ public abstract class ScalarObjectFactory
 		switch( vt ) {
 			case FP64:    return new DoubleObject(lit.getDoubleValue());
 			case INT64:   return new IntObject(lit.getLongValue());
-			case BITSET: return new BooleanObject(lit.getBooleanValue());
+			case BOOLEAN: return new BooleanObject(lit.getBooleanValue());
 			case STRING:  return new StringObject(lit.getStringValue());
 			default: throw new RuntimeException("Unsupported scalar value type: "+vt.name());
 		}
@@ -97,7 +97,7 @@ public abstract class ScalarObjectFactory
 		switch( so.getValueType() ){
 			case FP64:    return new LiteralOp(so.getDoubleValue());
 			case INT64:   return new LiteralOp(so.getLongValue());
-			case BITSET: return new LiteralOp(so.getBooleanValue());
+			case BOOLEAN: return new LiteralOp(so.getBooleanValue());
 			case STRING:  return new LiteralOp(so.getStringValue());
 			default:
 				throw new HopsException("Unsupported literal value type: "+so.getValueType());
@@ -117,7 +117,7 @@ public abstract class ScalarObjectFactory
 		switch( vt ) {
 			case FP64:    return new LiteralOp(Double.parseDouble(value));
 			case INT64:   return new LiteralOp(Long.parseLong(value));
-			case BITSET: return new LiteralOp(Boolean.parseBoolean(value));
+			case BOOLEAN: return new LiteralOp(Boolean.parseBoolean(value));
 			case STRING:  return new LiteralOp(value);
 			default: throw new RuntimeException("Unsupported scalar value type: "+vt.name());
 		}

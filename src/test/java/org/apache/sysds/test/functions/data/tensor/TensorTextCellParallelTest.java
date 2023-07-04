@@ -52,7 +52,7 @@ public class TensorTextCellParallelTest {
 
 	@Test
 	public void testReadWriteTextCellParallelBasicTensorBoolean() {
-		testReadWriteTextCellParallelBasicTensor(ValueType.BITSET);
+		testReadWriteTextCellParallelBasicTensor(ValueType.BOOLEAN);
 	}
 
 	@Test
@@ -88,7 +88,7 @@ public class TensorTextCellParallelTest {
 
 	@Test
 	public void testReadWriteTextCellParallelDataTensorBoolean() {
-		testReadWriteTextCellParallelDataTensor(ValueType.BITSET);
+		testReadWriteTextCellParallelDataTensor(ValueType.BOOLEAN);
 	}
 
 	@Test

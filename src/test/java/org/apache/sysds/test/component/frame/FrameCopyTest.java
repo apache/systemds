@@ -32,7 +32,7 @@ public class FrameCopyTest extends AutomatedTestBase
 {
 	private final static int rows = 342;
 	private final static ValueType[] schemaStrings = new ValueType[]{ValueType.STRING, ValueType.STRING, ValueType.STRING};	
-	private final static ValueType[] schemaMixed = new ValueType[]{ValueType.STRING, ValueType.FP64, ValueType.INT64, ValueType.BITSET};
+	private final static ValueType[] schemaMixed = new ValueType[]{ValueType.STRING, ValueType.FP64, ValueType.INT64, ValueType.BOOLEAN};
 	
 	@Override
 	public void setUp() {
@@ -137,7 +137,7 @@ public class FrameCopyTest extends AutomatedTestBase
 		for( int j=0; j<lschema.length; j++ )	{
 			switch( lschema[j] ) {
 				case STRING:  frame.set(updateRow,  j,  "String:"+ frame.get(updateRow, j)); break;
-				case BITSET: frame.set(updateRow,  j, ((Boolean)frame.get(updateRow, j))?Boolean.FALSE:Boolean.TRUE); break;
+				case BOOLEAN: frame.set(updateRow,  j, ((Boolean)frame.get(updateRow, j))?Boolean.FALSE:Boolean.TRUE); break;
 				case INT64:     frame.set(updateRow,  j, (Long)frame.get(updateRow, j) * 2 + 5); break;
 				case FP64:  frame.set(updateRow,  j, (Double)frame.get(updateRow, j) * 2 + 7); break;
 				default: throw new RuntimeException("Unsupported value type: "+lschema[j]);

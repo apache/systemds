@@ -92,19 +92,19 @@ public class NegativeArrayTests {
 	@Test(expected = DMLRuntimeException.class)
 	public void changeTypeBoolean_1() {
 		StringArray a = ArrayFactory.create(new String[] {"1", "10", "0"});
-		a.changeType(ValueType.BITSET);
+		a.changeType(ValueType.BOOLEAN);
 	}
 
 	@Test(expected = DMLRuntimeException.class)
 	public void changeTypeBoolean_2() {
 		StringArray a = ArrayFactory.create(new String[] {"1", "-1", "0"});
-		a.changeType(ValueType.BITSET);
+		a.changeType(ValueType.BOOLEAN);
 	}
 
 	@Test(expected = DMLRuntimeException.class)
 	public void changeTypeBoolean_3() {
 		StringArray a = ArrayFactory.create(new String[] {"HI", "false", "0"});
-		a.changeType(ValueType.BITSET);
+		a.changeType(ValueType.BOOLEAN);
 	}
 
 	@Test(expected = DMLRuntimeException.class)
@@ -113,13 +113,13 @@ public class NegativeArrayTests {
 		s[0] = "1";
 		s[1] = "10";
 		StringArray a = ArrayFactory.create(s);
-		a.changeType(ValueType.BITSET);
+		a.changeType(ValueType.BOOLEAN);
 	}
 
 	@Test(expected = DMLRuntimeException.class)
 	public void changeTypeBoolean_5() {
 		StringArray a = ArrayFactory.create(new String[] {"0.0", null, "1.1"});
-		a.changeType(ValueType.BITSET);
+		a.changeType(ValueType.BOOLEAN);
 	}
 
 	@Test(expected = DMLRuntimeException.class)
@@ -128,7 +128,7 @@ public class NegativeArrayTests {
 		s[0] = "1.0";
 		s[1] = "1.2";
 		StringArray a = ArrayFactory.create(s);
-		a.changeType(ValueType.BITSET);
+		a.changeType(ValueType.BOOLEAN);
 	}
 
 	@Test(expected = DMLRuntimeException.class)

@@ -55,7 +55,7 @@ public class LiteralReplaceCastScalarReadTest extends AutomatedTestBase
 	
 	@Test
 	public void testRemoveCastsInputBoolean() {
-		runScalarCastTest(ValueType.BITSET);
+		runScalarCastTest(ValueType.BOOLEAN);
 	}
 	
 	private void runScalarCastTest( ValueType vt ) {
@@ -71,7 +71,7 @@ public class LiteralReplaceCastScalarReadTest extends AutomatedTestBase
 			switch( vt ) {
 				case INT64: val = "7"; break;
 				case FP64: val = "7.3"; break;
-				case BITSET: val = "TRUE"; break;
+				case BOOLEAN: val = "TRUE"; break;
 				default: //do nothing
 			}
 			

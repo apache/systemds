@@ -396,7 +396,7 @@ public class DataOp extends Hop {
 					ret = OptimizerUtils.INT_SIZE; break;
 				case FP64:
 					ret = OptimizerUtils.DOUBLE_SIZE; break;
-				case BITSET:
+				case BOOLEAN:
 					ret = OptimizerUtils.BOOLEAN_SIZE; break;
 				case STRING: 
 					// by default, it estimates the size of string[100]

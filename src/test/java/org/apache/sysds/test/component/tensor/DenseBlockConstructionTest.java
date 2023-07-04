@@ -60,7 +60,7 @@ public class DenseBlockConstructionTest
 	
 	@Test
 	public void testMetaDenseBlock2Bool() {
-		DenseBlock db = getDenseBlock2(ValueType.BITSET);
+		DenseBlock db = getDenseBlock2(ValueType.BOOLEAN);
 		Assert.assertEquals(3, db.numRows());
 		Assert.assertTrue(db.isNumeric());
 		Assert.assertTrue(db.isContiguous());
@@ -75,7 +75,7 @@ public class DenseBlockConstructionTest
 
 	@Test
 	public void testMetaDenseBlock2TrueBool() {
-		DenseBlock db = getDenseBlock2(ValueType.BOOLEAN);
+		DenseBlock db = new DenseBlockBoolArray(new int[] {3,5});
 		Assert.assertEquals(3, db.numRows());
 		Assert.assertTrue(db.isNumeric());
 		Assert.assertTrue(db.isContiguous());
@@ -165,7 +165,7 @@ public class DenseBlockConstructionTest
 
 	@Test
 	public void testMetaDenseBlockLarge2Bool() {
-		DenseBlock db = getDenseBlockLarge2(ValueType.BITSET);
+		DenseBlock db = getDenseBlockLarge2(ValueType.BOOLEAN);
 		Assert.assertEquals(3, db.numRows());
 		Assert.assertTrue(db.isNumeric());
 		Assert.assertTrue(db.isContiguous());
@@ -255,7 +255,7 @@ public class DenseBlockConstructionTest
 	
 	@Test
 	public void testMetaDenseBlock3Bool() {
-		DenseBlock db = getDenseBlock3(ValueType.BITSET);
+		DenseBlock db = getDenseBlock3(ValueType.BOOLEAN);
 		Assert.assertEquals(3, db.numRows());
 		Assert.assertTrue(db.isNumeric());
 		Assert.assertTrue(db.isContiguous());
@@ -270,7 +270,7 @@ public class DenseBlockConstructionTest
 
 	@Test
 	public void testMetaDenseBlock3TrueBool() {
-		DenseBlock db = getDenseBlock3(ValueType.BOOLEAN);
+		DenseBlock db = new DenseBlockBoolArray(new int[] {3,5,7});
 		Assert.assertEquals(3, db.numRows());
 		Assert.assertTrue(db.isNumeric());
 		Assert.assertTrue(db.isContiguous());
@@ -360,7 +360,7 @@ public class DenseBlockConstructionTest
 
 	@Test
 	public void testMetaDenseBlockLarge3Bool() {
-		DenseBlock db = getDenseBlockLarge3(ValueType.BITSET);
+		DenseBlock db = getDenseBlockLarge3(ValueType.BOOLEAN);
 		Assert.assertEquals(3, db.numRows());
 		Assert.assertTrue(db.isNumeric());
 		Assert.assertTrue(db.isContiguous());
@@ -431,7 +431,7 @@ public class DenseBlockConstructionTest
 		switch (vt) {
 			case FP32: return new DenseBlockLFP32(dims);
 			case FP64: return new DenseBlockLFP64(dims);
-			case BITSET: return new DenseBlockLBoolBitset(dims);
+			case BOOLEAN: return new DenseBlockLBoolBitset(dims);
 			case INT32: return new DenseBlockLInt32(dims);
 			case INT64: return new DenseBlockLInt64(dims);
 			case STRING: return new DenseBlockLString(dims);
@@ -444,7 +444,7 @@ public class DenseBlockConstructionTest
 		switch (vt) {
 			case FP32: return new DenseBlockLFP32(dims);
 			case FP64: return new DenseBlockLFP64(dims);
-			case BITSET: return new DenseBlockLBoolBitset(dims);
+			case BOOLEAN: return new DenseBlockLBoolBitset(dims);
 			case INT32: return new DenseBlockLInt32(dims);
 			case INT64: return new DenseBlockLInt64(dims);
 			case STRING: return new DenseBlockLString(dims);

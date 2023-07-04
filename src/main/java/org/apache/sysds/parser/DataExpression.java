@@ -1129,8 +1129,8 @@ public class DataExpression extends DataIdentifier
 				//handle all csv default parameters
 				handleCSVDefaultParam(DELIM_DELIMITER, ValueType.STRING, conditional);
 				handleCSVDefaultParam(DELIM_FILL_VALUE, ValueType.FP64, conditional);
-				handleCSVDefaultParam(DELIM_HAS_HEADER_ROW, ValueType.BITSET, conditional);
-				handleCSVDefaultParam(DELIM_FILL, ValueType.BITSET, conditional);
+				handleCSVDefaultParam(DELIM_HAS_HEADER_ROW, ValueType.BOOLEAN, conditional);
+				handleCSVDefaultParam(DELIM_FILL, ValueType.BOOLEAN, conditional);
 				handleCSVDefaultParam(DELIM_NA_STRINGS, ValueType.STRING, conditional);
 			}
 
@@ -1283,7 +1283,7 @@ public class DataExpression extends DataIdentifier
 				else if (valueTypeString.equalsIgnoreCase(Statement.INT_VALUE_TYPE))
 					getOutput().setValueType(ValueType.INT64);
 				else if (valueTypeString.equalsIgnoreCase(Statement.BOOLEAN_VALUE_TYPE))
-					getOutput().setValueType(ValueType.BITSET);
+					getOutput().setValueType(ValueType.BOOLEAN);
 				else if (valueTypeString.equalsIgnoreCase(ValueType.UNKNOWN.name()))
 					getOutput().setValueType(ValueType.UNKNOWN);
 				else {
@@ -2168,7 +2168,7 @@ public class DataExpression extends DataIdentifier
 		if (getVarParam(param) == null) {
 			Expression defExpr = null;
 			switch(vt) {
-				case BITSET:
+				case BOOLEAN:
 					defExpr = new BooleanIdentifier((boolean)csvDefaults.get(param), this);
 					break;
 				case FP64:
@@ -2198,7 +2198,7 @@ public class DataExpression extends DataIdentifier
 	private boolean checkValueType(Expression expr, ValueType vt) {
 		return (vt == ValueType.STRING && expr instanceof StringIdentifier)
 			|| (vt == ValueType.FP64 && (expr instanceof DoubleIdentifier || expr instanceof IntIdentifier))
-			|| (vt == ValueType.BITSET && expr instanceof BooleanIdentifier);
+			|| (vt == ValueType.BOOLEAN && expr instanceof BooleanIdentifier);
 	}
 
 	private void validateParams(boolean conditional, Set<String> validParamNames, String legalMessage) {

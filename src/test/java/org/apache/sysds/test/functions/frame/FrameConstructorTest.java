@@ -48,7 +48,7 @@ public class FrameConstructorTest extends AutomatedTestBase {
 	private final static int cols = 4;
 
 	private final static ValueType[] schemaStrings1 = new ValueType[]{
-		ValueType.INT64, ValueType.STRING, ValueType.FP64, ValueType.BITSET};
+		ValueType.INT64, ValueType.STRING, ValueType.FP64, ValueType.BOOLEAN};
 
 	private final static ValueType[] schemaStrings2 = new ValueType[]{
 		ValueType.INT64, ValueType.STRING, ValueType.FP64, ValueType.STRING};

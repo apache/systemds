@@ -658,7 +658,7 @@ public class TensorBlock implements CacheBlock<TensorBlock>, Externalizable {
 				case INT64:
 				case FP64:
 					size += 8 * getLength(); break;
-				case BITSET:
+				case BOOLEAN:
 					//TODO perf bits instead of bytes
 					size += getLength(); break;
 					//size += Math.ceil((double)getLength() / 64); break;
@@ -737,7 +737,7 @@ public class TensorBlock implements CacheBlock<TensorBlock>, Externalizable {
 						case FP64: out.writeDouble(a.get(i, j)); break;
 						case INT32: out.writeInt((int) a.getLong(ix)); break;
 						case INT64: out.writeLong(a.getLong(ix)); break;
-						case BITSET: out.writeBoolean(a.get(i, j) != 0); break;
+						case BOOLEAN: out.writeBoolean(a.get(i, j) != 0); break;
 						case STRING:
 							String s = a.getString(ix);
 							out.writeUTF(s == null ? "" : s);
@@ -811,7 +811,7 @@ public class TensorBlock implements CacheBlock<TensorBlock>, Externalizable {
 							case FP64: a.set(i, j, in.readDouble()); break;
 							case INT32: a.set(ix, in.readInt()); break;
 							case INT64: a.set(ix, in.readLong()); break;
-							case BITSET: a.set(i, j, in.readByte()); break;
+							case BOOLEAN: a.set(i, j, in.readByte()); break;
 							case STRING:
 								// FIXME readUTF is not supported for CacheDataInput
 								a.set(ix, in.readUTF());

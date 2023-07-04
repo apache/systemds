@@ -78,8 +78,8 @@ public class TensorConstructionTest {
 
 	@Test
 	public void testMetaTypedBasicTensor3() {
-		BasicTensorBlock tb = new BasicTensorBlock(ValueType.BITSET, new int[]{11, 12}, true);
-		Assert.assertEquals(ValueType.BITSET, tb.getValueType());
+		BasicTensorBlock tb = new BasicTensorBlock(ValueType.BOOLEAN, new int[]{11, 12}, true);
+		Assert.assertEquals(ValueType.BOOLEAN, tb.getValueType());
 		Assert.assertEquals(2, tb.getNumDims());
 		Assert.assertEquals(11, tb.getNumRows());
 		Assert.assertEquals(12, tb.getNumColumns());
@@ -136,8 +136,8 @@ public class TensorConstructionTest {
 
 	@Test
 	public void testMetaCopyTypedBasicTensor3() {
-		BasicTensorBlock tb = new BasicTensorBlock(new BasicTensorBlock(ValueType.BITSET, new int[]{11, 12}, true));
-		Assert.assertEquals(ValueType.BITSET, tb.getValueType());
+		BasicTensorBlock tb = new BasicTensorBlock(new BasicTensorBlock(ValueType.BOOLEAN, new int[]{11, 12}, true));
+		Assert.assertEquals(ValueType.BOOLEAN, tb.getValueType());
 		Assert.assertEquals(2, tb.getNumDims());
 		Assert.assertEquals(11, tb.getNumRows());
 		Assert.assertEquals(12, tb.getNumColumns());
@@ -178,7 +178,7 @@ public class TensorConstructionTest {
 
 	@Test
 	public void testMetaSchemaTypedDataTensor() {
-		ValueType[] schema = new ValueType[] {ValueType.BITSET, ValueType.INT32, ValueType.STRING};
+		ValueType[] schema = new ValueType[] {ValueType.BOOLEAN, ValueType.INT32, ValueType.STRING};
 		DataTensorBlock tb = new DataTensorBlock(schema);
 		Assert.assertArrayEquals(schema, tb.getSchema());
 		Assert.assertEquals(2, tb.getNumDims());
@@ -188,9 +188,9 @@ public class TensorConstructionTest {
 
 	@Test
 	public void testMetaNColsTypedDataTensor() {
-		DataTensorBlock tb = new DataTensorBlock(10, ValueType.BITSET);
+		DataTensorBlock tb = new DataTensorBlock(10, ValueType.BOOLEAN);
 		ValueType[] schema = new ValueType[10];
-		Arrays.fill(schema, ValueType.BITSET);
+		Arrays.fill(schema, ValueType.BOOLEAN);
 		Assert.assertArrayEquals(schema, tb.getSchema());
 		Assert.assertEquals(2, tb.getNumDims());
 		Assert.assertEquals(0, tb.getNumRows());
@@ -217,7 +217,7 @@ public class TensorConstructionTest {
 
 	@Test
 	public void testMetaCopyTypedDataTensor() {
-		ValueType[] schema = {ValueType.INT32, ValueType.INT64, ValueType.BITSET};
+		ValueType[] schema = {ValueType.INT32, ValueType.INT64, ValueType.BOOLEAN};
 		DataTensorBlock tb = new DataTensorBlock(new DataTensorBlock(schema, new int[]{11, 3, 13}));
 		Assert.assertArrayEquals(schema, tb.getSchema());
 		Assert.assertEquals(3, tb.getNumDims());
@@ -239,7 +239,7 @@ public class TensorConstructionTest {
 
 	@Test
 	public void testMetaCopyTypedDataTensor3() {
-		ValueType[] schema = {ValueType.FP64, ValueType.FP32, ValueType.INT64, ValueType.INT32, ValueType.BITSET,
+		ValueType[] schema = {ValueType.FP64, ValueType.FP32, ValueType.INT64, ValueType.INT32, ValueType.BOOLEAN,
 				ValueType.STRING};
 		DataTensorBlock tb = new DataTensorBlock(new DataTensorBlock(schema, new int[]{2, schema.length, 2}, new String[][]{
 				new String[]{"1.4", "-5.34", "4.5", "-100000.1"},
@@ -338,7 +338,7 @@ public class TensorConstructionTest {
 
 	@Test
 	public void testMetaSchemaTypedTensorBlock() {
-		ValueType[] schema = new ValueType[] {ValueType.BITSET, ValueType.INT32, ValueType.STRING};
+		ValueType[] schema = new ValueType[] {ValueType.BOOLEAN, ValueType.INT32, ValueType.STRING};
 		TensorBlock tb = new TensorBlock(schema, new int[]{4, 3, 2});
 		Assert.assertArrayEquals(schema, tb.getSchema());
 		Assert.assertNull(tb.getValueType());
@@ -403,7 +403,7 @@ public class TensorConstructionTest {
 
 	@Test
 	public void testMetaCopySchemaTypedTensorBlock() {
-		ValueType[] schema = new ValueType[] {ValueType.BITSET, ValueType.INT32, ValueType.STRING};
+		ValueType[] schema = new ValueType[] {ValueType.BOOLEAN, ValueType.INT32, ValueType.STRING};
 		TensorBlock tb = new TensorBlock(new TensorBlock(schema, new int[]{4, 3, 2}));
 		Assert.assertArrayEquals(schema, tb.getSchema());
 		Assert.assertNull(tb.getValueType());

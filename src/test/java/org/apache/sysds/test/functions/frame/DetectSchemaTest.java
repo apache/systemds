@@ -50,7 +50,7 @@ public class DetectSchemaTest extends AutomatedTestBase {
 	private final static Types.ValueType[] schemaDoubles = new Types.ValueType[] {Types.ValueType.FP64,
 		Types.ValueType.FP64};
 	private final static Types.ValueType[] schemaMixed = new Types.ValueType[] {Types.ValueType.INT64,
-		Types.ValueType.FP64, Types.ValueType.INT64, Types.ValueType.BITSET};
+		Types.ValueType.FP64, Types.ValueType.INT64, Types.ValueType.BOOLEAN};
 
 	@BeforeClass
 	public static void init() {
@@ -144,7 +144,7 @@ public class DetectSchemaTest extends AutomatedTestBase {
 						tmp1[i] = (String) UtilFunctions.doubleToObject(vt, data[i][j]) + "AB";
 					frame1.appendColumn(tmp1);
 					break;
-				case BITSET:
+				case BOOLEAN:
 					boolean[] tmp2 = new boolean[rows];
 					for(int i = 0; i < rows; i++)
 						data[i][j] = (tmp2[i] = (Boolean) UtilFunctions.doubleToObject(vt, data[i][j], false)) ? 1 : 0;

@@ -71,7 +71,7 @@ public class RawRow {
 
 		else if(vt == Types.ValueType.STRING)
 			return findStringValue(vtf, forward, update);
-		else if(vt == Types.ValueType.BITSET) {
+		else if(vt == Types.ValueType.BOOLEAN) {
 			ValueTrimFormat vtfb = new ValueTrimFormat(vtf.getStringOfActualValue());
 			return findStringValue(vtfb, forward, update);
 		}
@@ -129,7 +129,7 @@ public class RawRow {
 			return findAtStringValue(vtf, rawIndex, update);
 		else if(vtf.getValueType().isNumeric())
 			return findAtNumericValue(vtf, rawIndex, numericIndex, update);
-		else if(vtf.getValueType() == Types.ValueType.BITSET) {
+		else if(vtf.getValueType() == Types.ValueType.BOOLEAN) {
 			ValueTrimFormat vtfb = new ValueTrimFormat(vtf.getStringOfActualValue());
 			return findAtStringValue(vtfb, rawIndex, update);
 		}

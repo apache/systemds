@@ -73,13 +73,11 @@ public interface ArrayFactory {
 
 	public static long getInMemorySize(ValueType type, int _numRows) {
 		switch(type) {
-			case BITSET:
+			case BOOLEAN:
 				if(_numRows > bitSetSwitchPoint)
 					return Array.baseMemoryCost() + (long) MemoryEstimates.longArrayCost(_numRows >> 6 + 1);
 				else
 					return Array.baseMemoryCost() + (long) MemoryEstimates.booleanArrayCost(_numRows);
-			case BOOLEAN:
-				return Array.baseMemoryCost() + (long) MemoryEstimates.booleanArrayCost(_numRows);
 			case INT64:
 				return Array.baseMemoryCost() + (long) MemoryEstimates.longArrayCost(_numRows);
 			case FP64:
@@ -109,7 +107,7 @@ public interface ArrayFactory {
 
 	public static Array<?> allocateOptional(ValueType v, int nRow) {
 		switch(v) {
-			case BITSET:
+			case BOOLEAN:
 				if(nRow > bitSetSwitchPoint)
 					return new OptionalArray<>(new BitSetArray(nRow), true);
 				else
@@ -142,7 +140,7 @@ public interface ArrayFactory {
 
 	public static Array<?> allocate(ValueType v, int nRow) {
 		switch(v) {
-			case BITSET:
+			case BOOLEAN:
 				return allocateBoolean(nRow);
 			case UINT4:
 			case UINT8:
@@ -260,7 +258,7 @@ public interface ArrayFactory {
 
 	public static Object parseString(String s, ValueType v) {
 		switch(v) {
-			case BITSET:
+			case BOOLEAN:
 				return BooleanArray.parseBoolean(s);
 			case CHARACTER:
 				return CharArray.parseChar(s);

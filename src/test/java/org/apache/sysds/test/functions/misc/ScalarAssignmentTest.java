@@ -72,7 +72,7 @@ public class ScalarAssignmentTest extends AutomatedTestBase
 	@Test
 	public void testForLoopBoolean() 
 	{
-		runScalarAssignmentTest(ControlFlowConstruct.FOR, ValueType.BITSET);
+		runScalarAssignmentTest(ControlFlowConstruct.FOR, ValueType.BOOLEAN);
 	}
 	
 	@Test
@@ -96,7 +96,7 @@ public class ScalarAssignmentTest extends AutomatedTestBase
 	@Test
 	public void testParForLoopBoolean() 
 	{
-		runScalarAssignmentTest(ControlFlowConstruct.PARFOR, ValueType.BITSET);
+		runScalarAssignmentTest(ControlFlowConstruct.PARFOR, ValueType.BOOLEAN);
 	}
 	
 	@Test
@@ -120,7 +120,7 @@ public class ScalarAssignmentTest extends AutomatedTestBase
 	@Test
 	public void testWhileLoopBoolean() 
 	{
-		runScalarAssignmentTest(ControlFlowConstruct.WHILE, ValueType.BITSET);
+		runScalarAssignmentTest(ControlFlowConstruct.WHILE, ValueType.BOOLEAN);
 	}
 
 	@Test
@@ -144,7 +144,7 @@ public class ScalarAssignmentTest extends AutomatedTestBase
 	@Test
 	public void testIfLoopBoolean() 
 	{
-		runScalarAssignmentTest(ControlFlowConstruct.IFELSE, ValueType.BITSET);
+		runScalarAssignmentTest(ControlFlowConstruct.IFELSE, ValueType.BOOLEAN);
 	}
 
 	public void runScalarAssignmentTest( ControlFlowConstruct cfc, ValueType vt ) {
@@ -162,7 +162,7 @@ public class ScalarAssignmentTest extends AutomatedTestBase
 			case INT64: value = Integer.valueOf(7); break;
 			case FP64: value = Double.valueOf(7.7); break;
 			case STRING: value = "This is a test!"; break;
-			case BITSET: value = Boolean.valueOf(true); break;
+			case BOOLEAN: value = Boolean.valueOf(true); break;
 			default: //do nothing
 		}
 		

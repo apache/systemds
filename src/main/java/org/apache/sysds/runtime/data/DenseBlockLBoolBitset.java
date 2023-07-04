@@ -61,7 +61,7 @@ public class DenseBlockLBoolBitset extends DenseBlockLDRB
 	
 	@Override
 	public boolean isNumeric(ValueType vt) {
-		return ValueType.BITSET == vt;
+		return ValueType.BOOLEAN == vt;
 	}
 
 

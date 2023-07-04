@@ -210,7 +210,7 @@ public class FrameTest {
 
 	@Test
 	public void rBindZeros() {
-		ValueType[] bools = UtilFunctions.nCopies(f.getNumColumns(), ValueType.BITSET);
+		ValueType[] bools = UtilFunctions.nCopies(f.getNumColumns(), ValueType.BOOLEAN);
 		FrameBlock b = new FrameBlock(bools, "0", 10);
 
 		FrameBlock ff = append(b, f, false);
@@ -232,7 +232,7 @@ public class FrameTest {
 
 	@Test
 	public void rBindZerosMany() {
-		ValueType[] bools = UtilFunctions.nCopies(f.getNumColumns(), ValueType.BITSET);
+		ValueType[] bools = UtilFunctions.nCopies(f.getNumColumns(), ValueType.BOOLEAN);
 		FrameBlock b = new FrameBlock(bools, "0", 240);
 		FrameBlock ff = append(b, f, false);
 		for(int r = 0; r < 240; r++)

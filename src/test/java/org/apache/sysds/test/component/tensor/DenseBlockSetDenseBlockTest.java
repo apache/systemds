@@ -48,8 +48,8 @@ public class DenseBlockSetDenseBlockTest
 
 	@Test
 	public void testDenseBlock2BoolSetDenseBlock() {
-		DenseBlock db = getDenseBlock2(ValueType.BITSET);
-		DenseBlock dbSet = getDenseBlock2(ValueType.BITSET);
+		DenseBlock db = getDenseBlock2(ValueType.BOOLEAN);
+		DenseBlock dbSet = getDenseBlock2(ValueType.BOOLEAN);
 		dbSet.set(1);
 		db.set(dbSet);
 		compareDenseBlocks(db, dbSet);
@@ -57,8 +57,8 @@ public class DenseBlockSetDenseBlockTest
 
 	@Test
 	public void testDenseBlock2TrueBoolSetDenseBlock() {
-		DenseBlock db = getDenseBlock2(ValueType.BOOLEAN);
-		DenseBlock dbSet = getDenseBlock2(ValueType.BOOLEAN);
+		DenseBlock db = new DenseBlockBoolArray(new int[] {3,5});
+		DenseBlock dbSet = new DenseBlockBoolArray(new int[] {3,5});
 		dbSet.set(1);
 		db.set(dbSet);
 		compareDenseBlocks(db, dbSet);
@@ -115,8 +115,8 @@ public class DenseBlockSetDenseBlockTest
 
 	@Test
 	public void testDenseBlockLarge2BoolSetDenseBlock() {
-		DenseBlock db = getDenseBlockLarge2(ValueType.BITSET);
-		DenseBlock dbSet = getDenseBlockLarge2(ValueType.BITSET);
+		DenseBlock db = getDenseBlockLarge2(ValueType.BOOLEAN);
+		DenseBlock dbSet = getDenseBlockLarge2(ValueType.BOOLEAN);
 		dbSet.set(1);
 		db.set(dbSet);
 		compareDenseBlocks(db, dbSet);
@@ -169,8 +169,8 @@ public class DenseBlockSetDenseBlockTest
 
 	@Test
 	public void testDenseBlock3BoolSetDenseBlock() {
-		DenseBlock db = getDenseBlock3(ValueType.BITSET);
-		DenseBlock dbSet = getDenseBlock3(ValueType.BITSET);
+		DenseBlock db = getDenseBlock3(ValueType.BOOLEAN);
+		DenseBlock dbSet = getDenseBlock3(ValueType.BOOLEAN);
 		dbSet.set(1);
 		db.set(dbSet);
 		compareDenseBlocks(db, dbSet);
@@ -178,8 +178,8 @@ public class DenseBlockSetDenseBlockTest
 
 	@Test
 	public void testDenseBlock3TrueBoolSetDenseBlock() {
-		DenseBlock db = getDenseBlock3(ValueType.BOOLEAN);
-		DenseBlock dbSet = getDenseBlock3(ValueType.BOOLEAN);
+		DenseBlock db = new DenseBlockBoolArray(new int[] {3,5,7});
+		DenseBlock dbSet = new DenseBlockBoolArray(new int[] {3,5,7});
 		dbSet.set(1);
 		db.set(dbSet);
 		compareDenseBlocks(db, dbSet);
@@ -232,8 +232,8 @@ public class DenseBlockSetDenseBlockTest
 
 	@Test
 	public void testDenseBlockLarge3BoolSetDenseBlock() {
-		DenseBlock db = getDenseBlockLarge3(ValueType.BITSET);
-		DenseBlock dbSet = getDenseBlockLarge3(ValueType.BITSET);
+		DenseBlock db = getDenseBlockLarge3(ValueType.BOOLEAN);
+		DenseBlock dbSet = getDenseBlockLarge3(ValueType.BOOLEAN);
 		dbSet.set(1);
 		db.set(dbSet);
 		compareDenseBlocks(db, dbSet);
@@ -279,7 +279,7 @@ public class DenseBlockSetDenseBlockTest
 		switch (vt) {
 			case FP32: return new DenseBlockLFP32(dims);
 			case FP64: return new DenseBlockLFP64(dims);
-			case BITSET: return new DenseBlockLBoolBitset(dims);
+			case BOOLEAN: return new DenseBlockLBoolBitset(dims);
 			case INT32: return new DenseBlockLInt32(dims);
 			case INT64: return new DenseBlockLInt64(dims);
 			case STRING: return new DenseBlockLString(dims);
@@ -292,7 +292,7 @@ public class DenseBlockSetDenseBlockTest
 		switch (vt) {
 			case FP32: return new DenseBlockLFP32(dims);
 			case FP64: return new DenseBlockLFP64(dims);
-			case BITSET: return new DenseBlockLBoolBitset(dims);
+			case BOOLEAN: return new DenseBlockLBoolBitset(dims);
 			case INT32: return new DenseBlockLInt32(dims);
 			case INT64: return new DenseBlockLInt64(dims);
 			case STRING: return new DenseBlockLString(dims);

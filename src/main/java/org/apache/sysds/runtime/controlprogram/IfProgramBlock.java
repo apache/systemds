@@ -138,10 +138,10 @@ public class IfProgramBlock extends ProgramBlock
 			if( _sb != null ) {
 				IfStatementBlock isb = (IfStatementBlock)_sb;
 				result = (BooleanObject) executePredicate(_predicate, isb.getPredicateHops(), 
-					isb.requiresPredicateRecompilation(), ValueType.BITSET, ec);
+					isb.requiresPredicateRecompilation(), ValueType.BOOLEAN, ec);
 			}
 			else
-				result = (BooleanObject) executePredicate(_predicate, null, false, ValueType.BITSET, ec);
+				result = (BooleanObject) executePredicate(_predicate, null, false, ValueType.BOOLEAN, ec);
 		}
 		catch(Exception ex) {
 			throw new DMLRuntimeException(this.printBlockErrorLocation() + "Failed to evaluate the IF predicate.", ex);

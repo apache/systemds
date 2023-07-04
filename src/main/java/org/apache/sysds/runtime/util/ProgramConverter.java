@@ -1653,7 +1653,7 @@ public class ProgramConverter
 				switch ( valuetype ) {
 					case INT64:     dat = new IntObject(Long.parseLong(valString)); break;
 					case FP64:  dat = new DoubleObject(Double.parseDouble(valString)); break;
-					case BITSET: dat = new BooleanObject(Boolean.parseBoolean(valString)); break;
+					case BOOLEAN: dat = new BooleanObject(Boolean.parseBoolean(valString)); break;
 					case STRING:  dat = new StringObject(valString); break;
 					default:
 						throw new DMLRuntimeException("Unable to parse valuetype "+valuetype);

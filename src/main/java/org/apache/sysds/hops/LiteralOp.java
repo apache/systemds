@@ -58,7 +58,7 @@ public class LiteralOp extends Hop
 	}
 
 	public LiteralOp(boolean value) {
-		super(String.valueOf(value), DataType.SCALAR, ValueType.BITSET);
+		super(String.valueOf(value), DataType.SCALAR, ValueType.BOOLEAN);
 		value_boolean = value;
 	}
 	
@@ -96,8 +96,8 @@ public class LiteralOp extends Hop
 			case FP64:
 				l = Data.createLiteralLop(ValueType.FP64, Double.toString(value_double));
 				break;
-			case BITSET:
-				l = Data.createLiteralLop(ValueType.BITSET, Boolean.toString(value_boolean));
+			case BOOLEAN:
+				l = Data.createLiteralLop(ValueType.BOOLEAN, Boolean.toString(value_boolean));
 				break;
 			case STRING:
 				l = Data.createLiteralLop(ValueType.STRING, value_string);
@@ -131,7 +131,7 @@ public class LiteralOp extends Hop
 			case FP64:
 				val = Double.toString(value_double);
 				break;
-			case BITSET:
+			case BOOLEAN:
 				val = Boolean.toString(value_boolean);
 				break;
 			case STRING:
@@ -156,7 +156,7 @@ public class LiteralOp extends Hop
 				ret = OptimizerUtils.INT_SIZE; break;
 			case FP64:
 				ret = OptimizerUtils.DOUBLE_SIZE; break;
-			case BITSET:
+			case BOOLEAN:
 				ret = OptimizerUtils.BOOLEAN_SIZE; break;
 			case STRING: 
 				ret = this.value_string.length() * OptimizerUtils.CHAR_SIZE; break;
@@ -205,7 +205,7 @@ public class LiteralOp extends Hop
 				return UtilFunctions.toLong(value_double);
 			case STRING:
 				return Long.parseLong(value_string);
-			case BITSET:
+			case BOOLEAN:
 				return value_boolean ? 1 : 0;
 			default:
 				return -1;
@@ -220,7 +220,7 @@ public class LiteralOp extends Hop
 				return value_double;
 			case STRING:
 				return Double.parseDouble(value_string);
-			case BITSET:
+			case BOOLEAN:
 				return value_boolean ? 1 : 0;
 			default:
 				throw new HopsException("Can not coerce an object of type " + getValueType() + " into Double.");
@@ -235,7 +235,7 @@ public class LiteralOp extends Hop
 				return (value_double != 0);
 			case STRING:
 				return Boolean.parseBoolean(value_string);
-			case BITSET:
+			case BOOLEAN:
 				return value_boolean;
 			default:
 				throw new HopsException("Can not coerce an object of type " + getValueType() + " into Boolean.");
@@ -244,7 +244,7 @@ public class LiteralOp extends Hop
 	
 	public String getStringValue() {
 		switch( getValueType() ) {
-			case BITSET:
+			case BOOLEAN:
 				return String.valueOf(value_boolean);
 			case UINT4:
 			case UINT8:

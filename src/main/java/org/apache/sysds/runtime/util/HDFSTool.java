@@ -280,7 +280,7 @@ public class HDFSTool
 	}
 	
 	public static boolean readBooleanFromHDFSFile(String filename) throws IOException {
-		return (Boolean)readObjectFromHDFSFile(filename, ValueType.BITSET);
+		return (Boolean)readObjectFromHDFSFile(filename, ValueType.BOOLEAN);
 	}
 	
 	public static String readStringFromHDFSFile(String filename) 
@@ -309,7 +309,7 @@ public class HDFSTool
 			throw new IOException("Empty file on hdfs: "+filename);
 		
 		switch( vt ) {
-			case BITSET: return Boolean.parseBoolean(line);
+			case BOOLEAN: return Boolean.parseBoolean(line);
 			case FP64: return Double.parseDouble(line);
 			case INT64: return Long.parseLong(line);
 			default: return line;
@@ -322,7 +322,7 @@ public class HDFSTool
 			switch( vt ) {
 				case INT64:   obj = readIntegerFromHDFSFile(fname); break;
 				case FP64:    obj = readDoubleFromHDFSFile(fname); break;
-				case BITSET: obj = readBooleanFromHDFSFile(fname); break;
+				case BOOLEAN: obj = readBooleanFromHDFSFile(fname); break;
 				case STRING:
 				default:      obj = readStringFromHDFSFile(fname);
 			}

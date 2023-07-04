@@ -46,7 +46,7 @@ public class TensorGetSetIndexingTest
 
 	@Test
 	public void testIndexBasicTensor2BoolSetGetCell() {
-		TensorBlock tb = getBasicTensor2(ValueType.BITSET);
+		TensorBlock tb = getBasicTensor2(ValueType.BOOLEAN);
 		checkSequence(setSequence(tb));
 	}
 
@@ -76,7 +76,7 @@ public class TensorGetSetIndexingTest
 
 	@Test
 	public void testIndexBasicTensor3BoolSetGetCell() {
-		TensorBlock tb = getBasicTensor3(ValueType.BITSET);
+		TensorBlock tb = getBasicTensor3(ValueType.BOOLEAN);
 		checkSequence(setSequence(tb));
 	}
 
@@ -119,7 +119,7 @@ public class TensorGetSetIndexingTest
 	}
 
 	private static void checkSequence(TensorBlock tb) {
-		boolean isBool = (tb.isBasic() ? tb.getValueType() : tb.getSchema()[0]) == ValueType.BITSET;
+		boolean isBool = (tb.isBasic() ? tb.getValueType() : tb.getSchema()[0]) == ValueType.BOOLEAN;
 		if( tb.getNumDims() == DIM0 ) {
 			int dim12 = DIM1 * DIM2;
 			for(int i=0; i<tb.getNumRows(); i++)
@@ -160,7 +160,7 @@ public class TensorGetSetIndexingTest
 
 	@Test
 	public void testIndexDataTensor2BoolSetGetCell() {
-		TensorBlock tb = getDataTensor2(ValueType.BITSET);
+		TensorBlock tb = getDataTensor2(ValueType.BOOLEAN);
 		checkSequence(setSequence(tb));
 	}
 
@@ -190,7 +190,7 @@ public class TensorGetSetIndexingTest
 
 	@Test
 	public void testIndexDataTensor3BoolSetGetCell() {
-		TensorBlock tb = getDataTensor3(ValueType.BITSET);
+		TensorBlock tb = getDataTensor3(ValueType.BOOLEAN);
 		checkSequence(setSequence(tb));
 	}
 

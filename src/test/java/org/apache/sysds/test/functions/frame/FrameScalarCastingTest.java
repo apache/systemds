@@ -58,7 +58,7 @@ public class FrameScalarCastingTest extends AutomatedTestBase
 	
 	@Test
 	public void testFrame2ScalarBoolean() {
-		runFrameCastingTest(TEST_NAME1, ValueType.BITSET);
+		runFrameCastingTest(TEST_NAME1, ValueType.BOOLEAN);
 	}
 	
 	@Test
@@ -78,7 +78,7 @@ public class FrameScalarCastingTest extends AutomatedTestBase
 	
 	@Test
 	public void testScalar2FrameBoolean() {
-		runFrameCastingTest(TEST_NAME2, ValueType.BITSET);
+		runFrameCastingTest(TEST_NAME2, ValueType.BOOLEAN);
 	}
 	
 	@Test

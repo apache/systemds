@@ -59,42 +59,42 @@ public class FrameUtilTest {
 
 	@Test
 	public void testIsTypeMinimumBoolean_1() {
-		assertEquals(ValueType.BITSET, FrameUtil.isType("TRUE", ValueType.UNKNOWN));
+		assertEquals(ValueType.BOOLEAN, FrameUtil.isType("TRUE", ValueType.UNKNOWN));
 	}
 
 	@Test
 	public void testIsTypeMinimumBoolean_2() {
-		assertEquals(ValueType.BITSET, FrameUtil.isType("True", ValueType.UNKNOWN));
+		assertEquals(ValueType.BOOLEAN, FrameUtil.isType("True", ValueType.UNKNOWN));
 	}
 
 	@Test
 	public void testIsTypeMinimumBoolean_3() {
-		assertEquals(ValueType.BITSET, FrameUtil.isType("true", ValueType.UNKNOWN));
+		assertEquals(ValueType.BOOLEAN, FrameUtil.isType("true", ValueType.UNKNOWN));
 	}
 
 	@Test
 	public void testIsTypeMinimumBoolean_4() {
-		assertEquals(ValueType.BITSET, FrameUtil.isType("t", ValueType.UNKNOWN));
+		assertEquals(ValueType.BOOLEAN, FrameUtil.isType("t", ValueType.UNKNOWN));
 	}
 
 	@Test
 	public void testIsTypeMinimumBoolean_5() {
-		assertEquals(ValueType.BITSET, FrameUtil.isType("f", ValueType.UNKNOWN));
+		assertEquals(ValueType.BOOLEAN, FrameUtil.isType("f", ValueType.UNKNOWN));
 	}
 
 	@Test
 	public void testIsTypeMinimumBoolean_6() {
-		assertEquals(ValueType.BITSET, FrameUtil.isType("false", ValueType.UNKNOWN));
+		assertEquals(ValueType.BOOLEAN, FrameUtil.isType("false", ValueType.UNKNOWN));
 	}
 
 	@Test
 	public void testIsTypeMinimumBoolean_7() {
-		assertEquals(ValueType.BITSET, FrameUtil.isType("False", ValueType.UNKNOWN));
+		assertEquals(ValueType.BOOLEAN, FrameUtil.isType("False", ValueType.UNKNOWN));
 	}
 
 	@Test
 	public void testIsTypeMinimumBoolean_8() {
-		assertEquals(ValueType.BITSET, FrameUtil.isType("FALSE", ValueType.UNKNOWN));
+		assertEquals(ValueType.BOOLEAN, FrameUtil.isType("FALSE", ValueType.UNKNOWN));
 	}
 
 	@Test
@@ -207,12 +207,12 @@ public class FrameUtilTest {
 
 	@Test
 	public void testDoubleIsType_1() {
-		assertEquals(ValueType.BITSET, FrameUtil.isType(0.0));
+		assertEquals(ValueType.BOOLEAN, FrameUtil.isType(0.0));
 	}
 
 	@Test
 	public void testDoubleIsType_2() {
-		assertEquals(ValueType.BITSET, FrameUtil.isType(1.0));
+		assertEquals(ValueType.BOOLEAN, FrameUtil.isType(1.0));
 	}
 
 	@Test

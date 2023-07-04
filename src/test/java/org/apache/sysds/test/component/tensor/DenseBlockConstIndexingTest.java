@@ -50,7 +50,7 @@ public class DenseBlockConstIndexingTest
 	
 	@Test
 	public void testIndexDenseBlock2BoolConst() {
-		DenseBlock db = getDenseBlock2(ValueType.BITSET);
+		DenseBlock db = getDenseBlock2(ValueType.BOOLEAN);
 		db.set(7.3);
 		for(int i=0; i<db.numRows(); i++)
 			for(int j=0; j<5; j++)
@@ -59,7 +59,7 @@ public class DenseBlockConstIndexingTest
 
 	@Test
 	public void testIndexDenseBlock2TrueBoolConst() {
-		DenseBlock db = getDenseBlock2(ValueType.BOOLEAN);
+		DenseBlock db = new DenseBlockBoolArray(new int[] {3,5});
 		db.set(7.3);
 		for(int i=0; i<db.numRows(); i++)
 			for(int j=0; j<5; j++) {
@@ -119,12 +119,14 @@ public class DenseBlockConstIndexingTest
 
 	@Test
 	public void testIndexDenseBlockLarge2BoolConst() {
-		DenseBlock db = getDenseBlockLarge2(ValueType.BITSET);
+		DenseBlock db = getDenseBlockLarge2(ValueType.BOOLEAN);
 		db.set(7.3);
 		for(int i=0; i<db.numRows(); i++)
 			for(int j=0; j<5; j++)
 				Assert.assertEquals(1, db.get(i, j), 0);
 	}
+
+
 
 	@Test
 	public void testIndexDenseBlockLarge2Int32Const() {
@@ -173,7 +175,7 @@ public class DenseBlockConstIndexingTest
 	
 	@Test
 	public void testIndexDenseBlock3BoolConst() {
-		DenseBlock db = getDenseBlock3(ValueType.BITSET);
+		DenseBlock db = getDenseBlock3(ValueType.BOOLEAN);
 		db.set(7.3);
 		for(int i=0; i<db.numRows(); i++)
 			for(int j=0; j<5; j++)
@@ -183,7 +185,7 @@ public class DenseBlockConstIndexingTest
 
 	@Test
 	public void testIndexDenseBlock3TrueBoolConst() {
-		DenseBlock db = getDenseBlock3(ValueType.BOOLEAN);
+		DenseBlock db = new DenseBlockBoolArray(new int[] {3,5,7});
 		db.set(7.3);
 		for(int i=0; i<db.numRows(); i++)
 			for(int j=0; j<5; j++)
@@ -240,7 +242,7 @@ public class DenseBlockConstIndexingTest
 
 	@Test
 	public void testIndexDenseBlockLarge3BoolConst() {
-		DenseBlock db = getDenseBlockLarge3(ValueType.BITSET);
+		DenseBlock db = getDenseBlockLarge3(ValueType.BOOLEAN);
 		db.set(7.3);
 		for(int i=0; i<db.numRows(); i++)
 			for(int j=0; j<5; j++)
@@ -288,7 +290,7 @@ public class DenseBlockConstIndexingTest
 		switch (vt) {
 			case FP32: return new DenseBlockLFP32(dims);
 			case FP64: return new DenseBlockLFP64(dims);
-			case BITSET: return new DenseBlockLBoolBitset(dims);
+			case BOOLEAN: return new DenseBlockLBoolBitset(dims);
 			case INT32: return new DenseBlockLInt32(dims);
 			case INT64: return new DenseBlockLInt64(dims);
 			case STRING: return new DenseBlockLString(dims);
@@ -301,7 +303,7 @@ public class DenseBlockConstIndexingTest
 		switch (vt) {
 			case FP32: return new DenseBlockLFP32(dims);
 			case FP64: return new DenseBlockLFP64(dims);
-			case BITSET: return new DenseBlockLBoolBitset(dims);
+			case BOOLEAN: return new DenseBlockLBoolBitset(dims);
 			case INT32: return new DenseBlockLInt32(dims);
 			case INT64: return new DenseBlockLInt64(dims);
 			case STRING: return new DenseBlockLString(dims);

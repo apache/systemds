@@ -101,7 +101,7 @@ public class SqlCPInstruction extends CPInstruction {
 			case FP32: outBlock.set(ix, resultSet.getFloat(sqlCol)); break;
 			case INT64: outBlock.set(ix, resultSet.getLong(sqlCol)); break;
 			case INT32: outBlock.set(ix, resultSet.getInt(sqlCol)); break;
-			case BITSET: outBlock.set(ix, resultSet.getBoolean(sqlCol)); break;
+			case BOOLEAN: outBlock.set(ix, resultSet.getBoolean(sqlCol)); break;
 			case STRING: outBlock.set(ix, resultSet.getString(sqlCol)); break;
 			default: throw new DMLRuntimeException("Cell can not be set to valuetype " + valueType.name());
 		}
@@ -122,7 +122,7 @@ public class SqlCPInstruction extends CPInstruction {
 				case Types.SMALLINT:
 				case Types.TINYINT:
 				case Types.INTEGER: schema[i] = ValueType.INT32; break;
-				case Types.BIT:     schema[i] = ValueType.BITSET; break;
+				case Types.BIT:     schema[i] = ValueType.BOOLEAN; break;
 				default:            schema[i] = ValueType.STRING; break;
 			}
 		}

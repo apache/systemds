@@ -50,7 +50,7 @@ public class BooleanIdentifier extends ConstIdentifier
 		_val = val;
 		setDimensions(0, 0);
 		computeDataType();
-		setValueType(ValueType.BITSET);
+		setValueType(ValueType.BOOLEAN);
 	}
 
 	@Override

@@ -64,7 +64,7 @@ public class ValueTypeAutoCastingTest extends AutomatedTestBase
 	@Test
 	public void testIterablePredicateBoolean() 
 	{ 
-		runTest( TEST_NAME1, ValueType.BITSET, true );
+		runTest( TEST_NAME1, ValueType.BOOLEAN, true );
 	}
 	
 	@Test
@@ -82,7 +82,7 @@ public class ValueTypeAutoCastingTest extends AutomatedTestBase
 	@Test
 	public void testConditionalPredicateWhileBoolean() 
 	{ 
-		runTest( TEST_NAME2, ValueType.BITSET, false );
+		runTest( TEST_NAME2, ValueType.BOOLEAN, false );
 	}
 	
 	@Test
@@ -100,7 +100,7 @@ public class ValueTypeAutoCastingTest extends AutomatedTestBase
 	@Test
 	public void testConditionalPredicateIfBoolean() 
 	{ 
-		runTest( TEST_NAME3, ValueType.BITSET, false );
+		runTest( TEST_NAME3, ValueType.BOOLEAN, false );
 	}
 	
 	@Test
@@ -118,7 +118,7 @@ public class ValueTypeAutoCastingTest extends AutomatedTestBase
 	@Test
 	public void testFunctionInliningBoolean() 
 	{ 
-		runTest( TEST_NAME4, ValueType.BITSET, false );
+		runTest( TEST_NAME4, ValueType.BOOLEAN, false );
 	}
 	
 	@Test
@@ -136,7 +136,7 @@ public class ValueTypeAutoCastingTest extends AutomatedTestBase
 	@Test
 	public void testFunctionNoInliningBoolean() 
 	{ 
-		runTest( TEST_NAME5, ValueType.BITSET, false );
+		runTest( TEST_NAME5, ValueType.BOOLEAN, false );
 	}
 
 	
@@ -163,7 +163,7 @@ public class ValueTypeAutoCastingTest extends AutomatedTestBase
 				case INT64:
 					val1 = Integer.toString((int)V[0][0]); 
 					val2 = Integer.toString((int)V[0][1]); break;
-				case BITSET:
+				case BOOLEAN:
 					val1 = (V[0][0]!=0)?"TRUE":"FALSE"; 
 					val2 = (V[0][1]!=0)?"TRUE":"FALSE"; break;
 				default:

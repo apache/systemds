@@ -574,7 +574,7 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 	}
 
 	private CPOperand getBoolLiteral(String name) {
-		return getLiteral(name, ValueType.BITSET);
+		return getLiteral(name, ValueType.BOOLEAN);
 	}
 
 	private CPOperand getLiteral(String name, ValueType vt) {

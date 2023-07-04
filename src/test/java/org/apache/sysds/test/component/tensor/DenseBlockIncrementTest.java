@@ -40,13 +40,13 @@ public class DenseBlockIncrementTest {
 
 	@Test
 	public void testIndexDenseBlock2BoolCountNonZero() {
-		DenseBlock db = getDenseBlock2(ValueType.BITSET);
+		DenseBlock db = getDenseBlock2(ValueType.BOOLEAN);
 		checkIncrement2(db);
 	}
 
 	@Test
 	public void testIndexDenseBlock2TrueBoolCountNonZero() {
-		DenseBlock db = getDenseBlock2(ValueType.BOOLEAN);
+		DenseBlock db = new DenseBlockBoolArray(new int[] {3,5});
 		checkIncrement2(db);
 	}
 
@@ -85,7 +85,7 @@ public class DenseBlockIncrementTest {
 
 	@Test
 	public void testIndexDenseBlockLarge2BoolCountNonZero() {
-		DenseBlock db = getDenseBlockLarge2(ValueType.BITSET);
+		DenseBlock db = getDenseBlockLarge2(ValueType.BOOLEAN);
 		checkIncrement2(db);
 	}
 
@@ -121,7 +121,7 @@ public class DenseBlockIncrementTest {
 				return new DenseBlockLFP32(dims);
 			case FP64:
 				return new DenseBlockLFP64(dims);
-			case BITSET:
+			case BOOLEAN:
 				return new DenseBlockLBoolBitset(dims);
 			case INT32:
 				return new DenseBlockLInt32(dims);

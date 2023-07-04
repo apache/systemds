@@ -19,13 +19,32 @@
 
 package org.apache.sysds.runtime.frame.data.compress;
 
+import org.apache.sysds.runtime.frame.data.columns.ArrayFactory.FrameArrayType;
+
 public class ArrayCompressionStatistics {
 
+	public final long originalSize;
+	public final long compressedSizeEstimate;
+	public final boolean shouldCompress;
+	public final FrameArrayType bestType;
 	public final int bitPerValue;
 	public final int nUnique;
 
-	public ArrayCompressionStatistics(int bitPerValue, int nUnique) {
+	public ArrayCompressionStatistics(int bitPerValue, int nUnique, boolean shouldCompress, FrameArrayType bestType,
+		long originalSize, long compressedSizeEstimate) {
 		this.bitPerValue = bitPerValue;
 		this.nUnique = nUnique;
+		this.shouldCompress = shouldCompress;
+		this.bestType = bestType;
+		this.originalSize = originalSize;
+		this.compressedSizeEstimate = compressedSizeEstimate;
+	}
+
+	@Override
+	public String toString() {
+		StringBuilder sb = new StringBuilder();
+		sb.append(String.format("C-Stats: size:%6d->%6d, Use:%10s, Unique:%5d", originalSize, compressedSizeEstimate,
+			bestType.toString(), nUnique));
+		return sb.toString();
 	}
 }

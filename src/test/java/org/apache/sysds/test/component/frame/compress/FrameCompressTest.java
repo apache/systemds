@@ -19,15 +19,42 @@
 
 package org.apache.sysds.test.component.frame.compress;
 
+import static org.junit.Assert.fail;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.runtime.frame.data.columns.Array;
+import org.apache.sysds.runtime.frame.data.columns.ArrayFactory;
+import org.apache.sysds.runtime.frame.data.lib.FrameLibCompress;
+import org.apache.sysds.test.TestUtils;
+import org.apache.sysds.test.component.frame.array.FrameArrayTests;
 import org.junit.Test;
 
 public class FrameCompressTest {
+	protected static final Log LOG = LogFactory.getLog(FrameCompressTest.class.getName());
+
 	@Test
 	public void testCompressionStatisticsConstruction() {
-		Array<?>[] data = new Array<?>[5];
-		FrameBlock a = new FrameBlock(data);
+		try {
 
+			FrameBlock a = generateCompressableBlock(200, 5, 1232);
+			FrameBlock b = FrameLibCompress.compress(a, 1);
+			TestUtils.compareFrames(a, b, true);
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
+
+	}
+
+	private FrameBlock generateCompressableBlock(int rows, int cols, int seed) {
+		Array<?>[] data = new Array<?>[cols];
+		for(int i = 0; i < cols; i++) {
+			data[i] = ArrayFactory.create(//
+				FrameArrayTests.generateRandomStringNUniqueLengthOpt(rows, seed + i, i + 1, 55 + i));
+		}
+		return new FrameBlock(data);
 	}
 }

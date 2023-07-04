@@ -19,20 +19,27 @@
 
 package org.apache.sysds.runtime.frame.data.compress;
 
-import org.apache.commons.lang.NotImplementedException;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.workload.WTreeRoot;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
+import org.apache.sysds.runtime.frame.data.columns.Array;
+import org.apache.sysds.runtime.frame.data.columns.DDCArray;
 
 public class CompressedFrameBlockFactory {
+
+	private static final Log LOG = LogFactory.getLog(CompressedFrameBlockFactory.class.getName());
 
 	private final FrameBlock in;
 	private final FrameCompressionSettings cs;
 	private final ArrayCompressionStatistics[] stats;
+	private final Array<?>[] compressedColumns;
 
 	private CompressedFrameBlockFactory(FrameBlock fb, FrameCompressionSettings cs) {
 		this.in = fb;
 		this.cs = cs;
 		this.stats = new ArrayCompressionStatistics[in.getNumColumns()];
+		this.compressedColumns = new Array<?>[in.getNumColumns()];
 	}
 
 	public static FrameBlock compress(FrameBlock fb) {
@@ -41,11 +48,50 @@ public class CompressedFrameBlockFactory {
 	}
 
 	public static FrameBlock compress(FrameBlock fb, int k, WTreeRoot root) {
-		throw new NotImplementedException();
+		FrameCompressionSettings cs = new FrameCompressionSettingsBuilder()//
+			.threads(k).wTreeRoot(root).create();
+		return new CompressedFrameBlockFactory(fb, cs).compressFrame();
 	}
 
 	private FrameBlock compressFrame() {
-		throw new NotImplementedException();
+		extractStatistics();
+		encodeColumns();
+		FrameBlock ret = new FrameBlock(compressedColumns);
+
+		final long before = in.getInMemorySize();
+		final long after = ret.getInMemorySize();
+
+		LOG.error(String.format("Uncompressed Size: %15d",before));
+		LOG.error(String.format("compressed Size:   %15d", after));
+		LOG.error(String.format("ratio:             %15.3f", (double)before / (double)after));
+
+		return ret;
+	}
+
+	private void extractStatistics() {
+		int nSamples = Math.min(in.getNumRows(), (int) Math.ceil(in.getNumRows() * cs.sampleRatio));
+		for(int i = 0; i < stats.length; i++) {
+			stats[i] = in.getColumn(i).statistics(nSamples);
+		}
+	}
+
+	private void encodeColumns() {
+		for(int i = 0; i < compressedColumns.length; i++) {
+			if(stats[i] != null) {
+				LOG.error(stats[i]);
+				switch(stats[i].bestType) {
+					case DDC:
+						compressedColumns[i] = DDCArray.compressToDDC(in.getColumn(i));
+						break;
+
+					default:
+						compressedColumns[i] = in.getColumn(i);
+						break;
+				}
+			}
+			else
+				compressedColumns[i] = in.getColumn(i);
+		}
 	}
 
 }

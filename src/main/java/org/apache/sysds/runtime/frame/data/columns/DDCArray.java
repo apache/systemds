@@ -22,7 +22,6 @@ package org.apache.sysds.runtime.frame.data.columns;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
@@ -56,13 +55,6 @@ public class DDCArray<T> extends ACompressedArray<T> {
 		}
 	}
 
-	private static <V, K> Map<V, K> invert(Map<K, V> map) {
-		Map<V, K> invMap = new HashMap<V, K>();
-		for(Entry<K, V> e : map.entrySet())
-			invMap.put(e.getValue(), e.getKey());
-		return invMap;
-	}
-
 	/**
 	 * Try to compress array into DDC format.
 	 * 
@@ -72,30 +64,33 @@ public class DDCArray<T> extends ACompressedArray<T> {
 	 */
 	@SuppressWarnings("unchecked")
 	public static <T> Array<T> compressToDDC(Array<T> arr) {
-		// two pass algorithm
-		if(arr.size() <= 10)
+		// Early aborts
+		// if the size is small do not consider
+		// or if the instance if RaggedArray where all values typically are unique.
+		if(arr.size() <= 10 || arr instanceof RaggedArray)
 			return arr;
 
-		// 1. Get unique
+		// Two pass algorithm
+		// 1.full iteration: Get unique
 		Map<T, Integer> rcd = arr.getDictionary();
 
+		// Abort if there are to many unique values.
 		if(rcd.size() > arr.size() / 2)
 			return arr;
 
+		// Allocate the correct dictionary output
 		Array<T> ar;
-
 		if(rcd.keySet().contains(null))
 			ar = (Array<T>) ArrayFactory.allocateOptional(arr.getValueType(), rcd.size());
 		else
 			ar = (Array<T>) ArrayFactory.allocate(arr.getValueType(), rcd.size());
 
-		Map<Integer, T> rcdInv = invert(rcd);
-		for(int i = 0; i < rcd.size(); i++)
-			ar.set(i, rcdInv.get(Integer.valueOf(i)));
+		// Set elements in the Dictionary array --- much smaller.
+		for(Entry<T, Integer> e : rcd.entrySet())
+			ar.set(e.getValue(), e.getKey());
 
-		// 2. Make map
+		// 2. full iteration: Make map
 		AMapToData m = MapToFactory.create(arr.size(), rcd.size());
-
 		for(int i = 0; i < arr.size(); i++)
 			m.set(i, rcd.get(arr.get(i)));
 
@@ -283,6 +278,10 @@ public class DDCArray<T> extends ACompressedArray<T> {
 	protected Map<T, Integer> getDictionary() {
 		// Nice shortcut!
 		return dict.getDictionary();
+	}
+
+	public static long estimateInMemorySize(int memSizeBitPerElement, int estDistinct, int nRow) {
+		return (estDistinct * memSizeBitPerElement) / 8 + MapToFactory.estimateInMemorySize(nRow, estDistinct);
 	}
 
 	@Override

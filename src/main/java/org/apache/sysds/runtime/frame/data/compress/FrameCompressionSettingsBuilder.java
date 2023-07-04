@@ -19,17 +19,36 @@
 
 package org.apache.sysds.runtime.frame.data.compress;
 
+import org.apache.sysds.runtime.compress.workload.WTreeRoot;
+
 public class FrameCompressionSettingsBuilder {
 
-	public float sampleRatio;
-	public int k;
+	private float sampleRatio;
+	private int k;
+	private WTreeRoot wt;
 
 	public FrameCompressionSettingsBuilder() {
 		this.sampleRatio = 0.1f;
 		this.k = 1;
+		this.wt = null;
+	}
+
+	public FrameCompressionSettingsBuilder wTreeRoot(WTreeRoot wt) {
+		this.wt = wt;
+		return this;
+	}
+
+	public FrameCompressionSettingsBuilder threads(int k) {
+		this.k = k;
+		return this;
+	}
+
+	public FrameCompressionSettingsBuilder sampleRatio(float sampleRatio) {
+		this.sampleRatio = sampleRatio;
+		return this;
 	}
 
 	public FrameCompressionSettings create() {
-		return new FrameCompressionSettings(sampleRatio, k);
+		return new FrameCompressionSettings(sampleRatio, k, wt);
 	}
 }

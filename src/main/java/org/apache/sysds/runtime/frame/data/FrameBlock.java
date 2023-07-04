@@ -198,7 +198,14 @@ public class FrameBlock implements CacheBlock<FrameBlock>, Externalizable {
 	}
 
 	public FrameBlock(Array<?>[] data) {
-		throw new NotImplementedException();
+		_schema = new ValueType[data.length];
+		for(int i = 0 ; i < data.length; i++)
+			_schema[i] = data[i].getValueType();
+		
+		_colnames = null;
+		ensureAllocateMeta();
+		_coldata = data;
+		_nRow = data[0].size();
 	}
 
 	/**

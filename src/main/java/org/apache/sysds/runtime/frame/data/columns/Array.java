@@ -618,13 +618,12 @@ public abstract class Array<T> implements Writable {
 				d.put(key, 1);
 		}
 
-		int[] freq = new int[d.size()];
+		final int[] freq = new int[d.size()];
 		int id = 0;
 		for(Entry<T, Integer> e : d.entrySet())
 			freq[id++] = e.getValue();
 
 		int estDistinct = SampleEstimatorFactory.distinctCount(freq, size(), nSamples);
-
 		long memSize = getInMemorySize(); // uncompressed size
 		int memSizePerElement = (int) ((memSize * 8L) / size());
 

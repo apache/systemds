@@ -1782,6 +1782,22 @@ public class FrameArrayTests {
 			case CHARACTER:
 				return DDCArray
 					.compressToDDC(ArrayFactory.create(generateRandomCharacterNUniqueLengthOpt(size, seed, nUnique)));
+			case RAGGED:
+				Random rand = new Random(seed);
+				switch(rand.nextInt(7)) {
+					case 0:
+						return ArrayFactory.create(generateRandomIntegerOpt(size, seed), size);
+					case 1:
+						return ArrayFactory.create(generateRandomLongOpt(size, seed), size);
+					case 2:
+						return ArrayFactory.create(generateRandomDoubleOpt(size, seed), size);
+					case 3:
+						return ArrayFactory.create(generateRandomFloatOpt(size, seed), size);
+					case 4:
+						return ArrayFactory.create(generateRandomCharacterOpt(size, seed), size);
+					default:
+						return ArrayFactory.create(generateRandomBooleanOpt(size, seed), size);
+				}
 			case OPTIONAL:
 				Random r = new Random(seed);
 				switch(r.nextInt(7)) {

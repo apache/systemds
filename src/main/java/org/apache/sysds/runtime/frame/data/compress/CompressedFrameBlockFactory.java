@@ -44,32 +44,34 @@ public class CompressedFrameBlockFactory {
 
 	public static FrameBlock compress(FrameBlock fb) {
 		FrameCompressionSettings cs = new FrameCompressionSettingsBuilder().create();
-		return new CompressedFrameBlockFactory(fb, cs).compressFrame();
+		return compress(fb, cs);
 	}
 
 	public static FrameBlock compress(FrameBlock fb, int k, WTreeRoot root) {
 		FrameCompressionSettings cs = new FrameCompressionSettingsBuilder()//
 			.threads(k).wTreeRoot(root).create();
+		return compress(fb, cs);
+	}
+
+	public static FrameBlock compress(FrameBlock fb, FrameCompressionSettingsBuilder csb) {
+		return compress(fb, csb.create());
+	}
+
+	public static FrameBlock compress(FrameBlock fb, FrameCompressionSettings cs) {
 		return new CompressedFrameBlockFactory(fb, cs).compressFrame();
 	}
 
 	private FrameBlock compressFrame() {
 		extractStatistics();
+		logStatistics();
 		encodeColumns();
-		FrameBlock ret = new FrameBlock(compressedColumns);
-
-		final long before = in.getInMemorySize();
-		final long after = ret.getInMemorySize();
-
-		LOG.error(String.format("Uncompressed Size: %15d",before));
-		LOG.error(String.format("compressed Size:   %15d", after));
-		LOG.error(String.format("ratio:             %15.3f", (double)before / (double)after));
-
+		final FrameBlock ret = new FrameBlock(compressedColumns, in.getColumnNames(false));
+		logRet(ret);
 		return ret;
 	}
 
 	private void extractStatistics() {
-		int nSamples = Math.min(in.getNumRows(), (int) Math.ceil(in.getNumRows() * cs.sampleRatio));
+		final int nSamples = Math.min(in.getNumRows(), (int) Math.ceil(in.getNumRows() * cs.sampleRatio));
 		for(int i = 0; i < stats.length; i++) {
 			stats[i] = in.getColumn(i).statistics(nSamples);
 		}
@@ -78,19 +80,39 @@ public class CompressedFrameBlockFactory {
 	private void encodeColumns() {
 		for(int i = 0; i < compressedColumns.length; i++) {
 			if(stats[i] != null) {
-				LOG.error(stats[i]);
-				switch(stats[i].bestType) {
-					case DDC:
-						compressedColumns[i] = DDCArray.compressToDDC(in.getColumn(i));
-						break;
-
-					default:
-						compressedColumns[i] = in.getColumn(i);
-						break;
-				}
+				// commented out because no other encodings are supported yet
+				// switch(stats[i].bestType) {
+				// case DDC:
+				compressedColumns[i] = DDCArray.compressToDDC(in.getColumn(i));
+				// break;
+				// default:
+				// compressedColumns[i] = in.getColumn(i);
+				// break;
+				// }
 			}
 			else
 				compressedColumns[i] = in.getColumn(i);
+		}
+	}
+
+	private void logStatistics() {
+		if(LOG.isDebugEnabled()) {
+			for(int i = 0; i < compressedColumns.length; i++) {
+				if(stats[i] != null)
+					LOG.debug(stats[i]);
+				else
+					LOG.debug("no Comp col: " + i);
+			}
+		}
+	}
+
+	private void logRet(FrameBlock ret) {
+		if(LOG.isDebugEnabled()) {
+			final long before = in.getInMemorySize();
+			final long after = ret.getInMemorySize();
+			LOG.debug(String.format("Uncompressed Size: %15d", before));
+			LOG.debug(String.format("compressed Size:   %15d", after));
+			LOG.debug(String.format("ratio:             %15.3f", (double) before / (double) after));
 		}
 	}
 

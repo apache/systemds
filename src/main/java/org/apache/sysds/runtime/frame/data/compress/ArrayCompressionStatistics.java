@@ -43,8 +43,8 @@ public class ArrayCompressionStatistics {
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
-		sb.append(String.format("C-Stats: size:%6d->%6d, Use:%10s, Unique:%5d", originalSize, compressedSizeEstimate,
-			bestType.toString(), nUnique));
+		sb.append(String.format("Compressed Stats: size:%6d->%6d, Use:%10s, Unique:%5d", originalSize,
+			compressedSizeEstimate, bestType.toString(), nUnique));
 		return sb.toString();
 	}
 }

@@ -197,15 +197,53 @@ public class FrameBlock implements CacheBlock<FrameBlock>, Externalizable {
 		_nRow = data[0].size();
 	}
 
+	/**
+	 * Create a FrameBlock containing columns of the specified arrays
+	 * 
+	 * @param data The column data contained
+	 */
 	public FrameBlock(Array<?>[] data) {
 		_schema = new ValueType[data.length];
-		for(int i = 0 ; i < data.length; i++)
+		for(int i = 0; i < data.length; i++)
 			_schema[i] = data[i].getValueType();
-		
+
 		_colnames = null;
 		ensureAllocateMeta();
 		_coldata = data;
 		_nRow = data[0].size();
+
+		if(debug) {
+			for(int i = 0; i < data.length; i++) {
+				if(data[i].size() != getNumRows())
+					throw new DMLRuntimeException(
+						"Invalid Frame allocation with different size arrays " + data[i].size() + " vs " + getNumRows());
+			}
+		}
+	}
+
+	/**
+	 * Create a FrameBlock containing columns of the specified arrays and names
+	 * 
+	 * @param data     The column data contained
+	 * @param colnames The column names of the contained columns
+	 */
+	public FrameBlock(Array<?>[] data, String[] colnames) {
+		_schema = new ValueType[data.length];
+		for(int i = 0; i < data.length; i++)
+			_schema[i] = data[i].getValueType();
+
+		_colnames = colnames;
+		ensureAllocateMeta();
+		_coldata = data;
+		_nRow = data[0].size();
+
+		if(debug) {
+			for(int i = 0; i < data.length; i++) {
+				if(data[i].size() != getNumRows())
+					throw new DMLRuntimeException(
+						"Invalid Frame allocation with different size arrays " + data[i].size() + " vs " + getNumRows());
+			}
+		}
 	}
 
 	/**

@@ -41,7 +41,7 @@ public class LineageReuseSparkTest extends AutomatedTestBase {
 
 	protected static final String TEST_DIR = "functions/async/";
 	protected static final String TEST_NAME = "LineageReuseSpark";
-	protected static final int TEST_VARIANTS = 3;
+	protected static final int TEST_VARIANTS = 4;
 	protected static String TEST_CLASS_DIR = TEST_DIR + LineageReuseSparkTest.class.getSimpleName() + "/";
 
 	@Override
@@ -73,6 +73,12 @@ public class LineageReuseSparkTest extends AutomatedTestBase {
 		runTest(TEST_NAME+"3", ExecMode.SPARK, 3);
 	}
 
+	@Test
+	public void testlmdsMultiLevel() {
+		// Cache RDD and matrix block function returns and reuse
+		runTest(TEST_NAME+"4", ExecMode.HYBRID, 4);
+	}
+
 	public void runTest(String testname, ExecMode execMode, int testId) {
 		boolean old_simplification = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
 		boolean old_sum_product = OptimizerUtils.ALLOW_SUM_PRODUCT_REWRITES;
@@ -92,7 +98,6 @@ public class LineageReuseSparkTest extends AutomatedTestBase {
 
 			//proArgs.add("-explain");
 			proArgs.add("-stats");
-			proArgs.add("-explain");
 			proArgs.add("-args");
 			proArgs.add(output("R"));
 			programArgs = proArgs.toArray(new String[proArgs.size()]);
@@ -109,7 +114,7 @@ public class LineageReuseSparkTest extends AutomatedTestBase {
 			//proArgs.add("recompile_runtime");
 			proArgs.add("-stats");
 			proArgs.add("-lineage");
-			proArgs.add(LineageCacheConfig.ReuseCacheType.REUSE_FULL.name().toLowerCase());
+			proArgs.add(LineageCacheConfig.ReuseCacheType.REUSE_MULTILEVEL.name().toLowerCase());
 			proArgs.add("-args");
 			proArgs.add(output("R"));
 			programArgs = proArgs.toArray(new String[proArgs.size()]);

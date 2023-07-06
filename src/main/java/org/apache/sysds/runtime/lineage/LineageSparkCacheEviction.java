@@ -117,8 +117,11 @@ public class LineageSparkCacheEviction
 
 	private static void setSparkStorageLimit() {
 		// Set the limit only during the first RDD caching to avoid context creation
-		if (SPARK_STORAGE_LIMIT == 0)
-			SPARK_STORAGE_LIMIT = (long) SparkExecutionContext.getDataMemoryBudget(false, true); //FIXME
+		// Cache size = 70% of unified Spark memory = 0.7 * 0.6 = 42%.
+		if (SPARK_STORAGE_LIMIT == 0) {
+			long unifiedSparkMem = (long) SparkExecutionContext.getDataMemoryBudget(false, true);
+			SPARK_STORAGE_LIMIT = (long)(unifiedSparkMem * 0.7d);
+		}
 	}
 
 	protected static double getSparkStorageLimit() {

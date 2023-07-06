@@ -70,7 +70,7 @@ public class LineageCacheConfig
 
 	// Relatively inexpensive instructions.
 	private static final String[] PERSIST_OPCODES2 = new String[] {
-		"mapmm,"
+		"mapmm"
 	};
 
 	private static String[] REUSE_OPCODES  = new String[] {};
@@ -300,8 +300,8 @@ public class LineageCacheConfig
 		return insttype && rightOp;
 	}
 
-	protected static boolean isShuffleOp(Instruction inst) {
-		return ArrayUtils.contains(PERSIST_OPCODES1, inst.getOpcode());
+	protected static boolean isShuffleOp(String opcode) {
+		return ArrayUtils.contains(PERSIST_OPCODES1, opcode);
 	}
 
 	protected static int getComputeGroup(String opcode) {

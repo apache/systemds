@@ -254,7 +254,7 @@ public class LineageCacheEntry {
 		_gpuPointer = src._gpuPointer;
 		_rddObject = src._rddObject;
 		_computeTime = src._computeTime;
-		_status = isNullVal() ? LineageCacheStatus.EMPTY : LineageCacheStatus.CACHED;
+		_status = src._status; //requires for multi-level reuse of RDDs
 		// resume all threads waiting for val
 		notifyAll();
 	}

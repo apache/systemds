@@ -1,0 +1,60 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+# The following is an adaptation of the script nn/examples/mnist_lenet_predict.dml
+source("../../nn/examples/mnist_lenet.dml") as mnist_lenet
+
+# Read training data & settings
+fmt = ifdef($fmt, "csv")
+train = read($train, format=fmt)
+C = $C
+Hin = $Hin
+Win = $Win
+epochs = ifdef($epochs, 10)
+out_dir = ifdef($base_dir, ".")
+
+# Extract images and labels
+images = train[,2:ncol(train)]
+labels = train[,1]
+
+# Scale images to [-1,1], and one-hot encode the labels
+n = nrow(train)
+images = (images / 255.0) * 2 - 1
+labels = table(seq(1, n), labels+1, n, 10)
+
+# Split into 80/20 training/validation data
+split_idx = floor(.8 * nrow(images))
+X = images[1:split_idx,]
+X_val = images[split_idx+1:nrow(images),]
+Y = labels[1:split_idx,]
+Y_val = labels[split_idx+1:nrow(images),]
+
+# Train
+[W1, b1, W2, b2, W3, b3, W4, b4] = mnist_lenet::train(X, Y, X_val, Y_val, C, Hin, Win, epochs)
+
+# Write model out
+write(W1, out_dir+"/W1", format=fmt)
+write(b1, out_dir+"/b1", format=fmt)
+write(W2, out_dir+"/W2", format=fmt)
+write(b2, out_dir+"/b2", format=fmt)
+write(W3, out_dir+"/W3", format=fmt)
+write(b3, out_dir+"/b3", format=fmt)
+write(W4, out_dir+"/W4", format=fmt)
+write(b4, out_dir+"/b4", format=fmt)

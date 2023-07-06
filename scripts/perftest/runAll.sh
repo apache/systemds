@@ -116,8 +116,9 @@ echo -e "\n\n" >>results/times.txt
 
 # Data for tests of nn components
 if [ "$DO_TESTS_FOR_NN" = true ]; then
-  ./datagen/genNNData.sh ${CMD} ${TEMPFOLDER} ${MAXMEM} &>logs/genNNData.out
-  ./datagen/genNCFData.sh ${CMD} ${TEMPFOLDER} ${MAXMEM} &>logs/genNCFData.out
+  #./datagen/genNNData.sh ${CMD} ${TEMPFOLDER} ${MAXMEM} &>logs/genNNData.out
+  #./datagen/genNCFData.sh ${CMD} ${TEMPFOLDER} ${MAXMEM} &>logs/genNCFData.out
+  ./datagen/genMNISTData.sh ${CMD} ${TEMPFOLDER} ${MAXMEM} &>logs/genMNISTData.out
 fi
 
 ### Micro Benchmarks:
@@ -138,10 +139,9 @@ fi
 
 # Tests of nn components
 if [ "$DO_TESTS_FOR_NN" = true ]; then
-  # NOTICE: remember to pass the command variable as a quoted string!
-  # otherwise the command (eg. `systemds -gpu` without quotes) will be split into two variables in subscripts when USE_GPU_FOR_NN is set
-  ./runAllNN.sh "${CMD}" ${TEMPFOLDER} ${MAXMEM} ${USE_GPU_FOR_NN}
-  ./runAllNCF.sh "${CMD}" ${TEMPFOLDER} ${MAXMEM} ${USE_GPU_FOR_NN} # currently broken: staging/NCF.dml and any dml that sources it die on launch
+  #./runAllNN.sh "${CMD}" ${TEMPFOLDER} ${MAXMEM} ${USE_GPU_FOR_NN}
+  #./runAllNCF.sh "${CMD}" ${TEMPFOLDER} ${MAXMEM} ${USE_GPU_FOR_NN} # currently broken: staging/NCF.dml and any dml that sources it die on launch
+  ./runAllConv2d.sh "${CMD}" ${TEMPFOLDER} ${MAXMEM} ${USE_GPU_FOR_NN}
 fi
 
 # TODO The following benchmarks have yet to be written. The decision tree algorithms additionally need to be fixed.

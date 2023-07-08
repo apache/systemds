@@ -24,11 +24,33 @@
 # --------------------------------------------------------------------------------------------
 # X         Output of hmm of last n timestep
 # k         Number of timesteps to predict the output for
-# model     'd' for discrete outputs and 'c' for continuos
 # OUTPUT:
 # --------------------------------------------------------------------------------------------
 # outputs   Output of hmm for k timesteps
 # --------------------------------------------------------------------------------------------
+
+m_hmmPredict = function (Matrix[Double] X, Integer k) return (Matrix[Double] outputs)
+{
+    /*
+    A, B, ip = hmm(X)
+
+    The above would be the function call to obtain model parameters. 
+    Instead, the following has dummy model parameters to for the functions to work
+
+    Also only discrete model implemented, need to discretize the cotinous outputs
+    to work with the continous model
+    */
+
+    n_states = 3
+    n_outputs = 3
+    
+    A = matrix(1/n_states, rows=n_states, cols=n_states)
+    B = matrix(1/n_outputs, rows=n_states, cols=n_outputs)
+    ip = matrix(1/n_states, rows=n_states, cols=1)
+
+    states = get_all_states(A, ip, k)
+    outputs = get_outputs(B, states)
+}
 
 choose_value = function (Matrix[Double] prob_dist) return (Double val)
 {
@@ -64,27 +86,4 @@ get_outputs = function (Matrix[Double] B, Matrix[Double] states) return (Matrix[
         s = as.scalar(states[i, 1])
         outputs[i, 1] = choose_value(t(B[s, ]))
     }
-}
-
-m_hmmPredict = function (Matrix[Double] X, Integer k) return (Matrix[Double] outputs)
-{
-    /*
-    A, B, ip = hmm(X)
-
-    The above would be the function call to obtain model parameters. 
-    Instead, the following has dummy model parameters to for the functions to work
-
-    Also only discrete model implemented, need to discretize the cotinous outputs
-    to work with the continous model
-    */
-
-    n_states = 3
-    n_outputs = 3
-    
-    A = matrix(1/n_states, rows=n_states, cols=n_states)
-    B = matrix(1/n_outputs, rows=n_states, cols=n_outputs)
-    ip = matrix(1/n_states, rows=n_states, cols=1)
-
-    states = get_all_states(A, ip, k)
-    outputs = get_outputs(B, states)
 }

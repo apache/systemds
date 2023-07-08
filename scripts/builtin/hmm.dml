@@ -26,10 +26,12 @@
 #
 # OUTPUT:
 # --------------------------------------------------------------------------------------------
-# outputs     Probability of the set of outputs
+# ip        Probability of starting at each state at first timestep
+# A         Probability of transitioning from each state to each other state
+# B         Probability of emmiting each output from each state 
 # --------------------------------------------------------------------------------------------
 
-m_hmm = function(Matrix[Double] X) return (Matrix[Double] P, Matrix[Double] A, Matrix[Double] B)
+m_hmm = function(Matrix[Double] X) return (Matrix[Double] ip, Matrix[Double] A, Matrix[Double] B)
 {
     #X should have the size of 1 * ncols
     
@@ -57,7 +59,7 @@ m_hmm = function(Matrix[Double] X) return (Matrix[Double] P, Matrix[Double] A, M
     search = TRUE
     nr_states = 2
     while (search) {
-        A, B, ip, curr_ll = baum_welch(X, nr_states)
+        A, B, sp, curr_ll = baum_welch(X, nr_states)
         if (nr_states == 2) {
             prev_ll = -1
         }
@@ -68,6 +70,8 @@ m_hmm = function(Matrix[Double] X) return (Matrix[Double] P, Matrix[Double] A, M
         
         prev_ll = curr_ll
         nr_states = nr_states+1
+
+        #TODO add break condition
     }
 }
 

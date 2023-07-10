@@ -37,7 +37,7 @@ import org.apache.sysds.runtime.compress.utils.IntArrayList;
  * A Encoding that contain a default value that is not encoded and every other value is encoded in the map. The logic is
  * similar to the SDC column group.
  */
-public class SparseEncoding implements IEncode {
+public class SparseEncoding extends AEncode {
 
 	/** A map to the distinct values contained */
 	protected final AMapToData map;
@@ -392,6 +392,13 @@ public class SparseEncoding implements IEncode {
 
 	public int getNumRows() {
 		return nRows;
+	}
+
+	@Override
+	public boolean equals(IEncode e) {
+		return e instanceof SparseEncoding && //
+			((SparseEncoding) e).off.equals(this.off) && //
+			((SparseEncoding) e).map.equals(this.map);
 	}
 
 	@Override

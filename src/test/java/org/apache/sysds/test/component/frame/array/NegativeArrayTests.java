@@ -54,8 +54,13 @@ public class NegativeArrayTests {
 	}
 
 	@Test(expected = DMLRuntimeException.class)
-	public void testEstimateMemorySizeInvalid() {
-		ArrayFactory.getInMemorySize(ValueType.UNKNOWN, 0);
+	public void testEstimateMemorySizeInvalid_1() {
+		ArrayFactory.getInMemorySize(ValueType.UNKNOWN, 0, false);
+	}
+
+	@Test(expected = DMLRuntimeException.class)
+	public void testEstimateMemorySizeInvalid_2() {
+		ArrayFactory.getInMemorySize(ValueType.UNKNOWN, 0, true);
 	}
 
 	@Test

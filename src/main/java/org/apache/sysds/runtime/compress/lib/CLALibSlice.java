@@ -78,8 +78,6 @@ public final class CLALibSlice {
 	}
 
 	private static List<MatrixBlock> sliceBlocksMultiThread(CompressedMatrixBlock cmb, int blen, int k) {
-		// final List<MatrixBlock> mbs = new ArrayList<>();
-
 		final ExecutorService pool = CommonThreadPool.get(k);
 		try {
 			final ArrayList<SliceTask> tasks = new ArrayList<>();

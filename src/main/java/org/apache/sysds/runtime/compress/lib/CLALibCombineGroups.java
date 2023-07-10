@@ -87,7 +87,6 @@ public final class CLALibCombineGroups {
 		if(filterFor)
 			input = CLALibUtils.filterFOR(input, c);
 
-
 		List<List<AColGroup>> combinations = new ArrayList<>();
 		for(CompressedSizeInfoColGroup gi : csi.getInfo()) {
 			combinations.add(findGroupsInIndex(gi.getColumns(), input));
@@ -98,10 +97,8 @@ public final class CLALibCombineGroups {
 			for(List<AColGroup> combine : combinations)
 				ret.add(combineN(combine).addVector(c));
 		else
-			for(List<AColGroup> combine : combinations) 
+			for(List<AColGroup> combine : combinations)
 				ret.add(combineN(combine));
-		
-
 
 		return ret;
 	}
@@ -138,26 +135,37 @@ public final class CLALibCombineGroups {
 	 * @return A new column group containing the two.
 	 */
 	public static AColGroup combine(AColGroup a, AColGroup b) {
-		if(a instanceof IFrameOfReferenceGroup || b instanceof IFrameOfReferenceGroup)
-			throw new DMLCompressionException("Invalid call with frame of reference group to combine");
+		try {
 
-		IColIndex combinedColumns = ColIndexFactory.combine(a, b);
+			if(a instanceof IFrameOfReferenceGroup || b instanceof IFrameOfReferenceGroup)
+				throw new DMLCompressionException("Invalid call with frame of reference group to combine");
 
-		// try to recompress a and b if uncompressed
-		if(a instanceof ColGroupUncompressed)
-			a = a.recompress();
+			IColIndex combinedColumns = ColIndexFactory.combine(a, b);
 
-		if(b instanceof ColGroupUncompressed)
-			b = b.recompress();
+			// try to recompress a and b if uncompressed
+			if(a instanceof ColGroupUncompressed)
+				a = a.recompress();
 
-		if(a instanceof AColGroupCompressed && b instanceof AColGroupCompressed)
-			return combineCompressed(combinedColumns, (AColGroupCompressed) a, (AColGroupCompressed) b);
-		else if(a instanceof ColGroupUncompressed || b instanceof ColGroupUncompressed)
-			// either side is uncompressed
-			return combineUC(combinedColumns, a, b);
+			if(b instanceof ColGroupUncompressed)
+				b = b.recompress();
 
-		throw new NotImplementedException(
-			"Not implemented combine for " + a.getClass().getSimpleName() + " - " + b.getClass().getSimpleName());
+			if(a instanceof AColGroupCompressed && b instanceof AColGroupCompressed)
+				return combineCompressed(combinedColumns, (AColGroupCompressed) a, (AColGroupCompressed) b);
+			else if(a instanceof ColGroupUncompressed || b instanceof ColGroupUncompressed)
+				// either side is uncompressed
+				return combineUC(combinedColumns, a, b);
+
+			throw new NotImplementedException(
+				"Not implemented combine for " + a.getClass().getSimpleName() + " - " + b.getClass().getSimpleName());
+		}
+		catch(Exception e) {
+			StringBuilder sb = new StringBuilder();
+			sb.append("Failed to combine:\n\n");
+			sb.append(a);
+			sb.append("\n\n");
+			sb.append(b);
+			throw new DMLCompressionException(sb.toString(), e);
+		}
 
 	}
 
@@ -170,9 +178,9 @@ public final class CLALibCombineGroups {
 			return combineCompressed(combinedColumns, bc, ac);
 		}
 
-		Pair<IEncode, Map<Integer,Integer>> cec = ae.combineWithMap(be);
+		Pair<IEncode, Map<Integer, Integer>> cec = ae.combineWithMap(be);
 		IEncode ce = cec.getLeft();
-		Map<Integer,Integer> filter = cec.getRight();
+		Map<Integer, Integer> filter = cec.getRight();
 		if(ce instanceof DenseEncoding) {
 			DenseEncoding ced = (DenseEncoding) (ce);
 			ADictionary cd = DictionaryFactory.combineDictionaries(ac, bc, filter);

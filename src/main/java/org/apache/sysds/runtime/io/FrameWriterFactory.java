@@ -45,6 +45,7 @@ public class FrameWriterFactory {
 				FileFormatPropertiesCSV fp = (FileFormatPropertiesCSV) props;
 				return textParallel ? new FrameWriterTextCSVParallel(fp) : new FrameWriterTextCSV(fp);
 			case COMPRESSED:
+				LOG.error("Compressed IO! Frame");
 				return new FrameWriterCompressed(binaryParallel);
 			case BINARY:
 				return binaryParallel ? new FrameWriterBinaryBlockParallel() : new FrameWriterBinaryBlock();

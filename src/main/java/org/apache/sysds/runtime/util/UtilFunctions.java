@@ -512,6 +512,7 @@ public class UtilFunctions {
 			case INT64:   return (Long)in;
 			case INT32:   return (Integer)in;
 			case BOOLEAN: return ((Boolean)in) ? 1 : 0;
+			case CHARACTER: return (int)((Character)in);
 			case STRING:
 				try {
 					return !((String) in).isEmpty() ? Double.parseDouble((String) in) : 0;

@@ -33,7 +33,7 @@ import org.apache.sysds.runtime.compress.estim.EstimationFactors;
 /**
  * An Encoding that contains a value on each row of the input.
  */
-public class DenseEncoding implements IEncode {
+public class DenseEncoding extends AEncode {
 
 	private final AMapToData map;
 
@@ -244,6 +244,11 @@ public class DenseEncoding implements IEncode {
 	@Override
 	public boolean isDense() {
 		return true;
+	}
+
+	@Override
+	public boolean equals(IEncode e) {
+		return e instanceof DenseEncoding && ((DenseEncoding)e).map.equals(this.map);
 	}
 
 	@Override

@@ -670,6 +670,14 @@ public class StringArray extends Array<String> {
 	}
 
 	@Override
+	public boolean equals(Array<String> other) {
+		if(other instanceof StringArray)
+			return Arrays.equals(_data, ((StringArray) other)._data);
+		else
+			return false;
+	}
+
+	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder(_size * 5 + 2);
 		sb.append(super.toString() + ":[");

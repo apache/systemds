@@ -351,6 +351,14 @@ public class BooleanArray extends ABooleanArray {
 	}
 
 	@Override
+	public boolean equals(Array<Boolean> other) {
+		if(other instanceof BooleanArray)
+			return Arrays.equals(_data, ((BooleanArray) other)._data);
+		else
+			return false;
+	}
+
+	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder(_data.length * 2 + 10);
 		sb.append(super.toString() + ":[");

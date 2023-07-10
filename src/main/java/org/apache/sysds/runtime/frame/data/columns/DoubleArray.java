@@ -374,10 +374,17 @@ public class DoubleArray extends Array<Double> {
 		return _data[i] != 0.0d;
 	}
 
+	@Override
+	public double hashDouble(int idx) {
+		return Double.hashCode(_data[idx]);
+	}
 
 	@Override
-	public double hashDouble(int idx){
-		return Double.hashCode(_data[idx]);
+	public boolean equals(Array<Double> other) {
+		if(other instanceof DoubleArray)
+			return Arrays.equals(_data, ((DoubleArray) other)._data);
+		else
+			return false;
 	}
 
 	@Override

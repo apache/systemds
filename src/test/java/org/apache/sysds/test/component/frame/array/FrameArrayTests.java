@@ -40,10 +40,10 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
+import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.runtime.frame.data.columns.Array;
 import org.apache.sysds.runtime.frame.data.columns.ArrayFactory;
 import org.apache.sysds.runtime.frame.data.columns.ArrayFactory.FrameArrayType;
-import org.apache.sysds.runtime.frame.data.columns.BitSetArray;
 import org.apache.sysds.runtime.frame.data.columns.BooleanArray;
 import org.apache.sysds.runtime.frame.data.columns.CharArray;
 import org.apache.sysds.runtime.frame.data.columns.DDCArray;
@@ -128,7 +128,6 @@ public class FrameArrayTests {
 			tests.add(new Object[] {ArrayFactory.create(generateRandomNullZeroString(67, 21)), FrameArrayType.STRING});
 			tests.add(new Object[] {ArrayFactory.create(generateRandomNullFloatString(67, 21)), FrameArrayType.STRING});
 			tests.add(new Object[] {ArrayFactory.create(new String[30]), FrameArrayType.STRING}); // all null
-
 			tests.add(new Object[] {ArrayFactory.create(new char[] {0, 0, 0, 0, 1, 1, 1}), FrameArrayType.CHARACTER});
 			tests.add(new Object[] {ArrayFactory.create(new char[] {'t', 't', 'f', 'f', 'T'}), FrameArrayType.CHARACTER});
 			tests.add(new Object[] {ArrayFactory.create(new char[] {'0', '2', '3', '4', '9'}), FrameArrayType.CHARACTER});
@@ -222,12 +221,12 @@ public class FrameArrayTests {
 	@Test
 	public void getSizeEstimateVsReal() {
 		long memSize = a.getInMemorySize();
-		long estSize = ArrayFactory.getInMemorySize(a.getValueType(), a.size());
+		long estSize = ArrayFactory.getInMemorySize(a.getValueType(), a.size(),
+			a.containsNull() || a instanceof OptionalArray);
+
 		switch(a.getValueType()) {
 			case BOOLEAN:
-				if(a instanceof BitSetArray)
-					estSize = BitSetArray.estimateInMemorySize(a.size());
-				else
+				if(a instanceof BooleanArray) // just in case we overwrite the BitSet to boolean Array type.
 					estSize = BooleanArray.estimateInMemorySize(a.size());
 			default: // nothing
 		}
@@ -458,6 +457,7 @@ public class FrameArrayTests {
 
 	@SuppressWarnings("unchecked")
 	public void testSetRange(int start, int end, int otherSize, int seed) {
+		FrameBlock.debug = true;
 		try {
 			Array<?> other = create(a.getFrameArrayType(), otherSize, seed);
 			try {
@@ -1761,7 +1761,8 @@ public class FrameArrayTests {
 		int nUnique = Math.max(size / 100, 2);
 		switch(t) {
 			case STRING:
-				return DDCArray.compressToDDC(ArrayFactory.create(generateRandomStringOpt(size, seed)));
+				return DDCArray
+					.compressToDDC(ArrayFactory.create(generateRandomStringNUniqueLengthOpt(size, seed, nUnique, 132)));
 			case BITSET:// not a thing
 			case BOOLEAN:
 				return DDCArray.compressToDDC(ArrayFactory.create(generateRandomBooleanOpt(size, seed)));
@@ -2130,7 +2131,7 @@ public class FrameArrayTests {
 		return ret;
 	}
 
-	protected static Boolean[] generateRandomBooleanOpt(int size, int seed) {
+	public static Boolean[] generateRandomBooleanOpt(int size, int seed) {
 		Random r = new Random(seed);
 		Boolean[] ret = new Boolean[size];
 		for(int i = 0; i < size; i++) {

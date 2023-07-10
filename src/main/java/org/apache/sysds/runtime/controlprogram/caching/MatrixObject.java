@@ -24,7 +24,7 @@ import java.lang.ref.SoftReference;
 import java.util.List;
 import java.util.concurrent.Future;
 
-import org.apache.commons.lang.mutable.MutableBoolean;
+import org.apache.commons.lang3.mutable.MutableBoolean;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.DataType;

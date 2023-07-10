@@ -24,7 +24,7 @@ import static org.junit.Assert.assertEquals;
 import java.util.ArrayList;
 import java.util.Random;
 
-import org.apache.commons.lang.NotImplementedException;
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.utils.MemoryEstimates;
 import org.junit.Test;
 import org.junit.runner.RunWith;

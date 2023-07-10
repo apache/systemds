@@ -24,7 +24,7 @@ import java.util.EnumMap;
 import java.util.Map;
 import java.util.concurrent.atomic.LongAdder;
 
-import org.apache.commons.lang.exception.ExceptionUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.lineage.LineageItem;
@@ -80,7 +80,7 @@ public class FederatedResponse implements Serializable {
 	
 	public String getErrorMessage() {
 		if (_data[0] instanceof Throwable )
-			return ExceptionUtils.getFullStackTrace( (Throwable) _data[0] );
+			return ExceptionUtils.getStackTrace( (Throwable) _data[0] );
 		else if (_data[0] instanceof String)
 			return (String) _data[0];
 		else return "No readable error message";

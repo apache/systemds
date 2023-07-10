@@ -21,7 +21,7 @@ package org.apache.sysds.test.functions.federated.transform;
 
 import java.io.IOException;
 
-import org.apache.commons.lang.ArrayUtils;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.common.Types.FileFormat;

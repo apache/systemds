@@ -19,7 +19,7 @@
 
 package org.apache.sysds.test.component.compress.estim.encoding;
 
-import org.apache.commons.lang.NotImplementedException;
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.runtime.compress.estim.encoding.EncodingFactory;
 import org.apache.sysds.runtime.data.DenseBlockFP64;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;

@@ -21,7 +21,7 @@ package org.apache.sysds.test.component.compress.colgroup;
 
 import static org.junit.Assert.fail;
 
-import org.apache.commons.lang.NotImplementedException;
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType;

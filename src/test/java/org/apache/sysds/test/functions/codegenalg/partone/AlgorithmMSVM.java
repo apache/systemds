@@ -22,7 +22,7 @@ package org.apache.sysds.test.functions.codegenalg.partone;
 import java.io.File;
 import java.util.HashMap;
 
-import org.apache.commons.lang.ArrayUtils;
+import org.apache.commons.lang3.ArrayUtils;
 import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysds.api.DMLScript;

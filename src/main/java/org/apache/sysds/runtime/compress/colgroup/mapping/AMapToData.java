@@ -841,6 +841,19 @@ public abstract class AMapToData implements Serializable {
 	public abstract AMapToData appendN(IMapToDataGroup[] d);
 
 	@Override
+	public boolean equals(Object e) {
+		return e instanceof AMapToData && (this == e || this.equals((AMapToData) e));
+	}
+
+	/**
+	 * Indicate if the given encoding is equivalent to this encoding
+	 * 
+	 * @param e The other encoding to be compared with this
+	 * @return If the encoding is equivalent
+	 */
+	public abstract boolean equals(AMapToData e);
+
+	@Override
 	public String toString() {
 		final int sz = size();
 		StringBuilder sb = new StringBuilder();

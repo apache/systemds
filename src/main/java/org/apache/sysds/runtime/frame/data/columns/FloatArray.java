@@ -326,10 +326,17 @@ public class FloatArray extends Array<Float> {
 		return _data[i] != 0.0f;
 	}
 
+	@Override
+	public double hashDouble(int idx) {
+		return Float.hashCode(_data[idx]);
+	}
 
 	@Override
-	public double hashDouble(int idx){
-		return Float.hashCode(_data[idx]);
+	public boolean equals(Array<Float> other) {
+		if(other instanceof FloatArray)
+			return Arrays.equals(_data, ((FloatArray) other)._data);
+		else
+			return false;
 	}
 
 	@Override

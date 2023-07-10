@@ -328,6 +328,14 @@ public class CharArray extends Array<Character> {
 	}
 
 	@Override
+	public boolean equals(Array<Character> other){
+		if(other instanceof CharArray)
+			return Arrays.equals(_data, ((CharArray)other)._data);
+		else 
+			return false;
+	}
+
+	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder(_data.length * 2 + 15);
 		sb.append(super.toString());

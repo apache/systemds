@@ -176,6 +176,17 @@ public class DDCArray<T> extends ACompressedArray<T> {
 	}
 
 	@Override
+	protected void set(int rl, int ru, DDCArray<T> value) {
+		if(value.dict.size() != dict.size() || (FrameBlock.debug && !value.dict.equals(dict)))
+			throw new DMLCompressionException("Invalid setting of DDC Array, of incompatible instance.");
+
+		final AMapToData tm = value.map;
+		for(int i = rl; i <= ru; i++) {
+			map.set(i, tm.getIndex(i-rl));
+		}
+	}
+
+	@Override
 	public FrameArrayType getFrameArrayType() {
 		return FrameArrayType.DDC;
 	}
@@ -282,6 +293,26 @@ public class DDCArray<T> extends ACompressedArray<T> {
 
 	public static long estimateInMemorySize(int memSizeBitPerElement, int estDistinct, int nRow) {
 		return (estDistinct * memSizeBitPerElement) / 8 + MapToFactory.estimateInMemorySize(nRow, estDistinct);
+	}
+
+	protected DDCArray<T> allocateLarger(int nRow) {
+		final AMapToData m = MapToFactory.create(nRow, map.getUnique());
+		return new DDCArray<>(dict, m);
+	}
+
+	@Override
+	public boolean containsNull() {
+		return dict.containsNull();
+	}
+
+	@Override
+	public boolean equals(Array<T> other) {
+		if(other instanceof DDCArray) {
+			DDCArray<T> ot = (DDCArray<T>) other;
+			return dict.equals(ot.dict) && map.equals(ot.map);
+		}
+		else
+			return false;
 	}
 
 	@Override

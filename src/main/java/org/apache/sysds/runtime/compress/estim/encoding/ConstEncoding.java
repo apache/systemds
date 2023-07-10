@@ -27,7 +27,7 @@ import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.compress.estim.EstimationFactors;
 
 /** Const encoding for cases where the entire group of columns is the same value */
-public class ConstEncoding implements IEncode {
+public class ConstEncoding extends AEncode {
 
 	private final int[] counts;
 
@@ -66,5 +66,10 @@ public class ConstEncoding implements IEncode {
 	@Override
 	public boolean isDense() {
 		return true;
+	}
+
+	@Override
+	public boolean equals(IEncode e) {
+		return e instanceof ConstEncoding && ((ConstEncoding) e).counts.length == this.counts.length;
 	}
 }

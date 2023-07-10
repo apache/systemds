@@ -271,4 +271,11 @@ public class MapToInt extends AMapToData {
 
 		return new MapToInt(getUnique(), ret);
 	}
+
+	@Override
+	public boolean equals(AMapToData e) {
+		return e instanceof MapToInt && //
+			e.getUnique() == getUnique() &&//
+			Arrays.equals(((MapToInt) e)._data, _data);
+	}
 }

@@ -252,4 +252,9 @@ public class RaggedArray<T> extends Array<T> {
 		throw new NotImplementedException("Unimplemented method 'hashDouble'");
 	}
 
+	@Override
+	public boolean equals(Array<T> other) {
+		throw new NotImplementedException("Unimplemented method 'equals'");
+	}
+
 }

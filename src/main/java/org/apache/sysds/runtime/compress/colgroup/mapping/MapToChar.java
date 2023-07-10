@@ -270,4 +270,11 @@ public class MapToChar extends AMapToData {
 
 		return new MapToChar(getUnique(), ret);
 	}
+
+	@Override
+	public boolean equals(AMapToData e) {
+		return e instanceof MapToChar && //
+			e.getUnique() == getUnique() &&//
+			Arrays.equals(((MapToChar) e)._data, _data);
+	}
 }

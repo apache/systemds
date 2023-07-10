@@ -29,7 +29,7 @@ import org.apache.sysds.runtime.compress.estim.EstimationFactors;
 /**
  * Empty encoding for cases where the entire group of columns is zero
  */
-public class EmptyEncoding implements IEncode {
+public class EmptyEncoding extends AEncode  {
 
 	// empty constructor
 	public EmptyEncoding() {
@@ -66,5 +66,10 @@ public class EmptyEncoding implements IEncode {
 	@Override
 	public boolean isDense() {
 		return false;
+	}
+
+	@Override
+	public boolean equals(IEncode e) {
+		return e instanceof EmptyEncoding;
 	}
 }

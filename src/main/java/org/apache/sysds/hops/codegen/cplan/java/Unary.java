@@ -19,7 +19,7 @@
 
 package org.apache.sysds.hops.codegen.cplan.java;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.sysds.hops.codegen.cplan.CNodeUnary.UnaryType;
 import org.apache.sysds.hops.codegen.cplan.CodeTemplate;
 

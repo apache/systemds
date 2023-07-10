@@ -20,7 +20,7 @@
 package org.apache.sysds.runtime.controlprogram.caching;
 
 
-import org.apache.commons.lang.mutable.MutableBoolean;
+import org.apache.commons.lang3.mutable.MutableBoolean;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.DataType;

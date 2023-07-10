@@ -22,7 +22,7 @@ package org.apache.sysds.test.functions.builtin.part2;
 import org.apache.sysds.common.Types.ExecMode;
 
 
-import org.apache.commons.lang.ArrayUtils;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.sysds.runtime.lineage.LineageCacheConfig.ReuseCacheType;
 import org.apache.sysds.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysds.test.AutomatedTestBase;

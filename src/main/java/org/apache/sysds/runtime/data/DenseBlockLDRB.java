@@ -23,7 +23,7 @@ package org.apache.sysds.runtime.data;
 
 import java.util.stream.IntStream;
 
-import org.apache.commons.lang.NotImplementedException;
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.runtime.util.UtilFunctions;
 
 /**

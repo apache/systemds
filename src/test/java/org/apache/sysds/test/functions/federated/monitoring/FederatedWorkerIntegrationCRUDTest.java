@@ -19,7 +19,7 @@
 
 package org.apache.sysds.test.functions.federated.monitoring;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.WorkerModel;
 import org.apache.sysds.test.TestConfiguration;

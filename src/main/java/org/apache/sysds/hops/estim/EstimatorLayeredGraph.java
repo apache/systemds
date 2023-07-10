@@ -19,7 +19,7 @@
 
 package org.apache.sysds.hops.estim;
 
-import org.apache.commons.lang.NotImplementedException;
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.math3.distribution.ExponentialDistribution;
 import org.apache.commons.math3.random.Well1024a;
 import org.apache.sysds.hops.OptimizerUtils;

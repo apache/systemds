@@ -21,7 +21,7 @@ package org.apache.sysds.test.functions.builtin.part2;
 
 import java.util.HashMap;
 
-import org.apache.commons.lang.ArrayUtils;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.runtime.lineage.LineageCacheConfig.ReuseCacheType;

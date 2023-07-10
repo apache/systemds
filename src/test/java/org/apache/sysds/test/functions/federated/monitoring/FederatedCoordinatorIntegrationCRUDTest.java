@@ -21,7 +21,7 @@ package org.apache.sysds.test.functions.federated.monitoring;
 
 import static org.junit.Assert.fail;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.CoordinatorModel;
 import org.apache.sysds.test.TestConfiguration;

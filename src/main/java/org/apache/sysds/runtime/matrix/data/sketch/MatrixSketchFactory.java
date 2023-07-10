@@ -19,7 +19,7 @@
 
 package org.apache.sysds.runtime.matrix.data.sketch;
 
-import org.apache.commons.lang.NotImplementedException;
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.runtime.matrix.data.sketch.countdistinct.CountDistinctFunctionSketch;
 import org.apache.sysds.runtime.matrix.data.sketch.countdistinctapprox.KMVSketch;
 import org.apache.sysds.runtime.matrix.operators.CountDistinctOperator;

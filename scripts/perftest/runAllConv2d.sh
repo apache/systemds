@@ -83,10 +83,10 @@ echo "RUN CONV2D EXPERIMENTS" $(date) >>results/times.txt
 
 for d in ${DATA[@]}; do #"_KDD"
   for f in "runMNISTLeNet"; do
-    echo "-- Running "$f" on "$d" for 10 epochs" >>results/times.txt
-    ./${f}.sh ${BASE}/${d}_train ${BASE}/${d}_test ${BASE} "${COMMAND}" ${d} 10 ${USEGPU} &>logs/${f}_${d}_10.out
-    echo "-- Running "$f" on "$d" for 100 epochs" >>results/times.txt
-    ./${f}.sh ${BASE}/${d}_train ${BASE}/${d}_test ${BASE} "${COMMAND}" ${d} 100 ${USEGPU} &>logs/${f}_${d}_100.out
+    echo "-- Running "$f" on "$d" for 5 epochs" >>results/times.txt
+    ./${f}.sh ${BASE}/${d}_train ${BASE}/${d}_test ${BASE} "${COMMAND}" ${d} 5 ${USEGPU} &>logs/${f}_${d}_5.out
+    echo "-- Running "$f" on "$d" for 50 epochs" >>results/times.txt
+    ./${f}.sh ${BASE}/${d}_train ${BASE}/${d}_test ${BASE} "${COMMAND}" ${d} 50 ${USEGPU} &>logs/${f}_${d}_50.out
   done
 done
 

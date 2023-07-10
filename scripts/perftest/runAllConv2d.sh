@@ -85,8 +85,8 @@ for d in ${DATA[@]}; do #"_KDD"
   for f in "runMNISTLeNet"; do
     echo "-- Running "$f" on "$d" for 5 epochs" >>results/times.txt
     ./${f}.sh ${BASE}/${d}_train ${BASE}/${d}_test ${BASE} "${COMMAND}" ${d} 5 ${USEGPU} &>logs/${f}_${d}_5.out
-    echo "-- Running "$f" on "$d" for 50 epochs" >>results/times.txt
-    ./${f}.sh ${BASE}/${d}_train ${BASE}/${d}_test ${BASE} "${COMMAND}" ${d} 50 ${USEGPU} &>logs/${f}_${d}_50.out
+    echo "-- Running "$f" on "$d" for 25 epochs" >>results/times.txt
+    ./${f}.sh ${BASE}/${d}_train ${BASE}/${d}_test ${BASE} "${COMMAND}" ${d} 25 ${USEGPU} &>logs/${f}_${d}_25.out
   done
 done
 

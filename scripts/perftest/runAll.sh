@@ -31,7 +31,11 @@ TEMPFOLDER="temp"
 
 # Max memory of data to be benchmarked
 # Possible values: 80/80MB, 800/800MB, 8000/8000MB/8GB, 80000/80000MB/80GB, 800000/800000MB/800GB
-MAXMEM=800
+MAXMEM=80
+
+# Flags for tests of components in nn
+DO_TESTS_FOR_NN=true # toggle execution of datagen for as well as tests of nn components themselves
+USE_GPU_FOR_NN=false # toggle gpu usage for nn tests
 
 # Set properties
 export LOG4JPROP='conf/log4j-off.properties'
@@ -94,10 +98,6 @@ mkdir -p logs
 mkdir -p results
 mkdir -p temp
 
-# Flags for tests of components in nn
-DO_TESTS_FOR_NN=true # toggle execution of datagen for as well as tests of nn components themselves
-USE_GPU_FOR_NN=false # toggle gpu usage for nn tests
-
 # init time measurement
 
 rm -f results/times.txt
@@ -116,7 +116,7 @@ echo -e "\n\n" >>results/times.txt
 
 # Data for tests of nn components
 if [ "$DO_TESTS_FOR_NN" = true ]; then
-  #./datagen/genNNData.sh ${CMD} ${TEMPFOLDER} ${MAXMEM} &>logs/genNNData.out
+  ./datagen/genNNData.sh ${CMD} ${TEMPFOLDER} ${MAXMEM} &>logs/genNNData.out
   #./datagen/genNCFData.sh ${CMD} ${TEMPFOLDER} ${MAXMEM} &>logs/genNCFData.out
   ./datagen/genMNISTData.sh ${CMD} ${TEMPFOLDER} ${MAXMEM} &>logs/genMNISTData.out
 fi
@@ -139,7 +139,7 @@ fi
 
 # Tests of nn components
 if [ "$DO_TESTS_FOR_NN" = true ]; then
-  #./runAllNN.sh "${CMD}" ${TEMPFOLDER} ${MAXMEM} ${USE_GPU_FOR_NN}
+  ./runAllNN.sh "${CMD}" ${TEMPFOLDER} ${MAXMEM} ${USE_GPU_FOR_NN}
   #./runAllNCF.sh "${CMD}" ${TEMPFOLDER} ${MAXMEM} ${USE_GPU_FOR_NN} # currently broken: staging/NCF.dml and any dml that sources it die on launch
   ./runAllConv2d.sh "${CMD}" ${TEMPFOLDER} ${MAXMEM} ${USE_GPU_FOR_NN}
 fi

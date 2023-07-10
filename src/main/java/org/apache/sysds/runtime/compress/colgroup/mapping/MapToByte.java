@@ -255,4 +255,11 @@ public class MapToByte extends AMapToData {
 		else
 			return new MapToByte(getUnique(), ret);
 	}
+
+	@Override
+	public boolean equals(AMapToData e) {
+		return e instanceof MapToByte && //
+			e.getUnique() == getUnique() &&//
+			Arrays.equals(((MapToByte) e)._data, _data);
+	}
 }

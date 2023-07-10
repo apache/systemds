@@ -100,6 +100,15 @@ public class OptionalArray<T> extends Array<T> {
 	}
 
 	@Override
+	public long getInMemorySize() {
+		long size = super.getInMemorySize(); // object header + object reference
+		size += 16; // object pointers.
+		size += _a.getInMemorySize();
+		size += _n.getInMemorySize();
+		return size;
+	}
+
+	@Override
 	public void readFields(DataInput in) throws IOException {
 		throw new DMLRuntimeException("Should not be called");
 	}
@@ -200,7 +209,7 @@ public class OptionalArray<T> extends Array<T> {
 		Array<Boolean> nulls = value.getNulls();
 		if(nulls != null)
 			_n.set(rl, ru, nulls, rlSrc);
-		else{
+		else {
 			for(int i = rl; i <= ru; i++)
 				_n.set(i, true);
 		}
@@ -422,17 +431,15 @@ public class OptionalArray<T> extends Array<T> {
 			default:
 				return changeTypeString(); // String can contain null
 		}
-
 	}
 
 	@Override
-	public boolean containsNull(){
+	public boolean containsNull() {
 		return !_n.isAllTrue();
 	}
 
-
 	@Override
-	public double hashDouble(int idx){
+	public double hashDouble(int idx) {
 		if(_n.get(idx))
 			return _a.hashDouble(idx);
 		else
@@ -440,9 +447,19 @@ public class OptionalArray<T> extends Array<T> {
 	}
 
 	@Override
+	public boolean equals(Array<T> other) {
+		if(other instanceof OptionalArray) {
+			OptionalArray<T> ot = (OptionalArray<T>) other;
+			return _n.equals(ot._n) && ot._a.equals(_a);
+		}
+		else
+			return false;
+	}
+
+	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder(_size + 2);
-		sb.append(super.toString() + "<" + _a.getClass().getSimpleName() + ">:[");
+		sb.append(super.toString() + "<" + _a.getValueType() + ">:[");
 		for(int i = 0; i < _size - 1; i++)
 			sb.append(get(i) + ",");
 		sb.append(get(_size - 1));

@@ -550,6 +550,15 @@ public class BitSetArray extends ABooleanArray {
 		return null;
 	}
 
+
+	@Override
+	public boolean equals(Array<Boolean> other){
+		if(other instanceof BitSetArray)
+			return Arrays.equals(_data, ((BitSetArray)other)._data);
+		else 
+			return false;
+	}
+
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder(_size + 10);

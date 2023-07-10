@@ -333,10 +333,17 @@ public class LongArray extends Array<Long> {
 		return _data[i] != 0;
 	}
 
+	@Override
+	public double hashDouble(int idx) {
+		return Long.hashCode(_data[idx]);
+	}
 
 	@Override
-	public double hashDouble(int idx){
-		return Long.hashCode(_data[idx]);
+	public boolean equals(Array<Long> other) {
+		if(other instanceof LongArray)
+			return Arrays.equals(_data, ((LongArray) other)._data);
+		else
+			return false;
 	}
 
 	@Override

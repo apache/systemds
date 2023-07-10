@@ -331,10 +331,17 @@ public class IntegerArray extends Array<Integer> {
 		return _data[i] != 0;
 	}
 
+	@Override
+	public double hashDouble(int idx) {
+		return Integer.hashCode(_data[idx]);
+	}
 
 	@Override
-	public double hashDouble(int idx){
-		return Integer.hashCode(_data[idx]);
+	public boolean equals(Array<Integer> other) {
+		if(other instanceof IntegerArray)
+			return Arrays.equals(_data, ((IntegerArray) other)._data);
+		else
+			return false;
 	}
 
 	@Override

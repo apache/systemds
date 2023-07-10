@@ -233,7 +233,7 @@ public class IdentityDictionary extends ADictionary {
 
 	@Override
 	public ADictionary clone() {
-		return new IdentityDictionary(nRowCol);
+		return new IdentityDictionary(nRowCol, withEmpty);
 	}
 
 	@Override
@@ -357,9 +357,9 @@ public class IdentityDictionary extends ADictionary {
 	@Override
 	public ADictionary sliceOutColumnRange(int idxStart, int idxEnd, int previousNumberOfColumns) {
 		if(idxStart == 0 && idxEnd == nRowCol)
-			return new IdentityDictionary(nRowCol);
+			return new IdentityDictionary(nRowCol, withEmpty);
 		else
-			return new IdentityDictionarySlice(nRowCol, idxStart, idxEnd);
+			return new IdentityDictionarySlice(nRowCol, withEmpty, idxStart, idxEnd);
 	}
 
 	@Override

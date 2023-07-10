@@ -152,7 +152,7 @@ public final class CLALibDecompress {
 			return ret; // if uncompressedColGroup is only colGroup.
 		}
 
-		final boolean shouldFilter = CLALibUtils.shouldPreFilter(groups);
+		final boolean shouldFilter = CLALibUtils.shouldPreFilterMorphOrRef(groups);
 		double[] constV = shouldFilter ? new double[nCols] : null;
 		final List<AColGroup> filteredGroups = shouldFilter ? CLALibUtils.filterGroups(groups, constV) : groups;
 
@@ -164,6 +164,10 @@ public final class CLALibDecompress {
 				ret.allocateSparseRowsBlock();
 			else
 				ret.allocateDenseBlock();
+
+			if(MatrixBlock.evalSparseFormatInMemory(nRows, nCols, nonZeros) && !sparse)
+				LOG.warn("Decompressing into dense but reallocating after to sparse: overlapping - " + overlapping
+					+ ", filter - " + shouldFilter);
 		}
 
 		final int blklen = Math.max(nRows / k, 512);
@@ -188,9 +192,10 @@ public final class CLALibDecompress {
 		else {
 			decompressDenseMultiThread(ret, filteredGroups, nRows, blklen, constV, eps, k, overlapping);
 		}
-		ret.recomputeNonZeros();
 
+		ret.recomputeNonZeros();
 		ret.examSparsity();
+
 		return ret;
 	}
 

@@ -96,7 +96,7 @@ public class MappingTests {
 		m = genMap(MapToFactory.create(size, max), expected, max, fill, seed);
 	}
 
-	protected static AMapToData genMap(AMapToData m, int[] expected, int max, boolean fill, int seed) {
+	public static AMapToData genMap(AMapToData m, int[] expected, int max, boolean fill, int seed) {
 		if(max <= 1)
 			return m;
 		Random vals = new Random(seed);

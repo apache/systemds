@@ -167,4 +167,11 @@ public class MapToZero extends AMapToData {
 			p += gd.getMapToData().size();
 		return new MapToZero(p);
 	}
+
+	@Override
+	public boolean equals(AMapToData e) {
+		return e instanceof MapToZero && //
+			e.getUnique() == getUnique() && //
+			_size == ((MapToZero) e)._size;
+	}
 }

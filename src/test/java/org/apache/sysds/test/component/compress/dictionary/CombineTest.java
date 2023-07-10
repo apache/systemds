@@ -25,6 +25,9 @@ import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -32,6 +35,7 @@ import org.apache.sysds.runtime.compress.colgroup.AColGroup;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType;
 import org.apache.sysds.runtime.compress.colgroup.AColGroupCompressed;
 import org.apache.sysds.runtime.compress.colgroup.ADictBasedColGroup;
+import org.apache.sysds.runtime.compress.colgroup.ASDC;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupConst;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupDDC;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupEmpty;
@@ -480,7 +484,6 @@ public class CombineTest {
 		}
 	}
 
-
 	@Test
 	public void combineDictionariesSparse2() {
 		try {
@@ -501,5 +504,229 @@ public class CombineTest {
 			e.printStackTrace();
 			fail(e.getMessage());
 		}
+	}
+
+	@Test
+	public void combineMockingEmpty() {
+		ADictionary ad = Dictionary.create(new double[] {1, 2, 3, 4});
+		double[] ade = new double[] {0};
+		AColGroupCompressed a = mockSDC(ad, ade);
+		AColGroupCompressed b = mockSDC(ad, ade);
+
+		Map<Integer, Integer> m = new HashMap<>();
+		ADictionary red = DictionaryFactory.combineDictionaries(a, b, m);
+
+		assertEquals(red.getNumberOfValues(2), 0);
+	}
+
+	@Test
+	public void combineMockingDefault() {
+		ADictionary ad = Dictionary.create(new double[] {1, 2, 3, 4});
+		double[] ade = new double[] {0};
+		AColGroupCompressed a = mockSDC(ad, ade);
+		AColGroupCompressed b = mockSDC(ad, ade);
+
+		Map<Integer, Integer> m = new HashMap<>();
+		m.put(0, 0);
+		ADictionary red = DictionaryFactory.combineDictionaries(a, b, m);
+
+		assertEquals(red.getNumberOfValues(2), 1);
+		assertEquals(red, Dictionary.createNoCheck(new double[] {0, 0}));
+	}
+
+	@Test
+	public void combineMockingFirstValue() {
+		ADictionary ad = Dictionary.create(new double[] {1, 2, 3, 4});
+		double[] ade = new double[] {0};
+		AColGroupCompressed a = mockSDC(ad, ade);
+		AColGroupCompressed b = mockSDC(ad, ade);
+
+		Map<Integer, Integer> m = new HashMap<>();
+		m.put(1, 0);
+		ADictionary red = DictionaryFactory.combineDictionaries(a, b, m);
+
+		assertEquals(red.getNumberOfValues(2), 1);
+		assertEquals(red, Dictionary.create(new double[] {1, 0}));
+	}
+
+	@Test
+	public void combineMockingFirstAndDefault() {
+		ADictionary ad = Dictionary.create(new double[] {1, 2, 3, 4});
+		double[] ade = new double[] {0};
+		AColGroupCompressed a = mockSDC(ad, ade);
+		AColGroupCompressed b = mockSDC(ad, ade);
+
+		Map<Integer, Integer> m = new HashMap<>();
+		m.put(1, 0);
+		m.put(0, 1);
+		ADictionary red = DictionaryFactory.combineDictionaries(a, b, m);
+
+		assertEquals(red.getNumberOfValues(2), 2);
+		assertEquals(red, Dictionary.create(new double[] {1, 0, 0, 0}));
+	}
+
+	@Test
+	public void combineMockingMixed() {
+		ADictionary ad = Dictionary.create(new double[] {1, 2, 3, 4});
+		double[] ade = new double[] {0};
+		AColGroupCompressed a = mockSDC(ad, ade);
+		AColGroupCompressed b = mockSDC(ad, ade);
+
+		Map<Integer, Integer> m = new HashMap<>();
+		m.put(1, 0);
+		m.put(0, 1);
+		m.put(5, 2);
+		ADictionary red = DictionaryFactory.combineDictionaries(a, b, m);
+
+		assertEquals(red.getNumberOfValues(2), 3);
+		assertEquals(Dictionary.create(new double[] {1, 0, 0, 0, 0, 1}), red);
+	}
+
+	@Test
+	public void combineMockingMixed2() {
+		ADictionary ad = Dictionary.create(new double[] {1, 2, 3, 4});
+		double[] ade = new double[] {0};
+		AColGroupCompressed a = mockSDC(ad, ade);
+		AColGroupCompressed b = mockSDC(ad, ade);
+
+		Map<Integer, Integer> m = new HashMap<>();
+		m.put(1, 0);
+		m.put(0, 1);
+		m.put(10, 2);
+		ADictionary red = DictionaryFactory.combineDictionaries(a, b, m);
+
+		assertEquals(red.getNumberOfValues(2), 3);
+		assertEquals(Dictionary.create(new double[] {1, 0, 0, 0, 0, 2}), red);
+	}
+
+	@Test
+	public void combineMockingSparseDenseEmpty() {
+		try {
+
+			ADictionary ad = Dictionary.create(new double[] {1, 2, 3, 4});
+			double[] ade = new double[] {0};
+			AColGroupCompressed a = mockDDC(ad, 1);
+			AColGroupCompressed b = mockSDC(ad, ade);
+
+			Map<Integer, Integer> m = new HashMap<>();
+			ADictionary red = DictionaryFactory.combineDictionaries(a, b, m);
+
+			assertEquals(0, red.getNumberOfValues(2));
+			assertEquals(Dictionary.createNoCheck(new double[] {}), red);
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
+	}
+
+	@Test
+	public void combineMockingSparseDenseOne() {
+		try {
+
+			ADictionary ad = Dictionary.create(new double[] {1, 2, 3, 4});
+			double[] ade = new double[] {0};
+			AColGroupCompressed a = mockDDC(ad, 1);
+			AColGroupCompressed b = mockSDC(ad, ade);
+
+			Map<Integer, Integer> m = new HashMap<>();
+			m.put(0, 0);
+			ADictionary red = DictionaryFactory.combineDictionaries(a, b, m);
+			assertEquals(1, red.getNumberOfValues(2));
+			assertEquals(Dictionary.createNoCheck(new double[] {1, 0}), red);
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
+	}
+
+	@Test
+	public void combineMockingSparseDenseMixed1() {
+		try {
+
+			ADictionary ad = Dictionary.create(new double[] {1, 2, 3, 4});
+			double[] ade = new double[] {0};
+			AColGroupCompressed a = mockDDC(ad, 1);
+			AColGroupCompressed b = mockSDC(ad, ade);
+
+			Map<Integer, Integer> m = new HashMap<>();
+			m.put(0, 1);
+			m.put(1, 0);
+			ADictionary red = DictionaryFactory.combineDictionaries(a, b, m);
+
+			assertEquals(2, red.getNumberOfValues(2));
+			assertEquals(Dictionary.createNoCheck(new double[] {2, 0, 1, 0}), red);
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
+	}
+
+	@Test
+	public void combineMockingSparseDenseMixed2() {
+		try {
+
+			ADictionary ad = Dictionary.create(new double[] {1, 2, 3, 4});
+			double[] ade = new double[] {0};
+			AColGroupCompressed a = mockDDC(ad, 1);
+			AColGroupCompressed b = mockSDC(ad, ade);
+
+			Map<Integer, Integer> m = new HashMap<>();
+			m.put(0, 1);
+			m.put(1, 0);
+			m.put(4, 2);
+			ADictionary red = DictionaryFactory.combineDictionaries(a, b, m);
+
+			assertEquals(3, red.getNumberOfValues(2));
+			assertEquals(Dictionary.createNoCheck(new double[] {2, 0, 1, 0, 1, 1}), red);
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
+	}
+
+	@Test
+	public void combineMockingSparseDenseMixed3() {
+		try {
+
+			ADictionary ad = Dictionary.create(new double[] {1, 2, 3, 4});
+			double[] ade = new double[] {0};
+			AColGroupCompressed a = mockDDC(ad, 1);
+			AColGroupCompressed b = mockSDC(ad, ade);
+
+			Map<Integer, Integer> m = new HashMap<>();
+			m.put(0, 1);
+			m.put(1, 0);
+			m.put(5, 2);
+			m.put(4, 3);
+			ADictionary red = DictionaryFactory.combineDictionaries(a, b, m);
+
+			assertEquals(4, red.getNumberOfValues(2));
+			assertEquals(Dictionary.createNoCheck(new double[] {2, 0, 1, 0, 2, 1, 1, 1}), red);
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
+	}
+
+	private ASDC mockSDC(ADictionary ad, double[] def) {
+		ASDC a = mock(ASDC.class);
+		when(a.getCompType()).thenReturn(CompressionType.SDC);
+		when(a.getDictionary()).thenReturn(ad);
+		when(a.getDefaultTuple()).thenReturn(def);
+		when(a.getNumCols()).thenReturn(def.length);
+		return a;
+	}
+
+	private ColGroupDDC mockDDC(ADictionary ad, int nCol) {
+		ColGroupDDC a = mock(ColGroupDDC.class);
+		when(a.getCompType()).thenReturn(CompressionType.DDC);
+		when(a.getDictionary()).thenReturn(ad);
+		when(a.getNumCols()).thenReturn(nCol);
+		return a;
 	}
 }

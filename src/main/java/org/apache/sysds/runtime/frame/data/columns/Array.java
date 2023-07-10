@@ -606,6 +606,19 @@ public abstract class Array<T> implements Writable {
 		return new ArrayIterator();
 	}
 
+	@Override
+	@SuppressWarnings("unchecked")
+	public boolean equals(Object other) {
+		try {
+			return other instanceof Array && this.equals((Array<T>) other);
+		}
+		catch(ClassCastException e) {
+			return false;
+		}
+	}
+
+	public abstract boolean equals(Array<T> other);
+
 	public ArrayCompressionStatistics statistics(int nSamples) {
 
 		Map<T, Integer> d = new HashMap<>();
@@ -631,7 +644,7 @@ public abstract class Array<T> implements Writable {
 
 		if(ddcSize < memSize)
 			return new ArrayCompressionStatistics(memSizePerElement, //
-				estDistinct, true, FrameArrayType.DDC, memSize, ddcSize);
+				estDistinct, true, getValueType(),FrameArrayType.DDC, memSize, ddcSize);
 
 		return null;
 	}

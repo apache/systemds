@@ -235,7 +235,6 @@ public class MapToCharPByte extends AMapToData {
 			byte[] ret_b = Arrays.copyOf(_data_b, newSize);
 			System.arraycopy(tbbb, 0, ret_b, _data_b.length, t.size());
 
-
 			return new MapToCharPByte(newDistinct, ret_c, ret_b);
 		}
 		else {
@@ -244,7 +243,15 @@ public class MapToCharPByte extends AMapToData {
 	}
 
 	@Override
-	public AMapToData appendN(IMapToDataGroup[] d){
+	public AMapToData appendN(IMapToDataGroup[] d) {
 		throw new NotImplementedException();
+	}
+
+	@Override
+	public boolean equals(AMapToData e) {
+		return e instanceof MapToCharPByte && //
+			e.getUnique() == getUnique() &&//
+			Arrays.equals(((MapToCharPByte) e)._data_b, _data_b) && //
+			Arrays.equals(((MapToCharPByte) e)._data_c, _data_c);
 	}
 }

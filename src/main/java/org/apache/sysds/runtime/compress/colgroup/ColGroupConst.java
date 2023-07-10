@@ -73,6 +73,14 @@ public class ColGroupConst extends ADictBasedColGroup implements IContainDefault
 	public static AColGroup create(IColIndex colIndices, ADictionary dict) {
 		if(dict == null)
 			return new ColGroupEmpty(colIndices);
+		else if(dict.getNumberOfValues(colIndices.size()) > 1) {
+			// extract dict first row
+			final double[] nd = new double[colIndices.size()];
+			for(int i = 0; i < colIndices.size(); i++)
+				nd[i] = dict.getValue(i);
+
+			return ColGroupConst.create(colIndices, nd);
+		}
 		else
 			return new ColGroupConst(colIndices, dict);
 	}
@@ -578,7 +586,8 @@ public class ColGroupConst extends ADictBasedColGroup implements IContainDefault
 	@Override
 	public CompressedSizeInfoColGroup getCompressionInfo(int nRow) {
 		EstimationFactors ef = new EstimationFactors(1, 1, 1, _dict.getSparsity());
-		return new CompressedSizeInfoColGroup(_colIndexes, ef, estimateInMemorySize(), CompressionType.CONST, getEncoding());
+		return new CompressedSizeInfoColGroup(_colIndexes, ef, estimateInMemorySize(), CompressionType.CONST,
+			getEncoding());
 	}
 
 	@Override

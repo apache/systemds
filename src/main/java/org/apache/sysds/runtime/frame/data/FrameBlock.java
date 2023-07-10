@@ -857,7 +857,7 @@ public class FrameBlock implements CacheBlock<FrameBlock>, Externalizable {
 		double size = 0;
 		if(_coldata == null) // not allocated estimate if allocated
 			for(int j = 0; j < clen; j++)
-				size += ArrayFactory.getInMemorySize(_schema[j], rlen);
+				size += ArrayFactory.getInMemorySize(_schema[j], rlen, true);
 		else {// allocated
 			if(rlen > 1000 && clen > 10 && ConfigurationManager.isParallelIOEnabled()) {
 				final ExecutorService pool = CommonThreadPool.get(InfrastructureAnalyzer.getLocalParallelism());
@@ -1196,12 +1196,14 @@ public class FrameBlock implements CacheBlock<FrameBlock>, Externalizable {
 
 	/**
 	 * Copy src matrix into the index range of the existing current matrix.
+	 *
+	 * This is used to copy smaller blocks into a larger block, for instance in binary reading.
 	 * 
 	 * @param rl  row start
 	 * @param ru  row end inclusive
 	 * @param cl  col start
 	 * @param cu  col end inclusive
-	 * @param src source FrameBlock
+	 * @param src source FrameBlock typically a smaller block.
 	 */
 	public void copy(int rl, int ru, int cl, int cu, FrameBlock src) {
 		// If full copy, fall back to default copy
@@ -1210,9 +1212,10 @@ public class FrameBlock implements CacheBlock<FrameBlock>, Externalizable {
 			return;
 		}
 		ensureAllocateMeta();
-		if(_coldata == null)
+		if(_coldata == null) // allocate column data.
 			_coldata = new Array[_schema.length];
-		synchronized(this) {
+		synchronized(this) { // make sync locks
+			// TODO remove sync locks on array types where they are not needed.
 			if(_columnLocks == null) {
 				Object[] locks = new Object[_schema.length];
 				for(int i = 0; i < locks.length; i++)
@@ -1221,7 +1224,7 @@ public class FrameBlock implements CacheBlock<FrameBlock>, Externalizable {
 			}
 		}
 		Object[] locks = _columnLocks.get();
-		for(int j = cl; j <= cu; j++) {
+		for(int j = cl; j <= cu; j++) { // for each column
 			synchronized(locks[j]) { // synchronize on the column.
 				_coldata[j] = ArrayFactory.set(_coldata[j], src._coldata[j - cl], rl, ru, _nRow);
 			}

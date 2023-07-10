@@ -153,9 +153,13 @@ public abstract class AColGroupValue extends ADictBasedColGroup {
 
 	@Override
 	protected AColGroup sliceMultiColumns(int idStart, int idEnd, IColIndex outputCols) {
-		ADictionary retDict = _dict.sliceOutColumnRange(idStart, idEnd, _colIndexes.size());
+		final ADictionary retDict = _dict.sliceOutColumnRange(idStart, idEnd, _colIndexes.size());
 		if(retDict == null)
 			return new ColGroupEmpty(outputCols);
+
+		if(retDict.getNumberOfValues(outputCols.size()) != getNumValues())
+			throw new DMLCompressionException("Invalid Slice Multi Columns");
+
 		return copyAndSet(outputCols, retDict);
 	}
 
@@ -204,7 +208,7 @@ public abstract class AColGroupValue extends ADictBasedColGroup {
 	}
 
 	@Override
-	public void clear(){
+	public void clear() {
 		counts = null;
 	}
 

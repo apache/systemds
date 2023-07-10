@@ -99,9 +99,10 @@ public class CompressedFrameBlockFactory {
 		if(LOG.isDebugEnabled()) {
 			for(int i = 0; i < compressedColumns.length; i++) {
 				if(stats[i] != null)
-					LOG.debug(stats[i]);
+					LOG.debug(String.format("Col: %3d, %s", i, stats[i]));
 				else
-					LOG.debug("no Comp col: " + i);
+					LOG.debug(
+						String.format("Col: %3d, No Compress, Type: %s", i, in.getColumn(i).getClass().getSimpleName()));
 			}
 		}
 	}

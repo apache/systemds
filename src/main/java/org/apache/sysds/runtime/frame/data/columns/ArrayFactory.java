@@ -189,6 +189,8 @@ public interface ArrayFactory {
 			case CHARACTER:
 				arr = new CharArray(new char[nRow]);
 				break;
+			case RAGGED:
+				return RaggedArray.readRagged(in, nRow);
 			case OPTIONAL:
 				return OptionalArray.readOpt(in, nRow);
 			case DDC:

@@ -165,8 +165,16 @@ public abstract class Array<T> implements Writable {
 	 */
 	public abstract Object get();
 
+	/**
+	 * @param i index
+	 * @return 0 in case of nulls
+	 */
 	public abstract double getAsDouble(int i);
 
+	/**
+	 * @param i index
+	 * @return Double.NaN in case of nulls
+	 */
 	public double getAsNaNDouble(int i) {
 		return getAsDouble(i);
 	}

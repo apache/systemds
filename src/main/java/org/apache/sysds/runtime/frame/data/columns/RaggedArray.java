@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.util.Arrays;
 
 import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.frame.data.columns.ArrayFactory.FrameArrayType;
 import org.apache.sysds.runtime.matrix.data.Pair;
 
@@ -59,12 +60,33 @@ public class RaggedArray<T> extends Array<T> {
 
 	@Override
 	public void write(DataOutput out) throws IOException {
+		out.writeByte(FrameArrayType.RAGGED.ordinal());
 		_a.write(out);
 	}
 
 	@Override
 	public void readFields(DataInput in) throws IOException {
-		_a.readFields(in);
+		throw new DMLRuntimeException("Should not be called");
+	}
+
+	protected static RaggedArray<?> readRagged(DataInput in, int nRow) throws IOException {
+		final Array<?> a = ArrayFactory.read(in, nRow);
+		switch(a.getValueType()) {
+			case BOOLEAN:
+				return new RaggedArray<>((Array<Boolean>) a, nRow);
+			case FP32:
+				return new RaggedArray<>((Array<Float>) a, nRow);
+			case FP64:
+				return new RaggedArray<>((Array<Double>) a, nRow);
+			case UINT8:
+			case INT32:
+				return new RaggedArray<>((Array<Integer>) a, nRow);
+			case INT64:
+				return new RaggedArray<>((Array<Long>) a, nRow);
+			case CHARACTER:
+			default:
+				return new RaggedArray<>((Array<Character>) a, nRow);
+		}
 	}
 
 	@Override
@@ -86,7 +108,7 @@ public class RaggedArray<T> extends Array<T> {
 
 	@Override
 	public double getAsDouble(int i) {
-		return i < _a._size ? _a.getAsDouble(i) : Double.NaN;
+		return i < _a._size ? _a.getAsDouble(i) : 0;
 	}
 
 	@Override
@@ -209,7 +231,7 @@ public class RaggedArray<T> extends Array<T> {
 
 	@Override
 	public long getExactSerializedSize() {
-		return _a.getExactSerializedSize();
+		return _a.getExactSerializedSize() + 1;
 	}
 
 	@Override

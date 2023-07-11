@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.sysds.runtime.iogen;
+package org.apache.sysds.test.functions.iogen.earlyGIO;
 
 import java.io.Serializable;
 import java.util.HashSet;

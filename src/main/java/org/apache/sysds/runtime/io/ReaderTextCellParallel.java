@@ -315,7 +315,7 @@ public class ReaderTextCellParallel extends ReaderTextCell
 		}
 		
 		public int size() {
-			return _pos+1;
+			return _pos+2;
 		}
 		
 		public void reset() {

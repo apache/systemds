@@ -21,8 +21,8 @@ package org.apache.sysds.runtime.iogen;
 
 import org.apache.sysds.common.Types;
 import org.apache.sysds.hops.OptimizerUtils;
-import org.apache.sysds.runtime.io.IOUtilFunctions;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
+import org.apache.sysds.runtime.io.IOUtilFunctions;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.Pair;
 import org.apache.sysds.runtime.util.CommonThreadPool;
@@ -38,7 +38,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
-public class ReaderMapping {
+public class ReaderMappingIndex {
 	private int[][] mapRow;
 	private int[][] mapCol;
 	private int[][] mapLen;
@@ -52,33 +52,33 @@ public class ReaderMapping {
 	private FrameBlock sampleFrame;
 	private Types.ValueType[] schema;
 	private final boolean isMatrix;
-	public ReaderMapping(int nlines, int nrows, int ncols, RawIndex[] sampleRawIndexes, MatrixBlock matrix) throws Exception {
+	public ReaderMappingIndex(int nlines, int nrows, int ncols, RawIndex[] sampleRawIndexes, MatrixBlock matrix) throws Exception {
 		this.nlines = nlines;
 		this.nrows = nrows;
 		this.ncols = ncols;
 		this.sampleRawIndexes = sampleRawIndexes;
 		this.sampleMatrix = matrix;
 		this.isMatrix = true;
-		this.runMapping(true);
+		//this.runMapping(true);
 	}
 
-	public ReaderMapping(String raw, MatrixBlock matrix) throws Exception {
+	public ReaderMappingIndex(String raw, MatrixBlock matrix) throws Exception {
 		this.ReadRaw(raw);
 		this.isMatrix = true;
 		this.sampleMatrix = matrix;
 		this.nrows = this.sampleMatrix.getNumRows();
 		this.ncols = this.sampleMatrix.getNumColumns();
-		this.runMapping(false);
+		//this.runMapping(false);
 	}
 
-	public ReaderMapping(String raw, FrameBlock frame) throws Exception {
+	public ReaderMappingIndex(String raw, FrameBlock frame) throws Exception {
 		this.ReadRaw(raw);
 		this.isMatrix = false;
 		this.sampleFrame = frame;
 		this.nrows = this.sampleFrame.getNumRows();
 		this.ncols = this.sampleFrame.getNumColumns();
 		this.schema = this.sampleFrame.getSchema();
-		this.runMapping(false);
+		//this.runMapping(false);
 	}
 
 	private void ReadRaw(String raw) throws Exception {

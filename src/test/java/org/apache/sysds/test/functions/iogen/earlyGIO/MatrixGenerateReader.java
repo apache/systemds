@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.sysds.runtime.iogen;
+package org.apache.sysds.test.functions.iogen.earlyGIO;
 
 import org.apache.commons.lang.mutable.MutableInt;
 import org.apache.hadoop.fs.FileStatus;
@@ -115,11 +115,12 @@ public abstract class MatrixGenerateReader extends MatrixReader {
 		return ret;
 	}
 
+	@SuppressWarnings("unchecked")
 	private MatrixBlock readMatrixFromHDFS(Path path, JobConf job, FileSystem fs, MatrixBlock dest, long rlen,
 		long clen, int blen) throws IOException, DMLRuntimeException {
 		//prepare file paths in alphanumeric order
 		ArrayList<Path> files = new ArrayList<>();
-		if(fs.getFileStatus(path).isDirectory()) {
+		if(fs.isDirectory(path)) {
 			for(FileStatus stat : fs.listStatus(path, IOUtilFunctions.hiddenFileFilter))
 				files.add(stat.getPath());
 			Collections.sort(files);

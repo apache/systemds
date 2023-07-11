@@ -96,7 +96,8 @@ public abstract class MatrixGenerateReader extends MatrixReader {
 		return ret;
 	}
 
-	private MatrixBlock computeSizeAndCreateOutputMatrixBlock(TextInputFormat informat, JobConf job, InputSplit[] splits, long estnnz) throws IOException, DMLRuntimeException {
+	private MatrixBlock computeSizeAndCreateOutputMatrixBlock(TextInputFormat informat, JobConf job, InputSplit[] splits,
+		long estnnz) throws IOException, DMLRuntimeException {
 		int row = 0;
 		// count rows in parallel per split
 		try {
@@ -153,7 +154,8 @@ public abstract class MatrixGenerateReader extends MatrixReader {
 								if(index!=-1){
 									endPos = TemplateUtil.getEndPos(strValue,strValue.length(),
 										_props.getRowIndexStructure().getKeyPattern().
-											get(_props.getRowIndexStructure().getKeyPattern().size() -1).length()+index,_props.getRowIndexStructure()
+											get(_props.getRowIndexStructure().getKeyPattern().size() -1).length()+index,
+										_props.getRowIndexStructure()
 										.endWithValueString());
 									int rowValue;
 									try {
@@ -214,8 +216,8 @@ public abstract class MatrixGenerateReader extends MatrixReader {
 							p1 = beginIndexes.get(i);
 						}
 						j += n - 1;
-						splitInfo.addIndexAndPosition(beginIndexes.get(i - n).getKey(), endIndexes.get(j).getKey(), beginIndexes.get(i - n).getValue(),
-							endIndexes.get(j).getValue() + tokenLength);
+						splitInfo.addIndexAndPosition(beginIndexes.get(i - n).getKey(), endIndexes.get(j).getKey(),
+							beginIndexes.get(i - n).getValue(),endIndexes.get(j).getValue() + tokenLength);
 						j++;
 						nrows++;
 					}

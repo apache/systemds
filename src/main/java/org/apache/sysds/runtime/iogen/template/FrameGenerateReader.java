@@ -19,7 +19,6 @@
 
 package org.apache.sysds.runtime.iogen.template;
 
-import com.google.gson.Gson;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.LongWritable;
@@ -50,7 +49,8 @@ public abstract class FrameGenerateReader extends FrameReader {
 	}
 
 	@Override
-	public FrameBlock readFrameFromHDFS(String fname, Types.ValueType[] schema, String[] names, long rlen, long clen) throws IOException, DMLRuntimeException {
+	public FrameBlock readFrameFromHDFS(String fname, Types.ValueType[] schema, String[] names, long rlen, long clen)
+		throws IOException, DMLRuntimeException {
 
 		// prepare file access
 		JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());
@@ -81,8 +81,8 @@ public abstract class FrameGenerateReader extends FrameReader {
 
 	}
 
-	private FrameBlock computeSizeAndCreateOutputFrameBlock(TextInputFormat informat, JobConf job, Types.ValueType[] schema, String[] names,
-		InputSplit[] splits, Path path)
+	private FrameBlock computeSizeAndCreateOutputFrameBlock(TextInputFormat informat, JobConf job,
+		Types.ValueType[] schema, String[] names, InputSplit[] splits, Path path)
 		throws IOException, DMLRuntimeException {
 
 		int row = 0;
@@ -213,8 +213,6 @@ public abstract class FrameGenerateReader extends FrameReader {
 		// core read (sequential/parallel)
 		InputStreamInputFormat informat = new InputStreamInputFormat(is);
 		InputSplit split = informat.getSplits(null, 1)[0];
-		//readFrameFromInputSplit(split, informat, null, ret, schema, names, rlen, clen, 0, true);
-
 		return ret;
 	}
 

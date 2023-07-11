@@ -189,13 +189,13 @@ public class CodeGenTrie {
 						mKey = mKey.replace("\\", "\\\\");
 						mKey = mKey.replace(Lop.OPERAND_DELIMITOR, "\\\"");
 						if(node.getKey() == null) {
-							src.append("index = str.indexOf(\"" + mKey.replace("\\\"", "\"").replace("\"", "\\\"") +
-								"\"); \n");
+							src.append("index = str.indexOf(\"" + mKey.replace("\\\"", "\"").
+								replace("\"", "\\\"") +"\"); \n");
 						}
 						else
 							src.append(
-								"index = str.indexOf(\"" + mKey.replace("\\\"", "\"").replace("\"", "\\\"") + "\", " +
-									currPos + "); \n");
+								"index = str.indexOf(\"" + mKey.replace("\\\"", "\"").
+									replace("\"", "\\\"") + "\", " + currPos + "); \n");
 						src.append("if(index != -1) { \n");
 						src.append("int " + currPosVariable + " = index + " + key.length() + "; \n");
 					}

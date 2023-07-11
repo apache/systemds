@@ -61,7 +61,6 @@ public class MatrixCodeGen extends TemplateCodeGenBase {
 
 		StringBuilder src = new StringBuilder();
 		CodeGenTrie trie = new CodeGenTrie(properties, "dest.appendValue", true, formatIdentifyer);
-		//CodeGenFlat flat = new CodeGenFlat(properties, "dest.appendValue", true, formatIdentifyer);
 		src.append("String str=\"\"; \n");
 		src.append("String remainStr = \"\"; \n");
 		src.append("int col = -1; \n");

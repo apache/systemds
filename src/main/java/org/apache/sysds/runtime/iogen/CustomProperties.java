@@ -39,7 +39,8 @@ public class CustomProperties extends FileFormatProperties implements Serializab
 	private boolean sparse;
 	private boolean parallel;
 
-	public CustomProperties(MappingProperties mappingProperties, RowIndexStructure rowIndexStructure, ColIndexStructure colIndexStructure) {
+	public CustomProperties(MappingProperties mappingProperties, RowIndexStructure rowIndexStructure,
+		ColIndexStructure colIndexStructure) {
 		this.mappingProperties = mappingProperties;
 		this.rowIndexStructure = rowIndexStructure;
 		this.colIndexStructure = colIndexStructure;

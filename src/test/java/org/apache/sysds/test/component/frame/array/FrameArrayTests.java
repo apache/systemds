@@ -730,7 +730,7 @@ public class FrameArrayTests {
 			// just test that it serialize as byte array with no crashes
 			a.getAsByteArray();
 		}
-		catch(DMLCompressionException e) {
+		catch(DMLCompressionException | NotImplementedException e) {
 			return; // valid
 		}
 	}

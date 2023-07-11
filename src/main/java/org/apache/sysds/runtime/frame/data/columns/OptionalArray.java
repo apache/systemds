@@ -442,9 +442,9 @@ public class OptionalArray<T> extends Array<T> {
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder(_size + 2);
-		sb.append(super.toString() + "<" + _a.getClass().getSimpleName() + ">:[");
+		sb.append(super.toString()).append("<").append(_a.getClass().getSimpleName()).append(">:[");
 		for(int i = 0; i < _size - 1; i++)
-			sb.append(get(i) + ",");
+			sb.append(get(i)).append(",");
 		sb.append(get(_size - 1));
 		sb.append("]");
 		return sb.toString();

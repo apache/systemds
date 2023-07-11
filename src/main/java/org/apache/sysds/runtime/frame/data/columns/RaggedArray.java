@@ -328,4 +328,24 @@ public class RaggedArray<T> extends Array<T> {
 		return idx < _a.size() ? _a.hashDouble(idx): Double.NaN;
 	}
 
+	@Override
+	public long getInMemorySize() {
+		return baseMemoryCost() + _a.getInMemorySize() + 8;
+	}
+
+	@Override
+	public boolean containsNull(){
+		return (_a.size() < super._size) || _a.containsNull();
+	}
+
+	@Override
+	public String toString() {
+		StringBuilder sb = new StringBuilder(_size + 2);
+		sb.append(super.toString()).append("<").append(_a.getClass().getSimpleName()).append(">:[");
+		for(int i = 0; i < _size - 1; i++)
+			sb.append(get(i)).append(",");
+		sb.append(get(_size - 1));
+		sb.append("]");
+		return sb.toString();
+	}
 }

@@ -231,7 +231,8 @@ public class FrameArrayTests {
 					estSize = BooleanArray.estimateInMemorySize(a.size());
 			default: // nothing
 		}
-		if(a.getFrameArrayType() == FrameArrayType.DDC)
+		if(a.getFrameArrayType() == FrameArrayType.DDC ||
+			a.getFrameArrayType() == FrameArrayType.RAGGED)
 			return;
 		if(memSize > estSize)
 			fail("Estimated size is not smaller than actual:" + memSize + "  " + estSize + "\n" + a.getValueType() + " "

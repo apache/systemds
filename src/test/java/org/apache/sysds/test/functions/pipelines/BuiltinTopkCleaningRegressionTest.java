@@ -59,7 +59,7 @@ public class BuiltinTopkCleaningRegressionTest extends AutomatedTestBase{
 	private void runFindPipelineTest(Double sample, int topk, int resources, String crossfold,
 		int cvk, double split,  Types.ExecMode et) {
 
-		setOutputBuffering(true);
+		//setOutputBuffering(true);
 		String HOME = SCRIPT_DIR+"functions/pipelines/" ;
 		Types.ExecMode modeOld = setExecMode(et);
 		try {

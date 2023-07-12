@@ -22,5 +22,5 @@
 z0 = rbind(read($X1), read($X2))
 z1 = z0 %*% z0
 z2 = z1 %*% z1
-print(toString(z2))
+print(toString(z2[1,]))
 write(z2, $Z)

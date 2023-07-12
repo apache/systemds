@@ -140,7 +140,7 @@ public class FederatedKMeansPlanningTest extends AutomatedTestBase {
 
 			// Run actual dml script with federated matrix
 			fullDMLScriptName = HOME + testName + ".dml";
-			programArgs = new String[] { "-stats", "-explain", "hops", "-nvargs",
+			programArgs = new String[] { "-stats", "-nvargs",
 				"X1=" + TestUtils.federatedAddress(port1, input("X1")),
 				"X2=" + TestUtils.federatedAddress(port2, input("X2")),
 				"Y=" + input("Y"), "r=" + rows, "c=" + cols, "Z=" + output("Z")};

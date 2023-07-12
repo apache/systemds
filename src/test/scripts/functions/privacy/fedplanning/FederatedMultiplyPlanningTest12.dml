@@ -23,5 +23,5 @@ z0 = federated(addresses=list($X1, $X2),
               ranges=list(list(0, 0), list($r / 2, $c), list($r / 2, 0), list($r, $c)))
 z1 = z0 %*% z0
 z2 = z1 %*% z1
-print(toString(z2))
+print(toString(z2[1,]))
 write(z2, $Z)

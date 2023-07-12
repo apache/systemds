@@ -269,7 +269,7 @@ public class FederatedMultiplyPlanningTest extends AutomatedTestBase {
 
 			// Run actual dml script with federated matrix
 			fullDMLScriptName = HOME + testName + ".dml";
-			programArgs = new String[] {"-stats", "-explain", "-nvargs", "X1=" + TestUtils.federatedAddress(port1, input("X1")),
+			programArgs = new String[] {"-stats", "-nvargs", "X1=" + TestUtils.federatedAddress(port1, input("X1")),
 				"X2=" + TestUtils.federatedAddress(port2, input("X2")),
 				"Y1=" + TestUtils.federatedAddress(port1, input("Y1")),
 				"Y2=" + TestUtils.federatedAddress(port2, input("Y2")), "r=" + rows, "c=" + cols, "Z=" + output("Z")};
@@ -297,12 +297,12 @@ public class FederatedMultiplyPlanningTest extends AutomatedTestBase {
 
 	private void rewriteRealProgramArgs(String testName, int port1, int port2){
 		if ( testName.equals(TEST_NAME_4) || testName.equals(TEST_NAME_5) ){
-			programArgs = new String[] {"-stats","-explain", "-nvargs", "X1=" + TestUtils.federatedAddress(port1, input("X1")),
+			programArgs = new String[] {"-stats","-nvargs", "X1=" + TestUtils.federatedAddress(port1, input("X1")),
 				"X2=" + TestUtils.federatedAddress(port2, input("X2")),
 				"Y1=" + input("Y1"),
 				"Y2=" + input("Y2"), "r=" + rows, "c=" + cols, "Z=" + output("Z")};
 		} else if ( testName.equals(TEST_NAME_8) ){
-			programArgs = new String[] {"-stats","-explain", "-nvargs", "X1=" + TestUtils.federatedAddress(port1, input("X1")),
+			programArgs = new String[] {"-stats","-nvargs", "X1=" + TestUtils.federatedAddress(port1, input("X1")),
 				"X2=" + TestUtils.federatedAddress(port2, input("X2")),
 				"Y1=" + TestUtils.federatedAddress(port1, input("Y1")),
 				"Y2=" + TestUtils.federatedAddress(port2, input("Y2")),

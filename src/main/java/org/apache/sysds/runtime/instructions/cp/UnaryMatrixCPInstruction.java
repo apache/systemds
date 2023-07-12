@@ -19,7 +19,10 @@
 
 package org.apache.sysds.runtime.instructions.cp;
 
+import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
+import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
+import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.runtime.matrix.data.LibCommonsMath;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.Operator;
@@ -32,7 +35,8 @@ public class UnaryMatrixCPInstruction extends UnaryCPInstruction {
 
 	@Override 
 	public void processInstruction(ExecutionContext ec) {
-		MatrixBlock inBlock = ec.getMatrixInput(input1.getName());
+		MatrixObject inObj = ec.getMatrixObject(input1);
+		MatrixBlock inBlock = inObj.acquireRead();
 		MatrixBlock retBlock = null;
 		
 		if(LibCommonsMath.isSupportedUnaryOperation(getOpcode())) {
@@ -48,6 +52,15 @@ public class UnaryMatrixCPInstruction extends UnaryCPInstruction {
 	 			retBlock.examSparsity();
 		}
 		
-		ec.setMatrixOutput(output.getName(), retBlock);
+		//avoid bufferpool pollution and unnecessary writes by leveraging lineage
+		//but only if short lineage (here the lineage of datagen ops)
+		LineageItem lin = (!inObj.hasValidLineage() || !inObj.getCacheLineage().isLeaf() ||
+			CacheableData.isBelowCachingThreshold(retBlock)) ? null : 
+			getCacheLineageItem(inObj.getCacheLineage());
+		ec.setMatrixOutputAndLineage(output, retBlock, lin);
+	}
+	
+	public LineageItem getCacheLineageItem(LineageItem input) {
+		return new LineageItem(getOpcode(), new LineageItem[]{input});
 	}
 }

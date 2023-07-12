@@ -600,6 +600,10 @@ public class ExecutionContext {
 		setMatrixOutputAndLineage(varName, outputData, null);
 	}
 
+	public void setMatrixOutputAndLineage(CPOperand var, MatrixBlock outputData, LineageItem li) {
+		setMatrixOutputAndLineage(var.getName(), outputData, li);
+	}
+	
 	public void setMatrixOutputAndLineage(String varName, MatrixBlock outputData, LineageItem li) {
 		if( isAutoCreateVars() && !containsVariable(varName) )
 			setVariable(varName, createMatrixObject(outputData));

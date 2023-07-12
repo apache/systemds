@@ -587,7 +587,8 @@ public class MatrixObject extends CacheableData<MatrixBlock> {
 
 	@Override
 	protected MatrixBlock reconstructByLineage(LineageItem li) throws IOException {
-		return ((MatrixObject) LineageRecomputeUtils.parseNComputeLineageTrace(Explain.explain(li), null))
+		return ((MatrixObject) LineageRecomputeUtils
+			.parseNComputeLineageTrace(Explain.explain(li), null))
 			.acquireReadAndRelease();
 	}
 

@@ -84,6 +84,15 @@ public class BinaryOperator extends MultiThreadedOperator {
 		_numThreads = k;
 	}
 
+	public BinaryOperator(ValueFunction p, boolean sparseSafe){
+		// enforce desired sparse safety
+		super(sparseSafe);
+		fn = p;
+		commutative = p instanceof Plus || p instanceof Multiply || p instanceof And || p instanceof Or ||
+				p instanceof Xor || p instanceof Minus1Multiply;
+		_numThreads = 1;
+	}
+
 	/**
 	 * Method for getting the hop binary operator type for a given function object.
 	 * This is used in order to use a common code path for consistency between 

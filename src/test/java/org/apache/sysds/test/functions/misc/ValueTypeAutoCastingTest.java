@@ -64,7 +64,7 @@ public class ValueTypeAutoCastingTest extends AutomatedTestBase
 	@Test
 	public void testIterablePredicateBoolean() 
 	{ 
-		runTest( TEST_NAME1, ValueType.BOOLEAN, true ); 
+		runTest( TEST_NAME1, ValueType.BOOLEAN, true );
 	}
 	
 	@Test
@@ -82,7 +82,7 @@ public class ValueTypeAutoCastingTest extends AutomatedTestBase
 	@Test
 	public void testConditionalPredicateWhileBoolean() 
 	{ 
-		runTest( TEST_NAME2, ValueType.BOOLEAN, false ); 
+		runTest( TEST_NAME2, ValueType.BOOLEAN, false );
 	}
 	
 	@Test
@@ -100,7 +100,7 @@ public class ValueTypeAutoCastingTest extends AutomatedTestBase
 	@Test
 	public void testConditionalPredicateIfBoolean() 
 	{ 
-		runTest( TEST_NAME3, ValueType.BOOLEAN, false ); 
+		runTest( TEST_NAME3, ValueType.BOOLEAN, false );
 	}
 	
 	@Test
@@ -118,7 +118,7 @@ public class ValueTypeAutoCastingTest extends AutomatedTestBase
 	@Test
 	public void testFunctionInliningBoolean() 
 	{ 
-		runTest( TEST_NAME4, ValueType.BOOLEAN, false ); 
+		runTest( TEST_NAME4, ValueType.BOOLEAN, false );
 	}
 	
 	@Test
@@ -136,7 +136,7 @@ public class ValueTypeAutoCastingTest extends AutomatedTestBase
 	@Test
 	public void testFunctionNoInliningBoolean() 
 	{ 
-		runTest( TEST_NAME5, ValueType.BOOLEAN, false ); 
+		runTest( TEST_NAME5, ValueType.BOOLEAN, false );
 	}
 
 	

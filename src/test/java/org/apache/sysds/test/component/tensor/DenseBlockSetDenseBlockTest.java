@@ -20,18 +20,10 @@
 package org.apache.sysds.test.component.tensor;
 
 import org.apache.commons.lang.NotImplementedException;
+import org.apache.sysds.runtime.data.*;
 import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysds.common.Types.ValueType;
-import org.apache.sysds.runtime.data.DenseBlock;
-import org.apache.sysds.runtime.data.DenseBlockFactory;
-import org.apache.sysds.runtime.data.DenseBlockLBool;
-import org.apache.sysds.runtime.data.DenseBlockLFP32;
-import org.apache.sysds.runtime.data.DenseBlockLFP64;
-import org.apache.sysds.runtime.data.DenseBlockLString;
-import org.apache.sysds.runtime.data.DenseBlockLInt32;
-import org.apache.sysds.runtime.data.DenseBlockLInt64;
-import org.apache.sysds.runtime.data.DenseBlockString;
 
 
 public class DenseBlockSetDenseBlockTest
@@ -58,6 +50,15 @@ public class DenseBlockSetDenseBlockTest
 	public void testDenseBlock2BoolSetDenseBlock() {
 		DenseBlock db = getDenseBlock2(ValueType.BOOLEAN);
 		DenseBlock dbSet = getDenseBlock2(ValueType.BOOLEAN);
+		dbSet.set(1);
+		db.set(dbSet);
+		compareDenseBlocks(db, dbSet);
+	}
+
+	@Test
+	public void testDenseBlock2TrueBoolSetDenseBlock() {
+		DenseBlock db = new DenseBlockBoolArray(new int[] {3,5});
+		DenseBlock dbSet = new DenseBlockBoolArray(new int[] {3,5});
 		dbSet.set(1);
 		db.set(dbSet);
 		compareDenseBlocks(db, dbSet);
@@ -176,6 +177,15 @@ public class DenseBlockSetDenseBlockTest
 	}
 
 	@Test
+	public void testDenseBlock3TrueBoolSetDenseBlock() {
+		DenseBlock db = new DenseBlockBoolArray(new int[] {3,5,7});
+		DenseBlock dbSet = new DenseBlockBoolArray(new int[] {3,5,7});
+		dbSet.set(1);
+		db.set(dbSet);
+		compareDenseBlocks(db, dbSet);
+	}
+
+	@Test
 	public void testDenseBlock3Int32SetDenseBlock() {
 		DenseBlock db = getDenseBlock3(ValueType.INT32);
 		DenseBlock dbSet = getDenseBlock3(ValueType.INT32);
@@ -269,7 +279,7 @@ public class DenseBlockSetDenseBlockTest
 		switch (vt) {
 			case FP32: return new DenseBlockLFP32(dims);
 			case FP64: return new DenseBlockLFP64(dims);
-			case BOOLEAN: return new DenseBlockLBool(dims);
+			case BOOLEAN: return new DenseBlockLBoolBitset(dims);
 			case INT32: return new DenseBlockLInt32(dims);
 			case INT64: return new DenseBlockLInt64(dims);
 			case STRING: return new DenseBlockLString(dims);
@@ -282,7 +292,7 @@ public class DenseBlockSetDenseBlockTest
 		switch (vt) {
 			case FP32: return new DenseBlockLFP32(dims);
 			case FP64: return new DenseBlockLFP64(dims);
-			case BOOLEAN: return new DenseBlockLBool(dims);
+			case BOOLEAN: return new DenseBlockLBoolBitset(dims);
 			case INT32: return new DenseBlockLInt32(dims);
 			case INT64: return new DenseBlockLInt64(dims);
 			case STRING: return new DenseBlockLString(dims);

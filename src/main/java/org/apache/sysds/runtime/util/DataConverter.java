@@ -1190,7 +1190,7 @@ public class DataConverter {
 					sb.append(String.valueOf(row[j]));
 				else if( fb.getSchema()[j] == ValueType.FP64 )
 					sb.append(dfFormat(df, (Double)row[j]));
-				else if( fb.getSchema()[j] == ValueType.BOOLEAN )
+				else if( fb.getSchema()[j] == ValueType.BOOLEAN)
 					sb.append(new BooleanObject((Boolean)row[j])
 						.getLanguageSpecificStringValue());
 				else
@@ -1338,6 +1338,13 @@ public class DataConverter {
 		double[] ret = new double[len];
 		for(int i=0; i<len; i++)
 			ret[i] = data.get(i) ? 1 : 0;
+		return ret;
+	}
+
+	public static double[] toDouble(boolean[] data, int len) {
+		double[] ret = new double[len];
+		for(int i=0; i<len; i++)
+			ret[i] = data[i] ? 1 : 0;
 		return ret;
 	}
 

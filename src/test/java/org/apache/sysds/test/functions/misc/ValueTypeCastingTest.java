@@ -65,7 +65,7 @@ public class ValueTypeCastingTest extends AutomatedTestBase
 	@Test
 	public void testScalarBooleanToDouble() 
 	{ 
-		runTest( ValueType.BOOLEAN, ValueType.FP64, false, false ); 
+		runTest( ValueType.BOOLEAN, ValueType.FP64, false, false );
 	}
 	
 	@Test
@@ -89,7 +89,7 @@ public class ValueTypeCastingTest extends AutomatedTestBase
 	@Test
 	public void testScalarBooleanToInteger() 
 	{ 
-		runTest( ValueType.BOOLEAN, ValueType.INT64, false, false ); 
+		runTest( ValueType.BOOLEAN, ValueType.INT64, false, false );
 	}
 	
 	@Test
@@ -102,25 +102,25 @@ public class ValueTypeCastingTest extends AutomatedTestBase
 	@Test
 	public void testScalarDoubleToBoolean() 
 	{ 
-		runTest( ValueType.FP64, ValueType.BOOLEAN, false, false ); 
+		runTest( ValueType.FP64, ValueType.BOOLEAN, false, false );
 	}
 	
 	@Test
 	public void testScalarIntegerToBoolean() 
 	{ 
-		runTest( ValueType.INT64, ValueType.BOOLEAN, false, false ); 
+		runTest( ValueType.INT64, ValueType.BOOLEAN, false, false );
 	}
 	
 	@Test
 	public void testScalarBooleanToBoolean() 
 	{ 
-		runTest( ValueType.BOOLEAN, ValueType.BOOLEAN, false, false ); 
+		runTest( ValueType.BOOLEAN, ValueType.BOOLEAN, false, false );
 	}
 	
 	@Test
 	public void testMatrixDoubleToBoolean() 
 	{ 
-		runTest( ValueType.FP64, ValueType.BOOLEAN, true, true ); 
+		runTest( ValueType.FP64, ValueType.BOOLEAN, true, true );
 	}
 	
 	private void runTest( ValueType vtIn, ValueType vtOut, boolean matrixInput, boolean exceptionExpected )
@@ -162,7 +162,7 @@ public class ValueTypeCastingTest extends AutomatedTestBase
 					case INT64:    
 						HDFSTool.writeIntToHDFS((int)V[0][0], input("V")); 
 						inVal = ((int)V[0][0]); break;
-					case BOOLEAN: 
+					case BOOLEAN:
 						HDFSTool.writeBooleanToHDFS(V[0][0]!=0, input("V")); 
 						inVal = (V[0][0]!=0)?1:0; break;
 					default: 

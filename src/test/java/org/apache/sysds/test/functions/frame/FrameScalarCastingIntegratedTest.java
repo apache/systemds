@@ -55,7 +55,7 @@ public class FrameScalarCastingIntegratedTest extends AutomatedTestBase
 	
 	@Test
 	public void testFrameBooleanCP0() { 
-		runFrameScalarCastingTest(ValueType.BOOLEAN, ExecMode.SINGLE_NODE); 
+		runFrameScalarCastingTest(ValueType.BOOLEAN, ExecMode.SINGLE_NODE);
 	}
 	
 	@Test
@@ -75,7 +75,7 @@ public class FrameScalarCastingIntegratedTest extends AutomatedTestBase
 	
 	@Test
 	public void testFrameBooleanCP1() { 
-		runFrameScalarCastingTest(ValueType.BOOLEAN, ExecMode.HYBRID); 
+		runFrameScalarCastingTest(ValueType.BOOLEAN, ExecMode.HYBRID);
 	}
 	
 	@Test
@@ -95,7 +95,7 @@ public class FrameScalarCastingIntegratedTest extends AutomatedTestBase
 	
 	@Test
 	public void testFrameBooleanCP2() { 
-		runFrameScalarCastingTest(ValueType.BOOLEAN, ExecMode.HYBRID); 
+		runFrameScalarCastingTest(ValueType.BOOLEAN, ExecMode.HYBRID);
 	}
 	
 	@Test
@@ -115,7 +115,7 @@ public class FrameScalarCastingIntegratedTest extends AutomatedTestBase
 	
 	@Test
 	public void testFrameBooleanSP() { 
-		runFrameScalarCastingTest(ValueType.BOOLEAN, ExecMode.SPARK); 
+		runFrameScalarCastingTest(ValueType.BOOLEAN, ExecMode.SPARK);
 	}
 	
 	@Test

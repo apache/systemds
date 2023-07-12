@@ -31,31 +31,9 @@ import org.apache.commons.lang.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.DMLRuntimeException;
-import org.apache.sysds.runtime.data.DenseBlock;
-import org.apache.sysds.runtime.data.SparseBlock;
-import org.apache.sysds.runtime.data.SparseBlockCSR;
-import org.apache.sysds.runtime.data.SparseBlockFactory;
-import org.apache.sysds.runtime.data.SparseBlockMCSR;
-import org.apache.sysds.runtime.data.SparseRow;
-import org.apache.sysds.runtime.data.SparseRowVector;
-import org.apache.sysds.runtime.functionobjects.And;
-import org.apache.sysds.runtime.functionobjects.Builtin;
+import org.apache.sysds.runtime.data.*;
+import org.apache.sysds.runtime.functionobjects.*;
 import org.apache.sysds.runtime.functionobjects.Builtin.BuiltinCode;
-import org.apache.sysds.runtime.functionobjects.Divide;
-import org.apache.sysds.runtime.functionobjects.Equals;
-import org.apache.sysds.runtime.functionobjects.GreaterThan;
-import org.apache.sysds.runtime.functionobjects.GreaterThanEquals;
-import org.apache.sysds.runtime.functionobjects.LessThan;
-import org.apache.sysds.runtime.functionobjects.LessThanEquals;
-import org.apache.sysds.runtime.functionobjects.Minus;
-import org.apache.sysds.runtime.functionobjects.MinusMultiply;
-import org.apache.sysds.runtime.functionobjects.Multiply;
-import org.apache.sysds.runtime.functionobjects.Multiply2;
-import org.apache.sysds.runtime.functionobjects.NotEquals;
-import org.apache.sysds.runtime.functionobjects.Plus;
-import org.apache.sysds.runtime.functionobjects.PlusMultiply;
-import org.apache.sysds.runtime.functionobjects.Power2;
-import org.apache.sysds.runtime.functionobjects.ValueFunction;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
 import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
@@ -1423,20 +1401,72 @@ public class LibMatrixBincell {
 			}
 			//general case
 			else {
-				for(int r=rl; r<ru; r++)
-					for(int c=0; c<clen; c++) {
-						double v1 = m1.quickGetValue(r, c);
-						double v2 = m2.quickGetValue(r, c);
-						double v = op.fn.execute( v1, v2 );
-						ret.appendValuePlain(r, c, v);
-						lnnz += (v!=0) ? 1 : 0;
-					}
+				// if return matrix is boolean or bitset, use boolean arithmetics
+				if (ret.denseBlock != null && ret.getDenseBlock() instanceof DenseBlockBool ){
+					lnnz = computeAsBoolean(m1, m2, ret, op, rl, ru);
+				} else {
+					for(int r=rl; r<ru; r++)
+						for(int c=0; c<clen; c++) {
+							double v1 = m1.quickGetValue(r, c);
+							double v2 = m2.quickGetValue(r, c);
+							double v = op.fn.execute( v1, v2 );
+							ret.appendValuePlain(r, c, v);
+							lnnz += (v!=0) ? 1 : 0;
+						}
+				}
+
 			}
 		}
 		
 		return lnnz;
 	}
 
+	/**
+	 * EXPERIMENTAL
+	 * Runs operations that return booleans and uses boolean arithmetics and boolean matrices.
+	 * @param m1 input matrix 1
+	 * @param m2 input matrix 2
+	 * @param ret result matrix
+	 * @param op operator that returns boolean values
+	 * @return lnnz
+	 */
+	private static long computeAsBoolean(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, BinaryOperator op, int rl, int ru){
+		int clen = m1.clen;
+		long lnnz = 0;
+
+		//currently operators that have boolean as input and output have to use one of DenseBlockBool
+		boolean canRunAndOrXorAsFullBoolean = (op.fn instanceof And || op.fn instanceof Or || op.fn instanceof Xor) && m1.denseBlock instanceof DenseBlockBool && m2.denseBlock instanceof DenseBlockBool;
+
+		boolean isValueComparisonFunction = op.fn instanceof ValueComparisonFunction;
+
+		for(int r=rl; r<ru; r++)
+			for(int c=0; c<clen; c++) {
+
+				boolean vb;
+
+				if(isValueComparisonFunction){
+					double v1 = m1.quickGetValue(r, c);
+					double v2 = m2.quickGetValue(r, c);
+					vb = ((ValueComparisonFunction) op.fn).compare( v1, v2 );
+				} else if (canRunAndOrXorAsFullBoolean) {
+					boolean vb1 = ((DenseBlockBool)m1.denseBlock).getBoolean(r,c);
+					boolean vb2 = ((DenseBlockBool)m2.denseBlock).getBoolean(r,c);
+					vb = op.fn.execute(vb1, vb2);
+				} else {
+					throw new RuntimeException("Currently there is no support for full boolean computation with operator of type "+op.fn.getClass().getSimpleName()
+							+" for input typ "+m1.denseBlock.getClass().getSimpleName()+" and output type "+ret.denseBlock.getClass().getSimpleName());
+				}
+
+				//reenact what is happening in appendValuePlain()
+				ret.allocateDenseBlock(false);
+				((DenseBlockBool) ret.getDenseBlock()).set(r,c,vb);
+
+				lnnz += vb ? 1 : 0;
+			}
+
+
+		return lnnz;
+	}
 	private static long safeBinaryScalar(MatrixBlock m1, MatrixBlock ret, ScalarOperator op, int rl, int ru) {
 		//early abort possible since sparsesafe
 		if( m1.isEmptyBlock(false) ) {

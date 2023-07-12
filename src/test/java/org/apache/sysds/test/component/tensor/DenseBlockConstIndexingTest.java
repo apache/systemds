@@ -23,14 +23,8 @@ import static org.junit.Assert.fail;
 
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.common.Types.ValueType;
-import org.apache.sysds.runtime.data.DenseBlock;
-import org.apache.sysds.runtime.data.DenseBlockFactory;
-import org.apache.sysds.runtime.data.DenseBlockLBool;
-import org.apache.sysds.runtime.data.DenseBlockLFP32;
-import org.apache.sysds.runtime.data.DenseBlockLFP64;
-import org.apache.sysds.runtime.data.DenseBlockLInt32;
-import org.apache.sysds.runtime.data.DenseBlockLInt64;
-import org.apache.sysds.runtime.data.DenseBlockLString;
+import org.apache.sysds.runtime.data.*;
+import org.apache.sysds.runtime.data.DenseBlockLBoolBitset;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -61,6 +55,16 @@ public class DenseBlockConstIndexingTest
 		for(int i=0; i<db.numRows(); i++)
 			for(int j=0; j<5; j++)
 				Assert.assertEquals(1, db.get(i, j), 0);
+	}
+
+	@Test
+	public void testIndexDenseBlock2TrueBoolConst() {
+		DenseBlock db = new DenseBlockBoolArray(new int[] {3,5});
+		db.set(7.3);
+		for(int i=0; i<db.numRows(); i++)
+			for(int j=0; j<5; j++) {
+				Assert.assertEquals(1, db.get(i, j), 0);
+			}
 	}
 	
 	@Test
@@ -122,6 +126,8 @@ public class DenseBlockConstIndexingTest
 				Assert.assertEquals(1, db.get(i, j), 0);
 	}
 
+
+
 	@Test
 	public void testIndexDenseBlockLarge2Int32Const() {
 		DenseBlock db = getDenseBlockLarge2(ValueType.INT32);
@@ -170,6 +176,16 @@ public class DenseBlockConstIndexingTest
 	@Test
 	public void testIndexDenseBlock3BoolConst() {
 		DenseBlock db = getDenseBlock3(ValueType.BOOLEAN);
+		db.set(7.3);
+		for(int i=0; i<db.numRows(); i++)
+			for(int j=0; j<5; j++)
+				for(int k=0; k<7; k++)
+					Assert.assertEquals(1, db.get(new int[]{i,j,k}), 0);
+	}
+
+	@Test
+	public void testIndexDenseBlock3TrueBoolConst() {
+		DenseBlock db = new DenseBlockBoolArray(new int[] {3,5,7});
 		db.set(7.3);
 		for(int i=0; i<db.numRows(); i++)
 			for(int j=0; j<5; j++)
@@ -274,7 +290,7 @@ public class DenseBlockConstIndexingTest
 		switch (vt) {
 			case FP32: return new DenseBlockLFP32(dims);
 			case FP64: return new DenseBlockLFP64(dims);
-			case BOOLEAN: return new DenseBlockLBool(dims);
+			case BOOLEAN: return new DenseBlockLBoolBitset(dims);
 			case INT32: return new DenseBlockLInt32(dims);
 			case INT64: return new DenseBlockLInt64(dims);
 			case STRING: return new DenseBlockLString(dims);
@@ -287,7 +303,7 @@ public class DenseBlockConstIndexingTest
 		switch (vt) {
 			case FP32: return new DenseBlockLFP32(dims);
 			case FP64: return new DenseBlockLFP64(dims);
-			case BOOLEAN: return new DenseBlockLBool(dims);
+			case BOOLEAN: return new DenseBlockLBoolBitset(dims);
 			case INT32: return new DenseBlockLInt32(dims);
 			case INT64: return new DenseBlockLInt64(dims);
 			case STRING: return new DenseBlockLString(dims);

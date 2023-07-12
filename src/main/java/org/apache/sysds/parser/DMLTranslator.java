@@ -2708,7 +2708,7 @@ public class DMLTranslator
 			else if ( in.length == 3 )
 			{
 				// check if the third argument is "replace" or "seed"
-				if ( expr3.getValueType() == ValueType.BOOLEAN ) 
+				if ( expr3.getValueType() == ValueType.BOOLEAN)
 				{
 					tmpparams.put(DataExpression.RAND_PDF, expr3);
 					tmpparams.put(DataExpression.RAND_SEED, new LiteralOp(DataGenOp.UNSPECIFIED_SEED) );

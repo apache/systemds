@@ -126,10 +126,10 @@ public class MLContextFrameTest extends MLContextTestBase {
 		List<String> listB = new ArrayList<>();
 		FrameMetadata fmA = null, fmB = null;
 		Script script = null;
-		ValueType[] schemaA = { ValueType.INT64, ValueType.STRING, ValueType.FP64, ValueType.BOOLEAN };
+		ValueType[] schemaA = { ValueType.INT64, ValueType.STRING, ValueType.FP64, ValueType.BOOLEAN};
 		List<ValueType> lschemaA = Arrays.asList(schemaA);
 		FrameSchema fschemaA = new FrameSchema(lschemaA);
-		ValueType[] schemaB = { ValueType.STRING, ValueType.FP64, ValueType.BOOLEAN };
+		ValueType[] schemaB = { ValueType.STRING, ValueType.FP64, ValueType.BOOLEAN};
 		List<ValueType> lschemaB = Arrays.asList(schemaB);
 		FrameSchema fschemaB = new FrameSchema(lschemaB);
 

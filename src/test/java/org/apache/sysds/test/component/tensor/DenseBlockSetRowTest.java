@@ -20,18 +20,10 @@
 package org.apache.sysds.test.component.tensor;
 
 import org.apache.commons.lang.NotImplementedException;
+import org.apache.sysds.runtime.data.*;
 import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysds.common.Types.ValueType;
-import org.apache.sysds.runtime.data.DenseBlock;
-import org.apache.sysds.runtime.data.DenseBlockBool;
-import org.apache.sysds.runtime.data.DenseBlockFactory;
-import org.apache.sysds.runtime.data.DenseBlockLBool;
-import org.apache.sysds.runtime.data.DenseBlockLFP32;
-import org.apache.sysds.runtime.data.DenseBlockLFP64;
-import org.apache.sysds.runtime.data.DenseBlockLString;
-import org.apache.sysds.runtime.data.DenseBlockLInt32;
-import org.apache.sysds.runtime.data.DenseBlockLInt64;
 
 public class DenseBlockSetRowTest {
 	@Test
@@ -49,6 +41,12 @@ public class DenseBlockSetRowTest {
 	@Test
 	public void testDenseBlock2BoolRow() {
 		DenseBlock db = getDenseBlock2(ValueType.BOOLEAN);
+		checkRow(setRow(db));
+	}
+
+	@Test
+	public void testDenseBlock2TrueBoolRow() {
+		DenseBlock db = new DenseBlockBoolArray(new int[] {3,5});
 		checkRow(setRow(db));
 	}
 
@@ -125,6 +123,12 @@ public class DenseBlockSetRowTest {
 	}
 
 	@Test
+	public void testDenseBlock3TrueBoolRow() {
+		DenseBlock db = new DenseBlockBoolArray( new int[] {3,5,7});
+		checkRow(setRow(db));
+	}
+
+	@Test
 	public void testDenseBlock3Int32Row() {
 		DenseBlock db = getDenseBlock3(ValueType.INT32);
 		checkRow(setRow(db));
@@ -194,7 +198,7 @@ public class DenseBlockSetRowTest {
 			case FP64:
 				return new DenseBlockLFP64(dims);
 			case BOOLEAN:
-				return new DenseBlockLBool(dims);
+				return new DenseBlockLBoolBitset(dims);
 			case INT32:
 				return new DenseBlockLInt32(dims);
 			case INT64:
@@ -214,7 +218,7 @@ public class DenseBlockSetRowTest {
 			case FP64:
 				return new DenseBlockLFP64(dims);
 			case BOOLEAN:
-				return new DenseBlockLBool(dims);
+				return new DenseBlockLBoolBitset(dims);
 			case INT32:
 				return new DenseBlockLInt32(dims);
 			case INT64:
@@ -246,7 +250,7 @@ public class DenseBlockSetRowTest {
 	}
 
 	private static void checkRow(DenseBlock db) {
-		boolean isBool = (db instanceof DenseBlockBool) || (db instanceof DenseBlockLBool);
+		boolean isBool = (db instanceof DenseBlockBoolBitset) || (db instanceof DenseBlockLBoolBitset) || (db instanceof DenseBlockBoolArray);
 		if (db.numDims() == 3) {
 			int dim1 = 5, dim2 = 7;
 			for (int i = 0; i < dim1; i++)

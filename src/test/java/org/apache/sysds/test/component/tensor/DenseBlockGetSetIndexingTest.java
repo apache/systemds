@@ -20,18 +20,10 @@
 package org.apache.sysds.test.component.tensor;
 
 import org.apache.commons.lang.NotImplementedException;
+import org.apache.sysds.runtime.data.*;
 import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysds.common.Types.ValueType;
-import org.apache.sysds.runtime.data.DenseBlock;
-import org.apache.sysds.runtime.data.DenseBlockBool;
-import org.apache.sysds.runtime.data.DenseBlockFactory;
-import org.apache.sysds.runtime.data.DenseBlockLBool;
-import org.apache.sysds.runtime.data.DenseBlockLFP32;
-import org.apache.sysds.runtime.data.DenseBlockLFP64;
-import org.apache.sysds.runtime.data.DenseBlockLString;
-import org.apache.sysds.runtime.data.DenseBlockLInt32;
-import org.apache.sysds.runtime.data.DenseBlockLInt64;
 
 
 public class DenseBlockGetSetIndexingTest
@@ -51,6 +43,12 @@ public class DenseBlockGetSetIndexingTest
 	@Test
 	public void testIndexDenseBlock2BoolSetGetCell() {
 		DenseBlock db = getDenseBlock2(ValueType.BOOLEAN);
+		checkSequence(setSequence(db));
+	}
+
+	@Test
+	public void testIndexDenseBlock2TrueBoolSetGetCell() {
+		DenseBlock db = new DenseBlockBoolArray(new int[] {3,5});
 		checkSequence(setSequence(db));
 	}
 	
@@ -125,6 +123,12 @@ public class DenseBlockGetSetIndexingTest
 		DenseBlock db = getDenseBlock3(ValueType.BOOLEAN);
 		checkSequence(setSequence(db));
 	}
+
+	@Test
+	public void testIndexDenseBlock3TrueBoolSetGetCell() {
+		DenseBlock db = new DenseBlockBoolArray(new int[] {3,5,7});
+		checkSequence(setSequence(db));
+	}
 	
 	@Test
 	public void testIndexDenseBlock3Int32SetGetCell() {
@@ -193,7 +197,7 @@ public class DenseBlockGetSetIndexingTest
 		switch (vt) {
 			case FP32: return new DenseBlockLFP32(dims);
 			case FP64: return new DenseBlockLFP64(dims);
-			case BOOLEAN: return new DenseBlockLBool(dims);
+			case BOOLEAN: return new DenseBlockLBoolBitset(dims);
 			case INT32: return new DenseBlockLInt32(dims);
 			case INT64: return new DenseBlockLInt64(dims);
 			case STRING: return new DenseBlockLString(dims);
@@ -206,7 +210,7 @@ public class DenseBlockGetSetIndexingTest
 		switch (vt) {
 			case FP32: return new DenseBlockLFP32(dims);
 			case FP64: return new DenseBlockLFP64(dims);
-			case BOOLEAN: return new DenseBlockLBool(dims);
+			case BOOLEAN: return new DenseBlockLBoolBitset(dims);
 			case INT32: return new DenseBlockLInt32(dims);
 			case INT64: return new DenseBlockLInt64(dims);
 			case STRING: return new DenseBlockLString(dims);
@@ -234,7 +238,7 @@ public class DenseBlockGetSetIndexingTest
 	}
 	
 	private static void checkSequence(DenseBlock db) {
-		boolean isBool = (db instanceof DenseBlockBool) || (db instanceof DenseBlockLBool);
+		boolean isBool = (db instanceof DenseBlockBoolBitset) || (db instanceof DenseBlockLBoolBitset) || (db instanceof DenseBlockBoolArray);
 		if( db.numDims() == 3 ) {
 			int dim12 = 5*7;
 			int dim1 = 5, dim2 = 7;

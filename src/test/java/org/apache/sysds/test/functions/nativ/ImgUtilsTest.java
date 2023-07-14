@@ -16,10 +16,10 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+package org.apache.sysds.test.functions.nativ;
 
 import org.apache.sysds.utils.NativeHelper;
 import org.junit.Assert;
-
 import org.junit.Test;
 
 public class ImgUtilsTest {

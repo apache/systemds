@@ -419,4 +419,8 @@ public class NativeHelper {
 
 	//test interface for native binding
 	public static native void testNativeBindingWithDgemm(char transa, char transb, int m, int n, int k, double alpha, double[] A, int lda, double[] B, int ldb, double beta, double[] C, int ldc);
+
+	//image rotation
+	public static native void imageRotate(double[] img_in, int rows, int cols, double radians, double fill_value, double[] img_out);
+
 }

@@ -123,6 +123,14 @@ JNIEXPORT void JNICALL Java_org_apache_sysds_utils_NativeHelper_setMaxNumThreads
 JNIEXPORT void JNICALL Java_org_apache_sysds_utils_NativeHelper_testNativeBindingWithDgemm
    (JNIEnv *, jclass, jchar, jchar, jint, jint, jint, jdouble, jdoubleArray, jint, jdoubleArray, jint, jdouble, jdoubleArray, jint);
 
+/*
+ * Class:     org_apache_sysds_utils_NativeHelper
+ * Method:    imageRotate
+ * Signature: ([DIIIDD[D)V
+ */
+JNIEXPORT void JNICALL Java_org_apache_sysds_utils_NativeHelper_imageRotate
+    (JNIEnv *, jclass, jdoubleArray, jint, jint, jdouble, jdouble, jdoubleArray);
+
 
 #ifdef __cplusplus
 }

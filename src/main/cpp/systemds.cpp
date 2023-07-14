@@ -27,7 +27,7 @@
 #include "libmatrixdnn.h"
 #include "libmatrixmult.h"
 #include "systemds.h"
-
+#include "imgUtils.h"
 // Results from Matrix-vector/vector-matrix 1M x 1K, dense show that GetDoubleArrayElements creates a copy on OpenJDK.
 
 // Logic:
@@ -254,8 +254,8 @@ JNIEXPORT jlong JNICALL Java_org_apache_sysds_utils_NativeHelper_conv2dBackwardF
   RELEASE_INPUT_ARRAY(env, dout, doutPtr, numThreads);
   RELEASE_ARRAY(env, ret, retPtr, numThreads);
   return static_cast<jlong>(nnz);
-}*/
-
+}
+*/
 JNIEXPORT void JNICALL Java_org_apache_sysds_utils_NativeHelper_testNativeBindingWithDgemm
     (JNIEnv* env, jclass cls, jchar transa, jchar transb, jint m, jint n, jint k, jdouble alpha, jdoubleArray A, jint lda, jdoubleArray B, jint ldb, jdouble beta, jdoubleArray C, jint ldc) {
 
@@ -271,4 +271,24 @@ JNIEXPORT void JNICALL Java_org_apache_sysds_utils_NativeHelper_testNativeBindin
     env->ReleaseDoubleArrayElements(A, nativeA, 0);
     env->ReleaseDoubleArrayElements(B, nativeB, 0);
     env->ReleaseDoubleArrayElements(C, nativeC, 0);
+}
+
+JNIEXPORT void JNICALL Java_org_apache_sysds_utils_NativeHelper_imageRotate(JNIEnv* env, jclass clazz, jdoubleArray img_in, jint rows, jint cols, jdouble radians, jdouble fill_value, jdoubleArray img_out) {
+    // Get input image data
+
+    jsize num_pixels = env->GetArrayLength(img_in);
+    jdouble* img_in_data = env->GetDoubleArrayElements(img_in, NULL);
+
+    // Create output image array
+    jdouble* img_out_data = new jdouble[num_pixels];
+
+    // Rotate the image
+    imageRotate(img_in_data, rows, cols, radians, fill_value, img_out_data);
+
+    // Set the output image data
+    env->SetDoubleArrayRegion(img_out, 0, num_pixels, img_out_data);
+
+    // Clean up
+    delete[] img_out_data;
+    env->ReleaseDoubleArrayElements(img_in, img_in_data, JNI_ABORT);
 }

@@ -27,5 +27,10 @@ A = federated(addresses=list($in_X1, $in_X2, $in_X3, $in_X4),
     ranges=list(list(0, 0), list(2, 12), list(2, 0), list(4, $cols),
     list(4, 0), list(10, $cols), list(10, 0), list(12, $cols)));
 
-s = matrix(A, rows=$r_rows, cols=$r_cols);
+# materialize the scalar input (non-literal)
+reshape_cols = $r_cols;
+while(FALSE) {}
+reshape_cols = reshape_cols;
+
+s = matrix(A, rows=$r_rows, cols=reshape_cols);
 write(s, $out_S);

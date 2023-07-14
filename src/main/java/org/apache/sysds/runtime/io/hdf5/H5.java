@@ -133,7 +133,7 @@ public class H5 {
 			String childName = Utils.readUntilNull(nameBuffer);
 
 			if(!childName.equals(datasetName)) {
-				throw new H5RuntimeException("The dataset name '" + datasetName + "' not found!");
+				throw new H5RuntimeException("The requested dataset '" + datasetName + "' differs from available '"+childName+"'.");
 			}
 
 			final H5ObjectHeader header = new H5ObjectHeader(rootObject, symbolTableEntry.getObjectHeaderAddress());

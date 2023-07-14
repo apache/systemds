@@ -1,0 +1,116 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+# create federated matrix
+X = federated(addresses=list($in_X1, $in_X2),
+ranges=list(list(0, 0), list($rows, $cols), list($rows, 0), list($rows * 2, $cols)));
+# construct additional matrices:
+#   - X2 (federated, aligned with X)
+#   - Y (federated, transpose aligned with X)
+#   - L (local, same dimension as X)
+X2 = X^2;
+L = rand(rows=nrow(X), cols=ncol(X), sparsity=$sparsity, seed=13);
+Y = t(X + (0.1 * L));
+
+# right indexing
+M1 = X[ , 1:10];
+
+# matrix multiplication
+M2 = X %*% Y;
+
+# elementwise minus
+M3 = X - X2;
+
+# elementwise multiplication
+M4 = X[1:20, ] * L[1:20, ];
+
+# elementwise division
+M5 = X / L;
+
+# matrix vector addition
+M6 = X + L[1, ];
+
+# column bind, federated row partitioned / local
+M7 = cbind(X, L);
+
+# row bind, federated row partitioned / local
+M8 = rbind(M3, t(L) %*% L);
+
+# column bind, federated row partitioned / federated row partitioned
+M9 = cbind(X2, X);
+
+# binary matrix scalar (literal) multiplication
+M10 = X * 0.2;
+
+# binary matrix scalar subtraction
+M11 = X - max(X);
+
+# ctable
+TMP12 = floor(matrix(seq(0, (nrow(X)*ncol(X))-1), nrow(X), ncol(X)) / (nrow(X)*ncol(X)/4)) + 1;
+M12 = table(floor(abs(X) + 1), TMP12);
+
+# transpose
+M13 = t(X);
+
+# rev
+M14 = rev(X);
+
+# reshape
+M15 = matrix(X, rows=4, cols=(ncol(X)*nrow(X)/4), byrow=FALSE);
+
+# FIXME: wrong nnz from cumsum instruction (should be less than nrows)
+# # cumulative sum
+# M16 = cumsum(X);
+
+# FIXME: wrong nnz from ternary instruction
+# # ternary ifelse
+# M16 = ifelse(X > X2, X, X2);
+
+# ===== Try these again after restructuring the program block creation in the test
+# ===== Maybe X is too small?
+# # weighted sigmoid (quaternary)
+# TMP13 = L[ , 1:10] %*% L[1:10, ];
+# M13 = X * log(1 / (1 + exp(-TMP13)));
+# 
+# # weighted unary matrix mult (quaternary)
+# TMP14 = L[ , 1:10] %*% L[1:10, ];
+# M14 = X * (2 * (TMP14));
+# =====
+
+# ===== skipped for now
+# # left indexing matrix
+# M13 = X;
+# M13[($rows-2):($rows+2), ] = X2[1:5, ];
+# 
+# # left indexing scalar
+# M14 = X;
+# M14[1,1] = 1;
+# =====
+
+# # cumsum
+# M13 = cumsum(t(X));
+
+# # if else aligned
+# M5 = ifelse(X > mean(X), X2, X);
+
+while(FALSE) {}
+Z = sum(M1) + sum(M2) + sum(M3) + sum(M4) + sum(M5) + sum(M6) + sum(M7) + sum(M8)
+  + sum(M9) + sum(M10) + sum(M11) + sum(M12) + sum(M13) + sum(M14) + sum(M15);

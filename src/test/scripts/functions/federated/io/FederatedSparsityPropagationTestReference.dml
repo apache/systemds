@@ -1,0 +1,142 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+X = rbind(read($in_X1), read($in_X2));
+
+X2 = X^2;
+L = rand(rows=nrow(X), cols=ncol(X), sparsity=$sparsity, seed=13);
+Y = t(X + (0.1 * L));
+
+# right indexing
+M1 = X[ , 1:10];
+
+# matrix multiplication
+M2 = X %*% Y;
+
+# elementwise minus
+M3 = X - X2;
+
+# elementwise multiplication
+M4 = X[1:20, ] * L[1:20, ];
+
+# elementwise division
+M5 = X / L;
+
+# matrix vector addition
+M6 = X + L[1, ];
+
+# column bind
+M7 = cbind(X, L);
+
+# row bind, federated row partitioned / local
+M8 = rbind(M3, t(L) %*% L);
+
+# column bind, federated row partitioned / federated row partitioned
+M9 = cbind(X2, X);
+
+# binary matrix scalar (literal) multiplication
+M10 = X * 0.2;
+
+# binary matrix scalar subtraction
+M11 = X - max(X);
+
+# ctable
+TMP12 = floor(matrix(seq(0, (nrow(X)*ncol(X))-1), nrow(X), ncol(X)) / (nrow(X)*ncol(X)/4)) + 1;
+M12 = table(floor(abs(X) + 1), TMP12);
+
+# transpose
+M13 = t(X);
+
+# rev
+M14 = rev(X);
+
+# reshape
+M15 = matrix(X, rows=1, cols=(ncol(X)*nrow(X)), byrow=FALSE);
+
+# FIXME: wrong nnz from cumsum instruction (should be less than nrows)
+# # cumulative sum
+# M16 = cumsum(X);
+
+# FIXME: wrong nnz from ternary instruction
+# # ternary ifelse
+# M16 = ifelse(X > X2, X, X2);
+
+# ===== Try these again after restructuring the program block creation in the test
+# ===== Maybe X is too small?
+# # weighted sigmoid (quaternary)
+# TMP13 = L[ , 1:10] %*% L[1:10, ];
+# M13 = X * log(1 / (1 + exp(-TMP13)));
+# 
+# # weighted unary matrix mult (quaternary)
+# TMP14 = L[ , 1:10] %*% L[1:10, ];
+# M14 = X * (2 * (TMP14));
+# =====
+
+# ===== left out for now
+# # left indexing matrix
+# M13 = X;
+# M13[($rows-2):($rows+2), ] = X2[1:5, ];
+# 
+# # left indexing scalar
+# M14 = X;
+# M14[1,1] = 1;
+# =====
+
+
+# # cumsum
+# M13 = cumsum(t(X));
+
+# # if else aligned
+# M5 = ifelse(X > mean(X), X2, X);
+
+
+while(FALSE) { }
+
+NNZ_M1 = sum(M1 != 0);
+write(NNZ_M1, $out_Dir + "NNZ_M1");
+NNZ_M2 = sum(M2 != 0);
+write(NNZ_M2, $out_Dir + "NNZ_M2");
+NNZ_M3 = sum(M3 != 0);
+write(NNZ_M3, $out_Dir + "NNZ_M3");
+NNZ_M4 = sum(M4 != 0);
+write(NNZ_M4, $out_Dir + "NNZ_M4");
+NNZ_M5 = sum(M5 != 0);
+write(NNZ_M5, $out_Dir + "NNZ_M5");
+NNZ_M6 = sum(M6 != 0);
+write(NNZ_M6, $out_Dir + "NNZ_M6");
+NNZ_M7 = (nrow(M7) * ncol(M7)) - sum(M7 == 0); # TODO: the not equal operation returns incorrect results
+write(NNZ_M7, $out_Dir + "NNZ_M7");
+NNZ_M8 = sum(M8 != 0);
+write(NNZ_M8, $out_Dir + "NNZ_M8");
+NNZ_M9 = (nrow(M9) * ncol(M9)) - sum(M9 == 0); # TODO: the not equal operation returns incorrect results
+write(NNZ_M9, $out_Dir + "NNZ_M9");
+NNZ_M10 = sum(M10 != 0);
+write(NNZ_M10, $out_Dir + "NNZ_M10");
+NNZ_M11 = sum(M11 != 0);
+write(NNZ_M11, $out_Dir + "NNZ_M11");
+NNZ_M12 = sum(M12 != 0);
+write(NNZ_M12, $out_Dir + "NNZ_M12");
+NNZ_M13 = (nrow(M13) * ncol(M13)) - sum(M13 == 0); # TODO: the not equal operation returns incorrect results
+write(NNZ_M13, $out_Dir + "NNZ_M13");
+NNZ_M14 = (nrow(M14) * ncol(M14)) - sum(M14 == 0); # TODO: the not equal operation returns incorrect results
+write(NNZ_M14, $out_Dir + "NNZ_M14");
+NNZ_M15 = (nrow(M15) * ncol(M15)) - sum(M15 == 0); # TODO: the not equal operation returns incorrect results
+write(NNZ_M15, $out_Dir + "NNZ_M15");

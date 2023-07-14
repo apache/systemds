@@ -142,7 +142,7 @@ public class LineageRecomputeUtils {
 		}
 		ec.setProgram(prog);
 		prog.execute(ec);
-		if (DEBUG || DMLScript.STATISTICS) {
+		if (DEBUG) {
 			Statistics.stopRunTimer();
 			System.out.println(Statistics.display(DMLScript.STATISTICS_COUNT));
 		}

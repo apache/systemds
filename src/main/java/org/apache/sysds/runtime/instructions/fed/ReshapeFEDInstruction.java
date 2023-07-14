@@ -120,7 +120,7 @@ public class ReshapeFEDInstruction extends UnaryFEDInstruction {
 			mo1.getFedMapping().execute(getTID(), true, fr1, new FederatedRequest[0]);
 
 			// set new fed map
-			FederationMap reshapedFedMap = mo1.getFedMapping();
+			FederationMap reshapedFedMap = mo1.getFedMapping().copyWithNewID(fr1[0].getID());
 			for(int i = 0; i < reshapedFedMap.getFederatedRanges().length; i++) {
 				long cells = reshapedFedMap.getFederatedRanges()[i].getSize();
 				long row = byRow.getBooleanValue() ? cells / cols : rows;
@@ -141,7 +141,7 @@ public class ReshapeFEDInstruction extends UnaryFEDInstruction {
 			//derive output federated mapping
 			MatrixObject out = ec.getMatrixObject(output);
 			out.getDataCharacteristics().set(rows, cols, (int) mo1.getBlocksize(), mo1.getNnz());
-			out.setFedMapping(reshapedFedMap.copyWithNewID(fr1[0].getID()));
+			out.setFedMapping(reshapedFedMap);
 		}
 		else {
 			// TODO support tensor out, frame and list

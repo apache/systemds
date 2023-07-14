@@ -576,8 +576,8 @@ public class Data extends Lop
 	private String createVarHDF5Helper() {
 		StringBuilder sb = new StringBuilder();
 		if ( _op.isRead() ) {
-			Data datasetNameLop = (Data) getNamedInputLop(DataExpression.HDF5_DATASET_NAME);
-			sb.append(datasetNameLop.getStringValue());
+			Data dataset = (Data) getNamedInputLop(DataExpression.HDF5_DATASET_NAME);
+			sb.append(dataset != null ? dataset.getStringValue() : "*");
 			sb.append(OPERAND_DELIMITOR);
 		}
 		else { // (operation == OperationTypes.WRITE)

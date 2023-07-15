@@ -28,6 +28,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.Objects;
 
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.logging.Log;
@@ -193,7 +194,7 @@ public interface EncoderFactory {
 				String[] colnames2 = meta.getColumnNames();
 
 				if(!TfMetaUtils.isIDSpec(jSpec) && colnames != null && colnames2 != null &&
-					!ArrayUtils.isEquals(colnames, colnames2)) {
+					!Objects.deepEquals(colnames, colnames2)) {
 					HashMap<String, Integer> colPos = getColumnPositions(colnames2);
 					// create temporary meta frame block w/ shallow column copy
 					FrameBlock meta2 = new FrameBlock(meta.getSchema(), colnames2);

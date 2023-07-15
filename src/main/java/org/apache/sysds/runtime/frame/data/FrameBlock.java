@@ -1455,6 +1455,7 @@ public class FrameBlock implements CacheBlock<FrameBlock>, Externalizable {
 		return out;
 	}
 
+	@SuppressWarnings("deprecation")
 	public FrameBlock valueSwap(FrameBlock schema) {
 		String[] schemaString = IteratorFactory.getStringRowIterator(schema).next();
 		String dataValue2 = null;

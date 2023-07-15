@@ -204,7 +204,7 @@ public class FederatedData {
 		final int timeout = ConfigurationManager.getFederatedTimeout();
 		final boolean ssl = ConfigurationManager.isFederatedSSL();
 
-		return new ChannelInitializer<SocketChannel>() {
+		return new ChannelInitializer<>() {
 			@Override
 			protected void initChannel(SocketChannel ch) throws Exception {
 				final ChannelPipeline cp = ch.pipeline();

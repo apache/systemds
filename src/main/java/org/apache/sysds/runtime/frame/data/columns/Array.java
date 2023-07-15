@@ -386,22 +386,22 @@ public abstract class Array<T> implements Writable {
 		switch(t) {
 			case BOOLEAN:
 				if(size() > ArrayFactory.bitSetSwitchPoint)
-					return new OptionalArray<Boolean>(changeTypeBitSet(), nulls);
+					return new OptionalArray<>(changeTypeBitSet(), nulls);
 				else
-					return new OptionalArray<Boolean>(changeTypeBoolean(), nulls);
+					return new OptionalArray<>(changeTypeBoolean(), nulls);
 			case FP32:
-				return new OptionalArray<Float>(changeTypeFloat(), nulls);
+				return new OptionalArray<>(changeTypeFloat(), nulls);
 			case FP64:
-				return new OptionalArray<Double>(changeTypeDouble(), nulls);
+				return new OptionalArray<>(changeTypeDouble(), nulls);
 			case UINT4:
 			case UINT8:
 				throw new NotImplementedException();
 			case INT32:
-				return new OptionalArray<Integer>(changeTypeInteger(), nulls);
+				return new OptionalArray<>(changeTypeInteger(), nulls);
 			case INT64:
-				return new OptionalArray<Long>(changeTypeLong(), nulls);
+				return new OptionalArray<>(changeTypeLong(), nulls);
 			case CHARACTER:
-				return new OptionalArray<Character>(changeTypeCharacter(), nulls);
+				return new OptionalArray<>(changeTypeCharacter(), nulls);
 			case STRING:
 			case UNKNOWN:
 			default:

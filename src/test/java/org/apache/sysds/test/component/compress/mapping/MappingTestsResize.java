@@ -84,7 +84,7 @@ public class MappingTestsResize {
 			case CHAR:
 				return (int) Math.pow(2, 8) - 1;
 			default:
-				return (int) Character.MAX_VALUE;
+				return Character.MAX_VALUE;
 		}
 	}
 

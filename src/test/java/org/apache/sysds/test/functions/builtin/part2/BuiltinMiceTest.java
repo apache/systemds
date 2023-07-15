@@ -93,7 +93,7 @@ public class BuiltinMiceTest extends AutomatedTestBase {
 			programArgs = new String[]{"-nvargs", "X=" + DATASET, "Mask="+input("M"),
 				"iteration=" + iter, "dataN=" + output("N"), "dataC=" + output("C")};
 			if (lineage) {
-				programArgs = (String[]) ArrayUtils.addAll(programArgs, new String[] {
+				programArgs = ArrayUtils.addAll(programArgs, new String[] {
 					"-stats","-lineage", ReuseCacheType.REUSE_HYBRID.name().toLowerCase()});
 			}
 			writeInputMatrixWithMTD("M", mask, true);

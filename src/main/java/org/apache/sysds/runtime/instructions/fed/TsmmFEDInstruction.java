@@ -122,7 +122,7 @@ public class TsmmFEDInstruction extends BinaryFEDInstruction {
 	private void setOutputFederated(ExecutionContext ec, MatrixObject mo1, FederatedRequest fr1, FType outFType){
 		MatrixObject out = ec.getMatrixObject(output);
 		out.getDataCharacteristics()
-			.set(mo1.getNumColumns(), mo1.getNumColumns(), (int) mo1.getBlocksize());
+			.set(mo1.getNumColumns(), mo1.getNumColumns(), mo1.getBlocksize());
 		FederationMap outputFedMap = mo1.getFedMapping()
 			.copyWithNewIDAndRange(mo1.getNumColumns(), mo1.getNumColumns(), fr1.getID(), outFType);
 		out.setFedMapping(outputFedMap);

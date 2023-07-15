@@ -96,7 +96,7 @@ public class BuiltinNaLocfTest extends AutomatedTestBase {
 			programArgs = new String[] {"-nvargs", "X=" + input("A"), "option="+option, "O=" + output("O")};
 			if(lineage) {
 				String[] lin = new String[] {"-stats", "-lineage", ReuseCacheType.REUSE_HYBRID.name().toLowerCase()};
-				programArgs = (String[]) ArrayUtils.addAll(programArgs, lin);
+				programArgs = ArrayUtils.addAll(programArgs, lin);
 			}
 
 			fullRScriptName = HOME + TEST_NAME + ".R";

@@ -114,7 +114,7 @@ public class InstructionUtils {
 	protected static final Log LOG = LogFactory.getLog(InstructionUtils.class.getName());
 
 	//thread-local string builders for instruction concatenation (avoid allocation)
-	private static ThreadLocal<StringBuilder> _strBuilders = new ThreadLocal<StringBuilder>() {
+	private static ThreadLocal<StringBuilder> _strBuilders = new ThreadLocal<>() {
 		@Override
 		protected StringBuilder initialValue() { 
 			return new StringBuilder(64);
@@ -1119,7 +1119,7 @@ public class InstructionUtils {
 			throw new DMLRuntimeException("Operand position "
 				+ operand + " exceeds the length of the instruction.");
 		//remove and reconstruct string
-		return concatOperands((String[]) ArrayUtils.remove(parts, operand));
+		return concatOperands(ArrayUtils.remove(parts, operand));
 	}
 
 	public static String replaceOperandName(String instStr) {

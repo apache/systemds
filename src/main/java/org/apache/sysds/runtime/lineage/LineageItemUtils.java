@@ -155,10 +155,7 @@ public class LineageItemUtils {
 			//TODO: trace all UDFs
 			return;
 
-		if (!(udf instanceof LineageTraceable))
-			throw new DMLRuntimeException("Unknown Federated UDF (" + udf.getClass().getSimpleName() + ") traced.");
-		LineageTraceable ludf = (LineageTraceable) udf;
-		if (ludf.hasSingleLineage()) {
+		if (udf.hasSingleLineage()) {
 			Pair<String, LineageItem> item = udf.getLineageItem(ec);
 			ec.getLineage().set(item.getKey(), item.getValue());
 		}

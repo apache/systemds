@@ -129,7 +129,7 @@ public class StringArray extends Array<String> {
 		final int endSize = this._size + other.size();
 		final String[] ret = new String[endSize];
 		System.arraycopy(_data, 0, ret, 0, this._size);
-		System.arraycopy((String[]) other.get(), 0, ret, this._size, other.size());
+		System.arraycopy(other.get(), 0, ret, this._size, other.size());
 		return new StringArray(ret);
 	}
 
@@ -247,13 +247,13 @@ public class StringArray extends Array<String> {
 		for(int i = 0; i < _size; i++) {
 			final ValueType c = FrameUtil.isType(_data[i], state);
 			if(c == ValueType.STRING) // early termination
-				return new Pair<ValueType, Boolean>(ValueType.STRING, false);
+				return new Pair<>(ValueType.STRING, false);
 			else if(c == ValueType.UNKNOWN)
 				nulls = true;
 			else
 				state = getHighest(state, c);
 		}
-		return new Pair<ValueType, Boolean>(state, nulls);
+		return new Pair<>(state, nulls);
 	}
 
 	@Override

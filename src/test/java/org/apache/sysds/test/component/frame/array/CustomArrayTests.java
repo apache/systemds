@@ -238,7 +238,7 @@ public class CustomArrayTests {
 
 	@Test
 	public void analyzeValueTypeStringInt64() {
-		StringArray a = ArrayFactory.create(new String[] {"" + (((long) Integer.MAX_VALUE) + 10L), "131", "-142"});
+		StringArray a = ArrayFactory.create(new String[] {String.valueOf(Integer.MAX_VALUE + 10L), "131", "-142"});
 		ValueType t = a.analyzeValueType().getKey();
 		assertEquals(ValueType.INT64, t);
 	}
@@ -1212,7 +1212,7 @@ public class CustomArrayTests {
 	public void DDCCompressInvalid() {
 		FrameBlock.debug = true; // should be fine in general to set while testing
 		Array<Boolean> b = ArrayFactory.create(new boolean[4]);
-		new DDCArray<Boolean>(b, MapToFactory.create(10, 10));
+		new DDCArray<>(b, MapToFactory.create(10, 10));
 	}
 
 	@Test
@@ -1271,7 +1271,7 @@ public class CustomArrayTests {
 	public void hashDoubleOnString() {
 		Array<String> a = ArrayFactory.create(FrameArrayTests.generateRandom01String(100, 32));
 		for(int i = 0; i < a.size(); i++) {
-			assertEquals(a.hashDouble(i), (double) a.get(i).hashCode(), 0.0);
+			assertEquals(a.hashDouble(i), a.get(i).hashCode(), 0.0);
 		}
 	}
 
@@ -1279,7 +1279,7 @@ public class CustomArrayTests {
 	public void hashDoubleOnChar() {
 		Array<Character> a = ArrayFactory.create(FrameArrayTests.generateRandom01chars(5, 32));
 		for(int i = 0; i < a.size(); i++) {
-			assertEquals(a.hashDouble(i), (double) a.get(i).hashCode(), 0.0);
+			assertEquals(a.hashDouble(i), a.get(i).hashCode(), 0.0);
 		}
 	}
 
@@ -1287,7 +1287,7 @@ public class CustomArrayTests {
 	public void hashDoubleOnInt() {
 		Array<Integer> a = ArrayFactory.create(FrameArrayTests.generateRandomInt8(5, 32));
 		for(int i = 0; i < a.size(); i++) {
-			assertEquals(a.hashDouble(i), (double) a.get(i).hashCode(), 0.0);
+			assertEquals(a.hashDouble(i), a.get(i).hashCode(), 0.0);
 		}
 	}
 
@@ -1295,7 +1295,7 @@ public class CustomArrayTests {
 	public void hashDoubleOnLong() {
 		Array<Long> a = ArrayFactory.create(FrameArrayTests.generateRandomLong(5, 32));
 		for(int i = 0; i < a.size(); i++) {
-			assertEquals(a.hashDouble(i), (double) a.get(i).hashCode(), 0.0);
+			assertEquals(a.hashDouble(i), a.get(i).hashCode(), 0.0);
 		}
 	}
 
@@ -1303,7 +1303,7 @@ public class CustomArrayTests {
 	public void hashDoubleOnFloat() {
 		Array<Float> a = ArrayFactory.create(FrameArrayTests.generateRandomFloat(5, 32));
 		for(int i = 0; i < a.size(); i++) {
-			assertEquals(a.hashDouble(i), (double) a.get(i).hashCode(), 0.0);
+			assertEquals(a.hashDouble(i), a.get(i).hashCode(), 0.0);
 		}
 	}
 

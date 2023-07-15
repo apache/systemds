@@ -280,7 +280,7 @@ public class QDictionary extends ADictionary {
 		int valOff = k * nrColumns;
 		double res = 0.0;
 		for(int i = 0; i < nrColumns; i++)
-			res += (int) (_values[valOff + i] * _values[valOff + i]) * _scale * _scale;
+			res += (_values[valOff + i] * _values[valOff + i]) * _scale * _scale;
 		return res;
 	}
 

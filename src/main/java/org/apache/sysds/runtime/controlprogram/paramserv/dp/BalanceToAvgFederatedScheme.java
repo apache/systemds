@@ -58,8 +58,8 @@ public class BalanceToAvgFederatedScheme extends DataPartitionFederatedScheme {
 
 		for(int i = 0; i < pFeatures.size(); i++) {
 			// Works, because the map contains a single entry
-			FederatedData featuresData = (FederatedData) pFeatures.get(i).getFedMapping().getFederatedData()[0];
-			FederatedData labelsData = (FederatedData) pLabels.get(i).getFedMapping().getFederatedData()[0];
+			FederatedData featuresData = pFeatures.get(i).getFedMapping().getFederatedData()[0];
+			FederatedData labelsData = pLabels.get(i).getFedMapping().getFederatedData()[0];
 
 			Future<FederatedResponse> udfResponse = featuresData.executeFederatedOperation(new FederatedRequest(FederatedRequest.RequestType.EXEC_UDF,
 					featuresData.getVarID(), new balanceDataOnFederatedWorker(new long[]{featuresData.getVarID(), labelsData.getVarID()}, seed, average_num_rows)));

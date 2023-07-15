@@ -365,7 +365,7 @@ public class ExecutionContext {
 		MetaData oldMetaData = mo.getMetaData();
 		if( oldMetaData == null || !(oldMetaData instanceof MetaDataFormat) )
 			throw new DMLRuntimeException("Metadata not available");
-		MatrixCharacteristics mc = new MatrixCharacteristics(nrows, ncols, (int) mo.getBlocksize());
+		MatrixCharacteristics mc = new MatrixCharacteristics(nrows, ncols, mo.getBlocksize());
 		mo.setMetaData(new MetaDataFormat(mc, ((MetaDataFormat)oldMetaData).getFileFormat()));
 	}
 	

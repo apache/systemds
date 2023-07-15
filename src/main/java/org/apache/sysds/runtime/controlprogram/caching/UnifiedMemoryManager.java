@@ -97,7 +97,7 @@ public class UnifiedMemoryManager
 	// Operational memory limit in bytes (70%)
 	private static long _opMemLimit;
 	// List of pinned entries
-	private static final List<String> _pinnedEntries = new ArrayList<String>();
+	private static final List<String> _pinnedEntries = new ArrayList<>();
 
 	// Eviction queue of <filename,buffer> pairs (implemented via linked hash map
 	// for (1) queue semantics and (2) constant time get/insert/delete operations)

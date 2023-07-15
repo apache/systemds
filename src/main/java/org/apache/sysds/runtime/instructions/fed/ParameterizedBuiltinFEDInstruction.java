@@ -539,8 +539,7 @@ public class ParameterizedBuiltinFEDInstruction extends ComputationFEDInstructio
 
 		out.setSchema(schema);
 		out.getDataCharacteristics().set(out.getFedMapping().getMaxIndexInRange(0),
-			out.getFedMapping().getMaxIndexInRange(1),
-			(int) mo.getBlocksize());
+			out.getFedMapping().getMaxIndexInRange(1), mo.getBlocksize());
 	}
 
 
@@ -679,8 +678,7 @@ public class ParameterizedBuiltinFEDInstruction extends ComputationFEDInstructio
 		}
 
 		out.getDataCharacteristics().set(out.getFedMapping().getMaxIndexInRange(0),
-			out.getFedMapping().getMaxIndexInRange(1),
-			(int) mo.getBlocksize());
+			out.getFedMapping().getMaxIndexInRange(1), mo.getBlocksize());
 	}
 
 	private void transformDecode(ExecutionContext ec) {

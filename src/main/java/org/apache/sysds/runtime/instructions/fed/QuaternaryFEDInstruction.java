@@ -224,6 +224,6 @@ public abstract class QuaternaryFEDInstruction extends ComputationFEDInstruction
 		long cols = X.getNumColumns() > 1 ? X
 			.getNumColumns() : (U.getNumColumns() == V.getNumRows() ? V.getNumColumns() : V.getNumRows());
 		MatrixObject out = ec.getMatrixObject(output);
-		out.getDataCharacteristics().set(rows, cols, (int) X.getBlocksize());
+		out.getDataCharacteristics().set(rows, cols, X.getBlocksize());
 	}
 }

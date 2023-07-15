@@ -140,7 +140,7 @@ public class ReshapeFEDInstruction extends UnaryFEDInstruction {
 
 			//derive output federated mapping
 			MatrixObject out = ec.getMatrixObject(output);
-			out.getDataCharacteristics().set(rows, cols, (int) mo1.getBlocksize(), mo1.getNnz());
+			out.getDataCharacteristics().set(rows, cols, mo1.getBlocksize(), mo1.getNnz());
 			out.setFedMapping(reshapedFedMap);
 		}
 		else {

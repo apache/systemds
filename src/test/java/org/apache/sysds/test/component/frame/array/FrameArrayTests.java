@@ -345,28 +345,28 @@ public class FrameArrayTests {
 
 			switch(a.getFrameArrayType()) {
 				case FP64:
-					x = (double[]) a.get();
+					x = a.get();
 					return;
 				case FP32:
-					x = (float[]) a.get();
+					x = a.get();
 					return;
 				case INT32:
-					x = (int[]) a.get();
+					x = a.get();
 					return;
 				case BOOLEAN:
-					x = (boolean[]) a.get();
+					x = a.get();
 					return;
 				case INT64:
-					x = (long[]) a.get();
+					x = a.get();
 					return;
 				case BITSET:
-					x = (BitSet) a.get();
+					x = a.get();
 					return;
 				case STRING:
-					x = (String[]) a.get();
+					x = a.get();
 					return;
 				case CHARACTER:
-					x = (char[]) a.get();
+					x = a.get();
 				case OPTIONAL:
 					try {
 						a.get();
@@ -739,9 +739,9 @@ public class FrameArrayTests {
 			switch(a.getValueType()) {
 				case BOOLEAN:
 					aa.append("0");
-					assertEquals((Boolean) aa.get(aa.size() - 1), false);
+					assertEquals(aa.get(aa.size() - 1), false);
 					aa.append("1");
-					assertEquals((Boolean) aa.get(aa.size() - 1), true);
+					assertEquals(aa.get(aa.size() - 1), true);
 					break;
 				case FP32:
 					float vf = 3215216.222f;
@@ -790,11 +790,11 @@ public class FrameArrayTests {
 				case STRING:
 					String vs = "ThisIsAMonkeyTestSting";
 					aa.append(vs);
-					assertEquals((String) aa.get(aa.size() - 1), vs);
+					assertEquals(aa.get(aa.size() - 1), vs);
 
 					vs = "£$&*%!))";
 					aa.append(vs);
-					assertEquals((String) aa.get(aa.size() - 1), vs);
+					assertEquals(aa.get(aa.size() - 1), vs);
 					break;
 				case UINT8:
 					int vi8 = 234;
@@ -835,11 +835,11 @@ public class FrameArrayTests {
 
 			aa.append((String) null);
 			if(a.getFrameArrayType() == FrameArrayType.OPTIONAL)
-				assertEquals((String) aa.get(aa.size() - 1), null);
+				assertEquals(aa.get(aa.size() - 1), null);
 			else {
 				switch(a.getValueType()) {
 					case BOOLEAN:
-						assertEquals((Boolean) aa.get(aa.size() - 1), false);
+						assertEquals(aa.get(aa.size() - 1), false);
 						break;
 					case FP32:
 						assertEquals((float) aa.get(aa.size() - 1), 0.0, 0.00001);
@@ -854,7 +854,7 @@ public class FrameArrayTests {
 						assertEquals((long) aa.get(aa.size() - 1), 0);
 						break;
 					case STRING:
-						assertEquals((String) aa.get(aa.size() - 1), null);
+						assertEquals(aa.get(aa.size() - 1), null);
 						break;
 					case UINT8:
 						assertEquals((int) aa.get(aa.size() - 1), 0);
@@ -882,11 +882,11 @@ public class FrameArrayTests {
 			for(int i = 0; i < 60; i++)
 				aa.append((String) null);
 			if(a.getFrameArrayType() == FrameArrayType.OPTIONAL)
-				assertEquals((String) aa.get(aa.size() - 1), null);
+				assertEquals(aa.get(aa.size() - 1), null);
 			else {
 				switch(a.getValueType()) {
 					case BOOLEAN:
-						assertEquals((Boolean) aa.get(aa.size() - 1), false);
+						assertEquals(aa.get(aa.size() - 1), false);
 						break;
 					case FP32:
 						assertEquals((float) aa.get(aa.size() - 1), 0.0, 0.00001);
@@ -901,7 +901,7 @@ public class FrameArrayTests {
 						assertEquals((long) aa.get(aa.size() - 1), 0);
 						break;
 					case STRING:
-						assertEquals((String) aa.get(aa.size() - 1), null);
+						assertEquals(aa.get(aa.size() - 1), null);
 						break;
 					case UINT8:
 						assertEquals((int) aa.get(aa.size() - 1), 0);
@@ -1084,7 +1084,7 @@ public class FrameArrayTests {
 			ByteArrayOutputStream bos = new ByteArrayOutputStream();
 			DataOutputStream fos = new DataOutputStream(bos);
 			a.write(fos);
-			long s = (long) fos.size();
+			long s = fos.size();
 			long e = a.getExactSerializedSize();
 			assertEquals(s, e);
 		}
@@ -2183,7 +2183,7 @@ public class FrameArrayTests {
 		Character[] ret = new Character[size];
 		for(int i = 0; i < size; i++) {
 			if(r.nextBoolean())
-				ret[i] = (char) r.nextInt((int) Character.MAX_VALUE);
+				ret[i] = (char) r.nextInt(Character.MAX_VALUE);
 			else
 				ret[i] = null;
 		}
@@ -2230,7 +2230,7 @@ public class FrameArrayTests {
 		Random r = new Random(seed);
 		char[] ret = new char[size];
 		for(int i = 0; i < size; i++)
-			ret[i] = (char) r.nextInt((int) Character.MAX_VALUE);
+			ret[i] = (char) r.nextInt(Character.MAX_VALUE);
 		return ret;
 	}
 

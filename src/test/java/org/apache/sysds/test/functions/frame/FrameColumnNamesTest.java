@@ -83,8 +83,8 @@ public class FrameColumnNamesTest extends AutomatedTestBase {
 			programArgs = new String[] {"-args", input("A"), String.valueOf(_rows),
 				Integer.toString(columnNames.length), output("B")};
 
-			Types.ValueType[] schema = (Types.ValueType[]) Collections
-				.nCopies(columnNames.length, Types.ValueType.FP64).toArray(new Types.ValueType[0]);
+			Types.ValueType[] schema = Collections.nCopies(
+				columnNames.length, Types.ValueType.FP64).toArray(new Types.ValueType[0]);
 			FrameBlock frame1 = new FrameBlock(schema);
 			frame1.setColumnNames(columnNames);
 			FrameWriter writer = FrameWriterFactory.createFrameWriter(FileFormat.CSV,

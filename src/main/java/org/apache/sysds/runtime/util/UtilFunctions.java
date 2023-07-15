@@ -777,7 +777,7 @@ public class UtilFunctions {
 		int c = 0;
 		int javaIdx = idx - 1;
 		if (javaIdx >= 0 && javaIdx < strlen) {
-			c = (int)s.charAt(javaIdx);
+			c = s.charAt(javaIdx);
 		}
 		return c;
 	}
@@ -896,7 +896,7 @@ public class UtilFunctions {
 	}
 
 	public static ValueType[] copyOf(ValueType[] schema1, ValueType[] schema2) {
-		return (ValueType[]) ArrayUtils.addAll(schema1, schema2);
+		return ArrayUtils.addAll(schema1, schema2);
 	}
 	
 	public static int countNonZeros(double[] data, int pos, int len) {
@@ -950,7 +950,7 @@ public class UtilFunctions {
 		}
 	}
 	
-	private static final Map<String, String> DATE_FORMATS = new HashMap<String, String>() {
+	private static final Map<String, String> DATE_FORMATS = new HashMap<>() {
 		private static final long serialVersionUID = 6826162458614520846L; {
 		put("^\\d{4}-\\d{1,2}-\\d{1,2}\\s\\d{1,2}:\\d{2}:\\d{2}$", "yyyy-MM-dd HH:mm:ss");
 		put("^\\d{1,2}-\\d{1,2}-\\d{4}\\s\\d{1,2}:\\d{2}:\\d{2}$", "dd-MM-yyyy HH:mm:ss");
@@ -1066,7 +1066,7 @@ public class UtilFunctions {
 		String[] output = new String[values.length];
 		Map<String, String> date_formats = DATE_FORMATS;
 
-		Map<String, Integer> format_matches = new HashMap<String, Integer>();
+		Map<String, Integer> format_matches = new HashMap<>();
 		for (Map.Entry<String,String> entry : date_formats.entrySet()) {
 			format_matches.put(entry.getValue(), 0);
 		}

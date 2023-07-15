@@ -101,6 +101,6 @@ public class FrameLibAppend {
 	}
 
 	private static <T> T[] addAll(T[] a, T[] b) {
-		return (T[]) ArrayUtils.addAll(a, b);
+		return ArrayUtils.addAll(a, b);
 	}
 }

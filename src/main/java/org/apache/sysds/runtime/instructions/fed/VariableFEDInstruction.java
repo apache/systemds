@@ -147,7 +147,7 @@ public class VariableFEDInstruction extends FEDInstruction implements LineageTra
 
 		// Construct output local.
 		FrameObject out = ec.getFrameObject(_in.getOutput());
-		out.getDataCharacteristics().set(mo1.getNumRows(), mo1.getNumColumns(), (int) mo1.getBlocksize(), mo1.getNnz());
+		out.getDataCharacteristics().set(mo1.getNumRows(), mo1.getNumColumns(), mo1.getBlocksize(), mo1.getNnz());
 		FederationMap outMap = mo1.getFedMapping().copyWithNewID(fr1.getID());
 		List<Pair<FederatedRange, FederatedData>> newMap = new ArrayList<>();
 		for(Map.Entry<FederatedRange, FederatedData> pair : outMap.getMap()) {

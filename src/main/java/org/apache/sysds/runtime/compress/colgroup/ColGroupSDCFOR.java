@@ -101,7 +101,7 @@ public class ColGroupSDCFOR extends ASDC implements IMapToDataGroup , IFrameOfRe
 
 	public static AColGroup sparsifyFOR(ColGroupSDC g) {
 		// subtract default.
-		final double[] constV = ((ColGroupSDC) g)._defaultTuple;
+		final double[] constV = g._defaultTuple;
 		final AColGroupValue clg = (AColGroupValue) g.subtractDefaultTuple();
 		return create(g.getColIndices(), g._numRows, clg._dict, g._indexes, g._data, g.getCachedCounts(), constV);
 	}

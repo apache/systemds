@@ -188,7 +188,7 @@ public final class CLALibCombineGroups {
 		else if(ce instanceof SparseEncoding) {
 			SparseEncoding sed = (SparseEncoding) ce;
 			ADictionary cd = DictionaryFactory.combineDictionariesSparse(ac, bc);
-			double[] defaultTuple = constructDefaultTuple((AColGroupCompressed) ac, (AColGroupCompressed) bc);
+			double[] defaultTuple = constructDefaultTuple(ac, bc);
 			return ColGroupSDC.create(combinedColumns, sed.getNumRows(), cd, defaultTuple, sed.getOffsets(), sed.getMap(),
 				null);
 		}

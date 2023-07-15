@@ -1213,14 +1213,14 @@ public class DataConverter {
 			if( x instanceof MatrixObject) {
 				sb.append("\nMatrix:\n");
 				MatrixObject dat = (MatrixObject) x;
-				MatrixBlock matrix = (MatrixBlock) dat.acquireRead();
+				MatrixBlock matrix = dat.acquireRead();
 				sb.append(DataConverter.toString(matrix, sparse, separator, lineSeparator, rows, cols, decimal));
 				dat.release();
 			}
 			else if( x instanceof TensorObject ) {
 				sb.append("\n");
 				TensorObject dat = (TensorObject) x;
-				TensorBlock tensor = (TensorBlock) dat.acquireRead();
+				TensorBlock tensor = dat.acquireRead();
 				sb.append(DataConverter.toString(tensor, sparse, separator,
 					lineSeparator, "[", "]", rows, cols, decimal));
 				dat.release();
@@ -1228,7 +1228,7 @@ public class DataConverter {
 			else if( x instanceof FrameObject ) {
 				sb.append("\n");
 				FrameObject dat = (FrameObject) x;
-				FrameBlock frame = (FrameBlock) dat.acquireRead();
+				FrameBlock frame = dat.acquireRead();
 				sb.append(DataConverter.toString(frame, sparse, separator, lineSeparator, rows, cols, decimal));
 				dat.release();
 			}

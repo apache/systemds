@@ -353,7 +353,7 @@ public class ComEstSample extends AComEst {
 		final double sampleRatio = _cs.transposed ? (double) _data.getNumColumns() /
 			sampleSize : (double) _data.getNumRows() / sampleSize;
 		final long inputNonZeros = _data.getNonZeros();
-		final long estimatedNonZerosInSample = (long) Math.ceil((double) inputNonZeros / sampleRatio);
+		final long estimatedNonZerosInSample = (long) Math.ceil(inputNonZeros / sampleRatio);
 		final int resRows = _cs.transposed ? _data.getNumRows() : _data.getNumColumns();
 		final long nCellsInSample = (long) sampleSize * resRows;
 		final boolean shouldBeSparseSample = 0.4 > (double) estimatedNonZerosInSample / nCellsInSample;

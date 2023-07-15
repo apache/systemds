@@ -80,7 +80,7 @@ public final class LoggingUtils {
 	 * To be used in connection with LoggingUtils.
 	 */
 	public static class TestAppender extends AppenderSkeleton {
-		private final List<LoggingEvent> log = new ArrayList<LoggingEvent>();
+		private final List<LoggingEvent> log = new ArrayList<>();
 
 		private TestAppender() {
 			// empty constructor
@@ -101,7 +101,7 @@ public final class LoggingUtils {
 		}
 
 		private List<LoggingEvent> getLog() {
-			return new ArrayList<LoggingEvent>(log);
+			return new ArrayList<>(log);
 		}
 	}
 }

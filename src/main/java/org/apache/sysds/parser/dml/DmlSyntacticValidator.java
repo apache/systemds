@@ -142,11 +142,11 @@ public class DmlSyntacticValidator implements DmlListener {
 	private static final String DEF_WORK_DIR = ".";
 	
 	//externally loaded dml scripts filename (unmodified) / script
-	protected static ThreadLocal<HashMap<String, String>> _tScripts = new ThreadLocal<HashMap<String, String>>() {
+	protected static ThreadLocal<HashMap<String, String>> _tScripts = new ThreadLocal<>() {
 		@Override protected HashMap<String, String> initialValue() { return new HashMap<>(); }
 	};
 	//imported scripts to prevent infinite recursion, modified filename / namespace
-	protected static ThreadLocal<HashMap<String, String>> _f2NS = new ThreadLocal<HashMap<String, String>>() {
+	protected static ThreadLocal<HashMap<String, String>> _f2NS = new ThreadLocal<>() {
 		@Override protected HashMap<String, String> initialValue() { return new HashMap<>(); }
 	};
 	

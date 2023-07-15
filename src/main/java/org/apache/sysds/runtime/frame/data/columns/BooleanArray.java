@@ -80,7 +80,7 @@ public class BooleanArray extends ABooleanArray {
 	@Override
 	public void set(int rl, int ru, Array<Boolean> value, int rlSrc) {
 		if(value instanceof BooleanArray)
-			System.arraycopy((boolean[]) value.get(), rlSrc, _data, rl, ru - rl + 1);
+			System.arraycopy(value.get(), rlSrc, _data, rl, ru - rl + 1);
 		else
 			for(int i = rl, off = rlSrc; i <= ru; i++, off++)
 				_data[i] = value.get(off);
@@ -191,7 +191,7 @@ public class BooleanArray extends ABooleanArray {
 
 	@Override
 	public Pair<ValueType, Boolean> analyzeValueType() {
-		return new Pair<ValueType, Boolean>(ValueType.BOOLEAN, false);
+		return new Pair<>(ValueType.BOOLEAN, false);
 	}
 
 	@Override

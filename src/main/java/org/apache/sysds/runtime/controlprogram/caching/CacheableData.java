@@ -137,7 +137,7 @@ public abstract class CacheableData<T extends CacheBlock<?>> extends Data
 	/**
 	 * Current state of pinned variables, required for guarded collect.
 	 */
-	private static ThreadLocal<Long> sizePinned = new ThreadLocal<Long>() {
+	private static ThreadLocal<Long> sizePinned = new ThreadLocal<>() {
 		@Override protected Long initialValue() { return 0L; }
 	};
 

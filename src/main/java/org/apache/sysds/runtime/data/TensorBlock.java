@@ -317,18 +317,15 @@ public class TensorBlock implements CacheBlock<TensorBlock>, Externalizable {
 
 	@Override
 	public TensorBlock slice(int rl, int ru, int cl, int cu, boolean deep, TensorBlock block) {
-		if( !(block instanceof TensorBlock) )
-			throw new RuntimeException("TensorBlock.slice(int,int,int,int,CacheBlock) CacheBlock was no TensorBlock");
-		TensorBlock tb = (TensorBlock) block;
 		int[] dims = new int[_dims.length];
 		dims[0] = ru - rl + 1;
 		dims[1] = cu - cl + 1;
 		System.arraycopy(_dims, 2, dims, 2, _dims.length - 2);
-		tb.reset(dims);
+		block.reset(dims);
 		int[] offsets = new int[dims.length];
 		offsets[0] = rl;
 		offsets[1] = cl;
-		return slice(offsets, tb);
+		return slice(offsets, block);
 	}
 
 	@Override

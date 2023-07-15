@@ -21,15 +21,14 @@ package org.apache.sysds.runtime.controlprogram.federated;
 
 import java.io.Serializable;
 import java.net.InetSocketAddress;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.Future;
 
 import javax.net.ssl.SSLException;
 
+import io.netty.channel.*;
 import io.netty.handler.codec.compression.JdkZlibDecoder;
+import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.common.Types;
@@ -44,12 +43,6 @@ import org.apache.sysds.runtime.meta.MetaData;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelInboundHandlerAdapter;
-import io.netty.channel.ChannelInitializer;
-import io.netty.channel.ChannelPipeline;
-import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
@@ -210,15 +203,16 @@ public class FederatedData {
 			@Override
 			protected void initChannel(SocketChannel ch) throws Exception {
 				final ChannelPipeline cp = ch.pipeline();
+				final Optional<ImmutablePair<ChannelInboundHandlerAdapter, ChannelOutboundHandlerAdapter>> compressionStrategy = FederationUtils.compressionStrategy();
 				cp.addLast("NetworkTrafficCounter", new NetworkTrafficCounter(FederatedStatistics::logServerTraffic));
 				if(ssl)
 					cp.addLast(createSSLHandler(ch, address));
 				if(timeout > -1)
 					cp.addLast(new ReadTimeoutHandler(timeout));
 				// cp.addLast(FederationUtils.decoder(), new FederatedRequestEncoder(), handler);
-				cp.addLast(new JdkZlibDecoder());
+				compressionStrategy.ifPresent(strategy -> cp.addLast(strategy.left));
 				cp.addLast(FederationUtils.decoder());
-				cp.addLast(new CompressionEncoder());
+				compressionStrategy.ifPresent(strategy -> cp.addLast(strategy.right));
 				cp.addLast(new FederatedRequestEncoder());
 				cp.addLast(handler);
 			}

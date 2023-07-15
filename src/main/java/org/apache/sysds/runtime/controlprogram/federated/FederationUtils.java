@@ -25,9 +25,15 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.Future;
 
+import io.netty.channel.ChannelInboundHandlerAdapter;
+import io.netty.channel.ChannelOutboundHandlerAdapter;
+import io.netty.handler.codec.compression.JdkZlibDecoder;
+import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.log4j.Logger;
 import org.apache.sysds.common.Types.ExecType;
+import org.apache.sysds.conf.ConfigurationManager;
+import org.apache.sysds.conf.DMLConfig;
 import org.apache.sysds.hops.fedplanner.FTypes.FPartitioning;
 import org.apache.sysds.hops.fedplanner.FTypes.FType;
 import org.apache.sysds.lops.Lop;
@@ -35,6 +41,7 @@ import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest.RequestType;
+import org.apache.sysds.runtime.controlprogram.federated.compression.CompressionEncoder;
 import org.apache.sysds.runtime.controlprogram.parfor.util.IDSequence;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.functionobjects.Builtin.BuiltinCode;
@@ -588,6 +595,26 @@ public class FederationUtils {
 	public static ObjectDecoder decoder() {
 		return new ObjectDecoder(Integer.MAX_VALUE,
 			ClassResolvers.weakCachingResolver(ClassLoader.getSystemClassLoader()));
+	}
+
+	public static Optional<ChannelOutboundHandlerAdapter> compressionEncoder() {
+		return compressionStrategy().map(strategy -> strategy.right);
+	}
+
+	public static Optional<ChannelInboundHandlerAdapter> compressionDecoder() {
+		return compressionStrategy().map(strategy -> strategy.left);
+	}
+
+	public static Optional<ImmutablePair<ChannelInboundHandlerAdapter, ChannelOutboundHandlerAdapter>> compressionStrategy() {
+		String strategy = ConfigurationManager.getDMLConfig().getTextValue(DMLConfig.FEDERATED_COMPRESSION).toLowerCase();
+		switch (strategy) {
+			case "none":
+				return Optional.empty();
+			case "zlib":
+				return Optional.of(new ImmutablePair(new JdkZlibDecoder(), new CompressionEncoder()));
+			default:
+				throw new IllegalArgumentException("Invalid federated compression strategy: " + strategy);
+		}
 	}
 
 	public static long sumNonZeros(Future<FederatedResponse>[] responses) {

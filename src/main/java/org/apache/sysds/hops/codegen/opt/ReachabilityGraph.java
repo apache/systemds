@@ -304,8 +304,8 @@ public class ReachabilityGraph
 		private CutSet(InterestingPoint[] cutPoints, 
 				InterestingPoint[] l, InterestingPoint[] r) {
 			cut = cutPoints;
-			left = (InterestingPoint[]) ArrayUtils.addAll(cut, l);
-			right = (InterestingPoint[]) ArrayUtils.addAll(cut, r);
+			left = ArrayUtils.addAll(cut, l);
+			right = ArrayUtils.addAll(cut, r);
 		}
 		
 		private void updatePositions(HashMap<InterestingPoint,Integer> probe) {

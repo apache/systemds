@@ -188,7 +188,7 @@ public class AlgorithmMSVM extends AutomatedTestBase
 					"icpt="+String.valueOf(intercept), "tol="+String.valueOf(epsilon), "reg=0.001",
 					"maxiter="+String.valueOf(maxiter), "model="+output("w"), "Log= "};
 			if( lineage )
-				programArgs = (String[])ArrayUtils.addAll(new String[]{"-lineage"}, programArgs);
+				programArgs = ArrayUtils.addAll(new String[]{"-lineage"}, programArgs);
 			
 			rCmd = getRCmd(inputDir(), String.valueOf(intercept),String.valueOf(epsilon),
 				String.valueOf(maxiter), expectedDir());

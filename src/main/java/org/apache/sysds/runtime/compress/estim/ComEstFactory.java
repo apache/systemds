@@ -64,7 +64,7 @@ public interface ComEstFactory {
 	}
 
 	private static AComEst createEstimator(MatrixBlock data, CompressionSettings cs, int sampleSize, int k, int nRows) {
-		if(sampleSize >= (double) nRows * 0.8) // if sample size is larger than 80% use entire input as sample.
+		if(sampleSize >= nRows * 0.8) // if sample size is larger than 80% use entire input as sample.
 			return createExactEstimator(data, cs);
 		else
 			return createSampleEstimator(data, cs, sampleSize, k);
@@ -132,7 +132,7 @@ public interface ComEstFactory {
 		sampleSize = (int) (sampleSize * (1.0 / Math.min(sparsity + 0.2, 1.0)));
 
 		// adhere to maximum sample size.
-		sampleSize = (int) Math.max(minSampleSize, Math.min(sampleSize, maxSampleSize));
+		sampleSize = Math.max(minSampleSize, Math.min(sampleSize, maxSampleSize));
 
 		return sampleSize;
 	}

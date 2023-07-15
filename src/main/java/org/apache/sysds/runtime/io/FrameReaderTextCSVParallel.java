@@ -120,7 +120,7 @@ public class FrameReaderTextCSVParallel extends FrameReaderTextCSV
 		finally {
 			pool.shutdown();
 		}
-		if(nrow > (long)Integer.MAX_VALUE)
+		if(nrow > Integer.MAX_VALUE)
 			throw new DMLRuntimeException("invalid read with over Integer number of rows");
 
 		return new Pair<>((int)nrow, ncol);

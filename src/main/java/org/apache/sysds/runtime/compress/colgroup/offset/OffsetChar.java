@@ -28,7 +28,7 @@ import org.apache.sysds.utils.MemoryEstimates;
 public class OffsetChar extends AOffset {
 
 	private static final long serialVersionUID = -1192266421395964882L;
-	protected static final int maxV = (int) Character.MAX_VALUE;
+	protected static final int maxV = Character.MAX_VALUE;
 
 	private final char[] offsets;
 	private final int offsetToFirst;

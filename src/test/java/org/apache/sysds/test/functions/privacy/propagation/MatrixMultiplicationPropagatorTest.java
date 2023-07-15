@@ -585,8 +585,8 @@ public class MatrixMultiplicationPropagatorTest extends AutomatedTestBase {
 		for ( Map.Entry<DataRange, PrivacyLevel> constraint : constraints )
 			if ( constraint.getValue() == privacyLevel ){
 				privacyLevelSum++;
-				levelRange = (DataRange)constraint.getKey();
-				level = (PrivacyLevel) constraint.getValue();
+				levelRange = constraint.getKey();
+				level = constraint.getValue();
 			}
 
 		assertEquals("Output constraint should only contain one privacy level which is not none", 1,privacyLevelSum);

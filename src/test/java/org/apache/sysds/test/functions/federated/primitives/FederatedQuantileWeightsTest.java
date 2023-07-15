@@ -100,7 +100,7 @@ public class FederatedQuantileWeightsTest extends AutomatedTestBase {
 		double[][] W = getRandomMatrix(rows, 1, 1, 5, 1.0, 1);
 		for(int i = 0; i < W.length; i++){
 			for(int y = 0; y < W[0].length; y++){
-				W[i][y] = (double) Math.round(W[i][y]);
+				W[i][y] = Math.round(W[i][y]);
 			}
 		}
 		writeInputMatrixWithMTD("W", W, false);

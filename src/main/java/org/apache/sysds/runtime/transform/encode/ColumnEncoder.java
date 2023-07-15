@@ -398,7 +398,7 @@ public abstract class ColumnEncoder implements Encoder, Comparable<ColumnEncoder
 
 	public Set<Integer> getSparseRowsWZeros(){
 		if (_sparseRowsWZeros != null) {
-			return new HashSet<Integer>(_sparseRowsWZeros);
+			return new HashSet<>(_sparseRowsWZeros);
 		}
 		else
 			return null;

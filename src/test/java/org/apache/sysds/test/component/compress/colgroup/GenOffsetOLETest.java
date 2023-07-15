@@ -94,7 +94,7 @@ public class GenOffsetOLETest {
 	@Test
 	public void encodeChar() {
 		char v = (char) (CompressionSettings.BITMAP_BLOCK_SZ % (CompressionSettings.BITMAP_BLOCK_SZ));
-		assertEquals(0, (int) v);
+		assertEquals(0, v);
 	}
 
 	private static int[] conv(char[] i) {

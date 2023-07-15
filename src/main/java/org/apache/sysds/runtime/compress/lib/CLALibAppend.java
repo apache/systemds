@@ -63,7 +63,7 @@ public final class CLALibAppend {
 
 		// if compression failed then use default append method.
 		if(!(left instanceof CompressedMatrixBlock && right instanceof CompressedMatrixBlock)) {
-			final double spar = (double) (left.getNonZeros() + right.getNonZeros()) / ((double) m * n);
+			final double spar = (left.getNonZeros() + right.getNonZeros()) / ((double) m * n);
 			final double estSizeUncompressed = MatrixBlock.estimateSizeInMemory(m, n, spar);
 			final double estSizeCompressed = left.getInMemorySize() + right.getInMemorySize();
 			if(estSizeUncompressed < estSizeCompressed)

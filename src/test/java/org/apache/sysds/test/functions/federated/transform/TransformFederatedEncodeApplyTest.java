@@ -290,7 +290,7 @@ public class TransformFederatedEncodeApplyTest extends AutomatedTestBase {
 			
 			if (lineage) {
 				Lineage.resetInternalState();
-				programArgs = (String[]) ArrayUtils.addAll(lineageArgs, programArgs);
+				programArgs = ArrayUtils.addAll(lineageArgs, programArgs);
 			}
 
 			runTest(true, false, null, -1);

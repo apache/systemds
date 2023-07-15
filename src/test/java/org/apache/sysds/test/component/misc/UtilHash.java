@@ -93,7 +93,7 @@ public class UtilHash {
 
 		double top = 0;
 		for(int b : buckets) {
-			top += (double) (b) * (double) (b + 1.0) / 2.0;
+			top += b * (b + 1d) / 2;
 		}
 
 		double res = top / ((nrKeys / (2.0 * nrBuckets)) * (nrKeys + 2.0 * nrBuckets - 1));

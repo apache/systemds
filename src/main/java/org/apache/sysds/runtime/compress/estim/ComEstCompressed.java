@@ -40,7 +40,7 @@ public class ComEstCompressed extends AComEst {
 
 	@Override
 	protected List<CompressedSizeInfoColGroup> CompressedSizeInfoColGroup(int clen, int k) {
-		List<CompressedSizeInfoColGroup> ret = new ArrayList<CompressedSizeInfoColGroup>();
+		List<CompressedSizeInfoColGroup> ret = new ArrayList<>();
 		final int nRow = cData.getNumRows();
 		for(AColGroup g : cData.getColGroups()) {
 			ret.add(g.getCompressionInfo(nRow));

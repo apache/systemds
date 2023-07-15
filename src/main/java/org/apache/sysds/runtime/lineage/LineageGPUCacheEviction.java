@@ -115,7 +115,6 @@ public class LineageGPUCacheEviction
 		return _startTimestamp;
 	}
 	
-	@SuppressWarnings("unused")
 	private static void adjustD2HTransferSpeed(double sizeByte, double copyTime) {
 		double sizeMB = sizeByte / (1024*1024);
 		double newTSpeed = sizeMB / copyTime;  //bandwidth (MB/sec) + java overhead
@@ -237,7 +236,7 @@ public class LineageGPUCacheEviction
 		MatrixBlock mb = pointerToMatrixBlock(entry);
 		long t1 = System.nanoTime();
 		// Adjust the estimated D2H bandwidth
-		adjustD2HTransferSpeed(((double)entry.getSize()), ((double)(t1-t0))/1000000000);
+		adjustD2HTransferSpeed(entry.getSize(), ((double)(t1-t0))/1000000000);
 		Pointer ptr = entry.getGPUPointer();
 		long size = mb.getInMemorySize();
 		synchronized(LineageCache.getLineageCache()) {

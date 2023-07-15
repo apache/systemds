@@ -439,7 +439,7 @@ public class SparkExecutionContext extends ExecutionContext
 			}
 			else { //default case
 				MatrixBlock mb = mo.acquireRead(); //pin matrix in memory
-				rdd = toMatrixJavaPairRDD(sc, mb, (int)mo.getBlocksize(), numParts, inclEmpty);
+				rdd = toMatrixJavaPairRDD(sc, mb, mo.getBlocksize(), numParts, inclEmpty);
 				mo.release(); //unpin matrix
 				_parRDDs.registerRDD(rdd.id(), OptimizerUtils.estimatePartitionedSizeExactSparsity(dc), true);
 			}
@@ -700,7 +700,7 @@ public class SparkExecutionContext extends ExecutionContext
 					CacheableData.addBroadcastSize(-mo.getBroadcastHandle().getSize());
 
 				//obtain meta data for matrix
-				int blen = (int) mo.getBlocksize();
+				int blen = mo.getBlocksize();
 
 				//create partitioned matrix block and release memory consumed by input
 				MatrixBlock mb = mo.acquireRead();

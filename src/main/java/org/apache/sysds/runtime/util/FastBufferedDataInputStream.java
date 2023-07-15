@@ -165,7 +165,7 @@ public class FastBufferedDataInputStream extends FilterInputStream implements Da
 		for( long i=0; i<len; i+=_bufflen/8 ) {
 			// read next 8KB block from input 
 			// note: cast to long to prevent overflows w/ len*8
-			int maxNB = (int)Math.min(_bufflen, ((long)len-i)*8);
+			int maxNB = (int)Math.min(_bufflen, (len-i)*8L);
 			readFully(_buff, 0, maxNB);
 			
 			for( int j=0, ix=(int)i; j<maxNB; j+=8, ix++ ) 

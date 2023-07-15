@@ -82,7 +82,7 @@ public class IONegativeTest {
 
 	@Test(expected = RuntimeException.class)
 	public void writeLargeNRow() throws IOException {
-		writeEmpty(null, (long) Integer.MAX_VALUE + 1L, 100, 100);
+		writeEmpty(null, Integer.MAX_VALUE + 1L, 100, 100);
 	}
 
 	@Test(expected = RuntimeException.class)
@@ -97,7 +97,7 @@ public class IONegativeTest {
 
 	@Test(expected = RuntimeException.class)
 	public void writeLargeNCol() throws IOException {
-		writeEmpty(null, 100, (long) Integer.MAX_VALUE + 1L, 100);
+		writeEmpty(null, 100, Integer.MAX_VALUE + 1L, 100);
 	}
 
 	@Test(expected = RuntimeException.class)

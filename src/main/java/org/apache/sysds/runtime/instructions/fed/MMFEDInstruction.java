@@ -168,7 +168,7 @@ public class MMFEDInstruction extends BinaryFEDInstruction
 	private void setPartialOutput(FederationMap federationMap, MatrixObject mo1, MatrixObject mo2,
 		long outputID, ExecutionContext ec){
 		MatrixObject out = ec.getMatrixObject(output);
-		out.getDataCharacteristics().set(mo1.getNumRows(), mo2.getNumColumns(), (int)mo1.getBlocksize());
+		out.getDataCharacteristics().set(mo1.getNumRows(), mo2.getNumColumns(), mo1.getBlocksize());
 		FederationMap outputFedMap = federationMap
 			.copyWithNewIDAndRange(mo1.getNumRows(), mo2.getNumColumns(), outputID);
 		out.setFedMapping(outputFedMap);
@@ -185,7 +185,7 @@ public class MMFEDInstruction extends BinaryFEDInstruction
 	private void setOutputFedMapping(FederationMap federationMap, MatrixObject mo1, MatrixObject mo2,
 		long outputID, ExecutionContext ec){
 		MatrixObject out = ec.getMatrixObject(output);
-		out.getDataCharacteristics().set(mo1.getNumRows(), mo2.getNumColumns(), (int)mo1.getBlocksize());
+		out.getDataCharacteristics().set(mo1.getNumRows(), mo2.getNumColumns(), mo1.getBlocksize());
 		out.setFedMapping(federationMap.copyWithNewID(outputID, mo2.getNumColumns()));
 	}
 

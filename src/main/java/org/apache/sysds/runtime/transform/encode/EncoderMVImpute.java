@@ -262,7 +262,7 @@ public class EncoderMVImpute extends LegacyEncoder {
 			_rcList = new ArrayList<>();
 		 
 		List<Integer> rcList = _rcList.stream() //
-			.filter((x) -> ixRange.inColRange((long)x)) //
+			.filter((x) -> ixRange.inColRange(x)) //
 			.map(i -> (int) (i - (ixRange.colStart - 1))) //
 			.collect(Collectors.toList());
 

@@ -72,13 +72,8 @@ public final class CLALibDecompress {
 			MatrixBlock mbSliced = cmb.slice( //
 				Math.min(Math.abs(rowOffset), 0), Math.min(cmb.getNumRows(), ret.getNumRows() - rowOffset) - 1, // Rows
 				Math.min(Math.abs(colOffset), 0), Math.min(cmb.getNumColumns(), ret.getNumColumns() - colOffset) - 1); // Cols
-			if(mbSliced instanceof MatrixBlock) {
-				mbSliced.putInto(ret, rowOffset, colOffset, false);
-				return;
-			}
-
-			cmb = (CompressedMatrixBlock) mbSliced;
-			decompress(cmb, 1);
+			mbSliced.putInto(ret, rowOffset, colOffset, false);
+			return;
 		}
 
 		final boolean outSparse = ret.isInSparseFormat();

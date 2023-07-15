@@ -161,7 +161,7 @@ public class DecoderRecode extends Decoder
 	public void readExternal(ObjectInput in) throws IOException {
 		super.readExternal(in);
 		_onOut = in.readBoolean();
-		_rcMaps = (HashMap<Long,Object>[])new HashMap[in.readInt()];
+		_rcMaps = new HashMap[in.readInt()];
 		for(int i = 0; i < _rcMaps.length; i++) {
 			HashMap<Long, Object> maps = new HashMap<>();
 			int size = in.readInt();

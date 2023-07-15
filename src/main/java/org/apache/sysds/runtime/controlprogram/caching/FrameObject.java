@@ -121,7 +121,7 @@ public class FrameObject extends CacheableData<FrameBlock>
 	 * @return schema of value types
 	 */
 	public ValueType[] mergeSchemas(FrameObject fo) {
-		return (ValueType[]) ArrayUtils.addAll(
+		return ArrayUtils.addAll(
 			(_schema!=null) ? _schema : UtilFunctions.nCopies((int)getNumColumns(), ValueType.STRING), 
 			(fo._schema!=null) ? fo._schema : UtilFunctions.nCopies((int)fo.getNumColumns(), ValueType.STRING));
 	} 

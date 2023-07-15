@@ -189,7 +189,7 @@ public class ColumnMetadataTests {
 			ByteArrayOutputStream bos = new ByteArrayOutputStream();
 			DataOutputStream fos = new DataOutputStream(bos);
 			d.write(fos);
-			assertEquals(d.getExactSerializedSize(), (long) fos.size());
+			assertEquals(d.getExactSerializedSize(), fos.size());
 		}
 		catch(Exception e) {
 			e.printStackTrace();

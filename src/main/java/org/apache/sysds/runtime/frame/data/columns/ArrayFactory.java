@@ -68,7 +68,7 @@ public interface ArrayFactory {
 	}
 
 	public static <T> OptionalArray<T> create(T[] col) {
-		return new OptionalArray<T>(col);
+		return new OptionalArray<>(col);
 	}
 
 	public static long getInMemorySize(ValueType type, int _numRows) {
@@ -91,7 +91,7 @@ public interface ArrayFactory {
 			case STRING:
 				// cannot be known since strings have dynamic length
 				// lets assume something large to make it somewhat safe.
-				return Array.baseMemoryCost() + (long) MemoryEstimates.stringCost(12) * _numRows;
+				return Array.baseMemoryCost() + MemoryEstimates.stringCost(12) * _numRows;
 			case CHARACTER:
 				return Array.baseMemoryCost() + (long) MemoryEstimates.charArrayCost(_numRows);
 			default: // not applicable

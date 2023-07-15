@@ -51,7 +51,7 @@ public abstract class AOffset implements Serializable {
 	protected static final Log LOG = LogFactory.getLog(AOffset.class.getName());
 
 	/** Thread local cache for a single recently used Iterator, this is used for cache blocking */
-	private ThreadLocal<OffsetCache> cacheRow = new ThreadLocal<OffsetCache>() {
+	private ThreadLocal<OffsetCache> cacheRow = new ThreadLocal<>() {
 		@Override
 		protected OffsetCache initialValue() {
 			return null;

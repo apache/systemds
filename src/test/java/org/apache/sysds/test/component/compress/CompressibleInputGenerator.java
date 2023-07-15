@@ -163,7 +163,7 @@ public class CompressibleInputGenerator {
 		final Random r = new Random(seed);
 		final List<Double> values = getNRandomValues(nrUnique, r, max, min);
 		if(transpose && output.isInSparseFormat() && output.getNumRows() == 1) {
-			int nV = (int) Math.round((double) output.getNumColumns() * sparsity);
+			int nV = (int) Math.round(output.getNumColumns() * sparsity);
 			int skip = (output.getNumColumns() * 2) / nV;
 
 			for(int i = 0, n = 0; n < nV && i < output.getNumColumns(); i += r.nextInt(skip) + 1, n++)
@@ -194,17 +194,17 @@ public class CompressibleInputGenerator {
 			for(int x = 0; x < rows; x++) {
 				if(r.nextDouble() < sparsity) {
 					if(transpose && output.isInSparseFormat()) {
-						int v = (int) (output.getValue(0, x) * (double) y);
+						int v = (int) (output.getValue(0, x) * y);
 						double d = Math.abs(v % ((int) (diff))) + min;
 						output.appendValue(y, x, d);
 					}
 					else if(transpose) {
-						int v = (int) (output.getValue(0, x) * (double) y);
+						int v = (int) (output.getValue(0, x) * y);
 						double d = Math.abs(v % ((int) (diff))) + min;
 						output.quickSetValue(y, x, d);
 					}
 					else {
-						int v = (int) (output.getValue(x, 0) * (double) y);
+						int v = (int) (output.getValue(x, 0) * y);
 						double d = Math.abs(v % ((int) (diff))) + min;
 						output.quickSetValue(x, y, d);
 					}
@@ -243,7 +243,7 @@ public class CompressibleInputGenerator {
 
 		int[] occurences = new int[nrUnique];
 		for(int i = 0; i < nrUnique; i++) {
-			occurences[i] = (int) (((double) distribution[i] / (double) sum) * (double) rows);
+			occurences[i] = (int) ((distribution[i] / sum) * rows);
 		}
 		return occurences;
 	}

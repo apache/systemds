@@ -64,7 +64,7 @@ public class KMVSketch extends CountDistinctSketch {
 			 * value is higher than int (which is the area we hash to) then use Integer Max value as largest hashing space.
 			 */
 			long tmp = D * D;
-			int M = (tmp > (long) Integer.MAX_VALUE) ? Integer.MAX_VALUE : (int) tmp;
+			int M = (tmp > Integer.MAX_VALUE) ? Integer.MAX_VALUE : (int) tmp;
 			/**
 			 * The estimator is asymptotically unbiased as k becomes large, but memory usage also scales with k. Furthermore k
 			 * value must be within range: D >> k >> 0
@@ -93,7 +93,7 @@ public class KMVSketch extends CountDistinctSketch {
 		} else if (this.op.getDirection().isRow()) {
 			long D = (long) Math.floor(blkIn.getNonZeros() / (double) blkIn.getNumRows()) + 1;
 			long tmp = D * D;
-			int M = (tmp > (long) Integer.MAX_VALUE) ? Integer.MAX_VALUE : (int) tmp;
+			int M = (tmp > Integer.MAX_VALUE) ? Integer.MAX_VALUE : (int) tmp;
 			int k = D > 64 ? 64 : (int) D;
 
 			MatrixBlock resultMatrix = new MatrixBlock(blkIn.getNumRows(), 1, false, blkIn.getNumRows());
@@ -116,7 +116,7 @@ public class KMVSketch extends CountDistinctSketch {
 		} else {  // Col
 			long D = (long) Math.floor(blkIn.getNonZeros() / (double) blkIn.getNumColumns()) + 1;
 			long tmp = D * D;
-			int M = (tmp > (long) Integer.MAX_VALUE) ? Integer.MAX_VALUE : (int) tmp;
+			int M = (tmp > Integer.MAX_VALUE) ? Integer.MAX_VALUE : (int) tmp;
 			int k = D > 64 ? 64 : (int) D;
 
 			MatrixBlock resultMatrix = new MatrixBlock(1, blkIn.getNumColumns(), false, blkIn.getNumColumns());
@@ -193,9 +193,9 @@ public class KMVSketch extends CountDistinctSketch {
 		}
 		else {
 			double kthSmallestHash = spq.poll();
-			double U_k = kthSmallestHash / (double) M;
-			double estimate = (double) (k - 1) / U_k;
-			double ceilEstimate = Math.min(estimate, (double) D);
+			double U_k = kthSmallestHash / M;
+			double estimate = (k - 1) / U_k;
+			double ceilEstimate = Math.min(estimate, D);
 
 			if(LOG.isDebugEnabled()) {
 				LOG.debug("U_k : " + U_k);
@@ -263,7 +263,7 @@ public class KMVSketch extends CountDistinctSketch {
 		double D = blkInCorr.getValue(idx, 2);
 
 		double D2 = D * D;
-		double M = (D2 > (long) Integer.MAX_VALUE) ? Integer.MAX_VALUE : D2;
+		double M = (D2 > Integer.MAX_VALUE) ? Integer.MAX_VALUE : D2;
 
 		double ceilEstimate;
 		if(nHashes != 0 && nHashes < k) {
@@ -352,7 +352,7 @@ public class KMVSketch extends CountDistinctSketch {
 		long D = blkInSlice.getNonZeros() + 1;
 
 		long D2 = D * D;
-		int M = (D2 > (long) Integer.MAX_VALUE) ? Integer.MAX_VALUE : (int) D2;
+		int M = (D2 > Integer.MAX_VALUE) ? Integer.MAX_VALUE : (int) D2;
 		int k = D > 64 ? 64 : (int) D;
 
 		// blkOut is only passed as parameter in case dir == RowCol

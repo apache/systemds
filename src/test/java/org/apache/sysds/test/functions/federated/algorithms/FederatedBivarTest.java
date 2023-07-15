@@ -87,15 +87,15 @@ public class FederatedBivarTest extends AutomatedTestBase {
 		double[][] X4 = getRandomMatrix(rows, quarterCols, 1, 5, 1, 9);
 
 		// generate attribute set
-		double[][] S1 = getRandomMatrix(1, (int) cols / 4, 1, cols, 1, 3);
+		double[][] S1 = getRandomMatrix(1, cols / 4, 1, cols, 1, 3);
 		TestUtils.floor(S1);
-		double[][] S2 = getRandomMatrix(1, (int) cols / 4, 1, cols, 1, 9);
+		double[][] S2 = getRandomMatrix(1, cols / 4, 1, cols, 1, 9);
 		TestUtils.floor(S2);
 
 		// write types matrix shape of (1, D)
-		double[][] T1 = getRandomMatrix(1, (int) cols / 4, 0, 2, 1, 9);
+		double[][] T1 = getRandomMatrix(1, cols / 4, 0, 2, 1, 9);
 		TestUtils.ceil(T1);
-		double[][] T2 = getRandomMatrix(1, (int) cols / 4, 0, 2, 1, 9);
+		double[][] T2 = getRandomMatrix(1, cols / 4, 0, 2, 1, 9);
 		TestUtils.ceil(T2);
 
 		MatrixCharacteristics mc = new MatrixCharacteristics(rows, quarterCols, blocksize, rows * quarterCols);

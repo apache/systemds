@@ -225,7 +225,7 @@ public abstract class ParamServer
 					// the number of workers, creating "Pseudo Epochs"
 					if (_numBatchesPerEpoch != -1 &&
 						((_freq == Statement.PSFrequency.EPOCH && ((float) ++_syncCounter % _numWorkers) == 0) ||
-						(_freq == Statement.PSFrequency.BATCH && ((float) ++_syncCounter / _numWorkers) % (float) _numBatchesPerEpoch == 0)) ||
+						(_freq == Statement.PSFrequency.BATCH && ((float) ++_syncCounter / _numWorkers) % _numBatchesPerEpoch == 0)) ||
 						(_freq == Statement.PSFrequency.NBATCHES)) {
 						if(LOG.isInfoEnabled())
 							LOG.info("[+] PARAMSERV: completed PSEUDO EPOCH (ASP) " + _epochCounter);

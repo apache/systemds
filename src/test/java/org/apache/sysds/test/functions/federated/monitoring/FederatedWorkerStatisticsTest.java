@@ -76,7 +76,7 @@ public class FederatedWorkerStatisticsTest extends FederatedMonitoringTestBase {
 	@Test
 	public void testWorkerStatisticsParsedCorrectly() throws InterruptedException {
 
-		var model = (StatisticsModel) StatisticsService.getWorkerStatistics(1L, "localhost:" + workerPorts[0]);
+		var model = StatisticsService.getWorkerStatistics(1L, "localhost:" + workerPorts[0]);
 		int retry = 10;
 		while(model == null && retry > 0){
 			Thread.sleep(1000 * (11 - retry));

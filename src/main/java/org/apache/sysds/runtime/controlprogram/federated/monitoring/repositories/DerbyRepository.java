@@ -25,6 +25,7 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -167,7 +168,7 @@ public class DerbyRepository implements IRepository {
 			sb.replace(sb.length() - 1, sb.length(), ")");
 			String bindVarsStr = String.format("(%s)", String.join(",", Collections.nCopies(dbFieldCount, "?")));
 
-			st = db.prepareStatement(String.format(ENTITY_INSERT_STMT, sb, bindVarsStr), PreparedStatement.RETURN_GENERATED_KEYS);
+			st = db.prepareStatement(String.format(ENTITY_INSERT_STMT, sb, bindVarsStr), Statement.RETURN_GENERATED_KEYS);
 
 			int bindVarIndex = 1;
 			for (var field: fields) {

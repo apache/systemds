@@ -52,10 +52,9 @@ public class MMChainFEDInstruction extends UnaryFEDInstruction {
 	}
 
 	public static MMChainFEDInstruction parseInstruction(MMChainCPInstruction inst, ExecutionContext ec) {
-		MMChainCPInstruction linst = (MMChainCPInstruction) inst;
-		MatrixObject mo = ec.getMatrixObject(linst.input1);
+		MatrixObject mo = ec.getMatrixObject(inst.input1);
 		if( mo.isFederated(FType.ROW) )
-			return MMChainFEDInstruction.parseInstruction(linst);
+			return MMChainFEDInstruction.parseInstruction(inst);
 		return null;
 	}
 

@@ -2404,7 +2404,7 @@ public class TestUtils {
 	 * 				random Object
 	 */
 	public static ValueType[] generateRandomSchema(int size, Random random){
-		final List<ValueType> valueTypes = new ArrayList<ValueType>();
+		final List<ValueType> valueTypes = new ArrayList<>();
 		for(ValueType v : ValueType.values())
 			if(v != ValueType.UNKNOWN)
 				valueTypes.add(v);

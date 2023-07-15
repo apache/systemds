@@ -289,7 +289,7 @@ public class CtableFEDInstruction extends ComputationFEDInstruction {
 		final long d2 = (reversed ? staticDim : Collections.max(Arrays.asList(dims2)));
 
 		// set output
-		out.getDataCharacteristics().set(d1, d2, (int) mo1.getBlocksize(), mo1.getNnz());
+		out.getDataCharacteristics().set(d1, d2, mo1.getBlocksize(), mo1.getNnz());
 		out.setFedMapping(fedMap);
 
 		long varID = FederationUtils.getNextFedDataID();

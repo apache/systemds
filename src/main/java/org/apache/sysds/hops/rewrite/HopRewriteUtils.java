@@ -569,8 +569,7 @@ public class HopRewriteUtils {
 	
 	public static DataOp createTransientRead(String name, MatrixObject mo) {
 		DataOp tread = new DataOp(name, DataType.MATRIX, ValueType.FP64, OpOpData.TRANSIENTREAD,
-			null, mo.getNumRows(), mo.getNumColumns(), mo.getNnz(), UpdateType.COPY,
-			(int)mo.getBlocksize());
+			null, mo.getNumRows(), mo.getNumColumns(), mo.getNnz(), UpdateType.COPY, mo.getBlocksize());
 		tread.setVisited();
 		copyLineNumbers(mo, tread);
 		tread.setFileName(name);

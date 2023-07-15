@@ -88,7 +88,7 @@ public class DenseBlockFP64DEDUP extends DenseBlockDRB{
 	@Override
 	public long countNonZeros(){
 		long nnz = 0;
-		HashMap<double[], Long> cache = new HashMap<double[], Long>();
+		HashMap<double[], Long> cache = new HashMap<>();
 		for (int i = 0; i < _rlen; i++) {
 			double[] row = this._data[i];
 			if(row == null)

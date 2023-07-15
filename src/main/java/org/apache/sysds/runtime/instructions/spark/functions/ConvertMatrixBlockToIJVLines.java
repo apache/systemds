@@ -42,10 +42,10 @@ public class ConvertMatrixBlockToIJVLines implements FlatMapFunction<Tuple2<Matr
 		converter.setBlockSize(blen, blen);
 		converter.convert(kv._1, kv._2);
 		
-		Iterable<String> ret = new Iterable<String>() {
+		Iterable<String> ret = new Iterable<>() {
 			@Override
 			public Iterator<String> iterator() {
-				return new Iterator<String>() {
+				return new Iterator<>() {
 					
 					@Override
 					public void remove() {}

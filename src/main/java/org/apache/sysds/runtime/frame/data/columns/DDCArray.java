@@ -94,7 +94,7 @@ public class DDCArray<T> extends ACompressedArray<T> {
 		for(int i = 0; i < arr.size(); i++)
 			m.set(i, rcd.get(arr.get(i)));
 
-		return new DDCArray<T>(ar, m);
+		return new DDCArray<>(ar, m);
 	}
 
 	@Override
@@ -116,21 +116,21 @@ public class DDCArray<T> extends ACompressedArray<T> {
 		switch(dict.getValueType()) {
 			case BOOLEAN:
 				// Interesting case, that does not make much sense.
-				return new DDCArray<Boolean>((Array<Boolean>) dict, map);
+				return new DDCArray<>((Array<Boolean>) dict, map);
 			case FP32:
-				return new DDCArray<Float>((Array<Float>) dict, map);
+				return new DDCArray<>((Array<Float>) dict, map);
 			case FP64:
-				return new DDCArray<Double>((Array<Double>) dict, map);
+				return new DDCArray<>((Array<Double>) dict, map);
 			case UINT8:
 			case INT32:
-				return new DDCArray<Integer>((Array<Integer>) dict, map);
+				return new DDCArray<>((Array<Integer>) dict, map);
 			case INT64:
-				return new DDCArray<Long>((Array<Long>) dict, map);
+				return new DDCArray<>((Array<Long>) dict, map);
 			case CHARACTER:
-				return new DDCArray<Character>((Array<Character>) dict, map);
+				return new DDCArray<>((Array<Character>) dict, map);
 			case STRING:
 			default:
-				return new DDCArray<String>((Array<String>) dict, map);
+				return new DDCArray<>((Array<String>) dict, map);
 		}
 	}
 
@@ -187,42 +187,42 @@ public class DDCArray<T> extends ACompressedArray<T> {
 
 	@Override
 	protected Array<Boolean> changeTypeBitSet() {
-		return new DDCArray<Boolean>(dict.changeTypeBitSet(), map);
+		return new DDCArray<>(dict.changeTypeBitSet(), map);
 	}
 
 	@Override
 	protected Array<Boolean> changeTypeBoolean() {
-		return new DDCArray<Boolean>(dict.changeTypeBoolean(), map);
+		return new DDCArray<>(dict.changeTypeBoolean(), map);
 	}
 
 	@Override
 	protected Array<Double> changeTypeDouble() {
-		return new DDCArray<Double>(dict.changeTypeDouble(), map);
+		return new DDCArray<>(dict.changeTypeDouble(), map);
 	}
 
 	@Override
 	protected Array<Float> changeTypeFloat() {
-		return new DDCArray<Float>(dict.changeTypeFloat(), map);
+		return new DDCArray<>(dict.changeTypeFloat(), map);
 	}
 
 	@Override
 	protected Array<Integer> changeTypeInteger() {
-		return new DDCArray<Integer>(dict.changeTypeInteger(), map);
+		return new DDCArray<>(dict.changeTypeInteger(), map);
 	}
 
 	@Override
 	protected Array<Long> changeTypeLong() {
-		return new DDCArray<Long>(dict.changeTypeLong(), map);
+		return new DDCArray<>(dict.changeTypeLong(), map);
 	}
 
 	@Override
 	protected Array<String> changeTypeString() {
-		return new DDCArray<String>(dict.changeTypeString(), map);
+		return new DDCArray<>(dict.changeTypeString(), map);
 	}
 
 	@Override
 	protected Array<Character> changeTypeCharacter() {
-		return new DDCArray<Character>(dict.changeTypeCharacter(), map);
+		return new DDCArray<>(dict.changeTypeCharacter(), map);
 	}
 
 	@Override
@@ -250,7 +250,7 @@ public class DDCArray<T> extends ACompressedArray<T> {
 		for(int i = 0; i < select.length; i++)
 			if(select[i])
 				map2.set(j++, map.getIndex(i));
-		return new DDCArray<T>(dict, map2);
+		return new DDCArray<>(dict, map2);
 	}
 
 	@Override
@@ -261,7 +261,7 @@ public class DDCArray<T> extends ACompressedArray<T> {
 	@Override
 	public Array<T> clone() {
 		// Since the compressed formats are immutable, it is allowed to return the same.
-		return new DDCArray<T>(dict, map);
+		return new DDCArray<>(dict, map);
 	}
 
 	@Override

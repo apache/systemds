@@ -287,7 +287,7 @@ public class IdentityDictionarySlice extends IdentityDictionary {
 
 	@Override
 	public double getSparsity() {
-		return 1.0d / (double)nRowCol;
+		return 1d / nRowCol;
 	}
 
 	@Override

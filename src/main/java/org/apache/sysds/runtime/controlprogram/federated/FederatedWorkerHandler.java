@@ -155,18 +155,20 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 		}
 		
 		String host;
-		_remoteAddress = remoteAddress.toString();
-		if(remoteAddress instanceof InetSocketAddress) {
-			host = ((InetSocketAddress) remoteAddress).getHostString();
-		}
-		else if(remoteAddress instanceof SocketAddress) {
-			host = remoteAddress.toString().split(":")[0].split("/")[1];
-		}
-		else {
+		if(remoteAddress == null) {
 			LOG.warn("Given remote address of coordinator is null. Continuing with "
 				+ FederatedLookupTable.NOHOST + " as host identifier.");
 			host = FederatedLookupTable.NOHOST;
 		}
+		else if(remoteAddress instanceof InetSocketAddress) {
+			host = ((InetSocketAddress) remoteAddress).getHostString();
+			_remoteAddress = remoteAddress.toString();
+		}
+		else {
+			host = remoteAddress.toString().split(":")[0].split("/")[1];
+			_remoteAddress = remoteAddress.toString();
+		}
+		
 
 		FederatedResponse res = createResponse(msg, host);
 		if (_timing != null) {

@@ -683,9 +683,9 @@ public class FrameBlock implements CacheBlock<FrameBlock>, Externalizable {
 	 */
 	private void appendColumnMetaData(ValueType vt) {
 		if(_colnames != null)
-			_colnames = (String[]) ArrayUtils.add(getColumnNames(), createColName(_colnames.length + 1));
-		_schema = (ValueType[]) ArrayUtils.add(_schema, vt);
-		_colmeta = (ColumnMetadata[]) ArrayUtils.add(getColumnMetadata(), new ColumnMetadata());
+			_colnames = ArrayUtils.add(getColumnNames(), createColName(_colnames.length + 1));
+		_schema = ArrayUtils.add(_schema, vt);
+		_colmeta = ArrayUtils.add(getColumnMetadata(), new ColumnMetadata());
 		_msize = -1;
 	}
 

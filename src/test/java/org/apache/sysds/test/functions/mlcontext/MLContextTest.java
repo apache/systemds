@@ -303,7 +303,7 @@ public class MLContextTest extends MLContextTestBase {
 		list.add("30,40");
 		final JavaRDD<String> javaRDD = sc.parallelize(list);
 
-		Map<String, Object> inputs = new HashMap<String, Object>() {
+		Map<String, Object> inputs = new HashMap<>() {
 			private static final long serialVersionUID = 1L;
 			{
 				put("$X", 2);
@@ -652,7 +652,7 @@ public class MLContextTest extends MLContextTestBase {
 		list.add("30,40");
 		final JavaRDD<String> javaRDD = sc.parallelize(list);
 
-		Map<String, Object> inputs = new HashMap<String, Object>() {
+		Map<String, Object> inputs = new HashMap<>() {
 			private static final long serialVersionUID = 1L;
 			{
 				put("$X", 2);

@@ -47,7 +47,7 @@ public class LibSpoofPrimitives
 	
 	//global pool of reusable vectors, individual operations set up their own thread-local
 	//ring buffers of reusable vectors with specific number of vectors and vector sizes 
-	private static ThreadLocal<VectorBuffer> memPool = new ThreadLocal<VectorBuffer>() {
+	private static ThreadLocal<VectorBuffer> memPool = new ThreadLocal<>() {
 		@Override protected VectorBuffer initialValue() { return new VectorBuffer(0,0,0); }
 	};
 

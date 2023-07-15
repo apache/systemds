@@ -100,7 +100,6 @@ public class FrameLibAppend {
 		return new FrameBlock(retSchema, retColNames, retColMeta, retCols);
 	}
 
-	@SuppressWarnings("unchecked")
 	private static <T> T[] addAll(T[] a, T[] b) {
 		return (T[]) ArrayUtils.addAll(a, b);
 	}

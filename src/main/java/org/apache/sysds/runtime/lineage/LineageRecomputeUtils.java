@@ -99,9 +99,6 @@ public class LineageRecomputeUtils {
 			GPUenabled = true;
 			DMLScript.USE_ACCELERATOR = false;
 		}
-		// Reset statistics
-		if (DMLScript.STATISTICS)
-			Statistics.reset();
 
 		Data ret = computeByLineage(root);
 
@@ -133,7 +130,9 @@ public class LineageRecomputeUtils {
 		constructBasicBlock(partDagRoots, varname, prog);
 		
 		// Reset cache to avoid erroneous reuse
+		//FIXME: any lineage-based restore in the bufferpool flushes the lineage cache
 		LineageCache.resetCache();
+		
 		// Execute instructions and get result
 		if (DEBUG) {
 			DMLScript.STATISTICS = true;

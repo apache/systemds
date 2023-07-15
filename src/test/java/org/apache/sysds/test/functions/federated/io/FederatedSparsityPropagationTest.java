@@ -116,7 +116,6 @@ public class FederatedSparsityPropagationTest extends AutomatedTestBase {
 		runTest(true, false, null, -1);
 
 		Map<String, Long> refNNZ = getRefNNZ();
-		
 
 		// Obtain nnz from actual dml script with federated matrix
 		fullDMLScriptName = HOME + TEST_NAME + ".dml";
@@ -127,7 +126,13 @@ public class FederatedSparsityPropagationTest extends AutomatedTestBase {
 		argVals.put("$cols", Integer.toString(fed_cols));
 		argVals.put("$sparsity", Double.toString(sparsity));
 
-		Map<String, Long> fedNNZ = executeFedAndGetNNZ(fullDMLScriptName, argVals);
+		Map<String, Long> fedNNZ = null;
+		try {
+			fedNNZ = executeFedAndGetNNZ(fullDMLScriptName, argVals);
+		} catch(IOException ioe) {
+			DMLScript.errorPrint(ioe);
+			Assert.fail("IOException when executing federated test script.");
+		}
 
 		System.out.println("RefNNZ: " + refNNZ);
 		System.out.println("FedNNZ: " + fedNNZ);
@@ -139,14 +144,12 @@ public class FederatedSparsityPropagationTest extends AutomatedTestBase {
 		resetExecMode(platform_old);
 	}
 
-	private Map<String, Long> executeFedAndGetNNZ(String dmlScriptPath, Map<String, String> argVals) {
+	// NOTE: the body of this function is copied from DMLScript.execute
+	private Map<String, Long> executeFedAndGetNNZ(String dmlScriptPath, Map<String, String> argVals)
+		throws IOException {
 		String dmlScriptStr = "";
 		String DML_FILE_PATH_ANTLR_PARSER = DMLOptions.defaultOptions.filePath;
-		try {
-			dmlScriptStr = DMLScript.readDMLScript(true, fullDMLScriptName);
-		} catch(IOException ioe) {
-			ioe.printStackTrace();
-		}
+		dmlScriptStr = DMLScript.readDMLScript(true, fullDMLScriptName);
 
 		ParserWrapper parser = ParserFactory.createParser();
 		DMLProgram prog = parser.parse(DML_FILE_PATH_ANTLR_PARSER, dmlScriptStr, argVals);

@@ -74,43 +74,18 @@ M13 = t(X);
 M14 = rev(X);
 
 # reshape
-M15 = matrix(X, rows=4, cols=(ncol(X)*nrow(X)/4), byrow=FALSE);
+M15 = matrix(X, rows=1, cols=(ncol(X)*nrow(X)), byrow=FALSE);
 
-# FIXME: wrong nnz from cumsum instruction (should be less than nrows)
+# FIXME: wrong nnz from cumsum instruction
 # # cumulative sum
 # M16 = cumsum(X);
 
 # FIXME: wrong nnz from ternary instruction
 # # ternary ifelse
-# M16 = ifelse(X > X2, X, X2);
-
-# ===== Try these again after restructuring the program block creation in the test
-# ===== Maybe X is too small?
-# # weighted sigmoid (quaternary)
-# TMP13 = L[ , 1:10] %*% L[1:10, ];
-# M13 = X * log(1 / (1 + exp(-TMP13)));
-# 
-# # weighted unary matrix mult (quaternary)
-# TMP14 = L[ , 1:10] %*% L[1:10, ];
-# M14 = X * (2 * (TMP14));
-# =====
-
-# ===== skipped for now
-# # left indexing matrix
-# M13 = X;
-# M13[($rows-2):($rows+2), ] = X2[1:5, ];
-# 
-# # left indexing scalar
-# M14 = X;
-# M14[1,1] = 1;
-# =====
-
-# # cumsum
-# M13 = cumsum(t(X));
-
-# # if else aligned
-# M5 = ifelse(X > mean(X), X2, X);
+# M17 = ifelse(X > X2, X, X2);
 
 while(FALSE) {}
 Z = sum(M1) + sum(M2) + sum(M3) + sum(M4) + sum(M5) + sum(M6) + sum(M7) + sum(M8)
-  + sum(M9) + sum(M10) + sum(M11) + sum(M12) + sum(M13) + sum(M14) + sum(M15);
+  + sum(M9) + sum(M10) + sum(M11) + sum(M12) + sum(M13) + sum(M14) + sum(M15)
+  /*+ sum(M16) + sum(M17)*/;
+# NOTE: when adding tests, please remember to increment the number of matrices in the java test class

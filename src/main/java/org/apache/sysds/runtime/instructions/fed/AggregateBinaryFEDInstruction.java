@@ -120,8 +120,9 @@ public class AggregateBinaryFEDInstruction extends BinaryFEDInstruction {
 			}
 			if((_fedOut.isForcedFederated() || (!isVector && !_fedOut.isForcedLocal()))
 				&& !isPartOut) { // not creating federated output in the MV case for reasons of performance
-				mo1.getFedMapping().execute(getTID(), true, fr1, fr2);
-				setOutputFedMapping(mo1.getFedMapping(), mo1, mo2, fr2.getID(), ec);
+				Future<FederatedResponse>[] ffr = mo1.getFedMapping().execute(getTID(), true, fr1, fr2);
+				setOutputFedMapping(mo1.getFedMapping(), mo1, mo2,
+					FederationUtils.sumNonZeros(ffr), fr2.getID(), ec);
 			}
 			else {
 				boolean isDoubleBroadcast = (mo1.isFederated(FType.BROADCAST) && mo2.isFederated(FType.BROADCAST));
@@ -194,13 +195,17 @@ public class AggregateBinaryFEDInstruction extends BinaryFEDInstruction {
 	 * @param federationMap federation map to be set in output
 	 * @param mo1 matrix object with number of rows used to set the number of rows of the output
 	 * @param mo2 matrix object with number of columns used to set the number of columns of the output
+	 * @param nnz the number of non-zeros of the output
 	 * @param outputID ID of the output
 	 * @param ec execution context
 	 */
-	private void setOutputFedMapping(FederationMap federationMap, MatrixLineagePair mo1, MatrixLineagePair mo2,
-		long outputID, ExecutionContext ec){
+	private void setOutputFedMapping(FederationMap federationMap, MatrixLineagePair mo1,
+		MatrixLineagePair mo2, long nnz, long outputID, ExecutionContext ec){
 		MatrixObject out = ec.getMatrixObject(output);
-		out.getDataCharacteristics().set(mo1.getNumRows(), mo2.getNumColumns(), (int)mo1.getBlocksize());
+		out.getDataCharacteristics()
+			.setDimension(mo1.getNumRows(), mo2.getNumColumns())
+			.setBlocksize((int)mo1.getBlocksize())
+			.setNonZeros(nnz);
 		out.setFedMapping(federationMap.copyWithNewID(outputID, mo2.getNumColumns()));
 	}
 

@@ -40,7 +40,7 @@ import org.junit.runners.Parameterized;
 public class FederatedReaderTest extends AutomatedTestBase {
 
 	private static final Log LOG = LogFactory.getLog(FederatedReaderTest.class.getName());
-	private final static String TEST_DIR = "functions/federated/ioR/";
+	private final static String TEST_DIR = "functions/federated/io/";
 	private final static String TEST_NAME = "FederatedReaderTest";
 	private final static String TEST_CLASS_DIR = TEST_DIR + FederatedReaderTest.class.getSimpleName() + "/";
 	private final static int blocksize = 1024;
@@ -50,8 +50,6 @@ public class FederatedReaderTest extends AutomatedTestBase {
 	public int cols;
 	@Parameterized.Parameter(2)
 	public boolean rowPartitioned;
-	@Parameterized.Parameter(3)
-	public int fedCount;
 
 	@Override
 	public void setUp() {
@@ -62,7 +60,7 @@ public class FederatedReaderTest extends AutomatedTestBase {
 	@Parameterized.Parameters
 	public static Collection<Object[]> data() {
 		// number of rows or cols has to be >= number of federated locations.
-		return Arrays.asList(new Object[][] {{10, 13, true, 2}});
+		return Arrays.asList(new Object[][] {{10, 13, true}});
 	}
 
 	@Test
@@ -111,11 +109,11 @@ public class FederatedReaderTest extends AutomatedTestBase {
 			// Run reference dml script with normal matrix
 
 			if(workerCount == 1) {
-				fullDMLScriptName = SCRIPT_DIR + "functions/federated/io/" + TEST_NAME + "1Reference.dml";
+				fullDMLScriptName = SCRIPT_DIR + TEST_DIR + TEST_NAME + "1Reference.dml";
 				programArgs = new String[] {"-stats", "-args", input("X1")};
 			}
 			else {
-				fullDMLScriptName = SCRIPT_DIR + "functions/federated/io/" + TEST_NAME
+				fullDMLScriptName = SCRIPT_DIR + TEST_DIR + TEST_NAME
 					+ (rowPartitioned ? "Row" : "Col") + "2Reference.dml";
 				programArgs = new String[] {"-stats", "-args", input("X1"), input("X2")};
 			}
@@ -125,7 +123,7 @@ public class FederatedReaderTest extends AutomatedTestBase {
 			LOG.debug(refOut);
 			
 			// Run federated
-			fullDMLScriptName = SCRIPT_DIR + "functions/federated/io/" + TEST_NAME + ".dml";
+			fullDMLScriptName = SCRIPT_DIR + TEST_DIR + TEST_NAME + ".dml";
 			programArgs = new String[] {"-stats", "-args", input("X.json")};
 			String out = runTest(null).toString();
 

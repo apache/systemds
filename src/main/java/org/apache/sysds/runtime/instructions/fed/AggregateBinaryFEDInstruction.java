@@ -184,7 +184,8 @@ public class AggregateBinaryFEDInstruction extends BinaryFEDInstruction {
 	private void setPartialOutput(FederationMap federationMap, MatrixLineagePair mo1, MatrixLineagePair mo2,
 		long outputID, ExecutionContext ec){
 		MatrixObject out = ec.getMatrixObject(output);
-		out.getDataCharacteristics().set(mo1.getNumRows(), mo2.getNumColumns(), (int)mo1.getBlocksize());
+		out.getDataCharacteristics().setDimension(mo1.getNumRows(), mo2.getNumColumns())
+			.setBlocksize(mo1.getBlocksize());
 		FederationMap outputFedMap = federationMap
 			.copyWithNewIDAndRange(mo1.getNumRows(), mo2.getNumColumns(), outputID);
 		out.setFedMapping(outputFedMap);
@@ -204,8 +205,7 @@ public class AggregateBinaryFEDInstruction extends BinaryFEDInstruction {
 		MatrixObject out = ec.getMatrixObject(output);
 		out.getDataCharacteristics()
 			.setDimension(mo1.getNumRows(), mo2.getNumColumns())
-			.setBlocksize((int)mo1.getBlocksize())
-			.setNonZeros(nnz);
+			.setBlocksize(mo1.getBlocksize()).setNonZeros(nnz);
 		out.setFedMapping(federationMap.copyWithNewID(outputID, mo2.getNumColumns()));
 	}
 

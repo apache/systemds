@@ -33,7 +33,6 @@ import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory.MAP_TYPE;
 import org.apache.sysds.runtime.compress.colgroup.offset.AOffset;
 import org.apache.sysds.runtime.compress.colgroup.offset.AOffsetIterator;
-import org.apache.sysds.runtime.compress.estim.encoding.IEncode;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -843,7 +842,7 @@ public abstract class AMapToData implements Serializable {
 
 	@Override
 	public boolean equals(Object e) {
-		return e instanceof IEncode && this.equals((AMapToData) e);
+		return e instanceof AMapToData && (this == e || this.equals((AMapToData) e));
 	}
 
 	/**

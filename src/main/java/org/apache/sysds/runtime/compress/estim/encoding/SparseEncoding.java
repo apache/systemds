@@ -19,6 +19,7 @@
 
 package org.apache.sysds.runtime.compress.estim.encoding;
 
+import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.commons.lang3.tuple.ImmutablePair;
@@ -77,7 +78,7 @@ public class SparseEncoding extends AEncode {
 			SparseEncoding es = (SparseEncoding) e;
 			if(es.off == off && es.map == map)
 				return new ImmutablePair<>(this, null);
-			return new ImmutablePair<>(combineSparseNoResize(es), null);
+			return combineSparseNoResizeDense(es);
 		}
 		else
 			throw new DMLCompressionException("Not allowed other to be dense");
@@ -121,13 +122,9 @@ public class SparseEncoding extends AEncode {
 		}
 	}
 
-	private IEncode combineSparseNoResize(SparseEncoding e) {
-		// for now just use the dense... and lets continue.
-		// TODO add sparse combine with sparse output.
-		return combineSparseNoResizeDense(e);
-	}
 
-	private IEncode combineSparseNoResizeDense(SparseEncoding e) {
+
+	private Pair<IEncode, Map<Integer, Integer>>  combineSparseNoResizeDense(SparseEncoding e) {
 
 		final int fl = off.getOffsetToLast();
 		final int fr = e.off.getOffsetToLast();
@@ -137,6 +134,7 @@ public class SparseEncoding extends AEncode {
 		final int nVr = e.getUnique();
 
 		final AMapToData retMap = MapToFactory.create(nRows, (nVl + 1) * (nVr + 1));
+		
 		int il = itl.value();
 		// parse through one side set all values into the dense.
 		while(il < fl) {
@@ -155,8 +153,26 @@ public class SparseEncoding extends AEncode {
 		}
 		retMap.set(fr, retMap.getIndex(fr) + (e.map.getIndex(itr.getDataIndex()) + 1) * nVl);
 
-		return new DenseEncoding(retMap);
+		// Full iteration to set unique elements.
+		final Map<Integer, Integer> m = new HashMap<>();
+		for(int i = 0 ; i < retMap.size(); i ++)
+			addValHashMap(retMap.getIndex(i), i,m, retMap );
+		
+
+		return new ImmutablePair<>(new DenseEncoding(retMap.resize(m.size())), m);
+		
 	}
+
+
+	protected static void addValHashMap(final int nv, final int r, final Map<Integer, Integer> map, final AMapToData d) {
+		final int v = map.size();
+		final Integer mv = map.putIfAbsent(nv, v);
+		if(mv == null)
+			d.set(r, v);
+		else
+			d.set(r, mv);
+	}
+
 
 	private static int combineSparse(AMapToData lMap, AMapToData rMap, AIterator itl, AIterator itr,
 		final IntArrayList retOff, final IntArrayList tmpVals, final int fl, final int fr, final int nVl, final int nVr,

@@ -19,15 +19,18 @@
 
 package org.apache.sysds.test.component.compress.combine;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.Set;
 
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -99,12 +102,31 @@ public class CombineEncodingsUnique {
 			Pair<IEncode, Map<Integer, Integer>> cec = ae.combineWithMap(be);
 			IEncode ce = cec.getLeft();
 			Map<Integer, Integer> cem = cec.getRight();
-			// LOG.error(ae + "\n" + be + "\n" + ce);
-			assertTrue(cem.size() == ce.getUnique());
+			// LOG.error(ae + "\n" + be + "\n" + ce + "\n" + cem);
+			assertEquals(cem.size(), ce.getUnique());
+			// check all unique values are contained.
+			checkContainsAllUnique(ce);
 		}
 		catch(Exception e) {
 			e.printStackTrace();
+			LOG.error("Failed to combine " + ae + " " + be);
 			fail(e.getMessage());
+		}
+	}
+
+	private void checkContainsAllUnique(IEncode ce) {
+		if(ce instanceof DenseEncoding) {
+			DenseEncoding ced = (DenseEncoding) ce;
+			AMapToData m = ced.getMap();
+			Set<Integer> s = new HashSet<>();
+			for(int i = 0; i < m.size(); i++) {
+				s.add(m.getIndex(i));
+			}
+
+			assertEquals(m.getUnique(), s.size());
+		}
+		else {
+			throw new NotImplementedException();
 		}
 	}
 

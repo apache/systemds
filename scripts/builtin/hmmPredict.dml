@@ -32,22 +32,11 @@
 m_hmmPredict = function (Matrix[Double] X, Integer k) return (Matrix[Double] outputs)
 {
     /*
-    A, B, ip = hmm(X)
-
-    The above would be the function call to obtain model parameters. 
-    Instead, the following has dummy model parameters to for the functions to work
-
     Also only discrete model implemented, need to discretize the cotinous outputs
     to work with the continous model
     */
 
-    n_states = 3
-    n_outputs = 3
-    
-    A = matrix(1/n_states, rows=n_states, cols=n_states)
-    B = matrix(1/n_outputs, rows=n_states, cols=n_outputs)
-    ip = matrix(1/n_states, rows=n_states, cols=1)
-
+    [ip, A, B] = hmm(X)
     states = get_all_states(A, ip, k)
     outputs = get_outputs(B, states)
 }
@@ -65,7 +54,7 @@ choose_value = function (Matrix[Double] prob_dist) return (Double val)
     val = as.scalar(colSums(cum_prob <= R) + 1)
 }
 
-get_all_states = function (Matrix[Double] A, Matrix[Double] ip, integer k) return (Matrix[Double] states)
+get_all_states = function (Matrix[Double] A, Matrix[Double] ip, Integer k) return (Matrix[Double] states)
 {
     init_state = choose_value(ip)
     states = matrix(0, rows=k, cols=1)

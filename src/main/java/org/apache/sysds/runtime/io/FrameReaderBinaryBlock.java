@@ -104,7 +104,6 @@ public class FrameReaderBinaryBlock extends FrameReader {
 					dest.setColumnNames(value.getColumnNames());
 					dest.setColumnMetadata(value.getColumnMetadata());
 				}
-				LOG.error(key);
 			}
 		}
 		catch(ArrayIndexOutOfBoundsException e) {

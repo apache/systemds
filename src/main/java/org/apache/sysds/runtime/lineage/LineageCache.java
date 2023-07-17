@@ -157,15 +157,20 @@ public class LineageCache
 						//Reuse the cached RDD (local or persisted at the executors)
 						switch(e.getCacheStatus()) {
 							case TOPERSISTRDD:
-								//Mark for caching on the second hit
-								boolean persisted = persistRDD(inst, e, ec);
-								//Return if not already persisted and not a shuffle operations
-								if (!persisted && !LineageCacheConfig.isShuffleOp(inst.getOpcode()))
-									return false;
-								//Else, fall through to reuse (local or distributed)
+								//Change status to PERSISTEDRDD on the second hit
+								//putValueRDD method will save the RDD and call persist
+								e.setCacheStatus(LineageCacheStatus.PERSISTEDRDD);
+								//Cannot reuse rdd as already garbage collected
+								return false;
 							case PERSISTEDRDD:
 								//Reuse the persisted intermediate at the executors
 								((SparkExecutionContext) ec).setRDDHandleForVariable(outName, rdd);
+								//Safely cleanup the child RDDs if this RDD is persisted already
+								//If reused 3 times and still not persisted, move to Spark asynchronously
+								if (probeRDDDistributed(e))
+									LineageSparkCacheEviction.cleanupChildRDDs(e);
+								else
+									LineageSparkCacheEviction.moveToSpark(e);
 								break;
 							default:
 								return false;
@@ -295,25 +300,26 @@ public class LineageCache
 					LineageGPUCacheEviction.incrementLiveCount(e.getGPUPointer());
 				else if (e.isRDDPersist()) {
 					//Reuse the cached RDD (local or persisted at the executors)
-					RDDObject rdd = e.getRDDObject();
 					switch(e.getCacheStatus()) {
 						case TOPERSISTRDD:
-							//Mark for caching on the second hit
-							long estimatedSize = MatrixBlock.estimateSizeInMemory(rdd.getDataCharacteristics());
-							boolean persisted = persistRDD(e, estimatedSize);
-							//Return if not already persisted and not a shuffle operations
-							if (!persisted && !LineageCacheConfig.isShuffleOp(e._origItem.getOpcode()))
-								return false;
-							//Else, fall through to reuse (local or distributed)
+							//Cannot reuse rdd as already garbage collected
+							//putValue method will save the RDD and call persist
+							//while caching the original instruction
+							return false;
 						case PERSISTEDRDD:
 							//Reuse the persisted intermediate at the executors
+							//Safely cleanup the child RDDs if this RDD is persisted already
+							//If reused 3 times and still not persisted, move to Spark asynchronously
+							if (probeRDDDistributed(e))
+								LineageSparkCacheEviction.cleanupChildRDDs(e);
+							else
+								LineageSparkCacheEviction.moveToSpark(e);
 							break;
 						default:
 							return false;
 					}
 				}
 			}
-
 			funcOutputs.forEach((var, val) -> {
 				//cleanup existing data bound to output variable name
 				Data exdata = ec.removeVariable(var);
@@ -328,7 +334,6 @@ public class LineageCache
 			if (DMLScript.STATISTICS) //increment saved time
 				LineageCacheStatistics.incrementSavedComputeTime(savedComputeTime);
 		}
-
 		return reuse;
 	}
 	
@@ -492,7 +497,10 @@ public class LineageCache
 	private static boolean probeRDDDistributed(LineageItem key) {
 		if (!_cache.containsKey(key))
 			return false;
-		LineageCacheEntry e = _cache.get(key);
+		return probeRDDDistributed(_cache.get(key));
+	}
+
+	protected static boolean probeRDDDistributed(LineageCacheEntry e) {
 		if (!e.isRDDPersist())
 			return false;
 		return SparkExecutionContext.isRDDCached(e.getRDDObject().getRDD().id());
@@ -716,8 +724,9 @@ public class LineageCache
 			if (!probe(instLI))
 				return;
 			LineageCacheEntry centry = _cache.get(instLI);
-			// Put in the cache only the first time
-			if (centry.getCacheStatus() != LineageCacheStatus.EMPTY)
+			// Remember the 1st hit and put the RDD in the cache the 2nd time
+			if (centry.getCacheStatus() != LineageCacheStatus.EMPTY            //first hit
+				&& centry.getCacheStatus() != LineageCacheStatus.PERSISTEDRDD) //second hit
 				return;
 			// Avoid reuse chkpoint, which is unnecessary
 			if (inst.getOpcode().equalsIgnoreCase("chkpoint")) {
@@ -742,10 +751,29 @@ public class LineageCache
 			// Get the RDD handle of the RDD
 			CacheableData<?> cd = ec.getCacheableData(((ComputationSPInstruction)inst).output.getName());
 			RDDObject rddObj = cd.getRDDHandle();
-			// Set the RDD object in the cache and set the status to TOPERSISTRDD
-			rddObj.setLineageCached();
+			// Save the metadata. Required for estimating cached space overhead.
 			rddObj.setDataCharacteristics(cd.getDataCharacteristics());
-			centry.setRDDValue(rddObj, computetime);
+			// Set the RDD object in the cache
+			switch(centry.getCacheStatus()) {
+				case EMPTY:  //first hit
+					// Do not save the child RDDS (incl. broadcast vars) on the first hit.
+					// Let them be garbage collected via rmvar. Save them on the second hit
+					// by disabling garbage collection on this and the child RDDs.
+					centry.setRDDValue(rddObj, computetime); //rddObj will be garbage collected
+					break;
+				case PERSISTEDRDD:  //second hit
+					// Replace the old RDD (GCed) with the new one
+					centry.setRDDValue(rddObj);
+					// Set the correct status to indicate the RDD is marked to be persisted
+					centry.setCacheStatus(LineageCacheStatus.PERSISTEDRDD);
+					// Call persist. Next collect will materialize this intermediate in Spark
+					persistRDD(inst, centry, ec);
+					// Mark lineage cached to prevent this and child RDDs from cleanup by rmvar
+					centry.getRDDObject().setLineageCached();
+					break;
+				default:
+					throw new DMLRuntimeException("Execution should not reach here: "+centry._key);
+			}
 		}
 	}
 
@@ -1017,6 +1045,8 @@ public class LineageCache
 			return;
 		// Move the value from the cache entry with key probeItem to
 		// the placeholder entry with key item.
+		// Entries with RDDs are cached twice. First hit is GCed,
+		// Second hit saves the child RDDs
 		if (LineageCache.probe(probeItem)) {
 			LineageCacheEntry oe = getIntern(probeItem);
 			LineageCacheEntry e = _cache.get(item);
@@ -1083,7 +1113,7 @@ public class LineageCache
 	private static boolean persistRDD(Instruction inst, LineageCacheEntry centry, ExecutionContext ec) {
 		// If already persisted, change the status and return true.
 		// Else, persist, change cache status and return false.
-		if (probeRDDDistributed(centry._key)) {
+		if (probeRDDDistributed(centry)) {
 			// Update status to indicate persisted in the executors
 			centry.setCacheStatus(LineageCacheStatus.PERSISTEDRDD);
 			return true;
@@ -1103,7 +1133,7 @@ public class LineageCache
 	private static boolean persistRDD(LineageCacheEntry centry, long estimatedSize) {
 		// If already persisted, change the status and return true.
 		// Else, persist, change cache status and return false.
-		if (probeRDDDistributed(centry._key)) {
+		if (probeRDDDistributed(centry)) {
 			// Update status to indicate persisted in the executors
 			centry.setCacheStatus(LineageCacheStatus.PERSISTEDRDD);
 			return true;

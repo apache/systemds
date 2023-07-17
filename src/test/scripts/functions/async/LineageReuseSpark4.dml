@@ -19,16 +19,16 @@
 #
 #-------------------------------------------------------------
 
-SimlinRegDS = function(Matrix[Double] X, Matrix[Double] y, Double lamda, Integer N) 
+SimlinRegDS = function(Matrix[Double] X, Matrix[Double] y) 
 return (Matrix[double] A, Matrix[double] b)
 {
   # Reuse sp_tsmm and sp_mapmm if not future-based
-  A = (t(X) %*% X) + diag(matrix(lamda, rows=N, cols=1));
+  A = (t(X) %*% X); 
   while(FALSE){}
   b = t(X) %*% y;
 }
 
-no_lamda = 2;
+no_lamda = 5;
 
 stp = (0.1 - 0.0001)/no_lamda;
 lamda = 0.0001;
@@ -38,19 +38,35 @@ X = rand(rows=1500, cols=1500, seed=42);
 y = rand(rows=1500, cols=1, seed=43);
 N = ncol(X);
 R = matrix(0, rows=N, cols=no_lamda+2);
+i = 1;
 
-[A, b] = SimlinRegDS(X, y, lamda, N);
-beta = solve(A, b);
+while (lamda < lim)
+{
+  [A, b] = SimlinRegDS(X, y);
+  A_diag = A + diag(matrix(lamda, rows=N, cols=1));
+  beta = solve(A_diag, b);
+  R[,i] = beta;
+  lamda = lamda + stp;
+  i = i + 1;
+}
+
+/*[A, b] = SimlinRegDS(X, y);
+A_diag = A + diag(matrix(lamda, rows=N, cols=1));
+beta = solve(A_diag, b);
 R[,1] = beta;
+lamda = lamda + stp;
 
 # Reuse function call
-[A, b] = SimlinRegDS(X, y, lamda, N);
-beta = solve(A, b);
+[A, b] = SimlinRegDS(X, y);
+A_diag = A + diag(matrix(lamda, rows=N, cols=1));
+beta = solve(A_diag, b);
 R[,2] = beta;
+lamda = lamda + stp;
 
-[A, b] = SimlinRegDS(X, y, lamda, N);
-beta = solve(A, b);
-R[,3] = beta;
+[A, b] = SimlinRegDS(X, y);
+A_diag = A + diag(matrix(lamda, rows=N, cols=1));
+beta = solve(A_diag, b);
+R[,3] = beta;*/
 
 R = sum(R);
 write(R, $1, format="text");

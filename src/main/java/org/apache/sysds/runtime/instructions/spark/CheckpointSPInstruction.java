@@ -21,6 +21,7 @@ package org.apache.sysds.runtime.instructions.spark;
 
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.storage.StorageLevel;
+import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.hops.OptimizerUtils;
@@ -41,6 +42,7 @@ import org.apache.sysds.runtime.instructions.spark.functions.CopyFrameBlockFunct
 import org.apache.sysds.runtime.instructions.spark.functions.CreateSparseBlockFunction;
 import org.apache.sysds.runtime.instructions.spark.utils.SparkUtils;
 import org.apache.sysds.runtime.lineage.LineageCacheConfig;
+import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysds.runtime.matrix.operators.Operator;
@@ -99,6 +101,7 @@ public class CheckpointSPInstruction extends UnarySPInstruction {
 			//add a dummy entry to the input, which will be immediately overwritten by the null output.
 			sec.setVariable( input1.getName(), new BooleanObject(false));
 			sec.setVariable( output.getName(), new BooleanObject(false));
+			replaceLineage(ec);
 			return;
 		}
 
@@ -107,6 +110,7 @@ public class CheckpointSPInstruction extends UnarySPInstruction {
 			// Do nothing if the RDD is already checkpointed
 			sec.setVariable(output.getName(), sec.getCacheableData(input1.getName()));
 			Statistics.decrementNoOfExecutedSPInst();
+			replaceLineage(ec);
 			return;
 		}
 		//-------
@@ -121,6 +125,7 @@ public class CheckpointSPInstruction extends UnarySPInstruction {
 			//available in memory
 			sec.setVariable(output.getName(), obj);
 			Statistics.decrementNoOfExecutedSPInst();
+			replaceLineage(ec);
 			return;
 		}
 		
@@ -187,6 +192,7 @@ public class CheckpointSPInstruction extends UnarySPInstruction {
 		}
 		else {
 			out = in; //pass-through
+			replaceLineage(ec);
 		}
 		
 		// Step 3: In-place update of input matrix/frame rdd handle and set as output
@@ -207,5 +213,18 @@ public class CheckpointSPInstruction extends UnarySPInstruction {
 			cd.setRDDHandle(outro);
 		}
 		sec.setVariable( output.getName(), cd);
+		//TODO: remove lineage tracing of chkpoint to allow
+		//  reuse across loops and basic blocks
+		//replaceLineage(ec);
+	}
+
+	private void replaceLineage(ExecutionContext ec) {
+		// Copy the lineage trace of the input to the output
+		// to prevent unnecessary chkpoint lineage entry, which wrongly
+		// reduces reuse opportunities for nested loop bodies.
+		if (DMLScript.LINEAGE) {
+			LineageItem inputLi = ec.getLineageItem(input1.getName());
+			ec.getLineage().set(output.getName(), inputLi);
+		}
 	}
 }

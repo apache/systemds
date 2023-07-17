@@ -240,6 +240,13 @@ public class LineageCacheEntry {
 		notifyAll();
 	}
 
+	public synchronized void setRDDValue(RDDObject rdd) {
+		_rddObject = rdd;
+		_status = isNullVal() ? LineageCacheStatus.EMPTY : LineageCacheStatus.TOPERSISTRDD;
+		//resume all threads waiting for val
+		notifyAll();
+	}
+
 	public synchronized void setValue(byte[] serialBytes, long computetime) {
 		_serialBytes = serialBytes;
 		_computeTime = computetime;

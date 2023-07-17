@@ -63,7 +63,8 @@ public abstract class FrameGenerateReaderParallel extends FrameReader {
 		this._props = _props;
 	}
 
-	@Override public FrameBlock readFrameFromHDFS(String fname, Types.ValueType[] schema, String[] names, long rlen,
+	@Override
+	public FrameBlock readFrameFromHDFS(String fname, Types.ValueType[] schema, String[] names, long rlen,
 		long clen) throws IOException, DMLRuntimeException {
 
 		//prepare file access
@@ -192,7 +193,8 @@ public abstract class FrameGenerateReaderParallel extends FrameReader {
 		return ret;
 	}
 
-	@Override public FrameBlock readFrameFromInputStream(InputStream is, Types.ValueType[] schema, String[] names,
+	@Override
+	public FrameBlock readFrameFromInputStream(InputStream is, Types.ValueType[] schema, String[] names,
 		long rlen, long clen) throws IOException, DMLRuntimeException {
 
 		// allocate output frame block
@@ -240,7 +242,8 @@ public abstract class FrameGenerateReaderParallel extends FrameReader {
 			_splitCount = splitCount;
 		}
 
-		@Override public Long call() throws IOException {
+		@Override
+		public Long call() throws IOException {
 			RecordReader<LongWritable, Text> reader = _informat.getRecordReader(_split, job, Reporter.NULL);
 			LongWritable key = new LongWritable();
 			Text value = new Text();
@@ -273,7 +276,8 @@ public abstract class FrameGenerateReaderParallel extends FrameReader {
 			_endToken = endToken;
 		}
 
-		@Override public Integer call() throws Exception {
+		@Override
+		public Integer call() throws Exception {
 			int nrows = 0;
 			TemplateUtil.SplitInfo splitInfo = _offsets.getSeqOffsetPerSplit(_curOffset);
 

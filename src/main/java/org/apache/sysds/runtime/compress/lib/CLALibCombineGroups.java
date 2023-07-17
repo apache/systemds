@@ -177,6 +177,7 @@ public final class CLALibCombineGroups {
 			// the order must be sparse second unless both sparse.
 			return combineCompressed(combinedColumns, bc, ac);
 		}
+		// add if encodings are equal make shortcut.
 
 		Pair<IEncode, Map<Integer, Integer>> cec = ae.combineWithMap(be);
 		IEncode ce = cec.getLeft();

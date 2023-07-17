@@ -153,8 +153,13 @@ public class DenseEncoding extends AEncode {
 	}
 
 	private Pair<IEncode, Map<Integer, Integer>> combineDenseNoResize(final DenseEncoding other) {
-		if(map == other.map)
-			return new ImmutablePair<>(this, null); // same object
+		if(map == other.map) {
+			LOG.warn("Constructing perfect mapping, this could be optimized to skip hashmap");
+			final Map<Integer, Integer> m = new HashMap<>(map.size());
+			for(int i = 0; i < map.getUnique(); i++)
+				m.put(i * i, i);
+			return new ImmutablePair<>(this, m); // same object
+		}
 
 		final AMapToData lm = map;
 		final AMapToData rm = other.map;
@@ -248,7 +253,7 @@ public class DenseEncoding extends AEncode {
 
 	@Override
 	public boolean equals(IEncode e) {
-		return e instanceof DenseEncoding && ((DenseEncoding)e).map.equals(this.map);
+		return e instanceof DenseEncoding && ((DenseEncoding) e).map.equals(this.map);
 	}
 
 	@Override

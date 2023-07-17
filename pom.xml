@@ -204,6 +204,48 @@
 				<version>${maven-jar-plugin.version}</version>
 				<executions>
 					<execution>
+						<phase>compile</phase>
+						<goals>
+							<goal>test-jar</goal>
+						</goals>
+						<configuration>
+							<classifier>perf</classifier>
+							<includes>
+								<include>org/apache/sysds/performance/**</include>
+								<include>log4j.properties</include>
+							</includes>
+							<archive>
+								<manifest>
+									<addClasspath>true</addClasspath>
+									<classpathPrefix>lib/</classpathPrefix>
+									<mainClass>org.apache.sysds.performance.Main</mainClass>
+								</manifest>
+								 <manifestEntries>
+									 <Class-Path>SystemDS.jar SystemDS-tests.jar</Class-Path>
+								 </manifestEntries>
+							</archive>
+						</configuration>
+					</execution>
+					<execution>
+						<id>test-jar</id>
+						<goals>
+							<goal>test-jar</goal>
+						</goals>
+						<configuration>
+							<includes>
+								<include>org/apache/sysds/test/**</include>
+							</includes>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-jar-plugin</artifactId>
+				<version>${maven-jar-plugin.version}</version>
+				<executions>
+					<execution>
 						<id>default-jar</id>
 						<phase>package</phase>
 						<goals>

@@ -5,13 +5,8 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.DataConverter;
 
 import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.FileOutputStream;
 import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.IOException;
-import java.io.OutputStreamWriter;
-import java.io.Writer;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -36,7 +31,7 @@ public class Util {
 
 	public Map<String, Integer> getSchemaMap(String fileName) throws IOException {
 		Map<String, Integer> schemaMap = new HashMap<>();
-		try(BufferedReader br = new BufferedReader(new FileReader(fileName,StandardCharsets.UTF_8))) {
+		try(BufferedReader br = new BufferedReader(new FileReader(fileName, StandardCharsets.UTF_8))) {
 			String line;
 			while((line = br.readLine()) != null) {
 				String[] colSchema = line.split(",");
@@ -46,17 +41,16 @@ public class Util {
 		return schemaMap;
 	}
 
-	public String[][] loadFrameData(String fileName,String delimiter, int ncols)
-		throws IOException {
+	public String[][] loadFrameData(String fileName, String delimiter, int ncols) throws IOException {
 		ArrayList<String[]> sampleRawLines = new ArrayList<>();
-		try(BufferedReader br = new BufferedReader(new FileReader(fileName,StandardCharsets.UTF_8))) {
+		try(BufferedReader br = new BufferedReader(new FileReader(fileName, StandardCharsets.UTF_8))) {
 			String line;
 			while((line = br.readLine()) != null) {
 				String[] data = line.split(delimiter);
 				String[] colsData = new String[ncols];
 				for(int i = 0; i < data.length; i++) {
 					String[] value = data[i].split("::");
-					if(value.length ==2) {
+					if(value.length == 2) {
 						int col = Integer.parseInt(value[0]);
 						colsData[col] = value[1];
 					}
@@ -67,29 +61,29 @@ public class Util {
 
 		int nrows = sampleRawLines.size();
 		String[][] result = new String[nrows][ncols];
-		for(int i=0; i< nrows; i++)
+		for(int i = 0; i < nrows; i++)
 			result[i] = sampleRawLines.get(i);
 
 		return result;
 	}
 
-	public MatrixBlock loadMatrixData(String fileName,  String delimiter) throws IOException {
+	public MatrixBlock loadMatrixData(String fileName, String delimiter) throws IOException {
 		int ncols = 0;
-		try(BufferedReader br = new BufferedReader(new FileReader(fileName,StandardCharsets.UTF_8))) {
+		try(BufferedReader br = new BufferedReader(new FileReader(fileName, StandardCharsets.UTF_8))) {
 			String line;
 			while((line = br.readLine()) != null) {
 				String[] data = line.split(delimiter);
-				ncols = Math.max(ncols, Integer.parseInt( data[data.length-1].split("::")[0]));
+				ncols = Math.max(ncols, Integer.parseInt(data[data.length - 1].split("::")[0]));
 			}
 		}
-		String[][] dataString = loadFrameData(fileName,delimiter, ncols+1);
+		String[][] dataString = loadFrameData(fileName, delimiter, ncols + 1);
 		double[][] data = new double[dataString.length][dataString[0].length];
-		for(int i=0;i<dataString.length;i++)
-			for(int j=0;j<dataString[0].length;j++)
-				if(dataString[i][j]!=null)
+		for(int i = 0; i < dataString.length; i++)
+			for(int j = 0; j < dataString[0].length; j++)
+				if(dataString[i][j] != null)
 					data[i][j] = Double.parseDouble(dataString[i][j]);
 				else
-					data[i][j] =0;
+					data[i][j] = 0;
 		MatrixBlock mb = DataConverter.convertToMatrixBlock(data);
 		return mb;
 	}

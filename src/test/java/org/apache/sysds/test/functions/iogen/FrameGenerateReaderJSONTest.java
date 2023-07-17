@@ -32,7 +32,7 @@ public class FrameGenerateReaderJSONTest extends GenerateReaderFrameTest {
 
 	@Test
 	public void test1() {
-		String HOME = SCRIPT_DIR + TEST_DIR + "in/JSON/";
+		String HOME = SCRIPT_DIR + TEST_DIR + "data/JSON/";
 		String[] fields = {"F1", "F2", "F3", "F4", "F5", "F6", "F7"};
 		Boolean[] parallel = {true, false};
 		for(Boolean b : parallel) {

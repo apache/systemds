@@ -29,7 +29,7 @@ import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import org.apache.commons.lang.NotImplementedException;
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -336,7 +336,7 @@ public abstract class CompressedTestBase extends TestBase {
 	 * @param valueRange The value range used as input
 	 */
 	private void setLossyTolerance(ValueRange valueRange) {
-		lossyTolerance = (double) (Math.max(TestConstants.getMaxRangeValue(valueRange),
+		lossyTolerance = (Math.max(TestConstants.getMaxRangeValue(valueRange),
 			Math.abs(TestConstants.getMinRangeValue(valueRange)))) * (1.0 / 127.0) / 2.0;
 	}
 

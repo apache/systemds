@@ -78,8 +78,6 @@ public final class CLALibSlice {
 	}
 
 	private static List<MatrixBlock> sliceBlocksMultiThread(CompressedMatrixBlock cmb, int blen, int k) {
-		// final List<MatrixBlock> mbs = new ArrayList<>();
-
 		final ExecutorService pool = CommonThreadPool.get(k);
 		try {
 			final ArrayList<SliceTask> tasks = new ArrayList<>();
@@ -144,7 +142,7 @@ public final class CLALibSlice {
 
 	private static MatrixBlock sliceRowsCompressed(CompressedMatrixBlock cmb, int rl, int ru) {
 		final List<AColGroup> groups = cmb.getColGroups();
-		final List<AColGroup> newColGroups = new ArrayList<AColGroup>(groups.size());
+		final List<AColGroup> newColGroups = new ArrayList<>(groups.size());
 		final int rue = ru + 1;
 
 		final CompressedMatrixBlock ret = new CompressedMatrixBlock(rue - rl, cmb.getNumColumns());

@@ -118,7 +118,7 @@ public class FloatArray extends Array<Float> {
 		final int endSize = this._size + other.size();
 		final float[] ret = new float[endSize];
 		System.arraycopy(_data, 0, ret, 0, this._size);
-		System.arraycopy((float[]) other.get(), 0, ret, this._size, other.size());
+		System.arraycopy(other.get(), 0, ret, this._size, other.size());
 		if(other instanceof OptionalArray)
 			return OptionalArray.appendOther((OptionalArray<Float>) other, new FloatArray(ret));
 		else
@@ -175,7 +175,7 @@ public class FloatArray extends Array<Float> {
 
 	@Override
 	public Pair<ValueType, Boolean> analyzeValueType() {
-		return new Pair<ValueType, Boolean>(ValueType.FP32, false);
+		return new Pair<>(ValueType.FP32, false);
 	}
 
 	@Override
@@ -223,7 +223,7 @@ public class FloatArray extends Array<Float> {
 	protected Array<Double> changeTypeDouble() {
 		double[] ret = new double[size()];
 		for(int i = 0; i < size(); i++)
-			ret[i] = (double) _data[i];
+			ret[i] = _data[i];
 		return new DoubleArray(ret);
 	}
 
@@ -326,10 +326,17 @@ public class FloatArray extends Array<Float> {
 		return _data[i] != 0.0f;
 	}
 
+	@Override
+	public double hashDouble(int idx) {
+		return Float.hashCode(_data[idx]);
+	}
 
 	@Override
-	public double hashDouble(int idx){
-		return Float.hashCode(_data[idx]);
+	public boolean equals(Array<Float> other) {
+		if(other instanceof FloatArray)
+			return Arrays.equals(_data, ((FloatArray) other)._data);
+		else
+			return false;
 	}
 
 	@Override

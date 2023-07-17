@@ -201,7 +201,7 @@ public class ResultMergeRemoteSpark extends ResultMergeMatrix
 	@SuppressWarnings({ "unchecked"})
 	private static void setRDDHandleForMerge(MatrixObject mo, SparkExecutionContext sec) {
 		InputOutputInfo iinfo = InputOutputInfo.get(DataType.MATRIX, FileFormat.BINARY);
-		JavaPairRDD<MatrixIndexes,MatrixBlock> rdd = (JavaPairRDD<MatrixIndexes,MatrixBlock>) sec.getSparkContext().hadoopFile(
+		JavaPairRDD<MatrixIndexes,MatrixBlock> rdd = sec.getSparkContext().hadoopFile(
 			mo.getFileName(), iinfo.inputFormatClass, iinfo.keyClass, iinfo.valueClass);
 		RDDObject rddhandle = new RDDObject(rdd);
 		rddhandle.setHDFSFile(true);

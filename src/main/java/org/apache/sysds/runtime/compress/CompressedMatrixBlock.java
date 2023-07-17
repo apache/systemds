@@ -30,7 +30,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.Future;
 
-import org.apache.commons.lang.NotImplementedException;
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.commons.math3.random.Well1024a;
@@ -94,6 +94,11 @@ import org.apache.sysds.utils.DMLCompressionStatistics;
 public class CompressedMatrixBlock extends MatrixBlock {
 	private static final Log LOG = LogFactory.getLog(CompressedMatrixBlock.class.getName());
 	private static final long serialVersionUID = 73193720143154058L;
+
+	/**
+	 * Debugging flag for Compressed Matrices
+	 */
+	public static boolean debug = true;
 
 	/**
 	 * Column groups
@@ -926,6 +931,11 @@ public class CompressedMatrixBlock extends MatrixBlock {
 	public static MatrixBlock getUncompressed(MatrixValue mVal, String message) {
 		return isCompressed((MatrixBlock) mVal) ? ((CompressedMatrixBlock) mVal)
 			.getUncompressed(message) : (MatrixBlock) mVal;
+	}
+
+	public static MatrixBlock getUncompressed(MatrixValue mVal, String message, int k) {
+		return isCompressed((MatrixBlock) mVal) ? ((CompressedMatrixBlock) mVal).getUncompressed(message,
+			k) : (MatrixBlock) mVal;
 	}
 
 	public MatrixBlock getUncompressed() {

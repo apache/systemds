@@ -307,7 +307,8 @@ public class QuantilePickFEDInstruction extends BinaryFEDInstruction {
 
 				if(quantiles[i] > sizeBefore && quantiles[i] <= sizeBeforeTmp) {
 					bucketWithQ = new ImmutablePair<>(min + (j * bucketRange), min + ((j+1) * bucketRange));
-					bucketsWithIndex[i] = new ImmutableTriple<Integer, Integer, ImmutablePair<Double, Double>>(quantiles[i] == 1 ? 1 : (int) quantiles[i] - sizeBefore, bucketsFrequencies[j], bucketWithQ);
+					bucketsWithIndex[i] = new ImmutableTriple<>(quantiles[i] == 1 ? 1 :
+						(int) quantiles[i] - sizeBefore, bucketsFrequencies[j], bucketWithQ);
 					countFoundBins++;
 				}
 			}

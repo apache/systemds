@@ -24,7 +24,10 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.util.Arrays;
 
-import org.apache.commons.lang.NotImplementedException;
+import org.apache.commons.lang3.NotImplementedException;
+import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
+import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.DictionaryFactory;
@@ -62,6 +65,16 @@ public class ColGroupDDC extends APreAgg implements IMapToDataGroup {
 	private ColGroupDDC(IColIndex colIndexes, ADictionary dict, AMapToData data, int[] cachedCounts) {
 		super(colIndexes, dict, cachedCounts);
 		_data = data;
+
+		if(CompressedMatrixBlock.debug) {
+			if(data.getUnique() != dict.getNumberOfValues(colIndexes.size()))
+				throw new DMLCompressionException("Invalid map to dict Map has:" + data.getUnique() + " while dict has "
+					+ dict.getNumberOfValues(colIndexes.size()) );
+			int[] c = getCounts();
+			if(c.length != dict.getNumberOfValues(colIndexes.size()))
+				throw new DMLCompressionException("Invalid DDC Construction");
+		}
+
 	}
 
 	public static AColGroup create(IColIndex colIndexes, ADictionary dict, AMapToData data, int[] cachedCounts) {
@@ -490,8 +503,12 @@ public class ColGroupDDC extends APreAgg implements IMapToDataGroup {
 
 	@Override
 	public AColGroup sliceRows(int rl, int ru) {
-		AMapToData sliceMap = _data.slice(rl, ru);
-		return new ColGroupDDC(_colIndexes, _dict, sliceMap, null);
+		try {
+			return ColGroupDDC.create(_colIndexes, _dict, _data.slice(rl, ru), null);
+		}
+		catch(Exception e) {
+			throw new DMLRuntimeException("Failed to slice out sub part DDC: " + rl + " " + ru, e);
+		}
 	}
 
 	@Override

@@ -240,6 +240,13 @@ public class LineageCacheEntry {
 		notifyAll();
 	}
 
+	public synchronized void setRDDValue(RDDObject rdd) {
+		_rddObject = rdd;
+		_status = isNullVal() ? LineageCacheStatus.EMPTY : LineageCacheStatus.TOPERSISTRDD;
+		//resume all threads waiting for val
+		notifyAll();
+	}
+
 	public synchronized void setValue(byte[] serialBytes, long computetime) {
 		_serialBytes = serialBytes;
 		_computeTime = computetime;
@@ -254,7 +261,7 @@ public class LineageCacheEntry {
 		_gpuPointer = src._gpuPointer;
 		_rddObject = src._rddObject;
 		_computeTime = src._computeTime;
-		_status = isNullVal() ? LineageCacheStatus.EMPTY : LineageCacheStatus.CACHED;
+		_status = src._status; //requires for multi-level reuse of RDDs
 		// resume all threads waiting for val
 		notifyAll();
 	}

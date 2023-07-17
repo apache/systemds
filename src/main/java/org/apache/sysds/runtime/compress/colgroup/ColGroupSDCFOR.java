@@ -24,7 +24,7 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.util.Arrays;
 
-import org.apache.commons.lang.NotImplementedException;
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
@@ -101,7 +101,7 @@ public class ColGroupSDCFOR extends ASDC implements IMapToDataGroup , IFrameOfRe
 
 	public static AColGroup sparsifyFOR(ColGroupSDC g) {
 		// subtract default.
-		final double[] constV = ((ColGroupSDC) g)._defaultTuple;
+		final double[] constV = g._defaultTuple;
 		final AColGroupValue clg = (AColGroupValue) g.subtractDefaultTuple();
 		return create(g.getColIndices(), g._numRows, clg._dict, g._indexes, g._data, g.getCachedCounts(), constV);
 	}

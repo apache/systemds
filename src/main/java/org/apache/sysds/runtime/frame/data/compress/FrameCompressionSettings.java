@@ -16,8 +16,21 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+
 package org.apache.sysds.runtime.frame.data.compress;
 
-public class FrameCompressionStatistics {
+import org.apache.sysds.runtime.compress.workload.WTreeRoot;
+
+public class FrameCompressionSettings {
+
+	public final float sampleRatio;
+	public final int k;
+	public final WTreeRoot wt;
+
+	protected FrameCompressionSettings(float sampleRatio, int k, WTreeRoot wt) {
+		this.sampleRatio = sampleRatio;
+		this.k = k;
+		this.wt = wt;
+	}
 
 }

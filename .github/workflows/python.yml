@@ -113,14 +113,14 @@ jobs:
         export PATH=$SYSTEMDS_ROOT/bin:$PATH
         export SYSDS_QUIET=1
         cd src/main/python
-        unittest-parallel -t . -s tests --module-fixtures
+        unittest-parallel -t . -s tests
         # python -m unittest discover -s tests -p 'test_*.py'
         echo "Exit Status: " $?
     
     - name: Run all python tests no environment
       run: |
         cd src/main/python
-        unittest-parallel -t . -s tests --module-fixtures
+        unittest-parallel -t . -s tests
         # python -m unittest discover -s tests -p 'test_*.py'
         echo "Exit Status: " $?
 

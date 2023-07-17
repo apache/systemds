@@ -22,12 +22,13 @@ package org.apache.sysds.runtime.transform.encode;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
-import org.apache.commons.lang.NotImplementedException;
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.common.Types.ValueType;
@@ -154,7 +155,7 @@ public class CompressedEncode {
 		int colId = c._colID;
 		Array<?> a = in.getColumn(colId - 1);
 		boolean containsNull = a.containsNull();
-		HashMap<?, Long> map = a.getRecodeMap();
+		Map<?, Long> map = a.getRecodeMap();
 		int domain = map.size();
 		if(containsNull && domain == 0)
 			return new ColGroupEmpty(ColIndexFactory.create(1));
@@ -232,7 +233,7 @@ public class CompressedEncode {
 	private AColGroup recode(ColumnEncoderComposite c) {
 		int colId = c._colID;
 		Array<?> a = in.getColumn(colId - 1);
-		HashMap<?, Long> map = a.getRecodeMap();
+		Map<?, Long> map = a.getRecodeMap();
 		boolean containsNull = a.containsNull();
 		int domain = map.size();
 
@@ -284,7 +285,7 @@ public class CompressedEncode {
 
 	}
 
-	private AMapToData createMappingAMapToData(Array<?> a, HashMap<?, Long> map, boolean containsNull) {
+	private AMapToData createMappingAMapToData(Array<?> a, Map<?, Long> map, boolean containsNull) {
 		final int si = map.size();
 		AMapToData m = MapToFactory.create(in.getNumRows(), si + (containsNull ? 1 : 0));
 		Array<?>.ArrayIterator it = a.getIterator();

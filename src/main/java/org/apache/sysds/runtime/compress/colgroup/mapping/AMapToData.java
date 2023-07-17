@@ -24,7 +24,7 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.util.BitSet;
 
-import org.apache.commons.lang.NotImplementedException;
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.colgroup.IMapToDataGroup;
@@ -91,6 +91,26 @@ public abstract class AMapToData implements Serializable {
 	 * @return the value represented in that cell as integer
 	 */
 	public abstract int getIndex(int n);
+
+	/**
+	 * Shortcut method to support Long objects, not really efficient but for the purpose of reusing code.
+	 * 
+	 * @param n The index to set.
+	 * @param v The value to set.
+	 */
+	public void set(int n, Long v) {
+		set(n, (int) (long) v);
+	}
+
+	/**
+	 * Shortcut method to support Integer objects, not really efficient but for the purpose of reusing code.
+	 * 
+	 * @param n The index to set.
+	 * @param v The value to set.
+	 */
+	public void set(int n, Integer v) {
+		set(n, (int) v);
+	}
 
 	/**
 	 * Set the index to the value.
@@ -819,6 +839,19 @@ public abstract class AMapToData implements Serializable {
 	public abstract AMapToData append(AMapToData t);
 
 	public abstract AMapToData appendN(IMapToDataGroup[] d);
+
+	@Override
+	public boolean equals(Object e) {
+		return e instanceof AMapToData && (this == e || this.equals((AMapToData) e));
+	}
+
+	/**
+	 * Indicate if the given encoding is equivalent to this encoding
+	 * 
+	 * @param e The other encoding to be compared with this
+	 * @return If the encoding is equivalent
+	 */
+	public abstract boolean equals(AMapToData e);
 
 	@Override
 	public String toString() {

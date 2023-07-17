@@ -27,7 +27,7 @@ then
   exit 1;
 fi
 
-CMD=$3
+CMD=${3:-systemds}
 BASE=$2
 
 tstart=$(date +%s.%N)

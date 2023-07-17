@@ -34,7 +34,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 
-import org.apache.commons.lang.NotImplementedException;
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.DMLRuntimeException;
@@ -238,7 +238,7 @@ public class LibMatrixReorg {
 		// Timing time = new Timing(true);
 
 		// CSR is only allowed in the transposed output if the number of non zeros is counted in the columns
-		allowCSR = allowCSR && out.nonZeros < (long) Integer.MAX_VALUE && in.clen <= 4096;
+		allowCSR = allowCSR && out.nonZeros < Integer.MAX_VALUE && in.clen <= 4096;
 
 		if(out.sparse && allowCSR) {
 			int size = (int) out.nonZeros;
@@ -1310,12 +1310,12 @@ public class LibMatrixReorg {
 	}
 
 	/** Thread local temporary double array.. */
-	private static ThreadLocal<double[]> memPool = new ThreadLocal<double[]>() {
-        @Override
-        protected double[] initialValue() {
-            return null;
-        }
-    };
+	private static ThreadLocal<double[]> memPool = new ThreadLocal<>() {
+		@Override
+		protected double[] initialValue() {
+			return null;
+		}
+	};
 
 	/**
 	 * Only use if the number of rows and cols are equal
@@ -2581,7 +2581,6 @@ public class LibMatrixReorg {
 		return rix.stream().collect(Collectors.toMap(ix -> ix, ix -> createResultBlock(ix, nnz, rix.size(), mcOut)));
 	}
 	
-	@SuppressWarnings("unused")
 	private static MatrixBlock createResultBlock(MatrixIndexes ix, long nnz, int nBlocks, DataCharacteristics mcOut) {
 		//compute indexes
 		long bi = ix.getRowIndex();

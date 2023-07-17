@@ -24,7 +24,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.DataType;
@@ -258,6 +258,10 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 	public boolean isRemoveVariable() {
 		return opcode == VariableOperationCode.RemoveVariable
 			|| opcode == VariableOperationCode.RemoveVariableAndFile;
+	}
+	
+	public boolean isMoveVariable() {
+		return opcode == VariableOperationCode.MoveVariable;
 	}
 
 	public boolean isAssignVariable() {

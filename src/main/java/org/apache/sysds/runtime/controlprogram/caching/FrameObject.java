@@ -20,8 +20,8 @@
 package org.apache.sysds.runtime.controlprogram.caching;
 
 
-import org.apache.commons.lang.ArrayUtils;
-import org.apache.commons.lang.mutable.MutableBoolean;
+import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.mutable.MutableBoolean;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.FileFormat;
@@ -121,7 +121,7 @@ public class FrameObject extends CacheableData<FrameBlock>
 	 * @return schema of value types
 	 */
 	public ValueType[] mergeSchemas(FrameObject fo) {
-		return (ValueType[]) ArrayUtils.addAll(
+		return ArrayUtils.addAll(
 			(_schema!=null) ? _schema : UtilFunctions.nCopies((int)getNumColumns(), ValueType.STRING), 
 			(fo._schema!=null) ? fo._schema : UtilFunctions.nCopies((int)fo.getNumColumns(), ValueType.STRING));
 	} 

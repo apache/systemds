@@ -25,7 +25,7 @@ import java.io.IOException;
 import java.lang.ref.SoftReference;
 import java.util.Arrays;
 
-import org.apache.commons.lang.NotImplementedException;
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.data.SparseBlock;
@@ -233,7 +233,7 @@ public class IdentityDictionary extends ADictionary {
 
 	@Override
 	public ADictionary clone() {
-		return new IdentityDictionary(nRowCol);
+		return new IdentityDictionary(nRowCol, withEmpty);
 	}
 
 	@Override
@@ -357,9 +357,9 @@ public class IdentityDictionary extends ADictionary {
 	@Override
 	public ADictionary sliceOutColumnRange(int idxStart, int idxEnd, int previousNumberOfColumns) {
 		if(idxStart == 0 && idxEnd == nRowCol)
-			return new IdentityDictionary(nRowCol);
+			return new IdentityDictionary(nRowCol, withEmpty);
 		else
-			return new IdentityDictionarySlice(nRowCol, idxStart, idxEnd);
+			return new IdentityDictionarySlice(nRowCol, withEmpty, idxStart, idxEnd);
 	}
 
 	@Override
@@ -529,7 +529,7 @@ public class IdentityDictionary extends ADictionary {
 
 	@Override
 	public double getSparsity() {
-		return 1.0d / (double) nRowCol;
+		return 1d / nRowCol;
 	}
 
 	@Override

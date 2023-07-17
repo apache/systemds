@@ -154,7 +154,7 @@ public class PartitionedBroadcast<T extends CacheBlock> implements Serializable
 		
 		T ret = (T) allBlks.get(0).getValue();
 		for(int i=1; i<allBlks.size(); i++)
-			ret.merge((T)allBlks.get(i).getValue(), false);
+			ret.merge(allBlks.get(i).getValue(), false);
 		return ret;
 	}
 	

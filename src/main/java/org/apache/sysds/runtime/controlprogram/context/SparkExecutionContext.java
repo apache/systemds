@@ -439,7 +439,7 @@ public class SparkExecutionContext extends ExecutionContext
 			}
 			else { //default case
 				MatrixBlock mb = mo.acquireRead(); //pin matrix in memory
-				rdd = toMatrixJavaPairRDD(sc, mb, (int)mo.getBlocksize(), numParts, inclEmpty);
+				rdd = toMatrixJavaPairRDD(sc, mb, mo.getBlocksize(), numParts, inclEmpty);
 				mo.release(); //unpin matrix
 				_parRDDs.registerRDD(rdd.id(), OptimizerUtils.estimatePartitionedSizeExactSparsity(dc), true);
 			}
@@ -700,7 +700,7 @@ public class SparkExecutionContext extends ExecutionContext
 					CacheableData.addBroadcastSize(-mo.getBroadcastHandle().getSize());
 
 				//obtain meta data for matrix
-				int blen = (int) mo.getBlocksize();
+				int blen = mo.getBlocksize();
 
 				//create partitioned matrix block and release memory consumed by input
 				MatrixBlock mb = mo.acquireRead();
@@ -1503,7 +1503,6 @@ public class SparkExecutionContext extends ExecutionContext
 		}
 	}
 
-	@SuppressWarnings({ "rawtypes", "unchecked" })
 	private void rCleanupLineageObject(LineageObject lob)
 		throws IOException
 	{
@@ -1522,12 +1521,30 @@ public class SparkExecutionContext extends ExecutionContext
 
 		//cleanup current lineage object (from driver/executors)
 		//incl deferred hdfs file removal (only if metadata set by cleanup call)
+		cleanupSingleLineageObject(lob);
+
+		//recursively process lineage children
+		for( LineageObject c : lob.getLineageChilds() ){
+			c.decrementNumReferences();
+			rCleanupLineageObject(c);
+		}
+	}
+
+	@SuppressWarnings({ "rawtypes", "unchecked" })
+	public static void cleanupSingleLineageObject(LineageObject lob) {
+		//cleanup current lineage object (from driver/executors)
+		//incl deferred hdfs file removal (only if metadata set by cleanup call)
 		if( lob instanceof RDDObject ) {
 			RDDObject rdd = (RDDObject)lob;
 			int rddID = rdd.getRDD().id();
 			cleanupRDDVariable(rdd.getRDD());
 			if( rdd.getHDFSFilename()!=null ) { //deferred file removal
-				HDFSTool.deleteFileWithMTDIfExistOnHDFS(rdd.getHDFSFilename());
+				try {
+					HDFSTool.deleteFileWithMTDIfExistOnHDFS(rdd.getHDFSFilename());
+				}
+				catch(IOException e) {
+					throw new DMLRuntimeException(e);
+				}
 			}
 			if( rdd.isParallelizedRDD() )
 				_parRDDs.deregisterRDD(rddID);
@@ -1547,12 +1564,6 @@ public class SparkExecutionContext extends ExecutionContext
 					cleanupBroadcastVariable(bc);
 			}
 			CacheableData.addBroadcastSize(-bob.getSize());
-		}
-
-		//recursively process lineage children
-		for( LineageObject c : lob.getLineageChilds() ){
-			c.decrementNumReferences();
-			rCleanupLineageObject(c);
 		}
 	}
 

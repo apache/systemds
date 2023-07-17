@@ -29,12 +29,14 @@ for index in ${!address[*]}; do
     if [ "${address[$index]}" != "localhost" ]; then
         # remote workers stop.
         ssh ${address[$index]} " cd ${remoteDir}; ./scripts/stopWorker.sh" &
+        rsync -ah -e ssh ${address[$index]}:$remoteDir/tmp/ &
     else
         # stop all localhost workers.
         ./scripts/stopWorker.sh
     fi
 done
 
+./scripts/stopWorker.sh
 ./scripts/stopMonitoring.sh 
 
 wait

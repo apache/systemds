@@ -24,7 +24,7 @@ import java.io.Serializable;
 import java.lang.ref.SoftReference;
 import java.util.Arrays;
 
-import org.apache.commons.lang.NotImplementedException;
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.DMLRuntimeException;
@@ -51,7 +51,7 @@ public abstract class AOffset implements Serializable {
 	protected static final Log LOG = LogFactory.getLog(AOffset.class.getName());
 
 	/** Thread local cache for a single recently used Iterator, this is used for cache blocking */
-	private ThreadLocal<OffsetCache> cacheRow = new ThreadLocal<OffsetCache>() {
+	private ThreadLocal<OffsetCache> cacheRow = new ThreadLocal<>() {
 		@Override
 		protected OffsetCache initialValue() {
 			return null;

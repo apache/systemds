@@ -40,7 +40,7 @@ public class LineageEstimatorStatistics {
 	
 	public static String displayComputeTime() {
 		StringBuilder sb = new StringBuilder();
-		sb.append(String.format("%.3f", ((double)Statistics.getRunTime())*1e-9)); //in sec
+		sb.append(String.format("%.3f", Statistics.getRunTime()*1e-9)); //in sec
 		sb.append("/");
 		sb.append(String.format("%.3f", ((double)_ctimeSaved.longValue())/1000000000)); //in sec
 		return sb.toString();

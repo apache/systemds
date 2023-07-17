@@ -161,7 +161,7 @@ public class DetectSchemaTest extends AutomatedTestBase {
 					long[] tmp4 = new long[rows];
 					for(int i = 0; i < rows; i++)
 						data[i][j] = tmp4[i] = (Long) UtilFunctions.doubleToObject(Types.ValueType.INT64, data[i][j], false);
-					data[0][j] = tmp4[0] = ((long) Integer.MAX_VALUE) + 6L;
+					data[0][j] = tmp4[0] = Integer.MAX_VALUE + 6L;
 					frame1.appendColumn(tmp4);
 					break;
 				case FP32:

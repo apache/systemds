@@ -21,7 +21,7 @@ package org.apache.sysds.runtime.compress.estim.encoding;
 
 import java.util.Arrays;
 
-import org.apache.commons.lang.NotImplementedException;
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupConst;
@@ -307,7 +307,7 @@ public interface EncodingFactory {
 		final DoubleCountHashMap map = new DoubleCountHashMap(16);
 		final SparseBlock sb = m.getSparseBlock();
 
-		final double guessedNumberOfNonZero = Math.min(4, Math.ceil((double) m.getNumRows() * m.getSparsity()));
+		final double guessedNumberOfNonZero = Math.min(4, Math.ceil(m.getNumRows() * m.getSparsity()));
 		final IntArrayList offsets = new IntArrayList((int) guessedNumberOfNonZero);
 
 		// Iteration 1 of non zero values, make Count HashMap.

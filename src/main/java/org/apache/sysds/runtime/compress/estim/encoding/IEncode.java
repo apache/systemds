@@ -45,13 +45,13 @@ public interface IEncode {
 	public IEncode combine(IEncode e);
 
 	/**
-	 * Combine two encodings without resizing the output. meaning the mapping of the indexes should be consistent with 
+	 * Combine two encodings without resizing the output. meaning the mapping of the indexes should be consistent with
 	 * left hand side Dictionary indexes and right hand side indexes.
 	 * 
-	 * @param e The other side to combine with 
+	 * @param e The other side to combine with
 	 * @return The combined encoding
 	 */
-	public Pair<IEncode, Map<Integer,Integer>> combineWithMap(IEncode e);
+	public Pair<IEncode, Map<Integer, Integer>> combineWithMap(IEncode e);
 
 	/**
 	 * Get the number of unique values in this encoding
@@ -78,4 +78,15 @@ public interface IEncode {
 	 * @return is dense
 	 */
 	public abstract boolean isDense();
+
+	@Override
+	public abstract boolean equals(Object e);
+
+	/**
+	 * Indicate if the given encoding is equivalent to this encoding
+	 * 
+	 * @param e The other encoding to be compared with this
+	 * @return If the encoding is equivalent
+	 */
+	public abstract boolean equals(IEncode e);
 }

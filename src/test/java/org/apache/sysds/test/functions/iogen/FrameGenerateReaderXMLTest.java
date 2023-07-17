@@ -32,11 +32,11 @@ public class FrameGenerateReaderXMLTest extends GenerateReaderFrameTest {
 
 	@Test
 	public void test1() {
-		String HOME = SCRIPT_DIR + TEST_DIR + "data/XML/";
+		String HOME = SCRIPT_DIR + TEST_DIR + "in/XML/";
 		Boolean[] parallel = {true, false};
 		for(Boolean b : parallel) {
-			String sampleRaw = HOME + "/sample-autolead-xml200.raw";
-			String sampleFrame = HOME + "/sample-autolead-xml200.frame";
+			String sampleRaw = HOME + "/sample-autolead-xml50.raw";
+			String sampleFrame = HOME + "/sample-autolead-xml50.frame";
 			String schema = HOME + "/autolead-xml.schema";
 			runGenerateReaderTest(sampleRaw, sampleFrame, schema, b);
 

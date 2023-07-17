@@ -25,15 +25,9 @@ import org.apache.sysds.conf.CompilerConfig;
 import org.apache.sysds.runtime.io.MatrixReader;
 import org.apache.sysds.runtime.iogen.GenerateReader;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
-
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
 
 public abstract class GenerateReaderMatrixTest extends AutomatedTestBase {
 

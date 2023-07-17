@@ -35,9 +35,9 @@ public class FrameGenerateReaderJSONTest extends GenerateReaderFrameTest {
 		String HOME = SCRIPT_DIR + TEST_DIR + "in/JSON/";
 		String[] fields = {"F1", "F2", "F3", "F4", "F5", "F6", "F7"};
 		Boolean[] parallel = {true, false};
+		String sampleRaw = HOME + "/sample-aminer-author-json200.raw";
 		for(Boolean b : parallel) {
 			for(String f : fields) {
-				String sampleRaw = HOME + f + "/sample-aminer-author-json200.raw";
 				String sampleFrame = HOME + f + "/sample-aminer-author-json200.frame";
 				String schema = HOME + f + "/aminer-author-json.schema";
 				runGenerateReaderTest(sampleRaw, sampleFrame, schema, b);

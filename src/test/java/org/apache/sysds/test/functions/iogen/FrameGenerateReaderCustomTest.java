@@ -35,9 +35,9 @@ public class FrameGenerateReaderCustomTest extends GenerateReaderFrameTest {
 		String HOME = SCRIPT_DIR + TEST_DIR + "in/Custom/";
 		String[] fields = {"F1", "F2", "F3", "F4", "F5", "F6", "F7"};
 		Boolean[] parallel = {true, false};
+		String sampleRaw = HOME + "sample-aminer-author200.raw";
 		for(Boolean b : parallel) {
 			for(String f : fields) {
-				String sampleRaw = HOME + f + "/sample-aminer-author200.raw";
 				String sampleFrame = HOME + f + "/sample-aminer-author200.frame";
 				String schema = HOME + f + "/aminer-author.schema";
 				runGenerateReaderTest(sampleRaw, sampleFrame, schema, b);

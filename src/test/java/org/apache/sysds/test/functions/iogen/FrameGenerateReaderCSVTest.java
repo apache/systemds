@@ -35,9 +35,9 @@ public class FrameGenerateReaderCSVTest extends GenerateReaderFrameTest {
 		String HOME = SCRIPT_DIR + TEST_DIR + "in/CSV/";
 		String[] fields = {"F1", "F2", "F3", "F4", "F5", "F6", "F7"};
 		Boolean[] parallel = {true, false};
+		String sampleRaw = HOME + "sample-yelp-csv200.raw";
 		for(Boolean b : parallel) {
 			for(String f : fields) {
-				String sampleRaw = HOME + f + "/sample-yelp-csv200.raw";
 				String sampleFrame = HOME + f + "/sample-yelp-csv200.frame";
 				String schema = HOME + f + "/yelp-csv.schema";
 				runGenerateReaderTest(sampleRaw, sampleFrame, schema, b);

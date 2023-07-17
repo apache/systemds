@@ -30,91 +30,18 @@ public class FrameGenerateReaderCSVTest extends GenerateReaderFrameTest {
 		return TEST_NAME;
 	}
 
-	private void extractSampleRawCSV(String separator) {
-		int nrows = data.length;
-		int ncols = data[0].length;
-		StringBuilder sb = new StringBuilder();
-		for(int r = 0; r < nrows; r++) {
-			for(int c = 0; c < ncols; c++) {
-				sb.append(data[r][c]);
-				if(c != ncols - 1)
-					sb.append(separator);
-			}
-			if(r != nrows - 1)
-				sb.append("\n");
-		}
-		sampleRaw = sb.toString();
-	}
-
 	@Test
 	public void test1() {
-		String[] naStrings = {"NULL", "inf", "NaN"};
-		String separator = ",";
-		generateRandomData(10, 10, -100, 100, 1, naStrings);
-		extractSampleRawCSV(separator);
-		runGenerateReaderTest();
-	}
-
-	@Test
-	public void test2() {
-		String[] naStrings = {"NULL", "inf", "NaN"};
-		String separator = ",";
-		generateRandomData(10, 10, -10, 10, 1, naStrings);
-		extractSampleRawCSV(separator);
-		runGenerateReaderTest();
-	}
-
-	@Test
-	public void test3() {
-		String[] naStrings = {"NULL", "inf", "NaN"};
-		String separator = "****";
-		generateRandomData(100, 500, -10, 10, 1, naStrings);
-		extractSampleRawCSV(separator);
-		runGenerateReaderTest();
-	}
-
-	@Test
-	public void test4() {
-		String[] naStrings = {"NULL", "inf", "NaN"};
-		String separator = ",";
-		generateRandomData(10, 10, -10, 10, 0.7, naStrings);
-		extractSampleRawCSV(separator);
-		runGenerateReaderTest();
-	}
-
-	@Test
-	public void test5() {
-		String[] naStrings = {"NULL", "inf", "NaN"};
-		String separator = ",,,,";
-		generateRandomData(10, 10, -10, 10, 0.5, naStrings);
-		extractSampleRawCSV(separator);
-		runGenerateReaderTest();
-	}
-
-	@Test
-	public void test6() {
-		String[] naStrings = {"NULL", "inf", "NaN"};
-		String separator = "**";
-		generateRandomData(1000, 100, -10, 10, 0.4, naStrings);
-		extractSampleRawCSV(separator);
-		runGenerateReaderTest();
-	}
-
-	@Test
-	public void test7() {
-		String[] naStrings = {"NULL", "inf", "NaN"};
-		String separator = "**";
-		generateRandomData(1000, 100, -10, 10, 0.8, naStrings);
-		extractSampleRawCSV(separator);
-		runGenerateReaderTest();
-	}
-
-	@Test
-	public void test8() {
-		String[] naStrings = {"NULL", "inf", "NaN"};
-		String separator = "**";
-		generateRandomData(10000, 100, -10, 10, 0.5, naStrings);
-		extractSampleRawCSV(separator);
-		runGenerateReaderTest();
+		String HOME = SCRIPT_DIR + TEST_DIR + "data/CSV/";
+		String[] fields = {"F1", "F2", "F3", "F4", "F5", "F6", "F7"};
+		Boolean[] parallel = {true, false};
+		for(Boolean b : parallel) {
+			for(String f : fields) {
+				String sampleRaw = HOME + f + "/sample-yelp-csv200.raw";
+				String sampleFrame = HOME + f + "/sample-yelp-csv200.frame";
+				String schema = HOME + f + "/yelp-csv.schema";
+				runGenerateReaderTest(sampleRaw, sampleFrame, schema, b);
+			}
+		}
 	}
 }

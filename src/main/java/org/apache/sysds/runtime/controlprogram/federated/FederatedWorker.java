@@ -38,7 +38,7 @@ import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.conf.DMLConfig;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
-import org.apache.sysds.runtime.controlprogram.federated.compression.CompressionEncoder;
+import org.apache.sysds.runtime.controlprogram.federated.compression.*;
 import org.apache.sysds.runtime.controlprogram.paramserv.NetworkTrafficCounter;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysds.runtime.lineage.LineageCache;
@@ -197,11 +197,15 @@ public class FederatedWorker {
 						cp.addLast(cont2.newHandler(ch.alloc()));
 					final Optional<ImmutablePair<ChannelInboundHandlerAdapter, ChannelOutboundHandlerAdapter>> compressionStrategy = FederationUtils.compressionStrategy();
 					cp.addLast("NetworkTrafficCounter", new NetworkTrafficCounter(FederatedStatistics::logWorkerTraffic));
+					cp.addLast("CompressionDecodingStartStatistics", new CompressionDecoderStartStatisticsHandler());
 					compressionStrategy.ifPresent(strategy -> cp.addLast("CompressionDecoder", strategy.left));
+					cp.addLast("CompressionDecoderEndStatistics", new CompressionDecoderEndStatisticsHandler());
 					cp.addLast("ObjectDecoder",
 						new ObjectDecoder(Integer.MAX_VALUE,
 							ClassResolvers.weakCachingResolver(ClassLoader.getSystemClassLoader())));
+					cp.addLast("CompressionEncodingEndStatistics", new CompressionEncoderEndStatisticsHandler());
 					compressionStrategy.ifPresent(strategy -> cp.addLast("CompressionEncoder", strategy.right));
+					cp.addLast("CompressionEncodingStartStatistics", new CompressionEncoderStartStatisticsHandler());
 					cp.addLast("ObjectEncoder", new ObjectEncoder());
 					cp.addLast(FederationUtils.decoder(), new FederatedResponseEncoder());
 					cp.addLast(new FederatedWorkerHandler(_flt, _frc, _fan, networkTimer));

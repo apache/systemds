@@ -1,3 +1,22 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
 package org.apache.sysds.test.functions.federated.io;
 
 import org.apache.commons.logging.Log;
@@ -10,6 +29,7 @@ import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
 import org.apache.sysds.test.functions.federated.FederatedTestObjectConstructor;
+import org.apache.sysds.utils.stats.FederatedCompressionStatistics;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -33,9 +53,9 @@ public class FederatedCompressionTest extends AutomatedTestBase {
     private final static String TEST_CONF_FOLDER = SCRIPT_DIR + TEST_DIR + "config/";
 
     @Parameterized.Parameter()
-    public String compressionStrategy = "Zlib";
+    public String compressionStrategy;
     @Parameterized.Parameter(1)
-    public int dim = 3;
+    public int dim;
     @Parameterized.Parameter(2)
     public long[][] begins;
     @Parameterized.Parameter(3)
@@ -55,7 +75,10 @@ public class FederatedCompressionTest extends AutomatedTestBase {
     public static Collection<Object[]> data() {
         return Arrays.asList(new Object[][] {
                 // {compressionStrategy, dim, begins, ends}
+                {"None", 3, new long[][] {new long[] {0, 0}}, new long[][] {new long[] {3, 3}}},
                 {"Zlib", 3, new long[][] {new long[] {0, 0}}, new long[][] {new long[] {3, 3}}},
+                {"None", 1000, new long[][] {new long[] {0, 0}}, new long[][] {new long[] {1000, 1000}}},
+                {"Zlib", 1000, new long[][] {new long[] {0, 0}}, new long[][] {new long[] {1000, 1000}}},
         });
     }
 
@@ -75,40 +98,35 @@ public class FederatedCompressionTest extends AutomatedTestBase {
 
         fullDMLScriptName = "";
         int port1 = getRandomAvailablePort();
-        Thread t1 = startLocalFedWorkerThread(port1);
+        Thread t1 = startLocalFedWorkerThread(port1, new String[] {});
         String host = "localhost";
 
+        FederatedCompressionStatistics.reset();
+
         try {
-            double[][] X1 = new double[][] {new double[] {1, 2, 3}, new double[] {4, 5, 6}, new double[] {7, 8, 9}};
+            double[][] X1 = createNonRandomMatrixValues(dim, dim);
             MatrixCharacteristics mc = new MatrixCharacteristics(dim, dim, blocksize, dim * dim);
             writeCSVMatrix("X1", X1, false, mc);
 
-            // Thread.sleep(10000);
             MatrixObject fed = FederatedTestObjectConstructor.constructFederatedInput(dim, dim, blocksize, host, begins,
                     ends, new int[] {port1}, new String[] {input("X1")}, input("X.json"));
             writeInputFederatedWithMTD("X.json", fed, null);
 
             // Run reference dml script with normal matrix
             fullDMLScriptName = SCRIPT_DIR + "functions/federated/io/" + TEST_NAME + "1Reference.dml";
-            programArgs = new String[] {"-stats", "-nvargs", "fedmatrix=" + input("X1"), "out=" + expected(OUTPUT_NAME)};
+            programArgs = new String[] {"-nvargs", "fedmatrix=" + input("X1"), "out=" + expected(OUTPUT_NAME)};
 
             runTest(null);
-
-            // LOG.debug(refOut);
 
             // Run federated
             fullDMLScriptName = SCRIPT_DIR + "functions/federated/io/" + TEST_NAME + ".dml";
-            programArgs = new String[] {"-stats", "-nvargs", "fedmatrix=" + input("X.json"), "out=" + output(OUTPUT_NAME)};
+            programArgs = new String[] {"-nvargs", "fedmatrix=" + input("X.json"), "out=" + output(OUTPUT_NAME)};
             runTest(null);
+            System.out.println(FederatedCompressionStatistics.statistics());
 
             HashMap<MatrixValue.CellIndex, Double> refResults = readDMLMatrixFromExpectedDir(OUTPUT_NAME);
             HashMap<MatrixValue.CellIndex, Double> fedResults = readDMLMatrixFromOutputDir(OUTPUT_NAME);
             TestUtils.compareMatrices(fedResults, refResults, 0, "Fed", "Ref");
-
-            /*Assert.assertTrue(heavyHittersContainsString("fed_uak+"));
-            // Verify output
-            Assert.assertEquals(Double.parseDouble(refOut.split("\n")[0]), Double.parseDouble(out.split("\n")[0]),
-                    0.00001);*/
         } catch (Exception e) {
             e.printStackTrace();
             Assert.assertTrue(false);

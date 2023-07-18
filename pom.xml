@@ -407,30 +407,7 @@
 					</execution>
 				</executions>
 			</plugin>
-			
-
-<!-- 
-        <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-resources-plugin</artifactId>
-            <version>3.1.0</version>
-            <executions>
-                <execution>
-                    <goals>
-                        <goal>testResources</goal>
-                    </goals>
-                    <phase>process-test-resources</phase>
-                    <configuration>
-                        <skip>true</skip>
-                    </configuration>
-                </execution>
-            </executions>
-        </plugin> -->
-
-
 		</plugins>
-
-
 
 	</build>
 

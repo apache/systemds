@@ -78,4 +78,4 @@ jobs:
         cache: 'maven'
 
     - name: Build
-      run: mvn package -D maven.test.skip=true -D org.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn
+      run: mvn package -D maven.test.skip=true -B

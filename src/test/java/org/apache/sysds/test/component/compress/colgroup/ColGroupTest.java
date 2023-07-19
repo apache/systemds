@@ -2255,7 +2255,8 @@ public class ColGroupTest extends ColGroupBase {
 			// both should be null, or both should not be.
 			if(g2 == null)
 				assertTrue(g2n == null);
-			assertTrue(g2n != null);
+			else
+				assertTrue(g2n != null);
 		}
 		catch(Exception e) {
 			e.printStackTrace();

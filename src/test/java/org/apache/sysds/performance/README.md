@@ -9,5 +9,5 @@ mvn package
 To run:
 
 ```bash
-java -jar target/SystemDS-Performance.jar
+java -jar target/SystemDS-tests.jar
 ```

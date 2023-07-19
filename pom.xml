@@ -210,6 +210,7 @@
 							<goal>jar</goal>
 						</goals>
 						<configuration>
+							<forceCreation>true</forceCreation>
 							<archive>
 								<manifest>
 									<mainClass>org.apache.sysds.api.DMLScript</mainClass>

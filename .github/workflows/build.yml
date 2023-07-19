@@ -78,4 +78,4 @@ jobs:
         cache: 'maven'
 
     - name: Build
-      run: mvn package -D maven.test.skip=true
+      run: mvn package -D maven.test.skip=true -B

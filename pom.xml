@@ -344,6 +344,17 @@
 								<copy 
 								file="${project.build.directory}/${project.artifactId}-${project.version}-shaded.jar" 
 								tofile="${project.build.directory}/SystemDS.jar" />
+							</target>
+						</configuration>
+						<goals>
+							<goal>run</goal>
+						</goals>
+					</execution>
+					<execution>
+						<id>copy-testJar</id>
+						<phase>package</phase>
+						<configuration>
+							<target name="copy and rename test Jar" unless="maven.test.skip">
 								<copy 
 								file="${project.build.directory}/${project.artifactId}-${project.version}-tests.jar" 
 								tofile="${project.build.directory}/SystemDS-tests.jar" />

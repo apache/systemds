@@ -33,31 +33,25 @@ import org.apache.sysds.runtime.compress.colgroup.offset.OffsetFactory;
 import org.apache.sysds.runtime.compress.utils.IntArrayList;
 
 public class MappingTestUtil {
+	@SuppressWarnings("fallthrough")
 	protected static AMapToData[] getAllHigherVersions(AMapToData m) {
 		AMapToData[] ret = new AMapToData[getTypeSize(m.getType())];
 		int idx = 0;
 		switch(m.getType()) {
 			case ZERO:
 				ret[idx++] = MapToFactory.resizeForce(m, MAP_TYPE.ZERO);
-				break;
 			case BIT:
 				ret[idx++] = MapToFactory.resizeForce(m, MAP_TYPE.UBYTE);
-				break;
 			case UBYTE:
 				ret[idx++] = MapToFactory.resizeForce(m, MAP_TYPE.BYTE);
-				break;
 			case BYTE:
 				ret[idx++] = MapToFactory.resizeForce(m, MAP_TYPE.CHAR);
-				break;
 			case CHAR:
 				ret[idx++] = MapToFactory.resizeForce(m, MAP_TYPE.CHAR_BYTE);
-				break;
 			case CHAR_BYTE:
 				ret[idx++] = MapToFactory.resizeForce(m, MAP_TYPE.INT);
-				break;
 			case INT:
 				// none
-				break;
 		}
 		return ret;
 	}

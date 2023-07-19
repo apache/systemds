@@ -286,12 +286,17 @@
 								<exclude>META-INF/LICENSE</exclude>
 								<exclude>META-INF/NOTICE</exclude>
 								<exclude>META-INF/MANIFEST.MF</exclude>
+								<!-- Exclude wink if already shaded -->
+								<exclude>org/apache/wink/**</exclude>
 							</excludes>
 						</filter>
 						<filter>
 							<artifact>org.antlr:antlr4-runtime:*</artifact>
 							<excludes>
 								<exclude>META-INF/MANIFEST.MF</exclude>
+								<!-- Exclude antlr4 if already shaded -->
+								<exclude>org/antlr/v4/**</exclude>
+								<exclude>META-INF/maven/org.antlr/**</exclude>
 							</excludes>
 						</filter>
 					</filters>

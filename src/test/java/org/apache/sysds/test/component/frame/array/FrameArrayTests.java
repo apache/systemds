@@ -228,6 +228,7 @@ public class FrameArrayTests {
 			case BOOLEAN:
 				if(a instanceof BooleanArray) // just in case we overwrite the BitSet to boolean Array type.
 					estSize = BooleanArray.estimateInMemorySize(a.size());
+				 break;
 			default: // nothing
 		}
 		if(a.getFrameArrayType() == FrameArrayType.DDC)
@@ -344,28 +345,15 @@ public class FrameArrayTests {
 
 			switch(a.getFrameArrayType()) {
 				case FP64:
-					x = a.get();
-					return;
 				case FP32:
-					x = a.get();
-					return;
 				case INT32:
-					x = a.get();
-					return;
 				case BOOLEAN:
-					x = a.get();
-					return;
 				case INT64:
-					x = a.get();
-					return;
 				case BITSET:
-					x = a.get();
-					return;
 				case STRING:
-					x = a.get();
-					return;
 				case CHARACTER:
 					x = a.get();
+					break;
 				case OPTIONAL:
 					try {
 						a.get();
@@ -376,6 +364,7 @@ public class FrameArrayTests {
 					return;
 				case DDC:
 					a.get();
+					break;
 				default:
 					throw new NotImplementedException();
 			}

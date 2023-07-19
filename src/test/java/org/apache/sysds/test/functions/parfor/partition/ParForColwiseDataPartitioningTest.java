@@ -34,7 +34,6 @@ import org.apache.sysds.test.TestUtils;
 
 public class ParForColwiseDataPartitioningTest extends AutomatedTestBase 
 {
-	
 	private final static String TEST_NAME = "parfor_cdatapartitioning";
 	private final static String TEST_DIR = "functions/parfor/";
 	private final static String TEST_CLASS_DIR = TEST_DIR + ParForColwiseDataPartitioningTest.class.getSimpleName() + "/";
@@ -285,6 +284,7 @@ public class ParForColwiseDataPartitioningTest extends AutomatedTestBase
 						scriptNum=2; 
 					else
 						scriptNum=3;
+					break;
 				case REMOTE_SPARK: 
 					if( mode==PExecMode.LOCAL ){
 						if( !multiParts )
@@ -319,7 +319,7 @@ public class ParForColwiseDataPartitioningTest extends AutomatedTestBase
 				sparsity = sparsity2;
 			else
 				sparsity = sparsity1;
-	        double[][] V = getRandomMatrix(rows, cols, 0, 1, sparsity, seed);
+			double[][] V = getRandomMatrix(rows, cols, 0, 1, sparsity, seed);
 			writeInputMatrix("V", V, true);
 	
 			boolean exceptionExpected = false;

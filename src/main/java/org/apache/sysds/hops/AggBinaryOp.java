@@ -366,14 +366,9 @@ public class AggBinaryOp extends MultiThreadedHop {
 	}
 	
 	private boolean isOuterProduct() {
-		if ( getInput().get(0).isVector() && getInput().get(1).isVector() ) {
-			if ( getInput().get(0).getDim1() == 1 && getInput().get(0).getDim1() > 1
-					&& getInput().get(1).getDim1() > 1 && getInput().get(1).getDim2() == 1 )
-				return true;
-			else
-				return false;
-		}
-		return false;
+		return ( getInput().get(0).isVector() && getInput().get(1).isVector() )
+			&& ( getInput().get(0).getDim1() == 1 && getInput().get(0).getDim1() > 1
+					&& getInput().get(1).getDim1() > 1 && getInput().get(1).getDim2() == 1 );
 	}
 	
 	@Override
@@ -979,15 +974,12 @@ public class AggBinaryOp extends MultiThreadedHop {
 		return ret;
 	}
 
-	private SparkAggType getSparkMMAggregationType( boolean agg )
-	{
+	private SparkAggType getSparkMMAggregationType( boolean agg ) {
 		if( !agg )
 			return SparkAggType.NONE;
-		
 		if( dimsKnown() && getDim1()<=getBlocksize() && getDim2()<=getBlocksize() )
 			return SparkAggType.SINGLE_BLOCK;
-		else
-			return SparkAggType.MULTI_BLOCK;
+		return SparkAggType.MULTI_BLOCK;
 	}
 
 	private boolean requiresAggregation(MMultMethod method) 
@@ -1224,8 +1216,7 @@ public class AggBinaryOp extends MultiThreadedHop {
 		//final mmult method decision 
 		if ( cpmm_costs < rmm_costs ) 
 			return MMultMethod.CPMM;
-		else 
-			return MMultMethod.RMM;
+		return MMultMethod.RMM;
 	}
 
 	private static double getRMMCostEstimate( long m1_rows, long m1_cols, long m1_blen, 

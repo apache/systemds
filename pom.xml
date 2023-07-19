@@ -340,10 +340,17 @@
 						<id>copy-Sysds</id>
 						<phase>package</phase>
 						<configuration>
-							<target name="copy and rename JAR">
+							<target name="copy and rename JAR files">
+								<!-- https://ant.apache.org/manual/Tasks -->
 								<copy 
-								file="${project.build.directory}/${project.artifactId}-${project.version}-shaded.jar" 
-								tofile="${project.build.directory}/SystemDS.jar" />
+									file="${project.build.directory}/${project.artifactId}-${project.version}-shaded.jar" 
+									tofile="${project.build.directory}/SystemDS.jar" />
+								<move
+									file="${project.build.directory}/${project.artifactId}-${project.version}.jar" 
+									tofile="${project.build.directory}/${project.artifactId}-${project.version}-unshaded.jar"/>
+								<move
+									file="${project.build.directory}/${project.artifactId}-${project.version}-shaded.jar" 
+									tofile="${project.build.directory}/${project.artifactId}-${project.version}.jar"/>
 							</target>
 						</configuration>
 						<goals>
@@ -354,13 +361,13 @@
 						<id>copy-testJar</id>
 						<phase>package</phase>
 						<configuration>
-							<target name="copy and rename test Jar" unless="maven.test.skip">
+							<target name="copy and rename test JAR" unless="maven.test.skip">
 								<copy 
-								file="${project.build.directory}/${project.artifactId}-${project.version}-tests.jar" 
-								tofile="${project.build.directory}/SystemDS-tests.jar" />
+									file="${project.build.directory}/${project.artifactId}-${project.version}-tests.jar" 
+									tofile="${project.build.directory}/SystemDS-tests.jar" />
 								<copy 
-								file="${project.build.directory}/${project.artifactId}-${project.version}-perf.jar" 
-								tofile="${project.build.directory}/SystemDS-perf.jar" />
+									file="${project.build.directory}/${project.artifactId}-${project.version}-perf.jar" 
+									tofile="${project.build.directory}/SystemDS-perf.jar" />
 							</target>
 						</configuration>
 						<goals>

@@ -35,7 +35,6 @@ m_hmmPredict = function (Matrix[Double] X, Integer k) return (Matrix[Double] out
     Also only discrete model implemented, need to discretize the cotinous outputs
     to work with the continous model
     */
-
     [ip, A, B] = hmm(X)
     states = get_all_states(A, ip, k)
     outputs = get_outputs(B, states)

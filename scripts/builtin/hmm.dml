@@ -40,15 +40,14 @@ m_hmm = function(Matrix[Double] X) return (Matrix[Double] ip, Matrix[Double] A, 
     
     /*
     Since nr of states if unknown, fit a hmm model for every total number of states
-    from 1 to 10 or 1 to log(n_timesteps), depending on whichever is greater. Use only 50 iterations
-    for each nr of states(since it is computationally expensive).
+    from 1 to some max_states or 1 to log(n_timesteps), depending on whichever is greater. Use only low number of
+    iterations at first for each nr of states(since it is computationally expensive).
 
     Also the break condition is: If the likelihood decreases with increase in number of total states, 
     break and take the paremeters of the last iteration as the optimal one.
 
-
     After finding out which nr_of_states yields highest likelihood, find the parameters for that
-    with higher iterations. 1000 is taken here
+    with higher iterations. 
     */
     
     max_states = 6
@@ -61,7 +60,6 @@ m_hmm = function(Matrix[Double] X) return (Matrix[Double] ip, Matrix[Double] A, 
     search = TRUE
     nr_states = 2
     nr_states_likelihood = matrix(0, rows=max_states-1, cols=1)
-
 
     while (search) {
         if (nr_states > max_states) {

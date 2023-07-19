@@ -85,7 +85,7 @@ public abstract class GenerateReader {
 			String className = getRandomClassName();
 			MatrixCodeGen src = new MatrixCodeGen(properties, className);
 			// constructor with arguments as CustomProperties
-			Class[] cArg = new Class[1];
+			Class<?>[] cArg = new Class[1];
 			cArg[0] = CustomProperties.class;
 			String srcJava =  src.generateCodeJava(formatIdentifyer);
 			matrixReader = (MatrixReader) CodegenUtils.compileClass(className, srcJava).getDeclaredConstructor(cArg).newInstance(properties);
@@ -111,7 +111,7 @@ public abstract class GenerateReader {
 			String className = getRandomClassName();
 			FrameCodeGen src = new FrameCodeGen(properties, className);
 			// constructor with arguments as CustomProperties
-			Class[] cArg = new Class[1];
+			Class<?>[] cArg = new Class[1];
 			cArg[0] = CustomProperties.class;
 			String srcJava = src.generateCodeJava(formatIdentifyer);
 			frameReader = (FrameReader) CodegenUtils.compileClass(className, srcJava).getDeclaredConstructor(cArg).newInstance(properties);

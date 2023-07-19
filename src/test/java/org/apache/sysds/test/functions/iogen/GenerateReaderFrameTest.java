@@ -70,7 +70,10 @@ public abstract class GenerateReaderFrameTest extends AutomatedTestBase {
 			GenerateReader.GenerateReaderFrame gr = new GenerateReader.GenerateReaderFrame(sampleRaw, sampleFrame,
 				parallel);
 			FrameReader fr = gr.getReader();
-			FrameBlock frameBlock = fr.readFrameFromHDFS(dataFileName, sampleSchema, rows, sampleSchema.length);
+			fr.readFrameFromHDFS(dataFileName, sampleSchema, rows, sampleSchema.length);
+
+			// TODO Verify the frameblock contains the correct values.
+
 		}
 		catch(Exception exception) {
 			exception.printStackTrace();

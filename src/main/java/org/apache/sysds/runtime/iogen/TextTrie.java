@@ -127,15 +127,17 @@ public class TextTrie {
 			return key;
 		}
 
-
+		@SuppressWarnings("unused")
 		public void setKey(StringBuilder key) {
 			this.key = key;
 		}
 
+		@SuppressWarnings("unused")
 		public ArrayList<Integer> getRowIndexes() {
 			return rowIndexes;
 		}
 
+		@SuppressWarnings("unused")
 		public void setRowIndexes(ArrayList<Integer> rowIndexes) {
 			this.rowIndexes = rowIndexes;
 		}
@@ -152,6 +154,7 @@ public class TextTrie {
 			return indexSetSize;
 		}
 
+		@SuppressWarnings("unused")
 		public void print(){
 			Gson gson = new Gson();
 			System.out.println(key.toString()+" "+gson.toJson(this.indexSet));

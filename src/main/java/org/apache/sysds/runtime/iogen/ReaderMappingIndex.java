@@ -117,6 +117,7 @@ public class ReaderMappingIndex {
 
 	}
 
+	@SuppressWarnings("unused")
 	private void runMapping(boolean isIndexMapping) {
 
 		this.mapRow = new int[nrows][ncols];

@@ -212,7 +212,7 @@ public abstract class FrameGenerateReader extends FrameReader {
 
 		// core read (sequential/parallel)
 		InputStreamInputFormat informat = new InputStreamInputFormat(is);
-		InputSplit split = informat.getSplits(null, 1)[0];
+		informat.getSplits(null, 1);
 		return ret;
 	}
 

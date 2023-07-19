@@ -213,6 +213,7 @@ public class RawIndex {
 		return null;
 	}
 
+	@SuppressWarnings("unused")
 	private void extractNumericActualValues() {
 		if(this.actualNumericValues == null)
 			this.actualNumericValues = new HashMap<>();
@@ -238,6 +239,7 @@ public class RawIndex {
 			addActualValueToList(sb.toString(), pi, actualNumericValues);
 	}
 
+	@SuppressWarnings("unused")
 	private void extractNumericDotActualValues() {
 		if(this.dotActualNumericValues == null)
 			this.dotActualNumericValues = new HashMap<>();

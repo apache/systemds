@@ -42,7 +42,6 @@ import org.apache.sysds.runtime.matrix.data.Pair;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.concurrent.Future;
 
 public abstract class MatrixGenerateReader extends MatrixReader {
 
@@ -257,7 +256,6 @@ public abstract class MatrixGenerateReader extends MatrixReader {
 		return ret;
 	}
 
-	@SuppressWarnings("unchecked")
 	protected void readMatrixFromHDFS(TextInputFormat informat, InputSplit[] splits, JobConf job, MatrixBlock dest) throws IOException {
 		MutableInt row = new MutableInt(0);
 		long lnnz = 0;

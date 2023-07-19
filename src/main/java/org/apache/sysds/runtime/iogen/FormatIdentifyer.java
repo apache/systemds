@@ -19,7 +19,6 @@
 
 package org.apache.sysds.runtime.iogen;
 
-import org.apache.spark.sql.sources.In;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.lops.Lop;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
@@ -65,6 +64,7 @@ public class FormatIdentifyer {
 		this.runIdentification();
 	}
 
+	@SuppressWarnings("unchecked")
 	private void runIdentification() {
 
 		/* Index properties:
@@ -615,9 +615,12 @@ public class FormatIdentifyer {
 		result.get(nrows - 1).setValue(null);
 		return result;
 	}
+
 	public CustomProperties getFormatProperties() {
 		return properties;
 	}
+
+	@SuppressWarnings("unchecked")
 	private Pair<ArrayList<String>, HashSet<String>> buildValueKeyPattern() {
 		int minSelectCols = Math.min(10, ncols);
 		ArrayList<String>[] prefixesRemovedReverse = new ArrayList[1];
@@ -664,6 +667,7 @@ public class FormatIdentifyer {
 
 		return  new Pair<>(keys[0], colSuffixes[0]);
 	}
+
 	private String addToPrefixes(Set<String> list, String strValue, int value, boolean reverse){
 		String str = reverse ? new StringBuilder(strValue).reverse().toString() : strValue;
 		RawIndex rawIndex = new RawIndex(str);
@@ -675,6 +679,8 @@ public class FormatIdentifyer {
 		}
 		return null;
 	}
+
+	@SuppressWarnings("unchecked")
 	private Pair<ArrayList<String>, HashSet<String>> buildIndexKeyPattern(boolean keyForRowIndexes, int begin) {
 		ArrayList<String>[] prefixesRemovedReverse = new ArrayList[1];
 		ArrayList<String>[] prefixesRemoved = new ArrayList[1];
@@ -786,6 +792,7 @@ public class FormatIdentifyer {
 	}
 
 	// Get all prefix strings of a column
+	@SuppressWarnings("unchecked")
 	public Pair<ArrayList<String>[], ArrayList<Integer>[]> extractAllPrefixStringsOfColsSingleLine(boolean reverse, boolean removesSelected) {
 		ArrayList<String>[] prefixStrings = new ArrayList[ncols];
 		ArrayList<Integer>[] rowIndexes = new ArrayList[ncols];
@@ -796,10 +803,11 @@ public class FormatIdentifyer {
 		}
 		return new Pair<>(prefixStrings, rowIndexes);
 	}
+
 	public Pair<ArrayList<String>, ArrayList<Integer>> extractAllPrefixStringsOfAColSingleLine(int r,
 		ArrayList<Integer> colIndexes, boolean reverse, boolean removesSelected) {
-		ArrayList<String> prefixStrings = new ArrayList();
-		ArrayList<Integer> rowIndexes = new ArrayList();
+		ArrayList<String> prefixStrings = new ArrayList<>();
+		ArrayList<Integer> rowIndexes = new ArrayList<>();
 		for(int c : colIndexes) {
 			int rowIndex = mapRow[r][c];
 			if(rowIndex != -1) {
@@ -820,8 +828,8 @@ public class FormatIdentifyer {
 
 	public Pair<ArrayList<String>, ArrayList<Integer>> extractAllPrefixStringsOfAColSingleLine(int colIndex,
 		boolean reverse, boolean removesSelected) {
-		ArrayList<String> prefixStrings = new ArrayList();
-		ArrayList<Integer> rowIndexes = new ArrayList();
+		ArrayList<String> prefixStrings = new ArrayList<>();
+		ArrayList<Integer> rowIndexes = new ArrayList<>();
 		for(int r = 0; r < nrows; r++) {
 			int rowIndex = mapRow[r][colIndex];
 			if(rowIndex != -1) {
@@ -840,7 +848,7 @@ public class FormatIdentifyer {
 		return new Pair<>(prefixStrings, rowIndexes);
 	}
 
-
+	@SuppressWarnings("unchecked")
 	private ArrayList<String>[] extractAllSuffixStringsOfColsSingleLine(boolean removeData) {
 		ArrayList<String>[] result = new ArrayList[ncols];
 		for(int c = 0; c < ncols; c++) {
@@ -876,6 +884,7 @@ public class FormatIdentifyer {
 		return result;
 	}
 
+	@SuppressWarnings("unused")
 	private ArrayList<String> extractAllSuffixStringsOfColsSingleLine(ArrayList<Integer> rows,int col, boolean removeData) {
 		ArrayList<String> result = new ArrayList<>();
 		for(int r: rows) {
@@ -979,6 +988,7 @@ public class FormatIdentifyer {
 		return result;
 	}
 
+	@SuppressWarnings("unused")
 	private ArrayList<Pair<Integer, Integer>> getTokenIndexOnMultiLineRecords(String beginToken, String endToken) {
 		ArrayList<Pair<Integer, Integer>> result = new ArrayList<>();
 
@@ -1026,7 +1036,7 @@ public class FormatIdentifyer {
 		}
 		return result;
 	}
-
+	
 	private Pair<Set<String>, Set<String>> getNewRefineKeys(LongestCommonSubsequence lcs, String firstKey,
 		ArrayList<String> prefixesRemoved, ArrayList<String> prefixes, Set<String> refineKeys) {
 
@@ -1059,7 +1069,8 @@ public class FormatIdentifyer {
 					set.addAll(list1);
 
 					for(String lcsKeys : set) {
-						if(setRefineLCS.contains(lcsKeys) || newSetRefineLCS.contains(lcsKey))
+						// TODO Removed an unlikely argument it should not be a problem.
+						if(setRefineLCS.contains(lcsKeys))
 							continue;
 						String[] newLCSKey = (lcsKeys+Lop.OPERAND_DELIMITOR+firstKey).split(Lop.OPERAND_DELIMITOR);
 						ArrayList<String> tmpLCSKeyList = new ArrayList<>();
@@ -1109,9 +1120,10 @@ public class FormatIdentifyer {
 		for(; i>=0; i--) {
 			boolean flag = true;
 			for(int j =0; j< prefixes.size() && flag; j++) {
-				String bk = keys.get(i);
-				int k1 = getIndexOfKeyPatternOnString(prefixes.get(j), i, keys, 0);
-				int k2 = prefixes.get(j).length();
+				// TODO find out if used:
+				// String bk = keys.get(i);
+				// int k1 = getIndexOfKeyPatternOnString(prefixes.get(j), i, keys, 0);
+				// int k2 = prefixes.get(j).length();
 				flag = getIndexOfKeyPatternOnString(prefixes.get(j), i, keys, 0) == prefixes.get(j).length();
 			}
 			if(flag)
@@ -1123,10 +1135,11 @@ public class FormatIdentifyer {
 			for(int index = i; index< keys.size(); index++)
 				result.add(keys.get(index));
 
-			int a = 100;
 		}
 		return result;
 	}
+
+
 	private boolean checkExtraKeyForCol(ArrayList<String> keys, String extraKey , ArrayList<String> prefixes){
 		boolean flag = true;
 		for(int i=0; i<keys.size()-1 && flag; i++)
@@ -1144,9 +1157,11 @@ public class FormatIdentifyer {
 		}
 		return flag;
 	}
+
 	private Integer getIndexOfKeyPatternOnString(String str, ArrayList<String> key, int beginPos) {
 		return getIndexOfKeyPatternOnString(str,0, key, beginPos);
 	}
+
 	private Integer getIndexOfKeyPatternOnString(String str, int keyFromIndex,ArrayList<String> key, int beginPos) {
 		int currPos = beginPos;
 		boolean flag = true;
@@ -1164,6 +1179,8 @@ public class FormatIdentifyer {
 		else
 			return -1;
 	}
+
+	@SuppressWarnings("unchecked")
 	private Pair<ArrayList<String>[], HashSet<String>[]> buildColsKeyPatternSingleRow() {
 		ArrayList<String>[] prefixesRemovedReverse = extractAllPrefixStringsOfColsSingleLine(true, true).getKey();
 		ArrayList<String>[] prefixesRemoved = new ArrayList[ncols];
@@ -1199,14 +1216,13 @@ public class FormatIdentifyer {
 			//check for exceptions
 			for(Future<Object> task : rt)
 				task.get();
-
-			int a = 50;
 		}
 		catch(Exception e) {
 			throw new RuntimeException("Failed parallel ColsKeyPatternSingleRow.", e);
 		}
 		return  new Pair<>(keys, colSuffixes);
 	}
+
 	private class BuildColsKeyPatternSingleRowTask implements Callable<Object> {
 		private final ArrayList<String>[] prefixesRemovedReverse;
 		private final ArrayList<String>[] prefixesRemoved;
@@ -1232,6 +1248,7 @@ public class FormatIdentifyer {
 			this.lcs = lcs;
 			this.colIndexes = colIndexes;
 		}
+
 		@Override
 		public Object call() throws Exception {
 			// Sort prefixesRemovedReverse list
@@ -1367,16 +1384,7 @@ public class FormatIdentifyer {
 
 			// CleanUP keys: reduce key list if it possible
 			for(int c :colIndexes) {
-				if(c == 5){
-					int fff = 500;
-				}
 				ArrayList<String> cleanUPKeys =  cleanUPKey(keys[c], prefixes[c]);
-//				boolean flagOptimal = false;
-//				for(int i=0; i< keys[c].size() && !flagOptimal; i++)
-//					flagOptimal = keys[c].get(i).contains(" ");
-//				if(flagOptimal) {
-//					keys[c] = optimalKeyPattern(keys[c], prefixes[c]);
-//				}
 
 				// set static col flag
 				Boolean flagFixCol = true;
@@ -1603,6 +1611,7 @@ public class FormatIdentifyer {
 		return result;
 	}
 
+	@SuppressWarnings("all") // unused and unsafe
 	private ArrayList<String> optimalKeyPattern(ArrayList<String> keys, ArrayList<String> prefixes) {
 		ArrayList<ArrayList<String>> keysList = new ArrayList<>();
 		for(int i = 0; i < keys.size() - 1; i++) {

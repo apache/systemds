@@ -598,7 +598,7 @@
 								<!-- csv test input not captured by *.csv -->
 								<exclude>src/test/scripts/functions/io/csv/in/*/*</exclude>
 								<!-- IOGEN input examples -->
-								<exclude>src/test/scripts/functions/iogen/in/*/*/*</exclude>
+								<exclude>src/test/scripts/functions/iogen/in/*/*</exclude>
 								<!-- Python bindings lineage test result comparison -->
 								<exclude>src/main/python/tests/lt*.txt</exclude>
 								<!-- Perftest requirement file -->

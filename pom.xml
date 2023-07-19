@@ -287,7 +287,7 @@
 								<exclude>META-INF/NOTICE</exclude>
 								<exclude>META-INF/MANIFEST.MF</exclude>
 								<!-- Exclude wink if already shaded -->
-								<exclude>org/apache/wink/**</exclude>
+								<!-- <exclude>org/apache/wink/**</exclude> -->
 							</excludes>
 						</filter>
 						<filter>
@@ -295,8 +295,8 @@
 							<excludes>
 								<exclude>META-INF/MANIFEST.MF</exclude>
 								<!-- Exclude antlr4 if already shaded -->
-								<exclude>org/antlr/v4/**</exclude>
-								<exclude>META-INF/maven/org.antlr/**</exclude>
+								<!-- <exclude>org/antlr/v4/**</exclude>
+								<exclude>META-INF/maven/org.antlr/**</exclude> -->
 							</excludes>
 						</filter>
 					</filters>
@@ -342,7 +342,7 @@
 				<version>${maven-antrun-plugin.version}</version>
 				<executions>
 					<execution>
-						<id>copy-Sysds</id>
+						<id>copy-sysds</id>
 						<phase>package</phase>
 						<configuration>
 							<target name="copy and rename JAR files">
@@ -353,6 +353,19 @@
 								<move
 									file="${project.build.directory}/${project.artifactId}-${project.version}.jar" 
 									tofile="${project.build.directory}/${project.artifactId}-${project.version}-unshaded.jar"/>
+								
+							</target>
+						</configuration>
+						<goals>
+							<goal>run</goal>
+						</goals>
+					</execution>
+					<execution>
+						<id>move-shaded-jar</id>
+						<phase>package</phase>
+						<configuration>
+							<target name="copy and rename JAR files">
+								<!-- https://ant.apache.org/manual/Tasks -->
 								<move
 									file="${project.build.directory}/${project.artifactId}-${project.version}-shaded.jar" 
 									tofile="${project.build.directory}/${project.artifactId}-${project.version}.jar"/>
@@ -363,7 +376,7 @@
 						</goals>
 					</execution>
 					<execution>
-						<id>copy-testJar</id>
+						<id>copy-test-jar</id>
 						<phase>package</phase>
 						<configuration>
 							<target name="copy and rename test JAR" unless="maven.test.skip">

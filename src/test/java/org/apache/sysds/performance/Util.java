@@ -35,7 +35,7 @@ public interface Util {
 		return times;
 	}
 
-	public static void printStats(double[] v) {
+	public static String stats(double[] v) {
 
 		Arrays.sort(v);
 		final int l = v.length;
@@ -46,7 +46,7 @@ public interface Util {
 		double q50 = v[(int) (l / 2)];
 		double q75 = v[(int) ((l / 4) * 3)];
 
-		System.out.println(String.format("[%5.3f, %5.3f, %5.3f, %5.3f, %5.3f]", min, q25, q50, q75, max));
+		return String.format("[%.3f, %.3f, %.3f, %.3f, %.3f]", min, q25, q50, q75, max);
 	}
 
 	interface F {

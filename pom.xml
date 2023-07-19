@@ -182,6 +182,24 @@
 		<plugins>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-dependency-plugin</artifactId>
+				<version>${maven-dependency-plugin.version}</version>
+				<executions>
+					<execution>
+						<phase>compile</phase>
+						<goals>
+							<goal>copy-dependencies</goal>
+						</goals>
+						<configuration>
+							<silent>true</silent>
+							<outputDirectory>${project.build.directory}/lib</outputDirectory>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-jar-plugin</artifactId>
 				<version>${maven-jar-plugin.version}</version>
 				<executions>
@@ -208,11 +226,11 @@
 							<archive>
 								<manifest>
 									<addClasspath>true</addClasspath>
-									<classpathPrefix>target/lib/</classpathPrefix>
+									<classpathPrefix>lib/</classpathPrefix>
 									<mainClass>org.apache.sysds.performance.Main</mainClass>
 								</manifest>
 								 <manifestEntries>
-									 <Class-Path>target/SystemDS.jar</Class-Path>
+									 <Class-Path>SystemDS.jar</Class-Path>
                    				 </manifestEntries>
 							</archive>
 						</configuration>

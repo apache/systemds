@@ -504,7 +504,7 @@ public class FederatedStatistics {
 	public static void addWorkerRequest(RequestModel request) {
 		if (!workerFederatedRequests.containsKey(request.type)) {
 			workerFederatedRequests.put(request.type, request);
-		};
+		}
 
 		workerFederatedRequests.get(request.type).count++;
 	}

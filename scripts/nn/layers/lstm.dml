@@ -162,7 +162,7 @@ backward = function(matrix[double] dout, matrix[double] dc,
   M = as.integer(ncol(W)/4)
   N1 = nrow(out0)
   if(N != N1) {
-    # Allow for smaller out0 for last batch 
+    # Allow for smaller out0 for last batch
     # out0 = out0[1:N,]
     # c0 = c0[1:N,]
     stop("Unsupported operation: The batch size of previous iteration " + N1 + " is different than the batch size of current iteration " + N)

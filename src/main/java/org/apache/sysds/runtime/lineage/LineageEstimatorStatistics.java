@@ -65,7 +65,7 @@ public class LineageEstimatorStatistics {
 		for (int i=1; i<=instCount; i++) {
 			MutableTriple<String, Long, Double> op = LineageEstimator.computeSavingInst.poll();
 			int tl = String.valueOf(op.getRight()*1e-3).indexOf(".");
-			if (op != null && op.getRight() > 0)
+			if (op.getRight() > 0)
 				sb.append(String.valueOf(i) 
 					+ String.format("%"+(4-String.valueOf(i).length())+"s", "") // 4-length(i) spaces
 					+ op.getLeft() 

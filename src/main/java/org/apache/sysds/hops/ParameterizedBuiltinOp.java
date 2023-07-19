@@ -741,6 +741,7 @@ public class ParameterizedBuiltinOp extends MultiThreadedHop {
 				case CONTAINS:
 					if(getTargetHop().optFindExecType() == ExecType.SPARK)
 						_etype = ExecType.SPARK;
+					break;
 				default:
 					// Do not change execution type.
 			}

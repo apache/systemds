@@ -152,8 +152,7 @@ public final class CLALibScalar {
 			else
 				newColGroups.add(grp.scalarOperation(new RightScalarOperator(Multiply.getMultiplyFnObject(), -1)));
 		}
-		if(c != null)
-			newColGroups.add(c);
+		newColGroups.add(c);
 		return newColGroups;
 	}
 

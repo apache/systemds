@@ -184,8 +184,8 @@ public class SampleDistinctTest {
 		}
 		else if(c < frequencies.length)
 			fail("estimate is lower than observed elements");
-		else if(c > Math.ceil((double) total / p) - frequencies.length + total)
+		else if(c > Math.ceil(total / p) - frequencies.length + total)
 			fail("estimate " + c + " is larger than theoretical max uniques "
-				+ (Math.ceil((double) total / p) - frequencies.length + total) + " using: " + type);
+				+ (Math.ceil(total / p) - frequencies.length + total) + " using: " + type);
 	}
 }

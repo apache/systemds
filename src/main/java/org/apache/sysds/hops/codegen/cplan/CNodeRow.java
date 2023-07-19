@@ -153,6 +153,7 @@ private static final String TEMPLATE_ROWAGG_OUT_CUDA  = "\t\tif(threadIdx.x == 0
 		return tmp;
 	}
 	
+	@SuppressWarnings("fallthrough")
 	private String getOutputStatement(String varName) {
 		switch( _type ) {
 			case NO_AGG:

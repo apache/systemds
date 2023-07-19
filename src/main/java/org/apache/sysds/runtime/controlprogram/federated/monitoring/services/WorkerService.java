@@ -151,8 +151,7 @@ public class WorkerService {
 							var eventId = entityRepository.createEntity(eventEntity);
 							for(var stageEntity : eventEntity.stages) {
 								stageEntity.eventId = eventId;
-								if(stageEntity != null)
-									entityRepository.createEntity(stageEntity);
+								entityRepository.createEntity(stageEntity);
 							}
 						});
 					}

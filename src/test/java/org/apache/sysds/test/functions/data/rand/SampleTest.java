@@ -115,6 +115,7 @@ public class SampleTest extends AutomatedTestBase
 		}
 	}
 	
+	@SuppressWarnings("fallthrough")
 	private void runSampleTest() {
 		getAndLoadTestConfiguration(TEST_NAME);
 
@@ -156,7 +157,5 @@ public class SampleTest extends AutomatedTestBase
 		}
 
 		runTest(expectedException);
-
 	}
-	
 }

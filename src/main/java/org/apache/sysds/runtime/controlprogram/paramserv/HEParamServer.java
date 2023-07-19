@@ -128,7 +128,7 @@ public class HEParamServer extends LocalParamServer {
 			for (int i = 0; i < encrypted_models.size(); i++) {
 				summands[i] = (CiphertextMatrix) encrypted_models.get(i).getData(matrix_idx);
 			}
-			result[matrix_idx] = _seal_server.accumulateCiphertexts(summands);;
+			result[matrix_idx] = _seal_server.accumulateCiphertexts(summands);
 		});
 		if (tAgg != null) {
 			ParamServStatistics.accHEAccumulation((long)tAgg.stop());

@@ -386,7 +386,7 @@ public class ReorgFEDInstruction extends UnaryFEDInstruction {
 				res.copy(0, res.getNumRows()-1, _slice[0], _slice[1]-1, tmp, false);
 			} else {
 				res = new MatrixBlock(_len, _slice[1], 0.0);
-				res.copy(_slice[0], _slice[1]-1, 0, mb.getNumColumns() - 1, tmp, false);;
+				res.copy(_slice[0], _slice[1]-1, 0, mb.getNumColumns() - 1, tmp, false);
 			}
 			MatrixObject mout = ExecutionContext.createMatrixObject(res);
 			mout.setDiag(true);

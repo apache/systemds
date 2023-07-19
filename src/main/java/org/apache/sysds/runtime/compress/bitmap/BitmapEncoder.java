@@ -207,8 +207,7 @@ public class BitmapEncoder {
 			}
 			return new Bitmap(offsetsLists, values, numRows);
 		}
-		else
-			return null;
+		return null;
 	}
 
 	static class CompSizeDArrayIListEntry implements Comparator<DArrayIListEntry> {

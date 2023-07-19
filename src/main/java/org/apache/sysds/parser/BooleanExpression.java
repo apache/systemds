@@ -136,9 +136,8 @@ public class BooleanExpression extends Expression
 	public String toString(){
 		if (_opcode == BooleanOp.NOT) {
 			return "(" + _opcode.toString() + " " + _left.toString() + ")";
-		} else {
-			return "(" + _left.toString() + " " + _opcode.toString() + " " + _right.toString() + ")";
 		}
+		return "(" + _left.toString() + " " + _opcode.toString() + " " + _right.toString() + ")";
 	}
 	
 	@Override

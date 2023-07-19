@@ -95,9 +95,7 @@ public class AggregateTernaryFEDInstruction extends ComputationFEDInstruction {
 			AggregateTernaryOperator op = InstructionUtils.parseAggregateTernaryOperator(opcode, numThreads);
 			return new AggregateTernaryFEDInstruction(op, in1, in2, in3, out, opcode, str, fedOut);
 		}
-		else {
-			throw new DMLRuntimeException("AggregateTernaryInstruction.parseInstruction():: Unknown opcode " + opcode);
-	}
+		throw new DMLRuntimeException("AggregateTernaryInstruction.parseInstruction():: Unknown opcode " + opcode);
 }
 
 	@Override
@@ -188,10 +186,9 @@ public class AggregateTernaryFEDInstruction extends ComputationFEDInstruction {
 				throw new DMLRuntimeException("Federated AggregateTernary not supported with the "
 					+ "following federated objects: " + mo1.isFederated() + ":" + mo1.getFedMapping() + " "
 					+ mo2.isFederated() + ":" + mo2.getFedMapping());
-			else
-				throw new DMLRuntimeException("Federated AggregateTernary not supported with the "
-					+ "following federated objects: " + mo1.isFederated() + ":" + mo1.getFedMapping() + " "
-					+ mo2.isFederated() + ":" + mo2.getFedMapping() + mo3.isFederated() + ":" + mo3.getFedMapping());
+			throw new DMLRuntimeException("Federated AggregateTernary not supported with the "
+				+ "following federated objects: " + mo1.isFederated() + ":" + mo1.getFedMapping() + " "
+				+ mo2.isFederated() + ":" + mo2.getFedMapping() + mo3.isFederated() + ":" + mo3.getFedMapping());
 		}
 	}
 }

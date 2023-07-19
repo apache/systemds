@@ -65,11 +65,10 @@ public class AggregateBinaryCPInstruction extends BinaryCPInstruction {
 		if(numFields == 6) {
 			boolean isLeftTransposed = Boolean.parseBoolean(parts[5]);
 			boolean isRightTransposed = Boolean.parseBoolean(parts[6]);
-			return new AggregateBinaryCPInstruction(aggbin, in1, in2, out, opcode, str, isLeftTransposed,
-				isRightTransposed);
+			return new AggregateBinaryCPInstruction(aggbin,
+				in1, in2, out, opcode, str, isLeftTransposed, isRightTransposed);
 		}
-		else
-			return new AggregateBinaryCPInstruction(aggbin, in1, in2, out, opcode, str);
+		return new AggregateBinaryCPInstruction(aggbin, in1, in2, out, opcode, str);
 	}
 
 	@Override

@@ -1177,7 +1177,6 @@ public abstract class AutomatedTestBase {
 	protected void runRScript(boolean newWay) {
 
 		String executionFile = sourceDirectory + selectedTest + ".R";
-		;
 		if(fullRScriptName != null)
 			executionFile = fullRScriptName;
 

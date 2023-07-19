@@ -232,6 +232,7 @@ public class InterProceduralAnalysis
 						+ " repetitions due to reached fixpoint.");
 				break;
 			}
+			lastSizes = fcallSizes;
 			
 			//step 3: rebuild function call graph if necessary
 			if( rebuildFGraph && i < repetitions-1 )

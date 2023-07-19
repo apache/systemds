@@ -423,16 +423,13 @@ public class AggUnaryOp extends MultiThreadedHop
 		return !noAggRequired;
 	}
 
-	private SparkAggType getSparkUnaryAggregationType( boolean agg )
-	{
+	private SparkAggType getSparkUnaryAggregationType( boolean agg ) {
 		if( !agg )
 			return SparkAggType.NONE;
-		
 		if(   getDataType()==DataType.SCALAR //in case of scalars the block dims are not set
 		   || dimsKnown() && getDim1()<=getBlocksize() && getDim2()<=getBlocksize() )
 			return SparkAggType.SINGLE_BLOCK;
-		else
-			return SparkAggType.MULTI_BLOCK;
+		return SparkAggType.MULTI_BLOCK;
 	}
 
 	private boolean isTernaryAggregateRewriteApplicable() 

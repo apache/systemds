@@ -55,9 +55,7 @@ public class AggregateTernaryCPInstruction extends ComputationCPInstruction {
 			AggregateTernaryOperator op = InstructionUtils.parseAggregateTernaryOperator(opcode, numThreads);
 			return new AggregateTernaryCPInstruction(op, in1, in2, in3, out, opcode, str);
 		}
-		else {
-			throw new DMLRuntimeException("AggregateTernaryInstruction.parseInstruction():: Unknown opcode " + opcode);
-		}
+		throw new DMLRuntimeException("AggregateTernaryInstruction.parseInstruction():: Unknown opcode " + opcode);
 	}
 
 	@Override

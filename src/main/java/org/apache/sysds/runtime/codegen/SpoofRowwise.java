@@ -322,7 +322,7 @@ public abstract class SpoofRowwise extends SpoofOperator
 				default: 			rows = 0;	cols = 0;
 			}
 		}
-	};
+	}
 	
 	
 	private void allocateOutputMatrix(int m, int n, int n2, MatrixBlock out) {

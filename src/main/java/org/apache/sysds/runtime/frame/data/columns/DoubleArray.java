@@ -186,7 +186,7 @@ public class DoubleArray extends Array<Double> {
 				case FP32:
 					switch(c) {
 						case FP64:
-							state = c;
+							state = c; break;
 						default:
 					}
 					break;
@@ -194,7 +194,7 @@ public class DoubleArray extends Array<Double> {
 					switch(c) {
 						case FP64:
 						case FP32:
-							state = c;
+							state = c; break;
 						default:
 					}
 					break;
@@ -203,7 +203,7 @@ public class DoubleArray extends Array<Double> {
 						case FP64:
 						case FP32:
 						case INT64:
-							state = c;
+							state = c; break;
 						default:
 					}
 					break;
@@ -214,7 +214,7 @@ public class DoubleArray extends Array<Double> {
 						case FP32:
 						case INT64:
 						case INT32:
-							state = c;
+							state = c; break;
 						default:
 					}
 					break;

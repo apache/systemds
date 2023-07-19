@@ -25,7 +25,8 @@ import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
-import org.junit.Ignore;
+import org.apache.sysds.utils.Statistics;
+import org.junit.Assert;
 import org.junit.Test;
 
 /**
@@ -47,16 +48,17 @@ public class IPAConstantFoldingScalarVariablePropagationTest extends AutomatedTe
 {
 	private final static String TEST_NAME1 = "IPAConstantFoldingScalarVariablePropagation1";
 	private final static String TEST_NAME2 = "IPAConstantFoldingScalarVariablePropagation2";
+	private final static String TEST_NAME3 = "IPAConstantFoldingScalarVariablePropagation3";
+	
 	private final static String TEST_DIR = "functions/misc/";
 	private final static String TEST_CLASS_DIR = TEST_DIR + IPAConstantFoldingScalarVariablePropagationTest.class.getSimpleName() + "/";
 
 	@Override
 	public void setUp() {
 		TestUtils.clearAssertionInformation();
-		TestConfiguration conf1 = new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[]{});
-		TestConfiguration conf2 = new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[]{});
-		addTestConfiguration(TEST_NAME1, conf1);
-		addTestConfiguration(TEST_NAME2, conf2);
+		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[]{}));
+		addTestConfiguration(TEST_NAME2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[]{}));
+		addTestConfiguration(TEST_NAME3, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME3, new String[]{}));
 	}
 
 	@Test
@@ -69,20 +71,26 @@ public class IPAConstantFoldingScalarVariablePropagationTest extends AutomatedTe
 		runIPAScalarVariablePropagationTest(TEST_NAME1, false);
 	}
 
-	// TODO: this test is ignored because  sourcing functions from another script does not allow named variables, with default values.
 	@Test
-	@Ignore
 	public void testConstantFoldingScalarPropagation2IPASecondChance() {
 		runIPAScalarVariablePropagationTest(TEST_NAME2, true);
 	}
 
-	// TODO: this test is ignored because  sourcing functions from another script does not allow named variables, with default values.
 	@Test
-	@Ignore
 	public void testConstantFoldingScalarPropagation2NoIPASecondChance() {
 		runIPAScalarVariablePropagationTest(TEST_NAME2, false);
 	}
 
+	@Test
+	public void testConstantFoldingScalarPropagation3IPASecondChance() {
+		runIPAScalarVariablePropagationTest(TEST_NAME3, true);
+	}
+	
+	@Test
+	public void testConstantFoldingScalarPropagation3NoIPASecondChance() {
+		runIPAScalarVariablePropagationTest(TEST_NAME3, false);
+	}
+	
 	/**
 	 * Test for static rewrites + IPA second chance compilation to allow
 	 * for scalar propagation (IPA) of constant-folded DAG of literals
@@ -106,7 +114,7 @@ public class IPAConstantFoldingScalarVariablePropagationTest extends AutomatedTe
 			loadTestConfiguration(config);
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + testname + ".dml";
-			programArgs = new String[]{"-stats"};
+			programArgs = new String[]{"-explain","-stats"};
 			OptimizerUtils.IPA_NUM_REPETITIONS = IPA_SECOND_CHANCE ? 2 : 1;
 			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 			rtplatform = ExecMode.HYBRID;
@@ -118,6 +126,12 @@ public class IPAConstantFoldingScalarVariablePropagationTest extends AutomatedTe
 			// (MB: originally, this required a second chance, but not anymore)
 			checkNumCompiledSparkInst(0);
 			checkNumExecutedSparkInst(0);
+			
+			//check successful constant folding of entire expressions
+			if( testname.equals(TEST_NAME3) && IPA_SECOND_CHANCE ) {
+				Assert.assertTrue(Statistics.getCPHeavyHitterCount("floor")==2);
+				Assert.assertTrue(Statistics.getCPHeavyHitterCount("castvti")==2);
+			}
 		}
 		finally {
 			// Reset

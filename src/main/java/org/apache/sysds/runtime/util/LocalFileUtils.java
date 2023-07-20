@@ -28,6 +28,7 @@ import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.Writer;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
@@ -54,6 +55,7 @@ import org.apache.sysds.runtime.matrix.data.Pair;
 public class LocalFileUtils 
 {
 	public static final int BUFFER_SIZE = 8192;
+	public static final int DOUBLE_BUFFERING_MIN = 100*1024;
 	
 	//unique IDs per JVM for tmp files
 	private static IDSequence _seq = null;
@@ -197,7 +199,7 @@ public class LocalFileUtils
 	 * @throws IOException if IOException occurs
 	 */
 	public static void writeMatrixBlockToLocal(String fname, MatrixBlock mb) throws IOException {
-		writeWritableToLocal(fname, mb);
+		writeWritableToLocal(fname, mb, mb.getInMemorySize()>=DOUBLE_BUFFERING_MIN);
 	}
 	
 	/** Writes a frame block to local file system.
@@ -207,7 +209,7 @@ public class LocalFileUtils
 	 * @throws IOException if IOException occurs
 	 */
 	public static void writeFrameBlockToLocal(String fname, FrameBlock fb) throws IOException {
-		writeWritableToLocal(fname, fb);
+		writeWritableToLocal(fname, fb, fb.getInMemorySize()>=DOUBLE_BUFFERING_MIN);
 	}
 
 	/** Writes a matrix/frame block to local file system.
@@ -217,7 +219,7 @@ public class LocalFileUtils
 	 * @throws IOException if IOException occurs
 	 */
 	public static void writeCacheBlockToLocal(String fname, CacheBlock<?> cb) throws IOException {
-		writeWritableToLocal(fname, cb);
+		writeWritableToLocal(fname, cb, cb.getInMemorySize()>=DOUBLE_BUFFERING_MIN);
 	}
 	
 	/**
@@ -226,21 +228,24 @@ public class LocalFileUtils
 	 * 
 	 * @param fname file name to write
 	 * @param mb Hadoop writable
+	 * @param doubleBuffering overlay serialization and I/O
 	 * @throws IOException if IOException occurs
 	 */
-	public static void writeWritableToLocal(String fname, Writable mb)
+	public static void writeWritableToLocal(String fname, Writable mb, boolean doubleBuffering)
 		throws IOException
-	{	
-		FileOutputStream fos = new FileOutputStream( fname );
+	{
+		OutputStream fos = new FileOutputStream( fname );
+		if( doubleBuffering )
+			fos = new DoubleBufferingOutputStream(fos, 2, BUFFER_SIZE);
 		FastBufferedDataOutputStream out = new FastBufferedDataOutputStream(fos, BUFFER_SIZE);
 		
 		try {
 			mb.write(out);
 		}
 		finally {
-			IOUtilFunctions.closeSilently(out);
+			IOUtilFunctions.closeSilently(out); //incl double buffering
 			IOUtilFunctions.closeSilently(fos);
-		}	
+		}
 	}
 
 	public static void writeByteArrayToLocal( String fname, byte[] data )

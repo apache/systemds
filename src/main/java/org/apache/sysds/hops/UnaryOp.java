@@ -558,13 +558,10 @@ public class UnaryOp extends MultiThreadedHop
 		{
 			// If output is a Matrix then this operation is of type (B = op(A))
 			// Dimensions of B are same as that of A, and sparsity may/maynot change
+			// note: round, sin, cos can introduce new zeros for non-zero inputs
 			setDim1( input.getDim1() );
 			setDim2( input.getDim2() );
-			// cosh(0)=cos(0)=1, acos(0)=1.5707963267948966
-			if( _op==OpOp1.ABS || _op==OpOp1.SIN || _op==OpOp1.TAN  
-				|| _op==OpOp1.SINH || _op==OpOp1.TANH
-				|| _op==OpOp1.ASIN || _op==OpOp1.ATAN
-				|| _op==OpOp1.SQRT || _op==OpOp1.ROUND || _op==OpOp1.SPROP
+			if( _op==OpOp1.ABS || _op==OpOp1.SQRT || _op==OpOp1.SPROP
 				|| _op==OpOp1.COMPRESS || _op==OpOp1.DECOMPRESS || _op==OpOp1.LOCAL) //sparsity preserving
 			{
 				setNnz( input.getNnz() );

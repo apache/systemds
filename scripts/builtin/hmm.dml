@@ -66,7 +66,7 @@ m_hmm = function(Matrix[Double] X) return (Matrix[Double] ip, Matrix[Double] A, 
             search = FALSE
         }
 
-        [A, B, ip, curr_ll] = baum_welch(X, nr_states, nr_outputs, 50)
+        [A, B, ip, curr_ll] = baum_welch(X, nr_states, nr_outputs, 100)
         nr_states_likelihood[nr_states-1, 1] = curr_ll
         if (nr_states == 2) {
             prev_ll = -1
@@ -82,7 +82,7 @@ m_hmm = function(Matrix[Double] X) return (Matrix[Double] ip, Matrix[Double] A, 
     best_nr_states = max_ll_state(nr_states_likelihood)
     print('found optimal number of states.')
     print('Now, caulculating parameters for the optimal number of states')
-    [A, B, ip, ll] = baum_welch(X, best_nr_states, nr_outputs, 100)
+    [A, B, ip, ll] = baum_welch(X, best_nr_states, nr_outputs, 200)
 }
 
 unique_vals = function(Matrix[Double] X) return (Integer l) {
@@ -96,7 +96,7 @@ unique_vals = function(Matrix[Double] X) return (Integer l) {
 max_ll_state = function(Matrix[Double] nr_states_likelihood) return (Integer best_state) {
     max_val = max(nr_states_likelihood)
     S = nrow(nr_states_likelihood)
-    best_state = -1
+    best_state = 0
 
     for (i in 1:S){
         if (max_val == as.scalar(nr_states_likelihood[i, 1])) {

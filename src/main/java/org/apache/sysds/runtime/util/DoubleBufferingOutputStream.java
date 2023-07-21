@@ -22,6 +22,7 @@ package org.apache.sysds.runtime.util;
 import java.io.FilterOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
@@ -29,8 +30,8 @@ import org.apache.commons.lang3.concurrent.ConcurrentUtils;
 
 public class DoubleBufferingOutputStream extends FilterOutputStream
 {
-	ExecutorService _pool = CommonThreadPool.get(1); //no outrun
-	Future<?>[] _locks;
+	protected ExecutorService _pool = CommonThreadPool.get(1);
+	protected Future<?>[] _locks;
 	protected byte[][] _buff;
 	private int _pos;
 	
@@ -68,7 +69,7 @@ public class DoubleBufferingOutputStream extends FilterOutputStream
 				System.arraycopy(b, off, _buff[_pos], 0, len);
 				
 				//submit write request 
-				_locks[_pos] = _pool.submit(() -> writeBuffer(_buff[_pos], 0, len));
+				_locks[_pos] = _pool.submit(new WriteTask(_buff[_pos], len));
 				_pos = (_pos+1) % _buff.length;
 			}
 		}
@@ -104,5 +105,21 @@ public class DoubleBufferingOutputStream extends FilterOutputStream
 	public void close() throws IOException {
 		_pool.shutdown();
 		super.close();
+	}
+	
+	private class WriteTask implements Callable<Object> {
+		private final byte[] _b;
+		private final int _len;
+		
+		protected WriteTask(byte[] buff, int len) {
+			_b = buff;
+			_len = len;
+		}
+		
+		@Override
+		public Object call() {
+			writeBuffer(_b, 0, _len);
+			return null;
+		}
 	}
 }

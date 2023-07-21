@@ -32,46 +32,45 @@
 m_hmmPredict = function (Matrix[Double] X, Integer k) return (Matrix[Double] outputs)
 {
     /*
-    Also only discrete model implemented, need to discretize the cotinous outputs
+    Only discrete model implemented, need to discretize the cotinous outputs
     to work with the continous model
     */
     [ip, A, B] = hmm(X)
-    states = get_all_states(A, ip, k)
-    outputs = get_outputs(B, states)
+    /*
+    Also only discrete model implemented, need to discretize the cotinous outputs
+    to work with the continous model
+    */
+    seed = 42
+    init_state = choose_value(ip, seed)
+
+    states = matrix(0, rows=k, cols=1)
+    
+    states[1, 1] = init_state
+    s = init_state
+    for (i in 2:k) {
+        seed=seed +1
+        next_state = choose_value(t(A[s, ]), seed) 
+        states[i, 1] = next_state
+        s = next_state
+    }
+
+    outputs = matrix(0, rows=nrow(states), cols=1)
+    for (i in 1:nrow(states)) {
+        seed = seed+1
+        s = as.scalar(states[i, 1])
+        outputs[i, 1] = choose_value(t(B[s, ]), seed)
+    }
 }
 
-choose_value = function (Matrix[Double] prob_dist) return (Double val)
+choose_value = function (Matrix[Double] prob_dist, Integer seed) return (Double val)
 {
     # for selecting output or states given probability distribution
 
     # choosing using cumulative distribution
     cum_prob = cumsum(prob_dist)
     
-    R = rand(rows=1, cols=1, min=0, max=1)
+    R = rand(rows=1, cols=1, min=0, max=1, seed=seed)
     
     # adding 1 to colsum because indexing starts from 1
     val = as.scalar(colSums(cum_prob <= R) + 1)
-}
-
-get_all_states = function (Matrix[Double] A, Matrix[Double] ip, Integer k) return (Matrix[Double] states)
-{
-    init_state = choose_value(ip)
-    states = matrix(0, rows=k, cols=1)
-    states[1, 1] = init_state
-    s = init_state
-    
-    for (i in 2:k) {
-        next_state = choose_value(t(A[s, ])) 
-        states[i, 1] = next_state
-        s = next_state
-    }
-}
-
-get_outputs = function (Matrix[Double] B, Matrix[Double] states) return (Matrix[Double] outputs)
-{
-    outputs = matrix(0, rows=nrow(states), cols=1)
-    parfor (i in 1:nrow(states)) {
-        s = as.scalar(states[i, 1])
-        outputs[i, 1] = choose_value(t(B[s, ]))
-    }
 }

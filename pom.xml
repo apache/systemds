@@ -60,6 +60,10 @@
 		<maven-gpg-plugin.version>3.0.1</maven-gpg-plugin.version>
 		<maven-assembly-plugin.version>3.5.0</maven-assembly-plugin.version>
 		<maven-dependency-plugin.version>3.5.0</maven-dependency-plugin.version>
+		<maven-jar-plugin.version>3.3.0</maven-jar-plugin.version>
+		<maven-shade-plugin.version>3.5.0</maven-shade-plugin.version>
+		<maven-compiler-plugin.version>3.11.0</maven-compiler-plugin.version>
+		<maven-antrun-plugin.version>3.1.0</maven-antrun-plugin.version>
 		<!-- Set java compile level via argument, ex: 1.8 1.9 10 11-->
 		<java.level>11</java.level>
 		<java.version>{java.level}</java.version>
@@ -158,7 +162,22 @@
 				<directory>src/test/config/hadoop_bin_windows/bin</directory>
 				<targetPath>../lib/hadoop/bin</targetPath>
 			</resource>
+			<resource>
+				<directory>src/assembly/bin</directory>
+				<targetPath>META-INF/</targetPath>
+			</resource>
 		</resources>
+		<testResources>
+			<testResource>
+				<directory>src/test/resources</directory>
+				<!-- Exclude all datasets to avoid copying to target on all tests. -->
+				<excludes>
+					<exclude>datasets/**</exclude>
+					<exclude>expected/**</exclude>
+					<exclude>component/**</exclude>
+				</excludes>
+			</testResource>
+		</testResources>
 
 		<plugins>
 			<plugin>
@@ -166,27 +185,6 @@
 				<artifactId>maven-dependency-plugin</artifactId>
 				<version>${maven-dependency-plugin.version}</version>
 				<executions>
-					<execution>
-						<id>unpack</id>
-						<phase>package</phase>
-						<goals>
-							<goal>unpack</goal>
-						</goals>
-						<configuration>
-							<artifactItems>
-								<artifactItem>
-									<groupId>org.apache.hadoop</groupId>
-									<artifactId>hadoop-test</artifactId>
-									<version>1.2.1</version>
-									<type>jar</type>
-									<overWrite>true</overWrite>
-									<outputDirectory>${project.build.directory}/hadoop-test</outputDirectory>
-								</artifactItem>
-							</artifactItems>
-							<overWriteReleases>false</overWriteReleases>
-							<overWriteSnapshots>true</overWriteSnapshots>
-						</configuration>
-					</execution>
 					<execution>
 						<phase>compile</phase>
 						<goals>
@@ -200,13 +198,70 @@
 				</executions>
 			</plugin>
 
-			<!-- PLEASE DO NOT REMOVE! NEEDED to "PACKAGE" ANTLR RUNTIME INTO SYSTEMDS.JAR -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-jar-plugin</artifactId>
+				<version>${maven-jar-plugin.version}</version>
+				<executions>
+					<execution>
+						<id>default-jar</id>
+						<phase>package</phase>
+						<goals>
+							<goal>jar</goal>
+						</goals>
+						<configuration>
+							<forceCreation>true</forceCreation>
+							<archive>
+								<manifest>
+									<mainClass>org.apache.sysds.api.DMLScript</mainClass>
+								</manifest>
+							</archive>
+						</configuration>
+					</execution>
+					<execution>
+						<id>perf-jar</id>
+						<goals>
+							<goal>test-jar</goal>
+						</goals>
+						<configuration>
+							<classifier>perf</classifier>
+							<includes>
+								<include>org/apache/sysds/performance/**</include>
+								<include>log4j.properties</include>
+							</includes>
+							<archive>
+								<manifest>
+									<addClasspath>true</addClasspath>
+									<classpathPrefix>lib/</classpathPrefix>
+									<mainClass>org.apache.sysds.performance.Main</mainClass>
+								</manifest>
+								 <manifestEntries>
+									 <Class-Path>SystemDS.jar SystemDS-tests.jar</Class-Path>
+								 </manifestEntries>
+							</archive>
+						</configuration>
+					</execution>
+					<execution>
+						<id>test-jar</id>
+						<goals>
+							<goal>test-jar</goal>
+						</goals>
+						<configuration>
+							<includes>
+								<include>org/apache/sysds/test/**</include>
+							</includes>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-shade-plugin</artifactId>
-				<version>3.4.1</version>
+				<version>${maven-shade-plugin.version}</version>
 				<executions>
 					<execution>
+						<id>default-shade</id>
 						<phase>package</phase>
 						<goals>
 							<goal>shade</goal>
@@ -218,41 +273,31 @@
 									<include>org.antlr:antlr4-runtime:*</include>
 								</includes>
 							</artifactSet>
-							<transformers>
-								<transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-									<mainClass>org.apache.sysds.api.DMLScript</mainClass>
-								</transformer>
-								<transformer implementation="org.apache.maven.plugins.shade.resource.ApacheLicenseResourceTransformer" />
-								<transformer implementation="org.apache.maven.plugins.shade.resource.IncludeResourceTransformer">
-									<resource>META-INF/LICENSE</resource>
-									<file>src/assembly/bin/LICENSE</file>
-								</transformer>
-								<transformer implementation="org.apache.maven.plugins.shade.resource.IncludeResourceTransformer">
-									<resource>META-INF/NOTICE</resource>
-									<file>NOTICE</file>
-								</transformer>
-							</transformers>
-							<createDependencyReducedPom>false</createDependencyReducedPom>
+							<shadedArtifactAttached>true</shadedArtifactAttached>
+							<shadedClassifierName>shaded</shadedClassifierName>
 						</configuration>
 					</execution>
 				</executions>
 				<configuration>
-					<!-- Include signature files so that recent versions of Java will run
-						the resulting jar without complaining about "Invalid signature file digest
-						for Manifest main attributes".
-						Furthermore, the excluded notice and license files will be explicitly
-						added by the resource transformers above -->
 					<filters>
 						<filter>
-							<artifact>*:*</artifact>
+							<artifact>org.apache.wink:wink-json4j:*</artifact>
 							<excludes>
-								<exclude>META-INF/*.SF</exclude>
-								<exclude>META-INF/*.DSA</exclude>
-								<exclude>META-INF/*.RSA</exclude>
 								<exclude>META-INF/DEPENDENCIES</exclude>
-								<exclude>META-INF/MANIFEST.MF</exclude>
 								<exclude>META-INF/LICENSE</exclude>
 								<exclude>META-INF/NOTICE</exclude>
+								<exclude>META-INF/MANIFEST.MF</exclude>
+								<!-- Exclude wink if already shaded -->
+								<!-- <exclude>org/apache/wink/**</exclude> -->
+							</excludes>
+						</filter>
+						<filter>
+							<artifact>org.antlr:antlr4-runtime:*</artifact>
+							<excludes>
+								<exclude>META-INF/MANIFEST.MF</exclude>
+								<!-- Exclude antlr4 if already shaded -->
+								<!-- <exclude>org/antlr/v4/**</exclude>
+								<exclude>META-INF/maven/org.antlr/**</exclude> -->
 							</excludes>
 						</filter>
 					</filters>
@@ -262,13 +307,14 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
-				<version>3.11.0</version>
+				<version>${maven-compiler-plugin.version}</version>
 				<configuration>
 					<source>${java.level}</source>
 					<target>${java.level}</target>
 					<release>${java.level}</release>
 				</configuration>
 			</plugin>
+
 
 			<plugin>
 				<!-- unit tests -->
@@ -292,43 +338,55 @@
 			</plugin>
 
 			<plugin>
-				<artifactId>maven-clean-plugin</artifactId>
-				<version>${maven-clean-plugin.version}</version>
-				<executions>
-					<execution>
-						<id>clean-original-jar</id>
-						<phase>package</phase>
-						<goals>
-							<goal>clean</goal>
-						</goals>
-						<configuration>
-							<excludeDefaultDirectories>true</excludeDefaultDirectories>
-							<filesets>
-								<fileset>
-									<directory>${project.build.directory}</directory>
-									<includes>
-										<include>original-*.jar</include>
-									</includes>
-								</fileset>
-							</filesets>
-						</configuration>
-					</execution>
-				</executions>
-			</plugin>
-
-			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-antrun-plugin</artifactId>
-				<version>3.1.0</version>
+				<version>${maven-antrun-plugin.version}</version>
 				<executions>
 					<execution>
-						<id>copy</id>
+						<id>copy-sysds</id>
 						<phase>package</phase>
 						<configuration>
-							<target name="copy and rename JAR">
+							<target name="copy and rename JAR files">
+								<!-- https://ant.apache.org/manual/Tasks -->
 								<copy 
-								file="${project.build.directory}/${project.artifactId}-${project.version}.jar" 
-								tofile="${project.build.directory}/SystemDS.jar" />
+									file="${project.build.directory}/${project.artifactId}-${project.version}-shaded.jar" 
+									tofile="${project.build.directory}/SystemDS.jar" />
+								<move
+									file="${project.build.directory}/${project.artifactId}-${project.version}.jar" 
+									tofile="${project.build.directory}/${project.artifactId}-${project.version}-unshaded.jar"/>
+								
+							</target>
+						</configuration>
+						<goals>
+							<goal>run</goal>
+						</goals>
+					</execution>
+					<execution>
+						<id>move-shaded-jar</id>
+						<phase>package</phase>
+						<configuration>
+							<target name="copy and rename JAR files">
+								<!-- https://ant.apache.org/manual/Tasks -->
+								<move
+									file="${project.build.directory}/${project.artifactId}-${project.version}-shaded.jar" 
+									tofile="${project.build.directory}/${project.artifactId}-${project.version}.jar"/>
+							</target>
+						</configuration>
+						<goals>
+							<goal>run</goal>
+						</goals>
+					</execution>
+					<execution>
+						<id>copy-test-jar</id>
+						<phase>package</phase>
+						<configuration>
+							<target name="copy and rename test JAR" unless="maven.test.skip">
+								<copy 
+									file="${project.build.directory}/${project.artifactId}-${project.version}-tests.jar" 
+									tofile="${project.build.directory}/SystemDS-tests.jar" />
+								<copy 
+									file="${project.build.directory}/${project.artifactId}-${project.version}-perf.jar" 
+									tofile="${project.build.directory}/SystemDS-perf.jar" />
 							</target>
 						</configuration>
 						<goals>
@@ -395,6 +453,7 @@
 				</executions>
 			</plugin>
 		</plugins>
+
 	</build>
 
 	<profiles>
@@ -596,9 +655,14 @@
 								<exclude>src/test/scripts/functions/jmlc/tfmtd_example2/column.names</exclude>
 								<exclude>src/test/scripts/functions/jmlc/tfmtd_frame_example/tfmtd_frame</exclude>
 								<!-- csv test input not captured by *.csv -->
-								<exclude>src/test/scripts/functions/io/csv/in/*/*</exclude>
+								<exclude>src/test/scripts/functions/io/csv/in/**</exclude>
+								<!-- IOGEN input examples -->
+								<exclude>src/test/scripts/functions/iogen/in/**</exclude>
 								<!-- Python bindings lineage test result comparison -->
 								<exclude>src/main/python/tests/lt*.txt</exclude>
+								<exclude>scripts/tutorials/federated/python_venv/**</exclude>
+								<exclude>scripts/tutorials/federated/data/**</exclude>
+								<exclude>scripts/tutorials/federated/tmp/**</exclude>
 								<!-- Perftest requirement file -->
 								<exclude>scripts/perftest/python/requirements.txt</exclude>
 								<!-- external sources -->
@@ -790,22 +854,6 @@
 								</goals>
 							</execution>
 						</executions>
-					</plugin>
-				</plugins>
-			</build>
-		</profile>
-
-		<profile>
-			<id>skip-sign</id>
-			<build>
-				<plugins>
-					<plugin>
-						<groupId>org.apache.maven.plugins</groupId>
-						<artifactId>maven-gpg-plugin</artifactId>
-						<version>${maven-gpg-plugin.version}</version>
-						<configuration>
-							<skip>true</skip>
-						</configuration>
 					</plugin>
 				</plugins>
 			</build>

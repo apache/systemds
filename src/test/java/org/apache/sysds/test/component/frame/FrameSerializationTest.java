@@ -36,6 +36,7 @@ import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.test.TestUtils;
 import org.apache.sysds.test.component.frame.array.FrameArrayTests;
+import org.apache.sysds.test.component.frame.compress.FrameCompressTestUtils;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -66,6 +67,11 @@ public class FrameSerializationTest {
 					tests.add(new Object[] {new FrameBlock(sch), t});
 					tests.add(new Object[] {new FrameBlock(sch, FrameArrayTests.generateRandomString(sch.length, 32)), t});
 				}
+			}
+			for(SerType t : SerType.values()) {
+				tests.add(new Object[] {FrameCompressTestUtils.generateCompressableBlockRandomTypes(200, 4, 31), t});
+				tests.add(new Object[] {FrameCompressTestUtils.generateCompressableBlockRandomTypes(102, 4, 2), t});
+				tests.add(new Object[] {FrameCompressTestUtils.generateCompressableBlockRandomTypes(524, 4, 13), t});
 			}
 		}
 		catch(Exception e) {
@@ -125,7 +131,7 @@ public class FrameSerializationTest {
 				return; // not valid test
 			FrameBlock back = new FrameBlock();
 			back = writableSerialize(frame, back);
-			back = back.slice(0, frame.getNumRows()-1 , 0, 0);
+			back = back.slice(0, frame.getNumRows() - 1, 0, 0);
 			ValueType[] v1 = back.getSchema();
 			back = writableSerialize(frame, back);
 			ValueType[] v2 = back.getSchema();
@@ -141,7 +147,9 @@ public class FrameSerializationTest {
 	@Test
 	public void estimateMemory() {
 		// should always be true that in memory size is bigger than serialized size.
-		assertTrue(frame.getInMemorySize() > frame.getExactSerializedSize());
+
+		assertTrue(String.format(" %5d vs %5d :\n\n %s", frame.getInMemorySize(), frame.getExactSerializedSize(), frame),
+			frame.getInMemorySize() > frame.getExactSerializedSize());
 	}
 
 	private static FrameBlock writableSerialize(FrameBlock in) throws Exception {

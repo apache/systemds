@@ -154,7 +154,7 @@ public class BinaryMatrixMatrixFEDInstruction extends BinaryFEDInstruction
 	 */
 	private void setOutputFedMappingPart(MatrixObject mo1, MatrixObject mo2, long outputID, ExecutionContext ec){
 		MatrixObject out = ec.getMatrixObject(output);
-		out.getDataCharacteristics().set(mo1.getNumRows(), mo2.getNumColumns(), (int)mo1.getBlocksize());
+		out.getDataCharacteristics().set(mo1.getNumRows(), mo2.getNumColumns(), mo1.getBlocksize());
 		FederationMap outputFedMap = mo1.getFedMapping()
 			.copyWithNewIDAndRange(mo1.getNumRows(), mo2.getNumColumns(), outputID);
 		out.setFedMapping(outputFedMap);

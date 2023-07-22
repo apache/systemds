@@ -26,7 +26,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
-import org.apache.commons.lang.mutable.MutableBoolean;
+import org.apache.commons.lang3.mutable.MutableBoolean;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.fs.Path;
@@ -137,7 +137,7 @@ public abstract class CacheableData<T extends CacheBlock<?>> extends Data
 	/**
 	 * Current state of pinned variables, required for guarded collect.
 	 */
-	private static ThreadLocal<Long> sizePinned = new ThreadLocal<Long>() {
+	private static ThreadLocal<Long> sizePinned = new ThreadLocal<>() {
 		@Override protected Long initialValue() { return 0L; }
 	};
 

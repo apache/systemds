@@ -496,7 +496,7 @@ public class ColGroupSDC extends ASDC implements IMapToDataGroup {
 				return ColGroupEmpty.create(max);
 			else {
 				double[] retDef = new double[max];
-				retDef[((int) def) - 1] = 1;
+				retDef[def - 1] = 1;
 				return ColGroupSDCSingle.create(ColIndexFactory.create(max), nRows, Dictionary.create(new double[max]),
 					retDef, indexes, null);
 			}
@@ -513,7 +513,7 @@ public class ColGroupSDC extends ASDC implements IMapToDataGroup {
 				return ColGroupSDCZeros.create(outCols, nRows, d, indexes, data, counts);
 			else {
 				double[] retDef = new double[max];
-				retDef[((int) def) - 1] = 1;
+				retDef[def - 1] = 1;
 				return ColGroupSDC.create(outCols, nRows, d, retDef, indexes, data, counts);
 			}
 		}

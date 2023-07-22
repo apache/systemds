@@ -19,22 +19,36 @@
 
 package org.apache.sysds.runtime.controlprogram.federated.monitoring.repositories;
 
-import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.*;
-import org.apache.sysds.runtime.controlprogram.federated.monitoring.services.MapperService;
-
 import java.lang.reflect.Field;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.BaseModel;
+import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.CoordinatorModel;
+import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.DataObjectModel;
+import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.EventModel;
+import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.EventStageModel;
+import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.HeavyHitterModel;
+import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.RequestModel;
+import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.TrafficModel;
+import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.UtilizationModel;
+import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.WorkerModel;
+import org.apache.sysds.runtime.controlprogram.federated.monitoring.services.MapperService;
+
+
 public class DerbyRepository implements IRepository {
+	protected static final Log LOG = LogFactory.getLog(DerbyRepository.class.getName());
 	private final static String DB_CONNECTION = "jdbc:derby:memory:derbyDB";
 	private final List<BaseModel> _allEntities = new ArrayList<>(List.of(
 			new WorkerModel(),
@@ -154,7 +168,7 @@ public class DerbyRepository implements IRepository {
 			sb.replace(sb.length() - 1, sb.length(), ")");
 			String bindVarsStr = String.format("(%s)", String.join(",", Collections.nCopies(dbFieldCount, "?")));
 
-			st = db.prepareStatement(String.format(ENTITY_INSERT_STMT, sb, bindVarsStr), PreparedStatement.RETURN_GENERATED_KEYS);
+			st = db.prepareStatement(String.format(ENTITY_INSERT_STMT, sb, bindVarsStr), Statement.RETURN_GENERATED_KEYS);
 
 			int bindVarIndex = 1;
 			for (var field: fields) {
@@ -236,6 +250,7 @@ public class DerbyRepository implements IRepository {
 
 		return resultModels;
 	}
+
 	public <T extends BaseModel> List<T> getAllEntitiesByField(String fieldName, Object value, Class<T> type) {
 		return getAllEntitiesByField(fieldName, value, type, -1);
 	}
@@ -247,7 +262,7 @@ public class DerbyRepository implements IRepository {
 		try (var db = DriverManager.getConnection(DB_CONNECTION)) {
 			var entityName = type.getSimpleName().replace(Constants.ENTITY_CLASS_SUFFIX, "");
 
-			if (rowCount < 0) {
+			if (rowCount < 0) { // take all.
 				st = db.prepareStatement(String.format(GET_ENTITY_WITH_COL_STMT, entityName, fieldName));
 			} else {
 				st = db.prepareStatement(String.format(GET_ENTITY_WITH_COL_LIMIT_STMT, entityName, fieldName, rowCount));
@@ -266,7 +281,6 @@ public class DerbyRepository implements IRepository {
 		} catch (SQLException e) {
 			throw new RuntimeException(e);
 		}
-
 		return resultModels;
 	}
 

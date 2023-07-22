@@ -25,7 +25,9 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.SequenceFile.Writer;
 import org.apache.hadoop.mapred.JobConf;
+import org.apache.sysds.conf.CompilerConfig.ConfigType;
 import org.apache.sysds.conf.ConfigurationManager;
+import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -54,8 +56,18 @@ public class WriterBinaryBlock extends MatrixWriter {
 		if(HDFSTool.USE_BINARYBLOCK_SERIALIZATION)
 			HDFSTool.addBinaryBlockSerializationFramework(job);
 
-		if(src instanceof CompressedMatrixBlock)
-			src = CompressedMatrixBlock.getUncompressed(src, "Decompressing for binary write");
+		if(src instanceof CompressedMatrixBlock) {
+			if(ConfigurationManager.getCompilerConfigFlag(ConfigType.PARALLEL_CP_WRITE_BINARYFORMATS)){
+				LOG.debug("Multi threaded decompression");
+				// parallel
+				src = CompressedMatrixBlock.getUncompressed(src, "binary write",
+					OptimizerUtils.getParallelBinaryWriteParallelism());
+			}
+			else {
+				LOG.warn("Single threaded decompression");
+				src = CompressedMatrixBlock.getUncompressed(src, "binary write");
+			}
+		}
 
 		// core write sequential/parallel
 		if(diag)

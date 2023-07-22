@@ -25,7 +25,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import org.apache.commons.lang.NotImplementedException;
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.runtime.compress.bitmap.ABitmap;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
@@ -350,8 +350,8 @@ public class ColGroupRLE extends AColGroupOffset {
 				int re = tmp.astart;
 				for(; apos < blen; apos += 2) {
 					// for each run find new start and end
-					rs = re + (int) _data[apos];
-					re = rs + (int) _data[apos + 1];
+					rs = re + _data[apos];
+					re = rs + _data[apos + 1];
 					// TODO make specialized version that ignore rl if rl == 0.
 					// move start to new variable but minimum rl
 					final int rsc = Math.max(rs, rl); // runStartCorrected
@@ -518,7 +518,6 @@ public class ColGroupRLE extends AColGroupOffset {
 			if(!zeroRows[i]) {
 				final int id = i + rl;
 				c[id] = builtin.execute(c[id], 0);
-				;
 			}
 	}
 
@@ -739,17 +738,17 @@ public class ColGroupRLE extends AColGroupOffset {
 	}
 
 	private String pair(char[] d, int off) {
-		if((int) _data[off + 1] == 1)
+		if(_data[off + 1] == 1)
 			return ((int) _data[off]) + "";
 		else
 			return ((int) _data[off]) + "-" + ((int) _data[off + 1]);
 	}
 
 	private String pair(char[] d, int off, int sum) {
-		if((int) _data[off + 1] == 1)
-			return ((int) _data[off] + sum) + "";
+		if(_data[off + 1] == 1)
+			return (_data[off] + sum) + "";
 		else
-			return ((int) _data[off] + sum) + "-" + ((int) _data[off + 1]);
+			return (_data[off] + sum) + "-" + ((int) _data[off + 1]);
 	}
 
 	@Override

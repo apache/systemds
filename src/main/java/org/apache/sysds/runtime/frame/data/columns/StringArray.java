@@ -25,8 +25,9 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.BitSet;
 import java.util.HashMap;
+import java.util.Map;
 
-import org.apache.commons.lang.NotImplementedException;
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.frame.data.columns.ArrayFactory.FrameArrayType;
@@ -128,7 +129,7 @@ public class StringArray extends Array<String> {
 		final int endSize = this._size + other.size();
 		final String[] ret = new String[endSize];
 		System.arraycopy(_data, 0, ret, 0, this._size);
-		System.arraycopy((String[]) other.get(), 0, ret, this._size, other.size());
+		System.arraycopy(other.get(), 0, ret, this._size, other.size());
 		return new StringArray(ret);
 	}
 
@@ -246,13 +247,13 @@ public class StringArray extends Array<String> {
 		for(int i = 0; i < _size; i++) {
 			final ValueType c = FrameUtil.isType(_data[i], state);
 			if(c == ValueType.STRING) // early termination
-				return new Pair<ValueType, Boolean>(ValueType.STRING, false);
+				return new Pair<>(ValueType.STRING, false);
 			else if(c == ValueType.UNKNOWN)
 				nulls = true;
 			else
 				state = getHighest(state, c);
 		}
-		return new Pair<ValueType, Boolean>(state, nulls);
+		return new Pair<>(state, nulls);
 	}
 
 	@Override
@@ -297,7 +298,7 @@ public class StringArray extends Array<String> {
 	protected Array<Boolean> changeTypeBoolean() {
 		String firstNN = _data[0];
 		int i = 1;
-		while(firstNN == null && i < size()){
+		while(firstNN == null && i < size()) {
 			firstNN = _data[i++];
 		}
 
@@ -422,7 +423,6 @@ public class StringArray extends Array<String> {
 		else
 			return changeTypeBooleanFloatArray();
 	}
-
 
 	protected Array<Boolean> changeTypeBooleanFloatBitSet() {
 		BitSet ret = new BitSet(size());
@@ -561,34 +561,34 @@ public class StringArray extends Array<String> {
 
 	@Override
 	public double getAsDouble(int i) {
-		if(_data[i] != null && !_data[i].isEmpty()){
+		if(_data[i] != null && !_data[i].isEmpty()) {
 			return getAsDouble(_data[i]);
 		}
-		else{
+		else {
 			return 0.0;
 		}
 	}
 
 	@Override
 	public double getAsNaNDouble(int i) {
-		if(_data[i] != null && !_data[i].isEmpty()){
+		if(_data[i] != null && !_data[i].isEmpty()) {
 			return getAsDouble(_data[i]);
 		}
-		else{
+		else {
 			return Double.NaN;
 		}
 	}
 
-	private static double getAsDouble(String s){
-		try{
+	private static double getAsDouble(String s) {
+		try {
 
 			return DoubleArray.parseDouble(s);
 		}
-		catch(Exception e){
+		catch(Exception e) {
 			String ls = s.toLowerCase();
 			if(ls.equals("true") || ls.equals("t"))
 				return 1;
-			else if (ls.equals("false") || ls.equals("f"))
+			else if(ls.equals("false") || ls.equals("f"))
 				return 0;
 			else
 				throw new DMLRuntimeException("Unable to change to double: " + s, e);
@@ -608,9 +608,9 @@ public class StringArray extends Array<String> {
 				return false;
 		return true;
 	}
-	
+
 	@Override
-	public boolean containsNull(){
+	public boolean containsNull() {
 		for(int i = 0; i < _data.length; i++)
 			if(_data[i] == null)
 				return true;
@@ -641,10 +641,10 @@ public class StringArray extends Array<String> {
 	}
 
 	@Override
-	protected HashMap<String, Long> createRecodeMap(){
-		try{
+	protected Map<String, Long> createRecodeMap() {
+		try {
 
-			HashMap<String, Long> map = new HashMap<>();
+			Map<String, Long> map = new HashMap<>();
 			for(int i = 0; i < size(); i++) {
 				Object val = get(i);
 				if(val != null) {
@@ -656,17 +656,25 @@ public class StringArray extends Array<String> {
 			}
 			return map;
 		}
-		catch(Exception e){
+		catch(Exception e) {
 			return super.createRecodeMap();
 		}
 	}
 
 	@Override
-	public double hashDouble(int idx){
+	public double hashDouble(int idx) {
 		if(_data[idx] != null)
 			return _data[idx].hashCode();
 		else
 			return Double.NaN;
+	}
+
+	@Override
+	public boolean equals(Array<String> other) {
+		if(other instanceof StringArray)
+			return Arrays.equals(_data, ((StringArray) other)._data);
+		else
+			return false;
 	}
 
 	@Override

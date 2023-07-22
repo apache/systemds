@@ -29,7 +29,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 
-import org.apache.commons.lang.NotImplementedException;
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.DMLRuntimeException;
@@ -2255,7 +2255,7 @@ public class ColGroupTest extends ColGroupBase {
 			// both should be null, or both should not be.
 			if(g2 == null)
 				assertTrue(g2n == null);
-			else if(g2 != null)
+			else
 				assertTrue(g2n != null);
 		}
 		catch(Exception e) {

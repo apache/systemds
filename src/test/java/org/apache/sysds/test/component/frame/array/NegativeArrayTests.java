@@ -21,12 +21,15 @@ package org.apache.sysds.test.component.frame.array;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
+import static org.mockito.Mockito.mock;
 
 import java.io.IOException;
 
-import org.apache.commons.lang.NotImplementedException;
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.compress.DMLCompressionException;
+import org.apache.sysds.runtime.frame.data.columns.ACompressedArray;
 import org.apache.sysds.runtime.frame.data.columns.Array;
 import org.apache.sysds.runtime.frame.data.columns.ArrayFactory;
 import org.apache.sysds.runtime.frame.data.columns.BitSetArray;
@@ -39,6 +42,7 @@ import org.apache.sysds.runtime.frame.data.columns.LongArray;
 import org.apache.sysds.runtime.frame.data.columns.OptionalArray;
 import org.apache.sysds.runtime.frame.data.columns.StringArray;
 import org.junit.Test;
+import org.mockito.Mockito;
 
 public class NegativeArrayTests {
 
@@ -50,8 +54,13 @@ public class NegativeArrayTests {
 	}
 
 	@Test(expected = DMLRuntimeException.class)
-	public void testEstimateMemorySizeInvalid() {
-		ArrayFactory.getInMemorySize(ValueType.UNKNOWN, 0);
+	public void testEstimateMemorySizeInvalid_1() {
+		ArrayFactory.getInMemorySize(ValueType.UNKNOWN, 0, false);
+	}
+
+	@Test(expected = DMLRuntimeException.class)
+	public void testEstimateMemorySizeInvalid_2() {
+		ArrayFactory.getInMemorySize(ValueType.UNKNOWN, 0, true);
 	}
 
 	@Test
@@ -248,7 +257,26 @@ public class NegativeArrayTests {
 	}
 
 	@Test(expected = NotImplementedException.class)
-	public void byteArrayString(){
+	public void byteArrayString() {
 		new StringArray(new String[10]).getAsByteArray();
+	}
+
+	@Test(expected = DMLCompressionException.class)
+	public void set1() {
+		ACompressedArray<?> a = mock(ACompressedArray.class, Mockito.CALLS_REAL_METHODS);
+		a.set(0, 0.0);
+	}
+
+	@Test(expected = DMLCompressionException.class)
+	public void set2() {
+		ACompressedArray<?> a = mock(ACompressedArray.class, Mockito.CALLS_REAL_METHODS);
+		a.set(0, "0mm0");
+	}
+
+	@Test(expected = DMLCompressionException.class)
+	@SuppressWarnings("unchecked")
+	public void set3() {
+		ACompressedArray<Integer> a = mock(ACompressedArray.class, Mockito.CALLS_REAL_METHODS);
+		a.set(0, Integer.valueOf(13));
 	}
 }

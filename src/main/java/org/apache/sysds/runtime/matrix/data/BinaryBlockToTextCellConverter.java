@@ -113,25 +113,18 @@ Converter<MatrixIndexes, MatrixBlock, NullWritable, Text>
 		{
 			if(sparseIterator==null)
 				return null;
-			else
-			{
-				IJV cell = sparseIterator.next();
-				i = cell.getI() + startIndexes.getRowIndex();
-				j = cell.getJ() + startIndexes.getColumnIndex();
-				v = cell.getV();
-			}
-				
-		}else
-		{
+			IJV cell = sparseIterator.next();
+			i = cell.getI() + startIndexes.getRowIndex();
+			j = cell.getJ() + startIndexes.getColumnIndex();
+			v = cell.getV();
+		}
+		else {
 			if(denseArray==null)
 				return null;
-			else
-			{
-				i=startIndexes.getRowIndex() + nextInDenseArray/thisBlockWidth;
-				j=startIndexes.getColumnIndex() + nextInDenseArray%thisBlockWidth;
-				v=denseArray[nextInDenseArray];
-				nextInDenseArray++;
-			}
+			i=startIndexes.getRowIndex() + nextInDenseArray/thisBlockWidth;
+			j=startIndexes.getColumnIndex() + nextInDenseArray%thisBlockWidth;
+			v=denseArray[nextInDenseArray];
+			nextInDenseArray++;
 		}
 		value.set(i+" "+j+" "+v);
 		return pair;

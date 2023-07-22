@@ -34,7 +34,7 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import org.apache.commons.lang.ArrayUtils;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.sysds.api.jmlc.Connection;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.lops.Lop;

@@ -23,7 +23,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Random;
 
-import org.apache.commons.lang.ArrayUtils;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.mapred.SequenceFileOutputFormat;
@@ -377,7 +377,7 @@ public class WriteSPInstruction extends SPInstruction implements LineageTraceabl
 	public Pair<String, LineageItem> getLineageItem(ExecutionContext ec) {
 		LineageItem[] ret = LineageItemUtils.getLineage(ec, input1, input2, input3, input4);
 		if (formatProperties != null && formatProperties.getDescription() != null && !formatProperties.getDescription().isEmpty())
-			ret = (LineageItem[])ArrayUtils.add(ret, new LineageItem(formatProperties.getDescription()));
+			ret = ArrayUtils.add(ret, new LineageItem(formatProperties.getDescription()));
 		return Pair.of(input1.getName(), new LineageItem(getOpcode(), ret));
 	}
 }

@@ -18,7 +18,7 @@
  */
 package org.apache.sysds.test.component.compress.dictionary;
 
-import org.apache.commons.lang.NotImplementedException;
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.DeltaDictionary;
 import org.apache.sysds.runtime.functionobjects.And;
 import org.apache.sysds.runtime.functionobjects.Divide;

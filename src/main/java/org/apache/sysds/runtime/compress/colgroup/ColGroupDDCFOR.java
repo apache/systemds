@@ -24,7 +24,7 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.util.Arrays;
 
-import org.apache.commons.lang.NotImplementedException;
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.DictionaryFactory;
@@ -389,7 +389,7 @@ public class ColGroupDDCFOR extends AMorphingMMColGroup implements IFrameOfRefer
 				return ColGroupEmpty.create(max);
 			else {
 				double[] retDef = new double[max];
-				retDef[((int) def) - 1] = 1;
+				retDef[def - 1] = 1;
 				return ColGroupConst.create(retDef);
 			}
 		}
@@ -405,7 +405,7 @@ public class ColGroupDDCFOR extends AMorphingMMColGroup implements IFrameOfRefer
 				return ColGroupDDC.create(outCols, d, _data, getCachedCounts());
 			else {
 				double[] retDef = new double[max];
-				retDef[((int) def) - 1] = 1;
+				retDef[def - 1] = 1;
 				return ColGroupDDCFOR.create(outCols, d, _data, getCachedCounts(), retDef);
 			}
 		}

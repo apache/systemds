@@ -19,14 +19,17 @@
 
 package org.apache.sysds.runtime.io;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.conf.CompilerConfig.ConfigType;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.io.WriterCompressed;
 
-public class MatrixWriterFactory
-{
+public class MatrixWriterFactory{
+
+	protected static final Log LOG = LogFactory.getLog(MatrixWriterFactory.class.getName());
 
 	public static MatrixWriter createMatrixWriter(FileFormat fmt) {
 		return createMatrixWriter(fmt, -1, null);
@@ -74,8 +77,10 @@ public class MatrixWriterFactory
 			case BINARY:
 				if( ConfigurationManager.getCompilerConfigFlag(ConfigType.PARALLEL_CP_WRITE_BINARYFORMATS) )
 					writer = new WriterBinaryBlockParallel(replication);
-				else
+				else{
+					LOG.warn("Using single threaded binary writer");
 					writer = new WriterBinaryBlock(replication);
+				}
 				break;
 
 			case HDF5:

@@ -19,7 +19,7 @@
 
 package org.apache.sysds.hops.rewrite;
 
-import org.apache.commons.lang.ArrayUtils;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.api.DMLScript;
@@ -569,8 +569,7 @@ public class HopRewriteUtils {
 	
 	public static DataOp createTransientRead(String name, MatrixObject mo) {
 		DataOp tread = new DataOp(name, DataType.MATRIX, ValueType.FP64, OpOpData.TRANSIENTREAD,
-			null, mo.getNumRows(), mo.getNumColumns(), mo.getNnz(), UpdateType.COPY,
-			(int)mo.getBlocksize());
+			null, mo.getNumRows(), mo.getNumColumns(), mo.getNnz(), UpdateType.COPY, mo.getBlocksize());
 		tread.setVisited();
 		copyLineNumbers(mo, tread);
 		tread.setFileName(name);
@@ -1321,10 +1320,11 @@ public class HopRewriteUtils {
 		//starting row and column ranges of 1 in order to guard against
 		//invalid modifications in the presence of invalid index ranges
 		//(e.g., X[,2] on a column vector needs to throw an error)
-		return isEqualSize(hop, hop.getInput().get(0))
-			&& !(hop.getDim1()==1 && hop.getDim2()==1)
-			&& isLiteralOfValue(hop.getInput().get(1), 1)  //rl
-			&& isLiteralOfValue(hop.getInput().get(3), 1); //cl
+		return ((IndexingOp)hop).isAllRowsAndCols()
+			|| (isEqualSize(hop, hop.getInput().get(0))
+				&& !(hop.getDim1()==1 && hop.getDim2()==1)
+				&& isLiteralOfValue(hop.getInput().get(1), 1)  //rl
+				&& isLiteralOfValue(hop.getInput().get(3), 1)); //cl
 	}
 	
 	public static boolean isScalarMatrixBinaryMult( Hop hop ) {

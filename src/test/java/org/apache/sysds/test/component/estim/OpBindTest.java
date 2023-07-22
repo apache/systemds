@@ -29,7 +29,7 @@ import org.apache.sysds.hops.estim.SparsityEstimator.OpCode;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestUtils;
-import org.apache.commons.lang.NotImplementedException;
+import org.apache.commons.lang3.NotImplementedException;
 
 /**
  * this is the basic operation check for all estimators with single operations

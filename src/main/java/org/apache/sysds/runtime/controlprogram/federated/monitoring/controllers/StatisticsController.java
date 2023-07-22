@@ -19,6 +19,8 @@
 
 package org.apache.sysds.runtime.controlprogram.federated.monitoring.controllers;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.Request;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.Response;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.StatisticsOptions;
@@ -27,6 +29,7 @@ import org.apache.sysds.runtime.controlprogram.federated.monitoring.services.Sta
 import io.netty.handler.codec.http.FullHttpResponse;
 
 public class StatisticsController implements IController {
+	private static final Log LOG = LogFactory.getLog(StatisticsController.class.getName());
 	private final StatisticsService statisticsService = new StatisticsService();
 
 	@Override
@@ -51,6 +54,9 @@ public class StatisticsController implements IController {
 		var options = new StatisticsOptions();
 
 		var result = statisticsService.getAll(objectId, options);
+
+		if(LOG.isDebugEnabled())
+			LOG.debug("Get -- events: " + result.events);
 
 		return Response.ok(result.toString());
 	}

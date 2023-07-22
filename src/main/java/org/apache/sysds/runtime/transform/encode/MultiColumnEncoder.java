@@ -318,7 +318,7 @@ public class MultiColumnEncoder implements Encoder {
 		for(ColumnEncoderComposite columnEncoder : _columnEncoders)
 			columnEncoder.updateAllDCEncoders();
 		int numCols = getNumOutCols();
-		long estNNz = (long) in.getNumRows() * (hasUDF ? numCols : hasWE ? getEstNNzRow() : (long) in.getNumColumns());
+		long estNNz = (long) in.getNumRows() * (hasUDF ? numCols : hasWE ? getEstNNzRow() : in.getNumColumns());
 		// FIXME: estimate nnz for multiple encoders including dummycode and embedding
 		boolean sparse = MatrixBlock.evalSparseFormatInMemory(in.getNumRows(), numCols, estNNz) && !hasUDF;
 		MatrixBlock out = new MatrixBlock(in.getNumRows(), numCols, sparse, estNNz);
@@ -1126,7 +1126,7 @@ public class MultiColumnEncoder implements Encoder {
 			boolean hasWE = _encoder.getColumnEncoders().stream().anyMatch(e -> e.hasEncoder(ColumnEncoderWordEmbedding.class));
 			int numCols = _encoder.getNumOutCols();
 			boolean hasDC = _encoder.getColumnEncoders(ColumnEncoderDummycode.class).size() > 0;
-			long estNNz = (long) _input.getNumRows() * (hasUDF ? numCols : (long) _input.getNumColumns());
+			long estNNz = (long) _input.getNumRows() * (hasUDF ? numCols : _input.getNumColumns());
 			boolean sparse = MatrixBlock.evalSparseFormatInMemory(_input.getNumRows(), numCols, estNNz) && !hasUDF;
 			_output.reset(_input.getNumRows(), numCols, sparse, estNNz);
 			outputMatrixPreProcessing(_output, _input, hasDC, hasWE);

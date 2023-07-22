@@ -22,6 +22,7 @@ package org.apache.sysds.hops.rewrite;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Set;
@@ -45,6 +46,7 @@ import org.apache.sysds.common.Types.OpOp1;
 import org.apache.sysds.common.Types.OpOp2;
 import org.apache.sysds.common.Types.OpOp3;
 import org.apache.sysds.common.Types.OpOpDG;
+import org.apache.sysds.common.Types.OpOpData;
 import org.apache.sysds.common.Types.OpOpN;
 import org.apache.sysds.common.Types.ParamBuiltinOp;
 import org.apache.sysds.common.Types.ReOrgOp;
@@ -93,6 +95,9 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 		for( Hop h : roots )
 			rule_AlgebraicSimplification( h, true );
 		Hop.resetVisitStatus(roots, true);
+		
+		//cleanup remove (twrite <- tread) pairs (unless checkpointing)
+		removeTWriteTReadPairs(roots);
 		
 		return roots;
 	}
@@ -2010,5 +2015,19 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 		}
 		
 		return hi;
+	}
+	
+	private static void removeTWriteTReadPairs(ArrayList<Hop> roots) {
+		Iterator<Hop> iter = roots.iterator();
+		while(iter.hasNext()) {
+			Hop root = iter.next();
+			if( HopRewriteUtils.isData(root, OpOpData.TRANSIENTWRITE)
+				&& HopRewriteUtils.isData(root.getInput(0), OpOpData.TRANSIENTREAD)
+				&& root.getName().equals(root.getInput(0).getName())
+				&& !root.getInput(0).requiresCheckpoint())
+			{
+				iter.remove();
+			}
+		}
 	}
 }

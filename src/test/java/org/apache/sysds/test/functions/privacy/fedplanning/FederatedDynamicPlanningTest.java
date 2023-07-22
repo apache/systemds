@@ -136,7 +136,7 @@ public class FederatedDynamicPlanningTest extends AutomatedTestBase {
 
 			// Run actual dml script with federated matrix
 			fullDMLScriptName = HOME + testName + ".dml";
-			programArgs = new String[] {"-stats", "-explain", "hops", "-nvargs",
+			programArgs = new String[] {"-stats", "-nvargs",
 				 "r=" + rows, "c=" + cols,
 				"A=" + input("A"),
 				"B1=" + TestUtils.federatedAddress(port1, input("B1")),

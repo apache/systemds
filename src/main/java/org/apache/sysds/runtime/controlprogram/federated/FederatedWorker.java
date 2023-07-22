@@ -192,7 +192,7 @@ public class FederatedWorker {
 			final SelfSignedCertificate cert = new SelfSignedCertificate();
 			final SslContext cont2 = SslContextBuilder.forServer(cert.certificate(), cert.privateKey()).build();
 
-			return new ChannelInitializer<SocketChannel>() {
+			return new ChannelInitializer<>() {
 				@Override
 				public void initChannel(SocketChannel ch) {
 					final ChannelPipeline cp = ch.pipeline();

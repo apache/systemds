@@ -239,6 +239,6 @@ public class QuaternaryWDivMMFEDInstruction extends QuaternaryFEDInstruction
 			outFedMap.modifyFedRanges(cols, 1);
 		}
 		out.setFedMapping(outFedMap);
-		out.getDataCharacteristics().set(rows, cols, (int) X.getBlocksize());
+		out.getDataCharacteristics().set(rows, cols, X.getBlocksize());
 	}
 }

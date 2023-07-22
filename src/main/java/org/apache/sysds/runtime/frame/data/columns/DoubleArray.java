@@ -119,7 +119,7 @@ public class DoubleArray extends Array<Double> {
 		final int endSize = this._size + other.size();
 		final double[] ret = new double[endSize];
 		System.arraycopy(_data, 0, ret, 0, this._size);
-		System.arraycopy((double[]) other.get(), 0, ret, this._size, other.size());
+		System.arraycopy(other.get(), 0, ret, this._size, other.size());
 		if(other instanceof OptionalArray)
 			return OptionalArray.appendOther((OptionalArray<Double>) other, new DoubleArray(ret));
 		else
@@ -180,13 +180,13 @@ public class DoubleArray extends Array<Double> {
 		for(int i = 0; i < _size; i++) {
 			ValueType c = FrameUtil.isType(_data[i], state);
 			if(state == ValueType.FP64)
-				return new Pair<ValueType, Boolean>(ValueType.FP64, false);
+				return new Pair<>(ValueType.FP64, false);
 
 			switch(state) {
 				case FP32:
 					switch(c) {
 						case FP64:
-							state = c;
+							state = c; break;
 						default:
 					}
 					break;
@@ -194,7 +194,7 @@ public class DoubleArray extends Array<Double> {
 					switch(c) {
 						case FP64:
 						case FP32:
-							state = c;
+							state = c; break;
 						default:
 					}
 					break;
@@ -203,7 +203,7 @@ public class DoubleArray extends Array<Double> {
 						case FP64:
 						case FP32:
 						case INT64:
-							state = c;
+							state = c; break;
 						default:
 					}
 					break;
@@ -214,13 +214,13 @@ public class DoubleArray extends Array<Double> {
 						case FP32:
 						case INT64:
 						case INT32:
-							state = c;
+							state = c; break;
 						default:
 					}
 					break;
 			}
 		}
-		return new Pair<ValueType, Boolean>(state, false);
+		return new Pair<>(state, false);
 	}
 
 	@Override
@@ -374,10 +374,17 @@ public class DoubleArray extends Array<Double> {
 		return _data[i] != 0.0d;
 	}
 
+	@Override
+	public double hashDouble(int idx) {
+		return Double.hashCode(_data[idx]);
+	}
 
 	@Override
-	public double hashDouble(int idx){
-		return Double.hashCode(_data[idx]);
+	public boolean equals(Array<Double> other) {
+		if(other instanceof DoubleArray)
+			return Arrays.equals(_data, ((DoubleArray) other)._data);
+		else
+			return false;
 	}
 
 	@Override

@@ -32,7 +32,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Random;
 
-import org.apache.commons.lang.NotImplementedException;
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.colgroup.IMapToDataGroup;
@@ -96,7 +96,7 @@ public class MappingTests {
 		m = genMap(MapToFactory.create(size, max), expected, max, fill, seed);
 	}
 
-	protected static AMapToData genMap(AMapToData m, int[] expected, int max, boolean fill, int seed) {
+	public static AMapToData genMap(AMapToData m, int[] expected, int max, boolean fill, int seed) {
 		if(max <= 1)
 			return m;
 		Random vals = new Random(seed);

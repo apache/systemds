@@ -18,19 +18,17 @@
  */
 package org.apache.sysds.runtime.frame.data.lib;
 
-import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.apache.commons.lang3.tuple.Pair;
 import org.apache.sysds.runtime.compress.workload.WTreeRoot;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
-import org.apache.sysds.runtime.frame.data.compress.FrameCompressionStatistics;
+import org.apache.sysds.runtime.frame.data.compress.CompressedFrameBlockFactory;
 
 public class FrameLibCompress {
 
-	public static Pair<FrameBlock, FrameCompressionStatistics> compress(FrameBlock in, int k) {
+	public static FrameBlock compress(FrameBlock in, int k) {
 		return compress(in, k, null);
 	}
 
-	public static Pair<FrameBlock, FrameCompressionStatistics> compress(FrameBlock in, int k, WTreeRoot root) {
-		return new ImmutablePair<>(in, new FrameCompressionStatistics());
+	public static FrameBlock compress(FrameBlock in, int k, WTreeRoot root) {
+		return CompressedFrameBlockFactory.compress(in, k, root);
 	}
 }

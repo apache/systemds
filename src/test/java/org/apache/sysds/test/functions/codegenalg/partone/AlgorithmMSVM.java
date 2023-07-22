@@ -22,7 +22,7 @@ package org.apache.sysds.test.functions.codegenalg.partone;
 import java.io.File;
 import java.util.HashMap;
 
-import org.apache.commons.lang.ArrayUtils;
+import org.apache.commons.lang3.ArrayUtils;
 import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysds.api.DMLScript;
@@ -188,7 +188,7 @@ public class AlgorithmMSVM extends AutomatedTestBase
 					"icpt="+String.valueOf(intercept), "tol="+String.valueOf(epsilon), "reg=0.001",
 					"maxiter="+String.valueOf(maxiter), "model="+output("w"), "Log= "};
 			if( lineage )
-				programArgs = (String[])ArrayUtils.addAll(new String[]{"-lineage"}, programArgs);
+				programArgs = ArrayUtils.addAll(new String[]{"-lineage"}, programArgs);
 			
 			rCmd = getRCmd(inputDir(), String.valueOf(intercept),String.valueOf(epsilon),
 				String.valueOf(maxiter), expectedDir());

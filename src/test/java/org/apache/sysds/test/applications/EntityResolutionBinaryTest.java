@@ -55,7 +55,7 @@ public class EntityResolutionBinaryTest extends AutomatedTestBase {
 	public void testScriptEndToEnd(int numLshHashtables, int numLshHyperplanes) {
 		TestConfiguration config = getTestConfiguration(TEST_NAME);
 		loadTestConfiguration(config);
-		fullDMLScriptName = "./scripts/staging/entity-resolution/binary-entity-resolution.dml";;
+		fullDMLScriptName = "./scripts/staging/entity-resolution/binary-entity-resolution.dml";
 
 		programArgs = new String[]{
 				"-nvargs", //

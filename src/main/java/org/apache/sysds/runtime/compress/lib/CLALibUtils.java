@@ -24,7 +24,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import org.apache.commons.lang.NotImplementedException;
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
@@ -95,6 +95,19 @@ public final class CLALibUtils {
 	}
 
 	/**
+	 * Helper method to determine if the column groups contains Morphing or Frame of reference groups.
+	 * 
+	 * @param groups The groups to analyze
+	 * @return A Boolean saying there is morphing or FOR groups.
+	 */
+	protected static boolean shouldPreFilterMorphOrRef(List<AColGroup> groups) {
+		for(AColGroup g : groups)
+			if(g instanceof AMorphingMMColGroup || g instanceof IFrameOfReferenceGroup)
+				return true;
+		return false;
+	}
+
+	/**
 	 * Detect if the list of groups contains FOR.
 	 * 
 	 * @param groups the groups
@@ -132,6 +145,8 @@ public final class CLALibUtils {
 		for(AColGroup g : groups) {
 			if(g instanceof ColGroupEmpty || g.isEmpty())
 				continue;
+			else if(g instanceof IFrameOfReferenceGroup)
+				filteredGroups.add(((IFrameOfReferenceGroup)g).extractCommon(constV));
 			else if(g instanceof AMorphingMMColGroup)
 				filteredGroups.add(((AMorphingMMColGroup) g).extractCommon(constV));
 			else if(g instanceof ColGroupConst)

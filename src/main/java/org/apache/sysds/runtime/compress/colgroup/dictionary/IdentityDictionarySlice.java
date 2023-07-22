@@ -25,7 +25,7 @@ import java.io.IOException;
 import java.lang.ref.SoftReference;
 import java.util.Arrays;
 
-import org.apache.commons.lang.NotImplementedException;
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.functionobjects.Builtin;
@@ -42,12 +42,13 @@ public class IdentityDictionarySlice extends IdentityDictionary {
 	 * Create a Identity matrix dictionary slice. It behaves as if allocated a Sparse Matrix block but exploits that the
 	 * structure is known to have certain properties.
 	 * 
-	 * @param nRowCol the number of rows and columns in this identity matrix.
-	 * @param l       the index lower to start at
-	 * @param u       the index upper to end at (not inclusive)
+	 * @param nRowCol   the number of rows and columns in this identity matrix.
+	 * @param withEmpty If the matrix should contain an empty row in the end.
+	 * @param l         the index lower to start at
+	 * @param u         the index upper to end at (not inclusive)
 	 */
-	public IdentityDictionarySlice(int nRowCol, int l, int u) {
-		super(nRowCol);
+	public IdentityDictionarySlice(int nRowCol, boolean withEmpty, int l, int u) {
+		super(nRowCol, withEmpty);
 		if(u > nRowCol || l < 0 || l >= u)
 			throw new DMLRuntimeException("Invalid slice Identity: " + nRowCol + " range: " + l + "--" + u);
 		this.l = l;
@@ -68,18 +69,13 @@ public class IdentityDictionarySlice extends IdentityDictionary {
 	@Override
 	public double getValue(int i) {
 		throw new NotImplementedException();
-		// final int nCol = nRowCol;
-		// final int row = i / nCol;
-		// if(row > nRowCol)
-		// return 0;
-		// final int col = i % nCol;
-		// return row == col ? 1 : 0;
+
 	}
 
 	@Override
 	public final double getValue(int r, int c, int nCol) {
 		throw new NotImplementedException();
-		// return r == c ? 1 : 0;
+
 	}
 
 	@Override
@@ -110,17 +106,12 @@ public class IdentityDictionarySlice extends IdentityDictionary {
 
 	@Override
 	public ADictionary clone() {
-		return new IdentityDictionarySlice(nRowCol, l, u);
+		return new IdentityDictionarySlice(nRowCol, withEmpty, l, u);
 	}
 
 	@Override
 	public DictType getDictType() {
 		return DictType.IdentitySlice;
-	}
-
-	@Override
-	public int getNumberOfValues(int ncol) {
-		return nRowCol;
 	}
 
 	@Override
@@ -200,7 +191,6 @@ public class IdentityDictionarySlice extends IdentityDictionary {
 		return sum(counts, ncol);
 	}
 
-
 	@Override
 	public ADictionary sliceOutColumnRange(int idxStart, int idxEnd, int previousNumberOfColumns) {
 		throw new NotImplementedException("Slice of identity slice ??? this is getting a bit ridiculous");
@@ -210,7 +200,6 @@ public class IdentityDictionarySlice extends IdentityDictionary {
 	public boolean containsValue(double pattern) {
 		return pattern == 0.0 || pattern == 1.0;
 	}
-
 
 	@Override
 	public long getNumberNonZeros(int[] counts, int nCol) {
@@ -229,11 +218,10 @@ public class IdentityDictionarySlice extends IdentityDictionary {
 		return ret;
 	}
 
-
 	private MatrixBlockDictionary createMBDict() {
 		MatrixBlock identity = new MatrixBlock(nRowCol, u - l, true);
 		for(int i = l; i < u; i++)
-			identity.quickSetValue(i, i-l, 1.0);
+			identity.quickSetValue(i, i - l, 1.0);
 		return new MatrixBlockDictionary(identity);
 	}
 
@@ -266,7 +254,7 @@ public class IdentityDictionarySlice extends IdentityDictionary {
 
 	@Override
 	public long getExactSizeOnDisk() {
-		return 1 + 4 *3;
+		return 1 + 4 * 3;
 	}
 
 	@Override
@@ -287,14 +275,14 @@ public class IdentityDictionarySlice extends IdentityDictionary {
 
 	@Override
 	public double getSparsity() {
-		return 1.0d / (double)nRowCol;
+		return 1d / nRowCol;
 	}
 
 	@Override
 	public boolean equals(ADictionary o) {
-		if(o instanceof IdentityDictionarySlice){
+		if(o instanceof IdentityDictionarySlice) {
 			IdentityDictionarySlice os = ((IdentityDictionarySlice) o);
-			return os.nRowCol == nRowCol &&  os.l == l && os.u == u;
+			return os.nRowCol == nRowCol && os.l == l && os.u == u;
 		}
 		else if(o instanceof IdentityDictionary)
 			return false;

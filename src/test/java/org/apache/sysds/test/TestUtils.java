@@ -52,7 +52,7 @@ import java.util.StringTokenizer;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang.NotImplementedException;
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
@@ -2404,7 +2404,7 @@ public class TestUtils {
 	 * 				random Object
 	 */
 	public static ValueType[] generateRandomSchema(int size, Random random){
-		final List<ValueType> valueTypes = new ArrayList<ValueType>();
+		final List<ValueType> valueTypes = new ArrayList<>();
 		for(ValueType v : ValueType.values())
 			if(v != ValueType.UNKNOWN)
 				valueTypes.add(v);

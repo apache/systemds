@@ -24,6 +24,7 @@ source parameters.sh
 
 # Synchronize code and setup.
 for index in ${!address[*]}; do
+    sleep 0.2
     # echo "${address[$index]}"
     if [  "${address[$index]}" != "localhost" ]; then
         # Make the required directiories

@@ -22,7 +22,7 @@
 source("scripts/pipelines/scripts/utils.dml") as utils;
 
 # read the inputs
-F = read($dirtyData, data_type="frame", format="csv", header=TRUE, 
+F = read($dirtyData, data_type="frame", format="csv", header=TRUE,
   naStrings= ["NA", "null","  ","NaN", "nan", "", " ", "_nan_", "inf", "?", "NAN", "99999"]);
 F = F[,2:ncol(F)]
 primitives = read($primitives, data_type = "frame", format="csv", header= TRUE)
@@ -48,7 +48,7 @@ else {
 
 # # # split in train/test 70/30
 #matrix("1 1e-6 1e-9 1000", rows=1, cols=4)
-[topKPipelines, topKHyperParams, topKScores, baseLineScore, evalFunHp, applyFunc] = topk_cleaning(dataTrain=trainData, dataTest=testData, 
+[topKPipelines, topKHyperParams, topKScores, baseLineScore, evalFunHp, applyFunc] = topk_cleaning(dataTrain=trainData, dataTest=testData,
   primitives=primitives, parameters=param, evaluationFunc=evalFunc, evalFunHp=as.matrix(NaN),
   topK=topK, resource_val=resources, cv=testCV, cvk=cvk, sample=sample, isLastLabel=TRUE, correctTypos=FALSE)
 
@@ -58,11 +58,11 @@ write(topKScores, output+"/bestAcc.csv", format="csv")
 write(baseLineScore, output+"/dirtyScore.csv", format="csv")
 write(evalFunHp, output+"/evalHp.csv", format="csv")
 write(applyFunc, output+"/applyFunc.csv", format="csv")
-result = baseLineScore < as.scalar(topKScores[1, 1])     
+result = baseLineScore < as.scalar(topKScores[1, 1])
 write(result, $O)
 
 
-# UDF for evaluation  
+# UDF for evaluation
 # choice of parameters provided by API, X, Y, clone_X, evalFunHp (hyper-param), trainML (boolean for optimizing hp internally or passed by externally )
 evalRegression = function(Matrix[Double] X, Matrix[Double] Y, Matrix[Double] Xtest, Matrix[Double] Ytest, Matrix[Double] Xorig=as.matrix(0),
   Matrix[Double] evalFunHp)
@@ -71,14 +71,16 @@ return(Matrix[Double] output)
   if(is.na(as.scalar(evalFunHp[1,1])))
   {
     # do the gridsearch for hyper-parameters
+    lArgs=list(X=X, y=Y, icpt=0, reg=-1, tol=-1, maxi=-1, verbose=FALSE);
     params = list("icpt","reg", "tol");
-    paramRanges = list(seq(0,2,1),10^seq(0,-4), 10^seq(-6,-12));
-    [B1, opt] = gridSearch(X=X, y=Y, train="lm", predict="wmape",
+    paramRanges = list(seq(0,2,1), 10^seq(0,-4), 10^seq(-6,-12));
+    [B1, opt] = gridSearch(X=X, y=Y, train="lm", predict="wmape", trainArgs=lArgs,
       numB=ncol(X)+1, params=params, paramValues=paramRanges, cv=TRUE, cvk=3, verbose=FALSE);
-    evalFunHp = as.matrix(opt)  
+    evalFunHp = as.matrix(opt)
   }
-  beta = lm(X=X, y=Y, icpt=as.scalar(evalFunHp[1,1]), reg=as.scalar(evalFunHp[1,2]), tol=as.scalar(evalFunHp[1,3]), 
+  beta = lm(X=X, y=Y, icpt=as.scalar(evalFunHp[1,1]), reg=as.scalar(evalFunHp[1,2]), tol=as.scalar(evalFunHp[1,3]),
     maxi=1000, verbose=FALSE);
+
   acc = wmape(Xtest, Ytest, beta)
   accuracy = (1 - acc)
   output = cbind(accuracy, evalFunHp)
@@ -88,13 +90,13 @@ return(Matrix[Double] output)
   # # loss = as.matrix(sum((y - X%*%B)^2));
   # pred = lmPredict(X=X, B=B, ytest=y);
   # WMAPE = sum(abs(y - pred))/sum(abs(y)) #this will give the lose into range of [0,1]
-  # loss = ifelse(is.na(as.matrix(WMAPE)), as.matrix(0), as.matrix(WMAPE))  
+  # loss = ifelse(is.na(as.matrix(WMAPE)), as.matrix(0), as.matrix(WMAPE))
 # }
 
 wmape = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] B) return (Matrix[Double] loss) {
   # loss = as.matrix(sum((y - X%*%B)^2));
-  pred = lmPredict(X=X, B=B, ytest=y);
+  pred = lmPredict(X=X, B=B, ytest=y, verbose=FALSE);
   # print("WMAPO: "+(1 - (sum(abs((pred - y)/(pred + y)))/nrow(y))))
   WMAPE = 1 - (sum(abs((pred - y)/(pred + y)))/nrow(y)) #this will give the lose into range of [0,1]
-  loss = ifelse(is.na(as.matrix(WMAPE)), as.matrix(0), as.matrix(WMAPE))  
+  loss = ifelse(is.na(as.matrix(WMAPE)), as.matrix(0), as.matrix(WMAPE))
 }

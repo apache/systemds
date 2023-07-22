@@ -30,6 +30,7 @@ import java.util.BitSet;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.frame.data.columns.ArrayFactory.FrameArrayType;
+import org.apache.sysds.runtime.frame.data.compress.ArrayCompressionStatistics;
 import org.apache.sysds.runtime.matrix.data.Pair;
 import org.apache.sysds.runtime.util.UtilFunctions;
 import org.apache.sysds.utils.MemoryEstimates;
@@ -39,7 +40,7 @@ public class BitSetArray extends ABooleanArray {
 	private static final boolean useVectorizedKernel = true;
 
 	/** Vectorized "words" containing all the bits set */
-	long[] _data;
+	protected long[] _data;
 
 	protected BitSetArray(int size) {
 		this(new long[longSize(size)], size);
@@ -370,7 +371,7 @@ public class BitSetArray extends ABooleanArray {
 
 	@Override
 	public Pair<ValueType, Boolean> analyzeValueType() {
-		return new Pair<ValueType, Boolean>(ValueType.BOOLEAN, false);
+		return new Pair<>(ValueType.BOOLEAN, false);
 	}
 
 	@Override
@@ -539,8 +540,23 @@ public class BitSetArray extends ABooleanArray {
 	}
 
 	@Override
-	public double hashDouble(int idx){
+	public double hashDouble(int idx) {
 		return get(idx) ? 1.0 : 0.0;
+	}
+
+	@Override
+	public ArrayCompressionStatistics statistics(int nSamples) {
+		// Unlikely to compress so lets just say... no
+		return null;
+	}
+
+
+	@Override
+	public boolean equals(Array<Boolean> other){
+		if(other instanceof BitSetArray)
+			return Arrays.equals(_data, ((BitSetArray)other)._data);
+		else 
+			return false;
 	}
 
 	@Override

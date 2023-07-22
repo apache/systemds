@@ -68,7 +68,7 @@ backward = function(matrix[double] dout, matrix[double] X,
    *  - db: Gradient wrt `b`, of shape (1, M).
    */
   dX = dout %*% t(V) %*% t(U)
-  
+
   # If out = Z %*% L, then dL = t(Z) %*% dout
   # Substituting Z = X %*% U and L = V, we get
   dV = t(U) %*% t(X) %*% dout

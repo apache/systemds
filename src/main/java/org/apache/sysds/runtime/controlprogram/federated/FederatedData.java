@@ -21,13 +21,22 @@ package org.apache.sysds.runtime.controlprogram.federated;
 
 import java.io.Serializable;
 import java.net.InetSocketAddress;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.Future;
 
 import javax.net.ssl.SSLException;
 
-import io.netty.channel.*;
-import io.netty.handler.codec.compression.JdkZlibDecoder;
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInboundHandlerAdapter;
+import io.netty.channel.ChannelInitializer;
+import io.netty.channel.ChannelOutboundHandlerAdapter;
+import io.netty.channel.ChannelPipeline;
+import io.netty.channel.EventLoopGroup;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -37,7 +46,6 @@ import org.apache.sysds.conf.DMLConfig;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest.RequestType;
-import org.apache.sysds.runtime.controlprogram.federated.compression.CompressionEncoder;
 import org.apache.sysds.runtime.controlprogram.paramserv.NetworkTrafficCounter;
 import org.apache.sysds.runtime.meta.MetaData;
 
@@ -205,11 +213,12 @@ public class FederatedData {
 				final ChannelPipeline cp = ch.pipeline();
 				final Optional<ImmutablePair<ChannelInboundHandlerAdapter, ChannelOutboundHandlerAdapter>> compressionStrategy = FederationUtils.compressionStrategy();
 				cp.addLast("NetworkTrafficCounter", new NetworkTrafficCounter(FederatedStatistics::logServerTraffic));
+
 				if(ssl)
 					cp.addLast(createSSLHandler(ch, address));
 				if(timeout > -1)
 					cp.addLast(new ReadTimeoutHandler(timeout));
-				// cp.addLast(FederationUtils.decoder(), new FederatedRequestEncoder(), handler);
+
 				compressionStrategy.ifPresent(strategy -> cp.addLast(strategy.left));
 				cp.addLast(FederationUtils.decoder());
 				compressionStrategy.ifPresent(strategy -> cp.addLast(strategy.right));

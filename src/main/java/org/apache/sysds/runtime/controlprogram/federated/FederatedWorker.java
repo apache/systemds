@@ -28,9 +28,13 @@ import java.util.concurrent.TimeUnit;
 
 import javax.net.ssl.SSLException;
 
-import io.netty.channel.*;
-import io.netty.handler.codec.compression.JdkZlibDecoder;
-import org.apache.commons.lang3.NotImplementedException;
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInboundHandlerAdapter;
+import io.netty.channel.ChannelInitializer;
+import io.netty.channel.ChannelOption;
+import io.netty.channel.ChannelOutboundHandlerAdapter;
+import io.netty.channel.ChannelPipeline;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.log4j.Logger;
 import org.apache.sysds.api.DMLScript;
@@ -38,7 +42,10 @@ import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.conf.DMLConfig;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
-import org.apache.sysds.runtime.controlprogram.federated.compression.*;
+import org.apache.sysds.runtime.controlprogram.federated.compression.CompressionDecoderEndStatisticsHandler;
+import org.apache.sysds.runtime.controlprogram.federated.compression.CompressionDecoderStartStatisticsHandler;
+import org.apache.sysds.runtime.controlprogram.federated.compression.CompressionEncoderEndStatisticsHandler;
+import org.apache.sysds.runtime.controlprogram.federated.compression.CompressionEncoderStartStatisticsHandler;
 import org.apache.sysds.runtime.controlprogram.paramserv.NetworkTrafficCounter;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysds.runtime.lineage.LineageCache;

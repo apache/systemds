@@ -354,8 +354,7 @@ public class BooleanArray extends ABooleanArray {
 	public boolean equals(Array<Boolean> other) {
 		if(other instanceof BooleanArray)
 			return Arrays.equals(_data, ((BooleanArray) other)._data);
-		else
-			return false;
+		return false;
 	}
 
 	@Override

@@ -101,12 +101,10 @@ public class BasicProgramBlock extends ProgramBlock
 					RecompileStatistics.incrementRecompileSB();
 			}
 		}
-		catch(Exception ex)
-		{
+		catch(Exception ex) {
 			if( _sb != null )
 				throw new DMLRuntimeException("Unable to recompile program block (lines "+_sb.getBeginLine()+"-"+_sb.getEndLine()+").", ex);
-			else
-				throw new DMLRuntimeException("Unable to recompile program block.", ex);
+			throw new DMLRuntimeException("Unable to recompile program block.", ex);
 		}
 		
 		//statement-block-level, lineage-based reuse

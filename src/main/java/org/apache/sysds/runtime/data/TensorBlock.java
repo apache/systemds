@@ -647,6 +647,7 @@ public class TensorBlock implements CacheBlock<TensorBlock>, Externalizable {
 			switch (bt._vt) {
 				case UINT4:
 					size += getLength() / 2 + getLength() % 2;
+					break;
 				case UINT8:
 					size += 1 * getLength(); break;
 				case INT32:

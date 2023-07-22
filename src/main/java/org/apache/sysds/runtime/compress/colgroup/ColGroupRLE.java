@@ -518,7 +518,6 @@ public class ColGroupRLE extends AColGroupOffset {
 			if(!zeroRows[i]) {
 				final int id = i + rl;
 				c[id] = builtin.execute(c[id], 0);
-				;
 			}
 	}
 

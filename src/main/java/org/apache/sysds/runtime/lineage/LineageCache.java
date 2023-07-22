@@ -1130,6 +1130,7 @@ public class LineageCache
 		return false;
 	}
 
+	@SuppressWarnings("unused")
 	private static boolean persistRDD(LineageCacheEntry centry, long estimatedSize) {
 		// If already persisted, change the status and return true.
 		// Else, persist, change cache status and return false.

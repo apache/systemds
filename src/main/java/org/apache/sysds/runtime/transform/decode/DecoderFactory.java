@@ -41,7 +41,7 @@ public class DecoderFactory
 		Dummycode, 
 		PassThrough,
 		Recode,
-	};
+	}
 	
 	public static Decoder createDecoder(String spec, String[] colnames, ValueType[] schema, FrameBlock meta) {
 		return createDecoder(spec, colnames, schema, meta, meta.getNumColumns(), -1, -1);

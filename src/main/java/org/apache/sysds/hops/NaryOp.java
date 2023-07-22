@@ -236,6 +236,7 @@ public class NaryOp extends Hop {
 			case LIST:
 				setDim1(getInput().size());
 				setDim2(1);
+				break;
 			case PRINTF:
 			case EVAL:
 				//do nothing:

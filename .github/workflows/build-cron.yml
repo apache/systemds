@@ -64,4 +64,4 @@ jobs:
         cache: 'maven'
 
     - name: Build
-      run: mvn package
+      run: mvn package -B

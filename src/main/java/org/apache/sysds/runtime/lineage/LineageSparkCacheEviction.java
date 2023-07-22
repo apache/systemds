@@ -28,7 +28,6 @@ import org.apache.sysds.runtime.lineage.LineageCacheConfig.LineageCacheStatus;
 import org.apache.sysds.runtime.util.CommonThreadPool;
 
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.TreeSet;
 import java.util.concurrent.Executors;
@@ -229,7 +228,7 @@ public class LineageSparkCacheEviction
 		@Override
 		public void run() {
 			// Trigger a Spark job
-			long ret = rdd.count();
+			rdd.count();
 		}
 	}
 }

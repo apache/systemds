@@ -33,6 +33,7 @@ import org.apache.sysds.runtime.compress.colgroup.offset.OffsetFactory;
 import org.apache.sysds.runtime.compress.utils.IntArrayList;
 
 public class MappingTestUtil {
+	@SuppressWarnings("fallthrough")
 	protected static AMapToData[] getAllHigherVersions(AMapToData m) {
 		AMapToData[] ret = new AMapToData[getTypeSize(m.getType())];
 		int idx = 0;

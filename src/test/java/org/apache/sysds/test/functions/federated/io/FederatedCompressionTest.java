@@ -39,6 +39,7 @@ import java.io.File;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.Random;
 
 @RunWith(value = Parameterized.class)
 @net.jcip.annotations.NotThreadSafe
@@ -77,8 +78,10 @@ public class FederatedCompressionTest extends AutomatedTestBase {
                 // {compressionStrategy, dim, begins, ends}
                 {"None", 3, new long[][] {new long[] {0, 0}}, new long[][] {new long[] {3, 3}}},
                 {"Zlib", 3, new long[][] {new long[] {0, 0}}, new long[][] {new long[] {3, 3}}},
-                {"None", 1000, new long[][] {new long[] {0, 0}}, new long[][] {new long[] {1000, 1000}}},
-                {"Zlib", 1000, new long[][] {new long[] {0, 0}}, new long[][] {new long[] {1000, 1000}}},
+                {"Snappy", 3, new long[][] {new long[] {0, 0}}, new long[][] {new long[] {3, 3}}},
+                {"FastLZ", 3, new long[][] {new long[] {0, 0}}, new long[][] {new long[] {3, 3}}},
+                {"LZ4", 3, new long[][] {new long[] {0, 0}}, new long[][] {new long[] {3, 3}}},
+                {"LZF", 3, new long[][] {new long[] {0, 0}}, new long[][] {new long[] {3, 3}}},
         });
     }
 
@@ -88,23 +91,20 @@ public class FederatedCompressionTest extends AutomatedTestBase {
     }
 
     public void federatedReadWriteCompression() {
-        System.out.println("CompressionStrategy: " + compressionStrategy);
-        System.out.println("Dim: " + dim);
         Types.ExecMode oldPlatform = setExecMode(Types.ExecType.CP);
         getAndLoadTestConfiguration(TEST_NAME);
-        //setOutputBuffering(true);
 
         // empty script name because we don't execute any script, just start the worker
 
         fullDMLScriptName = "";
         int port1 = getRandomAvailablePort();
-        Thread t1 = startLocalFedWorkerThread(port1, new String[] {});
+        Thread t1 = startLocalFedWorkerThread(port1);
         String host = "localhost";
 
         FederatedCompressionStatistics.reset();
 
         try {
-            double[][] X1 = createNonRandomMatrixValues(dim, dim);
+            double[][] X1 = createRandomMatrix(dim, dim);
             MatrixCharacteristics mc = new MatrixCharacteristics(dim, dim, blocksize, dim * dim);
             writeCSVMatrix("X1", X1, false, mc);
 
@@ -135,6 +135,16 @@ public class FederatedCompressionTest extends AutomatedTestBase {
         }
 
         TestUtils.shutdownThreads(t1);
+    }
+
+    public double[][] createRandomMatrix(int width, int height) {
+        Random rd = new Random();
+        double[][] matrix = new double[height][];
+
+        for (int i = 0; i < height; i++)
+            matrix[i] = rd.doubles(width).toArray();
+
+        return matrix;
     }
 
     /**

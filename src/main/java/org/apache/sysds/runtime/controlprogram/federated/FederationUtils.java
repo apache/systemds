@@ -27,8 +27,16 @@ import java.util.concurrent.Future;
 
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelOutboundHandlerAdapter;
+import io.netty.handler.codec.compression.FastLzFrameDecoder;
+import io.netty.handler.codec.compression.FastLzFrameEncoder;
 import io.netty.handler.codec.compression.JdkZlibDecoder;
 import io.netty.handler.codec.compression.JdkZlibEncoder;
+import io.netty.handler.codec.compression.Lz4FrameDecoder;
+import io.netty.handler.codec.compression.Lz4FrameEncoder;
+import io.netty.handler.codec.compression.LzfDecoder;
+import io.netty.handler.codec.compression.LzfEncoder;
+import io.netty.handler.codec.compression.SnappyFrameDecoder;
+import io.netty.handler.codec.compression.SnappyFrameEncoder;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.log4j.Logger;
@@ -611,7 +619,15 @@ public class FederationUtils {
 			case "none":
 				return Optional.empty();
 			case "zlib":
-				return Optional.of(new ImmutablePair(new JdkZlibDecoder(), new JdkZlibEncoder()));
+				return Optional.of(new ImmutablePair<>(new JdkZlibDecoder(), new JdkZlibEncoder()));
+			case "snappy":
+				return Optional.of(new ImmutablePair<>(new SnappyFrameDecoder(), new SnappyFrameEncoder()));
+			case "fastlz":
+				return Optional.of(new ImmutablePair<>(new FastLzFrameDecoder(), new FastLzFrameEncoder()));
+			case "lz4":
+				return Optional.of(new ImmutablePair<>(new Lz4FrameDecoder(), new Lz4FrameEncoder()));
+			case "lzf":
+				return Optional.of(new ImmutablePair<>(new LzfDecoder(), new LzfEncoder()));
 			default:
 				throw new IllegalArgumentException("Invalid federated compression strategy: " + strategy);
 		}

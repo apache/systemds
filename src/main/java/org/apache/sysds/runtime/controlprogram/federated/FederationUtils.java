@@ -28,6 +28,7 @@ import java.util.concurrent.Future;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelOutboundHandlerAdapter;
 import io.netty.handler.codec.compression.JdkZlibDecoder;
+import io.netty.handler.codec.compression.JdkZlibEncoder;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.log4j.Logger;
@@ -41,7 +42,6 @@ import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest.RequestType;
-import org.apache.sysds.runtime.controlprogram.federated.compression.CompressionEncoder;
 import org.apache.sysds.runtime.controlprogram.parfor.util.IDSequence;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.functionobjects.Builtin.BuiltinCode;
@@ -611,7 +611,7 @@ public class FederationUtils {
 			case "none":
 				return Optional.empty();
 			case "zlib":
-				return Optional.of(new ImmutablePair(new JdkZlibDecoder(), new CompressionEncoder()));
+				return Optional.of(new ImmutablePair(new JdkZlibDecoder(), new JdkZlibEncoder()));
 			default:
 				throw new IllegalArgumentException("Invalid federated compression strategy: " + strategy);
 		}

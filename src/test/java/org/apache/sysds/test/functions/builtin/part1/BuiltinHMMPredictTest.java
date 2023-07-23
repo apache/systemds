@@ -19,11 +19,13 @@
 
 package org.apache.sysds.test.functions.builtin.part1;
 
+import java.util.HashMap;
 import java.util.Random;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.hops.OptimizerUtils;
+import org.apache.sysds.runtime.matrix.data.MatrixValue;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
@@ -35,9 +37,8 @@ public class BuiltinHMMPredictTest extends AutomatedTestBase
 	private final static String TEST_NAME = "hmmPredict";
 	private final static String TEST_DIR = "functions/builtin/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + BuiltinHMMPredictTest.class.getSimpleName() + "/";
-	private final static int rows = 1320;
-	private final static int cols = 32;
-
+	private final static double eps = 1e-3;
+	
 	@Override
 	public void setUp() {
 		TestUtils.clearAssertionInformation();
@@ -49,7 +50,7 @@ public class BuiltinHMMPredictTest extends AutomatedTestBase
 		runHMMPredictTest(ExecType.CP);
 	}
 
-	@Test    
+	@Test
 	public void testHMMPredictSpark() {
 		runHMMPredictTest(ExecType.SPARK);
 	}
@@ -57,52 +58,44 @@ public class BuiltinHMMPredictTest extends AutomatedTestBase
 	private void runHMMPredictTest(ExecType instType)
 	{
 		Types.ExecMode platformOld = setExecMode(instType);
-
-		boolean oldFlag = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
-		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-
 		try
 		{
 			loadTestConfiguration(getTestConfiguration(TEST_NAME));
-
 			String HOME = SCRIPT_DIR + TEST_DIR;
 
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
 			programArgs = new String[]{
-					"-nvargs", "X=" + input("X"), "k=" + input("k"), "Y=" + output("Y")};
+					"-nvargs", "X=" + input("X"), "k=" + input("k"), "outputs=" + output("outputs")};
 
-
-			//generate actual datasets
-			// Random random = new Random();
-			// Integer k = random.nextInt(10) + 1;
-
-			//generate actual datasets
 			//Output generated from https://en.wikipedia.org/wiki/Hidden_Markov_model#Weather_guessing_game
-			// C(Clean) -> 0, W(Walk) -> 1, S(Shop) -> 2
-
-			double[][] X = {{0, 0, 1, 
-							2, 1, 1, 
-							1, 0, 0, 1}
-            				};
-
+			double[][] X = {{2, 1, 2, 1, 2, 2, 3, 3, 1, 1, 1, 1, 2, 2, 3, 2, 1, 2, 3, 2, 
+						    1, 1, 1, 3, 2, 2, 2, 2, 3, 3, 1, 2, 3, 1, 3, 3, 2, 3, 1, 2, 1, 
+							1, 2, 3, 1, 1, 1, 3, 2, 3, 2, 1, 1, 3, 3, 3, 1, 2, 3, 3, 1, 3, 
+							3, 3, 2, 2, 2, 3, 3, 3, 3, 3, 1, 1, 3, 2, 2, 3, 2, 2, 1, 3, 2, 
+							1, 3, 2, 2, 2, 1, 2, 1, 2, 2, 1, 3, 2, 2, 2, 3, 2}};
+			int k = 10;
+			
 			writeInputMatrixWithMTD("X", X, true);
-
-			//TODO: Compare outputs? What is the output of the 
-			// function supposed to be compared against? How?
-			
-			setOutputBuffering(true);
-
-			String stdout = runTest(null).toString();
-
-			
 			runTest(true, false, null, -1);
+
+			HashMap<MatrixValue.CellIndex, Double> test_output = readDMLMatrixFromOutputDir("outputs");
+			HashMap<MatrixValue.CellIndex, Double> expected_output = new HashMap<>();
+
+			expected_output.put(new MatrixValue.CellIndex(1, 1), 1.0);
+			expected_output.put(new MatrixValue.CellIndex(2, 1), 3.0);
+			expected_output.put(new MatrixValue.CellIndex(3, 1), 3.0);
+			expected_output.put(new MatrixValue.CellIndex(4, 1), 2.0);
+			expected_output.put(new MatrixValue.CellIndex(5, 1), 1.0);
+			expected_output.put(new MatrixValue.CellIndex(6, 1), 2.0);
+			expected_output.put(new MatrixValue.CellIndex(7, 1), 3.0);
+			expected_output.put(new MatrixValue.CellIndex(8, 1), 1.0);
+			expected_output.put(new MatrixValue.CellIndex(9, 1), 3.0);
+			expected_output.put(new MatrixValue.CellIndex(10, 1), 1.0);
+
+			TestUtils.compareMatrices(expected_output, test_output, eps, "Expected-DML", "Actual-DML");
 		}
 		finally {
 			rtplatform = platformOld;
-			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
-			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = oldFlag;
-			OptimizerUtils.ALLOW_AUTO_VECTORIZATION = true;
-			OptimizerUtils.ALLOW_OPERATOR_FUSION = true;
 		}
 	}
 }

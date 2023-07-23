@@ -40,14 +40,10 @@ m_hmm = function(Matrix[Double] X) return (Matrix[Double] ip, Matrix[Double] A, 
     
     /*
     Since nr of states if unknown, fit a hmm model for every total number of states
-    from 1 to some max_states or 1 to log(n_timesteps), depending on whichever is greater. Use only low number of
-    iterations at first for each nr of states(since it is computationally expensive).
+    from 1 to some max_states or 1 to log(n_timesteps), depending on whichever is greater.
 
     Also the break condition is: If the likelihood decreases with increase in number of total states, 
     break and take the paremeters of the last iteration as the optimal one.
-
-    After finding out which nr_of_states yields highest likelihood, find the parameters for that
-    with higher iterations. 
     */
     
     max_states = 6
@@ -59,58 +55,53 @@ m_hmm = function(Matrix[Double] X) return (Matrix[Double] ip, Matrix[Double] A, 
     
     search = TRUE
     nr_states = 2
-    nr_states_likelihood = matrix(0, rows=max_states-1, cols=1)
+    seed = 42
 
     while (search) {
-        if (nr_states > max_states) {
-            search = FALSE
-        }
-
-        [A, B, ip, curr_ll] = baum_welch(X, nr_states, nr_outputs, 100)
-        nr_states_likelihood[nr_states-1, 1] = curr_ll
+        [A_new, B_new, ip_new, curr_ll, seed] = baum_welch(X, nr_states, nr_outputs, 20, seed)
+        seed = seed+1
         if (nr_states == 2) {
             prev_ll = -1
         }
         if (curr_ll < prev_ll) {
             search = FALSE
         }
-
+        else {
+            A = A_new
+            B = B_new
+            ip = ip_new
+        }
         prev_ll = curr_ll
         nr_states = nr_states+1
+
+        if (nr_states > max_states) {
+            search = FALSE
+        }
     }
-    
-    best_nr_states = max_ll_state(nr_states_likelihood)
-    print('found optimal number of states.')
-    print('Now, caulculating parameters for the optimal number of states')
-    [A, B, ip, ll] = baum_welch(X, best_nr_states, nr_outputs, 200)
 }
 
-unique_vals = function(Matrix[Double] X) return (Integer l) {
+col_normalize = function(Matrix[Double] m) return (Matrix[Double] m_norm) {
+	m_norm = m / rowSums(m)
+}
+
+unique_vals = function (Matrix[Double] X) return (Integer l) {
     # group and count duplicates
     I = aggregate (target = X, groups = X[,1], fn = "count")
     # select groups
     res = removeEmpty (target = seq (1, max (X[,1])), margin = "rows", select = (I != 0))
     l = length(res)
 }
-    
-max_ll_state = function(Matrix[Double] nr_states_likelihood) return (Integer best_state) {
-    max_val = max(nr_states_likelihood)
-    S = nrow(nr_states_likelihood)
-    best_state = 0
 
-    for (i in 1:S){
-        if (max_val == as.scalar(nr_states_likelihood[i, 1])) {
-            best_state = i +1
-        }
-    }    
-}
-
-baum_welch = function( Matrix[Double] X, Integer nr_states, Integer nr_outputs, Integer IT) return (Matrix[Double] A, Matrix[Double] B, Matrix[Double] ip, Double likelihood)
+baum_welch = function( Matrix[Double] X, Integer nr_states, Integer nr_outputs, Integer IT, Integer seed) return (Matrix[Double] A, Matrix[Double] B, Matrix[Double] ip, Double likelihood, Integer seed)
 {
     #initialize state transition and emmission matrices uniformly
-    A = rand(rows=nr_states, cols=nr_states)
-    B = rand(rows=nr_states, cols=nr_outputs)
-    ip = rand(rows=nr_states, cols=1)
+    A = col_normalize(matrix(1/nr_states, rows=nr_states, cols=nr_states) + rand(rows=nr_states, cols=nr_states, seed=seed))
+    seed = seed+1
+    B = col_normalize(matrix(1/nr_outputs,rows=nr_states, cols=nr_outputs) + rand(rows=nr_states, cols=nr_outputs, seed=seed))
+    seed = seed+1
+    ip = matrix(1/nr_states, rows=nr_states, cols=1) + rand(rows=nr_states, cols=1, seed=seed)
+    seed = seed+1
+
     likelihood = 0
     T = ncol(X)
     

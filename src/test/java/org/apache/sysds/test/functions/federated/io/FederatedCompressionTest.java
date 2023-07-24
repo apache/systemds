@@ -75,6 +75,7 @@ public class FederatedCompressionTest extends AutomatedTestBase {
     @Parameterized.Parameters
     public static Collection<Object[]> data() {
         return Arrays.asList(new Object[][] {
+
                 // {compressionStrategy, dim, begins, ends}
                 {"None", 3, new long[][] {new long[] {0, 0}}, new long[][] {new long[] {3, 3}}},
                 {"Zlib", 3, new long[][] {new long[] {0, 0}}, new long[][] {new long[] {3, 3}}},
@@ -93,6 +94,8 @@ public class FederatedCompressionTest extends AutomatedTestBase {
     public void federatedReadWriteCompression() {
         Types.ExecMode oldPlatform = setExecMode(Types.ExecType.CP);
         getAndLoadTestConfiguration(TEST_NAME);
+
+        LOG.debug("Current test configuration: compressionStrategy = " + compressionStrategy + ", dim = " + dim);
 
         // empty script name because we don't execute any script, just start the worker
 
@@ -122,12 +125,13 @@ public class FederatedCompressionTest extends AutomatedTestBase {
             fullDMLScriptName = SCRIPT_DIR + "functions/federated/io/" + TEST_NAME + ".dml";
             programArgs = new String[] {"-nvargs", "fedmatrix=" + input("X.json"), "out=" + output(OUTPUT_NAME)};
             runTest(null);
-            System.out.println(FederatedCompressionStatistics.statistics());
+            LOG.debug(FederatedCompressionStatistics.statistics());
 
             HashMap<MatrixValue.CellIndex, Double> refResults = readDMLMatrixFromExpectedDir(OUTPUT_NAME);
             HashMap<MatrixValue.CellIndex, Double> fedResults = readDMLMatrixFromOutputDir(OUTPUT_NAME);
             TestUtils.compareMatrices(fedResults, refResults, 0, "Fed", "Ref");
         } catch (Exception e) {
+            LOG.warn("Failed to run test with properties compressionStrategy = " + compressionStrategy + ", dim = " + dim);
             e.printStackTrace();
             Assert.assertTrue(false);
         } finally {
@@ -154,7 +158,7 @@ public class FederatedCompressionTest extends AutomatedTestBase {
     @Override
     protected File getConfigTemplateFile() {
         // Instrumentation in this test's output log to show custom configuration file used for template.
-        LOG.info("This test case overrides default configuration with " + new File(TEST_CONF_FOLDER + compressionStrategy + "CompressionConfig.xml").getPath());
+        LOG.debug("This test case overrides default configuration with " + new File(TEST_CONF_FOLDER + compressionStrategy + "CompressionConfig.xml").getPath());
         return new File(TEST_CONF_FOLDER + compressionStrategy + "CompressionConfig.xml");
     }
 }

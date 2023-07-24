@@ -20,11 +20,13 @@
 package org.apache.sysds.performance;
 
 import java.util.Arrays;
-import java.util.concurrent.BlockingQueue;
 
+import org.apache.sysds.performance.generators.IGenerate;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.Timing;
 
 public interface Util {
+
+
 	public static double time(F f) {
 		Timing time = new Timing(true);
 		f.run();
@@ -44,28 +46,43 @@ public interface Util {
 		times[i] = time.stop();
 	}
 
-	public static double[] time(F f, int rep, BlockingQueue<?> bq) throws InterruptedException {
+	public static double[] time(F f, int rep, IGenerate<?> bq) throws InterruptedException {
 		double[] times = new double[rep];
 		for(int i = 0; i < rep; i++) {
 			while(bq.isEmpty())
-				Thread.sleep(100);
+				Thread.sleep(bq.defaultWaitTime());
 			Util.time(f, times, i);
 		}
 		return times;
 	}
 
 	public static String stats(double[] v) {
-
+		final int l = v.length ;
+		final int remove = (int)Math.floor((double)l * 0.05);
 		Arrays.sort(v);
-		final int l = v.length;
 
-		double min = v[0];
-		double max = v[l - 1];
-		double q25 = v[(int) (l / 4)];
-		double q50 = v[(int) (l / 2)];
-		double q75 = v[(int) ((l / 4) * 3)];
+		double total = 0;
+		final int el = v.length - remove *2;
+		for(int i = remove; i < l-remove; i++)
+			total += v[i];
+		
+		double mean = total / el;
 
-		return String.format("[%.3f, %.3f, %.3f, %.3f, %.3f]", min, q25, q50, q75, max);
+		double var = 0;
+		for(int i = remove; i < l-remove; i++)
+			var += Math.pow(Math.abs(v[i] - mean), 2);
+		
+		double std = Math.sqrt(var / el);
+
+		return String.format("%8.3f+-%7.3f ms", mean, std);
+
+		// double min = v[0];
+		// double max = v[l - 1];
+		// double q25 = v[(int) (l / 4)];
+		// double q50 = v[(int) (l / 2)];
+		// double q75 = v[(int) ((l / 4) * 3)];
+
+		// return String.format("[%8.3f, %8.3f, %8.3f, %8.3f, %8.3f]", min, q25, q50, q75, max);
 	}
 
 	interface F {

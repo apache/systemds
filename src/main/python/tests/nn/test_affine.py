@@ -25,7 +25,7 @@ import numpy as np
 from numpy.testing import assert_almost_equal
 
 from systemds.context import SystemDSContext
-
+from systemds.script_building.script import DMLScript
 from systemds.operator.nn.affine import Affine
 
 dim = 6
@@ -101,21 +101,33 @@ class TestAffine(unittest.TestCase):
         res = Affine.backward(doutm, Xm, Wm, bm).compute()
         assert len(res) == 3
 
-    def test_source_multiple_times(self):
-        """
-        still working on it
-        script = "source(\"/home/thai/Studieren/8.Semester/AMLS/systemds/scripts/nn/layers/affine.dml\") as " \
-                 "affine\nV1 = read(\'./tmp/V1\', rows=10, cols=10);\n[V2_0, V2_1] = affine::init(D=10, M=10, " \
-                 "seed=10);\nV3 = affine::forward(X=V1, W=V2_0, b=V2_1);\nV4 = affine::forward(X=V3, W=V2_0, " \
-                 "b=V2_1);\nwrite(V4, \'./tmp\');"
-        affine1 = Affine(self.sds, dim, m, 10)
-        affine2 = Affine(self.sds, m, 11, 10)
+    def test_multiple_sourcing(self):
+        a1 = Affine(self.sds, dim, m, 10)
+        a2 = Affine(self.sds, m, 11, 10)
+
         Xm = self.sds.from_numpy(X)
-        out = affine2.forward(affine1.forward(Xm))
-        out.compute(verbose=True)
-        self.assertEquals(out.script_str, script)
+        X1 = a1.forward(Xm)
+        X2 = a2.forward(X1)
+
+        scripts = DMLScript(self.sds)
+        scripts.build_code(X2)
+
+        self.assertEqual(1,self.count_sourcing(scripts.dml_script, layer_name="affine"))
+
+    def count_sourcing(self, script: str, layer_name: str):
         """
-        pass
+        Count the number of times the dml script is being sourced
+        i.e. count the number of occurrences of lines like
+        'source(...) as affine' in the dml script
+
+        :param script: the sourced dml script text
+        :param layer_name: example: "affine", "relu"
+        :return:
+        """
+        return len([
+            line for line in script.split("\n")
+            if all([line.startswith("source"), line.endswith(layer_name)])
+        ])
 
 
 if __name__ == '__main__':

@@ -18,67 +18,60 @@
 # under the License.
 #
 # -------------------------------------------------------------
-
 import unittest
-
 import numpy as np
 
 from systemds.context import SystemDSContext
+from systemds.operator.nn.neural_network import NeuralNetwork
 from systemds.script_building.script import DMLScript
-from systemds.operator.nn.relu import ReLU
+
+# Seed for the input matrix
+np.random.seed(42)
 
 
-class TestRelu(unittest.TestCase):
+class TestNeuralNetwork(unittest.TestCase):
     sds: SystemDSContext = None
 
     @classmethod
     def setUpClass(cls):
         cls.sds = SystemDSContext()
-        cls.X = np.array([0, -1, -2, 2, 3, -5])
-        cls.dout = np.array([0, 1, 2, 3, 4, 5])
+        cls.X = np.random.rand(6, 1)
+        cls.exp_out = np.array([
+            -0.37768756, -0.47785831, -0.95870362,
+            -1.21297214, -0.73814523, -0.933917,
+            -0.60368929, -0.76380049, -0.15732974,
+            -0.19905692, -0.15730542, -0.19902615
+        ])
+        cls.nn = NeuralNetwork(cls.sds, dim=1)
 
     @classmethod
     def tearDownClass(cls):
         cls.sds.close()
 
-    def test_forward(self):
-        relu = ReLU(self.sds)
-        # forward
+    def test_forward_pass(self):
+
         Xm = self.sds.from_numpy(self.X)
-        out = relu.forward(Xm).compute().flatten()
-        expected = np.array([0, 0, 0, 2, 3, 0])
-        self.assertTrue(np.allclose(out, expected))
 
-        # test static
-        sout = ReLU.forward(Xm).compute().flatten()
-        self.assertTrue(np.allclose(sout, expected))
+        # test forward pass through the network using static calls
+        static_out = self.nn.forward_static_pass(Xm)\
+                            .compute().flatten()
+        self.assertTrue(np.allclose(static_out, self.exp_out))
 
-    def test_backward(self):
-        relu = ReLU(self.sds)
-        # forward
-        Xm = self.sds.from_numpy(self.X)
-        out = relu.forward(Xm)
-        # backward
-        doutm = self.sds.from_numpy(self.dout)
-        dx = relu.backward(doutm).compute().flatten()
-        expected = np.array([0, 0, 0, 3, 4, 0], dtype=np.double)
-        self.assertTrue(np.allclose(dx, expected))
-
-        # test static
-        sdx = ReLU.backward(doutm, Xm).compute().flatten()
-        self.assertTrue(np.allclose(sdx, expected))
+        # test forward pass through the network using dynamic calls
+        dynamic_out = self.nn.forward_dynamic_pass(Xm)\
+                             .compute().flatten()
+        self.assertTrue(np.allclose(dynamic_out,self.exp_out))
 
     def test_multiple_sourcing(self):
-        r1 = ReLU(self.sds)
-        r2 = ReLU(self.sds)
 
         Xm = self.sds.from_numpy(self.X)
-        X1 = r1.forward(Xm)
-        X2 = r2.forward(X1)
 
+        # test for verifying that affine and relu are each being sourced exactly once
+        network_out = self.nn.forward_static_pass(Xm)
         scripts = DMLScript(self.sds)
-        scripts.build_code(X2)
+        scripts.build_code(network_out)
 
+        self.assertEqual(1,self.count_sourcing(scripts.dml_script, layer_name="affine"))
         self.assertEqual(1,self.count_sourcing(scripts.dml_script, layer_name="relu"))
 
     def count_sourcing(self, script: str, layer_name: str):

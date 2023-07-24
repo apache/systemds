@@ -71,3 +71,4 @@ class ReLU:
             path = get_path_to_script_layers()
             path = os.path.join(path, "relu.dml")
             ReLU._source = sds.source(path, "relu")
+

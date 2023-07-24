@@ -21,6 +21,8 @@
 
 __all__ = ["Source"]
 
+import platform
+
 from types import MethodType
 from typing import TYPE_CHECKING, Dict, Iterable, Sequence
 
@@ -142,6 +144,7 @@ class Source(OperationNode):
             func = f.get_func(sds_context, name)
             setattr(self, f._name, MethodType(func, self))
 
+
     def __parse_functions_from_script(self, path: str) -> Iterable[Func]:
         lines = self.__parse_lines_with_filter(path)
         functions = []
@@ -201,7 +204,11 @@ class Source(OperationNode):
         return filtered_lines
 
     def code_line(self, var_name: str, unnamed_input_vars: Sequence[str], named_input_vars: Dict[str, str]) -> str:
-        line = f'source({self.operation}) as { self.__name}'
+        if platform.system() == 'Windows':
+            source_path = self.operation.replace("\\","\\\\")
+        else:
+            source_path = self.operation
+        line = f'source({source_path}) as { self.__name}'
         return line
 
     def compute(self, verbose: bool = False, lineage: bool = False):

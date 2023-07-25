@@ -38,7 +38,6 @@ import org.apache.sysds.runtime.controlprogram.context.ExecutionContextFactory;
 import org.apache.sysds.runtime.controlprogram.Program;
 import org.apache.sysds.runtime.controlprogram.ProgramBlock;
 import org.apache.sysds.common.Types.ExecMode;
-import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
@@ -56,7 +55,6 @@ public class FederatedSparsityPropagationTest extends AutomatedTestBase {
 	private final static int NUM_MATRICES = 15;
 	private final static String TEST_CLASS_DIR = TEST_DIR + FederatedSparsityPropagationTest.class.getSimpleName() + "/";
 
-	private final static int blocksize = 1024;
 	@Parameterized.Parameter()
 	public int rows;
 	@Parameterized.Parameter(1)
@@ -95,11 +93,10 @@ public class FederatedSparsityPropagationTest extends AutomatedTestBase {
 		int fed_rows = rows / 2;
 		int fed_cols = cols;
 
-		MatrixCharacteristics mc = new MatrixCharacteristics(fed_rows, fed_cols, blocksize, fed_rows * fed_cols);
 		double[][] X1 = getRandomMatrix(fed_rows, fed_cols, 1, 3, sparsity, 3);
 		double[][] X2 = getRandomMatrix(fed_rows, fed_cols, 1, 3, sparsity, 7);
-		writeInputMatrixWithMTD("X1", X1, false, mc);
-		writeInputMatrixWithMTD("X2", X2, false, mc);
+		writeInputMatrixWithMTD("X1", X1, false);
+		writeInputMatrixWithMTD("X2", X2, false);
 
 		// empty script name because we don't execute any script, just start the worker
 		fullDMLScriptName = "";
@@ -163,7 +160,7 @@ public class FederatedSparsityPropagationTest extends AutomatedTestBase {
 		ArrayList<ProgramBlock> progBlocks = rtprog.getProgramBlocks();
 
 		ExecutionContext ec = ExecutionContextFactory.createContext(rtprog);
-
+		
 		// execute the first program block and obtain the nnz from the federation maps
 		progBlocks.get(0).execute(ec);
 		Map<String, Long> fedNNZ = getFedNNZ(ec);

@@ -26,7 +26,8 @@ import java.util.ArrayList;
 import java.util.HashSet;
 
 public class CustomProperties extends FileFormatProperties implements Serializable {
-
+	private static final long serialVersionUID = -2877155313260718134L;
+	
 	private MappingProperties mappingProperties;
 	private RowIndexStructure rowIndexStructure;
 	private ColIndexStructure colIndexStructure;

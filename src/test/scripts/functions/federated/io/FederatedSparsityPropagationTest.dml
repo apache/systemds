@@ -76,16 +76,14 @@ M14 = rev(X);
 # reshape
 M15 = matrix(X, rows=1, cols=(ncol(X)*nrow(X)), byrow=FALSE);
 
-# FIXME: wrong nnz from cumsum instruction
-# # cumulative sum
-# M16 = cumsum(X);
+# cumulative sum
+M16 = cumsum(X);
 
-# FIXME: wrong nnz from ternary instruction
-# # ternary ifelse
-# M17 = ifelse(X > X2, X, X2);
+# ternary ifelse
+M17 = ifelse(X > X2, X, X2);
 
 while(FALSE) {}
 Z = sum(M1) + sum(M2) + sum(M3) + sum(M4) + sum(M5) + sum(M6) + sum(M7) + sum(M8)
   + sum(M9) + sum(M10) + sum(M11) + sum(M12) + sum(M13) + sum(M14) + sum(M15)
-  /*+ sum(M16) + sum(M17)*/;
+  + sum(M16) + sum(M17);
 # NOTE: when adding tests, please remember to increment the number of matrices in the java test class

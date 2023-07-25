@@ -566,8 +566,8 @@ public class FederationUtils {
 			int[] endDimsInt = range.getEndDimsInt();
 			MatrixBlock multRes = (MatrixBlock) response.getData()[0];
 			ret.copy(beginDimsInt[0], endDimsInt[0] - 1, beginDimsInt[1], endDimsInt[1] - 1, multRes, false);
-			ret.setNonZeros(ret.getNonZeros() + multRes.getNonZeros());
 		}
+		ret.setNonZeros(totalNNZ);
 		return ret;
 	}
 

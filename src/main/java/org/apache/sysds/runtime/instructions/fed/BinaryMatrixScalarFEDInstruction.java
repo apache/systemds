@@ -19,9 +19,12 @@
 
 package org.apache.sysds.runtime.instructions.fed;
 
+import java.util.concurrent.Future;
+
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest;
+import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
 import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.BinaryMatrixScalarCPInstruction;
@@ -62,16 +65,19 @@ public class BinaryMatrixScalarFEDInstruction extends BinaryFEDInstruction
 			new long[]{mo.getFedMapping().getID(), (fr1 != null)?fr1.getID():-1}, true);
 		
 		//execute federated matrix-scalar operation and cleanups
+		Future<FederatedResponse>[] ffr = null;
 		if( fr1 != null ) {
 			FederatedRequest fr3 = mo.getFedMapping().cleanup(getTID(), fr1.getID());
-			mo.getFedMapping().execute(getTID(), true, fr1, fr2, fr3);
+			ffr = mo.getFedMapping().execute(getTID(), true, fr1, fr2, fr3);
 		}
-		else
-			mo.getFedMapping().execute(getTID(), true, fr2);
+		else {
+			ffr = mo.getFedMapping().execute(getTID(), true, fr2);
+		}
 		
 		//derive new fed mapping for output
 		MatrixObject out = ec.getMatrixObject(output);
-		out.getDataCharacteristics().set(mo.getDataCharacteristics());
+		out.getDataCharacteristics().set(mo.getDataCharacteristics())
+			.setNonZeros(FederationUtils.sumNonZeros(ffr));
 		out.setFedMapping(mo.getFedMapping().copyWithNewID(fr2.getID()));
 	}
 }

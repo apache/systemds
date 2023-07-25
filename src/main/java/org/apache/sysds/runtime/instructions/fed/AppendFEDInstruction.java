@@ -124,19 +124,21 @@ public class AppendFEDInstruction extends BinaryFEDInstruction {
 				new CPOperand[]{input1, input2},
 				new long[]{mo1.getFedMapping().getID(), mo2.getFedMapping().getID()});
 
+			Future<FederatedResponse>[] ffr = null;
 			if(isSpark) {
 				FederatedRequest frTmp = new FederatedRequest(RequestType.PUT_VAR,
 					fr2.getID(), new MatrixCharacteristics(-1, -1), mo1.getDataType());
-				mo1.getFedMapping().execute(getTID(), true, frTmp, fr2);
+				ffr = mo1.getFedMapping().execute(getTID(), true, frTmp, fr2);
 			}
 			else {
-				mo1.getFedMapping().execute(getTID(), true, fr2);
+				ffr = mo1.getFedMapping().execute(getTID(), true, fr2);
 			}
 
 			int dim = (_cbind ? 1 : 0);
 			FederationMap newFedMap = mo1.getFedMapping().copyWithNewID(fr2.getID())
 				.modifyFedRanges(mo1.getDim(dim) + mo2.getDim(dim), dim);
 			out.setFedMapping(newFedMap);
+			out.getDataCharacteristics().setNonZeros(FederationUtils.sumNonZeros(ffr));
 		}
 		// federated/federated misaligned, federated/local, local/federated bind
 		else if( ((mo1.isFederated(FType.ROW) || mo2.isFederated(FType.ROW)) && !_cbind)
@@ -152,6 +154,8 @@ public class AppendFEDInstruction extends BinaryFEDInstruction {
 
 			out.setFedMapping(fed1.identCopy(getTID(), id)
 				.bind(roff, coff, fed2.identCopy(getTID(), id)));
+			if(mo1.getNnz() != -1 && mo2.getNnz() != -1)
+				out.getDataCharacteristics().setNonZeros(mo1.getNnz() + mo2.getNnz());
 		}
 		// federated/local, local/federated bind
 		else if( ((mo1.isFederated(FType.ROW) || mo2.isFederated(FType.ROW)) && _cbind)

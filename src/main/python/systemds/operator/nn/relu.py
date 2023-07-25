@@ -27,7 +27,6 @@ from systemds.utils.helpers import get_path_to_script_layers
 
 class ReLU:
     _source: Source = None
-    _X: Matrix
 
     def __init__(self, sds: SystemDSContext):
         ReLU._create_source(sds)
@@ -41,8 +40,7 @@ class ReLU:
         return out: output matrix
         """
         ReLU._create_source(X.sds_context)
-        out = ReLU._source.forward(X)
-        return out
+        return ReLU._source.forward(X)
 
     @staticmethod
     def backward(dout: Matrix, X: Matrix):
@@ -52,18 +50,14 @@ class ReLU:
         return dX: gradient of input
         """
         ReLU._create_source(dout.sds_context)
-        dX = ReLU._source.backward(dout, X)
-        return dX
-
-    # forward = staticmethod(forward)
-    # backward = staticmethod(backward)
+        return ReLU._source.backward(dout, X)
 
     def _instance_forward(self, X: Matrix):
         self._X = X
         return ReLU.forward(X)
 
-    def _instance_backward(self, dout: Matrix):
-        return ReLU.backward(dout, self._X)
+    def _instance_backward(self, dout: Matrix, X: Matrix):
+        return ReLU.backward(dout, X)
 
     @staticmethod
     def _create_source(sds: SystemDSContext):

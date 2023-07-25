@@ -91,8 +91,7 @@ class TestAffine(unittest.TestCase):
 
         # test class method
         affine = Affine(self.sds, dim, m, 10)
-        out = affine.forward(Xm)
-        [dx, dw, db] = affine.backward(doutm).compute()
+        [dx, dw, db] = affine.backward(doutm, Xm).compute()
         assert len(dx) == 5 and len(dx[0]) == 6
         assert len(dw) == 6 and len(dx[0]) == 6
         assert len(db) == 1 and len(db[0]) == 6
@@ -112,7 +111,31 @@ class TestAffine(unittest.TestCase):
         scripts = DMLScript(self.sds)
         scripts.build_code(X2)
 
-        self.assertEqual(1,self.count_sourcing(scripts.dml_script, layer_name="affine"))
+        self.assertEqual(1, self.count_sourcing(scripts.dml_script, layer_name="affine"))
+
+    def test_multiple_context(self):
+        # two context
+        sds1 = SystemDSContext()
+        sds2 = SystemDSContext()
+        a1 = Affine(sds1, dim, m, 10)
+        a2 = Affine(sds2, m, 11, 10)
+
+        Xm = sds1.from_numpy(X)
+        X1 = a1.forward(Xm)
+        out_actual = a2.forward(X1).compute()
+
+        # one context
+        Xm = self.sds.from_numpy(X)
+        a1 = Affine(self.sds, dim, m, 10)
+        a2 = Affine(self.sds, m, 11, 10)
+
+        X1 = a1.forward(Xm)
+        out_expected = a2.forward(X1).compute()
+
+        assert_almost_equal(out_actual, out_expected)
+
+        sds1.close()
+        sds2.close()
 
     def count_sourcing(self, script: str, layer_name: str):
         """

@@ -22,7 +22,7 @@ import unittest
 import numpy as np
 
 from systemds.context import SystemDSContext
-from systemds.operator.nn.neural_network import NeuralNetwork
+from tests.nn.neural_network import NeuralNetwork
 from systemds.script_building.script import DMLScript
 
 # Seed for the input matrix
@@ -71,8 +71,8 @@ class TestNeuralNetwork(unittest.TestCase):
         scripts = DMLScript(self.sds)
         scripts.build_code(network_out)
 
-        self.assertEqual(1,self.count_sourcing(scripts.dml_script, layer_name="affine"))
-        self.assertEqual(1,self.count_sourcing(scripts.dml_script, layer_name="relu"))
+        self.assertEqual(1, self.count_sourcing(scripts.dml_script, layer_name="affine"))
+        self.assertEqual(1, self.count_sourcing(scripts.dml_script, layer_name="relu"))
 
     def count_sourcing(self, script: str, layer_name: str):
         """

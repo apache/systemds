@@ -27,7 +27,6 @@ from systemds.utils.helpers import get_path_to_script_layers
 
 class Affine:
     _source: Source = None
-    _X: Matrix
     weight: Matrix
     bias: Matrix
 
@@ -65,8 +64,7 @@ class Affine:
         return out: output matrix
         """
         Affine._create_source(X.sds_context)
-        out = Affine._source.forward(X, W, b)
-        return out
+        return Affine._source.forward(X, W, b)
 
     @staticmethod
     def backward(dout, X: Matrix, W: Matrix, b: Matrix):
@@ -99,12 +97,12 @@ class Affine:
         self._X = X
         return Affine.forward(X, self.weight, self.bias)
 
-    def _instance_backward(self, dout: Matrix):
+    def _instance_backward(self, dout: Matrix, X: Matrix):
         """
         dout: gradient of output, passed from the upstream
         return dX, dW,db: gradient of input, weights and bias, respectively
         """
-        return Affine.backward(dout, self._X, self.weight, self.bias)
+        return Affine.backward(dout, X, self.weight, self.bias)
 
     @staticmethod
     def _create_source(sds: SystemDSContext):

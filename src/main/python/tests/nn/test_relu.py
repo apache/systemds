@@ -34,17 +34,16 @@ class TestRelu(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.sds = SystemDSContext()
-        cls.X = np.array([0, -1, -2, 2, 3, -5])
-        cls.dout = np.array([0, 1, 2, 3, 4, 5])
 
     @classmethod
     def tearDownClass(cls):
         cls.sds.close()
 
     def test_forward(self):
+        X = np.array([0, -1, -2, 2, 3, -5])
         relu = ReLU(self.sds)
         # forward
-        Xm = self.sds.from_numpy(self.X)
+        Xm = self.sds.from_numpy(X)
         out = relu.forward(Xm).compute().flatten()
         expected = np.array([0, 0, 0, 2, 3, 0])
         self.assertTrue(np.allclose(out, expected))
@@ -54,13 +53,15 @@ class TestRelu(unittest.TestCase):
         self.assertTrue(np.allclose(sout, expected))
 
     def test_backward(self):
+        X = np.array([0, -1, -2, 2, 3, -5])
+        dout = np.array([0, 1, 2, 3, 4, 5])
         relu = ReLU(self.sds)
         # forward
-        Xm = self.sds.from_numpy(self.X)
+        Xm = self.sds.from_numpy(X)
         out = relu.forward(Xm)
         # backward
-        doutm = self.sds.from_numpy(self.dout)
-        dx = relu.backward(doutm).compute().flatten()
+        doutm = self.sds.from_numpy(dout)
+        dx = relu.backward(doutm, Xm).compute().flatten()
         expected = np.array([0, 0, 0, 3, 4, 0], dtype=np.double)
         self.assertTrue(np.allclose(dx, expected))
 
@@ -69,10 +70,11 @@ class TestRelu(unittest.TestCase):
         self.assertTrue(np.allclose(sdx, expected))
 
     def test_multiple_sourcing(self):
+        X = np.array([0, -1, -2, 2, 3, -5])
         r1 = ReLU(self.sds)
         r2 = ReLU(self.sds)
 
-        Xm = self.sds.from_numpy(self.X)
+        Xm = self.sds.from_numpy(X)
         X1 = r1.forward(Xm)
         X2 = r2.forward(X1)
 

@@ -71,13 +71,11 @@ M14 = rev(X);
 # reshape
 M15 = matrix(X, rows=1, cols=(ncol(X)*nrow(X)), byrow=FALSE);
 
-# FIXME: wrong nnz from cumsum instruction
-# # cumulative sum
-# M16 = cumsum(X);
+# cumulative sum
+M16 = cumsum(X);
 
-# FIXME: wrong nnz from ternary instruction
-# # ternary ifelse
-# M17 = ifelse(X > X2, X, X2);
+# ternary ifelse
+M17 = ifelse(X > X2, X, X2);
 
 while(FALSE) { }
 
@@ -93,13 +91,11 @@ NNZ_M5 = sum(M5 != 0);
 write(NNZ_M5, $out_Dir + "NNZ_M5");
 NNZ_M6 = sum(M6 != 0);
 write(NNZ_M6, $out_Dir + "NNZ_M6");
-# FIXME: the not equal operation returns incorrect results
-#   DMLTranslator.rewriteHopsDAG rewrites the instruction sum(X != s) and introduces incorrect results
-NNZ_M7 = (nrow(M7) * ncol(M7)) - sum(M7 == 0);
+NNZ_M7 = sum(M7 != 0);
 write(NNZ_M7, $out_Dir + "NNZ_M7");
 NNZ_M8 = sum(M8 != 0);
 write(NNZ_M8, $out_Dir + "NNZ_M8");
-NNZ_M9 = (nrow(M9) * ncol(M9)) - sum(M9 == 0); # FIXME: the not equal operation returns incorrect results
+NNZ_M9 = sum(M9 != 0);
 write(NNZ_M9, $out_Dir + "NNZ_M9");
 NNZ_M10 = sum(M10 != 0);
 write(NNZ_M10, $out_Dir + "NNZ_M10");
@@ -107,14 +103,15 @@ NNZ_M11 = sum(M11 != 0);
 write(NNZ_M11, $out_Dir + "NNZ_M11");
 NNZ_M12 = sum(M12 != 0);
 write(NNZ_M12, $out_Dir + "NNZ_M12");
-NNZ_M13 = (nrow(M13) * ncol(M13)) - sum(M13 == 0); # FIXME: the not equal operation returns incorrect results
+NNZ_M13 = sum(M13 != 0);
 write(NNZ_M13, $out_Dir + "NNZ_M13");
-NNZ_M14 = (nrow(M14) * ncol(M14)) - sum(M14 == 0); # FIXME: the not equal operation returns incorrect results
+NNZ_M14 = sum(M14 != 0);
 write(NNZ_M14, $out_Dir + "NNZ_M14");
-NNZ_M15 = (nrow(M15) * ncol(M15)) - sum(M15 == 0); # FIXME: the not equal operation returns incorrect results
+NNZ_M15 = sum(M15 != 0);
 write(NNZ_M15, $out_Dir + "NNZ_M15");
-# NNZ_M16 = sum(M16 != 0);
-# write(NNZ_M16, $out_Dir + "NNZ_M16");
-# NNZ_M17 = sum(M17 != 0);
-# write(NNZ_M17, $out_Dir + "NNZ_M17");
+NNZ_M16 = sum(M16 != 0);
+write(NNZ_M16, $out_Dir + "NNZ_M16");
+NNZ_M17 = sum(M17 != 0);
+write(NNZ_M17, $out_Dir + "NNZ_M17");
 # NOTE: when adding tests, please remember to increment the number of matrices in the java test class
+

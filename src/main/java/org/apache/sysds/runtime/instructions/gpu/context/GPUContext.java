@@ -107,7 +107,7 @@ public class GPUContext {
 		
 
 		if (DMLScript.STATISTICS)
-			GPUStatistics.cudaLibrariesInitTime = System.nanoTime() - start;
+			GPUStatistics.cudaLibrariesInitTime.add(System.nanoTime() - start);
 
 		memoryManager = new GPUMemoryManager(this);
 	}
@@ -139,10 +139,10 @@ public class GPUContext {
 		// This has a huge performance impact on scripts that has large number of layers (i.e. FunctionCallCP) for example ResNet.
 		// If this is absolutely required for parfor, please add appropriate safeguard for non-parfor scripts. 
 		// deleteCudaLibraryHandles();
-		if (cudnnHandle == null) {
+		/*if (cudnnHandle == null) {
 			cudnnHandle = new cudnnHandle();
 			cudnnCreate(cudnnHandle);
-		}
+		}*/
 
 		if (cublasHandle == null) {
 			cublasHandle = new cublasHandle();
@@ -152,10 +152,10 @@ public class GPUContext {
 		// This applies to arguments like "alpha" in Dgemm, and "y" in Ddot.
 		// cublasSetPointerMode(LibMatrixCUDA.cublasHandle, cublasPointerMode.CUBLAS_POINTER_MODE_DEVICE);
 
-		if (cusparseHandle == null) {
+		/*if (cusparseHandle == null) {
 			cusparseHandle = new cusparseHandle();
 			cusparseCreate(cusparseHandle);
-		}
+		}*/
 		
 		if (kernels == null) {
 			kernels = new JCudaKernels();
@@ -340,6 +340,15 @@ public class GPUContext {
 	 * @return cudnnHandle for current thread
 	 */
 	public cudnnHandle getCudnnHandle() {
+		if (cudnnHandle == null) {
+			// Load the library if not done already
+			GPUContext.LOG.info("Initializing cuDNN Library Handle");
+			long start = System.nanoTime();
+			cudnnHandle = new cudnnHandle();
+			cudnnCreate(cudnnHandle);
+			if (DMLScript.STATISTICS)
+				GPUStatistics.cudaLibrariesInitTime.add(System.nanoTime() - start);
+		}
 		return cudnnHandle;
 	}
 
@@ -349,6 +358,15 @@ public class GPUContext {
 	 * @return cublasHandle for current thread
 	 */
 	public cublasHandle getCublasHandle() {
+		if (cublasHandle == null) {
+			// Load the library if not done already
+			GPUContext.LOG.info("Initializing cuBLAS Library Handle");
+			long start = System.nanoTime();
+			cublasHandle = new cublasHandle();
+			cublasCreate(cublasHandle);
+			if (DMLScript.STATISTICS)
+				GPUStatistics.cudaLibrariesInitTime.add(System.nanoTime() - start);
+		}
 		return cublasHandle;
 	}
 
@@ -358,6 +376,15 @@ public class GPUContext {
 	 * @return cusparseHandle for current thread
 	 */
 	public cusparseHandle getCusparseHandle() {
+		if (cusparseHandle == null) {
+			// Load the library if not done already
+			GPUContext.LOG.info("Initializing cuSPARSE Library Handle");
+			long start = System.nanoTime();
+			cusparseHandle = new cusparseHandle();
+			cusparseCreate(cusparseHandle);
+			if (DMLScript.STATISTICS)
+				GPUStatistics.cudaLibrariesInitTime.add(System.nanoTime() - start);
+		}
 		return cusparseHandle;
 	}
 

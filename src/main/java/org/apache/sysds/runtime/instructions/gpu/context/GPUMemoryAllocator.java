@@ -30,7 +30,7 @@ public interface GPUMemoryAllocator {
 	 * @param size size in bytes
 	 * @throws jcuda.CudaException if unable to allocate
 	 */
-	public void allocate(Pointer devPtr, long size) throws jcuda.CudaException;
+	public void allocate(Pointer devPtr, long size);
 	
 	/**
 	 * Frees memory on the device

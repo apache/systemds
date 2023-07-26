@@ -42,6 +42,7 @@ import org.apache.sysds.runtime.matrix.data.LibMatrixReorg;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.CommonThreadPool;
 import org.apache.sysds.runtime.util.UtilFunctions;
+import org.apache.sysds.utils.MemoryEstimates;
 
 
 public abstract class SpoofRowwise extends SpoofOperator
@@ -126,13 +127,27 @@ public abstract class SpoofRowwise extends SpoofOperator
 	public int getNumIntermediates() {
 		return _reqVectMem;
 	}
+	
+	public long getTmpMemoryReq(int k, long cols, long... cols2) {
+		boolean hasMatrixSideInputs = IntStream.range(1, cols2.length)
+			.mapToLong(i -> cols2[i]).anyMatch(n -> n > 1);
+		long minCols = IntStream.range(1, cols2.length)
+			.mapToLong(i -> cols2[i]).filter(c -> c > 1).min().orElse(1);
+		long n = cols;
+		long n2 = _type.isConstDim2(_constDim2) ? (int)_constDim2 : 
+			_type.isRowTypeB1() || hasMatrixSideInputs ? minCols : -1;
+		return (long)(k * _reqVectMem * ((n2>0 && n!=n2) ?
+			(MemoryEstimates.doubleArrayCost(n) + MemoryEstimates.doubleArrayCost(n2)) :
+			MemoryEstimates.doubleArrayCost(n)));
+	}
 
 	@Override
 	public String getSpoofType() {
 		return "RA" +  getClass().getName().split("\\.")[1];
 	}
 	
-	@Override public SpoofCUDAOperator createCUDAInstrcution(Integer opID, SpoofCUDAOperator.PrecisionProxy ep) {
+	@Override
+	public SpoofCUDAOperator createCUDAInstrcution(Integer opID, SpoofCUDAOperator.PrecisionProxy ep) {
 		return new SpoofCUDARowwise(_type, _constDim2, _tB1, _reqVectMem, opID, ep);
 	}
 	

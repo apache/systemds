@@ -126,38 +126,6 @@ void imageRotate(double* img_in, int rows, int cols, double radians, double fill
     // Transform image
     img_transform(img_in,rows,cols,rows,cols,m[0], m[1], m[2], m[3], m[4], m[5], fill_value, img_out);
 }
-/*
-double* imageCutout(double* img_in, int rows, int cols, int x, int y, int width, int height, double fill_value) {
-    // Allocate memory for the output image
-        double* img_out = new double[rows * cols];
-
-        if (width < 1 || height < 1) {
-            // Invalid width or height, return the input image as it is
-            std::copy(img_in, img_in + rows * cols, img_out);
-        } else {
-            int end_x = x + width - 1;
-            int end_y = y + height - 1;
-
-            int start_x = std::max(1, x);
-            int start_y = std::max(1, y);
-            end_x = std::min(cols, end_x);
-            end_y = std::min(rows, end_y);
-
-            // Copy the input image to the output image
-            std::copy(img_in, img_in + rows * cols, img_out);
-
-            // Fill the cutout region with the fill_value
-            for (int i = start_y - 1; i < end_y; ++i) {
-                for (int j = start_x - 1; j < end_x; ++j) {
-                    img_out[i * cols + j] = fill_value;
-                }
-            }
-        }
-
-    printImage(img_out,rows,cols);
-    return img_out;
-}
-*/
 
 double* imageCutout(double* img_in, int rows, int cols, int x, int y, int width, int height, double fill_value) {
     // Allocate memory for the output image using MKL

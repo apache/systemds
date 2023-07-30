@@ -273,7 +273,8 @@ JNIEXPORT void JNICALL Java_org_apache_sysds_utils_NativeHelper_testNativeBindin
     env->ReleaseDoubleArrayElements(C, nativeC, 0);
 }
 
-JNIEXPORT void JNICALL Java_org_apache_sysds_utils_NativeHelper_imageRotate(JNIEnv* env, jclass clazz, jdoubleArray img_in, jint rows, jint cols, jdouble radians, jdouble fill_value, jdoubleArray img_out) {
+JNIEXPORT void JNICALL Java_org_apache_sysds_utils_NativeHelper_imageRotate
+    (JNIEnv* env, jclass clazz, jdoubleArray img_in, jint rows, jint cols, jdouble radians, jdouble fill_value, jdoubleArray img_out) {
     // Get input image data
 
     jsize num_pixels = env->GetArrayLength(img_in);
@@ -291,4 +292,55 @@ JNIEXPORT void JNICALL Java_org_apache_sysds_utils_NativeHelper_imageRotate(JNIE
     // Clean up
     delete[] img_out_data;
     env->ReleaseDoubleArrayElements(img_in, img_in_data, JNI_ABORT);
+}
+
+JNIEXPORT jdoubleArray JNICALL Java_org_apache_sysds_utils_NativeHelper_imageCutout
+    (JNIEnv* env, jclass cls, jdoubleArray img_in, jint rows, jint cols, jint x, jint y, jint width, jint height, jdouble fill_value) {
+    // Convert the Java 1D array to a double*
+    jdouble* img_in_arr = env->GetDoubleArrayElements(img_in, nullptr);
+
+    // Call the C++ implementation of the Image Cutout function
+    jdouble* img_out_arr = imageCutout(img_in_arr, rows, cols, x, y, width, height, fill_value);
+
+    // Convert the double* back to a Java 1D array
+    jdoubleArray img_out = env->NewDoubleArray(rows * cols);
+    env->SetDoubleArrayRegion(img_out, 0, rows * cols, img_out_arr);
+
+    // Release the native array reference
+    env->ReleaseDoubleArrayElements(img_in, img_in_arr, JNI_ABORT);
+    delete[] img_out_arr;
+
+    return img_out;
+}
+
+JNIEXPORT jdoubleArray JNICALL Java_org_apache_sysds_utils_NativeHelper_cropImage(JNIEnv *env, jclass,
+    jdoubleArray img_in, jint orig_w, jint orig_h, jint w, jint h, jint x_offset, jint y_offset) {
+    jsize length = env->GetArrayLength(img_in);
+    double *img_in_array = env->GetDoubleArrayElements(img_in, 0);
+
+    int start_h = (ceil((orig_h - h) / 2)) + y_offset - 1;
+    int end_h = (start_h + h - 1);
+    int start_w = (ceil((orig_w - w) / 2)) + x_offset - 1;
+    int end_w = (start_w + w - 1);
+
+    jdoubleArray img_out_java;
+    if (start_h < 0 || end_h >= orig_h || start_w < 0 || end_w >= orig_w) {
+      img_out_java = env->NewDoubleArray(orig_w * orig_h);
+      env->SetDoubleArrayRegion(img_out_java, 0, orig_w * orig_h, img_in_array);
+
+    }else {
+        double *img_out = imageCrop(img_in_array, orig_w, orig_h, w, h, x_offset, y_offset);
+
+         if (img_out == nullptr) {
+                 return nullptr;
+             }
+
+         img_out_java = env->NewDoubleArray(w * h);
+         env->SetDoubleArrayRegion(img_out_java, 0, w * h, img_out);
+         delete[] img_out;
+     }
+
+     env->ReleaseDoubleArrayElements(img_in, img_in_array, 0);
+
+    return img_out_java;
 }

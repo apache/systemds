@@ -131,7 +131,21 @@ JNIEXPORT void JNICALL Java_org_apache_sysds_utils_NativeHelper_testNativeBindin
 JNIEXPORT void JNICALL Java_org_apache_sysds_utils_NativeHelper_imageRotate
     (JNIEnv *, jclass, jdoubleArray, jint, jint, jdouble, jdouble, jdoubleArray);
 
+/*
+ * Class:     org_apache_sysds_utils_NativeHelper
+ * Method:    imageCutout
+ * Signature: ([DIIIIIDD)[D
+ */
+JNIEXPORT jdoubleArray JNICALL Java_org_apache_sysds_utils_NativeHelper_imageCutout
+  (JNIEnv *, jclass, jdoubleArray, jint, jint, jint, jint, jint, jint, jdouble);
 
+/*
+ * Class:     org_apache_sysds_utils_NativeHelper
+ * Method:    cropImage
+ * Signature: ([DIIIIII)[D
+ */
+JNIEXPORT jdoubleArray JNICALL Java_org_apache_sysds_utils_NativeHelper_cropImage(JNIEnv *, jclass,
+    jdoubleArray, jint, jint, jint, jint, jint, jint);
 #ifdef __cplusplus
 }
 #endif

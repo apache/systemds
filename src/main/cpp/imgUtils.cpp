@@ -28,11 +28,12 @@ void printImage(const double* image, int rows, int cols) {
         for (int j = 0; j < cols; j++) {
             cout << image[i * cols + j] << " ";
         }
-        cout << endl;
+        cout <<  endl;
     }
+    cout << "\n"<< endl;
 }
 
-void m_img_transform(const double* img_in, int orig_w, int orig_h, int out_w, int out_h, double a, double b, double c, double d,
+void img_transform(const double* img_in, int orig_w, int orig_h, int out_w, int out_h, double a, double b, double c, double d,
                      double e, double f, double fill_value, double* img_out) {
     double divisor = a * e - b * d;
     if (divisor == 0) {
@@ -73,6 +74,8 @@ void m_img_transform(const double* img_in, int orig_w, int orig_h, int out_w, in
             transformed_coords[2 * i + 1] = std::floor(T_inv[3] * x + T_inv[4] * y + T_inv[5]) + 1;
         }
 
+
+
         // Fill output image
         for (int i = 0; i < out_h; i++) {
             for (int j = 0; j < out_w; j++) {
@@ -94,20 +97,18 @@ void m_img_transform(const double* img_in, int orig_w, int orig_h, int out_w, in
 void imageRotate(double* img_in, int rows, int cols, double radians, double fill_value, double* img_out) {
     // Translation matrix for moving the origin to the center of the image
     double t1_data[] = {
-            1, 0, static_cast<double>(-cols / 2),
-            0, 1, static_cast<double>(-rows / 2),
+            1, 0, static_cast<double>(-cols)/2,
+            0, 1, static_cast<double>(-rows)/2,
             0, 0, 1
     };
     double* t1 = t1_data;
-
     // Translation matrix for moving the origin back to the top left corner
     double t2_data[] = {
-            1, 0, static_cast<double>(cols / 2),
-            0, 1, static_cast<double>(rows / 2),
+            1, 0, static_cast<double>(cols)/2,
+            0, 1, static_cast<double>(rows)/2,
             0, 0, 1
     };
     double* t2 = t2_data;
-
     // The rotation matrix around the origin
     double rot_data[] = {
             cos(radians), sin(radians), 0,
@@ -117,14 +118,113 @@ void imageRotate(double* img_in, int rows, int cols, double radians, double fill
     double* rot = rot_data;
 
     // Combined transformation matrix
-    int matrix_size = std::max(rows, cols);
-    double m_data[matrix_size * matrix_size];
+   // int matrix_size = std::max(3, 3);
+    double m_data[3 * 3];
     cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, 3, 3, 3, 1.0, t2, 3, rot, 3, 0.0, m_data, 3);
     cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, 3, 3, 3, 1.0, m_data, 3, t1, 3, 0.0, m_data, 3);
     double* m = m_data;
-
-
     // Transform image
-    //imgTransform(img_in, rows, cols, m[0], m[1], m[2], m[3], m[4], m[5], fill_value, img_out);
-    m_img_transform(img_in,rows,cols,rows,cols,m[0], m[1], m[2], m[3], m[4], m[5], fill_value, img_out);
+    img_transform(img_in,rows,cols,rows,cols,m[0], m[1], m[2], m[3], m[4], m[5], fill_value, img_out);
 }
+/*
+double* imageCutout(double* img_in, int rows, int cols, int x, int y, int width, int height, double fill_value) {
+    // Allocate memory for the output image
+        double* img_out = new double[rows * cols];
+
+        if (width < 1 || height < 1) {
+            // Invalid width or height, return the input image as it is
+            std::copy(img_in, img_in + rows * cols, img_out);
+        } else {
+            int end_x = x + width - 1;
+            int end_y = y + height - 1;
+
+            int start_x = std::max(1, x);
+            int start_y = std::max(1, y);
+            end_x = std::min(cols, end_x);
+            end_y = std::min(rows, end_y);
+
+            // Copy the input image to the output image
+            std::copy(img_in, img_in + rows * cols, img_out);
+
+            // Fill the cutout region with the fill_value
+            for (int i = start_y - 1; i < end_y; ++i) {
+                for (int j = start_x - 1; j < end_x; ++j) {
+                    img_out[i * cols + j] = fill_value;
+                }
+            }
+        }
+
+    printImage(img_out,rows,cols);
+    return img_out;
+}
+*/
+
+double* imageCutout(double* img_in, int rows, int cols, int x, int y, int width, int height, double fill_value) {
+    // Allocate memory for the output image using MKL
+   double* img_out = new double[rows * cols];
+
+    if (width < 1 || height < 1) {
+        // Invalid width or height, return the input image as it is
+        cblas_dcopy(rows * cols, img_in, 1, img_out, 1);
+    } else {
+        int end_x = x + width - 1;
+        int end_y = y + height - 1;
+
+        int start_x = std::max(1, x);
+        int start_y = std::max(1, y);
+        end_x = std::min(cols, end_x);
+        end_y = std::min(rows, end_y);
+
+        // Copy the input image to the output image using MKL
+        cblas_dcopy(rows * cols, img_in, 1, img_out, 1);
+
+        // Fill the cutout region with the fill_value
+        for (int i = start_y - 1; i < end_y; ++i) {
+            for (int j = start_x - 1; j < end_x; ++j) {
+                img_out[i * cols + j] = fill_value;
+            }
+        }
+    }
+
+    return img_out;
+}
+
+double* imageCrop(double* img_in, int orig_w, int orig_h, int w, int h, int x_offset, int y_offset) {
+    // Allocate memory for the output image
+    double* img_out = new double[w * h];
+
+    int start_h = (std::ceil((orig_h - h) / 2)) + y_offset - 1 ;
+    int end_h = (start_h + h - 1);
+    int start_w = (std::ceil((orig_w - w) / 2)) + x_offset - 1;
+    int end_w = (start_w + w - 1);
+
+    // Create a mask to identify the cropped region
+    double* mask = new double[orig_w * orig_h];
+    double* temp_mask = new double[w * h];
+
+    // Set mask elements to 0 outside the cropped region and 1 inside
+    std::memset(mask, 0, orig_w * orig_h * sizeof(double));
+    for(int i = 0; i < h * w; i++) {
+     temp_mask[i] = 1;
+    }
+
+    for (int i = start_h; i <= end_h; ++i) {
+        for (int j = start_w; j <= end_w; ++j) {
+            mask[i * orig_w + j] = temp_mask[(i - start_h) * w + (j - start_w)];
+        }
+    }
+
+    // Apply the mask to crop the image
+    for (int i = 0; i < h; ++i) {
+        for (int j = 0; j < w; ++j) {
+            img_out[i * w + j] = img_in[(start_h + i) * orig_w + (start_w + j)] * mask[(start_h + i) * orig_w + (start_w + j)];
+        }
+    }
+
+    // Free memory for the mask
+    delete[] mask;
+    delete[] temp_mask;
+
+    return img_out;
+}
+

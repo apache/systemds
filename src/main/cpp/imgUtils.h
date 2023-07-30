@@ -19,6 +19,7 @@
 
 #ifndef IMAGE_UTILS_H
 #define IMAGE_UTILS_H
+#include <cmath>
 
 void printImage(const double* image, int rows, int cols);
 
@@ -26,5 +27,9 @@ void m_img_transform(const double* img_in, int orig_w, int orig_h, int out_w, in
                      double e, double f, double fill_value, double* img_out);
 
 void imageRotate(double* img_in, int rows, int cols, double radians, double fill_value, double* img_out);
+
+double* imageCutout(double* img_in, int rows, int cols, int x, int y, int width, int height, double fill_value);
+
+double* imageCrop(double* img_in, int orig_w, int orig_h, int w, int h, int x_offset, int y_offset);
 
 #endif /* IMAGE_UTILS_H */

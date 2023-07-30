@@ -19,8 +19,9 @@
 package org.apache.sysds.test.functions.nativ;
 
 import org.apache.sysds.utils.NativeHelper;
-import org.junit.Assert;
 import org.junit.Test;
+
+import static org.junit.Assert.assertArrayEquals;
 
 public class ImgUtilsTest {
 
@@ -30,35 +31,39 @@ public class ImgUtilsTest {
     @Test
     public void testImageRotation90() {
         // Input image dimensions
-        int rows = 4;
-        int cols = 4;
+        int rows = 3;
+        int cols = 3;
 
         // Input image
         double[] img_in = {
-                1.0, 2.0, 3.0, 4.0,
-                5.0, 6.0, 7.0, 8.0,
-                9.0, 10.0, 11.0, 12.0,
-                13.0, 14.0, 15.0, 16.0
+                1,2,3,
+                4,5,6,
+                7,8,9
         };
-
         // Rotation angle in radians
         double radians = Math.PI / 2;
-
         // Fill value for the output image
         double fill_value = 0.0;
-
         // Expected output image
-        double[] expected_img_out = {
-                4.0, 8.0, 12.0, 16.0,
-                3.0, 7.0, 11.0, 15.0,
-                2.0, 6.0, 10.0, 14.0,
-                1.0, 5.0, 9.0, 13.0
+        double[] expected_img_out_90 = {
+                3,6,9,
+                2,5,8,
+                1,4,7
+        };
+
+        double[] expected_img_out_45 = {
+                2,3,6,
+                1,5,9,
+                4,7,8
         };
 
         // Create the output image array
         double[] img_out = new double[rows * cols];
         NativeHelper.imageRotate(img_in, rows, cols, radians, fill_value, img_out);
-        Assert.assertArrayEquals(expected_img_out, img_out, 0.0001);
+        assertArrayEquals(expected_img_out_90, img_out, 0.0001);
+        //rotate by 45
+        NativeHelper.imageRotate(img_in, rows, cols, radians/2, fill_value, img_out);
+        assertArrayEquals(expected_img_out_45, img_out, 0.0001);
     }
 
     @Test
@@ -100,7 +105,7 @@ public class ImgUtilsTest {
         NativeHelper.imageRotate(img_in, rows, cols, radians, fill_value, img_out);
 
         // Compare the output image with the expected image
-        Assert.assertArrayEquals(expected_img_out, img_out, 0.0001);
+        assertArrayEquals(expected_img_out, img_out, 0.0001);
     }
 
     @Test
@@ -138,6 +143,137 @@ public class ImgUtilsTest {
         NativeHelper.imageRotate(img_in, rows, cols, radians, fill_value, img_out);
 
         // Compare the output image with the expected image
-        Assert.assertArrayEquals(expected_img_out, img_out, 0.0001);
+        assertArrayEquals(expected_img_out, img_out, 0.0001);
     }
+
+
+    @Test
+    public void testCutoutImage() {
+        // Example input 2D matrix
+        double[] img_in = {
+                1.0, 2.0, 3.0, 4.0,
+                5.0, 6.0, 7.0, 8.0,
+                9.0, 10.0, 11.0, 12.0,
+                13.0, 14.0, 15.0, 16.0
+        };
+
+        int rows = 4;
+        int cols = 4;
+        int x = 2;
+        int y = 2;
+        int width = 2;
+        int height = 2;
+        double fill_value = 0.0;
+
+        // Perform image cutout using JNI
+        double[] img_out = NativeHelper.imageCutout(img_in, rows, cols, x, y, width, height, fill_value);
+
+        // Expected output image after cutout
+        double[] expectedOutput = {
+                1.0, 2.0, 3.0, 4.0,
+                5.0, 0.0, 0.0, 8.0,
+                9.0, 0.0, 0.0, 12.0,
+                13.0, 14.0, 15.0, 16.0
+        };
+
+        // Check if the output image matches the expected output
+        assertArrayEquals(expectedOutput, img_out,0.0001);
+    }
+
+    @Test
+    public void testImageCutoutInvalidCutout() {
+        double[] img_in = {
+                1.0, 2.0, 3.0, 4.0,
+                5.0, 6.0, 7.0, 8.0,
+                9.0, 10.0, 11.0, 12.0,
+                13.0, 14.0, 15.0, 16.0
+        };
+
+        int rows = 4;
+        int cols = 4;
+        int x = 3;
+        int y = 3;
+        int width = -2;
+        int height = 0;
+        double fill_value = 0.0;
+
+        double[] expectedOutput = img_in; // Expect no change since the cutout is invalid
+
+        double[] img_out = NativeHelper.imageCutout(img_in, rows, cols, x, y, width, height, fill_value);
+        assertArrayEquals(expectedOutput, img_out,0.0001);
+    }
+
+    @Test
+    public void testImageCutoutNoCutout() {
+        double[] img_in = {
+                1.0, 2.0, 3.0, 4.0,
+                5.0, 6.0, 7.0, 8.0,
+                9.0, 10.0, 11.0, 12.0,
+                13.0, 14.0, 15.0, 16.0
+        };
+
+        int rows = 4;
+        int cols = 4;
+        int x = 3;
+        int y = 3;
+        int width = 1;
+        int height = 1;
+        double fill_value = 0.0;
+
+        double[] expectedOutput = {
+                1.0, 2.0, 3.0, 4.0,
+                5.0, 6.0, 7.0, 8.0,
+                9.0, 10.0, 0.0, 12.0,
+                13.0, 14.0, 15.0, 16.0
+        };
+
+        double[] img_out = NativeHelper.imageCutout(img_in, rows, cols, x, y, width, height, fill_value);
+        assertArrayEquals(expectedOutput, img_out,0.0001);
+    }
+
+    @Test
+    public void testImageCropValidCrop() {
+        double[] img_in = {
+                1.0, 2.0, 3.0, 4.0,
+                5.0, 6.0, 7.0, 8.0,
+                9.0, 10.0, 11.0, 12.0,
+                13.0, 14.0, 15.0, 16.0
+        };
+
+        int orig_w = 4;
+        int orig_h = 4;
+        int w = 2;
+        int h = 2;
+        int x_offset = 1;
+        int y_offset = 1;
+
+        double[] expectedOutput = {
+                6.0, 7.0,
+                10.0, 11.0
+        };
+
+        double[] img_out = NativeHelper.cropImage(img_in, orig_w, orig_h, w, h, x_offset, y_offset);
+
+        assertArrayEquals(expectedOutput, img_out,0.0001);     }
+
+    @Test
+    public void testImageCropInvalidCrop() {
+        double[] img_in = {
+                1.0, 2.0, 3.0, 4.0,
+                5.0, 6.0, 7.0, 8.0,
+                9.0, 10.0, 11.0, 12.0,
+                13.0, 14.0, 15.0, 16.0
+        };
+
+        int orig_w = 4;
+        int orig_h = 4;
+        int w = 5;
+        int h = 5;
+        int x_offset = 1;
+        int y_offset = 1;
+
+        double[] expectedOutput = img_in; // Expect no change since the crop is invalid
+
+        double[] img_out = NativeHelper.cropImage(img_in, orig_w, orig_h, w, h, x_offset, y_offset);
+        assertArrayEquals(expectedOutput, img_out,0.0001);     }
 }

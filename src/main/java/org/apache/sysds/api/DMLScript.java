@@ -86,6 +86,7 @@ import org.apache.sysds.utils.Explain;
 import org.apache.sysds.utils.Explain.ExplainCounts;
 import org.apache.sysds.utils.Explain.ExplainType;
 import org.apache.sysds.utils.NativeHelper;
+import org.apache.sysds.utils.SettingsChecker;
 import org.apache.sysds.utils.Statistics;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -278,6 +279,8 @@ public class DMLScript
 			String fileOrScript = isFile ? dmlOptions.filePath : dmlOptions.script;
 
 			boolean help = dmlOptions.help;
+
+			SettingsChecker.check();
 
 			if (help) {
 				HelpFormatter formatter = new HelpFormatter();

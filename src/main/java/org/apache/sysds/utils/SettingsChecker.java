@@ -21,6 +21,8 @@ package org.apache.sysds.utils;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -61,10 +63,13 @@ public interface SettingsChecker {
 	}
 
 	private static long maxMemMachine() {
-		if("Linux".equals(System.getProperty("os.name"))) {
+		String sys = System.getProperty("os.name");
+		if("Linux".equals(sys)) {
 			return maxMemMachineLinux();
 		}
-		// TODO add windows.
+		else if(sys.contains("Mac OS")) {
+			return maxMemMachineOSX();
+		}
 		else {
 			return -1;
 		}
@@ -78,8 +83,21 @@ public interface SettingsChecker {
 			return Long.parseLong(currentLine.split(":")[1].split("kB")[0].strip());
 		}
 		catch(Exception e) {
-			LOG.error(e);
+			e.printStackTrace();
 			return -1;
+		}
+	}
+
+	private static long maxMemMachineOSX() {
+		try {
+			String command = "sysctl hw.memsize";
+			Runtime rt = Runtime.getRuntime();
+			Process pr = rt.exec(command);
+			String memStr = new String(pr.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
+			return Long.parseLong(memStr.trim().substring(12, memStr.length()-1));
+		}
+		catch(IOException e) {
+			throw new RuntimeException(e);
 		}
 	}
 

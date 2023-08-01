@@ -213,6 +213,7 @@ public class Types
 		ULTRA_SPARSE_BLOCK,
 		SPARSE_BLOCK,
 		DENSE_BLOCK,
+		DEDUP_BLOCK,
 	}
 	
 	/**

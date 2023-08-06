@@ -184,7 +184,6 @@ public abstract class AComEst {
 		final int worstCase = worstCaseUpperBound(combinedColumns);
 		// Get max number of tuples based on the above.
 		final long max = Math.min((long) g1V * g2V, worstCase);
-
 		if(max > 1000000) // set the max combination to a million distinct
 			return null; // This combination is clearly not a good idea return null to indicate that.
 		else if(g1.getMap() == null || g2.getMap() == null)
@@ -222,7 +221,7 @@ public abstract class AComEst {
 	protected abstract CompressedSizeInfoColGroup combine(IColIndex combinedColumns, CompressedSizeInfoColGroup g1,
 		CompressedSizeInfoColGroup g2, int maxDistinct);
 
-	private List<CompressedSizeInfoColGroup> CompressedSizeInfoColGroup(int clen, int k) {
+	protected List<CompressedSizeInfoColGroup> CompressedSizeInfoColGroup(int clen, int k) {
 		if(k <= 1)
 			return CompressedSizeInfoColGroupSingleThread(clen);
 		else

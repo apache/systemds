@@ -229,7 +229,7 @@ public class FastBufferedDataOutputStream extends FilterOutputStream implements 
 				long tmp = Double.doubleToRawLongBits(varr[i+j]);
 				longToBa(tmp, _buff, _count);
 				_count += 8;
-			}	
+			}
 			
 			//flush buffer for current block
 			flushBuffer(); //based on count
@@ -258,7 +258,7 @@ public class FastBufferedDataOutputStream extends FilterOutputStream implements 
 				if( alen2 < _bufflen )
 				{
 					if (_count+alen2 > _bufflen) 
-					    flushBuffer();
+						flushBuffer();
 					
 					for( int j=apos; j<apos+alen; j++ )
 					{
@@ -274,7 +274,7 @@ public class FastBufferedDataOutputStream extends FilterOutputStream implements 
 					for( int j=apos; j<apos+alen; j++ )
 					{
 						if (_count+12 > _bufflen) 
-						    flushBuffer();
+							flushBuffer();
 						
 						long tmp2 = Double.doubleToRawLongBits(avals[j]);
 						intToBa(aix[j], _buff, _count);

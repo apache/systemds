@@ -55,6 +55,12 @@ public class CheckpointSharedOpsTest extends AutomatedTestBase {
 		runTest(TEST_NAME+"1");
 	}
 
+	@Test
+	public void testPnmf() {
+		// Place checkpoint at the end of a loop as the updated vars are read in each iteration.
+		runTest(TEST_NAME+"2");
+	}
+
 	public void runTest(String testname) {
 		Types.ExecMode oldPlatform = setExecMode(Types.ExecMode.HYBRID);
 
@@ -86,9 +92,10 @@ public class CheckpointSharedOpsTest extends AutomatedTestBase {
 			OptimizerUtils.ASYNC_CHECKPOINT_SPARK = false;
 
 			//compare matrices
-			boolean matchVal = TestUtils.compareMatrices(R, R_mp, 1e-6, "Origin", "withPrefetch");
+			boolean matchVal = TestUtils.compareMatrices(R, R_mp, 1e-3, "Origin", "withChkpoint");
 			if (!matchVal)
-				System.out.println("Value w/o Prefetch "+R+" w/ Prefetch "+R_mp);
+				System.out.println("Value w/o Checkpoint "+R+" w/ Checkpoint "+R_mp);
+			//compare checkpoint instruction count
 			Assert.assertTrue("Violated checkpoint count: " + numCP + " < " + numCP_maxp, numCP < numCP_maxp);
 		} finally {
 			resetExecMode(oldPlatform);

@@ -25,8 +25,8 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.BitSet;
 
-import org.apache.commons.lang.NotImplementedException;
-import org.apache.sysds.runtime.compress.colgroup.AMapToDataGroup;
+import org.apache.commons.lang3.NotImplementedException;
+import org.apache.sysds.runtime.compress.colgroup.IMapToDataGroup;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory.MAP_TYPE;
 import org.apache.sysds.utils.MemoryEstimates;
 
@@ -255,9 +255,9 @@ public class MapToInt extends AMapToData {
 	}
 
 	@Override
-	public AMapToData appendN(AMapToDataGroup[] d) {
+	public AMapToData appendN(IMapToDataGroup[] d) {
 		int p = 0; // pointer
-		for(AMapToDataGroup gd : d)
+		for(IMapToDataGroup gd : d)
 			p += gd.getMapToData().size();
 		final int[] ret = Arrays.copyOf(_data, p);
 
@@ -270,5 +270,12 @@ public class MapToInt extends AMapToData {
 		}
 
 		return new MapToInt(getUnique(), ret);
+	}
+
+	@Override
+	public boolean equals(AMapToData e) {
+		return e instanceof MapToInt && //
+			e.getUnique() == getUnique() &&//
+			Arrays.equals(((MapToInt) e)._data, _data);
 	}
 }

@@ -24,7 +24,7 @@ import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.commons.lang.NotImplementedException;
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.SequenceFile;
@@ -35,7 +35,8 @@ import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlockFactory;
-import org.apache.sysds.runtime.compress.lib.CLALibCombine;
+import org.apache.sysds.runtime.compress.DMLCompressionException;
+import org.apache.sysds.runtime.compress.lib.CLALibStack;
 import org.apache.sysds.runtime.io.IOUtilFunctions;
 import org.apache.sysds.runtime.io.MatrixReader;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -78,11 +79,13 @@ public final class ReaderCompressed extends MatrixReader {
 		for(Path subPath : IOUtilFunctions.getSequenceFilePaths(fs, path)){
 			read(subPath, job, data);
 		}
+		if(data.containsValue(null))
+			throw new DMLCompressionException("Invalid read data contains null:");
 
 		if(data.size() == 1)
 			return data.entrySet().iterator().next().getValue();
 		else
-			return CLALibCombine.combine(data, OptimizerUtils.getParallelTextWriteParallelism());
+			return CLALibStack.combine(data, OptimizerUtils.getParallelTextWriteParallelism());
 	}
 
 	private static void read(Path path, JobConf job, Map<MatrixIndexes, MatrixBlock> data) throws IOException {

@@ -1047,8 +1047,9 @@ public class DMLTranslator
 				}
 				
 				DataOp ae = (DataOp)processExpression(source, target, ids);
-				String formatName = os.getExprParam(DataExpression.FORMAT_TYPE).toString();
-				ae.setFileFormat(Expression.convertFormatType(formatName));
+				Expression fmtExpr = os.getExprParam(DataExpression.FORMAT_TYPE);
+				ae.setFileFormat((fmtExpr instanceof StringIdentifier) ?
+					Expression.convertFormatType(fmtExpr.toString()) : FileFormat.UNKNOWN);
 
 				if (ae.getDataType() == DataType.SCALAR ) {
 					ae.setOutputParams(ae.getDim1(), ae.getDim2(), ae.getNnz(), ae.getUpdateType(), -1);
@@ -1065,6 +1066,7 @@ public class DMLTranslator
 							break;
 						case BINARY:
 						case COMPRESSED:
+						case UNKNOWN:
 							// write output in binary block format
 							ae.setOutputParams(ae.getDim1(), ae.getDim2(), ae.getNnz(), ae.getUpdateType(), ae.getBlocksize());
 							break;
@@ -1077,7 +1079,6 @@ public class DMLTranslator
 				}
 				
 				output.add(ae);
-				
 			}
 
 			if (current instanceof PrintStatement) {
@@ -1565,8 +1566,11 @@ public class DMLTranslator
 				Hop ae = processDataExpression((DataExpression)source, target, hops);
 				if (ae instanceof DataOp && ((DataOp) ae).getOp() != OpOpData.SQLREAD &&
 						((DataOp) ae).getOp() != OpOpData.FEDERATED) {
-					String formatName = ((DataExpression)source).getVarParam(DataExpression.FORMAT_TYPE).toString();
-					((DataOp)ae).setFileFormat(Expression.convertFormatType(formatName));
+					Expression expr = ((DataExpression)source).getVarParam(DataExpression.FORMAT_TYPE);
+					if( expr instanceof StringIdentifier )
+						((DataOp)ae).setFileFormat(Expression.convertFormatType(expr.toString()));
+					else
+						((DataOp)ae).setFileFormat(FileFormat.UNKNOWN);
 				}
 				return ae;
 			}

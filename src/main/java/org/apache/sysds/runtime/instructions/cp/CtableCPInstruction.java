@@ -124,20 +124,20 @@ public class CtableCPInstruction extends ComputationCPInstruction {
 			case CTABLE_TRANSFORM_SCALAR_WEIGHT: //(VECTOR/MATRIX)
 				// F = ctable(A,B) or F = ctable(A,B,1)
 				matBlock2 = ec.getMatrixInput(input2.getName());
-				cst1 = ec.getScalarInput(input3.getName(), input3.getValueType(), input3.isLiteral()).getDoubleValue();
+				cst1 = ec.getScalarInput(input3).getDoubleValue();
 				matBlock1.ctableOperations(_optr, matBlock2, cst1, _ignoreZeros, resultMap, resultBlock);
 				break;
 			case CTABLE_EXPAND_SCALAR_WEIGHT: //(VECTOR)
 				// F = ctable(seq,A) or F = ctable(seq,B,1)
 				matBlock2 = ec.getMatrixInput(input2.getName());
-				cst1 = ec.getScalarInput(input3.getName(), input3.getValueType(), input3.isLiteral()).getDoubleValue();
+				cst1 = ec.getScalarInput(input3).getDoubleValue();
 				// only resultBlock.rlen known, resultBlock.clen set in operation
 				matBlock1.ctableSeqOperations(matBlock2, cst1, resultBlock);
 				break;
 			case CTABLE_TRANSFORM_HISTOGRAM: //(VECTOR)
 				// F=ctable(A,1) or F = ctable(A,1,1)
-				cst1 = ec.getScalarInput(input2.getName(), input2.getValueType(), input2.isLiteral()).getDoubleValue();
-				cst2 = ec.getScalarInput(input3.getName(), input3.getValueType(), input3.isLiteral()).getDoubleValue();
+				cst1 = ec.getScalarInput(input2).getDoubleValue();
+				cst2 = ec.getScalarInput(input3).getDoubleValue();
 				matBlock1.ctableOperations(_optr, cst1, cst2, resultMap, resultBlock);
 				break;
 			case CTABLE_TRANSFORM_WEIGHTED_HISTOGRAM: //(VECTOR)

@@ -1,0 +1,19 @@
+{
+  "ids":true,
+  "recode":[1],
+  "bin":[
+    {"id":2, "method":"equi-width", "numbins":100},
+    {"id":3, "method":"equi-width", "numbins":100},
+    {"id":4, "method":"equi-width", "numbins":100},
+    {"id":5, "method":"equi-width", "numbins":100},
+    {"id":6, "method":"equi-width", "numbins":100},
+    {"id":7, "method":"equi-width", "numbins":100},
+    {"id":8, "method":"equi-width", "numbins":100},
+    {"id":9, "method":"equi-width", "numbins":100},
+    {"id":10, "method":"equi-width", "numbins":100},
+    {"id":11, "method":"equi-width", "numbins":100},
+    {"id":12, "method":"equi-width", "numbins":100},
+    {"id":13, "method":"equi-width", "numbins":100},
+    {"id":14, "method":"equi-width", "numbins":100},
+    {"id":15, "method":"equi-width", "numbins":100},]
+}

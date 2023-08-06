@@ -26,12 +26,17 @@ import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.DictionaryFactory;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.IdentityDictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.MatrixBlockDictionary;
 import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.compress.colgroup.scheme.ConstScheme;
 import org.apache.sysds.runtime.compress.colgroup.scheme.ICLAScheme;
 import org.apache.sysds.runtime.compress.cost.ComputationCostEstimator;
+import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
+import org.apache.sysds.runtime.compress.estim.EstimationFactors;
+import org.apache.sysds.runtime.compress.estim.encoding.EncodingFactory;
+import org.apache.sysds.runtime.compress.estim.encoding.IEncode;
 import org.apache.sysds.runtime.compress.lib.CLALibLeftMultBy;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
@@ -43,7 +48,7 @@ import org.apache.sysds.runtime.matrix.operators.CMOperator;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
 import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
 
-public class ColGroupConst extends ADictBasedColGroup {
+public class ColGroupConst extends ADictBasedColGroup implements IContainDefaultTuple {
 
 	private static final long serialVersionUID = -7387793538322386611L;
 
@@ -65,9 +70,17 @@ public class ColGroupConst extends ADictBasedColGroup {
 	 * @param dict       The dictionary to use
 	 * @return A Colgroup either const or empty.
 	 */
-	protected static AColGroup create(IColIndex colIndices, ADictionary dict) {
+	public static AColGroup create(IColIndex colIndices, ADictionary dict) {
 		if(dict == null)
 			return new ColGroupEmpty(colIndices);
+		else if(dict.getNumberOfValues(colIndices.size()) > 1) {
+			// extract dict first row
+			final double[] nd = new double[colIndices.size()];
+			for(int i = 0; i < colIndices.size(); i++)
+				nd[i] = dict.getValue(i);
+
+			return ColGroupConst.create(colIndices, nd);
+		}
 		else
 			return new ColGroupConst(colIndices, dict);
 	}
@@ -254,14 +267,14 @@ public class ColGroupConst extends ADictBasedColGroup {
 				ret.append(offT, _colIndexes.get(j) + offC, _dict.getValue(j));
 	}
 
-	private final  void decompressToDenseBlockAllColumnsContiguous(final DenseBlock db, final int rl, final int ru) {
+	private final void decompressToDenseBlockAllColumnsContiguous(final DenseBlock db, final int rl, final int ru) {
 		final double[] c = db.values(0);
 		final int nCol = _colIndexes.size();
 		final double[] values = _dict.getValues();
 		final int start = rl * nCol;
 		final int end = ru * nCol;
 		for(int i = start; i < end; i++)
-			c[i] += values[i % nCol]; 
+			c[i] += values[i % nCol];
 	}
 
 	private void decompressToDenseBlockGeneric(DenseBlock db, int rl, int ru, int offR, int offC) {
@@ -305,7 +318,14 @@ public class ColGroupConst extends ADictBasedColGroup {
 	 * @param constV The output columns.
 	 */
 	public final void addToCommon(double[] constV) {
-		if(_dict instanceof MatrixBlockDictionary) {
+		if(_dict instanceof IdentityDictionary) {
+			MatrixBlock mb = ((IdentityDictionary) _dict).getMBDict().getMatrixBlock();
+			if(mb.isInSparseFormat())
+				addToCommonSparse(constV, mb.getSparseBlock());
+			else
+				addToCommonDense(constV, mb.getDenseBlockValues());
+		}
+		else if(_dict instanceof MatrixBlockDictionary) {
 			MatrixBlock mb = ((MatrixBlockDictionary) _dict).getMatrixBlock();
 			if(mb.isInSparseFormat())
 				addToCommonSparse(constV, mb.getSparseBlock());
@@ -556,6 +576,38 @@ public class ColGroupConst extends ADictBasedColGroup {
 	@Override
 	public ICLAScheme getCompressionScheme() {
 		return ConstScheme.create(this);
+	}
+
+	@Override
+	public AColGroup recompress() {
+		return this;
+	}
+
+	@Override
+	public CompressedSizeInfoColGroup getCompressionInfo(int nRow) {
+		EstimationFactors ef = new EstimationFactors(1, 1, 1, _dict.getSparsity());
+		return new CompressedSizeInfoColGroup(_colIndexes, ef, estimateInMemorySize(), CompressionType.CONST,
+			getEncoding());
+	}
+
+	@Override
+	public IEncode getEncoding() {
+		return EncodingFactory.create(this);
+	}
+
+	@Override
+	public boolean sameIndexStructure(AColGroupCompressed that) {
+		return that instanceof ColGroupEmpty || that instanceof ColGroupConst;
+	}
+
+	@Override
+	public double[] getDefaultTuple() {
+		return _dict.getValues();
+	}
+
+	@Override
+	protected AColGroup fixColIndexes(IColIndex newColIndex, int[] reordering) {
+		return ColGroupConst.create(newColIndex, _dict.reorder(reordering));
 	}
 
 	@Override

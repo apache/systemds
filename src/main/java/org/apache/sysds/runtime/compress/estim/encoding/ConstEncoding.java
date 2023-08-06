@@ -19,11 +19,15 @@
 
 package org.apache.sysds.runtime.compress.estim.encoding;
 
+import java.util.Map;
+
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.compress.estim.EstimationFactors;
 
 /** Const encoding for cases where the entire group of columns is the same value */
-public class ConstEncoding implements IEncode {
+public class ConstEncoding extends AEncode {
 
 	private final int[] counts;
 
@@ -34,6 +38,11 @@ public class ConstEncoding implements IEncode {
 	@Override
 	public IEncode combine(IEncode e) {
 		return e;
+	}
+
+	@Override
+	public Pair<IEncode, Map<Integer, Integer>> combineWithMap(IEncode e) {
+		return new ImmutablePair<>(e, null);
 	}
 
 	@Override
@@ -57,5 +66,10 @@ public class ConstEncoding implements IEncode {
 	@Override
 	public boolean isDense() {
 		return true;
+	}
+
+	@Override
+	public boolean equals(IEncode e) {
+		return e instanceof ConstEncoding && ((ConstEncoding) e).counts.length == this.counts.length;
 	}
 }

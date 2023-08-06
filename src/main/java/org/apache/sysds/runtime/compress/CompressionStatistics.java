@@ -35,6 +35,8 @@ public class CompressionStatistics {
 	public long originalSize;
 	/** Size if the input is dense */
 	public long denseSize;
+	/** Size if the input is sparse */
+	public long sparseSize;
 	/** Estimated size of compressing individual columns */
 	public long estimatedSizeCols;
 	/** Estimated size of compressing after co-coding */
@@ -84,10 +86,6 @@ public class CompressionStatistics {
 		this.colGroupCounts = ret;
 	}
 
-	public Map<String, int[]> getColGroups() {
-		return colGroupCounts;
-	}
-
 	public String getGroupsTypesString() {
 		StringBuilder sb = new StringBuilder();
 
@@ -122,6 +120,8 @@ public class CompressionStatistics {
 		sb.append("\nOriginal Size         : " + originalSize);
 		sb.append("\nCompressed Size       : " + compressedSize);
 		sb.append("\nCompressionRatio      : " + getRatio());
+		sb.append("\nDenseCompressionRatio : " + getDenseRatio());
+	
 		if(colGroupCounts != null) {
 			sb.append("\nCompressionTypes      : " + getGroupsTypesString());
 			sb.append("\nCompressionGroupSizes : " + getGroupsSizesString());

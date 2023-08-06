@@ -54,7 +54,11 @@ import org.apache.sysds.runtime.transform.tokenize.TokenizerFactory;
 import org.apache.sysds.runtime.util.AutoDiff;
 import org.apache.sysds.runtime.util.DataConverter;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -227,10 +231,13 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 
 				// compute the result
 				boolean emptyReturn = Boolean.parseBoolean(params.get("empty.return").toLowerCase());
-				MatrixBlock soresBlock = target.removeEmptyOperations(new MatrixBlock(), margin.equals("rows"), emptyReturn, select);
+				MatrixBlock ret = target.removeEmptyOperations(new MatrixBlock(), margin.equals("rows"), emptyReturn, select);
 
 				// release locks
-				ec.setMatrixOutput(output.getName(), soresBlock);
+				if( target == ret ) //short-circuit (avoid buffer pool pollution)
+					ec.setVariable(output.getName(), ec.getVariable(params.get("target")));
+				else
+					ec.setMatrixOutput(output.getName(), ret);
 				ec.releaseMatrixInput(params.get("target"));
 				if(params.containsKey("select"))
 					ec.releaseMatrixInput(params.get("select"));
@@ -307,11 +314,12 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 			// acquire locks
 			FrameBlock data = ec.getFrameInput(params.get("target"));
 			FrameBlock meta = ec.getFrameInput(params.get("meta"));
+			MatrixBlock embeddings = params.get("embedding") != null ? ec.getMatrixInput(params.get("embedding")) : null;
 			String[] colNames = data.getColumnNames();
 
 			// compute transformapply
 			MultiColumnEncoder encoder = EncoderFactory
-				.createEncoder(params.get("spec"), colNames, data.getNumColumns(), meta);
+				.createEncoder(params.get("spec"), colNames, data.getNumColumns(), meta, embeddings);
 			MatrixBlock mbout = encoder.apply(data, OptimizerUtils.getTransformNumThreads());
 
 			// release locks
@@ -343,7 +351,7 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 
 			// compute transformapply
 			MultiColumnEncoder encoder = EncoderFactory
-				.createEncoder(params.get("spec"), colNames, meta.getNumColumns(), null);
+				.createEncoder(params.get("spec"), colNames, meta.getNumColumns(), null, null);
 			MatrixBlock mbout = encoder.getColMapping(meta);
 
 			// release locks
@@ -529,6 +537,8 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 			CPOperand target = new CPOperand(params.get("target"), ValueType.FP64, DataType.FRAME);
 			CPOperand meta = getLiteral("meta", ValueType.UNKNOWN, DataType.FRAME);
 			CPOperand spec = getStringLiteral("spec");
+			//FIXME: Taking only spec file name as a literal leads to wrong reuse
+			//TODO: Add Embedding to the lineage item
 			return Pair.of(output.getName(),
 				new LineageItem(getOpcode(), LineageItemUtils.getLineage(ec, target, meta, spec)));
 		}

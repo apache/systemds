@@ -439,7 +439,7 @@ public class SparkExecutionContext extends ExecutionContext
 			}
 			else { //default case
 				MatrixBlock mb = mo.acquireRead(); //pin matrix in memory
-				rdd = toMatrixJavaPairRDD(sc, mb, (int)mo.getBlocksize(), numParts, inclEmpty);
+				rdd = toMatrixJavaPairRDD(sc, mb, mo.getBlocksize(), numParts, inclEmpty);
 				mo.release(); //unpin matrix
 				_parRDDs.registerRDD(rdd.id(), OptimizerUtils.estimatePartitionedSizeExactSparsity(dc), true);
 			}
@@ -700,7 +700,7 @@ public class SparkExecutionContext extends ExecutionContext
 					CacheableData.addBroadcastSize(-mo.getBroadcastHandle().getSize());
 
 				//obtain meta data for matrix
-				int blen = (int) mo.getBlocksize();
+				int blen = mo.getBlocksize();
 
 				//create partitioned matrix block and release memory consumed by input
 				MatrixBlock mb = mo.acquireRead();
@@ -1503,7 +1503,6 @@ public class SparkExecutionContext extends ExecutionContext
 		}
 	}
 
-	@SuppressWarnings({ "rawtypes", "unchecked" })
 	private void rCleanupLineageObject(LineageObject lob)
 		throws IOException
 	{
@@ -1522,12 +1521,30 @@ public class SparkExecutionContext extends ExecutionContext
 
 		//cleanup current lineage object (from driver/executors)
 		//incl deferred hdfs file removal (only if metadata set by cleanup call)
+		cleanupSingleLineageObject(lob);
+
+		//recursively process lineage children
+		for( LineageObject c : lob.getLineageChilds() ){
+			c.decrementNumReferences();
+			rCleanupLineageObject(c);
+		}
+	}
+
+	@SuppressWarnings({ "rawtypes", "unchecked" })
+	public static void cleanupSingleLineageObject(LineageObject lob) {
+		//cleanup current lineage object (from driver/executors)
+		//incl deferred hdfs file removal (only if metadata set by cleanup call)
 		if( lob instanceof RDDObject ) {
 			RDDObject rdd = (RDDObject)lob;
 			int rddID = rdd.getRDD().id();
 			cleanupRDDVariable(rdd.getRDD());
 			if( rdd.getHDFSFilename()!=null ) { //deferred file removal
-				HDFSTool.deleteFileWithMTDIfExistOnHDFS(rdd.getHDFSFilename());
+				try {
+					HDFSTool.deleteFileWithMTDIfExistOnHDFS(rdd.getHDFSFilename());
+				}
+				catch(IOException e) {
+					throw new DMLRuntimeException(e);
+				}
 			}
 			if( rdd.isParallelizedRDD() )
 				_parRDDs.deregisterRDD(rddID);
@@ -1547,12 +1564,6 @@ public class SparkExecutionContext extends ExecutionContext
 					cleanupBroadcastVariable(bc);
 			}
 			CacheableData.addBroadcastSize(-bob.getSize());
-		}
-
-		//recursively process lineage children
-		for( LineageObject c : lob.getLineageChilds() ){
-			c.decrementNumReferences();
-			rCleanupLineageObject(c);
 		}
 	}
 
@@ -1695,9 +1706,12 @@ public class SparkExecutionContext extends ExecutionContext
 		return jsc.sc().getPersistentRDDs().contains(rddID);
 	}
 
-	public boolean isRDDCached( int rddID ) {
+	public static boolean isRDDCached( int rddID ) {
+		if (!isSparkContextCreated())
+			return false;
+
+		JavaSparkContext jsc = _spctx;
 		//check that rdd is marked for caching
-		JavaSparkContext jsc = getSparkContext();
 		if( !jsc.sc().getPersistentRDDs().contains(rddID) ) {
 			return false;
 		}
@@ -1708,6 +1722,31 @@ public class SparkExecutionContext extends ExecutionContext
 				return info.isCached();
 		}
 		return false;
+	}
+
+	public static long getMemCachedRDDSize(int rddID) {
+		if (!isSparkContextCreated())
+			return 0;
+
+		JavaSparkContext jsc = _spctx;
+		//check that rdd is marked for caching
+		if( !jsc.sc().getPersistentRDDs().contains(rddID) )
+			return 0;
+
+		for (RDDInfo info : jsc.sc().getRDDStorageInfo()) {
+			if (info.id() == rddID && info.isCached())
+				return info.memSize(); //total size summing all executors
+		}
+		return 0;
+	}
+
+	public static long getStorageSpaceUsed() {
+		//return the sum of the sizes of the cached RDDs in all executors
+		if (!isSparkContextCreated())
+			return 0;
+
+		JavaSparkContext jsc = _spctx;
+		return Arrays.stream(jsc.sc().getRDDStorageInfo()).mapToLong(RDDInfo::memSize).sum();
 	}
 
 	///////////////////////////////////////////
@@ -1776,9 +1815,10 @@ public class SparkExecutionContext extends ExecutionContext
 	 */
 	public static class SparkClusterConfig
 	{
-		//broadcasts are stored in mem-and-disk in data space, this config
-		//defines the fraction of data space to be used as broadcast budget
-		private static final double BROADCAST_DATA_FRACTION = 0.35;
+		//broadcasts are stored in mem-and-disk in storage space, this config
+		//defines the fraction of min storage space to be used as broadcast budget
+		private static final double BROADCAST_DATA_FRACTION = 0.70;
+		private static final double BROADCAST_DATA_FRACTION_LEGACY = 0.35;
 
 		//forward private config from Spark's UnifiedMemoryManager.scala (>1.6)
 		private static final long RESERVED_SYSTEM_MEMORY_BYTES = 300 * 1024 * 1024;
@@ -1866,7 +1906,7 @@ public class SparkExecutionContext extends ExecutionContext
 			double dataFrac = sconf.getDouble("spark.storage.memoryFraction", 0.6); //default 60%
 			_memDataMinFrac = dataFrac;
 			_memDataMaxFrac = dataFrac;
-			_memBroadcastFrac = dataFrac * BROADCAST_DATA_FRACTION; //default 18%
+			_memBroadcastFrac = dataFrac * BROADCAST_DATA_FRACTION_LEGACY; //default 18%
 
 			//analyze spark degree of parallelism
 			analyzeSparkParallelismConfiguation(sconf);
@@ -1882,10 +1922,14 @@ public class SparkExecutionContext extends ExecutionContext
 					- RESERVED_SYSTEM_MEMORY_BYTES;
 
 			//get data and shuffle memory ratios (defaults not specified in job conf)
-			_memDataMinFrac = sconf.getDouble("spark.memory.storageFraction", 0.5); //default 50%
-			_memDataMaxFrac = sconf.getDouble("spark.memory.fraction", 0.6); //default 60%
-			_memBroadcastFrac = _memDataMaxFrac * BROADCAST_DATA_FRACTION; //default 21%
-			
+			//first get the unified memory fraction (60%) comprising execution and storage
+			double unifiedMem = sconf.getDouble("spark.memory.fraction", 0.6);
+			//minimum default storage expressed as 50% of unified memory (= 30% of heap)
+			_memDataMinFrac = unifiedMem * sconf.getDouble("spark.memory.storageFraction", 0.5);
+			//storage memory can expand and take up the full unified memory
+			_memDataMaxFrac = unifiedMem;
+			//Heuristic-based broadcast fraction (70% of min storage = 21% of heap)
+			_memBroadcastFrac = _memDataMinFrac * BROADCAST_DATA_FRACTION;
 			//analyze spark degree of parallelism
 			analyzeSparkParallelismConfiguation(sconf);
 		}

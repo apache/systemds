@@ -883,6 +883,10 @@ public abstract class AutomatedTestBase {
 		return TestUtils.readRMatrixFromFS(baseDirectory + EXPECTED_DIR + cacheDir + fileName);
 	}
 
+	protected static HashMap<CellIndex, Double> readDMLScalarFromExpectedDir(String fileName) {
+		return TestUtils.readDMLScalarFromHDFS(baseDirectory + EXPECTED_DIR + fileName);
+	}
+
 	protected static HashMap<CellIndex, Double> readDMLScalarFromOutputDir(String fileName) {
 		return TestUtils.readDMLScalarFromHDFS(baseDirectory + OUTPUT_DIR + fileName);
 	}
@@ -973,9 +977,17 @@ public abstract class AutomatedTestBase {
 			Assert.assertEquals(mc.getBlocksize(), rmc.getBlocksize());
 	}
 
+	public static MatrixCharacteristics readDMLMetaDataFileFromExpectedDir(String fileName) {
+		return readDMLMetaDataFile(fileName, EXPECTED_DIR);
+	}
+
 	public static MatrixCharacteristics readDMLMetaDataFile(String fileName) {
+		return readDMLMetaDataFile(fileName, OUTPUT_DIR);
+	}
+
+	public static MatrixCharacteristics readDMLMetaDataFile(String fileName, String outputDir) {
 		try {
-			MetaDataAll meta = getMetaData(fileName);
+			MetaDataAll meta = getMetaData(fileName, outputDir);
 			return new MatrixCharacteristics(
 				meta.getDim1(), meta.getDim2(), meta.getBlocksize(), -1);
 		}
@@ -1177,7 +1189,6 @@ public abstract class AutomatedTestBase {
 	protected void runRScript(boolean newWay) {
 
 		String executionFile = sourceDirectory + selectedTest + ".R";
-		;
 		if(fullRScriptName != null)
 			executionFile = fullRScriptName;
 

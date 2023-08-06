@@ -118,6 +118,10 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.compress.lib">org.apache.sysds.runtime.compress.lib</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
+<tr class="rowColor">
+<th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.compress.plan">org.apache.sysds.runtime.compress.plan</a></th>
+<td class="colLast">&nbsp;</td>
+</tr>
 </tbody>
 </table>
 </li>
@@ -289,11 +293,12 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code>static void</code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">CLALibDecompress.</span><code><span class="memberNameLink"><a href="../lib/CLALibDecompress.html#decompressTo(org.apache.sysds.runtime.compress.CompressedMatrixBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock,int,int,int)">decompressTo</a></span>&#8203;(<a href="../CompressedMatrixBlock.html" title="class in org.apache.sysds.runtime.compress">CompressedMatrixBlock</a>&nbsp;cmb,
+<th class="colSecond" scope="row"><span class="typeNameLabel">CLALibDecompress.</span><code><span class="memberNameLink"><a href="../lib/CLALibDecompress.html#decompressTo(org.apache.sysds.runtime.compress.CompressedMatrixBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock,int,int,int,boolean)">decompressTo</a></span>&#8203;(<a href="../CompressedMatrixBlock.html" title="class in org.apache.sysds.runtime.compress">CompressedMatrixBlock</a>&nbsp;cmb,
             <a href="../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;ret,
             int&nbsp;rowOffset,
             int&nbsp;colOffset,
-            int&nbsp;k)</code></th>
+            int&nbsp;k,
+            boolean&nbsp;countNNz)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
@@ -424,6 +429,35 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <th class="colSecond" scope="row"><span class="typeNameLabel">CLALibUnary.</span><code><span class="memberNameLink"><a href="../lib/CLALibUnary.html#unaryOperations(org.apache.sysds.runtime.compress.CompressedMatrixBlock,org.apache.sysds.runtime.matrix.operators.UnaryOperator,org.apache.sysds.runtime.matrix.data.MatrixValue)">unaryOperations</a></span>&#8203;(<a href="../CompressedMatrixBlock.html" title="class in org.apache.sysds.runtime.compress">CompressedMatrixBlock</a>&nbsp;m,
                <a href="../../matrix/operators/UnaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">UnaryOperator</a>&nbsp;op,
                <a href="../../matrix/data/MatrixValue.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixValue</a>&nbsp;result)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+</tbody>
+</table>
+</section>
+</li>
+<li class="blockList">
+<section><a id="org.apache.sysds.runtime.compress.plan">
+<!--   -->
+</a>
+<h3>Uses of <a href="../CompressedMatrixBlock.html" title="class in org.apache.sysds.runtime.compress">CompressedMatrixBlock</a> in <a href="../plan/package-summary.html">org.apache.sysds.runtime.compress.plan</a></h3>
+<table class="useSummary">
+<caption><span>Methods in <a href="../plan/package-summary.html">org.apache.sysds.runtime.compress.plan</a> that return <a href="../CompressedMatrixBlock.html" title="class in org.apache.sysds.runtime.compress">CompressedMatrixBlock</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colSecond" scope="col">Method</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../CompressedMatrixBlock.html" title="class in org.apache.sysds.runtime.compress">CompressedMatrixBlock</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">IPlanEncode.</span><code><span class="memberNameLink"><a href="../plan/IPlanEncode.html#encode(org.apache.sysds.runtime.matrix.data.MatrixBlock)">encode</a></span>&#8203;(<a href="../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;in)</code></th>
+<td class="colLast">
+<div class="block">Encode a given matrix block subject to the plan given, while erroring out in case of breaking compression</div>
+</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../CompressedMatrixBlock.html" title="class in org.apache.sysds.runtime.compress">CompressedMatrixBlock</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">NaivePlanEncode.</span><code><span class="memberNameLink"><a href="../plan/NaivePlanEncode.html#encode(org.apache.sysds.runtime.matrix.data.MatrixBlock)">encode</a></span>&#8203;(<a href="../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;in)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 </tbody>

@@ -19,7 +19,7 @@
 
 package org.apache.sysds.runtime.controlprogram.paramserv;
 
-import org.apache.commons.lang.SystemUtils;
+import org.apache.commons.lang3.SystemUtils;
 import org.apache.sysds.utils.NativeHelper;
 
 public class NativeHEHelper {

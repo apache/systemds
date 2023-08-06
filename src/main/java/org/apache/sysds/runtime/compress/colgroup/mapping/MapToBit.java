@@ -24,9 +24,9 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.util.BitSet;
 
-import org.apache.commons.lang.NotImplementedException;
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.runtime.DMLRuntimeException;
-import org.apache.sysds.runtime.compress.colgroup.AMapToDataGroup;
+import org.apache.sysds.runtime.compress.colgroup.IMapToDataGroup;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory.MAP_TYPE;
 import org.apache.sysds.utils.MemoryEstimates;
@@ -35,6 +35,7 @@ public class MapToBit extends AMapToData {
 
 	private static final long serialVersionUID = -8065234231282619923L;
 
+	// TODO use custom BitSet
 	private final BitSet _data;
 	private final int _size;
 
@@ -80,7 +81,7 @@ public class MapToBit extends AMapToData {
 
 	@Override
 	public long getInMemorySize() {
-		return getInMemorySize(_data.size()-1);
+		return getInMemorySize(_data.size() - 1);
 	}
 
 	public static long getInMemorySize(int dataLength) {
@@ -326,10 +327,10 @@ public class MapToBit extends AMapToData {
 
 	@Override
 	public AMapToData slice(int l, int u) {
-		BitSet s = _data.get(l,u);
+		BitSet s = _data.get(l, u);
 		if(s.isEmpty())
-			return new MapToZero(u-l);
-		else 
+			return new MapToZero(u - l);
+		else
 			return new MapToBit(getUnique(), s, u - l);
 	}
 
@@ -352,9 +353,17 @@ public class MapToBit extends AMapToData {
 	}
 
 	@Override
-	public AMapToData appendN(AMapToDataGroup[] d) {
+	public boolean equals(AMapToData e) {
+		return e instanceof MapToBit && //
+			e.getUnique() == getUnique() &&//
+			((MapToBit) e)._size == _size && //
+			((MapToBit) e)._data.equals(_data);
+	}
+
+	@Override
+	public AMapToData appendN(IMapToDataGroup[] d) {
 		int p = 0; // pointer
-		for(AMapToDataGroup gd : d)
+		for(IMapToDataGroup gd : d)
 			p += gd.getMapToData().size();
 		final long[] ret = new long[(p - 1) / 64 + 1];
 		long[] or = _data.toLongArray();

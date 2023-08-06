@@ -142,10 +142,49 @@ public interface IColIndex {
 	 * 
 	 * 1,3,4 is not.
 	 * 
-	 * 
 	 * @return If the Columns are contiguous.
 	 */
 	public boolean isContiguous();
+
+	/**
+	 * If the columns are not in sorted incrementing order this method can be called to get the sorting index for this
+	 * set of column indexes.
+	 * 
+	 * The returned list should be the mapping of elements for each column to where it should be after sorting.
+	 * 
+	 * @return A Reordered index.
+	 */
+	public int[] getReorderingIndex();
+
+	/**
+	 * Get if the Index is sorted.
+	 * 
+	 * @return If the index is sorted
+	 */
+	public boolean isSorted();
+
+	/**
+	 * Sort the index and return a new object if there are modifications otherwise return this.
+	 * 
+	 * @return The sorted instance of this column index.
+	 */
+	public IColIndex sort();
+
+	/**
+	 * Analyze if this column group contain the given column id
+	 * 
+	 * @param i id to search for
+	 * @return if it is contained
+	 */
+	public boolean contains(int i);
+
+	/**
+	 * Analyze if this column group contain any of the given column Ids.
+	 * 
+	 * @param idx A List of indexes
+	 * @return If it is contained
+	 */
+	public boolean containsAny(IColIndex idx);
 
 	/** A Class for slice results containing indexes for the slicing of dictionaries, and the resulting column index */
 	public static class SliceResult {

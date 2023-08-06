@@ -25,11 +25,11 @@ import java.io.IOException;
 import java.lang.ref.SoftReference;
 import java.util.Arrays;
 
-import org.apache.commons.lang.NotImplementedException;
-import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.data.SparseBlock;
+import org.apache.sysds.runtime.data.SparseBlockFactory;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.functionobjects.Builtin.BuiltinCode;
 import org.apache.sysds.runtime.functionobjects.ValueFunction;
@@ -39,35 +39,56 @@ import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
 import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
 
+/**
+ * A specialized dictionary that exploits the fact that the contained dictionary is an Identity Matrix.
+ */
 public class IdentityDictionary extends ADictionary {
 
 	private static final long serialVersionUID = 2535887782150955098L;
 
+	/** The number of rows or columns, rows can be +1 if withEmpty is set. */
 	protected final int nRowCol;
-
+	/** Specify if the Identity matrix should contain an empty row in the end. */
+	protected final boolean withEmpty;
+	/** A Cache to contain a materialized version of the identity matrix. */
 	protected SoftReference<MatrixBlockDictionary> cache = null;
 
 	/**
-	 * Create a Identity matrix dictionary. It behaves as if allocated a Sparse Matrix block but exploits that the
+	 * Create an identity matrix dictionary. It behaves as if allocated a Sparse Matrix block but exploits that the
 	 * structure is known to have certain properties.
 	 * 
-	 * @param nRowCol the number of rows and columns in this identity matrix.
+	 * @param nRowCol The number of rows and columns in this identity matrix.
 	 */
 	public IdentityDictionary(int nRowCol) {
 		if(nRowCol <= 0)
 			throw new DMLCompressionException("Invalid Identity Dictionary");
 		this.nRowCol = nRowCol;
+		this.withEmpty = false;
+	}
+
+	/**
+	 * Create an identity matrix dictionary, It behaves as if allocated a Sparse Matrix block but exploits that the
+	 * structure is known to have certain properties.
+	 * 
+	 * @param nRowCol   The number of rows and columns in this identity matrix.
+	 * @param withEmpty If the matrix should contain an empty row in the end.
+	 */
+	public IdentityDictionary(int nRowCol, boolean withEmpty) {
+		if(nRowCol <= 0)
+			throw new DMLCompressionException("Invalid Identity Dictionary");
+		this.nRowCol = nRowCol;
+		this.withEmpty = withEmpty;
 	}
 
 	@Override
 	public double[] getValues() {
-		LOG.warn("Should not call getValues on Identity Dictionary");
-
-		double[] ret = new double[nRowCol * nRowCol];
-		for(int i = 0; i < nRowCol; i++) {
-			ret[(i * nRowCol) + i] = 1;
-		}
-		return ret;
+		throw new DMLCompressionException("Invalid to materialize identity Matrix Please Implement alternative");
+		// LOG.warn("Should not call getValues on Identity Dictionary");
+		// double[] ret = new double[nRowCol * nRowCol];
+		// for(int i = 0; i < nRowCol; i++) {
+		// ret[(i * nRowCol) + i] = 1;
+		// }
+		// return ret;
 	}
 
 	@Override
@@ -212,7 +233,7 @@ public class IdentityDictionary extends ADictionary {
 
 	@Override
 	public ADictionary clone() {
-		return new IdentityDictionary(nRowCol);
+		return new IdentityDictionary(nRowCol, withEmpty);
 	}
 
 	@Override
@@ -222,7 +243,7 @@ public class IdentityDictionary extends ADictionary {
 
 	@Override
 	public int getNumberOfValues(int ncol) {
-		return nRowCol;
+		return nRowCol + (withEmpty ? 1 : 0);
 	}
 
 	@Override
@@ -336,9 +357,9 @@ public class IdentityDictionary extends ADictionary {
 	@Override
 	public ADictionary sliceOutColumnRange(int idxStart, int idxEnd, int previousNumberOfColumns) {
 		if(idxStart == 0 && idxEnd == nRowCol)
-			return new IdentityDictionary(nRowCol);
+			return new IdentityDictionary(nRowCol, withEmpty);
 		else
-			return new IdentityDictionarySlice(nRowCol, idxStart, idxEnd);
+			return new IdentityDictionarySlice(nRowCol, withEmpty, idxStart, idxEnd);
 	}
 
 	@Override
@@ -383,8 +404,7 @@ public class IdentityDictionary extends ADictionary {
 	}
 
 	public MatrixBlockDictionary getMBDict() {
-		throw new DMLRuntimeException("Do not make MB Dict");
-		// return getMBDict(nRowCol);
+		return getMBDict(nRowCol);
 	}
 
 	@Override
@@ -400,11 +420,17 @@ public class IdentityDictionary extends ADictionary {
 	}
 
 	private MatrixBlockDictionary createMBDict() {
-		MatrixBlock identity = new MatrixBlock(nRowCol, nRowCol, true);
-		for(int i = 0; i < nRowCol; i++)
-			identity.quickSetValue(i, i, 1.0);
+		if(withEmpty) {
+			final SparseBlock sb = SparseBlockFactory.createIdentityMatrixWithEmptyRow(nRowCol);
+			final MatrixBlock identity = new MatrixBlock(nRowCol + 1, nRowCol, nRowCol, sb);
+			return new MatrixBlockDictionary(identity);
+		}
+		else {
 
-		return new MatrixBlockDictionary(identity);
+			final SparseBlock sb = SparseBlockFactory.createIdentityMatrix(nRowCol);
+			final MatrixBlock identity = new MatrixBlock(nRowCol, nRowCol, nRowCol, sb);
+			return new MatrixBlockDictionary(identity);
+		}
 	}
 
 	@Override
@@ -503,7 +529,7 @@ public class IdentityDictionary extends ADictionary {
 
 	@Override
 	public double getSparsity() {
-		return 1.0d / (double) nRowCol;
+		return 1d / nRowCol;
 	}
 
 	@Override
@@ -584,6 +610,16 @@ public class IdentityDictionary extends ADictionary {
 		}
 
 		return false;
+	}
+
+	@Override
+	public ADictionary cbind(ADictionary that, int nCol) {
+		throw new NotImplementedException();
+	}
+
+	@Override
+	public ADictionary reorder(int[] reorder) {
+		return getMBDict().reorder(reorder);
 	}
 
 }

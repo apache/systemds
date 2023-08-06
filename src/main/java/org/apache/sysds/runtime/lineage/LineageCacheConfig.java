@@ -39,7 +39,9 @@ import org.apache.sysds.runtime.instructions.spark.ComputationSPInstruction;
 import org.apache.sysds.runtime.instructions.spark.CpmmSPInstruction;
 import org.apache.sysds.runtime.instructions.spark.MapmmSPInstruction;
 
+import java.util.Arrays;
 import java.util.Comparator;
+import java.util.stream.Stream;
 
 public class LineageCacheConfig 
 {
@@ -48,16 +50,27 @@ public class LineageCacheConfig
 	private static final String[] OPCODES = new String[] {
 		"tsmm", "ba+*", "*", "/", "+", "||", "nrow", "ncol", "round", "exp", "log",
 		"rightIndex", "leftIndex", "groupedagg", "r'", "solve", "spoof",
-		"uamean", "max", "min", "ifelse", "-", "sqrt", ">", "uak+", "<=",
+		"uamean", "max", "min", "ifelse", "-", "sqrt", "<", ">", "uak+", "<=",
 		"^", "uamax", "uark+", "uacmean", "eigen", "ctableexpand", "replace",
-		"^2", "uack+", "tak+*", "uacsqk+", "uark+", "n+", "uarimax", "qsort", 
+		"^2", "*2", "uack+", "tak+*", "uacsqk+", "uark+", "n+", "uarimax", "qsort",
 		"qpick", "transformapply", "uarmax", "n+", "-*", "castdtm", "lowertri",
-		"mapmm", "cpmm", "rmm", "prefetch", "chkpoint"
-		//TODO: Reuse everything. 
+		"prefetch", "mapmm", "contains", "mmchain", "mapmmchain", "+*"
+		//TODO: Reuse everything.
 	};
 
-	private static final String[] PERSIST_OPCODES = new String[] {
-		"mapmm", "cpmm", "rmm"
+	// Relatively expensive instructions. Most include shuffles.
+	private static final String[] PERSIST_OPCODES1 = new String[] {
+		"cpmm", "rmm", "pmm", "rev", "rshape", "rsort", "+", "-", "*",
+		"/", "%%", "%/%", "1-*", "^", "^2", "*2", "==", "!=", "<", ">",
+		"<=", ">=", "&&", "||", "xor", "max", "min", "rmempty", "rappend",
+		"gappend", "galignedappend", "rbind", "cbind", "nmin", "nmax",
+		"n+", "ctable", "ucumack+", "ucumac*", "ucumacmin", "ucumacmax",
+		"qsort", "qpick"
+	};
+
+	// Relatively inexpensive instructions.
+	private static final String[] PERSIST_OPCODES2 = new String[] {
+		"mapmm"
 	};
 
 	private static String[] REUSE_OPCODES  = new String[] {};
@@ -91,6 +104,7 @@ public class LineageCacheConfig
 	private static CachedItemTail _itemT = null;
 	private static boolean _compilerAssistedRW = false;
 	private static boolean _onlyEstimate = false;
+	private static boolean _reuseLineageTraces = true;
 
 	//-------------DISK SPILLING RELATED CONFIGURATIONS--------------//
 
@@ -139,6 +153,8 @@ public class LineageCacheConfig
 		RELOADED,  //Reloaded from disk. Can be evicted.
 		PINNED,    //Pinned to memory. Cannot be evicted.
 		GPUCACHED, //Points to GPU intermediate
+		PERSISTEDRDD, //Persisted at the Spark executors
+		TOPERSISTRDD, //To be persisted if the instruction reoccur
 		TOSPILL,   //To be spilled lazily 
 		TODELETE;  //TO be removed lazily
 		public boolean canEvict() {
@@ -199,7 +215,8 @@ public class LineageCacheConfig
 	static {
 		//setup static configuration parameters
 		REUSE_OPCODES = OPCODES;
-		CHKPOINT_OPCODES = PERSIST_OPCODES;
+		CHKPOINT_OPCODES = Stream.concat(Arrays.stream(PERSIST_OPCODES1), Arrays.stream(PERSIST_OPCODES2))
+			.toArray(String[]::new);
 		//setSpill(true);
 		setCachePolicy(LineageCachePolicy.COSTNSIZE);
 		setCompAssRW(true);
@@ -223,16 +240,17 @@ public class LineageCacheConfig
 			|| inst instanceof GPUInstruction
 			|| inst instanceof ComputationSPInstruction)
 			&& !(inst instanceof ListIndexingCPInstruction);
-		boolean rightop = (ArrayUtils.contains(REUSE_OPCODES, inst.getOpcode())
+		boolean rightCPOp = (ArrayUtils.contains(REUSE_OPCODES, inst.getOpcode())
 			|| (inst.getOpcode().equals("append") && isVectorAppend(inst, ec))
 			|| (inst.getOpcode().startsWith("spoof"))
 			|| (inst instanceof DataGenCPInstruction) && ((DataGenCPInstruction) inst).isMatrixCall());
+		boolean rightSPOp = isReusableRDDType(inst);
 		boolean updateInplace = (inst instanceof MatrixIndexingCPInstruction)
 			&& ec.getMatrixObject(((ComputationCPInstruction)inst).input1).getUpdateType().isInPlace();
 		updateInplace = updateInplace || ((inst instanceof BinaryMatrixMatrixCPInstruction)
 			&& ((BinaryMatrixMatrixCPInstruction) inst).isInPlace());
 		boolean federatedOutput = false;
-		return insttype && rightop && !updateInplace && !federatedOutput;
+		return insttype && (rightCPOp || rightSPOp) && !updateInplace && !federatedOutput;
 	}
 	
 	private static boolean isVectorAppend(Instruction inst, ExecutionContext ec) {
@@ -280,6 +298,14 @@ public class LineageCacheConfig
 			&& ((CpmmSPInstruction) inst).getAggType() == AggBinaryOp.SparkAggType.SINGLE_BLOCK)
 			rightOp = false;
 		return insttype && rightOp;
+	}
+
+	protected static boolean isShuffleOp(String opcode) {
+		return ArrayUtils.contains(PERSIST_OPCODES1, opcode);
+	}
+
+	protected static int getComputeGroup(String opcode) {
+		return ArrayUtils.contains(PERSIST_OPCODES1, opcode) ? 2 : 1;
 	}
 
 
@@ -341,6 +367,14 @@ public class LineageCacheConfig
 	
 	public static boolean getCompAssRW() {
 		return _compilerAssistedRW;
+	}
+
+	public static void setReuseLineageTraces(boolean reuseTrace) {
+		_reuseLineageTraces = reuseTrace;
+	}
+
+	public static boolean isLineageTraceReuse() {
+		return _reuseLineageTraces;
 	}
 
 	public static void setCachePolicy(LineageCachePolicy policy) {

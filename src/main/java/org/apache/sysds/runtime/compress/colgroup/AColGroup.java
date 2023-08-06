@@ -24,14 +24,19 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.util.Collection;
 
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex.SliceResult;
 import org.apache.sysds.runtime.compress.colgroup.scheme.ICLAScheme;
 import org.apache.sysds.runtime.compress.cost.ComputationCostEstimator;
+import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
+import org.apache.sysds.runtime.compress.estim.encoding.IEncode;
+import org.apache.sysds.runtime.compress.lib.CLALibCombineGroups;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
+import org.apache.sysds.runtime.functionobjects.Plus;
 import org.apache.sysds.runtime.instructions.cp.CM_COV_Object;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator;
@@ -53,6 +58,18 @@ public abstract class AColGroup implements Serializable {
 	/** Public super types of compression ColGroups supported */
 	public static enum CompressionType {
 		UNCOMPRESSED, RLE, OLE, DDC, CONST, EMPTY, SDC, SDCFOR, DDCFOR, DeltaDDC, LinearFunctional;
+
+		public boolean isDense() {
+			return this == DDC || this == CONST || this == DDCFOR || this == DDCFOR;
+		}
+
+		public boolean isConst() {
+			return this == CONST || this == EMPTY;
+		}
+
+		public boolean isSDC() {
+			return this == SDC;
+		}
 	}
 
 	/**
@@ -117,7 +134,7 @@ public abstract class AColGroup implements Serializable {
 	 * @param colIndexes the new indexes to use in the copy
 	 * @return a new object with pointers to underlying data.
 	 */
-	protected abstract AColGroup copyAndSet(IColIndex colIndexes);
+	public abstract AColGroup copyAndSet(IColIndex colIndexes);
 
 	/**
 	 * Get the upper bound estimate of in memory allocation for the column group.
@@ -402,17 +419,29 @@ public abstract class AColGroup implements Serializable {
 	 * Perform a binary row operation.
 	 * 
 	 * @param op        The operation to execute
-	 * @param v         The vector of values to apply, should be same length as dictionary length.
+	 * @param v         The vector of values to apply the values contained should be at least the length of the highest
+	 *                  value in the column index
 	 * @param isRowSafe True if the binary op is applied to an entire zero row and all results are zero
 	 * @return A updated column group with the new values.
 	 */
 	public abstract AColGroup binaryRowOpLeft(BinaryOperator op, double[] v, boolean isRowSafe);
 
 	/**
+	 * Short hand add operator call on column group to add a row vector to the column group
+	 * 
+	 * @param v The vector to add
+	 * @return A new column group where the vector is added.
+	 */
+	public AColGroup addVector(double[] v) {
+		return binaryRowOpRight(new BinaryOperator(Plus.getPlusFnObject(), 1), v, false);
+	}
+
+	/**
 	 * Perform a binary row operation.
 	 * 
 	 * @param op        The operation to execute
-	 * @param v         The vector of values to apply, should be same length as dictionary length.
+	 * @param v         The vector of values to apply the values contained should be at least the length of the highest
+	 *                  value in the column index
 	 * @param isRowSafe True if the binary op is applied to an entire zero row and all results are zero
 	 * @return A updated column group with the new values.
 	 */
@@ -610,11 +639,67 @@ public abstract class AColGroup implements Serializable {
 	public abstract ICLAScheme getCompressionScheme();
 
 	/**
-	 * Clear variables that can be recomputed from the allocation of this columngroup.
+	 * Clear variables that can be recomputed from the allocation of this column group.
 	 */
-	public void clear(){
+	public void clear() {
 		// do nothing
 	}
+
+	/**
+	 * Recompress this column group into a new column group.
+	 * 
+	 * @return A new or the same column group depending on optimization goal.
+	 */
+	public abstract AColGroup recompress();
+
+	/**
+	 * Recompress this column group into a new column group of the given type.
+	 * 
+	 * @param ct The compressionType that the column group should morph into
+	 * @return A new column group
+	 */
+	public AColGroup morph(CompressionType ct) {
+		throw new NotImplementedException();
+	}
+
+	/**
+	 * Get the compression info for this column group.
+	 * 
+	 * @param nRow The number of rows in this column group.
+	 * @return The compression info for this group.
+	 */
+	public abstract CompressedSizeInfoColGroup getCompressionInfo(int nRow);
+
+	/**
+	 * Combine this column group with another
+	 * 
+	 * @param other The other column group to combine with.
+	 * @return A combined representation as a column group.
+	 */
+	public AColGroup combine(AColGroup other) {
+		return CLALibCombineGroups.combine(this, other);
+	}
+
+	/**
+	 * Get encoding of this column group.
+	 * 
+	 * @return The encoding of the index structure.
+	 */
+	public IEncode getEncoding() {
+		throw new NotImplementedException();
+	}
+
+	public AColGroup sortColumnIndexes() {
+		if(_colIndexes.isSorted())
+			return this;
+		else {
+			int[] reorderingIndex = _colIndexes.getReorderingIndex();
+			IColIndex ni = _colIndexes.sort();
+			return fixColIndexes(ni, reorderingIndex);
+		}
+	}
+
+	protected abstract AColGroup fixColIndexes(IColIndex newColIndex, int[] reordering);
 
 	@Override
 	public String toString() {

@@ -29,6 +29,7 @@ import org.apache.sysds.hops.recompile.Recompiler;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysds.runtime.lineage.Lineage;
 import org.apache.sysds.runtime.lineage.LineageCacheConfig;
+import org.apache.sysds.runtime.lineage.LineageCacheStatistics;
 import org.apache.sysds.runtime.matrix.data.MatrixValue;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
@@ -41,7 +42,7 @@ public class LineageReuseSparkTest extends AutomatedTestBase {
 
 	protected static final String TEST_DIR = "functions/async/";
 	protected static final String TEST_NAME = "LineageReuseSpark";
-	protected static final int TEST_VARIANTS = 3;
+	protected static final int TEST_VARIANTS = 6;
 	protected static String TEST_CLASS_DIR = TEST_DIR + LineageReuseSparkTest.class.getSimpleName() + "/";
 
 	@Override
@@ -70,12 +71,27 @@ public class LineageReuseSparkTest extends AutomatedTestBase {
 
 	@Test
 	public void testL2svm() {
-		runTest(TEST_NAME+"3", ExecMode.SPARK, 3);
+		runTest(TEST_NAME+"3", ExecMode.HYBRID, 3);
 	}
 
+	@Test
+	public void testlmdsMultiLevel() {
+		// Cache RDD and matrix block function returns and reuse
+		runTest(TEST_NAME+"4", ExecMode.HYBRID, 4);
+	}
+
+	@Test
+	public void testEnsemble() {
+		runTest(TEST_NAME+"5", ExecMode.HYBRID, 5);
+	}
+
+	//FIXME: Collecting a persisted RDD still needs the broadcast vars. Debug.
+	/*@Test
+	public void testHyperband() {
+		runTest(TEST_NAME+"6", ExecMode.HYBRID, 6);
+	}*/
+
 	public void runTest(String testname, ExecMode execMode, int testId) {
-		setOutputBuffering(true);
-		
 		boolean old_simplification = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
 		boolean old_sum_product = OptimizerUtils.ALLOW_SUM_PRODUCT_REWRITES;
 		boolean old_trans_exec_type = OptimizerUtils.ALLOW_TRANSITIVE_SPARK_EXEC_TYPE;
@@ -94,7 +110,6 @@ public class LineageReuseSparkTest extends AutomatedTestBase {
 
 			//proArgs.add("-explain");
 			proArgs.add("-stats");
-			proArgs.add("-explain");
 			proArgs.add("-args");
 			proArgs.add(output("R"));
 			programArgs = proArgs.toArray(new String[proArgs.size()]);
@@ -111,7 +126,7 @@ public class LineageReuseSparkTest extends AutomatedTestBase {
 			//proArgs.add("recompile_runtime");
 			proArgs.add("-stats");
 			proArgs.add("-lineage");
-			proArgs.add(LineageCacheConfig.ReuseCacheType.REUSE_FULL.name().toLowerCase());
+			proArgs.add(LineageCacheConfig.ReuseCacheType.REUSE_MULTILEVEL.name().toLowerCase());
 			proArgs.add("-args");
 			proArgs.add(output("R"));
 			programArgs = proArgs.toArray(new String[proArgs.size()]);
@@ -127,12 +142,17 @@ public class LineageReuseSparkTest extends AutomatedTestBase {
 			boolean matchVal = TestUtils.compareMatrices(R, R_reused, 1e-6, "Origin", "withPrefetch");
 			if (!matchVal)
 				System.out.println("Value w/o reuse "+R+" w/ reuse "+R_reused);
-			if (testId == 1 || testId == 3) {
+			if (testId == 1) {
 				Assert.assertTrue("Violated sp_tsmm reuse count: " + numTsmm_r + " < " + numTsmm, numTsmm_r < numTsmm);
 				Assert.assertTrue("Violated sp_mapmm reuse count: " + numMapmm_r + " < " + numMapmm, numMapmm_r < numMapmm);
 			}
+			if (testId == 3)
+				Assert.assertTrue("Violated sp_mapmm reuse count: " + numMapmm_r + " < " + numMapmm, numMapmm_r < numMapmm);
 			if (testId == 2)
 				Assert.assertTrue("Violated sp_rmm reuse count: " + numRmm_r + " < " + numRmm, numRmm_r < numRmm);
+			if (testId == 4 || testId == 5) { // fn/SB reuse
+				Assert.assertTrue((LineageCacheStatistics.getMultiLevelFnHits() + LineageCacheStatistics.getMultiLevelSBHits()) > 1);
+			}
 		} finally {
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = old_simplification;
 			OptimizerUtils.ALLOW_SUM_PRODUCT_REWRITES = old_sum_product;

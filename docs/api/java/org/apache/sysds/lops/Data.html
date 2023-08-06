@@ -27,7 +27,7 @@
     catch(err) {
     }
 //-->
-var data = {"i0":9,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10,"i10":10,"i11":10,"i12":10,"i13":10,"i14":10,"i15":10,"i16":10,"i17":10,"i18":10};
+var data = {"i0":9,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10,"i10":10,"i11":10,"i12":10,"i13":10,"i14":10,"i15":10,"i16":10,"i17":10,"i18":10,"i19":10,"i20":10};
 var tabs = {65535:["t0","All Methods"],1:["t1","Static Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -345,13 +345,23 @@ extends <a href="Lop.html" title="class in org.apache.sysds.lops">Lop</a></pre>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i17" class="rowColor">
+<td class="colFirst"><code>boolean</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#isTransientRead()">isTransientRead</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i18" class="altColor">
+<td class="colFirst"><code>boolean</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#isTransientWrite()">isTransientWrite</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i19" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#setExecType(org.apache.sysds.common.Types.ExecType)">setExecType</a></span>&#8203;(<a href="../common/Types.ExecType.html" title="enum in org.apache.sysds.common">Types.ExecType</a>&nbsp;et)</code></th>
 <td class="colLast">
 <div class="block">Data-Lop-specific method to set the execution type for persistent write.</div>
 </td>
 </tr>
-<tr id="i18" class="altColor">
+<tr id="i20" class="altColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#toString()">toString</a></span>()</code></th>
 <td class="colLast">
@@ -629,6 +639,24 @@ extends <a href="Lop.html" title="class in org.apache.sysds.lops">Lop</a></pre>
 <li class="blockList">
 <h4>isPersistentRead</h4>
 <pre class="methodSignature">public&nbsp;boolean&nbsp;isPersistentRead()</pre>
+</li>
+</ul>
+<a id="isTransientWrite()">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>isTransientWrite</h4>
+<pre class="methodSignature">public&nbsp;boolean&nbsp;isTransientWrite()</pre>
+</li>
+</ul>
+<a id="isTransientRead()">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>isTransientRead</h4>
+<pre class="methodSignature">public&nbsp;boolean&nbsp;isTransientRead()</pre>
 </li>
 </ul>
 <a id="getInstructions(java.lang.String,java.lang.String)">

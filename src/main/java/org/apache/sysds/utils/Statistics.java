@@ -638,13 +638,18 @@ public class Statistics
 			if (DMLScript.LINEAGE && !ReuseCacheType.isNone()) {
 				sb.append("LinCache hits (Mem/FS/Del): \t" + LineageCacheStatistics.displayHits() + ".\n");
 				sb.append("LinCache MultiLevel (Ins/SB/Fn):" + LineageCacheStatistics.displayMultiLevelHits() + ".\n");
-				sb.append("LinCache GPU (Hit/Async/Sync): \t" + LineageCacheStatistics.displayGpuStats() + ".\n");
-				sb.append("LinCache GPU (Recyc/Del): \t" + LineageCacheStatistics.displayGpuPointerStats() + ".\n");
-				sb.append("LinCache GPU evict time: \t" + LineageCacheStatistics.displayGpuEvictTime() + " sec.\n");
-				sb.append("LinCache Spark (Col/Loc/Dist): \t" + LineageCacheStatistics.displaySparkStats() + ".\n");
+				if (LineageCacheStatistics.ifGpuStats()) {
+					sb.append("LinCache GPU (Hit/Async/Sync): \t" + LineageCacheStatistics.displayGpuStats() + ".\n");
+					sb.append("LinCache GPU (Recyc/Del): \t" + LineageCacheStatistics.displayGpuPointerStats() + ".\n");
+					sb.append("LinCache GPU evict time: \t" + LineageCacheStatistics.displayGpuEvictTime() + " sec.\n");
+				}
+				if (LineageCacheStatistics.ifSparkStats()) {
+					sb.append("LinCache Spark (Col/Loc/Dist): \t" + LineageCacheStatistics.displaySparkHits() + ".\n");
+					sb.append("LinCache Spark (Per/Unper): \t" + LineageCacheStatistics.displaySparkPersist() + ".\n");
+				}
 				sb.append("LinCache writes (Mem/FS/Del): \t" + LineageCacheStatistics.displayWtrites() + ".\n");
 				sb.append("LinCache FStimes (Rd/Wr): \t" + LineageCacheStatistics.displayFSTime() + " sec.\n");
-				sb.append("LinCache Computetime (S/M): \t" + LineageCacheStatistics.displayComputeTime() + " sec.\n");
+				sb.append("LinCache Computetime (S/M/P): \t" + LineageCacheStatistics.displayComputeTime() + " sec.\n");
 				sb.append("LinCache Rewrites:    \t\t" + LineageCacheStatistics.displayRewrites() + ".\n");
 			}
 

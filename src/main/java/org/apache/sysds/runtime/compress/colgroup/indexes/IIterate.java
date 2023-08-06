@@ -38,4 +38,18 @@ public interface IIterate {
 	 * @return the next index.
 	 */
 	public boolean hasNext();
+
+	/**
+	 * Get current value
+	 * 
+	 * @return the value pointing at.
+	 */
+	public int v();
+
+	/**
+	 * Get current index
+	 * 
+	 * @return The index currently pointed at
+	 */
+	public int i();
 }

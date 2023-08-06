@@ -43,6 +43,8 @@ public class LopRewriter
 		_lopSBRuleSet.add(new RewriteAddPrefetchLop());
 		_lopSBRuleSet.add(new RewriteAddBroadcastLop());
 		_lopSBRuleSet.add(new RewriteAddChkpointLop());
+		_lopSBRuleSet.add(new RewriteAddChkpointInLoop());
+		_lopSBRuleSet.add(new RewriteUpdateGPUPlacements());
 		// TODO: A rewrite pass to remove less effective chkpoints
 		// Last rewrite to reset Lop IDs in a depth-first manner
 		_lopSBRuleSet.add(new RewriteFixIDs());
@@ -67,8 +69,8 @@ public class LopRewriter
 			rRewriteLop(fsb);
 	}
 
-	public ArrayList<Lop> rewriteLopDAG(ArrayList<Lop> lops) {
-		StatementBlock sb = new StatementBlock();
+	public ArrayList<Lop> rewriteLopDAG(StatementBlock sb, ArrayList<Lop> lops) {
+		//StatementBlock sb = new StatementBlock();
 		sb.setLops(lops);
 		return rRewriteLop(sb).get(0).getLops();
 	}

@@ -27,6 +27,7 @@ import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.hops.AggBinaryOp.SparkAggType;
 import org.apache.sysds.common.Types.ExecType;
+import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.lops.compile.Dag;
 import org.apache.sysds.runtime.instructions.fed.FEDInstruction.FederatedOutput;
 import org.apache.sysds.runtime.privacy.PrivacyConstraint;
@@ -155,7 +156,34 @@ public abstract class Lop
 	 * Examples include spark unary aggregate, mapmm, prefetch
 	 */
 	protected boolean _asynchronous = false;
-	
+
+	/**
+	 * Estimated size for the output produced by this Lop in bytes.
+	 */
+	protected double _outputMemEstimate = OptimizerUtils.INVALID_SIZE;
+
+	/*
+	 * Estimated size for the entire operation represented by this Lop
+	 * It includes the memory required for all inputs as well as the output
+	 * For Spark collects, _memEstimate equals _outputMemEstimate.
+	 */
+	protected double _memEstimate = OptimizerUtils.INVALID_SIZE;
+
+	/**
+	 * Estimated size for the intermediates produced by this Lop in bytes.
+	 */
+	protected double _processingMemEstimate = 0;
+
+	/**
+	 * Estimated size for the broadcast partitions.
+	 */
+	protected double _spBroadcastMemEstimate = 0;
+
+	/*
+	 * Compute cost for this Lop based on the number of floating point operations per
+	 * output cell and the total number of output cells.
+	 */
+	protected double _computeCost = 0;
 
 	/**
 	 * Constructor to be invoked by base class.
@@ -278,6 +306,10 @@ public abstract class Lop
 		return inputs;
 	}
 
+	public Lop getInput(int index) {
+		return inputs.get(index);
+	}
+
 	/**
 	 * Method to get output of Lops
 	 * 
@@ -308,6 +340,14 @@ public abstract class Lop
 			int index = inputs.indexOf(oldInp);
 			inputs.set(index, newInp);
 		}
+	}
+
+	public void replaceAllInputs(ArrayList<Lop> newInputs) {
+		inputs = newInputs;
+	}
+
+	public void replaceAllOutputs(ArrayList<Lop> newOutputs) {
+		outputs = newOutputs;
 	}
 
 	public void removeInput(Lop op) {
@@ -378,6 +418,29 @@ public abstract class Lop
 		return _asynchronous;
 	}
 
+	public void setMemoryEstimates(double outMem, double totMem, double interMem, double bcMem) {
+		_outputMemEstimate = outMem;
+		_memEstimate = totMem;
+		_processingMemEstimate = interMem;
+		_spBroadcastMemEstimate = bcMem;
+	}
+
+	public double getTotalMemoryEstimate() {
+		return _memEstimate;
+	}
+
+	public double getOutputMemoryEstimate() {
+		return _outputMemEstimate;
+	}
+
+	public void setComputeEstimate(double compCost) {
+		_computeCost = compCost;
+	}
+
+	public double getComputeEstimate() {
+		return _computeCost;
+	}
+
 	/**
 	 * Method to have Lops print their state. This is for debugging purposes.
 	 */
@@ -444,8 +507,17 @@ public abstract class Lop
  		lps.setExecType(newExecType);
 	}
 
+
 	public boolean isExecSpark () {
 		return (lps.getExecType() == ExecType.SPARK);
+	}
+
+	public boolean isExecGPU () {
+		return (lps.getExecType() == ExecType.GPU);
+	}
+
+	public boolean isExecCP () {
+		return (lps.getExecType() == ExecType.CP);
 	}
 
 	public boolean getProducesIntermediateOutput() {
@@ -472,7 +544,19 @@ public abstract class Lop
 	public OutputParameters getOutputParameters() {
 		return outParams;
 	}
-	
+
+	public long getNumRows() {
+		return getOutputParameters().getNumRows();
+	}
+
+	public long getNumCols() {
+		return getOutputParameters().getNumCols();
+	}
+
+	public long getNnz() {
+		return getOutputParameters().getNnz();
+	}
+
 	/**
 	 * Method to get aggregate type if applicable.
 	 * This method is overridden by the Lops with aggregate types (e.g. MapMult)
@@ -677,6 +761,25 @@ public abstract class Lop
 			}
 		}
 		return outCP;
+	}
+
+	/**
+	 * Function that determines if all the outputs of a LOP are of GPU execution types
+	 *
+	 * @return true if all outputs are CP
+	 */
+	public boolean isAllOutputsGPU() {
+		if (outputs.isEmpty())
+			return false;
+
+		boolean outGPU = true;
+		for (Lop out : getOutputs()) {
+			if (out.getExecType() != ExecType.GPU) {
+				outGPU = false;
+				break;
+			}
+		}
+		return outGPU;
 	}
 
 	/**

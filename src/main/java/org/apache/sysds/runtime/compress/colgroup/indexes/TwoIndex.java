@@ -134,6 +134,32 @@ public class TwoIndex extends AColIndex {
 	}
 
 	@Override
+	public int[] getReorderingIndex() {
+		if(id2 < id1)
+			return new int[] {1, 0};
+		else
+			return new int[] {0, 1};
+	}
+
+	@Override
+	public boolean isSorted() {
+		return id2 > id1;
+	}
+
+	@Override
+	public IColIndex sort() {
+		if(id2 < id1)
+			return new TwoIndex(id2, id1);
+		else
+			return this;
+	}
+
+	@Override
+	public boolean contains(int i) {
+		return i == id1 || i == id2;
+	}
+
+	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		sb.append(this.getClass().getSimpleName());
@@ -159,6 +185,16 @@ public class TwoIndex extends AColIndex {
 		@Override
 		public boolean hasNext() {
 			return id < 2;
+		}
+
+		@Override
+		public int v() {
+			return id == 0 ? id1 : id2;
+		}
+
+		@Override
+		public int i() {
+			return id;
 		}
 	}
 

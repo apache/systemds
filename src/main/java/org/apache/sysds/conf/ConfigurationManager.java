@@ -24,6 +24,7 @@ import java.util.concurrent.ExecutorService;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.mapred.JobConf;
+import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.conf.CompilerConfig.ConfigType;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.lops.Compression.CompressConfig;
@@ -262,6 +263,10 @@ public class ConfigurationManager{
 			|| OptimizerUtils.MAX_PARALLELIZE_ORDER);
 	}
 
+	public static boolean isAutoLinearizationEnabled() {
+		return OptimizerUtils.COST_BASED_ORDERING;
+	}
+
 	public static boolean isParallelIOEnabled(){
 		return getDMLConfig().getBooleanValue(DMLConfig.CP_PARALLEL_IO);
 	}
@@ -275,8 +280,16 @@ public class ConfigurationManager{
 			|| OptimizerUtils.ASYNC_CHECKPOINT_SPARK);
 	}
 
+	public static boolean isRuleBasedGPUPlacement() {
+		return (DMLScript.USE_ACCELERATOR &&
+			(getDMLConfig().getBooleanValue(DMLConfig.GPU_RULE_BASED_PLACEMENT)
+			|| OptimizerUtils.RULE_BASED_GPU_EXEC));
+	}
+
 	public static ILinearize.DagLinearization getLinearizationOrder() {
-		if (OptimizerUtils.MAX_PARALLELIZE_ORDER)
+		if (OptimizerUtils.COST_BASED_ORDERING)
+			return ILinearize.DagLinearization.AUTO;
+		else if (OptimizerUtils.MAX_PARALLELIZE_ORDER)
 			return ILinearize.DagLinearization.MAX_PARALLELIZE;
 		else
 			return ILinearize.DagLinearization

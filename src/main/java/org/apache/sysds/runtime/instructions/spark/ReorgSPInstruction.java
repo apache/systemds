@@ -241,7 +241,7 @@ public class ReorgSPInstruction extends UnarySPInstruction {
 		
 		//infer initially unknown nnz from input
 		if( !mcOut.nnzKnown() && mc1.nnzKnown() ){
-			boolean sortIx = getOpcode().equalsIgnoreCase("rsort") && sec.getScalarInput(_ixret.getName(), _ixret.getValueType(), _ixret.isLiteral()).getBooleanValue();			
+			boolean sortIx = getOpcode().equalsIgnoreCase("rsort") && sec.getScalarInput(_ixret).getBooleanValue();			
 			if( sortIx )
 				mcOut.setNonZeros(mc1.getRows());
 			else //default (r', rdiag, rev, rsort data)

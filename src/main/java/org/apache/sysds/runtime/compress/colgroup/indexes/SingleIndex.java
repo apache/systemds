@@ -22,6 +22,8 @@ package org.apache.sysds.runtime.compress.colgroup.indexes;
 import java.io.DataOutput;
 import java.io.IOException;
 
+import org.apache.sysds.runtime.compress.DMLCompressionException;
+
 public class SingleIndex extends AColIndex {
 	private final int idx;
 
@@ -61,10 +63,10 @@ public class SingleIndex extends AColIndex {
 
 	@Override
 	public long estimateInMemorySize() {
-		return estimateInMemorySizeStatic(); 
+		return estimateInMemorySizeStatic();
 	}
 
-	public static long estimateInMemorySizeStatic(){
+	public static long estimateInMemorySizeStatic() {
 		return 16 + 4 + 4; // object, int, and padding
 	}
 
@@ -104,8 +106,28 @@ public class SingleIndex extends AColIndex {
 	}
 
 	@Override
-	public boolean isContiguous(){
+	public boolean isContiguous() {
 		return true;
+	}
+
+	@Override
+	public int[] getReorderingIndex() {
+		throw new DMLCompressionException("not valid to get reordering Index for range");
+	}
+
+	@Override
+	public boolean isSorted() {
+		return true;
+	}
+	
+	@Override
+	public IColIndex sort() {
+		throw new DMLCompressionException("range is always sorted");
+	}
+
+	@Override
+	public boolean contains(int i) {
+		return i == idx;
 	}
 
 	@Override
@@ -130,6 +152,16 @@ public class SingleIndex extends AColIndex {
 		@Override
 		public boolean hasNext() {
 			return !taken;
+		}
+
+		@Override
+		public int v() {
+			return idx;
+		}
+
+		@Override
+		public int i() {
+			return 0;
 		}
 	}
 

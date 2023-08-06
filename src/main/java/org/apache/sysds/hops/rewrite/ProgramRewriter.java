@@ -150,6 +150,7 @@ public class ProgramRewriter
 		if( OptimizerUtils.ALLOW_CONSTANT_FOLDING )
 			_dagRuleSet.add( new RewriteConstantFolding()                    ); //dependency: cse
 		_sbRuleSet.add(  new RewriteRemoveEmptyBasicBlocks()                 );
+		_sbRuleSet.add(  new RewriteRemoveEmptyForLoops()                    );
 	}
 	
 	/**

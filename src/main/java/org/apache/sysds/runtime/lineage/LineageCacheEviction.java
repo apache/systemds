@@ -58,9 +58,9 @@ public class LineageCacheEviction
 			return;
 
 		double exectime = ((double) entry._computeTime) / 1000000; // in milliseconds
-		if (!entry.isMatrixValue() && exectime >= LineageCacheConfig.MIN_SPILL_TIME_ESTIMATE)
+		if (!entry.isMatrixValue() && (exectime >= LineageCacheConfig.MIN_SPILL_TIME_ESTIMATE || entry._origItem != null))
 			// Pin the entries having scalar values and with higher computation time
-			// to memory, to save those from eviction. Scalar values are
+			// to memory or function output, to save those from eviction. Scalar values are
 			// not spilled to disk and are just deleted. Scalar entries associated 
 			// with high computation time might contain function outputs. Pinning them
 			// will increase chances of multilevel reuse.
@@ -90,7 +90,7 @@ public class LineageCacheEviction
 		// FIXME: avoid when called from partial reuse methods
 		if (LineageCacheConfig.isCostNsize()) {
 			if (weightedQueue.remove(entry)) {
-				entry.updateScore();
+				entry.updateScore(true);
 				weightedQueue.add(entry);
 			}
 		}

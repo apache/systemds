@@ -35,8 +35,12 @@ import org.apache.sysds.runtime.matrix.data.LibMatrixMult;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.CommonThreadPool;
 
-public class CLALibTSMM {
+public final class CLALibTSMM {
 	private static final Log LOG = LogFactory.getLog(CLALibTSMM.class.getName());
+
+	private CLALibTSMM() {
+		// private constructor
+	}
 
 	/**
 	 * Self left Matrix multiplication (tsmm)

@@ -32,10 +32,10 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Random;
 
-import org.apache.commons.lang.NotImplementedException;
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.sysds.runtime.compress.colgroup.AMapToDataGroup;
+import org.apache.sysds.runtime.compress.colgroup.IMapToDataGroup;
 import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToCharPByte;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
@@ -96,7 +96,7 @@ public class MappingTests {
 		m = genMap(MapToFactory.create(size, max), expected, max, fill, seed);
 	}
 
-	protected static AMapToData genMap(AMapToData m, int[] expected, int max, boolean fill, int seed) {
+	public static AMapToData genMap(AMapToData m, int[] expected, int max, boolean fill, int seed) {
 		if(max <= 1)
 			return m;
 		Random vals = new Random(seed);
@@ -302,7 +302,7 @@ public class MappingTests {
 
 		try {
 
-			AMapToData m2 = m.appendN(new AMapToDataGroup[] {//
+			AMapToData m2 = m.appendN(new IMapToDataGroup[] {//
 				new Holder(m), new Holder(m), new Holder(m)});
 			try {
 				assertEquals(m.size() * 3, m2.size());
@@ -326,7 +326,7 @@ public class MappingTests {
 	@Test
 	public void testAppendVSAppendN() {
 		final AMapToData m2 = m.append(m).append(m);
-		final AMapToData m3 = m.appendN(new AMapToDataGroup[] {//
+		final AMapToData m3 = m.appendN(new IMapToDataGroup[] {//
 			new Holder(m), new Holder(m), new Holder(m)});
 		compare(m2, m3);
 	}
@@ -348,7 +348,7 @@ public class MappingTests {
 		LOG.error("Did not throw exception with: " + m);
 	}
 
-	private static class Holder implements AMapToDataGroup {
+	private static class Holder implements IMapToDataGroup {
 
 		AMapToData d;
 

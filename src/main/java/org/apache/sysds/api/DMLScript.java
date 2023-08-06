@@ -38,7 +38,7 @@ import java.util.Scanner;
 
 import org.apache.commons.cli.AlreadySelectedException;
 import org.apache.commons.cli.HelpFormatter;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
@@ -86,6 +86,7 @@ import org.apache.sysds.utils.Explain;
 import org.apache.sysds.utils.Explain.ExplainCounts;
 import org.apache.sysds.utils.Explain.ExplainType;
 import org.apache.sysds.utils.NativeHelper;
+import org.apache.sysds.utils.SettingsChecker;
 import org.apache.sysds.utils.Statistics;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -278,6 +279,8 @@ public class DMLScript
 			String fileOrScript = isFile ? dmlOptions.filePath : dmlOptions.script;
 
 			boolean help = dmlOptions.help;
+
+			SettingsChecker.check();
 
 			if (help) {
 				HelpFormatter formatter = new HelpFormatter();
@@ -605,7 +608,7 @@ public class DMLScript
 		if(debug)
 			LOG.debug("DML script: \n" + dmlScriptString);
 		if(info)
-			LOG.info("Process id:  " + IDHandler.obtainProcessID());
+			LOG.info("Process id:  " + IDHandler.getProcessID());
 	}
 
 	private static void registerForMonitoring() {
@@ -622,7 +625,7 @@ public class DMLScript
 				// TODO fix and replace localhost identifyer with hostname in federated instructions SYSTEMDS-3440
 				// https://issues.apache.org/jira/browse/SYSTEMDS-3440
 				model.host = "localhost"; 
-				model.processId = Long.parseLong(IDHandler.obtainProcessID());
+				model.processId = Long.parseLong(IDHandler.getProcessID());
 
 				String requestBody = objectMapper
 						.writerWithDefaultPrettyPrinter()

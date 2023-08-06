@@ -139,10 +139,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <hr>
 <pre>public class <span class="typeNameLabel">RewriteInjectSparkPReadCheckpointing</span>
 extends <a href="HopRewriteRule.html" title="class in org.apache.sysds.hops.rewrite">HopRewriteRule</a></pre>
-<div class="block">Rule: BlockSizeAndReblock. For all statement blocks, determine
- "optimal" block size, and place reblock Hops. For now, we just
- use BlockSize 1K x 1K and do reblock after Persistent Reads and
- before Persistent Writes.</div>
+<div class="block">Rule: Inject checkpointing on reading in data in all cases where the operand is used in more than one operation.</div>
 </li>
 </ul>
 </div>

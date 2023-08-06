@@ -23,9 +23,14 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.List;
 
-import org.apache.commons.lang.NotImplementedException;
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
+import org.apache.sysds.runtime.compress.CompressedMatrixBlockFactory;
+import org.apache.sysds.runtime.compress.CompressionSettings;
+import org.apache.sysds.runtime.compress.CompressionSettingsBuilder;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.DictLibMatrixMult;
@@ -34,6 +39,10 @@ import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.compress.colgroup.scheme.ICLAScheme;
 import org.apache.sysds.runtime.compress.cost.ComputationCostEstimator;
+import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
+import org.apache.sysds.runtime.compress.estim.EstimationFactors;
+import org.apache.sysds.runtime.compress.estim.encoding.EncodingFactory;
+import org.apache.sysds.runtime.compress.estim.encoding.IEncode;
 import org.apache.sysds.runtime.compress.utils.Util;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysds.runtime.data.DenseBlock;
@@ -805,6 +814,49 @@ public class ColGroupUncompressed extends AColGroup {
 	}
 
 	@Override
+	public AColGroup recompress() {
+		MatrixBlock mb = CompressedMatrixBlockFactory.compress(_data).getLeft();
+		if(mb instanceof CompressedMatrixBlock) {
+			CompressedMatrixBlock cmb = (CompressedMatrixBlock) mb;
+			List<AColGroup> gs = cmb.getColGroups();
+			if(gs.size() > 1) {
+				LOG.error("The uncompressed column group did compress into multiple groups");
+				return this;
+			}
+			else {
+				return gs.get(0).copyAndSet(_colIndexes);
+			}
+		}
+		else
+			return this;
+	}
+
+	@Override
+	public CompressedSizeInfoColGroup getCompressionInfo(int nRow) {
+		final IEncode map = EncodingFactory.createFromMatrixBlock(_data, false,
+			ColIndexFactory.create(_data.getNumColumns()));
+		final int _numRows = _data.getNumRows();
+		final CompressionSettings _cs = new CompressionSettingsBuilder().create();// default settings
+		final EstimationFactors em = map.extractFacts(_numRows, _data.getSparsity(), _data.getSparsity(), _cs);
+		return new CompressedSizeInfoColGroup(_colIndexes, em, _cs.validCompressions, map);
+	}
+
+	@Override
+	public AColGroup copyAndSet(IColIndex colIndexes) {
+		return ColGroupUncompressed.create(_data, colIndexes);
+	}
+
+	@Override
+	protected AColGroup fixColIndexes(IColIndex newColIndex, int[] reordering) {
+		MatrixBlock ret = new MatrixBlock(_data.getNumRows(), _data.getNumColumns(), _data.getNonZeros());
+		// TODO add sparse optmization
+		for(int r = 0; r < _data.getNumRows(); r++)
+			for(int c = 0; c < _data.getNumColumns(); c++)
+				ret.quickSetValue(r, c, _data.quickGetValue(r, reordering[c]));
+		return create(newColIndex, ret, false);
+	}
+
+	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		sb.append(super.toString());
@@ -821,10 +873,5 @@ public class ColGroupUncompressed extends AColGroup {
 			sb.append(" don't print uncompressed matrix because it is to big.");
 
 		return sb.toString();
-	}
-
-	@Override
-	protected AColGroup copyAndSet(IColIndex colIndexes) {
-		return ColGroupUncompressed.create(_data, colIndexes);
 	}
 }

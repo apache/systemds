@@ -32,7 +32,7 @@ import java.util.Objects;
 import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
 
-import org.apache.commons.lang.NotImplementedException;
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
@@ -319,6 +319,12 @@ public class ColumnEncoderComposite extends ColumnEncoder {
 			columnEncoder.initMetaData(out);
 	}
 
+	//pass down init to actual encoders, only ColumnEncoderWordEmbedding has actually implemented the init method
+	public void initEmbeddings(MatrixBlock embeddings){
+		for(ColumnEncoder columnEncoder : _columnEncoders)
+			columnEncoder.initEmbeddings(embeddings);
+	}
+
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
@@ -433,6 +439,28 @@ public class ColumnEncoderComposite extends ColumnEncoder {
 	public boolean isPassThrough(){
 		return _columnEncoders.size() == 1 //
 			&& _columnEncoders.get(0) instanceof ColumnEncoderPassThrough;
+	}
+
+	public boolean isBin(){
+		return _columnEncoders.size() == 1//
+			&& _columnEncoders.get(0) instanceof ColumnEncoderBin;
+	}
+
+	public boolean isBinToDummy(){
+		return _columnEncoders.size() == 2//
+			&& _columnEncoders.get(0) instanceof ColumnEncoderBin//
+			&& _columnEncoders.get(1) instanceof ColumnEncoderDummycode;
+	}
+
+	public boolean isHash() {
+		return _columnEncoders.size() == 1//
+			&& _columnEncoders.get(0) instanceof ColumnEncoderFeatureHash;//
+	}
+
+	public boolean isHashToDummy() {
+		return _columnEncoders.size() == 2//
+			&& _columnEncoders.get(0) instanceof ColumnEncoderFeatureHash//
+			&& _columnEncoders.get(1) instanceof ColumnEncoderDummycode;
 	}
 
 	private static class ColumnCompositeUpdateDCTask implements Callable<Object> {

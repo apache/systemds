@@ -68,7 +68,7 @@ public class Data extends Lop
 	 * @param fmt file format
 	 */
 	public Data(OpOpData op, Lop input, HashMap<String, Lop>
-	inputParametersLops, String name, String literal, DataType dt, ValueType vt, FileFormat fmt)
+		inputParametersLops, String name, String literal, DataType dt, ValueType vt, FileFormat fmt)
 	{
 		super(Lop.Type.Data, dt, vt);
 		_op = op;
@@ -240,6 +240,14 @@ public class Data extends Lop
 			&& !literal_var;
 	}
 
+	public boolean isTransientWrite() {
+		return _op == OpOpData.TRANSIENTWRITE;
+	}
+
+	public boolean isTransientRead() {
+		return _op == OpOpData.TRANSIENTREAD;
+	}
+
 	/**
 	 * Method to get CP instructions for reading/writing scalars and matrices from/to HDFS.
 	 * This method generates CP read/write instructions.
@@ -278,14 +286,18 @@ public class Data extends Lop
 		OutputParameters oparams = getOutputParameters();
 		if ( _op.isWrite() ) {
 			sb.append( OPERAND_DELIMITOR );
-			String fmt = null;
+			FileFormat fmt = null;
 			if ( getDataType() == DataType.MATRIX || getDataType() == DataType.FRAME )
-				fmt = oparams.getFormat().toString();
+				fmt = oparams.getFormat();
 			else // scalars will always be written in text format
-				fmt = FileFormat.TEXT.toString();
+				fmt = FileFormat.TEXT;
 
-			sb.append( prepOperand(fmt, DataType.SCALAR, ValueType.STRING, true));
-
+			//format literal or variable
+			Lop fmtLop = _inputParams.get(DataExpression.FORMAT_TYPE);
+			String fmtLabel = (fmt!=FileFormat.UNKNOWN) ? fmt.toString() : fmtLop.getOutputParameters().getLabel();
+			sb.append(prepOperand(fmtLabel, DataType.SCALAR, ValueType.STRING,
+				(fmtLop instanceof Data && ((Data)fmtLop).isLiteral()))); //even fmtLop may be Data literal
+			
 			if(oparams.getFormat() == FileFormat.CSV) {
 				Data headerLop = (Data) getNamedInputLop(DataExpression.DELIM_HAS_HEADER_ROW);
 				Data delimLop = (Data) getNamedInputLop(DataExpression.DELIM_DELIMITER);
@@ -564,8 +576,8 @@ public class Data extends Lop
 	private String createVarHDF5Helper() {
 		StringBuilder sb = new StringBuilder();
 		if ( _op.isRead() ) {
-			Data datasetNameLop = (Data) getNamedInputLop(DataExpression.HDF5_DATASET_NAME);
-			sb.append(datasetNameLop.getStringValue());
+			Data dataset = (Data) getNamedInputLop(DataExpression.HDF5_DATASET_NAME);
+			sb.append(dataset != null ? dataset.getStringValue() : "*");
 			sb.append(OPERAND_DELIMITOR);
 		}
 		else { // (operation == OperationTypes.WRITE)

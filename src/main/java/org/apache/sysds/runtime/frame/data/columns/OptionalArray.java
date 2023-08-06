@@ -23,7 +23,7 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-import org.apache.commons.lang.NotImplementedException;
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.frame.data.columns.ArrayFactory.FrameArrayType;
@@ -33,9 +33,9 @@ import org.apache.sysds.runtime.util.UtilFunctions;
 public class OptionalArray<T> extends Array<T> {
 
 	/** Underlying values not able to contain null values */
-	protected Array<T> _a;
+	protected final Array<T> _a;
 	/** A Bitset specifying where there are null, in it false means null */
-	protected ABooleanArray _n;
+	protected final ABooleanArray _n;
 
 	@SuppressWarnings("unchecked")
 	public OptionalArray(T[] a) {
@@ -100,6 +100,15 @@ public class OptionalArray<T> extends Array<T> {
 	}
 
 	@Override
+	public long getInMemorySize() {
+		long size = super.getInMemorySize(); // object header + object reference
+		size += 16; // object pointers.
+		size += _a.getInMemorySize();
+		size += _n.getInMemorySize();
+		return size;
+	}
+
+	@Override
 	public void readFields(DataInput in) throws IOException {
 		throw new DMLRuntimeException("Should not be called");
 	}
@@ -110,19 +119,19 @@ public class OptionalArray<T> extends Array<T> {
 		final ABooleanArray n = (ABooleanArray) ArrayFactory.read(in, nRow);
 		switch(a.getValueType()) {
 			case BOOLEAN:
-				return new OptionalArray<Boolean>((Array<Boolean>) a, n);
+				return new OptionalArray<>((Array<Boolean>) a, n);
 			case FP32:
-				return new OptionalArray<Float>((Array<Float>) a, n);
+				return new OptionalArray<>((Array<Float>) a, n);
 			case FP64:
-				return new OptionalArray<Double>((Array<Double>) a, n);
+				return new OptionalArray<>((Array<Double>) a, n);
 			case UINT8:
 			case INT32:
-				return new OptionalArray<Integer>((Array<Integer>) a, n);
+				return new OptionalArray<>((Array<Integer>) a, n);
 			case INT64:
-				return new OptionalArray<Long>((Array<Long>) a, n);
+				return new OptionalArray<>((Array<Long>) a, n);
 			case CHARACTER:
 			default:
-				return new OptionalArray<Character>((Array<Character>) a, n);
+				return new OptionalArray<>((Array<Character>) a, n);
 		}
 	}
 
@@ -200,7 +209,7 @@ public class OptionalArray<T> extends Array<T> {
 		Array<Boolean> nulls = value.getNulls();
 		if(nulls != null)
 			_n.set(rl, ru, nulls, rlSrc);
-		else{
+		else {
 			for(int i = rl; i <= ru; i++)
 				_n.set(i, true);
 		}
@@ -249,10 +258,10 @@ public class OptionalArray<T> extends Array<T> {
 	@Override
 	public Array<T> append(Array<T> other) {
 		OptionalArray<T> otherOpt = (other instanceof OptionalArray) ? //
-			(OptionalArray<T>) other : new OptionalArray<T>(other, false);
+			(OptionalArray<T>) other : new OptionalArray<>(other, false);
 		ABooleanArray n = (ABooleanArray) _n.append(otherOpt._n);
 		Array<T> a = _a.append(otherOpt._a);
-		return new OptionalArray<T>(a, n);
+		return new OptionalArray<>(a, n);
 	}
 
 	public static <T> OptionalArray<T> appendOther(OptionalArray<T> that, Array<T> appended) {
@@ -261,12 +270,12 @@ public class OptionalArray<T> extends Array<T> {
 		ABooleanArray optsEnd = ArrayFactory.allocateBoolean(endSize);
 		optsEnd.fill(true);
 		optsEnd.set(endSize - that.size(), endSize - 1, nullsThat);
-		return new OptionalArray<T>(appended, optsEnd);
+		return new OptionalArray<>(appended, optsEnd);
 	}
 
 	@Override
 	public Array<T> slice(int rl, int ru) {
-		return new OptionalArray<T>(_a.slice(rl, ru), _n.slice(rl, ru));
+		return new OptionalArray<>(_a.slice(rl, ru), _n.slice(rl, ru));
 	}
 
 	@Override
@@ -289,7 +298,7 @@ public class OptionalArray<T> extends Array<T> {
 
 	@Override
 	public Pair<ValueType, Boolean> analyzeValueType() {
-		return new Pair<ValueType, Boolean>(getValueType(), true);
+		return new Pair<>(getValueType(), true);
 	}
 
 	@Override
@@ -300,43 +309,43 @@ public class OptionalArray<T> extends Array<T> {
 	@Override
 	protected Array<Boolean> changeTypeBitSet() {
 		Array<Boolean> a = _a.changeTypeBitSet();
-		return new OptionalArray<Boolean>(a, _n);
+		return new OptionalArray<>(a, _n);
 	}
 
 	@Override
 	protected Array<Boolean> changeTypeBoolean() {
 		Array<Boolean> a = _a.changeTypeBoolean();
-		return new OptionalArray<Boolean>(a, _n);
+		return new OptionalArray<>(a, _n);
 	}
 
 	@Override
 	protected Array<Double> changeTypeDouble() {
 		Array<Double> a = _a.changeTypeDouble();
-		return new OptionalArray<Double>(a, _n);
+		return new OptionalArray<>(a, _n);
 	}
 
 	@Override
 	protected Array<Float> changeTypeFloat() {
 		Array<Float> a = _a.changeTypeFloat();
-		return new OptionalArray<Float>(a, _n);
+		return new OptionalArray<>(a, _n);
 	}
 
 	@Override
 	protected Array<Integer> changeTypeInteger() {
 		Array<Integer> a = _a.changeTypeInteger();
-		return new OptionalArray<Integer>(a, _n);
+		return new OptionalArray<>(a, _n);
 	}
 
 	@Override
 	protected Array<Long> changeTypeLong() {
 		Array<Long> a = _a.changeTypeLong();
-		return new OptionalArray<Long>(a, _n);
+		return new OptionalArray<>(a, _n);
 	}
 
 	@Override
 	protected Array<Character> changeTypeCharacter() {
 		Array<Character> a = _a.changeTypeCharacter();
-		return new OptionalArray<Character>(a, _n);
+		return new OptionalArray<>(a, _n);
 	}
 
 	@Override
@@ -373,7 +382,7 @@ public class OptionalArray<T> extends Array<T> {
 
 	@Override
 	public Array<T> clone() {
-		return new OptionalArray<T>(_a.clone(), _n.clone());
+		return new OptionalArray<>(_a.clone(), _n.clone());
 	}
 
 	@Override
@@ -383,12 +392,12 @@ public class OptionalArray<T> extends Array<T> {
 
 	@Override
 	public Array<T> select(int[] indices) {
-		return new OptionalArray<T>(_a.select(indices), _n.select(indices));
+		return new OptionalArray<>(_a.select(indices), _n.select(indices));
 	}
 
 	@Override
 	public Array<T> select(boolean[] select, int nTrue) {
-		return new OptionalArray<T>(_a.select(select, nTrue), _n.select(select, nTrue));
+		return new OptionalArray<>(_a.select(select, nTrue), _n.select(select, nTrue));
 	}
 
 	@Override
@@ -422,18 +431,35 @@ public class OptionalArray<T> extends Array<T> {
 			default:
 				return changeTypeString(); // String can contain null
 		}
-
 	}
 
 	@Override
-	public boolean containsNull(){
+	public boolean containsNull() {
 		return !_n.isAllTrue();
+	}
+
+	@Override
+	public double hashDouble(int idx) {
+		if(_n.get(idx))
+			return _a.hashDouble(idx);
+		else
+			return Double.NaN;
+	}
+
+	@Override
+	public boolean equals(Array<T> other) {
+		if(other instanceof OptionalArray) {
+			OptionalArray<T> ot = (OptionalArray<T>) other;
+			return _n.equals(ot._n) && ot._a.equals(_a);
+		}
+		else
+			return false;
 	}
 
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder(_size + 2);
-		sb.append(super.toString() + "<" + _a.getClass().getSimpleName() + ">:[");
+		sb.append(super.toString() + "<" + _a.getValueType() + ">:[");
 		for(int i = 0; i < _size - 1; i++)
 			sb.append(get(i) + ",");
 		sb.append(get(_size - 1));

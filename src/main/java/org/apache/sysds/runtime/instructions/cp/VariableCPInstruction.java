@@ -24,7 +24,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.DataType;
@@ -258,6 +258,10 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 	public boolean isRemoveVariable() {
 		return opcode == VariableOperationCode.RemoveVariable
 			|| opcode == VariableOperationCode.RemoveVariableAndFile;
+	}
+	
+	public boolean isMoveVariable() {
+		return opcode == VariableOperationCode.MoveVariable;
 	}
 
 	public boolean isAssignVariable() {
@@ -915,8 +919,7 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 				break;
 			}
 			case SCALAR: {
-				ScalarObject scalarInput = ec.getScalarInput(
-					getInput1().getName(), getInput1().getValueType(), getInput1().isLiteral());
+				ScalarObject scalarInput = ec.getScalarInput(getInput1());
 				MatrixBlock out = new MatrixBlock(scalarInput.getDoubleValue());
 				ec.setMatrixOutput(output.getName(), out);
 				break;
@@ -1023,8 +1026,8 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 	 */
 	private void processWriteInstruction(ExecutionContext ec) {
 		//get filename (literal or variable expression)
-		String fname = ec.getScalarInput(getInput2().getName(), ValueType.STRING, getInput2().isLiteral()).getStringValue();
-		String fmtStr = getInput3().getName();
+		String fname = ec.getScalarInput(getInput2()).getStringValue();
+		String fmtStr = ec.getScalarInput(getInput3()).getStringValue();
 		FileFormat fmt = FileFormat.safeValueOf(fmtStr);
 		if( fmt != FileFormat.LIBSVM  && fmt != FileFormat.HDF5) {
 			String desc = ec.getScalarInput(getInput4().getName(), ValueType.STRING, getInput4().isLiteral()).getStringValue();
@@ -1110,11 +1113,13 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 	private void writeCSVFile(ExecutionContext ec, String fname) {
 		MatrixObject mo = ec.getMatrixObject(getInput1().getName());
 		String outFmt = "csv";
-
+		FileFormatProperties fprop = (_formatProperties instanceof FileFormatPropertiesCSV) ?
+			_formatProperties : new FileFormatPropertiesCSV(); //for dynamic format strings
+		
 		if(mo.isDirty()) {
 			// there exist data computed in CP that is not backed up on HDFS
 			// i.e., it is either in-memory or in evicted space
-			mo.exportData(fname, outFmt, _formatProperties);
+			mo.exportData(fname, outFmt, fprop);
 		}
 		else {
 			try {
@@ -1123,14 +1128,14 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 				if( fmt == FileFormat.CSV
 					&& !getInput1().getName().startsWith(org.apache.sysds.lops.Data.PREAD_PREFIX) )
 				{
-					WriterTextCSV writer = new WriterTextCSV((FileFormatPropertiesCSV)_formatProperties);
+					WriterTextCSV writer = new WriterTextCSV((FileFormatPropertiesCSV)fprop);
 					writer.addHeaderToCSV(mo.getFileName(), fname, dc.getRows(), dc.getCols());
 				}
 				else {
-					mo.exportData(fname, outFmt, _formatProperties);
+					mo.exportData(fname, outFmt, fprop);
 				}
 				HDFSTool.writeMetaDataFile(fname + ".mtd", mo.getValueType(),
-					dc, FileFormat.CSV, _formatProperties, mo.getPrivacyConstraint());
+					dc, FileFormat.CSV, fprop, mo.getPrivacyConstraint());
 			}
 			catch(IOException e) {
 				throw new DMLRuntimeException(e);
@@ -1383,6 +1388,14 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 				li = new LineageItem(getOpcode(), LineageItemUtils.getLineage(ec, getInput1()));
 				break;
 			}
+			case CastAsListVariable:
+				varname = getOutputVariableName();
+				ListObject lobj = ec.getListObject(getInput1());
+				if (lobj.getLength() != 1 || !(lobj.getData(0) instanceof ListObject))
+					li = new LineageItem(getOpcode(), LineageItemUtils.getLineage(ec, getInput1()));
+				else
+					li = new LineageItem(getOpcode(), new LineageItem[] {lobj.getLineageItem(0)});
+				break;
 			case RemoveVariable:
 			case MoveVariable:
 			default:

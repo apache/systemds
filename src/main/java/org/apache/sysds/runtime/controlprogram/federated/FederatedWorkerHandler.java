@@ -120,6 +120,14 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 		_flt = flt;
 		_frc = frc;
 		_fan = fan;
+		
+		if(DMLScript.LINEAGE) {
+			// Compiler assisted optimizations are not applicable for Fed workers.
+			// e.g. isMarkedForCaching fails as output operands are saved in the
+			// symbol table only after the instruction execution finishes.
+			// NOTE: In shared JVM, this will disable compiler assistance even for the coordinator
+			LineageCacheConfig.setCompAssRW(false);
+		}
 	}
 	
 	public FederatedWorkerHandler(FederatedLookupTable flt, FederatedReadCache frc, FederatedWorkloadAnalyzer fan, Timing timing) {
@@ -147,18 +155,20 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 		}
 		
 		String host;
-		_remoteAddress = remoteAddress.toString();
-		if(remoteAddress instanceof InetSocketAddress) {
-			host = ((InetSocketAddress) remoteAddress).getHostString();
-		}
-		else if(remoteAddress instanceof SocketAddress) {
-			host = remoteAddress.toString().split(":")[0].split("/")[1];
-		}
-		else {
+		if(remoteAddress == null) {
 			LOG.warn("Given remote address of coordinator is null. Continuing with "
 				+ FederatedLookupTable.NOHOST + " as host identifier.");
 			host = FederatedLookupTable.NOHOST;
 		}
+		else if(remoteAddress instanceof InetSocketAddress) {
+			host = ((InetSocketAddress) remoteAddress).getHostString();
+			_remoteAddress = remoteAddress.toString();
+		}
+		else {
+			host = remoteAddress.toString().split(":")[0].split("/")[1];
+			_remoteAddress = remoteAddress.toString();
+		}
+		
 
 		FederatedResponse res = createResponse(msg, host);
 		if (_timing != null) {
@@ -300,7 +310,8 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 	}
 
 	private FederatedResponse executeCommand(FederatedRequest request, ExecutionContextMap ecm, EventStageModel eventStage)
-		throws DMLPrivacyException, FederatedWorkerHandlerException, Exception {
+		throws DMLPrivacyException, FederatedWorkerHandlerException, Exception
+	{
 		final RequestType method = request.getType();
 		FederatedResponse result = null;
 
@@ -616,15 +627,17 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 		final BasicProgramBlock pb = new BasicProgramBlock(null);
 		pb.getInstructions().clear();
 		pb.getInstructions().add(ins);
-
-		if(DMLScript.LINEAGE)
-			// Compiler assisted optimizations are not applicable for Fed workers.
-			// e.g. isMarkedForCaching fails as output operands are saved in the
-			// symbol table only after the instruction execution finishes.
-			// NOTE: In shared JVM, this will disable compiler assistance even for the coordinator
-			LineageCacheConfig.setCompAssRW(false);
-
-		pb.execute(ec); // execute single instruction
+		
+		try {
+			// execute single instruction
+			pb.execute(ec);
+		}
+		catch(Exception ex) {
+			// ensure all variables are properly unpinned, even in case
+			// of failures because federated workers are stateful servers
+			ec.getVariables().releasePinnedData();
+			throw ex;
+		}
 	}
 
 	private static void adaptToWorkload(ExecutionContext ec, FederatedWorkloadAnalyzer fan,  long tid, Instruction ins){
@@ -652,6 +665,8 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 		// get function and input parameters
 		try {
 			FederatedUDF udf = (FederatedUDF) request.getParam(0);
+			if(LOG.isDebugEnabled())
+				LOG.debug(udf);
 
 			eventStage.operation = udf.getClass().getSimpleName();
 

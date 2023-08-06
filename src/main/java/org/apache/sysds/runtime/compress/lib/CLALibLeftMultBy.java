@@ -42,8 +42,12 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.util.CommonThreadPool;
 
-public class CLALibLeftMultBy {
+public final class CLALibLeftMultBy {
 	private static final Log LOG = LogFactory.getLog(CLALibLeftMultBy.class.getName());
+
+	private CLALibLeftMultBy(){
+		// private constructor
+	}
 
 	/**
 	 * Left multiplication with a CompressedMatrixBlock on the right following the equation:
@@ -195,7 +199,7 @@ public class CLALibLeftMultBy {
 				rowSums = that.rowSum(k).getDenseBlockValues();
 
 			// add the correction layer for the subtracted common values.
-			if(rowSums != null && constV != null) {
+			if(rowSums != null) {
 				if(ret.isEmpty())
 					ret.allocateDenseBlock();
 				else

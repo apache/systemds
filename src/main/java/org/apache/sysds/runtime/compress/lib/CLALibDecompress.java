@@ -44,8 +44,12 @@ import org.apache.sysds.utils.DMLCompressionStatistics;
 /**
  * Library to decompress a list of column groups into a matrix.
  */
-public class CLALibDecompress {
+public final class CLALibDecompress {
 	private static final Log LOG = LogFactory.getLog(CLALibDecompress.class.getName());
+
+	private CLALibDecompress() {
+		// private constructor
+	}
 
 	public static MatrixBlock decompress(CompressedMatrixBlock cmb, int k) {
 		Timing time = new Timing(true);
@@ -59,7 +63,8 @@ public class CLALibDecompress {
 		return ret;
 	}
 
-	public static void decompressTo(CompressedMatrixBlock cmb, MatrixBlock ret, int rowOffset, int colOffset, int k, boolean countNNz) {
+	public static void decompressTo(CompressedMatrixBlock cmb, MatrixBlock ret, int rowOffset, int colOffset, int k,
+		boolean countNNz) {
 		Timing time = new Timing(true);
 		if(cmb.getNumColumns() + colOffset > ret.getNumColumns() || cmb.getNumRows() + rowOffset > ret.getNumRows()) {
 			LOG.warn(
@@ -67,13 +72,8 @@ public class CLALibDecompress {
 			MatrixBlock mbSliced = cmb.slice( //
 				Math.min(Math.abs(rowOffset), 0), Math.min(cmb.getNumRows(), ret.getNumRows() - rowOffset) - 1, // Rows
 				Math.min(Math.abs(colOffset), 0), Math.min(cmb.getNumColumns(), ret.getNumColumns() - colOffset) - 1); // Cols
-			if(mbSliced instanceof MatrixBlock) {
-				mbSliced.putInto(ret, rowOffset, colOffset, false);
-				return;
-			}
-
-			cmb = (CompressedMatrixBlock) mbSliced;
-			decompress(cmb, 1);
+			mbSliced.putInto(ret, rowOffset, colOffset, false);
+			return;
 		}
 
 		final boolean outSparse = ret.isInSparseFormat();
@@ -152,7 +152,7 @@ public class CLALibDecompress {
 			return ret; // if uncompressedColGroup is only colGroup.
 		}
 
-		final boolean shouldFilter = CLALibUtils.shouldPreFilter(groups);
+		final boolean shouldFilter = CLALibUtils.shouldPreFilterMorphOrRef(groups);
 		double[] constV = shouldFilter ? new double[nCols] : null;
 		final List<AColGroup> filteredGroups = shouldFilter ? CLALibUtils.filterGroups(groups, constV) : groups;
 
@@ -164,6 +164,10 @@ public class CLALibDecompress {
 				ret.allocateSparseRowsBlock();
 			else
 				ret.allocateDenseBlock();
+
+			if(MatrixBlock.evalSparseFormatInMemory(nRows, nCols, nonZeros) && !sparse)
+				LOG.warn("Decompressing into dense but reallocating after to sparse: overlapping - " + overlapping
+					+ ", filter - " + shouldFilter);
 		}
 
 		final int blklen = Math.max(nRows / k, 512);
@@ -177,22 +181,21 @@ public class CLALibDecompress {
 		if(k == 1) {
 			if(ret.isInSparseFormat()) {
 				decompressSparseSingleThread(ret, filteredGroups, nRows, blklen);
-				ret.setNonZeros(nonZeros);
 			}
 			else {
 				decompressDenseSingleThread(ret, filteredGroups, nRows, blklen, constV, eps, nonZeros, overlapping);
-				ret.recomputeNonZeros();
-				// ret.setNonZeros(nonZeros == -1 || overlapping ? ret.recomputeNonZeros() : nonZeros);
 			}
 		}
 		else if(ret.isInSparseFormat()) {
 			decompressSparseMultiThread(ret, filteredGroups, nRows, blklen, k);
-			ret.setNonZeros(nonZeros);
 		}
-		else
+		else {
 			decompressDenseMultiThread(ret, filteredGroups, nRows, blklen, constV, eps, k, overlapping);
+		}
 
+		ret.recomputeNonZeros();
 		ret.examSparsity();
+
 		return ret;
 	}
 
@@ -251,7 +254,8 @@ public class CLALibDecompress {
 		}
 	}
 
-	protected static void decompressDenseMultiThread(MatrixBlock ret, List<AColGroup> groups, double[] constV, int k, boolean overlapping) {
+	protected static void decompressDenseMultiThread(MatrixBlock ret, List<AColGroup> groups, double[] constV, int k,
+		boolean overlapping) {
 		final int nRows = ret.getNumRows();
 		final double eps = getEps(constV);
 		final int blklen = Math.max(nRows / k, 512);
@@ -270,11 +274,11 @@ public class CLALibDecompress {
 		final ExecutorService pool = CommonThreadPool.get(k);
 		try {
 			final ArrayList<Callable<Long>> tasks = new ArrayList<>();
-			if(overlapping || constV != null){
+			if(overlapping || constV != null) {
 				for(int i = 0; i < rlen; i += blklen)
 					tasks.add(new DecompressDenseTask(filteredGroups, ret, eps, i, Math.min(i + blklen, rlen), constV));
 			}
-			else{
+			else {
 				for(int i = 0; i < rlen; i += blklen)
 					for(AColGroup g : filteredGroups)
 						tasks.add(new DecompressDenseSingleColTask(g, ret, eps, i, Math.min(i + blklen, rlen), null));
@@ -404,7 +408,7 @@ public class CLALibDecompress {
 				for(int b = _rl; b < _ru; b += _blklen) {
 					final int e = Math.min(b + _blklen, _ru);
 					// for(AColGroup grp : _colGroups)
-						_grp.decompressToDenseBlock(_ret.getDenseBlock(), b, e);
+					_grp.decompressToDenseBlock(_ret.getDenseBlock(), b, e);
 
 					if(_constV != null)
 						addVector(_ret, _constV, _eps, b, e);

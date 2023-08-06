@@ -130,16 +130,16 @@ public class Recompiler {
 	/** Local reused rewriter for dynamic rewrites during recompile */
 
 	/** Local DML configuration for thread-local config updates */
-	private static ThreadLocal<ProgramRewriter> _rewriter = new ThreadLocal<ProgramRewriter>() {
+	private static ThreadLocal<ProgramRewriter> _rewriter = new ThreadLocal<>() {
 		@Override protected ProgramRewriter initialValue() { return new ProgramRewriter(false, true); }
 	};
 
-	private static ThreadLocal<LopRewriter> _lopRewriter = new ThreadLocal<LopRewriter>() {
+	private static ThreadLocal<LopRewriter> _lopRewriter = new ThreadLocal<>() {
 		@Override protected LopRewriter initialValue() {return new LopRewriter();}
 	};
 	
 	// additional reused objects to avoid repeated, incremental reallocation on deepCopyDags
-	private static ThreadLocal<HashMap<Long,Hop>> _memoHop = new ThreadLocal<HashMap<Long,Hop>>() {
+	private static ThreadLocal<HashMap<Long,Hop>> _memoHop = new ThreadLocal<>() {
 		@Override protected HashMap<Long,Hop> initialValue() { return new HashMap<>(); }
 		@Override public HashMap<Long,Hop> get() { var tmp = super.get(); tmp.clear(); return tmp; }
 	};
@@ -404,8 +404,8 @@ public class Recompiler {
 		}
 
 		// dynamic lop rewrites for the updated hop DAGs
-		if (rewrittenHops)
-			_lopRewriter.get().rewriteLopDAG(lops);
+		if (rewrittenHops && sb != null)
+			_lopRewriter.get().rewriteLopDAG(sb, lops);
 
 		Dag<Lop> dag = new Dag<>();
 		for (Lop l : lops)

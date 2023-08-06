@@ -28,6 +28,7 @@ public abstract class LineageObject
 {
 	//basic lineage information
 	protected int _numRef = -1;
+	protected int _maxNumRef = -1;
 	protected boolean _lineageCached = false;
 	protected final List<LineageObject> _childs;
 	
@@ -62,10 +63,18 @@ public abstract class LineageObject
 	
 	public void incrementNumReferences() {
 		_numRef++;
+
+		// Maintain the maximum reference count. Higher reference
+		// count indicates higher importance to persist (in lineage cache)
+		_maxNumRef = Math.max(_numRef, _maxNumRef);
 	}
 	
 	public void decrementNumReferences() {
 		_numRef--;
+	}
+
+	public int getMaxReferenceCount() {
+		return _maxNumRef;
 	}
 	
 	public List<LineageObject> getLineageChilds() {
@@ -75,5 +84,9 @@ public abstract class LineageObject
 	public void addLineageChild(LineageObject lob) {
 		lob.incrementNumReferences();
 		_childs.add( lob );
+	}
+
+	public void removeAllChild() {
+		_childs.clear();
 	}
 }

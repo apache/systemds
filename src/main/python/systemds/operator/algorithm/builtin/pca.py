@@ -32,18 +32,45 @@ from systemds.utils.consts import VALID_INPUT_TYPES
 def pca(X: Matrix,
         **kwargs: Dict[str, VALID_INPUT_TYPES]):
     """
-     The function Principal Component Analysis (PCA) is used for dimensionality reduction
+     This builtin defines PCA that is a technique typically used to
+     reduce the number of dimensions of a matrix.
+     This implementation is based on calculating eigenvectors on
+     the covariance matrix of the input.
+    
+     An example of calling in DML:
+    
+     .. code-block::
+    
+       data = read($1)
+       [data_reduced, Components] = pca(data=data, K=4, onlyComponents=TRUE)
+       print(Components)
+    
+    
+     An example in a ML pipeline containing PCA:
+    
+     .. code-block::
+    
+       X = read($1)
+       [X_reduced, Components] = pca(data=X, K=4)
+       Y = read($2)
+       bias = l2svm(X=X, Y=Y)
+       X_test = read($3)
+       [y_predict_normal, Y_predict_rounded] = l2svmPredict(X=X_test, W=bias)
+       write($5, Y_predict_rounded)
+    
     
     
     
     :param X: Input feature matrix
-    :param K: Number of reduced dimensions (i.e., columns)
-    :param Center: Indicates whether or not to center the feature matrix
-    :param Scale: Indicates whether or not to scale the feature matrix
+    :param K: Number of components returned
+    :param center: Indicates whether or not to center the feature matrix
+    :param scale: Indicates whether or not to scale the feature matrix
+    :param onlyComponents: Indicate if only the components should be calculated and returned
+        not the application of the components on X
     :return: Output feature matrix with K columns
-    :return: Output dominant eigen vectors (can be used for projections)
+    :return: Output dominant eigen vectors sorted by influence
     :return: The column means of the input, subtracted to construct the PCA
-    :return: The Scaling of the values, to make each dimension same size.
+    :return: The scaling of the values, to make each dimension same size.
     """
 
     params_dict = {'X': X}

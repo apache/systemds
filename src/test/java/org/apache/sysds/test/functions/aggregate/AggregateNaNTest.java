@@ -116,10 +116,10 @@ public class AggregateNaNTest extends AutomatedTestBase
 		
 		double ret = -1;
 		switch(type) {
-			case 0: ret = mb.sum();
-			case 1: ret = mb.sumSq();
-			case 2: ret = mb.min();
-			case 3: ret = mb.max();
+			case 0: ret = mb.sum(); break;
+			case 1: ret = mb.sumSq(); break;
+			case 2: ret = mb.min(); break;
+			case 3: ret = mb.max(); break;
 		}
 		
 		Assert.assertTrue(Double.isNaN(ret));

@@ -23,7 +23,7 @@ import java.util.EnumMap;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.commons.lang.NotImplementedException;
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.CompressionSettings;
@@ -79,7 +79,17 @@ public class CompressedSizeInfoColGroup {
 		_sizes.put(bestCompressionType, _minSize);
 	}
 
-	protected CompressedSizeInfoColGroup(IColIndex columns, EstimationFactors facts,
+	public CompressedSizeInfoColGroup(IColIndex columns, EstimationFactors facts, long minSize, CompressionType bestCompression, IEncode map){
+		_cols = columns;
+		_facts = facts;
+		_minSize = minSize;
+		_bestCompressionType = bestCompression;
+		_sizes = new EnumMap<>(CompressionType.class);
+		_sizes.put(bestCompression, _minSize);
+		_map = map;
+	}
+
+	public CompressedSizeInfoColGroup(IColIndex columns, EstimationFactors facts,
 		Set<CompressionType> validCompressionTypes, IEncode map) {
 		_cols = columns;
 		_facts = facts;
@@ -193,7 +203,7 @@ public class CompressedSizeInfoColGroup {
 
 	private static EnumMap<CompressionType, Double> calculateCompressionSizes(IColIndex cols, EstimationFactors fact,
 		Set<CompressionType> validCompressionTypes) {
-		EnumMap<CompressionType, Double> res = new EnumMap<CompressionType, Double>(CompressionType.class);
+		EnumMap<CompressionType, Double> res = new EnumMap<>(CompressionType.class);
 		for(CompressionType ct : validCompressionTypes) {
 			double compSize = getCompressionSize(cols, ct, fact);
 			if(compSize > 0)
@@ -260,12 +270,11 @@ public class CompressedSizeInfoColGroup {
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		sb.append(this.getClass().getSimpleName());
-		sb.append("cols: " + _cols);
+		sb.append(" cols: " + _cols);
 		sb.append(String.format(" common: %4.3f", getMostCommonFraction()));
-		sb.append(" Sizes: ");
-		sb.append(_sizes);
+		sb.append(" Sizes: " + _sizes);
 		sb.append(" facts: " + _facts);
-		// sb.append("\n" + _map);
+		sb.append(" mapIsNull: " + (_map == null));
 		return sb.toString();
 	}
 

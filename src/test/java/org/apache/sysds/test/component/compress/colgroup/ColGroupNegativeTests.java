@@ -218,7 +218,7 @@ public class ColGroupNegativeTests {
 		}
 
 		@Override
-		protected boolean sameIndexStructure(AColGroupCompressed that) {
+		public boolean sameIndexStructure(AColGroupCompressed that) {
 			return false;
 		}
 
@@ -374,6 +374,24 @@ public class ColGroupNegativeTests {
 		protected AColGroup copyAndSet(IColIndex colIndexes, ADictionary newDictionary) {
 			// TODO Auto-generated method stub
 			return null;
+		}
+
+		@Override
+		public AColGroup recompress() {
+			// TODO Auto-generated method stub
+			throw new UnsupportedOperationException("Unimplemented method 'recompress'");
+		}
+
+		@Override
+		public CompressedSizeInfoColGroup getCompressionInfo(int nRow) {
+			// TODO Auto-generated method stub
+			throw new UnsupportedOperationException("Unimplemented method 'getCompressionInfo'");
+		}
+
+		@Override
+		protected AColGroup fixColIndexes(IColIndex newColIndex, int[] reordering) {
+			// TODO Auto-generated method stub
+			throw new UnsupportedOperationException("Unimplemented method 'fixColIndexes'");
 		}
 	}
 
@@ -600,6 +618,30 @@ public class ColGroupNegativeTests {
 		protected AColGroup sliceMultiColumns(int idStart, int idEnd, IColIndex outputCols) {
 			// TODO Auto-generated method stub
 			return null;
+		}
+
+		@Override
+		public AColGroup recompress() {
+			// TODO Auto-generated method stub
+			throw new UnsupportedOperationException("Unimplemented method 'recompress'");
+		}
+
+		@Override
+		public CompressedSizeInfoColGroup getCompressionInfo(int nRow) {
+			// TODO Auto-generated method stub
+			throw new UnsupportedOperationException("Unimplemented method 'getCompressionInfo'");
+		}
+
+		@Override
+		public boolean sameIndexStructure(AColGroupCompressed that) {
+			// TODO Auto-generated method stub
+			throw new UnsupportedOperationException("Unimplemented method 'sameIndexStructure'");
+		}
+
+		@Override
+		protected AColGroup fixColIndexes(IColIndex newColIndex, int[] reordering) {
+			// TODO Auto-generated method stub
+			throw new UnsupportedOperationException("Unimplemented method 'fixColIndexes'");
 		}
 	}
 }

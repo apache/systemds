@@ -332,7 +332,7 @@ public class AggUnaryOp extends MultiThreadedHop
 		if( _direction == Direction.Col && dc.colsKnown() )
 			ret = new MatrixCharacteristics(1, dc.getCols(), -1, -1);
 		else if( _direction == Direction.Row && dc.rowsKnown() )
-			ret = new MatrixCharacteristics(dc.getRows(), 1, -1 -1);
+			ret = new MatrixCharacteristics(dc.getRows(), 1, -1, -1);
 		return ret;
 	}
 	
@@ -423,16 +423,13 @@ public class AggUnaryOp extends MultiThreadedHop
 		return !noAggRequired;
 	}
 
-	private SparkAggType getSparkUnaryAggregationType( boolean agg )
-	{
+	private SparkAggType getSparkUnaryAggregationType( boolean agg ) {
 		if( !agg )
 			return SparkAggType.NONE;
-		
 		if(   getDataType()==DataType.SCALAR //in case of scalars the block dims are not set
 		   || dimsKnown() && getDim1()<=getBlocksize() && getDim2()<=getBlocksize() )
 			return SparkAggType.SINGLE_BLOCK;
-		else
-			return SparkAggType.MULTI_BLOCK;
+		return SparkAggType.MULTI_BLOCK;
 	}
 
 	private boolean isTernaryAggregateRewriteApplicable() 

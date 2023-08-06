@@ -117,6 +117,8 @@ public class FederatedMultiAggTmplTest extends AutomatedTestBase
 	
 	private void testFederatedCodegenMultiAgg(ExecMode exec_mode) {
 		// store the previous platform config to restore it after the test
+		
+		setOutputBuffering(true);
 		ExecMode platform_old = setExecMode(exec_mode);
 
 		getAndLoadTestConfiguration(TEST_NAME);
@@ -153,7 +155,7 @@ public class FederatedMultiAggTmplTest extends AutomatedTestBase
 			"in_rp=" + Boolean.toString(row_partitioned).toUpperCase(),
 			"in_test_num=" + Integer.toString(test_num),
 			"out_Z=" + expected(OUTPUT_NAME)};
-		runTest(true, false, null, -1);
+		runTest(null);
 
 		// Run actual dml script with federated matrix
 		fullDMLScriptName = HOME + TEST_NAME + ".dml";
@@ -164,7 +166,7 @@ public class FederatedMultiAggTmplTest extends AutomatedTestBase
 			"in_test_num=" + Integer.toString(test_num),
 			"rows=" + rows, "cols=" + cols,
 			"out_Z=" + output(OUTPUT_NAME)};
-		runTest(true, false, null, -1);
+		runTest(null);
 
 		// compare the results via files
 		HashMap<CellIndex, Double> refResults  = readDMLMatrixFromExpectedDir(OUTPUT_NAME);

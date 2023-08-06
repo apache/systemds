@@ -24,7 +24,7 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.util.Arrays;
 
-import org.apache.commons.lang.NotImplementedException;
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.DictionaryFactory;
@@ -35,6 +35,10 @@ import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
 import org.apache.sysds.runtime.compress.colgroup.scheme.ICLAScheme;
 import org.apache.sysds.runtime.compress.cost.ComputationCostEstimator;
+import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
+import org.apache.sysds.runtime.compress.estim.EstimationFactors;
+import org.apache.sysds.runtime.compress.estim.encoding.EncodingFactory;
+import org.apache.sysds.runtime.compress.estim.encoding.IEncode;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.functionobjects.Divide;
 import org.apache.sysds.runtime.functionobjects.Minus;
@@ -50,7 +54,7 @@ import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
 /**
  * Class to encapsulate information about a column group that is encoded with dense dictionary encoding (DDC).
  */
-public class ColGroupDDCFOR extends AMorphingMMColGroup {
+public class ColGroupDDCFOR extends AMorphingMMColGroup implements IFrameOfReferenceGroup {
 	private static final long serialVersionUID = -5769772089913918987L;
 
 	/** Pointers to row indexes in the dictionary */
@@ -59,7 +63,8 @@ public class ColGroupDDCFOR extends AMorphingMMColGroup {
 	/** Reference values in this column group */
 	protected final double[] _reference;
 
-	private ColGroupDDCFOR(IColIndex colIndexes, ADictionary dict, double[] reference, AMapToData data, int[] cachedCounts) {
+	private ColGroupDDCFOR(IColIndex colIndexes, ADictionary dict, double[] reference, AMapToData data,
+		int[] cachedCounts) {
 		super(colIndexes, dict, cachedCounts);
 		_data = data;
 		_reference = reference;
@@ -384,7 +389,7 @@ public class ColGroupDDCFOR extends AMorphingMMColGroup {
 				return ColGroupEmpty.create(max);
 			else {
 				double[] retDef = new double[max];
-				retDef[((int) def) - 1] = 1;
+				retDef[def - 1] = 1;
 				return ColGroupConst.create(retDef);
 			}
 		}
@@ -400,7 +405,7 @@ public class ColGroupDDCFOR extends AMorphingMMColGroup {
 				return ColGroupDDC.create(outCols, d, _data, getCachedCounts());
 			else {
 				double[] retDef = new double[max];
-				retDef[((int) def) - 1] = 1;
+				retDef[def - 1] = 1;
 				return ColGroupDDCFOR.create(outCols, d, _data, getCachedCounts(), retDef);
 			}
 		}
@@ -439,7 +444,7 @@ public class ColGroupDDCFOR extends AMorphingMMColGroup {
 	public AColGroup append(AColGroup g) {
 		if(g instanceof ColGroupDDCFOR && g.getColIndices().equals(_colIndexes)) {
 			ColGroupDDCFOR gDDC = (ColGroupDDCFOR) g;
-			if(Arrays.equals(_reference , gDDC._reference) && gDDC._dict.equals(_dict)){
+			if(Arrays.equals(_reference, gDDC._reference) && gDDC._dict.equals(_dict)) {
 				AMapToData nd = _data.append(gDDC._data);
 				return create(_colIndexes, _dict, nd, null, _reference);
 			}
@@ -455,6 +460,33 @@ public class ColGroupDDCFOR extends AMorphingMMColGroup {
 	@Override
 	public ICLAScheme getCompressionScheme() {
 		return null;
+	}
+
+	@Override
+	public AColGroup recompress() {
+		return this;
+	}
+
+	@Override
+	public CompressedSizeInfoColGroup getCompressionInfo(int nRow) {
+		IEncode enc = getEncoding();
+		EstimationFactors ef = new EstimationFactors(getNumValues(), _data.size(), _data.size(), _dict.getSparsity());
+		return new CompressedSizeInfoColGroup(_colIndexes, ef, estimateInMemorySize(), getCompType(), enc);
+	}
+
+	@Override
+	public IEncode getEncoding() {
+		return EncodingFactory.create(_data);
+	}
+
+	@Override
+	public boolean sameIndexStructure(AColGroupCompressed that) {
+		return that instanceof ColGroupDDCFOR && ((ColGroupDDCFOR) that)._data == _data;
+	}
+
+	@Override
+	protected AColGroup fixColIndexes(IColIndex newColIndex, int[] reordering) {
+		throw new NotImplementedException();
 	}
 
 	@Override

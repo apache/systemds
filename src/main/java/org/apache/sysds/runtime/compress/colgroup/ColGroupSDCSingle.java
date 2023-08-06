@@ -24,13 +24,13 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.util.Arrays;
 
-import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.DictionaryFactory;
 import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
+import org.apache.sysds.runtime.compress.colgroup.mapping.MapToZero;
 import org.apache.sysds.runtime.compress.colgroup.offset.AIterator;
 import org.apache.sysds.runtime.compress.colgroup.offset.AOffset;
 import org.apache.sysds.runtime.compress.colgroup.offset.AOffset.OffsetSliceInfo;
@@ -38,6 +38,8 @@ import org.apache.sysds.runtime.compress.colgroup.offset.AOffsetIterator;
 import org.apache.sysds.runtime.compress.colgroup.offset.OffsetFactory;
 import org.apache.sysds.runtime.compress.colgroup.scheme.ICLAScheme;
 import org.apache.sysds.runtime.compress.cost.ComputationCostEstimator;
+import org.apache.sysds.runtime.compress.estim.encoding.EncodingFactory;
+import org.apache.sysds.runtime.compress.estim.encoding.IEncode;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.instructions.cp.CM_COV_Object;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
@@ -59,8 +61,8 @@ public class ColGroupSDCSingle extends ASDC {
 	/** The default value stored in this column group */
 	protected final double[] _defaultTuple;
 
-	private ColGroupSDCSingle(IColIndex colIndices, int numRows, ADictionary dict, double[] defaultTuple, AOffset offsets,
-		int[] cachedCounts) {
+	private ColGroupSDCSingle(IColIndex colIndices, int numRows, ADictionary dict, double[] defaultTuple,
+		AOffset offsets, int[] cachedCounts) {
 		super(colIndices, numRows, dict == null ? Dictionary.createNoCheck(new double[colIndices.size()]) : dict, offsets,
 			cachedCounts);
 		_defaultTuple = defaultTuple;
@@ -111,12 +113,6 @@ public class ColGroupSDCSingle extends ASDC {
 			return _defaultTuple[colIdx];
 		else
 			return _dict.getValue(colIdx);
-	}
-
-	@Override
-	public ADictionary getDictionary() {
-		throw new NotImplementedException(
-			"Not implemented getting the dictionary out, and i think we should consider removing the option");
 	}
 
 	@Override
@@ -587,6 +583,41 @@ public class ColGroupSDCSingle extends ASDC {
 	@Override
 	public ICLAScheme getCompressionScheme() {
 		return null;
+	}
+
+	@Override
+	public AColGroup recompress() {
+		return this;
+	}
+
+	@Override
+	public IEncode getEncoding() {
+		return EncodingFactory.create(new MapToZero(getCounts()[0]), _indexes, _numRows);
+	}
+
+	@Override
+	public int getNumberOffsets() {
+		return getCounts()[0];
+	}
+
+	@Override
+	public boolean sameIndexStructure(AColGroupCompressed that) {
+		if(that instanceof ColGroupSDCSingleZeros) {
+			ColGroupSDCSingleZeros th = (ColGroupSDCSingleZeros) that;
+			return th._indexes == _indexes;
+		}
+		else if(that instanceof ColGroupSDCSingle) {
+			ColGroupSDCSingle th = (ColGroupSDCSingle) that;
+			return th._indexes == _indexes;
+		}
+		else
+			return false;
+	}
+
+	@Override
+	protected AColGroup fixColIndexes(IColIndex newColIndex, int[] reordering) {
+		return ColGroupSDCSingle.create(newColIndex, getNumRows(), _dict.reorder(reordering),
+			ColGroupUtils.reorderDefault(_defaultTuple, reordering), _indexes, getCachedCounts());
 	}
 
 	@Override

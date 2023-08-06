@@ -27,7 +27,7 @@
     catch(err) {
     }
 //-->
-var data = {"i0":9,"i1":9,"i2":9,"i3":9,"i4":9};
+var data = {"i0":9,"i1":9,"i2":9,"i3":9,"i4":9,"i5":9};
 var tabs = {65535:["t0","All Methods"],1:["t1","Static Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -177,9 +177,9 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 </tr>
 <tr id="i0" class="altColor">
 <td class="colFirst"><code>static int</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#collectSparkRoots(org.apache.sysds.lops.Lop,java.util.Map,java.util.List)">collectSparkRoots</a></span>&#8203;(<a href="Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;root,
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#collectSparkRoots(org.apache.sysds.lops.Lop,java.util.Map,java.util.HashSet)">collectSparkRoots</a></span>&#8203;(<a href="Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;root,
                  <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/Map.html?is-external=true" title="class or interface in java.util" class="externalLink">Map</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Long.html?is-external=true" title="class or interface in java.lang" class="externalLink">Long</a>,&#8203;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Integer.html?is-external=true" title="class or interface in java.lang" class="externalLink">Integer</a>&gt;&nbsp;sparkOpCount,
-                 <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="Lop.html" title="class in org.apache.sysds.lops">Lop</a>&gt;&nbsp;sparkRoots)</code></th>
+                 <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/HashSet.html?is-external=true" title="class or interface in java.util" class="externalLink">HashSet</a>&lt;<a href="Lop.html" title="class in org.apache.sysds.lops">Lop</a>&gt;&nbsp;sparkRoots)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i1" class="rowColor">
@@ -200,6 +200,12 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <tr id="i4" class="altColor">
 <td class="colFirst"><code>static boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#isPersistableSparkOp(org.apache.sysds.lops.Lop)">isPersistableSparkOp</a></span>&#8203;(<a href="Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;lop)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i5" class="rowColor">
+<td class="colFirst"><code>static void</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#markSharedSparkOps(java.util.HashSet,java.util.Map)">markSharedSparkOps</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/HashSet.html?is-external=true" title="class or interface in java.util" class="externalLink">HashSet</a>&lt;<a href="Lop.html" title="class in org.apache.sysds.lops">Lop</a>&gt;&nbsp;sparkRoots,
+                  <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/Map.html?is-external=true" title="class or interface in java.util" class="externalLink">Map</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Long.html?is-external=true" title="class or interface in java.lang" class="externalLink">Long</a>,&#8203;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Integer.html?is-external=true" title="class or interface in java.lang" class="externalLink">Integer</a>&gt;&nbsp;operatorJobCount)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 </table>
@@ -263,7 +269,7 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <pre class="methodSignature">public static&nbsp;boolean&nbsp;isLopRoot&#8203;(<a href="Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;lop)</pre>
 </li>
 </ul>
-<a id="collectSparkRoots(org.apache.sysds.lops.Lop,java.util.Map,java.util.List)">
+<a id="collectSparkRoots(org.apache.sysds.lops.Lop,java.util.Map,java.util.HashSet)">
 <!--   -->
 </a>
 <ul class="blockList">
@@ -271,7 +277,7 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <h4>collectSparkRoots</h4>
 <pre class="methodSignature">public static&nbsp;int&nbsp;collectSparkRoots&#8203;(<a href="Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;root,
                                     <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/Map.html?is-external=true" title="class or interface in java.util" class="externalLink">Map</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Long.html?is-external=true" title="class or interface in java.lang" class="externalLink">Long</a>,&#8203;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Integer.html?is-external=true" title="class or interface in java.lang" class="externalLink">Integer</a>&gt;&nbsp;sparkOpCount,
-                                    <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="Lop.html" title="class in org.apache.sysds.lops">Lop</a>&gt;&nbsp;sparkRoots)</pre>
+                                    <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/HashSet.html?is-external=true" title="class or interface in java.util" class="externalLink">HashSet</a>&lt;<a href="Lop.html" title="class in org.apache.sysds.lops">Lop</a>&gt;&nbsp;sparkRoots)</pre>
 </li>
 </ul>
 <a id="isPersistableSparkOp(org.apache.sysds.lops.Lop)">
@@ -286,10 +292,20 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <a id="isCollectForBroadcast(org.apache.sysds.lops.Lop)">
 <!--   -->
 </a>
-<ul class="blockListLast">
+<ul class="blockList">
 <li class="blockList">
 <h4>isCollectForBroadcast</h4>
 <pre class="methodSignature">public static&nbsp;boolean&nbsp;isCollectForBroadcast&#8203;(<a href="Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;lop)</pre>
+</li>
+</ul>
+<a id="markSharedSparkOps(java.util.HashSet,java.util.Map)">
+<!--   -->
+</a>
+<ul class="blockListLast">
+<li class="blockList">
+<h4>markSharedSparkOps</h4>
+<pre class="methodSignature">public static&nbsp;void&nbsp;markSharedSparkOps&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/HashSet.html?is-external=true" title="class or interface in java.util" class="externalLink">HashSet</a>&lt;<a href="Lop.html" title="class in org.apache.sysds.lops">Lop</a>&gt;&nbsp;sparkRoots,
+                                      <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/Map.html?is-external=true" title="class or interface in java.util" class="externalLink">Map</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Long.html?is-external=true" title="class or interface in java.lang" class="externalLink">Long</a>,&#8203;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Integer.html?is-external=true" title="class or interface in java.lang" class="externalLink">Integer</a>&gt;&nbsp;operatorJobCount)</pre>
 </li>
 </ul>
 </li>

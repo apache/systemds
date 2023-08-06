@@ -84,4 +84,37 @@ public abstract class SparseBlockFactory
 				throw new RuntimeException("Unexpected sparse block type: "+type.toString());
 		}
 	}
+
+	public static SparseBlock createIdentityMatrix(int nRowCol){
+		final int[] rowPtr = new int[nRowCol+1];
+		final int[] colIdx = new int[nRowCol];
+		final double[] vals = new double[nRowCol];
+		int nnz = nRowCol;
+		
+		for(int i = 0; i < nRowCol; i++){
+			rowPtr[i] = i;
+			colIdx[i] = i;
+			vals[i] = 1;
+		}
+		rowPtr[nRowCol] = nRowCol; // add last index for row pointers.
+		
+		return new SparseBlockCSR(rowPtr, colIdx, vals, nnz);
+	}
+
+	public static SparseBlock createIdentityMatrixWithEmptyRow(int nRowCol){
+		final int[] rowPtr = new int[nRowCol+2];
+		final int[] colIdx = new int[nRowCol];
+		final double[] vals = new double[nRowCol];
+		int nnz = nRowCol;
+		
+		for(int i = 0; i < nRowCol; i++){
+			rowPtr[i] = i;
+			colIdx[i] = i;
+			vals[i] = 1;
+		}
+		// add last index for row pointers.
+		rowPtr[nRowCol] = nRowCol; 
+		rowPtr[nRowCol+1] = nRowCol;
+		return new SparseBlockCSR(rowPtr, colIdx, vals, nnz);
+	}
 }

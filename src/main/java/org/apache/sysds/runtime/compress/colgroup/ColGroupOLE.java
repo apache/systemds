@@ -23,7 +23,7 @@ import java.io.DataInput;
 import java.io.IOException;
 import java.util.Arrays;
 
-import org.apache.commons.lang.NotImplementedException;
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.compress.bitmap.ABitmap;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
@@ -33,6 +33,7 @@ import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.compress.colgroup.scheme.ICLAScheme;
 import org.apache.sysds.runtime.compress.cost.ComputationCostEstimator;
+import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.functionobjects.Builtin;
@@ -48,8 +49,8 @@ import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
 public class ColGroupOLE extends AColGroupOffset {
 	private static final long serialVersionUID = 5723227906925121066L;
 
-	private ColGroupOLE(IColIndex colIndices, int numRows, boolean zero, ADictionary dict, char[] bitmaps, int[] bitmapOffs,
-		int[] counts) {
+	private ColGroupOLE(IColIndex colIndices, int numRows, boolean zero, ADictionary dict, char[] bitmaps,
+		int[] bitmapOffs, int[] counts) {
 		super(colIndices, numRows, zero, dict, bitmapOffs, bitmaps, counts);
 	}
 
@@ -620,7 +621,7 @@ public class ColGroupOLE extends AColGroupOffset {
 	}
 
 	@Override
-	protected boolean sameIndexStructure(AColGroupCompressed that) {
+	public boolean sameIndexStructure(AColGroupCompressed that) {
 		throw new NotImplementedException();
 	}
 
@@ -671,6 +672,21 @@ public class ColGroupOLE extends AColGroupOffset {
 	@Override
 	public ICLAScheme getCompressionScheme() {
 		return null;
+	}
+
+	@Override
+	public AColGroup recompress() {
+		return this;
+	}
+
+	@Override
+	public CompressedSizeInfoColGroup getCompressionInfo(int nRow) {
+		throw new NotImplementedException();
+	}
+
+	@Override
+	protected AColGroup fixColIndexes(IColIndex newColIndex, int[] reordering) {
+		throw new NotImplementedException();
 	}
 
 }

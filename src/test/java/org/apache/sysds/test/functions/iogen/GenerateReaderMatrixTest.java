@@ -25,15 +25,9 @@ import org.apache.sysds.conf.CompilerConfig;
 import org.apache.sysds.runtime.io.MatrixReader;
 import org.apache.sysds.runtime.iogen.GenerateReader;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
-
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
 
 public abstract class GenerateReaderMatrixTest extends AutomatedTestBase {
 
@@ -65,7 +59,7 @@ public abstract class GenerateReaderMatrixTest extends AutomatedTestBase {
 	}
 
 	@SuppressWarnings("unused")
-	protected void runGenerateReaderTest() {
+	protected void runGenerateReaderTest(String sampleRawFileName, String sampleMatrixFileName,	boolean parallel) {
 
 		Types.ExecMode oldPlatform = rtplatform;
 		rtplatform = Types.ExecMode.SINGLE_NODE;
@@ -75,24 +69,25 @@ public abstract class GenerateReaderMatrixTest extends AutomatedTestBase {
 
 		try {
 			CompilerConfig.FLAG_PARREADWRITE_TEXT = false;
+			setOutputBuffering(true);
+			setOutAndExpectedDeletionDisabled(true);
 
 			TestConfiguration config = getTestConfiguration(getTestName());
 			loadTestConfiguration(config);
 
-			MatrixBlock sampleMB = DataConverter.convertToMatrixBlock(sampleMatrix);
+			String sampleRawDelimiter = "\t";
+			String dataFileName = sampleRawFileName;
 
-			String HOME = SCRIPT_DIR + TEST_DIR;
-			File directory = new File(HOME);
-			if (! directory.exists()){
-				directory.mkdir();
-			}
-			String dataPath = HOME + "matrix_data.raw";
-			int clen = sampleMatrix[0].length;
-			writeRawString(sampleRaw, dataPath);
-			GenerateReader.GenerateReaderMatrix gr = new GenerateReader.GenerateReaderMatrix(sampleRaw, sampleMB);
+			long rows = 200;
+			Util util = new Util();
 
-			MatrixReader mr= gr.getReader();
-			MatrixBlock matrixBlock = mr.readMatrixFromHDFS(dataPath, -1, clen, -1, -1);
+			MatrixBlock sampleMB = util.loadMatrixData(sampleMatrixFileName, sampleRawDelimiter);
+			String sampleRaw = util.readEntireTextFile(sampleRawFileName);
+
+			GenerateReader.GenerateReaderMatrix gr = new GenerateReader.GenerateReaderMatrix(sampleRaw, sampleMB, parallel);
+			MatrixReader matrixReader = gr.getReader();
+			MatrixBlock matrixBlock = matrixReader.readMatrixFromHDFS(dataFileName, rows, sampleMB.getNumColumns(), -1, -1);
+
 		}
 		catch(Exception exception) {
 			exception.printStackTrace();
@@ -102,11 +97,5 @@ public abstract class GenerateReaderMatrixTest extends AutomatedTestBase {
 			CompilerConfig.FLAG_PARREADWRITE_TEXT = oldpar;
 			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
 		}
-	}
-
-	private static void writeRawString(String raw, String fileName) throws IOException {
-		BufferedWriter writer = new BufferedWriter(new FileWriter(fileName));
-		writer.write(raw);
-		writer.close();
 	}
 }

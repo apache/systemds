@@ -85,7 +85,7 @@ public class CentralMoment extends Lop
 			InstructionUtils.concatOperands(sb,
 				getExecType().toString(), "cm",
 				getInputs().get(0).prepInputOperand(input1),
-				getInputs().get((input3!=null)?2:1).prepScalarInputOperand(getExecType()),
+				getInputs().get(1).prepScalarInputOperand(getExecType()),
 				prepOutputOperand(output));
 		}
 		else {
@@ -93,7 +93,7 @@ public class CentralMoment extends Lop
 				getExecType().toString(), "cm",
 				getInputs().get(0).prepInputOperand(input1),
 				getInputs().get(1).prepInputOperand(input2),
-				getInputs().get((input3!=null)?2:1).prepScalarInputOperand(getExecType()),
+				getInputs().get(2).prepScalarInputOperand(getExecType()),
 				prepOutputOperand(output));
 		}
 		if( getExecType() == ExecType.CP || getExecType() == ExecType.FED ) {

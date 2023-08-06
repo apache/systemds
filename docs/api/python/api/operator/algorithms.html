@@ -67,6 +67,7 @@
 <li class="toctree-l2"><a class="reference internal" href="#systemds.operator.algorithm.alsTopkPredict"><code class="docutils literal notranslate"><span class="pre">alsTopkPredict()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#systemds.operator.algorithm.apply_pipeline"><code class="docutils literal notranslate"><span class="pre">apply_pipeline()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#systemds.operator.algorithm.arima"><code class="docutils literal notranslate"><span class="pre">arima()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#systemds.operator.algorithm.auc"><code class="docutils literal notranslate"><span class="pre">auc()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#systemds.operator.algorithm.autoencoder_2layer"><code class="docutils literal notranslate"><span class="pre">autoencoder_2layer()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#systemds.operator.algorithm.bandit"><code class="docutils literal notranslate"><span class="pre">bandit()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#systemds.operator.algorithm.bivar"><code class="docutils literal notranslate"><span class="pre">bivar()</span></code></a></li>
@@ -146,6 +147,7 @@
 <li class="toctree-l2"><a class="reference internal" href="#systemds.operator.algorithm.lmCG"><code class="docutils literal notranslate"><span class="pre">lmCG()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#systemds.operator.algorithm.lmDS"><code class="docutils literal notranslate"><span class="pre">lmDS()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#systemds.operator.algorithm.lmPredict"><code class="docutils literal notranslate"><span class="pre">lmPredict()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#systemds.operator.algorithm.lmPredictStats"><code class="docutils literal notranslate"><span class="pre">lmPredictStats()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#systemds.operator.algorithm.logSumExp"><code class="docutils literal notranslate"><span class="pre">logSumExp()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#systemds.operator.algorithm.matrixProfile"><code class="docutils literal notranslate"><span class="pre">matrixProfile()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#systemds.operator.algorithm.mcc"><code class="docutils literal notranslate"><span class="pre">mcc()</span></code></a></li>
@@ -173,6 +175,7 @@
 <li class="toctree-l2"><a class="reference internal" href="#systemds.operator.algorithm.pnmf"><code class="docutils literal notranslate"><span class="pre">pnmf()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#systemds.operator.algorithm.ppca"><code class="docutils literal notranslate"><span class="pre">ppca()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#systemds.operator.algorithm.randomForest"><code class="docutils literal notranslate"><span class="pre">randomForest()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#systemds.operator.algorithm.randomForestPredict"><code class="docutils literal notranslate"><span class="pre">randomForestPredict()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#systemds.operator.algorithm.scale"><code class="docutils literal notranslate"><span class="pre">scale()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#systemds.operator.algorithm.scaleApply"><code class="docutils literal notranslate"><span class="pre">scaleApply()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#systemds.operator.algorithm.scaleMinMax"><code class="docutils literal notranslate"><span class="pre">scaleMinMax()</span></code></a></li>
@@ -590,6 +593,27 @@ in terms of classification accuracy</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>The calculated coefficients</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="systemds.operator.algorithm.auc">
+<span class="sig-prename descclassname"><span class="pre">systemds.operator.algorithm.</span></span><span class="sig-name descname"><span class="pre">auc</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Y</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="node/matrix.html#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">Matrix</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">P</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="node/matrix.html#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">Matrix</span></a></span></em><span class="sig-paren">)</span><a class="headerlink" href="#systemds.operator.algorithm.auc" title="Permalink to this definition"></a></dt>
+<dd><blockquote>
+<div><p>This builting function computes the area under the ROC curve (AUC)
+for binary classifiers.</p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>Y</strong> – Binary response vector (shape: n x 1), in -1/+1 or 0/1 encoding</p></li>
+<li><p><strong>P</strong> – Prediction scores (predictor such as estimated probabilities)
+for true class (shape: n x 1), assumed in [0,1]</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Area under the ROC curve (AUC)</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1114,80 +1138,76 @@ highly dependant/sparse/numerous features</p></li>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="systemds.operator.algorithm.decisionTree">
-<span class="sig-prename descclassname"><span class="pre">systemds.operator.algorithm.</span></span><span class="sig-name descname"><span class="pre">decisionTree</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="node/matrix.html#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">Matrix</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">Y</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="node/matrix.html#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">Matrix</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">R</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="node/matrix.html#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">Matrix</span></a></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../script_building/dag.html#systemds.script_building.dag.DAGNode" title="systemds.script_building.dag.DAGNode"><span class="pre">DAGNode</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#systemds.operator.algorithm.decisionTree" title="Permalink to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">systemds.operator.algorithm.</span></span><span class="sig-name descname"><span class="pre">decisionTree</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="node/matrix.html#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">Matrix</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="node/matrix.html#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">Matrix</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">ctypes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="node/matrix.html#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">Matrix</span></a></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../script_building/dag.html#systemds.script_building.dag.DAGNode" title="systemds.script_building.dag.DAGNode"><span class="pre">DAGNode</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#systemds.operator.algorithm.decisionTree" title="Permalink to this definition"></a></dt>
 <dd><blockquote>
-<div><p>Builtin script implementing classification trees with scale and categorical features</p>
+<div><p>This script implements decision trees for recoded and binned categorical and
+numerical input features. We train a single CART (classification and
+regression tree) decision trees depending on the provided labels y, either
+classification (majority vote per leaf) or regression (average per leaf).</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">For</span> <span class="n">example</span><span class="p">,</span> <span class="n">give</span> <span class="n">a</span> <span class="n">feature</span> <span class="n">matrix</span> <span class="k">with</span> <span class="n">features</span> <span class="p">[</span><span class="n">a</span><span class="p">,</span><span class="n">b</span><span class="p">,</span><span class="n">c</span><span class="p">,</span><span class="n">d</span><span class="p">]</span>
+<span class="ow">and</span> <span class="n">the</span> <span class="n">following</span> <span class="n">trees</span><span class="p">,</span> <span class="n">M</span> <span class="n">would</span> <span class="n">look</span> <span class="k">as</span> <span class="n">follows</span><span class="p">:</span>
+
+<span class="p">(</span><span class="n">L1</span><span class="p">)</span>               <span class="o">|</span><span class="n">d</span><span class="o">&lt;</span><span class="mi">5</span><span class="o">|</span>
+                  <span class="o">/</span>            <span class="p">(</span><span class="n">L2</span><span class="p">)</span>           <span class="n">P1</span><span class="p">:</span><span class="mi">2</span>    <span class="o">|</span><span class="n">a</span><span class="o">&lt;</span><span class="mi">7</span><span class="o">|</span>
+                       <span class="o">/</span>          <span class="p">(</span><span class="n">L3</span><span class="p">)</span>                 <span class="n">P2</span><span class="p">:</span><span class="mi">2</span> <span class="n">P3</span><span class="p">:</span><span class="mi">1</span>
+
+<span class="o">--&gt;</span> <span class="n">M</span> <span class="o">:=</span>
+<span class="p">[[</span><span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]]</span>
+ <span class="o">|</span><span class="p">(</span><span class="n">L1</span><span class="p">)</span><span class="o">|</span> <span class="o">|</span>  <span class="p">(</span><span class="n">L2</span><span class="p">)</span>   <span class="o">|</span> <span class="o">|</span>        <span class="p">(</span><span class="n">L3</span><span class="p">)</span>         <span class="o">|</span>
+</pre></div>
+</div>
 </div></blockquote>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>X</strong> – Feature matrix X; note that X needs to be both recoded and dummy coded</p></li>
-<li><p><strong>Y</strong> – Label matrix Y; note that Y needs to be both recoded and dummy coded</p></li>
-<li><p><strong>R</strong> – Matrix R which for each feature in X contains the following information
-- R[1,]: Row Vector which indicates if feature vector is scalar or categorical. 1 indicates
-a scalar feature vector, other positive Integers indicate the number of categories
-If R is not provided by default all variables are assumed to be scale</p></li>
-<li><p><strong>bins</strong> – Number of equiheight bins per scale feature to choose thresholds</p></li>
-<li><p><strong>depth</strong> – Maximum depth of the learned tree</p></li>
-<li><p><strong>verbose</strong> – boolean specifying if the algorithm should print information while executing</p></li>
+<li><p><strong>X</strong> – Feature matrix in recoded/binned representation</p></li>
+<li><p><strong>y</strong> – Label matrix in recoded/binned representation</p></li>
+<li><p><strong>ctypes</strong> – Row-Vector of column types [1 scale/ordinal, 2 categorical]
+of shape 1-by-(ncol(X)+1), where the last entry is the y type</p></li>
+<li><p><strong>max_depth</strong> – Maximum depth of the learned tree (stopping criterion)</p></li>
+<li><p><strong>min_leaf</strong> – Minimum number of samples in leaf nodes (stopping criterion),
+odd number recommended to avoid 50/50 leaf label decisions</p></li>
+<li><p><strong>min_split</strong> – Minimum number of samples in leaf for attempting a split</p></li>
+<li><p><strong>max_features</strong> – Parameter controlling the number of features used as split
+candidates at tree nodes: m = ceil(num_features^max_features)</p></li>
+<li><p><strong>max_values</strong> – Parameter controlling the number of values per feature used
+as split candidates: nb = ceil(num_values^max_values)</p></li>
+<li><p><strong>impurity</strong> – Impurity measure: entropy, gini (default), rss (regression)</p></li>
+<li><p><strong>seed</strong> – Fixed seed for randomization of samples and split candidates</p></li>
+<li><p><strong>verbose</strong> – Flag indicating verbose debug output</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>Matrix M where each column corresponds to a node in the learned tree and each row
-contains the following information:
-M[1,j]: id of node j (in a complete binary tree)
-M[2,j]: Offset (no. of columns) to left child of j if j is an internal node, otherwise 0
-M[3,j]: Feature index of the feature (scale feature id if the feature is scale or
-categorical feature id if the feature is categorical)
-that node j looks at if j is an internal node, otherwise 0
-M[4,j]: Type of the feature that node j looks at if j is an internal node: holds
-the same information as R input vector
-M[5,j]: If j is an internal node: 1 if the feature chosen for j is scale,
-otherwise the size of the subset of values
-stored in rows 6,7,… if j is categorical
-If j is a leaf node: number of misclassified samples reaching at node j
-M[6:,j]: If j is an internal node: Threshold the example’s feature value is compared
-to is stored at M[6,j] if the feature chosen for j is scale,
-otherwise if the feature chosen for j is categorical rows 6,7,… depict the value subset chosen for j
-If j is a leaf node 1 if j is impure and the number of samples at j &gt; threshold, otherwise 0</p>
+<dd class="field-even"><p>Matrix M containing the learned trees, in linearized form</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="systemds.operator.algorithm.decisionTreePredict">
-<span class="sig-prename descclassname"><span class="pre">systemds.operator.algorithm.</span></span><span class="sig-name descname"><span class="pre">decisionTreePredict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">M</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="node/matrix.html#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">Matrix</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">X</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="node/matrix.html#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">Matrix</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">strategy</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#systemds.operator.algorithm.decisionTreePredict" title="Permalink to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">systemds.operator.algorithm.</span></span><span class="sig-name descname"><span class="pre">decisionTreePredict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="node/matrix.html#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">Matrix</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">ctypes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="node/matrix.html#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">Matrix</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">M</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="node/matrix.html#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">Matrix</span></a></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../script_building/dag.html#systemds.script_building.dag.DAGNode" title="systemds.script_building.dag.DAGNode"><span class="pre">DAGNode</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#systemds.operator.algorithm.decisionTreePredict" title="Permalink to this definition"></a></dt>
 <dd><blockquote>
-<div><p>Builtin script implementing prediction based on classification trees with scale features using prediction methods of the
+<div><p>This script implements random forest prediction for recoded and binned
+categorical and numerical input features.
 Hummingbird paper (<a class="reference external" href="https://www.usenix.org/system/files/osdi20-nakandala.pdf">https://www.usenix.org/system/files/osdi20-nakandala.pdf</a>).</p>
 </div></blockquote>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>M</strong> – Decision tree matrix M, as generated by scripts/builtin/decisionTree.dml, where each column corresponds
-to a node in the learned tree and each row contains the following information:
-M[1,j]: id of node j (in a complete binary tree)
-M[2,j]: Offset (no. of columns) to left child of j if j is an internal node, otherwise 0
-M[3,j]: Feature index of the feature (scale feature id if the feature is scale or
-categorical feature id if the feature is categorical)
-that node j looks at if j is an internal node, otherwise 0
-M[4,j]: Type of the feature that node j looks at if j is an internal node: holds
-the same information as R input vector
-M[5,j]: If j is an internal node: 1 if the feature chosen for j is scale,
-otherwise the size of the subset of values
-stored in rows 6,7,… if j is categorical
-If j is a leaf node: number of misclassified samples reaching at node j
-M[6:,j]: If j is an internal node: Threshold the example’s feature value is compared
-to is stored at M[6,j] if the feature chosen for j is scale,
-otherwise if the feature chosen for j is categorical rows 6,7,… depict the value subset chosen for j
-If j is a leaf node 1 if j is impure and the number of samples at j &gt; threshold, otherwise 0</p></li>
-<li><p><strong>X</strong> – Feature matrix X</p></li>
-<li><p><strong>strategy</strong> – Prediction strategy, can be one of [“GEMM”, “TT”, “PTT”], referring to “Generic matrix multiplication”,
+<li><p><strong>X</strong> – Feature matrix in recoded/binned representation</p></li>
+<li><p><strong>y</strong> – Label matrix in recoded/binned representation,
+optional for accuracy evaluation</p></li>
+<li><p><strong>ctypes</strong> – Row-Vector of column types [1 scale/ordinal, 2 categorical]</p></li>
+<li><p><strong>M</strong> – Matrix M holding the learned tree in linearized form
+see decisionTree() for the detailed tree representation.</p></li>
+<li><p><strong>strategy</strong> – Prediction strategy, can be one of [“GEMM”, “TT”, “PTT”],
+referring to “Generic matrix multiplication”,
 “Tree traversal”, and “Perfect tree traversal”, respectively</p></li>
+<li><p><strong>verbose</strong> – Flag indicating verbose debug output</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>Matrix containing the predicted labels for X</p>
+<dd class="field-even"><p>Label vector of predictions</p>
 </dd>
 </dl>
 </dd></dl>
@@ -3073,6 +3093,27 @@ if verbose output is not wanted</p></li>
 </dd></dl>
 
 <dl class="py function">
+<dt class="sig sig-object py" id="systemds.operator.algorithm.lmPredictStats">
+<span class="sig-prename descclassname"><span class="pre">systemds.operator.algorithm.</span></span><span class="sig-name descname"><span class="pre">lmPredictStats</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">yhat</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="node/matrix.html#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">Matrix</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">ytest</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="node/matrix.html#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">Matrix</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">lm</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#systemds.operator.algorithm.lmPredictStats" title="Permalink to this definition"></a></dt>
+<dd><blockquote>
+<div><p>This builtin function computes and prints a summary of accuracy
+measures for regression problems.</p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>yhat</strong> – column vector of predicted response values y</p></li>
+<li><p><strong>ytest</strong> – column vector of actual response values y</p></li>
+<li><p><strong>lm</strong> – indicator if used for linear regression model</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>column vector holding avg_res, ss_avg_res, and R2</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="systemds.operator.algorithm.logSumExp">
 <span class="sig-prename descclassname"><span class="pre">systemds.operator.algorithm.</span></span><span class="sig-name descname"><span class="pre">logSumExp</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">M</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="node/matrix.html#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">Matrix</span></a></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../script_building/dag.html#systemds.script_building.dag.DAGNode" title="systemds.script_building.dag.DAGNode"><span class="pre">DAGNode</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#systemds.operator.algorithm.logSumExp" title="Permalink to this definition"></a></dt>
 <dd><blockquote>
@@ -3610,28 +3651,49 @@ n = any constant defined by user</p></li>
 <dt class="sig sig-object py" id="systemds.operator.algorithm.pca">
 <span class="sig-prename descclassname"><span class="pre">systemds.operator.algorithm.</span></span><span class="sig-name descname"><span class="pre">pca</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="node/matrix.html#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">Matrix</span></a></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../script_building/dag.html#systemds.script_building.dag.DAGNode" title="systemds.script_building.dag.DAGNode"><span class="pre">DAGNode</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#systemds.operator.algorithm.pca" title="Permalink to this definition"></a></dt>
 <dd><blockquote>
-<div><p>The function Principal Component Analysis (PCA) is used for dimensionality reduction</p>
+<div><p>This builtin defines PCA that is a technique typically used to
+reduce the number of dimensions of a matrix.
+This implementation is based on calculating eigenvectors on
+the covariance matrix of the input.</p>
+<p>An example of calling in DML:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>data = read($1)
+[data_reduced, Components] = pca(data=data, K=4, onlyComponents=TRUE)
+print(Components)
+</pre></div>
+</div>
+<p>An example in a ML pipeline containing PCA:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>X = read($1)
+[X_reduced, Components] = pca(data=X, K=4)
+Y = read($2)
+bias = l2svm(X=X, Y=Y)
+X_test = read($3)
+[y_predict_normal, Y_predict_rounded] = l2svmPredict(X=X_test, W=bias)
+write($5, Y_predict_rounded)
+</pre></div>
+</div>
 </div></blockquote>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>X</strong> – Input feature matrix</p></li>
-<li><p><strong>K</strong> – Number of reduced dimensions (i.e., columns)</p></li>
-<li><p><strong>Center</strong> – Indicates whether or not to center the feature matrix</p></li>
-<li><p><strong>Scale</strong> – Indicates whether or not to scale the feature matrix</p></li>
+<li><p><strong>K</strong> – Number of components returned</p></li>
+<li><p><strong>center</strong> – Indicates whether or not to center the feature matrix</p></li>
+<li><p><strong>scale</strong> – Indicates whether or not to scale the feature matrix</p></li>
+<li><p><strong>onlyComponents</strong> – Indicate if only the components should be calculated and returned
+not the application of the components on X</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>Output feature matrix with K columns</p>
 </dd>
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Output dominant eigen vectors (can be used for projections)</p>
+<dd class="field-odd"><p>Output dominant eigen vectors sorted by influence</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>The column means of the input, subtracted to construct the PCA</p>
 </dd>
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>The Scaling of the values, to make each dimension same size.</p>
+<dd class="field-odd"><p>The scaling of the values, to make each dimension same size.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -3742,58 +3804,80 @@ Platforms. Tarek Elgamal et.al.</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="systemds.operator.algorithm.randomForest">
-<span class="sig-prename descclassname"><span class="pre">systemds.operator.algorithm.</span></span><span class="sig-name descname"><span class="pre">randomForest</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="node/matrix.html#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">Matrix</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">Y</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="node/matrix.html#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">Matrix</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">R</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="node/matrix.html#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">Matrix</span></a></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../script_building/dag.html#systemds.script_building.dag.DAGNode" title="systemds.script_building.dag.DAGNode"><span class="pre">DAGNode</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#systemds.operator.algorithm.randomForest" title="Permalink to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">systemds.operator.algorithm.</span></span><span class="sig-name descname"><span class="pre">randomForest</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="node/matrix.html#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">Matrix</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="node/matrix.html#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">Matrix</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">ctypes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="node/matrix.html#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">Matrix</span></a></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../script_building/dag.html#systemds.script_building.dag.DAGNode" title="systemds.script_building.dag.DAGNode"><span class="pre">DAGNode</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#systemds.operator.algorithm.randomForest" title="Permalink to this definition"></a></dt>
 <dd><blockquote>
-<div><p>This script implement classification random forest with both scale and categorical features.</p>
+<div><p>This script implements random forest for recoded and binned categorical and
+numerical input features. In detail, we train multiple CART (classification
+and regression trees) decision trees in parallel and use them as an ensemble.
+classifier/regressor. Each tree is trained on a sample of observations (rows)
+and optionally subset of features (columns). During tree construction, split
+candidates are additionally chosen on a sample of remaining features.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">For</span> <span class="n">example</span><span class="p">,</span> <span class="n">given</span> <span class="n">a</span> <span class="n">feature</span> <span class="n">matrix</span> <span class="k">with</span> <span class="n">features</span> <span class="p">[</span><span class="n">a</span><span class="p">,</span><span class="n">b</span><span class="p">,</span><span class="n">c</span><span class="p">,</span><span class="n">d</span><span class="p">]</span>
+<span class="ow">and</span> <span class="n">the</span> <span class="n">following</span> <span class="n">two</span> <span class="n">trees</span><span class="p">,</span> <span class="n">M</span> <span class="p">(</span><span class="n">the</span> <span class="n">output</span><span class="p">)</span> <span class="n">would</span> <span class="n">look</span> <span class="k">as</span> <span class="n">follows</span><span class="p">:</span>
+
+<span class="p">(</span><span class="n">L1</span><span class="p">)</span>          <span class="o">|</span><span class="n">a</span><span class="o">&lt;</span><span class="mi">7</span><span class="o">|</span>                   <span class="o">|</span><span class="n">d</span><span class="o">&lt;</span><span class="mi">5</span><span class="o">|</span>
+             <span class="o">/</span>     \                 <span class="o">/</span>            <span class="p">(</span><span class="n">L2</span><span class="p">)</span>     <span class="o">|</span><span class="n">c</span><span class="o">&lt;</span><span class="mi">3</span><span class="o">|</span>     <span class="o">|</span><span class="n">b</span><span class="o">&lt;</span><span class="mi">4</span><span class="o">|</span>         <span class="o">|</span><span class="n">a</span><span class="o">&lt;</span><span class="mi">7</span><span class="o">|</span>     <span class="n">P3</span><span class="p">:</span><span class="mi">2</span>
+         <span class="o">/</span>   \     <span class="o">/</span>   \         <span class="o">/</span>          <span class="p">(</span><span class="n">L3</span><span class="p">)</span>   <span class="n">P1</span><span class="p">:</span><span class="mi">2</span> <span class="n">P2</span><span class="p">:</span><span class="mi">1</span> <span class="n">P3</span><span class="p">:</span><span class="mi">1</span> <span class="n">P4</span><span class="p">:</span><span class="mi">2</span>     <span class="n">P1</span><span class="p">:</span><span class="mi">2</span> <span class="n">P2</span><span class="p">:</span><span class="mi">1</span>
+<span class="o">--&gt;</span> <span class="n">M</span> <span class="o">:=</span>
+<span class="p">[[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span>  <span class="p">(</span><span class="mi">1</span><span class="n">st</span> <span class="n">tree</span><span class="p">)</span>
+ <span class="p">[</span><span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]]</span>  <span class="p">(</span><span class="mi">2</span><span class="n">nd</span> <span class="n">tree</span><span class="p">)</span>
+ <span class="o">|</span><span class="p">(</span><span class="n">L1</span><span class="p">)</span><span class="o">|</span> <span class="o">|</span>  <span class="p">(</span><span class="n">L2</span><span class="p">)</span>   <span class="o">|</span> <span class="o">|</span>        <span class="p">(</span><span class="n">L3</span><span class="p">)</span>         <span class="o">|</span>
+
+<span class="n">With</span> <span class="n">feature</span> <span class="n">sampling</span> <span class="p">(</span><span class="n">feature_frac</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">),</span> <span class="n">each</span> <span class="n">tree</span> <span class="ow">is</span>
+<span class="n">prefixed</span> <span class="n">by</span> <span class="n">a</span> <span class="n">one</span><span class="o">-</span><span class="n">hot</span> <span class="n">vector</span> <span class="n">of</span> <span class="n">sampled</span> <span class="n">features</span>
+<span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">g</span><span class="o">.</span><span class="p">,</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="n">we</span> <span class="n">sampled</span> <span class="n">a</span><span class="p">,</span><span class="n">b</span><span class="p">,</span><span class="n">c</span> <span class="n">of</span> <span class="n">the</span> <span class="n">four</span> <span class="n">features</span><span class="p">)</span>
+</pre></div>
+</div>
 </div></blockquote>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>X</strong> – Feature matrix X; note that X needs to be both recoded and dummy coded</p></li>
-<li><p><strong>Y</strong> – Label matrix Y; note that Y needs to be both recoded and dummy coded</p></li>
-<li><p><strong>R</strong> – Matrix which for each feature in X contains the following information
-- R[,1]: column ids       TODO pass recorded and binned
-- R[,2]: start indices
-- R[,3]: end indices
-If R is not provided by default all variables are assumed to be scale</p></li>
-<li><p><strong>bins</strong> – Number of equiheight bins per scale feature to choose thresholds</p></li>
-<li><p><strong>depth</strong> – Maximum depth of the learned tree</p></li>
-<li><p><strong>num_leaf</strong> – Number of samples when splitting stops and a leaf node is added</p></li>
-<li><p><strong>num_samples</strong> – Number of samples at which point we switch to in-memory subtree building</p></li>
+<li><p><strong>X</strong> – Feature matrix in recoded/binned representation</p></li>
+<li><p><strong>y</strong> – Label matrix in recoded/binned representation</p></li>
+<li><p><strong>ctypes</strong> – Row-Vector of column types [1 scale/ordinal, 2 categorical]
+of shape 1-by-(ncol(X)+1), where the last entry is the y type</p></li>
 <li><p><strong>num_trees</strong> – Number of trees to be learned in the random forest model</p></li>
-<li><p><strong>subsamp_rate</strong> – Parameter controlling the size of each tree in the forest; samples are selected from a
-Poisson distribution with parameter subsamp_rate (the default value is 1.0)</p></li>
-<li><p><strong>feature_subset</strong> – Parameter that controls the number of feature used as candidates for splitting at each tree node
-as a power of number of features in the dataset;
-by default square root of features (i.e., feature_subset = 0.5) are used at each tree node</p></li>
-<li><p><strong>impurity</strong> – Impurity measure: entropy or Gini (the default)</p></li>
+<li><p><strong>sample_frac</strong> – Sample fraction of examples for each tree in the forest</p></li>
+<li><p><strong>feature_frac</strong> – Sample fraction of features for each tree in the forest</p></li>
+<li><p><strong>max_depth</strong> – Maximum depth of the learned tree (stopping criterion)</p></li>
+<li><p><strong>min_leaf</strong> – Minimum number of samples in leaf nodes (stopping criterion)</p></li>
+<li><p><strong>min_split</strong> – Minimum number of samples in leaf for attempting a split</p></li>
+<li><p><strong>max_features</strong> – Parameter controlling the number of features used as split
+candidates at tree nodes: m = ceil(num_features^max_features)</p></li>
+<li><p><strong>max_values</strong> – Parameter controlling the number of values per feature used
+as split candidates: nb = ceil(num_values^max_values)</p></li>
+<li><p><strong>impurity</strong> – Impurity measure: entropy, gini (default), rss (regression)</p></li>
+<li><p><strong>seed</strong> – Fixed seed for randomization of samples and split candidates</p></li>
+<li><p><strong>verbose</strong> – Flag indicating verbose debug output</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>Matrix M containing the learned tree, where each column corresponds to a node
-in the learned tree and each row contains the following information:
-M[1,j]: id of node j (in a complete binary tree)
-M[2,j]: tree id to which node j belongs
-M[3,j]: Offset (no. of columns) to left child of j
-M[4,j]: Feature index of the feature that node j looks at if j is an internal node, otherwise 0
-M[5,j]: Type of the feature that node j looks at if j is an internal node: 1 for scale and 2
-for categorical features,
-otherwise the label that leaf node j is supposed to predict
-M[6,j]: 1 if j is an internal node and the feature chosen for j is scale, otherwise the
-size of the subset of values
-stored in rows 7,8,… if j is categorical
-M[7:,j]: Only applicable for internal nodes. Threshold the example’s feature value is
-compared to is stored at M[7,j] if the feature chosen for j is scale;
-If the feature chosen for j is categorical rows 7,8,… depict the value subset chosen for j</p>
+<dd class="field-even"><p>Matrix M containing the learned trees, in linearized form.</p>
 </dd>
-<dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Matrix C containing the number of times samples are chosen in each tree of the random forest</p>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="systemds.operator.algorithm.randomForestPredict">
+<span class="sig-prename descclassname"><span class="pre">systemds.operator.algorithm.</span></span><span class="sig-name descname"><span class="pre">randomForestPredict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="node/matrix.html#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">Matrix</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">ctypes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="node/matrix.html#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">Matrix</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">M</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="node/matrix.html#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">Matrix</span></a></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../script_building/dag.html#systemds.script_building.dag.DAGNode" title="systemds.script_building.dag.DAGNode"><span class="pre">DAGNode</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#systemds.operator.algorithm.randomForestPredict" title="Permalink to this definition"></a></dt>
+<dd><blockquote>
+<div><p>This script implements random forest prediction for recoded and binned
+categorical and numerical input features.</p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>X</strong> – Feature matrix in recoded/binned representation</p></li>
+<li><p><strong>y</strong> – Label matrix in recoded/binned representation,
+optional for accuracy evaluation</p></li>
+<li><p><strong>ctypes</strong> – Row-Vector of column types [1 scale/ordinal, 2 categorical]</p></li>
+<li><p><strong>M</strong> – Matrix M holding the learned trees (one tree per row),
+see randomForest() for the detailed tree representation.</p></li>
+<li><p><strong>verbose</strong> – Flag indicating verbose debug output</p></li>
+</ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>Mappings from scale feature ids to global feature ids</p>
-</dd>
-<dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Mappings from categorical feature ids to global feature ids</p>
+<dd class="field-even"><p>Label vector of predictions</p>
 </dd>
 </dl>
 </dd></dl>
@@ -3802,24 +3886,30 @@ If the feature chosen for j is categorical rows 7,8,… depict the value subset 
 <dt class="sig sig-object py" id="systemds.operator.algorithm.scale">
 <span class="sig-prename descclassname"><span class="pre">systemds.operator.algorithm.</span></span><span class="sig-name descname"><span class="pre">scale</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="node/matrix.html#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">Matrix</span></a></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../script_building/dag.html#systemds.script_building.dag.DAGNode" title="systemds.script_building.dag.DAGNode"><span class="pre">DAGNode</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#systemds.operator.algorithm.scale" title="Permalink to this definition"></a></dt>
 <dd><blockquote>
-<div><p>This function scales and center individual features in the input matrix (column wise.) using z-score to scale the values.</p>
+<div><p>This function scales and center individual features in the input
+matrix (column wise.) using z-score to scale the values.
+The transformation is sometimes also called scale and shift,
+but it is shifted first and then subsequently scaled.</p>
+<p>The method is not resistant to inputs containing NaN nor overflows
+of doubles, but handle it by guaranteeing that no extra NaN values
+are introduced and columns that contain NaN will not be scaled or shifted.</p>
 </div></blockquote>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>X</strong> – Input feature matrix</p></li>
-<li><p><strong>center</strong> – Indicates whether or not to center the feature matrix</p></li>
-<li><p><strong>scale</strong> – Indicates whether or not to scale the feature matrix</p></li>
+<li><p><strong>center</strong> – Indicates to center the feature matrix</p></li>
+<li><p><strong>scale</strong> – Indicates to scale the feature matrix according to z-score</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>Output feature matrix with K columns</p>
+<dd class="field-even"><p>Output feature matrix scaled and shifted</p>
 </dd>
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>The column means of the input, subtracted if Center was TRUE</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>The Scaling of the values, to make each dimension have similar value ranges</p>
+<dd class="field-even"><p>The scaling of the values, to make each dimension have similar value ranges</p>
 </dd>
 </dl>
 </dd></dl>
@@ -4046,8 +4136,8 @@ Svetlana Sagadeeva, Matthias Boehm: SliceLine: Fast, Linear-Algebra-based Slice 
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>X</strong> – Recoded dataset into Matrix</p></li>
-<li><p><strong>e</strong> – Trained model</p></li>
+<li><p><strong>X</strong> – Feature matrix in recoded/binned representation</p></li>
+<li><p><strong>e</strong> – Error vector of trained model</p></li>
 <li><p><strong>k</strong> – Number of subsets required</p></li>
 <li><p><strong>maxL</strong> – maximum level L (conjunctions of L predicates), 0 unlimited</p></li>
 <li><p><strong>minSup</strong> – minimum support (min number of rows per slice)</p></li>

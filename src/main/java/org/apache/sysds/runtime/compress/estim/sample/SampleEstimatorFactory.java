@@ -30,8 +30,20 @@ public interface SampleEstimatorFactory {
 
 	public enum EstimationType {
 		HassAndStokes, ShlosserEstimator, //
-		ShlosserJackknifeEstimator, SmoothedJackknifeEstimator,
-		HassAndStokesNoSolveCache,
+		ShlosserJackknifeEstimator, SmoothedJackknifeEstimator, HassAndStokesNoSolveCache,
+	}
+
+	/**
+	 * Estimate a distinct number of values based on frequencies.
+	 * 
+	 * @param frequencies A list of frequencies of unique values, Note all values contained should be larger than zero
+	 * @param nRows       The total number of rows to consider, Note should always be larger or equal to sum(frequencies)
+	 * @param sampleSize  The size of the sample, Note this should ideally be scaled to match the sum(frequencies) and
+	 *                    should always be lower or equal to nRows
+	 * @return A estimated number of unique values
+	 */
+	public static int distinctCount(int[] frequencies, int nRows, int sampleSize) {
+		return distinctCount(frequencies, nRows, sampleSize, EstimationType.HassAndStokes, null);
 	}
 
 	/**

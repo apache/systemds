@@ -19,7 +19,13 @@
 
 package org.apache.sysds.runtime.compress.estim.encoding;
 
+import java.util.HashMap;
+import java.util.Map;
+
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.sysds.runtime.compress.CompressionSettings;
+import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
 import org.apache.sysds.runtime.compress.colgroup.offset.AIterator;
@@ -28,8 +34,11 @@ import org.apache.sysds.runtime.compress.colgroup.offset.OffsetFactory;
 import org.apache.sysds.runtime.compress.estim.EstimationFactors;
 import org.apache.sysds.runtime.compress.utils.IntArrayList;
 
-/** Most common is zero encoding */
-public class SparseEncoding implements IEncode {
+/**
+ * A Encoding that contain a default value that is not encoded and every other value is encoded in the map. The logic is
+ * similar to the SDC column group.
+ */
+public class SparseEncoding extends AEncode {
 
 	/** A map to the distinct values contained */
 	protected final AMapToData map;
@@ -54,11 +63,25 @@ public class SparseEncoding implements IEncode {
 			SparseEncoding es = (SparseEncoding) e;
 			if(es.off == off && es.map == map)
 				return this;
-			return combineSparse((SparseEncoding) e);
+			return combineSparse(es);
 		}
 		else
 			return e.combine(this);
 
+	}
+
+	@Override
+	public Pair<IEncode, Map<Integer, Integer>> combineWithMap(IEncode e) {
+		if(e instanceof EmptyEncoding || e instanceof ConstEncoding)
+			return new ImmutablePair<>(this, null);
+		else if(e instanceof SparseEncoding) {
+			SparseEncoding es = (SparseEncoding) e;
+			if(es.off == off && es.map == map)
+				return new ImmutablePair<>(this, null);
+			return combineSparseNoResizeDense(es);
+		}
+		else
+			throw new DMLCompressionException("Not allowed other to be dense");
 	}
 
 	protected IEncode combineSparse(SparseEncoding e) {
@@ -98,6 +121,58 @@ public class SparseEncoding implements IEncode {
 			return new DenseEncoding(retMap);
 		}
 	}
+
+
+
+	private Pair<IEncode, Map<Integer, Integer>>  combineSparseNoResizeDense(SparseEncoding e) {
+
+		final int fl = off.getOffsetToLast();
+		final int fr = e.off.getOffsetToLast();
+		final AIterator itl = off.getIterator();
+		final AIterator itr = e.off.getIterator();
+		final int nVl = getUnique();
+		final int nVr = e.getUnique();
+
+		final AMapToData retMap = MapToFactory.create(nRows, (nVl + 1) * (nVr + 1));
+		
+		int il = itl.value();
+		// parse through one side set all values into the dense.
+		while(il < fl) {
+			retMap.set(il, map.getIndex(itl.getDataIndex()) + 1);
+			il = itl.next();
+		}
+		retMap.set(fl, map.getIndex(itl.getDataIndex()) + 1);
+
+		int ir = itr.value();
+		// parse through other side set all values with offset based on what already is there.
+		while(ir < fr) {
+			final int vl = retMap.getIndex(ir); // probably 0
+			final int vr = e.map.getIndex(itr.getDataIndex()) + 1;
+			retMap.set(ir, vl + vr * nVl);
+			ir = itr.next();
+		}
+		retMap.set(fr, retMap.getIndex(fr) + (e.map.getIndex(itr.getDataIndex()) + 1) * nVl);
+
+		// Full iteration to set unique elements.
+		final Map<Integer, Integer> m = new HashMap<>();
+		for(int i = 0 ; i < retMap.size(); i ++)
+			addValHashMap(retMap.getIndex(i), i,m, retMap );
+		
+
+		return new ImmutablePair<>(new DenseEncoding(retMap.resize(m.size())), m);
+		
+	}
+
+
+	protected static void addValHashMap(final int nv, final int r, final Map<Integer, Integer> map, final AMapToData d) {
+		final int v = map.size();
+		final Integer mv = map.putIfAbsent(nv, v);
+		if(mv == null)
+			d.set(r, v);
+		else
+			d.set(r, mv);
+	}
+
 
 	private static int combineSparse(AMapToData lMap, AMapToData rMap, AIterator itl, AIterator itr,
 		final IntArrayList retOff, final IntArrayList tmpVals, final int fl, final int fr, final int nVl, final int nVr,
@@ -325,6 +400,21 @@ public class SparseEncoding implements IEncode {
 
 	public AOffset getOffsets() {
 		return off;
+	}
+
+	public AMapToData getMap() {
+		return map;
+	}
+
+	public int getNumRows() {
+		return nRows;
+	}
+
+	@Override
+	public boolean equals(IEncode e) {
+		return e instanceof SparseEncoding && //
+			((SparseEncoding) e).off.equals(this.off) && //
+			((SparseEncoding) e).map.equals(this.map);
 	}
 
 	@Override

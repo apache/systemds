@@ -19,14 +19,14 @@
 
 package org.apache.sysds.lops;
 
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Map;
+
 import org.apache.sysds.common.Types;
 import org.apache.sysds.hops.AggBinaryOp;
 import org.apache.sysds.parser.DMLProgram;
 import org.apache.sysds.parser.StatementBlock;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
 
 public class OperatorOrderingUtils
 {
@@ -55,7 +55,7 @@ public class OperatorOrderingUtils
 
 	// Gather the Spark operators which return intermediates to local (actions/single_block)
 	// In addition count the number of Spark OPs underneath every Operator
-	public static int collectSparkRoots(Lop root, Map<Long, Integer> sparkOpCount, List<Lop> sparkRoots) {
+	public static int collectSparkRoots(Lop root, Map<Long, Integer> sparkOpCount, HashSet<Lop> sparkRoots) {
 		if (sparkOpCount.containsKey(root.getID())) //visited before
 			return sparkOpCount.get(root.getID());
 
@@ -71,7 +71,6 @@ public class OperatorOrderingUtils
 		// Triggering point: Spark action/operator with all CP consumers
 		if (isSparkTriggeringOp(root)) {
 			sparkRoots.add(root);
-			root.setAsynchronous(true); //candidate for async. execution
 		}
 
 		return total;
@@ -82,7 +81,7 @@ public class OperatorOrderingUtils
 	public static boolean isPersistableSparkOp(Lop lop) {
 		return lop.isExecSpark() && (lop instanceof MapMult
 			|| lop instanceof MMCJ || lop instanceof MMRJ
-			|| lop instanceof MMZip);
+			|| lop instanceof MMZip || lop instanceof WeightedDivMMR);
 	}
 
 	private static boolean isSparkTriggeringOp(Lop lop) {
@@ -107,6 +106,28 @@ public class OperatorOrderingUtils
 			.allMatch(out -> (out.getBroadcastInput() == lop));
 		//TODO: Handle Lops with mixed Spark (broadcast) CP consumers
 		return isSparkOp && isBc && (lop.getDataType() == Types.DataType.MATRIX);
+	}
+
+	// Count the number of jobs a Spark operator is part of
+	public static void markSharedSparkOps(HashSet<Lop> sparkRoots, Map<Long, Integer> operatorJobCount) {
+		for (Lop root : sparkRoots) {
+			collectSharedSparkOps(root, operatorJobCount);
+			root.resetVisitStatus();
+		}
+	}
+
+	private static void collectSharedSparkOps(Lop root, Map<Long, Integer> operatorJobCount) {
+		if (root.isVisited())
+			return;
+
+		for (Lop input : root.getInputs())
+			if (root.getBroadcastInput() != input)
+				collectSharedSparkOps(input, operatorJobCount);
+
+		// Increment the job counter if this node is reachable from multiple job roots
+		operatorJobCount.merge(root.getID(), 1, Integer::sum);
+
+		root.setVisited();
 	}
 
 	private static boolean addNode(ArrayList<Lop> lops, Lop node) {

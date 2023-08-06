@@ -140,8 +140,6 @@ public abstract class APreAgg extends AColGroupValue {
 
 	protected abstract void preAggregateThatRLEStructure(ColGroupRLE that, Dictionary ret);
 
-	protected abstract boolean sameIndexStructure(AColGroupCompressed that);
-
 	public int getPreAggregateSize() {
 		return getNumValues();
 	}
@@ -175,7 +173,7 @@ public abstract class APreAgg extends AColGroupValue {
 	private boolean shouldDirectMultiply(APreAgg lg, int nColL, int nColR, boolean leftPreAgg) {
 		int lMRows = lg.numRowsToMultiply();
 		int rMRows = this.numRowsToMultiply();
-		long commonDim = (long) Math.min(lMRows, rMRows);
+		long commonDim = Math.min(lMRows, rMRows);
 		long directFLOPS = commonDim * nColL * nColR * 2; // times 2 for first add then multiply
 
 		long preAggFLOPS = 0;
@@ -272,7 +270,7 @@ public abstract class APreAgg extends AColGroupValue {
 	private void tsmmColGroupUncompressed(ColGroupUncompressed other, MatrixBlock result) {
 		LOG.warn("Inefficient multiplication with uncompressed column group");
 		final int nCols = result.getNumColumns();
-		final MatrixBlock otherMBT = LibMatrixReorg.transpose(((ColGroupUncompressed) other).getData());
+		final MatrixBlock otherMBT = LibMatrixReorg.transpose(other.getData());
 		final int nRows = otherMBT.getNumRows();
 		final MatrixBlock tmp = new MatrixBlock(nRows, nCols, false);
 		tmp.allocateDenseBlock();

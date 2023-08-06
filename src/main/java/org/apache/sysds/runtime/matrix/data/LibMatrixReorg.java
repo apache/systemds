@@ -34,7 +34,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 
-import org.apache.commons.lang.NotImplementedException;
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.DMLRuntimeException;
@@ -238,7 +238,7 @@ public class LibMatrixReorg {
 		// Timing time = new Timing(true);
 
 		// CSR is only allowed in the transposed output if the number of non zeros is counted in the columns
-		allowCSR = allowCSR && out.nonZeros < (long) Integer.MAX_VALUE && in.clen <= 4096;
+		allowCSR = allowCSR && out.nonZeros < Integer.MAX_VALUE && in.clen <= 4096;
 
 		if(out.sparse && allowCSR) {
 			int size = (int) out.nonZeros;
@@ -661,6 +661,12 @@ public class LibMatrixReorg {
 			return ret;
 		}
 		
+		// short-circuit for select-all (shallow-copy input)
+		if( select != null && (select.nonZeros == (rows?in.rlen:in.clen)) ) {
+			return in;
+		}
+		
+		// core removeEmpty
 		if( rows )
 			return removeEmptyRows(in, ret, select, emptyReturn);
 		else //cols
@@ -1304,12 +1310,12 @@ public class LibMatrixReorg {
 	}
 
 	/** Thread local temporary double array.. */
-	private static ThreadLocal<double[]> memPool = new ThreadLocal<double[]>() {
-        @Override
-        protected double[] initialValue() {
-            return null;
-        }
-    };
+	private static ThreadLocal<double[]> memPool = new ThreadLocal<>() {
+		@Override
+		protected double[] initialValue() {
+			return null;
+		}
+	};
 
 	/**
 	 * Only use if the number of rows and cols are equal

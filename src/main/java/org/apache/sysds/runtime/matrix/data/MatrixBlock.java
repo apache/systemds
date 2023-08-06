@@ -35,6 +35,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.stream.IntStream;
 
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.concurrent.ConcurrentUtils;
 import org.apache.commons.logging.Log;
@@ -383,8 +384,12 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 			allocateDenseBlock();
 		return this;
 	}
-	
-	public boolean allocateDenseBlock(boolean clearNNZ) {
+
+	public boolean allocateDenseBlock(boolean clearNNZ){
+		return allocateDenseBlock(clearNNZ, false);
+	}
+
+	public boolean allocateDenseBlock(boolean clearNNZ, boolean containsDuplicates) {
 		//allocate block if non-existing or too small (guaranteed to be 0-initialized),
 		long limit = (long)rlen * clen;
 		//clear nnz if necessary
@@ -393,7 +398,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 		sparse = false;
 
 		if( denseBlock == null ){
-			denseBlock = DenseBlockFactory.createDenseBlock(rlen, clen);
+			denseBlock = DenseBlockFactory.createDenseBlock(rlen, clen, containsDuplicates);
 			return true;
 		}
 		else if( denseBlock.capacity() < limit ){
@@ -666,6 +671,17 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 			denseBlock.set(r, c, v);
 			if( v==0 )
 				nonZeros--;
+		}
+	}
+
+	public void quickSetRow(int r, double[] values){
+		if(sparse)
+			throw new NotImplementedException();
+		else{
+			//allocate and init dense block (w/o overwriting nnz)
+			allocateDenseBlock(false);
+			nonZeros += UtilFunctions.computeNnz(values, 0, values.length) - denseBlock.countNonZeros(r);
+			denseBlock.set(r, values);
 		}
 	}
 
@@ -2564,6 +2580,14 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 			return estimateSizeDenseInMemory(nrows, ncols);
 	}
 
+	public static long estimateSizeInMemory(DataCharacteristics dc) {
+		return estimateSizeInMemory(dc.getRows(), dc.getCols(), dc.getSparsity());
+	}
+
+	public static long estimateSizeInMemory(long nrows, long ncols, long nnz) {
+		return estimateSizeInMemory(nrows, ncols, OptimizerUtils.getSparsity(nrows, ncols, nnz));
+	}
+
 	public long estimateSizeDenseInMemory() {
 		return estimateSizeDenseInMemory(rlen, clen);
 	}
@@ -2987,7 +3011,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 		return ret;
 	}
 
-	protected static void ternaryOperationCheck(boolean s1, boolean s2, boolean s3, int m, int r1, int r2, int r3, int n, int c1, int c2, int c3){
+	public static void ternaryOperationCheck(boolean s1, boolean s2, boolean s3, int m, int r1, int r2, int r3, int n, int c1, int c2, int c3){
 		//error handling 
 		if( (!s1 && (r1 != m || c1 != n))
 		|| (!s2 && (r2 != m || c2 != n))
@@ -4066,7 +4090,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 		
 		// Output matrix will have the same sparsity as that of the input matrix.
 		// (assuming a uniform distribution of non-zeros in the input)
-		MatrixBlock result=checkType((MatrixBlock)ret);
+		MatrixBlock result=checkType(ret);
 		long estnnz= (long) ((double)this.nonZeros/rlen/clen*(ru-rl+1)*(cu-cl+1));
 		boolean result_sparsity = this.sparse && MatrixBlock.evalSparseFormatInMemory(ru-rl+1, cu-cl+1, estnnz);
 		if(result==null)
@@ -5110,6 +5134,10 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 			return ret;
 		if( !containsValue(pattern) )
 			return this; //avoid allocation + copy
+		if( isEmpty() && pattern==0 ) {
+			ret.reset(rlen, clen, replacement);
+			return ret;
+		}
 		
 		boolean NaNpattern = Double.isNaN(pattern);
 		if( sparse ) //SPARSE

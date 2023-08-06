@@ -24,7 +24,7 @@ import java.io.Serializable;
 import java.lang.ref.SoftReference;
 import java.util.Arrays;
 
-import org.apache.commons.lang.NotImplementedException;
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.DMLRuntimeException;
@@ -51,7 +51,7 @@ public abstract class AOffset implements Serializable {
 	protected static final Log LOG = LogFactory.getLog(AOffset.class.getName());
 
 	/** Thread local cache for a single recently used Iterator, this is used for cache blocking */
-	private ThreadLocal<OffsetCache> cacheRow = new ThreadLocal<OffsetCache>() {
+	private ThreadLocal<OffsetCache> cacheRow = new ThreadLocal<>() {
 		@Override
 		protected OffsetCache initialValue() {
 			return null;
@@ -95,7 +95,7 @@ public abstract class AOffset implements Serializable {
 			return getIterator();
 		else if(row > getOffsetToLast())
 			return null;
-		final OffsetCache c = cacheRow.get();
+		final OffsetCache c = getLength() < skipStride ? null :  cacheRow.get();
 		if(c != null && c.row == row)
 			return c.it.clone();
 		else if(getLength() < skipStride)
@@ -169,7 +169,7 @@ public abstract class AOffset implements Serializable {
 	 * @param row The row index to cache the iterator as.
 	 */
 	public void cacheIterator(AIterator it, int row) {
-		if(it == null)
+		if(it == null || getLength() < skipStride)
 			return;
 		cacheRow.set(new OffsetCache(it, row));
 	}
@@ -446,6 +446,12 @@ public abstract class AOffset implements Serializable {
 
 	protected abstract AOffset moveIndex(int m);
 
+	/**
+	 * Get the length of the underlying array. This does not reflect the number of contained elements, since some of the
+	 * elements can be skips.
+	 * 
+	 * @return The length of the underlying arrays
+	 */
 	protected abstract int getLength();
 
 	public OffsetSliceInfo slice(int l, int u) {

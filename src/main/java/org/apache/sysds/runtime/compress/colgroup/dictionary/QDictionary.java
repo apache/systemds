@@ -23,7 +23,7 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-import org.apache.commons.lang.NotImplementedException;
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.functionobjects.Builtin;
@@ -94,7 +94,7 @@ public class QDictionary extends ADictionary {
 
 	public static long getInMemorySize(int valuesCount) {
 		// object + values array + double
-		return 16 + (long)MemoryEstimates.byteArrayCost(valuesCount) + 8;
+		return 16 + (long) MemoryEstimates.byteArrayCost(valuesCount) + 8;
 	}
 
 	@Override
@@ -280,7 +280,7 @@ public class QDictionary extends ADictionary {
 		int valOff = k * nrColumns;
 		double res = 0.0;
 		for(int i = 0; i < nrColumns; i++)
-			res += (int) (_values[valOff + i] * _values[valOff + i]) * _scale * _scale;
+			res += (_values[valOff + i] * _values[valOff + i]) * _scale * _scale;
 		return res;
 	}
 
@@ -423,7 +423,8 @@ public class QDictionary extends ADictionary {
 	}
 
 	@Override
-	public void aggregateColsWithReference(double[] c, Builtin fn, IColIndex colIndexes, double[] reference, boolean def) {
+	public void aggregateColsWithReference(double[] c, Builtin fn, IColIndex colIndexes, double[] reference,
+		boolean def) {
 		throw new NotImplementedException();
 	}
 
@@ -575,7 +576,8 @@ public class QDictionary extends ADictionary {
 	}
 
 	@Override
-	protected void TSMMToUpperTriangleSparse(SparseBlock left, IColIndex rowsLeft, IColIndex colsRight, MatrixBlock result) {
+	protected void TSMMToUpperTriangleSparse(SparseBlock left, IColIndex rowsLeft, IColIndex colsRight,
+		MatrixBlock result) {
 		throw new NotImplementedException();
 	}
 
@@ -592,13 +594,23 @@ public class QDictionary extends ADictionary {
 	}
 
 	@Override
-	protected void TSMMToUpperTriangleSparseScaling(SparseBlock left, IColIndex rowsLeft, IColIndex colsRight, int[] scale,
-		MatrixBlock result) {
+	protected void TSMMToUpperTriangleSparseScaling(SparseBlock left, IColIndex rowsLeft, IColIndex colsRight,
+		int[] scale, MatrixBlock result) {
 		throw new NotImplementedException();
 	}
 
 	@Override
 	public boolean equals(ADictionary o) {
+		throw new NotImplementedException();
+	}
+
+	@Override
+	public ADictionary cbind(ADictionary that, int nCol) {
+		throw new NotImplementedException();
+	}
+
+	@Override
+	public ADictionary reorder(int[] reorder) {
 		throw new NotImplementedException();
 	}
 }

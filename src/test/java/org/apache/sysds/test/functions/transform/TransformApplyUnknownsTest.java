@@ -61,7 +61,7 @@ public class TransformApplyUnknownsTest extends AutomatedTestBase
 			Assert.assertEquals(out.getNumRows(), data2.getNumRows());
 			Assert.assertEquals(out.getNumColumns(), data2.getNumColumns());
 			for(int i=1; i<=rows; i++)
-				Assert.assertEquals((double)i, out.quickGetValue(i-1, 0), 1e-8);
+				Assert.assertEquals(i, out.quickGetValue(i-1, 0), 1e-8);
 			for(int i=rows+1; i<=rows+10; i++)
 				Assert.assertTrue(Double.isNaN(out.quickGetValue(i-1, 0)));
 		} 
@@ -94,7 +94,7 @@ public class TransformApplyUnknownsTest extends AutomatedTestBase
 				if( i < 1 | i > rows )
 					Assert.assertTrue(Double.isNaN(out.quickGetValue(i+5, 0)));
 				else
-					Assert.assertEquals((double)((i-1)/10+1), out.quickGetValue(i+5, 0), 1e-8);
+					Assert.assertEquals(((i-1)/10+1), out.quickGetValue(i+5, 0), 1e-8);
 			}
 		}
 		catch (Exception e) {

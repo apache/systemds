@@ -111,7 +111,7 @@ public class SparseBlockMCSR extends SparseBlock
 		//Overheads for arrays, objects, and references refer to 64bit JVMs
 		//If nnz < rows we have guaranteed also empty rows.
 		double size = 16; //object
-		size += MemoryEstimates.objectArrayCost((long)nrows); //references
+		size += MemoryEstimates.objectArrayCost(nrows); //references
 		long sparseRowSize = 16; // object
 		sparseRowSize += 4*4; // 3 integers + padding
 		sparseRowSize += MemoryEstimates.intArrayCost(0);

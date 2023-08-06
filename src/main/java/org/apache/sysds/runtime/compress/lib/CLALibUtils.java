@@ -20,12 +20,11 @@
 package org.apache.sysds.runtime.compress.lib;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import org.apache.commons.lang.NotImplementedException;
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
@@ -35,12 +34,17 @@ import org.apache.sysds.runtime.compress.colgroup.AMorphingMMColGroup;
 import org.apache.sysds.runtime.compress.colgroup.APreAgg;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupConst;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupEmpty;
+import org.apache.sysds.runtime.compress.colgroup.IFrameOfReferenceGroup;
 import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IIterate;
 
 public final class CLALibUtils {
 	protected static final Log LOG = LogFactory.getLog(CLALibUtils.class.getName());
+
+	private CLALibUtils() {
+		// private constructor
+	}
 
 	/**
 	 * Combine all column groups that are constant types, this include empty and const.
@@ -91,6 +95,42 @@ public final class CLALibUtils {
 	}
 
 	/**
+	 * Helper method to determine if the column groups contains Morphing or Frame of reference groups.
+	 * 
+	 * @param groups The groups to analyze
+	 * @return A Boolean saying there is morphing or FOR groups.
+	 */
+	protected static boolean shouldPreFilterMorphOrRef(List<AColGroup> groups) {
+		for(AColGroup g : groups)
+			if(g instanceof AMorphingMMColGroup || g instanceof IFrameOfReferenceGroup)
+				return true;
+		return false;
+	}
+
+	/**
+	 * Detect if the list of groups contains FOR.
+	 * 
+	 * @param groups the groups
+	 * @return If it contains FOR.
+	 */
+	protected static boolean shouldFilterFOR(List<AColGroup> groups) {
+		for(AColGroup g : groups)
+			if(g instanceof IFrameOfReferenceGroup)
+				return true;
+		return false;
+	}
+
+	protected static List<AColGroup> filterFOR(List<AColGroup> groups, double[] constV) {
+		if(constV == null)
+			return groups;
+		final List<AColGroup> filteredGroups = new ArrayList<>();
+		for(AColGroup g : groups)
+			if(g instanceof IFrameOfReferenceGroup)
+				filteredGroups.add(((IFrameOfReferenceGroup) g).extractCommon(constV));
+		return filteredGroups;
+	}
+
+	/**
 	 * Helper method to filter out SDC Groups and remove all constant groups, to reduce computation.
 	 * 
 	 * @param groups The Column Groups
@@ -105,6 +145,8 @@ public final class CLALibUtils {
 		for(AColGroup g : groups) {
 			if(g instanceof ColGroupEmpty || g.isEmpty())
 				continue;
+			else if(g instanceof IFrameOfReferenceGroup)
+				filteredGroups.add(((IFrameOfReferenceGroup)g).extractCommon(constV));
 			else if(g instanceof AMorphingMMColGroup)
 				filteredGroups.add(((AMorphingMMColGroup) g).extractCommon(constV));
 			else if(g instanceof ColGroupConst)
@@ -112,7 +154,7 @@ public final class CLALibUtils {
 			else
 				filteredGroups.add(g);
 		}
-		return returnGroupIfFiniteNumbers(groups, filteredGroups, constV);
+		return filteredGroups;
 	}
 
 	protected static void filterGroupsAndSplitPreAgg(List<AColGroup> groups, double[] constV,
@@ -150,14 +192,6 @@ public final class CLALibUtils {
 		}
 	}
 
-	private static List<AColGroup> returnGroupIfFiniteNumbers(List<AColGroup> groups, List<AColGroup> filteredGroups,
-		double[] constV) {
-		for(double v : constV)
-			if(!Double.isFinite(v))
-				throw new NotImplementedException("Not handling if the values are not finite: " + Arrays.toString(constV));
-		return filteredGroups;
-	}
-
 	private static AColGroup combineEmpty(List<AColGroup> e) {
 		return new ColGroupEmpty(combineColIndexes(e));
 	}
@@ -171,7 +205,7 @@ public final class CLALibUtils {
 			final double[] colVals = cg.getValues();
 			for(int i = 0; i < colIdx.size(); i++) {
 				// Find the index in the result columns to add the value into.
-				int outId = resCols.findIndex(colIdx.get(i)); 
+				int outId = resCols.findIndex(colIdx.get(i));
 				values[outId] = colVals[i];
 			}
 		}

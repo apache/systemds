@@ -25,7 +25,7 @@ If you want to execute from source code follow the [Install from source](install
 
 ## Setting SYSTEMDS_ROOT environment variable
 
-In order to run SystemDS it is highly recomended to setup SystemDS root on path.
+In order to run SystemDS it is highly recommended to setup SystemDS root on path.
 This works both from your development directory containing source code and if
 you download a release of SystemDS.
 
@@ -61,6 +61,8 @@ systemds hello.dml
 # Remove the hello.dml
 rm hello.dml
 ```
+
+If you are running MacOS and encounter an error message similar to `realpath: illegal option -- -` when executing `systemds hello.dml`. You may try to replace the system-wide command `realpath` with the homebrew version `grealpath` that comes with the `coreutils`. Alternatively, you may change all occurrences within the script accordingly, i.e., by prepending a `g` to avoid any side effects.
 
 ## Running a real first example
 

@@ -33,7 +33,11 @@ import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
-public class CLALibAppend {
+public final class CLALibAppend {
+
+	private CLALibAppend(){
+		// private constructor.
+	}
 
 	private static final Log LOG = LogFactory.getLog(CLALibAppend.class.getName());
 
@@ -59,7 +63,7 @@ public class CLALibAppend {
 
 		// if compression failed then use default append method.
 		if(!(left instanceof CompressedMatrixBlock && right instanceof CompressedMatrixBlock)) {
-			final double spar = (double) (left.getNonZeros() + right.getNonZeros()) / ((double) m * n);
+			final double spar = (left.getNonZeros() + right.getNonZeros()) / ((double) m * n);
 			final double estSizeUncompressed = MatrixBlock.estimateSizeInMemory(m, n, spar);
 			final double estSizeCompressed = left.getInMemorySize() + right.getInMemorySize();
 			if(estSizeUncompressed < estSizeCompressed)

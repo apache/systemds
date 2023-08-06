@@ -41,6 +41,7 @@ public class LineageCacheStatistics {
 	private static final LongAdder _ctimeFSWrite    = new LongAdder();
 	private static final LongAdder _ctimeSaved      = new LongAdder();
 	private static final LongAdder _ctimeMissed     = new LongAdder();
+	private static final LongAdder _ctimeProbe      = new LongAdder();
 	// Bellow entries are specific to gpu lineage cache
 	private static final LongAdder _numHitsGpu      = new LongAdder();
 	private static final LongAdder _numAsyncEvictGpu= new LongAdder();
@@ -52,6 +53,8 @@ public class LineageCacheStatistics {
 	private static final LongAdder _numHitsRdd      = new LongAdder();
 	private static final LongAdder _numHitsSparkActions = new LongAdder();
 	private static final LongAdder _numHitsRddPersist   = new LongAdder();
+	private static final LongAdder _numRddPersist   = new LongAdder();
+	private static final LongAdder _numRddUnpersist   = new LongAdder();
 
 	public static void reset() {
 		_numHitsMem.reset();
@@ -68,6 +71,7 @@ public class LineageCacheStatistics {
 		_ctimeFSWrite.reset();
 		_ctimeSaved.reset();
 		_ctimeMissed.reset();
+		_ctimeProbe.reset();
 		_evtimeGpu.reset();
 		_numHitsGpu.reset();
 		_numAsyncEvictGpu.reset();
@@ -77,6 +81,8 @@ public class LineageCacheStatistics {
 		_numHitsRdd.reset();
 		_numHitsSparkActions.reset();
 		_numHitsRddPersist.reset();
+		_numRddPersist.reset();
+		_numRddUnpersist.reset();
 	}
 	
 	public static void incrementMemHits() {
@@ -187,6 +193,10 @@ public class LineageCacheStatistics {
 		_ctimeMissed.add(delta);
 	}
 
+	public static void incrementProbeTime(long delta) {
+		_ctimeProbe.add(delta);
+	}
+
 	public static long getMultiLevelFnHits() {
 		return _numHitsFunc.longValue();
 	}
@@ -241,6 +251,16 @@ public class LineageCacheStatistics {
 		_numHitsRddPersist.increment();
 	}
 
+	public static void incrementRDDPersists() {
+		// Number of RDDs marked for persistence
+		_numRddPersist.increment();
+	}
+
+	public static void incrementRDDUnpersists() {
+		// Number of RDDs unpersisted due the due to memory pressure
+		_numRddUnpersist.increment();
+	}
+
 	public static String displayHits() {
 		StringBuilder sb = new StringBuilder();
 		sb.append(_numHitsMem.longValue());
@@ -289,6 +309,8 @@ public class LineageCacheStatistics {
 		sb.append(String.format("%.3f", ((double)_ctimeSaved.longValue())/1000000000)); //in sec
 		sb.append("/");
 		sb.append(String.format("%.3f", ((double)_ctimeMissed.longValue())/1000000000)); //in sec
+		sb.append("/");
+		sb.append(String.format("%.3f", ((double)_ctimeProbe.longValue())/1000000000)); //in sec
 		return sb.toString();
 	}
 
@@ -316,7 +338,13 @@ public class LineageCacheStatistics {
 		return sb.toString();
 	}
 
-	public static String displaySparkStats() {
+	public static boolean ifGpuStats() {
+		return (_numHitsGpu.longValue() + _numAsyncEvictGpu.longValue()
+			+ _numSyncEvictGpu.longValue() + _numRecycleGpu.longValue()
+			+ _numDelGpu.longValue() + _evtimeGpu.longValue()) != 0;
+	}
+
+	public static String displaySparkHits() {
 		StringBuilder sb = new StringBuilder();
 		sb.append(_numHitsSparkActions.longValue());
 		sb.append("/");
@@ -324,5 +352,18 @@ public class LineageCacheStatistics {
 		sb.append("/");
 		sb.append(_numHitsRddPersist.longValue());
 		return sb.toString();
+	}
+
+	public static String displaySparkPersist() {
+		StringBuilder sb = new StringBuilder();
+		sb.append(_numRddPersist.longValue());
+		sb.append("/");
+		sb.append(_numRddUnpersist.longValue());
+		return sb.toString();
+	}
+
+	public static boolean ifSparkStats() {
+		return (_numHitsSparkActions.longValue() + _numHitsRdd.longValue()
+		+ _numHitsRddPersist.longValue() + _numRddUnpersist.longValue()) != 0;
 	}
 }

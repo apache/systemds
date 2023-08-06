@@ -1,0 +1,175 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+# Implements builtin for
+# Expected NaN missing values
+# mask = isNaN(X)
+# I = rowSums(mask) != 0
+# dev@systemds.apache.org
+    #rowIndexMin() -> get index
+    #method 1
+    #impute By Mean?, really small, coarse grained-operation
+    #Extract Top 1 distances, impute the respective value
+    #dist runtime * #features
+    #method 2
+    #assuming missing value is very small, 1%
+    #compute only the distances between tuples between missing value, impute the mean,
+    #compute distance between entire "X" (potentially large) and rows with missing values (hopefully small),
+    #method 3
+    #sample rows, randomly select subset of rows
+    #assuming missing value is very large,
+    #compute distance between sample of rows of X (control small) and rows with missing values (if not small),
+
+m_imputeByKNN = function(Matrix[Double] data, String method = "default")
+return(Matrix[Double] result)
+{
+
+  print("BEGIN KNN-IMPUTATION SCRIPT")
+
+  #Test Data, initial data
+  first = matrix ("1 3 4 8", rows = 4, cols = 1)
+  second = matrix ("2 NaN 6 NaN", rows = 4, cols = 1)
+  third = matrix ("4 7 5 7", rows = 4, cols = 1)
+  test_matrix = cbind(first,second,third)
+
+  #Add more data for more test cases
+  fifth = matrix("5 6 7", rows = 1, cols = 3)
+  sixth = matrix("3 4 5", rows = 1 , cols = 3)
+  tm2 = rbind(test_matrix, fifth,sixth)
+
+  #Create a mask for placeholder
+  masked = is.nan(tm2)
+  print(toString(tm2))
+  print(toString(masked))
+
+  #Check the missing column
+  missing_col = rowIndexMax(colSums(is.nan(tm2)))
+  print(toString(missing_col))
+
+  #change method here temporary "default"/"method2"
+  method = "method2"
+
+  if(method == "default"){
+    #METHOD 1
+
+    #Calculate the distance using dist method after imputation with mean
+    filled1 = imputeByMean(tm2, matrix(0, cols = ncol(tm2), rows = 1))
+    distance_matrix = dist(filled1)
+    #Change 0 value so rowIndexMin will ignore that diagonal value
+    distance_matrix = replace(target = distance_matrix, pattern = 0, replacement = 999)
+    print(toString(distance_matrix))
+
+    #Get the minimum distance row-wise computation
+    minimum_index = rowIndexMin(distance_matrix)
+
+    #Position of missing values in column
+    position = rowSums(is.nan(tm2))
+    position = position * minimum_index
+    print(toString(position))
+
+    #Replace the index with the value
+    for(i in 1:nrow(position)){
+        if(as.scalar(position[i,1]) != 0){
+            index = as.scalar(position[i,1])
+            position[i,1] = tm2[index,as.scalar(missing_col)]
+        }
+    }
+    #Replace the masked column with to be imputed Value
+    masked[,as.scalar(missing_col)] = masked[,as.scalar(missing_col)] * position
+
+    #Impute the value
+    tm3 = replace(target = tm2, pattern = NaN, replacement = 0)
+    tm3 = tm3 + masked
+    print("Result method1")
+    print(toString(tm3))
+
+  } else if(method == "method2"){
+
+    #METHOD 2
+    #Split the matrix into containing NaN values and not containing NaN values
+    I = (rowSums(is.nan(tm2))!=0)
+    print(toString(I))
+    filled_matrix = imputeByMean(tm2, matrix(0, cols = ncol(tm2), rows = 1))
+    print(toString(filled_matrix))
+    missing = removeEmpty(target=filled_matrix, margin="rows", select=I)
+    Y = (rowSums(is.nan(tm2))==0)
+    M3 = removeEmpty(target=filled_matrix, margin = "rows", select = Y)
+    print(toString(missing))
+    print(toString(M3))
+
+    #Calculate the euclidean distance between fully records and missing records, and then find the min value row wise
+    D = -2 * (M3 %*% t(missing)) + t(rowSums (missing ^ 2));
+    print(toString(D))
+    minD = rowMins (D);
+    print(toString(minD))
+
+    print(toString(t(D)))
+    print(toString(rowMins(t(D))))
+    print(toString(rowIndexMin(t(D))))
+    CheckMin = rowIndexMin(t(D))
+
+    print("Computing Euclidean Distances completed")
+
+    #Replace the index position with the value to be imputed
+    imputedValue = matrix(0, rows = nrow(CheckMin), cols = 1)
+    for(i in 1:nrow(CheckMin)){
+        imputedValue[i,1] = M3[as.scalar(CheckMin[i,1]),as.scalar(missing_col)]
+    }
+
+    #get the index location of the missing value
+    x = rowSums(is.nan(tm2))
+    v = matrix ("6 8", rows = 2, cols = 1)
+
+    Ind = seq(1, nrow(x)) * x
+    print(toString(Ind))
+    I2 = removeEmpty(target=Ind, margin="rows")
+    print(toString(I2))
+    R = table(I2,1,imputedValue)
+    print(toString(R))
+
+    #To make the number of rows identitcal to original matrix
+    if(nrow(R) < nrow(tm2)){
+        null_matrix = matrix(0, rows = nrow(tm2) - nrow(R), cols = 1)
+        R = rbind(R, null_matrix)
+    }
+    print(toString(R))
+
+    masked[,as.scalar(missing_col)] = masked[,as.scalar(missing_col)] * R
+    print(toString(masked))
+
+    tm2 = replace(target = tm2, pattern = NaN, replacement = 0)
+    tm2 = tm2 + masked
+
+    print("Result method2")
+    print(toString(tm2))
+
+  } else if(method == "method3"){
+    print("To be implemented")
+  } else {
+    print("Method is unknown or not yet implemented")
+  }
+
+
+#Default Results
+result = data
+}
+
+

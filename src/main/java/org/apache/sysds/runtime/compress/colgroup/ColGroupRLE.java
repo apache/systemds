@@ -973,12 +973,12 @@ public class ColGroupRLE extends AColGroupOffset {
 
 	@Override
 	public AColGroup append(AColGroup g) {
-		throw new NotImplementedException();
+		return null;
 	}
 
 	@Override
 	public AColGroup appendNInternal(AColGroup[] g) {
-		throw new NotImplementedException();
+		return null;
 	}
 
 	@Override

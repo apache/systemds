@@ -276,12 +276,12 @@ public class NegativeIndexTest {
 		ColIndexFactory.create(new int[0]);
 	}
 
-	@Test(expected = NullPointerException.class)
+	@Test(expected = DMLRuntimeException.class)
 	public void invalidCreate2() {
 		ColIndexFactory.create(new IntArrayList());
 	}
 
-	@Test(expected = ArrayIndexOutOfBoundsException.class)
+	@Test(expected = DMLRuntimeException.class)
 	public void invalidCreate3() {
 		ColIndexFactory.create(new IntArrayList(0));
 	}
@@ -333,16 +333,16 @@ public class NegativeIndexTest {
 
 	@Test(expected = DMLCompressionException.class)
 	public void invalidRange3() {
-		ColIndexFactory.createI(0,-1,2);
+		ColIndexFactory.createI(0, -1, 2);
 	}
 
 	@Test(expected = DMLCompressionException.class)
 	public void invalidRange4() {
-		ColIndexFactory.createI(0,0,2);
+		ColIndexFactory.createI(0, 0, 2);
 	}
 
 	@Test(expected = DMLCompressionException.class)
 	public void invalidRange5() {
-		ColIndexFactory.createI(0,1,1);
+		ColIndexFactory.createI(0, 1, 1);
 	}
 }

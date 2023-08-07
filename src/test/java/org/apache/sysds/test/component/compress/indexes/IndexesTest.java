@@ -155,7 +155,7 @@ public class IndexesTest {
 			compare(actual, n);
 		}
 		catch(IOException e) {
-			throw new RuntimeException("Error in io", e);
+			throw new RuntimeException("Error in io " + actual, e);
 		}
 		catch(Exception e) {
 			e.printStackTrace();

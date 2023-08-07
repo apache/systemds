@@ -58,11 +58,10 @@ public class TwoRangesIndex extends AColIndex {
 	@Override
 	public void write(DataOutput out) throws IOException {
 		out.writeByte(ColIndexType.TWORANGE.ordinal());
-
-		out.write(idx1.get(0));
-		out.write(idx1.size());
-		out.write(idx2.get(0));
-		out.write(idx2.size());
+		out.writeInt(idx1.get(0));
+		out.writeInt(idx1.size());
+		out.writeInt(idx2.get(0));
+		out.writeInt(idx2.size());
 	}
 
 	public static TwoRangesIndex read(DataInput in) throws IOException {
@@ -101,8 +100,32 @@ public class TwoRangesIndex extends AColIndex {
 
 	@Override
 	public SliceResult slice(int l, int u) {
-		// TODO Auto-generated method stub
-		throw new UnsupportedOperationException("Unimplemented method 'slice'");
+		LOG.error(l + " " + u + " " + this);
+		if(u <= idx1.get(0))
+			return new SliceResult(0, 0, null);
+		else if(l >= idx2.get(idx2.size() - 1))
+			return new SliceResult(0, 0, null);
+		else if(l <= idx1.get(0) && u >= idx2.get(idx2.size() - 1)) {
+			RangeIndex ids1 = idx1.shift(-l);
+			RangeIndex ids2 = idx2.shift(-l);
+			return new SliceResult(0, size(), new TwoRangesIndex(ids1, ids2));
+		}
+
+		SliceResult sa = idx1.slice(l, u);
+		SliceResult sb = idx2.slice(l, u);
+		LOG.error("SA" + sa);
+		LOG.error("SB" + sb);
+		if(sa.ret == null) {
+			return new SliceResult(idx1.size() + sb.idStart, idx1.size() + sb.idEnd, sb.ret);
+		}
+		else if(sb.ret == null) {
+			return sa;
+		}
+		else {
+			LOG.error("Default");
+			IColIndex c = sa.ret.combine(sb.ret);
+			return new SliceResult(sa.idStart, sa.idStart + sb.idEnd, c);
+		}
 	}
 
 	@Override
@@ -211,7 +234,7 @@ public class TwoRangesIndex extends AColIndex {
 		public int next() {
 			if(!aDone) {
 				int v = a.next();
-				aDone =! a.hasNext();
+				aDone = !a.hasNext();
 				return v;
 			}
 			else

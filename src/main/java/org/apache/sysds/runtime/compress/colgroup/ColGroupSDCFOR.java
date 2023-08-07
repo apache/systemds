@@ -37,7 +37,6 @@ import org.apache.sysds.runtime.compress.colgroup.offset.AIterator;
 import org.apache.sysds.runtime.compress.colgroup.offset.AOffset;
 import org.apache.sysds.runtime.compress.colgroup.offset.AOffset.OffsetSliceInfo;
 import org.apache.sysds.runtime.compress.colgroup.offset.OffsetFactory;
-import org.apache.sysds.runtime.compress.colgroup.scheme.ICLAScheme;
 import org.apache.sysds.runtime.compress.cost.ComputationCostEstimator;
 import org.apache.sysds.runtime.compress.estim.encoding.EncodingFactory;
 import org.apache.sysds.runtime.compress.estim.encoding.IEncode;
@@ -62,7 +61,7 @@ import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
  * with no modifications.
  * 
  */
-public class ColGroupSDCFOR extends ASDC implements IMapToDataGroup , IFrameOfReferenceGroup{
+public class ColGroupSDCFOR extends ASDC implements IMapToDataGroup, IFrameOfReferenceGroup {
 
 	private static final long serialVersionUID = 3883228464052204203L;
 
@@ -484,11 +483,6 @@ public class ColGroupSDCFOR extends ASDC implements IMapToDataGroup , IFrameOfRe
 		AMapToData nd = _data.appendN(Arrays.copyOf(g, g.length, IMapToDataGroup[].class));
 		AOffset no = _indexes.appendN(Arrays.copyOf(g, g.length, AOffsetsGroup[].class), getNumRows());
 		return create(_colIndexes, sumRows, _dict, no, nd, null, _reference);
-	}
-
-	@Override
-	public ICLAScheme getCompressionScheme() {
-		return null;
 	}
 
 	@Override

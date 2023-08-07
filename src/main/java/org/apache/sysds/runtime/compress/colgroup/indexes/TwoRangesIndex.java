@@ -182,6 +182,11 @@ public class TwoRangesIndex extends AColIndex {
 	}
 
 	@Override
+	public boolean containsAny(IColIndex idx) {
+		return idx1.containsAny(idx) || idx2.containsAny(idx);
+	}
+
+	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		sb.append(this.getClass().getSimpleName());
@@ -204,9 +209,9 @@ public class TwoRangesIndex extends AColIndex {
 
 		@Override
 		public int next() {
-			if(aDone) {
+			if(!aDone) {
 				int v = a.next();
-				aDone = a.hasNext();
+				aDone =! a.hasNext();
 				return v;
 			}
 			else
@@ -220,7 +225,7 @@ public class TwoRangesIndex extends AColIndex {
 
 		@Override
 		public int v() {
-			if(aDone)
+			if(!aDone)
 				return a.v();
 			else
 				return b.v();
@@ -228,7 +233,7 @@ public class TwoRangesIndex extends AColIndex {
 
 		@Override
 		public int i() {
-			if(aDone)
+			if(!aDone)
 				return a.i();
 			else
 				return a.i() + b.i();

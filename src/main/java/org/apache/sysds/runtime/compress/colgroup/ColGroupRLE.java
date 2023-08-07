@@ -35,6 +35,7 @@ import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.compress.colgroup.offset.AIterator;
 import org.apache.sysds.runtime.compress.colgroup.offset.AOffsetIterator;
 import org.apache.sysds.runtime.compress.colgroup.scheme.ICLAScheme;
+import org.apache.sysds.runtime.compress.colgroup.scheme.RLEScheme;
 import org.apache.sysds.runtime.compress.cost.ComputationCostEstimator;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
 import org.apache.sysds.runtime.data.DenseBlock;
@@ -972,17 +973,17 @@ public class ColGroupRLE extends AColGroupOffset {
 
 	@Override
 	public AColGroup append(AColGroup g) {
-		return null;
+		throw new NotImplementedException();
 	}
 
 	@Override
 	public AColGroup appendNInternal(AColGroup[] g) {
-		return null;
+		throw new NotImplementedException();
 	}
 
 	@Override
 	public ICLAScheme getCompressionScheme() {
-		return null;
+		return RLEScheme.create(this);
 	}
 
 	@Override

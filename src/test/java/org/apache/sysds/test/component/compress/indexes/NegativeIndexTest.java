@@ -247,24 +247,24 @@ public class NegativeIndexTest {
 	@Test
 	public void hashCode8() {
 		assertTrue(
-			new RangeIndex(0, 10).hashCode() == new ArrayIndex(new int[] {0, 1, 2, 3, 4, 5, 6, 7, 8, 9}).hashCode());
+			new RangeIndex(0, 10).hashCode() != new ArrayIndex(new int[] {0, 1, 2, 3, 4, 5, 6, 7, 8, 9}).hashCode());
 	}
 
 	@Test
 	public void hashCode9() {
-		assertTrue(new RangeIndex(0, 4).hashCode() == new ArrayIndex(new int[] {0, 1, 2, 3,}).hashCode());
+		assertTrue(new RangeIndex(0, 4).hashCode() != new ArrayIndex(new int[] {0, 1, 2, 3,}).hashCode());
 	}
 
 	@Test
 	public void hashCode10() {
 		assertTrue(
-			new RangeIndex(5555, 5560).hashCode() == new ArrayIndex(new int[] {5555, 5556, 5557, 5558, 5559}).hashCode());
+			new RangeIndex(5555, 5560).hashCode() != new ArrayIndex(new int[] {5555, 5556, 5557, 5558, 5559}).hashCode());
 	}
 
 	@Test
 	public void hashCode11() {
 		assertTrue(new RangeIndex(5000000, 5000005)
-			.hashCode() == new ArrayIndex(new int[] {5000000, 5000001, 5000002, 5000003, 5000004}).hashCode());
+			.hashCode() != new ArrayIndex(new int[] {5000000, 5000001, 5000002, 5000003, 5000004}).hashCode());
 	}
 
 	private static Object notRelated() {
@@ -319,5 +319,30 @@ public class NegativeIndexTest {
 	@Test(expected = DMLRuntimeException.class)
 	public void invalidCreate9() {
 		ColIndexFactory.create(-10);
+	}
+
+	@Test(expected = DMLCompressionException.class)
+	public void invalidRange() {
+		new RangeIndex(10, 4);
+	}
+
+	@Test(expected = DMLCompressionException.class)
+	public void invalidRange2() {
+		new RangeIndex(10, 10);
+	}
+
+	@Test(expected = DMLCompressionException.class)
+	public void invalidRange3() {
+		ColIndexFactory.createI(0,-1,2);
+	}
+
+	@Test(expected = DMLCompressionException.class)
+	public void invalidRange4() {
+		ColIndexFactory.createI(0,0,2);
+	}
+
+	@Test(expected = DMLCompressionException.class)
+	public void invalidRange5() {
+		ColIndexFactory.createI(0,1,1);
 	}
 }

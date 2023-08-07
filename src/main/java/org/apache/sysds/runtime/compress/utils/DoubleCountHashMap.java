@@ -288,7 +288,7 @@ public class DoubleCountHashMap {
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
-		sb.append(this.getClass().getSimpleName() + this.hashCode());
+		sb.append(this.getClass().getSimpleName());
 		for(int i = 0; i < _data.length; i++)
 			if(_data[i] != null)
 				sb.append(", " + _data[i]);

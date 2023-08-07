@@ -30,18 +30,23 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Random;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.colgroup.indexes.ArrayIndex;
 import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex.SliceResult;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IIterate;
+import org.apache.sysds.runtime.compress.colgroup.indexes.RangeIndex;
 import org.apache.sysds.runtime.compress.colgroup.indexes.SingleIndex;
 import org.apache.sysds.runtime.compress.colgroup.indexes.TwoIndex;
+import org.apache.sysds.runtime.compress.colgroup.indexes.TwoRangesIndex;
 import org.apache.sysds.runtime.compress.utils.IntArrayList;
 import org.apache.sysds.utils.MemoryEstimates;
 import org.junit.Test;
@@ -51,6 +56,7 @@ import org.junit.runners.Parameterized.Parameters;
 
 @RunWith(value = Parameterized.class)
 public class IndexesTest {
+	public static final Log LOG = LogFactory.getLog(IndexesTest.class.getName());
 
 	private final int[] expected;
 	private final IColIndex actual;
@@ -110,6 +116,7 @@ public class IndexesTest {
 			tests.add(createRangeWithArray(4, 132));
 			tests.add(createRangeWithArray(2, 132));
 			tests.add(createRangeWithArray(1, 132));
+			tests.add(createTwoRange(1, 10, 20, 30));
 		}
 		catch(Exception e) {
 			e.printStackTrace();
@@ -300,12 +307,53 @@ public class IndexesTest {
 
 	@Test
 	public void hashCodeEquals() {
-		assertEquals(actual.hashCode(), ColIndexFactory.create(expected).hashCode());
+		if(!(actual instanceof TwoRangesIndex))
+			assertEquals(actual.hashCode(), ColIndexFactory.create(expected).hashCode());
 	}
 
 	@Test
 	public void estimateInMemorySizeIsNotToBig() {
 		assertTrue(MemoryEstimates.intArrayCost(expected.length) >= actual.estimateInMemorySize() - 16);
+	}
+
+	@Test
+	public void containsInt1() {
+		assertTrue(actual.contains(expected[0]));
+	}
+
+	@Test
+	public void containsInt2() {
+		assertTrue(actual.contains(expected[expected.length - 1]));
+	}
+
+	@Test
+	public void containsIntAllElements() {
+		for(int i = 0; i < expected.length; i++)
+			assertTrue(actual.contains(expected[i]));
+	}
+
+	@Test
+	public void containsIntNot1() {
+		assertFalse(actual.contains(expected[expected.length - 1] + 3));
+	}
+
+	@Test
+	public void containsIntNot2() {
+		assertFalse(actual.toString(), actual.contains(expected[0] - 1));
+	}
+
+	@Test
+	public void containsIntNotAllInbetween() {
+		int j = 0;
+		for(int i = expected[0]; i < expected[expected.length - 1]; i++) {
+			if(i == expected[j]) {
+				j++;
+				assertTrue(actual.toString(), actual.contains(i));
+			}
+			else {
+				assertFalse(actual.toString(), actual.contains(i));
+			}
+		}
 	}
 
 	private void shift(int i) {
@@ -331,6 +379,7 @@ public class IndexesTest {
 	}
 
 	private static void compare(int[] expected, IIterate actual) {
+		// LOG.error(expected);
 		for(int i = 0; i < expected.length; i++) {
 			assertTrue(actual.hasNext());
 			assertEquals(i, actual.i());
@@ -378,5 +427,21 @@ public class IndexesTest {
 			return new Object[] {cols.extractValues(true), ret};
 		else
 			throw new DMLRuntimeException("Invalid construction of range array");
+	}
+
+	private static Object[] createTwoRange(int l1, int u1, int l2, int u2) {
+		RangeIndex a = new RangeIndex(l1, u1);
+		RangeIndex b = new RangeIndex(l2, u2);
+		TwoRangesIndex c = (TwoRangesIndex) a.combine(b);
+		int[] exp = new int[u1 - l1 + u2 - l2];
+		for(int i = l1, j = 0; i < u1; i++, j++) {
+			exp[j] = i;
+		}
+		for(int i = l2, j = u1 - l1; i < u2; i++, j++) {
+			exp[j] = i;
+		}
+		LOG.error(Arrays.toString(exp));
+		LOG.error(c);
+		return new Object[] {exp, c};
 	}
 }

@@ -22,6 +22,8 @@ package org.apache.sysds.runtime.compress.colgroup;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.compress.colgroup.offset.AOffset;
+import org.apache.sysds.runtime.compress.colgroup.scheme.ICLAScheme;
+import org.apache.sysds.runtime.compress.colgroup.scheme.SDCScheme;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
 import org.apache.sysds.runtime.compress.estim.EstimationFactors;
 
@@ -61,5 +63,10 @@ public abstract class ASDC extends AMorphingMMColGroup implements AOffsetsGroup 
 	public final CompressedSizeInfoColGroup getCompressionInfo(int nRow) {
 		EstimationFactors ef = new EstimationFactors(getNumValues(), _numRows, getNumberOffsets(), _dict.getSparsity());
 		return new CompressedSizeInfoColGroup(_colIndexes, ef, nRow, getCompType(),getEncoding());
+	}
+
+	@Override
+	public ICLAScheme getCompressionScheme() {
+		return SDCScheme.create(this);
 	}
 }

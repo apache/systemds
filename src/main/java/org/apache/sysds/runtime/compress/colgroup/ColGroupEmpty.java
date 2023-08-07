@@ -352,7 +352,8 @@ public class ColGroupEmpty extends AColGroupCompressed implements IContainADicti
 	@Override
 	public CompressedSizeInfoColGroup getCompressionInfo(int nRow) {
 		EstimationFactors ef = new EstimationFactors(getNumValues(), 1, 0, 0.0);
-		return new CompressedSizeInfoColGroup(_colIndexes, ef, estimateInMemorySize(), CompressionType.CONST, getEncoding());
+		return new CompressedSizeInfoColGroup(_colIndexes, ef, estimateInMemorySize(), CompressionType.EMPTY,
+			getEncoding());
 	}
 
 	@Override

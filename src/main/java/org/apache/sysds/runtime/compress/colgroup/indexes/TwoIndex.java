@@ -113,16 +113,16 @@ public class TwoIndex extends AColIndex {
 		if(other instanceof SingleIndex) {
 			int otherV = other.get(0);
 			if(otherV < id1)
-				return new ArrayIndex(new int[] {otherV, id1, id2});
+				return ColIndexFactory.create(new int[] {otherV, id1, id2});
 			else if(otherV < id2)
-				return new ArrayIndex(new int[] {id1, otherV, id2});
+				return ColIndexFactory.create(new int[] {id1, otherV, id2});
 			else
-				return new ArrayIndex(new int[] {id1, id2, otherV});
+				return ColIndexFactory.create(new int[] {id1, id2, otherV});
 		}
 		else if(other instanceof TwoIndex) {
 			int[] vals = new int[] {other.get(0), other.get(1), id1, id2};
 			Arrays.sort(vals);
-			return new ArrayIndex(vals);
+			return ColIndexFactory.create(vals);
 		}
 		else
 			return other.combine(this);
@@ -157,6 +157,11 @@ public class TwoIndex extends AColIndex {
 	@Override
 	public boolean contains(int i) {
 		return i == id1 || i == id2;
+	}
+
+	@Override
+	public double avgOfIndex() {
+		return (id1 + id2) * 0.5;
 	}
 
 	@Override

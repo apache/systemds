@@ -80,17 +80,16 @@ public final class CLALibCombineGroups {
 	}
 
 	public static List<AColGroup> combine(CompressedMatrixBlock cmb, CompressedSizeInfo csi, ExecutorService pool) {
-
 		List<AColGroup> input = cmb.getColGroups();
-		boolean filterFor = CLALibUtils.shouldFilterFOR(input);
+		
+		final boolean filterFor = CLALibUtils.shouldFilterFOR(input);
 		double[] c = filterFor ? new double[cmb.getNumColumns()] : null;
 		if(filterFor)
 			input = CLALibUtils.filterFOR(input, c);
 
 		List<List<AColGroup>> combinations = new ArrayList<>();
-		for(CompressedSizeInfoColGroup gi : csi.getInfo()) {
+		for(CompressedSizeInfoColGroup gi : csi.getInfo())
 			combinations.add(findGroupsInIndex(gi.getColumns(), input));
-		}
 
 		List<AColGroup> ret = new ArrayList<>();
 		if(filterFor)
@@ -99,16 +98,15 @@ public final class CLALibCombineGroups {
 		else
 			for(List<AColGroup> combine : combinations)
 				ret.add(combineN(combine));
-
 		return ret;
 	}
 
 	public static List<AColGroup> findGroupsInIndex(IColIndex idx, List<AColGroup> groups) {
 		List<AColGroup> ret = new ArrayList<>();
-		for(AColGroup g : groups) {
+		for(AColGroup g : groups)
 			if(g.getColIndices().containsAny(idx))
 				ret.add(g);
-		}
+
 		return ret;
 	}
 

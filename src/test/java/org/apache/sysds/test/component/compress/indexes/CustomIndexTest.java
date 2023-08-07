@@ -21,7 +21,10 @@ package org.apache.sysds.test.component.compress.indexes;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -36,6 +39,7 @@ import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex.SliceResult;
 import org.apache.sysds.runtime.compress.colgroup.indexes.RangeIndex;
 import org.apache.sysds.runtime.compress.colgroup.indexes.SingleIndex;
 import org.apache.sysds.runtime.compress.colgroup.indexes.TwoIndex;
+import org.apache.sysds.runtime.compress.colgroup.indexes.TwoRangesIndex;
 import org.apache.sysds.runtime.compress.utils.Util;
 import org.junit.Test;
 import org.mockito.Mockito;
@@ -792,16 +796,235 @@ public class CustomIndexTest {
 
 	@Test
 	public void isSortedArray2() {
-		assertFalse(ColIndexFactory.createI(0, 1, 5, 3, 9).isSorted());
+		assertFalse(new ArrayIndex(new int[] {0, 1, 5, 3, 9}).isSorted());
 	}
 
 	@Test
 	public void isSortedArray3() {
-		assertFalse(ColIndexFactory.createI(0, 1, 5, 9, -13).isSorted());
+		assertFalse(new ArrayIndex(new int[] {0, 1, 5, 9, -13}).isSorted());
 	}
 
 	@Test
 	public void isSortedArray4() {
-		assertFalse(ColIndexFactory.createI(0, 1, 0, 1, 0).isSorted());
+		assertFalse(new ArrayIndex(new int[] {0, 1, 0, 1, 0}).isSorted());
+	}
+
+	@Test
+	public void combine_1() {
+		IColIndex a = ColIndexFactory.createI(0, 1, 2, 3);
+		IColIndex b = ColIndexFactory.createI(4, 5, 6, 7);
+		IColIndex e = ColIndexFactory.createI(0, 1, 2, 3, 4, 5, 6, 7);
+		assertEquals(e, a.combine(b));
+	}
+
+	@Test
+	public void sortArray() {
+		IColIndex a = new ArrayIndex(new int[] {6, 7, 3, 2, 8});
+		IColIndex b = a.sort();
+		IColIndex e = ColIndexFactory.createI(2, 3, 6, 7, 8);
+		assertFalse(a.isSorted());
+		assertTrue(b.isSorted());
+		assertNotEquals(e, a);
+		assertEquals(e, b);
+	}
+
+	@Test
+	public void sortArray2() {
+		IColIndex a = new ArrayIndex(new int[] {6, 7, 3, 2, 8});
+		IColIndex b = a.sort();
+		IColIndex e = ColIndexFactory.createI(2, 3, 6, 7, 8);
+		assertFalse(a.isSorted());
+		assertTrue(b.isSorted());
+		assertNotEquals(e, a);
+		assertEquals(e, b);
+	}
+
+	@Test
+	public void getReorderingIndex() {
+		IColIndex a = new ArrayIndex(new int[] {6, 4, 3, 2, 1});
+		int[] b = a.getReorderingIndex();
+		int[] e = new int[] {4, 3, 2, 1, 0};
+		assertTrue(Arrays.equals(e, b));
+	}
+
+	@Test
+	public void combineToRangeFromArray() {
+		IColIndex a = ColIndexFactory.createI(0, 2, 4, 6, 8);
+		IColIndex b = ColIndexFactory.createI(1, 3, 5, 7, 9);
+		IColIndex e = ColIndexFactory.create(0, 10);
+		assertEquals(e, a.combine(b));
+	}
+
+	@Test
+	public void combineToRangeFromArray2() {
+		IColIndex a = ColIndexFactory.createI(0, 2, 4, 6, 8);
+		IColIndex b = ColIndexFactory.createI(1, 3, 5, 7);
+		IColIndex e = ColIndexFactory.create(0, 9);
+		assertEquals(e, a.combine(b));
+	}
+
+	@Test
+	public void combineToRangeFromArray3() {
+		IColIndex a = ColIndexFactory.createI(2, 4, 6, 8);
+		IColIndex b = ColIndexFactory.createI(1, 3, 5, 7);
+		IColIndex e = ColIndexFactory.create(1, 9);
+		assertEquals(e, a.combine(b));
+	}
+
+	@Test
+	public void combineToRangeFromArray4() {
+		IColIndex a = ColIndexFactory.createI(2, 4, 6, 8);
+		IColIndex b = ColIndexFactory.createI(1, 3, 5, 7, 9, 10, 11);
+		IColIndex e = ColIndexFactory.create(1, 12);
+		assertEquals(e, a.combine(b));
+	}
+
+	@Test
+	public void avgIndex() {
+		IColIndex a = ColIndexFactory.createI(2, 4, 6, 8);
+		assertEquals(5.0, a.avgOfIndex(), 0.01);
+	}
+
+	@Test
+	public void avgIndex2() {
+		IColIndex a = ColIndexFactory.createI(2, 4, 6);
+		assertEquals(4.0, a.avgOfIndex(), 0.01);
+	}
+
+	@Test
+	public void avgIndex3() {
+		IColIndex a = ColIndexFactory.createI(2, 6);
+		assertEquals(4.0, a.avgOfIndex(), 0.01);
+	}
+
+	@Test
+	public void avgIndex4() {
+		IColIndex a = ColIndexFactory.createI(2);
+		assertEquals(2.0, a.avgOfIndex(), 0.01);
+	}
+
+	@Test
+	public void avgIndex5() {
+		IColIndex a = ColIndexFactory.create(0, 10);
+		assertEquals(4.5, a.avgOfIndex(), 0.01);
+	}
+
+	@Test
+	public void combineColGroups() {
+		AColGroup a = mock(AColGroup.class);
+		when(a.getColIndices()).thenReturn(ColIndexFactory.createI(1, 2, 5, 6));
+		AColGroup b = mock(AColGroup.class);
+		when(b.getColIndices()).thenReturn(ColIndexFactory.createI(3, 4, 8));
+		IColIndex e = ColIndexFactory.createI(1, 2, 3, 4, 5, 6, 8);
+		assertEquals(e, ColIndexFactory.combine(a, b));
+	}
+
+	@Test
+	public void combineArrayOfIndexes() {
+		List<IColIndex> l = new ArrayList<>();
+		l.add(ColIndexFactory.createI(1));
+		l.add(ColIndexFactory.createI(3, 5));
+		l.add(ColIndexFactory.createI(4, 7, 8, 9));
+		l.add(ColIndexFactory.createI(10, 11, 12, 13, 14));
+
+		IColIndex e = ColIndexFactory.createI(1, 3, 4, 5, 7, 8, 9, 10, 11, 12, 13, 14);
+		assertEquals(e, ColIndexFactory.combineIndexes(l));
+	}
+
+	@Test
+	public void containsAny() {
+		IColIndex a = ColIndexFactory.createI(27, 28, 29);
+		IColIndex b = ColIndexFactory.createI(61, 62, 63);
+		IColIndex c = a.combine(b);
+		assertTrue(c instanceof TwoRangesIndex);
+
+		IColIndex d = ColIndexFactory.createI(12);
+
+		assertFalse(c.containsAny(d));
+		assertFalse(d.containsAny(c));
+	}
+
+	@Test
+	public void combineRanges() {
+		IColIndex a = ColIndexFactory.createI(1, 2, 3, 4);
+		IColIndex b = ColIndexFactory.createI(5, 6, 7, 8);
+		IColIndex e = ColIndexFactory.createI(1, 2, 3, 4, 5, 6, 7, 8);
+		assertEquals(e, a.combine(b));
+	}
+
+	@Test
+	public void combineRanges2() {
+		IColIndex b = ColIndexFactory.createI(1, 2, 3, 4);
+		IColIndex a = ColIndexFactory.createI(5, 6, 7, 8);
+		IColIndex e = ColIndexFactory.createI(1, 2, 3, 4, 5, 6, 7, 8);
+		assertEquals(e, a.combine(b));
+	}
+
+	@Test
+	public void combineRanges3() {
+		IColIndex b = ColIndexFactory.createI(1, 2, 3, 4);
+		IColIndex a = ColIndexFactory.createI(6, 7, 8, 9);
+		IColIndex e = ColIndexFactory.createI(1, 2, 3, 4, 6, 7, 8, 9);
+		assertEquals(e, a.combine(b));
+	}
+
+	@Test
+	public void combineRanges4() {
+		IColIndex a = ColIndexFactory.createI(1, 2, 3, 4);
+		IColIndex b = ColIndexFactory.createI(6, 7, 8, 9);
+		IColIndex e = ColIndexFactory.createI(1, 2, 3, 4, 6, 7, 8, 9);
+		assertEquals(e, a.combine(b));
+	}
+
+	@Test
+	public void containsTest() {
+		// to get coverage
+		IColIndex a = new TwoRangesIndex(new RangeIndex(1, 10), new RangeIndex(5, 10));
+		assertTrue(a.contains(7));
+		assertTrue(a.contains(2));
+		assertTrue(a.contains(9));
+		assertFalse(a.contains(-1));
+		assertFalse(a.contains(11));
+		assertFalse(a.contains(10));
+	}
+
+	@Test
+	public void containsTest2() {
+		// to get coverage
+		IColIndex a = new TwoRangesIndex(new RangeIndex(1, 4), new RangeIndex(11, 20));
+		assertFalse(a.contains(7));
+		assertTrue(a.contains(2));
+		assertTrue(a.contains(11));
+		assertFalse(a.contains(-1));
+		assertFalse(a.contains(20));
+		assertFalse(a.contains(10));
+	}
+
+	@Test
+	public void containsAnyArray1() {
+		IColIndex a = new TwoRangesIndex(new RangeIndex(1, 4), new RangeIndex(11, 20));
+		IColIndex b = new RangeIndex(7, 15);
+		assertTrue(a.containsAny(b));
+	}
+
+	@Test
+	public void containsAnyArrayF1() {
+		IColIndex a = new TwoRangesIndex(new RangeIndex(1, 4), new RangeIndex(11, 20));
+		IColIndex b = new RangeIndex(20, 25);
+		assertFalse(a.containsAny(b));
+	}
+
+	@Test
+	public void containsAnyArrayF2() {
+		IColIndex a = new TwoRangesIndex(new RangeIndex(1, 4), new RangeIndex(11, 20));
+		IColIndex b = new RangeIndex(4, 11);
+		assertFalse(a.containsAny(b));
+	}
+
+	@Test
+	public void containsAnyArray2() {
+		IColIndex a = new TwoRangesIndex(new RangeIndex(1, 4), new RangeIndex(11, 20));
+		IColIndex b = new RangeIndex(3, 11);
+		assertTrue(a.containsAny(b));
 	}
 }

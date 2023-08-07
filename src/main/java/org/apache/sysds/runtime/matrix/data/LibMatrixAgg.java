@@ -27,6 +27,8 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.common.Types.CorrectionLocationType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.codegen.SpoofOperator.SideInput;
@@ -87,7 +89,7 @@ import org.apache.sysds.runtime.util.UtilFunctions;
  * TODO next opcode extensions: a+, colindexmax
  */
 public class LibMatrixAgg {
-	// private static final Log LOG = LogFactory.getLog(LibMatrixAgg.class.getName());
+	protected static final Log LOG = LogFactory.getLog(LibMatrixAgg.class.getName());
 
 	//internal configuration parameters
 	private static final boolean NAN_AWARENESS = false;
@@ -512,8 +514,11 @@ public class LibMatrixAgg {
 
 	public static MatrixBlock aggregateTernary(MatrixBlock in1, MatrixBlock in2, MatrixBlock in3, MatrixBlock ret, AggregateTernaryOperator op, int k) {
 		//fall back to sequential version if necessary
-		if( k <= 1 || in1.nonZeros+in2.nonZeros < PAR_NUMCELL_THRESHOLD1 || in1.rlen <= k/2 
-			|| (!(op.indexFn instanceof ReduceCol) &&  ret.clen*8*k > PAR_INTERMEDIATE_SIZE_THRESHOLD) ) {
+		if( k <= 1 
+			|| in1.nonZeros+in2.nonZeros < PAR_NUMCELL_THRESHOLD1 
+			|| in1.rlen <= k/2 
+			// || (!(op.indexFn instanceof ReduceCol) &&  ret.clen*8*k > PAR_INTERMEDIATE_SIZE_THRESHOLD)
+			 ) {
 			return aggregateTernary(in1, in2, in3, ret, op);
 		}
 		
@@ -636,7 +641,7 @@ public class LibMatrixAgg {
 			&& in.nonZeros > (sharedTP ? PAR_NUMCELL_THRESHOLD2 : PAR_NUMCELL_THRESHOLD1);
 	}
 	
-	public static boolean satisfiesMultiThreadingConstraints(MatrixBlock in,int k) {
+	public static boolean satisfiesMultiThreadingConstraints(MatrixBlock in, int k) {
 		boolean sharedTP = (InfrastructureAnalyzer.getLocalParallelism() == k);
 		return k > 1 && in.rlen > (sharedTP ? k/8 : k/2)
 			&& in.nonZeros > (sharedTP ? PAR_NUMCELL_THRESHOLD2 : PAR_NUMCELL_THRESHOLD1);

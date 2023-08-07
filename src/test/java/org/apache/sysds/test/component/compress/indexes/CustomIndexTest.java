@@ -882,36 +882,31 @@ public class CustomIndexTest {
 	@Test
 	public void avgIndex() {
 		IColIndex a = ColIndexFactory.createI(2, 4, 6, 8);
-
 		assertEquals(5.0, a.avgOfIndex(), 0.01);
 	}
 
 	@Test
 	public void avgIndex2() {
 		IColIndex a = ColIndexFactory.createI(2, 4, 6);
-
 		assertEquals(4.0, a.avgOfIndex(), 0.01);
 	}
 
 	@Test
 	public void avgIndex3() {
 		IColIndex a = ColIndexFactory.createI(2, 6);
-
 		assertEquals(4.0, a.avgOfIndex(), 0.01);
 	}
 
 	@Test
 	public void avgIndex4() {
 		IColIndex a = ColIndexFactory.createI(2);
-
 		assertEquals(2.0, a.avgOfIndex(), 0.01);
 	}
 
 	@Test
 	public void avgIndex5() {
 		IColIndex a = ColIndexFactory.create(0, 10);
-
-		assertEquals(5.0, a.avgOfIndex(), 0.01);
+		assertEquals(4.5, a.avgOfIndex(), 0.01);
 	}
 
 	@Test
@@ -947,5 +942,37 @@ public class CustomIndexTest {
 
 		assertFalse(c.containsAny(d));
 		assertFalse(d.containsAny(c));
+	}
+
+	@Test
+	public void combineRanges() {
+		IColIndex a = ColIndexFactory.createI(1, 2, 3, 4);
+		IColIndex b = ColIndexFactory.createI(5, 6, 7, 8);
+		IColIndex e = ColIndexFactory.createI(1, 2, 3, 4, 5, 6, 7, 8);
+		assertEquals(e, a.combine(b));
+	}
+
+	@Test
+	public void combineRanges2() {
+		IColIndex b = ColIndexFactory.createI(1, 2, 3, 4);
+		IColIndex a = ColIndexFactory.createI(5, 6, 7, 8);
+		IColIndex e = ColIndexFactory.createI(1, 2, 3, 4, 5, 6, 7, 8);
+		assertEquals(e, a.combine(b));
+	}
+
+	@Test
+	public void combineRanges3() {
+		IColIndex b = ColIndexFactory.createI(1, 2, 3, 4);
+		IColIndex a = ColIndexFactory.createI(6, 7, 8, 9);
+		IColIndex e = ColIndexFactory.createI(1, 2, 3, 4, 6, 7, 8, 9);
+		assertEquals(e, a.combine(b));
+	}
+
+	@Test
+	public void combineRanges4() {
+		IColIndex a = ColIndexFactory.createI(1, 2, 3, 4);
+		IColIndex b = ColIndexFactory.createI(6, 7, 8, 9);
+		IColIndex e = ColIndexFactory.createI(1, 2, 3, 4, 6, 7, 8, 9);
+		assertEquals(e, a.combine(b));
 	}
 }

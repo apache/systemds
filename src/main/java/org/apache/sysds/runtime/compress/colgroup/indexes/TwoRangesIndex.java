@@ -23,6 +23,7 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
+import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
 
 public class TwoRangesIndex extends AColIndex {
@@ -93,14 +94,21 @@ public class TwoRangesIndex extends AColIndex {
 
 	@Override
 	public int findIndex(int i) {
+		int aix = idx1.findIndex(i);
+		if(aix < -1 * idx1.size()) {
+			int bix = idx2.findIndex(i);
+			if(bix < 0)
+				return aix + bix + 1;
+			else
+				return idx1.size() + bix;
+		}
+		else
+			return aix;
 
-		// TODO Auto-generated method stub
-		throw new UnsupportedOperationException("Unimplemented method 'findIndex'");
 	}
 
 	@Override
 	public SliceResult slice(int l, int u) {
-		LOG.error(l + " " + u + " " + this);
 		if(u <= idx1.get(0))
 			return new SliceResult(0, 0, null);
 		else if(l >= idx2.get(idx2.size() - 1))
@@ -113,16 +121,13 @@ public class TwoRangesIndex extends AColIndex {
 
 		SliceResult sa = idx1.slice(l, u);
 		SliceResult sb = idx2.slice(l, u);
-		LOG.error("SA" + sa);
-		LOG.error("SB" + sb);
 		if(sa.ret == null) {
 			return new SliceResult(idx1.size() + sb.idStart, idx1.size() + sb.idEnd, sb.ret);
 		}
-		else if(sb.ret == null) {
+		else if(sb.ret == null)
+		// throw new NotImplementedException();
 			return sa;
-		}
 		else {
-			LOG.error("Default");
 			IColIndex c = sa.ret.combine(sb.ret);
 			return new SliceResult(sa.idStart, sa.idStart + sb.idEnd, c);
 		}
@@ -195,7 +200,7 @@ public class TwoRangesIndex extends AColIndex {
 
 	@Override
 	public double avgOfIndex() {
-		return (idx1.avgOfIndex() + idx2.avgOfIndex()) * 0.5;
+		return (idx1.avgOfIndex() * idx1.size() + idx2.avgOfIndex() * idx2.size()) / size();
 	}
 
 	@Override

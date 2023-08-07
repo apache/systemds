@@ -245,7 +245,7 @@ public class RangeIndex extends AColIndex {
 
 	@Override
 	public double avgOfIndex() {
-		double diff = u - l;
+		double diff = u - 1 - l;
 		// double s = l * diff + diff * diff * 0.5;
 		// return s / diff;
 		return l + diff * 0.5;

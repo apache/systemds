@@ -115,7 +115,7 @@ public class Builtin extends ValueFunction
 		String2BuiltinCode.put( "applySchema", BuiltinCode.APPLY_SCHEMA);
 	}
 	
-	private Builtin(BuiltinCode bf) {
+	protected Builtin(BuiltinCode bf) {
 		bFunc = bf;
 	}
 	
@@ -142,6 +142,10 @@ public class Builtin extends ValueFunction
 	public static Builtin getBuiltinFnObject(BuiltinCode code) {
 		if ( code == null ) 
 			return null; 
+		if(code == BuiltinCode.MAX)
+			return Max.getMaxFnObject();
+		else if (code == BuiltinCode.MIN)
+			return Min.getMinFnObject();
 		return new Builtin(code);
 	}
 

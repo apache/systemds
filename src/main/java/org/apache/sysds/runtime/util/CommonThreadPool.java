@@ -31,43 +31,104 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import org.apache.commons.lang3.NotImplementedException;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 
 /**
- * This common thread pool provides an abstraction to obtain a shared
- * thread pool, specifically the ForkJoinPool.commonPool, for all requests
- * of the maximum degree of parallelism. If pools of different size are
+ * This common thread pool provides an abstraction to obtain a shared thread pool, specifically the
+ * ForkJoinPool.commonPool, for all requests of the maximum degree of parallelism. If pools of different size are
  * requested, we create new pool instances of FixedThreadPool.
  */
-public class CommonThreadPool implements ExecutorService
-{
-	//shared thread pool used system-wide, potentially by concurrent parfor workers
-	//we use the ForkJoinPool.commonPool() to avoid explicit cleanup, including
-	//unnecessary initialization (e.g., problematic in jmlc) and because this commonPool
-	//resulted in better performance than a dedicated fixed thread pool.
-	private static final int size = InfrastructureAnalyzer.getLocalParallelism();
-	private static final ExecutorService shared = ForkJoinPool.commonPool();
-	private final ExecutorService _pool;
-	public static ExecutorService triggerRemoteOPsPool = null;
+public class CommonThreadPool implements ExecutorService {
+	/** Log object */
+	protected static final Log LOG = LogFactory.getLog(CommonThreadPool.class.getName());
 
-	public CommonThreadPool(ExecutorService pool) {
+	/** The number of threads of the machine */
+	private static final int size = InfrastructureAnalyzer.getLocalParallelism();
+	/**
+	 * Shared thread pool used system-wide, potentially by concurrent parfor workers
+	 * 
+	 * we use the ForkJoinPool.commonPool() to avoid explicit cleanup, including unnecessary initialization (e.g.,
+	 * problematic in jmlc) and because this commonPool resulted in better performance than a dedicated fixed thread
+	 * pool.
+	 */
+	private static final ExecutorService shared = ForkJoinPool.commonPool();
+	/** A secondary thread local executor that use a custom number of threads */
+	private static ExecutorService shared2 = null;
+	/** The number of threads used in the custom secondary executor */
+	private static int shared2K = -1;
+	/** Dynamic thread pool, that dynamically allocate threads as tasks come in. */
+	private static ExecutorService triggerRemoteOPsPool = null;
+	/** This common thread pool */
+	private final ExecutorService _pool;
+
+	/**
+	 * Private constructor of the threadPool.
+	 * 
+	 * @param pool The thread pool instance to use.
+	 */
+	private CommonThreadPool(ExecutorService pool) {
 		_pool = pool;
 	}
 
-	public static ExecutorService get(int k) {
-		return new CommonThreadPool( (size==k) ?
-			shared : Executors.newFixedThreadPool(k));
+	/**
+	 * Get the shared Executor thread pool, that have the number of threads of the host system
+	 * 
+	 * @return An ExecutorService
+	 */
+	public static ExecutorService get() {
+		return shared;
 	}
-	
+
+	/**
+	 * Get a Executor thread pool, that have the number of threads specified in k.
+	 * 
+	 * The thread pool can be reused by other processes in the same host thread requesting another pool of the same
+	 * number of threads. The executor that is guaranteed ThreadLocal except if it is number of host logical cores.
+	 * 
+	 * 
+	 * @param k The number of threads wanted
+	 * @return The executor with specified parallelism
+	 */
+	public static ExecutorService get(int k) {
+		if(size == k)
+			return shared;
+		else if(Thread.currentThread().getName().equals("main")) {
+			if(shared2 != null && shared2K == k)
+				return shared2;
+			else if(shared2 == null) {
+				shared2 = new CommonThreadPool(Executors.newFixedThreadPool(k));
+				shared2K = k;
+				return shared2;
+			}
+			else {
+				return Executors.newFixedThreadPool(k);
+			}
+		}
+		else
+			return Executors.newFixedThreadPool(k);
+	}
+
+	/**
+	 * Get if there is a current thread pool that have the given parallelism locally.
+	 * 
+	 * @param k the parallelism
+	 * @return If we have a cached thread pool.
+	 */
+	public static boolean isSharedTPThreads(int k) {
+		return InfrastructureAnalyzer.getLocalParallelism() == k || shared2K == k || shared2K == -1;
+	}
+
 	public static <T> void invokeAndShutdown(ExecutorService pool, Collection<? extends Callable<T>> tasks) {
 		try {
-			//execute tasks
+			// execute tasks
 			List<Future<T>> ret = pool.invokeAll(tasks);
-			//check for errors and exceptions
-			for( Future<T> r : ret )
+			// check for errors and exceptions
+			for(Future<T> r : ret)
 				r.get();
-			//shutdown pool
+			// shutdown pool
 			pool.shutdown();
 		}
 		catch(Exception ex) {
@@ -75,28 +136,45 @@ public class CommonThreadPool implements ExecutorService
 		}
 	}
 
-	public static void shutdownShared() {
-		shared.shutdownNow();
+	/**
+	 * Get a dynamic thread pool that allocate threads as the requests are made. This pool is intended for async remote
+	 * calls that does not depend on local compute.
+	 * 
+	 * @return A dynamic thread pool.
+	 */
+	public static ExecutorService getDynamicPool() {
+		if(triggerRemoteOPsPool != null)
+			return triggerRemoteOPsPool;
+		else {
+			triggerRemoteOPsPool = Executors.newCachedThreadPool();
+			return triggerRemoteOPsPool;
+		}
 	}
 
+	/**
+	 * Shutdown the RDD Thread pool.
+	 */
 	public static void shutdownAsyncRDDPool() {
-		if (triggerRemoteOPsPool != null) {
-			//shutdown prefetch/broadcast thread pool
+		if(triggerRemoteOPsPool != null) {
+			// shutdown prefetch/broadcast thread pool
 			triggerRemoteOPsPool.shutdown();
 			triggerRemoteOPsPool = null;
 		}
 	}
 
+	private boolean isCached() {
+		return _pool == shared || _pool == shared2;
+	}
+
 	@Override
 	public void shutdown() {
-		if( _pool != shared )
+		if(!isCached())
 			_pool.shutdown();
 	}
 
 	@Override
 	public List<Runnable> shutdownNow() {
-		return ( _pool != shared ) ?
-			_pool.shutdownNow() : null;
+		return !isCached() ? null : _pool.shutdownNow();
 	}
 
 	@Override
@@ -106,10 +184,10 @@ public class CommonThreadPool implements ExecutorService
 
 	@Override
 	public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks, long timeout, TimeUnit unit)
-			throws InterruptedException {
+		throws InterruptedException {
 		return _pool.invokeAll(tasks, timeout, unit);
 	}
-	
+
 	@Override
 	public void execute(Runnable command) {
 		_pool.execute(command);
@@ -130,8 +208,7 @@ public class CommonThreadPool implements ExecutorService
 		return _pool.submit(task);
 	}
 
-	
-	//unnecessary methods required for API compliance
+	// unnecessary methods required for API compliance
 	@Override
 	public boolean isShutdown() {
 		throw new NotImplementedException();
@@ -154,7 +231,7 @@ public class CommonThreadPool implements ExecutorService
 
 	@Override
 	public <T> T invokeAny(Collection<? extends Callable<T>> tasks, long timeout, TimeUnit unit)
-			throws InterruptedException, ExecutionException, TimeoutException {
+		throws InterruptedException, ExecutionException, TimeoutException {
 		throw new NotImplementedException();
 	}
 }

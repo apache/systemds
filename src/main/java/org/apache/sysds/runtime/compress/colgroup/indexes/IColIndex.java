@@ -28,7 +28,7 @@ import java.io.IOException;
 public interface IColIndex {
 
 	public static enum ColIndexType {
-		SINGLE, TWO, ARRAY, RANGE, UNKNOWN;
+		SINGLE, TWO, ARRAY, RANGE, TWORANGE, UNKNOWN;
 	}
 
 	/**
@@ -185,6 +185,13 @@ public interface IColIndex {
 	 * @return If it is contained
 	 */
 	public boolean containsAny(IColIndex idx);
+
+	/**
+	 * Get the average of this index. We use this to sort the priority que when combining equivalent costly groups
+	 * 
+	 * @return The average of the indexes.
+	 */
+	public double avgOfIndex();
 
 	/** A Class for slice results containing indexes for the slicing of dictionaries, and the resulting column index */
 	public static class SliceResult {

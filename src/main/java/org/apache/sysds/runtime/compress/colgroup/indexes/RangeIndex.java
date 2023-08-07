@@ -22,6 +22,7 @@ package org.apache.sysds.runtime.compress.colgroup.indexes;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.util.Arrays;
 
 import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.utils.IntArrayList;
@@ -52,7 +53,7 @@ public class RangeIndex extends AColIndex {
 	 * Construct an range index with lower and upper values given.
 	 * 
 	 * @param l lower index
-	 * @param u Upper index
+	 * @param u Upper index not inclusive
 	 */
 	public RangeIndex(int l, int u) {
 		this.l = l;
@@ -73,7 +74,7 @@ public class RangeIndex extends AColIndex {
 	}
 
 	@Override
-	public IColIndex shift(int i) {
+	public RangeIndex shift(int i) {
 		return new RangeIndex(l + i, u + i);
 	}
 
@@ -154,6 +155,16 @@ public class RangeIndex extends AColIndex {
 			else if(v == u)
 				return new RangeIndex(l, u + 1);
 		}
+		if(other instanceof RangeIndex) {
+			if(other.get(0) == u)
+				return new RangeIndex(l, other.get(other.size() - 1) + 1);
+			else if(other.get(other.size() - 1) == l - 1)
+				return new RangeIndex(other.get(0), u);
+			else if(other.get(0) < this.get(0))
+				return new TwoRangesIndex((RangeIndex) other, this);
+			else
+				return new TwoRangesIndex(this, (RangeIndex) other);
+		}
 
 		final int sr = other.size();
 		final int sl = size();
@@ -186,18 +197,6 @@ public class RangeIndex extends AColIndex {
 		return true;
 	}
 
-	@Override
-	public String toString() {
-		StringBuilder sb = new StringBuilder();
-		sb.append(this.getClass().getSimpleName());
-		sb.append("[");
-		sb.append(l);
-		sb.append(" -> ");
-		sb.append(u);
-		sb.append("]");
-		return sb.toString();
-	}
-
 	protected static boolean isValidRange(int[] indexes) {
 		return isValidRange(indexes, indexes.length);
 	}
@@ -210,10 +209,14 @@ public class RangeIndex extends AColIndex {
 		int len = length;
 		int first = indexes[0];
 		int last = indexes[length - 1];
-		if(last - first + 1 == len) {
+
+		final boolean isPossibleFistAndLast = last - first + 1 >= len;
+		if(!isPossibleFistAndLast)
+			throw new DMLCompressionException("Invalid Index " + Arrays.toString(indexes));
+		else if(last - first + 1 == len) {
 			for(int i = 1; i < length; i++)
-				if(indexes[i - 1] > indexes[i])
-					return false;
+				if(indexes[i - 1] >= indexes[i])
+					throw new DMLCompressionException("Invalid Index");
 			return true;
 		}
 		else
@@ -238,6 +241,31 @@ public class RangeIndex extends AColIndex {
 	@Override
 	public boolean contains(int i) {
 		return l <= i && i < u;
+	}
+
+	@Override
+	public double avgOfIndex() {
+		double diff = u - l;
+		// double s = l * diff + diff * diff * 0.5;
+		// return s / diff;
+		return l + diff * 0.5;
+	}
+
+	@Override
+	public int hashCode() {
+		return 31 * l + u;
+	}
+
+	@Override
+	public String toString() {
+		StringBuilder sb = new StringBuilder();
+		sb.append(this.getClass().getSimpleName());
+		sb.append("[");
+		sb.append(l);
+		sb.append(" -> ");
+		sb.append(u);
+		sb.append("]");
+		return sb.toString();
 	}
 
 	protected class RangeIterator implements IIterate {

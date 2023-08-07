@@ -70,9 +70,10 @@ public abstract class AColIndex implements IColIndex {
 	@Override
 	public boolean containsAny(IColIndex idx) {
 		IIterate it = idx.iterator();
-		while(it.hasNext())
+		while(it.hasNext()){
 			if(contains(it.next()))
 				return true;
+		}
 		return false;
 	}
 }

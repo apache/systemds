@@ -30,6 +30,7 @@ import org.apache.sysds.runtime.compress.colgroup.ColGroupConst;
 import org.apache.sysds.runtime.functionobjects.KahanPlus;
 import org.apache.sysds.runtime.functionobjects.Multiply;
 import org.apache.sysds.runtime.functionobjects.ReduceAll;
+import org.apache.sysds.runtime.functionobjects.ReduceRow;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.AggregateTernaryOperator;
 
@@ -82,7 +83,19 @@ public final class CLALibAggTernaryOp {
 
 	public static MatrixBlock agg(MatrixBlock m1, MatrixBlock m2, MatrixBlock m3, MatrixBlock ret,
 		AggregateTernaryOperator op, boolean inCP) {
-		return new CLALibAggTernaryOp(m1, m2, m3, ret, op, inCP).exec();
+
+		int rl = (op.indexFn instanceof ReduceRow) ? 2 : 1;
+		int cl = (op.indexFn instanceof ReduceRow) ? m1.getNumRows() : 2;
+		if(ret == null)
+			ret = new MatrixBlock(rl, cl, false);
+		else
+			ret.reset(rl, cl, false);
+		ret = new CLALibAggTernaryOp(m1, m2, m3, ret, op, inCP).exec();
+
+		if(op.aggOp.existsCorrection() && inCP)
+			ret.dropLastRowsOrColumns(op.aggOp.correction);
+
+		return ret;
 	}
 
 	private MatrixBlock fallBack() {

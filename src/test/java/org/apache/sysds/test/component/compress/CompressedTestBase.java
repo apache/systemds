@@ -50,6 +50,7 @@ import org.apache.sysds.runtime.compress.colgroup.ColGroupFactory;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupUncompressed;
 import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
+import org.apache.sysds.runtime.compress.colgroup.indexes.IIterate;
 import org.apache.sysds.runtime.compress.cost.ACostEstimate;
 import org.apache.sysds.runtime.compress.cost.CostEstimatorBuilder;
 import org.apache.sysds.runtime.compress.cost.CostEstimatorFactory;
@@ -684,6 +685,8 @@ public abstract class CompressedTestBase extends TestBase {
 			if(compressMatrix && !(compMatrix instanceof CompressedMatrixBlock))
 				return; // Early termination since the test does not test what we wanted.
 
+			compareResultMatrices(matrix, compMatrix, 0.0);
+
 			// Make Operator
 			AggregateBinaryOperator abopSingle = InstructionUtils.getMatMultOperator(1);
 
@@ -1054,6 +1057,7 @@ public abstract class CompressedTestBase extends TestBase {
 	public void testCompressAgain() {
 		try {
 			TestUtils.assertEqualColsAndRows(mb, cmb);
+			compareResultMatrices(mb, cmb, 1);
 			MatrixBlock cmba = CompressedMatrixBlockFactory.compress(cmb, _k).getLeft();
 			compareResultMatrices(mb, cmba, 1);
 		}
@@ -1139,14 +1143,14 @@ public abstract class CompressedTestBase extends TestBase {
 
 	protected void compareResultMatrices(MatrixBlock expected, MatrixBlock result, double toleranceMultiplier) {
 		TestUtils.assertEqualColsAndRows(expected, result);
-		if(expected instanceof CompressedMatrixBlock)
+		if(expected instanceof CompressedMatrixBlock) {
+			verifyContainsAllColumns((CompressedMatrixBlock) expected);
 			expected = ((CompressedMatrixBlock) expected).decompress();
-		if(result instanceof CompressedMatrixBlock)
+		}
+		if(result instanceof CompressedMatrixBlock) {
+			verifyContainsAllColumns((CompressedMatrixBlock) result);
 			result = ((CompressedMatrixBlock) result).decompress();
-
-		if(result.getNonZeros() < expected.getNonZeros())
-			fail("Nonzero is to low guarantee at least equal or higher" + result.getNonZeros() + " vs "
-				+ expected.getNonZeros());
+		}
 
 		if(_cs != null && _cs.lossy)
 			TestUtils.compareMatricesPercentageDistance(expected, result, 0.25, 0.83, bufferedToString);
@@ -1159,15 +1163,45 @@ public abstract class CompressedTestBase extends TestBase {
 		else
 			TestUtils.compareMatricesBitAvgDistance(expected, result, (long) (27000 * toleranceMultiplier),
 				(long) (1024 * toleranceMultiplier), bufferedToString);
+
+		if(result.getNonZeros() < expected.getNonZeros())
+			fail("Nonzero is to low guarantee at least equal or higher " + result.getNonZeros() + " vs "
+				+ expected.getNonZeros());
+
+	}
+
+	protected void verifyContainsAllColumns(CompressedMatrixBlock mb) {
+		boolean[] cols = new boolean[mb.getNumColumns()];
+		List<AColGroup> groups = mb.getColGroups();
+
+		for(int i = 0; i < groups.size(); i++) {
+			AColGroup g = groups.get(i);
+			IColIndex idx = g.getColIndices();
+			IIterate it = idx.iterator();
+			while(it.hasNext()) {
+				cols[it.v()] = true;
+				it.next();
+			}
+		}
+
+		for(int i = 0; i < cols.length; i++) {
+			if(!cols[i])
+				fail("Invalid constructed compression is missing column: " + i);
+		}
+
 	}
 
 	protected void compareResultMatricesPercentDistance(MatrixBlock expected, MatrixBlock result, double avg,
 		double max) {
 		TestUtils.assertEqualColsAndRows(expected, result);
-		if(expected instanceof CompressedMatrixBlock)
+		if(expected instanceof CompressedMatrixBlock) {
+			verifyContainsAllColumns((CompressedMatrixBlock) expected);
 			expected = ((CompressedMatrixBlock) expected).decompress();
-		if(result instanceof CompressedMatrixBlock)
+		}
+		if(result instanceof CompressedMatrixBlock) {
+			verifyContainsAllColumns((CompressedMatrixBlock) result);
 			result = ((CompressedMatrixBlock) result).decompress();
+		}
 
 		TestUtils.compareMatricesPercentageDistance(expected, result, avg, max, bufferedToString);
 

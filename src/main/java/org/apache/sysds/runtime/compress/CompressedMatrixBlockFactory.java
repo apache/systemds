@@ -265,8 +265,10 @@ public class CompressedMatrixBlockFactory {
 	}
 
 	private Pair<MatrixBlock, CompressionStatistics> compressMatrix() {
-		if(mb.getNonZeros() < 0)
-			throw new DMLCompressionException("Invalid to compress matrices with unknown nonZeros");
+		if(mb.getNonZeros() < 0) {
+			LOG.warn("Recomputing non-zeros since it is unknown in compression");
+			mb.recomputeNonZeros();
+		}
 		else if(mb instanceof CompressedMatrixBlock && ((CompressedMatrixBlock) mb).isOverlapping()) {
 			LOG.warn("Unsupported recompression of overlapping compression");
 			return new ImmutablePair<>(mb, null);

@@ -26,16 +26,16 @@ import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 public class SchemeFactory {
 	public static ICLAScheme create(IColIndex columns, CompressionType type) {
 		switch(type) {
-			case CONST:
-				return ConstScheme.create(columns);
 			case DDC:
 				return DDCScheme.create(columns);
 			case DDCFOR:
 				break;
 			case DeltaDDC:
 				break;
+			case CONST:
+				// const is automatically empty if no data is provided.
 			case EMPTY:
-				break;
+				return new EmptyScheme(columns);
 			case LinearFunctional:
 				break;
 			case OLE:

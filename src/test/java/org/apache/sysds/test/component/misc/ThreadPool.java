@@ -370,39 +370,28 @@ public class ThreadPool {
 	public void invokeAndShutdownException() throws InterruptedException {
 		ExecutorService p = mock(ExecutorService.class);
 		ExecutorService c = new CommonThreadPool(p);
-
 		when(p.invokeAll(null)).thenThrow(new RuntimeException("Test"));
-
-		CommonThreadPool.invokeAndShutdown(p, null);
-
+		CommonThreadPool.invokeAndShutdown(c, null);
 	}
 
 	@Test
 	public void invokeAndShutdown() throws InterruptedException {
-
 		ExecutorService p = mock(ExecutorService.class);
 		ExecutorService c = new CommonThreadPool(p);
-
 		Collection<Callable<Integer>> cc = (Collection<Callable<Integer>>) null;
 		when(p.invokeAll(cc)).thenReturn(new ArrayList<Future<Integer>>());
-
 		CommonThreadPool.invokeAndShutdown(c, null);
-
 	}
 
 	@Test
 	@SuppressWarnings("all")
-	public void invokeAndShutdownV2() throws InterruptedException{
-		
+	public void invokeAndShutdownV2() throws InterruptedException {
 		ExecutorService p = mock(ExecutorService.class);
 		ExecutorService c = new CommonThreadPool(p);
-
 		Collection<Callable<Integer>> cc = (Collection<Callable<Integer>>) null;
 		List<Future<Integer>> f = new ArrayList<Future<Integer>>();
 		f.add(mock(Future.class));
-		when(p.invokeAll(cc)).thenReturn(f );
-
+		when(p.invokeAll(cc)).thenReturn(f);
 		CommonThreadPool.invokeAndShutdown(c, null);
-
 	}
 }

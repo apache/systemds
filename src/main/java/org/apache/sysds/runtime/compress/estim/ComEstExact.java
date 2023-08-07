@@ -20,6 +20,7 @@
 package org.apache.sysds.runtime.compress.estim;
 
 import org.apache.sysds.runtime.compress.CompressionSettings;
+import org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.compress.estim.encoding.EmptyEncoding;
 import org.apache.sysds.runtime.compress.estim.encoding.EncodingFactory;
@@ -39,7 +40,7 @@ public class ComEstExact extends AComEst {
 	public CompressedSizeInfoColGroup getColGroupInfo(IColIndex colIndexes, int estimate, int nrUniqueUpperBound) {
 		final IEncode map = EncodingFactory.createFromMatrixBlock(_data, _cs.transposed, colIndexes);
 		if(map instanceof EmptyEncoding)
-			return new CompressedSizeInfoColGroup(colIndexes, getNumRows());
+			return new CompressedSizeInfoColGroup(colIndexes, getNumRows(), CompressionType.EMPTY);
 		return getFacts(map, colIndexes);
 	}
 

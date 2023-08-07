@@ -127,6 +127,8 @@ public final class CLALibUtils {
 		for(AColGroup g : groups)
 			if(g instanceof IFrameOfReferenceGroup)
 				filteredGroups.add(((IFrameOfReferenceGroup) g).extractCommon(constV));
+			else
+				filteredGroups.add(g);
 		return filteredGroups;
 	}
 

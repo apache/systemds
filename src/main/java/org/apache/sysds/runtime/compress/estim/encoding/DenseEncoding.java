@@ -141,7 +141,7 @@ public class DenseEncoding extends AEncode {
 
 		final AMapToData ret = MapToFactory.create(size, maxUnique);
 
-		if(maxUnique > size) {
+		if(maxUnique > size && maxUnique > 2048) {
 			// aka there is more maxUnique than rows.
 			final Map<Integer, Integer> m = new HashMap<>(size);
 			return combineDenseWithHashMap(lm, rm, size, nVL, ret, m);

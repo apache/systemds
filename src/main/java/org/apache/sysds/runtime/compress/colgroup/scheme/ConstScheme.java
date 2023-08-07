@@ -19,8 +19,10 @@
 
 package org.apache.sysds.runtime.compress.colgroup.scheme;
 
-import org.apache.commons.lang3.NotImplementedException;
+import java.util.Arrays;
+
 import org.apache.sysds.runtime.compress.colgroup.AColGroup;
+import org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupConst;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -40,8 +42,8 @@ public class ConstScheme extends ACLAScheme {
 		return new ConstScheme(g.getColIndices(), g.getValues(), true);
 	}
 
-	public static ICLAScheme create(IColIndex cols) {
-		return new ConstScheme(cols, new double[cols.size()], false);
+	public static ICLAScheme create(IColIndex cols, double[] vals) {
+		return new ConstScheme(cols, vals, false);
 	}
 
 	@Override
@@ -51,13 +53,37 @@ public class ConstScheme extends ACLAScheme {
 
 	@Override
 	public ICLAScheme update(MatrixBlock data, IColIndex columns) {
-		throw new NotImplementedException();
+		final int nRow = data.getNumRows();
+		final int nColScheme = vals.length;
+		for(int r = 0; r < nRow; r++)
+			for(int c = 0; c < nColScheme; c++) {
+				final double v = data.quickGetValue(r, cols.get(c));
+				if(Double.compare(v, vals[c]) != 0)
+					return updateToDDC(data, columns);
+			}
+		return this;
+	}
+
+	private ICLAScheme updateToDDC(MatrixBlock data, IColIndex columns) {
+		return SchemeFactory.create(columns, CompressionType.DDC).update(data, columns);
 	}
 
 	@Override
 	public AColGroup encode(MatrixBlock data, IColIndex columns) {
 		validate(data, columns);
+		// we assume that it is always valid.
 		return ColGroupConst.create(columns, vals);
+	}
+
+	@Override
+	public final String toString() {
+		StringBuilder sb = new StringBuilder();
+		sb.append(this.getClass().getSimpleName());
+		sb.append(" Cols: ");
+		sb.append(cols);
+		sb.append(" Def:  ");
+		sb.append(Arrays.toString(vals));
+		return sb.toString();
 	}
 
 }

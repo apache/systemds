@@ -138,7 +138,7 @@ public class AggregateTernarySPInstruction extends ComputationSPInstruction {
 			
 			//execute aggregate ternary operation
 			return new Tuple2<>(new MatrixIndexes(1, ix.getColumnIndex()),
-				in1.aggregateTernaryOperations(in1, in2, in3, new MatrixBlock(), _aggop, false));
+				MatrixBlock.aggregateTernaryOperations(in1, in2, in3, new MatrixBlock(), _aggop, false));
 		}
 	}
 
@@ -164,7 +164,7 @@ public class AggregateTernarySPInstruction extends ComputationSPInstruction {
 			
 			//execute aggregate ternary operation
 			return new Tuple2<>(new MatrixIndexes(1, ix.getColumnIndex()),
-				in1.aggregateTernaryOperations(in1, in2, null, new MatrixBlock(), _aggop, false));
+				MatrixBlock.aggregateTernaryOperations(in1, in2, null, new MatrixBlock(), _aggop, false));
 		}
 	}
 }

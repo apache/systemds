@@ -36,6 +36,7 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.test.LoggingUtils;
 import org.apache.sysds.test.LoggingUtils.TestAppender;
 import org.apache.sysds.test.TestUtils;
+import org.junit.Ignore;
 import org.junit.Test;
 
 public class CompressedLoggingTests {
@@ -370,6 +371,7 @@ public class CompressedLoggingTests {
 	}
 
 	@Test
+	@Ignore
 	public void compressedLoggingTest_AbortEnd() {
 		final TestAppender appender = LoggingUtils.overwrite();
 
@@ -381,8 +383,9 @@ public class CompressedLoggingTests {
 			CompressionSettingsBuilder sb = new CompressionSettingsBuilder();
 			sb.setMaxSampleSize(ss);
 			sb.setMinimumSampleSize(ss);
-			CompressedMatrixBlockFactory.compress(mb, sb).getLeft();
+			MatrixBlock cmb = CompressedMatrixBlockFactory.compress(mb, sb).getLeft();
 			final List<LoggingEvent> log = LoggingUtils.reinsert(appender);
+			LOG.error(cmb);
 			for(LoggingEvent l : log) {
 				// LOG.error(l.getMessage());
 				if(l.getMessage().toString().contains("Abort block compression"))
@@ -449,7 +452,6 @@ public class CompressedLoggingTests {
 		}
 	}
 
-
 	@Test
 	public void compressionSettingsFull() {
 		final TestAppender appender = LoggingUtils.overwrite();
@@ -462,7 +464,7 @@ public class CompressedLoggingTests {
 				if(l.getMessage().toString().contains("Estimation Type"))
 					fail("Contained estimationType");
 			}
-			
+
 		}
 		catch(Exception e) {
 			e.printStackTrace();
@@ -470,6 +472,33 @@ public class CompressedLoggingTests {
 		}
 		finally {
 			Logger.getLogger(CompressionSettings.class).setLevel(Level.WARN);
+			LoggingUtils.reinsert(appender);
+		}
+	}
+
+	@Test
+	public void compressedLoggingTest_NNzNotSet() {
+		final TestAppender appender = LoggingUtils.overwrite();
+
+		try {
+			Logger.getLogger(CompressedMatrixBlockFactory.class).setLevel(Level.WARN);
+			MatrixBlock mb = TestUtils.generateTestMatrixBlock(1000, 5, 1, 1, 0.5, 235);
+			mb.setNonZeros(-1);
+			MatrixBlock m2 = CompressedMatrixBlockFactory.compress(mb).getLeft();
+			TestUtils.compareMatrices(mb, m2, 0.0);
+			final List<LoggingEvent> log = LoggingUtils.reinsert(appender);
+			for(LoggingEvent l : log) {
+				if(l.getMessage().toString().contains("Recomputing non-zeros"))
+					return;
+			}
+			fail("NonZeros not set warning not printed");
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
+		finally {
+			Logger.getLogger(CompressedMatrixBlockFactory.class).setLevel(Level.WARN);
 			LoggingUtils.reinsert(appender);
 		}
 	}

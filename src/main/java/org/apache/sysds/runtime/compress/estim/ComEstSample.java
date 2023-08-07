@@ -23,6 +23,7 @@ import java.util.Arrays;
 import java.util.Random;
 
 import org.apache.sysds.runtime.compress.CompressionSettings;
+import org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.compress.estim.encoding.EncodingFactory;
 import org.apache.sysds.runtime.compress.estim.encoding.IEncode;
@@ -77,7 +78,7 @@ public class ComEstSample extends AComEst {
 		if(_data.isEmpty() || (nnzCols != null && colIndexes.size() == 1 && nnzCols[colIndexes.get(0)] == 0) ||
 			(_cs.transposed && colIndexes.size() == 1 && _data.isInSparseFormat() &&
 				_data.getSparseBlock().isEmpty(colIndexes.get(0))))
-			return new CompressedSizeInfoColGroup(colIndexes, getNumRows());
+			return new CompressedSizeInfoColGroup(colIndexes, getNumRows(), CompressionType.EMPTY);
 
 		final IEncode map = EncodingFactory.createFromMatrixBlock(_sample, _transposed, colIndexes);
 		return extractInfo(map, colIndexes, maxDistinct);

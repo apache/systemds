@@ -19,43 +19,53 @@
 
 package org.apache.sysds.runtime.compress.colgroup.scheme;
 
-import org.apache.sysds.runtime.compress.colgroup.ColGroupDDC;
+import org.apache.commons.lang3.NotImplementedException;
+import org.apache.sysds.runtime.compress.colgroup.AColGroup;
+import org.apache.sysds.runtime.compress.colgroup.ASDC;
+import org.apache.sysds.runtime.compress.colgroup.ASDCZero;
+import org.apache.sysds.runtime.compress.colgroup.ColGroupSDCFOR;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
-public abstract class DDCScheme extends ACLAScheme {
+public abstract class SDCScheme extends ACLAScheme {
 
 	// TODO make it into a soft reference
 	protected ADictionary lastDict;
 
-	protected DDCScheme(IColIndex cols) {
+	protected SDCScheme(IColIndex cols) {
 		super(cols);
 	}
 
-	/**
-	 * Create a scheme for the DDC compression given
-	 * 
-	 * @param g A DDC Column group
-	 * @return A DDC Compression scheme
-	 */
-	public static DDCScheme create(ColGroupDDC g) {
-		return g.getNumCols() == 1 ? new DDCSchemeSC(g) : new DDCSchemeMC(g);
+	public static SDCScheme create(ASDC g) {
+		if(g instanceof ColGroupSDCFOR)
+			throw new NotImplementedException();
+		if(g.getColIndices().size() == 1)
+			return new SDCSchemeSC(g);
+		else
+			return new SDCSchemeMC(g);
 	}
 
-	/**
-	 * Create a scheme for the DDC compression given a list of columns.
-	 * 
-	 * @param cols The columns to compress
-	 * @return A DDC Compression scheme
-	 */
-	public static DDCScheme create(IColIndex cols) {
-		return cols.size() == 1 ? new DDCSchemeSC(cols) : new DDCSchemeMC(cols);
+	public static SDCScheme create(ASDCZero g) {
+		if(g.getColIndices().size() == 1)
+			return new SDCSchemeSC(g);
+		else
+			return new SDCSchemeMC(g);
 	}
 
 	@Override
-	protected final IColIndex getColIndices() {
-		return cols;
+	public AColGroup encode(MatrixBlock data, IColIndex columns) {
+		// TODO Auto-generated method stub
+		throw new UnsupportedOperationException("Unimplemented method 'encode'");
 	}
+
+	@Override
+	public ICLAScheme update(MatrixBlock data, IColIndex columns) {
+		// TODO Auto-generated method stub
+		throw new UnsupportedOperationException("Unimplemented method 'update'");
+	}
+
+	protected abstract Object getDef();
 
 	protected abstract Object getMap();
 
@@ -65,6 +75,8 @@ public abstract class DDCScheme extends ACLAScheme {
 		sb.append(this.getClass().getSimpleName());
 		sb.append("\nCols: ");
 		sb.append(cols);
+		sb.append("\nDef:  ");
+		sb.append(getDef());
 		sb.append("\nMap:  ");
 		sb.append(getMap());
 		return sb.toString();

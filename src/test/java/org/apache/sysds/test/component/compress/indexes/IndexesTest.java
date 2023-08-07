@@ -21,6 +21,7 @@ package org.apache.sysds.test.component.compress.indexes;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -34,14 +35,19 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Random;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.indexes.ArrayIndex;
 import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex.SliceResult;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IIterate;
+import org.apache.sysds.runtime.compress.colgroup.indexes.RangeIndex;
 import org.apache.sysds.runtime.compress.colgroup.indexes.SingleIndex;
 import org.apache.sysds.runtime.compress.colgroup.indexes.TwoIndex;
+import org.apache.sysds.runtime.compress.colgroup.indexes.TwoRangesIndex;
 import org.apache.sysds.runtime.compress.utils.IntArrayList;
 import org.apache.sysds.utils.MemoryEstimates;
 import org.junit.Test;
@@ -51,6 +57,7 @@ import org.junit.runners.Parameterized.Parameters;
 
 @RunWith(value = Parameterized.class)
 public class IndexesTest {
+	public static final Log LOG = LogFactory.getLog(IndexesTest.class.getName());
 
 	private final int[] expected;
 	private final IColIndex actual;
@@ -97,6 +104,26 @@ public class IndexesTest {
 				new int[] {4, 5, 6, 7, 8, 9}, //
 				ColIndexFactory.create(4, 10)});
 
+			tests.add(new Object[] {//
+				new int[] {4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18}, //
+				ColIndexFactory.create(4, 19)});
+			tests.add(new Object[] {//
+				new int[] {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18}, //
+				ColIndexFactory.create(0, 19)});
+			tests.add(new Object[] {//
+				new int[] {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18}, //
+				ColIndexFactory.create(1, 19)});
+
+			tests.add(new Object[] {//
+				new int[] {1, 2, 3, 4, 5, 6}, //
+				ColIndexFactory.create(1, 7)});
+			tests.add(new Object[] {//
+				new int[] {2, 3, 4, 5, 6}, //
+				ColIndexFactory.create(2, 7)});
+			tests.add(new Object[] {//
+				new int[] {3, 4, 5, 6}, //
+				ColIndexFactory.create(3, 7)});
+
 			tests.add(createWithArray(1, 323));
 			tests.add(createWithArray(2, 1414));
 			tests.add(createWithArray(144, 32));
@@ -110,6 +137,10 @@ public class IndexesTest {
 			tests.add(createRangeWithArray(4, 132));
 			tests.add(createRangeWithArray(2, 132));
 			tests.add(createRangeWithArray(1, 132));
+			tests.add(createTwoRange(1, 10, 20, 30));
+			tests.add(createTwoRange(1, 10, 22, 30));
+			tests.add(createTwoRange(9, 11, 22, 30));
+			tests.add(createTwoRange(9, 11, 22, 60));
 		}
 		catch(Exception e) {
 			e.printStackTrace();
@@ -148,7 +179,7 @@ public class IndexesTest {
 			compare(actual, n);
 		}
 		catch(IOException e) {
-			throw new RuntimeException("Error in io", e);
+			throw new RuntimeException("Error in io " + actual, e);
 		}
 		catch(Exception e) {
 			e.printStackTrace();
@@ -226,7 +257,7 @@ public class IndexesTest {
 
 	@Test
 	public void slice_2() {
-		if(expected[0] <= 1) {
+		if(expected[0] < 1) {
 
 			SliceResult sr = actual.slice(1, expected[expected.length - 1] + 1);
 			String errStr = actual.toString();
@@ -239,8 +270,81 @@ public class IndexesTest {
 	}
 
 	@Test
+	public void slice_3() {
+		for(int e = 0; e < actual.size(); e++) {
+
+			SliceResult sr = actual.slice(expected[e], expected[expected.length - 1] + 1);
+			String errStr = actual.toString();
+			if(sr.ret != null) {
+				IColIndex a = sr.ret;
+				assertEquals(errStr, a.size(), actual.size() - e);
+				assertEquals(errStr, a.get(0), 0);
+				assertEquals(errStr, a.get(a.size() - 1), expected[expected.length - 1] - expected[e]);
+			}
+		}
+	}
+
+	@Test
+	public void slice_4() {
+		SliceResult sr = actual.slice(-10, -1);
+		assertEquals(null, sr.ret);
+		assertEquals(0, sr.idEnd);
+		assertEquals(0, sr.idStart);
+	}
+
+	@Test
+	public void slice_5_moreThanRange() {
+		SliceResult sr = actual.slice(-10, expected[expected.length - 1] + 10);
+		assertTrue(sr.toString() + "  " + actual, sr.ret.contains(expected[0] + 10));
+		assertEquals(0, sr.idStart);
+	}
+
+	@Test
+	public void slice_5_SubRange() {
+		if(expected.length > 5) {
+
+			SliceResult sr = actual.slice(4, expected[5] + 1);
+
+			assertEquals(actual.toString(), expected[5], sr.ret.get(sr.ret.size() - 1) + 4);
+		}
+	}
+
+	@Test
 	public void equals() {
 		assertEquals(actual, ColIndexFactory.create(expected));
+	}
+
+	@Test
+	public void equalsSizeDiff_range() {
+		if(actual.size() == 10)
+			return;
+
+		IColIndex a = new RangeIndex(0, 10);
+		assertNotEquals(actual, a);
+	}
+
+	@Test
+	public void equalsSizeDiff_twoRanges() {
+		if(actual.size() == 10)
+			return;
+
+		IColIndex a = new TwoRangesIndex(new RangeIndex(0, 5), new RangeIndex(6, 10));
+		assertNotEquals(actual, a);
+	}
+
+	@Test
+	public void equalsSizeDiff_twoRanges2() {
+		if(actual.size() == 10 + 3)
+			return;
+		RangeIndex a = new RangeIndex(1, 10);
+		RangeIndex b = new RangeIndex(22, 25);
+		TwoRangesIndex c = (TwoRangesIndex) a.combine(b);
+		assertNotEquals(actual, c);
+	}
+
+	@Test
+	public void equalsItself() {
+		assertEquals(actual, actual);
 	}
 
 	@Test
@@ -300,12 +404,183 @@ public class IndexesTest {
 
 	@Test
 	public void hashCodeEquals() {
-		assertEquals(actual.hashCode(), ColIndexFactory.create(expected).hashCode());
+		if(!(actual instanceof TwoRangesIndex))
+			assertEquals(actual.hashCode(), ColIndexFactory.create(expected).hashCode());
 	}
 
 	@Test
 	public void estimateInMemorySizeIsNotToBig() {
 		assertTrue(MemoryEstimates.intArrayCost(expected.length) >= actual.estimateInMemorySize() - 16);
+	}
+
+	@Test
+	public void containsInt1() {
+		assertTrue(actual.contains(expected[0]));
+	}
+
+	@Test
+	public void containsInt2() {
+		assertTrue(actual.contains(expected[expected.length - 1]));
+	}
+
+	@Test
+	public void containsIntAllElements() {
+		for(int i = 0; i < expected.length; i++)
+			assertTrue(actual.contains(expected[i]));
+	}
+
+	@Test
+	public void containsIntNot1() {
+		assertFalse(actual.contains(expected[expected.length - 1] + 3));
+	}
+
+	@Test
+	public void containsIntNot2() {
+		assertFalse(actual.toString(), actual.contains(expected[0] - 1));
+	}
+
+	@Test
+	public void containsIntNotAllInbetween() {
+		int j = 0;
+		for(int i = expected[0]; i < expected[expected.length - 1]; i++) {
+			if(i == expected[j]) {
+				j++;
+				assertTrue(actual.toString(), actual.contains(i));
+			}
+			else {
+				assertFalse(actual.toString(), actual.contains(i));
+			}
+		}
+	}
+
+	@Test
+	public void containsAnySingle() {
+		assertTrue(actual.containsAny(new SingleIndex(expected[expected.length - 1])));
+	}
+
+	@Test
+	public void containsAnySingleFalse1() {
+		assertFalse(actual.containsAny(new SingleIndex(expected[expected.length - 1] + 1)));
+	}
+
+	@Test
+	public void containsAnySingleFalse2() {
+		assertFalse(actual.containsAny(new SingleIndex(expected[0] - 1)));
+	}
+
+	@Test
+	public void containsAnyTwo() {
+		assertTrue(actual.containsAny(new TwoIndex(expected[expected.length - 1], expected[expected.length - 1] + 4)));
+	}
+
+	@Test
+	public void containsAnyTwoFalse() {
+		assertFalse(
+			actual.containsAny(new TwoIndex(expected[expected.length - 1] + 1, expected[expected.length - 1] + 4)));
+	}
+
+	@Test
+	public void iteratorsV() {
+		IIterate i = actual.iterator();
+		while(i.hasNext()) {
+			int v = i.v();
+			assertEquals(actual.toString(), v, i.next());
+		}
+	}
+
+	@Test
+	public void averageOfIndex() {
+		double a = actual.avgOfIndex();
+		double s = 0.0;
+		for(int i = 0; i < expected.length; i++)
+			s += expected[i];
+
+		assertEquals(actual.toString(), s / expected.length, a, 0.0000001);
+	}
+
+	@Test
+	public void isSorted() {
+		assertTrue(actual.isSorted());
+	}
+
+	@Test
+	public void sort() {
+		assertTrue(actual.isSorted());
+		try {
+
+			actual.sort();// should do nothing
+		}
+		catch(DMLCompressionException e) {
+			// okay
+		}
+		assertTrue(actual.isSorted());
+	}
+
+	@Test
+	public void getReorderingIndex() {
+		try {
+
+			int[] ro = actual.getReorderingIndex();
+			if(ro != null) {
+				for(int i = 0; i < ro.length - 1; i++) {
+					assertTrue(ro[i] < ro[i + 1]);
+				}
+			}
+		}
+		catch(DMLCompressionException e) {
+			// okay
+		}
+	}
+
+	@Test
+	public void findIndexBefore() {
+		final String er = actual.toString();
+		assertEquals(er, -1, actual.findIndex(expected[0] - 1));
+		assertEquals(er, -1, actual.findIndex(expected[0] - 10));
+		assertEquals(er, -1, actual.findIndex(expected[0] - 100));
+	}
+
+	@Test
+	public void findIndexAll() {
+		final String er = actual.toString();
+		for(int i = 0; i < expected.length; i++) {
+			assertEquals(er, i, actual.findIndex(expected[i]));
+		}
+	}
+
+	@Test
+	public void findIndexAllMinus1() {
+		final String er = actual.toString();
+		for(int i = 1; i < expected.length; i++) {
+			if(expected[i - 1] == expected[i] - 1) {
+				assertEquals(er, i - 1, actual.findIndex(expected[i] - 1));
+			}
+			else {
+				assertEquals(er, i * -1 - 1, actual.findIndex(expected[i] - 1));
+
+			}
+		}
+	}
+
+	@Test
+	public void findIndexAfter() {
+		final int el = expected.length;
+		final String er = actual.toString();
+		assertEquals(er, -el - 1, actual.findIndex(expected[el - 1] + 1));
+		assertEquals(er, -el - 1, actual.findIndex(expected[el - 1] + 10));
+		assertEquals(er, -el - 1, actual.findIndex(expected[el - 1] + 100));
+	}
+
+	@Test
+	public void testHash() {
+		// flawed test in the case hashes can collide, but it should be unlikely.
+		IColIndex a = ColIndexFactory.createI(1, 2, 3, 1342);
+		if(a.equals(actual)) {
+			assertEquals(a.hashCode(), actual.hashCode());
+		}
+		else {
+			assertNotEquals(a.hashCode(), actual.hashCode());
+		}
 	}
 
 	private void shift(int i) {
@@ -331,6 +606,7 @@ public class IndexesTest {
 	}
 
 	private static void compare(int[] expected, IIterate actual) {
+		// LOG.error(expected);
 		for(int i = 0; i < expected.length; i++) {
 			assertTrue(actual.hasNext());
 			assertEquals(i, actual.i());
@@ -378,5 +654,17 @@ public class IndexesTest {
 			return new Object[] {cols.extractValues(true), ret};
 		else
 			throw new DMLRuntimeException("Invalid construction of range array");
+	}
+
+	private static Object[] createTwoRange(int l1, int u1, int l2, int u2) {
+		RangeIndex a = new RangeIndex(l1, u1);
+		RangeIndex b = new RangeIndex(l2, u2);
+		TwoRangesIndex c = (TwoRangesIndex) a.combine(b);
+		int[] exp = new int[u1 - l1 + u2 - l2];
+		for(int i = l1, j = 0; i < u1; i++, j++)
+			exp[j] = i;
+		for(int i = l2, j = u1 - l1; i < u2; i++, j++)
+			exp[j] = i;
+		return new Object[] {exp, c};
 	}
 }

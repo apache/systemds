@@ -22,16 +22,19 @@ package org.apache.sysds.runtime.compress.cocode;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.CompressionSettings;
+import org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType;
 import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.compress.cost.ACostEstimate;
 import org.apache.sysds.runtime.compress.estim.AComEst;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfo;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
-import org.apache.sysds.runtime.compress.utils.IntArrayList;
 
 public interface CoCoderFactory {
+	public static final Log LOG = LogFactory.getLog(AColumnCoCoder.class.getName());
 
 	/**
 	 * The Valid coCoding techniques
@@ -53,51 +56,69 @@ public interface CoCoderFactory {
 	 * @param cs            The compression settings used in the compression.
 	 * @return The estimated (hopefully) best groups of ColGroups.
 	 */
-	public static CompressedSizeInfo findCoCodesByPartitioning(AComEst est, CompressedSizeInfo colInfos,
-		int k, ACostEstimate costEstimator, CompressionSettings cs) {
+	public static CompressedSizeInfo findCoCodesByPartitioning(AComEst est, CompressedSizeInfo colInfos, int k,
+		ACostEstimate costEstimator, CompressionSettings cs) {
 
 		// Use column group partitioner to create partitions of columns
 		AColumnCoCoder co = createColumnGroupPartitioner(cs.columnPartitioner, est, costEstimator, cs);
 
 		// Find out if any of the groups are empty.
-		boolean containsEmpty = false;
-		for(CompressedSizeInfoColGroup g : colInfos.compressionInfo) {
-			if(g.isEmpty()) {
-				containsEmpty = true;
-				break;
-			}
-		}
+		final boolean containsEmptyOrConst = containsEmptyOrConst(colInfos);
 
-		// if there are no empty columns then try cocode algorithms for all columns
-		if(!containsEmpty)
+		// if there are no empty or const columns then try cocode algorithms for all columns
+		if(!containsEmptyOrConst)
 			return co.coCodeColumns(colInfos, k);
+		else {
+			// filtered empty groups
+			final List<IColIndex> emptyCols = new ArrayList<>();
+			// filtered const groups
+			final List<IColIndex> constCols = new ArrayList<>();
+			// filtered groups -- in the end starting with all groups
+			final List<CompressedSizeInfoColGroup> groups = new ArrayList<>();
 
-		// extract all empty columns
-		IntArrayList emptyCols = new IntArrayList();
-		List<CompressedSizeInfoColGroup> notEmpty = new ArrayList<>();
+			final int nRow = colInfos.compressionInfo.get(0).getNumRows();
 
-		for(CompressedSizeInfoColGroup g : colInfos.compressionInfo) {
-			if(g.isEmpty())
-				emptyCols.appendValue(g.getColumns().get(0));
-			else
-				notEmpty.add(g);
+			// filter groups
+			for(int i = 0; i < colInfos.compressionInfo.size(); i++) {
+				CompressedSizeInfoColGroup g = colInfos.compressionInfo.get(i);
+				if(g.isEmpty())
+					emptyCols.add(g.getColumns());
+				else if(g.isConst())
+					constCols.add(g.getColumns());
+				else
+					groups.add(g);
+			}
+
+			// overwrite groups.
+			colInfos.compressionInfo = groups;
+			
+			// cocode remaining groups
+			if(!groups.isEmpty()) {
+				colInfos = co.coCodeColumns(colInfos, k);
+			}
+
+			// add empty
+			if(emptyCols.size() > 0) {
+				final IColIndex idx = ColIndexFactory.combineIndexes(emptyCols);
+				colInfos.compressionInfo.add(new CompressedSizeInfoColGroup(idx, nRow, CompressionType.EMPTY));
+			}
+
+			// add const
+			if(constCols.size() > 0) {
+				final IColIndex idx = ColIndexFactory.combineIndexes(constCols);
+				colInfos.compressionInfo.add(new CompressedSizeInfoColGroup(idx, nRow, CompressionType.CONST));
+			}
+
+			return colInfos;
+
 		}
+	}
 
-		final int nRow = colInfos.compressionInfo.get(0).getNumRows();
-
-		final IColIndex idx = ColIndexFactory.create(emptyCols);
-		if(notEmpty.isEmpty()) { // if all empty (unlikely but could happen)
-			CompressedSizeInfoColGroup empty = new CompressedSizeInfoColGroup(idx, nRow);
-			return new CompressedSizeInfo(empty);
-		}
-
-		// cocode all not empty columns
-		colInfos.compressionInfo = notEmpty;
-		colInfos = co.coCodeColumns(colInfos, k);
-
-		// add empty columns back as single columns
-		colInfos.compressionInfo.add(new CompressedSizeInfoColGroup(idx, nRow));
-		return colInfos;
+	private static boolean containsEmptyOrConst(CompressedSizeInfo colInfos) {
+		for(CompressedSizeInfoColGroup g : colInfos.compressionInfo)
+			if(g.isEmpty() || g.isConst())
+				return true;
+		return false;
 	}
 
 	private static AColumnCoCoder createColumnGroupPartitioner(PartitionerType type, AComEst est,

@@ -51,6 +51,7 @@ import org.apache.sysds.lops.MapMultChain.ChainType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
+import org.apache.sysds.runtime.compress.lib.CLALibAggTernaryOp;
 import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject.UpdateType;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
@@ -967,10 +968,20 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 	 * @return the maximum value of all values in the matrix
 	 */
 	public double max() {
-		MatrixBlock out = new MatrixBlock(1, 1, false);
-		LibMatrixAgg.aggregateUnaryMatrix(this, out,
-			InstructionUtils.parseBasicAggregateUnaryOperator("uamax", 1));
+		AggregateUnaryOperator op =InstructionUtils.parseBasicAggregateUnaryOperator("uamax", 1);
+		MatrixBlock out = aggregateUnaryOperations(op, null, 1000, null, true);
 		return out.quickGetValue(0, 0);
+	}
+
+	/**
+	 * Wrapper method for reduceall-max of a matrix.
+	 * 
+	 * @param k the parallelization degree
+	 * @return the maximum value of all values in the matrix
+	 */
+	public MatrixBlock max(int k){
+		AggregateUnaryOperator op = InstructionUtils.parseBasicAggregateUnaryOperator("uamax", k);
+		return aggregateUnaryOperations(op, null, 1000, null, true);
 	}
 	
 	/**
@@ -981,6 +992,17 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 	public double sum() {
 		KahanPlus kplus = KahanPlus.getKahanPlusFnObject();
 		return sumWithFn(kplus);
+	}
+
+	/**
+	 * Wrapper method for reduceall-sum of a matrix parallel
+	 * 
+	 * @param k parallelization degree
+	 * @return Sum of the values in the matrix.
+	 */
+	public MatrixBlock sum(int k) {
+		AggregateUnaryOperator op = InstructionUtils.parseBasicAggregateUnaryOperator("uak+", k);
+		return aggregateUnaryOperations(op, null, 1000, null, true);
 	}
 
 	/**
@@ -4982,15 +5004,11 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 			throw new DMLRuntimeException("Invalid aggregateBinaryOperatio: one of either input should be this");
 	}
 
-	public MatrixBlock aggregateTernaryOperations(MatrixBlock m1, MatrixBlock m2, MatrixBlock m3, MatrixBlock ret,
+	public static MatrixBlock aggregateTernaryOperations(MatrixBlock m1, MatrixBlock m2, MatrixBlock m3, MatrixBlock ret,
 			AggregateTernaryOperator op, boolean inCP) {
-		if(m1 instanceof CompressedMatrixBlock)
-			m1 = ((CompressedMatrixBlock) m1).getUncompressed("Aggregate Ternary Operator arg1 " + op.getClass().getSimpleName(), op.getNumThreads());
-		if(m2 instanceof CompressedMatrixBlock)
-			m2 = ((CompressedMatrixBlock) m2).getUncompressed("Aggregate Ternary Operator arg2 " + op.getClass().getSimpleName(), op.getNumThreads());
-		if(m3 instanceof CompressedMatrixBlock)
-			m3 = ((CompressedMatrixBlock) m3).getUncompressed("Aggregate Ternary Operator arg3 " + op.getClass().getSimpleName(), op.getNumThreads());
-
+		if(m1 instanceof CompressedMatrixBlock || m2 instanceof CompressedMatrixBlock || m3 instanceof CompressedMatrixBlock)
+			return CLALibAggTernaryOp.agg(m1, m2, m3, ret, op, inCP);
+		
 		//create output matrix block w/ corrections
 		int rl = (op.indexFn instanceof ReduceRow) ? 2 : 1;
 		int cl = (op.indexFn instanceof ReduceRow) ? m1.clen : 2;
@@ -5626,15 +5644,15 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 	
 	/**
 	 * Function to generate the random matrix with specified dimensions (block sizes are not specified).
-	 *  
-	 * @param rows number of rows
-	 * @param cols number of columns
+	 * 
+	 * @param rows     number of rows
+	 * @param cols     number of columns
 	 * @param sparsity sparsity as a percentage
-	 * @param min minimum value
-	 * @param max maximum value
-	 * @param pdf pdf
-	 * @param seed random seed
-	 * @param k ?
+	 * @param min      minimum value
+	 * @param max      maximum value
+	 * @param pdf      pdf
+	 * @param seed     random seed
+	 * @param k        The number of threads in the operation
 	 * @return matrix block
 	 */
 	public static MatrixBlock randOperations(int rows, int cols, double sparsity, double min, double max, String pdf, long seed, int k) {
@@ -5663,7 +5681,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 	 * 
 	 * @param rgen random matrix generator
 	 * @param seed seed value
-	 * @param k ?
+	 * @param k The number of threads to use in the operation
 	 * @return matrix block
 	 */
 	public static MatrixBlock randOperations(RandomMatrixGenerator rgen, long seed, int k) {

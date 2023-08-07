@@ -62,7 +62,7 @@ import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
  * with no modifications.
  * 
  */
-public class ColGroupSDCFOR extends ASDC implements IMapToDataGroup , IFrameOfReferenceGroup{
+public class ColGroupSDCFOR extends ASDC implements IMapToDataGroup, IFrameOfReferenceGroup {
 
 	private static final long serialVersionUID = 3883228464052204203L;
 
@@ -487,11 +487,6 @@ public class ColGroupSDCFOR extends ASDC implements IMapToDataGroup , IFrameOfRe
 	}
 
 	@Override
-	public ICLAScheme getCompressionScheme() {
-		return null;
-	}
-
-	@Override
 	public AColGroup recompress() {
 		return this;
 	}
@@ -519,6 +514,11 @@ public class ColGroupSDCFOR extends ASDC implements IMapToDataGroup , IFrameOfRe
 	@Override
 	public int getNumberOffsets() {
 		return _data.size();
+	}
+
+	@Override
+	public ICLAScheme getCompressionScheme() {
+		throw new NotImplementedException();
 	}
 
 	@Override

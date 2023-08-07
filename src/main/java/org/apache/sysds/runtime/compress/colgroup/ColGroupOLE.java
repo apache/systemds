@@ -671,7 +671,7 @@ public class ColGroupOLE extends AColGroupOffset {
 
 	@Override
 	public ICLAScheme getCompressionScheme() {
-		return null;
+		throw new NotImplementedException();
 	}
 
 	@Override

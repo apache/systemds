@@ -68,7 +68,7 @@ public class AggregateTernaryCPInstruction extends ComputationCPInstruction {
 		AggregateTernaryOperator ab_op = (AggregateTernaryOperator) _optr;
 
 		validateInput(matBlock1, matBlock2, matBlock3, ab_op);
-		MatrixBlock ret = matBlock1
+		MatrixBlock ret = MatrixBlock
 			.aggregateTernaryOperations(matBlock1, matBlock2, matBlock3, new MatrixBlock(), ab_op, true);
 
 		// release inputs/outputs

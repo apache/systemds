@@ -110,16 +110,14 @@ public class MapToByte extends AMapToData {
 	protected void writeBytes(DataOutput out) throws IOException {
 		out.writeInt(getUnique());
 		out.writeInt(_data.length);
-		for(int i = 0; i < _data.length; i++)
-			out.writeByte(_data[i]);
+		out.write(_data);
 	}
 
 	protected static MapToByte readFields(DataInput in) throws IOException {
 		final int unique = in.readInt();
 		final int length = in.readInt();
 		final byte[] data = new byte[length];
-		for(int i = 0; i < length; i++)
-			data[i] = in.readByte();
+		in.readFully(data);
 		return new MapToByte(unique, data);
 	}
 

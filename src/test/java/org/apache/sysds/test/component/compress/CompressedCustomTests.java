@@ -324,8 +324,8 @@ public class CompressedCustomTests {
 		TestUtils.compareMatricesBitAvgDistance(mb, mb2, 0, 0);
 	}
 
-	@Test(expected = DMLCompressionException.class)
-	public void invalidIfNnzNotSet() {
+	@Test
+	public void notInvalidIfNnzNotSet() {
 		MatrixBlock mb = TestUtils.generateTestMatrixBlock(32, 42, 32, 123, 0.2, 2135);
 		mb.setNonZeros(-23L);
 		CompressedMatrixBlockFactory.compress(mb);

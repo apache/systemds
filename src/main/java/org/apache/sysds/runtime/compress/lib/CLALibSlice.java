@@ -31,6 +31,9 @@ import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupConst;
+import org.apache.sysds.runtime.compress.colgroup.ColGroupEmpty;
+import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
+import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.CommonThreadPool;
@@ -143,6 +146,7 @@ public final class CLALibSlice {
 	private static MatrixBlock sliceRowsCompressed(CompressedMatrixBlock cmb, int rl, int ru) {
 		final List<AColGroup> groups = cmb.getColGroups();
 		final List<AColGroup> newColGroups = new ArrayList<>(groups.size());
+		final List<IColIndex> emptyGroups = new ArrayList<>();
 		final int rue = ru + 1;
 
 		final CompressedMatrixBlock ret = new CompressedMatrixBlock(rue - rl, cmb.getNumColumns());
@@ -151,11 +155,18 @@ public final class CLALibSlice {
 			final AColGroup slice = grp.sliceRows(rl, rue);
 			if(slice != null)
 				newColGroups.add(slice);
+			else
+				emptyGroups.add(grp.getColIndices());
 		}
 
 		if(newColGroups.size() == 0)
 			return new MatrixBlock(rue - rl, cmb.getNumColumns(), 0.0);
 
+		if(!emptyGroups.isEmpty()){
+			IColIndex empties = ColIndexFactory.combineIndexes(emptyGroups);
+			newColGroups.add(new ColGroupEmpty(empties));
+		}
+		
 		ret.allocateColGroupList(newColGroups);
 		ret.recomputeNonZeros();
 		ret.setOverlapping(cmb.isOverlapping());

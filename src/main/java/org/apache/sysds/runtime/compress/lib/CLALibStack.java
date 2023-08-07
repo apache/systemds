@@ -156,7 +156,7 @@ public final class CLALibStack {
 						final int c = cols.next();
 						if(colTypes[c + off] != t) {
 							LOG.warn("Not supported different types of column groups to combine."
-								+ "Falling back to decompression of all blocks");
+								+ "Falling back to decompression of all blocks " + t + " vs " + colTypes[c + off]);
 							return combineViaDecompression(m, rlen, clen, blen, k);
 						}
 					}
@@ -192,7 +192,6 @@ public final class CLALibStack {
 		final AColGroup[][] finalCols = new AColGroup[clen][]; // temp array for combining
 		final int blocksInColumn = (rlen - 1) / blen + 1;
 
-
 		// Add all the blocks into linear structure.
 		for(int br = 0; br * blen < rlen; br++) {
 			for(int bc = 0; bc * blen < clen; bc++) {
@@ -209,7 +208,8 @@ public final class CLALibStack {
 						return combineViaDecompression(m, rlen, clen, blen, k);
 					}
 					finalCols[c][br] = gc;
-					if(br != 0 && (finalCols[c][0] == null || !finalCols[c][br].getColIndices().equals(finalCols[c][0].getColIndices()))){
+					if(br != 0 && (finalCols[c][0] == null ||
+						!finalCols[c][br].getColIndices().equals(finalCols[c][0].getColIndices()))) {
 						LOG.warn("Combining via decompression. There was an column with different index");
 						return combineViaDecompression(m, rlen, clen, blen, k);
 					}
@@ -217,7 +217,6 @@ public final class CLALibStack {
 				}
 			}
 		}
-
 
 		final ExecutorService pool = CommonThreadPool.get(Math.max(Math.min(clen / 500, k), 1));
 		try {

@@ -131,6 +131,11 @@ public class SingleIndex extends AColIndex {
 	}
 
 	@Override
+	public double avgOfIndex() {
+		return idx;
+	}
+
+	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		sb.append(this.getClass().getSimpleName());

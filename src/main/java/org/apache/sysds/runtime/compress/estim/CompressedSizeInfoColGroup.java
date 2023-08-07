@@ -79,7 +79,8 @@ public class CompressedSizeInfoColGroup {
 		_sizes.put(bestCompressionType, _minSize);
 	}
 
-	public CompressedSizeInfoColGroup(IColIndex columns, EstimationFactors facts, long minSize, CompressionType bestCompression, IEncode map){
+	public CompressedSizeInfoColGroup(IColIndex columns, EstimationFactors facts, long minSize,
+		CompressionType bestCompression, IEncode map) {
 		_cols = columns;
 		_facts = facts;
 		_minSize = minSize;
@@ -110,22 +111,30 @@ public class CompressedSizeInfoColGroup {
 	}
 
 	/**
-	 * Create empty.
+	 * Create empty or const.
 	 * 
 	 * @param columns columns
 	 * @param nRows   number of rows
+	 * @param ct      The type intended either Empty or Const
 	 */
-	public CompressedSizeInfoColGroup(IColIndex columns, int nRows) {
+	public CompressedSizeInfoColGroup(IColIndex columns, int nRows, CompressionType ct) {
 		_cols = columns;
 		_facts = new EstimationFactors(0, nRows);
-
 		_sizes = new EnumMap<>(CompressionType.class);
-		final CompressionType ct = CompressionType.EMPTY;
-		_sizes.put(ct, (double) ColGroupSizes.estimateInMemorySizeEMPTY(columns.size(), columns.isContiguous()));
+		switch(ct) {
+			case EMPTY:
+				_sizes.put(ct, (double) ColGroupSizes.estimateInMemorySizeEMPTY(columns.size(), columns.isContiguous()));
+				break;
+			case CONST:
+				_sizes.put(ct,
+					(double) ColGroupSizes.estimateInMemorySizeCONST(columns.size(), columns.isContiguous(), 1.0, false));
+				break;
+			default:
+				throw new DMLCompressionException("Invalid instantiation of const Cost");
+		}
 		_bestCompressionType = ct;
 		_minSize = _sizes.get(ct);
 		_map = null;
-
 	}
 
 	public double getCompressionSize(CompressionType ct) {
@@ -213,11 +222,11 @@ public class CompressedSizeInfoColGroup {
 	}
 
 	public boolean isEmpty() {
-		return _bestCompressionType == CompressionType.EMPTY;
+		return _bestCompressionType == CompressionType.EMPTY || _sizes.containsKey(CompressionType.EMPTY);
 	}
 
 	public boolean isConst() {
-		return _bestCompressionType == CompressionType.CONST;
+		return _bestCompressionType == CompressionType.CONST || _sizes.containsKey(CompressionType.CONST);
 	}
 
 	private static double getCompressionSize(IColIndex cols, CompressionType ct, EstimationFactors fact) {

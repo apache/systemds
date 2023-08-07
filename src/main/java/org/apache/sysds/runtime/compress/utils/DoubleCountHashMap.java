@@ -35,7 +35,7 @@ public class DoubleCountHashMap {
 	private Bucket[] _data = null;
 
 	public DoubleCountHashMap(int init_capacity) {
-		_data = new Bucket[(Util.getPow2(init_capacity)/2) + 7];
+		_data = new Bucket[(Util.getPow2(init_capacity) / 2) + 7];
 		// _data = new Bucket[(Util.getPow2(init_capacity)) ];
 		_size = 0;
 	}
@@ -70,7 +70,7 @@ public class DoubleCountHashMap {
 				return l.v.id;
 			}
 			else
-			l = l.n;
+				l = l.n;
 		}
 		return addNewBucket(ix, key);
 	}
@@ -84,7 +84,7 @@ public class DoubleCountHashMap {
 				return l.v.id;
 			}
 			else
-			l = l.n;
+				l = l.n;
 		}
 		return addNewBucket(ix, key);
 	}
@@ -106,38 +106,39 @@ public class DoubleCountHashMap {
 	 * @return count on key
 	 */
 	public int get(double key) {
-		try{
+		try {
 			int ix = hashIndex(key);
 			Bucket l = _data[ix];
 			while(!(l.v.key == key))
 				l = l.n;
-	
+
 			return l.v.count;
-		} catch( Exception e){
+		}
+		catch(Exception e) {
 			if(Double.isNaN(key))
 				return get(0.0);
 			throw e;
 		}
 	}
 
-		/**
+	/**
 	 * Get the ID behind the key, if it does not exist -1 is returned.
 	 * 
 	 * @param key The key array
 	 * @return The Id or -1
 	 */
 	public int getId(double key) {
-		try{
+		try {
 			int ix = hashIndex(key);
 			Bucket l = _data[ix];
 			while(!(l.v.key == key))
 				l = l.n;
-	
 			return l.v.id;
-		} catch( Exception e){
+		}
+		catch(Exception e) {
 			if(Double.isNaN(key))
 				return get(0.0);
-			throw e;
+			throw new RuntimeException("Failed to getKey : " + key + " in " + this, e);
 		}
 	}
 
@@ -173,12 +174,11 @@ public class DoubleCountHashMap {
 			}
 	}
 
-
 	public void replaceWithUIDsNoZero() {
 		int i = 0;
 		for(Bucket e : _data) {
 			while(e != null) {
-				if(e.v.key != 0) 
+				if(e.v.key != 0)
 					e.v.count = i++;
 				e = e.n;
 			}
@@ -214,12 +214,12 @@ public class DoubleCountHashMap {
 		return counts;
 	}
 
-	public double getMostFrequent(){
+	public double getMostFrequent() {
 		double f = 0;
 		int fq = 0;
-		for(Bucket e: _data){
-			while(e != null){
-				if(e.v.count > fq){
+		for(Bucket e : _data) {
+			while(e != null) {
+				if(e.v.count > fq) {
 					fq = e.v.count;
 					f = e.v.key;
 				}
@@ -261,7 +261,7 @@ public class DoubleCountHashMap {
 	private final int hashIndex(final double key) {
 		// Option 1 ... conflict on 1 vs -1
 		final long bits = Double.doubleToLongBits(key);
-		return Math.abs((int)(bits ^ (bits >>> 32)) % _data.length);
+		return Math.abs((int) (bits ^ (bits >>> 32)) % _data.length);
 	}
 
 	// private static int indexFor(int h, int length) {
@@ -288,7 +288,7 @@ public class DoubleCountHashMap {
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
-		sb.append(this.getClass().getSimpleName() + this.hashCode());
+		sb.append(this.getClass().getSimpleName());
 		for(int i = 0; i < _data.length; i++)
 			if(_data[i] != null)
 				sb.append(", " + _data[i]);

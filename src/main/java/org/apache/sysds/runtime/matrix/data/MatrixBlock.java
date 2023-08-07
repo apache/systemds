@@ -4216,7 +4216,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 		
 		// Output matrix will have the same sparsity as that of the input matrix.
 		// (assuming a uniform distribution of non-zeros in the input)
-		MatrixBlock result=checkType((MatrixBlock)ret);
+		MatrixBlock result=checkType(ret);
 		long estnnz= (long) ((double)this.nonZeros/rlen/clen*(ru-rl+1)*(cu-cl+1));
 		boolean result_sparsity = this.sparse && MatrixBlock.evalSparseFormatInMemory(ru-rl+1, cu-cl+1, estnnz);
 		if(result==null)
@@ -5260,7 +5260,11 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 			return ret;
 		if( !containsValue(pattern) )
 			return this; //avoid allocation + copy
-		
+		if( isEmpty() && pattern==0 ) {
+			ret.reset(rlen, clen, replacement);
+			return ret;
+		}
+
 		boolean NaNpattern = Double.isNaN(pattern);
 		if( sparse ) //SPARSE
 		{

@@ -20,6 +20,9 @@
 package org.apache.sysds.runtime.instructions.spark;
 
 
+import java.util.concurrent.Callable;
+import java.util.concurrent.Future;
+
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.function.Function;
@@ -37,11 +40,8 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 import org.apache.sysds.runtime.util.CommonThreadPool;
-import scala.Tuple2;
 
-import java.util.concurrent.Callable;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
+import scala.Tuple2;
 
 public class TsmmSPInstruction extends UnarySPInstruction {
 	private MMTSJType _type = null;
@@ -72,10 +72,8 @@ public class TsmmSPInstruction extends UnarySPInstruction {
 
 		if (ConfigurationManager.isMaxPrallelizeEnabled()) {
 			try {
-				if (CommonThreadPool.triggerRemoteOPsPool == null)
-					CommonThreadPool.triggerRemoteOPsPool = Executors.newCachedThreadPool();
 				TsmmTask task = new TsmmTask(in, _type);
-				Future<MatrixBlock> future_out = CommonThreadPool.triggerRemoteOPsPool.submit(task);
+				Future<MatrixBlock> future_out = CommonThreadPool.getDynamicPool().submit(task);
 				LineageItem li = !LineageCacheConfig.ReuseCacheType.isNone() ? getLineageItem(ec).getValue() : null;
 				sec.setMatrixOutputAndLineage(output.getName(), future_out, li);
 			}

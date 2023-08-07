@@ -19,6 +19,9 @@
 
 package org.apache.sysds.runtime.instructions.spark;
 
+import java.util.concurrent.Callable;
+import java.util.concurrent.Future;
+
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.function.Function;
@@ -42,11 +45,8 @@ import org.apache.sysds.runtime.matrix.operators.AggregateOperator;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 import org.apache.sysds.runtime.matrix.operators.ReorgOperator;
 import org.apache.sysds.runtime.util.CommonThreadPool;
-import scala.Tuple2;
 
-import java.util.concurrent.Callable;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
+import scala.Tuple2;
 
 public class ZipmmSPInstruction extends BinarySPInstruction {
 	// internal flag to apply left-transpose rewrite or not
@@ -86,10 +86,8 @@ public class ZipmmSPInstruction extends BinarySPInstruction {
 
 		if (ConfigurationManager.isMaxPrallelizeEnabled()) {
 			try {
-				if (CommonThreadPool.triggerRemoteOPsPool == null)
-					CommonThreadPool.triggerRemoteOPsPool = Executors.newCachedThreadPool();
-				ZipmmTask task = new ZipmmTask(in1, in2, _tRewrite);
-				Future<MatrixBlock> future_out = CommonThreadPool.triggerRemoteOPsPool.submit(task);
+					ZipmmTask task = new ZipmmTask(in1, in2, _tRewrite);
+				Future<MatrixBlock> future_out = CommonThreadPool.getDynamicPool().submit(task);
 				LineageItem li = !LineageCacheConfig.ReuseCacheType.isNone() ? getLineageItem(ec).getValue() : null;
 				sec.setMatrixOutputAndLineage(output.getName(), future_out, li);
 			}

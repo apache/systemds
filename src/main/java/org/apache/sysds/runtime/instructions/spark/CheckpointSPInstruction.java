@@ -51,8 +51,6 @@ import org.apache.sysds.runtime.util.CommonThreadPool;
 import org.apache.sysds.runtime.util.UtilFunctions;
 import org.apache.sysds.utils.Statistics;
 
-import java.util.concurrent.Executors;
-
 public class CheckpointSPInstruction extends UnarySPInstruction {
 	// default storage level
 	private StorageLevel _level = null;
@@ -86,9 +84,7 @@ public class CheckpointSPInstruction extends UnarySPInstruction {
 			// TODO: Synchronize. Avoid double execution
 			ec.setVariable(output.getName(), ec.getCacheableData(input1));
 
-			if (CommonThreadPool.triggerRemoteOPsPool == null)
-				CommonThreadPool.triggerRemoteOPsPool = Executors.newCachedThreadPool();
-			CommonThreadPool.triggerRemoteOPsPool.submit(new TriggerCheckpointTask(ec.getMatrixObject(output)));
+			CommonThreadPool.getDynamicPool().submit(new TriggerCheckpointTask(ec.getMatrixObject(output)));
 			return;
 		}
 

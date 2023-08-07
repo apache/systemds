@@ -19,8 +19,6 @@
 
 package org.apache.sysds.runtime.instructions.cp;
 
-import java.util.concurrent.Executors;
-
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.matrix.operators.Operator;
@@ -43,9 +41,6 @@ public class BroadcastCPInstruction extends UnaryCPInstruction {
 	@Override
 	public void processInstruction(ExecutionContext ec) {
 		ec.setVariable(output.getName(), ec.getMatrixObject(input1));
-
-		if (CommonThreadPool.triggerRemoteOPsPool == null)
-			CommonThreadPool.triggerRemoteOPsPool = Executors.newCachedThreadPool();
-		CommonThreadPool.triggerRemoteOPsPool.submit(new TriggerBroadcastTask(ec, ec.getMatrixObject(output)));
+		CommonThreadPool.getDynamicPool().submit(new TriggerBroadcastTask(ec, ec.getMatrixObject(output)));
 	}
 }

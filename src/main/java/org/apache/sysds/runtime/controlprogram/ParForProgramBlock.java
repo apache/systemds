@@ -19,6 +19,8 @@
 
 package org.apache.sysds.runtime.controlprogram;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.log4j.Level;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.DataType;
@@ -89,6 +91,7 @@ import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.runtime.lineage.LineageItemUtils;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.util.CollectionUtils;
+import org.apache.sysds.runtime.util.CommonThreadPool;
 import org.apache.sysds.runtime.util.ProgramConverter;
 import org.apache.sysds.runtime.util.UtilFunctions;
 import org.apache.sysds.utils.stats.ParForStatistics;
@@ -118,8 +121,8 @@ import java.util.stream.Stream;
  * TODO: papply(A,1:2,FUN) language construct (compiled to ParFOR) via DML function repository =&gt; modules OK, but second-order functions required
  *
  */
-public class ParForProgramBlock extends ForProgramBlock 
-{	
+public class ParForProgramBlock extends ForProgramBlock {	
+	protected static final Log LOG = LogFactory.getLog(CommonThreadPool.class.getName());
 	// execution modes
 	public enum PExecMode {
 		LOCAL,          //local (master) multi-core execution mode
@@ -759,7 +762,7 @@ public class ParForProgramBlock extends ForProgramBlock
 			LocalTaskQueue<Task> queue = new LocalTaskQueue<>();
 			Thread[] threads         = new Thread[_numThreads];
 			LocalParWorker[] workers = new LocalParWorker[_numThreads];
-			IntStream.range(0, _numThreads).parallel().forEach(i -> {
+			IntStream.range(0, _numThreads).forEach(i -> {
 				workers[i] = createParallelWorker( _pwIDs[i], queue, ec, i);
 				threads[i] = new Thread( workers[i] );
 				threads[i].setPriority(Thread.MAX_PRIORITY);
@@ -1430,9 +1433,14 @@ public class ParForProgramBlock extends ForProgramBlock
 		}
 	}
 
-	private void consolidateAndCheckResults(ExecutionContext ec, long expIters, long expTasks, long numIters, long numTasks, LocalVariableMap [] results) 
-	{
+	private void consolidateAndCheckResults(ExecutionContext ec, final long expIters, final long expTasks,
+		final long numIters, final long numTasks, LocalVariableMap[] results) {
 		Timing time = new Timing(true);
+
+		//check expected counters
+		if( numTasks != expTasks || numIters !=expIters ) //consistency check
+			throw new DMLRuntimeException("PARFOR: Number of executed tasks does not match the number of created tasks: tasks "+numTasks+"/"+expTasks+", iters "+numIters+"/"+expIters+".");
+	
 		
 		//result merge
 		if( checkParallelRemoteResultMerge() )
@@ -1531,10 +1539,7 @@ public class ParForProgramBlock extends ForProgramBlock
 		if( CREATE_UNSCOPED_RESULTVARS && sb != null && ec.getVariables() != null ) //sb might be null for nested parallelism
 			createEmptyUnscopedVariables( ec.getVariables(), sb );
 		
-		//check expected counters
-		if( numTasks != expTasks || numIters !=expIters ) //consistency check
-			throw new DMLRuntimeException("PARFOR: Number of executed tasks does not match the number of created tasks: tasks "+numTasks+"/"+expTasks+", iters "+numIters+"/"+expIters+".");
-	
+			
 		if( DMLScript.STATISTICS )
 			ParForStatistics.incrementMergeTime((long) time.stop());
 	}

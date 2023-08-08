@@ -975,4 +975,56 @@ public class CustomIndexTest {
 		IColIndex e = ColIndexFactory.createI(1, 2, 3, 4, 6, 7, 8, 9);
 		assertEquals(e, a.combine(b));
 	}
+
+	@Test
+	public void containsTest() {
+		// to get coverage
+		IColIndex a = new TwoRangesIndex(new RangeIndex(1, 10), new RangeIndex(5, 10));
+		assertTrue(a.contains(7));
+		assertTrue(a.contains(2));
+		assertTrue(a.contains(9));
+		assertFalse(a.contains(-1));
+		assertFalse(a.contains(11));
+		assertFalse(a.contains(10));
+	}
+
+	@Test
+	public void containsTest2() {
+		// to get coverage
+		IColIndex a = new TwoRangesIndex(new RangeIndex(1, 4), new RangeIndex(11, 20));
+		assertFalse(a.contains(7));
+		assertTrue(a.contains(2));
+		assertTrue(a.contains(11));
+		assertFalse(a.contains(-1));
+		assertFalse(a.contains(20));
+		assertFalse(a.contains(10));
+	}
+
+	@Test
+	public void containsAnyArray1() {
+		IColIndex a = new TwoRangesIndex(new RangeIndex(1, 4), new RangeIndex(11, 20));
+		IColIndex b = new RangeIndex(7, 15);
+		assertTrue(a.containsAny(b));
+	}
+
+	@Test
+	public void containsAnyArrayF1() {
+		IColIndex a = new TwoRangesIndex(new RangeIndex(1, 4), new RangeIndex(11, 20));
+		IColIndex b = new RangeIndex(20, 25);
+		assertFalse(a.containsAny(b));
+	}
+
+	@Test
+	public void containsAnyArrayF2() {
+		IColIndex a = new TwoRangesIndex(new RangeIndex(1, 4), new RangeIndex(11, 20));
+		IColIndex b = new RangeIndex(4, 11);
+		assertFalse(a.containsAny(b));
+	}
+
+	@Test
+	public void containsAnyArray2() {
+		IColIndex a = new TwoRangesIndex(new RangeIndex(1, 4), new RangeIndex(11, 20));
+		IColIndex b = new RangeIndex(3, 11);
+		assertTrue(a.containsAny(b));
+	}
 }

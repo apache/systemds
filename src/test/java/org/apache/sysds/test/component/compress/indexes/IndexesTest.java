@@ -114,6 +114,16 @@ public class IndexesTest {
 				new int[] {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18}, //
 				ColIndexFactory.create(1, 19)});
 
+			tests.add(new Object[] {//
+				new int[] {1, 2, 3, 4, 5, 6}, //
+				ColIndexFactory.create(1, 7)});
+			tests.add(new Object[] {//
+				new int[] {2, 3, 4, 5, 6}, //
+				ColIndexFactory.create(2, 7)});
+			tests.add(new Object[] {//
+				new int[] {3, 4, 5, 6}, //
+				ColIndexFactory.create(3, 7)});
+
 			tests.add(createWithArray(1, 323));
 			tests.add(createWithArray(2, 1414));
 			tests.add(createWithArray(144, 32));
@@ -294,10 +304,8 @@ public class IndexesTest {
 		if(expected.length > 5) {
 
 			SliceResult sr = actual.slice(4, expected[5] + 1);
-			int i = 0;
-			while(expected[i] < sr.idStart)
-				i++;
-			assertEquals(actual.toString(), i, sr.idStart);
+
+			assertEquals(actual.toString(), expected[5], sr.ret.get(sr.ret.size() - 1) + 4);
 		}
 	}
 
@@ -561,6 +569,18 @@ public class IndexesTest {
 		assertEquals(er, -el - 1, actual.findIndex(expected[el - 1] + 1));
 		assertEquals(er, -el - 1, actual.findIndex(expected[el - 1] + 10));
 		assertEquals(er, -el - 1, actual.findIndex(expected[el - 1] + 100));
+	}
+
+	@Test
+	public void testHash() {
+		// flawed test in the case hashes can collide, but it should be unlikely.
+		IColIndex a = ColIndexFactory.createI(1, 2, 3, 1342);
+		if(a.equals(actual)) {
+			assertEquals(a.hashCode(), actual.hashCode());
+		}
+		else {
+			assertNotEquals(a.hashCode(), actual.hashCode());
+		}
 	}
 
 	private void shift(int i) {

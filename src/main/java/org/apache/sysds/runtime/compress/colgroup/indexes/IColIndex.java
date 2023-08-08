@@ -94,6 +94,25 @@ public interface IColIndex {
 	 */
 	public int findIndex(int i);
 
+	/**
+	 * Slice the range given.
+	 * 
+	 * The slice result is an object containing the indexes in the original array to slice out and a new index for the
+	 * sliced columns offset by l.
+	 * 
+	 * Example:
+	 * 
+	 * ArrayIndex(1,3,5).slice(2,6)
+	 * 
+	 * returns
+	 * 
+	 * SliceResult(1,3,ArrayIndex(1,3))
+	 * 
+	 * 
+	 * @param l inclusive lower bound
+	 * @param u exclusive upper bound
+	 * @return A slice result
+	 */
 	public SliceResult slice(int l, int u);
 
 	@Override
@@ -202,6 +221,12 @@ public interface IColIndex {
 		/** The already modified column index to return on slices */
 		public final IColIndex ret;
 
+		/**
+		 * The slice result
+		 * @param idStart The starting index
+		 * @param idEnd The ending index (not inclusive)
+		 * @param ret The resulting IColIndex
+		 */
 		protected SliceResult(int idStart, int idEnd, IColIndex ret) {
 			this.idStart = idStart;
 			this.idEnd = idEnd;

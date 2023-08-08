@@ -573,7 +573,7 @@ public class DMLScript
 		FederatedData.clearFederatedWorkers();
 		
 		//0) shutdown prefetch/broadcast thread pool if necessary
-		CommonThreadPool.shutdownAsyncRDDPool();
+		CommonThreadPool.shutdownAsyncPools();
 
 		//1) cleanup scratch space (everything for current uuid)
 		//(required otherwise export to hdfs would skip assumed unnecessary writes if same name)

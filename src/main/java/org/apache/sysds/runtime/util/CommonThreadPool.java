@@ -30,7 +30,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.DMLRuntimeException;
@@ -62,21 +61,23 @@ public class CommonThreadPool implements ExecutorService {
 	 */
 	private static final ExecutorService shared = ForkJoinPool.commonPool();
 	/** A secondary thread local executor that use a custom number of threads */
-	private static ExecutorService shared2 = null;
+	private static CommonThreadPool shared2 = null;
 	/** The number of threads used in the custom secondary executor */
 	private static int shared2K = -1;
 	/** Dynamic thread pool, that dynamically allocate threads as tasks come in. */
-	private static ExecutorService triggerRemoteOPsPool = null;
+	private static ExecutorService asyncPool = null;
 	/** This common thread pool */
 	private final ExecutorService _pool;
 
 	/**
-	 * Private constructor of the threadPool.
+	 * Constructor of the threadPool.
+	 * This is intended not to be used except for tests.
+	 * Please use the static constructors.
 	 * 
 	 * @param pool The thread pool instance to use.
 	 */
-	private CommonThreadPool(ExecutorService pool) {
-		_pool = pool;
+	public CommonThreadPool(ExecutorService pool) {
+		this._pool = pool;
 	}
 
 	/**
@@ -109,12 +110,11 @@ public class CommonThreadPool implements ExecutorService {
 				shared2K = k;
 				return shared2;
 			}
-			else {
-				return Executors.newFixedThreadPool(k);
-			}
+			else
+				return new CommonThreadPool(Executors.newFixedThreadPool(k));
 		}
 		else
-			return Executors.newFixedThreadPool(k);
+			return new CommonThreadPool(Executors.newFixedThreadPool(k));
 	}
 
 	/**
@@ -124,7 +124,7 @@ public class CommonThreadPool implements ExecutorService {
 	 * @return If we have a cached thread pool.
 	 */
 	public static boolean isSharedTPThreads(int k) {
-		return InfrastructureAnalyzer.getLocalParallelism() == k || shared2K == k || shared2K == -1;
+		return size == k || shared2K == k || shared2K == -1;
 	}
 
 	/**
@@ -156,27 +156,33 @@ public class CommonThreadPool implements ExecutorService {
 	 * @return A dynamic thread pool.
 	 */
 	public static ExecutorService getDynamicPool() {
-		if(triggerRemoteOPsPool != null)
-			return triggerRemoteOPsPool;
+		if(asyncPool != null)
+			return asyncPool;
 		else {
-			triggerRemoteOPsPool = Executors.newCachedThreadPool();
-			return triggerRemoteOPsPool;
+			asyncPool = Executors.newCachedThreadPool();
+			return asyncPool;
 		}
 	}
 
 	/**
-	 * Shutdown the RDD Thread pool.
+	 * Shutdown the cached thread pools.
 	 */
-	public static void shutdownAsyncRDDPool() {
-		if(triggerRemoteOPsPool != null) {
+	public static void shutdownAsyncPools() {
+		if(asyncPool != null) {
 			// shutdown prefetch/broadcast thread pool
-			triggerRemoteOPsPool.shutdown();
-			triggerRemoteOPsPool = null;
+			asyncPool.shutdown();
+			asyncPool = null;
+		}
+		if(shared2 != null) {
+			// shutdown shared custom thread count pool
+			shared2.shutdown();
+			shared2 = null;
+			shared2K = -1;
 		}
 	}
 
-	private boolean isCached() {
-		return _pool == shared || _pool == shared2;
+	public final boolean isCached() {
+		return _pool.equals(shared) || this.equals(shared2);
 	}
 
 	@Override
@@ -187,7 +193,7 @@ public class CommonThreadPool implements ExecutorService {
 
 	@Override
 	public List<Runnable> shutdownNow() {
-		return !isCached() ? null : _pool.shutdownNow();
+		return !isCached() ? _pool.shutdownNow() : null;
 	}
 
 	@Override
@@ -221,30 +227,29 @@ public class CommonThreadPool implements ExecutorService {
 		return _pool.submit(task);
 	}
 
-	// unnecessary methods required for API compliance
 	@Override
 	public boolean isShutdown() {
-		throw new NotImplementedException();
+		return isCached() || _pool.isShutdown();
 	}
 
 	@Override
 	public boolean isTerminated() {
-		throw new NotImplementedException();
+		return isCached() || _pool.isTerminated();
 	}
 
 	@Override
 	public boolean awaitTermination(long timeout, TimeUnit unit) throws InterruptedException {
-		throw new NotImplementedException();
+		return isCached() || _pool.awaitTermination(timeout, unit);
 	}
 
 	@Override
 	public <T> T invokeAny(Collection<? extends Callable<T>> tasks) throws InterruptedException, ExecutionException {
-		throw new NotImplementedException();
+		return _pool.invokeAny(tasks);
 	}
 
 	@Override
 	public <T> T invokeAny(Collection<? extends Callable<T>> tasks, long timeout, TimeUnit unit)
 		throws InterruptedException, ExecutionException, TimeoutException {
-		throw new NotImplementedException();
+		return _pool.invokeAny(tasks);
 	}
 }

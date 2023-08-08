@@ -157,7 +157,7 @@ public class CommonThreadPool implements ExecutorService {
 	 * @return A dynamic thread pool.
 	 */
 	public synchronized static ExecutorService getDynamicPool() {
-		if(asyncPool != null && (asyncPool.isShutdown() || asyncPool.isTerminated()) )
+		if(asyncPool != null && !(asyncPool.isShutdown() || asyncPool.isTerminated()) )
 			return asyncPool;
 		else {
 			asyncPool = Executors.newCachedThreadPool();

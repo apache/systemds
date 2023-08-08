@@ -23,14 +23,11 @@ import java.io.FilterOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
 import org.apache.commons.lang3.concurrent.ConcurrentUtils;
 
-public class DoubleBufferingOutputStream extends FilterOutputStream
-{
-	protected ExecutorService _pool = CommonThreadPool.getDynamicPool();
+public class DoubleBufferingOutputStream extends FilterOutputStream {
 	protected Future<?>[] _locks;
 	protected byte[][] _buff;
 	private int _pos;
@@ -69,7 +66,7 @@ public class DoubleBufferingOutputStream extends FilterOutputStream
 				System.arraycopy(b, off, _buff[_pos], 0, len);
 				
 				//submit write request 
-				_locks[_pos] = _pool.submit(new WriteTask(_buff[_pos], len));
+				_locks[_pos] = CommonThreadPool.getDynamicPool().submit(new WriteTask(_buff[_pos], len));
 				_pos = (_pos+1) % _buff.length;
 			}
 		}
@@ -103,7 +100,6 @@ public class DoubleBufferingOutputStream extends FilterOutputStream
 
 	@Override
 	public void close() throws IOException {
-		_pool.shutdown();
 		super.close();
 	}
 	

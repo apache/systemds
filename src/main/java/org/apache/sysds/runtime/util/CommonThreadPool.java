@@ -99,14 +99,14 @@ public class CommonThreadPool implements ExecutorService {
 	 * @param k The number of threads wanted
 	 * @return The executor with specified parallelism
 	 */
-	public static ExecutorService get(int k) {
+	public synchronized static ExecutorService get(int k) {
 		if(size == k)
 			return shared;
 		else if(Thread.currentThread().getName().equals("main")) {
 			if(shared2 != null && shared2K == k)
 				return shared2;
 			else if(shared2 == null) {
-				shared2 = new CommonThreadPool(Executors.newFixedThreadPool(k));
+				shared2 = new CommonThreadPool(new ForkJoinPool(k));
 				shared2K = k;
 				return shared2;
 			}
@@ -141,11 +141,12 @@ public class CommonThreadPool implements ExecutorService {
 			// check for errors and exceptions
 			for(Future<T> r : ret)
 				r.get();
-			// shutdown pool
-			pool.shutdown();
 		}
 		catch(Exception ex) {
 			throw new DMLRuntimeException(ex);
+		}
+		finally{
+			pool.shutdown();
 		}
 	}
 
@@ -167,7 +168,7 @@ public class CommonThreadPool implements ExecutorService {
 	/**
 	 * Shutdown the cached thread pools.
 	 */
-	public static void shutdownAsyncPools() {
+	public synchronized static void shutdownAsyncPools() {
 		if(asyncPool != null) {
 			// shutdown prefetch/broadcast thread pool
 			asyncPool.shutdown();

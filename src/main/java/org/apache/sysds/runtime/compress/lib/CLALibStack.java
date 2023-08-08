@@ -218,7 +218,7 @@ public final class CLALibStack {
 			}
 		}
 
-		final ExecutorService pool = CommonThreadPool.get(Math.max(Math.min(clen / 500, k), 1));
+		final ExecutorService pool = CommonThreadPool.get();
 		try {
 
 			List<AColGroup> finalGroups = pool.submit(() -> {

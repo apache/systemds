@@ -614,7 +614,6 @@ public class FederationMap {
 	 */
 	public void forEachParallel(BiFunction<FederatedRange, FederatedData, Void> forEachFunction) {
 		ExecutorService pool = CommonThreadPool.get(_fedMap.size());
-
 		ArrayList<MappingTask> mappingTasks = new ArrayList<>();
 		for(Pair<FederatedRange, FederatedData> fedMap : _fedMap)
 			mappingTasks.add(new MappingTask(fedMap.getKey(), fedMap.getValue(), forEachFunction, _ID));

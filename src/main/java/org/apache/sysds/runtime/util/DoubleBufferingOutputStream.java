@@ -30,7 +30,7 @@ import org.apache.commons.lang3.concurrent.ConcurrentUtils;
 
 public class DoubleBufferingOutputStream extends FilterOutputStream
 {
-	protected ExecutorService _pool = CommonThreadPool.get(1);
+	protected ExecutorService _pool = CommonThreadPool.getDynamicPool();
 	protected Future<?>[] _locks;
 	protected byte[][] _buff;
 	private int _pos;

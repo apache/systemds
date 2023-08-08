@@ -123,10 +123,11 @@ public class Main {
 	public static void main(String[] args) {
 		try {
 			exec(Integer.parseInt(args[0]), args);
-			CommonThreadPool.get().shutdown();
 		}
 		catch(Exception e) {
 			e.printStackTrace();
+		}finally{
+			CommonThreadPool.get().shutdown();
 		}
 	}
 }

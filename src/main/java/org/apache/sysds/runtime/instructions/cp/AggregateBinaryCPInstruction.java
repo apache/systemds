@@ -61,39 +61,36 @@ public class AggregateBinaryCPInstruction extends BinaryCPInstruction {
 		CPOperand in2 = new CPOperand(parts[2]);
 		CPOperand out = new CPOperand(parts[3]);
 		int k = Integer.parseInt(parts[4]);
-		AggregateBinaryOperator aggbin = InstructionUtils.getMatMultOperator(k);
+		AggregateBinaryOperator op = InstructionUtils.getMatMultOperator(k);
 		if(numFields == 6) {
-			boolean isLeftTransposed = Boolean.parseBoolean(parts[5]);
-			boolean isRightTransposed = Boolean.parseBoolean(parts[6]);
-			return new AggregateBinaryCPInstruction(aggbin,
-				in1, in2, out, opcode, str, isLeftTransposed, isRightTransposed);
+			boolean lt = Boolean.parseBoolean(parts[5]);
+			boolean rt = Boolean.parseBoolean(parts[6]);
+			return new AggregateBinaryCPInstruction(op, in1, in2, out, opcode, str, lt, rt);
 		}
-		return new AggregateBinaryCPInstruction(aggbin, in1, in2, out, opcode, str);
+		return new AggregateBinaryCPInstruction(op, in1, in2, out, opcode, str);
 	}
 
 	@Override
 	public void processInstruction(ExecutionContext ec) {
-		// check compressed inputs
-		final boolean comp1 = ec.getMatrixObject(input1.getName()).isCompressed();
-		final boolean comp2 = ec.getMatrixObject(input2.getName()).isCompressed();
-		if(comp1 || comp2)
-			processCompressedAggregateBinary(ec, comp1, comp2);
-		else if(transposeLeft || transposeRight)
-			processTransposedFusedAggregateBinary(ec);
-		else
-			processNormal(ec);
-	}
-
-	private void processNormal(ExecutionContext ec) {
-		// get inputs
 		MatrixBlock matBlock1 = ec.getMatrixInput(input1.getName());
 		MatrixBlock matBlock2 = ec.getMatrixInput(input2.getName());
+		// check compressed inputs
+		final boolean comp1 = matBlock1 instanceof CompressedMatrixBlock;
+		final boolean comp2 = matBlock2 instanceof CompressedMatrixBlock;
 
+		if(comp1 || comp2)
+			processCompressedAggregateBinary(ec, matBlock1, matBlock2, comp1, comp2);
+		else if(transposeLeft || transposeRight)
+			processTransposedFusedAggregateBinary(ec, matBlock1, matBlock2);
+		else
+			processNormal(ec, matBlock1, matBlock2);
+
+	}
+
+	private void processNormal(ExecutionContext ec, MatrixBlock matBlock1, MatrixBlock matBlock2) {
 		// compute matrix multiplication
 		AggregateBinaryOperator ab_op = (AggregateBinaryOperator) _optr;
-		MatrixBlock ret;
-
-		ret = matBlock1.aggregateBinaryOperations(matBlock1, matBlock2, new MatrixBlock(), ab_op);
+		MatrixBlock ret = matBlock1.aggregateBinaryOperations(matBlock1, matBlock2, new MatrixBlock(), ab_op);
 
 		// release inputs/outputs
 		ec.releaseMatrixInput(input1.getName());
@@ -101,9 +98,9 @@ public class AggregateBinaryCPInstruction extends BinaryCPInstruction {
 		ec.setMatrixOutput(output.getName(), ret);
 	}
 
-	private void processTransposedFusedAggregateBinary(ExecutionContext ec) {
-		MatrixBlock matBlock1 = ec.getMatrixInput(input1.getName());
-		MatrixBlock matBlock2 = ec.getMatrixInput(input2.getName());
+	private void processTransposedFusedAggregateBinary(ExecutionContext ec, MatrixBlock matBlock1,
+		MatrixBlock matBlock2) {
+
 		// compute matrix multiplication
 		AggregateBinaryOperator ab_op = (AggregateBinaryOperator) _optr;
 		MatrixBlock ret;
@@ -127,9 +124,9 @@ public class AggregateBinaryCPInstruction extends BinaryCPInstruction {
 		ec.setMatrixOutput(output.getName(), ret);
 	}
 
-	private void processCompressedAggregateBinary(ExecutionContext ec, boolean c1, boolean c2) {
-		MatrixBlock matBlock1 = ec.getMatrixInput(input1.getName());
-		MatrixBlock matBlock2 = ec.getMatrixInput(input2.getName());
+	private void processCompressedAggregateBinary(ExecutionContext ec, MatrixBlock matBlock1, MatrixBlock matBlock2,
+		boolean c1, boolean c2) {
+
 		// compute matrix multiplication
 		AggregateBinaryOperator ab_op = (AggregateBinaryOperator) _optr;
 		MatrixBlock ret;

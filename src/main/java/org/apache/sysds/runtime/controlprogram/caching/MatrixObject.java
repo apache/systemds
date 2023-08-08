@@ -35,6 +35,7 @@ import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.hops.fedplanner.FTypes.FType;
 import org.apache.sysds.lops.Lop;
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
 import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRange;
@@ -590,6 +591,18 @@ public class MatrixObject extends CacheableData<MatrixBlock> {
 		return ((MatrixObject) LineageRecomputeUtils
 			.parseNComputeLineageTrace(Explain.explain(li), null))
 			.acquireReadAndRelease();
+	}
+
+	@Override 
+	public boolean isCompressed(){
+		if(super.isCompressed())
+			return true;
+		else if(_partitionInMemory instanceof CompressedMatrixBlock){
+			setCompressedSize(_partitionInMemory.estimateSizeInMemory());
+			return true;
+		}
+		else
+			return false;
 	}
 
 	@Override

@@ -25,8 +25,23 @@ To compile:
 mvn package
 ```
 
-To run:
+Example of running it:
 
 ```bash
-java -jar target/SystemDS-tests.jar
+java -jar target/systemds-3.2.0-SNAPSHOT-perf.jar 1
+```
+
+example result of the above job:
+
+```txt
+Running Steam Compression Test
+      StreamCompress  Repetitions: 100 GenMatrices rand(10000, 100, 32, 1.0) Seed: 42
+               In Memory Block Size,    0.010+-  0.010 ms, 8000152.00
+                Write Blocks Stream,   16.272+-  4.027 ms, 8000009.00
+               Write Stream Deflate,  444.453+- 37.761 ms, 1037452.78
+        Write Stream Deflate Speedy,  276.331+- 24.461 ms, 1362222.20
+ In Memory Compress Individual (CI),   29.070+-  2.083 ms, 1041744.00
+                    Write CI Stream,   31.607+-  1.722 ms, 1027621.00
+            Write CI Deflate Stream,   63.826+-  1.693 ms,  655801.16
+     Write CI Deflate Stream Speedy,   54.482+-  1.266 ms,  678390.92
 ```

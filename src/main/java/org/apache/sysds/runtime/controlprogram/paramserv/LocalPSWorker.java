@@ -31,7 +31,6 @@ import org.apache.sysds.parser.Statement;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
-import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.Timing;
 import org.apache.sysds.runtime.instructions.cp.ListObject;
 import org.apache.sysds.runtime.util.CommonThreadPool;
@@ -91,7 +90,7 @@ public class LocalPSWorker extends PSWorker implements Callable<Void> {
 			ListObject params = pullModel();
 			Future<ListObject> accGradients = ConcurrentUtils.constantFuture(null);
 			if(_tpool == null)
-				_tpool = CommonThreadPool.get(InfrastructureAnalyzer.getLocalParallelism());
+				_tpool = CommonThreadPool.get();
 
 			try {
 				for (int j = 0; j < batchIter; j++) {

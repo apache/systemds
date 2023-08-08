@@ -53,7 +53,7 @@ public class FrameReaderJSONLParallel extends FrameReaderJSONL
 		splits = IOUtilFunctions.sortInputSplits(splits);
 
 		try{
-			ExecutorService executorPool = CommonThreadPool.get(Math.min(numThreads, splits.length));
+			ExecutorService executorPool = CommonThreadPool.get(numThreads);
 
 			//compute num rows per split
 			ArrayList<CountRowsTask> countRowsTasks = new ArrayList<>();

@@ -670,7 +670,7 @@ public class LibMatrixDNN {
 				}
 			}
 			else {
-				ExecutorService pool = CommonThreadPool.get( Math.min(k, params.N) );
+				ExecutorService pool = CommonThreadPool.get(k);
 				List<Future<Long>> taskret = pool.invokeAll(tasks);
 				pool.shutdown();
 				for( Future<Long> task : taskret )

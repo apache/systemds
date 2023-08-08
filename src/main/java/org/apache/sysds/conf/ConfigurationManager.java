@@ -29,7 +29,6 @@ import org.apache.sysds.conf.CompilerConfig.ConfigType;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.lops.Compression.CompressConfig;
 import org.apache.sysds.lops.compile.linearization.ILinearize;
-import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysds.runtime.io.IOUtilFunctions;
 import org.apache.sysds.runtime.util.CommonThreadPool;
 
@@ -66,7 +65,7 @@ public class ConfigurationManager{
  		_dmlconf = new DMLConfig();
 		_cconf = new CompilerConfig();
 
-		final ExecutorService pool = CommonThreadPool.get(InfrastructureAnalyzer.getLocalParallelism());
+		final ExecutorService pool = CommonThreadPool.get();
 		pool.submit(() ->{
 			try{
 				IOUtilFunctions.getFileSystem(_rJob);
@@ -75,7 +74,7 @@ public class ConfigurationManager{
 				LOG.warn(e.getMessage());
 			}
 		});
-		pool.shutdown();
+		// pool.shutdown();
 	}
 	
 	

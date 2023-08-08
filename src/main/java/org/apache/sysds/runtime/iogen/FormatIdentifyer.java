@@ -647,19 +647,14 @@ public class FormatIdentifyer {
 		colIndexes.add(0);
 
 		try {
-			ExecutorService pool = CommonThreadPool.get(1);
 			ArrayList<BuildColsKeyPatternSingleRowTask> tasks = new ArrayList<>();
 			tasks.add(
 				new BuildColsKeyPatternSingleRowTask(prefixesRemovedReverse, prefixesRemoved, prefixes, suffixes,
 					prefixesRemovedReverseSort, keys, colSuffixes, lcs, colIndexes));
 
-			//wait until all tasks have been executed
-			List<Future<Object>> rt = pool.invokeAll(tasks);
-			pool.shutdown();
-
 			//check for exceptions
-			for(Future<Object> task : rt)
-				task.get();
+			for(Callable<Object> task : tasks)
+				task.call();
 		}
 		catch(Exception e) {
 			throw new RuntimeException("Failed BuildValueKeyPattern.", e);
@@ -770,19 +765,13 @@ public class FormatIdentifyer {
 		colIndexe.add(0);
 
 		try {
-			ExecutorService pool = CommonThreadPool.get(1);
 			ArrayList<BuildColsKeyPatternSingleRowTask> tasks = new ArrayList<>();
 			tasks.add(
 				new BuildColsKeyPatternSingleRowTask(prefixesRemovedReverse, prefixesRemoved, prefixes, suffixes,
 					prefixesRemovedReverseSort, keys, colSuffixes, lcs, colIndexe));
-
-			//wait until all tasks have been executed
-			List<Future<Object>> rt = pool.invokeAll(tasks);
-			pool.shutdown();
-
 			//check for exceptions
-			for(Future<Object> task : rt)
-				task.get();
+			for(Callable<Object> task : tasks)
+				task.call();
 		}
 		catch(Exception e) {
 			throw new RuntimeException("Failed BuildValueKeyPattern.", e);

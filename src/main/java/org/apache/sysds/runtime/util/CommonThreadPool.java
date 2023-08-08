@@ -37,9 +37,15 @@ import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 
 /**
- * This common thread pool provides an abstraction to obtain a shared thread pool, specifically the
- * ForkJoinPool.commonPool, for all requests of the maximum degree of parallelism. If pools of different size are
- * requested, we create new pool instances of FixedThreadPool.
+ * This common thread pool provides an abstraction to obtain a shared thread pool.
+ * 
+ * If the number of logical cores is specified a ForkJoinPool.commonPool is returned on all requests.
+ * 
+ * If pools of different size are requested, we create new pool instances of FixedThreadPool, Unless we currently are on
+ * the main thread, Then we return a shared instance of the first requested number of cores.
+ * 
+ * Alternatively the class also contain a dynamic threadPool, that is intended for asynchronous long running tasks with
+ * low compute overhead, such as broadcast and collect from federated workers.
  */
 public class CommonThreadPool implements ExecutorService {
 	/** Log object */
@@ -121,6 +127,13 @@ public class CommonThreadPool implements ExecutorService {
 		return InfrastructureAnalyzer.getLocalParallelism() == k || shared2K == k || shared2K == -1;
 	}
 
+	/**
+	 * Invoke the collection of tasks and shutdown the pool upon job termination.
+	 * 
+	 * @param <T>   The type of class to return from the job
+	 * @param pool  The pool to execute in
+	 * @param tasks The tasks to execute
+	 */
 	public static <T> void invokeAndShutdown(ExecutorService pool, Collection<? extends Callable<T>> tasks) {
 		try {
 			// execute tasks

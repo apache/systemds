@@ -19,9 +19,11 @@
 
 package org.apache.sysds.runtime.compress.colgroup.scheme;
 
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup;
 import org.apache.sysds.runtime.compress.colgroup.ASDC;
 import org.apache.sysds.runtime.compress.colgroup.ASDCZero;
+import org.apache.sysds.runtime.compress.colgroup.ColGroupSDCFOR;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -36,6 +38,8 @@ public abstract class SDCScheme extends ACLAScheme {
 	}
 
 	public static SDCScheme create(ASDC g) {
+		if(g instanceof ColGroupSDCFOR)
+			throw new NotImplementedException();
 		if(g.getColIndices().size() == 1)
 			return new SDCSchemeSC(g);
 		else

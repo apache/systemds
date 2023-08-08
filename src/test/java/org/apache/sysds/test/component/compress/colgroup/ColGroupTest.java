@@ -2212,10 +2212,11 @@ public class ColGroupTest extends ColGroupBase {
 	public void getScheme() {
 		try {
 			// create scheme and check if it compress the same matrix input in same way.
+			compare(base, other);
 			checkScheme(base.getCompressionScheme(), base, nRow, maxCol);
 			checkScheme(other.getCompressionScheme(), other, nRow, maxCol);
 		}
-		catch(NotImplementedException e){
+		catch(NotImplementedException e) {
 			// allow it to be not implemented
 		}
 		catch(Exception e) {
@@ -2240,7 +2241,7 @@ public class ColGroupTest extends ColGroupBase {
 
 			}
 		}
-		catch(NotImplementedException e){
+		catch(NotImplementedException e) {
 			// allow it to be not implemented
 
 		}

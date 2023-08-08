@@ -57,6 +57,7 @@ public class SDCSchemeSC extends SDCScheme {
 		this.lastDict = lastDict;
 		int unique = lastDict.getNumberOfValues(1);
 		map = new DoubleCountHashMap(unique);
+
 		for(int i = 0; i < unique; i++)
 			map.increment(lastDict.getValue(i));
 	}
@@ -101,7 +102,7 @@ public class SDCSchemeSC extends SDCScheme {
 		for(int i = 0; i < nRow; i++)
 			if(sb.get(i, col) != def)
 				off.appendValue(i);
-		
+
 		// Only cells with non default values.
 		AMapToData d = MapToFactory.create(off.size(), map.size());
 		for(int i = 0; i < off.size(); i++) {
@@ -160,7 +161,7 @@ public class SDCSchemeSC extends SDCScheme {
 		final int col = columns.get(0);
 		if(data.isEmpty()) {
 			if(def != 0.0)
-				map.increment(0, data.getNumRows());
+				map.increment(0.0, data.getNumRows());
 		}
 		else if(data.isInSparseFormat())
 			updateSparse(data, col);

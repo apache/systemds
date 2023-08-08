@@ -24,7 +24,6 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.util.Arrays;
 
-import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.utils.IntArrayList;
 
@@ -129,12 +128,6 @@ public class RangeIndex extends AColIndex {
 			return new SliceResult(0, 0, null);
 		else if(l <= this.l && u >= this.u)
 			return new SliceResult(0, size(), new RangeIndex(this.l - l, this.u - l));
-		// else if (l == this.l){
-		// 	int minU = Math.min(u, this.u);
-		// 	int offR = minU - this.l;
-		// 	return new SliceResult(0, offR + 1, new RangeIndex(0, minU - l));
-
-		// }
 		else {
 			int maxL = Math.max(l, this.l);
 			int minU = Math.min(u, this.u);

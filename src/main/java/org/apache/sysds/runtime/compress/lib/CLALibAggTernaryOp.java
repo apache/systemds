@@ -43,8 +43,21 @@ public final class CLALibAggTernaryOp {
 	private final MatrixBlock ret;
 	private final AggregateTernaryOperator op;
 	private final boolean inCP;
-
 	private static boolean warned = false;
+
+	public static MatrixBlock agg(MatrixBlock m1, MatrixBlock m2, MatrixBlock m3, MatrixBlock ret,
+		AggregateTernaryOperator op, boolean inCP) {
+
+		int rl = (op.indexFn instanceof ReduceRow) ? 2 : 1;
+		int cl = (op.indexFn instanceof ReduceRow) ? m1.getNumColumns() : 2;
+		if(ret == null)
+			ret = new MatrixBlock(rl, cl, false);
+		else
+			ret.reset(rl, cl, false);
+		ret = new CLALibAggTernaryOp(m1, m2, m3, ret, op, inCP).exec();
+
+		return ret;
+	}
 
 	private CLALibAggTernaryOp(MatrixBlock m1, MatrixBlock m2, MatrixBlock m3, MatrixBlock ret,
 		AggregateTernaryOperator op, boolean inCP) {
@@ -60,8 +73,11 @@ public final class CLALibAggTernaryOp {
 		if(op.indexFn instanceof ReduceAll && op.aggOp.increOp.fn instanceof KahanPlus &&
 			op.binaryFn instanceof Multiply) {
 			// early abort if if anyEmpty.
-			if(m1.isEmptyBlock(false) || m2.isEmptyBlock(false) || m3 != null && m3.isEmptyBlock(false))
+			if(m1.isEmptyBlock(false) || m2.isEmptyBlock(false) || m3 != null && m3.isEmptyBlock(false)) {
+				if(op.aggOp.existsCorrection() && inCP)
+					ret.dropLastRowsOrColumns(op.aggOp.correction);
 				return ret;
+			}
 
 			// if any is constant.
 			if(isConst(m1)) {
@@ -81,30 +97,13 @@ public final class CLALibAggTernaryOp {
 		return false;
 	}
 
-	public static MatrixBlock agg(MatrixBlock m1, MatrixBlock m2, MatrixBlock m3, MatrixBlock ret,
-		AggregateTernaryOperator op, boolean inCP) {
-
-		int rl = (op.indexFn instanceof ReduceRow) ? 2 : 1;
-		int cl = (op.indexFn instanceof ReduceRow) ? m1.getNumRows() : 2;
-		if(ret == null)
-			ret = new MatrixBlock(rl, cl, false);
-		else
-			ret.reset(rl, cl, false);
-		ret = new CLALibAggTernaryOp(m1, m2, m3, ret, op, inCP).exec();
-
-		if(op.aggOp.existsCorrection() && inCP)
-			ret.dropLastRowsOrColumns(op.aggOp.correction);
-
-		return ret;
-	}
-
 	private MatrixBlock fallBack() {
 		warnDecompression();
 		MatrixBlock m1UC = CompressedMatrixBlock.getUncompressed(m1);
 		MatrixBlock m2UC = CompressedMatrixBlock.getUncompressed(m2);
 		MatrixBlock m3UC = CompressedMatrixBlock.getUncompressed(m3);
 
-		MatrixBlock ret2 = m1UC.aggregateTernaryOperations(m1UC, m2UC, m3UC, ret, op, inCP);
+		MatrixBlock ret2 = MatrixBlock.aggregateTernaryOperations(m1UC, m2UC, m3UC, ret, op, inCP);
 		if(ret2.getNumRows() == 0 || ret2.getNumColumns() == 0)
 			throw new DMLCompressionException("Invalid output");
 		return ret2;

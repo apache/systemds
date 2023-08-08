@@ -72,10 +72,12 @@ public class UnaryCP extends Lop {
 
 	@Override
 	public String getInstructions(String input, String output) {
-		return InstructionUtils.concatOperands(
+		String ret =  InstructionUtils.concatOperands(
 			getExecType().name(), getOpCode(),
 			getInputs().get(0).prepScalarInputOperand(getExecType()),
-			prepOutputOperand(output),
-			Integer.toString(_numThreads));
+			prepOutputOperand(output));
+		if (getExecType() == ExecType.CP || getExecType() == ExecType.FED)
+			ret = InstructionUtils.concatOperands(ret, Integer.toString(_numThreads));
+		return ret;
 	}
 }

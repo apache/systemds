@@ -54,7 +54,7 @@ public class LineageCacheConfig
 		"^", "uamax", "uark+", "uacmean", "eigen", "ctableexpand", "replace",
 		"^2", "*2", "uack+", "tak+*", "uacsqk+", "uark+", "n+", "uarimax", "qsort",
 		"qpick", "transformapply", "uarmax", "n+", "-*", "castdtm", "lowertri",
-		"prefetch", "mapmm", "contains", "mmchain", "mapmmchain", "+*"
+		"prefetch", "mapmm", "contains", "mmchain", "mapmmchain", "+*", "=="
 		//TODO: Reuse everything.
 	};
 
@@ -152,6 +152,7 @@ public class LineageCacheConfig
 		SPILLED,   //Data is in disk. Empty value. Cannot be evicted.
 		RELOADED,  //Reloaded from disk. Can be evicted.
 		PINNED,    //Pinned to memory. Cannot be evicted.
+		TOCACHEGPU, //To be cached in GPU if the instruction reoccur
 		GPUCACHED, //Points to GPU intermediate
 		PERSISTEDRDD, //Persisted at the Spark executors
 		TOPERSISTRDD, //To be persisted if the instruction reoccur

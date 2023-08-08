@@ -161,6 +161,7 @@ public class LineageCache
 								//putValueRDD method will save the RDD and call persist
 								e.setCacheStatus(LineageCacheStatus.PERSISTEDRDD);
 								//Cannot reuse rdd as already garbage collected
+								ec.replaceLineageItem(outName, e._key); //still reuse the lineage trace
 								return false;
 							case PERSISTEDRDD:
 								//Reuse the persisted intermediate at the executors
@@ -180,6 +181,12 @@ public class LineageCache
 						Pointer gpuPtr = e.getGPUPointer();
 						if (gpuPtr == null && e.getCacheStatus() == LineageCacheStatus.NOTCACHED)
 							return false;  //the executing thread removed this entry from cache
+						if (e.getCacheStatus() == LineageCacheStatus.TOCACHEGPU) {  //second hit
+							//Cannot reuse as already garbage collected
+							ec.replaceLineageItem(outName, e._key); //still reuse the lineage trace
+							return false;
+						}
+						//Reuse from third hit onwards (status == GPUCACHED)
 						//Create a GPUObject with the cached pointer
 						GPUObject gpuObj = new GPUObject(ec.getGPUContext(0),
 							ec.getMatrixObject(outName), gpuPtr);
@@ -295,9 +302,20 @@ public class LineageCache
 		if (reuse) {
 			//Additional maintenance for GPU pointers and RDDs
 			for (LineageCacheEntry e : funcOutLIs) {
-				if (e.isGPUObject())
-					//Increment the live count for this pointer
-					LineageGPUCacheEviction.incrementLiveCount(e.getGPUPointer());
+				if (e.isGPUObject()) {
+					switch(e.getCacheStatus()) {
+						case TOCACHEGPU:
+							//Cannot reuse as already garbage collected putValue method
+							// will save the pointer while caching the original instruction
+							return false;
+						case GPUCACHED:
+							//Increment the live count for this pointer
+							LineageGPUCacheEviction.incrementLiveCount(e.getGPUPointer());
+							break;
+						default:
+							return false;
+					}
+				}
 				else if (e.isRDDPersist()) {
 					//Reuse the cached RDD (local or persisted at the executors)
 					switch(e.getCacheStatus()) {
@@ -598,7 +616,7 @@ public class LineageCache
 				}
 			}
 			else if (inst instanceof GPUInstruction) {
-				// TODO: gpu multiretrun instructions
+				// TODO: gpu multi-return instructions
 				Data gpudata = ec.getVariable(((GPUInstruction) inst)._output);
 				liGPUObj = gpudata instanceof MatrixObject ?
 						ec.getMatrixObject(((GPUInstruction)inst)._output).
@@ -708,14 +726,27 @@ public class LineageCache
 				removePlaceholder(instLI);
 				return;
 			}
-			// Update the total size of lineage cached gpu objects
-			// The eviction is handled by the unified gpu memory manager
-			LineageGPUCacheEviction.updateSize(gpuObj.getAllocatedSize(), true);
-			// Set the GPUOject in the cache
-			centry.setGPUValue(gpuObj.getDensePointer(), gpuObj.getAllocatedSize(),
-				gpuObj.getMatrixObject().getMetaData(), computetime);
-			// Maintain order for eviction
-			LineageGPUCacheEviction.addEntry(centry);
+			switch(centry.getCacheStatus()) {
+				case EMPTY:  //first hit
+					// Set the GPUOject in the cache. Will be garbage collected
+					centry.setGPUValue(gpuObj.getDensePointer(), gpuObj.getAllocatedSize(),
+						gpuObj.getMatrixObject().getMetaData(), computetime);
+					centry.setCacheStatus(LineageCacheStatus.TOCACHEGPU);
+					break;
+				case TOCACHEGPU:  //second hit
+					// Update the total size of lineage cached gpu objects
+					// The eviction is handled by the unified gpu memory manager
+					LineageGPUCacheEviction.updateSize(gpuObj.getAllocatedSize(), true);
+					// Set the GPUOject in the cache and update the status
+					centry.setGPUValue(gpuObj.getDensePointer(), gpuObj.getAllocatedSize(),
+						gpuObj.getMatrixObject().getMetaData(), computetime);
+					centry.setCacheStatus(LineageCacheStatus.GPUCACHED);
+					// Maintain order for eviction
+					LineageGPUCacheEviction.addEntry(centry);
+					break;
+				default:
+					throw new DMLRuntimeException("Execution should not reach here: "+centry._key);
+			}
 		}
 	}
 

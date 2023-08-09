@@ -68,7 +68,7 @@ return(Matrix[Double] eXtrain, Matrix[Double] eXtest)
 {
   if(sum(mask) > 0)
   {
-    index = vectorToCsv(mask)
+    index = vectorToCsv(mask, ncol(mask))
     jspecR = "{ids:true, "+code+":["+index+"]}"
     [eXtrain, X_meta] = transformencode(target=Xtrain, spec=jspecR);
     if(!cv)

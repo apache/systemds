@@ -52,7 +52,7 @@ s_apply_pipeline = function(Frame[Unknown] testData, Frame[Unknown] metaData = a
   [schema, mask, fdMask, maskY] = topk::prepareMeta(testData, metaData)
   pip = removeEmpty(target=pip, margin="cols")
   applyFunc = removeEmpty(target=applyFunc, margin="cols")
-  metaList = list(mask=mask, schema=schema, fd=fdMask, applyFunc=as.frame("NULL"))
+  metaList = list(mask=mask, schema=schema, fd=fdMask, applyFunc=as.frame("NULL"), tfspec=as.scalar(exState[3]))
   ctx = list(prefix="----"); #TODO include seed
   # separate the label
   [Xtest, Ytest] = topk::getLabel(testData, isLastLabel)
@@ -75,7 +75,7 @@ s_apply_pipeline = function(Frame[Unknown] testData, Frame[Unknown] metaData = a
   M = as.frame(exState[2])
   if(sum(mask) > 0)
   {
-    index = vectorToCsv(mask)
+    index = vectorToCsv(mask, ncol(mask))
     jspecR = "{ids:true, recode:["+index+"]}"
     eXtest = transformapply(target=Xtest, spec=jspecR, meta=M);
   }

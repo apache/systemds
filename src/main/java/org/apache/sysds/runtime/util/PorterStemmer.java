@@ -25,24 +25,17 @@ import java.util.Iterator;
 import java.util.Map.Entry;
 
 /**
- * Stemmer, implementing the Porter Stemming Algorithm
- *
- * The Stemmer class transforms a word into its root form.  The input
- * word can be provided a character at time (by calling add()), or at once
- * by calling one of the various stem(something) methods.
+ * Porter, 1980, An algorithm for suffix stripping, Program, Vol. 14,
+ *    no. 3, pp 130-137
+
  */
 
 public class PorterStemmer
 {
-   /* m() measures the number of consonant sequences between 0 and j. if c is
-      a consonant sequence and v a vowel sequence, and <..> indicates arbitrary
-      presence,
-
-         <c><v>       gives 0
+   /* m() measures the number of consonant sequences for vowels v and consonants c
          <c>vc<v>     gives 1
          <c>vcvc<v>   gives 2
          <c>vcvcvc<v> gives 3
-         ....
    */
 
 	private static int calcM(String word)
@@ -65,7 +58,7 @@ public class PorterStemmer
 		return  count;
 	}
 
-	/* doublec(j) is true <=> j,(j-1) contain a double consonant. */
+	/* ends on a double consonant i.e., ee, ss, tt */
 
 	private static boolean doublec(String word)
 	{  int len = word.length() - 1;
@@ -74,13 +67,9 @@ public class PorterStemmer
 		return cons(word, len);
 	}
 
-   /* cvc(i) is true <=> i-2,i-1,i has the form consonant - vowel - consonant
-      and also if the second c is not w,x or y. this is used when trying to
-      restore an e at the end of a short word. e.g.
-
-         cav(e), lov(e), hop(e), crim(e), but
-         snow, box, tray.
-*	*/
+	/* ends with cvc and second c is not w,x or y e.g.
+		  snow, box, tray.
+ *	*/
 	private static boolean cvc(String word)
 	{
 		int len = word.length();
@@ -94,7 +83,7 @@ public class PorterStemmer
 		return !exceptions.contains(ch);
 	}
 
-	/* vowelinstem() is true <=> 0,...j contains a vowel */
+	/* vowelinstem() is true if stem contains a vowel */
 	private static boolean  vowelinStem(String word, String suffix) {
 		int length = word.length() - suffix.length();
 		for(int i=0; i<length; i++)
@@ -104,7 +93,6 @@ public class PorterStemmer
 		return false;
 	}
 
-	/* cons(i) is true <=> b[i] is a consonant. */
 
 	private static boolean cons(String stem, int i)
 	{
@@ -112,13 +100,6 @@ public class PorterStemmer
 		char ch = stem.charAt(i);
 		if(vowels.contains(String.valueOf(stem.charAt(i))))
 			return false;
-		if(ch == 'y')
-		{
-			if(i == 0)
-				return true;
-			else
-				return (!cons(stem, i - 1));
-		}
 		return true;
 	}
 	// process the collection of tuples to find which prefix matches the case.
@@ -154,20 +135,6 @@ public class PorterStemmer
 		return null;
 	}
 
-	/* step1() gets rid of plurals and -ed or -ing. e.g.
-	i.e., condition & suffix -> replacement
-		SSES -> SS
-		IES  -> I
-		SS -> SS
-		S -> ""
-		(m > 0) EED -> EE
-		vowelSequence(ED) -> ""
-		vowelsequence(ING) -> ""
-		any("at, bl, iz")  -> add(e)
-		doubleconsonant and not("l", "s", "z") -> remove single letter from end
-		(m == 1 and cvc) -> add(e)
-		turns terminal y to i when there is another vowel in the stem.
-   */
 
 	private static String step1(String word)
 	{
@@ -323,6 +290,7 @@ public class PorterStemmer
 	}
 	public static String stem (String word)
 	{
+		word = StringUtils.lowerCase(word);
 		if(word.length() >= 3) {
 			word = step1(word);
 			word = step2(word);

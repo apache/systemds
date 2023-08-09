@@ -571,12 +571,20 @@ public class StringArray extends Array<String> {
 
 	@Override
 	public double getAsNaNDouble(int i) {
-		if(_data[i] != null && !_data[i].isEmpty()) {
-			return getAsDouble(_data[i]);
+		String value = _data[i];
+		if(value != null && !value.isEmpty())
+		{
+			char c = (value.charAt(0) == '-')? value.charAt(1): value.charAt(0);
+			if(Character.isDigit(c))
+				return DoubleArray.parseDouble(_data[i]);
+			else {
+				if (FrameUtil.isType(value.toString(), ValueType.BOOLEAN) == ValueType.BOOLEAN)
+					return (value.equals("true")?  1:  0 );
+				else
+					throw new DMLRuntimeException("Type mismatch String found when Double expected "+value);
+			}
 		}
-		else {
-			return Double.NaN;
-		}
+		else  return Double.NaN;
 	}
 
 	private static double getAsDouble(String s) {

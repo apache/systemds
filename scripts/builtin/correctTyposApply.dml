@@ -91,3 +91,4 @@ replaceStrings1 = function(String replacement, String to_replace, Frame[String] 
 {
   strings = map(strings, "s -> s.equals(\""+to_replace+"\") ? \""+replacement+"\" : s");
 }
+

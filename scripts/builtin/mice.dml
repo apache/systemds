@@ -72,7 +72,7 @@ m_mice= function(Matrix[Double] X, Matrix[Double] cMask, Integer iter = 3,
   d = ncol(X1)
   n = nrow(X1)
   # compute index of categorical features
-  index = vectorToCsv(cMask)
+  index = vectorToCsv(cMask, ncol(cMask))
   # specifications for one-hot encoding of categorical features
   jspecDC = "{ids:true, dummycode:["+index+"]}";
   [dX, dM] = transformencode(target=as.frame(X1), spec=jspecDC);

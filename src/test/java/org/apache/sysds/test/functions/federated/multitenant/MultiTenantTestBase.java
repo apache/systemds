@@ -138,7 +138,7 @@ public abstract class MultiTenantTestBase extends AutomatedTestBase {
 	}
 
 	protected String waitForCoordinators(int timeout){
-		ExecutorService executor = Executors.newCachedThreadPool();
+		ExecutorService executor = Executors.newSingleThreadExecutor();
 		try{
 			return executor.submit(() -> waitForCoordinatorsActual()).get(timeout, TimeUnit.SECONDS);
 		}

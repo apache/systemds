@@ -26,7 +26,7 @@ import java.util.Arrays;
 
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.runtime.DMLRuntimeException;
-import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.DictionaryFactory;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.MatrixBlockDictionary;
 import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
@@ -63,14 +63,14 @@ public class ColGroupDDCFOR extends AMorphingMMColGroup implements IFrameOfRefer
 	/** Reference values in this column group */
 	protected final double[] _reference;
 
-	private ColGroupDDCFOR(IColIndex colIndexes, ADictionary dict, double[] reference, AMapToData data,
+	private ColGroupDDCFOR(IColIndex colIndexes, IDictionary dict, double[] reference, AMapToData data,
 		int[] cachedCounts) {
 		super(colIndexes, dict, cachedCounts);
 		_data = data;
 		_reference = reference;
 	}
 
-	public static AColGroup create(IColIndex colIndexes, ADictionary dict, AMapToData data, int[] cachedCounts,
+	public static AColGroup create(IColIndex colIndexes, IDictionary dict, AMapToData data, int[] cachedCounts,
 		double[] reference) {
 		final boolean allZero = ColGroupUtils.allZero(reference);
 		if(dict == null && allZero)
@@ -154,11 +154,11 @@ public class ColGroupDDCFOR extends AMorphingMMColGroup implements IFrameOfRefer
 		if(op.fn instanceof Plus || op.fn instanceof Minus)
 			return create(_colIndexes, _dict, _data, getCachedCounts(), newRef);
 		else if(op.fn instanceof Multiply || op.fn instanceof Divide) {
-			final ADictionary newDict = _dict.applyScalarOp(op);
+			final IDictionary newDict = _dict.applyScalarOp(op);
 			return create(_colIndexes, newDict, _data, getCachedCounts(), newRef);
 		}
 		else {
-			final ADictionary newDict = _dict.applyScalarOpWithReference(op, _reference, newRef);
+			final IDictionary newDict = _dict.applyScalarOpWithReference(op, _reference, newRef);
 			return create(_colIndexes, newDict, _data, getCachedCounts(), newRef);
 		}
 	}
@@ -166,7 +166,7 @@ public class ColGroupDDCFOR extends AMorphingMMColGroup implements IFrameOfRefer
 	@Override
 	public AColGroup unaryOperation(UnaryOperator op) {
 		final double[] newRef = ColGroupUtils.unaryOperator(op, _reference);
-		final ADictionary newDict = _dict.applyUnaryOpWithReference(op, _reference, newRef);
+		final IDictionary newDict = _dict.applyUnaryOpWithReference(op, _reference, newRef);
 		return create(_colIndexes, newDict, _data, getCachedCounts(), newRef);
 	}
 
@@ -180,11 +180,11 @@ public class ColGroupDDCFOR extends AMorphingMMColGroup implements IFrameOfRefer
 			return create(_colIndexes, _dict, _data, getCachedCounts(), newRef);
 		else if(op.fn instanceof Multiply || op.fn instanceof Divide) {
 			// possible to simply process on dict and keep reference
-			final ADictionary newDict = _dict.binOpLeft(op, v, _colIndexes);
+			final IDictionary newDict = _dict.binOpLeft(op, v, _colIndexes);
 			return create(_colIndexes, newDict, _data, getCachedCounts(), newRef);
 		}
 		else { // have to apply reference while processing
-			final ADictionary newDict = _dict.binOpLeftWithReference(op, v, _colIndexes, _reference, newRef);
+			final IDictionary newDict = _dict.binOpLeftWithReference(op, v, _colIndexes, _reference, newRef);
 			return create(_colIndexes, newDict, _data, getCachedCounts(), newRef);
 		}
 	}
@@ -199,11 +199,11 @@ public class ColGroupDDCFOR extends AMorphingMMColGroup implements IFrameOfRefer
 			return create(_colIndexes, _dict, _data, getCachedCounts(), newRef);
 		else if(op.fn instanceof Multiply || op.fn instanceof Divide) {
 			// possible to simply process on dict and keep reference
-			final ADictionary newDict = _dict.binOpRight(op, v, _colIndexes);
+			final IDictionary newDict = _dict.binOpRight(op, v, _colIndexes);
 			return create(_colIndexes, newDict, _data, getCachedCounts(), newRef);
 		}
 		else { // have to apply reference while processing
-			final ADictionary newDict = _dict.binOpRightWithReference(op, v, _colIndexes, _reference, newRef);
+			final IDictionary newDict = _dict.binOpRightWithReference(op, v, _colIndexes, _reference, newRef);
 			return create(_colIndexes, newDict, _data, getCachedCounts(), newRef);
 		}
 	}
@@ -218,7 +218,7 @@ public class ColGroupDDCFOR extends AMorphingMMColGroup implements IFrameOfRefer
 
 	public static ColGroupDDCFOR read(DataInput in) throws IOException {
 		IColIndex cols = ColIndexFactory.read(in);
-		ADictionary dict = DictionaryFactory.read(in);
+		IDictionary dict = DictionaryFactory.read(in);
 		AMapToData data = MapToFactory.readIn(in);
 		double[] ref = ColGroupIO.readDoubleArray(cols.size(), in);
 		return new ColGroupDDCFOR(cols, dict, ref, data, null);
@@ -241,7 +241,7 @@ public class ColGroupDDCFOR extends AMorphingMMColGroup implements IFrameOfRefer
 
 	@Override
 	public AColGroup replace(double pattern, double replace) {
-		final ADictionary newDict = _dict.replaceWithReference(pattern, replace, _reference);
+		final IDictionary newDict = _dict.replaceWithReference(pattern, replace, _reference);
 		boolean patternInReference = false;
 		for(double d : _reference)
 			if(pattern == d) {
@@ -339,7 +339,7 @@ public class ColGroupDDCFOR extends AMorphingMMColGroup implements IFrameOfRefer
 
 	@Override
 	protected AColGroup sliceMultiColumns(int idStart, int idEnd, IColIndex outputCols) {
-		ADictionary retDict = _dict.sliceOutColumnRange(idStart, idEnd, _colIndexes.size());
+		IDictionary retDict = _dict.sliceOutColumnRange(idStart, idEnd, _colIndexes.size());
 		final double[] newDef = new double[idEnd - idStart];
 		for(int i = idStart, j = 0; i < idEnd; i++, j++)
 			newDef[j] = _reference[i];
@@ -352,14 +352,13 @@ public class ColGroupDDCFOR extends AMorphingMMColGroup implements IFrameOfRefer
 		if(_colIndexes.size() == 1) // early abort, only single column already.
 			return create(retIndexes, _dict, _data, getCounts(), _reference);
 		final double[] newDef = new double[] {_reference[idx]};
-		final ADictionary retDict = _dict.sliceOutColumnRange(idx, idx + 1, _colIndexes.size());
+		final IDictionary retDict = _dict.sliceOutColumnRange(idx, idx + 1, _colIndexes.size());
 		return create(retIndexes, retDict, _data, getCounts(), newDef);
 
 	}
 
 	@Override
 	public boolean containsValue(double pattern) {
-
 		if(Double.isNaN(pattern) || Double.isInfinite(pattern))
 			return ColGroupUtils.containsInfOrNan(pattern, _reference) || _dict.containsValue(pattern);
 		else
@@ -382,7 +381,7 @@ public class ColGroupDDCFOR extends AMorphingMMColGroup implements IFrameOfRefer
 	@Override
 	public AColGroup rexpandCols(int max, boolean ignore, boolean cast, int nRows) {
 		final int def = (int) _reference[0];
-		ADictionary d = _dict.rexpandColsWithReference(max, ignore, cast, def);
+		IDictionary d = _dict.rexpandColsWithReference(max, ignore, cast, def);
 
 		if(d == null) {
 			if(def <= 0 || def > max)
@@ -425,7 +424,7 @@ public class ColGroupDDCFOR extends AMorphingMMColGroup implements IFrameOfRefer
 	}
 
 	@Override
-	protected AColGroup allocateRightMultiplicationCommon(double[] common, IColIndex colIndexes, ADictionary preAgg) {
+	protected AColGroup allocateRightMultiplicationCommon(double[] common, IColIndex colIndexes, IDictionary preAgg) {
 		return create(colIndexes, preAgg, _data, getCachedCounts(), common);
 	}
 
@@ -436,7 +435,7 @@ public class ColGroupDDCFOR extends AMorphingMMColGroup implements IFrameOfRefer
 	}
 
 	@Override
-	protected AColGroup copyAndSet(IColIndex colIndexes, ADictionary newDictionary) {
+	protected AColGroup copyAndSet(IColIndex colIndexes, IDictionary newDictionary) {
 		return create(colIndexes, newDictionary, _data, getCachedCounts(), _reference);
 	}
 

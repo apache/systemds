@@ -255,6 +255,11 @@ public class MapToByte extends AMapToData {
 	}
 
 	@Override
+	public int getMaxPossible(){
+		return 256;
+	}
+
+	@Override
 	public boolean equals(AMapToData e) {
 		return e instanceof MapToByte && //
 			e.getUnique() == getUnique() &&//

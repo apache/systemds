@@ -22,7 +22,7 @@ package org.apache.sysds.runtime.compress.colgroup;
 import java.lang.ref.SoftReference;
 
 import org.apache.sysds.runtime.compress.DMLCompressionException;
-import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary;
 import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.functionobjects.Builtin;
@@ -36,14 +36,14 @@ public abstract class AColGroupValue extends ADictBasedColGroup {
 	private SoftReference<int[]> counts = null;
 
 	/**
-	 * A abstract class for column groups that contain ADictionary for values.
+	 * A abstract class for column groups that contain IDictionary for values.
 	 * 
 	 * @param colIndices   The Column indexes
 	 * @param dict         The dictionary to contain the distinct tuples
 	 * @param cachedCounts The cached counts of the distinct tuples (can be null since it should be possible to
 	 *                     reconstruct the counts on demand)
 	 */
-	protected AColGroupValue(IColIndex colIndices, ADictionary dict, int[] cachedCounts) {
+	protected AColGroupValue(IColIndex colIndices, IDictionary dict, int[] cachedCounts) {
 		super(colIndices, dict);
 		if(cachedCounts != null)
 			counts = new SoftReference<>(cachedCounts);
@@ -55,9 +55,9 @@ public abstract class AColGroupValue extends ADictBasedColGroup {
 	}
 
 	/**
-	 * Returns the counts of values inside the dictionary. If already calculated it will return the previous counts. This
-	 * produce an overhead in cases where the count is calculated, but the overhead will be limited to number of distinct
-	 * tuples in the dictionary.
+	 * Returns the counts of values inside the dictionary. If already calculated it will return the previous counts.
+	 * This produce an overhead in cases where the count is calculated, but the overhead will be limited to number of
+	 * distinct tuples in the dictionary.
 	 * 
 	 * The returned counts always contains the number of zero tuples as well if there are some contained, even if they
 	 * are not materialized.
@@ -143,7 +143,7 @@ public abstract class AColGroupValue extends ADictBasedColGroup {
 		if(_colIndexes.size() == 1)
 			return copyAndSet(retIndexes, _dict);
 
-		final ADictionary retDict = _dict.sliceOutColumnRange(idx, idx + 1, _colIndexes.size());
+		final IDictionary retDict = _dict.sliceOutColumnRange(idx, idx + 1, _colIndexes.size());
 		if(retDict == null)
 			return new ColGroupEmpty(retIndexes);
 		else
@@ -153,7 +153,7 @@ public abstract class AColGroupValue extends ADictBasedColGroup {
 
 	@Override
 	protected AColGroup sliceMultiColumns(int idStart, int idEnd, IColIndex outputCols) {
-		final ADictionary retDict = _dict.sliceOutColumnRange(idStart, idEnd, _colIndexes.size());
+		final IDictionary retDict = _dict.sliceOutColumnRange(idStart, idEnd, _colIndexes.size());
 		if(retDict == null)
 			return new ColGroupEmpty(outputCols);
 
@@ -184,7 +184,7 @@ public abstract class AColGroupValue extends ADictBasedColGroup {
 
 	@Override
 	public AColGroup replace(double pattern, double replace) {
-		ADictionary replaced = _dict.replace(pattern, replace, _colIndexes.size());
+		IDictionary replaced = _dict.replace(pattern, replace, _colIndexes.size());
 		return copyAndSet(replaced);
 	}
 
@@ -196,7 +196,7 @@ public abstract class AColGroupValue extends ADictBasedColGroup {
 	@Override
 	public AColGroup rexpandCols(int max, boolean ignore, boolean cast, int nRows) {
 		try {
-			ADictionary d = _dict.rexpandCols(max, ignore, cast, _colIndexes.size());
+			IDictionary d = _dict.rexpandCols(max, ignore, cast, _colIndexes.size());
 			if(d == null)
 				return ColGroupEmpty.create(max);
 			else

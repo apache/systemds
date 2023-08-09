@@ -103,8 +103,7 @@ public class HDFSTool
 		
 		try {
 			Path path = new Path(fname);
-			return IOUtilFunctions
-				.getFileSystem(path).exists(path);
+			return IOUtilFunctions.getFileSystem(path).exists(path);
 		}
 		catch(Exception ex) {
 			LOG.error("Failed check existsFileOnHDFS.", ex);

@@ -24,6 +24,7 @@ import static org.junit.Assert.assertTrue;
 import java.util.Collection;
 
 import org.apache.commons.lang3.NotImplementedException;
+import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.compress.CompressionSettingsBuilder;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType;
@@ -60,6 +61,8 @@ public class TestBase {
 		CompressionSettingsBuilder compressionSettings, MatrixTypology MatrixTypology, OverLapping ov,
 		Collection<CompressionType> ct) {
 
+		CompressedMatrixBlock.debug = true;
+
 		this.sparsity = TestConstants.getSparsityValue(sparType);
 		this.rows = TestConstants.getNumberOfRows(MatrixTypology);
 		this.cols = TestConstants.getNumberOfColumns(MatrixTypology);
@@ -93,8 +96,8 @@ public class TestBase {
 						Math.min((max - min), 10), max, min, sparsity, seed, false);
 					break;
 				case UNBALANCED_SPARSE:
-					mb = CompressibleInputGenerator.getUnbalancedSparseMatrix(rows, cols, Math.min((max - min), 10), max,
-						min, seed);
+					mb = CompressibleInputGenerator.getUnbalancedSparseMatrix(rows, cols, Math.min((max - min), 10),
+						max, min, seed);
 					cols = mb.getNumColumns();
 					break;
 				case ONE_HOT:

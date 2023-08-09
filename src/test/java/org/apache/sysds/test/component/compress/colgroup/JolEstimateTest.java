@@ -28,6 +28,7 @@ import java.util.List;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.compress.CompressionSettingsBuilder;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup;
@@ -74,6 +75,7 @@ public abstract class JolEstimateTest {
 	private final AColGroup cg;
 
 	public JolEstimateTest(MatrixBlock mbt) {
+		CompressedMatrixBlock.debug = true;
 		this.mbt = mbt;
 		colIndexes = ColIndexFactory.create(mbt.getNumRows());
 
@@ -166,7 +168,8 @@ public abstract class JolEstimateTest {
 			final int estimateNUniques = cInfo.getNumVals();
 
 			final double estimateCSI = (cg.getCompType() == CompressionType.CONST) ? ColGroupSizes
-				.estimateInMemorySizeCONST(cg.getNumCols(),true, 1.0, false) : cInfo.getCompressionSize(cg.getCompType());
+				.estimateInMemorySizeCONST(cg.getNumCols(), true, 1.0,
+					false) : cInfo.getCompressionSize(cg.getCompType());
 			final double minTolerance = actualSize * tolerance *
 				(ratio < 1 && mbt.getSparsity() < 0.8 ? mbt.getSparsity() + 0.2 : 1);
 			double maxTolerance = actualSize / tolerance;
@@ -182,8 +185,8 @@ public abstract class JolEstimateTest {
 			final boolean withinToleranceOnSize = minTolerance <= estimateCSI && estimateCSI <= maxTolerance;
 
 			if(!withinToleranceOnSize) {
-				final String rangeString = String.format("%.0f <= %.0f <= %.0f , Actual Size %d", minTolerance, estimateCSI,
-					maxTolerance, actualSize);
+				final String rangeString = String.format("%.0f <= %.0f <= %.0f , Actual Size %d", minTolerance,
+					estimateCSI, maxTolerance, actualSize);
 				String message = "CSI Sampled estimate size is not in tolerance range \n" + rangeString
 					+ "\nActual number uniques:" + actualNumberUnique + " estimated Uniques: " + estimateNUniques
 					+ "\nSampleSize of total rows:: " + sampleSize + " " + mbt.getNumColumns() + "\n" + cInfo + "\n";

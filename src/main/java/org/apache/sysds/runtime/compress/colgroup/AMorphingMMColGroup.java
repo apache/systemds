@@ -20,7 +20,7 @@
 package org.apache.sysds.runtime.compress.colgroup;
 
 import org.apache.sysds.runtime.compress.DMLCompressionException;
-import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.compress.lib.CLALibLeftMultBy;
 import org.apache.sysds.runtime.compress.lib.CLALibTSMM;
@@ -37,14 +37,14 @@ public abstract class AMorphingMMColGroup extends AColGroupValue {
 	private static final long serialVersionUID = -4265713396790607199L;
 
 	/**
-	 * A Abstract class for column groups that contain ADictionary for values.
+	 * A Abstract class for column groups that contain IDictionary for values.
 	 * 
 	 * @param colIndices   The Column indexes
 	 * @param dict         The dictionary to contain the distinct tuples
 	 * @param cachedCounts The cached counts of the distinct tuples (can be null since it should be possible to
 	 *                     reconstruct the counts on demand)
 	 */
-	protected AMorphingMMColGroup(IColIndex colIndices, ADictionary dict, int[] cachedCounts) {
+	protected AMorphingMMColGroup(IColIndex colIndices, IDictionary dict, int[] cachedCounts) {
 		super(colIndices, dict, cachedCounts);
 	}
 
@@ -161,7 +161,7 @@ public abstract class AMorphingMMColGroup extends AColGroupValue {
 	}
 
 	@Override
-	protected AColGroup allocateRightMultiplication(MatrixBlock right, IColIndex colIndexes, ADictionary preAgg) {
+	protected AColGroup allocateRightMultiplication(MatrixBlock right, IColIndex colIndexes, IDictionary preAgg) {
 		LOG.warn("right mm should not be called directly on a morphing column group");
 		final double[] common = getCommon();
 		final int rc = right.getNumColumns();
@@ -195,7 +195,7 @@ public abstract class AMorphingMMColGroup extends AColGroupValue {
 	}
 
 	protected abstract AColGroup allocateRightMultiplicationCommon(double[] common, IColIndex colIndexes,
-		ADictionary preAgg);
+		IDictionary preAgg);
 
 	/**
 	 * extract common value from group and return non morphing group

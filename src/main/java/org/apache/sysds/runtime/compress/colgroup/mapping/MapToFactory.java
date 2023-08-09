@@ -50,7 +50,7 @@ public interface MapToFactory {
 		for(int i = 0; i < values.length; i++) {
 			final IntArrayList tmpList = values[i];
 			final int sz = tmpList.size();
-			for(int k = 0; k < sz; k++){
+			for(int k = 0; k < sz; k++) {
 				_data.set(tmpList.get(k), i);
 			}
 		}
@@ -61,6 +61,7 @@ public interface MapToFactory {
 		AMapToData _data = create(size, nUnique);
 		_data.copyInt(values);
 		return _data;
+
 	}
 
 	/**

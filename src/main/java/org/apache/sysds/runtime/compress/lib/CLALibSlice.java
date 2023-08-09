@@ -143,7 +143,7 @@ public final class CLALibSlice {
 		return tmp;
 	}
 
-	private static MatrixBlock sliceRowsCompressed(CompressedMatrixBlock cmb, int rl, int ru) {
+	public static MatrixBlock sliceRowsCompressed(CompressedMatrixBlock cmb, int rl, int ru) {
 		final List<AColGroup> groups = cmb.getColGroups();
 		final List<AColGroup> newColGroups = new ArrayList<>(groups.size());
 		final List<IColIndex> emptyGroups = new ArrayList<>();
@@ -162,13 +162,13 @@ public final class CLALibSlice {
 		if(newColGroups.size() == 0)
 			return new MatrixBlock(rue - rl, cmb.getNumColumns(), 0.0);
 
-		if(!emptyGroups.isEmpty()){
+		if(!emptyGroups.isEmpty()) {
 			IColIndex empties = ColIndexFactory.combineIndexes(emptyGroups);
 			newColGroups.add(new ColGroupEmpty(empties));
 		}
-		
+
 		ret.allocateColGroupList(newColGroups);
-		ret.recomputeNonZeros();
+		ret.setNonZeros(-1);
 		ret.setOverlapping(cmb.isOverlapping());
 		return ret;
 	}
@@ -182,18 +182,22 @@ public final class CLALibSlice {
 
 	public static CompressedMatrixBlock sliceColumns(CompressedMatrixBlock cmb, int cl, int cu) {
 		final int cue = cu + 1;
+		if(cl == 0 && cue == cmb.getNumColumns())
+			return cmb;
 		final CompressedMatrixBlock ret = new CompressedMatrixBlock(cmb.getNumRows(), cue - cl);
 
 		final List<AColGroup> newColGroups = new ArrayList<>();
 		for(AColGroup grp : cmb.getColGroups()) {
 			final AColGroup slice = grp.sliceColumns(cl, cue);
-			if(slice != null)
+			if(slice != null) {
+				// LOG.error(slice + " \n\ncl" + cl + "\n\n " + grp);
 				newColGroups.add(slice);
+			}
 		}
 
 		ret.allocateColGroupList(newColGroups);
-		ret.recomputeNonZeros();
 		ret.setOverlapping(cmb.isOverlapping());
+		ret.setNonZeros(-1);
 		return ret;
 	}
 

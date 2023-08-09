@@ -33,7 +33,7 @@ import org.apache.sysds.runtime.compress.CompressedMatrixBlockFactory;
 import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.compress.CompressionSettingsBuilder;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
-import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.DictLibMatrixMult;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.MatrixBlockDictionary;
 import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
@@ -387,7 +387,7 @@ public class ColGroupUncompressed extends AColGroup {
 		LOG.warn("Binary row op left is not supported for Uncompressed Matrix, "
 			+ "Implement support for VMr in MatrixBlock Binary Cell operations");
 		MatrixBlockDictionary d = MatrixBlockDictionary.create(_data);
-		ADictionary dm = d.binOpLeft(op, v, _colIndexes);
+		IDictionary dm = d.binOpLeft(op, v, _colIndexes);
 		if(dm == null)
 			return create(null, _colIndexes);
 		else

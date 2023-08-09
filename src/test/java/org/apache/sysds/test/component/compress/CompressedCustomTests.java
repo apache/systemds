@@ -48,25 +48,43 @@ public class CompressedCustomTests {
 
 	@Test
 	public void compressNaNDense() {
-		MatrixBlock m = new MatrixBlock(100, 100, Double.NaN);
+		try {
+			MatrixBlock m = new MatrixBlock(100, 100, Double.NaN);
 
-		MatrixBlock m2 = CompressedMatrixBlockFactory.compress(m).getLeft();
+			MatrixBlock m2 = CompressedMatrixBlockFactory.compress(m).getLeft();
 
-		for(int i = 0; i < m.getNumRows(); i++)
-			for(int j = 0; j < m.getNumColumns(); j++)
-				assertEquals(0.0, m2.quickGetValue(i, j), 0.0);
+			for(int i = 0; i < m.getNumRows(); i++)
+				for(int j = 0; j < m.getNumColumns(); j++)
+					assertEquals(Double.NaN, m2.quickGetValue(i, j), 0.0);
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
 	}
 
 	@Test
 	public void compressNaNSparse() {
-		MatrixBlock m = new MatrixBlock(100, 100, true);
-		for(int i = 0; i < m.getNumRows(); i++)
-			m.setValue(i, i, Double.NaN);
-		assertTrue(m.isInSparseFormat());
-		MatrixBlock m2 = CompressedMatrixBlockFactory.compress(m).getLeft();
-		for(int i = 0; i < m.getNumRows(); i++)
-			for(int j = 0; j < m.getNumColumns(); j++)
-				assertEquals(0.0, m2.quickGetValue(i, j), 0.0);
+		try {
+
+			MatrixBlock m = new MatrixBlock(100, 100, true);
+			for(int i = 0; i < m.getNumRows(); i++)
+				m.setValue(i, i, Double.NaN);
+			assertTrue(m.isInSparseFormat());
+			MatrixBlock m2 = CompressedMatrixBlockFactory.compress(m).getLeft();
+
+			for(int i = 0; i < m.getNumRows(); i++)
+				for(int j = 0; j < m.getNumColumns(); j++) {
+					if(i == j)
+						assertEquals(Double.NaN, m2.quickGetValue(i, j), 0.0);
+					else
+						assertEquals(0.0, m2.quickGetValue(i, j), 0.0);
+				}
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
 	}
 
 	@Test

@@ -19,7 +19,7 @@
 
 package org.apache.sysds.runtime.compress.colgroup;
 
-import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.compress.colgroup.offset.AOffset;
 import org.apache.sysds.runtime.compress.colgroup.scheme.ICLAScheme;
@@ -42,7 +42,7 @@ public abstract class ASDC extends AMorphingMMColGroup implements AOffsetsGroup 
 	/** The number of rows in this column group */
 	protected final int _numRows;
 
-	protected ASDC(IColIndex colIndices, int numRows, ADictionary dict, AOffset offsets, int[] cachedCounts) {
+	protected ASDC(IColIndex colIndices, int numRows, IDictionary dict, AOffset offsets, int[] cachedCounts) {
 		super(colIndices, dict, cachedCounts);
 		_indexes = offsets;
 		_numRows = numRows;

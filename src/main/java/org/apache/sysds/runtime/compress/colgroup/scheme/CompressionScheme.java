@@ -33,6 +33,7 @@ import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.matrix.data.Pair;
 import org.apache.sysds.runtime.util.CommonThreadPool;
 
 /**
@@ -66,7 +67,8 @@ public class CompressionScheme {
 	 */
 	public CompressedMatrixBlock encode(MatrixBlock mb) {
 		if(mb instanceof CompressedMatrixBlock)
-			throw new NotImplementedException("Not implemented schema encode/apply on an already compressed MatrixBlock");
+			throw new NotImplementedException(
+				"Not implemented schema encode/apply on an already compressed MatrixBlock");
 
 		List<AColGroup> ret = new ArrayList<>(encodings.length);
 
@@ -116,7 +118,8 @@ public class CompressionScheme {
 	 */
 	public CompressionScheme update(MatrixBlock mb) {
 		if(mb instanceof CompressedMatrixBlock)
-			throw new NotImplementedException("Not implemented schema encode/apply on an already compressed MatrixBlock");
+			throw new NotImplementedException(
+				"Not implemented schema encode/apply on an already compressed MatrixBlock");
 
 		for(int i = 0; i < encodings.length; i++)
 			encodings[i] = encodings[i].update(mb);
@@ -182,18 +185,21 @@ public class CompressionScheme {
 	public CompressedMatrixBlock updateAndEncode(MatrixBlock mb, int k) {
 		if(k == 1)
 			return updateAndEncode(mb);
+
 		final ExecutorService pool = CommonThreadPool.get(k);
 		try {
-
+			final int nCol = mb.getNumColumns();
+			AColGroup[] ret = new AColGroup[encodings.length];
 			List<UpdateAndEncodeTask> tasks = new ArrayList<>();
-			for(int i = 0; i < encodings.length; i++)
-				tasks.add(new UpdateAndEncodeTask(i, encodings[i], mb));
+			int taskSize = Math.max(1, encodings.length / (4 * k));
+			for(int i = 0; i < encodings.length; i += taskSize)
+				tasks.add(new UpdateAndEncodeTask(i, Math.min(encodings.length, i + taskSize), ret, mb));
 
-			List<AColGroup> ret = new ArrayList<>(encodings.length);
-			for(Future<AColGroup> t : pool.invokeAll(tasks))
-				ret.add(t.get());
+			for(Future<Object> t : pool.invokeAll(tasks))
+				t.get();
 
-			return new CompressedMatrixBlock(mb.getNumRows(), mb.getNumColumns(), mb.getNonZeros(), false, ret);
+			List<AColGroup> retA = new ArrayList<>(Arrays.asList(ret));
+			return new CompressedMatrixBlock(mb.getNumRows(), nCol, mb.getNonZeros(), false, retA);
 
 		}
 		catch(Exception e) {
@@ -206,13 +212,15 @@ public class CompressionScheme {
 
 	public CompressedMatrixBlock updateAndEncode(MatrixBlock mb) {
 		if(mb instanceof CompressedMatrixBlock)
-			throw new NotImplementedException("Not implemented schema encode/apply on an already compressed MatrixBlock");
+			throw new NotImplementedException(
+				"Not implemented schema encode/apply on an already compressed MatrixBlock");
 
 		List<AColGroup> ret = new ArrayList<>(encodings.length);
 
 		for(int i = 0; i < encodings.length; i++) {
-			encodings[i] = encodings[i].update(mb);
-			ret.add(encodings[i].encode(mb));
+			Pair<ICLAScheme, AColGroup> p = encodings[i].updateAndEncode(mb);
+			encodings[i] = p.getKey();
+			ret.add(p.getValue());
 		}
 
 		return new CompressedMatrixBlock(mb.getNumRows(), mb.getNumColumns(), mb.getNonZeros(), false, ret);
@@ -258,21 +266,28 @@ public class CompressionScheme {
 		}
 	}
 
-	protected class UpdateAndEncodeTask implements Callable<AColGroup> {
+	protected class UpdateAndEncodeTask implements Callable<Object> {
 		final int i;
-		final ICLAScheme enc;
+		final int e;
 		final MatrixBlock mb;
+		final AColGroup[] ret;
 
-		protected UpdateAndEncodeTask(int i, ICLAScheme enc, MatrixBlock mb) {
+		protected UpdateAndEncodeTask(int i, int e, AColGroup[] ret, MatrixBlock mb) {
 			this.i = i;
-			this.enc = enc;
+			this.e = e;
 			this.mb = mb;
+			this.ret = ret;
 		}
 
 		@Override
-		public AColGroup call() throws Exception {
-			encodings[i] = enc.update(mb);
-			return enc.encode(mb);
+		public Object call() throws Exception {
+
+			for(int j = i; j < e; j++) {
+				Pair<ICLAScheme, AColGroup> p = encodings[j].updateAndEncode(mb);
+				encodings[j] = p.getKey();
+				ret[j] = p.getValue();
+			}
+			return null;
 		}
 	}
 }

@@ -26,15 +26,17 @@ import java.io.File;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.io.WriterCompressed;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.junit.AfterClass;
 import org.junit.Test;
 
+@net.jcip.annotations.NotThreadSafe
 public class IOEmpty {
 
 	protected static final Log LOG = LogFactory.getLog(IOTest.class.getName());
-	
+
 	final static String nameBeginning = "src/test/java/org/apache/sysds/test/component/compress/io/files"
 		+ IOEmpty.class.getSimpleName() + "/";
 
@@ -50,7 +52,9 @@ public class IOEmpty {
 	}
 
 	public static String getName() {
-		return IOCompressionTestUtils.getName(nameBeginning);
+		String name = IOCompressionTestUtils.getName(nameBeginning);
+		IOCompressionTestUtils.deleteDirectory(new File(name));
+		return name;
 	}
 
 	@Test
@@ -62,7 +66,7 @@ public class IOEmpty {
 	}
 
 	@Test
-	public void writeEmptyAndRead() {
+	public void writeEmptyAndRead() throws Exception {
 		String n = getName();
 		write(n, 10, 10, 1000);
 		MatrixBlock mb = IOCompressionTestUtils.read(n);
@@ -78,7 +82,7 @@ public class IOEmpty {
 	}
 
 	@Test
-	public void writeEmptyAndReadMultiBlock() {
+	public void writeEmptyAndReadMultiBlock() throws Exception {
 		String n = getName();
 		write(n, 1000, 10, 100);
 		File f = new File(n);
@@ -89,6 +93,7 @@ public class IOEmpty {
 
 	protected static void write(String path, int nRows, int nCols, int blen) {
 		try {
+			CompressedMatrixBlock.debug = true;
 			WriterCompressed w = WriterCompressed.create(null);
 			w.writeEmptyMatrixToHDFS(path, nRows, nCols, blen);
 		}

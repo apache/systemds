@@ -20,55 +20,60 @@
 package org.apache.sysds.runtime.controlprogram.parfor.stat;
 
 /**
- * Helper class for encapsulated time measurements.
- * 
- * 
+ * Helper class to time the execution of elements
  */
-public class Timing 
-{
+public class Timing {
+	/** The current timers starting time */
 	private long _start = -1;
-	
+
+	/**
+	 * Get a timer that is started.
+	 */
 	public Timing() {
-		//default constructor
+		this(true);
 	}
-	
+
+	/**
+	 * Get a timing that is optionally started
+	 * 
+	 * @param start If the timer should reset its time.
+	 */
 	public Timing(boolean start) {
-		//init and start the timer
-		if( start )
+		// init and start the timer
+		if(start)
 			start();
 	}
-	
+
 	/**
 	 * Starts the time measurement.
 	 */
 	public void start() {
 		_start = System.nanoTime();
 	}
-	
+
 	/**
-	 * Measures and returns the time since the last start() or stop() invocation and
-	 * restarts the measurement.
+	 * Measures and returns the time since the last start() or stop() invocation and restarts the measurement.
 	 * 
 	 * @return duration between start and stop
 	 */
 	public double stop() {
-		if( _start == -1 )
+		if(_start == -1)
 			throw new RuntimeException("Stop time measurement without prior start is invalid.");
-	
+
 		long end = System.nanoTime();
-		double duration = ((double)(end-_start))/1000000;
-		
-		//carry end time over
+		double duration = ((double) (end - _start)) / 1000000;
+
+		// carry end time over
 		_start = end;
 		return duration;
 	}
-	
+
 	/**
-	 * Measures and returns the time since the last start() or stop() invocation,
-	 * restarts the measurement, and prints the last measurement to STDOUT.
+	 * Measures and returns the time since the last start() or stop() invocation, restarts the measurement, and prints
+	 * the last measurement to STDOUT.
 	 */
 	public void stopAndPrint() {
 		double tmp = stop();
-		System.out.println("PARFOR: time = "+tmp+"ms");
+		System.out.println("PARFOR: time = " + tmp + "ms");
 	}
 }

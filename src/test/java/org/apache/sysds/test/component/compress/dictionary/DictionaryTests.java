@@ -30,7 +30,7 @@ import java.util.List;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
-import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.MatrixBlockDictionary;
 import org.apache.sysds.runtime.functionobjects.Builtin;
@@ -51,10 +51,10 @@ public class DictionaryTests {
 
 	private final int nRow;
 	private final int nCol;
-	private final ADictionary a;
-	private final ADictionary b;
+	private final IDictionary a;
+	private final IDictionary b;
 
-	public DictionaryTests(ADictionary a, ADictionary b, int nRow, int nCol) {
+	public DictionaryTests(IDictionary a, IDictionary b, int nRow, int nCol) {
 		this.nRow = nRow;
 		this.nCol = nCol;
 		this.a = a;
@@ -241,8 +241,8 @@ public class DictionaryTests {
 		final int c = rand.nextInt(nCol);
 		final double v = a.getValue(r, c, nCol);
 		final double rep = rand.nextDouble();
-		final ADictionary aRep = a.replace(v, rep, nCol);
-		final ADictionary bRep = b.replace(v, rep, nCol);
+		final IDictionary aRep = a.replace(v, rep, nCol);
+		final IDictionary bRep = b.replace(v, rep, nCol);
 		assertEquals(aRep.getValue(r, c, nCol), rep, 0.0000001);
 		assertEquals(bRep.getValue(r, c, nCol), rep, 0.0000001);
 	}
@@ -256,8 +256,8 @@ public class DictionaryTests {
 		final double before = a.getValue(r, c, nCol);
 		final double v = before + 1.0;
 		final double rep = rand.nextDouble() * 500;
-		final ADictionary aRep = a.replaceWithReference(v, rep, reference);
-		final ADictionary bRep = b.replaceWithReference(v, rep, reference);
+		final IDictionary aRep = a.replaceWithReference(v, rep, reference);
+		final IDictionary bRep = b.replaceWithReference(v, rep, reference);
 		assertEquals(aRep.getValue(r, c, nCol), bRep.getValue(r, c, nCol), 0.0000001);
 		assertNotEquals(before, aRep.getValue(r, c, nCol), 0.00001);
 	}
@@ -266,8 +266,8 @@ public class DictionaryTests {
 	public void rexpandCols() {
 		if(nCol == 1) {
 			int max = (int) a.aggregate(0, Builtin.getBuiltinFnObject(BuiltinCode.MAX));
-			final ADictionary aR = a.rexpandCols(max + 1, true, false, nCol);
-			final ADictionary bR = b.rexpandCols(max + 1, true, false, nCol);
+			final IDictionary aR = a.rexpandCols(max + 1, true, false, nCol);
+			final IDictionary bR = b.rexpandCols(max + 1, true, false, nCol);
 			compare(aR, bR, nRow, max + 1);
 		}
 	}
@@ -316,8 +316,8 @@ public class DictionaryTests {
 		if(nCol == 1) {
 			int max = (int) a.aggregate(0, Builtin.getBuiltinFnObject(BuiltinCode.MAX));
 
-			final ADictionary aR = a.rexpandColsWithReference(max + 1, true, false, reference);
-			final ADictionary bR = b.rexpandColsWithReference(max + 1, true, false, reference);
+			final IDictionary aR = a.rexpandColsWithReference(max + 1, true, false, reference);
+			final IDictionary bR = b.rexpandColsWithReference(max + 1, true, false, reference);
 			if(aR == null && bR == null)
 				return; // valid
 			compare(aR, bR, nRow, max + 1);
@@ -346,8 +346,8 @@ public class DictionaryTests {
 		Random r = new Random(2323);
 		int s = r.nextInt(nCol);
 		int e = r.nextInt(nCol - s) + s + 1;
-		ADictionary ad = a.sliceOutColumnRange(s, e, nCol);
-		ADictionary bd = b.sliceOutColumnRange(s, e, nCol);
+		IDictionary ad = a.sliceOutColumnRange(s, e, nCol);
+		IDictionary bd = b.sliceOutColumnRange(s, e, nCol);
 		compare(ad, bd, nRow, e - s);
 	}
 
@@ -411,7 +411,7 @@ public class DictionaryTests {
 			b.containsValueWithReference(value, reference));
 	}
 
-	private static void compare(ADictionary a, ADictionary b, int nRow, int nCol) {
+	private static void compare(IDictionary a, IDictionary b, int nRow, int nCol) {
 		for(int i = 0; i < nRow; i++)
 			for(int j = 0; j < nCol; j++)
 				assertEquals(a.getValue(i, j, nCol), b.getValue(i, j, nCol), 0.0001);

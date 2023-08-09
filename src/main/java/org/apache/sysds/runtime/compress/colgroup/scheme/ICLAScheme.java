@@ -24,6 +24,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.matrix.data.Pair;
 
 /**
  * Interface for a scheme instance.
@@ -43,10 +44,10 @@ public interface ICLAScheme {
 
 	/**
 	 * Encode the given matrix block into the scheme provided in the instance.
-	 * 	 
 	 * 
-	 * The method is unsafe in the sense that if the encoding scheme does not fit, there is no guarantee that an error is
-	 * thrown. To guarantee the encoding scheme, first use update on the matrix block and used the returned scheme to
+	 * 
+	 * The method is unsafe in the sense that if the encoding scheme does not fit, there is no guarantee that an error
+	 * is thrown. To guarantee the encoding scheme, first use update on the matrix block and used the returned scheme to
 	 * ensure consistency.
 	 * 
 	 * @param data The data to encode
@@ -59,8 +60,8 @@ public interface ICLAScheme {
 	/**
 	 * Encode a given matrix block into the scheme provided in the instance but overwrite what columns to use.
 	 * 
-	 * The method is unsafe in the sense that if the encoding scheme does not fit, there is no guarantee that an error is
-	 * thrown. To guarantee the encoding scheme, first use update on the matrix block and used the returned scheme to
+	 * The method is unsafe in the sense that if the encoding scheme does not fit, there is no guarantee that an error
+	 * is thrown. To guarantee the encoding scheme, first use update on the matrix block and used the returned scheme to
 	 * ensure consistency.
 	 * 
 	 * @param data    The data to encode
@@ -75,7 +76,7 @@ public interface ICLAScheme {
 	 * Update the encoding scheme to enable compression of the given data.
 	 * 
 	 * @param data The data to update into the scheme
-	 * @return A updated scheme 
+	 * @return A updated scheme
 	 */
 	public ICLAScheme update(MatrixBlock data);
 
@@ -84,8 +85,30 @@ public interface ICLAScheme {
 	 * 
 	 * @param data    The data to update into the scheme
 	 * @param columns The columns to extract the data from
-	 * @return A updated scheme 
+	 * @return A updated scheme
 	 */
 	public ICLAScheme update(MatrixBlock data, IColIndex columns);
 
+	/**
+	 * Update and encode the given block in a single pass. It can fail to do so in cases where the dictionary size
+	 * increase over the mapping sizes supported by individual encodings.
+	 * 
+	 * The implementation should always work and fall back to a normal two pass algorithm if it breaks.
+	 * 
+	 * @param data The block to encode
+	 * @return The updated scheme and an encoded columngroup
+	 */
+	public Pair<ICLAScheme, AColGroup> updateAndEncode(MatrixBlock data);
+
+	/**
+	 * Try to update and encode in a single pass over the data. It can fail to do so in cases where the dictionary size
+	 * increase over the mapping sizes supported by individual encodings.
+	 * 
+	 * The implementation should always work and fall back to a normal two pass algorithm if it breaks.
+	 * 
+	 * @param data    The block to encode
+	 * @param columns The column to encode
+	 * @return The updated scheme and an encoded columngroup
+	 */
+	public Pair<ICLAScheme, AColGroup> updateAndEncode(MatrixBlock data, IColIndex columns);
 }

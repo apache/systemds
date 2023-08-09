@@ -19,6 +19,7 @@
 
 package org.apache.sysds.runtime.compress.colgroup.scheme;
 
+import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupDDC;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.DictionaryFactory;
@@ -27,9 +28,11 @@ import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
 import org.apache.sysds.runtime.compress.readers.ReaderColumnSelection;
+import org.apache.sysds.runtime.compress.utils.ACount;
 import org.apache.sysds.runtime.compress.utils.DblArray;
 import org.apache.sysds.runtime.compress.utils.DblArrayCountHashMap;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.matrix.data.Pair;
 
 public class DDCSchemeMC extends DDCScheme {
 
@@ -45,9 +48,10 @@ public class DDCSchemeMC extends DDCScheme {
 		final int dictCols = mbDict.getNumColumns();
 
 		// Read the mapping data and materialize map.
-		map = new DblArrayCountHashMap(dictRows * 2, dictCols);
+		map = new DblArrayCountHashMap(dictRows * 2);
 		final ReaderColumnSelection r = ReaderColumnSelection.createReader(mbDict, //
 			ColIndexFactory.create(dictCols), false, 0, dictRows);
+
 		DblArray d = null;
 		while((d = r.nextRow()) != null)
 			map.increment(d);
@@ -58,7 +62,7 @@ public class DDCSchemeMC extends DDCScheme {
 	protected DDCSchemeMC(IColIndex cols) {
 		super(cols);
 		final int nCol = cols.size();
-		this.map = new DblArrayCountHashMap(4, nCol);
+		this.map = new DblArrayCountHashMap(4);
 		this.emptyRow = new DblArray(new double[nCol]);
 	}
 
@@ -69,7 +73,6 @@ public class DDCSchemeMC extends DDCScheme {
 
 	@Override
 	public ICLAScheme update(MatrixBlock data, IColIndex columns) {
-
 		validate(data, columns);
 		final int nRow = data.getNumRows();
 		final ReaderColumnSelection reader = ReaderColumnSelection.createReader(//
@@ -87,7 +90,7 @@ public class DDCSchemeMC extends DDCScheme {
 		}
 
 		if(r < nRow)
-			map.increment(emptyRow,  nRow - r - 1);
+			map.increment(emptyRow, nRow - r - 1);
 
 		return this;
 	}
@@ -102,8 +105,8 @@ public class DDCSchemeMC extends DDCScheme {
 		final AMapToData d = MapToFactory.create(nRow, map.size());
 
 		DblArray cellVals;
-		int emptyIdx = map.getId(emptyRow);
-		if(emptyIdx == -1){
+		ACount<DblArray> emptyIdx = map.getC(emptyRow);
+		if(emptyIdx == null) {
 
 			while((cellVals = reader.nextRow()) != null) {
 				final int row = reader.getCurrentRowIndex();
@@ -111,24 +114,75 @@ public class DDCSchemeMC extends DDCScheme {
 				d.set(row, id);
 			}
 		}
-		else{
+		else {
 			int r = 0;
 			while((cellVals = reader.nextRow()) != null) {
 				final int row = reader.getCurrentRowIndex();
 				if(row != r) {
 					while(r < row)
-						d.set(r++, emptyIdx);
+						d.set(r++, emptyIdx.id);
 				}
 				final int id = map.getId(cellVals);
 				d.set(row, id);
 				r++;
 			}
 			while(r < nRow)
-				d.set(r++, emptyIdx);
+				d.set(r++, emptyIdx.id);
 		}
 		if(lastDict == null || lastDict.getNumberOfValues(columns.size()) != map.size())
 			lastDict = DictionaryFactory.create(map, columns.size(), false, data.getSparsity());
 		return ColGroupDDC.create(columns, lastDict, d, null);
 	}
 
+	@Override
+	protected Pair<ICLAScheme, AColGroup> tryUpdateAndEncode(MatrixBlock data, IColIndex columns) {
+
+		validate(data, columns);
+		final int nRow = data.getNumRows();
+		final ReaderColumnSelection reader = ReaderColumnSelection.createReader(//
+			data, columns, false, 0, nRow);
+		final AMapToData d = MapToFactory.create(nRow, map.size());
+		int max = d.getMaxPossible();
+
+		DblArray cellVals;
+		ACount<DblArray> emptyIdx = map.getC(emptyRow);
+		if(emptyIdx == null) {
+
+			while((cellVals = reader.nextRow()) != null) {
+				final int row = reader.getCurrentRowIndex();
+				final int id = map.increment(cellVals);
+				if(id >= max)
+					throw new DMLCompressionException("Failed update and encode with " + max + " possible values");
+				d.set(row, id);
+			}
+		}
+		else {
+			int r = 0;
+			while((cellVals = reader.nextRow()) != null) {
+				final int row = reader.getCurrentRowIndex();
+				if(row != r) {
+					map.increment(emptyRow, row - r);
+					while(r < row)
+						d.set(r++, emptyIdx.id);
+				}
+				final int id = map.increment(cellVals);
+				if(id >= max)
+					throw new DMLCompressionException(
+						"Failed update and encode with " + max + " possible values" + map + " " + map.size());
+				d.set(row, id);
+				r++;
+			}
+			if(r < nRow)
+
+				map.increment(emptyRow, nRow - r);
+			while(r < nRow)
+				d.set(r++, emptyIdx.id);
+		}
+		if(lastDict == null || lastDict.getNumberOfValues(columns.size()) != map.size())
+			lastDict = DictionaryFactory.create(map, columns.size(), false, data.getSparsity());
+
+		AColGroup g = ColGroupDDC.create(columns, lastDict, d, null);
+		ICLAScheme s = this;
+		return new Pair<>(s, g);
+	}
 }

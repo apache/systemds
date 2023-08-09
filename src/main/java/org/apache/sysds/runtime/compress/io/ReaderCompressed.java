@@ -22,6 +22,7 @@ package org.apache.sysds.runtime.compress.io;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.lang3.NotImplementedException;
@@ -36,6 +37,7 @@ import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlockFactory;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary;
 import org.apache.sysds.runtime.compress.lib.CLALibStack;
 import org.apache.sysds.runtime.io.IOUtilFunctions;
 import org.apache.sysds.runtime.io.MatrixReader;
@@ -62,7 +64,7 @@ public final class ReaderCompressed extends MatrixReader {
 
 		checkValidInputFile(fs, path);
 
-		return readCompressedMatrix(path, job, fs, (int) rlen, (int) clen, blen);
+		return readCompressedMatrix(fname, job, fs, (int) rlen, (int) clen, blen);
 	}
 
 	@Override
@@ -71,25 +73,32 @@ public final class ReaderCompressed extends MatrixReader {
 		throw new NotImplementedException("Not implemented reading compressedMatrix from input stream");
 	}
 
-	private static MatrixBlock readCompressedMatrix(Path path, JobConf job, FileSystem fs, int rlen, int clen, int blen)
-		throws IOException {
+	private static MatrixBlock readCompressedMatrix(String fname, JobConf job, FileSystem fs, int rlen, int clen,
+		int blen) throws IOException {
 
 		final Map<MatrixIndexes, MatrixBlock> data = new HashMap<>();
-		
-		for(Path subPath : IOUtilFunctions.getSequenceFilePaths(fs, path)){
-			read(subPath, job, data);
+
+		for(Path subPath : IOUtilFunctions.getSequenceFilePaths(fs, new Path(fname))) {
+			data.putAll(readColumnGroups(subPath, job));
 		}
+
+		final Path dictPath = new Path(fname + ".dict");
+		Map<Integer, List<IDictionary>> dicts = null;
+		if(fs.exists(dictPath)) {
+			dicts = new HashMap<>();
+			for(Path subPath : IOUtilFunctions.getSequenceFilePaths(fs, dictPath)) {
+				dicts.putAll(readDictionaries(subPath, job));
+			}
+		}
+
 		if(data.containsValue(null))
 			throw new DMLCompressionException("Invalid read data contains null:");
 
-		if(data.size() == 1)
-			return data.entrySet().iterator().next().getValue();
-		else
-			return CLALibStack.combine(data, OptimizerUtils.getParallelTextWriteParallelism());
+		return CLALibStack.combine(data, dicts, OptimizerUtils.getParallelTextWriteParallelism());
 	}
 
-	private static void read(Path path, JobConf job, Map<MatrixIndexes, MatrixBlock> data) throws IOException {
-
+	private static Map<MatrixIndexes, MatrixBlock> readColumnGroups(Path path, JobConf job) throws IOException {
+		Map<MatrixIndexes, MatrixBlock> data = new HashMap<>();
 		final Reader reader = new SequenceFile.Reader(job, SequenceFile.Reader.file(path));
 		try {
 			// Materialize all sub blocks.
@@ -98,7 +107,6 @@ public final class ReaderCompressed extends MatrixReader {
 			MatrixIndexes key = new MatrixIndexes();
 			CompressedWriteBlock value = new CompressedWriteBlock();
 
-			
 			while(reader.next(key, value)) {
 				final MatrixBlock g = value.get();
 				if(g instanceof CompressedMatrixBlock)
@@ -114,5 +122,24 @@ public final class ReaderCompressed extends MatrixReader {
 		finally {
 			IOUtilFunctions.closeSilently(reader);
 		}
+		return data;
+	}
+
+	private static Map<Integer, List<IDictionary>> readDictionaries(Path path, JobConf job) throws IOException {
+		Map<Integer, List<IDictionary>> data = new HashMap<>();
+		final Reader reader = new SequenceFile.Reader(job, SequenceFile.Reader.file(path));
+
+		try {
+			// Materialize all sub blocks.
+			// Use write and read interface to read and write this object.
+			DictWritable.K key = new DictWritable.K(0);
+			DictWritable value = new DictWritable(null);
+			while(reader.next(key, value))
+				data.put(key.id, value.dicts);
+		}
+		finally {
+			IOUtilFunctions.closeSilently(reader);
+		}
+		return data;
 	}
 }

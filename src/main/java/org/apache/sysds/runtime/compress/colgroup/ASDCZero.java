@@ -19,7 +19,7 @@
 
 package org.apache.sysds.runtime.compress.colgroup;
 
-import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.MatrixBlockDictionary;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.compress.colgroup.offset.AIterator;
@@ -40,7 +40,7 @@ public abstract class ASDCZero extends APreAgg implements AOffsetsGroup, IContai
 	/** The number of rows in this column group */
 	protected final int _numRows;
 
-	protected ASDCZero(IColIndex colIndices, int numRows, ADictionary dict, AOffset offsets, int[] cachedCounts) {
+	protected ASDCZero(IColIndex colIndices, int numRows, IDictionary dict, AOffset offsets, int[] cachedCounts) {
 		super(colIndices, dict, cachedCounts);
 		_indexes = offsets;
 		_numRows = numRows;

@@ -115,37 +115,44 @@ public class ComEstSample extends AComEst {
 
 	private EstimationFactors scaleFactors(EstimationFactors sampleFacts, IColIndex colIndexes, int maxDistinct,
 		boolean dense) {
-		final int numRows = getNumRows();
-		final int nCol = colIndexes.size();
+		try {
 
-		final double scalingFactor = (double) numRows / _sampleSize;
+			final int numRows = getNumRows();
+			final int nCol = colIndexes.size();
 
-		final long nnz = calculateNNZ(colIndexes, scalingFactor);
-		final int numOffs = calculateOffs(sampleFacts, numRows, scalingFactor, colIndexes, (int) nnz);
-		final int estDistinct = distinctCountScale(sampleFacts, numOffs, numRows, maxDistinct, dense, nCol);
+			final double scalingFactor = (double) numRows / _sampleSize;
 
-		// calculate the largest instance count.
-		final int maxLargestInstanceCount = numRows - estDistinct + 1;
-		final int scaledLargestInstanceCount = sampleFacts.largestOff < 0 ? numOffs /
-			estDistinct : (int) Math.floor(sampleFacts.largestOff * scalingFactor);
-		final int mostFrequentOffsetCount = Math.max(Math.min(maxLargestInstanceCount, scaledLargestInstanceCount),
-			numRows - numOffs);
+			final long nnz = calculateNNZ(colIndexes, scalingFactor);
+			final int numOffs = calculateOffs(sampleFacts, numRows, scalingFactor, colIndexes, (int) nnz);
+			final int estDistinct = distinctCountScale(sampleFacts, numOffs, numRows, maxDistinct, dense, nCol);
 
-		final double overallSparsity = calculateSparsity(colIndexes, nnz, scalingFactor, sampleFacts.overAllSparsity);
-		// For robustness safety add 10 percent more tuple sparsity
-		final double tupleSparsity = Math.min(overallSparsity * 1.3, 1.0); // increase sparsity by 30%.
+			// calculate the largest instance count.
+			final int maxLargestInstanceCount = numRows - estDistinct + 1;
+			final int scaledLargestInstanceCount = sampleFacts.largestOff < 0 ? numOffs /
+				estDistinct : (int) Math.floor(sampleFacts.largestOff * scalingFactor);
+			final int mostFrequentOffsetCount = Math.max(Math.min(maxLargestInstanceCount, scaledLargestInstanceCount),
+				numRows - numOffs);
 
-		if(_cs.isRLEAllowed()) {
-			final int scaledRuns = Math.max(estDistinct, calculateRuns(sampleFacts, scalingFactor, numOffs, estDistinct));
-			return new EstimationFactors(estDistinct, numOffs, mostFrequentOffsetCount, sampleFacts.frequencies,
-				sampleFacts.numSingle, numRows, scaledRuns, sampleFacts.lossy, sampleFacts.zeroIsMostFrequent,
-				overallSparsity, tupleSparsity);
+			final double overallSparsity = calculateSparsity(colIndexes, nnz, scalingFactor,
+				sampleFacts.overAllSparsity);
+			// For robustness safety add 10 percent more tuple sparsity
+			final double tupleSparsity = Math.min(overallSparsity * 1.3, 1.0); // increase sparsity by 30%.
+
+			if(_cs.isRLEAllowed()) {
+				final int scaledRuns = Math.max(estDistinct,
+					calculateRuns(sampleFacts, scalingFactor, numOffs, estDistinct));
+				return new EstimationFactors(estDistinct, numOffs, mostFrequentOffsetCount, sampleFacts.frequencies,
+					sampleFacts.numSingle, numRows, scaledRuns, sampleFacts.lossy, sampleFacts.zeroIsMostFrequent,
+					overallSparsity, tupleSparsity);
+			}
+			else
+				return new EstimationFactors(estDistinct, numOffs, mostFrequentOffsetCount, sampleFacts.frequencies,
+					sampleFacts.numSingle, numRows, sampleFacts.lossy, sampleFacts.zeroIsMostFrequent, overallSparsity,
+					tupleSparsity);
 		}
-		else
-			return new EstimationFactors(estDistinct, numOffs, mostFrequentOffsetCount, sampleFacts.frequencies,
-				sampleFacts.numSingle, numRows, sampleFacts.lossy, sampleFacts.zeroIsMostFrequent, overallSparsity,
-				tupleSparsity);
-
+		catch(Exception e) {
+			throw new RuntimeException(colIndexes.toString(), e);
+		}
 	}
 
 	private int distinctCountScale(EstimationFactors sampleFacts, int numOffs, int numRows, int maxDistinct,
@@ -157,7 +164,8 @@ public class ComEstSample extends AComEst {
 		// sampled size is smaller than actual if there was empty rows.
 		// and the more we can reduce this value the more accurate the estimation will become.
 		final int sampledSize = sampleFacts.numOffs;
-		int est = SampleEstimatorFactory.distinctCount(freq, dense ? numRows : numOffs, sampledSize, _cs.estimationType);
+		int est = SampleEstimatorFactory.distinctCount(freq, dense ? numRows : numOffs, sampledSize,
+			_cs.estimationType);
 		if(est > 10000)
 			est += est * 0.5;
 		if(nCol > 4) // Increase estimate if we get into many columns cocoding to be safe

@@ -62,8 +62,7 @@ import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.lops.Checkpoint;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
-import org.apache.sysds.runtime.compress.io.CompressUnwrap;
-import org.apache.sysds.runtime.compress.io.CompressedWriteBlock;
+import org.apache.sysds.runtime.compress.io.ReaderSparkCompressed;
 import org.apache.sysds.runtime.controlprogram.Program;
 import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
 import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
@@ -158,8 +157,12 @@ public class SparkExecutionContext extends ExecutionContext
 		return _spctx;
 	}
 
-	public static JavaSparkContext getSparkContextStatic() {
+	public synchronized static JavaSparkContext getSparkContextStatic() {
 		initSparkContext();
+		if(_spctx.sc().isStopped()){
+			_spctx = null;
+			initSparkContext();
+		}
 		return _spctx;
 	}
 
@@ -207,10 +210,12 @@ public class SparkExecutionContext extends ExecutionContext
 	public static void handleIllegalReflectiveAccessSpark(){
 		Module pf = org.apache.spark.unsafe.Platform.class.getModule();
 		Target.class.getModule().addOpens("java.nio", pf);
+		Target.class.getModule().addOpens("java.io", pf);
 
 		Module se = org.apache.spark.util.SizeEstimator.class.getModule();
 		Target.class.getModule().addOpens("java.util", se);
 		Target.class.getModule().addOpens("java.lang", se);
+		Target.class.getModule().addOpens("java.lang.ref", se);
 		Target.class.getModule().addOpens("java.util.concurrent", se);
 	}
 
@@ -461,13 +466,19 @@ public class SparkExecutionContext extends ExecutionContext
 				//recordreader returns; the javadoc explicitly recommend to copy all key/value pairs
 				// cp is workaround for read bug
 				rdd = SparkUtils.copyBinaryBlockMatrix((JavaPairRDD<MatrixIndexes, MatrixBlock>)rdd); 
-			else if(fmt == FileFormat.COMPRESSED)
-				rdd = ((JavaPairRDD<MatrixIndexes, CompressedWriteBlock>) rdd).mapValues(new CompressUnwrap());
-			else if(fmt.isTextFormat())
+			else if(fmt == FileFormat.COMPRESSED){
+				// initial RDDS.
+				rdd = ReaderSparkCompressed.getRDD(sc, mo.getFileName()); 
+			}
+			else if(fmt.isTextFormat()){
+				JavaPairRDD<LongWritable, Text> textRDD = sc.hadoopFile(mo.getFileName(), //
+					inputInfo.inputFormatClass, LongWritable.class, Text.class);
 				// cp is workaround for read bug
-				rdd = ((JavaPairRDD<LongWritable, Text>) rdd).mapToPair(new CopyTextInputFunction());
+				rdd = textRDD.mapToPair(new CopyTextInputFunction());
+			}
 			else
 				throw new DMLRuntimeException("Incorrect input format in getRDDHandleForVariable");
+
 
 			//keep rdd handle for future operations on it
 			RDDObject rddhandle = new RDDObject(rdd);

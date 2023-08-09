@@ -24,6 +24,7 @@ import java.util.Map;
 
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
@@ -53,6 +54,14 @@ public class SparseEncoding extends AEncode {
 		this.map = map;
 		this.off = off;
 		this.nRows = nRows;
+
+		if(CompressedMatrixBlock.debug) {
+			int[] freq = map.getCounts();
+			for(int i = 0; i < freq.length; i++) {
+				if(freq[i] == 0)
+					throw new DMLCompressionException("Invalid counts in fact contains 0");
+			}
+		}
 	}
 
 	@Override
@@ -109,6 +118,7 @@ public class SparseEncoding extends AEncode {
 
 		if(retOff.size() < nRows / 4) {
 			final AOffset o = OffsetFactory.createOffset(retOff);
+			
 			final AMapToData retMap = MapToFactory.create(tmpVals.size(), tmpVals.extractValues(), unique - 1);
 			return new SparseEncoding(retMap, o, nRows);
 		}
@@ -122,9 +132,7 @@ public class SparseEncoding extends AEncode {
 		}
 	}
 
-
-
-	private Pair<IEncode, Map<Integer, Integer>>  combineSparseNoResizeDense(SparseEncoding e) {
+	private Pair<IEncode, Map<Integer, Integer>> combineSparseNoResizeDense(SparseEncoding e) {
 
 		final int fl = off.getOffsetToLast();
 		final int fr = e.off.getOffsetToLast();
@@ -134,7 +142,7 @@ public class SparseEncoding extends AEncode {
 		final int nVr = e.getUnique();
 
 		final AMapToData retMap = MapToFactory.create(nRows, (nVl + 1) * (nVr + 1));
-		
+
 		int il = itl.value();
 		// parse through one side set all values into the dense.
 		while(il < fl) {
@@ -155,16 +163,15 @@ public class SparseEncoding extends AEncode {
 
 		// Full iteration to set unique elements.
 		final Map<Integer, Integer> m = new HashMap<>();
-		for(int i = 0 ; i < retMap.size(); i ++)
-			addValHashMap(retMap.getIndex(i), i,m, retMap );
-		
+		for(int i = 0; i < retMap.size(); i++)
+			addValHashMap(retMap.getIndex(i), i, m, retMap);
 
 		return new ImmutablePair<>(new DenseEncoding(retMap.resize(m.size())), m);
-		
+
 	}
 
-
-	protected static void addValHashMap(final int nv, final int r, final Map<Integer, Integer> map, final AMapToData d) {
+	protected static void addValHashMap(final int nv, final int r, final Map<Integer, Integer> map,
+		final AMapToData d) {
 		final int v = map.size();
 		final Integer mv = map.putIfAbsent(nv, v);
 		if(mv == null)
@@ -172,7 +179,6 @@ public class SparseEncoding extends AEncode {
 		else
 			d.set(r, mv);
 	}
-
 
 	private static int combineSparse(AMapToData lMap, AMapToData rMap, AIterator itl, AIterator itr,
 		final IntArrayList retOff, final IntArrayList tmpVals, final int fl, final int fr, final int nVl, final int nVr,
@@ -382,7 +388,7 @@ public class SparseEncoding extends AEncode {
 		CompressionSettings cs) {
 		final int largestOffs = nRows - map.size(); // known largest off is zero tuples
 		tupleSparsity = Math.min((double) map.size() / (double) nRows, tupleSparsity);
-		final int[] counts = map.getCounts(new int[map.getUnique()]);
+		final int[] counts = map.getCounts();
 
 		if(cs.isRLEAllowed())
 			return new EstimationFactors(map.getUnique(), map.size(), largestOffs, counts, 0, nRows, map.countRuns(off),

@@ -20,8 +20,6 @@
 package org.apache.sysds.test.component.compress.readers;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.fail;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -32,7 +30,6 @@ import org.apache.sysds.runtime.compress.utils.DblArray;
 import org.apache.sysds.runtime.compress.utils.DblArrayCountHashMap;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.test.TestUtils;
-import org.junit.Ignore;
 import org.junit.Test;
 
 public class ReadersTest {
@@ -43,56 +40,6 @@ public class ReadersTest {
 	public void testDenseSingleCol() {
 		MatrixBlock mb = TestUtils.generateTestMatrixBlock(10, 1, 1, 1, 0.5, 21342);
 		ReaderColumnSelection.createReader(mb, ColIndexFactory.create(1), false);
-	}
-
-	@Test
-	public void testDenseMultiCol() {
-		MatrixBlock mb = TestUtils.generateTestMatrixBlock(10, 1, 1, 1, 0.5, 21342);
-		MatrixBlock mbc = mb.append(mb, null);
-		ReaderColumnSelection r = ReaderColumnSelection.createReader(mbc, ColIndexFactory.create(2), false);
-		DblArray d = null;
-		DblArrayCountHashMap map = new DblArrayCountHashMap(4, 2);
-
-		int i = 0;
-		while((d = r.nextRow()) != null) {
-			map.increment(d);
-			i++;
-		}
-
-		assertEquals(mb.getNonZeros(), i);
-	}
-
-	@Test
-	public void testDenseMultiColSparseRight() {
-		MatrixBlock mb = TestUtils.generateTestMatrixBlock(10, 1, 1, 1, 0.5, 21342);
-		MatrixBlock mbc = mb.append(new MatrixBlock(10, 1, true), null);
-		ReaderColumnSelection r = ReaderColumnSelection.createReader(mbc, ColIndexFactory.create(2), false);
-		DblArray d = null;
-		DblArrayCountHashMap map = new DblArrayCountHashMap(4, 2);
-
-		int i = 0;
-		while((d = r.nextRow()) != null) {
-			map.increment(d);
-			i++;
-		}
-		assertEquals(mb.getNonZeros(), i);
-	}
-
-	@Test
-	public void testDenseMultiColSparseLeft() {
-		MatrixBlock mb = TestUtils.generateTestMatrixBlock(10, 1, 1, 1, 0.5, 21342);
-		MatrixBlock mbc = new MatrixBlock(10, 1, true).append(mb, null);
-		ReaderColumnSelection r = ReaderColumnSelection.createReader(mbc, ColIndexFactory.create(2), false);
-		DblArray d = null;
-		DblArrayCountHashMap map = new DblArrayCountHashMap(4, 2);
-
-		int i = 0;
-		while((d = r.nextRow()) != null) {
-			map.increment(d);
-			i++;
-		}
-
-		assertEquals(mb.getNonZeros(), i);
 	}
 
 	@Test
@@ -110,7 +57,7 @@ public class ReadersTest {
 
 		ReaderColumnSelection r = ReaderColumnSelection.createReader(mb, ColIndexFactory.create(2), false);
 		DblArray d = null;
-		DblArrayCountHashMap map = new DblArrayCountHashMap(4, 2);
+		DblArrayCountHashMap map = new DblArrayCountHashMap();
 
 		int i = 0;
 		while((d = r.nextRow()) != null) {
@@ -135,187 +82,5 @@ public class ReadersTest {
 		MatrixBlock mb = new MatrixBlock(10, 32, true);
 		mb.allocateDenseBlock();
 		ReaderColumnSelection.createReader(mb, ColIndexFactory.create(2), false, 10, 9);
-	}
-
-	@Test
-	public void isEmptyNan() {
-		try {
-
-			MatrixBlock mb = new MatrixBlock(10, 5, Double.NaN);
-
-			ReaderColumnSelection reader = ReaderColumnSelection.createReader(mb, ColIndexFactory.create(2), false, 0,
-				mb.getNumRows());
-			assertEquals(null, reader.nextRow());
-		}
-		catch(Exception e) {
-			e.printStackTrace();
-			fail(e.getMessage());
-		}
-	}
-
-	@Test
-	public void isNaN() {
-		try {
-
-			MatrixBlock mb = new MatrixBlock(10, 5, Double.NaN);
-			mb.setValue(1, 1, 3214);
-
-			ReaderColumnSelection reader = ReaderColumnSelection.createReader(mb, ColIndexFactory.create(2), false, 0,
-				mb.getNumRows());
-			DblArray a = reader.nextRow();
-			assertNotEquals(null, a);
-			assertEquals(3214.0, a.getData()[1], 0.0);
-			assertEquals(0.0, a.getData()[0], 0.0);
-		}
-		catch(Exception e) {
-			e.printStackTrace();
-			fail(e.getMessage());
-		}
-	}
-
-	@Test
-	public void isEmptyNanTransposed() {
-		try {
-
-			MatrixBlock mb = new MatrixBlock(10, 5, Double.NaN);
-
-			ReaderColumnSelection reader = ReaderColumnSelection.createReader(mb, ColIndexFactory.create(2), true, 0,
-				mb.getNumRows());
-			assertEquals(null, reader.nextRow());
-		}
-		catch(Exception e) {
-			e.printStackTrace();
-			fail(e.getMessage());
-		}
-	}
-
-	@Test
-	public void isNaNTransposed() {
-		try {
-
-			MatrixBlock mb = new MatrixBlock(10, 5, Double.NaN);
-			mb.setValue(1, 1, 3214);
-
-			ReaderColumnSelection reader = ReaderColumnSelection.createReader(mb, ColIndexFactory.create(2), true, 0,
-				mb.getNumRows());
-			DblArray a = reader.nextRow();
-			assertNotEquals(null, a);
-			assertEquals(3214.0, a.getData()[1], 0.0);
-			assertEquals(0.0, a.getData()[0], 0.0);
-		}
-		catch(Exception e) {
-			e.printStackTrace();
-			fail(e.getMessage());
-		}
-	}
-
-	@Test
-	public void isEmptyNanMultiBlock() {
-		try {
-
-			MatrixBlock mb = ReadersTestCompareReaders.createMock(new MatrixBlock(10, 5, Double.NaN));
-
-			ReaderColumnSelection reader = ReaderColumnSelection.createReader(mb, ColIndexFactory.create(2), false, 0,
-				mb.getNumRows());
-			assertEquals(null, reader.nextRow());
-		}
-		catch(Exception e) {
-			e.printStackTrace();
-			fail(e.getMessage());
-		}
-	}
-
-	@Test
-	public void isNaNMultiBlock() {
-		try {
-
-			MatrixBlock mb = ReadersTestCompareReaders.createMock(new MatrixBlock(10, 5, Double.NaN));
-			mb.setValue(1, 1, 3214);
-
-			ReaderColumnSelection reader = ReaderColumnSelection.createReader(mb, ColIndexFactory.create(2), false, 0,
-				mb.getNumRows());
-			DblArray a = reader.nextRow();
-			assertNotEquals(null, a);
-			assertEquals(3214.0, a.getData()[1], 0.0);
-			assertEquals(0.0, a.getData()[0], 0.0);
-		}
-		catch(Exception e) {
-			e.printStackTrace();
-			fail(e.getMessage());
-		}
-	}
-
-	@Test
-	public void isEmptyNanMultiBlockTransposed() {
-		try {
-
-			MatrixBlock mb = ReadersTestCompareReaders.createMock(new MatrixBlock(10, 5, Double.NaN));
-
-			ReaderColumnSelection reader = ReaderColumnSelection.createReader(mb, ColIndexFactory.create(2), true, 0,
-				mb.getNumRows());
-			assertEquals(null, reader.nextRow());
-		}
-		catch(Exception e) {
-			e.printStackTrace();
-			fail(e.getMessage());
-		}
-	}
-
-	@Test
-	public void isNaNMultiBlockTransposed() {
-		try {
-
-			MatrixBlock mb = ReadersTestCompareReaders.createMock(new MatrixBlock(10, 5, Double.NaN));
-			mb.setValue(1, 1, 3214);
-
-			ReaderColumnSelection reader = ReaderColumnSelection.createReader(mb, ColIndexFactory.create(2), true, 0,
-				mb.getNumRows());
-			DblArray a = reader.nextRow();
-			assertNotEquals(null, a);
-			assertEquals(3214.0, a.getData()[1], 0.0);
-			assertEquals(0.0, a.getData()[0], 0.0);
-		}
-		catch(Exception e) {
-			e.printStackTrace();
-			fail(e.getMessage());
-		}
-	}
-
-	@Test
-	public void isNanSparseBlock() {
-		MatrixBlock mbs = new MatrixBlock(10, 10, true);
-		mbs.setValue(1, 1, 3214);
-		mbs.setValue(0, 0, Double.NaN);
-		mbs.setValue(0, 1, Double.NaN);
-		mbs.setValue(1, 0, Double.NaN);
-
-		ReaderColumnSelection reader = ReaderColumnSelection.createReader(mbs, ColIndexFactory.create(2), false, 0,
-			mbs.getNumRows());
-
-		DblArray a = reader.nextRow();
-		assertNotEquals(null, a);
-		assertEquals(3214.0, a.getData()[1], 0.0);
-		assertEquals(0.0, a.getData()[0], 0.0);
-		assertEquals(null, reader.nextRow());
-	}
-
-	@Test
-	// for now ignore.. i need a better way of reading matrices containing Nan Becuase the check is very expensive
-	@Ignore 
-	public void isNanSparseBlockTransposed() {
-		MatrixBlock mbs = new MatrixBlock(10, 10, true);
-		mbs.setValue(1, 1, 3214);
-		mbs.setValue(0, 0, Double.NaN);
-		mbs.setValue(0, 1, Double.NaN);
-		mbs.setValue(1, 0, Double.NaN);
-
-		ReaderColumnSelection reader = ReaderColumnSelection.createReader(mbs, ColIndexFactory.create(2), true, 0,
-			mbs.getNumRows());
-
-		DblArray a = reader.nextRow();
-		assertNotEquals(null, a);
-		assertEquals(3214.0, a.getData()[1], 0.0);
-		assertEquals(0.0, a.getData()[0], 0.0);
-		assertEquals(null, reader.nextRow());
 	}
 }

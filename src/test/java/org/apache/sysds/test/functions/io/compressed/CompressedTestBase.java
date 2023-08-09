@@ -24,6 +24,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 
+@net.jcip.annotations.NotThreadSafe
 public abstract class CompressedTestBase extends AutomatedTestBase {
 	protected final static String TEST_DIR = "functions/io/compressed/";
 	protected static final Log LOG = LogFactory.getLog(CompressedTestBase.class.getName());

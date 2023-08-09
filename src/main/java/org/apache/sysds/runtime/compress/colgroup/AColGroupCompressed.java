@@ -21,7 +21,7 @@ package org.apache.sysds.runtime.compress.colgroup;
 
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.DMLScriptException;
-import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.MatrixBlockDictionary;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.data.SparseBlock;
@@ -205,7 +205,7 @@ public abstract class AColGroupCompressed extends AColGroup {
 
 	protected abstract void tsmm(double[] result, int numColumns, int nRows);
 
-	protected static void tsmm(double[] result, int numColumns, int[] counts, ADictionary dict, IColIndex colIndexes) {
+	protected static void tsmm(double[] result, int numColumns, int[] counts, IDictionary dict, IColIndex colIndexes) {
 		dict = dict.getMBDict(colIndexes.size());
 		final MatrixBlock mb = ((MatrixBlockDictionary) dict).getMatrixBlock();
 		if(mb.isInSparseFormat())

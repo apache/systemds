@@ -17,13 +17,24 @@
  * under the License.
  */
 
-package org.apache.sysds.test.component.compress.util;
+package org.apache.sysds.runtime.compress.lib;
 
-import org.junit.Test;
+import org.apache.commons.lang.NotImplementedException;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
-public class BitmapTest {
-	@Test
-	public void testConstruction(){
-		
-	}
+public class CLALibMerge {
+
+    /**
+     * Merge b into a, if possible otherwise
+     * 
+     * @param a          MatrixBlock a to merge into if possible
+     * @param b          MatrixBlock b to take elements from
+     * @param appendOnly If the appending can be done into a sparse block without sorted indexes
+     * @param par        If parallelism is allowed
+     * @param deep       If the copy should be deep most common is true
+     * @return The merged MatrixBlock
+     */
+    public static MatrixBlock merge(MatrixBlock a, MatrixBlock b, boolean appendOnly, boolean par, boolean deep) {
+        throw new NotImplementedException();
+    }
 }

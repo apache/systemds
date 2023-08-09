@@ -27,61 +27,89 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.file.Files;
-import java.nio.file.Paths;
 
+import org.apache.commons.lang3.tuple.Pair;
+import org.apache.sysds.conf.CompilerConfig.ConfigType;
+import org.apache.sysds.conf.ConfigurationManager;
+import org.apache.sysds.conf.DMLConfig;
 import org.apache.sysds.performance.generators.IGenerate;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlockFactory;
+import org.apache.sysds.runtime.compress.CompressionStatistics;
 import org.apache.sysds.runtime.compress.colgroup.scheme.CompressionScheme;
 import org.apache.sysds.runtime.compress.io.WriterCompressed;
 import org.apache.sysds.runtime.compress.lib.CLALibScheme;
 import org.apache.sysds.runtime.io.MatrixWriter;
+import org.apache.sysds.runtime.io.WriterBinaryBlock;
 import org.apache.sysds.runtime.io.WriterBinaryBlockParallel;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
 public class Serialize extends APerfTest<Serialize.InOut, MatrixBlock> {
 
-	static final String file = "./perftmp.bin";
-	final int k;
+	private final String file;
+	private final int k;
 
 	public Serialize(int N, IGenerate<MatrixBlock> gen) {
 		super(N, gen);
+		file = "tmp/perf-tmp.bin";
 		k = 1;
 	}
 
 	public Serialize(int N, IGenerate<MatrixBlock> gen, int k) {
 		super(N, gen);
+		file = "tmp/perf-tmp.bin";
 		this.k = k;
 	}
 
+	public Serialize(int N, IGenerate<MatrixBlock> gen, int k, String file) {
+		super(N, gen);
+		this.file = file;
+		this.k = k;
+		
+	}
+
 	public void run() throws Exception, InterruptedException {
+		CompressedMatrixBlock.debug = true;
 		System.out.println(this);
+		File directory = new File(file).getParentFile();
+		if(!directory.exists()) {
+			directory.mkdir();
+		}
+		if(k == 1){
+			ConfigurationManager.getCompilerConfig().set(ConfigType.PARALLEL_CP_WRITE_BINARYFORMATS, false);
+		}
+
 		warmup(() -> sumTask(k), N);
 		cleanup();
 		execute(() -> writeUncompressed(k), "Serialize");
-		execute(() -> diskUncompressed(k), "CustomDisk");
+		// execute(() -> diskUncompressed(k), "CustomDisk");
 		cleanup();
-		execute(() -> standardIO(k), "StandardDisk");
+		execute(() -> standardIO(k), () -> setFileSize(), "StandardDisk");
 		cleanup();
 
 		execute(() -> compressTask(k), "Compress Normal");
-		execute(() -> writeCompressTask(k), "Compress Normal Serialize");
-		execute(() -> diskCompressTask(k), "Compress Normal CustomDisk");
+		// execute(() -> writeCompressTask(k), "Compress Normal Serialize");
+		// execute(() -> diskCompressTask(k), "Compress Normal CustomDisk");
 		cleanup();
-		execute(() -> standardCompressedIO(k), "Compress StandardIO");
+		execute(() -> standardCompressedIO(k), () -> setFileSize(), "Compress StandardIO");
 		cleanup();
 
 		final CompressionScheme sch2 = CLALibScheme.getScheme(getC());
 		execute(() -> updateAndApplySchemeFused(sch2, k), "Update&Apply Scheme Fused");
-		execute(() -> writeUpdateAndApplySchemeFused(sch2, k), "Update&Apply Scheme Fused Serialize");
+		// execute(() -> writeUpdateAndApplySchemeFused(sch2, k), "Update&Apply Scheme Fused Serialize");
+		// cleanup();
+		// execute(() -> diskUpdateAndApplySchemeFused(sch2, k), "Update&Apply Scheme Fused Disk");
 		cleanup();
-		execute(() -> diskUpdateAndApplySchemeFused(sch2, k), "Update&Apply Scheme Fused Disk");
-		cleanup();
-		execute(() -> standardCompressedIOUpdateAndApply(sch2, k), "Update&Apply Standard IO");
+		execute(() -> standardCompressedIOUpdateAndApply(sch2, k), () -> setFileSize(), "Update&Apply Standard IO");
 	}
 
 	public void run(int i) throws Exception, InterruptedException {
 		warmup(() -> sumTask(k), N);
+		if(k == 1) {
+			ConfigurationManager.getDMLConfig().setTextValue(DMLConfig.CP_PARALLEL_IO, "false");
+			ConfigurationManager.getCompilerConfig().set(ConfigType.PARALLEL_CP_WRITE_BINARYFORMATS, false);
+		}
+
 		final CompressionScheme sch = CLALibScheme.getScheme(getC());
 		cleanup();
 		switch(i) {
@@ -92,7 +120,7 @@ public class Serialize extends APerfTest<Serialize.InOut, MatrixBlock> {
 				execute(() -> diskUncompressed(k), "CustomDisk");
 				break;
 			case 3:
-				execute(() -> standardIO(k), "StandardDisk");
+				execute(() -> standardIO(k), () -> setFileSize(), "StandardDisk");
 				break;
 			case 4:
 				execute(() -> compressTask(k), "Compress Normal");
@@ -104,7 +132,7 @@ public class Serialize extends APerfTest<Serialize.InOut, MatrixBlock> {
 				execute(() -> diskCompressTask(k), "Compress Normal CustomDisk");
 				break;
 			case 7:
-				execute(() -> standardCompressedIO(k), "Compress StandardIO");
+				execute(() -> standardCompressedIO(k), () -> setFileSize(), "Compress StandardIO");
 				break;
 			case 8:
 				execute(() -> updateAndApplySchemeFused(sch, k), "Update&Apply Scheme Fused");
@@ -116,10 +144,11 @@ public class Serialize extends APerfTest<Serialize.InOut, MatrixBlock> {
 				execute(() -> diskUpdateAndApplySchemeFused(sch, k), "Update&Apply Scheme Fused Disk");
 				break;
 			case 11:
-				execute(() -> standardCompressedIOUpdateAndApply(sch, k), "Update&Apply Standard IO");
+				execute(() -> standardCompressedIOUpdateAndApply(sch, k), () -> setFileSize(),
+					"Update&Apply Standard IO");
 				break;
 		}
-		cleanup();
+		// cleanup();
 	}
 
 	private void writeUncompressed(int k) {
@@ -136,10 +165,11 @@ public class Serialize extends APerfTest<Serialize.InOut, MatrixBlock> {
 
 	private void standardIO(int k) {
 		try {
-			MatrixWriter w = new WriterBinaryBlockParallel(1);
+
+			MatrixWriter w = (k == 1) ? new WriterBinaryBlock(-1) : new WriterBinaryBlockParallel(1);
 			MatrixBlock mb = gen.take();
 			w.writeMatrixToHDFS(mb, file, mb.getNumRows(), mb.getNumColumns(), 1000, mb.getNonZeros(), false);
-			ret.add(new InOut(mb.getInMemorySize(), Files.size(Paths.get(file))));
+			ret.add(new InOut(mb.getInMemorySize(), -1));
 		}
 		catch(Exception e) {
 			throw new RuntimeException(e);
@@ -175,12 +205,25 @@ public class Serialize extends APerfTest<Serialize.InOut, MatrixBlock> {
 			// MatrixWriter w = new WriterBinaryBlockParallel(1);
 			MatrixBlock mb = gen.take();
 			WriterCompressed.writeCompressedMatrixToHDFS(mb, file);
-			ret.add(new InOut(mb.getInMemorySize(), Files.size(Paths.get(file))));
+			ret.add(new InOut(mb.getInMemorySize(), -1));
 		}
 		catch(Exception e) {
 			throw new RuntimeException(e);
 		}
 	}
+
+	// private void standardCompressedIOPipelined(int k) {
+	// try {
+	// // MatrixWriter w = new WriterBinaryBlockParallel(1);
+	// // new WriterCompressed(file);
+	// MatrixBlock mb = gen.take();
+	// WriterCompressed.writeCompressedMatrixToHDFS(mb, file);
+	// ret.add(new InOut(mb.getInMemorySize(), getFileSize()));
+	// }
+	// catch(Exception e) {
+	// throw new RuntimeException(e);
+	// }
+	// }
 
 	private void updateAndApplySchemeFused(CompressionScheme sch, int k) {
 		MatrixBlock mb = gen.take();
@@ -212,7 +255,17 @@ public class Serialize extends APerfTest<Serialize.InOut, MatrixBlock> {
 			MatrixBlock mb = gen.take();
 			MatrixBlock cmb = sch.updateAndEncode(mb, k);
 			WriterCompressed.writeCompressedMatrixToHDFS(cmb, file);
-			ret.add(new InOut(mb.getInMemorySize(), Files.size(Paths.get(file))));
+			// ret.add(new InOut(mb.getInMemorySize(), -1));
+			ret.add(new InOut(mb.getInMemorySize(), -1));
+		}
+		catch(Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	private void setFileSize() {
+		try {
+			ret.get(ret.size() - 1).out = getFileSize();
 		}
 		catch(Exception e) {
 			throw new RuntimeException(e);
@@ -230,7 +283,10 @@ public class Serialize extends APerfTest<Serialize.InOut, MatrixBlock> {
 	private CompressedMatrixBlock getC() throws InterruptedException {
 		gen.generate(1);
 		MatrixBlock mb = gen.take();
-		return (CompressedMatrixBlock) CompressedMatrixBlockFactory.compress(mb).getLeft();
+		// System.out.println(mb);
+		Pair<MatrixBlock, CompressionStatistics> r = CompressedMatrixBlockFactory.compress(mb);
+		// System.out.println(r.getRight());
+		return (CompressedMatrixBlock) r.getLeft();
 	}
 
 	@Override
@@ -301,7 +357,7 @@ public class Serialize extends APerfTest<Serialize.InOut, MatrixBlock> {
 		}
 	}
 
-	public static Disk serializeD(MatrixBlock mb) {
+	private Disk serializeD(MatrixBlock mb) {
 		try {
 			Disk s = new Disk();
 			DataOutputStream fos = new DataOutputStream(s);
@@ -332,7 +388,7 @@ public class Serialize extends APerfTest<Serialize.InOut, MatrixBlock> {
 
 	}
 
-	private static class Disk extends OutputStream {
+	private class Disk extends OutputStream {
 		final FileOutputStream writer;
 		final BufferedOutputStream buf;
 		long s = 0L;
@@ -374,9 +430,16 @@ public class Serialize extends APerfTest<Serialize.InOut, MatrixBlock> {
 			else
 				f.delete();
 		}
+		File fd = new File(file + ".dict");
+		if(fd.exists()) {
+			if(fd.isDirectory())
+				deleteDirectory(f);
+			else
+				fd.delete();
+		}
 	}
 
-	boolean deleteDirectory(File directoryToBeDeleted) {
+	private boolean deleteDirectory(File directoryToBeDeleted) {
 		File[] allContents = directoryToBeDeleted.listFiles();
 		if(allContents != null) {
 			for(File file : allContents) {
@@ -384,6 +447,25 @@ public class Serialize extends APerfTest<Serialize.InOut, MatrixBlock> {
 			}
 		}
 		return directoryToBeDeleted.delete();
+	}
+
+	private long getFileSize() throws IOException {
+		if(new File(file + ".dict").exists())
+			return getFileSize(new File(file)) + getFileSize(new File(file + ".dict"));
+		else
+			return getFileSize(new File(file));
+	}
+
+	private long getFileSize(File f) throws IOException {
+		if(f.isDirectory()) {
+			File[] allContents = f.listFiles();
+			long s = 0;
+			for(File a : allContents) {
+				s += getFileSize(a);
+			}
+			return s;
+		}
+		return Files.size(f.toPath());
 	}
 
 	@Override

@@ -45,3 +45,9 @@ Running Steam Compression Test
             Write CI Deflate Stream,   63.826+-  1.693 ms,  655801.16
      Write CI Deflate Stream Speedy,   54.482+-  1.266 ms,  678390.92
 ```
+
+With profiler:
+
+```bash
+java -jar -agentpath:$HOME/Programs/profiler/lib/libasyncProfiler.so=start,event=cpu,file=temp/log.html target/systemds-3.2.0-SNAPSHOT-perf.jar 12 10000 100 4 1.0 16 1000 -1
+```

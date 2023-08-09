@@ -71,16 +71,8 @@ public class ReaderColumnSelectionSparse extends ReaderColumnSelection {
 
 		while(skip < _colIndexes.size() && j < alen) {
 			if(_colIndexes.get(skip) == aix[j]) {
-				final Double v = avals[j];
-				boolean isNan = Double.isNaN(v);
-				if(isNan) {
-					warnNaN();
-					reusableArr[skip] = 0;
-				}
-				else {
-					reusableArr[skip] = avals[j];
-					zeroResult = false;
-				}
+				reusableArr[skip] = avals[j];
+				zeroResult = false;
 				skip++;
 				j++;
 			}

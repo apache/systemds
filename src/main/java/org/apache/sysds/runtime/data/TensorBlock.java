@@ -329,7 +329,7 @@ public class TensorBlock implements CacheBlock<TensorBlock>, Externalizable {
 	}
 
 	@Override
-	public void merge(TensorBlock that, boolean appendOnly) {
+	public TensorBlock merge(TensorBlock that, boolean appendOnly) {
 		throw new NotImplementedException();
 	}
 

@@ -19,8 +19,8 @@
 
 package org.apache.sysds.runtime.compress.colgroup;
 
-import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary;
 
 public interface IContainADictionary {
-	public ADictionary getDictionary();
+	public IDictionary getDictionary();
 }

@@ -35,6 +35,7 @@ import java.util.Random;
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.colgroup.IMapToDataGroup;
 import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToCharPByte;
@@ -88,6 +89,7 @@ public class MappingTests {
 	}
 
 	public MappingTests(int seed, MAP_TYPE type, int size, boolean fill) {
+		CompressedMatrixBlock.debug = true;
 		this.seed = seed;
 		this.type = type;
 		this.size = size;
@@ -260,7 +262,7 @@ public class MappingTests {
 		for(int i = 0; i < size; i++) {
 			expected[i] = expected[i] == 0 ? max : expected[i];
 			if(expected[i] != m.getIndex(i))
-				fail("Expected equals " + Arrays.toString(expected) + "\nbut got: " + m);
+				fail("Expected the out put not to contain 0 but got: " + m);
 		}
 	}
 

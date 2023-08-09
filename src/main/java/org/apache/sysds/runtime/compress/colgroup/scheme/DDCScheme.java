@@ -20,13 +20,13 @@
 package org.apache.sysds.runtime.compress.colgroup.scheme;
 
 import org.apache.sysds.runtime.compress.colgroup.ColGroupDDC;
-import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 
 public abstract class DDCScheme extends ACLAScheme {
 
 	// TODO make it into a soft reference
-	protected ADictionary lastDict;
+	protected IDictionary lastDict;
 
 	protected DDCScheme(IColIndex cols) {
 		super(cols);
@@ -50,11 +50,6 @@ public abstract class DDCScheme extends ACLAScheme {
 	 */
 	public static DDCScheme create(IColIndex cols) {
 		return cols.size() == 1 ? new DDCSchemeSC(cols) : new DDCSchemeMC(cols);
-	}
-
-	@Override
-	protected final IColIndex getColIndices() {
-		return cols;
 	}
 
 	protected abstract Object getMap();

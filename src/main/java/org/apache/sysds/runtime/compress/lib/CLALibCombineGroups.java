@@ -39,7 +39,7 @@ import org.apache.sysds.runtime.compress.colgroup.ColGroupSDC;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupUncompressed;
 import org.apache.sysds.runtime.compress.colgroup.IContainDefaultTuple;
 import org.apache.sysds.runtime.compress.colgroup.IFrameOfReferenceGroup;
-import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.DictionaryFactory;
 import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
@@ -182,19 +182,19 @@ public final class CLALibCombineGroups {
 		Map<Integer, Integer> filter = cec.getRight();
 		if(ce instanceof DenseEncoding) {
 			DenseEncoding ced = (DenseEncoding) (ce);
-			ADictionary cd = DictionaryFactory.combineDictionaries(ac, bc, filter);
+			IDictionary cd = DictionaryFactory.combineDictionaries(ac, bc, filter);
 			return ColGroupDDC.create(combinedColumns, cd, ced.getMap(), null);
 		}
 		else if(ce instanceof EmptyEncoding) {
 			return new ColGroupEmpty(combinedColumns);
 		}
 		else if(ce instanceof ConstEncoding) {
-			ADictionary cd = DictionaryFactory.combineDictionaries(ac, bc, filter);
+			IDictionary cd = DictionaryFactory.combineDictionaries(ac, bc, filter);
 			return ColGroupConst.create(combinedColumns, cd);
 		}
 		else if(ce instanceof SparseEncoding) {
 			SparseEncoding sed = (SparseEncoding) ce;
-			ADictionary cd = DictionaryFactory.combineDictionariesSparse(ac, bc);
+			IDictionary cd = DictionaryFactory.combineDictionariesSparse(ac, bc);
 			double[] defaultTuple = constructDefaultTuple(ac, bc);
 			return ColGroupSDC.create(combinedColumns, sed.getNumRows(), cd, defaultTuple, sed.getOffsets(), sed.getMap(),
 				null);

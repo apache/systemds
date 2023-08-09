@@ -37,7 +37,7 @@ import org.apache.sysds.runtime.compress.colgroup.ColGroupFactory;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupRLE;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupSDCSingleZeros;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupSDCZeros;
-import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
 import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
@@ -365,13 +365,13 @@ public class ColGroupNegativeTests {
 		}
 
 		@Override
-		protected AColGroup allocateRightMultiplication(MatrixBlock right, IColIndex colIndexes, ADictionary preAgg) {
+		protected AColGroup allocateRightMultiplication(MatrixBlock right, IColIndex colIndexes, IDictionary preAgg) {
 			// TODO Auto-generated method stub
 			return null;
 		}
 
 		@Override
-		protected AColGroup copyAndSet(IColIndex colIndexes, ADictionary newDictionary) {
+		protected AColGroup copyAndSet(IColIndex colIndexes, IDictionary newDictionary) {
 			// TODO Auto-generated method stub
 			return null;
 		}
@@ -603,13 +603,13 @@ public class ColGroupNegativeTests {
 		}
 
 		@Override
-		protected AColGroup allocateRightMultiplication(MatrixBlock right, IColIndex colIndexes, ADictionary preAgg) {
+		protected AColGroup allocateRightMultiplication(MatrixBlock right, IColIndex colIndexes, IDictionary preAgg) {
 			// TODO Auto-generated method stub
 			return null;
 		}
 
 		@Override
-		protected AColGroup copyAndSet(IColIndex colIndexes, ADictionary newDictionary) {
+		protected AColGroup copyAndSet(IColIndex colIndexes, IDictionary newDictionary) {
 			// TODO Auto-generated method stub
 			return null;
 		}

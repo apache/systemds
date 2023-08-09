@@ -117,7 +117,7 @@ public class AppendGSPInstruction extends AppendSPInstruction {
 			if( !iterLeft.hasNext() ) {
 				MatrixBlock tmp = iterRight.next();
 				if( iterRight.hasNext() )
-					tmp.merge(iterRight.next(), false);
+					tmp = tmp.merge(iterRight.next(), false);
 				return new Tuple2<>(kv._1, tmp);
 			}
 			else if ( !iterRight.hasNext() ) {	
@@ -138,7 +138,7 @@ public class AppendGSPInstruction extends AppendSPInstruction {
 			}
 			
 			//merge with sort since blocks might be in any order
-			firstBlk.merge(secondBlk, false);
+			firstBlk = firstBlk.merge(secondBlk, false);
 			return new Tuple2<>(kv._1, firstBlk);
 		}
 		

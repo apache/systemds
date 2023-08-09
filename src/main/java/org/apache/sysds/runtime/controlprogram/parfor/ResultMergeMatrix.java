@@ -21,6 +21,7 @@ package org.apache.sysds.runtime.controlprogram.parfor;
 
 import java.util.List;
 
+import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -51,8 +52,12 @@ public abstract class ResultMergeMatrix extends ResultMerge<MatrixObject>
 		//pass through to matrix block operations
 		if( _isAccum )
 			out.binaryOperationsInPlace(PLUS, in);
-		else
-			out.merge(in, appendOnly, par);
+		else{
+			MatrixBlock out2 = out.merge(in, appendOnly, par);
+
+			if(out2 != out)
+				throw new DMLRuntimeException("Failed merge need to allow returned MatrixBlock to be used");
+		}
 	}
 
 	/**

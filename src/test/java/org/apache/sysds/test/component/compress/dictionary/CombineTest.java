@@ -40,7 +40,7 @@ import org.apache.sysds.runtime.compress.colgroup.ColGroupConst;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupDDC;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupEmpty;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupSDC;
-import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.DictionaryFactory;
 import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
@@ -58,10 +58,10 @@ public class CombineTest {
 	public void singleBothSides() {
 		try {
 
-			ADictionary a = Dictionary.create(new double[] {1.2});
-			ADictionary b = Dictionary.create(new double[] {1.4});
+			IDictionary a = Dictionary.create(new double[] {1.2});
+			IDictionary b = Dictionary.create(new double[] {1.4});
 
-			ADictionary c = DictionaryFactory.combineFullDictionaries(a, 1, b, 1);
+			IDictionary c = DictionaryFactory.combineFullDictionaries(a, 1, b, 1);
 
 			assertEquals(c.getValue(0, 0, 2), 1.2, 0.0);
 			assertEquals(c.getValue(0, 1, 2), 1.4, 0.0);
@@ -75,10 +75,10 @@ public class CombineTest {
 	@Test
 	public void singleOneSideBothSides() {
 		try {
-			ADictionary a = Dictionary.create(new double[] {1.2, 1.3});
-			ADictionary b = Dictionary.create(new double[] {1.4});
+			IDictionary a = Dictionary.create(new double[] {1.2, 1.3});
+			IDictionary b = Dictionary.create(new double[] {1.4});
 
-			ADictionary c = DictionaryFactory.combineFullDictionaries(a, 1, b, 1);
+			IDictionary c = DictionaryFactory.combineFullDictionaries(a, 1, b, 1);
 
 			assertEquals(c.getValue(0, 0, 2), 1.2, 0.0);
 			assertEquals(c.getValue(0, 1, 2), 1.4, 0.0);
@@ -94,10 +94,10 @@ public class CombineTest {
 	@Test
 	public void twoBothSides() {
 		try {
-			ADictionary a = Dictionary.create(new double[] {1.2, 1.3});
-			ADictionary b = Dictionary.create(new double[] {1.4, 1.5});
+			IDictionary a = Dictionary.create(new double[] {1.2, 1.3});
+			IDictionary b = Dictionary.create(new double[] {1.4, 1.5});
 
-			ADictionary c = DictionaryFactory.combineFullDictionaries(a, 1, b, 1);
+			IDictionary c = DictionaryFactory.combineFullDictionaries(a, 1, b, 1);
 
 			assertEquals(c.getValue(0, 0, 2), 1.2, 0.0);
 			assertEquals(c.getValue(0, 1, 2), 1.4, 0.0);
@@ -117,12 +117,12 @@ public class CombineTest {
 	@Test
 	public void sparseSparse() {
 		try {
-			ADictionary a = Dictionary.create(new double[] {3});
-			ADictionary b = Dictionary.create(new double[] {4});
+			IDictionary a = Dictionary.create(new double[] {3});
+			IDictionary b = Dictionary.create(new double[] {4});
 			double[] ad = new double[] {0};
 			double[] bd = new double[] {0};
 
-			ADictionary c = DictionaryFactory.combineSDC(a, ad, b, bd);
+			IDictionary c = DictionaryFactory.combineSDC(a, ad, b, bd);
 			MatrixBlock ret = c.getMBDict(2).getMatrixBlock();
 
 			MatrixBlock exp = new MatrixBlock(4, 2, new double[] {0, 0, 3, 0, 0, 4, 3, 4});
@@ -137,12 +137,12 @@ public class CombineTest {
 	@Test
 	public void sparseSparse2() {
 		try {
-			ADictionary a = Dictionary.create(new double[] {3});
-			ADictionary b = Dictionary.create(new double[] {4, 4});
+			IDictionary a = Dictionary.create(new double[] {3});
+			IDictionary b = Dictionary.create(new double[] {4, 4});
 			double[] ad = new double[] {0};
 			double[] bd = new double[] {0, 0};
 
-			ADictionary c = DictionaryFactory.combineSDC(a, ad, b, bd);
+			IDictionary c = DictionaryFactory.combineSDC(a, ad, b, bd);
 			MatrixBlock ret = c.getMBDict(2).getMatrixBlock();
 
 			MatrixBlock exp = new MatrixBlock(4, 3, new double[] {0, 0, 0, 3, 0, 0, 0, 4, 4, 3, 4, 4});
@@ -157,12 +157,12 @@ public class CombineTest {
 	@Test
 	public void sparseSparse3() {
 		try {
-			ADictionary a = Dictionary.create(new double[] {3});
-			ADictionary b = Dictionary.create(new double[] {4});
+			IDictionary a = Dictionary.create(new double[] {3});
+			IDictionary b = Dictionary.create(new double[] {4});
 			double[] ad = new double[] {1};
 			double[] bd = new double[] {2};
 
-			ADictionary c = DictionaryFactory.combineSDC(a, ad, b, bd);
+			IDictionary c = DictionaryFactory.combineSDC(a, ad, b, bd);
 			MatrixBlock ret = c.getMBDict(2).getMatrixBlock();
 
 			MatrixBlock exp = new MatrixBlock(4, 2, new double[] {//
@@ -181,12 +181,12 @@ public class CombineTest {
 	@Test
 	public void sparseSparse4() {
 		try {
-			ADictionary a = Dictionary.create(new double[] {3, 2});
-			ADictionary b = Dictionary.create(new double[] {4, 4});
+			IDictionary a = Dictionary.create(new double[] {3, 2});
+			IDictionary b = Dictionary.create(new double[] {4, 4});
 			double[] ad = new double[] {0, 1};
 			double[] bd = new double[] {0, 2};
 
-			ADictionary c = DictionaryFactory.combineSDC(a, ad, b, bd);
+			IDictionary c = DictionaryFactory.combineSDC(a, ad, b, bd);
 			MatrixBlock ret = c.getMBDict(2).getMatrixBlock();
 
 			MatrixBlock exp = new MatrixBlock(4, 4, new double[] {//
@@ -205,12 +205,12 @@ public class CombineTest {
 	@Test
 	public void sparseSparse5() {
 		try {
-			ADictionary a = Dictionary.create(new double[] {3, 2, 7, 8});
-			ADictionary b = Dictionary.create(new double[] {4, 4});
+			IDictionary a = Dictionary.create(new double[] {3, 2, 7, 8});
+			IDictionary b = Dictionary.create(new double[] {4, 4});
 			double[] ad = new double[] {0, 1};
 			double[] bd = new double[] {0, 2};
 
-			ADictionary c = DictionaryFactory.combineSDC(a, ad, b, bd);
+			IDictionary c = DictionaryFactory.combineSDC(a, ad, b, bd);
 			MatrixBlock ret = c.getMBDict(2).getMatrixBlock();
 
 			MatrixBlock exp = new MatrixBlock(6, 4, new double[] {//
@@ -231,12 +231,12 @@ public class CombineTest {
 	@Test
 	public void sparseSparse6() {
 		try {
-			ADictionary a = Dictionary.create(new double[] {3, 2, 7, 8});
-			ADictionary b = Dictionary.create(new double[] {4, 4, 9, 5});
+			IDictionary a = Dictionary.create(new double[] {3, 2, 7, 8});
+			IDictionary b = Dictionary.create(new double[] {4, 4, 9, 5});
 			double[] ad = new double[] {0, 1};
 			double[] bd = new double[] {0, 2};
 
-			ADictionary c = DictionaryFactory.combineSDC(a, ad, b, bd);
+			IDictionary c = DictionaryFactory.combineSDC(a, ad, b, bd);
 			MatrixBlock ret = c.getMBDict(2).getMatrixBlock();
 
 			MatrixBlock exp = new MatrixBlock(9, 4, new double[] {//
@@ -398,12 +398,12 @@ public class CombineTest {
 	@Test
 	public void sparseSparseConst1() {
 		try {
-			ADictionary a = Dictionary.create(new double[] {3, 2, 7, 8});
-			// ADictionary b = Dictionary.create(new double[] {4, 4, 9, 5});
+			IDictionary a = Dictionary.create(new double[] {3, 2, 7, 8});
+			// IDictionary b = Dictionary.create(new double[] {4, 4, 9, 5});
 
 			double[] bd = new double[] {0, 2};
 
-			ADictionary c = DictionaryFactory.combineSparseConstSparseRet(a, 2, bd);
+			IDictionary c = DictionaryFactory.combineSparseConstSparseRet(a, 2, bd);
 			MatrixBlock ret = c.getMBDict(2).getMatrixBlock();
 
 			MatrixBlock exp = new MatrixBlock(2, 4, new double[] {//
@@ -420,12 +420,12 @@ public class CombineTest {
 	@Test
 	public void sparseSparseConst2() {
 		try {
-			ADictionary a = Dictionary.create(new double[] {3, 2, 7, 8});
-			// ADictionary b = Dictionary.create(new double[] {4, 4, 9, 5});
+			IDictionary a = Dictionary.create(new double[] {3, 2, 7, 8});
+			// IDictionary b = Dictionary.create(new double[] {4, 4, 9, 5});
 
 			double[] bd = new double[] {0, 2};
 
-			ADictionary c = DictionaryFactory.combineSparseConstSparseRet(a, 1, bd);
+			IDictionary c = DictionaryFactory.combineSparseConstSparseRet(a, 1, bd);
 			MatrixBlock ret = c.getMBDict(2).getMatrixBlock();
 
 			MatrixBlock exp = new MatrixBlock(2, 3, new double[] {//
@@ -444,11 +444,11 @@ public class CombineTest {
 	@Test
 	public void testEmpty() {
 		try {
-			ADictionary d = Dictionary.create(new double[] {3, 2, 7, 8});
+			IDictionary d = Dictionary.create(new double[] {3, 2, 7, 8});
 			AColGroup a = ColGroupDDC.create(ColIndexFactory.create(2), d, MapToFactory.create(10, 2), null);
 			ColGroupEmpty b = new ColGroupEmpty(ColIndexFactory.create(4));
 
-			ADictionary c = DictionaryFactory.combineDictionaries((AColGroupCompressed) a, (AColGroupCompressed) b);
+			IDictionary c = DictionaryFactory.combineDictionaries((AColGroupCompressed) a, (AColGroupCompressed) b);
 			MatrixBlock ret = c.getMBDict(2).getMatrixBlock();
 
 			MatrixBlock exp = new MatrixBlock(2, 6, new double[] {//
@@ -465,12 +465,12 @@ public class CombineTest {
 	@Test
 	public void combineDictionariesSparse1() {
 		try {
-			ADictionary d = Dictionary.create(new double[] {3, 2, 7, 8});
+			IDictionary d = Dictionary.create(new double[] {3, 2, 7, 8});
 			AColGroup a = ColGroupSDC.create(ColIndexFactory.create(2), 500, d, new double[] {1, 2},
 				OffsetFactory.createOffset(new int[] {3, 4}), MapToFactory.create(10, 2), null);
 			ColGroupEmpty b = new ColGroupEmpty(ColIndexFactory.create(4));
 
-			ADictionary c = DictionaryFactory.combineDictionariesSparse((AColGroupCompressed) a, (AColGroupCompressed) b);
+			IDictionary c = DictionaryFactory.combineDictionariesSparse((AColGroupCompressed) a, (AColGroupCompressed) b);
 			MatrixBlock ret = c.getMBDict(2).getMatrixBlock();
 
 			MatrixBlock exp = new MatrixBlock(2, 6, new double[] {//
@@ -487,12 +487,12 @@ public class CombineTest {
 	@Test
 	public void combineDictionariesSparse2() {
 		try {
-			ADictionary d = Dictionary.create(new double[] {3, 2, 7, 8});
+			IDictionary d = Dictionary.create(new double[] {3, 2, 7, 8});
 			AColGroup b = ColGroupSDC.create(ColIndexFactory.create(2), 500, d, new double[] {1, 2},
 				OffsetFactory.createOffset(new int[] {3, 4}), MapToFactory.create(10, 2), null);
 			ColGroupEmpty a = new ColGroupEmpty(ColIndexFactory.create(4));
 
-			ADictionary c = DictionaryFactory.combineDictionariesSparse((AColGroupCompressed) a, (AColGroupCompressed) b);
+			IDictionary c = DictionaryFactory.combineDictionariesSparse((AColGroupCompressed) a, (AColGroupCompressed) b);
 			MatrixBlock ret = c.getMBDict(2).getMatrixBlock();
 
 			MatrixBlock exp = new MatrixBlock(2, 6, new double[] {//
@@ -508,27 +508,27 @@ public class CombineTest {
 
 	@Test
 	public void combineMockingEmpty() {
-		ADictionary ad = Dictionary.create(new double[] {1, 2, 3, 4});
+		IDictionary ad = Dictionary.create(new double[] {1, 2, 3, 4});
 		double[] ade = new double[] {0};
 		AColGroupCompressed a = mockSDC(ad, ade);
 		AColGroupCompressed b = mockSDC(ad, ade);
 
 		Map<Integer, Integer> m = new HashMap<>();
-		ADictionary red = DictionaryFactory.combineDictionaries(a, b, m);
+		IDictionary red = DictionaryFactory.combineDictionaries(a, b, m);
 
 		assertEquals(red.getNumberOfValues(2), 0);
 	}
 
 	@Test
 	public void combineMockingDefault() {
-		ADictionary ad = Dictionary.create(new double[] {1, 2, 3, 4});
+		IDictionary ad = Dictionary.create(new double[] {1, 2, 3, 4});
 		double[] ade = new double[] {0};
 		AColGroupCompressed a = mockSDC(ad, ade);
 		AColGroupCompressed b = mockSDC(ad, ade);
 
 		Map<Integer, Integer> m = new HashMap<>();
 		m.put(0, 0);
-		ADictionary red = DictionaryFactory.combineDictionaries(a, b, m);
+		IDictionary red = DictionaryFactory.combineDictionaries(a, b, m);
 
 		assertEquals(red.getNumberOfValues(2), 1);
 		assertEquals(red, Dictionary.createNoCheck(new double[] {0, 0}));
@@ -536,14 +536,14 @@ public class CombineTest {
 
 	@Test
 	public void combineMockingFirstValue() {
-		ADictionary ad = Dictionary.create(new double[] {1, 2, 3, 4});
+		IDictionary ad = Dictionary.create(new double[] {1, 2, 3, 4});
 		double[] ade = new double[] {0};
 		AColGroupCompressed a = mockSDC(ad, ade);
 		AColGroupCompressed b = mockSDC(ad, ade);
 
 		Map<Integer, Integer> m = new HashMap<>();
 		m.put(1, 0);
-		ADictionary red = DictionaryFactory.combineDictionaries(a, b, m);
+		IDictionary red = DictionaryFactory.combineDictionaries(a, b, m);
 
 		assertEquals(red.getNumberOfValues(2), 1);
 		assertEquals(red, Dictionary.create(new double[] {1, 0}));
@@ -551,7 +551,7 @@ public class CombineTest {
 
 	@Test
 	public void combineMockingFirstAndDefault() {
-		ADictionary ad = Dictionary.create(new double[] {1, 2, 3, 4});
+		IDictionary ad = Dictionary.create(new double[] {1, 2, 3, 4});
 		double[] ade = new double[] {0};
 		AColGroupCompressed a = mockSDC(ad, ade);
 		AColGroupCompressed b = mockSDC(ad, ade);
@@ -559,7 +559,7 @@ public class CombineTest {
 		Map<Integer, Integer> m = new HashMap<>();
 		m.put(1, 0);
 		m.put(0, 1);
-		ADictionary red = DictionaryFactory.combineDictionaries(a, b, m);
+		IDictionary red = DictionaryFactory.combineDictionaries(a, b, m);
 
 		assertEquals(red.getNumberOfValues(2), 2);
 		assertEquals(red, Dictionary.create(new double[] {1, 0, 0, 0}));
@@ -567,7 +567,7 @@ public class CombineTest {
 
 	@Test
 	public void combineMockingMixed() {
-		ADictionary ad = Dictionary.create(new double[] {1, 2, 3, 4});
+		IDictionary ad = Dictionary.create(new double[] {1, 2, 3, 4});
 		double[] ade = new double[] {0};
 		AColGroupCompressed a = mockSDC(ad, ade);
 		AColGroupCompressed b = mockSDC(ad, ade);
@@ -576,7 +576,7 @@ public class CombineTest {
 		m.put(1, 0);
 		m.put(0, 1);
 		m.put(5, 2);
-		ADictionary red = DictionaryFactory.combineDictionaries(a, b, m);
+		IDictionary red = DictionaryFactory.combineDictionaries(a, b, m);
 
 		assertEquals(red.getNumberOfValues(2), 3);
 		assertEquals(Dictionary.create(new double[] {1, 0, 0, 0, 0, 1}), red);
@@ -584,7 +584,7 @@ public class CombineTest {
 
 	@Test
 	public void combineMockingMixed2() {
-		ADictionary ad = Dictionary.create(new double[] {1, 2, 3, 4});
+		IDictionary ad = Dictionary.create(new double[] {1, 2, 3, 4});
 		double[] ade = new double[] {0};
 		AColGroupCompressed a = mockSDC(ad, ade);
 		AColGroupCompressed b = mockSDC(ad, ade);
@@ -593,7 +593,7 @@ public class CombineTest {
 		m.put(1, 0);
 		m.put(0, 1);
 		m.put(10, 2);
-		ADictionary red = DictionaryFactory.combineDictionaries(a, b, m);
+		IDictionary red = DictionaryFactory.combineDictionaries(a, b, m);
 
 		assertEquals(red.getNumberOfValues(2), 3);
 		assertEquals(Dictionary.create(new double[] {1, 0, 0, 0, 0, 2}), red);
@@ -603,13 +603,13 @@ public class CombineTest {
 	public void combineMockingSparseDenseEmpty() {
 		try {
 
-			ADictionary ad = Dictionary.create(new double[] {1, 2, 3, 4});
+			IDictionary ad = Dictionary.create(new double[] {1, 2, 3, 4});
 			double[] ade = new double[] {0};
 			AColGroupCompressed a = mockDDC(ad, 1);
 			AColGroupCompressed b = mockSDC(ad, ade);
 
 			Map<Integer, Integer> m = new HashMap<>();
-			ADictionary red = DictionaryFactory.combineDictionaries(a, b, m);
+			IDictionary red = DictionaryFactory.combineDictionaries(a, b, m);
 
 			assertEquals(0, red.getNumberOfValues(2));
 			assertEquals(Dictionary.createNoCheck(new double[] {}), red);
@@ -624,14 +624,14 @@ public class CombineTest {
 	public void combineMockingSparseDenseOne() {
 		try {
 
-			ADictionary ad = Dictionary.create(new double[] {1, 2, 3, 4});
+			IDictionary ad = Dictionary.create(new double[] {1, 2, 3, 4});
 			double[] ade = new double[] {0};
 			AColGroupCompressed a = mockDDC(ad, 1);
 			AColGroupCompressed b = mockSDC(ad, ade);
 
 			Map<Integer, Integer> m = new HashMap<>();
 			m.put(0, 0);
-			ADictionary red = DictionaryFactory.combineDictionaries(a, b, m);
+			IDictionary red = DictionaryFactory.combineDictionaries(a, b, m);
 			assertEquals(1, red.getNumberOfValues(2));
 			assertEquals(Dictionary.createNoCheck(new double[] {1, 0}), red);
 		}
@@ -645,7 +645,7 @@ public class CombineTest {
 	public void combineMockingSparseDenseMixed1() {
 		try {
 
-			ADictionary ad = Dictionary.create(new double[] {1, 2, 3, 4});
+			IDictionary ad = Dictionary.create(new double[] {1, 2, 3, 4});
 			double[] ade = new double[] {0};
 			AColGroupCompressed a = mockDDC(ad, 1);
 			AColGroupCompressed b = mockSDC(ad, ade);
@@ -653,7 +653,7 @@ public class CombineTest {
 			Map<Integer, Integer> m = new HashMap<>();
 			m.put(0, 1);
 			m.put(1, 0);
-			ADictionary red = DictionaryFactory.combineDictionaries(a, b, m);
+			IDictionary red = DictionaryFactory.combineDictionaries(a, b, m);
 
 			assertEquals(2, red.getNumberOfValues(2));
 			assertEquals(Dictionary.createNoCheck(new double[] {2, 0, 1, 0}), red);
@@ -668,7 +668,7 @@ public class CombineTest {
 	public void combineMockingSparseDenseMixed2() {
 		try {
 
-			ADictionary ad = Dictionary.create(new double[] {1, 2, 3, 4});
+			IDictionary ad = Dictionary.create(new double[] {1, 2, 3, 4});
 			double[] ade = new double[] {0};
 			AColGroupCompressed a = mockDDC(ad, 1);
 			AColGroupCompressed b = mockSDC(ad, ade);
@@ -677,7 +677,7 @@ public class CombineTest {
 			m.put(0, 1);
 			m.put(1, 0);
 			m.put(4, 2);
-			ADictionary red = DictionaryFactory.combineDictionaries(a, b, m);
+			IDictionary red = DictionaryFactory.combineDictionaries(a, b, m);
 
 			assertEquals(3, red.getNumberOfValues(2));
 			assertEquals(Dictionary.createNoCheck(new double[] {2, 0, 1, 0, 1, 1}), red);
@@ -692,7 +692,7 @@ public class CombineTest {
 	public void combineMockingSparseDenseMixed3() {
 		try {
 
-			ADictionary ad = Dictionary.create(new double[] {1, 2, 3, 4});
+			IDictionary ad = Dictionary.create(new double[] {1, 2, 3, 4});
 			double[] ade = new double[] {0};
 			AColGroupCompressed a = mockDDC(ad, 1);
 			AColGroupCompressed b = mockSDC(ad, ade);
@@ -702,7 +702,7 @@ public class CombineTest {
 			m.put(1, 0);
 			m.put(5, 2);
 			m.put(4, 3);
-			ADictionary red = DictionaryFactory.combineDictionaries(a, b, m);
+			IDictionary red = DictionaryFactory.combineDictionaries(a, b, m);
 
 			assertEquals(4, red.getNumberOfValues(2));
 			assertEquals(Dictionary.createNoCheck(new double[] {2, 0, 1, 0, 2, 1, 1, 1}), red);
@@ -713,7 +713,7 @@ public class CombineTest {
 		}
 	}
 
-	private ASDC mockSDC(ADictionary ad, double[] def) {
+	private ASDC mockSDC(IDictionary ad, double[] def) {
 		ASDC a = mock(ASDC.class);
 		when(a.getCompType()).thenReturn(CompressionType.SDC);
 		when(a.getDictionary()).thenReturn(ad);
@@ -722,7 +722,7 @@ public class CombineTest {
 		return a;
 	}
 
-	private ColGroupDDC mockDDC(ADictionary ad, int nCol) {
+	private ColGroupDDC mockDDC(IDictionary ad, int nCol) {
 		ColGroupDDC a = mock(ColGroupDDC.class);
 		when(a.getCompType()).thenReturn(CompressionType.DDC);
 		when(a.getDictionary()).thenReturn(ad);

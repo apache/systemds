@@ -35,6 +35,7 @@ import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
 import org.apache.sysds.runtime.compress.colgroup.offset.AOffset;
 import org.apache.sysds.runtime.compress.colgroup.offset.OffsetFactory;
 import org.apache.sysds.runtime.compress.readers.ReaderColumnSelection;
+import org.apache.sysds.runtime.compress.utils.ACount;
 import org.apache.sysds.runtime.compress.utils.DblArray;
 import org.apache.sysds.runtime.compress.utils.DblArrayCountHashMap;
 import org.apache.sysds.runtime.compress.utils.IntArrayList;
@@ -56,7 +57,7 @@ public class SDCSchemeMC extends SDCScheme {
 			final int dictCols = mbDict.getNumColumns();
 
 			// Read the mapping data and materialize map.
-			map = new DblArrayCountHashMap(dictRows * 2, dictCols);
+			map = new DblArrayCountHashMap(dictRows * 2);
 			final ReaderColumnSelection reader = ReaderColumnSelection.createReader(mbDict, //
 				ColIndexFactory.create(dictCols), false, 0, dictRows);
 			emptyRow = new DblArray(new double[dictCols]);
@@ -76,6 +77,7 @@ public class SDCSchemeMC extends SDCScheme {
 			}
 
 			def = new DblArray(g.getCommon());
+
 		}
 		catch(Exception e) {
 			throw new DMLCompressionException(g.getDictionary().toString());
@@ -91,7 +93,7 @@ public class SDCSchemeMC extends SDCScheme {
 		final int dictCols = mbDict.getNumColumns();
 
 		// Read the mapping data and materialize map.
-		map = new DblArrayCountHashMap(dictRows * 2, dictCols);
+		map = new DblArrayCountHashMap(dictRows * 2);
 		final ReaderColumnSelection r = ReaderColumnSelection.createReader(mbDict, //
 			ColIndexFactory.create(dictCols), false, 0, dictRows);
 		DblArray d = null;
@@ -128,37 +130,39 @@ public class SDCSchemeMC extends SDCScheme {
 		final ReaderColumnSelection reader = ReaderColumnSelection.createReader(//
 			data, cols, false, 0, nRow);
 		DblArray cellVals;
-		int emptyIdx = map.getId(emptyRow);
-		emptyRow.equals(def);
+		ACount<DblArray> emptyIdx = map.getC(emptyRow);
 		IntArrayList dt = new IntArrayList();
 
 		int r = 0;
 		while((cellVals = reader.nextRow()) != null) {
 			final int row = reader.getCurrentRowIndex();
-			if(row != r) {
-				if(emptyIdx >= 0) {
+			if(row != r) { // empty rows.
+				if(emptyIdx != null) {
 					// empty is non default.
 					while(r < row) {
 						off.appendValue(r++);
-						dt.appendValue(emptyIdx);
+						dt.appendValue(emptyIdx.id);
 					}
 				}
 				else {
 					r = row;
 				}
 			}
-			final int id = map.getId(cellVals);
-			if(id >= 0) {
-				off.appendValue(row);
-				dt.appendValue(id);
-				r++;
+
+			if(!cellVals.equals(def)) {
+				final int id = map.getId(cellVals);
+				if(id >= 0) {
+					off.appendValue(row);
+					dt.appendValue(id);
+					r++;
+				}
 			}
 		}
-		if(emptyIdx >= 0) {
+		if(emptyIdx != null) {
 			// empty is non default.
 			while(r < nRow) {
 				off.appendValue(r++);
-				dt.appendValue(emptyIdx);
+				dt.appendValue(emptyIdx.id);
 			}
 		}
 

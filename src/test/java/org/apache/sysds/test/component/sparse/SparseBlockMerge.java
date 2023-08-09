@@ -249,7 +249,7 @@ public class SparseBlockMerge extends AutomatedTestBase
 			mb2.setSparseBlock(SparseBlockFactory.copySparseBlock(btype2, mb2.getSparseBlock(), false));
 			
 			//execute merge
-			mb1.merge(mb2, false);
+			mb1 = mb1.merge(mb2, false);
 			
 			//check for correct number of non-zeros
 			if( nnz != mb1.getNonZeros() )

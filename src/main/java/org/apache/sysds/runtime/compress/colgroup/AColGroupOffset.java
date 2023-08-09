@@ -23,7 +23,7 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.utils.MemoryEstimates;
 
@@ -46,7 +46,7 @@ public abstract class AColGroupOffset extends APreAgg {
 	/** If the column group contains unassigned rows. */
 	protected final boolean _zeros;
 
-	protected AColGroupOffset(IColIndex colIndices, int numRows, boolean zeros, ADictionary dict, int[] ptr, char[] data, int[] cachedCounts) {
+	protected AColGroupOffset(IColIndex colIndices, int numRows, boolean zeros, IDictionary dict, int[] ptr, char[] data, int[] cachedCounts) {
 		super(colIndices, dict, cachedCounts);
 		_numRows = numRows;
 		_zeros = zeros;

@@ -1240,14 +1240,14 @@ public class FrameBlock implements CacheBlock<FrameBlock>, Externalizable {
 	}
 
 	@Override
-	public void merge(FrameBlock that, boolean appendOnly) {
-		merge(that);
+	public FrameBlock merge(FrameBlock that, boolean appendOnly) {
+		return merge(that);
 	}
 
-	public void merge(FrameBlock that) {
+	public FrameBlock merge(FrameBlock that) {
 		// check for empty input source (nothing to merge)
 		if(that == null || that.getNumRows() == 0)
-			return;
+			return this;
 
 		// check dimensions (before potentially copy to prevent implicit dimension change)
 		if(getNumRows() != that.getNumRows() || getNumColumns() != that.getNumColumns())
@@ -1269,6 +1269,7 @@ public class FrameBlock implements CacheBlock<FrameBlock>, Externalizable {
 			else
 				_coldata[j].setFromOtherTypeNz(that._coldata[j]);
 		}
+		return this;
 	}
 
 	/**

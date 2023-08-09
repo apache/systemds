@@ -20,6 +20,7 @@
 package org.apache.sysds.runtime.compress.colgroup.scheme;
 
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupDDC;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupEmpty;
@@ -31,6 +32,7 @@ import org.apache.sysds.runtime.compress.utils.DoubleCountHashMap;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.matrix.data.Pair;
 
 public class DDCSchemeSC extends DDCScheme {
 
@@ -60,36 +62,40 @@ public class DDCSchemeSC extends DDCScheme {
 	@Override
 	public ICLAScheme update(MatrixBlock data, IColIndex columns) {
 		validate(data, columns);
-		final int col = columns.get(0);
 		if(data.isEmpty())
-			map.increment(0, data.getNumRows());
+			map.increment(0.0, data.getNumRows());
 		else if(data.isInSparseFormat())
-			updateSparse(data, col);
+			updateSparse(data, columns);
 		else if(data.getDenseBlock().isContiguous())
-			updateDense(data, col);
+			updateDense(data, columns);
 		else
-			updateGeneric(data, col);
+			updateGeneric(data, columns);
+
 		return this;
 	}
 
-	private void updateSparse(MatrixBlock data, int col) {
+	private ICLAScheme updateSparse(MatrixBlock data, IColIndex columns) {
+		final int col = columns.get(0);
 		final int nRow = data.getNumRows();
 		final SparseBlock sb = data.getSparseBlock();
 		for(int i = 0; i < nRow; i++)
 			map.increment(sb.get(i, col));
+		return this;
 	}
 
-	private void updateDense(MatrixBlock data, int col) {
+	private ICLAScheme updateDense(MatrixBlock data, IColIndex columns) {
+		final int col = columns.get(0);
 		final int nRow = data.getNumRows();
 		final double[] vals = data.getDenseBlockValues();
 		final int nCol = data.getNumColumns();
 		final int max = nRow * nCol; // guaranteed lower than intmax.
 		for(int off = col; off < max; off += nCol)
 			map.increment(vals[off]);
-
+		return this;
 	}
 
-	private void updateGeneric(MatrixBlock data, int col) {
+	private ICLAScheme updateGeneric(MatrixBlock data, IColIndex columns) {
+		final int col = columns.get(0);
 		final int nRow = data.getNumRows();
 		final DenseBlock db = data.getDenseBlock();
 		for(int i = 0; i < nRow; i++) {
@@ -97,6 +103,7 @@ public class DDCSchemeSC extends DDCScheme {
 			final int off = db.pos(i) + col;
 			map.increment(c[off]);
 		}
+		return this;
 	}
 
 	@Override
@@ -105,7 +112,9 @@ public class DDCSchemeSC extends DDCScheme {
 		if(data.isEmpty())
 			return new ColGroupEmpty(columns);
 		final int nRow = data.getNumRows();
+
 		final AMapToData d = MapToFactory.create(nRow, map.size());
+
 		encode(data, d, cols.get(0));
 		if(lastDict == null || lastDict.getNumberOfValues(columns.size()) != map.size())
 			lastDict = DictionaryFactory.create(map);
@@ -151,4 +160,69 @@ public class DDCSchemeSC extends DDCScheme {
 		}
 	}
 
+	@Override
+	protected Pair<ICLAScheme, AColGroup> tryUpdateAndEncode(MatrixBlock data, IColIndex columns) {
+		validate(data, columns);
+		if(data.isEmpty())
+			return new Pair<>(this, new ColGroupEmpty(columns));
+		final int nRow = data.getNumRows();
+
+		final AMapToData d = MapToFactory.create(nRow, map.size());
+
+		encodeAndUpdate(data, d, cols.get(0));
+		if(lastDict == null || lastDict.getNumberOfValues(columns.size()) != map.size())
+			lastDict = DictionaryFactory.create(map);
+
+		return new Pair<>(this, ColGroupDDC.create(columns, lastDict, d, null));
+	}
+
+	private void encodeAndUpdate(MatrixBlock data, AMapToData d, int col) {
+		final int max = d.getMaxPossible();
+		if(data.isEmpty())
+			d.fill(map.getId(0.0));
+		else if(data.isInSparseFormat())
+			encodeAndUpdateSparse(data, d, col, max);
+		else if(data.getDenseBlock().isContiguous())
+			encodeAndUpdateDense(data, d, col, max);
+		else
+			encodeAndUpdateGeneric(data, d, col, max);
+	}
+
+	private void encodeAndUpdateSparse(MatrixBlock data, AMapToData d, int col, int max) {
+		final int nRow = data.getNumRows();
+		final SparseBlock sb = data.getSparseBlock();
+		for(int i = 0; i < nRow; i++) {
+			int id = map.increment(sb.get(i, col));
+			if(id >= max)
+				throw new DMLCompressionException("Failed update and encode with " + max + " possible values");
+			d.set(i, id);
+		}
+
+	}
+
+	private void encodeAndUpdateDense(final MatrixBlock data, final AMapToData d, final int col, int max) {
+		final int nRow = data.getNumRows();
+		final double[] vals = data.getDenseBlockValues();
+		final int nCol = data.getNumColumns();
+		final int end = nRow * nCol; // guaranteed lower than intend.
+		for(int i = 0, off = col; off < end; i++, off += nCol) {
+			int id = map.increment(vals[off]);
+			if(id >= max)
+				throw new DMLCompressionException("Failed update and encode with " + max + " possible values");
+			d.set(i, id);
+		}
+	}
+
+	private void encodeAndUpdateGeneric(MatrixBlock data, AMapToData d, int col, int max) {
+		final int nRow = data.getNumRows();
+		final DenseBlock db = data.getDenseBlock();
+		for(int i = 0; i < nRow; i++) {
+			final double[] c = db.values(i);
+			final int off = db.pos(i) + col;
+			int id = map.increment(c[off]);
+			if(id >= max)
+				throw new DMLCompressionException("Failed update and encode with " + max + " possible values");
+			d.set(i, id);
+		}
+	}
 }

@@ -28,10 +28,7 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
 /** Base class for all column selection readers. */
 public abstract class ReaderColumnSelection {
-
 	protected static final Log LOG = LogFactory.getLog(ReaderColumnSelection.class.getName());
-
-	protected static boolean nanEncountered = false;
 
 	protected final IColIndex _colIndexes;
 	protected final DblArray reusableReturn;
@@ -113,12 +110,5 @@ public abstract class ReaderColumnSelection {
 				"Column selection reader should not be done on single column groups: " + colIndices);
 		else if(rl >= ru)
 			throw new DMLCompressionException("Invalid inverse range for reader " + rl + " to " + ru);
-	}
-
-	protected void warnNaN() {
-		if(!nanEncountered) {
-			LOG.warn("NaN value encountered, replaced by 0 in compression, since nan is not supported");
-			nanEncountered = true;
-		}
 	}
 }

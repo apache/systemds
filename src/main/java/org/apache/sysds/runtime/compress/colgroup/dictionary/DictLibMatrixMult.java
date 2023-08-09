@@ -63,12 +63,12 @@ public class DictLibMatrixMult {
 	 * @param result       The result matrix
 	 * @param counts       The scaling factors
 	 */
-	public static void MMDictsWithScaling(ADictionary left, ADictionary right, IColIndex leftRows,
+	public static void MMDictsWithScaling(IDictionary left, IDictionary right, IColIndex leftRows,
 		IColIndex rightColumns, MatrixBlock result, int[] counts) {
 		LOG.warn("Inefficient double allocation of dictionary");
 		final boolean modifyRight = right.getInMemorySize() > left.getInMemorySize();
-		final ADictionary rightM = modifyRight ? right.scaleTuples(counts, rightColumns.size()) : right;
-		final ADictionary leftM = modifyRight ? left : left.scaleTuples(counts, leftRows.size());
+		final IDictionary rightM = modifyRight ? right.scaleTuples(counts, rightColumns.size()) : right;
+		final IDictionary leftM = modifyRight ? left : left.scaleTuples(counts, leftRows.size());
 		MMDicts(leftM, rightM, leftRows, rightColumns, result);
 	}
 
@@ -81,7 +81,7 @@ public class DictLibMatrixMult {
 	 * @param cols   The cols of the dictionary
 	 * @param ret    The output to add the results to
 	 */
-	public static void TSMMDictionaryWithScaling(ADictionary dict, int[] counts, IColIndex rows, IColIndex cols,
+	public static void TSMMDictionaryWithScaling(IDictionary dict, int[] counts, IColIndex rows, IColIndex cols,
 		MatrixBlock ret) {
 		dict.TSMMWithScaling(counts, rows, cols, ret);
 	}
@@ -96,7 +96,7 @@ public class DictLibMatrixMult {
 	 * @param colsRight The column indexes on the right hand side
 	 * @param result    The result matrix to put the results into.
 	 */
-	public static void MMDicts(ADictionary left, ADictionary right, IColIndex rowsLeft, IColIndex colsRight,
+	public static void MMDicts(IDictionary left, IDictionary right, IColIndex rowsLeft, IColIndex colsRight,
 		MatrixBlock result) {
 		left.MMDict(right, rowsLeft, colsRight, result);
 	}
@@ -121,7 +121,7 @@ public class DictLibMatrixMult {
 	 * @param colsRight cols for the right dictionary
 	 * @param result    the result
 	 */
-	public static void TSMMToUpperTriangle(ADictionary left, ADictionary right, IColIndex rowsLeft, IColIndex colsRight,
+	public static void TSMMToUpperTriangle(IDictionary left, IDictionary right, IColIndex rowsLeft, IColIndex colsRight,
 		MatrixBlock result) {
 		left.TSMMToUpperTriangle(right, rowsLeft, colsRight, result);
 	}
@@ -147,7 +147,7 @@ public class DictLibMatrixMult {
 	 * @param scale     A multiplier to each dictionary entry
 	 * @param result    The result
 	 */
-	public static void TSMMToUpperTriangleScaling(ADictionary left, ADictionary right, IColIndex rowsLeft,
+	public static void TSMMToUpperTriangleScaling(IDictionary left, IDictionary right, IColIndex rowsLeft,
 		IColIndex colsRight, int[] scale, MatrixBlock result) {
 		left.TSMMToUpperTriangleScaling(left, rowsLeft, colsRight, scale, result);
 	}

@@ -204,8 +204,17 @@ public abstract class AColGroup implements Serializable {
 	 *         dictionary and _columnIndexes correctly aligned with the expected sliced compressed matrix.
 	 */
 	public final AColGroup sliceColumns(int cl, int cu) {
-		AColGroup ret = (cu - cl == 1) ? sliceColumn(cl) : sliceMultiColumns(cl, cu);
-		return ret;
+		if(cl <= _colIndexes.get(0) && cu > _colIndexes.get(_colIndexes.size() - 1)) {
+			if(cl == 0)
+				return this;
+			else
+				return this.shiftColIndices(-cl);
+		}
+		else if(cu - cl == 1)
+			return sliceColumn(cl);
+		else
+			return sliceMultiColumns(cl, cu);
+
 	}
 
 	/**
@@ -595,8 +604,8 @@ public abstract class AColGroup implements Serializable {
 	public abstract boolean isEmpty();
 
 	/**
-	 * Append the other column group to this column group. This method tries to combine them to return a new column group
-	 * containing both. In some cases it is possible in reasonable time, in others it is not.
+	 * Append the other column group to this column group. This method tries to combine them to return a new column
+	 * group containing both. In some cases it is possible in reasonable time, in others it is not.
 	 * 
 	 * The result is first this column group followed by the other column group in higher row values.
 	 * 

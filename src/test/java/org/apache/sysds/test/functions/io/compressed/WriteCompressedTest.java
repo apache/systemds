@@ -19,8 +19,6 @@
 
 package org.apache.sysds.test.functions.io.compressed;
 
-import java.io.IOException;
-
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.test.AutomatedTestBase;
@@ -50,26 +48,26 @@ public class WriteCompressedTest extends AutomatedTestBase {
 	}
 
 	@Test
-	public void testCP() throws IOException {
+	public void testCP() throws Exception {
 		runWriteTest(ExecMode.SINGLE_NODE);
 	}
 
 	@Test
-	public void testHP() throws IOException {
+	public void testHP() throws Exception {
 		runWriteTest(ExecMode.HYBRID);
 	}
 
 	@Test
-	public void testSP() throws IOException {
+	public void testSP() throws Exception {
 		runWriteTest(ExecMode.SPARK);
 	}
 
-	private void runWriteTest(ExecMode platform) throws IOException {
+	private void runWriteTest(ExecMode platform) throws Exception {
 		runWriteTest(platform, 100, 100, 0, 0, 0.0);
 	}
 
 	private void runWriteTest(ExecMode platform, int rows, int cols, int min, int max, double sparsity)
-		throws IOException {
+		throws Exception {
 
 		ExecMode oldPlatform = rtplatform;
 		rtplatform = platform;

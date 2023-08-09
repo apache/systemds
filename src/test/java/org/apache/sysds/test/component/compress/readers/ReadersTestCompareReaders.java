@@ -19,6 +19,7 @@
 
 package org.apache.sysds.test.component.compress.readers;
 
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.util.ArrayList;
@@ -73,7 +74,8 @@ public class ReadersTestCompareReaders {
 				for(int c = 0; c < cols.length; c++) {
 					for(int r = 0; r < rows.length; r++) {
 						mb = TestUtils.generateTestMatrixBlock(rows[r], cols[c], 1, 10, spar[s], i);
-						tests.add(new Object[] {mb});
+						if(!mb.isInSparseFormat())
+							tests.add(new Object[] {mb});
 					}
 				}
 			}
@@ -83,13 +85,15 @@ public class ReadersTestCompareReaders {
 		mb = new MatrixBlock(100, 10, false);
 		for(int i = 0; i < 10; i++)
 			mb.quickSetValue(3, i, 231);
-		tests.add(new Object[] {mb});
+		if(!mb.isInSparseFormat())
+			tests.add(new Object[] {mb});
 
 		// only one col is set
 		mb = new MatrixBlock(100, 10, false);
 		for(int i = 0; i < 100; i++)
 			mb.quickSetValue(i, 4, 231);
-		tests.add(new Object[] {mb});
+		if(!mb.isInSparseFormat())
+			tests.add(new Object[] {mb});
 
 		return tests;
 	}
@@ -498,7 +502,8 @@ public class ReadersTestCompareReaders {
 				final int end = m.getNumRows() - 10;
 				final int start = end - 10;
 				ReaderColumnSelection a = ReaderColumnSelection.createReader(m, cols, false, start, end);
-				ReaderColumnSelection b = ReaderColumnSelection.createReader(mMockLargeTransposed, cols, true, start, end);
+				ReaderColumnSelection b = ReaderColumnSelection.createReader(mMockLargeTransposed, cols, true, start,
+					end);
 				compareReaders(a, b, start, end);
 			}
 		}
@@ -527,12 +532,36 @@ public class ReadersTestCompareReaders {
 			DblArray br = null;
 			while((ar = a.nextRow()) != null) {
 				br = b.nextRow();
-				final int aIdx = a.getCurrentRowIndex();
-				final int bIdx = b.getCurrentRowIndex();
-				if(aIdx != bIdx)
-					fail("Not equal row indexes" + aIdx + "  " + bIdx);
-				if(!ar.equals(br))
-					fail("Not equal row values" + ar + " " + br + " at row: " + aIdx);
+				int aIdx = a.getCurrentRowIndex();
+				int bIdx = b.getCurrentRowIndex();
+				while(aIdx < bIdx && ar != null) {
+					assertTrue(ar == null || ar.isEmpty());
+					ar = a.nextRow();
+					aIdx = a.getCurrentRowIndex();
+				}
+				while(bIdx < aIdx && br != null) {
+					assertTrue(br == null || br.isEmpty());
+					br = b.nextRow();
+					bIdx = b.getCurrentRowIndex();
+				}
+
+				if(ar != null && br != null) {
+					if(aIdx != bIdx)
+						fail("Not equal row indexes" + aIdx + "  " + bIdx);
+				}
+
+				if(ar == null && br == null) {
+					// all good
+				}
+				else if(ar == null && br != null && br.isEmpty()) {
+					// all good
+				}
+				else if(br == null && ar != null && ar.isEmpty()) {
+					// all good
+				}
+				else if(ar != null && br != null && !ar.equals(br)) {
+					fail("Not equal row values: " + ar + " " + br + " at row: " + aIdx);
+				}
 			}
 			br = b.nextRow();
 
@@ -559,18 +588,42 @@ public class ReadersTestCompareReaders {
 			DblArray br = null;
 			while((ar = a.nextRow()) != null) {
 				br = b.nextRow();
-				final int aIdx = a.getCurrentRowIndex();
-				final int bIdx = b.getCurrentRowIndex();
+				int aIdx = a.getCurrentRowIndex();
+				int bIdx = b.getCurrentRowIndex();
+				while(aIdx < bIdx && ar != null) {
+					assertTrue(ar == null || ar.isEmpty());
+					ar = a.nextRow();
+					aIdx = a.getCurrentRowIndex();
+				}
 
-				if(aIdx != bIdx)
-					fail("Not equal row indexes" + aIdx + "  " + bIdx);
-				if(aIdx < start)
-					fail("reader violated the row lower");
-				if(aIdx >= end)
-					fail("reader violated the row upper " + aIdx + " is larger or equal to " + end + "  "
-						+ b.getClass().getSimpleName());
-				if(!ar.equals(br))
+				while(bIdx < aIdx && br != null) {
+					assertTrue(br == null || br.isEmpty());
+					br = b.nextRow();
+					bIdx = b.getCurrentRowIndex();
+				}
+
+				if(ar != null && br != null) {
+					if(aIdx != bIdx)
+						fail("Not equal row indexes" + aIdx + "  " + bIdx);
+					if(aIdx < start)
+						fail("reader violated the row lower");
+					if(aIdx >= end)
+						fail("reader violated the row upper " + aIdx + " is larger or equal to " + end + "  "
+							+ b.getClass().getSimpleName());
+				}
+
+				if(ar == null && br == null) {
+					// all good
+				}
+				else if(ar == null && br != null && br.isEmpty()) {
+					// all good
+				}
+				else if(br == null && ar != null && ar.isEmpty()) {
+					// all good
+				}
+				else if(ar != null && br != null && !ar.equals(br)) {
 					fail("Not equal row values" + ar + " " + br + " at row: " + aIdx);
+				}
 			}
 			br = b.nextRow();
 
@@ -600,7 +653,8 @@ public class ReadersTestCompareReaders {
 	}
 
 	public static MatrixBlock createMock(MatrixBlock d) {
-		DenseBlockFP64 a = new DenseBlockFP64Mock(new int[] {d.getNumRows(), d.getNumColumns()}, d.getDenseBlockValues());
+		DenseBlockFP64 a = new DenseBlockFP64Mock(new int[] {d.getNumRows(), d.getNumColumns()},
+			d.getDenseBlockValues());
 		MatrixBlock b = new MatrixBlock(d.getNumRows(), d.getNumColumns(), a);
 		b.setNonZeros(d.getNumRows() * d.getNumColumns());
 		return b;

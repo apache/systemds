@@ -19,6 +19,7 @@
 
 package org.apache.sysds.runtime.compress.estim;
 
+import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
 
 /**
@@ -94,10 +95,18 @@ public class EstimationFactors {
 				"Invalid number of instance of most common element should be lower than number of rows. " + largestOff
 					+ " > numRows: " + numRows);
 		else if(numVals > numOffs)
-			throw new DMLCompressionException("Num vals cannot be greater than num offs: vals: "+ numVals + " offs: " + numOffs);
+			throw new DMLCompressionException(
+				"Num vals cannot be greater than num offs: vals: " + numVals + " offs: " + numOffs);
+
+		if(CompressedMatrixBlock.debug && frequencies != null) {
+			for(int i = 0; i < frequencies.length; i++) {
+				if(frequencies[i] == 0)
+					throw new DMLCompressionException("Invalid counts in fact contains 0");
+			}
+		}
 	}
 
-	public int[] getFrequencies(){
+	public int[] getFrequencies() {
 		return frequencies;
 	}
 

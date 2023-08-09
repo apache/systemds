@@ -24,14 +24,14 @@ import org.apache.sysds.runtime.compress.colgroup.AColGroup;
 import org.apache.sysds.runtime.compress.colgroup.ASDC;
 import org.apache.sysds.runtime.compress.colgroup.ASDCZero;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupSDCFOR;
-import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
 public abstract class SDCScheme extends ACLAScheme {
 
 	// TODO make it into a soft reference
-	protected ADictionary lastDict;
+	protected IDictionary lastDict;
 
 	protected SDCScheme(IColIndex cols) {
 		super(cols);

@@ -26,6 +26,9 @@ import java.util.List;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+/**
+ * collect an array list of the indexes with the same hashes.
+ */
 public class DblArrayIntListHashMap {
 
 	protected static final Log LOG = LogFactory.getLog(DblArrayIntListHashMap.class.getName());

@@ -24,6 +24,7 @@ import static org.junit.Assert.fail;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.CompressionSettingsBuilder;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType;
 import org.apache.sysds.runtime.compress.estim.EstimationFactors;
@@ -46,6 +47,7 @@ public abstract class EncodeSampleTest {
 		this.t = t;
 		this.u = u;
 		this.e = e;
+		CompressedMatrixBlock.debug = true;
 	}
 
 	@Test
@@ -166,7 +168,8 @@ public abstract class EncodeSampleTest {
 	public void toEstimationFactorsWithRLE() {
 		try {
 			int rows = t ? m.getNumColumns() : m.getNumRows();
-			EstimationFactors a = e.extractFacts(rows, 1.0, 1.0, new CompressionSettingsBuilder().addValidCompression(CompressionType.RLE).create());
+			EstimationFactors a = e.extractFacts(rows, 1.0, 1.0,
+				new CompressionSettingsBuilder().addValidCompression(CompressionType.RLE).create());
 			int[] f = a.getFrequencies();
 			if(f != null)
 				for(int i : f)
@@ -180,10 +183,10 @@ public abstract class EncodeSampleTest {
 	}
 
 	@Test
-	public void isDense(){
+	public void isDense() {
 		boolean d = e.isDense();
 		int rows = t ? m.getNumColumns() : m.getNumRows();
-		if(rows == 1 && m.isInSparseFormat() && ! d)
-			fail ("Should extract sparse if input is sparse and one column (row)");
+		if(rows == 1 && m.isInSparseFormat() && !d)
+			fail("Should extract sparse if input is sparse and one column (row)");
 	}
 }

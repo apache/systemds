@@ -22,6 +22,7 @@ package org.apache.sysds.runtime.compress.colgroup.scheme;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.matrix.data.Pair;
 
 public abstract class ACLAScheme implements ICLAScheme {
 	protected final IColIndex cols;
@@ -30,18 +31,38 @@ public abstract class ACLAScheme implements ICLAScheme {
 		this.cols = cols;
 	}
 
-	protected IColIndex getColIndices() {
-		return cols;
-	}
-
 	@Override
 	public AColGroup encode(MatrixBlock data) {
-		return encode(data, getColIndices());
+		return encode(data, cols);
 	}
 
 	@Override
 	public ICLAScheme update(MatrixBlock data) {
-		return update(data, getColIndices());
+		return update(data, cols);
+	}
+
+	@Override
+	public Pair<ICLAScheme, AColGroup> updateAndEncode(MatrixBlock data) {
+		return updateAndEncode(data, cols);
+	}
+
+	@Override
+	public Pair<ICLAScheme, AColGroup> updateAndEncode(MatrixBlock data, IColIndex columns) {
+		try {
+			return tryUpdateAndEncode(data, columns);
+		}
+		catch(Exception e) {
+			LOG.warn("Failed to update and encode in one pass, fallback to separated update and encode");
+			ICLAScheme s = update(data, columns);
+			AColGroup g = encode(data, columns);
+			return new Pair<>(s, g);
+		}
+	}
+
+	protected Pair<ICLAScheme, AColGroup> tryUpdateAndEncode(MatrixBlock data, IColIndex columns) {
+		final ICLAScheme s = update(data, columns);
+		final AColGroup g = encode(data, columns);
+		return new Pair<>(s, g);
 	}
 
 	protected final void validate(MatrixBlock data, IColIndex columns) throws IllegalArgumentException {
@@ -51,7 +72,8 @@ public abstract class ACLAScheme implements ICLAScheme {
 
 		final int nCol = data.getNumColumns();
 		if(nCol < cols.get(cols.size() - 1))
-			throw new IllegalArgumentException("Invalid columns to encode with max col:" + nCol+ " list of columns: "+ columns);
+			throw new IllegalArgumentException(
+				"Invalid columns to encode with max col:" + nCol + " list of columns: " + columns);
 	}
 
 }

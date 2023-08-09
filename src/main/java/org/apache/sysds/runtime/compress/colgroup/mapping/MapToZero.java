@@ -26,7 +26,7 @@ import java.util.BitSet;
 
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.runtime.compress.colgroup.IMapToDataGroup;
-import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory.MAP_TYPE;
 
 public class MapToZero extends AMapToData {
@@ -120,7 +120,7 @@ public class MapToZero extends AMapToData {
 	}
 
 	@Override
-	public void preAggregateDDC_DDCMultiCol(AMapToData tm, ADictionary td, double[] v, int nCol) {
+	public void preAggregateDDC_DDCMultiCol(AMapToData tm, IDictionary td, double[] v, int nCol) {
 		final int sz = size();
 		for(int r = 0; r < sz; r++)
 			td.addToEntry(v, tm.getIndex(r), 0, nCol);
@@ -166,6 +166,11 @@ public class MapToZero extends AMapToData {
 		for(IMapToDataGroup gd : d)
 			p += gd.getMapToData().size();
 		return new MapToZero(p);
+	}
+
+	@Override
+	public int getMaxPossible(){
+		return 1;
 	}
 
 	@Override

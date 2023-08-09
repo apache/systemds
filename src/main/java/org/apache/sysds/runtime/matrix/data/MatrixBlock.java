@@ -53,6 +53,7 @@ import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.lib.CLALibAggTernaryOp;
+import org.apache.sysds.runtime.compress.lib.CLALibMerge;
 import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject.UpdateType;
 import org.apache.sysds.runtime.data.DenseBlock;
@@ -1861,57 +1862,60 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 		}
 	}
 
-	/**
-	 * Merge disjoint: merges all non-zero values of the given input into the current
-	 * matrix block. Note that this method does NOT check for overlapping entries;
-	 * it's the callers reponsibility of ensuring disjoint matrix blocks.  
-	 * 
-	 * The appendOnly parameter is only relevant for sparse target blocks; if true,
-	 * we only append values and do not sort sparse rows for each call; this is useful
-	 * whenever we merge iterators of matrix blocks into one target block.
-	 * 
-	 * @param that matrix block
-	 * @param appendOnly ?
-	 */
-
 	@Override
-	public void merge(MatrixBlock that, boolean appendOnly) {
-		merge(that, appendOnly, false, true);
+	public MatrixBlock merge(MatrixBlock that, boolean appendOnly) {
+		return merge(that, appendOnly, false, true);
 	}
 	
-	public void merge(MatrixBlock that, boolean appendOnly, boolean par) {
-		merge(that, appendOnly, par, true);
+	public MatrixBlock merge(MatrixBlock that, boolean appendOnly, boolean par) {
+		return merge(that, appendOnly, par, true);
 	}
 	
-	public void merge(MatrixBlock that, boolean appendOnly, boolean par, boolean deep) {
-		//check for empty input source (nothing to merge)
-		if( that == null || that.isEmptyBlock(false) )
-			return;
-		
-		//check dimensions (before potentially copy to prevent implicit dimension change) 
-		//this also does a best effort check for disjoint input blocks via the number of non-zeros
-		if( rlen != that.rlen || clen != that.clen )
-			throw new DMLRuntimeException("Dimension mismatch on merge disjoint (target="+rlen+"x"+clen+", source="+that.rlen+"x"+that.clen+")");
-		if( nonZeros+that.nonZeros > (long)rlen*clen )
-			throw new DMLRuntimeException("Number of non-zeros mismatch on merge disjoint (target="+rlen+"x"+clen+", nnz target="+nonZeros+", nnz source="+that.nonZeros+")");
-		
-		//check for empty target (copy in full)
-		if( isEmptyBlock(false) && !(!sparse && isAllocated()) ) {
-			copy(that);
-			return;
+	public MatrixBlock merge(MatrixBlock that, boolean appendOnly, boolean par, boolean deep) {
+		try{
+
+			//check for empty input source (nothing to merge)
+			if( that == null || that.isEmptyBlock(false) )
+				return this;
+	
+			if(this instanceof CompressedMatrixBlock || that instanceof CompressedMatrixBlock){
+				return CLALibMerge.merge(this, that, appendOnly, par, deep);
+			}
+			
+			//check dimensions (before potentially copy to prevent implicit dimension change) 
+			//this also does a best effort check for disjoint input blocks via the number of non-zeros
+			if( rlen != that.rlen || clen != that.clen )
+				throw new DMLRuntimeException("Dimension mismatch on merge disjoint (target="+rlen+"x"+clen+", source="+that.rlen+"x"+that.clen+")");
+			if( nonZeros+that.nonZeros > (long)rlen*clen ){
+				recomputeNonZeros();
+				that.recomputeNonZeros();
+				if( nonZeros+that.nonZeros > (long)rlen*clen ){
+					throw new DMLRuntimeException("Number of non-zeros mismatch on merge disjoint (target="+rlen+"x"+clen+", nnz target="+nonZeros+", nnz source="+that.nonZeros+")");
+				}
+			}
+			
+			//check for empty target (copy in full)
+			if( isEmptyBlock(false) && !(!sparse && isAllocated()) ) {
+				copy(that);
+				return this;
+			}
+			
+			//core matrix block merge (guaranteed non-empty source/target, nnz maintenance not required)
+			long nnz = nonZeros + that.nonZeros;
+			if( sparse )
+				mergeIntoSparse(that, appendOnly, deep);
+			else if( par )
+				mergeIntoDensePar(that);
+			else
+				mergeIntoDense(that);
+			
+			//maintain number of nonzeros
+			nonZeros = nnz;
+			return this;
 		}
-		
-		//core matrix block merge (guaranteed non-empty source/target, nnz maintenance not required)
-		long nnz = nonZeros + that.nonZeros;
-		if( sparse )
-			mergeIntoSparse(that, appendOnly, deep);
-		else if( par )
-			mergeIntoDensePar(that);
-		else
-			mergeIntoDense(that);
-		
-		//maintain number of nonzeros
-		nonZeros = nnz;
+		catch(Exception e){
+			throw new DMLRuntimeException("Failed merging blocks: "+ this + " \n " + that, e);
+		}
 	}
 
 	private void mergeIntoDense(MatrixBlock that) {

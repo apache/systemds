@@ -25,8 +25,8 @@ import org.apache.sysds.runtime.compress.colgroup.ASDCZero;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupDDC;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupEmpty;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupSDC;
-import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.DictionaryFactory;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
@@ -51,7 +51,7 @@ public class SDCSchemeSC extends SDCScheme {
 		this(g.getColIndices(), 0, g.getDictionary());
 	}
 
-	private SDCSchemeSC(IColIndex cols, double def, ADictionary lastDict) {
+	private SDCSchemeSC(IColIndex cols, double def, IDictionary lastDict) {
 		super(cols);
 		this.def = def;
 		this.lastDict = lastDict;

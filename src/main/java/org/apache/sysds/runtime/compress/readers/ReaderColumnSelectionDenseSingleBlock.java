@@ -28,31 +28,18 @@ public class ReaderColumnSelectionDenseSingleBlock extends ReaderColumnSelection
 	private final int _numCols;
 
 	protected ReaderColumnSelectionDenseSingleBlock(MatrixBlock data, IColIndex colIndices, int rl, int ru) {
-		super(colIndices, rl, Math.min(ru, data.getNumRows()) -1);
+		super(colIndices, rl, Math.min(ru, data.getNumRows()) - 1);
 		_data = data.getDenseBlockValues();
 		_numCols = data.getNumColumns();
 	}
 
 	protected DblArray getNextRow() {
 
-		boolean empty = true;
-		while(empty && _rl < _ru) {
-			_rl++;
-			final int indexOff = _rl * _numCols;
-			for(int i = 0; i < _colIndexes.size(); i++) {
-				double v = _data[indexOff + _colIndexes.get(i)];
-				boolean isNan = Double.isNaN(v);
-				if(isNan){
-					warnNaN();
-					reusableArr[i] = 0;
-				}
-				else{
-					empty &= v == 0;
-					reusableArr[i] = v;
-				}
-			}
-		}
+		_rl++;
+		final int indexOff = _rl * _numCols;
+		for(int i = 0; i < _colIndexes.size(); i++)
+			reusableArr[i] = _data[indexOff + _colIndexes.get(i)];
 
-		return empty ? null : reusableReturn;
+		return reusableReturn;
 	}
 }

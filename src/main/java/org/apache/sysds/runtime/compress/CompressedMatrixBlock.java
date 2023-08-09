@@ -51,6 +51,7 @@ import org.apache.sysds.runtime.compress.lib.CLALibCompAgg;
 import org.apache.sysds.runtime.compress.lib.CLALibDecompress;
 import org.apache.sysds.runtime.compress.lib.CLALibMMChain;
 import org.apache.sysds.runtime.compress.lib.CLALibMatrixMult;
+import org.apache.sysds.runtime.compress.lib.CLALibMerge;
 import org.apache.sysds.runtime.compress.lib.CLALibRexpand;
 import org.apache.sysds.runtime.compress.lib.CLALibScalar;
 import org.apache.sysds.runtime.compress.lib.CLALibSlice;
@@ -98,7 +99,7 @@ public class CompressedMatrixBlock extends MatrixBlock {
 	/**
 	 * Debugging flag for Compressed Matrices
 	 */
-	public static boolean debug = true;
+	public static boolean debug = false;
 
 	/**
 	 * Column groups
@@ -510,7 +511,8 @@ public class CompressedMatrixBlock extends MatrixBlock {
 	}
 
 	@Override
-	public MatrixBlock chainMatrixMultOperations(MatrixBlock v, MatrixBlock w, MatrixBlock out, ChainType ctype, int k) {
+	public MatrixBlock chainMatrixMultOperations(MatrixBlock v, MatrixBlock w, MatrixBlock out, ChainType ctype,
+		int k) {
 
 		checkMMChain(ctype, v, w);
 		// multi-threaded MMChain of single uncompressed ColGroup
@@ -1099,7 +1101,8 @@ public class CompressedMatrixBlock extends MatrixBlock {
 	}
 
 	@Override
-	public void appendRowToSparse(SparseBlock dest, MatrixBlock src, int i, int rowoffset, int coloffset, boolean deep) {
+	public void appendRowToSparse(SparseBlock dest, MatrixBlock src, int i, int rowoffset, int coloffset,
+		boolean deep) {
 		throw new DMLCompressionException("Can't append row to compressed Matrix");
 	}
 
@@ -1159,8 +1162,8 @@ public class CompressedMatrixBlock extends MatrixBlock {
 	}
 
 	@Override
-	public void merge(MatrixBlock that, boolean appendOnly, boolean par, boolean deep) {
-		throw new NotImplementedException();
+	public MatrixBlock merge(MatrixBlock that, boolean appendOnly, boolean par, boolean deep) {
+		return CLALibMerge.merge(this, that, appendOnly, par, deep);
 	}
 
 	@Override

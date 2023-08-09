@@ -24,6 +24,7 @@ import java.util.Arrays;
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupConst;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupEmpty;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
@@ -64,8 +65,8 @@ public interface EncodingFactory {
 	/**
 	 * Encode a full delta representation of the matrix input taking all rows into account.
 	 * 
-	 * Note the input matrix should not be delta encoded, but instead while processing, enforcing that we do not allocate
-	 * more memory.
+	 * Note the input matrix should not be delta encoded, but instead while processing, enforcing that we do not
+	 * allocate more memory.
 	 * 
 	 * @param m          The input matrix that is not delta encoded and should not be modified
 	 * @param transposed If the input matrix is transposed.
@@ -81,8 +82,8 @@ public interface EncodingFactory {
 	/**
 	 * Encode a delta representation of the matrix input taking the first "sampleSize" rows into account.
 	 * 
-	 * Note the input matrix should not be delta encoded, but instead while processing, enforcing that we do not allocate
-	 * more memory.
+	 * Note the input matrix should not be delta encoded, but instead while processing, enforcing that we do not
+	 * allocate more memory.
 	 * 
 	 * @param m          Input matrix that is not delta encoded and should not be modified
 	 * @param transposed If the input matrix is transposed.
@@ -90,7 +91,8 @@ public interface EncodingFactory {
 	 * @param sampleSize The number of rows to consider for the delta encoding (from the beginning)
 	 * @return A delta encoded encoding.
 	 */
-	public static IEncode createFromMatrixBlockDelta(MatrixBlock m, boolean transposed, IColIndex rowCols, int sampleSize) {
+	public static IEncode createFromMatrixBlockDelta(MatrixBlock m, boolean transposed, IColIndex rowCols,
+		int sampleSize) {
 		throw new NotImplementedException();
 	}
 
@@ -117,19 +119,19 @@ public interface EncodingFactory {
 			return createFromDense(m, rowCol);
 	}
 
-	public static IEncode create(ColGroupConst c){
+	public static IEncode create(ColGroupConst c) {
 		return new ConstEncoding(-1);
 	}
 
-	public static IEncode create(ColGroupEmpty c){
+	public static IEncode create(ColGroupEmpty c) {
 		return new EmptyEncoding();
 	}
 
-	public static IEncode create(AMapToData d){
+	public static IEncode create(AMapToData d) {
 		return new DenseEncoding(d);
 	}
 
-	public static IEncode create(AMapToData d, AOffset i, int nRow){
+	public static IEncode create(AMapToData d, AOffset i, int nRow) {
 		return new SparseEncoding(d, i, nRow);
 	}
 
@@ -137,7 +139,7 @@ public interface EncodingFactory {
 		final DenseBlock db = m.getDenseBlock();
 		if(!db.isContiguous())
 			throw new NotImplementedException("Not Implemented non contiguous dense matrix encoding for sample");
-		final DoubleCountHashMap map = new DoubleCountHashMap(16);
+		final DoubleCountHashMap map = new DoubleCountHashMap();
 		final int off = db.pos(row);
 		final int nCol = m.getNumColumns();
 		final int end = off + nCol;
@@ -145,10 +147,7 @@ public interface EncodingFactory {
 
 		// Iteration 1, make Count HashMap.
 		for(int i = off; i < end; i++) // sequential access
-			if(!Double.isNaN(vals[i]))
-				map.increment(vals[i]);
-			else
-				map.increment(0);
+			map.increment(vals[i]);
 
 		final int nUnique = map.size();
 
@@ -156,40 +155,33 @@ public interface EncodingFactory {
 			return new ConstEncoding(m.getNumColumns());
 		else if(nUnique == 0)
 			return new EmptyEncoding();
-		else if(map.getOrDefault(0, -1) > nCol / 4) {
+		else if(map.getOrDefault(0.0, -1) > nCol / 4) {
 			map.replaceWithUIDsNoZero();
-			final int zeroCount = map.get(0);
+			final int zeroCount = map.get(0.0);
 			final int nV = nCol - zeroCount;
 			final IntArrayList offsets = new IntArrayList(nV);
 
 			final AMapToData d = MapToFactory.create(nV, nUnique - 1);
-
-			// for(int i = off, r = 0, di = 0; i < end; i += nCol, r++){
-			for(int i = off, r = 0, di = 0; i < end; i++, r++) {
+			int di = 0;
+			for(int i = off, r = 0; i < end; i++, r++) {
 				if(vals[i] != 0) {
 					offsets.appendValue(r);
-					if(!Double.isNaN(vals[i]))
-						d.set(di++, map.get(vals[i]));
-					else
-						d.set(di++, map.get(0.0));
+					d.set(di++, map.getId(vals[i]));
 				}
 			}
+			if(di != nV)
+				throw new RuntimeException("Did not find equal number of elements " + di + " vs " + nV);
 
 			final AOffset o = OffsetFactory.createOffset(offsets);
 			return new SparseEncoding(d, o, nCol);
 		}
 		else {
-			map.replaceWithUIDs();
 			// Create output map
 			final AMapToData d = MapToFactory.create(nCol, nUnique);
 
 			// Iteration 2, make final map
-			for(int i = off, r = 0; i < end; i++, r++) {
-				if(!Double.isNaN(vals[i]))
-					d.set(r, map.get(vals[i]));
-				else
-					d.set(r, map.get(0.0));
-			}
+			for(int i = off, r = 0; i < end; i++, r++)
+				d.set(r, map.getId(vals[i]));
 
 			return new DenseEncoding(d);
 		}
@@ -207,17 +199,13 @@ public interface EncodingFactory {
 
 		// Iteration 1 of non zero values, make Count HashMap.
 		for(int i = apos; i < alen; i++) {
-			// sequential of non zero cells.
-			if(!Double.isNaN(avals[i]))
-				map.increment(avals[i]);
-
+			map.increment(avals[i]);
 		}
 
 		final int nUnique = map.size();
-		map.replaceWithUIDs();
 
 		final int nCol = m.getNumColumns();
-		if(nUnique == 0) // only if all NaN
+		if(nUnique == 0)
 			return new EmptyEncoding();
 		else if(alen - apos > nCol / 4) { // return a dense encoding
 			// If the row was full but the overall matrix is sparse.
@@ -226,20 +214,18 @@ public interface EncodingFactory {
 			// Since the dictionary is allocated with zero then we exploit that here and
 			// only iterate through non zero entries.
 			for(int i = apos; i < alen; i++)
-				if(!Double.isNaN(avals[i])) // correction one to assign unique IDs taking into account zero
-					d.set(aix[i], map.get(avals[i]) + correct);
+				d.set(aix[i], map.getId(avals[i]) + correct);
 
 			// the rest is automatically set to zero.
 			return new DenseEncoding(d);
 		}
 		else { // return a sparse encoding
-			// Create output map
+				// Create output map
 			final AMapToData d = MapToFactory.create(alen - apos, nUnique);
 
 			// Iteration 2 of non zero values, make either a IEncode Dense or sparse map.
 			for(int i = apos, j = 0; i < alen; i++, j++)
-				if(!Double.isNaN(avals[i]))
-					d.set(j, map.get(avals[i]));
+				d.set(j, map.getId(avals[i]));
 
 			// Iteration 3 of non zero indexes, make a Offset Encoding to know what cells are zero and not.
 			// not done yet
@@ -261,28 +247,27 @@ public interface EncodingFactory {
 
 		// Iteration 1, make Count HashMap.
 		for(int i = off; i < end; i += nCol) // jump down through rows.
-			if(!Double.isNaN(vals[i]))
-				map.increment(vals[i]);
-			else
-				map.increment(0);
+			map.increment(vals[i]);
 		final int nUnique = map.size();
 		if(nUnique == 1)
 			return new ConstEncoding(m.getNumColumns());
 
-		if(map.getOrDefault(0, -1) > nRow / 4) {
+		if(map.getOrDefault(0.0, -1) > nRow / 4) {
 			map.replaceWithUIDsNoZero();
-			final int zeroCount = map.get(0);
+			final int zeroCount = map.get(0.0);
 			final int nV = m.getNumRows() - zeroCount;
 			final IntArrayList offsets = new IntArrayList(nV);
 
 			final AMapToData d = MapToFactory.create(nV, nUnique - 1);
-
-			for(int i = off, r = 0, di = 0; i < end; i += nCol, r++) {
-				if(vals[i] != 0 && !Double.isNaN(vals[i])) {
+			int di = 0;
+			for(int i = off, r = 0; i < end; i += nCol, r++) {
+				if(vals[i] != 0) {
 					offsets.appendValue(r);
-					d.set(di++, map.get(vals[i]));
+					d.set(di++, map.getId(vals[i]));
 				}
 			}
+			if(di != nV)
+				throw new DMLRuntimeException("Invalid number of zero.");
 
 			final AOffset o = OffsetFactory.createOffset(offsets);
 
@@ -290,14 +275,11 @@ public interface EncodingFactory {
 		}
 		else {
 			// Allocate counts, and iterate once to replace counts with u ids
-			map.replaceWithUIDs();
+
 			final AMapToData d = MapToFactory.create(nRow, nUnique);
 			// Iteration 2, make final map
 			for(int i = off, r = 0; i < end; i += nCol, r++)
-				if(!Double.isNaN(vals[i]))
-					d.set(r, map.get(vals[i]));
-				else
-					d.set(r, map.get(0));
+				d.set(r, map.getId(vals[i]));
 			return new DenseEncoding(d);
 		}
 	}
@@ -319,18 +301,14 @@ public interface EncodingFactory {
 			final int[] aix = sb.indexes(r);
 			final int index = Arrays.binarySearch(aix, apos, alen, col);
 			if(index >= 0) {
-				final double v = sb.values(r)[index];
-				if(!Double.isNaN(v)) {
-					offsets.appendValue(r);
-					map.increment(sb.values(r)[index]);
-				}
+				offsets.appendValue(r);
+				map.increment(sb.values(r)[index]);
 			}
 		}
 		if(offsets.size() == 0)
 			return new EmptyEncoding();
 
 		final int nUnique = map.size();
-		map.replaceWithUIDs();
 
 		final AMapToData d = MapToFactory.create(offsets.size(), nUnique);
 
@@ -345,8 +323,8 @@ public interface EncodingFactory {
 			final int index = Arrays.binarySearch(aix, apos, alen, col);
 			if(index >= 0) {
 				final double v = sb.values(r)[index];
-				if(index >= 0 && !Double.isNaN(v))
-					d.set(off++, map.get(v));
+				if(index >= 0)
+					d.set(off++, map.getId(v));
 			}
 		}
 
@@ -358,7 +336,7 @@ public interface EncodingFactory {
 	private static IEncode createWithReader(MatrixBlock m, IColIndex rowCols, boolean transposed) {
 		final ReaderColumnSelection reader1 = ReaderColumnSelection.createReader(m, rowCols, transposed);
 		final int nRows = transposed ? m.getNumColumns() : m.getNumRows();
-		final DblArrayCountHashMap map = new DblArrayCountHashMap(16, rowCols.size());
+		final DblArrayCountHashMap map = new DblArrayCountHashMap();
 		final IntArrayList offsets = new IntArrayList();
 		DblArray cellVals = reader1.nextRow();
 
@@ -374,7 +352,6 @@ public interface EncodingFactory {
 		else if(map.size() == 1 && offsets.size() == nRows)
 			return new ConstEncoding(nRows);
 
-		map.replaceWithUIDs();
 		if(offsets.size() < nRows / 4)
 			// Output encoded sparse since there is very empty.
 			return createWithReaderSparse(m, map, rowCols, offsets, nRows, transposed);
@@ -393,10 +370,10 @@ public interface EncodingFactory {
 		DblArray cellVals;
 		if(zero)
 			while((cellVals = reader2.nextRow()) != null)
-				d.set(reader2.getCurrentRowIndex(), map.get(cellVals) + 1);
+				d.set(reader2.getCurrentRowIndex(), map.getId(cellVals) + 1);
 		else
 			while((cellVals = reader2.nextRow()) != null)
-				d.set(reader2.getCurrentRowIndex(), map.get(cellVals));
+				d.set(reader2.getCurrentRowIndex(), map.getId(cellVals));
 
 		return new DenseEncoding(d);
 	}
@@ -411,7 +388,7 @@ public interface EncodingFactory {
 		int i = 0;
 		// Iterator 2 of non zero tuples.
 		while(cellVals != null) {
-			d.set(i++, map.get(cellVals));
+			d.set(i++, map.getId(cellVals));
 			cellVals = reader2.nextRow();
 		}
 

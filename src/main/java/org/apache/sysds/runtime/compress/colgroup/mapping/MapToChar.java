@@ -272,6 +272,11 @@ public class MapToChar extends AMapToData {
 	}
 
 	@Override
+	public int getMaxPossible(){
+		return Character.MAX_VALUE;
+	}
+
+	@Override
 	public boolean equals(AMapToData e) {
 		return e instanceof MapToChar && //
 			e.getUnique() == getUnique() &&//

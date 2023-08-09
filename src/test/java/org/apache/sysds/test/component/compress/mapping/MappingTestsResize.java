@@ -24,6 +24,7 @@ import static org.junit.Assert.fail;
 import java.util.ArrayList;
 import java.util.Collection;
 
+import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory.MAP_TYPE;
@@ -53,6 +54,7 @@ public class MappingTestsResize {
 	}
 
 	public MappingTestsResize(int seed, MAP_TYPE type, int size, boolean fill) {
+		CompressedMatrixBlock.debug = true;
 		this.seed = seed;
 		this.type = type;
 		this.size = size;

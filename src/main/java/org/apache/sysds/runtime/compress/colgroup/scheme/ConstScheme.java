@@ -30,25 +30,20 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 public class ConstScheme extends ACLAScheme {
 
 	final double[] vals;
-	boolean initialized = false;
 
-	private ConstScheme(IColIndex cols, double[] vals, boolean initialized) {
+	private ConstScheme(IColIndex cols, double[] vals) {
 		super(cols);
 		this.vals = vals;
-		this.initialized = initialized;
 	}
 
 	public static ICLAScheme create(ColGroupConst g) {
-		return new ConstScheme(g.getColIndices(), g.getValues(), true);
+		return new ConstScheme(g.getColIndices(), g.getValues());
 	}
 
 	public static ICLAScheme create(IColIndex cols, double[] vals) {
-		return new ConstScheme(cols, vals, false);
-	}
-
-	@Override
-	protected IColIndex getColIndices() {
-		return cols;
+		if(vals == null)
+			throw new RuntimeException("Invalid null vals for ConstScheme");
+		return new ConstScheme(cols, vals);
 	}
 
 	@Override

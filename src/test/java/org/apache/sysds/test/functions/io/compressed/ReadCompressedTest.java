@@ -93,6 +93,12 @@ public class ReadCompressedTest extends CompressedTestBase {
 		runTest(ExecMode.SPARK, false);
 	}
 
+	@Test
+	public void testCSV_SP_parallel() {
+		// not that it makes a difference from the above test.
+		runTest(ExecMode.SPARK, true);
+	}
+
 	protected String runTest(ExecMode platform, boolean parallel) {
 		ExecMode oldPlatform = rtplatform;
 		rtplatform = platform;

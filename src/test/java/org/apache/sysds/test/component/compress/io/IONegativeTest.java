@@ -29,6 +29,7 @@ import org.apache.sysds.runtime.compress.io.WriterCompressed;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.junit.Test;
 
+@net.jcip.annotations.NotThreadSafe
 public class IONegativeTest {
 	@Test(expected = RuntimeException.class)
 	public void negativeBLen() throws IOException {

@@ -70,6 +70,7 @@ import org.apache.sysds.parser.DataExpression;
 import org.apache.sysds.parser.ParseException;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.DMLScriptException;
+import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.controlprogram.caching.FrameObject;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
@@ -260,6 +261,7 @@ public abstract class AutomatedTestBase {
 			TEST_GPU = false;
 			VERBOSE_STATS = false;
 		}
+		CompressedMatrixBlock.debug = true;
 	}
 
 	// Timestamp before test start.

@@ -623,10 +623,8 @@ public class IOUtilFunctions
 	 */
 	public static void deleteCrcFilesFromLocalFileSystem(FileSystem fs, Path path) throws IOException {
 		if (fs instanceof LocalFileSystem) {
-			Path fnameCrc = new Path(path.getParent(), "." + path.getName() + ".crc");
-			fs.delete(fnameCrc, false);
-			Path fnameMtdCrc = new Path(path.getParent(), "." + path.getName() + ".mtd.crc");
-			fs.delete(fnameMtdCrc, false);
+			fs.deleteOnExit(new Path(path.getParent(), "." + path.getName() + ".crc"));
+			fs.deleteOnExit(new Path(path.getParent(), "." + path.getName() + ".mtd.crc"));
 		}
 	}
 	

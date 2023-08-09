@@ -24,7 +24,9 @@ import java.util.Map;
 
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.CompressionSettings;
+import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
 import org.apache.sysds.runtime.compress.colgroup.offset.AIterator;
@@ -39,7 +41,14 @@ public class DenseEncoding extends AEncode {
 
 	public DenseEncoding(AMapToData map) {
 		this.map = map;
-		map.getCounts();
+
+		if(CompressedMatrixBlock.debug) {
+			int[] freq = map.getCounts();
+			for(int i = 0; i < freq.length; i++) {
+				if(freq[i] == 0)
+					throw new DMLCompressionException("Invalid counts in fact contains 0");
+			}
+		}
 	}
 
 	@Override
@@ -209,7 +218,8 @@ public class DenseEncoding extends AEncode {
 		return newId;
 	}
 
-	protected static void addValHashMap(final int nv, final int r, final Map<Integer, Integer> map, final AMapToData d) {
+	protected static void addValHashMap(final int nv, final int r, final Map<Integer, Integer> map,
+		final AMapToData d) {
 		final int v = map.size();
 		final Integer mv = map.putIfAbsent(nv, v);
 		if(mv == null)
@@ -232,6 +242,8 @@ public class DenseEncoding extends AEncode {
 		for(int i = 0; i < counts.length; i++)
 			if(counts[i] > largestOffs)
 				largestOffs = counts[i];
+			else if(counts[i] == 0)
+				throw new DMLCompressionException("Invalid count of 0 all values should have at least one instance");
 
 		if(cs.isRLEAllowed())
 			return new EstimationFactors(map.getUnique(), nRows, largestOffs, counts, 0, nRows, map.countRuns(), false,

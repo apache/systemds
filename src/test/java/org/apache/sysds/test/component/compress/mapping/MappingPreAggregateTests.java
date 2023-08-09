@@ -28,6 +28,7 @@ import java.util.Random;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory.MAP_TYPE;
@@ -99,6 +100,7 @@ public class MappingPreAggregateTests {
 	}
 
 	public MappingPreAggregateTests(int seed, int nUnique, MAP_TYPE type, int size) {
+		CompressedMatrixBlock.debug = true;
 		this.seed = seed;
 		this.type = type;
 		this.size = size;

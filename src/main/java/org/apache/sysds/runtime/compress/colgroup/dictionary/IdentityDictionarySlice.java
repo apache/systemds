@@ -105,7 +105,7 @@ public class IdentityDictionarySlice extends IdentityDictionary {
 	}
 
 	@Override
-	public ADictionary clone() {
+	public IDictionary clone() {
 		return new IdentityDictionarySlice(nRowCol, withEmpty, l, u);
 	}
 
@@ -192,7 +192,7 @@ public class IdentityDictionarySlice extends IdentityDictionary {
 	}
 
 	@Override
-	public ADictionary sliceOutColumnRange(int idxStart, int idxEnd, int previousNumberOfColumns) {
+	public IDictionary sliceOutColumnRange(int idxStart, int idxEnd, int previousNumberOfColumns) {
 		throw new NotImplementedException("Slice of identity slice ??? this is getting a bit ridiculous");
 	}
 
@@ -236,7 +236,7 @@ public class IdentityDictionarySlice extends IdentityDictionary {
 	}
 
 	@Override
-	public ADictionary scaleTuples(int[] scaling, int nCol) {
+	public IDictionary scaleTuples(int[] scaling, int nCol) {
 		return getMBDict().scaleTuples(scaling, nCol);
 	}
 
@@ -258,7 +258,7 @@ public class IdentityDictionarySlice extends IdentityDictionary {
 	}
 
 	@Override
-	public ADictionary replace(double pattern, double replace, int nCol) {
+	public IDictionary replace(double pattern, double replace, int nCol) {
 		if(containsValue(pattern))
 			return getMBDict().replace(pattern, replace, nCol);
 		else
@@ -266,7 +266,7 @@ public class IdentityDictionarySlice extends IdentityDictionary {
 	}
 
 	@Override
-	public ADictionary replaceWithReference(double pattern, double replace, double[] reference) {
+	public IDictionary replaceWithReference(double pattern, double replace, double[] reference) {
 		if(containsValueWithReference(pattern, reference))
 			return getMBDict().replaceWithReference(pattern, replace, reference);
 		else
@@ -279,7 +279,7 @@ public class IdentityDictionarySlice extends IdentityDictionary {
 	}
 
 	@Override
-	public boolean equals(ADictionary o) {
+	public boolean equals(IDictionary o) {
 		if(o instanceof IdentityDictionarySlice) {
 			IdentityDictionarySlice os = ((IdentityDictionarySlice) o);
 			return os.nRowCol == nRowCol && os.l == l && os.u == u;

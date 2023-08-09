@@ -20,7 +20,6 @@
 package org.apache.sysds.test.component.compress.io;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
 
 import java.io.File;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -34,12 +33,12 @@ public class IOCompressionTestUtils {
 
 	static final AtomicInteger id = new AtomicInteger(0);
 
-	public static void deleteDirectory(File file) {
+	public synchronized static void deleteDirectory(File file) {
 		synchronized(IOCompressionTestUtils.lock) {
 			File[] files = file.listFiles();
 			if(files == null)
 				return;
-			for(File subfile :files) {
+			for(File subfile : files) {
 				if(subfile.isDirectory())
 					deleteDirectory(subfile);
 				subfile.delete();
@@ -48,7 +47,7 @@ public class IOCompressionTestUtils {
 		}
 	}
 
-	public static String getName(String nameBeginning) {
+	public synchronized static String getName(String nameBeginning) {
 		return nameBeginning + "testWrite" + id.incrementAndGet() + ".cla";
 	}
 
@@ -62,14 +61,8 @@ public class IOCompressionTestUtils {
 		// assertTrue("Disk size is not equivalent", a.getExactSizeOnDisk() > b.getExactSizeOnDisk());
 	}
 
-	public static MatrixBlock read(String path) {
-		try {
-			return ReaderCompressed.readCompressedMatrixFromHDFS(path);
-		}
-		catch(Exception e) {
-			e.printStackTrace();
-			fail("Failed to read file");
-			return null;
-		}
+	public synchronized static MatrixBlock read(String path) throws Exception {
+		return ReaderCompressed.readCompressedMatrixFromHDFS(path);
 	}
+
 }

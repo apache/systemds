@@ -37,30 +37,30 @@ public interface TimingUtils {
 	/** The specified measurement to use in this case. Can be set from any of the programs */
 	public static StatsType st = StatsType.MEAN_STD;
 
-	/**
-	 * Time the given function call
-	 * 
-	 * @param f The function to execute
-	 * @return The time it took
-	 */
-	public static double time(F f) {
-		Timing time = new Timing(true);
-		f.run();
-		return time.stop();
-	}
+	// /**
+	// * Time the given function call
+	// *
+	// * @param f The function to execute
+	// * @return The time it took
+	// */
+	// public static double time(F f) {
+	// Timing time = new Timing(true);
+	// f.run();
+	// return time.stop();
+	// }
 
-	/**
-	 * Time the function and print using the string given prepended.
-	 * 
-	 * @param f The function to time
-	 * @param p The print statement
-	 */
-	public static void time(F f, String p) {
-		Timing time = new Timing(true);
-		f.run();
-		System.out.print(p);
-		System.out.println(time.stop());
-	}
+	// /**
+	// * Time the function and print using the string given prepended.
+	// *
+	// * @param f The function to time
+	// * @param p The print statement
+	// */
+	// public static void time(F f, String p) {
+	// Timing time = new Timing(true);
+	// f.run();
+	// System.out.print(p);
+	// System.out.println(time.stop());
+	// }
 
 	/**
 	 * Time the function given assuming that it should put result into the given time array at index i.
@@ -80,17 +80,19 @@ public interface TimingUtils {
 	 * it in the timing of the operation
 	 * 
 	 * @param f   The function to time
+	 * @param c   A cleanup funtion or part that should not be timed.
 	 * @param rep The number of repetitions to make
 	 * @param bq  The generator for the input
 	 * @return A list of the individual repetitions execution time
 	 * @throws InterruptedException An exception in case the job gets interrupted
 	 */
-	public static double[] time(F f, int rep, IGenerate<?> bq) throws InterruptedException {
+	public static double[] time(F f, F c, int rep, IGenerate<?> bq) throws InterruptedException {
 		double[] times = new double[rep];
 		for(int i = 0; i < rep; i++) {
 			while(bq.isEmpty())
 				Thread.sleep(bq.defaultWaitTime());
 			time(f, times, i);
+			c.run();
 		}
 		return times;
 	}

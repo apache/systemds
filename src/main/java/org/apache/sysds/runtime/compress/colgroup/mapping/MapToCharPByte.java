@@ -248,9 +248,14 @@ public class MapToCharPByte extends AMapToData {
 	}
 
 	@Override
+	public int getMaxPossible() {
+		return (int) Character.MAX_VALUE * 256;
+	}
+
+	@Override
 	public boolean equals(AMapToData e) {
 		return e instanceof MapToCharPByte && //
-			e.getUnique() == getUnique() &&//
+			e.getUnique() == getUnique() && //
 			Arrays.equals(((MapToCharPByte) e)._data_b, _data_b) && //
 			Arrays.equals(((MapToCharPByte) e)._data_c, _data_c);
 	}

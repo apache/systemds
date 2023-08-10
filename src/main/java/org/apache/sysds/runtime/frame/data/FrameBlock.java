@@ -701,11 +701,9 @@ public class FrameBlock implements CacheBlock<FrameBlock>, Externalizable {
 		Array[] tmpData = new Array[ncol];
 		for(int j = 0; j < ncol; j++)
 			tmpData[j] = ArrayFactory.create(cols[j]);
-		_colnames = empty ? null : (String[]) ArrayUtils.addAll(getColumnNames(), createColNames(getNumColumns(), ncol)); // before
-																																								// schema
-																																								// modification
-		_schema = empty ? tmpSchema : (ValueType[]) ArrayUtils.addAll(_schema, tmpSchema);
-		_coldata = empty ? tmpData : (Array[]) ArrayUtils.addAll(_coldata, tmpData);
+		_colnames = empty ? null : ArrayUtils.addAll(getColumnNames(), createColNames(getNumColumns(), ncol)); // before schema modification
+		_schema = empty ? tmpSchema : ArrayUtils.addAll(_schema, tmpSchema);
+		_coldata = empty ? tmpData : ArrayUtils.addAll(_coldata, tmpData);
 		_nRow = cols[0].length;
 		_msize = -1;
 	}

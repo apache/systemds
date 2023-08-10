@@ -164,7 +164,7 @@ public class IOBandwidth extends APerfTest<IOBandwidth.InOut, MatrixBlock> {
 		ret.sort(IOBandwidth::compare);
 
 		final int l = ret.size();
-		final int remove = (int) Math.floor((double) l * 0.05);
+		final int remove = (int) Math.floor(l * 0.05);
 
 		final int el = l - remove * 2;
 

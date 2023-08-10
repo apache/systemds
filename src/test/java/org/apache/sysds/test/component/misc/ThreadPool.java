@@ -304,7 +304,7 @@ public class ThreadPool {
 		when(p.shutdownNow()).thenReturn(null);
 		assertNull(c.shutdownNow());
 
-		Collection<Callable<Integer>> cc = (Collection<Callable<Integer>>) null;
+		Collection<Callable<Integer>> cc = null;
 		when(p.invokeAll(cc)).thenReturn(null);
 		assertNull(c.invokeAll(cc));
 		when(p.invokeAll(cc, 1L, TimeUnit.DAYS)).thenReturn(null);
@@ -378,7 +378,7 @@ public class ThreadPool {
 	public void invokeAndShutdown() throws InterruptedException {
 		ExecutorService p = mock(ExecutorService.class);
 		ExecutorService c = new CommonThreadPool(p);
-		Collection<Callable<Integer>> cc = (Collection<Callable<Integer>>) null;
+		Collection<Callable<Integer>> cc = null;
 		when(p.invokeAll(cc)).thenReturn(new ArrayList<Future<Integer>>());
 		CommonThreadPool.invokeAndShutdown(c, null);
 	}

@@ -598,7 +598,6 @@ public class DnnOp extends MultiThreadedHop {
 	// filter_shape1, filter_shape2, filter_shape3, filter_shape4
 	DnnParameters parseInput() {
 		
-		Hop imageHeightHop = null; Hop filterHeightHop = null;
 		if(op == OpOpDnn.MAX_POOL_BACKWARD || op == OpOpDnn.AVG_POOL_BACKWARD 
 				|| op == OpOpDnn.CONV2D 
 				|| op == OpOpDnn.CONV2D_BACKWARD_FILTER
@@ -641,7 +640,7 @@ public class DnnOp extends MultiThreadedHop {
 			}
 		}
 		
-		if(imageHeightHop == filterHeightHop && _cachedParams.R < 0 && _cachedParams.H > 0) {
+		if(_cachedParams.R < 0 && _cachedParams.H > 0) {
 			// Unknown R, but known H and both are equal
 			// This happens for one-dimensional conv2d where H=R and H can be inferred from the parent hop
 			_cachedParams.R = _cachedParams.H;

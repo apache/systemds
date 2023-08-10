@@ -37,7 +37,7 @@ public abstract class APerfTest<T, G> {
 	protected final int N;
 
 	protected APerfTest(int N, IGenerate<G> gen) {
-		ret = new ArrayList<T>(N);
+		ret = new ArrayList<>(N);
 		this.gen = gen;
 		this.N = N;
 	}

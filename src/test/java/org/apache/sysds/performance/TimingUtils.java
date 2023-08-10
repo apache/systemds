@@ -112,7 +112,7 @@ public interface TimingUtils {
 
 	private static String statsMeanSTD(double[] v) {
 		final int l = v.length;
-		final int remove = (int) Math.floor((double) l * 0.05);
+		final int remove = (int) Math.floor(l * 0.05);
 		Arrays.sort(v);
 
 		double total = 0;

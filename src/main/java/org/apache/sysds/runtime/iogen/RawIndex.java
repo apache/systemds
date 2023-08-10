@@ -294,7 +294,7 @@ public class RawIndex {
 	private void addActualValueToList(String stringValue, Integer position, HashMap<Double, ArrayList<Pair<Integer, Integer>>> list) {
 		try {
 			double d = UtilFunctions.getDouble(stringValue);
-			Pair<Integer, Integer> pair = new Pair<Integer, Integer>(position, stringValue.length());
+			Pair<Integer, Integer> pair = new Pair<>(position, stringValue.length());
 			if(!list.containsKey(d)) {
 				ArrayList<Pair<Integer, Integer>> tmpList = new ArrayList<>();
 				tmpList.add(pair);

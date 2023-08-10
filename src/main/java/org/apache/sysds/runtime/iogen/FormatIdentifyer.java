@@ -1029,8 +1029,8 @@ public class FormatIdentifyer {
 	private Pair<Set<String>, Set<String>> getNewRefineKeys(LongestCommonSubsequence lcs, String firstKey,
 		ArrayList<String> prefixesRemoved, ArrayList<String> prefixes, Set<String> refineKeys) {
 
-		Set<String> setRefineLCS = new HashSet<String>();
-		Set<String> newSetRefineLCS = new HashSet<String>();
+		Set<String> setRefineLCS = new HashSet<>();
+		Set<String> newSetRefineLCS = new HashSet<>();
 
 		for(String refineKey : refineKeys) {
 			boolean flagRefine = true;
@@ -1054,7 +1054,7 @@ public class FormatIdentifyer {
 				for(int i = 0; i < prefixesRemoved.size() ; i++) {
 					String psStr = prefixesRemoved.get(i).substring(0, firstKey.length());
 					ArrayList<String> list1 = lcs.getLCS(refineKey, psStr);
-					Set<String> set = new HashSet<String>();
+					Set<String> set = new HashSet<>();
 					set.addAll(list1);
 
 					for(String lcsKeys : set) {
@@ -1084,7 +1084,7 @@ public class FormatIdentifyer {
 		String str2 = string2.substring(0, string2.length() - firstKey.length());
 
 		ArrayList<String> list1 = lcs.getLCS(str1, str2);
-		Set<String> setLCS = new HashSet<String>();
+		Set<String> setLCS = new HashSet<>();
 		setLCS.addAll(list1);
 
 		Set<String> refineKeysStep = new HashSet<>();
@@ -1723,26 +1723,26 @@ public class FormatIdentifyer {
 		return result;
 	}
 
-	Comparator<ArrayList<String>> AscendingArrayOfStringComparator = new Comparator<ArrayList<String>>() {
+	Comparator<ArrayList<String>> AscendingArrayOfStringComparator = new Comparator<>() {
 		@Override
 		public int compare(ArrayList<String> strings, ArrayList<String> t1) {
 			return Integer.compare(strings.size(), t1.size());
 		}
 	};
-	Comparator<String> AscendingStringLengthComparator = new Comparator<String>() {
+	Comparator<String> AscendingStringLengthComparator = new Comparator<>() {
 		@Override
 		public int compare(String s, String t1) {
 			return s.length() - t1.length();
 		}
 	};
-	Comparator<Pair<String, Integer>> AscendingPairStringComparator = new Comparator<Pair<String, Integer>>() {
+	Comparator<Pair<String, Integer>> AscendingPairStringComparator = new Comparator<>() {
 		@Override
 		public int compare(Pair<String, Integer> stringIntegerPair, Pair<String, Integer> t1) {
 			return stringIntegerPair.getKey().length() - t1.getKey().length();
 		}
 	};
 
-	Comparator<Pair<String, ArrayList<Integer>>> AscendingPairListComparator = new Comparator<Pair<String, ArrayList<Integer>>>() {
+	Comparator<Pair<String, ArrayList<Integer>>> AscendingPairListComparator = new Comparator<>() {
 		@Override
 		public int compare(Pair<String, ArrayList<Integer>> stringArrayListPair, Pair<String, ArrayList<Integer>> t1) {
 			boolean flag = true;

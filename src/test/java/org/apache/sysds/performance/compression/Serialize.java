@@ -249,7 +249,7 @@ public class Serialize extends APerfTest<Serialize.InOut, MatrixBlock> {
 		ret.sort(Serialize::compare);
 
 		final int l = ret.size();
-		final int remove = (int) Math.floor((double) l * 0.05);
+		final int remove = (int) Math.floor(l * 0.05);
 
 		final int el = l - remove * 2;
 

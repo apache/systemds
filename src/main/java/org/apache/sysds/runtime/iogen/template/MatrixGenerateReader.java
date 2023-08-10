@@ -252,7 +252,7 @@ public abstract class MatrixGenerateReader extends MatrixReader {
 		catch(Exception e) {
 			throw new IOException("Thread pool Error " + e.getMessage(), e);
 		}
-		MatrixBlock ret = createOutputMatrixBlock(row, _props.getNcols(), (int) row, estnnz, true, false);
+		MatrixBlock ret = createOutputMatrixBlock(row, _props.getNcols(), row, estnnz, true, false);
 		return ret;
 	}
 

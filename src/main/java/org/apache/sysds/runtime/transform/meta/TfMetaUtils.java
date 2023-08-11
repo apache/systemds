@@ -490,4 +490,19 @@ public class TfMetaUtils
 				throw new DMLRuntimeException("Transform specification includes an invalid encoder: "+key);
 		}
 	}
+	
+	@SuppressWarnings("unchecked")
+	public static boolean checkValidEncoders(JSONObject jSpec, TfMethod... encoders) {
+		Set<String> validEncoders = new HashSet<>();
+		validEncoders.addAll(Arrays.asList("ids","K"));
+		for( TfMethod tf : encoders )
+			validEncoders.add(tf.toString());
+		Iterator<String> keys = jSpec.keys();
+		while( keys.hasNext() ) {
+			String key = keys.next();
+			if( !validEncoders.contains(key) )
+				return false;
+		}
+		return true;
+	}
 }

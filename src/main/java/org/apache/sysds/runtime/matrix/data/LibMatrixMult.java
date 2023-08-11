@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
@@ -41,6 +42,7 @@ import org.apache.sysds.lops.WeightedUnaryMM.WUMMType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysds.runtime.data.DenseBlock;
+import org.apache.sysds.runtime.data.DenseBlockFP64DEDUP;
 import org.apache.sysds.runtime.data.DenseBlockFactory;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.data.SparseBlock.Type;
@@ -197,7 +199,10 @@ public class LibMatrixMult
 			ret = new MatrixBlock(m1.rlen, m2.clen, ultraSparse | sparse);
 		else 
 			ret.reset(m1.rlen, m2.clen, ultraSparse | sparse);
-		ret.allocateBlock();
+		if(m1.denseBlock instanceof DenseBlockFP64DEDUP)
+			ret.allocateDenseBlock(true, true);
+		else
+			ret.allocateBlock();
 		
 		// Detect if we should transpose skinny right side.
 		boolean tm2 = !fixedRet && checkPrepMatrixMultRightInput(m1,m2);
@@ -258,9 +263,11 @@ public class LibMatrixMult
 		try {
 			ExecutorService pool = CommonThreadPool.get(k);
 			ArrayList<MatrixMultTask> tasks = new ArrayList<>();
-			ArrayList<Integer> blklens = UtilFunctions.getBalancedBlockSizesDefault(num, k, (pm2r || pm2c));
+			ArrayList<Integer> blklens = UtilFunctions.getBalancedBlockSizesDefault(num, k,
+				(pm2r || pm2c || ret.denseBlock instanceof DenseBlockFP64DEDUP));
+			ConcurrentHashMap<double[], double[]> cache = m1.denseBlock instanceof DenseBlockFP64DEDUP ? new ConcurrentHashMap(): null;
 			for(int i = 0, lb = 0; i < blklens.size(); lb += blklens.get(i), i++)
-				tasks.add(new MatrixMultTask(m1, m2, ret, tm2, pm2r, pm2c, m1Perm, sparse, lb, lb + blklens.get(i)));
+				tasks.add(new MatrixMultTask(m1, m2, ret, tm2, pm2r, pm2c, m1Perm, sparse, lb, lb + blklens.get(i), cache));
 			// execute tasks
 			List<Future<Object>> taskret = pool.invokeAll(tasks);
 			pool.shutdown();
@@ -1129,21 +1136,44 @@ public class LibMatrixMult
 				cvals[cix+j] = dotProduct(avals, b.values(j), aix, b.pos(j), cd);
 		}
 	}
-	
+
+	public static void matrixMultDenseDenseMMDedup(DenseBlock a, DenseBlock b, DenseBlock c, int n, int cd, int rl, int ru, ConcurrentHashMap<double[], double[]> cache) {
+		//n = m2.clen;
+		//cd = m1.clen;
+		for (int i = rl; i < ru; i++) {
+			double[] a_row = a.values(i);
+			double[] c_row = cache.getOrDefault(a_row, null);
+			if (c_row == null) {
+				c_row = new double[n];
+				for (int j = 0; j < n; j++) {
+					c_row[j] = 0.0;
+					//the following requires b.isContiguous(0,cd)
+					double[] b_column = b.values(0);
+					for (int k = 0; k < cd; k++) {
+						c_row[j] += a_row[k] * b_column[b.pos(k, j)];
+					}
+				}
+				//the following requires
+				cache.put(a_row, c_row);
+			}
+			c.set(i, c_row);
+		}
+	}
+
 	//note: public for use by codegen for consistency
 	public static void matrixMultDenseDenseMM(DenseBlock a, DenseBlock b, DenseBlock c, int n, int cd, int rl, int ru, int cl, int cu) {
 		//1) Unrolled inner loop (for better instruction-level parallelism)
-		//2) Blocked execution (for less cache trashing in parallel exec) 
+		//2) Blocked execution (for less cache trashing in parallel exec)
 		//3) Asymmetric block sizes (for less misses in inner loop, yet blocks in L1/L2)
-		
-		final int blocksizeI = 32; //64//256KB c block (typical L2 size per core), 32KB a block 
-		final int blocksizeK = 24; //64//256KB b block (typical L2 size per core), used while read 512B of a / read/write 4KB of c 
-		final int blocksizeJ = 1024; //512//4KB (typical main-memory page size), for scan 
+
+		final int blocksizeI = 32; //64//256KB c block (typical L2 size per core), 32KB a block
+		final int blocksizeK = 24; //64//256KB b block (typical L2 size per core), used while read 512B of a / read/write 4KB of c
+		final int blocksizeJ = 1024; //512//4KB (typical main-memory page size), for scan
 
 		//temporary arrays (nnz a, b index)
 		double[] ta = new double[ blocksizeK ];
 		int[]  tbi  = new int[ blocksizeK ];
-		
+
 		//blocked execution
 		for( int bi = rl; bi < ru; bi+=blocksizeI )
 			for( int bk = 0, bimin = Math.min(ru, bi+blocksizeI); bk < cd; bk+=blocksizeK ) 
@@ -4135,9 +4165,10 @@ public class LibMatrixMult
 		private final boolean _sparse; //sparse output
 		private final int _rl;
 		private final int _ru;
+		private final ConcurrentHashMap<double[], double[]> _cache;
 
 		protected MatrixMultTask( MatrixBlock m1, MatrixBlock m2, MatrixBlock ret,
-			boolean tm2, boolean pm2r, boolean pm2c, boolean m1Perm, boolean sparse, int rl, int ru )
+			boolean tm2, boolean pm2r, boolean pm2c, boolean m1Perm, boolean sparse, int rl, int ru, ConcurrentHashMap<double[], double[]> cache )
 		{
 			_m1 = m1;
 			_m2 = m2;
@@ -4148,7 +4179,8 @@ public class LibMatrixMult
 			_sparse = sparse;
 			_rl = rl;
 			_ru = ru;
-			
+			_cache = cache;
+
 			if( pm2r ) { //vector-matrix / matrix-matrix
 				//allocate local result for partial aggregation
 				_ret = new MatrixBlock(ret.rlen, ret.clen, false);
@@ -4174,7 +4206,11 @@ public class LibMatrixMult
 			if( _ret.sparse ) //ultra-sparse
 				matrixMultUltraSparse(_m1, _m2, _ret, _m1Perm, rl, ru);
 			else if(!_m1.sparse && !_m2.sparse)
-				matrixMultDenseDense(_m1, _m2, _ret, _tm2, _pm2r, rl, ru, cl, cu);
+				if(_m1.denseBlock instanceof DenseBlockFP64DEDUP && _m2.denseBlock.isContiguous(0,_m1.clen) && cl == 0 && cu == _m2.clen)
+					matrixMultDenseDenseMMDedup(_m1.denseBlock, _m2.denseBlock, _ret.denseBlock, _m2.clen, _m1.clen, rl, ru, _cache);
+				else
+					matrixMultDenseDense(_m1, _m2, _ret, _tm2, _pm2r, rl, ru, cl, cu);
+
 			else if(_m1.sparse && _m2.sparse)
 				matrixMultSparseSparse(_m1, _m2, _ret, _pm2r, _sparse, rl, ru);
 			else if(_m1.sparse)

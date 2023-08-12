@@ -36,15 +36,20 @@ public class BuiltinImputeKNNTest extends AutomatedTestBase {
     @Override
     public void setUp() {
         TestUtils.clearAssertionInformation();
-        addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] {"C"}));
+        addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] {"B"}));
     }
 
     @Test
-    public void test()throws IOException{
-        runImputeKNN(Types.ExecType.CP);
+    public void testDefaultCP()throws IOException{
+        runImputeKNN(true, Types.ExecType.CP);
     }
 
-    private void runImputeKNN(Types.ExecType instType) throws IOException {
+    @Test
+    public void testDefaultSpark()throws IOException{
+        runImputeKNN(true, Types.ExecType.SPARK);
+    }
+
+    private void runImputeKNN(boolean defaultProb, Types.ExecType instType) throws IOException {
         Types.ExecMode platform_old = setExecMode(instType);
         try {
             loadTestConfiguration(getTestConfiguration(TEST_NAME));

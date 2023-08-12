@@ -20,64 +20,45 @@
 #-------------------------------------------------------------
 
 # Impute the data by using KNN-algorithm and finding the nearest neighbor using euclidean distance
+# method. To avoid NaN value during distance calculation, NaN values are temporarily replaced
+# with mean value of the respective column using ImputeByMean method.
 # Currently only for single column with multiple missing values and top 1 neighbor
 #
 # INPUT:
-# -------------------------------------------------------------------------------------
-# data    Data Matrix (numerical)
-# method  methods of calculating the KNN-algorith depending on the size of data and missing values
-# -------------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------------------------
+# X       Data Matrix with missing values (numerical features)
+# method  Methods of calculating the KNN-algorithm depending on the size of data and missing values
+#         default - Default method. Really small, coarse-grained operation.
+#         Distance computation and complexity O(n2 * #features)
+#         small   - Assuming the missing value is small. Compute the euclidean distances between
+#         entire "X" (potentially large) and rows with missing values.
+#         large   - Assuming the missing value is large. Compute the euclidean distances between
+#         sample of rows of X (randomly selected and act as control) and rows with
+#         missing values (if not small).
+# seed    Set seed value for random/sample calls to ensure deterministic behavior when needed
+# --------------------------------------------------------------------------------------------------
 #
 # OUTPUT:
-# -----------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------------------------
 # result     imputed dataset
-# -----------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------------------------
 
-
-#method 1
-#impute By Mean, really small, coarse grained-operation
-#Extract Top 1 distances, impute the respective value
-#dist runtime * #features
-#method 2
-#assuming missing value is very small, 1%
-#compute only the distances between tuples between missing value, impute the mean,
-#compute distance between entire "X" (potentially large) and rows with missing values (hopefully small),
-#method 3
-#sample rows, randomly select subset of rows
-#assuming missing value is very large,
-#compute distance between sample of rows of X (control small) and rows with missing values (if not small),
-
-m_imputeByKNN = function(Matrix[Double] data, String method = "default")
+m_imputeByKNN = function(Matrix[Double] X, String method = "default", Integer seed = 33)
 return(Matrix[Double] result)
 {
-  print("KNN-IMPUTATION SCRIPT")
-
-  #Test data, initial data, will be replaced later with variable data
-  first = matrix ("1 3 4 8", rows = 4, cols = 1)
-  second = matrix ("2 4 6 7", rows = 4, cols = 1)
-  third = matrix ("4 NaN 5 NaN", rows = 4, cols = 1)
-  test_matrix = cbind(first,second,third)
-
-  #Add more data for more test cases
-  fifth = matrix("5 6 7", rows = 1, cols = 3)
-  sixth = matrix("3 4 5", rows = 1 , cols = 3)
-  tm2 = rbind(test_matrix, fifth,sixth)
+  #KNN-Imputation Script
 
   #Create a mask for placeholder and to check for missing values
-  masked = is.nan(tm2)
-  print(toString(tm2))
+  masked = is.nan(X)
 
   #Find the column containing multiple missing values
-  missing_col = rowIndexMax(colSums(is.nan(tm2)))
-
-  #change method here temporary "default"/"method2" for testing purposes, will be replaced by user input
-  method = "method3"
+  missing_col = rowIndexMax(colSums(is.nan(X)))
 
   #Impute NaN value with temporary mean value of the column
-  filled_matrix = imputeByMean(tm2, matrix(0, cols = ncol(tm2), rows = 1))
+  filled_matrix = imputeByMean(X, matrix(0, cols = ncol(X), rows = 1))
 
   if(method == "default"){
-    #METHOD 1
+    #default method
     #Calculate the distance using dist method after imputation with mean
     distance_matrix = dist(filled_matrix)
 
@@ -88,11 +69,11 @@ return(Matrix[Double] result)
     minimum_index = rowIndexMin(distance_matrix)
 
     #Position of missing values in per row in which column
-    position = rowSums(is.nan(tm2))
+    position = rowSums(is.nan(X))
     position = position * minimum_index
 
     #Filter the 0 out
-    I = (rowSums(is.nan(tm2))!=0)
+    I = (rowSums(is.nan(X))!=0)
     missing = removeEmpty(target=position, margin="rows", select=I)
 
     #Convert the value indices into 0/1 matrix to find location
@@ -102,29 +83,23 @@ return(Matrix[Double] result)
     imputedValue = t(indices) %*% filled_matrix[,as.scalar(missing_col)]
 
     #Get the index location of the missing value
-    x = rowSums(is.nan(tm2))
-    missing_indices = seq(1, nrow(x)) * x
+    pos = rowSums(is.nan(X))
+    missing_indices = seq(1, nrow(pos)) * pos
 
     #Put the replacement value in the missing indices
     I2 = removeEmpty(target=missing_indices, margin="rows")
-    R = table(I2,1,imputedValue,odim1 = nrow(tm2), odim2=1)
+    R = table(I2,1,imputedValue,odim1 = nrow(X), odim2=1)
 
     #Replace the masked column with to be imputed Value
     masked[,as.scalar(missing_col)] = masked[,as.scalar(missing_col)] * R
 
-    #Impute the value
-    result = replace(target = tm2, pattern = NaN, replacement = 0)
-    result = result + masked
-    print("Result method1")
-    print(toString(result))
-
-  } else if(method == "method2"){
-    #METHOD 2
+  } else if(method == "small"){
+    #assuming small missing values
     #Split the matrix into containing NaN values (missing records) and not containing NaN values (M2 records)
-    I = (rowSums(is.nan(tm2))!=0)
+    I = (rowSums(is.nan(X))!=0)
     missing = removeEmpty(target=filled_matrix, margin="rows", select=I)
 
-    Y = (rowSums(is.nan(tm2))==0)
+    Y = (rowSums(is.nan(X))==0)
     M2 = removeEmpty(target=filled_matrix, margin = "rows", select = Y)
 
     #Calculate the euclidean distance between fully records and missing records, and then find the min value row wise
@@ -138,35 +113,32 @@ return(Matrix[Double] result)
     imputedValue = t(indices) %*% M2[,as.scalar(missing_col)]
 
     #Get the index location of the missing value
-    x = rowSums(is.nan(tm2))
-    missing_indices = seq(1, nrow(x)) * x
+    pos = rowSums(is.nan(X))
+    missing_indices = seq(1, nrow(pos)) * pos
 
     #Put the replacement value in the missing indices
     I2 = removeEmpty(target=missing_indices, margin="rows")
-    R = table(I2,1,imputedValue,odim1 = nrow(tm2), odim2=1)
+    R = table(I2,1,imputedValue,odim1 = nrow(X), odim2=1)
 
     #Update the masked value
     masked[,as.scalar(missing_col)] = masked[,as.scalar(missing_col)] * R
 
-    result = replace(target = tm2, pattern = NaN, replacement = 0)
-    result = result + masked
-
-    print("Result method2")
-    print(toString(result))
-
-  } else if(method == "method3"){
-    #METHOD 3
+  } else if(method == "large"){
+    #assuming large missing values
     #Split the matrix into containing NaN values (missing records) and not containing NaN values (M2 records)
-    I = (rowSums(is.nan(tm2))!=0)
+    I = (rowSums(is.nan(X))!=0)
     missing = removeEmpty(target=filled_matrix, margin="rows", select=I)
 
-    Y = (rowSums(is.nan(tm2))==0)
+    Y = (rowSums(is.nan(X))==0)
     M3 = removeEmpty(target=filled_matrix, margin = "rows", select = Y)
 
     #Create a random subset
-    random_matrix = ceiling(rand(rows = nrow(M3), cols = 1, min = 0, max = 1, sparsity = 0.5, seed = 33))
+    random_matrix = ceiling(rand(rows = nrow(M3), cols = 1, min = 0, max = 1, sparsity = 0.5, seed = seed))
+
     #ensure that random_matrix has at least 1 value
-    if(as.scalar(colSums(random_matrix)) < 1) { random_matrix = matrix(1, rows = nrow(M3), cols = 1)}
+    if(as.scalar(colSums(random_matrix)) < 1) {
+    random_matrix = matrix(1, rows = nrow(M3), cols = 1)
+    }
 
     subset = M3 * random_matrix
     subset = removeEmpty(target=subset, margin = "rows", select = random_matrix)
@@ -182,27 +154,21 @@ return(Matrix[Double] result)
     imputedValue = t(indices) %*% subset[,as.scalar(missing_col)]
 
     #Get the index location of the missing value
-    x = rowSums(is.nan(tm2))
-    missing_indices = seq(1, nrow(x)) * x
+    pos = rowSums(is.nan(X))
+    missing_indices = seq(1, nrow(pos)) * pos
 
     #Put the replacement value in the missing indices
     I2 = removeEmpty(target=missing_indices, margin="rows")
-    R = table(I2,1,imputedValue,odim1 = nrow(tm2), odim2=1)
+    R = table(I2,1,imputedValue,odim1 = nrow(X), odim2=1)
 
     #Update the masked value
     masked[,as.scalar(missing_col)] = masked[,as.scalar(missing_col)] * R
 
-    result = replace(target = tm2, pattern = NaN, replacement = 0)
-    result = result + masked
-
-    print("Result method3")
-    print(toString(result))
   } else {
     print("Method is unknown or not yet implemented")
   }
 
-#Default Results to be replaced with variable result
-result = data
+  #Impute the value
+  result = replace(target = X, pattern = NaN, replacement = 0)
+  result = result + masked
 }
-
-

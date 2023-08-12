@@ -166,7 +166,7 @@ public enum Builtins {
 	IMG_INVERT("img_invert", true),
 	IMG_POSTERIZE("img_posterize", true),
 	IMPURITY_MEASURES("impurityMeasures", true),
-	IMPUTE_BY_KNN("imputeByKNN",true),
+	IMPUTE_BY_KNN("imputeByKNN", true),
 	IMPUTE_BY_MEAN("imputeByMean", true),
 	IMPUTE_BY_MEAN_APPLY("imputeByMeanApply", true),
 	IMPUTE_BY_MEDIAN("imputeByMedian", true),

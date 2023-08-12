@@ -21,12 +21,14 @@ package org.apache.sysds.test.functions.builtin.part1;
 
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types;
+import org.apache.sysds.runtime.matrix.data.MatrixValue;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.util.HashMap;
 
 public class BuiltinImputeKNNTest extends AutomatedTestBase {
 
@@ -36,7 +38,7 @@ public class BuiltinImputeKNNTest extends AutomatedTestBase {
     @Override
     public void setUp() {
         TestUtils.clearAssertionInformation();
-        addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] {"B"}));
+        addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] {"B","B2"}));
     }
 
     @Test
@@ -55,8 +57,12 @@ public class BuiltinImputeKNNTest extends AutomatedTestBase {
             loadTestConfiguration(getTestConfiguration(TEST_NAME));
             String HOME = SCRIPT_DIR + TEST_DIR;
             fullDMLScriptName = HOME + TEST_NAME + ".dml";
-            programArgs = new String[] {}; //
+            programArgs = new String[] {"-args", output("B"),output("B2")};
             runTest(true, false, null, -1);
+
+            HashMap<MatrixValue.CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir("B");
+            HashMap<MatrixValue.CellIndex, Double> dmlfile2 = readDMLMatrixFromOutputDir("B2");
+            TestUtils.compareMatrices(dmlfile,dmlfile2,100,"default","small");
         } finally {
             rtplatform = platform_old;
         }

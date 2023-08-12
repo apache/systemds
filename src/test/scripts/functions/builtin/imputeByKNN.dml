@@ -28,8 +28,9 @@ test_matrix = cbind(first,second,third)
 fifth = matrix("5 6 7", rows = 1, cols = 3)
 sixth = matrix("3 4 5", rows = 1 , cols = 3)
 tm2 = rbind(test_matrix, fifth,sixth)
-print(toString(tm2))
 
 result = imputeByKNN(X = tm2, method = "default")
-print(toString(result))
+result2 = imputeByKNN(X = tm2, method = "small")
 
+write(result, $1)
+write(result2,$2)

@@ -4361,11 +4361,9 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 			} else
 				for (int i = rl; i <= ru; i++)
 					System.arraycopy(a.values(i), a.pos(i) + cl, c.values(i - rl), c.pos(i - rl), len);
-
-				//compute nnz of output (not maintained due to native calls)
-			dest.setNonZeros((getNonZeros() == getLength()) ?
-					(ru - rl + 1) * (cu - cl + 1) : dest.recomputeNonZeros());
 		}
+		//compute nnz of output (not maintained due to native calls)
+		dest.setNonZeros((getNonZeros() == getLength()) ? (ru - rl + 1) * (cu - cl + 1) : dest.recomputeNonZeros());
 	}
 	
 	@Override

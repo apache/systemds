@@ -35,6 +35,8 @@ public class BuiltinImputeKNNTest extends AutomatedTestBase {
     private final static String TEST_NAME = "imputeByKNN";
     private final static String TEST_DIR = "functions/builtin/";
     private static final String TEST_CLASS_DIR = TEST_DIR + BuiltinImputeKNNTest.class.getSimpleName() + "/";
+
+    private double eps = 10;
     @Override
     public void setUp() {
         TestUtils.clearAssertionInformation();
@@ -57,12 +59,12 @@ public class BuiltinImputeKNNTest extends AutomatedTestBase {
             loadTestConfiguration(getTestConfiguration(TEST_NAME));
             String HOME = SCRIPT_DIR + TEST_DIR;
             fullDMLScriptName = HOME + TEST_NAME + ".dml";
-            programArgs = new String[] {"-args", output("B"),output("B2")};
+            programArgs = new String[] {"-args", DATASET_DIR+"Salaries.csv", "dist","dist_missing", output("B"),output("B2")};
             runTest(true, false, null, -1);
 
             HashMap<MatrixValue.CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir("B");
             HashMap<MatrixValue.CellIndex, Double> dmlfile2 = readDMLMatrixFromOutputDir("B2");
-            TestUtils.compareMatrices(dmlfile,dmlfile2,100,"default","small");
+            TestUtils.compareMatrices(dmlfile,dmlfile2,eps,"dist","dist_sample");
         } finally {
             rtplatform = platform_old;
         }

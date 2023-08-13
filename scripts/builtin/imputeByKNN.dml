@@ -23,18 +23,19 @@
 # method. To avoid NaN value during distance calculation, NaN values are temporarily replaced
 # with mean value of the respective column using ImputeByMean method.
 # Currently only for single column with multiple missing values and top 1 neighbor
+# Methods currently implemented
+# dist           - Default method. Really small, coarse-grained operation.
+# Distance computation and complexity O(n2 * #features)
+# dist_missing   - Assuming the missing value is small. Compute the euclidean distances between
+# entire "X" (potentially large) and rows with missing values.
+# dist_sample    - Assuming the missing value is large. Compute the euclidean distances between
+# sample of rows of X (randomly selected and act as control) and rows with
+# missing values (if not small).
 #
 # INPUT:
 # --------------------------------------------------------------------------------------------------
 # X       Data Matrix with missing values (numerical features)
 # method  Methods of calculating the KNN-algorithm depending on the size of data and missing values
-#         default - Default method. Really small, coarse-grained operation.
-#         Distance computation and complexity O(n2 * #features)
-#         small   - Assuming the missing value is small. Compute the euclidean distances between
-#         entire "X" (potentially large) and rows with missing values.
-#         large   - Assuming the missing value is large. Compute the euclidean distances between
-#         sample of rows of X (randomly selected and act as control) and rows with
-#         missing values (if not small).
 # seed    Set seed value for random/sample calls to ensure deterministic behavior when needed
 # --------------------------------------------------------------------------------------------------
 #
@@ -43,7 +44,7 @@
 # result     imputed dataset
 # --------------------------------------------------------------------------------------------------
 
-m_imputeByKNN = function(Matrix[Double] X, String method = "default", Integer seed = 33)
+m_imputeByKNN = function(Matrix[Double] X, String method = "dist", Integer seed = 33)
 return(Matrix[Double] result)
 {
   #KNN-Imputation Script
@@ -57,7 +58,7 @@ return(Matrix[Double] result)
   #Impute NaN value with temporary mean value of the column
   filled_matrix = imputeByMean(X, matrix(0, cols = ncol(X), rows = 1))
 
-  if(method == "default"){
+  if(method == "dist"){
     #default method
     #Calculate the distance using dist method after imputation with mean
     distance_matrix = dist(filled_matrix)
@@ -93,7 +94,7 @@ return(Matrix[Double] result)
     #Replace the masked column with to be imputed Value
     masked[,as.scalar(missing_col)] = masked[,as.scalar(missing_col)] * R
 
-  } else if(method == "small"){
+  } else if(method == "dist_missing"){
     #assuming small missing values
     #Split the matrix into containing NaN values (missing records) and not containing NaN values (M2 records)
     I = (rowSums(is.nan(X))!=0)
@@ -123,7 +124,7 @@ return(Matrix[Double] result)
     #Update the masked value
     masked[,as.scalar(missing_col)] = masked[,as.scalar(missing_col)] * R
 
-  } else if(method == "large"){
+  } else if(method == "dist_sample"){
     #assuming large missing values
     #Split the matrix into containing NaN values (missing records) and not containing NaN values (M2 records)
     I = (rowSums(is.nan(X))!=0)

@@ -35,5 +35,9 @@ result2 = imputeByKNN(X = data, method = $3)
 value = removeEmpty(target = result, margin = "rows", select = mask[,2] == 1)
 value2 = removeEmpty(target = result2, margin = "rows", select = mask[,2] == 1)
 
+#Get the sum of the imputed value
+value = colSums(value[,2])
+value2 = colSums(value2[,2])
+
 write(value, $4)
 write(value2,$5)

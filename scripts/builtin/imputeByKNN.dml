@@ -104,7 +104,9 @@ return(Matrix[Double] result)
     M2 = removeEmpty(target=filled_matrix, margin = "rows", select = Y)
 
     #Calculate the euclidean distance between fully records and missing records, and then find the min value row wise
-    D = -2 * (M2 %*% t(missing)) + t(rowSums (missing ^ 2));
+    dotM2 = rowSums(M2 * M2) %*% matrix(1, rows = 1, cols = nrow(missing))
+    dotMissing = t(rowSums(missing * missing) %*% matrix(1, rows = 1, cols = nrow(M2)))
+    D = sqrt(dotM2 + dotMissing - 2 * (M2 %*% t(missing)))
     minD = rowIndexMin(t(D))
 
     #Convert the value indices into 0/1 matrix to find location
@@ -145,7 +147,9 @@ return(Matrix[Double] result)
     subset = removeEmpty(target=subset, margin = "rows", select = random_matrix)
 
     #Calculate the euclidean distance between fully records and missing records, and then find the min value row wise
-    D = -2 * (subset %*% t(missing)) + t(rowSums (missing ^ 2));
+    dotSubset = rowSums(subset * subset) %*% matrix(1, rows = 1, cols = nrow(missing))
+    dotMissing = t(rowSums(missing * missing) %*% matrix(1, rows = 1, cols = nrow(subset)))
+    D = sqrt(dotSubset + dotMissing - 2 * (subset %*% t(missing)))
     minD = rowIndexMin(t(D))
 
     #Convert the value indices into 0/1 matrix to find location

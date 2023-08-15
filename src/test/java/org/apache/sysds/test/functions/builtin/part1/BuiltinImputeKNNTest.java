@@ -60,8 +60,10 @@ public class BuiltinImputeKNNTest extends AutomatedTestBase {
             String HOME = SCRIPT_DIR + TEST_DIR;
             fullDMLScriptName = HOME + TEST_NAME + ".dml";
             programArgs = new String[] {"-args", DATASET_DIR+"Salaries.csv", "dist","dist_missing", output("B"),output("B2")};
+
             runTest(true, false, null, -1);
 
+            //Compare matrices, check if the sum of the imputed value is roughly the same
             HashMap<MatrixValue.CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir("B");
             HashMap<MatrixValue.CellIndex, Double> dmlfile2 = readDMLMatrixFromOutputDir("B2");
             TestUtils.compareMatrices(dmlfile,dmlfile2,eps,"dist","dist_sample");

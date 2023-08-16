@@ -19,6 +19,7 @@
 #
 #-------------------------------------------------------------
 
+
 # Imputes missing values, indicated by NaNs, using KNN-based methods
 # (k-nearest neighbors by euclidean distance). In order to avoid NaNs in
 # distance computation and meaningful nearest neighbor search, we initialize
@@ -99,10 +100,8 @@ m_imputeByKNN = function(Matrix[Double] X, String method="dist", Int seed=-1)
 
     #Replace the masked column with to be imputed Value
     masked[,as.scalar(missing_col)] = masked[,as.scalar(missing_col)] * R
-
   }
   else if(method == "dist_missing") {
-
     #assuming small missing values
     #Split the matrix into containing NaN values (missing records) and not containing NaN values (M2 records)
     I = (rowSums(is.nan(X))!=0)
@@ -133,7 +132,6 @@ m_imputeByKNN = function(Matrix[Double] X, String method="dist", Int seed=-1)
 
     #Update the masked value
     masked[,as.scalar(missing_col)] = masked[,as.scalar(missing_col)] * R
-
   }
   else if(method == "dist_sample"){
     #assuming large missing values
@@ -176,7 +174,6 @@ m_imputeByKNN = function(Matrix[Double] X, String method="dist", Int seed=-1)
 
     #Update the masked value
     masked[,as.scalar(missing_col)] = masked[,as.scalar(missing_col)] * R
-
   }
   else {
     print("Method is unknown or not yet implemented")
@@ -186,4 +183,3 @@ m_imputeByKNN = function(Matrix[Double] X, String method="dist", Int seed=-1)
   result = replace(target = X, pattern = NaN, replacement = 0)
   result = result + masked
 }
-

@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 
+import org.apache.sysds.runtime.compress.colgroup.scheme.SchemeFactory;
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
@@ -810,7 +811,7 @@ public class ColGroupUncompressed extends AColGroup {
 
 	@Override
 	public ICLAScheme getCompressionScheme() {
-		return null;
+		return SchemeFactory.create(_colIndexes, CompressionType.UNCOMPRESSED);
 	}
 
 	@Override

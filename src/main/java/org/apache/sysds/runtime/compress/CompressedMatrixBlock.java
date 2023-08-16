@@ -64,6 +64,7 @@ import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyze
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.data.SparseRow;
+import org.apache.sysds.runtime.functionobjects.SwapIndex;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.CM_COV_Object;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
@@ -77,7 +78,6 @@ import org.apache.sysds.runtime.matrix.data.MatrixValue;
 import org.apache.sysds.runtime.matrix.data.RandomMatrixGenerator;
 import org.apache.sysds.runtime.matrix.operators.AggregateBinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.AggregateOperator;
-import org.apache.sysds.runtime.matrix.operators.AggregateTernaryOperator;
 import org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.CMOperator;
@@ -587,11 +587,21 @@ public class CompressedMatrixBlock extends MatrixBlock {
 
 	@Override
 	public MatrixBlock reorgOperations(ReorgOperator op, MatrixValue ret, int startRow, int startColumn, int length) {
-		// Allow transpose to be compressed output. In general we need to have a transposed flag on
-		// the compressed matrix. https://issues.apache.org/jira/browse/SYSTEMDS-3025
-		printDecompressWarning(op.getClass().getSimpleName() + " -- " + op.fn.getClass().getSimpleName());
-		MatrixBlock tmp = decompress(op.getNumThreads());
-		return tmp.reorgOperations(op, ret, startRow, startColumn, length);
+		if(op.fn instanceof SwapIndex && this.getNumColumns() == 1) {
+			MatrixBlock tmp = decompress(op.getNumThreads());
+			long nz = tmp.setNonZeros(tmp.getNonZeros());
+			tmp = new MatrixBlock(tmp.getNumColumns(), tmp.getNumRows(), tmp.getDenseBlockValues());
+			tmp.setNonZeros(nz);
+			return tmp;
+		}
+		else {
+			// Allow transpose to be compressed output. In general we need to have a transposed flag on
+			// the compressed matrix. https://issues.apache.org/jira/browse/SYSTEMDS-3025
+			String message = op.getClass().getSimpleName() + " -- " + op.fn.getClass().getSimpleName();
+			MatrixBlock tmp = getUncompressed(message, op.getNumThreads());
+			return tmp.reorgOperations(op, ret, startRow, startColumn, length);
+		}
+
 	}
 
 	public boolean isOverlapping() {
@@ -786,24 +796,6 @@ public class CompressedMatrixBlock extends MatrixBlock {
 	public MatrixBlock sortOperations(MatrixValue weights, MatrixBlock result) {
 		MatrixBlock right = getUncompressed(weights);
 		return getUncompressed("sortOperations").sortOperations(right, result);
-	}
-
-	@Override
-	public MatrixBlock aggregateTernaryOperations(MatrixBlock m1, MatrixBlock m2, MatrixBlock m3, MatrixBlock ret,
-		AggregateTernaryOperator op, boolean inCP) {
-		boolean m1C = m1 instanceof CompressedMatrixBlock;
-		boolean m2C = m2 instanceof CompressedMatrixBlock;
-		boolean m3C = m3 instanceof CompressedMatrixBlock;
-		printDecompressWarning("aggregateTernaryOperations " + op.aggOp.getClass().getSimpleName() + " "
-			+ op.indexFn.getClass().getSimpleName() + " " + op.aggOp.increOp.fn.getClass().getSimpleName() + " "
-			+ op.binaryFn.getClass().getSimpleName() + " m1,m2,m3 " + m1C + " " + m2C + " " + m3C);
-		MatrixBlock left = getUncompressed(m1);
-		MatrixBlock right1 = getUncompressed(m2);
-		MatrixBlock right2 = getUncompressed(m3);
-		ret = left.aggregateTernaryOperations(left, right1, right2, ret, op, inCP);
-		if(ret.getNumRows() == 0 || ret.getNumColumns() == 0)
-			throw new DMLCompressionException("Invalid output");
-		return ret;
 	}
 
 	@Override

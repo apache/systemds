@@ -418,9 +418,11 @@ public class CompressedMatrixTest extends AbstractCompressedUnaryTests {
 			MatrixBlock m2 = new MatrixBlock(nrow, ncol, 13.0);
 			MatrixBlock m3 = new MatrixBlock(nrow, ncol, 14.0);
 
-			MatrixBlock ret1 = cmb.aggregateTernaryOperations(cmb, m2, m3, null, op, true);
-			ucRet = mb.aggregateTernaryOperations(mb, m2, m3, ucRet, op, true);
+			MatrixBlock ret1 = MatrixBlock.aggregateTernaryOperations(cmb, m2, m3, null, op, true);
+			ucRet = MatrixBlock.aggregateTernaryOperations(mb, m2, m3, ucRet, op, true);
 
+			// LOG.error(ret1);
+			// LOG.error(ucRet);
 			compareResultMatrices(ucRet, ret1, 1);
 		}
 		catch(Exception e) {
@@ -445,8 +447,8 @@ public class CompressedMatrixTest extends AbstractCompressedUnaryTests {
 			MatrixBlock m2 = new MatrixBlock(nrow, ncol, 0);
 			MatrixBlock m3 = new MatrixBlock(nrow, ncol, 14.0);
 
-			MatrixBlock ret1 = cmb.aggregateTernaryOperations(cmb, m2, m3, null, op, true);
-			ucRet = mb.aggregateTernaryOperations(mb, m2, m3, ucRet, op, true);
+			MatrixBlock ret1 = MatrixBlock.aggregateTernaryOperations(cmb, m2, m3, null, op, true);
+			ucRet = MatrixBlock.aggregateTernaryOperations(mb, m2, m3, ucRet, op, true);
 
 			compareResultMatrices(ucRet, ret1, 1);
 		}

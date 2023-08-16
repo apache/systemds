@@ -19,6 +19,10 @@
 
 package org.apache.sysds.runtime.lineage;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.TreeSet;
+
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
@@ -26,11 +30,6 @@ import org.apache.sysds.runtime.instructions.spark.data.LineageObject;
 import org.apache.sysds.runtime.instructions.spark.data.RDDObject;
 import org.apache.sysds.runtime.lineage.LineageCacheConfig.LineageCacheStatus;
 import org.apache.sysds.runtime.util.CommonThreadPool;
-
-import java.util.HashMap;
-import java.util.Map;
-import java.util.TreeSet;
-import java.util.concurrent.Executors;
 
 public class LineageSparkCacheEviction
 {
@@ -212,9 +211,7 @@ public class LineageSparkCacheEviction
 		int localHitCount = RDDHitCountLocal.get(e._key);
 		if (localHitCount > 3) {
 			RDDHitCountLocal.remove(e._key);
-			if (CommonThreadPool.triggerRemoteOPsPool == null)
-				CommonThreadPool.triggerRemoteOPsPool = Executors.newCachedThreadPool();
-			CommonThreadPool.triggerRemoteOPsPool.submit(new TriggerRemoteTask(e.getRDDObject().getRDD()));
+			CommonThreadPool.getDynamicPool().submit(new TriggerRemoteTask(e.getRDDObject().getRDD()));
 		}
 	}
 

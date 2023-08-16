@@ -97,9 +97,9 @@ public class GPUMemoryManager {
 	 * To record size of all allocated pointers allocated by above memory managers
 	 */
 	protected final HashMap<Pointer, PointerInfo> allPointers = new HashMap<>();
-	
+
 	/*****************************************************************************************/
-	
+
 
 	/**
 	 * Get size of allocated GPU Pointer
@@ -415,6 +415,7 @@ public class GPUMemoryManager {
 			LOG.warn("Potential fragmentation of the GPU memory. Forcibly evicting all ...");
 			LOG.info("Before clearAllUnlocked, GPU Memory info:" + toString());
 			matrixMemoryManager.clearAllUnlocked(opcode);
+			CudaMemoryAllocator.resetUnusableFreeMemory();
 			LOG.info("GPU Memory info after evicting all unlocked matrices:" + toString());
 			A = cudaMallocNoWarn(tmpA, size, null);
 		}

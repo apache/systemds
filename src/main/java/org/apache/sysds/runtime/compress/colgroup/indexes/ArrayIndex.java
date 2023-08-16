@@ -147,6 +147,13 @@ public class ArrayIndex extends AColIndex {
 	public IColIndex combine(IColIndex other) {
 		final int sr = other.size();
 		final int sl = size();
+		final int maxCombined = Math.max(this.get(this.size() - 1), other.get(other.size() - 1));
+		final int minCombined = Math.min(this.get(0), other.get(0));
+		if(sr + sl == maxCombined - minCombined + 1) {
+			return new RangeIndex(minCombined, maxCombined + 1);
+		}
+
+		// LOG.error("Combining Worst " + this + " " + other);
 		final int[] ret = new int[sr + sl];
 		int pl = 0;
 		int pr = 0;
@@ -204,8 +211,18 @@ public class ArrayIndex extends AColIndex {
 
 	@Override
 	public boolean contains(int i) {
+		if(i < cols[0] || i > cols[cols.length - 1])
+			return false;
 		int id = Arrays.binarySearch(cols, 0, cols.length, i);
 		return id >= 0;
+	}
+
+	@Override
+	public double avgOfIndex() {
+		double s = 0.0;
+		for(int i = 0; i < cols.length; i++) 
+			s += cols[i];
+		return s / cols.length;
 	}
 
 	protected class ArrayIterator implements IIterate {

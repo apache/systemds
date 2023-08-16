@@ -25,7 +25,7 @@ import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 
 public abstract class DDCScheme extends ACLAScheme {
 
-	// TODO make it into a soft refrence
+	// TODO make it into a soft reference
 	protected ADictionary lastDict;
 
 	protected DDCScheme(IColIndex cols) {

@@ -24,13 +24,13 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 import org.apache.commons.lang3.concurrent.ConcurrentUtils;
 
-public class DoubleBufferingOutputStream extends FilterOutputStream
-{
-	protected ExecutorService _pool = CommonThreadPool.get(1);
+public class DoubleBufferingOutputStream extends FilterOutputStream {
+	protected ExecutorService _pool = Executors.newSingleThreadExecutor();
 	protected Future<?>[] _locks;
 	protected byte[][] _buff;
 	private int _pos;

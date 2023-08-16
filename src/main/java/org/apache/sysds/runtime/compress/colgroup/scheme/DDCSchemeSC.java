@@ -22,6 +22,7 @@ package org.apache.sysds.runtime.compress.colgroup.scheme;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupDDC;
+import org.apache.sysds.runtime.compress.colgroup.ColGroupEmpty;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.DictionaryFactory;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
@@ -76,7 +77,6 @@ public class DDCSchemeSC extends DDCScheme {
 		final SparseBlock sb = data.getSparseBlock();
 		for(int i = 0; i < nRow; i++)
 			map.increment(sb.get(i, col));
-
 	}
 
 	private void updateDense(MatrixBlock data, int col) {
@@ -101,8 +101,9 @@ public class DDCSchemeSC extends DDCScheme {
 
 	@Override
 	public AColGroup encode(MatrixBlock data, IColIndex columns) {
-
 		validate(data, columns);
+		if(data.isEmpty())
+			return new ColGroupEmpty(columns);
 		final int nRow = data.getNumRows();
 		final AMapToData d = MapToFactory.create(nRow, map.size());
 		encode(data, d, cols.get(0));
@@ -131,14 +132,13 @@ public class DDCSchemeSC extends DDCScheme {
 
 	}
 
-	private void encodeDense(MatrixBlock data, AMapToData d, int col) {
+	private void encodeDense(final MatrixBlock data, final AMapToData d, final int col) {
 		final int nRow = data.getNumRows();
 		final double[] vals = data.getDenseBlockValues();
 		final int nCol = data.getNumColumns();
 		final int max = nRow * nCol; // guaranteed lower than intmax.
 		for(int i = 0, off = col; off < max; i++, off += nCol)
 			d.set(i, map.getId(vals[off]));
-
 	}
 
 	private void encodeGeneric(MatrixBlock data, AMapToData d, int col) {

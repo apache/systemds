@@ -30,13 +30,14 @@ import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.stream.IntStream;
 
-import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.concurrent.ConcurrentUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -51,11 +52,12 @@ import org.apache.sysds.lops.MapMultChain.ChainType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
+import org.apache.sysds.runtime.compress.lib.CLALibAggTernaryOp;
 import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject.UpdateType;
-import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.DenseBlockFP64;
+import org.apache.sysds.runtime.data.DenseBlockFP64DEDUP;
 import org.apache.sysds.runtime.data.DenseBlockFactory;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.data.SparseBlockCOO;
@@ -172,7 +174,11 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 	public MatrixBlock(int rl, int cl, boolean sp, long estnnz) {
 		reset(rl, cl, sp, estnnz, 0);
 	}
-	
+
+	public MatrixBlock(int rl, int cl, boolean sp, long estnnz, boolean dedup) {
+		reset(rl, cl, sp, estnnz, 0, dedup);
+	}
+
 	public MatrixBlock(MatrixBlock that) {
 		copy(that);
 	}
@@ -298,7 +304,27 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 		else
 			resetDense(val);
 	}
-	
+
+	public void reset(int rl, int cl, boolean sp, long estnnz, double val, boolean dedup) {
+		//check for valid dimensions
+		if( rl < 0 || cl < 0 )
+			throw new RuntimeException("Invalid block dimensions: "+rl+" "+cl);
+
+		//reset basic meta data
+		rlen = rl;
+		clen = cl;
+		sparse = (val == 0) ? sp : false;
+		nonZeros = (val == 0) ? 0 : (long)rl*cl;
+		estimatedNNzsPerRow = (estnnz < 0 || !sparse) ? -1 :
+				(int)Math.ceil((double)estnnz/(double)rlen);
+
+		//reset sparse/dense blocks
+		if( sparse )
+			resetSparse();
+		else
+			resetDense(val, dedup);
+	}
+
 	private void resetSparse() {
 		if(sparseBlock == null)
 			return;
@@ -315,7 +341,18 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 			denseBlock.set(val);
 		}
 	}
-	
+
+	private void resetDense(double val, boolean dedup) {
+		//handle to dense block allocation and
+		//reset dense block to given value
+		if( denseBlock != null )
+			denseBlock.reset(rlen, clen, val);
+		else if( val != 0 ) {
+			allocateDenseBlock(false, dedup);
+			denseBlock.set(val);
+		}
+	}
+
 	/**
 	 * NOTE: This method is designed only for dense representation.
 	 * 
@@ -372,7 +409,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 	}
 	
 	public Future<MatrixBlock> allocateBlockAsync() {
-		ExecutorService pool = CommonThreadPool.get(InfrastructureAnalyzer.getLocalParallelism());
+		ExecutorService pool = CommonThreadPool.get();
 		return (pool != null) ? pool.submit(() -> allocateBlock()) : //async
 			ConcurrentUtils.constantFuture(allocateBlock()); //fallback sync
 	}
@@ -399,6 +436,10 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 
 		if( denseBlock == null ){
 			denseBlock = DenseBlockFactory.createDenseBlock(rlen, clen, containsDuplicates);
+			return true;
+		}
+		else if( containsDuplicates && !(denseBlock instanceof DenseBlockFP64DEDUP)) {
+			denseBlock = DenseBlockFactory.createDenseBlock(rlen, clen, true);
 			return true;
 		}
 		else if( denseBlock.capacity() < limit ){
@@ -967,10 +1008,20 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 	 * @return the maximum value of all values in the matrix
 	 */
 	public double max() {
-		MatrixBlock out = new MatrixBlock(1, 1, false);
-		LibMatrixAgg.aggregateUnaryMatrix(this, out,
-			InstructionUtils.parseBasicAggregateUnaryOperator("uamax", 1));
+		AggregateUnaryOperator op =InstructionUtils.parseBasicAggregateUnaryOperator("uamax", 1);
+		MatrixBlock out = aggregateUnaryOperations(op, null, 1000, null, true);
 		return out.quickGetValue(0, 0);
+	}
+
+	/**
+	 * Wrapper method for reduceall-max of a matrix.
+	 * 
+	 * @param k the parallelization degree
+	 * @return the maximum value of all values in the matrix
+	 */
+	public MatrixBlock max(int k){
+		AggregateUnaryOperator op = InstructionUtils.parseBasicAggregateUnaryOperator("uamax", k);
+		return aggregateUnaryOperations(op, null, 1000, null, true);
 	}
 	
 	/**
@@ -981,6 +1032,17 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 	public double sum() {
 		KahanPlus kplus = KahanPlus.getKahanPlusFnObject();
 		return sumWithFn(kplus);
+	}
+
+	/**
+	 * Wrapper method for reduceall-sum of a matrix parallel
+	 * 
+	 * @param k parallelization degree
+	 * @return Sum of the values in the matrix.
+	 */
+	public MatrixBlock sum(int k) {
+		AggregateUnaryOperator op = InstructionUtils.parseBasicAggregateUnaryOperator("uak+", k);
+		return aggregateUnaryOperations(op, null, 1000, null, true);
 	}
 
 	/**
@@ -2016,6 +2078,11 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 					cleanupBlock(false, true); //reuse dense
 					readDenseBlock(in); //always dense in-mem if dense on disk
 					break;
+				case DEDUP_BLOCK:
+					sparse = false;
+					cleanupBlock(false, true); //reuse dense
+					readDedupDenseBlock(in); //always dense in-mem if dense on disk
+					break;
 				case EMPTY_BLOCK:
 					sparse = true;
 					cleanupBlock(true, !(sparseBlock instanceof SparseBlockCSR));
@@ -2029,6 +2096,33 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 		{
 			throw new IOException("Error reading block of type '"+format.toString()+"'.", ex);
 		}
+	}
+
+	private void readDedupDenseBlock(DataInput in) throws IOException, DMLRuntimeException {
+		allocateDenseBlock(true,true);
+		DenseBlock a = getDenseBlock();
+		if(a.getDim(0) != rlen || a.getDim(1) != clen)
+			a.resetNoFill(rlen, clen); // reset the dimensions of a if incorrect.
+		HashMap<Integer, double[]> mapping = new HashMap<>();
+		for( int i=0; i<rlen; i++ ) {
+			Integer pos = in.readInt();
+			double[] row = mapping.get(pos);
+			if( row == null){
+				row = new double[clen];
+				mapping.put(pos, row);
+			}
+			a.set(i, row);
+		}
+		for (int i = 0; i < mapping.size(); i++) {
+			double[] row = mapping.get(i);
+			if (row == null) {
+				throw new DMLRuntimeException("serialized object is corrupt, did not find unique row number [" + i +"] in mappings");
+			}
+			for (int j = 0; j < clen; j++) {
+				row[j] = in.readDouble();
+			}
+		}
+		nonZeros = a.countNonZeros();
 	}
 
 	private void readDenseBlock(DataInput in) throws IOException, DMLRuntimeException {
@@ -2165,7 +2259,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 	}
 	
 	@Override
-	public void write(DataOutput out) 
+	public void write(DataOutput out)
 		throws IOException 
 	{
 		//determine format
@@ -2197,12 +2291,55 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 				writeDenseToUltraSparse(out);
 			else if( sparseDst )
 				writeDenseToSparse(out);
+			else if( denseBlock instanceof DenseBlockFP64DEDUP )
+				writeDedupDenseblock(out);
 			else
 				writeDenseBlock(out);
 		}
 	}
 
-	private static void writeEmptyBlock(DataOutput out) 
+	private void writeDedupDenseblock(DataOutput out)
+			throws IOException
+	{
+		out.writeByte( BlockType.DEDUP_BLOCK.ordinal() );
+
+		DenseBlockFP64DEDUP a = (DenseBlockFP64DEDUP) getDenseBlock();
+		if (rlen > a.numBlocks())
+			throw new DMLRuntimeException("Serialize DedupDenseblock: block does not contain enough rows ["+a.numBlocks() +" < " + rlen + "]");
+
+		HashMap<double[], Integer> mapping = new HashMap<>((int) (a.getNrDistinctRows()*1.1));
+		ArrayList<double[]> unique_rows = new ArrayList<>((int) (a.getNrDistinctRows()*1.1));
+
+		for(int i=0; i<rlen; i++) {
+			double[] avals = a.values(i); //equals 1 row
+			Integer pos = mapping.get(avals);
+			if (pos == null) {
+				pos = mapping.size();
+				unique_rows.add(avals);
+				mapping.put(avals, pos);
+			}
+			out.writeInt(pos);
+		}
+		if( mapping.size() != unique_rows.size() )
+			throw new DMLRuntimeException("Serialize DedupDenseblock: Map Size != Row Size");
+
+		if( out instanceof MatrixBlockDataOutput) { //fast serialize
+			MatrixBlockDataOutput mout = (MatrixBlockDataOutput)out;
+			for (double[] row : unique_rows) {
+				mout.writeDoubleArray(clen, row);
+			}
+		}
+		else { //general case (if fast serialize not supported)
+
+			for (double[] row : unique_rows) {
+				for (int i = 0; i < clen; i++) {
+					out.writeDouble(row[i]);
+				}
+			}
+		}
+	}
+
+	private static void writeEmptyBlock(DataOutput out)
 		throws IOException
 	{
 		//empty blocks do not need to materialize row information
@@ -2565,6 +2702,10 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 	}
 	
 	public long estimateSizeInMemory() {
+		if (denseBlock instanceof DenseBlockFP64DEDUP) {
+			double size = getHeaderSize() + ((DenseBlockFP64DEDUP) denseBlock).estimateMemory();
+			return (long) Math.min(size, Long.MAX_VALUE);
+		}
 		return estimateSizeInMemory(rlen, clen, getSparsity());
 	}
 
@@ -2760,6 +2901,11 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 		//in-memory size given by header if not allocated
 		if( !isAllocated() ) 
 			return getHeaderSize();
+		//dedup dense block uses less in-memory than other dense blocks
+		if (denseBlock instanceof DenseBlockFP64DEDUP) {
+			double size = getHeaderSize() + ((DenseBlockFP64DEDUP) denseBlock).estimateMemory();
+			return (long) Math.min(size, Long.MAX_VALUE);
+		}
 		//in-memory size of dense/sparse representation
 		return !sparse ? estimateSizeDenseInMemory(rlen, clen) :
 			estimateSizeSparseInMemory(rlen, clen, getSparsity(),
@@ -4982,15 +5128,11 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 			throw new DMLRuntimeException("Invalid aggregateBinaryOperatio: one of either input should be this");
 	}
 
-	public MatrixBlock aggregateTernaryOperations(MatrixBlock m1, MatrixBlock m2, MatrixBlock m3, MatrixBlock ret,
+	public static MatrixBlock aggregateTernaryOperations(MatrixBlock m1, MatrixBlock m2, MatrixBlock m3, MatrixBlock ret,
 			AggregateTernaryOperator op, boolean inCP) {
-		if(m1 instanceof CompressedMatrixBlock)
-			m1 = ((CompressedMatrixBlock) m1).getUncompressed("Aggregate Ternary Operator arg1 " + op.getClass().getSimpleName(), op.getNumThreads());
-		if(m2 instanceof CompressedMatrixBlock)
-			m2 = ((CompressedMatrixBlock) m2).getUncompressed("Aggregate Ternary Operator arg2 " + op.getClass().getSimpleName(), op.getNumThreads());
-		if(m3 instanceof CompressedMatrixBlock)
-			m3 = ((CompressedMatrixBlock) m3).getUncompressed("Aggregate Ternary Operator arg3 " + op.getClass().getSimpleName(), op.getNumThreads());
-
+		if(m1 instanceof CompressedMatrixBlock || m2 instanceof CompressedMatrixBlock || m3 instanceof CompressedMatrixBlock)
+			return CLALibAggTernaryOp.agg(m1, m2, m3, ret, op, inCP);
+		
 		//create output matrix block w/ corrections
 		int rl = (op.indexFn instanceof ReduceRow) ? 2 : 1;
 		int cl = (op.indexFn instanceof ReduceRow) ? m1.clen : 2;
@@ -5138,7 +5280,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 			ret.reset(rlen, clen, replacement);
 			return ret;
 		}
-		
+
 		boolean NaNpattern = Double.isNaN(pattern);
 		if( sparse ) //SPARSE
 		{
@@ -5626,15 +5768,15 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 	
 	/**
 	 * Function to generate the random matrix with specified dimensions (block sizes are not specified).
-	 *  
-	 * @param rows number of rows
-	 * @param cols number of columns
+	 * 
+	 * @param rows     number of rows
+	 * @param cols     number of columns
 	 * @param sparsity sparsity as a percentage
-	 * @param min minimum value
-	 * @param max maximum value
-	 * @param pdf pdf
-	 * @param seed random seed
-	 * @param k ?
+	 * @param min      minimum value
+	 * @param max      maximum value
+	 * @param pdf      pdf
+	 * @param seed     random seed
+	 * @param k        The number of threads in the operation
 	 * @return matrix block
 	 */
 	public static MatrixBlock randOperations(int rows, int cols, double sparsity, double min, double max, String pdf, long seed, int k) {
@@ -5663,7 +5805,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 	 * 
 	 * @param rgen random matrix generator
 	 * @param seed seed value
-	 * @param k ?
+	 * @param k The number of threads to use in the operation
 	 * @return matrix block
 	 */
 	public static MatrixBlock randOperations(RandomMatrixGenerator rgen, long seed, int k) {

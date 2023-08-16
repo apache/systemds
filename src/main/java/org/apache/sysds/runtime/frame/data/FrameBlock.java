@@ -49,7 +49,6 @@ import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.codegen.CodegenUtils;
 import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
-import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysds.runtime.controlprogram.parfor.util.IDSequence;
 import org.apache.sysds.runtime.frame.data.columns.Array;
 import org.apache.sysds.runtime.frame.data.columns.ArrayFactory;
@@ -702,11 +701,9 @@ public class FrameBlock implements CacheBlock<FrameBlock>, Externalizable {
 		Array[] tmpData = new Array[ncol];
 		for(int j = 0; j < ncol; j++)
 			tmpData[j] = ArrayFactory.create(cols[j]);
-		_colnames = empty ? null : (String[]) ArrayUtils.addAll(getColumnNames(), createColNames(getNumColumns(), ncol)); // before
-																																								// schema
-																																								// modification
-		_schema = empty ? tmpSchema : (ValueType[]) ArrayUtils.addAll(_schema, tmpSchema);
-		_coldata = empty ? tmpData : (Array[]) ArrayUtils.addAll(_coldata, tmpData);
+		_colnames = empty ? null : ArrayUtils.addAll(getColumnNames(), createColNames(getNumColumns(), ncol)); // before schema modification
+		_schema = empty ? tmpSchema : ArrayUtils.addAll(_schema, tmpSchema);
+		_coldata = empty ? tmpData : ArrayUtils.addAll(_coldata, tmpData);
 		_nRow = cols[0].length;
 		_msize = -1;
 	}
@@ -860,26 +857,25 @@ public class FrameBlock implements CacheBlock<FrameBlock>, Externalizable {
 				size += ArrayFactory.getInMemorySize(_schema[j], rlen, true);
 		else {// allocated
 			if(rlen > 1000 && clen > 10 && ConfigurationManager.isParallelIOEnabled()) {
-				final ExecutorService pool = CommonThreadPool.get(InfrastructureAnalyzer.getLocalParallelism());
+				final ExecutorService pool = CommonThreadPool.get();
 				try {
 					size += pool.submit(() -> {
 						return Arrays.stream(_coldata).parallel() // parallel columns
 							.map(x -> x.getInMemorySize()).reduce(0L, Long::sum);
 					}).get();
-					pool.shutdown();
-
 				}
 				catch(InterruptedException | ExecutionException e) {
-					pool.shutdown();
 					LOG.error(e);
 					for(Array<?> aa : _coldata)
 						size += aa.getInMemorySize();
+				}
+				finally{
+					pool.shutdown();
 				}
 			}
 			else {
 				for(Array<?> aa : _coldata)
 					size += aa.getInMemorySize();
-
 			}
 		}
 		return size;

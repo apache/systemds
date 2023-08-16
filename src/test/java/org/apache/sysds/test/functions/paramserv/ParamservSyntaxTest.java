@@ -93,9 +93,11 @@ public class ParamservSyntaxTest extends AutomatedTestBase {
 
 	private void runDMLTest(String testname, boolean exceptionExpected, Class<?> exceptionClass, String errmsg) {
 		TestConfiguration config = getTestConfiguration(testname);
+		setOutputBuffering(true);
 		loadTestConfiguration(config);
 		programArgs = new String[] { "-explain" };
 		fullDMLScriptName = HOME + testname + ".dml";
 		runTest(true, exceptionExpected, exceptionClass, errmsg, -1);
+		setOutputBuffering(false);
 	}
 }

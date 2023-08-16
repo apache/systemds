@@ -326,6 +326,7 @@ public class DMLScript
 			//reset runtime platform and visualize flag
 			setGlobalExecMode(oldrtplatform);
 			EXPLAIN = oldexplain;
+			CommonThreadPool.shutdownAsyncPools();
 		}
 		
 		return true;
@@ -572,9 +573,6 @@ public class DMLScript
 		//0) cleanup federated workers if necessary
 		FederatedData.clearFederatedWorkers();
 		
-		//0) shutdown prefetch/broadcast thread pool if necessary
-		CommonThreadPool.shutdownAsyncRDDPool();
-
 		//1) cleanup scratch space (everything for current uuid)
 		//(required otherwise export to hdfs would skip assumed unnecessary writes if same name)
 		HDFSTool.deleteFileIfExistOnHDFS( config.getTextValue(DMLConfig.SCRATCH_SPACE) + dirSuffix );

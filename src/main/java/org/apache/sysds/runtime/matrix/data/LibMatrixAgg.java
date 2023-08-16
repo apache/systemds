@@ -22,11 +22,14 @@ package org.apache.sysds.runtime.matrix.data;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.common.Types.CorrectionLocationType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.codegen.SpoofOperator.SideInput;
@@ -34,6 +37,7 @@ import org.apache.sysds.runtime.codegen.SpoofOperator.SideInputSparseCell;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject.UpdateType;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysds.runtime.data.DenseBlock;
+import org.apache.sysds.runtime.data.DenseBlockFP64DEDUP;
 import org.apache.sysds.runtime.data.DenseBlockFactory;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.data.SparseBlockCSR;
@@ -87,7 +91,7 @@ import org.apache.sysds.runtime.util.UtilFunctions;
  * TODO next opcode extensions: a+, colindexmax
  */
 public class LibMatrixAgg {
-	// private static final Log LOG = LogFactory.getLog(LibMatrixAgg.class.getName());
+	protected static final Log LOG = LogFactory.getLog(LibMatrixAgg.class.getName());
 
 	//internal configuration parameters
 	private static final boolean NAN_AWARENESS = false;
@@ -512,8 +516,11 @@ public class LibMatrixAgg {
 
 	public static MatrixBlock aggregateTernary(MatrixBlock in1, MatrixBlock in2, MatrixBlock in3, MatrixBlock ret, AggregateTernaryOperator op, int k) {
 		//fall back to sequential version if necessary
-		if( k <= 1 || in1.nonZeros+in2.nonZeros < PAR_NUMCELL_THRESHOLD1 || in1.rlen <= k/2 
-			|| (!(op.indexFn instanceof ReduceCol) &&  ret.clen*8*k > PAR_INTERMEDIATE_SIZE_THRESHOLD) ) {
+		if( k <= 1 
+			|| in1.nonZeros+in2.nonZeros < PAR_NUMCELL_THRESHOLD1 
+			|| in1.rlen <= k/2 
+			// || (!(op.indexFn instanceof ReduceCol) &&  ret.clen*8*k > PAR_INTERMEDIATE_SIZE_THRESHOLD)
+			 ) {
 			return aggregateTernary(in1, in2, in3, ret, op);
 		}
 		
@@ -636,7 +643,7 @@ public class LibMatrixAgg {
 			&& in.nonZeros > (sharedTP ? PAR_NUMCELL_THRESHOLD2 : PAR_NUMCELL_THRESHOLD1);
 	}
 	
-	public static boolean satisfiesMultiThreadingConstraints(MatrixBlock in,int k) {
+	public static boolean satisfiesMultiThreadingConstraints(MatrixBlock in, int k) {
 		boolean sharedTP = (InfrastructureAnalyzer.getLocalParallelism() == k);
 		return k > 1 && in.rlen > (sharedTP ? k/8 : k/2)
 			&& in.nonZeros > (sharedTP ? PAR_NUMCELL_THRESHOLD2 : PAR_NUMCELL_THRESHOLD1);
@@ -1823,12 +1830,16 @@ public class LibMatrixAgg {
 	 * @param ru row upper index
 	 */
 	private static void d_uakp( DenseBlock a, DenseBlock c, int n, KahanObject kbuff, KahanPlus kplus, int rl, int ru ) {
-		final int bil = a.index(rl);
-		final int biu = a.index(ru-1);
-		for(int bi=bil; bi<=biu; bi++) {
-			int lpos = (bi==bil) ? a.pos(rl) : 0;
-			int len = (bi==biu) ? a.pos(ru-1)-lpos+n : a.blockSize(bi)*n;
-			sum(a.valuesAt(bi), lpos, len, kbuff, kplus);
+		if(a instanceof DenseBlockFP64DEDUP)
+			uakpDedup(a, c, n, kbuff, kplus, rl, ru);
+		else {
+			final int bil = a.index(rl);
+			final int biu = a.index(ru - 1);
+			for (int bi = bil; bi <= biu; bi++) {
+				int lpos = (bi == bil) ? a.pos(rl) : 0;
+				int len = (bi == biu) ? a.pos(ru - 1) - lpos + n : a.blockSize(bi) * n;
+				sum(a.valuesAt(bi), lpos, len, kbuff, kplus);
+			}
 		}
 		c.set(kbuff);
 	}
@@ -1846,10 +1857,14 @@ public class LibMatrixAgg {
 	 */
 	private static void d_uarkp( DenseBlock a, DenseBlock c, int n, KahanObject kbuff, KahanPlus kplus, int rl, int ru ) 
 	{
-		for( int i=rl; i<ru; i++ ) {
-			kbuff.set(0, 0); //reset buffer
-			sum( a.values(i), a.pos(i), n, kbuff, kplus );
-			c.set(i, kbuff);
+		if(a instanceof DenseBlockFP64DEDUP)
+			uarkpDedup(a, c, n, kbuff, kplus, rl, ru);
+		else {
+			for (int i = rl; i < ru; i++) {
+				kbuff.set(0, 0); //reset buffer
+				sum(a.values(i), a.pos(i), n, kbuff, kplus);
+				c.set(i, kbuff);
+			}
 		}
 	}
 	
@@ -1865,8 +1880,12 @@ public class LibMatrixAgg {
 	 * @param ru row upper index
 	 */
 	private static void d_uackp( DenseBlock a, DenseBlock c, int n, KahanObject kbuff, KahanPlus kplus, int rl, int ru ) {
-		for( int i=rl; i<ru; i++ )
-			sumAgg( a.values(i), c, a.pos(i), n, kbuff, kplus );
+		if(a instanceof DenseBlockFP64DEDUP)
+			uackpDedup(a, c, n, kbuff, kplus, rl, ru);
+		else {
+			for( int i=rl; i<ru; i++ )
+				sumAgg( a.values(i), c, a.pos(i), n, kbuff, kplus );
+		}
 	}
 
 	/**
@@ -3457,7 +3476,77 @@ public class LibMatrixAgg {
 			c[ ci+aix[ i+7 ] ] --;
 		}
 	}
-	
+
+
+	//////////////////////////////////////////////////////
+	// Duplicated dense block related utility functions //
+	/////////////////////////////////////////////////////
+
+
+	private static void uakpDedup (DenseBlock a, DenseBlock c, int n, KahanObject kbuff, KahanPlus kplus, int rl, int ru) {
+		HashMap<double[], Integer> counts = new HashMap<>();
+		for(int i = rl; i < ru; i++) {
+			double[] row = a.values(i);
+			Integer count = counts.getOrDefault(row, 0);
+			count += 1;
+			counts.put(row, count);
+		}
+		counts.forEach((row, count) -> {
+			for(double r : row) {
+				kplus.execute3(kbuff, r, count);
+			}
+		});
+	}
+
+	private static void uarkpDedup( DenseBlock a, DenseBlock c, int n, KahanObject kbuff, KahanPlus kplus, int rl, int ru ) {
+		HashMap<double[], double[]> cache = new HashMap<>();
+		for(int i = rl; i < ru; i++) {
+			double[] row = a.values(i);
+			int finalI = i;
+			double[] kbuff_array = cache.computeIfAbsent(row, lambda_row -> {
+				kbuff.set(0, 0);
+				sum(lambda_row, a.pos(finalI), n, kbuff, kplus);
+				return new double[] {kbuff._sum, kbuff._correction};
+			});
+			cache.putIfAbsent(row, kbuff_array);
+			c.set(i, 0, kbuff_array[0]);
+			c.set(i, 1, kbuff_array[1]);
+		}
+	}
+
+	private static void uackpDedup( DenseBlock a, DenseBlock c, int n, KahanObject kbuff, KahanPlus kplus, int rl, int ru ) {
+		HashMap<double[], Integer> counts = new HashMap<>();
+		for(int i = rl; i < ru; i++) {
+			double[] row = a.values(i);
+			Integer count = counts.getOrDefault(row, 0);
+			count += 1;
+			counts.put(row, count);
+		}
+		double[] sum = new double[n];
+		double[] corr = new double[n];
+		counts.forEach((row, count) -> {
+			for(int i = 0; i < row.length; i++) {
+				kbuff._sum = sum[i];
+				kbuff._correction = corr[i];
+				kplus.execute3(kbuff, row[i], count);
+				sum[i] = kbuff._sum;
+				corr[i] = kbuff._correction;
+			}
+		});
+		double[] out_sum = c.values(0);
+		double[] out_corr = c.values(1);
+		int pos0 = c.pos(0), pos1 = c.pos(1);
+		for(int i = 0; i < n; i++) {
+			double tmp_sum = out_sum[pos0 + i] + sum[i];
+			if(Math.abs(out_sum[pos0 + i]) > Math.abs(sum[i]))
+				out_corr[pos1 + i] = ((out_sum[pos0 + i] - tmp_sum) + sum[i]) + out_corr[pos1 + i] + corr[i];
+			else
+				out_corr[pos1 + i] = ((sum[i] - tmp_sum) + out_sum[pos0 + i]) + out_corr[pos1 + i] + corr[i];
+			out_sum[pos0 + i] = tmp_sum + out_corr[pos1 + i];
+		}
+	}
+
+
 	/////////////////////////////////////////////////////////
 	// Task Implementations for Multi-Threaded Operations  //
 	/////////////////////////////////////////////////////////

@@ -30,6 +30,7 @@ import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyze
 import org.apache.sysds.runtime.lineage.Lineage;
 import org.apache.sysds.runtime.lineage.LineageCacheConfig;
 import org.apache.sysds.runtime.lineage.LineageCacheStatistics;
+import org.apache.sysds.runtime.lineage.LineageCacheConfig.ReuseCacheType;
 import org.apache.sysds.runtime.matrix.data.MatrixValue;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
@@ -42,7 +43,7 @@ public class LineageReuseSparkTest extends AutomatedTestBase {
 
 	protected static final String TEST_DIR = "functions/async/";
 	protected static final String TEST_NAME = "LineageReuseSpark";
-	protected static final int TEST_VARIANTS = 6;
+	protected static final int TEST_VARIANTS = 7;
 	protected static String TEST_CLASS_DIR = TEST_DIR + LineageReuseSparkTest.class.getSimpleName() + "/";
 
 	@Override
@@ -54,44 +55,48 @@ public class LineageReuseSparkTest extends AutomatedTestBase {
 
 	@Test
 	public void testlmdsHB() {
-		runTest(TEST_NAME+"1", ExecMode.HYBRID, 1);
+		runTest(TEST_NAME+"1", ExecMode.HYBRID, ReuseCacheType.REUSE_FULL, 1);
 	}
 
 	@Test
 	public void testlmdsSP() {
 		// Only reuse the actions
-		runTest(TEST_NAME+"1", ExecMode.SPARK, 1);
+		runTest(TEST_NAME+"1", ExecMode.SPARK, ReuseCacheType.REUSE_MULTILEVEL, 1);
 	}
 
 	@Test
 	public void testlmdsRDD() {
 		// Cache all RDDs and persist shuffle-based Spark operations (eg. rmm, cpmm)
-		runTest(TEST_NAME+"2", ExecMode.HYBRID, 2);
+		runTest(TEST_NAME+"2", ExecMode.HYBRID, ReuseCacheType.REUSE_FULL, 2);
 	}
 
 	@Test
 	public void testL2svm() {
-		runTest(TEST_NAME+"3", ExecMode.HYBRID, 3);
+		runTest(TEST_NAME+"3", ExecMode.HYBRID, ReuseCacheType.REUSE_FULL, 3);
 	}
 
 	@Test
 	public void testlmdsMultiLevel() {
 		// Cache RDD and matrix block function returns and reuse
-		runTest(TEST_NAME+"4", ExecMode.HYBRID, 4);
+		runTest(TEST_NAME+"4", ExecMode.HYBRID, ReuseCacheType.REUSE_MULTILEVEL, 4);
 	}
 
 	@Test
 	public void testEnsemble() {
-		runTest(TEST_NAME+"5", ExecMode.HYBRID, 5);
+		runTest(TEST_NAME+"5", ExecMode.HYBRID, ReuseCacheType.REUSE_MULTILEVEL, 5);
 	}
 
 	//FIXME: Collecting a persisted RDD still needs the broadcast vars. Debug.
 	/*@Test
 	public void testHyperband() {
-		runTest(TEST_NAME+"6", ExecMode.HYBRID, 6);
+		runTest(TEST_NAME+"6", ExecMode.HYBRID, ReuseCacheType.REUSE_FULL, 6);
+	}*/
+	/*@Test
+	public void testBroadcastBug() {
+		runTest(TEST_NAME+"7", ExecMode.HYBRID, ReuseCacheType.REUSE_FULL, 7);
 	}*/
 
-	public void runTest(String testname, ExecMode execMode, int testId) {
+	public void runTest(String testname, ExecMode execMode, LineageCacheConfig.ReuseCacheType reuse, int testId) {
 		boolean old_simplification = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
 		boolean old_sum_product = OptimizerUtils.ALLOW_SUM_PRODUCT_REWRITES;
 		boolean old_trans_exec_type = OptimizerUtils.ALLOW_TRANSITIVE_SPARK_EXEC_TYPE;
@@ -126,7 +131,7 @@ public class LineageReuseSparkTest extends AutomatedTestBase {
 			//proArgs.add("recompile_runtime");
 			proArgs.add("-stats");
 			proArgs.add("-lineage");
-			proArgs.add(LineageCacheConfig.ReuseCacheType.REUSE_MULTILEVEL.name().toLowerCase());
+			proArgs.add(reuse.name().toLowerCase());
 			proArgs.add("-args");
 			proArgs.add(output("R"));
 			programArgs = proArgs.toArray(new String[proArgs.size()]);

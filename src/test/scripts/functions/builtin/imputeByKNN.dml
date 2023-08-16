@@ -21,7 +21,8 @@
 
 # Prepare the data
 X = read($1, data_type="frame", format="csv", header=TRUE, naStrings= ["20"]);
-X = as.matrix(cbind(X[,4],X[,5]))
+X = cbind(as.matrix(X[,4:5]), as.matrix(X[,7]))
+
 remove_col = is.nan(X)
 
 data = removeEmpty(target = X, margin = "rows", select = (remove_col[,1] != 1))
@@ -35,9 +36,14 @@ result2 = imputeByKNN(X = data, method = $3)
 value = removeEmpty(target = result, margin = "rows", select = mask[,2] == 1)
 value2 = removeEmpty(target = result2, margin = "rows", select = mask[,2] == 1)
 
+I = (mask[,2] == 1);
+value = removeEmpty(target = result, margin = "rows", select = I)
+value2 = removeEmpty(target = result2, margin = "rows", select = I)
+
 #Get the sum of the imputed value
 value = colSums(value[,2])
 value2 = colSums(value2[,2])
 
 write(value, $4)
-write(value2,$5)
+write(value2, $5)
+

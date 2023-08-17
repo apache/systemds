@@ -159,6 +159,7 @@ public enum Builtins {
 	IMG_BRIGHTNESS("img_brightness", true),
 	IMG_BRIGHTNESS_LINEARIZED("img_brightness_linearized", true),
 	IMG_CROP("img_crop", true),
+	IMG_CROP_LINEARIZED("img_crop_linearized", true),
 	IMG_TRANSFORM("img_transform", true),
 	IMG_TRANSFORM_LINEARIZED("img_transform_linearized", true),
 	IMG_TRANSLATE("img_translate", true),

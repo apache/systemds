@@ -19,6 +19,7 @@
 package org.apache.sysds.test.functions.nativ;
 
 import org.apache.sysds.utils.NativeHelper;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import static org.junit.Assert.assertArrayEquals;
@@ -26,8 +27,10 @@ import static org.junit.Assert.assertArrayEquals;
 public class ImgUtilsTest {
 
     static {
-        System.loadLibrary("systemds_mkl-Darwin-x86_64");
+        //System.loadLibrary("systemds_mkl-Darwin-x86_64");
+        System.loadLibrary("systemds_openblas-Darwin-x86_64");
     }
+
     @Test
     public void testImageRotation90() {
         // Input image dimensions
@@ -146,7 +149,6 @@ public class ImgUtilsTest {
         assertArrayEquals(expected_img_out, img_out, 0.0001);
     }
 
-
     @Test
     public void testCutoutImage() {
         // Example input 2D matrix
@@ -161,8 +163,8 @@ public class ImgUtilsTest {
         int cols = 4;
         int x = 2;
         int y = 2;
-        int width = 2;
-        int height = 2;
+        int width = 3;
+        int height = 3;
         double fill_value = 0.0;
 
         // Perform image cutout using JNI
@@ -171,15 +173,14 @@ public class ImgUtilsTest {
         // Expected output image after cutout
         double[] expectedOutput = {
                 1.0, 2.0, 3.0, 4.0,
-                5.0, 0.0, 0.0, 8.0,
-                9.0, 0.0, 0.0, 12.0,
-                13.0, 14.0, 15.0, 16.0
+                5.0, 0.0, 0.0, 0.0,
+                9.0, 0.0, 0.0, 0.0,
+                13.0, 0.0, 0.0, 0.0
         };
 
         // Check if the output image matches the expected output
         assertArrayEquals(expectedOutput, img_out,0.0001);
     }
-
     @Test
     public void testImageCutoutInvalidCutout() {
         double[] img_in = {
@@ -275,5 +276,139 @@ public class ImgUtilsTest {
         double[] expectedOutput = img_in; // Expect no change since the crop is invalid
 
         double[] img_out = NativeHelper.cropImage(img_in, orig_w, orig_h, w, h, x_offset, y_offset);
-        assertArrayEquals(expectedOutput, img_out,0.0001);     }
+        assertArrayEquals(expectedOutput, img_out,0.0001);
+    }
+
+    @Test
+    public void testImgTranslate() {
+        int in_w = 5;
+        int in_h = 5;
+        int out_w = 7;
+        int out_h = 7;
+        double fill_value = 0.0;
+
+        double[] img_in = new double[in_w * in_h];
+        for (int i = 0; i < in_w * in_h; ++i) {
+            img_in[i] = i + 1; // Filling input image with sequential values
+        }
+
+        double[] img_out = new double[out_w * out_h];
+
+        double offset_x = 1.5;
+        double offset_y = 1.5;
+
+        NativeHelper.imgTranslate(img_in, offset_x, offset_y, in_w, in_h, out_w, out_h, fill_value, img_out);
+
+        // Expected output based on the given offsets and fill value
+        double[] expectedOutput = {
+                0,0,0,0,0,0,0,
+                0,0,0,0,0,0,0,
+                0,0,1,2,3,4,5,
+                0,0,6,7,8,9,10,
+                0,0,11,12,13,14,15,
+                0,0,16,17,18,19,20,
+                0,0,21,22,23,24,25
+        };
+
+        assertArrayEquals(expectedOutput, img_out, 1e-9); // Compare arrays with a small epsilon
+    }
+
+    @Test
+    public void testImgTranslateNegativeOffsets() {
+        int in_w = 5;
+        int in_h = 5;
+        int out_w = 6;
+        int out_h = 6;
+        double fill_value = 0.0;
+
+        double[] img_in = new double[in_w * in_h];
+        for (int i = 0; i < in_w * in_h; ++i) {
+            img_in[i] = i + 1; // Filling input image with sequential values
+        }
+
+        double[] img_out = new double[out_w * out_h];
+
+        double offset_x = -0.5; // Negative offset in X direction
+        double offset_y = -0.5; // Negative offset in Y direction
+
+        NativeHelper.imgTranslate(img_in, offset_x, offset_y, in_w, in_h, out_w, out_h, fill_value, img_out);
+
+        // Expected output based on the given offsets and fill value
+        double[] expectedOutput = {
+                1,2,3,4,5,0,
+                6,7,8,9,10,0,
+                11,12,13,14,15,0,
+                16,17,18,19,20,0,
+                21,22,23,24,25,0,
+                0,0,0,0,0,0,
+        };
+
+        assertArrayEquals(expectedOutput, img_out, 1e-9); // Compare arrays with a small epsilon
+    }
+
+    @Test
+    public void testImgTranslatePositiveAndNegativeOffsets() {
+        int in_w = 5;
+        int in_h = 5;
+        int out_w = 6;
+        int out_h = 6;
+        double fill_value = 0.0;
+
+        double[] img_in = new double[in_w * in_h];
+        for (int i = 0; i < in_w * in_h; ++i) {
+            img_in[i] = i + 1; // Filling input image with sequential values
+        }
+
+        double[] img_out = new double[out_w * out_h];
+
+        double offset_x = -0.5; // Negative offset in X direction
+        double offset_y = 0.5; // Negative offset in Y direction
+
+        NativeHelper.imgTranslate(img_in, offset_x, offset_y, in_w, in_h, out_w, out_h, fill_value, img_out);
+
+        // Expected output based on the given offsets and fill value
+        double[] expectedOutput = {
+                0,0,0,0,0,0,
+                1,2,3,4,5,0,
+                6,7,8,9,10,0,
+                11,12,13,14,15,0,
+                16,17,18,19,20,0,
+                21,22,23,24,25,0,
+        };
+
+        assertArrayEquals(expectedOutput, img_out, 1e-9); // Compare arrays with a small epsilon
+    }
+
+    @Test
+    public void testImgTranslatePositiveAndNegativeOffsets2() {
+        int in_w = 5;
+        int in_h = 5;
+        int out_w = 6;
+        int out_h = 6;
+        double fill_value = 0.0;
+
+        double[] img_in = new double[in_w * in_h];
+        for (int i = 0; i < in_w * in_h; ++i) {
+            img_in[i] = i + 1; // Filling input image with sequential values
+        }
+
+        double[] img_out = new double[out_w * out_h];
+
+        double offset_x = 0.5; // Negative offset in X direction
+        double offset_y = -0.5; // Negative offset in Y direction
+
+        NativeHelper.imgTranslate(img_in, offset_x, offset_y, in_w, in_h, out_w, out_h, fill_value, img_out);
+
+        // Expected output based on the given offsets and fill value
+        double[] expectedOutput = {
+                0,1,2,3,4,5,
+                0,6,7,8,9,10,
+                0,11,12,13,14,15,
+                0,16,17,18,19,20,
+                0,21,22,23,24,25,
+                0,0,0,0,0,0,
+        };
+
+        assertArrayEquals(expectedOutput, img_out, 1e-9); // Compare arrays with a small epsilon
+    }
 }

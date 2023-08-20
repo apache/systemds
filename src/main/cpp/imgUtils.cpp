@@ -74,8 +74,6 @@ void img_transform(const double* img_in, int orig_w, int orig_h, int out_w, int 
             transformed_coords[2 * i + 1] = std::floor(T_inv[3] * x + T_inv[4] * y + T_inv[5]) + 1;
         }
 
-
-
         // Fill output image
         for (int i = 0; i < out_h; i++) {
             for (int j = 0; j < out_w; j++) {
@@ -118,11 +116,11 @@ void imageRotate(double* img_in, int rows, int cols, double radians, double fill
     double* rot = rot_data;
 
     // Combined transformation matrix
-   // int matrix_size = std::max(3, 3);
-    double m_data[3 * 3];
-    cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, 3, 3, 3, 1.0, t2, 3, rot, 3, 0.0, m_data, 3);
-    cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, 3, 3, 3, 1.0, m_data, 3, t1, 3, 0.0, m_data, 3);
-    double* m = m_data;
+    double m_data1[3*3];
+    cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, 3, 3, 3, 1.0, t2, 3, rot, 3, 0.0, m_data1, 3);
+    double m_data2[3*3];
+    cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, 3, 3, 3, 1.0, m_data1, 3, t1, 3, 0.0, m_data2, 3);
+    double* m = m_data2;
     // Transform image
     img_transform(img_in,rows,cols,rows,cols,m[0], m[1], m[2], m[3], m[4], m[5], fill_value, img_out);
 }
@@ -194,5 +192,48 @@ double* imageCrop(double* img_in, int orig_w, int orig_h, int w, int h, int x_of
     delete[] temp_mask;
 
     return img_out;
+}
+
+void img_translate(double* img_in, double offset_x, double offset_y,
+                   int in_w, int in_h, int out_w, int out_h, double fill_value, double* img_out) {
+    int w = out_w;
+    int h = out_h;
+    offset_x = round(offset_x);
+    offset_y = round(offset_y);
+
+    int start_x = 0 - static_cast<int>(offset_x);
+    int start_y = 0 - static_cast<int>(offset_y);
+    int end_x = std::max(w, out_w) - static_cast<int>(offset_x);
+    int end_y = std::max(h, out_h) - static_cast<int>(offset_y);
+
+    if (start_x < 0)
+        start_x = 0;
+    if (start_y < 0)
+        start_y = 0;
+
+    if (w < end_x)
+        end_x = w;
+    if (h < end_y)
+        end_y = h;
+
+    if (out_w < end_x + static_cast<int>(offset_x))
+        end_x = out_w - static_cast<int>(offset_x);
+    if (out_h < end_y + static_cast<int>(offset_y))
+        end_y = out_h - static_cast<int>(offset_y);
+
+    for (int y = 0; y < out_h; ++y) {
+        for (int x = 0; x < out_w; ++x) {
+            img_out[y * out_w + x] = fill_value;
+        }
+    }
+
+   if (start_x < end_x && start_y < end_y) {
+           for (int y = start_y + static_cast<int>(offset_y); y < end_y + static_cast<int>(offset_y); ++y) {
+                int x_in = (start_x > 0) ? start_x + static_cast<int>(offset_x): start_x;
+                int y_in = (start_y > 0 ) ? y : y - static_cast<int>(offset_y);
+               cblas_dcopy(end_x - start_x, &img_in[(x_in) + (y_in) * in_w],
+                           1, &img_out[y * out_w + start_x + static_cast<int>(offset_x)], 1);
+           }
+       }
 }
 

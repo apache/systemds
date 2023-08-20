@@ -32,4 +32,7 @@ double* imageCutout(double* img_in, int rows, int cols, int x, int y, int width,
 
 double* imageCrop(double* img_in, int orig_w, int orig_h, int w, int h, int x_offset, int y_offset);
 
+void img_translate(double* img_in, double offset_x, double offset_y,
+                   int in_w, int in_h, int out_w, int out_h, double fill_value, double* img_out);
+
 #endif /* IMAGE_UTILS_H */

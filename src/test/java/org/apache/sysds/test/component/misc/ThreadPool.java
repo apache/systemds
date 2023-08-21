@@ -295,8 +295,8 @@ public class ThreadPool {
 	}
 
 	@Test
-	public void mock1() throws NoSuchFieldException, SecurityException, IllegalArgumentException, IllegalAccessException,
-		InterruptedException, ExecutionException, TimeoutException {
+	public void mock1() throws NoSuchFieldException, SecurityException, IllegalArgumentException,
+		IllegalAccessException, InterruptedException, ExecutionException, TimeoutException {
 
 		ExecutorService p = mock(ExecutorService.class);
 		ExecutorService c = new CommonThreadPool(p);
@@ -347,8 +347,8 @@ public class ThreadPool {
 	}
 
 	@Test
-	public void mock2() throws NoSuchFieldException, SecurityException, IllegalArgumentException, IllegalAccessException,
-		InterruptedException, ExecutionException, TimeoutException {
+	public void mock2() throws NoSuchFieldException, SecurityException, IllegalArgumentException,
+		IllegalAccessException, InterruptedException, ExecutionException, TimeoutException {
 
 		CommonThreadPool p = mock(CommonThreadPool.class);
 		when(p.isShutdown()).thenCallRealMethod();
@@ -390,8 +390,11 @@ public class ThreadPool {
 		ExecutorService c = new CommonThreadPool(p);
 		Collection<Callable<Integer>> cc = (Collection<Callable<Integer>>) null;
 		List<Future<Integer>> f = new ArrayList<Future<Integer>>();
-		f.add(mock(Future.class));
+		f.add(mock(FI.class));
 		when(p.invokeAll(cc)).thenReturn(f);
 		CommonThreadPool.invokeAndShutdown(c, null);
+	}
+
+	private interface FI extends Future<Integer> {
 	}
 }

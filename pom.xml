@@ -309,6 +309,7 @@
 				<artifactId>maven-compiler-plugin</artifactId>
 				<version>${maven-compiler-plugin.version}</version>
 				<configuration>
+			        <compilerArgument>-Xlint:unchecked</compilerArgument>
 					<source>${java.level}</source>
 					<target>${java.level}</target>
 					<release>${java.level}</release>

@@ -29,12 +29,11 @@ import org.apache.sysds.runtime.frame.data.columns.ArrayFactory.FrameArrayType;
 import org.apache.sysds.runtime.matrix.data.Pair;
 
 /**
- * A Ragged array for the columns contains a smaller array, only containing the values of the top most part of the
- * column.
+ * A Ragged array for a single column contains a smaller array, only containing the values of the top most part of the
  * 
- * This makes the allocation much better in cases where only the top n rows of a m row frame is used for the specific
+ * This makes the allocation much better in cases where only the top n rows of a m row frame are used for the specific
  * column. It is typically used for instances of transform encode, where the transform encode return a metadata frame to
- * enable encoding and decoding the matrix
+ * enable encoding and decoding the matrix.
  */
 public class RaggedArray<T> extends Array<T> {
 
@@ -49,97 +48,203 @@ public class RaggedArray<T> extends Array<T> {
 	 */
 	public RaggedArray(T[] a, int m) {
 		super(m);
-		throw new NotImplementedException();
+		this._a = ArrayFactory.create(a);
+	}
+
+	/**
+	 * The allocation where, a's length is shorter than m, and we handle all accesses above len(a) as null.
+	 * 
+	 * @param a The underlying array that is shorter than length m
+	 * @param m The overall supported length m
+	 */
+	public RaggedArray(Array<T> a, int m) {
+		super(m);
+		this._a = a;
+	}
+
+	protected Array<T> getInnerArray() {
+		return _a;
 	}
 
 	@Override
 	public void write(DataOutput out) throws IOException {
-		throw new NotImplementedException("Unimplemented method 'write'");
+		out.writeByte(FrameArrayType.RAGGED.ordinal());
+		out.writeInt(_size);
+		out.writeInt(_a.size());
+		_a.write(out);
 	}
 
 	@Override
+	@SuppressWarnings("unchecked")
 	public void readFields(DataInput in) throws IOException {
-		throw new NotImplementedException("Unimplemented method 'readFields'");
+		_size = in.readInt();
+		_a = (Array<T>) ArrayFactory.read(in, in.readInt());
+	}
+
+	protected static RaggedArray<?> readRagged(DataInput in, int nRow) throws IOException {
+
+		int m = in.readInt();
+		final Array<?> a = ArrayFactory.read(in, in.readInt());
+		return new RaggedArray<>(a, m);
+
 	}
 
 	@Override
 	public T get(int index) {
-		throw new NotImplementedException("Unimplemented method 'get'");
+		if(index > _size || index < 0)
+			throw new ArrayIndexOutOfBoundsException("Index " + index + " out of bounds " + _size);
+		return index < _a._size ? _a.get(index) : null;
 	}
 
 	@Override
 	public Object get() {
-		throw new NotImplementedException("Unimplemented method 'get'");
+		throw new NotImplementedException("Should not be called");
 	}
 
 	@Override
 	public double getAsDouble(int i) {
-		throw new NotImplementedException("Unimplemented method 'getAsDouble'");
+		return i < _a._size ? _a.getAsDouble(i) : 0;
+	}
+
+	@Override
+	public double getAsNaNDouble(int i) {
+		return i < _a._size ? _a.getAsNaNDouble(i) : Double.NaN;
 	}
 
 	@Override
 	public void set(int index, T value) {
-		throw new NotImplementedException("Unimplemented method 'set'");
+		if(index < _a._size)
+			_a.set(index, value);
+		else if(index < super.size()) {
+			_a.reset(index + 1);
+			_a.set(index, value);
+			LOG.warn("Reallocated ragged array");
+		}
 	}
 
 	@Override
 	public void set(int index, double value) {
-		throw new NotImplementedException("Unimplemented method 'set'");
+		if(index < _a._size)
+			_a.set(index, value);
+		else if(index < super.size()) {
+			_a.reset(index + 1);
+			_a.set(index, value);
+			LOG.warn("Reallocated ragged array");
+		}
 	}
 
 	@Override
 	public void set(int index, String value) {
-		throw new NotImplementedException("Unimplemented method 'set'");
+		if(index < _a._size)
+			_a.set(index, value);
+		else if(index < super.size()) {
+			_a.reset(index + 1);
+			_a.set(index, value);
+			LOG.warn("Reallocated ragged array");
+		}
 	}
 
 	@Override
 	public void setFromOtherType(int rl, int ru, Array<?> value) {
-		throw new NotImplementedException("Unimplemented method 'setFromOtherType'");
+		if(rl >= 0 && rl < _a._size && ru < _a._size)
+			_a.setFromOtherType(rl, ru, value);
+		else
+			throw new NotImplementedException("Unimplemented method 'setFromOtherType'");
 	}
 
 	@Override
 	public void set(int rl, int ru, Array<T> value) {
-		throw new NotImplementedException("Unimplemented method 'set'");
+		if(rl >= 0 && rl < _a._size && ru < _a._size)
+			if(value instanceof RaggedArray)
+				_a.set(rl, ru, ((RaggedArray<T>) value).getInnerArray());
+			else if(_a.getClass() == value.getClass())
+				_a.set(rl, ru, value);
+			else
+				throw new RuntimeException(
+					"RaggedArray set: value type should be same to RaggedArray type " + _a.getClass());
+		else if(rl >= 0 && rl < super.size() && ru < super.size()) {
+			_a.reset(rl + 1);
+			_a.set(rl, ru, value);
+			LOG.warn("Reallocated ragged array");
+		}
 	}
 
 	@Override
 	public void set(int rl, int ru, Array<T> value, int rlSrc) {
-		throw new NotImplementedException("Unimplemented method 'set'");
+		if(rl >= 0 && rl < _a._size && ru < _a._size)
+			if(value instanceof RaggedArray)
+				_a.set(rl, ru, ((RaggedArray<T>) value).getInnerArray(), rlSrc);
+			else if(_a.getClass() == value.getClass())
+				_a.set(rl, ru, value, rlSrc);
+			else
+				throw new RuntimeException(
+					"RaggedArray set: value type should be same to RaggedArray type " + _a.getClass());
 	}
 
 	@Override
 	public void setNz(int rl, int ru, Array<T> value) {
-		throw new NotImplementedException("Unimplemented method 'setNz'");
+		if(rl >= 0 && rl < _a._size && ru < _a._size)
+			_a.setNz(rl, ru, value);
+		else
+			throw new NotImplementedException();
 	}
 
 	@Override
 	public void setFromOtherTypeNz(int rl, int ru, Array<?> value) {
-		throw new NotImplementedException("Unimplemented method 'setFromOtherTypeNz'");
+		if(rl >= 0 && rl < _a._size && ru < _a._size)
+			_a.setFromOtherTypeNz(rl, ru, value);
+		else
+			throw new NotImplementedException();
 	}
 
 	@Override
 	public void append(String value) {
-		throw new NotImplementedException("Unimplemented method 'append'");
+		Array<T> oldVals = _a.clone();
+		_a.reset(super.size() + 1);
+		_a.set(0, oldVals.size() - 1, oldVals);
+		_a.set(super.size(), value);
+		super._size += 1;
+
+		LOG.warn("Fully allocated ragged array");
 	}
 
 	@Override
 	public void append(T value) {
-		throw new NotImplementedException("Unimplemented method 'append'");
+		Array<T> oldVals = _a.clone();
+		_a.reset(super.size() + 1);
+		_a.set(0, oldVals.size() - 1, oldVals);
+		_a.set(super.size(), value);
+		super._size += 1;
+
+		LOG.warn("Fully allocated ragged array");
 	}
 
 	@Override
 	public Array<T> append(Array<T> other) {
-		throw new NotImplementedException("Unimplemented method 'append'");
+		Array<T> oldVals = _a.clone();
+		_a.reset(super.size() + other._size + 1);
+		_a.set(0, oldVals.size() - 1, oldVals);
+		_a.set(super.size(), super.size() + other.size() - 1, other);
+		super._size += other.size();
+
+		LOG.warn("Fully allocated ragged array");
+
+		return this;
 	}
 
 	@Override
 	public Array<T> slice(int rl, int ru) {
-		throw new NotImplementedException("Unimplemented method 'slice'");
+		if(rl >= 0 && rl < _a._size && ru < _a._size)
+			return _a.slice(rl, ru);
+		else if(rl >= 0 && ru >= _a._size)
+			return _a.slice(rl, _a._size - 1);
+		return null;
 	}
 
 	@Override
 	public void reset(int size) {
-		throw new NotImplementedException("Unimplemented method 'reset'");
+		_a.reset(size);
+		super._size = size;
 	}
 
 	@Override
@@ -149,112 +254,157 @@ public class RaggedArray<T> extends Array<T> {
 
 	@Override
 	public ValueType getValueType() {
-		throw new NotImplementedException("Unimplemented method 'getValueType'");
+		return _a.getValueType();
 	}
 
 	@Override
 	public Pair<ValueType, Boolean> analyzeValueType() {
-		throw new NotImplementedException("Unimplemented method 'analyzeValueType'");
+		return _a.analyzeValueType();
 	}
 
 	@Override
 	public FrameArrayType getFrameArrayType() {
-		throw new NotImplementedException("Unimplemented method 'getFrameArrayType'");
+		return FrameArrayType.RAGGED;
 	}
 
 	@Override
 	public long getExactSerializedSize() {
-		throw new NotImplementedException("Unimplemented method 'getExactSerializedSize'");
+		return _a.getExactSerializedSize() + 8 + 1;
 	}
 
 	@Override
 	protected Array<Boolean> changeTypeBitSet() {
-		throw new NotImplementedException("Unimplemented method 'changeTypeBitSet'");
+		return _a.changeTypeBitSet();
 	}
 
 	@Override
 	protected Array<Boolean> changeTypeBoolean() {
-		throw new NotImplementedException("Unimplemented method 'changeTypeBoolean'");
+		return _a.changeTypeBoolean();
 	}
 
 	@Override
 	protected Array<Double> changeTypeDouble() {
-		throw new NotImplementedException("Unimplemented method 'changeTypeDouble'");
+		return _a.changeTypeDouble();
 	}
 
 	@Override
 	protected Array<Float> changeTypeFloat() {
-		throw new NotImplementedException("Unimplemented method 'changeTypeFloat'");
+		return _a.changeTypeFloat();
 	}
 
 	@Override
 	protected Array<Integer> changeTypeInteger() {
-		throw new NotImplementedException("Unimplemented method 'changeTypeInteger'");
+		return _a.changeTypeInteger();
 	}
 
 	@Override
 	protected Array<Long> changeTypeLong() {
-		throw new NotImplementedException("Unimplemented method 'changeTypeLong'");
+		return _a.changeTypeLong();
 	}
 
 	@Override
 	protected Array<String> changeTypeString() {
-		throw new NotImplementedException("Unimplemented method 'changeTypeString'");
+		return _a.changeTypeString();
 	}
 
 	@Override
 	protected Array<Character> changeTypeCharacter() {
-		throw new NotImplementedException("Unimplemented method 'changeTypeCharacter'");
+		return _a.changeTypeCharacter();
 	}
 
 	@Override
 	public void fill(String val) {
-		throw new NotImplementedException("Unimplemented method 'fill'");
+		_a.reset(super.size());
+		_a.fill(val);
 	}
 
 	@Override
 	public void fill(T val) {
-		throw new NotImplementedException("Unimplemented method 'fill'");
+		_a.reset(super.size());
+		_a.fill(val);
 	}
 
 	@Override
 	public boolean isShallowSerialize() {
-		throw new NotImplementedException("Unimplemented method 'isShallowSerialize'");
+		return _a.isShallowSerialize();
 	}
 
 	@Override
 	public boolean isEmpty() {
-		throw new NotImplementedException("Unimplemented method 'isEmpty'");
+		return _a.isEmpty();
 	}
 
 	@Override
+	@SuppressWarnings("unchecked")
 	public Array<T> select(int[] indices) {
-		throw new NotImplementedException("Unimplemented method 'select'");
+		Array<T> ret = _a.getFrameArrayType() == FrameArrayType.OPTIONAL ? //
+			(Array<T>) ArrayFactory.allocateOptional(_a.getValueType(), indices.length) : //
+			(Array<T>) ArrayFactory.allocate(_a.getValueType(), indices.length);
+		for(int i = 0; i < indices.length; i++)
+			ret.set(i, get(indices[i]));
+		return ret;
 	}
 
 	@Override
+	@SuppressWarnings("unchecked")
 	public Array<T> select(boolean[] select, int nTrue) {
-		throw new NotImplementedException("Unimplemented method 'select'");
+		Array<T> ret = _a.getFrameArrayType() == FrameArrayType.OPTIONAL ? //
+			(Array<T>) ArrayFactory.allocateOptional(_a.getValueType(), nTrue) : //
+			(Array<T>) ArrayFactory.allocate(_a.getValueType(), nTrue);
+		int k = 0;
+		for(int i = 0; i < _a.size(); i++) {
+			if(select[i])
+				ret.set(k++, _a.get(i));
+		}
+
+		for(int i = _a.size(); i < select.length; i++) {
+			if(select[i])
+				ret.set(k++, get(i));
+		}
+
+		return ret;
 	}
 
 	@Override
 	public boolean isNotEmpty(int i) {
-		throw new NotImplementedException("Unimplemented method 'isNotEmpty'");
+		return i < _a.size() && _a.isNotEmpty(i);
 	}
 
 	@Override
 	public Array<T> clone() {
-		throw new NotImplementedException("Unimplemented method 'clone'");
+		return new RaggedArray<>(_a.clone(), super._size);
 	}
 
 	@Override
 	public double hashDouble(int idx) {
-		throw new NotImplementedException("Unimplemented method 'hashDouble'");
+		return idx < _a.size() ? _a.hashDouble(idx) : Double.NaN;
 	}
 
 	@Override
 	public boolean equals(Array<T> other) {
 		throw new NotImplementedException("Unimplemented method 'equals'");
+	}
+
+	@Override
+	public long getInMemorySize() {
+		return baseMemoryCost() + _a.getInMemorySize() + 8;
+	}
+
+	@Override
+	public boolean containsNull() {
+		return (_a.size() < super._size) || _a.containsNull();
+	}
+
+	@Override
+	public String toString() {
+		StringBuilder sb = new StringBuilder(_size + 2);
+		sb.append(super.toString()).append("<");
+		sb.append(_a.getClass().getSimpleName()).append(">:[");
+		for(int i = 0; i < _size - 1; i++)
+			sb.append(get(i)).append(",");
+		sb.append(get(_size - 1));
+		sb.append("]");
+		return sb.toString();
 	}
 
 }

@@ -185,7 +185,7 @@ public class CharArray extends Array<Character> {
 
 	@Override
 	public long getExactSerializedSize() {
-		return 1 + 2 * _data.length;
+		return 1L + 2L * _data.length;
 	}
 
 	@Override

@@ -861,7 +861,7 @@ public class FrameBlock implements CacheBlock<FrameBlock>, Externalizable {
 				try {
 					size += pool.submit(() -> {
 						return Arrays.stream(_coldata).parallel() // parallel columns
-							.map(x -> x.getInMemorySize()).reduce(0L, Long::sum);
+							.map(x ->x.getInMemorySize()).reduce(0L, (a,x) -> a + x);
 					}).get();
 				}
 				catch(InterruptedException | ExecutionException e) {

@@ -302,8 +302,9 @@ public class StringArray extends Array<String> {
 			firstNN = _data[i++];
 		}
 
-		// detect type of transform.
-		if(i == size()) // if all null return empty boolean.
+		if(firstNN == null)
+			// this check is similar to saying i == size();
+			// this means all values were null. therefore we have an easy time retuning an empty boolean array.
 			return ArrayFactory.allocateBoolean(size());
 		else if(firstNN.toLowerCase().equals("true") || firstNN.toLowerCase().equals("false"))
 			return changeTypeBooleanStandard();

@@ -147,8 +147,8 @@ public abstract class Array<T> implements Writable {
 	/**
 	 * Get the value at a given index.
 	 * 
-	 * This method returns objects that have a high overhead in allocation. Therefore it is not as efficient as using the
-	 * vectorized operations specified in the object.
+	 * This method returns objects that have a high overhead in allocation. Therefore it is not as efficient as using
+	 * the vectorized operations specified in the object.
 	 * 
 	 * @param index The index to query
 	 * @return The value returned as an object
@@ -168,8 +168,24 @@ public abstract class Array<T> implements Writable {
 	 */
 	public abstract Object get();
 
+	/**
+	 * Get the index's value.
+	 * 
+	 * returns 0 in case of Null.
+	 * 
+	 * @param i index to get value from
+	 * @return the value
+	 */
 	public abstract double getAsDouble(int i);
 
+	/**
+	 * Get the index's value.
+	 * 
+	 * returns Double.NaN in case of Null.
+	 * 
+	 * @param i index to get value from
+	 * @return the value
+	 */
 	public double getAsNaNDouble(int i) {
 		return getAsDouble(i);
 	}
@@ -644,7 +660,7 @@ public abstract class Array<T> implements Writable {
 
 		if(ddcSize < memSize)
 			return new ArrayCompressionStatistics(memSizePerElement, //
-				estDistinct, true, getValueType(),FrameArrayType.DDC, memSize, ddcSize);
+				estDistinct, true, getValueType(), FrameArrayType.DDC, memSize, ddcSize);
 
 		return null;
 	}

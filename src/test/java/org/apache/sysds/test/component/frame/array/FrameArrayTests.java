@@ -52,6 +52,7 @@ import org.apache.sysds.runtime.frame.data.columns.FloatArray;
 import org.apache.sysds.runtime.frame.data.columns.IntegerArray;
 import org.apache.sysds.runtime.frame.data.columns.LongArray;
 import org.apache.sysds.runtime.frame.data.columns.OptionalArray;
+import org.apache.sysds.runtime.frame.data.columns.RaggedArray;
 import org.apache.sysds.runtime.frame.data.columns.StringArray;
 import org.apache.sysds.runtime.frame.data.lib.FrameLibRemoveEmpty;
 import org.apache.sysds.runtime.matrix.data.Pair;
@@ -100,13 +101,17 @@ public class FrameArrayTests {
 			tests.add(new Object[] {ArrayFactory.create(new String[] {"1", "0", "1"}), FrameArrayType.STRING});
 			tests.add(new Object[] {ArrayFactory.create(new String[] {"1", "0", "null"}), FrameArrayType.STRING});
 			tests.add(new Object[] {ArrayFactory.create(new String[] {"0", "0", "null"}), FrameArrayType.STRING});
-			tests.add(new Object[] {ArrayFactory.create(new String[] {"true", "false", "false"}), FrameArrayType.STRING});
-			tests.add(new Object[] {ArrayFactory.create(new String[] {"True", "False", "False"}), FrameArrayType.STRING});
-			tests.add(new Object[] {ArrayFactory.create(new String[] {"False", "False", "False"}), FrameArrayType.STRING});
+			tests.add(
+				new Object[] {ArrayFactory.create(new String[] {"true", "false", "false"}), FrameArrayType.STRING});
+			tests.add(
+				new Object[] {ArrayFactory.create(new String[] {"True", "False", "False"}), FrameArrayType.STRING});
+			tests.add(
+				new Object[] {ArrayFactory.create(new String[] {"False", "False", "False"}), FrameArrayType.STRING});
 			tests.add(new Object[] {ArrayFactory.create(new String[] {"T", "F", "F"}), FrameArrayType.STRING});
 			tests.add(new Object[] {ArrayFactory.create(new String[] {"t", "f", "f"}), FrameArrayType.STRING});
 			tests.add(new Object[] {ArrayFactory.create(new String[] {"f", "t", "t"}), FrameArrayType.STRING});
-			tests.add(new Object[] {ArrayFactory.create(new String[] {"true", "false", "BLAA"}), FrameArrayType.STRING});
+			tests
+				.add(new Object[] {ArrayFactory.create(new String[] {"true", "false", "BLAA"}), FrameArrayType.STRING});
 			tests.add(new Object[] {ArrayFactory.create(new float[] {0.0f, 1.0f, 1.0f, 0.0f}), FrameArrayType.FP32});
 			tests.add(new Object[] {ArrayFactory.create(new double[] {0.0, 1.0, 1.0, 0.0}), FrameArrayType.FP64});
 			tests.add(new Object[] {ArrayFactory.create(new long[] {0, 1, 1, 0, 0, 1}), FrameArrayType.INT64});
@@ -114,9 +119,12 @@ public class FrameArrayTests {
 			tests.add(new Object[] {ArrayFactory.create(generateRandom01String(100, 324)), FrameArrayType.STRING});
 			tests.add(new Object[] {ArrayFactory.create(generateRandom01String(80, 22)), FrameArrayType.STRING});
 			tests.add(new Object[] {ArrayFactory.create(generateRandom01String(32, 221)), FrameArrayType.STRING});
-			tests.add(new Object[] {ArrayFactory.create(generateRandomTrueFalseString(32, 221)), FrameArrayType.STRING});
-			tests.add(new Object[] {ArrayFactory.create(generateRandomTrueFalseString(80, 221)), FrameArrayType.STRING});
-			tests.add(new Object[] {ArrayFactory.create(generateRandomTrueFalseString(150, 221)), FrameArrayType.STRING});
+			tests
+				.add(new Object[] {ArrayFactory.create(generateRandomTrueFalseString(32, 221)), FrameArrayType.STRING});
+			tests
+				.add(new Object[] {ArrayFactory.create(generateRandomTrueFalseString(80, 221)), FrameArrayType.STRING});
+			tests.add(
+				new Object[] {ArrayFactory.create(generateRandomTrueFalseString(150, 221)), FrameArrayType.STRING});
 			tests.add(new Object[] {ArrayFactory.create(generateRandomTFString(150, 221)), FrameArrayType.STRING});
 			tests.add(new Object[] {ArrayFactory.create(generateRandomTFString(22, 2)), FrameArrayType.STRING});
 			tests.add(new Object[] {ArrayFactory.create(generateRandomTFString(142, 4)), FrameArrayType.STRING});
@@ -129,8 +137,10 @@ public class FrameArrayTests {
 			tests.add(new Object[] {ArrayFactory.create(generateRandomNullFloatString(67, 21)), FrameArrayType.STRING});
 			tests.add(new Object[] {ArrayFactory.create(new String[30]), FrameArrayType.STRING}); // all null
 			tests.add(new Object[] {ArrayFactory.create(new char[] {0, 0, 0, 0, 1, 1, 1}), FrameArrayType.CHARACTER});
-			tests.add(new Object[] {ArrayFactory.create(new char[] {'t', 't', 'f', 'f', 'T'}), FrameArrayType.CHARACTER});
-			tests.add(new Object[] {ArrayFactory.create(new char[] {'0', '2', '3', '4', '9'}), FrameArrayType.CHARACTER});
+			tests.add(
+				new Object[] {ArrayFactory.create(new char[] {'t', 't', 'f', 'f', 'T'}), FrameArrayType.CHARACTER});
+			tests.add(
+				new Object[] {ArrayFactory.create(new char[] {'0', '2', '3', '4', '9'}), FrameArrayType.CHARACTER});
 			tests.add(new Object[] {ArrayFactory.create(generateRandom01chars(150, 221)), FrameArrayType.CHARACTER});
 			tests.add(new Object[] {ArrayFactory.create(generateRandom01chars(67, 221)), FrameArrayType.CHARACTER});
 			tests.add(new Object[] {DDCArray.compressToDDC(ArrayFactory.create(generateRandom01chars(67, 221))),
@@ -138,7 +148,8 @@ public class FrameArrayTests {
 			tests.add(new Object[] {DDCArray.compressToDDC(ArrayFactory.create(generateRandom01chars(30, 221))),
 				FrameArrayType.CHARACTER});
 			// Long to int
-			tests.add(new Object[] {ArrayFactory.create(new long[] {3214, 424, 13, 22, 111, 134}), FrameArrayType.INT64});
+			tests.add(
+				new Object[] {ArrayFactory.create(new long[] {3214, 424, 13, 22, 111, 134}), FrameArrayType.INT64});
 
 			tests.add(new Object[] {ArrayFactory.create(new double[] {//
 				Double.NaN, 424, 13, Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY, 134}), FrameArrayType.FP64});
@@ -228,10 +239,10 @@ public class FrameArrayTests {
 			case BOOLEAN:
 				if(a instanceof BooleanArray) // just in case we overwrite the BitSet to boolean Array type.
 					estSize = BooleanArray.estimateInMemorySize(a.size());
-				 break;
+				break;
 			default: // nothing
 		}
-		if(a.getFrameArrayType() == FrameArrayType.DDC)
+		if(a.getFrameArrayType() == FrameArrayType.DDC || a.getFrameArrayType() == FrameArrayType.RAGGED)
 			return;
 		if(memSize > estSize)
 			fail("Estimated size is not smaller than actual:" + memSize + "  " + estSize + "\n" + a.getValueType() + " "
@@ -304,6 +315,8 @@ public class FrameArrayTests {
 			return;
 		if(t == FrameArrayType.DDC)// can be many things.
 			return;
+		if(t == FrameArrayType.OPTIONAL && a.getFrameArrayType() == FrameArrayType.RAGGED)
+			return;
 		if(a.getFrameArrayType() == FrameArrayType.DDC)
 			return; // can happen where DDC is wrapping Optional.
 
@@ -354,6 +367,7 @@ public class FrameArrayTests {
 				case CHARACTER:
 					x = a.get();
 					break;
+				case RAGGED:
 				case OPTIONAL:
 					try {
 						a.get();
@@ -715,7 +729,7 @@ public class FrameArrayTests {
 			// just test that it serialize as byte array with no crashes
 			a.getAsByteArray();
 		}
-		catch(DMLCompressionException e) {
+		catch(DMLCompressionException | NotImplementedException e) {
 			return; // valid
 		}
 	}
@@ -823,7 +837,7 @@ public class FrameArrayTests {
 		try {
 
 			aa.append((String) null);
-			if(a.getFrameArrayType() == FrameArrayType.OPTIONAL)
+			if(a.getFrameArrayType() == FrameArrayType.OPTIONAL || a.getFrameArrayType() == FrameArrayType.RAGGED)
 				assertEquals(aa.get(aa.size() - 1), null);
 			else {
 				switch(a.getValueType()) {
@@ -870,7 +884,7 @@ public class FrameArrayTests {
 
 			for(int i = 0; i < 60; i++)
 				aa.append((String) null);
-			if(a.getFrameArrayType() == FrameArrayType.OPTIONAL)
+			if(a.getFrameArrayType() == FrameArrayType.OPTIONAL || a.getFrameArrayType() == FrameArrayType.RAGGED)
 				assertEquals(aa.get(aa.size() - 1), null);
 			else {
 				switch(a.getValueType()) {
@@ -1044,7 +1058,9 @@ public class FrameArrayTests {
 
 			Array<?> aa = a.clone();
 			aa.reset(10);
-			if(aa.getValueType() == ValueType.STRING || aa.getFrameArrayType() == FrameArrayType.OPTIONAL) {
+			if(aa.getValueType() == ValueType.STRING //
+				|| aa.getFrameArrayType() == FrameArrayType.OPTIONAL //
+				|| aa.getFrameArrayType() == FrameArrayType.RAGGED) {
 				for(int i = 0; i < 10; i++) {
 					assertEquals(null, aa.get(i));
 				}
@@ -1268,7 +1284,7 @@ public class FrameArrayTests {
 	@SuppressWarnings("unchecked")
 	public void testAppendValue() {
 		Array<?> aa = a.clone();
-		boolean isOptional = aa instanceof OptionalArray;
+		boolean isOptional = aa instanceof OptionalArray || aa instanceof RaggedArray;
 		try {
 
 			switch(a.getValueType()) {
@@ -1389,7 +1405,7 @@ public class FrameArrayTests {
 	@Test
 	public void fillNull() {
 		Array<?> aa = a.clone();
-		boolean isOptional = aa instanceof OptionalArray;
+		boolean isOptional = aa instanceof OptionalArray || aa instanceof RaggedArray;
 		try {
 
 			aa.fill((String) null);
@@ -1551,7 +1567,7 @@ public class FrameArrayTests {
 		try {
 
 			Array<?> aa = a.clone();
-			boolean isOptional = aa instanceof OptionalArray;
+			boolean isOptional = aa instanceof OptionalArray || aa instanceof RaggedArray;
 			switch(a.getValueType()) {
 				case BOOLEAN:
 					((Array<Boolean>) aa).fill((Boolean) null);
@@ -1759,7 +1775,8 @@ public class FrameArrayTests {
 				return DDCArray
 					.compressToDDC(ArrayFactory.create(generateRandomIntegerNUniqueLengthOpt(size, seed, nUnique)));
 			case INT64:
-				return DDCArray.compressToDDC(ArrayFactory.create(generateRandomLongNUniqueLengthOpt(size, seed, nUnique)));
+				return DDCArray
+					.compressToDDC(ArrayFactory.create(generateRandomLongNUniqueLengthOpt(size, seed, nUnique)));
 			case FP32:
 				return DDCArray
 					.compressToDDC(ArrayFactory.create(generateRandomFloatNUniqueLengthOpt(size, seed, nUnique)));
@@ -1773,47 +1790,64 @@ public class FrameArrayTests {
 				Random r = new Random(seed);
 				switch(r.nextInt(7)) {
 					case 0:
-						return DDCArray
-							.compressToDDC(ArrayFactory.create(generateRandomIntegerNUniqueLengthOpt(size, seed, nUnique)));
+						return DDCArray.compressToDDC(
+							ArrayFactory.create(generateRandomIntegerNUniqueLengthOpt(size, seed, nUnique)));
 					case 1:
-						return DDCArray
-							.compressToDDC(ArrayFactory.create(generateRandomLongNUniqueLengthOpt(size, seed, nUnique)));
+						return DDCArray.compressToDDC(
+							ArrayFactory.create(generateRandomLongNUniqueLengthOpt(size, seed, nUnique)));
 					case 2:
-						return DDCArray
-							.compressToDDC(ArrayFactory.create(generateRandomDoubleNUniqueLengthOpt(size, seed, nUnique)));
+						return DDCArray.compressToDDC(
+							ArrayFactory.create(generateRandomDoubleNUniqueLengthOpt(size, seed, nUnique)));
 					case 3:
-						return DDCArray
-							.compressToDDC(ArrayFactory.create(generateRandomFloatNUniqueLengthOpt(size, seed, nUnique)));
+						return DDCArray.compressToDDC(
+							ArrayFactory.create(generateRandomFloatNUniqueLengthOpt(size, seed, nUnique)));
 					case 4:
-						return DDCArray
-							.compressToDDC(ArrayFactory.create(generateRandomCharacterNUniqueLengthOpt(size, seed, nUnique)));
+						return DDCArray.compressToDDC(
+							ArrayFactory.create(generateRandomCharacterNUniqueLengthOpt(size, seed, nUnique)));
 					default:
 						return DDCArray.compressToDDC(ArrayFactory.create(generateRandomBooleanOpt(size, seed)));
+				}
+			case RAGGED:
+				Random rand = new Random(seed);
+				switch(rand.nextInt(7)) {
+					case 0:
+						return ArrayFactory.create(generateRandomIntegerOpt(size, seed), size);
+					case 1:
+						return ArrayFactory.create(generateRandomLongOpt(size, seed), size);
+					case 2:
+						return ArrayFactory.create(generateRandomDoubleOpt(size, seed), size);
+					case 3:
+						return ArrayFactory.create(generateRandomFloatOpt(size, seed), size);
+					case 4:
+						return ArrayFactory.create(generateRandomCharacterOpt(size, seed), size);
+					default:
+						return ArrayFactory.create(generateRandomBooleanOpt(size, seed), size);
 				}
 			case DDC:
 				Random r2 = new Random(seed);
 				switch(r2.nextInt(7)) {
 					case 0:
-						return DDCArray
-							.compressToDDC(ArrayFactory.create(generateRandomIntegerNUniqueLengthOpt(size, seed, nUnique)));
+						return DDCArray.compressToDDC(
+							ArrayFactory.create(generateRandomIntegerNUniqueLengthOpt(size, seed, nUnique)));
 					case 1:
-						return DDCArray
-							.compressToDDC(ArrayFactory.create(generateRandomLongNUniqueLengthOpt(size, seed, nUnique)));
+						return DDCArray.compressToDDC(
+							ArrayFactory.create(generateRandomLongNUniqueLengthOpt(size, seed, nUnique)));
 					case 2:
-						return DDCArray
-							.compressToDDC(ArrayFactory.create(generateRandomDoubleNUniqueLengthOpt(size, seed, nUnique)));
+						return DDCArray.compressToDDC(
+							ArrayFactory.create(generateRandomDoubleNUniqueLengthOpt(size, seed, nUnique)));
 					case 3:
-						return DDCArray
-							.compressToDDC(ArrayFactory.create(generateRandomFloatNUniqueLengthOpt(size, seed, nUnique)));
+						return DDCArray.compressToDDC(
+							ArrayFactory.create(generateRandomFloatNUniqueLengthOpt(size, seed, nUnique)));
 					case 4:
-						return DDCArray
-							.compressToDDC(ArrayFactory.create(generateRandomCharacterNUniqueLengthOpt(size, seed, nUnique)));
+						return DDCArray.compressToDDC(
+							ArrayFactory.create(generateRandomCharacterNUniqueLengthOpt(size, seed, nUnique)));
 					case 5:
-						return DDCArray
-							.compressToDDC(ArrayFactory.create(generateRandomStringNUniqueLengthOpt(size, seed, nUnique, 32)));
+						return DDCArray.compressToDDC(
+							ArrayFactory.create(generateRandomStringNUniqueLengthOpt(size, seed, nUnique, 32)));
 					default:
 						return DDCArray.compressToDDC(ArrayFactory.create(generateRandomBooleanOpt(size, seed)));
 				}
+
 			default:
 				throw new DMLRuntimeException("Unsupported value type: " + t);
 
@@ -1838,6 +1872,7 @@ public class FrameArrayTests {
 			case CHARACTER:
 				return ArrayFactory.create(generateRandomCharacterOpt(size, seed));
 			case OPTIONAL:
+			case RAGGED: // lets not test this case here.
 				Random r = new Random(seed);
 				switch(r.nextInt(7)) {
 					case 0:
@@ -1858,23 +1893,23 @@ public class FrameArrayTests {
 				int nUnique = Math.max(size / 100, 2);
 				switch(r2.nextInt(7)) {
 					case 0:
-						return DDCArray
-							.compressToDDC(ArrayFactory.create(generateRandomIntegerNUniqueLengthOpt(size, seed, nUnique)));
+						return DDCArray.compressToDDC(
+							ArrayFactory.create(generateRandomIntegerNUniqueLengthOpt(size, seed, nUnique)));
 					case 1:
-						return DDCArray
-							.compressToDDC(ArrayFactory.create(generateRandomLongNUniqueLengthOpt(size, seed, nUnique)));
+						return DDCArray.compressToDDC(
+							ArrayFactory.create(generateRandomLongNUniqueLengthOpt(size, seed, nUnique)));
 					case 2:
-						return DDCArray
-							.compressToDDC(ArrayFactory.create(generateRandomDoubleNUniqueLengthOpt(size, seed, nUnique)));
+						return DDCArray.compressToDDC(
+							ArrayFactory.create(generateRandomDoubleNUniqueLengthOpt(size, seed, nUnique)));
 					case 3:
-						return DDCArray
-							.compressToDDC(ArrayFactory.create(generateRandomFloatNUniqueLengthOpt(size, seed, nUnique)));
+						return DDCArray.compressToDDC(
+							ArrayFactory.create(generateRandomFloatNUniqueLengthOpt(size, seed, nUnique)));
 					case 4:
-						return DDCArray
-							.compressToDDC(ArrayFactory.create(generateRandomCharacterNUniqueLengthOpt(size, seed, nUnique)));
+						return DDCArray.compressToDDC(
+							ArrayFactory.create(generateRandomCharacterNUniqueLengthOpt(size, seed, nUnique)));
 					case 5:
-						return DDCArray
-							.compressToDDC(ArrayFactory.create(generateRandomStringNUniqueLengthOpt(size, seed, nUnique, 32)));
+						return DDCArray.compressToDDC(
+							ArrayFactory.create(generateRandomStringNUniqueLengthOpt(size, seed, nUnique, 32)));
 					default:
 						return DDCArray.compressToDDC(ArrayFactory.create(generateRandomBooleanOpt(size, seed)));
 				}
@@ -1902,6 +1937,24 @@ public class FrameArrayTests {
 				return ArrayFactory.create(generateRandomDouble(size, seed));
 			case CHARACTER:
 				return ArrayFactory.create(generateRandomChar(size, seed));
+			case RAGGED:
+				Random rand = new Random(seed);
+				switch(rand.nextInt(7)) {
+					case 0:
+						return ArrayFactory.create(generateRandomIntegerOpt(size, seed), size);
+					case 1:
+						return ArrayFactory.create(generateRandomLongOpt(size, seed), size);
+					case 2:
+						return ArrayFactory.create(generateRandomDoubleOpt(size, seed), size);
+					case 3:
+						return ArrayFactory.create(generateRandomFloatOpt(size, seed), size);
+					case 4:
+						return ArrayFactory.create(generateRandomCharacterOpt(size, seed), size);
+					case 5:
+						return ArrayFactory.create(generateRandomString(size, seed), size);
+					default:
+						return ArrayFactory.create(generateRandomBooleanOpt(size, seed), size);
+				}
 			case OPTIONAL:
 				Random r = new Random(seed);
 				switch(r.nextInt(7)) {
@@ -1923,23 +1976,23 @@ public class FrameArrayTests {
 				int nUnique = Math.max(size / 100, 2);
 				switch(r2.nextInt(7)) {
 					case 0:
-						return DDCArray
-							.compressToDDC(ArrayFactory.create(generateRandomIntegerNUniqueLengthOpt(size, seed, nUnique)));
+						return DDCArray.compressToDDC(
+							ArrayFactory.create(generateRandomIntegerNUniqueLengthOpt(size, seed, nUnique)));
 					case 1:
-						return DDCArray
-							.compressToDDC(ArrayFactory.create(generateRandomLongNUniqueLengthOpt(size, seed, nUnique)));
+						return DDCArray.compressToDDC(
+							ArrayFactory.create(generateRandomLongNUniqueLengthOpt(size, seed, nUnique)));
 					case 2:
-						return DDCArray
-							.compressToDDC(ArrayFactory.create(generateRandomDoubleNUniqueLengthOpt(size, seed, nUnique)));
+						return DDCArray.compressToDDC(
+							ArrayFactory.create(generateRandomDoubleNUniqueLengthOpt(size, seed, nUnique)));
 					case 3:
-						return DDCArray
-							.compressToDDC(ArrayFactory.create(generateRandomFloatNUniqueLengthOpt(size, seed, nUnique)));
+						return DDCArray.compressToDDC(
+							ArrayFactory.create(generateRandomFloatNUniqueLengthOpt(size, seed, nUnique)));
 					case 4:
-						return DDCArray
-							.compressToDDC(ArrayFactory.create(generateRandomCharacterNUniqueLengthOpt(size, seed, nUnique)));
+						return DDCArray.compressToDDC(
+							ArrayFactory.create(generateRandomCharacterNUniqueLengthOpt(size, seed, nUnique)));
 					case 5:
-						return DDCArray
-							.compressToDDC(ArrayFactory.create(generateRandomStringNUniqueLengthOpt(size, seed, nUnique, 32)));
+						return DDCArray.compressToDDC(
+							ArrayFactory.create(generateRandomStringNUniqueLengthOpt(size, seed, nUnique, 32)));
 					default:
 						return DDCArray.compressToDDC(ArrayFactory.create(generateRandomBooleanOpt(size, seed)));
 				}

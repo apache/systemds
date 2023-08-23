@@ -42,6 +42,7 @@
 #                              with M<<N and S<<N, but suboptimal imputation.
 # seed       Root seed value for random/sample calls for deterministic behavior
 #            -1 for true randomization
+# sparsity   Size of the sample for 'dist_sample' method
 # ------------------------------------------------------------------------------
 #
 # OUTPUT:
@@ -49,7 +50,7 @@
 # result     Imputed dataset
 # ------------------------------------------------------------------------------
 
-m_imputeByKNN = function(Matrix[Double] X, String method="dist", Int seed=-1)
+m_imputeByKNN = function(Matrix[Double] X, String method="dist", Int seed=-1,Int sparsity = 0.5)
   return(Matrix[Double] result)
 {
   #TODO fix seed handling (only root seed)
@@ -61,7 +62,9 @@ m_imputeByKNN = function(Matrix[Double] X, String method="dist", Int seed=-1)
   masked = is.nan(X)
 
   #Find the column containing multiple missing values
-  missing_col = rowIndexMax(colSums(is.nan(X)))
+  missing_col = colMaxs(masked)
+  missing_col_index = t(missing_col) * seq(1, ncol(X))
+  missing_col_index = removeEmpty(target = missing_col_index, margin = "rows", select = t(missing_col))
 
   #Impute NaN value with temporary mean value of the column
   filled_matrix = imputeByMean(X, matrix(0, cols = ncol(X), rows = 1))
@@ -76,30 +79,32 @@ m_imputeByKNN = function(Matrix[Double] X, String method="dist", Int seed=-1)
     #Get the minimum distance row-wise computation
     minimum_index = rowIndexMin(distance_matrix)
 
-    #Position of missing values in per row in which column
-    position = rowSums(is.nan(X))
-    position = position * minimum_index
+    #Loop through each column
+    parfor(i in 1:nrow(missing_col_index), check = 0){
+      #Position of missing values in per row in which column
+      position = masked[,as.scalar(missing_col_index[i,1])]
+      position = position * minimum_index
 
-    #Filter the 0 out
-    I = (rowSums(is.nan(X))!=0)
-    missing = removeEmpty(target=position, margin="rows", select=I)
+      #Filter the 0 out
+      I = masked[,as.scalar(missing_col_index[i,1])] != 0
+      missing = removeEmpty(target=position, margin="rows", select=I)
 
-    #Convert the value indices into 0/1 matrix to find location
-    indices = table(missing, seq(1,nrow(filled_matrix)),odim1=nrow(filled_matrix),odim2=nrow(missing))
+      #Convert the value indices into 0/1 matrix to find location
+      indices = table(missing, seq(1,nrow(filled_matrix)),odim1=nrow(filled_matrix),odim2=nrow(missing))
 
-    #Replace the index with value
-    imputedValue = t(indices) %*% filled_matrix[,as.scalar(missing_col)]
+      #Replace the index with value
+      imputedValue = t(indices) %*% filled_matrix[,as.scalar(missing_col_index[i,1])]
 
-    #Get the index location of the missing value
-    pos = rowSums(is.nan(X))
-    missing_indices = seq(1, nrow(pos)) * pos
+      #Get the index location of the missing value
+      missing_row_index = seq(1, nrow(position)) * masked[,as.scalar(missing_col_index[i,1])]
 
-    #Put the replacement value in the missing indices
-    I2 = removeEmpty(target=missing_indices, margin="rows")
-    R = table(I2,1,imputedValue,odim1 = nrow(X), odim2=1)
+      #Put the replacement value in the missing indices
+      I2 = removeEmpty(target=missing_row_index, margin="rows")
+      R = table(I2,1,imputedValue,odim1 = nrow(X), odim2=1)
 
-    #Replace the masked column with to be imputed Value
-    masked[,as.scalar(missing_col)] = masked[,as.scalar(missing_col)] * R
+      #Replace the masked column with to be imputed Value
+      masked[,as.scalar(missing_col_index[i,1])] = masked[,as.scalar(missing_col_index[i,1])] * R
+      }
   }
   else if(method == "dist_missing") {
     #assuming small missing values
@@ -116,22 +121,30 @@ m_imputeByKNN = function(Matrix[Double] X, String method="dist", Int seed=-1)
     D = sqrt(dotM2 + dotMissing - 2 * (M2 %*% t(missing)))
     minD = rowIndexMin(t(D))
 
-    #Convert the value indices into 0/1 matrix to find location
-    indices = table(minD, seq(1,nrow(M2)),odim1=nrow(M2),odim2=nrow(minD))
+    #Mask of only missing values
+    mask_subset = removeEmpty(target = masked, margin = "rows", select = I)
 
-    #Replace the value
-    imputedValue = t(indices) %*% M2[,as.scalar(missing_col)]
+    #Loop through each column
+    parfor(i in 1:nrow(missing_col_index), check=0){
+      #Convert the value indices into 0/1 matrix to find location
+      index = minD * mask_subset[,as.scalar(missing_col_index[i,1])]
+      index = removeEmpty(target = index, margin = "rows")
+      indices = table(index, seq(1, nrow(M2)),odim1=nrow(M2), odim2= nrow(minD))
 
-    #Get the index location of the missing value
-    pos = rowSums(is.nan(X))
-    missing_indices = seq(1, nrow(pos)) * pos
+      #Find the imputed value
+      imputedValue = t(indices) %*% M2[,as.scalar(missing_col_index[i,1])]
+      imputedValue = removeEmpty(target = imputedValue, margin = "rows")
 
-    #Put the replacement value in the missing indices
-    I2 = removeEmpty(target=missing_indices, margin="rows")
-    R = table(I2,1,imputedValue,odim1 = nrow(X), odim2=1)
+      #Get the index location of the missing value
+      missing_row_index = seq(1, nrow(X)) * masked[,as.scalar(missing_col_index[i,1])]
 
-    #Update the masked value
-    masked[,as.scalar(missing_col)] = masked[,as.scalar(missing_col)] * R
+      #Put the replacement value in the missing indices
+      I2 = removeEmpty(target=missing_row_index, margin="rows")
+      R = table(I2,1,imputedValue,odim1 = nrow(X), odim2=1)
+
+      #Update the masked value
+      masked[,as.scalar(missing_col_index[i,1])] = masked[,as.scalar(missing_col_index[i,1])] * R
+    }
   }
   else if(method == "dist_sample"){
     #assuming large missing values
@@ -143,7 +156,11 @@ m_imputeByKNN = function(Matrix[Double] X, String method="dist", Int seed=-1)
     M3 = removeEmpty(target=filled_matrix, margin = "rows", select = Y)
 
     #Create a random subset
-    random_matrix = ceiling(rand(rows = nrow(M3), cols = 1, min = 0, max = 1, sparsity = 0.5, seed = seed))
+    if(seed == -1){
+      random_matrix = ceiling(rand(rows = nrow(M3), cols = 1, min = 0, max = 1, sparsity = sparsity))
+    } else {
+      random_matrix = ceiling(rand(rows = nrow(M3), cols = 1, min = 0, max = 1, sparsity = sparsity, seed = seed))
+    }
 
     #ensure that random_matrix has at least 1 value
     if(as.scalar(colSums(random_matrix)) < 1)
@@ -158,22 +175,29 @@ m_imputeByKNN = function(Matrix[Double] X, String method="dist", Int seed=-1)
     D = sqrt(dotSubset + dotMissing - 2 * (subset %*% t(missing)))
     minD = rowIndexMin(t(D))
 
-    #Convert the value indices into 0/1 matrix to find location
-    indices = table(minD, seq(1,nrow(subset)),odim1=nrow(subset),odim2=nrow(minD))
+    #Mask of only missing values
+    mask_subset = removeEmpty(target = masked, margin = "rows", select = I)
 
-    #Replace the value
-    imputedValue = t(indices) %*% subset[,as.scalar(missing_col)]
+    parfor(i in 1:nrow(missing_col_index), check=0){
+      #Convert the value indices into 0/1 matrix to find location
+      index = minD * mask_subset[,as.scalar(missing_col_index[i,1])]
+      index = removeEmpty(target = index, margin = "rows")
+      indices = table(index, seq(1, nrow(subset)),odim1=nrow(subset), odim2= nrow(minD))
 
-    #Get the index location of the missing value
-    pos = rowSums(is.nan(X))
-    missing_indices = seq(1, nrow(pos)) * pos
+      #Find the imputed value
+      imputedValue = t(indices) %*% subset[,as.scalar(missing_col_index[i,1])]
+      imputedValue = removeEmpty(target = imputedValue, margin = "rows")
 
-    #Put the replacement value in the missing indices
-    I2 = removeEmpty(target=missing_indices, margin="rows")
-    R = table(I2,1,imputedValue,odim1 = nrow(X), odim2=1)
+      #Get the index location of the missing value
+      missing_row_index = seq(1, nrow(X)) * masked[,as.scalar(missing_col_index[i,1])]
 
-    #Update the masked value
-    masked[,as.scalar(missing_col)] = masked[,as.scalar(missing_col)] * R
+      #Put the replacement value in the missing indices
+      I2 = removeEmpty(target=missing_row_index, margin="rows")
+      R = table(I2,1,imputedValue,odim1 = nrow(X), odim2=1)
+
+      #Update the masked value
+      masked[,as.scalar(missing_col_index[i,1])] = masked[,as.scalar(missing_col_index[i,1])] * R
+    }
   }
   else {
     print("Method is unknown or not yet implemented")

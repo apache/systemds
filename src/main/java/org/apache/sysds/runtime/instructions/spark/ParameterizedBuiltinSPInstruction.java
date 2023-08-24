@@ -79,7 +79,6 @@ import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.transform.TfUtils.TfMethod;
 import org.apache.sysds.runtime.transform.decode.Decoder;
 import org.apache.sysds.runtime.transform.decode.DecoderFactory;
-import org.apache.sysds.runtime.transform.encode.ColumnEncoderComposite;
 import org.apache.sysds.runtime.transform.encode.EncoderFactory;
 import org.apache.sysds.runtime.transform.encode.MultiColumnEncoder;
 import org.apache.sysds.runtime.transform.meta.TfMetaUtils;
@@ -529,7 +528,12 @@ public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
 			// execute transform apply
 			JavaPairRDD<MatrixIndexes, MatrixBlock> out;
 			Tuple2<Boolean, Integer> aligned = FrameRDDAggregateUtils.checkRowAlignment(in, -1);
-			if(aligned._1 && mcOut.getCols() <= aligned._2) {
+			// NOTE Elias: currently disabled for LegacyEncoders, because OMIT probably results in not aligned
+			// blocks and for IMPUTE was an inaccuracy for the "testHomesImputeColnamesSparkCSV" test case.
+			// Expected: 8.150349617004395 vs actual: 8.15035 at 0 8 (expected is calculated from transform encode,
+			// which currently always uses the else branch: either inaccuracy must come from serialisation of
+			// matrixblock or from binaryBlockToBinaryBlock reblock
+			if(aligned._1 && mcOut.getCols() <= aligned._2 && !encoder.hasLegacyEncoder() /*&& containsWE*/) {
 				//Blocks are aligned & nr of Col is below Block length (necessary for matrix-matrix reblock)
 				JavaPairRDD<Long, MatrixBlock> tmp = in.mapToPair(new RDDTransformApplyFunction2(bmeta, bomap));
 				mcIn.setBlocksize(aligned._2);

@@ -58,11 +58,6 @@ m_imputeByKNN = function(Matrix[Double] X, String method="dist", Int seed=-1,Int
   #Create a mask for placeholder and to check for missing values
   masked = is.nan(X)
 
-  #Find the column containing multiple missing values
-  missing_col = colMaxs(masked)
-  missing_col_index = t(missing_col) * seq(1, ncol(X))
-  missing_col_index = removeEmpty(target = missing_col_index, margin = "rows", select = t(missing_col))
-
   #Impute NaN value with temporary mean value of the column
   filled_matrix = imputeByMean(X, matrix(0, cols = ncol(X), rows = 1))
 

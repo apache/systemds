@@ -46,13 +46,21 @@ public class DecoderRecode extends Decoder
 	private static final long serialVersionUID = -3784249774608228805L;
 
 	private HashMap<Long, Object>[] _rcMaps = null;
+	private Object[][] _rcMapsDirect = null;
 	private boolean _onOut = false;
 
-	public DecoderRecode() { super(null, null); }
+	public DecoderRecode() {
+		super(null, null);
+	}
 
 	protected DecoderRecode(ValueType[] schema, boolean onOut, int[] rcCols) {
 		super(schema, rcCols);
 		_onOut = onOut;
+	}
+	
+	public Object getRcMapValue(int i, long key) {
+		return (_rcMapsDirect != null) ?
+			_rcMapsDirect[i][(int)key-1] : _rcMaps[i].get(key);
 	}
 
 	@Override
@@ -64,7 +72,7 @@ public class DecoderRecode extends Decoder
 					double val = UtilFunctions.objectToDouble(
 							out.getSchema()[colID-1], out.get(i, colID-1));
 					long key = UtilFunctions.toLong(val);
-					out.set(i, colID-1, _rcMaps[j].get(key));
+					out.set(i, colID-1, getRcMapValue(j, key));
 				}
 			}
 		}
@@ -74,7 +82,7 @@ public class DecoderRecode extends Decoder
 				for( int j=0; j<_colList.length; j++ ) {
 					double val = in.quickGetValue(i, _colList[j]-1);
 					long key = UtilFunctions.toLong(val);
-					out.set(i, _colList[j]-1, _rcMaps[j].get(key));
+					out.set(i, _colList[j]-1, getRcMapValue(j, key));
 				}
 			}
 		}
@@ -112,6 +120,7 @@ public class DecoderRecode extends Decoder
 	public void initMetaData(FrameBlock meta) {
 		//initialize recode maps according to schema
 		_rcMaps = new HashMap[_colList.length];
+		long[] max = new long[_colList.length];
 		for( int j=0; j<_colList.length; j++ ) {
 			HashMap<Long, Object> map = new HashMap<>();
 			for( int i=0; i<meta.getNumRows(); i++ ) {
@@ -119,9 +128,22 @@ public class DecoderRecode extends Decoder
 					break; //reached end of recode map
 				String[] tmp = ColumnEncoderRecode.splitRecodeMapEntry(meta.get(i, _colList[j]-1).toString());
 				Object obj = UtilFunctions.stringToObject(_schema[_colList[j]-1], tmp[0]);
-				map.put(Long.parseLong(tmp[1]), obj);
+				long lval = Long.parseLong(tmp[1]);
+				map.put(lval, obj);
+				max[j] = Math.max(lval, max[j]);
 			}
 			_rcMaps[j] = map;
+		}
+		
+		//convert to direct lookup arrays
+		if( Arrays.stream(max).allMatch(v -> v < Integer.MAX_VALUE) ) {
+			_rcMapsDirect = new Object[_rcMaps.length][];
+			for( int i=0; i<_rcMaps.length; i++ ) {
+				Object[] arr = new Object[(int)max[i]];
+				for(Entry<Long,Object> e1 : _rcMaps[i].entrySet())
+					arr[e1.getKey().intValue()-1] = e1.getValue();
+				_rcMapsDirect[i] = arr;
+			}
 		}
 	}
 	

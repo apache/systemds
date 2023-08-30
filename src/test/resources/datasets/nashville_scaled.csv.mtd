@@ -1,0 +1,12 @@
+{
+    "data_type": "matrix",
+    "value_type": "double",
+    "rows": 8225,
+    "cols": 24,
+    "nnz": 180969,
+    "format": "csv",
+    "author": "arnab",
+    "header": false,
+    "sep": ",",
+    "created": "2023-08-22 17:22:52 UTC"
+}

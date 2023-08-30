@@ -29,6 +29,7 @@ import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.lops.MMTSJ.MMTSJType;
 import org.apache.sysds.parser.DataIdentifier;
@@ -246,6 +247,8 @@ public class LineageCache
 			if (e != null) {
 				String boundVarName = outNames.get(i);
 				Data boundValue = null;
+				//String fname = "target\\testTemp\\functions\\async\\LineageReuseSparkTest\\LineageReuseSpark8/target/scratch_space//_p11736_192.168.0.113//_t0/temp999";
+				//fname = VariableCPInstruction.getUniqueFileName(fname);
 				//convert to matrix object
 				if (e.isMatrixValue()) {
 					MatrixBlock mb = e.getMBValue();
@@ -253,6 +256,7 @@ public class LineageCache
 						return false;  //the executing thread removed this entry from cache
 					MetaDataFormat md = new MetaDataFormat(
 						e.getMBValue().getDataCharacteristics(),FileFormat.BINARY);
+					md.getDataCharacteristics().setBlocksize(ConfigurationManager.getBlocksize());
 					boundValue = new MatrixObject(ValueType.FP64, boundVarName, md);
 					((MatrixObject)boundValue).acquireModify(e.getMBValue());
 					((MatrixObject)boundValue).release();
@@ -311,6 +315,7 @@ public class LineageCache
 						case GPUCACHED:
 							//Increment the live count for this pointer
 							LineageGPUCacheEviction.incrementLiveCount(e.getGPUPointer());
+							if (DMLScript.STATISTICS) LineageCacheStatistics.incrementGpuHits();
 							break;
 						default:
 							return false;
@@ -328,10 +333,14 @@ public class LineageCache
 							//Reuse the persisted intermediate at the executors
 							//Safely cleanup the child RDDs if this RDD is persisted already
 							//If reused 3 times and still not persisted, move to Spark asynchronously
-							if (probeRDDDistributed(e))
+							if (probeRDDDistributed(e)) {
 								LineageSparkCacheEviction.cleanupChildRDDs(e);
-							else
+								if (DMLScript.STATISTICS) LineageCacheStatistics.incrementRDDPersistHits();
+							}
+							else {
 								LineageSparkCacheEviction.moveToSpark(e);
+								if (DMLScript.STATISTICS) LineageCacheStatistics.incrementRDDHits();
+							}
 							break;
 						default:
 							return false;
@@ -395,6 +404,7 @@ public class LineageCache
 
 				MetaDataFormat md = new MetaDataFormat(
 					e.getMBValue().getDataCharacteristics(),FileFormat.BINARY);
+				md.getDataCharacteristics().setBlocksize(ConfigurationManager.getBlocksize());
 				outValue = new MatrixObject(ValueType.FP64, outName, md);
 				((MatrixObject)outValue).acquireModify(e.getMBValue());
 				((MatrixObject)outValue).release();
@@ -604,9 +614,11 @@ public class LineageCache
 			//if (!isMarkedForCaching(inst, ec)) return;
 			List<Pair<LineageItem, Data>> liData = null;
 			GPUObject liGPUObj= null;
-			LineageItem instLI = ((LineageTraceable) inst).getLineageItem(ec).getValue();
+			//LineageItem instLI = ((LineageTraceable) inst).getLineageItem(ec).getValue();
+			LineageItem instLI = null;
 			if (inst instanceof MultiReturnBuiltinCPInstruction) {
 				liData = new ArrayList<>();
+				instLI = ((LineageTraceable) inst).getLineageItem(ec).getValue();
 				MultiReturnBuiltinCPInstruction mrInst = (MultiReturnBuiltinCPInstruction)inst;
 				for (int i=0; i<mrInst.getNumOutputs(); i++) {
 					String opcode = instLI.getOpcode() + String.valueOf(i);
@@ -630,16 +642,23 @@ public class LineageCache
 			else if (inst instanceof ComputationSPInstruction
 				&& (ec.getVariable(((ComputationSPInstruction) inst).output) instanceof MatrixObject)
 				&& (ec.getCacheableData(((ComputationSPInstruction)inst).output.getName())).hasRDDHandle()) {
+				instLI = ec.getLineageItem(((ComputationSPInstruction) inst).output);
 				putValueRDD(inst, instLI, ec, computetime);
 				return;
 			}
 			else
-				if (inst instanceof ComputationCPInstruction)
+				if (inst instanceof ComputationCPInstruction) {
+					instLI = ec.getLineageItem(((ComputationCPInstruction) inst).output);
 					liData = Arrays.asList(Pair.of(instLI, ec.getVariable(((ComputationCPInstruction) inst).output)));
-				else if (inst instanceof ComputationFEDInstruction)
+				}
+				else if (inst instanceof ComputationFEDInstruction) {
+					instLI = ec.getLineageItem(((ComputationFEDInstruction) inst).output);
 					liData = Arrays.asList(Pair.of(instLI, ec.getVariable(((ComputationFEDInstruction) inst).output)));
-				else if (inst instanceof ComputationSPInstruction) //collects or prefetches
+				}
+				else if (inst instanceof ComputationSPInstruction) { //collects or prefetches
+					instLI = ec.getLineageItem(((ComputationSPInstruction) inst).output);
 					liData = Arrays.asList(Pair.of(instLI, ec.getVariable(((ComputationSPInstruction) inst).output)));
+				}
 
 			if (liGPUObj == null)
 				putValueCPU(inst, liData, computetime);
@@ -857,8 +876,7 @@ public class LineageCache
 			LineageItem li = new LineageItem(opcode, liInputs);
 			String boundVarName = outputs.get(i).getName();
 			LineageItem boundLI = ec.getLineage().get(boundVarName);
-			if (boundLI != null)
-				boundLI.resetVisitStatusNR();
+			if (boundLI != null) boundLI.resetVisitStatusNR();
 			if (boundLI == null || !LineageCache.probe(li) || !LineageCache.probe(boundLI)) {
 				AllOutputsCacheable = false;
 				//FIXME: if boundLI is for a MultiReturnBuiltin instruction 
@@ -1052,8 +1070,12 @@ public class LineageCache
 	
 	private static LineageCacheEntry getIntern(LineageItem key) {
 		LineageCacheEntry e = _cache.get(key);
-		if (e == null)
+		if (e == null) {
+			if(DMLScript.STATISTICS && LineageCacheEviction._removelist.containsKey(key))
+				// The sought entry was in cache but removed later
+				LineageCacheStatistics.incrementDelHits();
 			return null;
+		}
 
 		if (e.getCacheStatus() != LineageCacheStatus.SPILLED) {
 			if (DMLScript.STATISTICS)
@@ -1351,10 +1373,14 @@ public class LineageCache
 
 		List<MutablePair<LineageItem, LineageCacheEntry>> liList = null;
 		//FIXME: Replace getLineageItem with get/getOrCreate to avoid creating a new LI object
-		LineageItem instLI = (cinst != null) ? cinst.getLineageItem(ec).getValue()
+		LineageItem instLI = (cinst != null) ? ec.getLineageItem(cinst.output)
+			: (cfinst != null) ? ec.getLineageItem(cfinst.output)
+			: (cspinst != null) ? ec.getLineageItem(cspinst.output)
+			: ec.getLineageItem(gpuinst._output);
+		/*LineageItem instLI = (cinst != null) ? cinst.getLineageItem(ec).getValue()
 			: (cfinst != null) ? cfinst.getLineageItem(ec).getValue()
 			: (cspinst != null) ? cspinst.getLineageItem(ec).getValue()
-			: gpuinst.getLineageItem(ec).getValue();
+			: gpuinst.getLineageItem(ec).getValue();*/
 		if (inst instanceof MultiReturnBuiltinCPInstruction) {
 			liList = new ArrayList<>();
 			MultiReturnBuiltinCPInstruction mrInst = (MultiReturnBuiltinCPInstruction)inst;

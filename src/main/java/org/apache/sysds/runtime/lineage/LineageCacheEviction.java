@@ -96,9 +96,11 @@ public class LineageCacheEviction
 		}
 	}
 
-	private static void removeEntry(Map<LineageItem, LineageCacheEntry> cache, LineageCacheEntry e) {
-		if (cache.remove(e._key) != null)
-			_cachesize -= e.getSize();
+	private static void removeEntry(Map<LineageItem, LineageCacheEntry> cache, LineageCacheEntry e, boolean updateSpace) {
+		if (cache.remove(e._key) != null) {
+			if (updateSpace)
+				updateSize(e.getSize(), false);
+		}
 
 		// Maintain miss count to increase the score if the item enters the cache again
 		if (_removelist.containsKey(e._key))
@@ -121,7 +123,18 @@ public class LineageCacheEviction
 				e.setCacheStatus(LineageCacheStatus.SPILLED);  //Set status to spilled
 			}
 			else
-				removeEntry(cache, e);
+				removeEntry(cache, e, true);
+			return;
+		}
+
+		if (e._origItem != null && !spill) {
+			// Reduce cache size once for all the entries.
+			updateSize(e.getSize(), false);
+			LineageCacheEntry h = cache.get(e._origItem);
+			while (h != null) {
+				removeEntry(cache, h, false);
+				h = h._nextEntry;
+			}
 			return;
 		}
 		
@@ -146,7 +159,7 @@ public class LineageCacheEviction
 		if (write) {
 			// Spill to disk if at least one entry has status TOSPILL. 
 			spillToLocalFS(cache, cache.get(e._origItem));
-			// Reduce cachesize once for all the entries.
+			// Reduce cache size once for all the entries.
 			updateSize(e.getSize(), false);
 			LineageCacheEntry h = cache.get(e._origItem);  //head
 			while (h != null) {
@@ -161,10 +174,12 @@ public class LineageCacheEviction
 		}
 		// All are set to be deleted.
 		else {
+			// Reduce cache size once for all the entries.
+			updateSize(e.getSize(), false);
 			// Remove all the entries from cache.
 			LineageCacheEntry h = cache.get(e._origItem);
 			while (h != null) {
-				removeEntry(cache, h);
+				removeEntry(cache, h, false);
 				h = h._nextEntry;
 			}
 		}

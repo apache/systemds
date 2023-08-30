@@ -24,12 +24,14 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
 import org.apache.spark.api.java.function.PairFunction;
 import org.apache.spark.broadcast.Broadcast;
+import org.apache.sysds.common.Types;
 import org.apache.sysds.common.Types.CorrectionLocationType;
 import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.common.Types.ValueType;
@@ -61,6 +63,8 @@ import org.apache.sysds.runtime.instructions.spark.functions.ReplicateVectorFunc
 import org.apache.sysds.runtime.instructions.spark.utils.FrameRDDConverterUtils;
 import org.apache.sysds.runtime.instructions.spark.utils.RDDAggregateUtils;
 import org.apache.sysds.runtime.instructions.spark.utils.SparkUtils;
+import org.apache.sysds.runtime.lineage.LineageItem;
+import org.apache.sysds.runtime.lineage.LineageItemUtils;
 import org.apache.sysds.runtime.matrix.data.LibMatrixReorg;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixCell;
@@ -558,6 +562,73 @@ public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
 		else {
 			throw new DMLRuntimeException("Unknown parameterized builtin opcode: " + opcode);
 		}
+	}
+	@Override
+	public Pair<String, LineageItem> getLineageItem(ExecutionContext ec) {
+		String opcode = getOpcode();
+		if(opcode.equalsIgnoreCase("replace")) {
+			CPOperand target = getTargetOperand();
+			CPOperand pattern = getFP64Literal("pattern");
+			CPOperand replace = getFP64Literal("replacement");
+			return Pair.of(output.getName(),
+				new LineageItem(getOpcode(), LineageItemUtils.getLineage(ec, target, pattern, replace)));
+		}
+		else if(opcode.equalsIgnoreCase("rmempty")) {
+			CPOperand target = getTargetOperand();
+			String off = params.get("offset");
+			CPOperand offset = new CPOperand(off, ValueType.FP64, Types.DataType.MATRIX);
+			CPOperand margin = getStringLiteral("margin");
+			CPOperand emptyReturn = getBoolLiteral("empty.return");
+			CPOperand maxDim = getLiteral("maxdim", ValueType.FP64);
+			CPOperand bRmEmptyBC = getBoolLiteral("bRmEmptyBC");
+			return Pair.of(output.getName(),
+				new LineageItem(getOpcode(), LineageItemUtils.getLineage(ec, target, offset, margin,
+				emptyReturn, maxDim, bRmEmptyBC)));
+		}
+		else if(opcode.equalsIgnoreCase("transformdecode") || opcode.equalsIgnoreCase("transformapply")) {
+			CPOperand target = new CPOperand(params.get("target"), ValueType.FP64, Types.DataType.FRAME);
+			CPOperand meta = getLiteral("meta", ValueType.UNKNOWN, Types.DataType.FRAME);
+			CPOperand spec = getStringLiteral("spec");
+			//FIXME: Taking only spec file name as a literal leads to wrong reuse
+			//TODO: Add Embedding to the lineage item
+			return Pair.of(output.getName(),
+				new LineageItem(getOpcode(), LineageItemUtils.getLineage(ec, target, meta, spec)));
+		}
+		if(opcode.equalsIgnoreCase("contains")) {
+			CPOperand target = getTargetOperand();
+			CPOperand pattern = getFP64Literal("pattern");
+			return Pair.of(output.getName(),
+				new LineageItem(getOpcode(), LineageItemUtils.getLineage(ec, target, pattern)));
+		}
+		else {
+			// NOTE: for now, we cannot have a generic fall through path, because the
+			// data and value types of parmeters are not compiled into the instruction
+			throw new DMLRuntimeException("Unsupported lineage tracing for: " + opcode);
+		}
+	}
+
+	private CPOperand getTargetOperand() {
+		return new CPOperand(params.get("target"), ValueType.FP64, Types.DataType.MATRIX);
+	}
+
+	private CPOperand getFP64Literal(String name) {
+		return getLiteral(name, ValueType.FP64);
+	}
+
+	private CPOperand getStringLiteral(String name) {
+		return getLiteral(name, ValueType.STRING);
+	}
+
+	private CPOperand getLiteral(String name, ValueType vt) {
+		return new CPOperand(params.get(name), vt, Types.DataType.SCALAR, true);
+	}
+
+	private CPOperand getLiteral(String name, ValueType vt, Types.DataType dt) {
+		return new CPOperand(params.get(name), vt, dt);
+	}
+
+	private CPOperand getBoolLiteral(String name) {
+		return getLiteral(name, ValueType.BOOLEAN);
 	}
 
 	public HashMap<String, String> getParameterMap() {

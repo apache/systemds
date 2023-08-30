@@ -42,6 +42,7 @@ public class LineageSparkCacheEviction
 		_sparkStorageSize = 0;
 		weightedQueue.clear();
 		RDDHitCountLocal.clear();
+		//TODO: Cleanup the RDDs and BC variables
 	}
 
 	//--------------- CACHE MAINTENANCE & LOOKUP FUNCTIONS --------------//
@@ -205,7 +206,7 @@ public class LineageSparkCacheEviction
 	// RDDs that are marked for persistence, reused more than three times,
 	// but never actually persisted in the executors. Asynchronously move
 	// them to Spark by triggering a Spark job. The next reuse will clean up
-	// The next reuse will clean up the child RDDs and broadcast variables.
+	// the child RDDs and broadcast variables.
 	protected static void moveToSpark(LineageCacheEntry e) {
 		RDDHitCountLocal.merge(e._key, 1, Integer::sum);
 		int localHitCount = RDDHitCountLocal.get(e._key);

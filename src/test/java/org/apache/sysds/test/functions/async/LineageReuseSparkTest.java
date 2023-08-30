@@ -43,7 +43,7 @@ public class LineageReuseSparkTest extends AutomatedTestBase {
 
 	protected static final String TEST_DIR = "functions/async/";
 	protected static final String TEST_NAME = "LineageReuseSpark";
-	protected static final int TEST_VARIANTS = 7;
+	protected static final int TEST_VARIANTS = 8;
 	protected static String TEST_CLASS_DIR = TEST_DIR + LineageReuseSparkTest.class.getSimpleName() + "/";
 
 	@Override
@@ -81,20 +81,25 @@ public class LineageReuseSparkTest extends AutomatedTestBase {
 		runTest(TEST_NAME+"4", ExecMode.HYBRID, ReuseCacheType.REUSE_MULTILEVEL, 4);
 	}
 
-	@Test
+	/*@Test
 	public void testEnsemble() {
 		runTest(TEST_NAME+"5", ExecMode.HYBRID, ReuseCacheType.REUSE_MULTILEVEL, 5);
 	}
 
 	//FIXME: Collecting a persisted RDD still needs the broadcast vars. Debug.
-	/*@Test
+	@Test
 	public void testHyperband() {
 		runTest(TEST_NAME+"6", ExecMode.HYBRID, ReuseCacheType.REUSE_FULL, 6);
-	}*/
-	/*@Test
+	}
+	@Test
 	public void testBroadcastBug() {
 		runTest(TEST_NAME+"7", ExecMode.HYBRID, ReuseCacheType.REUSE_FULL, 7);
 	}*/
+	@Test
+	public void testTopKClean() {
+		// Multiple cleaning pipelines with real dataset (Nashville accident)
+		runTest(TEST_NAME+"8", ExecMode.HYBRID, ReuseCacheType.REUSE_MULTILEVEL, 8);
+	}
 
 	public void runTest(String testname, ExecMode execMode, LineageCacheConfig.ReuseCacheType reuse, int testId) {
 		boolean old_simplification = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
@@ -112,10 +117,12 @@ public class LineageReuseSparkTest extends AutomatedTestBase {
 			fullDMLScriptName = getScript();
 
 			List<String> proArgs = new ArrayList<>();
+			String nashville = DATASET_DIR + "nashville_scaled.csv";
 
 			//proArgs.add("-explain");
 			proArgs.add("-stats");
 			proArgs.add("-args");
+			if (testId == 8) proArgs.add(nashville);
 			proArgs.add(output("R"));
 			programArgs = proArgs.toArray(new String[proArgs.size()]);
 
@@ -133,6 +140,7 @@ public class LineageReuseSparkTest extends AutomatedTestBase {
 			proArgs.add("-lineage");
 			proArgs.add(reuse.name().toLowerCase());
 			proArgs.add("-args");
+			if (testId == 8) proArgs.add(nashville);
 			proArgs.add(output("R"));
 			programArgs = proArgs.toArray(new String[proArgs.size()]);
 

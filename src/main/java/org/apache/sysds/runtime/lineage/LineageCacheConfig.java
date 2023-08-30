@@ -49,28 +49,28 @@ public class LineageCacheConfig
 
 	private static final String[] OPCODES = new String[] {
 		"tsmm", "ba+*", "*", "/", "+", "||", "nrow", "ncol", "round", "exp", "log",
-		"rightIndex", "leftIndex", "groupedagg", "r'", "solve", "spoof",
+		"rightIndex", "leftIndex", "groupedagg", "r'", "solve", "spoof", "isna",
 		"uamean", "max", "min", "ifelse", "-", "sqrt", "<", ">", "uak+", "<=",
-		"^", "uamax", "uark+", "uacmean", "eigen", "ctableexpand", "replace",
+		"^", "uamax", "uark+", "uacmean", "eigen","ctable", "ctableexpand", "replace",
 		"^2", "*2", "uack+", "tak+*", "uacsqk+", "uark+", "n+", "uarimax", "qsort",
 		"qpick", "transformapply", "uarmax", "n+", "-*", "castdtm", "lowertri",
-		"prefetch", "mapmm", "contains", "mmchain", "mapmmchain", "+*", "=="
+		"prefetch", "mapmm", "contains", "mmchain", "mapmmchain", "+*", "==", "rmempty"
 		//TODO: Reuse everything.
 	};
 
 	// Relatively expensive instructions. Most include shuffles.
 	private static final String[] PERSIST_OPCODES1 = new String[] {
-		"cpmm", "rmm", "pmm", "rev", "rshape", "rsort", "+", "-", "*",
+		"cpmm", "rmm", "pmm", "rev", "rshape", "rsort", "-", "*", "+",
 		"/", "%%", "%/%", "1-*", "^", "^2", "*2", "==", "!=", "<", ">",
 		"<=", ">=", "&&", "||", "xor", "max", "min", "rmempty", "rappend",
 		"gappend", "galignedappend", "rbind", "cbind", "nmin", "nmax",
 		"n+", "ctable", "ucumack+", "ucumac*", "ucumacmin", "ucumacmax",
-		"qsort", "qpick"
+		"qsort", "qpick", "replace"
 	};
 
 	// Relatively inexpensive instructions.
 	private static final String[] PERSIST_OPCODES2 = new String[] {
-		"mapmm"
+		"mapmm", "isna", "leftIndex", "rightIndex"
 	};
 
 	private static String[] REUSE_OPCODES  = new String[] {};

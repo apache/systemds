@@ -105,6 +105,10 @@ public class RDDObject extends LineageObject
 	 */
 	public boolean allowsShortCircuitRead()
 	{
+		// Cannot trust the hdfs file for reused RDD objects
+		if (isInLineageCache() && isCheckpointRDD())
+			return false;
+
 		boolean ret = isHDFSFile();
 		
 		if( isCheckpointRDD() && getLineageChilds().size() == 1 ) {

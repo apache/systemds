@@ -240,6 +240,7 @@ public class FunctionCallCPInstruction extends CPInstruction {
 			Data exdata = ec.removeVariable(boundVarName);
 			if( exdata != boundValue && !retVars.hasReferences(exdata) )
 				ec.cleanupDataObject(exdata);
+				//FIXME: interferes with reuse. Removes broadcasts before materialization
 
 			//add/replace data in symbol table
 			ec.setVariable(boundVarName, boundValue);

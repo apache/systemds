@@ -70,7 +70,7 @@ public class BuiltinImageCutoutLinTest extends AutomatedTestBase {
 		disableOutAndExpectedDeletion();
 
         setOutputBuffering(true);
-/*         int s_cols = random.nextInt(100) + 1;
+        int s_cols = random.nextInt(100) + 1;
         int s_rows = random.nextInt(100) + 1;
         int x = random.nextInt(s_cols);
         int y = random.nextInt(s_rows);
@@ -79,32 +79,12 @@ public class BuiltinImageCutoutLinTest extends AutomatedTestBase {
 
         int n_imgs = random.nextInt(100) + 1;
         int fill_color = random.nextInt(256);
- */
+ 
 
 
- // constant variables for this command: 
-/*  systemds ./src/test/scripts/functions/builtin/image_cutout_linearized.dml -nvargs \
-in_file=./target/testTemp/functions/builtin/BuiltinImageCutoutLinTestin/in/A.mtx \
-out_file=./target/testTemp/functions/builtin/BuiltinImageCutoutLinTestin/out/B.mtx \
-width=3358 \
-height=41 \
-x=12 \
-y=63 \
-w=11 \
-h=4 \
-fill_color=57 \
-s_cols=46 \
-s_rows=73 */
 
-        int s_cols = 46;
-        int s_rows = 73;
-        int x = 12;
-        int y = 63;
-        int width = 11;
-        int height = 4;
 
-        int n_imgs = 41;
-        int fill_color = 57;
+
 
         
         

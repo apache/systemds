@@ -23,7 +23,7 @@
 #
 # INPUT:
 # ---------------------------------------------------------------------------------------------
-# img_in      Input image as 2D matrix with top left corner at [1, 1]
+# img_in      Input images as linearized 2D matrix with top left corner at [1, 1]
 # x           Column index of the top left corner of the rectangle (starting at 1)
 # y           Row index of the top left corner of the rectangle (starting at 1)
 # width       Width of the rectangle (must be positive)
@@ -39,7 +39,7 @@
 # ------------------------------------------------------------------------------------------
 
 
-m_img_cutout_linearized = function(Matrix[Double] img_in, Integer x, Integer y, Integer width, Integer height, Double fill_value, Integer s_rows, Integer s_cols) return (Matrix[Double] img_out) {
+m_img_cutout_linearized = function(Matrix[Double] img_in, Integer x, Integer y, Integer width, Integer height, Double fill_value, Integer s_cols, Integer s_rows) return (Matrix[Double] img_out) {
     # size is s_cols : s_rows
   rows = nrow(img_in) # number of images
   cols = ncol(img_in) # s_cols * s_rows
@@ -48,23 +48,27 @@ m_img_cutout_linearized = function(Matrix[Double] img_in, Integer x, Integer y, 
     print("Invalid width or height. Returning input")
     img_out = img_in
   } else {
-    end_x = x + width - 1
-    end_y = (y + height)*s_cols #the last row's start
 
     start_x = max(1, x)
-    start_y = max(1, y*s_cols)
-    end_x = min(cols, end_x)
-    end_y = min(rows, end_y)
+    start_y = max(1, y)
+
+    end_x = start_x + width - 1
+    end_x = min(s_cols, end_x)
+
+    end_y = start_y + height - 1
+    end_y = min(s_rows, end_y)
 
     img_out = img_in
 
     # Iterate through each row of the rectangular region
     for (i in start_y: end_y){
       
-      start_idx = i * s_cols + start_x
-      end_idx = i * s_cols + end_x
+      start_idx = (i-1) * s_cols + start_x
+      end_idx = (i-1) * s_cols + end_x
 
       img_out[, start_idx:end_idx] = matrix(fill_value, rows=rows, cols=(end_x-start_x+1))
      }
   }
+
 }
+

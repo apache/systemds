@@ -1,0 +1,146 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
+// like BuiltinImageCutoutTest.java but this time input and output are matrices with each row representing a linearized image
+ 
+package org.apache.sysds.test.functions.pipelines;
+
+import org.apache.sysds.common.Types.ExecMode;
+import org.apache.sysds.common.Types.ExecType;
+import org.apache.sysds.runtime.matrix.data.MatrixValue;
+import org.apache.sysds.test.AutomatedTestBase;
+import org.apache.sysds.test.TestConfiguration;
+import org.apache.sysds.test.TestUtils;
+import org.junit.Test;
+
+import java.util.HashMap;
+import java.util.Random;
+
+public class BuiltinImageCutoutLinTest extends AutomatedTestBase {
+    private final static String TEST_NAME = "image_cutout_linearized";
+    private final static String TEST_DIR = "functions/builtin/";
+    private final static String TEST_CLASS_DIR = TEST_DIR + BuiltinImageCutoutLinTest.class.getSimpleName() + "/";
+
+    private final static double eps = 1e-10;
+    private final static double spSparse = 0.1;
+    private final static double spDense = 0.9;
+    private final static Random random = new Random();
+
+    @Override
+    public void setUp() {
+        addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] {"B"}));
+    }
+
+    @Test
+    public void testImageTranslateMatrixDenseCP() { runImageCutoutLinTest(false, ExecType.CP); }
+
+    @Test
+    public void testImageTranslateMatrixSparseCP() {
+        runImageCutoutLinTest(true, ExecType.CP);
+    }
+
+    @Test
+    public void testImageTranslateMatrixDenseSP() {
+        runImageCutoutLinTest(false, ExecType.SPARK);
+    }
+
+    @Test
+    public void testImageTranslateMatrixSparseSP() {
+        runImageCutoutLinTest(false, ExecType.SPARK);
+    }
+
+    private void runImageCutoutLinTest(boolean sparse, ExecType instType) {
+        ExecMode platformOld = setExecMode(instType);
+		disableOutAndExpectedDeletion();
+
+        setOutputBuffering(true);
+/*         int s_cols = random.nextInt(100) + 1;
+        int s_rows = random.nextInt(100) + 1;
+        int x = random.nextInt(s_cols);
+        int y = random.nextInt(s_rows);
+        int width = random.nextInt(s_cols - x) + 1;
+        int height = random.nextInt(s_rows - y) + 1;
+
+        int n_imgs = random.nextInt(100) + 1;
+        int fill_color = random.nextInt(256);
+ */
+
+
+ // constant variables for this command: 
+/*  systemds ./src/test/scripts/functions/builtin/image_cutout_linearized.dml -nvargs \
+in_file=./target/testTemp/functions/builtin/BuiltinImageCutoutLinTestin/in/A.mtx \
+out_file=./target/testTemp/functions/builtin/BuiltinImageCutoutLinTestin/out/B.mtx \
+width=3358 \
+height=41 \
+x=12 \
+y=63 \
+w=11 \
+h=4 \
+fill_color=57 \
+s_cols=46 \
+s_rows=73 */
+
+        int s_cols = 46;
+        int s_rows = 73;
+        int x = 12;
+        int y = 63;
+        int width = 11;
+        int height = 4;
+
+        int n_imgs = 41;
+        int fill_color = 57;
+
+        
+        
+        try {
+            loadTestConfiguration(getTestConfiguration(TEST_NAME));
+            double sparsity = sparse ? spSparse : spDense;
+
+            String HOME = SCRIPT_DIR + TEST_DIR;
+            fullDMLScriptName= HOME + TEST_NAME + ".dml";
+            programArgs = new String[] {"-nvargs", "in_file=" + input("A"), "out_file=" + output("B"), "width=" + s_cols*s_rows,
+				"height=" + n_imgs, "x=" + (x+1), "y=" + (y+1), "w=" + width, "h=" + height, "fill_color=" + fill_color, "s_cols=" + s_cols, "s_rows" + s_rows};
+
+            //generate actual dataset
+            double[][] A = getRandomMatrix(n_imgs, s_cols*s_rows, 0, 255, sparsity, 7);
+            writeInputMatrixWithMTD("A", A, true);
+
+            double[][] ref = new double[n_imgs][s_cols*s_rows];
+            for (int i = 0; i < n_imgs; i++) {
+                for (int j = 0; j < s_cols*s_rows; j++) {
+                    ref[i][j] = A[i][j];
+                    if (y <= Math.floor(j/s_cols) && Math.floor(j/s_cols) < y + height && x <= j%s_cols && j%s_cols < x + width) {
+                        ref[i][j] = fill_color;
+                    }
+                }
+            }
+
+            runTest(true, false, null, -1);
+
+            HashMap<MatrixValue.CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir("B");
+            double[][] dml_res = TestUtils.convertHashMapToDoubleArray(dmlfile, n_imgs, s_cols*s_rows);
+            TestUtils.compareMatrices(ref, dml_res, eps, "Java vs. DML");
+
+        }
+        finally {
+            rtplatform = platformOld;
+        }
+    }
+}
+

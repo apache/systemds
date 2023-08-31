@@ -30,7 +30,7 @@ s_cols = ifdef($s_cols, 512)
 s_rows = ifdef($s_rows, 512)
 fill_value = ifdef($fill_color, 0)
 
-input = matrix(input, rows=width, cols=height)
+input = matrix(input, rows=height, cols=width)
 
 res = img_cutout_linearized(input, x, y, w, h, fill_value, s_cols, s_rows)
 write(res, $out_file)

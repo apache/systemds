@@ -70,23 +70,16 @@ public class BuiltinImageCutoutLinTest extends AutomatedTestBase {
 		disableOutAndExpectedDeletion();
 
         setOutputBuffering(true);
+ 
         int s_cols = random.nextInt(100) + 1;
         int s_rows = random.nextInt(100) + 1;
         int x = random.nextInt(s_cols);
         int y = random.nextInt(s_rows);
         int width = random.nextInt(s_cols - x) + 1;
         int height = random.nextInt(s_rows - y) + 1;
-
         int n_imgs = random.nextInt(100) + 1;
-        int fill_color = random.nextInt(256);
- 
-
-
-
-
-
-
-        
+        int fill_color = random.nextInt(256);  
+  
         
         try {
             loadTestConfiguration(getTestConfiguration(TEST_NAME));

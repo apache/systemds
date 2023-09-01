@@ -81,20 +81,22 @@ public class LineageReuseSparkTest extends AutomatedTestBase {
 		runTest(TEST_NAME+"4", ExecMode.HYBRID, ReuseCacheType.REUSE_MULTILEVEL, 4);
 	}
 
-	/*@Test
+	@Test
 	public void testEnsemble() {
 		runTest(TEST_NAME+"5", ExecMode.HYBRID, ReuseCacheType.REUSE_MULTILEVEL, 5);
 	}
 
 	//FIXME: Collecting a persisted RDD still needs the broadcast vars. Debug.
-	@Test
-	public void testHyperband() {
-		runTest(TEST_NAME+"6", ExecMode.HYBRID, ReuseCacheType.REUSE_FULL, 6);
-	}
+	//@Test
+	//public void testHyperband() {
+	//	runTest(TEST_NAME+"6", ExecMode.HYBRID, ReuseCacheType.REUSE_FULL, 6);
+	//}
+	
 	@Test
 	public void testBroadcastBug() {
 		runTest(TEST_NAME+"7", ExecMode.HYBRID, ReuseCacheType.REUSE_FULL, 7);
-	}*/
+	}
+	
 	@Test
 	public void testTopKClean() {
 		// Multiple cleaning pipelines with real dataset (Nashville accident)

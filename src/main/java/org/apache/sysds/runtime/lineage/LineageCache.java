@@ -1203,9 +1203,12 @@ public class LineageCache
 		RDDObject rddObj = centry.getRDDObject();
 		JavaPairRDD<?,?> rdd = rddObj.getRDD();
 		rdd = rdd.persist(StorageLevel.MEMORY_AND_DISK());
+		//cut-off RDD lineage & broadcasts to prevent errors on
+		// task closure serialization with destroyed broadcasts
+		rdd.checkpoint();
 		rddObj.setRDD(rdd);
 		rddObj.setCheckpointRDD(true);
-
+		
 		// Make space based on the estimated size
 		if(!LineageSparkCacheEviction.isBelowThreshold(estimatedSize))
 			LineageSparkCacheEviction.makeSpace(_cache, estimatedSize);

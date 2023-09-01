@@ -20,8 +20,6 @@
 package org.apache.sysds.test.functions.io.binary;
 
 import com.google.crypto.tink.subtle.Random;
-import org.apache.sysds.runtime.controlprogram.caching.ByteBuffer;
-import org.apache.sysds.runtime.util.FastBufferedDataOutputStream;
 import org.apache.sysds.runtime.util.LocalFileUtils;
 import org.junit.Assert;
 import org.junit.Test;
@@ -35,9 +33,7 @@ import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
 
-import java.io.FileOutputStream;
 import java.util.HashMap;
-import java.util.HashSet;
 
 public class SerializeTest extends AutomatedTestBase
 {

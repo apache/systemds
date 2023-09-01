@@ -41,7 +41,7 @@ public abstract class ACount<T> {
 	public abstract ACount<T> inc(T key, int c, int id);
 
 	public ACount<T> sort() {
-		Sorter<T> s = new Sorter<T>();
+		Sorter<T> s = new Sorter<>();
 		s.sort(this);
 		return s.sorted;
 	}

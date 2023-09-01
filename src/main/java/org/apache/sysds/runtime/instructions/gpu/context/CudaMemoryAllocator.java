@@ -47,6 +47,7 @@ public class CudaMemoryAllocator implements GPUMemoryAllocator {
 	@Override
 	public void allocate(Pointer devPtr, long size) {
 		try {
+			@SuppressWarnings("unused")
 			int status = cudaMalloc(devPtr, size);
 		}
 		catch(CudaException e) {

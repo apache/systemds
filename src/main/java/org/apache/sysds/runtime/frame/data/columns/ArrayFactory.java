@@ -75,7 +75,7 @@ public interface ArrayFactory {
 	}
 
 	public static <T> RaggedArray<T> create(T[] col, int m) {
-		return new RaggedArray<T>(col, m);
+		return new RaggedArray<>(col, m);
 	}
 
 	public static long getInMemorySize(ValueType type, int _numRows, boolean containsNull) {

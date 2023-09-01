@@ -287,7 +287,7 @@ public class IOSpark {
 			// Read in again as RDD
 			JavaPairRDD<MatrixIndexes, MatrixBlock> m = getRDD(f1);
 			MatrixReader r = ReaderCompressed.create();
-			MatrixBlock mb2 = r.readMatrixFromHDFS(f1, (long) mb.getNumRows(), (long) mb.getNumColumns(), blen1, -1L);
+			MatrixBlock mb2 = r.readMatrixFromHDFS(f1, mb.getNumRows(), mb.getNumColumns(), blen1, -1L);
 			TestUtils.compareMatricesBitAvgDistance(mb, mb2, 0, 0);
 			String f2 = getName(); // get new name for writing RDD.
 			// Write RDD to disk
@@ -403,7 +403,7 @@ public class IOSpark {
 			WriterCompressed.writeCompressedMatrixToHDFS(mb, n, blen);
 			Thread.sleep(100);
 			MatrixReader r = ReaderCompressed.create();
-			MatrixBlock mb2 = r.readMatrixFromHDFS(n, (long) mb.getNumRows(), (long) mb.getNumColumns(), blen, -1L);
+			MatrixBlock mb2 = r.readMatrixFromHDFS(n, mb.getNumRows(), mb.getNumColumns(), blen, -1L);
 			TestUtils.compareMatricesBitAvgDistance(mb, mb2, 0, 0);
 
 			SparkExecutionContext ec = ExecutionContextFactory.createSparkExecutionContext();

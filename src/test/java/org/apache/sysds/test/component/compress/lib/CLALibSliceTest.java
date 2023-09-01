@@ -35,99 +35,99 @@ import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.junit.Test;
 
 public class CLALibSliceTest {
-    protected static final Log LOG = LogFactory.getLog(CLALibSliceTest.class.getName());
+	protected static final Log LOG = LogFactory.getLog(CLALibSliceTest.class.getName());
 
-    @Test
-    public void sliceColumnsRanges() {
-        List<AColGroup> gs = new ArrayList<AColGroup>();
-        for(int i = 0; i < 10; i++) {
-            gs.add(new ColGroupEmpty(ColIndexFactory.create(i * 10, i * 10 + 10)));
-        }
+	@Test
+	public void sliceColumnsRanges() {
+		List<AColGroup> gs = new ArrayList<>();
+		for(int i = 0; i < 10; i++) {
+			gs.add(new ColGroupEmpty(ColIndexFactory.create(i * 10, i * 10 + 10)));
+		}
 
-        CompressedMatrixBlock cmb = new CompressedMatrixBlock(100, 100, -1, false, gs);
+		CompressedMatrixBlock cmb = new CompressedMatrixBlock(100, 100, -1, false, gs);
 
-        CompressedMatrixBlock cmb2 = (CompressedMatrixBlock) cmb.slice(0, 99, 5, 49);
-        assertEquals(49 - 4, cmb2.getNumColumns());
-        assertEquals(5, cmb2.getColGroups().size());
+		CompressedMatrixBlock cmb2 = (CompressedMatrixBlock) cmb.slice(0, 99, 5, 49);
+		assertEquals(49 - 4, cmb2.getNumColumns());
+		assertEquals(5, cmb2.getColGroups().size());
 
-        int countColumns = 0;
-        for(AColGroup g : cmb2.getColGroups()) {
-            IColIndex idx = g.getColIndices();
-            countColumns += idx.size();
-            assertTrue(idx.get(0) >= 0);
-            assertTrue(idx.get(idx.size() - 1) < cmb.getNumColumns());
-        }
-        assertEquals(cmb2.getNumColumns(), countColumns);
-    }
+		int countColumns = 0;
+		for(AColGroup g : cmb2.getColGroups()) {
+			IColIndex idx = g.getColIndices();
+			countColumns += idx.size();
+			assertTrue(idx.get(0) >= 0);
+			assertTrue(idx.get(idx.size() - 1) < cmb.getNumColumns());
+		}
+		assertEquals(cmb2.getNumColumns(), countColumns);
+	}
 
-    @Test
-    public void sliceSingleColumns() {
-        List<AColGroup> gs = new ArrayList<AColGroup>();
-        for(int i = 0; i < 50; i++) {
-            gs.add(new ColGroupEmpty(ColIndexFactory.create(i, i + 1)));
-        }
+	@Test
+	public void sliceSingleColumns() {
+		List<AColGroup> gs = new ArrayList<>();
+		for(int i = 0; i < 50; i++) {
+			gs.add(new ColGroupEmpty(ColIndexFactory.create(i, i + 1)));
+		}
 
-        CompressedMatrixBlock cmb = new CompressedMatrixBlock(100, 50, -1, false, gs);
+		CompressedMatrixBlock cmb = new CompressedMatrixBlock(100, 50, -1, false, gs);
 
-        CompressedMatrixBlock cmb2 = (CompressedMatrixBlock) cmb.slice(0, 99, 5, 40);
-        assertEquals(40 - 4, cmb2.getNumColumns());
-        assertEquals(40 - 4, cmb2.getColGroups().size());
+		CompressedMatrixBlock cmb2 = (CompressedMatrixBlock) cmb.slice(0, 99, 5, 40);
+		assertEquals(40 - 4, cmb2.getNumColumns());
+		assertEquals(40 - 4, cmb2.getColGroups().size());
 
-        int countColumns = 0;
-        for(AColGroup g : cmb2.getColGroups()) {
-            IColIndex idx = g.getColIndices();
-            countColumns += idx.size();
-            assertTrue(idx.get(0) >= 0);
-            assertTrue(idx.get(idx.size() - 1) < cmb.getNumColumns());
-        }
-        assertEquals(cmb2.getNumColumns(), countColumns);
-    }
+		int countColumns = 0;
+		for(AColGroup g : cmb2.getColGroups()) {
+			IColIndex idx = g.getColIndices();
+			countColumns += idx.size();
+			assertTrue(idx.get(0) >= 0);
+			assertTrue(idx.get(idx.size() - 1) < cmb.getNumColumns());
+		}
+		assertEquals(cmb2.getNumColumns(), countColumns);
+	}
 
-    @Test
-    public void sliceTwoColumns() {
-        List<AColGroup> gs = new ArrayList<AColGroup>();
-        for(int i = 0; i < 50;  i+=2) {
-            gs.add(new ColGroupEmpty(ColIndexFactory.createI(i, i +1)));
-        }
+	@Test
+	public void sliceTwoColumns() {
+		List<AColGroup> gs = new ArrayList<>();
+		for(int i = 0; i < 50;  i+=2) {
+			gs.add(new ColGroupEmpty(ColIndexFactory.createI(i, i +1)));
+		}
 
-        CompressedMatrixBlock cmb = new CompressedMatrixBlock(100, 50, -1, false, gs);
+		CompressedMatrixBlock cmb = new CompressedMatrixBlock(100, 50, -1, false, gs);
 
-        CompressedMatrixBlock cmb2 = (CompressedMatrixBlock) cmb.slice(0, 99, 5, 40);
-        assertEquals(40 - 4, cmb2.getNumColumns());
-        assertEquals((40 - 4) /2 + 1, cmb2.getColGroups().size());
+		CompressedMatrixBlock cmb2 = (CompressedMatrixBlock) cmb.slice(0, 99, 5, 40);
+		assertEquals(40 - 4, cmb2.getNumColumns());
+		assertEquals((40 - 4) /2 + 1, cmb2.getColGroups().size());
 
-        int countColumns = 0;
-        for(AColGroup g : cmb2.getColGroups()) {
-            IColIndex idx = g.getColIndices();
-            countColumns += idx.size();
-            assertTrue(idx.get(0) >= 0);
-            assertTrue(idx.get(idx.size() - 1) < cmb.getNumColumns());
-        }
-        assertEquals(cmb2.getNumColumns(), countColumns);
-    }
+		int countColumns = 0;
+		for(AColGroup g : cmb2.getColGroups()) {
+			IColIndex idx = g.getColIndices();
+			countColumns += idx.size();
+			assertTrue(idx.get(0) >= 0);
+			assertTrue(idx.get(idx.size() - 1) < cmb.getNumColumns());
+		}
+		assertEquals(cmb2.getNumColumns(), countColumns);
+	}
 
 
-    @Test
-    public void sliceTwoColumnsV2() {
-        List<AColGroup> gs = new ArrayList<AColGroup>();
-        gs.add(new ColGroupEmpty(ColIndexFactory.createI(0)));
-        for(int i = 1; i < 51;  i+=2) {
-            gs.add(new ColGroupEmpty(ColIndexFactory.createI(i, i +1)));
-        }
+	@Test
+	public void sliceTwoColumnsV2() {
+		List<AColGroup> gs = new ArrayList<>();
+		gs.add(new ColGroupEmpty(ColIndexFactory.createI(0)));
+		for(int i = 1; i < 51;  i+=2) {
+			gs.add(new ColGroupEmpty(ColIndexFactory.createI(i, i +1)));
+		}
 
-        CompressedMatrixBlock cmb = new CompressedMatrixBlock(100, 51, -1, false, gs);
+		CompressedMatrixBlock cmb = new CompressedMatrixBlock(100, 51, -1, false, gs);
 
-        CompressedMatrixBlock cmb2 = (CompressedMatrixBlock) cmb.slice(0, 99, 5, 40);
-        assertEquals(40 - 4, cmb2.getNumColumns());
-        assertEquals(18, cmb2.getColGroups().size());
+		CompressedMatrixBlock cmb2 = (CompressedMatrixBlock) cmb.slice(0, 99, 5, 40);
+		assertEquals(40 - 4, cmb2.getNumColumns());
+		assertEquals(18, cmb2.getColGroups().size());
 
-        int countColumns = 0;
-        for(AColGroup g : cmb2.getColGroups()) {
-            IColIndex idx = g.getColIndices();
-            countColumns += idx.size();
-            assertTrue(idx.get(0) >= 0);
-            assertTrue(idx.get(idx.size() - 1) < cmb.getNumColumns());
-        }
-        assertEquals(cmb2.getNumColumns(), countColumns);
-    }
+		int countColumns = 0;
+		for(AColGroup g : cmb2.getColGroups()) {
+			IColIndex idx = g.getColIndices();
+			countColumns += idx.size();
+			assertTrue(idx.get(0) >= 0);
+			assertTrue(idx.get(idx.size() - 1) < cmb.getNumColumns());
+		}
+		assertEquals(cmb2.getNumColumns(), countColumns);
+	}
 }

@@ -23,7 +23,6 @@ import java.io.Serializable;
 import java.util.ArrayList;
 
 import org.apache.spark.broadcast.Broadcast;
-import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
 import org.apache.sysds.runtime.controlprogram.caching.CacheBlockFactory;
 import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;

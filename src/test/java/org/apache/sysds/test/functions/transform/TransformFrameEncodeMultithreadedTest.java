@@ -42,8 +42,8 @@ import org.junit.Test;
 public class TransformFrameEncodeMultithreadedTest extends AutomatedTestBase {
 	private final static String TEST_NAME1 = "TransformFrameEncodeMultithreadedTest";
 	private final static String TEST_DIR = "functions/transform/";
-	private final static String TEST_CLASS_DIR = TEST_DIR + TransformFrameEncodeMultithreadedTest.class.getSimpleName()
-		+ "/";
+	private final static String TEST_CLASS_DIR = TEST_DIR +
+		TransformFrameEncodeMultithreadedTest.class.getSimpleName() + "/";
 
 	// Datasets and transform tasks without missing values
 	private final static String DATASET1 = "homes3/homes.csv";

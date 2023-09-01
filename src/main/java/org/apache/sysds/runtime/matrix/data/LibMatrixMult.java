@@ -265,7 +265,7 @@ public class LibMatrixMult
 			ArrayList<MatrixMultTask> tasks = new ArrayList<>();
 			ArrayList<Integer> blklens = UtilFunctions.getBalancedBlockSizesDefault(num, k,
 				(pm2r || pm2c || ret.denseBlock instanceof DenseBlockFP64DEDUP));
-			ConcurrentHashMap<double[], double[]> cache = m1.denseBlock instanceof DenseBlockFP64DEDUP ? new ConcurrentHashMap(): null;
+			ConcurrentHashMap<double[], double[]> cache = m1.denseBlock instanceof DenseBlockFP64DEDUP ? new ConcurrentHashMap<>(): null;
 			for(int i = 0, lb = 0; i < blklens.size(); lb += blklens.get(i), i++)
 				tasks.add(new MatrixMultTask(m1, m2, ret, tm2, pm2r, pm2c, m1Perm, sparse, lb, lb + blklens.get(i), cache));
 			// execute tasks

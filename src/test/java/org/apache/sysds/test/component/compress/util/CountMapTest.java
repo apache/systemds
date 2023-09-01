@@ -146,7 +146,7 @@ public class CountMapTest {
 		Arrays.sort(vals, Comparator.comparing((x) -> x.key()));
 		for(int i = 0; i < 100; i++) {
 			assertEquals(1, vals[i].count);
-			assertEquals((double) i, vals[i].key(), 0.0);
+			assertEquals(i, vals[i].key(), 0.0);
 		}
 	}
 
@@ -160,7 +160,7 @@ public class CountMapTest {
 		Arrays.sort(vals, Comparator.comparing((x) -> x.key()));
 		for(int i = 0; i < 100; i++) {
 			assertEquals(1, vals[i].count);
-			assertEquals((double) i, vals[i].key(), 0.0);
+			assertEquals(i, vals[i].key(), 0.0);
 		}
 	}
 
@@ -206,15 +206,12 @@ public class CountMapTest {
 
 	@Test
 	public void getDictionary() {
-		if(!(m instanceof DoubleCountHashMap))
-			return;
-
 		for(int i = 0; i < 9; i++)
 			m.increment((double) i);
 
-		double[] d = ((DoubleCountHashMap) m).getDictionary();
+		double[] d = m.getDictionary();
 		for(int i = 0; i < 9; i++)
-			assertEquals((double) i, d[i], 0.0);
+			assertEquals(i, d[i], 0.0);
 	}
 
 	@Test()

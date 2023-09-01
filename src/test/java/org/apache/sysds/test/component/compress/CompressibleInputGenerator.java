@@ -195,17 +195,17 @@ public class CompressibleInputGenerator {
 				if(r.nextDouble() < sparsity) {
 					if(transpose && output.isInSparseFormat()) {
 						int v = (int) (output.getValue(0, x) * y);
-						double d = Math.abs(v % ((int) (diff))) + min;
+						double d = Math.abs(v % diff) + min;
 						output.appendValue(y, x, d);
 					}
 					else if(transpose) {
 						int v = (int) (output.getValue(0, x) * y);
-						double d = Math.abs(v % ((int) (diff))) + min;
+						double d = Math.abs(v % diff) + min;
 						output.quickSetValue(y, x, d);
 					}
 					else {
 						int v = (int) (output.getValue(x, 0) * y);
-						double d = Math.abs(v % ((int) (diff))) + min;
+						double d = Math.abs(v % diff) + min;
 						output.quickSetValue(x, y, d);
 					}
 				}

@@ -33,7 +33,7 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
  * either or.
  */
 public class CompressedWriteBlock implements WritableComparable<CompressedWriteBlock> , Serializable{
-
+	private static final long serialVersionUID = -587986086067463499L;
 	public MatrixBlock mb;
 
 	private enum CONTENT {

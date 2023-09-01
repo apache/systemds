@@ -46,7 +46,7 @@ public class TransformFrameEncodeWordEmbedding2Test extends AutomatedTestBase
 	private final static String TEST_NAME2b = "TransformFrameEncodeWordEmbeddings2MultiCols2";
 
 	private final static String TEST_DIR = "functions/transform/";
-	private final static String TEST_CLASS_DIR = TEST_DIR + TransformFrameEncodeWordEmbedding1Test.class.getSimpleName() + "/";
+	private final static String TEST_CLASS_DIR = TEST_DIR + TransformFrameEncodeWordEmbedding2Test.class.getSimpleName() + "/";
 
 	@Override
 	public void setUp() {

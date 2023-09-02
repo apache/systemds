@@ -19,11 +19,11 @@
 #
 #-------------------------------------------------------------
 
-# The img_crop-function is an image data augmentation function. It cuts out a subregion of an image.
+# The img_crop_linearized cuts out a rectangular section of multiple linearized images.
 #
 # INPUT:
 # ----------------------------------------------------------------------------------------
-# img_in    Input images as linearized 2D matrix
+# img_in    Linearized input images as 2D matrix
 # w         The width of the subregion required
 # h         The height of the subregion required
 # x_offset  The horizontal coordinate in the image to begin the crop operation
@@ -35,10 +35,12 @@
 # img_out  Cropped images as linearized 2D matrix
 # --------------------------------------------------------------------------------------------------
 
-m_img_crop_linearized = function(Matrix[Double] img_in, Integer w, Integer h, Integer x_offset, Integer y_offset, Integer s_rows, Integer s_cols) return (Matrix[Double] img_out) {
+m_img_crop_linearized = function(Matrix[Double] img_in, Integer w, Integer h, Integer x_offset, Integer y_offset, Integer s_cols, Integer s_rows) return (Matrix[Double] img_out) {
   
   orig_w = s_cols
   orig_h = s_rows
+
+  nrows = nrow(img_in) # number of images
 
   start_h = (ceil((orig_h - h) / 2)) + y_offset
   end_h = (start_h + h - 1) 
@@ -55,15 +57,8 @@ m_img_crop_linearized = function(Matrix[Double] img_in, Integer w, Integer h, In
     mask[start_h:end_h, start_w:end_w] = temp_mask
 
     linear_mask = matrix(mask, rows=1, cols=orig_w * orig_h)
-
-    # Repeat the linear mask for each image (row)
-    full_mask = matrix(linear_mask, rows=n_images, cols=orig_w * orig_h)
     
-    # Apply mask by element-wise multiplication
-    masked_img = (img_in + 1) * full_mask
-
-    cropped_img = removeEmpty(target=masked_img, margin="cols", select=matrix(1, rows=1, cols=orig_w * orig_h))
-
-    img_out = matrix(cropped_img - 1, n_images, w * h)
+    img_out = matrix(removeEmpty(target=(matrix(img_in+1, nrow(img_in), ncol(img_in))), margin="cols", select=linear_mask) - 1, nrows, w * h)
   }
 }
+

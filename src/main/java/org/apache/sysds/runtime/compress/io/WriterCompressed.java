@@ -61,7 +61,12 @@ public final class WriterCompressed extends MatrixWriter {
 
 	protected static final Log LOG = LogFactory.getLog(WriterCompressed.class.getName());
 
+	protected static int jobUse = 0;
+	protected static  JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());
+
 	private String fname;
+
+	private FileSystem fs;
 	private Future<Writer>[] writers;
 	private Lock[] writerLocks;
 
@@ -128,10 +133,20 @@ public final class WriterCompressed extends MatrixWriter {
 	}
 
 	private void write(MatrixBlock src, final String fname, final int blen) throws IOException {
+		jobUse ++;
+		if(jobUse > 30){
+			job = new JobConf(ConfigurationManager.getCachedJobConf());
+			jobUse = 0;
+		}
+		
+		
 		if(this.fname != fname) {
 			this.fname = fname;
 			this.writers = null;
 		}
+
+		fs = IOUtilFunctions.getFileSystem(new Path(fname), job);
+
 		final int k = OptimizerUtils.getParallelBinaryWriteParallelism();
 		final int rlen = src.getNumRows();
 		final int clen = src.getNumColumns();
@@ -149,18 +164,20 @@ public final class WriterCompressed extends MatrixWriter {
 	}
 
 	private void writeSingleBlock(MatrixBlock b, int k) throws IOException {
-		Writer w = getWriter(fname);
+		final Path path = new Path(fname);
+		Writer w = generateWriter(job, path, fs);
 		MatrixIndexes idx = new MatrixIndexes(1, 1);
 		if(!(b instanceof CompressedMatrixBlock))
 			b = CompressedMatrixBlockFactory.compress(b, k).getLeft();
 		w.append(idx, new CompressedWriteBlock(b));
 		IOUtilFunctions.closeSilently(w);
-		cleanup();
+		cleanup(path);
 	}
 
 	private void writeMultiBlockUncompressed(MatrixBlock b, final int rlen, final int clen, final int blen, int k)
 		throws IOException {
-		Writer w = getWriter(fname);
+		final Path path = new Path(fname);
+		Writer w = generateWriter(job, path, fs);
 		final MatrixIndexes indexes = new MatrixIndexes();
 		LOG.warn("Writing compressed format with non identical compression scheme");
 
@@ -178,7 +195,7 @@ public final class WriterCompressed extends MatrixWriter {
 			}
 		}
 		IOUtilFunctions.closeSilently(w);
-		cleanup();
+		cleanup(path);
 	}
 
 	private void writeMultiBlockCompressed(MatrixBlock b, final int rlen, final int clen, final int blen, int k)
@@ -196,7 +213,8 @@ public final class WriterCompressed extends MatrixWriter {
 		try {
 
 			setupWrite();
-			Writer w = getWriter(fname);
+			final Path path = new Path(fname);
+			Writer w = generateWriter(job, path, fs);
 			for(int bc = 0; bc * blen < clen; bc++) {// column blocks
 				final int sC = bc * blen;
 				final int mC = Math.min(sC + blen, clen) - 1;
@@ -212,6 +230,7 @@ public final class WriterCompressed extends MatrixWriter {
 
 			}
 			IOUtilFunctions.closeSilently(w);
+			cleanup(path);
 		}
 		catch(Exception e) {
 			throw new IOException(e);
@@ -235,7 +254,7 @@ public final class WriterCompressed extends MatrixWriter {
 				final int j = i;
 				if(writers[i] == null) {
 					writers[i] = pool.submit(() -> {
-						return generateWriter(getPath(j));
+						return generateWriter(job, getPath(j), fs);
 					});
 				}
 				writerLocks[i] = new ReentrantLock();
@@ -273,7 +292,7 @@ public final class WriterCompressed extends MatrixWriter {
 				pool.submit(() -> {
 					try {
 						IOUtilFunctions.closeSilently(writers[l].get());
-						cleanup(getPath(l));
+						cleanup(job, getPath(l), fs);
 					}
 					catch(Exception e) {
 						throw new RuntimeException(e);
@@ -301,28 +320,24 @@ public final class WriterCompressed extends MatrixWriter {
 		return new Path(fname, IOUtilFunctions.getPartFileName(id));
 	}
 
-	private Writer getWriter(String fname) throws IOException {
-		final Path path = new Path(fname);
-		return generateWriter(path);
-	}
+	// private Writer getWriter(String fname) throws IOException {
+	// 	final Path path = new Path(fname);
+	// 	return generateWriter(job, path);
+	// }
 
-	private static Writer generateWriter(Path path) throws IOException {
-		final JobConf job = ConfigurationManager.getCachedJobConf();
-		// HDFSTool.deleteFileIfExistOnHDFS(path, job);
+	private static Writer generateWriter(JobConf job, Path path, FileSystem fs) throws IOException {
+		
 		return SequenceFile.createWriter(job, Writer.file(path), Writer.bufferSize(4096),
 			Writer.keyClass(MatrixIndexes.class), Writer.valueClass(CompressedWriteBlock.class),
 			Writer.compression(SequenceFile.CompressionType.NONE), // No Compression type on disk
 			Writer.replication((short) 1));
 	}
 
-	private void cleanup() throws IOException {
-		final Path path = new Path(fname);
-		cleanup(path);
+	private void cleanup(Path p) throws IOException {
+		cleanup(job, p, fs);
 	}
 
-	private static void cleanup(Path path) throws IOException {
-		final JobConf job = ConfigurationManager.getCachedJobConf();
-		final FileSystem fs = IOUtilFunctions.getFileSystem(path, job);
+	private static void cleanup(JobConf job, Path path, FileSystem fs) throws IOException {
 		IOUtilFunctions.deleteCrcFilesFromLocalFileSystem(fs, path);
 	}
 
@@ -384,7 +399,6 @@ public final class WriterCompressed extends MatrixWriter {
 		@Override
 		public Object call() throws Exception {
 
-			final JobConf job = ConfigurationManager.getCachedJobConf();
 			Path p = new Path(fname + ".dict", IOUtilFunctions.getPartFileName(id));
 			try(Writer w = SequenceFile.createWriter(job, Writer.file(p), //
 				Writer.bufferSize(4096), //
@@ -394,7 +408,7 @@ public final class WriterCompressed extends MatrixWriter {
 				Writer.replication((short) 1))) {
 				w.append(new DictWritable.K(id), new DictWritable(dicts));
 			}
-			cleanup(p);
+			cleanup(job, p, fs);
 			return null;
 
 		}

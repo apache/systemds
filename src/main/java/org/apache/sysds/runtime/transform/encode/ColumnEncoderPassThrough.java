@@ -67,9 +67,9 @@ public class ColumnEncoderPassThrough extends ColumnEncoder {
 	}
 
 	@Override
-	protected double[] getCodeCol(CacheBlock<?> in, int startInd, int blkSize) {
-		int endInd = getEndIndex(in.getNumRows(), startInd, blkSize);
-		double[] codes = new double[endInd-startInd];
+	protected double[] getCodeCol(CacheBlock<?> in, int startInd, int endInd, double[] tmp) {
+		final int endLength = endInd - startInd;
+		final double[] codes = tmp != null && tmp.length == endLength ? tmp : new double[endLength];
 		for (int i=startInd; i<endInd; i++) {
 			codes[i-startInd] = in.getDoubleNaN(i, _colID-1);
 		}
@@ -83,8 +83,8 @@ public class ColumnEncoderPassThrough extends ColumnEncoder {
 		mcsr = false; //force CSR for transformencode
 		int index = _colID - 1;
 		// Apply loop tiling to exploit CPU caches
-		double[] codes = getCodeCol(in, rowStart, blk);
 		int rowEnd = getEndIndex(in.getNumRows(), rowStart, blk);
+		double[] codes = getCodeCol(in, rowStart, rowEnd, null);
 		int B = 32; //tile size
 		for(int i = rowStart; i < rowEnd; i+=B) {
 			int lim = Math.min(i+B, rowEnd);

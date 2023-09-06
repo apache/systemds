@@ -57,7 +57,7 @@ public class ColumnEncoderWordEmbedding extends ColumnEncoder {
     }
 
     @Override
-    protected double[] getCodeCol(CacheBlock<?> in, int startInd, int blkSize) {
+    protected double[] getCodeCol(CacheBlock<?> in, int startInd, int endInd, double[] tmp) {
         throw new NotImplementedException();
     }
 

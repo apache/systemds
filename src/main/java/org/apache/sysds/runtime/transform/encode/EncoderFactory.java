@@ -49,19 +49,22 @@ import org.apache.wink.json4j.JSONObject;
 public interface EncoderFactory {
 	final static Log LOG = LogFactory.getLog(EncoderFactory.class.getName());
 
+	public static MultiColumnEncoder createEncoder(String spec, int clen) {
+		return createEncoder(spec, null, clen, null, null, -1, -1);
+	}
+
 	public static MultiColumnEncoder createEncoder(String spec, String[] colnames, int clen, FrameBlock meta) {
-		return createEncoder(spec, colnames, UtilFunctions.nCopies(clen, ValueType.STRING), meta);
+		return createEncoder(spec, colnames, clen, meta, null, -1, -1);
 	}
 
 	public static MultiColumnEncoder createEncoder(String spec, String[] colnames, int clen, FrameBlock meta,
 		int minCol, int maxCol) {
-		return createEncoder(spec, colnames, UtilFunctions.nCopies(clen, ValueType.STRING), meta, minCol, maxCol);
+		return createEncoder(spec, colnames, clen, meta, null, minCol, maxCol);
 	}
 
 	public static MultiColumnEncoder createEncoder(String spec, String[] colnames, ValueType[] schema, int clen,
 		FrameBlock meta) {
-		ValueType[] lschema = (schema == null) ? UtilFunctions.nCopies(clen, ValueType.STRING) : schema;
-		return createEncoder(spec, colnames, lschema, meta);
+		return createEncoder(spec, colnames, clen, meta);
 	}
 
 	public static MultiColumnEncoder createEncoder(String spec, String[] colnames, ValueType[] schema,
@@ -70,8 +73,8 @@ public interface EncoderFactory {
 	}
 
 	public static MultiColumnEncoder createEncoder(String spec, String[] colnames, ValueType[] schema, FrameBlock meta,
-		int minCol, int maxCol){
-		return createEncoder(spec, colnames, schema, meta, null, minCol, maxCol);
+		int minCol, int maxCol) {
+		return createEncoder(spec, colnames, schema.length, meta, null, minCol, maxCol);
 	}
 
 	public static MultiColumnEncoder createEncoder(String spec, String[] colnames, int clen, FrameBlock meta, MatrixBlock embeddings) {
@@ -80,13 +83,15 @@ public interface EncoderFactory {
 
 	public static MultiColumnEncoder createEncoder(String spec, String[] colnames, ValueType[] schema,
 												   FrameBlock meta, MatrixBlock embeddings) {
-		return createEncoder(spec, colnames, schema, meta, embeddings, -1, -1);
+		return createEncoder(spec, colnames, schema.length, meta, embeddings, -1, -1);
 	}
 
-	public static MultiColumnEncoder createEncoder(String spec, String[] colnames, ValueType[] schema, FrameBlock meta,
+	public static MultiColumnEncoder createEncoder(String spec, String[] colnames, int clen, FrameBlock meta,
 		MatrixBlock embeddings, int minCol, int maxCol) {
+
+
 		MultiColumnEncoder encoder;
-		int clen = schema.length;
+		// int clen = schema.length;
 
 		try {
 			// parse transform specification
@@ -155,6 +160,8 @@ public interface EncoderFactory {
 						binMethod = ColumnEncoderBin.BinMethod.EQUI_WIDTH;
 					else if ("EQUI-HEIGHT".equals(method))
 						binMethod = ColumnEncoderBin.BinMethod.EQUI_HEIGHT;
+					else if ("EQUI-HEIGHT-APPROX".equals(method))
+						binMethod = ColumnEncoderBin.BinMethod.EQUI_HEIGHT_APPROX;
 					else
 						throw new DMLRuntimeException("Unsupported binning method: " + method);
 					ColumnEncoderBin bin = new ColumnEncoderBin(id, numBins, binMethod);
@@ -177,12 +184,12 @@ public interface EncoderFactory {
 			}
 			encoder = new MultiColumnEncoder(lencoders);
 			if(!oIDs.isEmpty()) {
-				encoder.addReplaceLegacyEncoder(new EncoderOmit(jSpec, colnames, schema.length, minCol, maxCol));
+				encoder.addReplaceLegacyEncoder(new EncoderOmit(jSpec, colnames, clen, minCol, maxCol));
 				if(DMLScript.STATISTICS)
 					TransformStatistics.incEncoderCount(1);
 			}
 			if(!mvIDs.isEmpty()) {
-				EncoderMVImpute ma = new EncoderMVImpute(jSpec, colnames, schema.length, minCol, maxCol);
+				EncoderMVImpute ma = new EncoderMVImpute(jSpec, colnames, clen, minCol, maxCol);
 				ma.initRecodeIDList(rcIDs);
 				encoder.addReplaceLegacyEncoder(ma);
 				if(DMLScript.STATISTICS)

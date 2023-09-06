@@ -32,6 +32,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.stream.IntStream;
@@ -1411,6 +1412,48 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 			nonZeros = denseBlock.countNonZeros();
 		}
 		return nonZeros;
+	}
+
+	/**
+	 * Recompute the number of nonZero values in parallel
+	 * 
+	 * @param k the paralelization degree
+	 * @return the number of non zeros
+	 */
+	public long recomputeNonZeros(int k) {
+		if(isInSparseFormat()) {
+			return recomputeNonZeros();
+		}
+		else {
+			if((long) rlen * clen < 10000)
+				return recomputeNonZeros();
+			final ExecutorService pool = CommonThreadPool.get(k);
+			try {
+				List<Future<Long>> f = new ArrayList<>();
+				final int bz = 1000;
+				for(int i = 0; i < rlen; i += bz) {
+					for(int ii = 0; ii < clen; ii += bz) {
+						final int j = i;
+						final int jj = ii;
+						f.add(pool.submit(() -> //
+						recomputeNonZeros(j, Math.min(j + bz, rlen) - 1, jj, Math.min(jj + bz, clen) - 1)));
+					}
+				}
+				long nnz = 0;
+				for(Future<Long> e : f)
+					nnz += e.get();
+				nonZeros = nnz;
+				return nonZeros;
+
+			}
+			catch(Exception e) {
+				LOG.warn("Failed Parallel non zero count fallback to singlethread");
+				return recomputeNonZeros();
+			}
+			finally {
+				pool.shutdown();
+			}
+		}
 	}
 	
 	public long recomputeNonZeros(int rl, int ru) {
@@ -2986,7 +3029,6 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 	@Override
 	public MatrixBlock unaryOperations(UnaryOperator op, MatrixValue result) {
 		MatrixBlock ret = checkType(result);
-		
 		// estimate the sparsity structure of result matrix
 		// by default, we guess result.sparsity=input.sparsity, unless not sparse safe
 		boolean sp = this.sparse && op.sparseSafe;

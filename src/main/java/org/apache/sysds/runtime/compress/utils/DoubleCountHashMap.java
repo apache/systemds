@@ -39,6 +39,10 @@ public final class DoubleCountHashMap extends ACountHashMap<Double> {
 		return DCounts.hashIndex(key);
 	}
 
+	protected final DCounts create(double key, int id) {
+		return new DCounts(key, id);
+	}
+
 	protected final DCounts create(Double key, int id) {
 		return new DCounts(key, id);
 	}
@@ -57,17 +61,26 @@ public final class DoubleCountHashMap extends ACountHashMap<Double> {
 	}
 
 	public void replaceWithUIDsNoZero() {
-        int i = 0;
+		int i = 0;
 		Double z = Double.valueOf(0.0);
-        for(ACount<Double> e : data) {
-            while(e != null) {
-                if(!e.key().equals(z))
-                    e.id = i++;
+		for(ACount<Double> e : data) {
+			while(e != null) {
+				if(!e.key().equals(z))
+					e.id = i++;
 				else
 					e.id = -1;
-                e = e.next();
-            }
-        }
+				e = e.next();
+			}
+		}
 
-    }
+	}
+
+	@Override
+	public DoubleCountHashMap clone() {
+		DoubleCountHashMap ret = new DoubleCountHashMap(size);
+		for(ACount<Double> e : data)
+			ret.appendValue(e);
+		ret.size = size;
+		return ret;
+	}
 }

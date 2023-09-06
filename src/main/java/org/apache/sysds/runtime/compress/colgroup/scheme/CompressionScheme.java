@@ -32,6 +32,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup;
+import org.apache.sysds.runtime.matrix.data.LibMatrixReorg;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.Pair;
 import org.apache.sysds.runtime.util.CommonThreadPool;
@@ -66,10 +67,7 @@ public class CompressionScheme {
 	 * @return A Compressed instance of the given matrixBlock;
 	 */
 	public CompressedMatrixBlock encode(MatrixBlock mb) {
-		if(mb instanceof CompressedMatrixBlock)
-			throw new NotImplementedException(
-				"Not implemented schema encode/apply on an already compressed MatrixBlock");
-
+		validateInput(mb);
 		List<AColGroup> ret = new ArrayList<>(encodings.length);
 
 		for(int i = 0; i < encodings.length; i++)
@@ -88,6 +86,7 @@ public class CompressionScheme {
 	public CompressedMatrixBlock encode(MatrixBlock mb, int k) {
 		if(k == 1)
 			return encode(mb);
+		validateInput(mb);
 		final ExecutorService pool = CommonThreadPool.get(k);
 		try {
 
@@ -117,10 +116,7 @@ public class CompressionScheme {
 	 * @return The updated scheme. (It is updated in place)
 	 */
 	public CompressionScheme update(MatrixBlock mb) {
-		if(mb instanceof CompressedMatrixBlock)
-			throw new NotImplementedException(
-				"Not implemented schema encode/apply on an already compressed MatrixBlock");
-
+		validateInput(mb);
 		for(int i = 0; i < encodings.length; i++)
 			encodings[i] = encodings[i].update(mb);
 
@@ -138,6 +134,7 @@ public class CompressionScheme {
 	public CompressionScheme update(MatrixBlock mb, int k) {
 		if(k == 1)
 			return update(mb);
+		validateInput(mb);
 		final ExecutorService pool = CommonThreadPool.get(k);
 		try {
 
@@ -183,8 +180,15 @@ public class CompressionScheme {
 	}
 
 	public CompressedMatrixBlock updateAndEncode(MatrixBlock mb, int k) {
-		if(k == 1)
+		if(k == 1 || mb.getInMemorySize() < 1000 * 20 * 8)
 			return updateAndEncode(mb);
+		validateInput(mb);
+
+		boolean transposed = false;
+		if(mb.getSparsity() < 0.1) {
+			transposed = true;
+			mb = LibMatrixReorg.transpose(mb, k, true);
+		}
 
 		final ExecutorService pool = CommonThreadPool.get(k);
 		try {
@@ -193,7 +197,7 @@ public class CompressionScheme {
 			List<UpdateAndEncodeTask> tasks = new ArrayList<>();
 			int taskSize = Math.max(1, encodings.length / (4 * k));
 			for(int i = 0; i < encodings.length; i += taskSize)
-				tasks.add(new UpdateAndEncodeTask(i, Math.min(encodings.length, i + taskSize), ret, mb));
+				tasks.add(new UpdateAndEncodeTask(i, Math.min(encodings.length, i + taskSize), ret, mb, transposed));
 
 			for(Future<Object> t : pool.invokeAll(tasks))
 				t.get();
@@ -211,20 +215,31 @@ public class CompressionScheme {
 	}
 
 	public CompressedMatrixBlock updateAndEncode(MatrixBlock mb) {
-		if(mb instanceof CompressedMatrixBlock)
-			throw new NotImplementedException(
-				"Not implemented schema encode/apply on an already compressed MatrixBlock");
+		validateInput(mb);
 
 		List<AColGroup> ret = new ArrayList<>(encodings.length);
+		boolean transposed = false;
+		if(mb.getSparsity() < 0.1) {
+			transposed = true;
+			mb = LibMatrixReorg.transpose(mb, 1, true);
+		}
 
 		for(int i = 0; i < encodings.length; i++) {
-			Pair<ICLAScheme, AColGroup> p = encodings[i].updateAndEncode(mb);
+			ICLAScheme e = encodings[i];
+			Pair<ICLAScheme, AColGroup> p = transposed ? e.updateAndEncodeT(mb) : e.updateAndEncode(mb);
 			encodings[i] = p.getKey();
 			ret.add(p.getValue());
 		}
 
 		return new CompressedMatrixBlock(mb.getNumRows(), mb.getNumColumns(), mb.getNonZeros(), false, ret);
 
+	}
+
+	private void validateInput(MatrixBlock mb) {
+
+		if(mb instanceof CompressedMatrixBlock)
+			throw new NotImplementedException(
+				"Not implemented schema encode/apply on an already compressed MatrixBlock");
 	}
 
 	@Override
@@ -271,19 +286,22 @@ public class CompressionScheme {
 		final int e;
 		final MatrixBlock mb;
 		final AColGroup[] ret;
+		final boolean transposed;
 
-		protected UpdateAndEncodeTask(int i, int e, AColGroup[] ret, MatrixBlock mb) {
+		protected UpdateAndEncodeTask(int i, int e, AColGroup[] ret, MatrixBlock mb, boolean transposed) {
 			this.i = i;
 			this.e = e;
 			this.mb = mb;
 			this.ret = ret;
+			this.transposed = transposed;
 		}
 
 		@Override
 		public Object call() throws Exception {
 
 			for(int j = i; j < e; j++) {
-				Pair<ICLAScheme, AColGroup> p = encodings[j].updateAndEncode(mb);
+				ICLAScheme sc = encodings[j];
+				Pair<ICLAScheme, AColGroup> p = transposed ? sc.updateAndEncodeT(mb) : sc.updateAndEncode(mb);
 				encodings[j] = p.getKey();
 				ret[j] = p.getValue();
 			}

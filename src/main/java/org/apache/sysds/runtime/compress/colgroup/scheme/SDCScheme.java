@@ -20,17 +20,14 @@
 package org.apache.sysds.runtime.compress.colgroup.scheme;
 
 import org.apache.commons.lang3.NotImplementedException;
-import org.apache.sysds.runtime.compress.colgroup.AColGroup;
 import org.apache.sysds.runtime.compress.colgroup.ASDC;
 import org.apache.sysds.runtime.compress.colgroup.ASDCZero;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupSDCFOR;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
-import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
 public abstract class SDCScheme extends ACLAScheme {
 
-	// TODO make it into a soft reference
 	protected IDictionary lastDict;
 
 	protected SDCScheme(IColIndex cols) {
@@ -51,18 +48,6 @@ public abstract class SDCScheme extends ACLAScheme {
 			return new SDCSchemeSC(g);
 		else
 			return new SDCSchemeMC(g);
-	}
-
-	@Override
-	public AColGroup encode(MatrixBlock data, IColIndex columns) {
-		// TODO Auto-generated method stub
-		throw new UnsupportedOperationException("Unimplemented method 'encode'");
-	}
-
-	@Override
-	public ICLAScheme update(MatrixBlock data, IColIndex columns) {
-		// TODO Auto-generated method stub
-		throw new UnsupportedOperationException("Unimplemented method 'update'");
 	}
 
 	protected abstract Object getDef();

@@ -153,7 +153,6 @@ public class ArrayIndex extends AColIndex {
 			return new RangeIndex(minCombined, maxCombined + 1);
 		}
 
-		// LOG.error("Combining Worst " + this + " " + other);
 		final int[] ret = new int[sr + sl];
 		int pl = 0;
 		int pr = 0;

@@ -40,6 +40,12 @@ public class DDCSchemeMC extends DDCScheme {
 
 	private final DblArrayCountHashMap map;
 
+	private DDCSchemeMC(IColIndex cols, DblArrayCountHashMap map) {
+		super(cols);
+		this.map = map;
+		this.emptyRow = new DblArray(new double[cols.size()]);
+	}
+
 	protected DDCSchemeMC(ColGroupDDC g) {
 		super(g.getColIndices());
 		this.lastDict = g.getDictionary();
@@ -72,46 +78,49 @@ public class DDCSchemeMC extends DDCScheme {
 	}
 
 	@Override
-	public ICLAScheme update(MatrixBlock data, IColIndex columns) {
-		validate(data, columns);
+	protected ICLAScheme updateV(MatrixBlock data, IColIndex columns) {
 		final int nRow = data.getNumRows();
 		final ReaderColumnSelection reader = ReaderColumnSelection.createReader(//
 			data, columns, false, 0, nRow);
-		DblArray d = null;
-		int r = 0;
-		while((d = reader.nextRow()) != null) {
-			final int cr = reader.getCurrentRowIndex();
-			if(cr != r) {
-				map.increment(emptyRow, cr - r);
-				r = cr;
-			}
-			map.increment(d);
-			r++;
-		}
-
-		if(r < nRow)
-			map.increment(emptyRow, nRow - r - 1);
-
-		return this;
+		return update(data, reader, nRow, columns);
 	}
 
 	@Override
-	public AColGroup encode(MatrixBlock data, IColIndex columns) {
-
-		validate(data, columns);
+	protected AColGroup encodeV(MatrixBlock data, IColIndex columns) {
 		final int nRow = data.getNumRows();
 		final ReaderColumnSelection reader = ReaderColumnSelection.createReader(//
 			data, columns, false, 0, nRow);
-		final AMapToData d = MapToFactory.create(nRow, map.size());
+		return encode(data, reader, nRow, columns);
+	}
 
+	@Override
+	protected Pair<ICLAScheme, AColGroup> tryUpdateAndEncode(MatrixBlock data, IColIndex columns) {
+		final int nRow = data.getNumRows();
+		final ReaderColumnSelection reader = ReaderColumnSelection.createReader(//
+			data, columns, false, 0, nRow);
+		return tryUpdateAndEncode(data, reader, nRow, columns);
+	}
+
+	@Override
+	protected AColGroup encodeVT(MatrixBlock data, IColIndex columns) {
+		final int nRow = data.getNumColumns();
+		final ReaderColumnSelection reader = ReaderColumnSelection.createReader(//
+			data, columns, true, 0, nRow);
+		return encode(data, reader, nRow, columns);
+	}
+
+	private AColGroup encode(MatrixBlock data, ReaderColumnSelection reader, int nRow, IColIndex columns) {
+		final AMapToData d = MapToFactory.create(nRow, map.size());
 		DblArray cellVals;
 		ACount<DblArray> emptyIdx = map.getC(emptyRow);
 		if(emptyIdx == null) {
 
 			while((cellVals = reader.nextRow()) != null) {
 				final int row = reader.getCurrentRowIndex();
+
 				final int id = map.getId(cellVals);
 				d.set(row, id);
+
 			}
 		}
 		else {
@@ -132,22 +141,51 @@ public class DDCSchemeMC extends DDCScheme {
 		if(lastDict == null || lastDict.getNumberOfValues(columns.size()) != map.size())
 			lastDict = DictionaryFactory.create(map, columns.size(), false, data.getSparsity());
 		return ColGroupDDC.create(columns, lastDict, d, null);
+
 	}
 
 	@Override
-	protected Pair<ICLAScheme, AColGroup> tryUpdateAndEncode(MatrixBlock data, IColIndex columns) {
-
-		validate(data, columns);
-		final int nRow = data.getNumRows();
+	protected ICLAScheme updateVT(MatrixBlock data, IColIndex columns) {
+		final int nRow = data.getNumColumns();
 		final ReaderColumnSelection reader = ReaderColumnSelection.createReader(//
-			data, columns, false, 0, nRow);
+			data, columns, true, 0, nRow);
+		return update(data, reader, nRow, columns);
+	}
+
+	private ICLAScheme update(MatrixBlock data, ReaderColumnSelection reader, int nRow, IColIndex columns) {
+		DblArray d = null;
+		int r = 0;
+		while((d = reader.nextRow()) != null) {
+			final int cr = reader.getCurrentRowIndex();
+			if(cr != r) {
+				map.increment(emptyRow, cr - r);
+				r = cr;
+			}
+			map.increment(d);
+			r++;
+		}
+		if(r < nRow)
+			map.increment(emptyRow, nRow - r - 1);
+
+		return this;
+	}
+
+	@Override
+	protected Pair<ICLAScheme, AColGroup> tryUpdateAndEncodeT(MatrixBlock data, IColIndex columns) {
+		final int nRow = data.getNumColumns();
+		final ReaderColumnSelection reader = ReaderColumnSelection.createReader(//
+			data, columns, true, 0, nRow);
+		return tryUpdateAndEncode(data, reader, nRow, columns);
+	}
+
+	private Pair<ICLAScheme, AColGroup> tryUpdateAndEncode(MatrixBlock data, ReaderColumnSelection reader, int nRow,
+		IColIndex columns) {
 		final AMapToData d = MapToFactory.create(nRow, map.size());
 		int max = d.getMaxPossible();
 
 		DblArray cellVals;
 		ACount<DblArray> emptyIdx = map.getC(emptyRow);
 		if(emptyIdx == null) {
-
 			while((cellVals = reader.nextRow()) != null) {
 				final int row = reader.getCurrentRowIndex();
 				final int id = map.increment(cellVals);
@@ -185,4 +223,10 @@ public class DDCSchemeMC extends DDCScheme {
 		ICLAScheme s = this;
 		return new Pair<>(s, g);
 	}
+
+	@Override
+	public DDCSchemeMC clone() {
+		return new DDCSchemeMC(cols, map.clone());
+	}
+
 }

@@ -189,10 +189,9 @@ public final class CLALibSlice {
 		final List<AColGroup> newColGroups = new ArrayList<>();
 		for(AColGroup grp : cmb.getColGroups()) {
 			final AColGroup slice = grp.sliceColumns(cl, cue);
-			if(slice != null) {
-				// LOG.error(slice + " \n\ncl" + cl + "\n\n " + grp);
+			if(slice != null) 
 				newColGroups.add(slice);
-			}
+			
 		}
 
 		ret.allocateColGroupList(newColGroups);

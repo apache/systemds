@@ -19,10 +19,12 @@
 
 package org.apache.sysds.runtime.compress.utils;
 
+import org.apache.commons.lang.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.sysds.runtime.compress.utils.ACount.DCounts;
 
-public abstract class ACountHashMap<T> {
+public abstract class ACountHashMap<T> implements Cloneable {
     protected static final Log LOG = LogFactory.getLog(ACountHashMap.class.getName());
     protected static final int RESIZE_FACTOR = 2;
     protected static final float LOAD_FACTOR = 0.80f;
@@ -61,17 +63,69 @@ public abstract class ACountHashMap<T> {
         return increment(key, 1);
     }
 
+    public final int increment(double key) {
+        return increment(key, 1);
+    }
+
     /**
      * Increment and return the id of the incremented index.
      * 
-     * @param key   The key to incremnt
+     * @param key   The key to increment
      * @param count The number of times to increment the value
      * @return The Id of the incremented entry.
      */
-    public final int increment(final T key, final int count) {
+    public int increment(final T key, final int count) {
         // skip hash if data array is 1 length
         final int ix = data.length < shortCutSize ? 0 : hash(key) % data.length;
 
+        try {
+            return increment(key, ix, count);
+        }
+        catch(ArrayIndexOutOfBoundsException e) {
+            if(ix < 0)
+                return increment(key, 0, count);
+            else
+                throw new RuntimeException(e);
+        }
+    }
+
+    private final int increment(final T key, final int ix, final int count) throws ArrayIndexOutOfBoundsException {
+        final ACount<T> l = data[ix];
+        if(l == null) {
+            data[ix] = create(key, size);
+            // never try to resize here since we use a new unused bucket.
+            return size++;
+        }
+        else {
+            final ACount<T> v = l.inc(key, count, size);
+            if(v.id == size) {
+                size++;
+                resize();
+                return size - 1;
+            }
+            else {
+                // do not resize if not new.
+                return v.id;
+            }
+        }
+    }
+
+    public final int increment(final double key, final int count) {
+        // skip hash if data array is 1 length
+        final int ix = data.length < shortCutSize ? 0 : DCounts.hashIndex(key) % data.length;
+
+        try {
+            return increment(key, ix, count);
+        }
+        catch(ArrayIndexOutOfBoundsException e) {
+            if(ix < 0)
+                return increment(key, 0, count);
+            else
+                throw new RuntimeException(e);
+        }
+    }
+
+    private final int increment(final double key, final int ix, final int count) throws ArrayIndexOutOfBoundsException {
         final ACount<T> l = data[ix];
         if(l == null) {
             data[ix] = create(key, size);
@@ -101,9 +155,19 @@ public abstract class ACountHashMap<T> {
     }
 
     public ACount<T> getC(T key) {
-        int ix = data.length < shortCutSize ? 0 : hash(key) % data.length;
-        ACount<T> l = data[ix];
-        return l != null ? l.get(key) : null;
+        final int ix = data.length < shortCutSize ? 0 : hash(key) % data.length;
+        try {
+            ACount<T> l = data[ix];
+            return l != null ? l.get(key) : null;
+        }
+        catch(ArrayIndexOutOfBoundsException e) {
+            if(ix < 0) {
+                ACount<T> l = data[0];
+                return l != null ? l.get(key) : null;
+            }
+            else
+                throw new RuntimeException(e);
+        }
     }
 
     public int getOrDefault(T key, int def) {
@@ -155,16 +219,28 @@ public abstract class ACountHashMap<T> {
             appendValue(e);
     }
 
-    private void appendValue(ACount<T> ent) {
+    protected void appendValue(ACount<T> ent) {
         if(ent != null) {
             // take the tail recursively first
             appendValue(ent.next()); // append tail first
             ent.setNext(null); // set this tail to null.
             final int ix = hash(ent.key()) % data.length;
-            ACount<T> l = data[ix];
-            data[ix] = ent;
-            ent.setNext(l);
+            try {
+                appendValue(ent, ix);
+            }
+            catch(ArrayIndexOutOfBoundsException e) {
+                if(ix < 0)
+                    appendValue(ent, 0);
+                else
+                    throw new RuntimeException(e);
+            }
         }
+    }
+
+    private void appendValue(ACount<T> ent, int ix) {
+        ACount<T> l = data[ix];
+        data[ix] = ent;
+        ent.setNext(l);
     }
 
     public void sortBuckets() {
@@ -184,6 +260,10 @@ public abstract class ACountHashMap<T> {
     protected abstract int hash(T key);
 
     protected abstract ACount<T> create(T key, int id);
+
+    protected ACount<T> create(double key, int id) {
+        throw new NotImplementedException();
+    }
 
     @Override
     public String toString() {

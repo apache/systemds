@@ -26,6 +26,7 @@ import java.util.Arrays;
 
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.PlaceHolderDict;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.DictionaryFactory;
 import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
@@ -72,7 +73,7 @@ public class ColGroupSDCSingle extends ASDC {
 		final boolean allZero = ColGroupUtils.allZero(defaultTuple);
 		if(dict == null && allZero)
 			return new ColGroupEmpty(colIndexes);
-		else if(dict == null && offsets.getSize() * 2 > numRows + 2) {
+		else if(dict == null && offsets.getSize() * 2 > numRows + 2 && !(dict instanceof PlaceHolderDict)) {
 			AOffset rev = AOffset.reverse(numRows, offsets);
 			return ColGroupSDCSingleZeros.create(colIndexes, numRows, Dictionary.create(defaultTuple), rev, cachedCounts);
 		}
@@ -80,7 +81,7 @@ public class ColGroupSDCSingle extends ASDC {
 			return new ColGroupSDCSingle(colIndexes, numRows, null, defaultTuple, offsets, cachedCounts);
 		else if(allZero)
 			return ColGroupSDCSingleZeros.create(colIndexes, numRows, dict, offsets, cachedCounts);
-		else if(offsets.getSize() * 2 > numRows + 2) {
+		else if(offsets.getSize() * 2 > numRows + 2 && !(dict instanceof PlaceHolderDict)) {
 			AOffset rev = AOffset.reverse(numRows, offsets);
 			return new ColGroupSDCSingle(colIndexes, numRows, Dictionary.create(defaultTuple), dict.getValues(), rev,
 				null);

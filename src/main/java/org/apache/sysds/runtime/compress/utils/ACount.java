@@ -19,6 +19,7 @@
 
 package org.apache.sysds.runtime.compress.utils;
 
+import org.apache.commons.lang.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -39,6 +40,14 @@ public abstract class ACount<T> {
 	public abstract ACount<T> get(T key);
 
 	public abstract ACount<T> inc(T key, int c, int id);
+
+	public ACount<T> get(double key) {
+		throw new NotImplementedException();
+	}
+
+	public ACount<T> inc(double key, int c, int id) {
+		throw new NotImplementedException();
+	}
 
 	public ACount<T> sort() {
 		Sorter<T> s = new Sorter<>();
@@ -164,20 +173,31 @@ public abstract class ACount<T> {
 
 		@Override
 		public ACount<Double> get(Double key) {
+			return get((double) key);
+		}
+
+		@Override
+		public ACount<Double> get(double key) {
 			DCounts e = this;
-			while(e != null && !eq(key, e.key))
+			while(e != null && !Util.eq(key, e.key))
 				e = e.next;
 			return e;
 		}
 
 		@Override
 		public DCounts inc(Double key, int c, int id) {
+			// return inc((double) key, c, id);
+			throw new NotImplementedException();
+		}
+
+		@Override
+		public DCounts inc(double key, int c, int id) {
 			DCounts e = this;
-			while(e.next != null && !eq(key, e.key)) {
+			while(e.next != null && !Util.eq(key, e.key)) {
 				e = e.next;
 			}
 
-			if(eq(key, e.key)) {
+			if(Util.eq(key, e.key)) {
 				e.count += c;
 				return e;
 			}
@@ -185,12 +205,6 @@ public abstract class ACount<T> {
 				e.next = new DCounts(key, id, c);
 				return e.next;
 			}
-		}
-
-		private static boolean eq(double a, double b) {
-			long al = Double.doubleToRawLongBits(a);
-			long bl = Double.doubleToRawLongBits(b);
-			return al == bl;
 		}
 
 		public static final int hashIndex(double key) {

@@ -25,11 +25,13 @@ import java.io.IOException;
 import java.util.Arrays;
 
 import org.apache.commons.lang3.NotImplementedException;
+import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
-import org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.DictionaryFactory;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.MatrixBlockDictionary;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.PlaceHolderDict;
 import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToZero;
@@ -63,16 +65,17 @@ public class ColGroupSDCSingleZeros extends ASDCZero {
 	private ColGroupSDCSingleZeros(IColIndex colIndices, int numRows, IDictionary dict, AOffset offsets,
 		int[] cachedCounts) {
 		super(colIndices, numRows, dict, offsets, cachedCounts);
-		if(offsets.getSize() * 2 > numRows + 2)
-			throw new DMLCompressionException("Wrong direction of SDCSingleZero compression should be other way " + numRows
-				+ " vs " + _indexes + "\n" + this);
+		if(CompressedMatrixBlock.debug)
+			if(offsets.getSize() * 2 > numRows + 2 && !(dict instanceof PlaceHolderDict))
+				throw new DMLCompressionException("Wrong direction of SDCSingleZero compression should be other way "
+					+ numRows + " vs " + _indexes + "\n" + this);
 	}
 
 	public static AColGroup create(IColIndex colIndices, int numRows, IDictionary dict, AOffset offsets,
 		int[] cachedCounts) {
 		if(dict == null)
 			return new ColGroupEmpty(colIndices);
-		else if(offsets.getSize() * 2 > numRows + 2) {
+		else if(offsets.getSize() * 2 > numRows + 2 && !(dict instanceof PlaceHolderDict)) {
 			AOffset rev = AOffset.reverse(numRows, offsets);
 			IDictionary empty = MatrixBlockDictionary.create(new MatrixBlock(1, colIndices.size(), true));
 			return ColGroupSDCSingle.create(colIndices, numRows, empty, dict.getValues(), rev, null);

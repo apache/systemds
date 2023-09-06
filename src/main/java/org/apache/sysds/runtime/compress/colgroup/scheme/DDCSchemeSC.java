@@ -19,7 +19,6 @@
 
 package org.apache.sysds.runtime.compress.colgroup.scheme;
 
-import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupDDC;
@@ -38,10 +37,13 @@ public class DDCSchemeSC extends DDCScheme {
 
 	final private DoubleCountHashMap map;
 
+	private DDCSchemeSC(IColIndex cols, DoubleCountHashMap map) {
+		super(cols);
+		this.map = map;
+	}
+
 	protected DDCSchemeSC(ColGroupDDC g) {
 		super(g.getColIndices());
-		if(cols.size() != 1)
-			throw new DMLRuntimeException("Invalid single col scheme");
 		this.lastDict = g.getDictionary();
 		int unique = lastDict.getNumberOfValues(1);
 		map = new DoubleCountHashMap(unique);
@@ -60,22 +62,20 @@ public class DDCSchemeSC extends DDCScheme {
 	}
 
 	@Override
-	public ICLAScheme update(MatrixBlock data, IColIndex columns) {
-		validate(data, columns);
+	protected ICLAScheme updateV(MatrixBlock data, IColIndex columns) {
 		if(data.isEmpty())
 			map.increment(0.0, data.getNumRows());
 		else if(data.isInSparseFormat())
-			updateSparse(data, columns);
+			updateSparse(data, columns.get(0));
 		else if(data.getDenseBlock().isContiguous())
-			updateDense(data, columns);
+			updateDense(data, columns.get(0));
 		else
-			updateGeneric(data, columns);
+			updateGeneric(data, columns.get(0));
 
 		return this;
 	}
 
-	private ICLAScheme updateSparse(MatrixBlock data, IColIndex columns) {
-		final int col = columns.get(0);
+	private ICLAScheme updateSparse(MatrixBlock data, int col) {
 		final int nRow = data.getNumRows();
 		final SparseBlock sb = data.getSparseBlock();
 		for(int i = 0; i < nRow; i++)
@@ -83,8 +83,8 @@ public class DDCSchemeSC extends DDCScheme {
 		return this;
 	}
 
-	private ICLAScheme updateDense(MatrixBlock data, IColIndex columns) {
-		final int col = columns.get(0);
+	private ICLAScheme updateDense(MatrixBlock data, int col) {
+
 		final int nRow = data.getNumRows();
 		final double[] vals = data.getDenseBlockValues();
 		final int nCol = data.getNumColumns();
@@ -94,8 +94,7 @@ public class DDCSchemeSC extends DDCScheme {
 		return this;
 	}
 
-	private ICLAScheme updateGeneric(MatrixBlock data, IColIndex columns) {
-		final int col = columns.get(0);
+	private ICLAScheme updateGeneric(MatrixBlock data, int col) {
 		final int nRow = data.getNumRows();
 		final DenseBlock db = data.getDenseBlock();
 		for(int i = 0; i < nRow; i++) {
@@ -107,8 +106,7 @@ public class DDCSchemeSC extends DDCScheme {
 	}
 
 	@Override
-	public AColGroup encode(MatrixBlock data, IColIndex columns) {
-		validate(data, columns);
+	protected AColGroup encodeV(MatrixBlock data, IColIndex columns) {
 		if(data.isEmpty())
 			return new ColGroupEmpty(columns);
 		final int nRow = data.getNumRows();
@@ -123,9 +121,7 @@ public class DDCSchemeSC extends DDCScheme {
 	}
 
 	private void encode(MatrixBlock data, AMapToData d, int col) {
-		if(data.isEmpty())
-			d.fill(map.getId(0.0));
-		else if(data.isInSparseFormat())
+		if(data.isInSparseFormat())
 			encodeSparse(data, d, col);
 		else if(data.getDenseBlock().isContiguous())
 			encodeDense(data, d, col);
@@ -162,9 +158,10 @@ public class DDCSchemeSC extends DDCScheme {
 
 	@Override
 	protected Pair<ICLAScheme, AColGroup> tryUpdateAndEncode(MatrixBlock data, IColIndex columns) {
-		validate(data, columns);
-		if(data.isEmpty())
+		if(data.isEmpty()) {
+			map.increment(0.0, data.getNumRows());
 			return new Pair<>(this, new ColGroupEmpty(columns));
+		}
 		final int nRow = data.getNumRows();
 
 		final AMapToData d = MapToFactory.create(nRow, map.size());
@@ -178,9 +175,7 @@ public class DDCSchemeSC extends DDCScheme {
 
 	private void encodeAndUpdate(MatrixBlock data, AMapToData d, int col) {
 		final int max = d.getMaxPossible();
-		if(data.isEmpty())
-			d.fill(map.getId(0.0));
-		else if(data.isInSparseFormat())
+		if(data.isInSparseFormat())
 			encodeAndUpdateSparse(data, d, col, max);
 		else if(data.getDenseBlock().isContiguous())
 			encodeAndUpdateDense(data, d, col, max);
@@ -191,6 +186,7 @@ public class DDCSchemeSC extends DDCScheme {
 	private void encodeAndUpdateSparse(MatrixBlock data, AMapToData d, int col, int max) {
 		final int nRow = data.getNumRows();
 		final SparseBlock sb = data.getSparseBlock();
+
 		for(int i = 0; i < nRow; i++) {
 			int id = map.increment(sb.get(i, col));
 			if(id >= max)
@@ -225,4 +221,140 @@ public class DDCSchemeSC extends DDCScheme {
 			d.set(i, id);
 		}
 	}
+
+	@Override
+	protected AColGroup encodeVT(MatrixBlock data, IColIndex columns) {
+		if(data.isEmpty())
+			return new ColGroupEmpty(columns);
+		final int nRow = data.getNumColumns();
+
+		final AMapToData d = MapToFactory.create(nRow, map.size());
+
+		encodeT(data, d, cols.get(0));
+		if(lastDict == null || lastDict.getNumberOfValues(columns.size()) != map.size())
+			lastDict = DictionaryFactory.create(map);
+
+		return ColGroupDDC.create(columns, lastDict, d, null);
+	}
+
+	private void encodeT(MatrixBlock data, AMapToData d, int col) {
+		if(data.isInSparseFormat())
+			encodeSparseT(data, d, col);
+		else
+			encodeDenseT(data, d, col);
+	}
+
+	private void encodeSparseT(MatrixBlock data, AMapToData d, int col) {
+		final SparseBlock sb = data.getSparseBlock();
+		d.fill(map.getId(0.0));
+		if(!sb.isEmpty(col)) {
+			int apos = sb.pos(col);
+			final int[] aix = sb.indexes(col);
+			final int alen = sb.size(col) + apos;
+			final double[] aval = sb.values(col);
+			while(apos < alen) {
+				final double v = aval[apos];
+				final int idx = aix[apos++];
+				d.set(idx, map.getId(v));
+			}
+		}
+	}
+
+	private void encodeDenseT(MatrixBlock data, AMapToData d, int col) {
+		final DenseBlock db = data.getDenseBlock();
+		final double[] vals = db.values(col);
+		final int nCol = data.getNumColumns();
+		for(int i = 0, off = db.pos(col); i < nCol; i++, off++)
+			d.set(i, map.getId(vals[off]));
+	}
+
+	@Override
+	protected ICLAScheme updateVT(MatrixBlock data, IColIndex columns) {
+		if(data.isEmpty())
+			map.increment(0.0, data.getNumColumns());
+		else if(data.isInSparseFormat())
+			updateSparseT(data, columns.get(0));
+		else // dense and generic can be handled together if transposed
+			updateDenseT(data, columns.get(0));
+
+		return this;
+	}
+
+	private void updateDenseT(MatrixBlock data, int col) {
+		final DenseBlock db = data.getDenseBlock();
+		final double[] vals = db.values(col);
+		final int nCol = data.getNumColumns();
+		for(int i = 0, off = db.pos(col); i < nCol; i++, off++)
+			map.increment(vals[off]);
+	}
+
+	private void updateSparseT(MatrixBlock data, int col) {
+		final SparseBlock sb = data.getSparseBlock();
+
+		if(!sb.isEmpty(col)) {
+			int apos = sb.pos(col);
+			final int alen = sb.size(col) + apos;
+			final double[] aval = sb.values(col);
+			map.increment(0.0, alen - apos);
+			while(apos < alen)
+				map.increment(aval[apos++]);
+		}
+		else
+			map.increment(0.0, data.getNumColumns());
+
+	}
+
+	@Override
+	protected Pair<ICLAScheme, AColGroup> tryUpdateAndEncodeT(MatrixBlock data, IColIndex columns) {
+		if(data.isEmpty())
+			return new Pair<>(this, new ColGroupEmpty(columns));
+		final int nRow = data.getNumColumns();
+
+		final AMapToData d = MapToFactory.create(nRow, map.size());
+
+		encodeAndUpdateT(data, d, cols.get(0));
+		if(lastDict == null || lastDict.getNumberOfValues(columns.size()) != map.size())
+			lastDict = DictionaryFactory.create(map);
+
+		return new Pair<>(this, ColGroupDDC.create(columns, lastDict, d, null));
+	}
+
+	private void encodeAndUpdateT(MatrixBlock data, AMapToData d, int col) {
+		if(data.isInSparseFormat())
+			encodeAndUpdateSparseT(data, d, col);
+		else
+			encodeAndUpdateDenseT(data, d, col);
+	}
+
+	private void encodeAndUpdateSparseT(MatrixBlock data, AMapToData d, int col) {
+		final SparseBlock sb = data.getSparseBlock();
+		if(!sb.isEmpty(col)) {
+			int apos = sb.pos(col);
+			final int[] aix = sb.indexes(col);
+			final int alen = sb.size(col) + apos;
+			d.fill(map.increment(0.0, data.getNumColumns() - alen - apos));
+			final double[] aval = sb.values(col);
+			while(apos < alen) {
+				final double v = aval[apos];
+				final int idx = aix[apos++];
+				d.set(idx, map.increment(v));
+			}
+		}
+		else
+			d.fill(map.increment(0.0, data.getNumColumns()));
+	}
+
+	private void encodeAndUpdateDenseT(MatrixBlock data, AMapToData d, int col) {
+		final DenseBlock db = data.getDenseBlock();
+		final double[] vals = db.values(col);
+		final int nCol = data.getNumColumns();
+		for(int i = 0, off = db.pos(col); i < nCol; i++, off++)
+			d.set(i, map.increment(vals[off]));
+	}
+
+	@Override
+	public DDCSchemeSC clone() {
+		return new DDCSchemeSC(cols, map.clone());
+	}
+
 }

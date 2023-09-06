@@ -102,4 +102,11 @@ public interface Util {
 			rowVector.quickSetValue(0, i, v[colIndexes.get(i)]);
 		return rowVector;
 	}
+
+	public static boolean eq(double a, double b) {
+		long al = Double.doubleToRawLongBits(a);
+		long bl = Double.doubleToRawLongBits(b);
+		return al == bl;
+	}
+
 }

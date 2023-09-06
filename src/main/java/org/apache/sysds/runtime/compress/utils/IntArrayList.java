@@ -88,6 +88,10 @@ public class IntArrayList {
 		_data = Arrays.copyOf(_data, _data.length * RESIZE_FACTOR);
 	}
 
+	public void reset(){
+		_size = 0;
+	}
+
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();

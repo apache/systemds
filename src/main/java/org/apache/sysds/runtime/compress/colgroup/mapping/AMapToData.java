@@ -801,7 +801,7 @@ public abstract class AMapToData implements Serializable {
 	/**
 	 * Get the maximum possible value to encode in this encoding. For instance in a bit you can encode 2 values
 	 * 
-	 * @return The maximum number of distict values to encode
+	 * @return The maximum number of distinct values to encode
 	 */
 	public abstract int getMaxPossible();
 

@@ -129,17 +129,17 @@ public class FrameUtilTest {
 
 	@Test
 	public void testInfinite() {
-		assertEquals(ValueType.FP64, FrameUtil.isType("infinity"));
+		assertEquals(ValueType.FP32, FrameUtil.isType("infinity"));
 	}
 
 	@Test
 	public void testMinusInfinite() {
-		assertEquals(ValueType.FP64, FrameUtil.isType("-infinity"));
+		assertEquals(ValueType.FP32, FrameUtil.isType("-infinity"));
 	}
 
 	@Test
 	public void testNan() {
-		assertEquals(ValueType.FP64, FrameUtil.isType("nan"));
+		assertEquals(ValueType.FP32, FrameUtil.isType("nan"));
 	}
 
 	@Test

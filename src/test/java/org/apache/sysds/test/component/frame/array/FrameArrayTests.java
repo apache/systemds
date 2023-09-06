@@ -189,7 +189,9 @@ public class FrameArrayTests {
 		for(int i = 0; i < size; i++) {
 			Object av = a.get(i);
 			Object sv = s.get(i);
-			if(!(av == null && sv == null))
+			if((av == null && sv != null) || (sv == null && av != null))
+				fail("not both null");
+			else if(av != null && sv != null)
 				assertTrue(av.toString().equals(sv));
 		}
 	}
@@ -1720,7 +1722,9 @@ public class FrameArrayTests {
 		for(int i = 0; i < size; i++) {
 			final Object av = a.get(i);
 			final Object bv = b.get(i);
-			if(!(av == null && bv == null))
+			if((av == null && bv != null) || (bv == null && av != null))
+				fail("not both null");
+			else if(av != null && bv != null)
 				assertTrue(err, av.toString().equals(bv.toString()));
 		}
 	}
@@ -1730,7 +1734,9 @@ public class FrameArrayTests {
 		for(int i = 0; i < size; i++) {
 			final Object av = sub.get(i);
 			final Object bv = b.get(i + off);
-			if(!(av == null && bv == null))
+			if((av == null && bv != null) || (bv == null && av != null))
+				fail("not both null");
+			else if(av != null && bv != null)
 				assertTrue(av.toString().equals(bv.toString()));
 		}
 	}
@@ -1739,7 +1745,9 @@ public class FrameArrayTests {
 		for(int i = rl; i <= ru; i++, off++) {
 			Object av = out.get(i);
 			Object bv = in.get(off);
-			if(!(av == null && bv == null)) {
+			if((av == null && bv != null) || (bv == null && av != null))
+				fail("not both null");
+			else if(av != null && bv != null){
 				String v1 = av.toString();
 				String v2 = bv.toString();
 				assertEquals("i: " + i + " args: " + rl + " " + ru + " " + (off - i) + " " + out.size(), v1, v2);

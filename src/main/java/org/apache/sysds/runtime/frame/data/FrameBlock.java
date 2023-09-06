@@ -31,9 +31,11 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Function;
 
@@ -56,6 +58,7 @@ import org.apache.sysds.runtime.frame.data.columns.ColumnMetadata;
 import org.apache.sysds.runtime.frame.data.iterators.IteratorFactory;
 import org.apache.sysds.runtime.frame.data.lib.FrameFromMatrixBlock;
 import org.apache.sysds.runtime.frame.data.lib.FrameLibAppend;
+import org.apache.sysds.runtime.frame.data.lib.FrameLibApplySchema;
 import org.apache.sysds.runtime.frame.data.lib.FrameLibDetectSchema;
 import org.apache.sysds.runtime.frame.data.lib.FrameLibRemoveEmpty;
 import org.apache.sysds.runtime.frame.data.lib.FrameUtil;
@@ -214,8 +217,8 @@ public class FrameBlock implements CacheBlock<FrameBlock>, Externalizable {
 		if(debug) {
 			for(int i = 0; i < data.length; i++) {
 				if(data[i].size() != getNumRows())
-					throw new DMLRuntimeException(
-						"Invalid Frame allocation with different size arrays " + data[i].size() + " vs " + getNumRows());
+					throw new DMLRuntimeException("Invalid Frame allocation with different size arrays "
+						+ data[i].size() + " vs " + getNumRows());
 			}
 		}
 	}
@@ -239,8 +242,8 @@ public class FrameBlock implements CacheBlock<FrameBlock>, Externalizable {
 		if(debug) {
 			for(int i = 0; i < data.length; i++) {
 				if(data[i].size() != getNumRows())
-					throw new DMLRuntimeException(
-						"Invalid Frame allocation with different size arrays " + data[i].size() + " vs " + getNumRows());
+					throw new DMLRuntimeException("Invalid Frame allocation with different size arrays "
+						+ data[i].size() + " vs " + getNumRows());
 			}
 		}
 	}
@@ -400,8 +403,8 @@ public class FrameBlock implements CacheBlock<FrameBlock>, Externalizable {
 	}
 
 	/**
-	 * Allocate column data structures if necessary, i.e., if schema specified but not all column data structures created
-	 * yet.
+	 * Allocate column data structures if necessary, i.e., if schema specified but not all column data structures
+	 * created yet.
 	 *
 	 * @param numRows number of rows
 	 */
@@ -640,8 +643,8 @@ public class FrameBlock implements CacheBlock<FrameBlock>, Externalizable {
 	}
 
 	/**
-	 * Append a column of value type LONG as the last column of the data frame. The given array is wrapped but not copied
-	 * and hence might be updated in the future.
+	 * Append a column of value type LONG as the last column of the data frame. The given array is wrapped but not
+	 * copied and hence might be updated in the future.
 	 *
 	 * @param col array of longs
 	 */
@@ -701,7 +704,9 @@ public class FrameBlock implements CacheBlock<FrameBlock>, Externalizable {
 		Array[] tmpData = new Array[ncol];
 		for(int j = 0; j < ncol; j++)
 			tmpData[j] = ArrayFactory.create(cols[j]);
-		_colnames = empty ? null : ArrayUtils.addAll(getColumnNames(), createColNames(getNumColumns(), ncol)); // before schema modification
+		_colnames = empty ? null : ArrayUtils.addAll(getColumnNames(), createColNames(getNumColumns(), ncol)); // before
+																												// schema
+																												// modification
 		_schema = empty ? tmpSchema : ArrayUtils.addAll(_schema, tmpSchema);
 		_coldata = empty ? tmpData : ArrayUtils.addAll(_coldata, tmpData);
 		_nRow = cols[0].length;
@@ -859,17 +864,22 @@ public class FrameBlock implements CacheBlock<FrameBlock>, Externalizable {
 			if(rlen > 1000 && clen > 10 && ConfigurationManager.isParallelIOEnabled()) {
 				final ExecutorService pool = CommonThreadPool.get();
 				try {
-					size += pool.submit(() -> {
-						return Arrays.stream(_coldata).parallel() // parallel columns
-							.map(x ->x.getInMemorySize()).reduce(0L, (a,x) -> a + x);
-					}).get();
+					List<Future<Long>> f = new ArrayList<>(clen);
+					for(int i = 0; i < clen; i++) {
+						final int j = i;
+						f.add(pool.submit(() -> _coldata[j].getInMemorySize()));
+					}
+
+					for(Future<Long> e : f) {
+						size += e.get();
+					}
 				}
 				catch(InterruptedException | ExecutionException e) {
 					LOG.error(e);
 					for(Array<?> aa : _coldata)
 						size += aa.getInMemorySize();
 				}
-				finally{
+				finally {
 					pool.shutdown();
 				}
 			}
@@ -1012,11 +1022,11 @@ public class FrameBlock implements CacheBlock<FrameBlock>, Externalizable {
 
 	public FrameBlock leftIndexingOperations(FrameBlock rhsFrame, int rl, int ru, int cl, int cu, FrameBlock ret) {
 		// check the validity of bounds
-		if(rl < 0 || rl >= getNumRows() || ru < rl || ru >= getNumRows() || cl < 0 || cu >= getNumColumns() || cu < cl ||
-			cu >= getNumColumns()) {
+		if(rl < 0 || rl >= getNumRows() || ru < rl || ru >= getNumRows() || cl < 0 || cu >= getNumColumns() ||
+			cu < cl || cu >= getNumColumns()) {
 			throw new DMLRuntimeException(
-				"Invalid values for frame indexing: [" + (rl + 1) + ":" + (ru + 1) + "," + (cl + 1) + ":" + (cu + 1) + "] "
-					+ "must be within frame dimensions [" + getNumRows() + "," + getNumColumns() + "].");
+				"Invalid values for frame indexing: [" + (rl + 1) + ":" + (ru + 1) + "," + (cl + 1) + ":" + (cu + 1)
+					+ "] " + "must be within frame dimensions [" + getNumRows() + "," + getNumColumns() + "].");
 		}
 
 		if((ru - rl + 1) < rhsFrame.getNumRows() || (cu - cl + 1) < rhsFrame.getNumColumns()) {
@@ -1132,11 +1142,11 @@ public class FrameBlock implements CacheBlock<FrameBlock>, Externalizable {
 	}
 
 	protected void validateSliceArgument(int rl, int ru, int cl, int cu) {
-		if(rl < 0 || rl >= getNumRows() || ru < rl || ru >= getNumRows() || cl < 0 || cu >= getNumColumns() || cu < cl ||
-			cu >= getNumColumns()) {
+		if(rl < 0 || rl >= getNumRows() || ru < rl || ru >= getNumRows() || cl < 0 || cu >= getNumColumns() ||
+			cu < cl || cu >= getNumColumns()) {
 			throw new DMLRuntimeException(
-				"Invalid values for frame indexing: [" + (rl + 1) + ":" + (ru + 1) + "," + (cl + 1) + ":" + (cu + 1) + "] "
-					+ "must be within frame dimensions [" + getNumRows() + "," + getNumColumns() + "]");
+				"Invalid values for frame indexing: [" + (rl + 1) + ":" + (ru + 1) + "," + (cl + 1) + ":" + (cu + 1)
+					+ "] " + "must be within frame dimensions [" + getNumRows() + "," + getNumColumns() + "]");
 		}
 	}
 
@@ -1338,6 +1348,14 @@ public class FrameBlock implements CacheBlock<FrameBlock>, Externalizable {
 		return FrameLibDetectSchema.detectSchema(this, sampleFraction, k);
 	}
 
+	public final FrameBlock applySchema(FrameBlock schema) {
+		return FrameLibApplySchema.applySchema(this, schema);
+	}
+
+	public final FrameBlock applySchema(FrameBlock schema, int k) {
+		return FrameLibApplySchema.applySchema(this, schema, k);
+	}
+
 	/**
 	 * Drop the cell value which does not confirms to the data type of its column
 	 * 
@@ -1347,8 +1365,8 @@ public class FrameBlock implements CacheBlock<FrameBlock>, Externalizable {
 	public FrameBlock dropInvalidType(FrameBlock schema) {
 		// sanity checks
 		if(this.getNumColumns() != schema.getNumColumns())
-			throw new DMLException("mismatch in number of columns in frame and its schema " + this.getNumColumns() + " != "
-				+ schema.getNumColumns());
+			throw new DMLException("mismatch in number of columns in frame and its schema " + this.getNumColumns()
+				+ " != " + schema.getNumColumns());
 
 		// extract the schema in String array
 		String[] schemaString = IteratorFactory.getStringRowIterator(schema).next();
@@ -1375,8 +1393,8 @@ public class FrameBlock implements CacheBlock<FrameBlock>, Externalizable {
 
 				if(!dataType.toString().contains(type) && !(dataType == ValueType.BOOLEAN && type.equals("INT")) &&
 					!(dataType == ValueType.BOOLEAN && type.equals("FP"))) {
-					LOG.warn("Datatype detected: " + dataType + " where expected: " + schemaString[i] + " col: " + (i + 1)
-						+ ", row:" + (j + 1));
+					LOG.warn("Datatype detected: " + dataType + " where expected: " + schemaString[i] + " col: "
+						+ (i + 1) + ", row:" + (j + 1));
 
 					this.set(j, i, null);
 				}
@@ -1554,12 +1572,9 @@ public class FrameBlock implements CacheBlock<FrameBlock>, Externalizable {
 		else if(margin == 2) {
 			// Execute map function on columns
 			for(int j = 0; j < getNumColumns(); j++) {
-				String[] actualColumn = Arrays.copyOfRange((String[]) getColumnData(j), 0, getNumRows()); // since more rows
-																																		// can be
-																																		// allocated,
-																																		// mutable array
+				// since more rows can be allocated, mutable array
+				String[] actualColumn = Arrays.copyOfRange((String[]) getColumnData(j), 0, getNumRows());
 				String[] outColumn = lambdaExpr.apply(actualColumn);
-
 				for(int i = 0; i < getNumRows(); i++)
 					output[i][j] = outColumn[i];
 			}
@@ -1615,7 +1630,8 @@ public class FrameBlock implements CacheBlock<FrameBlock>, Externalizable {
 				sb.append("  return String.valueOf(" + expr + "); }}\n");
 			}
 			else if(varname.length == 2) {
-				sb.append("public String apply(String " + varname[0].trim() + ", String " + varname[1].trim() + ") {\n");
+				sb.append(
+					"public String apply(String " + varname[0].trim() + ", String " + varname[1].trim() + ") {\n");
 				sb.append("  return String.valueOf(" + expr + "); }}\n");
 			}
 		}
@@ -1651,11 +1667,12 @@ public class FrameBlock implements CacheBlock<FrameBlock>, Externalizable {
 
 		boolean NaNp = "NaN".equals(pattern);
 		boolean NaNr = "NaN".equals(replacement);
-		ValueType patternType = UtilFunctions.isBoolean(pattern) ? ValueType.BOOLEAN : (NumberUtils.isCreatable(pattern) |
-			NaNp ? (UtilFunctions.isIntegerNumber(pattern) ? ValueType.INT64 : ValueType.FP64) : ValueType.STRING);
-		ValueType replacementType = UtilFunctions
-			.isBoolean(replacement) ? ValueType.BOOLEAN : (NumberUtils.isCreatable(replacement) |
-				NaNr ? (UtilFunctions.isIntegerNumber(replacement) ? ValueType.INT64 : ValueType.FP64) : ValueType.STRING);
+		ValueType patternType = UtilFunctions
+			.isBoolean(pattern) ? ValueType.BOOLEAN : (NumberUtils.isCreatable(pattern) |
+				NaNp ? (UtilFunctions.isIntegerNumber(pattern) ? ValueType.INT64 : ValueType.FP64) : ValueType.STRING);
+		ValueType replacementType = UtilFunctions.isBoolean(replacement) ? ValueType.BOOLEAN : (NumberUtils
+			.isCreatable(replacement) |
+			NaNr ? (UtilFunctions.isIntegerNumber(replacement) ? ValueType.INT64 : ValueType.FP64) : ValueType.STRING);
 
 		if(patternType != replacementType || !ValueType.isSameTypeString(patternType, replacementType))
 			throw new DMLRuntimeException(

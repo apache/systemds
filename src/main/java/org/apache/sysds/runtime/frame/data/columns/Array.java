@@ -394,6 +394,8 @@ public abstract class Array<T> implements Writable {
 		return false;
 	}
 
+	public abstract boolean possiblyContainsNaN();
+
 	public Array<?> changeTypeWithNulls(ValueType t) {
 		final ABooleanArray nulls = getNulls();
 		if(nulls == null)

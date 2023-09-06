@@ -37,6 +37,9 @@ import org.apache.sysds.runtime.matrix.data.Pair;
 import org.apache.sysds.runtime.transform.encode.ColumnEncoderRecode;
 import org.apache.sysds.utils.MemoryEstimates;
 
+import ch.randelshofer.fastdoubleparser.JavaDoubleParser;
+import ch.randelshofer.fastdoubleparser.JavaFloatParser;
+
 public class StringArray extends Array<String> {
 	private String[] _data;
 
@@ -466,7 +469,7 @@ public class StringArray extends Array<String> {
 			for(int i = 0; i < size(); i++) {
 				final String s = _data[i];
 				if(s != null)
-					ret[i] = Double.parseDouble(s);
+					ret[i] = JavaDoubleParser.parseDouble(s);
 			}
 			return new DoubleArray(ret);
 		}
@@ -482,7 +485,7 @@ public class StringArray extends Array<String> {
 			for(int i = 0; i < size(); i++) {
 				final String s = _data[i];
 				if(s != null)
-					ret[i] = Float.parseFloat(s);
+					ret[i] = JavaFloatParser.parseFloat(s);
 			}
 			return new FloatArray(ret);
 		}
@@ -676,6 +679,11 @@ public class StringArray extends Array<String> {
 			return Arrays.equals(_data, ((StringArray) other)._data);
 		else
 			return false;
+	}
+
+	@Override
+	public boolean possiblyContainsNaN(){
+		return true;
 	}
 
 	@Override

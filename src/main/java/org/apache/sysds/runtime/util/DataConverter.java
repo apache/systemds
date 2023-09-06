@@ -79,7 +79,6 @@ import org.apache.sysds.runtime.meta.DataCharacteristics;
  * This class provides methods to read and write matrix blocks from to HDFS using different data formats.
  * Those functionalities are used especially for CP read/write and exporting in-memory matrices to HDFS
  * (before executing MR jobs).
- *
  */
 public class DataConverter {
 	private static final String DELIM = " ";
@@ -112,20 +111,6 @@ public class DataConverter {
 		writer.writeTensorToHDFS(tensor, dir, blen);
 	}
 
-	public static MatrixBlock readMatrixFromHDFS(String dir, FileFormat fmt, long rlen, long clen, int blen, boolean localFS)
-		throws IOException
-	{
-		ReadProperties prop = new ReadProperties();
-
-		prop.path = dir;
-		prop.fmt = fmt;
-		prop.rlen = rlen;
-		prop.clen = clen;
-		prop.blen = blen;
-		prop.localFS = localFS;
-
-		return readMatrixFromHDFS(prop);
-	}
 
 	public static MatrixBlock readMatrixFromHDFS(String dir, FileFormat fmt, long rlen, long clen, int blen)
 		throws IOException
@@ -152,23 +137,6 @@ public class DataConverter {
 		prop.clen = clen;
 		prop.blen = blen;
 		prop.expectedNnz = expectedNnz;
-
-		return readMatrixFromHDFS(prop);
-	}
-
-	public static MatrixBlock readMatrixFromHDFS(String dir, FileFormat fmt, long rlen, long clen,
-		int blen, long expectedNnz, boolean localFS)
-		throws IOException
-	{
-		ReadProperties prop = new ReadProperties();
-
-		prop.path = dir;
-		prop.fmt = fmt;
-		prop.rlen = rlen;
-		prop.clen = clen;
-		prop.blen = blen;
-		prop.expectedNnz = expectedNnz;
-		prop.localFS = localFS;
 
 		return readMatrixFromHDFS(prop);
 	}

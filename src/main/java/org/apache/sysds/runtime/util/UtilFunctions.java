@@ -1296,7 +1296,7 @@ public class UtilFunctions {
 	}
 
 	public static int getEndIndex(int arrayLength, int startIndex, int blockSize){
-		return (blockSize <= 0)? arrayLength: Math.min(arrayLength, startIndex + blockSize);
+		return blockSize <= 0 ? arrayLength : Math.min(arrayLength, startIndex + blockSize);
 	}
 
 	public static int[] getBlockSizes(int num, int numBlocks){

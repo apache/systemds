@@ -113,8 +113,8 @@ public class FederatedRCBindTest extends AutomatedTestBase {
 		int port3 = getRandomAvailablePort();
 		int port4 = getRandomAvailablePort();
 		Thread t1 = startLocalFedWorkerThread(port1, FED_WORKER_WAIT_S);
-		Thread t2 = startLocalFedWorkerThread(port2);
-		Thread t3 = startLocalFedWorkerThread(port3);
+		Thread t2 = startLocalFedWorkerThread(port2, FED_WORKER_WAIT_S);
+		Thread t3 = startLocalFedWorkerThread(port3, FED_WORKER_WAIT_S);
 		Thread t4 = startLocalFedWorkerThread(port4);
 
 		// we need the reference file to not be written to hdfs, so we get the correct format

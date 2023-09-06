@@ -30,7 +30,6 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
  * write functionality but might provide additional custom functionality. Any non-default parameters
  * (e.g., CSV read properties) should be passed into custom constructors. There is also a factory
  * for creating format-specific writers. 
- * 
  */
 public abstract class MatrixWriter {
 	protected static final Log LOG = LogFactory.getLog(MatrixWriter.class.getName());

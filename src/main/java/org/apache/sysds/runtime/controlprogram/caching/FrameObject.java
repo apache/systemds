@@ -138,6 +138,8 @@ public class FrameObject extends CacheableData<FrameBlock>
 	}
 
 	public static ValueType[] parseSchema(String schema) {
+		if(schema == null)
+			return new ValueType[]{ValueType.STRING};
 		// parse given schema
 		String[] parts = schema.split(DataExpression.DEFAULT_DELIM_DELIMITER);
 		ValueType[] ret = new ValueType[parts.length];

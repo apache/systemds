@@ -80,15 +80,17 @@ public interface TimingUtils {
 	 * it in the timing of the operation
 	 * 
 	 * @param f   The function to time
-	 * @param c   A cleanup funtion or part that should not be timed.
+	 * @param c   A cleanup function or part that should not be timed.
+	 * @param b   A setup function that should not be timed.
 	 * @param rep The number of repetitions to make
 	 * @param bq  The generator for the input
 	 * @return A list of the individual repetitions execution time
 	 * @throws InterruptedException An exception in case the job gets interrupted
 	 */
-	public static double[] time(F f, F c, int rep, IGenerate<?> bq) throws InterruptedException {
+	public static double[] time(F f, F c, F b, int rep, IGenerate<?> bq) throws InterruptedException {
 		double[] times = new double[rep];
 		for(int i = 0; i < rep; i++) {
+			b.run();
 			while(bq.isEmpty())
 				Thread.sleep(bq.defaultWaitTime());
 			time(f, times, i);

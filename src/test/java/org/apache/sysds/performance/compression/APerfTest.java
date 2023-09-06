@@ -43,16 +43,20 @@ public abstract class APerfTest<T, G> {
 	}
 
 	protected void execute(F f, String name) throws InterruptedException {
-		execute(f, () -> {
-			return;
-		}, name);
+		N n = new N();
+		execute(f, n, n, name);
 	}
 
 	protected void execute(F f, F c, String name) throws InterruptedException {
+		N n = new N();
+		execute(f, c, n, name);
+	}
+
+	protected void execute(F f, F c, F b, String name) throws InterruptedException {
 		warmup(f, 10);
 		gen.generate(N);
 		ret.clear();
-		double[] times = TimingUtils.time(f, c, N, gen);
+		double[] times = TimingUtils.time(f, c, b, N, gen);
 		String retS = makeResString(times);
 		System.out.println(String.format("%35s, %s, %10s", name, TimingUtils.stats(times), retS));
 	}
@@ -63,15 +67,18 @@ public abstract class APerfTest<T, G> {
 	}
 
 	protected void execute(F f, String name, int N) throws InterruptedException {
-		execute(f, () -> {
-			return;
-		}, name, N);
+		N none = new N();
+		execute(f, none, none, name, N);
 	}
 
 	protected void execute(F f, F c, String name, int N) throws InterruptedException {
+		execute(f, c, new N(), name, N);
+	}
+
+	protected void execute(F f, F c, F b, String name, int N) throws InterruptedException {
 		gen.generate(N);
 		ret.clear();
-		double[] times = TimingUtils.time(f, c, N, gen);
+		double[] times = TimingUtils.time(f, c, b, N, gen);
 		String retS = makeResString(times);
 		System.out.println(String.format("%35s, %s, %10s", name, TimingUtils.stats(times), retS));
 	}
@@ -86,8 +93,19 @@ public abstract class APerfTest<T, G> {
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		sb.append(String.format("%20s ", this.getClass().getSimpleName()));
-		sb.append(" Repetitions: ").append(N).append(" ");
+		sb.append(" Repetitions: ").append(N).append("\n");
+		sb.append(String.format("%20s ","Generator:"));
 		sb.append(gen);
+		sb.append("\n");
 		return sb.toString();
+	}
+
+	private class N implements F {
+
+		@Override
+		public void run() {
+			// co nothing
+		}
+
 	}
 }

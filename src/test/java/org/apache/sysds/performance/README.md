@@ -51,3 +51,22 @@ With profiler:
 ```bash
 java -jar -agentpath:$HOME/Programs/profiler/lib/libasyncProfiler.so=start,event=cpu,file=temp/log.html target/systemds-3.2.0-SNAPSHOT-perf.jar 12 10000 100 4 1.0 16 1000 -1
 ```
+
+Take a Matrix and perform serialization
+
+```bash 
+java -jar -agentpath:$HOME/Programs/profiler/lib/libasyncProfiler.so=start,event=cpu,file=temp/log.html target/systemds-3.2.0-SNAPSHOT-perf.jar 13 16 100 "temp/test.csv" -1
+```
+
+Take a Frame and transform into a Matrix and perform serialization.
+
+```bash 
+java -jar -agentpath:$HOME/Programs/profiler/lib/libasyncProfiler.so=start,event=cpu,file=temp/log.html target/systemds-3.2.0-SNAPSHOT-perf.jar 14 16 1000 "src/test/resources/datasets/titanic/titanic.csv" "src/test/resources/datasets/titanic/tfspec.json" -1
+```
+
+Frame Operation timings
+
+```bash
+java -jar -agentpath:$HOME/Programs/profiler/lib/libasyncProfiler.so=start,event=cpu,file=temp/log.html target/systemds-3.2.0-SNAPSHOT-perf.jar 15 16 10 "src/test/resources/datasets/titanic/titanic.csv" "src/test/resources/datasets/titanic/tfspec.json"
+```
+

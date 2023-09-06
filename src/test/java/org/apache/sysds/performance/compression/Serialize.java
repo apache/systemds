@@ -27,6 +27,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.file.Files;
+import java.util.ArrayList;
 
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.sysds.conf.CompilerConfig.ConfigType;
@@ -65,42 +66,42 @@ public class Serialize extends APerfTest<Serialize.InOut, MatrixBlock> {
 		super(N, gen);
 		this.file = file;
 		this.k = k;
-		
+
 	}
 
 	public void run() throws Exception, InterruptedException {
 		CompressedMatrixBlock.debug = true;
+		CompressedMatrixBlock.debug = false;
 		System.out.println(this);
 		File directory = new File(file).getParentFile();
 		if(!directory.exists()) {
 			directory.mkdir();
 		}
-		if(k == 1){
+
+		if(k == 1) {
 			ConfigurationManager.getCompilerConfig().set(ConfigType.PARALLEL_CP_WRITE_BINARYFORMATS, false);
 		}
 
 		warmup(() -> sumTask(k), N);
-		cleanup();
-		execute(() -> writeUncompressed(k), "Serialize");
-		// execute(() -> diskUncompressed(k), "CustomDisk");
-		cleanup();
-		execute(() -> standardIO(k), () -> setFileSize(), "StandardDisk");
-		cleanup();
 
-		execute(() -> compressTask(k), "Compress Normal");
+		// execute(() -> writeUncompressed(k), "Serialize");
+		// execute(() -> diskUncompressed(k), "CustomDisk");
+
+		execute(() -> standardIO(k), () -> setFileSize(), () -> cleanup(), "StandardDisk");
+
+		// execute(() -> compressTask(k), "Compress Normal");
 		// execute(() -> writeCompressTask(k), "Compress Normal Serialize");
 		// execute(() -> diskCompressTask(k), "Compress Normal CustomDisk");
-		cleanup();
-		execute(() -> standardCompressedIO(k), () -> setFileSize(), "Compress StandardIO");
-		cleanup();
+
+		execute(() -> standardCompressedIO(k), () -> setFileSize(), () -> cleanup(), "Compress StandardIO");
 
 		final CompressionScheme sch2 = CLALibScheme.getScheme(getC());
-		execute(() -> updateAndApplySchemeFused(sch2, k), "Update&Apply Scheme Fused");
+		// execute(() -> updateAndApplySchemeFused(sch2, k), "Update&Apply Scheme Fused");
 		// execute(() -> writeUpdateAndApplySchemeFused(sch2, k), "Update&Apply Scheme Fused Serialize");
-		// cleanup();
 		// execute(() -> diskUpdateAndApplySchemeFused(sch2, k), "Update&Apply Scheme Fused Disk");
-		cleanup();
-		execute(() -> standardCompressedIOUpdateAndApply(sch2, k), () -> setFileSize(), "Update&Apply Standard IO");
+
+		execute(() -> standardCompressedIOUpdateAndApply(sch2, k), () -> setFileSize(), () -> cleanup(),
+			"Update&Apply Standard IO");
 	}
 
 	public void run(int i) throws Exception, InterruptedException {
@@ -110,7 +111,7 @@ public class Serialize extends APerfTest<Serialize.InOut, MatrixBlock> {
 			ConfigurationManager.getCompilerConfig().set(ConfigType.PARALLEL_CP_WRITE_BINARYFORMATS, false);
 		}
 
-		final CompressionScheme sch = CLALibScheme.getScheme(getC());
+		final CompressionScheme sch = (i == 8 || i == 9 || i == 10 || i == 11) ? CLALibScheme.getScheme(getC()) : null;
 		cleanup();
 		switch(i) {
 			case 1:
@@ -120,7 +121,7 @@ public class Serialize extends APerfTest<Serialize.InOut, MatrixBlock> {
 				execute(() -> diskUncompressed(k), "CustomDisk");
 				break;
 			case 3:
-				execute(() -> standardIO(k), () -> setFileSize(), "StandardDisk");
+				execute(() -> standardIO(k), () -> setFileSize(), () -> cleanup(), "StandardDisk");
 				break;
 			case 4:
 				execute(() -> compressTask(k), "Compress Normal");
@@ -132,7 +133,7 @@ public class Serialize extends APerfTest<Serialize.InOut, MatrixBlock> {
 				execute(() -> diskCompressTask(k), "Compress Normal CustomDisk");
 				break;
 			case 7:
-				execute(() -> standardCompressedIO(k), () -> setFileSize(), "Compress StandardIO");
+				execute(() -> standardCompressedIO(k), () -> setFileSize(), () -> cleanup(), "Compress StandardIO");
 				break;
 			case 8:
 				execute(() -> updateAndApplySchemeFused(sch, k), "Update&Apply Scheme Fused");
@@ -144,7 +145,7 @@ public class Serialize extends APerfTest<Serialize.InOut, MatrixBlock> {
 				execute(() -> diskUpdateAndApplySchemeFused(sch, k), "Update&Apply Scheme Fused Disk");
 				break;
 			case 11:
-				execute(() -> standardCompressedIOUpdateAndApply(sch, k), () -> setFileSize(),
+				execute(() -> standardCompressedIOUpdateAndApply(sch, k), () -> setFileSize(), () -> cleanup(),
 					"Update&Apply Standard IO");
 				break;
 		}
@@ -296,6 +297,10 @@ public class Serialize extends APerfTest<Serialize.InOut, MatrixBlock> {
 
 	@Override
 	protected String makeResString(double[] times) {
+		return makeResString(ret, times);
+	}
+
+	public static String makeResString(ArrayList<InOut> ret, double[] times) {
 		double totalIn = 0;
 		double totalOut = 0;
 		double totalTime = 0.0;
@@ -334,6 +339,7 @@ public class Serialize extends APerfTest<Serialize.InOut, MatrixBlock> {
 		double stdOut = Math.sqrt(varOut / el);
 
 		return String.format("%12.0f+-%12.0f Byte/s, %12.0f+-%12.0f Byte/s", bytePerMsIn, stdIn, bytePerMsOut, stdOut);
+
 	}
 
 	public static int compare(InOut a, InOut b) {
@@ -473,7 +479,7 @@ public class Serialize extends APerfTest<Serialize.InOut, MatrixBlock> {
 		return super.toString() + " threads: " + k;
 	}
 
-	protected class InOut {
+	protected static class InOut {
 		protected long in;
 		protected long out;
 		protected double time;

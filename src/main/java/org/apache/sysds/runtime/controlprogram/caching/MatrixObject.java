@@ -124,7 +124,13 @@ public class MatrixObject extends CacheableData<MatrixBlock> {
 		_metaData = mtd;
 		_hdfsFileName = file;
 		_cache = null;
-		_data = data;
+		if(data != null) {
+			acquireModify(data);
+			release();
+		}
+		else {
+			data = null;
+		}
 	}
 
 	/**

@@ -67,9 +67,14 @@ public class ColGroupDDC extends APreAgg implements IMapToDataGroup {
 		_data = data;
 
 		if(CompressedMatrixBlock.debug) {
+			if(getNumValues() == 0)
+				throw new DMLCompressionException("Invalid construction with empty dictionary");
+			if(data.size() == 0)
+				throw new DMLCompressionException("Invalid length of the data. is zero");
+
 			if(data.getUnique() != dict.getNumberOfValues(colIndexes.size()))
 				throw new DMLCompressionException("Invalid map to dict Map has:" + data.getUnique() + " while dict has "
-					+ dict.getNumberOfValues(colIndexes.size()) );
+					+ dict.getNumberOfValues(colIndexes.size()));
 			int[] c = getCounts();
 			if(c.length != dict.getNumberOfValues(colIndexes.size()))
 				throw new DMLCompressionException("Invalid DDC Construction");
@@ -282,7 +287,8 @@ public class ColGroupDDC extends APreAgg implements IMapToDataGroup {
 			lmSparseMatrixNoPreAggSingleCol(matrix.getSparseBlock(), nColM, retV, nColRet, dictVals, rl, ru);
 		}
 		else
-			lmDenseMatrixNoPreAggSingleCol(matrix.getDenseBlockValues(), nColM, retV, nColRet, dictVals, rl, ru, cl, cu);
+			lmDenseMatrixNoPreAggSingleCol(matrix.getDenseBlockValues(), nColM, retV, nColRet, dictVals, rl, ru, cl,
+				cu);
 	}
 
 	private void lmSparseMatrixNoPreAggSingleCol(SparseBlock sb, int nColM, double[] retV, int nColRet, double[] vals,

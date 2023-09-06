@@ -44,22 +44,27 @@ public class RLEScheme extends ACLAScheme {
 	}
 
 	@Override
-	public AColGroup encode(MatrixBlock data) {
+	protected AColGroup encodeV(MatrixBlock data, IColIndex columns) {
 		throw new NotImplementedException();
 	}
 
 	@Override
-	public AColGroup encode(MatrixBlock data, IColIndex columns) {
+	protected ICLAScheme updateV(MatrixBlock data, IColIndex columns) {
 		throw new NotImplementedException();
 	}
 
 	@Override
-	public ICLAScheme update(MatrixBlock data) {
+	protected AColGroup encodeVT(MatrixBlock data, IColIndex columns) {
 		throw new NotImplementedException();
 	}
 
 	@Override
-	public ICLAScheme update(MatrixBlock data, IColIndex columns) {
+	protected ICLAScheme updateVT(MatrixBlock data, IColIndex columns) {
+		throw new NotImplementedException();
+	}
+
+	@Override
+	public ACLAScheme clone() {
 		throw new NotImplementedException();
 	}
 

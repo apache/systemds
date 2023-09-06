@@ -19,11 +19,10 @@
 
 package org.apache.sysds.runtime.compress.colgroup.scheme;
 
-import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup;
 import org.apache.sysds.runtime.compress.colgroup.ASDC;
 import org.apache.sysds.runtime.compress.colgroup.ASDCZero;
-import org.apache.sysds.runtime.compress.colgroup.ColGroupDDC;
+import org.apache.sysds.runtime.compress.colgroup.ColGroupConst;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupEmpty;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupSDC;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.DictionaryFactory;
@@ -47,41 +46,40 @@ public class SDCSchemeMC extends SDCScheme {
 	private final DblArray def;
 	private final DblArrayCountHashMap map;
 
+	public SDCSchemeMC(IColIndex cols, DblArrayCountHashMap map, DblArray def) {
+		super(cols);
+		this.map = map;
+		this.def = def;
+		this.emptyRow = new DblArray(new double[cols.size()]);
+	}
+
 	protected SDCSchemeMC(ASDC g) {
 		super(g.getColIndices());
-		try {
-			this.lastDict = g.getDictionary();
-			final MatrixBlockDictionary mbd = lastDict.getMBDict(this.cols.size());
-			final MatrixBlock mbDict = mbd != null ? mbd.getMatrixBlock() : new MatrixBlock(1, this.cols.size(), 0.0);
-			final int dictRows = mbDict.getNumRows();
-			final int dictCols = mbDict.getNumColumns();
 
+		this.lastDict = g.getDictionary();
+		final MatrixBlockDictionary mbd = lastDict.getMBDict(this.cols.size());
+		final MatrixBlock mbDict = mbd != null ? mbd.getMatrixBlock() : new MatrixBlock(1, this.cols.size(), 0.0);
+		final int dictRows = mbDict.getNumRows();
+		final int dictCols = mbDict.getNumColumns();
+
+		map = new DblArrayCountHashMap(dictRows * 2);
+		emptyRow = new DblArray(new double[dictCols]);
+		if(mbDict.isEmpty()) {// there is the option of an empty dictionary.
+			map.increment(emptyRow);
+		}
+		else {
 			// Read the mapping data and materialize map.
-			map = new DblArrayCountHashMap(dictRows * 2);
 			final ReaderColumnSelection reader = ReaderColumnSelection.createReader(mbDict, //
 				ColIndexFactory.create(dictCols), false, 0, dictRows);
-			emptyRow = new DblArray(new double[dictCols]);
 			DblArray d = null;
-			int r = 0;
 			while((d = reader.nextRow()) != null) {
-
-				final int row = reader.getCurrentRowIndex();
-				if(row != r) {
-					map.increment(emptyRow, row - r);
-					r = row;
-				}
+				// this leverage the fact that our readers not transposed never skips a line
 				map.increment(d);
 			}
-			if(r < dictRows) {
-				map.increment(emptyRow, dictRows - r);
-			}
-
-			def = new DblArray(g.getCommon());
-
 		}
-		catch(Exception e) {
-			throw new DMLCompressionException(g.getDictionary().toString());
-		}
+
+		def = new DblArray(g.getCommon());
+
 	}
 
 	protected SDCSchemeMC(ASDCZero g) {
@@ -105,34 +103,41 @@ public class SDCSchemeMC extends SDCScheme {
 	}
 
 	@Override
-	public AColGroup encode(MatrixBlock data, IColIndex columns) {
-		validate(data, columns);
-		final int nRow = data.getNumRows();
+	protected AColGroup encodeV(MatrixBlock data, IColIndex columns) {
 		if(data.isEmpty())
 			return new ColGroupEmpty(columns);
-		// final AMapToData d = MapToFactory.create(nRow, map.size());
 
+		final int nRow = data.getNumRows();
 		final IntArrayList offs = new IntArrayList();
-		AMapToData d = encode(data, offs, cols);
+		final ReaderColumnSelection reader = ReaderColumnSelection.createReader(//
+			data, cols, false, 0, nRow);
+		final AMapToData d = encode(data, reader, offs, cols, nRow);
+
+		return finalizeEncode(data, offs, d, columns, nRow);
+	}
+
+	private AColGroup finalizeEncode(MatrixBlock data, IntArrayList offs, AMapToData d, IColIndex columns, int nRow) {
 
 		if(lastDict == null || lastDict.getNumberOfValues(columns.size()) != map.size())
 			lastDict = DictionaryFactory.create(map, columns.size(), false, data.getSparsity());
-		if(offs.size() == 0)
-			return ColGroupDDC.create(columns, lastDict, d, null);
+		if(offs.size() == 0) {
+			return ColGroupConst.create(columns, def.getData());
+			// return ColGroupDDC.create(columns, lastDict, d, null);
+		}
 		else {
 			final AOffset off = OffsetFactory.createOffset(offs);
 			return ColGroupSDC.create(columns, nRow, lastDict, def.getData(), off, d, null);
 		}
+
 	}
 
-	private AMapToData encode(MatrixBlock data, IntArrayList off, IColIndex cols) {
-		final int nRow = data.getNumRows();
-		final ReaderColumnSelection reader = ReaderColumnSelection.createReader(//
-			data, cols, false, 0, nRow);
+	private AMapToData encode(MatrixBlock data, ReaderColumnSelection reader, IntArrayList off, IColIndex cols,
+		int nRow) {
+
 		DblArray cellVals;
 		ACount<DblArray> emptyIdx = map.getC(emptyRow);
-		IntArrayList dt = new IntArrayList();
 
+		IntArrayList dt = new IntArrayList();
 		int r = 0;
 		while((cellVals = reader.nextRow()) != null) {
 			final int row = reader.getCurrentRowIndex();
@@ -157,6 +162,9 @@ public class SDCSchemeMC extends SDCScheme {
 					r++;
 				}
 			}
+			else {
+				r++;
+			}
 		}
 		if(emptyIdx != null) {
 			// empty is non default.
@@ -166,7 +174,7 @@ public class SDCSchemeMC extends SDCScheme {
 			}
 		}
 
-		AMapToData d = MapToFactory.create(off.size(), map.size());
+		final AMapToData d = MapToFactory.create(off.size(), map.size());
 		for(int i = 0; i < off.size(); i++)
 			d.set(i, dt.get(i));
 
@@ -174,17 +182,22 @@ public class SDCSchemeMC extends SDCScheme {
 	}
 
 	@Override
-	public ICLAScheme update(MatrixBlock data, IColIndex columns) {
-		validate(data, columns);
-
+	protected ICLAScheme updateV(MatrixBlock data, IColIndex columns) {
 		if(data.isEmpty()) {
 			if(!def.equals(emptyRow))
 				map.increment(emptyRow, data.getNumRows());
 			return this;
 		}
+
 		final int nRow = data.getNumRows();
 		final ReaderColumnSelection reader = ReaderColumnSelection.createReader(//
 			data, cols, false, 0, nRow);
+
+		return update(data, reader, columns, nRow);
+
+	}
+
+	private ICLAScheme update(MatrixBlock data, ReaderColumnSelection reader, IColIndex columns, final int nRow) {
 		DblArray cellVals;
 		final boolean defIsEmpty = emptyRow.equals(def);
 
@@ -196,10 +209,8 @@ public class SDCSchemeMC extends SDCScheme {
 					map.increment(emptyRow, row - r);
 				r = row;
 			}
-			final int id = map.getId(cellVals);
-			if(id >= 0)
+			if(!cellVals.equals(def))
 				map.increment(cellVals);
-
 		}
 		if(!defIsEmpty) {
 			// empty is non default.
@@ -217,4 +228,39 @@ public class SDCSchemeMC extends SDCScheme {
 	protected Object getMap() {
 		return map;
 	}
+
+	@Override
+	protected AColGroup encodeVT(MatrixBlock data, IColIndex columns) {
+		if(data.isEmpty())
+			return new ColGroupEmpty(columns);
+
+		final int nRow = data.getNumColumns();
+		final IntArrayList offs = new IntArrayList();
+		final ReaderColumnSelection reader = ReaderColumnSelection.createReader(//
+			data, cols, true, 0, nRow);
+		final AMapToData d = encode(data, reader, offs, cols, nRow);
+
+		return finalizeEncode(data, offs, d, columns, nRow);
+	}
+
+	@Override
+	protected ICLAScheme updateVT(MatrixBlock data, IColIndex columns) {
+		if(data.isEmpty()) {
+			if(!def.equals(emptyRow))
+				map.increment(emptyRow, data.getNumColumns());
+			return this;
+		}
+
+		final int nRow = data.getNumColumns();
+		final ReaderColumnSelection reader = ReaderColumnSelection.createReader(//
+			data, cols, true, 0, nRow);
+
+		return update(data, reader, columns, nRow);
+	}
+
+	@Override
+	public SDCSchemeMC clone() {
+		return new SDCSchemeMC(cols, map.clone(), def);
+	}
+
 }

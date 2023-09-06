@@ -35,27 +35,25 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 public class ReaderColumnSelectionSparse extends ReaderColumnSelection {
 
 	private final SparseBlock a;
+	private final DblArray empty;
 
 	protected ReaderColumnSelectionSparse(MatrixBlock data, IColIndex colIndexes, int rl, int ru) {
 		super(colIndexes, rl, Math.min(ru, data.getNumRows()) - 1);
 		a = data.getSparseBlock();
+		empty = new DblArray(new double[colIndexes.size()]);
 	}
 
 	protected final DblArray getNextRow() {
-		while(_rl < _ru) {
-			_rl++;
-			if(a.isEmpty(_rl))
-				continue; // if empty easy skip
+		_rl++;
+		if(a.isEmpty(_rl))
+			return empty;
 
-			final boolean zeroResult = processInRange(_rl);
+		final boolean zeroResult = processInRange(_rl);
 
-			if(zeroResult)
-				continue; // skip if no values found were in my cols
+		if(zeroResult)
+			return empty; // skip if no values found were in my cols
 
-			return reusableReturn;
-		}
-		return null;
-
+		return reusableReturn;
 	}
 
 	final boolean processInRange(final int r) {
@@ -81,6 +79,7 @@ public class ReaderColumnSelectionSparse extends ReaderColumnSelection {
 			else
 				reusableArr[skip++] = 0;
 		}
+
 		if(zeroResult)
 			return true; // skip if no values found were in my cols
 

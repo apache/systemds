@@ -32,40 +32,110 @@ public abstract class ACLAScheme implements ICLAScheme {
 	}
 
 	@Override
-	public AColGroup encode(MatrixBlock data) {
+	public final AColGroup encode(MatrixBlock data) {
 		return encode(data, cols);
 	}
 
 	@Override
-	public ICLAScheme update(MatrixBlock data) {
-		return update(data, cols);
+	public final AColGroup encode(MatrixBlock data, IColIndex columns) {
+		validate(data, columns);
+		return encodeV(data, columns);
+	}
+
+	protected abstract AColGroup encodeV(MatrixBlock data, IColIndex columns);
+
+	@Override
+	public final AColGroup encodeT(MatrixBlock data) {
+		return encodeVT(data, cols);
 	}
 
 	@Override
-	public Pair<ICLAScheme, AColGroup> updateAndEncode(MatrixBlock data) {
+	public final AColGroup encodeT(MatrixBlock data, IColIndex columns) {
+		validateT(data, columns);
+		return encodeVT(data, columns);
+	}
+
+	protected abstract AColGroup encodeVT(MatrixBlock data, IColIndex columns);
+
+	@Override
+	public final ICLAScheme update(MatrixBlock data) {
+		return updateV(data, cols);
+	}
+
+	@Override
+	public final ICLAScheme update(MatrixBlock data, IColIndex columns) {
+		validate(data, columns);
+		return updateV(data, columns);
+	}
+
+	protected abstract ICLAScheme updateV(MatrixBlock data, IColIndex columns);
+
+	@Override
+	public final ICLAScheme updateT(MatrixBlock data) {
+		return updateVT(data, cols);
+	}
+
+	@Override
+	public final ICLAScheme updateT(MatrixBlock data, IColIndex columns) {
+		validateT(data, columns);
+		return updateVT(data, columns);
+	}
+
+	protected abstract ICLAScheme updateVT(MatrixBlock data, IColIndex columns);
+
+	@Override
+	public final Pair<ICLAScheme, AColGroup> updateAndEncode(MatrixBlock data) {
 		return updateAndEncode(data, cols);
 	}
 
 	@Override
-	public Pair<ICLAScheme, AColGroup> updateAndEncode(MatrixBlock data, IColIndex columns) {
+	public final Pair<ICLAScheme, AColGroup> updateAndEncodeT(MatrixBlock data) {
+		return updateAndEncodeT(data, cols);
+	}
+
+	@Override
+	public final Pair<ICLAScheme, AColGroup> updateAndEncode(MatrixBlock data, IColIndex columns) {
+		validate(data, columns);
 		try {
 			return tryUpdateAndEncode(data, columns);
 		}
 		catch(Exception e) {
-			LOG.warn("Failed to update and encode in one pass, fallback to separated update and encode");
-			ICLAScheme s = update(data, columns);
-			AColGroup g = encode(data, columns);
-			return new Pair<>(s, g);
+			return fallBackUpdateAndEncode(data, columns);
+		}
+	}
+
+	@Override
+	public final Pair<ICLAScheme, AColGroup> updateAndEncodeT(MatrixBlock data, IColIndex columns) {
+		validateT(data, columns);
+		try {
+			return tryUpdateAndEncodeT(data, columns);
+		}
+		catch(Exception e) {
+			return fallBackUpdateAndEncodeT(data, columns);
 		}
 	}
 
 	protected Pair<ICLAScheme, AColGroup> tryUpdateAndEncode(MatrixBlock data, IColIndex columns) {
+		return fallBackUpdateAndEncode(data, columns);
+	}
+
+	protected Pair<ICLAScheme, AColGroup> tryUpdateAndEncodeT(MatrixBlock data, IColIndex columns) {
+		return fallBackUpdateAndEncodeT(data, columns);
+	}
+
+	private final Pair<ICLAScheme, AColGroup> fallBackUpdateAndEncode(MatrixBlock data, IColIndex columns) {
 		final ICLAScheme s = update(data, columns);
-		final AColGroup g = encode(data, columns);
+		final AColGroup g = s.encode(data, columns);
 		return new Pair<>(s, g);
 	}
 
-	protected final void validate(MatrixBlock data, IColIndex columns) throws IllegalArgumentException {
+	private final Pair<ICLAScheme, AColGroup> fallBackUpdateAndEncodeT(MatrixBlock data, IColIndex columns) {
+		final ICLAScheme s = updateT(data, columns);
+		final AColGroup g = s.encodeT(data, columns);
+		return new Pair<>(s, g);
+	}
+
+	private final void validate(MatrixBlock data, IColIndex columns) throws IllegalArgumentException {
 		if(columns.size() != cols.size())
 			throw new IllegalArgumentException(
 				"Invalid number of columns to encode expected: " + cols.size() + " but got: " + columns.size());
@@ -75,5 +145,19 @@ public abstract class ACLAScheme implements ICLAScheme {
 			throw new IllegalArgumentException(
 				"Invalid columns to encode with max col:" + nCol + " list of columns: " + columns);
 	}
+
+	private final void validateT(MatrixBlock data, IColIndex columns) throws IllegalArgumentException {
+		if(columns.size() != cols.size())
+			throw new IllegalArgumentException(
+				"Invalid number of columns to encode expected: " + cols.size() + " but got: " + columns.size());
+
+		final int nRow = data.getNumRows();
+		if(nRow < cols.get(cols.size() - 1))
+			throw new IllegalArgumentException(
+				"Invalid columns to encode with max col:" + nRow + " list of columns: " + columns);
+	}
+
+	@Override
+	public abstract ACLAScheme clone();
 
 }

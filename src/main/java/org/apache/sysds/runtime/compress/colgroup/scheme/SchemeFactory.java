@@ -47,7 +47,7 @@ public class SchemeFactory {
 			case SDCFOR:
 				break;
 			case UNCOMPRESSED:
-				break;
+				return new UncompressedScheme(columns);
 			default:
 				break;
 		}

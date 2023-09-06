@@ -121,6 +121,11 @@ public class MapToUByte extends MapToByte {
 	}
 
 	@Override
+	public int getMaxPossible(){
+		return 128;
+	}
+
+	@Override
 	public AMapToData resize(int unique) {
 		final int size = _data.length;
 		if(unique <= 1)

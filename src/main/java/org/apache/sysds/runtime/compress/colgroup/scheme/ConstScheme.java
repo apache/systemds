@@ -25,6 +25,7 @@ import org.apache.sysds.runtime.compress.colgroup.AColGroup;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupConst;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
+import org.apache.sysds.runtime.compress.utils.Util;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
 public class ConstScheme extends ACLAScheme {
@@ -47,13 +48,13 @@ public class ConstScheme extends ACLAScheme {
 	}
 
 	@Override
-	public ICLAScheme update(MatrixBlock data, IColIndex columns) {
+	protected ICLAScheme updateV(MatrixBlock data, IColIndex columns) {
 		final int nRow = data.getNumRows();
 		final int nColScheme = vals.length;
 		for(int r = 0; r < nRow; r++)
 			for(int c = 0; c < nColScheme; c++) {
 				final double v = data.quickGetValue(r, cols.get(c));
-				if(Double.compare(v, vals[c]) != 0)
+				if(!Util.eq(v, vals[c]))
 					return updateToDDC(data, columns);
 			}
 		return this;
@@ -63,11 +64,40 @@ public class ConstScheme extends ACLAScheme {
 		return SchemeFactory.create(columns, CompressionType.DDC).update(data, columns);
 	}
 
+	private ICLAScheme updateToDDCT(MatrixBlock data, IColIndex columns) {
+		return SchemeFactory.create(columns, CompressionType.DDC).updateT(data, columns);
+	}
+
 	@Override
-	public AColGroup encode(MatrixBlock data, IColIndex columns) {
-		validate(data, columns);
-		// we assume that it is always valid.
+	protected AColGroup encodeV(MatrixBlock data, IColIndex columns) {
 		return ColGroupConst.create(columns, vals);
+	}
+
+	@Override
+	protected AColGroup encodeVT(MatrixBlock data, IColIndex columns) {
+		return ColGroupConst.create(columns, vals);
+	}
+
+	@Override
+	protected ICLAScheme updateVT(MatrixBlock data, IColIndex columns) {
+		// TODO specialize for sparse data. But would only be used in rare cases
+		final int nCol = data.getNumColumns();
+		final int nColScheme = vals.length;
+		for(int r = 0; r < nColScheme; r++) {
+			final int row = cols.get(r);
+			final double def = vals[r];
+			for(int c = 0; c < nCol; c++) {
+				final double v = data.quickGetValue(row, c);
+				if(!Util.eq(v, def))
+					return updateToDDCT(data, columns);
+			}
+		}
+		return this;
+	}
+
+	@Override
+	public ConstScheme clone() {
+		return new ConstScheme(cols, Arrays.copyOf(vals, vals.length));
 	}
 
 	@Override

@@ -43,4 +43,14 @@ public final class DblArrayCountHashMap extends ACountHashMap<DblArray> {
 		return new DArrCounts(key, id);
 	}
 
+	@Override
+    public DblArrayCountHashMap clone() {
+		DblArrayCountHashMap ret = new DblArrayCountHashMap(size);
+
+        for(ACount<DblArray> e : data)
+            ret.appendValue(e);
+		ret.size = size;
+		return ret;
+    }
+
 }

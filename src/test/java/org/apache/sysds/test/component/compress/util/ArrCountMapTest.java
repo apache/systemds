@@ -205,11 +205,12 @@ public class ArrCountMapTest {
 		assertEquals(7, m.getId(I(7.0)));
 	}
 
-	@Test(expected = NullPointerException.class)
+	@Test
 	public void getNan() {
 		// arrays with NaN values work.
-		m.increment(I(Double.NaN));
-		m.getId(I(Double.NaN));
+		int a = m.increment(I(Double.NaN));
+		int b =m.getId(I(Double.NaN));
+		assertEquals(a, b);
 	}
 
 	private static DblArray I(double... d) {

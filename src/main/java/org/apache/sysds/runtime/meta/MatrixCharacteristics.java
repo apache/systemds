@@ -43,11 +43,11 @@ public class MatrixCharacteristics extends DataCharacteristics
 	public MatrixCharacteristics() {}
 	
 	public MatrixCharacteristics(long nr, long nc) {
-		set(nr, nc, -1, -1);
+		set(nr, nc, ConfigurationManager.getBlocksize(), -1);
 	}
 	
 	public MatrixCharacteristics(long nr, long nc, long nnz) {
-		set(nr, nc, -1, nnz);
+		set(nr, nc, ConfigurationManager.getBlocksize(), nnz);
 	}
 	
 	public MatrixCharacteristics(long nr, long nc, int blen) {

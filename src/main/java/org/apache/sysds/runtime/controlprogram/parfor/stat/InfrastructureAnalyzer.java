@@ -22,12 +22,16 @@ package org.apache.sysds.runtime.controlprogram.parfor.stat;
 import java.io.IOException;
 import java.util.StringTokenizer;
 
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.LocalFileSystem;
+import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapred.ClusterStatus;
 import org.apache.hadoop.mapred.JobClient;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
+import org.apache.sysds.runtime.io.IOUtilFunctions;
 import org.apache.sysds.runtime.util.HDFSTool;
 import org.apache.sysds.runtime.util.UtilFunctions;
 
@@ -192,6 +196,14 @@ public class InfrastructureAnalyzer
 		//default value (if not specified)
 		//TODO spark remote map task budget?
 		return getLocalMaxMemory();
+	}
+
+	public static long getBlockSize(FileSystem fs){
+		if(fs instanceof LocalFileSystem)
+			// 4 blocks per file at least
+			return 4096 * 4; 
+		else 
+			return getHDFSBlockSize();
 	}
 
 	/**

@@ -610,6 +610,12 @@ public class IOUtilFunctions
 		return ret;
 	}
 	
+	public static void deleteCrcFilesFromLocalFileSystem( JobConf job, Path path) throws IOException {
+		final FileSystem fs = getFileSystem(path,job );
+		deleteCrcFilesFromLocalFileSystem(fs, path);
+	}
+	
+
 	/**
 	 * Delete the CRC files from the local file system associated with a
 	 * particular file and its metadata file.

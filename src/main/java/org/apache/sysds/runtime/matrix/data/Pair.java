@@ -17,54 +17,46 @@
  * under the License.
  */
 
-
 package org.apache.sysds.runtime.matrix.data;
 
-public class Pair<K, V> 
-{
-	
+public class Pair<K, V> {
+
 	private K key;
 	private V value;
-	
-	public Pair()
-	{
-		key=null;
-		value=null;
+
+	public Pair() {
+		key = null;
+		value = null;
 	}
-	
-	public Pair(K k, V v)
-	{
-		set(k, v);
+
+	public Pair(K k, V v) {
+		key = k;
+		value = v;
 	}
-	
-	public void setKey(K k)
-	{
-		key=k;
+
+	public final void setKey(K k) {
+		key = k;
 	}
-	
-	public void setValue(V v)
-	{
-		value=v;
+
+	public final void setValue(V v) {
+		value = v;
 	}
-	
-	public void set(K k, V v)
-	{
-		key=k;
-		value=v;
+
+	public final void set(K k, V v) {
+		key = k;
+		value = v;
 	}
-	
-	public K getKey()
-	{
+
+	public final K getKey() {
 		return key;
 	}
-	
-	public V getValue()
-	{
+
+	public final V getValue() {
 		return value;
 	}
 
 	@Override
-	public String toString(){
+	public String toString() {
 		return key + ":" + value;
 	}
 }

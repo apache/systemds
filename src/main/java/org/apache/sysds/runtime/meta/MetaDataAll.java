@@ -153,7 +153,7 @@ public class MetaDataAll extends DataIdentifier {
 			boolean isValidName = DataExpression.READ_VALID_MTD_PARAM_NAMES.contains(key);
 
 			if (!isValidName){ //wrong parameters always rejected
-				raiseValidateError("MTD file " + " contains invalid parameter name: " + key, false);
+				raiseValidateError("MTD file contains invalid parameter name: " + key, false);
 			}
 
 			parseMetaDataParam(key, val);

@@ -559,7 +559,7 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 
 		try {
 			Object[] responseData = udfResponse.get().getData();
-			if(DMLScript.STATISTICS) {
+			if(tFedCommunication != null) {
 				long total = (long) tFedCommunication.stop();
 				long workerComputing = ((DoubleObject) responseData[1]).getLongValue();
 				ParamServStatistics.accFedWorkerComputing(workerComputing);
@@ -569,7 +569,7 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 			return (ListObject) responseData[0];
 		}
 		catch(Exception e) {
-			if(DMLScript.STATISTICS)
+			if(tFedCommunication != null)
 				tFedCommunication.stop();
 			throw new DMLRuntimeException("FederatedLocalPSThread: failed to execute UDF" + e.getMessage(), e);
 		}
@@ -624,7 +624,8 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 			// recreate aggregation instruction and output if needed
 			Instruction aggregationInstruction = null;
 			DataIdentifier aggregationOutput = null;
-			if(_localUpdate && _numBatchesToCompute > 1 | modelAvg) {
+			boolean loc= _localUpdate && _numBatchesToCompute > 1 | modelAvg;
+			if(loc) {
 				func = ec.getProgram().getFunctionProgramBlock(namespace, aggFunc, opt);
 				inputs = func.getInputParams();
 				outputs = func.getOutputParams();
@@ -666,7 +667,7 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 				// update the local model with gradients if needed
 				// FIXME ensure that with modelAvg we always update the model
 				// (current fails due to missing aggregation instruction)
-				if(_localUpdate && (batchCounter < _numBatchesToCompute - 1 | modelAvg) ) {
+				if(loc && aggregationInstruction != null && aggregationOutput != null) {
 					// Invoke the aggregate function
 					aggregationInstruction.processInstruction(ec);
 					// Get the new model

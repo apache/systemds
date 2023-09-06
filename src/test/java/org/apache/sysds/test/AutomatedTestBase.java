@@ -38,6 +38,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -1451,6 +1452,7 @@ public abstract class AutomatedTestBase {
 			throw new RuntimeException("Our tests should run faster than 1000 sec each",e);
 		}
 		catch(Exception e){
+			fail(e.getMessage());
 			throw new RuntimeException(e);
 		}
 		finally{
@@ -1541,18 +1543,23 @@ public abstract class AutomatedTestBase {
 			}
 			if(!exceptionExpected || (expectedException != null && !(e.getClass().equals(expectedException)))) {
 				StringBuilder errorMessage = new StringBuilder();
-				errorMessage.append("\nfailed to run script: " + executionFile);
+				String base = "\nfailed to run script: " + executionFile;
+				errorMessage.append(base);
 				errorMessage.append("\nStandard Out:");
 				if(outputBuffering)
 					errorMessage.append("\n" + buff);
-				errorMessage.append("\nStackTrace:");
-				errorMessage.append(getStackTraceString(e, 0));
-				fail(errorMessage.toString());
+				// errorMessage.append("\nStackTrace:");
+				// errorMessage.append(getStackTraceString(e, 0));
+				LOG.error(errorMessage);
+				e.printStackTrace();
+				fail(base);
 			}
 		}
-		if(outputBuffering) {
-			System.out.flush();
-			System.setOut(old);
+		finally{
+			if(outputBuffering) {
+				System.out.flush();
+				System.setOut(old);
+			}
 		}
 		return buff;
 	}

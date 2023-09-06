@@ -96,7 +96,7 @@ public class MatrixObject extends CacheableData<MatrixBlock> {
 	 * @param file file name
 	 */
 	public MatrixObject(ValueType vt, String file) {
-		this(vt, file, null); // HDFS file path
+		this(vt, file, null, null); // HDFS file path
 	}
 
 	/**
@@ -107,11 +107,7 @@ public class MatrixObject extends CacheableData<MatrixBlock> {
 	 * @param mtd  metadata
 	 */
 	public MatrixObject(ValueType vt, String file, MetaData mtd) {
-		super(DataType.MATRIX, vt);
-		_metaData = mtd;
-		_hdfsFileName = file;
-		_cache = null;
-		_data = null;
+		this(vt, file, mtd, null);
 	}
 
 	/**
@@ -128,7 +124,13 @@ public class MatrixObject extends CacheableData<MatrixBlock> {
 		_metaData = mtd;
 		_hdfsFileName = file;
 		_cache = null;
-		_data = data;
+		if(data != null) {
+			acquireModify(data);
+			release();
+		}
+		else {
+			data = null;
+		}
 	}
 
 	/**

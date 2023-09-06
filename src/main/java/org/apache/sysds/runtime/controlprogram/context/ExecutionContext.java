@@ -668,25 +668,17 @@ public class ExecutionContext {
 	}
 
 	public static MatrixObject createMatrixObject(MatrixBlock mb) {
-		MatrixObject ret = new MatrixObject(Types.ValueType.FP64,
-			OptimizerUtils.getUniqueTempFileName());
-		ret.acquireModify(mb);
-		ret.setMetaData(new MetaDataFormat(new MatrixCharacteristics(
-			mb.getNumRows(), mb.getNumColumns()), FileFormat.BINARY));
-		ret.getMetaData().getDataCharacteristics()
-			.setBlocksize(ConfigurationManager.getBlocksize());
-		ret.release();
-		return ret;
+		final long nRow = mb.getNumRows(), nCol = mb.getNumColumns();
+		final int bz = ConfigurationManager.getBlocksize();
+		MetaData md = new MetaDataFormat(new MatrixCharacteristics(nRow, nCol, bz), FileFormat.BINARY);
+		return new MatrixObject(Types.ValueType.FP64, OptimizerUtils.getUniqueTempFileName(), md, mb);
 	}
 
 	public static MatrixObject createMatrixObject(DataCharacteristics dc) {
-		MatrixObject ret = new MatrixObject(Types.ValueType.FP64,
-			OptimizerUtils.getUniqueTempFileName());
-		ret.setMetaData(new MetaDataFormat(new MatrixCharacteristics(
-			dc.getRows(), dc.getCols()), FileFormat.BINARY));
-		ret.getMetaData().getDataCharacteristics()
-			.setBlocksize(ConfigurationManager.getBlocksize());
-		return ret;
+		final long nRow = dc.getRows(), nCol = dc.getCols();
+		final int bz =  dc.getBlocksize() == -1 ? ConfigurationManager.getBlocksize() : dc.getBlocksize();
+		MetaData md = new MetaDataFormat(new MatrixCharacteristics(nRow, nCol, bz), FileFormat.BINARY);
+		return new MatrixObject(Types.ValueType.FP64, OptimizerUtils.getUniqueTempFileName(), md);
 	}
 
 	public static FrameObject createFrameObject(DataCharacteristics dc) {

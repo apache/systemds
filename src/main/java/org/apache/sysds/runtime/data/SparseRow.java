@@ -148,7 +148,7 @@ public abstract class SparseRow implements Serializable
 			else
 				sb.append(String.format("%"+rowDigits+"d:%s", indexes[i], Double.toString(values[i])));
 			if(i + 1 < s)
-				sb.append(", ");
+				sb.append(" ");
 		}
 		
 		return sb.toString();

@@ -24,12 +24,18 @@ import org.apache.sysds.performance.compression.SchemaTest;
 import org.apache.sysds.performance.compression.Serialize;
 import org.apache.sysds.performance.compression.StreamCompress;
 import org.apache.sysds.performance.generators.ConstMatrix;
+import org.apache.sysds.performance.generators.FrameFile;
 import org.apache.sysds.performance.generators.GenMatrices;
+import org.apache.sysds.performance.generators.IGenerate;
+import org.apache.sysds.performance.generators.MatrixFile;
+import org.apache.sysds.runtime.frame.data.FrameBlock;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.CommonThreadPool;
+import org.apache.sysds.test.TestUtils;
 
 public class Main {
 
-	private static void exec(int prog, String[] args) throws InterruptedException, Exception {
+	private static void exec(int prog, String[] args) throws Exception {
 		switch(prog) {
 			case 1:
 				new StreamCompress(100, new GenMatrices(10000, 100, 32, 1.0)).run();
@@ -79,12 +85,25 @@ public class Main {
 			case 12:
 				run11(args, Integer.parseInt(args[7]));
 				break;
+			case 13:
+				run13(args);
+				break;
+			case 14:
+				run14(args);
+				break;
+
+			case 15:
+				run15(args);
+				break;
+			case 16:
+				run16(args);
+				break;
 			default:
 				break;
 		}
 	}
 
-	private static void run9(String[] args) throws InterruptedException, Exception {
+	private static void run9(String[] args) throws Exception {
 		int rows = Integer.parseInt(args[1]);
 		int cols = Integer.parseInt(args[2]);
 		int unique = Integer.parseInt(args[3]);
@@ -94,7 +113,7 @@ public class Main {
 		new IOBandwidth(n, new ConstMatrix(rows, cols, unique, sparsity), k).run();
 	}
 
-	private static void run10(String[] args) throws InterruptedException, Exception {
+	private static void run10(String[] args) throws Exception {
 		int rows = Integer.parseInt(args[1]);
 		int cols = Integer.parseInt(args[2]);
 		int unique = Integer.parseInt(args[3]);
@@ -104,7 +123,7 @@ public class Main {
 		new IOBandwidth(n, new ConstMatrix(rows, cols, unique, sparsity), k).runVector();
 	}
 
-	private static void run11(String[] args, int id) throws InterruptedException, Exception {
+	private static void run11(String[] args, int id) throws Exception {
 		int rows = Integer.parseInt(args[1]);
 		int cols = Integer.parseInt(args[2]);
 		int unique = Integer.parseInt(args[3]);
@@ -120,13 +139,56 @@ public class Main {
 			s.run(id);
 	}
 
+	private static void run13(String[] args) throws Exception {
+		int k = Integer.parseInt(args[1]);
+		int n = Integer.parseInt(args[2]);
+		String p = args[3];
+		int id = Integer.parseInt(args[4]);
+		run13A(n, MatrixFile.create(p), k, id);
+	}
+
+	private static void run14(String[] args) throws Exception {
+		int k = Integer.parseInt(args[1]);
+		int n = Integer.parseInt(args[2]);
+		String p = args[3]; // input frame
+		String s = args[4]; // spec
+		int id = Integer.parseInt(args[5]);
+		// run13A(n, FrameTransformFile.create(p, s), k, id);
+	}
+
+	private static void run13A(int n, IGenerate<MatrixBlock> g, int k, int id) throws Exception {
+
+		Serialize s = new Serialize(n, g, k);
+
+		if(id == -1)
+			s.run();
+		else
+			s.run(id);
+	}
+
+	private static void run15(String[] args) throws Exception {
+		int k = Integer.parseInt(args[1]);
+		int n = Integer.parseInt(args[2]);
+		IGenerate<FrameBlock> g = FrameFile.create(args[3]);
+		String spec = args[4];
+		// new TransformPerf(n, k, g, spec).run();
+	}
+
+	private static void run16(String[] args) {
+		int len = Integer.parseInt(args[1]);
+		MatrixBlock mb = TestUtils.ceil(TestUtils.generateTestMatrixBlock(len, len, 0, 100, 0.01, len +1));
+		System.out.println(mb);
+	}
+
+
 	public static void main(String[] args) {
 		try {
 			exec(Integer.parseInt(args[0]), args);
 		}
 		catch(Exception e) {
 			e.printStackTrace();
-		}finally{
+		}
+		finally {
 			CommonThreadPool.get().shutdown();
 		}
 	}

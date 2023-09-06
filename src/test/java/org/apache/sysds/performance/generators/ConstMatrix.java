@@ -27,9 +27,9 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.CountDistinctOperator;
 import org.apache.sysds.test.TestUtils;
 
-public class ConstMatrix implements IGenerate<MatrixBlock> {
+public class ConstMatrix implements Const<MatrixBlock> {
 
-	protected final MatrixBlock mb;
+	protected MatrixBlock mb;
 	protected final int nVal;
 
 	public ConstMatrix(MatrixBlock mb) {
@@ -56,6 +56,16 @@ public class ConstMatrix implements IGenerate<MatrixBlock> {
 	}
 
 	@Override
+	public final boolean isEmpty() {
+		return false;
+	}
+	
+	@Override
+	public final int defaultWaitTime() {
+		return 0;
+	}
+	
+	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		sb.append(this.getClass().getSimpleName());
@@ -68,13 +78,7 @@ public class ConstMatrix implements IGenerate<MatrixBlock> {
 	}
 
 	@Override
-	public boolean isEmpty() {
-		return false;
+	public void change(MatrixBlock t) {
+		mb = t;
 	}
-
-	@Override
-	public int defaultWaitTime() {
-		return 0;
-	}
-
 }

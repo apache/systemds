@@ -19,10 +19,15 @@
 
 package org.apache.sysds.performance.generators;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
 /**
  * Generator interface for task generation.
  */
 public interface IGenerate<T> {
+
+	public static final Log LOG = LogFactory.getLog(IGenerate.class.getName());
 
 	/**
 	 * Validate if the generator is empty, and we have to wait for elements.

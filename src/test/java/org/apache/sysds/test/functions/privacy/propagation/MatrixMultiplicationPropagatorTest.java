@@ -19,6 +19,11 @@
 
 package org.apache.sysds.test.functions.privacy.propagation;
 
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
@@ -27,13 +32,15 @@ import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.DenseBlockLFP64;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.privacy.PrivacyConstraint;
-import org.apache.sysds.runtime.privacy.propagation.*;
 import org.apache.sysds.runtime.privacy.PrivacyConstraint.PrivacyLevel;
 import org.apache.sysds.runtime.privacy.finegrained.DataRange;
+import org.apache.sysds.runtime.privacy.propagation.MatrixMultiplicationPropagator;
+import org.apache.sysds.runtime.privacy.propagation.MatrixMultiplicationPropagatorNaive;
+import org.apache.sysds.runtime.privacy.propagation.MatrixMultiplicationPropagatorPrivateFirst;
+import org.apache.sysds.runtime.privacy.propagation.MatrixMultiplicationPropagatorPrivateFirstOptimized;
+import org.apache.sysds.runtime.privacy.propagation.OperatorType;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.junit.Test;
-
-import static org.junit.Assert.*;
 
 public class MatrixMultiplicationPropagatorTest extends AutomatedTestBase {
 

@@ -20,19 +20,23 @@
 
 package org.apache.sysds.test.functions.transform;
 
-import org.apache.sysds.common.Types;
-import org.apache.sysds.runtime.matrix.data.MatrixValue;
-import org.apache.sysds.test.AutomatedTestBase;
-import org.apache.sysds.test.TestConfiguration;
-import org.apache.sysds.test.TestUtils;
-import org.junit.Test;
+import static org.apache.sysds.test.functions.transform.TransformFrameEncodeWordEmbedding2Test.generateRandomStrings;
+import static org.apache.sysds.test.functions.transform.TransformFrameEncodeWordEmbedding2Test.manuallyDeriveWordEmbeddings;
+import static org.apache.sysds.test.functions.transform.TransformFrameEncodeWordEmbedding2Test.shuffleAndMultiplyStrings;
+import static org.apache.sysds.test.functions.transform.TransformFrameEncodeWordEmbedding2Test.writeDictToCsvFile;
+import static org.apache.sysds.test.functions.transform.TransformFrameEncodeWordEmbedding2Test.writeStringsToCsvFile;
 
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.apache.sysds.test.functions.transform.TransformFrameEncodeWordEmbedding2Test.*;
+import org.apache.sysds.common.Types;
+import org.apache.sysds.runtime.matrix.data.MatrixValue;
+import org.apache.sysds.test.AutomatedTestBase;
+import org.apache.sysds.test.TestConfiguration;
+import org.apache.sysds.test.TestUtils;
+import org.junit.Test;
 
 public class TransformFrameEncodeWordEmbeddingMMTest extends AutomatedTestBase {
 	private final static String TEST_NAME1 = "TransformFrameEncodeWordEmbeddingsMM";

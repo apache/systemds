@@ -19,11 +19,12 @@
 
 package org.apache.sysds.runtime.io.hdf5;
 
-import org.apache.sysds.runtime.io.hdf5.message.H5SymbolTableMessage;
-
-import java.io.*;
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.nio.ByteBuffer;
 import java.util.List;
+
+import org.apache.sysds.runtime.io.hdf5.message.H5SymbolTableMessage;
 
 public class H5 {
 

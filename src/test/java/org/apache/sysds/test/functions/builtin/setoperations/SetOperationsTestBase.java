@@ -19,6 +19,12 @@
 
 package org.apache.sysds.test.functions.builtin.setoperations;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+
 import org.apache.sysds.common.Types;
 import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.runtime.matrix.data.MatrixValue;
@@ -29,8 +35,6 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
-
-import java.util.*;
 
 @RunWith(Parameterized.class)
 @net.jcip.annotations.NotThreadSafe

@@ -19,6 +19,30 @@
 
 package org.apache.sysds.runtime.instructions.cp;
 
+import static org.apache.sysds.parser.Statement.PS_AGGREGATION_FUN;
+import static org.apache.sysds.parser.Statement.PS_BATCH_SIZE;
+import static org.apache.sysds.parser.Statement.PS_EPOCHS;
+import static org.apache.sysds.parser.Statement.PS_FEATURES;
+import static org.apache.sysds.parser.Statement.PS_FED_RUNTIME_BALANCING;
+import static org.apache.sysds.parser.Statement.PS_FED_WEIGHTING;
+import static org.apache.sysds.parser.Statement.PS_FREQUENCY;
+import static org.apache.sysds.parser.Statement.PS_HE;
+import static org.apache.sysds.parser.Statement.PS_HYPER_PARAMS;
+import static org.apache.sysds.parser.Statement.PS_LABELS;
+import static org.apache.sysds.parser.Statement.PS_MODE;
+import static org.apache.sysds.parser.Statement.PS_MODEL;
+import static org.apache.sysds.parser.Statement.PS_MODELAVG;
+import static org.apache.sysds.parser.Statement.PS_NBATCHES;
+import static org.apache.sysds.parser.Statement.PS_NUM_BACKUP_WORKERS;
+import static org.apache.sysds.parser.Statement.PS_PARALLELISM;
+import static org.apache.sysds.parser.Statement.PS_SCHEME;
+import static org.apache.sysds.parser.Statement.PS_SEED;
+import static org.apache.sysds.parser.Statement.PS_UPDATE_FUN;
+import static org.apache.sysds.parser.Statement.PS_UPDATE_TYPE;
+import static org.apache.sysds.parser.Statement.PS_VAL_FEATURES;
+import static org.apache.sysds.parser.Statement.PS_VAL_FUN;
+import static org.apache.sysds.parser.Statement.PS_VAL_LABELS;
+
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -49,7 +73,15 @@ import org.apache.sysds.runtime.controlprogram.LocalVariableMap;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
-import org.apache.sysds.runtime.controlprogram.paramserv.*;
+import org.apache.sysds.runtime.controlprogram.paramserv.FederatedPSControlThread;
+import org.apache.sysds.runtime.controlprogram.paramserv.HEParamServer;
+import org.apache.sysds.runtime.controlprogram.paramserv.LocalPSWorker;
+import org.apache.sysds.runtime.controlprogram.paramserv.LocalParamServer;
+import org.apache.sysds.runtime.controlprogram.paramserv.ParamServer;
+import org.apache.sysds.runtime.controlprogram.paramserv.ParamservUtils;
+import org.apache.sysds.runtime.controlprogram.paramserv.SparkPSBody;
+import org.apache.sysds.runtime.controlprogram.paramserv.SparkPSWorker;
+import org.apache.sysds.runtime.controlprogram.paramserv.SparkParamservUtils;
 import org.apache.sysds.runtime.controlprogram.paramserv.dp.DataPartitionFederatedScheme;
 import org.apache.sysds.runtime.controlprogram.paramserv.dp.DataPartitionLocalScheme;
 import org.apache.sysds.runtime.controlprogram.paramserv.dp.FederatedDataPartitioner;
@@ -62,8 +94,6 @@ import org.apache.sysds.runtime.matrix.operators.Operator;
 import org.apache.sysds.runtime.privacy.PrivacyConstraint;
 import org.apache.sysds.runtime.util.ProgramConverter;
 import org.apache.sysds.utils.stats.ParamServStatistics;
-
-import static org.apache.sysds.parser.Statement.*;
 
 public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruction {
 	private static final Log LOG = LogFactory.getLog(ParamservBuiltinCPInstruction.class.getName());

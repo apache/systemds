@@ -316,6 +316,12 @@ public class DDCArray<T> extends ACompressedArray<T> {
 	}
 
 	@Override
+	public boolean possiblyContainsNaN(){
+		return dict.possiblyContainsNaN();
+	}
+
+
+	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		sb.append(String.format("\n%15s", "Values: "));

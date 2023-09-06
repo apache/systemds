@@ -98,17 +98,42 @@ public interface FrameUtil {
 	}
 
 	public static ValueType isFloatType(final String val, final int len) {
+		if(len <= 25 && (simpleFloatMatch(val, len) || floatPattern.matcher(val).matches())) {
+			if(len <= 7 || (len == 8 && val.charAt(0) == '-'))
+				return ValueType.FP32;
+			else if(len >= 13)
+				return ValueType.FP64;
 
-		if(len <= 25 && floatPattern.matcher(val).matches()) {
 			final double d = Double.parseDouble(val);
-			if(same(d, (float) d))
+			if(d >= 10000 || d < 0.00001)
+				return ValueType.FP64; // just to be safe.
+			else if(same(d, (float) d))
 				return ValueType.FP32;
 			else
 				return ValueType.FP64;
 		}
 		else if(val.equals("infinity") || val.equals("-infinity") || val.equals("nan"))
-			return ValueType.FP64;
+			return ValueType.FP32;
 		return null;
+	}
+
+	private static boolean simpleFloatMatch(final String val, final int len) {
+		// a simple float matcher to avoid using the Regex.
+		boolean encounteredDot = false;
+		int start = val.charAt(0) == '-' && len > 1 ? 1 : 0;
+		for(int i = start; i < len; i++) {
+			final char c = val.charAt(i);
+			if(c >= '0' && c <= '9')
+				continue;
+			else if(c == '.' || c == ',')
+				if(encounteredDot == true)
+					return false;
+				else
+					encounteredDot = true;
+			else
+				return false;
+		}
+		return true;
 	}
 
 	private static boolean same(double d, float f) {
@@ -208,7 +233,8 @@ public interface FrameUtil {
 		String[] rowTemp2 = IteratorFactory.getStringRowIterator(temp2).next();
 
 		if(rowTemp1.length != rowTemp2.length)
-			throw new DMLRuntimeException("Schema dimension " + "mismatch: " + rowTemp1.length + " vs " + rowTemp2.length);
+			throw new DMLRuntimeException(
+				"Schema dimension " + "mismatch: " + rowTemp1.length + " vs " + rowTemp2.length);
 
 		for(int i = 0; i < rowTemp1.length; i++) {
 			// modify schema1 if necessary (different schema2)
@@ -233,7 +259,6 @@ public interface FrameUtil {
 		mergedFrame.appendRow(rowTemp1);
 		return mergedFrame;
 	}
-
 
 	public static boolean isDefault(String v, ValueType t) {
 		if(v == null)

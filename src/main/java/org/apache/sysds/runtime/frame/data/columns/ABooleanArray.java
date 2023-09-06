@@ -38,4 +38,9 @@ public abstract class ABooleanArray extends Array<Boolean> {
 
 	@Override
 	public abstract ABooleanArray select(boolean[] select, int nTrue);
+
+	@Override
+	public boolean possiblyContainsNaN(){
+		return false;
+	}
 }

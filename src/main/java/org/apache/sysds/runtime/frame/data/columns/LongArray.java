@@ -347,6 +347,11 @@ public class LongArray extends Array<Long> {
 	}
 
 	@Override
+	public boolean possiblyContainsNaN(){
+		return false;
+	}
+
+	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder(_data.length * 5 + 2);
 		sb.append(super.toString() + ":[");

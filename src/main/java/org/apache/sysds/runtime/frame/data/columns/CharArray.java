@@ -336,6 +336,11 @@ public class CharArray extends Array<Character> {
 	}
 
 	@Override
+	public boolean possiblyContainsNaN(){
+		return false;
+	}
+
+	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder(_data.length * 2 + 15);
 		sb.append(super.toString());

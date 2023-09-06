@@ -457,6 +457,11 @@ public class OptionalArray<T> extends Array<T> {
 	}
 
 	@Override
+	public boolean possiblyContainsNaN(){
+		return true;
+	}
+
+	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder(_size + 2);
 		sb.append(super.toString()).append("<").append(_a.getClass().getSimpleName()).append(">:[");

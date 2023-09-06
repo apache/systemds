@@ -33,9 +33,11 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Random;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.AOffsetsGroup;
 import org.apache.sysds.runtime.compress.colgroup.offset.AIterator;
@@ -98,6 +100,8 @@ public class OffsetTests {
 			tests.add(new Object[] {new int[] {0, 255 * 3}, t});
 			tests.add(new Object[] {new int[] {0, 255 * 4}, t});
 			tests.add(new Object[] {new int[] {0, 256 * 3}, t});
+			tests.add(new Object[] {new int[] {0, 100, 200, 300, 400, 500, 600}, t});
+			tests.add(new Object[] {new int[] {0, 200, 400, 600, 800, 1000, 1200}, t});
 			tests.add(new Object[] {new int[] {255 * 3, 255 * 5}, t});
 			tests.add(new Object[] {new int[] {1000000, 1000000 + 255 * 5}, t});
 			tests.add(new Object[] {new int[] {100000000, 100000000 + 255 * 5}, t});
@@ -106,6 +110,17 @@ public class OffsetTests {
 			tests.add(new Object[] {new int[] {0, 1, 2, 3, 4, 5}, t});
 			tests.add(new Object[] {new int[] {2458248, 2458249, 2458253, 2458254, 2458256, 2458257, 2458258, 2458262,
 				2458264, 2458266, 2458267, 2458271, 2458272, 2458275, 2458276, 2458281}, t});
+
+			tests.add(new Object[] {gen(100, 100, 1), t});
+			for(int i = 0; i < 10; i++) {
+				tests.add(new Object[] {gen(100, 200, i), t});
+				tests.add(new Object[] {gen(100, 250, i + 10230), t});
+				tests.add(new Object[] {gen(100, 4, i + 120), t});
+				tests.add(new Object[] {gen(100, 350, i + 1030), t});
+				tests.add(new Object[] {gen(30, 1000, i + 101420), t});
+				tests.add(new Object[] {gen(30, 3000, i + 101420), t});
+
+			}
 		}
 		tests.add(new Object[] {new int[] {Character.MAX_VALUE, ((int) Character.MAX_VALUE) * 2}, OFF_TYPE.CHAR});
 		tests.add(new Object[] {new int[] {0, Character.MAX_VALUE, ((int) Character.MAX_VALUE) * 2}, OFF_TYPE.CHAR});
@@ -114,7 +129,20 @@ public class OffsetTests {
 		return tests;
 	}
 
+	private static int[] gen(int i, int j, int seed) {
+		int[] a = new int[i];
+		Random r = new Random(seed);
+		int o = r.nextInt(j);
+		a[0] = o;
+		for(int k = 1; k < i; k++) {
+			o += r.nextInt(j) + 1;
+			a[k] = o;
+		}
+		return a;
+	}
+
 	public OffsetTests(int[] data, OFF_TYPE type) {
+		CompressedMatrixBlock.debug = true;
 		this.data = data;
 		this.type = type;
 		this.o = OffsetTestUtil.getOffset(data, type);
@@ -240,11 +268,14 @@ public class OffsetTests {
 
 				switch(type) {
 					case BYTE:
-						final int correctionByte = OffsetFactory.correctionByte(data[data.length - 1] - data[0], data.length);
+					case UBYTE:
+						final int correctionByte = OffsetFactory.correctionByte(data[data.length - 1] - data[0],
+							data.length);
 						estimatedSize = OffsetByte.estimateInMemorySize(data.length + correctionByte);
 						break;
 					case CHAR:
-						final int correctionChar = OffsetFactory.correctionChar(data[data.length - 1] - data[0], data.length);
+						final int correctionChar = OffsetFactory.correctionChar(data[data.length - 1] - data[0],
+							data.length);
 						estimatedSize = OffsetChar.estimateInMemorySize(data.length + correctionChar);
 						break;
 					default:
@@ -632,19 +663,40 @@ public class OffsetTests {
 	}
 
 	@Test
+	public void compareAppend_v3() {
+		if(data.length > 0) {
+			final int ll = data[data.length - 1] + 1000;
+			final AOffset r1 = o.appendN(new AOffsetsGroup[] {new Con(o), new Con(o)}, ll);
+			final AOffset r2 = o.append(o, ll);
+			compare(r1, r2);
+		}
+	}
+
+	@Test
+	public void compareAppend_ot() {
+		if(data.length > 0) {
+			final int ll = data[data.length - 1] + 1000;
+			final AOffset r1 = o.appendN(new AOffsetsGroup[] {new Con(o), new Con(OffsetFactory.createOffset(data))},
+				ll);
+			final AOffset r2 = o.append(o, ll);
+			compare(r1, r2);
+		}
+	}
+
+	@Test
 	public void compareAppend_2x() {
 
-		try{
+		try {
 
 			if(data.length > 0) {
-	
+
 				final int ll = data[data.length - 1] + 100;
 				final AOffset r = o.appendN(new AOffsetsGroup[] {new Con(o), new Con(o), new Con(o)}, ll);
 				final AOffset t2 = o.append(o, ll).append(o, ll * 2);
 				compare(r, t2);
 			}
 		}
-		catch(Exception e){
+		catch(Exception e) {
 			e.printStackTrace();
 			fail(e.getMessage());
 		}
@@ -653,17 +705,17 @@ public class OffsetTests {
 	@Test
 	public void compareAppend_2x_v2() {
 
-		try{
+		try {
 
 			if(data.length > 0) {
-	
+
 				final int ll = data[data.length - 1] + 280;
 				final AOffset r = o.appendN(new AOffsetsGroup[] {new Con(o), new Con(o), new Con(o)}, ll);
 				final AOffset t2 = o.append(o, ll).append(o, ll * 2);
 				compare(r, t2);
 			}
 		}
-		catch(Exception e){
+		catch(Exception e) {
 			e.printStackTrace();
 			fail(e.getMessage());
 		}
@@ -690,6 +742,38 @@ public class OffsetTests {
 			}
 			assertEquals(data[data.length - 1] + ll, i.value());
 			assertEquals(data[data.length - 1] + ll, r.getOffsetToLast());
+		}
+	}
+
+	@Test
+	public void moveIndex1() {
+
+		AOffset b = o.moveIndex(10);
+		compareMoved(b, data, -10);
+	}
+
+	@Test
+	public void getLength(){
+		assertTrue(o.getLength() + 1 >= data.length);
+	}
+
+
+	private void compareMoved(AOffset o, int[] v, int m) {
+		AIterator i = o.getIterator();
+		if(o.getSize() != v.length) {
+			fail("Incorrect result sizes : " + o + " " + Arrays.toString(v));
+		}
+		if(o.getSize() > 0) {
+			assertEquals(o.getOffsetToLast(), v[v.length - 1] + m);
+			if(v[0] + m != i.value())
+				fail("incorrect result using : " + o.getClass().getSimpleName() + " expected: " + Arrays.toString(v)
+					+ " but was :" + o.toString());
+			for(int j = 1; j < v.length; j++) {
+				i.next();
+				if(v[j] + m  != i.value())
+					fail("incorrect result using : " + o.getClass().getSimpleName() + " expected: " + Arrays.toString(v)
+						+ " but was :" + o.toString());
+			}
 		}
 	}
 

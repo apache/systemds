@@ -17,25 +17,10 @@
  * under the License.
  */
 
-package org.apache.sysds.test.component.compress.offset;
+package org.apache.sysds.runtime.compress.colgroup.offset;
 
-import org.apache.commons.lang3.NotImplementedException;
-import org.apache.sysds.runtime.compress.colgroup.offset.AOffset;
-import org.apache.sysds.runtime.compress.colgroup.offset.OffsetFactory;
-import org.apache.sysds.runtime.compress.colgroup.offset.OffsetFactory.OFF_TYPE;
+import org.apache.sysds.runtime.compress.colgroup.offset.AOffset.OffsetSliceInfo;
 
-public class OffsetTestUtil {
-
-	public static AOffset getOffset(int[] data, OFF_TYPE type) {
-		switch(type) {
-			case CHAR:
-				return OffsetFactory.createOffset(data, type);
-			case BYTE:
-				return OffsetFactory.createOffset(data, type);
-			case UBYTE:
-				return OffsetFactory.createOffset(data, type);
-			default:
-				throw new NotImplementedException("not implemented");
-		}
-	}
+public interface ISliceOffset {
+	public OffsetSliceInfo slice(int lowOff, int highOff, int lowValue, int highValue, int low, int high);
 }

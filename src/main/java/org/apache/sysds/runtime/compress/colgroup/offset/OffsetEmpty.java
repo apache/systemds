@@ -90,12 +90,12 @@ public class OffsetEmpty extends AOffset {
 	}
 
 	@Override
-	protected AOffset moveIndex(int m) {
+	public AOffset moveIndex(int m) {
 		return this;
 	}
 
 	@Override
-	protected int getLength() {
+	public int getLength() {
 		return 0;
 	}
 }

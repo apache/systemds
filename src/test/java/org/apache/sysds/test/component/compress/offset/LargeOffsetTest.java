@@ -26,6 +26,7 @@ import java.util.Collection;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.colgroup.offset.AIterator;
 import org.apache.sysds.runtime.compress.colgroup.offset.AOffset;
 import org.apache.sysds.runtime.compress.colgroup.offset.OffsetFactory.OFF_TYPE;
@@ -50,18 +51,19 @@ public class LargeOffsetTest {
 		ArrayList<Object[]> tests = new ArrayList<>();
 		// It is assumed that the input is in sorted order, all values are positive and there are no duplicates.
 		for(OFF_TYPE t : OFF_TYPE.values()) {
-			for(int i = 0; i < 4; i ++){
+			for(int i = 0; i < 4; i++) {
 				// tests.add(new Object[]{gen(100, 10, i),t});
 				// tests.add(new Object[]{gen(1000, 10, i),t});
-				tests.add(new Object[]{gen(3030, 10, i),t});
-				tests.add(new Object[]{gen(3030, 300, i),t});
-				tests.add(new Object[]{gen(10000, 501, i),t});
+				tests.add(new Object[] {gen(3030, 10, i), t});
+				tests.add(new Object[] {gen(3030, 300, i), t});
+				tests.add(new Object[] {gen(10000, 501, i), t});
 			}
 		}
 		return tests;
 	}
 
 	public LargeOffsetTest(int[] data, OFF_TYPE type) {
+		CompressedMatrixBlock.debug = true;
 		this.data = data;
 		this.type = type;
 		this.o = OffsetTestUtil.getOffset(data, type);
@@ -79,8 +81,8 @@ public class LargeOffsetTest {
 	}
 
 	@Test
-	public void IteratorAtStart(){
-		try{
+	public void IteratorAtStart() {
+		try {
 			int idx = data.length / 3;
 			AIterator it = o.getIterator(data[idx]);
 			compare(it, data, idx);
@@ -92,8 +94,8 @@ public class LargeOffsetTest {
 	}
 
 	@Test
-	public void IteratorAtMiddle(){
-		try{
+	public void IteratorAtMiddle() {
+		try {
 			int idx = data.length / 2;
 			AIterator it = o.getIterator(data[idx]);
 			compare(it, data, idx);
@@ -105,8 +107,8 @@ public class LargeOffsetTest {
 	}
 
 	@Test
-	public void IteratorAtEnd(){
-		try{
+	public void IteratorAtEnd() {
+		try {
 			int idx = data.length / 4 * 3;
 			AIterator it = o.getIterator(data[idx]);
 			compare(it, data, idx);
@@ -117,21 +119,20 @@ public class LargeOffsetTest {
 		}
 	}
 
-	private static void compare(AIterator it, int[] data, int off){
-		for(; off< data.length; off++){
-			assertEquals(data[off] , it.value());
-			if(off +1 < data.length)
-			 it.next();
+	private static void compare(AIterator it, int[] data, int off) {
+		for(; off < data.length; off++) {
+			assertEquals(data[off], it.value());
+			if(off + 1 < data.length)
+				it.next();
 		}
 	}
 
-
-	private static int[] gen(int size, int maxSkip, int seed){
+	private static int[] gen(int size, int maxSkip, int seed) {
 		int[] of = new int[size];
 		Random r = new Random(seed);
 		of[0] = r.nextInt(maxSkip);
-		for(int i = 1; i < size; i ++){
-			of[i] = r.nextInt(maxSkip) + of[i-1] + 1;
+		for(int i = 1; i < size; i++) {
+			of[i] = r.nextInt(maxSkip) + of[i - 1] + 1;
 		}
 		return of;
 	}

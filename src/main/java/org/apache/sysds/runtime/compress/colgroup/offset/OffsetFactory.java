@@ -38,12 +38,16 @@ public final class OffsetFactory {
 
 	/** The specific underlying types of offsets. */
 	public enum OFF_TYPE {
-		BYTE, CHAR
+		UBYTE, BYTE, CHAR
 	}
 
 	/** Specialized types of underlying offsets. */
 	public enum OFF_TYPE_SPECIALIZATIONS {
-		BYTE, CHAR, SINGLE_OFFSET, TWO_OFFSET, EMPTY
+		BYTE, CHAR, SINGLE_OFFSET, TWO_OFFSET, EMPTY,
+		/** unsigned Byte no zero */
+		BYTEUNZ,
+		/** Byte no zero */
+		BYTENZ,
 	}
 
 	/**
@@ -133,13 +137,14 @@ public final class OffsetFactory {
 			for(int i = apos + 1; i < alen; i++) {
 				if(indexes[i] <= indexes[i - 1]) {
 					String message = "Invalid input to create offset, all values should be continuously increasing.\n";
-					message += "Index " + (i - 1) + " and Index " + i + " are wrong with values: " + indexes[i - 1] + " and "
-						+ indexes[i];
+					message += "Index " + (i - 1) + " and Index " + i + " are wrong with values: " + indexes[i - 1]
+						+ " and " + indexes[i];
 					throw new DMLCompressionException(message, e);
 				}
 			}
 			throw new DMLCompressionException(
-				"Failed to create offset with input:" + Arrays.toString(indexes) + " Apos: " + apos + " Alen: " + alen, e);
+				"Failed to create offset with input:" + Arrays.toString(indexes) + " Apos: " + apos + " Alen: " + alen,
+				e);
 		}
 	}
 
@@ -173,6 +178,10 @@ public final class OffsetFactory {
 				return OffsetSingle.readFields(in);
 			case TWO_OFFSET:
 				return OffsetTwo.readFields(in);
+			case BYTEUNZ:
+				return OffsetByteUNZ.readFields(in);
+			case BYTENZ: 
+				return OffsetByteNZ.readFields(in);
 			case BYTE:
 				return OffsetByte.readFields(in);
 			case CHAR:
@@ -221,111 +230,122 @@ public final class OffsetFactory {
 	}
 
 	private static AOffset createByte(int[] indexes, int apos, int alen) {
-		final int indexesLength = alen - apos;
+		final int endSize = calcSize(indexes, apos, alen, OffsetByte.maxV);
+		final int offsetToFirst = indexes[apos];
+		final int offsetToLast = indexes[alen - 1];
+		final boolean noZero = endSize == alen - apos - 1;
+		final byte[] offsets = new byte[endSize];
 
-		int endSize = 0;
-		int offsetToFirst = indexes[apos];
-		int offsetToLast = indexes[alen - 1];
 		int ov = offsetToFirst;
+		int p = 0;
+
+		if(noZero) {
+			final int mp1 = (OffsetByte.maxV + 1);
+			for(int i = apos + 1; i < alen; i++) {
+				final int nv = indexes[i];
+				final int offsetSize = nv - ov;
+				if(offsetSize <= 0)
+					throw new DMLCompressionException("invalid offset construction with negative sequences");
+				final byte mod = (byte) (offsetSize % mp1);
+				offsets[p++] = mod;
+				ov = nv;
+			}
+		}
+		else {
+			final byte max = (byte) OffsetByte.maxV;
+			// populate the array
+			for(int i = apos + 1; i < alen; i++) {
+				final int nv = indexes[i];
+				final int offsetSize = nv - ov;
+				final int div = offsetSize / OffsetByte.maxV;
+				final byte mod = (byte) (offsetSize % OffsetByte.maxV);
+				if(mod == 0) {
+					p += div - 1; // skip values
+					offsets[p++] = max;
+				}
+				else {
+					p += div; // skip values
+					offsets[p++] = mod;
+				}
+
+				ov = nv;
+			}
+		}
+		boolean noOverHalf = getNoOverHalf(offsets);
+		return OffsetByte.create(offsets, offsetToFirst, offsetToLast, alen - apos, noZero, noOverHalf);
+
+	}
+
+	private static int calcSize(int[] indexes, int apos, int alen, int offMax) {
+		int endSize = 0;
+		int ov = indexes[apos];
 		// find the size of the array
 		for(int i = apos + 1; i < alen; i++) {
 			final int nv = indexes[i];
-			endSize += 1 + (nv - ov - 1) / OffsetByte.maxV;
+			endSize += 1 + (nv - ov - 1) / offMax;
 			ov = nv;
 		}
-
-		boolean noZero = endSize == indexesLength - 1;
-		byte[] offsets = new byte[endSize];
-		ov = offsetToFirst;
-		int p = 0;
-
-		// populate the array
-		for(int i = apos + 1; i < alen; i++) {
-			final int nv = indexes[i];
-			final int offsetSize = nv - ov;
-			if(offsetSize <= 0)
-				throw new DMLCompressionException("Invalid offset");
-			final int div = offsetSize / OffsetByte.maxV;
-			final int mod = offsetSize % OffsetByte.maxV;
-			if(mod == 0) {
-				p += div - 1; // skip values
-				offsets[p++] = (byte) OffsetByte.maxV;
-			}
-			else {
-				p += div; // skip values
-				offsets[p++] = (byte) (mod);
-			}
-
-			ov = nv;
-		}
-
-		boolean noOverHalf = getNoOverHalf(offsets);
-		return new OffsetByte(offsets, offsetToFirst, offsetToLast, indexesLength, noOverHalf, noZero);
+		return endSize;
 	}
 
 	private static AOffset createChar(int[] indexes, int apos, int alen) {
 
-		int endSize = 0;
-		int offsetToFirst = indexes[apos];
-		int offsetToLast = indexes[alen - 1];
+		final int endSize = calcSize(indexes, apos, alen, OffsetChar.maxV);
+		final int offsetToFirst = indexes[apos];
+		final int offsetToLast = indexes[alen - 1];
+		final boolean noZero = endSize == alen - apos - 1;
+		final char[] offsets = new char[endSize];
+
 		int ov = offsetToFirst;
-		for(int i = apos + 1; i < alen; i++) {
-			final int nv = indexes[i];
-			endSize += 1 + (nv - ov - 1) / OffsetChar.maxV;
-			ov = nv;
-		}
-		boolean noZero = endSize == alen - apos - 1;
-		char[] offsets = new char[endSize];
-		ov = offsetToFirst;
 		int p = 0;
-		for(int i = apos + 1; i < alen; i++) {
-			final int nv = indexes[i];
-			final int offsetSize = (nv - ov);
-			if(offsetSize <= 0)
-				throw new DMLCompressionException("Invalid offset");
-			final int div = offsetSize / OffsetChar.maxV;
-			final int mod = offsetSize % OffsetChar.maxV;
-			if(mod == 0) {
-				p += div - 1; // skip values
-				offsets[p++] = (char) OffsetChar.maxV;
-			}
-			else {
-				p += div; // skip values
+		
+		final int mp1 = (OffsetChar.maxV + 1);
+		if(noZero) {
+			for(int i = apos + 1; i < alen; i++) {
+				final int nv = indexes[i];
+				final int offsetSize = (nv - ov);
+				if(offsetSize <= 0)
+					throw new DMLCompressionException("invalid offset construction with negative sequences");
+				final int mod = offsetSize % mp1;
 				offsets[p++] = (char) (mod);
+				ov = nv;
 			}
-			ov = nv;
 		}
+		else {
+
+			// populate the array
+			for(int i = apos + 1; i < alen; i++) {
+				final int nv = indexes[i];
+				final int offsetSize = (nv - ov);
+				final int div = offsetSize / OffsetChar.maxV;
+				final int mod = offsetSize % OffsetChar.maxV;
+				if(mod == 0) {
+					p += div - 1; // skip values
+					offsets[p++] = (char) OffsetChar.maxV;
+				}
+				else {
+					p += div; // skip values
+					offsets[p++] = (char) (mod);
+				}
+				ov = nv;
+			}
+		}
+
 		return new OffsetChar(offsets, offsetToFirst, offsetToLast, noZero);
 	}
 
 	protected static boolean getNoOverHalf(byte[] off) {
-		boolean noOverHalf = true;
 		for(byte b : off)
-			if(b < 1) {
-				noOverHalf = false;
-				break;
-			}
-		return noOverHalf;
-	}
-
-	protected static boolean getNoZero(byte[] off) {
-		boolean noZero = true;
-		for(byte b : off)
-			if(b == 0) {
-				noZero = false;
-				break;
-			}
-		return noZero;
+		if(b < (byte)1) 
+		return false;
+		return true;
 	}
 
 	protected static boolean getNoZero(char[] off) {
-		boolean noZero = true;
 		for(char b : off)
-			if(b == 0) {
-				noZero = false;
-				break;
-			}
-		return noZero;
+			if(b == 0)
+				return false;
+		return true;
 	}
 
 }

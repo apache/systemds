@@ -888,14 +888,14 @@ public class SparseBlockCSR extends SparseBlock
 			final int pos = pos(i);
 			final int len = size(i);
 			if(pos < pos + len) {
-				sb.append(String.format("row %0"+rowDigits+"d -- ", i));
+				sb.append(String.format("%0"+rowDigits+"d ", i));
 				for(int j = pos; j < pos + len; j++) {
 					if(_values[j] == (long) _values[j])
 						sb.append(String.format("%"+rowDigits+"d:%d", _indexes[j], (long)_values[j]));
 					else
 						sb.append(String.format("%"+rowDigits+"d:%s", _indexes[j], Double.toString(_values[j])));
 					if(j + 1 < pos + len)
-						sb.append(", ");
+						sb.append(" ");
 				}
 				sb.append("\n");
 			}

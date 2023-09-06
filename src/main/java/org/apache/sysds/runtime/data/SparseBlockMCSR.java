@@ -87,8 +87,12 @@ public class SparseBlockMCSR extends SparseBlock
 		}
 	}
 	
-	public SparseBlockMCSR(int rlen, int clen) {
+	public SparseBlockMCSR(int rlen){
 		_rows = new SparseRow[rlen];
+	}
+
+	public SparseBlockMCSR(int rlen, int clen) {
+		this(rlen);
 	}
 	
 	/**
@@ -436,7 +440,7 @@ public class SparseBlockMCSR extends SparseBlock
 		for( int i=0; i<nRow; i++ ) {
 			if(isEmpty(i))
 				continue;
-			sb.append(String.format("row %0"+rowDigits+"d -- %s\n", i, _rows[i].toString()));
+			sb.append(String.format("%0"+rowDigits+"d %s\n", i, _rows[i].toString()));
 		}
 		
 		return sb.toString();

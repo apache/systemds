@@ -800,16 +800,16 @@ public class TestUtils {
 			fail("Invalid number of rows and cols in actual");
 		
 		int countErrors = 0;
-		for (int i = 0; i < rows && countErrors < 50; i++) {
-			for (int j = 0; j < cols && countErrors < 50; j++) {
+		for (int i = 0; i < rows && countErrors < 10; i++) {
+			for (int j = 0; j < cols && countErrors < 10; j++) {
 				if (!compareCellValue(expectedMatrix[i][j], actualMatrix[i][j], epsilon, true)) {
 					message += ("\n Expected: " +expectedMatrix[i][j] +" vs actual: "+actualMatrix[i][j]+" at "+i+" "+j);
 					countErrors++;
 				}
 			}
 		}
-		if(countErrors == 50){
-			assertTrue(message+" \n More than 50 values are not equal using epsilon " + epsilon, countErrors == 0);
+		if(countErrors == 10){
+			assertTrue(message+" \n More than 10 values are not equal using epsilon " + epsilon, countErrors == 0);
 		}else{
 			assertTrue(message+" \n" + countErrors + " values are not in equal using epsilon " + epsilon, countErrors == 0);
 		}
@@ -1505,6 +1505,14 @@ public class TestUtils {
 		compareMatrices(m1, m2, tolerance, null);
 	}
 
+	/**
+	 * compare and error out on differences above tolerance
+	 * 
+	 * @param m1        expected matrix
+	 * @param m2        actual matrix
+	 * @param tolerance tolerance
+	 * @param message   error message
+	 */
 	public static void compareMatrices(MatrixBlock m1, MatrixBlock m2, double tolerance, String message) {
 		if(m1.getNumRows() != m2.getNumRows() || m1.getNumColumns() != m2.getNumColumns())
 			fail("Matrices are different sizes " + m1.getNumRows() + "," + m1.getNumColumns() + " vs " + m2.getNumRows()
@@ -3253,11 +3261,11 @@ public class TestUtils {
 	}
 
 	public static MatrixBlock round(MatrixBlock data) {
-		return data.unaryOperations(new UnaryOperator(Builtin.getBuiltinFnObject(BuiltinCode.ROUND)), null);
+		return data.unaryOperations(new UnaryOperator(Builtin.getBuiltinFnObject(BuiltinCode.ROUND),2, true), null);
 	}
 
 	public static MatrixBlock ceil(MatrixBlock data){
-		return data.unaryOperations(new UnaryOperator(Builtin.getBuiltinFnObject(BuiltinCode.CEIL)), null);
+		return data.unaryOperations(new UnaryOperator(Builtin.getBuiltinFnObject(BuiltinCode.CEIL),2, true), null);
 	}
 
 	public static double[][] floor(double[][] data) {

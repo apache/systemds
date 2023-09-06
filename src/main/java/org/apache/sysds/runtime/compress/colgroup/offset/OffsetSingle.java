@@ -99,12 +99,12 @@ public class OffsetSingle extends AOffset {
 	}
 
 	@Override
-	protected AOffset moveIndex(int m) {
+	public AOffset moveIndex(int m) {
 		return new OffsetSingle(off - m);
 	}
 
 	@Override
-	protected int getLength() {
+	public int getLength() {
 		return 1;
 	}
 

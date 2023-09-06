@@ -20,6 +20,7 @@
 package org.apache.sysds.conf;
 
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -56,17 +57,20 @@ public class ConfigurationManager{
 	/** Local compiler configuration for thead-local config updates */
 	private static ThreadLocalCompilerConfig _lcconf = new ThreadLocalCompilerConfig();
 
+	/** Indicate if the filesystem is loaded or not */
+	private static Future<?> loaded;
+
 	//global static initialization
 	static {
 		_rJob = new JobConf();
 		
 		//initialization after job conf in order to prevent cyclic initialization issues 
-		//ConfigManager -> OptimizerUtils -> InfrastructureAnalyer -> ConfigManager 
+		//ConfigManager -> OptimizerUtils -> InfrastructureAnalyzer -> ConfigManager 
  		_dmlconf = new DMLConfig();
 		_cconf = new CompilerConfig();
 
 		final ExecutorService pool = CommonThreadPool.get();
-		pool.submit(() ->{
+		loaded = pool.submit(() ->{
 			try{
 				IOUtilFunctions.getFileSystem(_rJob);
 			}
@@ -74,19 +78,24 @@ public class ConfigurationManager{
 				LOG.warn(e.getMessage());
 			}
 		});
-		// pool.shutdown();
 	}
 	
 	
 	/**
 	 * Returns a cached JobConf object, intended for global use by all operations
 	 * with read-only access to job conf. This prevents to read the hadoop conf files
-	 * over and over again from classpath. However,
+	 * over and over again from classpath.
 	 *
 	 * @return the cached JobConf
 	 */
 	public static JobConf getCachedJobConf() {
-		return _rJob;
+		try{
+			loaded.get();
+			return _rJob;
+		}
+		catch(Exception e){
+			throw new RuntimeException(e);
+		}
 	}
 	
 	public static void setCachedJobConf(JobConf job) {

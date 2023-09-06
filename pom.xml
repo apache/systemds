@@ -235,9 +235,9 @@
 									<classpathPrefix>lib/</classpathPrefix>
 									<mainClass>org.apache.sysds.performance.Main</mainClass>
 								</manifest>
-								 <manifestEntries>
-									 <Class-Path>SystemDS.jar ${project.build.directory}/${project.artifactId}-${project.version}-tests.jar</Class-Path>
-								 </manifestEntries>
+								<manifestEntries>
+									<Class-Path>SystemDS.jar ${project.build.directory}/${project.artifactId}-${project.version}-tests.jar</Class-Path>
+								</manifestEntries>
 							</archive>
 						</configuration>
 					</execution>
@@ -309,7 +309,7 @@
 				<artifactId>maven-compiler-plugin</artifactId>
 				<version>${maven-compiler-plugin.version}</version>
 				<configuration>
-			        <compilerArgument>-Xlint:unchecked</compilerArgument>
+					<compilerArgument>-Xlint:unchecked</compilerArgument>
 					<source>${java.level}</source>
 					<target>${java.level}</target>
 					<release>${java.level}</release>
@@ -408,12 +408,12 @@
 					<output>file</output>
 					<destFile>${project.build.directory}/jacoco.exec</destFile>
 					<fileSets>
-					  <fileSet>
-					    <directory>${project.build.directory}</directory>
-					    <includes>
-						    <include>*/jacoco.exec</include>
-					    </includes>
-					  </fileSet>
+						<fileSet>
+							<directory>${project.build.directory}</directory>
+							<includes>
+								<include>*/jacoco.exec</include>
+							</includes>
+						</fileSet>
 					</fileSets>
 				</configuration>
 				<executions>
@@ -655,6 +655,7 @@
 								<exclude>src/test/scripts/functions/jmlc/tfmtd_example/dummycoded.column.names</exclude>
 								<exclude>src/test/scripts/functions/jmlc/tfmtd_example2/column.names</exclude>
 								<exclude>src/test/scripts/functions/jmlc/tfmtd_frame_example/tfmtd_frame</exclude>
+								<exclude>src/test/scripts/applications/entity_resolution/connected_components/expected/**</exclude>
 								<!-- csv test input not captured by *.csv -->
 								<exclude>src/test/scripts/functions/io/csv/in/**</exclude>
 								<!-- IOGEN input examples -->
@@ -1487,6 +1488,11 @@
 			<groupId>org.apache.logging.log4j</groupId>
 			<artifactId>log4j-core</artifactId>
 			<version>${log4j.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>ch.randelshofer</groupId>
+			<artifactId>fastdoubleparser</artifactId>
+			<version>0.9.0</version>
 		</dependency>
 	</dependencies>
 </project>

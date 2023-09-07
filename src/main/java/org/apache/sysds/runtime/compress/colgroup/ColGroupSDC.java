@@ -26,10 +26,11 @@ import java.util.Arrays;
 
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
-import org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.DictionaryFactory;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.MatrixBlockDictionary;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.PlaceHolderDict;
 import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
@@ -67,6 +68,8 @@ public class ColGroupSDC extends ASDC implements IMapToDataGroup {
 	protected ColGroupSDC(IColIndex colIndices, int numRows, IDictionary dict, double[] defaultTuple, AOffset offsets,
 		AMapToData data, int[] cachedCounts) {
 		super(colIndices, numRows, dict, offsets, cachedCounts);
+		_data = data;
+		_defaultTuple = defaultTuple;
 		if(data.getUnique() != dict.getNumberOfValues(colIndices.size())) {
 			if(data.getUnique() != data.getMax())
 				throw new DMLCompressionException(
@@ -77,8 +80,6 @@ public class ColGroupSDC extends ASDC implements IMapToDataGroup {
 		if(defaultTuple.length != colIndices.size())
 			throw new DMLCompressionException("Invalid construction of SDC group");
 
-		_data = data;
-		_defaultTuple = defaultTuple;
 	}
 
 	public static AColGroup create(IColIndex colIndices, int numRows, IDictionary dict, double[] defaultTuple,
@@ -596,30 +597,33 @@ public class ColGroupSDC extends ASDC implements IMapToDataGroup {
 	}
 
 	@Override
-	public AColGroup appendNInternal(AColGroup[] g) {
-		int sumRows = getNumRows();
+	public AColGroup appendNInternal(AColGroup[] g, int blen, int rlen) {
 		for(int i = 1; i < g.length; i++) {
-			if(!_colIndexes.equals(g[i]._colIndexes)) {
-				LOG.warn("Not same columns therefore not appending \n" + _colIndexes + "\n\n" + g[i]._colIndexes);
-				return null;
-			}
+			final AColGroup gs = g[i];
+			if(!_colIndexes.equals(gs._colIndexes))
+				throw new DMLCompressionException(
+					"Not same columns therefore not appending \n" + _colIndexes + "\n\n" + gs._colIndexes);
 
-			if(!(g[i] instanceof ColGroupSDC)) {
-				LOG.warn("Not SDC but " + g[i].getClass().getSimpleName());
-				return null;
-			}
+			if(!(gs instanceof AOffsetsGroup))
+				throw new DMLCompressionException("Not SDC but " + gs.getClass().getSimpleName());
 
-			final ColGroupSDC gc = (ColGroupSDC) g[i];
-			if(!gc._dict.equals(_dict)) {
-				LOG.warn("Not same Dictionaries therefore not appending \n" + _dict + "\n\n" + gc._dict);
-				return null;
+			if(gs instanceof ColGroupSDC) {
+				final ColGroupSDC gc = (ColGroupSDC) gs;
+				if(!gc._dict.equals(_dict))
+					throw new DMLCompressionException(
+						"Not same Dictionaries therefore not appending \n" + _dict + "\n\n" + gc._dict);
 			}
-			sumRows += gc.getNumRows();
+			else if(gs instanceof ColGroupConst) {
+				final ColGroupConst gc = (ColGroupConst) gs;
+				if(!(gc._dict instanceof PlaceHolderDict) && gc._dict.equals(_defaultTuple))
+					throw new DMLCompressionException("Not same default values therefore not appending:\n" + gc._dict
+						+ "\n\n" + Arrays.toString(_defaultTuple));
+			}
 		}
 		AMapToData nd = _data.appendN(Arrays.copyOf(g, g.length, IMapToDataGroup[].class));
 		AOffset no = _indexes.appendN(Arrays.copyOf(g, g.length, AOffsetsGroup[].class), getNumRows());
 
-		return create(_colIndexes, sumRows, _dict, _defaultTuple, no, nd, null);
+		return create(_colIndexes, rlen, _dict, _defaultTuple, no, nd, null);
 	}
 
 	@Override

@@ -21,6 +21,7 @@ package org.apache.sysds.hops;
 
 import java.util.ArrayList;
 
+import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.AggOp;
 import org.apache.sysds.common.Types.DataType;
@@ -158,11 +159,13 @@ public class UnaryOp extends MultiThreadedHop
 					}
 					else { // general case MATRIX
 						ExecType et = optFindExecType();
-
 						// special handling cumsum/cumprod/cummin/cumsum
 						if(isCumulativeUnaryOperation() && !(et == ExecType.CP || et == ExecType.GPU)) {
 							// TODO additional physical operation if offsets fit in memory
 							ret = constructLopsSparkCumulativeUnary();
+						}
+						else if(_op == OpOp1.CAST_AS_FRAME && getInput().size() == 2) {
+							throw new NotImplementedException();
 						}
 						else {// default unary
 							final boolean inplace = OptimizerUtils.ALLOW_UNARY_UPDATE_IN_PLACE &&

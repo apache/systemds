@@ -65,8 +65,14 @@ public class DecoderRecode extends Decoder
 
 	@Override
 	public FrameBlock decode(MatrixBlock in, FrameBlock out) {
+		decode(in, out, 0, in.getNumRows());
+		return out;
+	}
+
+	@Override
+	public void decode(MatrixBlock in, FrameBlock out, int rl, int ru) {
 		if( _onOut ) { //recode on output (after dummy)
-			for( int i=0; i<in.getNumRows(); i++ ) {
+			for( int i=rl; i<ru; i++ ) {
 				for( int j=0; j<_colList.length; j++ ) {
 					int colID = _colList[j];
 					double val = UtilFunctions.objectToDouble(
@@ -78,7 +84,7 @@ public class DecoderRecode extends Decoder
 		}
 		else { //recode on input (no dummy)
 			out.ensureAllocatedColumns(in.getNumRows());
-			for( int i=0; i<in.getNumRows(); i++ ) {
+			for( int i=rl; i<ru; i++ ) {
 				for( int j=0; j<_colList.length; j++ ) {
 					double val = in.quickGetValue(i, _colList[j]-1);
 					long key = UtilFunctions.toLong(val);
@@ -86,7 +92,6 @@ public class DecoderRecode extends Decoder
 				}
 			}
 		}
-		return out;
 	}
 
 	@Override

@@ -23,7 +23,11 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.fail;
 
+import org.apache.commons.lang3.NotImplementedException;
+import org.apache.sysds.runtime.compress.utils.ACount;
+import org.apache.sysds.runtime.compress.utils.ACount.DArrCounts;
 import org.apache.sysds.runtime.compress.utils.ACount.DCounts;
+import org.apache.sysds.runtime.compress.utils.DblArray;
 import org.junit.Test;
 
 public class CountTest {
@@ -84,5 +88,17 @@ public class CountTest {
 		assertEquals(3 + 3, h.get(2.0).count);
 		assertEquals(4 + 3, h.get(3.0).count);
 		assertEquals(1 + 3, h.get(1.0).count);
+	}
+
+	@Test(expected = NotImplementedException.class)
+	public void getDouble() {
+		ACount<DblArray> a = new DArrCounts(new DblArray(new double[] {1, 2}), 1);
+		a.get(0.0);
+	}
+
+	@Test(expected = NotImplementedException.class)
+	public void incDouble() {
+		ACount<DblArray> a = new DArrCounts(new DblArray(new double[] {1, 2}), 1);
+		a.inc(0.0, 0, 1);
 	}
 }

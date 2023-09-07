@@ -63,11 +63,11 @@ public final class CLALibMatrixMult {
 			}
 
 			if(!(m1 instanceof CompressedMatrixBlock) && transposeLeft) {
-				m1 = LibMatrixReorg.transpose(m1, k);
+				m1 = LibMatrixReorg.transpose(m1, k, true);
 				transposeLeft = false;
 			}
 			else if(!(m2 instanceof CompressedMatrixBlock) && transposeRight) {
-				m2 = LibMatrixReorg.transpose(m2, k);
+				m2 = LibMatrixReorg.transpose(m2, k, true);
 				transposeRight = false;
 			}
 		}
@@ -87,7 +87,7 @@ public final class CLALibMatrixMult {
 				LOG.warn("Transposing decompression");
 				ret = ((CompressedMatrixBlock) ret).decompress(k);
 			}
-			ret = LibMatrixReorg.transpose(ret, k);
+			ret = LibMatrixReorg.transpose(ret, k, true);
 		}
 
 		return ret;

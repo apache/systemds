@@ -273,7 +273,6 @@ public final class OffsetFactory {
 		}
 		boolean noOverHalf = getNoOverHalf(offsets);
 		return OffsetByte.create(offsets, offsetToFirst, offsetToLast, alen - apos, noZero, noOverHalf);
-
 	}
 
 	private static int calcSize(int[] indexes, int apos, int alen, int offMax) {

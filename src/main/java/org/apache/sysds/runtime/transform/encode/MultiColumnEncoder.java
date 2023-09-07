@@ -102,7 +102,6 @@ public class MultiColumnEncoder implements Encoder {
 	}
 
 	public MatrixBlock encode(CacheBlock<?> in, int k, boolean compressedOut){
-	
 		deriveNumRowPartitions(in, k);
 		try {
 			if(isCompressedTransformEncode(in, compressedOut))
@@ -112,7 +111,8 @@ public class MultiColumnEncoder implements Encoder {
 				DependencyThreadPool pool = new DependencyThreadPool(k);
 				LOG.debug("Encoding with full DAG on " + k + " Threads");
 				try {
-					pool.submitAllAndWait(getEncodeTasks(in, out, pool));
+					List<DependencyTask<?>> tasks = getEncodeTasks(in, out, pool);
+					pool.submitAllAndWait(tasks);
 				}
 				finally{
 					pool.shutdown();
@@ -296,10 +296,11 @@ public class MultiColumnEncoder implements Encoder {
 			pool.submitAllAndWait(getBuildTasks(in));
 		}
 		catch(ExecutionException | InterruptedException e) {
-			LOG.error("MT Column build failed");
-			e.printStackTrace();
+			throw new RuntimeException(e);
 		}
-		pool.shutdown();
+		finally{
+			pool.shutdown();
+		}
 	}
 
 	public void legacyBuild(FrameBlock in) {
@@ -412,10 +413,11 @@ public class MultiColumnEncoder implements Encoder {
 				pool.submitAllAndWait(getApplyTasks(in, out, outputCol));
 		}
 		catch(ExecutionException | InterruptedException e) {
-			LOG.error("MT Column apply failed");
-			e.printStackTrace();
+			throw new DMLRuntimeException(e);
 		}
-		pool.shutdown();
+		finally{
+			pool.shutdown();
+		}
 	}
 
 	private void deriveNumRowPartitions(CacheBlock<?> in, int k) {
@@ -679,8 +681,7 @@ public class MultiColumnEncoder implements Encoder {
 
 	@Override
 	public FrameBlock getMetaData(FrameBlock meta) {
-		getMetaData(meta, 1);
-		return meta;
+		return getMetaData(meta, 1);
 	}
 
 	public FrameBlock getMetaData(FrameBlock meta, int k) {
@@ -691,18 +692,20 @@ public class MultiColumnEncoder implements Encoder {
 			meta = new FrameBlock(_columnEncoders.size(), ValueType.STRING);
 		this.allocateMetaData(meta);
 		if (k > 1) {
+			ExecutorService pool = CommonThreadPool.get(k);
 			try {
-				ExecutorService pool = CommonThreadPool.get(k);
 				ArrayList<ColumnMetaDataTask<? extends ColumnEncoder>> tasks = new ArrayList<>();
 				for(ColumnEncoder columnEncoder : _columnEncoders)
 					tasks.add(new ColumnMetaDataTask<>(columnEncoder, meta));
 				List<Future<Object>> taskret = pool.invokeAll(tasks);
-				pool.shutdown();
 				for (Future<Object> task : taskret)
-					task.get();
+				task.get();
 			}
 			catch(Exception ex) {
 				throw new DMLRuntimeException(ex);
+			}
+			finally{
+				pool.shutdown();
 			}
 		}
 		else {
@@ -1167,8 +1170,8 @@ public class MultiColumnEncoder implements Encoder {
 		private final ColumnEncoder _encoder;
 		private final MatrixBlock _out;
 		private final CacheBlock<?> _in;
-		private int _offset = -1; // offset dude to dummycoding in
-									// previous columns needs to be updated by external task!
+		/** Offset because of dummmy coding such that the column id is correct. */
+		private int _offset = -1; 
 
 		private ApplyTasksWrapperTask(ColumnEncoder encoder, CacheBlock<?> in, 
 				MatrixBlock out, DependencyThreadPool pool) {
@@ -1189,7 +1192,7 @@ public class MultiColumnEncoder implements Encoder {
 			// and _outputCol has been updated!
 			if(_offset == -1)
 				throw new DMLRuntimeException(
-					"OutputCol for apply task wrapper has not been updated!, Most likely some " + "concurrency issues");
+					"OutputCol for apply task wrapper has not been updated!, Most likely some concurrency issues\n " + this);
 			return super.call();
 		}
 

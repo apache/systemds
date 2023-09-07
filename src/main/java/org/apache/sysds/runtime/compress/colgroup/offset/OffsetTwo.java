@@ -97,7 +97,9 @@ public class OffsetTwo extends AOffset {
 	@Override
 	public OffsetSliceInfo slice(int l, int u) {
 		if(l <= first) {
-			if(u > last)
+			if(u < first)
+				return new OffsetSliceInfo(-1, -1, new OffsetEmpty());
+			else if(u > last)
 				return new OffsetSliceInfo(0, 2, moveIndex(l));
 			else
 				return new OffsetSliceInfo(0, 1, new OffsetSingle(first - l));

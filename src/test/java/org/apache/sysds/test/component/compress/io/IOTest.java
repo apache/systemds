@@ -26,6 +26,7 @@ import java.io.File;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlockFactory;
 import org.apache.sysds.runtime.compress.io.WriterCompressed;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -139,7 +140,8 @@ public class IOTest {
 			WriterCompressed.writeCompressedMatrixToHDFS(mb, filename);
 			File f = new File(filename);
 			assertTrue(f.isFile() || f.isDirectory());
-			MatrixBlock mbr = IOCompressionTestUtils.read(filename);
+			MatrixBlock mbr = IOCompressionTestUtils.read(filename, mb.getNumRows(), mb.getNumColumns(),
+				OptimizerUtils.DEFAULT_BLOCKSIZE);
 			IOCompressionTestUtils.verifyEquivalence(mb, mbr);
 		}
 		catch(Exception e) {
@@ -180,7 +182,7 @@ public class IOTest {
 			WriterCompressed.writeCompressedMatrixToHDFS(mb, filename, blen);
 			File f = new File(filename);
 			assertTrue(f.isFile() || f.isDirectory());
-			MatrixBlock mbr = IOCompressionTestUtils.read(filename);
+			MatrixBlock mbr = IOCompressionTestUtils.read(filename, mb.getNumRows(), mb.getNumColumns(), blen);
 			IOCompressionTestUtils.verifyEquivalence(mb, mbr);
 		}
 		catch(Exception e) {

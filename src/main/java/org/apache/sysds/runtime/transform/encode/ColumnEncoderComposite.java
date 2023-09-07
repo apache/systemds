@@ -216,8 +216,7 @@ public class ColumnEncoderComposite extends ColumnEncoder {
 			}
 		}
 		catch(Exception ex) {
-			LOG.error("Failed to transform-apply frame with \n" + this);
-			throw ex;
+			throw new DMLRuntimeException("Failed to transform-apply frame with \n" + this, ex);
 		}
 		return out;
 	}

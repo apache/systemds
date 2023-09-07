@@ -108,7 +108,7 @@ public abstract class Array<T> implements Writable {
 	 */
 	protected Map<T, Long> createRecodeMap() {
 		Map<T, Long> map = new HashMap<>();
-		long id = 0;
+		long id = 1;
 		for(int i = 0; i < size(); i++) {
 			T val = get(i);
 			if(val != null) {

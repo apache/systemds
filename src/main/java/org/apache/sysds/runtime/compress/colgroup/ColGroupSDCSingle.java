@@ -27,6 +27,7 @@ import java.util.Arrays;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.PlaceHolderDict;
+import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.DictionaryFactory;
 import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
@@ -556,28 +557,31 @@ public class ColGroupSDCSingle extends ASDC {
 	}
 
 	@Override
-	public AColGroup appendNInternal(AColGroup[] g) {
-		int sumRows = getNumRows();
+	public AColGroup appendNInternal(AColGroup[] g, int blen, int rlen) {
 		for(int i = 1; i < g.length; i++) {
-			if(!_colIndexes.equals(g[i]._colIndexes)) {
-				LOG.warn("Not same columns therefore not appending \n" + _colIndexes + "\n\n" + g[i]._colIndexes);
-				return null;
-			}
+			final AColGroup gs = g[i];
+			if(!_colIndexes.equals(gs._colIndexes))
+				throw new DMLCompressionException(
+					"Not same columns therefore not appending \n" + _colIndexes + "\n\n" + gs._colIndexes);
 
-			if(!(g[i] instanceof ColGroupSDCSingle)) {
-				LOG.warn("Not SDCFOR but " + g[i].getClass().getSimpleName());
-				return null;
-			}
+			if(!(gs instanceof AOffsetsGroup))
+				throw new DMLCompressionException("Not SDC but " + gs.getClass().getSimpleName());
 
-			final ColGroupSDCSingle gc = (ColGroupSDCSingle) g[i];
-			if(!gc._dict.equals(_dict)) {
-				LOG.warn("Not same Dictionaries therefore not appending \n" + _dict + "\n\n" + gc._dict);
-				return null;
+			if(gs instanceof ColGroupSDC) {
+				final ColGroupSDC gc = (ColGroupSDC) gs;
+				if(!gc._dict.equals(_dict))
+					throw new DMLCompressionException(
+						"Not same Dictionaries therefore not appending \n" + _dict + "\n\n" + gc._dict);
 			}
-			sumRows += gc.getNumRows();
+			else if(gs instanceof ColGroupConst) {
+				final ColGroupConst gc = (ColGroupConst) gs;
+				if(!(gc._dict instanceof PlaceHolderDict) && gc._dict.equals(_defaultTuple))
+					throw new DMLCompressionException("Not same default values therefore not appending:\n" + gc._dict
+						+ "\n\n" + Arrays.toString(_defaultTuple));
+			}
 		}
 		AOffset no = _indexes.appendN(Arrays.copyOf(g, g.length, AOffsetsGroup[].class), getNumRows());
-		return create(_colIndexes, sumRows, _dict, _defaultTuple, no, null);
+		return create(_colIndexes, rlen, _dict, _defaultTuple, no, null);
 	}
 
 	@Override

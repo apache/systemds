@@ -129,12 +129,12 @@ public class MultiReturnBuiltinCPInstruction extends ComputationCPInstruction {
 		return false;
 	}
 	
-	private abstract class PP extends Pair<String,LineageItem>{};
 
 	@Override
+	@SuppressWarnings("unchecked")
 	public Pair<String, LineageItem>[] getLineageItems(ExecutionContext ec) {
 		LineageItem[] inputLineage = LineageItemUtils.getLineage(ec, input1, input2, input3);
-		final Pair<String,LineageItem>[] ret = new PP[_outputs.size()];
+		final Pair<String,LineageItem>[] ret = new Pair[_outputs.size()];
 		for(int i = 0; i < _outputs.size(); i++){
 			CPOperand out = _outputs.get(i);
 			ret[i] = Pair.of(out.getName(), new LineageItem(getOpcode(), inputLineage));

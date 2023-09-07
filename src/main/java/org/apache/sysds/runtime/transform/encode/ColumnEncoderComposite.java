@@ -228,7 +228,7 @@ public class ColumnEncoderComposite extends ColumnEncoder {
 	}
 
 	@Override
-	protected double[] getCodeCol(CacheBlock<?> in, int startInd, int blkSize) {
+	protected double[] getCodeCol(CacheBlock<?> in, int startInd, int endInd, double[] tmp) {
 		throw new DMLRuntimeException("CompositeEncoder does not have a Code");
 	}
 
@@ -421,7 +421,7 @@ public class ColumnEncoderComposite extends ColumnEncoder {
 	@Override
 	public int getDomainSize() {
 		return _columnEncoders.stream()//
-			.map(ColumnEncoder::getDomainSize).reduce(Integer::max).get();
+			.map(ColumnEncoder::getDomainSize).reduce((a,x) -> Integer.max(a,x)).get();
 	}
 
 

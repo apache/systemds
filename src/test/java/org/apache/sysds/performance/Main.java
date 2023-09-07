@@ -23,8 +23,10 @@ import org.apache.sysds.performance.compression.IOBandwidth;
 import org.apache.sysds.performance.compression.SchemaTest;
 import org.apache.sysds.performance.compression.Serialize;
 import org.apache.sysds.performance.compression.StreamCompress;
+import org.apache.sysds.performance.compression.TransformPerf;
 import org.apache.sysds.performance.generators.ConstMatrix;
 import org.apache.sysds.performance.generators.FrameFile;
+import org.apache.sysds.performance.generators.FrameTransformFile;
 import org.apache.sysds.performance.generators.GenMatrices;
 import org.apache.sysds.performance.generators.IGenerate;
 import org.apache.sysds.performance.generators.MatrixFile;
@@ -153,7 +155,7 @@ public class Main {
 		String p = args[3]; // input frame
 		String s = args[4]; // spec
 		int id = Integer.parseInt(args[5]);
-		// run13A(n, FrameTransformFile.create(p, s), k, id);
+		run13A(n, FrameTransformFile.create(p, s), k, id);
 	}
 
 	private static void run13A(int n, IGenerate<MatrixBlock> g, int k, int id) throws Exception {
@@ -171,7 +173,8 @@ public class Main {
 		int n = Integer.parseInt(args[2]);
 		IGenerate<FrameBlock> g = FrameFile.create(args[3]);
 		String spec = args[4];
-		// new TransformPerf(n, k, g, spec).run();
+		new TransformPerf(n, k, g, spec).run();
+
 	}
 
 	private static void run16(String[] args) {
@@ -179,7 +182,6 @@ public class Main {
 		MatrixBlock mb = TestUtils.ceil(TestUtils.generateTestMatrixBlock(len, len, 0, 100, 0.01, len +1));
 		System.out.println(mb);
 	}
-
 
 	public static void main(String[] args) {
 		try {

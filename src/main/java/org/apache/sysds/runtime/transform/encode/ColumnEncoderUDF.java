@@ -162,7 +162,7 @@ public class ColumnEncoderUDF extends ColumnEncoder {
 	}
 
 	@Override
-	protected double[] getCodeCol(CacheBlock<?> in, int startInd, int blkSize) {
+	protected double[] getCodeCol(CacheBlock<?> in, int startInd, int endInd, double[] tmp) {
 		throw new DMLRuntimeException("UDF encoders only support full column access.");
 	}
 }

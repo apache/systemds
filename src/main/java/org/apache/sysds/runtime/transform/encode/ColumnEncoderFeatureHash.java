@@ -19,8 +19,6 @@
 
 package org.apache.sysds.runtime.transform.encode;
 
-import static org.apache.sysds.runtime.util.UtilFunctions.getEndIndex;
-
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
@@ -85,10 +83,9 @@ public class ColumnEncoderFeatureHash extends ColumnEncoder {
 		return Math.abs(a.hashDouble(row) % _K + 1);
 	}
 
-	protected double[] getCodeCol(CacheBlock<?> in, int startInd, int blkSize) {
-		// hash a block of rows
-		int endInd = getEndIndex(in.getNumRows(), startInd, blkSize);
-		double codes[] = new double[endInd-startInd];
+	protected double[] getCodeCol(CacheBlock<?> in, int startInd, int endInd, double[] tmp) {
+		final int endLength = endInd - startInd;
+		final double[] codes = tmp != null && tmp.length == endLength ? tmp : new double[endLength];
 		if( in instanceof FrameBlock) {
 			Array<?> a = ((FrameBlock) in).getColumn(_colID-1);
 			for(int i = startInd; i < endInd; i++) 

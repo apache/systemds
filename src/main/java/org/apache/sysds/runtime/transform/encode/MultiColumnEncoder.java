@@ -117,7 +117,7 @@ public class MultiColumnEncoder implements Encoder {
 				finally{
 					pool.shutdown();
 				}
-				outputMatrixPostProcessing(out);
+				outputMatrixPostProcessing(out, k);
 				return out;
 			}
 			else {
@@ -367,7 +367,7 @@ public class MultiColumnEncoder implements Encoder {
 		}
 		// Recomputing NNZ since we access the block directly
 		// TODO set NNZ explicit count them in the encoders
-		outputMatrixPostProcessing(out);
+		outputMatrixPostProcessing(out, k);
 		if(_legacyOmit != null)
 			out = _legacyOmit.apply((FrameBlock) in, out);
 		if(_legacyMVImpute != null)
@@ -597,11 +597,26 @@ public class MultiColumnEncoder implements Encoder {
 		}
 	}
 
-	private void outputMatrixPostProcessing(MatrixBlock output){
+	private void outputMatrixPostProcessing(MatrixBlock output, int k){
 		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
-		int k = OptimizerUtils.getTransformNumThreads();
-		if (k == 1) {
-			Set<Integer> indexSet = _columnEncoders.stream()
+		if(output.isInSparseFormat()){
+			if (k == 1) 
+				outputMatrixPostProcessingSingleThread(output);
+			else 
+				outputMatrixPostProcessingParallel(output, k);	
+		}
+		else {
+			output.recomputeNonZeros(k);
+		}
+
+		
+		if(DMLScript.STATISTICS)
+			TransformStatistics.incOutMatrixPostProcessingTime(System.nanoTime()-t0);
+	}
+
+
+	private void outputMatrixPostProcessingSingleThread(MatrixBlock output){
+		Set<Integer> indexSet = _columnEncoders.stream()
 					.map(ColumnEncoderComposite::getSparseRowsWZeros).flatMap(l -> {
 						if(l == null)
 							return null;
@@ -612,42 +627,42 @@ public class MultiColumnEncoder implements Encoder {
 				for(Integer row : indexSet)
 					output.getSparseBlock().get(row).compact();
 			}
+
+		output.recomputeNonZeros();
+	}
+
+
+	private void outputMatrixPostProcessingParallel(MatrixBlock output, int k) {
+		ExecutorService myPool = CommonThreadPool.get(k);
+		try {
+			// Collect the row indices that need compaction
+			Set<Integer> indexSet = myPool.submit(() -> _columnEncoders.stream().parallel()
+				.map(ColumnEncoderComposite::getSparseRowsWZeros).flatMap(l -> {
+					if(l == null)
+						return null;
+					return l.stream();
+				}).collect(Collectors.toSet())).get();
+
+			// Check if the set is empty
+			boolean emptySet = myPool.submit(() -> indexSet.stream().parallel().allMatch(Objects::isNull)).get();
+
+			// Concurrently compact the rows
+			if(emptySet) {
+				myPool.submit(() -> {
+					indexSet.stream().parallel().forEach(row -> {
+						output.getSparseBlock().get(row).compact();
+					});
+				}).get();
+			}
 		}
-		else {
-			ExecutorService myPool = CommonThreadPool.get(k);
-			try {
-				// Collect the row indices that need compaction
-				Set<Integer> indexSet = myPool.submit(() ->
-					_columnEncoders.stream().parallel()
-					.map(ColumnEncoderComposite::getSparseRowsWZeros).flatMap(l -> {
-						if(l == null)
-							return null;
-						return l.stream();
-					}).collect(Collectors.toSet())
-				).get();
-
-				// Check if the set is empty
-				boolean emptySet = myPool.submit(() ->
-					indexSet.stream().parallel().allMatch(Objects::isNull)
-				).get();
-
-				// Concurrently compact the rows
-				if (emptySet) {
-					myPool.submit(() -> {
-						indexSet.stream().parallel().forEach(row -> {
-							output.getSparseBlock().get(row).compact();
-						});
-					}).get();
-				}
-			}
-			catch(Exception ex) {
-				throw new DMLRuntimeException(ex);
-			}
+		catch(Exception ex) {
+			throw new DMLRuntimeException(ex);
+		}
+		finally {
 			myPool.shutdown();
 		}
+
 		output.recomputeNonZeros();
-		if(DMLScript.STATISTICS)
-			TransformStatistics.incOutMatrixPostProcessingTime(System.nanoTime()-t0);
 	}
 
 	@Override

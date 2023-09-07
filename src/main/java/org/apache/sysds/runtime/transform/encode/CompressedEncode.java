@@ -197,8 +197,13 @@ public class CompressedEncode {
 			}
 		}
 		else {
-			for(int i = 0; i < a.size(); i++)
-				m.set(i, (int) b.getCodeIndex(a.getAsDouble(i)) - 1);
+			
+			for(int i = 0; i < a.size(); i++){
+				int idx = (int) b.getCodeIndex(a.getAsDouble(i)) - 1;
+				if(idx < 0)
+					throw new RuntimeException(a.getAsDouble(i) + " is invalid value for " + b + "\n" + idx);
+				m.set(i, idx);
+			}
 		}
 		return m;
 	}

@@ -28,6 +28,7 @@ import java.util.BitSet;
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.runtime.compress.colgroup.IMapToDataGroup;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory.MAP_TYPE;
+import org.apache.sysds.runtime.io.IOUtilFunctions;
 import org.apache.sysds.utils.MemoryEstimates;
 
 public class MapToChar extends AMapToData {
@@ -110,8 +111,27 @@ public class MapToChar extends AMapToData {
 		out.writeByte(MAP_TYPE.CHAR.ordinal());
 		out.writeInt(getUnique());
 		out.writeInt(_data.length);
-		for(int i = 0; i < _data.length; i++)
-			out.writeChar(_data[i]);
+		final int BS = 100;
+		if(_data.length > BS) {
+			final byte[] buff = new byte[BS*2];
+			for(int i = 0; i < _data.length; ) {
+				if(i + BS <= _data.length) {
+					for(int o = 0; o < BS; o++) {
+						IOUtilFunctions.shortToBa(_data[i++], buff, o * 2);
+					}
+					out.write(buff);
+				}
+				else {// remaining.
+					for(; i < _data.length; i++)
+						out.writeChar(_data[i]);
+				}
+			}
+		}
+		else {
+			for(int i = 0; i < _data.length; i++)
+				out.writeChar(_data[i]);
+		}
+
 	}
 
 	protected static MapToChar readFields(DataInput in) throws IOException {
@@ -258,28 +278,30 @@ public class MapToChar extends AMapToData {
 		int p = 0; // pointer
 		for(IMapToDataGroup gd : d)
 			p += gd.getMapToData().size();
-		final char[] ret = Arrays.copyOf(_data, p);
+		final char[] ret = new char[p];
 
-		p = size();
-		for(int i = 1; i < d.length; i++) {
-			final MapToChar mm = (MapToChar) d[i].getMapToData();
-			final int ms = mm.size();
-			System.arraycopy(mm._data, 0, ret, p, ms);
-			p += ms;
+		p = 0;
+		for(int i = 0; i < d.length; i++) {
+			if(d[i].getMapToData().size() > 0) {
+				final MapToChar mm = (MapToChar) d[i].getMapToData();
+				final int ms = mm.size();
+				System.arraycopy(mm._data, 0, ret, p, ms);
+				p += ms;
+			}
 		}
 
 		return new MapToChar(getUnique(), ret);
 	}
 
 	@Override
-	public int getMaxPossible(){
+	public int getMaxPossible() {
 		return Character.MAX_VALUE;
 	}
 
 	@Override
 	public boolean equals(AMapToData e) {
 		return e instanceof MapToChar && //
-			e.getUnique() == getUnique() &&//
+			e.getUnique() == getUnique() && //
 			Arrays.equals(((MapToChar) e)._data, _data);
 	}
 }

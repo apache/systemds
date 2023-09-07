@@ -59,6 +59,7 @@ import org.apache.sysds.runtime.compress.utils.DblArray;
 import org.apache.sysds.runtime.compress.utils.DblArrayCountHashMap;
 import org.apache.sysds.runtime.compress.utils.DoubleCountHashMap;
 import org.apache.sysds.runtime.compress.utils.IntArrayList;
+import org.apache.sysds.runtime.compress.utils.Util;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.Timing;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
@@ -225,12 +226,12 @@ public class ColGroupFactory {
 		if(estC < actC * 0.75) {
 			String warning = "The estimate cost is significantly off : " + est;
 			LOG.debug(
-				String.format("time[ms]: %10.2f %25s est %10.0f -- act %10.0f distinct:%5d cols:%s wanted:%s\n\t\t%s",
-					time, retType, estC, actC, act.getNumValues(), cols, wanted, warning));
+				String.format("time[ms]: %10.2f %25s est %10.0f -- act %10.0f distinct:%5d cols:%s wanted:%s\n\t\t%s", time,
+					retType, estC, actC, act.getNumValues(), cols, wanted, warning));
 		}
 		else {
-			LOG.debug(String.format("time[ms]: %10.2f %25s est %10.0f -- act %10.0f distinct:%5d cols:%s wanted:%s",
-				time, retType, estC, actC, act.getNumValues(), cols, wanted));
+			LOG.debug(String.format("time[ms]: %10.2f %25s est %10.0f -- act %10.0f distinct:%5d cols:%s wanted:%s", time,
+				retType, estC, actC, act.getNumValues(), cols, wanted));
 		}
 
 	}
@@ -277,6 +278,9 @@ public class ColGroupFactory {
 				return ColGroupDDCFOR.sparsifyFOR((ColGroupDDC) g);
 			return g;
 		}
+		else if(ct == CompressionType.SDC && colIndexes.size() == 1 && !t) {
+			return compressSDCSingleColDirectBlock(colIndexes, cg.getNumVals());
+		}
 
 		final ABitmap ubm = BitmapEncoder.extractBitmap(colIndexes, in, cg.getNumVals(), cs);
 		if(ubm == null) // no values ... therefore empty
@@ -305,6 +309,143 @@ public class ColGroupFactory {
 				return g;
 			default:
 				throw new DMLCompressionException("Not implemented compression of " + ct + " in factory.");
+		}
+	}
+
+	private AColGroup compressSDCSingleColDirectBlock(IColIndex colIndexes, int nVal) {
+		final DoubleCountHashMap cMap = new DoubleCountHashMap(nVal);
+		final int col = colIndexes.get(0);
+
+		countElements(cMap, col);
+
+		double def = cMap.getMostFrequent();
+		final int dictSize = cMap.size() - 1;
+		if(dictSize == 0)
+			return ColGroupConst.create(colIndexes, def);
+
+		int defCount = cMap.getC(def).count;
+		cMap.replaceWithUIDs(def);
+		IDictionary dict = Dictionary.create(cMap.getDictionary(dictSize));
+		IntArrayList offs = new IntArrayList(nRow - defCount);
+		AMapToData map = MapToFactory.create(nRow - defCount, dictSize);
+		getOffsets(offs, map, cMap, col, def);
+
+		AOffset aoff = OffsetFactory.createOffset(offs);
+
+		return ColGroupSDC.create(colIndexes, nRow, dict, new double[] {def}, aoff, map, null);
+
+	}
+
+	private void getOffsets(IntArrayList offs, AMapToData map, DoubleCountHashMap cMap, int col, double def) {
+
+		if(in.isInSparseFormat()) {
+			if(def == 0) {
+				final SparseBlock sb = in.getSparseBlock();
+				for(int r = 0; r < nRow; r++) {
+					if(sb.isEmpty(r))
+						continue;
+
+					final int apos = sb.pos(r);
+					final int alen = sb.size(r) + apos;
+					final int[] aix = sb.indexes(r);
+					final int idx = Arrays.binarySearch(aix, apos, alen, col);
+					if(!(idx < 0)) {
+						map.set(offs.size(), cMap.getId(sb.values(r)[idx]));
+						offs.appendValue(r);
+					}
+				}
+			}
+			else {
+
+				final SparseBlock sb = in.getSparseBlock();
+				for(int r = 0; r < nRow; r++) {
+					if(sb.isEmpty(r)) {
+
+						map.set(offs.size(), cMap.getId(0.0));
+						offs.appendValue(r);
+					}
+					else {
+						final int apos = sb.pos(r);
+						final int alen = sb.size(r) + apos;
+						final int[] aix = sb.indexes(r);
+						final int idx = Arrays.binarySearch(aix, apos, alen, col);
+						if(idx < 0) {
+							map.set(offs.size(), cMap.getId(0.0));
+							offs.appendValue(r);
+						}
+						else {
+							double v = sb.values(r)[idx];
+							if(!Util.eq(sb.values(r)[idx], def)) {
+								map.set(offs.size(), cMap.getId(v));
+								offs.appendValue(r);
+							}
+						}
+					}
+				}
+			}
+		}
+		else if(in.getDenseBlock().isContiguous()) {
+			final double[] dv = in.getDenseBlockValues();
+			int off = col;
+			for(int r = 0; r < nRow; r++, off += nCol)
+				if(!Util.eq(dv[off], def)) {
+					map.set(offs.size(), cMap.getId(dv[off]));
+					offs.appendValue(r);
+				}
+		}
+		else {
+			final DenseBlock db = in.getDenseBlock();
+			for(int r = 0; r < nRow; r++) {
+				final double[] dv = db.values(r);
+				int off = db.pos(r) + col;
+				if(!Util.eq(dv[off], def)) {
+					map.set(offs.size(), cMap.getId(dv[off]));
+					offs.appendValue(r);
+				}
+			}
+		}
+	}
+
+	private void countElements(DoubleCountHashMap map, int col) {
+		if(in.isInSparseFormat())
+			countElementsSparse(map, col);
+		else if(in.getDenseBlock().isContiguous())
+			countElementsDenseContiguous(map, col);
+		else
+			countElementsDenseGeneric(map, col);
+	}
+
+	private void countElementsSparse(DoubleCountHashMap map, int col) {
+		final SparseBlock sb = in.getSparseBlock();
+		for(int r = 0; r < nRow; r++) {
+			if(sb.isEmpty(r))
+				map.increment(0.0);
+			else {
+				final int apos = sb.pos(r);
+				final int alen = sb.size(r) + apos;
+				final int[] aix = sb.indexes(r);
+				final int idx = Arrays.binarySearch(aix, apos, alen, col);
+				if(idx < 0)
+					map.increment(0.0);
+				else
+					map.increment(sb.values(r)[idx]);
+			}
+		}
+	}
+
+	private void countElementsDenseContiguous(DoubleCountHashMap map, int col) {
+		final double[] dv = in.getDenseBlockValues();
+		int off = col;
+		for(int r = 0; r < nRow; r++, off += nCol)
+			map.increment(dv[off]);
+	}
+
+	private void countElementsDenseGeneric(DoubleCountHashMap map, int col) {
+		final DenseBlock db = in.getDenseBlock();
+		for(int r = 0; r < nRow; r++) {
+			final double[] dv = db.values(r);
+			int off = db.pos(r) + col;
+			map.increment(dv[off]);
 		}
 	}
 

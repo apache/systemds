@@ -70,6 +70,7 @@ public class DMLConfig
 	public static final String DEFAULT_BLOCK_SIZE   = "sysds.defaultblocksize";
 	public static final String CP_PARALLEL_OPS      = "sysds.cp.parallel.ops";
 	public static final String CP_PARALLEL_IO       = "sysds.cp.parallel.io";
+	public static final String IO_COMPRESSION_CODEC = "sysds.io.compression.encoding";
 	public static final String PARALLEL_ENCODE      = "sysds.parallel.encode";  // boolean: enable multi-threaded transformencode and apply
 	public static final String PARALLEL_ENCODE_STAGED = "sysds.parallel.encode.staged";
 	public static final String PARALLEL_ENCODE_APPLY_BLOCKS = "sysds.parallel.encode.applyBlocks";
@@ -154,6 +155,7 @@ public class DMLConfig
 		_defaultVals.put(DEFAULT_BLOCK_SIZE,     String.valueOf(OptimizerUtils.DEFAULT_BLOCKSIZE) );
 		_defaultVals.put(CP_PARALLEL_OPS,        "true" );
 		_defaultVals.put(CP_PARALLEL_IO,         "true" );
+		_defaultVals.put(IO_COMPRESSION_CODEC,   "none");
 		_defaultVals.put(PARALLEL_TOKENIZE,      "false");
 		_defaultVals.put(PARALLEL_TOKENIZE_NUM_BLOCKS, "64");
 		_defaultVals.put(PARALLEL_ENCODE,        "true" );
@@ -463,7 +465,7 @@ public class DMLConfig
 			FLOATING_POINT_PRECISION, GPU_EVICTION_POLICY, LOCAL_SPARK_NUM_THREADS, EVICTION_SHADOW_BUFFERSIZE,
 			GPU_MEMORY_ALLOCATOR, GPU_MEMORY_UTILIZATION_FACTOR, USE_SSL_FEDERATED_COMMUNICATION,
 			DEFAULT_FEDERATED_INITIALIZATION_TIMEOUT, FEDERATED_TIMEOUT, FEDERATED_MONITOR_FREQUENCY, FEDERATED_COMPRESSION,
-			ASYNC_PREFETCH, ASYNC_SPARK_BROADCAST, ASYNC_SPARK_CHECKPOINT
+			ASYNC_PREFETCH, ASYNC_SPARK_BROADCAST, ASYNC_SPARK_CHECKPOINT, IO_COMPRESSION_CODEC
 		}; 
 		
 		StringBuilder sb = new StringBuilder();

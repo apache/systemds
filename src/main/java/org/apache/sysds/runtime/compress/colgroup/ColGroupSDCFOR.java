@@ -461,8 +461,7 @@ public class ColGroupSDCFOR extends ASDC implements IMapToDataGroup, IFrameOfRef
 	}
 
 	@Override
-	public AColGroup appendNInternal(AColGroup[] g) {
-		int sumRows = getNumRows();
+	public AColGroup appendNInternal(AColGroup[] g, int blen, int rlen) {
 		for(int i = 1; i < g.length; i++) {
 			if(!_colIndexes.equals(g[i]._colIndexes)) {
 				LOG.warn("Not same columns therefore not appending \n" + _colIndexes + "\n\n" + g[i]._colIndexes);
@@ -479,11 +478,10 @@ public class ColGroupSDCFOR extends ASDC implements IMapToDataGroup, IFrameOfRef
 				LOG.warn("Not same Dictionaries therefore not appending \n" + _dict + "\n\n" + gc._dict);
 				return null;
 			}
-			sumRows += gc.getNumRows();
 		}
 		AMapToData nd = _data.appendN(Arrays.copyOf(g, g.length, IMapToDataGroup[].class));
 		AOffset no = _indexes.appendN(Arrays.copyOf(g, g.length, AOffsetsGroup[].class), getNumRows());
-		return create(_colIndexes, sumRows, _dict, no, nd, null, _reference);
+		return create(_colIndexes, rlen, _dict, no, nd, null, _reference);
 	}
 
 	@Override

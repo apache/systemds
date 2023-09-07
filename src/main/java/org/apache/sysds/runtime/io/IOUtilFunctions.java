@@ -22,6 +22,7 @@ package org.apache.sysds.runtime.io;
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -49,6 +50,15 @@ import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.io.SequenceFile.Writer;
 import org.apache.hadoop.io.Text;
+import org.apache.hadoop.io.compress.BZip2Codec;
+import org.apache.hadoop.io.compress.CompressionCodec;
+import org.apache.hadoop.io.compress.DefaultCodec;
+import org.apache.hadoop.io.compress.DeflateCodec;
+import org.apache.hadoop.io.compress.GzipCodec;
+import org.apache.hadoop.io.compress.Lz4Codec;
+import org.apache.hadoop.io.compress.PassthroughCodec;
+import org.apache.hadoop.io.compress.SnappyCodec;
+import org.apache.hadoop.io.compress.ZStandardCodec;
 import org.apache.hadoop.mapred.FileSplit;
 import org.apache.hadoop.mapred.InputFormat;
 import org.apache.hadoop.mapred.InputSplit;
@@ -57,6 +67,7 @@ import org.apache.hadoop.mapred.RecordReader;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.mapred.TextInputFormat;
 import org.apache.sysds.conf.ConfigurationManager;
+import org.apache.sysds.conf.DMLConfig;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.data.TensorBlock;
 import org.apache.sysds.runtime.data.TensorIndexes;
@@ -66,11 +77,12 @@ import org.apache.sysds.runtime.matrix.data.MatrixCell;
 import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysds.runtime.transform.TfUtils;
 import org.apache.sysds.runtime.util.LocalFileUtils;
-import org.apache.sysds.runtime.util.UtilFunctions;
 
-public class IOUtilFunctions 
-{
-	private static final Log LOG = LogFactory.getLog(UtilFunctions.class.getName());
+import io.airlift.compress.lzo.LzoCodec;
+import io.airlift.compress.lzo.LzopCodec;
+
+public class IOUtilFunctions {
+	private static final Log LOG = LogFactory.getLog(IOUtilFunctions.class.getName());
 
 	public static final PathFilter hiddenFileFilter = new PathFilter(){
 		@Override
@@ -188,7 +200,6 @@ public class IOUtilFunctions
 	{
 		//split by whole separator required for multi-character delimiters, preserve
 		//all tokens required for empty cells and in order to keep cell alignment
-	
 		return StringUtils.splitByWholeSeparatorPreserveAllTokens(str, delim);
 	}
 	
@@ -252,13 +263,22 @@ public class IOUtilFunctions
 	private static String[] splitCSVNonNullWithCache(final String str, final String delim, final String[] cache) {
 		final int len = str.length();
 		final int delimLen = delim.length();
-
+		final boolean containsQuotationMarks = str.contains("\"");
 		int from = 0;
 		int id = 0;
-		while(from < len) { // for all tokens
-			final int to = getTo(str, from, delim);
-			cache[id++] =str.substring(from, to);
-			from = to + delimLen;
+		if(containsQuotationMarks){
+			while(from < len) { // for all tokens
+				final int to = getTo(str, from, delim);
+				cache[id++] = str.substring(from, to);
+				from = to + delimLen;
+			}
+		}
+		else{
+			while(from < len) { // for all tokens
+				final int to = getToNoQuote(str, from, delim);
+				cache[id++] = str.substring(from, to);
+				from = to + delimLen;
+			}
 		}
 
 		if(from == len)
@@ -294,6 +314,21 @@ public class IOUtilFunctions
 				to = str.indexOf(delim, to + 1);
 		}
 		else if(isEmptyMatch(str, from, delim, dLen, len))
+			return to = from; // empty string
+		else // default: unquoted non-empty
+			to = str.indexOf(delim, fromP1);
+
+		// slice out token and advance position
+		return to >= 0 ? to : len;
+	}
+
+	private static int getToNoQuote(final String str, final int from, final String delim) {
+		final int len = str.length();
+		final int dLen = delim.length();
+		final int fromP1 = from + 1;
+		int to;
+
+		if(isEmptyMatch(str, from, delim, dLen, len))
 			return to = from; // empty string
 		else // default: unquoted non-empty
 			to = str.indexOf(delim, fromP1);
@@ -561,32 +596,43 @@ public class IOUtilFunctions
 		return ncol;
 	}
 
-	public static Path[] getSequenceFilePaths( FileSystem fs, Path file ) 
-		throws IOException
-	{
+	public static Path[] getSequenceFilePaths(FileSystem fs, Path file) throws IOException {
 		Path[] ret = null;
 		
-		//Note on object stores: Since the object store file system implementations 
-		//only emulate a file system, the directory of a multi-part file does not
-		//exist physically and hence the isDirectory call returns false. Furthermore,
-		//listStatus call returns all files with the given directory as prefix, which
-		//includes the mtd file which needs to be ignored accordingly.
-		
-		if( fs.getFileStatus(file).isDirectory() 
-			|| IOUtilFunctions.isObjectStoreFileScheme(file) )
-		{
+		// Note on object stores: Since the object store file system implementations
+		// only emulate a file system, the directory of a multi-part file does not
+		// exist physically and hence the isDirectory call returns false. Furthermore,
+		// listStatus call returns all files with the given directory as prefix, which
+		// includes the mtd file which needs to be ignored accordingly.
+
+		if(fs instanceof LocalFileSystem) {
+			java.io.File f = new java.io.File(file.toString());
+			if(f.isDirectory()){
+				java.io.File[] r = new java.io.File(file.toString()).listFiles((a) -> {
+					final String s = a.getName();
+					return !(s.startsWith("_") || (s.endsWith(".crc")) || s.endsWith(".mtd"));
+				});
+				ret = new Path[r.length];
+				for(int i = 0; i < r.length; i++)
+					ret[i] = new Path(r[i].toString());
+			}
+			else{
+				return new Path[]{file};
+			}
+		}
+		else if(fs.getFileStatus(file).isDirectory() || IOUtilFunctions.isObjectStoreFileScheme(file)) {
 			LinkedList<Path> tmp = new LinkedList<>();
 			FileStatus[] dStatus = fs.listStatus(file);
-			for( FileStatus fdStatus : dStatus )
-				if( !fdStatus.getPath().getName().startsWith("_") //skip internal files
-					&& !fdStatus.getPath().toString().equals(file.toString()+".mtd") ) //mtd file
+			for(FileStatus fdStatus : dStatus)
+				if(!fdStatus.getPath().getName().startsWith("_") // skip internal files
+					&& !fdStatus.getPath().toString().equals(file.toString() + ".mtd")) // mtd file
 					tmp.add(fdStatus.getPath());
 			ret = tmp.toArray(new Path[0]);
 		}
 		else {
-			ret = new Path[]{ file };
+			ret = new Path[] {file};
 		}
-		
+
 		return ret;
 	}
 	
@@ -703,6 +749,27 @@ public class IOUtilFunctions
 			throw new DMLRuntimeException(e);
 		}
 	}
+
+	public static boolean isFileCPReadable(String path){
+		try{
+
+			JobConf job = ConfigurationManager.getCachedJobConf();
+			Path p = new Path(path);
+			FileSystem fs = getFileSystem(p,job);
+			if(fs instanceof LocalFileSystem){
+				// fast java path.
+				File f = new File(path);
+				return ! f.isDirectory() && f.length() < Integer.MAX_VALUE;
+			}
+			else{
+				FileStatus fstat = fs.getFileStatus(p);
+				return !fstat.isDirectory() && fstat.getLen() < Integer.MAX_VALUE;
+			}
+		}
+		catch(Exception e){
+			return false;
+		}
+	}
 	
 	public static class CountRowsTask implements Callable<Long> {
 		private final InputSplit _split;
@@ -745,28 +812,69 @@ public class IOUtilFunctions
 	public static Writer getSeqWriter(Path path, Configuration job, int replication) throws IOException {
 		return SequenceFile.createWriter(job, Writer.file(path), Writer.bufferSize(4096),
 			Writer.replication((short) (replication > 0 ? replication : 1)),
-			Writer.compression(SequenceFile.CompressionType.NONE), Writer.keyClass(MatrixIndexes.class),
+			Writer.compression(getCompressionEncodingType(), getCompressionCodec()), Writer.keyClass(MatrixIndexes.class),
 			Writer.valueClass(MatrixBlock.class));
 	}
 
 	public static Writer getSeqWriterFrame(Path path, Configuration job, int replication) throws IOException {
 		return SequenceFile.createWriter(job, Writer.file(path), Writer.bufferSize(4096),
 			Writer.keyClass(LongWritable.class), Writer.valueClass(FrameBlock.class),
-			Writer.compression(SequenceFile.CompressionType.NONE),
+			Writer.compression(getCompressionEncodingType(), getCompressionCodec()),
 			Writer.replication((short) (replication > 0 ? replication : 1)));
 	}
 
 	public static Writer getSeqWriterTensor(Path path, Configuration job, int replication) throws IOException {
 		return SequenceFile.createWriter(job, Writer.file(path), Writer.bufferSize(4096),
 		Writer.replication((short) (replication > 0 ? replication : 1)),
-		Writer.compression(SequenceFile.CompressionType.NONE), Writer.keyClass(TensorIndexes.class),
+		Writer.compression(getCompressionEncodingType(),getCompressionCodec()), Writer.keyClass(TensorIndexes.class),
 		Writer.valueClass(TensorBlock.class));
 	}
 
 	public static Writer getSeqWriterCell(Path path, Configuration job, int replication) throws IOException {
 		return SequenceFile.createWriter(job, Writer.file(path), Writer.bufferSize(4096),
 			Writer.replication((short) (replication > 0 ? replication : 1)),
-			Writer.compression(SequenceFile.CompressionType.NONE), Writer.keyClass(MatrixIndexes.class),
+			Writer.compression(getCompressionEncodingType(), getCompressionCodec()),
+			Writer.keyClass(MatrixIndexes.class),
 			Writer.valueClass(MatrixCell.class));
 	}
+
+	public static SequenceFile.CompressionType getCompressionEncodingType() {
+		String v = ConfigurationManager.getDMLConfig().getTextValue(DMLConfig.IO_COMPRESSION_CODEC);
+		if(v.equals("none"))
+			return SequenceFile.CompressionType.NONE;
+		else
+			return SequenceFile.CompressionType.RECORD;
+	}
+
+	public static CompressionCodec getCompressionCodec() {
+		String v = ConfigurationManager.getDMLConfig().getTextValue(DMLConfig.IO_COMPRESSION_CODEC);
+
+		switch(v) {
+			case "Lz4":
+				return new Lz4Codec();
+			case "Lzo":
+				return new LzoCodec();
+			case "Lzop":
+				return new LzopCodec();
+			case "Snappy":
+				return new SnappyCodec();
+			case "BZip2":
+				return new BZip2Codec();
+			case "deflate":
+				return new DeflateCodec();
+			case "Gzip":
+				return new GzipCodec();
+			case "pass":
+				return new PassthroughCodec();
+			case "Zstd":
+				return new ZStandardCodec();
+			case "none":
+				return null;
+			case "default":
+			default:
+				return new DefaultCodec();
+		}
+
+	}
+
 }

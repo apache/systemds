@@ -452,8 +452,8 @@ public class ColGroupDDCFOR extends AMorphingMMColGroup implements IFrameOfRefer
 	}
 
 	@Override
-	public AColGroup appendNInternal(AColGroup[] g) {
-		return null;
+	public AColGroup appendNInternal(AColGroup[] g, int blen, int rlen) {
+		throw new NotImplementedException();
 	}
 
 	@Override

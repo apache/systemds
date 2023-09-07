@@ -146,17 +146,30 @@ public class TransformCompressedTestSingleCol {
 			MultiColumnEncoder encoderNormal = EncoderFactory.createEncoder(spec, data.getColumnNames(),
 				data.getNumColumns(), meta);
 			MatrixBlock outNormal = encoderNormal.encode(data, k);
-			FrameBlock outNormalMD = encoderNormal.getMetaData(null);
-
+	
+			meta = null;
 			MultiColumnEncoder encoderCompressed = EncoderFactory.createEncoder(spec, data.getColumnNames(),
 				data.getNumColumns(), meta);
 			MatrixBlock outCompressed = encoderCompressed.encode(data, k, true);
-			FrameBlock outCompressedMD = encoderCompressed.getMetaData(null);
-			// LOG.error(data.slice(0,10));
-			// LOG.error(outNormal.slice(0,10));
-			// LOG.error(outCompressed.slice(0,10));
-			TestUtils.compareMatrices(outNormal, outCompressed, 0, "Not Equal after apply");
-			TestUtils.compareFrames(outNormalMD, outCompressedMD, true);
+
+			TestUtils.compareMatrices(outNormal, outCompressed, 0, "Not Equal after encode");
+
+			// meta data is allowed to be different but!
+			// when applied inversely should return the same.
+
+			MultiColumnEncoder ec = EncoderFactory.createEncoder(spec, data.getColumnNames(), data.getNumColumns(),
+				encoderCompressed.getMetaData(null));
+			
+			MatrixBlock outMeta1 = ec.apply(data, k);
+
+			TestUtils.compareMatrices(outNormal, outMeta1, 0, "Not Equal after apply");
+
+			MultiColumnEncoder ec2 = EncoderFactory.createEncoder(spec, data.getColumnNames(), data.getNumColumns(),
+				encoderNormal.getMetaData(null));
+			
+			MatrixBlock outMeta12 = ec2.apply(data, k);
+			TestUtils.compareMatrices(outNormal, outMeta12, 0, "Not Equal after apply2");
+
 		}
 		catch(Exception e) {
 			e.printStackTrace();

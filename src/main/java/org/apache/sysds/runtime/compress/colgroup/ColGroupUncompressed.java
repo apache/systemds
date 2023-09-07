@@ -73,8 +73,8 @@ import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
 public class ColGroupUncompressed extends AColGroup {
 	private static final long serialVersionUID = -8254271148043292199L;
 	/**
-	 * We store the contents of the columns as a MatrixBlock to take advantage of high-performance routines available
-	 * for this data structure.
+	 * We store the contents of the columns as a MatrixBlock to take advantage of high-performance routines available for
+	 * this data structure.
 	 */
 	private final MatrixBlock _data;
 
@@ -216,8 +216,10 @@ public class ColGroupUncompressed extends AColGroup {
 			final int offS = tb.pos(row);
 			final double[] c = db.values(offT);
 			final int off = db.pos(offT);
-			for(int j = 0; j < nCol; j++)
-				c[off + j] += values[offS + j];
+			for(int j = 0; j < nCol; j++) {
+				double v = values[offS + j];
+				c[off + j] += v;
+			}
 		}
 	}
 
@@ -558,8 +560,7 @@ public class ColGroupUncompressed extends AColGroup {
 		else if(lhs instanceof APreAgg)
 			leftMultByAPreAggColGroup((APreAgg) lhs, result);
 		else
-			throw new DMLCompressionException(
-				"Not supported leftMult colgroup type: " + lhs.getClass().getSimpleName());
+			throw new DMLCompressionException("Not supported leftMult colgroup type: " + lhs.getClass().getSimpleName());
 	}
 
 	private void leftMultByAPreAggColGroup(APreAgg paCG, MatrixBlock result) {
@@ -678,8 +679,8 @@ public class ColGroupUncompressed extends AColGroup {
 				final int[] aix = sb.indexes(row);
 				final double[] avals = sb.values(row);
 				for(int col = apos; col < alen; col++)
-					DictLibMatrixMult.addToUpperTriangle(nCols, lhs._colIndexes.get(row), _colIndexes.get(aix[col]),
-						resV, avals[col]);
+					DictLibMatrixMult.addToUpperTriangle(nCols, lhs._colIndexes.get(row), _colIndexes.get(aix[col]), resV,
+						avals[col]);
 			}
 		}
 		else {
@@ -816,8 +817,23 @@ public class ColGroupUncompressed extends AColGroup {
 	}
 
 	@Override
-	public AColGroup appendNInternal(AColGroup[] g) {
-		return null;
+	public AColGroup appendNInternal(AColGroup[] g, int blen, int rlen) {
+		final MatrixBlock ret = new MatrixBlock(rlen, _colIndexes.size(), _data.isInSparseFormat());
+		ret.allocateBlock();
+		final SparseBlock sb = ret.getSparseBlock();
+		final DenseBlock db = ret.getDenseBlock();
+		final IColIndex target = ColIndexFactory.create(_colIndexes.size());
+		for(int i = 0; i < g.length; i++) {
+			final int start = i * blen;
+			final int end = Math.min(i * blen + blen, rlen);
+			final AColGroup gs = g[i];
+			if(_data.isInSparseFormat())
+				gs.copyAndSet(target).decompressToSparseBlock(sb, 0, end - start, start, 0);
+			else
+				gs.copyAndSet(target).decompressToDenseBlock(db, 0, end - start, start, 0);
+		}
+		ret.recomputeNonZeros();
+		return new ColGroupUncompressed(ret, _colIndexes);
 	}
 
 	@Override
@@ -855,7 +871,7 @@ public class ColGroupUncompressed extends AColGroup {
 
 	@Override
 	public AColGroup copyAndSet(IColIndex colIndexes) {
-		return ColGroupUncompressed.create(_data, colIndexes);
+		return new ColGroupUncompressed(_data, colIndexes);
 	}
 
 	@Override

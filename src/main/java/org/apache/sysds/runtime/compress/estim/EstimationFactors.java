@@ -36,7 +36,7 @@ public class EstimationFactors {
 	protected final int largestOff;
 	/** The frequencies of the Non zero tuples in the columns */
 	protected final int[] frequencies;
-	/** The Number of values in the collection not Zero , Also refered to as singletons */
+	/** The Number of values in the collection not Zero, also referred to as singletons */
 	protected final int numSingle;
 	/** The Number of rows in the column group */
 	protected final int numRows;

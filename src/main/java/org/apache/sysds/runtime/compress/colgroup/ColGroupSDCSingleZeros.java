@@ -826,6 +826,10 @@ public class ColGroupSDCSingleZeros extends ASDCZero {
 		OffsetSliceInfo off = _indexes.slice(rl, ru);
 		if(off.lIndex == -1)
 			return null;
+		if(CompressedMatrixBlock.debug){
+			if(off.offsetSlice.getOffsetToFirst() < 0 || off.offsetSlice.getOffsetToLast() > ru-rl)
+				throw new DMLCompressionException("Failed to slice : " + rl + "  " + ru + " in: " + this);
+		}
 		return create(_colIndexes, ru - rl, _dict, off.offsetSlice, null);
 	}
 
@@ -840,28 +844,30 @@ public class ColGroupSDCSingleZeros extends ASDCZero {
 	}
 
 	@Override
-	public AColGroup appendNInternal(AColGroup[] g) {
-		int sumRows = getNumRows();
+	public AColGroup appendNInternal(AColGroup[] g, int blen, int rlen) {
+
 		for(int i = 1; i < g.length; i++) {
-			if(!_colIndexes.equals(g[i]._colIndexes)) {
-				LOG.warn("Not same columns therefore not appending \n" + _colIndexes + "\n\n" + g[i]._colIndexes);
+			final AColGroup gs = g[i];
+			if(!_colIndexes.equals(gs._colIndexes)) {
+				LOG.warn("Not same columns therefore not appending \n" + _colIndexes + "\n\n" + gs._colIndexes);
 				return null;
 			}
 
-			if(!(g[i] instanceof ColGroupSDCSingleZeros)) {
-				LOG.warn("Not SDCFOR but " + g[i].getClass().getSimpleName());
+			if(!(gs instanceof AOffsetsGroup )) {
+				LOG.warn("Not SDCFOR but " + gs.getClass().getSimpleName());
 				return null;
 			}
 
-			final ColGroupSDCSingleZeros gc = (ColGroupSDCSingleZeros) g[i];
-			if(!gc._dict.equals(_dict)) {
-				LOG.warn("Not same Dictionaries therefore not appending \n" + _dict + "\n\n" + gc._dict);
-				return null;
+			if( gs instanceof ColGroupSDCSingleZeros){
+				final ColGroupSDCSingleZeros gc = (ColGroupSDCSingleZeros) gs;
+				if(!gc._dict.equals(_dict)) {
+					LOG.warn("Not same Dictionaries therefore not appending \n" + _dict + "\n\n" + gc._dict);
+					return null;
+				}
 			}
-			sumRows += gc.getNumRows();
 		}
-		AOffset no = _indexes.appendN(Arrays.copyOf(g, g.length, AOffsetsGroup[].class), getNumRows());
-		return create(_colIndexes, sumRows, _dict, no, null);
+		AOffset no = _indexes.appendN(Arrays.copyOf(g, g.length, AOffsetsGroup[].class), blen);
+		return create(_colIndexes, rlen, _dict, no, null);
 	}
 
 	@Override

@@ -102,7 +102,6 @@ public class MultiColumnEncoder implements Encoder {
 	}
 
 	public MatrixBlock encode(CacheBlock<?> in, int k, boolean compressedOut){
-	
 		deriveNumRowPartitions(in, k);
 		try {
 			if(isCompressedTransformEncode(in, compressedOut))
@@ -679,8 +678,7 @@ public class MultiColumnEncoder implements Encoder {
 
 	@Override
 	public FrameBlock getMetaData(FrameBlock meta) {
-		getMetaData(meta, 1);
-		return meta;
+		return getMetaData(meta, 1);
 	}
 
 	public FrameBlock getMetaData(FrameBlock meta, int k) {

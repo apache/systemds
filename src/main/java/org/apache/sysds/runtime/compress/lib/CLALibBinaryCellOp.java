@@ -48,6 +48,7 @@ import org.apache.sysds.runtime.functionobjects.MinusMultiply;
 import org.apache.sysds.runtime.functionobjects.Multiply;
 import org.apache.sysds.runtime.functionobjects.Plus;
 import org.apache.sysds.runtime.functionobjects.PlusMultiply;
+import org.apache.sysds.runtime.functionobjects.ValueComparisonFunction;
 import org.apache.sysds.runtime.functionobjects.ValueFunction;
 import org.apache.sysds.runtime.matrix.data.LibMatrixBincell;
 import org.apache.sysds.runtime.matrix.data.LibMatrixBincell.BinaryAccessType;
@@ -355,8 +356,16 @@ public final class CLALibBinaryCellOp {
 		else
 			nnz = binaryMVColMultiThread(m1, m2, op, left, ret);
 
+		if(op.fn instanceof ValueComparisonFunction) {
+			if(nnz == (long) nRows * nCols)
+				return CompressedMatrixBlockFactory.createConstant(nRows, nCols, 1.0);
+
+			else if(nnz == 0)
+				return CompressedMatrixBlockFactory.createConstant(nRows, nCols, 0.0);
+		}
 		ret.setNonZeros(nnz);
 		ret.examSparsity();
+
 		return ret;
 	}
 

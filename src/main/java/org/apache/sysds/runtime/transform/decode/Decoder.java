@@ -24,6 +24,8 @@ import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
@@ -34,8 +36,8 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
  * interface for decoding matrices to frames.
  * 
  */
-public abstract class Decoder implements Externalizable
-{	
+public abstract class Decoder implements Externalizable{	
+	protected static final Log LOG = LogFactory.getLog(Decoder.class.getName());
 	private static final long serialVersionUID = -1732411001366177787L;
 	
 	protected ValueType[] _schema;
@@ -61,12 +63,33 @@ public abstract class Decoder implements Externalizable
 	/**
 	 * Block decode API converting a matrix block into a frame block.
 	 * 
-	 * @param in input matrix block
-	 * @param out output frame block
-	 * 
+	 * @param in  Input matrix block
+	 * @param out Output frame block
 	 * @return returns given output frame block for convenience
 	 */
 	public abstract FrameBlock decode(MatrixBlock in, FrameBlock out);
+
+	/**
+	 * Block decode API converting a matrix block into a frame block in parallel.
+	 * 
+	 * @param in  Input matrix block
+	 * @param out Output frame block
+	 * @param k   Parallelization degree
+	 * @return returns the given output frame block for convenience
+	 */
+	public FrameBlock decode(MatrixBlock in, FrameBlock out, int k) {
+		return decode(in, out);
+	}
+
+	/**
+	 * Block decode row block
+	 * 
+	 * @param in  input Matrix Block
+	 * @param out output FrameBlock
+	 * @param rl  row start to decode
+	 * @param ru  row end to decode (not inclusive)
+	 */
+	public abstract void decode(MatrixBlock in, FrameBlock out, int rl, int ru);
 	
 	/**
 	 * Returns a new Decoder that only handles a sub range of columns. The sub-range refers to the columns after

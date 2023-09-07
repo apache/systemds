@@ -19,7 +19,7 @@
 
 package org.apache.sysds.runtime.compress.utils;
 
-import org.apache.commons.lang.NotImplementedException;
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -186,8 +186,7 @@ public abstract class ACount<T> {
 
 		@Override
 		public DCounts inc(Double key, int c, int id) {
-			// return inc((double) key, c, id);
-			throw new NotImplementedException();
+			return inc((double) key, c, id);
 		}
 
 		@Override

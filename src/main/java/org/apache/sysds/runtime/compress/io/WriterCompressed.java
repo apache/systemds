@@ -46,6 +46,7 @@ import org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary;
 import org.apache.sysds.runtime.compress.lib.CLALibSeparator;
 import org.apache.sysds.runtime.compress.lib.CLALibSeparator.SeparatedGroups;
 import org.apache.sysds.runtime.compress.lib.CLALibSlice;
+import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysds.runtime.instructions.spark.CompressionSPInstruction.CompressionFunction;
 import org.apache.sysds.runtime.instructions.spark.utils.RDDConverterUtils;
 import org.apache.sysds.runtime.io.FileFormatProperties;
@@ -62,7 +63,7 @@ public final class WriterCompressed extends MatrixWriter {
 	protected static final Log LOG = LogFactory.getLog(WriterCompressed.class.getName());
 
 	protected static int jobUse = 0;
-	protected static  JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());
+	protected static JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());
 
 	private String fname;
 
@@ -133,13 +134,12 @@ public final class WriterCompressed extends MatrixWriter {
 	}
 
 	private void write(MatrixBlock src, final String fname, final int blen) throws IOException {
-		jobUse ++;
-		if(jobUse > 30){
+		jobUse++;
+		if(jobUse > 30) {
 			job = new JobConf(ConfigurationManager.getCachedJobConf());
 			jobUse = 0;
 		}
-		
-		
+
 		if(this.fname != fname) {
 			this.fname = fname;
 			this.writers = null;
@@ -147,7 +147,9 @@ public final class WriterCompressed extends MatrixWriter {
 
 		fs = IOUtilFunctions.getFileSystem(new Path(fname), job);
 
-		final int k = OptimizerUtils.getParallelBinaryWriteParallelism();
+		int k = OptimizerUtils.getParallelBinaryWriteParallelism();
+
+		k =  Math.min(k, (int)(src.getInMemorySize() /  InfrastructureAnalyzer.getBlockSize(fs)));
 		final int rlen = src.getNumRows();
 		final int clen = src.getNumColumns();
 		// Try to compress!
@@ -200,7 +202,6 @@ public final class WriterCompressed extends MatrixWriter {
 
 	private void writeMultiBlockCompressed(MatrixBlock b, final int rlen, final int clen, final int blen, int k)
 		throws IOException {
-
 		if(k > 1)
 			writeMultiBlockCompressedParallel(b, rlen, clen, blen, k);
 		else
@@ -211,6 +212,7 @@ public final class WriterCompressed extends MatrixWriter {
 	private void writeMultiBlockCompressedSingleThread(MatrixBlock mb, final int rlen, final int clen, final int blen)
 		throws IOException {
 		try {
+			final CompressedMatrixBlock cmb = (CompressedMatrixBlock) mb;
 
 			setupWrite();
 			final Path path = new Path(fname);
@@ -219,7 +221,7 @@ public final class WriterCompressed extends MatrixWriter {
 				final int sC = bc * blen;
 				final int mC = Math.min(sC + blen, clen) - 1;
 				// slice out the current columns
-				final CompressedMatrixBlock mc = CLALibSlice.sliceColumns((CompressedMatrixBlock) mb, sC, mC);
+				final CompressedMatrixBlock mc = CLALibSlice.sliceColumns(cmb, sC, mC);
 				final SeparatedGroups s = CLALibSeparator.split(mc.getColGroups());
 				final CompressedMatrixBlock rmc = new CompressedMatrixBlock(mc.getNumRows(), mc.getNumColumns(),
 					mc.getNonZeros(), false, s.indexStructures);
@@ -260,22 +262,18 @@ public final class WriterCompressed extends MatrixWriter {
 				writerLocks[i] = new ReentrantLock();
 			}
 
+			final int colBlocks = (int) Math.ceil((double) clen / blen );
+			final int nBlocks = (int) Math.ceil((double) rlen / blen);
+			final int blocksPerThread = Math.max(1, nBlocks * colBlocks / k );
+
 			int i = 0;
 			for(int bc = 0; bc * blen < clen; bc++) {// column blocks
 				final int sC = bc * blen;
 				final int mC = Math.min(sC + blen, clen) - 1;
-				// slice out the current columns
 				final CompressedMatrixBlock mc = CLALibSlice.sliceColumns((CompressedMatrixBlock) b, sC, mC);
-				// slice out row blocks in this.
-				// final List<MatrixBlock> blocks = CLALibSlice.sliceBlocks(mc, blen, k); // Slice compressed blocks
-
 				final SeparatedGroups s = CLALibSeparator.split(mc.getColGroups());
 				final CompressedMatrixBlock rmc = new CompressedMatrixBlock(mc.getNumRows(), mc.getNumColumns(),
 					mc.getNonZeros(), false, s.indexStructures);
-				// slice out row blocks in this.
-				// List<MatrixBlock> blocks = CLALibSlice.sliceBlocks(rmc, blen, 1); // Slice compressed blocks
-				final int nBlocks = (int) Math.ceil((double) rlen / blen);
-				final int blocksPerThread = Math.max(1, nBlocks / k);
 				for(int block = 0; block < nBlocks; block += blocksPerThread) {
 					WriteTask we = new WriteTask(i++ % k, rmc, bc, block, Math.min(nBlocks, block + blocksPerThread),
 						blen);
@@ -320,16 +318,12 @@ public final class WriterCompressed extends MatrixWriter {
 		return new Path(fname, IOUtilFunctions.getPartFileName(id));
 	}
 
-	// private Writer getWriter(String fname) throws IOException {
-	// 	final Path path = new Path(fname);
-	// 	return generateWriter(job, path);
-	// }
-
 	private static Writer generateWriter(JobConf job, Path path, FileSystem fs) throws IOException {
-		
-		return SequenceFile.createWriter(job, Writer.file(path), Writer.bufferSize(4096),
-			Writer.keyClass(MatrixIndexes.class), Writer.valueClass(CompressedWriteBlock.class),
-			Writer.compression(SequenceFile.CompressionType.NONE), // No Compression type on disk
+
+		return SequenceFile.createWriter(job, Writer.file(path), Writer.bufferSize(4096), //
+			Writer.keyClass(MatrixIndexes.class), //
+			Writer.valueClass(CompressedWriteBlock.class), //
+			Writer.compression(IOUtilFunctions.getCompressionEncodingType(), IOUtilFunctions.getCompressionCodec()),
 			Writer.replication((short) 1));
 	}
 
@@ -344,9 +338,12 @@ public final class WriterCompressed extends MatrixWriter {
 	private static void write(Writer w, CompressedMatrixBlock rmc, int bc, int bl, int bu, int blen)
 		throws IOException {
 		final int nrow = rmc.getNumRows();
+		final int nGroups = rmc.getColGroups().size();
 		for(int b = bl; b < bu; b++) {
 			MatrixIndexes index = new MatrixIndexes(b, bc);
 			MatrixBlock cb = CLALibSlice.sliceRowsCompressed(rmc, (b - 1) * blen, Math.min(b * blen, nrow) - 1);
+			if(cb instanceof CompressedMatrixBlock && ((CompressedMatrixBlock)cb).getColGroups().size() != nGroups)
+				throw new RuntimeException("invalid writing of different number of column groups");
 			CompressedWriteBlock blk = new CompressedWriteBlock(cb);
 			w.append(index, blk);
 		}
@@ -404,7 +401,9 @@ public final class WriterCompressed extends MatrixWriter {
 				Writer.bufferSize(4096), //
 				Writer.keyClass(DictWritable.K.class), //
 				Writer.valueClass(DictWritable.class), //
-				Writer.compression(SequenceFile.CompressionType.NONE), //
+				Writer.compression(//
+					IOUtilFunctions.getCompressionEncodingType(), //
+					IOUtilFunctions.getCompressionCodec()), //
 				Writer.replication((short) 1))) {
 				w.append(new DictWritable.K(id), new DictWritable(dicts));
 			}

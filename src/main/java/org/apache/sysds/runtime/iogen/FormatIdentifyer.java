@@ -1629,18 +1629,18 @@ public class FormatIdentifyer {
 		orderedKeys.add(sbToken.reverse().toString());
 		keysList.add(orderedKeys);
 
-		ArrayList<ArrayList<String>>[] fullList = new ArrayList[keysList.size()];
+		ArrayList<ArrayList<ArrayList<String>>> fullList = new ArrayList<>(keysList.size());
 		for(int i = 0; i < keysList.size() - 1; i++)
-			fullList[i] = selfPropagate(keysList.get(i));
+			fullList.set(i, selfPropagate(keysList.get(i)));
 
 		ArrayList<ArrayList<String>> tmpLastKey = new ArrayList<>();
 		tmpLastKey.add(keysList.get(keysList.size() - 1));
-		fullList[keysList.size() - 1] = tmpLastKey;
+		fullList.set(keysList.size() - 1,  tmpLastKey);
 
-		ArrayList<ArrayList<String>> candidates = fullList[0];
+		ArrayList<ArrayList<String>> candidates = fullList.get(0);
 
 		for(int i = 1; i < keysList.size(); i++) {
-			if(candidates.size() * fullList[i].size() > 500000) {
+			if(candidates.size() * fullList.get(i).size() > 500000) {
 				ArrayList<ArrayList<String>> tmpCandidates = new ArrayList<>();
 				for(ArrayList<String> tmpList : candidates) {
 					ArrayList<String> tmpRemainList = new ArrayList<>();
@@ -1658,10 +1658,10 @@ public class FormatIdentifyer {
 					tmp.add(update.get(j));
 				}
 				candidates.add(tmp);
-				candidates = cartesianProduct(candidates, fullList[i]);
+				candidates = cartesianProduct(candidates, fullList.get(i));
 			}
 			else
-				candidates = cartesianProduct(candidates, fullList[i]);
+				candidates = cartesianProduct(candidates, fullList.get(i));
 		}
 		Pair<ArrayList<String>, Boolean> update = checkPattern(candidates, prefixes);
 		if(update.getValue())

@@ -27,6 +27,7 @@ import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
+import org.apache.sysds.runtime.frame.data.columns.Array;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.UtilFunctions;
 
@@ -36,8 +37,8 @@ import org.apache.sysds.runtime.util.UtilFunctions;
  * constant time for incoming values and  
  *  
  */
-public class DecoderBin extends Decoder
-{
+public class DecoderBin extends Decoder {
+
 	private static final long serialVersionUID = -3784249774608228805L;
 
 	// a) column bin boundaries
@@ -56,18 +57,28 @@ public class DecoderBin extends Decoder
 	@Override
 	public FrameBlock decode(MatrixBlock in, FrameBlock out) {
 		out.ensureAllocatedColumns(in.getNumRows());
-		for( int i=0; i<in.getNumRows(); i++ ) {
+		decode(in, out, 0, in.getNumRows());
+		return out;
+	}
+
+	@Override
+	public void decode(MatrixBlock in, FrameBlock out, int rl, int ru) {
+		for( int i=rl; i< ru; i++ ) {
 			for( int j=0; j<_colList.length; j++ ) {
-				double val = in.quickGetValue(i, _colList[j]-1);
-				int key = (int) Math.round(val);
-				double bmin = _binMins[j][key-1];
-				double bmax = _binMaxs[j][key-1];
-				double oval = bmin + (bmax-bmin)/2 // bin center
-					+ (val-key) * (bmax-bmin);     // bin fractions
-				out.set(i, _colList[j]-1, oval);
+				final Array<?> a = out.getColumn(_colList[j] - 1);
+				final double val = in.quickGetValue(i, _colList[j] - 1);
+				if(!Double.isNaN(val)){
+					final int key = (int) Math.round(val);
+					double bmin = _binMins[j][key - 1];
+					double bmax = _binMaxs[j][key - 1];
+					double oval = bmin + (bmax - bmin) / 2 // bin center
+						+ (val - key) * (bmax - bmin); // bin fractions
+					a.set(i, oval);
+				}
+				else 
+					a.set(i, val); // NaN
 			}
 		}
-		return out;
 	}
 
 	@Override

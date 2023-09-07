@@ -61,8 +61,8 @@ public class IOCompressionTestUtils {
 		// assertTrue("Disk size is not equivalent", a.getExactSizeOnDisk() > b.getExactSizeOnDisk());
 	}
 
-	public synchronized static MatrixBlock read(String path) throws Exception {
-		return ReaderCompressed.readCompressedMatrixFromHDFS(path);
+	public synchronized static MatrixBlock read(String path, long rlen, long clen, int blen) throws Exception {
+		return ReaderCompressed.readCompressedMatrixFromHDFS(path, rlen, clen, blen);
 	}
 
 }

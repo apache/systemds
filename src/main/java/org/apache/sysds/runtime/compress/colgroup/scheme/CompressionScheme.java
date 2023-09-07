@@ -30,6 +30,7 @@ import org.apache.commons.lang.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
+import org.apache.sysds.runtime.compress.CompressedMatrixBlockFactory;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup;
 import org.apache.sysds.runtime.matrix.data.LibMatrixReorg;
@@ -184,15 +185,16 @@ public class CompressionScheme {
 			return updateAndEncode(mb);
 		validateInput(mb);
 
+		final int nRow = mb.getNumRows();
+		final int nCol = mb.getNumColumns();
 		boolean transposed = false;
-		if(mb.getSparsity() < 0.1) {
+		if(CompressedMatrixBlockFactory.transposeHeuristics(encodings.length, mb)) {
 			transposed = true;
 			mb = LibMatrixReorg.transpose(mb, k, true);
 		}
 
 		final ExecutorService pool = CommonThreadPool.get(k);
 		try {
-			final int nCol = mb.getNumColumns();
 			AColGroup[] ret = new AColGroup[encodings.length];
 			List<UpdateAndEncodeTask> tasks = new ArrayList<>();
 			int taskSize = Math.max(1, encodings.length / (4 * k));
@@ -203,7 +205,9 @@ public class CompressionScheme {
 				t.get();
 
 			List<AColGroup> retA = new ArrayList<>(Arrays.asList(ret));
-			return new CompressedMatrixBlock(mb.getNumRows(), nCol, mb.getNonZeros(), false, retA);
+		
+			return new CompressedMatrixBlock(nRow, nCol, mb.getNonZeros(), false, retA);
+			
 
 		}
 		catch(Exception e) {

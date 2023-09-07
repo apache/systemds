@@ -68,12 +68,17 @@ public class ColumnEncoderPassThrough extends ColumnEncoder {
 
 	@Override
 	protected double[] getCodeCol(CacheBlock<?> in, int startInd, int endInd, double[] tmp) {
-		final int endLength = endInd - startInd;
-		final double[] codes = tmp != null && tmp.length == endLength ? tmp : new double[endLength];
-		for (int i=startInd; i<endInd; i++) {
-			codes[i-startInd] = in.getDoubleNaN(i, _colID-1);
+		try{
+			final int endLength = endInd - startInd;
+			final double[] codes = tmp != null && tmp.length == endLength ? tmp : new double[endLength];
+			for (int i = startInd; i < endInd; i++) {
+				codes[i - startInd] = in.getDoubleNaN(i, _colID - 1);
+			}
+			return codes;
 		}
-		return codes;
+		catch(Exception e){
+			throw new RuntimeException("Failed to get code for col: " + _colID + " on range: " + startInd + "->" + endInd, e);
+		}
 	}
 
 	protected void applySparse(CacheBlock<?> in, MatrixBlock out, int outputCol, int rowStart, int blk){

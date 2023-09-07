@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.stream.IntStream;
 
+import org.apache.sysds.runtime.io.IOUtilFunctions;
 import org.apache.sysds.utils.MemoryEstimates;
 
 public class ArrayIndex extends AColIndex {
@@ -54,10 +55,38 @@ public class ArrayIndex extends AColIndex {
 
 	@Override
 	public void write(DataOutput out) throws IOException {
-		out.writeByte(ColIndexType.ARRAY.ordinal());
-		out.writeInt(cols.length);
+		if(cols.length < 100)
+			writeBuffered(out);
+		else
+			writeGeneric(out);
+	}
+
+	public void writeBuffered(DataOutput out) throws IOException {
+		byte[] o = new byte[cols.length * 4 + 4 + 1];
+		o[0] = (byte) ColIndexType.ARRAY.ordinal();
+		IOUtilFunctions.intToBa(cols.length, o, 1);
 		for(int i = 0; i < cols.length; i++)
-			out.writeInt(cols[i]);
+			IOUtilFunctions.intToBa(cols[i], o, i * 4 + 5);
+		out.write(o);
+	}
+
+	public void writeGeneric(DataOutput out) throws IOException {
+		byte[] o = new byte[512];
+
+		o[0] = (byte) ColIndexType.ARRAY.ordinal();
+		IOUtilFunctions.intToBa(cols.length, o, 1);
+		out.write(o, 0, 5);
+
+		int i = 0;
+		while(i + 512 / 4 < cols.length) {
+			for(int of = 0; of < o.length; of += 4, i++)
+				IOUtilFunctions.intToBa(cols[i], o, of);
+			out.write(o);
+		}
+		int of = 0;
+		for(; i < cols.length; of += 4, i++)
+			IOUtilFunctions.intToBa(cols[i], o, of);
+		out.write(o, 0, of);
 	}
 
 	public static ArrayIndex read(DataInput in) throws IOException {
@@ -219,7 +248,7 @@ public class ArrayIndex extends AColIndex {
 	@Override
 	public double avgOfIndex() {
 		double s = 0.0;
-		for(int i = 0; i < cols.length; i++) 
+		for(int i = 0; i < cols.length; i++)
 			s += cols[i];
 		return s / cols.length;
 	}

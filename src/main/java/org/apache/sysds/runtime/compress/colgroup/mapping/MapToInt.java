@@ -259,28 +259,30 @@ public class MapToInt extends AMapToData {
 		int p = 0; // pointer
 		for(IMapToDataGroup gd : d)
 			p += gd.getMapToData().size();
-		final int[] ret = Arrays.copyOf(_data, p);
+		final int[] ret = new int[p];
 
-		p = size();
-		for(int i = 1; i < d.length; i++) {
-			final MapToInt mm = (MapToInt) d[i].getMapToData();
-			final int ms = mm.size();
-			System.arraycopy(mm._data, 0, ret, p, ms);
-			p += ms;
+		p = 0;
+		for(int i = 0; i < d.length; i++) {
+			if(d[i].getMapToData().size() > 0) {
+				final MapToInt mm = (MapToInt) d[i].getMapToData();
+				final int ms = mm.size();
+				System.arraycopy(mm._data, 0, ret, p, ms);
+				p += ms;
+			}
 		}
 
 		return new MapToInt(getUnique(), ret);
 	}
 
 	@Override
-	public int getMaxPossible(){
+	public int getMaxPossible() {
 		return Integer.MAX_VALUE;
 	}
 
 	@Override
 	public boolean equals(AMapToData e) {
 		return e instanceof MapToInt && //
-			e.getUnique() == getUnique() &&//
+			e.getUnique() == getUnique() && //
 			Arrays.equals(((MapToInt) e)._data, _data);
 	}
 }

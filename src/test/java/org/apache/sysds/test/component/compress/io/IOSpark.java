@@ -138,75 +138,75 @@ public class IOSpark {
 	}
 
 	@Test
-	public void writeSparkReadCPMultiColBlock() {
+	public void writeSparkReadMultiColBlock() {
 		MatrixBlock mb = TestUtils.ceil(TestUtils.generateTestMatrixBlock(50, 124, 1, 3, 1.0, 2514));
-		testWriteSparkReadCP(mb, 100, 100);
+		testWriteSparkRead(mb, 100, 100);
 	}
 
 	@Test
-	public void writeSparkReadCPMultiRowBlock() {
+	public void writeSparkReadMultiRowBlock() {
 		MatrixBlock mb = TestUtils.ceil(TestUtils.generateTestMatrixBlock(1322, 33, 1, 3, 1.0, 2514));
-		testWriteSparkReadCP(mb, 100, 100);
+		testWriteSparkRead(mb, 100, 100);
 	}
 
 	@Test
-	public void writeSparkReadCPSingleBlock() {
+	public void writeSparkReadSingleBlock() {
 		MatrixBlock mb = TestUtils.ceil(TestUtils.generateTestMatrixBlock(50, 99, 1, 3, 1.0, 33));
-		testWriteSparkReadCP(mb, 100, 100);
+		testWriteSparkRead(mb, 100, 100);
 	}
 
 	@Test
-	public void writeSparkReadCPMultiBlock() {
+	public void writeSparkReadMultiBlock() {
 		MatrixBlock mb = TestUtils.ceil(TestUtils.generateTestMatrixBlock(580, 244, 1, 3, 1.0, 33));
-		testWriteSparkReadCP(mb, 100, 100);
+		testWriteSparkRead(mb, 100, 100);
 	}
 
 	@Test
-	public void writeSparkReadCPMultiColBlockReblockUp() {
+	public void writeSparkReadMultiColBlockReblockUp() {
 		MatrixBlock mb = TestUtils.ceil(TestUtils.generateTestMatrixBlock(50, 124, 1, 3, 1.0, 2514));
-		testWriteSparkReadCP(mb, 100, 150);
+		testWriteSparkRead(mb, 100, 150);
 	}
 
 	@Test
-	public void writeSparkReadCPMultiRowBlockReblockUp() {
+	public void writeSparkReadMultiRowBlockReblockUp() {
 		MatrixBlock mb = TestUtils.ceil(TestUtils.generateTestMatrixBlock(1322, 33, 1, 3, 1.0, 2514));
-		testWriteSparkReadCP(mb, 100, 150);
+		testWriteSparkRead(mb, 100, 150);
 	}
 
 	@Test
-	public void writeSparkReadCPSingleBlockReblockUp() {
+	public void writeSparkReadSingleBlockReblockUp() {
 		MatrixBlock mb = TestUtils.ceil(TestUtils.generateTestMatrixBlock(50, 99, 1, 3, 1.0, 33));
-		testWriteSparkReadCP(mb, 100, 150);
+		testWriteSparkRead(mb, 100, 150);
 	}
 
 	@Test
-	public void writeSparkReadCPMultiBlockReblockUp() {
+	public void writeSparkReadMultiBlockReblockUp() {
 		MatrixBlock mb = TestUtils.ceil(TestUtils.generateTestMatrixBlock(580, 244, 1, 3, 1.0, 33));
-		testWriteSparkReadCP(mb, 100, 150);
+		testWriteSparkRead(mb, 100, 150);
 	}
 
 	@Test
-	public void writeSparkReadCPMultiColBlockReblockDown() {
+	public void writeSparkReadMultiColBlockReblockDown() {
 		MatrixBlock mb = TestUtils.ceil(TestUtils.generateTestMatrixBlock(50, 124, 1, 3, 1.0, 2514));
-		testWriteSparkReadCP(mb, 100, 80);
+		testWriteSparkRead(mb, 100, 80);
 	}
 
 	@Test
-	public void writeSparkReadCPMultiRowBlockReblockDown() {
+	public void writeSparkReadMultiRowBlockReblockDown() {
 		MatrixBlock mb = TestUtils.ceil(TestUtils.generateTestMatrixBlock(1322, 33, 1, 3, 1.0, 2514));
-		testWriteSparkReadCP(mb, 100, 80);
+		testWriteSparkRead(mb, 100, 80);
 	}
 
 	@Test
-	public void writeSparkReadCPSingleBlockReblockDown() {
+	public void writeSparkReadSingleBlockReblockDown() {
 		MatrixBlock mb = TestUtils.ceil(TestUtils.generateTestMatrixBlock(50, 99, 1, 3, 1.0, 33));
-		testWriteSparkReadCP(mb, 100, 80);
+		testWriteSparkRead(mb, 100, 80);
 	}
 
 	@Test
-	public void writeSparkReadCPMultiBlockReblockDown() {
+	public void writeSparkReadMultiBlockReblockDown() {
 		MatrixBlock mb = TestUtils.ceil(TestUtils.generateTestMatrixBlock(580, 244, 1, 3, 1.0, 33));
-		testWriteSparkReadCP(mb, 100, 80);
+		testWriteSparkRead(mb, 100, 80);
 	}
 
 	@Test
@@ -269,11 +269,11 @@ public class IOSpark {
 		testReblock(mb, 100, 25);
 	}
 
-	private void testWriteSparkReadCP(MatrixBlock mb, int blen1, int blen2) {
-		testWriteSparkReadCP(mb, blen1, blen2, 1);
+	private void testWriteSparkRead(MatrixBlock mb, int blen1, int blen2) {
+		testWriteSparkRead(mb, blen1, blen2, 1);
 	}
 
-	private void testWriteSparkReadCP(MatrixBlock mb, int blen1, int blen2, int rep) {
+	private void testWriteSparkRead(MatrixBlock mb, int blen1, int blen2, int rep) {
 
 		try {
 			CompressedMatrixBlock.debug = true;
@@ -300,7 +300,7 @@ public class IOSpark {
 			Thread.sleep(100);
 
 			// Read locally the spark block written.
-			MatrixBlock mbr = IOCompressionTestUtils.read(f2);
+			MatrixBlock mbr = IOCompressionTestUtils.read(f2, mb.getNumRows(), mb.getNumColumns(), blen2);
 			IOCompressionTestUtils.verifyEquivalence(mb, mbr);
 			LOG.warn("IOSpark Writer Read: " + t.stop());
 		}
@@ -310,7 +310,7 @@ public class IOSpark {
 
 				if(rep < 3) {
 					Thread.sleep(1000);
-					testWriteSparkReadCP(mb, blen1, blen2, rep + 1);
+					testWriteSparkRead(mb, blen1, blen2, rep + 1);
 					return;
 				}
 			}

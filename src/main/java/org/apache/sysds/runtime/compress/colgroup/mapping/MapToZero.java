@@ -163,13 +163,23 @@ public class MapToZero extends AMapToData {
 	@Override
 	public AMapToData appendN(IMapToDataGroup[] d) {
 		int p = 0; // pointer
-		for(IMapToDataGroup gd : d)
-			p += gd.getMapToData().size();
+		boolean allZ = true;
+		for(IMapToDataGroup gd : d) {
+			AMapToData m = gd.getMapToData();
+
+			p += m.size();
+			if(!(m instanceof MapToZero))
+				allZ = false;
+		}
+
+		if(!allZ)
+			throw new RuntimeException("Not supported combining different types of map");
+
 		return new MapToZero(p);
 	}
 
 	@Override
-	public int getMaxPossible(){
+	public int getMaxPossible() {
 		return 1;
 	}
 

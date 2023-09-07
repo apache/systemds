@@ -32,6 +32,7 @@ import org.apache.sysds.runtime.compress.cost.ACostEstimate;
 import org.apache.sysds.runtime.compress.estim.AComEst;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfo;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
+import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysds.runtime.util.CommonThreadPool;
 
 public class CoCodeGreedy extends AColumnCoCoder {
@@ -43,8 +44,7 @@ public class CoCodeGreedy extends AColumnCoCoder {
 		mem = new Memorizer(sizeEstimator);
 	}
 
-	protected CoCodeGreedy(AComEst sizeEstimator, ACostEstimate costEstimator, CompressionSettings cs,
-		Memorizer mem) {
+	protected CoCodeGreedy(AComEst sizeEstimator, ACostEstimate costEstimator, CompressionSettings cs, Memorizer mem) {
 		super(sizeEstimator, costEstimator, cs);
 		this.mem = mem;
 	}
@@ -64,7 +64,7 @@ public class CoCodeGreedy extends AColumnCoCoder {
 	private List<CompressedSizeInfoColGroup> coCodeBruteForce(List<CompressedSizeInfoColGroup> inputColumns, int k) {
 
 		final List<ColIndexes> workSet = new ArrayList<>(inputColumns.size());
-
+		k = k <= 0 ? InfrastructureAnalyzer.getLocalParallelism() : k;
 		final ExecutorService pool = CommonThreadPool.get(k);
 		for(int i = 0; i < inputColumns.size(); i++) {
 			CompressedSizeInfoColGroup g = inputColumns.get(i);

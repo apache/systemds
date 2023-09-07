@@ -238,14 +238,16 @@ public class MapToByte extends AMapToData {
 		int p = 0; // pointer
 		for(IMapToDataGroup gd : d)
 			p += gd.getMapToData().size();
-		final byte[] ret = Arrays.copyOf(_data, p);
+		final byte[] ret = new byte[p];
 
-		p = size();
-		for(int i = 1; i < d.length; i++) {
-			final MapToByte mm = (MapToByte) d[i].getMapToData();
-			final int ms = mm.size();
-			System.arraycopy(mm._data, 0, ret, p, ms);
-			p += ms;
+		p = 0;
+		for(int i = 0; i < d.length; i++) {
+			if(d[i].getMapToData().size() > 0) {
+				final MapToByte mm = (MapToByte) d[i].getMapToData();
+				final int ms = mm.size();
+				System.arraycopy(mm._data, 0, ret, p, ms);
+				p += ms;
+			}
 		}
 
 		if(getUnique() < 127)
@@ -255,14 +257,14 @@ public class MapToByte extends AMapToData {
 	}
 
 	@Override
-	public int getMaxPossible(){
+	public int getMaxPossible() {
 		return 256;
 	}
 
 	@Override
 	public boolean equals(AMapToData e) {
 		return e instanceof MapToByte && //
-			e.getUnique() == getUnique() &&//
+			e.getUnique() == getUnique() && //
 			Arrays.equals(((MapToByte) e)._data, _data);
 	}
 }

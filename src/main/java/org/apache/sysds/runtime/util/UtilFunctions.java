@@ -514,13 +514,19 @@ public class UtilFunctions {
 			case BOOLEAN: return ((Boolean)in) ? 1 : 0;
 			case CHARACTER: return (Character)in;
 			case STRING:
+				String inStr = (String) in;
 				try {
-					return !((String) in).isEmpty() ? Double.parseDouble((String) in) : 0;
+					return !(inStr).isEmpty() ? Double.parseDouble(inStr) : 0;
 				}
 				catch(NumberFormatException e) {
-					if(in.equals("true"))
+					final int len = inStr.length();
+					if(len == 1 && inStr.equalsIgnoreCase("T"))
 						return 1.0;
-					else if(in.equals("false"))
+					else if (len == 1 && inStr.equalsIgnoreCase("F"))
+						return 0.0;
+					else if(inStr.equalsIgnoreCase("true"))
+						return 1.0;
+					else if(inStr.equalsIgnoreCase("false"))
 						return 0.0;
 					else
 						throw new DMLRuntimeException("failed parsing object to double",e);

@@ -244,7 +244,26 @@ public class MapToCharPByte extends AMapToData {
 
 	@Override
 	public AMapToData appendN(IMapToDataGroup[] d) {
-		throw new NotImplementedException();
+
+		int p = 0; // pointer
+		for(IMapToDataGroup gd : d)
+			p += gd.getMapToData().size();
+		final char[] ret = new char[p];
+		final byte[] retb = new byte[p];
+
+		p = 0;
+		for(int i = 0; i < d.length; i++) {
+			if(d[i].getMapToData().size() > 0) {
+				final MapToCharPByte mm = (MapToCharPByte) d[i].getMapToData();
+				final int ms = mm.size();
+				System.arraycopy(mm._data_c, 0, ret, p, ms);
+				System.arraycopy(mm._data_b, 0, retb, p, ms);
+				p += ms;
+			}
+		}
+
+		return new MapToCharPByte(getUnique(), ret, retb);
+
 	}
 
 	@Override

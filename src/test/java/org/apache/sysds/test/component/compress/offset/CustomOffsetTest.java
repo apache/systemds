@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
+ * 
  *   http://www.apache.org/licenses/LICENSE-2.0
- *
+ * 
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -17,24 +17,23 @@
  * under the License.
  */
 
-package org.apache.sysds.runtime.compress.utils;
+package org.apache.sysds.test.component.compress.offset;
 
-import org.apache.spark.api.java.function.Function;
-import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
-import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import static org.junit.Assert.assertEquals;
 
-public class CompressRDDClean implements Function<MatrixBlock, MatrixBlock> {
+import org.apache.sysds.runtime.compress.colgroup.offset.AOffset;
+import org.apache.sysds.runtime.compress.colgroup.offset.AOffset.OffsetSliceInfo;
+import org.apache.sysds.runtime.compress.colgroup.offset.OffsetFactory;
+import org.junit.Test;
 
-	private static final long serialVersionUID = -704403012606821854L;
+public class CustomOffsetTest {
 
-	@Override
-	public MatrixBlock call(MatrixBlock mb) throws Exception {
+    @Test
+    public void sliceE() {
+        AOffset a = OffsetFactory.createOffset(new int[] {441, 1299, 14612, 16110, 18033, 18643, 18768, 25798, 32315});
 
-		if(mb instanceof CompressedMatrixBlock) {
-			CompressedMatrixBlock cmb = (CompressedMatrixBlock) mb;
-			cmb.clearSoftReferenceToDecompressed();
-			return cmb;
-		}
-		return mb;
-	}
+        OffsetSliceInfo i = a.slice(1000, 2000);
+        System.out.println(a);
+        assertEquals(OffsetFactory.createOffset(new int[] {299}), i.offsetSlice);
+    }
 }

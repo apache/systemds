@@ -53,7 +53,15 @@ public class DecoderDummycode extends Decoder
 	public FrameBlock decode(MatrixBlock in, FrameBlock out) {
 		//TODO perf (exploit sparse representation for better asymptotic behavior)
 		out.ensureAllocatedColumns(in.getNumRows());
-		for( int i=0; i<in.getNumRows(); i++ )
+		decode(in, out, 0, in.getNumRows());
+		return out;
+	}
+
+	@Override
+	public void decode(MatrixBlock in, FrameBlock out, int rl, int ru) {
+		//TODO perf (exploit sparse representation for better asymptotic behavior)
+		// out.ensureAllocatedColumns(in.getNumRows());
+		for( int i=rl; i<ru; i++ )
 			for( int j=0; j<_colList.length; j++ )
 				for( int k=_clPos[j]; k<_cuPos[j]; k++ )
 					if( in.quickGetValue(i, k-1) != 0 ) {
@@ -61,7 +69,6 @@ public class DecoderDummycode extends Decoder
 						out.set(i, col, UtilFunctions.doubleToObject(
 							out.getSchema()[col], k-_clPos[j]+1));
 					}
-		return out;
 	}
 	
 	@Override

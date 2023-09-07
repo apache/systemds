@@ -21,12 +21,14 @@ package org.apache.sysds.runtime.util;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
+import java.nio.file.Files;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Date;
@@ -175,26 +177,47 @@ public class HDFSTool
 	}
 
 	public static boolean isFileEmpty(FileSystem fs, Path dir) throws IOException {
-		FileStatus fstat = fs.getFileStatus(dir);
+		if(fs instanceof LocalFileSystem) {
+			// use local Java filesystem, this is much faster.
+			java.io.File f = new java.io.File(dir.toString());
+			if(f.exists()){
 
-		if( fstat.isDirectory() 
-			|| IOUtilFunctions.isObjectStoreFileScheme(dir) )
-		{
-			// it is a directory
-			FileStatus[] stats = fs.listStatus(dir);
-			if (stats != null) {
-				for (FileStatus stat : stats) {
-					if (stat.getLen() > 0)
+				if(f.isDirectory()) {
+					java.io.File[] fff = f.listFiles();
+					if(fff.length == 0)
 						return false;
+					for(File ff : fff) {
+						if(Files.size(ff.toPath()) > 0)
+							return false;
+					}
+					return true;
 				}
-				return true;
-			} else {
-				return true;
+				else
+					return Files.size(f.toPath()) <= 0;
 			}
-		} 
-		else {
-			// it is a regular file
-			return (fstat.getLen() == 0);
+			else return false;
+		}
+		else{
+			FileStatus fstat = fs.getFileStatus(dir);
+
+			if(fstat.isDirectory() || IOUtilFunctions.isObjectStoreFileScheme(dir)) {
+				// it is a directory
+				FileStatus[] stats = fs.listStatus(dir);
+				if(stats != null) {
+					for(FileStatus stat : stats) {
+						if(stat.getLen() > 0)
+							return false;
+					}
+					return true;
+				}
+				else {
+					return true;
+				}
+			}
+			else {
+				// it is a regular file
+				return fstat.getLen() == 0;
+			}
 		}
 	}
 

@@ -178,7 +178,9 @@ public abstract class AColGroup implements Serializable {
 	 * @throws IOException if IOException occurs
 	 */
 	protected void write(DataOutput out) throws IOException {
-		out.writeByte(getColGroupType().ordinal());
+		final byte[] o = new byte[1];
+		o[0] = (byte) getColGroupType().ordinal();
+		out.write(o);
 		_colIndexes.write(out);
 	}
 
@@ -622,10 +624,12 @@ public abstract class AColGroup implements Serializable {
 	 * If it is not possible or very inefficient null is returned.
 	 * 
 	 * @param groups The groups to combine.
+	 * @param blen   The normal number of rows in the groups
+	 * @param rlen   The total number of rows of all combined.
 	 * @return A combined column group or null
 	 */
-	public static AColGroup appendN(AColGroup[] groups) {
-		return groups[0].appendNInternal(groups);
+	public static AColGroup appendN(AColGroup[] groups, int blen, int rlen) {
+		return groups[0].appendNInternal(groups, blen, rlen);
 	}
 
 	/**
@@ -636,9 +640,11 @@ public abstract class AColGroup implements Serializable {
 	 * If it is not possible or very inefficient null is returned.
 	 * 
 	 * @param groups The groups to combine.
+	 * @param blen   The normal number of rows in the groups
+	 * @param rlen   The total number of rows of all combined.
 	 * @return A combined column group or null
 	 */
-	protected abstract AColGroup appendNInternal(AColGroup[] groups);
+	protected abstract AColGroup appendNInternal(AColGroup[] groups, int blen, int rlen);
 
 	/**
 	 * Get the compression scheme for this column group to enable compression of other data.
@@ -713,7 +719,7 @@ public abstract class AColGroup implements Serializable {
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
-		sb.append(String.format("%15s", "Type: "));
+		sb.append(String.format("\n%15s", "Type: "));
 		sb.append(this.getClass().getSimpleName());
 		sb.append(String.format("\n%15s", "Columns: "));
 		sb.append(_colIndexes);

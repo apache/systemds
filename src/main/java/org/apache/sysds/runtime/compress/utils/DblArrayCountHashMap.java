@@ -35,7 +35,7 @@ public final class DblArrayCountHashMap extends ACountHashMap<DblArray> {
 		return new DArrCounts[size];
 	}
 
-	protected int hash(DblArray key) {
+	protected final int hash(DblArray key) {
 		return Math.abs(key.hashCode());
 	}
 
@@ -44,13 +44,12 @@ public final class DblArrayCountHashMap extends ACountHashMap<DblArray> {
 	}
 
 	@Override
-    public DblArrayCountHashMap clone() {
+	public DblArrayCountHashMap clone() {
 		DblArrayCountHashMap ret = new DblArrayCountHashMap(size);
-
-        for(ACount<DblArray> e : data)
-            ret.appendValue(e);
+		for(ACount<DblArray> e : data)
+			ret.appendValue(e);
 		ret.size = size;
 		return ret;
-    }
+	}
 
 }

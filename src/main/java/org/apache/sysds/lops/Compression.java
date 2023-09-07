@@ -61,9 +61,21 @@ public class Compression extends Lop {
 		sb.append(Lop.OPERAND_DELIMITOR);
 		sb.append(OPCODE);
 		sb.append(OPERAND_DELIMITOR);
-		sb.append(getInputs().get(0).prepInputOperand(input1));
+		if(getInputs().get(0) instanceof FunctionCallCP &&
+			((FunctionCallCP)getInputs().get(0)).getFunctionName().equalsIgnoreCase("transformencode") ){
+			sb.append(getInputs().get(0).getOutputs().get(0).getOutputParameters().getLabel());
+		}
+		else{
+			sb.append(getInputs().get(0).prepInputOperand(input1));
+		}
 		sb.append(OPERAND_DELIMITOR);
-		sb.append(prepOutputOperand(output));
+		if(getInputs().get(0) instanceof FunctionCallCP && 
+			((FunctionCallCP)getInputs().get(0)).getFunctionName().equalsIgnoreCase("transformencode") ){
+			sb.append(getInputs().get(0).getOutputs().get(0).getOutputParameters().getLabel());
+		}
+		else{
+			sb.append(prepOutputOperand(output));
+		}
 		if(_singletonLookupKey != 0){
 			sb.append(OPERAND_DELIMITOR);
 			sb.append(_singletonLookupKey);

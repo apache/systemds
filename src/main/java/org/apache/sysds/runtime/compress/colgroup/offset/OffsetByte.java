@@ -25,6 +25,7 @@ import java.util.Arrays;
 
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.colgroup.AOffsetsGroup;
+import org.apache.sysds.runtime.io.IOUtilFunctions;
 import org.apache.sysds.utils.MemoryEstimates;
 
 public class OffsetByte extends AOffsetByte {
@@ -71,11 +72,13 @@ public class OffsetByte extends AOffsetByte {
 
 	@Override
 	public void write(DataOutput out) throws IOException {
-		out.writeByte(OffsetFactory.OFF_TYPE_SPECIALIZATIONS.BYTE.ordinal());
-		out.writeInt(offsetToFirst);
-		out.writeInt(offsets.length);
-		out.writeInt(offsetToLast);
-		out.writeInt(size);
+		final byte[] its = new byte[4 *4 + 1];
+		its[0] = (byte) OffsetFactory.OFF_TYPE_SPECIALIZATIONS.BYTE.ordinal();
+		IOUtilFunctions.intToBa(offsetToFirst, its, 1);
+		IOUtilFunctions.intToBa(offsets.length, its, 5);
+		IOUtilFunctions.intToBa(offsetToLast, its, 9);
+		IOUtilFunctions.intToBa(size, its, 13);
+		out.write(its);
 		out.write(offsets);
 	}
 

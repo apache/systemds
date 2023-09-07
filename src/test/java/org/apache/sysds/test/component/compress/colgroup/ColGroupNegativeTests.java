@@ -353,7 +353,7 @@ public class ColGroupNegativeTests {
 		}
 
 		@Override
-		protected AColGroup appendNInternal(AColGroup[] groups) {
+		protected AColGroup appendNInternal(AColGroup[] groups, int blen, int rlen) {
 			// TODO Auto-generated method stub
 			return null;
 		}
@@ -591,7 +591,7 @@ public class ColGroupNegativeTests {
 		}
 
 		@Override
-		protected AColGroup appendNInternal(AColGroup[] groups) {
+		protected AColGroup appendNInternal(AColGroup[] groups, int blen, int rlen) {
 			// TODO Auto-generated method stub
 			return null;
 		}

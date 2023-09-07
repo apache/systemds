@@ -75,8 +75,8 @@ public interface IDictionary {
 	public long getInMemorySize();
 
 	/**
-	 * Aggregate all the contained values, useful in value only computations where the operation is iterating through
-	 * all values contained in the dictionary.
+	 * Aggregate all the contained values, useful in value only computations where the operation is iterating through all
+	 * values contained in the dictionary.
 	 * 
 	 * @param init The initial Value, in cases such as Max value, this could be -infinity
 	 * @param fn   The Function to apply to values
@@ -572,8 +572,7 @@ public interface IDictionary {
 	/**
 	 * Allocate a new dictionary where the tuple given is subtracted from all tuples in the previous dictionary.
 	 * 
-	 * @param tuple a double list representing a tuple, it is given that the tuple with is the same as this
-	 *              dictionaries.
+	 * @param tuple a double list representing a tuple, it is given that the tuple with is the same as this dictionaries.
 	 * @return a new instance of dictionary with the tuple subtracted.
 	 */
 	public IDictionary subtractTuple(double[] tuple);
@@ -788,8 +787,8 @@ public interface IDictionary {
 	public double getSparsity();
 
 	/**
-	 * Multiply the v value with the dictionary entry at dictIdx and add it to the ret matrix at the columns specified
-	 * in the int array.
+	 * Multiply the v value with the dictionary entry at dictIdx and add it to the ret matrix at the columns specified in
+	 * the int array.
 	 * 
 	 * @param v       Value to multiply
 	 * @param ret     Output dense double array location
@@ -869,8 +868,7 @@ public interface IDictionary {
 	 * @param colsRight Offset cols on the right
 	 * @param result    The output matrix block
 	 */
-	public void TSMMToUpperTriangleSparse(SparseBlock left, IColIndex rowsLeft, IColIndex colsRight,
-		MatrixBlock result);
+	public void TSMMToUpperTriangleSparse(SparseBlock left, IColIndex rowsLeft, IColIndex colsRight, MatrixBlock result);
 
 	/**
 	 * Matrix multiplication but allocate output in upper triangle and twice if on diagonal, note this is left
@@ -924,6 +922,14 @@ public interface IDictionary {
 	 * @return If they are equal
 	 */
 	public boolean equals(Object o);
+
+	/**
+	 * Indicate if this object is equal to the given array of doubles.
+	 * 
+	 * @param v The list of double values
+	 * @return If they are equal to this.
+	 */
+	public boolean equals(double[] v);
 
 	/**
 	 * Indicate if the other dictionary is equal to this.

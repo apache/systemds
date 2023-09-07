@@ -1079,15 +1079,16 @@ public class Dictionary extends ADictionary {
 	}
 
 	@Override
-	public void TSMMToUpperTriangleSparseScaling(SparseBlock left, IColIndex rowsLeft, IColIndex colsRight,
-		int[] scale, MatrixBlock result) {
+	public void TSMMToUpperTriangleSparseScaling(SparseBlock left, IColIndex rowsLeft, IColIndex colsRight, int[] scale,
+		MatrixBlock result) {
 		DictLibMatrixMult.TSMMToUpperTriangleSparseDenseScaling(left, _values, rowsLeft, colsRight, scale, result);
 	}
 
 	@Override
 	public boolean equals(IDictionary o) {
-		if(o instanceof Dictionary)
+		if(o instanceof Dictionary) {
 			return Arrays.equals(_values, ((Dictionary) o)._values);
+		}
 		else if(o instanceof MatrixBlockDictionary) {
 			final MatrixBlock mb = ((MatrixBlockDictionary) o).getMatrixBlock();
 			if(mb.isInSparseFormat())
@@ -1099,7 +1100,7 @@ public class Dictionary extends ADictionary {
 	}
 
 	@Override
-	public IDictionary cbind(IDictionary that, int nCol){
+	public IDictionary cbind(IDictionary that, int nCol) {
 		int nRowThat = that.getNumberOfValues(nCol);
 		int nColThis = _values.length / nRowThat;
 		MatrixBlockDictionary mbd = getMBDict(nColThis);
@@ -1107,12 +1108,12 @@ public class Dictionary extends ADictionary {
 	}
 
 	@Override
-	public IDictionary reorder(int[] reorder){
+	public IDictionary reorder(int[] reorder) {
 		double[] retV = new double[_values.length];
 		Dictionary ret = new Dictionary(retV);
 		int nRows = _values.length / reorder.length;
 
-		for(int r = 0; r < nRows; r++){
+		for(int r = 0; r < nRows; r++) {
 			int off = r * reorder.length;
 			for(int c = 0; c < reorder.length; c++)
 				retV[off + c] = _values[off + reorder[c]];

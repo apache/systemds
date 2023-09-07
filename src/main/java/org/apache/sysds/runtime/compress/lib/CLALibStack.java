@@ -31,7 +31,6 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
-import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -51,7 +50,7 @@ public final class CLALibStack {
 	 * The intension is that the combining is able to resolve differences in the different MatrixBlocks allocation.
 	 * 
 	 * @param m The map of Index to MatrixBLocks
-	 * @param d A map of the dictionaries contained in the compressionscheme
+	 * @param d A map of the dictionaries contained in the compression scheme
 	 * @param k The parallelization degree allowed for this operation
 	 * @return The combined matrix.
 	 */
@@ -113,8 +112,7 @@ public final class CLALibStack {
 			return combineColumnGroups(m, d, lookup, rlen, clen, blen, k);
 		}
 		catch(Exception e) {
-			// throw new RuntimeException("failed normal combine", e);
-			LOG.error("Failed to combine compressed blocks, fallback to decompression.", e);
+			LOG.warn("Failed to combine compressed blocks, fallback to decompression.", e);
 			return combineViaDecompression(m, rlen, clen, blen, k);
 		}
 	}
@@ -144,14 +142,8 @@ public final class CLALibStack {
 
 		int nGroups = 0;
 		for(int bc = 0; bc * blen < clen; bc++) {
-			// iterate through the first row of blocks to see number of columngroups.
+			// iterate through the first row of blocks to see number of column groups.
 			lookup.setIndexes(1, bc + 1);
-			MatrixBlock mb = m.get(lookup);
-			if(!(mb instanceof CompressedMatrixBlock)) {
-				LOG.warn("Combining via decompression. There was an uncompressed MatrixBlock");
-				return combineViaDecompression(m, rlen, clen, blen, k);
-			}
-
 			final CompressedMatrixBlock cmb = (CompressedMatrixBlock) m.get(lookup);
 			final List<AColGroup> gs = cmb.getColGroups();
 			nGroups += gs.size();
@@ -165,20 +157,18 @@ public final class CLALibStack {
 			for(int bc = 0; bc * blen < clen; bc++) {
 				lookup.setIndexes(br + 1, bc + 1);
 				final CompressedMatrixBlock cmb = (CompressedMatrixBlock) m.get(lookup);
+				if(cmb == null) {
+					throw new RuntimeException("Invalid empty read: " + lookup + "  " + rlen + " " + clen + " " + blen);
+				}
 				final List<AColGroup> gs = cmb.getColGroups();
+				if(cgid + gs.size() > nGroups)
+					return combineViaDecompression(m, rlen, clen, blen, k);
 
 				for(int i = 0; i < gs.size(); i++) {
 					AColGroup g = gs.get(i);
 					final AColGroup gc = bc > 0 ? g.shiftColIndices(bc * blen) : g;
-
 					finalCols[cgid][br] = gc;
-					if(br != 0 && (finalCols[cgid][0] == null ||
-						!finalCols[cgid][br].getColIndices().equals(finalCols[cgid][0].getColIndices()))) {
-						LOG.warn("Combining via decompression. There was an column with different index");
-						return combineViaDecompression(m, rlen, clen, blen, k);
-					}
 					cgid++;
-
 				}
 			}
 			if(cgid != finalCols.length) {
@@ -195,18 +185,20 @@ public final class CLALibStack {
 					.stream(finalCols)//
 					.parallel()//
 					.map(x -> {
-						return combineN(x);
+						AColGroup r = AColGroup.appendN(x, blen, rlen);
+						return r;
 					}).collect(Collectors.toList());
 			}).get();
-
-			if(d != null) {
-				finalGroups = CLALibSeparator.combine(finalGroups, d, blen);
-			}
 
 			if(finalGroups.contains(null)) {
 				LOG.warn("Combining via decompression. There was a column group that did not append ");
 				return combineViaDecompression(m, rlen, clen, blen, k);
 			}
+
+			if(d != null) {
+				finalGroups = CLALibSeparator.combine(finalGroups, d, blen);
+			}
+
 			return new CompressedMatrixBlock(rlen, clen, -1, false, finalGroups);
 		}
 		catch(InterruptedException | ExecutionException e) {
@@ -214,16 +206,6 @@ public final class CLALibStack {
 		}
 		finally {
 			pool.shutdown();
-		}
-	}
-
-	private static AColGroup combineN(AColGroup[] groups) {
-		try {
-			return AColGroup.appendN(groups);
-
-		}
-		catch(Exception e) {
-			throw new DMLCompressionException("Failed to combine groups:\n" + Arrays.toString(groups), e);
 		}
 	}
 }

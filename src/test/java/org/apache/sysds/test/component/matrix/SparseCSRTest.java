@@ -53,7 +53,6 @@ public class SparseCSRTest {
 		int[] colInd = new int[] {10, 20, 30, 40, 50, 60, 80, 90, 100};
 		double[] val = new double[] {1, 1, 1, 1, 1, 1, 1, 1, 1};
 		SparseBlockCSR b = new SparseBlockCSR(rs, colInd, val, val.length);
-		LOG.error(b);
 
 		assertEquals(0, b.posFIndexGTE(1, 0));
 		assertEquals(0, b.posFIndexGTE(1, 10));
@@ -71,7 +70,6 @@ public class SparseCSRTest {
 		int[] colInd = new int[] {100, 10, 20, 30, 40, 50, 60, 80, 90, 100};
 		double[] val = new double[] {1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
 		SparseBlockCSR b = new SparseBlockCSR(rs, colInd, val, val.length);
-		LOG.error(b);
 
 		assertEquals(0, b.posFIndexGTE(1, 0));
 		assertEquals(0, b.posFIndexGTE(1, 10));

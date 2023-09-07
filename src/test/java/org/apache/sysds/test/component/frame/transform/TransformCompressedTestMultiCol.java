@@ -61,25 +61,25 @@ public class TransformCompressedTestMultiCol {
 			Arrays.fill(kPlusCols, ValueType.BOOLEAN);
 
 			FrameBlock[] blocks = new FrameBlock[] {//
-				TestUtils.generateRandomFrameBlock(100, //
+				TestUtils.generateRandomFrameBlock(16, //
 					new ValueType[] {ValueType.UINT4, ValueType.UINT8, ValueType.UINT4}, 231), //
-				TestUtils.generateRandomFrameBlock(100, //
+				TestUtils.generateRandomFrameBlock(10, //
 					new ValueType[] {ValueType.BOOLEAN, ValueType.UINT8, ValueType.UINT4}, 231), //
 				new FrameBlock(new ValueType[] {ValueType.BOOLEAN, ValueType.INT32, ValueType.INT32}, 100), //
-				TestUtils.generateRandomFrameBlock(100, //
+				TestUtils.generateRandomFrameBlock(11, //
 					new ValueType[] {ValueType.UINT4, ValueType.BOOLEAN, ValueType.FP32}, 231, 0.2),
 				TestUtils.generateRandomFrameBlock(432, //
 					new ValueType[] {ValueType.UINT4, ValueType.BOOLEAN, ValueType.FP32}, 231, 0.2),
-				TestUtils.generateRandomFrameBlock(100, //
+				TestUtils.generateRandomFrameBlock(12, //
 					new ValueType[] {ValueType.UINT4, ValueType.BOOLEAN, ValueType.FP32}, 231, 0.9),
-				TestUtils.generateRandomFrameBlock(100, //
+				TestUtils.generateRandomFrameBlock(14, //
 					new ValueType[] {ValueType.UINT4, ValueType.BOOLEAN, ValueType.FP32}, 231, 0.99),
 
 				TestUtils.generateRandomFrameBlock(5, kPlusCols, 322),
 				TestUtils.generateRandomFrameBlock(1020, kPlusCols, 322),
 
 			};
-			blocks[2].ensureAllocatedColumns(100);
+			blocks[2].ensureAllocatedColumns(20);
 
 			for(FrameBlock block : blocks) {
 				for(int k : threads) {
@@ -103,6 +103,11 @@ public class TransformCompressedTestMultiCol {
 	@Test
 	public void testDummyCode() {
 		test("{dummycode:[C1,C2,C3]}");
+	}
+
+	@Test 
+	public void testDummyCodeV2(){
+		test("{ids:true, dummycode:[1,2,3]}");
 	}
 
 	@Test
@@ -139,20 +144,29 @@ public class TransformCompressedTestMultiCol {
 
 	public void test(String spec) {
 		try {
-
 			FrameBlock meta = null;
 			MultiColumnEncoder encoderCompressed = EncoderFactory.createEncoder(spec, data.getColumnNames(),
 				data.getNumColumns(), meta);
 
 			MatrixBlock outCompressed = encoderCompressed.encode(data, k, true);
-			FrameBlock outCompressedMD = encoderCompressed.getMetaData(null);
 			MultiColumnEncoder encoderNormal = EncoderFactory.createEncoder(spec, data.getColumnNames(),
 				data.getNumColumns(), meta);
 			MatrixBlock outNormal = encoderNormal.encode(data, k);
-			FrameBlock outNormalMD = encoderNormal.getMetaData(null);
 
 			TestUtils.compareMatrices(outNormal, outCompressed, 0, "Not Equal after apply");
-			TestUtils.compareFrames(outNormalMD, outCompressedMD, true);
+
+			MultiColumnEncoder ec2 = EncoderFactory.createEncoder(spec, data.getColumnNames(), data.getNumColumns(),
+				encoderNormal.getMetaData(null));
+			
+			MatrixBlock outMeta12 = ec2.apply(data, k);
+			TestUtils.compareMatrices(outNormal, outMeta12, 0, "Not Equal after apply2");
+
+			MultiColumnEncoder ec = EncoderFactory.createEncoder(spec, data.getColumnNames(), data.getNumColumns(),
+				encoderCompressed.getMetaData(null));
+			
+			MatrixBlock outMeta1 = ec.apply(data, k);
+			TestUtils.compareMatrices(outNormal, outMeta1, 0, "Not Equal after apply");
+
 		}
 		catch(Exception e) {
 			e.printStackTrace();

@@ -22,6 +22,7 @@ package org.apache.sysds.runtime.frame.data.columns;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.BitSet;
 import java.util.HashMap;
@@ -101,7 +102,7 @@ public class StringArray extends Array<String> {
 		catch(Exception e) {
 			super.set(rl, ru, value, rlSrc);
 		}
-		finally{
+		finally {
 			materializedSize = -1;
 		}
 	}
@@ -146,7 +147,21 @@ public class StringArray extends Array<String> {
 	public void write(DataOutput out) throws IOException {
 		out.writeByte(FrameArrayType.STRING.ordinal());
 		out.writeLong(getInMemorySize());
+
+		// final Charset cs = Charset.defaultCharset();
 		for(int i = 0; i < _size; i++)
+			// {
+			// if(_data[i] == null){
+			// out.writeInt(0);
+			// }
+			// else{
+			// // cs.encode(_data[i]);
+			// byte[] bs = _data[i].getBytes(cs);
+			// out.writeInt(bs.length);
+			// out.write(bs);
+			// }
+			// }
+
 			out.writeUTF((_data[i] != null) ? _data[i] : "");
 	}
 
@@ -154,9 +169,25 @@ public class StringArray extends Array<String> {
 	public void readFields(DataInput in) throws IOException {
 		_size = _data.length;
 		materializedSize = in.readLong();
+		// byte[] bs = new byte[16];
+		// final Charset cs = Charset.defaultCharset();
 		for(int i = 0; i < _size; i++) {
-			String tmp = in.readUTF();
-			_data[i] = (!tmp.isEmpty()) ? tmp : null;
+			// int l = in.readInt();
+			// if(l == 0){
+			// _data[i] = null;
+			// }
+			// else{
+			// if(l > bs.length)
+			// bs = new byte[l];
+			// in.readFully(bs, 0, l);
+			// String tmp = new String(bs, 0, l, cs);
+			// // String tmp = in.readUTF();
+			// _data[i] = tmp;
+			// }
+			{
+				String tmp = in.readUTF();
+				_data[i] = tmp.isEmpty() ? null : tmp;
+			}
 		}
 	}
 

@@ -93,10 +93,10 @@ public class ReaderBinaryBlockParallel extends ReaderBinaryBlock
 		if( HDFSTool.USE_BINARYBLOCK_SERIALIZATION )
 			HDFSTool.addBinaryBlockSerializationFramework( job );
 		
+		final ExecutorService pool = CommonThreadPool.get(_numThreads);
 		try 
 		{
 			//create read tasks for all files
-			ExecutorService pool = CommonThreadPool.get(_numThreads);
 			ArrayList<ReadFileTask> tasks = new ArrayList<>();
 			for( Path lpath : IOUtilFunctions.getSequenceFilePaths(fs, path) ){
 				ReadFileTask t = new ReadFileTask(lpath, job, dest, rlen, clen, blen, syncBlock);
@@ -116,10 +116,12 @@ public class ReaderBinaryBlockParallel extends ReaderBinaryBlock
 			if( dest.isInSparseFormat() && clen>blen ) 
 				sortSparseRowsParallel(dest, rlen, _numThreads, pool);
 			
-			pool.shutdown();
 		} 
 		catch (Exception e) {
 			throw new IOException("Failed parallel read of binary block input.", e);
+		}
+		finally{
+			pool.shutdown();
 		}
 	}
 

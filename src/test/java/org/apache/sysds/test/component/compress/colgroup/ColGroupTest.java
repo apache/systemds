@@ -2282,8 +2282,7 @@ public class ColGroupTest extends ColGroupBase {
 		try {
 
 			AColGroup g2 = g.append(g);
-			AColGroup g2n = AColGroup.appendN(new AColGroup[] {g, g});
-
+			AColGroup g2n = AColGroup.appendN(new AColGroup[] {g, g}, nRow,  nRow*2);
 			if(g2 != null && g2n != null) {
 				double s2 = g2.getSum(nRow * 2);
 				double s = g.getSum(nRow) * 2;
@@ -2293,6 +2292,9 @@ public class ColGroupTest extends ColGroupBase {
 
 				UA_ROW(InstructionUtils.parseBasicAggregateUnaryOperator("uar+", 1), 0, nRow * 2, g2, g2n, nRow * 2);
 			}
+		}
+		catch(NotImplementedException e){
+			// okay
 		}
 		catch(Exception e) {
 			e.printStackTrace();

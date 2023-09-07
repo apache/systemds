@@ -544,7 +544,7 @@ public class ColGroupDDC extends APreAgg implements IMapToDataGroup {
 	}
 
 	@Override
-	public AColGroup appendNInternal(AColGroup[] g) {
+	public AColGroup appendNInternal(AColGroup[] g, int blen, int rlen) {
 		for(int i = 1; i < g.length; i++) {
 			if(!_colIndexes.equals(g[i]._colIndexes)) {
 				LOG.warn("Not same columns therefore not appending DDC\n" + _colIndexes + "\n\n" + g[i]._colIndexes);

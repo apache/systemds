@@ -100,8 +100,7 @@ public class RewriteRemovePersistentReadWrite extends HopRewriteRule
 			rule_RemovePersistentDataOp( inputs.get(i) );
 
 		//remove cast if unnecessary
-		if( hop instanceof DataOp )
-		{
+		if( hop instanceof DataOp ) {
 			DataOp dop = (DataOp) hop;
 			OpOpData dotype = dop.getOp();
 			

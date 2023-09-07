@@ -412,16 +412,17 @@ public class MapToBit extends AMapToData {
 			p += gd.getMapToData().size();
 		final long[] ret = new long[longSize(p)];
 
-		long[] or = _data;
-		System.arraycopy(or, 0, ret, 0, or.length);
+		long[] or = null;
 
-		p = size();
-		for(int i = 1; i < d.length; i++) {
-			final MapToBit mm = (MapToBit) d[i].getMapToData();
-			final int ms = mm.size();
-			or = mm._data;
-			BitSetArray.setVectorizedLongs(p, p + ms, ret, or);
-			p += ms;
+		p = 0;
+		for(int i = 0; i < d.length; i++) {
+			if(d[i].getMapToData().size() > 0) {
+				final MapToBit mm = (MapToBit) d[i].getMapToData();
+				final int ms = mm.size();
+				or = mm._data;
+				BitSetArray.setVectorizedLongs(p, p + ms, ret, or);
+				p += ms;
+			}
 		}
 
 		BitSet retBS = BitSet.valueOf(ret);
@@ -441,7 +442,7 @@ public class MapToBit extends AMapToData {
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		sb.append(super.toString());
-		sb.append("size: " + _size);
+		sb.append(" size: " + _size);
 		sb.append(" longLength:[");
 		sb.append(_data.length);
 		sb.append("]");

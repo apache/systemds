@@ -195,7 +195,7 @@ public class ArrCountMapTest {
 		assertEquals(19, m.getId(I(19.0)));
 	}
 
-	@Test()
+	@Test
 	public void sortBucketsSmall() {
 		for(int i = 0; i < 9; i++)
 			m.increment(I((double) i));

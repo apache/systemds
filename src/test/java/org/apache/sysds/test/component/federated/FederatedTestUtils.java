@@ -99,7 +99,6 @@ public class FederatedTestUtils {
 			final FederatedRequest frq = new FederatedRequest(RequestType.PUT_VAR, null, id, mb);
 			final Future<FederatedResponse> fr = FederatedData.executeFederatedOperation(addr, frq);
 			final FederatedResponse r = fr.get(timeout, TimeUnit.MILLISECONDS);
-			LOG.error(r);
 			if(r.isSuccessful())
 				return id;
 			else

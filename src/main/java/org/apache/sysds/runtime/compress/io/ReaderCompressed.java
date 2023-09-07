@@ -21,9 +21,12 @@ package org.apache.sysds.runtime.compress.io;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.hadoop.fs.FileSystem;
@@ -43,27 +46,35 @@ import org.apache.sysds.runtime.io.IOUtilFunctions;
 import org.apache.sysds.runtime.io.MatrixReader;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
+import org.apache.sysds.runtime.util.CommonThreadPool;
 
 public final class ReaderCompressed extends MatrixReader {
 
-	public static ReaderCompressed create() {
-		return new ReaderCompressed();
+	private final int k;
+
+	public ReaderCompressed() {
+		this.k = OptimizerUtils.getParallelBinaryReadParallelism();
 	}
 
-	public static MatrixBlock readCompressedMatrixFromHDFS(String fname) throws IOException {
-		return create().readMatrixFromHDFS(fname, 10, 10, 10, 100);
+	public ReaderCompressed(int k) {
+		this.k = k;
+	}
+
+	public static ReaderCompressed create() {
+		int numThreads = OptimizerUtils.getParallelBinaryReadParallelism();
+		return new ReaderCompressed(numThreads);
+	}
+
+	public static MatrixBlock readCompressedMatrixFromHDFS(String fname, long rlen, long clen, int blen) throws IOException {
+		return create().readMatrixFromHDFS(fname, rlen, clen, blen, 100);
 	}
 
 	@Override
 	public MatrixBlock readMatrixFromHDFS(String fname, long rlen, long clen, int blen, long estnnz)
 		throws IOException, DMLRuntimeException {
-
 		JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());
 		Path path = new Path(fname);
 		FileSystem fs = IOUtilFunctions.getFileSystem(path, job);
-
-		checkValidInputFile(fs, path);
-
 		return readCompressedMatrix(fname, job, fs, (int) rlen, (int) clen, blen);
 	}
 
@@ -73,7 +84,56 @@ public final class ReaderCompressed extends MatrixReader {
 		throw new NotImplementedException("Not implemented reading compressedMatrix from input stream");
 	}
 
-	private static MatrixBlock readCompressedMatrix(String fname, JobConf job, FileSystem fs, int rlen, int clen,
+	private MatrixBlock readCompressedMatrix(String fname, JobConf job, FileSystem fs, int rlen, int clen, int blen)
+		throws IOException {
+		if(k > 1) 
+			return readCompressedMatrixParallel(fname, job, fs, rlen, clen, blen);
+		else
+			return readCompressedMatrixSingleThread(fname, job, fs, rlen, clen, blen);
+	}
+
+	private MatrixBlock readCompressedMatrixParallel(String fname, final JobConf job, FileSystem fs, int rlen, int clen,
+		int blen) throws IOException {
+
+		final Map<MatrixIndexes, MatrixBlock> data = new HashMap<>();
+		Map<Integer, List<IDictionary>> dicts = null;
+		final ExecutorService pool = CommonThreadPool.get(k);
+		try {
+			List<Future<Map<MatrixIndexes, MatrixBlock>>> rt = new ArrayList<>();
+			List<Future<Map<Integer, List<IDictionary>>>> dt = new ArrayList<>();
+			for(Path subPath : IOUtilFunctions.getSequenceFilePaths(fs, new Path(fname))) {
+				final Path sp = subPath;
+				rt.add(pool.submit(() -> readColumnGroups(sp, job)));
+			}
+
+			final Path dictPath = new Path(fname + ".dict");
+			final boolean dictExists = fs.exists(dictPath);
+			if(dictExists) {
+				dicts = new HashMap<>();
+				for(Path subPath : IOUtilFunctions.getSequenceFilePaths(fs, dictPath)) {
+					final Path sp = subPath;
+					dt.add(pool.submit(() -> readDictionaries(sp, job)));
+				}
+			}
+
+			for(Future<Map<MatrixIndexes, MatrixBlock>> e : rt)
+				data.putAll(e.get());
+
+			if(dictExists && dicts != null)
+				for(Future<Map<Integer, List<IDictionary>>> e : dt)
+					dicts.putAll(e.get());
+
+			return CLALibStack.combine(data, dicts, rlen, clen, blen, k);
+		}
+		catch(Exception e) {
+			throw new IOException("failed parallel reading ", e);
+		}
+		finally {
+			pool.shutdown();
+		}
+	}
+
+	private MatrixBlock readCompressedMatrixSingleThread(String fname, JobConf job, FileSystem fs, int rlen, int clen,
 		int blen) throws IOException {
 
 		final Map<MatrixIndexes, MatrixBlock> data = new HashMap<>();
@@ -94,7 +154,7 @@ public final class ReaderCompressed extends MatrixReader {
 		if(data.containsValue(null))
 			throw new DMLCompressionException("Invalid read data contains null:");
 
-		return CLALibStack.combine(data, dicts, OptimizerUtils.getParallelTextWriteParallelism());
+		return CLALibStack.combine(data, dicts, k);
 	}
 
 	private static Map<MatrixIndexes, MatrixBlock> readColumnGroups(Path path, JobConf job) throws IOException {

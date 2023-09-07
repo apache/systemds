@@ -36,6 +36,7 @@ import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.runtime.frame.data.columns.Array;
+import org.apache.sysds.runtime.frame.data.columns.StringArray;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.utils.stats.TransformStatistics;
 
@@ -168,7 +169,7 @@ public class ColumnEncoderBin extends ColumnEncoder {
 		final double[] codes = tmp != null && tmp.length == endLength ? tmp : new double[endLength];
 		if (_binMins == null || _binMins.length == 0 || _binMaxs.length == 0) {
 			LOG.warn("ColumnEncoderBin: applyValue without bucket boundaries, assign 1");
-			Arrays.fill(codes, startInd, endInd, 1.0);
+			Arrays.fill(codes, 0, endLength, 1.0);
 			return codes;
 		}
 
@@ -187,39 +188,34 @@ public class ColumnEncoderBin extends ColumnEncoder {
 		final Array<?> c = in.getColumn(_colID - 1);
 		final double mi = _binMins[0];
 		final double mx = _binMaxs[_binMaxs.length-1];
-		if(!c.containsNull())
+		if(!(c instanceof StringArray) && !c.containsNull())
 			for(int i = startInd; i < endInd; i++)
-				codes[i - startInd] = getCodeIndex(c.getAsDouble(i), mi,mx);
+				codes[i - startInd] = getCodeIndex(c.getAsDouble(i), mi, mx);
 		else 
 			for(int i = startInd; i < endInd; i++)
-				codes[i - startInd] = getCodeIndex(c.getAsNaNDouble(i),mi,mx);
+				codes[i - startInd] = getCodeIndex(c.getAsNaNDouble(i),mi, mx);
 	}
 
 	protected final double getCodeIndex(double inVal){
-		return getCodeIndex(inVal, _binMins[0],_binMaxs[_binMaxs.length-1]);
+		return getCodeIndex(inVal, _binMins[0], _binMaxs[_binMaxs.length-1]);
 	}
 
-	protected final double getCodeIndex(double inVal, double mi, double mx){
-		final boolean nan = Double.isNaN(inVal); 
-		if(nan || (_binMethod != BinMethod.EQUI_HEIGHT_APPROX && (inVal < mi || inVal > mx)))
+	protected final double getCodeIndex(double inVal, double min, double max){
+		if(Double.isNaN(inVal))
 			return Double.NaN;
 		else if(_binMethod == BinMethod.EQUI_WIDTH)
-			return getEqWidth(inVal);
+			return getEqWidth(inVal, min, max);
 		else // if (_binMethod == BinMethod.EQUI_HEIGHT || _binMethod == BinMethod.EQUI_HEIGHT_APPROX)
 			return getCodeIndexEQHeight(inVal);
 	}
 
-	private final double getEqWidth(double inVal) {
-		final double max = _binMaxs[_binMaxs.length - 1];
-		final double min = _binMins[0];
-
+	private final double getEqWidth(double inVal, double min, double max) {
 		if(max == min)
 			return 1;
-		
-		// TODO: Skip computing bin boundaries for equi-width
-		double binWidth = (max - min) / _numBin;
-		double code = Math.ceil((inVal - min) / binWidth);
-		return (code == 0) ? code + 1 : code;
+		if(_numBin <= 0)
+			throw new RuntimeException("Invalid num bins");
+		final int code = (int)(Math.ceil((inVal - min) / (max - min) * _numBin) );
+		return code > _numBin ? _numBin : code < 1 ? 1 : code;
 	}
 
 	private final double getCodeIndexEQHeight(double inVal){
@@ -241,7 +237,7 @@ public class ColumnEncoderBin extends ColumnEncoder {
 		if(ix < 0) // somewhere in between values
 			// +2 because negative values are found from binary search.
 			// plus 2 to correct for the absolute value of that.
-			return Math.abs(ix + 1) + 1;
+			return Math.min(Math.abs(ix + 1) + 1, _binMaxs.length);
 		else if(ix == 0) // If first bucket boundary add it there.
 			return 1;
 		else

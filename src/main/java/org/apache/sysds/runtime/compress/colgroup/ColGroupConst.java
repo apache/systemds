@@ -22,6 +22,7 @@ package org.apache.sysds.runtime.compress.colgroup;
 import java.io.DataInput;
 import java.io.IOException;
 
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.DictionaryFactory;
@@ -30,6 +31,10 @@ import org.apache.sysds.runtime.compress.colgroup.dictionary.IdentityDictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.MatrixBlockDictionary;
 import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
+import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
+import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
+import org.apache.sysds.runtime.compress.colgroup.offset.AOffset;
+import org.apache.sysds.runtime.compress.colgroup.offset.OffsetEmpty;
 import org.apache.sysds.runtime.compress.colgroup.scheme.ConstScheme;
 import org.apache.sysds.runtime.compress.colgroup.scheme.ICLAScheme;
 import org.apache.sysds.runtime.compress.cost.ComputationCostEstimator;
@@ -48,7 +53,7 @@ import org.apache.sysds.runtime.matrix.operators.CMOperator;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
 import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
 
-public class ColGroupConst extends ADictBasedColGroup implements IContainDefaultTuple {
+public class ColGroupConst extends ADictBasedColGroup implements IContainDefaultTuple, AOffsetsGroup, IMapToDataGroup {
 
 	private static final long serialVersionUID = -7387793538322386611L;
 
@@ -566,10 +571,22 @@ public class ColGroupConst extends ADictBasedColGroup implements IContainDefault
 	}
 
 	@Override
-	public AColGroup appendNInternal(AColGroup[] g) {
-		for(int i = 0; i < g.length; i++)
-			if(!_colIndexes.equals(g[i]._colIndexes) || !this._dict.equals(((ColGroupConst) g[i])._dict))
-				return null;
+	public AColGroup appendNInternal(AColGroup[] g, int blen, int rlen) {
+		for(int i = 0; i < g.length; i++) {
+			final AColGroup gs = g[i];
+			if(!_colIndexes.equals(gs._colIndexes))
+				throw new DMLCompressionException("Invalid columns not matching " + gs._colIndexes + " " + _colIndexes);
+			if(gs instanceof ColGroupConst) {
+				if(this._dict.equals(((ColGroupConst) gs)._dict))
+					continue; // common case
+				else
+					throw new NotImplementedException("Appending const not equivalent");
+			}
+			else if(gs instanceof ColGroupEmpty)
+				throw new NotImplementedException("Appending empty and const");
+			else
+				return gs.appendNInternal(g, blen, rlen);
+		}
 		return this;
 	}
 
@@ -614,9 +631,20 @@ public class ColGroupConst extends ADictBasedColGroup implements IContainDefault
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		sb.append(super.toString());
-		sb.append(String.format("\n%15s", "Values: " + _dict.getClass().getSimpleName()));
+		sb.append(String.format("\n%15s", "Values: "));
+		sb.append(_dict.getClass().getSimpleName());
 		sb.append(_dict.getString(_colIndexes.size()));
 		return sb.toString();
+	}
+	
+	@Override
+	public AOffset getOffsets() {
+		return new OffsetEmpty();
+	}
+
+	@Override
+	public AMapToData getMapToData() {
+		return MapToFactory.create(0, 0);
 	}
 
 }

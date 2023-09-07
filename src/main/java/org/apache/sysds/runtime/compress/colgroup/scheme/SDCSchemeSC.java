@@ -237,10 +237,10 @@ public class SDCSchemeSC extends SDCScheme {
 		final int nRow = data.getNumRows();
 
 		Pair<IntArrayList, AMapToData> e = encodeAndUpdate(data, cols.get(0));
-		if(lastDict == null || lastDict.getNumberOfValues(columns.size()) != map.size())
-			lastDict = DictionaryFactory.create(map);
+		allocateDictionary();
 
 		final AOffset off = OffsetFactory.createOffset(e.getKey());
+		off.constructSkipList();
 		AColGroup g = ColGroupSDC.create(columns, nRow, lastDict, //
 			new double[] {def}, off, e.getValue(), null);
 		return new Pair<>(this, g);
@@ -280,7 +280,29 @@ public class SDCSchemeSC extends SDCScheme {
 	}
 
 	private Pair<IntArrayList, AMapToData> encodeAndUpdateDense(MatrixBlock data, int col) {
-		throw new NotImplementedException();
+		final int nRow = data.getNumRows();
+		final double[] vals = data.getDenseBlockValues();
+		final int nCol = data.getNumColumns();
+		final int max = nRow * nCol; // guaranteed lower than intmax.
+
+		IntArrayList off = getCachedArray(0);
+		IntArrayList val = getCachedArray(1);
+
+		// full iteration
+		for(int i = 0, o = col; o < max; i++, o += nCol)
+			if(!Util.eq(vals[o], def)){
+				off.appendValue(i);
+				val.appendValue(map.increment(vals[o]));
+			}
+
+		// Only cells with non default values.
+		AMapToData d = MapToFactory.create(off.size(), map.size());
+		for(int i = 0; i < off.size(); i++) {
+			int o = off.get(i) * nCol + col;
+			d.set(i, map.getId(vals[o]));
+		}
+		return new Pair<>(off, d);
+
 	}
 
 	private Pair<IntArrayList, AMapToData> encodeAndUpdateGeneric(MatrixBlock data, int col) {
@@ -500,8 +522,8 @@ public class SDCSchemeSC extends SDCScheme {
 				d.set(i, dt.get(i));
 
 			allocateDictionary();
-			AColGroup g = ColGroupSDC.create(columns, nRow, lastDict, new double[] {def},
-				OffsetFactory.createOffset(off), d, null);
+			AColGroup g = ColGroupSDC.create(columns, nRow, lastDict, new double[] {def}, OffsetFactory.createOffset(off),
+				d, null);
 			return new Pair<>(this, g);
 		}
 	}

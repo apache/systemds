@@ -156,6 +156,8 @@ public class CompressedEncode {
 		Array<?> a = in.getColumn(colId - 1);
 		boolean containsNull = a.containsNull();
 		Map<?, Long> map = a.getRecodeMap();
+		List<ColumnEncoder> r = c.getEncoders();
+		r.set(0, new ColumnEncoderRecode(colId, (HashMap<Object, Long>) map));
 		int domain = map.size();
 		if(containsNull && domain == 0)
 			return new ColGroupEmpty(ColIndexFactory.create(1));
@@ -164,8 +166,6 @@ public class CompressedEncode {
 			return ColGroupConst.create(colIndexes, new double[] {1});
 		ADictionary d = new IdentityDictionary(colIndexes.size(), containsNull);
 		AMapToData m = createMappingAMapToData(a, map, containsNull);
-		List<ColumnEncoder> r = c.getEncoders();
-		r.set(0, new ColumnEncoderRecode(colId, (HashMap<Object, Long>) map));
 		return ColGroupDDC.create(colIndexes, d, m, null);
 	}
 
@@ -189,20 +189,40 @@ public class CompressedEncode {
 		AMapToData m = MapToFactory.create(a.size(), b._numBin + (containsNull ? 1 : 0));
 		if(containsNull) {
 			for(int i = 0; i < a.size(); i++) {
-				double v = a.getAsNaNDouble(i);
-				if(Double.isNaN(v))
-					m.set(i, b._numBin);
-				else
-					m.set(i, (int) b.getCodeIndex(v) - 1);
+				final double v = a.getAsNaNDouble(i);
+				try {
+
+					if(Double.isNaN(v))
+						m.set(i, b._numBin);
+					else {
+						int idx = (int) b.getCodeIndex(v) - 1;
+						if(idx < 0)
+							idx = 0;
+						m.set(i, idx);
+					}
+				}
+				catch(Exception e) {
+
+					m.set(i, (int) b.getCodeIndex(v - 0.00001) - 1);
+				}
 			}
 		}
 		else {
-			
-			for(int i = 0; i < a.size(); i++){
-				int idx = (int) b.getCodeIndex(a.getAsDouble(i)) - 1;
-				if(idx < 0)
-					throw new RuntimeException(a.getAsDouble(i) + " is invalid value for " + b + "\n" + idx);
-				m.set(i, idx);
+
+			for(int i = 0; i < a.size(); i++) {
+				try {
+
+					int idx = (int) b.getCodeIndex(a.getAsDouble(i)) - 1;
+					if(idx < 0)
+						idx = 0;
+					// throw new RuntimeException(a.getAsDouble(i) + " is invalid value for " + b + "\n" + idx);
+					m.set(i, idx);
+				}
+				catch(Exception e) {
+
+					int idx = (int) b.getCodeIndex(a.getAsDouble(i) - 0.00001) - 1;
+					m.set(i, idx);
+				}
 			}
 		}
 		return m;
@@ -264,6 +284,7 @@ public class CompressedEncode {
 
 	@SuppressWarnings("unchecked")
 	private AColGroup passThrough(ColumnEncoderComposite c) {
+		// TODO optimize to not construct full map but only some of it until aborting compression.
 		IColIndex colIndexes = ColIndexFactory.create(1);
 		int colId = c._colID;
 		Array<?> a = in.getColumn(colId - 1);
@@ -282,7 +303,7 @@ public class CompressedEncode {
 			if(containsNull)
 				vals[map.size()] = Double.NaN;
 			ValueType t = a.getValueType();
-			map.forEach((k, v) -> vals[v.intValue()] = UtilFunctions.objectToDouble(t, k));
+			map.forEach((k, v) -> vals[v.intValue()-1] = UtilFunctions.objectToDouble(t, k));
 			ADictionary d = Dictionary.create(vals);
 			AMapToData m = createMappingAMapToData(a, map, containsNull);
 			return ColGroupDDC.create(colIndexes, d, m, null);
@@ -291,33 +312,44 @@ public class CompressedEncode {
 	}
 
 	private AMapToData createMappingAMapToData(Array<?> a, Map<?, Long> map, boolean containsNull) {
-		final int si = map.size();
-		AMapToData m = MapToFactory.create(in.getNumRows(), si + (containsNull ? 1 : 0));
-		Array<?>.ArrayIterator it = a.getIterator();
-		if(containsNull) {
+		try {
 
-			while(it.hasNext()) {
-				Object v = it.next();
-				if(v != null)
-					m.set(it.getIndex(), map.get(v).intValue());
-				else
-					m.set(it.getIndex(), si);
+			final int si = map.size();
+			AMapToData m = MapToFactory.create(in.getNumRows(), si + (containsNull ? 1 : 0));
+			Array<?>.ArrayIterator it = a.getIterator();
+			if(containsNull) {
+
+				while(it.hasNext()) {
+					Object v = it.next();
+					try{
+						if(v != null)
+							m.set(it.getIndex(), map.get(v).intValue() -1);
+						else
+							m.set(it.getIndex(), si);
+					}
+					catch(Exception e){
+						throw new RuntimeException("failed on " + v +" " + a.getValueType(), e);
+					}
+				}
 			}
-		}
-		else {
-			while(it.hasNext()) {
-				Object v = it.next();
-				m.set(it.getIndex(), map.get(v).intValue());
+			else {
+				while(it.hasNext()) {
+					Object v = it.next();
+					m.set(it.getIndex(), map.get(v).intValue() -1);
+				}
 			}
+			return m;
 		}
-		return m;
+		catch(Exception e) {
+			throw new RuntimeException("failed constructing map: " + map,  e);
+		}
 	}
 
 	private AMapToData createHashMappingAMapToData(Array<?> a, int k, boolean nulls) {
 		AMapToData m = MapToFactory.create(a.size(), k + (nulls ? 1 : 0));
 		if(nulls) {
 			for(int i = 0; i < a.size(); i++) {
-				double h = a.hashDouble(i);
+				double h = Math.abs(a.hashDouble(i));
 				if(Double.isNaN(h)) {
 					m.set(i, k);
 				}
@@ -328,7 +360,7 @@ public class CompressedEncode {
 		}
 		else {
 			for(int i = 0; i < a.size(); i++) {
-				double h = a.hashDouble(i);
+				double h = Math.abs(a.hashDouble(i));
 				m.set(i, (int) h % k);
 			}
 		}
@@ -342,7 +374,7 @@ public class CompressedEncode {
 		int domain = (int) CEHash.getK();
 		boolean nulls = a.containsNull();
 		IColIndex colIndexes = ColIndexFactory.create(0, 1);
-		if(domain == 1 && ! nulls)
+		if(domain == 1 && !nulls)
 			return ColGroupConst.create(colIndexes, new double[] {1});
 
 		MatrixBlock incrementing = new MatrixBlock(domain + (nulls ? 1 : 0), 1, false);

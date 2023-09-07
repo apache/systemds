@@ -23,6 +23,7 @@ import java.io.DataOutput;
 import java.io.IOException;
 
 import org.apache.sysds.runtime.compress.DMLCompressionException;
+import org.apache.sysds.runtime.io.IOUtilFunctions;
 
 public class SingleIndex extends AColIndex {
 	private final int idx;
@@ -52,8 +53,10 @@ public class SingleIndex extends AColIndex {
 	}
 
 	public void write(DataOutput out) throws IOException {
-		out.writeByte(ColIndexType.SINGLE.ordinal());
-		out.writeInt(idx);
+		byte[] o = new byte[5];
+		o[0] = (byte) ColIndexType.SINGLE.ordinal();
+		IOUtilFunctions.intToBa(idx, o, 1);
+		out.write(o);
 	}
 
 	@Override

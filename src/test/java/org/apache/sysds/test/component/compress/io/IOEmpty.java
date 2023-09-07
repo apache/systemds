@@ -69,7 +69,7 @@ public class IOEmpty {
 	public void writeEmptyAndRead() throws Exception {
 		String n = getName();
 		write(n, 10, 10, 1000);
-		MatrixBlock mb = IOCompressionTestUtils.read(n);
+		MatrixBlock mb = IOCompressionTestUtils.read(n, 10, 10, 1000);
 		IOCompressionTestUtils.verifyEquivalence(mb, new MatrixBlock(10, 10, 0.0));
 	}
 
@@ -87,7 +87,7 @@ public class IOEmpty {
 		write(n, 1000, 10, 100);
 		File f = new File(n);
 		assertTrue(f.isDirectory() || f.isFile());
-		MatrixBlock mb = IOCompressionTestUtils.read(n);
+		MatrixBlock mb = IOCompressionTestUtils.read(n, 1000, 10, 100);
 		IOCompressionTestUtils.verifyEquivalence(mb, new MatrixBlock(1000, 10, 0.0));
 	}
 

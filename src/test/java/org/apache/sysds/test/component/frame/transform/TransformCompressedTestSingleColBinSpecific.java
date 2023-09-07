@@ -27,6 +27,7 @@ import java.util.Collection;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -95,11 +96,46 @@ public class TransformCompressedTestSingleColBinSpecific {
 		test(4);
 	}
 
-	public void test(int bin) {
-		test("{ids:true, bin:[{id:1, method:equi-height, numbins:" + bin + "}], dummycode:[1] }");
+	@Test
+	public void test30() {
+		test(30);
 	}
 
-	public void test(String spec) {
+	public void test(int bin) {
+		test("{ids:true, bin:[{id:1, method:equi-height, numbins:" + bin + "}], dummycode:[1] }", true);
+	}
+
+	@Test
+	public void testAP1() {
+		testAP(1);
+	}
+
+	@Test
+	public void testAP2() {
+		testAP(2);
+	}
+
+	@Test
+	public void testAP3() {
+		testAP(3);
+	}
+
+	@Test
+	public void testAP4() {
+		testAP(4);
+	}
+
+	@Test
+	public void testAP30() {
+		testAP(30);
+	}
+
+	public void testAP(int bin) {
+		DMLScript.SEED = 132;
+		test("{ids:true, bin:[{id:1, method:equi-height-approx, numbins:" + bin + "}], dummycode:[1] }", false);
+	}
+
+	public void test(String spec, boolean EQ) {
 		try {
 
 			FrameBlock meta = null;
@@ -112,14 +148,15 @@ public class TransformCompressedTestSingleColBinSpecific {
 				data.getNumColumns(), meta);
 			MatrixBlock outNormal = encoderNormal.encode(data, k);
 			FrameBlock outNormalMD = encoderNormal.getMetaData(null);
-
 			TestUtils.compareMatrices(outNormal, outCompressed, 0, "Not Equal after apply");
 			TestUtils.compareFrames(outNormalMD, outCompressedMD, true);
 
-			// Assert that each bucket has the same number of elements
-			MatrixBlock colSum = outNormal.colSum();
-			for(int i = 0; i < colSum.getNumColumns(); i++)
-				assertEquals(colSum.quickGetValue(0, 0), colSum.quickGetValue(0, i), 0.001);
+			if(EQ){
+				// Assert that each bucket has the same number of elements
+				MatrixBlock colSum = outNormal.colSum();
+				for(int i = 0; i < colSum.getNumColumns(); i++)
+					assertEquals(colSum.quickGetValue(0, 0), colSum.quickGetValue(0, i), 0.001);
+			}
 		}
 
 		catch(Exception e) {

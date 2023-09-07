@@ -226,10 +226,9 @@ public class ColumnEncoderRecode extends ColumnEncoder {
 	}
 	
 	@Override
-	protected double[] getCodeCol(CacheBlock<?> in, int startInd, int blkSize) {
-		// lookup for a block of rows
-		int endInd = getEndIndex(in.getNumRows(), startInd, blkSize);
-		double codes[] = new double[endInd-startInd];
+	protected double[] getCodeCol(CacheBlock<?> in, int startInd, int endInd, double[] tmp) {
+		final int endLength = endInd - startInd;
+		final double[] codes = tmp != null && tmp.length == endLength ? tmp : new double[endLength];
 		for (int i=startInd; i<endInd; i++) {
 			String key = in.getString(i, _colID-1);
 			if(key == null || key.isEmpty()) {

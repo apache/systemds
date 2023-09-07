@@ -237,7 +237,7 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 			}
 		}
 
-		if (DMLScript.STATISTICS)
+		if (tSetup != null)
 			ParamServStatistics.accSetupTime((long) tSetup.stop());
 
 		try {
@@ -335,7 +335,7 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 			getFrequency(), getEpochs(), getBatchSize(), program, isLocal, clsMap, sec.getSparkContext().getConf(),
 			server.getPort(), aSetup, aWorker, aUpdate, aIndex, aGrad, aRPC, aBatch, aEpoch, nbatches, modelAvg);
 
-		if (DMLScript.STATISTICS)
+		if (tSetup != null)
 			ParamServStatistics.accSetupTime((long) tSetup.stop());
 
 		MatrixObject features = sec.getMatrixObject(getParam(PS_FEATURES));
@@ -411,7 +411,7 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 		PSScheme scheme = getScheme();
 		partitionLocally(scheme, ec, workers);
 
-		if (DMLScript.STATISTICS)
+		if (tSetup != null)
 			ParamServStatistics.accSetupTime((long) tSetup.stop());
 
 		if (LOG.isDebugEnabled()) {

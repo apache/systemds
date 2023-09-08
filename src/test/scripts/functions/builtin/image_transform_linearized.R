@@ -74,4 +74,5 @@ input = matrix(input, ncol=as.integer(args[3]), nrow=as.integer(args[4]))
 transformed = image_transform_linearized(input, as.integer(args[5]), as.integer(args[6]), as.double(args[7]), 
 as.double(args[8]), as.double(args[9]), as.double(args[10]), as.double(args[11]), as.double(args[12]), 
 as.double(args[13]), as.integer(args[14]),as.integer(args[15]))
+
 writeMM(as(transformed, "CsparseMatrix"), paste(args[2], "B", sep=""))

@@ -28,7 +28,6 @@ import org.apache.sysds.runtime.matrix.data.MatrixValue;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -36,76 +35,59 @@ import org.junit.runners.Parameterized;
 @RunWith(Parameterized.class)
 @net.jcip.annotations.NotThreadSafe
 
-public class BuiltinImageTransformLinTest extends AutomatedTestBase {
-	private final static String TEST_NAME = "image_transform_linearized";
+public class BuiltinImageShearLinTest extends AutomatedTestBase {
+	private final static String TEST_NAME = "image_shear_linearized";
 	private final static String TEST_DIR = "functions/builtin/";
-	private final static String TEST_CLASS_DIR = TEST_DIR + BuiltinImageTransformLinTest.class.getSimpleName() + "/";
+	private final static String TEST_CLASS_DIR = TEST_DIR + BuiltinImageShearLinTest.class.getSimpleName() + "/";
 
 	private final static double eps = 1e-10;
-
 	private final static double spSparse = 0.1;
 	private final static double spDense = 0.9;
-	private final static double fill_value = 0.0;
-
+	/*
+	 * private final static int s_rows = 200; private final static int s_cols = 120; private final static int n_imgs = 5;
+	 * 
+	 * private final static double shearX = 0.0; private final static double shearY = 0.2; private final static double
+	 * fill_value = 128.0;
+	 */
 	@Parameterized.Parameter(0)
 	public int s_rows;
 	@Parameterized.Parameter(1)
 	public int s_cols;
 	@Parameterized.Parameter(2)
 	public int n_imgs;
-
-	public double a;
-	public double b;
-	public double c;
-	public double d;
-	public double e;
-	public double f;
+	@Parameterized.Parameter(3)
+	public double shearX;
+	@Parameterized.Parameter(4)
+	public double shearY;
+	@Parameterized.Parameter(5)
+	public double fill_value;
 
 	@Parameterized.Parameters
 	public static Collection<Object[]> data() {
-		return Arrays.asList(new Object[][] {{16, 15, 50}, {32, 31, 100}, {64, 64, 200}, {127, 128, 100}, {256, 256, 200},
-			{500, 135, 100}});
+		return Arrays.asList(new Object[][] {{16, 15, 200, 0.0, 0.7, 255.0}, {31, 32, 100, 0.9, -0.2, 0.0},
+			{64, 64, 100, -0.3, 0.01, 50.0}, {128, 127, 100, 0.0, 0.55, 80.0}, {256, 256, 100, 0.11, 0.0, 25.0}
+
+		});
 	}
 
 	@Override
 	public void setUp() {
-		// rotate 30 degrees around the center
-		a = Math.sqrt(3) / 2;
-		b = -1.0 / 2.0;
-		c = s_cols / 4.0 * (3 - Math.sqrt(3));
-		d = 1.0 / 2.0;
-		e = Math.sqrt(3) / 2;
-		f = s_rows / 4.0 * (1 - Math.sqrt(3));
-
 		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] {"B"}));
 	}
 
 	@Test
-	public void testImageTransformLinMatrixDenseCP() {
-		runImageTransformLinTest(false, ExecType.CP);
+	public void testImageShearLinDenseCP() {
+		runImageShearLinTest(false, ExecType.CP);
 	}
 
 	@Test
-	public void testImageTransformLinMatrixSparseCP() {
-		runImageTransformLinTest(true, ExecType.CP);
+	public void testImageShearLinSparseCP() {
+		runImageShearLinTest(true, ExecType.CP);
 	}
 
-	@Ignore
-	@Test
-	public void testImageTransformLinMatrixDenseSP() {
-		runImageTransformLinTest(false, ExecType.SPARK);
-	}
-
-	@Ignore
-	@Test
-	public void testImageTransformLinMatrixSparseSP() {
-		runImageTransformLinTest(false, ExecType.SPARK);
-	}
-
-	private void runImageTransformLinTest(boolean sparse, ExecType instType) {
+	private void runImageShearLinTest(boolean sparse, ExecType instType) {
 		ExecMode platformOld = setExecMode(instType);
 		disableOutAndExpectedDeletion();
-		setOutputBuffering(true);
 
 		try {
 			loadTestConfiguration(getTestConfiguration(TEST_NAME));
@@ -114,23 +96,19 @@ public class BuiltinImageTransformLinTest extends AutomatedTestBase {
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
 			programArgs = new String[] {"-nvargs", "in_file=" + input("A"), "out_file=" + output("B"),
-				"width=" + s_cols * s_rows, "height=" + n_imgs, "out_w=" + s_cols, "out_h=" + s_rows * 1.2, "a=" + a,
-				"b=" + b, "c=" + c, "d=" + d, "e=" + e, "f=" + f, "fill_value=" + fill_value, "s_cols=" + s_cols,
-				"s_rows=" + s_rows};
+				"width=" + s_cols * s_rows, "height=" + n_imgs, "shear_x=" + shearX, "shear_y=" + shearY,
+				"fill_value=" + fill_value, "s_cols=" + s_cols, "s_rows=" + s_rows};
 
-			fullRScriptName = HOME + TEST_NAME + ".R";
-			rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + expectedDir() + " " + s_cols * s_rows + " "
-				+ n_imgs + " " + s_cols + " " + (s_rows * 1.2) + " " + a + " " + b + " " + c + " " + d + " " + e + " " + f
-				+ " " + fill_value + " " + s_cols + " " + s_rows;
-
-			// generate actual dataset
-			double[][] A = getRandomMatrix(n_imgs, s_cols * s_rows, 0, 255, sparsity, 7);
+			double[][] A = getRandomMatrix(n_imgs, s_rows * s_cols, 0, 255, sparsity, 7);
 			writeInputMatrixWithMTD("A", A, true);
+
+			fullRScriptName = HOME + "image_transform_linearized.R";
+			rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + expectedDir() + " " + s_cols * s_rows + " "
+				+ n_imgs + " " + s_cols + " " + s_rows + " " + 1 + " " + shearX + " " + 0 + " " + shearY + " " + 1 + " " + 0
+				+ " " + fill_value + " " + s_cols + " " + s_rows;
 
 			runTest(true, false, null, -1);
 			runRScript(true);
-
-			// compare matrices
 
 			HashMap<MatrixValue.CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir("B");
 			HashMap<MatrixValue.CellIndex, Double> rfile = readRMatrixFromExpectedDir("B");
@@ -140,4 +118,5 @@ public class BuiltinImageTransformLinTest extends AutomatedTestBase {
 			rtplatform = platformOld;
 		}
 	}
+
 }

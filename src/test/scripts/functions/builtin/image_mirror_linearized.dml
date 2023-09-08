@@ -1,0 +1,43 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+input_batched = read($in_file);
+num_images = nrow(input_batched);
+m_batched = ncol(input_batched);
+img_rows = $img_rows;
+img_cols = $img_cols;
+img_out_flattened_x = matrix(0, rows=num_images, cols=m_batched);
+img_out_flattened_y = matrix(0, rows=num_images, cols=m_batched);
+input_matrix = matrix(input_batched, rows=num_images, cols=m_batched);
+for(i in 1:num_images) {
+    image_i = matrix(input_matrix[i,], rows=img_rows, cols=img_cols);
+    img_out_x = img_mirror(image_i, TRUE);
+    img_out_y = img_mirror(image_i, FALSE);
+    img_out_flattened_x[i,] = matrix(img_out_x, rows=1, cols=m_batched);
+    img_out_flattened_y[i,] = matrix(img_out_y, rows=1, cols=m_batched);
+}
+write(img_out_flattened_x, $x_out_reshape_file);
+write(img_out_flattened_y, $y_out_reshape_file);
+imgs = matrix(input_batched, rows=num_images, cols=m_batched);
+img_out_x_linearized = img_mirror_linearized(imgs, TRUE, img_rows, img_cols);
+img_out_y_linearized = img_mirror_linearized(imgs, FALSE, img_rows, img_cols);
+write(img_out_x_linearized, $x_out_file);
+write(img_out_y_linearized, $y_out_file);

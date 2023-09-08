@@ -155,6 +155,7 @@ public enum Builtins {
 	HYPERBAND("hyperband", true),
 	IFELSE("ifelse", false),
 	IMG_MIRROR("img_mirror", true),
+	IMG_MIRROR_LINEARIZED("img_mirror_linearized", true),
 	IMG_BRIGHTNESS("img_brightness", true),
 	IMG_BRIGHTNESS_LINEARIZED("img_brightness_linearized", true),
 	IMG_CROP("img_crop", true),

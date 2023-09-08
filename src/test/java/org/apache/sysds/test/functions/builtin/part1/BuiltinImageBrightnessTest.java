@@ -29,8 +29,7 @@ import org.apache.sysds.test.TestUtils;
 
 import java.util.HashMap;
 
-public class BuiltinImageBrightnessTest extends AutomatedTestBase
-{
+public class BuiltinImageBrightnessTest extends AutomatedTestBase {
 	private final static String TEST_NAME = "image_brightness";
 	private final static String TEST_DIR = "functions/builtin/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + BuiltinImageBrightnessTest.class.getSimpleName() + "/";
@@ -43,54 +42,53 @@ public class BuiltinImageBrightnessTest extends AutomatedTestBase
 
 	@Override
 	public void setUp() {
-		addTestConfiguration(TEST_NAME,new TestConfiguration(TEST_CLASS_DIR, TEST_NAME,new String[]{"B"}));
+		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] {"B"}));
 	}
 
 	@Test
-	public void testImageBrightnessMatrixDenseCP() {runImageBrightnessTest(false, ExecType.CP);
+	public void testImageBrightnessMatrixDenseCP() {
+		runImageBrightnessTest(false, ExecType.CP);
 	}
 
 	@Test
-	public void testImageBrightnessMatrixSparseCP() {runImageBrightnessTest(true, ExecType.CP);
+	public void testImageBrightnessMatrixSparseCP() {
+		runImageBrightnessTest(true, ExecType.CP);
 	}
 
 	@Test
-	public void testImageBrightnessMatrixDenseSP() {runImageBrightnessTest(false, ExecType.SPARK);
+	public void testImageBrightnessMatrixDenseSP() {
+		runImageBrightnessTest(false, ExecType.SPARK);
 	}
 
 	@Test
-	public void testImageBrightnessMatrixSparseSP() {runImageBrightnessTest(false,ExecType.SPARK);
+	public void testImageBrightnessMatrixSparseSP() {
+		runImageBrightnessTest(false, ExecType.SPARK);
 	}
 
-	private void runImageBrightnessTest(boolean sparse, ExecType instType)
-	{
+	private void runImageBrightnessTest(boolean sparse, ExecType instType) {
 		ExecMode platformOld = setExecMode(instType);
-		
-		try
-		{
+
+		try {
 			loadTestConfiguration(getTestConfiguration(TEST_NAME));
 			double sparsity = sparse ? spSparse : spDense;
 
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[]{"-nvargs",
-					"in_file=" + input("A"),
-					"out_file=" + output("B"),
-			};
+			programArgs = new String[] {"-nvargs", "in_file=" + input("A"), "out_file=" + output("B"),};
 
 			fullRScriptName = HOME + TEST_NAME + ".R";
 			rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + expectedDir();
 
-			//generate actual dataset
+			// generate actual dataset
 			double[][] A = getRandomMatrix(rows, cols, 0, 255, sparsity, 7);
 			writeInputMatrixWithMTD("A", A, true);
 
 			runTest(true, false, null, -1);
 			runRScript(true);
 
-			//compare matrices
+			// compare matrices
 			HashMap<MatrixValue.CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir("B");
-			HashMap<MatrixValue.CellIndex, Double> rfile  = readRMatrixFromExpectedDir("B");
+			HashMap<MatrixValue.CellIndex, Double> rfile = readRMatrixFromExpectedDir("B");
 			TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
 
 		}

@@ -34,7 +34,7 @@
 # result     Output Matrix
 # ---------------------------------------------------------------------------
 
-page_rank = function (Matrix[Double] G, Matrix[Double] p,
+pageRank = function (Matrix[Double] G, Matrix[Double] p,
   Matrix[Double] e, Matrix[Double] u,
   Double alpha = 0.85, Integer max_iteration = 6)
   return (Matrix[double] result_matrix)

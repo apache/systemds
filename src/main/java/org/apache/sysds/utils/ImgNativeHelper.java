@@ -19,7 +19,31 @@
 
 package org.apache.sysds.utils;
 
+import org.apache.commons.lang.NotImplementedException;
+import org.apache.commons.lang.SystemUtils;
+
 public class ImgNativeHelper extends NativeHelper {
+
+    static {
+        final String blas = "openblas";
+        try{
+            if(SystemUtils.IS_OS_LINUX) {
+                String libname = "systemds_"+blas+"-Linux-x86_64";
+                System.loadLibrary(libname);
+            }else if (SystemUtils.IS_OS_WINDOWS) {
+                String libname = "systemds_"+blas+"-Windows-x86_64";
+                System.loadLibrary(libname);
+            }else {
+                //String libname = "systemds_"+blas+"-Darwin-x86_64";
+                //System.loadLibrary(libname);
+                throw new NotImplementedException("OS Currently Not Supported");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+
+    }
 
     //image rotation
     public static native void imageRotate(double[] img_in, int rows, int cols, double radians, double fill_value, double[] img_out);

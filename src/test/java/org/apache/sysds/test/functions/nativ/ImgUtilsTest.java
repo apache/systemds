@@ -16,22 +16,18 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+
 package org.apache.sysds.test.functions.nativ;
 
 import org.apache.sysds.utils.ImgNativeHelper;
-import org.apache.sysds.utils.NativeHelper;
 import org.junit.Test;
-
 import static org.junit.Assert.assertArrayEquals;
 
 public class ImgUtilsTest {
 
-    /*static {
-        System.loadLibrary("systemds_openblas-Darwin-x86_64");
-    }*/
-
     @Test
     public void testImageRotation90And45() {
+
         // Input image dimensions
         int rows = 3;
         int cols = 3;

@@ -29,7 +29,7 @@
 #include "systemds.h"
 #include "imgUtils.h"
 
-JNIEXPORT void JNICALL Java_org_apache_sysds_utils_NativeHelper_imageRotate
+JNIEXPORT void JNICALL Java_org_apache_sysds_utils_ImgNativeHelper_imageRotate
     (JNIEnv* env, jclass clazz, jdoubleArray img_in, jint rows, jint cols, jdouble radians, jdouble fill_value, jdoubleArray img_out) {
     // Get input image data
 
@@ -50,7 +50,7 @@ JNIEXPORT void JNICALL Java_org_apache_sysds_utils_NativeHelper_imageRotate
     env->ReleaseDoubleArrayElements(img_in, img_in_data, JNI_ABORT);
 }
 
-JNIEXPORT jdoubleArray JNICALL Java_org_apache_sysds_utils_NativeHelper_imageCutout
+JNIEXPORT jdoubleArray JNICALL Java_org_apache_sysds_utils_ImgNativeHelper_imageCutout
     (JNIEnv* env, jclass cls, jdoubleArray img_in, jint rows, jint cols, jint x, jint y, jint width, jint height, jdouble fill_value) {
     // Convert the Java 1D array to a double*
     jdouble* img_in_arr = env->GetDoubleArrayElements(img_in, nullptr);
@@ -69,7 +69,7 @@ JNIEXPORT jdoubleArray JNICALL Java_org_apache_sysds_utils_NativeHelper_imageCut
     return img_out;
 }
 
-JNIEXPORT jdoubleArray JNICALL Java_org_apache_sysds_utils_NativeHelper_cropImage(JNIEnv *env, jclass,
+JNIEXPORT jdoubleArray JNICALL Java_org_apache_sysds_utils_ImgNativeHelper_cropImage(JNIEnv *env, jclass,
     jdoubleArray img_in, jint orig_w, jint orig_h, jint w, jint h, jint x_offset, jint y_offset) {
     jsize length = env->GetArrayLength(img_in);
     double *img_in_array = env->GetDoubleArrayElements(img_in, 0);
@@ -101,7 +101,7 @@ JNIEXPORT jdoubleArray JNICALL Java_org_apache_sysds_utils_NativeHelper_cropImag
     return img_out_java;
 }
 
-/*JNIEXPORT jdoubleArray JNICALL Java_org_apache_sysds_utils_NativeHelper_shearImage(JNIEnv *env, jclass,
+/*JNIEXPORT jdoubleArray JNICALL Java_org_apache_sysds_utils_ImgNativeHelper_shearImage(JNIEnv *env, jclass,
     jdoubleArray img_in, jint width, jint height, jdouble shear_x, jdouble shear_y, jdouble fill_value) {
 
     // Convert the Java input double array to a C++ double array
@@ -128,7 +128,7 @@ JNIEXPORT jdoubleArray JNICALL Java_org_apache_sysds_utils_NativeHelper_cropImag
     return img_out_java;
 }*/
 
-JNIEXPORT void JNICALL Java_org_apache_sysds_utils_NativeHelper_imgTranslate(JNIEnv *env, jclass cls,
+JNIEXPORT void JNICALL Java_org_apache_sysds_utils_ImgNativeHelper_imgTranslate(JNIEnv *env, jclass cls,
                                                           jdoubleArray img_in, jdouble offset_x, jdouble offset_y,
                                                           jint in_w, jint in_h, jint out_w, jint out_h,
                                                           jdouble fill_value, jdoubleArray img_out) {

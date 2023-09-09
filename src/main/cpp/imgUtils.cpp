@@ -198,8 +198,10 @@ void img_translate(double* img_in, double offset_x, double offset_y,
                    int in_w, int in_h, int out_w, int out_h, double fill_value, double* img_out) {
     int w = out_w;
     int h = out_h;
+
     offset_x = round(offset_x);
     offset_y = round(offset_y);
+
 
     int start_x = 0 - static_cast<int>(offset_x);
     int start_y = 0 - static_cast<int>(offset_y);

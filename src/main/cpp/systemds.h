@@ -114,15 +114,6 @@ JNIEXPORT jboolean JNICALL Java_org_apache_sysds_utils_NativeHelper_conv2dSparse
 JNIEXPORT void JNICALL Java_org_apache_sysds_utils_NativeHelper_setMaxNumThreads
   (JNIEnv *, jclass, jint);
 
- /*
-    * Class:     org_apache_sysds_utils_NativeHelper
-    * Method:    testNativeBindingWithDgemm
-    * Signature: (CCIIID[DI[DID[DI)V
-   */
-
-JNIEXPORT void JNICALL Java_org_apache_sysds_utils_NativeHelper_testNativeBindingWithDgemm
-   (JNIEnv *, jclass, jchar, jchar, jint, jint, jint, jdouble, jdoubleArray, jint, jdoubleArray, jint, jdouble, jdoubleArray, jint);
-
 /*
  * Class:     org_apache_sysds_utils_NativeHelper
  * Method:    imageRotate

@@ -69,6 +69,7 @@ jobs:
           "**.functions.builtin.part2.**",
           "**.functions.frame.**,**.functions.indexing.**,**.functions.io.**,**.functions.iogen.**",
           "**.functions.dnn.**",
+          "**.functions.nativ.**",
           "**.functions.paramserv.**",
           "**.functions.recompile.**,**.functions.misc.**,**.functions.mlcontext.**",
           "**.functions.nary.**,**.functions.quaternary.**",

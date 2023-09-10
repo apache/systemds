@@ -22,20 +22,25 @@ package org.apache.sysds.utils;
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.commons.lang.SystemUtils;
 
+import java.io.File;
+
 public class ImgNativeHelper extends NativeHelper {
 
     static {
         final String blas = "openblas";
         try{
             if(SystemUtils.IS_OS_LINUX) {
-                String libname = "systemds_"+blas+"-Linux-x86_64";
-                System.loadLibrary(libname);
+                String libname = blas+"-Linux-x86_64.so";
+                System.load(System.getProperty("user.dir")
+                        + "/src/main/cpp/lib/libsystemds_"+libname);
             }else if (SystemUtils.IS_OS_WINDOWS) {
-                String libname = "systemds_"+blas+"-Windows-x86_64";
-                System.loadLibrary(libname);
+                String libname = blas+"-Windows-x86_64.dll";
+                System.load(System.getProperty("user.dir")
+                        + "/src/main/cpp/lib/".replace("/",File.separator)+"libsystemds_"+libname);
             }else {
-                //String libname = "systemds_"+blas+"-Darwin-x86_64";
-                //System.loadLibrary(libname);
+                /*String libname = "systemds_"+blas+"-Darwin-x86_64";
+                System.load(System.getProperty("user.dir")
+                        + "/src/main/cpp/lib/libsystemds_"+blas+"-Darwin-x86_64.dylib");*/
                 throw new NotImplementedException("OS Currently Not Supported");
             }
         } catch (Exception e) {

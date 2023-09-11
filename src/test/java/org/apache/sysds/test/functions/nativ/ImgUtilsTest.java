@@ -19,12 +19,14 @@
 
 package org.apache.sysds.test.functions.nativ;
 
-import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.utils.ImgNativeHelper;
 import org.junit.Test;
 import static org.junit.Assert.assertArrayEquals;
 
-public class ImgUtilsTest extends AutomatedTestBase {
+public class ImgUtilsTest {
+
+    private final String blasType = "mkl";
+    private final ImgNativeHelper imgNativeHelper = new ImgNativeHelper(blasType);
 
     @Test
     public void testImageRotation90And45() {
@@ -57,12 +59,13 @@ public class ImgUtilsTest extends AutomatedTestBase {
 
         // Create the output image array
         double[] img_out = new double[rows * cols];
-        ImgNativeHelper.imageRotate(img_in, rows, cols, radians, fill_value, img_out);
+        imgNativeHelper.imageRotate(img_in, rows, cols, radians, fill_value, img_out);
         assertArrayEquals(expected_img_out_90, img_out, 0.0001);
         //rotate by 45
-        ImgNativeHelper.imageRotate(img_in, rows, cols, radians/2, fill_value, img_out);
+        imgNativeHelper.imageRotate(img_in, rows, cols, radians/2, fill_value, img_out);
         assertArrayEquals(expected_img_out_45, img_out, 0.0001);
     }
+
 
     @Test
     public void testImageRotation90And45_4x4() {
@@ -99,10 +102,10 @@ public class ImgUtilsTest extends AutomatedTestBase {
 
         // Create the output image array
         double[] img_out = new double[rows * cols];
-        ImgNativeHelper.imageRotate(img_in, rows, cols, radians, fill_value, img_out);
+        imgNativeHelper.imageRotate(img_in, rows, cols, radians, fill_value, img_out);
         assertArrayEquals(expected_img_out_90, img_out, 0.0001);
         //rotate by 45
-        ImgNativeHelper.imageRotate(img_in, rows, cols, radians/2, fill_value, img_out);
+        imgNativeHelper.imageRotate(img_in, rows, cols, radians/2, fill_value, img_out);
         assertArrayEquals(expected_img_out_45, img_out, 0.0001);
     }
 
@@ -142,7 +145,7 @@ public class ImgUtilsTest extends AutomatedTestBase {
         double[] img_out = new double[rows * cols];
 
         // Rotate the image
-        ImgNativeHelper.imageRotate(img_in, rows, cols, radians, fill_value, img_out);
+        imgNativeHelper.imageRotate(img_in, rows, cols, radians, fill_value, img_out);
 
         // Compare the output image with the expected image
         assertArrayEquals(expected_img_out, img_out, 0.0001);
@@ -180,7 +183,7 @@ public class ImgUtilsTest extends AutomatedTestBase {
         double[] img_out = new double[rows * cols];
 
         // Rotate the image
-        ImgNativeHelper.imageRotate(img_in, rows, cols, radians, fill_value, img_out);
+        imgNativeHelper.imageRotate(img_in, rows, cols, radians, fill_value, img_out);
 
         // Compare the output image with the expected image
         assertArrayEquals(expected_img_out, img_out, 0.0001);
@@ -205,7 +208,7 @@ public class ImgUtilsTest extends AutomatedTestBase {
         double fill_value = 0.0;
 
         // Perform image cutout using JNI
-        double[] img_out = ImgNativeHelper.imageCutout(img_in, rows, cols, x, y, width, height, fill_value);
+        double[] img_out = imgNativeHelper.imageCutout(img_in, rows, cols, x, y, width, height, fill_value);
 
         // Expected output image after cutout
         double[] expectedOutput = {
@@ -237,7 +240,7 @@ public class ImgUtilsTest extends AutomatedTestBase {
 
         double[] expectedOutput = img_in; // Expect no change since the cutout is invalid
 
-        double[] img_out = ImgNativeHelper.imageCutout(img_in, rows, cols, x, y, width, height, fill_value);
+        double[] img_out = imgNativeHelper.imageCutout(img_in, rows, cols, x, y, width, height, fill_value);
         assertArrayEquals(expectedOutput, img_out,0.0001);
     }
 
@@ -265,7 +268,7 @@ public class ImgUtilsTest extends AutomatedTestBase {
                 13.0, 14.0, 15.0, 16.0
         };
 
-        double[] img_out = ImgNativeHelper.imageCutout(img_in, rows, cols, x, y, width, height, fill_value);
+        double[] img_out = imgNativeHelper.imageCutout(img_in, rows, cols, x, y, width, height, fill_value);
         assertArrayEquals(expectedOutput, img_out,0.0001);
     }
 
@@ -290,7 +293,7 @@ public class ImgUtilsTest extends AutomatedTestBase {
                 10.0, 11.0
         };
 
-        double[] img_out = ImgNativeHelper.cropImage(img_in, orig_w, orig_h, w, h, x_offset, y_offset);
+        double[] img_out = imgNativeHelper.cropImage(img_in, orig_w, orig_h, w, h, x_offset, y_offset);
 
         assertArrayEquals(expectedOutput, img_out,0.0001);     }
 
@@ -312,7 +315,7 @@ public class ImgUtilsTest extends AutomatedTestBase {
 
         double[] expectedOutput = img_in; // Expect no change since the crop is invalid
 
-        double[] img_out = ImgNativeHelper.cropImage(img_in, orig_w, orig_h, w, h, x_offset, y_offset);
+        double[] img_out = imgNativeHelper.cropImage(img_in, orig_w, orig_h, w, h, x_offset, y_offset);
         assertArrayEquals(expectedOutput, img_out,0.0001);
     }
 
@@ -334,7 +337,7 @@ public class ImgUtilsTest extends AutomatedTestBase {
         double offset_x = 1.5;
         double offset_y = 1.5;
 
-        ImgNativeHelper.imgTranslate(img_in, offset_x, offset_y, in_w, in_h, out_w, out_h, fill_value, img_out);
+        imgNativeHelper.imgTranslate(img_in, offset_x, offset_y, in_w, in_h, out_w, out_h, fill_value, img_out);
 
         // Expected output based on the given offsets and fill value
         double[] expectedOutput = {
@@ -368,7 +371,7 @@ public class ImgUtilsTest extends AutomatedTestBase {
         double offset_x = -0.5; // Negative offset in X direction
         double offset_y = -0.5; // Negative offset in Y direction
 
-        ImgNativeHelper.imgTranslate(img_in, offset_x, offset_y, in_w, in_h, out_w, out_h, fill_value, img_out);
+        imgNativeHelper.imgTranslate(img_in, offset_x, offset_y, in_w, in_h, out_w, out_h, fill_value, img_out);
 
         // Expected output based on the given offsets and fill value
         double[] expectedOutput = {
@@ -401,7 +404,7 @@ public class ImgUtilsTest extends AutomatedTestBase {
         double offset_x = -0.5; // Negative offset in X direction
         double offset_y = 0.5; // Negative offset in Y direction
 
-        ImgNativeHelper.imgTranslate(img_in, offset_x, offset_y, in_w, in_h, out_w, out_h, fill_value, img_out);
+        imgNativeHelper.imgTranslate(img_in, offset_x, offset_y, in_w, in_h, out_w, out_h, fill_value, img_out);
 
         // Expected output based on the given offsets and fill value
         double[] expectedOutput = {
@@ -434,7 +437,7 @@ public class ImgUtilsTest extends AutomatedTestBase {
         double offset_x = 0.5; // Negative offset in X direction
         double offset_y = -0.5; // Negative offset in Y direction
 
-        ImgNativeHelper.imgTranslate(img_in, offset_x, offset_y, in_w, in_h, out_w, out_h, fill_value, img_out);
+        imgNativeHelper.imgTranslate(img_in, offset_x, offset_y, in_w, in_h, out_w, out_h, fill_value, img_out);
 
         // Expected output based on the given offsets and fill value
         double[] expectedOutput = {
@@ -449,8 +452,4 @@ public class ImgUtilsTest extends AutomatedTestBase {
         assertArrayEquals(expectedOutput, img_out, 1e-9); // Compare arrays with a small epsilon
     }
 
-    @Override
-    public void setUp() {
-
-    }
 }

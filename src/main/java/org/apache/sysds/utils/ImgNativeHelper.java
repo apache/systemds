@@ -24,16 +24,13 @@ import org.apache.commons.lang.SystemUtils;
 import java.io.File;
 
 public class ImgNativeHelper extends NativeHelper {
-    private String blasType;
+    private final String blasType;
 
-    // Constructor that accepts the BLAS type
     public ImgNativeHelper(String blasType) {
         if(blasType != null) this.blasType = blasType;
         else this.blasType = "openblas";
         loadNativeLibrary();
     }
-
-    // Static initialization block is removed
 
     // Method to load the native library based on the specified BLAS type
     private void loadNativeLibrary() {
@@ -43,10 +40,10 @@ public class ImgNativeHelper extends NativeHelper {
                 System.load("/src/main/cpp/lib/libsystemds_" + libname);
             } else if (SystemUtils.IS_OS_WINDOWS) {
                 String libname = blasType + "-Windows-x86_64.dll";
-                System.load(System.getProperty("user.dir") + "/src/main/cpp/lib/".replace("/", File.separator) + "libsystemds_" + libname);
+                System.load("/src/main/cpp/lib/".replace("/", File.separator) + "libsystemds_" + libname);
             } else if (SystemUtils.IS_OS_MAC || SystemUtils.IS_OS_MAC_OSX) {
                // String libname = "systemds_" + blasType + "-Darwin-x86_64";
-                System.load(System.getProperty("user.dir") + "/src/main/cpp/lib/libsystemds_" + blasType + "-Darwin-x86_64.dylib");
+                System.load("/src/main/cpp/lib/libsystemds_" + blasType + "-Darwin-x86_64.dylib");
             }
         } catch (Exception e) {
             e.printStackTrace();

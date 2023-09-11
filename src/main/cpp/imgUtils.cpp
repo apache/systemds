@@ -19,7 +19,7 @@
 
 #include <iostream>
 #include <cmath>
-#include "mkl.h"
+#include <cblas.h>
 
 using namespace std;
 

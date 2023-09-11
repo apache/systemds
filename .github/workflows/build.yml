@@ -76,6 +76,10 @@ jobs:
         distribution: ${{ matrix.javadist }}
         java-version: ${{ matrix.java }}
         cache: 'maven'
-
+    - name: Build C++
+      run: |
+          cd /github/workspace/src/main/cpp
+          ./build.sh
+          ls lib
     - name: Build
       run: mvn package -D maven.test.skip=true

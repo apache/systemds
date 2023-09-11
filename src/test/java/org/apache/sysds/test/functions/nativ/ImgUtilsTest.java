@@ -19,11 +19,12 @@
 
 package org.apache.sysds.test.functions.nativ;
 
+import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.utils.ImgNativeHelper;
 import org.junit.Test;
 import static org.junit.Assert.assertArrayEquals;
 
-public class ImgUtilsTest {
+public class ImgUtilsTest extends AutomatedTestBase {
 
     @Test
     public void testImageRotation90And45() {
@@ -52,6 +53,48 @@ public class ImgUtilsTest {
                 2,3,6,
                 1,5,9,
                 4,7,8
+        };
+
+        // Create the output image array
+        double[] img_out = new double[rows * cols];
+        ImgNativeHelper.imageRotate(img_in, rows, cols, radians, fill_value, img_out);
+        assertArrayEquals(expected_img_out_90, img_out, 0.0001);
+        //rotate by 45
+        ImgNativeHelper.imageRotate(img_in, rows, cols, radians/2, fill_value, img_out);
+        assertArrayEquals(expected_img_out_45, img_out, 0.0001);
+    }
+
+    @Test
+    public void testImageRotation90And45_4x4() {
+
+        // Input image dimensions
+        int rows = 4;
+        int cols = 4;
+        // Input image
+        double[] img_in = {
+                1,2,3,5,
+                4,5,6,5,
+                7,8,9,5,
+                5,5,5,5,
+        };
+        // Rotation angle in radians
+        double radians = Math.PI / 2;
+        // Fill value for the output image
+        double fill_value = 0.0;
+        // Expected output image
+        double[] expected_img_out_90 = {
+                5,5,5,5,
+                3,6,9,5,
+                2,5,8,5,
+                1,4,7,5
+        };
+
+
+        double[] expected_img_out_45 = {
+                0,3,5,0,
+                2,5,6,5,
+                4,5,8,5,
+                0,7,5,0
         };
 
         // Create the output image array
@@ -404,5 +447,10 @@ public class ImgUtilsTest {
         };
 
         assertArrayEquals(expectedOutput, img_out, 1e-9); // Compare arrays with a small epsilon
+    }
+
+    @Override
+    public void setUp() {
+
     }
 }

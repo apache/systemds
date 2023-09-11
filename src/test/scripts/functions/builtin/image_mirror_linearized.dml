@@ -1,0 +1,19 @@
+input =  read($in_file);
+
+n = nrow(input);
+m = ncol(input);
+
+input_flattened_row = matrix(input, rows=1, cols=n*m);
+
+
+img_out_flattened_x = img_mirror_linearized(input_flattened_row, TRUE, n, m);
+img_out_flattened_y = img_mirror_linearized(input_flattened_row, FALSE, n, m);
+img_out_flattened_reshape_xflip = matrix( img_out_flattened_x[1,], rows=n ,cols=m)
+img_out_flattened_reshape_yflip = matrix( img_out_flattened_y[1,], rows=n ,cols=m)
+
+write(img_out_flattened_reshape_xflip , $x_out_reshape_file);
+write(img_out_flattened_reshape_yflip ,$y_out_reshape_file);
+
+
+
+ 

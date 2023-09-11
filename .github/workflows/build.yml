@@ -78,7 +78,7 @@ jobs:
         cache: 'maven'
     - name: Build C++
       run: |
-          cd /github/workspace/src/main/cpp
+          cd src/main/cpp
           ./build.sh
           ls lib
     - name: Build

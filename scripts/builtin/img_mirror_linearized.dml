@@ -35,7 +35,8 @@
 # R            Output matrix/image  (every row represents a linearized matrix/image)
 # -----------------------------------------------------------------------------------------
 
-m_img_mirror_linearized = function(matrix[double] img_matrix, Boolean horizontal_axis, Integer original_rows, Integer original_cols) return (matrix[double] R) {
+m_img_mirror_linearized = function(matrix[double] img_matrix, Boolean horizontal_axis, 
+Integer original_rows, Integer original_cols) return (matrix[double] R) {
   n = ncol(img_matrix);
   R = matrix(0, rows=nrow(img_matrix), cols=n);
   rows = original_rows;

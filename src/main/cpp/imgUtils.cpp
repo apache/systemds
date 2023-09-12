@@ -19,6 +19,7 @@
 
 #include <iostream>
 #include <cmath>
+#include <cstring>
 #include <cblas.h>
 
 using namespace std;
@@ -169,7 +170,7 @@ double* imageCrop(double* img_in, int orig_w, int orig_h, int w, int h, int x_of
     double* temp_mask = new double[w * h];
 
     // Set mask elements to 0 outside the cropped region and 1 inside
-    std::memset(mask, 0, orig_w * orig_h * sizeof(double));
+    memset(mask, 0, orig_w * orig_h * sizeof(double));
     for(int i = 0; i < h * w; i++) {
      temp_mask[i] = 1;
     }

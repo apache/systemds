@@ -21,6 +21,7 @@
 #-------------------------------------------------------------
 
 # A script to execute the tests inside the docker container.
+apk --no-cache add libopenblas-dev
 
 cd /github/workspace/src/main/cpp
 ./build.sh

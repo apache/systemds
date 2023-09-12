@@ -1,9 +1,0 @@
-
-M = matrix("1 2 3 4 5 6 7 8 9", rows=1, cols=9)
-
-
-
-A_linearized = img_translate_linearized(M, 0, 0, 4, 4, 11, 3, 3)
-
-
-write(A_linearized, "output.txt", format='csv')

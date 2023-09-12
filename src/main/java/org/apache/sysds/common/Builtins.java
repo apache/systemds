@@ -157,6 +157,7 @@ public enum Builtins {
 	IMG_MIRROR("img_mirror", true),
 	IMG_MIRROR_LINEARIZED("img_mirror_linearized", true),
 	IMG_BRIGHTNESS("img_brightness", true),
+	IMG_TRANSLATE_LINEARIZED("img_translate_linearized", true),
 	IMG_CROP("img_crop", true),
 	IMG_TRANSFORM("img_transform", true),
 	IMG_TRANSLATE("img_translate", true),

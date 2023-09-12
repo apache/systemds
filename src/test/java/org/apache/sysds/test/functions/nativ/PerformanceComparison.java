@@ -22,6 +22,7 @@ package org.apache.sysds.test.functions.nativ;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
+import org.apache.sysds.utils.ImgNativeHelper;
 import org.junit.Test;
 
 import java.util.Random;
@@ -41,6 +42,8 @@ public class PerformanceComparison extends AutomatedTestBase {
     private final static int x_offset = 12;
     private final static int y_offset = 24;
     private final static float size = 0.8f;
+
+    private final ImgNativeHelper imgNativeHelper = new ImgNativeHelper("mkl");
 
     @Override
     public void setUp() {
@@ -79,22 +82,22 @@ public class PerformanceComparison extends AutomatedTestBase {
         }
     }
 
-    public void runBlasTests(boolean sparse,int n) {
+    public void runBlasTests(boolean sparse,int n, int seed) {
     double spSparse = 0.1;
     double spDense = 0.9;
     double sparsity = sparse ? spSparse: spDense;
 
-    double[] img_in = PerformanceComparison.generateRandomMatrix(n, n, 0, 255, sparsity, 7);
-    double radians = Math.PI / 2.0; // 45-degree rotation
+    double[] img_in = PerformanceComparison.generateRandomMatrix(n, n, 0, 255, sparsity, seed);
+    double radians = Math.PI / 4.0;
 
     // Benchmark imageRotate
     double[] img_rotated = new double[n * n];
     long startTime = System.currentTimeMillis();
 
-    imageRotate(img_in, n, n, radians, 0.0,img_rotated);
+    imgNativeHelper.imageRotate(img_in, n, n, radians, 0.0,img_rotated);
 
     long endTime = System.currentTimeMillis();
-        System.out.println("imageRotate Execution Time: "+(endTime -startTime)+" ms");
+        System.out.println("image_rotate\nTotal execution time:"+(endTime -startTime));
 
     // Benchmark imageCutout
     int x = 100;
@@ -102,9 +105,9 @@ public class PerformanceComparison extends AutomatedTestBase {
     int width = 200;
     int height = 200;
     startTime =System.currentTimeMillis();
-    double[] img_cutout = imageCutout(img_in, n, n, x, y, width, height, 0.0);
+    double[] img_cutout = imgNativeHelper.imageCutout(img_in, n, n, x, y, width, height, 0.0);
     endTime =System.currentTimeMillis();
-        System.out.println("imageCutout Execution Time: "+(endTime -startTime)+" ms");
+        System.out.println("image_cutout\nTotal execution time:"+(endTime -startTime));
 
     // Benchmark cropImage
     int orig_w = 512;
@@ -114,9 +117,9 @@ public class PerformanceComparison extends AutomatedTestBase {
     int x_offset = 128;
     int y_offset = 128;
     startTime =System.currentTimeMillis();
-    double[] cropped_img = cropImage(img_in, orig_w, orig_h, crop_w, crop_h, x_offset, y_offset);
+    double[] cropped_img = imgNativeHelper.cropImage(img_in, orig_w, orig_h, crop_w, crop_h, x_offset, y_offset);
     endTime =System.currentTimeMillis();
-        System.out.println("cropImage Execution Time: "+(endTime -startTime)+" ms");
+        System.out.println("image_crop\nTotal execution time:"+(endTime -startTime));
 
     // Benchmark imgTranslate
     int in_w = 512;
@@ -126,14 +129,14 @@ public class PerformanceComparison extends AutomatedTestBase {
     double[] img_translated = new double[out_w * out_h];
     startTime =System.currentTimeMillis();
 
-    imgTranslate(img_in, 50.0,50.0,in_w, in_h, out_w, out_h, 0.0,img_translated);
+    imgNativeHelper.imgTranslate(img_in, 50.0,50.0,in_w, in_h, out_w, out_h, 0.0,img_translated);
 
     endTime =System.currentTimeMillis();
-        System.out.println("imgTranslate Execution Time: "+(endTime -startTime)+" ms");
+        System.out.println("image_translate\nTotal execution time:"+(endTime -startTime));
     }
 
 
-    public void runDMLTests(boolean sparse)
+    public void runDMLTests(boolean sparse,int seed)
     {
         String[] testNames = {"image_rotate","image_cutout","image_crop","image_translate"};
         for(String TEST_NAME : testNames) {
@@ -146,13 +149,13 @@ public class PerformanceComparison extends AutomatedTestBase {
                 double sparsity = sparse ? spSparse : spDense;
                 String HOME = SCRIPT_DIR + TEST_DIR;
                 fullDMLScriptName = HOME + TEST_NAME + ".dml";
-                programArgs = new String[]{"-nvargs",
+                programArgs = new String[]{"-stats","-nvargs",
                         "in_file=" + input("A"), "out_file=" + output("B"),
                         "size=" + size, "x_offset=" + x_offset, "y_offset=" + y_offset, "width=" + cols, "height=" + rows
                 };
 
                 //generate actual dataset
-                double[][] A = getRandomMatrix(rows, cols, 0, 255, sparsity, 7);
+                double[][] A = getRandomMatrix(rows, cols, 0, 255, sparsity, seed);
                 writeInputMatrixWithMTD("A", A, true);
 
                 runTest(true, false, null, -1);
@@ -165,13 +168,91 @@ public class PerformanceComparison extends AutomatedTestBase {
     }
 
     @Test
-    public void dmlTests() {
-        runDMLTests(false);
+    public void benchmarkDMLImgImplementations() {
+        for(int i = 0; i < 100; i ++) {
+            runDMLTests(true,i);
+        }
 
     }
 
     @Test
-    public void blasTests() {
-        runBlasTests(false,512);
+    public void benchmarkBlasImgImplementations() {
+        for(int i = 0; i < 100; i ++) {
+            runBlasTests(true,512,7);
+        }
+
+    }
+
+    public static double[][] rotateImage(double[][] image, double angleInRadians) {
+        int width = image[0].length;
+        int height = image.length;
+
+        // Find the center of the image
+        double centerX = width / 2.0;
+        double centerY = height / 2.0;
+
+        // Create the rotation matrix
+        double cosTheta = Math.cos(angleInRadians);
+        double sinTheta = Math.sin(angleInRadians);
+        double[][] rotationMatrix = {
+                {cosTheta, -sinTheta},
+                {sinTheta, cosTheta}
+        };
+
+        // Create a new image for the rotated result
+        double[][] rotatedImage = new double[width][height];
+
+        // Perform the rotation
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                // Translate to the origin
+                double xOffset = x - centerX;
+                double yOffset = y - centerY;
+
+                // Apply rotation
+                double rotatedX = rotationMatrix[0][0] * xOffset + rotationMatrix[0][1] * yOffset;
+                double rotatedY = rotationMatrix[1][0] * xOffset + rotationMatrix[1][1] * yOffset;
+
+                // Translate back to the original position
+                int newX = (int) (rotatedX + centerX);
+                int newY = (int) (rotatedY + centerY);
+
+                // Check if the new coordinates are within bounds
+                if (newX >= 0 && newX < width && newY >= 0 && newY < height) {
+                    rotatedImage[x][y] = image[newY][newX];
+                } else {
+                    // Set a default value for out-of-bounds pixels
+                    rotatedImage[y][x] = 0.0;
+                }
+            }
+        }
+
+        return rotatedImage;
+    }
+
+    public static void printMatrix(double[][] matrix) {
+        int numRows = matrix.length;
+        int numCols = matrix[0].length;
+
+        for (int i = 0; i < numRows; i++) {
+            for (int j = 0; j < numCols; j++) {
+                System.out.print(matrix[i][j] + "\t"); // Add tab for spacing
+            }
+            System.out.println(); // Move to the next line for the next row
+        }
+    }
+
+    public static void main(String[] args) {
+        double[][] inputImage = {
+                {1, 2, 3},
+                {4, 5, 6},
+                {7, 8, 9},
+                {10, 11, 12}
+        };
+
+        // Rotate the image by 90 degrees (π/2 radians)
+        double[][] rotatedImage90 = rotateImage(inputImage, Math.PI / 2);
+
+        printMatrix(rotatedImage90);
     }
 }

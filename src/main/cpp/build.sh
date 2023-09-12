@@ -46,6 +46,14 @@ if ! [ -x "$(command -v patchelf)" ]; then
   exit 1
 fi
 
+# Check if OpenBLAS is installed
+if ! ldconfig -p | grep -q libopenblas; then
+  echo "OpenBLAS not found. Installing OpenBLAS..."
+
+  sudo apt-get update
+  sudo apt-get install libopenblas-dev
+fi
+
 # configure and compile INTEL MKL
 cmake . -B INTEL -DUSE_INTEL_MKL=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER=g++ -DCMAKE_CXX_FLAGS="-DUSE_GNU_THREADING -m64"
 cmake --build INTEL --target install --config Release

@@ -76,14 +76,6 @@ jobs:
         distribution: ${{ matrix.javadist }}
         java-version: ${{ matrix.java }}
         cache: 'maven'
-    - name: Install OpenBLAS
-      run: |
-          sudo apt-get update -y
-          sudo apt-get install libopenblas-dev -y
-    - name: Build C++
-      run: |
-          cd src/main/cpp
-          ./build.sh
-          ls lib
+
     - name: Build
       run: mvn package -D maven.test.skip=true

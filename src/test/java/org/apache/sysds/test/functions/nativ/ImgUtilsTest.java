@@ -25,7 +25,7 @@ import static org.junit.Assert.assertArrayEquals;
 
 public class ImgUtilsTest {
 
-    private final String blasType = "mkl";
+    private final String blasType = "openblas";
     private final ImgNativeHelper imgNativeHelper = new ImgNativeHelper(blasType);
 
     @Test
@@ -221,6 +221,38 @@ public class ImgUtilsTest {
         // Check if the output image matches the expected output
         assertArrayEquals(expectedOutput, img_out,0.0001);
     }
+
+    @Test
+    public void testCutoutImageNonSquare() {
+        // Example input 2D matrix
+        double[] img_in = {
+                1.0, 2.0, 3.0, 4.0,
+                5.0, 6.0, 7.0, 8.0,
+                9.0, 10.0, 11.0, 12.0
+        };
+
+        int rows = 3;
+        int cols = 4;
+        int x = 1;
+        int y = 1;
+        int width = 3;
+        int height = 2;
+        double fill_value = 0.0;
+
+        // Perform image cutout using JNI
+        double[] img_out = imgNativeHelper.imageCutout(img_in, rows, cols, x, y, width, height, fill_value);
+
+        // Expected output image after cutout
+        double[] expectedOutput = {
+                0.0, 0.0, 0.0, 4.0,
+                0.0, 0.0, 0.0, 8.0,
+                9.0, 10.0, 11.0, 12.0
+        };
+
+        // Check if the output image matches the expected output
+        assertArrayEquals(expectedOutput, img_out, 0.0001);
+    }
+
     @Test
     public void testImageCutoutInvalidCutout() {
         double[] img_in = {

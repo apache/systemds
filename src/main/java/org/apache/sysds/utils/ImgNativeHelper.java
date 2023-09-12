@@ -37,7 +37,7 @@ public class ImgNativeHelper extends NativeHelper {
         try {
             if (SystemUtils.IS_OS_LINUX) {
                 String libname = blasType + "-Linux-x86_64.so";
-                System.load("/src/main/cpp/lib/libsystemds_" + libname);
+                System.load(System.getProperty("user.dir")+"/src/main/cpp/lib/libsystemds_" + libname);
                 //System.load("/home/runner/work/systemds/systemds/src/main/cpp/lib/libsystemds_openblas-Linux-x86_64.so");
             } else if (SystemUtils.IS_OS_WINDOWS) {
                 String libname = blasType + "-Windows-x86_64.dll";

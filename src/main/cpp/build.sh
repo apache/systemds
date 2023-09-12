@@ -50,8 +50,8 @@ fi
 if ! ldconfig -p | grep -q libopenblas; then
   echo "OpenBLAS not found. Installing OpenBLAS..."
 
-  sudo apt-get update
-  sudo apt-get install libopenblas-dev
+  apt-get update
+  apt-get install libopenblas-dev -y
 fi
 
 # configure and compile INTEL MKL

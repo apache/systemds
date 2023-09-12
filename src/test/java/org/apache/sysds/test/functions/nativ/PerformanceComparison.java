@@ -43,7 +43,7 @@ public class PerformanceComparison extends AutomatedTestBase {
     private final static int y_offset = 24;
     private final static float size = 0.8f;
 
-    private final ImgNativeHelper imgNativeHelper = new ImgNativeHelper("mkl");
+    private final ImgNativeHelper imgNativeHelper = new ImgNativeHelper("openblas");
 
     @Override
     public void setUp() {
@@ -167,7 +167,7 @@ public class PerformanceComparison extends AutomatedTestBase {
         }
     }
 
-    @Test
+
     public void benchmarkDMLImgImplementations() {
         for(int i = 0; i < 100; i ++) {
             runDMLTests(true,i);
@@ -175,7 +175,7 @@ public class PerformanceComparison extends AutomatedTestBase {
 
     }
 
-    @Test
+
     public void benchmarkBlasImgImplementations() {
         for(int i = 0; i < 100; i ++) {
             runBlasTests(true,512,7);

@@ -17,9 +17,7 @@
  * under the License.
  */
 
-// like BuiltinImageCutoutTest.java but this time input and output are matrices with each row representing a linearized image
- 
-package org.apache.sysds.test.functions.pipelines;
+package org.apache.sysds.test.functions.builtin.part1;
 
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.common.Types.ExecType;
@@ -31,6 +29,9 @@ import org.junit.Test;
 
 import java.util.HashMap;
 import java.util.Random;
+// if A should be generated one row at a time
+//import java.util.stream.Stream;
+//import java.util.stream.DoubleStream;
 
 public class BuiltinImageCutoutLinTest extends AutomatedTestBase {
     private final static String TEST_NAME = "image_cutout_linearized";
@@ -44,11 +45,13 @@ public class BuiltinImageCutoutLinTest extends AutomatedTestBase {
 
     @Override
     public void setUp() {
-        addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] {"B"}));
+        addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] { "B" }));
     }
 
     @Test
-    public void testImageTranslateMatrixDenseCP() { runImageCutoutLinTest(false, ExecType.CP); }
+    public void testImageTranslateMatrixDenseCP() {
+        runImageCutoutLinTest(false, ExecType.CP);
+    }
 
     @Test
     public void testImageTranslateMatrixSparseCP() {
@@ -67,38 +70,49 @@ public class BuiltinImageCutoutLinTest extends AutomatedTestBase {
 
     private void runImageCutoutLinTest(boolean sparse, ExecType instType) {
         ExecMode platformOld = setExecMode(instType);
-		disableOutAndExpectedDeletion();
+        disableOutAndExpectedDeletion();
 
         setOutputBuffering(true);
- 
-        int s_cols = random.nextInt(100) + 1;
+
         int s_rows = random.nextInt(100) + 1;
+        int s_cols = random.nextInt(100) + 1;
         int x = random.nextInt(s_cols);
         int y = random.nextInt(s_rows);
         int width = random.nextInt(s_cols - x) + 1;
         int height = random.nextInt(s_rows - y) + 1;
+        int fill_color = random.nextInt(256);
         int n_imgs = random.nextInt(100) + 1;
-        int fill_color = random.nextInt(256);  
-  
-        
+
         try {
             loadTestConfiguration(getTestConfiguration(TEST_NAME));
             double sparsity = sparse ? spSparse : spDense;
 
             String HOME = SCRIPT_DIR + TEST_DIR;
-            fullDMLScriptName= HOME + TEST_NAME + ".dml";
-            programArgs = new String[] {"-nvargs", "in_file=" + input("A"), "out_file=" + output("B"), "width=" + s_cols*s_rows,
-				"height=" + n_imgs, "x=" + (x+1), "y=" + (y+1), "w=" + width, "h=" + height, "fill_color=" + fill_color, "s_cols=" + s_cols, "s_rows" + s_rows};
+            fullDMLScriptName = HOME + TEST_NAME + ".dml";
+            programArgs = new String[] { "-nvargs", "in_file=" + input("A"), "out_file=" + output("B"),
+                    "width=" + (s_cols * s_rows),
+                    "height=" + n_imgs, "x=" + (x + 1), "y=" + (y + 1), "w=" + width, "h=" + height,
+                    "fill_color=" + fill_color, "s_cols=" + s_cols, "s_rows=" + s_rows };
 
-            //generate actual dataset
-            double[][] A = getRandomMatrix(n_imgs, s_cols*s_rows, 0, 255, sparsity, 7);
+            // overall sparsity of the dataset or a single image/row?
+            double[][] A = getRandomMatrix(n_imgs, s_cols * s_rows, 0, 255, sparsity, 7);
+            /*
+             * double[][] A = new double[n_imgs][s_cols*s_rows];
+             * for (int i = 0; i < n_imgs; i++) {
+             * double[][] matrix = getRandomMatrix(s_cols, s_rows, 0, 255, sparsity, 7);
+             * double[] row = Stream.of(matrix).flatMapToDouble(DoubleStream::of).toArray();
+             * A[i] = row;
+             * }
+             */
+
             writeInputMatrixWithMTD("A", A, true);
 
-            double[][] ref = new double[n_imgs][s_cols*s_rows];
+            double[][] ref = new double[n_imgs][s_cols * s_rows];
             for (int i = 0; i < n_imgs; i++) {
-                for (int j = 0; j < s_cols*s_rows; j++) {
+                for (int j = 0; j < s_cols * s_rows; j++) {
                     ref[i][j] = A[i][j];
-                    if (y <= Math.floor(j/s_cols) && Math.floor(j/s_cols) < y + height && x <= j%s_cols && j%s_cols < x + width) {
+                    if (y <= (int) Math.floor(j / s_cols) && (int) Math.floor(j / s_cols) < y + height
+                            && x <= (j % s_cols) && (j % s_cols) < x + width) {
                         ref[i][j] = fill_color;
                     }
                 }
@@ -107,13 +121,13 @@ public class BuiltinImageCutoutLinTest extends AutomatedTestBase {
             runTest(true, false, null, -1);
 
             HashMap<MatrixValue.CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir("B");
-            double[][] dml_res = TestUtils.convertHashMapToDoubleArray(dmlfile, n_imgs, s_cols*s_rows);
+            double[][] dml_res = TestUtils.convertHashMapToDoubleArray(dmlfile, n_imgs, (s_cols * s_rows));
+
+            writeInputMatrixWithMTD("ref", ref, true);
             TestUtils.compareMatrices(ref, dml_res, eps, "Java vs. DML");
 
-        }
-        finally {
+        } finally {
             rtplatform = platformOld;
         }
     }
 }
-

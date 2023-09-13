@@ -35,6 +35,7 @@ intel_mkl="libmkl_rt.so"
 # GCC __float128 shared support library: libquadmath.so.0
 openblas="libopenblas.so\|libgfortran.so\|libquadmath.so"
 
+export DEBIAN_FRONTEND=noninteractive
 
 if ! [ -x "$(command -v cmake)" ]; then
   echo 'Error: cmake is not installed.' >&2
@@ -56,7 +57,7 @@ if ! ldconfig -p | grep -q libmkl_rt; then
 
   echo "deb https://apt.repos.intel.com/oneapi all main" |  tee /etc/apt/sources.list.d/oneAPI.list
   apt update
-  apt install intel-basekit
+  apt install intel-basekit -y
 
   #set the env variables
   source /opt/intel/oneapi/setvars.sh

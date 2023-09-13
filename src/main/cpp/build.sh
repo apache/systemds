@@ -47,6 +47,14 @@ if ! [ -x "$(command -v patchelf)" ]; then
 fi
 
 # Check if OpenBLAS is installed
+if ! ldconfig -p | grep -q libmkl_rt; then
+  echo "Intel MKL not found. Installing Intel MKL..."
+
+  apt-get update
+  apt-get install intel-mkl-full -y
+fi
+
+# Check if OpenBLAS is installed
 if ! ldconfig -p | grep -q libopenblas; then
   echo "OpenBLAS not found. Installing OpenBLAS..."
 

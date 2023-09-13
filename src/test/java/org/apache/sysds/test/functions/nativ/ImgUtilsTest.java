@@ -25,7 +25,7 @@ import static org.junit.Assert.assertArrayEquals;
 
 public class ImgUtilsTest {
 
-    private final String blasType = "openblas";
+    private final String blasType = "mkl";
     private final ImgNativeHelper imgNativeHelper = new ImgNativeHelper(blasType);
 
     @Test

@@ -51,17 +51,19 @@ fi
 if ! ldconfig -p | grep -q libmkl_rt; then
   echo "Intel MKL not found. Installing Intel MKL..."
 
-  wget https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB
-  apt-key add GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB
-  rm GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB
+  #wget https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB
+  #apt-key add GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB
+  #rm GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB
 
-  echo "deb https://apt.repos.intel.com/oneapi all main" |  tee /etc/apt/sources.list.d/oneAPI.list
-  apt update
-  apt install intel-basekit -y
+  #echo "deb https://apt.repos.intel.com/oneapi all main" |  tee /etc/apt/sources.list.d/oneAPI.list
+  #apt update
+  #apt install intel-basekit -y
 
   #set the env variables
-  source /opt/intel/oneapi/setvars.sh
+  #source /opt/intel/oneapi/setvars.sh
 
+    apt-get update
+    apt-get -y install intel-mkl-full
 fi
 
 # Check if OpenBLAS is installed

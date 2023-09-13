@@ -46,12 +46,21 @@ if ! [ -x "$(command -v patchelf)" ]; then
   exit 1
 fi
 
-# Check if OpenBLAS is installed
+# Check if Intel MKL is installed
 if ! ldconfig -p | grep -q libmkl_rt; then
   echo "Intel MKL not found. Installing Intel MKL..."
 
-  apt-get update
-  apt-get install intel-mkl-full -y
+  wget https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB
+  apt-key add GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB
+  rm GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB
+
+  echo "deb https://apt.repos.intel.com/oneapi all main" | sudo tee /etc/apt/sources.list.d/oneAPI.list
+  apt update
+  apt install intel-basekit
+
+  #set the env variables
+  source /opt/intel/oneapi/setvars.sh
+
 fi
 
 # Check if OpenBLAS is installed

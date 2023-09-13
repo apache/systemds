@@ -19,6 +19,8 @@
 package org.apache.sysds.test.functions.builtin.part1;
 
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.runtime.matrix.data.MatrixValue;
@@ -26,28 +28,53 @@ import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
 
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 
+@RunWith(Parameterized.class)
+@net.jcip.annotations.NotThreadSafe
 public class BuiltinImageMirrorLinearizedTest extends AutomatedTestBase {
+
     private final static String TEST_NAME_LINEARIZED = "image_mirror_linearized";
-    private final static String TEST_NAME = "image_mirror";
     private final static String TEST_DIR = "functions/builtin/";
     private final static String TEST_CLASS_DIR = TEST_DIR + BuiltinImageMirrorLinearizedTest.class.getSimpleName() + "/";
-    
-   private final static double eps = 1e-10;
-   private final static int rows = 64; 
-   private final static int cols = 64; 
-   private final static double spSparse = 0.05; 
-   private final static double spDense = 0.5; 
+    private final static double eps = 1e-10;
+    private final static double spSparse = 0.05; 
+    private final static double spDense = 0.5; 
+
+    @Parameterized.Parameter()
+    public int img_rows;
+    @Parameterized.Parameter(1)
+    public int img_cols;
+    @Parameterized.Parameter(2)
+    public int rows;  // number of images
+    public int cols;  // Initialized based on img_rows * img_cols
+
+    @Parameterized.Parameters
+    public static Collection<Object[]> data() {
+        return Arrays.asList(new Object[][] {
+            {12, 12, 4},
+            {13, 11, 5},
+            {64, 64, 32},
+           {256, 256, 5},
+            {256, 253, 5},
+            {1024, 1024, 5},
+            {1024, 1048, 5}
+            
+
+           
+        });
+    }
 
     @Override
     public void setUp() {
-        addTestConfiguration(TEST_NAME_LINEARIZED, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME_LINEARIZED, new String[]{"B"}));
-        addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[]{"B"}));
+        cols = img_rows * img_cols;
+        addTestConfiguration(TEST_NAME_LINEARIZED, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME_LINEARIZED, new String[]{"B_x", "B_y"}));
     }
 
     @Test
-    public void testImageMirrorLinearizedDenseCP() {
+    public void testImageMirrorLinearized() {
         runImageMirrorLinearizedTest(false, ExecType.CP);
     }
 
@@ -57,39 +84,34 @@ public class BuiltinImageMirrorLinearizedTest extends AutomatedTestBase {
 
         try {
             loadTestConfiguration(getTestConfiguration(TEST_NAME_LINEARIZED));
-            loadTestConfiguration(getTestConfiguration(TEST_NAME));
 
             double sparsity = sparse ? spSparse : spDense;
             String HOME = SCRIPT_DIR + TEST_DIR;
 
-            // For image_mirror_linearized
             fullDMLScriptName = HOME + TEST_NAME_LINEARIZED + ".dml";
             programArgs = new String[]{"-nvargs",
-                    "in_file=" + input("A"), "x_out_reshape_file=" + output("B_x_reshape"), "y_out_reshape_file=" + output("B_y_reshape")
+                "in_file=" + input("A"), 
+                "x_out_reshape_file=" + output("B_x_reshape"), 
+                "y_out_reshape_file=" + output("B_y_reshape"),
+                "x_out_file=" + output("B_x"), 
+                "y_out_file=" + output("B_y"),
+                "img_rows=" + img_rows, 
+                "img_cols=" + img_cols    
             };
+
             double[][] A = getRandomMatrix(rows, cols, 0, 255, sparsity, 7);
             writeInputMatrixWithMTD("A", A, true);
 
             runTest(true, false, null, -1);
 
-            HashMap<MatrixValue.CellIndex, Double> dmlfileLinearizedX = readDMLMatrixFromOutputDir("B_x_reshape");
-            HashMap<MatrixValue.CellIndex, Double> dmlfileLinearizedY = readDMLMatrixFromOutputDir("B_y_reshape");
+            HashMap<MatrixValue.CellIndex, Double> dmlfileLinearizedX = readDMLMatrixFromOutputDir("B_x");
+            HashMap<MatrixValue.CellIndex, Double> dmlfileLinearizedY = readDMLMatrixFromOutputDir("B_y");
+            
+            HashMap<MatrixValue.CellIndex, Double> dmlfileX = readDMLMatrixFromOutputDir("B_x_reshape");
+            HashMap<MatrixValue.CellIndex, Double> dmlfileY = readDMLMatrixFromOutputDir("B_y_reshape");
 
-            // For image_mirror
-            fullDMLScriptName = HOME + TEST_NAME + ".dml";
-            programArgs = new String[]{"-nvargs",
-                    "in_file=" + input("A"), "x_out_file=" + output("B_x"), "y_out_file=" + output("B_y")
-            };
-
-            runTest(true, false, null, -1);
-
-            HashMap<MatrixValue.CellIndex, Double> dmlfileX = readDMLMatrixFromOutputDir("B_x");
-            HashMap<MatrixValue.CellIndex, Double> dmlfileY = readDMLMatrixFromOutputDir("B_y");
-
-            // Compare matrices
             TestUtils.compareMatrices(dmlfileLinearizedX, dmlfileX, eps, "Stat-DML-LinearizedX", "Stat-DML-X");
             TestUtils.compareMatrices(dmlfileLinearizedY, dmlfileY, eps, "Stat-DML-LinearizedY", "Stat-DML-Y");
-        
 
         } finally {
             rtplatform = platformOld;

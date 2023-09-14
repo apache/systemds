@@ -74,7 +74,6 @@ if ! ldconfig -p | grep -q libmkl_rt; then
 
   source /opt/intel/oneapi/setvars.sh
 
-  export MKL_INCLUDE_DIR=/opt/intel/oneapi/mkl/include
   export MKL_RT_LIBRARY=/opt/intel/oneapi/mkl/lib/intel64/libmkl_rt.so
 
   export MKL_ROOT=/opt/intel/oneapi/mkl/2023.2.0/
@@ -118,13 +117,11 @@ cmake he/ -B HE -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER=g++
 cmake --build HE --target install --config Release
 rm -R HE
 
-ls /opt/intel/oneapi/mkl/latest
-echo "showing include"
-ls /opt/intel/oneapi/mkl/include/
-
-find /opt -type f -name "mkl.h"
-find /opt -type d -name "include"
-find /opt/intel/oneapi/mkl/ -type d -name "lib"
-find /opt -type f -name "libmkl_rt.so"
+echo "Searching mkl.h"
+find / -type f -name "mkl.h"
+echo "Searching inc"
+find / -type d -name "include"
+echo "Searching rt"
+find / -type f -name "libmkl_rt.so"
 
 

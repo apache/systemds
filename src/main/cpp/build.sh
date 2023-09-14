@@ -67,15 +67,17 @@ if ! ldconfig -p | grep -q libmkl_rt; then
   #echo "showing env vars"
 
   #export ONEAPI_ROOT=/opt/intel/oneapi
+
+
+
+
+
+  source /opt/intel/oneapi/setvars.sh
+
   export LIBRARY_PATH=/opt/intel/oneapi/mkl/latest/lib
   export LD_LIBRARY_PATH=/opt/intel/oneapi/mkl/latest/lib:$LD_LIBRARY_PATH
   export CPATH=/opt/intel/oneapi/mkl/latest/include/
-  export MKLROOT=/opt/intel/oneapi/mkl/latest
-
-
-
-
-  #source /opt/intel/oneapi/setvars.sh
+  export MKL_ROOT=/opt/intel/oneapi/mkl/latest
 
 
   env

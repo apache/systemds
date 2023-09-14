@@ -60,7 +60,16 @@ if ! ldconfig -p | grep -q libmkl_rt; then
   apt install intel-mkl -y
 
   #set the env variables
-  source /opt/intel/oneapi/setvars.sh
+
+  ls /opt
+  echo "showing env vars"
+  env
+
+  apt update
+  apt install locate
+  locate libmkl_rt.so
+
+  #source /opt/intel/oneapi/setvars.sh
 
 fi
 

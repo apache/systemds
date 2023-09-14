@@ -57,7 +57,7 @@ if ! ldconfig -p | grep -q libmkl_rt; then
 
   echo "deb https://apt.repos.intel.com/oneapi all main" |  tee /etc/apt/sources.list.d/oneAPI.list
   apt update
-  apt install intel-oneapi-mkl-2023.2.0.x86_64 -y
+  apt install intel-oneapi-mkl -y
 
   #set the env variables
 

@@ -74,10 +74,10 @@ if ! ldconfig -p | grep -q libmkl_rt; then
 
   source /opt/intel/oneapi/setvars.sh
 
-  export LIBRARY_PATH=/opt/intel/oneapi/mkl/latest/lib
-  export LD_LIBRARY_PATH=/opt/intel/oneapi/mkl/latest/lib:$LD_LIBRARY_PATH
-  export CPATH=/opt/intel/oneapi/mkl/latest/include/
-  export MKL_ROOT=/opt/intel/oneapi/mkl/latest
+  export MKL_INCLUDE_DIR=/opt/intel/oneapi/mkl/include
+  export MKL_RT_LIBRARY=/opt/intel/oneapi/mkl/lib/intel64/libmkl_rt.so
+
+  export MKL_ROOT=/opt/intel/oneapi/mkl/2023.2.0/
 
 
   env
@@ -120,10 +120,11 @@ rm -R HE
 
 ls /opt/intel/oneapi/mkl/latest
 echo "showing include"
-ls /opt/intel/oneapi/mkl/latest/include/
+ls /opt/intel/oneapi/mkl/include/
 
-find /opt/intel/oneapi/mkl/ -type f -name "mkl.h"
+find /opt -type f -name "mkl.h"
+find /opt -type d -name "include"
 find /opt/intel/oneapi/mkl/ -type d -name "lib"
-find /opt/intel/oneapi/mkl/ -type f -name "libmkl_rt.so"
+find /opt -type f -name "libmkl_rt.so"
 
 

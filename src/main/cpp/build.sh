@@ -117,6 +117,12 @@ cmake he/ -B HE -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER=g++
 cmake --build HE --target install --config Release
 rm -R HE
 
-ls /usr/include
+echo "Searching mkl.h"
+find / -name "mkl.h"
+echo "Searching inc"
+find / -type d -name "include"
+echo "Searching rt"
+find / -name "libmkl_rt.so"
 
+ls /opt/intel/oneapi/mkl/2023.2.0/
 

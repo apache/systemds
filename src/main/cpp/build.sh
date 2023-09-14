@@ -75,7 +75,7 @@ if ! ldconfig -p | grep -q libmkl_rt; then
   source /opt/intel/oneapi/setvars.sh
 
   export MKL_RT_LIBRARY=/opt/intel/oneapi/mkl/lib/intel64/libmkl_rt.so
-
+  export MKL_INCLUDE_DIR=/opt/intel/oneapi/mkl/2023.2.0/include
   export MKL_ROOT=/opt/intel/oneapi/mkl/2023.2.0/
 
 

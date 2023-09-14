@@ -47,55 +47,35 @@ if ! [ -x "$(command -v patchelf)" ]; then
   exit 1
 fi
 
-#!/bin/bash
-
-LIBRARY_DIR1="/opt/intel/oneapi/mkl/latest/lib/intel64"
-LIBRARY_DIR2="/usr/lib/x86_64-linux-gnu"
-
-CONF_FILE1="/etc/ld.so.conf.d/my_library1.conf"
-CONF_FILE2="/etc/ld.so.conf.d/my_library2.conf"
-
-# Check if the directories exist
-if [ -d "$LIBRARY_DIR1" ]; then
-    # Create a new configuration file for directory 1
-    echo "$LIBRARY_DIR1" > "$CONF_FILE1"
-    echo "Directory added to ldconfig: $LIBRARY_DIR1"
-else
-    echo "Error: Directory does not exist: $LIBRARY_DIR1"
-fi
-
-if [ -d "$LIBRARY_DIR2" ]; then
-    # Create a new configuration file for directory 2
-    echo "$LIBRARY_DIR2" > "$CONF_FILE2"
-    echo "Directory added to ldconfig: $LIBRARY_DIR2"
-else
-    echo "Error: Directory does not exist: $LIBRARY_DIR2"
-fi
-
-# Update ldconfig cache
-ldconfig
-
-#install rsync
-apt install rsync
-
 # Check if Intel MKL is installed
 if ! ldconfig -p | grep -q libmkl_rt; then
   echo "Intel MKL not found. Installing Intel MKL..."
 
-  wget -O- https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB \
-  | gpg --dearmor | tee /usr/share/keyrings/oneapi-archive-keyring.gpg > /dev/null
+  wget -O- https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB \ | gpg --dearmor | tee /usr/share/keyrings/oneapi-archive-keyring.gpg > /dev/null
 
   echo "deb [signed-by=/usr/share/keyrings/oneapi-archive-keyring.gpg] https://apt.repos.intel.com/oneapi all main" | tee /etc/apt/sources.list.d/oneAPI.list
-  sudo apt install intel-oneapi-mkl
+  apt update
+  apt install intel-oneapi-mkl
 
   source /opt/intel/oneapi/setvars.sh
 
 fi
 
-#cd /tmp
-#wget https://github.com/01org/mkl-dnn/releases/download/v0.10/mklml_lnx_2018.0.20170908.tgz
-#tar -xzvf mklml_lnx_2018.0.20170908.tgz
-#rsync -av --ignore-existing  /path/to/destination/folder/
+LIBRARY_DIR="/opt/intel/oneapi/mkl/latest/lib/intel64"
+CONF_FILE="/etc/ld.so.conf.d/my_library.conf"
+
+# Check if the directory exists
+if [ -d "$LIBRARY_DIR" ]; then
+    # Create a new configuration file
+    echo "$LIBRARY_DIR" > "$CONF_FILE"
+    # Update ldconfig cache
+    ldconfig
+    echo "Directory added to ldconfig: $LIBRARY_DIR"
+else
+    echo "Error: Directory does not exist: $LIBRARY_DIR"
+fi
+
+ldconfig
 
 # Check if OpenBLAS is installed
 if ! ldconfig -p | grep -q libopenblas; then

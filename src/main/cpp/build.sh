@@ -59,25 +59,6 @@ if ! ldconfig -p | grep -q libmkl_rt; then
   apt update
   apt install intel-oneapi-mkl -y
 
-  #set the env variables
-
-  #ls /opt
-  #ls /usr/local/lib
-
-  #echo "showing env vars"
-
-  #export ONEAPI_ROOT=/opt/intel/oneapi
-
-  #source /opt/intel/oneapi/setvars.sh
-  source /opt/intel/oneapi/mkl/latest/env/vars.sh
-
-  export MKL_RT_LIBRARY=/opt/intel/oneapi/mkl/lib/intel64/libmkl_rt.so
-  export MKL_INCLUDE_DIR=/usr/include/mkl/
-  export MKL_ROOT=/opt/intel/oneapi/mkl/2023.2.0/
-
-
-  env
-
 fi
 
 # Check if OpenBLAS is installed

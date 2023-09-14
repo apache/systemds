@@ -25,11 +25,19 @@ import static org.junit.Assert.assertArrayEquals;
 
 public class ImgUtilsTest {
 
-    private final String blasType = "mkl";
-    private final ImgNativeHelper imgNativeHelper = new ImgNativeHelper(blasType);
+    @Test
+    public void runTestsWithOpenBlas() {
+        runTests("openblas");
+    }
 
     @Test
-    public void testImageRotation90And45() {
+    public void runTestsWithMKL() {
+        runTests("mkl");
+    }
+
+
+
+    public static void testImageRotation90And45(ImgNativeHelper imgNativeHelper) {
 
         // Input image dimensions
         int rows = 3;
@@ -67,8 +75,8 @@ public class ImgUtilsTest {
     }
 
 
-    @Test
-    public void testImageRotation90And45_4x4() {
+
+    public static void testImageRotation90And45_4x4(ImgNativeHelper imgNativeHelper) {
 
         // Input image dimensions
         int rows = 4;
@@ -109,8 +117,8 @@ public class ImgUtilsTest {
         assertArrayEquals(expected_img_out_45, img_out, 0.0001);
     }
 
-    @Test
-    public void testImageRotation45() {
+
+    public static void testImageRotation45(ImgNativeHelper imgNativeHelper) {
         // Input image dimensions
         int rows = 6;
         int cols = 6;
@@ -151,8 +159,8 @@ public class ImgUtilsTest {
         assertArrayEquals(expected_img_out, img_out, 0.0001);
     }
 
-    @Test
-    public void testImageRotation180() {
+
+    public static void testImageRotation180(ImgNativeHelper imgNativeHelper) {
         // Input image dimensions
         int rows = 4;
         int cols = 4;
@@ -189,8 +197,8 @@ public class ImgUtilsTest {
         assertArrayEquals(expected_img_out, img_out, 0.0001);
     }
 
-    @Test
-    public void testCutoutImage() {
+
+    public static void testCutoutImage(ImgNativeHelper imgNativeHelper) {
         // Example input 2D matrix
         double[] img_in = {
                 1.0, 2.0, 3.0, 4.0,
@@ -222,8 +230,8 @@ public class ImgUtilsTest {
         assertArrayEquals(expectedOutput, img_out,0.0001);
     }
 
-    @Test
-    public void testCutoutImageNonSquare() {
+
+    public static void testCutoutImageNonSquare(ImgNativeHelper imgNativeHelper) {
         // Example input 2D matrix
         double[] img_in = {
                 1.0, 2.0, 3.0, 4.0,
@@ -253,8 +261,8 @@ public class ImgUtilsTest {
         assertArrayEquals(expectedOutput, img_out, 0.0001);
     }
 
-    @Test
-    public void testImageCutoutInvalidCutout() {
+
+    public static void testImageCutoutInvalidCutout(ImgNativeHelper imgNativeHelper) {
         double[] img_in = {
                 1.0, 2.0, 3.0, 4.0,
                 5.0, 6.0, 7.0, 8.0,
@@ -276,8 +284,8 @@ public class ImgUtilsTest {
         assertArrayEquals(expectedOutput, img_out,0.0001);
     }
 
-    @Test
-    public void testImageCutoutNoCutout() {
+
+    public static void testImageCutoutNoCutout(ImgNativeHelper imgNativeHelper) {
         double[] img_in = {
                 1.0, 2.0, 3.0, 4.0,
                 5.0, 6.0, 7.0, 8.0,
@@ -304,8 +312,8 @@ public class ImgUtilsTest {
         assertArrayEquals(expectedOutput, img_out,0.0001);
     }
 
-    @Test
-    public void testImageCropValidCrop() {
+
+    public static void testImageCropValidCrop(ImgNativeHelper imgNativeHelper) {
         double[] img_in = {
                 1.0, 2.0, 3.0, 4.0,
                 5.0, 6.0, 7.0, 8.0,
@@ -329,8 +337,8 @@ public class ImgUtilsTest {
 
         assertArrayEquals(expectedOutput, img_out,0.0001);     }
 
-    @Test
-    public void testImageCropInvalidCrop() {
+
+    public static void testImageCropInvalidCrop(ImgNativeHelper imgNativeHelper) {
         double[] img_in = {
                 1.0, 2.0, 3.0, 4.0,
                 5.0, 6.0, 7.0, 8.0,
@@ -351,8 +359,8 @@ public class ImgUtilsTest {
         assertArrayEquals(expectedOutput, img_out,0.0001);
     }
 
-    @Test
-    public void testImgTranslate() {
+
+    public void testImgTranslate(ImgNativeHelper imgNativeHelper) {
         int in_w = 5;
         int in_h = 5;
         int out_w = 7;
@@ -385,8 +393,8 @@ public class ImgUtilsTest {
         assertArrayEquals(expectedOutput, img_out, 1e-9); // Compare arrays with a small epsilon
     }
 
-    @Test
-    public void testImgTranslateNegativeOffsets() {
+
+    public static void testImgTranslateNegativeOffsets(ImgNativeHelper imgNativeHelper) {
         int in_w = 5;
         int in_h = 5;
         int out_w = 6;
@@ -418,8 +426,8 @@ public class ImgUtilsTest {
         assertArrayEquals(expectedOutput, img_out, 1e-9); // Compare arrays with a small epsilon
     }
 
-    @Test
-    public void testImgTranslatePositiveAndNegativeOffsets() {
+
+    public static void testImgTranslatePositiveAndNegativeOffsets(ImgNativeHelper imgNativeHelper) {
         int in_w = 5;
         int in_h = 5;
         int out_w = 6;
@@ -451,8 +459,8 @@ public class ImgUtilsTest {
         assertArrayEquals(expectedOutput, img_out, 1e-9); // Compare arrays with a small epsilon
     }
 
-    @Test
-    public void testImgTranslatePositiveAndNegativeOffsets2() {
+
+    public static void testImgTranslatePositiveAndNegativeOffsets2(ImgNativeHelper imgNativeHelper) {
         int in_w = 5;
         int in_h = 5;
         int out_w = 6;
@@ -484,4 +492,30 @@ public class ImgUtilsTest {
         assertArrayEquals(expectedOutput, img_out, 1e-9); // Compare arrays with a small epsilon
     }
 
+    public void runTests(String blasType) {
+
+        ImgNativeHelper imgNativeHelper = new ImgNativeHelper(blasType);
+        //double startTime =System.currentTimeMillis();
+        testImageRotation45(imgNativeHelper);
+        testImageRotation90And45(imgNativeHelper);
+        testImageRotation90And45_4x4(imgNativeHelper);
+        testImageRotation180(imgNativeHelper);
+
+        testCutoutImage(imgNativeHelper);
+        testImageCutoutInvalidCutout(imgNativeHelper);
+        testImageCutoutNoCutout(imgNativeHelper);
+        testCutoutImageNonSquare(imgNativeHelper);
+
+        testImageCropValidCrop(imgNativeHelper);
+        testImageCropInvalidCrop(imgNativeHelper);
+
+        testImgTranslate(imgNativeHelper);
+        testImgTranslateNegativeOffsets(imgNativeHelper);
+        testImgTranslatePositiveAndNegativeOffsets(imgNativeHelper);
+        testImgTranslatePositiveAndNegativeOffsets2(imgNativeHelper);
+        //double endTime =System.currentTimeMillis();
+
+        //System.out.println(blasType+" total execution time:"+(endTime -startTime));
+
+    }
 }

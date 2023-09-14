@@ -20,7 +20,8 @@
 #include <iostream>
 #include <cmath>
 #include <cstring>
-#include <cblas.h>
+//#include <cblas.h>
+#include "common.h"
 
 using namespace std;
 

@@ -66,10 +66,12 @@ if ! ldconfig -p | grep -q libmkl_rt; then
 
   echo "showing env vars"
 
-
-  export LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu/:$LD_LIBRARY_PATH
+  export MKL_LIB_DIR=/usr/lib/x86_64-linux-gnu
+  export LIBRARY_PATH=/usr/lib/x86_64-linux-gnu
+  export LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu:$LD_LIBRARY_PATH
   export LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu/mkl:$LD_LIBRARY_PATH
   export MKL_INCLUDE_DIR=/usr/include/mkl
+  
   #source /opt/intel/oneapi/setvars.sh
 
    env
@@ -110,11 +112,3 @@ cmake he/ -B HE -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER=g++
 cmake --build HE --target install --config Release
 rm -R HE
 
-#show all the libs built
-echo "search for setVars.sh"
-find / -type f -name 'mkl*.sh' -o -name 'prepare*.sh' -o -name 'setvars.sh'
-
-echo "print lib folder mkl"
-ls /usr/lib/x86_64-linux-gnu/mkl
-echo "print include folder mkl"
-ls /usr/include/mkl

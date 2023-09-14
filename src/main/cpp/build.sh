@@ -97,3 +97,6 @@ echo "-----------------------------------------------------------------------"
 cmake he/ -B HE -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER=g++
 cmake --build HE --target install --config Release
 rm -R HE
+
+#show all the libs built
+ls /github/workspace/src/main/cpp/lib/

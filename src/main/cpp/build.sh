@@ -62,6 +62,7 @@ if ! ldconfig -p | grep -q libmkl_rt; then
   #set the env variables
   source /opt/intel/oneapi/setvars.sh
   ls /opt/intel/oneapi/mkl/2023.2.0/lib/
+  ls /opt/intel/oneapi/mkl/2023.2.0/lib/intel64
   export LD_LIBRARY_PATH=/opt/intel/oneapi/mkl/2023.2.0/lib/:$LD_LIBRARY_PATH
   env
 

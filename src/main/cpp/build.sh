@@ -70,7 +70,7 @@ if ! ldconfig -p | grep -q libmkl_rt; then
   apt update
   apt install locate
 
-
+  export LD_LIBRARY_PATH=/usr/local/lib/:$LD_LIBRARY_PATH
   #source /opt/intel/oneapi/setvars.sh
 
 fi
@@ -110,5 +110,7 @@ cmake --build HE --target install --config Release
 rm -R HE
 
 #show all the libs built
-locate libmkl_rt
-ls /usr/local/lib/
+ls /usr/lib/x86_64-linux-gnu/
+
+echo "find mkl folder"
+find / -type d -name "mkl"

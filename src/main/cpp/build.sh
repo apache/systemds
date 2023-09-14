@@ -55,7 +55,8 @@ if ! ldconfig -p | grep -q libmkl_rt; then
 
   echo "deb [signed-by=/usr/share/keyrings/oneapi-archive-keyring.gpg] https://apt.repos.intel.com/oneapi all main" | tee /etc/apt/sources.list.d/oneAPI.list
   apt update
-  apt install intel-oneapi-mkl
+
+  apt install intel-basekit
 
   source /opt/intel/oneapi/setvars.sh
 

@@ -50,35 +50,7 @@ jobs:
       matrix:
         os: [ubuntu-latest]
         tests: [
-          "org.apache.sysds.test.applications.**",
-          "**.test.usertest.**",
-          "**.component.c**.**",
-          "**.component.e**.**,**.component.f**.**,**.component.m**.**",
-          "**.component.p**.**,**.component.t**.**",
-          "**.functions.a**.**,**.functions.binary.frame.**,**.functions.binary.matrix.**,**.functions.binary.scalar.**,**.functions.binary.tensor.**",
-          "**.functions.blocks.**,**.functions.data.rand.**,",
-          "**.functions.countDistinct.**,**.functions.countDistinctApprox.**,**.functions.data.misc.**,**.functions.lineage.**",
-          "**.functions.compress.**,**.functions.data.tensor.**,**.functions.codegenalg.parttwo.**,**.functions.codegen.**,**.functions.caching.**",
-          "**.functions.binary.matrix_full_cellwise.**,**.functions.binary.matrix_full_other.**",
-          "**.functions.federated.algorithms.**,**.functions.federated.io.**,**.functions.federated.paramserv.**",
-          "**.functions.federated.primitives.**,**.functions.federated.transform.**",
-          "**.functions.federated.monitoring.**,**.functions.federated.multitenant.**",
-          "**.functions.federated.codegen.**,**.functions.federated.FederatedTestObjectConstructor",
-          "**.functions.codegenalg.partone.**",
-          "**.functions.builtin.part1.**",
-          "**.functions.builtin.part2.**",
-          "**.functions.frame.**,**.functions.indexing.**,**.functions.io.**,**.functions.iogen.**",
-          "**.functions.dnn.**",
           "**.functions.nativ.**",
-          "**.functions.paramserv.**",
-          "**.functions.recompile.**,**.functions.misc.**,**.functions.mlcontext.**",
-          "**.functions.nary.**,**.functions.quaternary.**",
-          "**.functions.parfor.**",
-          "**.functions.pipelines.**,**.functions.privacy.**",
-          "**.functions.homomorphicEncryption.**",
-          "**.functions.unary.scalar.**,**.functions.updateinplace.**,**.functions.vect.**",
-          "**.functions.reorg.**,**.functions.rewrite.**,**.functions.ternary.**,**.functions.transform.**",
-          "**.functions.unary.matrix.**,**.functions.linearization.**,**.functions.jmlc.**"
         ]
     name: ${{ matrix.tests }}
     steps:

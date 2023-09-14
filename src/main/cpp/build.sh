@@ -57,28 +57,10 @@ if ! ldconfig -p | grep -q libmkl_rt; then
 
   echo "deb https://apt.repos.intel.com/oneapi all main" |  tee /etc/apt/sources.list.d/oneAPI.list
   apt update
-  apt install intel-basekit -y
+  apt install intel-mkl -y
 
   #set the env variables
   source /opt/intel/oneapi/setvars.sh
-  ls /opt/intel/oneapi/mkl/2023.2.0/lib/
-  echo "open intel64 folder"
-  ls /opt/intel/oneapi/mkl/2023.2.0/lib/intel64
-  echo "printing /usr/local/lib folder"
-  ls /usr/local/lib
-  echo "printing /usr/lib folder"
-  ls /usr/lib
-  echo "printing /usr/lib/x86_64-linux-gnu/ folder"
-  ls /usr/lib/x86_64-linux-gnu/
-  echo "exporting lib paths"
-  export LD_LIBRARY_PATH=/opt/intel/oneapi/mkl/2023.2.0/lib/intel64/:$LD_LIBRARY_PATH
-  export LIBRARY_PATH=/opt/intel/oneapi/mkl/2023.2.0/lib/intel64/:$LIBRARY_PATH
-  export LD_LIBRARY_PATH=/usr/local/lib
-  export LD_LIBRARY_PATH=/usr/lib
-  export LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu
-  echo "printing env variables"
-  env
-
 
 fi
 

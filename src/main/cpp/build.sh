@@ -51,14 +51,29 @@ fi
 if ! ldconfig -p | grep -q libmkl_rt; then
   echo "Intel MKL not found. Installing Intel MKL..."
 
-  wget https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB
-  apt-key add GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB
-  rm GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB
+  wget -O- https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB \ | gpg --dearmor | tee /usr/share/keyrings/oneapi-archive-keyring.gpg > /dev/null
 
-  echo "deb https://apt.repos.intel.com/oneapi all main" |  tee /etc/apt/sources.list.d/oneAPI.list
+  echo "deb [signed-by=/usr/share/keyrings/oneapi-archive-keyring.gpg] https://apt.repos.intel.com/oneapi all main" | tee /etc/apt/sources.list.d/oneAPI.list
   apt update
-  apt install intel-oneapi-mkl -y
 
+  apt install intel-basekit -y
+
+  source /opt/intel/oneapi/setvars.sh
+
+fi
+
+LIBRARY_DIR="/opt/intel/oneapi/mkl/latest/lib/intel64"
+CONF_FILE="/etc/ld.so.conf.d/my_library.conf"
+
+# Check if the directory exists
+if [ -d "$LIBRARY_DIR" ]; then
+    # Create a new configuration file
+    echo "$LIBRARY_DIR" > "$CONF_FILE"
+    # Update ldconfig cache
+    ldconfig
+    echo "Directory added to ldconfig: $LIBRARY_DIR"
+else
+    echo "Error: Directory does not exist: $LIBRARY_DIR"
 fi
 
 # Check if OpenBLAS is installed
@@ -94,6 +109,3 @@ echo "-----------------------------------------------------------------------"
 cmake he/ -B HE -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER=g++
 cmake --build HE --target install --config Release
 rm -R HE
-
-#show all the libs built
-ls /github/workspace/src/main/cpp/lib/

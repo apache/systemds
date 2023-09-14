@@ -26,12 +26,15 @@ import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
 import java.util.HashMap;
-import java.util.Random;
-// if A should be generated one row at a time
-//import java.util.stream.Stream;
-//import java.util.stream.DoubleStream;
+import java.util.Arrays;
+import java.util.Collection;
+
+@RunWith(Parameterized.class)
+@net.jcip.annotations.NotThreadSafe
 
 public class BuiltinImageCutoutLinTest extends AutomatedTestBase {
     private final static String TEST_NAME = "image_cutout_linearized";
@@ -41,7 +44,36 @@ public class BuiltinImageCutoutLinTest extends AutomatedTestBase {
     private final static double eps = 1e-10;
     private final static double spSparse = 0.1;
     private final static double spDense = 0.9;
-    private final static Random random = new Random();
+
+    @Parameterized.Parameter(0)
+    public int s_rows; 
+    @Parameterized.Parameter(1)
+    public int s_cols; 
+    @Parameterized.Parameter(2)
+    public int x; 
+    @Parameterized.Parameter(3)
+    public int y; 
+    @Parameterized.Parameter(4)
+    public int width; 
+    @Parameterized.Parameter(5)
+    public int height; 
+    @Parameterized.Parameter(6)
+    public int fill_color; 
+    @Parameterized.Parameter(7)
+    public int n_imgs; 
+
+    @Parameterized.Parameters
+    public static Collection<Object[]> data() {
+        return Arrays.asList(new Object[][] {
+                { 12, 12, 7, 5, 6, 2, 0, 512 },
+                { 13, 11, 10, 7, 2, 3, 32, 175 },
+                { 32, 32, 2, 11, 1, 60, 64, 4 },
+                { 64, 64, 50, 17, 10, 109, 96, 5 },
+                { 64, 61, 33, 20, 30, 10, 128, 32 },
+                { 128, 128, 2, 3, 2, 9, 192, 5 },
+                { 123, 128, 83, 70, 50, 2, 225, 12 },
+        });
+    }
 
     @Override
     public void setUp() {
@@ -74,15 +106,6 @@ public class BuiltinImageCutoutLinTest extends AutomatedTestBase {
 
         setOutputBuffering(true);
 
-        int s_rows = random.nextInt(100) + 1;
-        int s_cols = random.nextInt(100) + 1;
-        int x = random.nextInt(s_cols);
-        int y = random.nextInt(s_rows);
-        int width = random.nextInt(s_cols - x) + 1;
-        int height = random.nextInt(s_rows - y) + 1;
-        int fill_color = random.nextInt(256);
-        int n_imgs = random.nextInt(100) + 1;
-
         try {
             loadTestConfiguration(getTestConfiguration(TEST_NAME));
             double sparsity = sparse ? spSparse : spDense;
@@ -94,17 +117,7 @@ public class BuiltinImageCutoutLinTest extends AutomatedTestBase {
                     "height=" + n_imgs, "x=" + (x + 1), "y=" + (y + 1), "w=" + width, "h=" + height,
                     "fill_color=" + fill_color, "s_cols=" + s_cols, "s_rows=" + s_rows };
 
-            // overall sparsity of the dataset or a single image/row?
             double[][] A = getRandomMatrix(n_imgs, s_cols * s_rows, 0, 255, sparsity, 7);
-            /*
-             * double[][] A = new double[n_imgs][s_cols*s_rows];
-             * for (int i = 0; i < n_imgs; i++) {
-             * double[][] matrix = getRandomMatrix(s_cols, s_rows, 0, 255, sparsity, 7);
-             * double[] row = Stream.of(matrix).flatMapToDouble(DoubleStream::of).toArray();
-             * A[i] = row;
-             * }
-             */
-
             writeInputMatrixWithMTD("A", A, true);
 
             double[][] ref = new double[n_imgs][s_cols * s_rows];
@@ -123,7 +136,6 @@ public class BuiltinImageCutoutLinTest extends AutomatedTestBase {
             HashMap<MatrixValue.CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir("B");
             double[][] dml_res = TestUtils.convertHashMapToDoubleArray(dmlfile, n_imgs, (s_cols * s_rows));
 
-            writeInputMatrixWithMTD("ref", ref, true);
             TestUtils.compareMatrices(ref, dml_res, eps, "Java vs. DML");
 
         } finally {

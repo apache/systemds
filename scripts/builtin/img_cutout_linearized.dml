@@ -28,21 +28,20 @@
 # y           Row index of the top left corner of the rectangle (starting at 1)
 # width       Width of the rectangle (must be positive)
 # height      Height of the rectangle (must be positive)
-# fill_value  The value to set for the rectangle
-# s_cols     Width of a single image
-# s_rows     Height of a single image
+# fill_value   The value to set for the rectangle
+# s_cols      Width of a single image
+# s_rows      Height of a single image
 # ---------------------------------------------------------------------------------------------
 #
 # OUTPUT:
 # ------------------------------------------------------------------------------------------
-# img_out Output images as linearized 2D matrix with top left corner at [1, 1]
+# img_out     Output images as linearized 2D matrix with top left corner at [1, 1]
 # ------------------------------------------------------------------------------------------
 
-
-m_img_cutout_linearized = function(Matrix[Double] img_in, Integer x, Integer y, Integer width, Integer height, Double fill_value, Integer s_cols, Integer s_rows) return (Matrix[Double] img_out) {
-    # size is s_cols : s_rows
-  rows = nrow(img_in) # number of images
-  cols = ncol(img_in) # s_cols * s_rows
+m_img_cutout_linearized = function(Matrix[Double] img_in, Integer x, Integer y, Integer width, Integer height, 
+  Double fill_value, Integer s_cols, Integer s_rows) return (Matrix[Double] img_out) {
+  rows = nrow(img_in) 
+  cols = ncol(img_in) 
 
   if (width < 1 | height < 1) {
     print("Invalid width or height. Returning input")
@@ -61,14 +60,11 @@ m_img_cutout_linearized = function(Matrix[Double] img_in, Integer x, Integer y, 
     img_out = img_in
 
     # Iterate through each row of the rectangular region
-    for (i in start_y: end_y){
-      
+    parfor (i in start_y: end_y, check=0){
       start_idx = (i-1) * s_cols + start_x
       end_idx = (i-1) * s_cols + end_x
 
       img_out[, start_idx:end_idx] = matrix(fill_value, rows=rows, cols=(end_x-start_x+1))
-     }
+    }
   }
-
 }
-

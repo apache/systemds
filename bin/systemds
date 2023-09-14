@@ -60,7 +60,7 @@ if [[ -z $SYSTEMDS_ROOT ]] ; then
   print_out "SYSTEMDS_ROOT not set defaulting to current dir $(pwd)"
 else
   # construct a relative path
-  SYSTEMDS_ROOT=$(grealpath --relative-to=. ${SYSTEMDS_ROOT})
+  SYSTEMDS_ROOT=$(realpath --relative-to=. ${SYSTEMDS_ROOT})
 fi;
 
 # when using find, look in the directories in this order
@@ -375,11 +375,11 @@ fi
 
 # find absolute path to hadoop home in SYSTEMDS_ROOT
 if [ -z "$HADOOP_HOME" ]; then
-  HADOOP_HOME=$(grealpath "$(find "$SYSTEMDS_ROOT" -iname hadoop | tail -n 1 )")
+  HADOOP_HOME=$(realpath "$(find "$SYSTEMDS_ROOT" -iname hadoop | tail -n 1 )")
   export HADOOP_HOME
 fi
 # add hadoop home to path and lib path for loading hadoop jni
-HADOOP_REL=$(grealpath --relative-to=. "$HADOOP_HOME")
+HADOOP_REL=$(realpath --relative-to=. "$HADOOP_HOME")
 
 # default directory separator unix style
 DIR_SEP=/
@@ -396,7 +396,7 @@ fi
 JARNAME=$(basename "$SYSTEMDS_JAR_FILE")
 
 # relative path to jar file
-SYSTEMDS_JAR_FILE=$(grealpath --relative-to=. "$(dirname "$SYSTEMDS_JAR_FILE")")${DIR_SEP}${JARNAME}
+SYSTEMDS_JAR_FILE=$(realpath --relative-to=. "$(dirname "$SYSTEMDS_JAR_FILE")")${DIR_SEP}${JARNAME}
 
 NATIVE_LIBS="$SYSTEMDS_ROOT${DIR_SEP}target${DIR_SEP}classes${DIR_SEP}lib"
 export PATH=${HADOOP_REL}${DIR_SEP}bin${PATH_SEP}${PATH}${PATH_SEP}$NATIVE_LIBS

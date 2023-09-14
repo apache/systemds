@@ -47,46 +47,56 @@ if ! [ -x "$(command -v patchelf)" ]; then
   exit 1
 fi
 
+#!/bin/bash
+
+LIBRARY_DIR1="/opt/intel/oneapi/mkl/latest/lib/intel64"
+LIBRARY_DIR2="/usr/lib/x86_64-linux-gnu"
+
+CONF_FILE1="/etc/ld.so.conf.d/my_library1.conf"
+CONF_FILE2="/etc/ld.so.conf.d/my_library2.conf"
+
+# Check if the directories exist
+if [ -d "$LIBRARY_DIR1" ]; then
+    # Create a new configuration file for directory 1
+    echo "$LIBRARY_DIR1" > "$CONF_FILE1"
+    echo "Directory added to ldconfig: $LIBRARY_DIR1"
+else
+    echo "Error: Directory does not exist: $LIBRARY_DIR1"
+fi
+
+if [ -d "$LIBRARY_DIR2" ]; then
+    # Create a new configuration file for directory 2
+    echo "$LIBRARY_DIR2" > "$CONF_FILE2"
+    echo "Directory added to ldconfig: $LIBRARY_DIR2"
+else
+    echo "Error: Directory does not exist: $LIBRARY_DIR2"
+fi
+
+# Update ldconfig cache
+ldconfig
+
+
 # Check if Intel MKL is installed
 if ! ldconfig -p | grep -q libmkl_rt; then
   echo "Intel MKL not found. Installing Intel MKL..."
 
-  wget https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB
-  apt-key add GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB
-  rm GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB
+  wget -O- https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB \
+  | gpg --dearmor | tee /usr/share/keyrings/oneapi-archive-keyring.gpg > /dev/null
 
-  echo "deb https://apt.repos.intel.com/oneapi all main" |  tee /etc/apt/sources.list.d/oneAPI.list
-  apt update
-  apt install intel-oneapi-mkl -y
+  echo "deb [signed-by=/usr/share/keyrings/oneapi-archive-keyring.gpg] https://apt.repos.intel.com/oneapi all main" | tee /etc/apt/sources.list.d/oneAPI.list
+  sudo apt install intel-oneapi-mkl
 
-  #set the env variables
-
-  #ls /opt
-  #ls /usr/local/lib
-
-  #echo "showing env vars"
-
-  #export ONEAPI_ROOT=/opt/intel/oneapi
-
-  #source /opt/intel/oneapi/setvars.sh
-  source /opt/intel/oneapi/mkl/latest/env/vars.sh
-
-  export MKL_RT_LIBRARY=/opt/intel/oneapi/mkl/lib/intel64/libmkl_rt.so
-  export MKL_INCLUDE_DIR=/usr/include/mkl/
-  export MKL_ROOT=/opt/intel/oneapi/mkl/2023.2.0/
-
-
-  env
+  source /opt/intel/oneapi/setvars.sh
 
 fi
 
 # Check if OpenBLAS is installed
-#if ! ldconfig -p | grep -q libopenblas; then
-#  echo "OpenBLAS not found. Installing OpenBLAS..."
+if ! ldconfig -p | grep -q libopenblas; then
+  echo "OpenBLAS not found. Installing OpenBLAS..."
 
-#  apt-get update
-#  apt-get install libopenblas-dev -y
-#fi
+  apt-get update
+  apt-get install libopenblas-dev -y
+fi
 
 # configure and compile INTEL MKL
 cmake . -B INTEL -DUSE_INTEL_MKL=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER=g++ -DCMAKE_CXX_FLAGS="-DUSE_GNU_THREADING -m64"
@@ -113,8 +123,5 @@ echo "-----------------------------------------------------------------------"
 cmake he/ -B HE -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER=g++
 cmake --build HE --target install --config Release
 rm -R HE
-
-
-ls /usr/include/mkl
 
 

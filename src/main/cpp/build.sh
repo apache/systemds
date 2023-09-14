@@ -57,7 +57,7 @@ if ! ldconfig -p | grep -q libmkl_rt; then
 
   echo "deb https://apt.repos.intel.com/oneapi all main" |  tee /etc/apt/sources.list.d/oneAPI.list
   apt update
-  apt install intel-basekit -y
+  apt install intel-oneapi-mkl -y
 
   #set the env variables
 
@@ -68,13 +68,11 @@ if ! ldconfig -p | grep -q libmkl_rt; then
 
   #export ONEAPI_ROOT=/opt/intel/oneapi
 
-
-
-
-
-  source /opt/intel/oneapi/setvars.sh
+  #source /opt/intel/oneapi/setvars.sh
+  source /opt/intel/oneapi/mkl/latest/env/vars.sh
 
   export MKL_RT_LIBRARY=/opt/intel/oneapi/mkl/lib/intel64/libmkl_rt.so
+  export MKL_INCLUDE_DIR=/usr/include/mkl/
   export MKL_ROOT=/opt/intel/oneapi/mkl/2023.2.0/
 
 
@@ -116,11 +114,7 @@ cmake he/ -B HE -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER=g++
 cmake --build HE --target install --config Release
 rm -R HE
 
-echo "Searching mkl.h"
-find /opt -name "mkl.h"
-echo "Searching rt"
-find /opt -name "libmkl_rt.so"
 
-ls /usr/include/x86_64-linux-gnu
+ls /usr/include/mkl
 
 

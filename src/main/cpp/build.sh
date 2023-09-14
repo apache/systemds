@@ -62,12 +62,14 @@ if ! ldconfig -p | grep -q libmkl_rt; then
   #set the env variables
 
   ls /opt
+  ls /usr/local/lib
+
   echo "showing env vars"
   env
 
   apt update
   apt install locate
-  locate libmkl_rt.so
+
 
   #source /opt/intel/oneapi/setvars.sh
 
@@ -108,4 +110,5 @@ cmake --build HE --target install --config Release
 rm -R HE
 
 #show all the libs built
-ls /github/workspace/src/main/cpp/lib/
+locate libmkl_rt
+ls /usr/local/lib/

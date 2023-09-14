@@ -114,4 +114,6 @@ cmake he/ -B HE -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER=g++
 cmake --build HE --target install --config Release
 rm -R HE
 
-sudo find / -type d -name "intel"
+find / -type d -name "intel"
+echo "searchin mkl"
+find / -type d -name "mkl"

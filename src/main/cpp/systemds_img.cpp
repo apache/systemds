@@ -31,38 +31,32 @@
 
 JNIEXPORT void JNICALL Java_org_apache_sysds_utils_ImgNativeHelper_imageRotate
     (JNIEnv* env, jclass clazz, jdoubleArray img_in, jint rows, jint cols, jdouble radians, jdouble fill_value, jdoubleArray img_out) {
-    // Get input image data
+    
+    if (rows != cols) {
+        jclass exceptionClass = env->FindClass("java/lang/IllegalArgumentException");
+        if (exceptionClass != NULL) {
+            env->ThrowNew(exceptionClass, "Image dimensions must be equal");
+            return;
+        }
+    }
 
     jsize num_pixels = env->GetArrayLength(img_in);
     jdouble* img_in_data = env->GetDoubleArrayElements(img_in, NULL);
-
-    // Create output image array
     jdouble* img_out_data = new jdouble[num_pixels];
-
-    // Rotate the image
     imageRotate(img_in_data, rows, cols, radians, fill_value, img_out_data);
-
-    // Set the output image data
     env->SetDoubleArrayRegion(img_out, 0, num_pixels, img_out_data);
-
-    // Clean up
     delete[] img_out_data;
     env->ReleaseDoubleArrayElements(img_in, img_in_data, JNI_ABORT);
 }
 
 JNIEXPORT jdoubleArray JNICALL Java_org_apache_sysds_utils_ImgNativeHelper_imageCutout
     (JNIEnv* env, jclass cls, jdoubleArray img_in, jint rows, jint cols, jint x, jint y, jint width, jint height, jdouble fill_value) {
-    // Convert the Java 1D array to a double*
+   
     jdouble* img_in_arr = env->GetDoubleArrayElements(img_in, nullptr);
-
-    // Call the C++ implementation of the Image Cutout function
     jdouble* img_out_arr = imageCutout(img_in_arr, rows, cols, x, y, width, height, fill_value);
-
-    // Convert the double* back to a Java 1D array
     jdoubleArray img_out = env->NewDoubleArray(rows * cols);
-    env->SetDoubleArrayRegion(img_out, 0, rows * cols, img_out_arr);
 
-    // Release the native array reference
+    env->SetDoubleArrayRegion(img_out, 0, rows * cols, img_out_arr);
     env->ReleaseDoubleArrayElements(img_in, img_in_arr, JNI_ABORT);
     delete[] img_out_arr;
 
@@ -104,25 +98,25 @@ JNIEXPORT jdoubleArray JNICALL Java_org_apache_sysds_utils_ImgNativeHelper_cropI
 /*JNIEXPORT jdoubleArray JNICALL Java_org_apache_sysds_utils_ImgNativeHelper_shearImage(JNIEnv *env, jclass,
     jdoubleArray img_in, jint width, jint height, jdouble shear_x, jdouble shear_y, jdouble fill_value) {
 
-    // Convert the Java input double array to a C++ double array
+   
     jsize length = env->GetArrayLength(img_in);
     double *img_in_array = env->GetDoubleArrayElements(img_in, 0);
 
-    // Call the C++ m_img_shear function (assuming it is implemented)
+   
     double* img_out = img_transform(img_in_array, width, height, shear_x, shear_y, fill_value);
 
-    // Release the input double array elements
+   
     env->ReleaseDoubleArrayElements(img_in, img_in_array, 0);
 
     if (img_out == nullptr) {
         return nullptr;
     }
 
-    // Create a new Java double array and copy the result into it
+   
     jdoubleArray img_out_java = env->NewDoubleArray(width * height);
     env->SetDoubleArrayRegion(img_out_java, 0, width * height, img_out);
 
-    // Free memory for the output image
+   
     delete[] img_out;
 
     return img_out_java;
@@ -132,14 +126,10 @@ JNIEXPORT void JNICALL Java_org_apache_sysds_utils_ImgNativeHelper_imgTranslate(
                                                           jdoubleArray img_in, jdouble offset_x, jdouble offset_y,
                                                           jint in_w, jint in_h, jint out_w, jint out_h,
                                                           jdouble fill_value, jdoubleArray img_out) {
-    // Convert Java arrays to C++ arrays
+   
     jdouble* j_img_in = env->GetDoubleArrayElements(img_in, nullptr);
     jdouble* j_img_out = env->GetDoubleArrayElements(img_out, nullptr);
-
-    // Call your C++ ImageTranslate function
     img_translate(j_img_in, offset_x, offset_y, in_w, in_h, out_w, out_h, fill_value, j_img_out);
-
-    // Release Java arrays
     env->ReleaseDoubleArrayElements(img_in, j_img_in, 0);
     env->ReleaseDoubleArrayElements(img_out, j_img_out, 0);
 }

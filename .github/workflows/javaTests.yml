@@ -50,89 +50,117 @@ jobs:
       matrix:
         os: [ubuntu-latest]
         tests: [
+          "org.apache.sysds.test.applications.**",
+          "**.test.usertest.**",
+          "**.component.c**.**",
+          "**.component.e**.**,**.component.f**.**,**.component.m**.**",
+          "**.component.p**.**,**.component.t**.**",
+          "**.functions.a**.**,**.functions.binary.frame.**,**.functions.binary.matrix.**,**.functions.binary.scalar.**,**.functions.binary.tensor.**",
+          "**.functions.blocks.**,**.functions.data.rand.**,",
+          "**.functions.countDistinct.**,**.functions.countDistinctApprox.**,**.functions.data.misc.**,**.functions.lineage.**",
+          "**.functions.compress.**,**.functions.data.tensor.**,**.functions.codegenalg.parttwo.**,**.functions.codegen.**,**.functions.caching.**",
+          "**.functions.binary.matrix_full_cellwise.**,**.functions.binary.matrix_full_other.**",
+          "**.functions.federated.algorithms.**,**.functions.federated.io.**,**.functions.federated.paramserv.**",
+          "**.functions.federated.primitives.**,**.functions.federated.transform.**",
+          "**.functions.federated.monitoring.**,**.functions.federated.multitenant.**",
+          "**.functions.federated.codegen.**,**.functions.federated.FederatedTestObjectConstructor",
+          "**.functions.codegenalg.partone.**",
+          "**.functions.builtin.part1.**",
+          "**.functions.builtin.part2.**",
+          "**.functions.frame.**,**.functions.indexing.**,**.functions.io.**,**.functions.iogen.**",
+          "**.functions.dnn.**",
           "**.functions.nativ.**",
+          "**.functions.paramserv.**",
+          "**.functions.recompile.**,**.functions.misc.**,**.functions.mlcontext.**",
+          "**.functions.nary.**,**.functions.quaternary.**",
+          "**.functions.parfor.**",
+          "**.functions.pipelines.**,**.functions.privacy.**",
+          "**.functions.homomorphicEncryption.**",
+          "**.functions.unary.scalar.**,**.functions.updateinplace.**,**.functions.vect.**",
+          "**.functions.reorg.**,**.functions.rewrite.**,**.functions.ternary.**,**.functions.transform.**",
+          "**.functions.unary.matrix.**,**.functions.linearization.**,**.functions.jmlc.**"
         ]
     name: ${{ matrix.tests }}
     steps:
-    - name: Checkout Repository
-      uses: actions/checkout@v3
+      - name: Checkout Repository
+        uses: actions/checkout@v4
 
 
-    - name: ${{ matrix.tests }}
-      uses: ./.github/action/
-      id: test
-      with:
-        test-to-run: ${{ matrix.tests }}
+      - name: ${{ matrix.tests }}
+        uses: ./.github/action/
+        id: test
+        with:
+          test-to-run: ${{ matrix.tests }}
 
-    - name: Clean Github Artifact Name of Asterisks
-      run: |
-        ARTIFACT_NAME="transient_jacoco"
-        ARTIFACT_NAME+="-${{ matrix.os }}"
-        ARTIFACT_NAME+="-java-${{ matrix.java }}"
-        ARTIFACT_NAME+="-${{ matrix.javadist }}"
-        ARTIFACT_NAME+="-${{ matrix.tests }}"
-        ARTIFACT_NAME=${ARTIFACT_NAME//\*/x} # replace * with x
-        echo "ARTIFACT_NAME=$ARTIFACT_NAME" >> $GITHUB_ENV
+      - name: Clean Github Artifact Name of Asterisks
+        run: |
+          ARTIFACT_NAME="transient_jacoco"
+          ARTIFACT_NAME+="-${{ matrix.os }}"
+          ARTIFACT_NAME+="-java-${{ matrix.java }}"
+          ARTIFACT_NAME+="-${{ matrix.javadist }}"
+          ARTIFACT_NAME+="-${{ matrix.tests }}"
+          ARTIFACT_NAME=${ARTIFACT_NAME//\*/x} # replace * with x
+          echo "ARTIFACT_NAME=$ARTIFACT_NAME" >> $GITHUB_ENV
 
-    - name: Save Java Test Coverage as Artifact
-      uses: actions/upload-artifact@v3
-      with:
-        name: ${{ env.ARTIFACT_NAME }}
-        path: target/jacoco.exec
-        retention-days: 1
+      - name: Save Java Test Coverage as Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ env.ARTIFACT_NAME }}
+          path: target/jacoco.exec
+          retention-days: 1
 
   determine_test_coverage:
     name: Determine Test Coverage
     runs-on: ubuntu-latest
     needs: [
       java_tests
-      ]
+    ]
     steps:
-    - name: Checkout Repository
-      uses: actions/checkout@v3
+      - name: Checkout Repository
+        uses: actions/checkout@v4
 
-    - name: Cache Maven Dependencies
-      uses: actions/cache@v3
-      with:
-        path: ~/.m2/repository
-        key: ${{ runner.os }}-maven-test-${{ hashFiles('**/pom.xml') }}
-        restore-keys: |
-          ${{ runner.os }}-maven-test-
+      - name: Cache Maven Dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-test-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-test-
 
-    - name: Download all Jacoco Artifacts
-      uses: actions/download-artifact@v3
-      with:
-        path: target
+      - name: Download all Jacoco Artifacts
+        uses: actions/download-artifact@v3
+        with:
+          path: target
 
-    - name: Merge Jacoco Artifacts
-      run: mvn jacoco:merge
+      - name: Merge Jacoco Artifacts
+        run: mvn jacoco:merge
 
-    - name: Process Classes 
-      run: mvn process-classes
+      - name: Process Classes
+        run: mvn process-classes
 
-    - name: Generate Code Coverage Report
-      run: mvn jacoco:report
+      - name: Generate Code Coverage Report
+        run: mvn jacoco:report
 
-    - name: Upload Jacoco Report Artifact PR
-      if: (github.repository_owner == 'apache') && (github.ref_name != 'main')
-      uses: actions/upload-artifact@v3
-      with:
-        name: Java Code Coverage (Jacoco)
-        path: target/site/jacoco
-        retention-days: 7
+      - name: Upload Jacoco Report Artifact PR
+        if: (github.repository_owner == 'apache') && (github.ref_name != 'main')
+        uses: actions/upload-artifact@v3
+        with:
+          name: Java Code Coverage (Jacoco)
+          path: target/site/jacoco
+          retention-days: 7
 
-    - name: Upload Jacoco Report Artifact Main
-      if: (github.repository_owner == 'apache') && (github.ref_name == 'main')
-      uses: actions/upload-artifact@v3
-      with:
-        name: Java Code Coverage (Jacoco)
-        path: target/site/jacoco
-        retention-days: 30
+      - name: Upload Jacoco Report Artifact Main
+        if: (github.repository_owner == 'apache') && (github.ref_name == 'main')
+        uses: actions/upload-artifact@v3
+        with:
+          name: Java Code Coverage (Jacoco)
+          path: target/site/jacoco
+          retention-days: 30
 
-    - name: Upload Jacoco Report Artifact Fork
-      if: (github.repository_owner != 'apache')
-      uses: actions/upload-artifact@v3
-      with:
-        name: Java Code Coverage (Jacoco)
-        path: target/site/jacoco
-        retention-days: 3
+      - name: Upload Jacoco Report Artifact Fork
+        if: (github.repository_owner != 'apache')
+        uses: actions/upload-artifact@v3
+        with:
+          name: Java Code Coverage (Jacoco)
+          path: target/site/jacoco
+          retention-days: 3

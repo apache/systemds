@@ -38,6 +38,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
@@ -66,6 +71,7 @@ import org.apache.sysds.parser.DataExpression;
 import org.apache.sysds.parser.ParseException;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.DMLScriptException;
+import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.controlprogram.caching.FrameObject;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
@@ -256,6 +262,7 @@ public abstract class AutomatedTestBase {
 			TEST_GPU = false;
 			VERBOSE_STATS = false;
 		}
+		CompressedMatrixBlock.debug = true;
 	}
 
 	// Timestamp before test start.
@@ -883,6 +890,10 @@ public abstract class AutomatedTestBase {
 		return TestUtils.readRMatrixFromFS(baseDirectory + EXPECTED_DIR + cacheDir + fileName);
 	}
 
+	protected static HashMap<CellIndex, Double> readDMLScalarFromExpectedDir(String fileName) {
+		return TestUtils.readDMLScalarFromHDFS(baseDirectory + EXPECTED_DIR + fileName);
+	}
+
 	protected static HashMap<CellIndex, Double> readDMLScalarFromOutputDir(String fileName) {
 		return TestUtils.readDMLScalarFromHDFS(baseDirectory + OUTPUT_DIR + fileName);
 	}
@@ -973,9 +984,17 @@ public abstract class AutomatedTestBase {
 			Assert.assertEquals(mc.getBlocksize(), rmc.getBlocksize());
 	}
 
+	public static MatrixCharacteristics readDMLMetaDataFileFromExpectedDir(String fileName) {
+		return readDMLMetaDataFile(fileName, EXPECTED_DIR);
+	}
+
 	public static MatrixCharacteristics readDMLMetaDataFile(String fileName) {
+		return readDMLMetaDataFile(fileName, OUTPUT_DIR);
+	}
+
+	public static MatrixCharacteristics readDMLMetaDataFile(String fileName, String outputDir) {
 		try {
-			MetaDataAll meta = getMetaData(fileName);
+			MetaDataAll meta = getMetaData(fileName, outputDir);
 			return new MatrixCharacteristics(
 				meta.getDim1(), meta.getDim2(), meta.getBlocksize(), -1);
 		}
@@ -1177,7 +1196,6 @@ public abstract class AutomatedTestBase {
 	protected void runRScript(boolean newWay) {
 
 		String executionFile = sourceDirectory + selectedTest + ".R";
-		;
 		if(fullRScriptName != null)
 			executionFile = fullRScriptName;
 
@@ -1424,7 +1442,26 @@ public abstract class AutomatedTestBase {
 	 */
 	protected ByteArrayOutputStream runTest(boolean newWay, boolean exceptionExpected, Class<?> expectedException,
 		String errMessage, int maxSparkInst) {
-
+		ExecutorService executor = Executors.newSingleThreadExecutor();
+		try{
+			return executor.submit(() -> 
+				runTestWithTimeout(newWay,exceptionExpected,expectedException,errMessage, maxSparkInst))//
+				.get(1000, TimeUnit.SECONDS);
+		}
+		catch(TimeoutException e){
+			throw new RuntimeException("Our tests should run faster than 1000 sec each",e);
+		}
+		catch(Exception e){
+			fail(e.getMessage());
+			throw new RuntimeException(e);
+		}
+		finally{
+			executor.shutdown();
+		}
+	}
+	
+	private ByteArrayOutputStream runTestWithTimeout(boolean newWay, boolean exceptionExpected, Class<?> expectedException,
+		String errMessage, int maxSparkInst){
 		String name = "";
 		final StackTraceElement[] ste = Thread.currentThread().getStackTrace();
 		for(int i = 0; i < ste.length; i++) {
@@ -1432,23 +1469,23 @@ public abstract class AutomatedTestBase {
 				name = ste[i - 1].getClassName() + "." + ste[i - 1].getMethodName();
 		}
 		LOG.info("Test method name: " + name);
-
+	
 		String executionFile = sourceDirectory + selectedTest + ".dml";
-
+	
 		if(!newWay) {
 			executionFile = executionFile + "t";
 			ParameterBuilder.setVariablesInScript(sourceDirectory, selectedTest + ".dml", testVariables);
 		}
-
+	
 		// cleanup scratch folder (prevent side effect between tests)
 		cleanupScratchSpace();
-
+	
 		ArrayList<String> args = new ArrayList<>();
 		// setup arguments to SystemDS
 		if(DEBUG) {
 			args.add("-Dsystemds.logging=trace");
 		}
-
+	
 		if(newWay) {
 			// Need a null pointer check because some tests read DML from a string.
 			if(null != fullDMLScriptName) {
@@ -1460,15 +1497,15 @@ public abstract class AutomatedTestBase {
 			args.add("-f");
 			args.add(executionFile);
 		}
-
+	
 		addProgramIndependentArguments(args, programArgs);
-
+	
 		// program-specific parameters
 		if(newWay) {
 			for(int i = 0; i < programArgs.length; i++)
 				args.add(programArgs[i]);
 		}
-
+	
 		if(DEBUG) {
 			if(!newWay)
 				TestUtils.printDMLScript(executionFile);
@@ -1476,22 +1513,22 @@ public abstract class AutomatedTestBase {
 				TestUtils.printDMLScript(fullDMLScriptName);
 			}
 		}
-
+	
 		ByteArrayOutputStream buff = outputBuffering ? new ByteArrayOutputStream() : null;
 		PrintStream old = System.out;
 		if(outputBuffering)
 			System.setOut(new PrintStream(buff));
-
+	
 		try {
 			String[] dmlScriptArgs = args.toArray(new String[args.size()]);
 			if(LOG.isTraceEnabled())
 				LOG.trace("arguments to DMLScript: " + Arrays.toString(dmlScriptArgs));
 			main(dmlScriptArgs);
-
+	
 			if(maxSparkInst > -1 && maxSparkInst < Statistics.getNoOfCompiledSPInst())
 				fail("Limit of Spark jobs is exceeded: expected: " + maxSparkInst + ", occurred: "
 					+ Statistics.getNoOfCompiledSPInst());
-
+	
 			if(exceptionExpected)
 				fail("expected exception which has not been raised: " + expectedException);
 		}
@@ -1506,18 +1543,23 @@ public abstract class AutomatedTestBase {
 			}
 			if(!exceptionExpected || (expectedException != null && !(e.getClass().equals(expectedException)))) {
 				StringBuilder errorMessage = new StringBuilder();
-				errorMessage.append("\nfailed to run script: " + executionFile);
+				String base = "\nfailed to run script: " + executionFile;
+				errorMessage.append(base);
 				errorMessage.append("\nStandard Out:");
 				if(outputBuffering)
 					errorMessage.append("\n" + buff);
-				errorMessage.append("\nStackTrace:");
-				errorMessage.append(getStackTraceString(e, 0));
-				fail(errorMessage.toString());
+				// errorMessage.append("\nStackTrace:");
+				// errorMessage.append(getStackTraceString(e, 0));
+				LOG.error(errorMessage);
+				e.printStackTrace();
+				fail(base);
 			}
 		}
-		if(outputBuffering) {
-			System.out.flush();
-			System.setOut(old);
+		finally{
+			if(outputBuffering) {
+				System.out.flush();
+				System.setOut(old);
+			}
 		}
 		return buff;
 	}

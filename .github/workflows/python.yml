@@ -56,7 +56,7 @@ jobs:
     name: ${{ matrix.os }} Java ${{ matrix.java }} ${{ matrix.javadist }} Python ${{ matrix.python-version }}
     steps:
     - name: Checkout Repository
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
     - name: Setup Java ${{ matrix.java }} ${{ matrix.javadist }}
       uses: actions/setup-java@v3
@@ -86,7 +86,7 @@ jobs:
         key: ${{ runner.os }}-${{ hashFiles('.github/workflows/python.yml') }}
 
     - name: Maven clean & package
-      run: mvn -ntp clean package -P distribution
+      run: mvn -ntp clean package -P distribution -B
 
     - name: Setup Python ${{ matrix.python-version }}
       uses: actions/setup-python@v4
@@ -113,14 +113,14 @@ jobs:
         export PATH=$SYSTEMDS_ROOT/bin:$PATH
         export SYSDS_QUIET=1
         cd src/main/python
-        unittest-parallel -t . -s tests --module-fixtures
+        unittest-parallel -t . -s tests
         # python -m unittest discover -s tests -p 'test_*.py'
         echo "Exit Status: " $?
     
     - name: Run all python tests no environment
       run: |
         cd src/main/python
-        unittest-parallel -t . -s tests --module-fixtures
+        unittest-parallel -t . -s tests
         # python -m unittest discover -s tests -p 'test_*.py'
         echo "Exit Status: " $?
 

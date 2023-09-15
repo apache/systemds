@@ -70,6 +70,12 @@ def decisionTree(X: Matrix,
         candidates at tree nodes: m = ceil(num_features^max_features)
     :param max_values: Parameter controlling the number of values per feature used
         as split candidates: nb = ceil(num_values^max_values)
+    :param max_dataratio: Parameter in [0,1] controlling when to materialize data
+        subsets of X and y on node splits. When set to 0, we always
+        scan the original X and y, which has the benefit of avoiding
+        the allocation and maintenance of data for all active nodes.
+        When set to 0.01 we rematerialize whenever the sub-tree data
+        would be less than 1% of last the parent materialize data size.
     :param impurity: Impurity measure: entropy, gini (default), rss (regression)
     :param seed: Fixed seed for randomization of samples and split candidates
     :param verbose: Flag indicating verbose debug output

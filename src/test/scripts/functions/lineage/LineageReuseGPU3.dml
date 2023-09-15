@@ -19,8 +19,6 @@
 #
 #-------------------------------------------------------------
 
-# Increase rows and cols for better performance gains
-
 SimLM = function(Matrix[Double] X, Matrix[Double] y, Double lamda=0.0001) return (Matrix[Double] beta) 
 {
   A = t(X) %*% X + diag(matrix(lamda, rows=ncol(X), cols=1));
@@ -34,13 +32,16 @@ c = 10
 
 X = rand(rows=r, cols=c, seed=42);
 y = rand(rows=r, cols=1, seed=43);
-R = matrix(0, 1, 2);
+R = matrix(0, 1, 3);
 
 beta1 = SimLM(X, y, 0.0001);
 R[,1] = sum(beta1);
 
 beta2 = SimLM(X, y, 0.0001);
-R[,2] = sum(beta2); #function reuse
+R[,2] = sum(beta2); #second hit
+
+beta3 = SimLM(X, y, 0.0001);
+R[,3] = sum(beta3); #function reuse
 
 write(R, $1, format="text");
 

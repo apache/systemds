@@ -19,6 +19,8 @@
 
 package org.apache.sysds.test.functions.io.binary;
 
+import com.google.crypto.tink.subtle.Random;
+import org.apache.sysds.runtime.util.LocalFileUtils;
 import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysds.common.Types.FileFormat;
@@ -31,7 +33,9 @@ import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
 
-public class SerializeTest extends AutomatedTestBase 
+import java.util.HashMap;
+
+public class SerializeTest extends AutomatedTestBase
 {
 	private final static String TEST_NAME = "SerializeTest";
 	private final static String TEST_DIR = "functions/io/binary/";
@@ -61,7 +65,13 @@ public class SerializeTest extends AutomatedTestBase
 	{ 
 		runSerializeTest( rows1, cols1, 1.0 ); 
 	}
-	
+	@Test
+	public void testDedupDenseBlock()
+	{
+		runSerializeDedupDenseTest( rows1, cols1 );
+	}
+
+
 	@Test
 	public void testDenseSparseBlock() 
 	{ 
@@ -116,6 +126,60 @@ public class SerializeTest extends AutomatedTestBase
 					double val2 = mb2.quickGetValue(i, j);
 					Assert.assertEquals(val1, val2, eps);
 				}
+		}
+		catch(Exception ex)
+		{
+			ex.printStackTrace();
+			throw new RuntimeException(ex);
+		}
+	}
+
+	private void runSerializeDedupDenseTest( int rows, int cols )
+	{
+		try
+		{
+			//generate actual dataset
+			double[][] X = getRandomMatrix(rows, cols, -1.0, 1.0, 1.0, 7);
+			double[][] X_duplicated = new double[rows*10][];
+			MatrixBlock mb = new MatrixBlock(rows*10, cols, false, 0, true);
+			mb.allocateDenseBlock(true, true);
+			HashMap<double[], Integer > seen = new HashMap<>();
+			for (int i = 0; i < rows*10; i++) {
+				int row = Random.randInt(rows);
+				Integer tmpPos = seen.get(X[row]);
+				if(tmpPos == null) {
+					tmpPos = seen.size();
+					seen.put(X[row], tmpPos);
+				}
+				X_duplicated[i] = X[row];
+				mb.quickSetRow(i, X[row]);
+			}
+
+			String fname = SCRIPT_DIR + TEST_DIR + "dedupSerializedBlock.out";
+			LocalFileUtils.writeCacheBlockToLocal(fname, mb);
+			MatrixBlock mb2 = (MatrixBlock) LocalFileUtils.readCacheBlockFromLocal(fname, true);
+
+			//compare matrices - values
+			for( int i=0; i<mb.getNumRows(); i++ )
+				for( int j=0; j<mb.getNumColumns(); j++ )
+				{
+					double val1 = mb.quickGetValue(i, j);
+					double val2 = mb2.quickGetValue(i, j);
+					Assert.assertEquals(val1, val2, eps);
+				}
+
+			//compare matrices - values
+			HashMap<double[], Integer > seen2 = new HashMap<>();
+			for( int i=0; i<mb.getNumRows(); i++ ){
+				double[] row = mb2.getDenseBlock().values(i);
+				Integer tmpPos = seen2.get(row);
+				if(tmpPos == null) {
+					tmpPos = seen2.size();
+					seen2.put(row, tmpPos);
+				}
+				Integer posMb1 = seen.get(mb.getDenseBlock().values(i));
+				Assert.assertEquals( (long) tmpPos, (long) posMb1);
+			}
 		}
 		catch(Exception ex)
 		{

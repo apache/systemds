@@ -77,16 +77,16 @@ public class EncodeSampleCustom {
 		AMapToData Z0 = MapToFactory.create(77, 0);
 		AOffset O0 = OffsetFactory.createOffset(new int[] {4036, 4382, 4390, 4764, 4831, 4929, 5013, 6964, 7018, 7642,
 			8306, 8559, 8650, 9041, 9633, 9770, 11000, 11702, 11851, 11890, 11912, 13048, 15859, 16164, 16191, 16212,
-			17927, 18344, 19007, 19614, 19806, 20878, 21884, 21924, 22245, 22454, 23185, 23825, 24128, 24829, 25835, 26130,
-			26456, 26767, 27058, 28094, 28250, 28335, 28793, 30175, 30868, 32526, 32638, 33464, 33536, 33993, 34096, 34146,
-			34686, 35863, 36655, 37212, 37535, 37832, 38328, 38689, 39802, 39810, 39835, 40065, 40554, 41221, 41420, 42133,
-			42914, 43027, 43092});
+			17927, 18344, 19007, 19614, 19806, 20878, 21884, 21924, 22245, 22454, 23185, 23825, 24128, 24829, 25835,
+			26130, 26456, 26767, 27058, 28094, 28250, 28335, 28793, 30175, 30868, 32526, 32638, 33464, 33536, 33993,
+			34096, 34146, 34686, 35863, 36655, 37212, 37535, 37832, 38328, 38689, 39802, 39810, 39835, 40065, 40554,
+			41221, 41420, 42133, 42914, 43027, 43092});
 		AMapToData Z1 = MapToFactory.create(65, 0);
-		AOffset O1 = OffsetFactory.createOffset(new int[] {294, 855, 1630, 1789, 1872, 1937, 2393, 2444, 3506, 4186, 5210,
-			6048, 6073, 8645, 9147, 9804, 9895, 13759, 14041, 14198, 16138, 16548, 16566, 17249, 18257, 18484, 18777,
-			18881, 19138, 19513, 20127, 21443, 23264, 23432, 24050, 24332, 24574, 24579, 25246, 25513, 25686, 27075, 31190,
-			31305, 31429, 31520, 31729, 32073, 32670, 33529, 34453, 34947, 36224, 37219, 38412, 39505, 39799, 40074, 40569,
-			40610, 40745, 41755, 41761, 41875, 44394});
+		AOffset O1 = OffsetFactory.createOffset(new int[] {294, 855, 1630, 1789, 1872, 1937, 2393, 2444, 3506, 4186,
+			5210, 6048, 6073, 8645, 9147, 9804, 9895, 13759, 14041, 14198, 16138, 16548, 16566, 17249, 18257, 18484,
+			18777, 18881, 19138, 19513, 20127, 21443, 23264, 23432, 24050, 24332, 24574, 24579, 25246, 25513, 25686,
+			27075, 31190, 31305, 31429, 31520, 31729, 32073, 32670, 33529, 34453, 34947, 36224, 37219, 38412, 39505,
+			39799, 40074, 40569, 40610, 40745, 41755, 41761, 41875, 44394});
 		SparseEncoding a = EncodingFactory.createSparse(Z0, O0, 50000);
 		SparseEncoding b = EncodingFactory.createSparse(Z1, O1, 50000);
 
@@ -273,19 +273,20 @@ public class EncodeSampleCustom {
 	public void testNaNDense() {
 		MatrixBlock m = getDenseNaNMatrix();
 		IEncode e = EncodingFactory.createFromMatrixBlock(m, false, 0);
-		// Technically it could have returned a sparse Encoding, but nulls, are considered values therefore the branching
+		// Technically it could have returned a sparse Encoding, but nulls, are considered values therefore the
+		// branching
 		// is saying that there is values in all cells making it chose a dense encoding.
 		// This is not a problem in the general compression, only in the edge case a entire or most of a column is null
 		assertTrue(e.isDense());
 		assertEquals(1, e.getUnique());
 	}
 
-
 	@Test
 	public void testNaNDenseTransposed() {
 		MatrixBlock m = getDenseNaNMatrix();
 		IEncode e = EncodingFactory.createFromMatrixBlock(m, true, 0);
-		// Technically it could have returned a sparse Encoding, but nulls, are considered values therefore the branching
+		// Technically it could have returned a sparse Encoding, but nulls, are considered values therefore the
+		// branching
 		// is saying that there is values in all cells making it chose a dense encoding.
 		// This is not a problem in the general compression, only in the edge case a entire or most of a column is null
 		assertTrue(e.isDense());
@@ -297,7 +298,7 @@ public class EncodeSampleCustom {
 		MatrixBlock m = getSparseNaNMatrix();
 		IEncode e = EncodingFactory.createFromMatrixBlock(m, false, 0);
 		assertTrue(!e.isDense());
-		assertEquals(1, e.getUnique());
+		assertEquals(2, e.getUnique());
 	}
 
 	@Test
@@ -305,6 +306,6 @@ public class EncodeSampleCustom {
 		MatrixBlock m = getSparseNaNMatrix();
 		IEncode e = EncodingFactory.createFromMatrixBlock(m, true, 0);
 		assertTrue(!e.isDense());
-		assertEquals(1, e.getUnique());
+		assertEquals(2, e.getUnique());
 	}
 }

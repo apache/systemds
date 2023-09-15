@@ -23,7 +23,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import org.apache.commons.lang.ArrayUtils;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.wink.json4j.JSONObject;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
@@ -41,7 +41,7 @@ public class DecoderFactory
 		Dummycode, 
 		PassThrough,
 		Recode,
-	};
+	}
 	
 	public static Decoder createDecoder(String spec, String[] colnames, ValueType[] schema, FrameBlock meta) {
 		return createDecoder(spec, colnames, schema, meta, meta.getNumColumns(), -1, -1);

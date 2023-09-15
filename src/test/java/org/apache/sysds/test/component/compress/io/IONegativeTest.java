@@ -21,7 +21,7 @@ package org.apache.sysds.test.component.compress.io;
 
 import java.io.IOException;
 
-import org.apache.commons.lang.NotImplementedException;
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.io.CompressedWriteBlock;
 import org.apache.sysds.runtime.compress.io.ReaderCompressed;
@@ -29,6 +29,7 @@ import org.apache.sysds.runtime.compress.io.WriterCompressed;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.junit.Test;
 
+@net.jcip.annotations.NotThreadSafe
 public class IONegativeTest {
 	@Test(expected = RuntimeException.class)
 	public void negativeBLen() throws IOException {
@@ -82,7 +83,7 @@ public class IONegativeTest {
 
 	@Test(expected = RuntimeException.class)
 	public void writeLargeNRow() throws IOException {
-		writeEmpty(null, (long) Integer.MAX_VALUE + 1L, 100, 100);
+		writeEmpty(null, Integer.MAX_VALUE + 1L, 100, 100);
 	}
 
 	@Test(expected = RuntimeException.class)
@@ -97,7 +98,7 @@ public class IONegativeTest {
 
 	@Test(expected = RuntimeException.class)
 	public void writeLargeNCol() throws IOException {
-		writeEmpty(null, 100, (long) Integer.MAX_VALUE + 1L, 100);
+		writeEmpty(null, 100, Integer.MAX_VALUE + 1L, 100);
 	}
 
 	@Test(expected = RuntimeException.class)

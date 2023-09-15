@@ -153,11 +153,11 @@ public class UnaryMatrixFEDInstruction extends UnaryFEDInstruction {
 
 		// modify fed ranges since ucumk+* output is always nx1
 		if(getOpcode().equalsIgnoreCase("ucumk+*")) {
-			out.getDataCharacteristics().set(out.getNumRows(), 1L, (int) out.getBlocksize());
+			out.getDataCharacteristics().set(out.getNumRows(), 1L, out.getBlocksize());
 			for(int i = 0; i < out.getFedMapping().getFederatedRanges().length; i++)
 				out.getFedMapping().getFederatedRanges()[i].setEndDim(1, 1);
 		} else {
-			out.getDataCharacteristics().set(out.getNumRows(), out.getNumColumns(), (int) out.getBlocksize());
+			out.getDataCharacteristics().set(out.getNumRows(), out.getNumColumns(), out.getBlocksize());
 		}
 	}
 

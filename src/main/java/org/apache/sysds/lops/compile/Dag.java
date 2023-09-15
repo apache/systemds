@@ -1027,7 +1027,8 @@ public class Dag<N extends Lop>
 	 */
 	private static ArrayList<Instruction> cleanupInstructions(List<Instruction> insts) {
 		//step 1: create mvvar instructions: assignvar s1 s2, rmvar s1 -> mvvar s1 s2,
-		//                                   cpvar m1 m2, rmvar m1 --> mvvar m1 m2 
+		//                                   cpvar m1 m2, rmvar m1 --> mvvar m1 m2
+		//                                   rmvar m2, mvvar m1 m2 -> mvvar m1 m2
 		List<Instruction> tmp1 = collapseAssignvarAndRmvarInstructions(insts);
 		
 		//step 2: create packed rmvar instructions: rmvar m1, rmvar m2 -> rmvar m1 m2
@@ -1049,6 +1050,14 @@ public class Dag<N extends Lop>
 					&& ((VariableCPInstruction)inst2).isRemoveVariableNoFile()
 					&& inst1.getInput1().getName().equals(
 						((VariableCPInstruction)inst2).getInput1().getName()) ) {
+					//remove unnecessary rmvar before mvvar
+					Instruction last = ret.size()>0 ? ret.get(ret.size()-1) : null;
+					if( last != null && last instanceof VariableCPInstruction
+						&& ((VariableCPInstruction)last).isRemoveVariableNoFile()
+						&& ((VariableCPInstruction)last).getInputs().size() == 1
+						&& ((VariableCPInstruction)last).getInput1().getName().equals(inst1.getInput2().getName()))
+						ret.remove(ret.size()-1);
+					//add fused mvvar instruction
 					ret.add(VariableCPInstruction.prepMoveInstruction(
 						inst1.getInput1().getName(), inst1.getInput2().getName()));
 				}

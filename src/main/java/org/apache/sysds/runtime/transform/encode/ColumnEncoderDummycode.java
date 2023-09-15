@@ -24,7 +24,9 @@ import static org.apache.sysds.runtime.util.UtilFunctions.getEndIndex;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
 
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.runtime.DMLRuntimeException;
@@ -75,38 +77,51 @@ public class ColumnEncoderDummycode extends ColumnEncoder {
 	}
 
 	@Override
-	protected double[] getCodeCol(CacheBlock<?> in, int startInd, int blkSize) {
+	protected double[] getCodeCol(CacheBlock<?> in, int startInd, int endInd, double[] tmp) {
 		throw new DMLRuntimeException("DummyCoder does not have a code");
 	}
 
-	protected void applySparse(CacheBlock<?> in, MatrixBlock out, int outputCol, int rowStart, int blk){
-		if (!(in instanceof MatrixBlock)){
-			throw new DMLRuntimeException("ColumnEncoderDummycode called with: " + in.getClass().getSimpleName() +
-					" and not MatrixBlock");
+
+	
+	/**
+	 * Since the recoded values are already offset in the output matrix (same as input at this point) the dummycoding
+	 * only needs to offset them within their column domain. Which means that the indexes in the SparseRowVector do not
+	 * need to be sorted anymore and can be updated directly.
+	 * <p>
+	 * Input: Output:
+	 * 
+	 * <pre>
+	 * <code>
+	 *1 | 0 | 2 | 0 		1 | 0 | 0 | 1
+	 *2 | 0 | 1 | 0 ===> 	0 | 1 | 1 | 0
+	 *1 | 0 | 2 | 0 		1 | 0 | 0 | 1
+	 *1 | 0 | 1 | 0 		1 | 0 | 1 | 0
+	 * </code>
+	 * </pre>
+	 * 
+	 * Example SparseRowVector Internals (1. row):
+	 * <p>
+	 * indexes = [0,2] ===> indexes = [0,3] values = [1,2] values = [1,1]
+	 * 
+	 * @param in        Input block to apply to
+	 * @param out       Output in sparse format
+	 * @param outputCol The column to output to
+	 * @param rowStart  Row start
+	 * @param blk       block size.
+	 */
+	protected void applySparse(CacheBlock<?> in, MatrixBlock out, int outputCol, int rowStart, int blk) {
+		if(!(in instanceof MatrixBlock)) {
+			throw new DMLRuntimeException(
+				"ColumnEncoderDummycode called with: " + in.getClass().getSimpleName() + " and not MatrixBlock");
 		}
 		boolean mcsr = MatrixBlock.DEFAULT_SPARSEBLOCK == SparseBlock.Type.MCSR;
-		mcsr = false; //force CSR for transformencode
+		mcsr = false; // force CSR for transformencode
 		ArrayList<Integer> sparseRowsWZeros = null;
 		int index = _colID - 1;
 		for(int r = rowStart; r < getEndIndex(in.getNumRows(), rowStart, blk); r++) {
-			// Since the recoded values are already offset in the output matrix (same as input at this point)
-			// the dummycoding only needs to offset them within their column domain. Which means that the
-			// indexes in the SparseRowVector do not need to be sorted anymore and can be updated directly.
-			//
-			// Input: Output:
-			//
-			// 1 | 0 | 2 | 0 		1 | 0 | 0 | 1
-			// 2 | 0 | 1 | 0 ===> 	0 | 1 | 1 | 0
-			// 1 | 0 | 2 | 0 		1 | 0 | 0 | 1
-			// 1 | 0 | 1 | 0 		1 | 0 | 1 | 0
-			//
-			// Example SparseRowVector Internals (1. row):
-			//
-			// indexes = [0,2] ===> indexes = [0,3]
-			// values = [1,2] values = [1,1]
-			if (mcsr) {
+			if(mcsr) {
 				double val = out.getSparseBlock().get(r).values()[index];
-				if(Double.isNaN(val)){
+				if(Double.isNaN(val)) {
 					if(sparseRowsWZeros == null)
 						sparseRowsWZeros = new ArrayList<>();
 					sparseRowsWZeros.add(r);
@@ -117,21 +132,21 @@ public class ColumnEncoderDummycode extends ColumnEncoder {
 				out.getSparseBlock().get(r).indexes()[index] = nCol;
 				out.getSparseBlock().get(r).values()[index] = 1;
 			}
-			else { //csr
-				SparseBlockCSR csrblock = (SparseBlockCSR)out.getSparseBlock();
+			else { // csr
+				SparseBlockCSR csrblock = (SparseBlockCSR) out.getSparseBlock();
 				int rptr[] = csrblock.rowPointers();
-				double val = csrblock.values()[rptr[r]+index];
-				if(Double.isNaN(val)){
+				double val = csrblock.values()[rptr[r] + index];
+				if(Double.isNaN(val)) {
 					if(sparseRowsWZeros == null)
 						sparseRowsWZeros = new ArrayList<>();
 					sparseRowsWZeros.add(r);
-					csrblock.values()[rptr[r]+index] = 0; //test
+					csrblock.values()[rptr[r] + index] = 0; // test
 					continue;
 				}
 				// Manually fill the column-indexes and values array
 				int nCol = outputCol + (int) val - 1;
-				csrblock.indexes()[rptr[r]+index] = nCol;
-				csrblock.values()[rptr[r]+index] = 1;
+				csrblock.indexes()[rptr[r] + index] = nCol;
+				csrblock.values()[rptr[r] + index] = 1;
 			}
 		}
 		if(sparseRowsWZeros != null) {

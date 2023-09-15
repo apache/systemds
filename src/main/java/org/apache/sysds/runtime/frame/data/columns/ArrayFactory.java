@@ -23,16 +23,19 @@ import java.io.DataInput;
 import java.io.IOException;
 import java.util.BitSet;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.utils.MemoryEstimates;
 
 public interface ArrayFactory {
+	public static final Log LOG = LogFactory.getLog(ArrayFactory.class.getName());
 
 	public final static int bitSetSwitchPoint = 64;
 
 	public enum FrameArrayType {
-		STRING, BOOLEAN, BITSET, INT32, INT64, FP32, FP64, CHARACTER, OPTIONAL;
+		STRING, BOOLEAN, BITSET, INT32, INT64, FP32, FP64, CHARACTER, RAGGED, OPTIONAL, DDC;
 	}
 
 	public static StringArray create(String[] col) {
@@ -68,34 +71,61 @@ public interface ArrayFactory {
 	}
 
 	public static <T> OptionalArray<T> create(T[] col) {
-		return new OptionalArray<T>(col);
+		return new OptionalArray<>(col);
 	}
 
-	public static long getInMemorySize(ValueType type, int _numRows) {
-		switch(type) {
-			case BOOLEAN:
-				if(_numRows > bitSetSwitchPoint)
-					return Array.baseMemoryCost() + (long) MemoryEstimates.longArrayCost(_numRows >> 6 + 1);
-				else
-					return Array.baseMemoryCost() + (long) MemoryEstimates.booleanArrayCost(_numRows);
-			case INT64:
-				return Array.baseMemoryCost() + (long) MemoryEstimates.longArrayCost(_numRows);
-			case FP64:
-				return Array.baseMemoryCost() + (long) MemoryEstimates.doubleArrayCost(_numRows);
-			case UINT4:
-			case UINT8:
-			case INT32:
-				return Array.baseMemoryCost() + (long) MemoryEstimates.intArrayCost(_numRows);
-			case FP32:
-				return Array.baseMemoryCost() + (long) MemoryEstimates.floatArrayCost(_numRows);
-			case STRING:
-				// cannot be known since strings have dynamic length
-				// lets assume something large to make it somewhat safe.
-				return Array.baseMemoryCost() + (long) MemoryEstimates.stringCost(12) * _numRows;
-			case CHARACTER:
-				return Array.baseMemoryCost() + (long) MemoryEstimates.charArrayCost(_numRows);
-			default: // not applicable
-				throw new DMLRuntimeException("Invalid type to estimate size of :" + type);
+	public static <T> RaggedArray<T> create(T[] col, int m) {
+		return new RaggedArray<>(col, m);
+	}
+
+	public static long getInMemorySize(ValueType type, int _numRows, boolean containsNull) {
+		if(containsNull) {
+			switch(type) {
+				case BOOLEAN:
+				case INT64:
+				case FP64:
+				case UINT4:
+				case UINT8:
+				case INT32:
+				case FP32:
+				case CHARACTER:
+					return getInMemorySize(type, _numRows, false) + // NotNull Array
+						getInMemorySize(ValueType.BOOLEAN, _numRows, false) // BitSet
+						+ 16 + Array.baseMemoryCost(); // Optional Overhead
+				case STRING:
+					// cannot be known since strings have dynamic length
+					// lets assume something large to make it somewhat safe.
+					return Array.baseMemoryCost() + MemoryEstimates.stringCost(12) * _numRows;
+				default: // not applicable
+					throw new DMLRuntimeException("Invalid type to estimate size of :" + type);
+			}
+		}
+		else {
+			switch(type) {
+				case BOOLEAN:
+					if(_numRows > bitSetSwitchPoint)
+						return BitSetArray.estimateInMemorySize(_numRows);
+					else
+						return BooleanArray.estimateInMemorySize(_numRows);
+				case INT64:
+					return Array.baseMemoryCost() + (long) MemoryEstimates.longArrayCost(_numRows);
+				case FP64:
+					return Array.baseMemoryCost() + (long) MemoryEstimates.doubleArrayCost(_numRows);
+				case UINT4:
+				case UINT8:
+				case INT32:
+					return Array.baseMemoryCost() + (long) MemoryEstimates.intArrayCost(_numRows);
+				case FP32:
+					return Array.baseMemoryCost() + (long) MemoryEstimates.floatArrayCost(_numRows);
+				case STRING:
+					// cannot be known since strings have dynamic length
+					// lets assume something large to make it somewhat safe.
+					return Array.baseMemoryCost() + MemoryEstimates.stringCost(12) * _numRows;
+				case CHARACTER:
+					return Array.baseMemoryCost() + (long) MemoryEstimates.charArrayCost(_numRows);
+				default: // not applicable
+					throw new DMLRuntimeException("Invalid type to estimate size of :" + type);
+			}
 		}
 	}
 
@@ -129,6 +159,10 @@ public interface ArrayFactory {
 			default:
 				return new StringArray(new String[nRow]);
 		}
+	}
+
+	public static <T> DDCArray<T> allocateDDC(DDCArray<T> start, int nRow) {
+		return start.allocateLarger(nRow);
 	}
 
 	public static ABooleanArray allocateBoolean(int nRow) {
@@ -186,8 +220,12 @@ public interface ArrayFactory {
 			case CHARACTER:
 				arr = new CharArray(new char[nRow]);
 				break;
+			case RAGGED:
+				return RaggedArray.readRagged(in, nRow);
 			case OPTIONAL:
 				return OptionalArray.readOpt(in, nRow);
+			case DDC:
+				return DDCArray.read(in);
 			default: // String
 				arr = new StringArray(new String[nRow]);
 				break;
@@ -232,25 +270,42 @@ public interface ArrayFactory {
 	 */
 	@SuppressWarnings("unchecked")
 	public static <C> Array<C> set(Array<?> target, Array<?> src, int rl, int ru, int rlen) {
-		if(target == null) {
-			if(src.getFrameArrayType() == FrameArrayType.OPTIONAL)
-				target = allocateOptional(src.getValueType(), rlen);
-			else
-				target = allocate(src.getValueType(), rlen);
-		}
-		else if(target.getFrameArrayType() != FrameArrayType.OPTIONAL //
-			&& src.getFrameArrayType() == FrameArrayType.OPTIONAL) {
-			target = new OptionalArray<>(target, false);
-		}
+		try {
 
-		final ValueType ta = target.getValueType();
-		final ValueType tb = src.getValueType();
-		final ValueType tc = ValueType.getHighestCommonType(ta, tb);
+			if(target == null) {
 
-		Array<C> targetC = (Array<C>) (ta != tc ? target.changeType(tc) : target);
-		Array<C> srcC = (Array<C>) (tb != tc ? src.changeType(tc) : src);
-		targetC.set(rl, ru, srcC);
-		return targetC;
+				if(src.getFrameArrayType() == FrameArrayType.OPTIONAL)
+					target = allocateOptional(src.getValueType(), rlen);
+				else if(src.getFrameArrayType() == FrameArrayType.DDC)
+					target = allocateDDC((DDCArray<?>) src, rlen);
+				else
+					target = allocate(src.getValueType(), rlen);
+
+				if(rlen == ru)
+					throw new DMLRuntimeException("Invalid length to set");
+			}
+			else if(target.getFrameArrayType() != FrameArrayType.OPTIONAL //
+				&& src.getFrameArrayType() == FrameArrayType.OPTIONAL) {
+				target = new OptionalArray<>(target, false);
+			}
+
+			if(target.size() < rlen) {
+				throw new DMLRuntimeException("Invalid allocated target is not large enough");
+			}
+
+			final ValueType ta = target.getValueType();
+			final ValueType tb = src.getValueType();
+			final ValueType tc = ValueType.getHighestCommonType(ta, tb);
+
+			Array<C> targetC = (Array<C>) (ta != tc ? target.changeType(tc) : target);
+			Array<C> srcC = (Array<C>) (tb != tc ? src.changeType(tc) : src);
+			targetC.set(rl, ru, srcC);
+			return targetC;
+		}
+		catch(Exception e) {
+			throw new DMLRuntimeException(
+				"Failed to set subpart with: \n\n" + target + "\n\n" + src + " \n\n " + rl + " " + ru + " " + rlen, e);
+		}
 
 	}
 

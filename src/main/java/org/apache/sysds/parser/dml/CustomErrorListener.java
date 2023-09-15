@@ -368,7 +368,7 @@ public class CustomErrorListener extends BaseErrorListener {
 			int issueLineNum = parseIssue.getLine();
 			boolean displayScriptLine = false;
 			String scriptLine = null;
-			if ((issueLineNum > 0) && (issueLineNum <= scriptLines.length)) {
+			if ((issueLineNum >= 0) && (issueLineNum <= scriptLines.length)) {
 				displayScriptLine = true;
 				scriptLine = scriptLines[issueLineNum - 1];
 			}
@@ -391,6 +391,8 @@ public class CustomErrorListener extends BaseErrorListener {
 			}
 			sb.append("\n   ");
 			sb.append(parseIssue.getMessage());
+			if( parseIssue.getMessage().startsWith("no viable alternative") )
+				sb.append("\n   (NoViableAltException thrown at EOF: line "+issueLineNum+")");
 			sb.append("\n");
 		}
 		sb.append("--------------------------------------------------------------");

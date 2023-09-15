@@ -29,6 +29,7 @@ import java.util.Random;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
 import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
@@ -85,6 +86,8 @@ public class PreAggregateSDCZ_DDCTest {
 
 	public PreAggregateSDCZ_DDCTest(AMapToData m, AMapToData tm, ADictionary td, AOffset of, int nCol,
 		double[] expected) {
+		CompressedMatrixBlock.debug = true;
+
 		this.m = m;
 		this.tm = tm;
 		this.td = td;

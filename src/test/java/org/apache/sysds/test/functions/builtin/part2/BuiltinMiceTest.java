@@ -21,7 +21,7 @@ package org.apache.sysds.test.functions.builtin.part2;
 
 import java.util.HashMap;
 
-import org.apache.commons.lang.ArrayUtils;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.runtime.lineage.LineageCacheConfig.ReuseCacheType;
@@ -93,7 +93,7 @@ public class BuiltinMiceTest extends AutomatedTestBase {
 			programArgs = new String[]{"-nvargs", "X=" + DATASET, "Mask="+input("M"),
 				"iteration=" + iter, "dataN=" + output("N"), "dataC=" + output("C")};
 			if (lineage) {
-				programArgs = (String[]) ArrayUtils.addAll(programArgs, new String[] {
+				programArgs = ArrayUtils.addAll(programArgs, new String[] {
 					"-stats","-lineage", ReuseCacheType.REUSE_HYBRID.name().toLowerCase()});
 			}
 			writeInputMatrixWithMTD("M", mask, true);

@@ -129,17 +129,17 @@ public class FrameUtilTest {
 
 	@Test
 	public void testInfinite() {
-		assertEquals(ValueType.FP64, FrameUtil.isType("infinity"));
+		assertEquals(ValueType.FP32, FrameUtil.isType("infinity"));
 	}
 
 	@Test
 	public void testMinusInfinite() {
-		assertEquals(ValueType.FP64, FrameUtil.isType("-infinity"));
+		assertEquals(ValueType.FP32, FrameUtil.isType("-infinity"));
 	}
 
 	@Test
 	public void testNan() {
-		assertEquals(ValueType.FP64, FrameUtil.isType("nan"));
+		assertEquals(ValueType.FP32, FrameUtil.isType("nan"));
 	}
 
 	@Test
@@ -187,7 +187,7 @@ public class FrameUtilTest {
 
 	@Test
 	public void testIntegerMinMinus1() {
-		assertEquals(ValueType.INT64, FrameUtil.isType(((long) Integer.MIN_VALUE - 1L) + ""));
+		assertEquals(ValueType.INT64, FrameUtil.isType(String.valueOf(Integer.MIN_VALUE - 1L)));
 	}
 
 	@Test

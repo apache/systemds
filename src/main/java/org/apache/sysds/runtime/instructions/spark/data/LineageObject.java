@@ -85,4 +85,8 @@ public abstract class LineageObject
 		lob.incrementNumReferences();
 		_childs.add( lob );
 	}
+
+	public void removeAllChild() {
+		_childs.clear();
+	}
 }

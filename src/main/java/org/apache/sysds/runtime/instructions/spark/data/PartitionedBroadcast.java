@@ -19,6 +19,9 @@
 
 package org.apache.sysds.runtime.instructions.spark.data;
 
+import java.io.Serializable;
+import java.util.ArrayList;
+
 import org.apache.spark.broadcast.Broadcast;
 import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
 import org.apache.sysds.runtime.controlprogram.caching.CacheBlockFactory;
@@ -28,9 +31,6 @@ import org.apache.sysds.runtime.matrix.data.Pair;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.util.IndexRange;
 import org.apache.sysds.runtime.util.UtilFunctions;
-
-import java.io.Serializable;
-import java.util.ArrayList;
 
 /**
  * This class is a wrapper around an array of broadcasts of partitioned matrix/frame blocks,
@@ -154,7 +154,8 @@ public class PartitionedBroadcast<T extends CacheBlock> implements Serializable
 		
 		T ret = (T) allBlks.get(0).getValue();
 		for(int i=1; i<allBlks.size(); i++)
-			ret.merge((T)allBlks.get(i).getValue(), false);
+			ret = (T) ret.merge(allBlks.get(i).getValue(), false);
+		
 		return ret;
 	}
 	

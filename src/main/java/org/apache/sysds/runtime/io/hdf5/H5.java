@@ -19,11 +19,12 @@
 
 package org.apache.sysds.runtime.io.hdf5;
 
-import org.apache.sysds.runtime.io.hdf5.message.H5SymbolTableMessage;
-
-import java.io.*;
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.nio.ByteBuffer;
 import java.util.List;
+
+import org.apache.sysds.runtime.io.hdf5.message.H5SymbolTableMessage;
 
 public class H5 {
 
@@ -133,7 +134,7 @@ public class H5 {
 			String childName = Utils.readUntilNull(nameBuffer);
 
 			if(!childName.equals(datasetName)) {
-				throw new H5RuntimeException("The dataset name '" + datasetName + "' not found!");
+				throw new H5RuntimeException("The requested dataset '" + datasetName + "' differs from available '"+childName+"'.");
 			}
 
 			final H5ObjectHeader header = new H5ObjectHeader(rootObject, symbolTableEntry.getObjectHeaderAddress());

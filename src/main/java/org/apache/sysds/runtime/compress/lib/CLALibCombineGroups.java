@@ -24,7 +24,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 
-import org.apache.commons.lang.NotImplementedException;
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -39,7 +39,7 @@ import org.apache.sysds.runtime.compress.colgroup.ColGroupSDC;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupUncompressed;
 import org.apache.sysds.runtime.compress.colgroup.IContainDefaultTuple;
 import org.apache.sysds.runtime.compress.colgroup.IFrameOfReferenceGroup;
-import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.DictionaryFactory;
 import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
@@ -80,38 +80,33 @@ public final class CLALibCombineGroups {
 	}
 
 	public static List<AColGroup> combine(CompressedMatrixBlock cmb, CompressedSizeInfo csi, ExecutorService pool) {
-
 		List<AColGroup> input = cmb.getColGroups();
-		boolean filterFor = CLALibUtils.shouldFilterFOR(input);
+		
+		final boolean filterFor = CLALibUtils.shouldFilterFOR(input);
 		double[] c = filterFor ? new double[cmb.getNumColumns()] : null;
 		if(filterFor)
 			input = CLALibUtils.filterFOR(input, c);
 
-
 		List<List<AColGroup>> combinations = new ArrayList<>();
-		for(CompressedSizeInfoColGroup gi : csi.getInfo()) {
+		for(CompressedSizeInfoColGroup gi : csi.getInfo())
 			combinations.add(findGroupsInIndex(gi.getColumns(), input));
-		}
 
 		List<AColGroup> ret = new ArrayList<>();
 		if(filterFor)
 			for(List<AColGroup> combine : combinations)
 				ret.add(combineN(combine).addVector(c));
 		else
-			for(List<AColGroup> combine : combinations) 
+			for(List<AColGroup> combine : combinations)
 				ret.add(combineN(combine));
-		
-
-
 		return ret;
 	}
 
 	public static List<AColGroup> findGroupsInIndex(IColIndex idx, List<AColGroup> groups) {
 		List<AColGroup> ret = new ArrayList<>();
-		for(AColGroup g : groups) {
+		for(AColGroup g : groups)
 			if(g.getColIndices().containsAny(idx))
 				ret.add(g);
-		}
+
 		return ret;
 	}
 
@@ -138,26 +133,37 @@ public final class CLALibCombineGroups {
 	 * @return A new column group containing the two.
 	 */
 	public static AColGroup combine(AColGroup a, AColGroup b) {
-		if(a instanceof IFrameOfReferenceGroup || b instanceof IFrameOfReferenceGroup)
-			throw new DMLCompressionException("Invalid call with frame of reference group to combine");
+		try {
 
-		IColIndex combinedColumns = ColIndexFactory.combine(a, b);
+			if(a instanceof IFrameOfReferenceGroup || b instanceof IFrameOfReferenceGroup)
+				throw new DMLCompressionException("Invalid call with frame of reference group to combine");
 
-		// try to recompress a and b if uncompressed
-		if(a instanceof ColGroupUncompressed)
-			a = a.recompress();
+			IColIndex combinedColumns = ColIndexFactory.combine(a, b);
 
-		if(b instanceof ColGroupUncompressed)
-			b = b.recompress();
+			// try to recompress a and b if uncompressed
+			if(a instanceof ColGroupUncompressed)
+				a = a.recompress();
 
-		if(a instanceof AColGroupCompressed && b instanceof AColGroupCompressed)
-			return combineCompressed(combinedColumns, (AColGroupCompressed) a, (AColGroupCompressed) b);
-		else if(a instanceof ColGroupUncompressed || b instanceof ColGroupUncompressed)
-			// either side is uncompressed
-			return combineUC(combinedColumns, a, b);
+			if(b instanceof ColGroupUncompressed)
+				b = b.recompress();
 
-		throw new NotImplementedException(
-			"Not implemented combine for " + a.getClass().getSimpleName() + " - " + b.getClass().getSimpleName());
+			if(a instanceof AColGroupCompressed && b instanceof AColGroupCompressed)
+				return combineCompressed(combinedColumns, (AColGroupCompressed) a, (AColGroupCompressed) b);
+			else if(a instanceof ColGroupUncompressed || b instanceof ColGroupUncompressed)
+				// either side is uncompressed
+				return combineUC(combinedColumns, a, b);
+
+			throw new NotImplementedException(
+				"Not implemented combine for " + a.getClass().getSimpleName() + " - " + b.getClass().getSimpleName());
+		}
+		catch(Exception e) {
+			StringBuilder sb = new StringBuilder();
+			sb.append("Failed to combine:\n\n");
+			sb.append(a);
+			sb.append("\n\n");
+			sb.append(b);
+			throw new DMLCompressionException(sb.toString(), e);
+		}
 
 	}
 
@@ -169,26 +175,27 @@ public final class CLALibCombineGroups {
 			// the order must be sparse second unless both sparse.
 			return combineCompressed(combinedColumns, bc, ac);
 		}
+		// add if encodings are equal make shortcut.
 
-		Pair<IEncode, Map<Integer,Integer>> cec = ae.combineWithMap(be);
+		Pair<IEncode, Map<Integer, Integer>> cec = ae.combineWithMap(be);
 		IEncode ce = cec.getLeft();
-		Map<Integer,Integer> filter = cec.getRight();
+		Map<Integer, Integer> filter = cec.getRight();
 		if(ce instanceof DenseEncoding) {
 			DenseEncoding ced = (DenseEncoding) (ce);
-			ADictionary cd = DictionaryFactory.combineDictionaries(ac, bc, filter);
+			IDictionary cd = DictionaryFactory.combineDictionaries(ac, bc, filter);
 			return ColGroupDDC.create(combinedColumns, cd, ced.getMap(), null);
 		}
 		else if(ce instanceof EmptyEncoding) {
 			return new ColGroupEmpty(combinedColumns);
 		}
 		else if(ce instanceof ConstEncoding) {
-			ADictionary cd = DictionaryFactory.combineDictionaries(ac, bc, filter);
+			IDictionary cd = DictionaryFactory.combineDictionaries(ac, bc, filter);
 			return ColGroupConst.create(combinedColumns, cd);
 		}
 		else if(ce instanceof SparseEncoding) {
 			SparseEncoding sed = (SparseEncoding) ce;
-			ADictionary cd = DictionaryFactory.combineDictionariesSparse(ac, bc);
-			double[] defaultTuple = constructDefaultTuple((AColGroupCompressed) ac, (AColGroupCompressed) bc);
+			IDictionary cd = DictionaryFactory.combineDictionariesSparse(ac, bc);
+			double[] defaultTuple = constructDefaultTuple(ac, bc);
 			return ColGroupSDC.create(combinedColumns, sed.getNumRows(), cd, defaultTuple, sed.getOffsets(), sed.getMap(),
 				null);
 		}

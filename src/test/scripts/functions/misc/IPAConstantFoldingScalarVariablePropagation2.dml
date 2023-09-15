@@ -42,7 +42,7 @@ Wf = 3  # filter width
 stride = 1
 pad = 1  # For same dimensions, (Hf - stride) / 2
 F1 = 32  # num conv filters in conv1
-[Wc1, bc1] = conv2d::init(F1, C, Hf, Wf)  # inputs: (N, C*Hin*Win)
+[Wc1, bc1] = conv2d::init(F1, C, Hf, Wf, -1)  # inputs: (N, C*Hin*Win)
 
 # Create data structure to store gradients computed in parallel
 doutc1_agg = matrix(0, rows=num_batches, cols=batch_size*F1*Hin*Win)

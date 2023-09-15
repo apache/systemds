@@ -253,7 +253,7 @@ public class RewriteElementwiseMultChainOptimization extends HopRewriteRule {
 	 */
 	//TODO replace by ComparableHop wrapper around hop that implements equals and compareTo
 	//in order to ensure comparisons that are 'consistent with equals'
-	private static final Comparator<Hop> compareByDataType = new Comparator<Hop>() {
+	private static final Comparator<Hop> compareByDataType = new Comparator<>() {
 		private final int[] orderDataType = new int[DataType.values().length];
 		{
 			for (int i = 0, valuesLength = DataType.values().length; i < valuesLength; i++)

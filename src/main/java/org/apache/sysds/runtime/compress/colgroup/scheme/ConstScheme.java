@@ -19,45 +19,96 @@
 
 package org.apache.sysds.runtime.compress.colgroup.scheme;
 
-import org.apache.commons.lang.NotImplementedException;
+import java.util.Arrays;
+
 import org.apache.sysds.runtime.compress.colgroup.AColGroup;
+import org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupConst;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
+import org.apache.sysds.runtime.compress.utils.Util;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
 public class ConstScheme extends ACLAScheme {
 
 	final double[] vals;
-	boolean initialized = false;
 
-	private ConstScheme(IColIndex cols, double[] vals, boolean initialized) {
+	private ConstScheme(IColIndex cols, double[] vals) {
 		super(cols);
 		this.vals = vals;
-		this.initialized = initialized;
 	}
 
 	public static ICLAScheme create(ColGroupConst g) {
-		return new ConstScheme(g.getColIndices(), g.getValues(), true);
+		return new ConstScheme(g.getColIndices(), g.getValues());
 	}
 
-	public static ICLAScheme create(IColIndex cols) {
-		return new ConstScheme(cols, new double[cols.size()], false);
-	}
-
-	@Override
-	protected IColIndex getColIndices() {
-		return cols;
+	public static ICLAScheme create(IColIndex cols, double[] vals) {
+		if(vals == null)
+			throw new RuntimeException("Invalid null vals for ConstScheme");
+		return new ConstScheme(cols, vals);
 	}
 
 	@Override
-	public ICLAScheme update(MatrixBlock data, IColIndex columns) {
-		throw new NotImplementedException();
+	protected ICLAScheme updateV(MatrixBlock data, IColIndex columns) {
+		final int nRow = data.getNumRows();
+		final int nColScheme = vals.length;
+		for(int r = 0; r < nRow; r++)
+			for(int c = 0; c < nColScheme; c++) {
+				final double v = data.quickGetValue(r, cols.get(c));
+				if(!Util.eq(v, vals[c]))
+					return updateToDDC(data, columns);
+			}
+		return this;
+	}
+
+	private ICLAScheme updateToDDC(MatrixBlock data, IColIndex columns) {
+		return SchemeFactory.create(columns, CompressionType.DDC).update(data, columns);
+	}
+
+	private ICLAScheme updateToDDCT(MatrixBlock data, IColIndex columns) {
+		return SchemeFactory.create(columns, CompressionType.DDC).updateT(data, columns);
 	}
 
 	@Override
-	public AColGroup encode(MatrixBlock data, IColIndex columns) {
-		validate(data, columns);
+	protected AColGroup encodeV(MatrixBlock data, IColIndex columns) {
 		return ColGroupConst.create(columns, vals);
+	}
+
+	@Override
+	protected AColGroup encodeVT(MatrixBlock data, IColIndex columns) {
+		return ColGroupConst.create(columns, vals);
+	}
+
+	@Override
+	protected ICLAScheme updateVT(MatrixBlock data, IColIndex columns) {
+		// TODO specialize for sparse data. But would only be used in rare cases
+		final int nCol = data.getNumColumns();
+		final int nColScheme = vals.length;
+		for(int r = 0; r < nColScheme; r++) {
+			final int row = cols.get(r);
+			final double def = vals[r];
+			for(int c = 0; c < nCol; c++) {
+				final double v = data.quickGetValue(row, c);
+				if(!Util.eq(v, def))
+					return updateToDDCT(data, columns);
+			}
+		}
+		return this;
+	}
+
+	@Override
+	public ConstScheme clone() {
+		return new ConstScheme(cols, Arrays.copyOf(vals, vals.length));
+	}
+
+	@Override
+	public final String toString() {
+		StringBuilder sb = new StringBuilder();
+		sb.append(this.getClass().getSimpleName());
+		sb.append(" Cols: ");
+		sb.append(cols);
+		sb.append(" Def:  ");
+		sb.append(Arrays.toString(vals));
+		return sb.toString();
 	}
 
 }

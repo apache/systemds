@@ -19,13 +19,17 @@
 
 package org.apache.sysds.lops;
 
-import org.apache.sysds.parser.DataExpression;
-import org.apache.sysds.runtime.instructions.InstructionUtils;
+import static org.apache.sysds.parser.DataExpression.SQL_CONN;
+import static org.apache.sysds.parser.DataExpression.SQL_PASS;
+import static org.apache.sysds.parser.DataExpression.SQL_QUERY;
+import static org.apache.sysds.parser.DataExpression.SQL_USER;
 
 import java.util.HashMap;
 
-import static org.apache.sysds.common.Types.*;
-import static org.apache.sysds.parser.DataExpression.*;
+import org.apache.sysds.common.Types.DataType;
+import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.parser.DataExpression;
+import org.apache.sysds.runtime.instructions.InstructionUtils;
 
 public class Sql extends Lop {
 	private HashMap<String, Lop> _inputParams;

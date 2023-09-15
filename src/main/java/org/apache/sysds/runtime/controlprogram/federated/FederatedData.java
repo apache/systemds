@@ -20,15 +20,25 @@
 package org.apache.sysds.runtime.controlprogram.federated;
 
 import java.io.Serializable;
+import java.net.ConnectException;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Future;
 
 import javax.net.ssl.SSLException;
 
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInboundHandlerAdapter;
+import io.netty.channel.ChannelInitializer;
+import io.netty.channel.ChannelOutboundHandlerAdapter;
+import io.netty.channel.ChannelPipeline;
+import io.netty.channel.EventLoopGroup;
+import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.common.Types;
@@ -42,12 +52,6 @@ import org.apache.sysds.runtime.meta.MetaData;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelInboundHandlerAdapter;
-import io.netty.channel.ChannelInitializer;
-import io.netty.channel.ChannelPipeline;
-import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
@@ -143,9 +147,8 @@ public class FederatedData {
 		if(!_dataType.isMatrix() && !_dataType.isFrame())
 			throw new DMLRuntimeException("Federated datatype \"" + _dataType.toString() + "\" is not supported.");
 		_varID = id;
-		FederatedRequest request = (mtd != null) ?
-			new FederatedRequest(RequestType.READ_VAR, id, mtd) :
-			new FederatedRequest(RequestType.READ_VAR, id);
+		FederatedRequest request = (mtd != null) ? new FederatedRequest(RequestType.READ_VAR, id,
+			mtd) : new FederatedRequest(RequestType.READ_VAR, id);
 		request.appendParam(_filepath);
 		request.appendParam(_dataType.name());
 		return executeFederatedOperation(request);
@@ -175,7 +178,20 @@ public class FederatedData {
 	 * @param request the requested operation
 	 * @return the response
 	 */
-	public synchronized static Future<FederatedResponse> executeFederatedOperation(InetSocketAddress address,
+	public static Future<FederatedResponse> executeFederatedOperation(InetSocketAddress address,
+		FederatedRequest... request) {
+		return executeFederatedOperation(address, 1, request);
+	}
+
+	/**
+	 * Executes an federated operation on a federated worker.
+	 *
+	 * @param address socket address (incl host and port)
+	 * @param retry   the retry count
+	 * @param request the requested operation
+	 * @return the response
+	 */
+	public synchronized static Future<FederatedResponse> executeFederatedOperation(InetSocketAddress address, int retry,
 		FederatedRequest... request) {
 		try {
 			final Bootstrap b = new Bootstrap();
@@ -196,24 +212,48 @@ public class FederatedData {
 			return handler.getProm();
 		}
 		catch(Exception e) {
+			if(e instanceof ConnectException) {
+
+				if(retry < 5) {
+					try {
+						// Increasing retry timeout
+						Thread.sleep(200 * retry);
+					}
+					catch(Exception e2) {
+						throw new DMLRuntimeException(e);
+					}
+					return executeFederatedOperation(address, retry + 1, request);
+				}
+				else {
+					throw new DMLRuntimeException(e);
+				}
+			}
 			throw new DMLRuntimeException("Failed sending federated operation", e);
 		}
 	}
 
-	private static ChannelInitializer<SocketChannel> createChannel(InetSocketAddress address, DataRequestHandler handler){
+	private static ChannelInitializer<SocketChannel> createChannel(InetSocketAddress address,
+		DataRequestHandler handler) {
 		final int timeout = ConfigurationManager.getFederatedTimeout();
 		final boolean ssl = ConfigurationManager.isFederatedSSL();
 
-		return new ChannelInitializer<SocketChannel>() {
+		return new ChannelInitializer<>() {
 			@Override
 			protected void initChannel(SocketChannel ch) throws Exception {
 				final ChannelPipeline cp = ch.pipeline();
+				final Optional<ImmutablePair<ChannelInboundHandlerAdapter, ChannelOutboundHandlerAdapter>> compressionStrategy = FederationUtils.compressionStrategy();
 				cp.addLast("NetworkTrafficCounter", new NetworkTrafficCounter(FederatedStatistics::logServerTraffic));
+
 				if(ssl)
 					cp.addLast(createSSLHandler(ch, address));
 				if(timeout > -1)
 					cp.addLast(new ReadTimeoutHandler(timeout));
-				cp.addLast(FederationUtils.decoder(), new FederatedRequestEncoder(), handler);
+
+				compressionStrategy.ifPresent(strategy -> cp.addLast(strategy.left));
+				cp.addLast(FederationUtils.decoder());
+				compressionStrategy.ifPresent(strategy -> cp.addLast(strategy.right));
+				cp.addLast(new FederatedRequestEncoder());
+				cp.addLast(handler);
 			}
 		};
 	}
@@ -240,9 +280,8 @@ public class FederatedData {
 		}
 	}
 
-	private static SslHandler createSSLHandler(SocketChannel ch, InetSocketAddress address){
-		return SslConstructor().context.newHandler(ch.alloc(), address.getAddress().getHostAddress(),
-							address.getPort());
+	private static SslHandler createSSLHandler(SocketChannel ch, InetSocketAddress address) {
+		return SslConstructor().context.newHandler(ch.alloc(), address.getAddress().getHostAddress(), address.getPort());
 	}
 
 	public static void resetFederatedSites() {
@@ -313,19 +352,20 @@ public class FederatedData {
 
 	public static class FederatedRequestEncoder extends ObjectEncoder {
 		@Override
-		protected ByteBuf allocateBuffer(ChannelHandlerContext ctx, Serializable msg,
-		boolean preferDirect) throws Exception {
+		protected ByteBuf allocateBuffer(ChannelHandlerContext ctx, Serializable msg, boolean preferDirect)
+			throws Exception {
 			int initCapacity = 256; // default initial capacity
 			if(msg instanceof FederatedRequest[]) {
 				initCapacity = 0;
 				try {
-					for(FederatedRequest fr : (FederatedRequest[])msg) {
+					for(FederatedRequest fr : (FederatedRequest[]) msg) {
 						int frSize = Math.toIntExact(fr.estimateSerializationBufferSize());
 						if(Integer.MAX_VALUE - initCapacity < frSize) // summed sizes exceed integer limits
 							throw new ArithmeticException("Overflow.");
 						initCapacity += frSize;
 					}
-				} catch(ArithmeticException ae) { // size of federated request exceeds integer limits
+				}
+				catch(ArithmeticException ae) { // size of federated request exceeds integer limits
 					initCapacity = Integer.MAX_VALUE;
 				}
 			}

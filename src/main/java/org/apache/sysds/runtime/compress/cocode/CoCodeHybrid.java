@@ -39,7 +39,7 @@ public class CoCodeHybrid extends AColumnCoCoder {
 		final int startSize = colInfos.getInfo().size();
 		if(startSize == 1)
 			return colInfos; // nothing to join when there only is one column
-		else if(startSize <= 5) {// Greedy all compare all if small number of columns
+		else if(startSize <= 16) {// Greedy all compare all if small number of columns
 			LOG.debug("Hybrid chose to do greedy cocode because of few columns");
 			CoCodeGreedy gd = new CoCodeGreedy(_sest, _cest, _cs);
 			return colInfos.setInfo(gd.combine(colInfos.getInfo(), k));

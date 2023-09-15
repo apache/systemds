@@ -32,7 +32,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlockFactory;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup;
-import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
+import org.apache.sysds.runtime.compress.colgroup.indexes.ArrayIndex;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IIterate;
 import org.apache.sysds.runtime.compress.lib.CLALibCombineGroups;
@@ -157,7 +157,7 @@ public class CombineGroupsTest {
 			CompressedMatrixBlock cc = appendNoMerge(ac, bc);
 
 			TestUtils.compareMatricesBitAvgDistance(c, cc, 0, 0, "Not the same verification");
-			CompressedMatrixBlock ccc = (CompressedMatrixBlock) cc;
+			CompressedMatrixBlock ccc = cc;
 			List<AColGroup> groups = ccc.getColGroups();
 			if(groups.size() > 1) {
 
@@ -184,7 +184,7 @@ public class CombineGroupsTest {
 			CompressedMatrixBlock cc = appendNoMerge(ec, appendNoMerge(ac, bc));
 
 			TestUtils.compareMatricesBitAvgDistance(c, cc, 0, 0, "Not the same verification");
-			CompressedMatrixBlock ccc = (CompressedMatrixBlock) cc;
+			CompressedMatrixBlock ccc = cc;
 			List<AColGroup> groups = ccc.getColGroups();
 			if(groups.size() > 1) {
 
@@ -210,7 +210,7 @@ public class CombineGroupsTest {
 			CompressedMatrixBlock cc = appendNoMerge(ec, appendNoMerge(ac, bc));
 
 			TestUtils.compareMatricesBitAvgDistance(c, cc, 0, 0, "Not the same verification");
-			CompressedMatrixBlock ccc = (CompressedMatrixBlock) cc;
+			CompressedMatrixBlock ccc = cc;
 			List<AColGroup> groups = ccc.getColGroups();
 			if(groups.size() > 1) {
 
@@ -236,7 +236,7 @@ public class CombineGroupsTest {
 			CompressedMatrixBlock cc = appendNoMerge(ac, appendNoMerge(ec, bc));
 
 			TestUtils.compareMatricesBitAvgDistance(c, cc, 0, 0, "Not the same verification");
-			CompressedMatrixBlock ccc = (CompressedMatrixBlock) cc;
+			CompressedMatrixBlock ccc = cc;
 			List<AColGroup> groups = ccc.getColGroups();
 			if(groups.size() > 1) {
 
@@ -261,7 +261,7 @@ public class CombineGroupsTest {
 			CompressedMatrixBlock cc = appendNoMerge(ac, appendNoMerge(bc, ec));
 
 			TestUtils.compareMatricesBitAvgDistance(c, cc, 0, 0, "Not the same verification");
-			CompressedMatrixBlock ccc = (CompressedMatrixBlock) cc;
+			CompressedMatrixBlock ccc = cc;
 			List<AColGroup> groups = ccc.getColGroups();
 			if(groups.size() > 1) {
 
@@ -296,7 +296,7 @@ public class CombineGroupsTest {
 			cc = applyCompressedShuffle(cc, mix);
 			TestUtils.compareMatricesBitAvgDistance(c, cc, 0, 0, "Not the same after shuffle verification: ");
 
-			CompressedMatrixBlock ccc = (CompressedMatrixBlock) cc;
+			CompressedMatrixBlock ccc = cc;
 			List<AColGroup> groups = ccc.getColGroups();
 			if(groups.size() > 1) {
 
@@ -389,7 +389,7 @@ public class CombineGroupsTest {
 			it.next();
 		}
 
-		g = g.copyAndSet(ColIndexFactory.create(newIndexes));
+		g = g.copyAndSet(new ArrayIndex(newIndexes));
 		g = g.sortColumnIndexes();
 		return g;
 	}

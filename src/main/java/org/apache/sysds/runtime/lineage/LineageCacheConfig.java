@@ -49,28 +49,28 @@ public class LineageCacheConfig
 
 	private static final String[] OPCODES = new String[] {
 		"tsmm", "ba+*", "*", "/", "+", "||", "nrow", "ncol", "round", "exp", "log",
-		"rightIndex", "leftIndex", "groupedagg", "r'", "solve", "spoof",
-		"uamean", "max", "min", "ifelse", "-", "sqrt", ">", "uak+", "<=",
-		"^", "uamax", "uark+", "uacmean", "eigen", "ctableexpand", "replace",
-		"^2", "uack+", "tak+*", "uacsqk+", "uark+", "n+", "uarimax", "qsort", 
+		"rightIndex", "leftIndex", "groupedagg", "r'", "solve", "spoof", "isna",
+		"uamean", "max", "min", "ifelse", "-", "sqrt", "<", ">", "uak+", "<=",
+		"^", "uamax", "uark+", "uacmean", "eigen","ctable", "ctableexpand", "replace",
+		"^2", "*2", "uack+", "tak+*", "uacsqk+", "uark+", "n+", "uarimax", "qsort",
 		"qpick", "transformapply", "uarmax", "n+", "-*", "castdtm", "lowertri",
-		"prefetch", "mapmm"
+		"prefetch", "mapmm", "contains", "mmchain", "mapmmchain", "+*", "==", "rmempty"
 		//TODO: Reuse everything.
 	};
 
 	// Relatively expensive instructions. Most include shuffles.
 	private static final String[] PERSIST_OPCODES1 = new String[] {
-		"cpmm", "rmm", "pmm", "rev", "rshape", "rsort", "+", "-", "*",
+		"cpmm", "rmm", "pmm", "rev", "rshape", "rsort", "-", "*", "+",
 		"/", "%%", "%/%", "1-*", "^", "^2", "*2", "==", "!=", "<", ">",
 		"<=", ">=", "&&", "||", "xor", "max", "min", "rmempty", "rappend",
 		"gappend", "galignedappend", "rbind", "cbind", "nmin", "nmax",
 		"n+", "ctable", "ucumack+", "ucumac*", "ucumacmin", "ucumacmax",
-		"qsort", "qpick"
+		"qsort", "qpick", "replace"
 	};
 
 	// Relatively inexpensive instructions.
 	private static final String[] PERSIST_OPCODES2 = new String[] {
-		"mapmm"
+		"mapmm", "isna", "leftIndex", "rightIndex"
 	};
 
 	private static String[] REUSE_OPCODES  = new String[] {};
@@ -104,6 +104,7 @@ public class LineageCacheConfig
 	private static CachedItemTail _itemT = null;
 	private static boolean _compilerAssistedRW = false;
 	private static boolean _onlyEstimate = false;
+	private static boolean _reuseLineageTraces = true;
 
 	//-------------DISK SPILLING RELATED CONFIGURATIONS--------------//
 
@@ -151,6 +152,7 @@ public class LineageCacheConfig
 		SPILLED,   //Data is in disk. Empty value. Cannot be evicted.
 		RELOADED,  //Reloaded from disk. Can be evicted.
 		PINNED,    //Pinned to memory. Cannot be evicted.
+		TOCACHEGPU, //To be cached in GPU if the instruction reoccur
 		GPUCACHED, //Points to GPU intermediate
 		PERSISTEDRDD, //Persisted at the Spark executors
 		TOPERSISTRDD, //To be persisted if the instruction reoccur
@@ -299,8 +301,8 @@ public class LineageCacheConfig
 		return insttype && rightOp;
 	}
 
-	protected static boolean isShuffleOp(Instruction inst) {
-		return ArrayUtils.contains(PERSIST_OPCODES1, inst.getOpcode());
+	protected static boolean isShuffleOp(String opcode) {
+		return ArrayUtils.contains(PERSIST_OPCODES1, opcode);
 	}
 
 	protected static int getComputeGroup(String opcode) {
@@ -366,6 +368,14 @@ public class LineageCacheConfig
 	
 	public static boolean getCompAssRW() {
 		return _compilerAssistedRW;
+	}
+
+	public static void setReuseLineageTraces(boolean reuseTrace) {
+		_reuseLineageTraces = reuseTrace;
+	}
+
+	public static boolean isLineageTraceReuse() {
+		return _reuseLineageTraces;
 	}
 
 	public static void setCachePolicy(LineageCachePolicy policy) {

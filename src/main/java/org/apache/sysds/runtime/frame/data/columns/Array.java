@@ -22,14 +22,18 @@ package org.apache.sysds.runtime.frame.data.columns;
 import java.lang.ref.SoftReference;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
+import java.util.Map.Entry;
 
-import org.apache.commons.lang.NotImplementedException;
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.io.Writable;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.compress.estim.sample.SampleEstimatorFactory;
 import org.apache.sysds.runtime.frame.data.columns.ArrayFactory.FrameArrayType;
+import org.apache.sysds.runtime.frame.data.compress.ArrayCompressionStatistics;
 import org.apache.sysds.runtime.matrix.data.Pair;
 
 /**
@@ -42,7 +46,7 @@ public abstract class Array<T> implements Writable {
 	private static final boolean REUSE_RECODE_MAPS = true;
 
 	/** A soft reference to a memorization of this arrays mapping, used in transformEncode */
-	protected SoftReference<HashMap<T, Long>> _rcdMapCache = null;
+	protected SoftReference<Map<T, Long>> _rcdMapCache = null;
 
 	/** The current allocated number of elements in this Array */
 	protected int _size;
@@ -62,7 +66,7 @@ public abstract class Array<T> implements Writable {
 	 * 
 	 * @return The cached object
 	 */
-	public final SoftReference<HashMap<T, Long>> getCache() {
+	public final SoftReference<Map<T, Long>> getCache() {
 		return _rcdMapCache;
 	}
 
@@ -71,21 +75,21 @@ public abstract class Array<T> implements Writable {
 	 * 
 	 * @param m The element to cache.
 	 */
-	public final void setCache(SoftReference<HashMap<T, Long>> m) {
+	public final void setCache(SoftReference<Map<T, Long>> m) {
 		_rcdMapCache = m;
 	}
 
-	public HashMap<T, Long> getRecodeMap() {
+	public Map<T, Long> getRecodeMap() {
 		// probe cache for existing map
 		if(REUSE_RECODE_MAPS) {
-			SoftReference<HashMap<T, Long>> tmp = getCache();
-			HashMap<T, Long> map = (tmp != null) ? tmp.get() : null;
+			SoftReference<Map<T, Long>> tmp = getCache();
+			Map<T, Long> map = (tmp != null) ? tmp.get() : null;
 			if(map != null)
 				return map;
 		}
 
 		// construct recode map
-		HashMap<T, Long> map = createRecodeMap();
+		Map<T, Long> map = createRecodeMap();
 
 		// put created map into cache
 		if(REUSE_RECODE_MAPS)
@@ -94,13 +98,17 @@ public abstract class Array<T> implements Writable {
 		return map;
 	}
 
-	
-	protected HashMap<T, Long> createRecodeMap(){
-		HashMap<T, Long> map = new HashMap<>();
+	/**
+	 * Recreate the recode map from what is already there.
+	 * 
+	 * @return
+	 */
+	protected Map<T, Long> createRecodeMap() {
+		Map<T, Long> map = new HashMap<>();
 		long id = 0;
 		for(int i = 0; i < size(); i++) {
 			T val = get(i);
-			if(val != null){
+			if(val != null) {
 				Long v = map.putIfAbsent(val, id);
 				if(v == null)
 					id++;
@@ -109,7 +117,23 @@ public abstract class Array<T> implements Writable {
 		return map;
 	}
 
+	/**
+	 * Get the dictionary of the contained values, including null.
+	 * 
+	 * @return a dictionary containing all unique values.
+	 */
+	protected Map<T, Integer> getDictionary() {
+		Map<T, Integer> dict = new HashMap<>();
+		int id = 0;
+		for(int i = 0; i < size(); i++) {
+			T val = get(i);
+			Integer v = dict.putIfAbsent(val, id);
+			if(v == null)
+				id++;
+		}
 
+		return dict;
+	}
 
 	/**
 	 * Get the number of elements in the array, this does not necessarily reflect the current allocated size.
@@ -123,8 +147,8 @@ public abstract class Array<T> implements Writable {
 	/**
 	 * Get the value at a given index.
 	 * 
-	 * This method returns objects that have a high overhead in allocation. Therefore it is not as efficient as using the
-	 * vectorized operations specified in the object.
+	 * This method returns objects that have a high overhead in allocation. Therefore it is not as efficient as using
+	 * the vectorized operations specified in the object.
 	 * 
 	 * @param index The index to query
 	 * @return The value returned as an object
@@ -144,8 +168,24 @@ public abstract class Array<T> implements Writable {
 	 */
 	public abstract Object get();
 
+	/**
+	 * Get the index's value.
+	 * 
+	 * returns 0 in case of Null.
+	 * 
+	 * @param i index to get value from
+	 * @return the value
+	 */
 	public abstract double getAsDouble(int i);
 
+	/**
+	 * Get the index's value.
+	 * 
+	 * returns Double.NaN in case of Null.
+	 * 
+	 * @param i index to get value from
+	 * @return the value
+	 */
 	public double getAsNaNDouble(int i) {
 		return getAsDouble(i);
 	}
@@ -255,7 +295,7 @@ public abstract class Array<T> implements Writable {
 	public abstract void append(T value);
 
 	/**
-	 * append other array, if the other array is fitting in current allocated size use that allocated size, otherwise
+	 * Append other array, if the other array is fitting in current allocated size use that allocated size, otherwise
 	 * allocate new array to combine the other with this.
 	 * 
 	 * This method should use the set range function, and should be preferred over the append single values.
@@ -350,9 +390,11 @@ public abstract class Array<T> implements Writable {
 	 * 
 	 * @return If the array contains null.
 	 */
-	public boolean containsNull(){
+	public boolean containsNull() {
 		return false;
 	}
+
+	public abstract boolean possiblyContainsNaN();
 
 	public Array<?> changeTypeWithNulls(ValueType t) {
 		final ABooleanArray nulls = getNulls();
@@ -362,22 +404,22 @@ public abstract class Array<T> implements Writable {
 		switch(t) {
 			case BOOLEAN:
 				if(size() > ArrayFactory.bitSetSwitchPoint)
-					return new OptionalArray<Boolean>(changeTypeBitSet(), nulls);
+					return new OptionalArray<>(changeTypeBitSet(), nulls);
 				else
-					return new OptionalArray<Boolean>(changeTypeBoolean(), nulls);
+					return new OptionalArray<>(changeTypeBoolean(), nulls);
 			case FP32:
-				return new OptionalArray<Float>(changeTypeFloat(), nulls);
+				return new OptionalArray<>(changeTypeFloat(), nulls);
 			case FP64:
-				return new OptionalArray<Double>(changeTypeDouble(), nulls);
+				return new OptionalArray<>(changeTypeDouble(), nulls);
 			case UINT4:
 			case UINT8:
 				throw new NotImplementedException();
 			case INT32:
-				return new OptionalArray<Integer>(changeTypeInteger(), nulls);
+				return new OptionalArray<>(changeTypeInteger(), nulls);
 			case INT64:
-				return new OptionalArray<Long>(changeTypeLong(), nulls);
+				return new OptionalArray<>(changeTypeLong(), nulls);
 			case CHARACTER:
-				return new OptionalArray<Character>(changeTypeCharacter(), nulls);
+				return new OptionalArray<>(changeTypeCharacter(), nulls);
 			case STRING:
 			case UNKNOWN:
 			default:
@@ -403,7 +445,7 @@ public abstract class Array<T> implements Writable {
 				return changeTypeFloat();
 			case FP64:
 				return changeTypeDouble();
-				case UINT4:
+			case UINT4:
 			case UINT8:
 				throw new NotImplementedException();
 			case INT32:
@@ -535,7 +577,7 @@ public abstract class Array<T> implements Writable {
 	 * 
 	 * @param select Modify this to true in indexes that are not empty.
 	 */
-	public final void findEmpty(boolean[] select){
+	public final void findEmpty(boolean[] select) {
 		for(int i = 0; i < select.length; i++)
 			if(isNotEmpty(i))
 				select[i] = true;
@@ -571,28 +613,70 @@ public abstract class Array<T> implements Writable {
 	}
 
 	/**
-	 * Hash the given index of the array.
-	 * It is allowed to return NaN on null elements.
+	 * Hash the given index of the array. It is allowed to return NaN on null elements.
 	 * 
 	 * @param idx The index to hash
 	 * @return The hash value of that index.
 	 */
 	public abstract double hashDouble(int idx);
 
-	public ArrayIterator getIterator(){
+	public ArrayIterator getIterator() {
 		return new ArrayIterator();
+	}
+
+	@Override
+	@SuppressWarnings("unchecked")
+	public boolean equals(Object other) {
+		try {
+			return other instanceof Array && this.equals((Array<T>) other);
+		}
+		catch(ClassCastException e) {
+			return false;
+		}
+	}
+
+	public abstract boolean equals(Array<T> other);
+
+	public ArrayCompressionStatistics statistics(int nSamples) {
+
+		Map<T, Integer> d = new HashMap<>();
+		for(int i = 0; i < nSamples; i++) {
+			// super inefficient, but startup
+			T key = get(i);
+			if(d.containsKey(key))
+				d.put(key, d.get(key) + 1);
+			else
+				d.put(key, 1);
+		}
+
+		final int[] freq = new int[d.size()];
+		int id = 0;
+		for(Entry<T, Integer> e : d.entrySet())
+			freq[id++] = e.getValue();
+
+		int estDistinct = SampleEstimatorFactory.distinctCount(freq, size(), nSamples);
+		long memSize = getInMemorySize(); // uncompressed size
+		int memSizePerElement = (int) ((memSize * 8L) / size());
+
+		long ddcSize = DDCArray.estimateInMemorySize(memSizePerElement, estDistinct, size());
+
+		if(ddcSize < memSize)
+			return new ArrayCompressionStatistics(memSizePerElement, //
+				estDistinct, true, getValueType(), FrameArrayType.DDC, memSize, ddcSize);
+
+		return null;
 	}
 
 	public class ArrayIterator implements Iterator<T> {
 		int index = -1;
 
-		public int getIndex(){
+		public int getIndex() {
 			return index;
 		}
 
 		@Override
 		public boolean hasNext() {
-			return index < size()-1;
+			return index < size() - 1;
 		}
 
 		@Override

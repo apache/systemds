@@ -36,7 +36,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 
 import org.apache.commons.io.input.ReaderInputStream;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
@@ -610,6 +610,12 @@ public class IOUtilFunctions
 		return ret;
 	}
 	
+	public static void deleteCrcFilesFromLocalFileSystem( JobConf job, Path path) throws IOException {
+		final FileSystem fs = getFileSystem(path,job );
+		deleteCrcFilesFromLocalFileSystem(fs, path);
+	}
+	
+
 	/**
 	 * Delete the CRC files from the local file system associated with a
 	 * particular file and its metadata file.
@@ -623,10 +629,8 @@ public class IOUtilFunctions
 	 */
 	public static void deleteCrcFilesFromLocalFileSystem(FileSystem fs, Path path) throws IOException {
 		if (fs instanceof LocalFileSystem) {
-			Path fnameCrc = new Path(path.getParent(), "." + path.getName() + ".crc");
-			fs.delete(fnameCrc, false);
-			Path fnameMtdCrc = new Path(path.getParent(), "." + path.getName() + ".mtd.crc");
-			fs.delete(fnameMtdCrc, false);
+			fs.deleteOnExit(new Path(path.getParent(), "." + path.getName() + ".crc"));
+			fs.deleteOnExit(new Path(path.getParent(), "." + path.getName() + ".mtd.crc"));
 		}
 	}
 	

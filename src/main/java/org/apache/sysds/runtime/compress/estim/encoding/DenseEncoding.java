@@ -24,7 +24,9 @@ import java.util.Map;
 
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.CompressionSettings;
+import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
 import org.apache.sysds.runtime.compress.colgroup.offset.AIterator;
@@ -33,13 +35,20 @@ import org.apache.sysds.runtime.compress.estim.EstimationFactors;
 /**
  * An Encoding that contains a value on each row of the input.
  */
-public class DenseEncoding implements IEncode {
+public class DenseEncoding extends AEncode {
 
 	private final AMapToData map;
 
 	public DenseEncoding(AMapToData map) {
 		this.map = map;
-		map.getCounts();
+
+		if(CompressedMatrixBlock.debug) {
+			int[] freq = map.getCounts();
+			for(int i = 0; i < freq.length; i++) {
+				if(freq[i] == 0)
+					throw new DMLCompressionException("Invalid counts in fact contains 0");
+			}
+		}
 	}
 
 	@Override
@@ -141,7 +150,7 @@ public class DenseEncoding implements IEncode {
 
 		final AMapToData ret = MapToFactory.create(size, maxUnique);
 
-		if(maxUnique > size) {
+		if(maxUnique > size && maxUnique > 2048) {
 			// aka there is more maxUnique than rows.
 			final Map<Integer, Integer> m = new HashMap<>(size);
 			return combineDenseWithHashMap(lm, rm, size, nVL, ret, m);
@@ -153,8 +162,13 @@ public class DenseEncoding implements IEncode {
 	}
 
 	private Pair<IEncode, Map<Integer, Integer>> combineDenseNoResize(final DenseEncoding other) {
-		if(map == other.map)
-			return new ImmutablePair<>(this, null); // same object
+		if(map == other.map) {
+			LOG.warn("Constructing perfect mapping, this could be optimized to skip hashmap");
+			final Map<Integer, Integer> m = new HashMap<>(map.size());
+			for(int i = 0; i < map.getUnique(); i++)
+				m.put(i * i, i);
+			return new ImmutablePair<>(this, m); // same object
+		}
 
 		final AMapToData lm = map;
 		final AMapToData rm = other.map;
@@ -204,7 +218,8 @@ public class DenseEncoding implements IEncode {
 		return newId;
 	}
 
-	protected static void addValHashMap(final int nv, final int r, final Map<Integer, Integer> map, final AMapToData d) {
+	protected static void addValHashMap(final int nv, final int r, final Map<Integer, Integer> map,
+		final AMapToData d) {
 		final int v = map.size();
 		final Integer mv = map.putIfAbsent(nv, v);
 		if(mv == null)
@@ -227,6 +242,8 @@ public class DenseEncoding implements IEncode {
 		for(int i = 0; i < counts.length; i++)
 			if(counts[i] > largestOffs)
 				largestOffs = counts[i];
+			else if(counts[i] == 0)
+				throw new DMLCompressionException("Invalid count of 0 all values should have at least one instance");
 
 		if(cs.isRLEAllowed())
 			return new EstimationFactors(map.getUnique(), nRows, largestOffs, counts, 0, nRows, map.countRuns(), false,
@@ -244,6 +261,11 @@ public class DenseEncoding implements IEncode {
 	@Override
 	public boolean isDense() {
 		return true;
+	}
+
+	@Override
+	public boolean equals(IEncode e) {
+		return e instanceof DenseEncoding && ((DenseEncoding) e).map.equals(this.map);
 	}
 
 	@Override

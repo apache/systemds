@@ -20,9 +20,11 @@
 package org.apache.sysds.runtime.instructions.spark;
 
 
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.function.Function;
+import org.apache.sysds.common.Types;
 import org.apache.sysds.lops.MapMultChain;
 import org.apache.sysds.lops.MapMultChain.ChainType;
 import org.apache.sysds.runtime.DMLRuntimeException;
@@ -32,12 +34,15 @@ import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.instructions.spark.data.PartitionedBroadcast;
 import org.apache.sysds.runtime.instructions.spark.utils.RDDAggregateUtils;
+import org.apache.sysds.runtime.lineage.LineageItem;
+import org.apache.sysds.runtime.lineage.LineageItemUtils;
+import org.apache.sysds.runtime.lineage.LineageTraceable;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 import scala.Tuple2;
 
-public class MapmmChainSPInstruction extends SPInstruction {
+public class MapmmChainSPInstruction extends SPInstruction implements LineageTraceable {
 	private ChainType _chainType = null;
 	private CPOperand _input1 = null;
 	private CPOperand _input2 = null;
@@ -116,7 +121,14 @@ public class MapmmChainSPInstruction extends SPInstruction {
 		//this also includes implicit maintenance of matrix characteristics
 		sec.setMatrixOutput(_output.getName(), out);
 	}
-	
+
+	@Override
+	public Pair<String, LineageItem> getLineageItem(ExecutionContext ec) {
+		CPOperand chainT = new CPOperand(_chainType.name(), Types.ValueType.INT64, Types.DataType.SCALAR, true);
+		return Pair.of(_output.getName(), new LineageItem(getOpcode(),
+			LineageItemUtils.getLineage(ec, _input1, _input2, _input3, chainT)));
+	}
+
 	/**
 	 * This function implements the chain type XtXv which requires just one broadcast and
 	 * no access to any indexes of matrix blocks.

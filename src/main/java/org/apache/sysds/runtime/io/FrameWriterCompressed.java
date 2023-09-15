@@ -40,7 +40,7 @@ public class FrameWriterCompressed extends FrameWriterBinaryBlockParallel {
 	protected void writeBinaryBlockFrameToHDFS(Path path, JobConf job, FrameBlock src, long rlen, long clen)
 		throws IOException, DMLRuntimeException {
 		int k = parallel ? OptimizerUtils.getParallelBinaryWriteParallelism() : 1;
-		FrameBlock compressed = FrameLibCompress.compress(src, k).getLeft();
+		FrameBlock compressed = FrameLibCompress.compress(src, k);
 		super.writeBinaryBlockFrameToHDFS(path, job, compressed, rlen, clen);
 	}
 

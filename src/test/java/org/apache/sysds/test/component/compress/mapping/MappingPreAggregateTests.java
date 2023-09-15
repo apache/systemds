@@ -28,6 +28,7 @@ import java.util.Random;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory.MAP_TYPE;
@@ -99,6 +100,7 @@ public class MappingPreAggregateTests {
 	}
 
 	public MappingPreAggregateTests(int seed, int nUnique, MAP_TYPE type, int size) {
+		CompressedMatrixBlock.debug = true;
 		this.seed = seed;
 		this.type = type;
 		this.size = size;
@@ -306,7 +308,7 @@ public class MappingPreAggregateTests {
 		private static final long serialVersionUID = 1910028460503867232L;
 
 		private OneOffset(byte[] offsets, int offsetToFirst, int offsetToLast, int length) {
-			super(offsets, offsetToFirst, offsetToLast, length, false, false);
+			super(offsets, offsetToFirst, offsetToLast, length);
 		}
 
 		protected static OneOffset create(int length) {

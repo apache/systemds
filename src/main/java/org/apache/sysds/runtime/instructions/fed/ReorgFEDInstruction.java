@@ -130,12 +130,14 @@ public class ReorgFEDInstruction extends UnaryFEDInstruction {
 
 			FederatedRequest fr1 = FederationUtils.callInstruction(instString, output, id, new CPOperand[] {input1},
 				new long[] {mo1.getFedMapping().getID()}, isSpark ? Types.ExecType.SPARK : Types.ExecType.CP, true);
-			mo1.getFedMapping().execute(getTID(), true, fr, fr1);
+			Future<FederatedResponse>[] ffr = mo1.getFedMapping().execute(getTID(), true, fr, fr1);
 
 			if (_fedOut != null && !_fedOut.isForcedLocal()){
 				//drive output federated mapping
 				MatrixObject out = ec.getMatrixObject(output);
-				out.getDataCharacteristics().set(mo1.getNumColumns(), mo1.getNumRows(), (int) mo1.getBlocksize(), mo1.getNnz());
+				long nnz = (mo1.getNnz() != -1) ? mo1.getNnz() : FederationUtils.sumNonZeros(ffr);
+				out.getDataCharacteristics().setDimension(mo1.getNumColumns(), mo1.getNumRows())
+					.setBlocksize(mo1.getBlocksize()).setNonZeros(nnz);
 				out.setFedMapping(mo1.getFedMapping().copyWithNewID(fr1.getID()).transpose());
 			} else {
 				FederatedRequest getRequest = new FederatedRequest(FederatedRequest.RequestType.GET_VAR, fr1.getID());
@@ -153,14 +155,16 @@ public class ReorgFEDInstruction extends UnaryFEDInstruction {
 			//execute transpose at federated site
 			FederatedRequest fr1 = FederationUtils.callInstruction(instString, output, id, new CPOperand[] {input1},
 				new long[] {mo1.getFedMapping().getID()}, isSpark ? Types.ExecType.SPARK : Types.ExecType.CP, true);
-			mo1.getFedMapping().execute(getTID(), true, fr, fr1);
+			Future<FederatedResponse>[] ffr = mo1.getFedMapping().execute(getTID(), true, fr, fr1);
 
 			if(mo1.isFederated(FType.ROW))
 				mo1.getFedMapping().reverseFedMap();
 
 			//derive output federated mapping
 			MatrixObject out = ec.getMatrixObject(output);
-			out.getDataCharacteristics().set(mo1.getNumRows(), mo1.getNumColumns(), (int) mo1.getBlocksize(), mo1.getNnz());
+			long nnz = (mo1.getNnz() != -1) ? mo1.getNnz() : FederationUtils.sumNonZeros(ffr);
+			out.getDataCharacteristics().setDimension(mo1.getNumRows(), mo1.getNumColumns())
+				.setBlocksize(mo1.getBlocksize()).setNonZeros(nnz);
 			out.setFedMapping(mo1.getFedMapping().copyWithNewID(fr1.getID()));
 
 			optionalForceLocal(out);
@@ -179,8 +183,7 @@ public class ReorgFEDInstruction extends UnaryFEDInstruction {
 			//update output mapping and data characteristics
 			MatrixObject rdiag = ec.getMatrixObject(output);
 			rdiag.getDataCharacteristics()
-				.set(diagFedMap.getMaxIndexInRange(0), diagFedMap.getMaxIndexInRange(1),
-					(int) mo1.getBlocksize());
+				.set(diagFedMap.getMaxIndexInRange(0), diagFedMap.getMaxIndexInRange(1), mo1.getBlocksize());
 			rdiag.setFedMapping(diagFedMap);
 			optionalForceLocal(rdiag);
 		}
@@ -387,7 +390,7 @@ public class ReorgFEDInstruction extends UnaryFEDInstruction {
 				res.copy(0, res.getNumRows()-1, _slice[0], _slice[1]-1, tmp, false);
 			} else {
 				res = new MatrixBlock(_len, _slice[1], 0.0);
-				res.copy(_slice[0], _slice[1]-1, 0, mb.getNumColumns() - 1, tmp, false);;
+				res.copy(_slice[0], _slice[1]-1, 0, mb.getNumColumns() - 1, tmp, false);
 			}
 			MatrixObject mout = ExecutionContext.createMatrixObject(res);
 			mout.setDiag(true);

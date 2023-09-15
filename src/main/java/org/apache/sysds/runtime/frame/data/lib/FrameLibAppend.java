@@ -22,7 +22,7 @@ package org.apache.sysds.runtime.frame.data.lib;
 import java.util.Arrays;
 import java.util.HashSet;
 
-import org.apache.commons.lang.ArrayUtils;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.common.Types.ValueType;
@@ -100,8 +100,7 @@ public class FrameLibAppend {
 		return new FrameBlock(retSchema, retColNames, retColMeta, retCols);
 	}
 
-	@SuppressWarnings("unchecked")
 	private static <T> T[] addAll(T[] a, T[] b) {
-		return (T[]) ArrayUtils.addAll(a, b);
+		return ArrayUtils.addAll(a, b);
 	}
 }

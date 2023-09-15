@@ -24,12 +24,14 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.util.Arrays;
 
-import org.apache.commons.lang.NotImplementedException;
+import org.apache.commons.lang3.NotImplementedException;
+import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
-import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.DictionaryFactory;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.MatrixBlockDictionary;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.PlaceHolderDict;
 import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToZero;
@@ -38,7 +40,6 @@ import org.apache.sysds.runtime.compress.colgroup.offset.AOffset;
 import org.apache.sysds.runtime.compress.colgroup.offset.AOffset.OffsetSliceInfo;
 import org.apache.sysds.runtime.compress.colgroup.offset.AOffsetIterator;
 import org.apache.sysds.runtime.compress.colgroup.offset.OffsetFactory;
-import org.apache.sysds.runtime.compress.colgroup.scheme.ICLAScheme;
 import org.apache.sysds.runtime.compress.cost.ComputationCostEstimator;
 import org.apache.sysds.runtime.compress.estim.encoding.EncodingFactory;
 import org.apache.sysds.runtime.compress.estim.encoding.IEncode;
@@ -61,21 +62,22 @@ import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
 public class ColGroupSDCSingleZeros extends ASDCZero {
 	private static final long serialVersionUID = 8033235615964315078L;
 
-	private ColGroupSDCSingleZeros(IColIndex colIndices, int numRows, ADictionary dict, AOffset offsets,
+	private ColGroupSDCSingleZeros(IColIndex colIndices, int numRows, IDictionary dict, AOffset offsets,
 		int[] cachedCounts) {
 		super(colIndices, numRows, dict, offsets, cachedCounts);
-		if(offsets.getSize() * 2 > numRows + 2)
-			throw new DMLCompressionException("Wrong direction of SDCSingleZero compression should be other way " + numRows
-				+ " vs " + _indexes + "\n" + this);
+		if(CompressedMatrixBlock.debug)
+			if(offsets.getSize() * 2 > numRows + 2 && !(dict instanceof PlaceHolderDict))
+				throw new DMLCompressionException("Wrong direction of SDCSingleZero compression should be other way "
+					+ numRows + " vs " + _indexes + "\n" + this);
 	}
 
-	public static AColGroup create(IColIndex colIndices, int numRows, ADictionary dict, AOffset offsets,
+	public static AColGroup create(IColIndex colIndices, int numRows, IDictionary dict, AOffset offsets,
 		int[] cachedCounts) {
 		if(dict == null)
 			return new ColGroupEmpty(colIndices);
-		else if(offsets.getSize() * 2 > numRows + 2) {
+		else if(offsets.getSize() * 2 > numRows + 2 && !(dict instanceof PlaceHolderDict)) {
 			AOffset rev = AOffset.reverse(numRows, offsets);
-			ADictionary empty = MatrixBlockDictionary.create(new MatrixBlock(1, colIndices.size(), true));
+			IDictionary empty = MatrixBlockDictionary.create(new MatrixBlock(1, colIndices.size(), true));
 			return ColGroupSDCSingle.create(colIndices, numRows, empty, dict.getValues(), rev, null);
 		}
 		else
@@ -491,7 +493,7 @@ public class ColGroupSDCSingleZeros extends ASDCZero {
 	public AColGroup scalarOperation(ScalarOperator op) {
 		final double val0 = op.executeScalar(0);
 		final boolean isSparseSafeOp = val0 == 0;
-		final ADictionary nDict = _dict.applyScalarOp(op);
+		final IDictionary nDict = _dict.applyScalarOp(op);
 		if(isSparseSafeOp)
 			return create(_colIndexes, _numRows, nDict, _indexes, getCachedCounts());
 		else {
@@ -504,7 +506,7 @@ public class ColGroupSDCSingleZeros extends ASDCZero {
 	@Override
 	public AColGroup unaryOperation(UnaryOperator op) {
 		final double val0 = op.fn.execute(0);
-		final ADictionary nDict = _dict.applyUnaryOp(op);
+		final IDictionary nDict = _dict.applyUnaryOp(op);
 		if(val0 == 0)
 			return create(_colIndexes, _numRows, nDict, _indexes, getCachedCounts());
 		else {
@@ -536,11 +538,11 @@ public class ColGroupSDCSingleZeros extends ASDCZero {
 	@Override
 	public AColGroup binaryRowOpLeft(BinaryOperator op, double[] v, boolean isRowSafe) {
 		if(isRowSafe) {
-			ADictionary ret = _dict.binOpLeft(op, v, _colIndexes);
+			IDictionary ret = _dict.binOpLeft(op, v, _colIndexes);
 			return ColGroupSDCSingleZeros.create(_colIndexes, _numRows, ret, _indexes, getCachedCounts());
 		}
 		else {
-			ADictionary newDict = _dict.binOpLeft(op, v, _colIndexes);
+			IDictionary newDict = _dict.binOpLeft(op, v, _colIndexes);
 			double[] defaultTuple = new double[_colIndexes.size()];
 			for(int i = 0; i < _colIndexes.size(); i++)
 				defaultTuple[i] = op.fn.execute(v[_colIndexes.get(i)], 0);
@@ -551,11 +553,11 @@ public class ColGroupSDCSingleZeros extends ASDCZero {
 	@Override
 	public AColGroup binaryRowOpRight(BinaryOperator op, double[] v, boolean isRowSafe) {
 		if(isRowSafe) {
-			ADictionary ret = _dict.binOpRight(op, v, _colIndexes);
+			IDictionary ret = _dict.binOpRight(op, v, _colIndexes);
 			return ColGroupSDCSingleZeros.create(_colIndexes, _numRows, ret, _indexes, getCachedCounts());
 		}
 		else {
-			ADictionary newDict = _dict.binOpRight(op, v, _colIndexes);
+			IDictionary newDict = _dict.binOpRight(op, v, _colIndexes);
 			double[] defaultTuple = new double[_colIndexes.size()];
 			for(int i = 0; i < _colIndexes.size(); i++)
 				defaultTuple[i] = op.fn.execute(0, v[_colIndexes.get(i)]);
@@ -571,7 +573,7 @@ public class ColGroupSDCSingleZeros extends ASDCZero {
 
 	public static ColGroupSDCSingleZeros read(DataInput in, int nRows) throws IOException {
 		IColIndex cols = ColIndexFactory.read(in);
-		ADictionary dict = DictionaryFactory.read(in);
+		IDictionary dict = DictionaryFactory.read(in);
 		AOffset indexes = OffsetFactory.readIn(in);
 		return new ColGroupSDCSingleZeros(cols, nRows, dict, indexes, null);
 	}
@@ -777,7 +779,7 @@ public class ColGroupSDCSingleZeros extends ASDCZero {
 
 	@Override
 	public AColGroup replace(double pattern, double replace) {
-		ADictionary replaced = _dict.replace(pattern, replace, _colIndexes.size());
+		IDictionary replaced = _dict.replace(pattern, replace, _colIndexes.size());
 		if(pattern == 0) {
 			double[] defaultTuple = new double[_colIndexes.size()];
 			for(int i = 0; i < _colIndexes.size(); i++)
@@ -812,7 +814,7 @@ public class ColGroupSDCSingleZeros extends ASDCZero {
 	}
 
 	@Override
-	protected AColGroup allocateRightMultiplication(MatrixBlock right, IColIndex colIndexes, ADictionary preAgg) {
+	protected AColGroup allocateRightMultiplication(MatrixBlock right, IColIndex colIndexes, IDictionary preAgg) {
 		if(colIndexes != null && preAgg != null)
 			return create(colIndexes, _numRows, preAgg, _indexes, getCachedCounts());
 		else
@@ -828,7 +830,7 @@ public class ColGroupSDCSingleZeros extends ASDCZero {
 	}
 
 	@Override
-	protected AColGroup copyAndSet(IColIndex colIndexes, ADictionary newDictionary) {
+	protected AColGroup copyAndSet(IColIndex colIndexes, IDictionary newDictionary) {
 		return create(colIndexes, _numRows, newDictionary, _indexes, getCachedCounts());
 	}
 
@@ -860,11 +862,6 @@ public class ColGroupSDCSingleZeros extends ASDCZero {
 		}
 		AOffset no = _indexes.appendN(Arrays.copyOf(g, g.length, AOffsetsGroup[].class), getNumRows());
 		return create(_colIndexes, sumRows, _dict, no, null);
-	}
-
-	@Override
-	public ICLAScheme getCompressionScheme() {
-		return null;
 	}
 
 	@Override

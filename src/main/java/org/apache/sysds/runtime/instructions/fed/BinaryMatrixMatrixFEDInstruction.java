@@ -19,12 +19,15 @@
 
 package org.apache.sysds.runtime.instructions.fed;
 
+import java.util.concurrent.Future;
+
 import org.apache.sysds.hops.fedplanner.FTypes.AlignType;
 import org.apache.sysds.hops.fedplanner.FTypes.FType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest;
+import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
 import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
 import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
 import org.apache.sysds.runtime.controlprogram.federated.MatrixLineagePair;
@@ -71,20 +74,21 @@ public class BinaryMatrixMatrixFEDInstruction extends BinaryFEDInstruction
 
 		//execute federated operation on mo1 or mo2
 		FederatedRequest fr2 = null;
+		Future<FederatedResponse>[] ffr = null;
 		if( mo2.isFederatedExcept(FType.BROADCAST) ) {
 			if(mo1.isFederated() && mo1.getFedMapping().isAligned(mo2.getFedMapping(),
-					mo1.isFederated(FType.ROW) ? AlignType.ROW : AlignType.COL)) {
+				mo1.isFederated(FType.ROW) ? AlignType.ROW : AlignType.COL)) {
 				fr2 = FederationUtils.callInstruction(instString, output,
 					new CPOperand[]{input1, input2},
 					new long[]{mo1.getFedMapping().getID(), mo2.getFedMapping().getID()}, true);
-				mo2.getFedMapping().execute(getTID(), true, fr2);
+				ffr = mo2.getFedMapping().execute(getTID(), true, fr2);
 			}
 			else {
 				FederatedRequest[] fr1 = mo2.getFedMapping().broadcastSliced(mo1, false);
 				fr2 = FederationUtils.callInstruction(instString, output,
 					new CPOperand[]{input1, input2},
 					new long[]{fr1[0].getID(), mo2.getFedMapping().getID()}, true);
-				mo2.getFedMapping().execute(getTID(), true, fr1, fr2);
+				ffr = mo2.getFedMapping().execute(getTID(), true, fr1, fr2);
 			}
 			fedMo = mo2.getMO(); // for setting the output federated mapping afterwards
 		}
@@ -92,7 +96,7 @@ public class BinaryMatrixMatrixFEDInstruction extends BinaryFEDInstruction
 			FederatedRequest fr1 = mo2.getFedMapping().broadcast(mo1);
 			fr2 = FederationUtils.callInstruction(instString, output, new CPOperand[]{input1, input2},
 				new long[]{mo2.getFedMapping().getID(), fr1.getID()}, true);
-			mo2.getFedMapping().execute(getTID(), true, fr1, fr2);
+			ffr = mo2.getFedMapping().execute(getTID(), true, fr1, fr2);
 			fedMo = mo2.getMO();
 		}
 		else { // matrix-matrix binary operations -> lhs fed input -> fed output
@@ -103,7 +107,7 @@ public class BinaryMatrixMatrixFEDInstruction extends BinaryFEDInstruction
 					FederatedRequest fr1 = mo1.getFedMapping().broadcast(mo2);
 					fr2 = FederationUtils.callInstruction(instString, output, new CPOperand[]{input1, input2},
 					new long[]{mo1.getFedMapping().getID(), fr1.getID()}, true);
-					mo1.getFedMapping().execute(getTID(), true, fr1, fr2);
+					ffr = mo1.getFedMapping().execute(getTID(), true, fr1, fr2);
 				}
 				else {
 					throw new DMLRuntimeException("Matrix-matrix binary operations with a full partitioned federated input with multiple partitions are not supported yet.");
@@ -115,7 +119,7 @@ public class BinaryMatrixMatrixFEDInstruction extends BinaryFEDInstruction
 				FederatedRequest fr1 = mo1.getFedMapping().broadcast(mo2);
 				fr2 = FederationUtils.callInstruction(instString, output, new CPOperand[]{input1, input2},
 				new long[]{mo1.getFedMapping().getID(), fr1.getID()}, true);
-				mo1.getFedMapping().execute(getTID(), true, fr1, fr2);
+				ffr = mo1.getFedMapping().execute(getTID(), true, fr1, fr2);
 			}
 			else if((mo1.isFederated(FType.ROW) ^ mo1.isFederated(FType.COL))
 			 	|| (mo1.isFederated(FType.FULL) && mo1.getFedMapping().getSize() == 1)) {
@@ -123,13 +127,13 @@ public class BinaryMatrixMatrixFEDInstruction extends BinaryFEDInstruction
 				FederatedRequest[] fr1 = mo1.getFedMapping().broadcastSliced(mo2, false);
 				fr2 = FederationUtils.callInstruction(instString, output, new CPOperand[]{input1, input2},
 					new long[]{mo1.getFedMapping().getID(), fr1[0].getID()}, true);
-				mo1.getFedMapping().execute(getTID(), true, fr1, fr2);
+				ffr = mo1.getFedMapping().execute(getTID(), true, fr1, fr2);
 			}
 			else if ( mo1.isFederated(FType.PART) && !mo2.isFederated() ){
 				FederatedRequest fr1 = mo1.getFedMapping().broadcast(mo2);
 				fr2 = FederationUtils.callInstruction(instString, output, new CPOperand[]{input1, input2},
 					new long[]{mo1.getFedMapping().getID(), fr1.getID()}, true);
-				mo1.getFedMapping().execute(getTID(), true, fr1, fr2);
+				ffr = mo1.getFedMapping().execute(getTID(), true, fr1, fr2);
 			}
 			else {
 				throw new DMLRuntimeException("Matrix-matrix binary operations are only supported with a row partitioned or column partitioned federated input yet.");
@@ -137,11 +141,12 @@ public class BinaryMatrixMatrixFEDInstruction extends BinaryFEDInstruction
 			fedMo = mo1.getMO(); // for setting the output federated mapping afterwards
 		}
 
+		long nnz = FederationUtils.sumNonZeros(ffr);
 		if ( mo1.isFederated(FType.PART) && !mo2.isFederated() )
-			setOutputFedMappingPart(mo1.getMO(), mo2.getMO(), fr2.getID(), ec);
+			setOutputFedMappingPart(mo1.getMO(), mo2.getMO(), nnz, fr2.getID(), ec);
 		else if ( fedMo.isFederated() )
 			setOutputFedMapping(fedMo, Math.max(mo1.getNumRows(), mo2.getNumRows()),
-				Math.max(mo1.getNumColumns(), mo2.getNumColumns()), fr2.getID(), ec);
+				Math.max(mo1.getNumColumns(), mo2.getNumColumns()), nnz, fr2.getID(), ec);
 		else throw new DMLRuntimeException("Input is not federated, so the output FedMapping cannot be set!");
 	}
 
@@ -152,9 +157,11 @@ public class BinaryMatrixMatrixFEDInstruction extends BinaryFEDInstruction
 	 * @param outputID ID of output
 	 * @param ec execution context
 	 */
-	private void setOutputFedMappingPart(MatrixObject mo1, MatrixObject mo2, long outputID, ExecutionContext ec){
+	private void setOutputFedMappingPart(MatrixObject mo1, MatrixObject mo2, long nnz,
+		long outputID, ExecutionContext ec){
 		MatrixObject out = ec.getMatrixObject(output);
-		out.getDataCharacteristics().set(mo1.getNumRows(), mo2.getNumColumns(), (int)mo1.getBlocksize());
+		out.getDataCharacteristics().setDimension(mo1.getNumRows(), mo2.getNumColumns())
+			.setBlocksize(mo1.getBlocksize()).setNonZeros(nnz);
 		FederationMap outputFedMap = mo1.getFedMapping()
 			.copyWithNewIDAndRange(mo1.getNumRows(), mo2.getNumColumns(), outputID);
 		out.setFedMapping(outputFedMap);
@@ -167,7 +174,7 @@ public class BinaryMatrixMatrixFEDInstruction extends BinaryFEDInstruction
 	 * @param ec execution context
 	 */
 	private void setOutputFedMapping(MatrixObject moFederated, long rowNum, long colNum,
-		long outputFedmappingID, ExecutionContext ec){
+		long nnz, long outputFedmappingID, ExecutionContext ec){
 		MatrixObject out = ec.getMatrixObject(output);
 		FederationMap fedMap = moFederated.getFedMapping().copyWithNewID(outputFedmappingID);
 		if(moFederated.getNumRows() != rowNum || moFederated.getNumColumns() != colNum) {
@@ -175,7 +182,7 @@ public class BinaryMatrixMatrixFEDInstruction extends BinaryFEDInstruction
 			fedMap.modifyFedRanges((dim == 0) ? rowNum : colNum, dim);
 		}
 		out.getDataCharacteristics().set(moFederated.getDataCharacteristics())
-			.setRows(rowNum).setCols(colNum);
+			.setDimension(rowNum, colNum).setNonZeros(nnz);
 		out.setFedMapping(fedMap);
 	}
 }

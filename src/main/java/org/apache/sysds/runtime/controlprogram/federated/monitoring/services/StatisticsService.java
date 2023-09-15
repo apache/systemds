@@ -29,6 +29,8 @@ import java.util.concurrent.Future;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedData;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest;
@@ -50,6 +52,7 @@ import org.apache.sysds.runtime.controlprogram.federated.monitoring.repositories
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.repositories.IRepository;
 
 public class StatisticsService {
+	protected static final Log LOG = LogFactory.getLog(StatisticsService.class.getName());
 
 	private static final IRepository entityRepository = new DerbyRepository();
 
@@ -184,7 +187,10 @@ public class StatisticsService {
 		}
 
 		for (var heavyHitterEntry: aggFedStats.heavyHitters.entrySet()) {
-			var newHH = new HeavyHitterModel(workerId, heavyHitterEntry.getKey(), heavyHitterEntry.getValue().getValue(), heavyHitterEntry.getValue().getLeft());
+			var newHH = new HeavyHitterModel(workerId, //
+				heavyHitterEntry.getKey(), 
+				heavyHitterEntry.getValue().getValue(),// 
+				heavyHitterEntry.getValue().getLeft());
 			heavyHitters.add(newHH);
 		}
 
@@ -193,10 +199,20 @@ public class StatisticsService {
 
 	private static void setCoordinatorId(CoordinatorConnectionModel entity) {
 		List<CoordinatorModel> coordinators = new ArrayList<>();
-		var monitoringKey = entity.getCoordinatorHostId();
+		String monitoringKey = entity.getCoordinatorHostId();
 
 		if (monitoringKey != null) {
 			coordinators = entityRepository.getAllEntitiesByField(Constants.ENTITY_MONITORING_KEY_COL, monitoringKey, CoordinatorModel.class);
+		}
+		if(coordinators.isEmpty()){
+			int processID = Integer.parseInt(monitoringKey.split("-")[1]);
+			coordinators = entityRepository.getAllEntities(CoordinatorModel.class);
+			for(CoordinatorModel c : coordinators){
+				if(c.processId == processID){
+					entity.coordinatorId = c.id;
+					return;
+				}
+			}
 		}
 
 		if (!coordinators.isEmpty()) {
@@ -215,20 +231,21 @@ public class StatisticsService {
 		if (matcher.find()) {
 			String host = matcher.group(2);
 			String portStr = matcher.group(3);
-			int port = 80;
-
-			if (portStr != null && !portStr.isBlank() && !portStr.isEmpty())
-				port = Integer.parseInt(portStr.replace(":", ""));
-
-			InetSocketAddress isa = new InetSocketAddress(host, port);
-			FederatedRequest frUDF = new FederatedRequest(FederatedRequest.RequestType.EXEC_UDF, -1,
-					new FederatedStatistics.FedStatsCollectFunction());
 
 			try {
+				// Force us to use the port specified.
+				int port = Integer.parseInt(portStr.replace(":", ""));
+
+				InetSocketAddress isa = new InetSocketAddress(host, port);
+				FederatedRequest frUDF = new FederatedRequest(FederatedRequest.RequestType.EXEC_UDF, -1,
+					new FederatedStatistics.FedStatsCollectFunction());
+
 				result = FederatedData.executeFederatedOperation(isa, frUDF);
-			} catch(DMLRuntimeException dre) {
+			}
+			catch(DMLRuntimeException dre) {
 				throw dre; // caused by offline federated workers
-			} catch (Exception e) {
+			}
+			catch(Exception e) {
 				throw new RuntimeException(e);
 			}
 		}

@@ -199,7 +199,7 @@ public final class CLALibLeftMultBy {
 				rowSums = that.rowSum(k).getDenseBlockValues();
 
 			// add the correction layer for the subtracted common values.
-			if(rowSums != null && constV != null) {
+			if(rowSums != null) {
 				if(ret.isEmpty())
 					ret.allocateDenseBlock();
 				else

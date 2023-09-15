@@ -60,6 +60,7 @@ public class RewriteAddChkpointLop extends LopRewriteRule
 		OperatorOrderingUtils.markSharedSparkOps(sparkRoots, operatorJobCount);
 		// TODO: A rewrite pass to remove less effective checkpoints
 		addChkpointLop(lops, operatorJobCount);
+		placeCompiledCheckpoints(lops, sb);
 		//New node is added inplace in the Lop DAG
 		return List.of(sb);
 	}
@@ -78,7 +79,7 @@ public class RewriteAddChkpointLop extends LopRewriteRule
 				&& OperatorOrderingUtils.isPersistableSparkOp(l)) {
 				// This operation is expensive and shared between Spark jobs
 				List<Lop> oldOuts = new ArrayList<>(l.getOutputs());
-				// Construct a chkpoint lop that takes this Spark node as a input
+				// Construct a chkpoint lop that takes this Spark node as an input
 				Lop chkpoint = new Checkpoint(l, l.getDataType(), l.getValueType(),
 					Checkpoint.getDefaultStorageLevelString(), false);
 				for (Lop out : oldOuts) {
@@ -89,5 +90,49 @@ public class RewriteAddChkpointLop extends LopRewriteRule
 				}
 			}
 		}
+	}
+
+	private void placeCompiledCheckpoints(List<Lop> nodes, StatementBlock sb) {
+		if (sb.getCheckpointPositions() == null)
+			return;
+
+		for (Lop l : nodes) {
+			// Check if the compiler placed and saved a checkpoint
+			// TODO: Call recompiler on the loops
+			if (isCheckpointed(l, sb)) {
+				List<Lop> oldOuts = new ArrayList<>(l.getOutputs());
+				// Construct a chkpoint lop that takes this Spark node as an input
+				Lop chkpoint = new Checkpoint(l, l.getDataType(), l.getValueType(),
+					Checkpoint.getDefaultStorageLevelString(), false);
+				for (Lop out : oldOuts) {
+					//Rewire l -> out to l -> chkpoint -> out
+					chkpoint.addOutput(out);
+					out.replaceInput(l, chkpoint);
+					l.removeOutput(out);
+				}
+			}
+		}
+	}
+
+	private boolean isCheckpointed(Lop lop, StatementBlock sb) {
+		var cpPositions = sb.getCheckpointPositions();
+		if (cpPositions == null)
+			return false;
+
+		if (cpPositions.containsKey(lop.getType())) {
+			List<Lop.Type> outputsT = cpPositions.get(lop.getType());
+			List<Lop> outputs = new ArrayList<>(lop.getOutputs());
+			if (outputs.size() != outputsT.size())
+				return false;
+			for (int i=0; i< outputs.size(); i++) {
+				if (outputs.get(i).getType() != outputsT.get(i)
+					|| !outputs.get(i).isExecSpark())
+					return false;
+			}
+		}
+		else
+			return false;
+
+		return true;
 	}
 }

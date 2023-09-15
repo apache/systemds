@@ -39,7 +39,7 @@ public class CheckpointSharedOpsTest extends AutomatedTestBase {
 
 	protected static final String TEST_DIR = "functions/async/";
 	protected static final String TEST_NAME = "CheckpointSharedOps";
-	protected static final int TEST_VARIANTS = 2;
+	protected static final int TEST_VARIANTS = 3;
 	protected static String TEST_CLASS_DIR = TEST_DIR + CheckpointSharedOpsTest.class.getSimpleName() + "/";
 
 	@Override
@@ -60,6 +60,12 @@ public class CheckpointSharedOpsTest extends AutomatedTestBase {
 		// Place checkpoint at the end of a loop as the updated vars are read in each iteration.
 		runTest(TEST_NAME+"2");
 	}
+
+	/*@Test
+	public void testAlsCG() {
+		// Place checkpoint at the end of a loop as the updated vars are read in each iteration.
+		runTest(TEST_NAME+"3");
+	}*/
 
 	public void runTest(String testname) {
 		Types.ExecMode oldPlatform = setExecMode(Types.ExecMode.HYBRID);
@@ -96,8 +102,7 @@ public class CheckpointSharedOpsTest extends AutomatedTestBase {
 			if (!matchVal)
 				System.out.println("Value w/o Checkpoint "+R+" w/ Checkpoint "+R_mp);
 			//compare checkpoint instruction count
-			if (!testname.equalsIgnoreCase(TEST_NAME+"2"))
-				Assert.assertTrue("Violated checkpoint count: " + numCP + " < " + numCP_maxp, numCP < numCP_maxp);
+			Assert.assertTrue("Violated checkpoint count: " + numCP + " < " + numCP_maxp, numCP < numCP_maxp);
 		} finally {
 			resetExecMode(oldPlatform);
 			InfrastructureAnalyzer.setLocalMaxMemory(oldmem);

@@ -25,7 +25,8 @@ import java.io.IOException;
 import java.util.Arrays;
 
 import org.apache.sysds.runtime.DMLRuntimeException;
-import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.PlaceHolderDict;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.DictionaryFactory;
 import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
@@ -36,7 +37,6 @@ import org.apache.sysds.runtime.compress.colgroup.offset.AOffset;
 import org.apache.sysds.runtime.compress.colgroup.offset.AOffset.OffsetSliceInfo;
 import org.apache.sysds.runtime.compress.colgroup.offset.AOffsetIterator;
 import org.apache.sysds.runtime.compress.colgroup.offset.OffsetFactory;
-import org.apache.sysds.runtime.compress.colgroup.scheme.ICLAScheme;
 import org.apache.sysds.runtime.compress.cost.ComputationCostEstimator;
 import org.apache.sysds.runtime.compress.estim.encoding.EncodingFactory;
 import org.apache.sysds.runtime.compress.estim.encoding.IEncode;
@@ -61,19 +61,19 @@ public class ColGroupSDCSingle extends ASDC {
 	/** The default value stored in this column group */
 	protected final double[] _defaultTuple;
 
-	private ColGroupSDCSingle(IColIndex colIndices, int numRows, ADictionary dict, double[] defaultTuple,
+	private ColGroupSDCSingle(IColIndex colIndices, int numRows, IDictionary dict, double[] defaultTuple,
 		AOffset offsets, int[] cachedCounts) {
 		super(colIndices, numRows, dict == null ? Dictionary.createNoCheck(new double[colIndices.size()]) : dict, offsets,
 			cachedCounts);
 		_defaultTuple = defaultTuple;
 	}
 
-	public static AColGroup create(IColIndex colIndexes, int numRows, ADictionary dict, double[] defaultTuple,
+	public static AColGroup create(IColIndex colIndexes, int numRows, IDictionary dict, double[] defaultTuple,
 		AOffset offsets, int[] cachedCounts) {
 		final boolean allZero = ColGroupUtils.allZero(defaultTuple);
 		if(dict == null && allZero)
 			return new ColGroupEmpty(colIndexes);
-		else if(dict == null && offsets.getSize() * 2 > numRows + 2) {
+		else if(dict == null && offsets.getSize() * 2 > numRows + 2 && !(dict instanceof PlaceHolderDict)) {
 			AOffset rev = AOffset.reverse(numRows, offsets);
 			return ColGroupSDCSingleZeros.create(colIndexes, numRows, Dictionary.create(defaultTuple), rev, cachedCounts);
 		}
@@ -81,7 +81,7 @@ public class ColGroupSDCSingle extends ASDC {
 			return new ColGroupSDCSingle(colIndexes, numRows, null, defaultTuple, offsets, cachedCounts);
 		else if(allZero)
 			return ColGroupSDCSingleZeros.create(colIndexes, numRows, dict, offsets, cachedCounts);
-		else if(offsets.getSize() * 2 > numRows + 2) {
+		else if(offsets.getSize() * 2 > numRows + 2 && !(dict instanceof PlaceHolderDict)) {
 			AOffset rev = AOffset.reverse(numRows, offsets);
 			return new ColGroupSDCSingle(colIndexes, numRows, Dictionary.create(defaultTuple), dict.getValues(), rev,
 				null);
@@ -362,7 +362,7 @@ public class ColGroupSDCSingle extends ASDC {
 		final double[] newDefaultTuple = new double[_defaultTuple.length];
 		for(int i = 0; i < _defaultTuple.length; i++)
 			newDefaultTuple[i] = op.executeScalar(_defaultTuple[i]);
-		final ADictionary nDict = _dict.applyScalarOp(op);
+		final IDictionary nDict = _dict.applyScalarOp(op);
 		return create(_colIndexes, _numRows, nDict, newDefaultTuple, _indexes, getCachedCounts());
 	}
 
@@ -371,7 +371,7 @@ public class ColGroupSDCSingle extends ASDC {
 		final double[] newDefaultTuple = new double[_defaultTuple.length];
 		for(int i = 0; i < _defaultTuple.length; i++)
 			newDefaultTuple[i] = op.fn.execute(_defaultTuple[i]);
-		final ADictionary nDict = _dict.applyUnaryOp(op);
+		final IDictionary nDict = _dict.applyUnaryOp(op);
 		return create(_colIndexes, _numRows, nDict, newDefaultTuple, _indexes, getCachedCounts());
 	}
 
@@ -380,7 +380,7 @@ public class ColGroupSDCSingle extends ASDC {
 		final double[] newDefaultTuple = new double[_defaultTuple.length];
 		for(int i = 0; i < _defaultTuple.length; i++)
 			newDefaultTuple[i] = op.fn.execute(v[_colIndexes.get(i)], _defaultTuple[i]);
-		final ADictionary newDict = _dict.binOpLeft(op, v, _colIndexes);
+		final IDictionary newDict = _dict.binOpLeft(op, v, _colIndexes);
 		return create(_colIndexes, _numRows, newDict, newDefaultTuple, _indexes, getCachedCounts());
 	}
 
@@ -389,7 +389,7 @@ public class ColGroupSDCSingle extends ASDC {
 		final double[] newDefaultTuple = new double[_defaultTuple.length];
 		for(int i = 0; i < _defaultTuple.length; i++)
 			newDefaultTuple[i] = op.fn.execute(_defaultTuple[i], v[_colIndexes.get(i)]);
-		final ADictionary newDict = _dict.binOpRight(op, v, _colIndexes);
+		final IDictionary newDict = _dict.binOpRight(op, v, _colIndexes);
 		return create(_colIndexes, _numRows, newDict, newDefaultTuple, _indexes, getCachedCounts());
 	}
 
@@ -403,7 +403,7 @@ public class ColGroupSDCSingle extends ASDC {
 
 	public static ColGroupSDCSingle read(DataInput in, int nRows) throws IOException {
 		IColIndex cols = ColIndexFactory.read(in);
-		ADictionary dict = DictionaryFactory.read(in);
+		IDictionary dict = DictionaryFactory.read(in);
 		AOffset indexes = OffsetFactory.readIn(in);
 		double[] defaultTuple = ColGroupIO.readDoubleArray(cols.size(), in);
 		return new ColGroupSDCSingle(cols, nRows, dict, defaultTuple, indexes, null);
@@ -419,7 +419,7 @@ public class ColGroupSDCSingle extends ASDC {
 
 	@Override
 	public AColGroup replace(double pattern, double replace) {
-		ADictionary replaced = _dict.replace(pattern, replace, _colIndexes.size());
+		IDictionary replaced = _dict.replace(pattern, replace, _colIndexes.size());
 		double[] newDefaultTuple = new double[_defaultTuple.length];
 		for(int i = 0; i < _defaultTuple.length; i++)
 			newDefaultTuple[i] = _defaultTuple[i] == pattern ? replace : _defaultTuple[i];
@@ -432,7 +432,7 @@ public class ColGroupSDCSingle extends ASDC {
 		for(int i = 0; i < _colIndexes.size(); i++)
 			constV[_colIndexes.get(i)] += _defaultTuple[i];
 
-		ADictionary subtractedDict = _dict.subtractTuple(_defaultTuple);
+		IDictionary subtractedDict = _dict.subtractTuple(_defaultTuple);
 		return ColGroupSDCSingleZeros.create(_colIndexes, _numRows, subtractedDict, _indexes, getCachedCounts());
 	}
 
@@ -452,7 +452,7 @@ public class ColGroupSDCSingle extends ASDC {
 
 	@Override
 	public AColGroup rexpandCols(int max, boolean ignore, boolean cast, int nRows) {
-		ADictionary d = _dict.rexpandCols(max, ignore, cast, _colIndexes.size());
+		IDictionary d = _dict.rexpandCols(max, ignore, cast, _colIndexes.size());
 		final int def = (int) _defaultTuple[0];
 		if(d == null) {
 			if(def <= 0 || def > max)
@@ -533,7 +533,7 @@ public class ColGroupSDCSingle extends ASDC {
 	}
 
 	@Override
-	protected AColGroup allocateRightMultiplicationCommon(double[] common, IColIndex colIndexes, ADictionary preAgg) {
+	protected AColGroup allocateRightMultiplicationCommon(double[] common, IColIndex colIndexes, IDictionary preAgg) {
 		return create(colIndexes, _numRows, preAgg, common, _indexes, getCachedCounts());
 	}
 
@@ -546,7 +546,7 @@ public class ColGroupSDCSingle extends ASDC {
 	}
 
 	@Override
-	protected AColGroup copyAndSet(IColIndex colIndexes, ADictionary newDictionary) {
+	protected AColGroup copyAndSet(IColIndex colIndexes, IDictionary newDictionary) {
 		return create(colIndexes, _numRows, newDictionary, _defaultTuple, _indexes, getCachedCounts());
 	}
 
@@ -578,11 +578,6 @@ public class ColGroupSDCSingle extends ASDC {
 		}
 		AOffset no = _indexes.appendN(Arrays.copyOf(g, g.length, AOffsetsGroup[].class), getNumRows());
 		return create(_colIndexes, sumRows, _dict, _defaultTuple, no, null);
-	}
-
-	@Override
-	public ICLAScheme getCompressionScheme() {
-		return null;
 	}
 
 	@Override

@@ -29,7 +29,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 
-import org.apache.commons.lang.NotImplementedException;
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.DMLRuntimeException;
@@ -1817,7 +1817,7 @@ public class ColGroupTest extends ColGroupBase {
 
 	public void rightMultWithAllCols(MatrixBlock right) {
 		try {
-			final IColIndex cols =  ColIndexFactory.create(right.getNumColumns());
+			final IColIndex cols = ColIndexFactory.create(right.getNumColumns());
 			AColGroup b = base.rightMultByMatrix(right, cols);
 			AColGroup o = other.rightMultByMatrix(right, cols);
 			if(!(b == null && o == null))
@@ -1933,7 +1933,7 @@ public class ColGroupTest extends ColGroupBase {
 	protected static AColGroup getColGroup(MatrixBlock mbt, CompressionType ct, int nRow) {
 		try {
 
-			final IColIndex cols =  ColIndexFactory.create(mbt.getNumRows());
+			final IColIndex cols = ColIndexFactory.create(mbt.getNumRows());
 			final List<CompressedSizeInfoColGroup> es = new ArrayList<>();
 			final EstimationFactors f = new EstimationFactors(nRow, nRow, mbt.getSparsity());
 			es.add(new CompressedSizeInfoColGroup(cols, f, 321452, ct));
@@ -2005,7 +2005,7 @@ public class ColGroupTest extends ColGroupBase {
 
 	@Test(expected = DMLCompressionException.class)
 	public void tsmmEmpty() {
-		tsmmColGroup(new ColGroupEmpty( ColIndexFactory.create(new int[] {1, 3, 10})));
+		tsmmColGroup(new ColGroupEmpty(ColIndexFactory.create(new int[] {1, 3, 10})));
 		throw new DMLCompressionException("The output is verified correct just ignore not implemented");
 	}
 
@@ -2172,12 +2172,12 @@ public class ColGroupTest extends ColGroupBase {
 				return;
 			assertTrue(a.getColIndices() == base.getColIndices());
 			assertTrue(b.getColIndices() == other.getColIndices());
-			
+
 			int nRow = ru - rl;
 			MatrixBlock ot = sparseMB(ru - rl, maxCol);
 			MatrixBlock bt = sparseMB(ru - rl, maxCol);
 			decompressToSparseBlock(a, b, ot, bt, 0, nRow);
-			
+
 			MatrixBlock otd = denseMB(ru - rl, maxCol);
 			MatrixBlock btd = denseMB(ru - rl, maxCol);
 			decompressToDenseBlock(otd, btd, a, b, 0, nRow);
@@ -2210,9 +2210,19 @@ public class ColGroupTest extends ColGroupBase {
 
 	@Test
 	public void getScheme() {
-		// create scheme and check if it compress the same matrix input in same way.
-		checkScheme(base.getCompressionScheme(), base, nRow, maxCol);
-		checkScheme(other.getCompressionScheme(), other, nRow, maxCol);
+		try {
+			// create scheme and check if it compress the same matrix input in same way.
+			compare(base, other);
+			checkScheme(base.getCompressionScheme(), base, nRow, maxCol);
+			checkScheme(other.getCompressionScheme(), other, nRow, maxCol);
+		}
+		catch(NotImplementedException e) {
+			// allow it to be not implemented
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
 	}
 
 	private static void checkScheme(ICLAScheme ia, AColGroup a, int nRow, int nCol) {
@@ -2230,6 +2240,10 @@ public class ColGroupTest extends ColGroupBase {
 					fail("Should not be possible to return null on equivalent matrix:\nGroup\n" + a + "\nScheme:\n" + ia);
 
 			}
+		}
+		catch(NotImplementedException e) {
+			// allow it to be not implemented
+
 		}
 		catch(Exception e) {
 			e.printStackTrace();
@@ -2255,7 +2269,7 @@ public class ColGroupTest extends ColGroupBase {
 			// both should be null, or both should not be.
 			if(g2 == null)
 				assertTrue(g2n == null);
-			else if(g2 != null)
+			else
 				assertTrue(g2n != null);
 		}
 		catch(Exception e) {

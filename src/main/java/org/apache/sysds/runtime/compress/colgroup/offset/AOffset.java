@@ -24,7 +24,7 @@ import java.io.Serializable;
 import java.lang.ref.SoftReference;
 import java.util.Arrays;
 
-import org.apache.commons.lang.NotImplementedException;
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.DMLRuntimeException;
@@ -51,7 +51,7 @@ public abstract class AOffset implements Serializable {
 	protected static final Log LOG = LogFactory.getLog(AOffset.class.getName());
 
 	/** Thread local cache for a single recently used Iterator, this is used for cache blocking */
-	private ThreadLocal<OffsetCache> cacheRow = new ThreadLocal<OffsetCache>() {
+	private ThreadLocal<OffsetCache> cacheRow = new ThreadLocal<>() {
 		@Override
 		protected OffsetCache initialValue() {
 			return null;
@@ -95,7 +95,7 @@ public abstract class AOffset implements Serializable {
 			return getIterator();
 		else if(row > getOffsetToLast())
 			return null;
-		final OffsetCache c = getLength() < skipStride ? null :  cacheRow.get();
+		final OffsetCache c = getLength() < skipStride ? null : cacheRow.get();
 		if(c != null && c.row == row)
 			return c.it.clone();
 		else if(getLength() < skipStride)
@@ -241,8 +241,8 @@ public abstract class AOffset implements Serializable {
 		}
 	}
 
-	protected final void preAggregateDenseMapRow(double[] mV, int off, double[] preAV, int cu, int nVal, AMapToData data,
-		AIterator it) {
+	protected final void preAggregateDenseMapRow(double[] mV, int off, double[] preAV, int cu, int nVal,
+		AMapToData data, AIterator it) {
 		final int last = getOffsetToLast();
 		if(cu <= last)
 			preAggregateDenseMapRowBellowEnd(mV, off, preAV, cu, nVal, data, it);
@@ -250,8 +250,8 @@ public abstract class AOffset implements Serializable {
 			preAggregateDenseMapRowEnd(mV, off, preAV, last, nVal, data, it);
 	}
 
-	protected final void preAggregateDenseMapRowBellowEnd(final double[] mV, final int off, final double[] preAV, int cu,
-		final int nVal, final AMapToData data, final AIterator it) {
+	protected final void preAggregateDenseMapRowBellowEnd(final double[] mV, final int off, final double[] preAV,
+		int cu, final int nVal, final AMapToData data, final AIterator it) {
 		it.offset += off;
 		cu += off;
 		while(it.offset < cu) {
@@ -444,7 +444,13 @@ public abstract class AOffset implements Serializable {
 		return false;
 	}
 
-	protected abstract AOffset moveIndex(int m);
+	/**
+	 * Move the index start x cells
+	 * 
+	 * @param m The amount to move
+	 * @return The moved index.
+	 */
+	public abstract AOffset moveIndex(int m);
 
 	/**
 	 * Get the length of the underlying array. This does not reflect the number of contained elements, since some of the
@@ -452,7 +458,7 @@ public abstract class AOffset implements Serializable {
 	 * 
 	 * @return The length of the underlying arrays
 	 */
-	protected abstract int getLength();
+	public abstract int getLength();
 
 	public OffsetSliceInfo slice(int l, int u) {
 		AIterator it = getIterator(l);
@@ -492,10 +498,8 @@ public abstract class AOffset implements Serializable {
 			return new OffsetSliceInfo(low, high + 1, new OffsetSingle(lowValue));
 		else if(low + 1 == high)
 			return new OffsetSliceInfo(low, high + 1, new OffsetTwo(lowValue, highValue));
-		else if(this instanceof OffsetByte)
-			return ((OffsetByte) this).slice(lowOff, highOff, lowValue, highValue, low, high);
-		else // if(this instanceof OffsetChar)
-			return ((OffsetChar) this).slice(lowOff, highOff, lowValue, highValue, low, high);
+		else
+			return ((ISliceOffset) this).slice(lowOff, highOff, lowValue, highValue, low, high);
 	}
 
 	/**
@@ -562,14 +566,19 @@ public abstract class AOffset implements Serializable {
 		sb.append(this.getClass().getSimpleName());
 		final AIterator it = getIterator();
 		if(it != null) {
+			int i = it.offset;
 			final int last = getOffsetToLast();
 			sb.append("[");
-			while(it.offset < last) {
-				sb.append(it.offset);
-				sb.append(", ");
-				it.next();
-			}
 			sb.append(it.offset);
+			while(it.offset < last) {
+				it.next();
+				sb.append(", ");
+				sb.append(it.offset);
+				if(it.offset - i <= 0)
+					throw new DMLCompressionException("Invalid offset");
+				else
+					i = it.offset;
+			}
 			sb.append("]");
 
 			if(it.offset != last)
@@ -582,7 +591,8 @@ public abstract class AOffset implements Serializable {
 
 	public static AOffset reverse(int numRows, AOffset offsets) {
 		if(numRows < offsets.getOffsetToLast()) {
-			throw new DMLRuntimeException("Invalid number of rows for reverse");
+			throw new DMLRuntimeException(
+				"Invalid number of rows for reverse: last: " + offsets.getOffsetToLast() + " numRows: " + numRows);
 		}
 
 		int[] newOff = new int[numRows - offsets.getSize()];

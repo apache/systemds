@@ -24,9 +24,9 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.util.Arrays;
 
-import org.apache.commons.lang.NotImplementedException;
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
-import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.DictionaryFactory;
 import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
@@ -62,7 +62,7 @@ import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
  * with no modifications.
  * 
  */
-public class ColGroupSDCFOR extends ASDC implements IMapToDataGroup , IFrameOfReferenceGroup{
+public class ColGroupSDCFOR extends ASDC implements IMapToDataGroup, IFrameOfReferenceGroup {
 
 	private static final long serialVersionUID = 3883228464052204203L;
 
@@ -72,7 +72,7 @@ public class ColGroupSDCFOR extends ASDC implements IMapToDataGroup , IFrameOfRe
 	/** Reference values in this column group */
 	protected final double[] _reference;
 
-	private ColGroupSDCFOR(IColIndex colIndices, int numRows, ADictionary dict, AOffset indexes, AMapToData data,
+	private ColGroupSDCFOR(IColIndex colIndices, int numRows, IDictionary dict, AOffset indexes, AMapToData data,
 		int[] cachedCounts, double[] reference) {
 		super(colIndices, numRows, dict, indexes, cachedCounts);
 		// allow for now 1 data unique.
@@ -84,7 +84,7 @@ public class ColGroupSDCFOR extends ASDC implements IMapToDataGroup , IFrameOfRe
 		_reference = reference;
 	}
 
-	public static AColGroup create(IColIndex colIndexes, int numRows, ADictionary dict, AOffset offsets, AMapToData data,
+	public static AColGroup create(IColIndex colIndexes, int numRows, IDictionary dict, AOffset offsets, AMapToData data,
 		int[] cachedCounts, double[] reference) {
 		final boolean allZero = ColGroupUtils.allZero(reference);
 		if(allZero && dict == null)
@@ -101,7 +101,7 @@ public class ColGroupSDCFOR extends ASDC implements IMapToDataGroup , IFrameOfRe
 
 	public static AColGroup sparsifyFOR(ColGroupSDC g) {
 		// subtract default.
-		final double[] constV = ((ColGroupSDC) g)._defaultTuple;
+		final double[] constV = g._defaultTuple;
 		final AColGroupValue clg = (AColGroupValue) g.subtractDefaultTuple();
 		return create(g.getColIndices(), g._numRows, clg._dict, g._indexes, g._data, g.getCachedCounts(), constV);
 	}
@@ -157,11 +157,11 @@ public class ColGroupSDCFOR extends ASDC implements IMapToDataGroup , IFrameOfRe
 		if(op.fn instanceof Plus || op.fn instanceof Minus)
 			return create(_colIndexes, _numRows, _dict, _indexes, _data, getCachedCounts(), newRef);
 		else if(op.fn instanceof Multiply || op.fn instanceof Divide) {
-			final ADictionary newDict = _dict.applyScalarOp(op);
+			final IDictionary newDict = _dict.applyScalarOp(op);
 			return create(_colIndexes, _numRows, newDict, _indexes, _data, getCachedCounts(), newRef);
 		}
 		else {
-			final ADictionary newDict = _dict.applyScalarOpWithReference(op, _reference, newRef);
+			final IDictionary newDict = _dict.applyScalarOpWithReference(op, _reference, newRef);
 			return create(_colIndexes, _numRows, newDict, _indexes, _data, getCachedCounts(), newRef);
 		}
 	}
@@ -169,7 +169,7 @@ public class ColGroupSDCFOR extends ASDC implements IMapToDataGroup , IFrameOfRe
 	@Override
 	public AColGroup unaryOperation(UnaryOperator op) {
 		final double[] newRef = ColGroupUtils.unaryOperator(op, _reference);
-		final ADictionary newDict = _dict.applyUnaryOpWithReference(op, _reference, newRef);
+		final IDictionary newDict = _dict.applyUnaryOpWithReference(op, _reference, newRef);
 		return create(_colIndexes, _numRows, newDict, _indexes, _data, getCachedCounts(), newRef);
 	}
 
@@ -183,11 +183,11 @@ public class ColGroupSDCFOR extends ASDC implements IMapToDataGroup , IFrameOfRe
 			return create(_colIndexes, _numRows, _dict, _indexes, _data, getCachedCounts(), newRef);
 		else if(op.fn instanceof Multiply || op.fn instanceof Divide) {
 			// possible to simply process on dict and keep reference
-			final ADictionary newDict = _dict.binOpLeft(op, v, _colIndexes);
+			final IDictionary newDict = _dict.binOpLeft(op, v, _colIndexes);
 			return create(_colIndexes, _numRows, newDict, _indexes, _data, getCachedCounts(), newRef);
 		}
 		else { // have to apply reference while processing
-			final ADictionary newDict = _dict.binOpLeftWithReference(op, v, _colIndexes, _reference, newRef);
+			final IDictionary newDict = _dict.binOpLeftWithReference(op, v, _colIndexes, _reference, newRef);
 			return create(_colIndexes, _numRows, newDict, _indexes, _data, getCachedCounts(), newRef);
 		}
 	}
@@ -202,11 +202,11 @@ public class ColGroupSDCFOR extends ASDC implements IMapToDataGroup , IFrameOfRe
 			return create(_colIndexes, _numRows, _dict, _indexes, _data, getCachedCounts(), newRef);
 		else if(op.fn instanceof Multiply || op.fn instanceof Divide) {
 			// possible to simply process on dict and keep reference
-			final ADictionary newDict = _dict.binOpRight(op, v, _colIndexes);
+			final IDictionary newDict = _dict.binOpRight(op, v, _colIndexes);
 			return create(_colIndexes, _numRows, newDict, _indexes, _data, getCachedCounts(), newRef);
 		}
 		else { // have to apply reference while processing
-			final ADictionary newDict = _dict.binOpRightWithReference(op, v, _colIndexes, _reference, newRef);
+			final IDictionary newDict = _dict.binOpRightWithReference(op, v, _colIndexes, _reference, newRef);
 			return create(_colIndexes, _numRows, newDict, _indexes, _data, getCachedCounts(), newRef);
 		}
 	}
@@ -222,7 +222,7 @@ public class ColGroupSDCFOR extends ASDC implements IMapToDataGroup , IFrameOfRe
 
 	public static ColGroupSDCFOR read(DataInput in, int nRows) throws IOException {
 		IColIndex cols = ColIndexFactory.read(in);
-		ADictionary dict = DictionaryFactory.read(in);
+		IDictionary dict = DictionaryFactory.read(in);
 		AOffset indexes = OffsetFactory.readIn(in);
 		AMapToData data = MapToFactory.readIn(in);
 		double[] reference = ColGroupIO.readDoubleArray(cols.size(), in);
@@ -250,7 +250,7 @@ public class ColGroupSDCFOR extends ASDC implements IMapToDataGroup , IFrameOfRe
 	@Override
 	public AColGroup replace(double pattern, double replace) {
 
-		final ADictionary newDict = _dict.replaceWithReference(pattern, replace, _reference);
+		final IDictionary newDict = _dict.replaceWithReference(pattern, replace, _reference);
 		boolean patternInReference = false;
 		for(double d : _reference)
 			if(pattern == d) {
@@ -362,7 +362,7 @@ public class ColGroupSDCFOR extends ASDC implements IMapToDataGroup , IFrameOfRe
 
 	@Override
 	protected AColGroup sliceMultiColumns(int idStart, int idEnd, IColIndex outputCols) {
-		ADictionary retDict = _dict.sliceOutColumnRange(idStart, idEnd, _colIndexes.size());
+		IDictionary retDict = _dict.sliceOutColumnRange(idStart, idEnd, _colIndexes.size());
 		final double[] newDef = new double[idEnd - idStart];
 		for(int i = idStart, j = 0; i < idEnd; i++, j++)
 			newDef[j] = _reference[i];
@@ -375,7 +375,7 @@ public class ColGroupSDCFOR extends ASDC implements IMapToDataGroup , IFrameOfRe
 		if(_colIndexes.size() == 1) // early abort, only single column already.
 			return create(retIndexes, _numRows, _dict, _indexes, _data, getCounts(), _reference);
 		final double[] newDef = new double[] {_reference[idx]};
-		final ADictionary retDict = _dict.sliceOutColumnRange(idx, idx + 1, _colIndexes.size());
+		final IDictionary retDict = _dict.sliceOutColumnRange(idx, idx + 1, _colIndexes.size());
 		return create(retIndexes, _numRows, retDict, _indexes, _data, getCounts(), newDef);
 	}
 
@@ -412,7 +412,7 @@ public class ColGroupSDCFOR extends ASDC implements IMapToDataGroup , IFrameOfRe
 
 	@Override
 	public AColGroup rexpandCols(int max, boolean ignore, boolean cast, int nRows) {
-		ADictionary d = _dict.rexpandColsWithReference(max, ignore, cast, (int) _reference[0]);
+		IDictionary d = _dict.rexpandColsWithReference(max, ignore, cast, (int) _reference[0]);
 		return ColGroupSDC.rexpandCols(max, ignore, cast, nRows, d, _indexes, _data, getCachedCounts(),
 			(int) _reference[0]);
 	}
@@ -437,7 +437,7 @@ public class ColGroupSDCFOR extends ASDC implements IMapToDataGroup , IFrameOfRe
 	}
 
 	@Override
-	protected AColGroup allocateRightMultiplicationCommon(double[] common, IColIndex colIndexes, ADictionary preAgg) {
+	protected AColGroup allocateRightMultiplicationCommon(double[] common, IColIndex colIndexes, IDictionary preAgg) {
 		return create(colIndexes, _numRows, preAgg, _indexes, _data, getCachedCounts(), common);
 	}
 
@@ -451,7 +451,7 @@ public class ColGroupSDCFOR extends ASDC implements IMapToDataGroup , IFrameOfRe
 	}
 
 	@Override
-	protected AColGroup copyAndSet(IColIndex colIndexes, ADictionary newDictionary) {
+	protected AColGroup copyAndSet(IColIndex colIndexes, IDictionary newDictionary) {
 		return create(colIndexes, _numRows, newDictionary, _indexes, _data, getCachedCounts(), _reference);
 	}
 
@@ -487,11 +487,6 @@ public class ColGroupSDCFOR extends ASDC implements IMapToDataGroup , IFrameOfRe
 	}
 
 	@Override
-	public ICLAScheme getCompressionScheme() {
-		return null;
-	}
-
-	@Override
 	public AColGroup recompress() {
 		return this;
 	}
@@ -519,6 +514,11 @@ public class ColGroupSDCFOR extends ASDC implements IMapToDataGroup , IFrameOfRe
 	@Override
 	public int getNumberOffsets() {
 		return _data.size();
+	}
+
+	@Override
+	public ICLAScheme getCompressionScheme() {
+		throw new NotImplementedException();
 	}
 
 	@Override

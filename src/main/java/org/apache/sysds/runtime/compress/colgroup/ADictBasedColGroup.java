@@ -24,8 +24,8 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.IdentityDictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.MatrixBlockDictionary;
 import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
@@ -37,15 +37,15 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 public abstract class ADictBasedColGroup extends AColGroupCompressed implements IContainADictionary {
 	private static final long serialVersionUID = -3737025296618703668L;
 	/** Distinct value tuples associated with individual bitmaps. */
-	protected final ADictionary _dict;
+	protected final IDictionary _dict;
 
 	/**
-	 * A Abstract class for column groups that contain ADictionary for values.
+	 * A Abstract class for column groups that contain IDictionary for values.
 	 * 
 	 * @param colIndices The Column indexes
 	 * @param dict       The dictionary to contain the distinct tuples
 	 */
-	protected ADictBasedColGroup(IColIndex colIndices, ADictionary dict) {
+	protected ADictBasedColGroup(IColIndex colIndices, IDictionary dict) {
 		super(colIndices);
 		_dict = dict;
 		if(dict == null)
@@ -53,7 +53,7 @@ public abstract class ADictBasedColGroup extends AColGroupCompressed implements 
 
 	}
 
-	public ADictionary getDictionary() {
+	public IDictionary getDictionary() {
 		return _dict;
 	}
 
@@ -197,14 +197,14 @@ public abstract class ADictBasedColGroup extends AColGroupCompressed implements 
 			return null;
 
 		final int nVals = getNumValues();
-		final ADictionary preAgg = (right.isInSparseFormat()) ? // Chose Sparse or Dense
+		final IDictionary preAgg = (right.isInSparseFormat()) ? // Chose Sparse or Dense
 			rightMMPreAggSparse(nVals, right.getSparseBlock(), agCols, 0, nCol) : // sparse
 			_dict.preaggValuesFromDense(nVals, _colIndexes, agCols, right.getDenseBlockValues(), nCol); // dense
 		return allocateRightMultiplication(right, agCols, preAgg);
 	}
 
 	protected abstract AColGroup allocateRightMultiplication(MatrixBlock right, IColIndex colIndexes,
-		ADictionary preAgg);
+		IDictionary preAgg);
 
 	/**
 	 * Find the minimum number of columns that are effected by the right multiplication
@@ -269,7 +269,7 @@ public abstract class ADictBasedColGroup extends AColGroupCompressed implements 
 		return ColIndexFactory.create(aggregateColumns);
 	}
 
-	private ADictionary rightMMPreAggSparse(int numVals, SparseBlock b, IColIndex aggregateColumns, int cl, int cu) {
+	private IDictionary rightMMPreAggSparse(int numVals, SparseBlock b, IColIndex aggregateColumns, int cl, int cu) {
 		final double[] ret = new double[numVals * aggregateColumns.size()];
 		for(int h = 0; h < _colIndexes.size(); h++) {
 			final int colIdx = _colIndexes.get(h);
@@ -300,10 +300,19 @@ public abstract class ADictBasedColGroup extends AColGroupCompressed implements 
 		return copyAndSet(colIndexes, _dict);
 	}
 
-	protected final AColGroup copyAndSet(ADictionary newDictionary) {
+	/**
+	 * This method copies the column group and sets the dictionary to another dictionary. The method shallow copies
+	 * underlying data structures.
+	 * 
+	 * NOTE: Be very carefull with this since it invalidate the contracts maintained via standard compression.
+	 * 
+	 * @param newDictionary A new dictionary to point to.
+	 * @return A new shallow copy of the column group
+	 */
+	public final AColGroup copyAndSet(IDictionary newDictionary) {
 		return copyAndSet(_colIndexes, newDictionary);
 	}
 
-	protected abstract AColGroup copyAndSet(IColIndex colIndexes, ADictionary newDictionary);
+	protected abstract AColGroup copyAndSet(IColIndex colIndexes, IDictionary newDictionary);
 
 }

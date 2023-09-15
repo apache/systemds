@@ -104,9 +104,8 @@ public abstract class BinaryFEDInstruction extends ComputationFEDInstruction {
 		}
 		else if(inst instanceof AppendGAlignedSPInstruction || inst instanceof AppendGSPInstruction ||
 			inst instanceof AppendMSPInstruction || inst instanceof AppendRSPInstruction) {
-			BinarySPInstruction ainstruction = (BinarySPInstruction) inst;
-			Data data1 = ec.getVariable(ainstruction.input1);
-			Data data2 = ec.getVariable(ainstruction.input2);
+			Data data1 = ec.getVariable(inst.input1);
+			Data data2 = ec.getVariable(inst.input2);
 			if((data1 instanceof MatrixObject && ((MatrixObject) data1).isFederatedExcept(FType.BROADCAST)) ||
 				(data2 instanceof MatrixObject && ((MatrixObject) data2).isFederatedExcept(FType.BROADCAST))) {
 				return AppendFEDInstruction.parseInstruction((AppendSPInstruction) inst);

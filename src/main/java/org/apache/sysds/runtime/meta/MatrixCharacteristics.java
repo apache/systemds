@@ -19,6 +19,7 @@
 
 package org.apache.sysds.runtime.meta;
 
+import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -30,19 +31,23 @@ public class MatrixCharacteristics extends DataCharacteristics
 {
 	private static final long serialVersionUID = 8300479822915546000L;
 
+	/** Number of columns */
 	private long numRows = -1;
+	/** Number of rows */
 	private long numColumns = -1;
+	/** Number of non zero values if -1 then unknown */
 	private long nonZero = -1;
+	/** Upper bound non zero value, indicate if the non zero value is an upper bound */
 	private boolean ubNnz = false;
 	
 	public MatrixCharacteristics() {}
 	
 	public MatrixCharacteristics(long nr, long nc) {
-		set(nr, nc, -1, -1);
+		set(nr, nc, ConfigurationManager.getBlocksize(), -1);
 	}
 	
 	public MatrixCharacteristics(long nr, long nc, long nnz) {
-		set(nr, nc, -1, nnz);
+		set(nr, nc, ConfigurationManager.getBlocksize(), nnz);
 	}
 	
 	public MatrixCharacteristics(long nr, long nc, int blen) {
@@ -124,12 +129,6 @@ public class MatrixCharacteristics extends DataCharacteristics
 		return Math.max((long) Math.ceil((double)getCols() / getBlocksize()), 1);
 	}
 	
-	@Override
-	public String toString() {
-		return "["+numRows+" x "+numColumns+", nnz="+nonZero+" ("+ubNnz+")"
-		+", blocks ("+_blocksize+" x "+_blocksize+")]";
-	}
-
 	@Override
 	public DataCharacteristics setDimension(long nr, long nc) {
 		numRows = nr;
@@ -255,5 +254,24 @@ public class MatrixCharacteristics extends DataCharacteristics
 	public int hashCode() {
 		return Arrays.hashCode(new long[]{
 			numRows, numColumns, _blocksize, nonZero});
+	}
+
+	@Override
+	public String toString() {
+		StringBuilder sb = new StringBuilder(30);
+		sb.append("[");
+		sb.append(numRows);
+		sb.append(" x ");
+		sb.append(numColumns);
+		sb.append(", nnz=");
+		sb.append(nonZero);
+		sb.append(" (");
+		sb.append(ubNnz);
+		sb.append("), blocks (");
+		sb.append(_blocksize);
+		sb.append(" x ");
+		sb.append(_blocksize);
+		sb.append(")]");
+		return sb.toString();
 	}
 }

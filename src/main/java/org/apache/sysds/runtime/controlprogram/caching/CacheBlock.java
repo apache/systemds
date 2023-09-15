@@ -171,13 +171,20 @@ public interface CacheBlock <T> extends Writable
 	
 	
 	/**
-	 * Merge the given block into the current block. Both blocks needs to be of equal 
-	 * dimensions and contain disjoint non-zero cells.
+	 * 
+	 * Merge disjoint: merges all non-zero values of the given input into the current
+	 * block. Note that this method does NOT check for overlapping entries;
+	 * it's the callers responsibility of ensuring disjoint blocks.  
+	 * 
+	 * The appendOnly parameter is only relevant for sparse target blocks; if true,
+	 * we only append values and do not sort sparse rows for each call; this is useful
+	 * whenever we merge iterators of matrix blocks into one target block.
 	 * 
 	 * @param that cache block
-	 * @param appendOnly ?
+	 * @param appendOnly Indicate if the merger can be append only on sparse rows.
+	 * @return the merged group, in most implementations 'this' is modified. 
 	 */
-	public void merge(T that, boolean appendOnly);
+	public CacheBlock<T> merge(T that, boolean appendOnly);
 
 	/**
 	 * Returns the double value at the passed row and column.

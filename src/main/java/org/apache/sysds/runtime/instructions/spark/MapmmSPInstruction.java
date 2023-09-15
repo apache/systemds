@@ -22,7 +22,6 @@ package org.apache.sysds.runtime.instructions.spark;
 
 import java.util.Iterator;
 import java.util.concurrent.Callable;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.stream.IntStream;
 
@@ -59,8 +58,8 @@ import org.apache.sysds.runtime.matrix.operators.AggregateBinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.AggregateOperator;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
-
 import org.apache.sysds.runtime.util.CommonThreadPool;
+
 import scala.Tuple2;
 
 public class MapmmSPInstruction extends AggregateBinarySPInstruction {
@@ -144,10 +143,8 @@ public class MapmmSPInstruction extends AggregateBinarySPInstruction {
 		{
 			if (ConfigurationManager.isMaxPrallelizeEnabled()) {
 				try {
-					if(CommonThreadPool.triggerRemoteOPsPool == null)
-						CommonThreadPool.triggerRemoteOPsPool = Executors.newCachedThreadPool();
 					RDDMapmmTask task = new  RDDMapmmTask(in1, in2, type);
-					Future<MatrixBlock> future_out = CommonThreadPool.triggerRemoteOPsPool.submit(task);
+					Future<MatrixBlock> future_out = CommonThreadPool.getDynamicPool().submit(task);
 					LineageItem li = !LineageCacheConfig.ReuseCacheType.isNone() ? getLineageItem(ec).getValue() : null;
 					sec.setMatrixOutputAndLineage(output.getName(), future_out, li);
 				}

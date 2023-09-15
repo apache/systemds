@@ -100,7 +100,7 @@ public class ScalarBuiltinNaryCPInstruction extends BuiltinNaryCPInstruction imp
 			List<LineageItem> li = null;
 			if (DMLScript.LINEAGE)
 				li = (inputs == null) ? new ArrayList<>() :
-					Arrays.stream(inputs).map(in -> ec.getLineage().get(in)).collect(Collectors.toList());
+					Arrays.stream(inputs).map(in -> ec.getLineage().getOrCreate(in)).collect(Collectors.toList());
 			
 			//create list object over all inputs
 			ListObject list = new ListObject(data, null, li);

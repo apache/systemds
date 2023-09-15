@@ -21,16 +21,17 @@ package org.apache.sysds.runtime.compress.utils;
 
 import java.util.Arrays;
 
+import org.apache.sysds.runtime.compress.DMLCompressionException;
+
 public class IntArrayList {
 	private static final int INIT_CAPACITY = 4;
 	private static final int RESIZE_FACTOR = 2;
 
-	private int[] _data = null;
+	private int[] _data;
 	private int _size;
 
 	public IntArrayList() {
-		_data = null;
-		_size = 0;
+		this(INIT_CAPACITY);
 	}
 
 	public IntArrayList(int initialSize) {
@@ -39,6 +40,8 @@ public class IntArrayList {
 	}
 
 	public IntArrayList(int[] values) {
+		if(values == null)
+			throw new DMLCompressionException("Invalid initialization of IntArrayList");
 		_data = values;
 		_size = values.length;
 	}
@@ -49,10 +52,7 @@ public class IntArrayList {
 
 	public void appendValue(int value) {
 		// allocate or resize array if necessary
-		if(_data == null) {
-			_data = new int[INIT_CAPACITY];
-		}
-		else if(_size + 1 >= _data.length)
+		if(_size + 1 >= _data.length)
 			resize();
 
 		// append value
@@ -71,10 +71,7 @@ public class IntArrayList {
 	}
 
 	public int get(int index) {
-		if(_data != null)
-			return _data[index];
-		else
-			throw new RuntimeException("invalid index to get");
+		return _data[index];
 	}
 
 	public int[] extractValues(boolean trim) {
@@ -91,16 +88,21 @@ public class IntArrayList {
 		_data = Arrays.copyOf(_data, _data.length * RESIZE_FACTOR);
 	}
 
+	public void reset(){
+		_size = 0;
+	}
+
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
-
+		if(_size == 0)
+			return "[]";
 		sb.append("[");
 		int i = 0;
 		for(; i < _size - 1; i++)
-			sb.append(_data[i] + ",");
-
-		sb.append(_data[i] + "]");
+			sb.append(_data[i]).append(", ");
+		sb.append(_data[i]);
+		sb.append("]");
 
 		return sb.toString();
 	}

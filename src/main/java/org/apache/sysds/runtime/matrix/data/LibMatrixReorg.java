@@ -34,7 +34,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 
-import org.apache.commons.lang.NotImplementedException;
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.DMLRuntimeException;
@@ -203,12 +203,17 @@ public class LibMatrixReorg {
 	}
 
 	public static MatrixBlock transpose(MatrixBlock in, int k) {
+		return transpose(in, k, false);
+	}
+
+	public static MatrixBlock transpose(MatrixBlock in, int k, boolean allowCSR) {
 		final int clen = in.getNumColumns();
 		final int rlen = in.getNumRows();
 		final long nnz = in.getNonZeros();
-		final boolean sparseOut = MatrixBlock.evalSparseFormatInMemory(clen, rlen, nnz, true);
-		return transpose(in, new MatrixBlock(clen, rlen, sparseOut), k);
+		final boolean sparseOut = MatrixBlock.evalSparseFormatInMemory(clen, rlen, nnz, allowCSR);
+		return transpose(in, new MatrixBlock(clen, rlen, sparseOut), k, allowCSR);
 	}
+
 
 	public static MatrixBlock transpose( MatrixBlock in, MatrixBlock out, int k ) {
 		return transpose(in, out, k, false);
@@ -238,8 +243,8 @@ public class LibMatrixReorg {
 		// Timing time = new Timing(true);
 
 		// CSR is only allowed in the transposed output if the number of non zeros is counted in the columns
-		allowCSR = allowCSR && out.nonZeros < (long) Integer.MAX_VALUE && in.clen <= 4096;
-
+		allowCSR = allowCSR && (in.clen <= 4096 || out.nonZeros < 10000000);
+		
 		if(out.sparse && allowCSR) {
 			int size = (int) out.nonZeros;
 			out.sparseBlock = new SparseBlockCSR(in.getNumColumns(), size, size);
@@ -256,7 +261,7 @@ public class LibMatrixReorg {
 			int[] cnt = null;
 			// filter matrices with many columns since the CountNnzTask would return
 			// null if the number of columns is larger than threshold
-			if(in.sparse && out.sparse && in.clen <= 4096) {
+			if(allowCSR) {
 				
 				cnt = countNNZColumns(in, k, pool);
 
@@ -1310,12 +1315,12 @@ public class LibMatrixReorg {
 	}
 
 	/** Thread local temporary double array.. */
-	private static ThreadLocal<double[]> memPool = new ThreadLocal<double[]>() {
-        @Override
-        protected double[] initialValue() {
-            return null;
-        }
-    };
+	private static ThreadLocal<double[]> memPool = new ThreadLocal<>() {
+		@Override
+		protected double[] initialValue() {
+			return null;
+		}
+	};
 
 	/**
 	 * Only use if the number of rows and cols are equal
@@ -2581,7 +2586,6 @@ public class LibMatrixReorg {
 		return rix.stream().collect(Collectors.toMap(ix -> ix, ix -> createResultBlock(ix, nnz, rix.size(), mcOut)));
 	}
 	
-	@SuppressWarnings("unused")
 	private static MatrixBlock createResultBlock(MatrixIndexes ix, long nnz, int nBlocks, DataCharacteristics mcOut) {
 		//compute indexes
 		long bi = ix.getRowIndex();

@@ -24,10 +24,13 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.util.Arrays;
 
-import org.apache.commons.lang.NotImplementedException;
-import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
+import org.apache.commons.lang3.NotImplementedException;
+import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
+import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.DictionaryFactory;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.MatrixBlockDictionary;
 import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
@@ -59,12 +62,27 @@ public class ColGroupDDC extends APreAgg implements IMapToDataGroup {
 
 	protected final AMapToData _data;
 
-	private ColGroupDDC(IColIndex colIndexes, ADictionary dict, AMapToData data, int[] cachedCounts) {
+	private ColGroupDDC(IColIndex colIndexes, IDictionary dict, AMapToData data, int[] cachedCounts) {
 		super(colIndexes, dict, cachedCounts);
 		_data = data;
+
+		if(CompressedMatrixBlock.debug) {
+			if(getNumValues() == 0)
+				throw new DMLCompressionException("Invalid construction with empty dictionary");
+			if(data.size() == 0)
+				throw new DMLCompressionException("Invalid length of the data. is zero");
+
+			if(data.getUnique() != dict.getNumberOfValues(colIndexes.size()))
+				throw new DMLCompressionException("Invalid map to dict Map has:" + data.getUnique() + " while dict has "
+					+ dict.getNumberOfValues(colIndexes.size()));
+			int[] c = getCounts();
+			if(c.length != dict.getNumberOfValues(colIndexes.size()))
+				throw new DMLCompressionException("Invalid DDC Construction");
+		}
+
 	}
 
-	public static AColGroup create(IColIndex colIndexes, ADictionary dict, AMapToData data, int[] cachedCounts) {
+	public static AColGroup create(IColIndex colIndexes, IDictionary dict, AMapToData data, int[] cachedCounts) {
 		if(data.getUnique() == 1)
 			return ColGroupConst.create(colIndexes, dict);
 		else if(dict == null)
@@ -269,7 +287,8 @@ public class ColGroupDDC extends APreAgg implements IMapToDataGroup {
 			lmSparseMatrixNoPreAggSingleCol(matrix.getSparseBlock(), nColM, retV, nColRet, dictVals, rl, ru);
 		}
 		else
-			lmDenseMatrixNoPreAggSingleCol(matrix.getDenseBlockValues(), nColM, retV, nColRet, dictVals, rl, ru, cl, cu);
+			lmDenseMatrixNoPreAggSingleCol(matrix.getDenseBlockValues(), nColM, retV, nColRet, dictVals, rl, ru, cl,
+				cu);
 	}
 
 	private void lmSparseMatrixNoPreAggSingleCol(SparseBlock sb, int nColM, double[] retV, int nColRet, double[] vals,
@@ -418,7 +437,7 @@ public class ColGroupDDC extends APreAgg implements IMapToDataGroup {
 
 	@Override
 	public AColGroup binaryRowOpLeft(BinaryOperator op, double[] v, boolean isRowSafe) {
-		ADictionary ret = _dict.binOpLeft(op, v, _colIndexes);
+		IDictionary ret = _dict.binOpLeft(op, v, _colIndexes);
 		return create(_colIndexes, ret, _data, getCachedCounts());
 	}
 
@@ -429,7 +448,7 @@ public class ColGroupDDC extends APreAgg implements IMapToDataGroup {
 			final double[] reference = ColGroupUtils.binaryDefRowRight(op, v, _colIndexes);
 			return ColGroupDDCFOR.create(_colIndexes, _dict, _data, getCachedCounts(), reference);
 		}
-		final ADictionary ret = _dict.binOpRight(op, v, _colIndexes);
+		final IDictionary ret = _dict.binOpRight(op, v, _colIndexes);
 		return create(_colIndexes, ret, _data, getCachedCounts());
 	}
 
@@ -441,7 +460,7 @@ public class ColGroupDDC extends APreAgg implements IMapToDataGroup {
 
 	public static ColGroupDDC read(DataInput in) throws IOException {
 		IColIndex cols = ColIndexFactory.read(in);
-		ADictionary dict = DictionaryFactory.read(in);
+		IDictionary dict = DictionaryFactory.read(in);
 		AMapToData data = MapToFactory.readIn(in);
 		return new ColGroupDDC(cols, dict, data, null);
 	}
@@ -481,7 +500,7 @@ public class ColGroupDDC extends APreAgg implements IMapToDataGroup {
 	}
 
 	@Override
-	protected AColGroup allocateRightMultiplication(MatrixBlock right, IColIndex colIndexes, ADictionary preAgg) {
+	protected AColGroup allocateRightMultiplication(MatrixBlock right, IColIndex colIndexes, IDictionary preAgg) {
 		if(preAgg != null)
 			return create(colIndexes, preAgg, _data, getCachedCounts());
 		else
@@ -490,12 +509,16 @@ public class ColGroupDDC extends APreAgg implements IMapToDataGroup {
 
 	@Override
 	public AColGroup sliceRows(int rl, int ru) {
-		AMapToData sliceMap = _data.slice(rl, ru);
-		return new ColGroupDDC(_colIndexes, _dict, sliceMap, null);
+		try {
+			return ColGroupDDC.create(_colIndexes, _dict, _data.slice(rl, ru), null);
+		}
+		catch(Exception e) {
+			throw new DMLRuntimeException("Failed to slice out sub part DDC: " + rl + " " + ru, e);
+		}
 	}
 
 	@Override
-	protected AColGroup copyAndSet(IColIndex colIndexes, ADictionary newDictionary) {
+	protected AColGroup copyAndSet(IColIndex colIndexes, IDictionary newDictionary) {
 		return create(colIndexes, newDictionary, _data, getCachedCounts());
 	}
 

@@ -19,12 +19,53 @@
 
 package org.apache.sysds.test.component.frame.compress;
 
-import org.apache.sysds.runtime.frame.data.compress.FrameCompressionStatistics;
+import static org.junit.Assert.fail;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.runtime.frame.data.FrameBlock;
+import org.apache.sysds.runtime.frame.data.compress.CompressedFrameBlockFactory;
+import org.apache.sysds.runtime.frame.data.compress.FrameCompressionSettings;
+import org.apache.sysds.runtime.frame.data.lib.FrameLibCompress;
+import org.apache.sysds.test.TestUtils;
 import org.junit.Test;
 
 public class FrameCompressTest {
+	protected static final Log LOG = LogFactory.getLog(FrameCompressTest.class.getName());
+
 	@Test
-	public void testCompressionStatisticsConstruction() {
-		new FrameCompressionStatistics();
+	public void testSingleThread() {
+		FrameBlock a = FrameCompressTestUtils.generateCompressableBlock(200, 5, 1232, ValueType.STRING);
+		runTest(a, 1);
 	}
+
+	@Test
+	public void testParallel() {
+		FrameBlock a = FrameCompressTestUtils.generateCompressableBlock(200, 5, 1232, ValueType.STRING);
+		runTest(a, 4);
+	}
+
+	public void runTest(FrameBlock a, int k) {
+		try {
+			FrameBlock b = FrameLibCompress.compress(a, k);
+			TestUtils.compareFrames(a, b, true);
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
+	}
+
+	public void runTestConfig(FrameBlock a, FrameCompressionSettings cs) {
+		try {
+			FrameBlock b = CompressedFrameBlockFactory.compress(a, cs);
+			TestUtils.compareFrames(a, b, true);
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
+	}
+
 }

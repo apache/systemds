@@ -33,23 +33,11 @@ public class ReaderColumnSelectionDenseMultiBlock extends ReaderColumnSelection 
 	}
 
 	protected DblArray getNextRow() {
-		boolean empty = true;
-		while(empty && _rl < _ru) {
-			_rl++;
-			for(int i = 0; i < _colIndexes.size(); i++) {
-				final double v = _data.get(_rl, _colIndexes.get(i));
-				boolean isNan = Double.isNaN(v);
-				if(isNan){
-					warnNaN();
-					reusableArr[i] = 0;
-				}
-				else{
-					
-					empty &= v == 0 ;
-					reusableArr[i] = v;
-				}
-			}
-		}
-		return empty ? null : reusableReturn;
+
+		_rl++;
+		for(int i = 0; i < _colIndexes.size(); i++)
+			reusableArr[i] = _data.get(_rl, _colIndexes.get(i));
+
+		return reusableReturn;
 	}
 }

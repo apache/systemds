@@ -46,6 +46,8 @@ public interface ColIndexFactory {
 				return ArrayIndex.read(in);
 			case RANGE:
 				return RangeIndex.read(in);
+			case TWORANGE: 
+				return TwoRangesIndex.read(in);
 			default:
 				throw new DMLCompressionException("Failed reading column index of type: " + t);
 		}
@@ -58,7 +60,7 @@ public interface ColIndexFactory {
 	public static IColIndex create(int[] indexes) {
 		if(indexes.length <= 0)
 			throw new DMLRuntimeException("Invalid length to create index from : " + indexes.length);
-		if(indexes.length == 1)
+		else if(indexes.length == 1)
 			return new SingleIndex(indexes[0]);
 		else if(indexes.length == 2)
 			return new TwoIndex(indexes[0], indexes[1]);
@@ -82,6 +84,13 @@ public interface ColIndexFactory {
 			return new ArrayIndex(indexes.extractValues(true));
 	}
 
+	/**
+	 * Create an Index range of the given values
+	 * 
+	 * @param l Lower bound (inclusive)
+	 * @param u Upper bound (not inclusive)
+	 * @return An Index
+	 */
 	public static IColIndex create(int l, int u) {
 		if(u - l <= 0)
 			throw new DMLRuntimeException("Invalid range: " + l + " " + u);
@@ -125,6 +134,24 @@ public interface ColIndexFactory {
 		int index = 0;
 		for(AColGroup g : gs) {
 			final IIterate it = g.getColIndices().iterator();
+			while(it.hasNext())
+				resCols[index++] = it.next();
+		}
+
+		Arrays.sort(resCols);
+		return create(resCols);
+	}
+
+	public static IColIndex combineIndexes(List<IColIndex> idx) {
+		int numCols = 0;
+		for(IColIndex g : idx)
+			numCols += g.size();
+
+		int[] resCols = new int[numCols];
+
+		int index = 0;
+		for(IColIndex g : idx) {
+			final IIterate it = g.iterator();
 			while(it.hasNext())
 				resCols[index++] = it.next();
 		}

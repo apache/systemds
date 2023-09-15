@@ -25,19 +25,20 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 
-import org.apache.commons.lang.NotImplementedException;
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlockFactory;
 import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.compress.CompressionSettingsBuilder;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
-import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.DictLibMatrixMult;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.MatrixBlockDictionary;
 import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.compress.colgroup.scheme.ICLAScheme;
+import org.apache.sysds.runtime.compress.colgroup.scheme.SchemeFactory;
 import org.apache.sysds.runtime.compress.cost.ComputationCostEstimator;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
 import org.apache.sysds.runtime.compress.estim.EstimationFactors;
@@ -72,8 +73,8 @@ import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
 public class ColGroupUncompressed extends AColGroup {
 	private static final long serialVersionUID = -8254271148043292199L;
 	/**
-	 * We store the contents of the columns as a MatrixBlock to take advantage of high-performance routines available for
-	 * this data structure.
+	 * We store the contents of the columns as a MatrixBlock to take advantage of high-performance routines available
+	 * for this data structure.
 	 */
 	private final MatrixBlock _data;
 
@@ -82,7 +83,16 @@ public class ColGroupUncompressed extends AColGroup {
 		_data = mb;
 	}
 
-	protected static AColGroup create(MatrixBlock mb, IColIndex colIndexes) {
+	/**
+	 * Create an Uncompressed Matrix Block, where the columns are offset by col indexes.
+	 * 
+	 * It is assumed that the size of the colIndexes and number of columns in mb is matching.
+	 * 
+	 * @param mb         The MB / data to contain in the uncompressed column
+	 * @param colIndexes The column indexes for the group
+	 * @return An Uncompressed Column group
+	 */
+	public static AColGroup create(MatrixBlock mb, IColIndex colIndexes) {
 		if(mb == null || mb.isEmpty())
 			return new ColGroupEmpty(colIndexes);
 		else
@@ -200,9 +210,10 @@ public class ColGroupUncompressed extends AColGroup {
 	private void decompressToDenseBlockDenseDataAllColumns(DenseBlock db, int rl, int ru, int offR) {
 		int offT = rl + offR;
 		final int nCol = _colIndexes.size();
-		final double[] values = _data.getDenseBlockValues();
-		int offS = rl * nCol;
-		for(int row = rl; row < ru; row++, offT++, offS += nCol) {
+		DenseBlock tb = _data.getDenseBlock();
+		for(int row = rl; row < ru; row++, offT++) {
+			final double[] values = tb.values(row);
+			final int offS = tb.pos(row);
 			final double[] c = db.values(offT);
 			final int off = db.pos(offT);
 			for(int j = 0; j < nCol; j++)
@@ -386,7 +397,7 @@ public class ColGroupUncompressed extends AColGroup {
 		LOG.warn("Binary row op left is not supported for Uncompressed Matrix, "
 			+ "Implement support for VMr in MatrixBlock Binary Cell operations");
 		MatrixBlockDictionary d = MatrixBlockDictionary.create(_data);
-		ADictionary dm = d.binOpLeft(op, v, _colIndexes);
+		IDictionary dm = d.binOpLeft(op, v, _colIndexes);
 		if(dm == null)
 			return create(null, _colIndexes);
 		else
@@ -547,7 +558,8 @@ public class ColGroupUncompressed extends AColGroup {
 		else if(lhs instanceof APreAgg)
 			leftMultByAPreAggColGroup((APreAgg) lhs, result);
 		else
-			throw new DMLCompressionException("Not supported leftMult colgroup type: " + lhs.getClass().getSimpleName());
+			throw new DMLCompressionException(
+				"Not supported leftMult colgroup type: " + lhs.getClass().getSimpleName());
 	}
 
 	private void leftMultByAPreAggColGroup(APreAgg paCG, MatrixBlock result) {
@@ -666,8 +678,8 @@ public class ColGroupUncompressed extends AColGroup {
 				final int[] aix = sb.indexes(row);
 				final double[] avals = sb.values(row);
 				for(int col = apos; col < alen; col++)
-					DictLibMatrixMult.addToUpperTriangle(nCols, lhs._colIndexes.get(row), _colIndexes.get(aix[col]), resV,
-						avals[col]);
+					DictLibMatrixMult.addToUpperTriangle(nCols, lhs._colIndexes.get(row), _colIndexes.get(aix[col]),
+						resV, avals[col]);
 			}
 		}
 		else {
@@ -810,7 +822,7 @@ public class ColGroupUncompressed extends AColGroup {
 
 	@Override
 	public ICLAScheme getCompressionScheme() {
-		return null;
+		return SchemeFactory.create(_colIndexes, CompressionType.UNCOMPRESSED);
 	}
 
 	@Override

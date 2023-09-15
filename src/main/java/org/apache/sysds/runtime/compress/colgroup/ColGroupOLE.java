@@ -23,10 +23,10 @@ import java.io.DataInput;
 import java.io.IOException;
 import java.util.Arrays;
 
-import org.apache.commons.lang.NotImplementedException;
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.compress.bitmap.ABitmap;
-import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.DictionaryFactory;
 import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
@@ -49,19 +49,19 @@ import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
 public class ColGroupOLE extends AColGroupOffset {
 	private static final long serialVersionUID = 5723227906925121066L;
 
-	private ColGroupOLE(IColIndex colIndices, int numRows, boolean zero, ADictionary dict, char[] bitmaps,
+	private ColGroupOLE(IColIndex colIndices, int numRows, boolean zero, IDictionary dict, char[] bitmaps,
 		int[] bitmapOffs, int[] counts) {
 		super(colIndices, numRows, zero, dict, bitmapOffs, bitmaps, counts);
 	}
 
-	protected static AColGroup create(IColIndex colIndices, int numRows, boolean zeros, ADictionary dict, char[] bitmaps,
+	protected static AColGroup create(IColIndex colIndices, int numRows, boolean zeros, IDictionary dict, char[] bitmaps,
 		int[] bitmapOffs, int[] counts) {
 		return new ColGroupOLE(colIndices, numRows, zeros, dict, bitmaps, bitmapOffs, counts);
 	}
 
 	protected static AColGroup compressOLE(IColIndex colIndexes, ABitmap ubm, int nRow, double tupleSparsity) {
 
-		ADictionary dict = DictionaryFactory.create(ubm, tupleSparsity);
+		IDictionary dict = DictionaryFactory.create(ubm, tupleSparsity);
 
 		final int numVals = ubm.getNumValues();
 		char[][] lBitMaps = new char[numVals][];
@@ -187,7 +187,7 @@ public class ColGroupOLE extends AColGroupOffset {
 			"Not implemented because dictionaries no longer should support extending by a tuple"
 				+ " Ideally implement a modification such that OLE becomes SDC group when materializing Zero tuples");
 
-		// ADictionary rvalues = _dict.applyScalarOp(op, val0, getNumCols());
+		// IDictionary rvalues = _dict.applyScalarOp(op, val0, getNumCols());
 		// char[] lbitmap = genOffsetBitmap(loff, loff.length);
 		// char[] rbitmaps = Arrays.copyOf(_data, _data.length + lbitmap.length);
 		// System.arraycopy(lbitmap, 0, rbitmaps, _data.length, lbitmap.length);
@@ -230,7 +230,7 @@ public class ColGroupOLE extends AColGroupOffset {
 	// return new ColGroupOLE(_colIndexes, _numRows, false, applyBinaryRowOp(op, v, true, left), _data, _ptr,
 	// getCachedCounts());
 	// }
-	// ADictionary rvalues = applyBinaryRowOp(op, v, sparseSafe, left);
+	// IDictionary rvalues = applyBinaryRowOp(op, v, sparseSafe, left);
 	// char[] lbitmap = genOffsetBitmap(loff, loff.length);
 	// char[] rbitmaps = Arrays.copyOf(_data, _data.length + lbitmap.length);
 	// System.arraycopy(lbitmap, 0, rbitmaps, _data.length, lbitmap.length);
@@ -492,7 +492,7 @@ public class ColGroupOLE extends AColGroupOffset {
 	// }
 
 	@Override
-	protected AColGroup allocateRightMultiplication(MatrixBlock right, IColIndex colIndexes, ADictionary preAgg) {
+	protected AColGroup allocateRightMultiplication(MatrixBlock right, IColIndex colIndexes, IDictionary preAgg) {
 		throw new NotImplementedException();
 	}
 
@@ -642,7 +642,7 @@ public class ColGroupOLE extends AColGroupOffset {
 
 	public static ColGroupOLE read(DataInput in, int nRows) throws IOException {
 		IColIndex cols = ColIndexFactory.read(in);
-		ADictionary dict = DictionaryFactory.read(in);
+		IDictionary dict = DictionaryFactory.read(in);
 		int[] ptr = readPointers(in);
 		char[] data = readData(in);
 		boolean zeros = in.readBoolean();
@@ -655,7 +655,7 @@ public class ColGroupOLE extends AColGroupOffset {
 	}
 
 	@Override
-	protected AColGroup copyAndSet(IColIndex colIndexes, ADictionary newDictionary) {
+	protected AColGroup copyAndSet(IColIndex colIndexes, IDictionary newDictionary) {
 		return create(colIndexes, _numRows, _zeros, newDictionary, _data, _ptr, getCachedCounts());
 	}
 
@@ -671,7 +671,7 @@ public class ColGroupOLE extends AColGroupOffset {
 
 	@Override
 	public ICLAScheme getCompressionScheme() {
-		return null;
+		throw new NotImplementedException();
 	}
 
 	@Override

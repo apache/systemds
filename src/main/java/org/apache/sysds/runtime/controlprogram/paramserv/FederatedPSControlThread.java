@@ -19,7 +19,20 @@
 
 package org.apache.sysds.runtime.controlprogram.paramserv;
 
-import org.apache.commons.lang.NotImplementedException;
+import static org.apache.sysds.runtime.util.ProgramConverter.NEWLINE;
+import static org.apache.sysds.runtime.util.ProgramConverter.PROG_BEGIN;
+import static org.apache.sysds.runtime.util.ProgramConverter.PROG_END;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.concurrent.Callable;
+import java.util.concurrent.Future;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -34,31 +47,33 @@ import org.apache.sysds.runtime.controlprogram.FunctionProgramBlock;
 import org.apache.sysds.runtime.controlprogram.ProgramBlock;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
-import org.apache.sysds.runtime.controlprogram.federated.*;
+import org.apache.sysds.runtime.controlprogram.federated.FederatedData;
+import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest.RequestType;
+import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
+import org.apache.sysds.runtime.controlprogram.federated.FederatedUDF;
+import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
 import org.apache.sysds.runtime.controlprogram.paramserv.homomorphicEncryption.PublicKey;
 import org.apache.sysds.runtime.controlprogram.paramserv.homomorphicEncryption.SEALClient;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.Timing;
 import org.apache.sysds.runtime.functionobjects.Multiply;
 import org.apache.sysds.runtime.instructions.Instruction;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
-import org.apache.sysds.runtime.instructions.cp.*;
+import org.apache.sysds.runtime.instructions.cp.BooleanObject;
+import org.apache.sysds.runtime.instructions.cp.CPOperand;
+import org.apache.sysds.runtime.instructions.cp.CiphertextMatrix;
+import org.apache.sysds.runtime.instructions.cp.Data;
+import org.apache.sysds.runtime.instructions.cp.DoubleObject;
+import org.apache.sysds.runtime.instructions.cp.FunctionCallCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.IntObject;
+import org.apache.sysds.runtime.instructions.cp.ListObject;
+import org.apache.sysds.runtime.instructions.cp.PlaintextMatrix;
+import org.apache.sysds.runtime.instructions.cp.StringObject;
+import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.RightScalarOperator;
-import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.runtime.util.ProgramConverter;
 import org.apache.sysds.utils.stats.ParamServStatistics;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.concurrent.Callable;
-import java.util.concurrent.Future;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-
-import static org.apache.sysds.runtime.util.ProgramConverter.*;
 
 public class FederatedPSControlThread extends PSWorker implements Callable<Void> {
 	private static final long serialVersionUID = 6846648059569648791L;
@@ -544,7 +559,7 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 
 		try {
 			Object[] responseData = udfResponse.get().getData();
-			if(DMLScript.STATISTICS) {
+			if(tFedCommunication != null) {
 				long total = (long) tFedCommunication.stop();
 				long workerComputing = ((DoubleObject) responseData[1]).getLongValue();
 				ParamServStatistics.accFedWorkerComputing(workerComputing);
@@ -554,7 +569,7 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 			return (ListObject) responseData[0];
 		}
 		catch(Exception e) {
-			if(DMLScript.STATISTICS)
+			if(tFedCommunication != null)
 				tFedCommunication.stop();
 			throw new DMLRuntimeException("FederatedLocalPSThread: failed to execute UDF" + e.getMessage(), e);
 		}
@@ -609,7 +624,8 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 			// recreate aggregation instruction and output if needed
 			Instruction aggregationInstruction = null;
 			DataIdentifier aggregationOutput = null;
-			if(_localUpdate && _numBatchesToCompute > 1 | modelAvg) {
+			boolean loc= _localUpdate && _numBatchesToCompute > 1 | modelAvg;
+			if(loc) {
 				func = ec.getProgram().getFunctionProgramBlock(namespace, aggFunc, opt);
 				inputs = func.getInputParams();
 				outputs = func.getOutputParams();
@@ -651,7 +667,7 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 				// update the local model with gradients if needed
 				// FIXME ensure that with modelAvg we always update the model
 				// (current fails due to missing aggregation instruction)
-				if(_localUpdate && (batchCounter < _numBatchesToCompute - 1 | modelAvg) ) {
+				if(loc && aggregationInstruction != null && aggregationOutput != null) {
 					// Invoke the aggregate function
 					aggregationInstruction.processInstruction(ec);
 					// Get the new model

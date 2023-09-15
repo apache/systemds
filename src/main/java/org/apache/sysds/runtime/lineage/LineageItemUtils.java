@@ -24,6 +24,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.LocalFileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.sysds.runtime.instructions.spark.ComputationSPInstruction;
 import org.apache.sysds.runtime.instructions.spark.RandSPInstruction;
 import org.apache.sysds.runtime.io.IOUtilFunctions;
 import org.apache.sysds.runtime.lineage.LineageCacheConfig.ReuseCacheType;
@@ -155,10 +156,7 @@ public class LineageItemUtils {
 			//TODO: trace all UDFs
 			return;
 
-		if (!(udf instanceof LineageTraceable))
-			throw new DMLRuntimeException("Unknown Federated UDF (" + udf.getClass().getSimpleName() + ") traced.");
-		LineageTraceable ludf = (LineageTraceable) udf;
-		if (ludf.hasSingleLineage()) {
+		if (udf.hasSingleLineage()) {
 			Pair<String, LineageItem> item = udf.getLineageItem(ec);
 			ec.getLineage().set(item.getKey(), item.getValue());
 		}
@@ -518,6 +516,23 @@ public class LineageItemUtils {
 		}
 		return(CPOpInputs != null ? LineageItemUtils.getLineage(ec, 
 			CPOpInputs.toArray(new CPOperand[CPOpInputs.size()])) : null);
+	}
+
+	// A statement block benefits from reuse if is large enough (>10 instructions) or has
+	// Spark instructions. Caching small SBs lead to long chains of LineageCacheEntries,
+	// which in turn leads to reduced evictable entries.
+	public static boolean hasValidInsts(ArrayList<Instruction> insts) {
+		int count = 0;
+		boolean hasSPInst = false;
+		for (Instruction ins : insts) {
+			if (ins instanceof VariableCPInstruction)
+				continue;
+			count++;
+			if ((ins instanceof ComputationSPInstruction && !ins.getOpcode().equals("chkpoint"))
+				|| ins.getOpcode().equals("prefetch"))
+				hasSPInst = true;
+		}
+		return count >= 10 || hasSPInst;
 	}
 	
 	public static void addAllDataLineage(ExecutionContext ec) {

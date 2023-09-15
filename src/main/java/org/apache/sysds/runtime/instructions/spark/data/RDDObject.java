@@ -20,6 +20,7 @@
 package org.apache.sysds.runtime.instructions.spark.data;
 
 import org.apache.spark.api.java.JavaPairRDD;
+import org.apache.sysds.runtime.meta.DataCharacteristics;
 
 public class RDDObject extends LineageObject
 {
@@ -31,6 +32,7 @@ public class RDDObject extends LineageObject
 	private String  _hdfsFname = null;     //hdfs filename, if created from hdfs.  
 	private boolean _parRDD = false;       //is a parallelized rdd at driver
 	private boolean _pending = true;       //is a pending rdd operation
+	private DataCharacteristics _dc = null;
 	
 	public RDDObject( JavaPairRDD<?,?> rddvar) {
 		super();
@@ -84,6 +86,14 @@ public class RDDObject extends LineageObject
 	public boolean isPending() {
 		return _pending;
 	}
+
+	public void setDataCharacteristics(DataCharacteristics dc) {
+		_dc = dc;
+	}
+
+	public DataCharacteristics getDataCharacteristics() {
+		return _dc;
+	}
 	
 
 	/**
@@ -95,6 +105,10 @@ public class RDDObject extends LineageObject
 	 */
 	public boolean allowsShortCircuitRead()
 	{
+		// Cannot trust the hdfs file for reused RDD objects
+		if (isInLineageCache() && isCheckpointRDD())
+			return false;
+
 		boolean ret = isHDFSFile();
 		
 		if( isCheckpointRDD() && getLineageChilds().size() == 1 ) {

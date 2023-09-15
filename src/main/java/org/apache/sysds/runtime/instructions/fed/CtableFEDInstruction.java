@@ -210,14 +210,15 @@ public class CtableFEDInstruction extends ComputationFEDInstruction {
 
 		if(fedOutput) {
 			if(fr2 != null) // broadcasted mo3
-				fedMap.execute(getTID(), true, fr1, fr2, fr3);
+				ffr = fedMap.execute(getTID(), true, fr1, fr2, fr3);
 			else
-				fedMap.execute(getTID(), true, fr1, fr3);
+				ffr = fedMap.execute(getTID(), true, fr1, fr3);
 
 			MatrixObject out = ec.getMatrixObject(output);
 			FederationMap newFedMap = modifyFedRanges(fedMap.copyWithNewID(fr3.getID()),
 				staticDim, dims2, reversed);
-			setFedOutput(mo1.getMO(), out, newFedMap, staticDim, dims2, reversed);
+			long nnz = FederationUtils.sumNonZeros(ffr);
+			setFedOutput(mo1.getMO(), out, newFedMap, staticDim, dims2, nnz, reversed);
 		} else {
 			fr4 = new FederatedRequest(FederatedRequest.RequestType.GET_VAR, fr3.getID());
 			fr5 = fedMap.cleanup(getTID(), fr3.getID());
@@ -280,16 +281,18 @@ public class CtableFEDInstruction extends ComputationFEDInstruction {
 	 * @param fedMap the federation map of the federated matrix input mo1
 	 * @param staticDim static non-partitioned dimension of the output
 	 * @param dims2 dimensions of the partial outputs along the federated partitioning
+	 * @param nnz the number of non-zeros of the resulting federated output
 	 * @param reversed boolean indicating if inputs mo1 and mo2 are reversed
 	 */
 	private static void setFedOutput(MatrixObject mo1, MatrixObject out, FederationMap fedMap,
-		long staticDim, Long[] dims2, boolean reversed) {
+		long staticDim, Long[] dims2, long nnz, boolean reversed) {
 		// get the final output dimensions
 		final long d1 = (reversed ? Collections.max(Arrays.asList(dims2)) : staticDim);
 		final long d2 = (reversed ? staticDim : Collections.max(Arrays.asList(dims2)));
 
 		// set output
-		out.getDataCharacteristics().set(d1, d2, (int) mo1.getBlocksize(), mo1.getNnz());
+		out.getDataCharacteristics().setDimension(d1, d2)
+			.setBlocksize(mo1.getBlocksize()).setNonZeros(nnz);
 		out.setFedMapping(fedMap);
 
 		long varID = FederationUtils.getNextFedDataID();

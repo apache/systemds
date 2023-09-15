@@ -25,7 +25,7 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.BitSet;
 
-import org.apache.commons.lang.NotImplementedException;
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.runtime.compress.colgroup.IMapToDataGroup;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory.MAP_TYPE;
 import org.apache.sysds.utils.MemoryEstimates;
@@ -110,16 +110,14 @@ public class MapToByte extends AMapToData {
 	protected void writeBytes(DataOutput out) throws IOException {
 		out.writeInt(getUnique());
 		out.writeInt(_data.length);
-		for(int i = 0; i < _data.length; i++)
-			out.writeByte(_data[i]);
+		out.write(_data);
 	}
 
 	protected static MapToByte readFields(DataInput in) throws IOException {
 		final int unique = in.readInt();
 		final int length = in.readInt();
 		final byte[] data = new byte[length];
-		for(int i = 0; i < length; i++)
-			data[i] = in.readByte();
+		in.readFully(data);
 		return new MapToByte(unique, data);
 	}
 
@@ -254,5 +252,17 @@ public class MapToByte extends AMapToData {
 			return new MapToUByte(getUnique(), ret);
 		else
 			return new MapToByte(getUnique(), ret);
+	}
+
+	@Override
+	public int getMaxPossible(){
+		return 256;
+	}
+
+	@Override
+	public boolean equals(AMapToData e) {
+		return e instanceof MapToByte && //
+			e.getUnique() == getUnique() &&//
+			Arrays.equals(((MapToByte) e)._data, _data);
 	}
 }

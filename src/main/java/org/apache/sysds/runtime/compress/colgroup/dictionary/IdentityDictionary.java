@@ -25,7 +25,7 @@ import java.io.IOException;
 import java.lang.ref.SoftReference;
 import java.util.Arrays;
 
-import org.apache.commons.lang.NotImplementedException;
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.data.SparseBlock;
@@ -163,77 +163,77 @@ public class IdentityDictionary extends ADictionary {
 	}
 
 	@Override
-	public ADictionary applyScalarOp(ScalarOperator op) {
+	public IDictionary applyScalarOp(ScalarOperator op) {
 		return getMBDict().applyScalarOp(op);
 	}
 
 	@Override
-	public ADictionary applyScalarOpAndAppend(ScalarOperator op, double v0, int nCol) {
+	public IDictionary applyScalarOpAndAppend(ScalarOperator op, double v0, int nCol) {
 
 		return getMBDict().applyScalarOpAndAppend(op, v0, nCol);
 	}
 
 	@Override
-	public ADictionary applyUnaryOp(UnaryOperator op) {
+	public IDictionary applyUnaryOp(UnaryOperator op) {
 		return getMBDict().applyUnaryOp(op);
 	}
 
 	@Override
-	public ADictionary applyUnaryOpAndAppend(UnaryOperator op, double v0, int nCol) {
+	public IDictionary applyUnaryOpAndAppend(UnaryOperator op, double v0, int nCol) {
 		return getMBDict().applyUnaryOpAndAppend(op, v0, nCol);
 	}
 
 	@Override
-	public ADictionary applyScalarOpWithReference(ScalarOperator op, double[] reference, double[] newReference) {
+	public IDictionary applyScalarOpWithReference(ScalarOperator op, double[] reference, double[] newReference) {
 		return getMBDict().applyScalarOpWithReference(op, reference, newReference);
 	}
 
 	@Override
-	public ADictionary applyUnaryOpWithReference(UnaryOperator op, double[] reference, double[] newReference) {
+	public IDictionary applyUnaryOpWithReference(UnaryOperator op, double[] reference, double[] newReference) {
 		return getMBDict().applyUnaryOpWithReference(op, reference, newReference);
 	}
 
 	@Override
-	public ADictionary binOpLeft(BinaryOperator op, double[] v, IColIndex colIndexes) {
+	public IDictionary binOpLeft(BinaryOperator op, double[] v, IColIndex colIndexes) {
 		return getMBDict().binOpLeft(op, v, colIndexes);
 	}
 
 	@Override
-	public ADictionary binOpLeftAndAppend(BinaryOperator op, double[] v, IColIndex colIndexes) {
+	public IDictionary binOpLeftAndAppend(BinaryOperator op, double[] v, IColIndex colIndexes) {
 		return getMBDict().binOpLeftAndAppend(op, v, colIndexes);
 	}
 
 	@Override
-	public ADictionary binOpLeftWithReference(BinaryOperator op, double[] v, IColIndex colIndexes, double[] reference,
+	public IDictionary binOpLeftWithReference(BinaryOperator op, double[] v, IColIndex colIndexes, double[] reference,
 		double[] newReference) {
 		return getMBDict().binOpLeftWithReference(op, v, colIndexes, reference, newReference);
 
 	}
 
 	@Override
-	public ADictionary binOpRight(BinaryOperator op, double[] v, IColIndex colIndexes) {
+	public IDictionary binOpRight(BinaryOperator op, double[] v, IColIndex colIndexes) {
 		return getMBDict().binOpRight(op, v, colIndexes);
 	}
 
 	@Override
-	public ADictionary binOpRightAndAppend(BinaryOperator op, double[] v, IColIndex colIndexes) {
+	public IDictionary binOpRightAndAppend(BinaryOperator op, double[] v, IColIndex colIndexes) {
 		return getMBDict().binOpRightAndAppend(op, v, colIndexes);
 	}
 
 	@Override
-	public ADictionary binOpRight(BinaryOperator op, double[] v) {
+	public IDictionary binOpRight(BinaryOperator op, double[] v) {
 		return getMBDict().binOpRight(op, v);
 	}
 
 	@Override
-	public ADictionary binOpRightWithReference(BinaryOperator op, double[] v, IColIndex colIndexes, double[] reference,
+	public IDictionary binOpRightWithReference(BinaryOperator op, double[] v, IColIndex colIndexes, double[] reference,
 		double[] newReference) {
 		return getMBDict().binOpRightWithReference(op, v, colIndexes, reference, newReference);
 	}
 
 	@Override
-	public ADictionary clone() {
-		return new IdentityDictionary(nRowCol);
+	public IDictionary clone() {
+		return new IdentityDictionary(nRowCol, withEmpty);
 	}
 
 	@Override
@@ -355,11 +355,11 @@ public class IdentityDictionary extends ADictionary {
 	}
 
 	@Override
-	public ADictionary sliceOutColumnRange(int idxStart, int idxEnd, int previousNumberOfColumns) {
+	public IDictionary sliceOutColumnRange(int idxStart, int idxEnd, int previousNumberOfColumns) {
 		if(idxStart == 0 && idxEnd == nRowCol)
-			return new IdentityDictionary(nRowCol);
+			return new IdentityDictionary(nRowCol, withEmpty);
 		else
-			return new IdentityDictionarySlice(nRowCol, idxStart, idxEnd);
+			return new IdentityDictionarySlice(nRowCol, withEmpty, idxStart, idxEnd);
 	}
 
 	@Override
@@ -399,7 +399,7 @@ public class IdentityDictionary extends ADictionary {
 	}
 
 	@Override
-	public ADictionary subtractTuple(double[] tuple) {
+	public IDictionary subtractTuple(double[] tuple) {
 		return getMBDict().subtractTuple(tuple);
 	}
 
@@ -444,7 +444,7 @@ public class IdentityDictionary extends ADictionary {
 	}
 
 	@Override
-	public ADictionary scaleTuples(int[] scaling, int nCol) {
+	public IDictionary scaleTuples(int[] scaling, int nCol) {
 		return getMBDict().scaleTuples(scaling, nCol);
 	}
 
@@ -464,13 +464,13 @@ public class IdentityDictionary extends ADictionary {
 	}
 
 	@Override
-	public ADictionary preaggValuesFromDense(final int numVals, final IColIndex colIndexes,
+	public IDictionary preaggValuesFromDense(final int numVals, final IColIndex colIndexes,
 		final IColIndex aggregateColumns, final double[] b, final int cut) {
 		return getMBDict().preaggValuesFromDense(numVals, colIndexes, aggregateColumns, b, cut);
 	}
 
 	@Override
-	public ADictionary replace(double pattern, double replace, int nCol) {
+	public IDictionary replace(double pattern, double replace, int nCol) {
 		if(containsValue(pattern))
 			return getMBDict().replace(pattern, replace, nCol);
 		else
@@ -478,7 +478,7 @@ public class IdentityDictionary extends ADictionary {
 	}
 
 	@Override
-	public ADictionary replaceWithReference(double pattern, double replace, double[] reference) {
+	public IDictionary replaceWithReference(double pattern, double replace, double[] reference) {
 		if(containsValueWithReference(pattern, reference))
 			return getMBDict().replaceWithReference(pattern, replace, reference);
 		else
@@ -518,18 +518,18 @@ public class IdentityDictionary extends ADictionary {
 	}
 
 	@Override
-	public ADictionary rexpandCols(int max, boolean ignore, boolean cast, int nCol) {
+	public IDictionary rexpandCols(int max, boolean ignore, boolean cast, int nCol) {
 		return getMBDict().rexpandCols(max, ignore, cast, nCol);
 	}
 
 	@Override
-	public ADictionary rexpandColsWithReference(int max, boolean ignore, boolean cast, int reference) {
+	public IDictionary rexpandColsWithReference(int max, boolean ignore, boolean cast, int reference) {
 		return getMBDict().rexpandColsWithReference(max, ignore, cast, reference);
 	}
 
 	@Override
 	public double getSparsity() {
-		return 1.0d / (double) nRowCol;
+		return 1d / nRowCol;
 	}
 
 	@Override
@@ -538,64 +538,64 @@ public class IdentityDictionary extends ADictionary {
 	}
 
 	@Override
-	protected void TSMMWithScaling(int[] counts, IColIndex rows, IColIndex cols, MatrixBlock ret) {
+	public void TSMMWithScaling(int[] counts, IColIndex rows, IColIndex cols, MatrixBlock ret) {
 		getMBDict().TSMMWithScaling(counts, rows, cols, ret);
 	}
 
 	@Override
-	protected void MMDict(ADictionary right, IColIndex rowsLeft, IColIndex colsRight, MatrixBlock result) {
+	public void MMDict(IDictionary right, IColIndex rowsLeft, IColIndex colsRight, MatrixBlock result) {
 		getMBDict().MMDict(right, rowsLeft, colsRight, result);
 		// should replace with add to right to output cells.
 	}
 
 	@Override
-	protected void MMDictDense(double[] left, IColIndex rowsLeft, IColIndex colsRight, MatrixBlock result) {
+	public void MMDictDense(double[] left, IColIndex rowsLeft, IColIndex colsRight, MatrixBlock result) {
 		getMBDict().MMDictDense(left, rowsLeft, colsRight, result);
 		// should replace with add to right to output cells.
 	}
 
 	@Override
-	protected void MMDictSparse(SparseBlock left, IColIndex rowsLeft, IColIndex colsRight, MatrixBlock result) {
+	public void MMDictSparse(SparseBlock left, IColIndex rowsLeft, IColIndex colsRight, MatrixBlock result) {
 		getMBDict().MMDictSparse(left, rowsLeft, colsRight, result);
 	}
 
 	@Override
-	protected void TSMMToUpperTriangle(ADictionary right, IColIndex rowsLeft, IColIndex colsRight, MatrixBlock result) {
+	public void TSMMToUpperTriangle(IDictionary right, IColIndex rowsLeft, IColIndex colsRight, MatrixBlock result) {
 		getMBDict().TSMMToUpperTriangle(right, rowsLeft, colsRight, result);
 	}
 
 	@Override
-	protected void TSMMToUpperTriangleDense(double[] left, IColIndex rowsLeft, IColIndex colsRight, MatrixBlock result) {
+	public void TSMMToUpperTriangleDense(double[] left, IColIndex rowsLeft, IColIndex colsRight, MatrixBlock result) {
 		getMBDict().TSMMToUpperTriangleDense(left, rowsLeft, colsRight, result);
 	}
 
 	@Override
-	protected void TSMMToUpperTriangleSparse(SparseBlock left, IColIndex rowsLeft, IColIndex colsRight,
+	public void TSMMToUpperTriangleSparse(SparseBlock left, IColIndex rowsLeft, IColIndex colsRight,
 		MatrixBlock result) {
 		getMBDict().TSMMToUpperTriangleSparse(left, rowsLeft, colsRight, result);
 	}
 
 	@Override
-	protected void TSMMToUpperTriangleScaling(ADictionary right, IColIndex rowsLeft, IColIndex colsRight, int[] scale,
+	public void TSMMToUpperTriangleScaling(IDictionary right, IColIndex rowsLeft, IColIndex colsRight, int[] scale,
 		MatrixBlock result) {
 		getMBDict().TSMMToUpperTriangleScaling(right, rowsLeft, colsRight, scale, result);
 	}
 
 	@Override
-	protected void TSMMToUpperTriangleDenseScaling(double[] left, IColIndex rowsLeft, IColIndex colsRight, int[] scale,
+	public void TSMMToUpperTriangleDenseScaling(double[] left, IColIndex rowsLeft, IColIndex colsRight, int[] scale,
 		MatrixBlock result) {
 		getMBDict().TSMMToUpperTriangleDenseScaling(left, rowsLeft, colsRight, scale, result);
 	}
 
 	@Override
-	protected void TSMMToUpperTriangleSparseScaling(SparseBlock left, IColIndex rowsLeft, IColIndex colsRight,
-		int[] scale, MatrixBlock result) {
+	public void TSMMToUpperTriangleSparseScaling(SparseBlock left, IColIndex rowsLeft, IColIndex colsRight, int[] scale,
+		MatrixBlock result) {
 
 		getMBDict().TSMMToUpperTriangleSparseScaling(left, rowsLeft, colsRight, scale, result);
 	}
 
 	@Override
-	public boolean equals(ADictionary o) {
+	public boolean equals(IDictionary o) {
 		if(o instanceof IdentityDictionary)
 			return ((IdentityDictionary) o).nRowCol == nRowCol;
 
@@ -613,12 +613,12 @@ public class IdentityDictionary extends ADictionary {
 	}
 
 	@Override
-	public ADictionary cbind(ADictionary that, int nCol) {
+	public IDictionary cbind(IDictionary that, int nCol) {
 		throw new NotImplementedException();
 	}
 
 	@Override
-	public ADictionary reorder(int[] reorder) {
+	public IDictionary reorder(int[] reorder) {
 		return getMBDict().reorder(reorder);
 	}
 

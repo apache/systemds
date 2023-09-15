@@ -19,21 +19,33 @@
 
 package org.apache.sysds.runtime.transform.encode;
 
-import org.apache.commons.lang.NotImplementedException;
-import org.apache.sysds.runtime.DMLRuntimeException;
+import static org.apache.sysds.runtime.util.UtilFunctions.getEndIndex;
+
+import java.util.HashMap;
+import java.util.Map;
+
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
-import static org.apache.sysds.runtime.util.UtilFunctions.getEndIndex;
-
 public class ColumnEncoderWordEmbedding extends ColumnEncoder {
-    private MatrixBlock wordEmbeddings;
+    private MatrixBlock _wordEmbeddings;
+    private Map<Object, Long> _rcdMap;
+    private HashMap<String, double[]> _embMap;
 
-    //domain size is equal to the number columns of the embedding column (equal to length of an embedding vector)
+    private long lookupRCDMap(Object key) {
+        return _rcdMap.getOrDefault(key, -1L);
+    }
+
+    private double[] lookupEMBMap(Object key) {
+        return _embMap.getOrDefault(key, null);
+    }
+
+    //domain size is equal to the number columns of the embeddings column thats equal to length of an embedding vector
     @Override
     public int getDomainSize(){
-        return wordEmbeddings.getNumColumns();
+        return _wordEmbeddings.getNumColumns();
     }
     protected ColumnEncoderWordEmbedding(int colID) {
         super(colID);
@@ -45,35 +57,48 @@ public class ColumnEncoderWordEmbedding extends ColumnEncoder {
     }
 
     @Override
-    protected double[] getCodeCol(CacheBlock<?> in, int startInd, int blkSize) {
+    protected double[] getCodeCol(CacheBlock<?> in, int startInd, int endInd, double[] tmp) {
         throw new NotImplementedException();
     }
 
-    //previous recode replaced strings with indices of the corresponding matrix row index
+    //previously recode replaced strings with indices of the corresponding matrix row index
     //now, the indices are replaced with actual word embedding vectors
-    //current limitation: in case the transform is done on multiple cols, the same embedding
-    //matrix is used for both transform
+    //current limitation: in case the transform is done on multiple cols, the same embedding matrix is used for both transform
+
+    private double[] getEmbeddedingFromEmbeddingMatrix(long r){
+        double[] embedding = new double[getDomainSize()];
+        for (int i = 0; i < getDomainSize(); i++) {
+            embedding[i] = this._wordEmbeddings.quickGetValue((int) r, _colID - 1 + i);
+        }
+        return embedding;
+
+    }
+
     @Override
     public void applyDense(CacheBlock<?> in, MatrixBlock out, int outputCol, int rowStart, int blk){
-        if (!(in instanceof MatrixBlock)){
+        /*if (!(in instanceof MatrixBlock)){
             throw new DMLRuntimeException("ColumnEncoderWordEmbedding called with: " + in.getClass().getSimpleName() +
                     " and not MatrixBlock");
-        }
+        }*/
         int rowEnd = getEndIndex(in.getNumRows(), rowStart, blk);
-        //map each recoded index to the corresponding embedding vector
+
+        //map each string to the corresponding embedding vector
         for(int i=rowStart; i<rowEnd; i++){
-            double embeddingIndex = in.getDouble(i, outputCol);
-            //fill row with zeroes
-            if(Double.isNaN(embeddingIndex)){
-                for (int j = outputCol; j < outputCol + getDomainSize(); j++)
-                    out.quickSetValue(i, j, 0.0);
+            String key = in.getString(i, _colID-1);
+            if(key == null || key.isEmpty()) {
+                //codes[i-startInd] = Double.NaN;
+                continue;
             }
-            //array copy
-            else{
-                for (int j = outputCol; j < outputCol + getDomainSize(); j++){
-                    out.quickSetValue(i, j, wordEmbeddings.quickGetValue((int) embeddingIndex - 1,j - outputCol ));
+            double[] embedding = lookupEMBMap(key);
+            if(embedding == null){
+                long code = lookupRCDMap(key);
+                if(code == -1L){
+                    continue;
                 }
+                embedding = getEmbeddedingFromEmbeddingMatrix(code - 1);
+                _embMap.put(key, embedding);
             }
+            out.quickSetRow(i, embedding);
         }
     }
 
@@ -100,12 +125,15 @@ public class ColumnEncoderWordEmbedding extends ColumnEncoder {
 
     @Override
     public void initMetaData(FrameBlock meta) {
-        return;
+        if(meta == null || meta.getNumRows() <= 0)
+            return;
+        _rcdMap = meta.getRecodeMap(_colID - 1); // 1-based
     }
 
     //save embeddings matrix reference for apply step
     @Override
     public void initEmbeddings(MatrixBlock embeddings){
-        this.wordEmbeddings = embeddings;
+        this._wordEmbeddings = embeddings;
+        this._embMap = new HashMap<>((int) (embeddings.getNumRows()*1.2),1.0f);
     }
 }

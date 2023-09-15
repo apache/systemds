@@ -19,10 +19,12 @@
 
 package org.apache.sysds.runtime.compress.estim.encoding;
 
+import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
@@ -37,7 +39,7 @@ import org.apache.sysds.runtime.compress.utils.IntArrayList;
  * A Encoding that contain a default value that is not encoded and every other value is encoded in the map. The logic is
  * similar to the SDC column group.
  */
-public class SparseEncoding implements IEncode {
+public class SparseEncoding extends AEncode {
 
 	/** A map to the distinct values contained */
 	protected final AMapToData map;
@@ -52,6 +54,14 @@ public class SparseEncoding implements IEncode {
 		this.map = map;
 		this.off = off;
 		this.nRows = nRows;
+
+		if(CompressedMatrixBlock.debug) {
+			int[] freq = map.getCounts();
+			for(int i = 0; i < freq.length; i++) {
+				if(freq[i] == 0)
+					throw new DMLCompressionException("Invalid counts in fact contains 0");
+			}
+		}
 	}
 
 	@Override
@@ -77,7 +87,7 @@ public class SparseEncoding implements IEncode {
 			SparseEncoding es = (SparseEncoding) e;
 			if(es.off == off && es.map == map)
 				return new ImmutablePair<>(this, null);
-			return new ImmutablePair<>(combineSparseNoResize(es), null);
+			return combineSparseNoResizeDense(es);
 		}
 		else
 			throw new DMLCompressionException("Not allowed other to be dense");
@@ -108,6 +118,7 @@ public class SparseEncoding implements IEncode {
 
 		if(retOff.size() < nRows / 4) {
 			final AOffset o = OffsetFactory.createOffset(retOff);
+			
 			final AMapToData retMap = MapToFactory.create(tmpVals.size(), tmpVals.extractValues(), unique - 1);
 			return new SparseEncoding(retMap, o, nRows);
 		}
@@ -121,13 +132,7 @@ public class SparseEncoding implements IEncode {
 		}
 	}
 
-	private IEncode combineSparseNoResize(SparseEncoding e) {
-		// for now just use the dense... and lets continue.
-		// TODO add sparse combine with sparse output.
-		return combineSparseNoResizeDense(e);
-	}
-
-	private IEncode combineSparseNoResizeDense(SparseEncoding e) {
+	private Pair<IEncode, Map<Integer, Integer>> combineSparseNoResizeDense(SparseEncoding e) {
 
 		final int fl = off.getOffsetToLast();
 		final int fr = e.off.getOffsetToLast();
@@ -137,6 +142,7 @@ public class SparseEncoding implements IEncode {
 		final int nVr = e.getUnique();
 
 		final AMapToData retMap = MapToFactory.create(nRows, (nVl + 1) * (nVr + 1));
+
 		int il = itl.value();
 		// parse through one side set all values into the dense.
 		while(il < fl) {
@@ -155,7 +161,23 @@ public class SparseEncoding implements IEncode {
 		}
 		retMap.set(fr, retMap.getIndex(fr) + (e.map.getIndex(itr.getDataIndex()) + 1) * nVl);
 
-		return new DenseEncoding(retMap);
+		// Full iteration to set unique elements.
+		final Map<Integer, Integer> m = new HashMap<>();
+		for(int i = 0; i < retMap.size(); i++)
+			addValHashMap(retMap.getIndex(i), i, m, retMap);
+
+		return new ImmutablePair<>(new DenseEncoding(retMap.resize(m.size())), m);
+
+	}
+
+	protected static void addValHashMap(final int nv, final int r, final Map<Integer, Integer> map,
+		final AMapToData d) {
+		final int v = map.size();
+		final Integer mv = map.putIfAbsent(nv, v);
+		if(mv == null)
+			d.set(r, v);
+		else
+			d.set(r, mv);
 	}
 
 	private static int combineSparse(AMapToData lMap, AMapToData rMap, AIterator itl, AIterator itr,
@@ -366,7 +388,7 @@ public class SparseEncoding implements IEncode {
 		CompressionSettings cs) {
 		final int largestOffs = nRows - map.size(); // known largest off is zero tuples
 		tupleSparsity = Math.min((double) map.size() / (double) nRows, tupleSparsity);
-		final int[] counts = map.getCounts(new int[map.getUnique()]);
+		final int[] counts = map.getCounts();
 
 		if(cs.isRLEAllowed())
 			return new EstimationFactors(map.getUnique(), map.size(), largestOffs, counts, 0, nRows, map.countRuns(off),
@@ -392,6 +414,13 @@ public class SparseEncoding implements IEncode {
 
 	public int getNumRows() {
 		return nRows;
+	}
+
+	@Override
+	public boolean equals(IEncode e) {
+		return e instanceof SparseEncoding && //
+			((SparseEncoding) e).off.equals(this.off) && //
+			((SparseEncoding) e).map.equals(this.map);
 	}
 
 	@Override

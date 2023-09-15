@@ -23,9 +23,9 @@ import java.io.DataInput;
 import java.io.IOException;
 
 import org.apache.sysds.runtime.compress.DMLCompressionException;
-import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.DictionaryFactory;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.IdentityDictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.MatrixBlockDictionary;
 import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
@@ -58,7 +58,7 @@ public class ColGroupConst extends ADictBasedColGroup implements IContainDefault
 	 * @param colIndices The Colum indexes for the column group.
 	 * @param dict       The dictionary containing one tuple for the entire compression.
 	 */
-	private ColGroupConst(IColIndex colIndices, ADictionary dict) {
+	private ColGroupConst(IColIndex colIndices, IDictionary dict) {
 		super(colIndices, dict);
 	}
 
@@ -70,9 +70,17 @@ public class ColGroupConst extends ADictBasedColGroup implements IContainDefault
 	 * @param dict       The dictionary to use
 	 * @return A Colgroup either const or empty.
 	 */
-	public static AColGroup create(IColIndex colIndices, ADictionary dict) {
+	public static AColGroup create(IColIndex colIndices, IDictionary dict) {
 		if(dict == null)
 			return new ColGroupEmpty(colIndices);
+		else if(dict.getNumberOfValues(colIndices.size()) > 1) {
+			// extract dict first row
+			final double[] nd = new double[colIndices.size()];
+			for(int i = 0; i < colIndices.size(); i++)
+				nd[i] = dict.getValue(i);
+
+			return ColGroupConst.create(colIndices, nd);
+		}
 		else
 			return new ColGroupConst(colIndices, dict);
 	}
@@ -139,7 +147,7 @@ public class ColGroupConst extends ADictBasedColGroup implements IContainDefault
 	 * @param dict    The dictionary to contain int the Constant group.
 	 * @return A Constant column group.
 	 */
-	public static AColGroup create(int numCols, ADictionary dict) {
+	public static AColGroup create(int numCols, IDictionary dict) {
 		if(dict instanceof MatrixBlockDictionary) {
 			MatrixBlock mbd = ((MatrixBlockDictionary) dict).getMatrixBlock();
 			if(mbd.getNumColumns() != numCols && mbd.getNumRows() != 1) {
@@ -436,14 +444,14 @@ public class ColGroupConst extends ADictBasedColGroup implements IContainDefault
 		if(v == 0)
 			return new ColGroupEmpty(colIndexes);
 		else {
-			ADictionary retD = Dictionary.create(new double[] {_dict.getValue(idx)});
+			IDictionary retD = Dictionary.create(new double[] {_dict.getValue(idx)});
 			return create(colIndexes, retD);
 		}
 	}
 
 	@Override
 	protected AColGroup sliceMultiColumns(int idStart, int idEnd, IColIndex outputCols) {
-		ADictionary retD = _dict.sliceOutColumnRange(idStart, idEnd, _colIndexes.size());
+		IDictionary retD = _dict.sliceOutColumnRange(idStart, idEnd, _colIndexes.size());
 		return create(outputCols, retD);
 	}
 
@@ -459,7 +467,7 @@ public class ColGroupConst extends ADictBasedColGroup implements IContainDefault
 
 	@Override
 	public AColGroup replace(double pattern, double replace) {
-		ADictionary replaced = _dict.replace(pattern, replace, _colIndexes.size());
+		IDictionary replaced = _dict.replace(pattern, replace, _colIndexes.size());
 		return create(_colIndexes, replaced);
 	}
 
@@ -509,7 +517,7 @@ public class ColGroupConst extends ADictBasedColGroup implements IContainDefault
 
 	@Override
 	public AColGroup rexpandCols(int max, boolean ignore, boolean cast, int nRows) {
-		ADictionary d = _dict.rexpandCols(max, ignore, cast, _colIndexes.size());
+		IDictionary d = _dict.rexpandCols(max, ignore, cast, _colIndexes.size());
 		if(d == null)
 			return ColGroupEmpty.create(max);
 		else
@@ -526,12 +534,12 @@ public class ColGroupConst extends ADictBasedColGroup implements IContainDefault
 		return create(colIndexes, Dictionary.create(newDictionary));
 	}
 
-	protected AColGroup copyAndSet(IColIndex colIndexes, ADictionary newDictionary) {
+	protected AColGroup copyAndSet(IColIndex colIndexes, IDictionary newDictionary) {
 		return create(colIndexes, newDictionary);
 	}
 
 	@Override
-	protected AColGroup allocateRightMultiplication(MatrixBlock right, IColIndex colIndexes, ADictionary preAgg) {
+	protected AColGroup allocateRightMultiplication(MatrixBlock right, IColIndex colIndexes, IDictionary preAgg) {
 		if(colIndexes != null && preAgg != null)
 			return create(colIndexes, preAgg);
 		else
@@ -540,7 +548,7 @@ public class ColGroupConst extends ADictBasedColGroup implements IContainDefault
 
 	public static ColGroupConst read(DataInput in) throws IOException {
 		IColIndex cols = ColIndexFactory.read(in);
-		ADictionary dict = DictionaryFactory.read(in);
+		IDictionary dict = DictionaryFactory.read(in);
 		return new ColGroupConst(cols, dict);
 	}
 
@@ -578,7 +586,8 @@ public class ColGroupConst extends ADictBasedColGroup implements IContainDefault
 	@Override
 	public CompressedSizeInfoColGroup getCompressionInfo(int nRow) {
 		EstimationFactors ef = new EstimationFactors(1, 1, 1, _dict.getSparsity());
-		return new CompressedSizeInfoColGroup(_colIndexes, ef, estimateInMemorySize(), CompressionType.CONST, getEncoding());
+		return new CompressedSizeInfoColGroup(_colIndexes, ef, estimateInMemorySize(), CompressionType.CONST,
+			getEncoding());
 	}
 
 	@Override

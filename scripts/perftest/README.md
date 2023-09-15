@@ -17,18 +17,35 @@ limitations under the License.
 {% end comment %}
 -->
 
-# Performance tests SystemDS
+# Performance Tests SystemDS
 
-To run all performance tests for SystemDS, simply download systemds, install the prerequisites and execute.
+To run all performance tests for SystemDS:
+ * install systemds,
+ * install the prerequisites,
+ * navigate to the perftest directory $`cd $SYSTEMDS_ROOT/scripts/perftest` 
+ * generate the data,
+ * and execute.
 
 There are a few prerequisites:
 
+## Install SystemDS
+
 - First follow the install guide: <http://apache.github.io/systemds/site/install> and build the project.
+- Install the python package for python api benchmarks: <https://apache.github.io/systemds/api/python/getting_started/install.html>
+- Prepare to run SystemDS: <https://apache.github.io/systemds/site/run>
+
+## Install Additional Prerequisites
 - Setup Intel MKL: <http://apache.github.io/systemds/site/run>
 - Setup OpenBlas: <https://github.com/xianyi/OpenBLAS/wiki/Precompiled-installation-packages>
 - Install Perf stat: <https://linoxide.com/linux-how-to/install-perf-tool-centos-ubuntu/>
 
-## NOTE THE SCRIPT HAS TO BE RUN FROM THE PERFTEST FOLDER
+## Generate Test Data
+
+Using the scripts found in `$SYSTEMDS_ROOT/scripts/perftest/datagen`, generate the data for the tests you want to run. Note the sometimes optional and other times required parameters/args. Dataset size is likely the most important of these.
+
+## Run the Benchmarks
+
+**Reminder: The scripts should be run from the perftest folder.**
 
 Examples:
 
@@ -36,7 +53,7 @@ Examples:
 ./runAll.sh
 ```
 
-Look inside the runAll script to see how to run individual tests.
+Or look inside the runAll script to see how to run individual tests.
 
-Time calculations in the bash scripts additionally subtract a number, e.g. ".4".
+Time calculations in the bash scripts may additionally subtract a number, e.g. ".4".
 This is done to accommodate for time lost by shell script and JVM startup overheads, to match the actual application runtime of SystemML.

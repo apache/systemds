@@ -19,7 +19,7 @@
 
 package org.apache.sysds.runtime.transform.encode;
 
-import org.apache.commons.lang.ArrayUtils;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
@@ -262,7 +262,7 @@ public class EncoderMVImpute extends LegacyEncoder {
 			_rcList = new ArrayList<>();
 		 
 		List<Integer> rcList = _rcList.stream() //
-			.filter((x) -> ixRange.inColRange((long)x)) //
+			.filter((x) -> ixRange.inColRange(x)) //
 			.map(i -> (int) (i - (ixRange.colStart - 1))) //
 			.collect(Collectors.toList());
 

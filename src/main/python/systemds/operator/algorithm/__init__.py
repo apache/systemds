@@ -61,6 +61,7 @@ from .builtin.ffTrain import ffTrain
 from .builtin.fit_pipeline import fit_pipeline 
 from .builtin.fixInvalidLengths import fixInvalidLengths 
 from .builtin.fixInvalidLengthsApply import fixInvalidLengthsApply 
+from .builtin.flattenQuantile import flattenQuantile 
 from .builtin.frameSort import frameSort 
 from .builtin.frequencyEncode import frequencyEncode 
 from .builtin.frequencyEncodeApply import frequencyEncodeApply 
@@ -113,11 +114,15 @@ from .builtin.lmDS import lmDS
 from .builtin.lmPredict import lmPredict 
 from .builtin.lmPredictStats import lmPredictStats 
 from .builtin.logSumExp import logSumExp 
+from .builtin.mae import mae 
+from .builtin.mape import mape 
 from .builtin.matrixProfile import matrixProfile 
 from .builtin.mcc import mcc 
 from .builtin.mdedup import mdedup 
 from .builtin.mice import mice 
 from .builtin.miceApply import miceApply 
+from .builtin.mse import mse 
+from .builtin.msmape import msmape 
 from .builtin.msvm import msvm 
 from .builtin.msvmPredict import msvmPredict 
 from .builtin.multiLogReg import multiLogReg 
@@ -127,6 +132,7 @@ from .builtin.naiveBayes import naiveBayes
 from .builtin.naiveBayesPredict import naiveBayesPredict 
 from .builtin.normalize import normalize 
 from .builtin.normalizeApply import normalizeApply 
+from .builtin.nrmse import nrmse 
 from .builtin.outlier import outlier 
 from .builtin.outlierByArima import outlierByArima 
 from .builtin.outlierByIQR import outlierByIQR 
@@ -138,8 +144,10 @@ from .builtin.pcaInverse import pcaInverse
 from .builtin.pcaTransform import pcaTransform 
 from .builtin.pnmf import pnmf 
 from .builtin.ppca import ppca 
+from .builtin.psnr import psnr 
 from .builtin.randomForest import randomForest 
 from .builtin.randomForestPredict import randomForestPredict 
+from .builtin.rmse import rmse 
 from .builtin.scale import scale 
 from .builtin.scaleApply import scaleApply 
 from .builtin.scaleMinMax import scaleMinMax 
@@ -149,7 +157,9 @@ from .builtin.sherlock import sherlock
 from .builtin.sherlockPredict import sherlockPredict 
 from .builtin.shortestPath import shortestPath 
 from .builtin.sigmoid import sigmoid 
+from .builtin.skewness import skewness 
 from .builtin.slicefinder import slicefinder 
+from .builtin.smape import smape 
 from .builtin.smote import smote 
 from .builtin.softmax import softmax 
 from .builtin.split import split 
@@ -215,6 +225,7 @@ __all__ = ['WoE',
  'fit_pipeline',
  'fixInvalidLengths',
  'fixInvalidLengthsApply',
+ 'flattenQuantile',
  'frameSort',
  'frequencyEncode',
  'frequencyEncodeApply',
@@ -267,11 +278,15 @@ __all__ = ['WoE',
  'lmPredict',
  'lmPredictStats',
  'logSumExp',
+ 'mae',
+ 'mape',
  'matrixProfile',
  'mcc',
  'mdedup',
  'mice',
  'miceApply',
+ 'mse',
+ 'msmape',
  'msvm',
  'msvmPredict',
  'multiLogReg',
@@ -281,6 +296,7 @@ __all__ = ['WoE',
  'naiveBayesPredict',
  'normalize',
  'normalizeApply',
+ 'nrmse',
  'outlier',
  'outlierByArima',
  'outlierByIQR',
@@ -292,8 +308,10 @@ __all__ = ['WoE',
  'pcaTransform',
  'pnmf',
  'ppca',
+ 'psnr',
  'randomForest',
  'randomForestPredict',
+ 'rmse',
  'scale',
  'scaleApply',
  'scaleMinMax',
@@ -303,7 +321,9 @@ __all__ = ['WoE',
  'sherlockPredict',
  'shortestPath',
  'sigmoid',
+ 'skewness',
  'slicefinder',
+ 'smape',
  'smote',
  'softmax',
  'split',

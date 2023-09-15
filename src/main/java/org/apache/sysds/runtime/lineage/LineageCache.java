@@ -19,6 +19,7 @@
 
 package org.apache.sysds.runtime.lineage;
 
+import jcuda.Pointer;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.commons.lang3.tuple.Pair;
@@ -28,6 +29,7 @@ import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.lops.MMTSJ.MMTSJType;
 import org.apache.sysds.parser.DataIdentifier;
@@ -108,7 +110,8 @@ public class LineageCache
 				//try to reuse full or partial intermediates (CPU and FED only)
 				for (MutablePair<LineageItem,LineageCacheEntry> item : liList) {
 					if (LineageCacheConfig.getCacheType().isFullReuse())
-						e = LineageCache.probe(item.getKey()) ? getIntern(item.getKey()) : null;
+						//e = LineageCache.probe(item.getKey()) ? getIntern(item.getKey()) : null;
+						e = getIntern(item.getKey()); //avoid double probing (containsKey + get)
 					//TODO need to also move execution of compensation plan out of here
 					//(create lazily evaluated entry)
 					if (e == null && LineageCacheConfig.getCacheType().isPartialReuse()
@@ -155,35 +158,49 @@ public class LineageCache
 						//Reuse the cached RDD (local or persisted at the executors)
 						switch(e.getCacheStatus()) {
 							case TOPERSISTRDD:
-								//Mark for caching on the second hit
-								persistRDD(inst, e, ec);
-								//Update status to indicate persisted in the executors
+								//Change status to PERSISTEDRDD on the second hit
+								//putValueRDD method will save the RDD and call persist
 								e.setCacheStatus(LineageCacheStatus.PERSISTEDRDD);
-								//Even not persisted, reuse the rdd locally for shuffle operations
-								if (!LineageCacheConfig.isShuffleOp(inst))
-									return false;
-								((SparkExecutionContext) ec).setRDDHandleForVariable(outName, rdd);
-								break;
+								//Cannot reuse rdd as already garbage collected
+								ec.replaceLineageItem(outName, e._key); //still reuse the lineage trace
+								return false;
 							case PERSISTEDRDD:
 								//Reuse the persisted intermediate at the executors
 								((SparkExecutionContext) ec).setRDDHandleForVariable(outName, rdd);
+								//Safely cleanup the child RDDs if this RDD is persisted already
+								//If reused 3 times and still not persisted, move to Spark asynchronously
+								if (probeRDDDistributed(e))
+									LineageSparkCacheEviction.cleanupChildRDDs(e);
+								else
+									LineageSparkCacheEviction.moveToSpark(e);
 								break;
 							default:
 								return false;
 						}
 					}
 					else { //TODO handle locks on gpu objects
+						Pointer gpuPtr = e.getGPUPointer();
+						if (gpuPtr == null && e.getCacheStatus() == LineageCacheStatus.NOTCACHED)
+							return false;  //the executing thread removed this entry from cache
+						if (e.getCacheStatus() == LineageCacheStatus.TOCACHEGPU) {  //second hit
+							//Cannot reuse as already garbage collected
+							ec.replaceLineageItem(outName, e._key); //still reuse the lineage trace
+							return false;
+						}
+						//Reuse from third hit onwards (status == GPUCACHED)
 						//Create a GPUObject with the cached pointer
 						GPUObject gpuObj = new GPUObject(ec.getGPUContext(0),
-							ec.getMatrixObject(outName), e.getGPUPointer());
+							ec.getMatrixObject(outName), gpuPtr);
 						ec.getMatrixObject(outName).setGPUObject(ec.getGPUContext(0), gpuObj);
 						//Set dirty to true, so that it is later copied to the host for write
 						ec.getMatrixObject(outName).getGPUObject(ec.getGPUContext(0)).setDirty(true);
 						//Set the cached data characteristics to the output matrix object
 						ec.getMatrixObject(outName).updateDataCharacteristics(e.getDataCharacteristics());
 						//Increment the live count for this pointer
-						LineageGPUCacheEviction.incrementLiveCount(e.getGPUPointer());
+						LineageGPUCacheEviction.incrementLiveCount(gpuPtr);
 					}
+					//Replace the live lineage trace with the cached one (if not parfor, dedup)
+					ec.replaceLineageItem(outName, e._key);
 				}
 				maintainReuseStatistics(ec, inst, liList.get(0).getValue());
 			}
@@ -206,6 +223,7 @@ public class LineageCache
 		long savedComputeTime = 0;
 		HashMap<String, Data> funcOutputs = new HashMap<>();
 		HashMap<String, LineageItem> funcLIs = new HashMap<>();
+		ArrayList<LineageCacheEntry> funcOutLIs = new ArrayList<>();
 		for (int i=0; i<numOutputs; i++) {
 			String opcode = name + String.valueOf(i+1);
 			LineageItem li = new LineageItem(opcode, liInputs);
@@ -216,6 +234,7 @@ public class LineageCache
 			synchronized(_cache) {
 				if (LineageCache.probe(li)) {
 					e = LineageCache.getIntern(li);
+					funcOutLIs.add(e);
 				}
 				else {
 					//create a placeholder if no reuse to avoid redundancy
@@ -228,6 +247,8 @@ public class LineageCache
 			if (e != null) {
 				String boundVarName = outNames.get(i);
 				Data boundValue = null;
+				//String fname = "target\\testTemp\\functions\\async\\LineageReuseSparkTest\\LineageReuseSpark8/target/scratch_space//_p11736_192.168.0.113//_t0/temp999";
+				//fname = VariableCPInstruction.getUniqueFileName(fname);
 				//convert to matrix object
 				if (e.isMatrixValue()) {
 					MatrixBlock mb = e.getMBValue();
@@ -235,21 +256,31 @@ public class LineageCache
 						return false;  //the executing thread removed this entry from cache
 					MetaDataFormat md = new MetaDataFormat(
 						e.getMBValue().getDataCharacteristics(),FileFormat.BINARY);
+					md.getDataCharacteristics().setBlocksize(ConfigurationManager.getBlocksize());
 					boundValue = new MatrixObject(ValueType.FP64, boundVarName, md);
 					((MatrixObject)boundValue).acquireModify(e.getMBValue());
 					((MatrixObject)boundValue).release();
 				}
 				else if (e.isGPUObject()) {
+					Pointer gpuPtr = e.getGPUPointer();
+					if (gpuPtr == null && e.getCacheStatus() == LineageCacheStatus.NOTCACHED)
+						return false;  //the executing thread removed this entry from cache
 					MetaDataFormat md = new MetaDataFormat(e.getDataCharacteristics(), FileFormat.BINARY);
 					boundValue = new MatrixObject(ValueType.FP64, boundVarName, md);
 					//Create a GPUObject with the cached pointer
 					GPUObject gpuObj = new GPUObject(ec.getGPUContext(0),
-						((MatrixObject)boundValue), e.getGPUPointer());
+						((MatrixObject)boundValue), gpuPtr);
 					//Set dirty to true, so that it is later copied to the host for write
 					gpuObj.setDirty(true);
 					((MatrixObject) boundValue).setGPUObject(ec.getGPUContext(0), gpuObj);
-					//Increment the live count for this pointer
-					LineageGPUCacheEviction.incrementLiveCount(e.getGPUPointer());
+				}
+				else if (e.isRDDPersist()) {
+					RDDObject rdd = e.getRDDObject();
+					if (rdd == null && e.getCacheStatus() == LineageCacheStatus.NOTCACHED)
+						return false;  //the executing thread removed this entry from cache
+					MetaDataFormat md = new MetaDataFormat(rdd.getDataCharacteristics(),FileFormat.BINARY);
+					boundValue = new MatrixObject(ValueType.FP64, boundVarName, md);
+					((MatrixObject) boundValue).setRDDHandle(rdd);
 				}
 				else if (e.isScalarValue()) {
 					boundValue = e.getSOValue();
@@ -273,6 +304,49 @@ public class LineageCache
 		}
 		
 		if (reuse) {
+			//Additional maintenance for GPU pointers and RDDs
+			for (LineageCacheEntry e : funcOutLIs) {
+				if (e.isGPUObject()) {
+					switch(e.getCacheStatus()) {
+						case TOCACHEGPU:
+							//Cannot reuse as already garbage collected putValue method
+							// will save the pointer while caching the original instruction
+							return false;
+						case GPUCACHED:
+							//Increment the live count for this pointer
+							LineageGPUCacheEviction.incrementLiveCount(e.getGPUPointer());
+							if (DMLScript.STATISTICS) LineageCacheStatistics.incrementGpuHits();
+							break;
+						default:
+							return false;
+					}
+				}
+				else if (e.isRDDPersist()) {
+					//Reuse the cached RDD (local or persisted at the executors)
+					switch(e.getCacheStatus()) {
+						case TOPERSISTRDD:
+							//Cannot reuse rdd as already garbage collected
+							//putValue method will save the RDD and call persist
+							//while caching the original instruction
+							return false;
+						case PERSISTEDRDD:
+							//Reuse the persisted intermediate at the executors
+							//Safely cleanup the child RDDs if this RDD is persisted already
+							//If reused 3 times and still not persisted, move to Spark asynchronously
+							if (probeRDDDistributed(e)) {
+								LineageSparkCacheEviction.cleanupChildRDDs(e);
+								if (DMLScript.STATISTICS) LineageCacheStatistics.incrementRDDPersistHits();
+							}
+							else {
+								LineageSparkCacheEviction.moveToSpark(e);
+								if (DMLScript.STATISTICS) LineageCacheStatistics.incrementRDDHits();
+							}
+							break;
+						default:
+							return false;
+					}
+				}
+			}
 			funcOutputs.forEach((var, val) -> {
 				//cleanup existing data bound to output variable name
 				Data exdata = ec.removeVariable(var);
@@ -287,7 +361,6 @@ public class LineageCache
 			if (DMLScript.STATISTICS) //increment saved time
 				LineageCacheStatistics.incrementSavedComputeTime(savedComputeTime);
 		}
-		
 		return reuse;
 	}
 	
@@ -331,6 +404,7 @@ public class LineageCache
 
 				MetaDataFormat md = new MetaDataFormat(
 					e.getMBValue().getDataCharacteristics(),FileFormat.BINARY);
+				md.getDataCharacteristics().setBlocksize(ConfigurationManager.getBlocksize());
 				outValue = new MatrixObject(ValueType.FP64, outName, md);
 				((MatrixObject)outValue).acquireModify(e.getMBValue());
 				((MatrixObject)outValue).release();
@@ -444,13 +518,17 @@ public class LineageCache
 		if (!p && DMLScript.STATISTICS && LineageCacheEviction._removelist.containsKey(key))
 			// The sought entry was in cache but removed later 
 			LineageCacheStatistics.incrementDelHits();
+
 		return p;
 	}
 
 	private static boolean probeRDDDistributed(LineageItem key) {
 		if (!_cache.containsKey(key))
 			return false;
-		LineageCacheEntry e = _cache.get(key);
+		return probeRDDDistributed(_cache.get(key));
+	}
+
+	protected static boolean probeRDDDistributed(LineageCacheEntry e) {
 		if (!e.isRDDPersist())
 			return false;
 		return SparkExecutionContext.isRDDCached(e.getRDDObject().getRDD().id());
@@ -536,9 +614,11 @@ public class LineageCache
 			//if (!isMarkedForCaching(inst, ec)) return;
 			List<Pair<LineageItem, Data>> liData = null;
 			GPUObject liGPUObj= null;
-			LineageItem instLI = ((LineageTraceable) inst).getLineageItem(ec).getValue();
+			//LineageItem instLI = ((LineageTraceable) inst).getLineageItem(ec).getValue();
+			LineageItem instLI = null;
 			if (inst instanceof MultiReturnBuiltinCPInstruction) {
 				liData = new ArrayList<>();
+				instLI = ((LineageTraceable) inst).getLineageItem(ec).getValue();
 				MultiReturnBuiltinCPInstruction mrInst = (MultiReturnBuiltinCPInstruction)inst;
 				for (int i=0; i<mrInst.getNumOutputs(); i++) {
 					String opcode = instLI.getOpcode() + String.valueOf(i);
@@ -548,7 +628,7 @@ public class LineageCache
 				}
 			}
 			else if (inst instanceof GPUInstruction) {
-				// TODO: gpu multiretrun instructions
+				// TODO: gpu multi-return instructions
 				Data gpudata = ec.getVariable(((GPUInstruction) inst)._output);
 				liGPUObj = gpudata instanceof MatrixObject ?
 						ec.getMatrixObject(((GPUInstruction)inst)._output).
@@ -562,16 +642,23 @@ public class LineageCache
 			else if (inst instanceof ComputationSPInstruction
 				&& (ec.getVariable(((ComputationSPInstruction) inst).output) instanceof MatrixObject)
 				&& (ec.getCacheableData(((ComputationSPInstruction)inst).output.getName())).hasRDDHandle()) {
+				instLI = ec.getLineageItem(((ComputationSPInstruction) inst).output);
 				putValueRDD(inst, instLI, ec, computetime);
 				return;
 			}
 			else
-				if (inst instanceof ComputationCPInstruction)
+				if (inst instanceof ComputationCPInstruction) {
+					instLI = ec.getLineageItem(((ComputationCPInstruction) inst).output);
 					liData = Arrays.asList(Pair.of(instLI, ec.getVariable(((ComputationCPInstruction) inst).output)));
-				else if (inst instanceof ComputationFEDInstruction)
+				}
+				else if (inst instanceof ComputationFEDInstruction) {
+					instLI = ec.getLineageItem(((ComputationFEDInstruction) inst).output);
 					liData = Arrays.asList(Pair.of(instLI, ec.getVariable(((ComputationFEDInstruction) inst).output)));
-				else if (inst instanceof ComputationSPInstruction) //collects or prefetches
+				}
+				else if (inst instanceof ComputationSPInstruction) { //collects or prefetches
+					instLI = ec.getLineageItem(((ComputationSPInstruction) inst).output);
 					liData = Arrays.asList(Pair.of(instLI, ec.getVariable(((ComputationSPInstruction) inst).output)));
+				}
 
 			if (liGPUObj == null)
 				putValueCPU(inst, liData, computetime);
@@ -658,14 +745,27 @@ public class LineageCache
 				removePlaceholder(instLI);
 				return;
 			}
-			// Update the total size of lineage cached gpu objects
-			// The eviction is handled by the unified gpu memory manager
-			LineageGPUCacheEviction.updateSize(gpuObj.getAllocatedSize(), true);
-			// Set the GPUOject in the cache
-			centry.setGPUValue(gpuObj.getDensePointer(), gpuObj.getAllocatedSize(),
-				gpuObj.getMatrixObject().getMetaData(), computetime);
-			// Maintain order for eviction
-			LineageGPUCacheEviction.addEntry(centry);
+			switch(centry.getCacheStatus()) {
+				case EMPTY:  //first hit
+					// Set the GPUOject in the cache. Will be garbage collected
+					centry.setGPUValue(gpuObj.getDensePointer(), gpuObj.getAllocatedSize(),
+						gpuObj.getMatrixObject().getMetaData(), computetime);
+					centry.setCacheStatus(LineageCacheStatus.TOCACHEGPU);
+					break;
+				case TOCACHEGPU:  //second hit
+					// Update the total size of lineage cached gpu objects
+					// The eviction is handled by the unified gpu memory manager
+					LineageGPUCacheEviction.updateSize(gpuObj.getAllocatedSize(), true);
+					// Set the GPUOject in the cache and update the status
+					centry.setGPUValue(gpuObj.getDensePointer(), gpuObj.getAllocatedSize(),
+						gpuObj.getMatrixObject().getMetaData(), computetime);
+					centry.setCacheStatus(LineageCacheStatus.GPUCACHED);
+					// Maintain order for eviction
+					LineageGPUCacheEviction.addEntry(centry);
+					break;
+				default:
+					throw new DMLRuntimeException("Execution should not reach here: "+centry._key);
+			}
 		}
 	}
 
@@ -674,8 +774,9 @@ public class LineageCache
 			if (!probe(instLI))
 				return;
 			LineageCacheEntry centry = _cache.get(instLI);
-			// Put in the cache only the first time
-			if (centry.getCacheStatus() != LineageCacheStatus.EMPTY)
+			// Remember the 1st hit and put the RDD in the cache the 2nd time
+			if (centry.getCacheStatus() != LineageCacheStatus.EMPTY            //first hit
+				&& centry.getCacheStatus() != LineageCacheStatus.PERSISTEDRDD) //second hit
 				return;
 			// Avoid reuse chkpoint, which is unnecessary
 			if (inst.getOpcode().equalsIgnoreCase("chkpoint")) {
@@ -700,9 +801,29 @@ public class LineageCache
 			// Get the RDD handle of the RDD
 			CacheableData<?> cd = ec.getCacheableData(((ComputationSPInstruction)inst).output.getName());
 			RDDObject rddObj = cd.getRDDHandle();
-			// Set the RDD object in the cache and set the status to TOPERSISTRDD
-			rddObj.setLineageCached();
-			centry.setRDDValue(rddObj, computetime);
+			// Save the metadata. Required for estimating cached space overhead.
+			rddObj.setDataCharacteristics(cd.getDataCharacteristics());
+			// Set the RDD object in the cache
+			switch(centry.getCacheStatus()) {
+				case EMPTY:  //first hit
+					// Do not save the child RDDS (incl. broadcast vars) on the first hit.
+					// Let them be garbage collected via rmvar. Save them on the second hit
+					// by disabling garbage collection on this and the child RDDs.
+					centry.setRDDValue(rddObj, computetime); //rddObj will be garbage collected
+					break;
+				case PERSISTEDRDD:  //second hit
+					// Replace the old RDD (GCed) with the new one
+					centry.setRDDValue(rddObj);
+					// Set the correct status to indicate the RDD is marked to be persisted
+					centry.setCacheStatus(LineageCacheStatus.PERSISTEDRDD);
+					// Call persist. Next collect will materialize this intermediate in Spark
+					persistRDD(inst, centry, ec);
+					// Mark lineage cached to prevent this and child RDDs from cleanup by rmvar
+					centry.getRDDObject().setLineageCached();
+					break;
+				default:
+					throw new DMLRuntimeException("Execution should not reach here: "+centry._key);
+			}
 		}
 	}
 
@@ -755,8 +876,7 @@ public class LineageCache
 			LineageItem li = new LineageItem(opcode, liInputs);
 			String boundVarName = outputs.get(i).getName();
 			LineageItem boundLI = ec.getLineage().get(boundVarName);
-			if (boundLI != null)
-				boundLI.resetVisitStatusNR();
+			if (boundLI != null) boundLI.resetVisitStatusNR();
 			if (boundLI == null || !LineageCache.probe(li) || !LineageCache.probe(boundLI)) {
 				AllOutputsCacheable = false;
 				//FIXME: if boundLI is for a MultiReturnBuiltin instruction 
@@ -949,9 +1069,15 @@ public class LineageCache
 	}
 	
 	private static LineageCacheEntry getIntern(LineageItem key) {
-		// This method is called only when entry is present either in cache or in local FS.
 		LineageCacheEntry e = _cache.get(key);
-		if (e != null && e.getCacheStatus() != LineageCacheStatus.SPILLED) {
+		if (e == null) {
+			if(DMLScript.STATISTICS && LineageCacheEviction._removelist.containsKey(key))
+				// The sought entry was in cache but removed later
+				LineageCacheStatistics.incrementDelHits();
+			return null;
+		}
+
+		if (e.getCacheStatus() != LineageCacheStatus.SPILLED) {
 			if (DMLScript.STATISTICS)
 				// Increment hit count.
 				LineageCacheStatistics.incrementMemHits();
@@ -972,6 +1098,8 @@ public class LineageCache
 			return;
 		// Move the value from the cache entry with key probeItem to
 		// the placeholder entry with key item.
+		// Entries with RDDs are cached twice. First hit is GCed,
+		// Second hit saves the child RDDs
 		if (LineageCache.probe(probeItem)) {
 			LineageCacheEntry oe = getIntern(probeItem);
 			LineageCacheEntry e = _cache.get(item);
@@ -996,8 +1124,10 @@ public class LineageCache
 				// Add to missed compute time
 				LineageCacheStatistics.incrementMissedComputeTime(e._computeTime);
 			
-			//maintain order for eviction
-			LineageCacheEviction.addEntry(e);
+			// Maintain order for eviction
+			if (!e.isRDDPersist() && !e.isGPUObject())
+				LineageCacheEviction.addEntry(e);
+			// TODO: Handling of func/SB cache entries for Spark and GPU
 		}
 		else
 			removePlaceholder(item);    //remove the placeholder
@@ -1033,39 +1163,62 @@ public class LineageCache
 			return true;
 	}
 
-	private static void persistRDD(Instruction inst, LineageCacheEntry centry, ExecutionContext ec) {
-		boolean opToPersist = LineageCacheConfig.isReusableRDDType(inst);
-		// Return if the operation is not in the list of instructions which benefit
-		// from persisting and the local only RDD caching is disabled
-		if (!opToPersist && !LineageCacheConfig.ENABLE_LOCAL_ONLY_RDD_CACHING)
-			return;
-
-		if (opToPersist && centry.getCacheStatus() == LineageCacheStatus.TOPERSISTRDD) {
-			CacheableData<?> cd = ec.getCacheableData(((ComputationSPInstruction)inst).output.getName());
-			// Estimate worst case dense size
-			long estimatedSize = MatrixBlock.estimateSizeInMemory(cd.getDataCharacteristics());
-			// Skip if the entry is bigger than the total storage.
-			if (estimatedSize > LineageSparkCacheEviction.getSparkStorageLimit())
-				return;
-
-			// Mark the rdd for lazy checkpointing
-			RDDObject rddObj = centry.getRDDObject();
-			JavaPairRDD<?,?> rdd = rddObj.getRDD();
-			rdd = rdd.persist(StorageLevel.MEMORY_AND_DISK());
-			rddObj.setRDD(rdd);
-			rddObj.setCheckpointRDD(true);
-
-			// Make space based on the estimated size
-			if(!LineageSparkCacheEviction.isBelowThreshold(estimatedSize))
-				LineageSparkCacheEviction.makeSpace(_cache, estimatedSize);
-			LineageSparkCacheEviction.updateSize(estimatedSize, true);
-			// Maintain order for eviction
-			LineageSparkCacheEviction.addEntry(centry, estimatedSize);
-
-			// Count number of RDDs marked for caching at the executors
-			if (DMLScript.STATISTICS)
-				LineageCacheStatistics.incrementRDDPersists();
+	private static boolean persistRDD(Instruction inst, LineageCacheEntry centry, ExecutionContext ec) {
+		// If already persisted, change the status and return true.
+		// Else, persist, change cache status and return false.
+		if (probeRDDDistributed(centry)) {
+			// Update status to indicate persisted in the executors
+			centry.setCacheStatus(LineageCacheStatus.PERSISTEDRDD);
+			return true;
 		}
+		CacheableData<?> cd = ec.getCacheableData(((ComputationSPInstruction)inst).output.getName());
+		// Estimate worst case dense size
+		long estimatedSize = MatrixBlock.estimateSizeInMemory(cd.getDataCharacteristics());
+		// Skip if the entry is bigger than the total storage.
+		if (estimatedSize > LineageSparkCacheEviction.getSparkStorageLimit())
+			return false;
+		// Mark for distributed caching and change status
+		persistRDDIntern(centry, estimatedSize);
+		centry.setCacheStatus(LineageCacheStatus.PERSISTEDRDD);
+		return false;
+	}
+
+	@SuppressWarnings("unused")
+	private static boolean persistRDD(LineageCacheEntry centry, long estimatedSize) {
+		// If already persisted, change the status and return true.
+		// Else, persist, change cache status and return false.
+		if (probeRDDDistributed(centry)) {
+			// Update status to indicate persisted in the executors
+			centry.setCacheStatus(LineageCacheStatus.PERSISTEDRDD);
+			return true;
+		}
+		// Mark for distributed caching and change status
+		persistRDDIntern(centry, estimatedSize);
+		centry.setCacheStatus(LineageCacheStatus.PERSISTEDRDD);
+		return false;
+	}
+
+	private static void persistRDDIntern(LineageCacheEntry centry, long estimatedSize) {
+		// Mark the rdd for lazy checkpointing
+		RDDObject rddObj = centry.getRDDObject();
+		JavaPairRDD<?,?> rdd = rddObj.getRDD();
+		rdd = rdd.persist(StorageLevel.MEMORY_AND_DISK());
+		//cut-off RDD lineage & broadcasts to prevent errors on
+		// task closure serialization with destroyed broadcasts
+		rdd.checkpoint();
+		rddObj.setRDD(rdd);
+		rddObj.setCheckpointRDD(true);
+		
+		// Make space based on the estimated size
+		if(!LineageSparkCacheEviction.isBelowThreshold(estimatedSize))
+			LineageSparkCacheEviction.makeSpace(_cache, estimatedSize);
+		LineageSparkCacheEviction.updateSize(estimatedSize, true);
+		// Maintain order for eviction
+		LineageSparkCacheEviction.addEntry(centry, estimatedSize);
+
+		// Count number of RDDs marked for caching at the executors
+		if (DMLScript.STATISTICS)
+			LineageCacheStatistics.incrementRDDPersists();
 	}
 
 	@Deprecated
@@ -1222,10 +1375,15 @@ public class LineageCache
 		//TODO: Replace with generic type
 
 		List<MutablePair<LineageItem, LineageCacheEntry>> liList = null;
-		LineageItem instLI = (cinst != null) ? cinst.getLineageItem(ec).getValue()
+		//FIXME: Replace getLineageItem with get/getOrCreate to avoid creating a new LI object
+		LineageItem instLI = (cinst != null) ? ec.getLineageItem(cinst.output)
+			: (cfinst != null) ? ec.getLineageItem(cfinst.output)
+			: (cspinst != null) ? ec.getLineageItem(cspinst.output)
+			: ec.getLineageItem(gpuinst._output);
+		/*LineageItem instLI = (cinst != null) ? cinst.getLineageItem(ec).getValue()
 			: (cfinst != null) ? cfinst.getLineageItem(ec).getValue()
 			: (cspinst != null) ? cspinst.getLineageItem(ec).getValue()
-			: gpuinst.getLineageItem(ec).getValue();
+			: gpuinst.getLineageItem(ec).getValue();*/
 		if (inst instanceof MultiReturnBuiltinCPInstruction) {
 			liList = new ArrayList<>();
 			MultiReturnBuiltinCPInstruction mrInst = (MultiReturnBuiltinCPInstruction)inst;

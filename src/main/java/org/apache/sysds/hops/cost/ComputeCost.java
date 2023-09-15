@@ -177,6 +177,7 @@ public class ComputeCost {
 				case BIASADD:
 				case BIASMULT:
 					costs = 2;
+					break;
 				default:
 					LOG.warn("Cost model not "
 						+ "implemented yet for: "+((DnnOp)currentHop).getOp());

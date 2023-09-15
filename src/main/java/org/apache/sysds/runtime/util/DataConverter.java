@@ -30,7 +30,7 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.StringTokenizer;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.math3.linear.Array2DRowRealMatrix;
 import org.apache.commons.math3.linear.BlockRealMatrix;
 import org.apache.commons.math3.linear.RealMatrix;
@@ -79,7 +79,6 @@ import org.apache.sysds.runtime.meta.DataCharacteristics;
  * This class provides methods to read and write matrix blocks from to HDFS using different data formats.
  * Those functionalities are used especially for CP read/write and exporting in-memory matrices to HDFS
  * (before executing MR jobs).
- *
  */
 public class DataConverter {
 	private static final String DELIM = " ";
@@ -112,20 +111,6 @@ public class DataConverter {
 		writer.writeTensorToHDFS(tensor, dir, blen);
 	}
 
-	public static MatrixBlock readMatrixFromHDFS(String dir, FileFormat fmt, long rlen, long clen, int blen, boolean localFS)
-		throws IOException
-	{
-		ReadProperties prop = new ReadProperties();
-
-		prop.path = dir;
-		prop.fmt = fmt;
-		prop.rlen = rlen;
-		prop.clen = clen;
-		prop.blen = blen;
-		prop.localFS = localFS;
-
-		return readMatrixFromHDFS(prop);
-	}
 
 	public static MatrixBlock readMatrixFromHDFS(String dir, FileFormat fmt, long rlen, long clen, int blen)
 		throws IOException
@@ -152,23 +137,6 @@ public class DataConverter {
 		prop.clen = clen;
 		prop.blen = blen;
 		prop.expectedNnz = expectedNnz;
-
-		return readMatrixFromHDFS(prop);
-	}
-
-	public static MatrixBlock readMatrixFromHDFS(String dir, FileFormat fmt, long rlen, long clen,
-		int blen, long expectedNnz, boolean localFS)
-		throws IOException
-	{
-		ReadProperties prop = new ReadProperties();
-
-		prop.path = dir;
-		prop.fmt = fmt;
-		prop.rlen = rlen;
-		prop.clen = clen;
-		prop.blen = blen;
-		prop.expectedNnz = expectedNnz;
-		prop.localFS = localFS;
 
 		return readMatrixFromHDFS(prop);
 	}
@@ -1213,14 +1181,14 @@ public class DataConverter {
 			if( x instanceof MatrixObject) {
 				sb.append("\nMatrix:\n");
 				MatrixObject dat = (MatrixObject) x;
-				MatrixBlock matrix = (MatrixBlock) dat.acquireRead();
+				MatrixBlock matrix = dat.acquireRead();
 				sb.append(DataConverter.toString(matrix, sparse, separator, lineSeparator, rows, cols, decimal));
 				dat.release();
 			}
 			else if( x instanceof TensorObject ) {
 				sb.append("\n");
 				TensorObject dat = (TensorObject) x;
-				TensorBlock tensor = (TensorBlock) dat.acquireRead();
+				TensorBlock tensor = dat.acquireRead();
 				sb.append(DataConverter.toString(tensor, sparse, separator,
 					lineSeparator, "[", "]", rows, cols, decimal));
 				dat.release();
@@ -1228,7 +1196,7 @@ public class DataConverter {
 			else if( x instanceof FrameObject ) {
 				sb.append("\n");
 				FrameObject dat = (FrameObject) x;
-				FrameBlock frame = (FrameBlock) dat.acquireRead();
+				FrameBlock frame = dat.acquireRead();
 				sb.append(DataConverter.toString(frame, sparse, separator, lineSeparator, rows, cols, decimal));
 				dat.release();
 			}

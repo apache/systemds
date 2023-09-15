@@ -20,7 +20,6 @@
 #include <iostream>
 #include <cmath>
 #include <cstring>
-#include <stdexcept>
 #include "common.h"
 
 using namespace std;
@@ -95,10 +94,6 @@ void img_transform(const double* img_in, int orig_w, int orig_h, int out_w, int 
 }
 
 void imageRotate(double* img_in, int rows, int cols, double radians, double fill_value, double* img_out) {
-    
-    if (rows != cols) {
-        throw std::invalid_argument("Input image must be square");
-    }
 
     // Translation matrix for moving the origin to the center of the image
     double t1_data[] = {

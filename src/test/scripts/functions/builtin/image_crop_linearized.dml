@@ -32,7 +32,5 @@ new_h = ifdef($new_h, 512)
 
 input = matrix(input, rows=rows, cols=cols)
 
-print("DML New w/h=" + new_w + "/" + new_h)
-
 crop2 = img_crop_linearized(input, new_w, new_h, x_offset, y_offset, s_cols, s_rows)
 write(crop2, $out_file);

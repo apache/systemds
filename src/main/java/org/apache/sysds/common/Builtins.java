@@ -161,6 +161,7 @@ public enum Builtins {
 	IMG_TRANSFORM_LINEARIZED("img_transform_linearized", true),
 	IMG_TRANSLATE("img_translate", true),
 	IMG_ROTATE("img_rotate", true),
+	IMG_ROTATE_LINEARIZED("img_rotate_linearized", true),
 	IMG_SHEAR("img_shear", true),
 	IMG_CUTOUT("img_cutout", true),
 	IMG_SAMPLE_PAIRING("img_sample_pairing", true),

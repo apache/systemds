@@ -165,6 +165,7 @@ public enum Builtins {
 	IMG_SAMPLE_PAIRING("img_sample_pairing", true),
 	IMG_INVERT("img_invert", true),
 	IMG_POSTERIZE("img_posterize", true),
+	IMG_POSTERIZE_LINEARIZED("img_posterize_linearized", true),
 	IMPURITY_MEASURES("impurityMeasures", true),
 	IMPUTE_BY_KNN("imputeByKNN", true),
 	IMPUTE_BY_MEAN("imputeByMean", true),

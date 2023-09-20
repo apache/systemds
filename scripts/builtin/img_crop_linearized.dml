@@ -26,8 +26,8 @@
 # img_in     Linearized input images as 2D matrix
 # w          The width of the subregion required
 # h          The height of the subregion required
-# x_offset   The horizontal coordinate in the image to begin the crop operation
-# y_offset   The vertical coordinate in the image to begin the crop operation
+# x_offset   The horizontal offset for the center of the crop region
+# y_offset   The vertical offset for the center of the crop region
 # s_cols     Width of a single image
 # s_rows     Height of a single image
 # ----------------------------------------------------------------------------------------

@@ -26,8 +26,8 @@
 # img_in     Linearized input images as 2D matrix
 # w          The width of the subregion required
 # h          The height of the subregion required
-# x_offset   The horizontal offset for the center of the crop region
-# y_offset   The vertical offset for the center of the crop region
+# x_offset   The horizontal coordinate in the image to begin the crop operation
+# y_offset   The vertical coordinate in the image to begin the crop operation
 # s_cols     Width of a single image
 # s_rows     Height of a single image
 # ----------------------------------------------------------------------------------------
@@ -55,18 +55,13 @@ m_img_crop_linearized = function(Matrix[Double] img_in, Integer w, Integer h, In
     img_out = img_in
   }
   else {
+    mask = matrix(0, rows=orig_h, cols=orig_w)
+    temp_mask = matrix(1, rows=h , cols=w )
+    mask[start_h:end_h, start_w:end_w] = temp_mask
 
-    img_out = matrix(0, rows=nrows , cols= w*h )
+    linear_mask = matrix(mask, rows=1, cols=orig_w * orig_h)
 
-    parfor (i in start_h: end_h, check=0){
-      start_idx = (i-1) * s_cols + start_w
-      end_idx = (i-1) * s_cols + end_w
-
-      start_idw = (i-start_h) * w +1
-      end_idw = (i-start_h) * w + w 
-
-      img_out[, start_idw:end_idw] = matrix(img_in[, start_idx:end_idx], rows=nrows, cols=w)
-    }
+    img_out = matrix(removeEmpty(target=(matrix(img_in+1, nrow(img_in), ncol(img_in))), margin="cols", select=linear_mask) - 1, nrows, w * h)
   }
 }
 

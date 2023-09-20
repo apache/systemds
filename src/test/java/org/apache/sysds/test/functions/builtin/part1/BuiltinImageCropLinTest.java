@@ -68,11 +68,12 @@ public class BuiltinImageCropLinTest extends AutomatedTestBase {
                 { 10, 12, 20, 2, 3, 0.5 },
                 { 12, 12, 40, 5, 5, 0.4 },
                 { 32, 32, 200, 13, 10, 0.2 },
-                { 31, 33, 200, 7, 10, 0.2 }, 
+                { 31, 33, 200, 7, 10, 0.2 },
                 { 64, 64, 50, 2, 0, 0.8 },
                 { 125, 123, 32, 7, 37, 0.3 },
                 { 128, 128, 83, 23, 14, 0.123 },
-                { 256, 50, 2, 0, 0, 0.8 } 
+                { 256, 50, 2, 0, 0, 0.8 },
+                { 256, 255, 2, 0, 0, 0.8 }
         });
     }
 
@@ -118,8 +119,6 @@ public class BuiltinImageCropLinTest extends AutomatedTestBase {
                     "in_file=" + input("A"), "out_file=" + output("B"),
                     "x_offset=" + x_offset, "y_offset=" + y_offset, "cols=" + cols, "rows=" + rows,
                     "s_cols=" + s_cols, "s_rows=" + s_rows, "new_w=" + new_w, "new_h=" + new_h };
-            // print the command
-            System.out.println("COMMAND:" + fullDMLScriptName + " " + String.join(" ", programArgs));
 
             // generate actual dataset
             double[][] A = getRandomMatrix(rows, cols, 0, 255, sparsity, 7);
@@ -129,14 +128,14 @@ public class BuiltinImageCropLinTest extends AutomatedTestBase {
             double[][] ref = new double[rows][new_h * new_w];
             int start_h = (int) Math.ceil((double) (s_rows - new_h) / 2) + y_offset;
             int start_w = (int) Math.ceil((double) (s_cols - new_w) / 2) + x_offset;
-            if(s_cols == 64){
+            if (s_cols == 64) {
                 System.out.println("start_h: " + start_h + ", start_w: " + start_w);
             }
 
             for (int i = 0; i < rows; i++) {
-                if(start_w == 0 && start_h == 0){
-                    ref[i]=A[i];
-                }else{
+                if (start_w == 0 && start_h == 0) {
+                    ref[i] = A[i];
+                } else {
                     for (int j = 0; j < new_h * new_w; j++) {
                         int ja = ((j / new_w) + start_h - 1) * s_cols + (j % new_w) + start_w - 1;
                         ref[i][j] = A[i][ja];

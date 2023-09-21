@@ -85,6 +85,12 @@ public class BuiltinImageTranslateLinearizedTest extends AutomatedTestBase {
     public void testImageTranslateLinearized() {
         runImageTranslateLinearizedTest(false, ExecType.CP);
     }
+
+    @Test
+    public void testImageTranslateLinearizedSP() {
+        runImageTranslateLinearizedTest(false, ExecType.SPARK);
+    }
+
    
 
     private void runImageTranslateLinearizedTest(boolean sparse, ExecType instType) {

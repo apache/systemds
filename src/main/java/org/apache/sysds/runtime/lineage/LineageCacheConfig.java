@@ -28,6 +28,7 @@ import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.instructions.Instruction;
 import org.apache.sysds.runtime.instructions.cp.BinaryMatrixMatrixCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.BinaryScalarScalarCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.ComputationCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.Data;
 import org.apache.sysds.runtime.instructions.cp.DataGenCPInstruction;
@@ -53,24 +54,24 @@ public class LineageCacheConfig
 		"uamean", "max", "min", "ifelse", "-", "sqrt", "<", ">", "uak+", "<=",
 		"^", "uamax", "uark+", "uacmean", "eigen","ctable", "ctableexpand", "replace",
 		"^2", "*2", "uack+", "tak+*", "uacsqk+", "uark+", "n+", "uarimax", "qsort",
-		"qpick", "transformapply", "uarmax", "n+", "-*", "castdtm", "lowertri",
+		"qpick", "transformapply", "uarmax", "n+", "-*", "castdtm", "lowertri", "1-*",
 		"prefetch", "mapmm", "contains", "mmchain", "mapmmchain", "+*", "==", "rmempty"
 		//TODO: Reuse everything.
 	};
 
 	// Relatively expensive instructions. Most include shuffles.
 	private static final String[] PERSIST_OPCODES1 = new String[] {
-		"cpmm", "rmm", "pmm", "rev", "rshape", "rsort", "-", "*", "+",
+		"cpmm", "rmm", "pmm", "zipmm", "rev", "rshape", "rsort", "-", "*", "+",
 		"/", "%%", "%/%", "1-*", "^", "^2", "*2", "==", "!=", "<", ">",
 		"<=", ">=", "&&", "||", "xor", "max", "min", "rmempty", "rappend",
 		"gappend", "galignedappend", "rbind", "cbind", "nmin", "nmax",
 		"n+", "ctable", "ucumack+", "ucumac*", "ucumacmin", "ucumacmax",
-		"qsort", "qpick", "replace"
+		"qsort", "qpick"
 	};
 
 	// Relatively inexpensive instructions.
 	private static final String[] PERSIST_OPCODES2 = new String[] {
-		"mapmm", "isna", "leftIndex", "rightIndex"
+		"mapmm", "isna", "leftIndex"
 	};
 
 	private static String[] REUSE_OPCODES  = new String[] {};
@@ -105,6 +106,7 @@ public class LineageCacheConfig
 	private static boolean _compilerAssistedRW = false;
 	private static boolean _onlyEstimate = false;
 	private static boolean _reuseLineageTraces = true;
+	private static boolean DELAYED_CACHING = false;
 
 	//-------------DISK SPILLING RELATED CONFIGURATIONS--------------//
 
@@ -148,6 +150,7 @@ public class LineageCacheConfig
 	protected enum LineageCacheStatus {
 		EMPTY,     //Placeholder with no data. Cannot be evicted.
 		NOTCACHED, //Placeholder removed from the cache
+		TOCACHE,   //To be cached in memory if reoccur
 		CACHED,    //General cached data. Can be evicted.
 		SPILLED,   //Data is in disk. Empty value. Cannot be evicted.
 		RELOADED,  //Reloaded from disk. Can be evicted.
@@ -240,7 +243,8 @@ public class LineageCacheConfig
 			|| inst instanceof ComputationFEDInstruction
 			|| inst instanceof GPUInstruction
 			|| inst instanceof ComputationSPInstruction)
-			&& !(inst instanceof ListIndexingCPInstruction);
+			&& !(inst instanceof ListIndexingCPInstruction)
+			&& !(inst instanceof BinaryScalarScalarCPInstruction);
 		boolean rightCPOp = (ArrayUtils.contains(REUSE_OPCODES, inst.getOpcode())
 			|| (inst.getOpcode().equals("append") && isVectorAppend(inst, ec))
 			|| (inst.getOpcode().startsWith("spoof"))
@@ -376,6 +380,10 @@ public class LineageCacheConfig
 
 	public static boolean isLineageTraceReuse() {
 		return _reuseLineageTraces;
+	}
+
+	public static boolean isDelayedCaching() {
+		return DELAYED_CACHING;
 	}
 
 	public static void setCachePolicy(LineageCachePolicy policy) {

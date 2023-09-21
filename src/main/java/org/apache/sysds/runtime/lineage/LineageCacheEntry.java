@@ -22,6 +22,7 @@ package org.apache.sysds.runtime.lineage;
 import java.util.Map;
 
 import jcuda.Pointer;
+import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
@@ -208,6 +209,8 @@ public class LineageCacheEntry {
 		_status = isNullVal() ? LineageCacheStatus.EMPTY : LineageCacheStatus.CACHED;
 		//resume all threads waiting for val
 		notifyAll();
+		if (DMLScript.STATISTICS && val != null)
+			LineageCacheStatistics.incrementMemWrites();
 	}
 	
 	public synchronized void setValue(MatrixBlock val) {
@@ -221,6 +224,8 @@ public class LineageCacheEntry {
 		_status = isNullVal() ? LineageCacheStatus.EMPTY : LineageCacheStatus.CACHED;
 		//resume all threads waiting for val
 		notifyAll();
+		if (DMLScript.STATISTICS && val != null)
+			LineageCacheStatistics.incrementMemWrites();
 	}
 	
 	public synchronized void setGPUValue(Pointer ptr, long size, MetaData md, long computetime) {
@@ -229,6 +234,8 @@ public class LineageCacheEntry {
 		_status = isNullVal() ? LineageCacheStatus.EMPTY : LineageCacheStatus.GPUCACHED;
 		//resume all threads waiting for val
 		notifyAll();
+		if (DMLScript.STATISTICS && ptr != null)
+			LineageCacheStatistics.incrementMemWrites();
 	}
 
 	public synchronized void setRDDValue(RDDObject rdd, long computetime) {
@@ -238,6 +245,8 @@ public class LineageCacheEntry {
 		_status = isNullVal() ? LineageCacheStatus.EMPTY : LineageCacheStatus.TOPERSISTRDD;
 		//resume all threads waiting for val
 		notifyAll();
+		if (DMLScript.STATISTICS && rdd != null)
+			LineageCacheStatistics.incrementMemWrites();
 	}
 
 	public synchronized void setRDDValue(RDDObject rdd) {
@@ -245,6 +254,8 @@ public class LineageCacheEntry {
 		_status = isNullVal() ? LineageCacheStatus.EMPTY : LineageCacheStatus.TOPERSISTRDD;
 		//resume all threads waiting for val
 		notifyAll();
+		if (DMLScript.STATISTICS && rdd != null)
+			LineageCacheStatistics.incrementMemWrites();
 	}
 
 	public synchronized void setValue(byte[] serialBytes, long computetime) {
@@ -253,6 +264,8 @@ public class LineageCacheEntry {
 		_status = isNullVal() ? LineageCacheStatus.EMPTY : LineageCacheStatus.CACHED;
 		// resume all threads waiting for val
 		notifyAll();
+		if (DMLScript.STATISTICS && serialBytes != null)
+			LineageCacheStatistics.incrementMemWrites();
 	}
 
 	public synchronized void copyValueFrom(LineageCacheEntry src, long computetime) {

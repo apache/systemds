@@ -72,7 +72,7 @@ public class LineageReuseSparkTest extends AutomatedTestBase {
 
 	@Test
 	public void testL2svm() {
-		runTest(TEST_NAME+"3", ExecMode.HYBRID, ReuseCacheType.REUSE_FULL, 3);
+		runTest(TEST_NAME+"3", ExecMode.SPARK, ReuseCacheType.REUSE_FULL, 3);
 	}
 
 	@Test
@@ -91,12 +91,10 @@ public class LineageReuseSparkTest extends AutomatedTestBase {
 	//public void testHyperband() {
 	//	runTest(TEST_NAME+"6", ExecMode.HYBRID, ReuseCacheType.REUSE_FULL, 6);
 	//}
-	
 	@Test
 	public void testBroadcastBug() {
 		runTest(TEST_NAME+"7", ExecMode.HYBRID, ReuseCacheType.REUSE_FULL, 7);
 	}
-	
 	@Test
 	public void testTopKClean() {
 		// Multiple cleaning pipelines with real dataset (Nashville accident)

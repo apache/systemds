@@ -50,24 +50,6 @@ while (lamda < lim)
   i = i + 1;
 }
 
-/*[A, b] = SimlinRegDS(X, y);
-A_diag = A + diag(matrix(lamda, rows=N, cols=1));
-beta = solve(A_diag, b);
-R[,1] = beta;
-lamda = lamda + stp;
-
-# Reuse function call
-[A, b] = SimlinRegDS(X, y);
-A_diag = A + diag(matrix(lamda, rows=N, cols=1));
-beta = solve(A_diag, b);
-R[,2] = beta;
-lamda = lamda + stp;
-
-[A, b] = SimlinRegDS(X, y);
-A_diag = A + diag(matrix(lamda, rows=N, cols=1));
-beta = solve(A_diag, b);
-R[,3] = beta;*/
-
 R = sum(R);
 write(R, $1, format="text");
 

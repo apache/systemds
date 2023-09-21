@@ -364,6 +364,6 @@ public class LineageCacheStatistics {
 
 	public static boolean ifSparkStats() {
 		return (_numHitsSparkActions.longValue() + _numHitsRdd.longValue()
-		+ _numHitsRddPersist.longValue() + _numRddUnpersist.longValue()) != 0;
+		+ _numHitsRddPersist.longValue() + _numRddPersist.longValue()) != 0;
 	}
 }

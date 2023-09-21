@@ -140,15 +140,21 @@ public class LineageCache
 						MatrixBlock mb = e.getMBValue(); //wait if another thread is executing the same inst.
 						if (mb == null && e.getCacheStatus() == LineageCacheStatus.NOTCACHED)
 							return false;  //the executing thread removed this entry from cache
-						else
-							ec.setMatrixOutput(outName, mb);
+						if (e.getCacheStatus() == LineageCacheStatus.TOCACHE) { //not cached yet
+							ec.replaceLineageItem(outName, e._key); //reuse the lineage trace
+							return false;
+						}
+						ec.setMatrixOutput(outName, mb);
 					}
 					else if (e.isScalarValue()) {
 						ScalarObject so = e.getSOValue(); //wait if another thread is executing the same inst.
 						if (so == null && e.getCacheStatus() == LineageCacheStatus.NOTCACHED)
 							return false;  //the executing thread removed this entry from cache
-						else
-							ec.setScalarOutput(outName, so);
+						if (e.getCacheStatus() == LineageCacheStatus.TOCACHE) { //not cached yet
+							ec.replaceLineageItem(outName, e._key); //reuse the lineage trace
+							return false;
+						}
+						ec.setScalarOutput(outName, so);
 					}
 					else if (e.isRDDPersist()) {
 						RDDObject rdd = e.getRDDObject();
@@ -254,6 +260,8 @@ public class LineageCache
 					MatrixBlock mb = e.getMBValue();
 					if (mb == null && e.getCacheStatus() == LineageCacheStatus.NOTCACHED)
 						return false;  //the executing thread removed this entry from cache
+					if (e.getCacheStatus() == LineageCacheStatus.TOCACHE)  //not cached yet
+						return false;
 					MetaDataFormat md = new MetaDataFormat(
 						e.getMBValue().getDataCharacteristics(),FileFormat.BINARY);
 					md.getDataCharacteristics().setBlocksize(ConfigurationManager.getBlocksize());
@@ -286,6 +294,8 @@ public class LineageCache
 					boundValue = e.getSOValue();
 					if (boundValue == null && e.getCacheStatus() == LineageCacheStatus.NOTCACHED)
 						return false;  //the executing thread removed this entry from cache
+					if (e.getCacheStatus() == LineageCacheStatus.TOCACHE)  //not cached yet
+						return false;
 				}
 				//TODO: support reusing RDD output of functions
 
@@ -514,12 +524,7 @@ public class LineageCache
 
 	public static boolean probe(LineageItem key) {
 		//TODO problematic as after probe the matrix might be kicked out of cache
-		boolean p = _cache.containsKey(key);  // in cache or in disk
-		if (!p && DMLScript.STATISTICS && LineageCacheEviction._removelist.containsKey(key))
-			// The sought entry was in cache but removed later 
-			LineageCacheStatistics.incrementDelHits();
-
-		return p;
+		return _cache.containsKey(key);
 	}
 
 	private static boolean probeRDDDistributed(LineageItem key) {
@@ -715,6 +720,16 @@ public class LineageCache
 					continue; 
 				}
 
+				//delay caching of large matrix blocks if the feature is enabled
+				if (centry.getCacheStatus() == LineageCacheStatus.EMPTY && LineageCacheConfig.isDelayedCaching()) {
+					if (data instanceof MatrixObject  //no delayed caching for scalars
+						&& !LineageCacheEviction._removelist.containsKey(centry._key) //evicted before
+						&& size > 0.05 * LineageCacheEviction.getAvailableSpace()) { //size adaptive
+						centry.setCacheStatus(LineageCacheStatus.TOCACHE);
+						continue;
+					}
+				}
+
 				//make space for the data
 				if (!LineageCacheEviction.isBelowThreshold(size))
 					LineageCacheEviction.makeSpace(_cache, size);
@@ -725,6 +740,7 @@ public class LineageCache
 					centry.setValue(mb, computetime);
 				else if (data instanceof ScalarObject)
 					centry.setValue((ScalarObject)data, computetime);
+				centry.setCacheStatus(LineageCacheStatus.CACHED);
 
 				if (DMLScript.STATISTICS && LineageCacheEviction._removelist.containsKey(centry._key)) {
 					// Add to missed compute time
@@ -785,8 +801,7 @@ public class LineageCache
 			}
 			boolean opToPersist = LineageCacheConfig.isReusableRDDType(inst);
 			// Return if the intermediate is not to be persisted in the executors
-			// and the local only RDD caching is disabled
-			if (!opToPersist && !LineageCacheConfig.ENABLE_LOCAL_ONLY_RDD_CACHING) {
+			if (!opToPersist) {
 				removePlaceholder(instLI);
 				return;
 			}
@@ -1064,8 +1079,6 @@ public class LineageCache
 		LineageCacheEviction.addEntry(newItem);
 		
 		_cache.put(key, newItem);
-		if (DMLScript.STATISTICS)
-			LineageCacheStatistics.incrementMemWrites();
 	}
 	
 	private static LineageCacheEntry getIntern(LineageItem key) {
@@ -1105,8 +1118,8 @@ public class LineageCache
 			LineageCacheEntry e = _cache.get(item);
 			boolean exists = !e.isNullVal();
 			e.copyValueFrom(oe, computetime);
-			if (e.isNullVal())
-				throw new DMLRuntimeException("Lineage Cache: Original item is empty: "+oe._key);
+			//if (e.isNullVal())
+			//	throw new DMLRuntimeException("Lineage Cache: Original item is empty: "+oe._key);
 
 			e._origItem = probeItem; 
 			// Add itself as original item to navigate the list.
@@ -1205,7 +1218,8 @@ public class LineageCache
 		rdd = rdd.persist(StorageLevel.MEMORY_AND_DISK());
 		//cut-off RDD lineage & broadcasts to prevent errors on
 		// task closure serialization with destroyed broadcasts
-		rdd.checkpoint();
+		//rdd.checkpoint();
+		rdd.rdd().localCheckpoint();
 		rddObj.setRDD(rdd);
 		rddObj.setCheckpointRDD(true);
 		

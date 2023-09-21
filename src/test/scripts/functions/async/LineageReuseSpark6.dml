@@ -34,13 +34,13 @@ return (Double accuracy) {
 M = 10000;
 N = 200;
 sp = 1.0; #1.0
-no_bracket = 2; #5
+no_bracket = 1; #5
 
 X = rand(rows=M, cols=N, sparsity=sp, seed=42);
 y = rand(rows=M, cols=1, min=0, max=2, seed=42);
 y = ceil(y);
 
-no_lamda = 25; #starting combintaions = 25 * 4 = 100 HPs
+no_lamda = 3; #starting combintaions = 25 * 4 = 100 HPs
 stp = (0.1 - 0.0001)/no_lamda;
 HPlamdas = seq(0.0001, 0.1, stp);
 maxIter = 10; #starting interation count = 100 * 10 = 1k
@@ -55,10 +55,10 @@ for (r in 1:no_bracket) {
   {
     #print("lamda = "+as.scalar(HPlamdas[i,1])+", maxIterations = "+maxIter);
     #Run L2svm with intercept true
-    beta = l2svm(X=X, Y=y, intercept=TRUE, epsilon=1e-12,
+    /*beta = l2svm(X=X, Y=y, intercept=TRUE, epsilon=1e-12,
       reg = as.scalar(HPlamdas[i,1]), maxIterations=maxIter, verbose=FALSE);
     svmModels[i,1] = l2norm(X, y, beta); #1st column
-    svmModels[i,2:nrow(beta)+1] = t(beta);
+    svmModels[i,2:nrow(beta)+1] = t(beta);*/
 
     #Run L2svm with intercept false
     beta = l2svm(X=X, Y=y, intercept=FALSE, epsilon=1e-12,
@@ -67,7 +67,7 @@ for (r in 1:no_bracket) {
     svmModels[i,2:nrow(beta)+1] = t(beta);
 
     #Run multilogreg with intercept true
-    beta = multiLogReg(X=X, Y=y, icpt=2, tol=1e-6, reg=as.scalar(HPlamdas[i,1]),
+    /*beta = multiLogReg(X=X, Y=y, icpt=2, tol=1e-6, reg=as.scalar(HPlamdas[i,1]),
       maxi=maxIter, maxii=20, verbose=FALSE);
     [prob_mlr, Y_mlr, acc] = multiLogRegPredict(X=X, B=beta, Y=y, verbose=FALSE);
     mlrModels[i,1] = acc; #1st column
@@ -78,7 +78,7 @@ for (r in 1:no_bracket) {
       maxi=maxIter, maxii=20, verbose=FALSE);
     [prob_mlr, Y_mlr, acc] = multiLogRegPredict(X=X, B=beta, Y=y, verbose=FALSE);
     mlrModels[i,1] = acc; #1st column
-    mlrModels[i,2:nrow(beta)+1] = t(beta);
+    mlrModels[i,2:nrow(beta)+1] = t(beta);*/
 
     i = i + 1;
   }

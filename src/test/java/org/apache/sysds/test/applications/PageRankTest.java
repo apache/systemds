@@ -49,7 +49,7 @@ public class PageRankTest extends AutomatedTestBase {
 
 	@Parameters
 	public static Collection<Object[]> data() {
-		Object[][] data = new Object[][] { { 50, 50 }, { 1500, 1500 }, { 7500, 7500 } };
+		Object[][] data = new Object[][] { { 50, 50 }, { 1500, 1500 }, { 7500, 7500 }, {10000,10000} };
 		return Arrays.asList(data);
 	}
 
@@ -83,7 +83,7 @@ public class PageRankTest extends AutomatedTestBase {
 		
 		fullDMLScriptName = getScript();
 
-		double[][] g = getRandomMatrix(rows, cols, 1, 1, 0.000374962, -1);
+		double[][] g = getRandomMatrix(rows, cols, 1, 1, 0.0000042159, -1);
 		double[][] p = getRandomMatrix(rows, 1, 1, 1, 1, -1);
 		double[][] e = getRandomMatrix(rows, 1, 1, 1, 1, -1);
 		double[][] u = getRandomMatrix(1, cols, 1, 1, 1, -1);

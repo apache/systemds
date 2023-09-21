@@ -198,6 +198,10 @@ public class LineageCacheEviction
 	public static long getCacheLimit() {
 		return CACHE_LIMIT;
 	}
+
+	public static long getAvailableSpace() {
+		return CACHE_LIMIT - _cachesize;
+	}
 	
 	protected static void updateSize(long space, boolean addspace) {
 		if (addspace)

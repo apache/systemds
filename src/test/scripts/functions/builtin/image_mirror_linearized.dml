@@ -19,43 +19,25 @@
 #
 #-------------------------------------------------------------
 
-# Beginning of the image_mirror_batched code
 input_batched = read($in_file);
 num_images = nrow(input_batched);
 m_batched = ncol(input_batched);
-
 img_rows = $img_rows;
 img_cols = $img_cols;
-
 img_out_flattened_x = matrix(0, rows=num_images, cols=m_batched);
 img_out_flattened_y = matrix(0, rows=num_images, cols=m_batched);
 input_matrix = matrix(input_batched, rows=num_images, cols=m_batched);
-
 for(i in 1:num_images) {
     image_i = matrix(input_matrix[i,], rows=img_rows, cols=img_cols);
-    
     img_out_x = img_mirror(image_i, TRUE);
     img_out_y = img_mirror(image_i, FALSE);
-    
     img_out_flattened_x[i,] = matrix(img_out_x, rows=1, cols=m_batched);
     img_out_flattened_y[i,] = matrix(img_out_y, rows=1, cols=m_batched);
 }
-
 write(img_out_flattened_x, $x_out_reshape_file);
 write(img_out_flattened_y, $y_out_reshape_file);
-
-# Beginning of the image_mirror_linearized code
-input_linearized = read($in_file);
-n_linearized = nrow(input_linearized);
-m_linearized = ncol(input_linearized);
-
-img_rows_linearized = $img_rows;
-img_cols_linearized = $img_cols;
-
-image_i_linearized = matrix(input_linearized, rows=n_linearized, cols=m_linearized);
-
-img_out_x_linearized = img_mirror_linearized(image_i_linearized, TRUE, img_rows_linearized, img_cols_linearized);
-img_out_y_linearized = img_mirror_linearized(image_i_linearized, FALSE, img_rows_linearized, img_cols_linearized);
-
+imgs = matrix(input_batched, rows=num_images, cols=m_batched);
+img_out_x_linearized = img_mirror_linearized(imgs, TRUE, img_rows, img_cols);
+img_out_y_linearized = img_mirror_linearized(imgs, FALSE, img_rows, img_cols);
 write(img_out_x_linearized, $x_out_file);
 write(img_out_y_linearized, $y_out_file);

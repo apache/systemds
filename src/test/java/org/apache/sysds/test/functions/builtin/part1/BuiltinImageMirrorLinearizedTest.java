@@ -57,13 +57,10 @@ public class BuiltinImageMirrorLinearizedTest extends AutomatedTestBase {
             {12, 12, 4},
             {13, 11, 5},
             {64, 64, 32},
-           {256, 256, 5},
+            {256, 256, 5},
             {256, 253, 5},
             {1024, 1024, 5},
             {1024, 1048, 5}
-            
-
-           
         });
     }
 
@@ -81,6 +78,11 @@ public class BuiltinImageMirrorLinearizedTest extends AutomatedTestBase {
      @Test
     public void testImageMirrorLinearizedSparse() {
         runImageMirrorLinearizedTest(true, ExecType.CP);
+    }
+
+    @Test
+    public void testImageMirrorLinearizedSP() {
+        runImageMirrorLinearizedTest(false, ExecType.SPARK);
     }
 
     private void runImageMirrorLinearizedTest(boolean sparse, ExecType instType) {

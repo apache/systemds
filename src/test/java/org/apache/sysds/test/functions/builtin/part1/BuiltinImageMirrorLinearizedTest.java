@@ -77,6 +77,11 @@ public class BuiltinImageMirrorLinearizedTest extends AutomatedTestBase {
     public void testImageMirrorLinearized() {
         runImageMirrorLinearizedTest(false, ExecType.CP);
     }
+    
+     @Test
+    public void testImageMirrorLinearizedSparse() {
+        runImageMirrorLinearizedTest(true, ExecType.CP);
+    }
 
     private void runImageMirrorLinearizedTest(boolean sparse, ExecType instType) {
         ExecMode platformOld = setExecMode(instType);

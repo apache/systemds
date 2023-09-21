@@ -43,7 +43,7 @@ Integer original_rows, Integer original_cols) return (matrix[double] R) {
   cols = original_cols;
 
   if (horizontal_axis) {
-    for (i in seq(1, (rows %/% 2) * cols, cols)) {
+    parfor (i in seq(1, (rows %/% 2) * cols, cols),check=0) {
       start = i;
       end = i + cols - 1;
       mirrorStart = (n - end) + 1;

@@ -66,8 +66,6 @@ public class BuiltinImagePosterizeLinTest extends AutomatedTestBase {
 		runImagePosterizeLinTest(false, ExecType.SPARK);
 	}
 
-	@Test
-
 	private void runImagePosterizeLinTest(boolean sparse, ExecType instType) {
 		ExecMode platformOld = setExecMode(instType);
 		disableOutAndExpectedDeletion();

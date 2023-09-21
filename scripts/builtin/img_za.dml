@@ -1,0 +1,14 @@
+
+#M_linearized = rand(rows=10, cols=512*512, min=0, max=1, sparsity=0.2)
+
+#A_linearized = m_img_translate_linearized(M_linearized, 30, 0, 512, 512, 11, 512, 512)
+
+#write(A_linearized, "output.txt", format='csv')
+
+
+
+M_linearized = rand(rows=10, cols=512*512, min=0, max=1, sparsity=0.2)
+
+A_linearized = m_img_translate_linearized(M_linearized, 30, 0, 512, 512, 11, 512, 512)
+
+write(A_linearized, "output.txt", format='csv')

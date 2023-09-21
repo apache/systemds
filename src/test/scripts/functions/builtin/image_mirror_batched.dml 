@@ -1,0 +1,24 @@
+input = read($in_file);
+num_images = nrow(input); 
+m = ncol(input); 
+
+
+img_rows = $img_rows;
+img_cols = $img_cols;
+
+img_out_flattened_x = matrix(0, rows=num_images, cols=m);
+img_out_flattened_y = matrix(0, rows=num_images, cols=m);
+input_matrix = matrix(input, rows=n, cols=m);
+
+for(i in 1:num_images) {
+    image_i = matrix(input_matrix[i,], rows=img_rows, cols=img_cols);
+    
+    img_out_x = img_mirror(image_i, TRUE);
+    img_out_y = img_mirror(image_i, FALSE);
+    
+    img_out_flattened_x[i,] = matrix(img_out_x, rows=1, cols=m);
+    img_out_flattened_y[i,] = matrix(img_out_y, rows=1, cols=m);
+}
+
+write(img_out_flattened_x, $x_out_reshape_file);
+write(img_out_flattened_y, $y_out_reshape_file);

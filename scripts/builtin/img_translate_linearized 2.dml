@@ -24,41 +24,50 @@
 # It translates the image and Optionally resizes the image (without scaling).
 # INPUT:
 # ----------------------------------------------------------------------------------------------
-# img_in                Input matrix/image (every row represents a linearized matrix/image)
+# img_in_linearized     Input matrix/image (every row represents a linearized matrix/image)
 # offset_x              The distance to move the image in x direction
 # offset_y              The distance to move the image in y direction
 # out_w                 Width of the output image
 # out_h                 Height of the output image
-# fill_value            The background of the image
-# o_w                   Width of the original 2D images
-# o_h                   Height of the original 2D images
+# fill_value            the background of the image
+# original_w            width of the original 2D images
+# original_h            height of the original 2D images
 # --------------------------------------------------------------------------------------------
 #
 # OUTPUT:
 # --------------------------------------------------------------------------------------------
-# img_out               Output matrix/image  (every row represents a linearized matrix/image)
+# img_out_linearized  Output matrix/image  (every row represents a linearized matrix/image)
 # --------------------------------------------------------------------------------------------
 
-m_img_translate_linearized = function(Matrix[Double] img_in, Double offset_x, 
-Double offset_y,Integer out_w, Integer out_h, Double fill_value, Integer o_w, Integer o_h) 
-return (Matrix[Double] img_out) {
+m_img_translate_linearized = function(Matrix[Double] img_in_linearized, 
+Double offset_x, Double offset_y, Integer out_w, Integer out_h, Double fill_value,
+Integer original_w, Integer original_h) return (Matrix[Double] img_out_linearized) {
+
+  num_images = nrow(img_in_linearized)
+  w = original_w
+  h = original_h
+  # Round offsets to nearest integer
   offset_x = round(offset_x)
   offset_y = round(offset_y)
-  img_out = matrix(fill_value, rows=nrow(img_in), cols=out_w * out_h)
-       parfor(y in 1:out_h,check=0) {
-         for (x in 1:out_w) {
+  img_out_linearized = matrix(fill_value, rows=num_images, cols=out_w * out_h)
+  for (i in 1:num_images) {
+    img_row = img_in_linearized[i,] 
+    
+    for (y in 1:out_h) {
+      for (x in 1:out_w) {
         src_x = x - offset_x
         src_y = y - offset_y
-        if (src_x >= 1 & src_x <= o_w & src_y >= 1 & src_y <= o_h) {
-          start_index = (src_y - 1) * o_w + src_x
+
+        # Validate indices to be in the valid range
+        if (src_x >= 1 & src_x <= w & src_y >= 1 & src_y <= h) {
+          src_index = (src_y - 1) * w + src_x
           dest_index = (y - 1) * out_w + x
-    
-          if (start_index >= 1 & start_index <= ncol(img_in) & dest_index >= 1 & dest_index <= ncol(img_out)) {
-            img_out[, dest_index] = img_in[, start_index]
-          }  
+
+          if (src_index >= 1 & src_index <= ncol(img_row) & dest_index >= 1 & dest_index <= ncol(img_out_linearized)) {
+            img_out_linearized[i, dest_index] = img_row[1, src_index]
+          }
         }
       }
     }
+  }
 }
-
-

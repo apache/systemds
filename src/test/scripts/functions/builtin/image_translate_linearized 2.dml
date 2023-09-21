@@ -19,7 +19,6 @@
 #
 #-------------------------------------------------------------
 
-
 input_linearized = read($in_file);
 rows_linear = nrow(input_linearized);
 cols_linear = ncol(input_linearized);

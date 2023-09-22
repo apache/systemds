@@ -29,17 +29,28 @@ import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
+import static org.apache.sysds.runtime.util.UtilFunctions.getEndIndex;
+
 public class ColumnEncoderWordEmbedding extends ColumnEncoder {
     private MatrixBlock _wordEmbeddings;
     private Map<Object, Long> _rcdMap;
-    private HashMap<String, double[]> _embMap;
+    private ConcurrentHashMap<String, double[]> _embMap;
+
+    public ColumnEncoderWordEmbedding() {
+        super(-1);
+        _rcdMap = new HashMap<>();
+        _wordEmbeddings = new MatrixBlock();
+    }
 
     private long lookupRCDMap(Object key) {
         return _rcdMap.getOrDefault(key, -1L);
-    }
-
-    private double[] lookupEMBMap(Object key) {
-        return _embMap.getOrDefault(key, null);
     }
 
     //domain size is equal to the number columns of the embeddings column thats equal to length of an embedding vector
@@ -74,31 +85,48 @@ public class ColumnEncoderWordEmbedding extends ColumnEncoder {
 
     }
 
+    @SuppressWarnings("DuplicatedCode")
     @Override
     public void applyDense(CacheBlock<?> in, MatrixBlock out, int outputCol, int rowStart, int blk){
-        /*if (!(in instanceof MatrixBlock)){
-            throw new DMLRuntimeException("ColumnEncoderWordEmbedding called with: " + in.getClass().getSimpleName() +
-                    " and not MatrixBlock");
-        }*/
         int rowEnd = getEndIndex(in.getNumRows(), rowStart, blk);
-
-        //map each string to the corresponding embedding vector
-        for(int i=rowStart; i<rowEnd; i++){
-            String key = in.getString(i, _colID-1);
-            if(key == null || key.isEmpty()) {
-                //codes[i-startInd] = Double.NaN;
-                continue;
-            }
-            double[] embedding = lookupEMBMap(key);
-            if(embedding == null){
-                long code = lookupRCDMap(key);
-                if(code == -1L){
+        if(blk == -1){
+            HashMap<String, double[]> _embMapSingleThread = new HashMap<>();
+            for(int i=rowStart; i<rowEnd; i++){
+                String key = in.getString(i, _colID-1);
+                if(key == null || key.isEmpty()) {
                     continue;
                 }
-                embedding = getEmbeddedingFromEmbeddingMatrix(code - 1);
-                _embMap.put(key, embedding);
+                double[] embedding = _embMapSingleThread.get(key);
+                if(embedding == null){
+                    long code = lookupRCDMap(key);
+                    if(code == -1L){
+                        continue;
+                    }
+                    embedding = getEmbeddedingFromEmbeddingMatrix(code - 1);
+                    _embMapSingleThread.put(key, embedding);
+                }
+                out.quickSetRow(i, embedding);
             }
-            out.quickSetRow(i, embedding);
+        }
+        else{
+            //map each string to the corresponding embedding vector
+            for(int i=rowStart; i<rowEnd; i++){
+                String key = in.getString(i, _colID-1);
+                if(key == null || key.isEmpty()) {
+                    //codes[i-startInd] = Double.NaN;
+                    continue;
+                }
+                double[] embedding = _embMap.get(key);
+                if(embedding == null){
+                    long code = lookupRCDMap(key);
+                    if(code == -1L){
+                        continue;
+                    }
+                    embedding = getEmbeddedingFromEmbeddingMatrix(code - 1);
+                    _embMap.put(key, embedding);
+                }
+                out.quickSetRow(i, embedding);
+            }
         }
     }
 
@@ -134,6 +162,31 @@ public class ColumnEncoderWordEmbedding extends ColumnEncoder {
     @Override
     public void initEmbeddings(MatrixBlock embeddings){
         this._wordEmbeddings = embeddings;
-        this._embMap = new HashMap<>((int) (embeddings.getNumRows()*1.2),1.0f);
+        this._embMap = new ConcurrentHashMap<>();
+    }
+
+    @Override
+    public void writeExternal(ObjectOutput out) throws IOException {
+        super.writeExternal(out);
+        out.writeInt(_rcdMap.size());
+
+        for(Map.Entry<Object, Long> e : _rcdMap.entrySet()) {
+            out.writeUTF(e.getKey().toString());
+            out.writeLong(e.getValue());
+        }
+        _wordEmbeddings.write(out);
+    }
+
+    @Override
+    public void readExternal(ObjectInput in) throws IOException {
+        super.readExternal(in);
+        int size = in.readInt();
+        for(int j = 0; j < size; j++) {
+            String key = in.readUTF();
+            Long value = in.readLong();
+            _rcdMap.put(key, value);
+        }
+        _wordEmbeddings.readExternal(in);
+        this._embMap = new ConcurrentHashMap<>();
     }
 }

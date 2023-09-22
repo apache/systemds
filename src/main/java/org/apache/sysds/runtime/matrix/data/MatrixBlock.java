@@ -44,6 +44,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.commons.math3.random.Well1024a;
 import org.apache.hadoop.io.DataInputBuffer;
+import org.apache.sysds.common.Types;
 import org.apache.sysds.common.Types.BlockType;
 import org.apache.sysds.common.Types.CorrectionLocationType;
 import org.apache.sysds.conf.ConfigurationManager;
@@ -1017,7 +1018,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 
 	/**
 	 * Wrapper method for reduceall-max of a matrix.
-	 * 
+	 *
 	 * @param k the parallelization degree
 	 * @return the maximum value of all values in the matrix
 	 */
@@ -1025,7 +1026,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 		AggregateUnaryOperator op = InstructionUtils.parseBasicAggregateUnaryOperator("uamax", k);
 		return aggregateUnaryOperations(op, null, 1000, null, true);
 	}
-	
+
 	/**
 	 * Wrapper method for reduceall-sum of a matrix.
 	 * 
@@ -1038,7 +1039,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 
 	/**
 	 * Wrapper method for reduceall-sum of a matrix parallel
-	 * 
+	 *
 	 * @param k parallelization degree
 	 * @return Sum of the values in the matrix.
 	 */
@@ -1872,14 +1873,14 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 		}
 		
 		//allocate output block
-		//no need to clear for awareDestNZ since overwritten 
-		allocateDenseBlock(false);
+		//no need to clear for awareDestNZ since overwritten
+		DenseBlock a = src.getDenseBlock();
+		allocateDenseBlock(false, a instanceof DenseBlockFP64DEDUP);
 		
 		if( awareDestNZ && (nonZeros!=getLength() || src.nonZeros!=src.getLength()) )
 			nonZeros = nonZeros - recomputeNonZeros(rl, ru, cl, cu) + src.nonZeros;
 		
 		//copy values
-		DenseBlock a = src.getDenseBlock();
 		DenseBlock c = getDenseBlock();
 		c.set(rl, ru+1, cl, cu+1, a);
 	}
@@ -4367,7 +4368,11 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 		//ensure allocated input/output blocks
 		if( denseBlock == null )
 			return;
-		dest.allocateDenseBlock();
+		boolean dedup = denseBlock instanceof DenseBlockFP64DEDUP;
+		if( dedup && cl!=cu)
+			dest.allocateDenseBlock(true, true);
+		else
+			dest.allocateDenseBlock();
 
 		//indexing operation
 		if( cl==cu ) { //COLUMN INDEXING
@@ -4387,13 +4392,24 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 			DenseBlock a = getDenseBlock();
 			DenseBlock c = dest.getDenseBlock();
 			int len = dest.clen;
-			for(int i = rl; i <= ru; i++)
-				System.arraycopy(a.values(i), a.pos(i)+cl, c.values(i-rl), c.pos(i-rl), len);
+			if (dedup) {
+				HashMap<double[], double[]> cache = new HashMap<>();
+				for (int i = rl; i <= ru; i++) {
+					double[] row = a.values(i);
+					double[] newRow = cache.get(row);
+					if (newRow == null) {
+						newRow = new double[len];
+						System.arraycopy(row, cl, newRow, 0, len);
+						cache.put(row, newRow);
+					}
+					c.set(i - rl, newRow);
+				}
+			} else
+				for (int i = rl; i <= ru; i++)
+					System.arraycopy(a.values(i), a.pos(i) + cl, c.values(i - rl), c.pos(i - rl), len);
 		}
-		
 		//compute nnz of output (not maintained due to native calls)
-		dest.setNonZeros((getNonZeros() == getLength()) ? 
-			(ru-rl+1) * (cu-cl+1) : dest.recomputeNonZeros());
+		dest.setNonZeros((getNonZeros() == getLength()) ? (ru - rl + 1) * (cu - cl + 1) : dest.recomputeNonZeros());
 	}
 	
 	@Override
@@ -5178,7 +5194,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 			AggregateTernaryOperator op, boolean inCP) {
 		if(m1 instanceof CompressedMatrixBlock || m2 instanceof CompressedMatrixBlock || m3 instanceof CompressedMatrixBlock)
 			return CLALibAggTernaryOp.agg(m1, m2, m3, ret, op, inCP);
-		
+
 		//create output matrix block w/ corrections
 		int rl = (op.indexFn instanceof ReduceRow) ? 2 : 1;
 		int cl = (op.indexFn instanceof ReduceRow) ? m1.clen : 2;
@@ -5814,7 +5830,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 	
 	/**
 	 * Function to generate the random matrix with specified dimensions (block sizes are not specified).
-	 * 
+	 *
 	 * @param rows     number of rows
 	 * @param cols     number of columns
 	 * @param sparsity sparsity as a percentage

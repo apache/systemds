@@ -40,7 +40,7 @@ m_img_sample_pairing_linearized= function(Matrix[Double] img_in1, Matrix[Double]
     weight = 0.5
   }
   num_images= nrow(img_in1)
-  img_out = matrix (0 ,  rows=nrow(img_in1),cols=ncol(img_in2))
+  img_out = matrix (0 ,rows=nrow(img_in1),cols=ncol(img_in2))
   parfor(i in 1:num_images) {
     img_out[i,] = (1 - weight) * img_in1[i,]+ weight * img_in2
   }

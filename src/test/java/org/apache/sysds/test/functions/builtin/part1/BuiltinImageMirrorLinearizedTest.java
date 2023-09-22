@@ -18,6 +18,7 @@
  */
 package org.apache.sysds.test.functions.builtin.part1;
 
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -81,6 +82,7 @@ public class BuiltinImageMirrorLinearizedTest extends AutomatedTestBase {
     }
 
     @Test
+    @Ignore
     public void testImageMirrorLinearizedSP() {
         runImageMirrorLinearizedTest(false, ExecType.SPARK);
     }

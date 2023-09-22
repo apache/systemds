@@ -23,7 +23,7 @@ args = commandArgs(TRUE)
 options(digits=22)
 library("Matrix")
 
-image_translate_linearized = function(img_in, out_w, out_h, a, b, c, d, e, f, fill_value, s_cols, s_rows) {
+image_transform_linearized = function(img_in, out_w, out_h, a, b, c, d, e, f, fill_value, s_cols, s_rows) {
   divisor = a * e - b * d
   if (divisor == 0) {
     print("Inverse matrix does not exist! Returning input.")
@@ -71,5 +71,7 @@ image_translate_linearized = function(img_in, out_w, out_h, a, b, c, d, e, f, fi
 input = as.matrix(readMM(paste(args[1], "A.mtx", sep="")))
 input = matrix(input, ncol=as.integer(args[3]), nrow=as.integer(args[4]))
 
-transformed = image_translate_linearized(input, as.integer(args[5]), as.integer(args[6]), as.double(args[7]), as.double(args[8]), as.double(args[9]), as.double(args[10]), as.double(args[11]), as.double(args[12]), 0, as.double(args[13]), as.double(args[14]));
+transformed = image_transform_linearized(input, as.integer(args[5]), as.integer(args[6]), as.double(args[7]), 
+as.double(args[8]), as.double(args[9]), as.double(args[10]), as.double(args[11]), as.double(args[12]), 
+as.double(args[13]), as.integer(args[14]),as.integer(args[15]))
 writeMM(as(transformed, "CsparseMatrix"), paste(args[2], "B", sep=""))

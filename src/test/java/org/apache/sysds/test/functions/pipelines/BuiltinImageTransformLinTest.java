@@ -26,8 +26,15 @@ import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.Arrays;
+
+@RunWith(Parameterized.class)
+@net.jcip.annotations.NotThreadSafe
 
 public class BuiltinImageTransformLinTest extends AutomatedTestBase {
     private final static String TEST_NAME = "image_transform_linearized";
@@ -36,22 +43,46 @@ public class BuiltinImageTransformLinTest extends AutomatedTestBase {
             + "/";
 
     private final static double eps = 1e-10;
-    private final static int s_rows = 135;
-    private final static int s_cols = 500;
-    private final static int n_imgs = 1;
-
     private final static double spSparse = 0.1;
     private final static double spDense = 0.9;
-    // rotate 30 degrees around the center
-    private final static double a = Math.sqrt(3) / 2;
-    private final static double b = -1.0 / 2.0;
-    private final static double c = s_cols / 4.0 * (3 - Math.sqrt(3));
-    private final static double d = 1.0 / 2.0;
-    private final static double e = Math.sqrt(3) / 2;
-    private final static double f = s_rows / 4.0 * (1 - Math.sqrt(3));
+    private final static double fill_value = 0.0;
+
+    @Parameterized.Parameter(0)
+    public int s_rows;
+    @Parameterized.Parameter(1)
+    public int s_cols;
+    @Parameterized.Parameter(2)
+    public int n_imgs;
+
+    public double a;
+    public double b;
+    public double c;
+    public double d;
+    public double e;
+    public double f;
+
+    @Parameterized.Parameters
+    public static Collection<Object[]> data() {
+        return Arrays.asList(new Object[][] {
+                { 16, 15, 50 },
+                { 32, 31, 100 },
+                { 64, 64, 200 },
+                { 127, 128, 100 },
+                { 256, 256, 200 },
+                { 500, 135, 100 }
+        });
+    }
 
     @Override
     public void setUp() {
+        // rotate 30 degrees around the center
+        a = Math.sqrt(3) / 2;
+        b = -1.0 / 2.0;
+        c = s_cols / 4.0 * (3 - Math.sqrt(3));
+        d = 1.0 / 2.0;
+        e = Math.sqrt(3) / 2;
+        f = s_rows / 4.0 * (1 - Math.sqrt(3));
+
         addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] { "B" }));
     }
 
@@ -65,41 +96,14 @@ public class BuiltinImageTransformLinTest extends AutomatedTestBase {
         runImageTransformLinTest(true, ExecType.CP);
     }
 
-    @Ignore
     @Test
     public void testImageTransformLinMatrixDenseSP() {
         runImageTransformLinTest(false, ExecType.SPARK);
     }
 
-    @Ignore
     @Test
     public void testImageTransformLinMatrixSparseSP() {
-        runImageTransformLinTest(false, ExecType.SPARK);
-    }
-
-    @Test
-    public void testImageTranslatePillow() throws Exception {
-        loadTestConfiguration(getTestConfiguration(TEST_NAME));
-        setOutputBuffering(true);
-        final int w = 500, h = 135, out_w = 550, out_h = 330;
-        final double fill_value = 128.0;
-        double[][] input = TestUtils.readExpectedResource("ImageTransformLinInput.csv", n_imgs, h * w);
-
-        double[][] reference = TestUtils.readExpectedResource("ImageTransformLinTransformed.csv", n_imgs,
-                out_h * out_w);
-        String HOME = SCRIPT_DIR + TEST_DIR;
-        fullDMLScriptName = HOME + TEST_NAME + ".dml";
-        programArgs = new String[] { "-nvargs", "in_file=" + input("A"), "out_file=" + output("B"),
-                "width=" + s_cols * s_rows,
-                "height=" + n_imgs, "out_w=" + out_w, "out_h=" + out_h,
-                "a=" + a, "b=" + b, "c=" + c, "d=" + d, "e=" + e, "f=" + f, "fill_value=" + fill_value,
-                "s_cols=" + s_cols, "s_rows=" + s_rows };
-        writeInputMatrixWithMTD("A", input, true);
-        runTest(true, false, null, -1);
-
-        HashMap<MatrixValue.CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir("B");
-        double[][] dml_res = TestUtils.convertHashMapToDoubleArray(dmlfile, n_imgs, out_h * out_w);
-        TestUtils.compareMatrices(reference, dml_res, eps, "Pillow vs. DML");
+        runImageTransformLinTest(true, ExecType.SPARK);
     }
 
     private void runImageTransformLinTest(boolean sparse, ExecType instType) {
@@ -116,14 +120,14 @@ public class BuiltinImageTransformLinTest extends AutomatedTestBase {
             programArgs = new String[] { "-nvargs", "in_file=" + input("A"), "out_file=" + output("B"),
                     "width=" + s_cols * s_rows,
                     "height=" + n_imgs, "out_w=" + s_cols, "out_h=" + s_rows * 1.2,
-                    "a=" + a, "b=" + b, "c=" + c, "d=" + d, "e=" + e, "f=" + f, "s_cols=" + s_cols,
+                    "a=" + a, "b=" + b, "c=" + c, "d=" + d, "e=" + e, "f=" + f, "fill_value=" + fill_value,
+                    "s_cols=" + s_cols,
                     "s_rows=" + s_rows };
 
             fullRScriptName = HOME + TEST_NAME + ".R";
             rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + expectedDir() + " " + s_cols * s_rows
-                    + " " + n_imgs
-                    + " " + s_cols + " " + (s_rows * 1.2) + " " + a + " " + b + " " + c + " " + d + " " + e + " " + f
-                    + " " + s_cols + " " + s_rows;
+                    + " " + n_imgs + " " + s_cols + " " + (s_rows * 1.2) + " " + a + " " + b + " " + c + " " + d + " "
+                    + e + " " + f + " " + fill_value + " " + s_cols + " " + s_rows;
 
             // generate actual dataset
             double[][] A = getRandomMatrix(n_imgs, s_cols * s_rows, 0, 255, sparsity, 7);
@@ -132,7 +136,6 @@ public class BuiltinImageTransformLinTest extends AutomatedTestBase {
             runTest(true, false, null, -1);
             runRScript(true);
 
-            // compare matrices
             HashMap<MatrixValue.CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir("B");
             HashMap<MatrixValue.CellIndex, Double> rfile = readRMatrixFromExpectedDir("B");
             TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");

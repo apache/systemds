@@ -86,6 +86,7 @@ import org.apache.sysds.runtime.controlprogram.caching.FrameObject;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.caching.TensorObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
+import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysds.runtime.controlprogram.parfor.opt.OptTreeConverter;
 import org.apache.sysds.runtime.instructions.Instruction;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
@@ -1598,6 +1599,7 @@ public class Recompiler {
 		//check valid dimensions and memory requirements
 		double sp = OptimizerUtils.getSparsity(rows, cols, nnz);
 		double mem = MatrixBlock.estimateSizeInMemory(rows, cols, sp);
+		
 		if(    !OptimizerUtils.isValidCPDimensions(rows, cols)
 			|| !OptimizerUtils.isValidCPMatrixSize(rows, cols, sp)
 			|| mem >= OptimizerUtils.getLocalMemBudget() ) 
@@ -1609,8 +1611,14 @@ public class Recompiler {
 		long estFilesize = (long)(3.5 * mem); //conservative estimate
 		long cpThreshold = CP_REBLOCK_THRESHOLD_SIZE * 
 			OptimizerUtils.getParallelTextReadParallelism();
-		return (iimd.getFileFormat() == FileFormat.BINARY
+		boolean ret = (iimd.getFileFormat() == FileFormat.BINARY
 			|| estFilesize < cpThreshold); //for text conservative
+		
+		// for reading ultra-sparse in local mode (1 executor) always avoid spark reblock
+		if( !ret && sp < MatrixBlock.ULTRA_SPARSITY_TURN_POINT ) // but qualifies
+			ret = (SparkExecutionContext.getNumExecutors() == 1);
+		
+		return ret;
 	}
 	
 	public static boolean checkCPCheckpoint(DataCharacteristics dc) {

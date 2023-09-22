@@ -31,7 +31,7 @@
 #
 # OUTPUT:
 # ---------------------------------------------------------------------------------------------
-# img_out  Output image
+# img_out  Row linearized output images as 2D matrix
 # ---------------------------------------------------------------------------------------------
 
 m_img_posterize_linearized = function(Matrix[Double] img_in, Integer bits) return (Matrix[Double] img_out) {

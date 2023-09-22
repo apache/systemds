@@ -73,7 +73,8 @@ public class BuiltinImageCropLinTest extends AutomatedTestBase {
                 { 125, 123, 32, 7, 37, 0.3 },
                 { 128, 128, 83, 23, 14, 0.123 },
                 { 256, 50, 2, 0, 0, 0.8 },
-                { 256, 255, 2, 0, 0, 0.8 }
+                { 256, 255, 2, 0, 0, 0.8 },
+                { 512, 300, 47, 6, 7, 0.7 }
         });
     }
 
@@ -102,7 +103,7 @@ public class BuiltinImageCropLinTest extends AutomatedTestBase {
 
     @Test
     public void testImageCropMatrixSparseSP() {
-        runImageCropLinTest(false, ExecType.SPARK);
+        runImageCropLinTest(true, ExecType.SPARK);
     }
 
     private void runImageCropLinTest(boolean sparse, ExecType instType) {
@@ -128,9 +129,6 @@ public class BuiltinImageCropLinTest extends AutomatedTestBase {
             double[][] ref = new double[rows][new_h * new_w];
             int start_h = (int) Math.ceil((double) (s_rows - new_h) / 2) + y_offset;
             int start_w = (int) Math.ceil((double) (s_cols - new_w) / 2) + x_offset;
-            if (s_cols == 64) {
-                System.out.println("start_h: " + start_h + ", start_w: " + start_w);
-            }
 
             for (int i = 0; i < rows; i++) {
                 if (start_w == 0 && start_h == 0) {

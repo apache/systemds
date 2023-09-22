@@ -135,10 +135,10 @@ public class ReaderTextCell extends MatrixReader
 					if( sparse ) { //SPARSE<-value
 						while( reader.next(key, value) ) {
 							cell = parseCell(value.toString(), st, cell, _mmProps);
-							appendCell(cell, dest, _mmProps);
+							nnz += appendCell(cell, dest, _mmProps);
 						}
 						dest.sortSparseRows();
-					} 
+					}
 					else { //DENSE<-value
 						DenseBlock a = dest.getDenseBlock();
 						while( reader.next(key, value) ) {
@@ -152,8 +152,7 @@ public class ReaderTextCell extends MatrixReader
 				}
 			}
 			
-			if( !dest.isInSparseFormat() )
-				dest.setNonZeros(nnz);
+			dest.setNonZeros(nnz);
 		}
 		catch(Exception ex) {
 			//post-mortem error handling and bounds checking
@@ -244,7 +243,7 @@ public class ReaderTextCell extends MatrixReader
 			if( sparse ) { //SPARSE<-value
 				while( (value=br.readLine())!=null ) {
 					cell = parseCell(value.toString(), st, cell, mmProps);
-					appendCell(cell, dest, mmProps);
+					nnz += appendCell(cell, dest, mmProps);
 				}
 				dest.sortSparseRows();
 			} 
@@ -254,8 +253,8 @@ public class ReaderTextCell extends MatrixReader
 					cell = parseCell(value.toString(), st, cell, mmProps);
 					nnz += appendCell(cell, a, mmProps);
 				}
-				dest.setNonZeros(nnz);
 			}
+			dest.setNonZeros(nnz);
 		}
 		catch(Exception ex) {
 			//post-mortem error handling and bounds checking

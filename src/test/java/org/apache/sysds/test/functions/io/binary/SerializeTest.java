@@ -20,6 +20,10 @@
 package org.apache.sysds.test.functions.io.binary;
 
 import com.google.crypto.tink.subtle.Random;
+import org.apache.sysds.lops.Lop;
+import org.apache.sysds.runtime.frame.data.FrameBlock;
+import org.apache.sysds.runtime.transform.encode.EncoderFactory;
+import org.apache.sysds.runtime.transform.encode.MultiColumnEncoder;
 import org.apache.sysds.runtime.util.LocalFileUtils;
 import org.junit.Assert;
 import org.junit.Test;
@@ -33,6 +37,13 @@ import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutput;
+import java.io.ObjectOutputStream;
 import java.util.HashMap;
 
 public class SerializeTest extends AutomatedTestBase
@@ -96,6 +107,11 @@ public class SerializeTest extends AutomatedTestBase
 		runSerializeTest( rows1, cols1, 0.0001 ); 
 	}
 
+	@Test
+	public void testWEEncoderSerialization(){
+		runSerializeWEEncoder();
+	}
+
 	private void runSerializeTest( int rows, int cols, double sparsity ) 
 	{
 		try
@@ -131,6 +147,43 @@ public class SerializeTest extends AutomatedTestBase
 		{
 			ex.printStackTrace();
 			throw new RuntimeException(ex);
+		}
+	}
+
+	private void runSerializeWEEncoder(){
+		try (ByteArrayOutputStream bos = new ByteArrayOutputStream();
+			 ObjectOutput out = new ObjectOutputStream(bos))
+		{
+			double[][] X = getRandomMatrix(5, 100, -1.0, 1.0, 1.0, 7);
+			MatrixBlock emb = DataConverter.convertToMatrixBlock(X);
+			FrameBlock data = DataConverter.convertToFrameBlock(new String[][]{{"A"}, {"B"}, {"C"}});
+			FrameBlock meta = DataConverter.convertToFrameBlock(new String[][]{{"A" + Lop.DATATYPE_PREFIX + "1"},
+					{"B" + Lop.DATATYPE_PREFIX + "2"},
+					{"C" + Lop.DATATYPE_PREFIX + "3"}});
+			MultiColumnEncoder encoder = EncoderFactory.createEncoder(
+					"{ids:true, word_embedding:[1]}", data.getColumnNames(), meta.getSchema(), meta, emb);
+
+			// Serialize the object
+			encoder.writeExternal(out);
+			out.flush();
+
+			// Deserialize the object
+			ByteArrayInputStream bis = new ByteArrayInputStream(bos.toByteArray());
+			ObjectInput in = new ObjectInputStream(bis);
+			MultiColumnEncoder encoder_ser = new MultiColumnEncoder();
+			encoder_ser.readExternal(in);
+			in.close();
+			MatrixBlock mout = encoder_ser.apply(data);
+			for (int i = 0; i < mout.getNumRows(); i++) {
+				for (int j = 0; j < mout.getNumColumns(); j++) {
+					assert mout.quickGetValue(i, j) == X[i][j];
+				}
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+			throw new RuntimeException(e);
+		} catch (ClassNotFoundException e) {
+			throw new RuntimeException(e);
 		}
 	}
 

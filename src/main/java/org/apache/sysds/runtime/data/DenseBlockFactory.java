@@ -52,8 +52,13 @@ public abstract class DenseBlockFactory
 	}
 
 	public static DenseBlock createDenseBlock(ValueType vt, int[] dims, boolean dedup) {
-		DenseBlock.Type type = (UtilFunctions.prod(dims) < Integer.MAX_VALUE) ?
-				DenseBlock.Type.DRB : DenseBlock.Type.LDRB;
+		DenseBlock.Type type;
+		if(dedup)
+			type = (dims[0] < Integer.MAX_VALUE) ?
+					DenseBlock.Type.DRB : DenseBlock.Type.LDRB;
+		else
+			type = (UtilFunctions.prod(dims) < Integer.MAX_VALUE) ?
+					DenseBlock.Type.DRB : DenseBlock.Type.LDRB;
 		return createDenseBlock(vt, type, dims, dedup);
 	}
 

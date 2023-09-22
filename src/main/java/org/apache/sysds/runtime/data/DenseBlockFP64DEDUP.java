@@ -49,19 +49,21 @@ public class DenseBlockFP64DEDUP extends DenseBlockDRB
 
 	@Override
 	public void reset(int rlen, int[] odims, double v) {
-		if(rlen >  capacity() / _odims[0])
+		if(rlen >  _rlen)
 			_data = new double[rlen][];
-		else {
-			if(v == 0.0) {
-				for(int i = 0; i < rlen; i++)
-					_data[i] = null;
+		else{
+			if(_data == null)
+				 _data = new double[rlen][];
+			if(v == 0.0){
+				 for(int i = 0; i < rlen; i++)
+					 _data[i] = null;
 			}
 			else {
-				for(int i = 0; i < rlen; i++) {
-					if(odims[0] > _odims[0] ||_data[i] == null )
-						allocateBlock(i, odims[0]);
-					Arrays.fill(_data[i], 0, odims[0], v);
-				}
+				 for(int i = 0; i < rlen; i++) {
+					 if(odims[0] > _odims[0] ||_data[i] == null )
+						 allocateBlock(i, odims[0]);
+					 Arrays.fill(_data[i], 0, odims[0], v);
+				 }
 			}
 		}
 		_rlen = rlen;
@@ -178,6 +180,12 @@ public class DenseBlockFP64DEDUP extends DenseBlockDRB
 	public int blockSize(int bix) {
 		return 1;
 	}
+
+	@Override
+	public boolean isContiguous() {
+		return false;
+	}
+	@Override
 	public boolean isContiguous(int rl, int ru){
 		return rl == ru;
 	}
@@ -250,6 +258,25 @@ public class DenseBlockFP64DEDUP extends DenseBlockDRB
 	@Override
 	public DenseBlock set(DenseBlock db) {
 		throw new NotImplementedException();
+	}
+
+	@Override
+	public DenseBlock set(int rl, int ru, int ol, int ou, DenseBlock db) {
+		if( !(db instanceof DenseBlockFP64DEDUP))
+			throw new NotImplementedException();
+		HashMap<double[], double[]> cache = new HashMap<>();
+		int len = ou - ol;
+		for(int i=rl, ix1 = 0; i<ru; i++, ix1++){
+			double[] row = db.values(ix1);
+			double[] newRow = cache.get(row);
+			if (newRow == null) {
+				 newRow = new double[len];
+				 System.arraycopy(row, 0, newRow, 0, len);
+				 cache.put(row, newRow);
+			}
+			set(i, newRow);
+		}
+		return this;
 	}
 
 	@Override

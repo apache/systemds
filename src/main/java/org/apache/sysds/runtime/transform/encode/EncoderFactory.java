@@ -67,6 +67,12 @@ public interface EncoderFactory {
 		return createEncoder(spec, colnames, clen, meta);
 	}
 
+	public static MultiColumnEncoder createEncoder(String spec, String[] colnames, ValueType[] schema, int clen,
+												   FrameBlock meta, MatrixBlock embeddings) {
+		ValueType[] lschema = (schema == null) ? UtilFunctions.nCopies(clen, ValueType.STRING) : schema;
+		return createEncoder(spec, colnames, lschema, meta, embeddings);
+	}
+
 	public static MultiColumnEncoder createEncoder(String spec, String[] colnames, ValueType[] schema,
 		FrameBlock meta) {
 		return createEncoder(spec, colnames, schema, meta, -1, -1);
@@ -249,6 +255,8 @@ public interface EncoderFactory {
 			return EncoderType.PassThrough.ordinal();
 		else if(columnEncoder instanceof ColumnEncoderRecode)
 			return EncoderType.Recode.ordinal();
+		else if(columnEncoder instanceof ColumnEncoderWordEmbedding)
+			return EncoderType.WordEmbedding.ordinal();
 		throw new DMLRuntimeException("Unsupported encoder type: " + columnEncoder.getClass().getCanonicalName());
 	}
 
@@ -265,6 +273,8 @@ public interface EncoderFactory {
 				return new ColumnEncoderPassThrough();
 			case Recode:
 				return new ColumnEncoderRecode();
+			case WordEmbedding:
+				return new ColumnEncoderWordEmbedding();
 			default:
 				throw new DMLRuntimeException("Unsupported encoder type: " + etype);
 		}

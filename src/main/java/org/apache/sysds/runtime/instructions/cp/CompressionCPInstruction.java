@@ -19,6 +19,9 @@
 
 package org.apache.sysds.runtime.instructions.cp;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -26,6 +29,7 @@ import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlockFactory;
 import org.apache.sysds.runtime.compress.CompressionStatistics;
 import org.apache.sysds.runtime.compress.SingletonLookupHashMap;
+import org.apache.sysds.runtime.compress.lib.CLALibBinCompress;
 import org.apache.sysds.runtime.compress.workload.WTreeRoot;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
@@ -39,19 +43,37 @@ public class CompressionCPInstruction extends ComputationCPInstruction {
 
 	private final int _singletonLookupID;
 
+	/** This is only for binned compression with 2 outputs*/
+	protected final List<CPOperand> _outputs;
+
 	private CompressionCPInstruction(Operator op, CPOperand in, CPOperand out, String opcode, String istr,
 		int singletonLookupID) {
 		super(CPType.Compression, op, in, null, null, out, opcode, istr);
+		_outputs = null;
+		this._singletonLookupID = singletonLookupID;
+	}
+
+	private CompressionCPInstruction(Operator op, CPOperand in1, CPOperand in2, List<CPOperand> out, String opcode, String istr,
+		int singletonLookupID) {
+		super(CPType.Compression, op, in1, in2, null, out.get(0), opcode, istr);
+		_outputs = out;
 		this._singletonLookupID = singletonLookupID;
 	}
 
 	public static CompressionCPInstruction parseInstruction(String str) {
-		InstructionUtils.checkNumFields(str, 2, 3);
+		InstructionUtils.checkNumFields(str, 2, 3, 4);
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		String opcode = parts[0];
 		CPOperand in1 = new CPOperand(parts[1]);
 		CPOperand out = new CPOperand(parts[2]);
-		if(parts.length == 4) {
+		if(parts.length == 6) {
+			/** Compression with bins that returns two outputs*/
+			List<CPOperand> outputs = new ArrayList<>();
+			outputs.add(new CPOperand(parts[3]));
+			outputs.add(new CPOperand(parts[4]));
+			return new CompressionCPInstruction(null, in1, out, outputs, opcode, str, 0);
+		}
+		else if(parts.length == 4) {
 			int treeNodeID = Integer.parseInt(parts[3]);
 			return new CompressionCPInstruction(null, in1, out, opcode, str, treeNodeID);
 		}
@@ -61,6 +83,28 @@ public class CompressionCPInstruction extends ComputationCPInstruction {
 
 	@Override
 	public void processInstruction(ExecutionContext ec) {
+		if(input2 == null)
+			processSimpleCompressInstruction(ec);
+		else
+			processCompressByBinInstruction(ec);
+	}
+
+	private void processCompressByBinInstruction(ExecutionContext ec) {
+		final MatrixBlock X = ec.getMatrixInput(input1.getName());
+		final MatrixBlock d = ec.getMatrixInput(input2.getName());
+
+		final int k = OptimizerUtils.getConstrainedNumThreads(-1);
+
+		Pair<MatrixBlock, FrameBlock> out = CLALibBinCompress.binCompress(X, d, k);
+		
+		// Set output and release input
+		ec.releaseMatrixInput(input1.getName());
+		ec.releaseMatrixInput(input2.getName());
+		ec.setMatrixOutput(_outputs.get(0).getName(), out.getKey());
+		ec.setFrameOutput(_outputs.get(1).getName(), out.getValue());
+	}
+
+	private void processSimpleCompressInstruction(ExecutionContext ec) {
 		// final MatrixBlock in = ec.getMatrixInput(input1.getName());
 		final SingletonLookupHashMap m = SingletonLookupHashMap.getMap();
 
@@ -74,7 +118,6 @@ public class CompressionCPInstruction extends ComputationCPInstruction {
 			processMatrixBlockCompression(ec, ec.getMatrixInput(input1.getName()), k, root);
 		else
 			processFrameBlockCompression(ec, ec.getFrameInput(input1.getName()), k, root);
-
 	}
 
 	private void processMatrixBlockCompression(ExecutionContext ec, MatrixBlock in, int k, WTreeRoot root) {

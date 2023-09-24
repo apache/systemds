@@ -19,8 +19,6 @@
 
 package org.apache.sysds.runtime.transform.encode;
 
-import static org.apache.sysds.runtime.util.UtilFunctions.getEndIndex;
-
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
@@ -30,9 +28,11 @@ import java.util.PriorityQueue;
 import java.util.Random;
 import java.util.concurrent.Callable;
 
+import static org.apache.sysds.runtime.util.UtilFunctions.getEndIndex;
 import org.apache.commons.lang3.tuple.MutableTriple;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.lops.Lop;
+import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.runtime.frame.data.columns.Array;
@@ -495,7 +495,17 @@ public class ColumnEncoderBin extends ColumnEncoder {
 	}
 
 	public enum BinMethod {
-		INVALID, EQUI_WIDTH, EQUI_HEIGHT, EQUI_HEIGHT_APPROX
+		INVALID, EQUI_WIDTH, EQUI_HEIGHT, EQUI_HEIGHT_APPROX;
+
+		@Override
+		public String toString(){
+			switch(this) {
+				case EQUI_WIDTH: return "EQUI-WIDTH";
+				case EQUI_HEIGHT: return "EQUI-HEIGHT";
+				case EQUI_HEIGHT_APPROX: return "EQUI_HEIGHT_APPROX";
+				default: throw new DMLRuntimeException("Invalid encoder type.");
+			}
+		}
 	}
 
 	private static class BinSparseApplyTask extends ColumnApplyTask<ColumnEncoderBin> {

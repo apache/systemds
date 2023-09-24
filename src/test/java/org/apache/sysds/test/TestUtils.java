@@ -19,12 +19,6 @@
 
 package org.apache.sysds.test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.DataOutputStream;
@@ -50,6 +44,11 @@ import java.util.Random;
 import java.util.Set;
 import java.util.StringTokenizer;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.NotImplementedException;
@@ -2740,6 +2739,11 @@ public class TestUtils {
 		writer.writeFrameToHDFS(frame, file, data.length, schema.length);
 	}
 
+	public static void writeTestFrame(String file, FrameBlock data, ValueType[] schema, FileFormat fmt, boolean isR) throws IOException {
+		FrameWriter writer = FrameWriterFactory.createFrameWriter(fmt);
+		writer.writeFrameToHDFS(data, file, data.getNumRows(), schema.length);
+	}
+
 	/**
 	 * <p>
 	 * Writes a frame to a file using the text format.
@@ -2752,6 +2756,10 @@ public class TestUtils {
 	 * @throws IOException
 	 */
 	public static void writeTestFrame(String file, double[][] data, ValueType[] schema, FileFormat fmt) throws IOException {
+		writeTestFrame(file, data, schema, fmt, false);
+	}
+
+	public static void writeTestFrame(String file, FrameBlock data, ValueType[] schema, FileFormat fmt) throws IOException {
 		writeTestFrame(file, data, schema, fmt, false);
 	}
 

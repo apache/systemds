@@ -19,10 +19,15 @@
 
 package org.apache.sysds.hops;
 
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
+
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.ExecMode;
+import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.common.Types.OpOp1;
 import org.apache.sysds.common.Types.OpOp2;
@@ -38,7 +43,6 @@ import org.apache.sysds.hops.fedplanner.FTypes.FederatedPlanner;
 import org.apache.sysds.hops.rewrite.HopRewriteUtils;
 import org.apache.sysds.lops.Checkpoint;
 import org.apache.sysds.lops.Lop;
-import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.lops.compile.Dag;
 import org.apache.sysds.parser.ForStatementBlock;
 import org.apache.sysds.runtime.DMLRuntimeException;
@@ -60,10 +64,6 @@ import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.util.IndexRange;
 import org.apache.sysds.runtime.util.UtilFunctions;
-
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
 
 public class OptimizerUtils 
 {
@@ -269,7 +269,7 @@ public class OptimizerUtils
 	 * This variable allows for insertion of Compress and decompress in the dml script from the user.
 	 * This is added because we want to have a way to test, and verify the correct placement of compress and decompress commands.
 	 */
-	public static boolean ALLOW_SCRIPT_LEVEL_COMPRESS_COMMAND = false;
+	public static boolean ALLOW_SCRIPT_LEVEL_COMPRESS_COMMAND = true;
 
 
 	/**

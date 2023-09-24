@@ -1045,7 +1045,7 @@ public class DMLTranslator
 					throw new LanguageException(source.printErrorLocation()+": Unsupported indexing expression in write statement. " +
 							                    "Please, assign the right indexing result to a variable and write this variable.");
 				}
-				
+
 				DataOp ae = (DataOp)processExpression(source, target, ids);
 				Expression fmtExpr = os.getExprParam(DataExpression.FORMAT_TYPE);
 				ae.setFileFormat((fmtExpr instanceof StringIdentifier) ?
@@ -1077,7 +1077,7 @@ public class DMLTranslator
 							throw new LanguageException("Unrecognized file format: " + ae.getFileFormat());
 					}
 				}
-				
+
 				output.add(ae);
 			}
 
@@ -1138,15 +1138,15 @@ public class DMLTranslator
 			}
 
 			if (current instanceof AssignmentStatement) {
-	
+
 				AssignmentStatement as = (AssignmentStatement) current;
 				DataIdentifier target = as.getTarget();
 				Expression source = as.getSource();
 
-			
-				// CASE: regular assignment statement -- source is DML expression that is NOT user-defined or external function 
+
+				// CASE: regular assignment statement -- source is DML expression that is NOT user-defined or external function
 				if (!(source instanceof FunctionCallIdentifier)){
-				
+
 					// CASE: target is regular data identifier
 					if (!(target instanceof IndexedIdentifier)) {
 						//process right hand side and accumulation
@@ -1166,7 +1166,7 @@ public class DMLTranslator
 						}
 
 						ids.put(target.getName(), ae);
-						
+
 						//add transient write if needed
 						Integer statementId = liveOutToTemp.get(target.getName());
 						if ((statementId != null) && (statementId.intValue() == i)) {
@@ -1176,11 +1176,11 @@ public class DMLTranslator
 							updatedLiveOut.addVariable(target.getName(), target);
 							output.add(transientwrite);
 						}
-					} 
+					}
 					// CASE: target is indexed identifier (left-hand side indexed expression)
 					else {
 						Hop ae = processLeftIndexedExpression(source, (IndexedIdentifier)target, ids);
-						
+
 						if( as.isAccumulator() ) {
 							DataIdentifier accum = getAccumulatorData(liveIn, target.getName());
 							Hop rix = processIndexingExpression((IndexedIdentifier)target, null, ids);
@@ -1189,16 +1189,16 @@ public class DMLTranslator
 							HopRewriteUtils.replaceChildReference(ae, ae.getInput(1), binary);
 							target.setProperties(accum.getOutput());
 						}
-						
+
 						ids.put(target.getName(), ae);
-						
+
 						// obtain origDim values BEFORE they are potentially updated during setProperties call
 						//	(this is incorrect for LHS Indexing)
 						long origDim1 = ((IndexedIdentifier)target).getOrigDim1();
 						long origDim2 = ((IndexedIdentifier)target).getOrigDim2();
 						target.setProperties(source.getOutput());
 						((IndexedIdentifier)target).setOriginalDimensions(origDim1, origDim2);
-						
+
 						// preserve data type matrix of any index identifier
 						// (required for scalar input to left indexing)
 						if( target.getDataType() != DataType.MATRIX ) {
@@ -1206,7 +1206,7 @@ public class DMLTranslator
 							target.setValueType(ValueType.FP64);
 							target.setBlocksize(ConfigurationManager.getBlocksize());
 						}
-						
+
 						Integer statementId = liveOutToTemp.get(target.getName());
 						if ((statementId != null) && (statementId.intValue() == i)) {
 							DataOp transientwrite = new DataOp(target.getName(), target.getDataType(), target.getValueType(), ae, OpOpData.TRANSIENTWRITE, null);
@@ -1222,36 +1222,36 @@ public class DMLTranslator
 					//assignment, function call
 					FunctionCallIdentifier fci = (FunctionCallIdentifier) source;
 					FunctionStatementBlock fsb = this._dmlProg.getFunctionStatementBlock(fci.getNamespace(),fci.getName());
-					
+
 					//error handling missing function
-					if (fsb == null) { 
-						throw new LanguageException(source.printErrorLocation() + "function " 
+					if (fsb == null) {
+						throw new LanguageException(source.printErrorLocation() + "function "
 							+ fci.getName() + " is undefined in namespace " + fci.getNamespace());
 					}
-					
+
 					FunctionStatement fstmt = (FunctionStatement)fsb.getStatement(0);
 					String fkey = DMLProgram.constructFunctionKey(fci.getNamespace(),fci.getName());
-					
+
 					//error handling unsupported function call in indexing expression
 					if( target instanceof IndexedIdentifier ) {
 						throw new LanguageException("Unsupported function call to '"+fkey+"' in left indexing "
 							+ "expression. Please, assign the function output to a variable.");
 					}
-					
+
 					//prepare function input names and inputs
 					List<String> inputNames = new ArrayList<>(fci.getParamExprs().stream()
 						.map(e -> e.getName()).collect(Collectors.toList()));
 					List<Hop> finputs = new ArrayList<>(fci.getParamExprs().stream()
 						.map(e -> processExpression(e.getExpr(), null, ids)).collect(Collectors.toList()));
-					
+
 					//append default expression for missing arguments
 					appendDefaultArguments(fstmt, inputNames, finputs, ids);
-					
+
 					//use function signature to obtain names for unnamed args
 					//(note: consistent parameters already checked for functions in general)
 					if( inputNames.stream().allMatch(n -> n==null) )
 						inputNames = fstmt._inputParams.stream().map(d -> d.getName()).collect(Collectors.toList());
-					
+
 					//create function op
 					String[] inputNames2 = inputNames.toArray(new String[0]);
 					FunctionType ftype = fsb.getFunctionOpType();
@@ -1267,31 +1267,31 @@ public class DMLTranslator
 				//multi-assignment, by definition a function call
 				MultiAssignmentStatement mas = (MultiAssignmentStatement) current;
 				Expression source = mas.getSource();
-				
+
 				if ( source instanceof FunctionCallIdentifier ) {
 					FunctionCallIdentifier fci = (FunctionCallIdentifier) source;
 					FunctionStatementBlock fsb = this._dmlProg.getFunctionStatementBlock(fci.getNamespace(),fci.getName());
 					if (fsb == null){
-						throw new LanguageException(source.printErrorLocation() + "function " 
+						throw new LanguageException(source.printErrorLocation() + "function "
 							+ fci.getName() + " is undefined in namespace " + fci.getNamespace());
 					}
-					
+
 					FunctionStatement fstmt = (FunctionStatement)fsb.getStatement(0);
-					
+
 					//prepare function input names and inputs
 					List<String> inputNames = new ArrayList<>(fci.getParamExprs().stream()
 						.map(e -> e.getName()).collect(Collectors.toList()));
 					List<Hop> finputs = new ArrayList<>(fci.getParamExprs().stream()
 						.map(e -> processExpression(e.getExpr(), null, ids)).collect(Collectors.toList()));
-					
+
 					//use function signature to obtain names for unnamed args
 					//(note: consistent parameters already checked for functions in general)
 					if( inputNames.stream().allMatch(n -> n==null) )
 						inputNames = fstmt._inputParams.stream().map(d -> d.getName()).collect(Collectors.toList());
-					
+
 					//append default expression for missing arguments
 					appendDefaultArguments(fstmt, inputNames, finputs, ids);
-					
+
 					//create function op
 					String[] foutputs = mas.getTargetList().stream()
 						.map(d -> d.getName()).toArray(String[]::new);
@@ -1314,7 +1314,7 @@ public class DMLTranslator
 				else
 					throw new LanguageException("Class \"" + source.getClass() + "\" is not supported in Multiple Assignment statements");
 			}
-			
+
 		}
 		sb.updateLiveVariablesOut(updatedLiveOut);
 		sb.setHops(output);
@@ -2265,11 +2265,21 @@ public class DMLTranslator
 				}
 				
 				// Create the hop for current function call
-				FunctionOp fcall = new FunctionOp(ftype, nameSpace, source.getOpCode().toString(), null, inputs, outputNames, outputs);
-				currBuiltinOp = fcall;
-				
+				currBuiltinOp = new FunctionOp(ftype, nameSpace, source.getOpCode().toString(), null, inputs, outputNames, outputs);
 				break;
-				
+
+			case COMPRESS:
+				// Number of outputs = size of targetList = #of identifiers in source.getOutputs
+				String[] outputNamesCompress = new String[targetList.size()];
+				outputNamesCompress[0] = targetList.get(0).getName();
+				outputNamesCompress[1] = targetList.get(1).getName();
+				outputs.add(new DataOp(outputNamesCompress[0], DataType.MATRIX, ValueType.FP64, inputs.get(0), OpOpData.FUNCTIONOUTPUT, inputs.get(0).getFilename()));
+				outputs.add(new DataOp(outputNamesCompress[1], DataType.FRAME, ValueType.STRING, inputs.get(0), OpOpData.FUNCTIONOUTPUT, inputs.get(0).getFilename()));
+
+				// Create the hop for current function call
+				currBuiltinOp = new FunctionOp(ftype, nameSpace, source.getOpCode().toString(), null, inputs, outputNamesCompress, outputs);
+				break;
+
 			default:
 				throw new ParseException("Invaid Opcode in DMLTranslator:processMultipleReturnBuiltinFunctionExpression(): " + source.getOpCode());
 		}

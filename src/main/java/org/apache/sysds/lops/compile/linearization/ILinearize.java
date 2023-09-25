@@ -210,6 +210,7 @@ public class ILinearize {
 			final_v = depthFirst(v);
 
 		return final_v;
+		//TODO: Support GPU operator chains
 	}
 
 	// Place the operators in a depth-first manner, but order

@@ -285,16 +285,16 @@ public class OptimizerUtils
 	public static boolean ALLOW_TRANSITIVE_SPARK_EXEC_TYPE = true;
 
 	/**
-	 * Enable prefetch and broadcast. Prefetch asynchronously calls acquireReadAndRelease() to trigger a chain of spark
-	 * transformations, which would would otherwise make the next instruction wait till completion. Broadcast allows
+	 * Enable prefetch and broadcast. Prefetch asynchronously calls acquireReadAndRelease() to trigger remote
+	 * operations, which would otherwise make the next instruction wait till completion. Broadcast allows
 	 * asynchronously transferring the data to all the nodes.
 	 */
-	public static boolean ASYNC_PREFETCH_SPARK = false;
+	public static boolean ASYNC_PREFETCH = false; //both Spark and GPU
 	public static boolean ASYNC_BROADCAST_SPARK = false;
 	public static boolean ASYNC_CHECKPOINT_SPARK = false;
 
 	/**
-	 * Heuristic-based instruction ordering to maximize inter-operator parallelism.
+	 * Heuristic-based instruction ordering to maximize inter-operator PARALLELISM.
 	 * Place the Spark operator chains first and trigger them to execute in parallel.
 	 */
 	public static boolean MAX_PARALLELIZE_ORDER = false;
@@ -308,7 +308,7 @@ public class OptimizerUtils
 	/**
 	 * Rule-based operator placement policy for GPU.
 	 */
-	public static boolean RULE_BASED_GPU_EXEC = false;
+	public static boolean RULE_BASED_GPU_EXEC = true;
 
 	//////////////////////
 	// Optimizer levels //

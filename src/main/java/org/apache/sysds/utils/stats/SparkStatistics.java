@@ -131,7 +131,7 @@ public class SparkStatistics {
 						parallelizeTime.longValue()*1e-9,
 						broadcastTime.longValue()*1e-9,
 						collectTime.longValue()*1e-9));
-		sb.append("Spark async. count (pf,bc,op): \t" +
+		sb.append("Async. OP count (pf,bc,op): \t" +
 				String.format("%d/%d/%d.\n", getAsyncPrefetchCount(), getAsyncBroadcastCount(), getAsyncSparkOpCount()));
 		return sb.toString();
 	}

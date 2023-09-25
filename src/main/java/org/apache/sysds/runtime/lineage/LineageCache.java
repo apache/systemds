@@ -641,8 +641,9 @@ public class LineageCache
 
 				// Scalar gpu intermediates is always copied back to host. 
 				// No need to cache the GPUobj for scalar intermediates.
+				instLI = ec.getLineageItem(((GPUInstruction) inst)._output);
 				if (liGPUObj == null)
-					liData = Arrays.asList(Pair.of(instLI, ec.getVariable(((GPUInstruction)inst)._output)));
+					liData = Arrays.asList(Pair.of(instLI, ec.getVariable(((GPUInstruction) inst)._output)));
 			}
 			else if (inst instanceof ComputationSPInstruction
 				&& (ec.getVariable(((ComputationSPInstruction) inst).output) instanceof MatrixObject)
@@ -1463,6 +1464,8 @@ public class LineageCache
 
 		LineageCacheStatistics.incrementSavedComputeTime(e._computeTime);
 		if (e.isGPUObject()) LineageCacheStatistics.incrementGpuHits();
+		if (inst.getOpcode().equals("prefetch") && DMLScript.USE_ACCELERATOR)
+			LineageCacheStatistics.incrementGpuPrefetch();
 		if (e.isRDDPersist()) {
 			if (SparkExecutionContext.isRDDCached(e.getRDDObject().getRDD().id()))
 				LineageCacheStatistics.incrementRDDPersistHits(); //persisted in the executors
@@ -1470,7 +1473,8 @@ public class LineageCache
 				LineageCacheStatistics.incrementRDDHits();  //only locally cached
 		}
 		if (e.isMatrixValue() || e.isScalarValue()) {
-			if (inst instanceof ComputationSPInstruction || inst.getOpcode().equals("prefetch"))
+			if (inst instanceof ComputationSPInstruction
+				|| (inst.getOpcode().equals("prefetch") && !DMLScript.USE_ACCELERATOR))
 				// Single_block Spark instructions (sync/async) and prefetch
 				LineageCacheStatistics.incrementSparkCollectHits();
 			else

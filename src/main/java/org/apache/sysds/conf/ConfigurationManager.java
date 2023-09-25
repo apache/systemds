@@ -262,8 +262,8 @@ public class ConfigurationManager{
 	}
 
 	public static boolean isPrefetchEnabled() {
-		return (getDMLConfig().getBooleanValue(DMLConfig.ASYNC_SPARK_PREFETCH)
-			|| OptimizerUtils.ASYNC_PREFETCH_SPARK);
+		return (getDMLConfig().getBooleanValue(DMLConfig.ASYNC_PREFETCH)
+			|| OptimizerUtils.ASYNC_PREFETCH);
 	}
 
 	public static boolean isMaxPrallelizeEnabled() {

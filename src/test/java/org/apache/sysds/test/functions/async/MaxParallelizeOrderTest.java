@@ -96,13 +96,13 @@ public class MaxParallelizeOrderTest extends AutomatedTestBase {
 			runTest(true, EXCEPTION_NOT_EXPECTED, null, -1);
 			HashMap<MatrixValue.CellIndex, Double> R = readDMLScalarFromOutputDir("R");
 
-			OptimizerUtils.ASYNC_PREFETCH_SPARK = true;
+			OptimizerUtils.ASYNC_PREFETCH = true;
 			OptimizerUtils.MAX_PARALLELIZE_ORDER = true;
 			if (testname.equalsIgnoreCase(TEST_NAME+"4"))
 				OptimizerUtils.ALLOW_TRANSITIVE_SPARK_EXEC_TYPE = false;
 			runTest(true, EXCEPTION_NOT_EXPECTED, null, -1);
 			HashMap<MatrixValue.CellIndex, Double> R_mp = readDMLScalarFromOutputDir("R");
-			OptimizerUtils.ASYNC_PREFETCH_SPARK = false;
+			OptimizerUtils.ASYNC_PREFETCH = false;
 			OptimizerUtils.MAX_PARALLELIZE_ORDER = false;
 			OptimizerUtils.ALLOW_TRANSITIVE_SPARK_EXEC_TYPE = true;
 

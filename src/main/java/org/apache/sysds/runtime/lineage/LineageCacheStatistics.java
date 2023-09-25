@@ -44,7 +44,7 @@ public class LineageCacheStatistics {
 	private static final LongAdder _ctimeProbe      = new LongAdder();
 	// Bellow entries are specific to gpu lineage cache
 	private static final LongAdder _numHitsGpu      = new LongAdder();
-	private static final LongAdder _numAsyncEvictGpu= new LongAdder();
+	private static final LongAdder _numPrefetchGpu= new LongAdder();
 	private static final LongAdder _numSyncEvictGpu = new LongAdder();
 	private static final LongAdder _numRecycleGpu   = new LongAdder();
 	private static final LongAdder _numDelGpu       = new LongAdder();
@@ -74,7 +74,7 @@ public class LineageCacheStatistics {
 		_ctimeProbe.reset();
 		_evtimeGpu.reset();
 		_numHitsGpu.reset();
-		_numAsyncEvictGpu.reset();
+		_numPrefetchGpu.reset();
 		_numSyncEvictGpu.reset();
 		_numRecycleGpu.reset();
 		_numDelGpu.reset();
@@ -210,9 +210,9 @@ public class LineageCacheStatistics {
 		_numHitsGpu.increment();
 	}
 
-	public static void incrementGpuAsyncEvicts() {
-		// Number of gpu cache entries moved to cpu cache via the background thread
-		_numAsyncEvictGpu.increment();
+	public static void incrementGpuPrefetch() {
+		// Number of reuse of GPU to host prefetches (asynchronous)
+		_numPrefetchGpu.increment();
 	}
 
 	public static void incrementGpuSyncEvicts() {
@@ -318,9 +318,7 @@ public class LineageCacheStatistics {
 		StringBuilder sb = new StringBuilder();
 		sb.append(_numHitsGpu.longValue());
 		sb.append("/");
-		sb.append(_numAsyncEvictGpu.longValue());
-		sb.append("/");
-		sb.append(_numSyncEvictGpu.longValue());
+		sb.append(_numPrefetchGpu.longValue());
 		return sb.toString();
 	}
 
@@ -339,7 +337,7 @@ public class LineageCacheStatistics {
 	}
 
 	public static boolean ifGpuStats() {
-		return (_numHitsGpu.longValue() + _numAsyncEvictGpu.longValue()
+		return (_numHitsGpu.longValue() + _numPrefetchGpu.longValue()
 			+ _numSyncEvictGpu.longValue() + _numRecycleGpu.longValue()
 			+ _numDelGpu.longValue() + _evtimeGpu.longValue()) != 0;
 	}

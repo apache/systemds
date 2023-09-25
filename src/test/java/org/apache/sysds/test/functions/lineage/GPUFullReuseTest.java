@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
+import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.lineage.Lineage;
 import org.apache.sysds.runtime.lineage.LineageCacheConfig;
 import org.apache.sysds.runtime.lineage.LineageCacheStatistics;
@@ -43,21 +44,21 @@ public class GPUFullReuseTest extends AutomatedTestBase{
 	protected static final String TEST_NAME = "LineageReuseGPU";
 	protected static final int TEST_VARIANTS = 4;
 	protected String TEST_CLASS_DIR = TEST_DIR + GPUFullReuseTest.class.getSimpleName() + "/";
-	
+
 	@BeforeClass
 	public static void checkGPU() {
 		// Skip all the tests if no GPU is available
 		// FIXME: Fails to skip if gpu available but no libraries
 		Assume.assumeTrue(TestUtils.isGPUAvailable() == cudaError.cudaSuccess);
 	}
-	
+
 	@Override
 	public void setUp() {
 		TestUtils.clearAssertionInformation();
 		for( int i=1; i<=TEST_VARIANTS; i++ )
 			addTestConfiguration(TEST_NAME+i, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME+i));
 	}
-	
+
 	@Test
 	public void ReuseAggBin() {           //reuse AggregateBinary and sum
 		testLineageTraceExec(TEST_NAME+"1");
@@ -90,9 +91,10 @@ public class GPUFullReuseTest extends AutomatedTestBase{
 		proArgs.add(output("R"));
 		programArgs = proArgs.toArray(new String[proArgs.size()]);
 		fullDMLScriptName = getScript();
-		
+
 		Lineage.resetInternalState();
 		//run the test
+		OptimizerUtils.ASYNC_PREFETCH = true;
 		runTest(true, EXCEPTION_NOT_EXPECTED, null, -1);
 		HashMap<MatrixValue.CellIndex, Double> R_orig = readDMLMatrixFromOutputDir("R");
 
@@ -104,14 +106,15 @@ public class GPUFullReuseTest extends AutomatedTestBase{
 		proArgs.add(output("R"));
 		programArgs = proArgs.toArray(new String[proArgs.size()]);
 		fullDMLScriptName = getScript();
-		
+
 		Lineage.resetInternalState();
 		//run the test
 		runTest(true, EXCEPTION_NOT_EXPECTED, null, -1);
+		OptimizerUtils.ASYNC_PREFETCH = false;
 		AutomatedTestBase.TEST_GPU = false;
 		HashMap<MatrixValue.CellIndex, Double> R_reused = readDMLMatrixFromOutputDir("R");
 
-		//compare results 
+		//compare results
 		TestUtils.compareMatrices(R_orig, R_reused, 1e-6, "Origin", "Reused");
 
 		if( testname.endsWith("3") ) { //function reuse

@@ -49,7 +49,8 @@ public class TriggerPrefetchTask implements Runnable {
 		synchronized (_prefetchMO) {
 			// Having this check inside the critical section
 			// safeguards against concurrent rmVar.
-			if (_prefetchMO.isPendingRDDOps() || _prefetchMO.isFederated()) {
+			if (_prefetchMO.isPendingRDDOps() || _prefetchMO.isDeviceToHostCopy()
+				|| _prefetchMO.isFederated()) {
 				// TODO: Add robust runtime constraints for federated prefetch
 				// Execute and bring the result to local
 				mb = _prefetchMO.acquireReadAndRelease();

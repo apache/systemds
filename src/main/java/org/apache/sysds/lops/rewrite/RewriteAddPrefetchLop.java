@@ -90,6 +90,10 @@ public class RewriteAddPrefetchLop extends LopRewriteRule
 	}
 
 	private boolean isPrefetchNeeded(Lop lop) {
+		return isPrefetchFromSparkNeeded(lop) || isPrefetchFromGPUNeeded(lop);
+	}
+
+	private boolean isPrefetchFromSparkNeeded(Lop lop) {
 		// Run Prefetch for a Spark instruction if the instruction is a Transformation
 		// and the output is consumed by only CP instructions.
 		boolean transformOP = lop.getExecType() == Types.ExecType.SPARK && lop.getAggType() != AggBinaryOp.SparkAggType.SINGLE_BLOCK
@@ -118,5 +122,11 @@ public class RewriteAddPrefetchLop extends LopRewriteRule
 		return transformOP && !hasParameterizedOut && !anyOutputList
 			&& (lop.isAllOutputsCP() || OperatorOrderingUtils.isCollectForBroadcast(lop))
 			&& lop.getDataType() == Types.DataType.MATRIX;
+	}
+
+	private boolean isPrefetchFromGPUNeeded(Lop lop) {
+		// Prefetch a GPU intermediate if all the outputs are CP.
+		return lop.getDataType() == Types.DataType.MATRIX
+			&& lop.isExecGPU() && lop.isAllOutputsCP();
 	}
 }

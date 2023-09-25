@@ -639,7 +639,7 @@ public class Statistics
 				sb.append("LinCache hits (Mem/FS/Del): \t" + LineageCacheStatistics.displayHits() + ".\n");
 				sb.append("LinCache MultiLevel (Ins/SB/Fn):" + LineageCacheStatistics.displayMultiLevelHits() + ".\n");
 				if (LineageCacheStatistics.ifGpuStats()) {
-					sb.append("LinCache GPU (Hit/Async/Sync): \t" + LineageCacheStatistics.displayGpuStats() + ".\n");
+					sb.append("LinCache GPU (Hit/PF): \t" + LineageCacheStatistics.displayGpuStats() + ".\n");
 					sb.append("LinCache GPU (Recyc/Del): \t" + LineageCacheStatistics.displayGpuPointerStats() + ".\n");
 					sb.append("LinCache GPU evict time: \t" + LineageCacheStatistics.displayGpuEvictTime() + " sec.\n");
 				}

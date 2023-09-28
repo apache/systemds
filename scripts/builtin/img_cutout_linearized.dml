@@ -60,7 +60,7 @@ m_img_cutout_linearized = function(Matrix[Double] img_in, Integer x, Integer y, 
     img_out = img_in
 
     # Iterate through each row of the rectangular region
-    parfor (i in start_y: end_y, check=0){
+    for (i in start_y: end_y){
       start_idx = (i-1) * s_cols + start_x
       end_idx = (i-1) * s_cols + end_x
 

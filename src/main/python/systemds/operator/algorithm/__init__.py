@@ -90,6 +90,7 @@ from .builtin.img_translate import img_translate
 from .builtin.impurityMeasures import impurityMeasures 
 from .builtin.imputeByFD import imputeByFD 
 from .builtin.imputeByFDApply import imputeByFDApply 
+from .builtin.imputeByKNN import imputeByKNN 
 from .builtin.imputeByMean import imputeByMean 
 from .builtin.imputeByMeanApply import imputeByMeanApply 
 from .builtin.imputeByMedian import imputeByMedian 
@@ -254,6 +255,7 @@ __all__ = ['WoE',
  'impurityMeasures',
  'imputeByFD',
  'imputeByFDApply',
+ 'imputeByKNN',
  'imputeByMean',
  'imputeByMeanApply',
  'imputeByMedian',

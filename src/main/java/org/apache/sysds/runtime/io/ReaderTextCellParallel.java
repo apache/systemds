@@ -259,23 +259,41 @@ public class ReaderTextCellParallel extends ReaderTextCell
 
 			RecordReader<LongWritable,Text> reader = _informat.getRecordReader(_split, _job, Reporter.NULL);
 			try {
-				//counting without locking as conflicts unlikely
+				//skip matrix-matrix meta data
+				boolean foundComment = false;
 				while( reader.next(key, value) ) {
 					if( value.toString().charAt(0) == '%' )
-						continue;
-					st.reset( value.toString() );
-					int nv = (int)st.nextLong()-1;
-					if(nv >= 0){
-						_rNnz[nv] ++;
-						if( _isSymmetric )
-							_rNnz[(int)st.nextLong()-1] ++;
+						foundComment = true;
+					else if( foundComment )
+						break; //skip meta data
+					else {
+						countCell(st, value.toString());
+						break;
 					}
+				}
+				
+				//counting without locking as conflicts unlikely
+				while( reader.next(key, value) ) {
+					countCell(st, value.toString());
 				}
 			}
 			finally {
 				IOUtilFunctions.closeSilently(reader);
 			}
 			return null;
+		}
+		
+		private void countCell(FastStringTokenizer st, String value) {
+			st.reset( value );
+			int rix = (int)st.nextLong()-1;
+			if(rix >= 0){
+				_rNnz[rix] ++;
+				if( _isSymmetric ) {
+					int cix = (int)st.nextLong()-1;
+					if(rix != cix)
+						_rNnz[cix] ++;
+				}
+			}
 		}
 	}
 	

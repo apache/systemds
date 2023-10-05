@@ -58,7 +58,6 @@ import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
-import org.apache.sysds.runtime.data.DenseBlockFP64DEDUP;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.instructions.spark.data.ReblockBuffer;
 import org.apache.sysds.runtime.instructions.spark.data.SerLongWritable;
@@ -1466,7 +1465,6 @@ public class RDDConverterUtils {
 		{
 			long rowIndex = arg0._1();
 			MatrixBlock blk = arg0._2();
-			boolean dedup = blk.getDenseBlock() instanceof DenseBlockFP64DEDUP;
 			ArrayList<Tuple2<MatrixIndexes, MatrixBlock>> ret = new ArrayList<>();
 			long rlen = _mcIn.getRows();
 			long clen = _mcIn.getCols();

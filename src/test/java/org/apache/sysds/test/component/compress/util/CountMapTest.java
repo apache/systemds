@@ -91,7 +91,7 @@ public class CountMapTest {
 	public void testDoubleCountHashMap4() {
 		for(int i = 0; i < 100; i++) {
 			assertEquals(i, m.size());
-			m.increment((double) i);
+			m.increment(i);
 			assertEquals(i + 1, m.size());
 		}
 		assertEquals(m.get(1.0), 1);
@@ -105,7 +105,7 @@ public class CountMapTest {
 
 			for(int i = 0; i < 100; i++) {
 				assertEquals(i, m.size());
-				m.increment((double) i);
+				m.increment(i);
 				assertEquals(i + 1, m.size());
 			}
 			assertEquals(m.get(1.0), 1);
@@ -122,7 +122,7 @@ public class CountMapTest {
 	public void testDoubleCountHashMap6() {
 		for(int i = 0; i < 5; i++) {
 			assertEquals(i, m.size());
-			m.increment((double) i);
+			m.increment(i);
 			assertEquals(i + 1, m.size());
 		}
 		assertEquals(1, m.getOrDefault(4.0, -1));
@@ -132,7 +132,7 @@ public class CountMapTest {
 	public void sizeIncrease() {
 		for(int i = 0; i < 100; i++) {
 			assertEquals(i, m.size());
-			m.increment((double) i);
+			m.increment(i);
 			assertEquals(i + 1, m.size());
 		}
 	}
@@ -140,7 +140,7 @@ public class CountMapTest {
 	@Test
 	public void extractValues() {
 		for(int i = 0; i < 100; i++) {
-			m.increment((double) i);
+			m.increment(i);
 		}
 		ACount<Double>[] vals = m.extractValues();
 		Arrays.sort(vals, Comparator.comparing((x) -> x.key()));
@@ -153,7 +153,7 @@ public class CountMapTest {
 	@Test
 	public void extractValuesAfterSort() {
 		for(int i = 0; i < 100; i++) {
-			m.increment((double) i);
+			m.increment(i);
 		}
 		m.sortBuckets();
 		ACount<Double>[] vals = m.extractValues();
@@ -168,7 +168,7 @@ public class CountMapTest {
 	public void complicatedExample() {
 		for(int i = 0; i < 100; i++)
 			for(int j = i; j < 100; j++)
-				m.increment((double) j);
+				m.increment(j);
 		assertEquals(100, m.size());
 		for(int i = 0; i < 100; i++) {
 			assertEquals("expect " + (i + 1) + " got: " + m.get((double) i) + " " + m, i + 1, m.get((double) i));
@@ -189,7 +189,7 @@ public class CountMapTest {
 	@Test()
 	public void getId2() {
 		for(int i = 0; i < 20; i++) {
-			m.increment((double) i);
+			m.increment(i);
 		}
 		assertEquals(19, m.getId(19.0));
 	}
@@ -197,7 +197,7 @@ public class CountMapTest {
 	@Test()
 	public void sortBucketsSmall() {
 		for(int i = 0; i < 9; i++)
-			m.increment((double) i);
+			m.increment(i);
 
 		m.sortBuckets(); // should not really do anything to behaviour
 		assertEquals(4, m.getId(4.0));
@@ -207,7 +207,7 @@ public class CountMapTest {
 	@Test
 	public void getDictionary() {
 		for(int i = 0; i < 9; i++)
-			m.increment((double) i);
+			m.increment(i);
 
 		double[] d = m.getDictionary();
 		for(int i = 0; i < 9; i++)

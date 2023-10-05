@@ -128,9 +128,6 @@ public class MatrixObject extends CacheableData<MatrixBlock> {
 			acquireModify(data);
 			release();
 		}
-		else {
-			data = null;
-		}
 	}
 
 	/**

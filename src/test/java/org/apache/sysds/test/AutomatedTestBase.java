@@ -19,11 +19,6 @@
 
 package org.apache.sysds.test;
 
-import static java.lang.Math.ceil;
-import static java.lang.Thread.sleep;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
-
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
@@ -38,12 +33,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import static java.lang.Math.ceil;
+import static java.lang.Thread.sleep;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.ArrayUtils;
@@ -2237,6 +2235,55 @@ public abstract class AutomatedTestBase {
 		MatrixCharacteristics mc = new MatrixCharacteristics(data.length, data[0].length,
 			OptimizerUtils.DEFAULT_BLOCKSIZE, -1);
 		return writeInputFrameWithMTD(name, data, bIncludeR, mc, schema, fmt);
+	}
+
+	protected FrameBlock writeInputFrame(String name, FrameBlock data, boolean bIncludeR, ValueType[] schema,
+		FileFormat fmt) throws IOException {
+		String completePath = baseDirectory + INPUT_DIR + name;
+		String completeRPath = baseDirectory + INPUT_DIR + name + ".csv";
+
+		try {
+			cleanupExistingData(baseDirectory + INPUT_DIR + name, bIncludeR);
+		}
+		catch(IOException e) {
+			e.printStackTrace();
+			throw new RuntimeException(e);
+		}
+
+		TestUtils.writeTestFrame(completePath, data, schema, fmt);
+		if(bIncludeR) {
+			TestUtils.writeTestFrame(completeRPath, data, schema, FileFormat.CSV, true);
+			inputRFiles.add(completeRPath);
+		}
+		if(DEBUG)
+			TestUtils.writeTestFrame(DEBUG_TEMP_DIR + completePath, data, schema, fmt);
+		inputDirectories.add(baseDirectory + INPUT_DIR + name);
+
+		return data;
+	}
+
+	protected FrameBlock writeInputFrameWithMTD(String name, FrameBlock data, boolean bIncludeR, ValueType[] schema,
+		FileFormat fmt) throws IOException {
+		MatrixCharacteristics mc = new MatrixCharacteristics(data.getNumRows(), data.getNumColumns(),
+			OptimizerUtils.DEFAULT_BLOCKSIZE, -1);
+		return writeInputFrameWithMTD(name, data, bIncludeR, mc, schema, fmt);
+	}
+
+	protected FrameBlock writeInputFrameWithMTD(String name, FrameBlock data, boolean bIncludeR,
+		MatrixCharacteristics mc, ValueType[] schema, FileFormat fmt) throws IOException {
+		writeInputFrame(name, data, bIncludeR, schema, fmt);
+
+		// write metadata file
+		try {
+			String completeMTDPath = baseDirectory + INPUT_DIR + name + ".mtd";
+			HDFSTool.writeMetaDataFile(completeMTDPath, null, schema, DataType.FRAME, mc, fmt);
+		}
+		catch(IOException e) {
+			e.printStackTrace();
+			throw new RuntimeException(e);
+		}
+
+		return data;
 	}
 
 	protected double[][] writeInputFrameWithMTD(String name, double[][] data, boolean bIncludeR,

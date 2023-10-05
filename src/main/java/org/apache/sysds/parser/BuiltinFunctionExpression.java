@@ -412,7 +412,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			if(OptimizerUtils.ALLOW_SCRIPT_LEVEL_COMPRESS_COMMAND){
 				Expression expressionTwo = getSecondExpr();
 				checkNumParameters(getSecondExpr() != null ? 2 : 1);
-				checkMatrixParam(getFirstExpr());
+				checkMatrixFrameParam(getFirstExpr());
 				if(expressionTwo != null)
 					checkMatrixParam(getSecondExpr());
 

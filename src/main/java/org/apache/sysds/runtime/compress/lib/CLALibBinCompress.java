@@ -20,8 +20,10 @@ package org.apache.sysds.runtime.compress.lib;
 
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.sysds.common.Types;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlockFactory;
 import org.apache.sysds.runtime.compress.CompressionStatistics;
+import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.transform.encode.ColumnEncoderBin;
@@ -30,7 +32,7 @@ import org.apache.sysds.runtime.transform.encode.MultiColumnEncoder;
 
 public class CLALibBinCompress {
 	public static ColumnEncoderBin.BinMethod binMethod = ColumnEncoderBin.BinMethod.EQUI_WIDTH;
-	public static Pair<MatrixBlock, FrameBlock> binCompress(MatrixBlock X, MatrixBlock d, int k){
+	public static Pair<MatrixBlock, FrameBlock> binCompress(CacheBlock<?> X, MatrixBlock d, int k){
 		// Create transform spec acc to binMethod
 		String spec = createSpec(d);
 
@@ -40,11 +42,13 @@ public class CLALibBinCompress {
 		MatrixBlock binned = encoder.encode(X, k, true);
 
 		// Get metadata from transformencode
-		FrameBlock meta = encoder.getMetaData(null);
+		FrameBlock meta = new FrameBlock(X.getNumColumns(), Types.ValueType.STRING);
+		encoder.initMetaData(meta);
+		FrameBlock newMeta = encoder.getMetaData(meta, k);
 
 		// Optional: recompress
 		Pair<MatrixBlock, CompressionStatistics> recompressed = CompressedMatrixBlockFactory.compress(binned, k);
-		return new ImmutablePair<>(recompressed.getKey(), meta);
+		return new ImmutablePair<>(recompressed.getKey(), newMeta);
 	}
 
 	private static String createSpec(MatrixBlock d) {

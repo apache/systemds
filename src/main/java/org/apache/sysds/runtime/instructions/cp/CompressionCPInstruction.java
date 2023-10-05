@@ -66,7 +66,7 @@ public class CompressionCPInstruction extends ComputationCPInstruction {
 		String opcode = parts[0];
 		CPOperand in1 = new CPOperand(parts[1]);
 		CPOperand out = new CPOperand(parts[2]);
-		if(parts.length == 6) {
+		if(parts.length == 5) {
 			/** Compression with bins that returns two outputs*/
 			List<CPOperand> outputs = new ArrayList<>();
 			outputs.add(new CPOperand(parts[3]));
@@ -90,15 +90,23 @@ public class CompressionCPInstruction extends ComputationCPInstruction {
 	}
 
 	private void processCompressByBinInstruction(ExecutionContext ec) {
-		final MatrixBlock X = ec.getMatrixInput(input1.getName());
 		final MatrixBlock d = ec.getMatrixInput(input2.getName());
 
 		final int k = OptimizerUtils.getConstrainedNumThreads(-1);
 
-		Pair<MatrixBlock, FrameBlock> out = CLALibBinCompress.binCompress(X, d, k);
+		Pair<MatrixBlock, FrameBlock> out;
+
+		if(ec.isMatrixObject(input1.getName())) {
+			final MatrixBlock X = ec.getMatrixInput(input1.getName());
+			out = CLALibBinCompress.binCompress(X, d, k);
+			ec.releaseMatrixInput(input1.getName());
+		} else {
+			final FrameBlock X = ec.getFrameInput(input1.getName());
+			out = CLALibBinCompress.binCompress(X, d, k);
+			ec.releaseFrameInput(input1.getName());
+		}
 		
 		// Set output and release input
-		ec.releaseMatrixInput(input1.getName());
 		ec.releaseMatrixInput(input2.getName());
 		ec.setMatrixOutput(_outputs.get(0).getName(), out.getKey());
 		ec.setFrameOutput(_outputs.get(1).getName(), out.getValue());

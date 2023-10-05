@@ -19,9 +19,13 @@
 
 package org.apache.sysds.test.functions.compress.matrixByBin;
 
+import java.io.IOException;
+
 import org.apache.sysds.common.Types;
+import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
+import org.apache.sysds.test.TestUtils;
 import org.apache.sysds.test.functions.builtin.part1.BuiltinDistTest;
 import org.junit.Test;
 
@@ -45,7 +49,10 @@ public class CompressByBinTest extends AutomatedTestBase {
 	}
 
 	@Test
-	public void testCompressBinsDefaultCP() { runCompress(Types.ExecType.CP); }
+	public void testCompressBinsDefaultMatrixCP() { runCompress(Types.ExecType.CP); }
+
+	@Test
+	public void testCompressBinsDefaultFrameCP() { runCompressFrame(Types.ExecType.CP); }
 
 	private void runCompress(Types.ExecType instType)
 	{
@@ -58,8 +65,6 @@ public class CompressByBinTest extends AutomatedTestBase {
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
 			programArgs = new String[]{"-args", input("X")};
-			fullRScriptName = HOME + TEST_NAME + ".R";
-			rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + expectedDir();
 
 			//generate actual dataset
 			double[][] X = getRandomMatrix(rows, cols, -100, 100, 1, 7);
@@ -67,6 +72,37 @@ public class CompressByBinTest extends AutomatedTestBase {
 
 			runTest(true, false, null, -1);
 
+		}
+		finally {
+			rtplatform = platformOld;
+		}
+	}
+
+	private void runCompressFrame(Types.ExecType instType)
+	{
+		Types.ExecMode platformOld = setExecMode(instType);
+
+		try
+		{
+			loadTestConfiguration(getTestConfiguration(TEST_NAME));
+
+			String HOME = SCRIPT_DIR + TEST_DIR;
+			fullDMLScriptName = HOME + TEST_NAME + ".dml";
+			programArgs = new String[]{"-explain", "-args", input("X")};
+
+			//generate actual dataset
+			double[][] X = getRandomMatrix(rows, cols, -100, 100, 1, 7);
+			writeInputMatrixWithMTD("X", X, true);
+
+			Types.ValueType[] schema = new Types.ValueType[]{Types.ValueType.INT32};
+			FrameBlock Xf = TestUtils
+				.generateRandomFrameBlock(1000, schema, 7);
+			writeInputFrameWithMTD("X", Xf, false, schema, Types.FileFormat.CSV);
+			runTest(true, false, null, -1);
+
+		}
+		catch(IOException e) {
+			throw new RuntimeException(e);
 		}
 		finally {
 			rtplatform = platformOld;

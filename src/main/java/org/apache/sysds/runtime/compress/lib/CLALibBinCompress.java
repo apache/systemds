@@ -46,9 +46,13 @@ public class CLALibBinCompress {
 		encoder.initMetaData(meta);
 		FrameBlock newMeta = encoder.getMetaData(meta, k);
 
-		// Optional: recompress
-		Pair<MatrixBlock, CompressionStatistics> recompressed = CompressedMatrixBlockFactory.compress(binned, k);
-		return new ImmutablePair<>(recompressed.getKey(), newMeta);
+		// FIXME Optional: recompress, else can be removed (lines 54-55) once fixed compression
+		if(X instanceof MatrixBlock) {
+			Pair<MatrixBlock, CompressionStatistics> recompressed = CompressedMatrixBlockFactory.compress(binned, k);
+			return new ImmutablePair<>(recompressed.getKey(), newMeta);
+		}
+		else
+			return new ImmutablePair<>(binned, newMeta);
 	}
 
 	private static String createSpec(MatrixBlock d) {

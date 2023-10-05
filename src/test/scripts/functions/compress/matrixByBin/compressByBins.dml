@@ -28,3 +28,6 @@ d = matrix(10, rows = 1, cols = ncol(X))
 print(toString(res))
 print(toString(meta))
 
+write(meta, $3, format="csv");
+
+

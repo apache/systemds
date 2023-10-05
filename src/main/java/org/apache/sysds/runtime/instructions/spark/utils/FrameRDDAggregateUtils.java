@@ -23,13 +23,9 @@ import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.Function2;
-import org.apache.spark.api.java.function.PairFunction;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
-import scala.Function3;
 import scala.Tuple2;
-import scala.Tuple3;
-import scala.Tuple4;
 import scala.Tuple5;
 
 

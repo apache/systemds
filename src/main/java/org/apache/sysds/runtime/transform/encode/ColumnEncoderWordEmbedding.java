@@ -32,161 +32,156 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static org.apache.sysds.runtime.util.UtilFunctions.getEndIndex;
-
 public class ColumnEncoderWordEmbedding extends ColumnEncoder {
-    private MatrixBlock _wordEmbeddings;
-    private Map<Object, Long> _rcdMap;
-    private ConcurrentHashMap<String, double[]> _embMap;
+	private MatrixBlock _wordEmbeddings;
+	private Map<Object, Long> _rcdMap;
+	private ConcurrentHashMap<String, double[]> _embMap;
 
-    public ColumnEncoderWordEmbedding() {
-        super(-1);
-        _rcdMap = new HashMap<>();
-        _wordEmbeddings = new MatrixBlock();
-    }
+	public ColumnEncoderWordEmbedding() {
+		super(-1);
+		_rcdMap = new HashMap<>();
+		_wordEmbeddings = new MatrixBlock();
+	}
 
-    private long lookupRCDMap(Object key) {
-        return _rcdMap.getOrDefault(key, -1L);
-    }
+	private long lookupRCDMap(Object key) {
+		return _rcdMap.getOrDefault(key, -1L);
+	}
 
-    //domain size is equal to the number columns of the embeddings column thats equal to length of an embedding vector
-    @Override
-    public int getDomainSize(){
-        return _wordEmbeddings.getNumColumns();
-    }
-    protected ColumnEncoderWordEmbedding(int colID) {
-        super(colID);
-    }
+	//domain size is equal to the number columns of the embeddings column thats equal to length of an embedding vector
+	@Override
+	public int getDomainSize(){
+		return _wordEmbeddings.getNumColumns();
+	}
+	protected ColumnEncoderWordEmbedding(int colID) {
+		super(colID);
+	}
 
-    @Override
-    protected double getCode(CacheBlock<?> in, int row) {
-        throw new NotImplementedException();
-    }
+	@Override
+	protected double getCode(CacheBlock<?> in, int row) {
+		throw new NotImplementedException();
+	}
 
-    @Override
-    protected double[] getCodeCol(CacheBlock<?> in, int startInd, int endInd, double[] tmp) {
-        throw new NotImplementedException();
-    }
+	@Override
+	protected double[] getCodeCol(CacheBlock<?> in, int startInd, int endInd, double[] tmp) {
+		throw new NotImplementedException();
+	}
 
-    //previously recode replaced strings with indices of the corresponding matrix row index
-    //now, the indices are replaced with actual word embedding vectors
-    //current limitation: in case the transform is done on multiple cols, the same embedding matrix is used for both transform
+	//previously recode replaced strings with indices of the corresponding matrix row index
+	//now, the indices are replaced with actual word embedding vectors
+	//current limitation: in case the transform is done on multiple cols, the same embedding matrix is used for both transform
 
-    private double[] getEmbeddedingFromEmbeddingMatrix(long r){
-        double[] embedding = new double[getDomainSize()];
-        for (int i = 0; i < getDomainSize(); i++) {
-            embedding[i] = this._wordEmbeddings.quickGetValue((int) r, _colID - 1 + i);
-        }
-        return embedding;
+	private double[] getEmbeddedingFromEmbeddingMatrix(long r){
+		double[] embedding = new double[getDomainSize()];
+		for (int i = 0; i < getDomainSize(); i++) {
+			embedding[i] = this._wordEmbeddings.quickGetValue((int) r, _colID - 1 + i);
+		}
+		return embedding;
 
-    }
+	}
 
-    @SuppressWarnings("DuplicatedCode")
-    @Override
-    public void applyDense(CacheBlock<?> in, MatrixBlock out, int outputCol, int rowStart, int blk){
-        int rowEnd = getEndIndex(in.getNumRows(), rowStart, blk);
-        if(blk == -1){
-            HashMap<String, double[]> _embMapSingleThread = new HashMap<>();
-            for(int i=rowStart; i<rowEnd; i++){
-                String key = in.getString(i, _colID-1);
-                if(key == null || key.isEmpty()) {
-                    continue;
-                }
-                double[] embedding = _embMapSingleThread.get(key);
-                if(embedding == null){
-                    long code = lookupRCDMap(key);
-                    if(code == -1L){
-                        continue;
-                    }
-                    embedding = getEmbeddedingFromEmbeddingMatrix(code - 1);
-                    _embMapSingleThread.put(key, embedding);
-                }
-                out.quickSetRow(i, embedding);
-            }
-        }
-        else{
-            //map each string to the corresponding embedding vector
-            for(int i=rowStart; i<rowEnd; i++){
-                String key = in.getString(i, _colID-1);
-                if(key == null || key.isEmpty()) {
-                    //codes[i-startInd] = Double.NaN;
-                    continue;
-                }
-                double[] embedding = _embMap.get(key);
-                if(embedding == null){
-                    long code = lookupRCDMap(key);
-                    if(code == -1L){
-                        continue;
-                    }
-                    embedding = getEmbeddedingFromEmbeddingMatrix(code - 1);
-                    _embMap.put(key, embedding);
-                }
-                out.quickSetRow(i, embedding);
-            }
-        }
-    }
+	@Override
+	public void applyDense(CacheBlock<?> in, MatrixBlock out, int outputCol, int rowStart, int blk){
+		int rowEnd = getEndIndex(in.getNumRows(), rowStart, blk);
+		if(blk == -1){
+			HashMap<String, double[]> _embMapSingleThread = new HashMap<>();
+			for(int i=rowStart; i<rowEnd; i++){
+				String key = in.getString(i, _colID-1);
+				if(key == null || key.isEmpty()) {
+					continue;
+				}
+				double[] embedding = _embMapSingleThread.get(key);
+				if(embedding == null){
+					long code = lookupRCDMap(key);
+					if(code == -1L){
+						continue;
+					}
+					embedding = getEmbeddedingFromEmbeddingMatrix(code - 1);
+					_embMapSingleThread.put(key, embedding);
+				}
+				out.quickSetRow(i, embedding);
+			}
+		}
+		else{
+			//map each string to the corresponding embedding vector
+			for(int i=rowStart; i<rowEnd; i++){
+				String key = in.getString(i, _colID-1);
+				if(key == null || key.isEmpty()) {
+					//codes[i-startInd] = Double.NaN;
+					continue;
+				}
+				double[] embedding = _embMap.get(key);
+				if(embedding == null){
+					long code = lookupRCDMap(key);
+					if(code == -1L){
+						continue;
+					}
+					embedding = getEmbeddedingFromEmbeddingMatrix(code - 1);
+					_embMap.put(key, embedding);
+				}
+				out.quickSetRow(i, embedding);
+			}
+		}
+	}
 
 
-    @Override
-    protected TransformType getTransformType() {
-        return TransformType.WORD_EMBEDDING;
-    }
+	@Override
+	protected TransformType getTransformType() {
+		return TransformType.WORD_EMBEDDING;
+	}
 
-    @Override
-    public void build(CacheBlock<?> in) {
-        throw new NotImplementedException();
-    }
+	@Override
+	public void build(CacheBlock<?> in) {
+		throw new NotImplementedException();
+	}
 
-    @Override
-    public void allocateMetaData(FrameBlock meta) {
-        throw new NotImplementedException();
-    }
+	@Override
+	public void allocateMetaData(FrameBlock meta) {
+		throw new NotImplementedException();
+	}
 
-    @Override
-    public FrameBlock getMetaData(FrameBlock out) {
-        throw new NotImplementedException();
-    }
+	@Override
+	public FrameBlock getMetaData(FrameBlock out) {
+		throw new NotImplementedException();
+	}
 
-    @Override
-    public void initMetaData(FrameBlock meta) {
-        if(meta == null || meta.getNumRows() <= 0)
-            return;
-        _rcdMap = meta.getRecodeMap(_colID - 1); // 1-based
-    }
+	@Override
+	public void initMetaData(FrameBlock meta) {
+		if(meta == null || meta.getNumRows() <= 0)
+			return;
+		_rcdMap = meta.getRecodeMap(_colID - 1); // 1-based
+	}
 
-    //save embeddings matrix reference for apply step
-    @Override
-    public void initEmbeddings(MatrixBlock embeddings){
-        this._wordEmbeddings = embeddings;
-        this._embMap = new ConcurrentHashMap<>();
-    }
+	//save embeddings matrix reference for apply step
+	@Override
+	public void initEmbeddings(MatrixBlock embeddings){
+		this._wordEmbeddings = embeddings;
+		this._embMap = new ConcurrentHashMap<>();
+	}
 
-    @Override
-    public void writeExternal(ObjectOutput out) throws IOException {
-        super.writeExternal(out);
-        out.writeInt(_rcdMap.size());
+	@Override
+	public void writeExternal(ObjectOutput out) throws IOException {
+		super.writeExternal(out);
+		out.writeInt(_rcdMap.size());
 
-        for(Map.Entry<Object, Long> e : _rcdMap.entrySet()) {
-            out.writeUTF(e.getKey().toString());
-            out.writeLong(e.getValue());
-        }
-        _wordEmbeddings.write(out);
-    }
+		for(Map.Entry<Object, Long> e : _rcdMap.entrySet()) {
+			out.writeUTF(e.getKey().toString());
+			out.writeLong(e.getValue());
+		}
+		_wordEmbeddings.write(out);
+	}
 
-    @Override
-    public void readExternal(ObjectInput in) throws IOException {
-        super.readExternal(in);
-        int size = in.readInt();
-        for(int j = 0; j < size; j++) {
-            String key = in.readUTF();
-            Long value = in.readLong();
-            _rcdMap.put(key, value);
-        }
-        _wordEmbeddings.readExternal(in);
-        this._embMap = new ConcurrentHashMap<>();
-    }
+	@Override
+	public void readExternal(ObjectInput in) throws IOException {
+		super.readExternal(in);
+		int size = in.readInt();
+		for(int j = 0; j < size; j++) {
+			String key = in.readUTF();
+			Long value = in.readLong();
+			_rcdMap.put(key, value);
+		}
+		_wordEmbeddings.readExternal(in);
+		this._embMap = new ConcurrentHashMap<>();
+	}
 }

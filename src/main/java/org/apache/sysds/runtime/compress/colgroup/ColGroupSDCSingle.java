@@ -73,7 +73,7 @@ public class ColGroupSDCSingle extends ASDC {
 		final boolean allZero = ColGroupUtils.allZero(defaultTuple);
 		if(dict == null && allZero)
 			return new ColGroupEmpty(colIndexes);
-		else if(dict == null && offsets.getSize() * 2 > numRows + 2 && !(dict instanceof PlaceHolderDict)) {
+		else if(dict == null && offsets.getSize() * 2 > numRows + 2) {
 			AOffset rev = AOffset.reverse(numRows, offsets);
 			return ColGroupSDCSingleZeros.create(colIndexes, numRows, Dictionary.create(defaultTuple), rev, cachedCounts);
 		}

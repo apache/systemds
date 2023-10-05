@@ -823,6 +823,7 @@ public class TensorBlock implements CacheBlock<TensorBlock>, Externalizable {
 			}
 			case SPARSE_BLOCK:
 			case ULTRA_SPARSE_BLOCK:
+			default:
 				throw new NotImplementedException();
 		}
 	}

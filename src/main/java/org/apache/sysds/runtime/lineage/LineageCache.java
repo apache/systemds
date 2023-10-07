@@ -78,7 +78,6 @@ public class LineageCache
 	static {
 		LineageCacheEviction.setCacheLimit(LineageCacheConfig.CPU_CACHE_FRAC); //5%
 		LineageCacheEviction.setStartTimestamp();
-		LineageGPUCacheEviction.setStartTimestamp();
 		// Note: GPU cache initialization is done in GPUContextPool:initializeGPU()
 	}
 	
@@ -204,6 +203,8 @@ public class LineageCache
 						ec.getMatrixObject(outName).updateDataCharacteristics(e.getDataCharacteristics());
 						//Increment the live count for this pointer
 						LineageGPUCacheEviction.incrementLiveCount(gpuPtr);
+						//Maintain the eviction list in the free list
+						LineageGPUCacheEviction.maintainOrder(e);
 					}
 					//Replace the live lineage trace with the cached one (if not parfor, dedup)
 					ec.replaceLineageItem(outName, e._key);
@@ -325,6 +326,8 @@ public class LineageCache
 						case GPUCACHED:
 							//Increment the live count for this pointer
 							LineageGPUCacheEviction.incrementLiveCount(e.getGPUPointer());
+							//Maintain the eviction list in the free list
+							LineageGPUCacheEviction.maintainOrder(e);
 							if (DMLScript.STATISTICS) LineageCacheStatistics.incrementGpuHits();
 							break;
 						default:
@@ -762,17 +765,19 @@ public class LineageCache
 				removePlaceholder(instLI);
 				return;
 			}
+			if(DMLScript.STATISTICS && LineageCacheEviction._removelist.containsKey(centry._key))
+				LineageCacheStatistics.incrementDelHitsGpu();
 			switch(centry.getCacheStatus()) {
 				case EMPTY:  //first hit
 					// Set the GPUOject in the cache. Will be garbage collected
-					centry.setGPUValue(gpuObj.getDensePointer(), gpuObj.getAllocatedSize(),
-						gpuObj.getMatrixObject().getMetaData(), computetime);
-					centry.setCacheStatus(LineageCacheStatus.TOCACHEGPU);
-					break;
+					if (!LineageCacheEviction._removelist.containsKey(centry._key)) {
+						// Cache right away if removed before
+						centry.setGPUValue(gpuObj.getDensePointer(), gpuObj.getAllocatedSize(),
+							gpuObj.getMatrixObject().getMetaData(), computetime);
+						centry.setCacheStatus(LineageCacheStatus.TOCACHEGPU);
+						break;
+					}
 				case TOCACHEGPU:  //second hit
-					// Update the total size of lineage cached gpu objects
-					// The eviction is handled by the unified gpu memory manager
-					LineageGPUCacheEviction.updateSize(gpuObj.getAllocatedSize(), true);
 					// Set the GPUOject in the cache and update the status
 					centry.setGPUValue(gpuObj.getDensePointer(), gpuObj.getAllocatedSize(),
 						gpuObj.getMatrixObject().getMetaData(), computetime);
@@ -1099,7 +1104,7 @@ public class LineageCache
 			// Maintain order for eviction
 			if (e.isRDDPersist())
 				LineageSparkCacheEviction.maintainOrder(e);
-			else
+			else if (!e.isGPUObject())
 				LineageCacheEviction.getEntry(e);
 			return e;
 		}
@@ -1115,7 +1120,8 @@ public class LineageCache
 		// Entries with RDDs are cached twice. First hit is GCed,
 		// Second hit saves the child RDDs
 		if (LineageCache.probe(probeItem)) {
-			LineageCacheEntry oe = getIntern(probeItem);
+			//LineageCacheEntry oe = getIntern(probeItem);
+			LineageCacheEntry oe = _cache.get(probeItem);
 			LineageCacheEntry e = _cache.get(item);
 			boolean exists = !e.isNullVal();
 			e.copyValueFrom(oe, computetime);

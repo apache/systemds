@@ -24,6 +24,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.LocalFileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.sysds.runtime.instructions.cp.ComputationCPInstruction;
 import org.apache.sysds.runtime.instructions.spark.ComputationSPInstruction;
 import org.apache.sysds.runtime.instructions.spark.RandSPInstruction;
 import org.apache.sysds.runtime.io.IOUtilFunctions;
@@ -519,11 +520,12 @@ public class LineageItemUtils {
 	}
 
 	// A statement block benefits from reuse if is large enough (>10 instructions) or has
-	// Spark instructions. Caching small SBs lead to long chains of LineageCacheEntries,
-	// which in turn leads to reduced evictable entries.
+	// Spark instructions or has input frames. Caching small SBs lead to long chains of
+	// LineageCacheEntries,which in turn leads to reduced evictable entries.
 	public static boolean hasValidInsts(ArrayList<Instruction> insts) {
 		int count = 0;
 		boolean hasSPInst = false;
+		boolean hasFrameInput = false;
 		for (Instruction ins : insts) {
 			if (ins instanceof VariableCPInstruction)
 				continue;
@@ -531,8 +533,10 @@ public class LineageItemUtils {
 			if ((ins instanceof ComputationSPInstruction && !ins.getOpcode().equals("chkpoint"))
 				|| ins.getOpcode().equals("prefetch"))
 				hasSPInst = true;
+			if (ins instanceof ComputationCPInstruction && ((ComputationCPInstruction) ins).hasFrameInput())
+				hasFrameInput = true;
 		}
-		return count >= 10 || hasSPInst;
+		return count >= 10 || hasSPInst || hasFrameInput;
 	}
 	
 	public static void addAllDataLineage(ExecutionContext ec) {

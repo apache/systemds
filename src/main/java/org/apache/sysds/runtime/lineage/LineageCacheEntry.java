@@ -342,6 +342,30 @@ public class LineageCacheEntry {
 		int computeGroup = LineageCacheConfig.getComputeGroup(_key.getOpcode());
 		int refCount = Math.max(_rddObject.getMaxReferenceCount(), 1);
 		score = w1*(((double)computeGroup*refCount)/estimatedSize) + w2*getTimestamp() + w3*(((double)1)/getDagHeight());
+		// Update score to emulate computeTime scaling by #misses
+		if (removeList.containsKey(_key) && LineageCacheConfig.isCostNsize()) {
+			int missCount = 1 + removeList.get(_key);
+			score = score + (w1*(((double) computeGroup * refCount) / estimatedSize) * missCount);
+		}
+	}
+
+	protected synchronized void initiateScoreGPU(Map<LineageItem, Integer> removeList) {
+		// Set timestamp
+		_timestamp =  System.currentTimeMillis() - LineageCacheEviction.getStartTimestamp();
+		if (_timestamp < 0)
+			throw new DMLRuntimeException ("Execution timestamp shouldn't be -ve. Key: "+_key);
+		// Weights for scoring components in GPU
+		double w1 = 0;
+		double w2 = 1;
+		double w3 = 1;
+		// Generate initial score
+		score = w2*getTimestamp() + w3*(((double)1)/getDagHeight());
+		// TODO: timestamp >> DAg_height. Normalize timestamp and DAG height.
+		// Update score to emulate computeTime scaling by #misses
+		if (removeList.containsKey(_key)) {
+			int missCount = 1 + removeList.get(_key);
+			score = score + ((w2*getTimestamp() + w3*(((double)1)/getDagHeight())) * missCount);
+		}
 	}
 	
 	protected synchronized void updateScore(boolean add) {
@@ -349,12 +373,14 @@ public class LineageCacheEntry {
 		double w1 = LineageCacheConfig.WEIGHTS[0];
 		long size = getSize();
 		int sign = add ? 1: -1;
-		 if(isLocalObject())
+		 if (isLocalObject())
 			 score = score + sign * w1 * (((double) _computeTime) / size);
-		 if(isRDDPersist() && size != 0) {  //size == 0 means not persisted yet
+		 if (isRDDPersist() && size != 0) {  //size == 0 means not persisted yet
 			 int computeGroup = LineageCacheConfig.getComputeGroup(_key.getOpcode());
 			 score = score + sign * w1 * (((double) computeGroup) / size);
 		 }
+		 if (isGPUObject())
+			 score = score + sign * (getTimestamp() + ((double)1)/getDagHeight());
 	}
 	
 	protected synchronized long getTimestamp() {
@@ -383,6 +409,8 @@ public class LineageCacheEntry {
 			int refCount = Math.max(_rddObject.getMaxReferenceCount(), 1);
 			score = w1*(((double)computeGroup*refCount)/size) + w2*getTimestamp() + w3*(((double)1)/getDagHeight());
 		}
+		if (isGPUObject())
+			score = getTimestamp() + (((double)1)/getDagHeight());
 	}
 
 	static class GPUPointer {

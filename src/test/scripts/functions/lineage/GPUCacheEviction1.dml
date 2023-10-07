@@ -23,16 +23,18 @@ X = rand(rows=10000, cols=1000, seed=42);
 y = rand(rows=10000, cols=1000, seed=43);
 S = matrix(0, rows=1, cols=3);
 
+for (j in 1:2) {
 X1 = X;
 y1 = y;
 S1 = 0;
 # fill half of the cache
-for (i in 1:20) {
-  R = X1 * y1;
-  X1 = cbind(X1, rand(rows=10000, cols=1, seed=42));
-  y1 = cbind(y1, rand(rows=10000, cols=1, seed=42));
-  while(FALSE){}
-  S1 = S1 + sum(R);
+  for (i in 1:20) {
+    R = X1 * y1;
+    X1 = cbind(X1, rand(rows=10000, cols=1, seed=42));
+    y1 = cbind(y1, rand(rows=10000, cols=1, seed=42));
+    while(FALSE){}
+    S1 = S1 + sum(R);
+  }
 }
 S[,1] = S1;
 

@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
+import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.lineage.Lineage;
 import org.apache.sysds.runtime.lineage.LineageCacheConfig;
 import org.apache.sysds.runtime.matrix.data.MatrixValue;
@@ -87,6 +88,7 @@ public class GPULineageCacheEvictionTest extends AutomatedTestBase{
 		Lineage.resetInternalState();
 		boolean gpu2Mem = LineageCacheConfig.GPU2HOSTEVICTION;
 		//LineageCacheConfig.GPU2HOSTEVICTION = true;
+		OptimizerUtils.ASYNC_PREFETCH = true;
 		//run the test
 		runTest(true, EXCEPTION_NOT_EXPECTED, null, -1);
 		HashMap<MatrixValue.CellIndex, Double> R_orig = readDMLMatrixFromOutputDir("R");
@@ -104,6 +106,7 @@ public class GPULineageCacheEvictionTest extends AutomatedTestBase{
 		runTest(true, EXCEPTION_NOT_EXPECTED, null, -1);
 		AutomatedTestBase.TEST_GPU = false;
 		LineageCacheConfig.GPU2HOSTEVICTION = gpu2Mem;
+		OptimizerUtils.ASYNC_PREFETCH = false;
 		HashMap<MatrixValue.CellIndex, Double> R_reused = readDMLMatrixFromOutputDir("R");
 
 		//compare results 

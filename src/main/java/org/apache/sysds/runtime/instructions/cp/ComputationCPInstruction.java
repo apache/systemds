@@ -67,6 +67,16 @@ public abstract class ComputationCPInstruction extends CPInstruction implements 
 		return new CPOperand[]{input1, input2, input3};
 	}
 
+	public boolean hasFrameInput() {
+		if (input1 != null && input1.isFrame())
+			return true;
+		if (input2 != null && input2.isFrame())
+			return true;
+		if (input3 != null && input3.isFrame())
+			return true;
+		return false;
+	}
+
 	protected boolean checkGuardedRepresentationChange( MatrixBlock in1, MatrixBlock out ) {
 		return checkGuardedRepresentationChange(in1, null, out);
 	}

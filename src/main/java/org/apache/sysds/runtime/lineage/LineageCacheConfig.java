@@ -99,7 +99,6 @@ public class LineageCacheConfig
 	}
 
 	protected static final double CPU_CACHE_FRAC = 0.05; // 5% of JVM heap size
-	protected static final double GPU_CACHE_MAX = 0.30; // 30% of gpu memory
 	private static ReuseCacheType _cacheType = null;
 	private static CachedItemHead _itemH = null;
 	private static CachedItemTail _itemT = null;
@@ -144,8 +143,6 @@ public class LineageCacheConfig
 	// Weights for scoring components (computeTime/size, LRU timestamp, DAG height)
 	protected static double[] WEIGHTS = {1, 0, 0};
 	public static boolean GPU2HOSTEVICTION = false;
-	public static boolean CONCURRENTGPUEVICTION = false;
-	public static volatile boolean STOPBACKGROUNDEVICTION = false;
 
 	protected enum LineageCacheStatus {
 		EMPTY,     //Placeholder with no data. Cannot be evicted.
@@ -209,6 +206,14 @@ public class LineageCacheConfig
 		return ret;
 	};
 
+	protected static Comparator<LineageCacheEntry> LineageGPUCacheComparator = (e1, e2) -> {
+		if (e1._key.getId() == e2._key.getId())
+			return 0;
+		if (e1.score == e2.score)
+			return Long.compare(e1._key.getId(), e2._key.getId());
+		else
+			return e1.score < e2.score ? -1 : 1;
+	};
 
 	//-------------SPARK OPERATION RELATED CONFIGURATIONS--------------//
 
@@ -362,14 +367,6 @@ public class LineageCacheConfig
 			&& _cacheType.isMultilevelReuse();
 	}
 
-	public static CachedItemHead getCachedItemHead() {
-		return _itemH;
-	}
-
-	public static CachedItemTail getCachedItemTail() {
-		return _itemT;
-	}
-	
 	public static boolean getCompAssRW() {
 		return _compilerAssistedRW;
 	}

@@ -153,9 +153,6 @@ public class GPUContextPool {
 		//LOG.debug("Active CUDA device number : " + device[0]);
 		//LOG.debug("Max Blocks/Threads/SharedMem on active device: " + maxBlocks + "/" + maxThreadsPerBlock + "/" + sharedMemPerBlock);
 		GPUStatistics.cudaInitTime = System.nanoTime() - start;
-
-		// Initialize the maximum size of the lineage cache in the GPU (30% of initial GPU memory)
-		LineageGPUCacheEviction.setGPULineageCacheLimit();
 	}
 
 	/**

@@ -1,0 +1,27 @@
+# -- Baseline sampling with f=0.1, nrow=3256.0
+# ---- Train Accuracy (%): 86.13587457731326
+# ---- Test Accuracy (%): 84.90836490222176
+# -- Baseline sampling with f=0.01, nrow=326.0
+# ---- Train Accuracy (%): 91.7933130699088
+# ---- Test Accuracy (%): 82.24633971536808
+# -- Baseline sampling with f=0.001, nrow=33.0
+# ---- Train Accuracy (%): 100.0
+# ---- Test Accuracy (%): 69.39694890959352
+
+X = read("data/Adult_X.csv")
+y = read("data/Adult_y.csv")
+B = read("data/Adult_W.csv")
+
+[Xtrain,Xtest,ytrain,ytest] = split(X=X,Y=y,f=0.7,cont=FALSE,seed=7)
+
+sf = matrix("0.1 0.01 0.001", rows=3, cols=1)
+for(i in 1:nrow(sf)) {
+  sfi = as.scalar(sf[i]);
+  print("Baseline uniform sampling with f="+sfi+", nrow="+round(nrow(X)*sfi))
+  [Xtrain2,Xtest2,ytrain2,ytest2] = split(X=X,Y=y,f=sfi,cont=FALSE,seed=7)
+  B = multiLogReg(X=Xtrain2, Y=ytrain2, maxii=50, icpt=2, reg=0.001, verbose=FALSE);
+
+  [M,yhat,acc] = multiLogRegPredict(X=Xtrain2, B=B, Y=ytrain2, verbose=TRUE);
+  [M,yhat,acc] = multiLogRegPredict(X=Xtest, B=B, Y=ytest, verbose=TRUE);
+}
+

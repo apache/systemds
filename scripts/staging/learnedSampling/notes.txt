@@ -1,0 +1,12 @@
+Data Preparation
+
+mkdir -p data;
+chmod 755 data;
+curl https://archive.ics.uci.edu/ml/machine-learning-databases/adult/adult.data -o data/Adult.csv;
+sed -i '$d' data/Adult.csv; # fix empty line at end of file
+
+Run Individual Scripts
+
+java -Xmx4g -Xms4g -cp ./lib/*:./SystemDS.jar org.apache.sysds.api.DMLScript \
+  -f XYZ.dml -debug -stats -explain
+

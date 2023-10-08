@@ -27,7 +27,7 @@ if [[ -d "tmp/monitoring" ]]; then
         rm -f "tmp/monitoring/monitoringProcessID"
     fi
     if [[ -f "tmp/monitoring/UIProcessID" ]]; then
-        echo "STOP NPM manually!! Process ID:"
+        echo "STOP NPM manually!! search for 'ng serve' at Process ID:"
         cat "tmp/monitoring/UIProcessID"
        
     fi

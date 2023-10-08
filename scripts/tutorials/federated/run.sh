@@ -55,10 +55,10 @@ source parameters.sh
 #     -args $x $y_hot $xt $yt_hot \
 #     -fedMonitoringAddress "http://localhost:8080"
 
-# systemds code/exp/CNNLong.dml \
-#     -stats \
-#     -args $x $y_hot $xt $yt_hot \
-#     -fedMonitoringAddress "http://localhost:8080"
+systemds code/exp/CNNLong.dml \
+    -stats \
+    -args $x $y_hot $xt $yt_hot \
+    -fedMonitoringAddress "http://localhost:8080"
 
 # systemds code/exp/sumRepeat.dml \
 #     -config conf/$conf.xml \

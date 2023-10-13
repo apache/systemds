@@ -1577,15 +1577,26 @@ public class LibMatrixBincell {
 		
 		//compute scalar operation, incl nnz maintenance
 		long nnz = 0;
-		for(int i=rl; i<ru; i++) {
-			double[] a = da.values(i);
-			double[] c = dc.values(i);
-			int apos = da.pos(i), cpos = dc.pos(i);
-			for(int j=0; j<clen; j++) {
-				c[cpos+j] = op.executeScalar( a[apos+j] );
-				nnz += (c[cpos+j] != 0) ? 1 : 0;
+		if( clen == 1 ) { //COL VECTOR
+			double[] a = da.valuesAt(0);
+			double[] c = dc.valuesAt(0);
+			for(int i=rl; i<ru; i++) { //VECTOR
+				c[i] = op.executeScalar( a[i] );
+				nnz += (c[i] != 0) ? 1 : 0;
 			}
 		}
+		else { //MULTI-COL MATRIX
+			for(int i=rl; i<ru; i++) {
+				double[] a = da.values(i);
+				double[] c = dc.values(i);
+				int apos = da.pos(i), cpos = dc.pos(i);
+				for(int j=0; j<clen; j++) {
+					c[cpos+j] = op.executeScalar( a[apos+j] );
+					nnz += (c[cpos+j] != 0) ? 1 : 0;
+				}
+			}
+		}
+		
 		return ret.nonZeros = nnz;
 	}
 

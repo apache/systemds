@@ -384,7 +384,7 @@ public class LibCommonsMath
 			T.setValue(i, i, alpha.getValue(0, 0));
 		}
 
-		MatrixBlock[] e = multiReturnOperations(T, "eigen");
+		MatrixBlock[] e = computeEigen(T);
 		TV.setNonZeros((long) m*m);
 		e[1] = TV.aggregateBinaryOperations(TV, e[1], op_mul_agg);
 		return e;

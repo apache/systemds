@@ -27,6 +27,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.compress.utils.Util;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.runtime.frame.data.columns.Array;
 import org.apache.sysds.runtime.frame.data.columns.BooleanArray;
@@ -193,32 +194,27 @@ public interface FrameUtil {
 	public static ValueType isType(double val) {
 		if(val == 1.0d || val == 0.0d)
 			return ValueType.BOOLEAN;
-		else if((long) (val) == val) {
-			if((int) val == val)
-				return ValueType.INT32;
-			else
+		else if(val < Integer.MAX_VALUE && Util.eq((int) val,val))
+			return ValueType.INT32;
+		else if(val < Long.MAX_VALUE && Util.eq((long) val, val)) 
 				return ValueType.INT64;
-		}
 		else if(same(val, (float) val))
 			return ValueType.FP32;
 		else
 			return ValueType.FP64;
-
 	}
 
 	public static ValueType isType(double val, ValueType min) {
 		switch(min) {
 			case BOOLEAN:
 				return isType(val);
-			case INT32:
 			case UINT8:
+			case INT32:
+				if(val < Integer.MAX_VALUE && Util.eq((int) val,val))
+					return ValueType.INT32;
 			case INT64:
-				if((long) (val) == val) {
-					if((int) val == val)
-						return ValueType.INT32;
-					else
-						return ValueType.INT64;
-				}
+				if(val < Long.MAX_VALUE && Util.eq((long) val, val)) 
+					return ValueType.INT64;
 			case FP32:
 				if(same(val, (float) val))
 					return ValueType.FP32;

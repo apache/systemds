@@ -91,4 +91,5 @@ m_img_transform = function(Matrix[Double] img_in, Integer out_w, Integer out_h, 
 
     img_out = matrix(output, rows=out_h, cols=out_w)
   }
+  
 }

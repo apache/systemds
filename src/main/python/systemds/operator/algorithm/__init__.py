@@ -51,6 +51,7 @@ from .builtin.decisionTree import decisionTree
 from .builtin.decisionTreePredict import decisionTreePredict 
 from .builtin.deepWalk import deepWalk 
 from .builtin.denialConstraints import denialConstraints 
+from .builtin.differenceStatistics import differenceStatistics 
 from .builtin.discoverFD import discoverFD 
 from .builtin.dist import dist 
 from .builtin.dmv import dmv 
@@ -216,6 +217,7 @@ __all__ = ['WoE',
  'decisionTreePredict',
  'deepWalk',
  'denialConstraints',
+ 'differenceStatistics',
  'discoverFD',
  'dist',
  'dmv',

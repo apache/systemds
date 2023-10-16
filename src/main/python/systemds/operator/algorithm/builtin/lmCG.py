@@ -46,7 +46,7 @@ def lmCG(X: Matrix,
         norm of the beta-residual is less than tolerance * its initial norm
     :param maxi: Maximum number of conjugate gradient iterations. 0 = no maximum
     :param verbose: If TRUE print messages are activated
-    :return: The model fit
+    :return: The model fit beta that can be used as input in lmPredict
     """
 
     params_dict = {'X': X, 'y': y}

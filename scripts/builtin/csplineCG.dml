@@ -27,7 +27,7 @@
 #          monotonically increasing and there is no duplicates points in X
 # Y      1-column matrix of corresponding y values knots
 # inp_x  the given input x, for which the cspline will find predicted y.
-# tol    Tolerance (epsilon); conjugate graduent procedure terminates early if
+# tol    Tolerance (epsilon); conjugate gradient procedure terminates early if
 #        L2 norm of the beta-residual is less than tolerance * its initial norm
 # maxi   Maximum number of conjugate gradient iterations, 0 = no maximum
 # ----------------------------------------------------------------------------------------------
@@ -51,7 +51,7 @@ m_csplineCG = function (Matrix[Double] X, Matrix[Double] Y, Double inp_x, Double
 
 
 #given X<nx1> and corresponding Y<nx1> values for the function. where each (xi,yi) represents a knot.
-#it calculates the first derivates i.e k of the interpolated polynomial
+#it calculates the first derivatives i.e k of the interpolated polynomial
 calcKnotsDerivKsCG = function (
   matrix[Double] X, matrix[Double] Y,
   Integer max_iteration,

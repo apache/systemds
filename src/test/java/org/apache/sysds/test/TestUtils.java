@@ -1343,7 +1343,7 @@ public class TestUtils {
 			double avgDistance = sumPercentDistance / (rows * cols);
 			if(countErrors != 0)
 				fail(message + "\n" + countErrors + " values are not in equal of total: " + (rows * cols));
-			if(avgDistance <= maxAveragePercentDistance)
+			if(avgDistance < maxAveragePercentDistance)
 				fail(message + "\nThe avg distance: " + avgDistance + " was lower than threshold "
 					+ maxAveragePercentDistance);
 		}

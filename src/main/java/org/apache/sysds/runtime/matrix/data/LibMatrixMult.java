@@ -277,15 +277,22 @@ public class LibMatrixMult
 			// execute tasks
 			
 			// aggregate partial results (nnz, ret for vector/matrix)
-			ret.nonZeros = 0; // reset after execute
+			// reset nonZero before execution.
+			// nonZero count cannot be trusted since it is not atomic
+			// and some of the matrix multiplication kernel call quick set value modifying the count.
+			ret.nonZeros = 0; 
+			long nnzCount = 0;
 			for(Future<Object> task : pool.invokeAll(tasks)) {
 				if(pm2r) // guaranteed single block
 					vectAdd((double[]) task.get(), ret.getDenseBlockValues(), 0, 0, ret.rlen * ret.clen);
-				else
-					ret.nonZeros += (Long) task.get();
+				else // or count non zeros of the block
+					nnzCount += (Long) task.get();
 			}
 			if(pm2r)
 				ret.recomputeNonZeros(k);
+			else // set the non zeros to the counted values.
+				ret.nonZeros = nnzCount;
+
 			// post-processing (nnz maintained in parallel)
 			ret.examSparsity();
 		}
@@ -1697,7 +1704,6 @@ public class LibMatrixMult
 		final boolean leftUS = m1.isUltraSparse()
 			|| (m1.isUltraSparse(false) && !m2.isUltraSparse())
 			|| (m1.sparse && !m2.sparse);
-		
 		if( m1 == m2 ) //self-product
 			matrixMultUltraSparseSelf(m1, ret, rl, ru);
 		else if( leftUS || m1Perm )
@@ -1757,14 +1763,14 @@ public class LibMatrixMult
 			}
 		}
 		//recompute non-zero for single-threaded
-		if( rl == 0 && ru == m1.rlen )
+		if( rl == 0 && ru == m1.rlen ){
 			ret.recomputeNonZeros();
+		}
 	}
 	
 	private static void matrixMultUltraSparseLeft(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, int rl, int ru) {
 		final int m  = m1.rlen;
 		final int n  = m2.clen;
-		
 		//left is ultra-sparse (IKJ)
 		SparseBlock a = m1.sparseBlock;
 		SparseBlock c = ret.sparseBlock;

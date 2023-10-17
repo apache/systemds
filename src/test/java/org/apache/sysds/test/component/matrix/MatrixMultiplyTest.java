@@ -19,6 +19,7 @@
 
 package org.apache.sysds.test.component.matrix;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 import java.util.ArrayList;
@@ -154,11 +155,12 @@ public class MatrixMultiplyTest {
 
 			String totalMessage = "\n\n" + sizeErrMessage + "\n" + sparseErrMessage;
 
-			if(ret.getNumRows() * ret.getNumColumns() < 1000) {
+			if(ret.getNumRows() * ret.getNumColumns() < 1000 || ret.getNonZeros() < 100) {
 				totalMessage += "\n\nExp" + exp;
 				totalMessage += "\n\nAct" + ret;
 			}
 
+			assertEquals(totalMessage,exp.getNonZeros(), ret.getNonZeros());
 			TestUtils.compareMatricesPercentageDistance(exp, ret, 0.999, 0.99999, totalMessage, false);
 		}
 		catch(Exception e) {

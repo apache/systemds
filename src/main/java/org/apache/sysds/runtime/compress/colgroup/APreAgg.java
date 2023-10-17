@@ -247,6 +247,8 @@ public abstract class APreAgg extends AColGroupValue {
 		if(tmp.isInSparseFormat()) {
 			SparseBlock sb = tmp.getSparseBlock();
 			for(int row = 0; row < rowIndexes.size(); row++) {
+				if(sb.isEmpty(row))
+					continue;
 				final int apos = sb.pos(row);
 				final int alen = sb.size(row);
 				final int[] aix = sb.indexes(row);

@@ -29,7 +29,7 @@ public class LopProperties
 	// static variable to assign an unique ID to every lop that is created
 	private static IDSequence UniqueLopID = null;
 	
-	static{
+	static {
 		UniqueLopID = new IDSequence();
 	}
 	

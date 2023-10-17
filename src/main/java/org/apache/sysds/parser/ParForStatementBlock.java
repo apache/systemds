@@ -62,9 +62,7 @@ import org.apache.sysds.runtime.util.UtilFunctions;
  * for checking/setting optional parfor parameters and running the loop dependency analysis.
  * 
  */
-public class ParForStatementBlock extends ForStatementBlock 
-{
-	private static final boolean LDEBUG = false; //internal local debug level
+public class ParForStatementBlock extends ForStatementBlock {
 	protected static final Log LOG = LogFactory.getLog(ParForStatementBlock.class.getName());
 	
 	//external parameter names 
@@ -146,12 +144,6 @@ public class ParForStatementBlock extends ForStatementBlock
 		//initialize function cache
 		if( USE_FN_CACHE ) {
 			_fncache = new HashMap<>();
-		}
-		
-		// for internal debugging only
-		if( LDEBUG ) {
-			Logger.getLogger("org.apache.sysds.parser.ParForStatementBlock")
-				.setLevel(Level.TRACE);
 		}
 	}
 	

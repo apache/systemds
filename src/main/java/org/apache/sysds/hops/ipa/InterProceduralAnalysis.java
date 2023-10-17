@@ -77,9 +77,7 @@ import java.util.Set;
  *  recompile once functions, the removal of unnecessary checkpoints, and the 
  *  global removal of constant binary operations such as X * ones.
  */
-public class InterProceduralAnalysis 
-{
-	private static final boolean LDEBUG = false; //internal local debug level
+public class InterProceduralAnalysis {
 	private static final Log LOG = LogFactory.getLog(InterProceduralAnalysis.class.getName());
 
 	//internal configuration parameters
@@ -108,15 +106,6 @@ public class InterProceduralAnalysis
 	//set IPA passes to apply in order 
 	private final ArrayList<IPAPass> _passes;
 
-	static {
-		// for internal debugging only
-		if( LDEBUG ) {
-			Logger.getLogger("org.apache.sysds.hops.ipa")
-				.setLevel(Level.TRACE);
-		}
-	}
-
-	
 	/**
 	 * Creates a handle for performing inter-procedural analysis
 	 * for a given DML program and its associated HOP DAGs. This

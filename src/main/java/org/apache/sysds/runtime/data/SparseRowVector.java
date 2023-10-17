@@ -24,17 +24,30 @@ import java.util.Arrays;
 import org.apache.sysds.runtime.util.SortUtils;
 import org.apache.sysds.runtime.util.UtilFunctions;
 
-public final class SparseRowVector extends SparseRow{
+/**
+ * A sparse row vector that is able to grow dynamically as values are appended to it.
+ */
+public final class SparseRowVector extends SparseRow {
 	private static final long serialVersionUID = 2971077474424464992L;
 
-	//initial capacity of any created sparse row
-	//WARNING: be aware that this affects the core memory estimates (incl. implicit assumptions)! 
+	/**
+	 * <p>Initial capacity of any created sparse row</p>
+	 * WARNING: be aware that this affects the core memory estimates (incl. implicit assumptions)! 
+	 */
 	public static final int initialCapacity = 4;
 	
+	/**
+	 * An estimate of the number of non zero values in this row.
+	 * The estimate is used to set a threshold on how much the array should grow at certain
+	 * lengths to not double the size at all times.
+	 */
 	private int estimatedNzs = initialCapacity;
-	private int size = 0;
-	private double[] values = null;
-	private int[] indexes = null;
+	/** The current size of the row vector */
+	private int size;
+	/** The values contained in the vector, can be allocated larger than needed */
+	private double[] values;
+	/** The column indexes of the values contained, can be allocated larger than needed */
+	private int[] indexes;
 	
 	public SparseRowVector() {
 		this(initialCapacity);
@@ -44,6 +57,7 @@ public final class SparseRowVector extends SparseRow{
 		estimatedNzs = capacity;
 		values = new double[capacity];
 		indexes = new int[capacity];
+		size = 0;
 	}
 	
 	public SparseRowVector(int nnz, double[] v, int vlen) {
@@ -88,10 +102,10 @@ public final class SparseRowVector extends SparseRow{
 	public SparseRowVector(int estnnz, int maxnnz) {
 		if( estnnz > initialCapacity )
 			estimatedNzs = estnnz;
-		// maxNzs = maxnnz;
 		int capacity = initialCapacity;
 		values = new double[capacity];
 		indexes = new int[capacity];
+		size = 0;
 	}
 	
 	public SparseRowVector(SparseRow that) {

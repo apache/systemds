@@ -34,7 +34,7 @@ public class DenseBlockFP64 extends DenseBlockDRB
 
 	public DenseBlockFP64(int[] dims) {
 		super(dims);
-		reset(_rlen, _odims, 0);
+		resetNoFill(_rlen, _odims);
 	}
 
 	@Override

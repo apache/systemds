@@ -131,6 +131,14 @@ public abstract class SparseRow implements Serializable
 	 * @param eps epsilon value
 	 */
 	public abstract void compact(double eps);
+
+	/**
+	 * Make a copy of this row.
+	 * 
+	 * @param deep if the copy should be deep
+	 * @return A copy
+	 */
+	public abstract SparseRow copy(boolean deep);
 	
 	@Override
 	public String toString() {

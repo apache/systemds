@@ -1396,7 +1396,7 @@ public class TestUtils {
 			if(countErrors != 0)
 				fail(message + "\n" + countErrors + " values are not in equal");
 			if(avgDistance > maxAveragePercentDistance)
-				fail(message + "\nThe avg distance in bits: " + avgDistance + " was higher than max: " + maxAveragePercentDistance);
+				fail(message + "\nThe avg distance in percent: " + avgDistance + " was higher than max: " + maxAveragePercentDistance);
 		}
 	}
 

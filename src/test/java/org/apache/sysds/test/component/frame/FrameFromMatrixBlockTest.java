@@ -135,19 +135,47 @@ public class FrameFromMatrixBlockTest {
 	}
 
 	@Test
+	public void random() {
+		MatrixBlock mb = TestUtils.generateTestMatrixBlock(100, 10, 0, 199, 1.0, 213);
+		FrameBlock fb = FrameFromMatrixBlock.convertToFrameBlock(mb, 1);
+		verifyEquivalence(mb, fb);
+	}
+
+	@Test
+	public void randomRounded() {
+		MatrixBlock mb = TestUtils.ceil(TestUtils.generateTestMatrixBlock(100, 10, 0, 199, 1.0, 213));
+		FrameBlock fb = FrameFromMatrixBlock.convertToFrameBlock(mb, 1);
+		verifyEquivalence(mb, fb);
+	}
+
+	@Test
+	public void randomSparse() {
+		MatrixBlock mb = TestUtils.ceil(TestUtils.generateTestMatrixBlock(100, 10, 0, 199, 0.1, 213));
+		FrameBlock fb = FrameFromMatrixBlock.convertToFrameBlock(mb, 1);
+		verifyEquivalence(mb, fb);
+	}
+
+	@Test
+	public void randomVerySparse() {
+		MatrixBlock mb = TestUtils.ceil(TestUtils.generateTestMatrixBlock(100, 1000, 0, 199, 0.01, 213));
+		FrameBlock fb = FrameFromMatrixBlock.convertToFrameBlock(mb, 1);
+		verifyEquivalence(mb, fb);
+	}
+
+	@Test
 	public void timeChange() {
 		// MatrixBlock mb = TestUtils.generateTestMatrixBlock(64000, 2000, 1, 1, 0.5, 2340);
 
 		// for(int i = 0; i < 10; i++) {
-		// 	Timing time = new Timing(true);
-		// 	FrameFromMatrixBlock.convertToFrameBlock(mb, ValueType.BOOLEAN, 1);
-		// 	LOG.error(time.stop());
+		// Timing time = new Timing(true);
+		// FrameFromMatrixBlock.convertToFrameBlock(mb, ValueType.BOOLEAN, 1);
+		// LOG.error(time.stop());
 		// }
 
 		// for(int i = 0; i < 10; i++) {
-		// 	Timing time = new Timing(true);
-		// 	FrameFromMatrixBlock.convertToFrameBlock(mb, ValueType.BOOLEAN, 16);
-		// 	LOG.error(time.stop());
+		// Timing time = new Timing(true);
+		// FrameFromMatrixBlock.convertToFrameBlock(mb, ValueType.BOOLEAN, 16);
+		// LOG.error(time.stop());
 		// }
 
 		// for(int i = 0; i < 10; i ++){
@@ -173,6 +201,17 @@ public class FrameFromMatrixBlockTest {
 		for(int i = 0; i < nRow; i++)
 			for(int j = 0; j < nCol; j++)
 				assertEquals(mb.getValue(i, j), fb.getDouble(i, j), 0.0000001);
+
+	}
+
+	private void verifyEquivalence(MatrixBlock mb, FrameBlock fb) {
+		int nRow = mb.getNumRows();
+		int nCol = mb.getNumColumns();
+		assertEquals(mb.getNumColumns(), fb.getSchema().length);
+
+		for(int i = 0; i < nRow; i++)
+			for(int j = 0; j < nCol; j++)
+				assertEquals(i + " " + j, mb.getValue(i, j), fb.getDouble(i, j), 0.0000001);
 
 	}
 

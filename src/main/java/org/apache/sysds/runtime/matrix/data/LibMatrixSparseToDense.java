@@ -24,6 +24,8 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlockCSR;
@@ -33,6 +35,8 @@ import org.apache.sysds.runtime.util.CommonThreadPool;
 import org.apache.sysds.runtime.util.UtilFunctions;
 
 public interface LibMatrixSparseToDense {
+	public static final Log LOG = LogFactory.getLog(LibMatrixSparseToDense.class.getName());
+
 	/**
 	 * Convert the given matrix block to a sparse allocation.
 	 * 
@@ -49,7 +53,7 @@ public interface LibMatrixSparseToDense {
 
 		final int k = InfrastructureAnalyzer.getLocalParallelism();
 
-		if(k > 1 && r.getNumRows() > 1000) 
+		if(k > 1 && r.getNumRows() > 1000)
 			denseToSparseParallel(r, k, allowCSR);
 		else if(allowCSR && r.nonZeros <= Integer.MAX_VALUE)
 			denseToSparseCSR(r);
@@ -156,9 +160,9 @@ public interface LibMatrixSparseToDense {
 		r.reset(r.getNumRows(), r.getNumColumns(), nnzTemp);
 		// fallback to less-memory efficient MCSR format, for efficient parallel conversion.
 		r.sparseBlock = new SparseBlockMCSR(r.getNumRows());
+		r.sparse = true;
 		final SparseBlockMCSR b = (SparseBlockMCSR) r.sparseBlock;
 		final int blockSize = Math.max(250, m / k);
-
 		ExecutorService pool = CommonThreadPool.get(k);
 		try {
 
@@ -180,6 +184,5 @@ public interface LibMatrixSparseToDense {
 		}
 
 		r.nonZeros = nnzTemp;
-
 	}
 }

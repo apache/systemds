@@ -1302,7 +1302,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 	}
 	
 	public void denseToSparse(boolean allowCSR){
-		LibMatrixSparseToDense.denseToSparse(this, allowCSR);
+		LibMatrixDenseToSparse.denseToSparse(this, allowCSR);
 	}
 	
 	public void sparseToDense() {

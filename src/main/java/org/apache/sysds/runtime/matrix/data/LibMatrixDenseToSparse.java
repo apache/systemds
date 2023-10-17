@@ -34,8 +34,8 @@ import org.apache.sysds.runtime.data.SparseRowVector;
 import org.apache.sysds.runtime.util.CommonThreadPool;
 import org.apache.sysds.runtime.util.UtilFunctions;
 
-public interface LibMatrixSparseToDense {
-	public static final Log LOG = LogFactory.getLog(LibMatrixSparseToDense.class.getName());
+public interface LibMatrixDenseToSparse {
+	public static final Log LOG = LogFactory.getLog(LibMatrixDenseToSparse.class.getName());
 
 	/**
 	 * Convert the given matrix block to a sparse allocation.

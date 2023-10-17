@@ -133,10 +133,9 @@ public interface LibMatrixDenseToSparse {
 		if(lnnz <= 0)
 			return;
 
+		// allocate sparse row and append non-zero values
 		final double[] vals = new double[lnnz];
 		final int[] idx = new int[lnnz];
-		// allocate sparse row and append non-zero values
-		// b.allocate(i, lnnz);
 
 		for(int j = 0, o = 0; j < n; j++) {
 			double v = avals[aix + j];

@@ -279,7 +279,7 @@ public class LibMatrixMult
 			// aggregate partial results (nnz, ret for vector/matrix)
 			// reset nonZero before execution.
 			// nonZero count cannot be trusted since it is not atomic
-			// and some of the matrix multiplication kernel call quick set value modifying the count.
+			// and some of the matrix multiplication kernels call quick set value modifying the count.
 			ret.nonZeros = 0; 
 			long nnzCount = 0;
 			for(Future<Object> task : pool.invokeAll(tasks)) {

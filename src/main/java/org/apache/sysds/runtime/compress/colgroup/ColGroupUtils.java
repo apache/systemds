@@ -283,6 +283,8 @@ public interface ColGroupUtils {
 		if(tmp.isInSparseFormat()) {
 			final SparseBlock sb = tmp.getSparseBlock();
 			for(int row = rl, offT = 0; row < ru; row++, offT++) {
+				if(sb.isEmpty(offT))
+					continue;
 				final int apos = sb.pos(offT);
 				final int alen = sb.size(offT);
 				final int[] aix = sb.indexes(offT);

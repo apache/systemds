@@ -85,7 +85,7 @@ m_imputeByKNN = function(Matrix[Double] X, String method="dist", Int seed=-1, Do
     imputedValue = compute_missing_values(X, filled_matrix, seed, sample_frac)
   }
   else {
-    print("Method is unknown or not yet implemented")
+    stop("Method is unknown or not yet implemented")
   }
 
   #Impute the value
@@ -94,7 +94,7 @@ m_imputeByKNN = function(Matrix[Double] X, String method="dist", Int seed=-1, Do
 }
 
 compute_missing_values = function (Matrix[Double] X, Matrix[Double] filled_matrix, Int seed, Double sample_frac)
-return (Matrix[Double] imputedValue)
+    return (Matrix[Double] imputedValue)
 {
     #Split the matrix into containing NaN values (missing records) and not containing NaN values (M2 records)
     maskNAN = is.nan(X)

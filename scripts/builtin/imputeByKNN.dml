@@ -19,7 +19,6 @@
 #
 #-------------------------------------------------------------
 
-
 # Imputes missing values, indicated by NaNs, using KNN-based methods
 # (k-nearest neighbors by euclidean distance). In order to avoid NaNs in
 # distance computation and meaningful nearest neighbor search, we initialize
@@ -50,13 +49,12 @@
 # result     Imputed dataset
 # ------------------------------------------------------------------------------
 
-m_imputeByKNN = function(Matrix[Double] X, String method="dist", Int seed=-1, Double sample_frac = 0.1)
+m_imputeByKNN = function(Matrix[Double] X, String method="dist", Int seed=-1, Double sample_frac=0.1)
   return(Matrix[Double] result)
 {
   #KNN-Imputation Script
 
-  #Create a mask for placeholder and to check for missing values
-  masked = is.nan(X)
+  imputedValue = X
 
   #Impute NaN value with temporary mean value of the column
   filled_matrix = imputeByMean(X, matrix(0, cols = ncol(X), rows = 1))
@@ -66,28 +64,51 @@ m_imputeByKNN = function(Matrix[Double] X, String method="dist", Int seed=-1, Do
     distance_matrix = dist(filled_matrix)
 
     #Change 0 value so rowIndexMin will ignore that diagonal value
-    distance_matrix = replace(target = distance_matrix, pattern = 0, replacement = 999)
+    distance_matrix = replace(target=distance_matrix, pattern=0, replacement=999)
 
     #Get the minimum distance row-wise computation
     minimum_index = rowIndexMin(distance_matrix)
 
     #Create aligned matrix from minimum index
-    aligned = table(minimum_index, seq(1, nrow(X)), odim1 = nrow(X), odim2 = nrow(X))
+    aligned = table(minimum_index, seq(1, nrow(X)), odim1=nrow(X), odim2=nrow(X))
 
     #Get the X records that need to be imputed
     imputedValue = t(filled_matrix) %*% aligned
-
-    #Update the mask value
-    masked = t(imputedValue) * masked
+    imputedValue = t(imputedValue)
   }
   else if(method == "dist_missing") {
     #assuming small missing values
+    imputedValue = compute_missing_values(X, filled_matrix, seed, 1.0)
+  }
+  else if(method == "dist_sample"){
+    #assuming large missing values
+    imputedValue = compute_missing_values(X, filled_matrix, seed, sample_frac)
+  }
+  else {
+    stop("Method is unknown or not yet implemented")
+  }
+
+  #Impute the value
+  result = replace(target=X, pattern=NaN, replacement=0)
+  result = result + (imputedValue * is.nan(X))
+}
+
+compute_missing_values = function (Matrix[Double] X, Matrix[Double] filled_matrix, Int seed, Double sample_frac)
+    return (Matrix[Double] imputedValue)
+{
     #Split the matrix into containing NaN values (missing records) and not containing NaN values (M2 records)
-    I = (rowSums(is.nan(X))!=0)
+    maskNAN = is.nan(X)
+    I = rowSums(maskNAN) != 0
     missing = removeEmpty(target=filled_matrix, margin="rows", select=I)
 
-    Y = (rowSums(is.nan(X))==0)
-    M2 = removeEmpty(target=filled_matrix, margin = "rows", select = Y)
+    Y = (rowSums(maskNAN)==0)
+    M2 = removeEmpty(target=X, margin = "rows", select = Y)
+
+    if (sample_frac != 1.0) {
+        #Create permutation matrix for sampling sample_frac*nrow(X) rows
+        I = rand(rows=nrow(M2), cols=1, seed=seed) <= sample_frac;
+        M2 = removeEmpty(target=M2, margin="rows", select=I);
+    }
 
     #Calculate the euclidean distance between fully records and missing records, and then find the min value row wise
     dotM2 = rowSums(M2 * M2) %*% matrix(1, rows = 1, cols = nrow(missing))
@@ -96,73 +117,23 @@ m_imputeByKNN = function(Matrix[Double] X, String method="dist", Int seed=-1, Do
     minD = rowIndexMin(t(D))
 
     #Get the index location of the missing value
-    pos = rowMaxs(is.nan(X))
+    pos = rowMaxs(maskNAN)
     missing_indices = seq(1, nrow(pos)) * pos
 
     #Put the replacement value in the missing indices
     I2 = removeEmpty(target=missing_indices, margin="rows")
-    R = table(I2,1,minD,odim1 = nrow(X), odim2=1)
+    R = table(I2, 1, minD, odim1=nrow(X), odim2=1)
 
     #Replace the 0 to avoid error in table()
-    R = replace(target = R, pattern = 0, replacement = nrow(X)+1)
+    R = replace(target=R, pattern=0, replacement=nrow(X)+1)
 
     #Create aligned matrix from minimum index
-    aligned = table(R, seq(1, nrow(X)), odim1 = nrow(X), odim2 = nrow(X))
+    aligned = table(R, seq(1, nrow(X)), odim1=nrow(X), odim2=nrow(X))
 
     #Reshape the subset
-    reshaped = rbind(M2, matrix(0, rows = nrow(X) - nrow(M2), cols = ncol(X)))
-
-    #Get the M2 records that need to be imputed
-    imputedValue = t(reshaped) %*% aligned
-
-    #Update the mask value
-    masked = t(imputedValue) * masked
-  }
-  else if(method == "dist_sample"){
-    #assuming large missing values
-    #Split the matrix into containing NaN values (missing records) and not containing NaN values (M2 records)
-    I = rowSums(is.nan(X)) != 0
-    missing = removeEmpty(target=filled_matrix, margin="rows", select=I)
-
-    #Create permutation matrix for sampling sample_frac*nrow(X) rows
-    I = rand(rows=nrow(X), cols=1, seed=seed) <= sample_frac;
-    subset = removeEmpty(target=filled_matrix, margin="rows", select=I);
-
-    #Calculate the euclidean distance between fully records and missing records, and then find the min value row wise
-    dotSubset = rowSums(subset * subset) %*% matrix(1, rows = 1, cols = nrow(missing))
-    dotMissing = t(rowSums(missing * missing) %*% matrix(1, rows = 1, cols = nrow(subset)))
-    D = sqrt(dotSubset + dotMissing - 2 * (subset %*% t(missing)))
-    minD = rowIndexMin(t(D))
-
-    #Get the index location of the missing value
-    pos = rowMaxs(is.nan(X))
-    missing_indices = seq(1, nrow(pos)) * pos
-
-    #Put the replacement value in the missing indices
-    I2 = removeEmpty(target=missing_indices, margin="rows")
-    R = table(I2,1,minD,odim1 = nrow(X), odim2=1)
-
-    #Replace the 0 to avoid error in table()
-    R = replace(target = R, pattern = 0, replacement = nrow(X)+1)
-
-    #Create aligned matrix from minimum index
-    aligned = table(R, seq(1, nrow(X)), odim1 = nrow(X), odim2 = nrow(X))
-
-    #Reshape the subset
-    reshaped = rbind(subset, matrix(0, rows = nrow(X) - nrow(subset), cols = ncol(X)))
+    reshaped = rbind(M2, matrix(0, rows=nrow(X) - nrow(M2), cols=ncol(X)))
 
     #Get the subset records that need to be imputed
     imputedValue = t(reshaped) %*% aligned
-
-    #Update the mask value
-    masked = t(imputedValue) * masked
-  }
-  else {
-    print("Method is unknown or not yet implemented")
-  }
-
-  #Impute the value
-  result = replace(target = X, pattern = NaN, replacement = 0)
-  result = result + masked
+    imputedValue = t(imputedValue)
 }
-

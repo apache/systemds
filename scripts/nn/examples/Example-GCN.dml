@@ -1,0 +1,243 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+#-------------------------------------------------------------
+# A simple example graph neural network using the graph
+# convolutional layer for a semi-supervised classification
+# task on the famous graph dataset, Zackary's Karate Club.
+# It will be a simple community prediction task on this
+# small social network.
+
+# Briefly, Zachary’s Karate Club is a
+# small social network where a conflict arises between the
+# administrator and instructor in a karate club. The task is
+# to predict which side of the conflict each member of the
+# karate club chooses.
+#
+# The dataset is hard-coded into this file since it only
+# holds 34 nodes in total.
+#
+# Model:
+# Our model will consist of 2 GCL layers using ReLU as our
+# activation function, followed by one logistic regressor
+# for the classification.
+# To make things simple, we will use a one-hot encoding for
+# the node features, i.e. the identity matrix.
+#-------------------------------------------------------------
+
+source("nn/layers/graph_conv.dml") as gcl
+source("nn/layers/sigmoid.dml") as sigmoid
+source("nn/layers/relu.dml") as relu
+source("nn/layers/log_loss.dml") as loss
+
+[X, edge_index, edge_weight, X_train, y_train, X_test, y_test] = get_dataset()
+add_self_loops = TRUE
+hidden_dim = 15
+out_dim = 3
+epochs = 1000
+learning_rate = 0.05
+[weights, biases] = train(X, edge_index, edge_weight, X_train, y_train, X_test, y_test, add_self_loops, hidden_dim,
+                          out_dim, epochs, learning_rate)
+
+
+get_dataset = function()
+    return (matrix[double] X, matrix[double] edge_index, matrix[double] edge_weight, matrix[double] X_train,
+            matrix[double] y_train, matrix[double] X_test, matrix[double] y_test)
+{
+    /*
+     * This function returns the dataset in the form of multiple matrices, having the matrices hard coded
+     * as strings for simplicity.
+     */
+
+      bin/systemds
+     	modified:   src/test/java/org/apache/sysds/test/applications/nn/NNComponentTest.java
+     	modified:   src/test/scripts/applications/nn/util.dml
+
+     Untracked files:
+       (use "git add <file>..." to include in what will be committed)
+     	bin/systemds.save
+     	gcl_project/
+     	hello.dml
+     	project/
+     	scripts/nn/examples/Example-GCN.dml
+     	scripts/nn/layers/graph_conv.dml
+     	scripts/nn/layers/graph_conv_old.dml
+     	src/test/scripts/applications/nn/component/graph_conv.dml
+
+
+    n = 34  # number of nodes
+    m = 78  # number of edges
+    X = matrix(0, rows=n, cols=n)
+    for (i in 1:n)
+    {
+        X[i, i] = 1
+    }
+    edge_index = matrix("0 1 0 2 0 3 0 4 0 5 0 6 0 7 0 8 0 10 0 11 0 12 0 13 0 17 0 19 0 21 0 31 1 2 1 3 1 7 1 13 1 17 1 19 1 21 1 30 2 3 2 7 2 8 2 9 2 13 2 27 2 28 2 32 3 7 3 12 3 13 4 6 4 10 5 6 5 10 5 16 6 16 8 30 8 32 8 33 9 33 13 33 14 32 14 33 15 32 15 33 18 32 18 33 19 33 20 32 20 33 22 32 22 33 23 25 23 27 23 29 23 32 23 33 24 25 24 27 24 31 25 31 26 29 26 33 27 33 28 31 28 33 29 32 29 33 30 32 30 33 31 32 31 33 32 33", rows=m, cols=2) + 1
+    # add edges in reverse direction
+    edge_index2 = matrix(0, rows=m, cols=2)
+    edge_index2[,1] = edge_index[,2]
+    edge_index2[,2] = edge_index[,1]
+    edge_index = rbind(edge_index, edge_index2)
+    edge_weight = matrix(1, rows=nrow(edge_index), cols=1)
+    X_train = matrix("0 33", rows=2, cols=1) + 1
+    X_test = matrix(" 1  2  3  4  5  6  7  8 10 11 12 13 17 19 21 31 30 9 27 28 32 16 14 15 18 20 22 23 25 29 24 26", rows=32, cols=1) + 1
+    y_train = matrix("0 1", rows=2, cols=1)
+    y_test = matrix("1. 1. 1. 1. 1. 1. 1. 1. 1. 1. 1. 1. 1. 1. 1. 0. 0. 0. 0. 0. 0. 1. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0.", rows=32, cols=1)
+}
+
+
+train = function(matrix[double] X, matrix[double] edge_index, matrix[double] edge_weight, matrix[double] X_train,
+                 matrix[double] y_train, matrix[double] X_test, matrix[double] y_test, boolean add_self_loops,
+                 int hidden_dim, int out_dim, int epochs, int learning_rate)
+    return(List[unknown] biases, List[unknown] weights)
+{
+    n = nrow(X)
+    m = nrow(edge_index)
+    gcl1_f_in = n
+    gcl1_f_out = hidden_dim
+    gcl2_f_in = hidden_dim
+    gcl2_f_out = out_dim
+
+    # initialize layers
+    [gcl1_weight, gcl1_bias] = gcl::init(gcl1_f_in, gcl1_f_out, -1)
+    [gcl2_weight, gcl2_bias] = gcl::init(gcl2_f_in, gcl2_f_out, -1)
+
+    # put weights & biases into list
+    biases = list(gcl1_bias, gcl2_bias)
+    weights = list(gcl1_weight, gcl2_weight)
+
+    for (e in 1:epochs)
+    {
+        print("Start epoch: " + e)
+        for (i in 1:nrow(y_train))
+        {
+            node = as.integer(as.scalar(X_train[i]))
+            # 1 - compute forward pass
+            gcl1_out = gcl::forward(X, edge_index, edge_weight, gcl1_weight, gcl1_bias, add_self_loops)
+            relu1_out = relu::forward(gcl1_out)
+            gcl2_out = gcl::forward(relu1_out, edge_index, edge_weight, gcl2_weight, gcl2_bias, add_self_loops)
+            relu2_out = relu::forward(gcl2_out)
+            # make classification prediction with logistic regressor
+            pred = sigmoid::forward(rowSums(relu2_out[node]))
+
+            # 2 - backpropagation
+            expected = y_train[i]
+            dout = loss::backward(pred, expected)
+            # backpropagate logistic regressor
+            sig_din = sigmoid::backward(dout, rowSums(relu2_out[i]))
+            sum_din = as.scalar(sig_din) * matrix(1, rows=1, cols=out_dim)
+            logreg_din = matrix(0, rows=n, cols=gcl2_f_out)
+            logreg_din[node] = sum_din
+            relu2_din = relu::backward(logreg_din, gcl2_out)
+            [gcl2_dX, gcl2_dW, gcl2_db] = gcl::backward(relu2_din, relu1_out, edge_index, edge_weight, gcl2_weight,
+                                                        gcl2_bias, add_self_loops)
+            relu1_din = relu::backward(gcl2_dX, gcl1_out)
+            [gcl1_dX, gcl1_dW, gcl1_db] = gcl::backward(relu1_din, X, edge_index, edge_weight, gcl1_weight, gcl1_bias,
+                                                        add_self_loops)
+
+            # 3 - update weights and biases
+            gcl1_weight = gcl1_weight - learning_rate * gcl1_dW
+            gcl1_bias = gcl1_bias - learning_rate * gcl1_db
+            gcl2_weight = gcl2_weight - learning_rate * gcl2_dW
+            gcl2_bias = gcl2_bias - learning_rate * gcl2_db
+
+            # put weights & biases into list
+            biases = list(gcl1_bias, gcl2_bias)
+            weights = list(gcl1_weight, gcl2_weight)
+        }
+        [train_loss, test_loss, train_accuracy, test_accuracy] = evaluate(X, edge_index, edge_weight, X_train, y_train,
+                                                                          X_test, y_test, gcl1_weight, gcl1_bias,
+                                                                          gcl2_weight, gcl2_bias, add_self_loops)
+        print("Train loss: %6.4f", train_loss)
+        print("Test accuracy: %6.4f", test_accuracy)
+    }
+}
+
+
+evaluate = function(matrix[double] X, matrix[double] edge_index, matrix[double] edge_weight, matrix[double] X_train,
+                    matrix[double] y_train, matrix[double] X_test, matrix[double] y_test, matrix[double] gcl1_weight,
+                    matrix[double] gcl1_bias, matrix[double] gcl2_weight, matrix[double] gcl2_bias,
+                    boolean add_self_loops)
+    return(double train_loss, double test_loss, double train_accuracy, double test_accuracy)
+{
+    # compute forward pass
+    gcl1_out = gcl::forward(X, edge_index, edge_weight, gcl1_weight, gcl1_bias, add_self_loops)
+    relu1_out = relu::forward(gcl1_out)
+    gcl2_out = gcl::forward(relu1_out, edge_index, edge_weight, gcl2_weight, gcl2_bias, add_self_loops)
+    relu2_out = relu::forward(gcl2_out)
+    # make classification prediction with logistic regressor
+    pred = sigmoid::forward(rowSums(relu2_out))
+    pred_train = matrix(0, rows=nrow(X), cols=1)
+    pred_test = matrix(0, rows=nrow(X), cols=1)
+    expected_train = matrix(0, rows=nrow(X), cols=1)
+    expected_test = matrix(0, rows=nrow(X), cols=1)
+    # use mask for train and test set
+    # so that for train nodes expected = pred = 0 for the test set and
+    # for test nodes expected = pred = 0 for the train set
+    for (i in 1:nrow(X_test))
+    {
+        node = as.integer(as.scalar(X_test[i]))
+        pred_test[node] = pred[node]
+        expected_test[node] = y_test[i]
+    }
+    for (i in 1:nrow(X_train))
+    {
+        node = as.integer(as.scalar(X_train[i]))
+        pred_train[node] = pred[node]
+        expected_train[node] = y_train[i]
+    }
+
+    # calculate loss
+    train_loss = loss::forward(pred_train, expected_train)
+    test_loss = loss::forward(pred_test, expected_test)
+
+
+    # calculate accuracy
+    sum_accuracy_train = 0.0
+    sum_accuracy_test = 0.0
+    for (i in 1:nrow(X_test))
+    {
+        node = as.integer(as.scalar(X_test[i]))
+        if (as.scalar(y_test[i]) == 1.0)
+        {
+            sum_accuracy_test += as.scalar(pred_test[i])
+        }
+        else
+        {
+            sum_accuracy_test += 1 - as.scalar(pred_test[i])
+        }
+    }
+    test_accuracy = sum_accuracy_test / nrow(X_test)
+    for (i in 1:nrow(X_train))
+    {
+        node = as.integer(as.scalar(X_train[i]))
+        if (as.scalar(y_train[i]) == 1.0)
+        {
+            sum_accuracy_train += as.scalar(pred_train[i])
+        }
+        else
+        {
+            sum_accuracy_train += 1 - as.scalar(pred_train[i])
+        }
+    }
+    train_accuracy = sum_accuracy_train / nrow(X_train)
+}
+

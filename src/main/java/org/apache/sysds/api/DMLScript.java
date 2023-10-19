@@ -41,10 +41,8 @@ import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.util.GenericOptionsParser;
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.conf.CompilerConfig;
 import org.apache.sysds.conf.ConfigurationManager;
@@ -204,16 +202,15 @@ public class DMLScript
 	public static void main(String[] args)
 	{
 		try{
-			Configuration conf = new Configuration(ConfigurationManager.getCachedJobConf());
-			String[] otherArgs = new GenericOptionsParser(conf, args).getRemainingArgs();
-			DMLScript.executeScript(conf, otherArgs);
+			DMLScript.executeScript(args);
 		} catch(Exception e){
-			errorPrint(e);
 			for(String s: args){
 				if(s.trim().contains("-debug")){
 					e.printStackTrace();
+					return;
 				}
 			}
+			errorPrint(e);
 		}
 	}
 
@@ -226,7 +223,7 @@ public class DMLScript
 	 * @return true if success, false otherwise
 	 * @throws IOException If an internal IOException happens.
 	 */
-	public static boolean executeScript( Configuration conf, String[] args )
+	public static boolean executeScript( String[] args )
 		throws IOException, ParseException, DMLScriptException
 	{
 		//parse arguments and set execution properties

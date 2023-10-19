@@ -19,11 +19,12 @@
 #
 #-------------------------------------------------------------
 
-# The lm-function solves linear regression using either the direct solve method or the conjugate gradient
-# algorithm depending on the input size of the matrices (See lmDS-function and lmCG-function respectively).
+# The lm-function solves linear regression using either the direct solve
+# method or the conjugate gradient algorithm depending on the input size
+# of the matrices (See lmDS-function and lmCG-function respectively).
 #
 # INPUT:
-# --------------------------------------------------------------------------------------
+# --------------------------------------------------------------------
 # X        Matrix of feature vectors.
 # y        1-column matrix of response values.
 # icpt     Intercept presence, shifting and rescaling the columns of X
@@ -33,14 +34,15 @@
 #          norm of the beta-residual is less than tolerance * its initial norm
 # maxi     Maximum number of conjugate gradient iterations. 0 = no maximum
 # verbose  If TRUE print messages are activated
-# --------------------------------------------------------------------------------------
+# --------------------------------------------------------------------
 #
 # OUTPUT:
-# --------------------------------------------------------------------------------------------
-# B     The model fit
-# --------------------------------------------------------------------------------------------
+# ---------------------------------------------------------------
+# B     The model fit beta that can be used as input in lmPredict
+# ---------------------------------------------------------------
 
-m_lm = function(Matrix[Double] X, Matrix[Double] y, Integer icpt = 0, Double reg = 1e-7, Double tol = 1e-7, Integer maxi = 0, Boolean verbose = TRUE)
+m_lm = function(Matrix[Double] X, Matrix[Double] y, Integer icpt = 0,
+    Double reg = 1e-7, Double tol = 1e-7, Integer maxi = 0, Boolean verbose = TRUE)
     return (Matrix[Double] B) {
   if( ncol(X) <= 1024 )
     B = lmDS(X, y, icpt, reg, verbose)

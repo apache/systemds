@@ -400,40 +400,6 @@ y = X %*% rand(rows = ncol(X), cols = 1)
 [predict, beta] = cvlm(X = X, y = y, k = 4)
 ```
 
-
-## `DBSCAN`-Function
-
-The dbscan() implements the DBSCAN Clustering algorithm using Euclidian distance.
-
-### Usage
-
-```r
-Y = dbscan(X = X, eps = 2.5, minPts = 5)
-```
-
-### Arguments
-
-| Name       | Type            | Default    | Description |
-| :--------- | :-------------- | :--------- | :---------- |
-| X          | Matrix[Double]  | required   | The input Matrix to do DBSCAN on. |
-| eps        | Double          | `0.5`      | Maximum distance between two points for one to be considered reachable for the other. |
-| minPts     | Int             | `5`        | Number of points in a neighborhood for a point to be considered as a core point (includes the point itself). |
-
-### Returns
-
-| Type        | Description |
-| :-----------| :---------- |
-| Matrix[Integer] | The mapping of records to clusters |
-| Matrix[Double]  | The coordinates of all points considered part of a cluster |
-
-### Example
-
-```r
-X = rand(rows=1780, cols=180, min=1, max=20) 
-[indices, model] = dbscan(X = X, eps = 2.5, minPts = 360)
-```
-
-
 ## `decisionTree`-Function
 
 The `decisionTree()` implements the classification tree with both scale and categorical

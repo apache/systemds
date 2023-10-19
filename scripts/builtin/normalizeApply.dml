@@ -27,8 +27,8 @@
 # INPUT:
 # ------------------------------------------------
 # X     Input feature matrix of shape n-by-m
-# cmin  Colunm minima of shape 1-by-m
-# cmax  Column maxima of shape 1-by-m
+# cmin  Column min of shape 1-by-m
+# cmax  Column max of shape 1-by-m
 # ------------------------------------------------
 #
 # OUTPUT:
@@ -36,10 +36,12 @@
 # Y     Modified output feature matrix of shape n-by-m
 # ------------------------------------------------
 
-
 m_normalizeApply = function(Matrix[Double] X, Matrix[Double] cmin, Matrix[Double] cmax)
   return (Matrix[Double] Y)
 {
+  diff = (cmax - cmin)
+  # avoid division by zero and divide by 1 instead
+  diff = replace(target=diff, pattern=0, replacement=1);
   # normalize features to given range ([0,1] if indeed min/max)
-  Y = (X - cmin) / (cmax - cmin);
+  Y = (X - cmin) / diff;
 }

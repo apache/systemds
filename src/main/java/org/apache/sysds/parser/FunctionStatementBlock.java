@@ -82,14 +82,16 @@ public class FunctionStatementBlock extends StatementBlock implements FunctionBl
 		for (DataIdentifier returnValue : returnValues){
 			DataIdentifier curr = ids.getVariable(returnValue.getName());
 			if (curr == null){
-				raiseValidateError("for function " + fstmt.getName() + ", return variable " + returnValue.getName() + " must be defined in function ", conditional);
+				raiseValidateError("for function " + fstmt.getName() + ", return variable " 
+					+ returnValue.getName() + " must be defined in function ", conditional);
 			}
-			
-			if (curr.getDataType() != DataType.UNKNOWN && !curr.getDataType().equals(returnValue.getDataType()) ){
-				raiseValidateError("for function " + fstmt.getName() + ", return variable " + curr.getName() + " data type of " + curr.getDataType() + " does not match data type in function signature of " + returnValue.getDataType(), conditional);
+			else if (curr.getDataType() != DataType.UNKNOWN && !curr.getDataType().equals(returnValue.getDataType()) ){
+				raiseValidateError("for function " + fstmt.getName() + ", return variable " 
+					+ curr.getName() + " data type of " + curr.getDataType() 
+					+ " does not match data type in function signature of " 
+					+ returnValue.getDataType(), conditional);
 			}
-			
-			if (curr.getValueType() != ValueType.UNKNOWN && returnValue.getValueType() != ValueType.UNKNOWN
+			else if (curr.getValueType() != ValueType.UNKNOWN && returnValue.getValueType() != ValueType.UNKNOWN
 				&& !curr.getValueType().equals(returnValue.getValueType())){
 				
 				// attempt to convert value type: handle conversion from scalar DOUBLE or INT

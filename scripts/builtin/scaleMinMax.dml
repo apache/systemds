@@ -20,6 +20,8 @@
 #-------------------------------------------------------------
 
 # This function performs min-max normalization (rescaling to [0,1]).
+# 
+# This function is deprecated, use normalize instead.
 #
 # INPUT:
 # ---------------------------------------------
@@ -28,11 +30,19 @@
 #
 # OUTPUT:
 # --------------------------------------------
-# Y     Scaled output matrix
+# Y      Scaled output matrix
 # --------------------------------------------
 
 m_scaleMinMax = function(Matrix[Double] X)
   return (Matrix[Double] Y)
 {
-  Y = (X - colMins(X)) / (colMaxs(X) - colMins(X));
+  print("Deprecated scaleMinMax use normalize instead")
+  # compute feature ranges for transformations
+  cmin = colMins(X);
+  cmax = colMaxs(X);
+  diff = (cmax - cmin)
+  # avoid division by zero and divide by 1 instead
+  diff = replace(target=diff, pattern=0, replacement=1);
+  # normalize features to given range ([0,1] if indeed min/max)
+  Y = (X - cmin) / diff;
 }

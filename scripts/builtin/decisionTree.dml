@@ -106,7 +106,7 @@ m_decisionTree = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] cty
 
   if( verbose ) {
     print("decisionTree: initialize with max_depth=" + max_depth + ", max_features="
-      + max_features +", max_dataratio" + max_dataratio + ", impurity="
+      + max_features +", max_dataratio=" + max_dataratio + ", impurity="
       + impurity + ", seed=" + seed + ".");
     print("decisionTree: basic statistics:");
     print("-- impurity: " + as.scalar(computeImpurity(y2, I, impurity)));

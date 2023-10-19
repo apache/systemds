@@ -5,7 +5,7 @@
 # distributed with this work for additional information
 # regarding copyright ownership.  The ASF licenses this file
 # to you under the Apache License, Version 2.0 (the
-# "License"); you may not use this file except in compliance
+# "License") you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
 #
 #   http://www.apache.org/licenses/LICENSE-2.0
@@ -22,62 +22,62 @@
 # The lmCG function solves linear regression using the conjugate gradient algorithm
 #
 # INPUT:
-# --------------------------------------------------------------------------------------
+# ---------------------------------------------------------------
 # X        Matrix of feature vectors.
 # y        1-column matrix of response values.
 # icpt     Intercept presence, shifting and rescaling the columns of X
 # reg      Regularization constant (lambda) for L2-regularization. set to nonzero
 #          for highly dependant/sparse/numerous features
-# tol      Tolerance (epsilon); conjugate gradient procedure terminates early if L2
+# tol      Tolerance (epsilon) conjugate gradient procedure terminates early if L2
 #          norm of the beta-residual is less than tolerance * its initial norm
 # maxi     Maximum number of conjugate gradient iterations. 0 = no maximum
 # verbose  If TRUE print messages are activated
-# --------------------------------------------------------------------------------------
+# ---------------------------------------------------------------
 #
 # OUTPUT:
-# ---------------------------------------------------------------------------------------------
-# B     The model fit
-# ---------------------------------------------------------------------------------------------
+# ---------------------------------------------------------------
+# B     The model fit beta that can be used as input in lmPredict
+# ---------------------------------------------------------------
 
-m_lmCG = function(Matrix[Double] X, Matrix[Double] y, Integer icpt = 0, Double reg = 1e-7, Double tol = 1e-7,
- Integer maxi = 0, Boolean verbose = TRUE) return (Matrix[Double] B) {
-  intercept_status = icpt;
-  regularization = reg;
-  tolerance = tol;
-  max_iteration = maxi;
+m_lmCG = function(Matrix[Double] X, Matrix[Double] y, Integer icpt = 0,
+    Double reg = 1e-7, Double tol = 1e-7, Integer maxi = 0, Boolean verbose = TRUE)
+    return (Matrix[Double] B) {
+  intercept_status = icpt
+  regularization = reg
+  tolerance = tol
+  max_iteration = maxi
 
-  n = nrow (X);
-  m = ncol (X);
-  ones_n = matrix (1, rows = n, cols = 1);
-  zero_cell = matrix (0, rows = 1, cols = 1);
+  n = nrow(X)
+  m = ncol(X)
 
   # Introduce the intercept, shift and rescale the columns of X if needed
-
-  m_ext = m;
-  if (intercept_status == 1 | intercept_status == 2)  # add the intercept column
-  {
-    X = cbind (X, ones_n);
-    m_ext = ncol (X);
+  # add the intercept column
+  if(intercept_status == 1 | intercept_status == 2){
+    ones_n = matrix(1, rows = n, cols = 1)
+    X = cbind(X, ones_n)
+    m_ext = ncol(X)
+    scale_lambda = matrix(1, rows = m_ext, cols = 1)
+    scale_lambda [m_ext, 1] = 0
+  }
+  else{
+    scale_lambda = matrix(1, rows = m, cols = 1)
+    m_ext = m
   }
 
-  scale_lambda = matrix (1, rows = m_ext, cols = 1);
-  if (intercept_status == 1 | intercept_status == 2)
-  {
-      scale_lambda [m_ext, 1] = 0;
-  }
 
-  if (intercept_status == 2)  # scale-&-shift X columns to mean 0, variance 1
-  {                           # Important assumption: X [, m_ext] = ones_n
-    avg_X_cols = t(colSums(X)) / n;
-    var_X_cols = (t(colSums (X ^ 2)) - n * (avg_X_cols ^ 2)) / (n - 1);
-    is_unsafe = (var_X_cols <= 0);
-    scale_X = 1.0 / sqrt (var_X_cols * (1 - is_unsafe) + is_unsafe);
-    scale_X [m_ext, 1] = 1;
-    shift_X = - avg_X_cols * scale_X;
-    shift_X [m_ext, 1] = 0;
-  } else {
-    scale_X = matrix (1, rows = m_ext, cols = 1);
-    shift_X = matrix (0, rows = m_ext, cols = 1);
+  # scale-&-shift X columns to mean 0, variance 1
+  # Important assumption: X [, m_ext] = ones_n
+  if(intercept_status == 2){                           
+    avg_X_cols = t(colSums(X)) / n
+    var_X_cols = (t(colSums(X ^ 2)) - n * (avg_X_cols ^ 2)) / (n - 1)
+    is_unsafe = (var_X_cols <= 0)
+    scale_X = 1.0 / sqrt(var_X_cols * (1 - is_unsafe) + is_unsafe)
+    scale_X [m_ext, 1] = 1
+    shift_X = - avg_X_cols * scale_X
+    shift_X [m_ext, 1] = 0
+  }else{
+    scale_X = matrix(1, rows = m_ext, cols = 1)
+    shift_X = matrix(0, rows = m_ext, cols = 1)
   }
 
   # Henceforth, if intercept_status == 2, we use "X %*% (SHIFT/SCALE TRANSFORM)"
@@ -86,117 +86,78 @@ m_lmCG = function(Matrix[Double] X, Matrix[Double] y, Integer icpt = 0, Double r
   # in which it occurs.  To avoid materializing a large matrix, we rewrite it:
   #
   # ssX_A  = (SHIFT/SCALE TRANSFORM) %*% A    --- is rewritten as:
-  # ssX_A  = diag (scale_X) %*% A;
-  # ssX_A [m_ext, ] = ssX_A [m_ext, ] + t(shift_X) %*% A;
+  # ssX_A  = diag (scale_X) %*% A
+  # ssX_A [m_ext, ] = ssX_A [m_ext, ] + t(shift_X) %*% A
   #
   # tssX_A = t(SHIFT/SCALE TRANSFORM) %*% A   --- is rewritten as:
-  # tssX_A = diag (scale_X) %*% A + shift_X %*% A [m_ext, ];
+  # tssX_A = diag (scale_X) %*% A + shift_X %*% A [m_ext, ]
 
-  lambda = scale_lambda * regularization;
-  beta_unscaled = matrix (0, rows = m_ext, cols = 1);
+  lambda = scale_lambda * regularization
+  beta_unscaled = matrix(0, rows = m_ext, cols = 1)
 
-  if (max_iteration == 0) {
-    max_iteration = m_ext;
+  if(max_iteration == 0){
+    max_iteration = m_ext
   }
-  i = 0;
+  i = 0
 
   # BEGIN THE CONJUGATE GRADIENT ALGORITHM
-  if (verbose) print ("Running the CG algorithm...");
+  if(verbose) print("Running the CG algorithm...")
 
-  r = - t(X) %*% y;
+  r = - t(X) %*% y
 
-  if (intercept_status == 2) {
-    r = scale_X * r + shift_X %*% r [m_ext, ];
+  if(intercept_status == 2){
+    r = scale_X * r + shift_X %*% r [m_ext, ]
   }
 
-  p = - r;
-  norm_r2 = sum (r ^ 2);
-  norm_r2_initial = norm_r2;
-  norm_r2_target = norm_r2_initial * tolerance ^ 2;
-  if (verbose) print ("||r|| initial value = " + sqrt (norm_r2_initial) + ",  target value = " + sqrt (norm_r2_target));
-
-  while (i < max_iteration & norm_r2 > norm_r2_target)
-  {
-    if (intercept_status == 2) {
-      ssX_p = scale_X * p;
-      ssX_p [m_ext, ] = ssX_p [m_ext, ] + t(shift_X) %*% p;
-    } else {
-      ssX_p = p;
-    }
-
-    q = t(X) %*% (X %*% ssX_p);
-
-    if (intercept_status == 2) {
-      q = scale_X * q + shift_X %*% q [m_ext, ];
-    }
-
-    q += lambda * p;
-    a = norm_r2 / sum (p * q);
-    beta_unscaled += a * p;
-    r += a * q;
-    old_norm_r2 = norm_r2;
-    norm_r2 = sum (r ^ 2);
-    p = -r + (norm_r2 / old_norm_r2) * p;
-    i = i + 1;
-    if (verbose) print ("Iteration " + i + ":  ||r|| / ||r init|| = " + sqrt (norm_r2 / norm_r2_initial));
+  p = - r
+  norm_r2 = sum(r ^ 2)
+  norm_r2_initial = norm_r2
+  norm_r2_target = norm_r2_initial * tolerance ^ 2
+  if(verbose){
+    print("||r|| initial value = " + sqrt(norm_r2_initial) +
+      ", target value = " + sqrt(norm_r2_target))
   }
 
-  if (i >= max_iteration) {
-    if (verbose) print ("Warning: the maximum number of iterations has been reached.");
+  while(i < max_iteration & norm_r2 > norm_r2_target){
+    if(intercept_status == 2){
+      ssX_p = scale_X * p
+      ssX_p [m_ext, ] = ssX_p [m_ext, ] + t(shift_X) %*% p
+    }else{
+      ssX_p = p
+    }
+
+    q = t(X) %*% (X %*% ssX_p)
+
+    if(intercept_status == 2) {
+      q = scale_X * q + shift_X %*% q [m_ext, ]
+    }
+
+    q += lambda * p
+    a = norm_r2 / sum(p * q)
+    beta_unscaled += a * p
+    r += a * q
+    old_norm_r2 = norm_r2
+    norm_r2 = sum(r ^ 2)
+    p = -r + (norm_r2 / old_norm_r2) * p
+    i = i + 1
+    if(verbose){
+      print("Iteration " + i + ":  ||r|| / ||r init|| = "
+        + sqrt(norm_r2 / norm_r2_initial))
+    }
+  }
+
+  if(verbose & i >= max_iteration){
+    print("Warning: the maximum number of iterations has been reached.")
   }
   
   # END THE CONJUGATE GRADIENT ALGORITHM
-  if (intercept_status == 2) {
-    beta = scale_X * beta_unscaled;
-    beta [m_ext, ] = beta [m_ext, ] + t(shift_X) %*% beta_unscaled;
-  } else {
-    beta = beta_unscaled;
+  if(intercept_status == 2){
+    beta = scale_X * beta_unscaled
+    beta[m_ext, ] = beta[m_ext, ] + t(shift_X) %*% beta_unscaled
+  }else{
+    beta = beta_unscaled
   }
 
-  if (verbose) {
-		print ("Computing the statistics...");
-	
-	  avg_tot = sum (y) / n;
-	  ss_tot = sum (y ^ 2);
-	  ss_avg_tot = ss_tot - n * avg_tot ^ 2;
-	  var_tot = ss_avg_tot / (n - 1);
-	  y_residual = y - X %*% beta;
-	  avg_res = sum (y_residual) / n;
-	  ss_res = sum (y_residual ^ 2);
-	  ss_avg_res = ss_res - n * avg_res ^ 2;
-	
-	  R2 = 1 - ss_res / ss_avg_tot;
-	  dispersion = ifelse(n > m_ext, ss_res / (n - m_ext), NaN);
-	  adjusted_R2 = ifelse(n > m_ext, 1 - dispersion / (ss_avg_tot / (n - 1)), NaN);
-	
-	  R2_nobias = 1 - ss_avg_res / ss_avg_tot;
-	  deg_freedom = n - m - 1;
-	  if (deg_freedom > 0) {
-	    var_res = ss_avg_res / deg_freedom;
-	    adjusted_R2_nobias = 1 - var_res / (ss_avg_tot / (n - 1));
-	  } else {
-	    var_res = NaN;
-	    adjusted_R2_nobias = NaN;
-	    print ("Warning: zero or negative number of degrees of freedom.");
-	  }
-	
-	  R2_vs_0 = 1 - ss_res / ss_tot;
-	  adjusted_R2_vs_0 = ifelse(n > m, 1 - (ss_res / (n - m)) / (ss_tot / n), NaN);
-
-    print ("AVG_TOT_Y, " + avg_tot +                 # Average of the response value Y
-      "\nSTDEV_TOT_Y, " + sqrt (var_tot) +           # Standard Deviation of the response value Y
-      "\nAVG_RES_Y, " + avg_res +                    # Average of the residual Y - pred(Y|X), i.e. residual bias
-      "\nSTDEV_RES_Y, " + sqrt (var_res) +           # Standard Deviation of the residual Y - pred(Y|X)
-      "\nDISPERSION, " + dispersion +                # GLM-style dispersion, i.e. residual sum of squares / # d.f.
-      "\nR2, " + R2 +                                # R^2 of residual with bias included vs. total average
-      "\nADJUSTED_R2, " + adjusted_R2 +              # Adjusted R^2 of residual with bias included vs. total average
-      "\nR2_NOBIAS, " + R2_nobias +                  # R^2 of residual with bias subtracted vs. total average<Paste>
-      "\nADJUSTED_R2_NOBIAS, " + adjusted_R2_nobias);  # Adjusted R^2 of residual with bias subtracted vs. total average
-    if (intercept_status == 0) {
-      print ("R2_VS_0, " + R2_vs_0 +               #  R^2 of residual with bias included vs. zero constant
-        "\nADJUSTED_R2_VS_0, " + adjusted_R2_vs_0);  #  Adjusted R^2 of residual with bias included vs. zero constant
-    }
-  }
-
-  B = beta;
+  # Set output variable
+  B = beta
 }

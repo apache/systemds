@@ -57,6 +57,6 @@ m_confusionMatrix = function(Matrix[Double] P, Matrix[Double] Y)
 
   dim = max(max(Y),max(P))
   confusionSum = table(P, Y,  dim, dim)
-  # max to avoid devision by 0, in case a colum contain no entries.
+  # max to avoid division by 0, in case a colum contain no entries.
   confusionAvg = confusionSum / max(1,colSums(confusionSum))
 }

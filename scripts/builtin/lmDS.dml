@@ -5,7 +5,7 @@
 # distributed with this work for additional information
 # regarding copyright ownership.  The ASF licenses this file
 # to you under the Apache License, Version 2.0 (the
-# "License"); you may not use this file except in compliance
+# "License") you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
 #
 #   http://www.apache.org/licenses/LICENSE-2.0
@@ -28,54 +28,52 @@
 # icpt     Intercept presence, shifting and rescaling the columns of X
 # reg      Regularization constant (lambda) for L2-regularization. set to nonzero
 #          for highly dependant/sparse/numerous features
-# tol      Tolerance (epsilon); conjugate gradient procedure terminates early if L2
+# tol      Tolerance (epsilon) conjugate gradient procedure terminates early if L2
 #          norm of the beta-residual is less than tolerance * its initial norm
 # maxi     Maximum number of conjugate gradient iterations. 0 = no maximum
 # verbose  If TRUE print messages are activated
 # --------------------------------------------------------------------------------------
 #
 # OUTPUT:
-# ---------------------------------------------------------------------------------------------
-# B     The model fit
-# ---------------------------------------------------------------------------------------------
+# ---------------------------------------------------------------
+# B     The model fit beta that can be used as input in lmPredict
+# ---------------------------------------------------------------
 
-m_lmDS = function(Matrix[Double] X, Matrix[Double] y, Integer icpt = 0, Double reg = 1e-7,
- Boolean verbose = TRUE) return (Matrix[Double] B) {
-  intercept_status = icpt;
-  regularization = reg;
+m_lmDS = function(Matrix[Double] X, Matrix[Double] y, Integer icpt = 0,
+    Double reg = 1e-7, Boolean verbose = TRUE) return (Matrix[Double] B) {
+  intercept_status = icpt
+  regularization = reg
 
-  n = nrow (X);
-  m = ncol (X);
-  ones_n = matrix (1, rows = n, cols = 1);
-  zero_cell = matrix (0, rows = 1, cols = 1);
+  n = nrow(X)
+  m = ncol(X)
 
   # Introduce the intercept, shift and rescale the columns of X if needed
-
-  m_ext = m;
-  if (intercept_status == 1 | intercept_status == 2)  # add the intercept column
-  {
-    X = cbind (X, ones_n);
-    m_ext = ncol (X);
+  # add the intercept column
+  if(intercept_status == 1 | intercept_status == 2){
+    ones_n = matrix (1, rows = n, cols = 1)
+    X = cbind (X, ones_n)
+    m_ext = ncol (X)
+    scale_lambda = matrix (1, rows = m_ext, cols = 1)
+    scale_lambda [m_ext, 1] = 0
+  }
+  else {
+    scale_lambda = matrix (1, rows = m, cols = 1)
+    m_ext = m
   }
 
-  scale_lambda = matrix (1, rows = m_ext, cols = 1);
-  if (intercept_status == 1 | intercept_status == 2)
-  {
-    scale_lambda [m_ext, 1] = 0;
-  }
-
-  if (intercept_status == 2)  # scale-&-shift X columns to mean 0, variance 1
-  {                           # Important assumption: X [, m_ext] = ones_n
-    avg_X_cols = t(colSums(X)) / n;
-    var_X_cols = (t(colSums (X ^ 2)) - n * (avg_X_cols ^ 2)) / (n - 1);
-    is_unsafe = (var_X_cols <= 0);
-    scale_X = 1.0 / sqrt (var_X_cols * (1 - is_unsafe) + is_unsafe);
-    scale_X [m_ext, 1] = 1;
-    shift_X = - avg_X_cols * scale_X;
-    shift_X [m_ext, 1] = 0;
-  } else {
-    scale_X = matrix (1, rows = m_ext, cols = 1);
-    shift_X = matrix (0, rows = m_ext, cols = 1);
+  # scale-&-shift X columns to mean 0, variance 1
+  # Important assumption: X [, m_ext] = ones_n
+  if(intercept_status == 2){
+    avg_X_cols = t(colSums(X)) / n
+    var_X_cols = (t(colSums(X ^ 2)) - n * (avg_X_cols ^ 2)) / (n - 1)
+    is_unsafe = (var_X_cols <= 0)
+    scale_X = 1.0 / sqrt(var_X_cols * (1 - is_unsafe) + is_unsafe)
+    scale_X [m_ext, 1] = 1
+    shift_X = - avg_X_cols * scale_X
+    shift_X [m_ext, 1] = 0
+  }else{
+    scale_X = matrix(1, rows = m_ext, cols = 1)
+    shift_X = matrix(0, rows = m_ext, cols = 1)
   }
 
   # Henceforth, if intercept_status == 2, we use "X %*% (SHIFT/SCALE TRANSFORM)"
@@ -84,79 +82,37 @@ m_lmDS = function(Matrix[Double] X, Matrix[Double] y, Integer icpt = 0, Double r
   # in which it occurs.  To avoid materializing a large matrix, we rewrite it:
   #
   # ssX_A  = (SHIFT/SCALE TRANSFORM) %*% A    --- is rewritten as:
-  # ssX_A  = diag (scale_X) %*% A;
-  # ssX_A [m_ext, ] = ssX_A [m_ext, ] + t(shift_X) %*% A;
+  # ssX_A  = diag (scale_X) %*% A
+  # ssX_A [m_ext, ] = ssX_A [m_ext, ] + t(shift_X) %*% A
   #
   # tssX_A = t(SHIFT/SCALE TRANSFORM) %*% A   --- is rewritten as:
-  # tssX_A = diag (scale_X) %*% A + shift_X %*% A [m_ext, ];
+  # tssX_A = diag (scale_X) %*% A + shift_X %*% A [m_ext, ]
 
-  lambda = scale_lambda * regularization;
+  lambda = scale_lambda * regularization
   # BEGIN THE DIRECT SOLVE ALGORITHM (EXTERNAL CALL)
-  A = t(X) %*% X;
-  b = t(X) %*% y;
-  if (intercept_status == 2) {
-    A = t(diag (scale_X) %*% A + shift_X %*% A [m_ext, ]);
-    A =   diag (scale_X) %*% A + shift_X %*% A [m_ext, ];
-    b =   diag (scale_X) %*% b + shift_X %*% b [m_ext, ];
+  A = t(X) %*% X
+  b = t(X) %*% y
+  if(intercept_status == 2){
+    A = t(diag(scale_X) %*% A + shift_X %*% A[m_ext, ])
+    A =   diag(scale_X) %*% A + shift_X %*% A[m_ext, ]
+    b =   diag(scale_X) %*% b + shift_X %*% b[m_ext, ]
   }
-  A = A + diag (lambda);
+  A = A + diag(lambda)
 
-  if (verbose)
-	  print ("Calling the Direct Solver...");
+  if(verbose){
+    print("Calling the Direct Solver...")
+  }
 
-  beta_unscaled = solve (A, b);
+  beta_unscaled = solve(A, b)
 
   # END THE DIRECT SOLVE ALGORITHM
-  if (intercept_status == 2) {
-      beta = scale_X * beta_unscaled;
-      beta [m_ext, ] = beta [m_ext, ] + t(shift_X) %*% beta_unscaled;
-  } else {
-      beta = beta_unscaled;
-  }
-  
-  if (verbose) { 
-	  print ("Computing the statistics...");
-	  avg_tot = sum (y) / n;
-	  ss_tot = sum (y ^ 2);
-	  ss_avg_tot = ss_tot - n * avg_tot ^ 2;
-	  var_tot = ss_avg_tot / (n - 1);
-	  y_residual = y - X %*% beta;
-	  avg_res = sum (y_residual) / n;
-	  ss_res = sum (y_residual ^ 2);
-	  ss_avg_res = ss_res - n * avg_res ^ 2;
-	
-	  R2 = 1 - ss_res / ss_avg_tot;
-	  dispersion = ifelse(n > m_ext, ss_res / (n - m_ext), NaN);
-	  adjusted_R2 = ifelse(n > m_ext, 1 - dispersion / (ss_avg_tot / (n - 1)), NaN);
-	
-	  R2_nobias = 1 - ss_avg_res / ss_avg_tot;
-	  deg_freedom = n - m - 1;
-	  if (deg_freedom > 0) {
-	    var_res = ss_avg_res / deg_freedom;
-	    adjusted_R2_nobias = 1 - var_res / (ss_avg_tot / (n - 1));
-	  } else {
-	    var_res = NaN;
-	    adjusted_R2_nobias = NaN;
-	    print ("Warning: zero or negative number of degrees of freedom.");
-	  }
-	
-	  R2_vs_0 = 1 - ss_res / ss_tot;
-	  adjusted_R2_vs_0 = ifelse(n > m, 1 - (ss_res / (n - m)) / (ss_tot / n), NaN);
-
-    print ("AVG_TOT_Y, " + avg_tot +                 # Average of the response value Y
-      "\nSTDEV_TOT_Y, " + sqrt (var_tot) +           # Standard Deviation of the response value Y
-      "\nAVG_RES_Y, " + avg_res +                    # Average of the residual Y - pred(Y|X), i.e. residual bias
-      "\nSTDEV_RES_Y, " + sqrt (var_res) +           # Standard Deviation of the residual Y - pred(Y|X)
-      "\nDISPERSION, " + dispersion +                # GLM-style dispersion, i.e. residual sum of squares / # d.f.
-      "\nR2, " + R2 +                                # R^2 of residual with bias included vs. total average
-      "\nADJUSTED_R2, " + adjusted_R2 +              # Adjusted R^2 of residual with bias included vs. total average
-      "\nR2_NOBIAS, " + R2_nobias +                  # R^2 of residual with bias subtracted vs. total average<Paste>
-      "\nADJUSTED_R2_NOBIAS, " + adjusted_R2_nobias);  # Adjusted R^2 of residual with bias subtracted vs. total average
-    if (intercept_status == 0) {
-      print ("R2_VS_0, " + R2_vs_0 +               #  R^2 of residual with bias included vs. zero constant
-        "\nADJUSTED_R2_VS_0, " + adjusted_R2_vs_0);  #  Adjusted R^2 of residual with bias included vs. zero constant
-    }
+  if(intercept_status == 2){
+    beta = scale_X * beta_unscaled
+    beta[m_ext, ] = beta[m_ext, ] + t(shift_X) %*% beta_unscaled
+  }else{
+    beta = beta_unscaled
   }
 
-  B = beta;
+  # Set output variable
+  B = beta
 }

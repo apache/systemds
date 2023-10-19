@@ -11,11 +11,11 @@
     <script src="../../static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-        <script src="../../static/jquery.js"></script>
-        <script src="../../static/_sphinx_javascript_frameworks_compat.js"></script>
-        <script data-url_root="../../" id="documentation_options" src="../../static/documentation_options.js"></script>
-        <script src="../../static/doctools.js"></script>
-        <script src="../../static/sphinx_highlight.js"></script>
+        <script src="../../static/jquery.js?v=5d32c60e"></script>
+        <script src="../../static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../static/documentation_options.js?v=596fb6d1"></script>
+        <script src="../../static/doctools.js?v=888ff710"></script>
+        <script src="../../static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
@@ -107,19 +107,19 @@
            <div itemprop="articleBody">
              
   <section id="script">
-<h1>Script<a class="headerlink" href="#script" title="Permalink to this heading"></a></h1>
+<h1>Script<a class="headerlink" href="#script" title="Link to this heading"></a></h1>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>OPS! For internal use!</p>
 </div>
-<span class="target" id="module-systemds.script_building.script"></span><dl class="py class">
+<dl class="py class" id="module-systemds.script_building.script">
 <dt class="sig sig-object py" id="systemds.script_building.script.DMLScript">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">systemds.script_building.script.</span></span><span class="sig-name descname"><span class="pre">DMLScript</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">context</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../context/systemds_context.html#systemds.context.SystemDSContext" title="systemds.context.SystemDSContext"><span class="pre">SystemDSContext</span></a></span></em><span class="sig-paren">)</span><a class="headerlink" href="#systemds.script_building.script.DMLScript" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">systemds.script_building.script.</span></span><span class="sig-name descname"><span class="pre">DMLScript</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">context</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../context/systemds_context.html#systemds.context.SystemDSContext" title="systemds.context.SystemDSContext"><span class="pre">SystemDSContext</span></a></span></em><span class="sig-paren">)</span><a class="headerlink" href="#systemds.script_building.script.DMLScript" title="Link to this definition"></a></dt>
 <dd><p>DMLScript is the class used to describe our intended behavior in DML. This script can be then executed to
 get the results.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="systemds.script_building.script.DMLScript.add_code">
-<span class="sig-name descname"><span class="pre">add_code</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">code</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#systemds.script_building.script.DMLScript.add_code" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">add_code</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">code</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#systemds.script_building.script.DMLScript.add_code" title="Link to this definition"></a></dt>
 <dd><p>Add a dml code line to our script</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -130,7 +130,7 @@ get the results.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="systemds.script_building.script.DMLScript.add_input_from_python">
-<span class="sig-name descname"><span class="pre">add_input_from_python</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">var_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_var</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="dag.html#systemds.script_building.dag.DAGNode" title="systemds.script_building.dag.DAGNode"><span class="pre">DAGNode</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#systemds.script_building.script.DMLScript.add_input_from_python" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">add_input_from_python</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">var_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_var</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="dag.html#systemds.script_building.dag.DAGNode" title="systemds.script_building.dag.DAGNode"><span class="pre">DAGNode</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#systemds.script_building.script.DMLScript.add_input_from_python" title="Link to this definition"></a></dt>
 <dd><p>Add an input for our preparedScript. Should only be executed for data that is python local.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -144,7 +144,7 @@ get the results.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="systemds.script_building.script.DMLScript.build_code">
-<span class="sig-name descname"><span class="pre">build_code</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dag_root</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="dag.html#systemds.script_building.dag.DAGNode" title="systemds.script_building.dag.DAGNode"><span class="pre">DAGNode</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#systemds.script_building.script.DMLScript.build_code" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">build_code</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dag_root</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="dag.html#systemds.script_building.dag.DAGNode" title="systemds.script_building.dag.DAGNode"><span class="pre">DAGNode</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#systemds.script_building.script.DMLScript.build_code" title="Link to this definition"></a></dt>
 <dd><p>Builds code from our DAG</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -155,7 +155,7 @@ get the results.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="systemds.script_building.script.DMLScript.execute">
-<span class="sig-name descname"><span class="pre">execute</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">JavaObject</span></span></span><a class="headerlink" href="#systemds.script_building.script.DMLScript.execute" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">execute</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">JavaObject</span></span></span><a class="headerlink" href="#systemds.script_building.script.DMLScript.execute" title="Link to this definition"></a></dt>
 <dd><p>If not already created, create a preparedScript from our DMLCode, pass python local data to our prepared
 script, then execute our script and return the resultVariables</p>
 <dl class="field-list simple">
@@ -167,7 +167,7 @@ script, then execute our script and return the resultVariables</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="systemds.script_building.script.DMLScript.execute_with_lineage">
-<span class="sig-name descname"><span class="pre">execute_with_lineage</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">JavaObject</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#systemds.script_building.script.DMLScript.execute_with_lineage" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">execute_with_lineage</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">JavaObject</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#systemds.script_building.script.DMLScript.execute_with_lineage" title="Link to this definition"></a></dt>
 <dd><p>If not already created, create a preparedScript from our DMLCode, pass python local data to our prepared
 script, then execute our script and return the resultVariables</p>
 <dl class="field-list simple">

@@ -14,7 +14,7 @@
 <!--[if IE]>
 <script type="text/javascript" src="../../../../../../../jquery/jszip-utils/dist/jszip-utils-ie.min.js"></script>
 <![endif]-->
-<script type="text/javascript" src="../../../../../../../jquery/jquery-3.6.0.min.js"></script>
+<script type="text/javascript" src="../../../../../../../jquery/jquery-3.6.1.min.js"></script>
 <script type="text/javascript" src="../../../../../../../jquery/jquery-ui.min.js"></script>
 </head>
 <body>
@@ -111,46 +111,50 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
+<th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.compress.lib">org.apache.sysds.runtime.compress.lib</a></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
 <th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.controlprogram.caching">org.apache.sysds.runtime.controlprogram.caching</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.controlprogram.context">org.apache.sysds.runtime.controlprogram.context</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.controlprogram.federated">org.apache.sysds.runtime.controlprogram.federated</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.controlprogram.parfor">org.apache.sysds.runtime.controlprogram.parfor</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.data">org.apache.sysds.runtime.data</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.frame.data">org.apache.sysds.runtime.frame.data</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.instructions.fed">org.apache.sysds.runtime.instructions.fed</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.instructions.spark.data">org.apache.sysds.runtime.instructions.spark.data</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.matrix.data">org.apache.sysds.runtime.matrix.data</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.transform.encode">org.apache.sysds.runtime.transform.encode</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.util">org.apache.sysds.runtime.util</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
@@ -175,6 +179,30 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <tr class="altColor">
 <td class="colFirst"><code>class&nbsp;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../../compress/CompressedMatrixBlock.html" title="class in org.apache.sysds.runtime.compress">CompressedMatrixBlock</a></span></code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+</tbody>
+</table>
+</section>
+</li>
+<li class="blockList">
+<section><a id="org.apache.sysds.runtime.compress.lib">
+<!--   -->
+</a>
+<h3>Uses of <a href="../CacheBlock.html" title="interface in org.apache.sysds.runtime.controlprogram.caching">CacheBlock</a> in <a href="../../../compress/lib/package-summary.html">org.apache.sysds.runtime.compress.lib</a></h3>
+<table class="useSummary">
+<caption><span>Methods in <a href="../../../compress/lib/package-summary.html">org.apache.sysds.runtime.compress.lib</a> with parameters of type <a href="../CacheBlock.html" title="interface in org.apache.sysds.runtime.controlprogram.caching">CacheBlock</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colSecond" scope="col">Method</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code>static org.apache.commons.lang3.tuple.Pair&lt;<a href="../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>,&#8203;<a href="../../../frame/data/FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&gt;</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">CLALibBinCompress.</span><code><span class="memberNameLink"><a href="../../../compress/lib/CLALibBinCompress.html#binCompress(org.apache.sysds.runtime.controlprogram.caching.CacheBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock,int)">binCompress</a></span>&#8203;(<a href="../CacheBlock.html" title="interface in org.apache.sysds.runtime.controlprogram.caching">CacheBlock</a>&lt;?&gt;&nbsp;X,
+           <a href="../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;d,
+           int&nbsp;k)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 </tbody>
@@ -218,28 +246,37 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
+<td class="colFirst"><code><a href="../CacheBlock.html" title="interface in org.apache.sysds.runtime.controlprogram.caching">CacheBlock</a>&lt;<a href="../CacheBlock.html" title="type parameter in CacheBlock">T</a>&gt;</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">CacheBlock.</span><code><span class="memberNameLink"><a href="../CacheBlock.html#merge(T,boolean)">merge</a></span>&#8203;(<a href="../CacheBlock.html" title="type parameter in CacheBlock">T</a>&nbsp;that,
+     boolean&nbsp;appendOnly)</code></th>
+<td class="colLast">
+<div class="block">Merge disjoint: merges all non-zero values of the given input into the current
+ block.</div>
+</td>
+</tr>
+<tr class="altColor">
 <td class="colFirst"><code>static <a href="../CacheBlock.html" title="interface in org.apache.sysds.runtime.controlprogram.caching">CacheBlock</a>&lt;?&gt;</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">CacheBlockFactory.</span><code><span class="memberNameLink"><a href="../CacheBlockFactory.html#newInstance(int)">newInstance</a></span>&#8203;(int&nbsp;code)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>static <a href="../CacheBlock.html" title="interface in org.apache.sysds.runtime.controlprogram.caching">CacheBlock</a>&lt;?&gt;</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">CacheBlockFactory.</span><code><span class="memberNameLink"><a href="../CacheBlockFactory.html#newInstance(org.apache.sysds.runtime.controlprogram.caching.CacheBlock)">newInstance</a></span>&#8203;(<a href="../CacheBlock.html" title="interface in org.apache.sysds.runtime.controlprogram.caching">CacheBlock</a>&lt;?&gt;&nbsp;block)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>static <a href="../CacheBlock.html" title="interface in org.apache.sysds.runtime.controlprogram.caching">CacheBlock</a>&lt;?&gt;</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">LazyWriteBuffer.</span><code><span class="memberNameLink"><a href="../LazyWriteBuffer.html#readBlock(java.lang.String,boolean)">readBlock</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;fname,
          boolean&nbsp;matrix)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>static <a href="../CacheBlock.html" title="interface in org.apache.sysds.runtime.controlprogram.caching">CacheBlock</a>&lt;?&gt;</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">UnifiedMemoryManager.</span><code><span class="memberNameLink"><a href="../UnifiedMemoryManager.html#readBlock(java.lang.String,boolean)">readBlock</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;fname,
          boolean&nbsp;matrix)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code><a href="../CacheBlock.html" title="interface in org.apache.sysds.runtime.controlprogram.caching">CacheBlock</a>&lt;<a href="../CacheBlock.html" title="type parameter in CacheBlock">T</a>&gt;</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">CacheBlock.</span><code><span class="memberNameLink"><a href="../CacheBlock.html#slice(int,int)">slice</a></span>&#8203;(int&nbsp;rl,
      int&nbsp;ru)</code></th>
@@ -247,7 +284,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <div class="block">Slice a sub block out of the current block and write into the given output block.</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code><a href="../CacheBlock.html" title="interface in org.apache.sysds.runtime.controlprogram.caching">CacheBlock</a>&lt;<a href="../CacheBlock.html" title="type parameter in CacheBlock">T</a>&gt;</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">CacheBlock.</span><code><span class="memberNameLink"><a href="../CacheBlock.html#slice(int,int,boolean)">slice</a></span>&#8203;(int&nbsp;rl,
      int&nbsp;ru,
@@ -256,7 +293,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <div class="block">Slice a sub block out of the current block and write into the given output block.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code><a href="../CacheBlock.html" title="interface in org.apache.sysds.runtime.controlprogram.caching">CacheBlock</a>&lt;<a href="../CacheBlock.html" title="type parameter in CacheBlock">T</a>&gt;</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">CacheBlock.</span><code><span class="memberNameLink"><a href="../CacheBlock.html#slice(int,int,int,int)">slice</a></span>&#8203;(int&nbsp;rl,
      int&nbsp;ru,
@@ -266,7 +303,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <div class="block">Slice a sub block out of the current block and write into the given output block.</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code><a href="../CacheBlock.html" title="interface in org.apache.sysds.runtime.controlprogram.caching">CacheBlock</a>&lt;<a href="../CacheBlock.html" title="type parameter in CacheBlock">T</a>&gt;</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">CacheBlock.</span><code><span class="memberNameLink"><a href="../CacheBlock.html#slice(int,int,int,int,boolean)">slice</a></span>&#8203;(int&nbsp;rl,
      int&nbsp;ru,
@@ -277,7 +314,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <div class="block">Slice a sub block out of the current block and write into the given output block.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code><a href="../CacheBlock.html" title="interface in org.apache.sysds.runtime.controlprogram.caching">CacheBlock</a>&lt;<a href="../CacheBlock.html" title="type parameter in CacheBlock">T</a>&gt;</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">CacheBlock.</span><code><span class="memberNameLink"><a href="../CacheBlock.html#slice(int,int,int,int,boolean,T)">slice</a></span>&#8203;(int&nbsp;rl,
      int&nbsp;ru,
@@ -289,7 +326,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <div class="block">Slice a sub block out of the current block and write into the given output block.</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code><a href="../CacheBlock.html" title="interface in org.apache.sysds.runtime.controlprogram.caching">CacheBlock</a>&lt;<a href="../CacheBlock.html" title="type parameter in CacheBlock">T</a>&gt;</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">CacheBlock.</span><code><span class="memberNameLink"><a href="../CacheBlock.html#slice(int,int,int,int,T)">slice</a></span>&#8203;(int&nbsp;rl,
      int&nbsp;ru,
@@ -300,7 +337,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <div class="block">Slice a sub block out of the current block and write into the given output block.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code><a href="../CacheBlock.html" title="interface in org.apache.sysds.runtime.controlprogram.caching">CacheBlock</a>&lt;<a href="../CacheBlock.html" title="type parameter in CacheBlock">T</a>&gt;</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">CacheBlock.</span><code><span class="memberNameLink"><a href="../CacheBlock.html#slice(org.apache.sysds.runtime.util.IndexRange,T)">slice</a></span>&#8203;(<a href="../../../util/IndexRange.html" title="class in org.apache.sysds.runtime.util">IndexRange</a>&nbsp;ixrange,
      <a href="../CacheBlock.html" title="type parameter in CacheBlock">T</a>&nbsp;ret)</code></th>
@@ -755,61 +792,75 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ColumnEncoderWordEmbedding.</span><code><span class="memberNameLink"><a href="../../../transform/encode/ColumnEncoderWordEmbedding.html#applyDense(org.apache.sysds.runtime.controlprogram.caching.CacheBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock,int,int,int)">applyDense</a></span>&#8203;(<a href="../CacheBlock.html" title="interface in org.apache.sysds.runtime.controlprogram.caching">CacheBlock</a>&lt;?&gt;&nbsp;in,
+          <a href="../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;out,
+          int&nbsp;outputCol,
+          int&nbsp;rowStart,
+          int&nbsp;blk)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">ColumnEncoder.</span><code><span class="memberNameLink"><a href="../../../transform/encode/ColumnEncoder.html#build(org.apache.sysds.runtime.controlprogram.caching.CacheBlock,double%5B%5D)">build</a></span>&#8203;(<a href="../CacheBlock.html" title="interface in org.apache.sysds.runtime.controlprogram.caching">CacheBlock</a>&lt;?&gt;&nbsp;in,
      double[]&nbsp;equiHeightMaxs)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">ColumnEncoder.</span><code><span class="memberNameLink"><a href="../../../transform/encode/ColumnEncoder.html#build(org.apache.sysds.runtime.controlprogram.caching.CacheBlock,java.util.Map)">build</a></span>&#8203;(<a href="../CacheBlock.html" title="interface in org.apache.sysds.runtime.controlprogram.caching">CacheBlock</a>&lt;?&gt;&nbsp;in,
      <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/Map.html?is-external=true" title="class or interface in java.util" class="externalLink">Map</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Integer.html?is-external=true" title="class or interface in java.lang" class="externalLink">Integer</a>,&#8203;double[]&gt;&nbsp;equiHeightMaxs)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">ColumnEncoderBin.</span><code><span class="memberNameLink"><a href="../../../transform/encode/ColumnEncoderBin.html#build(org.apache.sysds.runtime.controlprogram.caching.CacheBlock)">build</a></span>&#8203;(<a href="../CacheBlock.html" title="interface in org.apache.sysds.runtime.controlprogram.caching">CacheBlock</a>&lt;?&gt;&nbsp;in)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">ColumnEncoderBin.</span><code><span class="memberNameLink"><a href="../../../transform/encode/ColumnEncoderBin.html#build(org.apache.sysds.runtime.controlprogram.caching.CacheBlock,double%5B%5D)">build</a></span>&#8203;(<a href="../CacheBlock.html" title="interface in org.apache.sysds.runtime.controlprogram.caching">CacheBlock</a>&lt;?&gt;&nbsp;in,
      double[]&nbsp;equiHeightMaxs)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">ColumnEncoderComposite.</span><code><span class="memberNameLink"><a href="../../../transform/encode/ColumnEncoderComposite.html#build(org.apache.sysds.runtime.controlprogram.caching.CacheBlock)">build</a></span>&#8203;(<a href="../CacheBlock.html" title="interface in org.apache.sysds.runtime.controlprogram.caching">CacheBlock</a>&lt;?&gt;&nbsp;in)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">ColumnEncoderComposite.</span><code><span class="memberNameLink"><a href="../../../transform/encode/ColumnEncoderComposite.html#build(org.apache.sysds.runtime.controlprogram.caching.CacheBlock,java.util.Map)">build</a></span>&#8203;(<a href="../CacheBlock.html" title="interface in org.apache.sysds.runtime.controlprogram.caching">CacheBlock</a>&lt;?&gt;&nbsp;in,
      <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/Map.html?is-external=true" title="class or interface in java.util" class="externalLink">Map</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Integer.html?is-external=true" title="class or interface in java.lang" class="externalLink">Integer</a>,&#8203;double[]&gt;&nbsp;equiHeightMaxs)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">ColumnEncoderDummycode.</span><code><span class="memberNameLink"><a href="../../../transform/encode/ColumnEncoderDummycode.html#build(org.apache.sysds.runtime.controlprogram.caching.CacheBlock)">build</a></span>&#8203;(<a href="../CacheBlock.html" title="interface in org.apache.sysds.runtime.controlprogram.caching">CacheBlock</a>&lt;?&gt;&nbsp;in)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">ColumnEncoderFeatureHash.</span><code><span class="memberNameLink"><a href="../../../transform/encode/ColumnEncoderFeatureHash.html#build(org.apache.sysds.runtime.controlprogram.caching.CacheBlock)">build</a></span>&#8203;(<a href="../CacheBlock.html" title="interface in org.apache.sysds.runtime.controlprogram.caching">CacheBlock</a>&lt;?&gt;&nbsp;in)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">ColumnEncoderPassThrough.</span><code><span class="memberNameLink"><a href="../../../transform/encode/ColumnEncoderPassThrough.html#build(org.apache.sysds.runtime.controlprogram.caching.CacheBlock)">build</a></span>&#8203;(<a href="../CacheBlock.html" title="interface in org.apache.sysds.runtime.controlprogram.caching">CacheBlock</a>&lt;?&gt;&nbsp;in)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">ColumnEncoderRecode.</span><code><span class="memberNameLink"><a href="../../../transform/encode/ColumnEncoderRecode.html#build(org.apache.sysds.runtime.controlprogram.caching.CacheBlock)">build</a></span>&#8203;(<a href="../CacheBlock.html" title="interface in org.apache.sysds.runtime.controlprogram.caching">CacheBlock</a>&lt;?&gt;&nbsp;in)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">ColumnEncoderUDF.</span><code><span class="memberNameLink"><a href="../../../transform/encode/ColumnEncoderUDF.html#build(org.apache.sysds.runtime.controlprogram.caching.CacheBlock)">build</a></span>&#8203;(<a href="../CacheBlock.html" title="interface in org.apache.sysds.runtime.controlprogram.caching">CacheBlock</a>&lt;?&gt;&nbsp;in)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ColumnEncoderWordEmbedding.</span><code><span class="memberNameLink"><a href="../../../transform/encode/ColumnEncoderWordEmbedding.html#build(org.apache.sysds.runtime.controlprogram.caching.CacheBlock)">build</a></span>&#8203;(<a href="../CacheBlock.html" title="interface in org.apache.sysds.runtime.controlprogram.caching">CacheBlock</a>&lt;?&gt;&nbsp;in)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">

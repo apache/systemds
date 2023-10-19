@@ -14,7 +14,7 @@
 <!--[if IE]>
 <script type="text/javascript" src="../../../../../../../jquery/jszip-utils/dist/jszip-utils-ie.min.js"></script>
 <![endif]-->
-<script type="text/javascript" src="../../../../../../../jquery/jquery-3.6.0.min.js"></script>
+<script type="text/javascript" src="../../../../../../../jquery/jquery-3.6.1.min.js"></script>
 <script type="text/javascript" src="../../../../../../../jquery/jquery-ui.min.js"></script>
 </head>
 <body>
@@ -197,6 +197,11 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
                          org.apache.spark.broadcast.Broadcast&lt;<a href="../../meta/TfOffsetMap.html" title="class in org.apache.sysds.runtime.transform.meta">TfOffsetMap</a>&gt;&nbsp;omap)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
+<tr class="rowColor">
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../../instructions/spark/ParameterizedBuiltinSPInstruction.RDDTransformApplyFunction2.html#%3Cinit%3E(org.apache.spark.broadcast.Broadcast,org.apache.spark.broadcast.Broadcast)">RDDTransformApplyFunction2</a></span>&#8203;(org.apache.spark.broadcast.Broadcast&lt;<a href="../MultiColumnEncoder.html" title="class in org.apache.sysds.runtime.transform.encode">MultiColumnEncoder</a>&gt;&nbsp;bencoder,
+                          org.apache.spark.broadcast.Broadcast&lt;<a href="../../meta/TfOffsetMap.html" title="class in org.apache.sysds.runtime.transform.meta">TfOffsetMap</a>&gt;&nbsp;omap)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
 </tbody>
 </table>
 </section>
@@ -216,13 +221,19 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <tbody>
 <tr class="altColor">
 <td class="colFirst"><code>static <a href="../MultiColumnEncoder.html" title="class in org.apache.sysds.runtime.transform.encode">MultiColumnEncoder</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">EncoderFactory.</span><code><span class="memberNameLink"><a href="../EncoderFactory.html#createEncoder(java.lang.String,int)">createEncoder</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;spec,
+             int&nbsp;clen)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>static <a href="../MultiColumnEncoder.html" title="class in org.apache.sysds.runtime.transform.encode">MultiColumnEncoder</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">EncoderFactory.</span><code><span class="memberNameLink"><a href="../EncoderFactory.html#createEncoder(java.lang.String,java.lang.String%5B%5D,int,org.apache.sysds.runtime.frame.data.FrameBlock)">createEncoder</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;spec,
              <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>[]&nbsp;colnames,
              int&nbsp;clen,
              <a href="../../../frame/data/FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;meta)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>static <a href="../MultiColumnEncoder.html" title="class in org.apache.sysds.runtime.transform.encode">MultiColumnEncoder</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">EncoderFactory.</span><code><span class="memberNameLink"><a href="../EncoderFactory.html#createEncoder(java.lang.String,java.lang.String%5B%5D,int,org.apache.sysds.runtime.frame.data.FrameBlock,int,int)">createEncoder</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;spec,
              <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>[]&nbsp;colnames,
@@ -232,13 +243,43 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
              int&nbsp;maxCol)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
+<tr class="rowColor">
+<td class="colFirst"><code>static <a href="../MultiColumnEncoder.html" title="class in org.apache.sysds.runtime.transform.encode">MultiColumnEncoder</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">EncoderFactory.</span><code><span class="memberNameLink"><a href="../EncoderFactory.html#createEncoder(java.lang.String,java.lang.String%5B%5D,int,org.apache.sysds.runtime.frame.data.FrameBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock)">createEncoder</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;spec,
+             <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>[]&nbsp;colnames,
+             int&nbsp;clen,
+             <a href="../../../frame/data/FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;meta,
+             <a href="../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;embeddings)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
 <tr class="altColor">
+<td class="colFirst"><code>static <a href="../MultiColumnEncoder.html" title="class in org.apache.sysds.runtime.transform.encode">MultiColumnEncoder</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">EncoderFactory.</span><code><span class="memberNameLink"><a href="../EncoderFactory.html#createEncoder(java.lang.String,java.lang.String%5B%5D,int,org.apache.sysds.runtime.frame.data.FrameBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock,int,int)">createEncoder</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;spec,
+             <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>[]&nbsp;colnames,
+             int&nbsp;clen,
+             <a href="../../../frame/data/FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;meta,
+             <a href="../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;embeddings,
+             int&nbsp;minCol,
+             int&nbsp;maxCol)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
 <td class="colFirst"><code>static <a href="../MultiColumnEncoder.html" title="class in org.apache.sysds.runtime.transform.encode">MultiColumnEncoder</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">EncoderFactory.</span><code><span class="memberNameLink"><a href="../EncoderFactory.html#createEncoder(java.lang.String,java.lang.String%5B%5D,org.apache.sysds.common.Types.ValueType%5B%5D,int,org.apache.sysds.runtime.frame.data.FrameBlock)">createEncoder</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;spec,
              <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>[]&nbsp;colnames,
              <a href="../../../../common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>[]&nbsp;schema,
              int&nbsp;clen,
              <a href="../../../frame/data/FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;meta)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>static <a href="../MultiColumnEncoder.html" title="class in org.apache.sysds.runtime.transform.encode">MultiColumnEncoder</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">EncoderFactory.</span><code><span class="memberNameLink"><a href="../EncoderFactory.html#createEncoder(java.lang.String,java.lang.String%5B%5D,org.apache.sysds.common.Types.ValueType%5B%5D,int,org.apache.sysds.runtime.frame.data.FrameBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock)">createEncoder</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;spec,
+             <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>[]&nbsp;colnames,
+             <a href="../../../../common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>[]&nbsp;schema,
+             int&nbsp;clen,
+             <a href="../../../frame/data/FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;meta,
+             <a href="../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;embeddings)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
@@ -260,11 +301,20 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
+<td class="colFirst"><code>static <a href="../MultiColumnEncoder.html" title="class in org.apache.sysds.runtime.transform.encode">MultiColumnEncoder</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">EncoderFactory.</span><code><span class="memberNameLink"><a href="../EncoderFactory.html#createEncoder(java.lang.String,java.lang.String%5B%5D,org.apache.sysds.common.Types.ValueType%5B%5D,org.apache.sysds.runtime.frame.data.FrameBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock)">createEncoder</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;spec,
+             <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>[]&nbsp;colnames,
+             <a href="../../../../common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>[]&nbsp;schema,
+             <a href="../../../frame/data/FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;meta,
+             <a href="../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;embeddings)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
 <td class="colFirst"><code><a href="../MultiColumnEncoder.html" title="class in org.apache.sysds.runtime.transform.encode">MultiColumnEncoder</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">MultiColumnEncoder.</span><code><span class="memberNameLink"><a href="../MultiColumnEncoder.html#subRangeEncoder(org.apache.sysds.runtime.util.IndexRange)">subRangeEncoder</a></span>&#8203;(<a href="../../../util/IndexRange.html" title="class in org.apache.sysds.runtime.util">IndexRange</a>&nbsp;ixRange)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>&lt;T extends <a href="../ColumnEncoder.html" title="class in org.apache.sysds.runtime.transform.encode">ColumnEncoder</a>&gt;<br><a href="../MultiColumnEncoder.html" title="class in org.apache.sysds.runtime.transform.encode">MultiColumnEncoder</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">MultiColumnEncoder.</span><code><span class="memberNameLink"><a href="../MultiColumnEncoder.html#subRangeEncoder(org.apache.sysds.runtime.util.IndexRange,java.lang.Class)">subRangeEncoder</a></span>&#8203;(<a href="../../../util/IndexRange.html" title="class in org.apache.sysds.runtime.util">IndexRange</a>&nbsp;ixRange,
                <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Class.html?is-external=true" title="class or interface in java.lang" class="externalLink">Class</a>&lt;T&gt;&nbsp;type)</code></th>

@@ -14,7 +14,7 @@
 <!--[if IE]>
 <script type="text/javascript" src="../../../../../../../../jquery/jszip-utils/dist/jszip-utils-ie.min.js"></script>
 <![endif]-->
-<script type="text/javascript" src="../../../../../../../../jquery/jquery-3.6.0.min.js"></script>
+<script type="text/javascript" src="../../../../../../../../jquery/jquery-3.6.1.min.js"></script>
 <script type="text/javascript" src="../../../../../../../../jquery/jquery-ui.min.js"></script>
 </head>
 <body>
@@ -110,6 +110,10 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.frame.data.columns">org.apache.sysds.runtime.frame.data.columns</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
+<tr class="rowColor">
+<th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.frame.data.compress">org.apache.sysds.runtime.frame.data.compress</a></th>
+<td class="colLast">&nbsp;</td>
+</tr>
 </tbody>
 </table>
 </li>
@@ -153,27 +157,37 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code><a href="../ArrayFactory.FrameArrayType.html" title="enum in org.apache.sysds.runtime.frame.data.columns">ArrayFactory.FrameArrayType</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">DoubleArray.</span><code><span class="memberNameLink"><a href="../DoubleArray.html#getFrameArrayType()">getFrameArrayType</a></span>()</code></th>
+<th class="colSecond" scope="row"><span class="typeNameLabel">DDCArray.</span><code><span class="memberNameLink"><a href="../DDCArray.html#getFrameArrayType()">getFrameArrayType</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
+<td class="colFirst"><code><a href="../ArrayFactory.FrameArrayType.html" title="enum in org.apache.sysds.runtime.frame.data.columns">ArrayFactory.FrameArrayType</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">DoubleArray.</span><code><span class="memberNameLink"><a href="../DoubleArray.html#getFrameArrayType()">getFrameArrayType</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
 <td class="colFirst"><code><a href="../ArrayFactory.FrameArrayType.html" title="enum in org.apache.sysds.runtime.frame.data.columns">ArrayFactory.FrameArrayType</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">FloatArray.</span><code><span class="memberNameLink"><a href="../FloatArray.html#getFrameArrayType()">getFrameArrayType</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code><a href="../ArrayFactory.FrameArrayType.html" title="enum in org.apache.sysds.runtime.frame.data.columns">ArrayFactory.FrameArrayType</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">IntegerArray.</span><code><span class="memberNameLink"><a href="../IntegerArray.html#getFrameArrayType()">getFrameArrayType</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code><a href="../ArrayFactory.FrameArrayType.html" title="enum in org.apache.sysds.runtime.frame.data.columns">ArrayFactory.FrameArrayType</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">LongArray.</span><code><span class="memberNameLink"><a href="../LongArray.html#getFrameArrayType()">getFrameArrayType</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code><a href="../ArrayFactory.FrameArrayType.html" title="enum in org.apache.sysds.runtime.frame.data.columns">ArrayFactory.FrameArrayType</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">OptionalArray.</span><code><span class="memberNameLink"><a href="../OptionalArray.html#getFrameArrayType()">getFrameArrayType</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../ArrayFactory.FrameArrayType.html" title="enum in org.apache.sysds.runtime.frame.data.columns">ArrayFactory.FrameArrayType</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">RaggedArray.</span><code><span class="memberNameLink"><a href="../RaggedArray.html#getFrameArrayType()">getFrameArrayType</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
@@ -195,6 +209,47 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <div class="block">Returns an array containing the constants of this enum type, in
 the order they are declared.</div>
 </td>
+</tr>
+</tbody>
+</table>
+</section>
+</li>
+<li class="blockList">
+<section><a id="org.apache.sysds.runtime.frame.data.compress">
+<!--   -->
+</a>
+<h3>Uses of <a href="../ArrayFactory.FrameArrayType.html" title="enum in org.apache.sysds.runtime.frame.data.columns">ArrayFactory.FrameArrayType</a> in <a href="../../compress/package-summary.html">org.apache.sysds.runtime.frame.data.compress</a></h3>
+<table class="useSummary">
+<caption><span>Fields in <a href="../../compress/package-summary.html">org.apache.sysds.runtime.frame.data.compress</a> declared as <a href="../ArrayFactory.FrameArrayType.html" title="enum in org.apache.sysds.runtime.frame.data.columns">ArrayFactory.FrameArrayType</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colSecond" scope="col">Field</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../ArrayFactory.FrameArrayType.html" title="enum in org.apache.sysds.runtime.frame.data.columns">ArrayFactory.FrameArrayType</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ArrayCompressionStatistics.</span><code><span class="memberNameLink"><a href="../../compress/ArrayCompressionStatistics.html#bestType">bestType</a></span></code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+</tbody>
+</table>
+<table class="useSummary">
+<caption><span>Constructors in <a href="../../compress/package-summary.html">org.apache.sysds.runtime.frame.data.compress</a> with parameters of type <a href="../ArrayFactory.FrameArrayType.html" title="enum in org.apache.sysds.runtime.frame.data.columns">ArrayFactory.FrameArrayType</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Constructor</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../compress/ArrayCompressionStatistics.html#%3Cinit%3E(int,int,boolean,org.apache.sysds.common.Types.ValueType,org.apache.sysds.runtime.frame.data.columns.ArrayFactory.FrameArrayType,long,long)">ArrayCompressionStatistics</a></span>&#8203;(int&nbsp;bitPerValue,
+                          int&nbsp;nUnique,
+                          boolean&nbsp;shouldCompress,
+                          <a href="../../../../../common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;valueType,
+                          <a href="../ArrayFactory.FrameArrayType.html" title="enum in org.apache.sysds.runtime.frame.data.columns">ArrayFactory.FrameArrayType</a>&nbsp;bestType,
+                          long&nbsp;originalSize,
+                          long&nbsp;compressedSizeEstimate)</code></th>
+<td class="colLast">&nbsp;</td>
 </tr>
 </tbody>
 </table>

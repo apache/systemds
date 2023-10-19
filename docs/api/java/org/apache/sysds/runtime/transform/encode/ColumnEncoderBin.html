@@ -14,7 +14,7 @@
 <!--[if IE]>
 <script type="text/javascript" src="../../../../../../jquery/jszip-utils/dist/jszip-utils-ie.min.js"></script>
 <![endif]-->
-<script type="text/javascript" src="../../../../../../jquery/jquery-3.6.0.min.js"></script>
+<script type="text/javascript" src="../../../../../../jquery/jquery-3.6.1.min.js"></script>
 <script type="text/javascript" src="../../../../../../jquery/jquery-ui.min.js"></script>
 </head>
 <body>
@@ -208,8 +208,18 @@ extends <a href="ColumnEncoder.html" title="class in org.apache.sysds.runtime.tr
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
+<td class="colFirst"><code>static int</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#MINIMUM_SAMPLE_SIZE">MINIMUM_SAMPLE_SIZE</a></span></code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
 <td class="colFirst"><code>static <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#NBINS_PREFIX">NBINS_PREFIX</a></span></code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>static double</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#SAMPLE_FRACTION">SAMPLE_FRACTION</a></span></code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 </table>
@@ -412,7 +422,7 @@ extends <a href="ColumnEncoder.html" title="class in org.apache.sysds.runtime.tr
 <!--   -->
 </a>
 <h3>Methods inherited from class&nbsp;org.apache.sysds.runtime.transform.encode.<a href="ColumnEncoder.html" title="class in org.apache.sysds.runtime.transform.encode">ColumnEncoder</a></h3>
-<code><a href="ColumnEncoder.html#apply(org.apache.sysds.runtime.controlprogram.caching.CacheBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock,int)">apply</a>, <a href="ColumnEncoder.html#apply(org.apache.sysds.runtime.controlprogram.caching.CacheBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock,int,int,int)">apply</a>, <a href="ColumnEncoder.html#build(org.apache.sysds.runtime.controlprogram.caching.CacheBlock,java.util.Map)">build</a>, <a href="ColumnEncoder.html#compareTo(org.apache.sysds.runtime.transform.encode.ColumnEncoder)">compareTo</a>, <a href="ColumnEncoder.html#getApplyTasks(org.apache.sysds.runtime.controlprogram.caching.CacheBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock,int)">getApplyTasks</a>, <a href="ColumnEncoder.html#getBuildTasks(org.apache.sysds.runtime.controlprogram.caching.CacheBlock)">getBuildTasks</a>, <a href="ColumnEncoder.html#getColID()">getColID</a>, <a href="ColumnEncoder.html#getColMapping(org.apache.sysds.runtime.frame.data.FrameBlock)">getColMapping</a>, <a href="ColumnEncoder.html#getDomainSize()">getDomainSize</a>, <a href="ColumnEncoder.html#getEstMetaSize()">getEstMetaSize</a>, <a href="ColumnEncoder.html#getEstNumDistincts()">getEstNumDistincts</a>, <a href="ColumnEncoder.html#getSparseRowsWZeros()">getSparseRowsWZeros</a>, <a href="ColumnEncoder.html#isApplicable()">isApplicable</a>, <a href="ColumnEncoder.html#isApplicable(int)">isApplicable</a>, <a href="ColumnEncoder.html#setColID(int)">setColID</a>, <a href="ColumnEncoder.html#setEstMetaSize(long)">setEstMetaSize</a>, <a href="ColumnEncoder.html#setEstNumDistincts(int)">setEstNumDistincts</a>, <a href="ColumnEncoder.html#shiftCol(int)">shiftCol</a>, <a href="ColumnEncoder.html#updateIndexRanges(long%5B%5D,long%5B%5D,int)">updateIndexRanges</a></code></li>
+<code><a href="ColumnEncoder.html#apply(org.apache.sysds.runtime.controlprogram.caching.CacheBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock,int)">apply</a>, <a href="ColumnEncoder.html#apply(org.apache.sysds.runtime.controlprogram.caching.CacheBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock,int,int,int)">apply</a>, <a href="ColumnEncoder.html#build(org.apache.sysds.runtime.controlprogram.caching.CacheBlock,java.util.Map)">build</a>, <a href="ColumnEncoder.html#compareTo(org.apache.sysds.runtime.transform.encode.ColumnEncoder)">compareTo</a>, <a href="ColumnEncoder.html#getApplyTasks(org.apache.sysds.runtime.controlprogram.caching.CacheBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock,int)">getApplyTasks</a>, <a href="ColumnEncoder.html#getBuildTasks(org.apache.sysds.runtime.controlprogram.caching.CacheBlock)">getBuildTasks</a>, <a href="ColumnEncoder.html#getColID()">getColID</a>, <a href="ColumnEncoder.html#getColMapping(org.apache.sysds.runtime.frame.data.FrameBlock)">getColMapping</a>, <a href="ColumnEncoder.html#getDomainSize()">getDomainSize</a>, <a href="ColumnEncoder.html#getEstMetaSize()">getEstMetaSize</a>, <a href="ColumnEncoder.html#getEstNumDistincts()">getEstNumDistincts</a>, <a href="ColumnEncoder.html#getSparseRowsWZeros()">getSparseRowsWZeros</a>, <a href="ColumnEncoder.html#initEmbeddings(org.apache.sysds.runtime.matrix.data.MatrixBlock)">initEmbeddings</a>, <a href="ColumnEncoder.html#isApplicable()">isApplicable</a>, <a href="ColumnEncoder.html#isApplicable(int)">isApplicable</a>, <a href="ColumnEncoder.html#setColID(int)">setColID</a>, <a href="ColumnEncoder.html#setEstMetaSize(long)">setEstMetaSize</a>, <a href="ColumnEncoder.html#setEstNumDistincts(int)">setEstNumDistincts</a>, <a href="ColumnEncoder.html#shiftCol(int)">shiftCol</a>, <a href="ColumnEncoder.html#updateIndexRanges(long%5B%5D,long%5B%5D,int)">updateIndexRanges</a></code></li>
 </ul>
 <ul class="blockList">
 <li class="blockList"><a id="methods.inherited.from.class.java.lang.Object">
@@ -466,13 +476,39 @@ extends <a href="ColumnEncoder.html" title="class in org.apache.sysds.runtime.tr
 <a id="NBINS_PREFIX">
 <!--   -->
 </a>
-<ul class="blockListLast">
+<ul class="blockList">
 <li class="blockList">
 <h4>NBINS_PREFIX</h4>
 <pre>public static final&nbsp;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a> NBINS_PREFIX</pre>
 <dl>
 <dt><span class="seeLabel">See Also:</span></dt>
 <dd><a href="../../../../../../constant-values.html#org.apache.sysds.runtime.transform.encode.ColumnEncoderBin.NBINS_PREFIX">Constant Field Values</a></dd>
+</dl>
+</li>
+</ul>
+<a id="SAMPLE_FRACTION">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>SAMPLE_FRACTION</h4>
+<pre>public static final&nbsp;double SAMPLE_FRACTION</pre>
+<dl>
+<dt><span class="seeLabel">See Also:</span></dt>
+<dd><a href="../../../../../../constant-values.html#org.apache.sysds.runtime.transform.encode.ColumnEncoderBin.SAMPLE_FRACTION">Constant Field Values</a></dd>
+</dl>
+</li>
+</ul>
+<a id="MINIMUM_SAMPLE_SIZE">
+<!--   -->
+</a>
+<ul class="blockListLast">
+<li class="blockList">
+<h4>MINIMUM_SAMPLE_SIZE</h4>
+<pre>public static final&nbsp;int MINIMUM_SAMPLE_SIZE</pre>
+<dl>
+<dt><span class="seeLabel">See Also:</span></dt>
+<dd><a href="../../../../../../constant-values.html#org.apache.sysds.runtime.transform.encode.ColumnEncoderBin.MINIMUM_SAMPLE_SIZE">Constant Field Values</a></dd>
 </dl>
 </li>
 </ul>

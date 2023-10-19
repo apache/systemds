@@ -14,7 +14,7 @@
 <!--[if IE]>
 <script type="text/javascript" src="../../../../../jquery/jszip-utils/dist/jszip-utils-ie.min.js"></script>
 <![endif]-->
-<script type="text/javascript" src="../../../../../jquery/jquery-3.6.0.min.js"></script>
+<script type="text/javascript" src="../../../../../jquery/jquery-3.6.1.min.js"></script>
 <script type="text/javascript" src="../../../../../jquery/jquery-ui.min.js"></script>
 </head>
 <body>
@@ -274,26 +274,34 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </td>
 </tr>
 <tr class="rowColor">
+<th class="colFirst" scope="row"><a href="RewriteRemoveEmptyForLoops.html" title="class in org.apache.sysds.hops.rewrite">RewriteRemoveEmptyForLoops</a></th>
+<td class="colLast">
+<div class="block">Rule: Simplify program structure by removing empty for loops,
+ which may originate from the sequence of other rewrites like
+ dead-code-elimination.</div>
+</td>
+</tr>
+<tr class="altColor">
 <th class="colFirst" scope="row"><a href="RewriteRemoveForLoopEmptySequence.html" title="class in org.apache.sysds.hops.rewrite">RewriteRemoveForLoopEmptySequence</a></th>
 <td class="colLast">
 <div class="block">Rule: Simplify program structure by removing (par)for statements iterating over
  an empty sequence, i.e., (par)for-loops without a single iteration.</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <th class="colFirst" scope="row"><a href="RewriteRemovePersistentReadWrite.html" title="class in org.apache.sysds.hops.rewrite">RewriteRemovePersistentReadWrite</a></th>
 <td class="colLast">
 <div class="block">This rewrite is a custom rewrite for JMLC in order to replace all persistent reads
  and writes with transient reads and writes from the symbol table.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <th class="colFirst" scope="row"><a href="RewriteRemoveReadAfterWrite.html" title="class in org.apache.sysds.hops.rewrite">RewriteRemoveReadAfterWrite</a></th>
 <td class="colLast">
 <div class="block">Rule: RemoveReadAfterWrite.</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <th class="colFirst" scope="row"><a href="RewriteRemoveUnnecessaryBranches.html" title="class in org.apache.sysds.hops.rewrite">RewriteRemoveUnnecessaryBranches</a></th>
 <td class="colLast">
 <div class="block">Rule: Simplify program structure by pulling if or else statement body out
@@ -301,25 +309,25 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
  analysis to propagate exact statistics.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <th class="colFirst" scope="row"><a href="RewriteRemoveUnnecessaryCasts.html" title="class in org.apache.sysds.hops.rewrite">RewriteRemoveUnnecessaryCasts</a></th>
 <td class="colLast">
 <div class="block">Rule: RemoveUnnecessaryCasts.</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <th class="colFirst" scope="row"><a href="RewriteSplitDagDataDependentOperators.html" title="class in org.apache.sysds.hops.rewrite">RewriteSplitDagDataDependentOperators</a></th>
 <td class="colLast">
 <div class="block">Rule: Split Hop DAG after specific data-dependent operators.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <th class="colFirst" scope="row"><a href="RewriteSplitDagUnknownCSVRead.html" title="class in org.apache.sysds.hops.rewrite">RewriteSplitDagUnknownCSVRead</a></th>
 <td class="colLast">
 <div class="block">Rule: Split Hop DAG after CSV reads with unknown size.</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <th class="colFirst" scope="row"><a href="RewriteTransientWriteParentHandling.html" title="class in org.apache.sysds.hops.rewrite">RewriteTransientWriteParentHandling</a></th>
 <td class="colLast">
 <div class="block">Rule: Eliminate for Transient Write DataHops to have no parents
@@ -329,7 +337,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
  analysis for Lop's to Instruction translation (according to Amol)</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <th class="colFirst" scope="row"><a href="StatementBlockRewriteRule.html" title="class in org.apache.sysds.hops.rewrite">StatementBlockRewriteRule</a></th>
 <td class="colLast">
 <div class="block">Base class for all hop rewrites in order to enable generic

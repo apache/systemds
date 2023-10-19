@@ -14,7 +14,7 @@
 <!--[if IE]>
 <script type="text/javascript" src="../../../../../../../jquery/jszip-utils/dist/jszip-utils-ie.min.js"></script>
 <![endif]-->
-<script type="text/javascript" src="../../../../../../../jquery/jquery-3.6.0.min.js"></script>
+<script type="text/javascript" src="../../../../../../../jquery/jquery-3.6.1.min.js"></script>
 <script type="text/javascript" src="../../../../../../../jquery/jquery-ui.min.js"></script>
 </head>
 <body>
@@ -27,7 +27,7 @@
     catch(err) {
     }
 //-->
-var data = {"i0":10,"i1":10,"i2":10,"i3":9,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10,"i10":10,"i11":10,"i12":10,"i13":10};
+var data = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":9,"i6":10,"i7":10,"i8":10,"i9":10,"i10":10,"i11":10,"i12":10,"i13":10,"i14":10,"i15":10,"i16":10,"i17":10,"i18":10};
 var tabs = {65535:["t0","All Methods"],1:["t1","Static Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -203,6 +203,13 @@ extends <a href="AColIndex.html" title="class in org.apache.sysds.runtime.compre
 <th class="colLast" scope="col">Description</th>
 </tr>
 <tr id="i0" class="altColor">
+<td class="colFirst"><code>double</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#avgOfIndex()">avgOfIndex</a></span>()</code></th>
+<td class="colLast">
+<div class="block">Get the average of this index.</div>
+</td>
+</tr>
+<tr id="i1" class="rowColor">
 <td class="colFirst"><code><a href="IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#combine(org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex)">combine</a></span>&#8203;(<a href="IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;other)</code></th>
 <td class="colLast">
@@ -210,31 +217,38 @@ extends <a href="AColIndex.html" title="class in org.apache.sysds.runtime.compre
  and no copies of values.</div>
 </td>
 </tr>
-<tr id="i1" class="rowColor">
+<tr id="i2" class="altColor">
+<td class="colFirst"><code>boolean</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#contains(int)">contains</a></span>&#8203;(int&nbsp;i)</code></th>
+<td class="colLast">
+<div class="block">Analyze if this column group contain the given column id</div>
+</td>
+</tr>
+<tr id="i3" class="rowColor">
 <td class="colFirst"><code>boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#equals(org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex)">equals</a></span>&#8203;(<a href="IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;other)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i2" class="altColor">
+<tr id="i4" class="altColor">
 <td class="colFirst"><code>long</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#estimateInMemorySize()">estimateInMemorySize</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Get the in memory size of this object.</div>
 </td>
 </tr>
-<tr id="i3" class="rowColor">
+<tr id="i5" class="rowColor">
 <td class="colFirst"><code>static long</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#estimateInMemorySizeStatic()">estimateInMemorySizeStatic</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i4" class="altColor">
+<tr id="i6" class="altColor">
 <td class="colFirst"><code>int</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#findIndex(int)">findIndex</a></span>&#8203;(int&nbsp;i)</code></th>
 <td class="colLast">
 <div class="block">Find the index of the value given return negative if non existing.</div>
 </td>
 </tr>
-<tr id="i5" class="rowColor">
+<tr id="i7" class="rowColor">
 <td class="colFirst"><code>int</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#get(int)">get</a></span>&#8203;(int&nbsp;i)</code></th>
 <td class="colLast">
@@ -242,53 +256,77 @@ extends <a href="AColIndex.html" title="class in org.apache.sysds.runtime.compre
  on indexes that are completely wrong, so all implementations that use this index should always be well behaved.</div>
 </td>
 </tr>
-<tr id="i6" class="altColor">
+<tr id="i8" class="altColor">
 <td class="colFirst"><code>long</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getExactSizeOnDisk()">getExactSizeOnDisk</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Get the exact size on disk to enable preallocation of the disk output buffer sizes</div>
 </td>
 </tr>
-<tr id="i7" class="rowColor">
+<tr id="i9" class="rowColor">
+<td class="colFirst"><code>int[]</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getReorderingIndex()">getReorderingIndex</a></span>()</code></th>
+<td class="colLast">
+<div class="block">If the columns are not in sorted incrementing order this method can be called to get the sorting index for this
+ set of column indexes.</div>
+</td>
+</tr>
+<tr id="i10" class="altColor">
 <td class="colFirst"><code>boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#isContiguous()">isContiguous</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Get if these columns are contiguous, meaning all indexes are integers at increments of 1.</div>
 </td>
 </tr>
-<tr id="i8" class="altColor">
+<tr id="i11" class="rowColor">
+<td class="colFirst"><code>boolean</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#isSorted()">isSorted</a></span>()</code></th>
+<td class="colLast">
+<div class="block">Get if the Index is sorted.</div>
+</td>
+</tr>
+<tr id="i12" class="altColor">
 <td class="colFirst"><code><a href="IIterate.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IIterate</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#iterator()">iterator</a></span>()</code></th>
 <td class="colLast">
 <div class="block">A Iterator of the indexes see the iterator interface for details.</div>
 </td>
 </tr>
-<tr id="i9" class="rowColor">
+<tr id="i13" class="rowColor">
 <td class="colFirst"><code><a href="TwoIndex.html" title="class in org.apache.sysds.runtime.compress.colgroup.indexes">TwoIndex</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#shift(int)">shift</a></span>&#8203;(int&nbsp;i)</code></th>
 <td class="colLast">
 <div class="block">Return a new column index where the values are shifted by the specified amount.</div>
 </td>
 </tr>
-<tr id="i10" class="altColor">
+<tr id="i14" class="altColor">
 <td class="colFirst"><code>int</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#size()">size</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Get the size of the index aka, how many columns is contained</div>
 </td>
 </tr>
-<tr id="i11" class="rowColor">
+<tr id="i15" class="rowColor">
 <td class="colFirst"><code><a href="IColIndex.SliceResult.html" title="class in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex.SliceResult</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#slice(int,int)">slice</a></span>&#8203;(int&nbsp;l,
      int&nbsp;u)</code></th>
-<td class="colLast">&nbsp;</td>
+<td class="colLast">
+<div class="block">Slice the range given.</div>
+</td>
 </tr>
-<tr id="i12" class="altColor">
+<tr id="i16" class="altColor">
+<td class="colFirst"><code><a href="IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a></code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#sort()">sort</a></span>()</code></th>
+<td class="colLast">
+<div class="block">Sort the index and return a new object if there are modifications otherwise return this.</div>
+</td>
+</tr>
+<tr id="i17" class="rowColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#toString()">toString</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i13" class="rowColor">
+<tr id="i18" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#write(java.io.DataOutput)">write</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/DataOutput.html?is-external=true" title="class or interface in java.io" class="externalLink">DataOutput</a>&nbsp;out)</code></th>
 <td class="colLast">
@@ -301,7 +339,7 @@ extends <a href="AColIndex.html" title="class in org.apache.sysds.runtime.compre
 <!--   -->
 </a>
 <h3>Methods inherited from class&nbsp;org.apache.sysds.runtime.compress.colgroup.indexes.<a href="AColIndex.html" title="class in org.apache.sysds.runtime.compress.colgroup.indexes">AColIndex</a></h3>
-<code><a href="AColIndex.html#contains(org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex)">contains</a>, <a href="AColIndex.html#containsStrict(org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex)">containsStrict</a>, <a href="AColIndex.html#equals(java.lang.Object)">equals</a>, <a href="AColIndex.html#hashCode()">hashCode</a></code></li>
+<code><a href="AColIndex.html#contains(org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex)">contains</a>, <a href="AColIndex.html#containsAny(org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex)">containsAny</a>, <a href="AColIndex.html#containsStrict(org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex)">containsStrict</a>, <a href="AColIndex.html#equals(java.lang.Object)">equals</a>, <a href="AColIndex.html#hashCode()">hashCode</a></code></li>
 </ul>
 <ul class="blockList">
 <li class="blockList"><a id="methods.inherited.from.class.java.lang.Object">
@@ -495,6 +533,26 @@ extends <a href="AColIndex.html" title="class in org.apache.sysds.runtime.compre
 <h4>slice</h4>
 <pre class="methodSignature">public&nbsp;<a href="IColIndex.SliceResult.html" title="class in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex.SliceResult</a>&nbsp;slice&#8203;(int&nbsp;l,
                                    int&nbsp;u)</pre>
+<div class="block"><span class="descfrmTypeLabel">Description copied from interface:&nbsp;<code><a href="IColIndex.html#slice(int,int)">IColIndex</a></code></span></div>
+<div class="block">Slice the range given.
+ 
+ The slice result is an object containing the indexes in the original array to slice out and a new index for the
+ sliced columns offset by l.
+ 
+ Example:
+ 
+ ArrayIndex(1,3,5).slice(2,6)
+ 
+ returns
+ 
+ SliceResult(1,3,ArrayIndex(1,3))</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>l</code> - inclusive lower bound</dd>
+<dd><code>u</code> - exclusive upper bound</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>A slice result</dd>
+</dl>
 </li>
 </ul>
 <a id="equals(org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex)">
@@ -542,6 +600,86 @@ extends <a href="AColIndex.html" title="class in org.apache.sysds.runtime.compre
 <dl>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>If the Columns are contiguous.</dd>
+</dl>
+</li>
+</ul>
+<a id="getReorderingIndex()">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>getReorderingIndex</h4>
+<pre class="methodSignature">public&nbsp;int[]&nbsp;getReorderingIndex()</pre>
+<div class="block"><span class="descfrmTypeLabel">Description copied from interface:&nbsp;<code><a href="IColIndex.html#getReorderingIndex()">IColIndex</a></code></span></div>
+<div class="block">If the columns are not in sorted incrementing order this method can be called to get the sorting index for this
+ set of column indexes.
+ 
+ The returned list should be the mapping of elements for each column to where it should be after sorting.</div>
+<dl>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>A Reordered index.</dd>
+</dl>
+</li>
+</ul>
+<a id="isSorted()">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>isSorted</h4>
+<pre class="methodSignature">public&nbsp;boolean&nbsp;isSorted()</pre>
+<div class="block"><span class="descfrmTypeLabel">Description copied from interface:&nbsp;<code><a href="IColIndex.html#isSorted()">IColIndex</a></code></span></div>
+<div class="block">Get if the Index is sorted.</div>
+<dl>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>If the index is sorted</dd>
+</dl>
+</li>
+</ul>
+<a id="sort()">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>sort</h4>
+<pre class="methodSignature">public&nbsp;<a href="IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;sort()</pre>
+<div class="block"><span class="descfrmTypeLabel">Description copied from interface:&nbsp;<code><a href="IColIndex.html#sort()">IColIndex</a></code></span></div>
+<div class="block">Sort the index and return a new object if there are modifications otherwise return this.</div>
+<dl>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>The sorted instance of this column index.</dd>
+</dl>
+</li>
+</ul>
+<a id="contains(int)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>contains</h4>
+<pre class="methodSignature">public&nbsp;boolean&nbsp;contains&#8203;(int&nbsp;i)</pre>
+<div class="block"><span class="descfrmTypeLabel">Description copied from interface:&nbsp;<code><a href="IColIndex.html#contains(int)">IColIndex</a></code></span></div>
+<div class="block">Analyze if this column group contain the given column id</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>i</code> - id to search for</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>if it is contained</dd>
+</dl>
+</li>
+</ul>
+<a id="avgOfIndex()">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>avgOfIndex</h4>
+<pre class="methodSignature">public&nbsp;double&nbsp;avgOfIndex()</pre>
+<div class="block"><span class="descfrmTypeLabel">Description copied from interface:&nbsp;<code><a href="IColIndex.html#avgOfIndex()">IColIndex</a></code></span></div>
+<div class="block">Get the average of this index. We use this to sort the priority que when combining equivalent costly groups</div>
+<dl>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>The average of the indexes.</dd>
 </dl>
 </li>
 </ul>

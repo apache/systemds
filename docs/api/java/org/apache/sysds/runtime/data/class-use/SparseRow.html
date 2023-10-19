@@ -14,7 +14,7 @@
 <!--[if IE]>
 <script type="text/javascript" src="../../../../../../jquery/jszip-utils/dist/jszip-utils-ie.min.js"></script>
 <![endif]-->
-<script type="text/javascript" src="../../../../../../jquery/jquery-3.6.0.min.js"></script>
+<script type="text/javascript" src="../../../../../../jquery/jquery-3.6.1.min.js"></script>
 <script type="text/javascript" src="../../../../../../jquery/jquery-ui.min.js"></script>
 </head>
 <body>
@@ -168,7 +168,9 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <tr class="rowColor">
 <td class="colFirst"><code>class&nbsp;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../SparseRowVector.html" title="class in org.apache.sysds.runtime.data">SparseRowVector</a></span></code></th>
-<td class="colLast">&nbsp;</td>
+<td class="colLast">
+<div class="block">A sparse row vector that is able to grow dynamically as values are appended to it.</div>
+</td>
 </tr>
 </tbody>
 </table>
@@ -182,27 +184,44 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <tbody>
 <tr class="altColor">
 <td class="colFirst"><code>abstract <a href="../SparseRow.html" title="class in org.apache.sysds.runtime.data">SparseRow</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">SparseRow.</span><code><span class="memberNameLink"><a href="../SparseRow.html#copy(boolean)">copy</a></span>&#8203;(boolean&nbsp;deep)</code></th>
+<td class="colLast">
+<div class="block">Make a copy of this row.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../SparseRow.html" title="class in org.apache.sysds.runtime.data">SparseRow</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">SparseRowScalar.</span><code><span class="memberNameLink"><a href="../SparseRowScalar.html#copy(boolean)">copy</a></span>&#8203;(boolean&nbsp;deep)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../SparseRow.html" title="class in org.apache.sysds.runtime.data">SparseRow</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">SparseRowVector.</span><code><span class="memberNameLink"><a href="../SparseRowVector.html#copy(boolean)">copy</a></span>&#8203;(boolean&nbsp;deep)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>abstract <a href="../SparseRow.html" title="class in org.apache.sysds.runtime.data">SparseRow</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">SparseBlock.</span><code><span class="memberNameLink"><a href="../SparseBlock.html#get(int)">get</a></span>&#8203;(int&nbsp;r)</code></th>
 <td class="colLast">
 <div class="block">Get values of row r in the format of a sparse row.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code><a href="../SparseRow.html" title="class in org.apache.sysds.runtime.data">SparseRow</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">SparseBlockCOO.</span><code><span class="memberNameLink"><a href="../SparseBlockCOO.html#get(int)">get</a></span>&#8203;(int&nbsp;r)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code><a href="../SparseRow.html" title="class in org.apache.sysds.runtime.data">SparseRow</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">SparseBlockCSR.</span><code><span class="memberNameLink"><a href="../SparseBlockCSR.html#get(int)">get</a></span>&#8203;(int&nbsp;r)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code><a href="../SparseRow.html" title="class in org.apache.sysds.runtime.data">SparseRow</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">SparseBlockMCSR.</span><code><span class="memberNameLink"><a href="../SparseBlockMCSR.html#get(int)">get</a></span>&#8203;(int&nbsp;r)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code><a href="../SparseRow.html" title="class in org.apache.sysds.runtime.data">SparseRow</a>[]</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">SparseBlockMCSR.</span><code><span class="memberNameLink"><a href="../SparseBlockMCSR.html#getRows()">getRows</a></span>()</code></th>
 <td class="colLast">

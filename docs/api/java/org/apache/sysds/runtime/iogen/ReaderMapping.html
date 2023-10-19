@@ -14,7 +14,7 @@
 <!--[if IE]>
 <script type="text/javascript" src="../../../../../jquery/jszip-utils/dist/jszip-utils-ie.min.js"></script>
 <![endif]-->
-<script type="text/javascript" src="../../../../../jquery/jquery-3.6.0.min.js"></script>
+<script type="text/javascript" src="../../../../../jquery/jquery-3.6.1.min.js"></script>
 <script type="text/javascript" src="../../../../../jquery/jquery-ui.min.js"></script>
 </head>
 <body>
@@ -27,7 +27,7 @@
     catch(err) {
     }
 //-->
-var data = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10};
+var data = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10};
 var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -89,7 +89,7 @@ loadScripts(document, 'script');</script>
 <div>
 <ul class="subNavList">
 <li>Summary:&nbsp;</li>
-<li><a href="#nested.class.summary">Nested</a>&nbsp;|&nbsp;</li>
+<li>Nested&nbsp;|&nbsp;</li>
 <li>Field&nbsp;|&nbsp;</li>
 <li><a href="#constructor.summary">Constr</a>&nbsp;|&nbsp;</li>
 <li><a href="#method.summary">Method</a></li>
@@ -131,12 +131,8 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <div class="description">
 <ul class="blockList">
 <li class="blockList">
-<dl>
-<dt>Direct Known Subclasses:</dt>
-<dd><code><a href="ReaderMapping.FrameReaderMapping.html" title="class in org.apache.sysds.runtime.iogen">ReaderMapping.FrameReaderMapping</a></code>, <code><a href="ReaderMapping.MatrixReaderMapping.html" title="class in org.apache.sysds.runtime.iogen">ReaderMapping.MatrixReaderMapping</a></code></dd>
-</dl>
 <hr>
-<pre>public abstract class <span class="typeNameLabel">ReaderMapping</span>
+<pre>public class <span class="typeNameLabel">ReaderMapping</span>
 extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a></pre>
 </li>
 </ul>
@@ -144,34 +140,6 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <div class="summary">
 <ul class="blockList">
 <li class="blockList">
-<!-- ======== NESTED CLASS SUMMARY ======== -->
-<section>
-<ul class="blockList">
-<li class="blockList"><a id="nested.class.summary">
-<!--   -->
-</a>
-<h3>Nested Class Summary</h3>
-<table class="memberSummary">
-<caption><span>Nested Classes</span><span class="tabEnd">&nbsp;</span></caption>
-<tr>
-<th class="colFirst" scope="col">Modifier and Type</th>
-<th class="colSecond" scope="col">Class</th>
-<th class="colLast" scope="col">Description</th>
-</tr>
-<tr class="altColor">
-<td class="colFirst"><code>static class&nbsp;</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="ReaderMapping.FrameReaderMapping.html" title="class in org.apache.sysds.runtime.iogen">ReaderMapping.FrameReaderMapping</a></span></code></th>
-<td class="colLast">&nbsp;</td>
-</tr>
-<tr class="rowColor">
-<td class="colFirst"><code>static class&nbsp;</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="ReaderMapping.MatrixReaderMapping.html" title="class in org.apache.sysds.runtime.iogen">ReaderMapping.MatrixReaderMapping</a></span></code></th>
-<td class="colLast">&nbsp;</td>
-</tr>
-</table>
-</li>
-</ul>
-</section>
 <!-- ======== CONSTRUCTOR SUMMARY ======== -->
 <section>
 <ul class="blockList">
@@ -186,7 +154,21 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <th class="colLast" scope="col">Description</th>
 </tr>
 <tr class="altColor">
-<th class="colConstructorName" scope="row"><code><span class="memberNameLink"><a href="#%3Cinit%3E(java.lang.String)">ReaderMapping</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;raw)</code></th>
+<th class="colConstructorName" scope="row"><code><span class="memberNameLink"><a href="#%3Cinit%3E(int,int,int,org.apache.sysds.runtime.iogen.RawIndex%5B%5D,org.apache.sysds.runtime.matrix.data.MatrixBlock)">ReaderMapping</a></span>&#8203;(int&nbsp;nlines,
+             int&nbsp;nrows,
+             int&nbsp;ncols,
+             <a href="RawIndex.html" title="class in org.apache.sysds.runtime.iogen">RawIndex</a>[]&nbsp;sampleRawIndexes,
+             <a href="../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;matrix)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<th class="colConstructorName" scope="row"><code><span class="memberNameLink"><a href="#%3Cinit%3E(java.lang.String,org.apache.sysds.runtime.frame.data.FrameBlock)">ReaderMapping</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;raw,
+             <a href="../frame/data/FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;frame)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<th class="colConstructorName" scope="row"><code><span class="memberNameLink"><a href="#%3Cinit%3E(java.lang.String,org.apache.sysds.runtime.matrix.data.MatrixBlock)">ReaderMapping</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;raw,
+             <a href="../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;matrix)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 </table>
@@ -208,38 +190,55 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <th class="colLast" scope="col">Description</th>
 </tr>
 <tr id="i0" class="altColor">
-<td class="colFirst"><code><a href="CustomProperties.html" title="class in org.apache.sysds.runtime.iogen">CustomProperties</a></code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getFileFormatPropertiesOfRRCIMapping()">getFileFormatPropertiesOfRRCIMapping</a></span>()</code></th>
+<td class="colFirst"><code>boolean</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#compareCellValue(int,int,java.lang.String)">compareCellValue</a></span>&#8203;(int&nbsp;r,
+                int&nbsp;c,
+                <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;value)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i1" class="rowColor">
-<td class="colFirst"><code><a href="CustomProperties.html" title="class in org.apache.sysds.runtime.iogen">CustomProperties</a></code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getFileFormatPropertiesOfRRCRMapping()">getFileFormatPropertiesOfRRCRMapping</a></span>()</code></th>
+<td class="colFirst"><code>int</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getActualValueCount()">getActualValueCount</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i2" class="altColor">
-<td class="colFirst"><code><a href="CustomProperties.html" title="class in org.apache.sysds.runtime.iogen">CustomProperties</a></code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getFormatProperties()">getFormatProperties</a></span>()</code></th>
+<td class="colFirst"><code>int[][]</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getMapCol()">getMapCol</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i3" class="rowColor">
-<td class="colFirst"><code>boolean</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#isMapped()">isMapped</a></span>()</code></th>
+<td class="colFirst"><code>int[][]</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getMapLen()">getMapLen</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i4" class="altColor">
-<td class="colFirst"><code>boolean</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#isRowRegular()">isRowRegular</a></span>()</code></th>
+<td class="colFirst"><code><a href="MappingProperties.html" title="class in org.apache.sysds.runtime.iogen">MappingProperties</a></code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getMappingProperties()">getMappingProperties</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i5" class="rowColor">
-<td class="colFirst"><code>boolean</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#isSymmetric()">isSymmetric</a></span>()</code></th>
+<td class="colFirst"><code>int[][]</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getMapRow()">getMapRow</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i6" class="altColor">
-<td class="colFirst"><code>void</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#runMapping()">runMapping</a></span>()</code></th>
+<td class="colFirst"><code>int</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getNcols()">getNcols</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i7" class="rowColor">
+<td class="colFirst"><code>int</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getNlines()">getNlines</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i8" class="altColor">
+<td class="colFirst"><code>int</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getNrows()">getNrows</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i9" class="rowColor">
+<td class="colFirst"><code><a href="RawIndex.html" title="class in org.apache.sysds.runtime.iogen">RawIndex</a>[]</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getSampleRawIndexes()">getSampleRawIndexes</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 </table>
@@ -266,13 +265,47 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <!--   -->
 </a>
 <h3>Constructor Detail</h3>
-<a id="&lt;init&gt;(java.lang.String)">
+<a id="&lt;init&gt;(int,int,int,org.apache.sysds.runtime.iogen.RawIndex[],org.apache.sysds.runtime.matrix.data.MatrixBlock)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>ReaderMapping</h4>
+<pre>public&nbsp;ReaderMapping&#8203;(int&nbsp;nlines,
+                     int&nbsp;nrows,
+                     int&nbsp;ncols,
+                     <a href="RawIndex.html" title="class in org.apache.sysds.runtime.iogen">RawIndex</a>[]&nbsp;sampleRawIndexes,
+                     <a href="../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;matrix)
+              throws <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Exception.html?is-external=true" title="class or interface in java.lang" class="externalLink">Exception</a></pre>
+<dl>
+<dt><span class="throwsLabel">Throws:</span></dt>
+<dd><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Exception.html?is-external=true" title="class or interface in java.lang" class="externalLink">Exception</a></code></dd>
+</dl>
+</li>
+</ul>
+<a id="&lt;init&gt;(java.lang.String,org.apache.sysds.runtime.matrix.data.MatrixBlock)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>ReaderMapping</h4>
+<pre>public&nbsp;ReaderMapping&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;raw,
+                     <a href="../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;matrix)
+              throws <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Exception.html?is-external=true" title="class or interface in java.lang" class="externalLink">Exception</a></pre>
+<dl>
+<dt><span class="throwsLabel">Throws:</span></dt>
+<dd><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Exception.html?is-external=true" title="class or interface in java.lang" class="externalLink">Exception</a></code></dd>
+</dl>
+</li>
+</ul>
+<a id="&lt;init&gt;(java.lang.String,org.apache.sysds.runtime.frame.data.FrameBlock)">
 <!--   -->
 </a>
 <ul class="blockListLast">
 <li class="blockList">
 <h4>ReaderMapping</h4>
-<pre>public&nbsp;ReaderMapping&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;raw)
+<pre>public&nbsp;ReaderMapping&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;raw,
+                     <a href="../frame/data/FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;frame)
               throws <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Exception.html?is-external=true" title="class or interface in java.lang" class="externalLink">Exception</a></pre>
 <dl>
 <dt><span class="throwsLabel">Throws:</span></dt>
@@ -290,77 +323,96 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <!--   -->
 </a>
 <h3>Method Detail</h3>
-<a id="runMapping()">
+<a id="getMapRow()">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
-<h4>runMapping</h4>
-<pre class="methodSignature">public&nbsp;void&nbsp;runMapping()
-                throws <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Exception.html?is-external=true" title="class or interface in java.lang" class="externalLink">Exception</a></pre>
-<dl>
-<dt><span class="throwsLabel">Throws:</span></dt>
-<dd><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Exception.html?is-external=true" title="class or interface in java.lang" class="externalLink">Exception</a></code></dd>
-</dl>
+<h4>getMapRow</h4>
+<pre class="methodSignature">public&nbsp;int[][]&nbsp;getMapRow()</pre>
 </li>
 </ul>
-<a id="getFormatProperties()">
+<a id="getMapCol()">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
-<h4>getFormatProperties</h4>
-<pre class="methodSignature">public final&nbsp;<a href="CustomProperties.html" title="class in org.apache.sysds.runtime.iogen">CustomProperties</a>&nbsp;getFormatProperties()
-                                           throws <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Exception.html?is-external=true" title="class or interface in java.lang" class="externalLink">Exception</a></pre>
-<dl>
-<dt><span class="throwsLabel">Throws:</span></dt>
-<dd><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Exception.html?is-external=true" title="class or interface in java.lang" class="externalLink">Exception</a></code></dd>
-</dl>
+<h4>getMapCol</h4>
+<pre class="methodSignature">public&nbsp;int[][]&nbsp;getMapCol()</pre>
 </li>
 </ul>
-<a id="isRowRegular()">
+<a id="getMapLen()">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
-<h4>isRowRegular</h4>
-<pre class="methodSignature">public final&nbsp;boolean&nbsp;isRowRegular()</pre>
+<h4>getMapLen</h4>
+<pre class="methodSignature">public&nbsp;int[][]&nbsp;getMapLen()</pre>
 </li>
 </ul>
-<a id="getFileFormatPropertiesOfRRCRMapping()">
+<a id="getSampleRawIndexes()">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
-<h4>getFileFormatPropertiesOfRRCRMapping</h4>
-<pre class="methodSignature">public final&nbsp;<a href="CustomProperties.html" title="class in org.apache.sysds.runtime.iogen">CustomProperties</a>&nbsp;getFileFormatPropertiesOfRRCRMapping()</pre>
+<h4>getSampleRawIndexes</h4>
+<pre class="methodSignature">public&nbsp;<a href="RawIndex.html" title="class in org.apache.sysds.runtime.iogen">RawIndex</a>[]&nbsp;getSampleRawIndexes()</pre>
 </li>
 </ul>
-<a id="getFileFormatPropertiesOfRRCIMapping()">
+<a id="getNrows()">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
-<h4>getFileFormatPropertiesOfRRCIMapping</h4>
-<pre class="methodSignature">public&nbsp;<a href="CustomProperties.html" title="class in org.apache.sysds.runtime.iogen">CustomProperties</a>&nbsp;getFileFormatPropertiesOfRRCIMapping()</pre>
+<h4>getNrows</h4>
+<pre class="methodSignature">public&nbsp;int&nbsp;getNrows()</pre>
 </li>
 </ul>
-<a id="isSymmetric()">
+<a id="getNcols()">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
-<h4>isSymmetric</h4>
-<pre class="methodSignature">public&nbsp;boolean&nbsp;isSymmetric()</pre>
+<h4>getNcols</h4>
+<pre class="methodSignature">public&nbsp;int&nbsp;getNcols()</pre>
 </li>
 </ul>
-<a id="isMapped()">
+<a id="getNlines()">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>getNlines</h4>
+<pre class="methodSignature">public&nbsp;int&nbsp;getNlines()</pre>
+</li>
+</ul>
+<a id="getMappingProperties()">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>getMappingProperties</h4>
+<pre class="methodSignature">public&nbsp;<a href="MappingProperties.html" title="class in org.apache.sysds.runtime.iogen">MappingProperties</a>&nbsp;getMappingProperties()</pre>
+</li>
+</ul>
+<a id="getActualValueCount()">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>getActualValueCount</h4>
+<pre class="methodSignature">public&nbsp;int&nbsp;getActualValueCount()</pre>
+</li>
+</ul>
+<a id="compareCellValue(int,int,java.lang.String)">
 <!--   -->
 </a>
 <ul class="blockListLast">
 <li class="blockList">
-<h4>isMapped</h4>
-<pre class="methodSignature">public&nbsp;boolean&nbsp;isMapped()</pre>
+<h4>compareCellValue</h4>
+<pre class="methodSignature">public&nbsp;boolean&nbsp;compareCellValue&#8203;(int&nbsp;r,
+                                int&nbsp;c,
+                                <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;value)</pre>
 </li>
 </ul>
 </li>
@@ -415,7 +467,7 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <div>
 <ul class="subNavList">
 <li>Summary:&nbsp;</li>
-<li><a href="#nested.class.summary">Nested</a>&nbsp;|&nbsp;</li>
+<li>Nested&nbsp;|&nbsp;</li>
 <li>Field&nbsp;|&nbsp;</li>
 <li><a href="#constructor.summary">Constr</a>&nbsp;|&nbsp;</li>
 <li><a href="#method.summary">Method</a></li>

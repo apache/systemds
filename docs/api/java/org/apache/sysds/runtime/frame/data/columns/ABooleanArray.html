@@ -14,7 +14,7 @@
 <!--[if IE]>
 <script type="text/javascript" src="../../../../../../../jquery/jszip-utils/dist/jszip-utils-ie.min.js"></script>
 <![endif]-->
-<script type="text/javascript" src="../../../../../../../jquery/jquery-3.6.0.min.js"></script>
+<script type="text/javascript" src="../../../../../../../jquery/jquery-3.6.1.min.js"></script>
 <script type="text/javascript" src="../../../../../../../jquery/jquery-ui.min.js"></script>
 </head>
 <body>
@@ -27,8 +27,8 @@
     catch(err) {
     }
 //-->
-var data = {"i0":6,"i1":6,"i2":6,"i3":6,"i4":6};
-var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],4:["t3","Abstract Methods"]};
+var data = {"i0":6,"i1":6,"i2":10,"i3":6,"i4":6,"i5":6};
+var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],4:["t3","Abstract Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
 var tableTab = "tableTab";
@@ -199,7 +199,7 @@ extends <a href="Array.html" title="class in org.apache.sysds.runtime.frame.data
 </a>
 <h3>Method Summary</h3>
 <table class="memberSummary">
-<caption><span id="t0" class="activeTableTab"><span>All Methods</span><span class="tabEnd">&nbsp;</span></span><span id="t2" class="tableTab"><span><a href="javascript:show(2);">Instance Methods</a></span><span class="tabEnd">&nbsp;</span></span><span id="t3" class="tableTab"><span><a href="javascript:show(4);">Abstract Methods</a></span><span class="tabEnd">&nbsp;</span></span></caption>
+<caption><span id="t0" class="activeTableTab"><span>All Methods</span><span class="tabEnd">&nbsp;</span></span><span id="t2" class="tableTab"><span><a href="javascript:show(2);">Instance Methods</a></span><span class="tabEnd">&nbsp;</span></span><span id="t3" class="tableTab"><span><a href="javascript:show(4);">Abstract Methods</a></span><span class="tabEnd">&nbsp;</span></span><span id="t4" class="tableTab"><span><a href="javascript:show(8);">Concrete Methods</a></span><span class="tabEnd">&nbsp;</span></span></caption>
 <tr>
 <th class="colFirst" scope="col">Modifier and Type</th>
 <th class="colSecond" scope="col">Method</th>
@@ -221,6 +221,11 @@ extends <a href="Array.html" title="class in org.apache.sysds.runtime.frame.data
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i2" class="altColor">
+<td class="colFirst"><code>boolean</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#possiblyContainsNaN()">possiblyContainsNaN</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i3" class="rowColor">
 <td class="colFirst"><code>abstract <a href="ABooleanArray.html" title="class in org.apache.sysds.runtime.frame.data.columns">ABooleanArray</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#select(boolean%5B%5D,int)">select</a></span>&#8203;(boolean[]&nbsp;select,
       int&nbsp;nTrue)</code></th>
@@ -228,14 +233,14 @@ extends <a href="Array.html" title="class in org.apache.sysds.runtime.frame.data
 <div class="block">Slice out the true indices in the select input and return the sub array.</div>
 </td>
 </tr>
-<tr id="i3" class="rowColor">
+<tr id="i4" class="altColor">
 <td class="colFirst"><code>abstract <a href="ABooleanArray.html" title="class in org.apache.sysds.runtime.frame.data.columns">ABooleanArray</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#select(int%5B%5D)">select</a></span>&#8203;(int[]&nbsp;indices)</code></th>
 <td class="colLast">
 <div class="block">Slice out the specified indices and return the sub array.</div>
 </td>
 </tr>
-<tr id="i4" class="altColor">
+<tr id="i5" class="rowColor">
 <td class="colFirst"><code>abstract <a href="ABooleanArray.html" title="class in org.apache.sysds.runtime.frame.data.columns">ABooleanArray</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#slice(int,int)">slice</a></span>&#8203;(int&nbsp;rl,
      int&nbsp;ru)</code></th>
@@ -249,14 +254,14 @@ extends <a href="Array.html" title="class in org.apache.sysds.runtime.frame.data
 <!--   -->
 </a>
 <h3>Methods inherited from class&nbsp;org.apache.sysds.runtime.frame.data.columns.<a href="Array.html" title="class in org.apache.sysds.runtime.frame.data.columns">Array</a></h3>
-<code><a href="Array.html#analyzeValueType()">analyzeValueType</a>, <a href="Array.html#append(java.lang.String)">append</a>, <a href="Array.html#append(org.apache.sysds.runtime.frame.data.columns.Array)">append</a>, <a href="Array.html#append(T)">append</a>, <a href="Array.html#baseMemoryCost()">baseMemoryCost</a>, <a href="Array.html#changeType(org.apache.sysds.common.Types.ValueType)">changeType</a>, <a href="Array.html#changeTypeWithNulls(org.apache.sysds.common.Types.ValueType)">changeTypeWithNulls</a>, <a href="Array.html#containsNull()">containsNull</a>, <a href="Array.html#fill(java.lang.String)">fill</a>, <a href="Array.html#fill(T)">fill</a>, <a href="Array.html#findEmpty(boolean%5B%5D)">findEmpty</a>, <a href="Array.html#findEmptyInverse(boolean%5B%5D)">findEmptyInverse</a>, <a href="Array.html#get()">get</a>, <a href="Array.html#get(int)">get</a>, <a href="Array.html#getAsByteArray()">getAsByteArray</a>, <a href="Array.html#getAsDouble(int)">getAsDouble</a>, <a href="Array.html#getAsNaNDouble(int)">getAsNaNDouble</a>, <a href="Array.html#getCache()">getCache</a>, <a href="Array.html#getExactSerializedSize()">getExactSerializedSize</a>, <a href="Array.html#getFrameArrayType()">getFrameArrayType</a>, <a href="Array.html#getInMemorySize()">getInMemorySize</a>, <a href="Array.html#getIterator()">getIterator</a>, <a href="Array.html#getMinMaxLength()">getMinMaxLength</a>, <a href="Array.html#getNulls()">getNulls</a>, <a href="Array.html#getRecodeMap()">getRecodeMap</a>, <a href="Array.html#getValueType()">getValueType</a>, <a href="Array.html#isEmpty()">isEmpty</a>, <a href="Array.html#isNotEmpty(int)">isNotEmpty</a>, <a href="Array.html#isShallowSerialize()">isShallowSerialize</a>, <a href="Array.html#reset(int)">reset</a>, <a href="Array.html#set(int,double)">set</a>, <a href="Array.html#set(int,int,org.apache.sysds.runtime.frame.data.columns.Array)">set</a>, <a href="Array.html#set(int,int,org.apache.sysds.runtime.frame.data.columns.Array,int)">set</a>, <a href="Array.html#set(int,java.lang.String)">set</a>, <a href="Array.html#set(int,T)">set</a>, <a href="Array.html#setCache(java.lang.ref.SoftReference)">setCache</a>, <a href="Array.html#setFromOtherType(int,int,org.apache.sysds.runtime.frame.data.columns.Array)">setFromOtherType</a>, <a href="Array.html#setFromOtherTypeNz(int,int,org.apache.sysds.runtime.frame.data.columns.Array)">setFromOtherTypeNz</a>, <a href="Array.html#setFromOtherTypeNz(org.apache.sysds.runtime.frame.data.columns.Array)">setFromOtherTypeNz</a>, <a href="Array.html#setNz(int,int,org.apache.sysds.runtime.frame.data.columns.Array)">setNz</a>, <a href="Array.html#setNz(org.apache.sysds.runtime.frame.data.columns.Array)">setNz</a>, <a href="Array.html#size()">size</a>, <a href="Array.html#toString()">toString</a></code></li>
+<code><a href="Array.html#analyzeValueType()">analyzeValueType</a>, <a href="Array.html#append(java.lang.String)">append</a>, <a href="Array.html#append(org.apache.sysds.runtime.frame.data.columns.Array)">append</a>, <a href="Array.html#append(T)">append</a>, <a href="Array.html#baseMemoryCost()">baseMemoryCost</a>, <a href="Array.html#changeType(org.apache.sysds.common.Types.ValueType)">changeType</a>, <a href="Array.html#changeTypeWithNulls(org.apache.sysds.common.Types.ValueType)">changeTypeWithNulls</a>, <a href="Array.html#containsNull()">containsNull</a>, <a href="Array.html#equals(java.lang.Object)">equals</a>, <a href="Array.html#equals(org.apache.sysds.runtime.frame.data.columns.Array)">equals</a>, <a href="Array.html#fill(java.lang.String)">fill</a>, <a href="Array.html#fill(T)">fill</a>, <a href="Array.html#findEmpty(boolean%5B%5D)">findEmpty</a>, <a href="Array.html#findEmptyInverse(boolean%5B%5D)">findEmptyInverse</a>, <a href="Array.html#get()">get</a>, <a href="Array.html#get(int)">get</a>, <a href="Array.html#getAsByteArray()">getAsByteArray</a>, <a href="Array.html#getAsDouble(int)">getAsDouble</a>, <a href="Array.html#getAsNaNDouble(int)">getAsNaNDouble</a>, <a href="Array.html#getCache()">getCache</a>, <a href="Array.html#getExactSerializedSize()">getExactSerializedSize</a>, <a href="Array.html#getFrameArrayType()">getFrameArrayType</a>, <a href="Array.html#getInMemorySize()">getInMemorySize</a>, <a href="Array.html#getIterator()">getIterator</a>, <a href="Array.html#getMinMaxLength()">getMinMaxLength</a>, <a href="Array.html#getNulls()">getNulls</a>, <a href="Array.html#getRecodeMap()">getRecodeMap</a>, <a href="Array.html#getValueType()">getValueType</a>, <a href="Array.html#hashDouble(int)">hashDouble</a>, <a href="Array.html#isEmpty()">isEmpty</a>, <a href="Array.html#isNotEmpty(int)">isNotEmpty</a>, <a href="Array.html#isShallowSerialize()">isShallowSerialize</a>, <a href="Array.html#reset(int)">reset</a>, <a href="Array.html#set(int,double)">set</a>, <a href="Array.html#set(int,int,org.apache.sysds.runtime.frame.data.columns.Array)">set</a>, <a href="Array.html#set(int,int,org.apache.sysds.runtime.frame.data.columns.Array,int)">set</a>, <a href="Array.html#set(int,java.lang.String)">set</a>, <a href="Array.html#set(int,T)">set</a>, <a href="Array.html#setCache(java.lang.ref.SoftReference)">setCache</a>, <a href="Array.html#setFromOtherType(int,int,org.apache.sysds.runtime.frame.data.columns.Array)">setFromOtherType</a>, <a href="Array.html#setFromOtherTypeNz(int,int,org.apache.sysds.runtime.frame.data.columns.Array)">setFromOtherTypeNz</a>, <a href="Array.html#setFromOtherTypeNz(org.apache.sysds.runtime.frame.data.columns.Array)">setFromOtherTypeNz</a>, <a href="Array.html#setNz(int,int,org.apache.sysds.runtime.frame.data.columns.Array)">setNz</a>, <a href="Array.html#setNz(org.apache.sysds.runtime.frame.data.columns.Array)">setNz</a>, <a href="Array.html#size()">size</a>, <a href="Array.html#statistics(int)">statistics</a>, <a href="Array.html#toString()">toString</a></code></li>
 </ul>
 <ul class="blockList">
 <li class="blockList"><a id="methods.inherited.from.class.java.lang.Object">
 <!--   -->
 </a>
 <h3>Methods inherited from class&nbsp;java.lang.<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a></h3>
-<code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#equals(java.lang.Object)" title="class or interface in java.lang" class="externalLink">equals</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#getClass()" title="class or interface in java.lang" class="externalLink">getClass</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#hashCode()" title="class or interface in java.lang" class="externalLink">hashCode</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#notify()" title="class or interface in java.lang" class="externalLink">notify</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#notifyAll()" title="class or interface in java.lang" class="externalLink">notifyAll</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#wait()" title="class or interface in java.lang" class="externalLink">wait</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#wait(long)" title="class or interface in java.lang" class="externalLink">wait</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#wait(long,int)" title="class or interface in java.lang" class="externalLink">wait</a></code></li>
+<code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#getClass()" title="class or interface in java.lang" class="externalLink">getClass</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#hashCode()" title="class or interface in java.lang" class="externalLink">hashCode</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#notify()" title="class or interface in java.lang" class="externalLink">notify</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#notifyAll()" title="class or interface in java.lang" class="externalLink">notifyAll</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#wait()" title="class or interface in java.lang" class="externalLink">wait</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#wait(long)" title="class or interface in java.lang" class="externalLink">wait</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#wait(long,int)" title="class or interface in java.lang" class="externalLink">wait</a></code></li>
 </ul>
 <ul class="blockList">
 <li class="blockList"><a id="methods.inherited.from.class.org.apache.hadoop.io.Writable">
@@ -374,7 +379,7 @@ extends <a href="Array.html" title="class in org.apache.sysds.runtime.frame.data
 <a id="select(boolean[],int)">
 <!--   -->
 </a>
-<ul class="blockListLast">
+<ul class="blockList">
 <li class="blockList">
 <h4>select</h4>
 <pre class="methodSignature">public abstract&nbsp;<a href="ABooleanArray.html" title="class in org.apache.sysds.runtime.frame.data.columns">ABooleanArray</a>&nbsp;select&#8203;(boolean[]&nbsp;select,
@@ -389,6 +394,19 @@ extends <a href="Array.html" title="class in org.apache.sysds.runtime.frame.data
 <dd><code>nTrue</code> - number of true values inside select</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>the sliced out indices in an array format</dd>
+</dl>
+</li>
+</ul>
+<a id="possiblyContainsNaN()">
+<!--   -->
+</a>
+<ul class="blockListLast">
+<li class="blockList">
+<h4>possiblyContainsNaN</h4>
+<pre class="methodSignature">public&nbsp;boolean&nbsp;possiblyContainsNaN()</pre>
+<dl>
+<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
+<dd><code><a href="Array.html#possiblyContainsNaN()">possiblyContainsNaN</a></code>&nbsp;in class&nbsp;<code><a href="Array.html" title="class in org.apache.sysds.runtime.frame.data.columns">Array</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Boolean.html?is-external=true" title="class or interface in java.lang" class="externalLink">Boolean</a>&gt;</code></dd>
 </dl>
 </li>
 </ul>

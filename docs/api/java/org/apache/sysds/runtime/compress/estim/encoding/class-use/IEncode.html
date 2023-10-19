@@ -14,7 +14,7 @@
 <!--[if IE]>
 <script type="text/javascript" src="../../../../../../../../jquery/jszip-utils/dist/jszip-utils-ie.min.js"></script>
 <![endif]-->
-<script type="text/javascript" src="../../../../../../../../jquery/jquery-3.6.0.min.js"></script>
+<script type="text/javascript" src="../../../../../../../../jquery/jquery-3.6.1.min.js"></script>
 <script type="text/javascript" src="../../../../../../../../jquery/jquery-ui.min.js"></script>
 </head>
 <body>
@@ -107,10 +107,14 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tbody>
 <tr class="altColor">
-<th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.compress.estim">org.apache.sysds.runtime.compress.estim</a></th>
+<th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.compress.colgroup">org.apache.sysds.runtime.compress.colgroup</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
+<th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.compress.estim">org.apache.sysds.runtime.compress.estim</a></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
 <th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.compress.estim.encoding">org.apache.sysds.runtime.compress.estim.encoding</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
@@ -119,6 +123,75 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </li>
 <li class="blockList">
 <ul class="blockList">
+<li class="blockList">
+<section><a id="org.apache.sysds.runtime.compress.colgroup">
+<!--   -->
+</a>
+<h3>Uses of <a href="../IEncode.html" title="interface in org.apache.sysds.runtime.compress.estim.encoding">IEncode</a> in <a href="../../../colgroup/package-summary.html">org.apache.sysds.runtime.compress.colgroup</a></h3>
+<table class="useSummary">
+<caption><span>Methods in <a href="../../../colgroup/package-summary.html">org.apache.sysds.runtime.compress.colgroup</a> that return <a href="../IEncode.html" title="interface in org.apache.sysds.runtime.compress.estim.encoding">IEncode</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colSecond" scope="col">Method</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../IEncode.html" title="interface in org.apache.sysds.runtime.compress.estim.encoding">IEncode</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">AColGroup.</span><code><span class="memberNameLink"><a href="../../../colgroup/AColGroup.html#getEncoding()">getEncoding</a></span>()</code></th>
+<td class="colLast">
+<div class="block">Get encoding of this column group.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../IEncode.html" title="interface in org.apache.sysds.runtime.compress.estim.encoding">IEncode</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ColGroupConst.</span><code><span class="memberNameLink"><a href="../../../colgroup/ColGroupConst.html#getEncoding()">getEncoding</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../IEncode.html" title="interface in org.apache.sysds.runtime.compress.estim.encoding">IEncode</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ColGroupDDC.</span><code><span class="memberNameLink"><a href="../../../colgroup/ColGroupDDC.html#getEncoding()">getEncoding</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../IEncode.html" title="interface in org.apache.sysds.runtime.compress.estim.encoding">IEncode</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ColGroupDDCFOR.</span><code><span class="memberNameLink"><a href="../../../colgroup/ColGroupDDCFOR.html#getEncoding()">getEncoding</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../IEncode.html" title="interface in org.apache.sysds.runtime.compress.estim.encoding">IEncode</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ColGroupEmpty.</span><code><span class="memberNameLink"><a href="../../../colgroup/ColGroupEmpty.html#getEncoding()">getEncoding</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../IEncode.html" title="interface in org.apache.sysds.runtime.compress.estim.encoding">IEncode</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ColGroupSDC.</span><code><span class="memberNameLink"><a href="../../../colgroup/ColGroupSDC.html#getEncoding()">getEncoding</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../IEncode.html" title="interface in org.apache.sysds.runtime.compress.estim.encoding">IEncode</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ColGroupSDCFOR.</span><code><span class="memberNameLink"><a href="../../../colgroup/ColGroupSDCFOR.html#getEncoding()">getEncoding</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../IEncode.html" title="interface in org.apache.sysds.runtime.compress.estim.encoding">IEncode</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ColGroupSDCSingle.</span><code><span class="memberNameLink"><a href="../../../colgroup/ColGroupSDCSingle.html#getEncoding()">getEncoding</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../IEncode.html" title="interface in org.apache.sysds.runtime.compress.estim.encoding">IEncode</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ColGroupSDCSingleZeros.</span><code><span class="memberNameLink"><a href="../../../colgroup/ColGroupSDCSingleZeros.html#getEncoding()">getEncoding</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../IEncode.html" title="interface in org.apache.sysds.runtime.compress.estim.encoding">IEncode</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ColGroupSDCZeros.</span><code><span class="memberNameLink"><a href="../../../colgroup/ColGroupSDCZeros.html#getEncoding()">getEncoding</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+</tbody>
+</table>
+</section>
+</li>
 <li class="blockList">
 <section><a id="org.apache.sysds.runtime.compress.estim">
 <!--   -->
@@ -135,6 +208,30 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <tr class="altColor">
 <td class="colFirst"><code><a href="../IEncode.html" title="interface in org.apache.sysds.runtime.compress.estim.encoding">IEncode</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">CompressedSizeInfoColGroup.</span><code><span class="memberNameLink"><a href="../../CompressedSizeInfoColGroup.html#getMap()">getMap</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+</tbody>
+</table>
+<table class="useSummary">
+<caption><span>Constructors in <a href="../../package-summary.html">org.apache.sysds.runtime.compress.estim</a> with parameters of type <a href="../IEncode.html" title="interface in org.apache.sysds.runtime.compress.estim.encoding">IEncode</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Constructor</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../CompressedSizeInfoColGroup.html#%3Cinit%3E(org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,org.apache.sysds.runtime.compress.estim.EstimationFactors,long,org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType,org.apache.sysds.runtime.compress.estim.encoding.IEncode)">CompressedSizeInfoColGroup</a></span>&#8203;(<a href="../../../colgroup/indexes/IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;columns,
+                          <a href="../../EstimationFactors.html" title="class in org.apache.sysds.runtime.compress.estim">EstimationFactors</a>&nbsp;facts,
+                          long&nbsp;minSize,
+                          <a href="../../../colgroup/AColGroup.CompressionType.html" title="enum in org.apache.sysds.runtime.compress.colgroup">AColGroup.CompressionType</a>&nbsp;bestCompression,
+                          <a href="../IEncode.html" title="interface in org.apache.sysds.runtime.compress.estim.encoding">IEncode</a>&nbsp;map)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../CompressedSizeInfoColGroup.html#%3Cinit%3E(org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,org.apache.sysds.runtime.compress.estim.EstimationFactors,java.util.Set,org.apache.sysds.runtime.compress.estim.encoding.IEncode)">CompressedSizeInfoColGroup</a></span>&#8203;(<a href="../../../colgroup/indexes/IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;columns,
+                          <a href="../../EstimationFactors.html" title="class in org.apache.sysds.runtime.compress.estim">EstimationFactors</a>&nbsp;facts,
+                          <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/Set.html?is-external=true" title="class or interface in java.util" class="externalLink">Set</a>&lt;<a href="../../../colgroup/AColGroup.CompressionType.html" title="enum in org.apache.sysds.runtime.compress.colgroup">AColGroup.CompressionType</a>&gt;&nbsp;validCompressionTypes,
+                          <a href="../IEncode.html" title="interface in org.apache.sysds.runtime.compress.estim.encoding">IEncode</a>&nbsp;map)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 </tbody>
@@ -156,28 +253,35 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <tbody>
 <tr class="altColor">
 <td class="colFirst"><code>class&nbsp;</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../AEncode.html" title="class in org.apache.sysds.runtime.compress.estim.encoding">AEncode</a></span></code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>class&nbsp;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../ConstEncoding.html" title="class in org.apache.sysds.runtime.compress.estim.encoding">ConstEncoding</a></span></code></th>
 <td class="colLast">
 <div class="block">Const encoding for cases where the entire group of columns is the same value</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>class&nbsp;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../DenseEncoding.html" title="class in org.apache.sysds.runtime.compress.estim.encoding">DenseEncoding</a></span></code></th>
-<td class="colLast">&nbsp;</td>
+<td class="colLast">
+<div class="block">An Encoding that contains a value on each row of the input.</div>
+</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>class&nbsp;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../EmptyEncoding.html" title="class in org.apache.sysds.runtime.compress.estim.encoding">EmptyEncoding</a></span></code></th>
 <td class="colLast">
 <div class="block">Empty encoding for cases where the entire group of columns is zero</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>class&nbsp;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../SparseEncoding.html" title="class in org.apache.sysds.runtime.compress.estim.encoding">SparseEncoding</a></span></code></th>
 <td class="colLast">
-<div class="block">Most common is zero encoding</div>
+<div class="block">A Encoding that contain a default value that is not encoded and every other value is encoded in the map.</div>
 </td>
 </tr>
 </tbody>
@@ -197,76 +301,6 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code><a href="../IEncode.html" title="interface in org.apache.sysds.runtime.compress.estim.encoding">IEncode</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">EmptyEncoding.</span><code><span class="memberNameLink"><a href="../EmptyEncoding.html#combine(org.apache.sysds.runtime.compress.estim.encoding.IEncode)">combine</a></span>&#8203;(<a href="../IEncode.html" title="interface in org.apache.sysds.runtime.compress.estim.encoding">IEncode</a>&nbsp;e)</code></th>
-<td class="colLast">&nbsp;</td>
-</tr>
-<tr class="altColor">
-<td class="colFirst"><code><a href="../IEncode.html" title="interface in org.apache.sysds.runtime.compress.estim.encoding">IEncode</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">IEncode.</span><code><span class="memberNameLink"><a href="../IEncode.html#combine(org.apache.sysds.runtime.compress.estim.encoding.IEncode)">combine</a></span>&#8203;(<a href="../IEncode.html" title="interface in org.apache.sysds.runtime.compress.estim.encoding">IEncode</a>&nbsp;e)</code></th>
-<td class="colLast">
-<div class="block">Combine two encodings, note it should be guaranteed by the caller that the number of unique multiplied does not
- overflow Integer.</div>
-</td>
-</tr>
-<tr class="rowColor">
-<td class="colFirst"><code><a href="../IEncode.html" title="interface in org.apache.sysds.runtime.compress.estim.encoding">IEncode</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">SparseEncoding.</span><code><span class="memberNameLink"><a href="../SparseEncoding.html#combine(org.apache.sysds.runtime.compress.estim.encoding.IEncode)">combine</a></span>&#8203;(<a href="../IEncode.html" title="interface in org.apache.sysds.runtime.compress.estim.encoding">IEncode</a>&nbsp;e)</code></th>
-<td class="colLast">&nbsp;</td>
-</tr>
-<tr class="altColor">
-<td class="colFirst"><code>static <a href="../IEncode.html" title="interface in org.apache.sysds.runtime.compress.estim.encoding">IEncode</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">EncodingFactory.</span><code><span class="memberNameLink"><a href="../EncodingFactory.html#createFromMatrixBlock(org.apache.sysds.runtime.matrix.data.MatrixBlock,boolean,int)">createFromMatrixBlock</a></span>&#8203;(<a href="../../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;m,
-                     boolean&nbsp;transposed,
-                     int&nbsp;rowCol)</code></th>
-<td class="colLast">
-<div class="block">Create encoding of a single specific column inside the matrix input.</div>
-</td>
-</tr>
-<tr class="rowColor">
-<td class="colFirst"><code>static <a href="../IEncode.html" title="interface in org.apache.sysds.runtime.compress.estim.encoding">IEncode</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">EncodingFactory.</span><code><span class="memberNameLink"><a href="../EncodingFactory.html#createFromMatrixBlock(org.apache.sysds.runtime.matrix.data.MatrixBlock,boolean,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex)">createFromMatrixBlock</a></span>&#8203;(<a href="../../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;m,
-                     boolean&nbsp;transposed,
-                     <a href="../../../colgroup/indexes/IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;rowCols)</code></th>
-<td class="colLast">
-<div class="block">Encode a list of columns together from the input matrix, as if it is cocoded.</div>
-</td>
-</tr>
-<tr class="altColor">
-<td class="colFirst"><code>static <a href="../IEncode.html" title="interface in org.apache.sysds.runtime.compress.estim.encoding">IEncode</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">EncodingFactory.</span><code><span class="memberNameLink"><a href="../EncodingFactory.html#createFromMatrixBlockDelta(org.apache.sysds.runtime.matrix.data.MatrixBlock,boolean,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex)">createFromMatrixBlockDelta</a></span>&#8203;(<a href="../../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;m,
-                          boolean&nbsp;transposed,
-                          <a href="../../../colgroup/indexes/IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;rowCols)</code></th>
-<td class="colLast">
-<div class="block">Encode a full delta representation of the matrix input taking all rows into account.</div>
-</td>
-</tr>
-<tr class="rowColor">
-<td class="colFirst"><code>static <a href="../IEncode.html" title="interface in org.apache.sysds.runtime.compress.estim.encoding">IEncode</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">EncodingFactory.</span><code><span class="memberNameLink"><a href="../EncodingFactory.html#createFromMatrixBlockDelta(org.apache.sysds.runtime.matrix.data.MatrixBlock,boolean,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,int)">createFromMatrixBlockDelta</a></span>&#8203;(<a href="../../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;m,
-                          boolean&nbsp;transposed,
-                          <a href="../../../colgroup/indexes/IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;rowCols,
-                          int&nbsp;sampleSize)</code></th>
-<td class="colLast">
-<div class="block">Encode a delta representation of the matrix input taking the first "sampleSize" rows into account.</div>
-</td>
-</tr>
-</tbody>
-</table>
-<table class="useSummary">
-<caption><span>Methods in <a href="../package-summary.html">org.apache.sysds.runtime.compress.estim.encoding</a> with parameters of type <a href="../IEncode.html" title="interface in org.apache.sysds.runtime.compress.estim.encoding">IEncode</a></span><span class="tabEnd">&nbsp;</span></caption>
-<tr>
-<th class="colFirst" scope="col">Modifier and Type</th>
-<th class="colSecond" scope="col">Method</th>
-<th class="colLast" scope="col">Description</th>
-</tr>
-<tbody>
-<tr class="altColor">
-<td class="colFirst"><code><a href="../IEncode.html" title="interface in org.apache.sysds.runtime.compress.estim.encoding">IEncode</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">ConstEncoding.</span><code><span class="memberNameLink"><a href="../ConstEncoding.html#combine(org.apache.sysds.runtime.compress.estim.encoding.IEncode)">combine</a></span>&#8203;(<a href="../IEncode.html" title="interface in org.apache.sysds.runtime.compress.estim.encoding">IEncode</a>&nbsp;e)</code></th>
-<td class="colLast">&nbsp;</td>
-</tr>
-<tr class="rowColor">
-<td class="colFirst"><code><a href="../DenseEncoding.html" title="class in org.apache.sysds.runtime.compress.estim.encoding">DenseEncoding</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">DenseEncoding.</span><code><span class="memberNameLink"><a href="../DenseEncoding.html#combine(org.apache.sysds.runtime.compress.estim.encoding.IEncode)">combine</a></span>&#8203;(<a href="../IEncode.html" title="interface in org.apache.sysds.runtime.compress.estim.encoding">IEncode</a>&nbsp;e)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
@@ -286,6 +320,194 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <tr class="altColor">
 <td class="colFirst"><code><a href="../IEncode.html" title="interface in org.apache.sysds.runtime.compress.estim.encoding">IEncode</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">SparseEncoding.</span><code><span class="memberNameLink"><a href="../SparseEncoding.html#combine(org.apache.sysds.runtime.compress.estim.encoding.IEncode)">combine</a></span>&#8203;(<a href="../IEncode.html" title="interface in org.apache.sysds.runtime.compress.estim.encoding">IEncode</a>&nbsp;e)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>static <a href="../IEncode.html" title="interface in org.apache.sysds.runtime.compress.estim.encoding">IEncode</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">EncodingFactory.</span><code><span class="memberNameLink"><a href="../EncodingFactory.html#create(org.apache.sysds.runtime.compress.colgroup.ColGroupConst)">create</a></span>&#8203;(<a href="../../../colgroup/ColGroupConst.html" title="class in org.apache.sysds.runtime.compress.colgroup">ColGroupConst</a>&nbsp;c)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>static <a href="../IEncode.html" title="interface in org.apache.sysds.runtime.compress.estim.encoding">IEncode</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">EncodingFactory.</span><code><span class="memberNameLink"><a href="../EncodingFactory.html#create(org.apache.sysds.runtime.compress.colgroup.ColGroupEmpty)">create</a></span>&#8203;(<a href="../../../colgroup/ColGroupEmpty.html" title="class in org.apache.sysds.runtime.compress.colgroup">ColGroupEmpty</a>&nbsp;c)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>static <a href="../IEncode.html" title="interface in org.apache.sysds.runtime.compress.estim.encoding">IEncode</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">EncodingFactory.</span><code><span class="memberNameLink"><a href="../EncodingFactory.html#create(org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData)">create</a></span>&#8203;(<a href="../../../colgroup/mapping/AMapToData.html" title="class in org.apache.sysds.runtime.compress.colgroup.mapping">AMapToData</a>&nbsp;d)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>static <a href="../IEncode.html" title="interface in org.apache.sysds.runtime.compress.estim.encoding">IEncode</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">EncodingFactory.</span><code><span class="memberNameLink"><a href="../EncodingFactory.html#create(org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData,org.apache.sysds.runtime.compress.colgroup.offset.AOffset,int)">create</a></span>&#8203;(<a href="../../../colgroup/mapping/AMapToData.html" title="class in org.apache.sysds.runtime.compress.colgroup.mapping">AMapToData</a>&nbsp;d,
+      <a href="../../../colgroup/offset/AOffset.html" title="class in org.apache.sysds.runtime.compress.colgroup.offset">AOffset</a>&nbsp;i,
+      int&nbsp;nRow)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>static <a href="../IEncode.html" title="interface in org.apache.sysds.runtime.compress.estim.encoding">IEncode</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">EncodingFactory.</span><code><span class="memberNameLink"><a href="../EncodingFactory.html#createFromMatrixBlock(org.apache.sysds.runtime.matrix.data.MatrixBlock,boolean,int)">createFromMatrixBlock</a></span>&#8203;(<a href="../../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;m,
+                     boolean&nbsp;transposed,
+                     int&nbsp;rowCol)</code></th>
+<td class="colLast">
+<div class="block">Create encoding of a single specific column inside the matrix input.</div>
+</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>static <a href="../IEncode.html" title="interface in org.apache.sysds.runtime.compress.estim.encoding">IEncode</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">EncodingFactory.</span><code><span class="memberNameLink"><a href="../EncodingFactory.html#createFromMatrixBlock(org.apache.sysds.runtime.matrix.data.MatrixBlock,boolean,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex)">createFromMatrixBlock</a></span>&#8203;(<a href="../../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;m,
+                     boolean&nbsp;transposed,
+                     <a href="../../../colgroup/indexes/IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;rowCols)</code></th>
+<td class="colLast">
+<div class="block">Encode a list of columns together from the input matrix, as if it is cocoded.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>static <a href="../IEncode.html" title="interface in org.apache.sysds.runtime.compress.estim.encoding">IEncode</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">EncodingFactory.</span><code><span class="memberNameLink"><a href="../EncodingFactory.html#createFromMatrixBlockDelta(org.apache.sysds.runtime.matrix.data.MatrixBlock,boolean,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex)">createFromMatrixBlockDelta</a></span>&#8203;(<a href="../../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;m,
+                          boolean&nbsp;transposed,
+                          <a href="../../../colgroup/indexes/IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;rowCols)</code></th>
+<td class="colLast">
+<div class="block">Encode a full delta representation of the matrix input taking all rows into account.</div>
+</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>static <a href="../IEncode.html" title="interface in org.apache.sysds.runtime.compress.estim.encoding">IEncode</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">EncodingFactory.</span><code><span class="memberNameLink"><a href="../EncodingFactory.html#createFromMatrixBlockDelta(org.apache.sysds.runtime.matrix.data.MatrixBlock,boolean,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,int)">createFromMatrixBlockDelta</a></span>&#8203;(<a href="../../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;m,
+                          boolean&nbsp;transposed,
+                          <a href="../../../colgroup/indexes/IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;rowCols,
+                          int&nbsp;sampleSize)</code></th>
+<td class="colLast">
+<div class="block">Encode a delta representation of the matrix input taking the first "sampleSize" rows into account.</div>
+</td>
+</tr>
+</tbody>
+</table>
+<table class="useSummary">
+<caption><span>Methods in <a href="../package-summary.html">org.apache.sysds.runtime.compress.estim.encoding</a> that return types with arguments of type <a href="../IEncode.html" title="interface in org.apache.sysds.runtime.compress.estim.encoding">IEncode</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colSecond" scope="col">Method</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code>org.apache.commons.lang3.tuple.Pair&lt;<a href="../IEncode.html" title="interface in org.apache.sysds.runtime.compress.estim.encoding">IEncode</a>,&#8203;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/Map.html?is-external=true" title="class or interface in java.util" class="externalLink">Map</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Integer.html?is-external=true" title="class or interface in java.lang" class="externalLink">Integer</a>,&#8203;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Integer.html?is-external=true" title="class or interface in java.lang" class="externalLink">Integer</a>&gt;&gt;</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ConstEncoding.</span><code><span class="memberNameLink"><a href="../ConstEncoding.html#combineWithMap(org.apache.sysds.runtime.compress.estim.encoding.IEncode)">combineWithMap</a></span>&#8203;(<a href="../IEncode.html" title="interface in org.apache.sysds.runtime.compress.estim.encoding">IEncode</a>&nbsp;e)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>org.apache.commons.lang3.tuple.Pair&lt;<a href="../IEncode.html" title="interface in org.apache.sysds.runtime.compress.estim.encoding">IEncode</a>,&#8203;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/Map.html?is-external=true" title="class or interface in java.util" class="externalLink">Map</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Integer.html?is-external=true" title="class or interface in java.lang" class="externalLink">Integer</a>,&#8203;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Integer.html?is-external=true" title="class or interface in java.lang" class="externalLink">Integer</a>&gt;&gt;</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">DenseEncoding.</span><code><span class="memberNameLink"><a href="../DenseEncoding.html#combineWithMap(org.apache.sysds.runtime.compress.estim.encoding.IEncode)">combineWithMap</a></span>&#8203;(<a href="../IEncode.html" title="interface in org.apache.sysds.runtime.compress.estim.encoding">IEncode</a>&nbsp;e)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>org.apache.commons.lang3.tuple.Pair&lt;<a href="../IEncode.html" title="interface in org.apache.sysds.runtime.compress.estim.encoding">IEncode</a>,&#8203;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/Map.html?is-external=true" title="class or interface in java.util" class="externalLink">Map</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Integer.html?is-external=true" title="class or interface in java.lang" class="externalLink">Integer</a>,&#8203;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Integer.html?is-external=true" title="class or interface in java.lang" class="externalLink">Integer</a>&gt;&gt;</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">EmptyEncoding.</span><code><span class="memberNameLink"><a href="../EmptyEncoding.html#combineWithMap(org.apache.sysds.runtime.compress.estim.encoding.IEncode)">combineWithMap</a></span>&#8203;(<a href="../IEncode.html" title="interface in org.apache.sysds.runtime.compress.estim.encoding">IEncode</a>&nbsp;e)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>org.apache.commons.lang3.tuple.Pair&lt;<a href="../IEncode.html" title="interface in org.apache.sysds.runtime.compress.estim.encoding">IEncode</a>,&#8203;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/Map.html?is-external=true" title="class or interface in java.util" class="externalLink">Map</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Integer.html?is-external=true" title="class or interface in java.lang" class="externalLink">Integer</a>,&#8203;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Integer.html?is-external=true" title="class or interface in java.lang" class="externalLink">Integer</a>&gt;&gt;</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">IEncode.</span><code><span class="memberNameLink"><a href="../IEncode.html#combineWithMap(org.apache.sysds.runtime.compress.estim.encoding.IEncode)">combineWithMap</a></span>&#8203;(<a href="../IEncode.html" title="interface in org.apache.sysds.runtime.compress.estim.encoding">IEncode</a>&nbsp;e)</code></th>
+<td class="colLast">
+<div class="block">Combine two encodings without resizing the output.</div>
+</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>org.apache.commons.lang3.tuple.Pair&lt;<a href="../IEncode.html" title="interface in org.apache.sysds.runtime.compress.estim.encoding">IEncode</a>,&#8203;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/Map.html?is-external=true" title="class or interface in java.util" class="externalLink">Map</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Integer.html?is-external=true" title="class or interface in java.lang" class="externalLink">Integer</a>,&#8203;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Integer.html?is-external=true" title="class or interface in java.lang" class="externalLink">Integer</a>&gt;&gt;</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">SparseEncoding.</span><code><span class="memberNameLink"><a href="../SparseEncoding.html#combineWithMap(org.apache.sysds.runtime.compress.estim.encoding.IEncode)">combineWithMap</a></span>&#8203;(<a href="../IEncode.html" title="interface in org.apache.sysds.runtime.compress.estim.encoding">IEncode</a>&nbsp;e)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+</tbody>
+</table>
+<table class="useSummary">
+<caption><span>Methods in <a href="../package-summary.html">org.apache.sysds.runtime.compress.estim.encoding</a> with parameters of type <a href="../IEncode.html" title="interface in org.apache.sysds.runtime.compress.estim.encoding">IEncode</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colSecond" scope="col">Method</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../IEncode.html" title="interface in org.apache.sysds.runtime.compress.estim.encoding">IEncode</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ConstEncoding.</span><code><span class="memberNameLink"><a href="../ConstEncoding.html#combine(org.apache.sysds.runtime.compress.estim.encoding.IEncode)">combine</a></span>&#8203;(<a href="../IEncode.html" title="interface in org.apache.sysds.runtime.compress.estim.encoding">IEncode</a>&nbsp;e)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../IEncode.html" title="interface in org.apache.sysds.runtime.compress.estim.encoding">IEncode</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">DenseEncoding.</span><code><span class="memberNameLink"><a href="../DenseEncoding.html#combine(org.apache.sysds.runtime.compress.estim.encoding.IEncode)">combine</a></span>&#8203;(<a href="../IEncode.html" title="interface in org.apache.sysds.runtime.compress.estim.encoding">IEncode</a>&nbsp;e)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../IEncode.html" title="interface in org.apache.sysds.runtime.compress.estim.encoding">IEncode</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">EmptyEncoding.</span><code><span class="memberNameLink"><a href="../EmptyEncoding.html#combine(org.apache.sysds.runtime.compress.estim.encoding.IEncode)">combine</a></span>&#8203;(<a href="../IEncode.html" title="interface in org.apache.sysds.runtime.compress.estim.encoding">IEncode</a>&nbsp;e)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../IEncode.html" title="interface in org.apache.sysds.runtime.compress.estim.encoding">IEncode</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">IEncode.</span><code><span class="memberNameLink"><a href="../IEncode.html#combine(org.apache.sysds.runtime.compress.estim.encoding.IEncode)">combine</a></span>&#8203;(<a href="../IEncode.html" title="interface in org.apache.sysds.runtime.compress.estim.encoding">IEncode</a>&nbsp;e)</code></th>
+<td class="colLast">
+<div class="block">Combine two encodings, note it should be guaranteed by the caller that the number of unique multiplied does not
+ overflow Integer.</div>
+</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../IEncode.html" title="interface in org.apache.sysds.runtime.compress.estim.encoding">IEncode</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">SparseEncoding.</span><code><span class="memberNameLink"><a href="../SparseEncoding.html#combine(org.apache.sysds.runtime.compress.estim.encoding.IEncode)">combine</a></span>&#8203;(<a href="../IEncode.html" title="interface in org.apache.sysds.runtime.compress.estim.encoding">IEncode</a>&nbsp;e)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>org.apache.commons.lang3.tuple.Pair&lt;<a href="../IEncode.html" title="interface in org.apache.sysds.runtime.compress.estim.encoding">IEncode</a>,&#8203;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/Map.html?is-external=true" title="class or interface in java.util" class="externalLink">Map</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Integer.html?is-external=true" title="class or interface in java.lang" class="externalLink">Integer</a>,&#8203;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Integer.html?is-external=true" title="class or interface in java.lang" class="externalLink">Integer</a>&gt;&gt;</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ConstEncoding.</span><code><span class="memberNameLink"><a href="../ConstEncoding.html#combineWithMap(org.apache.sysds.runtime.compress.estim.encoding.IEncode)">combineWithMap</a></span>&#8203;(<a href="../IEncode.html" title="interface in org.apache.sysds.runtime.compress.estim.encoding">IEncode</a>&nbsp;e)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>org.apache.commons.lang3.tuple.Pair&lt;<a href="../IEncode.html" title="interface in org.apache.sysds.runtime.compress.estim.encoding">IEncode</a>,&#8203;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/Map.html?is-external=true" title="class or interface in java.util" class="externalLink">Map</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Integer.html?is-external=true" title="class or interface in java.lang" class="externalLink">Integer</a>,&#8203;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Integer.html?is-external=true" title="class or interface in java.lang" class="externalLink">Integer</a>&gt;&gt;</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">DenseEncoding.</span><code><span class="memberNameLink"><a href="../DenseEncoding.html#combineWithMap(org.apache.sysds.runtime.compress.estim.encoding.IEncode)">combineWithMap</a></span>&#8203;(<a href="../IEncode.html" title="interface in org.apache.sysds.runtime.compress.estim.encoding">IEncode</a>&nbsp;e)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>org.apache.commons.lang3.tuple.Pair&lt;<a href="../IEncode.html" title="interface in org.apache.sysds.runtime.compress.estim.encoding">IEncode</a>,&#8203;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/Map.html?is-external=true" title="class or interface in java.util" class="externalLink">Map</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Integer.html?is-external=true" title="class or interface in java.lang" class="externalLink">Integer</a>,&#8203;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Integer.html?is-external=true" title="class or interface in java.lang" class="externalLink">Integer</a>&gt;&gt;</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">EmptyEncoding.</span><code><span class="memberNameLink"><a href="../EmptyEncoding.html#combineWithMap(org.apache.sysds.runtime.compress.estim.encoding.IEncode)">combineWithMap</a></span>&#8203;(<a href="../IEncode.html" title="interface in org.apache.sysds.runtime.compress.estim.encoding">IEncode</a>&nbsp;e)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>org.apache.commons.lang3.tuple.Pair&lt;<a href="../IEncode.html" title="interface in org.apache.sysds.runtime.compress.estim.encoding">IEncode</a>,&#8203;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/Map.html?is-external=true" title="class or interface in java.util" class="externalLink">Map</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Integer.html?is-external=true" title="class or interface in java.lang" class="externalLink">Integer</a>,&#8203;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Integer.html?is-external=true" title="class or interface in java.lang" class="externalLink">Integer</a>&gt;&gt;</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">IEncode.</span><code><span class="memberNameLink"><a href="../IEncode.html#combineWithMap(org.apache.sysds.runtime.compress.estim.encoding.IEncode)">combineWithMap</a></span>&#8203;(<a href="../IEncode.html" title="interface in org.apache.sysds.runtime.compress.estim.encoding">IEncode</a>&nbsp;e)</code></th>
+<td class="colLast">
+<div class="block">Combine two encodings without resizing the output.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>org.apache.commons.lang3.tuple.Pair&lt;<a href="../IEncode.html" title="interface in org.apache.sysds.runtime.compress.estim.encoding">IEncode</a>,&#8203;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/Map.html?is-external=true" title="class or interface in java.util" class="externalLink">Map</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Integer.html?is-external=true" title="class or interface in java.lang" class="externalLink">Integer</a>,&#8203;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Integer.html?is-external=true" title="class or interface in java.lang" class="externalLink">Integer</a>&gt;&gt;</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">SparseEncoding.</span><code><span class="memberNameLink"><a href="../SparseEncoding.html#combineWithMap(org.apache.sysds.runtime.compress.estim.encoding.IEncode)">combineWithMap</a></span>&#8203;(<a href="../IEncode.html" title="interface in org.apache.sysds.runtime.compress.estim.encoding">IEncode</a>&nbsp;e)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>boolean</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ConstEncoding.</span><code><span class="memberNameLink"><a href="../ConstEncoding.html#equals(org.apache.sysds.runtime.compress.estim.encoding.IEncode)">equals</a></span>&#8203;(<a href="../IEncode.html" title="interface in org.apache.sysds.runtime.compress.estim.encoding">IEncode</a>&nbsp;e)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>boolean</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">DenseEncoding.</span><code><span class="memberNameLink"><a href="../DenseEncoding.html#equals(org.apache.sysds.runtime.compress.estim.encoding.IEncode)">equals</a></span>&#8203;(<a href="../IEncode.html" title="interface in org.apache.sysds.runtime.compress.estim.encoding">IEncode</a>&nbsp;e)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>boolean</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">EmptyEncoding.</span><code><span class="memberNameLink"><a href="../EmptyEncoding.html#equals(org.apache.sysds.runtime.compress.estim.encoding.IEncode)">equals</a></span>&#8203;(<a href="../IEncode.html" title="interface in org.apache.sysds.runtime.compress.estim.encoding">IEncode</a>&nbsp;e)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>boolean</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">IEncode.</span><code><span class="memberNameLink"><a href="../IEncode.html#equals(org.apache.sysds.runtime.compress.estim.encoding.IEncode)">equals</a></span>&#8203;(<a href="../IEncode.html" title="interface in org.apache.sysds.runtime.compress.estim.encoding">IEncode</a>&nbsp;e)</code></th>
+<td class="colLast">
+<div class="block">Indicate if the given encoding is equivalent to this encoding</div>
+</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>boolean</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">SparseEncoding.</span><code><span class="memberNameLink"><a href="../SparseEncoding.html#equals(org.apache.sysds.runtime.compress.estim.encoding.IEncode)">equals</a></span>&#8203;(<a href="../IEncode.html" title="interface in org.apache.sysds.runtime.compress.estim.encoding">IEncode</a>&nbsp;e)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 </tbody>

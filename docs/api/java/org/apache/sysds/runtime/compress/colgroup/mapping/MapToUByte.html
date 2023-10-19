@@ -14,7 +14,7 @@
 <!--[if IE]>
 <script type="text/javascript" src="../../../../../../../jquery/jszip-utils/dist/jszip-utils-ie.min.js"></script>
 <![endif]-->
-<script type="text/javascript" src="../../../../../../../jquery/jquery-3.6.0.min.js"></script>
+<script type="text/javascript" src="../../../../../../../jquery/jquery-3.6.1.min.js"></script>
 <script type="text/javascript" src="../../../../../../../jquery/jquery-ui.min.js"></script>
 </head>
 <body>
@@ -27,7 +27,7 @@
     catch(err) {
     }
 //-->
-var data = {"i0":10,"i1":10,"i2":10,"i3":9,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10};
+var data = {"i0":10,"i1":10,"i2":10,"i3":9,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10,"i10":10};
 var tabs = {65535:["t0","All Methods"],1:["t1","Static Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -221,18 +221,25 @@ extends <a href="MapToByte.html" title="class in org.apache.sysds.runtime.compre
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i4" class="altColor">
+<td class="colFirst"><code>int</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getMaxPossible()">getMaxPossible</a></span>()</code></th>
+<td class="colLast">
+<div class="block">Get the maximum possible value to encode in this encoding.</div>
+</td>
+</tr>
+<tr id="i5" class="rowColor">
 <td class="colFirst"><code><a href="MapToFactory.MAP_TYPE.html" title="enum in org.apache.sysds.runtime.compress.colgroup.mapping">MapToFactory.MAP_TYPE</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getType()">getType</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i5" class="rowColor">
+<tr id="i6" class="altColor">
 <td class="colFirst"><code>int</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getUpperBoundValue()">getUpperBoundValue</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Get the maximum value that is possible to allocate inside this map.</div>
 </td>
 </tr>
-<tr id="i6" class="altColor">
+<tr id="i7" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#replace(int,int)">replace</a></span>&#8203;(int&nbsp;v,
        int&nbsp;r)</code></th>
@@ -244,12 +251,12 @@ extends <a href="MapToByte.html" title="class in org.apache.sysds.runtime.compre
  - with two distinct values that is representable inside the given AMapToData.</div>
 </td>
 </tr>
-<tr id="i7" class="rowColor">
+<tr id="i8" class="altColor">
 <td class="colFirst"><code><a href="AMapToData.html" title="class in org.apache.sysds.runtime.compress.colgroup.mapping">AMapToData</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#resize(int)">resize</a></span>&#8203;(int&nbsp;unique)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i8" class="altColor">
+<tr id="i9" class="rowColor">
 <td class="colFirst"><code>int</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#setAndGet(int,int)">setAndGet</a></span>&#8203;(int&nbsp;n,
          int&nbsp;v)</code></th>
@@ -257,7 +264,7 @@ extends <a href="MapToByte.html" title="class in org.apache.sysds.runtime.compre
 <div class="block">Set the index to the value and get the contained value after.</div>
 </td>
 </tr>
-<tr id="i9" class="rowColor">
+<tr id="i10" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#write(java.io.DataOutput)">write</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/DataOutput.html?is-external=true" title="class or interface in java.io" class="externalLink">DataOutput</a>&nbsp;out)</code></th>
 <td class="colLast">
@@ -270,21 +277,21 @@ extends <a href="MapToByte.html" title="class in org.apache.sysds.runtime.compre
 <!--   -->
 </a>
 <h3>Methods inherited from class&nbsp;org.apache.sysds.runtime.compress.colgroup.mapping.<a href="MapToByte.html" title="class in org.apache.sysds.runtime.compress.colgroup.mapping">MapToByte</a></h3>
-<code><a href="MapToByte.html#append(org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData)">append</a>, <a href="MapToByte.html#appendN(org.apache.sysds.runtime.compress.colgroup.AMapToDataGroup%5B%5D)">appendN</a>, <a href="MapToByte.html#copyBit(java.util.BitSet)">copyBit</a>, <a href="MapToByte.html#copyInt(int%5B%5D)">copyInt</a>, <a href="MapToByte.html#countRuns()">countRuns</a>, <a href="MapToByte.html#getExactSizeOnDisk()">getExactSizeOnDisk</a>, <a href="MapToByte.html#getInMemorySize()">getInMemorySize</a>, <a href="MapToByte.html#set(int,int)">set</a>, <a href="MapToByte.html#size()">size</a>, <a href="MapToByte.html#slice(int,int)">slice</a></code></li>
+<code><a href="MapToByte.html#append(org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData)">append</a>, <a href="MapToByte.html#appendN(org.apache.sysds.runtime.compress.colgroup.IMapToDataGroup%5B%5D)">appendN</a>, <a href="MapToByte.html#copyBit(java.util.BitSet)">copyBit</a>, <a href="MapToByte.html#copyInt(int%5B%5D)">copyInt</a>, <a href="MapToByte.html#countRuns()">countRuns</a>, <a href="MapToByte.html#equals(org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData)">equals</a>, <a href="MapToByte.html#getExactSizeOnDisk()">getExactSizeOnDisk</a>, <a href="MapToByte.html#getInMemorySize()">getInMemorySize</a>, <a href="MapToByte.html#set(int,int)">set</a>, <a href="MapToByte.html#size()">size</a>, <a href="MapToByte.html#slice(int,int)">slice</a></code></li>
 </ul>
 <ul class="blockList">
 <li class="blockList"><a id="methods.inherited.from.class.org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData">
 <!--   -->
 </a>
 <h3>Methods inherited from class&nbsp;org.apache.sysds.runtime.compress.colgroup.mapping.<a href="AMapToData.html" title="class in org.apache.sysds.runtime.compress.colgroup.mapping">AMapToData</a></h3>
-<code><a href="AMapToData.html#copy(org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData)">copy</a>, <a href="AMapToData.html#countRuns(org.apache.sysds.runtime.compress.colgroup.offset.AOffset)">countRuns</a>, <a href="AMapToData.html#getCounts()">getCounts</a>, <a href="AMapToData.html#getMax()">getMax</a>, <a href="AMapToData.html#getUnique()">getUnique</a>, <a href="AMapToData.html#preAggregateDDC_DDC(org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData,org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary,org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary,int)">preAggregateDDC_DDC</a>, <a href="AMapToData.html#preAggregateDDC_RLE(int%5B%5D,char%5B%5D,org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary,org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary,int)">preAggregateDDC_RLE</a>, <a href="AMapToData.html#preAggregateDDC_SDCZ(org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData,org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary,org.apache.sysds.runtime.compress.colgroup.offset.AOffset,org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary,int)">preAggregateDDC_SDCZ</a>, <a href="AMapToData.html#preAggregateDDC_SDCZMultiCol(org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData,org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary,org.apache.sysds.runtime.compress.colgroup.offset.AOffset,double%5B%5D,int)">preAggregateDDC_SDCZMultiCol</a>, <a href="AMapToData.html#preAggregateDDC_SDCZSingleCol(org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData,double%5B%5D,org.apache.sysds.runtime.compress.colgroup.offset.AOffset,double%5B%5D)">preAggregateDDC_SDCZSingleCol</a>, <a href="AMapToData.html#preAggregateDense(org.apache.sysds.runtime.matrix.data.MatrixBlock,double%5B%5D,int,int,int,int)">preAggregateDense</a>, <a href="AMapToData.html#preAggregateDense(org.apache.sysds.runtime.matrix.data.MatrixBlock,double%5B%5D,int,int,int,int,org.apache.sysds.runtime.compress.colgroup.offset.AOffset)">preAggregateDense</a>, <a href="AMapToData.html#preAggregateRLE_DDC(int%5B%5D,char%5B%5D,org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary,org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary,int)">preAggregateRLE_DDC</a>, <a href="AMapToData.html#preAggregateSDCZ_DDC(org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData,org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary,org.apache.sysds.runtime.compress.colgroup.offset.AOffset,org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary,int)">preAggregateSDCZ_DDC</a>, <a href="AMapToData.html#preAggregateSDCZ_SDCZ(org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData,org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary,org.apache.sysds.runtime.compress.colgroup.offset.AOffset,org.apache.sysds.runtime.compress.colgroup.offset.AOffset,org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary,int)">preAggregateSDCZ_SDCZ</a>, <a href="AMapToData.html#preAggregateSparse(org.apache.sysds.runtime.data.SparseBlock,double%5B%5D,int,int)">preAggregateSparse</a>, <a href="AMapToData.html#preAggregateSparse(org.apache.sysds.runtime.data.SparseBlock,double%5B%5D,int,int,org.apache.sysds.runtime.compress.colgroup.offset.AOffset)">preAggregateSparse</a>, <a href="AMapToData.html#setUnique(int)">setUnique</a>, <a href="AMapToData.html#toString()">toString</a></code></li>
+<code><a href="AMapToData.html#copy(org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData)">copy</a>, <a href="AMapToData.html#countRuns(org.apache.sysds.runtime.compress.colgroup.offset.AOffset)">countRuns</a>, <a href="AMapToData.html#equals(java.lang.Object)">equals</a>, <a href="AMapToData.html#getCounts()">getCounts</a>, <a href="AMapToData.html#getMax()">getMax</a>, <a href="AMapToData.html#getUnique()">getUnique</a>, <a href="AMapToData.html#preAggregateDDC_DDC(org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData,org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary,org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary,int)">preAggregateDDC_DDC</a>, <a href="AMapToData.html#preAggregateDDC_RLE(int%5B%5D,char%5B%5D,org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary,org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary,int)">preAggregateDDC_RLE</a>, <a href="AMapToData.html#preAggregateDDC_SDCZ(org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData,org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary,org.apache.sysds.runtime.compress.colgroup.offset.AOffset,org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary,int)">preAggregateDDC_SDCZ</a>, <a href="AMapToData.html#preAggregateDDC_SDCZMultiCol(org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData,org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary,org.apache.sysds.runtime.compress.colgroup.offset.AOffset,double%5B%5D,int)">preAggregateDDC_SDCZMultiCol</a>, <a href="AMapToData.html#preAggregateDDC_SDCZSingleCol(org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData,double%5B%5D,org.apache.sysds.runtime.compress.colgroup.offset.AOffset,double%5B%5D)">preAggregateDDC_SDCZSingleCol</a>, <a href="AMapToData.html#preAggregateDense(org.apache.sysds.runtime.matrix.data.MatrixBlock,double%5B%5D,int,int,int,int)">preAggregateDense</a>, <a href="AMapToData.html#preAggregateDense(org.apache.sysds.runtime.matrix.data.MatrixBlock,double%5B%5D,int,int,int,int,org.apache.sysds.runtime.compress.colgroup.offset.AOffset)">preAggregateDense</a>, <a href="AMapToData.html#preAggregateRLE_DDC(int%5B%5D,char%5B%5D,org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary,org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary,int)">preAggregateRLE_DDC</a>, <a href="AMapToData.html#preAggregateSDCZ_DDC(org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData,org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary,org.apache.sysds.runtime.compress.colgroup.offset.AOffset,org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary,int)">preAggregateSDCZ_DDC</a>, <a href="AMapToData.html#preAggregateSDCZ_SDCZ(org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData,org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary,org.apache.sysds.runtime.compress.colgroup.offset.AOffset,org.apache.sysds.runtime.compress.colgroup.offset.AOffset,org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary,int)">preAggregateSDCZ_SDCZ</a>, <a href="AMapToData.html#preAggregateSparse(org.apache.sysds.runtime.data.SparseBlock,double%5B%5D,int,int)">preAggregateSparse</a>, <a href="AMapToData.html#preAggregateSparse(org.apache.sysds.runtime.data.SparseBlock,double%5B%5D,int,int,org.apache.sysds.runtime.compress.colgroup.offset.AOffset)">preAggregateSparse</a>, <a href="AMapToData.html#set(int,java.lang.Integer)">set</a>, <a href="AMapToData.html#set(int,java.lang.Long)">set</a>, <a href="AMapToData.html#setUnique(int)">setUnique</a>, <a href="AMapToData.html#toString()">toString</a></code></li>
 </ul>
 <ul class="blockList">
 <li class="blockList"><a id="methods.inherited.from.class.java.lang.Object">
 <!--   -->
 </a>
 <h3>Methods inherited from class&nbsp;java.lang.<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a></h3>
-<code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#equals(java.lang.Object)" title="class or interface in java.lang" class="externalLink">equals</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#getClass()" title="class or interface in java.lang" class="externalLink">getClass</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#hashCode()" title="class or interface in java.lang" class="externalLink">hashCode</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#notify()" title="class or interface in java.lang" class="externalLink">notify</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#notifyAll()" title="class or interface in java.lang" class="externalLink">notifyAll</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#wait()" title="class or interface in java.lang" class="externalLink">wait</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#wait(long)" title="class or interface in java.lang" class="externalLink">wait</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#wait(long,int)" title="class or interface in java.lang" class="externalLink">wait</a></code></li>
+<code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#getClass()" title="class or interface in java.lang" class="externalLink">getClass</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#hashCode()" title="class or interface in java.lang" class="externalLink">hashCode</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#notify()" title="class or interface in java.lang" class="externalLink">notify</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#notifyAll()" title="class or interface in java.lang" class="externalLink">notifyAll</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#wait()" title="class or interface in java.lang" class="externalLink">wait</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#wait(long)" title="class or interface in java.lang" class="externalLink">wait</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#wait(long,int)" title="class or interface in java.lang" class="externalLink">wait</a></code></li>
 </ul>
 </li>
 </ul>
@@ -371,8 +378,8 @@ extends <a href="MapToByte.html" title="class in org.apache.sysds.runtime.compre
 <dd><code>n</code> - index to set.</dd>
 <dd><code>v</code> - the value to set it to.</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
-<dd>v as encoded, note this value can be different that the one put in if the map is not able to represent the
-         value</dd>
+<dd>v as encoded, note this value can be different that the one put in if the map is not able to represent
+         the value</dd>
 </dl>
 </li>
 </ul>
@@ -481,6 +488,23 @@ extends <a href="MapToByte.html" title="class in org.apache.sysds.runtime.compre
 <dd><code>ret</code> - The object to return.</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>The counts</dd>
+</dl>
+</li>
+</ul>
+<a id="getMaxPossible()">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>getMaxPossible</h4>
+<pre class="methodSignature">public&nbsp;int&nbsp;getMaxPossible()</pre>
+<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="AMapToData.html#getMaxPossible()">AMapToData</a></code></span></div>
+<div class="block">Get the maximum possible value to encode in this encoding. For instance in a bit you can encode 2 values</div>
+<dl>
+<dt><span class="overrideSpecifyLabel">Overrides:</span></dt>
+<dd><code><a href="MapToByte.html#getMaxPossible()">getMaxPossible</a></code>&nbsp;in class&nbsp;<code><a href="MapToByte.html" title="class in org.apache.sysds.runtime.compress.colgroup.mapping">MapToByte</a></code></dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>The maximum number of distinct values to encode</dd>
 </dl>
 </li>
 </ul>

@@ -14,7 +14,7 @@
 <!--[if IE]>
 <script type="text/javascript" src="../../../../../../../jquery/jszip-utils/dist/jszip-utils-ie.min.js"></script>
 <![endif]-->
-<script type="text/javascript" src="../../../../../../../jquery/jquery-3.6.0.min.js"></script>
+<script type="text/javascript" src="../../../../../../../jquery/jquery-3.6.1.min.js"></script>
 <script type="text/javascript" src="../../../../../../../jquery/jquery-ui.min.js"></script>
 </head>
 <body>
@@ -167,6 +167,11 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#bitSetSwitchPoint">bitSetSwitchPoint</a></span></code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
+<tr class="rowColor">
+<td class="colFirst"><code>static org.apache.commons.logging.Log</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#LOG">LOG</a></span></code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
 </table>
 </li>
 </ul>
@@ -204,12 +209,18 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i3" class="rowColor">
+<td class="colFirst"><code>static &lt;T&gt;&nbsp;<a href="DDCArray.html" title="class in org.apache.sysds.runtime.frame.data.columns">DDCArray</a>&lt;T&gt;</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#allocateDDC(org.apache.sysds.runtime.frame.data.columns.DDCArray,int)">allocateDDC</a></span>&#8203;(<a href="DDCArray.html" title="class in org.apache.sysds.runtime.frame.data.columns">DDCArray</a>&lt;T&gt;&nbsp;start,
+           int&nbsp;nRow)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i4" class="altColor">
 <td class="colFirst"><code>static <a href="Array.html" title="class in org.apache.sysds.runtime.frame.data.columns">Array</a>&lt;?&gt;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#allocateOptional(org.apache.sysds.common.Types.ValueType,int)">allocateOptional</a></span>&#8203;(<a href="../../../../common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;v,
                 int&nbsp;nRow)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i4" class="altColor">
+<tr id="i5" class="rowColor">
 <td class="colFirst"><code>static &lt;C&gt;&nbsp;<a href="Array.html" title="class in org.apache.sysds.runtime.frame.data.columns">Array</a>&lt;C&gt;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#append(org.apache.sysds.runtime.frame.data.columns.Array,org.apache.sysds.runtime.frame.data.columns.Array)">append</a></span>&#8203;(<a href="Array.html" title="class in org.apache.sysds.runtime.frame.data.columns">Array</a>&lt;?&gt;&nbsp;a,
       <a href="Array.html" title="class in org.apache.sysds.runtime.frame.data.columns">Array</a>&lt;?&gt;&nbsp;b)</code></th>
@@ -217,76 +228,83 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <div class="block">append arrays to each other, and cast to highest common type if different types.</div>
 </td>
 </tr>
-<tr id="i5" class="rowColor">
+<tr id="i6" class="altColor">
 <td class="colFirst"><code>static <a href="BooleanArray.html" title="class in org.apache.sysds.runtime.frame.data.columns">BooleanArray</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#create(boolean%5B%5D)">create</a></span>&#8203;(boolean[]&nbsp;col)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i6" class="altColor">
+<tr id="i7" class="rowColor">
 <td class="colFirst"><code>static <a href="CharArray.html" title="class in org.apache.sysds.runtime.frame.data.columns">CharArray</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#create(char%5B%5D)">create</a></span>&#8203;(char[]&nbsp;col)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i7" class="rowColor">
+<tr id="i8" class="altColor">
 <td class="colFirst"><code>static <a href="DoubleArray.html" title="class in org.apache.sysds.runtime.frame.data.columns">DoubleArray</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#create(double%5B%5D)">create</a></span>&#8203;(double[]&nbsp;col)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i8" class="altColor">
+<tr id="i9" class="rowColor">
 <td class="colFirst"><code>static <a href="FloatArray.html" title="class in org.apache.sysds.runtime.frame.data.columns">FloatArray</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#create(float%5B%5D)">create</a></span>&#8203;(float[]&nbsp;col)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i9" class="rowColor">
+<tr id="i10" class="altColor">
 <td class="colFirst"><code>static <a href="IntegerArray.html" title="class in org.apache.sysds.runtime.frame.data.columns">IntegerArray</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#create(int%5B%5D)">create</a></span>&#8203;(int[]&nbsp;col)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i10" class="altColor">
+<tr id="i11" class="rowColor">
 <td class="colFirst"><code>static <a href="LongArray.html" title="class in org.apache.sysds.runtime.frame.data.columns">LongArray</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#create(long%5B%5D)">create</a></span>&#8203;(long[]&nbsp;col)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i11" class="rowColor">
+<tr id="i12" class="altColor">
 <td class="colFirst"><code>static <a href="StringArray.html" title="class in org.apache.sysds.runtime.frame.data.columns">StringArray</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#create(java.lang.String%5B%5D)">create</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>[]&nbsp;col)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i12" class="altColor">
+<tr id="i13" class="rowColor">
 <td class="colFirst"><code>static <a href="BitSetArray.html" title="class in org.apache.sysds.runtime.frame.data.columns">BitSetArray</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#create(java.util.BitSet,int)">create</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/BitSet.html?is-external=true" title="class or interface in java.util" class="externalLink">BitSet</a>&nbsp;col,
       int&nbsp;size)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i13" class="rowColor">
+<tr id="i14" class="altColor">
 <td class="colFirst"><code>static &lt;T&gt;&nbsp;<a href="OptionalArray.html" title="class in org.apache.sysds.runtime.frame.data.columns">OptionalArray</a>&lt;T&gt;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#create(T%5B%5D)">create</a></span>&#8203;(T[]&nbsp;col)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i14" class="altColor">
+<tr id="i15" class="rowColor">
+<td class="colFirst"><code>static &lt;T&gt;&nbsp;<a href="RaggedArray.html" title="class in org.apache.sysds.runtime.frame.data.columns">RaggedArray</a>&lt;T&gt;</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#create(T%5B%5D,int)">create</a></span>&#8203;(T[]&nbsp;col,
+      int&nbsp;m)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i16" class="altColor">
 <td class="colFirst"><code>static <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#defaultNullValue(org.apache.sysds.common.Types.ValueType)">defaultNullValue</a></span>&#8203;(<a href="../../../../common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;v)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i15" class="rowColor">
+<tr id="i17" class="rowColor">
 <td class="colFirst"><code>static long</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getInMemorySize(org.apache.sysds.common.Types.ValueType,int)">getInMemorySize</a></span>&#8203;(<a href="../../../../common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;type,
-               int&nbsp;_numRows)</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getInMemorySize(org.apache.sysds.common.Types.ValueType,int,boolean)">getInMemorySize</a></span>&#8203;(<a href="../../../../common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;type,
+               int&nbsp;_numRows,
+               boolean&nbsp;containsNull)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i16" class="altColor">
+<tr id="i18" class="altColor">
 <td class="colFirst"><code>static <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#parseString(java.lang.String,org.apache.sysds.common.Types.ValueType)">parseString</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;s,
            <a href="../../../../common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;v)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i17" class="rowColor">
+<tr id="i19" class="rowColor">
 <td class="colFirst"><code>static <a href="Array.html" title="class in org.apache.sysds.runtime.frame.data.columns">Array</a>&lt;?&gt;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#read(java.io.DataInput,int)">read</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/DataInput.html?is-external=true" title="class or interface in java.io" class="externalLink">DataInput</a>&nbsp;in,
     int&nbsp;nRow)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i18" class="altColor">
+<tr id="i20" class="altColor">
 <td class="colFirst"><code>static &lt;C&gt;&nbsp;<a href="Array.html" title="class in org.apache.sysds.runtime.frame.data.columns">Array</a>&lt;C&gt;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#set(org.apache.sysds.runtime.frame.data.columns.Array,org.apache.sysds.runtime.frame.data.columns.Array,int,int,int)">set</a></span>&#8203;(<a href="Array.html" title="class in org.apache.sysds.runtime.frame.data.columns">Array</a>&lt;?&gt;&nbsp;target,
    <a href="Array.html" title="class in org.apache.sysds.runtime.frame.data.columns">Array</a>&lt;?&gt;&nbsp;src,
@@ -314,6 +332,15 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <!--   -->
 </a>
 <h3>Field Detail</h3>
+<a id="LOG">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>LOG</h4>
+<pre>static final&nbsp;org.apache.commons.logging.Log LOG</pre>
+</li>
+</ul>
 <a id="bitSetSwitchPoint">
 <!--   -->
 </a>
@@ -421,14 +448,27 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <pre class="methodSignature">static&nbsp;&lt;T&gt;&nbsp;<a href="OptionalArray.html" title="class in org.apache.sysds.runtime.frame.data.columns">OptionalArray</a>&lt;T&gt;&nbsp;create&#8203;(T[]&nbsp;col)</pre>
 </li>
 </ul>
-<a id="getInMemorySize(org.apache.sysds.common.Types.ValueType,int)">
+<a id="create(java.lang.Object[],int)">
+<!--   -->
+</a><a id="create(T[],int)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>create</h4>
+<pre class="methodSignature">static&nbsp;&lt;T&gt;&nbsp;<a href="RaggedArray.html" title="class in org.apache.sysds.runtime.frame.data.columns">RaggedArray</a>&lt;T&gt;&nbsp;create&#8203;(T[]&nbsp;col,
+                                 int&nbsp;m)</pre>
+</li>
+</ul>
+<a id="getInMemorySize(org.apache.sysds.common.Types.ValueType,int,boolean)">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
 <h4>getInMemorySize</h4>
 <pre class="methodSignature">static&nbsp;long&nbsp;getInMemorySize&#8203;(<a href="../../../../common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;type,
-                            int&nbsp;_numRows)</pre>
+                            int&nbsp;_numRows,
+                            boolean&nbsp;containsNull)</pre>
 </li>
 </ul>
 <a id="allocate(org.apache.sysds.common.Types.ValueType,int,java.lang.String)">
@@ -450,6 +490,16 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <h4>allocateOptional</h4>
 <pre class="methodSignature">static&nbsp;<a href="Array.html" title="class in org.apache.sysds.runtime.frame.data.columns">Array</a>&lt;?&gt;&nbsp;allocateOptional&#8203;(<a href="../../../../common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;v,
                                  int&nbsp;nRow)</pre>
+</li>
+</ul>
+<a id="allocateDDC(org.apache.sysds.runtime.frame.data.columns.DDCArray,int)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>allocateDDC</h4>
+<pre class="methodSignature">static&nbsp;&lt;T&gt;&nbsp;<a href="DDCArray.html" title="class in org.apache.sysds.runtime.frame.data.columns">DDCArray</a>&lt;T&gt;&nbsp;allocateDDC&#8203;(<a href="DDCArray.html" title="class in org.apache.sysds.runtime.frame.data.columns">DDCArray</a>&lt;T&gt;&nbsp;start,
+                                   int&nbsp;nRow)</pre>
 </li>
 </ul>
 <a id="allocateBoolean(int)">

@@ -14,7 +14,7 @@
 <!--[if IE]>
 <script type="text/javascript" src="../../../../../../../jquery/jszip-utils/dist/jszip-utils-ie.min.js"></script>
 <![endif]-->
-<script type="text/javascript" src="../../../../../../../jquery/jquery-3.6.0.min.js"></script>
+<script type="text/javascript" src="../../../../../../../jquery/jquery-3.6.1.min.js"></script>
 <script type="text/javascript" src="../../../../../../../jquery/jquery-ui.min.js"></script>
 </head>
 <body>
@@ -107,7 +107,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tbody>
 <tr class="altColor">
-<th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.compress">org.apache.sysds.runtime.compress</a></th>
+<th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.compress.lib">org.apache.sysds.runtime.compress.lib</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
@@ -124,12 +124,12 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <li class="blockList">
 <ul class="blockList">
 <li class="blockList">
-<section><a id="org.apache.sysds.runtime.compress">
+<section><a id="org.apache.sysds.runtime.compress.lib">
 <!--   -->
 </a>
-<h3>Uses of <a href="../AggregateTernaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">AggregateTernaryOperator</a> in <a href="../../../compress/package-summary.html">org.apache.sysds.runtime.compress</a></h3>
+<h3>Uses of <a href="../AggregateTernaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">AggregateTernaryOperator</a> in <a href="../../../compress/lib/package-summary.html">org.apache.sysds.runtime.compress.lib</a></h3>
 <table class="useSummary">
-<caption><span>Methods in <a href="../../../compress/package-summary.html">org.apache.sysds.runtime.compress</a> with parameters of type <a href="../AggregateTernaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">AggregateTernaryOperator</a></span><span class="tabEnd">&nbsp;</span></caption>
+<caption><span>Methods in <a href="../../../compress/lib/package-summary.html">org.apache.sysds.runtime.compress.lib</a> with parameters of type <a href="../AggregateTernaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">AggregateTernaryOperator</a></span><span class="tabEnd">&nbsp;</span></caption>
 <tr>
 <th class="colFirst" scope="col">Modifier and Type</th>
 <th class="colSecond" scope="col">Method</th>
@@ -137,13 +137,13 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tbody>
 <tr class="altColor">
-<td class="colFirst"><code><a href="../../data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">CompressedMatrixBlock.</span><code><span class="memberNameLink"><a href="../../../compress/CompressedMatrixBlock.html#aggregateTernaryOperations(org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.operators.AggregateTernaryOperator,boolean)">aggregateTernaryOperations</a></span>&#8203;(<a href="../../data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;m1,
-                          <a href="../../data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;m2,
-                          <a href="../../data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;m3,
-                          <a href="../../data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;ret,
-                          <a href="../AggregateTernaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">AggregateTernaryOperator</a>&nbsp;op,
-                          boolean&nbsp;inCP)</code></th>
+<td class="colFirst"><code>static <a href="../../data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">CLALibAggTernaryOp.</span><code><span class="memberNameLink"><a href="../../../compress/lib/CLALibAggTernaryOp.html#agg(org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.operators.AggregateTernaryOperator,boolean)">agg</a></span>&#8203;(<a href="../../data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;m1,
+   <a href="../../data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;m2,
+   <a href="../../data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;m3,
+   <a href="../../data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;ret,
+   <a href="../AggregateTernaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">AggregateTernaryOperator</a>&nbsp;op,
+   boolean&nbsp;inCP)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 </tbody>
@@ -211,7 +211,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
-<td class="colFirst"><code><a href="../../data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
+<td class="colFirst"><code>static <a href="../../data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">MatrixBlock.</span><code><span class="memberNameLink"><a href="../../data/MatrixBlock.html#aggregateTernaryOperations(org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.operators.AggregateTernaryOperator,boolean)">aggregateTernaryOperations</a></span>&#8203;(<a href="../../data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;m1,
                           <a href="../../data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;m2,
                           <a href="../../data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;m3,

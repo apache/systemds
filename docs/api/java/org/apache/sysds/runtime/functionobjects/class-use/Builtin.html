@@ -14,7 +14,7 @@
 <!--[if IE]>
 <script type="text/javascript" src="../../../../../../jquery/jszip-utils/dist/jszip-utils-ie.min.js"></script>
 <![endif]-->
-<script type="text/javascript" src="../../../../../../jquery/jquery-3.6.0.min.js"></script>
+<script type="text/javascript" src="../../../../../../jquery/jquery-3.6.1.min.js"></script>
 <script type="text/javascript" src="../../../../../../jquery/jquery-ui.min.js"></script>
 </head>
 <body>
@@ -133,25 +133,25 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tbody>
 <tr class="altColor">
-<td class="colFirst"><code>abstract double</code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">ADictionary.</span><code><span class="memberNameLink"><a href="../../compress/colgroup/dictionary/ADictionary.html#aggregate(double,org.apache.sysds.runtime.functionobjects.Builtin)">aggregate</a></span>&#8203;(double&nbsp;init,
-         <a href="../Builtin.html" title="class in org.apache.sysds.runtime.functionobjects">Builtin</a>&nbsp;fn)</code></th>
-<td class="colLast">
-<div class="block">Aggregate all the contained values, useful in value only computations where the operation is iterating through all
- values contained in the dictionary.</div>
-</td>
-</tr>
-<tr class="rowColor">
 <td class="colFirst"><code>double</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">Dictionary.</span><code><span class="memberNameLink"><a href="../../compress/colgroup/dictionary/Dictionary.html#aggregate(double,org.apache.sysds.runtime.functionobjects.Builtin)">aggregate</a></span>&#8203;(double&nbsp;init,
          <a href="../Builtin.html" title="class in org.apache.sysds.runtime.functionobjects">Builtin</a>&nbsp;fn)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>double</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">IdentityDictionary.</span><code><span class="memberNameLink"><a href="../../compress/colgroup/dictionary/IdentityDictionary.html#aggregate(double,org.apache.sysds.runtime.functionobjects.Builtin)">aggregate</a></span>&#8203;(double&nbsp;init,
          <a href="../Builtin.html" title="class in org.apache.sysds.runtime.functionobjects">Builtin</a>&nbsp;fn)</code></th>
 <td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>double</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">IDictionary.</span><code><span class="memberNameLink"><a href="../../compress/colgroup/dictionary/IDictionary.html#aggregate(double,org.apache.sysds.runtime.functionobjects.Builtin)">aggregate</a></span>&#8203;(double&nbsp;init,
+         <a href="../Builtin.html" title="class in org.apache.sysds.runtime.functionobjects">Builtin</a>&nbsp;fn)</code></th>
+<td class="colLast">
+<div class="block">Aggregate all the contained values, useful in value only computations where the operation is iterating through
+ all values contained in the dictionary.</div>
+</td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>double</code></td>
@@ -161,18 +161,15 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code>double</code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">QDictionary.</span><code><span class="memberNameLink"><a href="../../compress/colgroup/dictionary/QDictionary.html#aggregate(double,org.apache.sysds.runtime.functionobjects.Builtin)">aggregate</a></span>&#8203;(double&nbsp;init,
+<th class="colSecond" scope="row"><span class="typeNameLabel">PlaceHolderDict.</span><code><span class="memberNameLink"><a href="../../compress/colgroup/dictionary/PlaceHolderDict.html#aggregate(double,org.apache.sysds.runtime.functionobjects.Builtin)">aggregate</a></span>&#8203;(double&nbsp;init,
          <a href="../Builtin.html" title="class in org.apache.sysds.runtime.functionobjects">Builtin</a>&nbsp;fn)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
-<td class="colFirst"><code>abstract void</code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">ADictionary.</span><code><span class="memberNameLink"><a href="../../compress/colgroup/dictionary/ADictionary.html#aggregateCols(double%5B%5D,org.apache.sysds.runtime.functionobjects.Builtin,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex)">aggregateCols</a></span>&#8203;(double[]&nbsp;c,
-             <a href="../Builtin.html" title="class in org.apache.sysds.runtime.functionobjects">Builtin</a>&nbsp;fn,
-             <a href="../../compress/colgroup/indexes/IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;colIndexes)</code></th>
-<td class="colLast">
-<div class="block">Aggregates the columns into the target double array provided.</div>
-</td>
+<td class="colFirst"><code>double</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">QDictionary.</span><code><span class="memberNameLink"><a href="../../compress/colgroup/dictionary/QDictionary.html#aggregate(double,org.apache.sysds.runtime.functionobjects.Builtin)">aggregate</a></span>&#8203;(double&nbsp;init,
+         <a href="../Builtin.html" title="class in org.apache.sysds.runtime.functionobjects">Builtin</a>&nbsp;fn)</code></th>
+<td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code>void</code></td>
@@ -197,7 +194,23 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">IDictionary.</span><code><span class="memberNameLink"><a href="../../compress/colgroup/dictionary/IDictionary.html#aggregateCols(double%5B%5D,org.apache.sysds.runtime.functionobjects.Builtin,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex)">aggregateCols</a></span>&#8203;(double[]&nbsp;c,
+             <a href="../Builtin.html" title="class in org.apache.sysds.runtime.functionobjects">Builtin</a>&nbsp;fn,
+             <a href="../../compress/colgroup/indexes/IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;colIndexes)</code></th>
+<td class="colLast">
+<div class="block">Aggregates the columns into the target double array provided.</div>
+</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">MatrixBlockDictionary.</span><code><span class="memberNameLink"><a href="../../compress/colgroup/dictionary/MatrixBlockDictionary.html#aggregateCols(double%5B%5D,org.apache.sysds.runtime.functionobjects.Builtin,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex)">aggregateCols</a></span>&#8203;(double[]&nbsp;c,
+             <a href="../Builtin.html" title="class in org.apache.sysds.runtime.functionobjects">Builtin</a>&nbsp;fn,
+             <a href="../../compress/colgroup/indexes/IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;colIndexes)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">PlaceHolderDict.</span><code><span class="memberNameLink"><a href="../../compress/colgroup/dictionary/PlaceHolderDict.html#aggregateCols(double%5B%5D,org.apache.sysds.runtime.functionobjects.Builtin,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex)">aggregateCols</a></span>&#8203;(double[]&nbsp;c,
              <a href="../Builtin.html" title="class in org.apache.sysds.runtime.functionobjects">Builtin</a>&nbsp;fn,
              <a href="../../compress/colgroup/indexes/IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;colIndexes)</code></th>
 <td class="colLast">&nbsp;</td>
@@ -210,17 +223,6 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
-<td class="colFirst"><code>abstract void</code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">ADictionary.</span><code><span class="memberNameLink"><a href="../../compress/colgroup/dictionary/ADictionary.html#aggregateColsWithReference(double%5B%5D,org.apache.sysds.runtime.functionobjects.Builtin,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,double%5B%5D,boolean)">aggregateColsWithReference</a></span>&#8203;(double[]&nbsp;c,
-                          <a href="../Builtin.html" title="class in org.apache.sysds.runtime.functionobjects">Builtin</a>&nbsp;fn,
-                          <a href="../../compress/colgroup/indexes/IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;colIndexes,
-                          double[]&nbsp;reference,
-                          boolean&nbsp;def)</code></th>
-<td class="colLast">
-<div class="block">Aggregates the columns into the target double array provided.</div>
-</td>
-</tr>
-<tr class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">Dictionary.</span><code><span class="memberNameLink"><a href="../../compress/colgroup/dictionary/Dictionary.html#aggregateColsWithReference(double%5B%5D,org.apache.sysds.runtime.functionobjects.Builtin,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,double%5B%5D,boolean)">aggregateColsWithReference</a></span>&#8203;(double[]&nbsp;c,
                           <a href="../Builtin.html" title="class in org.apache.sysds.runtime.functionobjects">Builtin</a>&nbsp;fn,
@@ -229,7 +231,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
                           boolean&nbsp;def)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">IdentityDictionary.</span><code><span class="memberNameLink"><a href="../../compress/colgroup/dictionary/IdentityDictionary.html#aggregateColsWithReference(double%5B%5D,org.apache.sysds.runtime.functionobjects.Builtin,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,double%5B%5D,boolean)">aggregateColsWithReference</a></span>&#8203;(double[]&nbsp;c,
                           <a href="../Builtin.html" title="class in org.apache.sysds.runtime.functionobjects">Builtin</a>&nbsp;fn,
@@ -237,6 +239,17 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
                           double[]&nbsp;reference,
                           boolean&nbsp;def)</code></th>
 <td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">IDictionary.</span><code><span class="memberNameLink"><a href="../../compress/colgroup/dictionary/IDictionary.html#aggregateColsWithReference(double%5B%5D,org.apache.sysds.runtime.functionobjects.Builtin,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,double%5B%5D,boolean)">aggregateColsWithReference</a></span>&#8203;(double[]&nbsp;c,
+                          <a href="../Builtin.html" title="class in org.apache.sysds.runtime.functionobjects">Builtin</a>&nbsp;fn,
+                          <a href="../../compress/colgroup/indexes/IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;colIndexes,
+                          double[]&nbsp;reference,
+                          boolean&nbsp;def)</code></th>
+<td class="colLast">
+<div class="block">Aggregates the columns into the target double array provided.</div>
+</td>
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code>void</code></td>
@@ -249,7 +262,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>void</code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">QDictionary.</span><code><span class="memberNameLink"><a href="../../compress/colgroup/dictionary/QDictionary.html#aggregateColsWithReference(double%5B%5D,org.apache.sysds.runtime.functionobjects.Builtin,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,double%5B%5D,boolean)">aggregateColsWithReference</a></span>&#8203;(double[]&nbsp;c,
+<th class="colSecond" scope="row"><span class="typeNameLabel">PlaceHolderDict.</span><code><span class="memberNameLink"><a href="../../compress/colgroup/dictionary/PlaceHolderDict.html#aggregateColsWithReference(double%5B%5D,org.apache.sysds.runtime.functionobjects.Builtin,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,double%5B%5D,boolean)">aggregateColsWithReference</a></span>&#8203;(double[]&nbsp;c,
                           <a href="../Builtin.html" title="class in org.apache.sysds.runtime.functionobjects">Builtin</a>&nbsp;fn,
                           <a href="../../compress/colgroup/indexes/IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;colIndexes,
                           double[]&nbsp;reference,
@@ -257,12 +270,13 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
-<td class="colFirst"><code>abstract double[]</code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">ADictionary.</span><code><span class="memberNameLink"><a href="../../compress/colgroup/dictionary/ADictionary.html#aggregateRows(org.apache.sysds.runtime.functionobjects.Builtin,int)">aggregateRows</a></span>&#8203;(<a href="../Builtin.html" title="class in org.apache.sysds.runtime.functionobjects">Builtin</a>&nbsp;fn,
-             int&nbsp;nCol)</code></th>
-<td class="colLast">
-<div class="block">Aggregate all entries in the rows.</div>
-</td>
+<td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">QDictionary.</span><code><span class="memberNameLink"><a href="../../compress/colgroup/dictionary/QDictionary.html#aggregateColsWithReference(double%5B%5D,org.apache.sysds.runtime.functionobjects.Builtin,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,double%5B%5D,boolean)">aggregateColsWithReference</a></span>&#8203;(double[]&nbsp;c,
+                          <a href="../Builtin.html" title="class in org.apache.sysds.runtime.functionobjects">Builtin</a>&nbsp;fn,
+                          <a href="../../compress/colgroup/indexes/IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;colIndexes,
+                          double[]&nbsp;reference,
+                          boolean&nbsp;def)</code></th>
+<td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>double[]</code></td>
@@ -284,7 +298,21 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code>double[]</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">IDictionary.</span><code><span class="memberNameLink"><a href="../../compress/colgroup/dictionary/IDictionary.html#aggregateRows(org.apache.sysds.runtime.functionobjects.Builtin,int)">aggregateRows</a></span>&#8203;(<a href="../Builtin.html" title="class in org.apache.sysds.runtime.functionobjects">Builtin</a>&nbsp;fn,
+             int&nbsp;nCol)</code></th>
+<td class="colLast">
+<div class="block">Aggregate all entries in the rows.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>double[]</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">MatrixBlockDictionary.</span><code><span class="memberNameLink"><a href="../../compress/colgroup/dictionary/MatrixBlockDictionary.html#aggregateRows(org.apache.sysds.runtime.functionobjects.Builtin,int)">aggregateRows</a></span>&#8203;(<a href="../Builtin.html" title="class in org.apache.sysds.runtime.functionobjects">Builtin</a>&nbsp;fn,
+             int&nbsp;nCol)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>double[]</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">PlaceHolderDict.</span><code><span class="memberNameLink"><a href="../../compress/colgroup/dictionary/PlaceHolderDict.html#aggregateRows(org.apache.sysds.runtime.functionobjects.Builtin,int)">aggregateRows</a></span>&#8203;(<a href="../Builtin.html" title="class in org.apache.sysds.runtime.functionobjects">Builtin</a>&nbsp;fn,
              int&nbsp;nCol)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
@@ -295,25 +323,25 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
-<td class="colFirst"><code>abstract double[]</code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">ADictionary.</span><code><span class="memberNameLink"><a href="../../compress/colgroup/dictionary/ADictionary.html#aggregateRowsWithDefault(org.apache.sysds.runtime.functionobjects.Builtin,double%5B%5D)">aggregateRowsWithDefault</a></span>&#8203;(<a href="../Builtin.html" title="class in org.apache.sysds.runtime.functionobjects">Builtin</a>&nbsp;fn,
-                        double[]&nbsp;defaultTuple)</code></th>
-<td class="colLast">
-<div class="block">Aggregate all entries in the rows of the dictionary with a extra cell in the end that contains the aggregate of
- the given defaultTuple.</div>
-</td>
-</tr>
-<tr class="rowColor">
 <td class="colFirst"><code>double[]</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">Dictionary.</span><code><span class="memberNameLink"><a href="../../compress/colgroup/dictionary/Dictionary.html#aggregateRowsWithDefault(org.apache.sysds.runtime.functionobjects.Builtin,double%5B%5D)">aggregateRowsWithDefault</a></span>&#8203;(<a href="../Builtin.html" title="class in org.apache.sysds.runtime.functionobjects">Builtin</a>&nbsp;fn,
                         double[]&nbsp;defaultTuple)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>double[]</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">IdentityDictionary.</span><code><span class="memberNameLink"><a href="../../compress/colgroup/dictionary/IdentityDictionary.html#aggregateRowsWithDefault(org.apache.sysds.runtime.functionobjects.Builtin,double%5B%5D)">aggregateRowsWithDefault</a></span>&#8203;(<a href="../Builtin.html" title="class in org.apache.sysds.runtime.functionobjects">Builtin</a>&nbsp;fn,
                         double[]&nbsp;defaultTuple)</code></th>
 <td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>double[]</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">IDictionary.</span><code><span class="memberNameLink"><a href="../../compress/colgroup/dictionary/IDictionary.html#aggregateRowsWithDefault(org.apache.sysds.runtime.functionobjects.Builtin,double%5B%5D)">aggregateRowsWithDefault</a></span>&#8203;(<a href="../Builtin.html" title="class in org.apache.sysds.runtime.functionobjects">Builtin</a>&nbsp;fn,
+                        double[]&nbsp;defaultTuple)</code></th>
+<td class="colLast">
+<div class="block">Aggregate all entries in the rows of the dictionary with a extra cell in the end that contains the aggregate of
+ the given defaultTuple.</div>
+</td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>double[]</code></td>
@@ -323,17 +351,15 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code>double[]</code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">QDictionary.</span><code><span class="memberNameLink"><a href="../../compress/colgroup/dictionary/QDictionary.html#aggregateRowsWithDefault(org.apache.sysds.runtime.functionobjects.Builtin,double%5B%5D)">aggregateRowsWithDefault</a></span>&#8203;(<a href="../Builtin.html" title="class in org.apache.sysds.runtime.functionobjects">Builtin</a>&nbsp;fn,
+<th class="colSecond" scope="row"><span class="typeNameLabel">PlaceHolderDict.</span><code><span class="memberNameLink"><a href="../../compress/colgroup/dictionary/PlaceHolderDict.html#aggregateRowsWithDefault(org.apache.sysds.runtime.functionobjects.Builtin,double%5B%5D)">aggregateRowsWithDefault</a></span>&#8203;(<a href="../Builtin.html" title="class in org.apache.sysds.runtime.functionobjects">Builtin</a>&nbsp;fn,
                         double[]&nbsp;defaultTuple)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
-<td class="colFirst"><code>abstract double[]</code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">ADictionary.</span><code><span class="memberNameLink"><a href="../../compress/colgroup/dictionary/ADictionary.html#aggregateRowsWithReference(org.apache.sysds.runtime.functionobjects.Builtin,double%5B%5D)">aggregateRowsWithReference</a></span>&#8203;(<a href="../Builtin.html" title="class in org.apache.sysds.runtime.functionobjects">Builtin</a>&nbsp;fn,
-                          double[]&nbsp;reference)</code></th>
-<td class="colLast">
-<div class="block">Aggregate all entries in the rows with an offset value reference added.</div>
-</td>
+<td class="colFirst"><code>double[]</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">QDictionary.</span><code><span class="memberNameLink"><a href="../../compress/colgroup/dictionary/QDictionary.html#aggregateRowsWithDefault(org.apache.sysds.runtime.functionobjects.Builtin,double%5B%5D)">aggregateRowsWithDefault</a></span>&#8203;(<a href="../Builtin.html" title="class in org.apache.sysds.runtime.functionobjects">Builtin</a>&nbsp;fn,
+                        double[]&nbsp;defaultTuple)</code></th>
+<td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code>double[]</code></td>
@@ -349,7 +375,21 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code>double[]</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">IDictionary.</span><code><span class="memberNameLink"><a href="../../compress/colgroup/dictionary/IDictionary.html#aggregateRowsWithReference(org.apache.sysds.runtime.functionobjects.Builtin,double%5B%5D)">aggregateRowsWithReference</a></span>&#8203;(<a href="../Builtin.html" title="class in org.apache.sysds.runtime.functionobjects">Builtin</a>&nbsp;fn,
+                          double[]&nbsp;reference)</code></th>
+<td class="colLast">
+<div class="block">Aggregate all entries in the rows with an offset value reference added.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>double[]</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">MatrixBlockDictionary.</span><code><span class="memberNameLink"><a href="../../compress/colgroup/dictionary/MatrixBlockDictionary.html#aggregateRowsWithReference(org.apache.sysds.runtime.functionobjects.Builtin,double%5B%5D)">aggregateRowsWithReference</a></span>&#8203;(<a href="../Builtin.html" title="class in org.apache.sysds.runtime.functionobjects">Builtin</a>&nbsp;fn,
+                          double[]&nbsp;reference)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>double[]</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">PlaceHolderDict.</span><code><span class="memberNameLink"><a href="../../compress/colgroup/dictionary/PlaceHolderDict.html#aggregateRowsWithReference(org.apache.sysds.runtime.functionobjects.Builtin,double%5B%5D)">aggregateRowsWithReference</a></span>&#8203;(<a href="../Builtin.html" title="class in org.apache.sysds.runtime.functionobjects">Builtin</a>&nbsp;fn,
                           double[]&nbsp;reference)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
@@ -360,16 +400,6 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
-<td class="colFirst"><code>abstract double</code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">ADictionary.</span><code><span class="memberNameLink"><a href="../../compress/colgroup/dictionary/ADictionary.html#aggregateWithReference(double,org.apache.sysds.runtime.functionobjects.Builtin,double%5B%5D,boolean)">aggregateWithReference</a></span>&#8203;(double&nbsp;init,
-                      <a href="../Builtin.html" title="class in org.apache.sysds.runtime.functionobjects">Builtin</a>&nbsp;fn,
-                      double[]&nbsp;reference,
-                      boolean&nbsp;def)</code></th>
-<td class="colLast">
-<div class="block">Aggregate all the contained values, with a reference offset.</div>
-</td>
-</tr>
-<tr class="rowColor">
 <td class="colFirst"><code>double</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">Dictionary.</span><code><span class="memberNameLink"><a href="../../compress/colgroup/dictionary/Dictionary.html#aggregateWithReference(double,org.apache.sysds.runtime.functionobjects.Builtin,double%5B%5D,boolean)">aggregateWithReference</a></span>&#8203;(double&nbsp;init,
                       <a href="../Builtin.html" title="class in org.apache.sysds.runtime.functionobjects">Builtin</a>&nbsp;fn,
@@ -377,13 +407,23 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
                       boolean&nbsp;def)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>double</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">IdentityDictionary.</span><code><span class="memberNameLink"><a href="../../compress/colgroup/dictionary/IdentityDictionary.html#aggregateWithReference(double,org.apache.sysds.runtime.functionobjects.Builtin,double%5B%5D,boolean)">aggregateWithReference</a></span>&#8203;(double&nbsp;init,
                       <a href="../Builtin.html" title="class in org.apache.sysds.runtime.functionobjects">Builtin</a>&nbsp;fn,
                       double[]&nbsp;reference,
                       boolean&nbsp;def)</code></th>
 <td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>double</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">IDictionary.</span><code><span class="memberNameLink"><a href="../../compress/colgroup/dictionary/IDictionary.html#aggregateWithReference(double,org.apache.sysds.runtime.functionobjects.Builtin,double%5B%5D,boolean)">aggregateWithReference</a></span>&#8203;(double&nbsp;init,
+                      <a href="../Builtin.html" title="class in org.apache.sysds.runtime.functionobjects">Builtin</a>&nbsp;fn,
+                      double[]&nbsp;reference,
+                      boolean&nbsp;def)</code></th>
+<td class="colLast">
+<div class="block">Aggregate all the contained values, with a reference offset.</div>
+</td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>double</code></td>
@@ -394,6 +434,14 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
+<td class="colFirst"><code>double</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">PlaceHolderDict.</span><code><span class="memberNameLink"><a href="../../compress/colgroup/dictionary/PlaceHolderDict.html#aggregateWithReference(double,org.apache.sysds.runtime.functionobjects.Builtin,double%5B%5D,boolean)">aggregateWithReference</a></span>&#8203;(double&nbsp;init,
+                      <a href="../Builtin.html" title="class in org.apache.sysds.runtime.functionobjects">Builtin</a>&nbsp;fn,
+                      double[]&nbsp;reference,
+                      boolean&nbsp;def)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
 <td class="colFirst"><code>double</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">QDictionary.</span><code><span class="memberNameLink"><a href="../../compress/colgroup/dictionary/QDictionary.html#aggregateWithReference(double,org.apache.sysds.runtime.functionobjects.Builtin,double%5B%5D,boolean)">aggregateWithReference</a></span>&#8203;(double&nbsp;init,
                       <a href="../Builtin.html" title="class in org.apache.sysds.runtime.functionobjects">Builtin</a>&nbsp;fn,
@@ -410,6 +458,26 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <!--   -->
 </a>
 <h3>Uses of <a href="../Builtin.html" title="class in org.apache.sysds.runtime.functionobjects">Builtin</a> in <a href="../package-summary.html">org.apache.sysds.runtime.functionobjects</a></h3>
+<table class="useSummary">
+<caption><span>Subclasses of <a href="../Builtin.html" title="class in org.apache.sysds.runtime.functionobjects">Builtin</a> in <a href="../package-summary.html">org.apache.sysds.runtime.functionobjects</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colSecond" scope="col">Class</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code>class&nbsp;</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../Max.html" title="class in org.apache.sysds.runtime.functionobjects">Max</a></span></code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>class&nbsp;</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../Min.html" title="class in org.apache.sysds.runtime.functionobjects">Min</a></span></code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+</tbody>
+</table>
 <table class="useSummary">
 <caption><span>Methods in <a href="../package-summary.html">org.apache.sysds.runtime.functionobjects</a> that return <a href="../Builtin.html" title="class in org.apache.sysds.runtime.functionobjects">Builtin</a></span><span class="tabEnd">&nbsp;</span></caption>
 <tr>

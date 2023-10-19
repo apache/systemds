@@ -14,7 +14,7 @@
 <!--[if IE]>
 <script type="text/javascript" src="../../../../../jquery/jszip-utils/dist/jszip-utils-ie.min.js"></script>
 <![endif]-->
-<script type="text/javascript" src="../../../../../jquery/jquery-3.6.0.min.js"></script>
+<script type="text/javascript" src="../../../../../jquery/jquery-3.6.1.min.js"></script>
 <script type="text/javascript" src="../../../../../jquery/jquery-ui.min.js"></script>
 </head>
 <body>
@@ -163,54 +163,66 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
+<th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.frame.data.compress">org.apache.sysds.runtime.frame.data.compress</a></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
 <th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.frame.data.iterators">org.apache.sysds.runtime.frame.data.iterators</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.frame.data.lib">org.apache.sysds.runtime.frame.data.lib</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.instructions">org.apache.sysds.runtime.instructions</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.instructions.cp">org.apache.sysds.runtime.instructions.cp</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.instructions.spark.data">org.apache.sysds.runtime.instructions.spark.data</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.instructions.spark.utils">org.apache.sysds.runtime.instructions.spark.utils</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.io">org.apache.sysds.runtime.io</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.iogen">org.apache.sysds.runtime.iogen</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
+<tr class="rowColor">
+<th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.iogen.codegen">org.apache.sysds.runtime.iogen.codegen</a></th>
+<td class="colLast">&nbsp;</td>
+</tr>
 <tr class="altColor">
+<th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.iogen.template">org.apache.sysds.runtime.iogen.template</a></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
 <th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.transform.decode">org.apache.sysds.runtime.transform.decode</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.transform.encode">org.apache.sysds.runtime.transform.encode</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.transform.tokenize">org.apache.sysds.runtime.transform.tokenize</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.transform.tokenize.applier">org.apache.sysds.runtime.transform.tokenize.applier</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.util">org.apache.sysds.runtime.util</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
@@ -2269,31 +2281,44 @@ the order they are declared.</div>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>static <a href="../../runtime/data/DenseBlock.html" title="class in org.apache.sysds.runtime.data">DenseBlock</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">DenseBlockFactory.</span><code><span class="memberNameLink"><a href="../../runtime/data/DenseBlockFactory.html#createDenseBlock(org.apache.sysds.common.Types.ValueType,org.apache.sysds.runtime.data.DenseBlock.Type,int%5B%5D)">createDenseBlock</a></span>&#8203;(<a href="../Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;vt,
-                <a href="../../runtime/data/DenseBlock.Type.html" title="enum in org.apache.sysds.runtime.data">DenseBlock.Type</a>&nbsp;type,
-                int[]&nbsp;dims)</code></th>
+<th class="colSecond" scope="row"><span class="typeNameLabel">DenseBlockFactory.</span><code><span class="memberNameLink"><a href="../../runtime/data/DenseBlockFactory.html#createDenseBlock(org.apache.sysds.common.Types.ValueType,int%5B%5D,boolean)">createDenseBlock</a></span>&#8203;(<a href="../Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;vt,
+                int[]&nbsp;dims,
+                boolean&nbsp;dedup)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
+<td class="colFirst"><code>static <a href="../../runtime/data/DenseBlock.html" title="class in org.apache.sysds.runtime.data">DenseBlock</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">DenseBlockFactory.</span><code><span class="memberNameLink"><a href="../../runtime/data/DenseBlockFactory.html#createDenseBlock(org.apache.sysds.common.Types.ValueType,org.apache.sysds.runtime.data.DenseBlock.Type,int%5B%5D,boolean)">createDenseBlock</a></span>&#8203;(<a href="../Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;vt,
+                <a href="../../runtime/data/DenseBlock.Type.html" title="enum in org.apache.sysds.runtime.data">DenseBlock.Type</a>&nbsp;type,
+                int[]&nbsp;dims,
+                boolean&nbsp;dedup)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
 <td class="colFirst"><code>abstract boolean</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">DenseBlock.</span><code><span class="memberNameLink"><a href="../../runtime/data/DenseBlock.html#isNumeric(org.apache.sysds.common.Types.ValueType)">isNumeric</a></span>&#8203;(<a href="../Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;vt)</code></th>
 <td class="colLast">
 <div class="block">Indicates if the dense block is a specific numeric value type.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>boolean</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">DenseBlockBool.</span><code><span class="memberNameLink"><a href="../../runtime/data/DenseBlockBool.html#isNumeric(org.apache.sysds.common.Types.ValueType)">isNumeric</a></span>&#8203;(<a href="../Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;vt)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>boolean</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">DenseBlockFP32.</span><code><span class="memberNameLink"><a href="../../runtime/data/DenseBlockFP32.html#isNumeric(org.apache.sysds.common.Types.ValueType)">isNumeric</a></span>&#8203;(<a href="../Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;vt)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>boolean</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">DenseBlockFP64.</span><code><span class="memberNameLink"><a href="../../runtime/data/DenseBlockFP64.html#isNumeric(org.apache.sysds.common.Types.ValueType)">isNumeric</a></span>&#8203;(<a href="../Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;vt)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>boolean</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">DenseBlockFP64DEDUP.</span><code><span class="memberNameLink"><a href="../../runtime/data/DenseBlockFP64DEDUP.html#isNumeric(org.apache.sysds.common.Types.ValueType)">isNumeric</a></span>&#8203;(<a href="../Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;vt)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
@@ -2323,31 +2348,36 @@ the order they are declared.</div>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>boolean</code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">DenseBlockLInt32.</span><code><span class="memberNameLink"><a href="../../runtime/data/DenseBlockLInt32.html#isNumeric(org.apache.sysds.common.Types.ValueType)">isNumeric</a></span>&#8203;(<a href="../Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;vt)</code></th>
+<th class="colSecond" scope="row"><span class="typeNameLabel">DenseBlockLFP64DEDUP.</span><code><span class="memberNameLink"><a href="../../runtime/data/DenseBlockLFP64DEDUP.html#isNumeric(org.apache.sysds.common.Types.ValueType)">isNumeric</a></span>&#8203;(<a href="../Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;vt)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
+<td class="colFirst"><code>boolean</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">DenseBlockLInt32.</span><code><span class="memberNameLink"><a href="../../runtime/data/DenseBlockLInt32.html#isNumeric(org.apache.sysds.common.Types.ValueType)">isNumeric</a></span>&#8203;(<a href="../Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;vt)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
 <td class="colFirst"><code>boolean</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">DenseBlockLInt64.</span><code><span class="memberNameLink"><a href="../../runtime/data/DenseBlockLInt64.html#isNumeric(org.apache.sysds.common.Types.ValueType)">isNumeric</a></span>&#8203;(<a href="../Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;vt)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>boolean</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">DenseBlockLString.</span><code><span class="memberNameLink"><a href="../../runtime/data/DenseBlockLString.html#isNumeric(org.apache.sysds.common.Types.ValueType)">isNumeric</a></span>&#8203;(<a href="../Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;vt)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>boolean</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">DenseBlockString.</span><code><span class="memberNameLink"><a href="../../runtime/data/DenseBlockString.html#isNumeric(org.apache.sysds.common.Types.ValueType)">isNumeric</a></span>&#8203;(<a href="../Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;vt)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">DataTensorBlock.</span><code><span class="memberNameLink"><a href="../../runtime/data/DataTensorBlock.html#reset(int%5B%5D,org.apache.sysds.common.Types.ValueType%5B%5D)">reset</a></span>&#8203;(int[]&nbsp;dims,
      <a href="../Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>[]&nbsp;schema)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>static <a href="../Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">TensorBlock.</span><code><span class="memberNameLink"><a href="../../runtime/data/TensorBlock.html#resultValueType(org.apache.sysds.common.Types.ValueType,org.apache.sysds.common.Types.ValueType)">resultValueType</a></span>&#8203;(<a href="../Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;in1,
                <a href="../Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;in2)</code></th>
@@ -2581,27 +2611,37 @@ the order they are declared.</div>
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code><a href="../Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">DoubleArray.</span><code><span class="memberNameLink"><a href="../../runtime/frame/data/columns/DoubleArray.html#getValueType()">getValueType</a></span>()</code></th>
+<th class="colSecond" scope="row"><span class="typeNameLabel">DDCArray.</span><code><span class="memberNameLink"><a href="../../runtime/frame/data/columns/DDCArray.html#getValueType()">getValueType</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
+<td class="colFirst"><code><a href="../Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">DoubleArray.</span><code><span class="memberNameLink"><a href="../../runtime/frame/data/columns/DoubleArray.html#getValueType()">getValueType</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
 <td class="colFirst"><code><a href="../Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">FloatArray.</span><code><span class="memberNameLink"><a href="../../runtime/frame/data/columns/FloatArray.html#getValueType()">getValueType</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code><a href="../Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">IntegerArray.</span><code><span class="memberNameLink"><a href="../../runtime/frame/data/columns/IntegerArray.html#getValueType()">getValueType</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code><a href="../Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">LongArray.</span><code><span class="memberNameLink"><a href="../../runtime/frame/data/columns/LongArray.html#getValueType()">getValueType</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code><a href="../Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">OptionalArray.</span><code><span class="memberNameLink"><a href="../../runtime/frame/data/columns/OptionalArray.html#getValueType()">getValueType</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">RaggedArray.</span><code><span class="memberNameLink"><a href="../../runtime/frame/data/columns/RaggedArray.html#getValueType()">getValueType</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
@@ -2643,27 +2683,37 @@ the order they are declared.</div>
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code><a href="../../runtime/matrix/data/Pair.html" title="class in org.apache.sysds.runtime.matrix.data">Pair</a>&lt;<a href="../Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>,&#8203;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Boolean.html?is-external=true" title="class or interface in java.lang" class="externalLink">Boolean</a>&gt;</code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">DoubleArray.</span><code><span class="memberNameLink"><a href="../../runtime/frame/data/columns/DoubleArray.html#analyzeValueType()">analyzeValueType</a></span>()</code></th>
+<th class="colSecond" scope="row"><span class="typeNameLabel">DDCArray.</span><code><span class="memberNameLink"><a href="../../runtime/frame/data/columns/DDCArray.html#analyzeValueType()">analyzeValueType</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
+<td class="colFirst"><code><a href="../../runtime/matrix/data/Pair.html" title="class in org.apache.sysds.runtime.matrix.data">Pair</a>&lt;<a href="../Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>,&#8203;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Boolean.html?is-external=true" title="class or interface in java.lang" class="externalLink">Boolean</a>&gt;</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">DoubleArray.</span><code><span class="memberNameLink"><a href="../../runtime/frame/data/columns/DoubleArray.html#analyzeValueType()">analyzeValueType</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
 <td class="colFirst"><code><a href="../../runtime/matrix/data/Pair.html" title="class in org.apache.sysds.runtime.matrix.data">Pair</a>&lt;<a href="../Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>,&#8203;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Boolean.html?is-external=true" title="class or interface in java.lang" class="externalLink">Boolean</a>&gt;</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">FloatArray.</span><code><span class="memberNameLink"><a href="../../runtime/frame/data/columns/FloatArray.html#analyzeValueType()">analyzeValueType</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code><a href="../../runtime/matrix/data/Pair.html" title="class in org.apache.sysds.runtime.matrix.data">Pair</a>&lt;<a href="../Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>,&#8203;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Boolean.html?is-external=true" title="class or interface in java.lang" class="externalLink">Boolean</a>&gt;</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">IntegerArray.</span><code><span class="memberNameLink"><a href="../../runtime/frame/data/columns/IntegerArray.html#analyzeValueType()">analyzeValueType</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code><a href="../../runtime/matrix/data/Pair.html" title="class in org.apache.sysds.runtime.matrix.data">Pair</a>&lt;<a href="../Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>,&#8203;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Boolean.html?is-external=true" title="class or interface in java.lang" class="externalLink">Boolean</a>&gt;</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">LongArray.</span><code><span class="memberNameLink"><a href="../../runtime/frame/data/columns/LongArray.html#analyzeValueType()">analyzeValueType</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code><a href="../../runtime/matrix/data/Pair.html" title="class in org.apache.sysds.runtime.matrix.data">Pair</a>&lt;<a href="../Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>,&#8203;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Boolean.html?is-external=true" title="class or interface in java.lang" class="externalLink">Boolean</a>&gt;</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">OptionalArray.</span><code><span class="memberNameLink"><a href="../../runtime/frame/data/columns/OptionalArray.html#analyzeValueType()">analyzeValueType</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../../runtime/matrix/data/Pair.html" title="class in org.apache.sysds.runtime.matrix.data">Pair</a>&lt;<a href="../Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>,&#8203;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Boolean.html?is-external=true" title="class or interface in java.lang" class="externalLink">Boolean</a>&gt;</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">RaggedArray.</span><code><span class="memberNameLink"><a href="../../runtime/frame/data/columns/RaggedArray.html#analyzeValueType()">analyzeValueType</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
@@ -2724,14 +2774,56 @@ the order they are declared.</div>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>static long</code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">ArrayFactory.</span><code><span class="memberNameLink"><a href="../../runtime/frame/data/columns/ArrayFactory.html#getInMemorySize(org.apache.sysds.common.Types.ValueType,int)">getInMemorySize</a></span>&#8203;(<a href="../Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;type,
-               int&nbsp;_numRows)</code></th>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ArrayFactory.</span><code><span class="memberNameLink"><a href="../../runtime/frame/data/columns/ArrayFactory.html#getInMemorySize(org.apache.sysds.common.Types.ValueType,int,boolean)">getInMemorySize</a></span>&#8203;(<a href="../Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;type,
+               int&nbsp;_numRows,
+               boolean&nbsp;containsNull)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code>static <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">ArrayFactory.</span><code><span class="memberNameLink"><a href="../../runtime/frame/data/columns/ArrayFactory.html#parseString(java.lang.String,org.apache.sysds.common.Types.ValueType)">parseString</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;s,
            <a href="../Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;v)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+</tbody>
+</table>
+</section>
+</li>
+<li class="blockList">
+<section><a id="org.apache.sysds.runtime.frame.data.compress">
+<!--   -->
+</a>
+<h3>Uses of <a href="../Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a> in <a href="../../runtime/frame/data/compress/package-summary.html">org.apache.sysds.runtime.frame.data.compress</a></h3>
+<table class="useSummary">
+<caption><span>Fields in <a href="../../runtime/frame/data/compress/package-summary.html">org.apache.sysds.runtime.frame.data.compress</a> declared as <a href="../Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colSecond" scope="col">Field</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ArrayCompressionStatistics.</span><code><span class="memberNameLink"><a href="../../runtime/frame/data/compress/ArrayCompressionStatistics.html#valueType">valueType</a></span></code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+</tbody>
+</table>
+<table class="useSummary">
+<caption><span>Constructors in <a href="../../runtime/frame/data/compress/package-summary.html">org.apache.sysds.runtime.frame.data.compress</a> with parameters of type <a href="../Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Constructor</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../runtime/frame/data/compress/ArrayCompressionStatistics.html#%3Cinit%3E(int,int,boolean,org.apache.sysds.common.Types.ValueType,org.apache.sysds.runtime.frame.data.columns.ArrayFactory.FrameArrayType,long,long)">ArrayCompressionStatistics</a></span>&#8203;(int&nbsp;bitPerValue,
+                          int&nbsp;nUnique,
+                          boolean&nbsp;shouldCompress,
+                          <a href="../Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;valueType,
+                          <a href="../../runtime/frame/data/columns/ArrayFactory.FrameArrayType.html" title="enum in org.apache.sysds.runtime.frame.data.columns">ArrayFactory.FrameArrayType</a>&nbsp;bestType,
+                          long&nbsp;originalSize,
+                          long&nbsp;compressedSizeEstimate)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 </tbody>
@@ -3322,7 +3414,12 @@ the order they are declared.</div>
 <tbody>
 <tr class="altColor">
 <td class="colFirst"><code><a href="../Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">ValueTrimFormat.</span><code><span class="memberNameLink"><a href="../../runtime/iogen/ValueTrimFormat.html#getValueType()">getValueType</a></span>()</code></th>
+<th class="colSecond" scope="row"><span class="typeNameLabel">MappingProperties.</span><code><span class="memberNameLink"><a href="../../runtime/iogen/MappingProperties.html#getPatternValueType()">getPatternValueType</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>[]</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">CustomProperties.</span><code><span class="memberNameLink"><a href="../../runtime/iogen/CustomProperties.html#getSchema()">getSchema</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 </tbody>
@@ -3336,8 +3433,97 @@ the order they are declared.</div>
 </tr>
 <tbody>
 <tr class="altColor">
+<td class="colFirst"><code><a href="../../runtime/matrix/data/Pair.html" title="class in org.apache.sysds.runtime.matrix.data">Pair</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Integer.html?is-external=true" title="class or interface in java.lang" class="externalLink">Integer</a>,&#8203;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Integer.html?is-external=true" title="class or interface in java.lang" class="externalLink">Integer</a>&gt;</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">RawIndex.</span><code><span class="memberNameLink"><a href="../../runtime/iogen/RawIndex.html#findValue(java.lang.Object,org.apache.sysds.common.Types.ValueType)">findValue</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a>&nbsp;value,
+         <a href="../Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;valueType)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">MappingProperties.</span><code><span class="memberNameLink"><a href="../../runtime/iogen/MappingProperties.html#setPatternRepresentation(org.apache.sysds.common.Types.ValueType,java.lang.Object)">setPatternRepresentation</a></span>&#8203;(<a href="../Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;valueType,
+                        <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a>&nbsp;value)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">CustomProperties.</span><code><span class="memberNameLink"><a href="../../runtime/iogen/CustomProperties.html#setSchema(org.apache.sysds.common.Types.ValueType%5B%5D)">setSchema</a></span>&#8203;(<a href="../Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>[]&nbsp;schema)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+</tbody>
+</table>
+</section>
+</li>
+<li class="blockList">
+<section><a id="org.apache.sysds.runtime.iogen.codegen">
+<!--   -->
+</a>
+<h3>Uses of <a href="../Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a> in <a href="../../runtime/iogen/codegen/package-summary.html">org.apache.sysds.runtime.iogen.codegen</a></h3>
+<table class="useSummary">
+<caption><span>Methods in <a href="../../runtime/iogen/codegen/package-summary.html">org.apache.sysds.runtime.iogen.codegen</a> that return <a href="../Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colSecond" scope="col">Method</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">CodeGenTrieNode.</span><code><span class="memberNameLink"><a href="../../runtime/iogen/codegen/CodeGenTrieNode.html#getValueType()">getValueType</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+</tbody>
+</table>
+<table class="useSummary">
+<caption><span>Methods in <a href="../../runtime/iogen/codegen/package-summary.html">org.apache.sysds.runtime.iogen.codegen</a> with parameters of type <a href="../Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colSecond" scope="col">Method</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">CodeGenTrieNode.</span><code><span class="memberNameLink"><a href="../../runtime/iogen/codegen/CodeGenTrieNode.html#setValueType(org.apache.sysds.common.Types.ValueType)">setValueType</a></span>&#8203;(<a href="../Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;valueType)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+</tbody>
+</table>
+<table class="useSummary">
+<caption><span>Constructors in <a href="../../runtime/iogen/codegen/package-summary.html">org.apache.sysds.runtime.iogen.codegen</a> with parameters of type <a href="../Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Constructor</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../runtime/iogen/codegen/CodeGenTrieNode.html#%3Cinit%3E(boolean,java.lang.String,org.apache.sysds.common.Types.ValueType,java.lang.String,java.util.HashSet,org.apache.sysds.runtime.iogen.codegen.CodeGenTrieNode.NodeType)">CodeGenTrieNode</a></span>&#8203;(boolean&nbsp;endOfCondition,
+               <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;colIndex,
+               <a href="../Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;valueType,
+               <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;key,
+               <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/HashSet.html?is-external=true" title="class or interface in java.util" class="externalLink">HashSet</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&gt;&nbsp;naStrings,
+               <a href="../../runtime/iogen/codegen/CodeGenTrieNode.NodeType.html" title="enum in org.apache.sysds.runtime.iogen.codegen">CodeGenTrieNode.NodeType</a>&nbsp;type)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+</tbody>
+</table>
+</section>
+</li>
+<li class="blockList">
+<section><a id="org.apache.sysds.runtime.iogen.template">
+<!--   -->
+</a>
+<h3>Uses of <a href="../Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a> in <a href="../../runtime/iogen/template/package-summary.html">org.apache.sysds.runtime.iogen.template</a></h3>
+<table class="useSummary">
+<caption><span>Methods in <a href="../../runtime/iogen/template/package-summary.html">org.apache.sysds.runtime.iogen.template</a> with parameters of type <a href="../Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colSecond" scope="col">Method</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
 <td class="colFirst"><code><a href="../../runtime/frame/data/FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">FrameGenerateReader.</span><code><span class="memberNameLink"><a href="../../runtime/iogen/FrameGenerateReader.html#readFrameFromHDFS(java.lang.String,org.apache.sysds.common.Types.ValueType%5B%5D,java.lang.String%5B%5D,long,long)">readFrameFromHDFS</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;fname,
+<th class="colSecond" scope="row"><span class="typeNameLabel">FrameGenerateReader.</span><code><span class="memberNameLink"><a href="../../runtime/iogen/template/FrameGenerateReader.html#readFrameFromHDFS(java.lang.String,org.apache.sysds.common.Types.ValueType%5B%5D,java.lang.String%5B%5D,long,long)">readFrameFromHDFS</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;fname,
                  <a href="../Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>[]&nbsp;schema,
                  <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>[]&nbsp;names,
                  long&nbsp;rlen,
@@ -3346,26 +3532,29 @@ the order they are declared.</div>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code><a href="../../runtime/frame/data/FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">FrameGenerateReader.</span><code><span class="memberNameLink"><a href="../../runtime/iogen/FrameGenerateReader.html#readFrameFromInputStream(java.io.InputStream,org.apache.sysds.common.Types.ValueType%5B%5D,java.lang.String%5B%5D,long,long)">readFrameFromInputStream</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/InputStream.html?is-external=true" title="class or interface in java.io" class="externalLink">InputStream</a>&nbsp;is,
+<th class="colSecond" scope="row"><span class="typeNameLabel">FrameGenerateReaderParallel.</span><code><span class="memberNameLink"><a href="../../runtime/iogen/template/FrameGenerateReaderParallel.html#readFrameFromHDFS(java.lang.String,org.apache.sysds.common.Types.ValueType%5B%5D,java.lang.String%5B%5D,long,long)">readFrameFromHDFS</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;fname,
+                 <a href="../Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>[]&nbsp;schema,
+                 <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>[]&nbsp;names,
+                 long&nbsp;rlen,
+                 long&nbsp;clen)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../../runtime/frame/data/FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">FrameGenerateReader.</span><code><span class="memberNameLink"><a href="../../runtime/iogen/template/FrameGenerateReader.html#readFrameFromInputStream(java.io.InputStream,org.apache.sysds.common.Types.ValueType%5B%5D,java.lang.String%5B%5D,long,long)">readFrameFromInputStream</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/InputStream.html?is-external=true" title="class or interface in java.io" class="externalLink">InputStream</a>&nbsp;is,
                         <a href="../Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>[]&nbsp;schema,
                         <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>[]&nbsp;names,
                         long&nbsp;rlen,
                         long&nbsp;clen)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-</tbody>
-</table>
-<table class="useSummary">
-<caption><span>Constructors in <a href="../../runtime/iogen/package-summary.html">org.apache.sysds.runtime.iogen</a> with parameters of type <a href="../Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a></span><span class="tabEnd">&nbsp;</span></caption>
-<tr>
-<th class="colFirst" scope="col">Constructor</th>
-<th class="colLast" scope="col">Description</th>
-</tr>
-<tbody>
-<tr class="altColor">
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../runtime/iogen/ValueTrimFormat.html#%3Cinit%3E(int,org.apache.sysds.common.Types.ValueType,java.lang.Object)">ValueTrimFormat</a></span>&#8203;(int&nbsp;colIndex,
-               <a href="../Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;vt,
-               <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a>&nbsp;o)</code></th>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../../runtime/frame/data/FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">FrameGenerateReaderParallel.</span><code><span class="memberNameLink"><a href="../../runtime/iogen/template/FrameGenerateReaderParallel.html#readFrameFromInputStream(java.io.InputStream,org.apache.sysds.common.Types.ValueType%5B%5D,java.lang.String%5B%5D,long,long)">readFrameFromInputStream</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/InputStream.html?is-external=true" title="class or interface in java.io" class="externalLink">InputStream</a>&nbsp;is,
+                        <a href="../Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>[]&nbsp;schema,
+                        <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>[]&nbsp;names,
+                        long&nbsp;rlen,
+                        long&nbsp;clen)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 </tbody>
@@ -3466,13 +3655,23 @@ the order they are declared.</div>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>static <a href="../../runtime/transform/encode/MultiColumnEncoder.html" title="class in org.apache.sysds.runtime.transform.encode">MultiColumnEncoder</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">EncoderFactory.</span><code><span class="memberNameLink"><a href="../../runtime/transform/encode/EncoderFactory.html#createEncoder(java.lang.String,java.lang.String%5B%5D,org.apache.sysds.common.Types.ValueType%5B%5D,int,org.apache.sysds.runtime.frame.data.FrameBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock)">createEncoder</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;spec,
+             <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>[]&nbsp;colnames,
+             <a href="../Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>[]&nbsp;schema,
+             int&nbsp;clen,
+             <a href="../../runtime/frame/data/FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;meta,
+             <a href="../../runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;embeddings)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>static <a href="../../runtime/transform/encode/MultiColumnEncoder.html" title="class in org.apache.sysds.runtime.transform.encode">MultiColumnEncoder</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">EncoderFactory.</span><code><span class="memberNameLink"><a href="../../runtime/transform/encode/EncoderFactory.html#createEncoder(java.lang.String,java.lang.String%5B%5D,org.apache.sysds.common.Types.ValueType%5B%5D,org.apache.sysds.runtime.frame.data.FrameBlock)">createEncoder</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;spec,
              <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>[]&nbsp;colnames,
              <a href="../Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>[]&nbsp;schema,
              <a href="../../runtime/frame/data/FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;meta)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>static <a href="../../runtime/transform/encode/MultiColumnEncoder.html" title="class in org.apache.sysds.runtime.transform.encode">MultiColumnEncoder</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">EncoderFactory.</span><code><span class="memberNameLink"><a href="../../runtime/transform/encode/EncoderFactory.html#createEncoder(java.lang.String,java.lang.String%5B%5D,org.apache.sysds.common.Types.ValueType%5B%5D,org.apache.sysds.runtime.frame.data.FrameBlock,int,int)">createEncoder</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;spec,
              <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>[]&nbsp;colnames,
@@ -3480,6 +3679,15 @@ the order they are declared.</div>
              <a href="../../runtime/frame/data/FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;meta,
              int&nbsp;minCol,
              int&nbsp;maxCol)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>static <a href="../../runtime/transform/encode/MultiColumnEncoder.html" title="class in org.apache.sysds.runtime.transform.encode">MultiColumnEncoder</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">EncoderFactory.</span><code><span class="memberNameLink"><a href="../../runtime/transform/encode/EncoderFactory.html#createEncoder(java.lang.String,java.lang.String%5B%5D,org.apache.sysds.common.Types.ValueType%5B%5D,org.apache.sysds.runtime.frame.data.FrameBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock)">createEncoder</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;spec,
+             <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>[]&nbsp;colnames,
+             <a href="../Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>[]&nbsp;schema,
+             <a href="../../runtime/frame/data/FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;meta,
+             <a href="../../runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;embeddings)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 </tbody>

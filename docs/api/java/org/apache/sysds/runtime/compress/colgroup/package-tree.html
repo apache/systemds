@@ -14,7 +14,7 @@
 <!--[if IE]>
 <script type="text/javascript" src="../../../../../../jquery/jszip-utils/dist/jszip-utils-ie.min.js"></script>
 <![endif]-->
-<script type="text/javascript" src="../../../../../../jquery/jquery-3.6.0.min.js"></script>
+<script type="text/javascript" src="../../../../../../jquery/jquery-3.6.1.min.js"></script>
 <script type="text/javascript" src="../../../../../../jquery/jquery-ui.min.js"></script>
 </head>
 <body>
@@ -110,20 +110,20 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <ul>
 <li class="circle">org.apache.sysds.runtime.compress.colgroup.<a href="AColGroupCompressed.html" title="class in org.apache.sysds.runtime.compress.colgroup"><span class="typeNameLink">AColGroupCompressed</span></a>
 <ul>
-<li class="circle">org.apache.sysds.runtime.compress.colgroup.<a href="ADictBasedColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup"><span class="typeNameLink">ADictBasedColGroup</span></a>
+<li class="circle">org.apache.sysds.runtime.compress.colgroup.<a href="ADictBasedColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup"><span class="typeNameLink">ADictBasedColGroup</span></a> (implements org.apache.sysds.runtime.compress.colgroup.<a href="IContainADictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup">IContainADictionary</a>)
 <ul>
 <li class="circle">org.apache.sysds.runtime.compress.colgroup.<a href="AColGroupValue.html" title="class in org.apache.sysds.runtime.compress.colgroup"><span class="typeNameLink">AColGroupValue</span></a>
 <ul>
 <li class="circle">org.apache.sysds.runtime.compress.colgroup.<a href="AMorphingMMColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup"><span class="typeNameLink">AMorphingMMColGroup</span></a>
 <ul>
-<li class="circle">org.apache.sysds.runtime.compress.colgroup.<a href="ASDC.html" title="class in org.apache.sysds.runtime.compress.colgroup"><span class="typeNameLink">ASDC</span></a> (implements org.apache.sysds.runtime.compress.colgroup.<a href="AOffsetsGroup.html" title="interface in org.apache.sysds.runtime.compress.colgroup">AOffsetsGroup</a>)
+<li class="circle">org.apache.sysds.runtime.compress.colgroup.<a href="ASDC.html" title="class in org.apache.sysds.runtime.compress.colgroup"><span class="typeNameLink">ASDC</span></a> (implements org.apache.sysds.runtime.compress.colgroup.<a href="AOffsetsGroup.html" title="interface in org.apache.sysds.runtime.compress.colgroup">AOffsetsGroup</a>, org.apache.sysds.runtime.compress.colgroup.<a href="IContainDefaultTuple.html" title="interface in org.apache.sysds.runtime.compress.colgroup">IContainDefaultTuple</a>)
 <ul>
-<li class="circle">org.apache.sysds.runtime.compress.colgroup.<a href="ColGroupSDC.html" title="class in org.apache.sysds.runtime.compress.colgroup"><span class="typeNameLink">ColGroupSDC</span></a> (implements org.apache.sysds.runtime.compress.colgroup.<a href="AMapToDataGroup.html" title="interface in org.apache.sysds.runtime.compress.colgroup">AMapToDataGroup</a>)</li>
-<li class="circle">org.apache.sysds.runtime.compress.colgroup.<a href="ColGroupSDCFOR.html" title="class in org.apache.sysds.runtime.compress.colgroup"><span class="typeNameLink">ColGroupSDCFOR</span></a> (implements org.apache.sysds.runtime.compress.colgroup.<a href="AMapToDataGroup.html" title="interface in org.apache.sysds.runtime.compress.colgroup">AMapToDataGroup</a>)</li>
+<li class="circle">org.apache.sysds.runtime.compress.colgroup.<a href="ColGroupSDC.html" title="class in org.apache.sysds.runtime.compress.colgroup"><span class="typeNameLink">ColGroupSDC</span></a> (implements org.apache.sysds.runtime.compress.colgroup.<a href="IMapToDataGroup.html" title="interface in org.apache.sysds.runtime.compress.colgroup">IMapToDataGroup</a>)</li>
+<li class="circle">org.apache.sysds.runtime.compress.colgroup.<a href="ColGroupSDCFOR.html" title="class in org.apache.sysds.runtime.compress.colgroup"><span class="typeNameLink">ColGroupSDCFOR</span></a> (implements org.apache.sysds.runtime.compress.colgroup.<a href="IFrameOfReferenceGroup.html" title="interface in org.apache.sysds.runtime.compress.colgroup">IFrameOfReferenceGroup</a>, org.apache.sysds.runtime.compress.colgroup.<a href="IMapToDataGroup.html" title="interface in org.apache.sysds.runtime.compress.colgroup">IMapToDataGroup</a>)</li>
 <li class="circle">org.apache.sysds.runtime.compress.colgroup.<a href="ColGroupSDCSingle.html" title="class in org.apache.sysds.runtime.compress.colgroup"><span class="typeNameLink">ColGroupSDCSingle</span></a></li>
 </ul>
 </li>
-<li class="circle">org.apache.sysds.runtime.compress.colgroup.<a href="ColGroupDDCFOR.html" title="class in org.apache.sysds.runtime.compress.colgroup"><span class="typeNameLink">ColGroupDDCFOR</span></a></li>
+<li class="circle">org.apache.sysds.runtime.compress.colgroup.<a href="ColGroupDDCFOR.html" title="class in org.apache.sysds.runtime.compress.colgroup"><span class="typeNameLink">ColGroupDDCFOR</span></a> (implements org.apache.sysds.runtime.compress.colgroup.<a href="IFrameOfReferenceGroup.html" title="interface in org.apache.sysds.runtime.compress.colgroup">IFrameOfReferenceGroup</a>)</li>
 </ul>
 </li>
 <li class="circle">org.apache.sysds.runtime.compress.colgroup.<a href="APreAgg.html" title="class in org.apache.sysds.runtime.compress.colgroup"><span class="typeNameLink">APreAgg</span></a>
@@ -134,21 +134,21 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <li class="circle">org.apache.sysds.runtime.compress.colgroup.<a href="ColGroupRLE.html" title="class in org.apache.sysds.runtime.compress.colgroup"><span class="typeNameLink">ColGroupRLE</span></a></li>
 </ul>
 </li>
-<li class="circle">org.apache.sysds.runtime.compress.colgroup.<a href="ASDCZero.html" title="class in org.apache.sysds.runtime.compress.colgroup"><span class="typeNameLink">ASDCZero</span></a> (implements org.apache.sysds.runtime.compress.colgroup.<a href="AOffsetsGroup.html" title="interface in org.apache.sysds.runtime.compress.colgroup">AOffsetsGroup</a>)
+<li class="circle">org.apache.sysds.runtime.compress.colgroup.<a href="ASDCZero.html" title="class in org.apache.sysds.runtime.compress.colgroup"><span class="typeNameLink">ASDCZero</span></a> (implements org.apache.sysds.runtime.compress.colgroup.<a href="AOffsetsGroup.html" title="interface in org.apache.sysds.runtime.compress.colgroup">AOffsetsGroup</a>, org.apache.sysds.runtime.compress.colgroup.<a href="IContainDefaultTuple.html" title="interface in org.apache.sysds.runtime.compress.colgroup">IContainDefaultTuple</a>)
 <ul>
 <li class="circle">org.apache.sysds.runtime.compress.colgroup.<a href="ColGroupSDCSingleZeros.html" title="class in org.apache.sysds.runtime.compress.colgroup"><span class="typeNameLink">ColGroupSDCSingleZeros</span></a></li>
-<li class="circle">org.apache.sysds.runtime.compress.colgroup.<a href="ColGroupSDCZeros.html" title="class in org.apache.sysds.runtime.compress.colgroup"><span class="typeNameLink">ColGroupSDCZeros</span></a> (implements org.apache.sysds.runtime.compress.colgroup.<a href="AMapToDataGroup.html" title="interface in org.apache.sysds.runtime.compress.colgroup">AMapToDataGroup</a>)</li>
+<li class="circle">org.apache.sysds.runtime.compress.colgroup.<a href="ColGroupSDCZeros.html" title="class in org.apache.sysds.runtime.compress.colgroup"><span class="typeNameLink">ColGroupSDCZeros</span></a> (implements org.apache.sysds.runtime.compress.colgroup.<a href="IMapToDataGroup.html" title="interface in org.apache.sysds.runtime.compress.colgroup">IMapToDataGroup</a>)</li>
 </ul>
 </li>
-<li class="circle">org.apache.sysds.runtime.compress.colgroup.<a href="ColGroupDDC.html" title="class in org.apache.sysds.runtime.compress.colgroup"><span class="typeNameLink">ColGroupDDC</span></a> (implements org.apache.sysds.runtime.compress.colgroup.<a href="AMapToDataGroup.html" title="interface in org.apache.sysds.runtime.compress.colgroup">AMapToDataGroup</a>)</li>
+<li class="circle">org.apache.sysds.runtime.compress.colgroup.<a href="ColGroupDDC.html" title="class in org.apache.sysds.runtime.compress.colgroup"><span class="typeNameLink">ColGroupDDC</span></a> (implements org.apache.sysds.runtime.compress.colgroup.<a href="IMapToDataGroup.html" title="interface in org.apache.sysds.runtime.compress.colgroup">IMapToDataGroup</a>)</li>
 </ul>
 </li>
 </ul>
 </li>
-<li class="circle">org.apache.sysds.runtime.compress.colgroup.<a href="ColGroupConst.html" title="class in org.apache.sysds.runtime.compress.colgroup"><span class="typeNameLink">ColGroupConst</span></a></li>
+<li class="circle">org.apache.sysds.runtime.compress.colgroup.<a href="ColGroupConst.html" title="class in org.apache.sysds.runtime.compress.colgroup"><span class="typeNameLink">ColGroupConst</span></a> (implements org.apache.sysds.runtime.compress.colgroup.<a href="IContainDefaultTuple.html" title="interface in org.apache.sysds.runtime.compress.colgroup">IContainDefaultTuple</a>)</li>
 </ul>
 </li>
-<li class="circle">org.apache.sysds.runtime.compress.colgroup.<a href="ColGroupEmpty.html" title="class in org.apache.sysds.runtime.compress.colgroup"><span class="typeNameLink">ColGroupEmpty</span></a></li>
+<li class="circle">org.apache.sysds.runtime.compress.colgroup.<a href="ColGroupEmpty.html" title="class in org.apache.sysds.runtime.compress.colgroup"><span class="typeNameLink">ColGroupEmpty</span></a> (implements org.apache.sysds.runtime.compress.colgroup.<a href="IContainADictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup">IContainADictionary</a>, org.apache.sysds.runtime.compress.colgroup.<a href="IContainDefaultTuple.html" title="interface in org.apache.sysds.runtime.compress.colgroup">IContainDefaultTuple</a>)</li>
 <li class="circle">org.apache.sysds.runtime.compress.colgroup.<a href="ColGroupLinearFunctional.html" title="class in org.apache.sysds.runtime.compress.colgroup"><span class="typeNameLink">ColGroupLinearFunctional</span></a></li>
 </ul>
 </li>
@@ -164,11 +164,14 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <section>
 <h2 title="Interface Hierarchy">Interface Hierarchy</h2>
 <ul>
-<li class="circle">org.apache.sysds.runtime.compress.colgroup.<a href="AMapToDataGroup.html" title="interface in org.apache.sysds.runtime.compress.colgroup"><span class="typeNameLink">AMapToDataGroup</span></a></li>
 <li class="circle">org.apache.sysds.runtime.compress.colgroup.<a href="AOffsetsGroup.html" title="interface in org.apache.sysds.runtime.compress.colgroup"><span class="typeNameLink">AOffsetsGroup</span></a></li>
 <li class="circle">org.apache.sysds.runtime.compress.colgroup.<a href="ColGroupIO.html" title="interface in org.apache.sysds.runtime.compress.colgroup"><span class="typeNameLink">ColGroupIO</span></a></li>
 <li class="circle">org.apache.sysds.runtime.compress.colgroup.<a href="ColGroupSizes.html" title="interface in org.apache.sysds.runtime.compress.colgroup"><span class="typeNameLink">ColGroupSizes</span></a></li>
 <li class="circle">org.apache.sysds.runtime.compress.colgroup.<a href="ColGroupUtils.html" title="interface in org.apache.sysds.runtime.compress.colgroup"><span class="typeNameLink">ColGroupUtils</span></a></li>
+<li class="circle">org.apache.sysds.runtime.compress.colgroup.<a href="IContainADictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup"><span class="typeNameLink">IContainADictionary</span></a></li>
+<li class="circle">org.apache.sysds.runtime.compress.colgroup.<a href="IContainDefaultTuple.html" title="interface in org.apache.sysds.runtime.compress.colgroup"><span class="typeNameLink">IContainDefaultTuple</span></a></li>
+<li class="circle">org.apache.sysds.runtime.compress.colgroup.<a href="IFrameOfReferenceGroup.html" title="interface in org.apache.sysds.runtime.compress.colgroup"><span class="typeNameLink">IFrameOfReferenceGroup</span></a></li>
+<li class="circle">org.apache.sysds.runtime.compress.colgroup.<a href="IMapToDataGroup.html" title="interface in org.apache.sysds.runtime.compress.colgroup"><span class="typeNameLink">IMapToDataGroup</span></a></li>
 </ul>
 </section>
 <section>

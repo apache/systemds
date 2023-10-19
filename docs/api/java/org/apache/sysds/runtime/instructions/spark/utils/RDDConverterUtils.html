@@ -14,7 +14,7 @@
 <!--[if IE]>
 <script type="text/javascript" src="../../../../../../../jquery/jszip-utils/dist/jszip-utils-ie.min.js"></script>
 <![endif]-->
-<script type="text/javascript" src="../../../../../../../jquery/jquery-3.6.0.min.js"></script>
+<script type="text/javascript" src="../../../../../../../jquery/jquery-3.6.1.min.js"></script>
 <script type="text/javascript" src="../../../../../../../jquery/jquery-ui.min.js"></script>
 </head>
 <body>
@@ -27,7 +27,7 @@
     catch(err) {
     }
 //-->
-var data = {"i0":9,"i1":9,"i2":9,"i3":41,"i4":9,"i5":9,"i6":9,"i7":9,"i8":9,"i9":9,"i10":9,"i11":9,"i12":9,"i13":9,"i14":9};
+var data = {"i0":9,"i1":9,"i2":9,"i3":41,"i4":9,"i5":9,"i6":9,"i7":9,"i8":9,"i9":9,"i10":9,"i11":9,"i12":9,"i13":9,"i14":9,"i15":9};
 var tabs = {65535:["t0","All Methods"],1:["t1","Static Methods"],8:["t4","Concrete Methods"],32:["t6","Deprecated Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -343,11 +343,18 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i13" class="rowColor">
+<td class="colFirst"><code>static org.apache.spark.api.java.JavaPairRDD&lt;<a href="../../../matrix/data/MatrixIndexes.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixIndexes</a>,&#8203;<a href="../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&gt;</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#matrixBlockToAlignedMatrixBlock(org.apache.spark.api.java.JavaPairRDD,org.apache.sysds.runtime.meta.DataCharacteristics,org.apache.sysds.runtime.meta.DataCharacteristics)">matrixBlockToAlignedMatrixBlock</a></span>&#8203;(org.apache.spark.api.java.JavaPairRDD&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Long.html?is-external=true" title="class or interface in java.lang" class="externalLink">Long</a>,&#8203;<a href="../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&gt;&nbsp;input,
+                               <a href="../../../meta/DataCharacteristics.html" title="class in org.apache.sysds.runtime.meta">DataCharacteristics</a>&nbsp;mcIn,
+                               <a href="../../../meta/DataCharacteristics.html" title="class in org.apache.sysds.runtime.meta">DataCharacteristics</a>&nbsp;mcOut)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i14" class="altColor">
 <td class="colFirst"><code>static org.apache.spark.api.java.JavaPairRDD&lt;org.apache.hadoop.io.LongWritable,&#8203;org.apache.hadoop.io.Text&gt;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#stringToSerializableText(org.apache.spark.api.java.JavaPairRDD)">stringToSerializableText</a></span>&#8203;(org.apache.spark.api.java.JavaPairRDD&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Long.html?is-external=true" title="class or interface in java.lang" class="externalLink">Long</a>,&#8203;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&gt;&nbsp;in)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i14" class="altColor">
+<tr id="i15" class="rowColor">
 <td class="colFirst"><code>static org.apache.spark.api.java.JavaPairRDD&lt;<a href="../../../matrix/data/MatrixIndexes.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixIndexes</a>,&#8203;<a href="../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&gt;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#textCellToBinaryBlock(org.apache.spark.api.java.JavaSparkContext,org.apache.spark.api.java.JavaPairRDD,org.apache.sysds.runtime.meta.DataCharacteristics,boolean,org.apache.sysds.runtime.io.FileFormatPropertiesMM)">textCellToBinaryBlock</a></span>&#8203;(org.apache.spark.api.java.JavaSparkContext&nbsp;sc,
                      org.apache.spark.api.java.JavaPairRDD&lt;org.apache.hadoop.io.LongWritable,&#8203;org.apache.hadoop.io.Text&gt;&nbsp;input,
@@ -606,6 +613,17 @@ public static&nbsp;org.apache.spark.sql.Dataset&lt;org.apache.spark.sql.Row&gt;&
 <dd><code>pathY</code> - path to binary block output file of labels</dd>
 <dd><code>mcOutX</code> - matrix characteristics of output matrix X</dd>
 </dl>
+</li>
+</ul>
+<a id="matrixBlockToAlignedMatrixBlock(org.apache.spark.api.java.JavaPairRDD,org.apache.sysds.runtime.meta.DataCharacteristics,org.apache.sysds.runtime.meta.DataCharacteristics)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>matrixBlockToAlignedMatrixBlock</h4>
+<pre class="methodSignature">public static&nbsp;org.apache.spark.api.java.JavaPairRDD&lt;<a href="../../../matrix/data/MatrixIndexes.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixIndexes</a>,&#8203;<a href="../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&gt;&nbsp;matrixBlockToAlignedMatrixBlock&#8203;(org.apache.spark.api.java.JavaPairRDD&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Long.html?is-external=true" title="class or interface in java.lang" class="externalLink">Long</a>,&#8203;<a href="../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&gt;&nbsp;input,
+                                                                                                                     <a href="../../../meta/DataCharacteristics.html" title="class in org.apache.sysds.runtime.meta">DataCharacteristics</a>&nbsp;mcIn,
+                                                                                                                     <a href="../../../meta/DataCharacteristics.html" title="class in org.apache.sysds.runtime.meta">DataCharacteristics</a>&nbsp;mcOut)</pre>
 </li>
 </ul>
 <a id="stringToSerializableText(org.apache.spark.api.java.JavaPairRDD)">

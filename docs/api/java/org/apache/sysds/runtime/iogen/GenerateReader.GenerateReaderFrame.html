@@ -14,7 +14,7 @@
 <!--[if IE]>
 <script type="text/javascript" src="../../../../../jquery/jszip-utils/dist/jszip-utils-ie.min.js"></script>
 <![endif]-->
-<script type="text/javascript" src="../../../../../jquery/jquery-3.6.0.min.js"></script>
+<script type="text/javascript" src="../../../../../jquery/jquery-3.6.1.min.js"></script>
 <script type="text/javascript" src="../../../../../jquery/jquery-ui.min.js"></script>
 </head>
 <body>
@@ -180,8 +180,9 @@ extends <a href="GenerateReader.html" title="class in org.apache.sysds.runtime.i
 <th class="colLast" scope="col">Description</th>
 </tr>
 <tr class="altColor">
-<th class="colConstructorName" scope="row"><code><span class="memberNameLink"><a href="#%3Cinit%3E(java.lang.String,org.apache.sysds.runtime.frame.data.FrameBlock)">GenerateReaderFrame</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;sampleRaw,
-                   <a href="../frame/data/FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;sampleFrame)</code></th>
+<th class="colConstructorName" scope="row"><code><span class="memberNameLink"><a href="#%3Cinit%3E(java.lang.String,org.apache.sysds.runtime.frame.data.FrameBlock,boolean)">GenerateReaderFrame</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;sampleRaw,
+                   <a href="../frame/data/FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;sampleFrame,
+                   boolean&nbsp;parallel)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
@@ -212,6 +213,13 @@ extends <a href="GenerateReader.html" title="class in org.apache.sysds.runtime.i
 <td class="colLast">&nbsp;</td>
 </tr>
 </table>
+<ul class="blockList">
+<li class="blockList"><a id="methods.inherited.from.class.org.apache.sysds.runtime.iogen.GenerateReader">
+<!--   -->
+</a>
+<h3>Methods inherited from class&nbsp;org.apache.sysds.runtime.iogen.<a href="GenerateReader.html" title="class in org.apache.sysds.runtime.iogen">GenerateReader</a></h3>
+<code><a href="GenerateReader.html#getProperties()">getProperties</a>, <a href="GenerateReader.html#getRandomClassName()">getRandomClassName</a></code></li>
+</ul>
 <ul class="blockList">
 <li class="blockList"><a id="methods.inherited.from.class.java.lang.Object">
 <!--   -->
@@ -249,14 +257,15 @@ extends <a href="GenerateReader.html" title="class in org.apache.sysds.runtime.i
 </dl>
 </li>
 </ul>
-<a id="&lt;init&gt;(java.lang.String,org.apache.sysds.runtime.frame.data.FrameBlock)">
+<a id="&lt;init&gt;(java.lang.String,org.apache.sysds.runtime.frame.data.FrameBlock,boolean)">
 <!--   -->
 </a>
 <ul class="blockListLast">
 <li class="blockList">
 <h4>GenerateReaderFrame</h4>
 <pre>public&nbsp;GenerateReaderFrame&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;sampleRaw,
-                           <a href="../frame/data/FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;sampleFrame)
+                           <a href="../frame/data/FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;sampleFrame,
+                           boolean&nbsp;parallel)
                     throws <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Exception.html?is-external=true" title="class or interface in java.lang" class="externalLink">Exception</a></pre>
 <dl>
 <dt><span class="throwsLabel">Throws:</span></dt>

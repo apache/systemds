@@ -14,7 +14,7 @@
 <!--[if IE]>
 <script type="text/javascript" src="../../../../../../../jquery/jszip-utils/dist/jszip-utils-ie.min.js"></script>
 <![endif]-->
-<script type="text/javascript" src="../../../../../../../jquery/jquery-3.6.0.min.js"></script>
+<script type="text/javascript" src="../../../../../../../jquery/jquery-3.6.1.min.js"></script>
 <script type="text/javascript" src="../../../../../../../jquery/jquery-ui.min.js"></script>
 </head>
 <body>
@@ -27,8 +27,8 @@
     catch(err) {
     }
 //-->
-var data = {"i0":10,"i1":10,"i2":10,"i3":10};
-var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
+var data = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":9};
+var tabs = {65535:["t0","All Methods"],1:["t1","Static Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
 var tableTab = "tableTab";
@@ -174,7 +174,7 @@ implements <a href="GPUMemoryAllocator.html" title="interface in org.apache.sysd
 </a>
 <h3>Method Summary</h3>
 <table class="memberSummary">
-<caption><span id="t0" class="activeTableTab"><span>All Methods</span><span class="tabEnd">&nbsp;</span></span><span id="t2" class="tableTab"><span><a href="javascript:show(2);">Instance Methods</a></span><span class="tabEnd">&nbsp;</span></span><span id="t4" class="tableTab"><span><a href="javascript:show(8);">Concrete Methods</a></span><span class="tabEnd">&nbsp;</span></span></caption>
+<caption><span id="t0" class="activeTableTab"><span>All Methods</span><span class="tabEnd">&nbsp;</span></span><span id="t1" class="tableTab"><span><a href="javascript:show(1);">Static Methods</a></span><span class="tabEnd">&nbsp;</span></span><span id="t2" class="tableTab"><span><a href="javascript:show(2);">Instance Methods</a></span><span class="tabEnd">&nbsp;</span></span><span id="t4" class="tableTab"><span><a href="javascript:show(8);">Concrete Methods</a></span><span class="tabEnd">&nbsp;</span></span></caption>
 <tr>
 <th class="colFirst" scope="col">Modifier and Type</th>
 <th class="colSecond" scope="col">Method</th>
@@ -208,6 +208,11 @@ implements <a href="GPUMemoryAllocator.html" title="interface in org.apache.sysd
 <td class="colLast">
 <div class="block">Gets the available memory on GPU that SystemDS can use.</div>
 </td>
+</tr>
+<tr id="i4" class="altColor">
+<td class="colFirst"><code>static void</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#resetUnusableFreeMemory()">resetUnusableFreeMemory</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
 </tr>
 </table>
 <ul class="blockList">
@@ -259,8 +264,7 @@ implements <a href="GPUMemoryAllocator.html" title="interface in org.apache.sysd
 <li class="blockList">
 <h4>allocate</h4>
 <pre class="methodSignature">public&nbsp;void&nbsp;allocate&#8203;(jcuda.Pointer&nbsp;devPtr,
-                     long&nbsp;size)
-              throws jcuda.CudaException</pre>
+                     long&nbsp;size)</pre>
 <div class="block">Allocate memory on the device.</div>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
@@ -313,7 +317,7 @@ implements <a href="GPUMemoryAllocator.html" title="interface in org.apache.sysd
 <a id="getAvailableMemory()">
 <!--   -->
 </a>
-<ul class="blockListLast">
+<ul class="blockList">
 <li class="blockList">
 <h4>getAvailableMemory</h4>
 <pre class="methodSignature">public&nbsp;long&nbsp;getAvailableMemory()</pre>
@@ -324,6 +328,15 @@ implements <a href="GPUMemoryAllocator.html" title="interface in org.apache.sysd
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>the available memory in bytes</dd>
 </dl>
+</li>
+</ul>
+<a id="resetUnusableFreeMemory()">
+<!--   -->
+</a>
+<ul class="blockListLast">
+<li class="blockList">
+<h4>resetUnusableFreeMemory</h4>
+<pre class="methodSignature">public static&nbsp;void&nbsp;resetUnusableFreeMemory()</pre>
 </li>
 </ul>
 </li>

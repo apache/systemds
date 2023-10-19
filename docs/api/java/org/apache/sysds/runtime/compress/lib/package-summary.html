@@ -14,7 +14,7 @@
 <!--[if IE]>
 <script type="text/javascript" src="../../../../../../jquery/jszip-utils/dist/jszip-utils-ie.min.js"></script>
 <![endif]-->
-<script type="text/javascript" src="../../../../../../jquery/jquery-3.6.0.min.js"></script>
+<script type="text/javascript" src="../../../../../../jquery/jquery-3.6.1.min.js"></script>
 <script type="text/javascript" src="../../../../../../jquery/jquery-ui.min.js"></script>
 </head>
 <body>
@@ -107,8 +107,11 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tbody>
 <tr class="altColor">
-<th class="colFirst" scope="row"><a href="CLALibMMChain.html" title="interface in org.apache.sysds.runtime.compress.lib">CLALibMMChain</a></th>
-<td class="colLast">&nbsp;</td>
+<th class="colFirst" scope="row"><a href="CLALibSeparator.html" title="interface in org.apache.sysds.runtime.compress.lib">CLALibSeparator</a></th>
+<td class="colLast">
+<div class="block">The job of this Lib is to separate and combine back a list of column groups from its dictionaries, and vice versa
+ combine back together dictionaries with their respective column groups</div>
+</td>
 </tr>
 </tbody>
 </table>
@@ -122,11 +125,19 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tbody>
 <tr class="altColor">
-<th class="colFirst" scope="row"><a href="CLALibAppend.html" title="class in org.apache.sysds.runtime.compress.lib">CLALibAppend</a></th>
+<th class="colFirst" scope="row"><a href="CLALibAggTernaryOp.html" title="class in org.apache.sysds.runtime.compress.lib">CLALibAggTernaryOp</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
+<th class="colFirst" scope="row"><a href="CLALibAppend.html" title="class in org.apache.sysds.runtime.compress.lib">CLALibAppend</a></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
 <th class="colFirst" scope="row"><a href="CLALibBinaryCellOp.html" title="class in org.apache.sysds.runtime.compress.lib">CLALibBinaryCellOp</a></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<th class="colFirst" scope="row"><a href="CLALibBinCompress.html" title="class in org.apache.sysds.runtime.compress.lib">CLALibBinCompress</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
@@ -134,8 +145,10 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
-<th class="colFirst" scope="row"><a href="CLALibCombine.html" title="class in org.apache.sysds.runtime.compress.lib">CLALibCombine</a></th>
-<td class="colLast">&nbsp;</td>
+<th class="colFirst" scope="row"><a href="CLALibCombineGroups.html" title="class in org.apache.sysds.runtime.compress.lib">CLALibCombineGroups</a></th>
+<td class="colLast">
+<div class="block">Library functions to combine column groups inside a compressed matrix.</div>
+</td>
 </tr>
 <tr class="altColor">
 <th class="colFirst" scope="row"><a href="CLALibCompAgg.html" title="class in org.apache.sysds.runtime.compress.lib">CLALibCompAgg</a></th>
@@ -156,6 +169,14 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
+<th class="colFirst" scope="row"><a href="CLALibMerge.html" title="class in org.apache.sysds.runtime.compress.lib">CLALibMerge</a></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<th class="colFirst" scope="row"><a href="CLALibMMChain.html" title="class in org.apache.sysds.runtime.compress.lib">CLALibMMChain</a></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
 <th class="colFirst" scope="row"><a href="CLALibRexpand.html" title="class in org.apache.sysds.runtime.compress.lib">CLALibRexpand</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
@@ -168,11 +189,29 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
+<th class="colFirst" scope="row"><a href="CLALibScheme.html" title="class in org.apache.sysds.runtime.compress.lib">CLALibScheme</a></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<th class="colFirst" scope="row"><a href="CLALibSeparator.SeparatedGroups.html" title="class in org.apache.sysds.runtime.compress.lib">CLALibSeparator.SeparatedGroups</a></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
 <th class="colFirst" scope="row"><a href="CLALibSlice.html" title="class in org.apache.sysds.runtime.compress.lib">CLALibSlice</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
 <th class="colFirst" scope="row"><a href="CLALibSquash.html" title="class in org.apache.sysds.runtime.compress.lib">CLALibSquash</a></th>
+<td class="colLast">
+<div class="block">Squash or recompress is processing each column group and trying to find a better compressed representation for each.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<th class="colFirst" scope="row"><a href="CLALibStack.html" title="class in org.apache.sysds.runtime.compress.lib">CLALibStack</a></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<th class="colFirst" scope="row"><a href="CLALibTernaryOp.html" title="class in org.apache.sysds.runtime.compress.lib">CLALibTernaryOp</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">

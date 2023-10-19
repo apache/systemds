@@ -14,7 +14,7 @@
 <!--[if IE]>
 <script type="text/javascript" src="../../../../../../jquery/jszip-utils/dist/jszip-utils-ie.min.js"></script>
 <![endif]-->
-<script type="text/javascript" src="../../../../../../jquery/jquery-3.6.0.min.js"></script>
+<script type="text/javascript" src="../../../../../../jquery/jquery-3.6.1.min.js"></script>
 <script type="text/javascript" src="../../../../../../jquery/jquery-ui.min.js"></script>
 </head>
 <body>
@@ -235,11 +235,12 @@ extends org.apache.hadoop.io.Writable</pre>
 </td>
 </tr>
 <tr id="i11" class="rowColor">
-<td class="colFirst"><code>void</code></td>
+<td class="colFirst"><code><a href="CacheBlock.html" title="interface in org.apache.sysds.runtime.controlprogram.caching">CacheBlock</a>&lt;<a href="CacheBlock.html" title="type parameter in CacheBlock">T</a>&gt;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#merge(T,boolean)">merge</a></span>&#8203;(<a href="CacheBlock.html" title="type parameter in CacheBlock">T</a>&nbsp;that,
      boolean&nbsp;appendOnly)</code></th>
 <td class="colLast">
-<div class="block">Merge the given block into the current block.</div>
+<div class="block">Merge disjoint: merges all non-zero values of the given input into the current
+ block.</div>
 </td>
 </tr>
 <tr id="i12" class="altColor">
@@ -629,14 +630,21 @@ extends org.apache.hadoop.io.Writable</pre>
 <ul class="blockList">
 <li class="blockList">
 <h4>merge</h4>
-<pre class="methodSignature">void&nbsp;merge&#8203;(<a href="CacheBlock.html" title="type parameter in CacheBlock">T</a>&nbsp;that,
-           boolean&nbsp;appendOnly)</pre>
-<div class="block">Merge the given block into the current block. Both blocks needs to be of equal 
- dimensions and contain disjoint non-zero cells.</div>
+<pre class="methodSignature"><a href="CacheBlock.html" title="interface in org.apache.sysds.runtime.controlprogram.caching">CacheBlock</a>&lt;<a href="CacheBlock.html" title="type parameter in CacheBlock">T</a>&gt;&nbsp;merge&#8203;(<a href="CacheBlock.html" title="type parameter in CacheBlock">T</a>&nbsp;that,
+                    boolean&nbsp;appendOnly)</pre>
+<div class="block">Merge disjoint: merges all non-zero values of the given input into the current
+ block. Note that this method does NOT check for overlapping entries;
+ it's the callers responsibility of ensuring disjoint blocks.  
+ 
+ The appendOnly parameter is only relevant for sparse target blocks; if true,
+ we only append values and do not sort sparse rows for each call; this is useful
+ whenever we merge iterators of matrix blocks into one target block.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>that</code> - cache block</dd>
-<dd><code>appendOnly</code> - ?</dd>
+<dd><code>appendOnly</code> - Indicate if the merger can be append only on sparse rows.</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>the merged group, in most implementations 'this' is modified.</dd>
 </dl>
 </li>
 </ul>

@@ -14,7 +14,7 @@
 <!--[if IE]>
 <script type="text/javascript" src="../../../../../../../jquery/jszip-utils/dist/jszip-utils-ie.min.js"></script>
 <![endif]-->
-<script type="text/javascript" src="../../../../../../../jquery/jquery-3.6.0.min.js"></script>
+<script type="text/javascript" src="../../../../../../../jquery/jquery-3.6.1.min.js"></script>
 <script type="text/javascript" src="../../../../../../../jquery/jquery-ui.min.js"></script>
 </head>
 <body>
@@ -27,7 +27,7 @@
     catch(err) {
     }
 //-->
-var data = {"i0":10,"i1":10};
+var data = {"i0":10};
 var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -143,7 +143,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <li class="blockList">
 <dl>
 <dt>All Implemented Interfaces:</dt>
-<dd><code><a href="ICLAScheme.html" title="interface in org.apache.sysds.runtime.compress.colgroup.scheme">ICLAScheme</a></code></dd>
+<dd><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Cloneable.html?is-external=true" title="class or interface in java.lang" class="externalLink">Cloneable</a></code>, <code><a href="ICLAScheme.html" title="interface in org.apache.sysds.runtime.compress.colgroup.scheme">ICLAScheme</a></code></dd>
 </dl>
 <hr>
 <pre>public class <span class="typeNameLabel">DDCSchemeMC</span>
@@ -186,20 +186,9 @@ extends <a href="DDCScheme.html" title="class in org.apache.sysds.runtime.compre
 <th class="colLast" scope="col">Description</th>
 </tr>
 <tr id="i0" class="altColor">
-<td class="colFirst"><code><a href="../AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a></code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#encode(org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex)">encode</a></span>&#8203;(<a href="../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;data,
-      <a href="../indexes/IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;columns)</code></th>
-<td class="colLast">
-<div class="block">Encode a given matrix block into the scheme provided in the instance but overwrite what columns to use.</div>
-</td>
-</tr>
-<tr id="i1" class="rowColor">
-<td class="colFirst"><code><a href="ICLAScheme.html" title="interface in org.apache.sysds.runtime.compress.colgroup.scheme">ICLAScheme</a></code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#update(org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex)">update</a></span>&#8203;(<a href="../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;data,
-      <a href="../indexes/IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;columns)</code></th>
-<td class="colLast">
-<div class="block">Update the encoding scheme to enable compression of the given data.</div>
-</td>
+<td class="colFirst"><code><a href="DDCSchemeMC.html" title="class in org.apache.sysds.runtime.compress.colgroup.scheme">DDCSchemeMC</a></code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#clone()">clone</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
 </tr>
 </table>
 <ul class="blockList">
@@ -214,7 +203,7 @@ extends <a href="DDCScheme.html" title="class in org.apache.sysds.runtime.compre
 <!--   -->
 </a>
 <h3>Methods inherited from class&nbsp;org.apache.sysds.runtime.compress.colgroup.scheme.<a href="ACLAScheme.html" title="class in org.apache.sysds.runtime.compress.colgroup.scheme">ACLAScheme</a></h3>
-<code><a href="ACLAScheme.html#encode(org.apache.sysds.runtime.matrix.data.MatrixBlock)">encode</a>, <a href="ACLAScheme.html#update(org.apache.sysds.runtime.matrix.data.MatrixBlock)">update</a></code></li>
+<code><a href="ACLAScheme.html#encode(org.apache.sysds.runtime.matrix.data.MatrixBlock)">encode</a>, <a href="ACLAScheme.html#encode(org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex)">encode</a>, <a href="ACLAScheme.html#encodeT(org.apache.sysds.runtime.matrix.data.MatrixBlock)">encodeT</a>, <a href="ACLAScheme.html#encodeT(org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex)">encodeT</a>, <a href="ACLAScheme.html#update(org.apache.sysds.runtime.matrix.data.MatrixBlock)">update</a>, <a href="ACLAScheme.html#update(org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex)">update</a>, <a href="ACLAScheme.html#updateAndEncode(org.apache.sysds.runtime.matrix.data.MatrixBlock)">updateAndEncode</a>, <a href="ACLAScheme.html#updateAndEncode(org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex)">updateAndEncode</a>, <a href="ACLAScheme.html#updateAndEncodeT(org.apache.sysds.runtime.matrix.data.MatrixBlock)">updateAndEncodeT</a>, <a href="ACLAScheme.html#updateAndEncodeT(org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex)">updateAndEncodeT</a>, <a href="ACLAScheme.html#updateT(org.apache.sysds.runtime.matrix.data.MatrixBlock)">updateT</a>, <a href="ACLAScheme.html#updateT(org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex)">updateT</a></code></li>
 </ul>
 <ul class="blockList">
 <li class="blockList"><a id="methods.inherited.from.class.java.lang.Object">
@@ -239,45 +228,18 @@ extends <a href="DDCScheme.html" title="class in org.apache.sysds.runtime.compre
 <!--   -->
 </a>
 <h3>Method Detail</h3>
-<a id="update(org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex)">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>update</h4>
-<pre class="methodSignature">public&nbsp;<a href="ICLAScheme.html" title="interface in org.apache.sysds.runtime.compress.colgroup.scheme">ICLAScheme</a>&nbsp;update&#8203;(<a href="../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;data,
-                         <a href="../indexes/IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;columns)</pre>
-<div class="block"><span class="descfrmTypeLabel">Description copied from interface:&nbsp;<code><a href="ICLAScheme.html#update(org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex)">ICLAScheme</a></code></span></div>
-<div class="block">Update the encoding scheme to enable compression of the given data.</div>
-<dl>
-<dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>data</code> - The data to update into the scheme</dd>
-<dd><code>columns</code> - The columns to extract the data from</dd>
-<dt><span class="returnLabel">Returns:</span></dt>
-<dd>A updated scheme</dd>
-</dl>
-</li>
-</ul>
-<a id="encode(org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex)">
+<a id="clone()">
 <!--   -->
 </a>
 <ul class="blockListLast">
 <li class="blockList">
-<h4>encode</h4>
-<pre class="methodSignature">public&nbsp;<a href="../AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a>&nbsp;encode&#8203;(<a href="../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;data,
-                        <a href="../indexes/IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;columns)</pre>
-<div class="block"><span class="descfrmTypeLabel">Description copied from interface:&nbsp;<code><a href="ICLAScheme.html#encode(org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex)">ICLAScheme</a></code></span></div>
-<div class="block">Encode a given matrix block into the scheme provided in the instance but overwrite what columns to use.
- 
- The method is unsafe in the sense that if the encoding scheme does not fit, there is no guarantee that an error is
- thrown. To guarantee the encoding scheme, first use update on the matrix block and used the returned scheme to
- ensure consistency.</div>
+<h4>clone</h4>
+<pre class="methodSignature">public&nbsp;<a href="DDCSchemeMC.html" title="class in org.apache.sysds.runtime.compress.colgroup.scheme">DDCSchemeMC</a>&nbsp;clone()</pre>
 <dl>
-<dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>data</code> - The data to encode</dd>
-<dd><code>columns</code> - The columns to apply the scheme to, but must be of same number than the encoded scheme</dd>
-<dt><span class="returnLabel">Returns:</span></dt>
-<dd>A compressed column group forced to use the scheme provided.</dd>
+<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
+<dd><code><a href="ICLAScheme.html#clone()">clone</a></code>&nbsp;in interface&nbsp;<code><a href="ICLAScheme.html" title="interface in org.apache.sysds.runtime.compress.colgroup.scheme">ICLAScheme</a></code></dd>
+<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
+<dd><code><a href="ACLAScheme.html#clone()">clone</a></code>&nbsp;in class&nbsp;<code><a href="ACLAScheme.html" title="class in org.apache.sysds.runtime.compress.colgroup.scheme">ACLAScheme</a></code></dd>
 </dl>
 </li>
 </ul>

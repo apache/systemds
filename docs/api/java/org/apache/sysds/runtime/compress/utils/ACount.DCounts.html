@@ -14,7 +14,7 @@
 <!--[if IE]>
 <script type="text/javascript" src="../../../../../../jquery/jszip-utils/dist/jszip-utils-ie.min.js"></script>
 <![endif]-->
-<script type="text/javascript" src="../../../../../../jquery/jquery-3.6.0.min.js"></script>
+<script type="text/javascript" src="../../../../../../jquery/jquery-3.6.1.min.js"></script>
 <script type="text/javascript" src="../../../../../../jquery/jquery-ui.min.js"></script>
 </head>
 <body>
@@ -27,8 +27,8 @@
     catch(err) {
     }
 //-->
-var data = {"i0":10};
-var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
+var data = {"i0":10,"i1":10,"i2":9,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10};
+var tabs = {65535:["t0","All Methods"],1:["t1","Static Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
 var tableTab = "tableTab";
@@ -124,7 +124,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <li><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">java.lang.Object</a></li>
 <li>
 <ul class="inheritance">
-<li><a href="ACount.html" title="class in org.apache.sysds.runtime.compress.utils">org.apache.sysds.runtime.compress.utils.ACount</a></li>
+<li><a href="ACount.html" title="class in org.apache.sysds.runtime.compress.utils">org.apache.sysds.runtime.compress.utils.ACount</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Double.html?is-external=true" title="class or interface in java.lang" class="externalLink">Double</a>&gt;</li>
 <li>
 <ul class="inheritance">
 <li>org.apache.sysds.runtime.compress.utils.ACount.DCounts</li>
@@ -138,11 +138,11 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <li class="blockList">
 <dl>
 <dt>Enclosing class:</dt>
-<dd><a href="ACount.html" title="class in org.apache.sysds.runtime.compress.utils">ACount</a></dd>
+<dd><a href="ACount.html" title="class in org.apache.sysds.runtime.compress.utils">ACount</a>&lt;<a href="ACount.html" title="type parameter in ACount">T</a>&gt;</dd>
 </dl>
 <hr>
-<pre>public static class <span class="typeNameLabel">ACount.DCounts</span>
-extends <a href="ACount.html" title="class in org.apache.sysds.runtime.compress.utils">ACount</a></pre>
+<pre>public static final class <span class="typeNameLabel">ACount.DCounts</span>
+extends <a href="ACount.html" title="class in org.apache.sysds.runtime.compress.utils">ACount</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Double.html?is-external=true" title="class or interface in java.lang" class="externalLink">Double</a>&gt;</pre>
 </li>
 </ul>
 </div>
@@ -185,6 +185,11 @@ extends <a href="ACount.html" title="class in org.apache.sysds.runtime.compress.
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#key">key</a></span></code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="ACount.DCounts.html" title="class in org.apache.sysds.runtime.compress.utils">ACount.DCounts</a></code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#next">next</a></span></code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
 </table>
 <ul class="blockList">
 <li class="blockList"><a id="fields.inherited.from.class.org.apache.sysds.runtime.compress.utils.ACount">
@@ -214,6 +219,12 @@ extends <a href="ACount.html" title="class in org.apache.sysds.runtime.compress.
        int&nbsp;id)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
+<tr class="rowColor">
+<th class="colConstructorName" scope="row"><code><span class="memberNameLink"><a href="#%3Cinit%3E(double,int,int)">DCounts</a></span>&#8203;(double&nbsp;key,
+       int&nbsp;id,
+       int&nbsp;c)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
 </table>
 </li>
 </ul>
@@ -226,15 +237,59 @@ extends <a href="ACount.html" title="class in org.apache.sysds.runtime.compress.
 </a>
 <h3>Method Summary</h3>
 <table class="memberSummary">
-<caption><span id="t0" class="activeTableTab"><span>All Methods</span><span class="tabEnd">&nbsp;</span></span><span id="t2" class="tableTab"><span><a href="javascript:show(2);">Instance Methods</a></span><span class="tabEnd">&nbsp;</span></span><span id="t4" class="tableTab"><span><a href="javascript:show(8);">Concrete Methods</a></span><span class="tabEnd">&nbsp;</span></span></caption>
+<caption><span id="t0" class="activeTableTab"><span>All Methods</span><span class="tabEnd">&nbsp;</span></span><span id="t1" class="tableTab"><span><a href="javascript:show(1);">Static Methods</a></span><span class="tabEnd">&nbsp;</span></span><span id="t2" class="tableTab"><span><a href="javascript:show(2);">Instance Methods</a></span><span class="tabEnd">&nbsp;</span></span><span id="t4" class="tableTab"><span><a href="javascript:show(8);">Concrete Methods</a></span><span class="tabEnd">&nbsp;</span></span></caption>
 <tr>
 <th class="colFirst" scope="col">Modifier and Type</th>
 <th class="colSecond" scope="col">Method</th>
 <th class="colLast" scope="col">Description</th>
 </tr>
 <tr id="i0" class="altColor">
+<td class="colFirst"><code><a href="ACount.html" title="class in org.apache.sysds.runtime.compress.utils">ACount</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Double.html?is-external=true" title="class or interface in java.lang" class="externalLink">Double</a>&gt;</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#get(double)">get</a></span>&#8203;(double&nbsp;key)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i1" class="rowColor">
+<td class="colFirst"><code><a href="ACount.html" title="class in org.apache.sysds.runtime.compress.utils">ACount</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Double.html?is-external=true" title="class or interface in java.lang" class="externalLink">Double</a>&gt;</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#get(java.lang.Double)">get</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Double.html?is-external=true" title="class or interface in java.lang" class="externalLink">Double</a>&nbsp;key)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i2" class="altColor">
+<td class="colFirst"><code>static int</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#hashIndex(double)">hashIndex</a></span>&#8203;(double&nbsp;key)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i3" class="rowColor">
+<td class="colFirst"><code><a href="ACount.DCounts.html" title="class in org.apache.sysds.runtime.compress.utils">ACount.DCounts</a></code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#inc(double,int,int)">inc</a></span>&#8203;(double&nbsp;key,
+   int&nbsp;c,
+   int&nbsp;id)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i4" class="altColor">
+<td class="colFirst"><code><a href="ACount.DCounts.html" title="class in org.apache.sysds.runtime.compress.utils">ACount.DCounts</a></code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#inc(java.lang.Double,int,int)">inc</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Double.html?is-external=true" title="class or interface in java.lang" class="externalLink">Double</a>&nbsp;key,
+   int&nbsp;c,
+   int&nbsp;id)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i5" class="rowColor">
+<td class="colFirst"><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Double.html?is-external=true" title="class or interface in java.lang" class="externalLink">Double</a></code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#key()">key</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i6" class="altColor">
+<td class="colFirst"><code><a href="ACount.DCounts.html" title="class in org.apache.sysds.runtime.compress.utils">ACount.DCounts</a></code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#next()">next</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i7" class="rowColor">
 <td class="colFirst"><code>void</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#inc()">inc</a></span>()</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#setNext(org.apache.sysds.runtime.compress.utils.ACount)">setNext</a></span>&#8203;(<a href="ACount.html" title="class in org.apache.sysds.runtime.compress.utils">ACount</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Double.html?is-external=true" title="class or interface in java.lang" class="externalLink">Double</a>&gt;&nbsp;e)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i8" class="altColor">
+<td class="colFirst"><code><a href="ACount.DCounts.html" title="class in org.apache.sysds.runtime.compress.utils">ACount.DCounts</a></code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#sort()">sort</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 </table>
@@ -271,10 +326,19 @@ extends <a href="ACount.html" title="class in org.apache.sysds.runtime.compress.
 <a id="key">
 <!--   -->
 </a>
-<ul class="blockListLast">
+<ul class="blockList">
 <li class="blockList">
 <h4>key</h4>
 <pre>public final&nbsp;double key</pre>
+</li>
+</ul>
+<a id="next">
+<!--   -->
+</a>
+<ul class="blockListLast">
+<li class="blockList">
+<h4>next</h4>
+<pre>public&nbsp;<a href="ACount.DCounts.html" title="class in org.apache.sysds.runtime.compress.utils">ACount.DCounts</a> next</pre>
 </li>
 </ul>
 </li>
@@ -290,11 +354,22 @@ extends <a href="ACount.html" title="class in org.apache.sysds.runtime.compress.
 <a id="&lt;init&gt;(double,int)">
 <!--   -->
 </a>
-<ul class="blockListLast">
+<ul class="blockList">
 <li class="blockList">
 <h4>DCounts</h4>
 <pre>public&nbsp;DCounts&#8203;(double&nbsp;key,
                int&nbsp;id)</pre>
+</li>
+</ul>
+<a id="&lt;init&gt;(double,int,int)">
+<!--   -->
+</a>
+<ul class="blockListLast">
+<li class="blockList">
+<h4>DCounts</h4>
+<pre>public&nbsp;DCounts&#8203;(double&nbsp;key,
+               int&nbsp;id,
+               int&nbsp;c)</pre>
 </li>
 </ul>
 </li>
@@ -307,13 +382,121 @@ extends <a href="ACount.html" title="class in org.apache.sysds.runtime.compress.
 <!--   -->
 </a>
 <h3>Method Detail</h3>
-<a id="inc()">
+<a id="next()">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>next</h4>
+<pre class="methodSignature">public final&nbsp;<a href="ACount.DCounts.html" title="class in org.apache.sysds.runtime.compress.utils">ACount.DCounts</a>&nbsp;next()</pre>
+<dl>
+<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
+<dd><code><a href="ACount.html#next()">next</a></code>&nbsp;in class&nbsp;<code><a href="ACount.html" title="class in org.apache.sysds.runtime.compress.utils">ACount</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Double.html?is-external=true" title="class or interface in java.lang" class="externalLink">Double</a>&gt;</code></dd>
+</dl>
+</li>
+</ul>
+<a id="setNext(org.apache.sysds.runtime.compress.utils.ACount)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>setNext</h4>
+<pre class="methodSignature">public final&nbsp;void&nbsp;setNext&#8203;(<a href="ACount.html" title="class in org.apache.sysds.runtime.compress.utils">ACount</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Double.html?is-external=true" title="class or interface in java.lang" class="externalLink">Double</a>&gt;&nbsp;e)</pre>
+<dl>
+<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
+<dd><code><a href="ACount.html#setNext(org.apache.sysds.runtime.compress.utils.ACount)">setNext</a></code>&nbsp;in class&nbsp;<code><a href="ACount.html" title="class in org.apache.sysds.runtime.compress.utils">ACount</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Double.html?is-external=true" title="class or interface in java.lang" class="externalLink">Double</a>&gt;</code></dd>
+</dl>
+</li>
+</ul>
+<a id="key()">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>key</h4>
+<pre class="methodSignature">public final&nbsp;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Double.html?is-external=true" title="class or interface in java.lang" class="externalLink">Double</a>&nbsp;key()</pre>
+<dl>
+<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
+<dd><code><a href="ACount.html#key()">key</a></code>&nbsp;in class&nbsp;<code><a href="ACount.html" title="class in org.apache.sysds.runtime.compress.utils">ACount</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Double.html?is-external=true" title="class or interface in java.lang" class="externalLink">Double</a>&gt;</code></dd>
+</dl>
+</li>
+</ul>
+<a id="sort()">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>sort</h4>
+<pre class="methodSignature">public&nbsp;<a href="ACount.DCounts.html" title="class in org.apache.sysds.runtime.compress.utils">ACount.DCounts</a>&nbsp;sort()</pre>
+<dl>
+<dt><span class="overrideSpecifyLabel">Overrides:</span></dt>
+<dd><code><a href="ACount.html#sort()">sort</a></code>&nbsp;in class&nbsp;<code><a href="ACount.html" title="class in org.apache.sysds.runtime.compress.utils">ACount</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Double.html?is-external=true" title="class or interface in java.lang" class="externalLink">Double</a>&gt;</code></dd>
+</dl>
+</li>
+</ul>
+<a id="get(java.lang.Double)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>get</h4>
+<pre class="methodSignature">public&nbsp;<a href="ACount.html" title="class in org.apache.sysds.runtime.compress.utils">ACount</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Double.html?is-external=true" title="class or interface in java.lang" class="externalLink">Double</a>&gt;&nbsp;get&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Double.html?is-external=true" title="class or interface in java.lang" class="externalLink">Double</a>&nbsp;key)</pre>
+<dl>
+<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
+<dd><code><a href="ACount.html#get(T)">get</a></code>&nbsp;in class&nbsp;<code><a href="ACount.html" title="class in org.apache.sysds.runtime.compress.utils">ACount</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Double.html?is-external=true" title="class or interface in java.lang" class="externalLink">Double</a>&gt;</code></dd>
+</dl>
+</li>
+</ul>
+<a id="get(double)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>get</h4>
+<pre class="methodSignature">public&nbsp;<a href="ACount.html" title="class in org.apache.sysds.runtime.compress.utils">ACount</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Double.html?is-external=true" title="class or interface in java.lang" class="externalLink">Double</a>&gt;&nbsp;get&#8203;(double&nbsp;key)</pre>
+<dl>
+<dt><span class="overrideSpecifyLabel">Overrides:</span></dt>
+<dd><code><a href="ACount.html#get(double)">get</a></code>&nbsp;in class&nbsp;<code><a href="ACount.html" title="class in org.apache.sysds.runtime.compress.utils">ACount</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Double.html?is-external=true" title="class or interface in java.lang" class="externalLink">Double</a>&gt;</code></dd>
+</dl>
+</li>
+</ul>
+<a id="inc(java.lang.Double,int,int)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>inc</h4>
+<pre class="methodSignature">public&nbsp;<a href="ACount.DCounts.html" title="class in org.apache.sysds.runtime.compress.utils">ACount.DCounts</a>&nbsp;inc&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Double.html?is-external=true" title="class or interface in java.lang" class="externalLink">Double</a>&nbsp;key,
+                          int&nbsp;c,
+                          int&nbsp;id)</pre>
+<dl>
+<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
+<dd><code><a href="ACount.html#inc(T,int,int)">inc</a></code>&nbsp;in class&nbsp;<code><a href="ACount.html" title="class in org.apache.sysds.runtime.compress.utils">ACount</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Double.html?is-external=true" title="class or interface in java.lang" class="externalLink">Double</a>&gt;</code></dd>
+</dl>
+</li>
+</ul>
+<a id="inc(double,int,int)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>inc</h4>
+<pre class="methodSignature">public&nbsp;<a href="ACount.DCounts.html" title="class in org.apache.sysds.runtime.compress.utils">ACount.DCounts</a>&nbsp;inc&#8203;(double&nbsp;key,
+                          int&nbsp;c,
+                          int&nbsp;id)</pre>
+<dl>
+<dt><span class="overrideSpecifyLabel">Overrides:</span></dt>
+<dd><code><a href="ACount.html#inc(double,int,int)">inc</a></code>&nbsp;in class&nbsp;<code><a href="ACount.html" title="class in org.apache.sysds.runtime.compress.utils">ACount</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Double.html?is-external=true" title="class or interface in java.lang" class="externalLink">Double</a>&gt;</code></dd>
+</dl>
+</li>
+</ul>
+<a id="hashIndex(double)">
 <!--   -->
 </a>
 <ul class="blockListLast">
 <li class="blockList">
-<h4>inc</h4>
-<pre class="methodSignature">public&nbsp;void&nbsp;inc()</pre>
+<h4>hashIndex</h4>
+<pre class="methodSignature">public static final&nbsp;int&nbsp;hashIndex&#8203;(double&nbsp;key)</pre>
 </li>
 </ul>
 </li>

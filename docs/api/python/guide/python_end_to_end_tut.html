@@ -11,11 +11,11 @@
     <script src="../static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-        <script src="../static/jquery.js"></script>
-        <script src="../static/_sphinx_javascript_frameworks_compat.js"></script>
-        <script data-url_root="../" id="documentation_options" src="../static/documentation_options.js"></script>
-        <script src="../static/doctools.js"></script>
-        <script src="../static/sphinx_highlight.js"></script>
+        <script src="../static/jquery.js?v=5d32c60e"></script>
+        <script src="../static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../static/documentation_options.js?v=596fb6d1"></script>
+        <script src="../static/doctools.js?v=888ff710"></script>
+        <script src="../static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
@@ -115,7 +115,7 @@
            <div itemprop="articleBody">
              
   <section id="python-end-to-end-tutorial">
-<h1>Python end-to-end tutorial<a class="headerlink" href="#python-end-to-end-tutorial" title="Permalink to this heading"></a></h1>
+<h1>Python end-to-end tutorial<a class="headerlink" href="#python-end-to-end-tutorial" title="Link to this heading"></a></h1>
 <p>The goal of this tutorial is to showcase different features of the SystemDS framework that can be accessed with the Python API.
 For this, we want to use the <a class="reference external" href="https://archive.ics.uci.edu/ml/datasets/adult/">Adult</a> dataset and predict whether the income of a person exceeds $50K/yr based on census data.
 The Adult dataset contains attributes like age, workclass, education, marital-status, occupation, race, […] and the labels &gt;50K or &lt;=50K.
@@ -128,7 +128,7 @@ With the second level, we want to show how we can integrate custom-built network
 <li><p><a class="reference internal" href="../getting_started/install.html"><span class="doc">Install SystemDS</span></a></p></li>
 </ul>
 <section id="level-1">
-<h2>Level 1<a class="headerlink" href="#level-1" title="Permalink to this heading"></a></h2>
+<h2>Level 1<a class="headerlink" href="#level-1" title="Link to this heading"></a></h2>
 <p>This example shows how one can work the SystemDS framework.
 More precisely, we will make use of the built-in DataManager, Multinomial Logistic Regression function, and the Confusion Matrix function.
 The dataset used in this tutorial is a preprocessed version of the “UCI Adult Data Set”.
@@ -136,7 +136,7 @@ If one wants to skip the explanation then the full script is available at the en
 <p>We will train a Multinomial Logistic Regression model on the training dataset and subsequently use the test dataset
 to assess how well our model can predict if the income is above or below $50K/yr based on the features.</p>
 <section id="step-1-load-and-prepare-data">
-<h3>Step 1: Load and prepare data<a class="headerlink" href="#step-1-load-and-prepare-data" title="Permalink to this heading"></a></h3>
+<h3>Step 1: Load and prepare data<a class="headerlink" href="#step-1-load-and-prepare-data" title="Link to this heading"></a></h3>
 <p>First, we get our training and testing data from the built-in DataManager. Since the multiLogReg function requires the
 labels (Y) to be &gt; 0, we add 1 to all labels. This ensures that the smallest label is &gt;= 1. Additionally we will only take
 a fraction of the training and test set into account to speed up the execution.</p>
@@ -177,7 +177,7 @@ a fraction of the training and test set into account to speed up the execution.<
 for the best performance and no data transfer from pandas to SystemDS it is recommended to read directly from disk into SystemDS.</p>
 </section>
 <section id="step-2-training">
-<h3>Step 2: Training<a class="headerlink" href="#step-2-training" title="Permalink to this heading"></a></h3>
+<h3>Step 2: Training<a class="headerlink" href="#step-2-training" title="Link to this heading"></a></h3>
 <p>Now that we prepared the data, we can use the multiLogReg function. First, we will train the model on our
 training data. Afterward, we can make predictions on the test data and assess the performance of the model.</p>
 <div class="code python highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="n">betas</span> <span class="o">=</span> <span class="n">multiLogReg</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
@@ -186,7 +186,7 @@ training data. Afterward, we can make predictions on the test data and assess th
 <p>Note that nothing has been calculated yet. In SystemDS the calculation is executed once compute() is called.
 E.g. betas_res = betas.compute().</p>
 <p>We can now use the trained model to make predictions on the test data.</p>
-<div class="code python highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="p">[</span><span class="n">_</span><span class="p">,</span> <span class="n">y_pred</span><span class="p">,</span> <span class="n">acc</span><span class="p">]</span> <span class="o">=</span> <span class="n">multiLogRegPredict</span><span class="p">(</span><span class="n">Xt</span><span class="p">,</span> <span class="n">betas</span><span class="p">,</span> <span class="n">Yt</span><span class="p">)</span>
+<div class="code python highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="p">[</span><span class="n">_</span><span class="p">,</span> <span class="n">y_pred</span><span class="p">,</span> <span class="n">acc</span><span class="p">]</span> <span class="o">=</span> <span class="n">multiLogRegPredict</span><span class="p">(</span><span class="n">Xt</span><span class="p">,</span> <span class="n">betas</span><span class="p">,</span> <span class="n">Y</span><span class="o">=</span><span class="n">Yt</span><span class="p">)</span>
 </pre></div>
 </div>
 <dl class="simple">
@@ -199,7 +199,7 @@ E.g. betas_res = betas.compute().</p>
 </dl>
 </section>
 <section id="step-3-confusion-matrix">
-<h3>Step 3: Confusion Matrix<a class="headerlink" href="#step-3-confusion-matrix" title="Permalink to this heading"></a></h3>
+<h3>Step 3: Confusion Matrix<a class="headerlink" href="#step-3-confusion-matrix" title="Link to this heading"></a></h3>
 <p>A confusion matrix is a useful tool to analyze the performance of the model and to obtain a better understanding
 which classes the model has difficulties separating.
 The confusionMatrix function takes the predicted labels and the true labels. It then returns the confusion matrix
@@ -209,7 +209,7 @@ for the predictions and the confusion matrix averages of each true class.</p>
 </div>
 </section>
 <section id="full-script">
-<h3>Full Script<a class="headerlink" href="#full-script" title="Permalink to this heading"></a></h3>
+<h3>Full Script<a class="headerlink" href="#full-script" title="Link to this heading"></a></h3>
 <p>In the full script, some steps are combined to reduce the overall script.</p>
 <div class="code python highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">systemds.context</span> <span class="kn">import</span> <span class="n">SystemDSContext</span>
 <span class="kn">from</span> <span class="nn">systemds.examples.tutorials.adult</span> <span class="kn">import</span> <span class="n">DataManager</span>
@@ -247,7 +247,7 @@ for the predictions and the confusion matrix averages of each true class.</p>
     <span class="n">betas</span> <span class="o">=</span> <span class="n">multiLogReg</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 
     <span class="c1"># Apply model</span>
-    <span class="p">[</span><span class="n">_</span><span class="p">,</span> <span class="n">y_pred</span><span class="p">,</span> <span class="n">acc</span><span class="p">]</span> <span class="o">=</span> <span class="n">multiLogRegPredict</span><span class="p">(</span><span class="n">Xt</span><span class="p">,</span> <span class="n">betas</span><span class="p">,</span> <span class="n">Yt</span><span class="p">)</span>
+    <span class="p">[</span><span class="n">_</span><span class="p">,</span> <span class="n">y_pred</span><span class="p">,</span> <span class="n">acc</span><span class="p">]</span> <span class="o">=</span> <span class="n">multiLogRegPredict</span><span class="p">(</span><span class="n">Xt</span><span class="p">,</span> <span class="n">betas</span><span class="p">,</span> <span class="n">Y</span><span class="o">=</span><span class="n">Yt</span><span class="p">)</span>
 
     <span class="c1"># Confusion Matrix</span>
     <span class="n">confusion_matrix_abs</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">confusionMatrix</span><span class="p">(</span><span class="n">y_pred</span><span class="p">,</span> <span class="n">Yt</span><span class="p">)</span><span class="o">.</span><span class="n">compute</span><span class="p">()</span>
@@ -260,11 +260,11 @@ for the predictions and the confusion matrix averages of each true class.</p>
 </section>
 </section>
 <section id="level-2">
-<h2>Level 2<a class="headerlink" href="#level-2" title="Permalink to this heading"></a></h2>
+<h2>Level 2<a class="headerlink" href="#level-2" title="Link to this heading"></a></h2>
 <p>In this level we want to show how we can integrate a custom built algorithm using the Python API.
 For this we will introduce another dml file, which can be used to train a basic feed forward network.</p>
 <section id="step-1-obtain-data">
-<h3>Step 1: Obtain data<a class="headerlink" href="#step-1-obtain-data" title="Permalink to this heading"></a></h3>
+<h3>Step 1: Obtain data<a class="headerlink" href="#step-1-obtain-data" title="Link to this heading"></a></h3>
 <p>For the whole data setup please refer to level 1, Step 1, as these steps are almost identical,
 but instead of preparing the test data, we only prepare the training data.</p>
 <div class="code python highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">systemds.context</span> <span class="kn">import</span> <span class="n">SystemDSContext</span>
@@ -298,7 +298,7 @@ but instead of preparing the test data, we only prepare the training data.</p>
 </div>
 </section>
 <section id="step-2-load-the-algorithm">
-<h3>Step 2: Load the algorithm<a class="headerlink" href="#step-2-load-the-algorithm" title="Permalink to this heading"></a></h3>
+<h3>Step 2: Load the algorithm<a class="headerlink" href="#step-2-load-the-algorithm" title="Link to this heading"></a></h3>
 <p>We use a neural network with 2 hidden layers, each consisting of 200 neurons.
 First, we need to source the dml file for neural networks.
 This file includes all the necessary functions for training, evaluating, and storing the model.
@@ -311,7 +311,7 @@ The file can be found here:</p>
 </div>
 </section>
 <section id="step-3-training-the-neural-network">
-<h3>Step 3: Training the neural network<a class="headerlink" href="#step-3-training-the-neural-network" title="Permalink to this heading"></a></h3>
+<h3>Step 3: Training the neural network<a class="headerlink" href="#step-3-training-the-neural-network" title="Link to this heading"></a></h3>
 <p>Training a neural network in SystemDS using the train function is straightforward.
 The first two arguments are the training features and the target values we want to fit our model on.
 Then we need to set the hyperparameters of the model.
@@ -327,7 +327,7 @@ The seed argument ensures that running the code again yields the same results.</
 </div>
 </section>
 <section id="step-4-saving-the-model">
-<h3>Step 4: Saving the model<a class="headerlink" href="#step-4-saving-the-model" title="Permalink to this heading"></a></h3>
+<h3>Step 4: Saving the model<a class="headerlink" href="#step-4-saving-the-model" title="Link to this heading"></a></h3>
 <p>For later usage, we can save the trained model.
 We only need to specify the name of our model and the file path.
 This call stores the weights and biases of our model.
@@ -343,7 +343,7 @@ is saved.</p>
 </div>
 </section>
 <section id="step-5-predict-on-unseen-data">
-<h3>Step 5: Predict on Unseen data<a class="headerlink" href="#step-5-predict-on-unseen-data" title="Permalink to this heading"></a></h3>
+<h3>Step 5: Predict on Unseen data<a class="headerlink" href="#step-5-predict-on-unseen-data" title="Link to this heading"></a></h3>
 <p>Once the model is saved along with metadata, it is simple to apply it all to
 unseen data:</p>
 <div class="code python highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="c1"># Read metadata and trained network and do prediction.</span>
@@ -361,7 +361,7 @@ unseen data:</p>
 </div>
 </section>
 <section id="full-script-nn">
-<h3>Full Script NN<a class="headerlink" href="#full-script-nn" title="Permalink to this heading"></a></h3>
+<h3>Full Script NN<a class="headerlink" href="#full-script-nn" title="Link to this heading"></a></h3>
 <p>The complete script now can be seen here:</p>
 <div class="code python highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">systemds.context</span> <span class="kn">import</span> <span class="n">SystemDSContext</span>
 <span class="kn">from</span> <span class="nn">systemds.examples.tutorials.adult</span> <span class="kn">import</span> <span class="n">DataManager</span>

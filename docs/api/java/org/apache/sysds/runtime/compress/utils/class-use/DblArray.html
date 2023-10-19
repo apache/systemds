@@ -14,7 +14,7 @@
 <!--[if IE]>
 <script type="text/javascript" src="../../../../../../../jquery/jszip-utils/dist/jszip-utils-ie.min.js"></script>
 <![endif]-->
-<script type="text/javascript" src="../../../../../../../jquery/jquery-3.6.0.min.js"></script>
+<script type="text/javascript" src="../../../../../../../jquery/jquery-3.6.1.min.js"></script>
 <script type="text/javascript" src="../../../../../../../jquery/jquery-ui.min.js"></script>
 </head>
 <body>
@@ -107,10 +107,14 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tbody>
 <tr class="altColor">
-<th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.compress.readers">org.apache.sysds.runtime.compress.readers</a></th>
+<th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.compress.colgroup.scheme">org.apache.sysds.runtime.compress.colgroup.scheme</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
+<th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.compress.readers">org.apache.sysds.runtime.compress.readers</a></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
 <th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.compress.utils">org.apache.sysds.runtime.compress.utils</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
@@ -119,6 +123,28 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </li>
 <li class="blockList">
 <ul class="blockList">
+<li class="blockList">
+<section><a id="org.apache.sysds.runtime.compress.colgroup.scheme">
+<!--   -->
+</a>
+<h3>Uses of <a href="../DblArray.html" title="class in org.apache.sysds.runtime.compress.utils">DblArray</a> in <a href="../../colgroup/scheme/package-summary.html">org.apache.sysds.runtime.compress.colgroup.scheme</a></h3>
+<table class="useSummary">
+<caption><span>Constructors in <a href="../../colgroup/scheme/package-summary.html">org.apache.sysds.runtime.compress.colgroup.scheme</a> with parameters of type <a href="../DblArray.html" title="class in org.apache.sysds.runtime.compress.utils">DblArray</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Constructor</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../colgroup/scheme/SDCSchemeMC.html#%3Cinit%3E(org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,org.apache.sysds.runtime.compress.utils.DblArrayCountHashMap,org.apache.sysds.runtime.compress.utils.DblArray)">SDCSchemeMC</a></span>&#8203;(<a href="../../colgroup/indexes/IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;cols,
+           <a href="../DblArrayCountHashMap.html" title="class in org.apache.sysds.runtime.compress.utils">DblArrayCountHashMap</a>&nbsp;map,
+           <a href="../DblArray.html" title="class in org.apache.sysds.runtime.compress.utils">DblArray</a>&nbsp;def)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+</tbody>
+</table>
+</section>
+</li>
 <li class="blockList">
 <section><a id="org.apache.sysds.runtime.compress.readers">
 <!--   -->
@@ -169,6 +195,36 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tbody>
 </table>
 <table class="useSummary">
+<caption><span>Methods in <a href="../package-summary.html">org.apache.sysds.runtime.compress.utils</a> that return <a href="../DblArray.html" title="class in org.apache.sysds.runtime.compress.utils">DblArray</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colSecond" scope="col">Method</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../DblArray.html" title="class in org.apache.sysds.runtime.compress.utils">DblArray</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ACount.DArrCounts.</span><code><span class="memberNameLink"><a href="../ACount.DArrCounts.html#key()">key</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+</tbody>
+</table>
+<table class="useSummary">
+<caption><span>Methods in <a href="../package-summary.html">org.apache.sysds.runtime.compress.utils</a> that return types with arguments of type <a href="../DblArray.html" title="class in org.apache.sysds.runtime.compress.utils">DblArray</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colSecond" scope="col">Method</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../ACount.html" title="class in org.apache.sysds.runtime.compress.utils">ACount</a>&lt;<a href="../DblArray.html" title="class in org.apache.sysds.runtime.compress.utils">DblArray</a>&gt;</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ACount.DArrCounts.</span><code><span class="memberNameLink"><a href="../ACount.DArrCounts.html#get(org.apache.sysds.runtime.compress.utils.DblArray)">get</a></span>&#8203;(<a href="../DblArray.html" title="class in org.apache.sysds.runtime.compress.utils">DblArray</a>&nbsp;key)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+</tbody>
+</table>
+<table class="useSummary">
 <caption><span>Methods in <a href="../package-summary.html">org.apache.sysds.runtime.compress.utils</a> with parameters of type <a href="../DblArray.html" title="class in org.apache.sysds.runtime.compress.utils">DblArray</a></span><span class="tabEnd">&nbsp;</span></caption>
 <tr>
 <th class="colFirst" scope="col">Modifier and Type</th>
@@ -188,11 +244,9 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
-<td class="colFirst"><code>int</code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">DblArrayCountHashMap.</span><code><span class="memberNameLink"><a href="../DblArrayCountHashMap.html#get(org.apache.sysds.runtime.compress.utils.DblArray)">get</a></span>&#8203;(<a href="../DblArray.html" title="class in org.apache.sysds.runtime.compress.utils">DblArray</a>&nbsp;key)</code></th>
-<td class="colLast">
-<div class="block">Get the value on a key, if the key is not inside a NullPointerException is thrown.</div>
-</td>
+<td class="colFirst"><code><a href="../ACount.html" title="class in org.apache.sysds.runtime.compress.utils">ACount</a>&lt;<a href="../DblArray.html" title="class in org.apache.sysds.runtime.compress.utils">DblArray</a>&gt;</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ACount.DArrCounts.</span><code><span class="memberNameLink"><a href="../ACount.DArrCounts.html#get(org.apache.sysds.runtime.compress.utils.DblArray)">get</a></span>&#8203;(<a href="../DblArray.html" title="class in org.apache.sysds.runtime.compress.utils">DblArray</a>&nbsp;key)</code></th>
+<td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code><a href="../IntArrayList.html" title="class in org.apache.sysds.runtime.compress.utils">IntArrayList</a></code></td>
@@ -200,28 +254,30 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
-<td class="colFirst"><code>int</code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">DblArrayCountHashMap.</span><code><span class="memberNameLink"><a href="../DblArrayCountHashMap.html#getId(org.apache.sysds.runtime.compress.utils.DblArray)">getId</a></span>&#8203;(<a href="../DblArray.html" title="class in org.apache.sysds.runtime.compress.utils">DblArray</a>&nbsp;key)</code></th>
-<td class="colLast">
-<div class="block">Get the ID behind the key, if it does not exist -1 is returned.</div>
-</td>
-</tr>
-<tr class="rowColor">
-<td class="colFirst"><code>int</code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">DblArrayCountHashMap.</span><code><span class="memberNameLink"><a href="../DblArrayCountHashMap.html#increment(org.apache.sysds.runtime.compress.utils.DblArray)">increment</a></span>&#8203;(<a href="../DblArray.html" title="class in org.apache.sysds.runtime.compress.utils">DblArray</a>&nbsp;key)</code></th>
-<td class="colLast">
-<div class="block">Increment the key, and return the Id of the value incremented.</div>
-</td>
-</tr>
-<tr class="altColor">
-<td class="colFirst"><code>int</code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">DblArrayCountHashMap.</span><code><span class="memberNameLink"><a href="../DblArrayCountHashMap.html#increment(org.apache.sysds.runtime.compress.utils.DblArray,int)">increment</a></span>&#8203;(<a href="../DblArray.html" title="class in org.apache.sysds.runtime.compress.utils">DblArray</a>&nbsp;key,
-         int&nbsp;count)</code></th>
+<td class="colFirst"><code><a href="../ACount.DArrCounts.html" title="class in org.apache.sysds.runtime.compress.utils">ACount.DArrCounts</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ACount.DArrCounts.</span><code><span class="memberNameLink"><a href="../ACount.DArrCounts.html#inc(org.apache.sysds.runtime.compress.utils.DblArray,int,int)">inc</a></span>&#8203;(<a href="../DblArray.html" title="class in org.apache.sysds.runtime.compress.utils">DblArray</a>&nbsp;key,
+   int&nbsp;c,
+   int&nbsp;id)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>boolean</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">DblArrayIntListHashMap.DArrayIListEntry.</span><code><span class="memberNameLink"><a href="../DblArrayIntListHashMap.DArrayIListEntry.html#keyEquals(org.apache.sysds.runtime.compress.utils.DblArray)">keyEquals</a></span>&#8203;(<a href="../DblArray.html" title="class in org.apache.sysds.runtime.compress.utils">DblArray</a>&nbsp;keyThat)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+</tbody>
+</table>
+<table class="useSummary">
+<caption><span>Method parameters in <a href="../package-summary.html">org.apache.sysds.runtime.compress.utils</a> with type arguments of type <a href="../DblArray.html" title="class in org.apache.sysds.runtime.compress.utils">DblArray</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colSecond" scope="col">Method</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ACount.DArrCounts.</span><code><span class="memberNameLink"><a href="../ACount.DArrCounts.html#setNext(org.apache.sysds.runtime.compress.utils.ACount)">setNext</a></span>&#8203;(<a href="../ACount.html" title="class in org.apache.sysds.runtime.compress.utils">ACount</a>&lt;<a href="../DblArray.html" title="class in org.apache.sysds.runtime.compress.utils">DblArray</a>&gt;&nbsp;e)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 </tbody>
@@ -244,6 +300,12 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../ACount.DArrCounts.html#%3Cinit%3E(org.apache.sysds.runtime.compress.utils.DblArray,int,int)">DArrCounts</a></span>&#8203;(<a href="../DblArray.html" title="class in org.apache.sysds.runtime.compress.utils">DblArray</a>&nbsp;key,
+          int&nbsp;id,
+          int&nbsp;count)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../DblArray.html#%3Cinit%3E(org.apache.sysds.runtime.compress.utils.DblArray)">DblArray</a></span>&#8203;(<a href="../DblArray.html" title="class in org.apache.sysds.runtime.compress.utils">DblArray</a>&nbsp;that)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>

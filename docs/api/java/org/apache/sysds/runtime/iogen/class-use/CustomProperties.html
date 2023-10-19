@@ -14,7 +14,7 @@
 <!--[if IE]>
 <script type="text/javascript" src="../../../../../../jquery/jszip-utils/dist/jszip-utils-ie.min.js"></script>
 <![endif]-->
-<script type="text/javascript" src="../../../../../../jquery/jquery-3.6.0.min.js"></script>
+<script type="text/javascript" src="../../../../../../jquery/jquery-3.6.1.min.js"></script>
 <script type="text/javascript" src="../../../../../../jquery/jquery-ui.min.js"></script>
 </head>
 <body>
@@ -110,6 +110,14 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.iogen">org.apache.sysds.runtime.iogen</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
+<tr class="rowColor">
+<th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.iogen.codegen">org.apache.sysds.runtime.iogen.codegen</a></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.iogen.template">org.apache.sysds.runtime.iogen.template</a></th>
+<td class="colLast">&nbsp;</td>
+</tr>
 </tbody>
 </table>
 </li>
@@ -130,58 +138,82 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <tbody>
 <tr class="altColor">
 <td class="colFirst"><code><a href="../CustomProperties.html" title="class in org.apache.sysds.runtime.iogen">CustomProperties</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">ReaderMapping.</span><code><span class="memberNameLink"><a href="../ReaderMapping.html#getFileFormatPropertiesOfRRCIMapping()">getFileFormatPropertiesOfRRCIMapping</a></span>()</code></th>
+<th class="colSecond" scope="row"><span class="typeNameLabel">FormatIdentifyer.</span><code><span class="memberNameLink"><a href="../FormatIdentifyer.html#getFormatProperties()">getFormatProperties</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code><a href="../CustomProperties.html" title="class in org.apache.sysds.runtime.iogen">CustomProperties</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">ReaderMapping.</span><code><span class="memberNameLink"><a href="../ReaderMapping.html#getFileFormatPropertiesOfRRCRMapping()">getFileFormatPropertiesOfRRCRMapping</a></span>()</code></th>
-<td class="colLast">&nbsp;</td>
-</tr>
-<tr class="altColor">
-<td class="colFirst"><code><a href="../CustomProperties.html" title="class in org.apache.sysds.runtime.iogen">CustomProperties</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">ReaderMapping.</span><code><span class="memberNameLink"><a href="../ReaderMapping.html#getFormatProperties()">getFormatProperties</a></span>()</code></th>
+<th class="colSecond" scope="row"><span class="typeNameLabel">GenerateReader.</span><code><span class="memberNameLink"><a href="../GenerateReader.html#getProperties()">getProperties</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 </tbody>
 </table>
+</section>
+</li>
+<li class="blockList">
+<section><a id="org.apache.sysds.runtime.iogen.codegen">
+<!--   -->
+</a>
+<h3>Uses of <a href="../CustomProperties.html" title="class in org.apache.sysds.runtime.iogen">CustomProperties</a> in <a href="../codegen/package-summary.html">org.apache.sysds.runtime.iogen.codegen</a></h3>
 <table class="useSummary">
-<caption><span>Constructors in <a href="../package-summary.html">org.apache.sysds.runtime.iogen</a> with parameters of type <a href="../CustomProperties.html" title="class in org.apache.sysds.runtime.iogen">CustomProperties</a></span><span class="tabEnd">&nbsp;</span></caption>
+<caption><span>Constructors in <a href="../codegen/package-summary.html">org.apache.sysds.runtime.iogen.codegen</a> with parameters of type <a href="../CustomProperties.html" title="class in org.apache.sysds.runtime.iogen">CustomProperties</a></span><span class="tabEnd">&nbsp;</span></caption>
 <tr>
 <th class="colFirst" scope="col">Constructor</th>
 <th class="colLast" scope="col">Description</th>
 </tr>
 <tbody>
 <tr class="altColor">
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../FrameGenerateReader.html#%3Cinit%3E(org.apache.sysds.runtime.iogen.CustomProperties)">FrameGenerateReader</a></span>&#8203;(<a href="../CustomProperties.html" title="class in org.apache.sysds.runtime.iogen">CustomProperties</a>&nbsp;_props)</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../codegen/CodeGenTrie.html#%3Cinit%3E(org.apache.sysds.runtime.iogen.CustomProperties,java.lang.String,boolean,org.apache.sysds.runtime.iogen.FormatIdentifyer)">CodeGenTrie</a></span>&#8203;(<a href="../CustomProperties.html" title="class in org.apache.sysds.runtime.iogen">CustomProperties</a>&nbsp;properties,
+           <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;destination,
+           boolean&nbsp;isMatrix,
+           <a href="../FormatIdentifyer.html" title="class in org.apache.sysds.runtime.iogen">FormatIdentifyer</a>&nbsp;formatIdentifyer)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../FrameGenerateReader.FrameReaderRowIrregular.html#%3Cinit%3E(org.apache.sysds.runtime.iogen.CustomProperties)">FrameReaderRowIrregular</a></span>&#8203;(<a href="../CustomProperties.html" title="class in org.apache.sysds.runtime.iogen">CustomProperties</a>&nbsp;_props)</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../codegen/FrameCodeGen.html#%3Cinit%3E(org.apache.sysds.runtime.iogen.CustomProperties,java.lang.String)">FrameCodeGen</a></span>&#8203;(<a href="../CustomProperties.html" title="class in org.apache.sysds.runtime.iogen">CustomProperties</a>&nbsp;properties,
+            <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;className)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../FrameGenerateReader.FrameReaderRowRegularColIrregular.html#%3Cinit%3E(org.apache.sysds.runtime.iogen.CustomProperties)">FrameReaderRowRegularColIrregular</a></span>&#8203;(<a href="../CustomProperties.html" title="class in org.apache.sysds.runtime.iogen">CustomProperties</a>&nbsp;_props)</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../codegen/MatrixCodeGen.html#%3Cinit%3E(org.apache.sysds.runtime.iogen.CustomProperties,java.lang.String)">MatrixCodeGen</a></span>&#8203;(<a href="../CustomProperties.html" title="class in org.apache.sysds.runtime.iogen">CustomProperties</a>&nbsp;properties,
+             <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;className)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+</tbody>
+</table>
+</section>
+</li>
+<li class="blockList">
+<section><a id="org.apache.sysds.runtime.iogen.template">
+<!--   -->
+</a>
+<h3>Uses of <a href="../CustomProperties.html" title="class in org.apache.sysds.runtime.iogen">CustomProperties</a> in <a href="../template/package-summary.html">org.apache.sysds.runtime.iogen.template</a></h3>
+<table class="useSummary">
+<caption><span>Constructors in <a href="../template/package-summary.html">org.apache.sysds.runtime.iogen.template</a> with parameters of type <a href="../CustomProperties.html" title="class in org.apache.sysds.runtime.iogen">CustomProperties</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Constructor</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../template/FrameGenerateReader.html#%3Cinit%3E(org.apache.sysds.runtime.iogen.CustomProperties)">FrameGenerateReader</a></span>&#8203;(<a href="../CustomProperties.html" title="class in org.apache.sysds.runtime.iogen">CustomProperties</a>&nbsp;_props)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../FrameGenerateReader.FrameReaderRowRegularColRegular.html#%3Cinit%3E(org.apache.sysds.runtime.iogen.CustomProperties)">FrameReaderRowRegularColRegular</a></span>&#8203;(<a href="../CustomProperties.html" title="class in org.apache.sysds.runtime.iogen">CustomProperties</a>&nbsp;_props)</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../template/FrameGenerateReaderParallel.html#%3Cinit%3E(org.apache.sysds.runtime.iogen.CustomProperties)">FrameGenerateReaderParallel</a></span>&#8203;(<a href="../CustomProperties.html" title="class in org.apache.sysds.runtime.iogen">CustomProperties</a>&nbsp;_props)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../MatrixGenerateReader.html#%3Cinit%3E(org.apache.sysds.runtime.iogen.CustomProperties)">MatrixGenerateReader</a></span>&#8203;(<a href="../CustomProperties.html" title="class in org.apache.sysds.runtime.iogen">CustomProperties</a>&nbsp;_props)</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../template/MatrixGenerateReader.html#%3Cinit%3E(org.apache.sysds.runtime.iogen.CustomProperties)">MatrixGenerateReader</a></span>&#8203;(<a href="../CustomProperties.html" title="class in org.apache.sysds.runtime.iogen">CustomProperties</a>&nbsp;_props)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../MatrixGenerateReader.MatrixReaderRowIrregular.html#%3Cinit%3E(org.apache.sysds.runtime.iogen.CustomProperties)">MatrixReaderRowIrregular</a></span>&#8203;(<a href="../CustomProperties.html" title="class in org.apache.sysds.runtime.iogen">CustomProperties</a>&nbsp;_props)</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../template/MatrixGenerateReaderParallel.html#%3Cinit%3E(org.apache.sysds.runtime.iogen.CustomProperties)">MatrixGenerateReaderParallel</a></span>&#8203;(<a href="../CustomProperties.html" title="class in org.apache.sysds.runtime.iogen">CustomProperties</a>&nbsp;_props)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../MatrixGenerateReader.MatrixReaderRowRegularColIrregular.html#%3Cinit%3E(org.apache.sysds.runtime.iogen.CustomProperties)">MatrixReaderRowRegularColIrregular</a></span>&#8203;(<a href="../CustomProperties.html" title="class in org.apache.sysds.runtime.iogen">CustomProperties</a>&nbsp;_props)</code></th>
-<td class="colLast">&nbsp;</td>
-</tr>
-<tr class="rowColor">
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../MatrixGenerateReader.MatrixReaderRowRegularColRegular.html#%3Cinit%3E(org.apache.sysds.runtime.iogen.CustomProperties)">MatrixReaderRowRegularColRegular</a></span>&#8203;(<a href="../CustomProperties.html" title="class in org.apache.sysds.runtime.iogen">CustomProperties</a>&nbsp;_props)</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../template/TemplateCodeGenBase.html#%3Cinit%3E(org.apache.sysds.runtime.iogen.CustomProperties,java.lang.String)">TemplateCodeGenBase</a></span>&#8203;(<a href="../CustomProperties.html" title="class in org.apache.sysds.runtime.iogen">CustomProperties</a>&nbsp;properties,
+                   <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;className)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 </tbody>

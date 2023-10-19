@@ -14,7 +14,7 @@
 <!--[if IE]>
 <script type="text/javascript" src="../../../../../../../jquery/jszip-utils/dist/jszip-utils-ie.min.js"></script>
 <![endif]-->
-<script type="text/javascript" src="../../../../../../../jquery/jquery-3.6.0.min.js"></script>
+<script type="text/javascript" src="../../../../../../../jquery/jquery-3.6.1.min.js"></script>
 <script type="text/javascript" src="../../../../../../../jquery/jquery-ui.min.js"></script>
 </head>
 <body>
@@ -164,6 +164,28 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tr id="i0" class="altColor">
 <td class="colFirst"><code>static <a href="IEncode.html" title="interface in org.apache.sysds.runtime.compress.estim.encoding">IEncode</a></code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#create(org.apache.sysds.runtime.compress.colgroup.ColGroupConst)">create</a></span>&#8203;(<a href="../../colgroup/ColGroupConst.html" title="class in org.apache.sysds.runtime.compress.colgroup">ColGroupConst</a>&nbsp;c)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i1" class="rowColor">
+<td class="colFirst"><code>static <a href="IEncode.html" title="interface in org.apache.sysds.runtime.compress.estim.encoding">IEncode</a></code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#create(org.apache.sysds.runtime.compress.colgroup.ColGroupEmpty)">create</a></span>&#8203;(<a href="../../colgroup/ColGroupEmpty.html" title="class in org.apache.sysds.runtime.compress.colgroup">ColGroupEmpty</a>&nbsp;c)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i2" class="altColor">
+<td class="colFirst"><code>static <a href="IEncode.html" title="interface in org.apache.sysds.runtime.compress.estim.encoding">IEncode</a></code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#create(org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData)">create</a></span>&#8203;(<a href="../../colgroup/mapping/AMapToData.html" title="class in org.apache.sysds.runtime.compress.colgroup.mapping">AMapToData</a>&nbsp;d)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i3" class="rowColor">
+<td class="colFirst"><code>static <a href="IEncode.html" title="interface in org.apache.sysds.runtime.compress.estim.encoding">IEncode</a></code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#create(org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData,org.apache.sysds.runtime.compress.colgroup.offset.AOffset,int)">create</a></span>&#8203;(<a href="../../colgroup/mapping/AMapToData.html" title="class in org.apache.sysds.runtime.compress.colgroup.mapping">AMapToData</a>&nbsp;d,
+      <a href="../../colgroup/offset/AOffset.html" title="class in org.apache.sysds.runtime.compress.colgroup.offset">AOffset</a>&nbsp;i,
+      int&nbsp;nRow)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i4" class="altColor">
+<td class="colFirst"><code>static <a href="IEncode.html" title="interface in org.apache.sysds.runtime.compress.estim.encoding">IEncode</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#createFromMatrixBlock(org.apache.sysds.runtime.matrix.data.MatrixBlock,boolean,int)">createFromMatrixBlock</a></span>&#8203;(<a href="../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;m,
                      boolean&nbsp;transposed,
                      int&nbsp;rowCol)</code></th>
@@ -171,7 +193,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <div class="block">Create encoding of a single specific column inside the matrix input.</div>
 </td>
 </tr>
-<tr id="i1" class="rowColor">
+<tr id="i5" class="rowColor">
 <td class="colFirst"><code>static <a href="IEncode.html" title="interface in org.apache.sysds.runtime.compress.estim.encoding">IEncode</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#createFromMatrixBlock(org.apache.sysds.runtime.matrix.data.MatrixBlock,boolean,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex)">createFromMatrixBlock</a></span>&#8203;(<a href="../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;m,
                      boolean&nbsp;transposed,
@@ -180,7 +202,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <div class="block">Encode a list of columns together from the input matrix, as if it is cocoded.</div>
 </td>
 </tr>
-<tr id="i2" class="altColor">
+<tr id="i6" class="altColor">
 <td class="colFirst"><code>static <a href="IEncode.html" title="interface in org.apache.sysds.runtime.compress.estim.encoding">IEncode</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#createFromMatrixBlockDelta(org.apache.sysds.runtime.matrix.data.MatrixBlock,boolean,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex)">createFromMatrixBlockDelta</a></span>&#8203;(<a href="../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;m,
                           boolean&nbsp;transposed,
@@ -189,7 +211,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <div class="block">Encode a full delta representation of the matrix input taking all rows into account.</div>
 </td>
 </tr>
-<tr id="i3" class="rowColor">
+<tr id="i7" class="rowColor">
 <td class="colFirst"><code>static <a href="IEncode.html" title="interface in org.apache.sysds.runtime.compress.estim.encoding">IEncode</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#createFromMatrixBlockDelta(org.apache.sysds.runtime.matrix.data.MatrixBlock,boolean,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,int)">createFromMatrixBlockDelta</a></span>&#8203;(<a href="../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;m,
                           boolean&nbsp;transposed,
@@ -199,7 +221,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <div class="block">Encode a delta representation of the matrix input taking the first "sampleSize" rows into account.</div>
 </td>
 </tr>
-<tr id="i4" class="altColor">
+<tr id="i8" class="altColor">
 <td class="colFirst"><code>static <a href="SparseEncoding.html" title="class in org.apache.sysds.runtime.compress.estim.encoding">SparseEncoding</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#createSparse(org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData,org.apache.sysds.runtime.compress.colgroup.offset.AOffset,int)">createSparse</a></span>&#8203;(<a href="../../colgroup/mapping/AMapToData.html" title="class in org.apache.sysds.runtime.compress.colgroup.mapping">AMapToData</a>&nbsp;map,
             <a href="../../colgroup/offset/AOffset.html" title="class in org.apache.sysds.runtime.compress.colgroup.offset">AOffset</a>&nbsp;off,
@@ -273,8 +295,8 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
                                           <a href="../../colgroup/indexes/IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;rowCols)</pre>
 <div class="block">Encode a full delta representation of the matrix input taking all rows into account.
  
- Note the input matrix should not be delta encoded, but instead while processing, enforcing that we do not allocate
- more memory.</div>
+ Note the input matrix should not be delta encoded, but instead while processing, enforcing that we do not
+ allocate more memory.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>m</code> - The input matrix that is not delta encoded and should not be modified</dd>
@@ -297,8 +319,8 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
                                           int&nbsp;sampleSize)</pre>
 <div class="block">Encode a delta representation of the matrix input taking the first "sampleSize" rows into account.
  
- Note the input matrix should not be delta encoded, but instead while processing, enforcing that we do not allocate
- more memory.</div>
+ Note the input matrix should not be delta encoded, but instead while processing, enforcing that we do not
+ allocate more memory.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>m</code> - Input matrix that is not delta encoded and should not be modified</dd>
@@ -328,6 +350,44 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>An encoded format of the information of this column.</dd>
 </dl>
+</li>
+</ul>
+<a id="create(org.apache.sysds.runtime.compress.colgroup.ColGroupConst)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>create</h4>
+<pre class="methodSignature">static&nbsp;<a href="IEncode.html" title="interface in org.apache.sysds.runtime.compress.estim.encoding">IEncode</a>&nbsp;create&#8203;(<a href="../../colgroup/ColGroupConst.html" title="class in org.apache.sysds.runtime.compress.colgroup">ColGroupConst</a>&nbsp;c)</pre>
+</li>
+</ul>
+<a id="create(org.apache.sysds.runtime.compress.colgroup.ColGroupEmpty)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>create</h4>
+<pre class="methodSignature">static&nbsp;<a href="IEncode.html" title="interface in org.apache.sysds.runtime.compress.estim.encoding">IEncode</a>&nbsp;create&#8203;(<a href="../../colgroup/ColGroupEmpty.html" title="class in org.apache.sysds.runtime.compress.colgroup">ColGroupEmpty</a>&nbsp;c)</pre>
+</li>
+</ul>
+<a id="create(org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>create</h4>
+<pre class="methodSignature">static&nbsp;<a href="IEncode.html" title="interface in org.apache.sysds.runtime.compress.estim.encoding">IEncode</a>&nbsp;create&#8203;(<a href="../../colgroup/mapping/AMapToData.html" title="class in org.apache.sysds.runtime.compress.colgroup.mapping">AMapToData</a>&nbsp;d)</pre>
+</li>
+</ul>
+<a id="create(org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData,org.apache.sysds.runtime.compress.colgroup.offset.AOffset,int)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>create</h4>
+<pre class="methodSignature">static&nbsp;<a href="IEncode.html" title="interface in org.apache.sysds.runtime.compress.estim.encoding">IEncode</a>&nbsp;create&#8203;(<a href="../../colgroup/mapping/AMapToData.html" title="class in org.apache.sysds.runtime.compress.colgroup.mapping">AMapToData</a>&nbsp;d,
+                      <a href="../../colgroup/offset/AOffset.html" title="class in org.apache.sysds.runtime.compress.colgroup.offset">AOffset</a>&nbsp;i,
+                      int&nbsp;nRow)</pre>
 </li>
 </ul>
 <a id="createSparse(org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData,org.apache.sysds.runtime.compress.colgroup.offset.AOffset,int)">

@@ -14,7 +14,7 @@
 <!--[if IE]>
 <script type="text/javascript" src="../../../../../../../jquery/jszip-utils/dist/jszip-utils-ie.min.js"></script>
 <![endif]-->
-<script type="text/javascript" src="../../../../../../../jquery/jquery-3.6.0.min.js"></script>
+<script type="text/javascript" src="../../../../../../../jquery/jquery-3.6.1.min.js"></script>
 <script type="text/javascript" src="../../../../../../../jquery/jquery-ui.min.js"></script>
 </head>
 <body>
@@ -458,8 +458,22 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tbody>
 <tr class="altColor">
-<td class="colFirst"><code>abstract <a href="../../../compress/colgroup/dictionary/ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">ADictionary.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/dictionary/ADictionary.html#binOpLeft(org.apache.sysds.runtime.matrix.operators.BinaryOperator,double%5B%5D,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex)">binOpLeft</a></span>&#8203;(<a href="../BinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">BinaryOperator</a>&nbsp;op,
+<td class="colFirst"><code><a href="../../../compress/colgroup/dictionary/Dictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">Dictionary</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">Dictionary.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/dictionary/Dictionary.html#binOpLeft(org.apache.sysds.runtime.matrix.operators.BinaryOperator,double%5B%5D,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex)">binOpLeft</a></span>&#8203;(<a href="../BinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">BinaryOperator</a>&nbsp;op,
+         double[]&nbsp;v,
+         <a href="../../../compress/colgroup/indexes/IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;colIndexes)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../../../compress/colgroup/dictionary/IDictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">IdentityDictionary.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/dictionary/IdentityDictionary.html#binOpLeft(org.apache.sysds.runtime.matrix.operators.BinaryOperator,double%5B%5D,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex)">binOpLeft</a></span>&#8203;(<a href="../BinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">BinaryOperator</a>&nbsp;op,
+         double[]&nbsp;v,
+         <a href="../../../compress/colgroup/indexes/IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;colIndexes)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../../../compress/colgroup/dictionary/IDictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">IDictionary.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/dictionary/IDictionary.html#binOpLeft(org.apache.sysds.runtime.matrix.operators.BinaryOperator,double%5B%5D,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex)">binOpLeft</a></span>&#8203;(<a href="../BinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">BinaryOperator</a>&nbsp;op,
          double[]&nbsp;v,
          <a href="../../../compress/colgroup/indexes/IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;colIndexes)</code></th>
 <td class="colLast">
@@ -467,82 +481,71 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </td>
 </tr>
 <tr class="rowColor">
-<td class="colFirst"><code><a href="../../../compress/colgroup/dictionary/Dictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">Dictionary</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">Dictionary.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/dictionary/Dictionary.html#binOpLeft(org.apache.sysds.runtime.matrix.operators.BinaryOperator,double%5B%5D,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex)">binOpLeft</a></span>&#8203;(<a href="../BinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">BinaryOperator</a>&nbsp;op,
-         double[]&nbsp;v,
-         <a href="../../../compress/colgroup/indexes/IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;colIndexes)</code></th>
-<td class="colLast">&nbsp;</td>
-</tr>
-<tr class="altColor">
-<td class="colFirst"><code><a href="../../../compress/colgroup/dictionary/ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">IdentityDictionary.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/dictionary/IdentityDictionary.html#binOpLeft(org.apache.sysds.runtime.matrix.operators.BinaryOperator,double%5B%5D,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex)">binOpLeft</a></span>&#8203;(<a href="../BinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">BinaryOperator</a>&nbsp;op,
-         double[]&nbsp;v,
-         <a href="../../../compress/colgroup/indexes/IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;colIndexes)</code></th>
-<td class="colLast">&nbsp;</td>
-</tr>
-<tr class="rowColor">
-<td class="colFirst"><code><a href="../../../compress/colgroup/dictionary/ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
+<td class="colFirst"><code><a href="../../../compress/colgroup/dictionary/IDictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">MatrixBlockDictionary.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/dictionary/MatrixBlockDictionary.html#binOpLeft(org.apache.sysds.runtime.matrix.operators.BinaryOperator,double%5B%5D,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex)">binOpLeft</a></span>&#8203;(<a href="../BinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">BinaryOperator</a>&nbsp;op,
          double[]&nbsp;v,
          <a href="../../../compress/colgroup/indexes/IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;colIndexes)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
-<td class="colFirst"><code><a href="../../../compress/colgroup/dictionary/ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">QDictionary.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/dictionary/QDictionary.html#binOpLeft(org.apache.sysds.runtime.matrix.operators.BinaryOperator,double%5B%5D,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex)">binOpLeft</a></span>&#8203;(<a href="../BinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">BinaryOperator</a>&nbsp;op,
+<td class="colFirst"><code><a href="../../../compress/colgroup/dictionary/IDictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">PlaceHolderDict.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/dictionary/PlaceHolderDict.html#binOpLeft(org.apache.sysds.runtime.matrix.operators.BinaryOperator,double%5B%5D,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex)">binOpLeft</a></span>&#8203;(<a href="../BinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">BinaryOperator</a>&nbsp;op,
          double[]&nbsp;v,
          <a href="../../../compress/colgroup/indexes/IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;colIndexes)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
-<td class="colFirst"><code>abstract <a href="../../../compress/colgroup/dictionary/ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">ADictionary.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/dictionary/ADictionary.html#binOpLeftAndAppend(org.apache.sysds.runtime.matrix.operators.BinaryOperator,double%5B%5D,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex)">binOpLeftAndAppend</a></span>&#8203;(<a href="../BinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">BinaryOperator</a>&nbsp;op,
-                  double[]&nbsp;v,
-                  <a href="../../../compress/colgroup/indexes/IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;colIndexes)</code></th>
-<td class="colLast">
-<div class="block">Apply binary row operation on the left side with one extra row evaluating with zeros.</div>
-</td>
+<td class="colFirst"><code><a href="../../../compress/colgroup/dictionary/IDictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">QDictionary.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/dictionary/QDictionary.html#binOpLeft(org.apache.sysds.runtime.matrix.operators.BinaryOperator,double%5B%5D,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex)">binOpLeft</a></span>&#8203;(<a href="../BinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">BinaryOperator</a>&nbsp;op,
+         double[]&nbsp;v,
+         <a href="../../../compress/colgroup/indexes/IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;colIndexes)</code></th>
+<td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
-<td class="colFirst"><code><a href="../../../compress/colgroup/dictionary/ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
+<td class="colFirst"><code><a href="../../../compress/colgroup/dictionary/IDictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">Dictionary.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/dictionary/Dictionary.html#binOpLeftAndAppend(org.apache.sysds.runtime.matrix.operators.BinaryOperator,double%5B%5D,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex)">binOpLeftAndAppend</a></span>&#8203;(<a href="../BinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">BinaryOperator</a>&nbsp;op,
                   double[]&nbsp;v,
                   <a href="../../../compress/colgroup/indexes/IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;colIndexes)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
-<td class="colFirst"><code><a href="../../../compress/colgroup/dictionary/ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
+<td class="colFirst"><code><a href="../../../compress/colgroup/dictionary/IDictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">IdentityDictionary.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/dictionary/IdentityDictionary.html#binOpLeftAndAppend(org.apache.sysds.runtime.matrix.operators.BinaryOperator,double%5B%5D,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex)">binOpLeftAndAppend</a></span>&#8203;(<a href="../BinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">BinaryOperator</a>&nbsp;op,
                   double[]&nbsp;v,
                   <a href="../../../compress/colgroup/indexes/IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;colIndexes)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
-<td class="colFirst"><code><a href="../../../compress/colgroup/dictionary/ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
+<td class="colFirst"><code><a href="../../../compress/colgroup/dictionary/IDictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">IDictionary.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/dictionary/IDictionary.html#binOpLeftAndAppend(org.apache.sysds.runtime.matrix.operators.BinaryOperator,double%5B%5D,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex)">binOpLeftAndAppend</a></span>&#8203;(<a href="../BinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">BinaryOperator</a>&nbsp;op,
+                  double[]&nbsp;v,
+                  <a href="../../../compress/colgroup/indexes/IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;colIndexes)</code></th>
+<td class="colLast">
+<div class="block">Apply binary row operation on the left side with one extra row evaluating with zeros.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../../../compress/colgroup/dictionary/IDictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">MatrixBlockDictionary.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/dictionary/MatrixBlockDictionary.html#binOpLeftAndAppend(org.apache.sysds.runtime.matrix.operators.BinaryOperator,double%5B%5D,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex)">binOpLeftAndAppend</a></span>&#8203;(<a href="../BinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">BinaryOperator</a>&nbsp;op,
                   double[]&nbsp;v,
                   <a href="../../../compress/colgroup/indexes/IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;colIndexes)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../../../compress/colgroup/dictionary/IDictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">PlaceHolderDict.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/dictionary/PlaceHolderDict.html#binOpLeftAndAppend(org.apache.sysds.runtime.matrix.operators.BinaryOperator,double%5B%5D,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex)">binOpLeftAndAppend</a></span>&#8203;(<a href="../BinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">BinaryOperator</a>&nbsp;op,
+                  double[]&nbsp;v,
+                  <a href="../../../compress/colgroup/indexes/IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;colIndexes)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
 <tr class="rowColor">
-<td class="colFirst"><code><a href="../../../compress/colgroup/dictionary/ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
+<td class="colFirst"><code><a href="../../../compress/colgroup/dictionary/IDictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">QDictionary.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/dictionary/QDictionary.html#binOpLeftAndAppend(org.apache.sysds.runtime.matrix.operators.BinaryOperator,double%5B%5D,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex)">binOpLeftAndAppend</a></span>&#8203;(<a href="../BinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">BinaryOperator</a>&nbsp;op,
                   double[]&nbsp;v,
                   <a href="../../../compress/colgroup/indexes/IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;colIndexes)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
-<td class="colFirst"><code>abstract <a href="../../../compress/colgroup/dictionary/ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">ADictionary.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/dictionary/ADictionary.html#binOpLeftWithReference(org.apache.sysds.runtime.matrix.operators.BinaryOperator,double%5B%5D,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,double%5B%5D,double%5B%5D)">binOpLeftWithReference</a></span>&#8203;(<a href="../BinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">BinaryOperator</a>&nbsp;op,
-                      double[]&nbsp;v,
-                      <a href="../../../compress/colgroup/indexes/IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;colIndexes,
-                      double[]&nbsp;reference,
-                      double[]&nbsp;newReference)</code></th>
-<td class="colLast">
-<div class="block">Apply the binary operator such that each value is offset by the reference before application.</div>
-</td>
-</tr>
-<tr class="rowColor">
 <td class="colFirst"><code><a href="../../../compress/colgroup/dictionary/Dictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">Dictionary</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">Dictionary.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/dictionary/Dictionary.html#binOpLeftWithReference(org.apache.sysds.runtime.matrix.operators.BinaryOperator,double%5B%5D,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,double%5B%5D,double%5B%5D)">binOpLeftWithReference</a></span>&#8203;(<a href="../BinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">BinaryOperator</a>&nbsp;op,
                       double[]&nbsp;v,
@@ -551,14 +554,25 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
                       double[]&nbsp;newReference)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
-<td class="colFirst"><code><a href="../../../compress/colgroup/dictionary/ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../../../compress/colgroup/dictionary/IDictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">IdentityDictionary.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/dictionary/IdentityDictionary.html#binOpLeftWithReference(org.apache.sysds.runtime.matrix.operators.BinaryOperator,double%5B%5D,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,double%5B%5D,double%5B%5D)">binOpLeftWithReference</a></span>&#8203;(<a href="../BinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">BinaryOperator</a>&nbsp;op,
                       double[]&nbsp;v,
                       <a href="../../../compress/colgroup/indexes/IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;colIndexes,
                       double[]&nbsp;reference,
                       double[]&nbsp;newReference)</code></th>
 <td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../../../compress/colgroup/dictionary/IDictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">IDictionary.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/dictionary/IDictionary.html#binOpLeftWithReference(org.apache.sysds.runtime.matrix.operators.BinaryOperator,double%5B%5D,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,double%5B%5D,double%5B%5D)">binOpLeftWithReference</a></span>&#8203;(<a href="../BinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">BinaryOperator</a>&nbsp;op,
+                      double[]&nbsp;v,
+                      <a href="../../../compress/colgroup/indexes/IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;colIndexes,
+                      double[]&nbsp;reference,
+                      double[]&nbsp;newReference)</code></th>
+<td class="colLast">
+<div class="block">Apply the binary operator such that each value is offset by the reference before application.</div>
+</td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code><a href="../../../compress/colgroup/dictionary/MatrixBlockDictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">MatrixBlockDictionary</a></code></td>
@@ -570,8 +584,8 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
-<td class="colFirst"><code><a href="../../../compress/colgroup/dictionary/ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">QDictionary.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/dictionary/QDictionary.html#binOpLeftWithReference(org.apache.sysds.runtime.matrix.operators.BinaryOperator,double%5B%5D,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,double%5B%5D,double%5B%5D)">binOpLeftWithReference</a></span>&#8203;(<a href="../BinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">BinaryOperator</a>&nbsp;op,
+<td class="colFirst"><code><a href="../../../compress/colgroup/dictionary/IDictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">PlaceHolderDict.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/dictionary/PlaceHolderDict.html#binOpLeftWithReference(org.apache.sysds.runtime.matrix.operators.BinaryOperator,double%5B%5D,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,double%5B%5D,double%5B%5D)">binOpLeftWithReference</a></span>&#8203;(<a href="../BinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">BinaryOperator</a>&nbsp;op,
                       double[]&nbsp;v,
                       <a href="../../../compress/colgroup/indexes/IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;colIndexes,
                       double[]&nbsp;reference,
@@ -579,123 +593,141 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
-<td class="colFirst"><code>abstract <a href="../../../compress/colgroup/dictionary/ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">ADictionary.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/dictionary/ADictionary.html#binOpRight(org.apache.sysds.runtime.matrix.operators.BinaryOperator,double%5B%5D)">binOpRight</a></span>&#8203;(<a href="../BinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">BinaryOperator</a>&nbsp;op,
-          double[]&nbsp;v)</code></th>
-<td class="colLast">
-<div class="block">Apply binary row operation on the right side as with no columns to extract from v.</div>
-</td>
+<td class="colFirst"><code><a href="../../../compress/colgroup/dictionary/IDictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">QDictionary.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/dictionary/QDictionary.html#binOpLeftWithReference(org.apache.sysds.runtime.matrix.operators.BinaryOperator,double%5B%5D,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,double%5B%5D,double%5B%5D)">binOpLeftWithReference</a></span>&#8203;(<a href="../BinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">BinaryOperator</a>&nbsp;op,
+                      double[]&nbsp;v,
+                      <a href="../../../compress/colgroup/indexes/IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;colIndexes,
+                      double[]&nbsp;reference,
+                      double[]&nbsp;newReference)</code></th>
+<td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
-<td class="colFirst"><code>abstract <a href="../../../compress/colgroup/dictionary/ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">ADictionary.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/dictionary/ADictionary.html#binOpRight(org.apache.sysds.runtime.matrix.operators.BinaryOperator,double%5B%5D,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex)">binOpRight</a></span>&#8203;(<a href="../BinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">BinaryOperator</a>&nbsp;op,
-          double[]&nbsp;v,
-          <a href="../../../compress/colgroup/indexes/IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;colIndexes)</code></th>
-<td class="colLast">
-<div class="block">Apply binary row operation on the right side.</div>
-</td>
-</tr>
-<tr class="rowColor">
 <td class="colFirst"><code><a href="../../../compress/colgroup/dictionary/Dictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">Dictionary</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">Dictionary.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/dictionary/Dictionary.html#binOpRight(org.apache.sysds.runtime.matrix.operators.BinaryOperator,double%5B%5D)">binOpRight</a></span>&#8203;(<a href="../BinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">BinaryOperator</a>&nbsp;op,
           double[]&nbsp;v)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code><a href="../../../compress/colgroup/dictionary/Dictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">Dictionary</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">Dictionary.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/dictionary/Dictionary.html#binOpRight(org.apache.sysds.runtime.matrix.operators.BinaryOperator,double%5B%5D,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex)">binOpRight</a></span>&#8203;(<a href="../BinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">BinaryOperator</a>&nbsp;op,
           double[]&nbsp;v,
           <a href="../../../compress/colgroup/indexes/IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;colIndexes)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
-<td class="colFirst"><code><a href="../../../compress/colgroup/dictionary/ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../../../compress/colgroup/dictionary/IDictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">IdentityDictionary.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/dictionary/IdentityDictionary.html#binOpRight(org.apache.sysds.runtime.matrix.operators.BinaryOperator,double%5B%5D)">binOpRight</a></span>&#8203;(<a href="../BinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">BinaryOperator</a>&nbsp;op,
           double[]&nbsp;v)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
-<td class="colFirst"><code><a href="../../../compress/colgroup/dictionary/ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../../../compress/colgroup/dictionary/IDictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">IdentityDictionary.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/dictionary/IdentityDictionary.html#binOpRight(org.apache.sysds.runtime.matrix.operators.BinaryOperator,double%5B%5D,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex)">binOpRight</a></span>&#8203;(<a href="../BinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">BinaryOperator</a>&nbsp;op,
           double[]&nbsp;v,
           <a href="../../../compress/colgroup/indexes/IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;colIndexes)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../../../compress/colgroup/dictionary/IDictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">IDictionary.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/dictionary/IDictionary.html#binOpRight(org.apache.sysds.runtime.matrix.operators.BinaryOperator,double%5B%5D)">binOpRight</a></span>&#8203;(<a href="../BinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">BinaryOperator</a>&nbsp;op,
+          double[]&nbsp;v)</code></th>
+<td class="colLast">
+<div class="block">Apply binary row operation on the right side as with no columns to extract from v.</div>
+</td>
+</tr>
 <tr class="rowColor">
+<td class="colFirst"><code><a href="../../../compress/colgroup/dictionary/IDictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">IDictionary.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/dictionary/IDictionary.html#binOpRight(org.apache.sysds.runtime.matrix.operators.BinaryOperator,double%5B%5D,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex)">binOpRight</a></span>&#8203;(<a href="../BinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">BinaryOperator</a>&nbsp;op,
+          double[]&nbsp;v,
+          <a href="../../../compress/colgroup/indexes/IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;colIndexes)</code></th>
+<td class="colLast">
+<div class="block">Apply binary row operation on the right side.</div>
+</td>
+</tr>
+<tr class="altColor">
 <td class="colFirst"><code><a href="../../../compress/colgroup/dictionary/MatrixBlockDictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">MatrixBlockDictionary</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">MatrixBlockDictionary.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/dictionary/MatrixBlockDictionary.html#binOpRight(org.apache.sysds.runtime.matrix.operators.BinaryOperator,double%5B%5D)">binOpRight</a></span>&#8203;(<a href="../BinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">BinaryOperator</a>&nbsp;op,
           double[]&nbsp;v)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code><a href="../../../compress/colgroup/dictionary/MatrixBlockDictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">MatrixBlockDictionary</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">MatrixBlockDictionary.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/dictionary/MatrixBlockDictionary.html#binOpRight(org.apache.sysds.runtime.matrix.operators.BinaryOperator,double%5B%5D,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex)">binOpRight</a></span>&#8203;(<a href="../BinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">BinaryOperator</a>&nbsp;op,
           double[]&nbsp;v,
           <a href="../../../compress/colgroup/indexes/IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;colIndexes)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../../../compress/colgroup/dictionary/IDictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">PlaceHolderDict.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/dictionary/PlaceHolderDict.html#binOpRight(org.apache.sysds.runtime.matrix.operators.BinaryOperator,double%5B%5D)">binOpRight</a></span>&#8203;(<a href="../BinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">BinaryOperator</a>&nbsp;op,
+          double[]&nbsp;v)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
 <tr class="rowColor">
-<td class="colFirst"><code><a href="../../../compress/colgroup/dictionary/ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
+<td class="colFirst"><code><a href="../../../compress/colgroup/dictionary/IDictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">PlaceHolderDict.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/dictionary/PlaceHolderDict.html#binOpRight(org.apache.sysds.runtime.matrix.operators.BinaryOperator,double%5B%5D,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex)">binOpRight</a></span>&#8203;(<a href="../BinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">BinaryOperator</a>&nbsp;op,
+          double[]&nbsp;v,
+          <a href="../../../compress/colgroup/indexes/IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;colIndexes)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../../../compress/colgroup/dictionary/IDictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">QDictionary.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/dictionary/QDictionary.html#binOpRight(org.apache.sysds.runtime.matrix.operators.BinaryOperator,double%5B%5D)">binOpRight</a></span>&#8203;(<a href="../BinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">BinaryOperator</a>&nbsp;op,
           double[]&nbsp;v)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
-<td class="colFirst"><code><a href="../../../compress/colgroup/dictionary/ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../../../compress/colgroup/dictionary/IDictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">QDictionary.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/dictionary/QDictionary.html#binOpRight(org.apache.sysds.runtime.matrix.operators.BinaryOperator,double%5B%5D,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex)">binOpRight</a></span>&#8203;(<a href="../BinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">BinaryOperator</a>&nbsp;op,
           double[]&nbsp;v,
           <a href="../../../compress/colgroup/indexes/IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;colIndexes)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
-<td class="colFirst"><code>abstract <a href="../../../compress/colgroup/dictionary/ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">ADictionary.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/dictionary/ADictionary.html#binOpRightAndAppend(org.apache.sysds.runtime.matrix.operators.BinaryOperator,double%5B%5D,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex)">binOpRightAndAppend</a></span>&#8203;(<a href="../BinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">BinaryOperator</a>&nbsp;op,
-                   double[]&nbsp;v,
-                   <a href="../../../compress/colgroup/indexes/IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;colIndexes)</code></th>
-<td class="colLast">
-<div class="block">Apply binary row operation on the right side with one extra row evaluating with zeros.</div>
-</td>
-</tr>
 <tr class="altColor">
-<td class="colFirst"><code><a href="../../../compress/colgroup/dictionary/ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
+<td class="colFirst"><code><a href="../../../compress/colgroup/dictionary/IDictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">Dictionary.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/dictionary/Dictionary.html#binOpRightAndAppend(org.apache.sysds.runtime.matrix.operators.BinaryOperator,double%5B%5D,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex)">binOpRightAndAppend</a></span>&#8203;(<a href="../BinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">BinaryOperator</a>&nbsp;op,
                    double[]&nbsp;v,
                    <a href="../../../compress/colgroup/indexes/IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;colIndexes)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
-<td class="colFirst"><code><a href="../../../compress/colgroup/dictionary/ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
+<td class="colFirst"><code><a href="../../../compress/colgroup/dictionary/IDictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">IdentityDictionary.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/dictionary/IdentityDictionary.html#binOpRightAndAppend(org.apache.sysds.runtime.matrix.operators.BinaryOperator,double%5B%5D,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex)">binOpRightAndAppend</a></span>&#8203;(<a href="../BinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">BinaryOperator</a>&nbsp;op,
                    double[]&nbsp;v,
                    <a href="../../../compress/colgroup/indexes/IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;colIndexes)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
-<td class="colFirst"><code><a href="../../../compress/colgroup/dictionary/ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
+<td class="colFirst"><code><a href="../../../compress/colgroup/dictionary/IDictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">IDictionary.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/dictionary/IDictionary.html#binOpRightAndAppend(org.apache.sysds.runtime.matrix.operators.BinaryOperator,double%5B%5D,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex)">binOpRightAndAppend</a></span>&#8203;(<a href="../BinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">BinaryOperator</a>&nbsp;op,
+                   double[]&nbsp;v,
+                   <a href="../../../compress/colgroup/indexes/IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;colIndexes)</code></th>
+<td class="colLast">
+<div class="block">Apply binary row operation on the right side with one extra row evaluating with zeros.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../../../compress/colgroup/dictionary/IDictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">MatrixBlockDictionary.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/dictionary/MatrixBlockDictionary.html#binOpRightAndAppend(org.apache.sysds.runtime.matrix.operators.BinaryOperator,double%5B%5D,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex)">binOpRightAndAppend</a></span>&#8203;(<a href="../BinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">BinaryOperator</a>&nbsp;op,
                    double[]&nbsp;v,
                    <a href="../../../compress/colgroup/indexes/IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;colIndexes)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../../../compress/colgroup/dictionary/IDictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">PlaceHolderDict.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/dictionary/PlaceHolderDict.html#binOpRightAndAppend(org.apache.sysds.runtime.matrix.operators.BinaryOperator,double%5B%5D,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex)">binOpRightAndAppend</a></span>&#8203;(<a href="../BinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">BinaryOperator</a>&nbsp;op,
+                   double[]&nbsp;v,
+                   <a href="../../../compress/colgroup/indexes/IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;colIndexes)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
 <tr class="rowColor">
-<td class="colFirst"><code><a href="../../../compress/colgroup/dictionary/ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
+<td class="colFirst"><code><a href="../../../compress/colgroup/dictionary/IDictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">QDictionary.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/dictionary/QDictionary.html#binOpRightAndAppend(org.apache.sysds.runtime.matrix.operators.BinaryOperator,double%5B%5D,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex)">binOpRightAndAppend</a></span>&#8203;(<a href="../BinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">BinaryOperator</a>&nbsp;op,
                    double[]&nbsp;v,
                    <a href="../../../compress/colgroup/indexes/IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;colIndexes)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
-<td class="colFirst"><code>abstract <a href="../../../compress/colgroup/dictionary/ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">ADictionary.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/dictionary/ADictionary.html#binOpRightWithReference(org.apache.sysds.runtime.matrix.operators.BinaryOperator,double%5B%5D,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,double%5B%5D,double%5B%5D)">binOpRightWithReference</a></span>&#8203;(<a href="../BinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">BinaryOperator</a>&nbsp;op,
-                       double[]&nbsp;v,
-                       <a href="../../../compress/colgroup/indexes/IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;colIndexes,
-                       double[]&nbsp;reference,
-                       double[]&nbsp;newReference)</code></th>
-<td class="colLast">
-<div class="block">Apply the binary operator such that each value is offset by the reference before application.</div>
-</td>
-</tr>
-<tr class="rowColor">
 <td class="colFirst"><code><a href="../../../compress/colgroup/dictionary/Dictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">Dictionary</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">Dictionary.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/dictionary/Dictionary.html#binOpRightWithReference(org.apache.sysds.runtime.matrix.operators.BinaryOperator,double%5B%5D,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,double%5B%5D,double%5B%5D)">binOpRightWithReference</a></span>&#8203;(<a href="../BinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">BinaryOperator</a>&nbsp;op,
                        double[]&nbsp;v,
@@ -704,14 +736,25 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
                        double[]&nbsp;newReference)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
-<td class="colFirst"><code><a href="../../../compress/colgroup/dictionary/ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../../../compress/colgroup/dictionary/IDictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">IdentityDictionary.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/dictionary/IdentityDictionary.html#binOpRightWithReference(org.apache.sysds.runtime.matrix.operators.BinaryOperator,double%5B%5D,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,double%5B%5D,double%5B%5D)">binOpRightWithReference</a></span>&#8203;(<a href="../BinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">BinaryOperator</a>&nbsp;op,
                        double[]&nbsp;v,
                        <a href="../../../compress/colgroup/indexes/IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;colIndexes,
                        double[]&nbsp;reference,
                        double[]&nbsp;newReference)</code></th>
 <td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../../../compress/colgroup/dictionary/IDictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">IDictionary.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/dictionary/IDictionary.html#binOpRightWithReference(org.apache.sysds.runtime.matrix.operators.BinaryOperator,double%5B%5D,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,double%5B%5D,double%5B%5D)">binOpRightWithReference</a></span>&#8203;(<a href="../BinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">BinaryOperator</a>&nbsp;op,
+                       double[]&nbsp;v,
+                       <a href="../../../compress/colgroup/indexes/IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;colIndexes,
+                       double[]&nbsp;reference,
+                       double[]&nbsp;newReference)</code></th>
+<td class="colLast">
+<div class="block">Apply the binary operator such that each value is offset by the reference before application.</div>
+</td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code><a href="../../../compress/colgroup/dictionary/MatrixBlockDictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">MatrixBlockDictionary</a></code></td>
@@ -723,7 +766,16 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
-<td class="colFirst"><code><a href="../../../compress/colgroup/dictionary/ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
+<td class="colFirst"><code><a href="../../../compress/colgroup/dictionary/IDictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">PlaceHolderDict.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/dictionary/PlaceHolderDict.html#binOpRightWithReference(org.apache.sysds.runtime.matrix.operators.BinaryOperator,double%5B%5D,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,double%5B%5D,double%5B%5D)">binOpRightWithReference</a></span>&#8203;(<a href="../BinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">BinaryOperator</a>&nbsp;op,
+                       double[]&nbsp;v,
+                       <a href="../../../compress/colgroup/indexes/IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;colIndexes,
+                       double[]&nbsp;reference,
+                       double[]&nbsp;newReference)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../../../compress/colgroup/dictionary/IDictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">QDictionary.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/dictionary/QDictionary.html#binOpRightWithReference(org.apache.sysds.runtime.matrix.operators.BinaryOperator,double%5B%5D,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,double%5B%5D,double%5B%5D)">binOpRightWithReference</a></span>&#8203;(<a href="../BinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">BinaryOperator</a>&nbsp;op,
                        double[]&nbsp;v,
                        <a href="../../../compress/colgroup/indexes/IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;colIndexes,

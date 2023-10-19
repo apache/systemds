@@ -14,7 +14,7 @@
 <!--[if IE]>
 <script type="text/javascript" src="../../../../../../../jquery/jszip-utils/dist/jszip-utils-ie.min.js"></script>
 <![endif]-->
-<script type="text/javascript" src="../../../../../../../jquery/jquery-3.6.0.min.js"></script>
+<script type="text/javascript" src="../../../../../../../jquery/jquery-3.6.1.min.js"></script>
 <script type="text/javascript" src="../../../../../../../jquery/jquery-ui.min.js"></script>
 </head>
 <body>
@@ -118,6 +118,14 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.compress.colgroup.mapping">org.apache.sysds.runtime.compress.colgroup.mapping</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
+<tr class="rowColor">
+<th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.compress.io">org.apache.sysds.runtime.compress.io</a></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.compress.lib">org.apache.sysds.runtime.compress.lib</a></th>
+<td class="colLast">&nbsp;</td>
+</tr>
 </tbody>
 </table>
 </li>
@@ -144,6 +152,10 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
  group.</div>
 </td>
 </tr>
+<tr class="altColor">
+<th class="colFirst" scope="row"><a href="class-use/IDictionary.html#org.apache.sysds.runtime.compress.colgroup">IDictionary</a></th>
+<td class="colLast">&nbsp;</td>
+</tr>
 </tbody>
 </table>
 </li>
@@ -164,32 +176,42 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </td>
 </tr>
 <tr class="rowColor">
-<th class="colFirst" scope="row"><a href="class-use/ADictionary.DictType.html#org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary.DictType</a></th>
-<td class="colLast">&nbsp;</td>
-</tr>
-<tr class="altColor">
 <th class="colFirst" scope="row"><a href="class-use/DeltaDictionary.html#org.apache.sysds.runtime.compress.colgroup.dictionary">DeltaDictionary</a></th>
 <td class="colLast">
 <div class="block">This dictionary class is a specialization for the DeltaDDCColgroup.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <th class="colFirst" scope="row"><a href="class-use/Dictionary.html#org.apache.sysds.runtime.compress.colgroup.dictionary">Dictionary</a></th>
 <td class="colLast">
 <div class="block">This dictionary class aims to encapsulate the storage and operations over unique floating point values of a column
  group.</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <th class="colFirst" scope="row"><a href="class-use/DictionaryFactory.Type.html#org.apache.sysds.runtime.compress.colgroup.dictionary">DictionaryFactory.Type</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <th class="colFirst" scope="row"><a href="class-use/IdentityDictionary.html#org.apache.sysds.runtime.compress.colgroup.dictionary">IdentityDictionary</a></th>
+<td class="colLast">
+<div class="block">A specialized dictionary that exploits the fact that the contained dictionary is an Identity Matrix.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<th class="colFirst" scope="row"><a href="class-use/IDictionary.html#org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
+<th class="colFirst" scope="row"><a href="class-use/IDictionary.DictType.html#org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary.DictType</a></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
 <th class="colFirst" scope="row"><a href="class-use/MatrixBlockDictionary.html#org.apache.sysds.runtime.compress.colgroup.dictionary">MatrixBlockDictionary</a></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<th class="colFirst" scope="row"><a href="class-use/PlaceHolderDict.html#org.apache.sysds.runtime.compress.colgroup.dictionary">PlaceHolderDict</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
@@ -213,17 +235,49 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tbody>
 <tr class="altColor">
-<th class="colFirst" scope="row"><a href="class-use/ADictionary.html#org.apache.sysds.runtime.compress.colgroup.mapping">ADictionary</a></th>
-<td class="colLast">
-<div class="block">This dictionary class aims to encapsulate the storage and operations over unique tuple values of a column group.</div>
-</td>
-</tr>
-<tr class="rowColor">
 <th class="colFirst" scope="row"><a href="class-use/Dictionary.html#org.apache.sysds.runtime.compress.colgroup.mapping">Dictionary</a></th>
 <td class="colLast">
 <div class="block">This dictionary class aims to encapsulate the storage and operations over unique floating point values of a column
  group.</div>
 </td>
+</tr>
+<tr class="rowColor">
+<th class="colFirst" scope="row"><a href="class-use/IDictionary.html#org.apache.sysds.runtime.compress.colgroup.mapping">IDictionary</a></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+</tbody>
+</table>
+</li>
+<li class="blockList"><a id="org.apache.sysds.runtime.compress.io">
+<!--   -->
+</a>
+<table class="useSummary">
+<caption><span>Classes in <a href="package-summary.html">org.apache.sysds.runtime.compress.colgroup.dictionary</a> used by <a href="../../io/package-summary.html">org.apache.sysds.runtime.compress.io</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Class</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<th class="colFirst" scope="row"><a href="class-use/IDictionary.html#org.apache.sysds.runtime.compress.io">IDictionary</a></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+</tbody>
+</table>
+</li>
+<li class="blockList"><a id="org.apache.sysds.runtime.compress.lib">
+<!--   -->
+</a>
+<table class="useSummary">
+<caption><span>Classes in <a href="package-summary.html">org.apache.sysds.runtime.compress.colgroup.dictionary</a> used by <a href="../../lib/package-summary.html">org.apache.sysds.runtime.compress.lib</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Class</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<th class="colFirst" scope="row"><a href="class-use/IDictionary.html#org.apache.sysds.runtime.compress.lib">IDictionary</a></th>
+<td class="colLast">&nbsp;</td>
 </tr>
 </tbody>
 </table>

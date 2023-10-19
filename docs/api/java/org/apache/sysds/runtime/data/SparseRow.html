@@ -14,7 +14,7 @@
 <!--[if IE]>
 <script type="text/javascript" src="../../../../../jquery/jszip-utils/dist/jszip-utils-ie.min.js"></script>
 <![endif]-->
-<script type="text/javascript" src="../../../../../jquery/jquery-3.6.0.min.js"></script>
+<script type="text/javascript" src="../../../../../jquery/jquery-3.6.1.min.js"></script>
 <script type="text/javascript" src="../../../../../jquery/jquery-ui.min.js"></script>
 </head>
 <body>
@@ -27,7 +27,7 @@
     catch(err) {
     }
 //-->
-var data = {"i0":6,"i1":6,"i2":6,"i3":6,"i4":6,"i5":6,"i6":6,"i7":6,"i8":6,"i9":6,"i10":6,"i11":10,"i12":6};
+var data = {"i0":6,"i1":6,"i2":6,"i3":6,"i4":6,"i5":6,"i6":6,"i7":6,"i8":6,"i9":6,"i10":6,"i11":6,"i12":10,"i13":6};
 var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],4:["t3","Abstract Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -224,13 +224,20 @@ implements <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base
 </td>
 </tr>
 <tr id="i4" class="altColor">
+<td class="colFirst"><code>abstract <a href="SparseRow.html" title="class in org.apache.sysds.runtime.data">SparseRow</a></code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#copy(boolean)">copy</a></span>&#8203;(boolean&nbsp;deep)</code></th>
+<td class="colLast">
+<div class="block">Make a copy of this row.</div>
+</td>
+</tr>
+<tr id="i5" class="rowColor">
 <td class="colFirst"><code>abstract double</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#get(int)">get</a></span>&#8203;(int&nbsp;col)</code></th>
 <td class="colLast">
 <div class="block">Gets the value of a specified column.</div>
 </td>
 </tr>
-<tr id="i5" class="rowColor">
+<tr id="i6" class="altColor">
 <td class="colFirst"><code>abstract int[]</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#indexes()">indexes</a></span>()</code></th>
 <td class="colLast">
@@ -238,7 +245,7 @@ implements <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base
  with the array of values.</div>
 </td>
 </tr>
-<tr id="i6" class="altColor">
+<tr id="i7" class="rowColor">
 <td class="colFirst"><code>abstract boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#isEmpty()">isEmpty</a></span>()</code></th>
 <td class="colLast">
@@ -246,7 +253,7 @@ implements <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base
  size zero.</div>
 </td>
 </tr>
-<tr id="i7" class="rowColor">
+<tr id="i8" class="altColor">
 <td class="colFirst"><code>abstract void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#reset(int,int)">reset</a></span>&#8203;(int&nbsp;estnns,
      int&nbsp;maxnns)</code></th>
@@ -255,7 +262,7 @@ implements <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base
  isEmpty are guaranteed to return 0 and true, respectively.</div>
 </td>
 </tr>
-<tr id="i8" class="altColor">
+<tr id="i9" class="rowColor">
 <td class="colFirst"><code>abstract boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#set(int,double)">set</a></span>&#8203;(int&nbsp;col,
    double&nbsp;v)</code></th>
@@ -264,14 +271,14 @@ implements <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base
  potential overwrites or deletes (set to value zero).</div>
 </td>
 </tr>
-<tr id="i9" class="rowColor">
+<tr id="i10" class="altColor">
 <td class="colFirst"><code>abstract int</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#size()">size</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Get the number of non-zero values of the sparse row.</div>
 </td>
 </tr>
-<tr id="i10" class="altColor">
+<tr id="i11" class="rowColor">
 <td class="colFirst"><code>abstract void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#sort()">sort</a></span>()</code></th>
 <td class="colLast">
@@ -279,12 +286,12 @@ implements <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base
  after constant-time append was used for reading unordered sparse rows.</div>
 </td>
 </tr>
-<tr id="i11" class="rowColor">
+<tr id="i12" class="altColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#toString()">toString</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i12" class="altColor">
+<tr id="i13" class="rowColor">
 <td class="colFirst"><code>abstract double[]</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#values()">values</a></span>()</code></th>
 <td class="colLast">
@@ -522,6 +529,22 @@ implements <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>eps</code> - epsilon value</dd>
+</dl>
+</li>
+</ul>
+<a id="copy(boolean)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>copy</h4>
+<pre class="methodSignature">public abstract&nbsp;<a href="SparseRow.html" title="class in org.apache.sysds.runtime.data">SparseRow</a>&nbsp;copy&#8203;(boolean&nbsp;deep)</pre>
+<div class="block">Make a copy of this row.</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>deep</code> - if the copy should be deep</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>A copy</dd>
 </dl>
 </li>
 </ul>

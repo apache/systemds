@@ -14,7 +14,7 @@
 <!--[if IE]>
 <script type="text/javascript" src="../../../../../jquery/jszip-utils/dist/jszip-utils-ie.min.js"></script>
 <![endif]-->
-<script type="text/javascript" src="../../../../../jquery/jquery-3.6.0.min.js"></script>
+<script type="text/javascript" src="../../../../../jquery/jquery-3.6.1.min.js"></script>
 <script type="text/javascript" src="../../../../../jquery/jquery-ui.min.js"></script>
 </head>
 <body>
@@ -27,6 +27,12 @@
     catch(err) {
     }
 //-->
+var data = {"i0":9};
+var tabs = {65535:["t0","All Methods"],1:["t1","Static Methods"],8:["t4","Concrete Methods"]};
+var altColor = "altColor";
+var rowColor = "rowColor";
+var tableTab = "tableTab";
+var activeTableTab = "activeTableTab";
 var pathtoroot = "../../../../../";
 var useModuleDirectories = true;
 loadScripts(document, 'script');</script>
@@ -92,7 +98,7 @@ loadScripts(document, 'script');</script>
 <li>Detail:&nbsp;</li>
 <li>Field&nbsp;|&nbsp;</li>
 <li><a href="#constructor.detail">Constr</a>&nbsp;|&nbsp;</li>
-<li>Method</li>
+<li><a href="#method.detail">Method</a></li>
 </ul>
 </div>
 <a id="skip.navbar.top">
@@ -172,6 +178,23 @@ extends <a href="WriterBinaryBlock.html" title="class in org.apache.sysds.runtim
 <!--   -->
 </a>
 <h3>Method Summary</h3>
+<table class="memberSummary">
+<caption><span id="t0" class="activeTableTab"><span>All Methods</span><span class="tabEnd">&nbsp;</span></span><span id="t1" class="tableTab"><span><a href="javascript:show(1);">Static Methods</a></span><span class="tabEnd">&nbsp;</span></span><span id="t4" class="tableTab"><span><a href="javascript:show(8);">Concrete Methods</a></span><span class="tabEnd">&nbsp;</span></span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colSecond" scope="col">Method</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tr id="i0" class="altColor">
+<td class="colFirst"><code>static int</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#numPartsFiles(org.apache.hadoop.fs.FileSystem,long,long,long,long)">numPartsFiles</a></span>&#8203;(org.apache.hadoop.fs.FileSystem&nbsp;fs,
+             long&nbsp;rlen,
+             long&nbsp;clen,
+             long&nbsp;blen,
+             long&nbsp;nZeros)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+</table>
 <ul class="blockList">
 <li class="blockList"><a id="methods.inherited.from.class.org.apache.sysds.runtime.io.WriterBinaryBlock">
 <!--   -->
@@ -216,6 +239,29 @@ extends <a href="WriterBinaryBlock.html" title="class in org.apache.sysds.runtim
 <li class="blockList">
 <h4>WriterBinaryBlockParallel</h4>
 <pre>public&nbsp;WriterBinaryBlockParallel&#8203;(int&nbsp;replication)</pre>
+</li>
+</ul>
+</li>
+</ul>
+</section>
+<!-- ============ METHOD DETAIL ========== -->
+<section>
+<ul class="blockList">
+<li class="blockList"><a id="method.detail">
+<!--   -->
+</a>
+<h3>Method Detail</h3>
+<a id="numPartsFiles(org.apache.hadoop.fs.FileSystem,long,long,long,long)">
+<!--   -->
+</a>
+<ul class="blockListLast">
+<li class="blockList">
+<h4>numPartsFiles</h4>
+<pre class="methodSignature">public static&nbsp;int&nbsp;numPartsFiles&#8203;(org.apache.hadoop.fs.FileSystem&nbsp;fs,
+                                long&nbsp;rlen,
+                                long&nbsp;clen,
+                                long&nbsp;blen,
+                                long&nbsp;nZeros)</pre>
 </li>
 </ul>
 </li>
@@ -279,7 +325,7 @@ extends <a href="WriterBinaryBlock.html" title="class in org.apache.sysds.runtim
 <li>Detail:&nbsp;</li>
 <li>Field&nbsp;|&nbsp;</li>
 <li><a href="#constructor.detail">Constr</a>&nbsp;|&nbsp;</li>
-<li>Method</li>
+<li><a href="#method.detail">Method</a></li>
 </ul>
 </div>
 <a id="skip.navbar.bottom">

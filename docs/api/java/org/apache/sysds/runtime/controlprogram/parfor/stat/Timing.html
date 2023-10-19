@@ -14,7 +14,7 @@
 <!--[if IE]>
 <script type="text/javascript" src="../../../../../../../jquery/jszip-utils/dist/jszip-utils-ie.min.js"></script>
 <![endif]-->
-<script type="text/javascript" src="../../../../../../../jquery/jquery-3.6.0.min.js"></script>
+<script type="text/javascript" src="../../../../../../../jquery/jquery-3.6.1.min.js"></script>
 <script type="text/javascript" src="../../../../../../../jquery/jquery-ui.min.js"></script>
 </head>
 <body>
@@ -134,7 +134,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <hr>
 <pre>public class <span class="typeNameLabel">Timing</span>
 extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a></pre>
-<div class="block">Helper class for encapsulated time measurements.</div>
+<div class="block">Helper class to time the execution of elements</div>
 </li>
 </ul>
 </div>
@@ -156,11 +156,15 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 </tr>
 <tr class="altColor">
 <th class="colConstructorName" scope="row"><code><span class="memberNameLink"><a href="#%3Cinit%3E()">Timing</a></span>()</code></th>
-<td class="colLast">&nbsp;</td>
+<td class="colLast">
+<div class="block">Get a timer that is started.</div>
+</td>
 </tr>
 <tr class="rowColor">
 <th class="colConstructorName" scope="row"><code><span class="memberNameLink"><a href="#%3Cinit%3E(boolean)">Timing</a></span>&#8203;(boolean&nbsp;start)</code></th>
-<td class="colLast">&nbsp;</td>
+<td class="colLast">
+<div class="block">Get a timing that is optionally started</div>
+</td>
 </tr>
 </table>
 </li>
@@ -191,16 +195,15 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <td class="colFirst"><code>double</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#stop()">stop</a></span>()</code></th>
 <td class="colLast">
-<div class="block">Measures and returns the time since the last start() or stop() invocation and
- restarts the measurement.</div>
+<div class="block">Measures and returns the time since the last start() or stop() invocation and restarts the measurement.</div>
 </td>
 </tr>
 <tr id="i2" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#stopAndPrint()">stopAndPrint</a></span>()</code></th>
 <td class="colLast">
-<div class="block">Measures and returns the time since the last start() or stop() invocation,
- restarts the measurement, and prints the last measurement to STDOUT.</div>
+<div class="block">Measures and returns the time since the last start() or stop() invocation, restarts the measurement, and prints
+ the last measurement to STDOUT.</div>
 </td>
 </tr>
 </table>
@@ -234,6 +237,7 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <li class="blockList">
 <h4>Timing</h4>
 <pre>public&nbsp;Timing()</pre>
+<div class="block">Get a timer that is started.</div>
 </li>
 </ul>
 <a id="&lt;init&gt;(boolean)">
@@ -243,6 +247,11 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <li class="blockList">
 <h4>Timing</h4>
 <pre>public&nbsp;Timing&#8203;(boolean&nbsp;start)</pre>
+<div class="block">Get a timing that is optionally started</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>start</code> - If the timer should reset its time.</dd>
+</dl>
 </li>
 </ul>
 </li>
@@ -272,8 +281,7 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <li class="blockList">
 <h4>stop</h4>
 <pre class="methodSignature">public&nbsp;double&nbsp;stop()</pre>
-<div class="block">Measures and returns the time since the last start() or stop() invocation and
- restarts the measurement.</div>
+<div class="block">Measures and returns the time since the last start() or stop() invocation and restarts the measurement.</div>
 <dl>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>duration between start and stop</dd>
@@ -287,8 +295,8 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <li class="blockList">
 <h4>stopAndPrint</h4>
 <pre class="methodSignature">public&nbsp;void&nbsp;stopAndPrint()</pre>
-<div class="block">Measures and returns the time since the last start() or stop() invocation,
- restarts the measurement, and prints the last measurement to STDOUT.</div>
+<div class="block">Measures and returns the time since the last start() or stop() invocation, restarts the measurement, and prints
+ the last measurement to STDOUT.</div>
 </li>
 </ul>
 </li>

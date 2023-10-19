@@ -14,7 +14,7 @@
 <!--[if IE]>
 <script type="text/javascript" src="../../../../../../../jquery/jszip-utils/dist/jszip-utils-ie.min.js"></script>
 <![endif]-->
-<script type="text/javascript" src="../../../../../../../jquery/jquery-3.6.0.min.js"></script>
+<script type="text/javascript" src="../../../../../../../jquery/jquery-3.6.1.min.js"></script>
 <script type="text/javascript" src="../../../../../../../jquery/jquery-ui.min.js"></script>
 </head>
 <body>
@@ -111,31 +111,39 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
+<th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.compress.colgroup.scheme">org.apache.sysds.runtime.compress.colgroup.scheme</a></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
 <th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.controlprogram.context">org.apache.sysds.runtime.controlprogram.context</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.frame.data">org.apache.sysds.runtime.frame.data</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.frame.data.columns">org.apache.sysds.runtime.frame.data.columns</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.functionobjects">org.apache.sysds.runtime.functionobjects</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.instructions.spark.data">org.apache.sysds.runtime.instructions.spark.data</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.instructions.spark.utils">org.apache.sysds.runtime.instructions.spark.utils</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.iogen">org.apache.sysds.runtime.iogen</a></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.iogen.template">org.apache.sysds.runtime.iogen.template</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
@@ -210,6 +218,75 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
               <a href="../../../../hops/codegen/template/CPlanMemoTable.html" title="class in org.apache.sysds.hops.codegen.template">CPlanMemoTable</a>&nbsp;memo,
               boolean&nbsp;compileLiterals)</code></th>
 <td class="colLast">&nbsp;</td>
+</tr>
+</tbody>
+</table>
+</section>
+</li>
+<li class="blockList">
+<section><a id="org.apache.sysds.runtime.compress.colgroup.scheme">
+<!--   -->
+</a>
+<h3>Uses of <a href="../Pair.html" title="class in org.apache.sysds.runtime.matrix.data">Pair</a> in <a href="../../../compress/colgroup/scheme/package-summary.html">org.apache.sysds.runtime.compress.colgroup.scheme</a></h3>
+<table class="useSummary">
+<caption><span>Methods in <a href="../../../compress/colgroup/scheme/package-summary.html">org.apache.sysds.runtime.compress.colgroup.scheme</a> that return <a href="../Pair.html" title="class in org.apache.sysds.runtime.matrix.data">Pair</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colSecond" scope="col">Method</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../Pair.html" title="class in org.apache.sysds.runtime.matrix.data">Pair</a>&lt;<a href="../../../compress/colgroup/scheme/ICLAScheme.html" title="interface in org.apache.sysds.runtime.compress.colgroup.scheme">ICLAScheme</a>,&#8203;<a href="../../../compress/colgroup/AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a>&gt;</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ACLAScheme.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/scheme/ACLAScheme.html#updateAndEncode(org.apache.sysds.runtime.matrix.data.MatrixBlock)">updateAndEncode</a></span>&#8203;(<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;data)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../Pair.html" title="class in org.apache.sysds.runtime.matrix.data">Pair</a>&lt;<a href="../../../compress/colgroup/scheme/ICLAScheme.html" title="interface in org.apache.sysds.runtime.compress.colgroup.scheme">ICLAScheme</a>,&#8203;<a href="../../../compress/colgroup/AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a>&gt;</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ACLAScheme.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/scheme/ACLAScheme.html#updateAndEncode(org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex)">updateAndEncode</a></span>&#8203;(<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;data,
+               <a href="../../../compress/colgroup/indexes/IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;columns)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../Pair.html" title="class in org.apache.sysds.runtime.matrix.data">Pair</a>&lt;<a href="../../../compress/colgroup/scheme/ICLAScheme.html" title="interface in org.apache.sysds.runtime.compress.colgroup.scheme">ICLAScheme</a>,&#8203;<a href="../../../compress/colgroup/AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a>&gt;</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ICLAScheme.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/scheme/ICLAScheme.html#updateAndEncode(org.apache.sysds.runtime.matrix.data.MatrixBlock)">updateAndEncode</a></span>&#8203;(<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;data)</code></th>
+<td class="colLast">
+<div class="block">Update and encode the given block in a single pass.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../Pair.html" title="class in org.apache.sysds.runtime.matrix.data">Pair</a>&lt;<a href="../../../compress/colgroup/scheme/ICLAScheme.html" title="interface in org.apache.sysds.runtime.compress.colgroup.scheme">ICLAScheme</a>,&#8203;<a href="../../../compress/colgroup/AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a>&gt;</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ICLAScheme.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/scheme/ICLAScheme.html#updateAndEncode(org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex)">updateAndEncode</a></span>&#8203;(<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;data,
+               <a href="../../../compress/colgroup/indexes/IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;columns)</code></th>
+<td class="colLast">
+<div class="block">Try to update and encode in a single pass over the data.</div>
+</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../Pair.html" title="class in org.apache.sysds.runtime.matrix.data">Pair</a>&lt;<a href="../../../compress/colgroup/scheme/ICLAScheme.html" title="interface in org.apache.sysds.runtime.compress.colgroup.scheme">ICLAScheme</a>,&#8203;<a href="../../../compress/colgroup/AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a>&gt;</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ACLAScheme.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/scheme/ACLAScheme.html#updateAndEncodeT(org.apache.sysds.runtime.matrix.data.MatrixBlock)">updateAndEncodeT</a></span>&#8203;(<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;data)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../Pair.html" title="class in org.apache.sysds.runtime.matrix.data">Pair</a>&lt;<a href="../../../compress/colgroup/scheme/ICLAScheme.html" title="interface in org.apache.sysds.runtime.compress.colgroup.scheme">ICLAScheme</a>,&#8203;<a href="../../../compress/colgroup/AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a>&gt;</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ACLAScheme.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/scheme/ACLAScheme.html#updateAndEncodeT(org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex)">updateAndEncodeT</a></span>&#8203;(<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;data,
+                <a href="../../../compress/colgroup/indexes/IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;columns)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../Pair.html" title="class in org.apache.sysds.runtime.matrix.data">Pair</a>&lt;<a href="../../../compress/colgroup/scheme/ICLAScheme.html" title="interface in org.apache.sysds.runtime.compress.colgroup.scheme">ICLAScheme</a>,&#8203;<a href="../../../compress/colgroup/AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a>&gt;</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ICLAScheme.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/scheme/ICLAScheme.html#updateAndEncodeT(org.apache.sysds.runtime.matrix.data.MatrixBlock)">updateAndEncodeT</a></span>&#8203;(<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;data)</code></th>
+<td class="colLast">
+<div class="block">Update and encode the given block in a single pass.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../Pair.html" title="class in org.apache.sysds.runtime.matrix.data">Pair</a>&lt;<a href="../../../compress/colgroup/scheme/ICLAScheme.html" title="interface in org.apache.sysds.runtime.compress.colgroup.scheme">ICLAScheme</a>,&#8203;<a href="../../../compress/colgroup/AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a>&gt;</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ICLAScheme.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/scheme/ICLAScheme.html#updateAndEncodeT(org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex)">updateAndEncodeT</a></span>&#8203;(<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;data,
+                <a href="../../../compress/colgroup/indexes/IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;columns)</code></th>
+<td class="colLast">
+<div class="block">Try to update and encode in a single pass over the data.</div>
+</td>
 </tr>
 </tbody>
 </table>
@@ -329,27 +406,37 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code><a href="../Pair.html" title="class in org.apache.sysds.runtime.matrix.data">Pair</a>&lt;<a href="../../../../common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>,&#8203;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Boolean.html?is-external=true" title="class or interface in java.lang" class="externalLink">Boolean</a>&gt;</code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">DoubleArray.</span><code><span class="memberNameLink"><a href="../../../frame/data/columns/DoubleArray.html#analyzeValueType()">analyzeValueType</a></span>()</code></th>
+<th class="colSecond" scope="row"><span class="typeNameLabel">DDCArray.</span><code><span class="memberNameLink"><a href="../../../frame/data/columns/DDCArray.html#analyzeValueType()">analyzeValueType</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
+<td class="colFirst"><code><a href="../Pair.html" title="class in org.apache.sysds.runtime.matrix.data">Pair</a>&lt;<a href="../../../../common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>,&#8203;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Boolean.html?is-external=true" title="class or interface in java.lang" class="externalLink">Boolean</a>&gt;</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">DoubleArray.</span><code><span class="memberNameLink"><a href="../../../frame/data/columns/DoubleArray.html#analyzeValueType()">analyzeValueType</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
 <td class="colFirst"><code><a href="../Pair.html" title="class in org.apache.sysds.runtime.matrix.data">Pair</a>&lt;<a href="../../../../common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>,&#8203;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Boolean.html?is-external=true" title="class or interface in java.lang" class="externalLink">Boolean</a>&gt;</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">FloatArray.</span><code><span class="memberNameLink"><a href="../../../frame/data/columns/FloatArray.html#analyzeValueType()">analyzeValueType</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code><a href="../Pair.html" title="class in org.apache.sysds.runtime.matrix.data">Pair</a>&lt;<a href="../../../../common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>,&#8203;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Boolean.html?is-external=true" title="class or interface in java.lang" class="externalLink">Boolean</a>&gt;</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">IntegerArray.</span><code><span class="memberNameLink"><a href="../../../frame/data/columns/IntegerArray.html#analyzeValueType()">analyzeValueType</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code><a href="../Pair.html" title="class in org.apache.sysds.runtime.matrix.data">Pair</a>&lt;<a href="../../../../common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>,&#8203;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Boolean.html?is-external=true" title="class or interface in java.lang" class="externalLink">Boolean</a>&gt;</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">LongArray.</span><code><span class="memberNameLink"><a href="../../../frame/data/columns/LongArray.html#analyzeValueType()">analyzeValueType</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code><a href="../Pair.html" title="class in org.apache.sysds.runtime.matrix.data">Pair</a>&lt;<a href="../../../../common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>,&#8203;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Boolean.html?is-external=true" title="class or interface in java.lang" class="externalLink">Boolean</a>&gt;</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">OptionalArray.</span><code><span class="memberNameLink"><a href="../../../frame/data/columns/OptionalArray.html#analyzeValueType()">analyzeValueType</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../Pair.html" title="class in org.apache.sysds.runtime.matrix.data">Pair</a>&lt;<a href="../../../../common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>,&#8203;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Boolean.html?is-external=true" title="class or interface in java.lang" class="externalLink">Boolean</a>&gt;</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">RaggedArray.</span><code><span class="memberNameLink"><a href="../../../frame/data/columns/RaggedArray.html#analyzeValueType()">analyzeValueType</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
@@ -519,48 +606,93 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tbody>
 <tr class="altColor">
-<td class="colFirst"><code><a href="../Pair.html" title="class in org.apache.sysds.runtime.matrix.data">Pair</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Integer.html?is-external=true" title="class or interface in java.lang" class="externalLink">Integer</a>,&#8203;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Integer.html?is-external=true" title="class or interface in java.lang" class="externalLink">Integer</a>&gt;</code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">RawRow.</span><code><span class="memberNameLink"><a href="../../../iogen/RawRow.html#findAtValue(org.apache.sysds.runtime.iogen.ValueTrimFormat,int,int)">findAtValue</a></span>&#8203;(<a href="../../../iogen/ValueTrimFormat.html" title="class in org.apache.sysds.runtime.iogen">ValueTrimFormat</a>&nbsp;vtf,
-           int&nbsp;rawIndex,
-           int&nbsp;numericIndex)</code></th>
+<td class="colFirst"><code><a href="../Pair.html" title="class in org.apache.sysds.runtime.matrix.data">Pair</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/ArrayList.html?is-external=true" title="class or interface in java.util" class="externalLink">ArrayList</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&gt;,&#8203;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/ArrayList.html?is-external=true" title="class or interface in java.util" class="externalLink">ArrayList</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Integer.html?is-external=true" title="class or interface in java.lang" class="externalLink">Integer</a>&gt;&gt;</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">FormatIdentifyer.</span><code><span class="memberNameLink"><a href="../../../iogen/FormatIdentifyer.html#extractAllPrefixStringsOfAColSingleLine(int,boolean,boolean)">extractAllPrefixStringsOfAColSingleLine</a></span>&#8203;(int&nbsp;colIndex,
+                                       boolean&nbsp;reverse,
+                                       boolean&nbsp;removesSelected)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../Pair.html" title="class in org.apache.sysds.runtime.matrix.data">Pair</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/ArrayList.html?is-external=true" title="class or interface in java.util" class="externalLink">ArrayList</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&gt;,&#8203;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/ArrayList.html?is-external=true" title="class or interface in java.util" class="externalLink">ArrayList</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Integer.html?is-external=true" title="class or interface in java.lang" class="externalLink">Integer</a>&gt;&gt;</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">FormatIdentifyer.</span><code><span class="memberNameLink"><a href="../../../iogen/FormatIdentifyer.html#extractAllPrefixStringsOfAColSingleLine(int,java.util.ArrayList,boolean,boolean)">extractAllPrefixStringsOfAColSingleLine</a></span>&#8203;(int&nbsp;r,
+                                       <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/ArrayList.html?is-external=true" title="class or interface in java.util" class="externalLink">ArrayList</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Integer.html?is-external=true" title="class or interface in java.lang" class="externalLink">Integer</a>&gt;&nbsp;colIndexes,
+                                       boolean&nbsp;reverse,
+                                       boolean&nbsp;removesSelected)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../Pair.html" title="class in org.apache.sysds.runtime.matrix.data">Pair</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/ArrayList.html?is-external=true" title="class or interface in java.util" class="externalLink">ArrayList</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&gt;[],&#8203;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/ArrayList.html?is-external=true" title="class or interface in java.util" class="externalLink">ArrayList</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Integer.html?is-external=true" title="class or interface in java.lang" class="externalLink">Integer</a>&gt;[]&gt;</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">FormatIdentifyer.</span><code><span class="memberNameLink"><a href="../../../iogen/FormatIdentifyer.html#extractAllPrefixStringsOfColsSingleLine(boolean,boolean)">extractAllPrefixStringsOfColsSingleLine</a></span>&#8203;(boolean&nbsp;reverse,
+                                       boolean&nbsp;removesSelected)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code><a href="../Pair.html" title="class in org.apache.sysds.runtime.matrix.data">Pair</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Integer.html?is-external=true" title="class or interface in java.lang" class="externalLink">Integer</a>,&#8203;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Integer.html?is-external=true" title="class or interface in java.lang" class="externalLink">Integer</a>&gt;</code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">RawRow.</span><code><span class="memberNameLink"><a href="../../../iogen/RawRow.html#findAtValue(org.apache.sysds.runtime.iogen.ValueTrimFormat,int,int,boolean)">findAtValue</a></span>&#8203;(<a href="../../../iogen/ValueTrimFormat.html" title="class in org.apache.sysds.runtime.iogen">ValueTrimFormat</a>&nbsp;vtf,
-           int&nbsp;rawIndex,
-           int&nbsp;numericIndex,
-           boolean&nbsp;update)</code></th>
+<th class="colSecond" scope="row"><span class="typeNameLabel">RawIndex.</span><code><span class="memberNameLink"><a href="../../../iogen/RawIndex.html#findValue(double)">findValue</a></span>&#8203;(double&nbsp;value)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code><a href="../Pair.html" title="class in org.apache.sysds.runtime.matrix.data">Pair</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Integer.html?is-external=true" title="class or interface in java.lang" class="externalLink">Integer</a>,&#8203;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Integer.html?is-external=true" title="class or interface in java.lang" class="externalLink">Integer</a>&gt;</code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">RawRow.</span><code><span class="memberNameLink"><a href="../../../iogen/RawRow.html#findSequenceValues(java.util.ArrayList,int,boolean)">findSequenceValues</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/ArrayList.html?is-external=true" title="class or interface in java.util" class="externalLink">ArrayList</a>&lt;<a href="../../../iogen/ValueTrimFormat.html" title="class in org.apache.sysds.runtime.iogen">ValueTrimFormat</a>&gt;&nbsp;vtfs,
-                  int&nbsp;startIndex,
-                  boolean&nbsp;update)</code></th>
+<th class="colSecond" scope="row"><span class="typeNameLabel">RawIndex.</span><code><span class="memberNameLink"><a href="../../../iogen/RawIndex.html#findValue(java.lang.Object,org.apache.sysds.common.Types.ValueType)">findValue</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a>&nbsp;value,
+         <a href="../../../../common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;valueType)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
-<td class="colFirst"><code><a href="../Pair.html" title="class in org.apache.sysds.runtime.matrix.data">Pair</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Integer.html?is-external=true" title="class or interface in java.lang" class="externalLink">Integer</a>,&#8203;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Integer.html?is-external=true" title="class or interface in java.lang" class="externalLink">Integer</a>&gt;</code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">RawRow.</span><code><span class="memberNameLink"><a href="../../../iogen/RawRow.html#findValue(org.apache.sysds.runtime.iogen.ValueTrimFormat,boolean)">findValue</a></span>&#8203;(<a href="../../../iogen/ValueTrimFormat.html" title="class in org.apache.sysds.runtime.iogen">ValueTrimFormat</a>&nbsp;vtf,
-         boolean&nbsp;forward)</code></th>
-<td class="colLast">&nbsp;</td>
+</tbody>
+</table>
+<table class="useSummary">
+<caption><span>Methods in <a href="../../../iogen/package-summary.html">org.apache.sysds.runtime.iogen</a> that return types with arguments of type <a href="../Pair.html" title="class in org.apache.sysds.runtime.matrix.data">Pair</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colSecond" scope="col">Method</th>
+<th class="colLast" scope="col">Description</th>
 </tr>
+<tbody>
 <tr class="altColor">
-<td class="colFirst"><code><a href="../Pair.html" title="class in org.apache.sysds.runtime.matrix.data">Pair</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Integer.html?is-external=true" title="class or interface in java.lang" class="externalLink">Integer</a>,&#8203;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Integer.html?is-external=true" title="class or interface in java.lang" class="externalLink">Integer</a>&gt;</code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">RawRow.</span><code><span class="memberNameLink"><a href="../../../iogen/RawRow.html#findValue(org.apache.sysds.runtime.iogen.ValueTrimFormat,boolean,boolean)">findValue</a></span>&#8203;(<a href="../../../iogen/ValueTrimFormat.html" title="class in org.apache.sysds.runtime.iogen">ValueTrimFormat</a>&nbsp;vtf,
-         boolean&nbsp;forward,
-         boolean&nbsp;update)</code></th>
+<td class="colFirst"><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/ArrayList.html?is-external=true" title="class or interface in java.util" class="externalLink">ArrayList</a>&lt;<a href="../Pair.html" title="class in org.apache.sysds.runtime.matrix.data">Pair</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>,&#8203;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/Set.html?is-external=true" title="class or interface in java.util" class="externalLink">Set</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Integer.html?is-external=true" title="class or interface in java.lang" class="externalLink">Integer</a>&gt;&gt;&gt;</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">TextTrie.</span><code><span class="memberNameLink"><a href="../../../iogen/TextTrie.html#getAllKeys()">getAllKeys</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
-<td class="colFirst"><code><a href="../Pair.html" title="class in org.apache.sysds.runtime.matrix.data">Pair</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>,&#8203;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&gt;</code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">RawRow.</span><code><span class="memberNameLink"><a href="../../../iogen/RawRow.html#getDelims()">getDelims</a></span>()</code></th>
-<td class="colLast">&nbsp;</td>
+</tbody>
+</table>
+</section>
+</li>
+<li class="blockList">
+<section><a id="org.apache.sysds.runtime.iogen.template">
+<!--   -->
+</a>
+<h3>Uses of <a href="../Pair.html" title="class in org.apache.sysds.runtime.matrix.data">Pair</a> in <a href="../../../iogen/template/package-summary.html">org.apache.sysds.runtime.iogen.template</a></h3>
+<table class="useSummary">
+<caption><span>Methods in <a href="../../../iogen/template/package-summary.html">org.apache.sysds.runtime.iogen.template</a> that return <a href="../Pair.html" title="class in org.apache.sysds.runtime.matrix.data">Pair</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colSecond" scope="col">Method</th>
+<th class="colLast" scope="col">Description</th>
 </tr>
+<tbody>
 <tr class="altColor">
-<td class="colFirst"><code><a href="../Pair.html" title="class in org.apache.sysds.runtime.matrix.data">Pair</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/HashSet.html?is-external=true" title="class or interface in java.util" class="externalLink">HashSet</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&gt;,&#8203;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Integer.html?is-external=true" title="class or interface in java.lang" class="externalLink">Integer</a>&gt;</code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">RawRow.</span><code><span class="memberNameLink"><a href="../../../iogen/RawRow.html#getDelimsSet()">getDelimsSet</a></span>()</code></th>
+<td class="colFirst"><code>static <a href="../Pair.html" title="class in org.apache.sysds.runtime.matrix.data">Pair</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/ArrayList.html?is-external=true" title="class or interface in java.util" class="externalLink">ArrayList</a>&lt;<a href="../Pair.html" title="class in org.apache.sysds.runtime.matrix.data">Pair</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Long.html?is-external=true" title="class or interface in java.lang" class="externalLink">Long</a>,&#8203;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Integer.html?is-external=true" title="class or interface in java.lang" class="externalLink">Integer</a>&gt;&gt;,&#8203;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Long.html?is-external=true" title="class or interface in java.lang" class="externalLink">Long</a>&gt;</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">TemplateUtil.</span><code><span class="memberNameLink"><a href="../../../iogen/template/TemplateUtil.html#getTokenIndexOnMultiLineRecords(org.apache.hadoop.mapred.InputSplit,org.apache.hadoop.mapred.TextInputFormat,org.apache.hadoop.mapred.JobConf,java.lang.String)">getTokenIndexOnMultiLineRecords</a></span>&#8203;(org.apache.hadoop.mapred.InputSplit&nbsp;split,
+                               org.apache.hadoop.mapred.TextInputFormat&nbsp;inputFormat,
+                               org.apache.hadoop.mapred.JobConf&nbsp;job,
+                               <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;token)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+</tbody>
+</table>
+<table class="useSummary">
+<caption><span>Methods in <a href="../../../iogen/template/package-summary.html">org.apache.sysds.runtime.iogen.template</a> that return types with arguments of type <a href="../Pair.html" title="class in org.apache.sysds.runtime.matrix.data">Pair</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colSecond" scope="col">Method</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code>static <a href="../Pair.html" title="class in org.apache.sysds.runtime.matrix.data">Pair</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/ArrayList.html?is-external=true" title="class or interface in java.util" class="externalLink">ArrayList</a>&lt;<a href="../Pair.html" title="class in org.apache.sysds.runtime.matrix.data">Pair</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Long.html?is-external=true" title="class or interface in java.lang" class="externalLink">Long</a>,&#8203;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Integer.html?is-external=true" title="class or interface in java.lang" class="externalLink">Integer</a>&gt;&gt;,&#8203;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Long.html?is-external=true" title="class or interface in java.lang" class="externalLink">Long</a>&gt;</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">TemplateUtil.</span><code><span class="memberNameLink"><a href="../../../iogen/template/TemplateUtil.html#getTokenIndexOnMultiLineRecords(org.apache.hadoop.mapred.InputSplit,org.apache.hadoop.mapred.TextInputFormat,org.apache.hadoop.mapred.JobConf,java.lang.String)">getTokenIndexOnMultiLineRecords</a></span>&#8203;(org.apache.hadoop.mapred.InputSplit&nbsp;split,
+                               org.apache.hadoop.mapred.TextInputFormat&nbsp;inputFormat,
+                               org.apache.hadoop.mapred.JobConf&nbsp;job,
+                               <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;token)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 </tbody>

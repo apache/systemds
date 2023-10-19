@@ -14,7 +14,7 @@
 <!--[if IE]>
 <script type="text/javascript" src="../../../../../jquery/jszip-utils/dist/jszip-utils-ie.min.js"></script>
 <![endif]-->
-<script type="text/javascript" src="../../../../../jquery/jquery-3.6.0.min.js"></script>
+<script type="text/javascript" src="../../../../../jquery/jquery-3.6.1.min.js"></script>
 <script type="text/javascript" src="../../../../../jquery/jquery-ui.min.js"></script>
 </head>
 <body>
@@ -27,7 +27,7 @@
     catch(err) {
     }
 //-->
-var data = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10};
+var data = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10,"i10":10,"i11":10,"i12":10,"i13":10,"i14":10,"i15":10,"i16":10,"i17":10,"i18":10,"i19":10};
 var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -168,27 +168,9 @@ implements <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base
 <th class="colLast" scope="col">Description</th>
 </tr>
 <tr class="altColor">
-<th class="colConstructorName" scope="row"><code><span class="memberNameLink"><a href="#%3Cinit%3E()">CustomProperties</a></span>()</code></th>
-<td class="colLast">&nbsp;</td>
-</tr>
-<tr class="rowColor">
-<th class="colConstructorName" scope="row"><code><span class="memberNameLink"><a href="#%3Cinit%3E(org.apache.sysds.runtime.iogen.CustomProperties.GRPattern,java.lang.String,java.lang.String,int)">CustomProperties</a></span>&#8203;(org.apache.sysds.runtime.iogen.CustomProperties.GRPattern&nbsp;rowPattern,
-                <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;delim,
-                <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;indexDelim,
-                int&nbsp;firstColIndex)</code></th>
-<td class="colLast">&nbsp;</td>
-</tr>
-<tr class="altColor">
-<th class="colConstructorName" scope="row"><code><span class="memberNameLink"><a href="#%3Cinit%3E(org.apache.sysds.runtime.iogen.CustomProperties.GRPattern,java.lang.String,java.util.HashSet)">CustomProperties</a></span>&#8203;(org.apache.sysds.runtime.iogen.CustomProperties.GRPattern&nbsp;rowPattern,
-                <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;delim,
-                <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/HashSet.html?is-external=true" title="class or interface in java.util" class="externalLink">HashSet</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&gt;&nbsp;naStrings)</code></th>
-<td class="colLast">&nbsp;</td>
-</tr>
-<tr class="rowColor">
-<th class="colConstructorName" scope="row"><code><span class="memberNameLink"><a href="#%3Cinit%3E(org.apache.sysds.runtime.iogen.CustomProperties.GRSymmetry,java.lang.String,int,int)">CustomProperties</a></span>&#8203;(org.apache.sysds.runtime.iogen.CustomProperties.GRSymmetry&nbsp;grSymmetry,
-                <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;delim,
-                int&nbsp;firstRowIndex,
-                int&nbsp;firstColIndex)</code></th>
+<th class="colConstructorName" scope="row"><code><span class="memberNameLink"><a href="#%3Cinit%3E(org.apache.sysds.runtime.iogen.MappingProperties,org.apache.sysds.runtime.iogen.RowIndexStructure,org.apache.sysds.runtime.iogen.ColIndexStructure)">CustomProperties</a></span>&#8203;(<a href="MappingProperties.html" title="class in org.apache.sysds.runtime.iogen">MappingProperties</a>&nbsp;mappingProperties,
+                <a href="RowIndexStructure.html" title="class in org.apache.sysds.runtime.iogen">RowIndexStructure</a>&nbsp;rowIndexStructure,
+                <a href="ColIndexStructure.html" title="class in org.apache.sysds.runtime.iogen">ColIndexStructure</a>&nbsp;colIndexStructure)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 </table>
@@ -210,53 +192,103 @@ implements <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base
 <th class="colLast" scope="col">Description</th>
 </tr>
 <tr id="i0" class="altColor">
-<td class="colFirst"><code>org.apache.sysds.runtime.iogen.CustomProperties.GRPattern</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getColPattern()">getColPattern</a></span>()</code></th>
+<td class="colFirst"><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/HashSet.html?is-external=true" title="class or interface in java.util" class="externalLink">HashSet</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&gt;[]</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#endWithValueStrings()">endWithValueStrings</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i1" class="rowColor">
-<td class="colFirst"><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a></code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getDelim()">getDelim</a></span>()</code></th>
+<td class="colFirst"><code><a href="ColIndexStructure.html" title="class in org.apache.sysds.runtime.iogen">ColIndexStructure</a></code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getColIndexStructure()">getColIndexStructure</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i2" class="altColor">
-<td class="colFirst"><code>int</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getFirstColIndex()">getFirstColIndex</a></span>()</code></th>
+<td class="colFirst"><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/ArrayList.html?is-external=true" title="class or interface in java.util" class="externalLink">ArrayList</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&gt;[]</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getColKeyPatterns()">getColKeyPatterns</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i3" class="rowColor">
-<td class="colFirst"><code>int</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getFirstRowIndex()">getFirstRowIndex</a></span>()</code></th>
+<td class="colFirst"><code><a href="MappingProperties.html" title="class in org.apache.sysds.runtime.iogen">MappingProperties</a></code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getMappingProperties()">getMappingProperties</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i4" class="altColor">
-<td class="colFirst"><code>org.apache.sysds.runtime.iogen.CustomProperties.GRSymmetry</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getGrSymmetry()">getGrSymmetry</a></span>()</code></th>
+<td class="colFirst"><code>int</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getNcols()">getNcols</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i5" class="rowColor">
-<td class="colFirst"><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a></code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getIndexDelim()">getIndexDelim</a></span>()</code></th>
+<td class="colFirst"><code><a href="RowIndexStructure.html" title="class in org.apache.sysds.runtime.iogen">RowIndexStructure</a></code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getRowIndexStructure()">getRowIndexStructure</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i6" class="altColor">
-<td class="colFirst"><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/HashSet.html?is-external=true" title="class or interface in java.util" class="externalLink">HashSet</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&gt;</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getNaStrings()">getNaStrings</a></span>()</code></th>
+<td class="colFirst"><code><a href="../../common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>[]</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getSchema()">getSchema</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i7" class="rowColor">
-<td class="colFirst"><code>org.apache.sysds.runtime.iogen.CustomProperties.GRPattern</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getRowPattern()">getRowPattern</a></span>()</code></th>
+<td class="colFirst"><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/ArrayList.html?is-external=true" title="class or interface in java.util" class="externalLink">ArrayList</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&gt;</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getValueKeyPattern()">getValueKeyPattern</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i8" class="altColor">
-<td class="colFirst"><code>void</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#setFirstColIndex(int)">setFirstColIndex</a></span>&#8203;(int&nbsp;firstColIndex)</code></th>
+<td class="colFirst"><code>boolean</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#isParallel()">isParallel</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i9" class="rowColor">
+<td class="colFirst"><code>boolean</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#isSparse()">isSparse</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i10" class="altColor">
 <td class="colFirst"><code>void</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#setFirstRowIndex(int)">setFirstRowIndex</a></span>&#8203;(int&nbsp;firstRowIndex)</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#setColIndexStructure(org.apache.sysds.runtime.iogen.ColIndexStructure)">setColIndexStructure</a></span>&#8203;(<a href="ColIndexStructure.html" title="class in org.apache.sysds.runtime.iogen">ColIndexStructure</a>&nbsp;colIndexStructure)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i11" class="rowColor">
+<td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#setColKeyPatterns(java.util.ArrayList%5B%5D)">setColKeyPatterns</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/ArrayList.html?is-external=true" title="class or interface in java.util" class="externalLink">ArrayList</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&gt;[]&nbsp;colKeyPatterns)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i12" class="altColor">
+<td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#setEndWithValueStrings(java.util.HashSet%5B%5D)">setEndWithValueStrings</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/HashSet.html?is-external=true" title="class or interface in java.util" class="externalLink">HashSet</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&gt;[]&nbsp;endWithValueStrings)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i13" class="rowColor">
+<td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#setMappingProperties(org.apache.sysds.runtime.iogen.MappingProperties)">setMappingProperties</a></span>&#8203;(<a href="MappingProperties.html" title="class in org.apache.sysds.runtime.iogen">MappingProperties</a>&nbsp;mappingProperties)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i14" class="altColor">
+<td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#setNcols(int)">setNcols</a></span>&#8203;(int&nbsp;ncols)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i15" class="rowColor">
+<td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#setParallel(boolean)">setParallel</a></span>&#8203;(boolean&nbsp;parallel)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i16" class="altColor">
+<td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#setRowIndexStructure(org.apache.sysds.runtime.iogen.RowIndexStructure)">setRowIndexStructure</a></span>&#8203;(<a href="RowIndexStructure.html" title="class in org.apache.sysds.runtime.iogen">RowIndexStructure</a>&nbsp;rowIndexStructure)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i17" class="rowColor">
+<td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#setSchema(org.apache.sysds.common.Types.ValueType%5B%5D)">setSchema</a></span>&#8203;(<a href="../../common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>[]&nbsp;schema)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i18" class="altColor">
+<td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#setSparse(boolean)">setSparse</a></span>&#8203;(boolean&nbsp;sparse)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i19" class="rowColor">
+<td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#setValueKeyPattern(java.util.ArrayList)">setValueKeyPattern</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/ArrayList.html?is-external=true" title="class or interface in java.util" class="externalLink">ArrayList</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&gt;&nbsp;valueKeyPattern)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 </table>
@@ -290,48 +322,15 @@ implements <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base
 <!--   -->
 </a>
 <h3>Constructor Detail</h3>
-<a id="&lt;init&gt;()">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>CustomProperties</h4>
-<pre>public&nbsp;CustomProperties()</pre>
-</li>
-</ul>
-<a id="&lt;init&gt;(org.apache.sysds.runtime.iogen.CustomProperties.GRPattern,java.lang.String,java.util.HashSet)">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>CustomProperties</h4>
-<pre>public&nbsp;CustomProperties&#8203;(org.apache.sysds.runtime.iogen.CustomProperties.GRPattern&nbsp;rowPattern,
-                        <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;delim,
-                        <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/HashSet.html?is-external=true" title="class or interface in java.util" class="externalLink">HashSet</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&gt;&nbsp;naStrings)</pre>
-</li>
-</ul>
-<a id="&lt;init&gt;(org.apache.sysds.runtime.iogen.CustomProperties.GRPattern,java.lang.String,java.lang.String,int)">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>CustomProperties</h4>
-<pre>public&nbsp;CustomProperties&#8203;(org.apache.sysds.runtime.iogen.CustomProperties.GRPattern&nbsp;rowPattern,
-                        <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;delim,
-                        <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;indexDelim,
-                        int&nbsp;firstColIndex)</pre>
-</li>
-</ul>
-<a id="&lt;init&gt;(org.apache.sysds.runtime.iogen.CustomProperties.GRSymmetry,java.lang.String,int,int)">
+<a id="&lt;init&gt;(org.apache.sysds.runtime.iogen.MappingProperties,org.apache.sysds.runtime.iogen.RowIndexStructure,org.apache.sysds.runtime.iogen.ColIndexStructure)">
 <!--   -->
 </a>
 <ul class="blockListLast">
 <li class="blockList">
 <h4>CustomProperties</h4>
-<pre>public&nbsp;CustomProperties&#8203;(org.apache.sysds.runtime.iogen.CustomProperties.GRSymmetry&nbsp;grSymmetry,
-                        <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;delim,
-                        int&nbsp;firstRowIndex,
-                        int&nbsp;firstColIndex)</pre>
+<pre>public&nbsp;CustomProperties&#8203;(<a href="MappingProperties.html" title="class in org.apache.sysds.runtime.iogen">MappingProperties</a>&nbsp;mappingProperties,
+                        <a href="RowIndexStructure.html" title="class in org.apache.sysds.runtime.iogen">RowIndexStructure</a>&nbsp;rowIndexStructure,
+                        <a href="ColIndexStructure.html" title="class in org.apache.sysds.runtime.iogen">ColIndexStructure</a>&nbsp;colIndexStructure)</pre>
 </li>
 </ul>
 </li>
@@ -344,94 +343,184 @@ implements <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base
 <!--   -->
 </a>
 <h3>Method Detail</h3>
-<a id="getDelim()">
+<a id="getMappingProperties()">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
-<h4>getDelim</h4>
-<pre class="methodSignature">public&nbsp;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;getDelim()</pre>
+<h4>getMappingProperties</h4>
+<pre class="methodSignature">public&nbsp;<a href="MappingProperties.html" title="class in org.apache.sysds.runtime.iogen">MappingProperties</a>&nbsp;getMappingProperties()</pre>
 </li>
 </ul>
-<a id="getIndexDelim()">
+<a id="setMappingProperties(org.apache.sysds.runtime.iogen.MappingProperties)">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
-<h4>getIndexDelim</h4>
-<pre class="methodSignature">public&nbsp;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;getIndexDelim()</pre>
+<h4>setMappingProperties</h4>
+<pre class="methodSignature">public&nbsp;void&nbsp;setMappingProperties&#8203;(<a href="MappingProperties.html" title="class in org.apache.sysds.runtime.iogen">MappingProperties</a>&nbsp;mappingProperties)</pre>
 </li>
 </ul>
-<a id="getNaStrings()">
+<a id="getRowIndexStructure()">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
-<h4>getNaStrings</h4>
-<pre class="methodSignature">public&nbsp;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/HashSet.html?is-external=true" title="class or interface in java.util" class="externalLink">HashSet</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&gt;&nbsp;getNaStrings()</pre>
+<h4>getRowIndexStructure</h4>
+<pre class="methodSignature">public&nbsp;<a href="RowIndexStructure.html" title="class in org.apache.sysds.runtime.iogen">RowIndexStructure</a>&nbsp;getRowIndexStructure()</pre>
 </li>
 </ul>
-<a id="getRowPattern()">
+<a id="setRowIndexStructure(org.apache.sysds.runtime.iogen.RowIndexStructure)">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
-<h4>getRowPattern</h4>
-<pre class="methodSignature">public&nbsp;org.apache.sysds.runtime.iogen.CustomProperties.GRPattern&nbsp;getRowPattern()</pre>
+<h4>setRowIndexStructure</h4>
+<pre class="methodSignature">public&nbsp;void&nbsp;setRowIndexStructure&#8203;(<a href="RowIndexStructure.html" title="class in org.apache.sysds.runtime.iogen">RowIndexStructure</a>&nbsp;rowIndexStructure)</pre>
 </li>
 </ul>
-<a id="getColPattern()">
+<a id="getColIndexStructure()">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
-<h4>getColPattern</h4>
-<pre class="methodSignature">public&nbsp;org.apache.sysds.runtime.iogen.CustomProperties.GRPattern&nbsp;getColPattern()</pre>
+<h4>getColIndexStructure</h4>
+<pre class="methodSignature">public&nbsp;<a href="ColIndexStructure.html" title="class in org.apache.sysds.runtime.iogen">ColIndexStructure</a>&nbsp;getColIndexStructure()</pre>
 </li>
 </ul>
-<a id="getGrSymmetry()">
+<a id="setColIndexStructure(org.apache.sysds.runtime.iogen.ColIndexStructure)">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
-<h4>getGrSymmetry</h4>
-<pre class="methodSignature">public&nbsp;org.apache.sysds.runtime.iogen.CustomProperties.GRSymmetry&nbsp;getGrSymmetry()</pre>
+<h4>setColIndexStructure</h4>
+<pre class="methodSignature">public&nbsp;void&nbsp;setColIndexStructure&#8203;(<a href="ColIndexStructure.html" title="class in org.apache.sysds.runtime.iogen">ColIndexStructure</a>&nbsp;colIndexStructure)</pre>
 </li>
 </ul>
-<a id="getFirstColIndex()">
+<a id="getColKeyPatterns()">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
-<h4>getFirstColIndex</h4>
-<pre class="methodSignature">public&nbsp;int&nbsp;getFirstColIndex()</pre>
+<h4>getColKeyPatterns</h4>
+<pre class="methodSignature">public&nbsp;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/ArrayList.html?is-external=true" title="class or interface in java.util" class="externalLink">ArrayList</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&gt;[]&nbsp;getColKeyPatterns()</pre>
 </li>
 </ul>
-<a id="setFirstColIndex(int)">
+<a id="setColKeyPatterns(java.util.ArrayList[])">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
-<h4>setFirstColIndex</h4>
-<pre class="methodSignature">public&nbsp;void&nbsp;setFirstColIndex&#8203;(int&nbsp;firstColIndex)</pre>
+<h4>setColKeyPatterns</h4>
+<pre class="methodSignature">public&nbsp;void&nbsp;setColKeyPatterns&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/ArrayList.html?is-external=true" title="class or interface in java.util" class="externalLink">ArrayList</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&gt;[]&nbsp;colKeyPatterns)</pre>
 </li>
 </ul>
-<a id="getFirstRowIndex()">
+<a id="getSchema()">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
-<h4>getFirstRowIndex</h4>
-<pre class="methodSignature">public&nbsp;int&nbsp;getFirstRowIndex()</pre>
+<h4>getSchema</h4>
+<pre class="methodSignature">public&nbsp;<a href="../../common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>[]&nbsp;getSchema()</pre>
 </li>
 </ul>
-<a id="setFirstRowIndex(int)">
+<a id="setSchema(org.apache.sysds.common.Types.ValueType[])">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>setSchema</h4>
+<pre class="methodSignature">public&nbsp;void&nbsp;setSchema&#8203;(<a href="../../common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>[]&nbsp;schema)</pre>
+</li>
+</ul>
+<a id="endWithValueStrings()">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>endWithValueStrings</h4>
+<pre class="methodSignature">public&nbsp;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/HashSet.html?is-external=true" title="class or interface in java.util" class="externalLink">HashSet</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&gt;[]&nbsp;endWithValueStrings()</pre>
+</li>
+</ul>
+<a id="getValueKeyPattern()">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>getValueKeyPattern</h4>
+<pre class="methodSignature">public&nbsp;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/ArrayList.html?is-external=true" title="class or interface in java.util" class="externalLink">ArrayList</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&gt;&nbsp;getValueKeyPattern()</pre>
+</li>
+</ul>
+<a id="setValueKeyPattern(java.util.ArrayList)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>setValueKeyPattern</h4>
+<pre class="methodSignature">public&nbsp;void&nbsp;setValueKeyPattern&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/ArrayList.html?is-external=true" title="class or interface in java.util" class="externalLink">ArrayList</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&gt;&nbsp;valueKeyPattern)</pre>
+</li>
+</ul>
+<a id="getNcols()">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>getNcols</h4>
+<pre class="methodSignature">public&nbsp;int&nbsp;getNcols()</pre>
+</li>
+</ul>
+<a id="setNcols(int)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>setNcols</h4>
+<pre class="methodSignature">public&nbsp;void&nbsp;setNcols&#8203;(int&nbsp;ncols)</pre>
+</li>
+</ul>
+<a id="isSparse()">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>isSparse</h4>
+<pre class="methodSignature">public&nbsp;boolean&nbsp;isSparse()</pre>
+</li>
+</ul>
+<a id="setSparse(boolean)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>setSparse</h4>
+<pre class="methodSignature">public&nbsp;void&nbsp;setSparse&#8203;(boolean&nbsp;sparse)</pre>
+</li>
+</ul>
+<a id="isParallel()">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>isParallel</h4>
+<pre class="methodSignature">public&nbsp;boolean&nbsp;isParallel()</pre>
+</li>
+</ul>
+<a id="setParallel(boolean)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>setParallel</h4>
+<pre class="methodSignature">public&nbsp;void&nbsp;setParallel&#8203;(boolean&nbsp;parallel)</pre>
+</li>
+</ul>
+<a id="setEndWithValueStrings(java.util.HashSet[])">
 <!--   -->
 </a>
 <ul class="blockListLast">
 <li class="blockList">
-<h4>setFirstRowIndex</h4>
-<pre class="methodSignature">public&nbsp;void&nbsp;setFirstRowIndex&#8203;(int&nbsp;firstRowIndex)</pre>
+<h4>setEndWithValueStrings</h4>
+<pre class="methodSignature">public&nbsp;void&nbsp;setEndWithValueStrings&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/HashSet.html?is-external=true" title="class or interface in java.util" class="externalLink">HashSet</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&gt;[]&nbsp;endWithValueStrings)</pre>
 </li>
 </ul>
 </li>

@@ -14,7 +14,7 @@
 <!--[if IE]>
 <script type="text/javascript" src="../../../../../../../jquery/jszip-utils/dist/jszip-utils-ie.min.js"></script>
 <![endif]-->
-<script type="text/javascript" src="../../../../../../../jquery/jquery-3.6.0.min.js"></script>
+<script type="text/javascript" src="../../../../../../../jquery/jquery-3.6.1.min.js"></script>
 <script type="text/javascript" src="../../../../../../../jquery/jquery-ui.min.js"></script>
 </head>
 <body>
@@ -111,10 +111,14 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
-<th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.compress.cost">org.apache.sysds.runtime.compress.cost</a></th>
+<th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.compress.colgroup">org.apache.sysds.runtime.compress.colgroup</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
+<th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.compress.cost">org.apache.sysds.runtime.compress.cost</a></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
 <th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.compress.estim">org.apache.sysds.runtime.compress.estim</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
@@ -167,6 +171,80 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <tr class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">Memorizer.</span><code><span class="memberNameLink"><a href="../../cocode/Memorizer.html#put(org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup)">put</a></span>&#8203;(<a href="../CompressedSizeInfoColGroup.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfoColGroup</a>&nbsp;g)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+</tbody>
+</table>
+</section>
+</li>
+<li class="blockList">
+<section><a id="org.apache.sysds.runtime.compress.colgroup">
+<!--   -->
+</a>
+<h3>Uses of <a href="../CompressedSizeInfoColGroup.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfoColGroup</a> in <a href="../../colgroup/package-summary.html">org.apache.sysds.runtime.compress.colgroup</a></h3>
+<table class="useSummary">
+<caption><span>Methods in <a href="../../colgroup/package-summary.html">org.apache.sysds.runtime.compress.colgroup</a> that return <a href="../CompressedSizeInfoColGroup.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfoColGroup</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colSecond" scope="col">Method</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code>abstract <a href="../CompressedSizeInfoColGroup.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfoColGroup</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">AColGroup.</span><code><span class="memberNameLink"><a href="../../colgroup/AColGroup.html#getCompressionInfo(int)">getCompressionInfo</a></span>&#8203;(int&nbsp;nRow)</code></th>
+<td class="colLast">
+<div class="block">Get the compression info for this column group.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../CompressedSizeInfoColGroup.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfoColGroup</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ASDC.</span><code><span class="memberNameLink"><a href="../../colgroup/ASDC.html#getCompressionInfo(int)">getCompressionInfo</a></span>&#8203;(int&nbsp;nRow)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../CompressedSizeInfoColGroup.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfoColGroup</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ASDCZero.</span><code><span class="memberNameLink"><a href="../../colgroup/ASDCZero.html#getCompressionInfo(int)">getCompressionInfo</a></span>&#8203;(int&nbsp;nRow)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../CompressedSizeInfoColGroup.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfoColGroup</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ColGroupConst.</span><code><span class="memberNameLink"><a href="../../colgroup/ColGroupConst.html#getCompressionInfo(int)">getCompressionInfo</a></span>&#8203;(int&nbsp;nRow)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../CompressedSizeInfoColGroup.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfoColGroup</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ColGroupDDC.</span><code><span class="memberNameLink"><a href="../../colgroup/ColGroupDDC.html#getCompressionInfo(int)">getCompressionInfo</a></span>&#8203;(int&nbsp;nRow)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../CompressedSizeInfoColGroup.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfoColGroup</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ColGroupDDCFOR.</span><code><span class="memberNameLink"><a href="../../colgroup/ColGroupDDCFOR.html#getCompressionInfo(int)">getCompressionInfo</a></span>&#8203;(int&nbsp;nRow)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../CompressedSizeInfoColGroup.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfoColGroup</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ColGroupEmpty.</span><code><span class="memberNameLink"><a href="../../colgroup/ColGroupEmpty.html#getCompressionInfo(int)">getCompressionInfo</a></span>&#8203;(int&nbsp;nRow)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../CompressedSizeInfoColGroup.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfoColGroup</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ColGroupLinearFunctional.</span><code><span class="memberNameLink"><a href="../../colgroup/ColGroupLinearFunctional.html#getCompressionInfo(int)">getCompressionInfo</a></span>&#8203;(int&nbsp;nRow)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../CompressedSizeInfoColGroup.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfoColGroup</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ColGroupOLE.</span><code><span class="memberNameLink"><a href="../../colgroup/ColGroupOLE.html#getCompressionInfo(int)">getCompressionInfo</a></span>&#8203;(int&nbsp;nRow)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../CompressedSizeInfoColGroup.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfoColGroup</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ColGroupRLE.</span><code><span class="memberNameLink"><a href="../../colgroup/ColGroupRLE.html#getCompressionInfo(int)">getCompressionInfo</a></span>&#8203;(int&nbsp;nRow)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../CompressedSizeInfoColGroup.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfoColGroup</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ColGroupUncompressed.</span><code><span class="memberNameLink"><a href="../../colgroup/ColGroupUncompressed.html#getCompressionInfo(int)">getCompressionInfo</a></span>&#8203;(int&nbsp;nRow)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 </tbody>
@@ -262,26 +340,33 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code><a href="../CompressedSizeInfoColGroup.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfoColGroup</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">ComEstExact.</span><code><span class="memberNameLink"><a href="../ComEstExact.html#getColGroupInfo(org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,int,int)">getColGroupInfo</a></span>&#8203;(<a href="../../colgroup/indexes/IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;colIndexes,
+<th class="colSecond" scope="row"><span class="typeNameLabel">ComEstCompressed.</span><code><span class="memberNameLink"><a href="../ComEstCompressed.html#getColGroupInfo(org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,int,int)">getColGroupInfo</a></span>&#8203;(<a href="../../colgroup/indexes/IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;colIndexes,
                int&nbsp;estimate,
                int&nbsp;nrUniqueUpperBound)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code><a href="../CompressedSizeInfoColGroup.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfoColGroup</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ComEstExact.</span><code><span class="memberNameLink"><a href="../ComEstExact.html#getColGroupInfo(org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,int,int)">getColGroupInfo</a></span>&#8203;(<a href="../../colgroup/indexes/IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;colIndexes,
+               int&nbsp;estimate,
+               int&nbsp;nrUniqueUpperBound)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../CompressedSizeInfoColGroup.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfoColGroup</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">ComEstSample.</span><code><span class="memberNameLink"><a href="../ComEstSample.html#getColGroupInfo(org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,int,int)">getColGroupInfo</a></span>&#8203;(<a href="../../colgroup/indexes/IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;colIndexes,
                int&nbsp;estimate,
                int&nbsp;maxDistinct)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code><a href="../CompressedSizeInfoColGroup.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfoColGroup</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">AComEst.</span><code><span class="memberNameLink"><a href="../AComEst.html#getDeltaColGroupInfo(org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex)">getDeltaColGroupInfo</a></span>&#8203;(<a href="../../colgroup/indexes/IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;colIndexes)</code></th>
 <td class="colLast">
 <div class="block">Method for extracting info of specified columns as delta encodings (delta from previous rows values)</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>abstract <a href="../CompressedSizeInfoColGroup.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfoColGroup</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">AComEst.</span><code><span class="memberNameLink"><a href="../AComEst.html#getDeltaColGroupInfo(org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,int,int)">getDeltaColGroupInfo</a></span>&#8203;(<a href="../../colgroup/indexes/IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;colIndexes,
                     int&nbsp;estimate,
@@ -291,6 +376,13 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
  number of unique values, since in some cases the estimated number of uniques is estimated higher than the number
  estimated in sub groups of the given colIndexes.</div>
 </td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../CompressedSizeInfoColGroup.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfoColGroup</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ComEstCompressed.</span><code><span class="memberNameLink"><a href="../ComEstCompressed.html#getDeltaColGroupInfo(org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,int,int)">getDeltaColGroupInfo</a></span>&#8203;(<a href="../../colgroup/indexes/IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;colIndexes,
+                    int&nbsp;estimate,
+                    int&nbsp;nrUniqueUpperBound)</code></th>
+<td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code><a href="../CompressedSizeInfoColGroup.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfoColGroup</a></code></td>

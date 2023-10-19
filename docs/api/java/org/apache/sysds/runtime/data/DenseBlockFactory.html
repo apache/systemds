@@ -14,7 +14,7 @@
 <!--[if IE]>
 <script type="text/javascript" src="../../../../../jquery/jszip-utils/dist/jszip-utils-ie.min.js"></script>
 <![endif]-->
-<script type="text/javascript" src="../../../../../jquery/jquery-3.6.0.min.js"></script>
+<script type="text/javascript" src="../../../../../jquery/jquery-3.6.1.min.js"></script>
 <script type="text/javascript" src="../../../../../jquery/jquery-ui.min.js"></script>
 </head>
 <body>
@@ -27,7 +27,7 @@
     catch(err) {
     }
 //-->
-var data = {"i0":9,"i1":9,"i2":9,"i3":9,"i4":9,"i5":9,"i6":9,"i7":9,"i8":9,"i9":9,"i10":9,"i11":9,"i12":9,"i13":9,"i14":9};
+var data = {"i0":9,"i1":9,"i2":9,"i3":9,"i4":9,"i5":9,"i6":9,"i7":9,"i8":9,"i9":9,"i10":9,"i11":9,"i12":9,"i13":9,"i14":9,"i15":9,"i16":9,"i17":9};
 var tabs = {65535:["t0","All Methods"],1:["t1","Static Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -208,59 +208,80 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 </tr>
 <tr id="i5" class="rowColor">
 <td class="colFirst"><code>static <a href="DenseBlock.html" title="class in org.apache.sysds.runtime.data">DenseBlock</a></code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#createDenseBlock(int%5B%5D,boolean)">createDenseBlock</a></span>&#8203;(int[]&nbsp;dims,
+                boolean&nbsp;dedup)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i6" class="altColor">
+<td class="colFirst"><code>static <a href="DenseBlock.html" title="class in org.apache.sysds.runtime.data">DenseBlock</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#createDenseBlock(int%5B%5D,int%5B%5D)">createDenseBlock</a></span>&#8203;(int[]&nbsp;data,
                 int[]&nbsp;dims)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i6" class="altColor">
+<tr id="i7" class="rowColor">
 <td class="colFirst"><code>static <a href="DenseBlock.html" title="class in org.apache.sysds.runtime.data">DenseBlock</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#createDenseBlock(int,int)">createDenseBlock</a></span>&#8203;(int&nbsp;rlen,
                 int&nbsp;clen)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i7" class="rowColor">
+<tr id="i8" class="altColor">
+<td class="colFirst"><code>static <a href="DenseBlock.html" title="class in org.apache.sysds.runtime.data">DenseBlock</a></code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#createDenseBlock(int,int,boolean)">createDenseBlock</a></span>&#8203;(int&nbsp;rlen,
+                int&nbsp;clen,
+                boolean&nbsp;dedup)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i9" class="rowColor">
 <td class="colFirst"><code>static <a href="DenseBlock.html" title="class in org.apache.sysds.runtime.data">DenseBlock</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#createDenseBlock(long%5B%5D,int%5B%5D)">createDenseBlock</a></span>&#8203;(long[]&nbsp;data,
                 int[]&nbsp;dims)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i8" class="altColor">
+<tr id="i10" class="altColor">
 <td class="colFirst"><code>static <a href="DenseBlock.html" title="class in org.apache.sysds.runtime.data">DenseBlock</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#createDenseBlock(java.lang.String%5B%5D,int%5B%5D)">createDenseBlock</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>[]&nbsp;data,
                 int[]&nbsp;dims)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i9" class="rowColor">
+<tr id="i11" class="rowColor">
 <td class="colFirst"><code>static <a href="DenseBlock.html" title="class in org.apache.sysds.runtime.data">DenseBlock</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#createDenseBlock(java.util.BitSet,int%5B%5D)">createDenseBlock</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/BitSet.html?is-external=true" title="class or interface in java.util" class="externalLink">BitSet</a>&nbsp;data,
                 int[]&nbsp;dims)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i10" class="altColor">
+<tr id="i12" class="altColor">
 <td class="colFirst"><code>static <a href="DenseBlock.html" title="class in org.apache.sysds.runtime.data">DenseBlock</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#createDenseBlock(org.apache.sysds.common.Types.ValueType,int%5B%5D)">createDenseBlock</a></span>&#8203;(<a href="../../common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;vt,
                 int[]&nbsp;dims)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i11" class="rowColor">
+<tr id="i13" class="rowColor">
 <td class="colFirst"><code>static <a href="DenseBlock.html" title="class in org.apache.sysds.runtime.data">DenseBlock</a></code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#createDenseBlock(org.apache.sysds.common.Types.ValueType,org.apache.sysds.runtime.data.DenseBlock.Type,int%5B%5D)">createDenseBlock</a></span>&#8203;(<a href="../../common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;vt,
-                <a href="DenseBlock.Type.html" title="enum in org.apache.sysds.runtime.data">DenseBlock.Type</a>&nbsp;type,
-                int[]&nbsp;dims)</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#createDenseBlock(org.apache.sysds.common.Types.ValueType,int%5B%5D,boolean)">createDenseBlock</a></span>&#8203;(<a href="../../common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;vt,
+                int[]&nbsp;dims,
+                boolean&nbsp;dedup)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i12" class="altColor">
+<tr id="i14" class="altColor">
+<td class="colFirst"><code>static <a href="DenseBlock.html" title="class in org.apache.sysds.runtime.data">DenseBlock</a></code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#createDenseBlock(org.apache.sysds.common.Types.ValueType,org.apache.sysds.runtime.data.DenseBlock.Type,int%5B%5D,boolean)">createDenseBlock</a></span>&#8203;(<a href="../../common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;vt,
+                <a href="DenseBlock.Type.html" title="enum in org.apache.sysds.runtime.data">DenseBlock.Type</a>&nbsp;type,
+                int[]&nbsp;dims,
+                boolean&nbsp;dedup)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i15" class="rowColor">
 <td class="colFirst"><code>static double</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#estimateSizeDenseInMemory(long,long)">estimateSizeDenseInMemory</a></span>&#8203;(long&nbsp;nrows,
                          long&nbsp;ncols)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i13" class="rowColor">
+<tr id="i16" class="altColor">
 <td class="colFirst"><code>static <a href="DenseBlock.Type.html" title="enum in org.apache.sysds.runtime.data">DenseBlock.Type</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getDenseBlockType(org.apache.sysds.runtime.data.DenseBlock)">getDenseBlockType</a></span>&#8203;(<a href="DenseBlock.html" title="class in org.apache.sysds.runtime.data">DenseBlock</a>&nbsp;dblock)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i14" class="altColor">
+<tr id="i17" class="rowColor">
 <td class="colFirst"><code>static boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#isDenseBlockType(org.apache.sysds.runtime.data.DenseBlock,org.apache.sysds.runtime.data.DenseBlock.Type)">isDenseBlockType</a></span>&#8203;(<a href="DenseBlock.html" title="class in org.apache.sysds.runtime.data">DenseBlock</a>&nbsp;sblock,
                 <a href="DenseBlock.Type.html" title="enum in org.apache.sysds.runtime.data">DenseBlock.Type</a>&nbsp;type)</code></th>
@@ -319,6 +340,17 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
                                           int&nbsp;clen)</pre>
 </li>
 </ul>
+<a id="createDenseBlock(int,int,boolean)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>createDenseBlock</h4>
+<pre class="methodSignature">public static&nbsp;<a href="DenseBlock.html" title="class in org.apache.sysds.runtime.data">DenseBlock</a>&nbsp;createDenseBlock&#8203;(int&nbsp;rlen,
+                                          int&nbsp;clen,
+                                          boolean&nbsp;dedup)</pre>
+</li>
+</ul>
 <a id="createDenseBlock(int[])">
 <!--   -->
 </a>
@@ -326,6 +358,16 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <li class="blockList">
 <h4>createDenseBlock</h4>
 <pre class="methodSignature">public static&nbsp;<a href="DenseBlock.html" title="class in org.apache.sysds.runtime.data">DenseBlock</a>&nbsp;createDenseBlock&#8203;(int[]&nbsp;dims)</pre>
+</li>
+</ul>
+<a id="createDenseBlock(int[],boolean)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>createDenseBlock</h4>
+<pre class="methodSignature">public static&nbsp;<a href="DenseBlock.html" title="class in org.apache.sysds.runtime.data">DenseBlock</a>&nbsp;createDenseBlock&#8203;(int[]&nbsp;dims,
+                                          boolean&nbsp;dedup)</pre>
 </li>
 </ul>
 <a id="createDenseBlock(org.apache.sysds.common.Types.ValueType,int[])">
@@ -336,6 +378,17 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <h4>createDenseBlock</h4>
 <pre class="methodSignature">public static&nbsp;<a href="DenseBlock.html" title="class in org.apache.sysds.runtime.data">DenseBlock</a>&nbsp;createDenseBlock&#8203;(<a href="../../common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;vt,
                                           int[]&nbsp;dims)</pre>
+</li>
+</ul>
+<a id="createDenseBlock(org.apache.sysds.common.Types.ValueType,int[],boolean)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>createDenseBlock</h4>
+<pre class="methodSignature">public static&nbsp;<a href="DenseBlock.html" title="class in org.apache.sysds.runtime.data">DenseBlock</a>&nbsp;createDenseBlock&#8203;(<a href="../../common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;vt,
+                                          int[]&nbsp;dims,
+                                          boolean&nbsp;dedup)</pre>
 </li>
 </ul>
 <a id="createDenseBlock(java.util.BitSet,int[])">
@@ -420,7 +473,7 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
                                           int&nbsp;clen)</pre>
 </li>
 </ul>
-<a id="createDenseBlock(org.apache.sysds.common.Types.ValueType,org.apache.sysds.runtime.data.DenseBlock.Type,int[])">
+<a id="createDenseBlock(org.apache.sysds.common.Types.ValueType,org.apache.sysds.runtime.data.DenseBlock.Type,int[],boolean)">
 <!--   -->
 </a>
 <ul class="blockList">
@@ -428,7 +481,8 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <h4>createDenseBlock</h4>
 <pre class="methodSignature">public static&nbsp;<a href="DenseBlock.html" title="class in org.apache.sysds.runtime.data">DenseBlock</a>&nbsp;createDenseBlock&#8203;(<a href="../../common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;vt,
                                           <a href="DenseBlock.Type.html" title="enum in org.apache.sysds.runtime.data">DenseBlock.Type</a>&nbsp;type,
-                                          int[]&nbsp;dims)</pre>
+                                          int[]&nbsp;dims,
+                                          boolean&nbsp;dedup)</pre>
 </li>
 </ul>
 <a id="isDenseBlockType(org.apache.sysds.runtime.data.DenseBlock,org.apache.sysds.runtime.data.DenseBlock.Type)">

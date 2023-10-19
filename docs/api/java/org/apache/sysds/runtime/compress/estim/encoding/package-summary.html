@@ -14,7 +14,7 @@
 <!--[if IE]>
 <script type="text/javascript" src="../../../../../../../jquery/jszip-utils/dist/jszip-utils-ie.min.js"></script>
 <![endif]-->
-<script type="text/javascript" src="../../../../../../../jquery/jquery-3.6.0.min.js"></script>
+<script type="text/javascript" src="../../../../../../../jquery/jquery-3.6.1.min.js"></script>
 <script type="text/javascript" src="../../../../../../../jquery/jquery-ui.min.js"></script>
 </head>
 <body>
@@ -129,25 +129,31 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tbody>
 <tr class="altColor">
+<th class="colFirst" scope="row"><a href="AEncode.html" title="class in org.apache.sysds.runtime.compress.estim.encoding">AEncode</a></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
 <th class="colFirst" scope="row"><a href="ConstEncoding.html" title="class in org.apache.sysds.runtime.compress.estim.encoding">ConstEncoding</a></th>
 <td class="colLast">
 <div class="block">Const encoding for cases where the entire group of columns is the same value</div>
 </td>
 </tr>
-<tr class="rowColor">
-<th class="colFirst" scope="row"><a href="DenseEncoding.html" title="class in org.apache.sysds.runtime.compress.estim.encoding">DenseEncoding</a></th>
-<td class="colLast">&nbsp;</td>
-</tr>
 <tr class="altColor">
+<th class="colFirst" scope="row"><a href="DenseEncoding.html" title="class in org.apache.sysds.runtime.compress.estim.encoding">DenseEncoding</a></th>
+<td class="colLast">
+<div class="block">An Encoding that contains a value on each row of the input.</div>
+</td>
+</tr>
+<tr class="rowColor">
 <th class="colFirst" scope="row"><a href="EmptyEncoding.html" title="class in org.apache.sysds.runtime.compress.estim.encoding">EmptyEncoding</a></th>
 <td class="colLast">
 <div class="block">Empty encoding for cases where the entire group of columns is zero</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <th class="colFirst" scope="row"><a href="SparseEncoding.html" title="class in org.apache.sysds.runtime.compress.estim.encoding">SparseEncoding</a></th>
 <td class="colLast">
-<div class="block">Most common is zero encoding</div>
+<div class="block">A Encoding that contain a default value that is not encoded and every other value is encoded in the map.</div>
 </td>
 </tr>
 </tbody>

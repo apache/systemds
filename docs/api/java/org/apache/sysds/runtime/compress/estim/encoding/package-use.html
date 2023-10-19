@@ -14,7 +14,7 @@
 <!--[if IE]>
 <script type="text/javascript" src="../../../../../../../jquery/jszip-utils/dist/jszip-utils-ie.min.js"></script>
 <![endif]-->
-<script type="text/javascript" src="../../../../../../../jquery/jquery-3.6.0.min.js"></script>
+<script type="text/javascript" src="../../../../../../../jquery/jquery-3.6.1.min.js"></script>
 <script type="text/javascript" src="../../../../../../../jquery/jquery-ui.min.js"></script>
 </head>
 <body>
@@ -107,12 +107,36 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tbody>
 <tr class="altColor">
-<th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.compress.estim">org.apache.sysds.runtime.compress.estim</a></th>
+<th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.compress.colgroup">org.apache.sysds.runtime.compress.colgroup</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
+<th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.compress.estim">org.apache.sysds.runtime.compress.estim</a></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
 <th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.compress.estim.encoding">org.apache.sysds.runtime.compress.estim.encoding</a></th>
 <td class="colLast">&nbsp;</td>
+</tr>
+</tbody>
+</table>
+</li>
+<li class="blockList"><a id="org.apache.sysds.runtime.compress.colgroup">
+<!--   -->
+</a>
+<table class="useSummary">
+<caption><span>Classes in <a href="package-summary.html">org.apache.sysds.runtime.compress.estim.encoding</a> used by <a href="../../colgroup/package-summary.html">org.apache.sysds.runtime.compress.colgroup</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Class</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<th class="colFirst" scope="row"><a href="class-use/IEncode.html#org.apache.sysds.runtime.compress.colgroup">IEncode</a></th>
+<td class="colLast">
+<div class="block">This interface covers an intermediate encoding for the samples to improve the efficiency of the joining of sample
+ column groups.</div>
+</td>
 </tr>
 </tbody>
 </table>
@@ -148,7 +172,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tbody>
 <tr class="altColor">
-<th class="colFirst" scope="row"><a href="class-use/DenseEncoding.html#org.apache.sysds.runtime.compress.estim.encoding">DenseEncoding</a></th>
+<th class="colFirst" scope="row"><a href="class-use/AEncode.html#org.apache.sysds.runtime.compress.estim.encoding">AEncode</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
@@ -161,7 +185,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <tr class="altColor">
 <th class="colFirst" scope="row"><a href="class-use/SparseEncoding.html#org.apache.sysds.runtime.compress.estim.encoding">SparseEncoding</a></th>
 <td class="colLast">
-<div class="block">Most common is zero encoding</div>
+<div class="block">A Encoding that contain a default value that is not encoded and every other value is encoded in the map.</div>
 </td>
 </tr>
 </tbody>

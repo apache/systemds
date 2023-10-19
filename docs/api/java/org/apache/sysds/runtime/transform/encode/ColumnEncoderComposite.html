@@ -14,7 +14,7 @@
 <!--[if IE]>
 <script type="text/javascript" src="../../../../../../jquery/jszip-utils/dist/jszip-utils-ie.min.js"></script>
 <![endif]-->
-<script type="text/javascript" src="../../../../../../jquery/jquery-3.6.0.min.js"></script>
+<script type="text/javascript" src="../../../../../../jquery/jquery-3.6.1.min.js"></script>
 <script type="text/javascript" src="../../../../../../jquery/jquery-ui.min.js"></script>
 </head>
 <body>
@@ -27,7 +27,7 @@
     catch(err) {
     }
 //-->
-var data = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10,"i10":10,"i11":10,"i12":10,"i13":10,"i14":10,"i15":10,"i16":10,"i17":10,"i18":10,"i19":10,"i20":10,"i21":10,"i22":10,"i23":10,"i24":10,"i25":10,"i26":10,"i27":10,"i28":10,"i29":10,"i30":10,"i31":10};
+var data = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10,"i10":10,"i11":10,"i12":10,"i13":10,"i14":10,"i15":10,"i16":10,"i17":10,"i18":10,"i19":10,"i20":10,"i21":10,"i22":10,"i23":10,"i24":10,"i25":10,"i26":10,"i27":10,"i28":10,"i29":10,"i30":10,"i31":10,"i32":10,"i33":10,"i34":10,"i35":10,"i36":10};
 var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -345,47 +345,72 @@ extends <a href="ColumnEncoder.html" title="class in org.apache.sysds.runtime.tr
 </tr>
 <tr id="i18" class="altColor">
 <td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#initEmbeddings(org.apache.sysds.runtime.matrix.data.MatrixBlock)">initEmbeddings</a></span>&#8203;(<a href="../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;embeddings)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i19" class="rowColor">
+<td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#initMetaData(org.apache.sysds.runtime.frame.data.FrameBlock)">initMetaData</a></span>&#8203;(<a href="../../frame/data/FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;out)</code></th>
 <td class="colLast">
 <div class="block">Sets up the required meta data for a subsequent call to apply.</div>
 </td>
 </tr>
-<tr id="i19" class="rowColor">
+<tr id="i20" class="altColor">
+<td class="colFirst"><code>boolean</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#isBin()">isBin</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i21" class="rowColor">
+<td class="colFirst"><code>boolean</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#isBinToDummy()">isBinToDummy</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i22" class="altColor">
 <td class="colFirst"><code>boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#isEncoder(int,java.lang.Class)">isEncoder</a></span>&#8203;(int&nbsp;colID,
          <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Class.html?is-external=true" title="class or interface in java.lang" class="externalLink">Class</a>&lt;?&gt;&nbsp;type)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i20" class="altColor">
+<tr id="i23" class="rowColor">
+<td class="colFirst"><code>boolean</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#isHash()">isHash</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i24" class="altColor">
+<td class="colFirst"><code>boolean</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#isHashToDummy()">isHashToDummy</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i25" class="rowColor">
 <td class="colFirst"><code>boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#isPassThrough()">isPassThrough</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i21" class="rowColor">
+<tr id="i26" class="altColor">
 <td class="colFirst"><code>boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#isRecode()">isRecode</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i22" class="altColor">
+<tr id="i27" class="rowColor">
 <td class="colFirst"><code>boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#isRecodeToDummy()">isRecodeToDummy</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i23" class="rowColor">
+<tr id="i28" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#mergeAt(org.apache.sysds.runtime.transform.encode.ColumnEncoder)">mergeAt</a></span>&#8203;(<a href="ColumnEncoder.html" title="class in org.apache.sysds.runtime.transform.encode">ColumnEncoder</a>&nbsp;other)</code></th>
 <td class="colLast">
 <div class="block">Merges another encoder, of a compatible type, in after a certain position.</div>
 </td>
 </tr>
-<tr id="i24" class="altColor">
+<tr id="i29" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#prepareBuildPartial()">prepareBuildPartial</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Allocates internal data structures for partial build.</div>
 </td>
 </tr>
-<tr id="i25" class="rowColor">
+<tr id="i30" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#readExternal(java.io.ObjectInput)">readExternal</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/ObjectInput.html?is-external=true" title="class or interface in java.io" class="externalLink">ObjectInput</a>&nbsp;in)</code></th>
 <td class="colLast">
@@ -393,28 +418,28 @@ extends <a href="ColumnEncoder.html" title="class in org.apache.sysds.runtime.tr
  efficient broadcast/rdd deserialization.</div>
 </td>
 </tr>
-<tr id="i26" class="altColor">
+<tr id="i31" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#setNumPartitions(int,int)">setNumPartitions</a></span>&#8203;(int&nbsp;nBuild,
                 int&nbsp;nApply)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i27" class="rowColor">
+<tr id="i32" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#shiftCol(int)">shiftCol</a></span>&#8203;(int&nbsp;columnOffset)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i28" class="altColor">
+<tr id="i33" class="rowColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#toString()">toString</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i29" class="rowColor">
+<tr id="i34" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#updateAllDCEncoders()">updateAllDCEncoders</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i30" class="altColor">
+<tr id="i35" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#updateIndexRanges(long%5B%5D,long%5B%5D,int)">updateIndexRanges</a></span>&#8203;(long[]&nbsp;beginDims,
                  long[]&nbsp;endDims,
@@ -423,7 +448,7 @@ extends <a href="ColumnEncoder.html" title="class in org.apache.sysds.runtime.tr
 <div class="block">Update index-ranges to after encoding.</div>
 </td>
 </tr>
-<tr id="i31" class="rowColor">
+<tr id="i36" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#writeExternal(java.io.ObjectOutput)">writeExternal</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/ObjectOutput.html?is-external=true" title="class or interface in java.io" class="externalLink">ObjectOutput</a>&nbsp;out)</code></th>
 <td class="colLast">
@@ -780,6 +805,19 @@ extends <a href="ColumnEncoder.html" title="class in org.apache.sysds.runtime.tr
 </dl>
 </li>
 </ul>
+<a id="initEmbeddings(org.apache.sysds.runtime.matrix.data.MatrixBlock)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>initEmbeddings</h4>
+<pre class="methodSignature">public&nbsp;void&nbsp;initEmbeddings&#8203;(<a href="../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;embeddings)</pre>
+<dl>
+<dt><span class="overrideSpecifyLabel">Overrides:</span></dt>
+<dd><code><a href="ColumnEncoder.html#initEmbeddings(org.apache.sysds.runtime.matrix.data.MatrixBlock)">initEmbeddings</a></code>&nbsp;in class&nbsp;<code><a href="ColumnEncoder.html" title="class in org.apache.sysds.runtime.transform.encode">ColumnEncoder</a></code></dd>
+</dl>
+</li>
+</ul>
 <a id="toString()">
 <!--   -->
 </a>
@@ -937,10 +975,46 @@ extends <a href="ColumnEncoder.html" title="class in org.apache.sysds.runtime.tr
 <a id="isPassThrough()">
 <!--   -->
 </a>
-<ul class="blockListLast">
+<ul class="blockList">
 <li class="blockList">
 <h4>isPassThrough</h4>
 <pre class="methodSignature">public&nbsp;boolean&nbsp;isPassThrough()</pre>
+</li>
+</ul>
+<a id="isBin()">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>isBin</h4>
+<pre class="methodSignature">public&nbsp;boolean&nbsp;isBin()</pre>
+</li>
+</ul>
+<a id="isBinToDummy()">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>isBinToDummy</h4>
+<pre class="methodSignature">public&nbsp;boolean&nbsp;isBinToDummy()</pre>
+</li>
+</ul>
+<a id="isHash()">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>isHash</h4>
+<pre class="methodSignature">public&nbsp;boolean&nbsp;isHash()</pre>
+</li>
+</ul>
+<a id="isHashToDummy()">
+<!--   -->
+</a>
+<ul class="blockListLast">
+<li class="blockList">
+<h4>isHashToDummy</h4>
+<pre class="methodSignature">public&nbsp;boolean&nbsp;isHashToDummy()</pre>
 </li>
 </ul>
 </li>

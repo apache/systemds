@@ -400,7 +400,7 @@ public class Types
 	// Operations that require 2 operands
 	public enum OpOp2 {
 		AND(true), APPLY_SCHEMA(false), BITWAND(true), BITWOR(true), BITWSHIFTL(true), BITWSHIFTR(true),
-		BITWXOR(true), CBIND(false), CONCAT(false), COV(false), DIV(true),
+		BITWXOR(true), CBIND(false), COMPRESS(true), CONCAT(false), COV(false), DIV(true),
 		DROP_INVALID_TYPE(false), DROP_INVALID_LENGTH(false), EQUAL(true),
 		FRAME_ROW_REPLICATE(true), GREATER(true), GREATEREQUAL(true), INTDIV(true),
 		INTERQUANTILE(false), IQM(false), LESS(true),

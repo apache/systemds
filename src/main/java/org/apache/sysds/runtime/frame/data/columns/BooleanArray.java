@@ -57,7 +57,7 @@ public class BooleanArray extends ABooleanArray {
 
 	@Override
 	public void set(int index, double value) {
-		_data[index] = value == 1.0;
+		_data[index] = (Math.round(value) == 1.0);
 	}
 
 	@Override

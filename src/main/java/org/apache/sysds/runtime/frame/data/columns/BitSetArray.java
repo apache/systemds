@@ -42,6 +42,8 @@ public class BitSetArray extends ABooleanArray {
 	/** Vectorized "words" containing all the bits set */
 	protected long[] _data;
 
+	private volatile int allTrue = -1;
+
 	protected BitSetArray(int size) {
 		this(new long[longSize(size)], size);
 	}
@@ -104,7 +106,7 @@ public class BitSetArray extends ABooleanArray {
 
 	@Override
 	public void set(int index, double value) {
-		set(index, value == 1.0);
+		set(index, Math.round(value) == 1.0);
 	}
 
 	@Override
@@ -502,9 +504,15 @@ public class BitSetArray extends ABooleanArray {
 
 	@Override
 	public boolean isAllTrue() {
+		if(allTrue != -1)
+			return allTrue ==1;
+		
 		for(int i = 0; i < _data.length; i++)
-			if(_data[i] != -1L)
+			if(_data[i] != -1L){
+				allTrue = 0;
 				return false;
+			}
+		allTrue = 1;
 		return true;
 	}
 

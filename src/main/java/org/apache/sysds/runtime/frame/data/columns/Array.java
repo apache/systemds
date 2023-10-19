@@ -79,7 +79,7 @@ public abstract class Array<T> implements Writable {
 		_rcdMapCache = m;
 	}
 
-	public Map<T, Long> getRecodeMap() {
+	public final Map<T, Long> getRecodeMap() {
 		// probe cache for existing map
 		if(REUSE_RECODE_MAPS) {
 			SoftReference<Map<T, Long>> tmp = getCache();
@@ -123,13 +123,13 @@ public abstract class Array<T> implements Writable {
 	 * @return a dictionary containing all unique values.
 	 */
 	protected Map<T, Integer> getDictionary() {
-		Map<T, Integer> dict = new HashMap<>();
-		int id = 0;
+		final Map<T, Integer> dict = new HashMap<>();
+		Integer id = 0;
 		for(int i = 0; i < size(); i++) {
-			T val = get(i);
-			Integer v = dict.putIfAbsent(val, id);
+			final T val = get(i);
+			final Integer v = dict.get(val);
 			if(v == null)
-				id++;
+				dict.put(val, id++);
 		}
 
 		return dict;

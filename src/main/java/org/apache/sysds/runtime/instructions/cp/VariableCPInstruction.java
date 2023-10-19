@@ -69,24 +69,24 @@ import org.apache.sysds.runtime.util.HDFSTool;
 import org.apache.sysds.runtime.util.ProgramConverter;
 import org.apache.sysds.utils.Statistics;
 
+/*
+ * Supported Operations
+ * --------------------
+ *  1) assignvar x:type y:type
+ *      assign value of y to x (both types should match)
+ *  2) rmvar x
+ *      remove variable x
+ *  3) cpvar x y
+ *      copy x to y (same as assignvar followed by rmvar, types are not required)
+ *  4) rmfilevar x:type b:type
+ *      remove variable x, and if b=true then the file object associated with x (b's type should be boolean)
+ *  5) assignvarwithfile FN x
+ *      assign x with the first value from the file whose name=FN
+ *  6) attachfiletovar FP x
+ *      allocate a new file object with name FP, and associate it with variable x
+ *      createvar x FP [dimensions] [formatinfo]
+ */
 public class VariableCPInstruction extends CPInstruction implements LineageTraceable {
-	/*
-	 * Supported Operations
-	 * --------------------
-	 *  1) assignvar x:type y:type
-	 *      assign value of y to x (both types should match)
-	 *  2) rmvar x
-	 *      remove variable x
-	 *  3) cpvar x y
-	 *      copy x to y (same as assignvar followed by rmvar, types are not required)
-	 *  4) rmfilevar x:type b:type
-	 *      remove variable x, and if b=true then the file object associated with x (b's type should be boolean)
-	 *  5) assignvarwithfile FN x
-	 *      assign x with the first value from the file whose name=FN
-	 *  6) attachfiletovar FP x
-	 *      allocate a new file object with name FP, and associate it with variable x
-	 *      createvar x FP [dimensions] [formatinfo]
-	 */
 
 	public enum VariableOperationCode {
 		CreateVariable,
@@ -189,30 +189,24 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 	}
 
 	private static VariableOperationCode getVariableOperationCode ( String str ) {
-
 		if ( str.equalsIgnoreCase("createvar"))
 			return VariableOperationCode.CreateVariable;
-
 		else if ( str.equalsIgnoreCase("assignvar"))
 			return VariableOperationCode.AssignVariable;
-
 		else if ( str.equalsIgnoreCase("cpvar"))
 			return VariableOperationCode.CopyVariable;
-
 		else if ( str.equalsIgnoreCase("mvvar"))
 			return VariableOperationCode.MoveVariable;
-
 		else if ( str.equalsIgnoreCase("rmvar") )
 			return VariableOperationCode.RemoveVariable;
-
 		else if ( str.equalsIgnoreCase("rmfilevar") )
 			return VariableOperationCode.RemoveVariableAndFile;
-
 		else if ( str.equalsIgnoreCase(OpOp1.CAST_AS_SCALAR.toString()) )
 			return VariableOperationCode.CastAsScalarVariable;
 		else if ( str.equalsIgnoreCase(OpOp1.CAST_AS_MATRIX.toString()) )
 			return VariableOperationCode.CastAsMatrixVariable;
-		else if ( str.equalsIgnoreCase(OpOp1.CAST_AS_FRAME.toString()) )
+		else if ( str.equalsIgnoreCase(OpOp1.CAST_AS_FRAME.toString()) 
+			|| str.equalsIgnoreCase("cast_as_frame"))
 			return VariableOperationCode.CastAsFrameVariable;
 		else if ( str.equalsIgnoreCase(OpOp1.CAST_AS_LIST.toString()) )
 			return VariableOperationCode.CastAsListVariable;
@@ -222,16 +216,12 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 			return VariableOperationCode.CastAsIntegerVariable;
 		else if ( str.equalsIgnoreCase(OpOp1.CAST_AS_BOOLEAN.toString()) )
 			return VariableOperationCode.CastAsBooleanVariable;
-
 		else if ( str.equalsIgnoreCase("write") )
 			return VariableOperationCode.Write;
-
 		else if ( str.equalsIgnoreCase("read") )
 			return VariableOperationCode.Read;
-
 		else if ( str.equalsIgnoreCase("setfilename") )
 			return VariableOperationCode.SetFileName;
-
 		else
 			throw new DMLRuntimeException("Invalid function: " + str);
 	}
@@ -343,7 +333,7 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType ( str );
 		String opcode = parts[0];
 		VariableOperationCode voc = getVariableOperationCode(opcode);
-
+	
 		if ( voc == VariableOperationCode.CreateVariable ){
 			if ( parts.length < 5 )  //&& parts.length != 10 )
 				throw new DMLRuntimeException("Invalid number of operands in createvar instruction: " + str);
@@ -360,6 +350,9 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 			// TODO - replace hardcoded numbers with more sophisticated code
 			if ( parts.length != 6 && parts.length != 7 && parts.length != 9 )
 				throw new DMLRuntimeException("Invalid number of operands in write instruction: " + str);
+		}
+		else if(voc == VariableOperationCode.CastAsFrameVariable){
+			InstructionUtils.checkNumFields(parts,4,5);
 		}
 		else {
 			try{
@@ -548,9 +541,16 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 				throw new DMLRuntimeException("Unexpected value type for second argument in: " + str);
 			break;
 
+		case CastAsFrameVariable:
+			if(parts.length==5){
+				in1 = new CPOperand(parts[1]); // input to cast
+				in2 = new CPOperand(parts[2]); // list of column names
+				out = new CPOperand(parts[3]); // output
+				k = Integer.parseInt(parts[4]);
+				break;
+			}
 		case CastAsScalarVariable:
 		case CastAsMatrixVariable:
-		case CastAsFrameVariable:
 		case CastAsListVariable:
 		case CastAsDoubleVariable:
 		case CastAsIntegerVariable:
@@ -966,18 +966,36 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 			out = new FrameBlock(1, getInput1().getValueType());
 			out.ensureAllocatedColumns(1);
 			out.set(0, 0, scalarInput.getStringValue());
+			setColumnNames(ec, out);
 			ec.setFrameOutput(output.getName(), out);
 		}
 		else if(getInput1().getDataType()==DataType.MATRIX) { //DataType.FRAME
 			MatrixBlock min = ec.getMatrixInput(getInput1().getName());
 			out = DataConverter.convertToFrameBlock(min, k);
 			ec.releaseMatrixInput(getInput1().getName());
+			setColumnNames(ec, out);
 			ec.setFrameOutput(output.getName(), out);
 		}
 		else { //convert list
 			ListObject list = (ListObject)ec.getVariable(getInput1().getName());
 			Data tmp = list.slice(0);
+			if(getInput2() != null){
+				throw new RuntimeException("List does not support as.frame column names arguments");
+			}
 			ec.setVariable(output.getName(), tmp);
+		}
+	}
+
+	private void setColumnNames(ExecutionContext ec, FrameBlock out){
+		if(getInput2() != null){
+			ListObject colNames = (ListObject)ec.getVariable(getInput2().getName());
+			String[] names = new String[out.getNumColumns()];
+			List<Data> dat = colNames.getData();
+			LOG.error(dat);
+			for(int i = 0; i < out.getNumColumns();i++){
+				names[i] = ((StringObject)dat.get(i)).getStringValue();
+			}
+			out.setColumnNames(names);
 		}
 	}
 

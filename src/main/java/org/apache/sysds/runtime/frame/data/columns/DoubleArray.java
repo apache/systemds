@@ -35,6 +35,8 @@ import org.apache.sysds.runtime.matrix.data.Pair;
 import org.apache.sysds.runtime.util.UtilFunctions;
 import org.apache.sysds.utils.MemoryEstimates;
 
+import ch.randelshofer.fastdoubleparser.JavaDoubleParser;
+
 public class DoubleArray extends Array<Double> {
 	private double[] _data;
 
@@ -334,8 +336,21 @@ public class DoubleArray extends Array<Double> {
 	public static double parseDouble(String value) {
 		if(value == null || value.isEmpty())
 			return 0.0;
-		else
-			return Double.parseDouble(value);
+		else{
+			try{
+				return JavaDoubleParser.parseDouble(value);
+				// return Double.parseDouble(value);
+			}
+			catch(NumberFormatException e){
+				final int len = value.length();
+				// check for common extra cases.
+				if(len == 3 && value.compareToIgnoreCase("Inf") == 0)
+					return Double.POSITIVE_INFINITY;
+				else if(len == 4 && value.compareToIgnoreCase("-Inf") ==0)
+					return Double.NEGATIVE_INFINITY;
+				throw new RuntimeException(e);
+			}
+		}
 	}
 
 	@Override

@@ -29,6 +29,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map.Entry;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.sysds.api.DMLScript;
@@ -120,7 +122,7 @@ import org.apache.sysds.utils.Explain.ExplainType;
  * 
  */
 public class Recompiler {
-	// private static final Log LOG =  LogFactory.getLog(Recompiler.class.getName());
+	protected static final Log LOG =  LogFactory.getLog(Recompiler.class.getName());
 
 	//Max threshold for in-memory reblock of text input [in bytes]
 	//reason: single-threaded text read at 20MB/s, 1GB input -> 50s (should exploit parallelism)

@@ -19,12 +19,18 @@
 
 package org.apache.sysds.runtime.frame.data.compress;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.workload.WTreeRoot;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.runtime.frame.data.columns.Array;
 import org.apache.sysds.runtime.frame.data.columns.DDCArray;
+import org.apache.sysds.runtime.util.CommonThreadPool;
 
 public class CompressedFrameBlockFactory {
 
@@ -35,11 +41,16 @@ public class CompressedFrameBlockFactory {
 	private final ArrayCompressionStatistics[] stats;
 	private final Array<?>[] compressedColumns;
 
+	private final int nSamples;
+
 	private CompressedFrameBlockFactory(FrameBlock fb, FrameCompressionSettings cs) {
 		this.in = fb;
 		this.cs = cs;
 		this.stats = new ArrayCompressionStatistics[in.getNumColumns()];
 		this.compressedColumns = new Array<?>[in.getNumColumns()];
+
+		this.nSamples = Math.min(in.getNumRows(), (int) Math.ceil(in.getNumRows() * cs.sampleRatio));
+
 	}
 
 	public static FrameBlock compress(FrameBlock fb) {
@@ -62,37 +73,61 @@ public class CompressedFrameBlockFactory {
 	}
 
 	private FrameBlock compressFrame() {
-		extractStatistics();
-		logStatistics();
 		encodeColumns();
 		final FrameBlock ret = new FrameBlock(compressedColumns, in.getColumnNames(false));
+		logStatistics();
 		logRet(ret);
 		return ret;
 	}
 
-	private void extractStatistics() {
-		final int nSamples = Math.min(in.getNumRows(), (int) Math.ceil(in.getNumRows() * cs.sampleRatio));
-		for(int i = 0; i < stats.length; i++) {
-			stats[i] = in.getColumn(i).statistics(nSamples);
+	private void encodeColumns() {
+		if(cs.k > 1)
+			encodeParallel();
+		else
+			encodeSingleThread();
+	}
+
+	private void encodeSingleThread() {
+		for(int i = 0; i < compressedColumns.length; i++)
+			compressCol(i);
+	}
+
+	private void encodeParallel() {
+		ExecutorService pool = CommonThreadPool.get(cs.k);
+		try {
+			List<Future<?>> tasks = new ArrayList<>();
+			for(int i = 0; i < compressedColumns.length; i++) {
+				final int l = i;
+				tasks.add(pool.submit(() -> compressCol(l)));
+			}
+
+			for(Future<?> t : tasks)
+				t.get();
+
+		}
+		catch(Exception e) {
+			throw new RuntimeException(e);
+		}
+		finally {
+			pool.shutdown();
 		}
 	}
 
-	private void encodeColumns() {
-		for(int i = 0; i < compressedColumns.length; i++) {
-			if(stats[i] != null) {
-				// commented out because no other encodings are supported yet
-				// switch(stats[i].bestType) {
-				// case DDC:
-				compressedColumns[i] = DDCArray.compressToDDC(in.getColumn(i));
-				// break;
-				// default:
-				// compressedColumns[i] = in.getColumn(i);
-				// break;
-				// }
-			}
-			else
-				compressedColumns[i] = in.getColumn(i);
+	private void compressCol(int i) {
+		stats[i] = in.getColumn(i).statistics(nSamples);
+		if(stats[i] != null) {
+			// commented out because no other encodings are supported yet
+			// switch(stats[i].bestType) {
+			// case DDC:
+			compressedColumns[i] = DDCArray.compressToDDC(in.getColumn(i));
+			// break;
+			// default:
+			// compressedColumns[i] = in.getColumn(i);
+			// break;
+			// }
 		}
+		else
+			compressedColumns[i] = in.getColumn(i);
 	}
 
 	private void logStatistics() {

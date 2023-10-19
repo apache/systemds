@@ -133,7 +133,7 @@ public class FrameUtilTest {
 
 	@Test
 	public void testIsIntLongString() {
-		assertEquals(ValueType.STRING, FrameUtil.isType("11111111111111111111111111111"));
+		assertEquals(ValueType.STRING, FrameUtil.isType("111111111111111111111111111111111"));
 	}
 
 	@Test

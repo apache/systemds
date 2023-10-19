@@ -1136,6 +1136,11 @@ public class HopRewriteUtils {
 		return isData(hop, type) && hop.getDataType()==dt;
 	}
 	
+	public static boolean isTransformEncode(Hop hop){
+		return hop instanceof FunctionOp 
+			&& (((FunctionOp)hop).getFunctionName().equalsIgnoreCase("transformencode"));
+	}
+
 	public static boolean isBinaryMatrixColVectorOperation(Hop hop) {
 		return hop instanceof BinaryOp 
 			&& hop.getInput().get(0).getDataType().isMatrix() && hop.getInput().get(1).getDataType().isMatrix()

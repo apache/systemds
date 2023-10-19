@@ -35,6 +35,8 @@ import org.apache.sysds.runtime.matrix.data.Pair;
 import org.apache.sysds.runtime.util.UtilFunctions;
 import org.apache.sysds.utils.MemoryEstimates;
 
+import ch.randelshofer.fastdoubleparser.JavaDoubleParser;
+
 public class DoubleArray extends Array<Double> {
 	private double[] _data;
 
@@ -81,7 +83,14 @@ public class DoubleArray extends Array<Double> {
 
 	@Override
 	public void set(int rl, int ru, Array<Double> value, int rlSrc) {
-		System.arraycopy(((DoubleArray) value)._data, rlSrc, _data, rl, ru - rl + 1);
+		try {
+			// try system array copy.
+			// but if it does not work, default to get.
+			System.arraycopy(value.get(), rlSrc, _data, rl, ru - rl + 1);
+		}
+		catch(Exception e) {
+			super.set(rl, ru, value, rlSrc);
+		}
 	}
 
 	@Override
@@ -186,7 +195,8 @@ public class DoubleArray extends Array<Double> {
 				case FP32:
 					switch(c) {
 						case FP64:
-							state = c; break;
+							state = c;
+							break;
 						default:
 					}
 					break;
@@ -194,7 +204,8 @@ public class DoubleArray extends Array<Double> {
 					switch(c) {
 						case FP64:
 						case FP32:
-							state = c; break;
+							state = c;
+							break;
 						default:
 					}
 					break;
@@ -203,7 +214,8 @@ public class DoubleArray extends Array<Double> {
 						case FP64:
 						case FP32:
 						case INT64:
-							state = c; break;
+							state = c;
+							break;
 						default:
 					}
 					break;
@@ -214,7 +226,8 @@ public class DoubleArray extends Array<Double> {
 						case FP32:
 						case INT64:
 						case INT32:
-							state = c; break;
+							state = c;
+							break;
 						default:
 					}
 					break;
@@ -332,10 +345,20 @@ public class DoubleArray extends Array<Double> {
 	}
 
 	public static double parseDouble(String value) {
-		if(value == null || value.isEmpty())
-			return 0.0;
-		else
-			return Double.parseDouble(value);
+		try {
+			if(value == null || value.isEmpty())
+				return 0.0;
+			return JavaDoubleParser.parseDouble(value);
+		}
+		catch(NumberFormatException e) {
+			final int len = value.length();
+			// check for common extra cases.
+			if(len == 3 && value.compareToIgnoreCase("Inf") == 0)
+				return Double.POSITIVE_INFINITY;
+			else if(len == 4 && value.compareToIgnoreCase("-Inf") == 0)
+				return Double.NEGATIVE_INFINITY;
+			throw new DMLRuntimeException(e);
+		}
 	}
 
 	@Override
@@ -388,7 +411,7 @@ public class DoubleArray extends Array<Double> {
 	}
 
 	@Override
-	public boolean possiblyContainsNaN(){
+	public boolean possiblyContainsNaN() {
 		return true;
 	}
 

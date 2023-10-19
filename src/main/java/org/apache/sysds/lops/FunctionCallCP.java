@@ -86,7 +86,11 @@ public class FunctionCallCP extends Lop
 	public String getFnamespace() {
 		return _fnamespace;
 	}
-	
+
+	public String getFunctionName(){
+		return _fname;
+	}	
+
 	public boolean requiresOutputCreateVar() {
 		return !_fname.equalsIgnoreCase(Builtins.REMOVE.getName());
 	}

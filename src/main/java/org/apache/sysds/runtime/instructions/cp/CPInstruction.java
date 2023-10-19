@@ -20,6 +20,8 @@
 package org.apache.sysds.runtime.instructions.cp;
 
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.conf.ConfigurationManager;
@@ -34,15 +36,17 @@ import org.apache.sysds.runtime.instructions.fed.FEDInstructionUtils;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 import org.apache.sysds.runtime.privacy.propagation.PrivacyPropagator;
 
-public abstract class CPInstruction extends Instruction 
-{
+public abstract class CPInstruction extends Instruction {
+	protected static final Log LOG = LogFactory.getLog(CPInstruction.class.getName());
 	public enum CPType {
 		AggregateUnary, AggregateBinary, AggregateTernary,
 		Unary, Binary, Ternary, Quaternary, BuiltinNary, Ctable,
 		MultiReturnParameterizedBuiltin, ParameterizedBuiltin, MultiReturnBuiltin,
 		Builtin, Reorg, Variable, FCall, Append, Rand, QSort, QPick, Local,
 		MatrixIndexing, MMTSJ, PMMJ, MMChain, Reshape, Partition, Compression, DeCompression, SpoofFused,
-		StringInit, CentralMoment, Covariance, UaggOuterChain, Dnn, Sql, Prefetch, Broadcast, TrigRemote }
+		StringInit, CentralMoment, Covariance, UaggOuterChain, Dnn, Sql, Prefetch, Broadcast, TrigRemote,
+		NoOp,
+	 }
 
 	protected final CPType _cptype;
 	protected final boolean _requiresLabelUpdate;

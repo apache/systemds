@@ -254,6 +254,7 @@ public class CPInstructionParser extends InstructionParser {
 		String2CPInstructionType.put( "rmfilevar"   , CPType.Variable);
 		String2CPInstructionType.put( OpOp1.CAST_AS_SCALAR.toString(),  CPType.Variable);
 		String2CPInstructionType.put( OpOp1.CAST_AS_MATRIX.toString(),  CPType.Variable);
+		String2CPInstructionType.put( "cast_as_frame", CPType.Variable);
 		String2CPInstructionType.put( OpOp1.CAST_AS_FRAME.toString(),   CPType.Variable);
 		String2CPInstructionType.put( OpOp1.CAST_AS_LIST.toString(),    CPType.Variable);
 		String2CPInstructionType.put( OpOp1.CAST_AS_DOUBLE.toString(),  CPType.Variable);
@@ -482,7 +483,7 @@ public class CPInstructionParser extends InstructionParser {
 				
 			case Broadcast:
 				return BroadcastCPInstruction.parseInstruction(str);
-
+			
 			default:
 				throw new DMLRuntimeException("Invalid CP Instruction Type: " + cptype );
 		}

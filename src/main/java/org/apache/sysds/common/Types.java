@@ -408,6 +408,7 @@ public class Types
 		MINUS(true), MODULUS(true), MOMENT(false), MULT(true), NOTEQUAL(true), OR(true),
 		PLUS(true), POW(true), PRINT(false), QUANTILE(false), SOLVE(false),
 		RBIND(false), VALUE_SWAP(false), XOR(true),
+		CAST_AS_FRAME(false), // cast as frame with column names
 		//fused ML-specific operators for performance
 		MINUS_NZ(false), //sparse-safe minus: X-(mean*ppred(X,0,!=))
 		LOG_NZ(false), //sparse-safe log; ppred(X,0,"!=")*log(X,0.5)

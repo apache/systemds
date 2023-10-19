@@ -737,15 +737,16 @@ public class FrameBlock implements CacheBlock<FrameBlock>, Externalizable {
 	}
 
 	public Array<?> getColumn(int c) {
-		return _coldata[c];
+		return _coldata != null ? _coldata[c] : null;
 	}
 
 	public void setColumn(int c, Array<?> column) {
 		if(_coldata == null) {
 			_coldata = new Array[getNumColumns()];
-			_nRow = column.size();
+			if(column != null)
+				_nRow = column.size();
 		}
-		if(column.size() != _nRow)
+		else if(column != null && column.size() != _nRow)
 			throw new DMLRuntimeException("Invalid number of rows in set column");
 		_coldata[c] = column;
 		_msize = -1;

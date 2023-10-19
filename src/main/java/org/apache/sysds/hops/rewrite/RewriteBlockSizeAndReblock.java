@@ -85,7 +85,7 @@ public class RewriteBlockSizeAndReblock extends HopRewriteRule
 				||(dop.getDataType() == DataType.FRAME && OptimizerUtils.isSparkExecutionMode() 
 				&& (dop.getFileFormat()==FileFormat.TEXT || dop.getFileFormat()==FileFormat.CSV)) )
 			{
-				if( dop.getOp() == OpOpData.PERSISTENTREAD)
+				if( dop.getOp() == OpOpData.PERSISTENTREAD || dop.getOp() == OpOpData.FEDERATED)
 				{
 					// insert reblock after the hop
 					dop.setRequiresReblock(true);
@@ -109,10 +109,6 @@ public class RewriteBlockSizeAndReblock extends HopRewriteRule
 				} 
 				else if (dop.getOp().isTransient()) {
 					// by default, all transient reads and writes are in blocked format
-					dop.setBlocksize(blocksize);
-				}
-				else if (dop.getOp() == OpOpData.FEDERATED) {
-					dop.setRequiresReblock(true);
 					dop.setBlocksize(blocksize);
 				}
 				else {

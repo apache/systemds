@@ -57,7 +57,7 @@ public class BooleanArray extends ABooleanArray {
 
 	@Override
 	public void set(int index, double value) {
-		_data[index] = value == 1.0;
+		_data[index] = (Math.round(value) == 1.0);
 	}
 
 	@Override
@@ -79,11 +79,19 @@ public class BooleanArray extends ABooleanArray {
 
 	@Override
 	public void set(int rl, int ru, Array<Boolean> value, int rlSrc) {
-		if(value instanceof BooleanArray)
-			System.arraycopy(value.get(), rlSrc, _data, rl, ru - rl + 1);
-		else
-			for(int i = rl, off = rlSrc; i <= ru; i++, off++)
-				_data[i] = value.get(off);
+		if(value instanceof BooleanArray){
+			try {
+				// try system array copy.
+				// but if it does not work, default to get.
+				System.arraycopy(value.get(), rlSrc, _data, rl, ru - rl + 1);
+				return;
+			}
+			catch(Exception e) {
+				// go default
+			}
+		}
+
+		super.set(rl, ru, value, rlSrc);
 	}
 
 	@Override

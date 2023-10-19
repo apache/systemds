@@ -66,28 +66,26 @@ class FunctionParser(object):
         # if match:
 
         func_split = function_definition.split("function")[1].split("return")
-        param_str, retval_str = self.extract_param_str(
-            func_split[0]), self.extract_param_str(func_split[1])
+       
+        param_str = self.extract_param_str(func_split[0])
+        retval_str = None
+        if(len(func_split)> 1):     
+            retval_str = self.extract_param_str(func_split[1])
+
         if param_str:
             parameters = self.get_parameters(param_str)
             return_values = self.get_parameters(retval_str)
             data = {'function_name': function_name,
                     'parameters': parameters, 'return_values': return_values}
-            if parameters and return_values:
+            if parameters:
                 return data
             else:
-                raise AttributeError("Unable to match to function definition:\n" + function_definition +
-                                     "\n parameter_str: " + param_str + "\n retVal: " + retval_str)
+                raise AttributeError("Unable to match to function   definition:\n" + function_definition +
+                                         "\n parameter_str: " + param_str + "\n     retVal: " + retval_str)
         else:
-            raise AttributeError("Unable to match to function definition:\n" + function_definition +
-                                 "\n parameter_str: " + param_str + "\n retVal: " + retval_str)
-        # else:
-        #     # TODO handle default matrix variables.
-        #     raise AttributeError("Unable to match to function definition:\n" + function_definition)
-        # except Exception as e:
-        #     import generator
-        #     raise AttributeError("Unable to parse " + path + " " + generator.format_exception(e))
-
+            raise AttributeError("Unable to match to function definition:\n" +  function_definition +
+                                 "\n parameter_str: " + param_str + "\n     retVal: " + retval_str)
+   
     def extract_param_str(self, a: str):
         try:
             return a[a.index("(") + 1: a.rindex(")")]
@@ -95,6 +93,8 @@ class FunctionParser(object):
             raise AttributeError("failed extracting from: " + a)
 
     def get_parameters(self, param_str: str):
+        if(param_str == None):
+            return None
 
         params = re.split(r",[\s]*", param_str)
 

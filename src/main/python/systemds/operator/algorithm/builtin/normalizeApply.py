@@ -41,8 +41,8 @@ def normalizeApply(X: Matrix,
     
     
     :param X: Input feature matrix of shape n-by-m
-    :param cmin: Colunm minima of shape 1-by-m
-    :param cmax: Column maxima of shape 1-by-m
+    :param cmin: Column min of shape 1-by-m
+    :param cmax: Column max of shape 1-by-m
     :return: Modified output feature matrix of shape n-by-m
     """
 

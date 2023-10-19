@@ -54,7 +54,7 @@ with SystemDSContext() as sds:
     betas = multiLogReg(X, Y, verbose=False)
 
     # Apply model
-    [_, y_pred, acc] = multiLogRegPredict(Xt, betas, Yt)
+    [_, y_pred, acc] = multiLogRegPredict(Xt, betas, Y=Yt)
 
     # Confusion Matrix
     confusion_matrix_abs, _ = confusionMatrix(y_pred, Yt).compute()

@@ -51,6 +51,7 @@ from .builtin.decisionTree import decisionTree
 from .builtin.decisionTreePredict import decisionTreePredict 
 from .builtin.deepWalk import deepWalk 
 from .builtin.denialConstraints import denialConstraints 
+from .builtin.differenceStatistics import differenceStatistics 
 from .builtin.discoverFD import discoverFD 
 from .builtin.dist import dist 
 from .builtin.dmv import dmv 
@@ -77,20 +78,27 @@ from .builtin.gridSearch import gridSearch
 from .builtin.hospitalResidencyMatch import hospitalResidencyMatch 
 from .builtin.hyperband import hyperband 
 from .builtin.img_brightness import img_brightness 
+from .builtin.img_brightness_linearized import img_brightness_linearized 
 from .builtin.img_crop import img_crop 
+from .builtin.img_crop_linearized import img_crop_linearized 
 from .builtin.img_cutout import img_cutout 
+from .builtin.img_cutout_linearized import img_cutout_linearized 
 from .builtin.img_invert import img_invert 
+from .builtin.img_invert_linearized import img_invert_linearized 
 from .builtin.img_mirror import img_mirror 
+from .builtin.img_mirror_linearized import img_mirror_linearized 
 from .builtin.img_posterize import img_posterize 
+from .builtin.img_posterize_linearized import img_posterize_linearized 
 from .builtin.img_rotate import img_rotate 
 from .builtin.img_sample_pairing import img_sample_pairing 
 from .builtin.img_shear import img_shear 
 from .builtin.img_transform import img_transform 
+from .builtin.img_transform_linearized import img_transform_linearized 
 from .builtin.img_translate import img_translate 
+from .builtin.img_translate_linearized import img_translate_linearized 
 from .builtin.impurityMeasures import impurityMeasures 
 from .builtin.imputeByFD import imputeByFD 
 from .builtin.imputeByFDApply import imputeByFDApply 
-from .builtin.imputeByKNN import imputeByKNN 
 from .builtin.imputeByMean import imputeByMean 
 from .builtin.imputeByMeanApply import imputeByMeanApply 
 from .builtin.imputeByMedian import imputeByMedian 
@@ -216,6 +224,7 @@ __all__ = ['WoE',
  'decisionTreePredict',
  'deepWalk',
  'denialConstraints',
+ 'differenceStatistics',
  'discoverFD',
  'dist',
  'dmv',
@@ -242,20 +251,27 @@ __all__ = ['WoE',
  'hospitalResidencyMatch',
  'hyperband',
  'img_brightness',
+ 'img_brightness_linearized',
  'img_crop',
+ 'img_crop_linearized',
  'img_cutout',
+ 'img_cutout_linearized',
  'img_invert',
+ 'img_invert_linearized',
  'img_mirror',
+ 'img_mirror_linearized',
  'img_posterize',
+ 'img_posterize_linearized',
  'img_rotate',
  'img_sample_pairing',
  'img_shear',
  'img_transform',
+ 'img_transform_linearized',
  'img_translate',
+ 'img_translate_linearized',
  'impurityMeasures',
  'imputeByFD',
  'imputeByFDApply',
- 'imputeByKNN',
  'imputeByMean',
  'imputeByMeanApply',
  'imputeByMedian',

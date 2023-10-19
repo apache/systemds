@@ -67,7 +67,7 @@ class TestMultiLogReg(unittest.TestCase):
             X), self.sds.from_numpy(Y), verbose=False).compute()
 
         [m, y_pred, acc] = multiLogRegPredict(self.sds.from_numpy(
-            X), self.sds.from_numpy(bias), self.sds.from_numpy(Y), verbose=False).compute()
+            X), self.sds.from_numpy(bias), Y=self.sds.from_numpy(Y), verbose=False).compute()
 
         self.assertTrue(acc > 98)
 

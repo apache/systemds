@@ -112,7 +112,7 @@ class TestFederatedMnist(unittest.TestCase):
         bias = multiLogReg(X, Y)
 
         with self.sds.capture_stats_context():
-            [_, _, acc] = multiLogRegPredict(Xt, bias, Yt).compute()
+            [_, _, acc] = multiLogRegPredict(Xt, bias, Y=Yt).compute()
         stats = self.sds.take_stats()
         for fed_instr in ["fed_contains", "fed_*", "fed_-", "fed_uark+", "fed_r'", "fed_rightIndex"]:
             self.assertIn(fed_instr, stats)

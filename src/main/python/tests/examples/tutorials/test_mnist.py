@@ -77,7 +77,7 @@ class Test_DMLScript(unittest.TestCase):
         Yt = Yt + 1.0
 
         bias = multiLogReg(X, Y, verbose = False)
-        [_, _, acc] = multiLogRegPredict(Xt, bias, Yt, verbose=False).compute()
+        [_, _, acc] = multiLogRegPredict(Xt, bias, Y=Yt, verbose=False).compute()
 
         self.assertGreater(acc, 80)
 
@@ -100,7 +100,7 @@ class Test_DMLScript(unittest.TestCase):
         Yt = self.sds.from_numpy( self.d.get_test_labels()[:test_count])
         Yt = Yt + 1.0
 
-        [_, _, acc] = multiLogRegPredict(Xt, bias, Yt).compute(verbose=False)
+        [_, _, acc] = multiLogRegPredict(Xt, bias, Y=Yt).compute(verbose=False)
         
         self.assertGreater(acc, 70)
 

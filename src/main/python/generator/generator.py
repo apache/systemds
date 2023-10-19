@@ -215,7 +215,10 @@ class PythonAPIFunctionGenerator(object):
                         return_values: List[Tuple[str]],
                         function_name: str
                         ) -> str:
-        length = len(return_values)
+        if( return_values == None):
+            length = 1
+        else:
+            length = len(return_values)
         param_string = ""
         param = parameters[0]
         sds_context = "{param}.sds_context".format(param=param[0])
@@ -229,6 +232,15 @@ class PythonAPIFunctionGenerator(object):
                 out_nodes=output_nodes_str,
                 multi_return=multi_return_str,
                 op_assign=op_assignments
+            )
+            return result
+        elif return_values == None:
+            result = ("return OperationNode({sds_context}," +
+                      "\n        \'{function_name}\'," +
+                      "\n        named_input_nodes=params_dict," + 
+                      "\n        output_type=OutputType.NONE)").format(
+                sds_context=sds_context,
+                function_name=function_name
             )
             return result
         else:

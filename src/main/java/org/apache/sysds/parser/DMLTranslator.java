@@ -440,7 +440,6 @@ public class DMLTranslator
 		return ret;
 	}
 
-
 	public Program getRuntimeProgram(DMLProgram prog, DMLConfig config) 
 		throws LanguageException, DMLRuntimeException, LopsException, HopsException 
 	{
@@ -646,7 +645,6 @@ public class DMLTranslator
 			FunctionStatementBlock fsb = (FunctionStatementBlock)sb;
 			FunctionStatement fstmt = (FunctionStatement)fsb.getStatement(0);
 			FunctionProgramBlock rtpb = null;
-
 
 			// create function program block
 			rtpb = new FunctionProgramBlock(prog, fstmt.getInputParams(), fstmt.getOutputParams());
@@ -907,7 +905,6 @@ public class DMLTranslator
 			}
 		}
 
-
 		if (current instanceof WhileStatementBlock) {
 			WhileStatementBlock wstb = (WhileStatementBlock) current;
 			wstb.getPredicateLops().resetVisitStatus();
@@ -955,7 +952,6 @@ public class DMLTranslator
 			}
 		}
 	}
-
 
 	public void constructHops(StatementBlock sb) {
 		if (sb instanceof WhileStatementBlock) {
@@ -1029,7 +1025,6 @@ public class DMLTranslator
 				}
 			}
 		}
-
 
 		for( int i = 0; i < sb.getNumStatements(); i++ ) {
 			Statement current = sb.getStatement(i);
@@ -1142,7 +1137,6 @@ public class DMLTranslator
 				AssignmentStatement as = (AssignmentStatement) current;
 				DataIdentifier target = as.getTarget();
 				Expression source = as.getSource();
-
 
 				// CASE: regular assignment statement -- source is DML expression that is NOT user-defined or external function 
 				if (!(source instanceof FunctionCallIdentifier)){
@@ -1685,7 +1679,6 @@ public class DMLTranslator
 		return leftIndexOp;
 	}
 
-
 	private Hop processIndexingExpression(IndexedIdentifier source, DataIdentifier target, HashMap<String, Hop> hops) {
 		// process Hops for indexes (for source)
 		Hop[] ixRange = getIndexingBounds(source, hops, false);
@@ -1734,7 +1727,6 @@ public class DMLTranslator
 
 		return new Hop[] {rowLowerHops, rowUpperHops, colLowerHops, colUpperHops};
 	}
-
 
 	/**
 	 * Construct Hops from parse tree : Process Binary Expression in an

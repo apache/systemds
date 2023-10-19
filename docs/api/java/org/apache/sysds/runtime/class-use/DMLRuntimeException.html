@@ -14,7 +14,7 @@
 <!--[if IE]>
 <script type="text/javascript" src="../../../../../jquery/jszip-utils/dist/jszip-utils-ie.min.js"></script>
 <![endif]-->
-<script type="text/javascript" src="../../../../../jquery/jquery-3.6.0.min.js"></script>
+<script type="text/javascript" src="../../../../../jquery/jquery-3.6.1.min.js"></script>
 <script type="text/javascript" src="../../../../../jquery/jquery-ui.min.js"></script>
 </head>
 <body>
@@ -155,7 +155,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
-<th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.iogen">org.apache.sysds.runtime.iogen</a></th>
+<th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.iogen.template">org.apache.sysds.runtime.iogen.template</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
@@ -1080,12 +1080,12 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </section>
 </li>
 <li class="blockList">
-<section><a id="org.apache.sysds.runtime.iogen">
+<section><a id="org.apache.sysds.runtime.iogen.template">
 <!--   -->
 </a>
-<h3>Uses of <a href="../DMLRuntimeException.html" title="class in org.apache.sysds.runtime">DMLRuntimeException</a> in <a href="../iogen/package-summary.html">org.apache.sysds.runtime.iogen</a></h3>
+<h3>Uses of <a href="../DMLRuntimeException.html" title="class in org.apache.sysds.runtime">DMLRuntimeException</a> in <a href="../iogen/template/package-summary.html">org.apache.sysds.runtime.iogen.template</a></h3>
 <table class="useSummary">
-<caption><span>Methods in <a href="../iogen/package-summary.html">org.apache.sysds.runtime.iogen</a> that throw <a href="../DMLRuntimeException.html" title="class in org.apache.sysds.runtime">DMLRuntimeException</a></span><span class="tabEnd">&nbsp;</span></caption>
+<caption><span>Methods in <a href="../iogen/template/package-summary.html">org.apache.sysds.runtime.iogen.template</a> that throw <a href="../DMLRuntimeException.html" title="class in org.apache.sysds.runtime">DMLRuntimeException</a></span><span class="tabEnd">&nbsp;</span></caption>
 <tr>
 <th class="colFirst" scope="col">Modifier and Type</th>
 <th class="colSecond" scope="col">Method</th>
@@ -1094,7 +1094,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <tbody>
 <tr class="altColor">
 <td class="colFirst"><code><a href="../frame/data/FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">FrameGenerateReader.</span><code><span class="memberNameLink"><a href="../iogen/FrameGenerateReader.html#readFrameFromHDFS(java.lang.String,org.apache.sysds.common.Types.ValueType%5B%5D,java.lang.String%5B%5D,long,long)">readFrameFromHDFS</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;fname,
+<th class="colSecond" scope="row"><span class="typeNameLabel">FrameGenerateReader.</span><code><span class="memberNameLink"><a href="../iogen/template/FrameGenerateReader.html#readFrameFromHDFS(java.lang.String,org.apache.sysds.common.Types.ValueType%5B%5D,java.lang.String%5B%5D,long,long)">readFrameFromHDFS</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;fname,
                  <a href="../../common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>[]&nbsp;schema,
                  <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>[]&nbsp;names,
                  long&nbsp;rlen,
@@ -1103,7 +1103,25 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code><a href="../frame/data/FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">FrameGenerateReader.</span><code><span class="memberNameLink"><a href="../iogen/FrameGenerateReader.html#readFrameFromInputStream(java.io.InputStream,org.apache.sysds.common.Types.ValueType%5B%5D,java.lang.String%5B%5D,long,long)">readFrameFromInputStream</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/InputStream.html?is-external=true" title="class or interface in java.io" class="externalLink">InputStream</a>&nbsp;is,
+<th class="colSecond" scope="row"><span class="typeNameLabel">FrameGenerateReaderParallel.</span><code><span class="memberNameLink"><a href="../iogen/template/FrameGenerateReaderParallel.html#readFrameFromHDFS(java.lang.String,org.apache.sysds.common.Types.ValueType%5B%5D,java.lang.String%5B%5D,long,long)">readFrameFromHDFS</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;fname,
+                 <a href="../../common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>[]&nbsp;schema,
+                 <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>[]&nbsp;names,
+                 long&nbsp;rlen,
+                 long&nbsp;clen)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../frame/data/FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">FrameGenerateReader.</span><code><span class="memberNameLink"><a href="../iogen/template/FrameGenerateReader.html#readFrameFromInputStream(java.io.InputStream,org.apache.sysds.common.Types.ValueType%5B%5D,java.lang.String%5B%5D,long,long)">readFrameFromInputStream</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/InputStream.html?is-external=true" title="class or interface in java.io" class="externalLink">InputStream</a>&nbsp;is,
+                        <a href="../../common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>[]&nbsp;schema,
+                        <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>[]&nbsp;names,
+                        long&nbsp;rlen,
+                        long&nbsp;clen)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../frame/data/FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">FrameGenerateReaderParallel.</span><code><span class="memberNameLink"><a href="../iogen/template/FrameGenerateReaderParallel.html#readFrameFromInputStream(java.io.InputStream,org.apache.sysds.common.Types.ValueType%5B%5D,java.lang.String%5B%5D,long,long)">readFrameFromInputStream</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/InputStream.html?is-external=true" title="class or interface in java.io" class="externalLink">InputStream</a>&nbsp;is,
                         <a href="../../common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>[]&nbsp;schema,
                         <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>[]&nbsp;names,
                         long&nbsp;rlen,
@@ -1112,7 +1130,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code><a href="../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">MatrixGenerateReader.</span><code><span class="memberNameLink"><a href="../iogen/MatrixGenerateReader.html#readMatrixFromHDFS(java.lang.String,long,long,int,long)">readMatrixFromHDFS</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;fname,
+<th class="colSecond" scope="row"><span class="typeNameLabel">MatrixGenerateReader.</span><code><span class="memberNameLink"><a href="../iogen/template/MatrixGenerateReader.html#readMatrixFromHDFS(java.lang.String,long,long,int,long)">readMatrixFromHDFS</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;fname,
                   long&nbsp;rlen,
                   long&nbsp;clen,
                   int&nbsp;blen,
@@ -1121,7 +1139,25 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code><a href="../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">MatrixGenerateReader.</span><code><span class="memberNameLink"><a href="../iogen/MatrixGenerateReader.html#readMatrixFromInputStream(java.io.InputStream,long,long,int,long)">readMatrixFromInputStream</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/InputStream.html?is-external=true" title="class or interface in java.io" class="externalLink">InputStream</a>&nbsp;is,
+<th class="colSecond" scope="row"><span class="typeNameLabel">MatrixGenerateReaderParallel.</span><code><span class="memberNameLink"><a href="../iogen/template/MatrixGenerateReaderParallel.html#readMatrixFromHDFS(java.lang.String,long,long,int,long)">readMatrixFromHDFS</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;fname,
+                  long&nbsp;rlen,
+                  long&nbsp;clen,
+                  int&nbsp;blen,
+                  long&nbsp;estnnz)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">MatrixGenerateReader.</span><code><span class="memberNameLink"><a href="../iogen/template/MatrixGenerateReader.html#readMatrixFromInputStream(java.io.InputStream,long,long,int,long)">readMatrixFromInputStream</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/InputStream.html?is-external=true" title="class or interface in java.io" class="externalLink">InputStream</a>&nbsp;is,
+                         long&nbsp;rlen,
+                         long&nbsp;clen,
+                         int&nbsp;blen,
+                         long&nbsp;estnnz)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">MatrixGenerateReaderParallel.</span><code><span class="memberNameLink"><a href="../iogen/template/MatrixGenerateReaderParallel.html#readMatrixFromInputStream(java.io.InputStream,long,long,int,long)">readMatrixFromInputStream</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/InputStream.html?is-external=true" title="class or interface in java.io" class="externalLink">InputStream</a>&nbsp;is,
                          long&nbsp;rlen,
                          long&nbsp;clen,
                          int&nbsp;blen,

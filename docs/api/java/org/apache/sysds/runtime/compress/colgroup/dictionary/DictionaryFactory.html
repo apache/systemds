@@ -14,7 +14,7 @@
 <!--[if IE]>
 <script type="text/javascript" src="../../../../../../../jquery/jszip-utils/dist/jszip-utils-ie.min.js"></script>
 <![endif]-->
-<script type="text/javascript" src="../../../../../../../jquery/jquery-3.6.0.min.js"></script>
+<script type="text/javascript" src="../../../../../../../jquery/jquery-3.6.1.min.js"></script>
 <script type="text/javascript" src="../../../../../../../jquery/jquery-ui.min.js"></script>
 </head>
 <body>
@@ -186,25 +186,116 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <th class="colLast" scope="col">Description</th>
 </tr>
 <tr id="i0" class="altColor">
-<td class="colFirst"><code>static <a href="ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#create(org.apache.sysds.runtime.compress.bitmap.ABitmap)">create</a></span>&#8203;(<a href="../../bitmap/ABitmap.html" title="class in org.apache.sysds.runtime.compress.bitmap">ABitmap</a>&nbsp;ubm)</code></th>
+<td class="colFirst"><code>static <a href="IDictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary</a></code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#combineConstSparseSparseRet(double%5B%5D,org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary,int)">combineConstSparseSparseRet</a></span>&#8203;(double[]&nbsp;tua,
+                           <a href="IDictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary</a>&nbsp;b,
+                           int&nbsp;ncb)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i1" class="rowColor">
-<td class="colFirst"><code>static <a href="ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
+<td class="colFirst"><code>static <a href="IDictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary</a></code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#combineDictionaries(org.apache.sysds.runtime.compress.colgroup.AColGroupCompressed,org.apache.sysds.runtime.compress.colgroup.AColGroupCompressed)">combineDictionaries</a></span>&#8203;(<a href="../AColGroupCompressed.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroupCompressed</a>&nbsp;a,
+                   <a href="../AColGroupCompressed.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroupCompressed</a>&nbsp;b)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i2" class="altColor">
+<td class="colFirst"><code>static <a href="IDictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary</a></code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#combineDictionaries(org.apache.sysds.runtime.compress.colgroup.AColGroupCompressed,org.apache.sysds.runtime.compress.colgroup.AColGroupCompressed,java.util.Map)">combineDictionaries</a></span>&#8203;(<a href="../AColGroupCompressed.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroupCompressed</a>&nbsp;a,
+                   <a href="../AColGroupCompressed.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroupCompressed</a>&nbsp;b,
+                   <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/Map.html?is-external=true" title="class or interface in java.util" class="externalLink">Map</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Integer.html?is-external=true" title="class or interface in java.lang" class="externalLink">Integer</a>,&#8203;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Integer.html?is-external=true" title="class or interface in java.lang" class="externalLink">Integer</a>&gt;&nbsp;filter)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i3" class="rowColor">
+<td class="colFirst"><code>static <a href="IDictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary</a></code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#combineDictionariesSparse(org.apache.sysds.runtime.compress.colgroup.AColGroupCompressed,org.apache.sysds.runtime.compress.colgroup.AColGroupCompressed)">combineDictionariesSparse</a></span>&#8203;(<a href="../AColGroupCompressed.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroupCompressed</a>&nbsp;a,
+                         <a href="../AColGroupCompressed.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroupCompressed</a>&nbsp;b)</code></th>
+<td class="colLast">
+<div class="block">Combine the dictionaries assuming a sparse combination where each dictionary can be a SDC containing a default
+ element that have to be introduced into the combined dictionary.</div>
+</td>
+</tr>
+<tr id="i4" class="altColor">
+<td class="colFirst"><code>static <a href="IDictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary</a></code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#combineFullDictionaries(org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary,int,org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary,int)">combineFullDictionaries</a></span>&#8203;(<a href="IDictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary</a>&nbsp;a,
+                       int&nbsp;nca,
+                       <a href="IDictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary</a>&nbsp;b,
+                       int&nbsp;ncb)</code></th>
+<td class="colLast">
+<div class="block">Combine the dictionaries as if the dictionaries contain the full spectrum of the combined data.</div>
+</td>
+</tr>
+<tr id="i5" class="rowColor">
+<td class="colFirst"><code>static <a href="IDictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary</a></code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#combineFullDictionaries(org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary,int,org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary,int,java.util.Map)">combineFullDictionaries</a></span>&#8203;(<a href="IDictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary</a>&nbsp;a,
+                       int&nbsp;nca,
+                       <a href="IDictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary</a>&nbsp;b,
+                       int&nbsp;ncb,
+                       <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/Map.html?is-external=true" title="class or interface in java.util" class="externalLink">Map</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Integer.html?is-external=true" title="class or interface in java.lang" class="externalLink">Integer</a>,&#8203;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Integer.html?is-external=true" title="class or interface in java.lang" class="externalLink">Integer</a>&gt;&nbsp;filter)</code></th>
+<td class="colLast">
+<div class="block">Combine the dictionaries as if the dictionaries only contain the values in the specified filter.</div>
+</td>
+</tr>
+<tr id="i6" class="altColor">
+<td class="colFirst"><code>static <a href="IDictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary</a></code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#combineSDC(org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary,double%5B%5D,org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary,double%5B%5D)">combineSDC</a></span>&#8203;(<a href="IDictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary</a>&nbsp;a,
+          double[]&nbsp;tua,
+          <a href="IDictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary</a>&nbsp;b,
+          double[]&nbsp;tub)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i7" class="rowColor">
+<td class="colFirst"><code>static <a href="IDictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary</a></code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#combineSDC(org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary,double%5B%5D,org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary,double%5B%5D,java.util.Map)">combineSDC</a></span>&#8203;(<a href="IDictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary</a>&nbsp;a,
+          double[]&nbsp;tua,
+          <a href="IDictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary</a>&nbsp;b,
+          double[]&nbsp;tub,
+          <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/Map.html?is-external=true" title="class or interface in java.util" class="externalLink">Map</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Integer.html?is-external=true" title="class or interface in java.lang" class="externalLink">Integer</a>,&#8203;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Integer.html?is-external=true" title="class or interface in java.lang" class="externalLink">Integer</a>&gt;&nbsp;filter)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i8" class="altColor">
+<td class="colFirst"><code>static <a href="IDictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary</a></code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#combineSDCRight(org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary,int,org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary,double%5B%5D)">combineSDCRight</a></span>&#8203;(<a href="IDictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary</a>&nbsp;a,
+               int&nbsp;nca,
+               <a href="IDictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary</a>&nbsp;b,
+               double[]&nbsp;tub)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i9" class="rowColor">
+<td class="colFirst"><code>static <a href="IDictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary</a></code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#combineSDCRight(org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary,int,org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary,double%5B%5D,java.util.Map)">combineSDCRight</a></span>&#8203;(<a href="IDictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary</a>&nbsp;a,
+               int&nbsp;nca,
+               <a href="IDictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary</a>&nbsp;b,
+               double[]&nbsp;tub,
+               <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/Map.html?is-external=true" title="class or interface in java.util" class="externalLink">Map</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Integer.html?is-external=true" title="class or interface in java.lang" class="externalLink">Integer</a>,&#8203;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Integer.html?is-external=true" title="class or interface in java.lang" class="externalLink">Integer</a>&gt;&nbsp;filter)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i10" class="altColor">
+<td class="colFirst"><code>static <a href="IDictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary</a></code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#combineSparseConstSparseRet(org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary,int,double%5B%5D)">combineSparseConstSparseRet</a></span>&#8203;(<a href="IDictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary</a>&nbsp;a,
+                           int&nbsp;nca,
+                           double[]&nbsp;tub)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i11" class="rowColor">
+<td class="colFirst"><code>static <a href="IDictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary</a></code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#create(org.apache.sysds.runtime.compress.bitmap.ABitmap)">create</a></span>&#8203;(<a href="../../bitmap/ABitmap.html" title="class in org.apache.sysds.runtime.compress.bitmap">ABitmap</a>&nbsp;ubm)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i12" class="altColor">
+<td class="colFirst"><code>static <a href="IDictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#create(org.apache.sysds.runtime.compress.bitmap.ABitmap,double)">create</a></span>&#8203;(<a href="../../bitmap/ABitmap.html" title="class in org.apache.sysds.runtime.compress.bitmap">ABitmap</a>&nbsp;ubm,
       double&nbsp;sparsity)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i2" class="altColor">
-<td class="colFirst"><code>static <a href="ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
+<tr id="i13" class="rowColor">
+<td class="colFirst"><code>static <a href="IDictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#create(org.apache.sysds.runtime.compress.bitmap.ABitmap,double,boolean)">create</a></span>&#8203;(<a href="../../bitmap/ABitmap.html" title="class in org.apache.sysds.runtime.compress.bitmap">ABitmap</a>&nbsp;ubm,
       double&nbsp;sparsity,
       boolean&nbsp;withZeroTuple)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i3" class="rowColor">
-<td class="colFirst"><code>static <a href="ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
+<tr id="i14" class="altColor">
+<td class="colFirst"><code>static <a href="IDictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#create(org.apache.sysds.runtime.compress.bitmap.ABitmap,int,double%5B%5D,double,boolean)">create</a></span>&#8203;(<a href="../../bitmap/ABitmap.html" title="class in org.apache.sysds.runtime.compress.bitmap">ABitmap</a>&nbsp;ubm,
       int&nbsp;defaultIndex,
       double[]&nbsp;defaultTuple,
@@ -212,26 +303,26 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
       boolean&nbsp;addZero)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i4" class="altColor">
-<td class="colFirst"><code>static <a href="ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
+<tr id="i15" class="rowColor">
+<td class="colFirst"><code>static <a href="IDictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#create(org.apache.sysds.runtime.compress.utils.DblArrayCountHashMap,int,boolean,double)">create</a></span>&#8203;(<a href="../../utils/DblArrayCountHashMap.html" title="class in org.apache.sysds.runtime.compress.utils">DblArrayCountHashMap</a>&nbsp;map,
       int&nbsp;nCols,
       boolean&nbsp;addZeroTuple,
       double&nbsp;sparsity)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i5" class="rowColor">
-<td class="colFirst"><code>static <a href="ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
+<tr id="i16" class="altColor">
+<td class="colFirst"><code>static <a href="IDictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#create(org.apache.sysds.runtime.compress.utils.DoubleCountHashMap)">create</a></span>&#8203;(<a href="../../utils/DoubleCountHashMap.html" title="class in org.apache.sysds.runtime.compress.utils">DoubleCountHashMap</a>&nbsp;map)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i6" class="altColor">
-<td class="colFirst"><code>static <a href="ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
+<tr id="i17" class="rowColor">
+<td class="colFirst"><code>static <a href="IDictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#createWithAppendedZeroTuple(org.apache.sysds.runtime.compress.bitmap.ABitmap,double)">createWithAppendedZeroTuple</a></span>&#8203;(<a href="../../bitmap/ABitmap.html" title="class in org.apache.sysds.runtime.compress.bitmap">ABitmap</a>&nbsp;ubm,
                            double&nbsp;sparsity)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i7" class="rowColor">
+<tr id="i18" class="altColor">
 <td class="colFirst"><code>static long</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getInMemorySize(int,int,double,boolean)">getInMemorySize</a></span>&#8203;(int&nbsp;nrValues,
                int&nbsp;nrColumns,
@@ -239,8 +330,8 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
                boolean&nbsp;lossy)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i8" class="altColor">
-<td class="colFirst"><code>static <a href="ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
+<tr id="i19" class="rowColor">
+<td class="colFirst"><code>static <a href="IDictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#read(java.io.DataInput)">read</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/DataInput.html?is-external=true" title="class or interface in java.io" class="externalLink">DataInput</a>&nbsp;in)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
@@ -286,7 +377,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <ul class="blockList">
 <li class="blockList">
 <h4>read</h4>
-<pre class="methodSignature">static&nbsp;<a href="ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a>&nbsp;read&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/DataInput.html?is-external=true" title="class or interface in java.io" class="externalLink">DataInput</a>&nbsp;in)
+<pre class="methodSignature">static&nbsp;<a href="IDictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary</a>&nbsp;read&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/DataInput.html?is-external=true" title="class or interface in java.io" class="externalLink">DataInput</a>&nbsp;in)
                  throws <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></pre>
 <dl>
 <dt><span class="throwsLabel">Throws:</span></dt>
@@ -312,7 +403,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <ul class="blockList">
 <li class="blockList">
 <h4>create</h4>
-<pre class="methodSignature">static&nbsp;<a href="ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a>&nbsp;create&#8203;(<a href="../../utils/DblArrayCountHashMap.html" title="class in org.apache.sysds.runtime.compress.utils">DblArrayCountHashMap</a>&nbsp;map,
+<pre class="methodSignature">static&nbsp;<a href="IDictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary</a>&nbsp;create&#8203;(<a href="../../utils/DblArrayCountHashMap.html" title="class in org.apache.sysds.runtime.compress.utils">DblArrayCountHashMap</a>&nbsp;map,
                           int&nbsp;nCols,
                           boolean&nbsp;addZeroTuple,
                           double&nbsp;sparsity)</pre>
@@ -324,7 +415,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <ul class="blockList">
 <li class="blockList">
 <h4>create</h4>
-<pre class="methodSignature">static&nbsp;<a href="ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a>&nbsp;create&#8203;(<a href="../../bitmap/ABitmap.html" title="class in org.apache.sysds.runtime.compress.bitmap">ABitmap</a>&nbsp;ubm)</pre>
+<pre class="methodSignature">static&nbsp;<a href="IDictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary</a>&nbsp;create&#8203;(<a href="../../bitmap/ABitmap.html" title="class in org.apache.sysds.runtime.compress.bitmap">ABitmap</a>&nbsp;ubm)</pre>
 </li>
 </ul>
 <a id="create(org.apache.sysds.runtime.compress.bitmap.ABitmap,double,boolean)">
@@ -333,7 +424,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <ul class="blockList">
 <li class="blockList">
 <h4>create</h4>
-<pre class="methodSignature">static&nbsp;<a href="ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a>&nbsp;create&#8203;(<a href="../../bitmap/ABitmap.html" title="class in org.apache.sysds.runtime.compress.bitmap">ABitmap</a>&nbsp;ubm,
+<pre class="methodSignature">static&nbsp;<a href="IDictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary</a>&nbsp;create&#8203;(<a href="../../bitmap/ABitmap.html" title="class in org.apache.sysds.runtime.compress.bitmap">ABitmap</a>&nbsp;ubm,
                           double&nbsp;sparsity,
                           boolean&nbsp;withZeroTuple)</pre>
 </li>
@@ -344,7 +435,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <ul class="blockList">
 <li class="blockList">
 <h4>create</h4>
-<pre class="methodSignature">static&nbsp;<a href="ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a>&nbsp;create&#8203;(<a href="../../bitmap/ABitmap.html" title="class in org.apache.sysds.runtime.compress.bitmap">ABitmap</a>&nbsp;ubm,
+<pre class="methodSignature">static&nbsp;<a href="IDictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary</a>&nbsp;create&#8203;(<a href="../../bitmap/ABitmap.html" title="class in org.apache.sysds.runtime.compress.bitmap">ABitmap</a>&nbsp;ubm,
                           double&nbsp;sparsity)</pre>
 </li>
 </ul>
@@ -354,7 +445,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <ul class="blockList">
 <li class="blockList">
 <h4>create</h4>
-<pre class="methodSignature">static&nbsp;<a href="ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a>&nbsp;create&#8203;(<a href="../../bitmap/ABitmap.html" title="class in org.apache.sysds.runtime.compress.bitmap">ABitmap</a>&nbsp;ubm,
+<pre class="methodSignature">static&nbsp;<a href="IDictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary</a>&nbsp;create&#8203;(<a href="../../bitmap/ABitmap.html" title="class in org.apache.sysds.runtime.compress.bitmap">ABitmap</a>&nbsp;ubm,
                           int&nbsp;defaultIndex,
                           double[]&nbsp;defaultTuple,
                           double&nbsp;sparsity,
@@ -367,17 +458,176 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <ul class="blockList">
 <li class="blockList">
 <h4>createWithAppendedZeroTuple</h4>
-<pre class="methodSignature">static&nbsp;<a href="ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a>&nbsp;createWithAppendedZeroTuple&#8203;(<a href="../../bitmap/ABitmap.html" title="class in org.apache.sysds.runtime.compress.bitmap">ABitmap</a>&nbsp;ubm,
+<pre class="methodSignature">static&nbsp;<a href="IDictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary</a>&nbsp;createWithAppendedZeroTuple&#8203;(<a href="../../bitmap/ABitmap.html" title="class in org.apache.sysds.runtime.compress.bitmap">ABitmap</a>&nbsp;ubm,
                                                double&nbsp;sparsity)</pre>
 </li>
 </ul>
 <a id="create(org.apache.sysds.runtime.compress.utils.DoubleCountHashMap)">
 <!--   -->
 </a>
-<ul class="blockListLast">
+<ul class="blockList">
 <li class="blockList">
 <h4>create</h4>
-<pre class="methodSignature">static&nbsp;<a href="ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a>&nbsp;create&#8203;(<a href="../../utils/DoubleCountHashMap.html" title="class in org.apache.sysds.runtime.compress.utils">DoubleCountHashMap</a>&nbsp;map)</pre>
+<pre class="methodSignature">static&nbsp;<a href="IDictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary</a>&nbsp;create&#8203;(<a href="../../utils/DoubleCountHashMap.html" title="class in org.apache.sysds.runtime.compress.utils">DoubleCountHashMap</a>&nbsp;map)</pre>
+</li>
+</ul>
+<a id="combineDictionaries(org.apache.sysds.runtime.compress.colgroup.AColGroupCompressed,org.apache.sysds.runtime.compress.colgroup.AColGroupCompressed)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>combineDictionaries</h4>
+<pre class="methodSignature">static&nbsp;<a href="IDictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary</a>&nbsp;combineDictionaries&#8203;(<a href="../AColGroupCompressed.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroupCompressed</a>&nbsp;a,
+                                       <a href="../AColGroupCompressed.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroupCompressed</a>&nbsp;b)</pre>
+</li>
+</ul>
+<a id="combineDictionaries(org.apache.sysds.runtime.compress.colgroup.AColGroupCompressed,org.apache.sysds.runtime.compress.colgroup.AColGroupCompressed,java.util.Map)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>combineDictionaries</h4>
+<pre class="methodSignature">static&nbsp;<a href="IDictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary</a>&nbsp;combineDictionaries&#8203;(<a href="../AColGroupCompressed.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroupCompressed</a>&nbsp;a,
+                                       <a href="../AColGroupCompressed.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroupCompressed</a>&nbsp;b,
+                                       <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/Map.html?is-external=true" title="class or interface in java.util" class="externalLink">Map</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Integer.html?is-external=true" title="class or interface in java.lang" class="externalLink">Integer</a>,&#8203;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Integer.html?is-external=true" title="class or interface in java.lang" class="externalLink">Integer</a>&gt;&nbsp;filter)</pre>
+</li>
+</ul>
+<a id="combineDictionariesSparse(org.apache.sysds.runtime.compress.colgroup.AColGroupCompressed,org.apache.sysds.runtime.compress.colgroup.AColGroupCompressed)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>combineDictionariesSparse</h4>
+<pre class="methodSignature">static&nbsp;<a href="IDictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary</a>&nbsp;combineDictionariesSparse&#8203;(<a href="../AColGroupCompressed.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroupCompressed</a>&nbsp;a,
+                                             <a href="../AColGroupCompressed.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroupCompressed</a>&nbsp;b)</pre>
+<div class="block">Combine the dictionaries assuming a sparse combination where each dictionary can be a SDC containing a default
+ element that have to be introduced into the combined dictionary.</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>a</code> - A Dictionary can be SDC or const</dd>
+<dd><code>b</code> - A Dictionary can be Const or SDC.</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>The combined dictionary</dd>
+</dl>
+</li>
+</ul>
+<a id="combineFullDictionaries(org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary,int,org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary,int)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>combineFullDictionaries</h4>
+<pre class="methodSignature">static&nbsp;<a href="IDictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary</a>&nbsp;combineFullDictionaries&#8203;(<a href="IDictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary</a>&nbsp;a,
+                                           int&nbsp;nca,
+                                           <a href="IDictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary</a>&nbsp;b,
+                                           int&nbsp;ncb)</pre>
+<div class="block">Combine the dictionaries as if the dictionaries contain the full spectrum of the combined data.</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>a</code> - Left side dictionary</dd>
+<dd><code>nca</code> - Number of columns left dictionary</dd>
+<dd><code>b</code> - Right side dictionary</dd>
+<dd><code>ncb</code> - Number of columns right dictionary</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>A combined dictionary</dd>
+</dl>
+</li>
+</ul>
+<a id="combineFullDictionaries(org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary,int,org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary,int,java.util.Map)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>combineFullDictionaries</h4>
+<pre class="methodSignature">static&nbsp;<a href="IDictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary</a>&nbsp;combineFullDictionaries&#8203;(<a href="IDictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary</a>&nbsp;a,
+                                           int&nbsp;nca,
+                                           <a href="IDictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary</a>&nbsp;b,
+                                           int&nbsp;ncb,
+                                           <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/Map.html?is-external=true" title="class or interface in java.util" class="externalLink">Map</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Integer.html?is-external=true" title="class or interface in java.lang" class="externalLink">Integer</a>,&#8203;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Integer.html?is-external=true" title="class or interface in java.lang" class="externalLink">Integer</a>&gt;&nbsp;filter)</pre>
+<div class="block">Combine the dictionaries as if the dictionaries only contain the values in the specified filter.</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>a</code> - Left side dictionary</dd>
+<dd><code>nca</code> - Number of columns left dictionary</dd>
+<dd><code>b</code> - Right side dictionary</dd>
+<dd><code>ncb</code> - Number of columns right dictionary</dd>
+<dd><code>filter</code> - The mapping filter to not include all possible combinations in the output, this filter is allowed
+               to be null, that means the output is defaulting back to a full combine</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>A combined dictionary</dd>
+</dl>
+</li>
+</ul>
+<a id="combineSDCRight(org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary,int,org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary,double[])">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>combineSDCRight</h4>
+<pre class="methodSignature">static&nbsp;<a href="IDictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary</a>&nbsp;combineSDCRight&#8203;(<a href="IDictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary</a>&nbsp;a,
+                                   int&nbsp;nca,
+                                   <a href="IDictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary</a>&nbsp;b,
+                                   double[]&nbsp;tub)</pre>
+</li>
+</ul>
+<a id="combineSDCRight(org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary,int,org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary,double[],java.util.Map)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>combineSDCRight</h4>
+<pre class="methodSignature">static&nbsp;<a href="IDictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary</a>&nbsp;combineSDCRight&#8203;(<a href="IDictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary</a>&nbsp;a,
+                                   int&nbsp;nca,
+                                   <a href="IDictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary</a>&nbsp;b,
+                                   double[]&nbsp;tub,
+                                   <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/Map.html?is-external=true" title="class or interface in java.util" class="externalLink">Map</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Integer.html?is-external=true" title="class or interface in java.lang" class="externalLink">Integer</a>,&#8203;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Integer.html?is-external=true" title="class or interface in java.lang" class="externalLink">Integer</a>&gt;&nbsp;filter)</pre>
+</li>
+</ul>
+<a id="combineSDC(org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary,double[],org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary,double[])">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>combineSDC</h4>
+<pre class="methodSignature">static&nbsp;<a href="IDictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary</a>&nbsp;combineSDC&#8203;(<a href="IDictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary</a>&nbsp;a,
+                              double[]&nbsp;tua,
+                              <a href="IDictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary</a>&nbsp;b,
+                              double[]&nbsp;tub)</pre>
+</li>
+</ul>
+<a id="combineSDC(org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary,double[],org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary,double[],java.util.Map)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>combineSDC</h4>
+<pre class="methodSignature">static&nbsp;<a href="IDictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary</a>&nbsp;combineSDC&#8203;(<a href="IDictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary</a>&nbsp;a,
+                              double[]&nbsp;tua,
+                              <a href="IDictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary</a>&nbsp;b,
+                              double[]&nbsp;tub,
+                              <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/Map.html?is-external=true" title="class or interface in java.util" class="externalLink">Map</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Integer.html?is-external=true" title="class or interface in java.lang" class="externalLink">Integer</a>,&#8203;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Integer.html?is-external=true" title="class or interface in java.lang" class="externalLink">Integer</a>&gt;&nbsp;filter)</pre>
+</li>
+</ul>
+<a id="combineSparseConstSparseRet(org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary,int,double[])">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>combineSparseConstSparseRet</h4>
+<pre class="methodSignature">static&nbsp;<a href="IDictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary</a>&nbsp;combineSparseConstSparseRet&#8203;(<a href="IDictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary</a>&nbsp;a,
+                                               int&nbsp;nca,
+                                               double[]&nbsp;tub)</pre>
+</li>
+</ul>
+<a id="combineConstSparseSparseRet(double[],org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary,int)">
+<!--   -->
+</a>
+<ul class="blockListLast">
+<li class="blockList">
+<h4>combineConstSparseSparseRet</h4>
+<pre class="methodSignature">static&nbsp;<a href="IDictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary</a>&nbsp;combineConstSparseSparseRet&#8203;(double[]&nbsp;tua,
+                                               <a href="IDictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary</a>&nbsp;b,
+                                               int&nbsp;ncb)</pre>
 </li>
 </ul>
 </li>

@@ -14,7 +14,7 @@
 <!--[if IE]>
 <script type="text/javascript" src="../../../../jquery/jszip-utils/dist/jszip-utils-ie.min.js"></script>
 <![endif]-->
-<script type="text/javascript" src="../../../../jquery/jquery-3.6.0.min.js"></script>
+<script type="text/javascript" src="../../../../jquery/jquery-3.6.1.min.js"></script>
 <script type="text/javascript" src="../../../../jquery/jquery-ui.min.js"></script>
 </head>
 <body>
@@ -156,20 +156,20 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code>static <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a></code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#ASYNC_SPARK_BROADCAST">ASYNC_SPARK_BROADCAST</a></span></code></th>
-<td class="colLast">&nbsp;</td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#ASYNC_PREFETCH">ASYNC_PREFETCH</a></span></code></th>
+<td class="colLast">
+<div class="block">Asynchronous triggering of Spark OPs and operator placement</div>
+</td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>static <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a></code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#ASYNC_SPARK_CHECKPOINT">ASYNC_SPARK_CHECKPOINT</a></span></code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#ASYNC_SPARK_BROADCAST">ASYNC_SPARK_BROADCAST</a></span></code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code>static <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a></code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#ASYNC_SPARK_PREFETCH">ASYNC_SPARK_PREFETCH</a></span></code></th>
-<td class="colLast">
-<div class="block">Asynchronous triggering of Spark OPs and operator placement</div>
-</td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#ASYNC_SPARK_CHECKPOINT">ASYNC_SPARK_CHECKPOINT</a></span></code></th>
+<td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>static <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a></code></td>
@@ -323,54 +323,64 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>static <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a></code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#FEDERATED_COMPRESSION">FEDERATED_COMPRESSION</a></span></code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>static <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#FEDERATED_MONITOR_FREQUENCY">FEDERATED_MONITOR_FREQUENCY</a></span></code></th>
 <td class="colLast">
 <div class="block">Trigger frequency of the collecting and parsing statistics process on registered workers for monitoring in seconds</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>static <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#FEDERATED_PAR_CONN">FEDERATED_PAR_CONN</a></span></code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>static <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#FEDERATED_PAR_INST">FEDERATED_PAR_INST</a></span></code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>static <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#FEDERATED_PLANNER">FEDERATED_PLANNER</a></span></code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>static <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#FEDERATED_READCACHE">FEDERATED_READCACHE</a></span></code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>static <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#FEDERATED_TIMEOUT">FEDERATED_TIMEOUT</a></span></code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>static <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#FLOATING_POINT_PRECISION">FLOATING_POINT_PRECISION</a></span></code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>static <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#GPU_EVICTION_POLICY">GPU_EVICTION_POLICY</a></span></code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>static <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#GPU_MEMORY_ALLOCATOR">GPU_MEMORY_ALLOCATOR</a></span></code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>static <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#GPU_MEMORY_UTILIZATION_FACTOR">GPU_MEMORY_UTILIZATION_FACTOR</a></span></code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>static <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a></code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#GPU_RULE_BASED_PLACEMENT">GPU_RULE_BASED_PLACEMENT</a></span></code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
@@ -1121,6 +1131,19 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 </dl>
 </li>
 </ul>
+<a id="GPU_RULE_BASED_PLACEMENT">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>GPU_RULE_BASED_PLACEMENT</h4>
+<pre>public static final&nbsp;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a> GPU_RULE_BASED_PLACEMENT</pre>
+<dl>
+<dt><span class="seeLabel">See Also:</span></dt>
+<dd><a href="../../../../constant-values.html#org.apache.sysds.conf.DMLConfig.GPU_RULE_BASED_PLACEMENT">Constant Field Values</a></dd>
+</dl>
+</li>
+</ul>
 <a id="USE_LOCAL_SPARK_CONFIG">
 <!--   -->
 </a>
@@ -1355,6 +1378,19 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 </dl>
 </li>
 </ul>
+<a id="FEDERATED_COMPRESSION">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>FEDERATED_COMPRESSION</h4>
+<pre>public static final&nbsp;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a> FEDERATED_COMPRESSION</pre>
+<dl>
+<dt><span class="seeLabel">See Also:</span></dt>
+<dd><a href="../../../../constant-values.html#org.apache.sysds.conf.DMLConfig.FEDERATED_COMPRESSION">Constant Field Values</a></dd>
+</dl>
+</li>
+</ul>
 <a id="PRIVACY_CONSTRAINT_MOCK">
 <!--   -->
 </a>
@@ -1408,17 +1444,17 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 </dl>
 </li>
 </ul>
-<a id="ASYNC_SPARK_PREFETCH">
+<a id="ASYNC_PREFETCH">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
-<h4>ASYNC_SPARK_PREFETCH</h4>
-<pre>public static final&nbsp;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a> ASYNC_SPARK_PREFETCH</pre>
+<h4>ASYNC_PREFETCH</h4>
+<pre>public static final&nbsp;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a> ASYNC_PREFETCH</pre>
 <div class="block">Asynchronous triggering of Spark OPs and operator placement</div>
 <dl>
 <dt><span class="seeLabel">See Also:</span></dt>
-<dd><a href="../../../../constant-values.html#org.apache.sysds.conf.DMLConfig.ASYNC_SPARK_PREFETCH">Constant Field Values</a></dd>
+<dd><a href="../../../../constant-values.html#org.apache.sysds.conf.DMLConfig.ASYNC_PREFETCH">Constant Field Values</a></dd>
 </dl>
 </li>
 </ul>

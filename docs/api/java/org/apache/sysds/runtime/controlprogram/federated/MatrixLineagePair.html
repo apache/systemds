@@ -14,7 +14,7 @@
 <!--[if IE]>
 <script type="text/javascript" src="../../../../../../jquery/jszip-utils/dist/jszip-utils-ie.min.js"></script>
 <![endif]-->
-<script type="text/javascript" src="../../../../../../jquery/jquery-3.6.0.min.js"></script>
+<script type="text/javascript" src="../../../../../../jquery/jquery-3.6.1.min.js"></script>
 <script type="text/javascript" src="../../../../../../jquery/jquery-ui.min.js"></script>
 </head>
 <body>
@@ -27,7 +27,7 @@
     catch(err) {
     }
 //-->
-var data = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10,"i10":10,"i11":10,"i12":9};
+var data = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10,"i10":10,"i11":10,"i12":10,"i13":9};
 var tabs = {65535:["t0","All Methods"],1:["t1","Static Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -221,7 +221,7 @@ extends org.apache.commons.lang3.tuple.MutablePair&lt;<a href="../caching/Matrix
 <th class="colLast" scope="col">Description</th>
 </tr>
 <tr id="i0" class="altColor">
-<td class="colFirst"><code>long</code></td>
+<td class="colFirst"><code>int</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getBlocksize()">getBlocksize</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
@@ -257,30 +257,35 @@ extends org.apache.commons.lang3.tuple.MutablePair&lt;<a href="../caching/Matrix
 </tr>
 <tr id="i7" class="rowColor">
 <td class="colFirst"><code>long</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getNumColumns()">getNumColumns</a></span>()</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getNnz()">getNnz</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i8" class="altColor">
 <td class="colFirst"><code>long</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getNumRows()">getNumRows</a></span>()</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getNumColumns()">getNumColumns</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i9" class="rowColor">
-<td class="colFirst"><code>boolean</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#isFederated()">isFederated</a></span>()</code></th>
+<td class="colFirst"><code>long</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getNumRows()">getNumRows</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i10" class="altColor">
 <td class="colFirst"><code>boolean</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#isFederated(org.apache.sysds.hops.fedplanner.FTypes.FType)">isFederated</a></span>&#8203;(<a href="../../../hops/fedplanner/FTypes.FType.html" title="enum in org.apache.sysds.hops.fedplanner">FTypes.FType</a>&nbsp;ftype)</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#isFederated()">isFederated</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i11" class="rowColor">
 <td class="colFirst"><code>boolean</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#isFederatedExcept(org.apache.sysds.hops.fedplanner.FTypes.FType)">isFederatedExcept</a></span>&#8203;(<a href="../../../hops/fedplanner/FTypes.FType.html" title="enum in org.apache.sysds.hops.fedplanner">FTypes.FType</a>&nbsp;ftype)</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#isFederated(org.apache.sysds.hops.fedplanner.FTypes.FType)">isFederated</a></span>&#8203;(<a href="../../../hops/fedplanner/FTypes.FType.html" title="enum in org.apache.sysds.hops.fedplanner">FTypes.FType</a>&nbsp;ftype)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i12" class="altColor">
+<td class="colFirst"><code>boolean</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#isFederatedExcept(org.apache.sysds.hops.fedplanner.FTypes.FType)">isFederatedExcept</a></span>&#8203;(<a href="../../../hops/fedplanner/FTypes.FType.html" title="enum in org.apache.sysds.hops.fedplanner">FTypes.FType</a>&nbsp;ftype)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i13" class="rowColor">
 <td class="colFirst"><code>static <a href="MatrixLineagePair.html" title="class in org.apache.sysds.runtime.controlprogram.federated">MatrixLineagePair</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#of(org.apache.sysds.runtime.controlprogram.caching.MatrixObject,org.apache.sysds.runtime.lineage.LineageItem)">of</a></span>&#8203;(<a href="../caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&nbsp;mo,
   <a href="../../lineage/LineageItem.html" title="class in org.apache.sysds.runtime.lineage">LineageItem</a>&nbsp;li)</code></th>
@@ -450,7 +455,16 @@ extends org.apache.commons.lang3.tuple.MutablePair&lt;<a href="../caching/Matrix
 <ul class="blockList">
 <li class="blockList">
 <h4>getBlocksize</h4>
-<pre class="methodSignature">public&nbsp;long&nbsp;getBlocksize()</pre>
+<pre class="methodSignature">public&nbsp;int&nbsp;getBlocksize()</pre>
+</li>
+</ul>
+<a id="getNnz()">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>getNnz</h4>
+<pre class="methodSignature">public&nbsp;long&nbsp;getNnz()</pre>
 </li>
 </ul>
 <a id="getDataType()">

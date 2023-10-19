@@ -14,7 +14,7 @@
 <!--[if IE]>
 <script type="text/javascript" src="../../../../../../jquery/jszip-utils/dist/jszip-utils-ie.min.js"></script>
 <![endif]-->
-<script type="text/javascript" src="../../../../../../jquery/jquery-3.6.0.min.js"></script>
+<script type="text/javascript" src="../../../../../../jquery/jquery-3.6.1.min.js"></script>
 <script type="text/javascript" src="../../../../../../jquery/jquery-ui.min.js"></script>
 </head>
 <body>
@@ -155,24 +155,40 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <th class="colLast" scope="col">Description</th>
 </tr>
 <tr class="altColor">
-<th class="colConstructorName" scope="row"><code><span class="memberNameLink"><a href="#%3Cinit%3E(org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,int)">CompressedSizeInfoColGroup</a></span>&#8203;(<a href="../colgroup/indexes/IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;columns,
-                          int&nbsp;nRows)</code></th>
-<td class="colLast">
-<div class="block">Create empty.</div>
-</td>
-</tr>
-<tr class="rowColor">
 <th class="colConstructorName" scope="row"><code><span class="memberNameLink"><a href="#%3Cinit%3E(org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,int,int,org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType)">CompressedSizeInfoColGroup</a></span>&#8203;(<a href="../colgroup/indexes/IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;cols,
                           int&nbsp;nVal,
                           int&nbsp;nRow,
                           <a href="../colgroup/AColGroup.CompressionType.html" title="enum in org.apache.sysds.runtime.compress.colgroup">AColGroup.CompressionType</a>&nbsp;bestCompressionType)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
+<tr class="rowColor">
+<th class="colConstructorName" scope="row"><code><span class="memberNameLink"><a href="#%3Cinit%3E(org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,int,org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType)">CompressedSizeInfoColGroup</a></span>&#8203;(<a href="../colgroup/indexes/IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;columns,
+                          int&nbsp;nRows,
+                          <a href="../colgroup/AColGroup.CompressionType.html" title="enum in org.apache.sysds.runtime.compress.colgroup">AColGroup.CompressionType</a>&nbsp;ct)</code></th>
+<td class="colLast">
+<div class="block">Create empty or const.</div>
+</td>
+</tr>
 <tr class="altColor">
 <th class="colConstructorName" scope="row"><code><span class="memberNameLink"><a href="#%3Cinit%3E(org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,org.apache.sysds.runtime.compress.estim.EstimationFactors,long,org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType)">CompressedSizeInfoColGroup</a></span>&#8203;(<a href="../colgroup/indexes/IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;cols,
                           <a href="EstimationFactors.html" title="class in org.apache.sysds.runtime.compress.estim">EstimationFactors</a>&nbsp;facts,
                           long&nbsp;minSize,
                           <a href="../colgroup/AColGroup.CompressionType.html" title="enum in org.apache.sysds.runtime.compress.colgroup">AColGroup.CompressionType</a>&nbsp;bestCompressionType)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<th class="colConstructorName" scope="row"><code><span class="memberNameLink"><a href="#%3Cinit%3E(org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,org.apache.sysds.runtime.compress.estim.EstimationFactors,long,org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType,org.apache.sysds.runtime.compress.estim.encoding.IEncode)">CompressedSizeInfoColGroup</a></span>&#8203;(<a href="../colgroup/indexes/IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;columns,
+                          <a href="EstimationFactors.html" title="class in org.apache.sysds.runtime.compress.estim">EstimationFactors</a>&nbsp;facts,
+                          long&nbsp;minSize,
+                          <a href="../colgroup/AColGroup.CompressionType.html" title="enum in org.apache.sysds.runtime.compress.colgroup">AColGroup.CompressionType</a>&nbsp;bestCompression,
+                          <a href="encoding/IEncode.html" title="interface in org.apache.sysds.runtime.compress.estim.encoding">IEncode</a>&nbsp;map)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<th class="colConstructorName" scope="row"><code><span class="memberNameLink"><a href="#%3Cinit%3E(org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,org.apache.sysds.runtime.compress.estim.EstimationFactors,java.util.Set,org.apache.sysds.runtime.compress.estim.encoding.IEncode)">CompressedSizeInfoColGroup</a></span>&#8203;(<a href="../colgroup/indexes/IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;columns,
+                          <a href="EstimationFactors.html" title="class in org.apache.sysds.runtime.compress.estim">EstimationFactors</a>&nbsp;facts,
+                          <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/Set.html?is-external=true" title="class or interface in java.util" class="externalLink">Set</a>&lt;<a href="../colgroup/AColGroup.CompressionType.html" title="enum in org.apache.sysds.runtime.compress.colgroup">AColGroup.CompressionType</a>&gt;&nbsp;validCompressionTypes,
+                          <a href="encoding/IEncode.html" title="interface in org.apache.sysds.runtime.compress.estim.encoding">IEncode</a>&nbsp;map)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
@@ -352,19 +368,46 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
                                   <a href="../colgroup/AColGroup.CompressionType.html" title="enum in org.apache.sysds.runtime.compress.colgroup">AColGroup.CompressionType</a>&nbsp;bestCompressionType)</pre>
 </li>
 </ul>
-<a id="&lt;init&gt;(org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,int)">
+<a id="&lt;init&gt;(org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,org.apache.sysds.runtime.compress.estim.EstimationFactors,long,org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType,org.apache.sysds.runtime.compress.estim.encoding.IEncode)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>CompressedSizeInfoColGroup</h4>
+<pre>public&nbsp;CompressedSizeInfoColGroup&#8203;(<a href="../colgroup/indexes/IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;columns,
+                                  <a href="EstimationFactors.html" title="class in org.apache.sysds.runtime.compress.estim">EstimationFactors</a>&nbsp;facts,
+                                  long&nbsp;minSize,
+                                  <a href="../colgroup/AColGroup.CompressionType.html" title="enum in org.apache.sysds.runtime.compress.colgroup">AColGroup.CompressionType</a>&nbsp;bestCompression,
+                                  <a href="encoding/IEncode.html" title="interface in org.apache.sysds.runtime.compress.estim.encoding">IEncode</a>&nbsp;map)</pre>
+</li>
+</ul>
+<a id="&lt;init&gt;(org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,org.apache.sysds.runtime.compress.estim.EstimationFactors,java.util.Set,org.apache.sysds.runtime.compress.estim.encoding.IEncode)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>CompressedSizeInfoColGroup</h4>
+<pre>public&nbsp;CompressedSizeInfoColGroup&#8203;(<a href="../colgroup/indexes/IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;columns,
+                                  <a href="EstimationFactors.html" title="class in org.apache.sysds.runtime.compress.estim">EstimationFactors</a>&nbsp;facts,
+                                  <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/Set.html?is-external=true" title="class or interface in java.util" class="externalLink">Set</a>&lt;<a href="../colgroup/AColGroup.CompressionType.html" title="enum in org.apache.sysds.runtime.compress.colgroup">AColGroup.CompressionType</a>&gt;&nbsp;validCompressionTypes,
+                                  <a href="encoding/IEncode.html" title="interface in org.apache.sysds.runtime.compress.estim.encoding">IEncode</a>&nbsp;map)</pre>
+</li>
+</ul>
+<a id="&lt;init&gt;(org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex,int,org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType)">
 <!--   -->
 </a>
 <ul class="blockListLast">
 <li class="blockList">
 <h4>CompressedSizeInfoColGroup</h4>
 <pre>public&nbsp;CompressedSizeInfoColGroup&#8203;(<a href="../colgroup/indexes/IColIndex.html" title="interface in org.apache.sysds.runtime.compress.colgroup.indexes">IColIndex</a>&nbsp;columns,
-                                  int&nbsp;nRows)</pre>
-<div class="block">Create empty.</div>
+                                  int&nbsp;nRows,
+                                  <a href="../colgroup/AColGroup.CompressionType.html" title="enum in org.apache.sysds.runtime.compress.colgroup">AColGroup.CompressionType</a>&nbsp;ct)</pre>
+<div class="block">Create empty or const.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>columns</code> - columns</dd>
 <dd><code>nRows</code> - number of rows</dd>
+<dd><code>ct</code> - The type intended either Empty or Const</dd>
 </dl>
 </li>
 </ul>

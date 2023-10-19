@@ -49,6 +49,7 @@ org.apache.sysds.runtime.controlprogram
 org.apache.sysds.runtime.controlprogram.caching
 org.apache.sysds.runtime.controlprogram.context
 org.apache.sysds.runtime.controlprogram.federated
+org.apache.sysds.runtime.controlprogram.federated.compression
 org.apache.sysds.runtime.controlprogram.federated.monitoring
 org.apache.sysds.runtime.controlprogram.federated.monitoring.controllers
 org.apache.sysds.runtime.controlprogram.federated.monitoring.models
@@ -83,6 +84,8 @@ org.apache.sysds.runtime.io
 org.apache.sysds.runtime.io.hdf5
 org.apache.sysds.runtime.io.hdf5.message
 org.apache.sysds.runtime.iogen
+org.apache.sysds.runtime.iogen.codegen
+org.apache.sysds.runtime.iogen.template
 org.apache.sysds.runtime.lineage
 org.apache.sysds.runtime.matrix.data
 org.apache.sysds.runtime.matrix.data.sketch

@@ -14,7 +14,7 @@
 <!--[if IE]>
 <script type="text/javascript" src="../../../../../../jquery/jszip-utils/dist/jszip-utils-ie.min.js"></script>
 <![endif]-->
-<script type="text/javascript" src="../../../../../../jquery/jquery-3.6.0.min.js"></script>
+<script type="text/javascript" src="../../../../../../jquery/jquery-3.6.1.min.js"></script>
 <script type="text/javascript" src="../../../../../../jquery/jquery-ui.min.js"></script>
 </head>
 <body>
@@ -106,9 +106,11 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <ul>
 <li class="circle">java.lang.<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink"><span class="typeNameLink">Object</span></a>
 <ul>
-<li class="circle">org.apache.sysds.runtime.compress.io.<a href="CompressedWriteBlock.html" title="class in org.apache.sysds.runtime.compress.io"><span class="typeNameLink">CompressedWriteBlock</span></a> (implements org.apache.hadoop.io.WritableComparable&lt;T&gt;)</li>
+<li class="circle">org.apache.sysds.runtime.compress.io.<a href="CompressedWriteBlock.html" title="class in org.apache.sysds.runtime.compress.io"><span class="typeNameLink">CompressedWriteBlock</span></a> (implements java.io.<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/Serializable.html?is-external=true" title="class or interface in java.io" class="externalLink">Serializable</a>, org.apache.hadoop.io.WritableComparable&lt;T&gt;)</li>
 <li class="circle">org.apache.sysds.runtime.compress.io.<a href="CompressUnwrap.html" title="class in org.apache.sysds.runtime.compress.io"><span class="typeNameLink">CompressUnwrap</span></a> (implements org.apache.spark.api.java.function.Function&lt;T1,&#8203;R&gt;)</li>
 <li class="circle">org.apache.sysds.runtime.compress.io.<a href="CompressWrap.html" title="class in org.apache.sysds.runtime.compress.io"><span class="typeNameLink">CompressWrap</span></a> (implements org.apache.spark.api.java.function.Function&lt;T1,&#8203;R&gt;)</li>
+<li class="circle">org.apache.sysds.runtime.compress.io.<a href="DictWritable.html" title="class in org.apache.sysds.runtime.compress.io"><span class="typeNameLink">DictWritable</span></a> (implements java.io.<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/Serializable.html?is-external=true" title="class or interface in java.io" class="externalLink">Serializable</a>, org.apache.hadoop.io.Writable)</li>
+<li class="circle">org.apache.sysds.runtime.compress.io.<a href="DictWritable.K.html" title="class in org.apache.sysds.runtime.compress.io"><span class="typeNameLink">DictWritable.K</span></a> (implements java.io.<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/Serializable.html?is-external=true" title="class or interface in java.io" class="externalLink">Serializable</a>, org.apache.hadoop.io.Writable)</li>
 <li class="circle">org.apache.sysds.runtime.io.<a href="../../io/MatrixReader.html" title="class in org.apache.sysds.runtime.io"><span class="typeNameLink">MatrixReader</span></a>
 <ul>
 <li class="circle">org.apache.sysds.runtime.compress.io.<a href="ReaderCompressed.html" title="class in org.apache.sysds.runtime.compress.io"><span class="typeNameLink">ReaderCompressed</span></a></li>
@@ -121,6 +123,12 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </li>
 </ul>
 </li>
+</ul>
+</section>
+<section>
+<h2 title="Interface Hierarchy">Interface Hierarchy</h2>
+<ul>
+<li class="circle">org.apache.sysds.runtime.compress.io.<a href="ReaderSparkCompressed.html" title="interface in org.apache.sysds.runtime.compress.io"><span class="typeNameLink">ReaderSparkCompressed</span></a></li>
 </ul>
 </section>
 </div>

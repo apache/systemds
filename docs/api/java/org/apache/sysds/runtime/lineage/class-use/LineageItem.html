@@ -14,7 +14,7 @@
 <!--[if IE]>
 <script type="text/javascript" src="../../../../../../jquery/jszip-utils/dist/jszip-utils-ie.min.js"></script>
 <![endif]-->
-<script type="text/javascript" src="../../../../../../jquery/jquery-3.6.0.min.js"></script>
+<script type="text/javascript" src="../../../../../../jquery/jquery-3.6.1.min.js"></script>
 <script type="text/javascript" src="../../../../../../jquery/jquery-ui.min.js"></script>
 </head>
 <body>
@@ -283,14 +283,27 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <tbody>
 <tr class="altColor">
 <td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ExecutionContext.</span><code><span class="memberNameLink"><a href="../../controlprogram/context/ExecutionContext.html#replaceLineageItem(java.lang.String,org.apache.sysds.runtime.lineage.LineageItem)">replaceLineageItem</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;varname,
+                  <a href="../LineageItem.html" title="class in org.apache.sysds.runtime.lineage">LineageItem</a>&nbsp;li)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">ExecutionContext.</span><code><span class="memberNameLink"><a href="../../controlprogram/context/ExecutionContext.html#setMatrixOutputAndLineage(java.lang.String,java.util.concurrent.Future,org.apache.sysds.runtime.lineage.LineageItem)">setMatrixOutputAndLineage</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;varName,
                          <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/concurrent/Future.html?is-external=true" title="class or interface in java.util.concurrent" class="externalLink">Future</a>&lt;<a href="../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&gt;&nbsp;fmb,
                          <a href="../LineageItem.html" title="class in org.apache.sysds.runtime.lineage">LineageItem</a>&nbsp;li)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">ExecutionContext.</span><code><span class="memberNameLink"><a href="../../controlprogram/context/ExecutionContext.html#setMatrixOutputAndLineage(java.lang.String,org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.lineage.LineageItem)">setMatrixOutputAndLineage</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;varName,
+                         <a href="../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;outputData,
+                         <a href="../LineageItem.html" title="class in org.apache.sysds.runtime.lineage">LineageItem</a>&nbsp;li)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ExecutionContext.</span><code><span class="memberNameLink"><a href="../../controlprogram/context/ExecutionContext.html#setMatrixOutputAndLineage(org.apache.sysds.runtime.instructions.cp.CPOperand,org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.lineage.LineageItem)">setMatrixOutputAndLineage</a></span>&#8203;(<a href="../../instructions/cp/CPOperand.html" title="class in org.apache.sysds.runtime.instructions.cp">CPOperand</a>&nbsp;var,
                          <a href="../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;outputData,
                          <a href="../LineageItem.html" title="class in org.apache.sysds.runtime.lineage">LineageItem</a>&nbsp;li)</code></th>
 <td class="colLast">&nbsp;</td>
@@ -413,15 +426,20 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <tbody>
 <tr class="altColor">
 <td class="colFirst"><code><a href="../LineageItem.html" title="class in org.apache.sysds.runtime.lineage">LineageItem</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">ListObject.</span><code><span class="memberNameLink"><a href="../../instructions/cp/ListObject.html#getLineageItem(int)">getLineageItem</a></span>&#8203;(int&nbsp;ix)</code></th>
+<th class="colSecond" scope="row"><span class="typeNameLabel">UnaryMatrixCPInstruction.</span><code><span class="memberNameLink"><a href="../../instructions/cp/UnaryMatrixCPInstruction.html#getCacheLineageItem(org.apache.sysds.runtime.lineage.LineageItem)">getCacheLineageItem</a></span>&#8203;(<a href="../LineageItem.html" title="class in org.apache.sysds.runtime.lineage">LineageItem</a>&nbsp;input)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code><a href="../LineageItem.html" title="class in org.apache.sysds.runtime.lineage">LineageItem</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">ListObject.</span><code><span class="memberNameLink"><a href="../../instructions/cp/ListObject.html#getLineageItem(java.lang.String)">getLineageItem</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;name)</code></th>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ListObject.</span><code><span class="memberNameLink"><a href="../../instructions/cp/ListObject.html#getLineageItem(int)">getLineageItem</a></span>&#8203;(int&nbsp;ix)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
+<td class="colFirst"><code><a href="../LineageItem.html" title="class in org.apache.sysds.runtime.lineage">LineageItem</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ListObject.</span><code><span class="memberNameLink"><a href="../../instructions/cp/ListObject.html#getLineageItem(java.lang.String)">getLineageItem</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;name)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
 <td class="colFirst"><code><a href="../LineageItem.html" title="class in org.apache.sysds.runtime.lineage">LineageItem</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">CPOperand.</span><code><span class="memberNameLink"><a href="../../instructions/cp/CPOperand.html#getLiteralLineageItem()">getLiteralLineageItem</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
@@ -511,6 +529,16 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <th class="colSecond" scope="row"><span class="typeNameLabel">ListObject.</span><code><span class="memberNameLink"><a href="../../instructions/cp/ListObject.html#getLineageItems()">getLineageItems</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
+<tr class="rowColor">
+<td class="colFirst"><code>org.apache.commons.lang3.tuple.Pair&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>,&#8203;<a href="../LineageItem.html" title="class in org.apache.sysds.runtime.lineage">LineageItem</a>&gt;[]</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">MultiReturnBuiltinCPInstruction.</span><code><span class="memberNameLink"><a href="../../instructions/cp/MultiReturnBuiltinCPInstruction.html#getLineageItems(org.apache.sysds.runtime.controlprogram.context.ExecutionContext)">getLineageItems</a></span>&#8203;(<a href="../../controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>org.apache.commons.lang3.tuple.Pair&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>,&#8203;<a href="../LineageItem.html" title="class in org.apache.sysds.runtime.lineage">LineageItem</a>&gt;[]</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">MultiReturnParameterizedBuiltinCPInstruction.</span><code><span class="memberNameLink"><a href="../../instructions/cp/MultiReturnParameterizedBuiltinCPInstruction.html#getLineageItems(org.apache.sysds.runtime.controlprogram.context.ExecutionContext)">getLineageItems</a></span>&#8203;(<a href="../../controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
 </tbody>
 </table>
 <table class="useSummary">
@@ -535,13 +563,18 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
+<td class="colFirst"><code><a href="../LineageItem.html" title="class in org.apache.sysds.runtime.lineage">LineageItem</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">UnaryMatrixCPInstruction.</span><code><span class="memberNameLink"><a href="../../instructions/cp/UnaryMatrixCPInstruction.html#getCacheLineageItem(org.apache.sysds.runtime.lineage.LineageItem)">getCacheLineageItem</a></span>&#8203;(<a href="../LineageItem.html" title="class in org.apache.sysds.runtime.lineage">LineageItem</a>&nbsp;input)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
 <td class="colFirst"><code><a href="../../instructions/cp/ListObject.html" title="class in org.apache.sysds.runtime.instructions.cp">ListObject</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">ListObject.</span><code><span class="memberNameLink"><a href="../../instructions/cp/ListObject.html#set(int,org.apache.sysds.runtime.instructions.cp.Data,org.apache.sysds.runtime.lineage.LineageItem)">set</a></span>&#8203;(int&nbsp;ix,
    <a href="../../instructions/cp/Data.html" title="class in org.apache.sysds.runtime.instructions.cp">Data</a>&nbsp;data,
    <a href="../LineageItem.html" title="class in org.apache.sysds.runtime.lineage">LineageItem</a>&nbsp;li)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code><a href="../../instructions/cp/Data.html" title="class in org.apache.sysds.runtime.instructions.cp">Data</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">ListObject.</span><code><span class="memberNameLink"><a href="../../instructions/cp/ListObject.html#set(java.lang.String,org.apache.sysds.runtime.instructions.cp.Data,org.apache.sysds.runtime.lineage.LineageItem)">set</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;name,
    <a href="../../instructions/cp/Data.html" title="class in org.apache.sysds.runtime.instructions.cp">Data</a>&nbsp;data,
@@ -721,7 +754,17 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>org.apache.commons.lang3.tuple.Pair&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>,&#8203;<a href="../LineageItem.html" title="class in org.apache.sysds.runtime.lineage">LineageItem</a>&gt;</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">CheckpointSPInstruction.</span><code><span class="memberNameLink"><a href="../../instructions/spark/CheckpointSPInstruction.html#getLineageItem(org.apache.sysds.runtime.controlprogram.context.ExecutionContext)">getLineageItem</a></span>&#8203;(<a href="../../controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>org.apache.commons.lang3.tuple.Pair&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>,&#8203;<a href="../LineageItem.html" title="class in org.apache.sysds.runtime.lineage">LineageItem</a>&gt;</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">ComputationSPInstruction.</span><code><span class="memberNameLink"><a href="../../instructions/spark/ComputationSPInstruction.html#getLineageItem(org.apache.sysds.runtime.controlprogram.context.ExecutionContext)">getLineageItem</a></span>&#8203;(<a href="../../controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>org.apache.commons.lang3.tuple.Pair&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>,&#8203;<a href="../LineageItem.html" title="class in org.apache.sysds.runtime.lineage">LineageItem</a>&gt;</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">MapmmChainSPInstruction.</span><code><span class="memberNameLink"><a href="../../instructions/spark/MapmmChainSPInstruction.html#getLineageItem(org.apache.sysds.runtime.controlprogram.context.ExecutionContext)">getLineageItem</a></span>&#8203;(<a href="../../controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
@@ -731,15 +774,20 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>org.apache.commons.lang3.tuple.Pair&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>,&#8203;<a href="../LineageItem.html" title="class in org.apache.sysds.runtime.lineage">LineageItem</a>&gt;</code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">RandSPInstruction.</span><code><span class="memberNameLink"><a href="../../instructions/spark/RandSPInstruction.html#getLineageItem(org.apache.sysds.runtime.controlprogram.context.ExecutionContext)">getLineageItem</a></span>&#8203;(<a href="../../controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec)</code></th>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ParameterizedBuiltinSPInstruction.</span><code><span class="memberNameLink"><a href="../../instructions/spark/ParameterizedBuiltinSPInstruction.html#getLineageItem(org.apache.sysds.runtime.controlprogram.context.ExecutionContext)">getLineageItem</a></span>&#8203;(<a href="../../controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code>org.apache.commons.lang3.tuple.Pair&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>,&#8203;<a href="../LineageItem.html" title="class in org.apache.sysds.runtime.lineage">LineageItem</a>&gt;</code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">ReblockSPInstruction.</span><code><span class="memberNameLink"><a href="../../instructions/spark/ReblockSPInstruction.html#getLineageItem(org.apache.sysds.runtime.controlprogram.context.ExecutionContext)">getLineageItem</a></span>&#8203;(<a href="../../controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec)</code></th>
+<th class="colSecond" scope="row"><span class="typeNameLabel">RandSPInstruction.</span><code><span class="memberNameLink"><a href="../../instructions/spark/RandSPInstruction.html#getLineageItem(org.apache.sysds.runtime.controlprogram.context.ExecutionContext)">getLineageItem</a></span>&#8203;(<a href="../../controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
+<td class="colFirst"><code>org.apache.commons.lang3.tuple.Pair&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>,&#8203;<a href="../LineageItem.html" title="class in org.apache.sysds.runtime.lineage">LineageItem</a>&gt;</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ReblockSPInstruction.</span><code><span class="memberNameLink"><a href="../../instructions/spark/ReblockSPInstruction.html#getLineageItem(org.apache.sysds.runtime.controlprogram.context.ExecutionContext)">getLineageItem</a></span>&#8203;(<a href="../../controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
 <td class="colFirst"><code>org.apache.commons.lang3.tuple.Pair&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>,&#8203;<a href="../LineageItem.html" title="class in org.apache.sysds.runtime.lineage">LineageItem</a>&gt;</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">WriteSPInstruction.</span><code><span class="memberNameLink"><a href="../../instructions/spark/WriteSPInstruction.html#getLineageItem(org.apache.sysds.runtime.controlprogram.context.ExecutionContext)">getLineageItem</a></span>&#8203;(<a href="../../controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec)</code></th>
 <td class="colLast">&nbsp;</td>

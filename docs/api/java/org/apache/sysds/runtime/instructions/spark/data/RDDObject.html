@@ -14,7 +14,7 @@
 <!--[if IE]>
 <script type="text/javascript" src="../../../../../../../jquery/jszip-utils/dist/jszip-utils-ie.min.js"></script>
 <![endif]-->
-<script type="text/javascript" src="../../../../../../../jquery/jquery-3.6.0.min.js"></script>
+<script type="text/javascript" src="../../../../../../../jquery/jquery-3.6.1.min.js"></script>
 <script type="text/javascript" src="../../../../../../../jquery/jquery-ui.min.js"></script>
 </head>
 <body>
@@ -27,7 +27,7 @@
     catch(err) {
     }
 //-->
-var data = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10,"i10":10,"i11":10,"i12":10,"i13":10};
+var data = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10,"i10":10,"i11":10,"i12":10,"i13":10,"i14":10,"i15":10,"i16":10};
 var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -195,63 +195,78 @@ extends <a href="LineageObject.html" title="class in org.apache.sysds.runtime.in
 </td>
 </tr>
 <tr id="i2" class="altColor">
+<td class="colFirst"><code><a href="../../../meta/DataCharacteristics.html" title="class in org.apache.sysds.runtime.meta">DataCharacteristics</a></code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getDataCharacteristics()">getDataCharacteristics</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i3" class="rowColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getHDFSFilename()">getHDFSFilename</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i3" class="rowColor">
+<tr id="i4" class="altColor">
 <td class="colFirst"><code>org.apache.spark.api.java.JavaPairRDD&lt;?,&#8203;?&gt;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getRDD()">getRDD</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i4" class="altColor">
+<tr id="i5" class="rowColor">
 <td class="colFirst"><code>boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#isCheckpointRDD()">isCheckpointRDD</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i5" class="rowColor">
+<tr id="i6" class="altColor">
 <td class="colFirst"><code>boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#isHDFSFile()">isHDFSFile</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i6" class="altColor">
+<tr id="i7" class="rowColor">
 <td class="colFirst"><code>boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#isParallelizedRDD()">isParallelizedRDD</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i7" class="rowColor">
+<tr id="i8" class="altColor">
 <td class="colFirst"><code>boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#isPending()">isPending</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i8" class="altColor">
+<tr id="i9" class="rowColor">
 <td class="colFirst"><code>boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#rHasCheckpointRDDChilds()">rHasCheckpointRDDChilds</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i9" class="rowColor">
+<tr id="i10" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#setCheckpointRDD(boolean)">setCheckpointRDD</a></span>&#8203;(boolean&nbsp;flag)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i10" class="altColor">
-<td class="colFirst"><code>void</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#setHDFSFile(boolean)">setHDFSFile</a></span>&#8203;(boolean&nbsp;flag)</code></th>
-<td class="colLast">&nbsp;</td>
-</tr>
 <tr id="i11" class="rowColor">
 <td class="colFirst"><code>void</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#setHDFSFilename(java.lang.String)">setHDFSFilename</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;fname)</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#setDataCharacteristics(org.apache.sysds.runtime.meta.DataCharacteristics)">setDataCharacteristics</a></span>&#8203;(<a href="../../../meta/DataCharacteristics.html" title="class in org.apache.sysds.runtime.meta">DataCharacteristics</a>&nbsp;dc)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i12" class="altColor">
 <td class="colFirst"><code>void</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#setParallelizedRDD(boolean)">setParallelizedRDD</a></span>&#8203;(boolean&nbsp;flag)</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#setHDFSFile(boolean)">setHDFSFile</a></span>&#8203;(boolean&nbsp;flag)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i13" class="rowColor">
 <td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#setHDFSFilename(java.lang.String)">setHDFSFilename</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;fname)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i14" class="altColor">
+<td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#setParallelizedRDD(boolean)">setParallelizedRDD</a></span>&#8203;(boolean&nbsp;flag)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i15" class="rowColor">
+<td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#setPending(boolean)">setPending</a></span>&#8203;(boolean&nbsp;flag)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i16" class="altColor">
+<td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#setRDD(org.apache.spark.api.java.JavaPairRDD)">setRDD</a></span>&#8203;(org.apache.spark.api.java.JavaPairRDD&lt;?,&#8203;?&gt;&nbsp;rddHandle)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 </table>
@@ -260,7 +275,7 @@ extends <a href="LineageObject.html" title="class in org.apache.sysds.runtime.in
 <!--   -->
 </a>
 <h3>Methods inherited from class&nbsp;org.apache.sysds.runtime.instructions.spark.data.<a href="LineageObject.html" title="class in org.apache.sysds.runtime.instructions.spark.data">LineageObject</a></h3>
-<code><a href="LineageObject.html#addLineageChild(org.apache.sysds.runtime.instructions.spark.data.LineageObject)">addLineageChild</a>, <a href="LineageObject.html#decrementNumReferences()">decrementNumReferences</a>, <a href="LineageObject.html#getLineageChilds()">getLineageChilds</a>, <a href="LineageObject.html#getNumReferences()">getNumReferences</a>, <a href="LineageObject.html#hasBackReference()">hasBackReference</a>, <a href="LineageObject.html#incrementNumReferences()">incrementNumReferences</a>, <a href="LineageObject.html#isInLineageCache()">isInLineageCache</a>, <a href="LineageObject.html#setBackReference(org.apache.sysds.runtime.controlprogram.caching.CacheableData)">setBackReference</a>, <a href="LineageObject.html#setLineageCached()">setLineageCached</a></code></li>
+<code><a href="LineageObject.html#addLineageChild(org.apache.sysds.runtime.instructions.spark.data.LineageObject)">addLineageChild</a>, <a href="LineageObject.html#decrementNumReferences()">decrementNumReferences</a>, <a href="LineageObject.html#getLineageChilds()">getLineageChilds</a>, <a href="LineageObject.html#getMaxReferenceCount()">getMaxReferenceCount</a>, <a href="LineageObject.html#getNumReferences()">getNumReferences</a>, <a href="LineageObject.html#hasBackReference()">hasBackReference</a>, <a href="LineageObject.html#incrementNumReferences()">incrementNumReferences</a>, <a href="LineageObject.html#isInLineageCache()">isInLineageCache</a>, <a href="LineageObject.html#removeAllChild()">removeAllChild</a>, <a href="LineageObject.html#setBackReference(org.apache.sysds.runtime.controlprogram.caching.CacheableData)">setBackReference</a>, <a href="LineageObject.html#setLineageCached()">setLineageCached</a></code></li>
 </ul>
 <ul class="blockList">
 <li class="blockList"><a id="methods.inherited.from.class.java.lang.Object">
@@ -311,6 +326,15 @@ extends <a href="LineageObject.html" title="class in org.apache.sysds.runtime.in
 <li class="blockList">
 <h4>getRDD</h4>
 <pre class="methodSignature">public&nbsp;org.apache.spark.api.java.JavaPairRDD&lt;?,&#8203;?&gt;&nbsp;getRDD()</pre>
+</li>
+</ul>
+<a id="setRDD(org.apache.spark.api.java.JavaPairRDD)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>setRDD</h4>
+<pre class="methodSignature">public&nbsp;void&nbsp;setRDD&#8203;(org.apache.spark.api.java.JavaPairRDD&lt;?,&#8203;?&gt;&nbsp;rddHandle)</pre>
 </li>
 </ul>
 <a id="setCheckpointRDD(boolean)">
@@ -401,6 +425,24 @@ extends <a href="LineageObject.html" title="class in org.apache.sysds.runtime.in
 <li class="blockList">
 <h4>isPending</h4>
 <pre class="methodSignature">public&nbsp;boolean&nbsp;isPending()</pre>
+</li>
+</ul>
+<a id="setDataCharacteristics(org.apache.sysds.runtime.meta.DataCharacteristics)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>setDataCharacteristics</h4>
+<pre class="methodSignature">public&nbsp;void&nbsp;setDataCharacteristics&#8203;(<a href="../../../meta/DataCharacteristics.html" title="class in org.apache.sysds.runtime.meta">DataCharacteristics</a>&nbsp;dc)</pre>
+</li>
+</ul>
+<a id="getDataCharacteristics()">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>getDataCharacteristics</h4>
+<pre class="methodSignature">public&nbsp;<a href="../../../meta/DataCharacteristics.html" title="class in org.apache.sysds.runtime.meta">DataCharacteristics</a>&nbsp;getDataCharacteristics()</pre>
 </li>
 </ul>
 <a id="allowsShortCircuitRead()">

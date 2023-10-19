@@ -14,7 +14,7 @@
 <!--[if IE]>
 <script type="text/javascript" src="../../../../../../../jquery/jszip-utils/dist/jszip-utils-ie.min.js"></script>
 <![endif]-->
-<script type="text/javascript" src="../../../../../../../jquery/jquery-3.6.0.min.js"></script>
+<script type="text/javascript" src="../../../../../../../jquery/jquery-3.6.1.min.js"></script>
 <script type="text/javascript" src="../../../../../../../jquery/jquery-ui.min.js"></script>
 </head>
 <body>
@@ -119,6 +119,10 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
+<th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.frame.data.compress">org.apache.sysds.runtime.frame.data.compress</a></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
 <th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.frame.data.lib">org.apache.sysds.runtime.frame.data.lib</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
@@ -210,6 +214,50 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </section>
 </li>
 <li class="blockList">
+<section><a id="org.apache.sysds.runtime.frame.data.compress">
+<!--   -->
+</a>
+<h3>Uses of <a href="../WTreeRoot.html" title="class in org.apache.sysds.runtime.compress.workload">WTreeRoot</a> in <a href="../../../frame/data/compress/package-summary.html">org.apache.sysds.runtime.frame.data.compress</a></h3>
+<table class="useSummary">
+<caption><span>Fields in <a href="../../../frame/data/compress/package-summary.html">org.apache.sysds.runtime.frame.data.compress</a> declared as <a href="../WTreeRoot.html" title="class in org.apache.sysds.runtime.compress.workload">WTreeRoot</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colSecond" scope="col">Field</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../WTreeRoot.html" title="class in org.apache.sysds.runtime.compress.workload">WTreeRoot</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">FrameCompressionSettings.</span><code><span class="memberNameLink"><a href="../../../frame/data/compress/FrameCompressionSettings.html#wt">wt</a></span></code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+</tbody>
+</table>
+<table class="useSummary">
+<caption><span>Methods in <a href="../../../frame/data/compress/package-summary.html">org.apache.sysds.runtime.frame.data.compress</a> with parameters of type <a href="../WTreeRoot.html" title="class in org.apache.sysds.runtime.compress.workload">WTreeRoot</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colSecond" scope="col">Method</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code>static <a href="../../../frame/data/FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">CompressedFrameBlockFactory.</span><code><span class="memberNameLink"><a href="../../../frame/data/compress/CompressedFrameBlockFactory.html#compress(org.apache.sysds.runtime.frame.data.FrameBlock,int,org.apache.sysds.runtime.compress.workload.WTreeRoot)">compress</a></span>&#8203;(<a href="../../../frame/data/FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;fb,
+        int&nbsp;k,
+        <a href="../WTreeRoot.html" title="class in org.apache.sysds.runtime.compress.workload">WTreeRoot</a>&nbsp;root)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../../../frame/data/compress/FrameCompressionSettingsBuilder.html" title="class in org.apache.sysds.runtime.frame.data.compress">FrameCompressionSettingsBuilder</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">FrameCompressionSettingsBuilder.</span><code><span class="memberNameLink"><a href="../../../frame/data/compress/FrameCompressionSettingsBuilder.html#wTreeRoot(org.apache.sysds.runtime.compress.workload.WTreeRoot)">wTreeRoot</a></span>&#8203;(<a href="../WTreeRoot.html" title="class in org.apache.sysds.runtime.compress.workload">WTreeRoot</a>&nbsp;wt)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+</tbody>
+</table>
+</section>
+</li>
+<li class="blockList">
 <section><a id="org.apache.sysds.runtime.frame.data.lib">
 <!--   -->
 </a>
@@ -223,7 +271,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tbody>
 <tr class="altColor">
-<td class="colFirst"><code>static org.apache.commons.lang3.tuple.Pair&lt;<a href="../../../frame/data/FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>,&#8203;<a href="../../../frame/data/compress/FrameCompressionStatistics.html" title="class in org.apache.sysds.runtime.frame.data.compress">FrameCompressionStatistics</a>&gt;</code></td>
+<td class="colFirst"><code>static <a href="../../../frame/data/FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">FrameLibCompress.</span><code><span class="memberNameLink"><a href="../../../frame/data/lib/FrameLibCompress.html#compress(org.apache.sysds.runtime.frame.data.FrameBlock,int,org.apache.sysds.runtime.compress.workload.WTreeRoot)">compress</a></span>&#8203;(<a href="../../../frame/data/FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;in,
         int&nbsp;k,
         <a href="../WTreeRoot.html" title="class in org.apache.sysds.runtime.compress.workload">WTreeRoot</a>&nbsp;root)</code></th>

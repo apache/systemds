@@ -2253,9 +2253,7 @@ public class DMLTranslator
 				}
 
 				// Create the hop for current function call
-				FunctionOp fcall = new FunctionOp(ftype, nameSpace, source.getOpCode().toString(), null, inputs, outputNames, outputs);
-				currBuiltinOp = fcall;
-
+				currBuiltinOp = new FunctionOp(ftype, nameSpace, source.getOpCode().toString(), null, inputs, outputNames, outputs);
 				break;
 			case COMPRESS:
 				// Number of outputs = size of targetList = #of identifiers in source.getOutputs
@@ -2267,7 +2265,6 @@ public class DMLTranslator
 
 				// Create the hop for current function call
 				currBuiltinOp = new FunctionOp(ftype, nameSpace, source.getOpCode().toString(), null, inputs, outputNamesCompress, outputs);
-
 				break;
 			default:
 				throw new ParseException("Invaid Opcode in DMLTranslator:processMultipleReturnBuiltinFunctionExpression(): " + source.getOpCode());

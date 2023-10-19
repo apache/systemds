@@ -431,9 +431,9 @@ public class BuiltinFunctionExpression extends DataIdentifier {
 				metaOutput.setDataType(DataType.FRAME);
 				metaOutput.setDimensions(compressInput1.getDim1(), -1);
 			}
-		else
-			raiseValidateError("Compress/DeCompress instruction not allowed in dml script");
-		break;
+			else
+				raiseValidateError("Compress/DeCompress instruction not allowed in dml script");
+			break;
 
 		default: //always unconditional
 			raiseValidateError("Unknown Builtin Function opcode: " + _opcode, false);
@@ -1737,7 +1737,7 @@ public class BuiltinFunctionExpression extends DataIdentifier {
 		output.setDimensions(Math.max(dims1.getRows(), dims2.getRows()), Math.max(dims1.getCols(), dims2.getCols()));
 		output.setBlocksize(Math.max(dims1.getBlocksize(), dims2.getBlocksize()));
 	}
-	
+
 	private void setNaryOutputProperties(DataIdentifier output) {
 		DataType dt = Arrays.stream(getAllExpr()).allMatch(
 			e -> e.getOutput().getDataType().isScalar()) ? DataType.SCALAR : DataType.MATRIX;

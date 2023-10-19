@@ -34,5 +34,5 @@
 m_dist = function(Matrix[Double] X) return (Matrix[Double] Y) {
   G = X %*% t(X);
   Y = sqrt(-2 * G + outer(diag(G), t(diag(G)), "+"));
-  Y = replace(target = Y, pattern=0/0, replacement = 0);
+  Y = replace(target = Y, pattern=NaN, replacement = 0);
 }

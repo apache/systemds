@@ -19,6 +19,8 @@
 
 package org.apache.sysds.test.functions.federated.algorithms;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
@@ -34,6 +36,8 @@ import org.junit.Test;
 
 @net.jcip.annotations.NotThreadSafe
 public class FederatedLmPipeline extends AutomatedTestBase {
+
+	protected static final Log LOG = LogFactory.getLog(FederatedLmPipeline.class.getName());
 
 	private final static String TEST_DIR = "functions/federated/";
 	private final static String TEST_NAME1 = "FederatedLmPipeline";
@@ -121,7 +125,7 @@ public class FederatedLmPipeline extends AutomatedTestBase {
 
 			// Run actual dml script with federated matrix
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[] {"-stats", "-nvargs", "in_X1=" + TestUtils.federatedAddress(port1, input("X1")),
+			programArgs = new String[] {"-stats", "100", "-nvargs", "in_X1=" + TestUtils.federatedAddress(port1, input("X1")),
 				"in_X2=" + TestUtils.federatedAddress(port2, input("X2")),
 				"in_X3=" + TestUtils.federatedAddress(port3, input("X3")),
 				"in_X4=" + TestUtils.federatedAddress(port4, input("X4")), "rows=" + rows, "cols=" + (cols + 1),
@@ -132,9 +136,10 @@ public class FederatedLmPipeline extends AutomatedTestBase {
 			compareResults(1e-2);
 			TestUtils.shutdownThreads(t1, t2, t3, t4);
 			
+			
 			// check correct federated operations
 			Assert.assertTrue(Statistics.getCPHeavyHitterCount("fed_mmchain")>10);
-			Assert.assertTrue(Statistics.getCPHeavyHitterCount("fed_ba+*")==3);
+			Assert.assertTrue(Statistics.getCPHeavyHitterCount("fed_ba+*") == 2);
 		}
 		finally {
 			resetExecMode(oldExec);

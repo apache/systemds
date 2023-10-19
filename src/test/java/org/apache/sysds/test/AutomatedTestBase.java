@@ -1568,9 +1568,7 @@ public abstract class AutomatedTestBase {
 	 * @throws IOException if an IOException occurs in the hadoop GenericOptionsParser
 	 */
 	public static void main(String[] args) throws IOException, ParseException, DMLScriptException {
-		Configuration conf = new Configuration(ConfigurationManager.getCachedJobConf());
-		String[] otherArgs = new GenericOptionsParser(conf, args).getRemainingArgs();
-		DMLScript.executeScript(conf, otherArgs);
+		DMLScript.executeScript(args);
 	}
 
 	private void addProgramIndependentArguments(ArrayList<String> args, String[] otherArgs) {

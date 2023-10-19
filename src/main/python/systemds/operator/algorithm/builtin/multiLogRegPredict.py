@@ -31,7 +31,6 @@ from systemds.utils.consts import VALID_INPUT_TYPES
 
 def multiLogRegPredict(X: Matrix,
                        B: Matrix,
-                       Y: Matrix,
                        **kwargs: Dict[str, VALID_INPUT_TYPES]):
     """
      THIS SCRIPT APPLIES THE ESTIMATED PARAMETERS OF MULTINOMIAL LOGISTIC REGRESSION TO A NEW (TEST) DATASET
@@ -48,7 +47,7 @@ def multiLogRegPredict(X: Matrix,
     :return: scalar value of accuracy
     """
 
-    params_dict = {'X': X, 'B': B, 'Y': Y}
+    params_dict = {'X': X, 'B': B}
     params_dict.update(kwargs)
     
     vX_0 = Matrix(X.sds_context, '')

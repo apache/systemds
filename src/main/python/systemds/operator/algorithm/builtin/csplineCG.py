@@ -42,7 +42,7 @@ def csplineCG(X: Matrix,
         monotonically increasing and there is no duplicates points in X
     :param Y: 1-column matrix of corresponding y values knots
     :param inp_x: the given input x, for which the cspline will find predicted y.
-    :param tol: Tolerance (epsilon); conjugate graduent procedure terminates early if
+    :param tol: Tolerance (epsilon); conjugate gradient procedure terminates early if
         L2 norm of the beta-residual is less than tolerance * its initial norm
     :param maxi: Maximum number of conjugate gradient iterations, 0 = no maximum
     :return: Predicted value

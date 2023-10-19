@@ -218,7 +218,6 @@ public class DMLScript
 	 * Single entry point for all public invocation alternatives (e.g.,
 	 * main, executeScript, JaqlUdf etc)
 	 * 
-	 * @param conf Hadoop configuration
 	 * @param args arguments
 	 * @return true if success, false otherwise
 	 * @throws IOException If an internal IOException happens.

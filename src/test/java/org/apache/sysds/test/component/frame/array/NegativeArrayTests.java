@@ -40,6 +40,7 @@ import org.apache.sysds.runtime.frame.data.columns.FloatArray;
 import org.apache.sysds.runtime.frame.data.columns.IntegerArray;
 import org.apache.sysds.runtime.frame.data.columns.LongArray;
 import org.apache.sysds.runtime.frame.data.columns.OptionalArray;
+import org.apache.sysds.runtime.frame.data.columns.RaggedArray;
 import org.apache.sysds.runtime.frame.data.columns.StringArray;
 import org.junit.Test;
 import org.mockito.Mockito;
@@ -207,9 +208,19 @@ public class NegativeArrayTests {
 	}
 
 	@Test(expected = DMLRuntimeException.class)
-	public void readFields() {
+	public void readFieldsOpt() {
 		try {
 			new OptionalArray<>(new Integer[1]).readFields(null);
+		}
+		catch(IOException e) {
+			fail("not correct exception");
+		}
+	}
+
+	@Test(expected = DMLRuntimeException.class)
+	public void readFieldsRagged() {
+		try {
+			new RaggedArray<>(ArrayFactory.create(new Integer[]{1,2,3}),10).readFields(null);
 		}
 		catch(IOException e) {
 			fail("not correct exception");

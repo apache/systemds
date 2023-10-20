@@ -161,10 +161,6 @@ public interface ArrayFactory {
 		}
 	}
 
-	public static <T> DDCArray<T> allocateDDC(DDCArray<T> start, int nRow) {
-		return start.allocateLarger(nRow);
-	}
-
 	public static ABooleanArray allocateBoolean(int nRow) {
 		if(nRow > bitSetSwitchPoint)
 			return new BitSetArray(nRow);

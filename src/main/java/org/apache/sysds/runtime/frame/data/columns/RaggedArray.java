@@ -76,14 +76,11 @@ public class RaggedArray<T> extends Array<T> {
 	}
 
 	@Override
-	@SuppressWarnings("unchecked")
 	public void readFields(DataInput in) throws IOException {
-		_size = in.readInt();
-		_a = (Array<T>) ArrayFactory.read(in, in.readInt());
+		throw new DMLRuntimeException("Should not be called");
 	}
 
 	protected static RaggedArray<?> readRagged(DataInput in, int nRow) throws IOException {
-
 		int m = in.readInt();
 		final Array<?> a = ArrayFactory.read(in, in.readInt());
 		return new RaggedArray<>(a, m);

@@ -40,7 +40,6 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
-import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.runtime.frame.data.columns.Array;
 import org.apache.sysds.runtime.frame.data.columns.ArrayFactory;
@@ -1869,7 +1868,8 @@ public class FrameArrayTests {
 			DataOutputStream fos = new DataOutputStream(bos);
 			g.write(fos);
 			DataInputStream fis = new DataInputStream(new ByteArrayInputStream(bos.toByteArray()));
-			return ArrayFactory.read(fis, nRow);
+			Array<?>  gr = ArrayFactory.read(fis, nRow);
+			return gr;
 		}
 		catch(Exception e) {
 			e.printStackTrace();

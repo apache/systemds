@@ -352,7 +352,8 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 				throw new DMLRuntimeException("Invalid number of operands in write instruction: " + str);
 		}
 		else if(voc == VariableOperationCode.CastAsFrameVariable){
-			InstructionUtils.checkNumFields(parts,4,5);
+			// LOG.error(parts);
+			InstructionUtils.checkNumFields(parts, 3, 4, 5);
 		}
 		else {
 			try{

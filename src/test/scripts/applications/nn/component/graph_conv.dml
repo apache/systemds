@@ -1,0 +1,859 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+/*
+ * Graph Convolutional Layer Test
+ *
+ * Use of known data (computed by PyTorch's GCL) compared to our GCL in scripts/nn/layers/graph_conv.dml
+ */
+
+source("scripts/nn/layers/graph_conv.dml") as graph_conv
+source("src/test/scripts/applications/nn/util.dml") as test_util
+
+graph_conv_forward_test = function() {
+    print("\nTesting the graph convolutional layer forward pass.")
+    fault_tolerance = 0.0001
+    print(" - Testing for correct computation against PyTorch's GCL computation.")
+
+
+    print(" - Test case 1, simple, all positive, no edge weights")
+    # generate data
+    # -- node feature matrix
+    #  1  2
+    #  3  4
+    #  5  6
+    #  7  8
+    # -- edge index list
+    #  1  2
+    #  1  4
+    #  1  3
+    #  2  3
+    # -- weight
+    #  1  2
+    #  3  4
+    # -- bias
+    #  0  0
+    # -- edge weight
+    # all 1 (equivalent to non-existent weights)
+    n = 4
+    f_in = 2
+    f_out = 2
+    m = 4
+    X = matrix(seq(1,8,1), rows=n, cols=f_in)
+    W = matrix(seq(1,4,1), rows=f_in, cols=f_out)
+    edge_index = matrix("0 1 0 3 0 2 1 2", rows=m, cols=2) + 1
+    edge_weight = matrix(1, rows=m, cols=1)
+    b = matrix(0, rows=1, cols=f_out)
+    add_self_loops = TRUE
+
+    # equivalency check with small tolerance
+    # -- expected (computed by PyTorch GCNConv)
+    #  7.0000 10.0000
+    # 12.4497 18.0711
+    # 17.8318 26.0883
+    # 20.4497 30.0711
+    actual = graph_conv::forward(X, edge_index, edge_weight, W, b, add_self_loops)
+    expected = matrix("7.0000 10.0000 12.4497 18.0711 17.8318 26.0883 20.4497 30.0711", n, f_out)
+    tmp = test_util::check_all_close(actual, expected, fault_tolerance)
+
+
+    print(" - Test case 2, simple, positive and negative, no edge weights")
+    # generate data
+    # -- node feature matrix
+    #  -1  2
+    #  3  -4
+    #  5  -6
+    #  -7  8
+    # -- edge index list
+    #  1  2
+    #  1  4
+    #  1  3
+    #  2  3
+    # -- weight
+    #  -1  2 10
+    #  3  -4 -1.234
+    # -- bias
+    #  0  0  0
+    # -- edge weight
+    # all 1 (equivalent to non-existent weights)
+    n = 4
+    f_in = 2
+    f_out = 3
+    m = 4
+    X = matrix("-1 2 3 -4 5 -6 -7 8", rows=n, cols=f_in)
+    W = matrix("-1 2 10 3 -4 -1.234", rows=f_in, cols=f_out)
+    edge_index = matrix("0 1 0 3 0 2 1 2", rows=m, cols=2) + 1
+    edge_weight = matrix(1, rows=m, cols=1)
+    b = matrix(0, rows=1, cols=f_out)
+    add_self_loops = TRUE
+
+    # equivalency check with small tolerance
+    # -- expected (computed by PyTorch GCNConv)
+    #   7.0000 -10.0000 -12.4680
+    #  -2.5503   3.9289   8.6518
+    #  -9.7489  14.5413  26.1988
+    #  20.4497 -30.0711 -48.7522
+    actual = graph_conv::forward(X, edge_index, edge_weight, W, b, add_self_loops)
+    expected = matrix("7.0000 -10.0000 -12.4680 -2.5503 3.9289 8.6518 -9.7489 14.5413 26.1988 20.4497 -30.0711 -48.7522", n, f_out)
+    tmp = test_util::check_all_close(actual, expected, fault_tolerance)
+
+
+    print(" - Test case 3, simple, positive and negative, with edge weights")
+    # generate data
+    # -- node feature matrix
+    #  -1  2
+    #  3  -4
+    #  5  -6
+    #  -7  8
+    # -- edge index list
+    #  1  2
+    #  1  4
+    #  1  3
+    #  2  3
+    # -- weight
+    #  -1  2 10
+    #  3  -4 -1.234
+    # -- bias
+    #  0  0  0
+    # -- edge weight
+    #  -10
+    #  3
+    #  1
+    #  -0.5
+    n = 4
+    f_in = 2
+    f_out = 3
+    m = 4
+    X = matrix("-1 2 3 -4 5 -6 -7 8", rows=n, cols=f_in)
+    W = matrix("-1 2 10 3 -4 -1.234", rows=f_in, cols=f_out)
+    edge_index = matrix("0 1 0 3 0 2 1 2", rows=m, cols=2) + 1
+    edge_weight = matrix("10.87 3 1 0.5", rows=m, cols=1)
+    b = matrix(0, rows=1, cols=f_out)
+    add_self_loops = TRUE
+
+    # equivalency check with small tolerance
+    # -- expected (computed by PyTorch GCNConv)
+    #   7.0000 -10.0000 -12.4680
+    #  20.8216 -29.6969 -36.3938
+    #  -6.1496   9.2947  18.2828
+    #  18.2500 -26.5000 -38.6700
+    actual = graph_conv::forward(X, edge_index, edge_weight, W, b, add_self_loops)
+    expected = matrix("  7.0000 -10.0000 -12.4680
+                        20.8216 -29.6969 -36.3938
+                        -6.1496   9.2947  18.2828
+                        18.2500 -26.5000 -38.6700", n, f_out)
+    tmp = test_util::check_all_close(actual, expected, fault_tolerance)
+
+
+    print(" - Test case 4.1, complex, randomized, with edge weights")
+    # generate data
+    # -- node feature matrix
+    # -0.03954168 -0.22821576  0.27983887  2.21056067
+    # -1.36763513  1.23573507  1.1419249  -0.34686732
+    # -0.01944286 -1.12778275 -0.11071066 -1.31029783
+    #  0.8665017   0.67740232 -0.45390609  0.50610146
+    # -1.12311188  0.48518135  0.80092033 -2.24611927
+    # -1.72630097 -1.31222509 -0.61888139  1.19511162
+    # -- edge index list
+    #  1 2
+    #  1 4
+    #  1 3
+    #  2 3
+    #  6 2
+    #  6 4
+    #  3 4
+    #  5 2
+    #  5 1
+    # -- weight
+    #  0.18297052 -0.06518507
+    #  0.17786455  0.20246875
+    #  0.34297037  0.68905926
+    # -0.15226507 -0.63840294
+    # -- bias
+    #  0  0
+    # -- edge weight
+    #  0.13947451
+    #  1.1164839
+    #  0.22261914
+    #  0.42733778
+    #  0.85356737
+    #  0.26186836
+    #  0.75082226
+    #  0.0038631
+    #  1.25638069
+    n = 6
+    f_in = 4
+    f_out = 2
+    m = 9
+    X = matrix("-0.03954168 -0.22821576  0.27983887  2.21056067
+                -1.36763513  1.23573507  1.1419249  -0.34686732
+                -0.01944286 -1.12778275 -0.11071066 -1.31029783
+                 0.8665017   0.67740232 -0.45390609  0.50610146
+                -1.12311188  0.48518135  0.80092033 -2.24611927
+                -1.72630097 -1.31222509 -0.61888139  1.19511162", rows=n, cols=f_in)
+    W = matrix(" 0.18297052 -0.06518507
+                 0.17786455  0.20246875
+                 0.34297037  0.68905926
+                -0.15226507 -0.63840294", rows=f_in, cols=f_out)
+    edge_index = matrix("0 1
+                         0 3
+                         0 2
+                         1 2
+                         5 1
+                         5 3
+                         2 3
+                         4 1
+                         4 0", rows=m, cols=2) + 1
+    edge_weight = matrix("0.13947451 1.1164839  0.22261914 0.42733778 0.85356737 0.26186836
+                          0.75082226 0.0038631  1.25638069", rows=m, cols=1)
+    b = matrix(0, rows=1, cols=f_out)
+    add_self_loops = TRUE
+
+    # equivalency check with small tolerance
+    # -- expected (computed by PyTorch GCNConv)
+    #  0.28827446  1.24501541
+    # -0.3801607  -0.21311138
+    #  0.03836799  0.49478427
+    # -0.26015258 -0.73028174
+    #  0.49749765  2.1572549
+    # -0.94349226 -1.34256425
+    actual = graph_conv::forward(X, edge_index, edge_weight, W, b, add_self_loops)
+    expected = matrix(" 0.28827446  1.24501541
+                       -0.3801607  -0.21311138
+                        0.03836799  0.49478427
+                       -0.26015258 -0.73028174
+                        0.49749765  2.1572549
+                       -0.94349226 -1.34256425", n, f_out)
+    tmp = test_util::check_all_close(actual, expected, fault_tolerance)
+
+
+    print(" - Test case 4.2, complex, randomized, with edge weights")
+    # generate data
+    # -- node feature matrix
+    # -1.11965375  0.6384355   1.10370885 -1.88936158
+    #  1.41055783  2.23371974  0.13818495  1.31366391
+    # -2.18102752  0.85058019 -0.85587945 -0.28112614
+    # -0.71075088  1.05491938  0.5400372   1.94870617
+    # -1.89519107 -1.51003672  0.03173285  1.4270867
+    #  0.25401879  0.25976044 -1.64005195  1.013302
+    # -- edge index list
+    #  1 2
+    #  1 4
+    #  1 3
+    #  2 3
+    #  6 6
+    #  6 2
+    #  6 4
+    #  3 4
+    #  4 4
+    #  5 2
+    #  5 1
+    # -- weight
+    #  0.02233565 -0.43570209
+    # -0.82555938 -0.20292008
+    # -0.11076403  0.98257113
+    # -0.05080259 -0.35279739
+    # -- bias
+    #  0  0
+    # -- edge weight
+    #  0.09340571
+    #  0.09981632
+    #  1.75615305
+    #  0.06257434
+    #  0.03938409
+    #  0.21530813
+    #  0.9066956
+    #  0.99889965
+    #  1.01805759
+    n = 6
+    f_in = 4
+    f_out = 2
+    m = 9
+    X = matrix("-1.11965375  0.6384355   1.10370885 -1.88936158
+                 1.41055783  2.23371974  0.13818495  1.31366391
+                -2.18102752  0.85058019 -0.85587945 -0.28112614
+                -0.71075088  1.05491938  0.5400372   1.94870617
+                -1.89519107 -1.51003672  0.03173285  1.4270867
+                 0.25401879  0.25976044 -1.64005195  1.013302  ", rows=n, cols=f_in)
+    W = matrix(" 0.02233565 -0.43570209
+                -0.82555938 -0.20292008
+                -0.11076403  0.98257113
+                -0.05080259 -0.35279739", rows=f_in, cols=f_out)
+    edge_index = matrix("0 1
+                         0 3
+                         0 2
+                         1 2
+                         5 1
+                         5 3
+                         2 3
+                         4 1
+                         4 0", rows=m, cols=2) + 1
+    edge_weight = matrix("0.09340571 0.09981632 1.75615305 0.06257434 0.03938409 0.21530813
+                          0.9066956  0.99889965 1.01805759", rows=m, cols=1)
+    b = matrix(0, rows=1, cols=f_out)
+    add_self_loops = TRUE
+
+    # equivalency check with small tolerance
+    # -- expected (computed by PyTorch GCNConv)
+    #  0.52199588  1.51811109
+    # -0.14501872 -0.16573294
+    # -0.7019156   1.53025273
+    # -0.74175941 -0.22314518
+    #  1.1282801   0.65986279
+    # -0.0785936  -2.13234512
+    actual = graph_conv::forward(X, edge_index, edge_weight, W, b, add_self_loops)
+    expected = matrix(" 0.52199588  1.51811109
+                       -0.14501872 -0.16573294
+                       -0.7019156   1.53025273
+                       -0.74175941 -0.22314518
+                        1.1282801   0.65986279
+                       -0.0785936  -2.13234512", n, f_out)
+    tmp = test_util::check_all_close(actual, expected, fault_tolerance)
+
+
+    print(" - Test case 4.3, complex, randomized, with edge weights")
+    # generate data
+    # -- node feature matrix
+    #  0.57407212  0.90497359 -1.24689056  0.18823932
+    # -1.54816311 -0.14678333  0.13934479 -0.21986209
+    #  1.72320647  0.86560702 -0.8200279  -1.07818455
+    #  1.32233361  0.30939536  1.24902857 -1.02692902
+    # -0.82592399  0.04382081  1.33889891  0.38821791
+    #  0.93065843  0.01446163 -0.77914837  0.37111681
+    # -- edge index list
+    #  1 2
+    #  1 4
+    #  1 3
+    #  2 3
+    #  6 6
+    #  6 2
+    #  6 4
+    #  3 4
+    #  4 4
+    #  5 2
+    #  5 1
+    # -- weight
+    #  0.47218204  0.35592949
+    #  0.68835163 -0.73972976
+    # -0.81141329 -0.5160017
+    # -0.97983336  0.79306936
+    # -- bias
+    #  0  0
+    # -- edge weight
+    #  0.80212742
+    #  0.1469252
+    #  1.45562842
+    #  2.19595012
+    #  1.66512389
+    #  0.38515703
+    #  0.48477879
+    #  0.33464465
+    #  0.93414134
+    n = 6
+    f_in = 4
+    f_out = 2
+    m = 9
+    X = matrix(" 0.57407212  0.90497359 -1.24689056  0.18823932
+                -1.54816311 -0.14678333  0.13934479 -0.21986209
+                 1.72320647  0.86560702 -0.8200279  -1.07818455
+                 1.32233361  0.30939536  1.24902857 -1.02692902
+                -0.82592399  0.04382081  1.33889891  0.38821791
+                 0.93065843  0.01446163 -0.77914837  0.37111681", rows=n, cols=f_in)
+    W = matrix(" 0.47218204  0.35592949
+                 0.68835163 -0.73972976
+                -0.81141329 -0.5160017
+                -0.97983336  0.79306936", rows=f_in, cols=f_out)
+    edge_index = matrix("0 1
+                         0 3
+                         0 2
+                         1 2
+                         5 1
+                         5 3
+                         2 3
+                         4 1
+                         4 0", rows=m, cols=2) + 1
+    edge_weight = matrix("0.80212742 0.1469252  1.45562842 2.19595012 1.66512389 0.38515703
+                          0.48477879 0.33464465 0.93414134", rows=m, cols=1)
+    b = matrix(0, rows=1, cols=f_out)
+    add_self_loops = TRUE
+
+    # equivalency check with small tolerance
+    # -- expected (computed by PyTorch GCNConv)
+    # -0.33695635 -0.30711477
+    #  0.61687423  0.66241902
+    #  1.12748673 -0.29932581
+    #  1.22994876 -0.37595291
+    # -1.82661158 -0.70937666
+    #  0.71797359  1.01691434
+    actual = graph_conv::forward(X, edge_index, edge_weight, W, b, add_self_loops)
+    expected = matrix("-0.33695635 -0.30711477
+                        0.61687423  0.66241902
+                        1.12748673 -0.29932581
+                        1.22994876 -0.37595291
+                       -1.82661158 -0.70937666
+                        0.71797359  1.01691434", n, f_out)
+    tmp = test_util::check_all_close(actual, expected, fault_tolerance)
+
+
+    print(" - Test case 5, complex, randomized, with edge weights, redundant self loops")
+    # generate data
+    n = 6
+    f_in = 4
+    f_out = 2
+    m = 11
+    X = matrix(" 0.95273581  0.5009128   1.04785229 -1.93263696
+                 0.14215824  0.44964665 -0.45037787 -0.84738932
+                -0.52412639 -0.33767097 -0.22465829  1.72382309
+                 1.30855001 -1.5831204   0.60606214 -1.10170201
+                 2.14615478 -0.88606802  0.49069127 -0.79382157
+                -1.70598706 -1.28156067 -2.11223594  0.33496785", rows=n, cols=f_in)
+    W = matrix("-0.18838739 -0.24912977
+                -0.74525225 -0.61697853
+                -0.33937538 -0.52324998
+                -0.50741041 -0.7869519 ", rows=f_in, cols=f_out)
+    edge_index = matrix("0 1
+                         0 3
+                         0 2
+                         1 2
+                         5 1
+                         5 3
+                         2 3
+                         4 1
+                         4 0
+                         4 4
+                         5 5", rows=m, cols=2) + 1
+    edge_weight = matrix("1.22683366 0.14002252 0.95005304 1.31155639 0.80839848 0.50590195
+                          1.36286172 0.90786318 1.48923355 0.21145087 1.65817295", rows=m, cols=1)
+    b = matrix(0, rows=1, cols=f_out)
+    add_self_loops = TRUE
+
+    # equivalency check with small tolerance
+    # -- expected (computed by PyTorch GCNConv)
+    actual = graph_conv::forward(X, edge_index, edge_weight, W, b, add_self_loops)
+    expected = matrix(" 1.03956363  0.95115748
+                        1.15023978  1.34464089
+                       -0.0324839   0.08179444
+                        0.64937443  0.49522505
+                        0.49230047  0.37995908
+                        1.82334712  2.05733141", n, f_out)
+    tmp = test_util::check_all_close(actual, expected, fault_tolerance)
+
+
+    print(" - Test case 6, complex, randomized, with edge weights, no add_self_loops")
+    # generate data
+    n = 7
+    f_in = 4
+    f_out = 5
+    m = 10
+    X = matrix("-1.18489365  0.2018881  -0.841532    0.60387346
+                 0.20675842  1.18982853 -0.54945254  2.41000789
+                 0.31259693  0.90364149  1.37086591 -0.22503709
+                -0.57951385 -1.15076861 -1.74784589 -1.32481771
+                -0.52709299 -0.16953025  1.3026696  -1.21757724
+                -0.50982519 -0.70737768 -0.17291481 -0.79377934
+                -0.89697592  0.04812539  1.22730751  0.07827407", rows=n, cols=f_in)
+    W = matrix("-0.24128091 -0.1566093   0.44746041  0.02265137  0.01867998
+                 0.01705134 -0.56958044  0.45929813 -0.09559864 -0.32619256
+                -0.2658481  -0.33731538 -0.53228784  0.12122959  0.32720745
+                -0.63622892  0.81031013  0.35863292 -0.25903463 -0.40159231", rows=f_in, cols=f_out)
+    edge_index = matrix("0 2
+                         0 4
+                         0 3
+                         1 5
+                         5 0
+                         5 4
+                         2 3
+                         4 5
+                         4 0
+                         6 1", rows=m, cols=2) + 1
+    edge_weight = matrix("0.93991589 0.35278312 1.22167942 1.53717352 0.65984781 0.8411225
+                          0.02089666 0.11146909 0.04891973 0.22551725", rows=m, cols=1)
+    b = matrix(0, rows=1, cols=f_out)
+    add_self_loops = FALSE
+
+    # equivalency check with small tolerance
+    # -- expected (computed by PyTorch GCNConv)
+    actual = graph_conv::forward(X, edge_index, edge_weight, W, b, add_self_loops)
+    expected = matrix(" 0.43345251 -0.12865227 -0.53194472  0.17234425  0.34617386
+                        0.          0.          0.          0.          0.
+                        0.14838356  0.97165409  0.26145378 -0.35074979 -0.69768766
+                        0.16230124  1.07503998  0.29062025 -0.39369787 -0.78386662
+                        0.44627083  0.26235693 -0.35997395  0.02751607  0.05747332
+                       -3.52793164  3.50116741  4.41241103 -1.9787095  -3.78550625
+                        0.          0.          0.          0.          0.        ", n, f_out)
+    tmp = test_util::check_all_close(actual, expected, fault_tolerance)
+}
+
+
+graph_conv_backward_test = function() {
+    print("\nTesting the graph convolutional layer backward pass.")
+    print("With computation of the derivative of the loss w.r.t. X, w.r.t. W, w.r.t. b.")
+    fault_tolerance = 0.0001
+    print(" - Testing for correct computation against PyTorch's GCL computation.")
+
+    print(" - Test case 1, simple, all positive, no edge weights")
+    # generate data
+    # -- node feature matrix
+    #  1  2
+    #  3  4
+    #  5  6
+    #  7  8
+    # -- edge index list
+    #  0  1
+    #  0  3
+    #  3  2
+    #  1  2
+    # -- weight
+    #  1  0  1
+    #  3  4  7
+    # -- bias
+    #  0  0  0
+    # -- edge weight
+    # all 1 (equivalent to non-existent weights)
+    # -- dOut (computed by PyTorch GCNConv)
+    #  1.        1.        2.
+    #  1.4082912 1.442809  3.3511004
+    #  3.2410145 3.2659862 7.507
+    #  1.7416246 1.7761421 5.0177665
+
+    n = 4
+    f_in = 2
+    f_out = 3
+    m = 4
+    X = matrix(seq(1,8,1), rows=n, cols=f_in)
+    W = matrix("1. 0. 1.
+                3. 4. 7.", rows=f_in, cols=f_out)
+    edge_index = matrix("0 1
+                         0 3
+                         3 2
+                         1 2", rows=m, cols=2) + 1
+    edge_weight = matrix(1, rows=m, cols=1)
+    b = matrix(0, rows=1, cols=f_out)
+    add_self_loops = TRUE
+    dOut = matrix(" 1.        1.        2.
+                    1.4082912 1.442809  3.3511004
+                    3.2410145 3.2659862 7.507
+                    1.7416246 1.7761421 5.0177665", rows=n, cols=f_out)
+
+    # equivalency check with small tolerance
+    # all computed by PyTorh GCNConv
+    expected_db = matrix(" 7.39093    7.4849377 17.875868", rows=1, cols=f_out)
+    expected_dW = matrix(" 30.068527 30.433495 73.665375
+                           38.597427 39.07444  94.39926 ", rows=f_in, cols=f_out)
+    expected_dX = matrix("11.14501   78.21033
+                           6.767554  47.48269
+                           3.5826712 25.111996
+                           7.7675533 54.48269  ", rows=n, cols=f_in)
+    [actual_dX, actual_dW, actual_db] = graph_conv::backward(dOut, X, edge_index, edge_weight, W, b, add_self_loops)
+    tmp = test_util::check_all_close(actual_dX, expected_dX, fault_tolerance)
+    tmp = test_util::check_all_close(actual_dW, expected_dW, fault_tolerance)
+    tmp = test_util::check_all_close(actual_db, expected_db, fault_tolerance)
+
+
+    print(" - Test case 2, simple, positive and negative, no edge weights")
+    # generate data
+    # -- node feature matrix
+    #  1  2
+    #  3  4
+    #  5  6
+    #  7  8
+    # -- edge index list
+    #  0  1
+    #  0  3
+    #  3  2
+    #  1  2
+    # -- weight
+    # -1  0  1
+    #  3 -4 -7
+    # -- bias
+    #  0  0  0
+    # -- edge weight
+    # all 1 (equivalent to non-existent weights)
+    # -- dOut (computed by PyTorch GCNConv)
+    #  1.        -1.6666667 -2.6666667
+    #  0.672589  -1.442809  -4.615398
+    #  3.6579647 -5.932653  -8.590618
+    #  0.3392555 -5.442809  -7.615398
+
+    n = 4
+    f_in = 2
+    f_out = 3
+    m = 4
+    X = matrix(seq(1,8,1), rows=n, cols=f_in)
+    W = matrix("-1.  0.  1.
+                 3. -4. -7.", rows=f_in, cols=f_out)
+    edge_index = matrix("0 1
+                         0 3
+                         3 2
+                         1 2", rows=m, cols=2) + 1
+    edge_weight = matrix(1, rows=m, cols=1)
+    b = matrix(0, rows=1, cols=f_out)
+    add_self_loops = TRUE
+    dOut = matrix(" 1.        -1.6666667 -2.6666667
+                    0.672589  -1.442809  -4.615398
+                    3.6579647 -5.932653  -8.590618
+                    0.3392555 -5.442809  -7.615398 ", rows=n, cols=f_out)
+
+    # equivalency check with small tolerance
+    # all computed by PyTorh GCNConv
+    expected_db = matrix("  5.6698093 -14.484938  -23.488081", rows=1, cols=f_out)
+    expected_dW = matrix(" 24.941946  -61.857285  -94.28088
+                           31.369387  -78.657166 -121.58917", rows=f_in, cols=f_out)
+    expected_dX = matrix("-13.030627  110.4946
+                           -7.6444564  58.766182
+                           -4.082861   31.612942
+                           -8.97779    76.76618  ", rows=n, cols=f_in)
+    [actual_dX, actual_dW, actual_db] = graph_conv::backward(dOut, X, edge_index, edge_weight, W, b, add_self_loops)
+    tmp = test_util::check_all_close(actual_dX, expected_dX, fault_tolerance)
+    tmp = test_util::check_all_close(actual_dW, expected_dW, fault_tolerance)
+    tmp = test_util::check_all_close(actual_db, expected_db, fault_tolerance)
+
+
+    print(" - Test case 3, simple, positive and negative, with edge weights")
+    # generate data
+    # -- node feature matrix
+    #  1  2
+    #  3  4
+    #  5  6
+    #  7  8
+    # -- edge index list
+    #  0  1
+    #  0  3
+    #  3  2
+    #  1  2
+    # -- weight
+    # -1  0  1
+    #  3 -4 -7
+    # -- bias
+    #  0  0  0
+    # -- edge weight
+    #  1  2  3  4
+    # -- dOut (computed by PyTorch GCNConv)
+    #  1.        -1.6666667 -2.6666667
+    #  0.672589  -1.442809  -4.615398
+    #  3.6579647 -5.932653  -8.590618
+    #  0.3392555 -5.442809  -7.615398
+
+    n = 4
+    f_in = 2
+    f_out = 3
+    m = 4
+    X = matrix(seq(1,8,1), rows=n, cols=f_in)
+    W = matrix("-1.  0.  1.
+                 3. -4. -7.", rows=f_in, cols=f_out)
+    edge_index = matrix("0 1
+                         0 3
+                         3 2
+                         1 2", rows=m, cols=2) + 1
+    edge_weight = matrix(seq(1, 4, 1), rows=m, cols=1)
+    b = matrix(0, rows=1, cols=f_out)
+    add_self_loops = TRUE
+    dOut = matrix(" 1.          -1.6666667   -2.6666667
+                    0.672589    -1.442809    -4.615398
+                    4.672555    -7.7659864  -11.438541
+                    0.24002807  -5.150712    -7.224073 ", rows=n, cols=f_out)
+
+    # equivalency check with small tolerance
+    # all computed by PyTorh GCNConv
+    expected_db = matrix("  6.585172 -16.026173 -25.94468", rows=1, cols=f_out)
+    expected_dW = matrix(" 40.28912   -84.25839  -128.54839
+                           50.576145 -108.823524 -167.409  ", rows=f_in, cols=f_out)
+    expected_dX = matrix("-16.02464  139.69913
+                          -18.755089 145.19978
+                           -2.013887  15.643924
+                          -12.354024 100.60307", rows=n, cols=f_in)
+    [actual_dX, actual_dW, actual_db] = graph_conv::backward(dOut, X, edge_index, edge_weight, W, b, add_self_loops)
+    tmp = test_util::check_all_close(actual_dX, expected_dX, fault_tolerance)
+    tmp = test_util::check_all_close(actual_dW, expected_dW, fault_tolerance)
+    tmp = test_util::check_all_close(actual_db, expected_db, fault_tolerance)
+
+
+    print(" - Test case 4, complex, randomized, with edge weights")
+    # generate data
+    n = 6
+    f_in = 4
+    f_out = 5
+    m = 9
+    X = matrix(" 1.2031149   0.29108927  0.06911583  0.58604974
+                 0.6558007  -0.1387985   1.3936987  -2.1811736
+                -0.15206665  0.7555549   0.7611931  -1.3536117
+                -0.27178934 -0.56362444 -0.19140585 -0.98478955
+                -0.23200686  0.5087707   0.29267493 -0.56944907
+                 0.4134154   1.7274256  -0.6514642  -2.1354604 ", rows=n, cols=f_in)
+    W = matrix(" 0.6664865  -0.61969984 -0.2202959   0.36392403  0.10777122
+                -0.01618779 -0.7659352   0.19400096  0.63562834 -0.0859797
+                 0.27626836  0.06018502 -0.47941092  0.53142023 -0.64003974
+                 0.1858443   0.44684827 -0.3331274   0.07469821  0.6819726 ", rows=f_in, cols=f_out)
+    edge_index = matrix("0 1
+                         0 3
+                         0 2
+                         1 2
+                         4 0
+                         4 2
+                         4 3
+                         4 1
+                         4 0", rows=m, cols=2) + 1
+    edge_weight = matrix("0.7689915  0.22816586 1.64223    0.3317891  0.4913247  0.6858898
+                          0.9614739  0.6692617  1.7219123 ", rows=m, cols=1)
+    b = matrix(0, rows=1, cols=f_out)
+    add_self_loops = TRUE
+    dOut = matrix(" 0.00001667 -0.07342456 -0.01882628  0.05316361 -0.03512903
+                    0.01914319 -0.07703556  0.05548839  0.10988894 -0.06857398
+                    0.05564846 -0.08154718 -0.04571829  0.00121375 -0.01274314
+                   -0.01075131  0.09498006 -0.05213822 -0.07067887 -0.06406848
+                   -0.03578694  0.00397091  0.07016002 -0.00623383 -0.05850988
+                   -0.00806136 -0.18917799  0.12462205 -0.01025546 -0.02818865", rows=n, cols=f_out)
+
+    # equivalency check with small tolerance
+    # all computed by PyTorh GCNConv
+    expected_db = matrix(" 0.02020872 -0.32223433  0.13358766  0.07709814 -0.26721317", rows=1, cols=f_out)
+    expected_dW = matrix(" 0.04556103 -0.1831415   0.04630188  0.06958374 -0.0311607
+                          -0.00002295 -0.42861095  0.22225149  0.03750094 -0.13307238
+                           0.03519159  0.01061805 -0.0566929   0.09682005 -0.07465722
+                          -0.00266499  0.4858714  -0.28592217 -0.05593665  0.2349617 ", rows=f_in, cols=f_out)
+    expected_dX = matrix(" 0.08135702  0.08333696  0.06060272 -0.04719092
+                           0.04391641  0.06561182  0.03588272 -0.03821557
+                           0.02643881  0.01490659  0.011253   -0.005319
+                          -0.03980809 -0.05576548  0.01424342  0.00403708
+                           0.04290428  0.12505178  0.12693822 -0.16496821
+                           0.07763692  0.16511036 -0.06076605 -0.147537  ", rows=n, cols=f_in)
+    [actual_dX, actual_dW, actual_db] = graph_conv::backward(dOut, X, edge_index, edge_weight, W, b, add_self_loops)
+    tmp = test_util::check_all_close(actual_dX, expected_dX, fault_tolerance)
+    tmp = test_util::check_all_close(actual_dW, expected_dW, fault_tolerance)
+    tmp = test_util::check_all_close(actual_db, expected_db, fault_tolerance)
+
+
+    print(" - Test case 5, complex, randomized, with edge weights, redundant self loops")
+    # generate data
+    n = 6
+    f_in = 4
+    f_out = 5
+    m = 11
+    X = matrix("-1.677484   -1.2355771   1.2625657   0.5326014
+                -1.2887143   0.94295657 -1.0760857  -0.5089458
+                 0.21678509  0.02454596 -0.55016637 -0.3504451
+                -0.9367239   1.2611942   0.58251053  0.46072337
+                 0.19644721 -0.38803542  0.8263637   1.8394312
+                 0.74577886  0.32268324  2.7673697   1.8836417 ", rows=n, cols=f_in)
+    W = matrix("-0.333266   -0.43249673  0.35952687  0.2904588  -0.30062157
+                 0.06695807  0.6919074  -0.6553944  -0.3669452   0.7609867
+                 0.04035068  0.20464313  0.46720934  0.52450323 -0.6685946
+                 0.09998256 -0.21320856  0.21915567  0.21119595  0.2621796 ", rows=f_in, cols=f_out)
+    edge_index = matrix("0 1
+                         0 3
+                         0 2
+                         1 2
+                         4 0
+                         4 2
+                         4 3
+                         4 1
+                         4 0
+                         4 4
+                         5 5", rows=m, cols=2) + 1
+    edge_weight = matrix("2.192942   0.7157633  1.2521718  1.1175433  1.4301333  0.96741766
+                          0.68247384 1.0985198  1.6585406  0.7412542  0.7010541 ", rows=m, cols=1)
+    b = matrix(0, rows=1, cols=f_out)
+    add_self_loops = TRUE
+    dOut = matrix(" 0.02778778 -0.17059584  0.09292188  0.14605011 -0.00396653
+                    0.0332877   0.04413612  0.09613498  0.0522084  -0.08106998
+                   -0.00330984  0.02639961 -0.06713077  0.00185994 -0.13511737
+                    0.03358173 -0.01125201  0.10444521 -0.07793155  0.05564234
+                   -0.08318672  0.05412309  0.27165452 -0.02798695 -0.15297009
+                    0.05308974 -0.02253116  0.03419498  0.19585714 -0.07803098", rows=n, cols=f_out)
+
+    # equivalency check with small tolerance
+    # all computed by PyTorh GCNConv
+    expected_db = matrix(" 0.0612504  -0.07972018  0.53222084  0.2900571  -0.3955126", rows=1, cols=f_out)
+    expected_dW = matrix("-0.0340426  -0.0525971  -0.05344859  0.12756607  0.05168589
+                           0.0022969   0.10219382 -0.2238423  -0.10950232  0.13876748
+                           0.18877228 -0.27961507  0.64419526  0.7524874  -0.42696753
+                           0.12338989 -0.4541254   1.0719106   0.78452545 -0.6035721 ", rows=f_in, cols=f_out)
+    expected_dX = matrix(" 0.05774456 -0.12833905  0.1058796   0.01389329
+                           0.01197144 -0.03662683  0.04878928 -0.01332064
+                           0.00154697 -0.0095601   0.01503738 -0.01284347
+                          -0.00339313 -0.00127172 -0.01260399  0.0111648
+                           0.41746607 -0.759259    0.48394418  0.13871306
+                           0.08469189 -0.16569526  0.16840637  0.03851201", rows=n, cols=f_in)
+    [actual_dX, actual_dW, actual_db] = graph_conv::backward(dOut, X, edge_index, edge_weight, W, b, add_self_loops)
+    tmp = test_util::check_all_close(actual_dX, expected_dX, fault_tolerance)
+    tmp = test_util::check_all_close(actual_dW, expected_dW, fault_tolerance)
+    tmp = test_util::check_all_close(actual_db, expected_db, fault_tolerance)
+
+
+    print(" - Test case 6, complex, randomized, with edge weights, no add self loops")
+    # generate data
+    n = 6
+    f_in = 4
+    f_out = 5
+    m = 11
+    X = matrix(" 0.6509163   0.84087867  0.00406513  0.3541003
+                 0.96925896  0.9321212   0.6662601   0.2906955
+                -0.94156843 -0.77015644  0.76742166 -0.2796007
+                -0.6768062  -0.41081068  0.07593145  1.7240006
+                 0.29197973  1.132494   -0.35129613 -1.5161023
+                 0.12569289 -0.31875432  2.4439077   0.5073866", rows=n, cols=f_in)
+    W = matrix("-0.72084147  0.52082396  0.7225965   0.636191    0.13566303
+                 0.164482   -0.36099246 -0.23306507  0.8010621  -0.719375
+                 0.4708066  -0.19209874 -0.5693782   0.4215685  -0.38401896
+                 0.67414975  0.5051558  -0.6493521  -0.3772742  -0.32322833", rows=f_in, cols=f_out)
+    edge_index = matrix("0 1
+                         0 3
+                         0 2
+                         1 2
+                         4 0
+                         4 2
+                         4 3
+                         4 1
+                         4 0
+                         4 4
+                         5 5", rows=m, cols=2) + 1
+    edge_weight = matrix("0.07524209 0.47512013 0.23576891 0.62809336 0.97305846 0.39294955
+                          1.065865   0.9195292  0.23091438 1.2162678  0.6145043 ", rows=m, cols=1)
+    b = matrix(0, rows=1, cols=f_out)
+    add_self_loops = FALSE
+    dOut = matrix("-0.08214325 -0.0758482   0.12083851 -0.00402118 -0.1354872
+                   -0.00594695 -0.08978884  0.00450707  0.11399021 -0.05994287
+                    0.01793323 -0.09690697 -0.01018947  0.12762336  0.00327979
+                   -0.07124385 -0.00498341  0.09427369  0.03048073 -0.00284161
+                   -0.07321862 -0.01122257  0.0711724   0.2392828  -0.0010167
+                   -0.06066972 -0.02324786 -0.11831899  0.03376728 -0.02253421", rows=n, cols=f_out)
+
+    # equivalency check with small tolerance
+    # all computed by PyTorh GCNConv
+    expected_db = matrix("-0.27528915 -0.30199784  0.1622832   0.5411232  -0.2185428", rows=1, cols=f_out)
+    expected_dW = matrix("-0.07329018 -0.13027634  0.07738519  0.21696742 -0.05859397
+                          -0.22708818 -0.28805253  0.3591284   0.53934354 -0.20675707
+                          -0.06798686 -0.02418774 -0.38605484 -0.00825245  0.01186438
+                           0.28232127  0.260804   -0.45289475 -0.5454838   0.27117336", rows=f_in, cols=f_out)
+    expected_dX = matrix(" 0.05121477  0.03630568 -0.00315453 -0.06312452
+                           0.00610961  0.07874441  0.04797337 -0.0446328
+                           0.          0.          0.          0.
+                           0.          0.          0.          0.
+                           0.4663973   0.4254872   0.02625447 -0.5013718
+                          -0.0354463   0.06924949  0.06615922  0.01873059", rows=n, cols=f_in)
+    [actual_dX, actual_dW, actual_db] = graph_conv::backward(dOut, X, edge_index, edge_weight, W, b, add_self_loops)
+    tmp = test_util::check_all_close(actual_dX, expected_dX, fault_tolerance)
+    tmp = test_util::check_all_close(actual_dW, expected_dW, fault_tolerance)
+    tmp = test_util::check_all_close(actual_db, expected_db, fault_tolerance)
+}
+
+graph_conv_forward_test()
+graph_conv_backward_test()

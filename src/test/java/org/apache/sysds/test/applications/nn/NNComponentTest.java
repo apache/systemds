@@ -113,6 +113,11 @@ public class NNComponentTest extends TestFolder {
 		run("logcosh.dml");
 	}
 
+	@Test
+	public void graph_conv() {
+		run("graph_conv.dml");
+	}
+
 	@Override
 	protected void run(String name) {
 		super.run("component/" + name);

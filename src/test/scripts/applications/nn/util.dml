@@ -153,3 +153,43 @@ check_rel_grad_error = function(double dw_a, double dw_n, double lossph, double 
   }
 }
 
+all_close = function(matrix[double] X1, matrix[double] X2, double epsilon)
+    return (boolean all_pretty_close) {
+    /*
+     * Determine if all values of two matrices are within range of epsilon to another.
+     *
+     * Inputs:
+     *  - X1: Inputs, of shape (any, any).
+     *  - X2: Inputs, of same shape as X1.
+     *
+     * Outputs:
+     *  - all_pretty_close: Whether or not the values of the two matrices are all close.
+     */
+    # Determine if matrices are all close
+    all_pretty_close = as.boolean(prod(abs(X1 - X2) <= epsilon))
+}
+
+check_all_close = function(matrix[double] X1, matrix[double] X2, double epsilon)
+    return (boolean all_pretty_close) {
+    /*
+     * Check if all values of two matrices are within range of epsilon to another,
+     * and report any issues.
+     *
+     * Issues an "ERROR" statement if elements of the two matrices are
+     * not within range epsilon to another.
+     *
+     * Inputs:
+     *  - X1: Inputs, of shape (any, any).
+     *  - X2: Inputs, of same shape as X1.
+     *
+     * Outputs:
+     *  - all_pretty_close: Whether or not the values of the two matrices are all close.
+     */
+    # Determine if matrices are all close
+    all_pretty_close = all_close(X1, X2, epsilon)
+
+    # Evaluate relative error
+    if (!all_pretty_close) {
+        print("ERROR: The values of the two matrices are not all close.")
+    }
+}

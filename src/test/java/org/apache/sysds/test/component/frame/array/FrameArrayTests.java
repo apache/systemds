@@ -40,6 +40,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
+import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.runtime.frame.data.columns.Array;
 import org.apache.sysds.runtime.frame.data.columns.ArrayFactory;
@@ -371,6 +372,41 @@ public class FrameArrayTests {
 			a.statistics(a.size()) : a.statistics(1000);
 		if(s != null) {
 			assertTrue(s.compressedSizeEstimate < s.originalSize);
+		}
+	}
+
+	@Test
+	public void setWithDDC() {
+		if(a.size() > 31) {
+			try{
+
+				Array<?> t = a.clone();
+				Array<?> ddc = DDCArray.compressToDDC(//
+					ArrayFactory.allocate(t.getValueType(), 30));
+				ArrayFactory.set(t, ddc, 0, 29, t.size());
+				switch(t.getValueType()) {
+					case BOOLEAN:
+						assertEquals(t.get(0), (Boolean) false);
+						break;
+					default:
+	
+				}
+			}
+			catch(DMLCompressionException e){
+				// valid error, Illegal to set range in a compressed array.
+			}
+			catch(DMLRuntimeException e){
+				// is intentional here.
+				if(!e.getMessage().contains("RaggedArray")){
+					e.printStackTrace();
+					fail(e.getMessage());
+				}
+			}
+			catch(Exception e){
+				e.printStackTrace();
+				fail(e.getMessage());
+			}
+			// assertEquals(t.get(0), )
 		}
 	}
 

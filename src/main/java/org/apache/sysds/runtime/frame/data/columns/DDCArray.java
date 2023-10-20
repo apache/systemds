@@ -55,6 +55,10 @@ public class DDCArray<T> extends ACompressedArray<T> {
 		}
 	}
 
+	protected Array<T> getDict(){
+		return dict;
+	}
+
 	/**
 	 * Try to compress array into DDC format.
 	 * 

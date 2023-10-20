@@ -137,11 +137,19 @@ public class BitSetArray extends ABooleanArray {
 
 	@Override
 	public void set(int rl, int ru, Array<Boolean> value, int rlSrc) {
-		if(useVectorizedKernel && value instanceof BitSetArray && (ru - rl >= 64))
-			setVectorized(rl, ru, (BitSetArray) value, rlSrc);
+		if(useVectorizedKernel && value instanceof BitSetArray && (ru - rl >= 64)){
+			try {
+				// try system array copy.
+				// but if it does not work, default to get.
+				setVectorized(rl, ru, (BitSetArray) value, rlSrc);
+				return;
+			}
+			catch(Exception e) {
+				// do nothing
+			}
+		}
 		else // default
-			for(int i = rl, off = rlSrc; i <= ru; i++, off++)
-				set(i, value.get(off));
+			super.set(rl,ru,value, rlSrc);
 	}
 
 	private void setVectorized(int rl, int ru, BitSetArray value, int rlSrc) {

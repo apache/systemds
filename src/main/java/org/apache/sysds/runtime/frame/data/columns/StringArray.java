@@ -77,7 +77,6 @@ public class StringArray extends Array<String> {
 	@Override
 	public void set(int rl, int ru, Array<String> value) {
 		set(rl, ru, value, 0);
-		materializedSize = -1;
 	}
 
 	@Override
@@ -94,8 +93,17 @@ public class StringArray extends Array<String> {
 
 	@Override
 	public void set(int rl, int ru, Array<String> value, int rlSrc) {
-		System.arraycopy(((StringArray) value)._data, rlSrc, _data, rl, ru - rl + 1);
-		materializedSize = -1;
+		try {
+			// try system array copy.
+			// but if it does not work, default to get.
+			System.arraycopy(value.get(), rlSrc, _data, rl, ru - rl + 1);
+		}
+		catch(Exception e) {
+			super.set(rl, ru, value, rlSrc);
+		}
+		finally{
+			materializedSize = -1;
+		}
 	}
 
 	@Override

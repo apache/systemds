@@ -264,48 +264,52 @@ public interface ArrayFactory {
 	 * @param target The target to put the values into
 	 * @param src    The source to take the values from
 	 * @param rl     The index to start on
-	 * @param ru     The index to end on
+	 * @param ru     The index to end on (inclusive)
 	 * @param rlen   The length of the target (a parameter in case target is null)
 	 * @return A new or modified array.
 	 */
 	@SuppressWarnings("unchecked")
 	public static <C> Array<C> set(Array<?> target, Array<?> src, int rl, int ru, int rlen) {
-		try {
+	
+		if(rlen <= ru)
+			throw new DMLRuntimeException("Invalid range ru: " + ru + " should be less than rlen: " + rlen);
+		else if(rl < 0)
+			throw new DMLRuntimeException("Invalid rl is less than zero");
+		else if(src == null)
+			throw new NullPointerException("Invalid src, cannot be null");
+		else if(ru - rl > src.size())
+			throw new DMLRuntimeException("Invalid range length to big: " + src.size() + " vs range: " + (ru - rl));
+		else if(target != null && target.size() < rlen)
+			throw new DMLRuntimeException("Invalid allocated target is not large enough");
 
-			if(target == null) {
-
-				if(src.getFrameArrayType() == FrameArrayType.OPTIONAL)
+		if(target == null) { // if target is not specified. allocate one.
+			if(src.getFrameArrayType() == FrameArrayType.OPTIONAL)
+				target = allocateOptional(src.getValueType(), rlen);
+			else if(src.getFrameArrayType() == FrameArrayType.DDC) {
+				Array<?> ddcDict = ((DDCArray<?>) src).getDict();
+				if(ddcDict.getFrameArrayType() == FrameArrayType.OPTIONAL) {
 					target = allocateOptional(src.getValueType(), rlen);
-				else if(src.getFrameArrayType() == FrameArrayType.DDC)
-					target = allocateDDC((DDCArray<?>) src, rlen);
-				else
+				}
+				else {
 					target = allocate(src.getValueType(), rlen);
-
-				if(rlen == ru)
-					throw new DMLRuntimeException("Invalid length to set");
+				}
 			}
-			else if(target.getFrameArrayType() != FrameArrayType.OPTIONAL //
-				&& src.getFrameArrayType() == FrameArrayType.OPTIONAL) {
-				target = new OptionalArray<>(target, false);
-			}
-
-			if(target.size() < rlen) {
-				throw new DMLRuntimeException("Invalid allocated target is not large enough");
-			}
-
-			final ValueType ta = target.getValueType();
-			final ValueType tb = src.getValueType();
-			final ValueType tc = ValueType.getHighestCommonType(ta, tb);
-
-			Array<C> targetC = (Array<C>) (ta != tc ? target.changeType(tc) : target);
-			Array<C> srcC = (Array<C>) (tb != tc ? src.changeType(tc) : src);
-			targetC.set(rl, ru, srcC);
-			return targetC;
+			else
+				target = allocate(src.getValueType(), rlen);
 		}
-		catch(Exception e) {
-			throw new DMLRuntimeException(
-				"Failed to set subpart with: \n\n" + target + "\n\n" + src + " \n\n " + rl + " " + ru + " " + rlen, e);
+		else if(target.getFrameArrayType() != FrameArrayType.OPTIONAL //
+			&& src.getFrameArrayType() == FrameArrayType.OPTIONAL) {
+			target = new OptionalArray<>(target, false);
 		}
+
+		final ValueType ta = target.getValueType();
+		final ValueType tb = src.getValueType();
+		final ValueType tc = ValueType.getHighestCommonType(ta, tb);
+
+		Array<C> targetC = (Array<C>) (ta != tc ? target.changeType(tc) : target);
+		Array<C> srcC = (Array<C>) (tb != tc ? src.changeType(tc) : src);
+		targetC.set(rl, ru, srcC);
+		return targetC;
 
 	}
 

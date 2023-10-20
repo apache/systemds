@@ -233,7 +233,10 @@ public abstract class Array<T> implements Writable {
 	 * @param ru    row upper (inclusive)
 	 * @param value value array to take values from (same type)
 	 */
-	public abstract void set(int rl, int ru, Array<T> value);
+	public void set(int rl, int ru, Array<T> value){
+		for(int i = rl; i <= ru; i++)
+			set(i, value.get(i));
+	}
 
 	/**
 	 * Set range to given arrays value with an offset into other array
@@ -243,7 +246,10 @@ public abstract class Array<T> implements Writable {
 	 * @param value value array to take values from
 	 * @param rlSrc the offset into the value array to take values from
 	 */
-	public abstract void set(int rl, int ru, Array<T> value, int rlSrc);
+	public void set(int rl, int ru, Array<T> value, int rlSrc){
+		for(int i = rl, off = rlSrc; i <= ru; i++, off++)
+			set(i, value.get(off));
+	}
 
 	/**
 	 * Set non default values from the value array given

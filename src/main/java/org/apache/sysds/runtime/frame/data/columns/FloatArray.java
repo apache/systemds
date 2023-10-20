@@ -80,7 +80,14 @@ public class FloatArray extends Array<Float> {
 
 	@Override
 	public void set(int rl, int ru, Array<Float> value, int rlSrc) {
-		System.arraycopy(((FloatArray) value)._data, rlSrc, _data, rl, ru - rl + 1);
+		try {
+			// try system array copy.
+			// but if it does not work, default to get.
+			System.arraycopy(value.get(), rlSrc, _data, rl, ru - rl + 1);
+		}
+		catch(Exception e) {
+			super.set(rl, ru, value, rlSrc);
+		}
 	}
 
 	@Override

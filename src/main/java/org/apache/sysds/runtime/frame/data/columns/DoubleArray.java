@@ -188,7 +188,8 @@ public class DoubleArray extends Array<Double> {
 				case FP32:
 					switch(c) {
 						case FP64:
-							state = c; break;
+							state = c;
+							break;
 						default:
 					}
 					break;
@@ -196,7 +197,8 @@ public class DoubleArray extends Array<Double> {
 					switch(c) {
 						case FP64:
 						case FP32:
-							state = c; break;
+							state = c;
+							break;
 						default:
 					}
 					break;
@@ -205,7 +207,8 @@ public class DoubleArray extends Array<Double> {
 						case FP64:
 						case FP32:
 						case INT64:
-							state = c; break;
+							state = c;
+							break;
 						default:
 					}
 					break;
@@ -216,7 +219,8 @@ public class DoubleArray extends Array<Double> {
 						case FP32:
 						case INT64:
 						case INT32:
-							state = c; break;
+							state = c;
+							break;
 						default:
 					}
 					break;
@@ -334,22 +338,19 @@ public class DoubleArray extends Array<Double> {
 	}
 
 	public static double parseDouble(String value) {
-		if(value == null || value.isEmpty())
-			return 0.0;
-		else{
-			try{
-				return JavaDoubleParser.parseDouble(value);
-				// return Double.parseDouble(value);
-			}
-			catch(NumberFormatException e){
-				final int len = value.length();
-				// check for common extra cases.
-				if(len == 3 && value.compareToIgnoreCase("Inf") == 0)
-					return Double.POSITIVE_INFINITY;
-				else if(len == 4 && value.compareToIgnoreCase("-Inf") ==0)
-					return Double.NEGATIVE_INFINITY;
-				throw new RuntimeException(e);
-			}
+		try {
+			if(value == null || value.isEmpty())
+				return 0.0;
+			return JavaDoubleParser.parseDouble(value);
+		}
+		catch(NumberFormatException e) {
+			final int len = value.length();
+			// check for common extra cases.
+			if(len == 3 && value.compareToIgnoreCase("Inf") == 0)
+				return Double.POSITIVE_INFINITY;
+			else if(len == 4 && value.compareToIgnoreCase("-Inf") == 0)
+				return Double.NEGATIVE_INFINITY;
+			throw new DMLRuntimeException(e);
 		}
 	}
 
@@ -403,7 +404,7 @@ public class DoubleArray extends Array<Double> {
 	}
 
 	@Override
-	public boolean possiblyContainsNaN(){
+	public boolean possiblyContainsNaN() {
 		return true;
 	}
 

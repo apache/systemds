@@ -382,7 +382,16 @@ public class RaggedArray<T> extends Array<T> {
 
 	@Override
 	public boolean equals(Array<T> other) {
-		throw new NotImplementedException("Unimplemented method 'equals'");
+		if(other._size == this._size && //
+			other.getValueType() == this.getValueType() && //
+			other instanceof RaggedArray) {
+			if(other == this){// same pointer
+				return true;
+			}
+			RaggedArray<T> ot = (RaggedArray<T>) other;
+			return ot._a.equals(this._a);
+		}
+		return false;
 	}
 
 	@Override
@@ -396,7 +405,7 @@ public class RaggedArray<T> extends Array<T> {
 	}
 
 	@Override
-	public boolean possiblyContainsNaN(){
+	public boolean possiblyContainsNaN() {
 		return true;
 	}
 

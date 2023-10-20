@@ -239,7 +239,7 @@ public interface ArrayFactory {
 	 * 
 	 * @param <C> The type to return, java automatically make this Object, and this is fine.
 	 * @param a   The first array to append to (potentially modifying this a if applicable)
-	 * @param b   THe array to append to a, (not getting modified).
+	 * @param b   The array to append to a, (not getting modified).
 	 * @return A array containing the concatenation of the two.
 	 */
 	@SuppressWarnings("unchecked")
@@ -260,8 +260,8 @@ public interface ArrayFactory {
 	 * Set the target array in the range of rl to ru with the src array. The type returned is the common or highest
 	 * common type of array.
 	 * 
-	 * @param <C>    THe highest common type to return.
-	 * @param target The target to pout the values into
+	 * @param <C>    The highest common type to return.
+	 * @param target The target to put the values into
 	 * @param src    The source to take the values from
 	 * @param rl     The index to start on
 	 * @param ru     The index to end on

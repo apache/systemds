@@ -255,8 +255,6 @@ public class StringArray extends Array<String> {
 			else
 				state = getHighest(state, c);
 		}
-		if(state == ValueType.UNKNOWN || state == ValueType.STRING)
-			throw new RuntimeException(this.toString());
 		return new Pair<>(state, nulls);
 	}
 
@@ -467,7 +465,7 @@ public class StringArray extends Array<String> {
 			firstNN = _data[i++];
 		}
 		if(firstNN == null)
-			throw new RuntimeException("Invalid change to int on all null");
+			throw new DMLRuntimeException("Invalid change to int on all null");
 		else if(firstNN.contains("."))
 			return changeTypeIntegerFloatString();
 		else
@@ -652,8 +650,6 @@ public class StringArray extends Array<String> {
 					String[] tmp = ColumnEncoderRecode.splitRecodeMapEntry(val.toString());
 					map.put(tmp[0], Long.parseLong(tmp[1]));
 				}
-				// else // once we hit null return.
-					// break;
 			}
 			return map;
 		}

@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -28,31 +28,31 @@ import org.apache.sysds.runtime.meta.MetaDataAll;
 
 public class MatrixFile extends ConstMatrix {
 
-    final private String path;
+	final private String path;
 
-    private MatrixFile(String path, MatrixBlock mb) {
-        super(mb);
-        this.path = path;
-    }
+	private MatrixFile(String path, MatrixBlock mb) {
+		super(mb);
+		this.path = path;
+	}
 
-    public static MatrixFile create(String path) throws Exception {
+	public static MatrixFile create(String path) throws Exception {
 
-        MetaDataAll mba = new MetaDataAll(path + ".mtd", false, true);
-        DataCharacteristics ds = mba.getDataCharacteristics();
-        FileFormat f = FileFormat.valueOf(mba.getFormatTypeString().toUpperCase());
+		MetaDataAll mba = new MetaDataAll(path + ".mtd", false, true);
+		DataCharacteristics ds = mba.getDataCharacteristics();
+		FileFormat f = FileFormat.valueOf(mba.getFormatTypeString().toUpperCase());
 
-        MatrixReader r = MatrixReaderFactory.createMatrixReader(f);
-        MatrixBlock mb = r.readMatrixFromHDFS(path, ds.getRows(), ds.getCols(), ds.getBlocksize(), ds.getNonZeros());
-        return new MatrixFile(path, mb);
-    }
+		MatrixReader r = MatrixReaderFactory.createMatrixReader(f);
+		MatrixBlock mb = r.readMatrixFromHDFS(path, ds.getRows(), ds.getCols(), ds.getBlocksize(), ds.getNonZeros());
+		return new MatrixFile(path, mb);
+	}
 
-    @Override
-    public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append(this.getClass().getSimpleName());
-        sb.append(" From file: ");
-        sb.append(path);
-        return sb.toString();
-    }
+	@Override
+	public String toString() {
+		StringBuilder sb = new StringBuilder();
+		sb.append(this.getClass().getSimpleName());
+		sb.append(" From file: ");
+		sb.append(path);
+		return sb.toString();
+	}
 
 }

@@ -27,30 +27,30 @@ import org.apache.sysds.runtime.frame.data.columns.ArrayFactory;
 
 public class DetectTypeArray {
 
-    public static void main(String[] args) {
-        Array<?> a = ArrayFactory.create(generateRandomFloatString(1000, 134));
+	public static void main(String[] args) {
+		Array<?> a = ArrayFactory.create(generateRandomFloatString(1000, 134));
 
-        Timing t = new Timing();
-        t.start();
-        int N = 10000;
-        for(int i = 0; i < N; i++)
-            a.analyzeValueType();
+		Timing t = new Timing();
+		t.start();
+		int N = 10000;
+		for(int i = 0; i < N; i++)
+			a.analyzeValueType();
 
-        System.out.println(t.stop() / N);
+		System.out.println(t.stop() / N);
 
-    }
+	}
 
-    public static String[] generateRandomFloatString(int size, int seed) {
-        Random r = new Random(seed);
-        String[] ret = new String[size];
-        for(int i = 0; i < size; i++) {
-            int e = r.nextInt(999);
-            int a = r.nextInt(999);
+	public static String[] generateRandomFloatString(int size, int seed) {
+		Random r = new Random(seed);
+		String[] ret = new String[size];
+		for(int i = 0; i < size; i++) {
+			int e = r.nextInt(999);
+			int a = r.nextInt(999);
 
-            ret[i] = String.format("%d.%03d", e, a);
-        }
+			ret[i] = String.format("%d.%03d", e, a);
+		}
 
-        return ret;
-    }
+		return ret;
+	}
 
 }

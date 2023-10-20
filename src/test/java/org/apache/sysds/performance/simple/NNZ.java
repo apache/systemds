@@ -24,32 +24,32 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.test.TestUtils;
 
 public class NNZ {
-    public static void main(String[] args) {
-        MatrixBlock mb = TestUtils.generateTestMatrixBlock(10000, 1000, 0, 103, 0.7, 421);
-        Timing t = new Timing();
-        t.start();
-        for(int i = 0; i < 1000; i++) {
-            mb.recomputeNonZeros();
-        }
-        System.out.println("single:   " + t.stop()/ 1000);
-        t.start();
-        for(int i = 0; i < 1000; i++) {
+	public static void main(String[] args) {
+		MatrixBlock mb = TestUtils.generateTestMatrixBlock(10000, 1000, 0, 103, 0.7, 421);
+		Timing t = new Timing();
+		t.start();
+		for(int i = 0; i < 1000; i++) {
+			mb.recomputeNonZeros();
+		}
+		System.out.println("single:   " + t.stop() / 1000);
+		t.start();
+		for(int i = 0; i < 1000; i++) {
 
-            mb.recomputeNonZeros(16);
-        }
+			mb.recomputeNonZeros(16);
+		}
 
-        System.out.println("par:      " + t.stop()/ 1000);
-        t.start();
-        for(int i = 0; i < 1000; i++) {
-            mb.recomputeNonZeros();
-        }
-        System.out.println("single:   " + t.stop()/ 1000);
-        t.start();
-        for(int i = 0; i < 1000; i++) {
+		System.out.println("par:      " + t.stop() / 1000);
+		t.start();
+		for(int i = 0; i < 1000; i++) {
+			mb.recomputeNonZeros();
+		}
+		System.out.println("single:   " + t.stop() / 1000);
+		t.start();
+		for(int i = 0; i < 1000; i++) {
 
-            mb.recomputeNonZeros(16);
-        }
+			mb.recomputeNonZeros(16);
+		}
 
-        System.out.println("par:      " + t.stop()/ 1000);
-    }
+		System.out.println("par:      " + t.stop() / 1000);
+	}
 }

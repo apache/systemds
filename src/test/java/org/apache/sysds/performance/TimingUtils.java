@@ -21,6 +21,7 @@ package org.apache.sysds.performance;
 
 import java.util.Arrays;
 
+import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.performance.generators.IGenerate;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.Timing;
 
@@ -93,6 +94,7 @@ public interface TimingUtils {
 			b.run();
 			while(bq.isEmpty())
 				Thread.sleep(bq.defaultWaitTime());
+			DMLScript.SEED = i + 1000;
 			time(f, times, i);
 			c.run();
 		}

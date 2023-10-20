@@ -31,50 +31,46 @@ import org.apache.sysds.runtime.meta.MetaDataAll;
 
 public class FrameFile extends ConstFrame {
 
-    final private String path;
+	final private String path;
 
-    private FrameFile(String path, FrameBlock fb) {
-        super(fb);
-        this.path = path;
-        System.out.println("First 10 rows:");
-        System.out.println(fb.slice(0, 10));
-    }
+	private FrameFile(String path, FrameBlock fb) {
+		super(fb);
+		this.path = path;
+	}
 
-    public static FrameFile create(String path) throws Exception {
+	public static FrameFile create(String path) throws Exception {
 
-        MetaDataAll mba = new MetaDataAll(path + ".mtd", false, true);
-        if(mba.mtdExists()) {
-            LOG.error(mba);
+		MetaDataAll mba = new MetaDataAll(path + ".mtd", false, true);
+		if(mba.mtdExists()) {
+			FileFormat f = FileFormat.valueOf(mba.getFormatTypeString().toUpperCase());
+			ValueType[] schema = FrameObject.parseSchema(mba.getSchema());
+			FileFormatProperties p = null;
+			if(f.equals(FileFormat.CSV)) {
+				p = new FileFormatPropertiesCSV();
+				((FileFormatPropertiesCSV) p).setHeader(mba.getHasHeader());
+				((FileFormatPropertiesCSV) p).setDelim(mba.getDelim());
+			}
+			FrameReader r = FrameReaderFactory.createFrameReader(f, p);
+			FrameBlock fb = r.readFrameFromHDFS(path, schema, mba.getDim1(), mba.getDim2());
+			return new FrameFile(path, fb);
+		}
+		else {
+			LOG.error("No Mtd file found.. please add one. Fallback to CSV reading with header");
+			// we assume csv
+			FrameReader r = FrameReaderFactory.createFrameReader(FileFormat.CSV);
+			FrameBlock fb = r.readFrameFromHDFS(path, -1, -1);
+			return new FrameFile(path, fb);
+		}
 
-            // DataCharacteristics ds = mba.getDataCharacteristics();
-            FileFormat f = FileFormat.valueOf(mba.getFormatTypeString().toUpperCase());
-            ValueType[] schema = FrameObject.parseSchema(mba.getSchema());
-            FileFormatProperties p = null;
-            if(f.equals(FileFormat.CSV)){
-                p = new FileFormatPropertiesCSV();
-                ((FileFormatPropertiesCSV)p).setHeader(mba.getHasHeader());
-            }
-            FrameReader r = FrameReaderFactory.createFrameReader(f, p);
-            FrameBlock fb = r.readFrameFromHDFS(path, schema, mba.getDim1(), mba.getDim2());
-            return new FrameFile(path, fb);
-        }
-        else {
-            LOG.error("No Mtd file found.. please add one. Fallback to CSV reading with header");
-            // we assume csv
-            FrameReader r = FrameReaderFactory.createFrameReader(FileFormat.CSV);
-            FrameBlock fb = r.readFrameFromHDFS(path, -1, -1);
-            return new FrameFile(path, fb);
-        }
+	}
 
-    }
-
-    @Override
-    public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append(super.toString());
-        sb.append(" From file: ");
-        sb.append(path);
-        return sb.toString();
-    }
+	@Override
+	public String toString() {
+		StringBuilder sb = new StringBuilder();
+		sb.append(super.toString());
+		sb.append(" From file: ");
+		sb.append(path);
+		return sb.toString();
+	}
 
 }

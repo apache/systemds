@@ -50,14 +50,18 @@ public class TransformPerf extends APerfTest<Serialize.InOut, FrameBlock> {
 		System.out.println(this);
 		CompressedMatrixBlock.debug = true;
 
-		// execute(() -> detectSchema(k), "Detect Schema");
-		// execute(() -> detectAndApply(k), "Detect&Apply Frame Schema");
+		System.out.println(String.format("Unknown mem size: %30d", gen.take().getInMemorySize()));
+
+		execute(() -> detectSchema(k), "Detect Schema");
+		execute(() -> detectAndApply(k), "Detect&Apply Frame Schema");
+		execute(() -> transformEncode(k), "TransformEncode Def");
+		execute(() -> transformEncodeCompressed(k), "TransformEncode Comp");
 
 		updateGen();
 
-		// execute(() -> detectAndApply(k), "Detect&Apply Frame Schema Known");
-
-		// execute(() -> transformEncode(k), "TransformEncode Def");
+		System.out.println(String.format("Known mem size:   %30d", gen.take().getInMemorySize()));
+		System.out.println(gen.take().slice(0, 10));
+		execute(() -> transformEncode(k), "TransformEncode Def");
 		execute(() -> transformEncodeCompressed(k), "TransformEncode Comp");
 
 	}

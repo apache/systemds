@@ -132,8 +132,10 @@ public class Main {
 		double sparsity = Double.parseDouble(args[4]);
 		int k = Integer.parseInt(args[5]);
 		int n = Integer.parseInt(args[6]);
-
-		Serialize s = new Serialize(n, new ConstMatrix(rows, cols, unique, sparsity), k);
+		//args[7] is id
+		Serialize s = (args.length == 9) ? //
+			new Serialize(n, new ConstMatrix(rows, cols, unique, sparsity), k) : //
+			new Serialize(n, new ConstMatrix(rows, cols, unique, sparsity), k, args[7], args[8]);
 
 		if(id == -1)
 			s.run();
@@ -179,7 +181,7 @@ public class Main {
 
 	private static void run16(String[] args) {
 		int len = Integer.parseInt(args[1]);
-		MatrixBlock mb = TestUtils.ceil(TestUtils.generateTestMatrixBlock(len, len, 0, 100, 0.01, len +1));
+		MatrixBlock mb = TestUtils.ceil(TestUtils.generateTestMatrixBlock(len, len, 0, 100, 0.01, len + 1));
 		System.out.println(mb);
 	}
 

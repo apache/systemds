@@ -38,9 +38,13 @@ import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlockFactory;
 import org.apache.sysds.runtime.compress.CompressionStatistics;
 import org.apache.sysds.runtime.compress.colgroup.scheme.CompressionScheme;
+import org.apache.sysds.runtime.compress.io.ReaderCompressed;
 import org.apache.sysds.runtime.compress.io.WriterCompressed;
 import org.apache.sysds.runtime.compress.lib.CLALibScheme;
+import org.apache.sysds.runtime.io.MatrixReader;
 import org.apache.sysds.runtime.io.MatrixWriter;
+import org.apache.sysds.runtime.io.ReaderBinaryBlock;
+import org.apache.sysds.runtime.io.ReaderBinaryBlockParallel;
 import org.apache.sysds.runtime.io.WriterBinaryBlock;
 import org.apache.sysds.runtime.io.WriterBinaryBlockParallel;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -49,24 +53,35 @@ public class Serialize extends APerfTest<Serialize.InOut, MatrixBlock> {
 
 	private final String file;
 	private final int k;
+	private final String codec;
 
 	public Serialize(int N, IGenerate<MatrixBlock> gen) {
 		super(N, gen);
-		file = "tmp/perf-tmp.bin";
+		file = "./tmp/perf-tmp.bin";
 		k = 1;
+		codec = "none";
 	}
 
 	public Serialize(int N, IGenerate<MatrixBlock> gen, int k) {
 		super(N, gen);
-		file = "tmp/perf-tmp.bin";
+		file = "./tmp/perf-tmp.bin";
 		this.k = k;
+		codec = "none";
 	}
 
 	public Serialize(int N, IGenerate<MatrixBlock> gen, int k, String file) {
 		super(N, gen);
 		this.file = file;
 		this.k = k;
+		codec = "none";
 
+	}
+
+	public Serialize(int N, IGenerate<MatrixBlock> gen, int k, String file, String codec) {
+		super(N, gen);
+		this.file = file == null ? "tmp/perf-tmp.bin" : file;
+		this.k = k;
+		this.codec = codec;
 	}
 
 	public void run() throws Exception, InterruptedException {
@@ -81,27 +96,35 @@ public class Serialize extends APerfTest<Serialize.InOut, MatrixBlock> {
 		if(k == 1) {
 			ConfigurationManager.getCompilerConfig().set(ConfigType.PARALLEL_CP_WRITE_BINARYFORMATS, false);
 		}
-
+		
+		ConfigurationManager.getDMLConfig().setTextValue(DMLConfig.IO_COMPRESSION_CODEC, codec);
+		System.out.println(ConfigurationManager.getDMLConfig().getTextValue(DMLConfig.IO_COMPRESSION_CODEC));
 		warmup(() -> sumTask(k), N);
+
 
 		// execute(() -> writeUncompressed(k), "Serialize");
 		// execute(() -> diskUncompressed(k), "CustomDisk");
-
-		execute(() -> standardIO(k), () -> setFileSize(), () -> cleanup(), "StandardDisk");
-
 		// execute(() -> compressTask(k), "Compress Normal");
 		// execute(() -> writeCompressTask(k), "Compress Normal Serialize");
 		// execute(() -> diskCompressTask(k), "Compress Normal CustomDisk");
-
-		execute(() -> standardCompressedIO(k), () -> setFileSize(), () -> cleanup(), "Compress StandardIO");
-
-		final CompressionScheme sch2 = CLALibScheme.getScheme(getC());
 		// execute(() -> updateAndApplySchemeFused(sch2, k), "Update&Apply Scheme Fused");
 		// execute(() -> writeUpdateAndApplySchemeFused(sch2, k), "Update&Apply Scheme Fused Serialize");
 		// execute(() -> diskUpdateAndApplySchemeFused(sch2, k), "Update&Apply Scheme Fused Disk");
-
+		
+		execute(() -> standardIO(k), () -> setFileSize(), () -> cleanup(), "StandardDisk");
+		execute(() -> standardCompressedIO(k), () -> setFileSize(), () -> cleanup(), "Compress StandardIO");
+		final CompressionScheme sch2 = CLALibScheme.getScheme(getC());
 		execute(() -> standardCompressedIOUpdateAndApply(sch2, k), () -> setFileSize(), () -> cleanup(),
 			"Update&Apply Standard IO");
+
+		// write the input file to disk.
+		standardIO(k);
+		execute(() -> standardIORead(k), "StandardRead");
+		cleanup();
+		// write compressed input file to disk
+		standardCompressedIOUpdateAndApply(sch2, k);
+		// standardCompressedIO( k);
+		execute(() -> standardCompressedRead(k), "StandardCompressedRead");
 	}
 
 	public void run(int i) throws Exception, InterruptedException {
@@ -177,6 +200,19 @@ public class Serialize extends APerfTest<Serialize.InOut, MatrixBlock> {
 		}
 	}
 
+	private void standardIORead(int k) {
+		try {
+			MatrixBlock mb = gen.take();
+			MatrixReader r = (k == 1) ? new ReaderBinaryBlock(false) : new ReaderBinaryBlockParallel(false);
+			MatrixBlock mbr = r.readMatrixFromHDFS(file, mb.getNumRows(), mb.getNumColumns(), ConfigurationManager.getBlocksize(), mb.getNonZeros());
+
+			ret.add(new InOut(mb.getInMemorySize(),mbr.getInMemorySize()));
+		}
+		catch(Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+
 	private void compressTask(int k) {
 		MatrixBlock mb = gen.take();
 		long in = mb.getInMemorySize();
@@ -212,6 +248,20 @@ public class Serialize extends APerfTest<Serialize.InOut, MatrixBlock> {
 			throw new RuntimeException(e);
 		}
 	}
+
+	private void standardCompressedRead(int k) {
+		try {
+			MatrixBlock mb = gen.take();
+			ReaderCompressed r = new ReaderCompressed(k);
+			MatrixBlock mbr = r.readMatrixFromHDFS(file, mb.getNumRows(), mb.getNumColumns(), ConfigurationManager.getBlocksize(), mb.getNonZeros());
+
+			ret.add(new InOut(mb.getInMemorySize(),mbr.getInMemorySize()));
+		}
+		catch(Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+
 
 	// private void standardCompressedIOPipelined(int k) {
 	// try {
@@ -443,15 +493,14 @@ public class Serialize extends APerfTest<Serialize.InOut, MatrixBlock> {
 			else
 				fd.delete();
 		}
+
 	}
 
 	private boolean deleteDirectory(File directoryToBeDeleted) {
 		File[] allContents = directoryToBeDeleted.listFiles();
-		if(allContents != null) {
-			for(File file : allContents) {
+		if(allContents != null)
+			for(File file : allContents) 
 				deleteDirectory(file);
-			}
-		}
 		return directoryToBeDeleted.delete();
 	}
 

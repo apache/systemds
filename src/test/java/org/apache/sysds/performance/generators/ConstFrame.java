@@ -25,43 +25,43 @@ import org.apache.sysds.runtime.frame.data.FrameBlock;
 
 public class ConstFrame implements Const<FrameBlock> {
 
-    protected FrameBlock fb;
+	protected FrameBlock fb;
 
-    public ConstFrame(FrameBlock fb) {
-        this.fb = fb;
-    }
+	public ConstFrame(FrameBlock fb) {
+		this.fb = fb;
+	}
 
-    @Override
-    public FrameBlock take() {
-        return fb;
-    }
+	@Override
+	public FrameBlock take() {
+		return fb;
+	}
 
-    @Override
-    public void generate(int N) throws InterruptedException {
-        // do nothing
-    }
+	@Override
+	public void generate(int N) throws InterruptedException {
+		// do nothing
+	}
 
-    @Override
-    public final boolean isEmpty() {
-        return false;
-    }
+	@Override
+	public final boolean isEmpty() {
+		return false;
+	}
 
-    @Override
-    public final int defaultWaitTime() {
-        return 0;
-    }
+	@Override
+	public final int defaultWaitTime() {
+		return 0;
+	}
 
-    @Override
-    public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append(this.getClass().getSimpleName());
-        sb.append(" Schema:");
-        sb.append(Arrays.toString(fb.getSchema()));
-        return sb.toString();
-    }
+	@Override
+	public String toString() {
+		StringBuilder sb = new StringBuilder();
+		sb.append(this.getClass().getSimpleName());
+		sb.append(" Schema:");
+		sb.append(Arrays.toString(fb.getSchema()));
+		return sb.toString();
+	}
 
-    @Override
-    public void change(FrameBlock t) {
-        fb = t;
-    }
+	@Override
+	public void change(FrameBlock t) {
+		fb = t;
+	}
 }

@@ -20,5 +20,5 @@
 package org.apache.sysds.performance.generators;
 
 public interface Const<T> extends IGenerate<T> {
-    public void change(T t);
+	public void change(T t);
 }

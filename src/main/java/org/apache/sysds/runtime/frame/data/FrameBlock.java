@@ -24,7 +24,9 @@ import java.io.DataOutput;
 import java.io.Externalizable;
 import java.io.IOException;
 import java.io.ObjectInput;
+import java.io.ObjectInputStream;
 import java.io.ObjectOutput;
+import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.lang.ref.SoftReference;
 import java.lang.reflect.InvocationTargetException;
@@ -69,6 +71,7 @@ import org.apache.sysds.runtime.instructions.cp.IntObject;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
 import org.apache.sysds.runtime.io.IOUtilFunctions;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.matrix.data.MatrixBlockDataInput;
 import org.apache.sysds.runtime.matrix.data.Pair;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
@@ -76,6 +79,8 @@ import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.util.CommonThreadPool;
 import org.apache.sysds.runtime.util.DMVUtils;
 import org.apache.sysds.runtime.util.EMAUtils;
+import org.apache.sysds.runtime.util.FastBufferedDataInputStream;
+import org.apache.sysds.runtime.util.FastBufferedDataOutputStream;
 import org.apache.sysds.runtime.util.IndexRange;
 import org.apache.sysds.runtime.util.UtilFunctions;
 import org.apache.sysds.utils.MemoryEstimates;
@@ -815,14 +820,30 @@ public class FrameBlock implements CacheBlock<FrameBlock>, Externalizable {
 
 	@Override
 	public void writeExternal(ObjectOutput out) throws IOException {
-		// redirect serialization to writable impl
-		write(out);
+		
+		if((out instanceof ObjectOutputStream)){
+			ObjectOutputStream oos = (ObjectOutputStream)out;
+			FastBufferedDataOutputStream fos = new FastBufferedDataOutputStream(oos);
+			write(fos); //note: cannot close fos as this would close oos
+			fos.flush();
+		}
+		else{
+			write(out);
+		}
 	}
 
 	@Override
 	public void readExternal(ObjectInput in) throws IOException {
-		// redirect deserialization to writable impl
-		readFields(in);
+		if(in instanceof ObjectInputStream) {
+			// fast deserialize of dense/sparse blocks
+			ObjectInputStream ois = (ObjectInputStream) in;
+			FastBufferedDataInputStream fis = new FastBufferedDataInputStream(ois);
+			readFields(fis); // note: cannot close fos as this would close oos
+		}
+		else {
+			// redirect deserialization to writable impl
+			readFields(in);
+		}
 	}
 
 	@Override

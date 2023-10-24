@@ -222,7 +222,7 @@ public class IOUtilFunctions {
 		final ArrayList<String> tokens = new ArrayList<>();
 
 		while(from < len) { // for all tokens
-			to = getTo(str, from, delim);
+			to = getTo(str, from, delim, len, delimLen);
 			tokens.add(str.substring(from, to));
 			from = to + delimLen;
 		}
@@ -257,28 +257,60 @@ public class IOUtilFunctions {
 			return cache;
 		}
 		else
-			return splitCSVNonNullWithCache(str,delim,cache);
+			return splitCSVNonNullWithCache(str, delim, cache);
 	}
 
 	private static String[] splitCSVNonNullWithCache(final String str, final String delim, final String[] cache) {
+		
 		final int len = str.length();
 		final int delimLen = delim.length();
-		final boolean containsQuotationMarks = str.contains("\"");
+		
+		if(str.contains("\""))
+			return splitCSVNonNullWithCacheWithQuote(str, delim, cache, len, delimLen);
+		else if(delimLen == 1)
+			return splitCSVNonNullCacheNoQuoteCharDelim(str, delim.charAt(0), cache, len);
+		else 
+			return splitCSVNonNullCacheNoQuote(str, delim, cache,  len, delimLen);
+	}
+
+	private static String[] splitCSVNonNullWithCacheWithQuote(final String str, final String delim,
+		final String[] cache, final int len, final int delimLen) {
 		int from = 0;
 		int id = 0;
-		if(containsQuotationMarks){
-			while(from < len) { // for all tokens
-				final int to = getTo(str, from, delim);
-				cache[id++] = str.substring(from, to);
-				from = to + delimLen;
-			}
+		while(from < len) { // for all tokens
+			final int to = getTo(str, from, delim, len, delimLen);
+			cache[id++] = str.substring(from, to);
+			from = to + delimLen;
 		}
-		else{
-			while(from < len) { // for all tokens
-				final int to = getToNoQuote(str, from, delim);
-				cache[id++] = str.substring(from, to);
-				from = to + delimLen;
-			}
+
+		if(from == len)
+			cache[id] = "";
+		return cache;
+	}
+
+	private static String[] splitCSVNonNullCacheNoQuote(final String str, final String delim, final String[] cache,final int len, final int delimLen) {
+		int from = 0;
+		int id = 0;
+		
+		while(from < len) { // for all tokens
+			final int to = getToNoQuote(str, from, delim, len, delimLen);
+			cache[id++] = str.substring(from, to);
+			from = to + delimLen;
+		}
+		
+		if(from == len)
+			cache[id] = "";
+		return cache;
+	}
+
+	private static String[] splitCSVNonNullCacheNoQuoteCharDelim(final String str, final char delim,
+		final String[] cache, final int len) {
+		int from = 0;
+		int id = 0;
+		while(from < len) { // for all tokens
+			final int to = getToNoQuoteCharDelim(str, from, delim, len);
+			cache[id++] = str.substring(from, to);
+			from = to + 1;
 		}
 
 		if(from == len)
@@ -296,9 +328,18 @@ public class IOUtilFunctions {
 		return true;
 	}
 
-	private static int getTo(final String str, final int from, final String delim) {
-		final int len = str.length();
-		final int dLen = delim.length();
+	/**
+	 * Get next index of substring after delim, while the string can contain Quotation marks
+	 * 
+	 * @param str   The string to get the index from
+	 * @param from  The index to start searching from
+	 * @param delim The delimiter to find
+	 * @param len   The length of the str string argument
+	 * @param dLen  The length of the delimiter string
+	 * @return The next index.
+	 */
+	private static int getTo(final String str, final int from, final String delim,
+		final int len, final int dLen) {
 		final char cq = CSV_QUOTE_CHAR;
 		final int fromP1 = from + 1;
 		int to;
@@ -322,12 +363,21 @@ public class IOUtilFunctions {
 		return to >= 0 ? to : len;
 	}
 
-	private static int getToNoQuote(final String str, final int from, final String delim) {
-		final int len = str.length();
-		final int dLen = delim.length();
-		final int fromP1 = from + 1;
+	/**
+	 * Get next index of substring after delim
+	 * 
+	 * @param str   The string to get the index from
+	 * @param from  The index to start searching from
+	 * @param delim The delimiter to find
+	 * @param len   The length of the str string argument
+	 * @param dLen  The length of the delimiter string
+	 * @return The next index.
+	 */
+	private static int getToNoQuote(final String str, final int from, final String delim, final int len,
+		final int dLen) {
+		
 		int to;
-
+		final int fromP1 = from + 1;
 		if(isEmptyMatch(str, from, delim, dLen, len))
 			return to = from; // empty string
 		else // default: unquoted non-empty
@@ -335,10 +385,29 @@ public class IOUtilFunctions {
 
 		// slice out token and advance position
 		return to >= 0 ? to : len;
+		
+	}
+
+	private static int getToNoQuoteCharDelim(final String str, final int from, final char delim, final int len){
+		for(int i = from; i < len; i++)
+			if(str.charAt(i) == delim)
+				return i;
+		return len;
 	}
 
 	public static String trim(String str) {
-		return str.trim();
+		try{
+			final int len = str.length();
+			if(len == 0)
+				return str;
+			// short the call to return input if not whitespace in ends.
+			else if(str.charAt(0) <= ' ' || str.charAt(len -1) <= ' ')
+				return str.trim();
+			else 
+				return str;
+		}catch(Exception e){
+			throw new RuntimeException("failed trimming: " + str + " " + str.length(),e);
+		}
 	}
 
 	/**
@@ -366,7 +435,7 @@ public class IOUtilFunctions {
 		int from = 0; 
 		int pos = 0;
 		while( from < len  ) { // for all tokens
-			final int to = getTo(str, from, delim);
+			final int to = getTo(str, from, delim, len, dLen);
 			final String curString = str.substring(from, to);
 			tokens[pos++] = naStrings.contains(curString) ? null : curString;
 			from = to + dLen;
@@ -401,7 +470,7 @@ public class IOUtilFunctions {
 		int numTokens = 0;
 		int from = 0; 
 		while( from < len  ) { // for all tokens
-			int to = getTo(str, from, delim);
+			int to = getTo(str, from, delim, len, dlen);
 			from = to + dlen;
 			numTokens++;
 		}

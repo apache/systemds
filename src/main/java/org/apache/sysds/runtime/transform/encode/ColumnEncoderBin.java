@@ -169,7 +169,7 @@ public class ColumnEncoderBin extends ColumnEncoder {
 		final double[] codes = tmp != null && tmp.length == endLength ? tmp : new double[endLength];
 		if (_binMins == null || _binMins.length == 0 || _binMaxs.length == 0) {
 			LOG.warn("ColumnEncoderBin: applyValue without bucket boundaries, assign 1");
-			Arrays.fill(codes, startInd, endInd, 1.0);
+			Arrays.fill(codes, 0, endLength, 1.0);
 			return codes;
 		}
 

@@ -144,8 +144,6 @@ public class TransformCompressedTestMultiCol {
 
 	public void test(String spec) {
 		try {
-			LOG.error(data);
-			LOG.error(k);
 			FrameBlock meta = null;
 			MultiColumnEncoder encoderCompressed = EncoderFactory.createEncoder(spec, data.getColumnNames(),
 				data.getNumColumns(), meta);

@@ -112,12 +112,7 @@ public class MultiColumnEncoder implements Encoder {
 				LOG.debug("Encoding with full DAG on " + k + " Threads");
 				try {
 					List<DependencyTask<?>> tasks = getEncodeTasks(in, out, pool);
-					// LOG.error(tasks);
-					// pool.submitAll(tasks);
-					for(Future<Future<?>> t : pool.submitAll(tasks)){
-						t.get().get();
-						// LOG.error(tasks);
-					}
+					pool.submitAllAndWait(tasks);
 				}
 				finally{
 					pool.shutdown();

@@ -232,7 +232,10 @@ public class ColumnEncoderDummycode extends ColumnEncoder {
 
 			if(distinct != -1) {
 				_domainSize = Math.max(1, distinct);
-				LOG.error("DummyCoder for column: " + _colID + " has domain size: " + _domainSize);
+				if(LOG.isDebugEnabled()){
+
+					LOG.debug("DummyCoder for column: " + _colID + " has domain size: " + _domainSize);
+				}
 			}
 		}
 	}

@@ -373,7 +373,6 @@ public class ColumnEncoderBin extends ColumnEncoder {
 	public void buildPartial(FrameBlock in) {
 		if(!isApplicable())
 			return;
-		LOG.error("Building entire min-max col");
 		// derive bin boundaries from min/max per column
 		double[] pairMinMax = getMinMaxOfCol(in, _colID, 0, -1);
 		_colMins = pairMinMax[0];

@@ -102,7 +102,7 @@ public class StringArray extends Array<String> {
 		catch(Exception e) {
 			super.set(rl, ru, value, rlSrc);
 		}
-		finally{
+		finally {
 			materializedSize = -1;
 		}
 	}
@@ -150,18 +150,18 @@ public class StringArray extends Array<String> {
 
 		// final Charset cs = Charset.defaultCharset();
 		for(int i = 0; i < _size; i++)
-		// {
-		// 	if(_data[i] == null){
-		// 		out.writeInt(0);
-		// 	}
-		// 	else{
-		// 		// cs.encode(_data[i]);
-		// 		byte[] bs = _data[i].getBytes(cs);
-		// 		out.writeInt(bs.length);
-		// 		out.write(bs);
-		// 	}
-		// }
-		
+			// {
+			// if(_data[i] == null){
+			// out.writeInt(0);
+			// }
+			// else{
+			// // cs.encode(_data[i]);
+			// byte[] bs = _data[i].getBytes(cs);
+			// out.writeInt(bs.length);
+			// out.write(bs);
+			// }
+			// }
+
 			out.writeUTF((_data[i] != null) ? _data[i] : "");
 	}
 
@@ -172,18 +172,17 @@ public class StringArray extends Array<String> {
 		// byte[] bs = new byte[16];
 		// final Charset cs = Charset.defaultCharset();
 		for(int i = 0; i < _size; i++) {
-
 			// int l = in.readInt();
 			// if(l == 0){
-			// 	_data[i] = null;
+			// _data[i] = null;
 			// }
 			// else{
-			// 	if(l > bs.length)
-			// 		bs = new byte[l];
-			// 	in.readFully(bs, 0, l);
-			// 	String tmp = new String(bs, 0, l, cs);
-			// 	// String tmp = in.readUTF();
-			// 	_data[i] = tmp;
+			// if(l > bs.length)
+			// bs = new byte[l];
+			// in.readFully(bs, 0, l);
+			// String tmp = new String(bs, 0, l, cs);
+			// // String tmp = in.readUTF();
+			// _data[i] = tmp;
 			// }
 			{
 				String tmp = in.readUTF();

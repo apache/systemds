@@ -821,29 +821,29 @@ public class FrameBlock implements CacheBlock<FrameBlock>, Externalizable {
 	@Override
 	public void writeExternal(ObjectOutput out) throws IOException {
 		
-		if((out instanceof ObjectOutputStream)){
-			ObjectOutputStream oos = (ObjectOutputStream)out;
-			FastBufferedDataOutputStream fos = new FastBufferedDataOutputStream(oos);
-			write(fos); //note: cannot close fos as this would close oos
-			fos.flush();
-		}
-		else{
+		// if((out instanceof ObjectOutputStream)){
+		// 	ObjectOutputStream oos = (ObjectOutputStream)out;
+		// 	FastBufferedDataOutputStream fos = new FastBufferedDataOutputStream(oos);
+		// 	write(fos); //note: cannot close fos as this would close oos
+		// 	fos.flush();
+		// }
+		// else{
 			write(out);
-		}
+		// }
 	}
 
 	@Override
 	public void readExternal(ObjectInput in) throws IOException {
-		if(in instanceof ObjectInputStream) {
-			// fast deserialize of dense/sparse blocks
-			ObjectInputStream ois = (ObjectInputStream) in;
-			FastBufferedDataInputStream fis = new FastBufferedDataInputStream(ois);
-			readFields(fis); // note: cannot close fos as this would close oos
-		}
-		else {
+		// if(in instanceof ObjectInputStream) {
+		// 	// fast deserialize of dense/sparse blocks
+		// 	ObjectInputStream ois = (ObjectInputStream) in;
+		// 	FastBufferedDataInputStream fis = new FastBufferedDataInputStream(ois);
+		// 	readFields(fis); // note: cannot close fos as this would close oos
+		// }
+		// else {
 			// redirect deserialization to writable impl
 			readFields(in);
-		}
+		// }
 	}
 
 	@Override

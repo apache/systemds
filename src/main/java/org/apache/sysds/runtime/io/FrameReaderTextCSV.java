@@ -144,9 +144,8 @@ public class FrameReaderTextCSV extends FrameReader {
 			String[] parts = null; // cache array for line reading.
 			while(reader.next(key, value)) // foreach line
 			{
-				String cellStr = value.toString();
 				boolean emptyValuesFound = false;
-				cellStr = IOUtilFunctions.trim(cellStr);
+				String cellStr = IOUtilFunctions.trim(value.toString());
 				parts = IOUtilFunctions.splitCSV(cellStr, delim, parts);
 				// sanity checks for empty values and number of columns
 
@@ -154,13 +153,12 @@ public class FrameReaderTextCSV extends FrameReader {
 				final boolean mtdx = parts[0].equals(TfUtils.TXMTD_NDPREFIX);
 				// parse frame meta data (missing values / num distinct)
 				if(mtdP || mtdx) {
-					parts = IOUtilFunctions.splitCSV(cellStr, delim);
 					if(parts.length != dest.getNumColumns() + 1){
 						LOG.warn("Invalid metadata ");
 						parts = null;
 						continue;
 					}
-					if(mtdP)
+					else if(mtdP)
 						for(int j = 0; j < dest.getNumColumns(); j++)
 							dest.getColumnMetadata(j).setMvValue(parts[j + 1]);
 					else if(mtdx)
@@ -169,17 +167,8 @@ public class FrameReaderTextCSV extends FrameReader {
 					parts = null;
 					continue;
 				}
-
-				for(int col = 0; col < nCol; col++) {
-					String part = IOUtilFunctions.trim(parts[col]);
-					if(part.isEmpty() || (naValues != null && naValues.contains(part))) {
-						if(isFill && dfillValue != 0)
-							dest.set(row, col, sfillValue);
-						emptyValuesFound = true;
-					}
-					else
-						dest.set(row, col, part);
-				}
+				assignColumns(row, nCol, dest, parts, naValues, isFill, dfillValue, sfillValue);
+				
 				IOUtilFunctions.checkAndRaiseErrorCSVEmptyField(cellStr, isFill, emptyValuesFound);
 				IOUtilFunctions.checkAndRaiseErrorCSVNumColumns("", cellStr, parts, clen);
 				row++;
@@ -194,6 +183,46 @@ public class FrameReaderTextCSV extends FrameReader {
 
 		return row;
 	}
+
+	private boolean assignColumns(int row, int nCol, FrameBlock dest, String[] parts, Set<String> naValues,
+		boolean isFill, double dfillValue, String sfillValue) {
+		if(!isFill && naValues == null)
+			return assignColumnsNoFillNoNan(row, nCol, dest, parts);
+		else 
+			return assignColumnsGeneric(row, nCol, dest, parts, naValues, isFill, dfillValue, sfillValue);
+	}
+
+	private boolean assignColumnsGeneric(int row, int nCol, FrameBlock dest, String[] parts, Set<String> naValues,
+		boolean isFill, double dfillValue, String sfillValue) {
+		boolean emptyValuesFound = false;
+		for(int col = 0; col < nCol; col++) {
+			String part = IOUtilFunctions.trim(parts[col]);
+			if(part.isEmpty() || (naValues != null && naValues.contains(part))) {
+				if(isFill && dfillValue != 0)
+					dest.set(row, col, sfillValue);
+				emptyValuesFound = true;
+			}
+			else
+				dest.set(row, col, part);
+		}
+
+		return emptyValuesFound;
+	}
+
+	private boolean assignColumnsNoFillNoNan(int row, int nCol, FrameBlock dest, String[] parts){
+		
+		boolean emptyValuesFound = false;
+		for(int col = 0; col < nCol; col++) {
+			String part = IOUtilFunctions.trim(parts[col]);
+			if(part.isEmpty()) 
+				emptyValuesFound = true;
+			else
+				dest.set(row, col, part);
+		}
+
+		return emptyValuesFound;
+	}
+
 
 	protected Pair<Integer, Integer> computeCSVSize(Path path, JobConf job, FileSystem fs) throws IOException {
 		TextInputFormat informat = new TextInputFormat();

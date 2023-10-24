@@ -112,11 +112,11 @@ public class MultiColumnEncoder implements Encoder {
 				LOG.debug("Encoding with full DAG on " + k + " Threads");
 				try {
 					List<DependencyTask<?>> tasks = getEncodeTasks(in, out, pool);
-					LOG.error(tasks);
-					pool.submitAll(tasks);
+					// LOG.error(tasks);
+					// pool.submitAll(tasks);
 					for(Future<Future<?>> t : pool.submitAll(tasks)){
 						t.get().get();
-						LOG.error(tasks);
+						// LOG.error(tasks);
 					}
 				}
 				finally{
@@ -1175,8 +1175,8 @@ public class MultiColumnEncoder implements Encoder {
 		private final ColumnEncoder _encoder;
 		private final MatrixBlock _out;
 		private final CacheBlock<?> _in;
-		private int _offset = -1; // offset dude to dummycoding in
-									// previous columns needs to be updated by external task!
+		/** Offset because of dummmy coding such that the column id is correct. */
+		private int _offset = -1; 
 
 		private ApplyTasksWrapperTask(ColumnEncoder encoder, CacheBlock<?> in, 
 				MatrixBlock out, DependencyThreadPool pool) {
@@ -1197,7 +1197,7 @@ public class MultiColumnEncoder implements Encoder {
 			// and _outputCol has been updated!
 			if(_offset == -1)
 				throw new DMLRuntimeException(
-					"OutputCol for apply task wrapper has not been updated!, Most likely some " + "concurrency issues");
+					"OutputCol for apply task wrapper has not been updated!, Most likely some concurrency issues\n " + this);
 			return super.call();
 		}
 

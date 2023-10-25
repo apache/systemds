@@ -22,38 +22,61 @@ package org.apache.sysds.runtime.frame.data.columns;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 import java.util.Arrays;
 import java.util.BitSet;
 
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.frame.data.columns.ArrayFactory.FrameArrayType;
 import org.apache.sysds.runtime.matrix.data.Pair;
-import org.apache.sysds.runtime.util.UtilFunctions;
 import org.apache.sysds.utils.MemoryEstimates;
 
-public class LongArray extends Array<Long> {
+public class HashLongArray extends Array<Object> {
 	private long[] _data;
 
-	public LongArray(long[] data) {
+	public HashLongArray(long[] data) {
 		super(data.length);
 		_data = data;
 	}
 
-	public long[] get() {
-		return _data;
+	public HashLongArray(String[] data) {
+		super(data.length);
+		_data = new long[data.length];
+		for(int i = 0; i < data.length; i++) {
+			_data[i] = parseHashLong(data[i]);
+		}
 	}
 
 	@Override
-	public Long get(int index) {
+	public Object get() {
+		throw new NotImplementedException("Invalid to get underlying array in Hash");
+	}
+
+	@Override
+	public Object get(int index) {
+		return Long.toHexString(_data[index]);
+	}
+
+	public long getLong(int index) {
 		return _data[index];
 	}
 
 	@Override
-	public void set(int index, Long value) {
-		_data[index] = (value != null) ? value : 0L;
+	public void set(int index, Object value) {
+		if(value instanceof String)
+			_data[index] = parseHashLong((String) value);
+		else if(value instanceof Long)
+			_data[index] = (Long) value;
+		else if (value == null)
+			_data[index] = 0L;
+		else 
+			throw new NotImplementedException("not supported : " + value);
+	}
+
+	@Override
+	public void set(int index, String value) {
+		_data[index] = parseHashLong((String) value);
 	}
 
 	@Override
@@ -62,79 +85,92 @@ public class LongArray extends Array<Long> {
 	}
 
 	@Override
-	public void set(int index, String value) {
-		set(index, parseLong(value));
-	}
-
-	@Override
-	public void set(int rl, int ru, Array<Long> value) {
+	public void set(int rl, int ru, Array<Object> value) {
 		set(rl, ru, value, 0);
 	}
 
 	@Override
 	public void setFromOtherType(int rl, int ru, Array<?> value) {
-		final ValueType vt = value.getValueType();
 		for(int i = rl; i <= ru; i++)
-			_data[i] = UtilFunctions.objectToLong(vt, value.get(i));
+			_data[i] = parseHashLong(value.get(i));
 	}
 
 	@Override
-	public void set(int rl, int ru, Array<Long> value, int rlSrc) {
-		try {
-			// try system array copy.
-			// but if it does not work, default to get.
-			System.arraycopy(value.get(), rlSrc, _data, rl, ru - rl + 1);
+	public void setNz(int rl, int ru, Array<Object> value) {
+		if(value instanceof HashLongArray) {
+			long[] thatVals = ((HashLongArray) value)._data;
+			for(int i = rl; i <= ru; i++)
+				if(thatVals[i] != 0)
+					_data[i] = thatVals[i];
 		}
-		catch(Exception e) {
-			super.set(rl, ru, value, rlSrc);
+		else {
+			throw new NotImplementedException("Not supported type of array: " + value.getClass().getSimpleName());
 		}
-	}
-
-	@Override
-	public void setNz(int rl, int ru, Array<Long> value) {
-		long[] data2 = ((LongArray) value)._data;
-		for(int i = rl; i <= ru; i++)
-			if(data2[i] != 0)
-				_data[i] = data2[i];
 	}
 
 	@Override
 	public void setFromOtherTypeNz(int rl, int ru, Array<?> value) {
-		final ValueType vt = value.getValueType();
-		for(int i = rl; i <= ru; i++) {
-			long v = UtilFunctions.objectToLong(vt, value.get(i));
-			if(v != 0)
-				_data[i] = v;
+		if(value instanceof HashLongArray)
+			setNz(rl, ru, (HashLongArray) value);
+		else if(value instanceof StringArray) {
+			StringArray st = ((StringArray) value);
+			for(int i = rl; i <= ru; i++)
+				if(st.get(i) != null)
+					_data[i] = parseHashLong(st.get(i));
+		}
+		else {
+			throw new NotImplementedException("Not supported type of array: " + value.getClass().getSimpleName());
 		}
 	}
 
 	@Override
-	public void append(String value) {
-		append(parseLong(value));
+	public void append(Object value) {
+		append(parseHashLong(value));
 	}
 
 	@Override
-	public void append(Long value) {
+	public void append(String value) {
+		append(parseHashLong(value));
+	}
+
+	public void append(long value) {
 		if(_data.length <= _size)
 			_data = Arrays.copyOf(_data, newSize());
-		_data[_size++] = (value != null) ? value : 0L;
+		_data[_size++] = value;
 	}
 
 	@Override
-	public Array<Long> append(Array<Long> other) {
-		final int endSize = this._size + other.size();
-		final long[] ret = new long[endSize];
-		System.arraycopy(_data, 0, ret, 0, this._size);
-		System.arraycopy(other.get(), 0, ret, this._size, other.size());
-		if(other instanceof OptionalArray)
-			return OptionalArray.appendOther((OptionalArray<Long>) other, new LongArray(ret));
-		else
-			return new LongArray(ret);
+	public Array<Object> append(Array<Object> other) {
+		if(other instanceof HashLongArray) {
+
+			final int endSize = this._size + other.size();
+			final long[] ret = new long[endSize];
+			System.arraycopy(_data, 0, ret, 0, this._size);
+			System.arraycopy(((HashLongArray) other)._data, 0, ret, this._size, other.size());
+			if(other instanceof OptionalArray)
+				return OptionalArray.appendOther((OptionalArray<Object>) other, new HashLongArray(ret));
+			else
+				return new HashLongArray(ret);
+		}
+		else if(other instanceof OptionalArray) {
+
+			OptionalArray<Object> ot = (OptionalArray<Object>) other;
+			if(ot._a instanceof HashLongArray) {
+				Array<Object> a = this.append((HashLongArray) ot._a);
+				return OptionalArray.appendOther(ot, a);
+			}
+			else {
+				throw new NotImplementedException("Invalid call with not hashArray");
+			}
+		}
+		else {
+			throw new NotImplementedException(other.getClass().getSimpleName() + "  not append supported in hashColumn");
+		}
 	}
 
 	@Override
 	public void write(DataOutput out) throws IOException {
-		out.writeByte(FrameArrayType.INT64.ordinal());
+		out.writeByte(FrameArrayType.HASH64.ordinal());
 		for(int i = 0; i < _size; i++)
 			out.writeLong(_data[i]);
 	}
@@ -147,13 +183,13 @@ public class LongArray extends Array<Long> {
 	}
 
 	@Override
-	public Array<Long> clone() {
-		return new LongArray(Arrays.copyOf(_data, _size));
+	public Array<Object> clone() {
+		return new HashLongArray(Arrays.copyOf(_data, _size));
 	}
 
 	@Override
-	public Array<Long> slice(int rl, int ru) {
-		return new LongArray(Arrays.copyOfRange(_data, rl, ru));
+	public Array<Object> slice(int rl, int ru) {
+		return new HashLongArray(Arrays.copyOfRange(_data, rl, ru));
 	}
 
 	@Override
@@ -168,26 +204,22 @@ public class LongArray extends Array<Long> {
 
 	@Override
 	public byte[] getAsByteArray() {
-		ByteBuffer longBuffer = ByteBuffer.allocate(8 * _size);
-		longBuffer.order(ByteOrder.LITTLE_ENDIAN);
-		for(int i = 0; i < _size; i++)
-			longBuffer.putLong(_data[i]);
-		return longBuffer.array();
+		throw new NotImplementedException("Unclear how this byte array should look like for Hash");
 	}
 
 	@Override
 	public ValueType getValueType() {
-		return ValueType.INT64;
+		return ValueType.HASH64;
 	}
 
 	@Override
 	public Pair<ValueType, Boolean> analyzeValueType() {
-		return new Pair<>(ValueType.INT64, false);
+		return new Pair<>(ValueType.HASH64, false);
 	}
 
 	@Override
 	public FrameArrayType getFrameArrayType() {
-		return FrameArrayType.INT64;
+		return FrameArrayType.HASH64;
 	}
 
 	@Override
@@ -246,7 +278,7 @@ public class LongArray extends Array<Long> {
 	protected Array<Integer> changeTypeInteger() {
 		int[] ret = new int[size()];
 		for(int i = 0; i < size(); i++) {
-			if(Math.abs(_data[i]) > Integer.MAX_VALUE )
+			if(Math.abs(_data[i]) > Integer.MAX_VALUE)
 				throw new DMLRuntimeException("Unable to change to integer from long array because of value:" + _data[i]);
 			ret[i] = (int) _data[i];
 		}
@@ -255,12 +287,12 @@ public class LongArray extends Array<Long> {
 
 	@Override
 	protected Array<Long> changeTypeLong() {
-		return this;
+		return new LongArray(_data);
 	}
 
 	@Override
 	protected Array<Object> changeTypeHash64() {
-		return new HashLongArray(_data);
+		return this;
 	}
 
 	@Override
@@ -273,13 +305,16 @@ public class LongArray extends Array<Long> {
 
 	@Override
 	public void fill(String value) {
-		fill(parseLong(value));
+		fill(parseHashLong(value));
 	}
 
 	@Override
+	public void fill(Object value) {
+		fill(parseHashLong(value));
+	}
+
 	public void fill(Long value) {
-		value = value != null ? value : 0L;
-		Arrays.fill(_data, value);
+		Arrays.fill(_data, value != null ? value : 0L);
 	}
 
 	@Override
@@ -287,18 +322,21 @@ public class LongArray extends Array<Long> {
 		return _data[i];
 	}
 
-	public static long parseLong(String s) {
+	public static long parseHashLong(Object s) {
+		if(s == null)
+			return 0L;
+		else if(s instanceof String)
+			return parseHashLong((String) s);
+		else if(s instanceof Long)
+			return (Long) s;
+		else
+			throw new NotImplementedException("not supported" + s);
+	}
+
+	public static long parseHashLong(String s) {
 		if(s == null || s.isEmpty())
-			return 0;
-		try {
-			return Long.parseLong(s);
-		}
-		catch(NumberFormatException e) {
-			if(s.contains("."))
-				return (long) Double.parseDouble(s);
-			else
-				throw e;
-		}
+			return 0L;
+		return Long.parseUnsignedLong(s, 16);
 	}
 
 	@Override
@@ -323,21 +361,21 @@ public class LongArray extends Array<Long> {
 	}
 
 	@Override
-	public Array<Long> select(int[] indices) {
+	public Array<Object> select(int[] indices) {
 		final long[] ret = new long[indices.length];
 		for(int i = 0; i < indices.length; i++)
 			ret[i] = _data[indices[i]];
-		return new LongArray(ret);
+		return new HashLongArray(ret);
 	}
 
 	@Override
-	public Array<Long> select(boolean[] select, int nTrue) {
+	public Array<Object> select(boolean[] select, int nTrue) {
 		final long[] ret = new long[nTrue];
 		int k = 0;
 		for(int i = 0; i < select.length; i++)
 			if(select[i])
 				ret[k++] = _data[i];
-		return new LongArray(ret);
+		return new HashLongArray(ret);
 	}
 
 	@Override
@@ -351,15 +389,15 @@ public class LongArray extends Array<Long> {
 	}
 
 	@Override
-	public boolean equals(Array<Long> other) {
-		if(other instanceof LongArray)
-			return Arrays.equals(_data, ((LongArray) other)._data);
+	public boolean equals(Array<Object> other) {
+		if(other instanceof HashLongArray)
+			return Arrays.equals(_data, ((HashLongArray) other)._data);
 		else
 			return false;
 	}
 
 	@Override
-	public boolean possiblyContainsNaN(){
+	public boolean possiblyContainsNaN() {
 		return false;
 	}
 

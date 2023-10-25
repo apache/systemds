@@ -23,6 +23,7 @@ import java.io.DataInput;
 import java.io.IOException;
 import java.util.BitSet;
 
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.common.Types.ValueType;
@@ -35,12 +36,26 @@ public interface ArrayFactory {
 	public final static int bitSetSwitchPoint = 64;
 
 	public enum FrameArrayType {
-		STRING, BOOLEAN, BITSET, INT32, INT64, FP32, FP64, CHARACTER, RAGGED, OPTIONAL, DDC;
+		STRING, BOOLEAN, BITSET, INT32, INT64, FP32, FP64, 
+		CHARACTER, RAGGED, OPTIONAL, DDC,
+		HASH64;
 	}
 
 	public static StringArray create(String[] col) {
 		return new StringArray(col);
 	}
+
+	public static HashLongArray createHash64(String[] col){
+		return new HashLongArray(col);
+	} 
+
+	public static OptionalArray<Object> createHash64Opt(String[] col){
+		return new OptionalArray<Object>(col, ValueType.HASH64);
+	} 
+
+	public static HashLongArray createHash64(long[] col){
+		return new HashLongArray(col);
+	} 
 
 	public static BooleanArray create(boolean[] col) {
 		return new BooleanArray(col);
@@ -81,6 +96,8 @@ public interface ArrayFactory {
 	public static long getInMemorySize(ValueType type, int _numRows, boolean containsNull) {
 		if(containsNull) {
 			switch(type) {
+				case HASH64:
+					type = ValueType.INT64;
 				case BOOLEAN:
 				case INT64:
 				case FP64:
@@ -108,6 +125,7 @@ public interface ArrayFactory {
 					else
 						return BooleanArray.estimateInMemorySize(_numRows);
 				case INT64:
+				case HASH64:
 					return Array.baseMemoryCost() + (long) MemoryEstimates.longArrayCost(_numRows);
 				case FP64:
 					return Array.baseMemoryCost() + (long) MemoryEstimates.doubleArrayCost(_numRows);
@@ -154,6 +172,8 @@ public interface ArrayFactory {
 				return new OptionalArray<>(new DoubleArray(new double[nRow]), true);
 			case CHARACTER:
 				return new OptionalArray<>(new CharArray(new char[nRow]), true);
+			case HASH64:
+				return new OptionalArray<>(new HashLongArray(new long[nRow]), true);
 			case UNKNOWN:
 			case STRING:
 			default:
@@ -184,6 +204,8 @@ public interface ArrayFactory {
 				return new DoubleArray(new double[nRow]);
 			case CHARACTER:
 				return new CharArray(new char[nRow]);
+			case HASH64:
+				return new HashLongArray(new long[nRow]);
 			case UNKNOWN:
 			case STRING:
 			default:
@@ -222,9 +244,14 @@ public interface ArrayFactory {
 				return OptionalArray.readOpt(in, nRow);
 			case DDC:
 				return DDCArray.read(in);
-			default: // String
+			case STRING:
 				arr = new StringArray(new String[nRow]);
 				break;
+			case HASH64:
+				arr = new HashLongArray(new long[nRow]);
+				break;
+			default: 
+				throw new NotImplementedException(v + "");
 		}
 		arr.readFields(in);
 		return arr;
@@ -325,6 +352,8 @@ public interface ArrayFactory {
 				return IntegerArray.parseInt(s);
 			case INT64:
 				return LongArray.parseLong(s);
+			case HASH64:
+				return HashLongArray.parseHashLong(s);
 			case STRING:
 			case UNKNOWN:
 			default:

@@ -122,6 +122,18 @@ public interface FrameUtil {
 		return null;
 	}
 
+	public static ValueType isHash(final String val, final int len) {
+		if(len == 8) {
+			for(int i = 0; i < 8; i++) {
+				char v = val.charAt(i);
+				if(v < '0' || v > 'f')
+					return null;
+			}
+			return ValueType.HASH64;
+		}
+		return null;
+	}
+
 	public static ValueType isFloatType(final String val, final int len) {
 		if(len <= 30 && (simpleFloatMatch(val, len) || floatPattern.matcher(val).matches())) {
 			if(len <= 7 || (len == 8 && val.charAt(0) == '-'))
@@ -169,7 +181,7 @@ public interface FrameUtil {
 			final char c = val.charAt(i);
 			if(c >= '0' && c <= '9')
 				continue;
-			else if(c == '.' || c == ','){
+			else if(c == '.' || c == ',') {
 				if(encounteredDot == true)
 					return false;
 				else
@@ -209,7 +221,7 @@ public interface FrameUtil {
 		switch(minType) {
 			case UNKNOWN:
 			case BOOLEAN:
-			// case CHARACTER:
+				// case CHARACTER:
 				if(isBooleanType(val, len) != null)
 					return ValueType.BOOLEAN;
 			case UINT8:
@@ -226,6 +238,10 @@ public interface FrameUtil {
 			case CHARACTER:
 				if(len == 1)
 					return ValueType.CHARACTER;
+			case HASH64:
+				r = isHash(val, len);
+				if(r != null)
+					return r;
 			case STRING:
 			default:
 				return ValueType.STRING;

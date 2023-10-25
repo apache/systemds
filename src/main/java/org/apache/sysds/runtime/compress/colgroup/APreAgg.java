@@ -154,7 +154,7 @@ public abstract class APreAgg extends AColGroupValue {
 			final boolean left = shouldPreAggregateLeft(lg);
 			if(!loggedWarningForDirect && shouldDirectMultiply(lg, leftIdx.size(), rightIdx.size(), left)) {
 				loggedWarningForDirect = true;
-				LOG.warn("Not implemented direct tsmm colgroup");
+				LOG.warn("Not implemented direct tsmm colgroup: " + lg.getClass().getSimpleName()  + " %*% " + this.getClass().getSimpleName() );
 			}
 
 			if(left) {

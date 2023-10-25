@@ -77,17 +77,21 @@ public class Types
 	public enum ValueType {
 		UINT4, UINT8, // Used for parsing in UINT values from numpy.
 		FP32, FP64, INT32, INT64, BOOLEAN, STRING, UNKNOWN,
+		HASH64, // Indicate that the value is a hash of 64 bit.
 		CHARACTER;
 		
 		public boolean isNumeric() {
 			return this == UINT8 || this == INT32 || this == INT64 || this == FP32 || this == FP64 || this== UINT4;
 		}
+		
 		public boolean isUnknown() {
 			return this == UNKNOWN;
 		}
+
 		public boolean isPseudoNumeric() {
 			return isNumeric() || this == BOOLEAN || this == CHARACTER;
 		}
+
 		public String toExternalString() {
 			switch(this) {
 				case FP32:
@@ -100,10 +104,13 @@ public class Types
 				default:      return toString();
 			}
 		}
+
 		public static ValueType fromExternalString(String value) {
 			//for now we support both internal and external strings
 			//until we have completely changed the external types
-			String lValue = (value != null) ? value.toUpperCase() : null;
+			if(value == null)
+				throw new DMLRuntimeException("Unknown null value type");
+			final String lValue = value.toUpperCase();
 			switch(lValue) {
 				case "FP32":     return FP32;
 				case "FP64":
@@ -117,6 +124,7 @@ public class Types
 				case "STRING":   return STRING;
 				case "CHARACTER": return CHARACTER;
 				case "UNKNOWN":  return UNKNOWN;
+				case "HASH64": return HASH64;
 				default:
 					throw new DMLRuntimeException("Unknown value type: "+value);
 			}
@@ -143,6 +151,13 @@ public class Types
 			switch(a){
 				case CHARACTER:
 					return STRING;
+				case HASH64:
+					switch(b){
+						case STRING: 
+							return b;
+						default:
+							return a;
+					}
 				case STRING:
 					return a;
 				case FP64:

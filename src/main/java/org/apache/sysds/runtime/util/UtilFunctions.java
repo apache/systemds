@@ -46,6 +46,7 @@ import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.data.TensorIndexes;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.runtime.frame.data.columns.CharArray;
+import org.apache.sysds.runtime.frame.data.columns.HashLongArray;
 import org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue;
 import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysds.runtime.matrix.data.Pair;
@@ -483,15 +484,16 @@ public class UtilFunctions {
 	public static Object stringToObject(ValueType vt, String in) {
 		if( in == null || in.isEmpty() )  return null;
 		switch( vt ) {
-			case STRING:  return in;
-			case BOOLEAN: return Boolean.parseBoolean(in);
+			case STRING:    return in;
+			case BOOLEAN:   return Boolean.parseBoolean(in);
 			case UINT4:
 			case UINT8:
-			case INT32:   return Integer.parseInt(in);
-			case INT64:   return Long.parseLong(in);
-			case FP64:    return Double.parseDouble(in);
-			case FP32:    return Float.parseFloat(in);
+			case INT32:     return Integer.parseInt(in);
+			case INT64:     return Long.parseLong(in);
+			case FP64:      return Double.parseDouble(in);
+			case FP32:      return Float.parseFloat(in);
 			case CHARACTER: return CharArray.parseChar(in);
+			case HASH64:    return HashLongArray.parseHashLong(in);
 			default: throw new RuntimeException("Unsupported value type: "+vt);
 		}
 	}
@@ -674,7 +676,7 @@ public class UtilFunctions {
 	public static Object objectToObject(ValueType vt, Object in) {
 		if( in instanceof Double && vt == ValueType.FP64
 			|| in instanceof Float && vt == ValueType.FP32
-			|| in instanceof Long && vt == ValueType.INT64
+			|| in instanceof Long && (vt == ValueType.INT64 || vt == ValueType.HASH64)
 			|| in instanceof Integer && vt == ValueType.INT32
 			|| in instanceof Boolean && vt == ValueType.BOOLEAN
 			|| in instanceof String && vt == ValueType.STRING )

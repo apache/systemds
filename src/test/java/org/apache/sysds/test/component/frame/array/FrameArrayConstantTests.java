@@ -102,6 +102,8 @@ public class FrameArrayConstantTests {
 	@Test
 	public void testConstruction_1() {
 		try {
+			if(t == ValueType.HASH64)
+				return;
 			Array<?> a = ArrayFactory.allocate(t, nRow, "1.0");
 			for(int i = 0; i < nRow; i++)
 				assertEquals(a.getAsDouble(i), 1.0, 0.0000000001);

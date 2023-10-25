@@ -232,6 +232,11 @@ public class DDCArray<T> extends ACompressedArray<T> {
 	}
 
 	@Override
+	protected Array<Object> changeTypeHash64(){
+		return new DDCArray<>(dict.changeTypeHash64(), map);
+	}
+
+	@Override
 	protected Array<String> changeTypeString() {
 		return new DDCArray<>(dict.changeTypeString(), map);
 	}

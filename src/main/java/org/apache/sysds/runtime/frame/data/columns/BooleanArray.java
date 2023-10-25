@@ -266,6 +266,14 @@ public class BooleanArray extends ABooleanArray {
 	}
 
 	@Override
+	protected Array<Object> changeTypeHash64(){
+		long[] ret = new long[size()];
+		for(int i = 0; i < size(); i++)
+			ret[i] = _data[i]  ? 1L : 0L;
+		return new HashLongArray(ret);
+	}
+
+	@Override
 	protected Array<String> changeTypeString() {
 		String[] ret = new String[size()];
 		for(int i = 0; i < size(); i++)

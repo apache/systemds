@@ -63,6 +63,17 @@ public class OptionalArray<T> extends Array<T> {
 		}
 	}
 
+	@SuppressWarnings("unchecked")
+	public OptionalArray(T[] a, ValueType vt){
+		super(a.length);
+		_a = (Array<T>) ArrayFactory.allocate(vt, a.length);
+		_n = ArrayFactory.allocateBoolean(a.length);
+		for(int i = 0; i < a.length; i++) {
+			_a.set(i, a[i]);
+			_n.set(i, a[i] != null);
+		}
+	}
+
 	public OptionalArray(Array<T> a, boolean empty) {
 		super(a.size());
 		if(a instanceof OptionalArray)
@@ -339,6 +350,12 @@ public class OptionalArray<T> extends Array<T> {
 	@Override
 	protected Array<Long> changeTypeLong() {
 		Array<Long> a = _a.changeTypeLong();
+		return new OptionalArray<>(a, _n);
+	}
+
+	@Override
+	protected Array<Object> changeTypeHash64() {
+		Array<Object> a = _a.changeTypeHash64();
 		return new OptionalArray<>(a, _n);
 	}
 

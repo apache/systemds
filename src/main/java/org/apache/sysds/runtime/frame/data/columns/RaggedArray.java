@@ -289,6 +289,11 @@ public class RaggedArray<T> extends Array<T> {
 	}
 
 	@Override
+	protected Array<Object> changeTypeHash64() {
+		return _a.changeTypeHash64();
+	}
+
+	@Override
 	protected Array<String> changeTypeString() {
 		return _a.changeTypeString();
 	}

@@ -520,7 +520,7 @@ public abstract class Array<T> implements Writable {
 	 * 
 	 * @return A Hash64 array 
 	 */
-	protected abstract Array<String> changeTypeHash64();
+	protected abstract Array<Object> changeTypeHash64();
 
 	/**
 	 * Change type to a String array type

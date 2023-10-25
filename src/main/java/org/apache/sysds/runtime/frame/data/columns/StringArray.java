@@ -568,7 +568,7 @@ public class StringArray extends Array<String> {
 	}
 
 	@Override
-	protected Array<String> changeTypeHash64() {
+	protected Array<Object> changeTypeHash64() {
 		try {
 			long[] ret = new long[size()];
 			for(int i = 0; i < size(); i++) {

@@ -194,7 +194,7 @@ public interface ArrayFactory {
 			case CHARACTER:
 				return new CharArray(new char[nRow]);
 			case HASH64:
-				throw new NotImplementedException();
+				return new HashLongArray(new long[nRow]);
 			case UNKNOWN:
 			case STRING:
 			default:

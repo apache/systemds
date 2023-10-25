@@ -2549,6 +2549,7 @@ public class TestUtils {
 			case INT32:   return random.nextInt();
 			case INT64:   return random.nextLong();
 			case BOOLEAN: return random.nextBoolean();
+			case HASH64:  return Long.toHexString(random.nextLong());
 			case STRING:
 				return random.ints('a', 'z' + 1)
 						.limit(10)

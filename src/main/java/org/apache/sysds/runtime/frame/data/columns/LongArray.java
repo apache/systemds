@@ -259,7 +259,7 @@ public class LongArray extends Array<Long> {
 	}
 
 	@Override
-	protected Array<String> changeTypeHash64() {
+	protected Array<Object> changeTypeHash64() {
 		return new HashLongArray(_data);
 	}
 

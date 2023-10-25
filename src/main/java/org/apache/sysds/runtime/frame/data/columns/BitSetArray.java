@@ -466,7 +466,7 @@ public class BitSetArray extends ABooleanArray {
 	}
 
 	@Override
-	protected Array<String> changeTypeHash64(){
+	protected Array<Object> changeTypeHash64(){
 		long[] ret = new long[size()];
 		for(int i = 0; i < size(); i++)
 			ret[i] = get(i) ? 1L : 0L;

@@ -232,7 +232,7 @@ public class DDCArray<T> extends ACompressedArray<T> {
 	}
 
 	@Override
-	protected Array<String> changeTypeHash64(){
+	protected Array<Object> changeTypeHash64(){
 		return new DDCArray<>(dict.changeTypeHash64(), map);
 	}
 

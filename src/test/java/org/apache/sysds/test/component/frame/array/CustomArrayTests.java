@@ -45,6 +45,7 @@ import org.apache.sysds.runtime.frame.data.columns.CharArray;
 import org.apache.sysds.runtime.frame.data.columns.DDCArray;
 import org.apache.sysds.runtime.frame.data.columns.DoubleArray;
 import org.apache.sysds.runtime.frame.data.columns.FloatArray;
+import org.apache.sysds.runtime.frame.data.columns.HashLongArray;
 import org.apache.sysds.runtime.frame.data.columns.IntegerArray;
 import org.apache.sysds.runtime.frame.data.columns.LongArray;
 import org.apache.sysds.runtime.frame.data.columns.OptionalArray;
@@ -857,7 +858,7 @@ public class CustomArrayTests {
 		try {
 			Array<Long> a = null;
 			Array<Long> b = new DDCArray<Long>(new LongArray(new long[] {1, 2, 3, 4}), //
-				MapToFactory.create(10, new int[] {0, 0, 0, 0, 1, 1, 1, 2, 2, 3,3}, 4));
+				MapToFactory.create(10, new int[] {0, 0, 0, 0, 1, 1, 1, 2, 2, 3, 3}, 4));
 			Array<Long> c = ArrayFactory.set(a, b, 10, 19, 20);
 			assertEquals((long) c.get(0), 0L);
 			assertEquals((long) c.get(10), 1L);
@@ -873,7 +874,7 @@ public class CustomArrayTests {
 		try {
 			Array<Long> a = null;
 			Array<Long> b = new DDCArray<Long>(new OptionalArray<Long>(new Long[] {1L, 2L, 3L, 4L}), //
-				MapToFactory.create(10, new int[] {0, 0, 0, 0, 1, 1, 1, 2, 2, 3,3}, 4));
+				MapToFactory.create(10, new int[] {0, 0, 0, 0, 1, 1, 1, 2, 2, 3, 3}, 4));
 			Array<Long> c = ArrayFactory.set(a, b, 10, 19, 20);
 			assertEquals(c.get(0), null);
 			assertEquals((long) c.get(10), 1L);
@@ -883,8 +884,6 @@ public class CustomArrayTests {
 			fail(e.getMessage());
 		}
 	}
-
-	
 
 	@Test
 	public void testSetOptionalB() {
@@ -1364,4 +1363,57 @@ public class CustomArrayTests {
 			assertEquals(a.hashDouble(i), Double.NaN, 0.0);
 		}
 	}
+
+	@Test
+	public void parseHash() {
+		assertEquals(10, HashLongArray.parseLong("a"));
+	}
+
+	@Test
+	public void parseHash2() {
+		assertEquals(-255, HashLongArray.parseLong("-ff"));
+	}
+
+	@Test
+	public void parseHash_ff() {
+		assertEquals(255, HashLongArray.parseLong("ff"));
+	}
+
+	@Test
+	public void parseHash_fff() {
+		assertEquals(4095, HashLongArray.parseLong("fff"));
+	}
+
+	@Test
+	public void parseHash_ffff() {
+		assertEquals(65535, HashLongArray.parseLong("ffff"));
+	}
+
+
+	@Test
+	public void parseHash_fffff() {
+		assertEquals(1048575, HashLongArray.parseLong("fffff"));
+	}
+
+	@Test
+	public void parseHash_ffffff() {
+		assertEquals(16777215, HashLongArray.parseLong("ffffff"));
+	}
+
+	@Test
+	public void parseHash_fffffff() {
+		assertEquals(268435455L, HashLongArray.parseLong("fffffff"));
+	}
+
+
+	@Test
+	public void parseHash_ffffffff() {
+		assertEquals(4294967295L, HashLongArray.parseLong("ffffffff"));
+	}
+
+	@Test
+	public void parseHash_ffffffff_ffffffff() {
+		assertEquals(Long.MAX_VALUE, HashLongArray.parseLong("fffffffffffffff"));
+	}
+
 }

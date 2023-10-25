@@ -313,7 +313,7 @@ public class DoubleArray extends Array<Double> {
 	}
 
 	@Override
-	protected Array<String> changeTypeHash64() {
+	protected Array<Object> changeTypeHash64() {
 		long[] ret = new long[size()];
 		for(int i = 0; i < size(); i++) {
 			if(_data[i] != (long) _data[i])

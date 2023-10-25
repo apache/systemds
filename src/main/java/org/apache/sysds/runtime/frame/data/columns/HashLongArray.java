@@ -33,7 +33,7 @@ import org.apache.sysds.runtime.matrix.data.Pair;
 import org.apache.sysds.runtime.util.UtilFunctions;
 import org.apache.sysds.utils.MemoryEstimates;
 
-public class HashLongArray extends Array<String> {
+public class HashLongArray extends Array<Object> {
 	private long[] _data;
 
 	public HashLongArray(long[] data) {
@@ -46,7 +46,7 @@ public class HashLongArray extends Array<String> {
 	}
 
 	@Override
-	public String get(int index) {
+	public Object get(int index) {
 		return Long.toHexString(_data[index]);
 	}
 
@@ -55,8 +55,19 @@ public class HashLongArray extends Array<String> {
 	}
 
 	@Override
+	public void set(int index, Object value) {
+		if(value instanceof String)
+			_data[index] = parseLong((String)value);
+		else if(value instanceof Long)
+			_data[index] = (Long)value;
+		else 
+			throw new NotImplementedException("not supported : " + value);
+	}
+
+
+	@Override
 	public void set(int index, String value) {
-		_data[index] = (value != null) ? Long.parseLong(value, 16) : 0L;
+		_data[index] = parseLong((String)value);
 	}
 
 	@Override
@@ -65,7 +76,7 @@ public class HashLongArray extends Array<String> {
 	}
 
 	@Override
-	public void set(int rl, int ru, Array<String> value) {
+	public void set(int rl, int ru, Array<Object> value) {
 		set(rl, ru, value, 0);
 	}
 
@@ -77,13 +88,10 @@ public class HashLongArray extends Array<String> {
 	}
 
 	@Override
-	public void setNz(int rl, int ru, Array<String> value) {
-		if(value instanceof StringArray){
-			throw new NotImplementedException();
-		}
-		else{
-			throw new NotImplementedException();
-		}
+	public void setNz(int rl, int ru, Array<Object> value) {
+	
+		throw new NotImplementedException();
+		
 		// long[] data2 = ((LongArray) value)._data;
 		// for(int i = rl; i <= ru; i++)
 		// 	if(data2[i] != 0)
@@ -96,8 +104,14 @@ public class HashLongArray extends Array<String> {
 	}
 
 	@Override
+	public void append(Object value) {
+		append(parseLong(value));
+	}
+
+
+	@Override
 	public void append(String value) {
-		append(Long.parseLong(value, 16));
+		append(parseLong(value));
 	}
 
 	public void append(long value) {
@@ -107,7 +121,7 @@ public class HashLongArray extends Array<String> {
 	}
 
 	@Override
-	public Array<String> append(Array<String> other) {
+	public Array<Object> append(Array<Object> other) {
 		throw new NotImplementedException();
 		// final int endSize = this._size + other.size();
 		// final long[] ret = new long[endSize];
@@ -134,12 +148,12 @@ public class HashLongArray extends Array<String> {
 	}
 
 	@Override
-	public Array<String> clone() {
+	public Array<Object> clone() {
 		return new HashLongArray(Arrays.copyOf(_data, _size));
 	}
 
 	@Override
-	public Array<String> slice(int rl, int ru) {
+	public Array<Object> slice(int rl, int ru) {
 		return new HashLongArray(Arrays.copyOfRange(_data, rl, ru));
 	}
 
@@ -247,7 +261,7 @@ public class HashLongArray extends Array<String> {
 	}
 
 	@Override
-	protected Array<String> changeTypeHash64() {
+	protected Array<Object> changeTypeHash64() {
 		return this;
 	}
 
@@ -264,6 +278,11 @@ public class HashLongArray extends Array<String> {
 		fill(parseLong(value));
 	}
 
+	@Override
+	public void fill(Object value) {
+		fill(parseLong(value));
+	}
+
 	public void fill(Long value) {
 		value = value != null ? value : 0L;
 		Arrays.fill(_data, value);
@@ -274,10 +293,20 @@ public class HashLongArray extends Array<String> {
 		return _data[i];
 	}
 
+	public static long parseLong(Object s) {
+		if(s instanceof String)
+			return parseLong((String) s);
+		else if (s instanceof Long)
+			return (Long)s;
+		else 
+			throw new NotImplementedException("not supported" + s); 
+	}
+
+
 	public static long parseLong(String s) {
 		if(s == null || s.isEmpty())
 			return 0L;
-		return Long.parseLong(s, 16);
+		return Long.parseUnsignedLong(s, 16);
 	}
 
 	@Override
@@ -302,7 +331,7 @@ public class HashLongArray extends Array<String> {
 	}
 
 	@Override
-	public Array<String> select(int[] indices) {
+	public Array<Object> select(int[] indices) {
 		final long[] ret = new long[indices.length];
 		for(int i = 0; i < indices.length; i++)
 			ret[i] = _data[indices[i]];
@@ -310,7 +339,7 @@ public class HashLongArray extends Array<String> {
 	}
 
 	@Override
-	public Array<String> select(boolean[] select, int nTrue) {
+	public Array<Object> select(boolean[] select, int nTrue) {
 		final long[] ret = new long[nTrue];
 		int k = 0;
 		for(int i = 0; i < select.length; i++)
@@ -330,7 +359,7 @@ public class HashLongArray extends Array<String> {
 	}
 
 	@Override
-	public boolean equals(Array<String> other) {
+	public boolean equals(Array<Object> other) {
 		if(other instanceof HashLongArray)
 			return Arrays.equals(_data, ((HashLongArray) other)._data);
 		else

@@ -23,6 +23,7 @@ import java.io.DataInput;
 import java.io.IOException;
 import java.util.BitSet;
 
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.common.Types.ValueType;
@@ -35,7 +36,9 @@ public interface ArrayFactory {
 	public final static int bitSetSwitchPoint = 64;
 
 	public enum FrameArrayType {
-		STRING, BOOLEAN, BITSET, INT32, INT64, FP32, FP64, CHARACTER, RAGGED, OPTIONAL, DDC;
+		STRING, BOOLEAN, BITSET, INT32, INT64, FP32, FP64, 
+		CHARACTER, RAGGED, OPTIONAL, DDC,
+		HASH64;
 	}
 
 	public static StringArray create(String[] col) {
@@ -81,6 +84,8 @@ public interface ArrayFactory {
 	public static long getInMemorySize(ValueType type, int _numRows, boolean containsNull) {
 		if(containsNull) {
 			switch(type) {
+				case HASH64:
+					type = ValueType.INT64;
 				case BOOLEAN:
 				case INT64:
 				case FP64:
@@ -123,6 +128,8 @@ public interface ArrayFactory {
 					return Array.baseMemoryCost() + MemoryEstimates.stringCost(12) * _numRows;
 				case CHARACTER:
 					return Array.baseMemoryCost() + (long) MemoryEstimates.charArrayCost(_numRows);
+				case HASH64:
+					throw new NotImplementedException();
 				default: // not applicable
 					throw new DMLRuntimeException("Invalid type to estimate size of :" + type);
 			}
@@ -154,6 +161,8 @@ public interface ArrayFactory {
 				return new OptionalArray<>(new DoubleArray(new double[nRow]), true);
 			case CHARACTER:
 				return new OptionalArray<>(new CharArray(new char[nRow]), true);
+			case HASH64:
+				throw new NotImplementedException();
 			case UNKNOWN:
 			case STRING:
 			default:
@@ -184,6 +193,8 @@ public interface ArrayFactory {
 				return new DoubleArray(new double[nRow]);
 			case CHARACTER:
 				return new CharArray(new char[nRow]);
+			case HASH64:
+				throw new NotImplementedException();
 			case UNKNOWN:
 			case STRING:
 			default:
@@ -222,9 +233,11 @@ public interface ArrayFactory {
 				return OptionalArray.readOpt(in, nRow);
 			case DDC:
 				return DDCArray.read(in);
-			default: // String
+			case STRING:
 				arr = new StringArray(new String[nRow]);
 				break;
+			default: 
+				throw new NotImplementedException(v + "");
 		}
 		arr.readFields(in);
 		return arr;
@@ -325,6 +338,8 @@ public interface ArrayFactory {
 				return IntegerArray.parseInt(s);
 			case INT64:
 				return LongArray.parseLong(s);
+			case HASH64: 
+				throw new NotImplementedException();
 			case STRING:
 			case UNKNOWN:
 			default:

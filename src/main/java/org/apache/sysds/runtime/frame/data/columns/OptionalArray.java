@@ -343,6 +343,12 @@ public class OptionalArray<T> extends Array<T> {
 	}
 
 	@Override
+	protected Array<String> changeTypeHash64() {
+		Array<String> a = _a.changeTypeHash64();
+		return new OptionalArray<>(a, _n);
+	}
+
+	@Override
 	protected Array<Character> changeTypeCharacter() {
 		Array<Character> a = _a.changeTypeCharacter();
 		return new OptionalArray<>(a, _n);

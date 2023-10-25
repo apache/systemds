@@ -259,6 +259,11 @@ public class LongArray extends Array<Long> {
 	}
 
 	@Override
+	protected Array<String> changeTypeHash64() {
+		return new HashLongArray(_data);
+	}
+
+	@Override
 	protected Array<String> changeTypeString() {
 		String[] ret = new String[size()];
 		for(int i = 0; i < size(); i++)

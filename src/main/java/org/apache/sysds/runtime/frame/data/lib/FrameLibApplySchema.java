@@ -20,6 +20,7 @@
 package org.apache.sysds.runtime.frame.data.lib;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -107,6 +108,7 @@ public class FrameLibApplySchema {
 	}
 
 	private FrameBlock apply() {
+		LOG.error(Arrays.toString(schema));
 		if(k <= 1 || nCol == 1)
 			applySingleThread();
 		else

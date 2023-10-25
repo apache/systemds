@@ -22,7 +22,6 @@ package org.apache.sysds.runtime.frame.data.columns;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
-import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.BitSet;
 import java.util.HashMap;
@@ -236,11 +235,17 @@ public class StringArray extends Array<String> {
 	}
 
 	private static final ValueType getHighest(ValueType state, ValueType c) {
-
 		switch(state) {
+			case FP64:
+				switch(c) {
+					case HASH64:
+						return c;
+					default:
+				}
 			case FP32:
 				switch(c) {
 					case FP64:
+					case HASH64:
 						return c;
 					default:
 				}
@@ -249,6 +254,7 @@ public class StringArray extends Array<String> {
 				switch(c) {
 					case FP64:
 					case FP32:
+					case HASH64:
 						return c;
 					default:
 				}
@@ -258,6 +264,7 @@ public class StringArray extends Array<String> {
 					case FP64:
 					case FP32:
 					case INT64:
+					case HASH64:
 						return c;
 					default:
 				}
@@ -269,6 +276,7 @@ public class StringArray extends Array<String> {
 					case INT64:
 					case INT32:
 					case CHARACTER:
+					case HASH64:
 						return c;
 					default:
 				}
@@ -286,9 +294,8 @@ public class StringArray extends Array<String> {
 		boolean nulls = false;
 		for(int i = 0; i < _size; i++) {
 			final ValueType c = FrameUtil.isType(_data[i], state);
-			if(c == ValueType.STRING) {
+			if(c == ValueType.STRING)
 				return new Pair<>(ValueType.STRING, false);
-			}
 			else if(c == ValueType.UNKNOWN)
 				nulls = true;
 			else
@@ -557,6 +564,22 @@ public class StringArray extends Array<String> {
 		}
 		catch(NumberFormatException e) {
 			throw new DMLRuntimeException("Unable to change to Long from String array", e);
+		}
+	}
+
+	@Override
+	protected Array<String> changeTypeHash64() {
+		try {
+			long[] ret = new long[size()];
+			for(int i = 0; i < size(); i++) {
+				final String s = _data[i];
+				if(s != null)
+					ret[i] = Long.parseLong(s, 16);
+			}
+			return new HashLongArray(ret);
+		}
+		catch(NumberFormatException e) {
+			throw new DMLRuntimeException("Unable to change to Hash64 from String array", e);
 		}
 	}
 

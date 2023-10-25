@@ -313,6 +313,17 @@ public class DoubleArray extends Array<Double> {
 	}
 
 	@Override
+	protected Array<String> changeTypeHash64() {
+		long[] ret = new long[size()];
+		for(int i = 0; i < size(); i++) {
+			if(_data[i] != (long) _data[i])
+				throw new DMLRuntimeException("Unable to change to Long from Double array because of value:" + _data[i]);
+			ret[i] = (long) _data[i];
+		}
+		return new HashLongArray(ret);
+	}
+
+	@Override
 	protected Array<String> changeTypeString() {
 		String[] ret = new String[size()];
 		for(int i = 0; i < size(); i++)

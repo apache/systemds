@@ -254,6 +254,14 @@ public class CharArray extends Array<Character> {
 	}
 
 	@Override
+	protected Array<String> changeTypeHash64(){
+		long[] ret = new long[size()];
+		for(int i = 0; i < size(); i++)
+			ret[i] = _data[i];
+		return new HashLongArray(ret);
+	}
+
+	@Override
 	protected Array<String> changeTypeString() {
 		String[] ret = new String[size()];
 		for(int i = 0; i < size(); i++)

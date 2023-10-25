@@ -484,16 +484,16 @@ public class UtilFunctions {
 	public static Object stringToObject(ValueType vt, String in) {
 		if( in == null || in.isEmpty() )  return null;
 		switch( vt ) {
-			case STRING:  return in;
-			case BOOLEAN: return Boolean.parseBoolean(in);
+			case STRING:    return in;
+			case BOOLEAN:   return Boolean.parseBoolean(in);
 			case UINT4:
 			case UINT8:
-			case INT32:   return Integer.parseInt(in);
-			case INT64:   return Long.parseLong(in);
-			case FP64:    return Double.parseDouble(in);
-			case FP32:    return Float.parseFloat(in);
+			case INT32:     return Integer.parseInt(in);
+			case INT64:     return Long.parseLong(in);
+			case FP64:      return Double.parseDouble(in);
+			case FP32:      return Float.parseFloat(in);
 			case CHARACTER: return CharArray.parseChar(in);
-			case HASH64:  return HashLongArray.parseLong(in);
+			case HASH64:    return HashLongArray.parseHashLong(in);
 			default: throw new RuntimeException("Unsupported value type: "+vt);
 		}
 	}

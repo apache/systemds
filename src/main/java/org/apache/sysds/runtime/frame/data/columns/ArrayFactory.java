@@ -45,6 +45,18 @@ public interface ArrayFactory {
 		return new StringArray(col);
 	}
 
+	public static HashLongArray createHash64(String[] col){
+		return new HashLongArray(col);
+	} 
+
+	public static OptionalArray<Object> createHash64Opt(String[] col){
+		return new OptionalArray<Object>(col, ValueType.HASH64);
+	} 
+
+	public static HashLongArray createHash64(long[] col){
+		return new HashLongArray(col);
+	} 
+
 	public static BooleanArray create(boolean[] col) {
 		return new BooleanArray(col);
 	}
@@ -113,6 +125,7 @@ public interface ArrayFactory {
 					else
 						return BooleanArray.estimateInMemorySize(_numRows);
 				case INT64:
+				case HASH64:
 					return Array.baseMemoryCost() + (long) MemoryEstimates.longArrayCost(_numRows);
 				case FP64:
 					return Array.baseMemoryCost() + (long) MemoryEstimates.doubleArrayCost(_numRows);
@@ -128,8 +141,6 @@ public interface ArrayFactory {
 					return Array.baseMemoryCost() + MemoryEstimates.stringCost(12) * _numRows;
 				case CHARACTER:
 					return Array.baseMemoryCost() + (long) MemoryEstimates.charArrayCost(_numRows);
-				case HASH64:
-					throw new NotImplementedException();
 				default: // not applicable
 					throw new DMLRuntimeException("Invalid type to estimate size of :" + type);
 			}
@@ -162,7 +173,7 @@ public interface ArrayFactory {
 			case CHARACTER:
 				return new OptionalArray<>(new CharArray(new char[nRow]), true);
 			case HASH64:
-				throw new NotImplementedException();
+				return new OptionalArray<>(new HashLongArray(new long[nRow]), true);
 			case UNKNOWN:
 			case STRING:
 			default:
@@ -235,6 +246,9 @@ public interface ArrayFactory {
 				return DDCArray.read(in);
 			case STRING:
 				arr = new StringArray(new String[nRow]);
+				break;
+			case HASH64:
+				arr = new HashLongArray(new long[nRow]);
 				break;
 			default: 
 				throw new NotImplementedException(v + "");
@@ -338,8 +352,8 @@ public interface ArrayFactory {
 				return IntegerArray.parseInt(s);
 			case INT64:
 				return LongArray.parseLong(s);
-			case HASH64: 
-				throw new NotImplementedException();
+			case HASH64:
+				return HashLongArray.parseHashLong(s);
 			case STRING:
 			case UNKNOWN:
 			default:

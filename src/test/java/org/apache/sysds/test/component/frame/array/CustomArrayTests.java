@@ -1366,54 +1366,49 @@ public class CustomArrayTests {
 
 	@Test
 	public void parseHash() {
-		assertEquals(10, HashLongArray.parseLong("a"));
-	}
-
-	@Test
-	public void parseHash2() {
-		assertEquals(-255, HashLongArray.parseLong("-ff"));
+		assertEquals(10, HashLongArray.parseHashLong("a"));
 	}
 
 	@Test
 	public void parseHash_ff() {
-		assertEquals(255, HashLongArray.parseLong("ff"));
+		assertEquals(255, HashLongArray.parseHashLong("ff"));
 	}
 
 	@Test
 	public void parseHash_fff() {
-		assertEquals(4095, HashLongArray.parseLong("fff"));
+		assertEquals(4095, HashLongArray.parseHashLong("fff"));
 	}
 
 	@Test
 	public void parseHash_ffff() {
-		assertEquals(65535, HashLongArray.parseLong("ffff"));
+		assertEquals(65535, HashLongArray.parseHashLong("ffff"));
 	}
 
 
 	@Test
 	public void parseHash_fffff() {
-		assertEquals(1048575, HashLongArray.parseLong("fffff"));
+		assertEquals(1048575, HashLongArray.parseHashLong("fffff"));
 	}
 
 	@Test
 	public void parseHash_ffffff() {
-		assertEquals(16777215, HashLongArray.parseLong("ffffff"));
+		assertEquals(16777215, HashLongArray.parseHashLong("ffffff"));
 	}
 
 	@Test
 	public void parseHash_fffffff() {
-		assertEquals(268435455L, HashLongArray.parseLong("fffffff"));
+		assertEquals(268435455L, HashLongArray.parseHashLong("fffffff"));
 	}
 
 
 	@Test
 	public void parseHash_ffffffff() {
-		assertEquals(4294967295L, HashLongArray.parseLong("ffffffff"));
+		assertEquals(4294967295L, HashLongArray.parseHashLong("ffffffff"));
 	}
 
 	@Test
 	public void parseHash_ffffffff_ffffffff() {
-		assertEquals(Long.MAX_VALUE, HashLongArray.parseLong("fffffffffffffff"));
+		assertEquals(-1, HashLongArray.parseHashLong("ffffffffffffffff"));
 	}
 
 }

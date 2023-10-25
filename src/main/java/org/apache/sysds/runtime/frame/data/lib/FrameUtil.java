@@ -122,11 +122,11 @@ public interface FrameUtil {
 		return null;
 	}
 
-	public static ValueType isHash(final String val, final int len){
-		if(len == 8){
-			for(int i = 0; i < 8; i++){
+	public static ValueType isHash(final String val, final int len) {
+		if(len == 8) {
+			for(int i = 0; i < 8; i++) {
 				char v = val.charAt(i);
-				if( v< '0' ||  v > 'f')
+				if(v < '0' || v > 'f')
 					return null;
 			}
 			return ValueType.HASH64;
@@ -181,7 +181,7 @@ public interface FrameUtil {
 			final char c = val.charAt(i);
 			if(c >= '0' && c <= '9')
 				continue;
-			else if(c == '.' || c == ','){
+			else if(c == '.' || c == ',') {
 				if(encounteredDot == true)
 					return false;
 				else
@@ -221,7 +221,7 @@ public interface FrameUtil {
 		switch(minType) {
 			case UNKNOWN:
 			case BOOLEAN:
-			// case CHARACTER:
+				// case CHARACTER:
 				if(isBooleanType(val, len) != null)
 					return ValueType.BOOLEAN;
 			case UINT8:

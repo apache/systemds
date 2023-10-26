@@ -25,8 +25,6 @@ import java.util.List;
 
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.lops.Compression;
-import org.apache.sysds.lops.Data;
-import org.apache.sysds.lops.DeCompression;
 import org.apache.sysds.lops.FunctionCallCP;
 import org.apache.sysds.lops.Lop;
 import org.apache.sysds.common.Types.ExecType;

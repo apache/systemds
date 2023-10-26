@@ -309,10 +309,10 @@ public class FrameArrayTests {
 
 			switch(a.getValueType()) {
 				case BOOLEAN:
-					assertFalse(a.equals((Object) ArrayFactory.create(new char[] {'a', 'b'})));
+					assertFalse(a.equals(ArrayFactory.create(new char[] {'a', 'b'})));
 					break;
 				default:
-					assertFalse(a.equals((Object) ArrayFactory.create(new boolean[] {true, false})));
+					assertFalse(a.equals(ArrayFactory.create(new boolean[] {true, false})));
 			}
 		}
 		catch(Exception e) {
@@ -324,7 +324,7 @@ public class FrameArrayTests {
 	@Test
 	public void equalsSelf() {
 		try {
-			assertTrue(a.equals((Object) a));
+			assertTrue(a.equals(a));
 		}
 		catch(Exception e) {
 			e.printStackTrace();
@@ -335,7 +335,7 @@ public class FrameArrayTests {
 	@Test
 	public void equalsClone() {
 		try {
-			assertTrue(a.equals((Object) a.clone()));
+			assertTrue(a.equals(a.clone()));
 		}
 		catch(Exception e) {
 			e.printStackTrace();
@@ -358,7 +358,7 @@ public class FrameArrayTests {
 	public void sameValueTypeNotEquals() {
 		try {
 			Array<?> b = ArrayFactory.allocate(a.getValueType(), a.size() == 1 ? 2 : 1);
-			assertFalse(a.equals((Object) b));
+			assertFalse(a.equals(b));
 		}
 		catch(Exception e) {
 			e.printStackTrace();
@@ -386,7 +386,7 @@ public class FrameArrayTests {
 				ArrayFactory.set(t, ddc, 0, 29, t.size());
 				switch(t.getValueType()) {
 					case BOOLEAN:
-						assertEquals(t.get(0), (Boolean) false);
+						assertEquals(t.get(0), false);
 						break;
 					default:
 

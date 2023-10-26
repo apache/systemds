@@ -100,7 +100,9 @@ public class LineageCacheConfig
 
 	protected static final double CPU_CACHE_FRAC = 0.05; // 5% of JVM heap size
 	private static ReuseCacheType _cacheType = null;
+	@SuppressWarnings("unused")
 	private static CachedItemHead _itemH = null;
+	@SuppressWarnings("unused")
 	private static CachedItemTail _itemT = null;
 	private static boolean _compilerAssistedRW = false;
 	private static boolean _onlyEstimate = false;

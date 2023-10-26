@@ -294,7 +294,7 @@ public class NegativeArrayTests {
 	@Test(expected = DMLRuntimeException.class)
 	public void testInvalidRLen() {
 		Array<Long> a = null;
-		Array<Long> b = new OptionalArray<Long>(new Long[] {1L, 2L, 3L, 4L});
+		Array<Long> b = new OptionalArray<>(new Long[] {1L, 2L, 3L, 4L});
 		ArrayFactory.set(a, b, 10, 20, 20);
 	}
 
@@ -308,21 +308,21 @@ public class NegativeArrayTests {
 	@Test(expected = DMLRuntimeException.class)
 	public void testInvalidBLength() {
 		Array<Long> a = null;
-		Array<Long> b = new OptionalArray<Long>(new Long[] {1L, 2L, 3L, 4L});
+		Array<Long> b = new OptionalArray<>(new Long[] {1L, 2L, 3L, 4L});
 		ArrayFactory.set(a, b, 10, 15, 20);// one to short
 	}
 
 	@Test(expected = DMLRuntimeException.class)
 	public void testInvalidALength() {
 		Array<?> a = ArrayFactory.allocate( ValueType.INT32, 10);
-		Array<Long> b = new OptionalArray<Long>(new Long[] {1L, 2L, 3L, 4L});
+		Array<Long> b = new OptionalArray<>(new Long[] {1L, 2L, 3L, 4L});
 		ArrayFactory.set(a, b, 10, 14, 20);// one to short
 	}
 
 	@Test(expected = DMLRuntimeException.class)
 	public void testInvalidRL() {
 		Array<?> a = ArrayFactory.allocate( ValueType.INT32, 10);
-		Array<Long> b = new OptionalArray<Long>(new Long[] {1L, 2L, 3L, 4L});
+		Array<Long> b = new OptionalArray<>(new Long[] {1L, 2L, 3L, 4L});
 		ArrayFactory.set(a, b, -1, 15, 20);// one to short
 	}
 }

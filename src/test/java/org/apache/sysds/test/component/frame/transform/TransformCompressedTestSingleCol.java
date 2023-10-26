@@ -147,7 +147,6 @@ public class TransformCompressedTestSingleCol {
 				data.getNumColumns(), meta);
 			MatrixBlock outNormal = encoderNormal.encode(data, k);
 	
-			meta = null;
 			MultiColumnEncoder encoderCompressed = EncoderFactory.createEncoder(spec, data.getColumnNames(),
 				data.getNumColumns(), meta);
 			MatrixBlock outCompressed = encoderCompressed.encode(data, k, true);

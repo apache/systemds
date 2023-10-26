@@ -52,7 +52,7 @@ public class CompressByBinTest extends AutomatedTestBase {
 
 	private final static int nbins = 10;
 
-	private final static int[] dVector = new int[cols];
+	//private final static int[] dVector = new int[cols];
 
 	@Override
 	public void setUp() {
@@ -146,7 +146,7 @@ public class CompressByBinTest extends AutomatedTestBase {
 				// Create one column
 				for(int i = 0, j = 0; i < rows; i++) {
 					X[i][c] = vals[j];
-					if(i == (int) ((j + 1) * (rows / nbins)))
+					if(i == ((j + 1) * (rows / nbins)))
 						j++;
 				}
 			}
@@ -156,6 +156,7 @@ public class CompressByBinTest extends AutomatedTestBase {
 		return X;
 	}
 
+	@SuppressWarnings("unchecked")
 	private FrameBlock generateFrameData(ColumnEncoderBin.BinMethod binMethod, Types.ValueType[] schema) {
 		FrameBlock Xf;
 		if(binMethod == ColumnEncoderBin.BinMethod.EQUI_WIDTH) {
@@ -173,7 +174,7 @@ public class CompressByBinTest extends AutomatedTestBase {
 				Array<Float> f = (Array<Float>) ArrayFactory.allocate(Types.ValueType.FP32, rows);
 				for(int i = 0, j = 0; i < rows; i++) {
 					f.set(i, vals[j]);
-					if(i == (int) ((j + 1) * (rows / nbins)))
+					if(i == ((j + 1) * (rows / nbins)))
 						j++;
 				}
 				Xf.appendColumn(f);

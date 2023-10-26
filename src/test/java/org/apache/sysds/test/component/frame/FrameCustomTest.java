@@ -32,7 +32,7 @@ public class FrameCustomTest {
 
 	@Test
 	public void castToFrame() {
-		double maxp1 = ((double) Integer.MAX_VALUE) + 1.0;
+		double maxp1 = Integer.MAX_VALUE + 1.0;
 		MatrixBlock mb = TestUtils.generateTestMatrixBlock(100, 100, maxp1, maxp1, 1.0, 23);
 		FrameBlock f = DataConverter.convertToFrameBlock(mb);
 		assertTrue(f.getSchema()[0] == ValueType.INT64);
@@ -40,7 +40,7 @@ public class FrameCustomTest {
 
 	@Test
 	public void castToFrame3() {
-		double maxp1 = ((double) Integer.MAX_VALUE) - 1.0;
+		double maxp1 = Integer.MAX_VALUE - 1.0;
 		MatrixBlock mb = TestUtils.generateTestMatrixBlock(100, 100, maxp1, maxp1, 1.0, 23);
 		FrameBlock f = DataConverter.convertToFrameBlock(mb);
 		assertTrue(f.getSchema()[0] == ValueType.INT32);
@@ -56,7 +56,7 @@ public class FrameCustomTest {
 
 	@Test
 	public void castToFrame2() {
-		double maxp1 = ((double) Integer.MAX_VALUE) + 1.1111;
+		double maxp1 = Integer.MAX_VALUE + 1.1111;
 		MatrixBlock mb = TestUtils.generateTestMatrixBlock(100, 100, maxp1, maxp1, 1.0, 23);
 		FrameBlock f = DataConverter.convertToFrameBlock(mb);
 		assertTrue(f.getSchema()[0] == ValueType.FP64);

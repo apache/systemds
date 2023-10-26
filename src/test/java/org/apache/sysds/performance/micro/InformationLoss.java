@@ -113,8 +113,8 @@ public class InformationLoss {
 	private static Pair<MatrixBlock, MatrixBlock> getMinMax(final MatrixBlock org) throws Exception {
 		ExecutorService pool = CommonThreadPool.get(16);
 
-		Future<MatrixBlock> minF = pool.submit(() -> (MatrixBlock) org.colMin(16));
-		Future<MatrixBlock> maxF = pool.submit(() -> (MatrixBlock) org.colMax(16));
+		Future<MatrixBlock> minF = pool.submit(() -> org.colMin(16));
+		Future<MatrixBlock> maxF = pool.submit(() -> org.colMax(16));
 
 		MatrixBlock min = minF.get();
 		MatrixBlock max = maxF.get();

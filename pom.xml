@@ -211,10 +211,18 @@
 						</goals>
 						<configuration>
 							<forceCreation>true</forceCreation>
+							<includes>
+								<include>org/apache/sysds/**</include>
+							</includes>
 							<archive>
 								<manifest>
+									<addClasspath>true</addClasspath>
+									<classpathPrefix>lib/</classpathPrefix>
 									<mainClass>org.apache.sysds.api.DMLScript</mainClass>
 								</manifest>
+								<manifestEntries>
+									<Class-Path>SystemDS.jar ${project.artifactId}-${project.version}.jar</Class-Path>
+								</manifestEntries>
 							</archive>
 						</configuration>
 					</execution>
@@ -227,7 +235,6 @@
 							<classifier>perf</classifier>
 							<includes>
 								<include>org/apache/sysds/performance/**</include>
-								<include>log4j.properties</include>
 							</includes>
 							<archive>
 								<manifest>
@@ -236,7 +243,7 @@
 									<mainClass>org.apache.sysds.performance.Main</mainClass>
 								</manifest>
 								<manifestEntries>
-									<Class-Path>SystemDS.jar ${project.build.directory}/${project.artifactId}-${project.version}-tests.jar</Class-Path>
+									<Class-Path>SystemDS.jar ${project.artifactId}-${project.version}-tests.jar</Class-Path>
 								</manifestEntries>
 							</archive>
 						</configuration>
@@ -1427,7 +1434,7 @@
 			<groupId>io.netty</groupId>
 			<artifactId>netty-all</artifactId>
 			<version>4.1.68.Final</version>
-			<scope>provided</scope>
+			<!-- <scope>provided</scope> -->
 			<exclusions>
 				<exclusion>
 					<groupId>org.apache.logging.log4j</groupId>

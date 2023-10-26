@@ -441,7 +441,7 @@ public class LibMatrixMult
 		ret.allocateBlock();
 
 		//core tsmm operation
-		matrixMultTransposeSelf(m1, ret, leftTranspose, 0, m1.rlen);
+		matrixMultTransposeSelf(m1, ret, leftTranspose, 0, ret.rlen);
 
 		//post-processing
 		if(copyToLowerTriangle){

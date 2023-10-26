@@ -90,7 +90,7 @@ public class TSMMTest {
 		final MMTSJType mType = MMTSJType.LEFT;
 		final MatrixBlock expected = in.transposeSelfMatrixMultOperations(null, mType, 1);
 
-		if(k > 1) // test multithread
+		if(k > 1) // test multi-threaded
 			testCompare(expected, in, "Compare single vs multithread");
 
 		final boolean isSparse = in.isInSparseFormat();

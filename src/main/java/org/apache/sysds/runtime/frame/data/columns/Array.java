@@ -422,8 +422,9 @@ public abstract class Array<T> implements Writable {
 				return new OptionalArray<>(changeTypeDouble(), nulls);
 			case UINT4:
 			case UINT8:
-			case HASH64:
 				throw new NotImplementedException();
+			case HASH64:
+				return new OptionalArray<>(changeTypeHash64(), nulls);
 			case INT32:
 				return new OptionalArray<>(changeTypeInteger(), nulls);
 			case INT64:

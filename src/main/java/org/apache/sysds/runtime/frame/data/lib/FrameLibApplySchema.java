@@ -108,7 +108,6 @@ public class FrameLibApplySchema {
 	}
 
 	private FrameBlock apply() {
-		LOG.error(Arrays.toString(schema));
 		if(k <= 1 || nCol == 1)
 			applySingleThread();
 		else

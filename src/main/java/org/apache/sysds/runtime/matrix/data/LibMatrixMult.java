@@ -364,7 +364,7 @@ public class LibMatrixMult
 	 * The parameter k (k&gt;=1) determines the max parallelism k' with k'=min(k, vcores, m1.rlen).
 	 * 
 	 * NOTE: This multi-threaded mmchain operation has additional memory requirements of k*ncol(X)*8bytes 
-	 * for partial aggregation. Current max memory: 256KB; otherwise redirectly to sequential execution.
+	 * for partial aggregation. Current max memory: 256KB; otherwise redirect to sequential execution.
 	 * 
 	 * @param mX X matrix
 	 * @param mV v matrix

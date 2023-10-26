@@ -166,6 +166,14 @@
 				<directory>src/assembly/bin</directory>
 				<targetPath>META-INF/</targetPath>
 			</resource>
+			<resource>
+				<!-- add the Log4j properties file into the jar to have default logging settings -->
+				<directory>conf</directory>
+				<includes>
+					<include>log4j.properties</include>
+				</includes>
+				<targetPath>./</targetPath>
+			</resource>
 		</resources>
 		<testResources>
 			<testResource>
@@ -211,9 +219,6 @@
 						</goals>
 						<configuration>
 							<forceCreation>true</forceCreation>
-							<includes>
-								<include>org/apache/sysds/**</include>
-							</includes>
 							<archive>
 								<manifest>
 									<addClasspath>true</addClasspath>

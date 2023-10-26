@@ -30,7 +30,6 @@ import java.util.List;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.DMLRuntimeException;
-import org.apache.sysds.runtime.lineage.LineageGPUCacheEviction;
 import org.apache.sysds.utils.GPUStatistics;
 
 import jcuda.driver.JCudaDriver;

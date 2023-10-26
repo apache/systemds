@@ -119,6 +119,10 @@ public class FullMatrixMultiplicationTransposeSelfTest extends AutomatedTestBase
 		runTransposeSelfVectorMultiplicationTest(MMTSJType.RIGHT, ExecType.CP, true);
 	}
 	
+	@Test
+	public void testRightUltraSparseCP() {
+		runTransposeSelfUltraSparseTest(MMTSJType.RIGHT);
+	}
 	
 	private void runTransposeSelfMatrixMultiplicationTest( MMTSJType type, ExecType instType, boolean sparse )
 	{
@@ -256,6 +260,40 @@ public class FullMatrixMultiplicationTransposeSelfTest extends AutomatedTestBase
 			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir("B");
 			HashMap<CellIndex, Double> rfile  = readRMatrixFromExpectedDir("B");
 			TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
+		}
+		finally {
+			rtplatform = platformOld;
+		}
+	}
+	
+	private void runTransposeSelfUltraSparseTest( MMTSJType type )
+	{
+		//rtplatform for MR
+		ExecMode platformOld = rtplatform;
+		rtplatform = ExecMode.SINGLE_NODE;
+	
+		try {
+			loadTestConfiguration(getTestConfiguration(TEST_NAME2));
+			int dim = 10000;
+			
+			String HOME = SCRIPT_DIR + TEST_DIR;
+			fullDMLScriptName = HOME + TEST_NAME2 + ".dml";
+			programArgs = new String[]{"-stats","-args", input("A"),
+				String.valueOf(dim), String.valueOf(dim), output("B") };
+			fullRScriptName = HOME + TEST_NAME2 + ".R";
+			rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + expectedDir();
+	
+			//generate actual dataset
+			double[][] A = getRandomMatrix(dim, dim, 0, 1, 0.0002, 7); 
+			writeInputMatrix("A", A, true);
+			
+			runTest(true, false, null, -1); 
+			//runRScript(true); 
+			
+			//compare matrices 
+			//HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir("B");
+			//HashMap<CellIndex, Double> rfile  = readRMatrixFromExpectedDir("B");
+			//TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
 		}
 		finally {
 			rtplatform = platformOld;

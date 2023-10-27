@@ -2405,6 +2405,47 @@ public class LibMatrixMult
 			}
 		}
 	}
+	
+	//alternative matrixMultTransposeSelfUltraSparse2 w/ IKJ iteration order and dense buffering
+	//(for moderately large graphs 4x improvement compared to above, but for large graphs slower -> non-conclusive)
+	@SuppressWarnings("unused")
+	private static void matrixMultTransposeSelfUltraSparse2( MatrixBlock m1, MatrixBlock m1t, MatrixBlock ret, boolean leftTranspose, int rl, int ru ) {
+		if( leftTranspose )
+			throw new DMLRuntimeException("Left tsmm with sparse output not supported");
+
+		// Operation X%*%t(X), sparse input and output
+		SparseBlock a = m1.sparseBlock;
+		SparseBlock b = m1t.sparseBlock;
+		SparseBlock c = ret.sparseBlock;
+		int m = m1.rlen;
+		double[] tmp = new double[m];
+		
+		for(int i=rl; i<ru; i++) { //rows in X
+			if( a.isEmpty(i) ) continue;
+			int apos = a.pos(i);
+			int alen = a.size(i);
+			int[] aix = a.indexes(i);
+			double[] avals = a.values(i);
+			//aggregate arow %*% B into tmp
+			Arrays.fill(tmp, 0);
+			for(int k=apos; k<apos+alen; k++) {
+				int aixk = aix[k];
+				double aval = avals[k];
+				if( b.isEmpty(aixk) ) continue;
+				int bpos = b.pos(aixk);
+				int bpos2 = b.posFIndexGTE(aixk, i);
+				if( bpos2 < 0 ) continue;
+				int blen = b.size(aixk);
+				int[] bix = b.indexes(aixk);
+				double[] bvals = b.values(aixk);
+				vectMultiplyAdd(aval, bvals, tmp, bix, bpos2, 0, bpos+blen-bpos2);
+			}
+			//copy non-zeros in tmp into sparse output 
+			for(int j=0; j<m; j++)
+				if( tmp[j] != 0 )
+					c.append(i, j, tmp[j]);
+		}
+	}
 
 	private static void matrixMultPermuteDense(MatrixBlock pm1, MatrixBlock m2, MatrixBlock ret1, MatrixBlock ret2, int rl, int ru) {
 		double[] a = pm1.getDenseBlockValues();

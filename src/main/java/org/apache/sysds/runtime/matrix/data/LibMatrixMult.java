@@ -435,9 +435,7 @@ public class LibMatrixMult
 		//Timing time = new Timing(true);
 		
 		//pre-processing
-		double sp = m1.getSparsity();
-		double osp = OptimizerUtils.getMatMultSparsity(sp, sp, m1.rlen, m1.clen, m1.rlen, false);
-		ret.sparse = !leftTranspose && m1.sparse && osp < MatrixBlock.SPARSITY_TURN_POINT;
+		ret.sparse = isSparseOutputTSMM(m1, leftTranspose);
 		ret.allocateBlock();
 
 		//core tsmm operation
@@ -477,10 +475,7 @@ public class LibMatrixMult
 		//Timing time = new Timing(true);
 		
 		//pre-processing (no need to check isThreadSafe)
-		double sp = m1.getSparsity();
-		ret.sparse = !leftTranspose && m1.sparse && MatrixBlock.SPARSITY_TURN_POINT >
-			OptimizerUtils.getMatMultSparsity(sp, sp, m1.rlen, m1.clen, m1.rlen, false);
-		
+		ret.sparse = isSparseOutputTSMM(m1, leftTranspose);
 		ret.allocateBlock();
 
 		//core multi-threaded matrix mult computation
@@ -3549,7 +3544,7 @@ public class LibMatrixMult
 		double v = 0;
 		while( k<asize & k2<bsize ) {
 			int aixk = aix[k];
-			int bixk = aix[k2];
+			int bixk = bix[k2];
 			if( aixk < bixk )
 				k++;
 			else if( aixk > bixk )
@@ -4203,9 +4198,7 @@ public class LibMatrixMult
 		MatrixBlock ret = m1;
 		final int rlen = m1.rlen;
 		final int clen = m1.clen;
-		double sp = m1.getSparsity();
-		double osp = OptimizerUtils.getMatMultSparsity(sp, sp, m1.rlen, m1.clen, m1.rlen, false);
-		boolean retSparse = !leftTranspose && m1.sparse && osp < MatrixBlock.SPARSITY_TURN_POINT;
+		boolean retSparse = isSparseOutputTSMM(m1, leftTranspose);
 		
 		if( !leftTranspose && !retSparse && m1.sparse && rlen > 1) { //X%*%t(X) SPARSE MATRIX
 			//directly via LibMatrixReorg in order to prevent sparsity change
@@ -4322,6 +4315,12 @@ public class LibMatrixMult
 		long estNnz = (long)(estSp * m1.rlen * m2.clen);
 		boolean sparseOut = MatrixBlock.evalSparseFormatInMemory(m1.rlen, m2.clen, estNnz);
 		return m2.clen < 4*1024 && sparseOut;
+	}
+	
+	public static boolean isSparseOutputTSMM(MatrixBlock m1, boolean leftTranspose) {
+		double sp = m1.getSparsity();
+		double osp = OptimizerUtils.getMatMultSparsity(sp, sp, m1.rlen, m1.clen, m1.rlen, false);
+		return !leftTranspose && m1.sparse && osp < MatrixBlock.ULTRA_SPARSITY_TURN_POINT2;
 	}
 
 	public static boolean isOuterProductTSMM(int rlen, int clen, boolean left) {

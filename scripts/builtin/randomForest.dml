@@ -110,6 +110,8 @@ m_randomForest = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] cty
     if( sample_frac < 1.0 ) {
       si1 = as.integer(as.scalar(randSeeds[3*(i-1)+1,1]));
       I1 = rand(rows=nrow(X), cols=1, seed=si1) <= sample_frac;
+      if( sum(I1) <= 1 ) # min 2 tuples
+        I1[1:2,] = matrix(1,2,1);
       Xi = removeEmpty(target=X, margin="rows", select=I1);
       yi = removeEmpty(target=y, margin="rows", select=I1);
     }

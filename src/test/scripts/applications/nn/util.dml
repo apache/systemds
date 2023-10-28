@@ -153,3 +153,7 @@ check_rel_grad_error = function(double dw_a, double dw_n, double lossph, double 
   }
 }
 
+fail = function(string message) {
+    print("ERROR: " + message)
+}
+

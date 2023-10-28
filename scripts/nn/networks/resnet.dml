@@ -19,23 +19,146 @@
 #
 #-------------------------------------------------------------
 
-basicBlockForward = function(matrix[double] X, int Hin, int Win, int Hf, int Wf,
-                   int strideh, int stridew, int padh, int padw)
-    return (matrix[double] out, int Hout, int Wout) {
+source("scripts/nn/layers/batch_norm2d.dml") as bn2d
+source("scripts/nn/layers/conv2d_builtin.dml") as conv2d
+source("scripts/nn/layers/relu.dml") as relu
+
+conv3x3_forward = function(matrix[double] X, matrix[double] filter,
+                           int C_in, int Hin, int Win, int strideh,
+                           int stridew)
+    return(matrix[double] out, int Hout, int Wout) {
     /*
+     * Simple 2D conv layer with 3x3 filter
+     */
+    # bias should not be applied
+    bias = matrix(0, C_in, 1)
+    [out, Hout, Wout] = conv2d::forward(X, filter, bias, C_in, Hin, Win,
+                                        3, 3, strideh, stridew, 1, 1)
+}
+
+conv1x1_forward = function(matrix[double] X, matrix[double] filter,
+                           int C_in, int Hin, int Win, int strideh,
+                           int stridew)
+    return(matrix[double] out, int Hout, int Wout) {
+    /*
+     * Simple 2D conv layer with 1x1 filter
+     */
+    # bias should not be applied
+    bias = matrix(0, C_in, 1)
+    [out, Hout, Wout] = conv2d::forward(X, filter, bias, C_in, Hin, Win,
+                                        1, 1, strideh, stridew, 0, 0)
+}
+
+basicBlockForward = function(matrix[double] X, list[unknown] weights,
+                             int C_in, int C_base, int Hin, int Win,
+                             int strideh, int stridew, string mode,
+                             list[unknown] ema_means_vars)
+    return (matrix[double] out, int Hout, int Wout,
+            list[unknown] ema_means_vars) {
+    /*
+     * Computes the forward pass for a basic residual block.
+     * This basic residual block (with 2 3x3 conv layers of
+     * same channel size) is used in the smaller ResNets 18
+     * and 34.
      *
+     * Inputs:
+     * - X: Inputs, of shape (N, C_in*Hin*Win).
+     * - weights: list of weights for all layers of block.
+     *   -> 1: Weight of conv 1, of shape (C_base, C_in*3*3)
+     *   -> 2: Gamma of batch norm 1, of shape (C_base, 1)
+     *   -> 3: Beta of batch norm 1, of shape (C_base, 1)
+     *   -> 4: Weight of conv 2, of shape (C_base, C_base*3*3)
+     *   -> 5: Gamma of batch norm 2, of shape (C_base, 1)
+     *   -> 6: Beta of batch norm 2, of shape (C_base, 1)
+     *   If the block should downsample X:
+     *   -> 7: Weight of downsample conv, of shape (C_base, C_in*3*3)
+     *   -> 8: Gamma of downsample batch norm, of shape (C_base, 1)
+     *   -> 9: Beta of downsample batch norm, of shape (C_base, 1)
+     * - C_in: Number of input channels
+     * - C_base: Number of base channels for this block
+     * - Hin: Input height.
+     * - Win: Input width.
+     * - strideh: Stride over height (usually 1 or 2).
+     * - stridew: Stride over width (usually same as strideh)
+     * - mode: 'train' or 'test' to indicate if the model is currently
+     *     being trained or tested for badge normalization layers.
+     *     See badge_norm2d.dml docs for more info.
+     * - ema_means_vars: List of exponential moving averages for mean
+     *     and variance for badge normalization layers.
+     *   -> 1: EMA for mean of badge norm 1, of shape (C_base, 1)
+     *   -> 2: EMA for variance of badge norm 1, of shape (C_base, 1)
+     *   -> 3: EMA for mean of badge norm 2, of shape (C_base, 1)
+     *   -> 4: EMA for variance of badge norm 2, of shape (C_base, 1)
+     *   If the block should downsample X:
+     *   -> 5: EMA for mean of downs. badge norm, of shape (C_base, 1)
+     *   -> 6: EMA for variance of downs. badge norm, of shape (C_base, 1)
+     *
+     * Outputs:
      *
      */
-    # convolutional 1 3x3
-    # badge norm 2d
-    # relu
+    # default values
+    mu_bn = 0.1
+    epsilon_bn = 1e-05
 
-    # convolutional 2 3x3
-    # badge norm 2d
+    # get all params
+    W_conv1 = as.matrix(weights[1])
+    gamma_bn1 = as.matrix(weights[2])
+    beta_bn1 = as.matrix(weights[3])
+    W_conv2 = as.matrix(weights[4])
+    gamma_bn2 = as.matrix(weights[5])
+    beta_bn2 = as.matrix(weights[6])
 
-    # downsample X to make it fit if has different dimensions from prior block
+    ema_mean_bn1 = as.matrix(ema_means_vars[1])
+    ema_var_bn1 = as.matrix(ema_means_vars[2])
+    ema_mean_bn2 = as.matrix(ema_means_vars[3])
+    ema_var_bn2 = as.matrix(ema_means_vars[4])
 
-    # out + X
-    # relu
+    if (strideh + stridew > 2) {
+        # gather params for donwsampling
+        W_conv3 = as.matrix(weights[7])
+        gamma_bn3 = as.matrix(weights[8])
+        beta_bn3 = as.matrix(weights[9])
+        ema_mean_bn3 = as.matrix(ema_means_vars[5])
+        ema_var_bn3 = as.matrix(ema_means_vars[6])
+    }
 
+    # RESIDUAL PATH
+    # First convolutional layer
+    [out, Hout, Wout] = conv3x3_forward(X, W_conv1, C_in, Hin, Win,
+                                        strideh, stridew)
+    [out, ema_mean_bn1, ema_var_bn1, c_m, c_v] = bn2d::forward(out,
+                           gamma_bn1, beta_bn1, C_base, Hout, Wout,
+                           mode, ema_mean_bn1, ema_var_bn1, mu_bn,
+                           epsilon_bn)
+    out = relu::forward(out)
+
+    # Second convolutional layer
+    [out, Hout, Wout] = conv3x3_forward(out, W_conv2, C_base, Hout,
+                                        Wout, 1, 1)
+    [out, ema_mean_bn2, ema_var_bn2, c_m, c_v] = bn2d::forward(out,
+                           gamma_bn2, beta_bn2, C_base, Hout, Wout,
+                           mode, ema_mean_bn2, ema_var_bn2, mu_bn,
+                           epsilon_bn)
+
+    # IDENTITY PATH
+    identity = X
+    if (strideh + stridew > 2) {
+        # downsample input
+        [identity, Hout, Wout] = conv1x1_forward(X, W_conv3, C_in,
+                                        Hin, Win, strideh, stridew)
+        [identity, ema_mean_bn3, ema_var_bn3, c_m, c_v] = bn2d::forward(identity,
+                                    gamma_bn3, beta_bn3, C_base, Hout, Wout,
+                                    mode, ema_mean_bn3, ema_var_bn3, mu_bn,
+                                    epsilon_bn)
+    }
+
+    out = relu::forward(out + identity)
+
+    ema_means_vars = list(ema_mean_bn1, ema_var_bn1, ema_mean_bn2, ema_var_bn2)
+    if (strideh + stridew > 2) {
+        ema_means_vars = append(ema_means_vars, ema_mean_bn3)
+        ema_means_vars = append(ema_means_vars, ema_var_bn3)
+    }
 }
+
+print("Hallo")

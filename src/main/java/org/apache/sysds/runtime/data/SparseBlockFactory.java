@@ -153,10 +153,9 @@ public abstract class SparseBlockFactory{
 			rowPtr[rowPtr.length -1] = off;
 
 			return new SparseBlockCSR(rowPtr, colIdx, valsSparse, nnz);
-
 		}
 		else {
-			throw new NotImplementedException();
+			return new SparseBlockMCSR(nRow); // empty MCSR block
 		}
 	}
 }

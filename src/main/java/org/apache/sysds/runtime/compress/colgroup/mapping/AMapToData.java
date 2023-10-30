@@ -27,6 +27,8 @@ import java.util.BitSet;
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
+import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.IMapToDataGroup;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary;
@@ -860,6 +862,17 @@ public abstract class AMapToData implements Serializable {
 	 */
 	public abstract boolean equals(AMapToData e);
 
+	/** Debugging verification that this mapping is correctly made. */
+	public void verify() {
+		if(CompressedMatrixBlock.debug) {
+			for(int i = 0; i < size(); i++) {
+				if(getIndex(i) >= nUnique) {
+					throw new DMLCompressionException("invalid construction of Mapping data containing values above unique");
+				}
+			}
+		}
+	}
+	
 	@Override
 	public String toString() {
 		final int sz = size();

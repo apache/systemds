@@ -41,6 +41,7 @@ import org.apache.sysds.runtime.compress.colgroup.scheme.ICLAScheme;
 import org.apache.sysds.runtime.compress.cost.ComputationCostEstimator;
 import org.apache.sysds.runtime.compress.estim.encoding.EncodingFactory;
 import org.apache.sysds.runtime.compress.estim.encoding.IEncode;
+import org.apache.sysds.runtime.compress.utils.Util;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.functionobjects.Divide;
 import org.apache.sysds.runtime.functionobjects.Minus;
@@ -260,7 +261,7 @@ public class ColGroupSDCFOR extends ASDC implements IMapToDataGroup, IFrameOfRef
 		if(patternInReference) {
 			double[] nRef = new double[_reference.length];
 			for(int i = 0; i < _reference.length; i++)
-				if(pattern == _reference[i])
+				if(Util.eq(pattern, _reference[i]))
 					nRef[i] = replace;
 				else
 					nRef[i] = _reference[i];

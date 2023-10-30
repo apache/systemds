@@ -568,9 +568,11 @@ public class ColGroupUncompressed extends AColGroup {
 		final MatrixBlock dictM = paCG._dict.getMBDict(nCols).getMatrixBlock();
 		if(dictM == null)
 			return;
-		LOG.warn("\nInefficient transpose of uncompressed to fit to"
-			+ " t(AColGroup) %*% UncompressedColGroup mult by colGroup uncompressed column"
-			+ "\nCurrently solved by t(t(Uncompressed) %*% AColGroup)");
+		if(paCG.getNumCols() != 1) {
+			LOG.warn("\nInefficient transpose of uncompressed to fit to"
+				+ " t(AColGroup) %*% UncompressedColGroup mult by colGroup uncompressed column"
+				+ "\nCurrently solved by t(t(Uncompressed) %*% AColGroup)");
+		}
 		final int k = InfrastructureAnalyzer.getLocalParallelism();
 		final MatrixBlock ucCGT = LibMatrixReorg.transpose(getData(), k);
 		final MatrixBlock preAgg = new MatrixBlock(1, paCG.getNumValues(), false);
@@ -606,10 +608,12 @@ public class ColGroupUncompressed extends AColGroup {
 	}
 
 	private void leftMultByAColGroupUncompressed(ColGroupUncompressed lhs, MatrixBlock result) {
-		LOG.warn("Inefficient Left Matrix Multiplication with transpose of left hand side : t(l) %*% r");
 		final MatrixBlock tmpRet = new MatrixBlock(lhs.getNumCols(), _colIndexes.size(), 0);
 		final int k = InfrastructureAnalyzer.getLocalParallelism();
-
+		
+		if(lhs._data.getNumColumns() != 1){
+			LOG.warn("Inefficient Left Matrix Multiplication with transpose of left hand side : t(l) %*% r");
+		}
 		// multiply to temp
 		MatrixBlock lhData = lhs._data;
 		MatrixBlock transposed = LibMatrixReorg.transpose(lhData, k);

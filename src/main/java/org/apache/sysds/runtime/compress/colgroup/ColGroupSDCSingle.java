@@ -41,6 +41,7 @@ import org.apache.sysds.runtime.compress.colgroup.offset.OffsetFactory;
 import org.apache.sysds.runtime.compress.cost.ComputationCostEstimator;
 import org.apache.sysds.runtime.compress.estim.encoding.EncodingFactory;
 import org.apache.sysds.runtime.compress.estim.encoding.IEncode;
+import org.apache.sysds.runtime.compress.utils.Util;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.instructions.cp.CM_COV_Object;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
@@ -423,7 +424,7 @@ public class ColGroupSDCSingle extends ASDC {
 		IDictionary replaced = _dict.replace(pattern, replace, _colIndexes.size());
 		double[] newDefaultTuple = new double[_defaultTuple.length];
 		for(int i = 0; i < _defaultTuple.length; i++)
-			newDefaultTuple[i] = _defaultTuple[i] == pattern ? replace : _defaultTuple[i];
+			newDefaultTuple[i] = Util.eq(_defaultTuple[i], pattern) ? replace : _defaultTuple[i];
 
 		return create(_colIndexes, _numRows, replaced, newDefaultTuple, _indexes, getCachedCounts());
 	}

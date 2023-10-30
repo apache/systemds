@@ -49,6 +49,7 @@ public class MapToChar extends AMapToData {
 	public MapToChar(int unique, char[] data) {
 		super(unique);
 		_data = data;
+		verify();
 	}
 
 	@Override
@@ -113,8 +114,8 @@ public class MapToChar extends AMapToData {
 		out.writeInt(_data.length);
 		final int BS = 100;
 		if(_data.length > BS) {
-			final byte[] buff = new byte[BS*2];
-			for(int i = 0; i < _data.length; ) {
+			final byte[] buff = new byte[BS * 2];
+			for(int i = 0; i < _data.length;) {
 				if(i + BS <= _data.length) {
 					for(int o = 0; o < BS; o++) {
 						IOUtilFunctions.shortToBa(_data[i++], buff, o * 2);
@@ -152,17 +153,21 @@ public class MapToChar extends AMapToData {
 		final int h = (cu - cl) % 8;
 		off += cl;
 		for(int rc = cl; rc < cl + h; rc++, off++)
-			preAV[_data[rc]] += mV[off];
-		for(int rc = cl + h; rc < cu; rc += 8, off += 8) {
-			preAV[_data[rc]] += mV[off];
-			preAV[_data[rc + 1]] += mV[off + 1];
-			preAV[_data[rc + 2]] += mV[off + 2];
-			preAV[_data[rc + 3]] += mV[off + 3];
-			preAV[_data[rc + 4]] += mV[off + 4];
-			preAV[_data[rc + 5]] += mV[off + 5];
-			preAV[_data[rc + 6]] += mV[off + 6];
-			preAV[_data[rc + 7]] += mV[off + 7];
-		}
+			preAV[getIndex(rc)] += mV[off];
+		for(int rc = cl + h; rc < cu; rc += 8, off += 8)
+			preAggregateDenseToRowVec8(mV, preAV, rc, off);
+	}
+
+	@Override
+	protected void preAggregateDenseToRowVec8(double[] mV, double[] preAV, int rc, int off){
+		preAV[getIndex(rc)] += mV[off];
+		preAV[getIndex(rc + 1)] += mV[off + 1];
+		preAV[getIndex(rc + 2)] += mV[off + 2];
+		preAV[getIndex(rc + 3)] += mV[off + 3];
+		preAV[getIndex(rc + 4)] += mV[off + 4];
+		preAV[getIndex(rc + 5)] += mV[off + 5];
+		preAV[getIndex(rc + 6)] += mV[off + 6];
+		preAV[getIndex(rc + 7)] += mV[off + 7];
 	}
 
 	@Override
@@ -304,4 +309,25 @@ public class MapToChar extends AMapToData {
 			e.getUnique() == getUnique() && //
 			Arrays.equals(((MapToChar) e)._data, _data);
 	}
+
+	@Override
+	protected void preAggregateDDC_DDCSingleCol_vec(AMapToData tm, double[] td, double[] v, int r) {
+		if(tm instanceof MapToChar)
+			preAggregateDDC_DDCSingleCol_vecChar((MapToChar) tm, td, v, r);
+		else
+			super.preAggregateDDC_DDCSingleCol_vec(tm, td, v, r);
+	}
+
+	protected final void preAggregateDDC_DDCSingleCol_vecChar(MapToChar tm, double[] td, double[] v, int r) {
+		final int r2 = r + 1, r3 = r + 2, r4 = r + 3, r5 = r + 4, r6 = r + 5, r7 = r + 6, r8 = r + 7;
+		v[getIndex(r)] += td[tm.getIndex(r)];
+		v[getIndex(r2)] += td[tm.getIndex(r2)];
+		v[getIndex(r3)] += td[tm.getIndex(r3)];
+		v[getIndex(r4)] += td[tm.getIndex(r4)];
+		v[getIndex(r5)] += td[tm.getIndex(r5)];
+		v[getIndex(r6)] += td[tm.getIndex(r6)];
+		v[getIndex(r7)] += td[tm.getIndex(r7)];
+		v[getIndex(r8)] += td[tm.getIndex(r8)];
+	}
+
 }

@@ -53,6 +53,7 @@ public class MapToCharPByte extends AMapToData {
 		super(unique);
 		_data_c = data_c;
 		_data_b = data_b;
+		verify();
 	}
 
 	@Override
@@ -277,5 +278,27 @@ public class MapToCharPByte extends AMapToData {
 			e.getUnique() == getUnique() && //
 			Arrays.equals(((MapToCharPByte) e)._data_b, _data_b) && //
 			Arrays.equals(((MapToCharPByte) e)._data_c, _data_c);
+	}
+
+	@Override
+	protected void preAggregateDenseToRowBy8(double[] mV, double[] preAV, int cl, int cu, int off) {
+		final int h = (cu - cl) % 8;
+		off += cl;
+		for(int rc = cl; rc < cl + h; rc++, off++)
+			preAV[getIndex(rc)] += mV[off];
+		for(int rc = cl + h; rc < cu; rc += 8, off += 8)
+			preAggregateDenseToRowVec8(mV, preAV, rc, off);
+	}
+
+	@Override
+	protected void preAggregateDenseToRowVec8(double[] mV, double[] preAV, int rc, int off){
+		preAV[getIndex(rc)] += mV[off];
+		preAV[getIndex(rc + 1)] += mV[off + 1];
+		preAV[getIndex(rc + 2)] += mV[off + 2];
+		preAV[getIndex(rc + 3)] += mV[off + 3];
+		preAV[getIndex(rc + 4)] += mV[off + 4];
+		preAV[getIndex(rc + 5)] += mV[off + 5];
+		preAV[getIndex(rc + 6)] += mV[off + 6];
+		preAV[getIndex(rc + 7)] += mV[off + 7];
 	}
 }

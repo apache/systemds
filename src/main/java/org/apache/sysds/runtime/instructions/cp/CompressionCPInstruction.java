@@ -22,6 +22,7 @@ package org.apache.sysds.runtime.instructions.cp;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -122,10 +123,13 @@ public class CompressionCPInstruction extends ComputationCPInstruction {
 
 		final int k = OptimizerUtils.getConstrainedNumThreads(-1);
 
-		if(ec.isMatrixObject(input1.getName()))
-			processMatrixBlockCompression(ec, ec.getMatrixInput(input1.getName()), k, root);
-		else
+		if(ec.isFrameObject(input1.getName()))
 			processFrameBlockCompression(ec, ec.getFrameInput(input1.getName()), k, root);
+		else if(ec.isMatrixObject(input1.getName()))
+			processMatrixBlockCompression(ec, ec.getMatrixInput(input1.getName()), k, root);
+		else{
+			throw new NotImplementedException("Not supported other types of input for compression than frame and matrix");
+		}
 	}
 
 	private void processMatrixBlockCompression(ExecutionContext ec, MatrixBlock in, int k, WTreeRoot root) {

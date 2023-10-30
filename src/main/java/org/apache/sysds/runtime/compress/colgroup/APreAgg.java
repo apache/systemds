@@ -19,6 +19,7 @@
 
 package org.apache.sysds.runtime.compress.colgroup;
 
+import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary;
@@ -84,9 +85,11 @@ public abstract class APreAgg extends AColGroupValue {
 	 * @return A aggregate dictionary
 	 */
 	public final IDictionary preAggregateThatIndexStructure(APreAgg that) {
-		int outputLength = that._colIndexes.size() * this.getNumValues();
+		long outputLength = (long)that._colIndexes.size() * this.getNumValues();
+		if(outputLength > Integer.MAX_VALUE)
+			throw new NotImplementedException("Not supported pre aggregate of above integer length");
 		// create empty Dictionary that we slowly fill, hence the dictionary is empty and no check
-		final Dictionary ret = Dictionary.createNoCheck(new double[outputLength]);
+		final Dictionary ret = Dictionary.createNoCheck(new double[(int)outputLength]);
 
 		if(that instanceof ColGroupDDC)
 			preAggregateThatDDCStructure((ColGroupDDC) that, ret);
@@ -224,7 +227,8 @@ public abstract class APreAgg extends AColGroupValue {
 	}
 
 	private void leftMultByUncompressedColGroup(ColGroupUncompressed lhs, MatrixBlock result) {
-		LOG.warn("Transpose of uncompressed to fit to template need t(a) %*% b");
+		if(lhs.getNumCols() != 1)
+			LOG.warn("Transpose of uncompressed to fit to template need t(a) %*% b");
 		final MatrixBlock tmp = LibMatrixReorg.transpose(lhs.getData(), InfrastructureAnalyzer.getLocalParallelism());
 		final int numVals = getNumValues();
 		final MatrixBlock preAgg = new MatrixBlock(tmp.getNumRows(), numVals, false);

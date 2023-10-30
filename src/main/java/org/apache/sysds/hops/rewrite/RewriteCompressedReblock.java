@@ -156,7 +156,7 @@ public class RewriteCompressedReblock extends StatementBlockRewriteRule {
 	public static boolean satisfiesCompressionCondition(Hop hop) {
 		boolean satisfies = false;
 		if(satisfiesSizeConstraintsForCompression(hop)){
-			satisfies |= HopRewriteUtils.isData(hop, OpOpData.PERSISTENTREAD);
+			satisfies |= HopRewriteUtils.isData(hop, OpOpData.PERSISTENTREAD) && !hop.isScalar();
 			satisfies |= HopRewriteUtils.isTransformEncode(hop);
 		}
 		return satisfies;
@@ -171,7 +171,7 @@ public class RewriteCompressedReblock extends StatementBlockRewriteRule {
 			satisfies |= HopRewriteUtils.isTernary(hop, OpOp3.CTABLE) 
 				&& hop.getInput(0).getDataType().isMatrix() 
 				&& hop.getInput(1).getDataType().isMatrix();
-			satisfies |= HopRewriteUtils.isData(hop, OpOpData.PERSISTENTREAD);
+			satisfies |= HopRewriteUtils.isData(hop, OpOpData.PERSISTENTREAD) && !hop.isScalar();
 			satisfies |= HopRewriteUtils.isUnary(hop, OpOp1.ROUND, OpOp1.FLOOR, OpOp1.NOT, OpOp1.CEIL);
 			satisfies |= HopRewriteUtils.isBinary(hop, OpOp2.EQUAL, OpOp2.NOTEQUAL, OpOp2.LESS,
 				OpOp2.LESSEQUAL, OpOp2.GREATER, OpOp2.GREATEREQUAL, OpOp2.AND, OpOp2.OR, OpOp2.MODULUS);

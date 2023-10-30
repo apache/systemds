@@ -168,8 +168,8 @@ public final class CLALibLeftMultBy {
 		final List<AColGroup> fLeft = CLALibUtils.filterGroups(leftCG, cL);
 
 		// Force dense output
-		ret.setNonZeros((long) ret.getNumRows() * ret.getNumColumns());
 		ret.allocateDenseBlock();
+		ret.setNonZeros((long) ret.getNumRows() * ret.getNumColumns());
 
 		final ExecutorService ex = CommonThreadPool.get(k);
 		final List<Future<MatrixBlock>> t = new ArrayList<>();
@@ -196,6 +196,7 @@ public final class CLALibLeftMultBy {
 				outerProduct(cL, CLALibUtils.getColSum(fRight, cr, sd), retV);
 			if(containsRight)// if right -- multiply right with left sum
 				outerProduct(CLALibUtils.getColSum(fLeft, rl, sd), cR, retV);
+
 			for(Future<MatrixBlock> f : t) {
 				MatrixBlock mb = f.get();
 				if(!mb.isEmpty()) {

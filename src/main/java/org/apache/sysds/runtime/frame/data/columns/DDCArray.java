@@ -55,8 +55,12 @@ public class DDCArray<T> extends ACompressedArray<T> {
 		}
 	}
 
-	protected Array<T> getDict(){
+	public Array<T> getDict(){
 		return dict;
+	}
+
+	public AMapToData getMap(){
+		return map;
 	}
 
 	/**

@@ -102,11 +102,12 @@ public class MultiColumnEncoder implements Encoder {
 	}
 
 	public MatrixBlock encode(CacheBlock<?> in, int k, boolean compressedOut){
-		deriveNumRowPartitions(in, k);
 		try {
 			if(isCompressedTransformEncode(in, compressedOut))
 				return CompressedEncode.encode(this, (FrameBlock ) in, k);
-			else if(k > 1 && !MULTI_THREADED_STAGES && !hasLegacyEncoder()) {
+
+			deriveNumRowPartitions(in, k);
+			if(k > 1 && !MULTI_THREADED_STAGES && !hasLegacyEncoder()) {
 				MatrixBlock out = new MatrixBlock();
 				DependencyThreadPool pool = new DependencyThreadPool(k);
 				LOG.debug("Encoding with full DAG on " + k + " Threads");

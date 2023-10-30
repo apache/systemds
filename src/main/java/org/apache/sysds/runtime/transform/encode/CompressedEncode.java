@@ -49,7 +49,9 @@ import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
+import org.apache.sysds.runtime.frame.data.columns.ACompressedArray;
 import org.apache.sysds.runtime.frame.data.columns.Array;
+import org.apache.sysds.runtime.frame.data.columns.DDCArray;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.CommonThreadPool;
 import org.apache.sysds.runtime.util.UtilFunctions;
@@ -164,6 +166,7 @@ public class CompressedEncode {
 		IColIndex colIndexes = ColIndexFactory.create(0, domain);
 		if(domain == 1 && !containsNull)
 			return ColGroupConst.create(colIndexes, new double[] {1});
+
 		ADictionary d = new IdentityDictionary(colIndexes.size(), containsNull);
 		AMapToData m = createMappingAMapToData(a, map, containsNull);
 		return ColGroupDDC.create(colIndexes, d, m, null);
@@ -288,6 +291,22 @@ public class CompressedEncode {
 		IColIndex colIndexes = ColIndexFactory.create(1);
 		int colId = c._colID;
 		Array<?> a = in.getColumn(colId - 1);
+		if(a instanceof ACompressedArray){
+			switch(a.getFrameArrayType()) {
+				case DDC:
+					DDCArray<?> aDDC = (DDCArray<?>) a;
+					Array<?> dict = aDDC.getDict();
+					double[] vals = new double[dict.size()];
+					for(int i = 0; i < dict.size(); i++) {
+						vals[i] = dict.getAsDouble(i);
+					}
+					ADictionary d = Dictionary.create(vals);
+
+					return ColGroupDDC.create(colIndexes, d, aDDC.getMap(), null);
+				default:
+					throw new NotImplementedException();
+			}
+		}
 		boolean containsNull = a.containsNull();
 		HashMap<Object, Long> map = (HashMap<Object, Long>) a.getRecodeMap();
 		final int blockSz = ConfigurationManager.getDMLConfig().getIntValue(DMLConfig.DEFAULT_BLOCK_SIZE);

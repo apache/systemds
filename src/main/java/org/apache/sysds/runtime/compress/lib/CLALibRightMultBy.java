@@ -243,7 +243,9 @@ public final class CLALibRightMultBy {
 		catch(InterruptedException | ExecutionException e) {
 			throw new DMLRuntimeException(e);
 		}
-		pool.shutdown();
+		finally{
+			pool.shutdown();
+		}
 		return containsNull;
 	}
 

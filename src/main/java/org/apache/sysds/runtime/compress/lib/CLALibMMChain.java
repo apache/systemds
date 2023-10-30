@@ -35,6 +35,21 @@ import org.apache.sysds.runtime.matrix.data.LibMatrixReorg;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 
+/**
+ * Support compressed MM chain operation to fuse the following cases :
+ * 
+ * <p>
+ * XtXv == (t(X) %*% (X %*% v))
+ * </p>
+ * 
+ * <p>
+ * XtwXv == (t(X) %*% (w * (X %*% v)))
+ * </p>
+ *
+ * <p>
+ * XtXvy == (t(X) %*% ((X %*% v) - y))
+ * </p>
+ */
 public final class CLALibMMChain {
 	static final Log LOG = LogFactory.getLog(CLALibMMChain.class.getName());
 
@@ -42,6 +57,33 @@ public final class CLALibMMChain {
 		// private constructor
 	}
 
+	/**
+	 * Support compressed MM chain operation to fuse the following cases :
+	 * 
+	 * <p>
+	 * XtXv == (t(X) %*% (X %*% v))
+	 * </p>
+	 * 
+	 * <p>
+	 * XtwXv == (t(X) %*% (w * (X %*% v)))
+	 * </p>
+	 *
+	 * <p>
+	 * XtXvy == (t(X) %*% ((X %*% v) - y))
+	 * </p>
+	 * 
+	 * Note the point of this optimization is that v and w always are vectors. This means in practice the all the compute
+	 * is faster if the intermediates are exploited.
+	 * 
+	 * 
+	 * @param x     Is the X part of the chain optimized kernel
+	 * @param v     Is the mandatory v part of the chain
+	 * @param w     Is the optional w port of t the chain
+	 * @param out   The output to put the result into. Can also be returned and in some cases will not be used.
+	 * @param ctype either XtwXv, XtXv or XtXvy
+	 * @param k     the parallelization degree
+	 * @return The result either in the given output or a new allocation
+	 */
 	public static MatrixBlock mmChain(CompressedMatrixBlock x, MatrixBlock v, MatrixBlock w, MatrixBlock out,
 		ChainType ctype, int k) {
 

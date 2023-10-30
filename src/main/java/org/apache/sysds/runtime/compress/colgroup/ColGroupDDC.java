@@ -35,6 +35,8 @@ import org.apache.sysds.runtime.compress.colgroup.dictionary.MatrixBlockDictiona
 import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
+import org.apache.sysds.runtime.compress.colgroup.mapping.MapToByte;
+import org.apache.sysds.runtime.compress.colgroup.mapping.MapToChar;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
 import org.apache.sysds.runtime.compress.colgroup.offset.AOffsetIterator;
 import org.apache.sysds.runtime.compress.colgroup.scheme.DDCScheme;
@@ -78,8 +80,8 @@ public class ColGroupDDC extends APreAgg implements IMapToDataGroup {
 			int[] c = getCounts();
 			if(c.length != dict.getNumberOfValues(colIndexes.size()))
 				throw new DMLCompressionException("Invalid DDC Construction");
+			data.verify();
 		}
-
 	}
 
 	public static AColGroup create(IColIndex colIndexes, IDictionary dict, AMapToData data, int[] cachedCounts) {
@@ -157,8 +159,37 @@ public class ColGroupDDC extends APreAgg implements IMapToDataGroup {
 	private final void decompressToDenseBlockDenseDictSingleColOutContiguous(DenseBlock db, int rl, int ru, int offR,
 		int offC, double[] values) {
 		final double[] c = db.values(0);
-		for(int i = rl, offT = rl + offR + _colIndexes.get(0) + offC; i < ru; i++, offT++)
-			c[offT] += values[_data.getIndex(i)];
+		decompressToDenseBlockDenseDictSingleColOutContiguous(c, rl, ru, offR + _colIndexes.get(0), values, _data);
+	}
+
+	private final static void decompressToDenseBlockDenseDictSingleColOutContiguous(double[] c, int rl, int ru, int offR,
+		double[] values, AMapToData data) {
+
+		if(data instanceof MapToByte)
+			decompressToDenseBlockDenseDictSingleColOutContiguousByteM(c, rl, ru, offR, values, (MapToByte) data);
+		else if(data instanceof MapToChar)
+			decompressToDenseBlockDenseDictSingleColOutContiguousCharM(c, rl, ru, offR, values, (MapToChar) data);
+		else
+			decompressToDenseBlockDenseDictSingleColOutContiguousGenM(c, rl, ru, offR, values, data);
+
+	}
+
+	private final static void decompressToDenseBlockDenseDictSingleColOutContiguousByteM(double[] c, int rl, int ru,
+		int offR, double[] values, MapToByte data) {
+		for(int i = rl, offT = rl + offR; i < ru; i++, offT++)
+			c[offT] += values[data.getIndex(i)];
+	}
+
+	private final static void decompressToDenseBlockDenseDictSingleColOutContiguousCharM(double[] c, int rl, int ru,
+		int offR, double[] values, MapToChar data) {
+		for(int i = rl, offT = rl + offR; i < ru; i++, offT++)
+			c[offT] += values[data.getIndex(i)];
+	}
+
+	private final static void decompressToDenseBlockDenseDictSingleColOutContiguousGenM(double[] c, int rl, int ru,
+		int offR, double[] values, AMapToData data) {
+		for(int i = rl, offT = rl + offR; i < ru; i++, offT++)
+			c[offT] += values[data.getIndex(i)];
 	}
 
 	private final void decompressToDenseBlockDenseDictAllColumnsContiguous(DenseBlock db, int rl, int ru, int offR,
@@ -287,8 +318,7 @@ public class ColGroupDDC extends APreAgg implements IMapToDataGroup {
 			lmSparseMatrixNoPreAggSingleCol(matrix.getSparseBlock(), nColM, retV, nColRet, dictVals, rl, ru);
 		}
 		else
-			lmDenseMatrixNoPreAggSingleCol(matrix.getDenseBlockValues(), nColM, retV, nColRet, dictVals, rl, ru, cl,
-				cu);
+			lmDenseMatrixNoPreAggSingleCol(matrix.getDenseBlockValues(), nColM, retV, nColRet, dictVals, rl, ru, cl, cu);
 	}
 
 	private void lmSparseMatrixNoPreAggSingleCol(SparseBlock sb, int nColM, double[] retV, int nColRet, double[] vals,

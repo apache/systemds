@@ -65,11 +65,6 @@ public class DictLibMatrixMult {
 	 */
 	public static void MMDictsWithScaling(IDictionary left, IDictionary right, IColIndex leftRows,
 		IColIndex rightColumns, MatrixBlock result, int[] counts) {
-		// LOG.warn("Inefficient double allocation of dictionary");
-		// final boolean modifyRight = right.getInMemorySize() > left.getInMemorySize();
-		// final IDictionary rightM = modifyRight ? right.scaleTuples(counts, rightColumns.size()) : right;
-		// final IDictionary leftM = modifyRight ? left : left.scaleTuples(counts, leftRows.size());
-		// MMDictsScaling(left, right, leftRows, rightColumns, result, counts);
 		left.MMDictScaling(right, leftRows, rightColumns, result, counts);
 	}
 
@@ -100,23 +95,6 @@ public class DictLibMatrixMult {
 	public static void MMDicts(IDictionary left, IDictionary right, IColIndex rowsLeft, IColIndex colsRight,
 		MatrixBlock result) {
 		left.MMDict(right, rowsLeft, colsRight, result);
-	}
-
-	/**
-	 * Matrix multiply the two dictionaries, note that the left side is considered transposed but not allocated
-	 * transposed making the multiplication a: t(left) %*% right. Furthermore, this multiplication contains a scaling
-	 * factor. changing the operation to: t(left) %*% (right * scaling) where scaling is a
-	 * 
-	 * @param left      The left side dictionary
-	 * @param right     The right side dictionary
-	 * @param rowsLeft  The row indexes on the left hand side
-	 * @param colsRight The column indexes on the right hand side
-	 * @param result    The result matrix to put the results into.
-	 * @param scaling   The scaling factor vector.
-	 */
-	public static void MMDictsScaling(IDictionary left, IDictionary right, IColIndex rowsLeft, IColIndex colsRight,
-		MatrixBlock result, int[] scaling) {
-		left.MMDictScaling(right, rowsLeft, colsRight, result, scaling);
 	}
 
 	/**

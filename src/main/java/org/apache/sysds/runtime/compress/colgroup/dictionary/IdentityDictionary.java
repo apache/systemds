@@ -32,6 +32,9 @@ import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.data.SparseBlockFactory;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.functionobjects.Builtin.BuiltinCode;
+import org.apache.sysds.runtime.functionobjects.Divide;
+import org.apache.sysds.runtime.functionobjects.Minus;
+import org.apache.sysds.runtime.functionobjects.Plus;
 import org.apache.sysds.runtime.functionobjects.ValueFunction;
 import org.apache.sysds.runtime.instructions.cp.CM_COV_Object;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -51,7 +54,7 @@ public class IdentityDictionary extends ADictionary {
 	/** Specify if the Identity matrix should contain an empty row in the end. */
 	protected final boolean withEmpty;
 	/** A Cache to contain a materialized version of the identity matrix. */
-	protected SoftReference<MatrixBlockDictionary> cache = null;
+	protected volatile SoftReference<MatrixBlockDictionary> cache = null;
 
 	/**
 	 * Create an identity matrix dictionary. It behaves as if allocated a Sparse Matrix block but exploits that the
@@ -212,7 +215,29 @@ public class IdentityDictionary extends ADictionary {
 
 	@Override
 	public IDictionary binOpRight(BinaryOperator op, double[] v, IColIndex colIndexes) {
-		return getMBDict().binOpRight(op, v, colIndexes);
+		boolean same = false;
+		if(op.fn instanceof Plus || op.fn instanceof Minus) {
+			same = true;
+			for(int i = 0; i < colIndexes.size(); i++) {
+				if(v[colIndexes.get(i)] != 0.0) {
+					same = false;
+					break;
+				}
+			}
+		}
+		if(op.fn instanceof Divide) {
+			same = true;
+			for(int i = 0; i < colIndexes.size(); i++) {
+				if(v[colIndexes.get(i)] != 1.0) {
+					same = false;
+					break;
+				}
+			}
+		}
+		if(same)
+			return this;
+		MatrixBlockDictionary mb = getMBDict();
+		return mb.binOpRight(op, v, colIndexes);
 	}
 
 	@Override
@@ -243,22 +268,33 @@ public class IdentityDictionary extends ADictionary {
 
 	@Override
 	public int getNumberOfValues(int ncol) {
+		if(ncol != nRowCol)
+			throw new DMLCompressionException("Invalid call to get Number of values assuming wrong number of columns");
 		return nRowCol + (withEmpty ? 1 : 0);
 	}
 
 	@Override
 	public double[] sumAllRowsToDouble(int nrColumns) {
-		double[] ret = new double[nRowCol];
-		Arrays.fill(ret, 1);
-		return ret;
+		if(withEmpty) {
+			double[] ret = new double[nRowCol + 1];
+			Arrays.fill(ret, 1);
+			ret[ret.length - 1] = 0;
+			return ret;
+		}
+		else {
+			double[] ret = new double[nRowCol];
+			Arrays.fill(ret, 1);
+			return ret;
+		}
 	}
 
 	@Override
 	public double[] sumAllRowsToDoubleWithDefault(double[] defaultTuple) {
-		double[] ret = new double[nRowCol];
-		Arrays.fill(ret, 1);
+		double[] ret = new double[defaultTuple.length];
 		for(int i = 0; i < defaultTuple.length; i++)
-			ret[i] += defaultTuple[i];
+			ret[i] += 1 + defaultTuple[i];
+		if(withEmpty)
+			ret[ret.length - 1] += -1;
 		return ret;
 	}
 
@@ -341,6 +377,8 @@ public class IdentityDictionary extends ADictionary {
 		double s = 0.0;
 		for(int v : counts)
 			s += v;
+		if(withEmpty)
+			s -= counts[counts.length - 1];
 		return s;
 	}
 
@@ -389,13 +427,54 @@ public class IdentityDictionary extends ADictionary {
 
 	@Override
 	public void addToEntry(final double[] v, final int fr, final int to, final int nCol, int rep) {
-		getMBDict().addToEntry(v, fr, to, nCol, rep);
+		if(withEmpty) {
+			if(fr < nRowCol)
+				v[to * nCol + fr] += rep;
+		}
+		else {
+			v[to * nCol + fr] += rep;
+		}
 	}
 
 	@Override
 	public void addToEntryVectorized(double[] v, int f1, int f2, int f3, int f4, int f5, int f6, int f7, int f8, int t1,
 		int t2, int t3, int t4, int t5, int t6, int t7, int t8, int nCol) {
-		getMBDict().addToEntryVectorized(v, f1, f2, f3, f4, f5, f6, f7, f8, t1, t2, t3, t4, t5, t6, t7, t8, nCol);
+		if(withEmpty)
+			addToEntryVectorizedWithEmpty(v, f1, f2, f3, f4, f5, f6, f7, f8, t1, t2, t3, t4, t5, t6, t7, t8, nCol);
+		else
+			addToEntryVectorizedNorm(v, f1, f2, f3, f4, f5, f6, f7, f8, t1, t2, t3, t4, t5, t6, t7, t8, nCol);
+	}
+
+	private void addToEntryVectorizedWithEmpty(double[] v, int f1, int f2, int f3, int f4, int f5, int f6, int f7,
+		int f8, int t1, int t2, int t3, int t4, int t5, int t6, int t7, int t8, int nCol) {
+		if(f1 < nRowCol)
+			v[t1 * nCol + f1] += 1;
+		if(f2 < nRowCol)
+			v[t2 * nCol + f2] += 1;
+		if(f3 < nRowCol)
+			v[t3 * nCol + f3] += 1;
+		if(f4 < nRowCol)
+			v[t4 * nCol + f4] += 1;
+		if(f5 < nRowCol)
+			v[t5 * nCol + f5] += 1;
+		if(f6 < nRowCol)
+			v[t6 * nCol + f6] += 1;
+		if(f7 < nRowCol)
+			v[t7 * nCol + f7] += 1;
+		if(f8 < nRowCol)
+			v[t8 * nCol + f8] += 1;
+	}
+
+	private void addToEntryVectorizedNorm(double[] v, int f1, int f2, int f3, int f4, int f5, int f6, int f7, int f8,
+		int t1, int t2, int t3, int t4, int t5, int t6, int t7, int t8, int nCol) {
+		v[t1 * nCol + f1] += 1;
+		v[t2 * nCol + f2] += 1;
+		v[t3 * nCol + f3] += 1;
+		v[t4 * nCol + f4] += 1;
+		v[t5 * nCol + f5] += 1;
+		v[t6 * nCol + f6] += 1;
+		v[t7 * nCol + f7] += 1;
+		v[t8 * nCol + f8] += 1;
 	}
 
 	@Override
@@ -466,7 +545,28 @@ public class IdentityDictionary extends ADictionary {
 	@Override
 	public IDictionary preaggValuesFromDense(final int numVals, final IColIndex colIndexes,
 		final IColIndex aggregateColumns, final double[] b, final int cut) {
-		return getMBDict().preaggValuesFromDense(numVals, colIndexes, aggregateColumns, b, cut);
+		/**
+		 * This operations is Essentially a Identity matrix multiplication with a right hand side dense matrix, but we
+		 * need to slice out the right hand side from the input.
+		 * 
+		 * ColIndexes specify the rows to slice out of the right matrix.
+		 * 
+		 * aggregate columns specify the columns to slice out from the right.
+		 */
+		final int cs = colIndexes.size();
+		final int s = aggregateColumns.size();
+
+		double[] ret = new double[s * numVals];
+		int off = 0;
+		for(int i = 0; i < cs; i++) {// rows on right
+			final int offB = colIndexes.get(i) * cut;
+			for(int j = 0; j < s; j++) {
+				ret[off++] = b[offB + aggregateColumns.get(j)];
+			}
+		}
+
+		MatrixBlock db = new MatrixBlock(numVals, s, ret);
+		return new MatrixBlockDictionary(db);
 	}
 
 	@Override
@@ -529,7 +629,10 @@ public class IdentityDictionary extends ADictionary {
 
 	@Override
 	public double getSparsity() {
-		return 1d / nRowCol;
+		if(withEmpty)
+			return 1d / (nRowCol + 1);
+		else
+			return 1d / nRowCol;
 	}
 
 	@Override
@@ -545,18 +648,55 @@ public class IdentityDictionary extends ADictionary {
 	@Override
 	public void MMDict(IDictionary right, IColIndex rowsLeft, IColIndex colsRight, MatrixBlock result) {
 		getMBDict().MMDict(right, rowsLeft, colsRight, result);
-		// should replace with add to right to output cells.
+	}
+
+	public void MMDictScaling(IDictionary right, IColIndex rowsLeft, IColIndex colsRight, MatrixBlock result,
+		int[] scaling) {
+		getMBDict().MMDictScaling(right, rowsLeft, colsRight, result, scaling);
 	}
 
 	@Override
 	public void MMDictDense(double[] left, IColIndex rowsLeft, IColIndex colsRight, MatrixBlock result) {
-		getMBDict().MMDictDense(left, rowsLeft, colsRight, result);
+		// getMBDict().MMDictDense(left, rowsLeft, colsRight, result);
 		// should replace with add to right to output cells.
+		final int leftSide = rowsLeft.size();
+		final int resCols = result.getNumColumns();
+		final int commonDim = Math.min(left.length / leftSide, nRowCol);
+		final double[] resV = result.getDenseBlockValues();
+		for(int i = 0; i < leftSide; i++) {// rows in left side
+			final int offOut = rowsLeft.get(i) * resCols;
+			final int leftOff = i * leftSide;
+			for(int j = 0; j < commonDim; j++) { // cols in left side skipping empty from identity
+				resV[offOut + colsRight.get(j)] += left[leftOff + j];
+			}
+		}
+	}
+
+	@Override
+	public void MMDictScalingDense(double[] left, IColIndex rowsLeft, IColIndex colsRight, MatrixBlock result,
+		int[] scaling) {
+		final int leftSide = rowsLeft.size();
+		final int resCols = result.getNumColumns();
+		final int commonDim = Math.min(left.length / leftSide, nRowCol);
+		final double[] resV = result.getDenseBlockValues();
+		for(int i = 0; i < leftSide; i++) {// rows in left side
+			final int offOut = rowsLeft.get(i) * resCols;
+			final int leftOff = i * leftSide;
+			for(int j = 0; j < commonDim; j++) { // cols in left side skipping empty from identity
+				resV[offOut + colsRight.get(j)] += left[leftOff + j] * scaling[j];
+			}
+		}
 	}
 
 	@Override
 	public void MMDictSparse(SparseBlock left, IColIndex rowsLeft, IColIndex colsRight, MatrixBlock result) {
 		getMBDict().MMDictSparse(left, rowsLeft, colsRight, result);
+	}
+
+	@Override
+	public void MMDictScalingSparse(SparseBlock left, IColIndex rowsLeft, IColIndex colsRight, MatrixBlock result,
+		int[] scaling) {
+		getMBDict().MMDictScalingSparse(left, rowsLeft, colsRight, result, scaling);
 	}
 
 	@Override

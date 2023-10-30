@@ -69,13 +69,13 @@ public class IdentityDictionarySlice extends IdentityDictionary {
 	@Override
 	public double getValue(int i) {
 		throw new NotImplementedException();
-
 	}
 
 	@Override
 	public final double getValue(int r, int c, int nCol) {
-		throw new NotImplementedException();
-
+		if(r < l || r > u)
+			return 0;
+		return super.getValue(r - l, c, nCol);
 	}
 
 	@Override
@@ -276,6 +276,23 @@ public class IdentityDictionarySlice extends IdentityDictionary {
 	@Override
 	public double getSparsity() {
 		return 1d / nRowCol;
+	}
+
+	@Override
+	public IDictionary preaggValuesFromDense(final int numVals, final IColIndex colIndexes,
+		final IColIndex aggregateColumns, final double[] b, final int cut) {
+		return getMBDict().preaggValuesFromDense(numVals, colIndexes, aggregateColumns, b, cut);
+	}
+
+	@Override
+	public void addToEntryVectorized(double[] v, int f1, int f2, int f3, int f4, int f5, int f6, int f7, int f8, int t1,
+		int t2, int t3, int t4, int t5, int t6, int t7, int t8, int nCol) {
+		throw new NotImplementedException();
+	}
+
+	@Override
+	public void addToEntry(final double[] v, final int fr, final int to, final int nCol, int rep) {
+		throw new NotImplementedException();
 	}
 
 	@Override

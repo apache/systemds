@@ -507,4 +507,22 @@ public class PlaceHolderDict implements IDictionary, Serializable {
 		return new PlaceHolderDict(nVal);
 	}
 
+	@Override
+	public void MMDictScaling(IDictionary right, IColIndex rowsLeft, IColIndex colsRight, MatrixBlock result,
+		int[] scaling) {
+		throw new RuntimeException(errMessage);
+	}
+
+	@Override
+	public void MMDictScalingDense(double[] left, IColIndex rowsLeft, IColIndex colsRight, MatrixBlock result,
+		int[] scaling) {
+		throw new RuntimeException(errMessage);
+	}
+
+	@Override
+	public void MMDictScalingSparse(SparseBlock left, IColIndex rowsLeft, IColIndex colsRight, MatrixBlock result,
+		int[] scaling) {
+		throw new RuntimeException(errMessage);
+	}
+
 }

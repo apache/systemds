@@ -21,21 +21,29 @@ package org.apache.sysds.test.component.compress.dictionary;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
-import org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.IdentityDictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.MatrixBlockDictionary;
+import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
+import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.functionobjects.Builtin.BuiltinCode;
+import org.apache.sysds.runtime.functionobjects.Divide;
+import org.apache.sysds.runtime.functionobjects.Minus;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.test.TestUtils;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -71,6 +79,30 @@ public class DictionaryTests {
 			addAll(tests, new double[] {1, 2, 3, 4, 5}, 1);
 			addAll(tests, new double[] {1, 2, 3, 4, 5, 6}, 2);
 			addAll(tests, new double[] {1, 2.2, 3.3, 4.4, 5.5, 6.6}, 3);
+
+			tests.add(new Object[] {new IdentityDictionary(2), Dictionary.create(new double[] {1, 0, 0, 1}), 2, 2});
+			tests.add(new Object[] {new IdentityDictionary(2, true), //
+				Dictionary.create(new double[] {1, 0, 0, 1, 0, 0}), 3, 2});
+			tests.add(new Object[] {new IdentityDictionary(3), //
+				Dictionary.create(new double[] {1, 0, 0, 0, 1, 0, 0, 0, 1}), 3, 3});
+			tests.add(new Object[] {new IdentityDictionary(3, true), //
+				Dictionary.create(new double[] {1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0}), 4, 3});
+
+			tests.add(new Object[] {new IdentityDictionary(4), //
+				Dictionary.create(new double[] {//
+					1, 0, 0, 0, //
+					0, 1, 0, 0, //
+					0, 0, 1, 0, //
+					0, 0, 0, 1,//
+				}), 4, 4});
+			tests.add(new Object[] {new IdentityDictionary(4, true), //
+				Dictionary.create(new double[] {//
+					1, 0, 0, 0, //
+					0, 1, 0, 0, //
+					0, 0, 1, 0, //
+					0, 0, 0, 1, //
+					0, 0, 0, 0}),
+				5, 4});
 
 			create(tests, 30, 300, 0.2);
 		}
@@ -405,6 +437,170 @@ public class DictionaryTests {
 		containsValueWithReference(1.0, getReference(nCol, 3241, -1.0, -1.0));
 	}
 
+	@Test
+	public void equalsEl() {
+		assertEquals(a, b);
+	}
+
+	@Test
+	public void opRightMinus() {
+		BinaryOperator op = new BinaryOperator(Minus.getMinusFnObject());
+		double[] vals = TestUtils.generateTestVector(nCol, -1, 1, 1.0, 132L);
+		opRight(op, vals, ColIndexFactory.create(0, nCol));
+	}
+
+	@Test
+	public void opRightMinusNoCol() {
+		BinaryOperator op = new BinaryOperator(Minus.getMinusFnObject());
+		double[] vals = TestUtils.generateTestVector(nCol, -1, 1, 1.0, 132L);
+		opRight(op, vals);
+	}
+
+	@Test
+	public void opRightMinusZero() {
+		BinaryOperator op = new BinaryOperator(Minus.getMinusFnObject());
+		double[] vals = new double[nCol];
+		opRight(op, vals, ColIndexFactory.create(0, nCol));
+	}
+
+	@Test
+	public void opRightDivOne() {
+		BinaryOperator op = new BinaryOperator(Divide.getDivideFnObject());
+		double[] vals = new double[nCol];
+		Arrays.fill(vals, 1);
+		opRight(op, vals, ColIndexFactory.create(0, nCol));
+	}
+
+	@Test
+	public void opRightDiv() {
+		BinaryOperator op = new BinaryOperator(Divide.getDivideFnObject());
+		double[] vals = TestUtils.generateTestVector(nCol, -1, 1, 1.0, 232L);
+		opRight(op, vals, ColIndexFactory.create(0, nCol));
+	}
+
+	private void opRight(BinaryOperator op, double[] vals, IColIndex cols) {
+		IDictionary aa = a.binOpRight(op, vals, cols);
+		IDictionary bb = b.binOpRight(op, vals, cols);
+		compare(aa, bb, nRow, nCol);
+	}
+
+	private void opRight(BinaryOperator op, double[] vals) {
+		IDictionary aa = a.binOpRight(op, vals);
+		IDictionary bb = b.binOpRight(op, vals);
+		compare(aa, bb, nRow, nCol);
+	}
+
+	@Test
+	public void testAddToEntry1() {
+		double[] ret1 = new double[nCol];
+		a.addToEntry(ret1, 0, 0, nCol);
+		double[] ret2 = new double[nCol];
+		b.addToEntry(ret2, 0, 0, nCol);
+		assertTrue(Arrays.equals(ret1, ret2));
+	}
+
+	@Test
+	public void testAddToEntry2() {
+		double[] ret1 = new double[nCol * 2];
+		a.addToEntry(ret1, 0, 1, nCol);
+		double[] ret2 = new double[nCol * 2];
+		b.addToEntry(ret2, 0, 1, nCol);
+		assertTrue(Arrays.equals(ret1, ret2));
+	}
+
+	@Test
+	public void testAddToEntry3() {
+		double[] ret1 = new double[nCol * 3];
+		a.addToEntry(ret1, 0, 2, nCol);
+		double[] ret2 = new double[nCol * 3];
+		b.addToEntry(ret2, 0, 2, nCol);
+		assertTrue(Arrays.equals(ret1, ret2));
+	}
+
+	@Test
+	public void testAddToEntry4() {
+		if(a.getNumberOfValues(nCol) > 2) {
+
+			double[] ret1 = new double[nCol * 3];
+			a.addToEntry(ret1, 2, 2, nCol);
+			double[] ret2 = new double[nCol * 3];
+			b.addToEntry(ret2, 2, 2, nCol);
+			assertTrue(Arrays.equals(ret1, ret2));
+		}
+	}
+
+	@Test
+	public void testAddToEntryVectorized1() {
+		try {
+			double[] ret1 = new double[nCol * 3];
+			a.addToEntryVectorized(ret1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 0, 1, 2, 0, 1, nCol);
+			double[] ret2 = new double[nCol * 3];
+			b.addToEntryVectorized(ret2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 0, 1, 2, 0, 1, nCol);
+			assertTrue(Arrays.equals(ret1, ret2));
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
+	}
+
+	@Test
+	public void testAddToEntryVectorized2() {
+		try {
+
+			if(a.getNumberOfValues(nCol) > 1) {
+				double[] ret1 = new double[nCol * 3];
+				a.addToEntryVectorized(ret1, 1, 0, 1, 0, 1, 0, 1, 0, 0, 1, 2, 0, 1, 2, 0, 1, nCol);
+				double[] ret2 = new double[nCol * 3];
+				b.addToEntryVectorized(ret2, 1, 0, 1, 0, 1, 0, 1, 0, 0, 1, 2, 0, 1, 2, 0, 1, nCol);
+				assertTrue("Error: " + a.getClass().getSimpleName() + " " + b.getClass().getSimpleName(),
+					Arrays.equals(ret1, ret2));
+			}
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
+	}
+
+	@Test
+	public void testAddToEntryVectorized3() {
+		try {
+
+			if(a.getNumberOfValues(nCol) > 2) {
+				double[] ret1 = new double[nCol * 3];
+				a.addToEntryVectorized(ret1, 1, 2, 1, 2, 1, 0, 1, 0, 0, 1, 2, 0, 1, 2, 0, 1, nCol);
+				double[] ret2 = new double[nCol * 3];
+				b.addToEntryVectorized(ret2, 1, 2, 1, 2, 1, 0, 1, 0, 0, 1, 2, 0, 1, 2, 0, 1, nCol);
+				assertTrue("Error: " + a.getClass().getSimpleName() + " " + b.getClass().getSimpleName(),
+					Arrays.equals(ret1, ret2));
+			}
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
+	}
+
+	@Test
+	public void testAddToEntryVectorized4() {
+		try {
+
+			if(a.getNumberOfValues(nCol) > 3) {
+				double[] ret1 = new double[nCol * 57];
+				a.addToEntryVectorized(ret1, 3, 3, 0, 3, 0, 2, 0, 3, 20, 1, 12, 2, 10, 3, 6, 56, nCol);
+				double[] ret2 = new double[nCol * 57];
+				b.addToEntryVectorized(ret2, 3, 3, 0, 3, 0, 2, 0, 3, 20, 1, 12, 2, 10, 3, 6, 56, nCol);
+				assertTrue("Error: " + a.getClass().getSimpleName() + " " + b.getClass().getSimpleName(),
+					Arrays.equals(ret1, ret2));
+			}
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
+	}
+
 	public void containsValueWithReference(double value, double[] reference) {
 		assertEquals(//
 			a.containsValueWithReference(value, reference), //
@@ -412,9 +608,37 @@ public class DictionaryTests {
 	}
 
 	private static void compare(IDictionary a, IDictionary b, int nRow, int nCol) {
-		for(int i = 0; i < nRow; i++)
-			for(int j = 0; j < nCol; j++)
-				assertEquals(a.getValue(i, j, nCol), b.getValue(i, j, nCol), 0.0001);
+		try {
+
+			String errorM = a.getClass().getSimpleName() + " " + b.getClass().getSimpleName();
+			for(int i = 0; i < nRow; i++)
+				for(int j = 0; j < nCol; j++)
+					assertEquals(errorM, a.getValue(i, j, nCol), b.getValue(i, j, nCol), 0.0001);
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
+	}
+
+	@Test
+	public void preaggValuesFromDense() {
+		try {
+
+			final int nv = a.getNumberOfValues(nCol);
+			IColIndex idc = ColIndexFactory.create(0, nCol);
+
+			double[] bv = TestUtils.generateTestVector(nCol * nCol, -1, 1, 1.0, 321521L);
+
+			IDictionary aa = a.preaggValuesFromDense(nv, idc, idc, bv, nCol);
+			IDictionary bb = b.preaggValuesFromDense(nv, idc, idc, bv, nCol);
+
+			compare(aa, bb, aa.getNumberOfValues(nCol), nCol);
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
 	}
 
 	public void productWithDefault(double retV, double[] def) {

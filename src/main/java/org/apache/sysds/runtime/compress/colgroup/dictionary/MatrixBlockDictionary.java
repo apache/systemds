@@ -88,8 +88,27 @@ public class MatrixBlockDictionary extends ADictionary {
 	}
 
 	public static MatrixBlockDictionary createDictionary(double[] values, int nCol, boolean check) {
-		final MatrixBlock mb = Util.matrixBlockFromDenseArray(values, nCol, check);
-		return create(mb, check);
+		if(nCol <= 1) {
+			final MatrixBlock mb = Util.matrixBlockFromDenseArray(values, nCol, check);
+			return create(mb, check);
+		}
+		else {
+			final int nnz = checkNNz(values);
+			if((double) nnz / values.length < 0.4D) {
+				SparseBlock sb = SparseBlockFactory.createFromArray(values, nCol, nnz);
+				MatrixBlock mb = new MatrixBlock(values.length / nCol, nCol, nnz, sb);
+				return create(mb, false);
+			}
+			else
+				return create(Util.matrixBlockFromDenseArray(values, nCol, check), false);
+		}
+	}
+
+	private static int checkNNz(double[] values) {
+		int nnz = 0;
+		for(int i = 0; i < values.length; i++)
+			nnz += values[i] == 0 ? 0 : 1;
+		return nnz;
 	}
 
 	public MatrixBlock getMatrixBlock() {
@@ -837,6 +856,9 @@ public class MatrixBlockDictionary extends ADictionary {
 
 	@Override
 	public int getNumberOfValues(int ncol) {
+
+		if(ncol != _data.getNumColumns())
+			throw new DMLCompressionException("Invalid call to get Number of values assuming wrong number of columns");
 		return _data.getNumRows();
 	}
 
@@ -1771,15 +1793,15 @@ public class MatrixBlockDictionary extends ADictionary {
 			}
 		}
 		else {
-			double[] values = _data.getDenseBlockValues();
-			for(int k = 0, off = 0;
-				k < numVals * colIndexes.size();
-				k += colIndexes.size(), off += aggregateColumns.size()) {
-				for(int h = 0; h < colIndexes.size(); h++) {
-					int idb = colIndexes.get(h) * cut;
+			final int cz = colIndexes.size();
+			final int az = aggregateColumns.size();
+			final double[] values = _data.getDenseBlockValues();
+			for(int k = 0, off = 0; k < numVals * cz; k += cz, off += az) {
+				for(int h = 0; h < cz; h++) {
+					final int idb = colIndexes.get(h) * cut;
 					double v = values[k + h];
 					if(v != 0)
-						for(int i = 0; i < aggregateColumns.size(); i++)
+						for(int i = 0; i < az; i++)
 							ret[off + i] += v * b[idb + aggregateColumns.get(i)];
 				}
 			}
@@ -1801,10 +1823,14 @@ public class MatrixBlockDictionary extends ADictionary {
 
 	@Override
 	public IDictionary replaceWithReference(double pattern, double replace, double[] reference) {
+		if(Util.eq(pattern, Double.NaN))
+			throw new NotImplementedException();
+
 		final int nRow = _data.getNumRows();
 		final int nCol = _data.getNumColumns();
 		final MatrixBlock ret = new MatrixBlock(nRow, nCol, false);
 		ret.allocateDenseBlock();
+
 		final double[] retV = ret.getDenseBlockValues();
 		int off = 0;
 		if(_data.isInSparseFormat()) {
@@ -2031,11 +2057,29 @@ public class MatrixBlockDictionary extends ADictionary {
 	}
 
 	@Override
+	public void MMDictScaling(IDictionary right, IColIndex rowsLeft, IColIndex colsRight, MatrixBlock result,
+		int[] scaling) {
+		if(_data.isInSparseFormat())
+			right.MMDictScalingSparse(_data.getSparseBlock(), rowsLeft, colsRight, result, scaling);
+		else
+			right.MMDictScalingDense(_data.getDenseBlockValues(), rowsLeft, colsRight, result, scaling);
+	}
+
+	@Override
 	public void MMDictDense(double[] left, IColIndex rowsLeft, IColIndex colsRight, MatrixBlock result) {
 		if(_data.isInSparseFormat())
 			DictLibMatrixMult.MMDictsDenseSparse(left, _data.getSparseBlock(), rowsLeft, colsRight, result);
 		else
 			DictLibMatrixMult.MMDictsDenseDense(left, _data.getDenseBlockValues(), rowsLeft, colsRight, result);
+	}
+
+	@Override
+	public void MMDictScalingDense(double[] left, IColIndex rowsLeft, IColIndex colsRight, MatrixBlock result,
+		int[] scaling) {
+		if(_data.isInSparseFormat())
+			DictLibMatrixMult.MMDictsScalingDenseSparse(left, _data.getSparseBlock(), rowsLeft, colsRight, result, scaling);
+		else
+			DictLibMatrixMult.MMDictsScalingDenseDense(left, _data.getDenseBlockValues(), rowsLeft, colsRight, result,scaling);
 	}
 
 	@Override
@@ -2045,6 +2089,15 @@ public class MatrixBlockDictionary extends ADictionary {
 			DictLibMatrixMult.MMDictsSparseSparse(left, _data.getSparseBlock(), rowsLeft, colsRight, result);
 		else
 			DictLibMatrixMult.MMDictsSparseDense(left, _data.getDenseBlockValues(), rowsLeft, colsRight, result);
+	}
+
+	@Override
+	public void MMDictScalingSparse(SparseBlock left, IColIndex rowsLeft, IColIndex colsRight, MatrixBlock result,
+		int[] scaling) {
+		if(_data.isInSparseFormat())
+			DictLibMatrixMult.MMDictsScalingSparseSparse(left, _data.getSparseBlock(), rowsLeft, colsRight, result, scaling);
+		else
+			DictLibMatrixMult.MMDictsScalingSparseDense(left, _data.getDenseBlockValues(), rowsLeft, colsRight, result, scaling);
 	}
 
 	@Override

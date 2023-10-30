@@ -2044,6 +2044,17 @@ public class TestUtils {
 		return matrix;
 	}
 
+	public static double[] generateTestVector(int cols, double min, double max, double sparsity, long seed) {
+		double[] vector = new double[cols];
+		Random random = (seed == -1) ? TestUtils.random : new Random(seed);
+		for(int j = 0; j < cols; j++) {
+			if(random.nextDouble() > sparsity)
+				continue;
+			vector[j] = (random.nextDouble() * (max - min) + min);
+		}
+		return vector;
+	}
+
 	/**
 	 *
 	 * Generates a test matrix with the specified parameters as a MatrixBlock.

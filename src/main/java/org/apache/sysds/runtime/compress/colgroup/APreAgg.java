@@ -85,9 +85,12 @@ public abstract class APreAgg extends AColGroupValue {
 	 * @return A aggregate dictionary
 	 */
 	public final IDictionary preAggregateThatIndexStructure(APreAgg that) {
-		long outputLength = (long)that._colIndexes.size() * this.getNumValues();
+		final long outputLength = (long)that._colIndexes.size() * this.getNumValues();
 		if(outputLength > Integer.MAX_VALUE)
 			throw new NotImplementedException("Not supported pre aggregate of above integer length");
+		if(outputLength <= 0) // if the pre aggregate output is empty or nothing, return null
+			return null;
+		
 		// create empty Dictionary that we slowly fill, hence the dictionary is empty and no check
 		final Dictionary ret = Dictionary.createNoCheck(new double[(int)outputLength]);
 

@@ -613,4 +613,22 @@ public class QDictionary extends ADictionary {
 	public IDictionary reorder(int[] reorder) {
 		throw new NotImplementedException();
 	}
+
+	@Override
+	public void MMDictScaling(IDictionary right, IColIndex rowsLeft, IColIndex colsRight, MatrixBlock result,
+		int[] scaling) {
+		throw new NotImplementedException();
+	}
+
+	@Override
+	public void MMDictScalingDense(double[] left, IColIndex rowsLeft, IColIndex colsRight, MatrixBlock result,
+		int[] scaling) {
+		throw new NotImplementedException();
+	}
+
+	@Override
+	public void MMDictScalingSparse(SparseBlock left, IColIndex rowsLeft, IColIndex colsRight, MatrixBlock result,
+		int[] scaling) {
+		throw new NotImplementedException();
+	}
 }

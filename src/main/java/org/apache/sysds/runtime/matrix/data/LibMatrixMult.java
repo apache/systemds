@@ -437,9 +437,11 @@ public class LibMatrixMult
 		//pre-processing
 		ret.sparse = isSparseOutputTSMM(m1, leftTranspose);
 		ret.allocateBlock();
-
+		MatrixBlock m1t = isSparseOutputTSMM(m1, leftTranspose, true) ?
+			LibMatrixReorg.transpose(m1) : null;
+		
 		//core tsmm operation
-		matrixMultTransposeSelf(m1, ret, leftTranspose, 0, ret.rlen);
+		matrixMultTransposeSelf(m1, m1t, ret, leftTranspose, 0, ret.rlen);
 
 		//post-processing
 		if(copyToLowerTriangle){
@@ -477,7 +479,9 @@ public class LibMatrixMult
 		//pre-processing (no need to check isThreadSafe)
 		ret.sparse = isSparseOutputTSMM(m1, leftTranspose);
 		ret.allocateBlock();
-
+		MatrixBlock m1t = isSparseOutputTSMM(m1, leftTranspose, true) ?
+			LibMatrixReorg.transpose(m1) : null;
+		
 		//core multi-threaded matrix mult computation
 		ExecutorService pool = CommonThreadPool.get(k);
 		try {
@@ -485,7 +489,7 @@ public class LibMatrixMult
 			//load balance via #tasks=4k due to triangular shape 
 			int blklen = (int)(Math.ceil((double)ret.rlen / (4 * k)));
 			for(int i = 0; i < ret.rlen; i += blklen)
-				tasks.add(new MatrixMultTransposeTask(m1, ret, leftTranspose, i, Math.min(i+blklen, ret.rlen)));
+				tasks.add(new MatrixMultTransposeTask(m1, m1t, ret, leftTranspose, i, Math.min(i+blklen, ret.rlen)));
 			for( Future<Object> rtask :  pool.invokeAll(tasks) )
 				rtask.get();
 		}
@@ -2235,9 +2239,13 @@ public class LibMatrixMult
 		}
 	}
 
-	private static void matrixMultTransposeSelf(MatrixBlock m1, MatrixBlock ret, boolean leftTranspose, int rl, int ru) {
-		if(m1.sparse && ret.sparse)
-			matrixMultTransposeSelfUltraSparse(m1, ret, leftTranspose, rl, ru);
+	private static void matrixMultTransposeSelf(MatrixBlock m1, MatrixBlock m1t, MatrixBlock ret, boolean leftTranspose, int rl, int ru) {
+		if(m1.sparse && ret.sparse) {
+			if( m1t == null )
+				matrixMultTransposeSelfUltraSparse(m1, ret, leftTranspose, rl, ru);
+			else
+				matrixMultTransposeSelfUltraSparse2(m1, m1t, ret, leftTranspose, rl, ru);
+		}
 		else if( m1.sparse )
 			matrixMultTransposeSelfSparse(m1, ret, leftTranspose, rl, ru);
 		else 
@@ -2406,9 +2414,7 @@ public class LibMatrixMult
 		}
 	}
 	
-	//alternative matrixMultTransposeSelfUltraSparse2 w/ IKJ iteration order and dense buffering
-	//(for moderately large graphs 4x improvement compared to above, but for large graphs slower -> non-conclusive)
-	@SuppressWarnings("unused")
+	//alternative matrixMultTransposeSelfUltraSparse2 w/ IKJ iteration order and sparse updates
 	private static void matrixMultTransposeSelfUltraSparse2( MatrixBlock m1, MatrixBlock m1t, MatrixBlock ret, boolean leftTranspose, int rl, int ru ) {
 		if( leftTranspose )
 			throw new DMLRuntimeException("Left tsmm with sparse output not supported");
@@ -2417,17 +2423,13 @@ public class LibMatrixMult
 		SparseBlock a = m1.sparseBlock;
 		SparseBlock b = m1t.sparseBlock;
 		SparseBlock c = ret.sparseBlock;
-		int m = m1.rlen;
-		double[] tmp = new double[m];
-		
 		for(int i=rl; i<ru; i++) { //rows in X
 			if( a.isEmpty(i) ) continue;
 			int apos = a.pos(i);
 			int alen = a.size(i);
 			int[] aix = a.indexes(i);
 			double[] avals = a.values(i);
-			//aggregate arow %*% B into tmp
-			Arrays.fill(tmp, 0);
+			//aggregate arow %*% B into output
 			for(int k=apos; k<apos+alen; k++) {
 				int aixk = aix[k];
 				double aval = avals[k];
@@ -2438,12 +2440,10 @@ public class LibMatrixMult
 				int blen = b.size(aixk);
 				int[] bix = b.indexes(aixk);
 				double[] bvals = b.values(aixk);
-				vectMultiplyAdd(aval, bvals, tmp, bix, bpos2, 0, bpos+blen-bpos2);
+				//sparse updates for ultra-sparse output
+				for(int k2 = bpos2; k2<bpos+blen; k2++)
+					c.add(i, bix[k2], aval*bvals[k2]);
 			}
-			//copy non-zeros in tmp into sparse output 
-			for(int j=0; j<m; j++)
-				if( tmp[j] != 0 )
-					c.append(i, j, tmp[j]);
 		}
 	}
 
@@ -4359,9 +4359,15 @@ public class LibMatrixMult
 	}
 	
 	public static boolean isSparseOutputTSMM(MatrixBlock m1, boolean leftTranspose) {
+		return isSparseOutputTSMM(m1, leftTranspose, false);
+	}
+	
+	public static boolean isSparseOutputTSMM(MatrixBlock m1, boolean leftTranspose, boolean ultraSparse) {
 		double sp = m1.getSparsity();
 		double osp = OptimizerUtils.getMatMultSparsity(sp, sp, m1.rlen, m1.clen, m1.rlen, false);
-		return !leftTranspose && m1.sparse && osp < MatrixBlock.ULTRA_SPARSITY_TURN_POINT2;
+		double sp_threshold = ultraSparse ?
+			MatrixBlock.ULTRA_SPARSITY_TURN_POINT : MatrixBlock.ULTRA_SPARSITY_TURN_POINT2;
+		return !leftTranspose && m1.sparse && osp < sp_threshold;
 	}
 
 	public static boolean isOuterProductTSMM(int rlen, int clen, boolean left) {
@@ -4577,14 +4583,16 @@ public class LibMatrixMult
 	private static class MatrixMultTransposeTask implements Callable<Object> 
 	{
 		private final MatrixBlock _m1;
+		private final MatrixBlock _m1t;
 		private final MatrixBlock _ret;
 		private final boolean _left;
 		private final int _rl;
 		private final int _ru;
 
-		protected MatrixMultTransposeTask( MatrixBlock m1, MatrixBlock ret, boolean left, int rl, int ru )
+		protected MatrixMultTransposeTask( MatrixBlock m1, MatrixBlock m1t, MatrixBlock ret, boolean left, int rl, int ru )
 		{
 			_m1 = m1;
+			_m1t = m1t;
 			_ret = ret;
 			_left = left;
 			_rl = rl;
@@ -4593,7 +4601,7 @@ public class LibMatrixMult
 		
 		@Override
 		public Object call() {
-			matrixMultTransposeSelf(_m1, _ret, _left, _rl, _ru);
+			matrixMultTransposeSelf(_m1, _m1t, _ret, _left, _rl, _ru);
 			return null;
 		}
 	}

@@ -480,7 +480,7 @@ public class LibMatrixMult
 		ret.sparse = isSparseOutputTSMM(m1, leftTranspose);
 		ret.allocateBlock();
 		MatrixBlock m1t = isSparseOutputTSMM(m1, leftTranspose, true) ?
-			LibMatrixReorg.transpose(m1) : null;
+			LibMatrixReorg.transpose(m1, k) : null;
 		
 		//core multi-threaded matrix mult computation
 		ExecutorService pool = CommonThreadPool.get(k);

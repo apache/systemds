@@ -769,14 +769,16 @@ public class LineageCache
 				LineageCacheStatistics.incrementDelHitsGpu();
 			switch(centry.getCacheStatus()) {
 				case EMPTY:  //first hit
-					// Set the GPUOject in the cache. Will be garbage collected
-					if (!LineageCacheEviction._removelist.containsKey(centry._key)) {
-						// Cache right away if removed before
+					// Cache right away if removed before or a heavy hitter
+					if (LineageCacheConfig.isDelayedCachingGPU()  //if delayed caching enabled
+						&& !LineageCacheEviction._removelist.containsKey(centry._key)
+						&& !LineageCacheConfig.isComputeGPUOps(centry._key.getOpcode())) {
+						// Delayed Caching: Set the GPUOject in the cache. Will be garbage collected
 						centry.setGPUValue(gpuObj.getDensePointer(), gpuObj.getAllocatedSize(),
 							gpuObj.getMatrixObject().getMetaData(), computetime);
 						centry.setCacheStatus(LineageCacheStatus.TOCACHEGPU);
 						break;
-					}
+					} //else, falls through and cache
 				case TOCACHEGPU:  //second hit
 					// Set the GPUOject in the cache and update the status
 					centry.setGPUValue(gpuObj.getDensePointer(), gpuObj.getAllocatedSize(),

@@ -48,16 +48,36 @@ public final class DoubleCountHashMap extends ACountHashMap<Double> {
 	}
 
 	public double[] getDictionary() {
+		return getDictionary(size);
+	}
+
+
+	public double[] getDictionary(int size) {
 		double[] ret = new double[size];
 		for(int i = 0; i < data.length; i++) {
 			ACount<Double> e = data[i];
 			while(e != null) {
-				ret[e.id] = e.key();
+				if(e.id >= 0)
+					ret[e.id] = e.key();
+				e = e.next();
+			}
+		}
+		return ret;
+	}
+
+
+	public void replaceWithUIDs(double v) {
+		int i = 0;
+		for(ACount<Double> e : data) {
+			while(e != null) {
+				if(!e.key().equals(v))
+					e.id = i++;
+				else
+					e.id = -1;
 				e = e.next();
 			}
 		}
 
-		return ret;
 	}
 
 	public void replaceWithUIDsNoZero() {

@@ -129,7 +129,11 @@ public class IndexesTest {
 			tests.add(createWithArray(144, 32));
 			tests.add(createWithArray(13, 23));
 			tests.add(createWithArray(145, 14));
+			tests.add(createWithArray(300, 14));
 			tests.add(createWithArray(23, 51515));
+			tests.add(createWithArray(128, 321));
+			tests.add(createWithArray(129, 1324));
+			tests.add(createWithArray(127, 1323));
 			tests.add(createWithArray(66, 132));
 			tests.add(createRangeWithArray(66, 132));
 			tests.add(createRangeWithArray(32, 132));
@@ -170,13 +174,16 @@ public class IndexesTest {
 			DataOutputStream fos = new DataOutputStream(bos);
 			actual.write(fos);
 
+			long actualSize = bos.size();
 			// Serialize in
 			ByteArrayInputStream bis = new ByteArrayInputStream(bos.toByteArray());
 			DataInputStream fis = new DataInputStream(bis);
 
 			IColIndex n = ColIndexFactory.read(fis);
+			long expectedSize = actual.getExactSizeOnDisk();
 
 			compare(actual, n);
+			assertEquals(actual.toString(), expectedSize, actualSize);
 		}
 		catch(IOException e) {
 			throw new RuntimeException("Error in io " + actual, e);
@@ -198,7 +205,7 @@ public class IndexesTest {
 			long actualSize = bos.size();
 			long expectedSize = actual.getExactSizeOnDisk();
 
-			assertEquals(expectedSize, actualSize);
+			assertEquals(actual.toString(), expectedSize, actualSize);
 		}
 		catch(IOException e) {
 			throw new RuntimeException("Error in io", e);
@@ -606,7 +613,6 @@ public class IndexesTest {
 	}
 
 	private static void compare(int[] expected, IIterate actual) {
-		// LOG.error(expected);
 		for(int i = 0; i < expected.length; i++) {
 			assertTrue(actual.hasNext());
 			assertEquals(i, actual.i());

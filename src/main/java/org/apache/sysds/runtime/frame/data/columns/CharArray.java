@@ -98,7 +98,14 @@ public class CharArray extends Array<Character> {
 
 	@Override
 	public void set(int rl, int ru, Array<Character> value, int rlSrc) {
-		System.arraycopy(((CharArray) value)._data, rlSrc, _data, rl, ru - rl + 1);
+		try {
+			// try system array copy.
+			// but if it does not work, default to get.
+			System.arraycopy(value.get(), rlSrc, _data, rl, ru - rl + 1);
+		}
+		catch(Exception e) {
+			super.set(rl, ru, value, rlSrc);
+		}
 	}
 
 	@Override
@@ -244,6 +251,14 @@ public class CharArray extends Array<Character> {
 		for(int i = 0; i < size(); i++)
 			ret[i] = _data[i];
 		return new LongArray(ret);
+	}
+
+	@Override
+	protected Array<Object> changeTypeHash64(){
+		long[] ret = new long[size()];
+		for(int i = 0; i < size(); i++)
+			ret[i] = _data[i];
+		return new HashLongArray(ret);
 	}
 
 	@Override

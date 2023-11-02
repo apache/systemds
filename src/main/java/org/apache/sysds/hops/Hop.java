@@ -441,26 +441,18 @@ public abstract class Hop implements ParseInfo {
 		if( _requiresReblock && et != ExecType.CP )
 		{
 			Lop input = getLops();
+
 			Lop reblock = null;
-			
-			try
-			{
-				if( this instanceof DataOp  // CSV
-					&& ((DataOp)this).getOp() == OpOpData.PERSISTENTREAD
-					&& ((DataOp)this).getFileFormat() == FileFormat.CSV  )
-				{
-					reblock = new CSVReBlock( input, getBlocksize(), 
-						getDataType(), getValueType(), et);
-				}
-				else { //ALL OTHER
-					reblock = new ReBlock( input, getBlocksize(), 
-						getDataType(), getValueType(), _outputEmptyBlocks, et);
-				}
+			if(this instanceof DataOp // CSV
+				&& ((DataOp) this).getOp() == OpOpData.PERSISTENTREAD &&
+				((DataOp) this).getFileFormat() == FileFormat.CSV) {
+				reblock = new CSVReBlock(input, getBlocksize(), getDataType(), getValueType(), et);
 			}
-			catch( LopsException ex ) {
-				throw new HopsException(ex);
+			else { // ALL OTHER
+				reblock = new ReBlock(input, getBlocksize(), getDataType(), getValueType(), _outputEmptyBlocks, et);
 			}
-		
+
+			// replace this lop with the reblock instruction
 			setOutputDimensions(reblock);
 			setLineNumbers(reblock);
 			setPrivacy(reblock);
@@ -513,43 +505,40 @@ public abstract class Hop implements ParseInfo {
 		}	
 	}
 
-	private void constructAndSetCompressionLopIfRequired() {
-		if((requiresCompression() && ! hasCompressedInput()) ^ _requiresDeCompression){ // xor
+	protected void constructAndSetCompressionLopIfRequired() {
+		if((requiresCompression()) ^ _requiresDeCompression){ // xor
 			ExecType et = getExecutionModeForCompression();
 
 			Lop compressionInstruction = null;
-			try{
-				if( requiresCompression() ){
-					if(_compressedWorkloadTree != null){
-						SingletonLookupHashMap m = SingletonLookupHashMap.getMap();
-						int singletonID = m.put(_compressedWorkloadTree);
-						compressionInstruction = new Compression(getLops(), getDataType(), getValueType(), et, singletonID);
-					}
-					else
-						compressionInstruction = new Compression(getLops(), getDataType(), getValueType(), et, 0);
+		
+			if(requiresCompression()) {
+				if(_compressedWorkloadTree != null) {
+					SingletonLookupHashMap m = SingletonLookupHashMap.getMap();
+					int singletonID = m.put(_compressedWorkloadTree);
+					compressionInstruction = new Compression(getLops(), getDataType(), getValueType(), et, singletonID);
 				}
-				else if( _requiresDeCompression && et != ExecType.SPARK ) // Disabled spark decompression instruction.
-					compressionInstruction = new DeCompression(getLops(), getDataType(), getValueType(), et);
 				else
-					return;
+					compressionInstruction = new Compression(getLops(), getDataType(), getValueType(), et, 0);
 			}
-			catch (LopsException ex) {
-				throw new HopsException(ex);
-			}
+			else if(_requiresDeCompression && et != ExecType.SPARK) // Disabled spark decompression instruction.
+				compressionInstruction = new DeCompression(getLops(), getDataType(), getValueType(), et);
+			else
+				return;
+
 			setOutputDimensions( compressionInstruction );
 			setLineNumbers( compressionInstruction );
 			setLops( compressionInstruction );
 		}
 	}
 
-	private ExecType getExecutionModeForCompression(){
+	protected ExecType getExecutionModeForCompression(){
 		ExecType et = ExecType.CP;
 		// conditional checkpoint based on memory estimate in order to avoid unnecessary 
 		// persist and unpersist calls (4x the memory budget is conservative)
 		if( OptimizerUtils.isSparkExecutionMode() && getDataType()!=DataType.SCALAR )
 			if( OptimizerUtils.isHybridExecutionMode() 
 				&& 2 * _outputMemEstimate < OptimizerUtils.getLocalMemBudget()
-				|| _etypeForced == ExecType.CP )
+				|| _etypeForced == ExecType.CP || getLops().isExecCP() )
 				et = ExecType.CP;
 			else 
 				et = ExecType.SPARK;
@@ -1050,8 +1039,12 @@ public abstract class Hop implements ParseInfo {
 	public abstract String getOpString();
 
 	@Override
-	public String toString(){
-		return super.getClass().getSimpleName() + "  " + getOpString();
+	public final String toString() {
+		StringBuilder sb = new StringBuilder();
+		sb.append(getClass().getSimpleName());
+		sb.append(" ");
+		sb.append(getOpString());
+		return sb.toString();
 	}
 
 	// ========================================================================================

@@ -737,15 +737,16 @@ public class FrameBlock implements CacheBlock<FrameBlock>, Externalizable {
 	}
 
 	public Array<?> getColumn(int c) {
-		return _coldata[c];
+		return _coldata != null ? _coldata[c] : null;
 	}
 
 	public void setColumn(int c, Array<?> column) {
 		if(_coldata == null) {
 			_coldata = new Array[getNumColumns()];
-			_nRow = column.size();
+			if(column != null)
+				_nRow = column.size();
 		}
-		if(column.size() != _nRow)
+		else if(column != null && column.size() != _nRow)
 			throw new DMLRuntimeException("Invalid number of rows in set column");
 		_coldata[c] = column;
 		_msize = -1;
@@ -814,14 +815,30 @@ public class FrameBlock implements CacheBlock<FrameBlock>, Externalizable {
 
 	@Override
 	public void writeExternal(ObjectOutput out) throws IOException {
-		// redirect serialization to writable impl
-		write(out);
+		
+		// if((out instanceof ObjectOutputStream)){
+		// 	ObjectOutputStream oos = (ObjectOutputStream)out;
+		// 	FastBufferedDataOutputStream fos = new FastBufferedDataOutputStream(oos);
+		// 	write(fos); //note: cannot close fos as this would close oos
+		// 	fos.flush();
+		// }
+		// else{
+			write(out);
+		// }
 	}
 
 	@Override
 	public void readExternal(ObjectInput in) throws IOException {
-		// redirect deserialization to writable impl
-		readFields(in);
+		// if(in instanceof ObjectInputStream) {
+		// 	// fast deserialize of dense/sparse blocks
+		// 	ObjectInputStream ois = (ObjectInputStream) in;
+		// 	FastBufferedDataInputStream fis = new FastBufferedDataInputStream(ois);
+		// 	readFields(fis); // note: cannot close fos as this would close oos
+		// }
+		// else {
+			// redirect deserialization to writable impl
+			readFields(in);
+		// }
 	}
 
 	@Override

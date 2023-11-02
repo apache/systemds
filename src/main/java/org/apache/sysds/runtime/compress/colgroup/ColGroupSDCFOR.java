@@ -41,6 +41,7 @@ import org.apache.sysds.runtime.compress.colgroup.scheme.ICLAScheme;
 import org.apache.sysds.runtime.compress.cost.ComputationCostEstimator;
 import org.apache.sysds.runtime.compress.estim.encoding.EncodingFactory;
 import org.apache.sysds.runtime.compress.estim.encoding.IEncode;
+import org.apache.sysds.runtime.compress.utils.Util;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.functionobjects.Divide;
 import org.apache.sysds.runtime.functionobjects.Minus;
@@ -260,7 +261,7 @@ public class ColGroupSDCFOR extends ASDC implements IMapToDataGroup, IFrameOfRef
 		if(patternInReference) {
 			double[] nRef = new double[_reference.length];
 			for(int i = 0; i < _reference.length; i++)
-				if(pattern == _reference[i])
+				if(Util.eq(pattern, _reference[i]))
 					nRef[i] = replace;
 				else
 					nRef[i] = _reference[i];
@@ -461,8 +462,7 @@ public class ColGroupSDCFOR extends ASDC implements IMapToDataGroup, IFrameOfRef
 	}
 
 	@Override
-	public AColGroup appendNInternal(AColGroup[] g) {
-		int sumRows = getNumRows();
+	public AColGroup appendNInternal(AColGroup[] g, int blen, int rlen) {
 		for(int i = 1; i < g.length; i++) {
 			if(!_colIndexes.equals(g[i]._colIndexes)) {
 				LOG.warn("Not same columns therefore not appending \n" + _colIndexes + "\n\n" + g[i]._colIndexes);
@@ -479,11 +479,10 @@ public class ColGroupSDCFOR extends ASDC implements IMapToDataGroup, IFrameOfRef
 				LOG.warn("Not same Dictionaries therefore not appending \n" + _dict + "\n\n" + gc._dict);
 				return null;
 			}
-			sumRows += gc.getNumRows();
 		}
 		AMapToData nd = _data.appendN(Arrays.copyOf(g, g.length, IMapToDataGroup[].class));
 		AOffset no = _indexes.appendN(Arrays.copyOf(g, g.length, AOffsetsGroup[].class), getNumRows());
-		return create(_colIndexes, sumRows, _dict, no, nd, null, _reference);
+		return create(_colIndexes, rlen, _dict, no, nd, null, _reference);
 	}
 
 	@Override

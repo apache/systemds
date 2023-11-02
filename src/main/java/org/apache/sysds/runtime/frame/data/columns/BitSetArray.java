@@ -42,6 +42,8 @@ public class BitSetArray extends ABooleanArray {
 	/** Vectorized "words" containing all the bits set */
 	protected long[] _data;
 
+	private volatile int allTrue = -1;
+
 	protected BitSetArray(int size) {
 		this(new long[longSize(size)], size);
 	}
@@ -104,7 +106,7 @@ public class BitSetArray extends ABooleanArray {
 
 	@Override
 	public void set(int index, double value) {
-		set(index, value == 1.0);
+		set(index, Math.round(value) == 1.0);
 	}
 
 	@Override
@@ -135,11 +137,19 @@ public class BitSetArray extends ABooleanArray {
 
 	@Override
 	public void set(int rl, int ru, Array<Boolean> value, int rlSrc) {
-		if(useVectorizedKernel && value instanceof BitSetArray && (ru - rl >= 64))
-			setVectorized(rl, ru, (BitSetArray) value, rlSrc);
+		if(useVectorizedKernel && value instanceof BitSetArray && (ru - rl >= 64)){
+			try {
+				// try system array copy.
+				// but if it does not work, default to get.
+				setVectorized(rl, ru, (BitSetArray) value, rlSrc);
+				return;
+			}
+			catch(Exception e) {
+				// do nothing
+			}
+		}
 		else // default
-			for(int i = rl, off = rlSrc; i <= ru; i++, off++)
-				set(i, value.get(off));
+			super.set(rl,ru,value, rlSrc);
 	}
 
 	private void setVectorized(int rl, int ru, BitSetArray value, int rlSrc) {
@@ -456,6 +466,14 @@ public class BitSetArray extends ABooleanArray {
 	}
 
 	@Override
+	protected Array<Object> changeTypeHash64(){
+		long[] ret = new long[size()];
+		for(int i = 0; i < size(); i++)
+			ret[i] = get(i) ? 1L : 0L;
+		return new HashLongArray(ret);
+	}
+
+	@Override
 	protected Array<String> changeTypeString() {
 		String[] ret = new String[size()];
 		for(int i = 0; i < size(); i++)
@@ -502,9 +520,15 @@ public class BitSetArray extends ABooleanArray {
 
 	@Override
 	public boolean isAllTrue() {
+		if(allTrue != -1)
+			return allTrue ==1;
+		
 		for(int i = 0; i < _data.length; i++)
-			if(_data[i] != -1L)
+			if(_data[i] != -1L){
+				allTrue = 0;
 				return false;
+			}
+		allTrue = 1;
 		return true;
 	}
 

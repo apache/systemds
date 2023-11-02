@@ -355,7 +355,7 @@ public class LineageCacheEntry {
 		if (_timestamp < 0)
 			throw new DMLRuntimeException ("Execution timestamp shouldn't be -ve. Key: "+_key);
 		// Weights for scoring components in GPU
-		double w1 = 0;
+		//double w1 = 0;
 		double w2 = 1;
 		double w3 = 1;
 		// Generate initial score

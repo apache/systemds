@@ -33,14 +33,19 @@ import org.apache.sysds.runtime.compress.SingletonLookupHashMap;
 import org.apache.sysds.runtime.compress.cost.CostEstimatorBuilder;
 import org.apache.sysds.runtime.compress.cost.CostEstimatorFactory.CostType;
 import org.apache.sysds.runtime.compress.workload.WTreeRoot;
+import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
+import org.apache.sysds.runtime.controlprogram.caching.FrameObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
+import org.apache.sysds.runtime.frame.data.FrameBlock;
+import org.apache.sysds.runtime.frame.data.lib.FrameLibCompress;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysds.runtime.matrix.operators.Operator;
+import org.apache.sysds.utils.Statistics;
 
 import scala.Tuple2;
 
@@ -73,6 +78,24 @@ public class CompressionSPInstruction extends UnarySPInstruction {
 	@Override
 	public void processInstruction(ExecutionContext ec) {
 		SparkExecutionContext sec = (SparkExecutionContext) ec;
+
+		CacheableData<?> obj = sec.getCacheableData(input1.getName());
+
+		if(obj instanceof FrameObject)
+			processFrame(sec);
+		else
+			processMatrix(sec);
+	}
+
+	private void processFrame(SparkExecutionContext sec) {
+		Statistics.decrementNoOfExecutedSPInst(); //
+		FrameBlock fb = sec.getFrameInput(input1.getName());
+		sec.releaseFrameInput(input1.getName());
+		FrameBlock compResult = FrameLibCompress.compress(fb, InfrastructureAnalyzer.getLocalParallelism());
+		sec.setFrameOutput(output.getName(), compResult);
+	}
+
+	private void processMatrix(SparkExecutionContext sec) {
 
 		// get input rdd handle
 		JavaPairRDD<MatrixIndexes, MatrixBlock> in = sec.getBinaryMatrixBlockRDDHandleForVariable(input1.getName());
@@ -139,8 +162,8 @@ public class CompressionSPInstruction extends UnarySPInstruction {
 		@Override
 		public MatrixBlock call(MatrixBlock arg0) throws Exception {
 			CompressionSettingsBuilder csb = new CompressionSettingsBuilder().setIsInSparkInstruction();
-			return CompressedMatrixBlockFactory.compress(arg0, InfrastructureAnalyzer.getLocalParallelism(), csb, costBuilder)
-				.getLeft();
+			return CompressedMatrixBlockFactory
+				.compress(arg0, InfrastructureAnalyzer.getLocalParallelism(), csb, costBuilder).getLeft();
 		}
 	}
 

@@ -52,6 +52,11 @@ public abstract class ADictionary implements IDictionary, Serializable {
 		return false;
 	}
 
+	@Override
+	public final boolean equals(double[] v) {
+		return equals(new Dictionary(v));
+	}
+
 	/**
 	 * Make a double into a string, if the double is a whole number then return it without decimal points
 	 * 

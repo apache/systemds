@@ -19,20 +19,22 @@
 
 package org.apache.sysds.test.functions.transform;
 
-import org.apache.sysds.runtime.transform.encode.MultiColumnEncoder;
-import org.junit.Assert;
-import org.junit.Test;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.transform.encode.EncoderFactory;
+import org.apache.sysds.runtime.transform.encode.MultiColumnEncoder;
 import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestUtils;
+import org.junit.Assert;
+import org.junit.Test;
 
-public class TransformApplyUnknownsTest extends AutomatedTestBase 
-{
+public class TransformApplyUnknownsTest extends AutomatedTestBase {
+	protected static final Log LOG = LogFactory.getLog(TransformApplyUnknownsTest.class.getName());
 	private static final int rows = 70;
 	
 	@Override
@@ -91,8 +93,10 @@ public class TransformApplyUnknownsTest extends AutomatedTestBase
 			Assert.assertEquals(out.getNumRows(), data2.getNumRows());
 			Assert.assertEquals(out.getNumColumns(), data2.getNumColumns());
 			for(int i=-5; i<=rows+5; i++) {
-				if( i < 1 | i > rows )
-					Assert.assertTrue(Double.isNaN(out.quickGetValue(i+5, 0)));
+				if( i < 1 )
+					Assert.assertEquals(1, out.quickGetValue(i+5, 0), 0.0);
+				else if(i > rows)
+					Assert.assertEquals(out.quickGetValue(out.getNumRows()-1, 0), out.quickGetValue(i+5, 0), 0.0);
 				else
 					Assert.assertEquals(((i-1)/10+1), out.quickGetValue(i+5, 0), 1e-8);
 			}

@@ -27,6 +27,7 @@ import java.util.List;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.common.Types.AggOp;
+import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.OpOp1;
 import org.apache.sysds.common.Types.OpOp2;
 import org.apache.sysds.common.Types.OpOp3;
@@ -35,6 +36,7 @@ import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.hops.AggBinaryOp;
 import org.apache.sysds.hops.FunctionOp;
 import org.apache.sysds.hops.Hop;
+import org.apache.sysds.hops.LiteralOp;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.lops.Compression.CompressConfig;
 import org.apache.sysds.parser.DMLProgram;
@@ -92,12 +94,18 @@ public class RewriteCompressedReblock extends StatementBlockRewriteRule {
 	}
 
 	private static void injectCompressionDirective(Hop hop, CompressConfig compress, DMLProgram prog) {
-		if(hop.isVisited() || hop.requiresCompression() || hop.hasCompressedInput())
+		if(hop.isVisited() || hop.requiresCompression())
 			return;
 
-		// recursively process children
+		// recursion for inputs.
 		for(Hop hi : hop.getInput())
 			injectCompressionDirective(hi, compress, prog);
+		
+		// filter candidates.
+		if((HopRewriteUtils.isData(hop, OpOpData.PERSISTENTREAD, DataType.SCALAR))//
+			|| HopRewriteUtils.isData(hop, OpOpData.TRANSIENTREAD, OpOpData.TRANSIENTWRITE)//
+			|| hop instanceof LiteralOp)
+			return;
 
 		// check for compression conditions
 		switch(compress) {
@@ -128,30 +136,42 @@ public class RewriteCompressedReblock extends StatementBlockRewriteRule {
 		if(hop.getDim2() >= 1) {
 			final long x = hop.getDim1();
 			final long y = hop.getDim2();
-			return 
+			final boolean ret = 
 				// If the Cube of the number of rows is greater than multiplying the number of columns by 1024.
 				y << 10 <= x * x
 				// is very sparse and at least 100 rows.
 				|| (hop.getSparsity() < 0.0001 && y > 100);
+			return ret;
 		}
-		return false;
+		else if(hop.getDim1() >= 1){
+			// known rows. but not cols;
+			boolean ret = hop.getDim1() > 10000;
+			return ret;
+		}
+		else{
+			return true; // unknown dimensions lets always try.
+		}
 	}
 
 	public static boolean satisfiesCompressionCondition(Hop hop) {
 		boolean satisfies = false;
-		if(satisfiesSizeConstraintsForCompression(hop))
-			satisfies |= HopRewriteUtils.isData(hop, OpOpData.PERSISTENTREAD);
-
+		if(satisfiesSizeConstraintsForCompression(hop)){
+			satisfies |= HopRewriteUtils.isData(hop, OpOpData.PERSISTENTREAD) && !hop.isScalar();
+			satisfies |= HopRewriteUtils.isTransformEncode(hop);
+		}
 		return satisfies;
 	}
 
 	public static boolean satisfiesAggressiveCompressionCondition(Hop hop) {
 		//size-independent conditions (robust against unknowns)
-		boolean satisfies = HopRewriteUtils.isTernary(hop, OpOp3.CTABLE) //matrix (no vector) ctable
-			&& hop.getInput(0).getDataType().isMatrix() && hop.getInput(1).getDataType().isMatrix();
+		boolean satisfies = false;
 		//size-dependent conditions
 		if(satisfiesSizeConstraintsForCompression(hop)) {
-			satisfies |= HopRewriteUtils.isData(hop, OpOpData.PERSISTENTREAD);
+			//matrix (no vector) ctable
+			satisfies |= HopRewriteUtils.isTernary(hop, OpOp3.CTABLE) 
+				&& hop.getInput(0).getDataType().isMatrix() 
+				&& hop.getInput(1).getDataType().isMatrix();
+			satisfies |= HopRewriteUtils.isData(hop, OpOpData.PERSISTENTREAD) && !hop.isScalar();
 			satisfies |= HopRewriteUtils.isUnary(hop, OpOp1.ROUND, OpOp1.FLOOR, OpOp1.NOT, OpOp1.CEIL);
 			satisfies |= HopRewriteUtils.isBinary(hop, OpOp2.EQUAL, OpOp2.NOTEQUAL, OpOp2.LESS,
 				OpOp2.LESSEQUAL, OpOp2.GREATER, OpOp2.GREATEREQUAL, OpOp2.AND, OpOp2.OR, OpOp2.MODULUS);

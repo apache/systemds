@@ -25,6 +25,7 @@ import java.io.IOException;
 
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.frame.data.columns.ArrayFactory.FrameArrayType;
 import org.apache.sysds.runtime.matrix.data.Pair;
 
@@ -75,14 +76,11 @@ public class RaggedArray<T> extends Array<T> {
 	}
 
 	@Override
-	@SuppressWarnings("unchecked")
 	public void readFields(DataInput in) throws IOException {
-		_size = in.readInt();
-		_a = (Array<T>) ArrayFactory.read(in, in.readInt());
+		throw new DMLRuntimeException("Should not be called");
 	}
 
 	protected static RaggedArray<?> readRagged(DataInput in, int nRow) throws IOException {
-
 		int m = in.readInt();
 		final Array<?> a = ArrayFactory.read(in, in.readInt());
 		return new RaggedArray<>(a, m);
@@ -154,19 +152,7 @@ public class RaggedArray<T> extends Array<T> {
 
 	@Override
 	public void set(int rl, int ru, Array<T> value) {
-		if(rl >= 0 && rl < _a._size && ru < _a._size)
-			if(value instanceof RaggedArray)
-				_a.set(rl, ru, ((RaggedArray<T>) value).getInnerArray());
-			else if(_a.getClass() == value.getClass())
-				_a.set(rl, ru, value);
-			else
-				throw new RuntimeException(
-					"RaggedArray set: value type should be same to RaggedArray type " + _a.getClass());
-		else if(rl >= 0 && rl < super.size() && ru < super.size()) {
-			_a.reset(rl + 1);
-			_a.set(rl, ru, value);
-			LOG.warn("Reallocated ragged array");
-		}
+		set(rl, ru, value, 0);
 	}
 
 	@Override
@@ -177,7 +163,7 @@ public class RaggedArray<T> extends Array<T> {
 			else if(_a.getClass() == value.getClass())
 				_a.set(rl, ru, value, rlSrc);
 			else
-				throw new RuntimeException(
+				throw new DMLRuntimeException(
 					"RaggedArray set: value type should be same to RaggedArray type " + _a.getClass());
 	}
 
@@ -303,6 +289,11 @@ public class RaggedArray<T> extends Array<T> {
 	}
 
 	@Override
+	protected Array<Object> changeTypeHash64() {
+		return _a.changeTypeHash64();
+	}
+
+	@Override
 	protected Array<String> changeTypeString() {
 		return _a.changeTypeString();
 	}
@@ -382,7 +373,16 @@ public class RaggedArray<T> extends Array<T> {
 
 	@Override
 	public boolean equals(Array<T> other) {
-		throw new NotImplementedException("Unimplemented method 'equals'");
+		if(other._size == this._size && //
+			other.getValueType() == this.getValueType() && //
+			other instanceof RaggedArray) {
+			if(other == this){// same pointer
+				return true;
+			}
+			RaggedArray<T> ot = (RaggedArray<T>) other;
+			return ot._a.equals(this._a);
+		}
+		return false;
 	}
 
 	@Override
@@ -396,7 +396,7 @@ public class RaggedArray<T> extends Array<T> {
 	}
 
 	@Override
-	public boolean possiblyContainsNaN(){
+	public boolean possiblyContainsNaN() {
 		return true;
 	}
 

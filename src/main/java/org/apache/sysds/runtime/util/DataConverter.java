@@ -602,7 +602,7 @@ public class DataConverter {
 	 * @return matrix block
 	 */
 	public static MatrixBlock convertToMatrixBlock(FrameBlock frame){
-		return MatrixBlockFromFrame.convertToMatrixBlock(frame);
+		return MatrixBlockFromFrame.convertToMatrixBlock(frame, 1);
 	}
 
 	/**

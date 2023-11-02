@@ -1769,7 +1769,7 @@ public class SparkExecutionContext extends ExecutionContext
 	 *
 	 * @return spark cluster configuration
 	 */
-	public static SparkClusterConfig getSparkClusterConfig() {
+	public synchronized static SparkClusterConfig getSparkClusterConfig() {
 		//lazy creation of spark cluster config
 		if( _sconf == null )
 			_sconf = new SparkClusterConfig();
@@ -1782,8 +1782,7 @@ public class SparkExecutionContext extends ExecutionContext
 	 * @return broadcast memory budget
 	 */
 	public static double getBroadcastMemoryBudget() {
-		return getSparkClusterConfig()
-			.getBroadcastMemoryBudget();
+		return getSparkClusterConfig().getBroadcastMemoryBudget();
 	}
 
 	/**

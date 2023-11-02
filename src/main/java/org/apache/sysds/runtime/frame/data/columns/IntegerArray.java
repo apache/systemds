@@ -81,7 +81,14 @@ public class IntegerArray extends Array<Integer> {
 
 	@Override
 	public void set(int rl, int ru, Array<Integer> value, int rlSrc) {
-		System.arraycopy(((IntegerArray) value)._data, rlSrc, _data, rl, ru - rl + 1);
+		try {
+			// try system array copy.
+			// but if it does not work, default to get.
+			System.arraycopy(value.get(), rlSrc, _data, rl, ru - rl + 1);
+		}
+		catch(Exception e) {
+			super.set(rl, ru, value, rlSrc);
+		}
 	}
 
 	@Override
@@ -246,6 +253,14 @@ public class IntegerArray extends Array<Integer> {
 		for(int i = 0; i < size(); i++)
 			ret[i] = _data[i];
 		return new LongArray(ret);
+	}
+
+	@Override
+	protected Array<Object> changeTypeHash64() {
+		long[] ret = new long[size()];
+		for(int i = 0; i < size(); i++)
+			ret[i] = _data[i];
+		return new HashLongArray(ret);
 	}
 
 	@Override

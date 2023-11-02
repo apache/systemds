@@ -27,7 +27,6 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
-import org.apache.sysds.runtime.compress.utils.Util;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.runtime.frame.data.columns.Array;
 import org.apache.sysds.runtime.frame.data.columns.BooleanArray;
@@ -60,8 +59,24 @@ public interface FrameUtil {
 		return ret;
 	}
 
-	private static ValueType isBooleanType(final String val, int len) {
-		if(val.length() <= 16 && booleanPattern.matcher(val).matches())
+	private static boolean isBooleanType(final char c) {
+		switch(c) {
+			case '0':
+			case '1':
+			case 't':
+			case 'T':
+			case 'f':
+			case 'F':
+				return true;
+			default:
+				return false;
+		}
+	}
+
+	private static ValueType isBooleanType(final String val, final int len) {
+		if(len == 1 && isBooleanType(val.charAt(0)))
+			return ValueType.BOOLEAN;
+		else if(len <= 16 && isBooleanType(val.charAt(0)) && booleanPattern.matcher(val).matches())
 			return ValueType.BOOLEAN;
 		return null;
 	}
@@ -69,9 +84,18 @@ public interface FrameUtil {
 	private static boolean simpleIntMatch(final String val, final int len) {
 		for(int i = 0; i < len; i++) {
 			final char c = val.charAt(i);
+			if(c == '.' && i < 0)
+				return restIsZero(val, i + 1, len);
 			if(c < '0' || c > '9')
 				return false;
 		}
+		return true;
+	}
+
+	private static boolean restIsZero(final String val, int i, final int len) {
+		for(; i < len; i++)
+			if(val.charAt(i) != '0')
+				return false;
 		return true;
 	}
 
@@ -98,8 +122,20 @@ public interface FrameUtil {
 		return null;
 	}
 
+	public static ValueType isHash(final String val, final int len) {
+		if(len == 8) {
+			for(int i = 0; i < 8; i++) {
+				char v = val.charAt(i);
+				if(v < '0' || v > 'f')
+					return null;
+			}
+			return ValueType.HASH64;
+		}
+		return null;
+	}
+
 	public static ValueType isFloatType(final String val, final int len) {
-		if(len <= 25 && (simpleFloatMatch(val, len) || floatPattern.matcher(val).matches())) {
+		if(len <= 30 && (simpleFloatMatch(val, len) || floatPattern.matcher(val).matches())) {
 			if(len <= 7 || (len == 8 && val.charAt(0) == '-'))
 				return ValueType.FP32;
 			else if(len >= 13)
@@ -113,8 +149,27 @@ public interface FrameUtil {
 			else
 				return ValueType.FP64;
 		}
-		else if(val.equals("infinity") || val.equals("-infinity") || val.equals("nan"))
-			return ValueType.FP32;
+		final char first = val.charAt(0);
+		// char sec = val.charAt(1);
+
+		if(len >= 3 && (first == 'i' || first == 'I')) {
+			String val2 = val.toLowerCase();
+			if((len == 3 && val2.equals("inf")) || (len == 8 && val2.equals("infinity")))
+				return ValueType.FP32;
+		}
+		else if(len == 3 & (first == 'n' || first == 'N')) {
+			final String val2 = val.toLowerCase();
+			if(val2.equals("nan"))
+				return ValueType.FP32;
+		}
+		else if(len > 1 && first == '-') {
+			final char sec = val.charAt(1);
+			if(sec == 'i' || sec == 'I') {
+				String val2 = val.toLowerCase();
+				if((len == 4 && val2.equals("-inf")) || (len == 9 && val2.equals("-infinity")))
+					return ValueType.FP32;
+			}
+		}
 		return null;
 	}
 
@@ -126,11 +181,12 @@ public interface FrameUtil {
 			final char c = val.charAt(i);
 			if(c >= '0' && c <= '9')
 				continue;
-			else if(c == '.' || c == ',')
+			else if(c == '.' || c == ',') {
 				if(encounteredDot == true)
 					return false;
 				else
 					encounteredDot = true;
+			}
 			else
 				return false;
 		}
@@ -165,7 +221,7 @@ public interface FrameUtil {
 		switch(minType) {
 			case UNKNOWN:
 			case BOOLEAN:
-			case CHARACTER:
+				// case CHARACTER:
 				if(isBooleanType(val, len) != null)
 					return ValueType.BOOLEAN;
 			case UINT8:
@@ -179,8 +235,13 @@ public interface FrameUtil {
 				r = isFloatType(val, len);
 				if(r != null)
 					return r;
+			case CHARACTER:
 				if(len == 1)
 					return ValueType.CHARACTER;
+			case HASH64:
+				r = isHash(val, len);
+				if(r != null)
+					return r;
 			case STRING:
 			default:
 				return ValueType.STRING;
@@ -194,27 +255,32 @@ public interface FrameUtil {
 	public static ValueType isType(double val) {
 		if(val == 1.0d || val == 0.0d)
 			return ValueType.BOOLEAN;
-		else if(val < Integer.MAX_VALUE && Util.eq((int) val,val))
-			return ValueType.INT32;
-		else if(val < Long.MAX_VALUE && Util.eq((long) val, val)) 
+		else if((long) (val) == val) {
+			if((int) val == val)
+				return ValueType.INT32;
+			else
 				return ValueType.INT64;
+		}
 		else if(same(val, (float) val))
 			return ValueType.FP32;
 		else
 			return ValueType.FP64;
+
 	}
 
 	public static ValueType isType(double val, ValueType min) {
 		switch(min) {
 			case BOOLEAN:
 				return isType(val);
-			case UINT8:
 			case INT32:
-				if(val < Integer.MAX_VALUE && Util.eq((int) val,val))
-					return ValueType.INT32;
+			case UINT8:
 			case INT64:
-				if(val < Long.MAX_VALUE && Util.eq((long) val, val)) 
-					return ValueType.INT64;
+				if((long) (val) == val) {
+					if((int) val == val)
+						return ValueType.INT32;
+					else
+						return ValueType.INT64;
+				}
 			case FP32:
 				if(same(val, (float) val))
 					return ValueType.FP32;
@@ -229,8 +295,7 @@ public interface FrameUtil {
 		String[] rowTemp2 = IteratorFactory.getStringRowIterator(temp2).next();
 
 		if(rowTemp1.length != rowTemp2.length)
-			throw new DMLRuntimeException(
-				"Schema dimension " + "mismatch: " + rowTemp1.length + " vs " + rowTemp2.length);
+			throw new DMLRuntimeException("Schema dimension " + "mismatch: " + rowTemp1.length + " vs " + rowTemp2.length);
 
 		for(int i = 0; i < rowTemp1.length; i++) {
 			// modify schema1 if necessary (different schema2)

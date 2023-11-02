@@ -20,7 +20,6 @@
 package org.apache.sysds.runtime.frame.data.lib;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;

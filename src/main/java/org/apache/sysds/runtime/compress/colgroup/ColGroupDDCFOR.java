@@ -26,8 +26,8 @@ import java.util.Arrays;
 
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.runtime.DMLRuntimeException;
-import org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.DictionaryFactory;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.MatrixBlockDictionary;
 import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
@@ -39,6 +39,7 @@ import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
 import org.apache.sysds.runtime.compress.estim.EstimationFactors;
 import org.apache.sysds.runtime.compress.estim.encoding.EncodingFactory;
 import org.apache.sysds.runtime.compress.estim.encoding.IEncode;
+import org.apache.sysds.runtime.compress.utils.Util;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.functionobjects.Divide;
 import org.apache.sysds.runtime.functionobjects.Minus;
@@ -251,7 +252,7 @@ public class ColGroupDDCFOR extends AMorphingMMColGroup implements IFrameOfRefer
 		if(patternInReference) {
 			double[] nRef = new double[_reference.length];
 			for(int i = 0; i < _reference.length; i++)
-				if(pattern == _reference[i])
+				if(Util.eq(pattern ,_reference[i]))
 					nRef[i] = replace;
 				else
 					nRef[i] = _reference[i];
@@ -452,8 +453,8 @@ public class ColGroupDDCFOR extends AMorphingMMColGroup implements IFrameOfRefer
 	}
 
 	@Override
-	public AColGroup appendNInternal(AColGroup[] g) {
-		return null;
+	public AColGroup appendNInternal(AColGroup[] g, int blen, int rlen) {
+		throw new NotImplementedException();
 	}
 
 	@Override

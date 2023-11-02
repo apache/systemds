@@ -42,8 +42,6 @@ import org.apache.sysds.runtime.matrix.data.Pair;
  */
 public abstract class Array<T> implements Writable {
 	protected static final Log LOG = LogFactory.getLog(Array.class.getName());
-	/** internal configuration */
-	private static final boolean REUSE_RECODE_MAPS = true;
 
 	/** A soft reference to a memorization of this arrays mapping, used in transformEncode */
 	protected SoftReference<Map<T, Long>> _rcdMapCache = null;
@@ -79,33 +77,38 @@ public abstract class Array<T> implements Writable {
 		_rcdMapCache = m;
 	}
 
-	public Map<T, Long> getRecodeMap() {
+	/**
+	 * Get a recode map that maps each unique value in the array, to a long ID. Null values are ignored, and not included
+	 * in the mapping. The resulting recode map in stored in a soft reference to speed up repeated calls to the same column.
+	 * 
+	 * @return A recode map
+	 */
+	public synchronized final Map<T, Long> getRecodeMap() {
 		// probe cache for existing map
-		if(REUSE_RECODE_MAPS) {
-			SoftReference<Map<T, Long>> tmp = getCache();
-			Map<T, Long> map = (tmp != null) ? tmp.get() : null;
-			if(map != null)
-				return map;
-		}
+		Map<T, Long> map;
+		SoftReference<Map<T, Long>> tmp = getCache();
+		map = (tmp != null) ? tmp.get() : null;
+		if(map != null)
+			return map;
 
 		// construct recode map
-		Map<T, Long> map = createRecodeMap();
+		map = createRecodeMap();
 
 		// put created map into cache
-		if(REUSE_RECODE_MAPS)
-			setCache(new SoftReference<>(map));
+		setCache(new SoftReference<>(map));
 
 		return map;
 	}
 
 	/**
-	 * Recreate the recode map from what is already there.
+	 * Recreate the recode map from what is inside array. This is an internal method for arrays, and the result is cached
+	 * in the main class of the arrays.
 	 * 
-	 * @return
+	 * @return The recode map
 	 */
 	protected Map<T, Long> createRecodeMap() {
 		Map<T, Long> map = new HashMap<>();
-		long id = 0;
+		long id = 1;
 		for(int i = 0; i < size(); i++) {
 			T val = get(i);
 			if(val != null) {
@@ -123,13 +126,13 @@ public abstract class Array<T> implements Writable {
 	 * @return a dictionary containing all unique values.
 	 */
 	protected Map<T, Integer> getDictionary() {
-		Map<T, Integer> dict = new HashMap<>();
-		int id = 0;
+		final Map<T, Integer> dict = new HashMap<>();
+		Integer id = 0;
 		for(int i = 0; i < size(); i++) {
-			T val = get(i);
-			Integer v = dict.putIfAbsent(val, id);
+			final T val = get(i);
+			final Integer v = dict.get(val);
 			if(v == null)
-				id++;
+				dict.put(val, id++);
 		}
 
 		return dict;
@@ -147,8 +150,8 @@ public abstract class Array<T> implements Writable {
 	/**
 	 * Get the value at a given index.
 	 * 
-	 * This method returns objects that have a high overhead in allocation. Therefore it is not as efficient as using
-	 * the vectorized operations specified in the object.
+	 * This method returns objects that have a high overhead in allocation. Therefore it is not as efficient as using the
+	 * vectorized operations specified in the object.
 	 * 
 	 * @param index The index to query
 	 * @return The value returned as an object
@@ -230,7 +233,10 @@ public abstract class Array<T> implements Writable {
 	 * @param ru    row upper (inclusive)
 	 * @param value value array to take values from (same type)
 	 */
-	public abstract void set(int rl, int ru, Array<T> value);
+	public void set(int rl, int ru, Array<T> value){
+		for(int i = rl; i <= ru; i++)
+			set(i, value.get(i));
+	}
 
 	/**
 	 * Set range to given arrays value with an offset into other array
@@ -240,7 +246,10 @@ public abstract class Array<T> implements Writable {
 	 * @param value value array to take values from
 	 * @param rlSrc the offset into the value array to take values from
 	 */
-	public abstract void set(int rl, int ru, Array<T> value, int rlSrc);
+	public void set(int rl, int ru, Array<T> value, int rlSrc){
+		for(int i = rl, off = rlSrc; i <= ru; i++, off++)
+			set(i, value.get(off));
+	}
 
 	/**
 	 * Set non default values from the value array given
@@ -414,6 +423,8 @@ public abstract class Array<T> implements Writable {
 			case UINT4:
 			case UINT8:
 				throw new NotImplementedException();
+			case HASH64:
+				return new OptionalArray<>(changeTypeHash64(), nulls);
 			case INT32:
 				return new OptionalArray<>(changeTypeInteger(), nulls);
 			case INT64:
@@ -448,6 +459,8 @@ public abstract class Array<T> implements Writable {
 			case UINT4:
 			case UINT8:
 				throw new NotImplementedException();
+			case HASH64:
+				return changeTypeHash64();
 			case INT32:
 				return changeTypeInteger();
 			case INT64:
@@ -503,6 +516,13 @@ public abstract class Array<T> implements Writable {
 	 * @return Long type of array
 	 */
 	protected abstract Array<Long> changeTypeLong();
+
+	/**
+	 * Change type to a Hash46 array type
+	 * 
+	 * @return A Hash64 array 
+	 */
+	protected abstract Array<Object> changeTypeHash64();
 
 	/**
 	 * Change type to a String array type
@@ -627,12 +647,10 @@ public abstract class Array<T> implements Writable {
 	@Override
 	@SuppressWarnings("unchecked")
 	public boolean equals(Object other) {
-		try {
-			return other instanceof Array && this.equals((Array<T>) other);
-		}
-		catch(ClassCastException e) {
-			return false;
-		}
+		return other instanceof Array && //
+			((Array<?>) other).getValueType() == this.getValueType() && //
+			this.equals((Array<T>) other);
+
 	}
 
 	public abstract boolean equals(Array<T> other);

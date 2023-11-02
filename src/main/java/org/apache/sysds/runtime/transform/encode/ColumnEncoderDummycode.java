@@ -41,7 +41,8 @@ import org.apache.sysds.utils.stats.TransformStatistics;
 public class ColumnEncoderDummycode extends ColumnEncoder {
 	private static final long serialVersionUID = 5832130477659116489L;
 
-	public int _domainSize = -1; // length = #of dummycoded columns
+	/** The number of columns outputted from this column group. */ 
+	public int _domainSize = -1; 
 
 	public ColumnEncoderDummycode() {
 		super(-1);
@@ -230,8 +231,11 @@ public class ColumnEncoderDummycode extends ColumnEncoder {
 			}
 
 			if(distinct != -1) {
-				_domainSize = distinct;
-				LOG.debug("DummyCoder for column: " + _colID + " has domain size: " + _domainSize);
+				_domainSize = Math.max(1, distinct);
+				if(LOG.isDebugEnabled()){
+
+					LOG.debug("DummyCoder for column: " + _colID + " has domain size: " + _domainSize);
+				}
 			}
 		}
 	}
@@ -249,7 +253,7 @@ public class ColumnEncoderDummycode extends ColumnEncoder {
 	@Override
 	public void initMetaData(FrameBlock meta) {
 		// initialize domain sizes and output num columns
-		_domainSize = (int) meta.getColumnMetadata()[_colID - 1].getNumDistinct();
+		_domainSize = Math.max(1, (int) meta.getColumnMetadata()[_colID - 1].getNumDistinct());
 	}
 
 	@Override

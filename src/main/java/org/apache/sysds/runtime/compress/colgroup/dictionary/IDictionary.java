@@ -75,8 +75,8 @@ public interface IDictionary {
 	public long getInMemorySize();
 
 	/**
-	 * Aggregate all the contained values, useful in value only computations where the operation is iterating through
-	 * all values contained in the dictionary.
+	 * Aggregate all the contained values, useful in value only computations where the operation is iterating through all
+	 * values contained in the dictionary.
 	 * 
 	 * @param init The initial Value, in cases such as Max value, this could be -infinity
 	 * @param fn   The Function to apply to values
@@ -524,46 +524,46 @@ public interface IDictionary {
 	public long getNumberNonZerosWithReference(int[] counts, double[] reference, int nRows);
 
 	/**
-	 * Copies and adds the dictionary entry from this dictionary to the d dictionary
+	 * Adds the dictionary entry from this dictionary to the d dictionary
 	 * 
-	 * @param v    the target dictionary (dense double array)
-	 * @param fr   the from index
-	 * @param to   the to index
-	 * @param nCol the number of columns
+	 * @param v    The target dictionary (dense double array)
+	 * @param fr   The from index is the tuple index to copy from.
+	 * @param to   The to index is the row index to copy into.
+	 * @param nCol The number of columns in both cases
 	 */
 	public void addToEntry(double[] v, int fr, int to, int nCol);
 
 	/**
-	 * copies and adds the dictonary entry from this dictionary yo the d dictionary rep times.
+	 * Adds the dictionary entry from this dictionary to the v dictionary rep times.
 	 * 
-	 * @param v    the target dictionary (dense double array)
-	 * @param fr   the from index
-	 * @param to   the to index
-	 * @param nCol the number of columns
-	 * @param rep  the number of repetitions to apply (simply multiply do not loop)
+	 * @param v    The target dictionary (dense double array)
+	 * @param fr   The from index is the tuple index to copy from.
+	 * @param to   The to index is the row index to copy into.
+	 * @param nCol The number of columns in both cases
+	 * @param rep  The number of repetitions to apply (simply multiply do not loop)
 	 */
 	public void addToEntry(double[] v, int fr, int to, int nCol, int rep);
 
 	/**
 	 * Vectorized add to entry, this call helps with a bit of locality for the cache.
 	 * 
-	 * @param v    THe target dictionary (dense double array)
-	 * @param f1   from index 1
-	 * @param f2   from index 2
-	 * @param f3   from index 3
-	 * @param f4   from index 4
-	 * @param f5   from index 5
-	 * @param f6   from index 6
-	 * @param f7   from index 7
-	 * @param f8   from index 8
-	 * @param t1   to index 1
-	 * @param t2   to index 2
-	 * @param t3   to index 3
-	 * @param t4   to index 4
-	 * @param t5   to index 5
-	 * @param t6   to index 6
-	 * @param t7   to index 7
-	 * @param t8   to index 8
+	 * @param v    The target dictionary (dense double array)
+	 * @param f1   From index 1
+	 * @param f2   From index 2
+	 * @param f3   From index 3
+	 * @param f4   From index 4
+	 * @param f5   From index 5
+	 * @param f6   From index 6
+	 * @param f7   From index 7
+	 * @param f8   From index 8
+	 * @param t1   To index 1
+	 * @param t2   To index 2
+	 * @param t3   To index 3
+	 * @param t4   To index 4
+	 * @param t5   To index 5
+	 * @param t6   To index 6
+	 * @param t7   To index 7
+	 * @param t8   To index 8
 	 * @param nCol Number of columns in the dictionary
 	 */
 	public void addToEntryVectorized(double[] v, int f1, int f2, int f3, int f4, int f5, int f6, int f7, int f8, int t1,
@@ -572,8 +572,7 @@ public interface IDictionary {
 	/**
 	 * Allocate a new dictionary where the tuple given is subtracted from all tuples in the previous dictionary.
 	 * 
-	 * @param tuple a double list representing a tuple, it is given that the tuple with is the same as this
-	 *              dictionaries.
+	 * @param tuple a double list representing a tuple, it is given that the tuple with is the same as this dictionaries.
 	 * @return a new instance of dictionary with the tuple subtracted.
 	 */
 	public IDictionary subtractTuple(double[] tuple);
@@ -788,8 +787,8 @@ public interface IDictionary {
 	public double getSparsity();
 
 	/**
-	 * Multiply the v value with the dictionary entry at dictIdx and add it to the ret matrix at the columns specified
-	 * in the int array.
+	 * Multiply the v value with the dictionary entry at dictIdx and add it to the ret matrix at the columns specified in
+	 * the int array.
 	 * 
 	 * @param v       Value to multiply
 	 * @param ret     Output dense double array location
@@ -822,6 +821,20 @@ public interface IDictionary {
 	public void MMDict(IDictionary right, IColIndex rowsLeft, IColIndex colsRight, MatrixBlock result);
 
 	/**
+	 * Matrix multiplication of dictionaries
+	 * 
+	 * Note the left is this, and it is transposed
+	 * 
+	 * @param right     Right hand side of multiplication
+	 * @param rowsLeft  Offset rows on the left
+	 * @param colsRight Offset cols on the right
+	 * @param result    The output matrix block
+	 * @param scaling   The scaling
+	 */
+	public void MMDictScaling(IDictionary right, IColIndex rowsLeft, IColIndex colsRight, MatrixBlock result,
+		int[] scaling);
+
+	/**
 	 * Matrix multiplication of dictionaries left side dense and transposed right side is this.
 	 * 
 	 * @param left      Dense left side
@@ -832,6 +845,18 @@ public interface IDictionary {
 	public void MMDictDense(double[] left, IColIndex rowsLeft, IColIndex colsRight, MatrixBlock result);
 
 	/**
+	 * Matrix multiplication of dictionaries left side dense and transposed right side is this.
+	 * 
+	 * @param left      Dense left side
+	 * @param rowsLeft  Offset rows on the left
+	 * @param colsRight Offset cols on the right
+	 * @param result    The output matrix block
+	 * @param scaling   The scaling
+	 */
+	public void MMDictScalingDense(double[] left, IColIndex rowsLeft, IColIndex colsRight, MatrixBlock result,
+		int[] scaling);
+
+	/**
 	 * Matrix multiplication of dictionaries left side sparse and transposed right side is this.
 	 * 
 	 * @param left      Sparse left side
@@ -840,6 +865,18 @@ public interface IDictionary {
 	 * @param result    The output matrix block
 	 */
 	public void MMDictSparse(SparseBlock left, IColIndex rowsLeft, IColIndex colsRight, MatrixBlock result);
+	
+/**
+	 * Matrix multiplication of dictionaries left side sparse and transposed right side is this.
+	 * 
+	 * @param left      Sparse left side
+	 * @param rowsLeft  Offset rows on the left
+	 * @param colsRight Offset cols on the right
+	 * @param result    The output matrix block
+	 * @param scaling   The scaling
+	 */
+	public void MMDictScalingSparse(SparseBlock left, IColIndex rowsLeft, IColIndex colsRight, MatrixBlock result,
+		int[] scaling);
 
 	/**
 	 * Matrix multiplication but allocate output in upper triangle and twice if on diagonal, note this is left
@@ -869,8 +906,7 @@ public interface IDictionary {
 	 * @param colsRight Offset cols on the right
 	 * @param result    The output matrix block
 	 */
-	public void TSMMToUpperTriangleSparse(SparseBlock left, IColIndex rowsLeft, IColIndex colsRight,
-		MatrixBlock result);
+	public void TSMMToUpperTriangleSparse(SparseBlock left, IColIndex rowsLeft, IColIndex colsRight, MatrixBlock result);
 
 	/**
 	 * Matrix multiplication but allocate output in upper triangle and twice if on diagonal, note this is left
@@ -924,6 +960,14 @@ public interface IDictionary {
 	 * @return If they are equal
 	 */
 	public boolean equals(Object o);
+
+	/**
+	 * Indicate if this object is equal to the given array of doubles.
+	 * 
+	 * @param v The list of double values
+	 * @return If they are equal to this.
+	 */
+	public boolean equals(double[] v);
 
 	/**
 	 * Indicate if the other dictionary is equal to this.

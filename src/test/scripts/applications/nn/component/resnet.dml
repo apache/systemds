@@ -22,6 +22,7 @@
 source("scripts/nn/networks/resnet.dml") as resnet
 source("src/test/scripts/applications/nn/util.dml") as test_util
 
+
 basic_test_basic_block_forward = function(int C_in, int C_base, int strideh, int stridew,
                                           int Hin, int Win, int N, Boolean downsample) {
     /*
@@ -68,6 +69,154 @@ basic_test_basic_block_forward = function(int C_in, int C_base, int strideh, int
     }
 }
 
+
+values_test_basic_block_forward_1 = function() {
+    /*
+     * Testing of values for forward pass of basic block against PyTorch.
+     */
+    strideh = 1; stridew = 1
+    C_in = 2; C_base = 2
+    Hin = 4; Win = 4
+    N = 2
+    X = matrix(1, rows=N, cols=C_in*Hin*Win)
+    W_conv1 = matrix("-0.13904892  0.12838013  0.08027278 -0.06143695  0.07755502 -0.16483936  0.06582125  0.00754158  0.10763083 0.04604699  0.03576668 -0.07599333 -0.06836346  0.19890614  0.01955454 -0.02767003  0.21198983  0.12785362
+                       0.04019578 -0.14636862 -0.02285126 -0.00971214  0.12590824 -0.06414033 -0.1034085  -0.23452668 -0.0999288   0.12418596 -0.03290591  0.02420332 0.17950852  0.00047226  0.13068716 -0.00955899  0.03092374  0.05555834",
+                       rows=C_base, cols=C_in*3*3)
+    gamma_bn1 = matrix(1, rows=C_base, cols=1)
+    beta_bn1 = matrix(0, rows=C_base, cols=1)
+    W_conv2 = matrix(" 0.10092591  0.15790914 -0.17673795  0.10573213  0.13680543 -0.22161855 -0.10239416  0.10747905  0.03636803 -0.00693908 -0.19976966 -0.15770042 -0.23468268  0.1040463   0.08357517 0.0780759   0.21764557 -0.11318331
+                       0.1958775   0.00366694  0.05713235 -0.0768708  -0.04275537 -0.23076743 -0.029018   -0.02308315 -0.05915356 -0.12383241  0.16292028  0.20669906 -0.19045494  0.10580237  0.21305619 0.19072767 -0.19292024  0.15425198",
+                     rows=C_base, cols=C_base*3*3)
+    gamma_bn2 = matrix(1, rows=C_base, cols=1)
+    beta_bn2 = matrix(0, rows=C_base, cols=1)
+    weights = list(W_conv1, gamma_bn1, beta_bn1, W_conv2, gamma_bn2, beta_bn2)
+    mode = "train"
+
+    ema_mean_bn1 = matrix(0, rows=C_base, cols=1)
+    ema_var_bn1 = matrix(0, rows=C_base, cols=1)
+    ema_mean_bn2 = matrix(0, rows=C_base, cols=1)
+    ema_var_bn2 = matrix(0, rows=C_base, cols=1)
+    ema_means_vars = list(ema_mean_bn1, ema_var_bn1, ema_mean_bn2, ema_var_bn2)
+
+    [out, Hout, Wout, ema_means_vars_up] = resnet::basic_block_forward(X, weights, C_in, C_base, Hin, Win,
+                                                                strideh, stridew, mode, ema_means_vars)
+
+    out_expected = matrix("1.1192019  0.13680267 0.3965159  0.09488004 1.5221035  0.60268176 0.870202   0.3568437 0.19053036 2.023053   2.810772   2.7142973 1.4163418  2.2421117  0.22204155 0.         0.31268513 0.14521259 0.57843214 0.65275586 0.         0.02211368 0.4826215  0.65296173 1.2726448  0.6964331  1.6637247  1.2155424 2.3015604  3.9708042  1.6967016  0.40145046
+                           1.1192019  0.13680267 0.3965159  0.09488004 1.5221035  0.60268176 0.870202   0.3568437 0.19053036 2.023053   2.810772   2.7142973 1.4163418  2.2421117  0.22204155 0.         0.31268513 0.14521259 0.57843214 0.65275586 0.         0.02211368 0.4826215  0.65296173 1.2726448  0.6964331  1.6637247  1.2155424 2.3015604  3.9708042  1.6967016  0.40145046",
+                           rows=N, cols=Hout*Wout*C_base)
+
+    test_util::check_all_close(out, out_expected, 0.00001)
+}
+
+
+values_test_basic_block_forward_2 = function() {
+    /*
+     * Testing of values for forward pass of basic block against PyTorch.
+     */
+    strideh = 2; stridew = 2
+    C_in = 2; C_base = 2
+    Hin = 4; Win = 4
+    N = 2
+    X = matrix(1, rows=N, cols=C_in*Hin*Win)
+    W_conv1 = matrix("-0.14026615 -0.06974511  0.21421503 0.00487083 -0.17600328 -0.05576494 0.08433063 -0.04809754 -0.0021321  -0.1935787  -0.04766957  0.15073563  0.14598249 -0.1946578  -0.01819092 -0.11103764 -0.01316494 -0.14351277
+                      -0.0036971  -0.18704589 -0.09860466 0.20417325 -0.20006022  0.00959031 0.13883735 -0.11765242 -0.17820978 -0.03428984 -0.02357996  0.11326601 -0.22515622  0.2001556  -0.0103206  -0.0384565   0.13819869 -0.03230184",
+                     rows=C_base, cols=C_in*3*3)
+    gamma_bn1 = matrix(1, rows=C_base, cols=1)
+    beta_bn1 = matrix(0, rows=C_base, cols=1)
+    W_conv2 = matrix(" 0.1952378  -0.13218941  0.20359151  0.21437167  0.20657437  0.07917522 -0.20072569 -0.16550082  0.14789648  0.03155191  0.10938872 -0.18765432  0.2069266  -0.0324703   0.14553984 -0.15199026 -0.01177226  0.05884366
+                      -0.16591048 -0.11745082  0.11246873  0.21435808  0.000237   -0.02330555  0.03408287 -0.09445126  0.09905426 -0.022421   -0.01720028 -0.08738072 -0.13018131  0.2277623  -0.22259445  0.06712689 -0.08571149  0.17849205",
+                     rows=C_base, cols=C_base*3*3)
+    gamma_bn2 = matrix(1, rows=C_base, cols=1)
+    beta_bn2 = matrix(0, rows=C_base, cols=1)
+
+    # downsampling weights
+    W_conv3 = matrix("-0.44065592 -0.29570574
+                      -0.60239863  0.43495506",
+                     rows=C_base, cols=C_in*1*1)
+    gamma_bn3 = matrix(1, rows=C_base, cols=1)
+    beta_bn3 = matrix(0, rows=C_base, cols=1)
+
+    weights = list(W_conv1, gamma_bn1, beta_bn1, W_conv2, gamma_bn2, beta_bn2, W_conv3, gamma_bn3, beta_bn3)
+    mode = "train"
+
+    ema_mean_bn1 = matrix(0, rows=C_base, cols=1)
+    ema_var_bn1 = matrix(0, rows=C_base, cols=1)
+    ema_mean_bn2 = matrix(0, rows=C_base, cols=1)
+    ema_var_bn2 = matrix(0, rows=C_base, cols=1)
+    ema_mean_bn3 = matrix(0, rows=C_base, cols=1)
+    ema_var_bn3 = matrix(0, rows=C_base, cols=1)
+    ema_means_vars = list(ema_mean_bn1, ema_var_bn1, ema_mean_bn2, ema_var_bn2, ema_mean_bn3, ema_var_bn3)
+
+    [out, Hout, Wout, ema_means_vars_up] = resnet::basic_block_forward(X, weights, C_in, C_base, Hin, Win,
+                                                                strideh, stridew, mode, ema_means_vars)
+
+    out_expected = matrix("0.         0.         0.33147347 1.4695541  0.         0.9726007  0.         0.9382379
+                           0.         0.         0.33147347 1.4695541  0.         0.9726007  0.         0.9382379 ",
+                          rows=N, cols=Hout*Wout*C_base)
+
+    test_util::check_all_close(out, out_expected, 0.0001)
+}
+
+
+values_test_basic_block_forward_3 = function() {
+    /*
+     * Testing of values for forward pass of basic block against PyTorch.
+     */
+    strideh = 2; stridew = 2
+    C_in = 2; C_base = 4
+    Hin = 4; Win = 4
+    N = 2
+    X = matrix(1, rows=N, cols=C_in*Hin*Win)
+    W_conv1 = matrix(" 0.23060845  0.01255383  0.10554366 -0.11032246  0.04110865  0.12300454  0.03407042  0.03677405  0.1022801   0.08667193  0.15104999 -0.08343385 -0.16137402  0.2004693  -0.15173802 -0.14732602 -0.16977917 -0.11108103
+                      -0.02234201 -0.13497168 -0.15396744 -0.11581142  0.19164546 -0.02277191  0.1283987  -0.06767575 -0.05453977 -0.13944787 -0.16732863  0.08283444 -0.20333174  0.15993242  0.09864204  0.02714513 -0.05416261 -0.16831529
+                      -0.02864511  0.17540906  0.10217993  0.16238032 -0.09703699  0.13528688 -0.12437965  0.22771217  0.13020585  0.06029092  0.03008728  0.08683048  0.18321039 -0.0570219  -0.04176761 -0.10389957 -0.21008791  0.21670572
+                      -0.17345327  0.05192728 -0.137008   -0.16411738  0.2257642   0.1580276  -0.17054762 -0.15276143  0.18090443 -0.00081959 -0.20020181 -0.15055852 -0.08635178  0.11620347 -0.17689864 -0.17850053  0.14149593  0.05391319",
+                     rows=C_base, cols=C_in*3*3)
+    gamma_bn1 = matrix(1, rows=C_base, cols=1)
+    beta_bn1 = matrix(0, rows=C_base, cols=1)
+    W_conv2 = matrix("-0.12502055  0.04218115 -0.01587057  0.02996665  0.03902064 -0.10042268  0.14614715  0.04653394 -0.16000232  0.16580684 -0.00197132 -0.12345098  0.16189565 -0.08695424 -0.02277309 -0.02887423 -0.06450109 -0.02360182 -0.11778401 -0.0124789  -0.14320037 -0.1436774  -0.00914766 -0.01130253  0.13241099  0.03841829  0.14280184  0.07521738  0.11815999 -0.13276237  0.12992252 -0.04222127 -0.03073458  0.01725562  0.15965255  0.10338821
+                      -0.1398921   0.05605571 -0.13995157 -0.12097194 -0.1035642   0.03313832  0.13476823  0.02719207  0.02726786 -0.08288203  0.10799147  0.03092675 -0.01539116 -0.08172278 -0.05077231  0.03913508  0.02528121  0.08431648  0.16408543 -0.09090649 -0.09221806  0.00649713  0.08248532  0.05170746 -0.03424133  0.12494816 -0.03637959  0.01817816  0.10356762  0.03744942 -0.10864812  0.10180093 -0.04949838 -0.10033202 -0.10501622 -0.05735092
+                      -0.05820473 -0.11734504  0.16419913 -0.05231454 -0.07497393  0.1414146  -0.07572757  0.12433673  0.11995722 -0.08965874  0.01813734  0.07857008 -0.01808423 -0.10376819  0.02973495 -0.06675623  0.12945338  0.11593701 -0.0270998   0.06052397 -0.09865837  0.05997723 -0.09147376 -0.13572678  0.04277535  0.06700458  0.10086431  0.0624107   0.01380444  0.02379382 -0.06924826  0.16204901  0.09410296  0.08837719  0.08246924 -0.02000479
+                      -0.05427806 -0.06499916 -0.07410125 -0.09293389 -0.05310518 -0.14569238  0.0565486   0.06677081  0.11938848  0.140608    0.08632036  0.06824701  0.08058478  0.1592765   0.05660491  0.000421    0.08094937  0.02867652  0.00291246 -0.10608425  0.03485543 -0.1534006  -0.05454665 -0.12841377  0.15747286  0.15352447  0.00212862 -0.06103357 -0.05826634 -0.12362739  0.05188899  0.0780222  -0.08359687 -0.07310607 -0.04413005  0.16476734",
+                     rows=C_base, cols=C_base*3*3)
+    gamma_bn2 = matrix(1, rows=C_base, cols=1)
+    beta_bn2 = matrix(0, rows=C_base, cols=1)
+
+    # downsampling weights
+    W_conv3 = matrix("-0.434205   -0.51763165
+                      -0.48000953 -0.4031318
+                       0.38555235  0.09546977
+                      -0.35429037 -0.35176745",
+                     rows=C_base, cols=C_in*1*1)
+    gamma_bn3 = matrix(1, rows=C_base, cols=1)
+    beta_bn3 = matrix(0, rows=C_base, cols=1)
+
+    weights = list(W_conv1, gamma_bn1, beta_bn1, W_conv2, gamma_bn2, beta_bn2, W_conv3, gamma_bn3, beta_bn3)
+    mode = "train"
+
+    ema_mean_bn1 = matrix(0, rows=C_base, cols=1)
+    ema_var_bn1 = matrix(0, rows=C_base, cols=1)
+    ema_mean_bn2 = matrix(0, rows=C_base, cols=1)
+    ema_var_bn2 = matrix(0, rows=C_base, cols=1)
+    ema_mean_bn3 = matrix(0, rows=C_base, cols=1)
+    ema_var_bn3 = matrix(0, rows=C_base, cols=1)
+    ema_means_vars = list(ema_mean_bn1, ema_var_bn1, ema_mean_bn2, ema_var_bn2, ema_mean_bn3, ema_var_bn3)
+
+    [out, Hout, Wout, ema_means_vars_up] = resnet::basic_block_forward(X, weights, C_in, C_base, Hin, Win,
+                                                                strideh, stridew, mode, ema_means_vars)
+
+    out_expected = matrix("0.         1.576729   0.         0.14989257  0.         0.         1.5978024  0.         1.6740767  0.         0.         0.         0.89626473 1.0869961  0.         0.
+                           0.         1.576729   0.         0.14989257  0.         0.         1.5978024  0.         1.6740767  0.         0.         0.         0.89626473 1.0869961  0.         0.        ",
+                          rows=N, cols=Hout*Wout*C_base)
+
+    test_util::check_all_close(out, out_expected, 0.0001)
+}
+
+
+/*
+ * **** Shape Handling Testing ****
+ */
+
 /*
  * Test case 1:
  * Basic block forward computation shouldn't raise errors
@@ -94,3 +243,39 @@ basic_test_basic_block_forward(C_in=2, C_base=4, strideh=1, stridew=1, Hin=4, Wi
  * have the expected (downsampled) shapes.
  */
 basic_test_basic_block_forward(C_in=4, C_base=4, strideh=2, stridew=2, Hin=4, Win=4, N=3, downsample=TRUE)
+
+/*
+ * **** Value Testing ****
+ * In these test cases, we compare the forward pass
+ * computation of a basic residual block against the
+ * PyTorch implementation. We calculate the PyTorch
+ * values with the NN module
+ * torchvision.models.resnet.BasicBlock and then
+ * hard-code the randomly initialized weights and
+ * biases and the expected output computed by PyTorch
+ * into this file.
+ */
+
+/*
+ * Test case 1:
+ * A simple forward pass of basic block with same
+ * input and output channels and the same input and
+ * output dimensions, i.e. stride 1, in train mode.
+ */
+values_test_basic_block_forward_1()
+
+/*
+ * Test case 2:
+ * A simple forward pass of basic block with
+ * downsampling through a stride of 2 but same number
+ * of channels in train mode.
+ */
+values_test_basic_block_forward_2()
+
+/*
+ * Test case 2:
+ * A simple forward pass of basic block with
+ * downsampling through non-matching channel sizes
+ * and different number of channels in train mode.
+ */
+values_test_basic_block_forward_3()

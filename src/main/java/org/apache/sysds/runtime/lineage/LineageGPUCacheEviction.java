@@ -20,6 +20,7 @@
 package org.apache.sysds.runtime.lineage;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -104,8 +105,8 @@ public class LineageGPUCacheEviction
 			return;
 		// Reset the timestamp to maintain the LRU component of the scoring function
 		entry.updateTimestamp();
-		// Scale score of the sought entry after every cache hit
-		entry.updateScore(true);
+		// TODO: Scale score after every cache hit if not LRU
+		//entry.updateScore(true);
 	}
 
 	protected static void removeSingleEntry(Map<LineageItem, LineageCacheEntry> cache, LineageCacheEntry e) {
@@ -161,6 +162,7 @@ public class LineageGPUCacheEviction
 	public static LineageCacheEntry pollFistFreeNotExact(long size) {
 		// Assuming no exact match
 		List<Long> sortedSizes = new ArrayList<>(freeQueues.keySet());
+		Collections.sort(sortedSizes);
 		// If the asked size is bigger than all, return a pointer of the highest size available
 		long maxSize = sortedSizes.get(sortedSizes.size()-1);
 		if (size > maxSize)

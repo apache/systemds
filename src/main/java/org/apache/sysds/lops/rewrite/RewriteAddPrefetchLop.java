@@ -113,12 +113,12 @@ public class RewriteAddPrefetchLop extends LopRewriteRule
 		boolean anyOutputList = lop.getOutputs().stream()
 			.anyMatch(out -> out.getDataType() == Types.DataType.LIST);
 
-		//FIXME: Rewire _inputParams when needed (e.g. GroupedAggregate)
+		// FIXME: Rewire _inputParams when needed (e.g. GroupedAggregate)
 		boolean hasParameterizedOut = lop.getOutputs().stream()
 			.anyMatch(out -> ((out instanceof ParameterizedBuiltin)
 				|| (out instanceof GroupedAggregate)
 				|| (out instanceof GroupedAggregateM)));
-		//TODO: support non-matrix outputs
+		// TODO: support non-matrix outputs
 		return transformOP && !hasParameterizedOut && !anyOutputList
 			&& (lop.isAllOutputsCP() || OperatorOrderingUtils.isCollectForBroadcast(lop))
 			&& lop.getDataType() == Types.DataType.MATRIX;
@@ -133,7 +133,7 @@ public class RewriteAddPrefetchLop extends LopRewriteRule
 		boolean anyOutputList = lop.getOutputs().stream()
 			.anyMatch(out -> out.getDataType() == Types.DataType.LIST);
 
-		//FIXME: Rewire _inputParams when needed (e.g. Replace)
+		// FIXME: Rewire _inputParams when needed (e.g. Replace)
 		boolean hasParameterizedOut = lop.getOutputs().stream()
 			.anyMatch(out -> ((out instanceof ParameterizedBuiltin)
 				|| (out instanceof GroupedAggregate)

@@ -22,7 +22,7 @@ package org.apache.sysds.runtime.matrix.data;
 import jcuda.Pointer;
 import jcuda.jcudnn.cudnnConvolutionBwdFilterPreference;
 import jcuda.jcudnn.cudnnConvolutionDescriptor;
-import jcuda.jcudnn.cudnnConvolutionFwdPreference;
+import jcuda.jcudnn.cudnnConvolutionFwdAlgo;
 import jcuda.jcudnn.cudnnFilterDescriptor;
 import jcuda.jcudnn.cudnnTensorDescriptor;
 import static jcuda.jcudnn.JCudnn.cudnnCreateConvolutionDescriptor;
@@ -126,17 +126,20 @@ public class LibMatrixCuDNNConvolutionAlgorithm implements java.lang.AutoCloseab
 			int pad_h, int pad_w, int stride_h, int stride_w, int P, int Q, long workspaceLimit) {
 		LibMatrixCuDNNConvolutionAlgorithm ret = new LibMatrixCuDNNConvolutionAlgorithm(gCtx, instName, N, C, H, W, K, R, S, 
 				pad_h, pad_w, stride_h, stride_w, P, Q);
-		int[] algos = {-1};
+		//int[] algos = {-1};
 		long sizeInBytesArray[] = {Math.min(workspaceLimit, MAX_WORKSPACE_LIMIT_BYTES)};
-		jcuda.jcudnn.JCudnn.cudnnGetConvolutionForwardAlgorithm(LibMatrixCuDNN.getCudnnHandle(gCtx), 
+		/*jcuda.jcudnn.JCudnn.cudnnGetConvolutionForwardAlgorithm(LibMatrixCuDNN.getCudnnHandle(gCtx),
 				ret.nchwTensorDesc, ret.filterDesc, ret.convDesc, ret.nkpqTensorDesc,
-				cudnnConvolutionFwdPreference.CUDNN_CONVOLUTION_FWD_SPECIFY_WORKSPACE_LIMIT, sizeInBytesArray[0], algos);
-		jcuda.jcudnn.JCudnn.cudnnGetConvolutionForwardWorkspaceSize(LibMatrixCuDNN.getCudnnHandle(gCtx), 
-				ret.nchwTensorDesc, ret.filterDesc, ret.convDesc, ret.nkpqTensorDesc, algos[0], sizeInBytesArray);
+				cudnnConvolutionFwdPreference.CUDNN_CONVOLUTION_FWD_SPECIFY_WORKSPACE_LIMIT, sizeInBytesArray[0], algos);*/
+		// FIXME: cudnnGetConvolutionForwardAlgorithm method returns CUDNN_CONVOLUTION_FWD_ALGO_IMPLICIT_PRECOMP_GEMM
+		// 	as the best suited conv2d algo for these inputs, however applying that algo returns zero values.
+		ret.algo = cudnnConvolutionFwdAlgo.CUDNN_CONVOLUTION_FWD_ALGO_IMPLICIT_GEMM; //force this algo
+		jcuda.jcudnn.JCudnn.cudnnGetConvolutionForwardWorkspaceSize(LibMatrixCuDNN.getCudnnHandle(gCtx),
+			ret.nchwTensorDesc, ret.filterDesc, ret.convDesc, ret.nkpqTensorDesc, ret.algo, sizeInBytesArray);
 		if (sizeInBytesArray[0] != 0)
 			ret.workSpace = gCtx.allocate(instName, sizeInBytesArray[0], false);
 		ret.sizeInBytes = sizeInBytesArray[0];
-		ret.algo = algos[0];
+		//ret.algo = algos[0];
 		return ret;
 	}
 	

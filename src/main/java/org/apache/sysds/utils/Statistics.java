@@ -658,6 +658,8 @@ public class Statistics
 
 			if( OptimizerUtils.isSparkExecutionMode() )
 				sb.append(SparkStatistics.displayStatistics());
+			if (SparkStatistics.anyAsyncOp())
+				sb.append(SparkStatistics.displayAsyncStats());
 
 			sb.append(ParamServStatistics.displayStatistics());
 

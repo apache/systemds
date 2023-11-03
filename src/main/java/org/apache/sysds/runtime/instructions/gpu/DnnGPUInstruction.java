@@ -21,6 +21,7 @@
 
 import java.util.ArrayList;
 
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
@@ -30,6 +31,8 @@ import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.instructions.gpu.context.ExecutionConfig;
 import org.apache.sysds.runtime.instructions.gpu.context.GPUContext;
+import org.apache.sysds.runtime.lineage.LineageItem;
+import org.apache.sysds.runtime.lineage.LineageItemUtils;
 import org.apache.sysds.runtime.matrix.data.LibMatrixCUDA;
 import org.apache.sysds.runtime.matrix.data.LibMatrixCuDNN;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -41,15 +44,12 @@ import org.apache.sysds.utils.GPUStatistics;
 import jcuda.Pointer;
 
 public class DnnGPUInstruction extends GPUInstruction {
-	private CPOperand _input1;
-	private CPOperand _input2;
 	private CPOperand _input3;
 	private CPOperand _input4;
 	private CPOperand _input5;
 	private CPOperand _input6;
 	private CPOperand _input7;
 	private CPOperand _input8;
-	private CPOperand _output;
 	private CPOperand _output2;
 	private CPOperand _output3;
 	private CPOperand _output4;
@@ -61,30 +61,24 @@ public class DnnGPUInstruction extends GPUInstruction {
 	private double _intermediateMemoryBudget = 0;
 	
 	public DnnGPUInstruction(CPOperand in1, CPOperand in2, CPOperand out, String opcode, String istr, double intermediateMemoryBudget) {
-		super(new ReorgOperator(SwapIndex.getSwapIndexFnObject()), opcode, istr);
+		super(new ReorgOperator(SwapIndex.getSwapIndexFnObject()), in1, in2, out, opcode, istr);
 		if (!(opcode.equals("bias_add") || opcode.equals("bias_multiply") || opcode.equals("relu_backward"))) {
 			throw new DMLRuntimeException(
 					"Incorrect usage. Expected the opcode to be bias_add or bias_multiply or relu_backward, but found "
 							+ opcode);
 		}
-		_input1 = in1;
-		_input2 = in2;
 		_gputype = GPUINSTRUCTION_TYPE.Dnn;
-		_output = out;
 		_intermediateMemoryBudget = intermediateMemoryBudget;
 	}
 	public DnnGPUInstruction(CPOperand in1, CPOperand in2, CPOperand in3, CPOperand in4, CPOperand in5, CPOperand in6, 
 			CPOperand out, CPOperand out2, String opcode, String istr, 
 			double intermediateMemoryBudget) throws DMLRuntimeException {
-		super(new ReorgOperator(SwapIndex.getSwapIndexFnObject()), opcode, istr);
-		_input1 = in1;
-		_input2 = in2;
+		super(new ReorgOperator(SwapIndex.getSwapIndexFnObject()), in1, in2, out,opcode, istr);
 		_input3 = in3;
 		_input4 = in4;
 		_input5 = in5;
 		_input6 = in6;
 		_gputype = GPUINSTRUCTION_TYPE.Dnn;
-		_output = out;
 		_output2 = out2;
 		_intermediateMemoryBudget = intermediateMemoryBudget;
 	}
@@ -93,9 +87,7 @@ public class DnnGPUInstruction extends GPUInstruction {
 			CPOperand in6, CPOperand in7, CPOperand in8,
 			CPOperand out, CPOperand out2, CPOperand out3, CPOperand out4, CPOperand out5, String opcode, String istr, 
 			double intermediateMemoryBudget) throws DMLRuntimeException {
-		super(new ReorgOperator(SwapIndex.getSwapIndexFnObject()), opcode, istr);
-		_input1 = in1;
-		_input2 = in2;
+		super(new ReorgOperator(SwapIndex.getSwapIndexFnObject()), in1, in2, out ,opcode, istr);
 		_input3 = in3;
 		_input4 = in4;
 		_input5 = in5;
@@ -103,7 +95,6 @@ public class DnnGPUInstruction extends GPUInstruction {
 		_input7 = in7;
 		_input8 = in8;
 		_gputype = GPUINSTRUCTION_TYPE.Dnn;
-		_output = out;
 		_output2 = out2;
 		_output3 = out3;
 		_output4 = out4;
@@ -113,30 +104,24 @@ public class DnnGPUInstruction extends GPUInstruction {
 	
 	public DnnGPUInstruction(CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out, String opcode, String istr, 
 			double intermediateMemoryBudget) throws DMLRuntimeException {
-		super(new ReorgOperator(SwapIndex.getSwapIndexFnObject()), opcode, istr);
+		super(new ReorgOperator(SwapIndex.getSwapIndexFnObject()), in1, in2, out, opcode, istr);
 		if( !opcode.equals("channel_sums") ) {
 			throw new DMLRuntimeException("Incorrect usage. Expected the opcode to be channel_sums, but found " + opcode);
 		}
-		_input1 = in1;
-		_input2 = in2;
 		_input3 = in3;
 		_gputype = GPUINSTRUCTION_TYPE.Dnn;
-		_output = out;
 		_intermediateMemoryBudget = intermediateMemoryBudget;
 	}
 	
 	public DnnGPUInstruction(CPOperand in1, CPOperand in2, CPOperand in3, CPOperand in4, CPOperand out, String opcode, String istr, 
 			double intermediateMemoryBudget) throws DMLRuntimeException {
-		super(new ReorgOperator(SwapIndex.getSwapIndexFnObject()), opcode, istr);
+		super(new ReorgOperator(SwapIndex.getSwapIndexFnObject()), in1, in2, out, opcode, istr);
 		if( !opcode.equals("update_nesterov_x") ) {
 			throw new DMLRuntimeException("Incorrect opcode: " + opcode);
 		}
-		_input1 = in1;
-		_input2 = in2;
 		_input3 = in3;
 		_input4 = in4;
 		_gputype = GPUINSTRUCTION_TYPE.Dnn;
-		_output = out;
 		_intermediateMemoryBudget = intermediateMemoryBudget;
 	}
 	
@@ -154,12 +139,8 @@ public class DnnGPUInstruction extends GPUInstruction {
 			ArrayList<CPOperand> padding, ArrayList<CPOperand> input_shape,
 			ArrayList<CPOperand> filter_shape, double intermediateMemoryBudget) 
 	{
-		super(new ReorgOperator(SwapIndex.getSwapIndexFnObject()), opcode, istr);
+		super(new ReorgOperator(SwapIndex.getSwapIndexFnObject()), in1, in2, out, opcode, istr);
 		_gputype = GPUINSTRUCTION_TYPE.Dnn;
-
-		_input1 = in1;
-		_input2 = in2;
-		_output = out;
 		_stride = stride;
 		_padding = padding;
 		_input_shape = input_shape;
@@ -169,18 +150,15 @@ public class DnnGPUInstruction extends GPUInstruction {
 
 	public DnnGPUInstruction(CPOperand in, CPOperand in2, CPOperand in3, CPOperand in4, CPOperand in5, CPOperand in6,
 			CPOperand out, String opcode, String istr, double intermediateMemoryBudget) {
-		super(new ReorgOperator(SwapIndex.getSwapIndexFnObject()), opcode, istr);
+		super(new ReorgOperator(SwapIndex.getSwapIndexFnObject()), in, in2, out, opcode, istr);
 		if( !opcode.equals("batch_norm2d_test") ) {
 			throw new DMLRuntimeException("Incorrect usage. Expected the opcode to be batch_norm2d_test, but found " + opcode);
 		}
-		_input1 = in;
-		_input2 = in2;
 		_input3 = in3;
 		_input4 = in4;
 		_input5 = in5;
 		_input6 = in6;
 		_gputype = GPUINSTRUCTION_TYPE.Dnn;
-		_output = out;
 		_intermediateMemoryBudget = intermediateMemoryBudget;
 	}
 	
@@ -787,15 +765,15 @@ public class DnnGPUInstruction extends GPUInstruction {
 		int stride_h = getScalarInput(ec, _stride, 0);
 		int stride_w = getScalarInput(ec, _stride, 1);
 
-		int N = getScalarInput(ec, _input_shape, 0);
-		int C = getScalarInput(ec, _input_shape, 1);
-		int H = getScalarInput(ec, _input_shape, 2);
-		int W = getScalarInput(ec, _input_shape, 3);
+		int N = getScalarInput(ec, _input_shape, 0); //N
+		int C = getScalarInput(ec, _input_shape, 1); //C
+		int H = getScalarInput(ec, _input_shape, 2); //Hin
+		int W = getScalarInput(ec, _input_shape, 3); //Win
 
-		int K = getScalarInput(ec, _filter_shape, 0);
+		int K = getScalarInput(ec, _filter_shape, 0); //F = nrow(W)
 		
-		int R = getScalarInput(ec, _filter_shape, 2);
-		int S = getScalarInput(ec, _filter_shape, 3);
+		int R = getScalarInput(ec, _filter_shape, 2); //Hf
+		int S = getScalarInput(ec, _filter_shape, 3); //Wf
 		
 		int P = (int) DnnUtils.getP(H, R, stride_h, pad_h);
 		int Q = (int) DnnUtils.getQ(W, S, stride_w, pad_w);
@@ -815,9 +793,9 @@ public class DnnGPUInstruction extends GPUInstruction {
 					K, R, S, pad_h, pad_w, stride_h, stride_w, P, Q, _intermediateMemoryBudget);
 		}
 		else if (instOpcode.equalsIgnoreCase("conv2d_bias_add")) {
-			MatrixObject image = getMatrixInputForGPUInstruction(ec, _input1.getName());
-			MatrixObject bias = getMatrixInputForGPUInstruction(ec, _input2.getName());
-			MatrixObject filter = getMatrixInputForGPUInstruction(ec, _input3.getName());
+			MatrixObject image = getMatrixInputForGPUInstruction(ec, _input1.getName()); //X
+			MatrixObject bias = getMatrixInputForGPUInstruction(ec, _input2.getName());  //b
+			MatrixObject filter = getMatrixInputForGPUInstruction(ec, _input3.getName()); //W
 
 			if(image.getNumRows() != N || image.getNumColumns() != C*H*W) 
 				throw new DMLRuntimeException("Incorrect dimensions for image in conv2d");
@@ -911,5 +889,24 @@ public class DnnGPUInstruction extends GPUInstruction {
 
 	private static int getScalarInput(ExecutionContext ec, ArrayList<CPOperand> aL, int index) {
 		return (int) ec.getScalarInput(aL.get(index)).getLongValue();
+	}
+
+	@Override
+	public Pair<String, LineageItem> getLineageItem(ExecutionContext ec) {
+		ArrayList<CPOperand> inputs = new ArrayList<>();
+		inputs.add(_input1);
+		inputs.add(_input2);
+		inputs.add(_input3);
+		inputs.add(_input4);
+		inputs.add(_input5);
+		inputs.add(_input6);
+		inputs.add(_input7);
+		inputs.add(_input8);
+		inputs.addAll(_input_shape);
+		inputs.addAll(_filter_shape);
+		inputs.addAll(_stride);
+		inputs.addAll(_padding);
+		return Pair.of(_output.getName(),
+			new LineageItem(getOpcode(), LineageItemUtils.getLineage(ec, inputs.toArray(new CPOperand[0]))));
 	}
 }

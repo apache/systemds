@@ -355,16 +355,23 @@ public class LineageCacheEntry {
 		if (_timestamp < 0)
 			throw new DMLRuntimeException ("Execution timestamp shouldn't be -ve. Key: "+_key);
 		// Weights for scoring components in GPU
-		//double w1 = 0;
+		// TODO: Multiple eviction policies.
+		double w1 = 1;
 		double w2 = 1;
 		double w3 = 1;
 		// Generate initial score
-		score = w2*getTimestamp() + w3*(((double)1)/getDagHeight());
+		int computeGroup = LineageCacheConfig.getComputeGroup(_key.getOpcode());
+		//score = w2*getTimestamp() + w3*(((double)1)/getDagHeight());
+		score = w1*computeGroup + w2*getTimestamp() + w3*(((double)1)/getDagHeight());
 		// TODO: timestamp >> DAg_height. Normalize timestamp and DAG height.
 		// Update score to emulate computeTime scaling by #misses
-		if (removeList.containsKey(_key)) {
+		if (removeList.containsKey(_key) && w2 != 1) {
+			// For LRU, artificially scaling the score may lead to a scenario where, the
+			// most recent entries have lower score than the least recent (w/ scaled score)
+			// scores, leading to eviction of the most recent entries.
 			int missCount = 1 + removeList.get(_key);
-			score = score + ((w2*getTimestamp() + w3*(((double)1)/getDagHeight())) * missCount);
+			//score = score + ((w2*getTimestamp() + w3*(((double)1)/getDagHeight())) * missCount);
+			score = score + ((w1*computeGroup + w2*getTimestamp() + w3*(((double)1)/getDagHeight())) * missCount);
 		}
 	}
 	
@@ -379,8 +386,10 @@ public class LineageCacheEntry {
 			 int computeGroup = LineageCacheConfig.getComputeGroup(_key.getOpcode());
 			 score = score + sign * w1 * (((double) computeGroup) / size);
 		 }
-		 if (isGPUObject())
-			 score = score + sign * (getTimestamp() + ((double)1)/getDagHeight());
+		 if (isGPUObject()) {
+			 int computeGroup = LineageCacheConfig.getComputeGroup(_key.getOpcode());
+			 score = score + sign * (computeGroup + getTimestamp() + ((double) 1) / getDagHeight());
+		 }
 	}
 	
 	protected synchronized long getTimestamp() {
@@ -409,8 +418,11 @@ public class LineageCacheEntry {
 			int refCount = Math.max(_rddObject.getMaxReferenceCount(), 1);
 			score = w1*(((double)computeGroup*refCount)/size) + w2*getTimestamp() + w3*(((double)1)/getDagHeight());
 		}
-		if (isGPUObject())
-			score = getTimestamp() + (((double)1)/getDagHeight());
+		if (isGPUObject()) {
+			int computeGroup = LineageCacheConfig.getComputeGroup(_key.getOpcode());
+			score = computeGroup + getTimestamp() + (((double) 1) / getDagHeight());
+			//score = getTimestamp() + (((double) 1) / getDagHeight());
+		}
 	}
 
 	static class GPUPointer {

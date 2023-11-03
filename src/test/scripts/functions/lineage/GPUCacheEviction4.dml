@@ -1,0 +1,303 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+conv2d_forward = function(matrix[double] X, matrix[double] W, matrix[double] b,
+  int C, int Hin, int Win, int Hf, int Wf, int strideh, int stridew,
+  int padh, int padw) return (matrix[double] out, int Hout, int Wout)
+{
+  N = nrow(X)
+  F = nrow(W)
+  Hout = as.integer(floor((Hin + 2*padh - Hf)/strideh + 1))
+  Wout = as.integer(floor((Win + 2*padw - Wf)/stridew + 1))
+  # Convolution - built-in implementation
+  out = conv2d(X, W, input_shape=[N,C,Hin,Win], filter_shape=[F,C,Hf,Wf],
+               stride=[strideh,stridew], padding=[padh,padw])
+  # Add bias term to each output filter
+  out = bias_add(out, b)
+}
+
+conv2d_backward = function(matrix[double] dout, int Hout, int Wout, matrix[double] X,
+  matrix[double] W, matrix[double] b, int C, int Hin, int Win, int Hf, int Wf,
+  int strideh, int stridew, int padh, int padw)
+  return (matrix[double] dX, matrix[double] dW, matrix[double] db)
+{
+  N = nrow(X)
+  F = nrow(W)
+  # Partial derivatives for convolution - built-in implementation
+  dW = conv2d_backward_filter(X, dout, stride=[strideh,stridew], padding=[padh,padw],
+                              input_shape=[N,C,Hin,Win], filter_shape=[F,C,Hf,Wf])
+  dX = conv2d_backward_data(W, dout, stride=[strideh,stridew], padding=[padh,padw],
+                            input_shape=[N,C,Hin,Win], filter_shape=[F,C,Hf,Wf])
+  # Partial derivatives for bias vector
+  # Here we sum each column, reshape to (F, Hout*Wout), and sum each row
+  # to result in the summation for each channel.
+  db = rowSums(matrix(colSums(dout), rows=F, cols=Hout*Wout))  # shape (F, 1)
+}
+
+conv2d_init = function(int F, int C, int Hf, int Wf, int seed = -1)
+  return (matrix[double] W, matrix[double] b) {
+  W = rand(rows=F, cols=C*Hf*Wf, pdf="normal", seed=seed) * sqrt(2.0/(C*Hf*Wf))
+  b = matrix(0, rows=F, cols=1)
+}
+
+affine_forward = function(matrix[double] X, matrix[double] W, matrix[double] b) return (matrix[double] out) {
+  out = X %*% W + b;
+}
+
+affine_init = function(int D, int M, int seed = -1 ) return (matrix[double] W, matrix[double] b) {
+  W = rand(rows=D, cols=M, pdf="normal", seed=seed) * sqrt(2.0/D);
+  b = matrix(0, rows=1, cols=M);
+}
+
+relu_forward = function(matrix[double] X) return (matrix[double] out) {
+  out = max(0, X);
+}
+
+max_pool2d_forward = function(matrix[double] X, int C, int Hin, int Win, int Hf, int Wf,
+  int strideh, int stridew, int padh, int padw) return(matrix[double] out, int Hout, int Wout)
+{
+  N = nrow(X)
+  Hout = as.integer(floor((Hin + 2*padh - Hf)/strideh + 1))
+  Wout = as.integer(floor((Win + 2*padw - Wf)/stridew + 1))
+  out = max_pool(X, input_shape=[N,C,Hin,Win], pool_size=[Hf,Wf],
+    stride=[strideh,stridew], padding=[padh,padw])
+}
+
+softmax_forward = function(matrix[double] scores) return (matrix[double] probs) {
+  scores = scores - rowMaxs(scores);  # numerical stability
+  unnorm_probs = exp(scores);  # unnormalized probabilities
+  probs = unnorm_probs / rowSums(unnorm_probs);  # normalized probabilities
+}
+
+getWeights = function(int fel, int lid,
+    matrix[double] W_pt, matrix[double] b_pt, 
+    matrix[double] W_init, matrix[double] b_init)
+  return (matrix[double] Wl, matrix[double] bl) 
+{
+  if (lid < fel) { #extract pretrained features
+    Wl = W_pt;
+    bl = b_pt;
+    print("Extract feature of layer "+lid);
+  }
+  else {  #use initialized weights
+    Wl = W_init;
+    bl = b_init;
+    print("Initialize weights for layer "+lid);
+  }
+}
+
+rwRowIndexMax = function(matrix[double] X, matrix[double] oneVec, matrix[double] idxSeq) 
+    return (matrix[double] index) {
+  rm = rowMaxs(X) %*% oneVec;
+  I = X == rm;
+  index = rowMaxs(I * idxSeq);
+}
+
+predict = function(matrix[double] X, int C, int Hin, int Win, int K,
+    matrix[double] W1, matrix[double] b1, matrix[double] W2, matrix[double] b2,
+    matrix[double] W3, matrix[double] b3, matrix[double] W4, matrix[double] b4,
+    matrix[double] W5, matrix[double] b5, matrix[double] W6, matrix[double] b6,
+    matrix[double] W7, matrix[double] b7, matrix[double] W8, matrix[double] b8)
+  return (matrix[double] Y_pred)
+{
+  N = nrow(X);
+  Hf = 5;  #filter height
+  Wf = 5;  #filter width
+  # Define filters
+  F1 = 96;
+  F2 = 256;
+  F3 = 384;
+  F4 = 384;
+  F5 = 256;
+  N3 = 4096;
+  # Define strides
+  s4 = 4;
+  s2 = 2;
+  s1 = 1;
+  # Define pads
+  pad2 = 2;
+  pad1 = 1;
+  pad0 = 0;
+
+  # Initialize the weights for the non-transferred layers
+  [W1_init, b1_init] = conv2d_init(F1, C, Hf=11, Wf=11, 43);
+  [W2_init, b2_init] = conv2d_init(F2, F1, Hf=5, Wf=5, 43);
+  [W3_init, b3_init] = conv2d_init(F3, F2, Hf=3, Wf=3, 43);
+  [W4_init, b4_init] = conv2d_init(F4, F3, Hf=3, Wf=3, 43);
+  [W5_init, b5_init] = conv2d_init(F5, F4, Hf=3, Wf=3, 43);
+  [W6_init, b6_init] = affine_init(9216, 4096, 43);
+  [W7_init, b7_init] = affine_init(N3, N3, 43);
+  [W8_init, b8_init] = affine_init(N3, K, 43);
+  W8_init = W8_init/sqrt(2);
+
+  # Compute prediction over mini-batches
+  verbose = FALSE;
+  probs = matrix(0, rows=N, cols=K);
+  Y_pred = matrix(0, rows=N, cols=4);
+  batch_size = 64;
+  oneVec = matrix(1, rows=1, cols=K);
+  idxSeq = matrix(1, rows=batch_size, cols=1) %*% t(seq(1, K));
+  iters = ceil (N / batch_size);
+  for (i in 1:iters) {
+    # Get next batch
+    beg = ((i-1) * batch_size) %% N + 1;
+    end = min(N, beg+batch_size-1);
+    X_batch = X[beg:end,];
+
+    j = 1;
+    fel = 8;
+    while (j < 5) {
+      # Compute forward pass
+      # layer 1: conv1 -> relu1 -> pool1
+      lid = 1;
+      [Wl1, bl1] = getWeights(fel, lid, W1, b1, W1_init, b1_init);
+      [outc1, Houtc1, Woutc1] = conv2d_forward(X_batch, Wl1, bl1, C, Hin, Win, Hf=11, Wf=11,
+          s4, s4, pad0, pad0);
+      if(verbose) print("sum(conv1) = "+sum(outc1));
+      if(verbose) print(nrow(outc1)+", "+ncol(outc1));
+      outr1 = relu_forward(outc1);
+      [outp1, Houtp1, Woutp1] = max_pool2d_forward(outr1, F1, Houtc1, Woutc1, Hf=3, Wf=3,
+          strideh=s2, stridew=s2, padh=0, padw=0)
+      if(verbose) print("sum(pool1) = "+sum(outp1));
+      if(verbose) print(nrow(outp1)+", "+ncol(outp1));
+
+      # layer 2: conv2 -> relu2 -> pool2
+      lid = 2;
+      [Wl2, bl2] = getWeights(fel, lid, W2, b2, W2_init, b2_init);
+      [outc2, Houtc2, Woutc2] = conv2d_forward(outp1, Wl2, bl2, F1, Houtp1, Woutp1, Hf=5,
+          Wf=5, s1, s1, pad2, pad2);
+      if(verbose) print("sum(conv2) = "+sum(outc2));
+      if(verbose) print(nrow(outc2)+", "+ncol(outc2));
+      outr2 = relu_forward(outc2);
+      [outp2, Houtp2, Woutp2] = max_pool2d_forward(outr2, F2, Houtc2, Woutc2, Hf=3, Wf=3,
+          strideh=s2, stridew=s2, padh=0, padw=0)
+      if(verbose) print("sum(pool2) = "+sum(outp2));
+      if(verbose) print(nrow(outp2)+", "+ncol(outp2));
+
+      # layer 3: conv3 -> relu3
+      lid = 3
+      [Wl3, bl3] = getWeights(fel, lid, W3, b3, W3_init, b3_init);
+      [outc3, Houtc3, Woutc3] = conv2d_forward(outp2, Wl3, bl3, F2, Houtp2, Woutp2, Hf=3,
+          Wf=3, s1, s1, pad1, pad1);
+      if(verbose) print("sum(conv3) = "+sum(outc3));
+      if(verbose) print(nrow(outc3)+", "+ncol(outc3));
+      outr3 = relu_forward(outc3);
+
+      # layer 4: conv4 -> relu4
+      lid = 4;
+      [Wl4, bl4] = getWeights(fel, lid, W4, b4, W4_init, b4_init);
+      [outc4, Houtc4, Woutc4] = conv2d_forward(outr3, Wl4, bl4, F3, Houtc3, Woutc3, Hf=3,
+          Wf=3, s1, s1, pad1, pad1);
+      if(verbose) print("sum(conv4) = "+sum(outc4));
+      if(verbose) print(nrow(outc4)+", "+ncol(outc4));
+      outr4 = relu_forward(outc4);
+
+      # layer 5: conv5 -> relu5 -> pool3
+      lid = 5;
+      [Wl5, bl5] = getWeights(fel, lid, W5, b5, W5_init, b5_init);
+      [outc5, Houtc5, Woutc5] = conv2d_forward(outr4, Wl5, bl5, F4, Houtc4, Woutc4, Hf=3,
+          Wf=3, s1, s1, pad1, pad1);
+      if(verbose) print("sum(conv5) = "+sum(outc5));
+      if(verbose) print(nrow(outc5)+", "+ncol(outc5));
+      outr5 = relu_forward(outc5);
+      [outp5, Houtp5, Woutp5] = max_pool2d_forward(outr5, F5, Houtc5, Woutc5, Hf=3, Wf=3,
+          strideh=s2, stridew=s2, padh=0, padw=0)
+      if(verbose) print("sum(pool3) = "+sum(outp5));
+      if(verbose) print(nrow(outp5)+", "+ncol(outp5));
+
+      # layer 6: affine1 -> relu6
+      lid = 6;
+      [Wl6, bl6] = getWeights(fel, lid, W6, b6, W6_init, b6_init);
+      outa6 = affine_forward(outp5, Wl6, bl6);
+      if(verbose) print(nrow(outa6)+", "+ncol(outa6));
+      outr6 = relu_forward(outa6);
+
+      # layer 7: affine2 -> relu7
+      lid = 7;
+      [Wl7, bl7] = getWeights(fel, lid, W7, b7, W7_init, b7_init);
+      outa7 = affine_forward(outr6, Wl7, bl7);
+      if(verbose) print(nrow(outa7)+", "+ncol(outa7));
+      outr7 = relu_forward(outa7);
+
+      # layer 8: affine3 -> softmax
+      lid = 8;
+      [Wl8, bl8] = getWeights(fel, lid, W8, b8, W8_init, b8_init);
+      outa8 = affine_forward(outr7, Wl8, bl8);
+      if(verbose) print(nrow(outa8)+", "+ncol(outa8));
+      probs_batch = softmax_forward(outa8);
+
+      # Store the predictions
+      Y_pred[beg:end,j] = rwRowIndexMax(probs_batch, oneVec, idxSeq);
+      j = j + 1;
+      fel = fel - 1;
+    }
+  }
+}
+
+generate_dummy_data = function(int N, int C, int Hin, int Win, int K)
+  return (matrix[double] X, matrix[double] Y) {
+  X = rand(rows=N, cols=C*Hin*Win, pdf="normal", seed=45) #linearized images
+  classes = round(rand(rows=N, cols=1, min=1, max=K, pdf="uniform", seed=46))
+  Y = table(seq(1, N), classes, N, K)  #one-hot encoding
+}
+
+# Read training data and settings
+N = 64;    #num of training images
+Nval = 512;  #num of validation images
+Ntest = 64; #num of test images
+C = 3;       #num of color channels
+Hin = 227; #227   #input image height
+Win = 227; #227   #input image width
+K = 10;      #num of classes
+epochs = 1;
+
+# Generate dummy data
+[X, Y] = generate_dummy_data(N, C, Hin, Win, K);
+[X_val, Y_val] = generate_dummy_data(Nval, C, Hin, Win, K);
+[X_test, Y_test] = generate_dummy_data(Ntest, C, Hin, Win, K);
+
+# Train
+#[W1, b1, W2, b2] = train(X, Y, X_val, Y_val, C, Hin, Win, epochs);
+
+# Predict
+Hf = 5;
+Wf = 5;
+# Initialize random weights. FIXME: use pretrained weights
+[W1, b1] = conv2d_init(96, C, Hf=11, Wf=11, 42);
+[W2, b2] = conv2d_init(256, 96, Hf=5, Wf=5, 42);
+[W3, b3] = conv2d_init(384, 256, Hf=3, Wf=3, 42);
+[W4, b4] = conv2d_init(384, 384, Hf=3, Wf=3, 42);
+[W5, b5] = conv2d_init(256, 384, Hf=3, Wf=3, 42);
+[W6, b6] = affine_init(9216, 4096, 42);
+[W7, b7] = affine_init(4096, 4096, 42);
+[W8, b8] = affine_init(4096, K, 42);
+W8 = W8/sqrt(2);
+
+# Load the CuDNN libraries by calling a conv2d
+print("Eagerly loading cuDNN library");
+[outc1, Houtc1, Woutc1] = conv2d_forward(X[1:8,], W1, b1, C, Hin, Win, 11, 11, 1, 1, 2, 2);
+print(sum(outc1));
+
+print("Starting exploratory feature transfers");
+Y_pred = predict(X_test, C, Hin, Win, K, W1, b1, W2, b2, W3, b3, W4, b4,
+   W5, b5, W6, b6, W7, b7, W8, b8);
+write(Y_pred, $1, format="text");
+

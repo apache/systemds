@@ -21,6 +21,7 @@ package org.apache.sysds.runtime.instructions.cp;
 
 import java.util.ArrayList;
 
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.api.DMLScript;
@@ -28,6 +29,8 @@ import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
+import org.apache.sysds.runtime.lineage.LineageItem;
+import org.apache.sysds.runtime.lineage.LineageItemUtils;
 import org.apache.sysds.runtime.matrix.data.DnnParameters;
 import org.apache.sysds.runtime.matrix.data.LibMatrixDNN;
 import org.apache.sysds.runtime.matrix.data.LibMatrixDNN.PoolingType;
@@ -598,5 +601,24 @@ public class DnnCPInstruction extends UnaryCPInstruction {
 				warnedUnderUtilitization = true;
 			}
 		}
+	}
+
+	@Override
+	public Pair<String, LineageItem> getLineageItem(ExecutionContext ec) {
+		ArrayList<CPOperand> inputs = new ArrayList<>();
+		inputs.add(input1);
+		inputs.add(_in2);
+		inputs.add(_in3);
+		inputs.add(_in4);
+		inputs.add(_in5);
+		inputs.add(_in6);
+		inputs.add(_in7);
+		inputs.add(_in8);
+		inputs.addAll(_input_shape);
+		inputs.addAll(_filter_shape);
+		inputs.addAll(_stride);
+		inputs.addAll(_padding);
+		return Pair.of(output.getName(),
+			new LineageItem(getOpcode(), LineageItemUtils.getLineage(ec, inputs.toArray(new CPOperand[0]))));
 	}
 }

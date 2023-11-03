@@ -345,6 +345,7 @@ public class GPUMemoryManager {
 					// Else, deallocate another free pointer. We are calling pollFistFreeNotExact with
 					// the same size (not with freedSize-size) to reduce potentials for creating holes
 				}
+				// FIXME: performance improvement. Slow due to looping and holes.
 			}
 			if (DMLScript.STATISTICS)
 				LineageCacheStatistics.incrementEvictTimeGpu(System.nanoTime() - t0);

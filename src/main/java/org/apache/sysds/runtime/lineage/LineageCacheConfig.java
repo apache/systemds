@@ -55,7 +55,8 @@ public class LineageCacheConfig
 		"^", "uamax", "uark+", "uacmean", "eigen","ctable", "ctableexpand", "replace",
 		"^2", "*2", "uack+", "tak+*", "uacsqk+", "uark+", "n+", "uarimax", "qsort",
 		"qpick", "transformapply", "uarmax", "n+", "-*", "castdtm", "lowertri", "1-*",
-		"prefetch", "mapmm", "contains", "mmchain", "mapmmchain", "+*", "==", "rmempty"
+		"prefetch", "mapmm", "contains", "mmchain", "mapmmchain", "+*", "==", "rmempty",
+		"conv2d_bias_add", "relu_maxpooling", "maxpooling", "softmax"
 		//TODO: Reuse everything.
 	};
 
@@ -72,6 +73,10 @@ public class LineageCacheConfig
 	// Relatively inexpensive instructions.
 	private static final String[] PERSIST_OPCODES2 = new String[] {
 		"mapmm", "isna", "leftIndex"
+	};
+
+	private static final String[] GPU_OPCODE_HEAVY = new String[] {
+		"conv2d_bias_add", "relu_maxpooling", "maxpooling"	 //DNN OPs
 	};
 
 	private static String[] REUSE_OPCODES  = new String[] {};
@@ -108,6 +113,14 @@ public class LineageCacheConfig
 	private static boolean _onlyEstimate = false;
 	private static boolean _reuseLineageTraces = true;
 	private static boolean DELAYED_CACHING = false;
+
+	// Delayed caching may lead to deletion and cache misses in GPU.
+	// Once the GPU memory is full, the non-reusable intermediates deallocates/deletes the cached
+	// entries from the free lists, leading to cache misses and high eviction overhead. Eager caching,
+	// however places every intermediate in a free list, increasing recycling and reducing deletion.
+	// Note, delayed caching helps in reducing lineage caching/probing overhead for use cases with
+	// no reusable instructions, but is anti-productive for use cases with repeating patterns (eg. scoring).
+	private static boolean DELAYED_CACHING_GPU = true;
 
 	//-------------DISK SPILLING RELATED CONFIGURATIONS--------------//
 
@@ -316,8 +329,14 @@ public class LineageCacheConfig
 		return ArrayUtils.contains(PERSIST_OPCODES1, opcode);
 	}
 
+	protected static boolean isComputeGPUOps(String opcode) {
+		return ArrayUtils.contains(GPU_OPCODE_HEAVY, opcode);
+	}
+
 	protected static int getComputeGroup(String opcode) {
-		return ArrayUtils.contains(PERSIST_OPCODES1, opcode) ? 2 : 1;
+		boolean heavy_hitter = ArrayUtils.contains(PERSIST_OPCODES1, opcode)
+			|| ArrayUtils.contains(GPU_OPCODE_HEAVY, opcode);
+		return heavy_hitter ? 2 : 1;
 	}
 
 
@@ -383,6 +402,10 @@ public class LineageCacheConfig
 
 	public static boolean isDelayedCaching() {
 		return DELAYED_CACHING;
+	}
+
+	public static boolean isDelayedCachingGPU() {
+		return DELAYED_CACHING_GPU;
 	}
 
 	public static void setCachePolicy(LineageCachePolicy policy) {

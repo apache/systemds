@@ -1,0 +1,262 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+/*
+ * A graph convolutional layer as presented in 'Semi-Supervised Classification with Graph Convolutional Networks'
+ * by Kipf and Welling
+ */
+
+forward = function(matrix[double] X, matrix[double] edge_index, matrix[double] edge_weight,
+                   matrix[double] W, matrix[double] b, boolean add_self_loops)
+    return (matrix[double] X_out)
+{
+    /* Forward pass of the Graph Convolutional Layer. It transforms the node feature matrix
+     * with linear weights W and then executes the message passing according to the edges.
+     * The message passing is normalized by spectral normalization, i.e. for edge (v, w) the
+     * normalization factor is 1 / sqrt(degree(v) * degree(w)).
+     *
+     * n: number of nodes.
+     * m: number of edges.
+     * f_in: number of input features per node.
+     * f_out: number of output features per node.
+     *
+     * Inputs:
+     * - X: node features, matrix of shape (n, f_in).
+     * - edge_index: directed edge list specifying the out-node (first column) and the
+     *               in-node (second column) of each edge, matrix of shape (m, 2).
+     * - edge_weight: weights of edges in edge_index, matrix of shape (m, 1).
+     *                This should be all 1s if there should be no edge weights.
+     * - W: linear weights, matrix of shape (f_in, f_out).
+     * - b: bias, matrix of shape (1, f_out).
+     * - add_self_loops: boolean that specifies whether self loops should be added.
+     *                   If TRUE new self loops will be added only for nodes that do
+     *                   not yet have a self loop. Added self loops will have weight 1.
+     *
+     * Outputs:
+     * - X_out: convolved and transformed node features, matrix of shape (n, f_out).
+     */
+    n = nrow(X)
+    m = nrow(edge_index)
+
+    # transform
+    X_hat = X %*% W
+
+    # count degrees for normalization
+    if (add_self_loops)
+    {
+        # add self loops and count degrees
+        D_in = matrix(1, n, 1)
+
+        loop_index = seq(1,n,1) %*% matrix(1, rows=1, cols=2)
+        loop_weight = matrix(1, rows=n, cols=1)
+
+        for (j in 1:m)
+        {
+            # count degree according to the weight for correct normalization
+            D_in[as.integer(as.scalar(edge_index[j, 2])), 1] += edge_weight[j, 1]
+
+            # for self loops
+            if (as.scalar(edge_index[j, 1]) == as.scalar(edge_index[j, 2]))
+            {
+                if (as.scalar(loop_weight[as.integer(as.scalar(edge_index[j, 1]))]) != 0.0)
+                {
+                    loop_weight[as.integer(as.scalar(edge_index[j, 1]))] = 0
+                    # remove 1 degree again that was added by initializing D_in with 1
+                    D_in[as.integer(as.scalar(edge_index[j, 2])), 1] += -1.0
+                }
+            }
+        }
+
+        edge_index = rbind(edge_index, loop_index)
+        edge_weight = rbind(edge_weight, loop_weight)
+    }
+    else
+    {
+        # count degrees
+        D_in = matrix(0, n, 1)
+        for (j in 1:m)
+        {
+            # count degree according to the weight for correct normalization
+            node_in = as.integer(as.scalar(edge_index[j, 2]))
+            D_in[node_in, 1] += edge_weight[j, 1]
+        }
+    }
+
+
+    # message passing/convolve with A_hat * X_hat (A_hat: normalized adjacency matrix weights)
+    X_out = matrix(0, rows=nrow(X_hat), cols=ncol(X_hat))
+    m = nrow(edge_index)
+    for (j in 1:m)
+    {
+        # doing: edge_weight[j] *= 1/sqrt(degree(node_in)*degree(node_out))
+        if (as.scalar(D_in[as.integer(as.scalar(edge_index[j, 2])), 1] *
+            D_in[as.integer(as.scalar(edge_index[j, 1])), 1]) != 0)
+        {
+            edge_weight[j, 1] = edge_weight[j, 1] * (1 / sqrt(D_in[as.integer(as.scalar(edge_index[j, 2])), 1]*
+                                                              D_in[as.integer(as.scalar(edge_index[j, 1])), 1]))
+        }
+        else
+        {
+            edge_weight[j, 1] = 0.0
+        }
+        X_out[as.integer(as.scalar(edge_index[j, 2]))] += as.scalar(edge_weight[j, 1]) * X_hat[as.integer(as.scalar(edge_index[j, 1]))]
+    }
+
+    # apply bias
+    X_out += b
+}
+
+backward = function(matrix[double] dOut, matrix[double] X, matrix[double] edge_index,
+                    matrix[double] edge_weight, matrix[double] W, matrix[double] b,
+                    boolean add_self_loops)
+    return (matrix[double] dX, matrix[double] dW, matrix[double] db)
+{
+    /* Backward pass of the Graph Convolutional Layer. It computes the gradients of the
+     * input feature matrix, the weights and the bias, given the gradient of the output.
+     * The message passing is normalized by spectral normalization like the forward pass,
+     * i.e. for edge (v, w) the normalization factor is 1 / sqrt(degree(v) * degree(w)).
+     *
+     * n: number of nodes.
+     * m: number of edges.
+     * f_in: number of input features per node.
+     * f_out: number of output features per node.
+     *
+     * Inputs:
+     * - dOut: partial derivative of the loss w.r.t. the output of this layer,
+     *         matrix of shape (n, f_out).
+     * - X: node features, matrix of shape (n, f_in).
+     * - edge_index: directed edge list specifying the out-node (first column) and the
+     *               in-node (second column) of each edge, matrix of shape (m, 2).
+     * - edge_weight: weights of edges in edge_index, matrix of shape (m, 1).
+     *                This should be all 1s if there should be no edge weights.
+     * - W: linear weights, matrix of shape (f_in, f_out).
+     * - b: bias, matrix of shape (1, f_out).
+     * - add_self_loops: boolean that specifies whether self loops should be added.
+     *                   If TRUE new self loops will be added only for nodes that do
+     *                   not yet have a self loop. Added self loops will have weight 1.
+     *
+     * Outputs:
+     * - dX: gradient of the input node features i.e. the partial derivative of the loss
+             w.r.t. the input feature matrix X, matrix of shape (n, f_in).
+     * - dW: gradient of the linear weights i.e. the partial derivative of the loss w.r.t.
+     *       the linear weights W, matrix of shape (f_in, f_out).
+     * - db: gradient of the bias i.e. the partial derivative of the loss w.r.t. the bias b,
+     *       matrix of shape (1, f_out).
+     */
+    n = nrow(X)
+    m = nrow(edge_index)
+
+    # count degrees for normalization
+    if (add_self_loops)
+    {
+        # add self loops and count degrees
+        D_in = matrix(1, n, 1)
+
+        loop_index = seq(1,n,1) %*% matrix(1, rows=1, cols=2)
+        loop_weight = matrix(1, rows=n, cols=1)
+
+        for (j in 1:m)
+        {
+            # count degree according to the weight for correct normalization
+            D_in[as.integer(as.scalar(edge_index[j, 2])), 1] += edge_weight[j, 1]
+
+            # for self loops
+            if (as.scalar(edge_index[j, 1]) == as.scalar(edge_index[j, 2]))
+            {
+                if (as.scalar(loop_weight[as.integer(as.scalar(edge_index[j, 1]))]) != 0.0)
+                {
+                    loop_weight[as.integer(as.scalar(edge_index[j, 1]))] = 0
+                    # remove 1 degree again that was added by initializing D_in with 1
+                    D_in[as.integer(as.scalar(edge_index[j, 2])), 1] += -1.0
+                }
+            }
+        }
+
+        edge_index = rbind(edge_index, loop_index)
+        edge_weight = rbind(edge_weight, loop_weight)
+    }
+    else
+    {
+        # count degrees
+        D_in = matrix(0, n, 1)
+        for (j in 1:m)
+        {
+            # count degree according to the weight for correct normalization
+            node_in = as.integer(as.scalar(edge_index[j, 2]))
+            D_in[node_in, 1] += edge_weight[j, 1]
+        }
+    }
+
+    # message passing/convolve dOut with reversed edges to compute A_hat^T * dOut
+    dOut_agg_rev = matrix(0, rows=nrow(dOut), cols=ncol(dOut))
+    m = nrow(edge_index)
+    for (j in 1:m)
+    {
+        # doing: edge_weight[j] *= 1/sqrt(degree(node_in)*degree(node_out))
+        if (as.scalar(D_in[as.integer(as.scalar(edge_index[j, 2])), 1] *
+            D_in[as.integer(as.scalar(edge_index[j, 1])), 1]) != 0)
+        {
+            edge_weight[j, 1] = edge_weight[j, 1] * (1 / sqrt(D_in[as.integer(as.scalar(edge_index[j, 2])), 1]*
+                                                              D_in[as.integer(as.scalar(edge_index[j, 1])), 1]))
+        }
+        else
+        {
+            edge_weight[j, 1] = 0.0
+        }
+        dOut_agg_rev[as.integer(as.scalar(edge_index[j, 1]))] += as.scalar(edge_weight[j, 1]) * dOut[as.integer(as.scalar(edge_index[j, 2]))]
+    }
+
+    # calculate gradient w.r.t. X (Formula: A_hat^T * dOut * W^T)
+    dX = dOut_agg_rev %*% t(W)
+
+    # calculate gradient w.r.t. W (Formula: X^T * A_hat^T * dOut)
+    dW = t(X) %*% dOut_agg_rev
+
+    # calculate gradient w.r.t. b (Formula: sum_of_columns(dOut))
+    db = colSums(dOut)
+}
+
+init = function(int f_in, int f_out, int seed = -1 )
+    return (matrix[double] W, matrix[double] b) {
+  /*
+   * Initialize the parameters of this layer.
+   *
+   * Note: This is just a convenience function, and parameters
+   * may be initialized manually if needed.
+   *
+   * We use the heuristic by He et al., which limits the magnification
+   * of inputs/gradients during forward/backward passes by scaling
+   * unit-Gaussian weights by a factor of sqrt(2/n), under the
+   * assumption of relu neurons.
+   *  - http://arxiv.org/abs/1502.01852
+   *
+   * Inputs:
+   *  - f_in: Dimensionality of the input features (number of in-features per node).
+   *  - f_out: Dimensionality of the output features (number of out-features per node).
+   *  - seed: The seed to initialize the weights
+   *
+   * Outputs:
+   *  - W: Weights, of shape (D, M).
+   *  - b: Biases, of shape (1, M).
+   */
+  W = rand(rows=f_in, cols=f_out, pdf="normal", seed=seed) * sqrt(2.0/f_in)
+  b = matrix(0, rows=1, cols=f_out)
+}

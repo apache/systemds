@@ -168,8 +168,7 @@ basic_block_forward = function(matrix[double] X, list[unknown] weights,
     }
 }
 
-/*
-reslayer_forward = function(matrix[double] X, int Hin, int Win, int blocks,
+basic_reslayer_forward = function(matrix[double] X, int Hin, int Win, int blocks,
                             int strideh, int stridew, int C_in, int C_base,
                             list[unknown] blocks_weights, string mode,
                             list[unknown] ema_means_vars)
@@ -191,6 +190,7 @@ reslayer_forward = function(matrix[double] X, int Hin, int Win, int blocks,
      * - blocks_weights: List of weights of each block.
      *     -> i: List of weights of block i with the content
      *           defined in the docs of basic_block_forward().
+     *     -> length == blocks
      * - mode: 'train' or 'test' to indicate if the model is currently
      *     being trained or tested for badge normalization layers.
      *     See badge_norm2d.dml docs for more info.
@@ -198,6 +198,7 @@ reslayer_forward = function(matrix[double] X, int Hin, int Win, int blocks,
      *     and variance for badge normalization layers of each block.
      *     -> i: List of EMAs of block i with the content defined
      *           in the docs of basic_block_forward().
+     *     -> length == blocks
      */
     # default values
     mu_bn = 0.1
@@ -211,10 +212,15 @@ reslayer_forward = function(matrix[double] X, int Hin, int Win, int blocks,
 
     # other block
     for (i in 2:blocks) {
-
+        current_weights = as.list(blocks_weights[i])
+        current_emas = as.list(ema_means_vars[i])
+        [out, Hout, Wout, current_emas_upd] = basic_block_forward(X=out,
+                        weights=current_weights, C_in=C_base, C_base=C_base,
+                        Hin=Hout, Win=Wout, strideh=1, stridew=1, mode=mode,
+                        ema_means_vars=current_emas)
+        ema_means_vars_upd = append(ema_means_vars_upd, current_emas_upd)
     }
 }
-*/
 
 resnet18_forward = function(matrix[double] X, int Hin, int Win,
                             list[unknown] model, string mode,

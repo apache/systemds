@@ -22,6 +22,7 @@
 source("scripts/nn/layers/batch_norm2d_old.dml") as bn2d
 source("scripts/nn/layers/conv2d_builtin.dml") as conv2d
 source("scripts/nn/layers/relu.dml") as relu
+source("scripts/nn/layers/max_pool2d_builtin.dml") as mp2d
 
 conv3x3_forward = function(matrix[double] X, matrix[double] filter,
                            int C_in, int C_out, int Hin, int Win,
@@ -54,7 +55,7 @@ basic_block_forward = function(matrix[double] X, list[unknown] weights,
                              int strideh, int stridew, string mode,
                              list[unknown] ema_means_vars)
     return (matrix[double] out, int Hout, int Wout,
-            list[unknown] ema_means_vars) {
+            list[unknown] ema_means_vars_upd) {
     /*
      * Computes the forward pass for a basic residual block.
      * This basic residual block (with 2 3x3 conv layers of
@@ -63,17 +64,18 @@ basic_block_forward = function(matrix[double] X, list[unknown] weights,
      *
      * Inputs:
      * - X: Inputs, of shape (N, C_in*Hin*Win).
-     * - weights: list of weights for all layers of block.
-     *   -> 1: Weight of conv 1, of shape (C_base, C_in*3*3).
-     *   -> 2: Gamma of batch norm 1, of shape (C_base, 1).
-     *   -> 3: Beta of batch norm 1, of shape (C_base, 1).
-     *   -> 4: Weight of conv 2, of shape (C_base, C_base*3*3).
-     *   -> 5: Gamma of batch norm 2, of shape (C_base, 1).
-     *   -> 6: Beta of batch norm 2, of shape (C_base, 1).
+     * - weights: list of weights for all layers of res block
+     *     with the following order/content:
+     *   -> 1: Weights of conv 1, of shape (C_base, C_in*3*3).
+     *   -> 2: Weights of batch norm 1, of shape (C_base, 1).
+     *   -> 3: Bias of batch norm 1, of shape (C_base, 1).
+     *   -> 4: Weights of conv 2, of shape (C_base, C_base*3*3).
+     *   -> 5: Weights of batch norm 2, of shape (C_base, 1).
+     *   -> 6: Bias of batch norm 2, of shape (C_base, 1).
      *   If the block should downsample X:
-     *   -> 7: Weight of downsample conv, of shape (C_base, C_in*3*3).
-     *   -> 8: Gamma of downsample batch norm, of shape (C_base, 1).
-     *   -> 9: Beta of downsample batch norm, of shape (C_base, 1).
+     *   -> 7: Weights of downsample conv, of shape (C_base, C_in*3*3).
+     *   -> 8: Weights of downsample batch norm, of shape (C_base, 1).
+     *   -> 9: Bias of downsample batch norm, of shape (C_base, 1).
      * - C_in: Number of input channels.
      * - C_base: Number of base channels for this block.
      * - Hin: Input height.
@@ -97,6 +99,8 @@ basic_block_forward = function(matrix[double] X, list[unknown] weights,
      * - out: Output, of shape (N, C_base*Hout*Wout).
      * - Hout: Output height.
      * - Wout: Output width.
+     * - ema_means_vars_upd: List of updated exponential moving averages
+     *     for mean and variance of badge normalization layers.
      */
     downsample = strideh > 1 | stridew > 1 | C_in != C_base
     # default values
@@ -157,9 +161,116 @@ basic_block_forward = function(matrix[double] X, list[unknown] weights,
 
     out = relu::forward(out + identity)
 
-    ema_means_vars = list(ema_mean_bn1, ema_var_bn1, ema_mean_bn2, ema_var_bn2)
+    ema_means_vars_upd = list(ema_mean_bn1, ema_var_bn1, ema_mean_bn2, ema_var_bn2)
     if (downsample) {
-        ema_means_vars = append(ema_means_vars, ema_mean_bn3)
-        ema_means_vars = append(ema_means_vars, ema_var_bn3)
+        ema_means_vars_upd = append(ema_means_vars, ema_mean_bn3)
+        ema_means_vars_upd = append(ema_means_vars, ema_var_bn3)
     }
+}
+
+resnet18_forward = function(matrix[double] X, int Hin, int Win,
+                            list[unknown] model, string mode,
+                            list[unknown] ema_means_vars)
+    return (matrix[double] out, list[unknown] ema_means_vars_upd) {
+    /*
+     * Forward pass of the ResNet 18 model as introduced in
+     * "Deep Residual Learning for Image Recognition" by
+     * Kaiming He et. al. and inspired by the PyTorch
+     * implementation.
+     *
+     * Inputs:
+     * - X: Inputs, of shape (N, C_in*Hin*Win).
+     *     C_in = 3 is expected.
+     * - Hin: Input height.
+     * - Win: Input width.
+     * - model: Weights and bias matrices of the model
+     *     with the following order/content:
+     *   -> 1: Weights of conv 1 7x7, of shape (64, 3*7*7)
+     *   -> 2: Weights of batch norm 1, of shape (64, 1).
+     *   -> 3: Bias of batch norm 1, of shape (64, 1).
+     *   -> 4: List of weights for first residual layer
+     *         with 64 base channels.
+     *   -> 5: List of weights for second residual layer
+     *         with 128 base channels.
+     *   -> 6: List of weights for third residual layer
+     *         with 256 base channels.
+     *   -> 7: List of weights for fourth residual layer
+     *         with 512 base channels.
+     *      List of residual layers 1, 2, 3 & 4 have
+     *      the content/order:
+     *      -> 1: List of weights for first residual
+     *            block.
+     *      -> 2: List of weights for second residual
+     *            block.
+     *         Each list of weights for a residual block
+     *         must follow the same order as defined in
+     *         the documentation of basic_block_forward().
+     *   -> 8: Weights of fully connected layer, of shape (512, 1000)
+     * - mode: 'train' or 'test' to indicate if the model is currently
+     *     being trained or tested for badge normalization layers.
+     *     See badge_norm2d.dml docs for more info.
+     * - ema_means_vars: List of exponential moving averages for mean
+     *     and variance for badge normalization layers.
+     *   -> 1: EMA for mean of badge norm 1, of shape (64, 1).
+     *   -> 2: EMA for variance of badge norm 1, of shape (64, 1).
+     *   -> 3: List of EMA means and vars for residual layer 1.
+     *   -> 4: List of EMA means and vars for residual layer 2.
+     *   -> 5: List of EMA means and vars for residual layer 3.
+     *   -> 6: List of EMA means and vars for residual layer 4.
+     *      Lists for EMAs of layer 1, 2, 3 & 4 must have the
+     *      following order:
+     *      -> 1: List of EMA means and vars for residual block 1.
+     *      -> 2: List of EMA means and vars for residual block 2.
+     *         Each list of EMAs for a residual block
+     *         must follow the same order as defined in
+     *         the documentation of basic_block_forward().
+     * - NOTICE: The lists of the first blocks for layer 2, 3 and 4
+     *           must include weights and EMAs for 1 extra conv layer
+     *           and a batch norm layer for the downsampling on the
+     *           identity path.
+     *
+     * Outputs:
+     * - out: Outputs, of shape (N, 1000)
+     * - ema_means_vars_upd: List of updated exponential moving averages
+     *     for mean and variance of badge normalization layers. It follows
+     *     the same exact structure as the input EMAs list.
+     */
+    # default values
+    mu_bn = 0.1
+    epsilon_bn = 1e-05
+
+    # extract model params
+    W_conv1 = model[1]
+    gamma_bn1 = model[2]; beta_bn1 = model[3]
+    weights_reslayer1 = model[4]
+    weights_reslayer2 = model[5]
+    weights_reslayer3 = model[6]
+    weights_reslayer4 = model[7]
+    W_fc = model[8]
+    ema_mean_bn1 = ema_means_vars[1]; ema_var_bn1 = ema_means_vars[2]
+    emas_reslayer1 = ema_mean_vars[3]
+    emas_reslayer2 = ema_mean_vars[4]
+    emas_reslayer3 = ema_mean_vars[5]
+    emas_reslayer4 = ema_mean_vars[6]
+
+    # Convolutional 7x7 layer
+    C = 64
+    b_conv1 = matrix(0, rows=C, cols=1)
+    [out, Hout, Wout] = conv2d::forward(X=X, W=W_conv1, b=b_conv1, C=C,
+                               Hin=Hin, Win=Win, Hf=7, Wf=7, strideh=2,
+                               stridew=2, padh=3, padw=3)
+    # Batch Normalization
+    [out, ema_mean_bn1, ema_var_bn1, c_mean, c_var] = bn2d::forward(X=out,
+                               gamma=gamma_bn1, beta=beta_bn1, C=C, Hin=Hout,
+                               Win=Wout, mode=mode, ema_mean=ema_mean_bn1,
+                               ema_var=ema_var_bn1, mu=mu_bn,
+                               epsilon=epsilon_bn)
+    # ReLU
+    out = relu::forward(X=out)
+    # Max Pooling 3x3
+    [out, Hout, Wout] = mp2d::forward(X=out, C=C, Hin=Hout, Win=Wout, Hf=3,
+                               Wf=3, strideh=2, stridew=2, padh=1, padw=1)
+
+
+
 }

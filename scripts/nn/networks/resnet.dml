@@ -23,6 +23,8 @@ source("scripts/nn/layers/batch_norm2d_old.dml") as bn2d
 source("scripts/nn/layers/conv2d_builtin.dml") as conv2d
 source("scripts/nn/layers/relu.dml") as relu
 source("scripts/nn/layers/max_pool2d_builtin.dml") as mp2d
+source("scripts/nn/layers/global_avg_pool2d.dml") as ap2d
+source("scripts/nn/layers/affine.dml") as fc
 
 conv3x3_forward = function(matrix[double] X, matrix[double] filter,
                            int C_in, int C_out, int Hin, int Win,
@@ -133,7 +135,7 @@ basic_block_forward = function(matrix[double] X, list[unknown] weights,
     # First convolutional layer
     [out, Hout, Wout] = conv3x3_forward(X, W_conv1, C_in, C_base, Hin, Win,
                                         strideh, stridew)
-    [out, ema_mean_bn1, ema_var_bn1, c_m, c_v] = bn2d::forward(out, gamma_bn1,
+    [out, ema_mean_bn1_upd, ema_var_bn1_upd, c_m, c_v] = bn2d::forward(out, gamma_bn1,
                                                  beta_bn1, C_base, Hout, Wout,
                                                  mode, ema_mean_bn1, ema_var_bn1,
                                                  mu_bn, epsilon_bn)
@@ -142,7 +144,7 @@ basic_block_forward = function(matrix[double] X, list[unknown] weights,
     # Second convolutional layer
     [out, Hout, Wout] = conv3x3_forward(out, W_conv2, C_base, C_base, Hout,
                                         Wout, 1, 1)
-    [out, ema_mean_bn2, ema_var_bn2, c_m, c_v] = bn2d::forward(out, gamma_bn2,
+    [out, ema_mean_bn2_upd, ema_var_bn2_upd, c_m, c_v] = bn2d::forward(out, gamma_bn2,
                                                  beta_bn2, C_base, Hout, Wout,
                                                  mode, ema_mean_bn2, ema_var_bn2,
                                                  mu_bn, epsilon_bn)
@@ -153,7 +155,7 @@ basic_block_forward = function(matrix[double] X, list[unknown] weights,
         # downsample input
         [identity, Hout, Wout] = conv1x1_forward(X, W_conv3, C_in, C_base,
                                                Hin, Win, strideh, stridew)
-        [identity, ema_mean_bn3, ema_var_bn3, c_m, c_v] = bn2d::forward(identity,
+        [identity, ema_mean_bn3_upd, ema_var_bn3_upd, c_m, c_v] = bn2d::forward(identity,
                                         gamma_bn3, beta_bn3, C_base, Hout, Wout,
                                         mode, ema_mean_bn3, ema_var_bn3, mu_bn,
                                         epsilon_bn)
@@ -161,10 +163,10 @@ basic_block_forward = function(matrix[double] X, list[unknown] weights,
 
     out = relu::forward(out + identity)
 
-    ema_means_vars_upd = list(ema_mean_bn1, ema_var_bn1, ema_mean_bn2, ema_var_bn2)
+    ema_means_vars_upd = list(ema_mean_bn1_upd, ema_var_bn1_upd, ema_mean_bn2_upd, ema_var_bn2_upd)
     if (downsample) {
-        ema_means_vars_upd = append(ema_means_vars, ema_mean_bn3)
-        ema_means_vars_upd = append(ema_means_vars, ema_var_bn3)
+        ema_means_vars_upd = append(ema_means_vars, ema_mean_bn3_upd)
+        ema_means_vars_upd = append(ema_means_vars, ema_var_bn3_upd)
     }
 }
 
@@ -260,6 +262,7 @@ resnet18_forward = function(matrix[double] X, int Hin, int Win,
      *         must follow the same order as defined in
      *         the documentation of basic_block_forward().
      *   -> 8: Weights of fully connected layer, of shape (512, 1000)
+     *   -> 9: Bias of fully connected layer, of shape (1, 1000)
      * - mode: 'train' or 'test' to indicate if the model is currently
      *     being trained or tested for badge normalization layers.
      *     See badge_norm2d.dml docs for more info.
@@ -301,6 +304,7 @@ resnet18_forward = function(matrix[double] X, int Hin, int Win,
     weights_reslayer3 = as.list(model[6])
     weights_reslayer4 = as.list(model[7])
     W_fc = as.matrix(model[8])
+    b_fc = as.matrix(model[9])
     ema_mean_bn1 = as.matrix(ema_means_vars[1]); ema_var_bn1 = as.matrix(ema_means_vars[2])
     emas_reslayer1 = as.list(ema_means_vars[3])
     emas_reslayer2 = as.list(ema_means_vars[4])
@@ -314,7 +318,7 @@ resnet18_forward = function(matrix[double] X, int Hin, int Win,
                                Hin=Hin, Win=Win, Hf=7, Wf=7, strideh=2,
                                stridew=2, padh=3, padw=3)
     # Batch Normalization
-    [out, ema_mean_bn1, ema_var_bn1, c_mean, c_var] = bn2d::forward(X=out,
+    [out, ema_mean_bn1_upd, ema_var_bn1_upd, c_mean, c_var] = bn2d::forward(X=out,
                                gamma=gamma_bn1, beta=beta_bn1, C=C, Hin=Hout,
                                Win=Wout, mode=mode, ema_mean=ema_mean_bn1,
                                ema_var=ema_var_bn1, mu=mu_bn,
@@ -325,5 +329,36 @@ resnet18_forward = function(matrix[double] X, int Hin, int Win,
     [out, Hout, Wout] = mp2d::forward(X=out, C=C, Hin=Hout, Win=Wout, Hf=3,
                                Wf=3, strideh=2, stridew=2, padh=1, padw=1)
 
-    ema_means_vars_upd = list(ema_mean_bn1, ema_var_bn1)
+    # residual layer 1
+    [out, Hout, Wout, emas1_upd] = basic_reslayer_forward(X=out, Hin=Hout,
+                               Win=Wout, blocks=2, strideh=1, stridew=1, C_in=C,
+                               C_base=64, blocks_weights=weights_reslayer1,
+                               mode=mode, ema_means_vars=emas_reslayer1)
+    C = 64
+    # residual layer 2
+    [out, Hout, Wout, emas2_upd] = basic_reslayer_forward(X=out, Hin=Hout,
+                               Win=Wout, blocks=2, strideh=2, stridew=2, C_in=C,
+                               C_base=128, blocks_weights=weights_reslayer2,
+                               mode=mode, ema_means_vars=emas_reslayer2)
+    C = 128
+    # residual layer 3
+    [out, Hout, Wout, emas3_upd] = basic_reslayer_forward(X=out, Hin=Hout,
+                               Win=Wout, blocks=2, strideh=2, stridew=2, C_in=C,
+                               C_base=256, blocks_weights=weights_reslayer3,
+                               mode=mode, ema_means_vars=emas_reslayer3)
+    C = 256
+    # residual layer 4
+    [out, Hout, Wout, emas4_upd] = basic_reslayer_forward(X=out, Hin=Hout,
+                               Win=Wout, blocks=2, strideh=2, stridew=2, C_in=C,
+                               C_base=512, blocks_weights=weights_reslayer4,
+                               mode=mode, ema_means_vars=emas_reslayer4)
+    C = 512
+
+    # Global Average Pooling
+    [out, Hout, Wout] = ap2d::forward(X=out, C=C, Hin=Hout, Win=Wout)
+    # Affine
+    out = fc::forward(X=out, W=W_fc, b=b_fc)
+
+    ema_means_vars_upd = list(ema_mean_bn1_upd, ema_var_bn1_upd,
+                              emas1_upd, emas2_upd, emas3_upd, emas4_upd)
 }

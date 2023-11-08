@@ -31,6 +31,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.stream.Collectors;
 
 import jcuda.Pointer;
+import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.instructions.gpu.context.GPUContext;
 import org.apache.sysds.runtime.matrix.data.LibMatrixCUDA;
@@ -127,6 +128,21 @@ public class LineageGPUCacheEviction
 		while (tmp != null) {
 			removeSingleEntry(cache, tmp);
 			tmp = tmp._nextEntry;
+		}
+	}
+
+	public static void removeAllEntries() {
+		List<Long> sizes = new ArrayList<>(freeQueues.keySet());
+		for (Long size : sizes) {
+			TreeSet<LineageCacheEntry> freeList = freeQueues.get(size);
+			LineageCacheEntry le = pollFirstFreeEntry(size);
+			while (le != null) {
+				// Free the pointer
+				_gpuContext.getMemoryManager().guardedCudaFree(le.getGPUPointer());
+				if (DMLScript.STATISTICS)
+					LineageCacheStatistics.incrementGpuDel();
+				le = pollFirstFreeEntry(size);
+			}
 		}
 	}
 

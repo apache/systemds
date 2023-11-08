@@ -56,7 +56,8 @@ public class LineageCacheConfig
 		"^2", "*2", "uack+", "tak+*", "uacsqk+", "uark+", "n+", "uarimax", "qsort",
 		"qpick", "transformapply", "uarmax", "n+", "-*", "castdtm", "lowertri", "1-*",
 		"prefetch", "mapmm", "contains", "mmchain", "mapmmchain", "+*", "==", "rmempty",
-		"conv2d_bias_add", "relu_maxpooling", "maxpooling", "softmax"
+		"conv2d_bias_add", "relu_maxpooling", "maxpooling", "batch_norm2d", "avgpooling",
+		"softmax"
 		//TODO: Reuse everything.
 	};
 
@@ -76,7 +77,7 @@ public class LineageCacheConfig
 	};
 
 	private static final String[] GPU_OPCODE_HEAVY = new String[] {
-		"conv2d_bias_add", "relu_maxpooling", "maxpooling"	 //DNN OPs
+		"conv2d_bias_add", "relu_maxpooling", "maxpooling", "batch_norm2d", "avgpooling"  //DNN OPs
 	};
 
 	private static String[] REUSE_OPCODES  = new String[] {};

@@ -189,6 +189,7 @@ public class LineageCache
 							return false;  //the executing thread removed this entry from cache
 						if (e.getCacheStatus() == LineageCacheStatus.TOCACHEGPU) {  //second hit
 							//Cannot reuse as already garbage collected
+							if (DMLScript.STATISTICS) LineageCacheStatistics.incrementDelHitsGpu(); //increase miss count
 							ec.replaceLineageItem(outName, e._key); //still reuse the lineage trace
 							return false;
 						}
@@ -322,6 +323,7 @@ public class LineageCache
 						case TOCACHEGPU:
 							//Cannot reuse as already garbage collected putValue method
 							// will save the pointer while caching the original instruction
+							if (DMLScript.STATISTICS) LineageCacheStatistics.incrementDelHitsGpu(); //increase miss count
 							return false;
 						case GPUCACHED:
 							//Increment the live count for this pointer

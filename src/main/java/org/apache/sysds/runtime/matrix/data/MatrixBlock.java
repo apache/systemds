@@ -1374,13 +1374,23 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 			final ExecutorService pool = CommonThreadPool.get(k);
 			try {
 				List<Future<Long>> f = new ArrayList<>();
-				final int bz = 1000;
-				for(int i = 0; i < rlen; i += bz) {
-					for(int ii = 0; ii < clen; ii += bz) {
+				if(denseBlock instanceof DenseBlockFP64DEDUP){
+					//do not uses 10kx10k Blocks because of duplicates
+					int bz = (int) Math.ceil(((double) rlen) / k*2);
+					for(int i = 0; i < rlen; i += bz){
 						final int j = i;
-						final int jj = ii;
-						f.add(pool.submit(() -> //
-						recomputeNonZeros(j, Math.min(j + bz, rlen) - 1, jj, Math.min(jj + bz, clen) - 1)));
+						f.add(pool.submit(() -> denseBlock.countNonZeros(j, Math.min(j + bz, rlen) -1, 0, clen -1)));
+					}
+				}
+				else {
+					final int bz = 1000;
+					for (int i = 0; i < rlen; i += bz) {
+						for (int ii = 0; ii < clen; ii += bz) {
+							final int j = i;
+							final int jj = ii;
+							f.add(pool.submit(() -> //
+									recomputeNonZeros(j, Math.min(j + bz, rlen) - 1, jj, Math.min(jj + bz, clen) - 1)));
+						}
 					}
 				}
 				long nnz = 0;
@@ -2694,8 +2704,8 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 	
 	public long estimateSizeInMemory() {
 		if (denseBlock instanceof DenseBlockFP64DEDUP) {
-			double size = getHeaderSize() + ((DenseBlockFP64DEDUP) denseBlock).estimateMemory();
-			return (long) Math.min(size, Long.MAX_VALUE);
+			long size = getHeaderSize() + ((DenseBlockFP64DEDUP) denseBlock).estimateMemory();
+			return Math.min(size, Long.MAX_VALUE);
 		}
 		return estimateSizeInMemory(rlen, clen, getSparsity());
 	}

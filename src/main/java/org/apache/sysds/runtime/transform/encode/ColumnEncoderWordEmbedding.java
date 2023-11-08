@@ -37,7 +37,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class ColumnEncoderWordEmbedding extends ColumnEncoder {
 	private MatrixBlock _wordEmbeddings;
 	private Map<Object, Long> _rcdMap;
-	private ConcurrentHashMap<String, double[]> _embMap;
+	private HashMap<String, double[]> _embMap;
 
 	public ColumnEncoderWordEmbedding() {
 		super(-1);
@@ -53,6 +53,10 @@ public class ColumnEncoderWordEmbedding extends ColumnEncoder {
 	@Override
 	public int getDomainSize(){
 		return _wordEmbeddings.getNumColumns();
+	}
+
+	public int getNrDistinctEmbeddings(){
+		return _wordEmbeddings.getNumRows();
 	}
 	protected ColumnEncoderWordEmbedding(int colID) {
 		super(colID);
@@ -78,50 +82,18 @@ public class ColumnEncoderWordEmbedding extends ColumnEncoder {
 			embedding[i] = this._wordEmbeddings.quickGetValue((int) r, _colID - 1 + i);
 		}
 		return embedding;
-
 	}
 
 	@Override
 	public void applyDense(CacheBlock<?> in, MatrixBlock out, int outputCol, int rowStart, int blk){
 		int rowEnd = getEndIndex(in.getNumRows(), rowStart, blk);
-		if(blk == -1){
-			HashMap<String, double[]> _embMapSingleThread = new HashMap<>();
-			for(int i=rowStart; i<rowEnd; i++){
-				String key = in.getString(i, _colID-1);
-				if(key == null || key.isEmpty()) {
-					continue;
-				}
-				double[] embedding = _embMapSingleThread.get(key);
-				if(embedding == null){
-					long code = lookupRCDMap(key);
-					if(code == -1L){
-						continue;
-					}
-					embedding = getEmbeddedingFromEmbeddingMatrix(code - 1);
-					_embMapSingleThread.put(key, embedding);
-				}
+		for(int i=rowStart; i<rowEnd; i++){
+			String key = in.getString(i, _colID-1);
+			if(key == null || key.isEmpty())
+				continue;
+			double[] embedding = _embMap.get(key);
+			if(embedding != null)
 				out.quickSetRow(i, embedding);
-			}
-		}
-		else{
-			//map each string to the corresponding embedding vector
-			for(int i=rowStart; i<rowEnd; i++){
-				String key = in.getString(i, _colID-1);
-				if(key == null || key.isEmpty()) {
-					//codes[i-startInd] = Double.NaN;
-					continue;
-				}
-				double[] embedding = _embMap.get(key);
-				if(embedding == null){
-					long code = lookupRCDMap(key);
-					if(code == -1L){
-						continue;
-					}
-					embedding = getEmbeddedingFromEmbeddingMatrix(code - 1);
-					_embMap.put(key, embedding);
-				}
-				out.quickSetRow(i, embedding);
-			}
 		}
 	}
 
@@ -157,7 +129,8 @@ public class ColumnEncoderWordEmbedding extends ColumnEncoder {
 	@Override
 	public void initEmbeddings(MatrixBlock embeddings){
 		this._wordEmbeddings = embeddings;
-		this._embMap = new ConcurrentHashMap<>();
+		this._embMap = new HashMap<>();
+		_rcdMap.forEach((word, index) -> _embMap.put((String) word, getEmbeddedingFromEmbeddingMatrix(index - 1)));
 	}
 
 	@Override
@@ -182,6 +155,6 @@ public class ColumnEncoderWordEmbedding extends ColumnEncoder {
 			_rcdMap.put(key, value);
 		}
 		_wordEmbeddings.readExternal(in);
-		this._embMap = new ConcurrentHashMap<>();
+		initEmbeddings(_wordEmbeddings);
 	}
 }

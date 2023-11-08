@@ -289,6 +289,8 @@ public class CPInstructionParser extends InstructionParser {
 		String2CPInstructionType.put( "bias_multiply"      , CPType.Dnn);
 		String2CPInstructionType.put( "batch_norm2d",           CPType.Dnn);
 		String2CPInstructionType.put( "batch_norm2d_backward",  CPType.Dnn);
+		String2CPInstructionType.put( "lstm"      , CPType.Dnn);
+		String2CPInstructionType.put( "lstm_backward"      , CPType.Dnn);
 		
 		// Quaternary instruction opcodes
 		String2CPInstructionType.put( "wsloss"  , CPType.Quaternary);

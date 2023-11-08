@@ -40,8 +40,7 @@ import java.util.Random;
 public class TransformFrameEncodeWordEmbedding2Test extends AutomatedTestBase
 {
 	private final static String TEST_NAME1 = "TransformFrameEncodeWordEmbeddings2";
-	private final static String TEST_NAME2a = "TransformFrameEncodeWordEmbeddings2MultiCols1";
-	private final static String TEST_NAME2b = "TransformFrameEncodeWordEmbeddings2MultiCols2";
+	private final static String TEST_NAME2 = "TransformFrameEncodeWordEmbeddings2Reshape";
 
 	private final static String TEST_DIR = "functions/transform/";
 	private final static String TEST_CLASS_DIR = TEST_DIR + TransformFrameEncodeWordEmbedding2Test.class.getSimpleName() + "/";
@@ -50,8 +49,7 @@ public class TransformFrameEncodeWordEmbedding2Test extends AutomatedTestBase
 	public void setUp() {
 		TestUtils.clearAssertionInformation();
 		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1));
-		addTestConfiguration(TEST_NAME2a, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2a));
-		addTestConfiguration(TEST_NAME2b, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2b));
+		addTestConfiguration(TEST_NAME2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2));
 	}
 
 	@Test
@@ -67,6 +65,11 @@ public class TransformFrameEncodeWordEmbedding2Test extends AutomatedTestBase
 	@Test
 	public void testTransformToWordEmbeddingsAuto() {
 		runTransformTest(TEST_NAME1, ExecMode.HYBRID);
+	}
+
+	@Test
+	public void testTransformToWordEmbeddingsWithReshape() {
+		runTransformTest(TEST_NAME2, ExecMode.SINGLE_NODE);
 	}
 
 	private void runTransformTest(String testname, ExecMode rt)
@@ -89,8 +92,10 @@ public class TransformFrameEncodeWordEmbedding2Test extends AutomatedTestBase
 			// Generate the dictionary by assigning unique ID to each distinct token
 			Map<String,Integer> map = writeDictToCsvFile(strings, baseDirectory + INPUT_DIR + "dict");
 
+			int multiplier = 320/32;
+			int reshape = 10/10;
 			// Create the dataset by repeating and shuffling the distinct tokens
-			List<String> stringsColumn = shuffleAndMultiplyStrings(strings, 320);
+			List<String> stringsColumn = shuffleAndMultiplyStrings(strings, multiplier);
 			writeStringsToCsvFile(stringsColumn, baseDirectory + INPUT_DIR + "data");
 
 			//run script
@@ -98,11 +103,12 @@ public class TransformFrameEncodeWordEmbedding2Test extends AutomatedTestBase
 			runTest(true, EXCEPTION_NOT_EXPECTED, null, -1);
 
 			// Manually derive the expected result
-			double[][] res_expected = manuallyDeriveWordEmbeddings(cols, a, map, stringsColumn);
+			//double[][] res_expected = manuallyDeriveWordEmbeddings(cols, a, map, stringsColumn);
+			double[][] res_expected = testname.equals(TEST_NAME2) ? manuallyDeriveWordEmbeddingsReshape(cols, a, map, stringsColumn, reshape) : manuallyDeriveWordEmbeddings(cols, a, map, stringsColumn);
 
 			// Compare results
 			HashMap<MatrixValue.CellIndex, Double> res_actual = readDMLMatrixFromOutputDir("result");
-			double[][] resultActualDouble = TestUtils.convertHashMapToDoubleArray(res_actual, rows*320, cols);
+			double[][] resultActualDouble = testname.equals(TEST_NAME2) ? TestUtils.convertHashMapToDoubleArray(res_actual, rows*multiplier / reshape, cols*reshape) : TestUtils.convertHashMapToDoubleArray(res_actual, rows*multiplier / 10, cols);
 			TestUtils.compareMatrices(res_expected, resultActualDouble, 1e-6);
 		}
 		catch(Exception ex) {
@@ -121,6 +127,16 @@ public class TransformFrameEncodeWordEmbedding2Test extends AutomatedTestBase
 			System.arraycopy(a[rowMapped], 0, res_expected[i], 0, cols);
 		}
 		return res_expected;
+	}
+
+	public static double[][] manuallyDeriveWordEmbeddingsReshape(int cols, double[][] a, Map<String, Integer> map, List<String> stringsColumn, int factor){
+		double[][] res_expected = new double[stringsColumn.size() / factor][cols*factor];
+		for (int i = 0; i < stringsColumn.size()/ factor; i++)
+			for (int j = 0; j < factor; j++) {
+				int rowMapped = map.get(stringsColumn.get(i*factor + j));
+				System.arraycopy(a[rowMapped], 0, res_expected[i], j*cols, cols);
+			}
+		return  res_expected;
 	}
 
 	public static List<String> shuffleAndMultiplyStrings(List<String> strings, int multiply){

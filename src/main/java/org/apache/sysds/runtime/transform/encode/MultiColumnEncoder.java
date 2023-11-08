@@ -356,15 +356,17 @@ public class MultiColumnEncoder implements Encoder {
 		boolean hasDC = false;
 		boolean hasWE = false;
 		int distinctWE = 0;
+		int sizeWE = 0;
 		for(ColumnEncoderComposite columnEncoder : _columnEncoders) {
 			hasDC |= columnEncoder.hasEncoder(ColumnEncoderDummycode.class);
 			for (ColumnEncoder enc : columnEncoder.getEncoders())
 				if(enc instanceof ColumnEncoderWordEmbedding){
 					hasWE = true;
 					distinctWE = ((ColumnEncoderWordEmbedding) enc).getNrDistinctEmbeddings();
+					sizeWE = ((ColumnEncoderWordEmbedding) enc).getDomainSize();
 				}
 		}
-		outputMatrixPreProcessing(out, in, hasDC, hasWE, distinctWE);
+		outputMatrixPreProcessing(out, in, hasDC, hasWE, distinctWE, sizeWE);
 		if(k > 1) {
 			if(!_partitionDone) //happens if this method is directly called
 				deriveNumRowPartitions(in, k);
@@ -553,7 +555,7 @@ public class MultiColumnEncoder implements Encoder {
 		return totMemOverhead;
 	}
 
-	private static void outputMatrixPreProcessing(MatrixBlock output, CacheBlock<?> input, boolean hasDC, boolean hasWE, int distinctWE) {
+	private static void outputMatrixPreProcessing(MatrixBlock output, CacheBlock<?> input, boolean hasDC, boolean hasWE, int distinctWE, int sizeWE) {
 		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 		if(output.isInSparseFormat()) {
 			if (MatrixBlock.DEFAULT_SPARSEBLOCK != SparseBlock.Type.CSR
@@ -601,8 +603,11 @@ public class MultiColumnEncoder implements Encoder {
 		else {
 			// Allocate dense block and set nnz to total #entries
 			output.allocateDenseBlock(true, hasWE);
-			if( hasWE)
-				((DenseBlockFP64DEDUP) output.getDenseBlock()).setDistinct(distinctWE);
+			if( hasWE){
+				DenseBlockFP64DEDUP dedup = ((DenseBlockFP64DEDUP) output.getDenseBlock());
+				dedup.setDistinct(distinctWE);
+				dedup.setEmbeddingSize(sizeWE);
+			}
 			//output.setAllNonZeros();
 		}
 
@@ -1159,17 +1164,19 @@ public class MultiColumnEncoder implements Encoder {
 			boolean hasUDF = _encoder.getColumnEncoders().stream().anyMatch(e -> e.hasEncoder(ColumnEncoderUDF.class));
 			boolean hasWE = false;
 			int distinctWE = 0;
+			int sizeWE = 0;
 			for (ColumnEncoder enc : _encoder.getEncoders())
 				if(enc instanceof ColumnEncoderWordEmbedding){
 					hasWE = true;
 					distinctWE = ((ColumnEncoderWordEmbedding) enc).getNrDistinctEmbeddings();
+					sizeWE = ((ColumnEncoderWordEmbedding) enc).getDomainSize();
 				}
 			int numCols = _encoder.getNumOutCols();
 			boolean hasDC = _encoder.getColumnEncoders(ColumnEncoderDummycode.class).size() > 0;
 			long estNNz = (long) _input.getNumRows() * (hasUDF ? numCols : _input.getNumColumns());
 			boolean sparse = MatrixBlock.evalSparseFormatInMemory(_input.getNumRows(), numCols, estNNz) && !hasUDF;
 			_output.reset(_input.getNumRows(), numCols, sparse, estNNz);
-			outputMatrixPreProcessing(_output, _input, hasDC, hasWE, distinctWE);
+			outputMatrixPreProcessing(_output, _input, hasDC, hasWE, distinctWE,sizeWE);
 			return null;
 		}
 

@@ -217,6 +217,8 @@ public class BuiltinFunctionExpression extends DataIdentifier {
 
 		case LSTM:
 		{
+			//TODO: LSTM on GPU has different INPUT/OUTPUT than LSTM on CPU
+
 			// X,  W, bias, out0, c0, return_sequences
 			checkNumParameters(6);
 			checkMatrixParam(getFirstExpr());
@@ -225,8 +227,8 @@ public class BuiltinFunctionExpression extends DataIdentifier {
 			checkMatrixParam(getFourthExpr());
 			checkMatrixParam(getFifthExpr());
 			
-			// setup output properties
-			if(getOutputs() == null || getOutputs().length != 2) {
+			// setup output properties, on CPU there are 3 more additionally outputs (cache_out, cache_c, cache_ifog)
+			if(getOutputs() == null || (getOutputs().length != 2 && getOutputs().length != 5)) {
 				int numOutputs = getOutputs() == null ? 0 : getOutputs().length;
 				raiseValidateError("The builtin function lstm has two outputs, but instead found: " + numOutputs, conditional);
 			}
@@ -244,7 +246,30 @@ public class BuiltinFunctionExpression extends DataIdentifier {
 			cy.setValueType(ValueType.FP64);
 			cy.setDimensions(getExpr(4).getOutput().getDim1(), getExpr(4).getOutput().getDim2());
 			cy.setBlocksize(getExpr(4).getOutput().getBlocksize());
-			
+
+			if(getOutputs().length == 5){
+				DataIdentifier cache_out = (DataIdentifier) getOutputs()[2];
+				DataIdentifier cache_c = (DataIdentifier) getOutputs()[3];
+				DataIdentifier cache_ifog = (DataIdentifier) getOutputs()[4];
+
+				// Output3 - cache_out: (T,N*M) T is unknown upfront
+				cache_out.setDataType(DataType.MATRIX);
+				cache_out.setValueType(ValueType.FP64);
+				cache_out.setDimensions(-1, -1);
+				cache_out.setBlocksize(getFirstExpr().getOutput().getBlocksize());
+
+				// Output4 - cache_c: (T,N*M)
+				cache_c.setDataType(DataType.MATRIX);
+				cache_c.setValueType(ValueType.FP64);
+				cache_out.setDimensions(-1, -1);
+				cache_out.setBlocksize(getFirstExpr().getOutput().getBlocksize());
+
+				// Output5 - cache_ifog: (T,N*M)
+				cache_ifog.setDataType(DataType.MATRIX);
+				cache_ifog.setValueType(ValueType.FP64);
+				cache_ifog.setDimensions(-1, -1);
+				cache_ifog.setBlocksize(getFirstExpr().getOutput().getBlocksize());
+			}
 			break;
 		}
 		case LSTM_BACKWARD:

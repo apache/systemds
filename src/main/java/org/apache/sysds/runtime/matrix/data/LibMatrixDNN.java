@@ -651,6 +651,37 @@ public class LibMatrixDNN {
 			params.output.setNonZeros(0);
 		}
 	}
+
+	public static void lstm(DnnParameters params){
+		long nnz;
+		if(LibMatrixDNNLSTM.checkLSTMInputForOptimisation(params)){
+			params.output.allocateDenseBlock();
+			params.output2.allocateDenseBlock();
+			params.output3.allocateDenseBlock();
+			params.output4.allocateDenseBlock();
+			params.output5.allocateDenseBlock();
+			nnz = execute(LibMatrixDNNLSTM.getLSTMWorkers(params), params);
+		}
+		else
+			nnz = LibMatrixDNNLSTM.lstmGeneric(params);
+		//post-processing: maintain nnz
+		params.output.setNonZeros(nnz);
+		params.output.examSparsity();
+	}
+
+	public static void lstmBackward(DnnParameters params) {
+		long nnz;
+		if(LibMatrixDNNLSTM.checkLSTMBackwardInputForOptimisation(params)){
+			//out.allocateDenseBlock();
+			//cout.allocateDenseBlock();
+			nnz = execute(LibMatrixDNNLSTM.getLSTMWorkers(params), params);
+		}
+		else
+			nnz = LibMatrixDNNLSTM.lstmBackwardGeneric(params);
+		//post-processing: maintain nnz
+		//out.setNonZeros(nnz);
+		//out.examSparsity();
+	}
 	
 	/**
 	 * Executes the tasks in parallel using java's ExecutorService.

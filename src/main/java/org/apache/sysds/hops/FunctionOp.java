@@ -349,9 +349,10 @@ public class FunctionOp extends Hop
 						&& OptimizerUtils.isSparkExecutionMode())) ? ExecType.SPARK : ExecType.CP);
 			}
 			else if(isBuiltinFunction && (getFunctionName().equalsIgnoreCase("lstm") || getFunctionName().equalsIgnoreCase("lstm_backward"))) {
-				if(!DMLScript.USE_ACCELERATOR)
-					throw new RuntimeException("The function " + getFunctionName() + " is only supported on GPU.");
-				_etype = ExecType.GPU;
+//				if(!DMLScript.USE_ACCELERATOR)
+//					throw new RuntimeException("The function " + getFunctionName() + " is only supported on GPU.");
+//				_etype = ExecType.GPU;
+				_etype = DMLScript.USE_ACCELERATOR ? ExecType.GPU : ExecType.CP;
 			}
 			else if(isBuiltinFunction && (getFunctionName().equalsIgnoreCase("batch_norm2d") || getFunctionName().equalsIgnoreCase("batch_norm2d_backward"))) {
 				_etype = DMLScript.USE_ACCELERATOR ? ExecType.GPU : ExecType.CP;

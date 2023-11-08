@@ -440,7 +440,23 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 			denseBlock = DenseBlockFactory.createDenseBlock(rlen, clen, containsDuplicates);
 			return true;
 		}
-		else if( containsDuplicates && !(denseBlock instanceof DenseBlockFP64DEDUP)) {
+		else if(denseBlock instanceof DenseBlockFP64DEDUP){
+			if( containsDuplicates ){
+				//capacity() of DedupDenseBlock returns size of internal pointer array
+				//therefore: allocation of DedupDenseBlock makes just sense if each row contains a single deduplicated embedding
+				//otherwise info about the nr of embeddings need to be known upfront
+				//then the cond becomes: if( denseBlock.capacity() < rlen*nr_of_embeddings_per_row )
+				if( denseBlock.capacity() < rlen )
+					denseBlock.reset(rlen, clen);
+				else
+					return false;
+			} else
+				denseBlock = DenseBlockFactory.createDenseBlock(rlen, clen, false);
+			return true;
+		}
+		else if( containsDuplicates ) {
+			//info: currently dedup allocation assumes, that each row contains a single embedding
+			//therefore clen == embedding_size
 			denseBlock = DenseBlockFactory.createDenseBlock(rlen, clen, true);
 			return true;
 		}
@@ -589,7 +605,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 	/**
 	 * Get if this MatrixBlock is an empty block. The call can potentially tricker a recomputation of non zeros if the
 	 * non-zero count is unknown.
-	 * 
+	 *
 	 * @param safe True if we want to ensure the count non zeros if the nnz is unknown.
 	 * @return If the block is empty.
 	 */
@@ -725,7 +741,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 			throw new NotImplementedException();
 		else{
 			//allocate and init dense block (w/o overwriting nnz)
-			allocateDenseBlock(false);
+			allocateDenseBlock(false,denseBlock instanceof DenseBlockFP64DEDUP);
 			nonZeros += UtilFunctions.computeNnz(values, 0, values.length) - denseBlock.countNonZeros(r);
 			denseBlock.set(r, values);
 		}
@@ -764,14 +780,14 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 	}
 	
 	public List<Integer> containsVector(MatrixBlock pattern, boolean earlyAbort) {
-		//note: in contract to containsValue, we return the row index where a match 
+		//note: in contract to containsValue, we return the row index where a match
 		//was found in order to reuse these block operations for Spark ops as well
-		
+
 		//basic error handling
 		if( clen != pattern.clen || pattern.rlen != 1 )
 			throw new DMLRuntimeException("contains only supports pattern row vectors of matching "
 				+ "number of columns: " + getDataCharacteristics()+" vs "+pattern.getDataCharacteristics());
-		
+
 		//make a pass over the data to determine if it includes the
 		//pattern, with early abort as soon as the pattern is found
 		double[] dpattern = DataConverter.convertToDoubleVector(pattern, false, false);
@@ -779,7 +795,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 			getSparseBlock().contains(dpattern, earlyAbort) :
 			getDenseBlock().contains(dpattern, earlyAbort);
 	}
-	
+
 	/**
 	 * <p>Append value is only used when values are appended at the end of each row for the sparse representation</p>
 	 * 
@@ -1231,16 +1247,16 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 	public final void examSparsity() {
 		examSparsity(true, 1);
 	}
-	
+
 	/**
 	 * Evaluates if this matrix block should be in sparse format in
 	 * memory. Depending on the current representation, the state of the
-	 * matrix block is changed to the right representation if necessary. 
-	 * Note that this consumes for the time of execution memory for both 
+	 * matrix block is changed to the right representation if necessary.
+	 * Note that this consumes for the time of execution memory for both
 	 * representations.
-	 * 
+	 *
 	 * Allowing CSR format is default for this operation.
-	 * 
+	 *
 	 * @param k parallelization degree
 	 */
 	public final void examSparsity(int k ) {
@@ -1263,10 +1279,10 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 	/**
 	 * Evaluates if this matrix block should be in sparse format in
 	 * memory. Depending on the current representation, the state of the
-	 * matrix block is changed to the right representation if necessary. 
-	 * Note that this consumes for the time of execution memory for both 
+	 * matrix block is changed to the right representation if necessary.
+	 * Note that this consumes for the time of execution memory for both
 	 * representations.
-	 * 
+	 *
 	 * @param allowCSR allow CSR format on dense to sparse conversion
 	 * @param k parallelization degree
 	 */
@@ -1380,7 +1396,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 			nonZeros = denseBlock.countNonZeros();
 		else // both blocks not allocated.
 			nonZeros = 0;
-		
+
 		return nonZeros;
 	}
 
@@ -1403,7 +1419,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 					int bz = (int) Math.ceil(((double) rlen) / k*2);
 					for(int i = 0; i < rlen; i += bz) {
 						final int j = i;
-						f.add(pool.submit(() -> 
+						f.add(pool.submit(() ->
 							denseBlock.countNonZeros(j, Math.min(j + bz, rlen) -1, 0, clen -1)));
 					}
 				}
@@ -1434,7 +1450,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 		}
 		else{
 			nonZeros = 0;
-		} 
+		}
 		return nonZeros;
 	}
 	
@@ -4678,7 +4694,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 		}
 		return (MatrixBlock)result;
 	}
-	
+
 	@Override
 	public MatrixBlock aggregateUnaryOperations(AggregateUnaryOperator op, MatrixValue result,
 			int blen, MatrixIndexes indexesIn, boolean inCP)  {

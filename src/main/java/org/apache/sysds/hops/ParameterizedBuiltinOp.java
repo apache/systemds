@@ -723,7 +723,7 @@ public class ParameterizedBuiltinOp extends MultiThreadedHop {
 		}
 		super.computeMemEstimate(memo);
 	}
-	
+
 	@Override 
 	public boolean allowsAllExecTypes() {
 		return false;

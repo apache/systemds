@@ -1888,7 +1888,7 @@ public class LibMatrixAgg {
 	 */
 	private static void d_uakp( DenseBlock a, DenseBlock c, int n, KahanObject kbuff, KahanPlus kplus, int rl, int ru ) {
 		if(a instanceof DenseBlockFP64DEDUP)
-			uakpDedup(a, c, n, kbuff, kplus, rl, ru);
+			uakpDedup((DenseBlockFP64DEDUP) a, c, n, kbuff, kplus, rl, ru);
 		else {
 			final int bil = a.index(rl);
 			final int biu = a.index(ru - 1);
@@ -1929,7 +1929,7 @@ public class LibMatrixAgg {
 	private static void d_uarkp( DenseBlock a, DenseBlock c, int n, KahanObject kbuff, KahanPlus kplus, int rl, int ru ) 
 	{
 		if(a instanceof DenseBlockFP64DEDUP)
-			uarkpDedup(a, c, n, kbuff, kplus, rl, ru);
+			uarkpDedup((DenseBlockFP64DEDUP) a, c, n, kbuff, kplus, rl, ru);
 		else {
 			for (int i = rl; i < ru; i++) {
 				kbuff.set(0, 0); //reset buffer
@@ -1963,7 +1963,7 @@ public class LibMatrixAgg {
 	 */
 	private static void d_uackp( DenseBlock a, DenseBlock c, int n, KahanObject kbuff, KahanPlus kplus, int rl, int ru ) {
 		if(a instanceof DenseBlockFP64DEDUP)
-			uackpDedup(a, c, n, kbuff, kplus, rl, ru);
+			uackpDedup((DenseBlockFP64DEDUP) a, c, n, kbuff, kplus, rl, ru);
 		else {
 			for( int i=rl; i<ru; i++ )
 				sumAgg( a.values(i), c, a.pos(i), n, kbuff, kplus );
@@ -3628,10 +3628,15 @@ public class LibMatrixAgg {
 	/////////////////////////////////////////////////////
 
 
-	private static void uakpDedup (DenseBlock a, DenseBlock c, int n, KahanObject kbuff, KahanPlus kplus, int rl, int ru) {
+	private static void uakpDedup (DenseBlockFP64DEDUP a, DenseBlock c, int n, KahanObject kbuff, KahanPlus kplus, int rl, int ru) {
 		HashMap<double[], Integer> counts = new HashMap<>();
+		if(a.getNrEmbsPerRow() != 1){
+			//TODO: currently impossible case, since Dedup reshape is not supported yet, once it is, this method needs
+			// to be implemented
+			throw new NotImplementedException("Check TODO");
+		}
 		for(int i = rl; i < ru; i++) {
-			double[] row = a.values(i);
+			double[] row = a.getDedupDirectly(i);
 			Integer count = counts.getOrDefault(row, 0);
 			count += 1;
 			counts.put(row, count);
@@ -3643,14 +3648,18 @@ public class LibMatrixAgg {
 		});
 	}
 
-	private static void uarkpDedup( DenseBlock a, DenseBlock c, int n, KahanObject kbuff, KahanPlus kplus, int rl, int ru ) {
+	private static void uarkpDedup( DenseBlockFP64DEDUP a, DenseBlock c, int n, KahanObject kbuff, KahanPlus kplus, int rl, int ru ) {
 		HashMap<double[], double[]> cache = new HashMap<>();
+		if(a.getNrEmbsPerRow() != 1){
+			//TODO: currently impossible case, since Dedup reshape is not supported yet, once it is, this method needs
+			// to be implemented
+			throw new NotImplementedException("Check TODO");
+		}
 		for(int i = rl; i < ru; i++) {
-			double[] row = a.values(i);
-			int finalI = i;
+			double[] row = a.getDedupDirectly(i);
 			double[] kbuff_array = cache.computeIfAbsent(row, lambda_row -> {
 				kbuff.set(0, 0);
-				sum(lambda_row, a.pos(finalI), n, kbuff, kplus);
+				sum(lambda_row, 0, n, kbuff, kplus);
 				return new double[] {kbuff._sum, kbuff._correction};
 			});
 			cache.putIfAbsent(row, kbuff_array);
@@ -3659,10 +3668,15 @@ public class LibMatrixAgg {
 		}
 	}
 
-	private static void uackpDedup( DenseBlock a, DenseBlock c, int n, KahanObject kbuff, KahanPlus kplus, int rl, int ru ) {
+	private static void uackpDedup( DenseBlockFP64DEDUP a, DenseBlock c, int n, KahanObject kbuff, KahanPlus kplus, int rl, int ru ) {
 		HashMap<double[], Integer> counts = new HashMap<>();
+		if(a.getNrEmbsPerRow() != 1){
+			//TODO: currently impossible case, since Dedup reshape is not supported yet, once it is, this method needs
+			// to be implemented
+			throw new NotImplementedException("Check TODO");
+		}
 		for(int i = rl; i < ru; i++) {
-			double[] row = a.values(i);
+			double[] row = a.getDedupDirectly(i);
 			Integer count = counts.getOrDefault(row, 0);
 			count += 1;
 			counts.put(row, count);

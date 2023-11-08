@@ -20,18 +20,23 @@
 #-------------------------------------------------------------
 
 # Read the pre-trained word embeddings
-E = read($1, rows=10, cols=30, format="text");
+E = read($1, rows=100, cols=300, format="text");
+
 # Read the token sequence (1K) w/ 100 distinct tokens
 Data = read($2, data_type="frame", format="csv");
+
 # Read the recode map for the distinct tokens
 Meta = read($3, data_type="frame", format="csv");
-#Read the matrix that is used for multiplication after transform
-MM = read($4, rows=30, cols=30, format="text");
 
-jspec = "{ids: true, word_embedding: [1]}";
-Data_enc = transformapply(target=Data, spec=jspec, meta=Meta, embedding=E);
-Product = Data_enc %*% MM
-write(Product, $5, format="text");
+jspec = "{ids: true, dummycode: [1]}";
+Data_enc = transformapply(target=Data, spec=jspec, meta=Meta);
+
+# Apply the embeddings on all tokens (1K x 100)
+Data_enc = Data_enc %*% E;
+
+seq_len = 10
+Data_enc = matrix(Data_enc, rows=nrow(Data_enc) / seq_len, cols=ncol(Data_enc)*seq_len)
+write(Data_enc, $4, format="text");
 
 
 

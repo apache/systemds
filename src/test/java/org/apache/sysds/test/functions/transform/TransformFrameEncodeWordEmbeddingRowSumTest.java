@@ -60,6 +60,11 @@ public class TransformFrameEncodeWordEmbeddingRowSumTest extends AutomatedTestBa
 	}
 
 	@Test
+	public void testDedupRowSumsSpark() {
+		runDedupRowSumTest(TEST_NAME1, Types.ExecMode.SPARK);
+	}
+
+	@Test
 	public void testDedupColSums() {
 		runDedupColSumTest(TEST_NAME2, Types.ExecMode.SINGLE_NODE);
 	}

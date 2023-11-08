@@ -616,8 +616,14 @@ public class InstructionUtils {
 				parseExtendedBinaryOperator(opcode));
 
 	}
-	
-	public static BinaryOperator parseBinaryOperator(String opcode) 
+
+	public static BinaryOperator parseBinaryOperator(String opcode, int k){
+		BinaryOperator bop = parseBinaryOperator(opcode);
+		bop.setNumThreads(k);
+		return  bop;
+	}
+
+	public static BinaryOperator parseBinaryOperator(String opcode)
 	{
 		if(opcode.equalsIgnoreCase("=="))
 			return new BinaryOperator(Equals.getEqualsFnObject());
@@ -918,6 +924,12 @@ public class InstructionUtils {
 			return new BinaryOperator(Builtin.getBuiltinFnObject("valueSwap"));
 
 		throw new DMLRuntimeException("Unknown binary opcode " + opcode);
+	}
+
+	public static ScalarOperator parseScalarBinaryOperator(String opcode, boolean arg1IsScalar, double constant, int k){
+		ScalarOperator sop = parseScalarBinaryOperator(opcode, arg1IsScalar, constant);
+		sop.setNumThreads(k);
+		return sop;
 	}
 	
 	public static String deriveAggregateOperatorOpcode(String opcode) {

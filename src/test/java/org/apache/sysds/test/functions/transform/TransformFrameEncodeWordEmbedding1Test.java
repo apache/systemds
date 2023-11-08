@@ -37,9 +37,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
+import static org.apache.sysds.test.functions.transform.TransformFrameEncodeWordEmbedding2Test.manuallyDeriveWordEmbeddings;
+import static org.apache.sysds.test.functions.transform.TransformFrameEncodeWordEmbedding2Test.manuallyDeriveWordEmbeddingsReshape;
+
 public class TransformFrameEncodeWordEmbedding1Test extends AutomatedTestBase
 {
 	private final static String TEST_NAME1 = "TransformFrameEncodeWordEmbeddings";
+	private final static String TEST_NAME2 = "TransformFrameEncodeWordEmbeddings1Reshape";
 	private final static String TEST_DIR = "functions/transform/";
 	private final static String TEST_CLASS_DIR = TEST_DIR + TransformFrameEncodeWordEmbedding1Test.class.getSimpleName() + "/";
 
@@ -47,6 +51,7 @@ public class TransformFrameEncodeWordEmbedding1Test extends AutomatedTestBase
 	public void setUp() {
 		TestUtils.clearAssertionInformation();
 		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1));
+		addTestConfiguration(TEST_NAME2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2));
 	}
 
 	@Test
@@ -58,6 +63,12 @@ public class TransformFrameEncodeWordEmbedding1Test extends AutomatedTestBase
 	public void testTransformToWordEmbeddingsSpark() {
 		runTransformTest(TEST_NAME1, ExecMode.SPARK);
 	}
+
+	@Test
+	public void testTransformToWordEmbeddingsWithReshape() {
+		runTransformTest(TEST_NAME2, ExecMode.SINGLE_NODE);
+	}
+
 
 	private void runTransformTest(String testname, ExecMode rt)
 	{
@@ -84,11 +95,7 @@ public class TransformFrameEncodeWordEmbedding1Test extends AutomatedTestBase
 			runTest(true, EXCEPTION_NOT_EXPECTED, null, -1);
 
 			// Manually derive the expected result
-			double[][] res_expected = new double[stringsColumn.size()][cols];
-			for (int i = 0; i < stringsColumn.size(); i++) {
-				int rowMapped = map.get(stringsColumn.get(i));
-				System.arraycopy(a[rowMapped], 0, res_expected[i], 0, cols);
-			}
+			double[][] res_expected = testname.equals(TEST_NAME2) ? manuallyDeriveWordEmbeddingsReshape(cols, a, map, stringsColumn, 10) : manuallyDeriveWordEmbeddings(cols, a, map, stringsColumn);
 
 			// Compare results
 			HashMap<MatrixValue.CellIndex, Double> res_actual = readDMLMatrixFromOutputDir("result");
@@ -100,7 +107,7 @@ public class TransformFrameEncodeWordEmbedding1Test extends AutomatedTestBase
 		finally {
 			resetExecMode(rtold);
 		}
-}
+	}
 
 	public static List<String> shuffleAndMultiplyStrings(List<String> strings, int multiply){
 		List<String> out = new ArrayList<>();

@@ -27,20 +27,22 @@ import org.apache.sysds.runtime.util.DnnUtils;
 
 /**
  * This class is container that stores parameters required for executing following operations:
- * conv2d, conv2d_backward_data, conv2d_backward_filter, maxpooling, maxpooling_backward 
+ * conv2d, conv2d_backward_data, conv2d_backward_filter, maxpooling, maxpooling_backward, lstm, lstm_backward
  */
 public class DnnParameters implements Serializable 
 {
 	private static final long serialVersionUID = -212362627205772829L;
 	
-	public int N, C, H, W, K, R, S, P, Q;
+	public int N, C, H, W, K, R, S, P, Q, D, T, M;
 	public int stride_h, stride_w, pad_h, pad_w;
 	public int numThreads;
 	
 	// Optional variables used by ConvolutionCPInstruction
 	public boolean enableNative = false;
-	
+	public boolean return_sequences;
+
 	public MatrixBlock input1; public MatrixBlock input2; public MatrixBlock output;
+	public MatrixBlock input3, input4, input5, input6, input7, input8, input9, output2, output3, output4, output5;
 	
 	public MatrixBlock bias;
 	public int [] start_indexes_h, end_indexes_h, start_indexes_w, end_indexes_w;
@@ -97,7 +99,39 @@ public class DnnParameters implements Serializable
 			Q = (int) DnnUtils.getQ(W, S, stride_w, pad_w);
 		this.numThreads = numThreads;
 	}
-	
+
+	public DnnParameters(int N, int D, int T, int M, MatrixBlock x, MatrixBlock w, MatrixBlock bias, MatrixBlock out0,
+						 MatrixBlock c0, boolean return_sequences, int numThreads){
+		this.N = N;
+		this.D = D;
+		this.T = T;
+		this.M = M;
+
+		this.input1 = x;
+		this.input2 = w;
+		this.bias = bias;
+		this.input3 = out0;
+		this.input4 = c0;
+
+		this.return_sequences = return_sequences;
+		this.numThreads = numThreads;
+	}
+
+	public DnnParameters(int n, int d, int t, int m, MatrixBlock x, MatrixBlock w, MatrixBlock bias, MatrixBlock out0, MatrixBlock c0, MatrixBlock cache_out, MatrixBlock cache_c, MatrixBlock cache_ifog, boolean return_sequences, MatrixBlock dout, MatrixBlock dc, MatrixBlock dx, MatrixBlock dw, MatrixBlock db, MatrixBlock dout0, MatrixBlock dc0, int numThreads) {
+		this(n, d, t, m, x, w, bias, out0, c0,  return_sequences, numThreads);
+		this.input5 = dout;
+		this.input6 = dc;
+		this.input7 = cache_out;
+		this.input8 = cache_c;
+		this.input9 = cache_ifog;
+		this.output = dx;
+		this.output2 = dw;
+		this.output3 = db;
+		this.output4 = dout0;
+		this.output5 = dc0;
+	}
+
+
 	private static int convertToInt(long val) {
 		if( val > Integer.MAX_VALUE )
 			throw new DMLRuntimeException("The value for DnnParameters is too large:" + val);

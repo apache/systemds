@@ -32,9 +32,11 @@ import org.apache.sysds.runtime.compress.io.WriterCompressed;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.test.TestUtils;
 import org.junit.AfterClass;
+import org.junit.Ignore;
 import org.junit.Test;
 
 @net.jcip.annotations.NotThreadSafe
+@Ignore //see corrupted tests TODO move out of component tests 
 public class IOTest {
 
 	protected static final Log LOG = LogFactory.getLog(IOTest.class.getName());

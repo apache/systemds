@@ -24,7 +24,6 @@ import org.apache.sysds.common.Types;
 import org.apache.sysds.runtime.util.UtilFunctions;
 import org.apache.sysds.utils.MemoryEstimates;
 
-import java.util.Arrays;
 import java.util.HashMap;
 
 public class DenseBlockFP64DEDUP extends DenseBlockDRB
@@ -33,9 +32,18 @@ public class DenseBlockFP64DEDUP extends DenseBlockDRB
 	private double[][] _data;
 	//TODO: implement estimator for nr of distinct
 	private int _distinct = 0;
+	private int _emb_size = 0;
+	private int _embPerRow = 0;
 
 	public void setDistinct(int d){
 		_distinct = d;
+	}
+
+	public void setEmbeddingSize(int s){
+		_emb_size = s;
+		if (_odims[0] % _emb_size != 0)
+			throw new RuntimeException("[Error] DedupDenseBlock: ncols[=" + _odims[0] + "] % emb_size[=" + _emb_size + "] != 0");
+		_embPerRow = _odims[0] / _emb_size;
 	}
 	protected DenseBlockFP64DEDUP(int[] dims) {
 		super(dims);
@@ -46,29 +54,31 @@ public class DenseBlockFP64DEDUP extends DenseBlockDRB
 		return _distinct;
 	}
 
+	public int getNrEmbsPerRow(){
+		return _embPerRow;
+	}
+
+	public int getEmbSize(){
+		return _emb_size;
+	}
+
 	@Override
 	protected void allocateBlock(int bix, int length) {
-		_data[bix] = new double[length];
+		_data = new double[length][];
 	}
 
 	@Override
 	public void reset(int rlen, int[] odims, double v) {
 		if(rlen >  _rlen)
-			_data = new double[rlen][];
+			allocateBlock(0,rlen);
 		else{
 			if(_data == null)
-				 _data = new double[rlen][];
-			if(v == 0.0){
+				allocateBlock(0,rlen);
+			if(v == 0.0)
 				 for(int i = 0; i < rlen; i++)
 					 _data[i] = null;
-			}
-			else {
-				 for(int i = 0; i < rlen; i++) {
-					 if(odims[0] > _odims[0] ||_data[i] == null )
-						 allocateBlock(i, odims[0]);
-					 Arrays.fill(_data[i], 0, odims[0], v);
-				 }
-			}
+			else
+				throw new NotImplementedException("Reset of DedupBlock with constant value is supported");
 		}
 		_rlen = rlen;
 		_odims = odims;
@@ -76,11 +86,17 @@ public class DenseBlockFP64DEDUP extends DenseBlockDRB
 
 	@Override
 	public void resetNoFill(int rlen, int[] odims) {
-		if(_data == null || rlen > _rlen){
+		if(_data == null || rlen > _rlen)
 			_data = new double[rlen][];
-		}
 		_rlen = rlen;
 		_odims = odims;
+	}
+
+	public void resetNoFillDedup(int rlen, int embsPerRow) {
+		if(_data == null || rlen > _rlen)
+			_data = new double[rlen*embsPerRow][];
+		_embPerRow = embsPerRow;
+		_rlen = rlen;
 	}
 
 	@Override
@@ -95,7 +111,7 @@ public class DenseBlockFP64DEDUP extends DenseBlockDRB
 
 	@Override
 	public long capacity() {
-		return (_data != null) ? ((long) _data.length)*_odims[0] : -1;
+		return (_data != null) ? _data.length : -1;
 	}
 
 	@Override
@@ -143,7 +159,7 @@ public class DenseBlockFP64DEDUP extends DenseBlockDRB
 	@Override
 	protected long computeNnz(int bix, int start, int length) {
 		int nnz = 0;
-		int row_start = (int) Math.floor(start / _odims[0]);
+		int row_start = (int) Math.floor(((double) start) / _odims[0]);
 		int col_start = start % _odims[0];
 		for (int i = 0; i < length; i++) {
 			if(_data[row_start] == null){
@@ -163,59 +179,91 @@ public class DenseBlockFP64DEDUP extends DenseBlockDRB
 	}
 
 	@Override
-	public int pos(int r){
-		return 0;
+	public int numBlocks() {
+		int blocksize = blockSize();
+		if(blocksize < _rlen){
+			int numBlocks = _rlen / blocksize;
+			if (_rlen % blocksize > 0)
+				numBlocks += 1;
+			return  numBlocks;
+		}
+		else
+			return 1;
 	}
 
 	@Override
-	public int pos(int r, int c){
-		return c;
+	public int blockSize() {
+		int blocksize = Integer.MAX_VALUE / _odims[0];
+		return Math.min(blocksize, _rlen);
+	}
+
+	@Override
+	public int blockSize(int bix) {
+		int blocksize = blockSize();
+		return Math.min(blocksize, _rlen - bix * blocksize);
+	}
+
+	@Override
+	public boolean isContiguous() {
+		return numBlocks() == 1;
+	}
+
+	@Override
+	public boolean isContiguous(int rl, int ru) {
+		return index(rl) == index(ru);
+	}
+
+	@Override
+	public int pos(int r) {
+		return (r % blockSize()) * _odims[0];
+	}
+
+	@Override
+	public int pos(int r, int c) {
+		return (r % blockSize()) * _odims[0] + c;
 	}
 
 	@Override
 	public int pos(int[] ix){
-		int pos = ix[ix.length - 1];
+		int pos = pos(ix[0]);
+		pos += ix[ix.length - 1];
 		for(int i = 1; i < ix.length - 1; i++)
 			pos += ix[i] * _odims[i];
 		return pos;
 	}
 
 	@Override
-	public int blockSize(int bix) {
-		return 1;
-	}
-
-	@Override
-	public boolean isContiguous() {
-		return false;
-	}
-	@Override
-	public boolean isContiguous(int rl, int ru){
-		return rl == ru;
-	}
-	@Override
 	public double[] values(int r) {
-		return valuesAt(r);
+		return valuesAt(index(r));
 	}
 
 	@Override
 	public double[] valuesAt(int bix) {
-		return _data[bix] == null ? new double[_odims[0]] : _data[bix];
+		int blocksize = blockSize(bix);
+		int blocksizeOther = blockSize();
+		double[] out = new double[_odims[0]*blocksize];
+		if(_data != null) {
+			for (int i = 0; i < blocksize; i++) {
+				for (int j = 0; j < _embPerRow; j++) {
+					int posInDedup = i * _embPerRow + j;
+					int posInDense = posInDedup * _emb_size;
+					posInDedup += bix*blocksizeOther*_embPerRow;
+					if(_data[posInDedup] != null)
+						System.arraycopy(_data[posInDedup], 0, out, posInDense, _emb_size);
+				}
+			}
+		}
+		return out;
 	}
 
 	@Override
 	public int index(int r) {
-		return r;
-	}
-
-	@Override
-	public int numBlocks(){
-		return _data.length;
+		return r / blockSize();
 	}
 
 	@Override
 	public int size(int bix) {
-		return _odims[0];
+		return blockSize(bix) * _odims[0];
 	}
 
 	@Override
@@ -223,18 +271,50 @@ public class DenseBlockFP64DEDUP extends DenseBlockDRB
 		incr(r,c,1.0);
 	}
 
+	public void createDeepCopyOfEmbedding(int pos){
+		if(_data[pos] == null)
+			_data[pos] = new double[_emb_size];
+		else {
+			double[] tmp = new double[_emb_size];
+			System.arraycopy(_data[pos], 0, tmp, 0, _emb_size);
+			_data[pos] = tmp;
+		}
+	}
+
 	@Override
 	public void incr(int r, int c, double delta) {
-		if(_data[r] == null)
-			allocateBlock(r, _odims[0]);
-		_data[r][c] += delta;
+		int roffset = c / _emb_size;
+		int coffset = c % _emb_size;
+
+		//creates a deep copy to avoid unexpected changes in other rows due deduplication
+		createDeepCopyOfEmbedding(r*_embPerRow + roffset);
+		_data[r*_embPerRow + roffset][coffset] += delta;
 	}
 
 	@Override
 	protected void fillBlock(int bix, int fromIndex, int toIndex, double v) {
-		if(_data[bix] == null)
-			allocateBlock(bix, _odims[0]);
-		Arrays.fill(_data[bix], fromIndex, toIndex, v);
+		int roffset = fromIndex / _emb_size;
+		int coffset = fromIndex % _emb_size;
+		int r2offset = fromIndex / _emb_size;
+		int c2offset = fromIndex % _emb_size;
+		int blockoffset = bix*blockSize();
+
+		int c = coffset;
+		int cmax = _emb_size;
+		int rmax = r2offset;
+
+		if(c2offset != 0)
+			rmax += 1;
+		for (int r = roffset; r < rmax; r++) {
+			//creates a deep copy to avoid unexpected changes in other rows due deduplication
+			createDeepCopyOfEmbedding(blockoffset + roffset);
+			if(r == r2offset)
+				cmax = c2offset;
+			for(; c < cmax; c++){
+				_data[blockoffset + r][c] = v;
+			}
+			c = 0;
+		}
 	}
 
 	@Override
@@ -244,18 +324,30 @@ public class DenseBlockFP64DEDUP extends DenseBlockDRB
 
 	@Override
 	public DenseBlock set(int r, int c, double v) {
-		if(_data[r] == null)
-			_data[r] = new double[_odims[0]];
-		_data[r][c] = v;
+		int roffset = c / _emb_size;
+		int coffset = c % _emb_size;
+
+		//creates a deep copy to avoid unexpected changes in other rows due deduplication
+		createDeepCopyOfEmbedding(r*_embPerRow + roffset);
+		_data[r*_embPerRow + roffset][coffset] = v;
 		return this;
 	}
 
 	@Override
 	public DenseBlock set(int r, double[] v) {
-		if(v.length == _odims[0])
+		if(_embPerRow == 1)
 			_data[r] = v;
 		else
-			throw new RuntimeException("set Denseblock called with an array length [" + v.length +"], array to overwrite is of length [" + _odims[0] + "]");
+			for (int i = 0; i < _embPerRow; i++) {
+				//creates a deep copy to avoid unexpected changes in other rows due deduplication
+				createDeepCopyOfEmbedding(r*_embPerRow + i);
+				System.arraycopy(v, i*_emb_size, _data[r*_embPerRow + i],0, _emb_size);
+			}
+		return this;
+	}
+
+	public DenseBlock setDedupDirectly(int r, double[] v) {
+		_data[r] = v;
 		return this;
 	}
 
@@ -265,6 +357,7 @@ public class DenseBlockFP64DEDUP extends DenseBlockDRB
 	}
 
 	@Override
+	//todo
 	public DenseBlock set(int rl, int ru, int ol, int ou, DenseBlock db) {
 		if( !(db instanceof DenseBlockFP64DEDUP))
 			throw new NotImplementedException();
@@ -298,12 +391,20 @@ public class DenseBlockFP64DEDUP extends DenseBlockDRB
 		return set(ix[0], pos(ix), Double.parseDouble(v));
 	}
 
+	public double[] getDedupDirectly(int pos){
+		return _data[pos];
+	}
+
 	@Override
 	public double get(int r, int c) {
-		if(_data[r] == null)
+		if(_embPerRow == 1)
+			return _data[r][c];
+		int roffset = c / _emb_size;
+		int coffset = c % _emb_size;
+		if(_data[r*_embPerRow + roffset] == null)
 			return 0.0;
 		else
-			return _data[r][c];
+			return _data[r*_embPerRow + roffset][coffset];
 	}
 
 	@Override
@@ -322,18 +423,16 @@ public class DenseBlockFP64DEDUP extends DenseBlockDRB
 	}
 
 	public long estimateMemory(){
-		if( (double)_rlen * _odims[0] > Long.MAX_VALUE )
-			return Long.MAX_VALUE;
 		return estimateMemory(_rlen, _odims[0], _distinct);
 	}
 
 	public static long estimateMemory(int rows, int cols, int duplicates){
-		return estimateMemory((long) rows, (long)cols, (long) duplicates);
+		return estimateMemory((long) rows, (long)  cols, (long) duplicates);
 	}
 
 	public static long estimateMemory(long rows, long cols, long duplicates){
 		return ((long) (DenseBlock.estimateMemory(rows, cols)))
-				+ ((long) MemoryEstimates.doubleArrayCost(cols)*duplicates) 
+				+ ((long) MemoryEstimates.doubleArrayCost(cols)*duplicates)
 				+ ((long) MemoryEstimates.objectArrayCost(rows));
 	}
 }

@@ -89,7 +89,7 @@ forward = function(matrix[double] X, int Hin, int Win,
      *     for mean and variance of badge normalization layers. It follows
      *     the same exact structure as the input EMAs list.
      */
-    layer_sizes = [2, 2, 2, 2]
+    layer_sizes = list(2, 2, 2, 2)
     [out, ema_means_vars_upd] = resnet::resnet_basic_forward(X, Hin, Win,
                                 layer_sizes, model, mode, ema_means_vars)
 }

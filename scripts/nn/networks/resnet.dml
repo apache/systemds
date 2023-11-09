@@ -165,8 +165,8 @@ basic_block_forward = function(matrix[double] X, list[unknown] weights,
 
     ema_means_vars_upd = list(ema_mean_bn1_upd, ema_var_bn1_upd, ema_mean_bn2_upd, ema_var_bn2_upd)
     if (downsample) {
-        ema_means_vars_upd = append(ema_means_vars, ema_mean_bn3_upd)
-        ema_means_vars_upd = append(ema_means_vars, ema_var_bn3_upd)
+        ema_means_vars_upd = append(ema_means_vars_upd, ema_mean_bn3_upd)
+        ema_means_vars_upd = append(ema_means_vars_upd, ema_var_bn3_upd)
     }
 }
 

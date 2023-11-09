@@ -335,7 +335,7 @@ resnet_basic_forward = function(matrix[double] X, int Hin, int Win,
                                Wf=3, strideh=2, stridew=2, padh=1, padw=1)
 
     # residual layer 1
-    block_count = layer_sizes[1]
+    block_count = as.integer(as.scalar(layer_sizes[1]))
     [out, Hout, Wout, emas1_upd] = basic_reslayer_forward(X=out, Hin=Hout,
                                Win=Wout, blocks=block_count, strideh=1,
                                stridew=1, C_in=C, C_base=64,
@@ -343,7 +343,7 @@ resnet_basic_forward = function(matrix[double] X, int Hin, int Win,
                                ema_means_vars=emas_reslayer1)
     C = 64
     # residual layer 2
-    block_count = layer_sizes[2]
+    block_count = as.integer(as.scalar(layer_sizes[2]))
     [out, Hout, Wout, emas2_upd] = basic_reslayer_forward(X=out, Hin=Hout,
                                Win=Wout, blocks=block_count, strideh=2,
                                stridew=2, C_in=C, C_base=128,
@@ -351,7 +351,7 @@ resnet_basic_forward = function(matrix[double] X, int Hin, int Win,
                                ema_means_vars=emas_reslayer2)
     C = 128
     # residual layer 3
-    block_count = layer_sizes[3]
+    block_count = as.integer(as.scalar(layer_sizes[3]))
     [out, Hout, Wout, emas3_upd] = basic_reslayer_forward(X=out, Hin=Hout,
                                Win=Wout, blocks=block_count, strideh=2,
                                stridew=2, C_in=C, C_base=256,
@@ -359,7 +359,7 @@ resnet_basic_forward = function(matrix[double] X, int Hin, int Win,
                                ema_means_vars=emas_reslayer3)
     C = 256
     # residual layer 4
-    block_count = layer_sizes[4]
+    block_count = as.integer(as.scalar(layer_sizes[4]))
     [out, Hout, Wout, emas4_upd] = basic_reslayer_forward(X=out, Hin=Hout,
                                Win=Wout, blocks=block_count, strideh=2,
                                stridew=2, C_in=C, C_base=512,

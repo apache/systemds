@@ -259,10 +259,8 @@ resnet_basic_forward = function(matrix[double] X, int Hin, int Win,
      *         with 512 base channels.
      *      List of residual layers 1, 2, 3 & 4 have
      *      the content/order:
-     *      -> 1: List of weights for first residual
-     *            block.
-     *      -> 2: List of weights for second residual
-     *            block.
+     *      -> i: List of weights for residual block i.
+     *            with i in {1, ..., layer_sizes[layer]}
      *         Each list of weights for a residual block
      *         must follow the same order as defined in
      *         the documentation of basic_block_forward().
@@ -281,8 +279,8 @@ resnet_basic_forward = function(matrix[double] X, int Hin, int Win,
      *   -> 6: List of EMA means and vars for residual layer 4.
      *      Lists for EMAs of layer 1, 2, 3 & 4 must have the
      *      following order:
-     *      -> 1: List of EMA means and vars for residual block 1.
-     *      -> 2: List of EMA means and vars for residual block 2.
+     *      -> i: List of EMA means and vars for residual block i.
+     *            with i in {1, ..., layer_sizes[layer]}
      *         Each list of EMAs for a residual block
      *         must follow the same order as defined in
      *         the documentation of basic_block_forward().

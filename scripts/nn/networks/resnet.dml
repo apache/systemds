@@ -238,6 +238,85 @@ bottleneck_block_forward = function(matrix[double] X,
      * - ema_means_vars_upd: List of updated exponential moving averages
      *     for mean and variance of badge normalization layers.
      */
+    downsample = strideh > 1 | stridew > 1 | C_in != 4 * C_base
+    # default values
+    mu_bn = 0.1
+    epsilon_bn = 1e-05
+
+    # get all params
+    W_conv1 = as.matrix(weights[1])
+    gamma_bn1 = as.matrix(weights[2])
+    beta_bn1 = as.matrix(weights[3])
+    W_conv2 = as.matrix(weights[4])
+    gamma_bn2 = as.matrix(weights[5])
+    beta_bn2 = as.matrix(weights[6])
+    W_conv3 = as.matrix(weights[7])
+    gamma_bn3 = as.matrix(weights[8])
+    beta_bn3 = as.matrix(weights[9])
+
+    ema_mean_bn1 = as.matrix(ema_means_vars[1])
+    ema_var_bn1 = as.matrix(ema_means_vars[2])
+    ema_mean_bn2 = as.matrix(ema_means_vars[3])
+    ema_var_bn2 = as.matrix(ema_means_vars[4])
+    ema_mean_bn3 = as.matrix(ema_means_vars[5])
+    ema_var_bn3 = as.matrix(ema_means_vars[6])
+
+    if (downsample) {
+        # gather params for donwsampling
+        W_conv4 = as.matrix(weights[10])
+        gamma_bn4 = as.matrix(weights[11])
+        beta_bn4 = as.matrix(weights[12])
+        ema_mean_bn4 = as.matrix(ema_means_vars[7])
+        ema_var_bn4 = as.matrix(ema_means_vars[8])
+    }
+
+    # RESIDUAL PATH
+    # First convolutional layer
+    [out, Hout, Wout] = conv1x1_forward(X, W_conv1, C_in, C_base, Hin, Win,
+                                        1, 1)
+    [out, ema_mean_bn1_upd, ema_var_bn1_upd, c_m, c_v] = bn2d::forward(out, gamma_bn1,
+                                                 beta_bn1, C_base, Hout, Wout,
+                                                 mode, ema_mean_bn1, ema_var_bn1,
+                                                 mu_bn, epsilon_bn)
+    out = relu::forward(out)
+
+    # Second convolutional layer
+    [out, Hout, Wout] = conv3x3_forward(out, W_conv2, C_base, C_base, Hout,
+                                        Wout, strideh, stridew)
+    [out, ema_mean_bn2_upd, ema_var_bn2_upd, c_m, c_v] = bn2d::forward(out, gamma_bn2,
+                                                 beta_bn2, C_base, Hout, Wout,
+                                                 mode, ema_mean_bn2, ema_var_bn2,
+                                                 mu_bn, epsilon_bn)
+    out = relu::forward(out)
+
+    # Third convolutional layer
+    [out, Hout, Wout] = conv1x1_forward(out, W_conv3, C_base, 4*C_base, Hout,
+                                        Wout, 1, 1)
+    [out, ema_mean_bn3_upd, ema_var_bn3_upd, c_m, c_v] = bn2d::forward(out, gamma_bn3,
+                                                 beta_bn3, 4*C_base, Hout, Wout,
+                                                 mode, ema_mean_bn3, ema_var_bn3,
+                                                 mu_bn, epsilon_bn)
+
+    # IDENTITY PATH
+    identity = X
+    if (downsample) {
+        # downsample input
+        [identity, Hout, Wout] = conv1x1_forward(X, W_conv4, C_in, 4*C_base,
+                                                 Hin, Win, strideh, stridew)
+        [identity, ema_mean_bn4_upd, ema_var_bn4_upd, c_m, c_v] = bn2d::forward(identity,
+                                        gamma_bn4, beta_bn4, 4*C_base, Hout, Wout,
+                                        mode, ema_mean_bn4, ema_var_bn4, mu_bn,
+                                        epsilon_bn)
+    }
+
+    out = relu::forward(out + identity)
+
+    ema_means_vars_upd = list(ema_mean_bn1_upd, ema_var_bn1_upd, ema_mean_bn2_upd,
+                              ema_var_bn2_upd, ema_mean_bn3_upd, ema_var_bn3_upd)
+    if (downsample) {
+        ema_means_vars_upd = append(ema_means_vars_upd, ema_mean_bn3_upd)
+        ema_means_vars_upd = append(ema_means_vars_upd, ema_var_bn3_upd)
+    }
 }
 
 basic_reslayer_forward = function(matrix[double] X, int Hin, int Win, int blocks,

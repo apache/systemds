@@ -116,6 +116,7 @@ public class NNComponentTest extends TestFolder {
 	@Test
 	public void resnet() {
 		run("resnet_basic.dml");
+		run("resnet_bottleneck.dml");
 	}
 
 	@Override

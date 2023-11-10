@@ -1,0 +1,176 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+source("scripts/nn/networks/resnet.dml") as resnet
+source("src/test/scripts/applications/nn/util.dml") as test_util
+
+values_test_bottleneck_forward_1 = function() {
+    /*
+     * Testing of values for forward pass of basic block against PyTorch.
+     */
+    strideh = 1; stridew = 1
+    C_in = 2; C_base = 2
+    Hin = 2; Win = 2
+    N = 3
+    X = matrix(1, rows=N, cols=C_in*Hin*Win)
+    W_conv1 = matrix("     0.36123914
+
+                           0.2112847
+
+
+                          -0.37620437
+
+                           0.34918302    ",
+                       rows=C_base, cols=C_in*1*1)
+    gamma_bn1 = matrix(1, rows=C_base, cols=1)
+    beta_bn1 = matrix(0, rows=C_base, cols=1)
+    W_conv2 = matrix("     0.05199759 -0.06049253 -0.04309021
+                          -0.21535346  0.12896903  0.15667327
+                          -0.09216988  0.06201397  0.13056289
+
+                          -0.08724584  0.10121109 -0.03631943
+                          -0.01245737  0.02210985 -0.06935176
+                          -0.08781703 -0.09042393 -0.01406386
+
+
+                          -0.12051006 -0.16107613 -0.21704304
+                           0.01695921 -0.03490813  0.01341523
+                          -0.01890042 -0.09000328 -0.16045968
+
+                           0.20279111 -0.08519125 -0.03917991
+                          -0.08972444  0.1956595  -0.10737693
+                          -0.05993287  0.06089772 -0.06617799  ",
+                     rows=C_base, cols=C_base*3*3)
+    gamma_bn2 = matrix(1, rows=C_base, cols=1)
+    beta_bn2 = matrix(0, rows=C_base, cols=1)
+    W_conv3 = matrix("    -6.3223720e-02
+
+                          -6.7343938e-01
+
+
+                          -2.9717910e-01
+
+                           5.5539685e-01
+
+
+                          -6.3470721e-02
+
+                           2.8451627e-01
+
+
+                          -2.3001271e-01
+
+                           7.0012289e-01
+
+
+                          -5.6478333e-01
+
+                          -1.3797164e-01
+
+
+                           7.7093422e-02
+
+                           3.5912853e-01
+
+
+                          -5.4846668e-01
+
+                           1.1951989e-01
+
+
+                          -6.7457885e-01
+
+                           4.0823221e-04",
+                    rows=4*C_base, cols=C_base*1*1)
+    gamma_bn3 = matrix(1, rows=4*C_base, cols=1)
+    beta_bn3 = matrix(0, rows=4*C_base, cols=1)
+    # downsample weights
+    W_conv4 = matrix("     0.27093774
+
+                           0.20230454
+
+
+                          -0.14230269
+
+                          -0.12077826
+
+
+                           0.67874914
+
+                           0.08611172
+
+
+                           0.6857756
+
+                          -0.17132008
+
+
+                          -0.16158098
+
+                          -0.6565306
+
+
+                           0.59828144
+
+                          -0.14310724
+
+
+                          -0.20270991
+
+                           0.20009744
+
+
+                           0.24481595
+
+                          -0.70355356",
+                    rows=4*C_base, cols=C_base*1*1)
+    gamma_bn4 = matrix(1, rows=4*C_base, cols=1)
+    beta_bn4 = matrix(0, rows=4*C_base, cols=1)
+
+    weights = list(W_conv1, gamma_bn1, beta_bn1, W_conv2, gamma_bn2, beta_bn2,
+                   W_conv3, gamma_bn3, beta_bn3, W_conv4, gamma_bn4, beta_bn4)
+    mode = "train"
+
+    ema_mean_bn1 = matrix(0, rows=C_base, cols=1)
+    ema_var_bn1 = matrix(0, rows=C_base, cols=1)
+    ema_mean_bn2 = matrix(0, rows=C_base, cols=1)
+    ema_var_bn2 = matrix(0, rows=C_base, cols=1)
+    ema_mean_bn3 = matrix(0, rows=4*C_base, cols=1)
+    ema_var_bn3 = matrix(0, rows=4*C_base, cols=1)
+    ema_mean_bn4 = matrix(0, rows=4*C_base, cols=1)
+    ema_var_bn4 = matrix(0, rows=4*C_base, cols=1)
+
+    ema_means_vars = list(ema_mean_bn1, ema_var_bn1, ema_mean_bn2, ema_var_bn2,
+                          ema_mean_bn3, ema_var_bn3, ema_mean_bn4, ema_var_bn4)
+
+    [out, Hout, Wout, ema_means_vars_up] = resnet::bottleneck_block_forward(X, weights, C_in, C_base, Hin, Win,
+                                                                strideh, stridew, mode, ema_means_vars)
+
+    Hout_exp = 2
+    Wout_exp = 2
+    #out_expected = matrix("",
+    #                      rows=N, cols=Hout_exp*Wout_exp*4*C_base)
+
+    #test_util::check_all_close(out, out_expected, 0.00001)
+    print(toString(out))
+}
+
+values_test_bottleneck_forward_1()

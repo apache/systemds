@@ -25,19 +25,20 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 
-import org.apache.commons.lang.NotImplementedException;
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlockFactory;
 import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.compress.CompressionSettingsBuilder;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
-import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.DictLibMatrixMult;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.MatrixBlockDictionary;
 import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.compress.colgroup.scheme.ICLAScheme;
+import org.apache.sysds.runtime.compress.colgroup.scheme.SchemeFactory;
 import org.apache.sysds.runtime.compress.cost.ComputationCostEstimator;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
 import org.apache.sysds.runtime.compress.estim.EstimationFactors;
@@ -82,7 +83,16 @@ public class ColGroupUncompressed extends AColGroup {
 		_data = mb;
 	}
 
-	protected static AColGroup create(MatrixBlock mb, IColIndex colIndexes) {
+	/**
+	 * Create an Uncompressed Matrix Block, where the columns are offset by col indexes.
+	 * 
+	 * It is assumed that the size of the colIndexes and number of columns in mb is matching.
+	 * 
+	 * @param mb         The MB / data to contain in the uncompressed column
+	 * @param colIndexes The column indexes for the group
+	 * @return An Uncompressed Column group
+	 */
+	public static AColGroup create(MatrixBlock mb, IColIndex colIndexes) {
 		if(mb == null || mb.isEmpty())
 			return new ColGroupEmpty(colIndexes);
 		else
@@ -200,13 +210,16 @@ public class ColGroupUncompressed extends AColGroup {
 	private void decompressToDenseBlockDenseDataAllColumns(DenseBlock db, int rl, int ru, int offR) {
 		int offT = rl + offR;
 		final int nCol = _colIndexes.size();
-		final double[] values = _data.getDenseBlockValues();
-		int offS = rl * nCol;
-		for(int row = rl; row < ru; row++, offT++, offS += nCol) {
+		DenseBlock tb = _data.getDenseBlock();
+		for(int row = rl; row < ru; row++, offT++) {
+			final double[] values = tb.values(row);
+			final int offS = tb.pos(row);
 			final double[] c = db.values(offT);
 			final int off = db.pos(offT);
-			for(int j = 0; j < nCol; j++)
-				c[off + j] += values[offS + j];
+			for(int j = 0; j < nCol; j++) {
+				double v = values[offS + j];
+				c[off + j] += v;
+			}
 		}
 	}
 
@@ -386,7 +399,7 @@ public class ColGroupUncompressed extends AColGroup {
 		LOG.warn("Binary row op left is not supported for Uncompressed Matrix, "
 			+ "Implement support for VMr in MatrixBlock Binary Cell operations");
 		MatrixBlockDictionary d = MatrixBlockDictionary.create(_data);
-		ADictionary dm = d.binOpLeft(op, v, _colIndexes);
+		IDictionary dm = d.binOpLeft(op, v, _colIndexes);
 		if(dm == null)
 			return create(null, _colIndexes);
 		else
@@ -555,9 +568,11 @@ public class ColGroupUncompressed extends AColGroup {
 		final MatrixBlock dictM = paCG._dict.getMBDict(nCols).getMatrixBlock();
 		if(dictM == null)
 			return;
-		LOG.warn("\nInefficient transpose of uncompressed to fit to"
-			+ " t(AColGroup) %*% UncompressedColGroup mult by colGroup uncompressed column"
-			+ "\nCurrently solved by t(t(Uncompressed) %*% AColGroup)");
+		if(paCG.getNumCols() != 1) {
+			LOG.warn("\nInefficient transpose of uncompressed to fit to"
+				+ " t(AColGroup) %*% UncompressedColGroup mult by colGroup uncompressed column"
+				+ "\nCurrently solved by t(t(Uncompressed) %*% AColGroup)");
+		}
 		final int k = InfrastructureAnalyzer.getLocalParallelism();
 		final MatrixBlock ucCGT = LibMatrixReorg.transpose(getData(), k);
 		final MatrixBlock preAgg = new MatrixBlock(1, paCG.getNumValues(), false);
@@ -593,10 +608,12 @@ public class ColGroupUncompressed extends AColGroup {
 	}
 
 	private void leftMultByAColGroupUncompressed(ColGroupUncompressed lhs, MatrixBlock result) {
-		LOG.warn("Inefficient Left Matrix Multiplication with transpose of left hand side : t(l) %*% r");
 		final MatrixBlock tmpRet = new MatrixBlock(lhs.getNumCols(), _colIndexes.size(), 0);
 		final int k = InfrastructureAnalyzer.getLocalParallelism();
-
+		
+		if(lhs._data.getNumColumns() != 1){
+			LOG.warn("Inefficient Left Matrix Multiplication with transpose of left hand side : t(l) %*% r");
+		}
 		// multiply to temp
 		MatrixBlock lhData = lhs._data;
 		MatrixBlock transposed = LibMatrixReorg.transpose(lhData, k);
@@ -804,13 +821,28 @@ public class ColGroupUncompressed extends AColGroup {
 	}
 
 	@Override
-	public AColGroup appendNInternal(AColGroup[] g) {
-		return null;
+	public AColGroup appendNInternal(AColGroup[] g, int blen, int rlen) {
+		final MatrixBlock ret = new MatrixBlock(rlen, _colIndexes.size(), _data.isInSparseFormat());
+		ret.allocateBlock();
+		final SparseBlock sb = ret.getSparseBlock();
+		final DenseBlock db = ret.getDenseBlock();
+		final IColIndex target = ColIndexFactory.create(_colIndexes.size());
+		for(int i = 0; i < g.length; i++) {
+			final int start = i * blen;
+			final int end = Math.min(i * blen + blen, rlen);
+			final AColGroup gs = g[i];
+			if(_data.isInSparseFormat())
+				gs.copyAndSet(target).decompressToSparseBlock(sb, 0, end - start, start, 0);
+			else
+				gs.copyAndSet(target).decompressToDenseBlock(db, 0, end - start, start, 0);
+		}
+		ret.recomputeNonZeros();
+		return new ColGroupUncompressed(ret, _colIndexes);
 	}
 
 	@Override
 	public ICLAScheme getCompressionScheme() {
-		return null;
+		return SchemeFactory.create(_colIndexes, CompressionType.UNCOMPRESSED);
 	}
 
 	@Override
@@ -843,7 +875,7 @@ public class ColGroupUncompressed extends AColGroup {
 
 	@Override
 	public AColGroup copyAndSet(IColIndex colIndexes) {
-		return ColGroupUncompressed.create(_data, colIndexes);
+		return new ColGroupUncompressed(_data, colIndexes);
 	}
 
 	@Override

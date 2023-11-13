@@ -29,6 +29,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map.Entry;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.sysds.api.DMLScript;
@@ -86,6 +88,7 @@ import org.apache.sysds.runtime.controlprogram.caching.FrameObject;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.caching.TensorObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
+import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysds.runtime.controlprogram.parfor.opt.OptTreeConverter;
 import org.apache.sysds.runtime.instructions.Instruction;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
@@ -119,7 +122,7 @@ import org.apache.sysds.utils.Explain.ExplainType;
  * 
  */
 public class Recompiler {
-	// private static final Log LOG =  LogFactory.getLog(Recompiler.class.getName());
+	protected static final Log LOG =  LogFactory.getLog(Recompiler.class.getName());
 
 	//Max threshold for in-memory reblock of text input [in bytes]
 	//reason: single-threaded text read at 20MB/s, 1GB input -> 50s (should exploit parallelism)
@@ -130,16 +133,16 @@ public class Recompiler {
 	/** Local reused rewriter for dynamic rewrites during recompile */
 
 	/** Local DML configuration for thread-local config updates */
-	private static ThreadLocal<ProgramRewriter> _rewriter = new ThreadLocal<ProgramRewriter>() {
+	private static ThreadLocal<ProgramRewriter> _rewriter = new ThreadLocal<>() {
 		@Override protected ProgramRewriter initialValue() { return new ProgramRewriter(false, true); }
 	};
 
-	private static ThreadLocal<LopRewriter> _lopRewriter = new ThreadLocal<LopRewriter>() {
+	private static ThreadLocal<LopRewriter> _lopRewriter = new ThreadLocal<>() {
 		@Override protected LopRewriter initialValue() {return new LopRewriter();}
 	};
 	
 	// additional reused objects to avoid repeated, incremental reallocation on deepCopyDags
-	private static ThreadLocal<HashMap<Long,Hop>> _memoHop = new ThreadLocal<HashMap<Long,Hop>>() {
+	private static ThreadLocal<HashMap<Long,Hop>> _memoHop = new ThreadLocal<>() {
 		@Override protected HashMap<Long,Hop> initialValue() { return new HashMap<>(); }
 		@Override public HashMap<Long,Hop> get() { var tmp = super.get(); tmp.clear(); return tmp; }
 	};
@@ -404,8 +407,8 @@ public class Recompiler {
 		}
 
 		// dynamic lop rewrites for the updated hop DAGs
-		if (rewrittenHops)
-			_lopRewriter.get().rewriteLopDAG(lops);
+		if (rewrittenHops && sb != null)
+			_lopRewriter.get().rewriteLopDAG(sb, lops);
 
 		Dag<Lop> dag = new Dag<>();
 		for (Lop l : lops)
@@ -1598,6 +1601,7 @@ public class Recompiler {
 		//check valid dimensions and memory requirements
 		double sp = OptimizerUtils.getSparsity(rows, cols, nnz);
 		double mem = MatrixBlock.estimateSizeInMemory(rows, cols, sp);
+		
 		if(    !OptimizerUtils.isValidCPDimensions(rows, cols)
 			|| !OptimizerUtils.isValidCPMatrixSize(rows, cols, sp)
 			|| mem >= OptimizerUtils.getLocalMemBudget() ) 
@@ -1609,8 +1613,14 @@ public class Recompiler {
 		long estFilesize = (long)(3.5 * mem); //conservative estimate
 		long cpThreshold = CP_REBLOCK_THRESHOLD_SIZE * 
 			OptimizerUtils.getParallelTextReadParallelism();
-		return (iimd.getFileFormat() == FileFormat.BINARY
+		boolean ret = (iimd.getFileFormat() == FileFormat.BINARY
 			|| estFilesize < cpThreshold); //for text conservative
+		
+		// for reading ultra-sparse in local mode (1 executor) always avoid spark reblock
+		if( !ret && sp < MatrixBlock.ULTRA_SPARSITY_TURN_POINT ) // but qualifies
+			ret = (SparkExecutionContext.getNumExecutors() == 1);
+		
+		return ret;
 	}
 	
 	public static boolean checkCPCheckpoint(DataCharacteristics dc) {

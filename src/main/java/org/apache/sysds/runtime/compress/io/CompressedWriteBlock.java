@@ -22,6 +22,7 @@ package org.apache.sysds.runtime.compress.io;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.io.Serializable;
 
 import org.apache.hadoop.io.WritableComparable;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
@@ -31,8 +32,8 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
  * Write block for serializing either a instance of MatrixBlock or CompressedMatrixBlock, To allow spark to read in
  * either or.
  */
-public class CompressedWriteBlock implements WritableComparable<CompressedWriteBlock> {
-
+public class CompressedWriteBlock implements WritableComparable<CompressedWriteBlock> , Serializable{
+	private static final long serialVersionUID = -587986086067463499L;
 	public MatrixBlock mb;
 
 	private enum CONTENT {

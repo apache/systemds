@@ -56,19 +56,20 @@ public class IPAPassCompressionWorkloadAnalysis extends IPAPass {
 		Map<Long, WTreeRoot> map = WorkloadAnalyzer.getAllCandidateWorkloads(prog);
 
 		// Add compression instruction to all remaining locations
-		for(Entry<Long, WTreeRoot> e : map.entrySet()) {
-			final WTreeRoot tree = e.getValue();
-			final CostEstimatorBuilder b = new CostEstimatorBuilder(tree);
-			final boolean shouldCompress = b.shouldTryToCompress();
-			// Filter out compression plans that is known to be bad
-			if(shouldCompress) 
-				tree.getRoot().setRequiresCompression(tree);
-			else if(LOG.isTraceEnabled())
-				LOG.trace("IPAPass Says no Compress:\n" + tree + "\n" + b);
-			else if(LOG.isDebugEnabled())
-				LOG.debug("IPApass Says no Compress:\n" + tree.getRoot() + "\n" + b);
+		if( map != null ) {
+			for(Entry<Long, WTreeRoot> e : map.entrySet()) {
+				final WTreeRoot tree = e.getValue();
+				final CostEstimatorBuilder b = new CostEstimatorBuilder(tree);
+				final boolean shouldCompress = b.shouldTryToCompress();
+				// Filter out compression plans that is known to be bad
+				if(shouldCompress) 
+					tree.getRoot().setRequiresCompression(tree);
+				else if(LOG.isTraceEnabled())
+					LOG.trace("IPAPass Says no Compress:\n" + tree + "\n" + b);
+				else if(LOG.isDebugEnabled())
+					LOG.debug("IPApass Says no Compress:\n" + tree.getRoot() + "\n" + b);
+			}
 		}
-
 		return map != null;
 	}
 }

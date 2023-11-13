@@ -22,6 +22,7 @@ package org.apache.sysds.test.component.frame.iterators;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.util.Arrays;
 
@@ -36,8 +37,20 @@ import org.junit.Test;
 
 public class IteratorTest {
 
-	private final FrameBlock fb1 = TestUtils.generateRandomFrameBlock(10, 10, 23);
-	private final FrameBlock fb2 = TestUtils.generateRandomFrameBlock(40, 30, 22);
+	private final FrameBlock fb1;
+	private final FrameBlock fb2;
+
+	public IteratorTest() {
+		try {
+			fb1 = TestUtils.generateRandomFrameBlock(10, 10, 23);
+			fb2 = TestUtils.generateRandomFrameBlock(40, 30, 22);
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+			throw new RuntimeException(e);
+		}
+	}
 
 	@Test
 	public void StringObjectStringFB1() {
@@ -236,28 +249,26 @@ public class IteratorTest {
 		compareIterators(a, b);
 	}
 
-
-	@Test(expected= DMLRuntimeException.class)
-	public void invalidRange1(){
+	@Test(expected = DMLRuntimeException.class)
+	public void invalidRange1() {
 		IteratorFactory.getStringRowIterator(fb2, -1, 1);
 	}
 
-	@Test(expected= DMLRuntimeException.class)
-	public void invalidRange2(){
+	@Test(expected = DMLRuntimeException.class)
+	public void invalidRange2() {
 		IteratorFactory.getStringRowIterator(fb2, 132415, 132416);
 	}
 
-	@Test(expected= DMLRuntimeException.class)
-	public void invalidRange3(){
+	@Test(expected = DMLRuntimeException.class)
+	public void invalidRange3() {
 		IteratorFactory.getStringRowIterator(fb2, 13, 4);
 	}
 
-	@Test(expected= DMLRuntimeException.class)
-	public void remove(){
-		RowIterator<?> a =IteratorFactory.getStringRowIterator(fb2, 0, 4);
+	@Test(expected = DMLRuntimeException.class)
+	public void remove() {
+		RowIterator<?> a = IteratorFactory.getStringRowIterator(fb2, 0, 4);
 		a.remove();
 	}
-
 
 	private static void compareIterators(RowIterator<?> a, RowIterator<?> b) {
 		while(a.hasNext()) {

@@ -183,9 +183,15 @@ public class ILinearize {
 	// followed by asynchronously triggering operators and CP chains.
 	private static List<Lop> doMaxParallelizeSort(List<Lop> v)
 	{
-		List<Lop> final_v = null;
+		List<Lop> v2 = v;
+		boolean hasSpark = v.stream().anyMatch(ILinearize::isDistributedOp);
+		boolean hasGPU = v.stream().anyMatch(ILinearize::isGPUOp);
+
 		// Fallback to default depth-first if all operators are CP
-		if (v.stream().anyMatch(ILinearize::isDistributedOp)) {
+		if (!hasSpark && !hasGPU)
+			return depthFirst(v);
+
+		if (hasSpark) {
 			// Step 1: Collect the Spark roots and #Spark instructions in each subDAG
 			Map<Long, Integer> sparkOpCount = new HashMap<>();
 			List<Lop> roots = v.stream().filter(OperatorOrderingUtils::isLopRoot).collect(Collectors.toList());
@@ -204,12 +210,29 @@ public class ILinearize {
 			roots.forEach(r -> depthFirst(r, operatorList, sparkOpCount, false));
 			roots.forEach(Lop::resetVisitStatus);
 
-			final_v = operatorList;
+			v2 = operatorList;
 		}
-		else
-			final_v = depthFirst(v);
 
-		return final_v;
+		if (hasGPU) {
+			// Step 1: Collect the GPU roots and #GPU instructions in each subDAG
+			Map<Long, Integer> gpuOpCount = new HashMap<>();
+			List<Lop> roots = v2.stream().filter(OperatorOrderingUtils::isLopRoot).collect(Collectors.toList());
+			HashSet<Lop> gpuRoots = new HashSet<>();
+			roots.forEach(r -> OperatorOrderingUtils.collectGPURoots(r, gpuOpCount, gpuRoots));
+			gpuRoots.forEach(sr -> sr.setAsynchronous(true));
+
+			// Step 2: Depth-first linearization of GPU roots.
+			// Maintain the default order (by ID) to trigger independent GPU OP chains first
+			ArrayList<Lop> operatorList = new ArrayList<>();
+			gpuRoots.forEach(r -> depthFirst(r, operatorList, gpuOpCount, false));
+
+			// Step 3: Place the rest of the operators (CP).
+			roots.forEach(r -> depthFirst(r, operatorList, gpuOpCount, false));
+			roots.forEach(Lop::resetVisitStatus);
+
+			v2 = operatorList;
+		}
+		return v2;
 	}
 
 	// Place the operators in a depth-first manner, but order
@@ -239,6 +262,13 @@ public class ILinearize {
 
 	private static boolean isDistributedOp(Lop lop) {
 		return lop.isExecSpark()
+			|| (lop instanceof UnaryCP
+			&& (((UnaryCP) lop).getOpCode().equalsIgnoreCase("prefetch")
+			|| ((UnaryCP) lop).getOpCode().equalsIgnoreCase("broadcast")));
+	}
+
+	private static boolean isGPUOp(Lop lop) {
+		return lop.isExecGPU()
 			|| (lop instanceof UnaryCP
 			&& (((UnaryCP) lop).getOpCode().equalsIgnoreCase("prefetch")
 			|| ((UnaryCP) lop).getOpCode().equalsIgnoreCase("broadcast")));

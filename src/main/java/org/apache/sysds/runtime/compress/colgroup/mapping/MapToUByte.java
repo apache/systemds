@@ -95,17 +95,21 @@ public class MapToUByte extends MapToByte {
 		final int h = (cu - cl) % 8;
 		off += cl;
 		for(int rc = cl; rc < cl + h; rc++, off++)
-			preAV[_data[rc]] += mV[off];
-		for(int rc = cl + h; rc < cu; rc += 8, off += 8) {
-			preAV[_data[rc]] += mV[off];
-			preAV[_data[rc + 1]] += mV[off + 1];
-			preAV[_data[rc + 2]] += mV[off + 2];
-			preAV[_data[rc + 3]] += mV[off + 3];
-			preAV[_data[rc + 4]] += mV[off + 4];
-			preAV[_data[rc + 5]] += mV[off + 5];
-			preAV[_data[rc + 6]] += mV[off + 6];
-			preAV[_data[rc + 7]] += mV[off + 7];
-		}
+			preAV[getIndex(rc)] += mV[off];
+		for(int rc = cl + h; rc < cu; rc += 8, off += 8)
+			preAggregateDenseToRowVec8(mV, preAV, rc, off);
+	}
+
+	@Override
+	protected void preAggregateDenseToRowVec8(double[] mV, double[] preAV, int rc, int off) {
+		preAV[getIndex(rc)] += mV[off];
+		preAV[getIndex(rc + 1)] += mV[off + 1];
+		preAV[getIndex(rc + 2)] += mV[off + 2];
+		preAV[getIndex(rc + 3)] += mV[off + 3];
+		preAV[getIndex(rc + 4)] += mV[off + 4];
+		preAV[getIndex(rc + 5)] += mV[off + 5];
+		preAV[getIndex(rc + 6)] += mV[off + 6];
+		preAV[getIndex(rc + 7)] += mV[off + 7];
 	}
 
 	@Override
@@ -118,6 +122,11 @@ public class MapToUByte extends MapToByte {
 		for(int i = 0; i < _data.length; i++)
 			ret[_data[i]]++;
 		return ret;
+	}
+
+	@Override
+	public int getMaxPossible() {
+		return 128;
 	}
 
 	@Override

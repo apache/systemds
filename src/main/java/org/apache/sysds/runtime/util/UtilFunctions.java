@@ -36,7 +36,7 @@ import java.util.TimeZone;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.apache.commons.lang.ArrayUtils;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.commons.math3.random.RandomDataGenerator;
@@ -46,6 +46,7 @@ import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.data.TensorIndexes;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.runtime.frame.data.columns.CharArray;
+import org.apache.sysds.runtime.frame.data.columns.HashLongArray;
 import org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue;
 import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysds.runtime.matrix.data.Pair;
@@ -483,15 +484,16 @@ public class UtilFunctions {
 	public static Object stringToObject(ValueType vt, String in) {
 		if( in == null || in.isEmpty() )  return null;
 		switch( vt ) {
-			case STRING:  return in;
-			case BOOLEAN: return Boolean.parseBoolean(in);
+			case STRING:    return in;
+			case BOOLEAN:   return Boolean.parseBoolean(in);
 			case UINT4:
 			case UINT8:
-			case INT32:   return Integer.parseInt(in);
-			case INT64:   return Long.parseLong(in);
-			case FP64:    return Double.parseDouble(in);
-			case FP32:    return Float.parseFloat(in);
+			case INT32:     return Integer.parseInt(in);
+			case INT64:     return Long.parseLong(in);
+			case FP64:      return Double.parseDouble(in);
+			case FP32:      return Float.parseFloat(in);
 			case CHARACTER: return CharArray.parseChar(in);
+			case HASH64:    return HashLongArray.parseHashLong(in);
 			default: throw new RuntimeException("Unsupported value type: "+vt);
 		}
 	}
@@ -512,14 +514,21 @@ public class UtilFunctions {
 			case INT64:   return (Long)in;
 			case INT32:   return (Integer)in;
 			case BOOLEAN: return ((Boolean)in) ? 1 : 0;
+			case CHARACTER: return (Character)in;
 			case STRING:
+				String inStr = (String) in;
 				try {
-					return !((String) in).isEmpty() ? Double.parseDouble((String) in) : 0;
+					return !(inStr).isEmpty() ? Double.parseDouble(inStr) : 0;
 				}
 				catch(NumberFormatException e) {
-					if(in.equals("true"))
+					final int len = inStr.length();
+					if(len == 1 && inStr.equalsIgnoreCase("T"))
 						return 1.0;
-					else if(in.equals("false"))
+					else if (len == 1 && inStr.equalsIgnoreCase("F"))
+						return 0.0;
+					else if(inStr.equalsIgnoreCase("true"))
+						return 1.0;
+					else if(inStr.equalsIgnoreCase("false"))
 						return 0.0;
 					else
 						throw new DMLRuntimeException("failed parsing object to double",e);
@@ -667,7 +676,7 @@ public class UtilFunctions {
 	public static Object objectToObject(ValueType vt, Object in) {
 		if( in instanceof Double && vt == ValueType.FP64
 			|| in instanceof Float && vt == ValueType.FP32
-			|| in instanceof Long && vt == ValueType.INT64
+			|| in instanceof Long && (vt == ValueType.INT64 || vt == ValueType.HASH64)
 			|| in instanceof Integer && vt == ValueType.INT32
 			|| in instanceof Boolean && vt == ValueType.BOOLEAN
 			|| in instanceof String && vt == ValueType.STRING )
@@ -777,7 +786,7 @@ public class UtilFunctions {
 		int c = 0;
 		int javaIdx = idx - 1;
 		if (javaIdx >= 0 && javaIdx < strlen) {
-			c = (int)s.charAt(javaIdx);
+			c = s.charAt(javaIdx);
 		}
 		return c;
 	}
@@ -896,7 +905,7 @@ public class UtilFunctions {
 	}
 
 	public static ValueType[] copyOf(ValueType[] schema1, ValueType[] schema2) {
-		return (ValueType[]) ArrayUtils.addAll(schema1, schema2);
+		return ArrayUtils.addAll(schema1, schema2);
 	}
 	
 	public static int countNonZeros(double[] data, int pos, int len) {
@@ -950,7 +959,7 @@ public class UtilFunctions {
 		}
 	}
 	
-	private static final Map<String, String> DATE_FORMATS = new HashMap<String, String>() {
+	private static final Map<String, String> DATE_FORMATS = new HashMap<>() {
 		private static final long serialVersionUID = 6826162458614520846L; {
 		put("^\\d{4}-\\d{1,2}-\\d{1,2}\\s\\d{1,2}:\\d{2}:\\d{2}$", "yyyy-MM-dd HH:mm:ss");
 		put("^\\d{1,2}-\\d{1,2}-\\d{4}\\s\\d{1,2}:\\d{2}:\\d{2}$", "dd-MM-yyyy HH:mm:ss");
@@ -1066,7 +1075,7 @@ public class UtilFunctions {
 		String[] output = new String[values.length];
 		Map<String, String> date_formats = DATE_FORMATS;
 
-		Map<String, Integer> format_matches = new HashMap<String, Integer>();
+		Map<String, Integer> format_matches = new HashMap<>();
 		for (Map.Entry<String,String> entry : date_formats.entrySet()) {
 			format_matches.put(entry.getValue(), 0);
 		}
@@ -1295,7 +1304,7 @@ public class UtilFunctions {
 	}
 
 	public static int getEndIndex(int arrayLength, int startIndex, int blockSize){
-		return (blockSize <= 0)? arrayLength: Math.min(arrayLength, startIndex + blockSize);
+		return blockSize <= 0 ? arrayLength : Math.min(arrayLength, startIndex + blockSize);
 	}
 
 	public static int[] getBlockSizes(int num, int numBlocks){

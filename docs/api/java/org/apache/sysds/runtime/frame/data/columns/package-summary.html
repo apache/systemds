@@ -14,7 +14,7 @@
 <!--[if IE]>
 <script type="text/javascript" src="../../../../../../../jquery/jszip-utils/dist/jszip-utils-ie.min.js"></script>
 <![endif]-->
-<script type="text/javascript" src="../../../../../../../jquery/jquery-3.6.0.min.js"></script>
+<script type="text/javascript" src="../../../../../../../jquery/jquery-3.6.1.min.js"></script>
 <script type="text/javascript" src="../../../../../../../jquery/jquery-ui.min.js"></script>
 </head>
 <body>
@@ -126,26 +126,38 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
+<th class="colFirst" scope="row"><a href="ACompressedArray.html" title="class in org.apache.sysds.runtime.frame.data.columns">ACompressedArray</a>&lt;T&gt;</th>
+<td class="colLast">
+<div class="block">A Compressed Array, in general does not allow us to set or modify the array.</div>
+</td>
+</tr>
+<tr class="altColor">
 <th class="colFirst" scope="row"><a href="Array.html" title="class in org.apache.sysds.runtime.frame.data.columns">Array</a>&lt;T&gt;</th>
 <td class="colLast">
 <div class="block">Generic, resizable native arrays for the internal representation of the columns in the FrameBlock.</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <th class="colFirst" scope="row"><a href="BitSetArray.html" title="class in org.apache.sysds.runtime.frame.data.columns">BitSetArray</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <th class="colFirst" scope="row"><a href="BooleanArray.html" title="class in org.apache.sysds.runtime.frame.data.columns">BooleanArray</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <th class="colFirst" scope="row"><a href="CharArray.html" title="class in org.apache.sysds.runtime.frame.data.columns">CharArray</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <th class="colFirst" scope="row"><a href="ColumnMetadata.html" title="class in org.apache.sysds.runtime.frame.data.columns">ColumnMetadata</a></th>
 <td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<th class="colFirst" scope="row"><a href="DDCArray.html" title="class in org.apache.sysds.runtime.frame.data.columns">DDCArray</a>&lt;T&gt;</th>
+<td class="colLast">
+<div class="block">A dense dictionary version of an column array</div>
+</td>
 </tr>
 <tr class="altColor">
 <th class="colFirst" scope="row"><a href="DoubleArray.html" title="class in org.apache.sysds.runtime.frame.data.columns">DoubleArray</a></th>
@@ -168,6 +180,15 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
+<th class="colFirst" scope="row"><a href="RaggedArray.html" title="class in org.apache.sysds.runtime.frame.data.columns">RaggedArray</a>&lt;T&gt;</th>
+<td class="colLast">
+<div class="block">A Ragged array for a single column contains a smaller array, only containing the values of the top most part of the
+ 
+ This makes the allocation much better in cases where only the top n rows of a m row frame are used for the specific
+ column.</div>
+</td>
+</tr>
+<tr class="altColor">
 <th class="colFirst" scope="row"><a href="StringArray.html" title="class in org.apache.sysds.runtime.frame.data.columns">StringArray</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>

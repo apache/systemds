@@ -50,7 +50,10 @@ import org.apache.sysds.parser.Statement;
 import org.apache.sysds.runtime.instructions.cp.ParamservBuiltinCPInstruction;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
+import org.apache.sysds.runtime.transform.TfUtils.TfMethod;
+import org.apache.sysds.runtime.transform.meta.TfMetaUtils;
 import org.apache.sysds.runtime.util.UtilFunctions;
+import org.apache.wink.json4j.JSONObject;
 
 
 /**
@@ -741,6 +744,7 @@ public class ParameterizedBuiltinOp extends MultiThreadedHop {
 				case CONTAINS:
 					if(getTargetHop().optFindExecType() == ExecType.SPARK)
 						_etype = ExecType.SPARK;
+					break;
 				default:
 					// Do not change execution type.
 			}
@@ -839,16 +843,35 @@ public class ParameterizedBuiltinOp extends MultiThreadedHop {
 			}
 			case TRANSFORMDECODE: {
 				Hop target = getTargetHop();
+				Hop meta = getParameterHop("meta");
 				//rows remain unchanged for recoding and dummy coding
-				setDim1( target.getDim1() );
-				//cols remain unchanged only if no dummy coding
-				//TODO parse json spec
+				setDim1(target.getDim1());
+				//cols remain unchanged only if no dummy coding, but meta aligned with input columns
+				setDim2(meta.getDim2());
 				break;
 			}
 			case TRANSFORMAPPLY: {
 				//rows remain unchanged only if no omitting
-				//cols remain unchanged of no dummy coding 
-				//TODO parse json spec
+				//cols remain unchanged of no dummy coding, feature hashing, word embeddings
+				Hop target = getTargetHop();
+				Hop spec = getParameterHop("spec");
+				if( dimsKnown() ) {
+					//safe to update according to new input as previously parsed 
+					setDim1(target.getDim1());
+					setDim2(target.getDim2());
+				}
+				else if( spec instanceof LiteralOp ) {
+					try {
+						JSONObject jspec = new JSONObject(((LiteralOp)spec).getStringValue());
+						if( TfMetaUtils.checkValidEncoders(jspec, TfMethod.RECODE, TfMethod.BIN, TfMethod.UDF) ) {
+							setDim1(target.getDim1());
+							setDim2(target.getDim2());
+						}
+					}
+					catch(Exception ex) {
+						throw new HopsException(ex);
+					}
+				}
 				break;
 			}
 			case TRANSFORMCOLMAP: {

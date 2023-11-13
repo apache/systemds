@@ -27,7 +27,7 @@ import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.util.Arrays;
 
-import org.apache.commons.lang.NotImplementedException;
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.common.Types.BlockType;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
@@ -317,22 +317,19 @@ public class TensorBlock implements CacheBlock<TensorBlock>, Externalizable {
 
 	@Override
 	public TensorBlock slice(int rl, int ru, int cl, int cu, boolean deep, TensorBlock block) {
-		if( !(block instanceof TensorBlock) )
-			throw new RuntimeException("TensorBlock.slice(int,int,int,int,CacheBlock) CacheBlock was no TensorBlock");
-		TensorBlock tb = (TensorBlock) block;
 		int[] dims = new int[_dims.length];
 		dims[0] = ru - rl + 1;
 		dims[1] = cu - cl + 1;
 		System.arraycopy(_dims, 2, dims, 2, _dims.length - 2);
-		tb.reset(dims);
+		block.reset(dims);
 		int[] offsets = new int[dims.length];
 		offsets[0] = rl;
 		offsets[1] = cl;
-		return slice(offsets, tb);
+		return slice(offsets, block);
 	}
 
 	@Override
-	public void merge(TensorBlock that, boolean appendOnly) {
+	public TensorBlock merge(TensorBlock that, boolean appendOnly) {
 		throw new NotImplementedException();
 	}
 
@@ -650,6 +647,7 @@ public class TensorBlock implements CacheBlock<TensorBlock>, Externalizable {
 			switch (bt._vt) {
 				case UINT4:
 					size += getLength() / 2 + getLength() % 2;
+					break;
 				case UINT8:
 					size += 1 * getLength(); break;
 				case INT32:
@@ -825,6 +823,7 @@ public class TensorBlock implements CacheBlock<TensorBlock>, Externalizable {
 			}
 			case SPARSE_BLOCK:
 			case ULTRA_SPARSE_BLOCK:
+			default:
 				throw new NotImplementedException();
 		}
 	}

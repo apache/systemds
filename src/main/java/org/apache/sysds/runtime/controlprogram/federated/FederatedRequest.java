@@ -83,7 +83,7 @@ public class FederatedRequest implements Serializable {
 		_method = method;
 		_id = id;
 		_data = data;
-		_pid = Long.valueOf(IDHandler.obtainProcessID());
+		_pid = Long.valueOf(IDHandler.getProcessID());
 		setCheckPrivacy();
 	}
 

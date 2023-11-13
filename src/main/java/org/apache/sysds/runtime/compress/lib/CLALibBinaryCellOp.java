@@ -26,7 +26,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
-import org.apache.commons.lang.NotImplementedException;
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.DMLRuntimeException;
@@ -48,6 +48,7 @@ import org.apache.sysds.runtime.functionobjects.MinusMultiply;
 import org.apache.sysds.runtime.functionobjects.Multiply;
 import org.apache.sysds.runtime.functionobjects.Plus;
 import org.apache.sysds.runtime.functionobjects.PlusMultiply;
+import org.apache.sysds.runtime.functionobjects.ValueComparisonFunction;
 import org.apache.sysds.runtime.functionobjects.ValueFunction;
 import org.apache.sysds.runtime.matrix.data.LibMatrixBincell;
 import org.apache.sysds.runtime.matrix.data.LibMatrixBincell.BinaryAccessType;
@@ -73,9 +74,14 @@ public final class CLALibBinaryCellOp {
 			ScalarOperator sop = new RightScalarOperator(op.fn, that.getValue(0, 0), op.getNumThreads());
 			return CLALibScalar.scalarOperations(sop, m1, result);
 		}
-		if(that.isEmpty())
+		else if(that.isEmpty())
 			return binaryOperationsEmpty(op, m1, that, result);
+		else
+			return binaryOperationsRightFiltered(op, m1, that, result);
+	}
 
+	private static MatrixBlock binaryOperationsRightFiltered(BinaryOperator op, CompressedMatrixBlock m1,
+		MatrixBlock that, MatrixBlock result) {
 		LibMatrixBincell.isValidDimensionsBinaryExtended(m1, that);
 
 		BinaryAccessType atype = LibMatrixBincell.getBinaryAccessTypeExtended(m1, that);
@@ -112,17 +118,16 @@ public final class CLALibBinaryCellOp {
 
 		final ValueFunction fn = op.fn;
 		if(fn instanceof Multiply)
-			result = CompressedMatrixBlockFactory.createConstant(m1Row, m1Col, 0);
+			return CompressedMatrixBlockFactory.createConstant(m1Row, m1Col, 0);
 		else if(fn instanceof Minus1Multiply)
-			result = CompressedMatrixBlockFactory.createConstant(m1Row, m1Col, 1);
+			return CompressedMatrixBlockFactory.createConstant(m1Row, m1Col, 1);
 		else if(fn instanceof Minus || fn instanceof Plus || fn instanceof MinusMultiply || fn instanceof PlusMultiply) {
 			CompressedMatrixBlock ret = new CompressedMatrixBlock();
 			ret.copy(m1);
 			return ret;
 		}
 		else
-			throw new NotImplementedException("Function Type: " + fn);
-		return result;
+			return binaryOperationsRightFiltered(op, m1, that, result);
 	}
 
 	private static MatrixBlock selectProcessingBasedOnAccessType(BinaryOperator op, CompressedMatrixBlock m1,
@@ -355,8 +360,16 @@ public final class CLALibBinaryCellOp {
 		else
 			nnz = binaryMVColMultiThread(m1, m2, op, left, ret);
 
+		if(op.fn instanceof ValueComparisonFunction) {
+			if(nnz == (long) nRows * nCols)
+				return CompressedMatrixBlockFactory.createConstant(nRows, nCols, 1.0);
+
+			else if(nnz == 0)
+				return CompressedMatrixBlockFactory.createConstant(nRows, nCols, 0.0);
+		}
 		ret.setNonZeros(nnz);
 		ret.examSparsity();
+
 		return ret;
 	}
 
@@ -603,8 +616,11 @@ public final class CLALibBinaryCellOp {
 		}
 
 		private final void processRight(final int rl, final int ru) {
+
+			if(_m2.isEmpty())
+				processRightEmpty(rl, ru);
 			// all exec should have ret on left side
-			if(_m2.isInSparseFormat())
+			else if(_m2.isInSparseFormat())
 				processRightSparse(rl, ru);
 			else
 				processRightDense(rl, ru);
@@ -651,6 +667,17 @@ public final class CLALibBinaryCellOp {
 				int off = rv.pos(r);
 				for(int c = off; c < cols + off; c++)
 					retV[c] = _op.fn.execute(retV[c], m2V[c]);
+			}
+		}
+
+		private final void processRightEmpty(final int rl, final int ru) {
+			final DenseBlock rv = _ret.getDenseBlock();
+			final int cols = _ret.getNumColumns();
+			for(int r = rl; r < ru; r++) {
+				final double[] retV = rv.values(r);
+				int off = rv.pos(r);
+				for(int c = off; c < cols + off; c++)
+					retV[c] = _op.fn.execute(retV[c], 0);
 			}
 		}
 	}

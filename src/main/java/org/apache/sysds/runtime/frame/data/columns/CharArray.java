@@ -35,7 +35,7 @@ import org.apache.sysds.runtime.util.UtilFunctions;
 
 public class CharArray extends Array<Character> {
 
-	protected char[] _data;
+	private char[] _data;
 
 	public CharArray(char[] data) {
 		super(data.length);
@@ -67,7 +67,7 @@ public class CharArray extends Array<Character> {
 
 	@Override
 	public double getAsDouble(int i) {
-		return (int) _data[i];
+		return _data[i];
 	}
 
 	@Override
@@ -98,7 +98,14 @@ public class CharArray extends Array<Character> {
 
 	@Override
 	public void set(int rl, int ru, Array<Character> value, int rlSrc) {
-		System.arraycopy(((CharArray) value)._data, rlSrc, _data, rl, ru - rl + 1);
+		try {
+			// try system array copy.
+			// but if it does not work, default to get.
+			System.arraycopy(value.get(), rlSrc, _data, rl, ru - rl + 1);
+		}
+		catch(Exception e) {
+			super.set(rl, ru, value, rlSrc);
+		}
 	}
 
 	@Override
@@ -136,7 +143,7 @@ public class CharArray extends Array<Character> {
 		final int endSize = this._size + other.size();
 		final char[] ret = new char[endSize];
 		System.arraycopy(_data, 0, ret, 0, this._size);
-		System.arraycopy((char[]) other.get(), 0, ret, this._size, other.size());
+		System.arraycopy(other.get(), 0, ret, this._size, other.size());
 		if(other instanceof OptionalArray)
 			return OptionalArray.appendOther((OptionalArray<Character>) other, new CharArray(ret));
 		else
@@ -175,7 +182,7 @@ public class CharArray extends Array<Character> {
 
 	@Override
 	public Pair<ValueType, Boolean> analyzeValueType() {
-		return new Pair<ValueType, Boolean>(ValueType.CHARACTER, false);
+		return new Pair<>(ValueType.CHARACTER, false);
 	}
 
 	@Override
@@ -185,14 +192,14 @@ public class CharArray extends Array<Character> {
 
 	@Override
 	public long getExactSerializedSize() {
-		return 1 + 2 * _data.length;
+		return 1L + 2L * _data.length;
 	}
 
 	@Override
 	protected Array<Boolean> changeTypeBitSet() {
 		final BitSet ret = new BitSet(size());
 		for(int i = 0; i < size(); i++) {
-			final int di = (int) _data[i];
+			final int di = _data[i];
 			if(di != 0 && di != 1)
 				throw new DMLRuntimeException("Unable to change to boolean from char array because of value:" //
 					+ _data[i] + " (as int: " + di + ")");
@@ -205,7 +212,7 @@ public class CharArray extends Array<Character> {
 	protected Array<Boolean> changeTypeBoolean() {
 		final boolean[] ret = new boolean[size()];
 		for(int i = 0; i < size(); i++) {
-			final int di = (int) _data[i];
+			final int di = _data[i];
 			if(di != 0 && di != 1)
 				throw new DMLRuntimeException("Unable to change to boolean from char array because of value:" //
 					+ _data[i] + " (as int: " + di + ")");
@@ -218,7 +225,7 @@ public class CharArray extends Array<Character> {
 	protected Array<Double> changeTypeDouble() {
 		double[] ret = new double[size()];
 		for(int i = 0; i < size(); i++)
-			ret[i] = (int) _data[i];
+			ret[i] = _data[i];
 		return new DoubleArray(ret);
 	}
 
@@ -226,7 +233,7 @@ public class CharArray extends Array<Character> {
 	protected Array<Float> changeTypeFloat() {
 		float[] ret = new float[size()];
 		for(int i = 0; i < size(); i++)
-			ret[i] = (int) _data[i];
+			ret[i] = _data[i];
 		return new FloatArray(ret);
 	}
 
@@ -234,7 +241,7 @@ public class CharArray extends Array<Character> {
 	protected Array<Integer> changeTypeInteger() {
 		int[] ret = new int[size()];
 		for(int i = 0; i < size(); i++)
-			ret[i] = (int) _data[i];
+			ret[i] = _data[i];
 		return new IntegerArray(ret);
 	}
 
@@ -242,15 +249,23 @@ public class CharArray extends Array<Character> {
 	protected Array<Long> changeTypeLong() {
 		long[] ret = new long[size()];
 		for(int i = 0; i < size(); i++)
-			ret[i] = (int) _data[i];
+			ret[i] = _data[i];
 		return new LongArray(ret);
+	}
+
+	@Override
+	protected Array<Object> changeTypeHash64(){
+		long[] ret = new long[size()];
+		for(int i = 0; i < size(); i++)
+			ret[i] = _data[i];
+		return new HashLongArray(ret);
 	}
 
 	@Override
 	protected Array<String> changeTypeString() {
 		String[] ret = new String[size()];
 		for(int i = 0; i < size(); i++)
-			ret[i] = _data[i] + "";
+			ret[i] = String.valueOf(_data[i]);
 		return new StringArray(ret);
 	}
 
@@ -325,6 +340,19 @@ public class CharArray extends Array<Character> {
 	@Override
 	public double hashDouble(int idx){
 		return Character.hashCode(_data[idx]);
+	}
+
+	@Override
+	public boolean equals(Array<Character> other){
+		if(other instanceof CharArray)
+			return Arrays.equals(_data, ((CharArray)other)._data);
+		else 
+			return false;
+	}
+
+	@Override
+	public boolean possiblyContainsNaN(){
+		return false;
 	}
 
 	@Override

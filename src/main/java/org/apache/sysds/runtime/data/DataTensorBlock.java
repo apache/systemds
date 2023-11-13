@@ -19,7 +19,6 @@
 
 package org.apache.sysds.runtime.data;
 
-import org.apache.commons.lang.math.IntRange;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 
@@ -99,9 +98,9 @@ public class DataTensorBlock implements Serializable {
 		_dims = dims;
 		_schema = new ValueType[getDim(1)];
 		Arrays.fill(_schema, vt);
-		_colsToIx = new IntRange(0, getDim(1)).toArray();
+		_colsToIx = IntStream.range(0, getDim(1)).toArray();
 		_ixToCols = new int[VALID_VALUE_TYPES_LENGTH][];
-		_ixToCols[vt.ordinal()] = new IntRange(0, getDim(1)).toArray();
+		_ixToCols[vt.ordinal()] = IntStream.range(0, getDim(1)).toArray();
 		reset();
 	}
 

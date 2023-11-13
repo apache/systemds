@@ -19,9 +19,25 @@
 
 package org.apache.sysds.runtime.controlprogram;
 
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.log4j.Level;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.DataType;
+import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.conf.CompilerConfig;
@@ -29,7 +45,6 @@ import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.hops.recompile.Recompiler;
 import org.apache.sysds.lops.Lop;
-import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.parser.DMLProgram;
 import org.apache.sysds.parser.DataIdentifier;
 import org.apache.sysds.parser.ParForStatementBlock;
@@ -84,6 +99,7 @@ import org.apache.sysds.runtime.instructions.cp.ScalarObject;
 import org.apache.sysds.runtime.instructions.cp.StringObject;
 import org.apache.sysds.runtime.instructions.cp.VariableCPInstruction;
 import org.apache.sysds.runtime.lineage.Lineage;
+import org.apache.sysds.runtime.lineage.LineageCacheConfig;
 import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.runtime.lineage.LineageItemUtils;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
@@ -91,19 +107,6 @@ import org.apache.sysds.runtime.util.CollectionUtils;
 import org.apache.sysds.runtime.util.ProgramConverter;
 import org.apache.sysds.runtime.util.UtilFunctions;
 import org.apache.sysds.utils.stats.ParForStatistics;
-
-import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-import java.util.stream.Stream;
 
 
 
@@ -117,8 +120,8 @@ import java.util.stream.Stream;
  * TODO: papply(A,1:2,FUN) language construct (compiled to ParFOR) via DML function repository =&gt; modules OK, but second-order functions required
  *
  */
-public class ParForProgramBlock extends ForProgramBlock 
-{	
+public class ParForProgramBlock extends ForProgramBlock {	
+	protected static final Log LOG = LogFactory.getLog(ParForProgramBlock.class.getName());
 	// execution modes
 	public enum PExecMode {
 		LOCAL,          //local (master) multi-core execution mode
@@ -758,7 +761,7 @@ public class ParForProgramBlock extends ForProgramBlock
 			LocalTaskQueue<Task> queue = new LocalTaskQueue<>();
 			Thread[] threads         = new Thread[_numThreads];
 			LocalParWorker[] workers = new LocalParWorker[_numThreads];
-			IntStream.range(0, _numThreads).parallel().forEach(i -> {
+			IntStream.range(0, _numThreads).forEach(i -> {
 				workers[i] = createParallelWorker( _pwIDs[i], queue, ec, i);
 				threads[i] = new Thread( workers[i] );
 				threads[i].setPriority(Thread.MAX_PRIORITY);
@@ -800,6 +803,7 @@ public class ParForProgramBlock extends ForProgramBlock
 				StatisticMonitor.putPFStat(_ID, Stat.PARFOR_INIT_TASKS_T, time.stop());
 			
 			// Step 3) join all threads (wait for finished work)
+			LineageCacheConfig.setReuseLineageTraces(false); //disable lineage trace reuse
 			for( Thread thread : threads )
 				thread.join();
 			
@@ -823,6 +827,7 @@ public class ParForProgramBlock extends ForProgramBlock
 				.map(w -> w.getExecutionContext().getLineage())
 				.toArray(Lineage[]::new);
 			mergeLineage(ec, lineages);
+			//LineageCacheConfig.setReuseLineageTraces(true);
 
 			//consolidate results into global symbol table
 			consolidateAndCheckResults( ec, numIterations, numCreatedTasks,
@@ -900,6 +905,7 @@ public class ParForProgramBlock extends ForProgramBlock
 		exportMatricesToHDFS(ec, brVars);
 		
 		// Step 3) submit Spark parfor job (no lazy evaluation, since collect on result)
+		LineageCacheConfig.setReuseLineageTraces(false); //disable lineage trace reuse
 		boolean topLevelPF = OptimizerUtils.isTopLevelParFor();
 		RemoteParForJobReturn ret = RemoteParForSpark.runJob(_ID, program,
 			clsMap, tasks, ec, brVars, _resultVars, _enableCPCaching, _numThreads, topLevelPF);
@@ -913,6 +919,7 @@ public class ParForProgramBlock extends ForProgramBlock
 		
 		//lineage maintenance
 		mergeLineage(ec, ret.getLineages());
+		//LineageCacheConfig.setReuseLineageTraces(true);
 		// TODO: remove duplicate lineage items in ec.getLineage()
 		
 		//consolidate results into global symbol table
@@ -1425,9 +1432,14 @@ public class ParForProgramBlock extends ForProgramBlock
 		}
 	}
 
-	private void consolidateAndCheckResults(ExecutionContext ec, long expIters, long expTasks, long numIters, long numTasks, LocalVariableMap [] results) 
-	{
+	private void consolidateAndCheckResults(ExecutionContext ec, final long expIters, final long expTasks,
+		final long numIters, final long numTasks, LocalVariableMap[] results) {
 		Timing time = new Timing(true);
+
+		//check expected counters
+		if( numTasks != expTasks || numIters !=expIters ) //consistency check
+			throw new DMLRuntimeException("PARFOR: Number of executed tasks does not match the number of created tasks: tasks "+numTasks+"/"+expTasks+", iters "+numIters+"/"+expIters+".");
+	
 		
 		//result merge
 		if( checkParallelRemoteResultMerge() )
@@ -1526,10 +1538,7 @@ public class ParForProgramBlock extends ForProgramBlock
 		if( CREATE_UNSCOPED_RESULTVARS && sb != null && ec.getVariables() != null ) //sb might be null for nested parallelism
 			createEmptyUnscopedVariables( ec.getVariables(), sb );
 		
-		//check expected counters
-		if( numTasks != expTasks || numIters !=expIters ) //consistency check
-			throw new DMLRuntimeException("PARFOR: Number of executed tasks does not match the number of created tasks: tasks "+numTasks+"/"+expTasks+", iters "+numIters+"/"+expIters+".");
-	
+			
 		if( DMLScript.STATISTICS )
 			ParForStatistics.incrementMergeTime((long) time.stop());
 	}

@@ -20,7 +20,7 @@
 
 package org.apache.sysds.runtime.data;
 
-import org.apache.commons.lang.NotImplementedException;
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.util.UtilFunctions;
@@ -32,15 +32,34 @@ public abstract class DenseBlockFactory
 	public static DenseBlock createDenseBlock(int rlen, int clen) {
 		return createDenseBlock(new int[]{rlen, clen});
 	}
+
+	public static DenseBlock createDenseBlock(int rlen, int clen, boolean dedup) {
+		return createDenseBlock(new int[]{rlen, clen}, dedup);
+	}
 	
 	public static DenseBlock createDenseBlock(int[] dims) {
 		return createDenseBlock(ValueType.FP64, dims);
+	}
+
+	public static DenseBlock createDenseBlock(int[] dims, boolean dedup) {
+		return createDenseBlock(ValueType.FP64, dims, dedup);
 	}
 	
 	public static DenseBlock createDenseBlock(ValueType vt, int[] dims) {
 		DenseBlock.Type type = (UtilFunctions.prod(dims) < Integer.MAX_VALUE) ?
 			DenseBlock.Type.DRB : DenseBlock.Type.LDRB;
-		return createDenseBlock(vt, type, dims);
+		return createDenseBlock(vt, type, dims, false);
+	}
+
+	public static DenseBlock createDenseBlock(ValueType vt, int[] dims, boolean dedup) {
+		DenseBlock.Type type;
+		if(dedup)
+			type = (dims[0] < Integer.MAX_VALUE) ?
+					DenseBlock.Type.DRB : DenseBlock.Type.LDRB;
+		else
+			type = (UtilFunctions.prod(dims) < Integer.MAX_VALUE) ?
+					DenseBlock.Type.DRB : DenseBlock.Type.LDRB;
+		return createDenseBlock(vt, type, dims, dedup);
 	}
 
 	public static DenseBlock createDenseBlock(BitSet data, int[] dims) {
@@ -75,7 +94,24 @@ public abstract class DenseBlockFactory
 		return createDenseBlock(data, new int[]{rlen, clen});
 	}
 	
-	public static DenseBlock createDenseBlock(ValueType vt, DenseBlock.Type type, int[] dims) {
+	public static DenseBlock createDenseBlock(ValueType vt, DenseBlock.Type type, int[] dims, boolean dedup) {
+		if( dedup ) {
+			switch( type ) {
+				case DRB:
+					switch(vt) {
+						case FP64: return new DenseBlockFP64DEDUP(dims);
+						default:
+							throw new DMLRuntimeException("Unsupported dense block value type with deduplication enabled: "+vt.name());
+					}
+				case LDRB:
+					switch(vt) {
+						default:
+							throw new NotImplementedException();
+					}
+				default:
+					throw new DMLRuntimeException("Unexpected dense block type: "+type.name());
+			}
+		}
 		switch( type ) {
 			case DRB:
 				switch(vt) {

@@ -32,6 +32,8 @@ from systemds.utils.consts import VALID_INPUT_TYPES
 def scaleMinMax(X: Matrix):
     """
      This function performs min-max normalization (rescaling to [0,1]).
+     
+     This function is deprecated, use normalize instead.
     
     
     

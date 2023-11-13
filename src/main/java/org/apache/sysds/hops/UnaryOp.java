@@ -21,6 +21,7 @@ package org.apache.sysds.hops;
 
 import java.util.ArrayList;
 
+import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.AggOp;
 import org.apache.sysds.common.Types.DataType;
@@ -158,11 +159,13 @@ public class UnaryOp extends MultiThreadedHop
 					}
 					else { // general case MATRIX
 						ExecType et = optFindExecType();
-
 						// special handling cumsum/cumprod/cummin/cumsum
 						if(isCumulativeUnaryOperation() && !(et == ExecType.CP || et == ExecType.GPU)) {
 							// TODO additional physical operation if offsets fit in memory
 							ret = constructLopsSparkCumulativeUnary();
+						}
+						else if(_op == OpOp1.CAST_AS_FRAME && getInput().size() == 2) {
+							throw new NotImplementedException();
 						}
 						else {// default unary
 							final boolean inplace = OptimizerUtils.ALLOW_UNARY_UPDATE_IN_PLACE &&
@@ -558,13 +561,10 @@ public class UnaryOp extends MultiThreadedHop
 		{
 			// If output is a Matrix then this operation is of type (B = op(A))
 			// Dimensions of B are same as that of A, and sparsity may/maynot change
+			// note: round, sin, cos can introduce new zeros for non-zero inputs
 			setDim1( input.getDim1() );
 			setDim2( input.getDim2() );
-			// cosh(0)=cos(0)=1, acos(0)=1.5707963267948966
-			if( _op==OpOp1.ABS || _op==OpOp1.SIN || _op==OpOp1.TAN  
-				|| _op==OpOp1.SINH || _op==OpOp1.TANH
-				|| _op==OpOp1.ASIN || _op==OpOp1.ATAN
-				|| _op==OpOp1.SQRT || _op==OpOp1.ROUND || _op==OpOp1.SPROP
+			if( _op==OpOp1.ABS || _op==OpOp1.SQRT || _op==OpOp1.SPROP
 				|| _op==OpOp1.COMPRESS || _op==OpOp1.DECOMPRESS || _op==OpOp1.LOCAL) //sparsity preserving
 			{
 				setNnz( input.getNnz() );

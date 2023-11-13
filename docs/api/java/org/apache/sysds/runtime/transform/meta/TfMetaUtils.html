@@ -14,7 +14,7 @@
 <!--[if IE]>
 <script type="text/javascript" src="../../../../../../jquery/jszip-utils/dist/jszip-utils-ie.min.js"></script>
 <![endif]-->
-<script type="text/javascript" src="../../../../../../jquery/jquery-3.6.0.min.js"></script>
+<script type="text/javascript" src="../../../../../../jquery/jquery-3.6.1.min.js"></script>
 <script type="text/javascript" src="../../../../../../jquery/jquery-ui.min.js"></script>
 </head>
 <body>
@@ -27,7 +27,7 @@
     catch(err) {
     }
 //-->
-var data = {"i0":9,"i1":9,"i2":9,"i3":9,"i4":9,"i5":9,"i6":9,"i7":9,"i8":9,"i9":9,"i10":9,"i11":9,"i12":9,"i13":9,"i14":9,"i15":9,"i16":9};
+var data = {"i0":9,"i1":9,"i2":9,"i3":9,"i4":9,"i5":9,"i6":9,"i7":9,"i8":9,"i9":9,"i10":9,"i11":9,"i12":9,"i13":9,"i14":9,"i15":9,"i16":9,"i17":9};
 var tabs = {65535:["t0","All Methods"],1:["t1","Static Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -182,28 +182,34 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 </tr>
 <tr id="i1" class="rowColor">
 <td class="colFirst"><code>static boolean</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#checkValidEncoders(org.apache.wink.json4j.JSONObject,org.apache.sysds.runtime.transform.TfUtils.TfMethod...)">checkValidEncoders</a></span>&#8203;(org.apache.wink.json4j.JSONObject&nbsp;jSpec,
+                  <a href="../TfUtils.TfMethod.html" title="enum in org.apache.sysds.runtime.transform">TfUtils.TfMethod</a>...&nbsp;encoders)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i2" class="altColor">
+<td class="colFirst"><code>static boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#containsOmitSpec(java.lang.String,java.lang.String%5B%5D)">containsOmitSpec</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;spec,
                 <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>[]&nbsp;colnames)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i2" class="altColor">
+<tr id="i3" class="rowColor">
 <td class="colFirst"><code>static long</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getK(org.apache.wink.json4j.JSONObject)">getK</a></span>&#8203;(org.apache.wink.json4j.JSONObject&nbsp;parsedSpec)</code></th>
 <td class="colLast">
 <div class="block">Get K value used for calculation during feature hashing from parsed specifications.</div>
 </td>
 </tr>
-<tr id="i3" class="rowColor">
+<tr id="i4" class="altColor">
 <td class="colFirst"><code>static boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#isIDSpec(java.lang.String)">isIDSpec</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;spec)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i4" class="altColor">
+<tr id="i5" class="rowColor">
 <td class="colFirst"><code>static boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#isIDSpec(org.apache.wink.json4j.JSONObject)">isIDSpec</a></span>&#8203;(org.apache.wink.json4j.JSONObject&nbsp;spec)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i5" class="rowColor">
+<tr id="i6" class="altColor">
 <td class="colFirst"><code>static <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Integer.html?is-external=true" title="class or interface in java.lang" class="externalLink">Integer</a>&gt;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#parseBinningColIDs(java.lang.String,java.lang.String%5B%5D,int,int)">parseBinningColIDs</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;spec,
                   <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>[]&nbsp;colnames,
@@ -211,7 +217,7 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
                   int&nbsp;maxCol)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i6" class="altColor">
+<tr id="i7" class="rowColor">
 <td class="colFirst"><code>static <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Integer.html?is-external=true" title="class or interface in java.lang" class="externalLink">Integer</a>&gt;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#parseBinningColIDs(org.apache.wink.json4j.JSONObject,java.lang.String%5B%5D,int,int)">parseBinningColIDs</a></span>&#8203;(org.apache.wink.json4j.JSONObject&nbsp;jSpec,
                   <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>[]&nbsp;colnames,
@@ -219,7 +225,7 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
                   int&nbsp;maxCol)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i7" class="rowColor">
+<tr id="i8" class="altColor">
 <td class="colFirst"><code>static int[]</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#parseJsonArrayIDList(org.apache.wink.json4j.JSONArray,java.lang.String%5B%5D,int,int,boolean)">parseJsonArrayIDList</a></span>&#8203;(org.apache.wink.json4j.JSONArray&nbsp;arr,
                     <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>[]&nbsp;colnames,
@@ -228,14 +234,14 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
                     boolean&nbsp;ids)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i8" class="altColor">
+<tr id="i9" class="rowColor">
 <td class="colFirst"><code>static int[]</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#parseJsonIDList(java.lang.String,java.lang.String%5B%5D,java.lang.String)">parseJsonIDList</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;spec,
                <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>[]&nbsp;colnames,
                <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;group)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i9" class="rowColor">
+<tr id="i10" class="altColor">
 <td class="colFirst"><code>static int[]</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#parseJsonIDList(org.apache.wink.json4j.JSONObject,java.lang.String%5B%5D,java.lang.String)">parseJsonIDList</a></span>&#8203;(org.apache.wink.json4j.JSONObject&nbsp;spec,
                <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>[]&nbsp;colnames,
@@ -244,7 +250,7 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <div class="block">TODO consolidate external and internal json spec definitions</div>
 </td>
 </tr>
-<tr id="i10" class="altColor">
+<tr id="i11" class="rowColor">
 <td class="colFirst"><code>static int[]</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#parseJsonIDList(org.apache.wink.json4j.JSONObject,java.lang.String%5B%5D,java.lang.String,int,int)">parseJsonIDList</a></span>&#8203;(org.apache.wink.json4j.JSONObject&nbsp;spec,
                <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>[]&nbsp;colnames,
@@ -253,7 +259,7 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
                int&nbsp;maxCol)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i11" class="rowColor">
+<tr id="i12" class="altColor">
 <td class="colFirst"><code>static int</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#parseJsonObjectID(org.apache.wink.json4j.JSONObject,java.lang.String%5B%5D,int,int,boolean)">parseJsonObjectID</a></span>&#8203;(org.apache.wink.json4j.JSONObject&nbsp;colspec,
                  <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>[]&nbsp;colnames,
@@ -262,7 +268,7 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
                  boolean&nbsp;ids)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i12" class="altColor">
+<tr id="i13" class="rowColor">
 <td class="colFirst"><code>static int[]</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#parseJsonObjectIDList(org.apache.wink.json4j.JSONObject,java.lang.String%5B%5D,java.lang.String,int,int)">parseJsonObjectIDList</a></span>&#8203;(org.apache.wink.json4j.JSONObject&nbsp;spec,
                      <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>[]&nbsp;colnames,
@@ -271,7 +277,7 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
                      int&nbsp;maxCol)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i13" class="rowColor">
+<tr id="i14" class="altColor">
 <td class="colFirst"><code>static int[]</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#parseJsonPlainArrayIDList(org.apache.wink.json4j.JSONArray,java.lang.String%5B%5D,int,int,boolean)">parseJsonPlainArrayIDList</a></span>&#8203;(org.apache.wink.json4j.JSONArray&nbsp;arr,
                          <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>[]&nbsp;colnames,
@@ -280,7 +286,7 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
                          boolean&nbsp;ids)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i14" class="altColor">
+<tr id="i15" class="rowColor">
 <td class="colFirst"><code>static <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Integer.html?is-external=true" title="class or interface in java.lang" class="externalLink">Integer</a>&gt;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#parseUDFColIDs(org.apache.wink.json4j.JSONObject,java.lang.String%5B%5D,int,int)">parseUDFColIDs</a></span>&#8203;(org.apache.wink.json4j.JSONObject&nbsp;jSpec,
               <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>[]&nbsp;colnames,
@@ -288,7 +294,7 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
               int&nbsp;maxCol)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i15" class="rowColor">
+<tr id="i16" class="altColor">
 <td class="colFirst"><code>static <a href="../../frame/data/FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#readTransformMetaDataFromFile(java.lang.String,java.lang.String,java.lang.String)">readTransformMetaDataFromFile</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;spec,
                              <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;metapath,
@@ -298,7 +304,7 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
  FrameBlock object.</div>
 </td>
 </tr>
-<tr id="i16" class="altColor">
+<tr id="i17" class="rowColor">
 <td class="colFirst"><code>static <a href="../../frame/data/FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#readTransformMetaDataFromPath(java.lang.String,java.lang.String,java.lang.String)">readTransformMetaDataFromPath</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;spec,
                              <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;metapath,
@@ -632,10 +638,20 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <a id="checkValidEncoders(org.apache.wink.json4j.JSONObject)">
 <!--   -->
 </a>
-<ul class="blockListLast">
+<ul class="blockList">
 <li class="blockList">
 <h4>checkValidEncoders</h4>
 <pre class="methodSignature">public static&nbsp;void&nbsp;checkValidEncoders&#8203;(org.apache.wink.json4j.JSONObject&nbsp;jSpec)</pre>
+</li>
+</ul>
+<a id="checkValidEncoders(org.apache.wink.json4j.JSONObject,org.apache.sysds.runtime.transform.TfUtils.TfMethod...)">
+<!--   -->
+</a>
+<ul class="blockListLast">
+<li class="blockList">
+<h4>checkValidEncoders</h4>
+<pre class="methodSignature">public static&nbsp;boolean&nbsp;checkValidEncoders&#8203;(org.apache.wink.json4j.JSONObject&nbsp;jSpec,
+                                         <a href="../TfUtils.TfMethod.html" title="enum in org.apache.sysds.runtime.transform">TfUtils.TfMethod</a>...&nbsp;encoders)</pre>
 </li>
 </ul>
 </li>

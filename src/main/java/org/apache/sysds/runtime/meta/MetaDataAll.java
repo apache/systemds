@@ -153,7 +153,7 @@ public class MetaDataAll extends DataIdentifier {
 			boolean isValidName = DataExpression.READ_VALID_MTD_PARAM_NAMES.contains(key);
 
 			if (!isValidName){ //wrong parameters always rejected
-				raiseValidateError("MTD file " + " contains invalid parameter name: " + key, false);
+				raiseValidateError("MTD file contains invalid parameter name: " + key, false);
 			}
 
 			parseMetaDataParam(key, val);
@@ -184,6 +184,7 @@ public class MetaDataAll extends DataIdentifier {
 				}
 				else
 					setHasHeader(false);
+				break;
 			case DataExpression.DELIM_SPARSE: setSparseDelim((boolean) val);
 		}
 	}
@@ -299,9 +300,9 @@ public class MetaDataAll extends DataIdentifier {
 							addVarParam(key.toString(), boolId, varParams);
 
 							switch(key.toString().toUpperCase()) {
-								case DataExpression.DELIM_HAS_HEADER_ROW: ;
-								case DataExpression.DELIM_FILL: ;
-								case DataExpression.DELIM_SPARSE: ;
+								case DataExpression.DELIM_HAS_HEADER_ROW:
+								case DataExpression.DELIM_FILL:
+								case DataExpression.DELIM_SPARSE:
 							}
 
 						}

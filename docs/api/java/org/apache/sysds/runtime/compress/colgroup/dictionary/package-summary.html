@@ -14,7 +14,7 @@
 <!--[if IE]>
 <script type="text/javascript" src="../../../../../../../jquery/jszip-utils/dist/jszip-utils-ie.min.js"></script>
 <![endif]-->
-<script type="text/javascript" src="../../../../../../../jquery/jquery-3.6.0.min.js"></script>
+<script type="text/javascript" src="../../../../../../../jquery/jquery-3.6.1.min.js"></script>
 <script type="text/javascript" src="../../../../../../../jquery/jquery-ui.min.js"></script>
 </head>
 <body>
@@ -110,6 +110,10 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <th class="colFirst" scope="row"><a href="DictionaryFactory.html" title="interface in org.apache.sysds.runtime.compress.colgroup.dictionary">DictionaryFactory</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
+<tr class="rowColor">
+<th class="colFirst" scope="row"><a href="IDictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary</a></th>
+<td class="colLast">&nbsp;</td>
+</tr>
 </tbody>
 </table>
 </li>
@@ -148,7 +152,9 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tr class="altColor">
 <th class="colFirst" scope="row"><a href="IdentityDictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">IdentityDictionary</a></th>
-<td class="colLast">&nbsp;</td>
+<td class="colLast">
+<div class="block">A specialized dictionary that exploits the fact that the contained dictionary is an Identity Matrix.</div>
+</td>
 </tr>
 <tr class="rowColor">
 <th class="colFirst" scope="row"><a href="IdentityDictionarySlice.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">IdentityDictionarySlice</a></th>
@@ -159,6 +165,10 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
+<th class="colFirst" scope="row"><a href="PlaceHolderDict.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">PlaceHolderDict</a></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
 <th class="colFirst" scope="row"><a href="QDictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">QDictionary</a></th>
 <td class="colLast">
 <div class="block">This dictionary class aims to encapsulate the storage and operations over unique floating point values of a column
@@ -177,11 +187,11 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tbody>
 <tr class="altColor">
-<th class="colFirst" scope="row"><a href="ADictionary.DictType.html" title="enum in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary.DictType</a></th>
+<th class="colFirst" scope="row"><a href="DictionaryFactory.Type.html" title="enum in org.apache.sysds.runtime.compress.colgroup.dictionary">DictionaryFactory.Type</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
-<th class="colFirst" scope="row"><a href="DictionaryFactory.Type.html" title="enum in org.apache.sysds.runtime.compress.colgroup.dictionary">DictionaryFactory.Type</a></th>
+<th class="colFirst" scope="row"><a href="IDictionary.DictType.html" title="enum in org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary.DictType</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 </tbody>

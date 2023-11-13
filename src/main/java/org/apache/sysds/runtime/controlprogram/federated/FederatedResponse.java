@@ -20,36 +20,35 @@
 package org.apache.sysds.runtime.controlprogram.federated;
 
 import java.io.Serializable;
+import java.util.Arrays;
 import java.util.EnumMap;
 import java.util.Map;
 import java.util.concurrent.atomic.LongAdder;
 
-import org.apache.commons.lang.exception.ExceptionUtils;
-import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
 import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.runtime.privacy.CheckedConstraintsLog;
 import org.apache.sysds.runtime.privacy.PrivacyConstraint.PrivacyLevel;
 
 public class FederatedResponse implements Serializable {
 	private static final long serialVersionUID = 3142180026498695091L;
-	
+
 	public enum ResponseType {
-		SUCCESS,
-		SUCCESS_EMPTY,
-		ERROR,
+		SUCCESS, SUCCESS_EMPTY, ERROR,
 	}
-	
+
 	private ResponseType _status;
 	private Object[] _data;
-	private Map<PrivacyLevel,LongAdder> checkedConstraints;
+	private Map<PrivacyLevel, LongAdder> checkedConstraints;
 
 	private transient LineageItem _linItem = null; // not included in serialized object
-	
+
 	public FederatedResponse(ResponseType status) {
 		this(status, null, null);
 	}
-	
+
 	public FederatedResponse(ResponseType status, Object[] data) {
 		this(status, data, null);
 	}
@@ -57,7 +56,7 @@ public class FederatedResponse implements Serializable {
 	public FederatedResponse(ResponseType status, Object[] data, LineageItem linItem) {
 		_status = status;
 		_data = data;
-		if( _status == ResponseType.SUCCESS && data == null )
+		if(_status == ResponseType.SUCCESS && data == null)
 			_status = ResponseType.SUCCESS_EMPTY;
 		_linItem = linItem;
 	}
@@ -73,23 +72,24 @@ public class FederatedResponse implements Serializable {
 			_status = ResponseType.SUCCESS_EMPTY;
 		_linItem = linItem;
 	}
-	
+
 	public boolean isSuccessful() {
 		return _status != ResponseType.ERROR;
 	}
-	
+
 	public String getErrorMessage() {
-		if (_data[0] instanceof Throwable )
-			return ExceptionUtils.getFullStackTrace( (Throwable) _data[0] );
-		else if (_data[0] instanceof String)
+		if(_data[0] instanceof Throwable)
+			return ExceptionUtils.getStackTrace((Throwable) _data[0]);
+		else if(_data[0] instanceof String)
 			return (String) _data[0];
-		else return "No readable error message";
+		else
+			return "No readable error message";
 	}
-	
+
 	public Object[] getData() throws Exception {
 		updateCheckedConstraintsLog();
-		if ( !isSuccessful() )
-			throwExceptionFromResponse(); 
+		if(!isSuccessful())
+			throwExceptionFromResponse();
 		return _data;
 	}
 
@@ -98,49 +98,65 @@ public class FederatedResponse implements Serializable {
 		if(_data != null) {
 			for(Object obj : _data) {
 				if(obj instanceof CacheBlock)
-					minBufferSize += ((CacheBlock<?>)obj).getExactSerializedSize();
+					minBufferSize += ((CacheBlock<?>) obj).getExactSerializedSize();
 			}
 		}
 		return minBufferSize;
 	}
 
 	/**
-	 * Checks the data object array for exceptions that occurred in the federated worker
-	 * during handling of request. 
-	 * @throws Exception the exception retrieved from the data object array 
-	 *  or DMLRuntimeException if no exception is provided by the federated worker.
+	 * Checks the data object array for exceptions that occurred in the federated worker during handling of request.
+	 * 
+	 * @throws Exception the exception retrieved from the data object array or DMLRuntimeException if no exception is
+	 *                   provided by the federated worker.
 	 */
 	public void throwExceptionFromResponse() throws Exception {
-		for ( Object potentialException : _data){
-			if (potentialException != null && (potentialException instanceof Exception) ){
+		for(Object potentialException : _data) {
+			if(potentialException != null && (potentialException instanceof Exception)) {
 				throw (Exception) potentialException;
 			}
 		}
 		String errorMessage = getErrorMessage();
-		if (getErrorMessage() != "No readable error message")
+		if(getErrorMessage() != "No readable error message")
 			throw new DMLRuntimeException(errorMessage);
 		else
-			throw new DMLRuntimeException("Unknown runtime exception in handling of federated request by federated worker.");
+			throw new DMLRuntimeException(
+				"Unknown runtime exception in handling of federated request by federated worker.");
 	}
 
 	/**
-	 * Set checked privacy constraints in response if the provided map is not empty.
-	 * If the map is empty, it means that no privacy constraints were found.
+	 * Set checked privacy constraints in response if the provided map is not empty. If the map is empty, it means that
+	 * no privacy constraints were found.
+	 * 
 	 * @param checkedConstraints map of checked constraints from the PrivacyMonitor
 	 */
-	public void setCheckedConstraints(Map<PrivacyLevel,LongAdder> checkedConstraints){
-		if ( checkedConstraints != null && !checkedConstraints.isEmpty() ){
+	public void setCheckedConstraints(Map<PrivacyLevel, LongAdder> checkedConstraints) {
+		if(checkedConstraints != null && !checkedConstraints.isEmpty()) {
 			this.checkedConstraints = new EnumMap<>(PrivacyLevel.class);
 			this.checkedConstraints.putAll(checkedConstraints);
 		}
 	}
 
-	public void updateCheckedConstraintsLog(){
-		if ( checkedConstraints != null && !checkedConstraints.isEmpty() )
+	public void updateCheckedConstraintsLog() {
+		if(checkedConstraints != null && !checkedConstraints.isEmpty())
 			CheckedConstraintsLog.addCheckedConstraints(checkedConstraints);
 	}
 
 	public LineageItem getLineageItem() {
 		return _linItem;
+	}
+
+	@Override
+	public String toString() {
+		StringBuilder sb = new StringBuilder();
+		sb.append(this.getClass().getSimpleName().toString());
+		sb.append(" response:").append(_status);
+		sb.append("\ndata:\n").append(Arrays.toString(_data));
+		if(checkedConstraints != null) {
+			sb.append("\ncheckedConstraints:\n");
+			sb.append(checkedConstraints);
+		}
+
+		return sb.toString();
 	}
 }

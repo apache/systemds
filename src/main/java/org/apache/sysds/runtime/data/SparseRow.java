@@ -131,6 +131,14 @@ public abstract class SparseRow implements Serializable
 	 * @param eps epsilon value
 	 */
 	public abstract void compact(double eps);
+
+	/**
+	 * Make a copy of this row.
+	 * 
+	 * @param deep if the copy should be deep
+	 * @return A copy
+	 */
+	public abstract SparseRow copy(boolean deep);
 	
 	@Override
 	public String toString() {
@@ -148,7 +156,7 @@ public abstract class SparseRow implements Serializable
 			else
 				sb.append(String.format("%"+rowDigits+"d:%s", indexes[i], Double.toString(values[i])));
 			if(i + 1 < s)
-				sb.append(", ");
+				sb.append(" ");
 		}
 		
 		return sb.toString();

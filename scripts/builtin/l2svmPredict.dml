@@ -38,15 +38,24 @@
 m_l2svmPredict = function(Matrix[Double] X, Matrix[Double] W, Boolean verbose = FALSE)
   return(Matrix[Double] YRaw, Matrix[Double] Y)
 {
-  if(ncol(X) != nrow(W)){
-    if(ncol(X) + 1 != nrow(W)){
-      stop("l2svm Predict: Invalid shape of W ["+ncol(W)+","+nrow(W)+"] or X ["+ncol(X)+","+nrow(X)+"]")
+  n = nrow(X)
+  m = ncol(X)
+  wn = nrow(W)
+  wm = ncol(W)
+  if(m != wn){
+    # If intercept was enabled
+    if(m + 1 != wn){
+      stop("l2svm Predict: Invalid shape of W [" +
+        wm + "," + wn + "] or X [" + m + "," + n + "]")
     }
-    YRaw = X %*% W[1:ncol(X),] + W[ncol(X)+1,]
-    Y = rowIndexMax(YRaw)
+    # We could append a 1 column to X and multiply
+    # But slicing W seems faster.
+    YRaw = X %*% W[1:m,] + W[m+1,]
   }
   else{
+    # If intercept was disabled
     YRaw = X %*% W
-    Y = rowIndexMax(YRaw)
   }
+  # Predict Y.
+  Y = rowIndexMax(YRaw)
 }

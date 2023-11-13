@@ -25,8 +25,10 @@ import java.util.HashMap;
 import java.util.HashSet;
 
 import org.antlr.v4.runtime.ParserRuleContext;
-import org.apache.commons.lang.ArrayUtils;
-import org.apache.commons.lang.NotImplementedException;
+import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.NotImplementedException;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.common.Builtins;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.ValueType;
@@ -37,8 +39,8 @@ import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.util.DnnUtils;
 import org.apache.sysds.runtime.util.UtilFunctions;
 
-public class BuiltinFunctionExpression extends DataIdentifier 
-{
+public class BuiltinFunctionExpression extends DataIdentifier {
+	protected static final Log LOG = LogFactory.getLog(BuiltinFunctionExpression.class.getName());
 	protected Expression[] _args = null;
 	private Builtins _opcode;
 
@@ -407,7 +409,32 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			svdOut3.setBlocksize(getFirstExpr().getOutput().getBlocksize());
 
 			break;
-		
+
+		case COMPRESS:
+			if(OptimizerUtils.ALLOW_SCRIPT_LEVEL_COMPRESS_COMMAND) {
+				Expression expressionTwo = getSecondExpr();
+				checkNumParameters(getSecondExpr() != null ? 2 : 1);
+				checkMatrixFrameParam(getFirstExpr());
+				if(expressionTwo != null)
+					checkMatrixParam(getSecondExpr());
+
+				Identifier compressInput1 = getFirstExpr().getOutput();
+				// Identifier compressInput2 = getSecondExpr().getOutput();
+
+				DataIdentifier compressOutput = (DataIdentifier) getOutputs()[0];
+				compressOutput.setDataType(DataType.MATRIX);
+				compressOutput.setDimensions(compressInput1.getDim1(), compressInput1.getDim2());
+				compressOutput.setBlocksize(compressInput1.getBlocksize());
+				compressOutput.setValueType(compressInput1.getValueType());
+
+				DataIdentifier metaOutput = (DataIdentifier) getOutputs()[1];
+				metaOutput.setDataType(DataType.FRAME);
+				metaOutput.setDimensions(compressInput1.getDim1(), -1);
+			}
+			else
+				raiseValidateError("Compress/DeCompress instruction not allowed in dml script");
+			break;
+
 		default: //always unconditional
 			raiseValidateError("Unknown Builtin Function opcode: " + _opcode, false);
 		}
@@ -742,15 +769,23 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			output.setValueType(ValueType.STRING);
 			break;
 		case CAST_AS_FRAME:
-			checkNumParameters(1);
-			checkDataTypeParam(getFirstExpr(),
-			DataType.SCALAR, DataType.MATRIX, DataType.LIST);
+			// operation as.frame
+			// overloaded to take either one argument or 2 where second is column names
+			if( getSecondExpr() == null) {// there is no column names
+				checkNumParameters(1);
+			}
+			else{ // there is column names
+				checkNumParameters(2);
+				checkDataTypeParam(getSecondExpr(), DataType.LIST);
+			}
+
+			checkDataTypeParam(getFirstExpr(), DataType.SCALAR, DataType.MATRIX, DataType.LIST);
 			output.setDataType(DataType.FRAME);
 			output.setDimensions(id.getDim1(), id.getDim2());
-			if( getFirstExpr().getOutput().getDataType()==DataType.SCALAR )
-				output.setDimensions(1, 1); //correction scalars
-			if( getFirstExpr().getOutput().getDataType()==DataType.LIST )
-				output.setDimensions(-1, -1); //correction list: arbitrary object
+			if(getFirstExpr().getOutput().getDataType() == DataType.SCALAR)
+				output.setDimensions(1, 1); // correction scalars
+			if(getFirstExpr().getOutput().getDataType() == DataType.LIST)
+				output.setDimensions(-1, -1); // correction list: arbitrary object
 			output.setBlocksize(id.getBlocksize());
 			output.setValueType(id.getValueType());
 			break;
@@ -1702,7 +1737,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		output.setDimensions(Math.max(dims1.getRows(), dims2.getRows()), Math.max(dims1.getCols(), dims2.getCols()));
 		output.setBlocksize(Math.max(dims1.getBlocksize(), dims2.getBlocksize()));
 	}
-	
+
 	private void setNaryOutputProperties(DataIdentifier output) {
 		DataType dt = Arrays.stream(getAllExpr()).allMatch(
 			e -> e.getOutput().getDataType().isScalar()) ? DataType.SCALAR : DataType.MATRIX;

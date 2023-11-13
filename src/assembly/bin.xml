@@ -64,7 +64,7 @@
 			<includes>
 				<include>systemds</include>
 			</includes>
-      <outputDirectory>bin</outputDirectory>
+				<outputDirectory>bin</outputDirectory>
 			<fileMode>0755</fileMode>
 		</fileSet>
 
@@ -97,6 +97,7 @@
 				<include>*:commons-logging*</include>
 				<include>*:commons-math3*</include>
 				<include>*:commons-text*</include>
+				<include>*:fastdoubleparser*</include>
 				<include>*:guava*</include>
 				<include>*:hadoop-auth*</include>
 				<include>*:hadoop-client*</include>

@@ -14,7 +14,7 @@
 <!--[if IE]>
 <script type="text/javascript" src="../../../../../../jquery/jszip-utils/dist/jszip-utils-ie.min.js"></script>
 <![endif]-->
-<script type="text/javascript" src="../../../../../../jquery/jquery-3.6.0.min.js"></script>
+<script type="text/javascript" src="../../../../../../jquery/jquery-3.6.1.min.js"></script>
 <script type="text/javascript" src="../../../../../../jquery/jquery-ui.min.js"></script>
 </head>
 <body>
@@ -193,7 +193,14 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <h4>encode</h4>
 <pre class="methodSignature">public static&nbsp;<a href="../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;encode&#8203;(<a href="MultiColumnEncoder.html" title="class in org.apache.sysds.runtime.transform.encode">MultiColumnEncoder</a>&nbsp;enc,
                                  <a href="../../frame/data/FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;in,
-                                 int&nbsp;k)</pre>
+                                 int&nbsp;k)
+                          throws <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/InterruptedException.html?is-external=true" title="class or interface in java.lang" class="externalLink">InterruptedException</a>,
+                                 <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/concurrent/ExecutionException.html?is-external=true" title="class or interface in java.util.concurrent" class="externalLink">ExecutionException</a></pre>
+<dl>
+<dt><span class="throwsLabel">Throws:</span></dt>
+<dd><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/InterruptedException.html?is-external=true" title="class or interface in java.lang" class="externalLink">InterruptedException</a></code></dd>
+<dd><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/concurrent/ExecutionException.html?is-external=true" title="class or interface in java.util.concurrent" class="externalLink">ExecutionException</a></code></dd>
+</dl>
 </li>
 </ul>
 </li>

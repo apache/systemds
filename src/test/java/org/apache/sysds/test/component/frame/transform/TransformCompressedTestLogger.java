@@ -73,16 +73,28 @@ public class TransformCompressedTestLogger {
 			MultiColumnEncoder encoderCompressed = EncoderFactory.createEncoder(spec, data.getColumnNames(),
 				data.getNumColumns(), meta);
 			MatrixBlock outCompressed = encoderCompressed.encode(data, true);
-			FrameBlock outCompressedMD = encoderCompressed.getMetaData(null);
+			// FrameBlock outCompressedMD = encoderCompressed.getMetaData(null);
 			MultiColumnEncoder encoderNormal = EncoderFactory.createEncoder(spec, data.getColumnNames(),
 				data.getNumColumns(), meta);
 			MatrixBlock outNormal = encoderNormal.encode(data);
-			FrameBlock outNormalMD = encoderNormal.getMetaData(null);
+			// FrameBlock outNormalMD = encoderNormal.getMetaData(null);
 
 			final List<LoggingEvent> log = LoggingUtils.reinsert(appender);
 			assertTrue(log.get(3).getMessage().toString().contains("Compression ratio"));
 			TestUtils.compareMatrices(outNormal, outCompressed, 0, "Not Equal after apply");
-			TestUtils.compareFrames(outNormalMD, outCompressedMD, true);
+
+			MultiColumnEncoder ec = EncoderFactory.createEncoder(spec, data.getColumnNames(), data.getNumColumns(),
+				encoderCompressed.getMetaData(null));
+			
+			MatrixBlock outMeta1 = ec.apply(data, 1);
+
+			TestUtils.compareMatrices(outNormal, outMeta1, 0, "Not Equal after apply");
+
+			MultiColumnEncoder ec2 = EncoderFactory.createEncoder(spec, data.getColumnNames(), data.getNumColumns(),
+				encoderNormal.getMetaData(null));
+			
+			MatrixBlock outMeta12 = ec2.apply(data, 1);
+			TestUtils.compareMatrices(outNormal, outMeta12, 0, "Not Equal after apply2");
 		}
 		catch(Exception e) {
 			e.printStackTrace();

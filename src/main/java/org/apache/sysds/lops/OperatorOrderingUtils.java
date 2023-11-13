@@ -45,7 +45,6 @@ public class OperatorOrderingUtils
 	public static boolean isLopRoot(Lop lop) {
 		if (lop.getOutputs().isEmpty())
 			return true;
-		//TODO: Handle internal builtins (e.g. eigen)
 		if (lop instanceof FunctionCallCP &&
 			((FunctionCallCP) lop).getFnamespace().equalsIgnoreCase(DMLProgram.INTERNAL_NAMESPACE)) {
 			return true;
@@ -76,6 +75,28 @@ public class OperatorOrderingUtils
 		return total;
 	}
 
+	// Gather the GPU operators which return intermediate to host
+	// In addition count the number of GPU OPs below every operator
+	public static int collectGPURoots(Lop root, Map<Long, Integer> gpuOpCount, HashSet<Lop> gpuRoots) {
+		if(gpuOpCount.containsKey(root.getID())) //visited before
+			return gpuOpCount.get(root.getID());
+
+		// Aggregate GPU operator count in the child DAGs
+		int total = 0;
+		for (Lop input : root.getInputs())
+			total += collectSparkRoots(input, gpuOpCount, gpuRoots);
+
+		// Check if this node is GPU
+		total = root.isExecGPU() ? total + 1 : total;
+		gpuOpCount.put(root.getID(), total);
+
+		// Triggering point: Spark action/operator with all CP consumers
+		if (isD2HCopyOp(root))
+			gpuRoots.add(root);
+
+		return total;
+	}
+
 	// Dictionary of Spark operators which are expensive enough to be
 	// benefited from persisting if shared among jobs.
 	public static boolean isPersistableSparkOp(Lop lop) {
@@ -96,6 +117,16 @@ public class OperatorOrderingUtils
 		boolean prefetch = (lop instanceof UnaryCP) &&
 			((UnaryCP) lop).getOpCode().equalsIgnoreCase("prefetch");
 		return (rightSpLop || col2Bc || prefetch) && !isPrefetched;
+	}
+
+	private static boolean isD2HCopyOp(Lop lop) {
+		boolean rightGpuLop = lop.isExecGPU() && lop.isAllOutputsCP();
+		boolean isPrefetched = lop.isExecGPU() && lop.getOutputs().size() == 1
+			&& lop.getOutputs().get(0) instanceof UnaryCP
+			&& ((UnaryCP) lop.getOutputs().get(0)).getOpCode().equalsIgnoreCase("prefetch");
+		boolean prefetch = (lop instanceof UnaryCP) &&
+			((UnaryCP) lop).getOpCode().equalsIgnoreCase("prefetch");
+		return (rightGpuLop || prefetch) && !isPrefetched;
 	}
 
 	// Determine if the result of this operator is collected to

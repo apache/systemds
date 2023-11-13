@@ -1,0 +1,207 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+rwOutlierByIQR = function(Matrix[Double] X, Double k =1.5, Integer repairMethod = 1,
+  Integer max_iterations, Boolean verbose = TRUE)
+  return(Matrix[Double] Y, Matrix[Double] Q1, Matrix[Double] Q3, Matrix[Double] IQR, Double k, Integer repairMethod)
+{
+  sumPrevious = as.double(0)
+  sumNext = as.double(1)
+  counter = 0
+  while( max_iterations == 0 | counter < max_iterations )
+  {
+    [Q1, Q3, IQR] = compute_quartiles(X)
+    upperBound = (Q3 + (k * IQR));
+    lowerBound = (Q1 - (k * IQR));
+    outlierFilter = X < lowerBound | X > upperBound
+    if(sum(outlierFilter) > 1 & sumNext != 0 & sumPrevious != sumNext ) {
+      #TODO: see outlierBySd why are sumPrevious and sumNext necessary
+      temp = replace(target=X, pattern = NaN, replacement = 0)
+      sumPrevious = sum(temp)
+      X = fix_outliers_iqr(X, outlierFilter, repairMethod)
+      temp = replace(target=X, pattern = NaN, replacement = 0)
+      sumNext = sum(temp)
+    }
+    else
+      max_iterations = -1
+
+    counter = counter + 1;
+  }
+  Y = X
+}
+
+fix_outliers_iqr = function(Matrix[Double] X, Matrix[Double] outlierFilter, Integer repairMethod=1)
+  return(Matrix[Double] fixed_X)
+{
+  rows = nrow(X)
+  cols = ncol(X)
+  if(repairMethod == 0) {
+    sel = rowMaxs(outlierFilter) == 0
+    X = removeEmpty(target = X, margin = "rows", select = sel)
+  }
+  else if(repairMethod == 1)
+    X = (outlierFilter == 0) * X
+  else if(repairMethod == 2)
+  {
+    outlierFilter = replace(target = (outlierFilter == 0), pattern = 0, replacement = NaN)
+    X = outlierFilter * X
+  }
+  else
+    stop("outlierByIQR: invalid argument - repair required 0-2 found: "+repairMethod)
+
+  fixed_X = X
+}
+
+compute_quartiles = function(Matrix[Double] X)
+  return(Matrix[Double] colQ1, Matrix[Double] colQ3, Matrix[Double] IQR)
+{
+  cols = ncol(X)
+  colQ1 = matrix(0, 1, cols)
+  colQ3 = matrix(0, 1, cols)
+  if(nrow(X) > 1) {
+    for(i in 1:cols) {
+      isNull = is.na(X[, i])
+      sel = (isNull == 0)
+      Xt = removeEmpty(target=X[, i], margin="rows", select=sel)
+      colQ1[,i] = quantile(Xt, 0.25)
+      colQ3[,i] = quantile(Xt, 0.75)
+    }
+  }
+  IQR = colQ3 - colQ1
+}
+
+rwImputeByMean = function(Matrix[Double] X, Matrix[Double] mask)
+return(Matrix[Double] X, Matrix[Double] imputedVec)
+{
+  #  mean imputation
+  colMean = matrix(0, rows=1, cols=ncol(X))
+  for(i in 1:ncol(X))
+  {
+    if(as.scalar(mask[1, i]) == 0)
+    {
+      nX = removeEmpty(target=X[, i], margin="rows", select = (is.na(X[, i]) == 0))
+      colMean[1, i] = mean(nX)
+    }
+  }
+
+  if(sum(mask) > 0)
+  {
+    # mode imputation
+    cX = X*mask
+    [X_c, colMode] = imputeByMode(cX)
+    imputedVec = colMean + colMode
+  }
+  else
+    imputedVec = colMean
+  X = imputeByMeanApply(X, imputedVec)
+}
+
+wrapIQR = function(Matrix[double] X) return (Matrix[double] out) {
+  #[X,q1,q3,iqr,k,r] = rwOutlierByIQR(X=X, max_iterations=0, verbose=FALSE);
+  [X,q1,q3,iqr,k,r] = outlierByIQR(X=X, max_iterations=10, verbose=FALSE);
+  while(FALSE){}
+  out = X;
+}
+
+wrapImputeByMode = function(Matrix[double] X) return (Matrix[double] out) {
+  [X, iVec]= imputeByMode(X=X);
+  while(FALSE){}
+  out = X;
+}
+
+wrapMice = function(Matrix[Double] X, Matrix[Double] cMask, Integer iter = 3,
+    Double threshold = 0.8, Boolean verbose = FALSE) return(Matrix[Double] output) {
+  [out,meta,th,dM,betaList] = mice(X=X, cMask=cMask, iter=iter, verbose=verbose);
+  while(FALSE){}
+  output = out;
+}
+
+getAccuracy = function(Matrix[double] X, Matrix[double] y) return (Double accuracy) {
+  #R = crossV(X, y, 0.01, 0, 4);
+  beta = l2svm(X=X, Y=y);
+  [yRaw, yPred] = l2svmPredict(X=X, W=beta, verbose=FALSE);
+  accuracy = sum((yPred - y) == 0) / nrow(y) * 100;
+}
+
+#dataX = rand(rows=8000, cols=23, min=-1, max=5, seed=42);
+#datay = rand(rows=8000, cols=1, min=0, max=2, seed=42);
+#datay = ceil(datay);
+dataX = read($1, data_type="matrix");
+datay = dataX[,7];
+dataX = cbind(dataX[,1:6], dataX[,8:ncol(dataX)]);
+mask = matrix(0, rows=1, cols=ncol(dataX));
+mask[1,1:2] = matrix(1, rows=1, cols=2);
+mask[1,7] = 1;
+mask[1,9] = 1;
+mask[1,11] = 1;
+mask[1,13] = 1;
+mask[1,14:19] = matrix(1, rows=1, cols=6);
+mask[1,21:23] = matrix(1, rows=1, cols=3);
+
+accs = matrix(0, rows=1, cols=5);
+# Pipeline1: imputeByMean, scale, underSampling
+X = dataX;
+y = datay;
+[X, iVec] = imputeByMean(X=X, mask=mask);
+X = scale(X=X, center=TRUE, scale=TRUE);
+X = wrapIQR(X);
+[X,y] = underSampling(X=X, Y=y, ratio=0.1);
+acc = getAccuracy(X, y);
+accs[1,1] = acc;
+
+# Pipeline2: imputeByMean, scale, outlierByIQR
+X = dataX;
+y = datay;
+[X, iVec]= imputeByMean(X=X, mask=mask);
+X = scale(X=X, center=TRUE, scale=TRUE);
+X = wrapIQR(X);
+acc = getAccuracy(X, y);
+accs[1,2] = acc;
+
+dataX = dataX[,1:8];
+mask = mask[,1:8];
+# Pipeline: Mice
+X = dataX;
+y = datay;
+X = wrapMice(X=X, cMask=mask, iter=1, verbose=FALSE);
+acc = getAccuracy(X, y);
+accs[1,1] = acc;
+
+# Pipeline: Mice, scale
+X = dataX;
+y = datay;
+X = wrapMice(X=X, cMask=mask, iter=1, verbose=FALSE);
+[X, cn, sf]= scale(X=X, center=TRUE, scale=TRUE);
+accs[1,2] = sum(X);
+acc = getAccuracy(X, y);
+accs[1,2] = acc;
+
+# Pipeline: Mice, scale, outlierByIQR 
+X = dataX;
+y = datay;
+X = wrapMice(X=X, cMask=mask, iter=1, verbose=FALSE);
+[X, cn, sf]= scale(X=X, center=TRUE, scale=TRUE);
+X = wrapIQR(X);
+acc = getAccuracy(X, y);
+accs[1,3] = acc;
+
+R = sum(accs);
+write(R, $2, format="text");

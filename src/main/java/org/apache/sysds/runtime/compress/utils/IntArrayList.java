@@ -21,16 +21,17 @@ package org.apache.sysds.runtime.compress.utils;
 
 import java.util.Arrays;
 
+import org.apache.sysds.runtime.compress.DMLCompressionException;
+
 public class IntArrayList {
 	private static final int INIT_CAPACITY = 4;
 	private static final int RESIZE_FACTOR = 2;
 
-	private int[] _data = null;
+	private int[] _data;
 	private int _size;
 
 	public IntArrayList() {
-		_data = null;
-		_size = 0;
+		this(INIT_CAPACITY);
 	}
 
 	public IntArrayList(int initialSize) {
@@ -39,6 +40,8 @@ public class IntArrayList {
 	}
 
 	public IntArrayList(int[] values) {
+		if(values == null)
+			throw new DMLCompressionException("Invalid initialization of IntArrayList");
 		_data = values;
 		_size = values.length;
 	}
@@ -49,15 +52,20 @@ public class IntArrayList {
 
 	public void appendValue(int value) {
 		// allocate or resize array if necessary
-		if(_data == null) {
-			_data = new int[INIT_CAPACITY];
-		}
-		else if(_size + 1 >= _data.length)
+		if(_size + 1 > _data.length)
 			resize();
 
 		// append value
 		_data[_size] = value;
 		_size++;
+	}
+
+	public void appendValue(IntArrayList value) {
+		// allocate or resize array if necessary
+		if(_size + value._size >= _data.length)
+			_data = Arrays.copyOf(_data, _size + value._size);
+		System.arraycopy(value._data, 0, _data, _size, value._size);
+		_size = _size + value._size;
 	}
 
 	/**
@@ -71,36 +79,40 @@ public class IntArrayList {
 	}
 
 	public int get(int index) {
-		if(_data != null)
-			return _data[index];
-		else
-			throw new RuntimeException("invalid index to get");
+		return _data[index];
 	}
 
 	public int[] extractValues(boolean trim) {
-		int[] ret = extractValues();
-		return (trim && _size < ret.length) ? Arrays.copyOfRange(ret, 0, _size) : ret;
+		if(trim ){
+			if(_data.length == _size)
+				return _data;
+			return Arrays.copyOfRange(_data, 0, _size);
+		}
+		else
+			return _data;
 	}
 
 	private void resize() {
-		// check for integer overflow on resize
-		if(_data.length > Integer.MAX_VALUE / RESIZE_FACTOR)
-			throw new RuntimeException("IntArrayList resize leads to integer overflow: size=" + _size);
 
 		// resize data array and copy existing contents
 		_data = Arrays.copyOf(_data, _data.length * RESIZE_FACTOR);
 	}
 
+	public void reset() {
+		_size = 0;
+	}
+
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
-
+		if(_size == 0)
+			return "[]";
 		sb.append("[");
 		int i = 0;
 		for(; i < _size - 1; i++)
-			sb.append(_data[i] + ",");
-
-		sb.append(_data[i] + "]");
+			sb.append(_data[i]).append(", ");
+		sb.append(_data[i]);
+		sb.append("]");
 
 		return sb.toString();
 	}

@@ -28,6 +28,7 @@ import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.instructions.Instruction;
 import org.apache.sysds.runtime.instructions.cp.BinaryMatrixMatrixCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.BinaryScalarScalarCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.ComputationCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.Data;
 import org.apache.sysds.runtime.instructions.cp.DataGenCPInstruction;
@@ -49,18 +50,19 @@ public class LineageCacheConfig
 
 	private static final String[] OPCODES = new String[] {
 		"tsmm", "ba+*", "*", "/", "+", "||", "nrow", "ncol", "round", "exp", "log",
-		"rightIndex", "leftIndex", "groupedagg", "r'", "solve", "spoof",
-		"uamean", "max", "min", "ifelse", "-", "sqrt", ">", "uak+", "<=",
-		"^", "uamax", "uark+", "uacmean", "eigen", "ctableexpand", "replace",
-		"^2", "uack+", "tak+*", "uacsqk+", "uark+", "n+", "uarimax", "qsort", 
-		"qpick", "transformapply", "uarmax", "n+", "-*", "castdtm", "lowertri",
-		"prefetch", "mapmm"
+		"rightIndex", "leftIndex", "groupedagg", "r'", "solve", "spoof", "isna",
+		"uamean", "max", "min", "ifelse", "-", "sqrt", "<", ">", "uak+", "<=",
+		"^", "uamax", "uark+", "uacmean", "eigen","ctable", "ctableexpand", "replace",
+		"^2", "*2", "uack+", "tak+*", "uacsqk+", "uark+", "n+", "uarimax", "qsort",
+		"qpick", "transformapply", "uarmax", "n+", "-*", "castdtm", "lowertri", "1-*",
+		"prefetch", "mapmm", "contains", "mmchain", "mapmmchain", "+*", "==", "rmempty",
+		"conv2d_bias_add", "relu_maxpooling", "maxpooling", "softmax"
 		//TODO: Reuse everything.
 	};
 
 	// Relatively expensive instructions. Most include shuffles.
 	private static final String[] PERSIST_OPCODES1 = new String[] {
-		"cpmm", "rmm", "pmm", "rev", "rshape", "rsort", "+", "-", "*",
+		"cpmm", "rmm", "pmm", "zipmm", "rev", "rshape", "rsort", "-", "*", "+",
 		"/", "%%", "%/%", "1-*", "^", "^2", "*2", "==", "!=", "<", ">",
 		"<=", ">=", "&&", "||", "xor", "max", "min", "rmempty", "rappend",
 		"gappend", "galignedappend", "rbind", "cbind", "nmin", "nmax",
@@ -70,7 +72,11 @@ public class LineageCacheConfig
 
 	// Relatively inexpensive instructions.
 	private static final String[] PERSIST_OPCODES2 = new String[] {
-		"mapmm"
+		"mapmm", "isna", "leftIndex"
+	};
+
+	private static final String[] GPU_OPCODE_HEAVY = new String[] {
+		"conv2d_bias_add", "relu_maxpooling", "maxpooling"	 //DNN OPs
 	};
 
 	private static String[] REUSE_OPCODES  = new String[] {};
@@ -98,12 +104,23 @@ public class LineageCacheConfig
 	}
 
 	protected static final double CPU_CACHE_FRAC = 0.05; // 5% of JVM heap size
-	protected static final double GPU_CACHE_MAX = 0.30; // 30% of gpu memory
 	private static ReuseCacheType _cacheType = null;
+	@SuppressWarnings("unused")
 	private static CachedItemHead _itemH = null;
+	@SuppressWarnings("unused")
 	private static CachedItemTail _itemT = null;
 	private static boolean _compilerAssistedRW = false;
 	private static boolean _onlyEstimate = false;
+	private static boolean _reuseLineageTraces = true;
+	private static boolean DELAYED_CACHING = false;
+
+	// Delayed caching may lead to deletion and cache misses in GPU.
+	// Once the GPU memory is full, the non-reusable intermediates deallocates/deletes the cached
+	// entries from the free lists, leading to cache misses and high eviction overhead. Eager caching,
+	// however places every intermediate in a free list, increasing recycling and reducing deletion.
+	// Note, delayed caching helps in reducing lineage caching/probing overhead for use cases with
+	// no reusable instructions, but is anti-productive for use cases with repeating patterns (eg. scoring).
+	private static boolean DELAYED_CACHING_GPU = true;
 
 	//-------------DISK SPILLING RELATED CONFIGURATIONS--------------//
 
@@ -141,16 +158,16 @@ public class LineageCacheConfig
 	// Weights for scoring components (computeTime/size, LRU timestamp, DAG height)
 	protected static double[] WEIGHTS = {1, 0, 0};
 	public static boolean GPU2HOSTEVICTION = false;
-	public static boolean CONCURRENTGPUEVICTION = false;
-	public static volatile boolean STOPBACKGROUNDEVICTION = false;
 
 	protected enum LineageCacheStatus {
 		EMPTY,     //Placeholder with no data. Cannot be evicted.
 		NOTCACHED, //Placeholder removed from the cache
+		TOCACHE,   //To be cached in memory if reoccur
 		CACHED,    //General cached data. Can be evicted.
 		SPILLED,   //Data is in disk. Empty value. Cannot be evicted.
 		RELOADED,  //Reloaded from disk. Can be evicted.
 		PINNED,    //Pinned to memory. Cannot be evicted.
+		TOCACHEGPU, //To be cached in GPU if the instruction reoccur
 		GPUCACHED, //Points to GPU intermediate
 		PERSISTEDRDD, //Persisted at the Spark executors
 		TOPERSISTRDD, //To be persisted if the instruction reoccur
@@ -204,6 +221,14 @@ public class LineageCacheConfig
 		return ret;
 	};
 
+	protected static Comparator<LineageCacheEntry> LineageGPUCacheComparator = (e1, e2) -> {
+		if (e1._key.getId() == e2._key.getId())
+			return 0;
+		if (e1.score == e2.score)
+			return Long.compare(e1._key.getId(), e2._key.getId());
+		else
+			return e1.score < e2.score ? -1 : 1;
+	};
 
 	//-------------SPARK OPERATION RELATED CONFIGURATIONS--------------//
 
@@ -238,7 +263,8 @@ public class LineageCacheConfig
 			|| inst instanceof ComputationFEDInstruction
 			|| inst instanceof GPUInstruction
 			|| inst instanceof ComputationSPInstruction)
-			&& !(inst instanceof ListIndexingCPInstruction);
+			&& !(inst instanceof ListIndexingCPInstruction)
+			&& !(inst instanceof BinaryScalarScalarCPInstruction);
 		boolean rightCPOp = (ArrayUtils.contains(REUSE_OPCODES, inst.getOpcode())
 			|| (inst.getOpcode().equals("append") && isVectorAppend(inst, ec))
 			|| (inst.getOpcode().startsWith("spoof"))
@@ -299,12 +325,18 @@ public class LineageCacheConfig
 		return insttype && rightOp;
 	}
 
-	protected static boolean isShuffleOp(Instruction inst) {
-		return ArrayUtils.contains(PERSIST_OPCODES1, inst.getOpcode());
+	protected static boolean isShuffleOp(String opcode) {
+		return ArrayUtils.contains(PERSIST_OPCODES1, opcode);
+	}
+
+	protected static boolean isComputeGPUOps(String opcode) {
+		return ArrayUtils.contains(GPU_OPCODE_HEAVY, opcode);
 	}
 
 	protected static int getComputeGroup(String opcode) {
-		return ArrayUtils.contains(PERSIST_OPCODES1, opcode) ? 2 : 1;
+		boolean heavy_hitter = ArrayUtils.contains(PERSIST_OPCODES1, opcode)
+			|| ArrayUtils.contains(GPU_OPCODE_HEAVY, opcode);
+		return heavy_hitter ? 2 : 1;
 	}
 
 
@@ -356,16 +388,24 @@ public class LineageCacheConfig
 			&& _cacheType.isMultilevelReuse();
 	}
 
-	public static CachedItemHead getCachedItemHead() {
-		return _itemH;
-	}
-
-	public static CachedItemTail getCachedItemTail() {
-		return _itemT;
-	}
-	
 	public static boolean getCompAssRW() {
 		return _compilerAssistedRW;
+	}
+
+	public static void setReuseLineageTraces(boolean reuseTrace) {
+		_reuseLineageTraces = reuseTrace;
+	}
+
+	public static boolean isLineageTraceReuse() {
+		return _reuseLineageTraces;
+	}
+
+	public static boolean isDelayedCaching() {
+		return DELAYED_CACHING;
+	}
+
+	public static boolean isDelayedCachingGPU() {
+		return DELAYED_CACHING_GPU;
 	}
 
 	public static void setCachePolicy(LineageCachePolicy policy) {

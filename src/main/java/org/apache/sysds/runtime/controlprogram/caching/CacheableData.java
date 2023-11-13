@@ -26,7 +26,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
-import org.apache.commons.lang.mutable.MutableBoolean;
+import org.apache.commons.lang3.mutable.MutableBoolean;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.fs.Path;
@@ -137,7 +137,7 @@ public abstract class CacheableData<T extends CacheBlock<?>> extends Data
 	/**
 	 * Current state of pinned variables, required for guarded collect.
 	 */
-	private static ThreadLocal<Long> sizePinned = new ThreadLocal<Long>() {
+	private static ThreadLocal<Long> sizePinned = new ThreadLocal<>() {
 		@Override protected Long initialValue() { return 0L; }
 	};
 
@@ -1280,7 +1280,12 @@ public abstract class CacheableData<T extends CacheBlock<?>> extends Data
 	public boolean isPendingRDDOps() {
 		return isEmpty(true) && _data == null && (_rddHandle != null && _rddHandle.hasBackReference());
 	}
-	
+
+	public boolean isDeviceToHostCopy() {
+		boolean isGpuOP = isEmpty(true) && _data == null && _gpuObjects != null;
+		return isGpuOP && _gpuObjects.values().stream().anyMatch(gobj -> (gobj != null && gobj.isDirty()));
+	}
+
 	protected void setEmpty() {
 		_cacheStatus = CacheStatus.EMPTY;
 	}

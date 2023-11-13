@@ -1,0 +1,60 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+
+X = read("data/Adult_X.csv")
+y = read("data/Adult_y.csv")
+B = read("data/Adult_W.csv")
+
+[Xtrain,Xtest,ytrain,ytest] = split(X=X,Y=y,f=0.7,cont=FALSE,seed=7)
+
+X = Xtrain;
+y = ytrain;
+
+# vanilla training with from scratch or from good model
+w = rand(rows=ncol(X), cols=1, min=0, max=0.05);
+icpt = 0
+#w = B[1:ncol(X), ];
+#icpt = as.scalar(B[nrow(B),])
+
+maxiter = 200;
+i = 0
+lr = 15
+lrdecay = 1.05
+
+y = y==1;
+while (i < maxiter) {
+  z = X %*% w + icpt
+  ht = sigmoid(z) #yhat
+  obj = -1/nrow(X) * sum(y*log(ht) + (1-y)*log(1-ht))
+  grad = (t(X) %*% (ht-y)) / nrow(X)
+
+  print("Iteration "+i+": "+obj+" "+sum(grad))
+  w = w - lr * grad;
+  i = i+1
+  lr = lr/lrdecay
+}
+y = y+2*(y==0);
+
+
+[M,yhat,acc] = multiLogRegPredict(X=X, B=w, Y=y, verbose=TRUE);
+[M,yhat,acc] = multiLogRegPredict(X=Xtest, B=w, Y=ytest, verbose=TRUE);
+

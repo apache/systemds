@@ -36,12 +36,12 @@ jobs:
 
     steps:
     - name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
     # https://github.com/docker/metadata-action
     - name: Configure Docker metadata
       id: meta
-      uses: docker/metadata-action@v4
+      uses: docker/metadata-action@v5
       with:
         images: apache/systemds
         tags: |
@@ -50,12 +50,12 @@ jobs:
     # https://github.com/docker/setup-buildx-action
     - name: Set up Docker Buildx
       id: buildx
-      uses: docker/setup-buildx-action@v2
+      uses: docker/setup-buildx-action@v3
 
     # https://github.com/docker/login-action  
     - name: Login to DockerHub
       if: github.event_name != 'pull_request'
-      uses: docker/login-action@v2
+      uses: docker/login-action@v3
       with:
           username: ${{ secrets.DOCKERHUB_USER }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
@@ -63,7 +63,7 @@ jobs:
     # https://github.com/docker/build-push-action
     - name: Build and push
       id: docker_build
-      uses: docker/build-push-action@v4
+      uses: docker/build-push-action@v5
       with:
         context: .
         file: ./docker/${{ matrix.docker-file }}

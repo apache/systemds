@@ -25,9 +25,9 @@ then
   exit 1;
 fi
 
-COMMAND=$1
-BASE=$2/dimensionreduction
-MAXMEM=$3
+CMD=${1:-systemds}
+BASE=${2:-"temp"}/dimensionreduction
+MAXMEM=${3:-80}
 
 FILENAME=$0
 err_report() {

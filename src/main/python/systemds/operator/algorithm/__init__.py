@@ -51,6 +51,7 @@ from .builtin.decisionTree import decisionTree
 from .builtin.decisionTreePredict import decisionTreePredict 
 from .builtin.deepWalk import deepWalk 
 from .builtin.denialConstraints import denialConstraints 
+from .builtin.differenceStatistics import differenceStatistics 
 from .builtin.discoverFD import discoverFD 
 from .builtin.dist import dist 
 from .builtin.dmv import dmv 
@@ -61,6 +62,7 @@ from .builtin.ffTrain import ffTrain
 from .builtin.fit_pipeline import fit_pipeline 
 from .builtin.fixInvalidLengths import fixInvalidLengths 
 from .builtin.fixInvalidLengthsApply import fixInvalidLengthsApply 
+from .builtin.flattenQuantile import flattenQuantile 
 from .builtin.frameSort import frameSort 
 from .builtin.frequencyEncode import frequencyEncode 
 from .builtin.frequencyEncodeApply import frequencyEncodeApply 
@@ -76,16 +78,24 @@ from .builtin.gridSearch import gridSearch
 from .builtin.hospitalResidencyMatch import hospitalResidencyMatch 
 from .builtin.hyperband import hyperband 
 from .builtin.img_brightness import img_brightness 
+from .builtin.img_brightness_linearized import img_brightness_linearized 
 from .builtin.img_crop import img_crop 
+from .builtin.img_crop_linearized import img_crop_linearized 
 from .builtin.img_cutout import img_cutout 
+from .builtin.img_cutout_linearized import img_cutout_linearized 
 from .builtin.img_invert import img_invert 
+from .builtin.img_invert_linearized import img_invert_linearized 
 from .builtin.img_mirror import img_mirror 
+from .builtin.img_mirror_linearized import img_mirror_linearized 
 from .builtin.img_posterize import img_posterize 
+from .builtin.img_posterize_linearized import img_posterize_linearized 
 from .builtin.img_rotate import img_rotate 
 from .builtin.img_sample_pairing import img_sample_pairing 
 from .builtin.img_shear import img_shear 
 from .builtin.img_transform import img_transform 
+from .builtin.img_transform_linearized import img_transform_linearized 
 from .builtin.img_translate import img_translate 
+from .builtin.img_translate_linearized import img_translate_linearized 
 from .builtin.impurityMeasures import impurityMeasures 
 from .builtin.imputeByFD import imputeByFD 
 from .builtin.imputeByFDApply import imputeByFDApply 
@@ -113,11 +123,15 @@ from .builtin.lmDS import lmDS
 from .builtin.lmPredict import lmPredict 
 from .builtin.lmPredictStats import lmPredictStats 
 from .builtin.logSumExp import logSumExp 
+from .builtin.mae import mae 
+from .builtin.mape import mape 
 from .builtin.matrixProfile import matrixProfile 
 from .builtin.mcc import mcc 
 from .builtin.mdedup import mdedup 
 from .builtin.mice import mice 
 from .builtin.miceApply import miceApply 
+from .builtin.mse import mse 
+from .builtin.msmape import msmape 
 from .builtin.msvm import msvm 
 from .builtin.msvmPredict import msvmPredict 
 from .builtin.multiLogReg import multiLogReg 
@@ -127,6 +141,7 @@ from .builtin.naiveBayes import naiveBayes
 from .builtin.naiveBayesPredict import naiveBayesPredict 
 from .builtin.normalize import normalize 
 from .builtin.normalizeApply import normalizeApply 
+from .builtin.nrmse import nrmse 
 from .builtin.outlier import outlier 
 from .builtin.outlierByArima import outlierByArima 
 from .builtin.outlierByIQR import outlierByIQR 
@@ -138,8 +153,10 @@ from .builtin.pcaInverse import pcaInverse
 from .builtin.pcaTransform import pcaTransform 
 from .builtin.pnmf import pnmf 
 from .builtin.ppca import ppca 
+from .builtin.psnr import psnr 
 from .builtin.randomForest import randomForest 
 from .builtin.randomForestPredict import randomForestPredict 
+from .builtin.rmse import rmse 
 from .builtin.scale import scale 
 from .builtin.scaleApply import scaleApply 
 from .builtin.scaleMinMax import scaleMinMax 
@@ -149,7 +166,9 @@ from .builtin.sherlock import sherlock
 from .builtin.sherlockPredict import sherlockPredict 
 from .builtin.shortestPath import shortestPath 
 from .builtin.sigmoid import sigmoid 
+from .builtin.skewness import skewness 
 from .builtin.slicefinder import slicefinder 
+from .builtin.smape import smape 
 from .builtin.smote import smote 
 from .builtin.softmax import softmax 
 from .builtin.split import split 
@@ -205,6 +224,7 @@ __all__ = ['WoE',
  'decisionTreePredict',
  'deepWalk',
  'denialConstraints',
+ 'differenceStatistics',
  'discoverFD',
  'dist',
  'dmv',
@@ -215,6 +235,7 @@ __all__ = ['WoE',
  'fit_pipeline',
  'fixInvalidLengths',
  'fixInvalidLengthsApply',
+ 'flattenQuantile',
  'frameSort',
  'frequencyEncode',
  'frequencyEncodeApply',
@@ -230,16 +251,24 @@ __all__ = ['WoE',
  'hospitalResidencyMatch',
  'hyperband',
  'img_brightness',
+ 'img_brightness_linearized',
  'img_crop',
+ 'img_crop_linearized',
  'img_cutout',
+ 'img_cutout_linearized',
  'img_invert',
+ 'img_invert_linearized',
  'img_mirror',
+ 'img_mirror_linearized',
  'img_posterize',
+ 'img_posterize_linearized',
  'img_rotate',
  'img_sample_pairing',
  'img_shear',
  'img_transform',
+ 'img_transform_linearized',
  'img_translate',
+ 'img_translate_linearized',
  'impurityMeasures',
  'imputeByFD',
  'imputeByFDApply',
@@ -267,11 +296,15 @@ __all__ = ['WoE',
  'lmPredict',
  'lmPredictStats',
  'logSumExp',
+ 'mae',
+ 'mape',
  'matrixProfile',
  'mcc',
  'mdedup',
  'mice',
  'miceApply',
+ 'mse',
+ 'msmape',
  'msvm',
  'msvmPredict',
  'multiLogReg',
@@ -281,6 +314,7 @@ __all__ = ['WoE',
  'naiveBayesPredict',
  'normalize',
  'normalizeApply',
+ 'nrmse',
  'outlier',
  'outlierByArima',
  'outlierByIQR',
@@ -292,8 +326,10 @@ __all__ = ['WoE',
  'pcaTransform',
  'pnmf',
  'ppca',
+ 'psnr',
  'randomForest',
  'randomForestPredict',
+ 'rmse',
  'scale',
  'scaleApply',
  'scaleMinMax',
@@ -303,7 +339,9 @@ __all__ = ['WoE',
  'sherlockPredict',
  'shortestPath',
  'sigmoid',
+ 'skewness',
  'slicefinder',
+ 'smape',
  'smote',
  'softmax',
  'split',

@@ -14,7 +14,7 @@
 <!--[if IE]>
 <script type="text/javascript" src="../../../../../jquery/jszip-utils/dist/jszip-utils-ie.min.js"></script>
 <![endif]-->
-<script type="text/javascript" src="../../../../../jquery/jquery-3.6.0.min.js"></script>
+<script type="text/javascript" src="../../../../../jquery/jquery-3.6.1.min.js"></script>
 <script type="text/javascript" src="../../../../../jquery/jquery-ui.min.js"></script>
 </head>
 <body>
@@ -187,6 +187,11 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <tr class="altColor">
 <td class="colFirst"><code>static <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#CATEGORY_WORK">CATEGORY_WORK</a></span></code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>static int</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#DOUBLE_BUFFERING_MIN">DOUBLE_BUFFERING_MIN</a></span></code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 </table>
@@ -434,8 +439,9 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 </tr>
 <tr id="i31" class="rowColor">
 <td class="colFirst"><code>static void</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#writeWritableToLocal(java.lang.String,org.apache.hadoop.io.Writable)">writeWritableToLocal</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;fname,
-                    org.apache.hadoop.io.Writable&nbsp;mb)</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#writeWritableToLocal(java.lang.String,org.apache.hadoop.io.Writable,boolean)">writeWritableToLocal</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;fname,
+                    org.apache.hadoop.io.Writable&nbsp;mb,
+                    boolean&nbsp;doubleBuffering)</code></th>
 <td class="colLast">
 <div class="block">Writes an arbitrary writable to local file system, using a fused buffered writer
  with special support for matrix blocks.</div>
@@ -475,6 +481,19 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <dl>
 <dt><span class="seeLabel">See Also:</span></dt>
 <dd><a href="../../../../../constant-values.html#org.apache.sysds.runtime.util.LocalFileUtils.BUFFER_SIZE">Constant Field Values</a></dd>
+</dl>
+</li>
+</ul>
+<a id="DOUBLE_BUFFERING_MIN">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>DOUBLE_BUFFERING_MIN</h4>
+<pre>public static final&nbsp;int DOUBLE_BUFFERING_MIN</pre>
+<dl>
+<dt><span class="seeLabel">See Also:</span></dt>
+<dd><a href="../../../../../constant-values.html#org.apache.sysds.runtime.util.LocalFileUtils.DOUBLE_BUFFERING_MIN">Constant Field Values</a></dd>
 </dl>
 </li>
 </ul>
@@ -806,14 +825,15 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 </dl>
 </li>
 </ul>
-<a id="writeWritableToLocal(java.lang.String,org.apache.hadoop.io.Writable)">
+<a id="writeWritableToLocal(java.lang.String,org.apache.hadoop.io.Writable,boolean)">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
 <h4>writeWritableToLocal</h4>
 <pre class="methodSignature">public static&nbsp;void&nbsp;writeWritableToLocal&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;fname,
-                                        org.apache.hadoop.io.Writable&nbsp;mb)
+                                        org.apache.hadoop.io.Writable&nbsp;mb,
+                                        boolean&nbsp;doubleBuffering)
                                  throws <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></pre>
 <div class="block">Writes an arbitrary writable to local file system, using a fused buffered writer
  with special support for matrix blocks.</div>
@@ -821,6 +841,7 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>fname</code> - file name to write</dd>
 <dd><code>mb</code> - Hadoop writable</dd>
+<dd><code>doubleBuffering</code> - overlay serialization and I/O</dd>
 <dt><span class="throwsLabel">Throws:</span></dt>
 <dd><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></code> - if IOException occurs</dd>
 </dl>

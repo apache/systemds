@@ -17,23 +17,21 @@
  * under the License.
  */
 
-
 package org.apache.sysds.runtime.compress.utils;
-
 
 import org.apache.spark.api.java.function.Function;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
 public class CompressRDDClean implements Function<MatrixBlock, MatrixBlock> {
-	
+
 	private static final long serialVersionUID = -704403012606821854L;
 
 	@Override
 	public MatrixBlock call(MatrixBlock mb) throws Exception {
-		
-		if(mb instanceof CompressedMatrixBlock){
-			CompressedMatrixBlock cmb = (CompressedMatrixBlock)mb;
+
+		if(mb instanceof CompressedMatrixBlock) {
+			CompressedMatrixBlock cmb = (CompressedMatrixBlock) mb;
 			cmb.clearSoftReferenceToDecompressed();
 			return cmb;
 		}

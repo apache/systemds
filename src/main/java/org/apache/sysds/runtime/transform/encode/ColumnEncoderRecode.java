@@ -47,7 +47,7 @@ public class ColumnEncoderRecode extends ColumnEncoder {
 	public static boolean SORT_RECODE_MAP = false;
 
 	// recode maps and custom map for partial recode maps
-	private HashMap<Object, Long> _rcdMap;
+	private Map<Object, Long> _rcdMap;
 	private HashSet<Object> _rcdMapPart = null;
 
 	public ColumnEncoderRecode(int colID) {
@@ -94,7 +94,7 @@ public class ColumnEncoderRecode extends ColumnEncoder {
 		return new String[] {value.substring(0, pos), value.substring(pos + 1)};
 	}
 
-	public HashMap<Object, Long> getCPRecodeMaps() {
+	public Map<Object, Long> getCPRecodeMaps() {
 		return _rcdMap;
 	}
 
@@ -106,7 +106,7 @@ public class ColumnEncoderRecode extends ColumnEncoder {
 		sortCPRecodeMaps(_rcdMap);
 	}
 
-	private static void sortCPRecodeMaps(HashMap<Object, Long> map) {
+	private static void sortCPRecodeMaps(Map<Object, Long> map) {
 		Object[] keys = map.keySet().toArray(new Object[0]);
 		Arrays.sort(keys);
 		map.clear();
@@ -114,7 +114,7 @@ public class ColumnEncoderRecode extends ColumnEncoder {
 			putCode(map, key);
 	}
 
-	private static void makeRcdMap(CacheBlock<?> in, HashMap<Object, Long> map, int colID, int startRow, int blk) {
+	private static void makeRcdMap(CacheBlock<?> in, Map<Object, Long> map, int colID, int startRow, int blk) {
 		for(int row = startRow; row < getEndIndex(in.getNumRows(), startRow, blk); row++){
 			String key = in.getString(row, colID - 1);
 			if(key != null && !key.isEmpty() && !map.containsKey(key))
@@ -202,7 +202,7 @@ public class ColumnEncoderRecode extends ColumnEncoder {
 	 * @param map column map
 	 * @param key key for the new entry
 	 */
-	protected static void putCode(HashMap<Object, Long> map, Object key) {
+	protected static void putCode(Map<Object, Long> map, Object key) {
 		map.put(key, (long) (map.size() + 1));
 	}
 
@@ -217,10 +217,9 @@ public class ColumnEncoderRecode extends ColumnEncoder {
 	}
 	
 	@Override
-	protected double[] getCodeCol(CacheBlock<?> in, int startInd, int blkSize) {
-		// lookup for a block of rows
-		int endInd = getEndIndex(in.getNumRows(), startInd, blkSize);
-		double codes[] = new double[endInd-startInd];
+	protected double[] getCodeCol(CacheBlock<?> in, int startInd, int endInd, double[] tmp) {
+		final int endLength = endInd - startInd;
+		final double[] codes = tmp != null && tmp.length == endLength ? tmp : new double[endLength];
 		for (int i=startInd; i<endInd; i++) {
 			String key = in.getString(i, _colID-1);
 			if(key == null || key.isEmpty()) {
@@ -270,7 +269,7 @@ public class ColumnEncoderRecode extends ColumnEncoder {
 		assert other._colID == _colID;
 		// merge together overlapping columns
 		ColumnEncoderRecode otherRec = (ColumnEncoderRecode) other;
-		HashMap<Object, Long> otherMap = otherRec._rcdMap;
+		Map<Object, Long> otherMap = otherRec._rcdMap;
 		if(otherMap != null) {
 			// for each column, add all non present recode values
 			for(Map.Entry<Object, Long> entry : otherMap.entrySet()) {
@@ -363,7 +362,7 @@ public class ColumnEncoderRecode extends ColumnEncoder {
 		return Objects.hash(_rcdMap);
 	}
 
-	public HashMap<Object, Long> getRcdMap() {
+	public Map<Object, Long> getRcdMap() {
 		return _rcdMap;
 	}
 
@@ -460,7 +459,7 @@ public class ColumnEncoderRecode extends ColumnEncoder {
 		@Override
 		public Object call() throws Exception {
 			long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
-			HashMap<Object, Long> rcdMap = _encoder.getRcdMap();
+			Map<Object, Long> rcdMap = _encoder.getRcdMap();
 			_partialMaps.forEach((start_row, map) -> {
 				((HashMap<?, ?>) map).forEach((k, v) -> {
 					if(!rcdMap.containsKey(k))

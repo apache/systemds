@@ -59,8 +59,24 @@ public interface FrameUtil {
 		return ret;
 	}
 
-	private static ValueType isBooleanType(final String val, int len) {
-		if(val.length() <= 16 && booleanPattern.matcher(val).matches())
+	private static boolean isBooleanType(final char c) {
+		switch(c) {
+			case '0':
+			case '1':
+			case 't':
+			case 'T':
+			case 'f':
+			case 'F':
+				return true;
+			default:
+				return false;
+		}
+	}
+
+	private static ValueType isBooleanType(final String val, final int len) {
+		if(len == 1 && isBooleanType(val.charAt(0)))
+			return ValueType.BOOLEAN;
+		else if(len <= 16 && isBooleanType(val.charAt(0)) && booleanPattern.matcher(val).matches())
 			return ValueType.BOOLEAN;
 		return null;
 	}
@@ -68,9 +84,18 @@ public interface FrameUtil {
 	private static boolean simpleIntMatch(final String val, final int len) {
 		for(int i = 0; i < len; i++) {
 			final char c = val.charAt(i);
+			if(c == '.' && i < 0)
+				return restIsZero(val, i + 1, len);
 			if(c < '0' || c > '9')
 				return false;
 		}
+		return true;
+	}
+
+	private static boolean restIsZero(final String val, int i, final int len) {
+		for(; i < len; i++)
+			if(val.charAt(i) != '0')
+				return false;
 		return true;
 	}
 
@@ -97,18 +122,75 @@ public interface FrameUtil {
 		return null;
 	}
 
-	public static ValueType isFloatType(final String val, final int len) {
+	public static ValueType isHash(final String val, final int len) {
+		if(len == 8) {
+			for(int i = 0; i < 8; i++) {
+				char v = val.charAt(i);
+				if(v < '0' || v > 'f')
+					return null;
+			}
+			return ValueType.HASH64;
+		}
+		return null;
+	}
 
-		if(len <= 25 && floatPattern.matcher(val).matches()) {
+	public static ValueType isFloatType(final String val, final int len) {
+		if(len <= 30 && (simpleFloatMatch(val, len) || floatPattern.matcher(val).matches())) {
+			if(len <= 7 || (len == 8 && val.charAt(0) == '-'))
+				return ValueType.FP32;
+			else if(len >= 13)
+				return ValueType.FP64;
+
 			final double d = Double.parseDouble(val);
-			if(same(d, (float) d))
+			if(d >= 10000 || d < 0.00001)
+				return ValueType.FP64; // just to be safe.
+			else if(same(d, (float) d))
 				return ValueType.FP32;
 			else
 				return ValueType.FP64;
 		}
-		else if(val.equals("infinity") || val.equals("-infinity") || val.equals("nan"))
-			return ValueType.FP64;
+		final char first = val.charAt(0);
+		// char sec = val.charAt(1);
+
+		if(len >= 3 && (first == 'i' || first == 'I')) {
+			String val2 = val.toLowerCase();
+			if((len == 3 && val2.equals("inf")) || (len == 8 && val2.equals("infinity")))
+				return ValueType.FP32;
+		}
+		else if(len == 3 & (first == 'n' || first == 'N')) {
+			final String val2 = val.toLowerCase();
+			if(val2.equals("nan"))
+				return ValueType.FP32;
+		}
+		else if(len > 1 && first == '-') {
+			final char sec = val.charAt(1);
+			if(sec == 'i' || sec == 'I') {
+				String val2 = val.toLowerCase();
+				if((len == 4 && val2.equals("-inf")) || (len == 9 && val2.equals("-infinity")))
+					return ValueType.FP32;
+			}
+		}
 		return null;
+	}
+
+	private static boolean simpleFloatMatch(final String val, final int len) {
+		// a simple float matcher to avoid using the Regex.
+		boolean encounteredDot = false;
+		int start = val.charAt(0) == '-' && len > 1 ? 1 : 0;
+		for(int i = start; i < len; i++) {
+			final char c = val.charAt(i);
+			if(c >= '0' && c <= '9')
+				continue;
+			else if(c == '.' || c == ',') {
+				if(encounteredDot == true)
+					return false;
+				else
+					encounteredDot = true;
+			}
+			else
+				return false;
+		}
+		return true;
 	}
 
 	private static boolean same(double d, float f) {
@@ -139,7 +221,7 @@ public interface FrameUtil {
 		switch(minType) {
 			case UNKNOWN:
 			case BOOLEAN:
-			case CHARACTER:
+				// case CHARACTER:
 				if(isBooleanType(val, len) != null)
 					return ValueType.BOOLEAN;
 			case UINT8:
@@ -153,8 +235,13 @@ public interface FrameUtil {
 				r = isFloatType(val, len);
 				if(r != null)
 					return r;
+			case CHARACTER:
 				if(len == 1)
 					return ValueType.CHARACTER;
+			case HASH64:
+				r = isHash(val, len);
+				if(r != null)
+					return r;
 			case STRING:
 			default:
 				return ValueType.STRING;
@@ -233,7 +320,6 @@ public interface FrameUtil {
 		mergedFrame.appendRow(rowTemp1);
 		return mergedFrame;
 	}
-
 
 	public static boolean isDefault(String v, ValueType t) {
 		if(v == null)

@@ -20,16 +20,18 @@
 package org.apache.sysds.runtime.instructions.fed;
 
 import java.util.Arrays;
+import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.sysds.common.Types;
-import org.apache.sysds.lops.Lop;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRange;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest;
+import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
 import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
 import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
@@ -116,10 +118,10 @@ public class ReshapeFEDInstruction extends UnaryFEDInstruction {
 			FederatedRequest[] fr1 = FederationUtils.callInstruction(newInstString, output, id,
 				new CPOperand[] {input1}, new long[] {mo1.getFedMapping().getID()}, InstructionUtils.getExecType(instString));
 			mo1.getFedMapping().execute(getTID(), true, tmp);
-			mo1.getFedMapping().execute(getTID(), true, fr1, new FederatedRequest[0]);
+			Future<FederatedResponse>[] ffr = mo1.getFedMapping().execute(getTID(), true, fr1, new FederatedRequest[0]);
 
 			// set new fed map
-			FederationMap reshapedFedMap = mo1.getFedMapping();
+			FederationMap reshapedFedMap = mo1.getFedMapping().copyWithNewID(fr1[0].getID());
 			for(int i = 0; i < reshapedFedMap.getFederatedRanges().length; i++) {
 				long cells = reshapedFedMap.getFederatedRanges()[i].getSize();
 				long row = byRow.getBooleanValue() ? cells / cols : rows;
@@ -139,8 +141,10 @@ public class ReshapeFEDInstruction extends UnaryFEDInstruction {
 
 			//derive output federated mapping
 			MatrixObject out = ec.getMatrixObject(output);
-			out.getDataCharacteristics().set(rows, cols, (int) mo1.getBlocksize(), mo1.getNnz());
-			out.setFedMapping(reshapedFedMap.copyWithNewID(fr1[0].getID()));
+			long nnz = (mo1.getNnz() != -1) ? mo1.getNnz() : FederationUtils.sumNonZeros(ffr);
+			out.getDataCharacteristics().setDimension(rows, cols)
+				.setBlocksize(mo1.getBlocksize()).setNonZeros(nnz);
+			out.setFedMapping(reshapedFedMap);
 		}
 		else {
 			// TODO support tensor out, frame and list
@@ -156,14 +160,15 @@ public class ReshapeFEDInstruction extends UnaryFEDInstruction {
 			.collect(Collectors.toSet()).size();
 		sameFedSize = sameFedSize == 1 ? 1 : mo1.getFedMapping().getSize();
 
+		String execTypeName = InstructionUtils.getExecType(instString).name();
+		String[] instParts = InstructionUtils.getInstructionPartsWithValueType(instString);
 		for(int i = 0; i < sameFedSize; i++) {
-			String[] instParts = instString.split(Lop.OPERAND_DELIMITOR);
 			long size = mo1.getFedMapping().getFederatedRanges()[i].getSize();
-			String oldInstStringPart = byRow ? instParts[3] : instParts[4];
-			String newInstStringPart = byRow ? 
-				oldInstStringPart.replace(String.valueOf(rows), String.valueOf(size/cols)) :
-				oldInstStringPart.replace(String.valueOf(cols), String.valueOf(size/rows));
-			instStrings[i] = instString.replace(oldInstStringPart, newInstStringPart);
+			instParts[2] = InstructionUtils.createLiteralOperand(
+				String.valueOf((int)(byRow ? size/cols : rows)), Types.ValueType.INT64);
+			instParts[3] = InstructionUtils.createLiteralOperand(
+				String.valueOf((int)(byRow ? cols : size/rows)), Types.ValueType.INT64);
+			instStrings[i] = InstructionUtils.concatOperands(ArrayUtils.addFirst(instParts, execTypeName));
 		}
 
 		if(sameFedSize == 1)

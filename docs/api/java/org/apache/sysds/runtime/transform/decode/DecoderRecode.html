@@ -14,7 +14,7 @@
 <!--[if IE]>
 <script type="text/javascript" src="../../../../../../jquery/jszip-utils/dist/jszip-utils-ie.min.js"></script>
 <![endif]-->
-<script type="text/javascript" src="../../../../../../jquery/jquery-3.6.0.min.js"></script>
+<script type="text/javascript" src="../../../../../../jquery/jquery-3.6.1.min.js"></script>
 <script type="text/javascript" src="../../../../../../jquery/jquery-ui.min.js"></script>
 </head>
 <body>
@@ -27,7 +27,7 @@
     catch(err) {
     }
 //-->
-var data = {"i0":10,"i1":10,"i2":9,"i3":10,"i4":10,"i5":10};
+var data = {"i0":10,"i1":10,"i2":10,"i3":9,"i4":10,"i5":10,"i6":10};
 var tabs = {65535:["t0","All Methods"],1:["t1","Static Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -199,11 +199,17 @@ extends <a href="Decoder.html" title="class in org.apache.sysds.runtime.transfor
 </td>
 </tr>
 <tr id="i1" class="rowColor">
+<td class="colFirst"><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a></code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getRcMapValue(int,long)">getRcMapValue</a></span>&#8203;(int&nbsp;i,
+             long&nbsp;key)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i2" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#initMetaData(org.apache.sysds.runtime.frame.data.FrameBlock)">initMetaData</a></span>&#8203;(<a href="../../frame/data/FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;meta)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i2" class="altColor">
+<tr id="i3" class="rowColor">
 <td class="colFirst"><code>static void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#parseRecodeMapEntry(java.lang.String,org.apache.sysds.runtime.matrix.data.Pair)">parseRecodeMapEntry</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;entry,
                    <a href="../../matrix/data/Pair.html" title="class in org.apache.sysds.runtime.matrix.data">Pair</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>,&#8203;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&gt;&nbsp;pair)</code></th>
@@ -212,7 +218,7 @@ extends <a href="Decoder.html" title="class in org.apache.sysds.runtime.transfor
  quoted tokens (potentially including separators) are supported.</div>
 </td>
 </tr>
-<tr id="i3" class="rowColor">
+<tr id="i4" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#readExternal(java.io.ObjectInput)">readExternal</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/ObjectInput.html?is-external=true" title="class or interface in java.io" class="externalLink">ObjectInput</a>&nbsp;in)</code></th>
 <td class="colLast">
@@ -220,7 +226,7 @@ extends <a href="Decoder.html" title="class in org.apache.sysds.runtime.transfor
  hadoop writable serialization for efficient broadcast/rdd deserialization.</div>
 </td>
 </tr>
-<tr id="i4" class="altColor">
+<tr id="i5" class="rowColor">
 <td class="colFirst"><code><a href="Decoder.html" title="class in org.apache.sysds.runtime.transform.decode">Decoder</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#subRangeDecoder(int,int,int)">subRangeDecoder</a></span>&#8203;(int&nbsp;colStart,
                int&nbsp;colEnd,
@@ -229,7 +235,7 @@ extends <a href="Decoder.html" title="class in org.apache.sysds.runtime.transfor
 <div class="block">Returns a new Decoder that only handles a sub range of columns.</div>
 </td>
 </tr>
-<tr id="i5" class="rowColor">
+<tr id="i6" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#writeExternal(java.io.ObjectOutput)">writeExternal</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/ObjectOutput.html?is-external=true" title="class or interface in java.io" class="externalLink">ObjectOutput</a>&nbsp;out)</code></th>
 <td class="colLast">
@@ -287,6 +293,16 @@ extends <a href="Decoder.html" title="class in org.apache.sysds.runtime.transfor
 <!--   -->
 </a>
 <h3>Method Detail</h3>
+<a id="getRcMapValue(int,long)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>getRcMapValue</h4>
+<pre class="methodSignature">public&nbsp;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a>&nbsp;getRcMapValue&#8203;(int&nbsp;i,
+                            long&nbsp;key)</pre>
+</li>
+</ul>
 <a id="decode(org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.frame.data.FrameBlock)">
 <!--   -->
 </a>

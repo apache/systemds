@@ -97,9 +97,9 @@ public class GPUMemoryManager {
 	 * To record size of all allocated pointers allocated by above memory managers
 	 */
 	protected final HashMap<Pointer, PointerInfo> allPointers = new HashMap<>();
-	
+
 	/*****************************************************************************************/
-	
+
 
 	/**
 	 * Get size of allocated GPU Pointer
@@ -258,7 +258,7 @@ public class GPUMemoryManager {
 
 		// Step 1: First try reusing exact match in rmvarGPUPointers to avoid holes in the GPU memory
 		Pointer A = lazyCudaFreeMemoryManager.getRmvarPointer(opcode, size);
-		
+
 		Pointer tmpA = (A == null) ? new Pointer() : null;
 		// Step 2: Allocate a new pointer in the GPU memory (since memory is available)
 		// Step 3 has potential to create holes as well as limit future reuse, hence perform this step before step 3.
@@ -297,7 +297,7 @@ public class GPUMemoryManager {
 			if (le != null) {
 				if(!LineageCacheConfig.GPU2HOSTEVICTION) {
 					A = le.getGPUPointer(); //recycle
-					LineageGPUCacheEviction.removeFromDeviceCache(le, le.getGPUPointer(), true);
+					//LineageGPUCacheEviction.removeFromDeviceCache(le, le.getGPUPointer(), true);
 					if (DMLScript.STATISTICS)
 						LineageCacheStatistics.incrementGpuRecycle();
 				}
@@ -327,7 +327,7 @@ public class GPUMemoryManager {
 				if(le != null) {
 					freedSize += getSizeAllocatedGPUPointer(le.getGPUPointer());
 					if(!LineageCacheConfig.GPU2HOSTEVICTION) {
-						LineageGPUCacheEviction.removeFromDeviceCache(le, le.getGPUPointer(), true);
+						//LineageGPUCacheEviction.removeFromDeviceCache(le, le.getGPUPointer(), true);
 						guardedCudaFree(le.getGPUPointer()); //free
 						if (DMLScript.STATISTICS)
 							LineageCacheStatistics.incrementGpuDel();
@@ -345,6 +345,7 @@ public class GPUMemoryManager {
 					// Else, deallocate another free pointer. We are calling pollFistFreeNotExact with
 					// the same size (not with freedSize-size) to reduce potentials for creating holes
 				}
+				// FIXME: performance improvement. Slow due to looping and holes.
 			}
 			if (DMLScript.STATISTICS)
 				LineageCacheStatistics.incrementEvictTimeGpu(System.nanoTime() - t0);
@@ -415,6 +416,7 @@ public class GPUMemoryManager {
 			LOG.warn("Potential fragmentation of the GPU memory. Forcibly evicting all ...");
 			LOG.info("Before clearAllUnlocked, GPU Memory info:" + toString());
 			matrixMemoryManager.clearAllUnlocked(opcode);
+			CudaMemoryAllocator.resetUnusableFreeMemory();
 			LOG.info("GPU Memory info after evicting all unlocked matrices:" + toString());
 			A = cudaMallocNoWarn(tmpA, size, null);
 		}

@@ -32,7 +32,7 @@ import java.util.Objects;
 import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
 
-import org.apache.commons.lang.NotImplementedException;
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
@@ -216,8 +216,7 @@ public class ColumnEncoderComposite extends ColumnEncoder {
 			}
 		}
 		catch(Exception ex) {
-			LOG.error("Failed to transform-apply frame with \n" + this);
-			throw ex;
+			throw new DMLRuntimeException("Failed to transform-apply frame with \n" + this, ex);
 		}
 		return out;
 	}
@@ -228,7 +227,7 @@ public class ColumnEncoderComposite extends ColumnEncoder {
 	}
 
 	@Override
-	protected double[] getCodeCol(CacheBlock<?> in, int startInd, int blkSize) {
+	protected double[] getCodeCol(CacheBlock<?> in, int startInd, int endInd, double[] tmp) {
 		throw new DMLRuntimeException("CompositeEncoder does not have a Code");
 	}
 
@@ -421,7 +420,7 @@ public class ColumnEncoderComposite extends ColumnEncoder {
 	@Override
 	public int getDomainSize() {
 		return _columnEncoders.stream()//
-			.map(ColumnEncoder::getDomainSize).reduce(Integer::max).get();
+			.map(ColumnEncoder::getDomainSize).reduce((a,x) -> Integer.max(a,x)).get();
 	}
 
 

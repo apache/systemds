@@ -20,24 +20,24 @@
 package org.apache.sysds.runtime.compress.utils;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+/**
+ * collect an array list of the indexes with the same hashes.
+ */
 public class DblArrayIntListHashMap {
 
 	protected static final Log LOG = LogFactory.getLog(DblArrayIntListHashMap.class.getName());
 
 	protected static final int INIT_CAPACITY = 8;
 	protected static final int RESIZE_FACTOR = 2;
-	protected static final float LOAD_FACTOR = 0.5f;
-	public static int hashMissCount = 0;
+	protected static final float LOAD_FACTOR = 0.8f;
 
-	protected int _size = -1;
-
-	protected DArrayIListEntry[] _data = null;
+	protected int _size;
+	protected DArrayIListEntry[] _data;
 
 	public DblArrayIntListHashMap() {
 		_data = new DArrayIListEntry[INIT_CAPACITY];
@@ -54,64 +54,21 @@ public class DblArrayIntListHashMap {
 	}
 
 	public IntArrayList get(DblArray key) {
-		// probe for early abort
-		if(_size == 0)
-			return null;
-		// compute entry index position
-		int hash = key.hashCode();
-		int ix = indexFor(hash, _data.length);
-
-		// find entry
-
-		while(_data[ix] != null && !_data[ix].keyEquals(key)) {
-			hash = Integer.hashCode(hash + 1); // hash of hash
-			ix = indexFor(hash, _data.length);
-			hashMissCount++;
-		}
-		DArrayIListEntry e = _data[ix];
-		if(e != null)
-			return e.value;
-		return null;
-	}
-
-	private void appendValue(DblArray key, IntArrayList value) {
-		// compute entry index position
-		int hash = key.hashCode();
-		int ix = indexFor(hash, _data.length);
-
-		// add new table entry (constant time)
-		while(_data[ix] != null && !_data[ix].keyEquals(key)) {
-			hash = Integer.hashCode(hash + 1); // hash of hash
-			ix = indexFor(hash, _data.length);
-			hashMissCount++;
-		}
-		_data[ix] = new DArrayIListEntry(key, value);
-		_size++;
+		final int hash = key.hashCode();
+		final int ix = indexFor(hash, _data.length);
+		return _data[ix] == null ? null: _data[ix].get(key);
 	}
 
 	public void appendValue(DblArray key, int value) {
 		int hash = key.hashCode();
 		int ix = indexFor(hash, _data.length);
-
-		while(_data[ix] != null && !_data[ix].keyEquals(key)) {
-			hash = Integer.hashCode(hash + 1); // hash of hash
-			ix = indexFor(hash, _data.length);
-			hashMissCount++;
-		}
-
-		DArrayIListEntry e = _data[ix];
-		if(e == null) {
-			final IntArrayList lstPtr = new IntArrayList();
-			lstPtr.appendValue(value);
-			_data[ix] = new DArrayIListEntry(new DblArray(key), lstPtr);
+		if(_data[ix] == null) {
+			_data[ix] = new DArrayIListEntry(new DblArray(key), value);
 			_size++;
 		}
-		else {
-			final IntArrayList lstPtr = e.value;
-			lstPtr.appendValue(value);
-		}
+		else if(_data[ix].add(key, value))
+			_size++;
 
-		// resize if necessary
 		if(_size >= LOAD_FACTOR * _data.length)
 			resize();
 	}
@@ -119,18 +76,17 @@ public class DblArrayIntListHashMap {
 	public List<DArrayIListEntry> extractValues() {
 		List<DArrayIListEntry> ret = new ArrayList<>();
 
-		for(DArrayIListEntry e : _data)
-			if(e != null)
+		for(DArrayIListEntry e : _data) {
+			while(e != null) {
 				ret.add(e);
+				e = e.next;
+			}
+		}
 
-		// Collections.sort(ret);
 		return ret;
 	}
 
 	private void resize() {
-		// check for integer overflow on resize
-		if(_data.length > Integer.MAX_VALUE / RESIZE_FACTOR)
-			return;
 
 		// resize data array and copy existing contents
 		DArrayIListEntry[] olddata = _data;
@@ -138,66 +94,112 @@ public class DblArrayIntListHashMap {
 		_size = 0;
 
 		// rehash all entries
-		for(DArrayIListEntry e : olddata)
-			if(e != null)
-				appendValue(e.key, e.value);
+		for(DArrayIListEntry e : olddata) {
+			while(e != null) {
+				reinsert(e.key, e.value);
+				e = e.next;
+			}
+		}
 	}
 
-	public void reset() {
-		Arrays.fill(_data, null);
-		_size = 0;
-	}
-
-	public void reset(int size) {
-		int newSize = Util.getPow2(size);
-		if(newSize > _data.length) {
-			_data = new DArrayIListEntry[newSize];
+	private void reinsert(DblArray key, IntArrayList value) {
+		// compute entry index position
+		int hash = key.hashCode();
+		int ix = indexFor(hash, _data.length);
+		if(_data[ix] == null) {
+			_data[ix] = new DArrayIListEntry(key, value);
+			_size++;
 		}
 		else {
-			Arrays.fill(_data, null);
-			// only allocate new if the size is smaller than 2x
-			if(size < _data.length / 2)
-				_data = new DArrayIListEntry[newSize];
+			_data[ix].reinsert(key, value);
+			_size++;
 		}
-		_size = 0;
 	}
 
-	protected static int indexFor(int h, int length) {
+	private static int indexFor(int h, int length) {
 		return h & (length - 1);
 	}
 
 	public static class DArrayIListEntry {
-		public DblArray key;
-		public IntArrayList value;
+		public final DblArray key;
+		public final IntArrayList value;
+		private DArrayIListEntry next;
 
-		public DArrayIListEntry(DblArray ekey, IntArrayList evalue) {
-			key = ekey;
-			value = evalue;
+		private DArrayIListEntry(DblArray key, int value) {
+			this.key = key;
+			this.value = new IntArrayList();
+			this.value.appendValue(value);
+			next = null;
 		}
 
-		@Override
-		public String toString() {
-			return key + ":" + value;
+		private DArrayIListEntry(DblArray key, IntArrayList value) {
+			this.key = key;
+			this.value = value;
+			next = null;
 		}
 
-		public boolean keyEquals(DblArray keyThat) {
-			return key.equals(keyThat);
+		private final boolean reinsert(final DblArray key, final IntArrayList value) {
+			DArrayIListEntry e = this;
+			while(e.next != null)
+				e = e.next;
+
+			e.next = new DArrayIListEntry(key, value);
+			return true;
+		}
+
+		private final boolean add(final DblArray key, final int value) {
+			DArrayIListEntry e = this;
+			if(e.key.equals(key)) {
+				this.value.appendValue(value);
+				return false;
+			}
+			while(e.next != null) {
+				e = e.next;
+				if(e.key.equals(key)) {
+					e.value.appendValue(value);
+					return false;
+				}
+			}
+			e.next = new DArrayIListEntry(new DblArray(key), new IntArrayList());
+			e.next.value.appendValue(value);
+			return true;
+		}
+
+		private IntArrayList get(DblArray key) {
+			DArrayIListEntry e = this;
+			boolean eq = e.key.equals(key);
+			while(e.next != null && !eq) {
+				e = e.next;
+				eq = e.key.equals(key);
+			}
+			return eq ? e.value : null;
+		}
+
+		private void toString(StringBuilder sb) {
+			DArrayIListEntry e = this;
+			while(e != null) {
+				sb.append(e.key);
+				sb.append(":");
+				sb.append(e.value);
+				if(e.next != null)
+					sb.append(" -> ");
+				e = e.next;
+			}
 		}
 	}
 
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
-		sb.append(this.getClass().getSimpleName() + this.hashCode());
+		sb.append(this.getClass().getSimpleName());
 		sb.append("   " + _size);
 		for(int i = 0; i < _data.length; i++) {
 			DArrayIListEntry ent = _data[i];
 			if(ent != null) {
 
 				sb.append("\n");
-				sb.append("id:" + i);
 				sb.append("[");
-				sb.append(ent);
+				ent.toString(sb);
 				sb.append("]");
 			}
 		}

@@ -35,6 +35,8 @@ import org.apache.sysds.runtime.matrix.data.Pair;
 import org.apache.sysds.runtime.util.UtilFunctions;
 import org.apache.sysds.utils.MemoryEstimates;
 
+import ch.randelshofer.fastdoubleparser.JavaDoubleParser;
+
 public class DoubleArray extends Array<Double> {
 	private double[] _data;
 
@@ -81,7 +83,14 @@ public class DoubleArray extends Array<Double> {
 
 	@Override
 	public void set(int rl, int ru, Array<Double> value, int rlSrc) {
-		System.arraycopy(((DoubleArray) value)._data, rlSrc, _data, rl, ru - rl + 1);
+		try {
+			// try system array copy.
+			// but if it does not work, default to get.
+			System.arraycopy(value.get(), rlSrc, _data, rl, ru - rl + 1);
+		}
+		catch(Exception e) {
+			super.set(rl, ru, value, rlSrc);
+		}
 	}
 
 	@Override
@@ -119,7 +128,7 @@ public class DoubleArray extends Array<Double> {
 		final int endSize = this._size + other.size();
 		final double[] ret = new double[endSize];
 		System.arraycopy(_data, 0, ret, 0, this._size);
-		System.arraycopy((double[]) other.get(), 0, ret, this._size, other.size());
+		System.arraycopy(other.get(), 0, ret, this._size, other.size());
 		if(other instanceof OptionalArray)
 			return OptionalArray.appendOther((OptionalArray<Double>) other, new DoubleArray(ret));
 		else
@@ -180,13 +189,14 @@ public class DoubleArray extends Array<Double> {
 		for(int i = 0; i < _size; i++) {
 			ValueType c = FrameUtil.isType(_data[i], state);
 			if(state == ValueType.FP64)
-				return new Pair<ValueType, Boolean>(ValueType.FP64, false);
+				return new Pair<>(ValueType.FP64, false);
 
 			switch(state) {
 				case FP32:
 					switch(c) {
 						case FP64:
 							state = c;
+							break;
 						default:
 					}
 					break;
@@ -195,6 +205,7 @@ public class DoubleArray extends Array<Double> {
 						case FP64:
 						case FP32:
 							state = c;
+							break;
 						default:
 					}
 					break;
@@ -204,6 +215,7 @@ public class DoubleArray extends Array<Double> {
 						case FP32:
 						case INT64:
 							state = c;
+							break;
 						default:
 					}
 					break;
@@ -215,12 +227,13 @@ public class DoubleArray extends Array<Double> {
 						case INT64:
 						case INT32:
 							state = c;
+							break;
 						default:
 					}
 					break;
 			}
 		}
-		return new Pair<ValueType, Boolean>(state, false);
+		return new Pair<>(state, false);
 	}
 
 	@Override
@@ -300,6 +313,17 @@ public class DoubleArray extends Array<Double> {
 	}
 
 	@Override
+	protected Array<Object> changeTypeHash64() {
+		long[] ret = new long[size()];
+		for(int i = 0; i < size(); i++) {
+			if(_data[i] != (long) _data[i])
+				throw new DMLRuntimeException("Unable to change to Long from Double array because of value:" + _data[i]);
+			ret[i] = (long) _data[i];
+		}
+		return new HashLongArray(ret);
+	}
+
+	@Override
 	protected Array<String> changeTypeString() {
 		String[] ret = new String[size()];
 		for(int i = 0; i < size(); i++)
@@ -332,10 +356,20 @@ public class DoubleArray extends Array<Double> {
 	}
 
 	public static double parseDouble(String value) {
-		if(value == null || value.isEmpty())
-			return 0.0;
-		else
-			return Double.parseDouble(value);
+		try {
+			if(value == null || value.isEmpty())
+				return 0.0;
+			return JavaDoubleParser.parseDouble(value);
+		}
+		catch(NumberFormatException e) {
+			final int len = value.length();
+			// check for common extra cases.
+			if(len == 3 && value.compareToIgnoreCase("Inf") == 0)
+				return Double.POSITIVE_INFINITY;
+			else if(len == 4 && value.compareToIgnoreCase("-Inf") == 0)
+				return Double.NEGATIVE_INFINITY;
+			throw new DMLRuntimeException(e);
+		}
 	}
 
 	@Override
@@ -374,10 +408,22 @@ public class DoubleArray extends Array<Double> {
 		return _data[i] != 0.0d;
 	}
 
+	@Override
+	public double hashDouble(int idx) {
+		return Double.hashCode(_data[idx]);
+	}
 
 	@Override
-	public double hashDouble(int idx){
-		return Double.hashCode(_data[idx]);
+	public boolean equals(Array<Double> other) {
+		if(other instanceof DoubleArray)
+			return Arrays.equals(_data, ((DoubleArray) other)._data);
+		else
+			return false;
+	}
+
+	@Override
+	public boolean possiblyContainsNaN() {
+		return true;
 	}
 
 	@Override

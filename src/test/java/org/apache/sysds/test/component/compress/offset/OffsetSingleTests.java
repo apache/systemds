@@ -23,6 +23,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.offset.AOffset;
 import org.apache.sysds.runtime.compress.colgroup.offset.OffsetEmpty;
@@ -32,6 +33,10 @@ import org.apache.sysds.runtime.compress.utils.IntArrayList;
 import org.junit.Test;
 
 public class OffsetSingleTests {
+
+	static {
+		CompressedMatrixBlock.debug = true;
+	}
 
 	@Test
 	public void testEmptyEstimateMemory() {

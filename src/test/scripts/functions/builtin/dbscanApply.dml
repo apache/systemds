@@ -24,6 +24,6 @@ Y = read($Y)
 eps = as.double($eps);
 minPts = as.integer($minPts);
 
-[indices, clusterModel, eps] = dbscan(X = X, eps = eps, minPts = minPts);
+[indices, clusterModel] = dbscan(X = X, eps = eps, minPts = minPts);
 [C, Z] = dbscanApply(X=Y, clusterModel = clusterModel, eps = eps);
 write(Z, $Z);

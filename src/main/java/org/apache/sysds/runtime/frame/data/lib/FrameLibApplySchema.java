@@ -19,9 +19,12 @@
 
 package org.apache.sysds.runtime.frame.data.lib;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
-import java.util.stream.IntStream;
+import java.util.concurrent.Future;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -44,6 +47,10 @@ public class FrameLibApplySchema {
 	private final Array<?>[] columnsOut;
 
 	private final int k;
+
+	public static FrameBlock applySchema(FrameBlock fb, FrameBlock schema) {
+		return applySchema(fb, schema, 1);
+	}
 
 	/**
 	 * Method to create a new FrameBlock where the given schema is applied, k is the parallelization degree.
@@ -136,17 +143,21 @@ public class FrameLibApplySchema {
 	private void applyMultiThread() {
 		final ExecutorService pool = CommonThreadPool.get(k);
 		try {
-
-			pool.submit(() -> {
-				IntStream.rangeClosed(0, nCol - 1).parallel() // parallel columns
-					.forEach(x -> apply(x));
-			}).get();
-
-			pool.shutdown();
+			List<Future<?>> f = new ArrayList<>(nCol ); 
+			for(int i = 0; i < nCol ; i ++){
+				final int j = i;
+				f.add(pool.submit(() -> apply(j)));
+			}
+			
+			for( Future<?> e : f)
+				e.get();
 		}
 		catch(InterruptedException | ExecutionException e) {
-			pool.shutdown();
 			throw new DMLRuntimeException("Failed to combine column groups", e);
+		}
+		finally{
+			pool.shutdown();
+
 		}
 	}
 

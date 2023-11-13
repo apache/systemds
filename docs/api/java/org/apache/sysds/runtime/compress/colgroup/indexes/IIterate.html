@@ -14,7 +14,7 @@
 <!--[if IE]>
 <script type="text/javascript" src="../../../../../../../jquery/jszip-utils/dist/jszip-utils-ie.min.js"></script>
 <![endif]-->
-<script type="text/javascript" src="../../../../../../../jquery/jquery-3.6.0.min.js"></script>
+<script type="text/javascript" src="../../../../../../../jquery/jquery-3.6.1.min.js"></script>
 <script type="text/javascript" src="../../../../../../../jquery/jquery-ui.min.js"></script>
 </head>
 <body>
@@ -27,7 +27,7 @@
     catch(err) {
     }
 //-->
-var data = {"i0":6,"i1":6};
+var data = {"i0":6,"i1":6,"i2":6,"i3":6};
 var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],4:["t3","Abstract Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -157,9 +157,23 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tr id="i1" class="rowColor">
 <td class="colFirst"><code>int</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#i()">i</a></span>()</code></th>
+<td class="colLast">
+<div class="block">Get current index</div>
+</td>
+</tr>
+<tr id="i2" class="altColor">
+<td class="colFirst"><code>int</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#next()">next</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Get next index</div>
+</td>
+</tr>
+<tr id="i3" class="rowColor">
+<td class="colFirst"><code>int</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#v()">v</a></span>()</code></th>
+<td class="colLast">
+<div class="block">Get current value</div>
 </td>
 </tr>
 </table>
@@ -196,7 +210,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <a id="hasNext()">
 <!--   -->
 </a>
-<ul class="blockListLast">
+<ul class="blockList">
 <li class="blockList">
 <h4>hasNext</h4>
 <pre class="methodSignature">boolean&nbsp;hasNext()</pre>
@@ -204,6 +218,34 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <dl>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>the next index.</dd>
+</dl>
+</li>
+</ul>
+<a id="v()">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>v</h4>
+<pre class="methodSignature">int&nbsp;v()</pre>
+<div class="block">Get current value</div>
+<dl>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>the value pointing at.</dd>
+</dl>
+</li>
+</ul>
+<a id="i()">
+<!--   -->
+</a>
+<ul class="blockListLast">
+<li class="blockList">
+<h4>i</h4>
+<pre class="methodSignature">int&nbsp;i()</pre>
+<div class="block">Get current index</div>
+<dl>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>The index currently pointed at</dd>
 </dl>
 </li>
 </ul>

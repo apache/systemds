@@ -14,7 +14,7 @@
 <!--[if IE]>
 <script type="text/javascript" src="../../../../../../jquery/jszip-utils/dist/jszip-utils-ie.min.js"></script>
 <![endif]-->
-<script type="text/javascript" src="../../../../../../jquery/jquery-3.6.0.min.js"></script>
+<script type="text/javascript" src="../../../../../../jquery/jquery-3.6.1.min.js"></script>
 <script type="text/javascript" src="../../../../../../jquery/jquery-ui.min.js"></script>
 </head>
 <body>
@@ -192,13 +192,22 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code>class&nbsp;</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../RewriteRemoveEmptyForLoops.html" title="class in org.apache.sysds.hops.rewrite">RewriteRemoveEmptyForLoops</a></span></code></th>
+<td class="colLast">
+<div class="block">Rule: Simplify program structure by removing empty for loops,
+ which may originate from the sequence of other rewrites like
+ dead-code-elimination.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>class&nbsp;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../RewriteRemoveForLoopEmptySequence.html" title="class in org.apache.sysds.hops.rewrite">RewriteRemoveForLoopEmptySequence</a></span></code></th>
 <td class="colLast">
 <div class="block">Rule: Simplify program structure by removing (par)for statements iterating over
  an empty sequence, i.e., (par)for-loops without a single iteration.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>class&nbsp;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../RewriteRemoveUnnecessaryBranches.html" title="class in org.apache.sysds.hops.rewrite">RewriteRemoveUnnecessaryBranches</a></span></code></th>
 <td class="colLast">
@@ -207,14 +216,14 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
  analysis to propagate exact statistics.</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>class&nbsp;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../RewriteSplitDagDataDependentOperators.html" title="class in org.apache.sysds.hops.rewrite">RewriteSplitDagDataDependentOperators</a></span></code></th>
 <td class="colLast">
 <div class="block">Rule: Split Hop DAG after specific data-dependent operators.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>class&nbsp;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../RewriteSplitDagUnknownCSVRead.html" title="class in org.apache.sysds.hops.rewrite">RewriteSplitDagUnknownCSVRead</a></span></code></th>
 <td class="colLast">

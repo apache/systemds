@@ -37,8 +37,9 @@
 # img_out  Output image as 2D matrix with top left corner at [1, 1]
 # ---------------------------------------------------------------------------------------
 
-m_img_transform = function(Matrix[Double] img_in, Integer out_w, Integer out_h, Double a, Double b, Double c, Double d,
- Double e, Double f, Double fill_value) return (Matrix[Double] img_out) {
+m_img_transform = function(Matrix[Double] img_in, Integer out_w, Integer out_h, Double a,
+    Double b, Double c, Double d, Double e, Double f, Double fill_value) 
+    return (Matrix[Double] img_out) {
   divisor = a * e - b * d
   if(divisor == 0) {
     print("Inverse matrix does not exist! Returning input.")
@@ -67,25 +68,28 @@ m_img_transform = function(Matrix[Double] img_in, Integer out_w, Integer out_h, 
     # compute sampling pixel indices
     coords = floor(T_inv %*% coords) + 1
 
-    # fill output image
-    img_out = matrix(fill_value, rows=out_w*out_h, cols=1)
-    parfor (cell in 1:(out_w*out_h)) {
-      inx = as.scalar(coords[1, cell])
-      iny = as.scalar(coords[2, cell])
-      if ((0 < inx) & (inx <= orig_w) & (0 < iny) & (iny <= orig_h))
-        img_out[cell] = img_in[iny, inx]
+    img_out = matrix(fill_value, rows=out_h, cols=out_w)
+    
+    inx = t(coords[1,])
+    iny = t(coords[2,])
+
+    # any out-of-range pixels, if present, correspond to an extra pixel with fill_value at the end of the input
+    index_vector = (orig_w *(iny-1) + inx) * ((0<inx) & (inx<=orig_w) & (0<iny) & (iny<=orig_h)) 
+    index_vector = t(index_vector)
+    xs = ((index_vector == 0)*(orig_w*orig_h +1)) + index_vector
+
+    y = matrix(img_in, 1, orig_w*orig_h)
+    if(min(index_vector) == 0){
+      ys= cbind(y, matrix(fill_value,1, 1))
+    }else{
+      ys = y
     }
 
-    # TODO replace above loop with following vectorized code
-    # but additional size mismatch / fill handling necessary
-    # ---
-    # P = order(target=t(coords), by=matrix("1 2",1,2), index.return=TRUE);
-    # inx = t(coords[1,]);
-    # iny = t(coords[2,]);
-    # vals = P %*% matrix(img_in, out_w*out_h, 1);
-    # img_out = ((0<inx) & (inx<=orig_w) & (0<iny) & (iny<=orig_h)) * vals; 
+    ind= matrix(seq(1,ncol(xs),1),1,ncol(xs))
+    z = table(xs, ind) 
+    output = ys%*%z
 
-    # reshape output
-    img_out = matrix(img_out, rows=out_h, cols=out_w)
+    img_out = matrix(output, rows=out_h, cols=out_w)
   }
+  
 }

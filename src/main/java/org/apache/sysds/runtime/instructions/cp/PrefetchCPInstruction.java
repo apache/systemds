@@ -19,8 +19,6 @@
 
 package org.apache.sysds.runtime.instructions.cp;
 
-import java.util.concurrent.Executors;
-
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.lineage.LineageCacheConfig;
@@ -53,10 +51,8 @@ public class PrefetchCPInstruction extends UnaryCPInstruction {
 		// If the next instruction which takes this output as an input comes before
 		// the prefetch thread triggers, that instruction will start the operations.
 		// In that case this Prefetch instruction will act like a NOOP. 
-		if (CommonThreadPool.triggerRemoteOPsPool == null)
-			CommonThreadPool.triggerRemoteOPsPool = Executors.newCachedThreadPool();
 		// Saving the lineage item inside the matrix object will replace the pre-attached
 		// lineage item (e.g. mapmm). Hence, passing separately.
-		CommonThreadPool.triggerRemoteOPsPool.submit(new TriggerPrefetchTask(ec.getMatrixObject(output), li));
+		CommonThreadPool.getDynamicPool().submit(new TriggerPrefetchTask(ec.getMatrixObject(output), li));
 	}
 }

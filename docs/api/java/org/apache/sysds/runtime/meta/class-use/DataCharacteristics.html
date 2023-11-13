@@ -14,7 +14,7 @@
 <!--[if IE]>
 <script type="text/javascript" src="../../../../../../jquery/jszip-utils/dist/jszip-utils-ie.min.js"></script>
 <![endif]-->
-<script type="text/javascript" src="../../../../../../jquery/jquery-3.6.0.min.js"></script>
+<script type="text/javascript" src="../../../../../../jquery/jquery-3.6.1.min.js"></script>
 <script type="text/javascript" src="../../../../../../jquery/jquery-ui.min.js"></script>
 </head>
 <body>
@@ -1097,6 +1097,26 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <th class="colSecond" scope="row"><span class="typeNameLabel">PartitionedBroadcast.</span><code><span class="memberNameLink"><a href="../../instructions/spark/data/PartitionedBroadcast.html#getDataCharacteristics()">getDataCharacteristics</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../DataCharacteristics.html" title="class in org.apache.sysds.runtime.meta">DataCharacteristics</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">RDDObject.</span><code><span class="memberNameLink"><a href="../../instructions/spark/data/RDDObject.html#getDataCharacteristics()">getDataCharacteristics</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+</tbody>
+</table>
+<table class="useSummary">
+<caption><span>Methods in <a href="../../instructions/spark/data/package-summary.html">org.apache.sysds.runtime.instructions.spark.data</a> with parameters of type <a href="../DataCharacteristics.html" title="class in org.apache.sysds.runtime.meta">DataCharacteristics</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colSecond" scope="col">Method</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">RDDObject.</span><code><span class="memberNameLink"><a href="../../instructions/spark/data/RDDObject.html#setDataCharacteristics(org.apache.sysds.runtime.meta.DataCharacteristics)">setDataCharacteristics</a></span>&#8203;(<a href="../DataCharacteristics.html" title="class in org.apache.sysds.runtime.meta">DataCharacteristics</a>&nbsp;dc)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
 </tbody>
 </table>
 <table class="useSummary">
@@ -1423,26 +1443,33 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
+<td class="colFirst"><code>static org.apache.spark.api.java.JavaPairRDD&lt;<a href="../../matrix/data/MatrixIndexes.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixIndexes</a>,&#8203;<a href="../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&gt;</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">RDDConverterUtils.</span><code><span class="memberNameLink"><a href="../../instructions/spark/utils/RDDConverterUtils.html#matrixBlockToAlignedMatrixBlock(org.apache.spark.api.java.JavaPairRDD,org.apache.sysds.runtime.meta.DataCharacteristics,org.apache.sysds.runtime.meta.DataCharacteristics)">matrixBlockToAlignedMatrixBlock</a></span>&#8203;(org.apache.spark.api.java.JavaPairRDD&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Long.html?is-external=true" title="class or interface in java.lang" class="externalLink">Long</a>,&#8203;<a href="../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&gt;&nbsp;input,
+                               <a href="../DataCharacteristics.html" title="class in org.apache.sysds.runtime.meta">DataCharacteristics</a>&nbsp;mcIn,
+                               <a href="../DataCharacteristics.html" title="class in org.apache.sysds.runtime.meta">DataCharacteristics</a>&nbsp;mcOut)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
 <td class="colFirst"><code>static org.apache.spark.api.java.JavaPairRDD&lt;org.apache.hadoop.io.LongWritable,&#8203;<a href="../../frame/data/FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&gt;</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">FrameRDDConverterUtils.</span><code><span class="memberNameLink"><a href="../../instructions/spark/utils/FrameRDDConverterUtils.html#matrixBlockToBinaryBlock(org.apache.spark.api.java.JavaSparkContext,org.apache.spark.api.java.JavaPairRDD,org.apache.sysds.runtime.meta.DataCharacteristics)">matrixBlockToBinaryBlock</a></span>&#8203;(org.apache.spark.api.java.JavaSparkContext&nbsp;sc,
                         org.apache.spark.api.java.JavaPairRDD&lt;<a href="../../matrix/data/MatrixIndexes.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixIndexes</a>,&#8203;<a href="../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&gt;&nbsp;input,
                         <a href="../DataCharacteristics.html" title="class in org.apache.sysds.runtime.meta">DataCharacteristics</a>&nbsp;mcIn)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>static org.apache.spark.api.java.JavaPairRDD&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Long.html?is-external=true" title="class or interface in java.lang" class="externalLink">Long</a>,&#8203;<a href="../../frame/data/FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&gt;</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">FrameRDDConverterUtils.</span><code><span class="memberNameLink"><a href="../../instructions/spark/utils/FrameRDDConverterUtils.html#matrixBlockToBinaryBlockLongIndex(org.apache.spark.api.java.JavaSparkContext,org.apache.spark.api.java.JavaPairRDD,org.apache.sysds.runtime.meta.DataCharacteristics)">matrixBlockToBinaryBlockLongIndex</a></span>&#8203;(org.apache.spark.api.java.JavaSparkContext&nbsp;sc,
                                  org.apache.spark.api.java.JavaPairRDD&lt;<a href="../../matrix/data/MatrixIndexes.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixIndexes</a>,&#8203;<a href="../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&gt;&nbsp;input,
                                  <a href="../DataCharacteristics.html" title="class in org.apache.sysds.runtime.meta">DataCharacteristics</a>&nbsp;dcIn)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>static void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">SparkUtils.</span><code><span class="memberNameLink"><a href="../../instructions/spark/utils/SparkUtils.html#postprocessUltraSparseOutput(org.apache.sysds.runtime.controlprogram.caching.MatrixObject,org.apache.sysds.runtime.meta.DataCharacteristics)">postprocessUltraSparseOutput</a></span>&#8203;(<a href="../../controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&nbsp;mo,
                             <a href="../DataCharacteristics.html" title="class in org.apache.sysds.runtime.meta">DataCharacteristics</a>&nbsp;mcOut)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>static org.apache.spark.api.java.JavaPairRDD&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Long.html?is-external=true" title="class or interface in java.lang" class="externalLink">Long</a>,&#8203;<a href="../../frame/data/FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&gt;</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">FrameRDDConverterUtils.</span><code><span class="memberNameLink"><a href="../../instructions/spark/utils/FrameRDDConverterUtils.html#textCellToBinaryBlock(org.apache.spark.api.java.JavaSparkContext,org.apache.spark.api.java.JavaPairRDD,org.apache.sysds.runtime.meta.DataCharacteristics,org.apache.sysds.common.Types.ValueType%5B%5D)">textCellToBinaryBlock</a></span>&#8203;(org.apache.spark.api.java.JavaSparkContext&nbsp;sc,
                      org.apache.spark.api.java.JavaPairRDD&lt;org.apache.hadoop.io.LongWritable,&#8203;org.apache.hadoop.io.Text&gt;&nbsp;in,
@@ -1450,7 +1477,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
                      <a href="../../../common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>[]&nbsp;schema)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>static org.apache.spark.api.java.JavaPairRDD&lt;<a href="../../matrix/data/MatrixIndexes.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixIndexes</a>,&#8203;<a href="../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&gt;</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">RDDConverterUtils.</span><code><span class="memberNameLink"><a href="../../instructions/spark/utils/RDDConverterUtils.html#textCellToBinaryBlock(org.apache.spark.api.java.JavaSparkContext,org.apache.spark.api.java.JavaPairRDD,org.apache.sysds.runtime.meta.DataCharacteristics,boolean,org.apache.sysds.runtime.io.FileFormatPropertiesMM)">textCellToBinaryBlock</a></span>&#8203;(org.apache.spark.api.java.JavaSparkContext&nbsp;sc,
                      org.apache.spark.api.java.JavaPairRDD&lt;org.apache.hadoop.io.LongWritable,&#8203;org.apache.hadoop.io.Text&gt;&nbsp;input,
@@ -1459,7 +1486,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
                      <a href="../../io/FileFormatPropertiesMM.html" title="class in org.apache.sysds.runtime.io">FileFormatPropertiesMM</a>&nbsp;mmProps)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>static org.apache.spark.api.java.JavaPairRDD&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Long.html?is-external=true" title="class or interface in java.lang" class="externalLink">Long</a>,&#8203;<a href="../../frame/data/FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&gt;</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">FrameRDDConverterUtils.</span><code><span class="memberNameLink"><a href="../../instructions/spark/utils/FrameRDDConverterUtils.html#textCellToBinaryBlockLongIndex(org.apache.spark.api.java.JavaSparkContext,org.apache.spark.api.java.JavaPairRDD,org.apache.sysds.runtime.meta.DataCharacteristics,org.apache.sysds.common.Types.ValueType%5B%5D)">textCellToBinaryBlockLongIndex</a></span>&#8203;(org.apache.spark.api.java.JavaSparkContext&nbsp;sc,
                               org.apache.spark.api.java.JavaPairRDD&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Long.html?is-external=true" title="class or interface in java.lang" class="externalLink">Long</a>,&#8203;org.apache.hadoop.io.Text&gt;&nbsp;input,
@@ -1562,11 +1589,16 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tbody>
 <tr class="altColor">
+<td class="colFirst"><code>static long</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">MatrixBlock.</span><code><span class="memberNameLink"><a href="../../matrix/data/MatrixBlock.html#estimateSizeInMemory(org.apache.sysds.runtime.meta.DataCharacteristics)">estimateSizeInMemory</a></span>&#8203;(<a href="../DataCharacteristics.html" title="class in org.apache.sysds.runtime.meta">DataCharacteristics</a>&nbsp;dc)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
 <td class="colFirst"><code>static boolean</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">MatrixBlock.</span><code><span class="memberNameLink"><a href="../../matrix/data/MatrixBlock.html#evalSparseFormatInMemory(org.apache.sysds.runtime.meta.DataCharacteristics)">evalSparseFormatInMemory</a></span>&#8203;(<a href="../DataCharacteristics.html" title="class in org.apache.sysds.runtime.meta">DataCharacteristics</a>&nbsp;dc)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>static <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="../../instructions/spark/data/IndexedMatrixValue.html" title="class in org.apache.sysds.runtime.instructions.spark.data">IndexedMatrixValue</a>&gt;</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">LibMatrixReorg.</span><code><span class="memberNameLink"><a href="../../matrix/data/LibMatrixReorg.html#reshape(org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue,org.apache.sysds.runtime.meta.DataCharacteristics,org.apache.sysds.runtime.meta.DataCharacteristics,boolean,boolean)">reshape</a></span>&#8203;(<a href="../../instructions/spark/data/IndexedMatrixValue.html" title="class in org.apache.sysds.runtime.instructions.spark.data">IndexedMatrixValue</a>&nbsp;in,
        <a href="../DataCharacteristics.html" title="class in org.apache.sysds.runtime.meta">DataCharacteristics</a>&nbsp;mcIn,

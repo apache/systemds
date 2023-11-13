@@ -32,6 +32,8 @@ public class OffsetTestUtil {
 				return OffsetFactory.createOffset(data, type);
 			case BYTE:
 				return OffsetFactory.createOffset(data, type);
+			case UBYTE:
+				return OffsetFactory.createOffset(data, type);
 			default:
 				throw new NotImplementedException("not implemented");
 		}

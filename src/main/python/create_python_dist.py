@@ -23,6 +23,6 @@
 import subprocess
 
 f = open("generator.log","w")
-subprocess.run("python generator/generator.py",shell=True, check=True, stdout =f, stderr=f)
-subprocess.run("python pre_setup.py",shell=True, check=True)
-subprocess.run("python setup.py sdist bdist_wheel",shell=True, check=True)
+subprocess.run("python3 generator/generator.py",shell=True, check=True, stdout =f, stderr=f)
+subprocess.run("python3 pre_setup.py",shell=True, check=True)
+subprocess.run("python3 setup.py sdist bdist_wheel",shell=True, check=True)

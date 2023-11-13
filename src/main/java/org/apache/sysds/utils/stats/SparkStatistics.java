@@ -118,6 +118,9 @@ public class SparkStatistics {
 		asyncTriggerCheckpointCount.reset();
 	}
 
+	public static boolean anyAsyncOp() {
+		return (getAsyncPrefetchCount() > 0) || (getAsyncBroadcastCount() > 0) || (getAsyncSparkOpCount() > 0);
+	}
 	public static String displayStatistics() {
 		StringBuilder sb = new StringBuilder();
 		String lazy = SparkExecutionContext.isLazySparkContextCreation() ? "(lazy)" : "(eager)";
@@ -131,8 +134,13 @@ public class SparkStatistics {
 						parallelizeTime.longValue()*1e-9,
 						broadcastTime.longValue()*1e-9,
 						collectTime.longValue()*1e-9));
-		sb.append("Spark async. count (pf,bc,op): \t" +
-				String.format("%d/%d/%d.\n", getAsyncPrefetchCount(), getAsyncBroadcastCount(), getAsyncSparkOpCount()));
+		return sb.toString();
+	}
+
+	public static String displayAsyncStats() {
+		StringBuilder sb = new StringBuilder();
+		sb.append("Async. OP count (pf,bc,op): \t" +
+			String.format("%d/%d/%d.\n", getAsyncPrefetchCount(), getAsyncBroadcastCount(), getAsyncSparkOpCount()));
 		return sb.toString();
 	}
 }

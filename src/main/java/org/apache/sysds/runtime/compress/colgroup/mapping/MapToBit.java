@@ -22,44 +22,84 @@ package org.apache.sysds.runtime.compress.colgroup.mapping;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.BitSet;
 
-import org.apache.commons.lang.NotImplementedException;
-import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.runtime.compress.colgroup.IMapToDataGroup;
-import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory.MAP_TYPE;
+import org.apache.sysds.runtime.frame.data.columns.BitSetArray;
 import org.apache.sysds.utils.MemoryEstimates;
 
+/**
+ * A Bit map containing the values of the map inside a long array.
+ * 
+ * By convention inside the indexes are from the right most bit. so for instance index 0 is the left most bit in the
+ * first long and index 63 is the leftmost bit in the first long. Similarly 64 is the right most bit in the second long.
+ * and so on.
+ * 
+ */
 public class MapToBit extends AMapToData {
 
-	private static final long serialVersionUID = -8065234231282619923L;
+	private static final long serialVersionUID = -8065234231282619903L;
 
-	private final BitSet _data;
+	private final long[] _data;
 	private final int _size;
 
+	/**
+	 * A Bit map containing the values of the map inside a long array.
+	 * 
+	 * By convention inside the indexes are from the right most bit. so for instance index 0 is the left most bit in the
+	 * first long and index 63 is the leftmost bit in the first long. Similarly 64 is the right most bit in the second
+	 * long. and so on.
+	 * 
+	 * @param size The size to allocate, as in the number of bits to enable encoding not the number of longs to allocate
+	 */
 	protected MapToBit(int size) {
 		this(2, size);
 	}
 
+	/**
+	 * A Bit map containing the values of the map inside a long array.
+	 * 
+	 * By convention inside the indexes are from the right most bit. so for instance index 0 is the left most bit in the
+	 * first long and index 63 is the leftmost bit in the first long. Similarly 64 is the right most bit in the second
+	 * long. and so on.
+	 * 
+	 * @param unique the number of unique values to encode ... is basically always 2 in this case
+	 * @param size   The size to allocate, as in number of bits to enable encoding not the number of longs to allocate.
+	 */
 	public MapToBit(int unique, int size) {
 		super(Math.min(unique, 2));
-		_data = new BitSet(size);
+		_data = new long[longSize(size)];
 		_size = size;
 	}
 
 	private MapToBit(int unique, BitSet d, int size) {
 		super(unique);
-		_data = d;
-		_size = size;
-		if(_data.isEmpty()) {
-			// unique = 1;
-			throw new DMLRuntimeException("Empty BitSet should not happen it should return MapToZero");
-			// LOG.warn("Empty bit set should not happen");
+		long[] bsd = d.toLongArray();
+		if(bsd.length == longSize(size))
+			_data = bsd;
+		else {
+			_data = new long[longSize(size)];
+			System.arraycopy(bsd, 0, _data, 0, bsd.length);
 		}
+		_size = size;
 	}
 
-	protected BitSet getData() {
+	private MapToBit(int unique, long[] bsd, int size) {
+		super(unique);
+		if(bsd.length == longSize(size))
+			_data = bsd;
+		else {
+			_data = new long[longSize(size)];
+			System.arraycopy(bsd, 0, _data, 0, bsd.length);
+		}
+		_size = size;
+	}
+
+	protected long[] getData() {
 		return _data;
 	}
 
@@ -70,33 +110,44 @@ public class MapToBit extends AMapToData {
 
 	@Override
 	public int getIndex(int n) {
-		return _data.get(n) ? 1 : 0;
+		int wIdx = n >> 6; // same as divide by 64 bit faster
+		return (_data[wIdx] & (1L << n)) != 0L ? 1 : 0;
 	}
 
 	@Override
 	public void fill(int v) {
-		_data.set(0, _size, true);
+		long re = (_data.length * 64) - _size;
+		if(re == 0 || v == 0)
+			Arrays.fill(_data, v == 0 ? 0L : -1L);
+		else {
+			Arrays.fill(_data, 0, _data.length - 1, v == 0 ? 0L : -1L);
+			_data[_data.length - 1] = -1L >>> re;
+		}
 	}
 
 	@Override
 	public long getInMemorySize() {
-		return getInMemorySize(_data.size()-1);
+		return getInMemorySize(_size);
 	}
 
 	public static long getInMemorySize(int dataLength) {
-		long size = 16 + 8 + 4; // object header + object reference + int size
-		size += MemoryEstimates.bitSetCost(dataLength);
+		long size = 16 + 4; // object header + object reference + int size
+		size += MemoryEstimates.longArrayCost(dataLength >> 6 + 1);
 		return size;
 	}
 
 	@Override
 	public void set(int n, int v) {
-		_data.set(n, v == 1);
+		int wIdx = n >> 6; // same as divide by 64 bit faster
+		if(v == 1)
+			_data[wIdx] |= (1L << n);
+		else
+			_data[wIdx] &= ~(1L << n);
 	}
 
 	@Override
 	public int setAndGet(int n, int v) {
-		_data.set(n, v == 1);
+		set(n, v);
 		return 1;
 	}
 
@@ -109,35 +160,33 @@ public class MapToBit extends AMapToData {
 	public void replace(int v, int r) {
 		// Note that this method assume that replace is called correctly.
 		if(v == 0) // set all to 1
-			_data.set(0, size(), true);
+			fill(1);
 		else // set all to 0
-			_data.clear();
+			fill(0);
 	}
 
 	@Override
 	public long getExactSizeOnDisk() {
 		long size = 1 + 4 + 4; // base variables
-		size += _data.toLongArray().length * 8;
+		size += _data.length * 8;
 		return size;
 	}
 
 	@Override
 	public void write(DataOutput out) throws IOException {
-		long[] internals = _data.toLongArray();
 		out.writeByte(MAP_TYPE.BIT.ordinal());
 		out.writeInt(_size);
-		out.writeInt(internals.length);
-		for(int i = 0; i < internals.length; i++)
-			out.writeLong(internals[i]);
+		out.writeInt(_data.length);
+		for(int i = 0; i < _data.length; i++)
+			out.writeLong(_data[i]);
 	}
 
 	protected static MapToBit readFields(DataInput in) throws IOException {
-		int size = in.readInt();
-		long[] internalLong = new long[in.readInt()];
-		for(int i = 0; i < internalLong.length; i++)
-			internalLong[i] = in.readLong();
-		BitSet ret = BitSet.valueOf(internalLong);
-		return new MapToBit(2, ret, size);
+		final int size = in.readInt();
+		final long[] data = new long[in.readInt()];
+		for(int i = 0; i < data.length; i++)
+			data[i] = in.readLong();
+		return new MapToBit(2, data, size);
 	}
 
 	@Override
@@ -148,7 +197,8 @@ public class MapToBit extends AMapToData {
 	@Override
 	public int[] getCounts(int[] ret) {
 		final int sz = size();
-		ret[1] = _data.cardinality();
+		for(int i = 0; i < _data.length; i++)
+			ret[1] += Long.bitCount(_data[i]);
 		ret[0] = sz - ret[1];
 		return ret;
 	}
@@ -163,7 +213,7 @@ public class MapToBit extends AMapToData {
 
 	private void preAggregateDDCSingleColBitBit(MapToBit tmb, double[] td, double[] v) {
 
-		JoinBitSets j = new JoinBitSets(tmb._data, _data, _size);
+		JoinBitSets j = new JoinBitSets(tmb, this, _size);
 
 		// multiply and scale with actual values
 		v[1] += td[1] * j.tt;
@@ -173,16 +223,16 @@ public class MapToBit extends AMapToData {
 	}
 
 	@Override
-	public void preAggregateDDC_DDCMultiCol(AMapToData tm, ADictionary td, double[] v, int nCol) {
+	public void preAggregateDDC_DDCMultiCol(AMapToData tm, IDictionary td, double[] v, int nCol) {
 		if(tm instanceof MapToBit)
 			preAggregateDDCMultiColBitBit((MapToBit) tm, td, v, nCol);
 		else // fallback
 			super.preAggregateDDC_DDCMultiCol(tm, td, v, nCol);
 	}
 
-	private void preAggregateDDCMultiColBitBit(MapToBit tmb, ADictionary td, double[] v, int nCol) {
+	private void preAggregateDDCMultiColBitBit(MapToBit tmb, IDictionary td, double[] v, int nCol) {
 
-		JoinBitSets j = new JoinBitSets(tmb._data, _data, _size);
+		JoinBitSets j = new JoinBitSets(tmb, this, _size);
 
 		final double[] tv = td.getValues();
 
@@ -197,35 +247,37 @@ public class MapToBit extends AMapToData {
 	}
 
 	public boolean isEmpty() {
-		return _data.isEmpty();
+		for(int i = 0; i < _data.length; i++)
+			if(_data[i] != 0)
+				return false;
+		return true;
 	}
 
 	@Override
 	public void copy(AMapToData d) {
-		if(d instanceof MapToBit)
-			copyBit((MapToBit) d);
-		else if(d instanceof MapToInt)
+		// if(d instanceof MapToBit)
+		// copyBit((MapToBit) d);
+		if(d instanceof MapToInt)
 			copyInt((MapToInt) d);
 		else {
 			final int sz = size();
 			for(int i = 0; i < sz; i++)
-				if(d.getIndex(i) != 0)
-					_data.set(i);
+				set(i, d.getIndex(i));
 		}
 	}
 
 	@Override
 	public void copyInt(int[] d) {
-		// start from end because bitset is allocating based on last bit set.
-		for(int i = d.length - 1; i > -1; i--)
-			if(d[i] != 0)
-				_data.set(i);
+		for(int i = 0; i < _size; i++)
+			set(i, d[i]);
 	}
 
 	@Override
 	public void copyBit(BitSet d) {
-		_data.clear();
-		_data.or(d);
+		long[] vals = d.toLongArray();
+		System.arraycopy(vals, 0, _data, 0, vals.length);
+		if(vals.length < _data.length)
+			Arrays.fill(_data, vals.length, _data.length, 0L);
 	}
 
 	private static class JoinBitSets {
@@ -234,11 +286,11 @@ public class MapToBit extends AMapToData {
 		int tf = 0;
 		int ff = 0;
 
-		protected JoinBitSets(BitSet t_data, BitSet o_data, int size) {
+		protected JoinBitSets(MapToBit t_data, MapToBit o_data, int size) {
 
 			// This naively rely on JDK implementation using long arrays to encode bit Arrays.
-			final long[] t_longs = t_data.toLongArray();
-			final long[] _longs = o_data.toLongArray();
+			final long[] t_longs = t_data._data;
+			final long[] _longs = o_data._data;
 
 			final int common = Math.min(t_longs.length, _longs.length);
 
@@ -282,8 +334,8 @@ public class MapToBit extends AMapToData {
 	@Override
 	public int countRuns() {
 		if(_size <= 64) {
-			long l = _data.toLongArray()[0];
-			if(_size != 64 && _data.get(_size - 1)) {
+			long l = _data[0];
+			if(_size != 64 && getIndex(_size - 1) == 1) {
 				// make last run go over into the last elements.
 				long mask = ~((-1L) ^ ((-1L) << (_size - 64)));
 				l |= mask;
@@ -294,7 +346,7 @@ public class MapToBit extends AMapToData {
 		}
 		else {
 			// at least two locations
-			final long[] _longs = _data.toLongArray();
+			final long[] _longs = _data;
 			final long lastMask = (-1L) << (63);
 
 			// first
@@ -314,7 +366,7 @@ public class MapToBit extends AMapToData {
 			// last
 			final int idx = _longs.length - 1;
 			// handle if we are not aligned with 64.
-			l = (_size % 64 != 0 && _data.get(_size - 1)) ? _longs[idx] |
+			l = (_size % 64 != 0 && getIndex(_size - 1) == 1) ? _longs[idx] |
 				(~((-1L) ^ ((-1L) << (_size - 64)))) : _longs[idx];
 			shift1 = (l << 1) | ((_longs[idx - 1] & lastMask) >>> 63);
 
@@ -326,29 +378,31 @@ public class MapToBit extends AMapToData {
 
 	@Override
 	public AMapToData slice(int l, int u) {
-		BitSet s = _data.get(l,u);
-		if(s.isEmpty())
-			return new MapToZero(u-l);
-		else 
-			return new MapToBit(getUnique(), s, u - l);
+		long[] s = BitSetArray.sliceVectorized(_data, l, u);
+		return new MapToBit(getUnique(), s, u - l);
 	}
 
 	@Override
 	public AMapToData append(AMapToData t) {
 		if(t instanceof MapToBit) {
 			MapToBit tb = (MapToBit) t;
-			BitSet tbb = tb._data;
 			final int newSize = _size + t.size();
-			BitSet ret = new BitSet(newSize);
-			ret.xor(_data);
-
-			tbb.stream().forEach(x -> ret.set(x + _size, true));
+			long[] ret = new long[longSize(newSize)];
+			System.arraycopy(_data, 0, ret, 0, _data.length);
+			BitSetArray.setVectorizedLongs(_size, newSize, ret, tb._data);
 			return new MapToBit(2, ret, newSize);
 		}
 		else {
 			throw new NotImplementedException("Not implemented append on Bit map different type");
-
 		}
+	}
+
+	@Override
+	public boolean equals(AMapToData e) {
+		return e instanceof MapToBit && //
+			e.getUnique() == getUnique() && //
+			((MapToBit) e)._size == _size && //
+			Arrays.equals(((MapToBit) e)._data, _data);
 	}
 
 	@Override
@@ -356,39 +410,43 @@ public class MapToBit extends AMapToData {
 		int p = 0; // pointer
 		for(IMapToDataGroup gd : d)
 			p += gd.getMapToData().size();
-		final long[] ret = new long[(p - 1) / 64 + 1];
-		long[] or = _data.toLongArray();
-		System.arraycopy(or, 0, ret, 0, or.length);
+		final long[] ret = new long[longSize(p)];
 
-		p = size();
-		for(int i = 1; i < d.length; i++) {
-			final MapToBit mm = (MapToBit) d[i].getMapToData();
-			final int ms = mm.size();
-			or = mm._data.toLongArray();
-			final int remainder = p % 64;
-			int retLp = p / 64;
-			if(remainder == 0)// Easy lining up
-				System.arraycopy(or, 0, ret, retLp, or.length);
-			else { // Not Lining up
-				// all but last
-				for(int j = 0; j < or.length - 1; j++) {
-					long v = or[j];
-					ret[retLp] = ret[retLp] ^ (v << remainder);
-					retLp++;
-					ret[retLp] = v >>> (64 - remainder);
-				}
-				// last
-				long v = or[or.length - 1];
-				ret[retLp] = ret[retLp] ^ (v << remainder);
-				retLp++;
-				if(retLp < ret.length)
-					ret[retLp] = v >>> (64 - remainder);
+		long[] or = null;
+
+		p = 0;
+		for(int i = 0; i < d.length; i++) {
+			if(d[i].getMapToData().size() > 0) {
+				final MapToBit mm = (MapToBit) d[i].getMapToData();
+				final int ms = mm.size();
+				or = mm._data;
+				BitSetArray.setVectorizedLongs(p, p + ms, ret, or);
+				p += ms;
 			}
-			p += ms;
 		}
 
 		BitSet retBS = BitSet.valueOf(ret);
 		return new MapToBit(getUnique(), retBS, p);
+
+	}
+
+	private static int longSize(int size) {
+		return Math.max(size >> 6, 0) + 1;
+	}
+
+	public int getMaxPossible() {
+		return 2;
+	}
+
+	@Override
+	public String toString() {
+		StringBuilder sb = new StringBuilder();
+		sb.append(super.toString());
+		sb.append(" size: " + _size);
+		sb.append(" longLength:[");
+		sb.append(_data.length);
+		sb.append("]");
+		return sb.toString();
 
 	}
 }

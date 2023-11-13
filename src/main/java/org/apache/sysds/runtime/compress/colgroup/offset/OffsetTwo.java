@@ -23,7 +23,7 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-import org.apache.commons.lang.NotImplementedException;
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
 
 public class OffsetTwo extends AOffset {
@@ -97,7 +97,9 @@ public class OffsetTwo extends AOffset {
 	@Override
 	public OffsetSliceInfo slice(int l, int u) {
 		if(l <= first) {
-			if(u > last)
+			if(u < first)
+				return new OffsetSliceInfo(-1, -1, new OffsetEmpty());
+			else if(u > last)
 				return new OffsetSliceInfo(0, 2, moveIndex(l));
 			else
 				return new OffsetSliceInfo(0, 1, new OffsetSingle(first - l));
@@ -109,12 +111,12 @@ public class OffsetTwo extends AOffset {
 	}
 
 	@Override
-	protected AOffset moveIndex(int m) {
+	public AOffset moveIndex(int m) {
 		return new OffsetTwo(first - m, last - m);
 	}
 
 	@Override
-	protected int getLength() {
+	public int getLength() {
 		return 2;
 	}
 

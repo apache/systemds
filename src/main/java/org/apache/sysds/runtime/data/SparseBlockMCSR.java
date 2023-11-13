@@ -49,7 +49,7 @@ public class SparseBlockMCSR extends SparseBlock
 			_rows = new SparseRow[orows.length];
 			for( int i=0; i<_rows.length; i++ )
 				if( orows[i] != null )
-					_rows[i] = new SparseRowVector(orows[i]);
+					_rows[i] = orows[i].copy(true);
 		}
 		//general case SparseBlock
 		else { 
@@ -58,10 +58,17 @@ public class SparseBlockMCSR extends SparseBlock
 				if( !sblock.isEmpty(i) ) {
 					int apos = sblock.pos(i);
 					int alen = sblock.size(i);
-					_rows[i] = new SparseRowVector(alen);
-					((SparseRowVector)_rows[i]).setSize(alen);
-					System.arraycopy(sblock.indexes(i), apos, _rows[i].indexes(), 0, alen);
-					System.arraycopy(sblock.values(i), apos, _rows[i].values(), 0, alen);
+					if(alen == 0){
+						// do nothing
+					}
+					else if(alen == 1)
+						_rows[i] = new SparseRowScalar(sblock.indexes(i)[apos], sblock.values(i)[apos]);
+					else{
+						_rows[i] = new SparseRowVector(alen);
+						((SparseRowVector)_rows[i]).setSize(alen);
+						System.arraycopy(sblock.indexes(i), apos, _rows[i].indexes(), 0, alen);
+						System.arraycopy(sblock.values(i), apos, _rows[i].values(), 0, alen);
+					}
 				}
 			}
 		}
@@ -87,8 +94,12 @@ public class SparseBlockMCSR extends SparseBlock
 		}
 	}
 	
-	public SparseBlockMCSR(int rlen, int clen) {
+	public SparseBlockMCSR(int rlen){
 		_rows = new SparseRow[rlen];
+	}
+
+	public SparseBlockMCSR(int rlen, int clen) {
+		this(rlen);
 	}
 	
 	/**
@@ -111,7 +122,7 @@ public class SparseBlockMCSR extends SparseBlock
 		//Overheads for arrays, objects, and references refer to 64bit JVMs
 		//If nnz < rows we have guaranteed also empty rows.
 		double size = 16; //object
-		size += MemoryEstimates.objectArrayCost((long)nrows); //references
+		size += MemoryEstimates.objectArrayCost(nrows); //references
 		long sparseRowSize = 16; // object
 		sparseRowSize += 4*4; // 3 integers + padding
 		sparseRowSize += MemoryEstimates.intArrayCost(0);
@@ -179,7 +190,7 @@ public class SparseBlockMCSR extends SparseBlock
 	}
 	
 	@Override
-	public boolean isAllocated(int r) {
+	public final boolean isAllocated(int r) {
 		return _rows[r] != null;
 	}
 
@@ -279,8 +290,8 @@ public class SparseBlockMCSR extends SparseBlock
 	}
 
 	@Override
-	public boolean isEmpty(int r) {
-		return (!isAllocated(r) || _rows[r].isEmpty());
+	public final boolean isEmpty(int r) {
+		return !isAllocated(r) || _rows[r].isEmpty();
 	}
 	
 	@Override
@@ -422,6 +433,18 @@ public class SparseBlockMCSR extends SparseBlock
 			_rows[r] = new SparseRowVector(_rows[r]);
 		return ((SparseRowVector)_rows[r]).searchIndexesFirstGT(c);
 	}
+
+	public void setNnzEstimatePerRow(int nnzPerCol, int nCol){
+		for(SparseRow s : _rows){
+			if(s instanceof SparseRowVector){
+				SparseRowVector sv = (SparseRowVector)s;
+				sv.setEstimatedNzs(nnzPerCol);
+			}
+			else if(s == null){
+				s = new SparseRowVector(nnzPerCol, nCol);
+			}
+		}
+	}
 	
 	@Override
 	public String toString() {
@@ -436,7 +459,7 @@ public class SparseBlockMCSR extends SparseBlock
 		for( int i=0; i<nRow; i++ ) {
 			if(isEmpty(i))
 				continue;
-			sb.append(String.format("row %0"+rowDigits+"d -- %s\n", i, _rows[i].toString()));
+			sb.append(String.format("%0"+rowDigits+"d %s\n", i, _rows[i].toString()));
 		}
 		
 		return sb.toString();

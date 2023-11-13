@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.stream.IntStream;
 
+import org.apache.sysds.runtime.io.IOUtilFunctions;
 import org.apache.sysds.utils.MemoryEstimates;
 
 public class ArrayIndex extends AColIndex {
@@ -54,10 +55,38 @@ public class ArrayIndex extends AColIndex {
 
 	@Override
 	public void write(DataOutput out) throws IOException {
-		out.writeByte(ColIndexType.ARRAY.ordinal());
-		out.writeInt(cols.length);
+		if(cols.length < 100)
+			writeBuffered(out);
+		else
+			writeGeneric(out);
+	}
+
+	public void writeBuffered(DataOutput out) throws IOException {
+		byte[] o = new byte[cols.length * 4 + 4 + 1];
+		o[0] = (byte) ColIndexType.ARRAY.ordinal();
+		IOUtilFunctions.intToBa(cols.length, o, 1);
 		for(int i = 0; i < cols.length; i++)
-			out.writeInt(cols[i]);
+			IOUtilFunctions.intToBa(cols[i], o, i * 4 + 5);
+		out.write(o);
+	}
+
+	public void writeGeneric(DataOutput out) throws IOException {
+		byte[] o = new byte[512];
+
+		o[0] = (byte) ColIndexType.ARRAY.ordinal();
+		IOUtilFunctions.intToBa(cols.length, o, 1);
+		out.write(o, 0, 5);
+
+		int i = 0;
+		while(i + 512 / 4 < cols.length) {
+			for(int of = 0; of < o.length; of += 4, i++)
+				IOUtilFunctions.intToBa(cols[i], o, of);
+			out.write(o);
+		}
+		int of = 0;
+		for(; i < cols.length; of += 4, i++)
+			IOUtilFunctions.intToBa(cols[i], o, of);
+		out.write(o, 0, of);
 	}
 
 	public static ArrayIndex read(DataInput in) throws IOException {
@@ -147,6 +176,12 @@ public class ArrayIndex extends AColIndex {
 	public IColIndex combine(IColIndex other) {
 		final int sr = other.size();
 		final int sl = size();
+		final int maxCombined = Math.max(this.get(this.size() - 1), other.get(other.size() - 1));
+		final int minCombined = Math.min(this.get(0), other.get(0));
+		if(sr + sl == maxCombined - minCombined + 1) {
+			return new RangeIndex(minCombined, maxCombined + 1);
+		}
+
 		final int[] ret = new int[sr + sl];
 		int pl = 0;
 		int pr = 0;
@@ -204,8 +239,18 @@ public class ArrayIndex extends AColIndex {
 
 	@Override
 	public boolean contains(int i) {
+		if(i < cols[0] || i > cols[cols.length - 1])
+			return false;
 		int id = Arrays.binarySearch(cols, 0, cols.length, i);
 		return id >= 0;
+	}
+
+	@Override
+	public double avgOfIndex() {
+		double s = 0.0;
+		for(int i = 0; i < cols.length; i++)
+			s += cols[i];
+		return s / cols.length;
 	}
 
 	protected class ArrayIterator implements IIterate {

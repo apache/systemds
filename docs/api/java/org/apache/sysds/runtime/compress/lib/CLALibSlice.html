@@ -14,7 +14,7 @@
 <!--[if IE]>
 <script type="text/javascript" src="../../../../../../jquery/jszip-utils/dist/jszip-utils-ie.min.js"></script>
 <![endif]-->
-<script type="text/javascript" src="../../../../../../jquery/jquery-3.6.0.min.js"></script>
+<script type="text/javascript" src="../../../../../../jquery/jquery-3.6.1.min.js"></script>
 <script type="text/javascript" src="../../../../../../jquery/jquery-ui.min.js"></script>
 </head>
 <body>
@@ -27,7 +27,7 @@
     catch(err) {
     }
 //-->
-var data = {"i0":9,"i1":9,"i2":9};
+var data = {"i0":9,"i1":9,"i2":9,"i3":9};
 var tabs = {65535:["t0","All Methods"],1:["t1","Static Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -91,13 +91,13 @@ loadScripts(document, 'script');</script>
 <li>Summary:&nbsp;</li>
 <li>Nested&nbsp;|&nbsp;</li>
 <li>Field&nbsp;|&nbsp;</li>
-<li><a href="#constructor.summary">Constr</a>&nbsp;|&nbsp;</li>
+<li>Constr&nbsp;|&nbsp;</li>
 <li><a href="#method.summary">Method</a></li>
 </ul>
 <ul class="subNavList">
 <li>Detail:&nbsp;</li>
 <li>Field&nbsp;|&nbsp;</li>
-<li><a href="#constructor.detail">Constr</a>&nbsp;|&nbsp;</li>
+<li>Constr&nbsp;|&nbsp;</li>
 <li><a href="#method.detail">Method</a></li>
 </ul>
 </div>
@@ -132,7 +132,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <ul class="blockList">
 <li class="blockList">
 <hr>
-<pre>public class <span class="typeNameLabel">CLALibSlice</span>
+<pre>public final class <span class="typeNameLabel">CLALibSlice</span>
 extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a></pre>
 </li>
 </ul>
@@ -140,27 +140,6 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <div class="summary">
 <ul class="blockList">
 <li class="blockList">
-<!-- ======== CONSTRUCTOR SUMMARY ======== -->
-<section>
-<ul class="blockList">
-<li class="blockList"><a id="constructor.summary">
-<!--   -->
-</a>
-<h3>Constructor Summary</h3>
-<table class="memberSummary">
-<caption><span>Constructors</span><span class="tabEnd">&nbsp;</span></caption>
-<tr>
-<th class="colFirst" scope="col">Constructor</th>
-<th class="colLast" scope="col">Description</th>
-</tr>
-<tr class="altColor">
-<th class="colConstructorName" scope="row"><code><span class="memberNameLink"><a href="#%3Cinit%3E()">CLALibSlice</a></span>()</code></th>
-<td class="colLast">&nbsp;</td>
-</tr>
-</table>
-</li>
-</ul>
-</section>
 <!-- ========== METHOD SUMMARY =========== -->
 <section>
 <ul class="blockList">
@@ -187,8 +166,9 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 </tr>
 <tr id="i1" class="rowColor">
 <td class="colFirst"><code>static <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&gt;</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#sliceBlocks(org.apache.sysds.runtime.compress.CompressedMatrixBlock,int)">sliceBlocks</a></span>&#8203;(<a href="../CompressedMatrixBlock.html" title="class in org.apache.sysds.runtime.compress">CompressedMatrixBlock</a>&nbsp;cmb,
-           int&nbsp;blen)</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#sliceBlocks(org.apache.sysds.runtime.compress.CompressedMatrixBlock,int,int)">sliceBlocks</a></span>&#8203;(<a href="../CompressedMatrixBlock.html" title="class in org.apache.sysds.runtime.compress">CompressedMatrixBlock</a>&nbsp;cmb,
+           int&nbsp;blen,
+           int&nbsp;k)</code></th>
 <td class="colLast">
 <div class="block">Slice blocks of compressed matrices from the compressed representation.</div>
 </td>
@@ -198,6 +178,13 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#sliceColumns(org.apache.sysds.runtime.compress.CompressedMatrixBlock,int,int)">sliceColumns</a></span>&#8203;(<a href="../CompressedMatrixBlock.html" title="class in org.apache.sysds.runtime.compress">CompressedMatrixBlock</a>&nbsp;cmb,
             int&nbsp;cl,
             int&nbsp;cu)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i3" class="rowColor">
+<td class="colFirst"><code>static <a href="../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#sliceRowsCompressed(org.apache.sysds.runtime.compress.CompressedMatrixBlock,int,int)">sliceRowsCompressed</a></span>&#8203;(<a href="../CompressedMatrixBlock.html" title="class in org.apache.sysds.runtime.compress">CompressedMatrixBlock</a>&nbsp;cmb,
+                   int&nbsp;rl,
+                   int&nbsp;ru)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 </table>
@@ -217,25 +204,6 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <div class="details">
 <ul class="blockList">
 <li class="blockList">
-<!-- ========= CONSTRUCTOR DETAIL ======== -->
-<section>
-<ul class="blockList">
-<li class="blockList"><a id="constructor.detail">
-<!--   -->
-</a>
-<h3>Constructor Detail</h3>
-<a id="&lt;init&gt;()">
-<!--   -->
-</a>
-<ul class="blockListLast">
-<li class="blockList">
-<h4>CLALibSlice</h4>
-<pre>public&nbsp;CLALibSlice()</pre>
-</li>
-</ul>
-</li>
-</ul>
-</section>
 <!-- ============ METHOD DETAIL ========== -->
 <section>
 <ul class="blockList">
@@ -243,19 +211,21 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <!--   -->
 </a>
 <h3>Method Detail</h3>
-<a id="sliceBlocks(org.apache.sysds.runtime.compress.CompressedMatrixBlock,int)">
+<a id="sliceBlocks(org.apache.sysds.runtime.compress.CompressedMatrixBlock,int,int)">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
 <h4>sliceBlocks</h4>
 <pre class="methodSignature">public static&nbsp;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&gt;&nbsp;sliceBlocks&#8203;(<a href="../CompressedMatrixBlock.html" title="class in org.apache.sysds.runtime.compress">CompressedMatrixBlock</a>&nbsp;cmb,
-                                            int&nbsp;blen)</pre>
+                                            int&nbsp;blen,
+                                            int&nbsp;k)</pre>
 <div class="block">Slice blocks of compressed matrices from the compressed representation.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>cmb</code> - The input block to slice.</dd>
 <dd><code>blen</code> - The length of the blocks.</dd>
+<dd><code>k</code> - The parallelization degree used</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>A list containing CompressedMatrixBlocks or MatrixBlocks</dd>
 </dl>
@@ -273,6 +243,17 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
                                 int&nbsp;cl,
                                 int&nbsp;cu,
                                 boolean&nbsp;deep)</pre>
+</li>
+</ul>
+<a id="sliceRowsCompressed(org.apache.sysds.runtime.compress.CompressedMatrixBlock,int,int)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>sliceRowsCompressed</h4>
+<pre class="methodSignature">public static&nbsp;<a href="../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;sliceRowsCompressed&#8203;(<a href="../CompressedMatrixBlock.html" title="class in org.apache.sysds.runtime.compress">CompressedMatrixBlock</a>&nbsp;cmb,
+                                              int&nbsp;rl,
+                                              int&nbsp;ru)</pre>
 </li>
 </ul>
 <a id="sliceColumns(org.apache.sysds.runtime.compress.CompressedMatrixBlock,int,int)">
@@ -340,13 +321,13 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <li>Summary:&nbsp;</li>
 <li>Nested&nbsp;|&nbsp;</li>
 <li>Field&nbsp;|&nbsp;</li>
-<li><a href="#constructor.summary">Constr</a>&nbsp;|&nbsp;</li>
+<li>Constr&nbsp;|&nbsp;</li>
 <li><a href="#method.summary">Method</a></li>
 </ul>
 <ul class="subNavList">
 <li>Detail:&nbsp;</li>
 <li>Field&nbsp;|&nbsp;</li>
-<li><a href="#constructor.detail">Constr</a>&nbsp;|&nbsp;</li>
+<li>Constr&nbsp;|&nbsp;</li>
 <li><a href="#method.detail">Method</a></li>
 </ul>
 </div>

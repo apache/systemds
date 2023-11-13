@@ -24,7 +24,7 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.util.Arrays;
 
-import org.apache.commons.lang.NotImplementedException;
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
@@ -674,8 +674,8 @@ public class ColGroupLinearFunctional extends AColGroupCompressed {
 	}
 
 	@Override
-	public AColGroup appendNInternal(AColGroup[] g) {
-		return null;
+	public AColGroup appendNInternal(AColGroup[] g, int blen, int rlen) {
+		throw new NotImplementedException();
 	}
 
 	@Override

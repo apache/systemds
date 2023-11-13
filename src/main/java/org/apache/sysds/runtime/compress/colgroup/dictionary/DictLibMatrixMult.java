@@ -63,13 +63,9 @@ public class DictLibMatrixMult {
 	 * @param result       The result matrix
 	 * @param counts       The scaling factors
 	 */
-	public static void MMDictsWithScaling(ADictionary left, ADictionary right, IColIndex leftRows,
+	public static void MMDictsWithScaling(IDictionary left, IDictionary right, IColIndex leftRows,
 		IColIndex rightColumns, MatrixBlock result, int[] counts) {
-		LOG.warn("Inefficient double allocation of dictionary");
-		final boolean modifyRight = right.getInMemorySize() > left.getInMemorySize();
-		final ADictionary rightM = modifyRight ? right.scaleTuples(counts, rightColumns.size()) : right;
-		final ADictionary leftM = modifyRight ? left : left.scaleTuples(counts, leftRows.size());
-		MMDicts(leftM, rightM, leftRows, rightColumns, result);
+		left.MMDictScaling(right, leftRows, rightColumns, result, counts);
 	}
 
 	/**
@@ -81,7 +77,7 @@ public class DictLibMatrixMult {
 	 * @param cols   The cols of the dictionary
 	 * @param ret    The output to add the results to
 	 */
-	public static void TSMMDictionaryWithScaling(ADictionary dict, int[] counts, IColIndex rows, IColIndex cols,
+	public static void TSMMDictionaryWithScaling(IDictionary dict, int[] counts, IColIndex rows, IColIndex cols,
 		MatrixBlock ret) {
 		dict.TSMMWithScaling(counts, rows, cols, ret);
 	}
@@ -96,7 +92,7 @@ public class DictLibMatrixMult {
 	 * @param colsRight The column indexes on the right hand side
 	 * @param result    The result matrix to put the results into.
 	 */
-	public static void MMDicts(ADictionary left, ADictionary right, IColIndex rowsLeft, IColIndex colsRight,
+	public static void MMDicts(IDictionary left, IDictionary right, IColIndex rowsLeft, IColIndex colsRight,
 		MatrixBlock result) {
 		left.MMDict(right, rowsLeft, colsRight, result);
 	}
@@ -121,7 +117,7 @@ public class DictLibMatrixMult {
 	 * @param colsRight cols for the right dictionary
 	 * @param result    the result
 	 */
-	public static void TSMMToUpperTriangle(ADictionary left, ADictionary right, IColIndex rowsLeft, IColIndex colsRight,
+	public static void TSMMToUpperTriangle(IDictionary left, IDictionary right, IColIndex rowsLeft, IColIndex colsRight,
 		MatrixBlock result) {
 		left.TSMMToUpperTriangle(right, rowsLeft, colsRight, result);
 	}
@@ -147,7 +143,7 @@ public class DictLibMatrixMult {
 	 * @param scale     A multiplier to each dictionary entry
 	 * @param result    The result
 	 */
-	public static void TSMMToUpperTriangleScaling(ADictionary left, ADictionary right, IColIndex rowsLeft,
+	public static void TSMMToUpperTriangleScaling(IDictionary left, IDictionary right, IColIndex rowsLeft,
 		IColIndex colsRight, int[] scale, MatrixBlock result) {
 		left.TSMMToUpperTriangleScaling(left, rowsLeft, colsRight, scale, result);
 	}
@@ -198,17 +194,43 @@ public class DictLibMatrixMult {
 
 	protected static void MMDictsDenseDense(double[] left, double[] right, IColIndex rowsLeft, IColIndex colsRight,
 		MatrixBlock result) {
-		final int commonDim = Math.min(left.length / rowsLeft.size(), right.length / colsRight.size());
+		final int leftSide = rowsLeft.size();
+		final int rightSide = colsRight.size();
+		final int commonDim = Math.min(left.length / leftSide, right.length / rightSide);
 		final int resCols = result.getNumColumns();
 		final double[] resV = result.getDenseBlockValues();
+
 		for(int k = 0; k < commonDim; k++) {
-			final int offL = k * rowsLeft.size();
-			final int offR = k * colsRight.size();
-			for(int i = 0; i < rowsLeft.size(); i++) {
+			final int offL = k * leftSide;
+			final int offR = k * rightSide;
+			for(int i = 0; i < leftSide; i++) {
 				final int offOut = rowsLeft.get(i) * resCols;
 				final double vl = left[offL + i];
 				if(vl != 0) {
-					for(int j = 0; j < colsRight.size(); j++)
+					for(int j = 0; j < rightSide; j++)
+						resV[offOut + colsRight.get(j)] += vl * right[offR + j];
+				}
+			}
+		}
+	}
+
+	protected static void MMDictsScalingDenseDense(double[] left, double[] right, IColIndex rowsLeft,
+		IColIndex colsRight, MatrixBlock result, int[] scaling) {
+		final int leftSide = rowsLeft.size();
+		final int rightSide = colsRight.size();
+		final int commonDim = Math.min(left.length / leftSide, right.length / rightSide);
+		final int resCols = result.getNumColumns();
+		final double[] resV = result.getDenseBlockValues();
+
+		for(int k = 0; k < commonDim; k++) {
+			final int offL = k * leftSide;
+			final int offR = k * rightSide;
+			final int s = scaling[k];
+			for(int i = 0; i < leftSide; i++) {
+				final int offOut = rowsLeft.get(i) * resCols;
+				final double vl = left[offL + i] * s;
+				if(vl != 0) {
+					for(int j = 0; j < rightSide; j++)
 						resV[offOut + colsRight.get(j)] += vl * right[offR + j];
 				}
 			}
@@ -236,10 +258,34 @@ public class DictLibMatrixMult {
 		}
 	}
 
+	protected static void MMDictsScalingSparseDense(SparseBlock left, double[] right, IColIndex rowsLeft,
+		IColIndex colsRight, MatrixBlock result, int[] scaling) {
+		final double[] resV = result.getDenseBlockValues();
+		final int commonDim = Math.min(left.numRows(), right.length / colsRight.size());
+		for(int i = 0; i < commonDim; i++) {
+			if(left.isEmpty(i))
+				continue;
+			final int apos = left.pos(i);
+			final int alen = left.size(i) + apos;
+			final int[] aix = left.indexes(i);
+			final double[] leftVals = left.values(i);
+			final int offRight = i * colsRight.size();
+			final int s = scaling[i];
+			for(int k = apos; k < alen; k++) {
+				final int offOut = rowsLeft.get(aix[k]) * result.getNumColumns();
+				final double v = leftVals[k] * s;
+				for(int j = 0; j < colsRight.size(); j++)
+					resV[offOut + colsRight.get(j)] += v * right[offRight + j];
+			}
+		}
+	}
+
 	protected static void MMDictsDenseSparse(double[] left, SparseBlock right, IColIndex rowsLeft, IColIndex colsRight,
 		MatrixBlock result) {
 		final double[] resV = result.getDenseBlockValues();
-		final int commonDim = Math.min(left.length / rowsLeft.size(), right.numRows());
+		final int leftSize = rowsLeft.size();
+		final int commonDim = Math.min(left.length / leftSize, right.numRows());
+
 		for(int i = 0; i < commonDim; i++) {
 			if(right.isEmpty(i))
 				continue;
@@ -247,10 +293,36 @@ public class DictLibMatrixMult {
 			final int alen = right.size(i) + apos;
 			final int[] aix = right.indexes(i);
 			final double[] rightVals = right.values(i);
-			final int offLeft = i * rowsLeft.size();
-			for(int j = 0; j < rowsLeft.size(); j++) {
+			final int offLeft = i * leftSize;
+			for(int j = 0; j < leftSize; j++) {
 				final int offOut = rowsLeft.get(j) * result.getNumColumns();
 				final double v = left[offLeft + j];
+				if(v != 0) {
+					for(int k = apos; k < alen; k++)
+						resV[offOut + colsRight.get(aix[k])] += v * rightVals[k];
+				}
+			}
+		}
+	}
+
+		protected static void MMDictsScalingDenseSparse(double[] left, SparseBlock right, IColIndex rowsLeft, IColIndex colsRight,
+		MatrixBlock result, int[] scaling) {
+		final double[] resV = result.getDenseBlockValues();
+		final int leftSize = rowsLeft.size();
+		final int commonDim = Math.min(left.length / leftSize, right.numRows());
+
+		for(int i = 0; i < commonDim; i++) {
+			if(right.isEmpty(i))
+				continue;
+			final int apos = right.pos(i);
+			final int alen = right.size(i) + apos;
+			final int[] aix = right.indexes(i);
+			final double[] rightVals = right.values(i);
+			final int offLeft = i * leftSize;
+			final int s = scaling[i];
+			for(int j = 0; j < leftSize; j++) {
+				final int offOut = rowsLeft.get(j) * result.getNumColumns();
+				final double v = left[offLeft + j] * s;
 				if(v != 0) {
 					for(int k = apos; k < alen; k++)
 						resV[offOut + colsRight.get(aix[k])] += v * rightVals[k];
@@ -280,6 +352,35 @@ public class DictLibMatrixMult {
 			for(int k = leftAPos; k < leftAlen; k++) {
 				final int offOut = rowsLeft.get(leftAix[k]) * resCols;
 				final double v = leftVals[k];
+				for(int j = rightAPos; j < rightAlen; j++)
+					resV[offOut + colsRight.get(rightAix[j])] += v * rightVals[j];
+			}
+		}
+	}
+
+	protected static void MMDictsScalingSparseSparse(SparseBlock left, SparseBlock right, IColIndex rowsLeft,
+		IColIndex colsRight, MatrixBlock result, int[] scaling) {
+		final int commonDim = Math.min(left.numRows(), right.numRows());
+		final double[] resV = result.getDenseBlockValues();
+		final int resCols = result.getNumColumns();
+		// remember that the left side is transposed...
+		for(int i = 0; i < commonDim; i++) {
+			if(left.isEmpty(i) || right.isEmpty(i))
+				continue;
+			final int leftAPos = left.pos(i);
+			final int leftAlen = left.size(i) + leftAPos;
+			final int[] leftAix = left.indexes(i);
+			final double[] leftVals = left.values(i);
+			final int rightAPos = right.pos(i);
+			final int rightAlen = right.size(i) + rightAPos;
+			final int[] rightAix = right.indexes(i);
+			final double[] rightVals = right.values(i);
+
+			final int s = scaling[i];
+
+			for(int k = leftAPos; k < leftAlen; k++) {
+				final int offOut = rowsLeft.get(leftAix[k]) * resCols;
+				final double v = leftVals[k] * s;
 				for(int j = rightAPos; j < rightAlen; j++)
 					resV[offOut + colsRight.get(rightAix[j])] += v * rightVals[j];
 			}
@@ -427,7 +528,6 @@ public class DictLibMatrixMult {
 	protected static void MMToUpperTriangleDenseDense(double[] left, double[] right, IColIndex rowsLeft,
 		IColIndex colsRight, MatrixBlock result) {
 		final int loc = location(rowsLeft, colsRight);
-		// LOG.error("loc:" + loc);
 		if(loc < 0)
 			MMToUpperTriangleDenseDenseAllUpperTriangle(left, right, rowsLeft, colsRight, result);
 		else if(loc > 0)

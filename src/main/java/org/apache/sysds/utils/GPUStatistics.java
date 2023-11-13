@@ -36,7 +36,7 @@ public class GPUStatistics {
 	private static int iNoOfExecutedGPUInst = 0;
 	
 	public static long cudaInitTime = 0;
-	public static long cudaLibrariesInitTime = 0;
+	public static LongAdder cudaLibrariesInitTime = new LongAdder();
 	public static LongAdder cudaSparseToDenseTime = new LongAdder();		// time spent in converting sparse matrix block to dense
 	public static LongAdder cudaDenseToSparseTime = new LongAdder();		// time spent in converting dense matrix block to sparse
 	public static LongAdder cudaSparseConversionTime = new LongAdder();	// time spent in converting between sparse block types
@@ -96,7 +96,7 @@ public class GPUStatistics {
 	 */
 	public static void reset(){
 		cudaInitTime = 0;
-		cudaLibrariesInitTime = 0;
+		cudaLibrariesInitTime.reset();
 		cudaAllocTime.reset();
 		cudaDeAllocTime.reset();
 		cudaMemSet0Time.reset();
@@ -183,7 +183,7 @@ public class GPUStatistics {
 	public static String getStringForCudaTimers() {
 		StringBuffer sb = new StringBuffer();
 		sb.append("CUDA/CuLibraries init time:\t" + String.format("%.3f", cudaInitTime*1e-9) + "/"
-				+ String.format("%.3f", cudaLibrariesInitTime*1e-9) + " sec.\n");
+				+ String.format("%.3f", cudaLibrariesInitTime.longValue()*1e-9) + " sec.\n");
 		sb.append("Number of executed GPU inst:\t" + getNoOfExecutedGPUInst() + ".\n");
 		// cudaSparseConversionCount
 		sb.append("GPU mem alloc time  (alloc(success/fail) / dealloc / set0):\t"

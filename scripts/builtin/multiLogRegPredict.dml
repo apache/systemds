@@ -37,14 +37,10 @@
 # accuracy     scalar value of accuracy
 # ----------------------------------------------------------------------------------------
 
-m_multiLogRegPredict = function(Matrix[Double] X, Matrix[Double] B, Matrix[Double] Y, Boolean verbose = FALSE)
+m_multiLogRegPredict = function(Matrix[Double] X, Matrix[Double] B, 
+    Matrix[Double] Y = matrix(0,1,1), Boolean verbose = FALSE)
   return(Matrix[Double] M, Matrix[Double] predicted_Y, Double accuracy)
 {
-  if(min(Y) <= 0) {
-    print("multiLogRegPredict: class labels should be greater than "
-        + "zero - converting all labels <= 0 to max(Y)+1");
-    Y = ifelse(Y <= 0, max(Y) + 1, Y);
-  }
   if(ncol(X) < nrow(B)-1)
     stop("multiLogRegPredict: mismatching ncol(X) and nrow(B): "+ncol(X)+" "+nrow(B));
   
@@ -62,8 +58,15 @@ m_multiLogRegPredict = function(Matrix[Double] X, Matrix[Double] B, Matrix[Doubl
   M = probabilities(linear_terms); # compute the probabilities on unknown data
   predicted_Y = rowIndexMax(M); # extract the class labels
 
-  if(nrow(Y) != 0)
+  if(nrow(Y) != 0){
+    if(min(Y) <= 0) {
+      print("multiLogRegPredict: class labels should be greater than "
+        + "zero - converting all labels <= 0 to max(Y)+1");
+      Y = ifelse(Y <= 0, max(Y) + 1, Y);
+    }
+
     accuracy = sum((predicted_Y - Y) == 0) / nrow(Y) * 100;
+  }
   
   if(verbose)
     print("Accuracy (%): " + accuracy);

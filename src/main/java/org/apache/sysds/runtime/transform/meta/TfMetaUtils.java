@@ -34,7 +34,7 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import org.apache.commons.lang.ArrayUtils;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.sysds.api.jmlc.Connection;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.lops.Lop;
@@ -489,5 +489,20 @@ public class TfMetaUtils
 			if( !validEncoders.contains(key) )
 				throw new DMLRuntimeException("Transform specification includes an invalid encoder: "+key);
 		}
+	}
+	
+	@SuppressWarnings("unchecked")
+	public static boolean checkValidEncoders(JSONObject jSpec, TfMethod... encoders) {
+		Set<String> validEncoders = new HashSet<>();
+		validEncoders.addAll(Arrays.asList("ids","K"));
+		for( TfMethod tf : encoders )
+			validEncoders.add(tf.toString());
+		Iterator<String> keys = jSpec.keys();
+		while( keys.hasNext() ) {
+			String key = keys.next();
+			if( !validEncoders.contains(key) )
+				return false;
+		}
+		return true;
 	}
 }

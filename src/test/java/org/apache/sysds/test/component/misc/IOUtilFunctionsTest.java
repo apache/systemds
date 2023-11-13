@@ -80,15 +80,15 @@ public class IOUtilFunctionsTest {
 	@Test(expected = StringIndexOutOfBoundsException.class)
 	public void splitCustom_3() {
 		// try{
-			String in = "aaaaaa \"\"\" abb";
-			String[] ret = IOUtilFunctions.splitCSV(in, " ");
-			assertArrayEquals(new String[] {"aaaaaa", "\"\"\"", "abb"}, ret);
+		String in = "aaaaaa \"\"\" abb";
+		String[] ret = IOUtilFunctions.splitCSV(in, " ");
+		assertArrayEquals(new String[] {"aaaaaa", "\"\"\"", "abb"}, ret);
 
 		// }
 		// catch(Exception e){
-			// e.printStackTrace();
-			// throw e;
-			// fail(e.getMessage());
+		// e.printStackTrace();
+		// throw e;
+		// fail(e.getMessage());
 		// }
 	}
 
@@ -108,9 +108,9 @@ public class IOUtilFunctionsTest {
 
 	// @Test
 	// public void splitCustom_6() {
-	// 	String in = "aaaaaa \"\"\"";
-	// 	String[] ret = IOUtilFunctions.splitCSV(in, " ");
-	// 	assertArrayEquals(new String[] {"aaaaaa", "\""}, ret);
+	// String in = "aaaaaa \"\"\"";
+	// String[] ret = IOUtilFunctions.splitCSV(in, " ");
+	// assertArrayEquals(new String[] {"aaaaaa", "\""}, ret);
 	// }
 
 	@Test
@@ -212,10 +212,11 @@ public class IOUtilFunctionsTest {
 	}
 
 	@Test
-	public void splitCustom_fromRddTest(){
+	public void splitCustom_fromRddTest() {
 		String in = "aaa,\"\"\",,,b,,\",\"c,c,c\"";
 
 		String[] ret = IOUtilFunctions.splitCSV(in, ",", null);
 		assertArrayEquals(new String[] {"aaa", "\"\"\",,,b,,\"", "\"c,c,c\""}, ret);
 	}
+
 }

@@ -60,7 +60,6 @@ import org.apache.sysds.parser.ParForStatementBlock;
 import org.apache.sysds.parser.StatementBlock;
 import org.apache.sysds.parser.WhileStatement;
 import org.apache.sysds.parser.WhileStatementBlock;
-import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.workload.AWTreeNode.WTNodeType;
 import org.apache.sysds.utils.Explain;
 
@@ -68,7 +67,7 @@ public class WorkloadAnalyzer {
 	private static final Log LOG = LogFactory.getLog(WorkloadAnalyzer.class.getName());
 	// indicator for more aggressive compression of intermediates
 	public static boolean ALLOW_INTERMEDIATE_CANDIDATES = false;
-	// avoid wtree construction for assumptionly already compressed intermediates
+	// avoid w-tree construction for already compressed intermediates
 	// (due to conditional control flow this might miss compression opportunities)
 	public static boolean PRUNE_COMPRESSED_INTERMEDIATES = true;
 
@@ -96,6 +95,7 @@ public class WorkloadAnalyzer {
 			// construct workload tree for candidate
 			WorkloadAnalyzer wa = new WorkloadAnalyzer(prog);
 			WTreeRoot tree = wa.createWorkloadTree(cand);
+
 			map.put(cand.getHopID(), tree);
 			allWAs.add(wa);
 		}
@@ -337,6 +337,7 @@ public class WorkloadAnalyzer {
 	}
 
 	private void createOp(Hop hop, AWTreeNode parent) {
+
 		if(hop.getDataType().isMatrix()) {
 			Op o = null;
 			if(HopRewriteUtils.isData(hop, OpOpData.PERSISTENTREAD, OpOpData.TRANSIENTREAD))
@@ -425,7 +426,11 @@ public class WorkloadAnalyzer {
 							o.setOverlapping();
 						}
 						else if(ol) {
-							treeLookup.get(in.get(0).getHopID()).setDecompressing();
+							if(in.get(0) != null) {
+								Op oo = treeLookup.get(in.get(0).getHopID());
+								if(oo != null)
+									oo.setDecompressing();
+							}
 							return;
 						}
 						else {
@@ -500,16 +505,15 @@ public class WorkloadAnalyzer {
 					setDecompressionOnAllInputs(hop, parent);
 				}
 			}
-			else if(hop instanceof ParameterizedBuiltinOp) {
+			else if(hop instanceof ParameterizedBuiltinOp || hop instanceof NaryOp) {
 				setDecompressionOnAllInputs(hop, parent);
 				return;
 			}
-			else if(hop instanceof NaryOp){
+			else {
+				LOG.warn("Unknown Hop:" + hop.getClass().getSimpleName() + "\n" + Explain.explain(hop));
 				setDecompressionOnAllInputs(hop, parent);
 				return;
 			}
-			else
-				throw new DMLCompressionException("Unknown Hop:" +hop.getClass().getSimpleName() +"\n" + Explain.explain(hop));
 
 			o = o != null ? o : new OpNormal(hop, RewriteCompressedReblock.satisfiesSizeConstraintsForCompression(hop));
 			treeLookup.put(hop.getHopID(), o);

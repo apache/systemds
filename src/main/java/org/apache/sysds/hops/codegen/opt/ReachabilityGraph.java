@@ -27,7 +27,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import org.apache.commons.lang.ArrayUtils;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.sysds.hops.Hop;
 import org.apache.sysds.hops.codegen.opt.PlanSelection.VisitMarkCost;
@@ -304,8 +304,8 @@ public class ReachabilityGraph
 		private CutSet(InterestingPoint[] cutPoints, 
 				InterestingPoint[] l, InterestingPoint[] r) {
 			cut = cutPoints;
-			left = (InterestingPoint[]) ArrayUtils.addAll(cut, l);
-			right = (InterestingPoint[]) ArrayUtils.addAll(cut, r);
+			left = ArrayUtils.addAll(cut, l);
+			right = ArrayUtils.addAll(cut, r);
 		}
 		
 		private void updatePositions(HashMap<InterestingPoint,Integer> probe) {

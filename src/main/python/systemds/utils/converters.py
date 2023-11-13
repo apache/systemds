@@ -135,6 +135,11 @@ def pandas_to_frame_block(sds, pd_df: pd.DataFrame):
 
 
 def frame_block_to_pandas(sds, fb: JavaObject):
+    """Converts a FrameBlock object in the JVM to a pandas dataframe.
+
+    :param sds: The current systemds context.
+    :param fb: A pointer to the JVM's FrameBlock object.
+    """
 
     num_rows = fb.getNumRows()
     num_cols = fb.getNumColumns()

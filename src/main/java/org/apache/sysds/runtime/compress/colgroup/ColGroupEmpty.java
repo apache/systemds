@@ -24,11 +24,16 @@ import java.io.IOException;
 import java.util.Arrays;
 
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
 import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IIterate;
+import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
+import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
+import org.apache.sysds.runtime.compress.colgroup.offset.AOffset;
+import org.apache.sysds.runtime.compress.colgroup.offset.OffsetEmpty;
 import org.apache.sysds.runtime.compress.colgroup.scheme.EmptyScheme;
 import org.apache.sysds.runtime.compress.colgroup.scheme.ICLAScheme;
 import org.apache.sysds.runtime.compress.cost.ComputationCostEstimator;
@@ -47,7 +52,8 @@ import org.apache.sysds.runtime.matrix.operators.CMOperator;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
 import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
 
-public class ColGroupEmpty extends AColGroupCompressed implements IContainADictionary, IContainDefaultTuple {
+public class ColGroupEmpty extends AColGroupCompressed
+	implements IContainADictionary, IContainDefaultTuple, AOffsetsGroup ,IMapToDataGroup{
 	private static final long serialVersionUID = -2307677253622099958L;
 
 	/**
@@ -332,10 +338,16 @@ public class ColGroupEmpty extends AColGroupCompressed implements IContainADicti
 	}
 
 	@Override
-	public AColGroup appendNInternal(AColGroup[] g) {
-		for(int i = 0; i < g.length; i++)
-			if(!_colIndexes.equals(g[i]._colIndexes))
-				return null;
+	public AColGroup appendNInternal(AColGroup[] g, int blen, int rlen) {
+		for(int i = 0; i < g.length; i++) {
+			final AColGroup gs = g[i];
+			if(!_colIndexes.equals(gs._colIndexes))
+				throw new DMLCompressionException("Invalid columns not matching " + gs._colIndexes + " " + _colIndexes);
+			if(gs instanceof ColGroupEmpty)
+				continue;
+			else
+				return gs.appendNInternal(g, blen, rlen);
+		}
 		return this;
 	}
 
@@ -352,7 +364,8 @@ public class ColGroupEmpty extends AColGroupCompressed implements IContainADicti
 	@Override
 	public CompressedSizeInfoColGroup getCompressionInfo(int nRow) {
 		EstimationFactors ef = new EstimationFactors(getNumValues(), 1, 0, 0.0);
-		return new CompressedSizeInfoColGroup(_colIndexes, ef, estimateInMemorySize(), CompressionType.CONST, getEncoding());
+		return new CompressedSizeInfoColGroup(_colIndexes, ef, estimateInMemorySize(), CompressionType.EMPTY,
+			getEncoding());
 	}
 
 	@Override
@@ -378,6 +391,16 @@ public class ColGroupEmpty extends AColGroupCompressed implements IContainADicti
 	@Override
 	protected AColGroup fixColIndexes(IColIndex newColIndex, int[] reordering) {
 		return new ColGroupEmpty(newColIndex);
+	}
+
+	@Override
+	public AOffset getOffsets() {
+		return new OffsetEmpty();
+	}
+
+	@Override
+	public AMapToData getMapToData() {
+		return MapToFactory.create(0, 0);
 	}
 
 }

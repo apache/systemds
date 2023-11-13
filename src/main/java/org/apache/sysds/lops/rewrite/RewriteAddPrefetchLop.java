@@ -59,12 +59,12 @@ public class RewriteAddPrefetchLop extends LopRewriteRule
 			return List.of(sb);
 
 		ArrayList<Lop> nodesWithPrefetch = new ArrayList<>();
-		//Find the Spark nodes with all CP outputs
+		//Find the Spark/GPU nodes with all CP outputs
 		for (Lop l : lops) {
 			nodesWithPrefetch.add(l);
 			if (isPrefetchNeeded(l)) {
 				List<Lop> oldOuts = new ArrayList<>(l.getOutputs());
-				//Construct a Prefetch lop that takes this Spark node as a input
+				//Construct a Prefetch lop that takes this Spark/GPU node as an input
 				UnaryCP prefetch = new UnaryCP(l, Types.OpOp1.PREFETCH, l.getDataType(), l.getValueType(), Types.ExecType.CP);
 				prefetch.setAsynchronous(true);
 				//Reset asynchronous flag for the input if already set (e.g. mapmm -> prefetch)
@@ -90,6 +90,10 @@ public class RewriteAddPrefetchLop extends LopRewriteRule
 	}
 
 	private boolean isPrefetchNeeded(Lop lop) {
+		return isPrefetchFromSparkNeeded(lop) || isPrefetchFromGPUNeeded(lop);
+	}
+
+	private boolean isPrefetchFromSparkNeeded(Lop lop) {
 		// Run Prefetch for a Spark instruction if the instruction is a Transformation
 		// and the output is consumed by only CP instructions.
 		boolean transformOP = lop.getExecType() == Types.ExecType.SPARK && lop.getAggType() != AggBinaryOp.SparkAggType.SINGLE_BLOCK
@@ -109,14 +113,31 @@ public class RewriteAddPrefetchLop extends LopRewriteRule
 		boolean anyOutputList = lop.getOutputs().stream()
 			.anyMatch(out -> out.getDataType() == Types.DataType.LIST);
 
-		//FIXME: Rewire _inputParams when needed (e.g. GroupedAggregate)
+		// FIXME: Rewire _inputParams when needed (e.g. GroupedAggregate)
 		boolean hasParameterizedOut = lop.getOutputs().stream()
 			.anyMatch(out -> ((out instanceof ParameterizedBuiltin)
 				|| (out instanceof GroupedAggregate)
 				|| (out instanceof GroupedAggregateM)));
-		//TODO: support non-matrix outputs
+		// TODO: support non-matrix outputs
 		return transformOP && !hasParameterizedOut && !anyOutputList
 			&& (lop.isAllOutputsCP() || OperatorOrderingUtils.isCollectForBroadcast(lop))
 			&& lop.getDataType() == Types.DataType.MATRIX;
+	}
+
+	private boolean isPrefetchFromGPUNeeded(Lop lop) {
+		// Prefetch a GPU intermediate if all the outputs are CP.
+		boolean gpuOP =  lop.getDataType() == Types.DataType.MATRIX
+			&& lop.isExecGPU() && lop.isAllOutputsCP();
+
+		// Exclude List consumers. List is just a metadata handle.
+		boolean anyOutputList = lop.getOutputs().stream()
+			.anyMatch(out -> out.getDataType() == Types.DataType.LIST);
+
+		// FIXME: Rewire _inputParams when needed (e.g. Replace)
+		boolean hasParameterizedOut = lop.getOutputs().stream()
+			.anyMatch(out -> ((out instanceof ParameterizedBuiltin)
+				|| (out instanceof GroupedAggregate)
+				|| (out instanceof GroupedAggregateM)));
+		return gpuOP && !hasParameterizedOut && !anyOutputList;
 	}
 }

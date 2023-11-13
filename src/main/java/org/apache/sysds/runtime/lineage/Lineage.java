@@ -132,6 +132,7 @@ public class Lineage {
 	public void initializeDedupBlock(ProgramBlock pb, ExecutionContext ec) {
 		if( !(pb instanceof ForProgramBlock || pb instanceof WhileProgramBlock) )
 			throw new DMLRuntimeException("Invalid deduplication block: "+ pb.getClass().getSimpleName());
+		LineageCacheConfig.setReuseLineageTraces(false);
 		if (!_dedupBlocks.containsKey(pb)) {
 			// valid only if doesn't contain a nested loop
 			boolean valid = LineageDedupUtils.isValidDedupBlock(pb, false);

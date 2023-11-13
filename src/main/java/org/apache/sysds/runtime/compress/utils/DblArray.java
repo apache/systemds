@@ -25,12 +25,8 @@ import java.util.Arrays;
  * Helper class used for bitmap extraction.
  */
 public class DblArray {
-	private double[] _arr;
+	private final double[] _arr;
 	private int _hash;
-
-	public DblArray() {
-		_arr = null;
-	}
 
 	public DblArray(double[] arr) {
 		_arr = arr;
@@ -54,27 +50,45 @@ public class DblArray {
 	}
 
 	public boolean isEmpty() {
-		return _arr == null;
+		if(_arr == null)
+			return true;
+
+		for(int i = 0; i < _arr.length; i++) {
+			if(_arr[i] != 0)
+				return false;
+		}
+		return true;
 	}
 
 	@Override
-	public int hashCode() {
-		if(_hash != 0 || _arr == null)
+	public final int hashCode() {
+		if(_hash != 0)
 			return _hash;
-		int h = Arrays.hashCode(_arr);
-		h ^= (h >>> 20) ^ (h >>> 12);
-		h = h ^ (h >>> 7) ^ (h >>> 4);
-		_hash = h;
+		_hash = hashCode(_arr);
 		return _hash;
 	}
 
-	public boolean equals(DblArray that) {
-		return this._arr == that._arr || // same object
-			(this.hashCode() == that.hashCode() && dblArrEq(this._arr, that._arr));
+	private final int hashCode(final double[] arr) {
+		int h = 1;
+		for(double element : _arr) {
+			long bits = Double.doubleToLongBits(element);
+			h = 857 * h + (int) (bits ^ (bits >>> 32));
+		}
+		h ^= (h >>> 20) ^ (h >>> 12);
+		h = h ^ (h >>> 7) ^ (h >>> 4);
+		return h;
 	}
 
-	private static boolean dblArrEq(double[] a, double[] b) {
-		return Arrays.equals(a, b);
+	public final boolean equals(DblArray that) {
+		if(hashCode() == that.hashCode()) {
+			final double[] t = _arr;
+			final double[] o = that._arr;
+			for(int i = 0; i < t.length; i++)
+				if(!Util.eq(t[i], o[i]))
+					return false;
+			return true;
+		}
+		return false;
 	}
 
 	@Override
@@ -84,6 +98,21 @@ public class DblArray {
 
 	@Override
 	public String toString() {
-		return Arrays.toString(_arr);
+		StringBuilder sb = new StringBuilder(2 + _arr.length * 4);
+		sb.append("[");
+		sb.append(doubleToString(_arr[0]));
+		for(int i = 1; i < _arr.length; i++) {
+			sb.append(", ");
+			sb.append(doubleToString(_arr[i]));
+		}
+		sb.append("]");
+		return sb.toString();
+	}
+
+	private static String doubleToString(double v) {
+		if(v == (long) v)
+			return Long.toString(((long) v));
+		else
+			return Double.toString(v);
 	}
 }

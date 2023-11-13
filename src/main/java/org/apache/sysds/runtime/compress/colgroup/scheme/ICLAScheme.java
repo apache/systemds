@@ -24,6 +24,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.matrix.data.Pair;
 
 /**
  * Interface for a scheme instance.
@@ -36,17 +37,17 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
  * 
  * A single scheme is only responsible for encoding a single column group type.
  */
-public interface ICLAScheme {
+public interface ICLAScheme extends Cloneable {
 
 	/** Logging access for the CLA Scheme encoders */
 	public final Log LOG = LogFactory.getLog(ICLAScheme.class.getName());
 
 	/**
 	 * Encode the given matrix block into the scheme provided in the instance.
-	 * 	 
 	 * 
-	 * The method is unsafe in the sense that if the encoding scheme does not fit, there is no guarantee that an error is
-	 * thrown. To guarantee the encoding scheme, first use update on the matrix block and used the returned scheme to
+	 * 
+	 * The method is unsafe in the sense that if the encoding scheme does not fit, there is no guarantee that an error
+	 * is thrown. To guarantee the encoding scheme, first use update on the matrix block and used the returned scheme to
 	 * ensure consistency.
 	 * 
 	 * @param data The data to encode
@@ -57,10 +58,25 @@ public interface ICLAScheme {
 	public AColGroup encode(MatrixBlock data);
 
 	/**
+	 * Encode the given matrix block into the scheme provided in the instance, the input data is transposed
+	 * 
+	 * 
+	 * The method is unsafe in the sense that if the encoding scheme does not fit, there is no guarantee that an error
+	 * is thrown. To guarantee the encoding scheme, first use update on the matrix block and used the returned scheme to
+	 * ensure consistency.
+	 * 
+	 * @param data The transposed data to encode
+	 * @throws IllegalArgumentException In the case the columns argument number of columns does not corelate with the
+	 *                                  schemes list of columns.
+	 * @return A compressed column group forced to use the scheme provided.
+	 */
+	public AColGroup encodeT(MatrixBlock data);
+
+	/**
 	 * Encode a given matrix block into the scheme provided in the instance but overwrite what columns to use.
 	 * 
-	 * The method is unsafe in the sense that if the encoding scheme does not fit, there is no guarantee that an error is
-	 * thrown. To guarantee the encoding scheme, first use update on the matrix block and used the returned scheme to
+	 * The method is unsafe in the sense that if the encoding scheme does not fit, there is no guarantee that an error
+	 * is thrown. To guarantee the encoding scheme, first use update on the matrix block and used the returned scheme to
 	 * ensure consistency.
 	 * 
 	 * @param data    The data to encode
@@ -72,20 +88,99 @@ public interface ICLAScheme {
 	public AColGroup encode(MatrixBlock data, IColIndex columns);
 
 	/**
+	 * Encode a given matrix block into the scheme provided in the instance but overwrite what columns to use.
+	 * 
+	 * The method is unsafe in the sense that if the encoding scheme does not fit, there is no guarantee that an error
+	 * is thrown. To guarantee the encoding scheme, first use update on the matrix block and used the returned scheme to
+	 * ensure consistency.
+	 * 
+	 * @param data    The transposed data to encode
+	 * @param columns The columns to apply the scheme to, but must be of same number than the encoded scheme
+	 * @throws IllegalArgumentException In the case the columns argument number of columns does not corelate with the
+	 *                                  schemes list of columns.
+	 * @return A compressed column group forced to use the scheme provided.
+	 */
+	public AColGroup encodeT(MatrixBlock data, IColIndex columns);
+
+	/**
 	 * Update the encoding scheme to enable compression of the given data.
 	 * 
 	 * @param data The data to update into the scheme
-	 * @return A updated scheme 
+	 * @return A updated scheme
 	 */
 	public ICLAScheme update(MatrixBlock data);
 
 	/**
 	 * Update the encoding scheme to enable compression of the given data.
 	 * 
+	 * @param data The transposed data to update into the scheme
+	 * @return A updated scheme
+	 */
+	public ICLAScheme updateT(MatrixBlock data);
+
+	/**
+	 * Update the encoding scheme to enable compression of the given data.
+	 * 
 	 * @param data    The data to update into the scheme
 	 * @param columns The columns to extract the data from
-	 * @return A updated scheme 
+	 * @return A updated scheme
 	 */
 	public ICLAScheme update(MatrixBlock data, IColIndex columns);
 
+	/**
+	 * Update the encoding scheme to enable compression of the given data.
+	 * 
+	 * @param data    The transposed data to update into the scheme
+	 * @param columns The columns to extract the data from
+	 * @return A updated scheme
+	 */
+	public ICLAScheme updateT(MatrixBlock data, IColIndex columns);
+
+	/**
+	 * Update and encode the given block in a single pass. It can fail to do so in cases where the dictionary size
+	 * increase over the mapping sizes supported by individual encodings.
+	 * 
+	 * The implementation should always work and fall back to a normal two pass algorithm if it breaks.
+	 * 
+	 * @param data The block to encode
+	 * @return The updated scheme and an encoded column group
+	 */
+	public Pair<ICLAScheme, AColGroup> updateAndEncode(MatrixBlock data);
+
+	/**
+	 * Update and encode the given block in a single pass. It can fail to do so in cases where the dictionary size
+	 * increase over the mapping sizes supported by individual encodings.
+	 * 
+	 * The implementation should always work and fall back to a normal two pass algorithm if it breaks.
+	 * 
+	 * @param data The transposed block to encode
+	 * @return The updated scheme and an encoded column group
+	 */
+	public Pair<ICLAScheme, AColGroup> updateAndEncodeT(MatrixBlock data);
+
+	/**
+	 * Try to update and encode in a single pass over the data. It can fail to do so in cases where the dictionary size
+	 * increase over the mapping sizes supported by individual encodings.
+	 * 
+	 * The implementation should always work and fall back to a normal two pass algorithm if it breaks.
+	 * 
+	 * @param data    The block to encode
+	 * @param columns The column to encode
+	 * @return The updated scheme and an encoded column group
+	 */
+	public Pair<ICLAScheme, AColGroup> updateAndEncode(MatrixBlock data, IColIndex columns);
+
+	/**
+	 * Try to update and encode in a single pass over the data. It can fail to do so in cases where the dictionary size
+	 * increase over the mapping sizes supported by individual encodings.
+	 * 
+	 * The implementation should always work and fall back to a normal two pass algorithm if it breaks.
+	 * 
+	 * @param data    The transposed block to encode
+	 * @param columns The column to encode
+	 * @return The updated scheme and an encoded column group
+	 */
+	public Pair<ICLAScheme, AColGroup> updateAndEncodeT(MatrixBlock data, IColIndex columns);
+
+	public ICLAScheme clone();
 }

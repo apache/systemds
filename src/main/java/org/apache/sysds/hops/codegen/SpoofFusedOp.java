@@ -30,11 +30,14 @@ import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.lops.Lop;
 import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.lops.SpoofFused;
+import org.apache.sysds.runtime.codegen.CodegenUtils;
+import org.apache.sysds.runtime.codegen.SpoofOperator;
 import org.apache.sysds.runtime.codegen.SpoofRowwise;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Objects;
 
 public class SpoofFusedOp extends MultiThreadedHop
@@ -119,6 +122,13 @@ public class SpoofFusedOp extends MultiThreadedHop
 
 	@Override
 	protected double computeIntermediateMemEstimate(long dim1, long dim2, long nnz) {
+		if( _class.getGenericSuperclass().equals(SpoofRowwise.class) ) {
+			long[] cols = new long[getInput().size()];
+			Arrays.setAll(cols, i -> getInput(i).getDim2());
+			SpoofOperator op = CodegenUtils.createInstance(_class);
+			int k = OptimizerUtils.getConstrainedNumThreads(_maxNumThreads);
+			return ((SpoofRowwise)op).getTmpMemoryReq(k, cols[0], cols);
+		}
 		return 0;
 	}
 	

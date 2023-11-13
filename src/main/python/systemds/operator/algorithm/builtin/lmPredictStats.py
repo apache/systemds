@@ -38,10 +38,10 @@ def lmPredictStats(yhat: Matrix,
     
     
     
-    :param yhat: column vector of predicted response values y
-    :param ytest: column vector of actual response values y
-    :param lm: indicator if used for linear regression model
-    :return: column vector holding avg_res, ss_avg_res, and R2
+    :param yhat: A column vector of predicted response values y
+    :param ytest: A column vector of actual response values y
+    :param lm: An indicator if used for linear regression model
+    :return: A column vector holding avg_res, ss_avg_res, and R2
     """
 
     params_dict = {'yhat': yhat, 'ytest': ytest, 'lm': lm}

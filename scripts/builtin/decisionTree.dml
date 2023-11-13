@@ -55,6 +55,12 @@
 #                 candidates at tree nodes: m = ceil(num_features^max_features)
 # max_values      Parameter controlling the number of values per feature used
 #                 as split candidates: nb = ceil(num_values^max_values)
+# max_dataratio   Parameter in [0,1] controlling when to materialize data
+#                 subsets of X and y on node splits. When set to 0, we always
+#                 scan the original X and y, which has the benefit of avoiding
+#                 the allocation and maintenance of data for all active nodes.
+#                 When set to 0.01 we rematerialize whenever the sub-tree data
+#                 would be less than 1% of last the parent materialize data size.
 # impurity        Impurity measure: entropy, gini (default), rss (regression)
 # seed            Fixed seed for randomization of samples and split candidates
 # verbose         Flag indicating verbose debug output
@@ -67,7 +73,7 @@
 
 m_decisionTree = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] ctypes,
     Int max_depth = 10, Int min_leaf = 20, Int min_split = 50,
-    Double max_features = 0.5, Double max_values = 1.0,
+    Double max_features = 0.5, Double max_values = 1.0, Double max_dataratio = 0.25,
     String impurity = "gini", Int seed = -1, Boolean verbose = FALSE)
   return(Matrix[Double] M)
 {
@@ -100,7 +106,8 @@ m_decisionTree = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] cty
 
   if( verbose ) {
     print("decisionTree: initialize with max_depth=" + max_depth + ", max_features="
-      + max_features + ", impurity=" + impurity + ", seed=" + seed + ".");
+      + max_features +", max_dataratio=" + max_dataratio + ", impurity="
+      + impurity + ", seed=" + seed + ".");
     print("decisionTree: basic statistics:");
     print("-- impurity: " + as.scalar(computeImpurity(y2, I, impurity)));
     print("-- minFeatureCount: " + min(cnt));
@@ -109,7 +116,7 @@ m_decisionTree = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] cty
 
   # queue-based node splitting
   M = matrix(0, rows=1, cols=2*(2^max_depth-1))
-  queue = list(list(1,I)); # node IDs / data indicators
+  queue = list(list(1,I,X2,y2)); # node IDs / data indicators
   maxPath = 1;
   while( length(queue) > 0 ) {
     # pop next node from queue for splitting
@@ -117,8 +124,19 @@ m_decisionTree = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] cty
     node = as.list(node0);
     nID = as.scalar(node[1]);
     nI = as.matrix(node[2]);
+    X2 = as.matrix(node[3]);
+    y2 = as.matrix(node[4]);
     if(verbose)
       print("decisionTree: attempting split of node "+nID+" ("+sum(nI)+" rows)");
+
+    # optional rematerialization of data per node
+    if( sum(nI) < max_dataratio*ncol(nI) ) {
+      if(verbose)
+        print("-- compacting data: "+ncol(nI)+" --> "+sum(nI));
+      X2 = removeEmpty(target=X2, margin="rows", select=t(nI));
+      y2 = removeEmpty(target=y2, margin="rows", select=t(nI));
+      nI = matrix(1, rows=1, cols=nrow(X2));
+    }
 
     # find best split attribute
     nSeed = ifelse(seed==-1, seed, seed*nID);
@@ -136,11 +154,11 @@ m_decisionTree = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] cty
     # split data, finalize or recurse
     if( validSplit ) {
       if( sum(Ileft) >= min_split & floor(log(IDleft,2))+2 < max_depth )
-        queue = append(queue, list(IDleft,Ileft));
+        queue = append(queue, list(IDleft,Ileft,X2,y2));
       else
         M[,2*IDleft] = computeLeafLabel(y2, Ileft, classify, verbose)
       if( sum(Iright) >= min_split & floor(log(IDright,2))+2 < max_depth )
-        queue = append(queue, list(IDright,Iright));
+        queue = append(queue, list(IDright,Iright,X2,y2));
       else
         M[,2*IDright] = computeLeafLabel(y2, Iright, classify, verbose)
       maxPath = max(maxPath, floor(log(IDleft,2)+1));
@@ -179,16 +197,16 @@ findBestSplit = function(Matrix[Double] X2, Matrix[Double] y2, Matrix[Double] fo
     f = as.scalar(feat[i]);        # feature
     beg = as.scalar(foffb[1,f])+1; # feature start in X2
     end = as.scalar(foffe[1,f]);   # feature end in X2
-    belen = end-beg;
+    belen = end-beg; #numFeat - 1
     while(FALSE){} # make beg/end known
 
     # construct 0/1 predicate vectors with <= semantics
     # find rows that match at least one value and appear in I
     # (vectorized evaluation, each column in P is a split candidate)
-    fP = upper.tri(target=matrix(1,belen,belen+1), diag=TRUE);
-    vI = seq(1,belen+1);
+    fP = upper.tri(target=matrix(1,belen,belen), diag=TRUE);
+    vI = seq(1,belen);
     if( max_values < 1.0 & ncol(fP)>10 ) {
-      rI2 = rand(rows=ncol(fP), cols=1, seed=seed) <= (ncol(fP)^max_values/ncol(fP));
+      rI2 = rand(rows=ncol(fP),cols=1,seed=seed) <= (ncol(fP)^max_values/ncol(fP));
       fP = removeEmpty(target=fP, margin="cols", select=t(rI2));
       vI = removeEmpty(target=vI, margin="rows", select=rI2);
     }

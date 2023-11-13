@@ -32,7 +32,11 @@ import jcuda.runtime.cudaError;
 import static jcuda.runtime.JCuda.cudaFree;
 
 public class CudaMemoryAllocator implements GPUMemoryAllocator {
-	
+	// Record the unusable free memory to avoid unnecessary cudaMalloc calls.
+	// An allocation request may fail due to fragmented memory even if cudaMemGetInfo
+	// says enough memory is available. CudaMalloc is expensive even when fails.
+	private static long unusableFreeMem = 0;
+
 	/**
 	 * Allocate memory on the device. 
 	 * 
@@ -41,10 +45,16 @@ public class CudaMemoryAllocator implements GPUMemoryAllocator {
 	 * @throws jcuda.CudaException if unable to allocate
 	 */
 	@Override
-	public void allocate(Pointer devPtr, long size) throws CudaException {
-		int status = cudaMalloc(devPtr, size);
-		if(status != cudaSuccess) {
-			throw new jcuda.CudaException("cudaMalloc failed:" + cudaError.stringFor(status));
+	public void allocate(Pointer devPtr, long size) {
+		try {
+			@SuppressWarnings("unused")
+			int status = cudaMalloc(devPtr, size);
+		}
+		catch(CudaException e) {
+			if (e.getMessage().equals("cudaErrorMemoryAllocation"))
+				// Update unusable memory
+				unusableFreeMem = getAvailableMemory();
+			throw new jcuda.CudaException("cudaMalloc failed: " + e.getMessage());
 		}
 	}
 
@@ -70,7 +80,7 @@ public class CudaMemoryAllocator implements GPUMemoryAllocator {
 	 */
 	@Override
 	public boolean canAllocate(long size) {
-		return size <= getAvailableMemory();
+		return size <= (getAvailableMemory() - unusableFreeMem);
 	}
 	
 	/**
@@ -84,6 +94,10 @@ public class CudaMemoryAllocator implements GPUMemoryAllocator {
 		long total[] = { 0 };
 		cudaMemGetInfo(free, total);
 		return (long) (free[0] * DMLScript.GPU_MEMORY_UTILIZATION_FACTOR);
+	}
+
+	public static void resetUnusableFreeMemory() {
+		unusableFreeMem = 0;
 	}
 
 }

@@ -81,7 +81,14 @@ public class IntegerArray extends Array<Integer> {
 
 	@Override
 	public void set(int rl, int ru, Array<Integer> value, int rlSrc) {
-		System.arraycopy(((IntegerArray) value)._data, rlSrc, _data, rl, ru - rl + 1);
+		try {
+			// try system array copy.
+			// but if it does not work, default to get.
+			System.arraycopy(value.get(), rlSrc, _data, rl, ru - rl + 1);
+		}
+		catch(Exception e) {
+			super.set(rl, ru, value, rlSrc);
+		}
 	}
 
 	@Override
@@ -119,7 +126,7 @@ public class IntegerArray extends Array<Integer> {
 		final int endSize = this._size + other.size();
 		final int[] ret = new int[endSize];
 		System.arraycopy(_data, 0, ret, 0, this._size);
-		System.arraycopy((int[]) other.get(), 0, ret, this._size, other.size());
+		System.arraycopy(other.get(), 0, ret, this._size, other.size());
 		if(other instanceof OptionalArray)
 			return OptionalArray.appendOther((OptionalArray<Integer>) other, new IntegerArray(ret));
 		else
@@ -175,7 +182,7 @@ public class IntegerArray extends Array<Integer> {
 
 	@Override
 	public Pair<ValueType, Boolean> analyzeValueType() {
-		return new Pair<ValueType, Boolean>(ValueType.INT32, false);
+		return new Pair<>(ValueType.INT32, false);
 	}
 
 	@Override
@@ -223,7 +230,7 @@ public class IntegerArray extends Array<Integer> {
 	protected Array<Double> changeTypeDouble() {
 		double[] ret = new double[size()];
 		for(int i = 0; i < size(); i++)
-			ret[i] = (double) _data[i];
+			ret[i] = _data[i];
 		return new DoubleArray(ret);
 	}
 
@@ -231,7 +238,7 @@ public class IntegerArray extends Array<Integer> {
 	protected Array<Float> changeTypeFloat() {
 		float[] ret = new float[size()];
 		for(int i = 0; i < size(); i++)
-			ret[i] = (float) _data[i];
+			ret[i] = _data[i];
 		return new FloatArray(ret);
 	}
 
@@ -246,6 +253,14 @@ public class IntegerArray extends Array<Integer> {
 		for(int i = 0; i < size(); i++)
 			ret[i] = _data[i];
 		return new LongArray(ret);
+	}
+
+	@Override
+	protected Array<Object> changeTypeHash64() {
+		long[] ret = new long[size()];
+		for(int i = 0; i < size(); i++)
+			ret[i] = _data[i];
+		return new HashLongArray(ret);
 	}
 
 	@Override
@@ -331,10 +346,22 @@ public class IntegerArray extends Array<Integer> {
 		return _data[i] != 0;
 	}
 
+	@Override
+	public double hashDouble(int idx) {
+		return Integer.hashCode(_data[idx]);
+	}
 
 	@Override
-	public double hashDouble(int idx){
-		return Integer.hashCode(_data[idx]);
+	public boolean equals(Array<Integer> other) {
+		if(other instanceof IntegerArray)
+			return Arrays.equals(_data, ((IntegerArray) other)._data);
+		else
+			return false;
+	}
+
+	@Override
+	public boolean possiblyContainsNaN(){
+		return false;
 	}
 
 	@Override

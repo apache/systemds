@@ -24,7 +24,7 @@ import java.lang.ref.SoftReference;
 import java.util.List;
 import java.util.concurrent.Future;
 
-import org.apache.commons.lang.mutable.MutableBoolean;
+import org.apache.commons.lang3.mutable.MutableBoolean;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.DataType;
@@ -35,6 +35,7 @@ import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.hops.fedplanner.FTypes.FType;
 import org.apache.sysds.lops.Lop;
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
 import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRange;
@@ -95,7 +96,7 @@ public class MatrixObject extends CacheableData<MatrixBlock> {
 	 * @param file file name
 	 */
 	public MatrixObject(ValueType vt, String file) {
-		this(vt, file, null); // HDFS file path
+		this(vt, file, null, null); // HDFS file path
 	}
 
 	/**
@@ -106,11 +107,7 @@ public class MatrixObject extends CacheableData<MatrixBlock> {
 	 * @param mtd  metadata
 	 */
 	public MatrixObject(ValueType vt, String file, MetaData mtd) {
-		super(DataType.MATRIX, vt);
-		_metaData = mtd;
-		_hdfsFileName = file;
-		_cache = null;
-		_data = null;
+		this(vt, file, mtd, null);
 	}
 
 	/**
@@ -127,7 +124,10 @@ public class MatrixObject extends CacheableData<MatrixBlock> {
 		_metaData = mtd;
 		_hdfsFileName = file;
 		_cache = null;
-		_data = data;
+		if(data != null) {
+			acquireModify(data);
+			release();
+		}
 	}
 
 	/**
@@ -587,8 +587,21 @@ public class MatrixObject extends CacheableData<MatrixBlock> {
 
 	@Override
 	protected MatrixBlock reconstructByLineage(LineageItem li) throws IOException {
-		return ((MatrixObject) LineageRecomputeUtils.parseNComputeLineageTrace(Explain.explain(li), null))
+		return ((MatrixObject) LineageRecomputeUtils
+			.parseNComputeLineageTrace(Explain.explain(li), null))
 			.acquireReadAndRelease();
+	}
+
+	@Override 
+	public boolean isCompressed(){
+		if(super.isCompressed())
+			return true;
+		else if(_partitionInMemory instanceof CompressedMatrixBlock){
+			setCompressedSize(_partitionInMemory.estimateSizeInMemory());
+			return true;
+		}
+		else
+			return false;
 	}
 
 	@Override

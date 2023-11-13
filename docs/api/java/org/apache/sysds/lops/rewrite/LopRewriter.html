@@ -14,7 +14,7 @@
 <!--[if IE]>
 <script type="text/javascript" src="../../../../../jquery/jszip-utils/dist/jszip-utils-ie.min.js"></script>
 <![endif]-->
-<script type="text/javascript" src="../../../../../jquery/jquery-3.6.0.min.js"></script>
+<script type="text/javascript" src="../../../../../jquery/jquery-3.6.1.min.js"></script>
 <script type="text/javascript" src="../../../../../jquery/jquery-ui.min.js"></script>
 </head>
 <body>
@@ -177,7 +177,8 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 </tr>
 <tr id="i0" class="altColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/ArrayList.html?is-external=true" title="class or interface in java.util" class="externalLink">ArrayList</a>&lt;<a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&gt;</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#rewriteLopDAG(java.util.ArrayList)">rewriteLopDAG</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/ArrayList.html?is-external=true" title="class or interface in java.util" class="externalLink">ArrayList</a>&lt;<a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&gt;&nbsp;lops)</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#rewriteLopDAG(org.apache.sysds.parser.StatementBlock,java.util.ArrayList)">rewriteLopDAG</a></span>&#8203;(<a href="../../parser/StatementBlock.html" title="class in org.apache.sysds.parser">StatementBlock</a>&nbsp;sb,
+             <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/ArrayList.html?is-external=true" title="class or interface in java.util" class="externalLink">ArrayList</a>&lt;<a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&gt;&nbsp;lops)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i1" class="rowColor">
@@ -261,13 +262,14 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <pre class="methodSignature">public&nbsp;void&nbsp;rewriteLopDAGsFunction&#8203;(<a href="../../parser/FunctionStatementBlock.html" title="class in org.apache.sysds.parser">FunctionStatementBlock</a>&nbsp;fsb)</pre>
 </li>
 </ul>
-<a id="rewriteLopDAG(java.util.ArrayList)">
+<a id="rewriteLopDAG(org.apache.sysds.parser.StatementBlock,java.util.ArrayList)">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
 <h4>rewriteLopDAG</h4>
-<pre class="methodSignature">public&nbsp;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/ArrayList.html?is-external=true" title="class or interface in java.util" class="externalLink">ArrayList</a>&lt;<a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&gt;&nbsp;rewriteLopDAG&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/ArrayList.html?is-external=true" title="class or interface in java.util" class="externalLink">ArrayList</a>&lt;<a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&gt;&nbsp;lops)</pre>
+<pre class="methodSignature">public&nbsp;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/ArrayList.html?is-external=true" title="class or interface in java.util" class="externalLink">ArrayList</a>&lt;<a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&gt;&nbsp;rewriteLopDAG&#8203;(<a href="../../parser/StatementBlock.html" title="class in org.apache.sysds.parser">StatementBlock</a>&nbsp;sb,
+                                    <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/ArrayList.html?is-external=true" title="class or interface in java.util" class="externalLink">ArrayList</a>&lt;<a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&gt;&nbsp;lops)</pre>
 </li>
 </ul>
 <a id="rRewriteLops(java.util.ArrayList)">

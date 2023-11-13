@@ -14,7 +14,7 @@
 <!--[if IE]>
 <script type="text/javascript" src="../../../../../../../jquery/jszip-utils/dist/jszip-utils-ie.min.js"></script>
 <![endif]-->
-<script type="text/javascript" src="../../../../../../../jquery/jquery-3.6.0.min.js"></script>
+<script type="text/javascript" src="../../../../../../../jquery/jquery-3.6.1.min.js"></script>
 <script type="text/javascript" src="../../../../../../../jquery/jquery-ui.min.js"></script>
 </head>
 <body>
@@ -317,6 +317,22 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </a>
 <h3>Uses of <a href="../MatrixIndexes.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixIndexes</a> in <a href="../../../compress/io/package-summary.html">org.apache.sysds.runtime.compress.io</a></h3>
 <table class="useSummary">
+<caption><span>Methods in <a href="../../../compress/io/package-summary.html">org.apache.sysds.runtime.compress.io</a> that return types with arguments of type <a href="../MatrixIndexes.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixIndexes</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colSecond" scope="col">Method</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code>static org.apache.spark.api.java.JavaPairRDD&lt;<a href="../MatrixIndexes.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixIndexes</a>,&#8203;<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&gt;</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ReaderSparkCompressed.</span><code><span class="memberNameLink"><a href="../../../compress/io/ReaderSparkCompressed.html#getRDD(org.apache.spark.api.java.JavaSparkContext,java.lang.String)">getRDD</a></span>&#8203;(org.apache.spark.api.java.JavaSparkContext&nbsp;sc,
+      <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;fileName)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+</tbody>
+</table>
+<table class="useSummary">
 <caption><span>Method parameters in <a href="../../../compress/io/package-summary.html">org.apache.sysds.runtime.compress.io</a> with type arguments of type <a href="../MatrixIndexes.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixIndexes</a></span><span class="tabEnd">&nbsp;</span></caption>
 <tr>
 <th class="colFirst" scope="col">Modifier and Type</th>
@@ -377,7 +393,8 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <tbody>
 <tr class="altColor">
 <td class="colFirst"><code>static <a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">CLALibCombine.</span><code><span class="memberNameLink"><a href="../../../compress/lib/CLALibCombine.html#combine(java.util.Map,int)">combine</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/Map.html?is-external=true" title="class or interface in java.util" class="externalLink">Map</a>&lt;<a href="../MatrixIndexes.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixIndexes</a>,&#8203;<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&gt;&nbsp;m,
+<th class="colSecond" scope="row"><span class="typeNameLabel">CLALibStack.</span><code><span class="memberNameLink"><a href="../../../compress/lib/CLALibStack.html#combine(java.util.Map,java.util.Map,int)">combine</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/Map.html?is-external=true" title="class or interface in java.util" class="externalLink">Map</a>&lt;<a href="../MatrixIndexes.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixIndexes</a>,&#8203;<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&gt;&nbsp;m,
+       <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/Map.html?is-external=true" title="class or interface in java.util" class="externalLink">Map</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Integer.html?is-external=true" title="class or interface in java.lang" class="externalLink">Integer</a>,&#8203;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="../../../compress/colgroup/dictionary/IDictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary</a>&gt;&gt;&nbsp;d,
        int&nbsp;k)</code></th>
 <td class="colLast">
 <div class="block">Combine the map of index matrix blocks into a single MatrixBlock.</div>
@@ -385,12 +402,15 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>static <a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">CLALibCombine.</span><code><span class="memberNameLink"><a href="../../../compress/lib/CLALibCombine.html#combine(java.util.Map,int,int,int,int)">combine</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/Map.html?is-external=true" title="class or interface in java.util" class="externalLink">Map</a>&lt;<a href="../MatrixIndexes.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixIndexes</a>,&#8203;<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&gt;&nbsp;m,
+<th class="colSecond" scope="row"><span class="typeNameLabel">CLALibStack.</span><code><span class="memberNameLink"><a href="../../../compress/lib/CLALibStack.html#combine(java.util.Map,java.util.Map,int,int,int,int)">combine</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/Map.html?is-external=true" title="class or interface in java.util" class="externalLink">Map</a>&lt;<a href="../MatrixIndexes.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixIndexes</a>,&#8203;<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&gt;&nbsp;m,
+       <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/Map.html?is-external=true" title="class or interface in java.util" class="externalLink">Map</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Integer.html?is-external=true" title="class or interface in java.lang" class="externalLink">Integer</a>,&#8203;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="../../../compress/colgroup/dictionary/IDictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary</a>&gt;&gt;&nbsp;d,
        int&nbsp;rlen,
        int&nbsp;clen,
        int&nbsp;blen,
        int&nbsp;k)</code></th>
-<td class="colLast">&nbsp;</td>
+<td class="colLast">
+<div class="block">Alternative read, when dimensions are known.</div>
+</td>
 </tr>
 </tbody>
 </table>
@@ -1247,12 +1267,19 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>static org.apache.spark.api.java.JavaPairRDD&lt;<a href="../MatrixIndexes.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixIndexes</a>,&#8203;<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&gt;</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">RDDConverterUtils.</span><code><span class="memberNameLink"><a href="../../../instructions/spark/utils/RDDConverterUtils.html#matrixBlockToAlignedMatrixBlock(org.apache.spark.api.java.JavaPairRDD,org.apache.sysds.runtime.meta.DataCharacteristics,org.apache.sysds.runtime.meta.DataCharacteristics)">matrixBlockToAlignedMatrixBlock</a></span>&#8203;(org.apache.spark.api.java.JavaPairRDD&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Long.html?is-external=true" title="class or interface in java.lang" class="externalLink">Long</a>,&#8203;<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&gt;&nbsp;input,
+                               <a href="../../../meta/DataCharacteristics.html" title="class in org.apache.sysds.runtime.meta">DataCharacteristics</a>&nbsp;mcIn,
+                               <a href="../../../meta/DataCharacteristics.html" title="class in org.apache.sysds.runtime.meta">DataCharacteristics</a>&nbsp;mcOut)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>static org.apache.spark.api.java.JavaPairRDD&lt;<a href="../MatrixIndexes.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixIndexes</a>,&#8203;<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&gt;</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">RDDAggregateUtils.</span><code><span class="memberNameLink"><a href="../../../instructions/spark/utils/RDDAggregateUtils.html#mergeByKey(org.apache.spark.api.java.JavaPairRDD)">mergeByKey</a></span>&#8203;(org.apache.spark.api.java.JavaPairRDD&lt;<a href="../MatrixIndexes.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixIndexes</a>,&#8203;<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&gt;&nbsp;in)</code></th>
 <td class="colLast">
 <div class="block">Merges disjoint data of all blocks per key.</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>static org.apache.spark.api.java.JavaPairRDD&lt;<a href="../MatrixIndexes.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixIndexes</a>,&#8203;<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&gt;</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">RDDAggregateUtils.</span><code><span class="memberNameLink"><a href="../../../instructions/spark/utils/RDDAggregateUtils.html#mergeByKey(org.apache.spark.api.java.JavaPairRDD,boolean)">mergeByKey</a></span>&#8203;(org.apache.spark.api.java.JavaPairRDD&lt;<a href="../MatrixIndexes.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixIndexes</a>,&#8203;<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&gt;&nbsp;in,
           boolean&nbsp;deepCopyCombiner)</code></th>
@@ -1260,7 +1287,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <div class="block">Merges disjoint data of all blocks per key.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>static org.apache.spark.api.java.JavaPairRDD&lt;<a href="../MatrixIndexes.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixIndexes</a>,&#8203;<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&gt;</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">RDDAggregateUtils.</span><code><span class="memberNameLink"><a href="../../../instructions/spark/utils/RDDAggregateUtils.html#mergeByKey(org.apache.spark.api.java.JavaPairRDD,int,boolean)">mergeByKey</a></span>&#8203;(org.apache.spark.api.java.JavaPairRDD&lt;<a href="../MatrixIndexes.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixIndexes</a>,&#8203;<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&gt;&nbsp;in,
           int&nbsp;numPartitions,
@@ -1269,21 +1296,21 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <div class="block">Merges disjoint data of all blocks per key.</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>static org.apache.spark.api.java.JavaPairRDD&lt;<a href="../MatrixIndexes.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixIndexes</a>,&#8203;<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&gt;</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">RDDAggregateUtils.</span><code><span class="memberNameLink"><a href="../../../instructions/spark/utils/RDDAggregateUtils.html#mergeRowsByKey(org.apache.spark.api.java.JavaPairRDD)">mergeRowsByKey</a></span>&#8203;(org.apache.spark.api.java.JavaPairRDD&lt;<a href="../MatrixIndexes.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixIndexes</a>,&#8203;<a href="../../../instructions/spark/data/RowMatrixBlock.html" title="class in org.apache.sysds.runtime.instructions.spark.data">RowMatrixBlock</a>&gt;&nbsp;in)</code></th>
 <td class="colLast">
 <div class="block">Merges disjoint data of all blocks per key.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>static org.apache.spark.api.java.JavaPairRDD&lt;<a href="../MatrixIndexes.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixIndexes</a>,&#8203;<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&gt;</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">RDDSortUtils.</span><code><span class="memberNameLink"><a href="../../../instructions/spark/utils/RDDSortUtils.html#sortByVal(org.apache.spark.api.java.JavaPairRDD,long,int)">sortByVal</a></span>&#8203;(org.apache.spark.api.java.JavaPairRDD&lt;<a href="../MatrixIndexes.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixIndexes</a>,&#8203;<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&gt;&nbsp;in,
          long&nbsp;rlen,
          int&nbsp;blen)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>static org.apache.spark.api.java.JavaPairRDD&lt;<a href="../MatrixIndexes.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixIndexes</a>,&#8203;<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&gt;</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">RDDSortUtils.</span><code><span class="memberNameLink"><a href="../../../instructions/spark/utils/RDDSortUtils.html#sortByVal(org.apache.spark.api.java.JavaPairRDD,org.apache.spark.api.java.JavaPairRDD,long,int)">sortByVal</a></span>&#8203;(org.apache.spark.api.java.JavaPairRDD&lt;<a href="../MatrixIndexes.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixIndexes</a>,&#8203;<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&gt;&nbsp;in,
          org.apache.spark.api.java.JavaPairRDD&lt;<a href="../MatrixIndexes.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixIndexes</a>,&#8203;<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&gt;&nbsp;in2,
@@ -1291,7 +1318,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
          int&nbsp;blen)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>static org.apache.spark.api.java.JavaPairRDD&lt;<a href="../MatrixIndexes.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixIndexes</a>,&#8203;<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&gt;</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">RDDSortUtils.</span><code><span class="memberNameLink"><a href="../../../instructions/spark/utils/RDDSortUtils.html#sortByVals(org.apache.spark.api.java.JavaPairRDD,long,long,int)">sortByVals</a></span>&#8203;(org.apache.spark.api.java.JavaPairRDD&lt;<a href="../MatrixIndexes.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixIndexes</a>,&#8203;<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&gt;&nbsp;in,
           long&nbsp;rlen,
@@ -1299,7 +1326,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
           int&nbsp;blen)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>static org.apache.spark.api.java.JavaPairRDD&lt;<a href="../MatrixIndexes.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixIndexes</a>,&#8203;<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&gt;</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">RDDSortUtils.</span><code><span class="memberNameLink"><a href="../../../instructions/spark/utils/RDDSortUtils.html#sortDataByIx(org.apache.spark.api.java.JavaPairRDD,org.apache.spark.api.java.JavaPairRDD,long,long,int)">sortDataByIx</a></span>&#8203;(org.apache.spark.api.java.JavaPairRDD&lt;<a href="../MatrixIndexes.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixIndexes</a>,&#8203;<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&gt;&nbsp;data,
             org.apache.spark.api.java.JavaPairRDD&lt;<a href="../MatrixIndexes.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixIndexes</a>,&#8203;<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&gt;&nbsp;ixmap,
@@ -1308,7 +1335,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
             int&nbsp;blen)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>static org.apache.spark.api.java.JavaPairRDD&lt;<a href="../MatrixIndexes.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixIndexes</a>,&#8203;<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&gt;</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">RDDSortUtils.</span><code><span class="memberNameLink"><a href="../../../instructions/spark/utils/RDDSortUtils.html#sortDataByVal(org.apache.spark.api.java.JavaPairRDD,org.apache.spark.api.java.JavaPairRDD,boolean,long,long,int)">sortDataByVal</a></span>&#8203;(org.apache.spark.api.java.JavaPairRDD&lt;<a href="../MatrixIndexes.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixIndexes</a>,&#8203;<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&gt;&nbsp;val,
              org.apache.spark.api.java.JavaPairRDD&lt;<a href="../MatrixIndexes.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixIndexes</a>,&#8203;<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&gt;&nbsp;data,
@@ -1318,7 +1345,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
              int&nbsp;blen)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>static org.apache.spark.api.java.JavaPairRDD&lt;<a href="../MatrixIndexes.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixIndexes</a>,&#8203;<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&gt;</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">RDDSortUtils.</span><code><span class="memberNameLink"><a href="../../../instructions/spark/utils/RDDSortUtils.html#sortDataByValMemSort(org.apache.spark.api.java.JavaPairRDD,org.apache.spark.api.java.JavaPairRDD,boolean,long,long,int,org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext,org.apache.sysds.runtime.matrix.operators.ReorgOperator)">sortDataByValMemSort</a></span>&#8203;(org.apache.spark.api.java.JavaPairRDD&lt;<a href="../MatrixIndexes.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixIndexes</a>,&#8203;<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&gt;&nbsp;val,
                     org.apache.spark.api.java.JavaPairRDD&lt;<a href="../MatrixIndexes.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixIndexes</a>,&#8203;<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&gt;&nbsp;data,
@@ -1332,7 +1359,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <div class="block">This function collects and sorts value column in memory and then broadcasts it.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>static org.apache.spark.api.java.JavaPairRDD&lt;<a href="../MatrixIndexes.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixIndexes</a>,&#8203;<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&gt;</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">RDDSortUtils.</span><code><span class="memberNameLink"><a href="../../../instructions/spark/utils/RDDSortUtils.html#sortDataByVals(org.apache.spark.api.java.JavaPairRDD,org.apache.spark.api.java.JavaPairRDD,boolean,long,long,long,int)">sortDataByVals</a></span>&#8203;(org.apache.spark.api.java.JavaPairRDD&lt;<a href="../MatrixIndexes.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixIndexes</a>,&#8203;<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&gt;&nbsp;val,
               org.apache.spark.api.java.JavaPairRDD&lt;<a href="../MatrixIndexes.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixIndexes</a>,&#8203;<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&gt;&nbsp;data,
@@ -1343,7 +1370,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
               int&nbsp;blen)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>static org.apache.spark.api.java.JavaPairRDD&lt;<a href="../MatrixIndexes.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixIndexes</a>,&#8203;<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&gt;</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">RDDSortUtils.</span><code><span class="memberNameLink"><a href="../../../instructions/spark/utils/RDDSortUtils.html#sortIndexesByVal(org.apache.spark.api.java.JavaPairRDD,boolean,long,int)">sortIndexesByVal</a></span>&#8203;(org.apache.spark.api.java.JavaPairRDD&lt;<a href="../MatrixIndexes.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixIndexes</a>,&#8203;<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&gt;&nbsp;val,
                 boolean&nbsp;asc,
@@ -1351,7 +1378,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
                 int&nbsp;blen)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>static org.apache.spark.api.java.JavaPairRDD&lt;<a href="../MatrixIndexes.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixIndexes</a>,&#8203;<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&gt;</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">RDDSortUtils.</span><code><span class="memberNameLink"><a href="../../../instructions/spark/utils/RDDSortUtils.html#sortIndexesByVals(org.apache.spark.api.java.JavaPairRDD,boolean,long,long,int)">sortIndexesByVals</a></span>&#8203;(org.apache.spark.api.java.JavaPairRDD&lt;<a href="../MatrixIndexes.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixIndexes</a>,&#8203;<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&gt;&nbsp;in,
                  boolean&nbsp;asc,
@@ -1360,36 +1387,36 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
                  int&nbsp;blen)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>static org.apache.spark.api.java.JavaPairRDD&lt;<a href="../MatrixIndexes.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixIndexes</a>,&#8203;<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&gt;</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">RDDAggregateUtils.</span><code><span class="memberNameLink"><a href="../../../instructions/spark/utils/RDDAggregateUtils.html#sumByKeyStable(org.apache.spark.api.java.JavaPairRDD)">sumByKeyStable</a></span>&#8203;(org.apache.spark.api.java.JavaPairRDD&lt;<a href="../MatrixIndexes.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixIndexes</a>,&#8203;<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&gt;&nbsp;in)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>static org.apache.spark.api.java.JavaPairRDD&lt;<a href="../MatrixIndexes.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixIndexes</a>,&#8203;<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&gt;</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">RDDAggregateUtils.</span><code><span class="memberNameLink"><a href="../../../instructions/spark/utils/RDDAggregateUtils.html#sumByKeyStable(org.apache.spark.api.java.JavaPairRDD,boolean)">sumByKeyStable</a></span>&#8203;(org.apache.spark.api.java.JavaPairRDD&lt;<a href="../MatrixIndexes.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixIndexes</a>,&#8203;<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&gt;&nbsp;in,
               boolean&nbsp;deepCopyCombiner)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>static org.apache.spark.api.java.JavaPairRDD&lt;<a href="../MatrixIndexes.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixIndexes</a>,&#8203;<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&gt;</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">RDDAggregateUtils.</span><code><span class="memberNameLink"><a href="../../../instructions/spark/utils/RDDAggregateUtils.html#sumByKeyStable(org.apache.spark.api.java.JavaPairRDD,int,boolean)">sumByKeyStable</a></span>&#8203;(org.apache.spark.api.java.JavaPairRDD&lt;<a href="../MatrixIndexes.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixIndexes</a>,&#8203;<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&gt;&nbsp;in,
               int&nbsp;numPartitions,
               boolean&nbsp;deepCopyCombiner)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>static org.apache.spark.api.java.JavaPairRDD&lt;<a href="../MatrixIndexes.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixIndexes</a>,&#8203;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Double.html?is-external=true" title="class or interface in java.lang" class="externalLink">Double</a>&gt;</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">RDDAggregateUtils.</span><code><span class="memberNameLink"><a href="../../../instructions/spark/utils/RDDAggregateUtils.html#sumCellsByKeyStable(org.apache.spark.api.java.JavaPairRDD)">sumCellsByKeyStable</a></span>&#8203;(org.apache.spark.api.java.JavaPairRDD&lt;<a href="../MatrixIndexes.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixIndexes</a>,&#8203;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Double.html?is-external=true" title="class or interface in java.lang" class="externalLink">Double</a>&gt;&nbsp;in)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>static org.apache.spark.api.java.JavaPairRDD&lt;<a href="../MatrixIndexes.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixIndexes</a>,&#8203;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Double.html?is-external=true" title="class or interface in java.lang" class="externalLink">Double</a>&gt;</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">RDDAggregateUtils.</span><code><span class="memberNameLink"><a href="../../../instructions/spark/utils/RDDAggregateUtils.html#sumCellsByKeyStable(org.apache.spark.api.java.JavaPairRDD,int)">sumCellsByKeyStable</a></span>&#8203;(org.apache.spark.api.java.JavaPairRDD&lt;<a href="../MatrixIndexes.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixIndexes</a>,&#8203;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Double.html?is-external=true" title="class or interface in java.lang" class="externalLink">Double</a>&gt;&nbsp;in,
                    int&nbsp;numParts)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>static org.apache.spark.api.java.JavaPairRDD&lt;<a href="../MatrixIndexes.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixIndexes</a>,&#8203;<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&gt;</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">RDDConverterUtils.</span><code><span class="memberNameLink"><a href="../../../instructions/spark/utils/RDDConverterUtils.html#textCellToBinaryBlock(org.apache.spark.api.java.JavaSparkContext,org.apache.spark.api.java.JavaPairRDD,org.apache.sysds.runtime.meta.DataCharacteristics,boolean,org.apache.sysds.runtime.io.FileFormatPropertiesMM)">textCellToBinaryBlock</a></span>&#8203;(org.apache.spark.api.java.JavaSparkContext&nbsp;sc,
                      org.apache.spark.api.java.JavaPairRDD&lt;org.apache.hadoop.io.LongWritable,&#8203;org.apache.hadoop.io.Text&gt;&nbsp;input,

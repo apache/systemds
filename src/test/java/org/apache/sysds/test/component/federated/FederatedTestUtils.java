@@ -26,6 +26,8 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedData;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest;
@@ -38,6 +40,7 @@ import org.apache.sysds.runtime.instructions.cp.ScalarObject;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
 public class FederatedTestUtils {
+	protected static final Log LOG = LogFactory.getLog(FederatedTestUtils.class.getName());
 
 	public static long putDouble(double v, InetSocketAddress addr) {
 		return putDouble(v, addr, 5000);

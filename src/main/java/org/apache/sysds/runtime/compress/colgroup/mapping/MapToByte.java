@@ -25,7 +25,7 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.BitSet;
 
-import org.apache.commons.lang.NotImplementedException;
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.runtime.compress.colgroup.IMapToDataGroup;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory.MAP_TYPE;
 import org.apache.sysds.utils.MemoryEstimates;
@@ -48,6 +48,7 @@ public class MapToByte extends AMapToData {
 	protected MapToByte(int unique, byte[] data) {
 		super(unique);
 		_data = data;
+		verify();
 	}
 
 	protected MapToUByte toUByte() {
@@ -110,16 +111,14 @@ public class MapToByte extends AMapToData {
 	protected void writeBytes(DataOutput out) throws IOException {
 		out.writeInt(getUnique());
 		out.writeInt(_data.length);
-		for(int i = 0; i < _data.length; i++)
-			out.writeByte(_data[i]);
+		out.write(_data);
 	}
 
 	protected static MapToByte readFields(DataInput in) throws IOException {
 		final int unique = in.readInt();
 		final int length = in.readInt();
 		final byte[] data = new byte[length];
-		for(int i = 0; i < length; i++)
-			data[i] = in.readByte();
+		in.readFully(data);
 		return new MapToByte(unique, data);
 	}
 
@@ -157,17 +156,21 @@ public class MapToByte extends AMapToData {
 		final int h = (cu - cl) % 8;
 		off += cl;
 		for(int rc = cl; rc < cl + h; rc++, off++)
-			preAV[_data[rc] & 0xFF] += mV[off];
-		for(int rc = cl + h; rc < cu; rc += 8, off += 8) {
-			preAV[_data[rc] & 0xFF] += mV[off];
-			preAV[_data[rc + 1] & 0xFF] += mV[off + 1];
-			preAV[_data[rc + 2] & 0xFF] += mV[off + 2];
-			preAV[_data[rc + 3] & 0xFF] += mV[off + 3];
-			preAV[_data[rc + 4] & 0xFF] += mV[off + 4];
-			preAV[_data[rc + 5] & 0xFF] += mV[off + 5];
-			preAV[_data[rc + 6] & 0xFF] += mV[off + 6];
-			preAV[_data[rc + 7] & 0xFF] += mV[off + 7];
-		}
+			preAV[getIndex(rc)] += mV[off];
+		for(int rc = cl + h; rc < cu; rc += 8, off += 8)
+			preAggregateDenseToRowVec8(mV, preAV, rc, off);
+	}
+
+	@Override
+	protected void preAggregateDenseToRowVec8(double[] mV, double[] preAV, int rc, int off) {
+		preAV[getIndex(rc)] += mV[off];
+		preAV[getIndex(rc + 1)] += mV[off + 1];
+		preAV[getIndex(rc + 2)] += mV[off + 2];
+		preAV[getIndex(rc + 3)] += mV[off + 3];
+		preAV[getIndex(rc + 4)] += mV[off + 4];
+		preAV[getIndex(rc + 5)] += mV[off + 5];
+		preAV[getIndex(rc + 6)] += mV[off + 6];
+		preAV[getIndex(rc + 7)] += mV[off + 7];
 	}
 
 	@Override
@@ -240,19 +243,33 @@ public class MapToByte extends AMapToData {
 		int p = 0; // pointer
 		for(IMapToDataGroup gd : d)
 			p += gd.getMapToData().size();
-		final byte[] ret = Arrays.copyOf(_data, p);
+		final byte[] ret = new byte[p];
 
-		p = size();
-		for(int i = 1; i < d.length; i++) {
-			final MapToByte mm = (MapToByte) d[i].getMapToData();
-			final int ms = mm.size();
-			System.arraycopy(mm._data, 0, ret, p, ms);
-			p += ms;
+		p = 0;
+		for(int i = 0; i < d.length; i++) {
+			if(d[i].getMapToData().size() > 0) {
+				final MapToByte mm = (MapToByte) d[i].getMapToData();
+				final int ms = mm.size();
+				System.arraycopy(mm._data, 0, ret, p, ms);
+				p += ms;
+			}
 		}
 
 		if(getUnique() < 127)
 			return new MapToUByte(getUnique(), ret);
 		else
 			return new MapToByte(getUnique(), ret);
+	}
+
+	@Override
+	public int getMaxPossible() {
+		return 256;
+	}
+
+	@Override
+	public boolean equals(AMapToData e) {
+		return e instanceof MapToByte && //
+			e.getUnique() == getUnique() && //
+			Arrays.equals(((MapToByte) e)._data, _data);
 	}
 }

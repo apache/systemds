@@ -25,7 +25,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 
-import org.apache.commons.lang.ArrayUtils;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.sysds.api.jmlc.Connection;
 import org.apache.sysds.api.jmlc.PreparedScript;
 import org.apache.sysds.api.jmlc.ResultVariables;

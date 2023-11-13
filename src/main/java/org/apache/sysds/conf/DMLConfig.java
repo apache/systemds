@@ -70,6 +70,7 @@ public class DMLConfig
 	public static final String DEFAULT_BLOCK_SIZE   = "sysds.defaultblocksize";
 	public static final String CP_PARALLEL_OPS      = "sysds.cp.parallel.ops";
 	public static final String CP_PARALLEL_IO       = "sysds.cp.parallel.io";
+	public static final String IO_COMPRESSION_CODEC = "sysds.io.compression.encoding";
 	public static final String PARALLEL_ENCODE      = "sysds.parallel.encode";  // boolean: enable multi-threaded transformencode and apply
 	public static final String PARALLEL_ENCODE_STAGED = "sysds.parallel.encode.staged";
 	public static final String PARALLEL_ENCODE_APPLY_BLOCKS = "sysds.parallel.encode.applyBlocks";
@@ -124,13 +125,14 @@ public class DMLConfig
 	public static final String FEDERATED_PAR_INST = "sysds.federated.par_inst";
 	public static final String FEDERATED_PAR_CONN = "sysds.federated.par_conn";
 	public static final String FEDERATED_READCACHE = "sysds.federated.readcache";
+	public static final String FEDERATED_COMPRESSION = "sysds.federated.compression";
 	public static final String PRIVACY_CONSTRAINT_MOCK = "sysds.federated.priv_mock";
 	/** Trigger frequency of the collecting and parsing statistics process on registered workers for monitoring in seconds */
 	public static final String FEDERATED_MONITOR_FREQUENCY = "sysds.federated.monitorFreq";
 	public static final int DEFAULT_FEDERATED_PORT = 4040; // borrowed default Spark Port
 	public static final int DEFAULT_NUMBER_OF_FEDERATED_WORKER_THREADS = 8;
 	/** Asynchronous triggering of Spark OPs and operator placement **/
-	public static final String ASYNC_SPARK_PREFETCH = "sysds.async.prefetch";  // boolean: enable asynchronous prefetching spark intermediates
+	public static final String ASYNC_PREFETCH = "sysds.async.prefetch";  // boolean: enable asynchronous prefetching spark/gpu intermediates
 	public static final String ASYNC_SPARK_BROADCAST = "sysds.async.broadcast";  // boolean: enable asynchronous broadcasting CP intermediates
 	public static final String ASYNC_SPARK_CHECKPOINT = "sysds.async.checkpoint";  // boolean: enable compile-time persisting of Spark intermediates
 	//internal config
@@ -153,6 +155,7 @@ public class DMLConfig
 		_defaultVals.put(DEFAULT_BLOCK_SIZE,     String.valueOf(OptimizerUtils.DEFAULT_BLOCKSIZE) );
 		_defaultVals.put(CP_PARALLEL_OPS,        "true" );
 		_defaultVals.put(CP_PARALLEL_IO,         "true" );
+		_defaultVals.put(IO_COMPRESSION_CODEC,   "none");
 		_defaultVals.put(PARALLEL_TOKENIZE,      "false");
 		_defaultVals.put(PARALLEL_TOKENIZE_NUM_BLOCKS, "64");
 		_defaultVals.put(PARALLEL_ENCODE,        "true" );
@@ -204,8 +207,9 @@ public class DMLConfig
 		_defaultVals.put(FEDERATED_PAR_INST,     "-1"); // vcores
 		_defaultVals.put(FEDERATED_READCACHE,    "true"); // vcores
 		_defaultVals.put(FEDERATED_MONITOR_FREQUENCY, "3");
+		_defaultVals.put(FEDERATED_COMPRESSION, "none");
 		_defaultVals.put(PRIVACY_CONSTRAINT_MOCK, null);
-		_defaultVals.put(ASYNC_SPARK_PREFETCH,   "false" );
+		_defaultVals.put(ASYNC_PREFETCH,   "false" );
 		_defaultVals.put(ASYNC_SPARK_BROADCAST,  "false" );
 		_defaultVals.put(ASYNC_SPARK_CHECKPOINT,  "false" );
 	}
@@ -460,8 +464,8 @@ public class DMLConfig
 			PRINT_GPU_MEMORY_INFO, AVAILABLE_GPUS, SYNCHRONIZE_GPU, EAGER_CUDA_FREE, GPU_RULE_BASED_PLACEMENT,
 			FLOATING_POINT_PRECISION, GPU_EVICTION_POLICY, LOCAL_SPARK_NUM_THREADS, EVICTION_SHADOW_BUFFERSIZE,
 			GPU_MEMORY_ALLOCATOR, GPU_MEMORY_UTILIZATION_FACTOR, USE_SSL_FEDERATED_COMMUNICATION,
-			DEFAULT_FEDERATED_INITIALIZATION_TIMEOUT, FEDERATED_TIMEOUT, FEDERATED_MONITOR_FREQUENCY,
-			ASYNC_SPARK_PREFETCH, ASYNC_SPARK_BROADCAST, ASYNC_SPARK_CHECKPOINT
+			DEFAULT_FEDERATED_INITIALIZATION_TIMEOUT, FEDERATED_TIMEOUT, FEDERATED_MONITOR_FREQUENCY, FEDERATED_COMPRESSION,
+			ASYNC_PREFETCH, ASYNC_SPARK_BROADCAST, ASYNC_SPARK_CHECKPOINT, IO_COMPRESSION_CODEC
 		}; 
 		
 		StringBuilder sb = new StringBuilder();

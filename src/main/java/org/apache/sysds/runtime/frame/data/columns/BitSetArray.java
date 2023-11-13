@@ -30,6 +30,7 @@ import java.util.BitSet;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.frame.data.columns.ArrayFactory.FrameArrayType;
+import org.apache.sysds.runtime.frame.data.compress.ArrayCompressionStatistics;
 import org.apache.sysds.runtime.matrix.data.Pair;
 import org.apache.sysds.runtime.util.UtilFunctions;
 import org.apache.sysds.utils.MemoryEstimates;
@@ -39,7 +40,9 @@ public class BitSetArray extends ABooleanArray {
 	private static final boolean useVectorizedKernel = true;
 
 	/** Vectorized "words" containing all the bits set */
-	long[] _data;
+	protected long[] _data;
+
+	private volatile int allTrue = -1;
 
 	protected BitSetArray(int size) {
 		this(new long[longSize(size)], size);
@@ -103,7 +106,7 @@ public class BitSetArray extends ABooleanArray {
 
 	@Override
 	public void set(int index, double value) {
-		set(index, value == 1.0);
+		set(index, Math.round(value) == 1.0);
 	}
 
 	@Override
@@ -134,11 +137,19 @@ public class BitSetArray extends ABooleanArray {
 
 	@Override
 	public void set(int rl, int ru, Array<Boolean> value, int rlSrc) {
-		if(useVectorizedKernel && value instanceof BitSetArray && (ru - rl >= 64))
-			setVectorized(rl, ru, (BitSetArray) value, rlSrc);
+		if(useVectorizedKernel && value instanceof BitSetArray && (ru - rl >= 64)){
+			try {
+				// try system array copy.
+				// but if it does not work, default to get.
+				setVectorized(rl, ru, (BitSetArray) value, rlSrc);
+				return;
+			}
+			catch(Exception e) {
+				// do nothing
+			}
+		}
 		else // default
-			for(int i = rl, off = rlSrc; i <= ru; i++, off++)
-				set(i, value.get(off));
+			super.set(rl,ru,value, rlSrc);
 	}
 
 	private void setVectorized(int rl, int ru, BitSetArray value, int rlSrc) {
@@ -149,14 +160,19 @@ public class BitSetArray extends ABooleanArray {
 	}
 
 	private void setVectorizedLongs(int rl, int ru, long[] ov) {
-		final long remainder = rl % 64L;
-		if(remainder == 0)
-			setVectorizedLongsNoOffset(rl, ru, ov);
-		else
-			setVectorizedLongsWithOffset(rl, ru, ov);
+		setVectorizedLongs(rl, ru, _data, ov);
 	}
 
-	private void setVectorizedLongsNoOffset(int rl, int ru, long[] ov) {
+	public static void setVectorizedLongs(int rl, int ru, long[] ret,  long[] ov) {
+
+		final long remainder = rl % 64L;
+		if(remainder == 0)
+			setVectorizedLongsNoOffset(rl, ru, ret, ov);
+		else
+			setVectorizedLongsWithOffset(rl, ru, ret, ov);
+	}
+
+	private static void setVectorizedLongsNoOffset(int rl, int ru, long[] ret, long[] ov) {
 		final long remainderEnd = (ru + 1) % 64L;
 		final long remainderEndInv = 64L - remainderEnd;
 		final int last = ov.length - 1;
@@ -164,52 +180,52 @@ public class BitSetArray extends ABooleanArray {
 
 		// assign all full.
 		for(int j = 0; j < last; j++, retP++)
-			_data[retP] = ov[j];
+			ret[retP] = ov[j];
 
 		// handle tail.
 		if(remainderEnd != 0) {
 			// clear ret in the area.
-			final long r = (_data[retP] >>> remainderEnd) << remainderEnd;
+			final long r = (ret[retP] >>> remainderEnd) << remainderEnd;
 			final long v = (ov[last] << remainderEndInv) >>> remainderEndInv;
 			// assign ret in the area.
-			_data[retP] = r ^ v;
+			ret[retP] = r ^ v;
 		}
 		else
-			_data[retP] = ov[last];
+			ret[retP] = ov[last];
 	}
 
-	private void setVectorizedLongsWithOffset(int rl, int ru, long[] ov) {
+	private static void setVectorizedLongsWithOffset(int rl, int ru, long[] ret, long[] ov) {
 		final long remainder = rl % 64L;
 		final long invRemainder = 64L - remainder;
 		final int last = ov.length - 1;
 		final int lastP = (ru + 1) / 64;
-		final long finalOriginal = _data[lastP]; // original log at the ru location.
+		final long finalOriginal = ret[lastP]; // original log at the ru location.
 
 		int retP = rl / 64; // pointer for current long to edit
 
 		// first mask out previous and then continue
 		// mask by shifting two times (easier than constructing a mask)
-		_data[retP] = (_data[retP] << invRemainder) >>> invRemainder;
+		ret[retP] = (ret[retP] << invRemainder) >>> invRemainder;
 
 		// middle full 64 bit overwrite no need to mask first.
 		// do not include last (it has to be specially handled)
 		for(int j = 0; j < last; j++) {
 			final long v = ov[j];
-			_data[retP] = _data[retP] ^ (v << remainder);
+			ret[retP] = ret[retP] ^ (v << remainder);
 			retP++;
-			_data[retP] = v >>> invRemainder;
+			ret[retP] = v >>> invRemainder;
 		}
 
-		_data[retP] = (ov[last] << remainder) ^ _data[retP];
+		ret[retP] = (ov[last] << remainder) ^ ret[retP];
 		retP++;
-		if(retP < _data.length && retP <= lastP) // aka there is a remainder
-			_data[retP] = ov[last] >>> invRemainder;
+		if(retP < ret.length && retP <= lastP) // aka there is a remainder
+			ret[retP] = ov[last] >>> invRemainder;
 
 		// reassign everything outside range of ru.
 		final long remainderEnd = (ru + 1) % 64L;
 		final long remainderEndInv = 64L - remainderEnd;
-		_data[lastP] = (_data[lastP] << remainderEndInv) >>> remainderEndInv;
-		_data[lastP] = _data[lastP] ^ (finalOriginal >>> remainderEnd) << remainderEnd;
+		ret[lastP] = (ret[lastP] << remainderEndInv) >>> remainderEndInv;
+		ret[lastP] = ret[lastP] ^ (finalOriginal >>> remainderEnd) << remainderEnd;
 
 	}
 
@@ -310,7 +326,12 @@ public class BitSetArray extends ABooleanArray {
 		return new BitSetArray(ret);
 	}
 
-	private BitSetArray sliceVectorized(int rl, int ru) {
+	private BitSetArray sliceVectorized(int rl, int ru){
+
+		return new BitSetArray(sliceVectorized(_data, rl, ru), ru - rl);
+	}
+
+	public static long[] sliceVectorized(long[] _data,int rl, int ru) {
 
 		final long[] ret = new long[(ru - rl) / 64 + 1];
 
@@ -342,7 +363,7 @@ public class BitSetArray extends ABooleanArray {
 				? (_data[sI] >>> rl) | (_data[sI + 1] & lastMask) << -rl //
 				: (_data[sI] & lastMask) >>> rl;
 
-		return new BitSetArray(ret, ru - rl);
+		return ret;
 	}
 
 	@Override
@@ -370,7 +391,7 @@ public class BitSetArray extends ABooleanArray {
 
 	@Override
 	public Pair<ValueType, Boolean> analyzeValueType() {
-		return new Pair<ValueType, Boolean>(ValueType.BOOLEAN, false);
+		return new Pair<>(ValueType.BOOLEAN, false);
 	}
 
 	@Override
@@ -445,6 +466,14 @@ public class BitSetArray extends ABooleanArray {
 	}
 
 	@Override
+	protected Array<Object> changeTypeHash64(){
+		long[] ret = new long[size()];
+		for(int i = 0; i < size(); i++)
+			ret[i] = get(i) ? 1L : 0L;
+		return new HashLongArray(ret);
+	}
+
+	@Override
 	protected Array<String> changeTypeString() {
 		String[] ret = new String[size()];
 		for(int i = 0; i < size(); i++)
@@ -468,8 +497,7 @@ public class BitSetArray extends ABooleanArray {
 	@Override
 	public void fill(Boolean value) {
 		value = value != null ? value : false;
-		for(int i = 0; i < _size / 64 + 1; i++)
-			_data[i] = value ? -1L : 0L;
+		Arrays.fill(_data, value ? -1L : 0L);
 	}
 
 	@Override
@@ -492,9 +520,15 @@ public class BitSetArray extends ABooleanArray {
 
 	@Override
 	public boolean isAllTrue() {
+		if(allTrue != -1)
+			return allTrue ==1;
+		
 		for(int i = 0; i < _data.length; i++)
-			if(_data[i] != -1L)
+			if(_data[i] != -1L){
+				allTrue = 0;
 				return false;
+			}
+		allTrue = 1;
 		return true;
 	}
 
@@ -539,8 +573,23 @@ public class BitSetArray extends ABooleanArray {
 	}
 
 	@Override
-	public double hashDouble(int idx){
+	public double hashDouble(int idx) {
 		return get(idx) ? 1.0 : 0.0;
+	}
+
+	@Override
+	public ArrayCompressionStatistics statistics(int nSamples) {
+		// Unlikely to compress so lets just say... no
+		return null;
+	}
+
+
+	@Override
+	public boolean equals(Array<Boolean> other){
+		if(other instanceof BitSetArray)
+			return Arrays.equals(_data, ((BitSetArray)other)._data);
+		else 
+			return false;
 	}
 
 	@Override

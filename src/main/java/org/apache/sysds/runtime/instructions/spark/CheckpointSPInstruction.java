@@ -19,6 +19,7 @@
 
 package org.apache.sysds.runtime.instructions.spark;
 
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.storage.StorageLevel;
 import org.apache.sysds.common.Types.DataType;
@@ -41,6 +42,7 @@ import org.apache.sysds.runtime.instructions.spark.functions.CopyFrameBlockFunct
 import org.apache.sysds.runtime.instructions.spark.functions.CreateSparseBlockFunction;
 import org.apache.sysds.runtime.instructions.spark.utils.SparkUtils;
 import org.apache.sysds.runtime.lineage.LineageCacheConfig;
+import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysds.runtime.matrix.operators.Operator;
@@ -48,8 +50,6 @@ import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.util.CommonThreadPool;
 import org.apache.sysds.runtime.util.UtilFunctions;
 import org.apache.sysds.utils.Statistics;
-
-import java.util.concurrent.Executors;
 
 public class CheckpointSPInstruction extends UnarySPInstruction {
 	// default storage level
@@ -84,9 +84,7 @@ public class CheckpointSPInstruction extends UnarySPInstruction {
 			// TODO: Synchronize. Avoid double execution
 			ec.setVariable(output.getName(), ec.getCacheableData(input1));
 
-			if (CommonThreadPool.triggerRemoteOPsPool == null)
-				CommonThreadPool.triggerRemoteOPsPool = Executors.newCachedThreadPool();
-			CommonThreadPool.triggerRemoteOPsPool.submit(new TriggerCheckpointTask(ec.getMatrixObject(output)));
+			CommonThreadPool.getDynamicPool().submit(new TriggerCheckpointTask(ec.getMatrixObject(output)));
 			return;
 		}
 
@@ -207,5 +205,13 @@ public class CheckpointSPInstruction extends UnarySPInstruction {
 			cd.setRDDHandle(outro);
 		}
 		sec.setVariable( output.getName(), cd);
+	}
+
+	@Override
+	public Pair<String, LineageItem> getLineageItem(ExecutionContext ec) {
+		// Copy the lineage trace of the input to the output
+		// to prevent unnecessary chkpoint lineage entry, which wrongly
+		// reduces reuse opportunities for nested loop bodies.
+		return Pair.of(output.getName(), ec.getLineageItem(input1.getName()));
 	}
 }

@@ -30,7 +30,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.Future;
 
-import org.apache.commons.lang.NotImplementedException;
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.commons.math3.random.Well1024a;
@@ -51,6 +51,7 @@ import org.apache.sysds.runtime.compress.lib.CLALibCompAgg;
 import org.apache.sysds.runtime.compress.lib.CLALibDecompress;
 import org.apache.sysds.runtime.compress.lib.CLALibMMChain;
 import org.apache.sysds.runtime.compress.lib.CLALibMatrixMult;
+import org.apache.sysds.runtime.compress.lib.CLALibMerge;
 import org.apache.sysds.runtime.compress.lib.CLALibRexpand;
 import org.apache.sysds.runtime.compress.lib.CLALibScalar;
 import org.apache.sysds.runtime.compress.lib.CLALibSlice;
@@ -64,6 +65,7 @@ import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyze
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.data.SparseRow;
+import org.apache.sysds.runtime.functionobjects.SwapIndex;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.CM_COV_Object;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
@@ -77,7 +79,6 @@ import org.apache.sysds.runtime.matrix.data.MatrixValue;
 import org.apache.sysds.runtime.matrix.data.RandomMatrixGenerator;
 import org.apache.sysds.runtime.matrix.operators.AggregateBinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.AggregateOperator;
-import org.apache.sysds.runtime.matrix.operators.AggregateTernaryOperator;
 import org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.CMOperator;
@@ -94,6 +95,11 @@ import org.apache.sysds.utils.DMLCompressionStatistics;
 public class CompressedMatrixBlock extends MatrixBlock {
 	private static final Log LOG = LogFactory.getLog(CompressedMatrixBlock.class.getName());
 	private static final long serialVersionUID = 73193720143154058L;
+
+	/**
+	 * Debugging flag for Compressed Matrices
+	 */
+	public static boolean debug = false;
 
 	/**
 	 * Column groups
@@ -505,7 +511,8 @@ public class CompressedMatrixBlock extends MatrixBlock {
 	}
 
 	@Override
-	public MatrixBlock chainMatrixMultOperations(MatrixBlock v, MatrixBlock w, MatrixBlock out, ChainType ctype, int k) {
+	public MatrixBlock chainMatrixMultOperations(MatrixBlock v, MatrixBlock w, MatrixBlock out, ChainType ctype,
+		int k) {
 
 		checkMMChain(ctype, v, w);
 		// multi-threaded MMChain of single uncompressed ColGroup
@@ -582,11 +589,21 @@ public class CompressedMatrixBlock extends MatrixBlock {
 
 	@Override
 	public MatrixBlock reorgOperations(ReorgOperator op, MatrixValue ret, int startRow, int startColumn, int length) {
-		// Allow transpose to be compressed output. In general we need to have a transposed flag on
-		// the compressed matrix. https://issues.apache.org/jira/browse/SYSTEMDS-3025
-		printDecompressWarning(op.getClass().getSimpleName() + " -- " + op.fn.getClass().getSimpleName());
-		MatrixBlock tmp = decompress(op.getNumThreads());
-		return tmp.reorgOperations(op, ret, startRow, startColumn, length);
+		if(op.fn instanceof SwapIndex && this.getNumColumns() == 1) {
+			MatrixBlock tmp = decompress(op.getNumThreads());
+			long nz = tmp.setNonZeros(tmp.getNonZeros());
+			tmp = new MatrixBlock(tmp.getNumColumns(), tmp.getNumRows(), tmp.getDenseBlockValues());
+			tmp.setNonZeros(nz);
+			return tmp;
+		}
+		else {
+			// Allow transpose to be compressed output. In general we need to have a transposed flag on
+			// the compressed matrix. https://issues.apache.org/jira/browse/SYSTEMDS-3025
+			String message = op.getClass().getSimpleName() + " -- " + op.fn.getClass().getSimpleName();
+			MatrixBlock tmp = getUncompressed(message, op.getNumThreads());
+			return tmp.reorgOperations(op, ret, startRow, startColumn, length);
+		}
+
 	}
 
 	public boolean isOverlapping() {
@@ -784,24 +801,6 @@ public class CompressedMatrixBlock extends MatrixBlock {
 	}
 
 	@Override
-	public MatrixBlock aggregateTernaryOperations(MatrixBlock m1, MatrixBlock m2, MatrixBlock m3, MatrixBlock ret,
-		AggregateTernaryOperator op, boolean inCP) {
-		boolean m1C = m1 instanceof CompressedMatrixBlock;
-		boolean m2C = m2 instanceof CompressedMatrixBlock;
-		boolean m3C = m3 instanceof CompressedMatrixBlock;
-		printDecompressWarning("aggregateTernaryOperations " + op.aggOp.getClass().getSimpleName() + " "
-			+ op.indexFn.getClass().getSimpleName() + " " + op.aggOp.increOp.fn.getClass().getSimpleName() + " "
-			+ op.binaryFn.getClass().getSimpleName() + " m1,m2,m3 " + m1C + " " + m2C + " " + m3C);
-		MatrixBlock left = getUncompressed(m1);
-		MatrixBlock right1 = getUncompressed(m2);
-		MatrixBlock right2 = getUncompressed(m3);
-		ret = left.aggregateTernaryOperations(left, right1, right2, ret, op, inCP);
-		if(ret.getNumRows() == 0 || ret.getNumColumns() == 0)
-			throw new DMLCompressionException("Invalid output");
-		return ret;
-	}
-
-	@Override
 	public MatrixBlock uaggouterchainOperations(MatrixBlock mbLeft, MatrixBlock mbRight, MatrixBlock mbOut,
 		BinaryOperator bOp, AggregateUnaryOperator uaggOp) {
 		printDecompressWarning("uaggouterchainOperations");
@@ -926,6 +925,11 @@ public class CompressedMatrixBlock extends MatrixBlock {
 	public static MatrixBlock getUncompressed(MatrixValue mVal, String message) {
 		return isCompressed((MatrixBlock) mVal) ? ((CompressedMatrixBlock) mVal)
 			.getUncompressed(message) : (MatrixBlock) mVal;
+	}
+
+	public static MatrixBlock getUncompressed(MatrixValue mVal, String message, int k) {
+		return isCompressed((MatrixBlock) mVal) ? ((CompressedMatrixBlock) mVal).getUncompressed(message,
+			k) : (MatrixBlock) mVal;
 	}
 
 	public MatrixBlock getUncompressed() {
@@ -1097,7 +1101,8 @@ public class CompressedMatrixBlock extends MatrixBlock {
 	}
 
 	@Override
-	public void appendRowToSparse(SparseBlock dest, MatrixBlock src, int i, int rowoffset, int coloffset, boolean deep) {
+	public void appendRowToSparse(SparseBlock dest, MatrixBlock src, int i, int rowoffset, int coloffset,
+		boolean deep) {
 		throw new DMLCompressionException("Can't append row to compressed Matrix");
 	}
 
@@ -1157,8 +1162,8 @@ public class CompressedMatrixBlock extends MatrixBlock {
 	}
 
 	@Override
-	public void merge(MatrixBlock that, boolean appendOnly, boolean par, boolean deep) {
-		throw new NotImplementedException();
+	public MatrixBlock merge(MatrixBlock that, boolean appendOnly, boolean par, boolean deep) {
+		return CLALibMerge.merge(this, that, appendOnly, par, deep);
 	}
 
 	@Override

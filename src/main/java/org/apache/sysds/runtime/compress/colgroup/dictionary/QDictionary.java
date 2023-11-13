@@ -23,7 +23,7 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-import org.apache.commons.lang.NotImplementedException;
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.functionobjects.Builtin;
@@ -143,27 +143,27 @@ public class QDictionary extends ADictionary {
 	}
 
 	@Override
-	public ADictionary applyScalarOpAndAppend(ScalarOperator op, double v0, int nCol) {
+	public IDictionary applyScalarOpAndAppend(ScalarOperator op, double v0, int nCol) {
 		throw new NotImplementedException();
 	}
 
 	@Override
-	public ADictionary applyUnaryOp(UnaryOperator op) {
+	public IDictionary applyUnaryOp(UnaryOperator op) {
 		throw new NotImplementedException();
 	}
 
 	@Override
-	public ADictionary applyUnaryOpAndAppend(UnaryOperator op, double v0, int nCol) {
+	public IDictionary applyUnaryOpAndAppend(UnaryOperator op, double v0, int nCol) {
 		throw new NotImplementedException();
 	}
 
 	@Override
-	public ADictionary applyScalarOpWithReference(ScalarOperator op, double[] reference, double[] newReference) {
+	public IDictionary applyScalarOpWithReference(ScalarOperator op, double[] reference, double[] newReference) {
 		throw new NotImplementedException();
 	}
 
 	@Override
-	public ADictionary applyUnaryOpWithReference(UnaryOperator op, double[] reference, double[] newReference) {
+	public IDictionary applyUnaryOpWithReference(UnaryOperator op, double[] reference, double[] newReference) {
 		throw new NotImplementedException();
 	}
 
@@ -280,7 +280,7 @@ public class QDictionary extends ADictionary {
 		int valOff = k * nrColumns;
 		double res = 0.0;
 		for(int i = 0; i < nrColumns; i++)
-			res += (int) (_values[valOff + i] * _values[valOff + i]) * _scale * _scale;
+			res += (_values[valOff + i] * _values[valOff + i]) * _scale * _scale;
 		return res;
 	}
 
@@ -338,7 +338,7 @@ public class QDictionary extends ADictionary {
 		return Dictionary.create(doubleValues);
 	}
 
-	public ADictionary sliceOutColumnRange(int idxStart, int idxEnd, int previousNumberOfColumns) {
+	public IDictionary sliceOutColumnRange(int idxStart, int idxEnd, int previousNumberOfColumns) {
 		int numberTuples = getNumberOfValues(previousNumberOfColumns);
 		int tupleLengthAfter = idxEnd - idxStart;
 		byte[] newDictValues = new byte[tupleLengthAfter * numberTuples];
@@ -408,7 +408,7 @@ public class QDictionary extends ADictionary {
 	}
 
 	@Override
-	public ADictionary subtractTuple(double[] tuple) {
+	public IDictionary subtractTuple(double[] tuple) {
 		throw new NotImplementedException();
 	}
 
@@ -429,23 +429,23 @@ public class QDictionary extends ADictionary {
 	}
 
 	@Override
-	public ADictionary scaleTuples(int[] scaling, int nCol) {
+	public IDictionary scaleTuples(int[] scaling, int nCol) {
 		throw new NotImplementedException();
 	}
 
 	@Override
-	public ADictionary preaggValuesFromDense(int numVals, IColIndex colIndexes, IColIndex aggregateColumns, double[] b,
+	public IDictionary preaggValuesFromDense(int numVals, IColIndex colIndexes, IColIndex aggregateColumns, double[] b,
 		int cut) {
 		throw new NotImplementedException();
 	}
 
 	@Override
-	public ADictionary replace(double pattern, double replace, int nCol) {
+	public IDictionary replace(double pattern, double replace, int nCol) {
 		throw new NotImplementedException();
 	}
 
 	@Override
-	public ADictionary replaceWithReference(double pattern, double replace, double[] reference) {
+	public IDictionary replaceWithReference(double pattern, double replace, double[] reference) {
 		throw new NotImplementedException();
 	}
 
@@ -465,38 +465,38 @@ public class QDictionary extends ADictionary {
 	}
 
 	@Override
-	public ADictionary binOpLeft(BinaryOperator op, double[] v, IColIndex colIndexes) {
+	public IDictionary binOpLeft(BinaryOperator op, double[] v, IColIndex colIndexes) {
 		throw new NotImplementedException();
 	}
 
 	@Override
-	public ADictionary binOpLeftAndAppend(BinaryOperator op, double[] v, IColIndex colIndexes) {
+	public IDictionary binOpLeftAndAppend(BinaryOperator op, double[] v, IColIndex colIndexes) {
 		throw new NotImplementedException();
 	}
 
 	@Override
-	public ADictionary binOpRight(BinaryOperator op, double[] v, IColIndex colIndexes) {
+	public IDictionary binOpRight(BinaryOperator op, double[] v, IColIndex colIndexes) {
 		throw new NotImplementedException();
 	}
 
 	@Override
-	public ADictionary binOpRightAndAppend(BinaryOperator op, double[] v, IColIndex colIndexes) {
+	public IDictionary binOpRightAndAppend(BinaryOperator op, double[] v, IColIndex colIndexes) {
 		throw new NotImplementedException();
 	}
 
 	@Override
-	public ADictionary binOpRight(BinaryOperator op, double[] v) {
+	public IDictionary binOpRight(BinaryOperator op, double[] v) {
 		throw new NotImplementedException();
 	}
 
 	@Override
-	public ADictionary binOpLeftWithReference(BinaryOperator op, double[] v, IColIndex colIndexes, double[] reference,
+	public IDictionary binOpLeftWithReference(BinaryOperator op, double[] v, IColIndex colIndexes, double[] reference,
 		double[] newReference) {
 		throw new NotImplementedException();
 	}
 
 	@Override
-	public ADictionary binOpRightWithReference(BinaryOperator op, double[] v, IColIndex colIndexes, double[] reference,
+	public IDictionary binOpRightWithReference(BinaryOperator op, double[] v, IColIndex colIndexes, double[] reference,
 		double[] newReference) {
 		throw new NotImplementedException();
 	}
@@ -519,7 +519,7 @@ public class QDictionary extends ADictionary {
 	}
 
 	@Override
-	public ADictionary rexpandCols(int max, boolean ignore, boolean cast, int nCol) {
+	public IDictionary rexpandCols(int max, boolean ignore, boolean cast, int nCol) {
 		throw new NotImplementedException();
 		// byte[] newDictValues = new byte[_values.length * max];
 		// for(int i = 0, offset = 0; i < _values.length; i++, offset += max) {
@@ -531,7 +531,7 @@ public class QDictionary extends ADictionary {
 	}
 
 	@Override
-	public ADictionary rexpandColsWithReference(int max, boolean ignore, boolean cast, int reference) {
+	public IDictionary rexpandColsWithReference(int max, boolean ignore, boolean cast, int reference) {
 		throw new NotImplementedException();
 	}
 
@@ -546,71 +546,89 @@ public class QDictionary extends ADictionary {
 	}
 
 	@Override
-	protected void TSMMWithScaling(int[] counts, IColIndex rows, IColIndex cols, MatrixBlock ret) {
+	public void TSMMWithScaling(int[] counts, IColIndex rows, IColIndex cols, MatrixBlock ret) {
 		throw new NotImplementedException();
 	}
 
 	@Override
-	protected void MMDict(ADictionary right, IColIndex rowsLeft, IColIndex colsRight, MatrixBlock result) {
+	public void MMDict(IDictionary right, IColIndex rowsLeft, IColIndex colsRight, MatrixBlock result) {
 		throw new NotImplementedException();
 	}
 
 	@Override
-	protected void MMDictDense(double[] left, IColIndex rowsLeft, IColIndex colsRight, MatrixBlock result) {
+	public void MMDictDense(double[] left, IColIndex rowsLeft, IColIndex colsRight, MatrixBlock result) {
 		throw new NotImplementedException();
 	}
 
 	@Override
-	protected void MMDictSparse(SparseBlock left, IColIndex rowsLeft, IColIndex colsRight, MatrixBlock result) {
+	public void MMDictSparse(SparseBlock left, IColIndex rowsLeft, IColIndex colsRight, MatrixBlock result) {
 		throw new NotImplementedException();
 	}
 
 	@Override
-	protected void TSMMToUpperTriangle(ADictionary right, IColIndex rowsLeft, IColIndex colsRight, MatrixBlock result) {
+	public void TSMMToUpperTriangle(IDictionary right, IColIndex rowsLeft, IColIndex colsRight, MatrixBlock result) {
 		throw new NotImplementedException();
 	}
 
 	@Override
-	protected void TSMMToUpperTriangleDense(double[] left, IColIndex rowsLeft, IColIndex colsRight, MatrixBlock result) {
+	public void TSMMToUpperTriangleDense(double[] left, IColIndex rowsLeft, IColIndex colsRight, MatrixBlock result) {
 		throw new NotImplementedException();
 	}
 
 	@Override
-	protected void TSMMToUpperTriangleSparse(SparseBlock left, IColIndex rowsLeft, IColIndex colsRight,
+	public void TSMMToUpperTriangleSparse(SparseBlock left, IColIndex rowsLeft, IColIndex colsRight,
 		MatrixBlock result) {
 		throw new NotImplementedException();
 	}
 
 	@Override
-	protected void TSMMToUpperTriangleScaling(ADictionary right, IColIndex rowsLeft, IColIndex colsRight, int[] scale,
+	public void TSMMToUpperTriangleScaling(IDictionary right, IColIndex rowsLeft, IColIndex colsRight, int[] scale,
 		MatrixBlock result) {
 		throw new NotImplementedException();
 	}
 
 	@Override
-	protected void TSMMToUpperTriangleDenseScaling(double[] left, IColIndex rowsLeft, IColIndex colsRight, int[] scale,
+	public void TSMMToUpperTriangleDenseScaling(double[] left, IColIndex rowsLeft, IColIndex colsRight, int[] scale,
 		MatrixBlock result) {
 		throw new NotImplementedException();
 	}
 
 	@Override
-	protected void TSMMToUpperTriangleSparseScaling(SparseBlock left, IColIndex rowsLeft, IColIndex colsRight,
-		int[] scale, MatrixBlock result) {
+	public void TSMMToUpperTriangleSparseScaling(SparseBlock left, IColIndex rowsLeft, IColIndex colsRight, int[] scale,
+		MatrixBlock result) {
 		throw new NotImplementedException();
 	}
 
 	@Override
-	public boolean equals(ADictionary o) {
+	public boolean equals(IDictionary o) {
 		throw new NotImplementedException();
 	}
 
 	@Override
-	public ADictionary cbind(ADictionary that, int nCol) {
+	public IDictionary cbind(IDictionary that, int nCol) {
 		throw new NotImplementedException();
 	}
 
 	@Override
-	public ADictionary reorder(int[] reorder) {
+	public IDictionary reorder(int[] reorder) {
+		throw new NotImplementedException();
+	}
+
+	@Override
+	public void MMDictScaling(IDictionary right, IColIndex rowsLeft, IColIndex colsRight, MatrixBlock result,
+		int[] scaling) {
+		throw new NotImplementedException();
+	}
+
+	@Override
+	public void MMDictScalingDense(double[] left, IColIndex rowsLeft, IColIndex colsRight, MatrixBlock result,
+		int[] scaling) {
+		throw new NotImplementedException();
+	}
+
+	@Override
+	public void MMDictScalingSparse(SparseBlock left, IColIndex rowsLeft, IColIndex colsRight, MatrixBlock result,
+		int[] scaling) {
 		throw new NotImplementedException();
 	}
 }

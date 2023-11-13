@@ -26,7 +26,7 @@ import java.math.BigDecimal;
 import java.math.MathContext;
 import java.util.Arrays;
 
-import org.apache.commons.lang.NotImplementedException;
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.compress.utils.Util;
@@ -88,8 +88,27 @@ public class MatrixBlockDictionary extends ADictionary {
 	}
 
 	public static MatrixBlockDictionary createDictionary(double[] values, int nCol, boolean check) {
-		final MatrixBlock mb = Util.matrixBlockFromDenseArray(values, nCol, check);
-		return create(mb, check);
+		if(nCol <= 1) {
+			final MatrixBlock mb = Util.matrixBlockFromDenseArray(values, nCol, check);
+			return create(mb, check);
+		}
+		else {
+			final int nnz = checkNNz(values);
+			if((double) nnz / values.length < 0.4D) {
+				SparseBlock sb = SparseBlockFactory.createFromArray(values, nCol, nnz);
+				MatrixBlock mb = new MatrixBlock(values.length / nCol, nCol, nnz, sb);
+				return create(mb, false);
+			}
+			else
+				return create(Util.matrixBlockFromDenseArray(values, nCol, check), false);
+		}
+	}
+
+	private static int checkNNz(double[] values) {
+		int nnz = 0;
+		for(int i = 0; i < values.length; i++)
+			nnz += values[i] == 0 ? 0 : 1;
+		return nnz;
 	}
 
 	public MatrixBlock getMatrixBlock() {
@@ -400,13 +419,13 @@ public class MatrixBlockDictionary extends ADictionary {
 	}
 
 	@Override
-	public ADictionary applyScalarOp(ScalarOperator op) {
+	public IDictionary applyScalarOp(ScalarOperator op) {
 		MatrixBlock res = _data.scalarOperations(op, new MatrixBlock());
 		return MatrixBlockDictionary.create(res);
 	}
 
 	@Override
-	public ADictionary applyScalarOpAndAppend(ScalarOperator op, double v0, int nCol) {
+	public IDictionary applyScalarOpAndAppend(ScalarOperator op, double v0, int nCol) {
 		// guaranteed to be densifying since this only is called if op(0) is != 0
 		// set the entire output to v0.
 		final MatrixBlock ret = new MatrixBlock(_data.getNumRows() + 1, _data.getNumColumns(), v0);
@@ -438,13 +457,13 @@ public class MatrixBlockDictionary extends ADictionary {
 	}
 
 	@Override
-	public ADictionary applyUnaryOp(UnaryOperator op) {
+	public IDictionary applyUnaryOp(UnaryOperator op) {
 		MatrixBlock res = _data.unaryOperations(op, new MatrixBlock());
 		return MatrixBlockDictionary.create(res);
 	}
 
 	@Override
-	public ADictionary applyUnaryOpAndAppend(UnaryOperator op, double v0, int nCol) {
+	public IDictionary applyUnaryOpAndAppend(UnaryOperator op, double v0, int nCol) {
 		// guaranteed to be densifying since this only is called if op(0) is != 0
 		// set the entire output to v0.
 		final MatrixBlock ret = new MatrixBlock(_data.getNumRows() + 1, _data.getNumColumns(), v0);
@@ -476,7 +495,7 @@ public class MatrixBlockDictionary extends ADictionary {
 	}
 
 	@Override
-	public ADictionary applyScalarOpWithReference(ScalarOperator op, double[] reference, double[] newReference) {
+	public IDictionary applyScalarOpWithReference(ScalarOperator op, double[] reference, double[] newReference) {
 		final int nCol = _data.getNumColumns();
 		final int nRow = _data.getNumRows();
 		final MatrixBlock ret = new MatrixBlock(nRow, nCol, false);
@@ -521,7 +540,7 @@ public class MatrixBlockDictionary extends ADictionary {
 	}
 
 	@Override
-	public ADictionary applyUnaryOpWithReference(UnaryOperator op, double[] reference, double[] newReference) {
+	public IDictionary applyUnaryOpWithReference(UnaryOperator op, double[] reference, double[] newReference) {
 		final int nCol = _data.getNumColumns();
 		final int nRow = _data.getNumRows();
 		final MatrixBlock ret = new MatrixBlock(nRow, nCol, false);
@@ -566,7 +585,7 @@ public class MatrixBlockDictionary extends ADictionary {
 	}
 
 	@Override
-	public ADictionary binOpLeft(BinaryOperator op, double[] v, IColIndex colIndexes) {
+	public IDictionary binOpLeft(BinaryOperator op, double[] v, IColIndex colIndexes) {
 		LOG.warn("Binary row op left is not supported for Uncompressed Matrix, "
 			+ "Implement support for VMr in MatrixBlock Binary Cell operations");
 		final int nCol = _data.getNumColumns();
@@ -614,7 +633,7 @@ public class MatrixBlockDictionary extends ADictionary {
 	}
 
 	@Override
-	public ADictionary binOpLeftAndAppend(BinaryOperator op, double[] v, IColIndex colIndexes) {
+	public IDictionary binOpLeftAndAppend(BinaryOperator op, double[] v, IColIndex colIndexes) {
 		final int nCol = _data.getNumColumns();
 		final int nRow = _data.getNumRows();
 
@@ -719,7 +738,7 @@ public class MatrixBlockDictionary extends ADictionary {
 	}
 
 	@Override
-	public ADictionary binOpRightAndAppend(BinaryOperator op, double[] v, IColIndex colIndexes) {
+	public IDictionary binOpRightAndAppend(BinaryOperator op, double[] v, IColIndex colIndexes) {
 		final int nCol = _data.getNumColumns();
 		final int nRow = _data.getNumRows();
 
@@ -824,7 +843,7 @@ public class MatrixBlockDictionary extends ADictionary {
 	}
 
 	@Override
-	public ADictionary clone() {
+	public IDictionary clone() {
 		MatrixBlock ret = new MatrixBlock();
 		ret.copy(_data);
 		return MatrixBlockDictionary.create(ret);
@@ -837,6 +856,9 @@ public class MatrixBlockDictionary extends ADictionary {
 
 	@Override
 	public int getNumberOfValues(int ncol) {
+
+		if(ncol != _data.getNumColumns())
+			throw new DMLCompressionException("Invalid call to get Number of values assuming wrong number of columns");
 		return _data.getNumRows();
 	}
 
@@ -1432,7 +1454,7 @@ public class MatrixBlockDictionary extends ADictionary {
 	}
 
 	@Override
-	public ADictionary sliceOutColumnRange(int idxStart, int idxEnd, int previousNumberOfColumns) {
+	public IDictionary sliceOutColumnRange(int idxStart, int idxEnd, int previousNumberOfColumns) {
 		final MatrixBlock ret = _data.slice(0, _data.getNumRows() - 1, idxStart, idxEnd - 1);
 		return MatrixBlockDictionary.create(ret);
 	}
@@ -1661,7 +1683,7 @@ public class MatrixBlockDictionary extends ADictionary {
 	}
 
 	@Override
-	public ADictionary subtractTuple(double[] tuple) {
+	public IDictionary subtractTuple(double[] tuple) {
 		MatrixBlock v = new MatrixBlock(1, tuple.length, tuple);
 		BinaryOperator op = new BinaryOperator(Minus.getMinusFnObject());
 		MatrixBlock ret = _data.binaryOperations(op, v, null);
@@ -1691,7 +1713,7 @@ public class MatrixBlockDictionary extends ADictionary {
 	}
 
 	@Override
-	public ADictionary scaleTuples(int[] scaling, int nCol) {
+	public IDictionary scaleTuples(int[] scaling, int nCol) {
 		if(_data.isInSparseFormat()) {
 			MatrixBlock retBlock = new MatrixBlock(_data.getNumRows(), _data.getNumColumns(), true);
 			retBlock.allocateSparseRowsBlock(true);
@@ -1771,15 +1793,15 @@ public class MatrixBlockDictionary extends ADictionary {
 			}
 		}
 		else {
-			double[] values = _data.getDenseBlockValues();
-			for(int k = 0, off = 0;
-				k < numVals * colIndexes.size();
-				k += colIndexes.size(), off += aggregateColumns.size()) {
-				for(int h = 0; h < colIndexes.size(); h++) {
-					int idb = colIndexes.get(h) * cut;
+			final int cz = colIndexes.size();
+			final int az = aggregateColumns.size();
+			final double[] values = _data.getDenseBlockValues();
+			for(int k = 0, off = 0; k < numVals * cz; k += cz, off += az) {
+				for(int h = 0; h < cz; h++) {
+					final int idb = colIndexes.get(h) * cut;
 					double v = values[k + h];
 					if(v != 0)
-						for(int i = 0; i < aggregateColumns.size(); i++)
+						for(int i = 0; i < az; i++)
 							ret[off + i] += v * b[idb + aggregateColumns.get(i)];
 				}
 			}
@@ -1794,17 +1816,21 @@ public class MatrixBlockDictionary extends ADictionary {
 	}
 
 	@Override
-	public ADictionary replace(double pattern, double replace, int nCol) {
+	public IDictionary replace(double pattern, double replace, int nCol) {
 		final MatrixBlock ret = _data.replaceOperations(new MatrixBlock(), pattern, replace);
 		return MatrixBlockDictionary.create(ret);
 	}
 
 	@Override
-	public ADictionary replaceWithReference(double pattern, double replace, double[] reference) {
+	public IDictionary replaceWithReference(double pattern, double replace, double[] reference) {
+		if(Util.eq(pattern, Double.NaN))
+			throw new NotImplementedException();
+
 		final int nRow = _data.getNumRows();
 		final int nCol = _data.getNumColumns();
 		final MatrixBlock ret = new MatrixBlock(nRow, nCol, false);
 		ret.allocateDenseBlock();
+
 		final double[] retV = ret.getDenseBlockValues();
 		int off = 0;
 		if(_data.isInSparseFormat()) {
@@ -1969,7 +1995,7 @@ public class MatrixBlockDictionary extends ADictionary {
 	}
 
 	@Override
-	public ADictionary rexpandCols(int max, boolean ignore, boolean cast, int nCol) {
+	public IDictionary rexpandCols(int max, boolean ignore, boolean cast, int nCol) {
 		if(nCol > 1)
 			throw new DMLCompressionException("Invalid to rexpand the column groups if more than one column");
 		MatrixBlock ret = LibMatrixReorg.rexpand(_data, new MatrixBlock(), max, false, cast, ignore, 1);
@@ -1977,8 +2003,8 @@ public class MatrixBlockDictionary extends ADictionary {
 	}
 
 	@Override
-	public ADictionary rexpandColsWithReference(int max, boolean ignore, boolean cast, int reference) {
-		ADictionary a = applyScalarOp(new LeftScalarOperator(Plus.getPlusFnObject(), reference));
+	public IDictionary rexpandColsWithReference(int max, boolean ignore, boolean cast, int reference) {
+		IDictionary a = applyScalarOp(new LeftScalarOperator(Plus.getPlusFnObject(), reference));
 		return a == null ? null : a.rexpandCols(max, ignore, cast, 1);
 	}
 
@@ -2015,7 +2041,7 @@ public class MatrixBlockDictionary extends ADictionary {
 	}
 
 	@Override
-	protected void TSMMWithScaling(int[] counts, IColIndex rows, IColIndex cols, MatrixBlock ret) {
+	public void TSMMWithScaling(int[] counts, IColIndex rows, IColIndex cols, MatrixBlock ret) {
 		if(_data.isInSparseFormat())
 			DictLibMatrixMult.TSMMDictsSparseWithScaling(_data.getSparseBlock(), rows, cols, counts, ret);
 		else
@@ -2023,7 +2049,7 @@ public class MatrixBlockDictionary extends ADictionary {
 	}
 
 	@Override
-	protected void MMDict(ADictionary right, IColIndex rowsLeft, IColIndex colsRight, MatrixBlock result) {
+	public void MMDict(IDictionary right, IColIndex rowsLeft, IColIndex colsRight, MatrixBlock result) {
 		if(_data.isInSparseFormat())
 			right.MMDictSparse(_data.getSparseBlock(), rowsLeft, colsRight, result);
 		else
@@ -2031,7 +2057,16 @@ public class MatrixBlockDictionary extends ADictionary {
 	}
 
 	@Override
-	protected void MMDictDense(double[] left, IColIndex rowsLeft, IColIndex colsRight, MatrixBlock result) {
+	public void MMDictScaling(IDictionary right, IColIndex rowsLeft, IColIndex colsRight, MatrixBlock result,
+		int[] scaling) {
+		if(_data.isInSparseFormat())
+			right.MMDictScalingSparse(_data.getSparseBlock(), rowsLeft, colsRight, result, scaling);
+		else
+			right.MMDictScalingDense(_data.getDenseBlockValues(), rowsLeft, colsRight, result, scaling);
+	}
+
+	@Override
+	public void MMDictDense(double[] left, IColIndex rowsLeft, IColIndex colsRight, MatrixBlock result) {
 		if(_data.isInSparseFormat())
 			DictLibMatrixMult.MMDictsDenseSparse(left, _data.getSparseBlock(), rowsLeft, colsRight, result);
 		else
@@ -2039,7 +2074,16 @@ public class MatrixBlockDictionary extends ADictionary {
 	}
 
 	@Override
-	protected void MMDictSparse(SparseBlock left, IColIndex rowsLeft, IColIndex colsRight, MatrixBlock result) {
+	public void MMDictScalingDense(double[] left, IColIndex rowsLeft, IColIndex colsRight, MatrixBlock result,
+		int[] scaling) {
+		if(_data.isInSparseFormat())
+			DictLibMatrixMult.MMDictsScalingDenseSparse(left, _data.getSparseBlock(), rowsLeft, colsRight, result, scaling);
+		else
+			DictLibMatrixMult.MMDictsScalingDenseDense(left, _data.getDenseBlockValues(), rowsLeft, colsRight, result,scaling);
+	}
+
+	@Override
+	public void MMDictSparse(SparseBlock left, IColIndex rowsLeft, IColIndex colsRight, MatrixBlock result) {
 
 		if(_data.isInSparseFormat())
 			DictLibMatrixMult.MMDictsSparseSparse(left, _data.getSparseBlock(), rowsLeft, colsRight, result);
@@ -2048,7 +2092,16 @@ public class MatrixBlockDictionary extends ADictionary {
 	}
 
 	@Override
-	protected void TSMMToUpperTriangle(ADictionary right, IColIndex rowsLeft, IColIndex colsRight, MatrixBlock result) {
+	public void MMDictScalingSparse(SparseBlock left, IColIndex rowsLeft, IColIndex colsRight, MatrixBlock result,
+		int[] scaling) {
+		if(_data.isInSparseFormat())
+			DictLibMatrixMult.MMDictsScalingSparseSparse(left, _data.getSparseBlock(), rowsLeft, colsRight, result, scaling);
+		else
+			DictLibMatrixMult.MMDictsScalingSparseDense(left, _data.getDenseBlockValues(), rowsLeft, colsRight, result, scaling);
+	}
+
+	@Override
+	public void TSMMToUpperTriangle(IDictionary right, IColIndex rowsLeft, IColIndex colsRight, MatrixBlock result) {
 		if(_data.isInSparseFormat())
 			right.TSMMToUpperTriangleSparse(_data.getSparseBlock(), rowsLeft, colsRight, result);
 		else
@@ -2056,7 +2109,7 @@ public class MatrixBlockDictionary extends ADictionary {
 	}
 
 	@Override
-	protected void TSMMToUpperTriangleDense(double[] left, IColIndex rowsLeft, IColIndex colsRight, MatrixBlock result) {
+	public void TSMMToUpperTriangleDense(double[] left, IColIndex rowsLeft, IColIndex colsRight, MatrixBlock result) {
 		if(_data.isInSparseFormat())
 			DictLibMatrixMult.MMToUpperTriangleDenseSparse(left, _data.getSparseBlock(), rowsLeft, colsRight, result);
 		else
@@ -2064,7 +2117,7 @@ public class MatrixBlockDictionary extends ADictionary {
 	}
 
 	@Override
-	protected void TSMMToUpperTriangleSparse(SparseBlock left, IColIndex rowsLeft, IColIndex colsRight,
+	public void TSMMToUpperTriangleSparse(SparseBlock left, IColIndex rowsLeft, IColIndex colsRight,
 		MatrixBlock result) {
 		if(_data.isInSparseFormat())
 			DictLibMatrixMult.MMToUpperTriangleSparseSparse(left, _data.getSparseBlock(), rowsLeft, colsRight, result);
@@ -2073,7 +2126,7 @@ public class MatrixBlockDictionary extends ADictionary {
 	}
 
 	@Override
-	protected void TSMMToUpperTriangleScaling(ADictionary right, IColIndex rowsLeft, IColIndex colsRight, int[] scale,
+	public void TSMMToUpperTriangleScaling(IDictionary right, IColIndex rowsLeft, IColIndex colsRight, int[] scale,
 		MatrixBlock result) {
 		if(_data.isInSparseFormat())
 			right.TSMMToUpperTriangleSparseScaling(_data.getSparseBlock(), rowsLeft, colsRight, scale, result);
@@ -2082,7 +2135,7 @@ public class MatrixBlockDictionary extends ADictionary {
 	}
 
 	@Override
-	protected void TSMMToUpperTriangleDenseScaling(double[] left, IColIndex rowsLeft, IColIndex colsRight, int[] scale,
+	public void TSMMToUpperTriangleDenseScaling(double[] left, IColIndex rowsLeft, IColIndex colsRight, int[] scale,
 		MatrixBlock result) {
 		if(_data.isInSparseFormat())
 			DictLibMatrixMult.TSMMToUpperTriangleDenseSparseScaling(left, _data.getSparseBlock(), rowsLeft, colsRight,
@@ -2093,8 +2146,8 @@ public class MatrixBlockDictionary extends ADictionary {
 	}
 
 	@Override
-	protected void TSMMToUpperTriangleSparseScaling(SparseBlock left, IColIndex rowsLeft, IColIndex colsRight,
-		int[] scale, MatrixBlock result) {
+	public void TSMMToUpperTriangleSparseScaling(SparseBlock left, IColIndex rowsLeft, IColIndex colsRight, int[] scale,
+		MatrixBlock result) {
 		if(_data.isInSparseFormat())
 			DictLibMatrixMult.TSMMToUpperTriangleSparseSparseScaling(left, _data.getSparseBlock(), rowsLeft, colsRight,
 				scale, result);
@@ -2104,7 +2157,7 @@ public class MatrixBlockDictionary extends ADictionary {
 	}
 
 	@Override
-	public boolean equals(ADictionary o) {
+	public boolean equals(IDictionary o) {
 		if(o instanceof MatrixBlockDictionary)
 			return _data.equals(((MatrixBlockDictionary) o)._data);
 		else if(o instanceof Dictionary) {
@@ -2118,16 +2171,16 @@ public class MatrixBlockDictionary extends ADictionary {
 	}
 
 	@Override
-	public ADictionary cbind(ADictionary that, int nCol) {
+	public IDictionary cbind(IDictionary that, int nCol) {
 		return cbind(that.getMBDict(nCol).getMatrixBlock());
 	}
 
-	private ADictionary cbind(MatrixBlock that) {
+	private IDictionary cbind(MatrixBlock that) {
 		return new MatrixBlockDictionary(_data.append(that));
 	}
 
 	@Override
-	public ADictionary reorder(int[] reorder) {
+	public IDictionary reorder(int[] reorder) {
 		MatrixBlock ret = new MatrixBlock(_data.getNumRows(), _data.getNumColumns(), _data.getNonZeros());
 
 		// TODO add sparse exploitation.

@@ -19,12 +19,6 @@
 
 package org.apache.sysds.test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.DataOutputStream;
@@ -50,9 +44,14 @@ import java.util.Random;
 import java.util.Set;
 import java.util.StringTokenizer;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang.NotImplementedException;
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
@@ -800,16 +799,16 @@ public class TestUtils {
 			fail("Invalid number of rows and cols in actual");
 		
 		int countErrors = 0;
-		for (int i = 0; i < rows && countErrors < 50; i++) {
-			for (int j = 0; j < cols && countErrors < 50; j++) {
+		for (int i = 0; i < rows && countErrors < 10; i++) {
+			for (int j = 0; j < cols && countErrors < 10; j++) {
 				if (!compareCellValue(expectedMatrix[i][j], actualMatrix[i][j], epsilon, true)) {
 					message += ("\n Expected: " +expectedMatrix[i][j] +" vs actual: "+actualMatrix[i][j]+" at "+i+" "+j);
 					countErrors++;
 				}
 			}
 		}
-		if(countErrors == 50){
-			assertTrue(message+" \n More than 50 values are not equal using epsilon " + epsilon, countErrors == 0);
+		if(countErrors == 10){
+			assertTrue(message+" \n More than 10 values are not equal using epsilon " + epsilon, countErrors == 0);
 		}else{
 			assertTrue(message+" \n" + countErrors + " values are not in equal using epsilon " + epsilon, countErrors == 0);
 		}
@@ -1344,7 +1343,7 @@ public class TestUtils {
 			double avgDistance = sumPercentDistance / (rows * cols);
 			if(countErrors != 0)
 				fail(message + "\n" + countErrors + " values are not in equal of total: " + (rows * cols));
-			if(avgDistance <= maxAveragePercentDistance)
+			if(avgDistance < maxAveragePercentDistance)
 				fail(message + "\nThe avg distance: " + avgDistance + " was lower than threshold "
 					+ maxAveragePercentDistance);
 		}
@@ -1397,7 +1396,7 @@ public class TestUtils {
 			if(countErrors != 0)
 				fail(message + "\n" + countErrors + " values are not in equal");
 			if(avgDistance > maxAveragePercentDistance)
-				fail(message + "\nThe avg distance in bits: " + avgDistance + " was higher than max: " + maxAveragePercentDistance);
+				fail(message + "\nThe avg distance in percent: " + avgDistance + " was higher than max: " + maxAveragePercentDistance);
 		}
 	}
 
@@ -1505,6 +1504,14 @@ public class TestUtils {
 		compareMatrices(m1, m2, tolerance, null);
 	}
 
+	/**
+	 * compare and error out on differences above tolerance
+	 * 
+	 * @param m1        expected matrix
+	 * @param m2        actual matrix
+	 * @param tolerance tolerance
+	 * @param message   error message
+	 */
 	public static void compareMatrices(MatrixBlock m1, MatrixBlock m2, double tolerance, String message) {
 		if(m1.getNumRows() != m2.getNumRows() || m1.getNumColumns() != m2.getNumColumns())
 			fail("Matrices are different sizes " + m1.getNumRows() + "," + m1.getNumColumns() + " vs " + m2.getNumRows()
@@ -2037,6 +2044,17 @@ public class TestUtils {
 		return matrix;
 	}
 
+	public static double[] generateTestVector(int cols, double min, double max, double sparsity, long seed) {
+		double[] vector = new double[cols];
+		Random random = (seed == -1) ? TestUtils.random : new Random(seed);
+		for(int j = 0; j < cols; j++) {
+			if(random.nextDouble() > sparsity)
+				continue;
+			vector[j] = (random.nextDouble() * (max - min) + min);
+		}
+		return vector;
+	}
+
 	/**
 	 *
 	 * Generates a test matrix with the specified parameters as a MatrixBlock.
@@ -2404,7 +2422,7 @@ public class TestUtils {
 	 * 				random Object
 	 */
 	public static ValueType[] generateRandomSchema(int size, Random random){
-		final List<ValueType> valueTypes = new ArrayList<ValueType>();
+		final List<ValueType> valueTypes = new ArrayList<>();
 		for(ValueType v : ValueType.values())
 			if(v != ValueType.UNKNOWN)
 				valueTypes.add(v);
@@ -2542,6 +2560,7 @@ public class TestUtils {
 			case INT32:   return random.nextInt();
 			case INT64:   return random.nextLong();
 			case BOOLEAN: return random.nextBoolean();
+			case HASH64:  return Long.toHexString(random.nextLong());
 			case STRING:
 				return random.ints('a', 'z' + 1)
 						.limit(10)
@@ -2732,6 +2751,11 @@ public class TestUtils {
 		writer.writeFrameToHDFS(frame, file, data.length, schema.length);
 	}
 
+	public static void writeTestFrame(String file, FrameBlock data, ValueType[] schema, FileFormat fmt, boolean isR) throws IOException {
+		FrameWriter writer = FrameWriterFactory.createFrameWriter(fmt);
+		writer.writeFrameToHDFS(data, file, data.getNumRows(), schema.length);
+	}
+
 	/**
 	 * <p>
 	 * Writes a frame to a file using the text format.
@@ -2744,6 +2768,10 @@ public class TestUtils {
 	 * @throws IOException
 	 */
 	public static void writeTestFrame(String file, double[][] data, ValueType[] schema, FileFormat fmt) throws IOException {
+		writeTestFrame(file, data, schema, fmt, false);
+	}
+
+	public static void writeTestFrame(String file, FrameBlock data, ValueType[] schema, FileFormat fmt) throws IOException {
 		writeTestFrame(file, data, schema, fmt, false);
 	}
 
@@ -3253,11 +3281,11 @@ public class TestUtils {
 	}
 
 	public static MatrixBlock round(MatrixBlock data) {
-		return data.unaryOperations(new UnaryOperator(Builtin.getBuiltinFnObject(BuiltinCode.ROUND)), null);
+		return data.unaryOperations(new UnaryOperator(Builtin.getBuiltinFnObject(BuiltinCode.ROUND),2, true), null);
 	}
 
 	public static MatrixBlock ceil(MatrixBlock data){
-		return data.unaryOperations(new UnaryOperator(Builtin.getBuiltinFnObject(BuiltinCode.CEIL)), null);
+		return data.unaryOperations(new UnaryOperator(Builtin.getBuiltinFnObject(BuiltinCode.CEIL),2, true), null);
 	}
 
 	public static double[][] floor(double[][] data) {

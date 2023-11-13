@@ -54,8 +54,14 @@ public class DecoderPassThrough extends Decoder
 	@Override
 	public FrameBlock decode(MatrixBlock in, FrameBlock out) {
 		out.ensureAllocatedColumns(in.getNumRows());
+		decode(in, out, 0, in.getNumRows());
+		return out;
+	}
+	
+	@Override
+	public void decode(MatrixBlock in, FrameBlock out, int rl, int ru) {
 		int clen = Math.min(_colList.length, out.getNumColumns());
-		for( int i=0; i<in.getNumRows(); i++ ) {
+		for( int i=rl; i<ru; i++ ) {
 			for( int j=0; j<clen; j++ ) {
 				int srcColID = _srcCols[j];
 				int tgtColID = _colList[j];
@@ -64,9 +70,8 @@ public class DecoderPassThrough extends Decoder
 					UtilFunctions.doubleToObject(_schema[tgtColID-1], val));
 			}
 		}
-		return out;
 	}
-	
+
 	@Override
 	public Decoder subRangeDecoder(int colStart, int colEnd, int dummycodedOffset) {
 		List<Integer> colList = new ArrayList<>();

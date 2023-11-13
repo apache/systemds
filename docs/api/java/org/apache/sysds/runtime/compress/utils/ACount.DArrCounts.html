@@ -14,7 +14,7 @@
 <!--[if IE]>
 <script type="text/javascript" src="../../../../../../jquery/jszip-utils/dist/jszip-utils-ie.min.js"></script>
 <![endif]-->
-<script type="text/javascript" src="../../../../../../jquery/jquery-3.6.0.min.js"></script>
+<script type="text/javascript" src="../../../../../../jquery/jquery-3.6.1.min.js"></script>
 <script type="text/javascript" src="../../../../../../jquery/jquery-ui.min.js"></script>
 </head>
 <body>
@@ -27,7 +27,7 @@
     catch(err) {
     }
 //-->
-var data = {"i0":10};
+var data = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10};
 var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -124,7 +124,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <li><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">java.lang.Object</a></li>
 <li>
 <ul class="inheritance">
-<li><a href="ACount.html" title="class in org.apache.sysds.runtime.compress.utils">org.apache.sysds.runtime.compress.utils.ACount</a></li>
+<li><a href="ACount.html" title="class in org.apache.sysds.runtime.compress.utils">org.apache.sysds.runtime.compress.utils.ACount</a>&lt;<a href="DblArray.html" title="class in org.apache.sysds.runtime.compress.utils">DblArray</a>&gt;</li>
 <li>
 <ul class="inheritance">
 <li>org.apache.sysds.runtime.compress.utils.ACount.DArrCounts</li>
@@ -138,11 +138,11 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <li class="blockList">
 <dl>
 <dt>Enclosing class:</dt>
-<dd><a href="ACount.html" title="class in org.apache.sysds.runtime.compress.utils">ACount</a></dd>
+<dd><a href="ACount.html" title="class in org.apache.sysds.runtime.compress.utils">ACount</a>&lt;<a href="ACount.html" title="type parameter in ACount">T</a>&gt;</dd>
 </dl>
 <hr>
-<pre>public static class <span class="typeNameLabel">ACount.DArrCounts</span>
-extends <a href="ACount.html" title="class in org.apache.sysds.runtime.compress.utils">ACount</a></pre>
+<pre>public static final class <span class="typeNameLabel">ACount.DArrCounts</span>
+extends <a href="ACount.html" title="class in org.apache.sysds.runtime.compress.utils">ACount</a>&lt;<a href="DblArray.html" title="class in org.apache.sysds.runtime.compress.utils">DblArray</a>&gt;</pre>
 </li>
 </ul>
 </div>
@@ -185,6 +185,11 @@ extends <a href="ACount.html" title="class in org.apache.sysds.runtime.compress.
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#key">key</a></span></code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="ACount.DArrCounts.html" title="class in org.apache.sysds.runtime.compress.utils">ACount.DArrCounts</a></code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#next">next</a></span></code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
 </table>
 <ul class="blockList">
 <li class="blockList"><a id="fields.inherited.from.class.org.apache.sysds.runtime.compress.utils.ACount">
@@ -214,6 +219,12 @@ extends <a href="ACount.html" title="class in org.apache.sysds.runtime.compress.
           int&nbsp;id)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
+<tr class="rowColor">
+<th class="colConstructorName" scope="row"><code><span class="memberNameLink"><a href="#%3Cinit%3E(org.apache.sysds.runtime.compress.utils.DblArray,int,int)">DArrCounts</a></span>&#8203;(<a href="DblArray.html" title="class in org.apache.sysds.runtime.compress.utils">DblArray</a>&nbsp;key,
+          int&nbsp;id,
+          int&nbsp;count)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
 </table>
 </li>
 </ul>
@@ -233,8 +244,30 @@ extends <a href="ACount.html" title="class in org.apache.sysds.runtime.compress.
 <th class="colLast" scope="col">Description</th>
 </tr>
 <tr id="i0" class="altColor">
+<td class="colFirst"><code><a href="ACount.html" title="class in org.apache.sysds.runtime.compress.utils">ACount</a>&lt;<a href="DblArray.html" title="class in org.apache.sysds.runtime.compress.utils">DblArray</a>&gt;</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#get(org.apache.sysds.runtime.compress.utils.DblArray)">get</a></span>&#8203;(<a href="DblArray.html" title="class in org.apache.sysds.runtime.compress.utils">DblArray</a>&nbsp;key)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i1" class="rowColor">
+<td class="colFirst"><code><a href="ACount.DArrCounts.html" title="class in org.apache.sysds.runtime.compress.utils">ACount.DArrCounts</a></code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#inc(org.apache.sysds.runtime.compress.utils.DblArray,int,int)">inc</a></span>&#8203;(<a href="DblArray.html" title="class in org.apache.sysds.runtime.compress.utils">DblArray</a>&nbsp;key,
+   int&nbsp;c,
+   int&nbsp;id)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i2" class="altColor">
+<td class="colFirst"><code><a href="DblArray.html" title="class in org.apache.sysds.runtime.compress.utils">DblArray</a></code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#key()">key</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i3" class="rowColor">
+<td class="colFirst"><code><a href="ACount.DArrCounts.html" title="class in org.apache.sysds.runtime.compress.utils">ACount.DArrCounts</a></code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#next()">next</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i4" class="altColor">
 <td class="colFirst"><code>void</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#inc()">inc</a></span>()</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#setNext(org.apache.sysds.runtime.compress.utils.ACount)">setNext</a></span>&#8203;(<a href="ACount.html" title="class in org.apache.sysds.runtime.compress.utils">ACount</a>&lt;<a href="DblArray.html" title="class in org.apache.sysds.runtime.compress.utils">DblArray</a>&gt;&nbsp;e)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 </table>
@@ -243,7 +276,7 @@ extends <a href="ACount.html" title="class in org.apache.sysds.runtime.compress.
 <!--   -->
 </a>
 <h3>Methods inherited from class&nbsp;org.apache.sysds.runtime.compress.utils.<a href="ACount.html" title="class in org.apache.sysds.runtime.compress.utils">ACount</a></h3>
-<code><a href="ACount.html#toString()">toString</a></code></li>
+<code><a href="ACount.html#get(double)">get</a>, <a href="ACount.html#inc(double,int,int)">inc</a>, <a href="ACount.html#sort()">sort</a>, <a href="ACount.html#toString()">toString</a></code></li>
 </ul>
 <ul class="blockList">
 <li class="blockList"><a id="methods.inherited.from.class.java.lang.Object">
@@ -271,10 +304,19 @@ extends <a href="ACount.html" title="class in org.apache.sysds.runtime.compress.
 <a id="key">
 <!--   -->
 </a>
-<ul class="blockListLast">
+<ul class="blockList">
 <li class="blockList">
 <h4>key</h4>
 <pre>public final&nbsp;<a href="DblArray.html" title="class in org.apache.sysds.runtime.compress.utils">DblArray</a> key</pre>
+</li>
+</ul>
+<a id="next">
+<!--   -->
+</a>
+<ul class="blockListLast">
+<li class="blockList">
+<h4>next</h4>
+<pre>public&nbsp;<a href="ACount.DArrCounts.html" title="class in org.apache.sysds.runtime.compress.utils">ACount.DArrCounts</a> next</pre>
 </li>
 </ul>
 </li>
@@ -290,11 +332,22 @@ extends <a href="ACount.html" title="class in org.apache.sysds.runtime.compress.
 <a id="&lt;init&gt;(org.apache.sysds.runtime.compress.utils.DblArray,int)">
 <!--   -->
 </a>
-<ul class="blockListLast">
+<ul class="blockList">
 <li class="blockList">
 <h4>DArrCounts</h4>
 <pre>public&nbsp;DArrCounts&#8203;(<a href="DblArray.html" title="class in org.apache.sysds.runtime.compress.utils">DblArray</a>&nbsp;key,
                   int&nbsp;id)</pre>
+</li>
+</ul>
+<a id="&lt;init&gt;(org.apache.sysds.runtime.compress.utils.DblArray,int,int)">
+<!--   -->
+</a>
+<ul class="blockListLast">
+<li class="blockList">
+<h4>DArrCounts</h4>
+<pre>public&nbsp;DArrCounts&#8203;(<a href="DblArray.html" title="class in org.apache.sysds.runtime.compress.utils">DblArray</a>&nbsp;key,
+                  int&nbsp;id,
+                  int&nbsp;count)</pre>
 </li>
 </ul>
 </li>
@@ -307,13 +360,71 @@ extends <a href="ACount.html" title="class in org.apache.sysds.runtime.compress.
 <!--   -->
 </a>
 <h3>Method Detail</h3>
-<a id="inc()">
+<a id="next()">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>next</h4>
+<pre class="methodSignature">public final&nbsp;<a href="ACount.DArrCounts.html" title="class in org.apache.sysds.runtime.compress.utils">ACount.DArrCounts</a>&nbsp;next()</pre>
+<dl>
+<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
+<dd><code><a href="ACount.html#next()">next</a></code>&nbsp;in class&nbsp;<code><a href="ACount.html" title="class in org.apache.sysds.runtime.compress.utils">ACount</a>&lt;<a href="DblArray.html" title="class in org.apache.sysds.runtime.compress.utils">DblArray</a>&gt;</code></dd>
+</dl>
+</li>
+</ul>
+<a id="setNext(org.apache.sysds.runtime.compress.utils.ACount)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>setNext</h4>
+<pre class="methodSignature">public final&nbsp;void&nbsp;setNext&#8203;(<a href="ACount.html" title="class in org.apache.sysds.runtime.compress.utils">ACount</a>&lt;<a href="DblArray.html" title="class in org.apache.sysds.runtime.compress.utils">DblArray</a>&gt;&nbsp;e)</pre>
+<dl>
+<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
+<dd><code><a href="ACount.html#setNext(org.apache.sysds.runtime.compress.utils.ACount)">setNext</a></code>&nbsp;in class&nbsp;<code><a href="ACount.html" title="class in org.apache.sysds.runtime.compress.utils">ACount</a>&lt;<a href="DblArray.html" title="class in org.apache.sysds.runtime.compress.utils">DblArray</a>&gt;</code></dd>
+</dl>
+</li>
+</ul>
+<a id="key()">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>key</h4>
+<pre class="methodSignature">public final&nbsp;<a href="DblArray.html" title="class in org.apache.sysds.runtime.compress.utils">DblArray</a>&nbsp;key()</pre>
+<dl>
+<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
+<dd><code><a href="ACount.html#key()">key</a></code>&nbsp;in class&nbsp;<code><a href="ACount.html" title="class in org.apache.sysds.runtime.compress.utils">ACount</a>&lt;<a href="DblArray.html" title="class in org.apache.sysds.runtime.compress.utils">DblArray</a>&gt;</code></dd>
+</dl>
+</li>
+</ul>
+<a id="get(org.apache.sysds.runtime.compress.utils.DblArray)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>get</h4>
+<pre class="methodSignature">public final&nbsp;<a href="ACount.html" title="class in org.apache.sysds.runtime.compress.utils">ACount</a>&lt;<a href="DblArray.html" title="class in org.apache.sysds.runtime.compress.utils">DblArray</a>&gt;&nbsp;get&#8203;(<a href="DblArray.html" title="class in org.apache.sysds.runtime.compress.utils">DblArray</a>&nbsp;key)</pre>
+<dl>
+<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
+<dd><code><a href="ACount.html#get(T)">get</a></code>&nbsp;in class&nbsp;<code><a href="ACount.html" title="class in org.apache.sysds.runtime.compress.utils">ACount</a>&lt;<a href="DblArray.html" title="class in org.apache.sysds.runtime.compress.utils">DblArray</a>&gt;</code></dd>
+</dl>
+</li>
+</ul>
+<a id="inc(org.apache.sysds.runtime.compress.utils.DblArray,int,int)">
 <!--   -->
 </a>
 <ul class="blockListLast">
 <li class="blockList">
 <h4>inc</h4>
-<pre class="methodSignature">public&nbsp;void&nbsp;inc()</pre>
+<pre class="methodSignature">public final&nbsp;<a href="ACount.DArrCounts.html" title="class in org.apache.sysds.runtime.compress.utils">ACount.DArrCounts</a>&nbsp;inc&#8203;(<a href="DblArray.html" title="class in org.apache.sysds.runtime.compress.utils">DblArray</a>&nbsp;key,
+                                   int&nbsp;c,
+                                   int&nbsp;id)</pre>
+<dl>
+<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
+<dd><code><a href="ACount.html#inc(T,int,int)">inc</a></code>&nbsp;in class&nbsp;<code><a href="ACount.html" title="class in org.apache.sysds.runtime.compress.utils">ACount</a>&lt;<a href="DblArray.html" title="class in org.apache.sysds.runtime.compress.utils">DblArray</a>&gt;</code></dd>
+</dl>
 </li>
 </ul>
 </li>

@@ -31,6 +31,7 @@ import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupConst;
+import org.apache.sysds.runtime.compress.colgroup.ColGroupEmpty;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.CommonThreadPool;
@@ -78,8 +79,6 @@ public final class CLALibSlice {
 	}
 
 	private static List<MatrixBlock> sliceBlocksMultiThread(CompressedMatrixBlock cmb, int blen, int k) {
-		// final List<MatrixBlock> mbs = new ArrayList<>();
-
 		final ExecutorService pool = CommonThreadPool.get(k);
 		try {
 			final ArrayList<SliceTask> tasks = new ArrayList<>();
@@ -142,9 +141,9 @@ public final class CLALibSlice {
 		return tmp;
 	}
 
-	private static MatrixBlock sliceRowsCompressed(CompressedMatrixBlock cmb, int rl, int ru) {
+	public static MatrixBlock sliceRowsCompressed(CompressedMatrixBlock cmb, int rl, int ru) {
 		final List<AColGroup> groups = cmb.getColGroups();
-		final List<AColGroup> newColGroups = new ArrayList<AColGroup>(groups.size());
+		final List<AColGroup> newColGroups = new ArrayList<>(groups.size());
 		final int rue = ru + 1;
 
 		final CompressedMatrixBlock ret = new CompressedMatrixBlock(rue - rl, cmb.getNumColumns());
@@ -153,13 +152,15 @@ public final class CLALibSlice {
 			final AColGroup slice = grp.sliceRows(rl, rue);
 			if(slice != null)
 				newColGroups.add(slice);
+			else
+				newColGroups.add(new ColGroupEmpty(grp.getColIndices()));
 		}
 
 		if(newColGroups.size() == 0)
 			return new MatrixBlock(rue - rl, cmb.getNumColumns(), 0.0);
 
 		ret.allocateColGroupList(newColGroups);
-		ret.recomputeNonZeros();
+		ret.setNonZeros(-1);
 		ret.setOverlapping(cmb.isOverlapping());
 		return ret;
 	}
@@ -173,18 +174,21 @@ public final class CLALibSlice {
 
 	public static CompressedMatrixBlock sliceColumns(CompressedMatrixBlock cmb, int cl, int cu) {
 		final int cue = cu + 1;
+		if(cl == 0 && cue == cmb.getNumColumns())
+			return cmb;
 		final CompressedMatrixBlock ret = new CompressedMatrixBlock(cmb.getNumRows(), cue - cl);
 
 		final List<AColGroup> newColGroups = new ArrayList<>();
 		for(AColGroup grp : cmb.getColGroups()) {
 			final AColGroup slice = grp.sliceColumns(cl, cue);
-			if(slice != null)
+			if(slice != null) 
 				newColGroups.add(slice);
+			
 		}
 
 		ret.allocateColGroupList(newColGroups);
-		ret.recomputeNonZeros();
 		ret.setOverlapping(cmb.isOverlapping());
+		ret.setNonZeros(-1);
 		return ret;
 	}
 

@@ -26,7 +26,7 @@ import java.util.Arrays;
 
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
-import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.DictionaryFactory;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.MatrixBlockDictionary;
@@ -38,7 +38,6 @@ import org.apache.sysds.runtime.compress.colgroup.offset.AIterator;
 import org.apache.sysds.runtime.compress.colgroup.offset.AOffset;
 import org.apache.sysds.runtime.compress.colgroup.offset.AOffset.OffsetSliceInfo;
 import org.apache.sysds.runtime.compress.colgroup.offset.OffsetFactory;
-import org.apache.sysds.runtime.compress.colgroup.scheme.ICLAScheme;
 import org.apache.sysds.runtime.compress.cost.ComputationCostEstimator;
 import org.apache.sysds.runtime.compress.estim.encoding.EncodingFactory;
 import org.apache.sysds.runtime.compress.estim.encoding.IEncode;
@@ -68,7 +67,7 @@ public class ColGroupSDCZeros extends ASDCZero implements IMapToDataGroup {
 	/** Pointers to row indexes in the dictionary. Note the dictionary has one extra entry. */
 	protected final AMapToData _data;
 
-	private ColGroupSDCZeros(IColIndex colIndices, int numRows, ADictionary dict, AOffset indexes, AMapToData data,
+	private ColGroupSDCZeros(IColIndex colIndices, int numRows, IDictionary dict, AOffset indexes, AMapToData data,
 		int[] cachedCounts) {
 		super(colIndices, numRows, dict, indexes, cachedCounts);
 		if(data.getUnique() != dict.getNumberOfValues(colIndices.size()))
@@ -77,7 +76,7 @@ public class ColGroupSDCZeros extends ASDCZero implements IMapToDataGroup {
 		_data = data;
 	}
 
-	public static AColGroup create(IColIndex colIndices, int numRows, ADictionary dict, AOffset offsets, AMapToData data,
+	public static AColGroup create(IColIndex colIndices, int numRows, IDictionary dict, AOffset offsets, AMapToData data,
 		int[] cachedCounts) {
 		if(dict == null)
 			return new ColGroupEmpty(colIndices);
@@ -513,7 +512,7 @@ public class ColGroupSDCZeros extends ASDCZero implements IMapToDataGroup {
 			return ColGroupSDCFOR.create(_colIndexes, _numRows, _dict, _indexes, _data, getCachedCounts(), reference);
 		}
 		else {
-			final ADictionary newDict = _dict.applyScalarOp(op);
+			final IDictionary newDict = _dict.applyScalarOp(op);
 			final double[] defaultTuple = ColGroupUtils.createReference(_colIndexes.size(), val0);
 			return ColGroupSDC.create(_colIndexes, _numRows, newDict, defaultTuple, _indexes, _data, getCachedCounts());
 		}
@@ -522,7 +521,7 @@ public class ColGroupSDCZeros extends ASDCZero implements IMapToDataGroup {
 	@Override
 	public AColGroup unaryOperation(UnaryOperator op) {
 		final double val0 = op.fn.execute(0);
-		final ADictionary nDict = _dict.applyUnaryOp(op);
+		final IDictionary nDict = _dict.applyUnaryOp(op);
 		if(val0 == 0)
 			return create(_colIndexes, _numRows, nDict, _indexes, _data, getCachedCounts());
 		else {
@@ -535,7 +534,7 @@ public class ColGroupSDCZeros extends ASDCZero implements IMapToDataGroup {
 	@Override
 	public AColGroup binaryRowOpLeft(BinaryOperator op, double[] v, boolean isRowSafe) {
 		if(isRowSafe) {
-			ADictionary newDict = _dict.binOpLeft(op, v, _colIndexes);
+			IDictionary newDict = _dict.binOpLeft(op, v, _colIndexes);
 			return create(_colIndexes, _numRows, newDict, _indexes, _data, getCachedCounts());
 		}
 		else if(op.fn instanceof Plus) {
@@ -543,7 +542,7 @@ public class ColGroupSDCZeros extends ASDCZero implements IMapToDataGroup {
 			return ColGroupSDCFOR.create(_colIndexes, _numRows, _dict, _indexes, _data, getCachedCounts(), reference);
 		}
 		else {
-			ADictionary newDict = _dict.binOpLeft(op, v, _colIndexes);
+			IDictionary newDict = _dict.binOpLeft(op, v, _colIndexes);
 			double[] defaultTuple = new double[_colIndexes.size()];
 			for(int i = 0; i < _colIndexes.size(); i++)
 				defaultTuple[i] = op.fn.execute(v[_colIndexes.get(i)], 0);
@@ -554,7 +553,7 @@ public class ColGroupSDCZeros extends ASDCZero implements IMapToDataGroup {
 	@Override
 	public AColGroup binaryRowOpRight(BinaryOperator op, double[] v, boolean isRowSafe) {
 		if(isRowSafe) {
-			ADictionary ret = _dict.binOpRight(op, v, _colIndexes);
+			IDictionary ret = _dict.binOpRight(op, v, _colIndexes);
 			return create(_colIndexes, _numRows, ret, _indexes, _data, getCachedCounts());
 		}
 		else if(op.fn instanceof Plus) {
@@ -562,7 +561,7 @@ public class ColGroupSDCZeros extends ASDCZero implements IMapToDataGroup {
 			return ColGroupSDCFOR.create(_colIndexes, _numRows, _dict, _indexes, _data, getCachedCounts(), def);
 		}
 		else {
-			ADictionary newDict = _dict.binOpRight(op, v, _colIndexes);
+			IDictionary newDict = _dict.binOpRight(op, v, _colIndexes);
 			double[] defaultTuple = new double[_colIndexes.size()];
 			for(int i = 0; i < _colIndexes.size(); i++)
 				defaultTuple[i] = op.fn.execute(0, v[_colIndexes.get(i)]);
@@ -579,7 +578,7 @@ public class ColGroupSDCZeros extends ASDCZero implements IMapToDataGroup {
 
 	public static ColGroupSDCZeros read(DataInput in, int nRows) throws IOException {
 		IColIndex cols = ColIndexFactory.read(in);
-		ADictionary dict = DictionaryFactory.read(in);
+		IDictionary dict = DictionaryFactory.read(in);
 		AOffset indexes = OffsetFactory.readIn(in);
 		AMapToData data = MapToFactory.readIn(in);
 		return new ColGroupSDCZeros(cols, nRows, dict, indexes, data, null);
@@ -683,7 +682,7 @@ public class ColGroupSDCZeros extends ASDCZero implements IMapToDataGroup {
 
 	@Override
 	public AColGroup replace(double pattern, double replace) {
-		ADictionary replaced = _dict.replace(pattern, replace, _colIndexes.size());
+		IDictionary replaced = _dict.replace(pattern, replace, _colIndexes.size());
 		if(pattern == 0) {
 			double[] defaultTuple = new double[_colIndexes.size()];
 			for(int i = 0; i < _colIndexes.size(); i++)
@@ -719,7 +718,7 @@ public class ColGroupSDCZeros extends ASDCZero implements IMapToDataGroup {
 	}
 
 	@Override
-	protected AColGroup allocateRightMultiplication(MatrixBlock right, IColIndex colIndexes, ADictionary preAgg) {
+	protected AColGroup allocateRightMultiplication(MatrixBlock right, IColIndex colIndexes, IDictionary preAgg) {
 		if(colIndexes != null && preAgg != null)
 			return create(colIndexes, _numRows, preAgg, _indexes, _data, getCachedCounts());
 		else
@@ -757,7 +756,7 @@ public class ColGroupSDCZeros extends ASDCZero implements IMapToDataGroup {
 	}
 
 	@Override
-	protected AColGroup copyAndSet(IColIndex colIndexes, ADictionary newDictionary) {
+	protected AColGroup copyAndSet(IColIndex colIndexes, IDictionary newDictionary) {
 		return create(colIndexes, _numRows, newDictionary, _indexes, _data, getCachedCounts());
 	}
 
@@ -767,35 +766,32 @@ public class ColGroupSDCZeros extends ASDCZero implements IMapToDataGroup {
 	}
 
 	@Override
-	public AColGroup appendNInternal(AColGroup[] g) {
-		int sumRows = getNumRows();
+	public AColGroup appendNInternal(AColGroup[] g, int blen, int rlen) {
+		
 		for(int i = 1; i < g.length; i++) {
-			if(!_colIndexes.equals(g[i]._colIndexes)) {
+			final AColGroup gs = g[i];
+			if(!_colIndexes.equals(gs._colIndexes)) {
 				LOG.warn("Not same columns therefore not appending \n" + _colIndexes + "\n\n" + g[i]._colIndexes);
 				return null;
 			}
 
-			if(!(g[i] instanceof ColGroupSDCZeros)) {
-				LOG.warn("Not SDCFOR but " + g[i].getClass().getSimpleName());
+			if(!(gs instanceof AOffsetsGroup )) {
+				LOG.warn("Not valid OffsetGroup but " + gs.getClass().getSimpleName());
 				return null;
 			}
 
-			final ColGroupSDCZeros gc = (ColGroupSDCZeros) g[i];
-			if(!gc._dict.equals(_dict)) {
-				LOG.warn("Not same Dictionaries therefore not appending \n" + _dict + "\n\n" + gc._dict);
-				return null;
+			if( gs instanceof ColGroupSDCZeros){
+				final ColGroupSDCZeros gc = (ColGroupSDCZeros) gs;
+				if(!gc._dict.equals(_dict)) {
+					LOG.warn("Not same Dictionaries therefore not appending \n" + _dict + "\n\n" + gc._dict);
+					return null;
+				}
 			}
-			sumRows += gc.getNumRows();
 		}
 		AMapToData nd = _data.appendN(Arrays.copyOf(g, g.length, IMapToDataGroup[].class));
-		AOffset no = _indexes.appendN(Arrays.copyOf(g, g.length, AOffsetsGroup[].class), getNumRows());
+		AOffset no = _indexes.appendN(Arrays.copyOf(g, g.length, AOffsetsGroup[].class), blen);
 
-		return create(_colIndexes, sumRows, _dict, no, nd, null);
-	}
-
-	@Override
-	public ICLAScheme getCompressionScheme() {
-		return null;
+		return create(_colIndexes, rlen, _dict, no, nd, null);
 	}
 
 	@Override

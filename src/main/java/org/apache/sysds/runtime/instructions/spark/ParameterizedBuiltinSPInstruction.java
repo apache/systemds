@@ -24,12 +24,14 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
 import org.apache.spark.api.java.function.PairFunction;
 import org.apache.spark.broadcast.Broadcast;
+import org.apache.sysds.common.Types;
 import org.apache.sysds.common.Types.CorrectionLocationType;
 import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.common.Types.ValueType;
@@ -58,9 +60,13 @@ import org.apache.sysds.runtime.instructions.spark.functions.ExtractGroupNWeight
 import org.apache.sysds.runtime.instructions.spark.functions.PerformGroupByAggInCombiner;
 import org.apache.sysds.runtime.instructions.spark.functions.PerformGroupByAggInReducer;
 import org.apache.sysds.runtime.instructions.spark.functions.ReplicateVectorFunction;
+import org.apache.sysds.runtime.instructions.spark.utils.FrameRDDAggregateUtils;
 import org.apache.sysds.runtime.instructions.spark.utils.FrameRDDConverterUtils;
 import org.apache.sysds.runtime.instructions.spark.utils.RDDAggregateUtils;
+import org.apache.sysds.runtime.instructions.spark.utils.RDDConverterUtils;
 import org.apache.sysds.runtime.instructions.spark.utils.SparkUtils;
+import org.apache.sysds.runtime.lineage.LineageItem;
+import org.apache.sysds.runtime.lineage.LineageItemUtils;
 import org.apache.sysds.runtime.matrix.data.LibMatrixReorg;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixCell;
@@ -500,6 +506,8 @@ public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
 			JavaPairRDD<Long, FrameBlock> in = (JavaPairRDD<Long, FrameBlock>) sec.getRDDHandleForFrameObject(fo,
 				FileFormat.BINARY);
 			FrameBlock meta = sec.getFrameInput(params.get("meta"));
+			MatrixBlock embeddings = params.get("embedding") != null ? ec.getMatrixInput(params.get("embedding")) : null;
+
 			DataCharacteristics mcIn = sec.getDataCharacteristics(params.get("target"));
 			DataCharacteristics mcOut = sec.getDataCharacteristics(output.getName());
 			String[] colnames = !TfMetaUtils.isIDSpec(params.get("spec")) ? in.lookup(1L).get(0)
@@ -514,21 +522,40 @@ public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
 
 			// create encoder broadcast (avoiding replication per task)
 			MultiColumnEncoder encoder = EncoderFactory
-				.createEncoder(params.get("spec"), colnames, fo.getSchema(), (int) fo.getNumColumns(), meta);
-			mcOut.setDimension(mcIn.getRows() - ((omap != null) ? omap.getNumRmRows() : 0),
-				(int)encoder.getNumOutCols());
+				.createEncoder(params.get("spec"), colnames, fo.getSchema(), (int) fo.getNumColumns(), meta, embeddings);
+			encoder.updateAllDCEncoders();
+			mcOut.setDimension(mcIn.getRows() - ((omap != null) ? omap.getNumRmRows() : 0), encoder.getNumOutCols());
 			Broadcast<MultiColumnEncoder> bmeta = sec.getSparkContext().broadcast(encoder);
 			Broadcast<TfOffsetMap> bomap = (omap != null) ? sec.getSparkContext().broadcast(omap) : null;
 
 			// execute transform apply
-			JavaPairRDD<Long, FrameBlock> tmp = in.mapToPair(new RDDTransformApplyFunction(bmeta, bomap));
-			JavaPairRDD<MatrixIndexes, MatrixBlock> out = FrameRDDConverterUtils
-				.binaryBlockToMatrixBlock(tmp, mcOut, mcOut);
+			JavaPairRDD<MatrixIndexes, MatrixBlock> out;
+			Tuple2<Boolean, Integer> aligned = FrameRDDAggregateUtils.checkRowAlignment(in, -1);
+			// NOTE: currently disabled for LegacyEncoders, because OMIT probably results in not aligned
+			// blocks and for IMPUTE was an inaccuracy for the "testHomesImputeColnamesSparkCSV" test case.
+			// Expected: 8.150349617004395 vs actual: 8.15035 at 0 8 (expected is calculated from transform encode,
+			// which currently always uses the else branch: either inaccuracy must come from serialisation of
+			// matrixblock or from binaryBlockToBinaryBlock reblock
+			if(aligned._1 && mcOut.getCols() <= aligned._2 && !encoder.hasLegacyEncoder() /*&& containsWE*/) {
+				//Blocks are aligned & #Col is below Block length (necessary for matrix-matrix reblock)
+				JavaPairRDD<Long, MatrixBlock> tmp = in.mapToPair(new RDDTransformApplyFunction2(bmeta, bomap));
+				mcIn.setBlocksize(aligned._2);
+				mcIn.setDimension(mcIn.getRows(), mcOut.getCols());
+				JavaPairRDD<MatrixIndexes, MatrixBlock> tmp2 = tmp.mapToPair((PairFunction<Tuple2<Long, MatrixBlock>, MatrixIndexes, MatrixBlock>) in12 ->
+						new Tuple2<>(new MatrixIndexes(UtilFunctions.computeBlockIndex(in12._1, aligned._2),1), in12._2));
+				out = RDDConverterUtils.binaryBlockToBinaryBlock(tmp2, mcIn, mcOut);
+				//out = RDDConverterUtils.matrixBlockToAlignedMatrixBlock(tmp, mcOut, mcOut);
+			} else {
+				JavaPairRDD<Long, FrameBlock> tmp = in.mapToPair(new RDDTransformApplyFunction(bmeta, bomap));
+				out = FrameRDDConverterUtils.binaryBlockToMatrixBlock(tmp, mcOut, mcOut);
+			}
 
 			// set output and maintain lineage/output characteristics
 			sec.setRDDHandleForVariable(output.getName(), out);
 			sec.addLineageRDD(output.getName(), params.get("target"));
 			ec.releaseFrameInput(params.get("meta"));
+			if(params.get("embedding") != null)
+				ec.releaseMatrixInput(params.get("embedding"));
 		}
 		else if(opcode.equalsIgnoreCase("transformdecode")) {
 			// get input RDD and meta data
@@ -559,6 +586,73 @@ public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
 		else {
 			throw new DMLRuntimeException("Unknown parameterized builtin opcode: " + opcode);
 		}
+	}
+	@Override
+	public Pair<String, LineageItem> getLineageItem(ExecutionContext ec) {
+		String opcode = getOpcode();
+		if(opcode.equalsIgnoreCase("replace")) {
+			CPOperand target = getTargetOperand();
+			CPOperand pattern = getFP64Literal("pattern");
+			CPOperand replace = getFP64Literal("replacement");
+			return Pair.of(output.getName(),
+				new LineageItem(getOpcode(), LineageItemUtils.getLineage(ec, target, pattern, replace)));
+		}
+		else if(opcode.equalsIgnoreCase("rmempty")) {
+			CPOperand target = getTargetOperand();
+			String off = params.get("offset");
+			CPOperand offset = new CPOperand(off, ValueType.FP64, Types.DataType.MATRIX);
+			CPOperand margin = getStringLiteral("margin");
+			CPOperand emptyReturn = getBoolLiteral("empty.return");
+			CPOperand maxDim = getLiteral("maxdim", ValueType.FP64);
+			CPOperand bRmEmptyBC = getBoolLiteral("bRmEmptyBC");
+			return Pair.of(output.getName(),
+				new LineageItem(getOpcode(), LineageItemUtils.getLineage(ec, target, offset, margin,
+				emptyReturn, maxDim, bRmEmptyBC)));
+		}
+		else if(opcode.equalsIgnoreCase("transformdecode") || opcode.equalsIgnoreCase("transformapply")) {
+			CPOperand target = new CPOperand(params.get("target"), ValueType.FP64, Types.DataType.FRAME);
+			CPOperand meta = getLiteral("meta", ValueType.UNKNOWN, Types.DataType.FRAME);
+			CPOperand spec = getStringLiteral("spec");
+			//FIXME: Taking only spec file name as a literal leads to wrong reuse
+			//TODO: Add Embedding to the lineage item
+			return Pair.of(output.getName(),
+				new LineageItem(getOpcode(), LineageItemUtils.getLineage(ec, target, meta, spec)));
+		}
+		if(opcode.equalsIgnoreCase("contains")) {
+			CPOperand target = getTargetOperand();
+			CPOperand pattern = getFP64Literal("pattern");
+			return Pair.of(output.getName(),
+				new LineageItem(getOpcode(), LineageItemUtils.getLineage(ec, target, pattern)));
+		}
+		else {
+			// NOTE: for now, we cannot have a generic fall through path, because the
+			// data and value types of parmeters are not compiled into the instruction
+			throw new DMLRuntimeException("Unsupported lineage tracing for: " + opcode);
+		}
+	}
+
+	private CPOperand getTargetOperand() {
+		return new CPOperand(params.get("target"), ValueType.FP64, Types.DataType.MATRIX);
+	}
+
+	private CPOperand getFP64Literal(String name) {
+		return getLiteral(name, ValueType.FP64);
+	}
+
+	private CPOperand getStringLiteral(String name) {
+		return getLiteral(name, ValueType.STRING);
+	}
+
+	private CPOperand getLiteral(String name, ValueType vt) {
+		return new CPOperand(params.get(name), vt, Types.DataType.SCALAR, true);
+	}
+
+	private CPOperand getLiteral(String name, ValueType vt, Types.DataType dt) {
+		return new CPOperand(params.get(name), vt, dt);
+	}
+
+	private CPOperand getBoolLiteral(String name) {
+		return getLiteral(name, ValueType.BOOLEAN);
 	}
 
 	public HashMap<String, String> getParameterMap() {
@@ -909,7 +1003,6 @@ public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
 			// execute block transform apply
 			MultiColumnEncoder encoder = _bencoder.getValue();
 			MatrixBlock tmp = encoder.apply(blk);
-
 			// remap keys
 			if(_omap != null) {
 				key = _omap.getValue().getOffset(key);
@@ -919,6 +1012,8 @@ public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
 			return new Tuple2<>(key, DataConverter.convertToFrameBlock(tmp));
 		}
 	}
+
+
 
 	public static class RDDTransformApplyOffsetFunction implements PairFunction<Tuple2<Long, FrameBlock>, Long, Long> {
 		private static final long serialVersionUID = 3450977356721057440L;
@@ -953,6 +1048,35 @@ public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
 			}
 
 			return new Tuple2<>(key, rmRows);
+		}
+	}
+
+	public static class RDDTransformApplyFunction2 implements PairFunction<Tuple2<Long, FrameBlock>, Long, MatrixBlock> {
+		private static final long serialVersionUID = 5759813006068230916L;
+
+		private Broadcast<MultiColumnEncoder> _bencoder = null;
+		private Broadcast<TfOffsetMap> _omap = null;
+
+		public RDDTransformApplyFunction2(Broadcast<MultiColumnEncoder> bencoder, Broadcast<TfOffsetMap> omap) {
+			_bencoder = bencoder;
+			_omap = omap;
+		}
+
+		@Override
+		public Tuple2<Long, MatrixBlock> call(Tuple2<Long, FrameBlock> in) throws Exception {
+			long key = in._1();
+			FrameBlock blk = in._2();
+
+			// execute block transform apply
+			MultiColumnEncoder encoder = _bencoder.getValue();
+			MatrixBlock tmp = encoder.apply(blk);
+			// remap keys
+			if(_omap != null) {
+				key = _omap.getValue().getOffset(key);
+			}
+
+			// convert to frameblock to reuse frame-matrix reblock
+			return new Tuple2<>(key, tmp);
 		}
 	}
 

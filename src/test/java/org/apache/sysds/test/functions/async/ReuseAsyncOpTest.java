@@ -136,12 +136,12 @@ public class ReuseAsyncOpTest extends AutomatedTestBase {
 	private void enableAsync() {
 		OptimizerUtils.ALLOW_TRANSITIVE_SPARK_EXEC_TYPE = false;
 		OptimizerUtils.MAX_PARALLELIZE_ORDER = true;
-		OptimizerUtils.ASYNC_PREFETCH_SPARK = true;
+		OptimizerUtils.ASYNC_PREFETCH = true;
 	}
 
 	private void disableAsync() {
 		OptimizerUtils.ALLOW_TRANSITIVE_SPARK_EXEC_TYPE = true;
 		OptimizerUtils.MAX_PARALLELIZE_ORDER = false;
-		OptimizerUtils.ASYNC_PREFETCH_SPARK = false;
+		OptimizerUtils.ASYNC_PREFETCH = false;
 	}
 }

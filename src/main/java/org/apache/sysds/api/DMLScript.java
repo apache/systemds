@@ -32,21 +32,17 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.Map;
 import java.util.Scanner;
 
 import org.apache.commons.cli.AlreadySelectedException;
 import org.apache.commons.cli.HelpFormatter;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.util.GenericOptionsParser;
-import org.apache.log4j.Logger;
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.conf.CompilerConfig;
 import org.apache.sysds.conf.ConfigurationManager;
@@ -69,7 +65,6 @@ import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContextFactory;
 import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
-import org.apache.sysds.runtime.controlprogram.federated.CompressedFederatedWorker;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedData;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedWorker;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.FederatedMonitoringServer;
@@ -89,6 +84,7 @@ import org.apache.sysds.utils.Explain;
 import org.apache.sysds.utils.Explain.ExplainCounts;
 import org.apache.sysds.utils.Explain.ExplainType;
 import org.apache.sysds.utils.NativeHelper;
+import org.apache.sysds.utils.SettingsChecker;
 import org.apache.sysds.utils.Statistics;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -205,19 +201,16 @@ public class DMLScript
 	 */
 	public static void main(String[] args)
 	{
-		Logger log = Logger.getLogger(DMLScript.class);
-		log.info(Arrays.toString(args));
 		try{
-			Configuration conf = new Configuration(ConfigurationManager.getCachedJobConf());
-			String[] otherArgs = new GenericOptionsParser(conf, args).getRemainingArgs();
-			DMLScript.executeScript(conf, otherArgs);
+			DMLScript.executeScript(args);
 		} catch(Exception e){
-			errorPrint(e);
 			for(String s: args){
 				if(s.trim().contains("-debug")){
 					e.printStackTrace();
+					return;
 				}
 			}
+			errorPrint(e);
 		}
 	}
 
@@ -225,12 +218,11 @@ public class DMLScript
 	 * Single entry point for all public invocation alternatives (e.g.,
 	 * main, executeScript, JaqlUdf etc)
 	 * 
-	 * @param conf Hadoop configuration
 	 * @param args arguments
 	 * @return true if success, false otherwise
 	 * @throws IOException If an internal IOException happens.
 	 */
-	public static boolean executeScript( Configuration conf, String[] args )
+	public static boolean executeScript( String[] args )
 		throws IOException, ParseException, DMLScriptException
 	{
 		//parse arguments and set execution properties
@@ -284,6 +276,8 @@ public class DMLScript
 
 			boolean help = dmlOptions.help;
 
+			SettingsChecker.check();
+
 			if (help) {
 				HelpFormatter formatter = new HelpFormatter();
 				formatter.printHelp( "systemds", dmlOptions.options );
@@ -298,12 +292,6 @@ public class DMLScript
 			if(dmlOptions.fedWorker) {
 				loadConfiguration(fnameOptConfig);
 				new FederatedWorker(dmlOptions.fedWorkerPort, dmlOptions.debug);
-				return true;
-			}
-
-			if(dmlOptions.fedCompressedWorker) {
-				loadConfiguration(fnameOptConfig);
-				new CompressedFederatedWorker(dmlOptions.fedWorkerPort, dmlOptions.debug);
 				return true;
 			}
 
@@ -334,6 +322,7 @@ public class DMLScript
 			//reset runtime platform and visualize flag
 			setGlobalExecMode(oldrtplatform);
 			EXPLAIN = oldexplain;
+			CommonThreadPool.shutdownAsyncPools();
 		}
 		
 		return true;
@@ -580,9 +569,6 @@ public class DMLScript
 		//0) cleanup federated workers if necessary
 		FederatedData.clearFederatedWorkers();
 		
-		//0) shutdown prefetch/broadcast thread pool if necessary
-		CommonThreadPool.shutdownAsyncRDDPool();
-
 		//1) cleanup scratch space (everything for current uuid)
 		//(required otherwise export to hdfs would skip assumed unnecessary writes if same name)
 		HDFSTool.deleteFileIfExistOnHDFS( config.getTextValue(DMLConfig.SCRATCH_SPACE) + dirSuffix );
@@ -616,7 +602,7 @@ public class DMLScript
 		if(debug)
 			LOG.debug("DML script: \n" + dmlScriptString);
 		if(info)
-			LOG.info("Process id:  " + IDHandler.obtainProcessID());
+			LOG.info("Process id:  " + IDHandler.getProcessID());
 	}
 
 	private static void registerForMonitoring() {
@@ -633,7 +619,7 @@ public class DMLScript
 				// TODO fix and replace localhost identifyer with hostname in federated instructions SYSTEMDS-3440
 				// https://issues.apache.org/jira/browse/SYSTEMDS-3440
 				model.host = "localhost"; 
-				model.processId = Long.parseLong(IDHandler.obtainProcessID());
+				model.processId = Long.parseLong(IDHandler.getProcessID());
 
 				String requestBody = objectMapper
 						.writerWithDefaultPrettyPrinter()

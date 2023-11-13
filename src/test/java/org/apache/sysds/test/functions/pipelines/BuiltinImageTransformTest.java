@@ -24,7 +24,7 @@ import org.apache.sysds.runtime.matrix.data.MatrixValue;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
-import org.junit.Ignore;
+//import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.HashMap;
@@ -49,7 +49,7 @@ public class BuiltinImageTransformTest extends AutomatedTestBase {
 
 	@Override
 	public void setUp() {
-		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] {"B"}));
+		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] { "B" }));
 	}
 
 	@Test
@@ -62,13 +62,11 @@ public class BuiltinImageTransformTest extends AutomatedTestBase {
 		runImageTransformTest(true, ExecType.CP);
 	}
 
-	@Ignore
 	@Test
 	public void testImageTransformMatrixDenseSP() {
 		runImageTransformTest(false, ExecType.SPARK);
 	}
 
-	@Ignore
 	@Test
 	public void testImageTransformMatrixSparseSP() {
 		runImageTransformTest(false, ExecType.SPARK);
@@ -84,9 +82,9 @@ public class BuiltinImageTransformTest extends AutomatedTestBase {
 		double[][] reference = TestUtils.readExpectedResource("ImageTransformTransformed.csv", out_h, out_w);
 		String HOME = SCRIPT_DIR + TEST_DIR;
 		fullDMLScriptName = HOME + TEST_NAME + ".dml";
-		programArgs = new String[] {"-nvargs", "in_file=" + input("A"), "out_file=" + output("B"), "width=" + cols,
+		programArgs = new String[] { "-nvargs", "in_file=" + input("A"), "out_file=" + output("B"), "width=" + cols,
 				"height=" + rows, "out_w=" + out_w, "out_h=" + out_h,
-				"a=" + a, "b=" + b, "c=" + c, "d=" + d, "e=" + e, "f=" + f, "fill_value=" + fill_value};
+				"a=" + a, "b=" + b, "c=" + c, "d=" + d, "e=" + e, "f=" + f, "fill_value=" + fill_value };
 		writeInputMatrixWithMTD("A", input, true);
 		runTest(true, false, null, -1);
 
@@ -106,26 +104,26 @@ public class BuiltinImageTransformTest extends AutomatedTestBase {
 
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[] {"-nvargs", "in_file=" + input("A"), "out_file=" + output("B"), "width=" + cols,
-				"height=" + rows, "out_w=" + cols, "out_h=" + (rows * 1.2),
-				"a=" + a, "b=" + b, "c=" + c, "d=" + d, "e=" + e, "f=" + f};
+			programArgs = new String[] { "-nvargs", "in_file=" + input("A"), "out_file=" + output("B"), "width=" + cols,
+					"height=" + rows, "out_w=" + cols, "out_h=" + (rows * 1.2),
+					"a=" + a, "b=" + b, "c=" + c, "d=" + d, "e=" + e, "f=" + f };
 
 			fullRScriptName = HOME + TEST_NAME + ".R";
-			rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + expectedDir() + " " + cols + " " + rows + " " + cols + " " + (rows * 1.2) + " " + a + " " + b + " " + c + " " + d + " " + e + " " + f;
+			rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + expectedDir() + " " + cols + " " + rows
+					+ " " + cols + " " + (rows * 1.2) + " " + a + " " + b + " " + c + " " + d + " " + e + " " + f;
 
-			//generate actual dataset
+			// generate actual dataset
 			double[][] A = getRandomMatrix(rows, cols, 0, 255, sparsity, 7);
 			writeInputMatrixWithMTD("A", A, true);
 
 			runTest(true, false, null, -1);
 			runRScript(true);
 
-			//compare matrices
+			// compare matrices
 			HashMap<MatrixValue.CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir("B");
 			HashMap<MatrixValue.CellIndex, Double> rfile = readRMatrixFromExpectedDir("B");
 			TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
-		}
-		finally {
+		} finally {
 			rtplatform = platformOld;
 		}
 	}

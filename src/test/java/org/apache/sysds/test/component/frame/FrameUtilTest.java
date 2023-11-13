@@ -20,10 +20,19 @@
 package org.apache.sysds.test.component.frame;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
+import org.apache.spark.SparkConf;
+import org.apache.spark.api.java.JavaPairRDD;
+import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.runtime.frame.data.lib.FrameUtil;
+import org.apache.sysds.runtime.instructions.spark.utils.FrameRDDAggregateUtils;
 import org.junit.Test;
+import scala.Tuple2;
+import java.util.Arrays;
+import java.util.List;
 
 public class FrameUtilTest {
 
@@ -124,22 +133,22 @@ public class FrameUtilTest {
 
 	@Test
 	public void testIsIntLongString() {
-		assertEquals(ValueType.STRING, FrameUtil.isType("11111111111111111111111111111"));
+		assertEquals(ValueType.STRING, FrameUtil.isType("111111111111111111111111111111111"));
 	}
 
 	@Test
 	public void testInfinite() {
-		assertEquals(ValueType.FP64, FrameUtil.isType("infinity"));
+		assertEquals(ValueType.FP32, FrameUtil.isType("infinity"));
 	}
 
 	@Test
 	public void testMinusInfinite() {
-		assertEquals(ValueType.FP64, FrameUtil.isType("-infinity"));
+		assertEquals(ValueType.FP32, FrameUtil.isType("-infinity"));
 	}
 
 	@Test
 	public void testNan() {
-		assertEquals(ValueType.FP64, FrameUtil.isType("nan"));
+		assertEquals(ValueType.FP32, FrameUtil.isType("nan"));
 	}
 
 	@Test
@@ -187,7 +196,7 @@ public class FrameUtilTest {
 
 	@Test
 	public void testIntegerMinMinus1() {
-		assertEquals(ValueType.INT64, FrameUtil.isType(((long) Integer.MIN_VALUE - 1L) + ""));
+		assertEquals(ValueType.INT64, FrameUtil.isType(String.valueOf(Integer.MIN_VALUE - 1L)));
 	}
 
 	@Test
@@ -238,5 +247,90 @@ public class FrameUtilTest {
 	@Test
 	public void testDoubleIsType_7() {
 		assertEquals(ValueType.FP64, FrameUtil.isType(33.231425155253));
+	}
+
+	@Test
+	public void testSparkFrameBlockALignment(){
+		ValueType[] schema = new ValueType[0];
+		FrameBlock f1 = new FrameBlock(schema, 1000);
+		FrameBlock f2 = new FrameBlock(schema, 500);
+		FrameBlock f3 = new FrameBlock(schema, 250);
+
+		SparkConf sparkConf = new SparkConf().setAppName("DirectPairRDDExample").setMaster("local");
+		JavaSparkContext sc = new JavaSparkContext(sparkConf);
+
+		//Test1 (1000, 1000, 500)
+		List<Tuple2<Long, FrameBlock>> t1 =  Arrays.asList(new Tuple2<>(1L, f1),new Tuple2<>(1001L, f1),new Tuple2<>(2001L, f2));
+		JavaPairRDD<Long, FrameBlock> pairRDD = sc.parallelizePairs(t1);
+		Tuple2<Boolean, Integer> result = FrameRDDAggregateUtils.checkRowAlignment(pairRDD, -1);
+		assertTrue(result._1);
+		assertEquals(1000L, (long) result._2);
+
+		//Test2 (1000, 500, 1000)
+		t1 =  Arrays.asList(new Tuple2<>(1L, f1),new Tuple2<>(1001L, f2),new Tuple2<>(1501L, f1));
+		pairRDD = sc.parallelizePairs(t1);
+		result = FrameRDDAggregateUtils.checkRowAlignment(pairRDD, -1);
+		assertTrue(!result._1);
+
+		//Test3 (1000, 500, 1000, 250)
+		t1 =  Arrays.asList(new Tuple2<>(1L, f1), new Tuple2<>(1001L, f2), new Tuple2<>(1501L, f1), new Tuple2<>(2501L, f3));
+		pairRDD = sc.parallelizePairs(t1);
+		result = FrameRDDAggregateUtils.checkRowAlignment(pairRDD, -1);
+		assertTrue(!result._1);
+
+		//Test4 (500, 500, 250)
+		t1 =  Arrays.asList(new Tuple2<>(1L, f2), new Tuple2<>(501L, f2), new Tuple2<>(1001L, f3));
+		pairRDD = sc.parallelizePairs(t1);
+		result = FrameRDDAggregateUtils.checkRowAlignment(pairRDD, -1);
+		assertTrue(result._1);
+		assertEquals(500L, (long) result._2);
+
+		//Test5 (1000, 500, 1000, 250)
+		t1 =  Arrays.asList(new Tuple2<>(1L, f1), new Tuple2<>(1001L, f2), new Tuple2<>(1501L, f1), new Tuple2<>(2501L, f3));
+		pairRDD = sc.parallelizePairs(t1);
+		result = FrameRDDAggregateUtils.checkRowAlignment(pairRDD, -1);
+		assertTrue(!result._1);
+
+		//Test6 (1000, 1000, 500, 500)
+		t1 =  Arrays.asList(new Tuple2<>(1L, f1), new Tuple2<>(1001L, f1), new Tuple2<>(2001L, f2), new Tuple2<>(2501L, f2));
+		pairRDD = sc.parallelizePairs(t1);
+		result = FrameRDDAggregateUtils.checkRowAlignment(pairRDD, -1);
+		assertTrue(!result._1);
+
+		//Test7 (500, 500, 250)
+		t1 =  Arrays.asList(new Tuple2<>(501L, f2), new Tuple2<>(1001L, f3), new Tuple2<>(1L, f2));
+		pairRDD = sc.parallelizePairs(t1);
+		result = FrameRDDAggregateUtils.checkRowAlignment(pairRDD, -1);
+		assertTrue(result._1);
+		assertEquals(500L, (long) result._2);
+
+		//Test8 (500, 500, 250)
+		t1 =  Arrays.asList( new Tuple2<>(1001L, f3), new Tuple2<>(501L, f2), new Tuple2<>(1L, f2));
+		pairRDD = sc.parallelizePairs(t1);
+		result = FrameRDDAggregateUtils.checkRowAlignment(pairRDD, -1);
+		assertTrue(result._1);
+		assertEquals(500L, (long) result._2);
+
+		//Test9 (1000, 1000, 1000, 500)
+		t1 =  Arrays.asList(new Tuple2<>(1L, f1),  new Tuple2<>(1001L, f1), new Tuple2<>(2001L, f1), new Tuple2<>(3001L, f2));
+		pairRDD = sc.parallelizePairs(t1).repartition(2);
+		result = FrameRDDAggregateUtils.checkRowAlignment(pairRDD, -1);
+		assertTrue(result._1);
+		assertEquals(1000L, (long) result._2);
+
+		//Test10 (1000, 1000, 1000, 500)
+		t1 =  Arrays.asList(new Tuple2<>(1L, f1),  new Tuple2<>(1001L, f1), new Tuple2<>(2001L, f1), new Tuple2<>(3001L, f2));
+		pairRDD = sc.parallelizePairs(t1).repartition(2);
+		result = FrameRDDAggregateUtils.checkRowAlignment(pairRDD, 1000);
+		assertTrue(result._1);
+		assertEquals(1000L, (long) result._2);
+
+		//Test11 (1000, 1000, 1000, 500)
+		t1 =  Arrays.asList(new Tuple2<>(1L, f1),  new Tuple2<>(1001L, f1), new Tuple2<>(2001L, f1), new Tuple2<>(3001L, f2));
+		pairRDD = sc.parallelizePairs(t1).repartition(2);
+		result = FrameRDDAggregateUtils.checkRowAlignment(pairRDD, 500);
+		assertTrue(!result._1);
+		
+		sc.close();
 	}
 }

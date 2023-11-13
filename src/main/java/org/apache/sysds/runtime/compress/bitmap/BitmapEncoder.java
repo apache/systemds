@@ -73,7 +73,8 @@ public class BitmapEncoder {
 		final int numRows = transposed ? rawBlock.getNumColumns() : rawBlock.getNumRows();
 		final int estimatedNumber = Math.max(estimatedNumberOfUniques, 8);
 		if(colIndices.size() == 1)
-			return extractBitmapSingleColumn(colIndices.get(0), rawBlock, numRows, transposed, estimatedNumber, sortedEntries);
+			return extractBitmapSingleColumn(colIndices.get(0), rawBlock, numRows, transposed, estimatedNumber,
+				sortedEntries);
 		else
 			return extractBitmapMultiColumns(colIndices, rawBlock, numRows, transposed, estimatedNumber, sortedEntries);
 	}
@@ -165,10 +166,18 @@ public class BitmapEncoder {
 		boolean transposed, int estimatedUnique, boolean sort) {
 		final DblArrayIntListHashMap map = new DblArrayIntListHashMap(estimatedUnique);
 		final ReaderColumnSelection reader = ReaderColumnSelection.createReader(rawBlock, colIndices, transposed);
-
 		DblArray cellVals = null;
-		while((cellVals = reader.nextRow()) != null)
-			map.appendValue(cellVals, reader.getCurrentRowIndex());
+		try {
+			DblArray empty = new DblArray(new double[colIndices.size()]);
+			while((cellVals = reader.nextRow()) != null) {
+				if(!cellVals.equals(empty))
+					map.appendValue(cellVals, reader.getCurrentRowIndex());
+			}
+
+		}
+		catch(Exception e) {
+			throw new RuntimeException("failed extracting bitmap and adding. " + map + "  \n " + cellVals, e);
+		}
 
 		return makeMultiColBitmap(map, numRows, colIndices.size(), sort);
 	}
@@ -207,8 +216,7 @@ public class BitmapEncoder {
 			}
 			return new Bitmap(offsetsLists, values, numRows);
 		}
-		else
-			return null;
+		return null;
 	}
 
 	static class CompSizeDArrayIListEntry implements Comparator<DArrayIListEntry> {

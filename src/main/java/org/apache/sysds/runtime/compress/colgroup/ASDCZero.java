@@ -19,11 +19,13 @@
 
 package org.apache.sysds.runtime.compress.colgroup;
 
-import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.MatrixBlockDictionary;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.compress.colgroup.offset.AIterator;
 import org.apache.sysds.runtime.compress.colgroup.offset.AOffset;
+import org.apache.sysds.runtime.compress.colgroup.scheme.ICLAScheme;
+import org.apache.sysds.runtime.compress.colgroup.scheme.SDCScheme;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
 import org.apache.sysds.runtime.compress.estim.EstimationFactors;
 import org.apache.sysds.runtime.data.DenseBlock;
@@ -38,7 +40,7 @@ public abstract class ASDCZero extends APreAgg implements AOffsetsGroup, IContai
 	/** The number of rows in this column group */
 	protected final int _numRows;
 
-	protected ASDCZero(IColIndex colIndices, int numRows, ADictionary dict, AOffset offsets, int[] cachedCounts) {
+	protected ASDCZero(IColIndex colIndices, int numRows, IDictionary dict, AOffset offsets, int[] cachedCounts) {
 		super(colIndices, dict, cachedCounts);
 		_indexes = offsets;
 		_numRows = numRows;
@@ -229,5 +231,10 @@ public abstract class ASDCZero extends APreAgg implements AOffsetsGroup, IContai
 	public final CompressedSizeInfoColGroup getCompressionInfo(int nRow) {
 		EstimationFactors ef = new EstimationFactors(getNumValues(), _numRows, getNumberOffsets(), _dict.getSparsity());
 		return new CompressedSizeInfoColGroup(_colIndexes, ef, nRow, getCompType(),getEncoding());
+	}
+
+		@Override
+	public ICLAScheme getCompressionScheme() {
+		return SDCScheme.create(this);
 	}
 }

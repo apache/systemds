@@ -32,7 +32,10 @@ import org.apache.hadoop.mapred.SequenceFileOutputFormat;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
-import org.apache.spark.api.java.function.*;
+import org.apache.spark.api.java.function.FlatMapFunction;
+import org.apache.spark.api.java.function.Function;
+import org.apache.spark.api.java.function.PairFlatMapFunction;
+import org.apache.spark.api.java.function.PairFunction;
 import org.apache.spark.ml.feature.LabeledPoint;
 import org.apache.spark.ml.linalg.DenseVector;
 import org.apache.spark.ml.linalg.SparseVector;
@@ -54,6 +57,7 @@ import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.instructions.spark.data.ReblockBuffer;
 import org.apache.sysds.runtime.instructions.spark.data.SerLongWritable;
@@ -375,6 +379,18 @@ public class RDDConverterUtils {
 		catch(IOException ex) {
 			throw new DMLRuntimeException(ex);
 		}
+	}
+
+	//can be removed if not necessary, it's basically the Frame-Matrix reblock but with matrix
+	public static JavaPairRDD<MatrixIndexes, MatrixBlock> matrixBlockToAlignedMatrixBlock(JavaPairRDD<Long,
+		MatrixBlock> input, DataCharacteristics mcIn, DataCharacteristics mcOut)
+	{
+		//align matrix blocks
+		JavaPairRDD<MatrixIndexes, MatrixBlock> out = input
+				.flatMapToPair(new RDDConverterUtils.MatrixBlockToAlignedMatrixBlockFunction(mcIn, mcOut));
+
+		//aggregate partial matrix blocks
+		return RDDAggregateUtils.mergeByKey(out, false);
 	}
 
 	public static JavaPairRDD<LongWritable, Text> stringToSerializableText(JavaPairRDD<Long,String> in)
@@ -1433,5 +1449,50 @@ public class RDDConverterUtils {
 	}
 	///////////////////////////////
 	// END LIBSVM FUNCTIONS
+
+	private static class MatrixBlockToAlignedMatrixBlockFunction implements PairFlatMapFunction<Tuple2<Long,MatrixBlock>,MatrixIndexes, MatrixBlock> {
+		private static final long serialVersionUID = -2654986510471835933L;
+
+		private DataCharacteristics _mcIn;
+		private DataCharacteristics _mcOut;
+		public MatrixBlockToAlignedMatrixBlockFunction(DataCharacteristics mcIn, DataCharacteristics mcOut) {
+			_mcIn = mcIn;		//Frame Characteristics
+			_mcOut = mcOut;		//Matrix Characteristics
+		}
+		@Override
+		public Iterator<Tuple2<MatrixIndexes, MatrixBlock>> call(Tuple2<Long, MatrixBlock> arg0)
+				throws Exception
+		{
+			long rowIndex = arg0._1();
+			MatrixBlock blk = arg0._2();
+			ArrayList<Tuple2<MatrixIndexes, MatrixBlock>> ret = new ArrayList<>();
+			long rlen = _mcIn.getRows();
+			long clen = _mcIn.getCols();
+			int blen = _mcOut.getBlocksize();
+
+			//slice aligned matrix blocks out of given frame block
+			long rstartix = UtilFunctions.computeBlockIndex(rowIndex, blen);
+			long rendix = UtilFunctions.computeBlockIndex(rowIndex+blk.getNumRows()-1, blen);
+			long cendix = UtilFunctions.computeBlockIndex(blk.getNumColumns(), blen);
+			for( long rix=rstartix; rix<=rendix; rix++ ) { //for all row blocks
+				long rpos = UtilFunctions.computeCellIndex(rix, blen, 0);
+				int lrlen = UtilFunctions.computeBlockSize(rlen, rix, blen);
+				int fix = (int)((rpos-rowIndex>=0) ? rpos-rowIndex : 0);
+				int fix2 = (int)Math.min(rpos+lrlen-rowIndex-1,blk.getNumRows()-1);
+				int mix = UtilFunctions.computeCellInBlock(rowIndex+fix, blen);
+				int mix2 = mix + (fix2-fix);
+				for( long cix=1; cix<=cendix; cix++ ) { //for all column blocks
+					long cpos = UtilFunctions.computeCellIndex(cix, blen, 0);
+					int lclen = UtilFunctions.computeBlockSize(clen, cix, blen);
+					MatrixBlock tmp = blk.slice(fix, fix2,
+							(int)cpos-1, (int)cpos+lclen-2, new MatrixBlock());
+					MatrixBlock newBlock = new MatrixBlock(lrlen, lclen, false);
+					ret.add(new Tuple2<>(new MatrixIndexes(rix, cix), newBlock.leftIndexingOperations(tmp, mix, mix2, 0, lclen-1,
+							new MatrixBlock(), MatrixObject.UpdateType.INPLACE_PINNED)));
+				}
+			}
+			return ret.iterator();
+		}
+	}
 }
 

@@ -80,7 +80,14 @@ public class FloatArray extends Array<Float> {
 
 	@Override
 	public void set(int rl, int ru, Array<Float> value, int rlSrc) {
-		System.arraycopy(((FloatArray) value)._data, rlSrc, _data, rl, ru - rl + 1);
+		try {
+			// try system array copy.
+			// but if it does not work, default to get.
+			System.arraycopy(value.get(), rlSrc, _data, rl, ru - rl + 1);
+		}
+		catch(Exception e) {
+			super.set(rl, ru, value, rlSrc);
+		}
 	}
 
 	@Override
@@ -118,7 +125,7 @@ public class FloatArray extends Array<Float> {
 		final int endSize = this._size + other.size();
 		final float[] ret = new float[endSize];
 		System.arraycopy(_data, 0, ret, 0, this._size);
-		System.arraycopy((float[]) other.get(), 0, ret, this._size, other.size());
+		System.arraycopy(other.get(), 0, ret, this._size, other.size());
 		if(other instanceof OptionalArray)
 			return OptionalArray.appendOther((OptionalArray<Float>) other, new FloatArray(ret));
 		else
@@ -175,7 +182,7 @@ public class FloatArray extends Array<Float> {
 
 	@Override
 	public Pair<ValueType, Boolean> analyzeValueType() {
-		return new Pair<ValueType, Boolean>(ValueType.FP32, false);
+		return new Pair<>(ValueType.FP32, false);
 	}
 
 	@Override
@@ -223,7 +230,7 @@ public class FloatArray extends Array<Float> {
 	protected Array<Double> changeTypeDouble() {
 		double[] ret = new double[size()];
 		for(int i = 0; i < size(); i++)
-			ret[i] = (double) _data[i];
+			ret[i] = _data[i];
 		return new DoubleArray(ret);
 	}
 
@@ -244,6 +251,14 @@ public class FloatArray extends Array<Float> {
 		for(int i = 0; i < size(); i++)
 			ret[i] = (int) _data[i];
 		return new LongArray(ret);
+	}
+
+	@Override
+	protected Array<Object> changeTypeHash64() {
+		long[] ret = new long[size()];
+		for(int i = 0; i < size(); i++)
+			ret[i] = (int) _data[i];
+		return new HashLongArray(ret);
 	}
 
 	@Override
@@ -284,10 +299,20 @@ public class FloatArray extends Array<Float> {
 	}
 
 	public static float parseFloat(String value) {
-		if(value == null || value.isEmpty())
-			return 0.0f;
-		else
+		try {
+			if(value == null || value.isEmpty())
+				return 0.0f;
 			return Float.parseFloat(value);
+		}
+		catch(NumberFormatException e) {
+			final int len = value.length();
+			// check for common extra cases.
+			if(len == 3 && value.compareToIgnoreCase("Inf") == 0)
+				return Float.POSITIVE_INFINITY;
+			else if(len == 4 && value.compareToIgnoreCase("-Inf") == 0)
+				return Float.NEGATIVE_INFINITY;
+			throw new DMLRuntimeException(e);
+		}
 	}
 
 	@Override
@@ -326,10 +351,22 @@ public class FloatArray extends Array<Float> {
 		return _data[i] != 0.0f;
 	}
 
+	@Override
+	public double hashDouble(int idx) {
+		return Float.hashCode(_data[idx]);
+	}
 
 	@Override
-	public double hashDouble(int idx){
-		return Float.hashCode(_data[idx]);
+	public boolean equals(Array<Float> other) {
+		if(other instanceof FloatArray)
+			return Arrays.equals(_data, ((FloatArray) other)._data);
+		else
+			return false;
+	}
+
+	@Override
+	public boolean possiblyContainsNaN() {
+		return true;
 	}
 
 	@Override

@@ -32,15 +32,19 @@ from systemds.utils.consts import VALID_INPUT_TYPES
 def dbscan(X: Matrix,
            **kwargs: Dict[str, VALID_INPUT_TYPES]):
     """
-     Implements the DBSCAN clustering algorithm using Euclidian distance matrix
+     Implements the DBSCAN clustering algorithm using an Euclidean
+     distance matrix.
     
     
     
     :param X: The input Matrix to do DBSCAN on.
-    :param eps: Maximum distance between two points for one to be considered reachable for the other.
-    :param minPts: Number of points in a neighborhood for a point to be considered as a core point
+    :param eps: Maximum distance between two points for one to
+        be considered reachable for the other.
+    :param minPts: Number of points in a neighborhood for a point to
+        be considered as a core point
         (includes the point itself).
-    :return: clustering Matrix
+    :return: The clustering matrix
+    :return: The cluster model
     """
 
     params_dict = {'X': X}
@@ -48,13 +52,11 @@ def dbscan(X: Matrix,
     
     vX_0 = Matrix(X.sds_context, '')
     vX_1 = Matrix(X.sds_context, '')
-    vX_2 = Scalar(X.sds_context, '')
-    output_nodes = [vX_0, vX_1, vX_2, ]
+    output_nodes = [vX_0, vX_1, ]
 
     op = MultiReturn(X.sds_context, 'dbscan', output_nodes, named_input_nodes=params_dict)
 
     vX_0._unnamed_input_nodes = [op]
     vX_1._unnamed_input_nodes = [op]
-    vX_2._unnamed_input_nodes = [op]
 
     return op

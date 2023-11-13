@@ -22,13 +22,16 @@ package org.apache.sysds.runtime.compress.colgroup.dictionary;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.lang.ref.SoftReference;
 import java.math.BigDecimal;
 import java.math.MathContext;
 import java.util.Arrays;
 
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
+import org.apache.sysds.runtime.compress.utils.Util;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.functionobjects.Plus;
@@ -51,6 +54,8 @@ public class Dictionary extends ADictionary {
 	private static final long serialVersionUID = -6517136537249507753L;
 
 	protected final double[] _values;
+	/** A Cache to contain a MatrixBlock version of the dictionary. */
+	protected volatile SoftReference<MatrixBlockDictionary> cache = null;
 
 	protected Dictionary(double[] values) {
 		_values = values;
@@ -184,7 +189,7 @@ public class Dictionary extends ADictionary {
 	}
 
 	@Override
-	public ADictionary applyScalarOpAndAppend(ScalarOperator op, double v0, int nCol) {
+	public IDictionary applyScalarOpAndAppend(ScalarOperator op, double v0, int nCol) {
 		final double[] retV = new double[_values.length + nCol];
 		for(int i = 0; i < _values.length; i++)
 			retV[i] = op.executeScalar(_values[i]);
@@ -202,7 +207,7 @@ public class Dictionary extends ADictionary {
 	}
 
 	@Override
-	public ADictionary applyUnaryOpAndAppend(UnaryOperator op, double v0, int nCol) {
+	public IDictionary applyUnaryOpAndAppend(UnaryOperator op, double v0, int nCol) {
 		final double[] retV = new double[_values.length + nCol];
 		for(int i = 0; i < _values.length; i++)
 			retV[i] = op.fn.execute(_values[i]);
@@ -227,7 +232,7 @@ public class Dictionary extends ADictionary {
 	}
 
 	@Override
-	public ADictionary applyUnaryOpWithReference(UnaryOperator op, double[] reference, double[] newReference) {
+	public IDictionary applyUnaryOpWithReference(UnaryOperator op, double[] reference, double[] newReference) {
 		final double[] retV = new double[_values.length];
 		final int nCol = reference.length;
 		final int nRow = _values.length / nCol;
@@ -264,7 +269,7 @@ public class Dictionary extends ADictionary {
 	}
 
 	@Override
-	public ADictionary binOpRightAndAppend(BinaryOperator op, double[] v, IColIndex colIndexes) {
+	public IDictionary binOpRightAndAppend(BinaryOperator op, double[] v, IColIndex colIndexes) {
 		final ValueFunction fn = op.fn;
 		final double[] retVals = new double[_values.length + colIndexes.size()];
 		final int lenV = colIndexes.size();
@@ -304,7 +309,7 @@ public class Dictionary extends ADictionary {
 	}
 
 	@Override
-	public ADictionary binOpLeftAndAppend(BinaryOperator op, double[] v, IColIndex colIndexes) {
+	public IDictionary binOpLeftAndAppend(BinaryOperator op, double[] v, IColIndex colIndexes) {
 		final ValueFunction fn = op.fn;
 		final double[] retVals = new double[_values.length + colIndexes.size()];
 		final int lenV = colIndexes.size();
@@ -574,7 +579,6 @@ public class Dictionary extends ADictionary {
 			for(int j = 0; j < nCol; j++)
 				res[colIndexes.get(j)] *= Math.pow(_values[off + j] + reference[j], cntk);
 		}
-
 		correctNan(res, colIndexes);
 	}
 
@@ -669,7 +673,7 @@ public class Dictionary extends ADictionary {
 		return sb.toString();
 	}
 
-	public ADictionary sliceOutColumnRange(int idxStart, int idxEnd, int previousNumberOfColumns) {
+	public IDictionary sliceOutColumnRange(int idxStart, int idxEnd, int previousNumberOfColumns) {
 		int numberTuples = getNumberOfValues(previousNumberOfColumns);
 		int tupleLengthAfter = idxEnd - idxStart;
 		double[] newDictValues = new double[tupleLengthAfter * numberTuples];
@@ -789,7 +793,7 @@ public class Dictionary extends ADictionary {
 	}
 
 	@Override
-	public ADictionary subtractTuple(double[] tuple) {
+	public IDictionary subtractTuple(double[] tuple) {
 		double[] newValues = new double[_values.length];
 		for(int i = 0; i < _values.length;)
 			for(int j = 0; j < tuple.length; i++, j++)
@@ -800,7 +804,14 @@ public class Dictionary extends ADictionary {
 
 	@Override
 	public MatrixBlockDictionary getMBDict(int nCol) {
-		return MatrixBlockDictionary.createDictionary(_values, nCol, true);
+		if(cache != null) {
+			MatrixBlockDictionary r = cache.get();
+			if(r != null)
+				return r;
+		}
+		MatrixBlockDictionary ret = MatrixBlockDictionary.createDictionary(_values, nCol, true);
+		cache = new SoftReference<>(ret);
+		return ret;
 	}
 
 	@Override
@@ -828,7 +839,7 @@ public class Dictionary extends ADictionary {
 	}
 
 	@Override
-	public ADictionary scaleTuples(int[] scaling, int nCol) {
+	public IDictionary scaleTuples(int[] scaling, int nCol) {
 		final double[] scaledValues = new double[_values.length];
 		int off = 0;
 		for(int tuple = 0; tuple < _values.length / nCol; tuple++) {
@@ -844,13 +855,15 @@ public class Dictionary extends ADictionary {
 	@Override
 	public Dictionary preaggValuesFromDense(int numVals, IColIndex colIndexes, IColIndex aggregateColumns, double[] b,
 		int cut) {
-		double[] ret = new double[numVals * aggregateColumns.size()];
-		for(int k = 0, off = 0; k < numVals * colIndexes.size(); k += colIndexes.size(), off += aggregateColumns.size()) {
-			for(int h = 0; h < colIndexes.size(); h++) {
-				int idb = colIndexes.get(h) * cut;
+		final int cz = colIndexes.size();
+		final int az = aggregateColumns.size();
+		final double[] ret = new double[numVals * az];
+		for(int k = 0, off = 0; k < numVals * cz; k += cz, off += az) {
+			for(int h = 0; h < cz; h++) {
+				final int idb = colIndexes.get(h) * cut;
 				double v = _values[k + h];
 				if(v != 0)
-					for(int i = 0; i < aggregateColumns.size(); i++)
+					for(int i = 0; i < az; i++)
 						ret[off + i] += v * b[idb + aggregateColumns.get(i)];
 			}
 		}
@@ -858,17 +871,19 @@ public class Dictionary extends ADictionary {
 	}
 
 	@Override
-	public ADictionary replace(double pattern, double replace, int nCol) {
+	public IDictionary replace(double pattern, double replace, int nCol) {
 		double[] retV = new double[_values.length];
 		for(int i = 0; i < _values.length; i++) {
 			final double v = _values[i];
-			retV[i] = v == pattern ? replace : v;
+			retV[i] = Util.eq(v, pattern) ? replace : v;
 		}
 		return create(retV);
 	}
 
 	@Override
-	public ADictionary replaceWithReference(double pattern, double replace, double[] reference) {
+	public IDictionary replaceWithReference(double pattern, double replace, double[] reference) {
+		if(Util.eq(pattern, Double.NaN))
+			throw new NotImplementedException();
 		final double[] retV = new double[_values.length];
 		final int nCol = reference.length;
 		final int nRow = _values.length / nCol;
@@ -997,7 +1012,7 @@ public class Dictionary extends ADictionary {
 	}
 
 	@Override
-	public ADictionary rexpandCols(int max, boolean ignore, boolean cast, int nCol) {
+	public IDictionary rexpandCols(int max, boolean ignore, boolean cast, int nCol) {
 		if(nCol > 1)
 			throw new DMLCompressionException("Invalid to rexpand the column groups if more than one column");
 		MatrixBlockDictionary m = getMBDict(nCol);
@@ -1005,11 +1020,11 @@ public class Dictionary extends ADictionary {
 	}
 
 	@Override
-	public ADictionary rexpandColsWithReference(int max, boolean ignore, boolean cast, int reference) {
+	public IDictionary rexpandColsWithReference(int max, boolean ignore, boolean cast, int reference) {
 		MatrixBlockDictionary m = getMBDict(1);
 		if(m == null)
 			return null;
-		ADictionary a = m.applyScalarOp(new LeftScalarOperator(Plus.getPlusFnObject(), reference));
+		IDictionary a = m.applyScalarOp(new LeftScalarOperator(Plus.getPlusFnObject(), reference));
 		return a == null ? null : a.rexpandCols(max, ignore, cast, 1);
 	}
 
@@ -1032,63 +1047,82 @@ public class Dictionary extends ADictionary {
 	}
 
 	@Override
-	protected void TSMMWithScaling(int[] counts, IColIndex rows, IColIndex cols, MatrixBlock ret) {
+	public void TSMMWithScaling(int[] counts, IColIndex rows, IColIndex cols, MatrixBlock ret) {
 		DictLibMatrixMult.TSMMDictsDenseWithScaling(_values, rows, cols, counts, ret);
 	}
 
 	@Override
-	protected void MMDict(ADictionary right, IColIndex rowsLeft, IColIndex colsRight, MatrixBlock result) {
+	public void MMDict(IDictionary right, IColIndex rowsLeft, IColIndex colsRight, MatrixBlock result) {
 		right.MMDictDense(_values, rowsLeft, colsRight, result);
 	}
 
 	@Override
-	protected void MMDictDense(double[] left, IColIndex rowsLeft, IColIndex colsRight, MatrixBlock result) {
+	public void MMDictScaling(IDictionary right, IColIndex rowsLeft, IColIndex colsRight, MatrixBlock result,
+		int[] scaling) {
+		right.MMDictScalingDense(_values, rowsLeft, colsRight, result, scaling);
+	}
+
+	@Override
+	public void MMDictDense(double[] left, IColIndex rowsLeft, IColIndex colsRight, MatrixBlock result) {
 		DictLibMatrixMult.MMDictsDenseDense(left, _values, rowsLeft, colsRight, result);
 	}
 
 	@Override
-	protected void MMDictSparse(SparseBlock left, IColIndex rowsLeft, IColIndex colsRight, MatrixBlock result) {
+	public void MMDictScalingDense(double[] left, IColIndex rowsLeft, IColIndex colsRight, MatrixBlock result,
+		int[] scaling) {
+		DictLibMatrixMult.MMDictsScalingDenseDense(left, _values, rowsLeft, colsRight, result, scaling);
+	}
+
+	@Override
+	public void MMDictSparse(SparseBlock left, IColIndex rowsLeft, IColIndex colsRight, MatrixBlock result) {
 		DictLibMatrixMult.MMDictsSparseDense(left, _values, rowsLeft, colsRight, result);
 	}
 
 	@Override
-	protected void TSMMToUpperTriangle(ADictionary right, IColIndex rowsLeft, IColIndex colsRight, MatrixBlock result) {
+	public void MMDictScalingSparse(SparseBlock left, IColIndex rowsLeft, IColIndex colsRight, MatrixBlock result,
+		int[] scaling) {
+		DictLibMatrixMult.MMDictsScalingSparseDense(left, _values, rowsLeft, colsRight, result, scaling);
+	}
+
+	@Override
+	public void TSMMToUpperTriangle(IDictionary right, IColIndex rowsLeft, IColIndex colsRight, MatrixBlock result) {
 		right.TSMMToUpperTriangleDense(_values, rowsLeft, colsRight, result);
 	}
 
 	@Override
-	protected void TSMMToUpperTriangleDense(double[] left, IColIndex rowsLeft, IColIndex colsRight, MatrixBlock result) {
+	public void TSMMToUpperTriangleDense(double[] left, IColIndex rowsLeft, IColIndex colsRight, MatrixBlock result) {
 		DictLibMatrixMult.MMToUpperTriangleDenseDense(left, _values, rowsLeft, colsRight, result);
 	}
 
 	@Override
-	protected void TSMMToUpperTriangleSparse(SparseBlock left, IColIndex rowsLeft, IColIndex colsRight,
+	public void TSMMToUpperTriangleSparse(SparseBlock left, IColIndex rowsLeft, IColIndex colsRight,
 		MatrixBlock result) {
 		DictLibMatrixMult.MMToUpperTriangleSparseDense(left, _values, rowsLeft, colsRight, result);
 	}
 
 	@Override
-	protected void TSMMToUpperTriangleScaling(ADictionary right, IColIndex rowsLeft, IColIndex colsRight, int[] scale,
+	public void TSMMToUpperTriangleScaling(IDictionary right, IColIndex rowsLeft, IColIndex colsRight, int[] scale,
 		MatrixBlock result) {
 		right.TSMMToUpperTriangleDenseScaling(_values, rowsLeft, colsRight, scale, result);
 	}
 
 	@Override
-	protected void TSMMToUpperTriangleDenseScaling(double[] left, IColIndex rowsLeft, IColIndex colsRight, int[] scale,
+	public void TSMMToUpperTriangleDenseScaling(double[] left, IColIndex rowsLeft, IColIndex colsRight, int[] scale,
 		MatrixBlock result) {
 		DictLibMatrixMult.TSMMToUpperTriangleDenseDenseScaling(left, _values, rowsLeft, colsRight, scale, result);
 	}
 
 	@Override
-	protected void TSMMToUpperTriangleSparseScaling(SparseBlock left, IColIndex rowsLeft, IColIndex colsRight,
-		int[] scale, MatrixBlock result) {
+	public void TSMMToUpperTriangleSparseScaling(SparseBlock left, IColIndex rowsLeft, IColIndex colsRight, int[] scale,
+		MatrixBlock result) {
 		DictLibMatrixMult.TSMMToUpperTriangleSparseDenseScaling(left, _values, rowsLeft, colsRight, scale, result);
 	}
 
 	@Override
-	public boolean equals(ADictionary o) {
-		if(o instanceof Dictionary)
+	public boolean equals(IDictionary o) {
+		if(o instanceof Dictionary) {
 			return Arrays.equals(_values, ((Dictionary) o)._values);
+		}
 		else if(o instanceof MatrixBlockDictionary) {
 			final MatrixBlock mb = ((MatrixBlockDictionary) o).getMatrixBlock();
 			if(mb.isInSparseFormat())
@@ -1100,7 +1134,7 @@ public class Dictionary extends ADictionary {
 	}
 
 	@Override
-	public ADictionary cbind(ADictionary that, int nCol){
+	public IDictionary cbind(IDictionary that, int nCol) {
 		int nRowThat = that.getNumberOfValues(nCol);
 		int nColThis = _values.length / nRowThat;
 		MatrixBlockDictionary mbd = getMBDict(nColThis);
@@ -1108,12 +1142,12 @@ public class Dictionary extends ADictionary {
 	}
 
 	@Override
-	public ADictionary reorder(int[] reorder){
+	public IDictionary reorder(int[] reorder) {
 		double[] retV = new double[_values.length];
 		Dictionary ret = new Dictionary(retV);
 		int nRows = _values.length / reorder.length;
 
-		for(int r = 0; r < nRows; r++){
+		for(int r = 0; r < nRows; r++) {
 			int off = r * reorder.length;
 			for(int c = 0; c < reorder.length; c++)
 				retV[off + c] = _values[off + reorder[c]];

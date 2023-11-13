@@ -45,10 +45,6 @@ public class ColIndexes {
 
 		if(a == null || b == null)
 			return false;
-		int id = _indexes.findIndex(a._indexes.get(0));
-		if(id >= 0)
-			return true;
-		id = _indexes.findIndex(b._indexes.get(0));
-		return id >= 0;
+		return _indexes.contains(a._indexes.get(0)) ||  _indexes.contains(b._indexes.get(0));
 	}
 }

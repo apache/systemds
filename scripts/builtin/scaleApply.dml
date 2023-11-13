@@ -36,8 +36,10 @@
 m_scaleApply = function(Matrix[Double] X, Matrix[Double] Centering, Matrix[Double] ScaleFactor) 
   return (Matrix[Double] Y) 
 {
-  centered = ifelse(nrow(Centering) > 0 & ncol(Centering) > 0, X - Centering, X)
+  if(nrow(Centering) > 0 & ncol(Centering) > 0)
+    Y = X - Centering
+  else 
+    Y = X
   if(nrow(ScaleFactor) > 0 & ncol(ScaleFactor) > 0)
-    Y = centered / ScaleFactor
-  else Y = centered
+    Y = Y / ScaleFactor
 }

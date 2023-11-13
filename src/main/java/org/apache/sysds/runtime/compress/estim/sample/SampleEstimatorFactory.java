@@ -19,6 +19,7 @@
 
 package org.apache.sysds.runtime.compress.estim.sample;
 
+import java.util.Arrays;
 import java.util.HashMap;
 
 import org.apache.commons.logging.Log;
@@ -30,8 +31,20 @@ public interface SampleEstimatorFactory {
 
 	public enum EstimationType {
 		HassAndStokes, ShlosserEstimator, //
-		ShlosserJackknifeEstimator, SmoothedJackknifeEstimator,
-		HassAndStokesNoSolveCache,
+		ShlosserJackknifeEstimator, SmoothedJackknifeEstimator, HassAndStokesNoSolveCache,
+	}
+
+	/**
+	 * Estimate a distinct number of values based on frequencies.
+	 * 
+	 * @param frequencies A list of frequencies of unique values, Note all values contained should be larger than zero
+	 * @param nRows       The total number of rows to consider, Note should always be larger or equal to sum(frequencies)
+	 * @param sampleSize  The size of the sample, Note this should ideally be scaled to match the sum(frequencies) and
+	 *                    should always be lower or equal to nRows
+	 * @return A estimated number of unique values
+	 */
+	public static int distinctCount(int[] frequencies, int nRows, int sampleSize) {
+		return distinctCount(frequencies, nRows, sampleSize, EstimationType.HassAndStokes, null);
 	}
 
 	/**
@@ -96,20 +109,26 @@ public interface SampleEstimatorFactory {
 	}
 
 	private static int[] getInvertedFrequencyHistogram(int[] frequencies) {
-		final int numVals = frequencies.length;
-		// Find max
-		int maxCount = 0;
-		for(int i = 0; i < numVals; i++) {
-			final int v = frequencies[i];
-			if(v > maxCount)
-				maxCount = v;
+		try{
+
+			final int numVals = frequencies.length;
+			// Find max
+			int maxCount = 0;
+			for(int i = 0; i < numVals; i++) {
+				final int v = frequencies[i];
+				if(v > maxCount)
+					maxCount = v;
+			}
+	
+			// create frequency histogram
+			int[] freqCounts = new int[maxCount];
+			for(int i = 0; i < numVals; i++)
+				freqCounts[frequencies[i] - 1]++;
+	
+			return freqCounts;
 		}
-
-		// create frequency histogram
-		int[] freqCounts = new int[maxCount];
-		for(int i = 0; i < numVals; i++)
-			freqCounts[frequencies[i] - 1]++;
-
-		return freqCounts;
+		catch(Exception e){
+			throw new RuntimeException(Arrays.toString(frequencies), e);
+		}
 	}
 }

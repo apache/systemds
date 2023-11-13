@@ -139,6 +139,9 @@
     <!-- enables the federated read cache for multi-tenancy / cross-session reuse -->
     <sysds.federated.readcache>true</sysds.federated.readcache>
 
+    <!-- sets the federated compression strategy (none, zlib, snappy, fastlz, lz4, lzf) -->
+    <sysds.federated.compression>none</sysds.federated.compression>
+
     <!-- set buffer pool threshold (max size) in % of total heap -->
     <sysds.caching.bufferpoollimit>15</sysds.caching.bufferpoollimit>
 

@@ -614,7 +614,6 @@ public class FederationMap {
 	 */
 	public void forEachParallel(BiFunction<FederatedRange, FederatedData, Void> forEachFunction) {
 		ExecutorService pool = CommonThreadPool.get(_fedMap.size());
-
 		ArrayList<MappingTask> mappingTasks = new ArrayList<>();
 		for(Pair<FederatedRange, FederatedData> fedMap : _fedMap)
 			mappingTasks.add(new MappingTask(fedMap.getKey(), fedMap.getValue(), forEachFunction, _ID));
@@ -658,6 +657,14 @@ public class FederationMap {
 			if(!overlap)
 				iter.remove();
 		}
+
+		boolean rowPartitioned = this.getType().isType(FType.ROW)
+			|| Arrays.stream(ret.getFederatedRanges()).allMatch(range -> range.getSize(1) == ret.getMaxIndexInRange(1));
+		boolean colPartitioned = this.getType().isType(FType.COL)
+			|| Arrays.stream(ret.getFederatedRanges()).allMatch(range -> range.getSize(0) == ret.getMaxIndexInRange(0));
+		if(rowPartitioned && colPartitioned)
+			ret.setType(FType.FULL);
+
 		return ret;
 	}
 

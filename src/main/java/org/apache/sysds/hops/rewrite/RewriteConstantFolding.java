@@ -34,7 +34,9 @@ import org.apache.sysds.lops.compile.Dag;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.OpOp1;
 import org.apache.sysds.common.Types.OpOp2;
+import org.apache.sysds.common.Types.OpOp3;
 import org.apache.sysds.common.Types.OpOpData;
+import org.apache.sysds.common.Types.OpOpN;
 import org.apache.sysds.runtime.controlprogram.BasicProgramBlock;
 import org.apache.sysds.runtime.controlprogram.Program;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
@@ -96,7 +98,8 @@ public class RewriteConstantFolding extends HopRewriteRule
 		
 		//fold binary op if both are literals / unary op if literal
 		if( root.getDataType() == DataType.SCALAR //scalar output
-			&& ( isApplicableBinaryOp(root) || isApplicableUnaryOp(root) ) )
+			&& ( isApplicableUnaryOp(root) || isApplicableBinaryOp(root)
+				|| isApplicableTernaryOp(root) || isApplicableNaryOp(root) ) )
 		{ 
 			literal = evalScalarOperation(root); 
 		}
@@ -210,6 +213,16 @@ public class RewriteConstantFolding extends HopRewriteRule
 				&& ((UnaryOp)hop).getOp() != OpOp1.ASSERT
 				&& ((UnaryOp)hop).getOp() != OpOp1.STOP
 				&& hop.getDataType() == DataType.SCALAR);
+	}
+	
+	private static boolean isApplicableTernaryOp( Hop hop ) {
+		return HopRewriteUtils.isTernary(hop, OpOp3.IFELSE, OpOp3.MINUS_MULT, OpOp3.PLUS_MULT)
+				&& hop.getInput().stream().allMatch(h -> h instanceof LiteralOp);
+	}
+	
+	private static boolean isApplicableNaryOp( Hop hop ) {
+		return HopRewriteUtils.isNary(hop, OpOpN.MIN, OpOpN.MAX, OpOpN.PLUS)
+			&& hop.getInput().stream().allMatch(h -> h instanceof LiteralOp);
 	}
 	
 	private static boolean isApplicableFalseConjunctivePredicate( Hop hop ) {

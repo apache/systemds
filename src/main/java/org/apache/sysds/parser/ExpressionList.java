@@ -48,6 +48,10 @@ public class ExpressionList extends Expression {
 		this._value = _value;
 	}
 
+	public Identifier getOutput() {
+		return new ListIdentifier();
+	}
+
 	@Override
 	public void validateExpression(HashMap<String, DataIdentifier> ids, HashMap<String, ConstIdentifier> currConstVars,
 		boolean conditional) {

@@ -22,11 +22,16 @@ package org.apache.sysds.test.functions.binary.matrix_full_other;
 import java.util.HashMap;
 
 import org.junit.AfterClass;
+import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.lops.MMTSJ.MMTSJType;
+import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
+import org.apache.sysds.runtime.matrix.data.LibMatrixMult;
+import org.apache.sysds.runtime.matrix.data.LibMatrixReorg;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
@@ -119,6 +124,10 @@ public class FullMatrixMultiplicationTransposeSelfTest extends AutomatedTestBase
 		runTransposeSelfVectorMultiplicationTest(MMTSJType.RIGHT, ExecType.CP, true);
 	}
 	
+	@Test
+	public void testRightUltraSparseCP() {
+		runTransposeSelfUltraSparseTest(MMTSJType.RIGHT);
+	}
 	
 	private void runTransposeSelfMatrixMultiplicationTest( MMTSJType type, ExecType instType, boolean sparse )
 	{
@@ -260,5 +269,29 @@ public class FullMatrixMultiplicationTransposeSelfTest extends AutomatedTestBase
 		finally {
 			rtplatform = platformOld;
 		}
+	}
+	
+	private void runTransposeSelfUltraSparseTest( MMTSJType type )
+	{
+		//compare sparse tsmm and gemm directly to avoid unnecessary overhead (e.g., R) 
+		int dim = 10000;
+		
+		MatrixBlock G = MatrixBlock.randOperations(dim, dim, 0.0002, 0, 1, "uniform", 7);
+		MatrixBlock Gt = LibMatrixReorg.transpose(G);
+		MatrixBlock Gtt = LibMatrixReorg.transpose(Gt);
+		TestUtils.compareMatrices(G, Gtt, 1e-16);
+		
+		//single-threaded core operations
+		MatrixBlock R11 = G.transposeSelfMatrixMultOperations(new MatrixBlock(), MMTSJType.RIGHT);
+		MatrixBlock R12 = LibMatrixMult.matrixMult(G, Gt);
+		Assert.assertEquals(R11.getNonZeros(), R12.getNonZeros());
+		TestUtils.compareMatrices(R11, R12, 1e-8);
+		
+		//multi-threaded core operations
+		int k = InfrastructureAnalyzer.getLocalParallelism();
+		MatrixBlock R21 = G.transposeSelfMatrixMultOperations(new MatrixBlock(), MMTSJType.RIGHT, k);
+		MatrixBlock R22 = LibMatrixMult.matrixMult(G, Gt, k);
+		Assert.assertEquals(R21.getNonZeros(), R22.getNonZeros());
+		TestUtils.compareMatrices(R21, R22, 1e-8);
 	}
 }

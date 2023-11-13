@@ -24,7 +24,7 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.util.Collection;
 
-import org.apache.commons.lang.NotImplementedException;
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
@@ -178,7 +178,9 @@ public abstract class AColGroup implements Serializable {
 	 * @throws IOException if IOException occurs
 	 */
 	protected void write(DataOutput out) throws IOException {
-		out.writeByte(getColGroupType().ordinal());
+		final byte[] o = new byte[1];
+		o[0] = (byte) getColGroupType().ordinal();
+		out.write(o);
 		_colIndexes.write(out);
 	}
 
@@ -204,8 +206,17 @@ public abstract class AColGroup implements Serializable {
 	 *         dictionary and _columnIndexes correctly aligned with the expected sliced compressed matrix.
 	 */
 	public final AColGroup sliceColumns(int cl, int cu) {
-		AColGroup ret = (cu - cl == 1) ? sliceColumn(cl) : sliceMultiColumns(cl, cu);
-		return ret;
+		if(cl <= _colIndexes.get(0) && cu > _colIndexes.get(_colIndexes.size() - 1)) {
+			if(cl == 0)
+				return this;
+			else
+				return this.shiftColIndices(-cl);
+		}
+		else if(cu - cl == 1)
+			return sliceColumn(cl);
+		else
+			return sliceMultiColumns(cl, cu);
+
 	}
 
 	/**
@@ -595,8 +606,8 @@ public abstract class AColGroup implements Serializable {
 	public abstract boolean isEmpty();
 
 	/**
-	 * Append the other column group to this column group. This method tries to combine them to return a new column group
-	 * containing both. In some cases it is possible in reasonable time, in others it is not.
+	 * Append the other column group to this column group. This method tries to combine them to return a new column
+	 * group containing both. In some cases it is possible in reasonable time, in others it is not.
 	 * 
 	 * The result is first this column group followed by the other column group in higher row values.
 	 * 
@@ -613,10 +624,12 @@ public abstract class AColGroup implements Serializable {
 	 * If it is not possible or very inefficient null is returned.
 	 * 
 	 * @param groups The groups to combine.
+	 * @param blen   The normal number of rows in the groups
+	 * @param rlen   The total number of rows of all combined.
 	 * @return A combined column group or null
 	 */
-	public static AColGroup appendN(AColGroup[] groups) {
-		return groups[0].appendNInternal(groups);
+	public static AColGroup appendN(AColGroup[] groups, int blen, int rlen) {
+		return groups[0].appendNInternal(groups, blen, rlen);
 	}
 
 	/**
@@ -627,9 +640,11 @@ public abstract class AColGroup implements Serializable {
 	 * If it is not possible or very inefficient null is returned.
 	 * 
 	 * @param groups The groups to combine.
+	 * @param blen   The normal number of rows in the groups
+	 * @param rlen   The total number of rows of all combined.
 	 * @return A combined column group or null
 	 */
-	protected abstract AColGroup appendNInternal(AColGroup[] groups);
+	protected abstract AColGroup appendNInternal(AColGroup[] groups, int blen, int rlen);
 
 	/**
 	 * Get the compression scheme for this column group to enable compression of other data.
@@ -704,7 +719,7 @@ public abstract class AColGroup implements Serializable {
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
-		sb.append(String.format("%15s", "Type: "));
+		sb.append(String.format("\n%15s", "Type: "));
 		sb.append(this.getClass().getSimpleName());
 		sb.append(String.format("\n%15s", "Columns: "));
 		sb.append(_colIndexes);

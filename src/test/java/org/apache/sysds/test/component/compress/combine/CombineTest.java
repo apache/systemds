@@ -55,7 +55,7 @@ public class CombineTest {
 		data.put(new MatrixIndexes(2, 1), m1);
 
 		try {
-			MatrixBlock c = CLALibStack.combine(data, 100 * 2, 10, 100, k);
+			MatrixBlock c = CLALibStack.combine(data, null, 100 * 2, 10, 100, k);
 			assertTrue("The result is not in compressed format", c instanceof CompressedMatrixBlock);
 			assertEquals(0.0, c.sum(), 0.0);
 		}
@@ -76,7 +76,7 @@ public class CombineTest {
 		data.put(new MatrixIndexes(2, 1), m1);
 
 		try {
-			MatrixBlock c = CLALibStack.combine(data, 100 * 2, 10, 100, k);
+			MatrixBlock c = CLALibStack.combine(data, null, 100 * 2, 10, 100, k);
 			assertTrue("The result is not in compressed format", c instanceof CompressedMatrixBlock);
 			assertEquals(0.0, c.sum(), 100.0 * 10.0 * 2);
 		}

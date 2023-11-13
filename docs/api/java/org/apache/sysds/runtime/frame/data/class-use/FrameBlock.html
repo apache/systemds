@@ -14,7 +14,7 @@
 <!--[if IE]>
 <script type="text/javascript" src="../../../../../../../jquery/jszip-utils/dist/jszip-utils-ie.min.js"></script>
 <![endif]-->
-<script type="text/javascript" src="../../../../../../../jquery/jquery-3.6.0.min.js"></script>
+<script type="text/javascript" src="../../../../../../../jquery/jquery-3.6.1.min.js"></script>
 <script type="text/javascript" src="../../../../../../../jquery/jquery-ui.min.js"></script>
 </head>
 <body>
@@ -115,11 +115,19 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
-<th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.controlprogram.context">org.apache.sysds.runtime.controlprogram.context</a></th>
+<th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.compress.lib">org.apache.sysds.runtime.compress.lib</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
+<th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.controlprogram.context">org.apache.sysds.runtime.controlprogram.context</a></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
 <th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.frame.data">org.apache.sysds.runtime.frame.data</a></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.frame.data.compress">org.apache.sysds.runtime.frame.data.compress</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
@@ -159,38 +167,42 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
+<th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.iogen.template">org.apache.sysds.runtime.iogen.template</a></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
 <th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.matrix.data">org.apache.sysds.runtime.matrix.data</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.transform.decode">org.apache.sysds.runtime.transform.decode</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.transform.encode">org.apache.sysds.runtime.transform.encode</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.transform.meta">org.apache.sysds.runtime.transform.meta</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.transform.tokenize">org.apache.sysds.runtime.transform.tokenize</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.transform.tokenize.applier">org.apache.sysds.runtime.transform.tokenize.applier</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.transform.tokenize.builder">org.apache.sysds.runtime.transform.tokenize.builder</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.util">org.apache.sysds.runtime.util</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <th class="colFirst" scope="row"><a href="#org.apache.sysds.utils">org.apache.sysds.utils</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
@@ -448,6 +460,30 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </section>
 </li>
 <li class="blockList">
+<section><a id="org.apache.sysds.runtime.compress.lib">
+<!--   -->
+</a>
+<h3>Uses of <a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a> in <a href="../../../compress/lib/package-summary.html">org.apache.sysds.runtime.compress.lib</a></h3>
+<table class="useSummary">
+<caption><span>Methods in <a href="../../../compress/lib/package-summary.html">org.apache.sysds.runtime.compress.lib</a> that return types with arguments of type <a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colSecond" scope="col">Method</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code>static org.apache.commons.lang3.tuple.Pair&lt;<a href="../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>,&#8203;<a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&gt;</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">CLALibBinCompress.</span><code><span class="memberNameLink"><a href="../../../compress/lib/CLALibBinCompress.html#binCompress(org.apache.sysds.runtime.controlprogram.caching.CacheBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock,int)">binCompress</a></span>&#8203;(<a href="../../../controlprogram/caching/CacheBlock.html" title="interface in org.apache.sysds.runtime.controlprogram.caching">CacheBlock</a>&lt;?&gt;&nbsp;X,
+           <a href="../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;d,
+           int&nbsp;k)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+</tbody>
+</table>
+</section>
+</li>
+<li class="blockList">
 <section><a id="org.apache.sysds.runtime.controlprogram.context">
 <!--   -->
 </a>
@@ -584,6 +620,17 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code><a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">FrameBlock.</span><code><span class="memberNameLink"><a href="../FrameBlock.html#applySchema(org.apache.sysds.runtime.frame.data.FrameBlock)">applySchema</a></span>&#8203;(<a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;schema)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">FrameBlock.</span><code><span class="memberNameLink"><a href="../FrameBlock.html#applySchema(org.apache.sysds.runtime.frame.data.FrameBlock,int)">applySchema</a></span>&#8203;(<a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;schema,
+           int&nbsp;k)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">FrameBlock.</span><code><span class="memberNameLink"><a href="../FrameBlock.html#binaryOperations(org.apache.sysds.runtime.matrix.operators.BinaryOperator,org.apache.sysds.runtime.frame.data.FrameBlock,org.apache.sysds.runtime.frame.data.FrameBlock)">binaryOperations</a></span>&#8203;(<a href="../../../matrix/operators/BinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">BinaryOperator</a>&nbsp;bop,
                 <a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;that,
                 <a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;out)</code></th>
@@ -679,6 +726,17 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <tr class="rowColor">
 <td class="colFirst"><code><a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">FrameBlock.</span><code><span class="memberNameLink"><a href="../FrameBlock.html#mapDist(org.apache.sysds.runtime.frame.data.FrameBlock.FrameMapFunction)">mapDist</a></span>&#8203;(<a href="../FrameBlock.FrameMapFunction.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock.FrameMapFunction</a>&nbsp;lambdaExpr)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">FrameBlock.</span><code><span class="memberNameLink"><a href="../FrameBlock.html#merge(org.apache.sysds.runtime.frame.data.FrameBlock)">merge</a></span>&#8203;(<a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;that)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">FrameBlock.</span><code><span class="memberNameLink"><a href="../FrameBlock.html#merge(org.apache.sysds.runtime.frame.data.FrameBlock,boolean)">merge</a></span>&#8203;(<a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;that,
+     boolean&nbsp;appendOnly)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
@@ -787,6 +845,17 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code><a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">FrameBlock.</span><code><span class="memberNameLink"><a href="../FrameBlock.html#applySchema(org.apache.sysds.runtime.frame.data.FrameBlock)">applySchema</a></span>&#8203;(<a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;schema)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">FrameBlock.</span><code><span class="memberNameLink"><a href="../FrameBlock.html#applySchema(org.apache.sysds.runtime.frame.data.FrameBlock,int)">applySchema</a></span>&#8203;(<a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;schema,
+           int&nbsp;k)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">FrameBlock.</span><code><span class="memberNameLink"><a href="../FrameBlock.html#binaryOperations(org.apache.sysds.runtime.matrix.operators.BinaryOperator,org.apache.sysds.runtime.frame.data.FrameBlock,org.apache.sysds.runtime.frame.data.FrameBlock)">binaryOperations</a></span>&#8203;(<a href="../../../matrix/operators/BinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">BinaryOperator</a>&nbsp;bop,
                 <a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;that,
                 <a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;out)</code></th>
@@ -842,12 +911,12 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
-<td class="colFirst"><code>void</code></td>
+<td class="colFirst"><code><a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">FrameBlock.</span><code><span class="memberNameLink"><a href="../FrameBlock.html#merge(org.apache.sysds.runtime.frame.data.FrameBlock)">merge</a></span>&#8203;(<a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;that)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
-<td class="colFirst"><code>void</code></td>
+<td class="colFirst"><code><a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">FrameBlock.</span><code><span class="memberNameLink"><a href="../FrameBlock.html#merge(org.apache.sysds.runtime.frame.data.FrameBlock,boolean)">merge</a></span>&#8203;(<a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;that,
      boolean&nbsp;appendOnly)</code></th>
 <td class="colLast">&nbsp;</td>
@@ -927,6 +996,81 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <div class="block">Copy constructor for frame blocks, which uses a shallow copy for the schema (column types and names) but a deep
  copy for meta data and actual column data.</div>
 </td>
+</tr>
+</tbody>
+</table>
+</section>
+</li>
+<li class="blockList">
+<section><a id="org.apache.sysds.runtime.frame.data.compress">
+<!--   -->
+</a>
+<h3>Uses of <a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a> in <a href="../compress/package-summary.html">org.apache.sysds.runtime.frame.data.compress</a></h3>
+<table class="useSummary">
+<caption><span>Methods in <a href="../compress/package-summary.html">org.apache.sysds.runtime.frame.data.compress</a> that return <a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colSecond" scope="col">Method</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code>static <a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">CompressedFrameBlockFactory.</span><code><span class="memberNameLink"><a href="../compress/CompressedFrameBlockFactory.html#compress(org.apache.sysds.runtime.frame.data.FrameBlock)">compress</a></span>&#8203;(<a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;fb)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>static <a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">CompressedFrameBlockFactory.</span><code><span class="memberNameLink"><a href="../compress/CompressedFrameBlockFactory.html#compress(org.apache.sysds.runtime.frame.data.FrameBlock,int,org.apache.sysds.runtime.compress.workload.WTreeRoot)">compress</a></span>&#8203;(<a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;fb,
+        int&nbsp;k,
+        <a href="../../../compress/workload/WTreeRoot.html" title="class in org.apache.sysds.runtime.compress.workload">WTreeRoot</a>&nbsp;root)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>static <a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">CompressedFrameBlockFactory.</span><code><span class="memberNameLink"><a href="../compress/CompressedFrameBlockFactory.html#compress(org.apache.sysds.runtime.frame.data.FrameBlock,org.apache.sysds.runtime.frame.data.compress.FrameCompressionSettings)">compress</a></span>&#8203;(<a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;fb,
+        <a href="../compress/FrameCompressionSettings.html" title="class in org.apache.sysds.runtime.frame.data.compress">FrameCompressionSettings</a>&nbsp;cs)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>static <a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">CompressedFrameBlockFactory.</span><code><span class="memberNameLink"><a href="../compress/CompressedFrameBlockFactory.html#compress(org.apache.sysds.runtime.frame.data.FrameBlock,org.apache.sysds.runtime.frame.data.compress.FrameCompressionSettingsBuilder)">compress</a></span>&#8203;(<a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;fb,
+        <a href="../compress/FrameCompressionSettingsBuilder.html" title="class in org.apache.sysds.runtime.frame.data.compress">FrameCompressionSettingsBuilder</a>&nbsp;csb)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+</tbody>
+</table>
+<table class="useSummary">
+<caption><span>Methods in <a href="../compress/package-summary.html">org.apache.sysds.runtime.frame.data.compress</a> with parameters of type <a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colSecond" scope="col">Method</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code>static <a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">CompressedFrameBlockFactory.</span><code><span class="memberNameLink"><a href="../compress/CompressedFrameBlockFactory.html#compress(org.apache.sysds.runtime.frame.data.FrameBlock)">compress</a></span>&#8203;(<a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;fb)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>static <a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">CompressedFrameBlockFactory.</span><code><span class="memberNameLink"><a href="../compress/CompressedFrameBlockFactory.html#compress(org.apache.sysds.runtime.frame.data.FrameBlock,int,org.apache.sysds.runtime.compress.workload.WTreeRoot)">compress</a></span>&#8203;(<a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;fb,
+        int&nbsp;k,
+        <a href="../../../compress/workload/WTreeRoot.html" title="class in org.apache.sysds.runtime.compress.workload">WTreeRoot</a>&nbsp;root)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>static <a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">CompressedFrameBlockFactory.</span><code><span class="memberNameLink"><a href="../compress/CompressedFrameBlockFactory.html#compress(org.apache.sysds.runtime.frame.data.FrameBlock,org.apache.sysds.runtime.frame.data.compress.FrameCompressionSettings)">compress</a></span>&#8203;(<a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;fb,
+        <a href="../compress/FrameCompressionSettings.html" title="class in org.apache.sysds.runtime.frame.data.compress">FrameCompressionSettings</a>&nbsp;cs)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>static <a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">CompressedFrameBlockFactory.</span><code><span class="memberNameLink"><a href="../compress/CompressedFrameBlockFactory.html#compress(org.apache.sysds.runtime.frame.data.FrameBlock,org.apache.sysds.runtime.frame.data.compress.FrameCompressionSettingsBuilder)">compress</a></span>&#8203;(<a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;fb,
+        <a href="../compress/FrameCompressionSettingsBuilder.html" title="class in org.apache.sysds.runtime.frame.data.compress">FrameCompressionSettingsBuilder</a>&nbsp;csb)</code></th>
+<td class="colLast">&nbsp;</td>
 </tr>
 </tbody>
 </table>
@@ -1122,6 +1266,12 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>static <a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">FrameLibApplySchema.</span><code><span class="memberNameLink"><a href="../lib/FrameLibApplySchema.html#applySchema(org.apache.sysds.runtime.frame.data.FrameBlock,org.apache.sysds.runtime.frame.data.FrameBlock)">applySchema</a></span>&#8203;(<a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;fb,
+           <a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;schema)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>static <a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">FrameLibApplySchema.</span><code><span class="memberNameLink"><a href="../lib/FrameLibApplySchema.html#applySchema(org.apache.sysds.runtime.frame.data.FrameBlock,org.apache.sysds.runtime.frame.data.FrameBlock,int)">applySchema</a></span>&#8203;(<a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;fb,
            <a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;schema,
            int&nbsp;k)</code></th>
@@ -1129,74 +1279,64 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <div class="block">Method to create a new FrameBlock where the given schema is applied, k is the parallelization degree.</div>
 </td>
 </tr>
+<tr class="rowColor">
+<td class="colFirst"><code>static <a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">FrameLibCompress.</span><code><span class="memberNameLink"><a href="../lib/FrameLibCompress.html#compress(org.apache.sysds.runtime.frame.data.FrameBlock,int)">compress</a></span>&#8203;(<a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;in,
+        int&nbsp;k)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
 <tr class="altColor">
+<td class="colFirst"><code>static <a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">FrameLibCompress.</span><code><span class="memberNameLink"><a href="../lib/FrameLibCompress.html#compress(org.apache.sysds.runtime.frame.data.FrameBlock,int,org.apache.sysds.runtime.compress.workload.WTreeRoot)">compress</a></span>&#8203;(<a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;in,
+        int&nbsp;k,
+        <a href="../../../compress/workload/WTreeRoot.html" title="class in org.apache.sysds.runtime.compress.workload">WTreeRoot</a>&nbsp;root)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
 <td class="colFirst"><code>static <a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">FrameFromMatrixBlock.</span><code><span class="memberNameLink"><a href="../lib/FrameFromMatrixBlock.html#convertToFrameBlock(org.apache.sysds.runtime.matrix.data.MatrixBlock,int)">convertToFrameBlock</a></span>&#8203;(<a href="../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;mb,
                    int&nbsp;k)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>static <a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">FrameFromMatrixBlock.</span><code><span class="memberNameLink"><a href="../lib/FrameFromMatrixBlock.html#convertToFrameBlock(org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.common.Types.ValueType%5B%5D,int)">convertToFrameBlock</a></span>&#8203;(<a href="../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;mb,
                    <a href="../../../../common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>[]&nbsp;schema,
                    int&nbsp;k)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>static <a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">FrameFromMatrixBlock.</span><code><span class="memberNameLink"><a href="../lib/FrameFromMatrixBlock.html#convertToFrameBlock(org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.common.Types.ValueType,int)">convertToFrameBlock</a></span>&#8203;(<a href="../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;mb,
                    <a href="../../../../common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;vt,
                    int&nbsp;k)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>static <a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">FrameLibDetectSchema.</span><code><span class="memberNameLink"><a href="../lib/FrameLibDetectSchema.html#detectSchema(org.apache.sysds.runtime.frame.data.FrameBlock,double,int)">detectSchema</a></span>&#8203;(<a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;in,
             double&nbsp;sampleFraction,
             int&nbsp;k)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>static <a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">FrameLibDetectSchema.</span><code><span class="memberNameLink"><a href="../lib/FrameLibDetectSchema.html#detectSchema(org.apache.sysds.runtime.frame.data.FrameBlock,int)">detectSchema</a></span>&#8203;(<a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;in,
             int&nbsp;k)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>static <a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">FrameUtil.</span><code><span class="memberNameLink"><a href="../lib/FrameUtil.html#mergeSchema(org.apache.sysds.runtime.frame.data.FrameBlock,org.apache.sysds.runtime.frame.data.FrameBlock)">mergeSchema</a></span>&#8203;(<a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;temp1,
            <a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;temp2)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>static <a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">FrameLibRemoveEmpty.</span><code><span class="memberNameLink"><a href="../lib/FrameLibRemoveEmpty.html#removeEmpty(org.apache.sysds.runtime.frame.data.FrameBlock,boolean,boolean,org.apache.sysds.runtime.matrix.data.MatrixBlock)">removeEmpty</a></span>&#8203;(<a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;fb,
            boolean&nbsp;rows,
            boolean&nbsp;emptyReturn,
            <a href="../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;select)</code></th>
-<td class="colLast">&nbsp;</td>
-</tr>
-</tbody>
-</table>
-<table class="useSummary">
-<caption><span>Methods in <a href="../lib/package-summary.html">org.apache.sysds.runtime.frame.data.lib</a> that return types with arguments of type <a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a></span><span class="tabEnd">&nbsp;</span></caption>
-<tr>
-<th class="colFirst" scope="col">Modifier and Type</th>
-<th class="colSecond" scope="col">Method</th>
-<th class="colLast" scope="col">Description</th>
-</tr>
-<tbody>
-<tr class="altColor">
-<td class="colFirst"><code>static org.apache.commons.lang3.tuple.Pair&lt;<a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>,&#8203;<a href="../compress/FrameCompressionStatistics.html" title="class in org.apache.sysds.runtime.frame.data.compress">FrameCompressionStatistics</a>&gt;</code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">FrameLibCompress.</span><code><span class="memberNameLink"><a href="../lib/FrameLibCompress.html#compress(org.apache.sysds.runtime.frame.data.FrameBlock,int)">compress</a></span>&#8203;(<a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;in,
-        int&nbsp;k)</code></th>
-<td class="colLast">&nbsp;</td>
-</tr>
-<tr class="rowColor">
-<td class="colFirst"><code>static org.apache.commons.lang3.tuple.Pair&lt;<a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>,&#8203;<a href="../compress/FrameCompressionStatistics.html" title="class in org.apache.sysds.runtime.frame.data.compress">FrameCompressionStatistics</a>&gt;</code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">FrameLibCompress.</span><code><span class="memberNameLink"><a href="../lib/FrameLibCompress.html#compress(org.apache.sysds.runtime.frame.data.FrameBlock,int,org.apache.sysds.runtime.compress.workload.WTreeRoot)">compress</a></span>&#8203;(<a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;in,
-        int&nbsp;k,
-        <a href="../../../compress/workload/WTreeRoot.html" title="class in org.apache.sysds.runtime.compress.workload">WTreeRoot</a>&nbsp;root)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 </tbody>
@@ -1249,6 +1389,12 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>static <a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">FrameLibApplySchema.</span><code><span class="memberNameLink"><a href="../lib/FrameLibApplySchema.html#applySchema(org.apache.sysds.runtime.frame.data.FrameBlock,org.apache.sysds.runtime.frame.data.FrameBlock)">applySchema</a></span>&#8203;(<a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;fb,
+           <a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;schema)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>static <a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">FrameLibApplySchema.</span><code><span class="memberNameLink"><a href="../lib/FrameLibApplySchema.html#applySchema(org.apache.sysds.runtime.frame.data.FrameBlock,org.apache.sysds.runtime.frame.data.FrameBlock,int)">applySchema</a></span>&#8203;(<a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;fb,
            <a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;schema,
            int&nbsp;k)</code></th>
@@ -1256,46 +1402,46 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <div class="block">Method to create a new FrameBlock where the given schema is applied, k is the parallelization degree.</div>
 </td>
 </tr>
-<tr class="altColor">
-<td class="colFirst"><code>static org.apache.commons.lang3.tuple.Pair&lt;<a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>,&#8203;<a href="../compress/FrameCompressionStatistics.html" title="class in org.apache.sysds.runtime.frame.data.compress">FrameCompressionStatistics</a>&gt;</code></td>
+<tr class="rowColor">
+<td class="colFirst"><code>static <a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">FrameLibCompress.</span><code><span class="memberNameLink"><a href="../lib/FrameLibCompress.html#compress(org.apache.sysds.runtime.frame.data.FrameBlock,int)">compress</a></span>&#8203;(<a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;in,
         int&nbsp;k)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
-<td class="colFirst"><code>static org.apache.commons.lang3.tuple.Pair&lt;<a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>,&#8203;<a href="../compress/FrameCompressionStatistics.html" title="class in org.apache.sysds.runtime.frame.data.compress">FrameCompressionStatistics</a>&gt;</code></td>
+<tr class="altColor">
+<td class="colFirst"><code>static <a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">FrameLibCompress.</span><code><span class="memberNameLink"><a href="../lib/FrameLibCompress.html#compress(org.apache.sysds.runtime.frame.data.FrameBlock,int,org.apache.sysds.runtime.compress.workload.WTreeRoot)">compress</a></span>&#8203;(<a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;in,
         int&nbsp;k,
         <a href="../../../compress/workload/WTreeRoot.html" title="class in org.apache.sysds.runtime.compress.workload">WTreeRoot</a>&nbsp;root)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>static <a href="../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">MatrixBlockFromFrame.</span><code><span class="memberNameLink"><a href="../lib/MatrixBlockFromFrame.html#convertToMatrixBlock(org.apache.sysds.runtime.frame.data.FrameBlock)">convertToMatrixBlock</a></span>&#8203;(<a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;frame)</code></th>
 <td class="colLast">
 <div class="block">Converts a frame block with arbitrary schema into a matrix block.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>static <a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">FrameLibDetectSchema.</span><code><span class="memberNameLink"><a href="../lib/FrameLibDetectSchema.html#detectSchema(org.apache.sysds.runtime.frame.data.FrameBlock,double,int)">detectSchema</a></span>&#8203;(<a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;in,
             double&nbsp;sampleFraction,
             int&nbsp;k)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>static <a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">FrameLibDetectSchema.</span><code><span class="memberNameLink"><a href="../lib/FrameLibDetectSchema.html#detectSchema(org.apache.sysds.runtime.frame.data.FrameBlock,int)">detectSchema</a></span>&#8203;(<a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;in,
             int&nbsp;k)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>static <a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">FrameUtil.</span><code><span class="memberNameLink"><a href="../lib/FrameUtil.html#mergeSchema(org.apache.sysds.runtime.frame.data.FrameBlock,org.apache.sysds.runtime.frame.data.FrameBlock)">mergeSchema</a></span>&#8203;(<a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;temp1,
            <a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;temp2)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>static <a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">FrameLibRemoveEmpty.</span><code><span class="memberNameLink"><a href="../lib/FrameLibRemoveEmpty.html#removeEmpty(org.apache.sysds.runtime.frame.data.FrameBlock,boolean,boolean,org.apache.sysds.runtime.matrix.data.MatrixBlock)">removeEmpty</a></span>&#8203;(<a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;fb,
            boolean&nbsp;rows,
@@ -1419,6 +1565,11 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
+<td class="colFirst"><code>scala.Tuple2&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Long.html?is-external=true" title="class or interface in java.lang" class="externalLink">Long</a>,&#8203;<a href="../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&gt;</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ParameterizedBuiltinSPInstruction.RDDTransformApplyFunction2.</span><code><span class="memberNameLink"><a href="../../../instructions/spark/ParameterizedBuiltinSPInstruction.RDDTransformApplyFunction2.html#call(scala.Tuple2)">call</a></span>&#8203;(scala.Tuple2&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Long.html?is-external=true" title="class or interface in java.lang" class="externalLink">Long</a>,&#8203;<a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&gt;&nbsp;in)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
 <td class="colFirst"><code>scala.Tuple2&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Long.html?is-external=true" title="class or interface in java.lang" class="externalLink">Long</a>,&#8203;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Long.html?is-external=true" title="class or interface in java.lang" class="externalLink">Long</a>&gt;</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">ParameterizedBuiltinSPInstruction.RDDTransformApplyOffsetFunction.</span><code><span class="memberNameLink"><a href="../../../instructions/spark/ParameterizedBuiltinSPInstruction.RDDTransformApplyOffsetFunction.html#call(scala.Tuple2)">call</a></span>&#8203;(scala.Tuple2&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Long.html?is-external=true" title="class or interface in java.lang" class="externalLink">Long</a>,&#8203;<a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&gt;&nbsp;in)</code></th>
 <td class="colLast">&nbsp;</td>
@@ -1712,21 +1863,27 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
+<td class="colFirst"><code>static scala.Tuple2&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Boolean.html?is-external=true" title="class or interface in java.lang" class="externalLink">Boolean</a>,&#8203;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Integer.html?is-external=true" title="class or interface in java.lang" class="externalLink">Integer</a>&gt;</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">FrameRDDAggregateUtils.</span><code><span class="memberNameLink"><a href="../../../instructions/spark/utils/FrameRDDAggregateUtils.html#checkRowAlignment(org.apache.spark.api.java.JavaPairRDD,int)">checkRowAlignment</a></span>&#8203;(org.apache.spark.api.java.JavaPairRDD&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Long.html?is-external=true" title="class or interface in java.lang" class="externalLink">Long</a>,&#8203;<a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&gt;&nbsp;in,
+                 int&nbsp;blen)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
 <td class="colFirst"><code>static <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;scala.Tuple2&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Long.html?is-external=true" title="class or interface in java.lang" class="externalLink">Long</a>,&#8203;<a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&gt;&gt;</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">SparkUtils.</span><code><span class="memberNameLink"><a href="../../../instructions/spark/utils/SparkUtils.html#fromIndexedFrameBlock(java.util.List)">fromIndexedFrameBlock</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="../../../matrix/data/Pair.html" title="class in org.apache.sysds.runtime.matrix.data">Pair</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Long.html?is-external=true" title="class or interface in java.lang" class="externalLink">Long</a>,&#8203;<a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&gt;&gt;&nbsp;in)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>static scala.Tuple2&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Long.html?is-external=true" title="class or interface in java.lang" class="externalLink">Long</a>,&#8203;<a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&gt;</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">SparkUtils.</span><code><span class="memberNameLink"><a href="../../../instructions/spark/utils/SparkUtils.html#fromIndexedFrameBlock(org.apache.sysds.runtime.matrix.data.Pair)">fromIndexedFrameBlock</a></span>&#8203;(<a href="../../../matrix/data/Pair.html" title="class in org.apache.sysds.runtime.matrix.data">Pair</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Long.html?is-external=true" title="class or interface in java.lang" class="externalLink">Long</a>,&#8203;<a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&gt;&nbsp;in)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>static org.apache.spark.api.java.JavaPairRDD&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Long.html?is-external=true" title="class or interface in java.lang" class="externalLink">Long</a>,&#8203;<a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&gt;</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">FrameRDDAggregateUtils.</span><code><span class="memberNameLink"><a href="../../../instructions/spark/utils/FrameRDDAggregateUtils.html#mergeByKey(org.apache.spark.api.java.JavaPairRDD)">mergeByKey</a></span>&#8203;(org.apache.spark.api.java.JavaPairRDD&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Long.html?is-external=true" title="class or interface in java.lang" class="externalLink">Long</a>,&#8203;<a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&gt;&nbsp;in)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>static <a href="../../../matrix/data/Pair.html" title="class in org.apache.sysds.runtime.matrix.data">Pair</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Long.html?is-external=true" title="class or interface in java.lang" class="externalLink">Long</a>,&#8203;<a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&gt;</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">SparkUtils.</span><code><span class="memberNameLink"><a href="../../../instructions/spark/utils/SparkUtils.html#toIndexedFrameBlock(scala.Tuple2)">toIndexedFrameBlock</a></span>&#8203;(scala.Tuple2&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Long.html?is-external=true" title="class or interface in java.lang" class="externalLink">Long</a>,&#8203;<a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&gt;&nbsp;in)</code></th>
 <td class="colLast">&nbsp;</td>
@@ -1981,24 +2138,6 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <th class="colSecond" scope="row"><span class="typeNameLabel">SampleProperties.</span><code><span class="memberNameLink"><a href="../../../iogen/SampleProperties.html#getSampleFrame()">getSampleFrame</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
-<td class="colFirst"><code><a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">FrameGenerateReader.</span><code><span class="memberNameLink"><a href="../../../iogen/FrameGenerateReader.html#readFrameFromHDFS(java.lang.String,org.apache.sysds.common.Types.ValueType%5B%5D,java.lang.String%5B%5D,long,long)">readFrameFromHDFS</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;fname,
-                 <a href="../../../../common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>[]&nbsp;schema,
-                 <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>[]&nbsp;names,
-                 long&nbsp;rlen,
-                 long&nbsp;clen)</code></th>
-<td class="colLast">&nbsp;</td>
-</tr>
-<tr class="altColor">
-<td class="colFirst"><code><a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">FrameGenerateReader.</span><code><span class="memberNameLink"><a href="../../../iogen/FrameGenerateReader.html#readFrameFromInputStream(java.io.InputStream,org.apache.sysds.common.Types.ValueType%5B%5D,java.lang.String%5B%5D,long,long)">readFrameFromInputStream</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/InputStream.html?is-external=true" title="class or interface in java.io" class="externalLink">InputStream</a>&nbsp;is,
-                        <a href="../../../../common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>[]&nbsp;schema,
-                        <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>[]&nbsp;names,
-                        long&nbsp;rlen,
-                        long&nbsp;clen)</code></th>
-<td class="colLast">&nbsp;</td>
-</tr>
 </tbody>
 </table>
 <table class="useSummary">
@@ -2024,18 +2163,82 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tbody>
 <tr class="altColor">
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../../iogen/ReaderMapping.FrameReaderMapping.html#%3Cinit%3E(java.lang.String,org.apache.sysds.runtime.frame.data.FrameBlock)">FrameReaderMapping</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;raw,
-                  <a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;frame)</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../../iogen/FormatIdentifyer.html#%3Cinit%3E(java.lang.String,org.apache.sysds.runtime.frame.data.FrameBlock)">FormatIdentifyer</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;raw,
+                <a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;frame)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../../iogen/GenerateReader.GenerateReaderFrame.html#%3Cinit%3E(java.lang.String,org.apache.sysds.runtime.frame.data.FrameBlock)">GenerateReaderFrame</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;sampleRaw,
-                   <a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;sampleFrame)</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../../iogen/GenerateReader.GenerateReaderFrame.html#%3Cinit%3E(java.lang.String,org.apache.sysds.runtime.frame.data.FrameBlock,boolean)">GenerateReaderFrame</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;sampleRaw,
+                   <a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;sampleFrame,
+                   boolean&nbsp;parallel)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../../iogen/ReaderMapping.html#%3Cinit%3E(java.lang.String,org.apache.sysds.runtime.frame.data.FrameBlock)">ReaderMapping</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;raw,
+             <a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;frame)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../../iogen/ReaderMappingIndex.html#%3Cinit%3E(java.lang.String,org.apache.sysds.runtime.frame.data.FrameBlock)">ReaderMappingIndex</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;raw,
+                  <a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;frame)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../../iogen/SampleProperties.html#%3Cinit%3E(java.lang.String,org.apache.sysds.runtime.frame.data.FrameBlock)">SampleProperties</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;sampleRaw,
                 <a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;sampleFrame)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+</tbody>
+</table>
+</section>
+</li>
+<li class="blockList">
+<section><a id="org.apache.sysds.runtime.iogen.template">
+<!--   -->
+</a>
+<h3>Uses of <a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a> in <a href="../../../iogen/template/package-summary.html">org.apache.sysds.runtime.iogen.template</a></h3>
+<table class="useSummary">
+<caption><span>Methods in <a href="../../../iogen/template/package-summary.html">org.apache.sysds.runtime.iogen.template</a> that return <a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colSecond" scope="col">Method</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">FrameGenerateReader.</span><code><span class="memberNameLink"><a href="../../../iogen/template/FrameGenerateReader.html#readFrameFromHDFS(java.lang.String,org.apache.sysds.common.Types.ValueType%5B%5D,java.lang.String%5B%5D,long,long)">readFrameFromHDFS</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;fname,
+                 <a href="../../../../common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>[]&nbsp;schema,
+                 <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>[]&nbsp;names,
+                 long&nbsp;rlen,
+                 long&nbsp;clen)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">FrameGenerateReaderParallel.</span><code><span class="memberNameLink"><a href="../../../iogen/template/FrameGenerateReaderParallel.html#readFrameFromHDFS(java.lang.String,org.apache.sysds.common.Types.ValueType%5B%5D,java.lang.String%5B%5D,long,long)">readFrameFromHDFS</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;fname,
+                 <a href="../../../../common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>[]&nbsp;schema,
+                 <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>[]&nbsp;names,
+                 long&nbsp;rlen,
+                 long&nbsp;clen)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">FrameGenerateReader.</span><code><span class="memberNameLink"><a href="../../../iogen/template/FrameGenerateReader.html#readFrameFromInputStream(java.io.InputStream,org.apache.sysds.common.Types.ValueType%5B%5D,java.lang.String%5B%5D,long,long)">readFrameFromInputStream</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/InputStream.html?is-external=true" title="class or interface in java.io" class="externalLink">InputStream</a>&nbsp;is,
+                        <a href="../../../../common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>[]&nbsp;schema,
+                        <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>[]&nbsp;names,
+                        long&nbsp;rlen,
+                        long&nbsp;clen)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">FrameGenerateReaderParallel.</span><code><span class="memberNameLink"><a href="../../../iogen/template/FrameGenerateReaderParallel.html#readFrameFromInputStream(java.io.InputStream,org.apache.sysds.common.Types.ValueType%5B%5D,java.lang.String%5B%5D,long,long)">readFrameFromInputStream</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/InputStream.html?is-external=true" title="class or interface in java.io" class="externalLink">InputStream</a>&nbsp;is,
+                        <a href="../../../../common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>[]&nbsp;schema,
+                        <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>[]&nbsp;names,
+                        long&nbsp;rlen,
+                        long&nbsp;clen)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 </tbody>
@@ -2347,34 +2550,39 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code><a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ColumnEncoderWordEmbedding.</span><code><span class="memberNameLink"><a href="../../../transform/encode/ColumnEncoderWordEmbedding.html#getMetaData(org.apache.sysds.runtime.frame.data.FrameBlock)">getMetaData</a></span>&#8203;(<a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;out)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">Encoder.</span><code><span class="memberNameLink"><a href="../../../transform/encode/Encoder.html#getMetaData(org.apache.sysds.runtime.frame.data.FrameBlock)">getMetaData</a></span>&#8203;(<a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;out)</code></th>
 <td class="colLast">
 <div class="block">Construct a frame block out of the transform meta data.</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code><a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">EncoderMVImpute.</span><code><span class="memberNameLink"><a href="../../../transform/encode/EncoderMVImpute.html#getMetaData(org.apache.sysds.runtime.frame.data.FrameBlock)">getMetaData</a></span>&#8203;(<a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;out)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code><a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">EncoderOmit.</span><code><span class="memberNameLink"><a href="../../../transform/encode/EncoderOmit.html#getMetaData(org.apache.sysds.runtime.frame.data.FrameBlock)">getMetaData</a></span>&#8203;(<a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;out)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>abstract <a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">LegacyEncoder.</span><code><span class="memberNameLink"><a href="../../../transform/encode/LegacyEncoder.html#getMetaData(org.apache.sysds.runtime.frame.data.FrameBlock)">getMetaData</a></span>&#8203;(<a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;out)</code></th>
 <td class="colLast">
 <div class="block">Construct a frame block out of the transform meta data.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code><a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">MultiColumnEncoder.</span><code><span class="memberNameLink"><a href="../../../transform/encode/MultiColumnEncoder.html#getMetaData(org.apache.sysds.runtime.frame.data.FrameBlock)">getMetaData</a></span>&#8203;(<a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;meta)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code><a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">MultiColumnEncoder.</span><code><span class="memberNameLink"><a href="../../../transform/encode/MultiColumnEncoder.html#getMetaData(org.apache.sysds.runtime.frame.data.FrameBlock,int)">getMetaData</a></span>&#8203;(<a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;meta,
            int&nbsp;k)</code></th>
@@ -2427,29 +2635,34 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ColumnEncoderWordEmbedding.</span><code><span class="memberNameLink"><a href="../../../transform/encode/ColumnEncoderWordEmbedding.html#allocateMetaData(org.apache.sysds.runtime.frame.data.FrameBlock)">allocateMetaData</a></span>&#8203;(<a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;meta)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">Encoder.</span><code><span class="memberNameLink"><a href="../../../transform/encode/Encoder.html#allocateMetaData(org.apache.sysds.runtime.frame.data.FrameBlock)">allocateMetaData</a></span>&#8203;(<a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;meta)</code></th>
 <td class="colLast">
 <div class="block">Pre-allocate a FrameBlock for metadata collection.</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">MultiColumnEncoder.</span><code><span class="memberNameLink"><a href="../../../transform/encode/MultiColumnEncoder.html#allocateMetaData(org.apache.sysds.runtime.frame.data.FrameBlock)">allocateMetaData</a></span>&#8203;(<a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;meta)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code><a href="../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">EncoderMVImpute.</span><code><span class="memberNameLink"><a href="../../../transform/encode/EncoderMVImpute.html#apply(org.apache.sysds.runtime.frame.data.FrameBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock)">apply</a></span>&#8203;(<a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;in,
      <a href="../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;out)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code><a href="../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">EncoderOmit.</span><code><span class="memberNameLink"><a href="../../../transform/encode/EncoderOmit.html#apply(org.apache.sysds.runtime.frame.data.FrameBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock)">apply</a></span>&#8203;(<a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;in,
      <a href="../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;out)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>abstract <a href="../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">LegacyEncoder.</span><code><span class="memberNameLink"><a href="../../../transform/encode/LegacyEncoder.html#apply(org.apache.sysds.runtime.frame.data.FrameBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock)">apply</a></span>&#8203;(<a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;in,
      <a href="../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;out)</code></th>
@@ -2457,65 +2670,65 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <div class="block">Encode input data blockwise according to existing transform meta data (transform apply).</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">EncoderMVImpute.</span><code><span class="memberNameLink"><a href="../../../transform/encode/EncoderMVImpute.html#build(org.apache.sysds.runtime.frame.data.FrameBlock)">build</a></span>&#8203;(<a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;in)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">EncoderOmit.</span><code><span class="memberNameLink"><a href="../../../transform/encode/EncoderOmit.html#build(org.apache.sysds.runtime.frame.data.FrameBlock)">build</a></span>&#8203;(<a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;in)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>abstract void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">LegacyEncoder.</span><code><span class="memberNameLink"><a href="../../../transform/encode/LegacyEncoder.html#build(org.apache.sysds.runtime.frame.data.FrameBlock)">build</a></span>&#8203;(<a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;in)</code></th>
 <td class="colLast">
 <div class="block">Build the transform meta data for the given block input.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">ColumnEncoder.</span><code><span class="memberNameLink"><a href="../../../transform/encode/ColumnEncoder.html#buildPartial(org.apache.sysds.runtime.frame.data.FrameBlock)">buildPartial</a></span>&#8203;(<a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;in)</code></th>
 <td class="colLast">
 <div class="block">Partial build of internal data structures (e.g., in distributed spark operations).</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">ColumnEncoderBin.</span><code><span class="memberNameLink"><a href="../../../transform/encode/ColumnEncoderBin.html#buildPartial(org.apache.sysds.runtime.frame.data.FrameBlock)">buildPartial</a></span>&#8203;(<a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;in)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">ColumnEncoderComposite.</span><code><span class="memberNameLink"><a href="../../../transform/encode/ColumnEncoderComposite.html#buildPartial(org.apache.sysds.runtime.frame.data.FrameBlock)">buildPartial</a></span>&#8203;(<a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;in)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">ColumnEncoderRecode.</span><code><span class="memberNameLink"><a href="../../../transform/encode/ColumnEncoderRecode.html#buildPartial(org.apache.sysds.runtime.frame.data.FrameBlock)">buildPartial</a></span>&#8203;(<a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;in)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">Encoder.</span><code><span class="memberNameLink"><a href="../../../transform/encode/Encoder.html#buildPartial(org.apache.sysds.runtime.frame.data.FrameBlock)">buildPartial</a></span>&#8203;(<a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;in)</code></th>
 <td class="colLast">
 <div class="block">Partial build of internal data structures (e.g., in distributed spark operations).</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">LegacyEncoder.</span><code><span class="memberNameLink"><a href="../../../transform/encode/LegacyEncoder.html#buildPartial(org.apache.sysds.runtime.frame.data.FrameBlock)">buildPartial</a></span>&#8203;(<a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;in)</code></th>
 <td class="colLast">
 <div class="block">Partial build of internal data structures (e.g., in distributed spark operations).</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">MultiColumnEncoder.</span><code><span class="memberNameLink"><a href="../../../transform/encode/MultiColumnEncoder.html#buildPartial(org.apache.sysds.runtime.frame.data.FrameBlock)">buildPartial</a></span>&#8203;(<a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;in)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>static <a href="../../../transform/encode/MultiColumnEncoder.html" title="class in org.apache.sysds.runtime.transform.encode">MultiColumnEncoder</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">EncoderFactory.</span><code><span class="memberNameLink"><a href="../../../transform/encode/EncoderFactory.html#createEncoder(java.lang.String,java.lang.String%5B%5D,int,org.apache.sysds.runtime.frame.data.FrameBlock)">createEncoder</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;spec,
              <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>[]&nbsp;colnames,
@@ -2523,7 +2736,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
              <a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;meta)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>static <a href="../../../transform/encode/MultiColumnEncoder.html" title="class in org.apache.sysds.runtime.transform.encode">MultiColumnEncoder</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">EncoderFactory.</span><code><span class="memberNameLink"><a href="../../../transform/encode/EncoderFactory.html#createEncoder(java.lang.String,java.lang.String%5B%5D,int,org.apache.sysds.runtime.frame.data.FrameBlock,int,int)">createEncoder</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;spec,
              <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>[]&nbsp;colnames,
@@ -2533,13 +2746,43 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
              int&nbsp;maxCol)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
+<tr class="rowColor">
+<td class="colFirst"><code>static <a href="../../../transform/encode/MultiColumnEncoder.html" title="class in org.apache.sysds.runtime.transform.encode">MultiColumnEncoder</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">EncoderFactory.</span><code><span class="memberNameLink"><a href="../../../transform/encode/EncoderFactory.html#createEncoder(java.lang.String,java.lang.String%5B%5D,int,org.apache.sysds.runtime.frame.data.FrameBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock)">createEncoder</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;spec,
+             <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>[]&nbsp;colnames,
+             int&nbsp;clen,
+             <a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;meta,
+             <a href="../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;embeddings)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
 <tr class="altColor">
+<td class="colFirst"><code>static <a href="../../../transform/encode/MultiColumnEncoder.html" title="class in org.apache.sysds.runtime.transform.encode">MultiColumnEncoder</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">EncoderFactory.</span><code><span class="memberNameLink"><a href="../../../transform/encode/EncoderFactory.html#createEncoder(java.lang.String,java.lang.String%5B%5D,int,org.apache.sysds.runtime.frame.data.FrameBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock,int,int)">createEncoder</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;spec,
+             <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>[]&nbsp;colnames,
+             int&nbsp;clen,
+             <a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;meta,
+             <a href="../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;embeddings,
+             int&nbsp;minCol,
+             int&nbsp;maxCol)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
 <td class="colFirst"><code>static <a href="../../../transform/encode/MultiColumnEncoder.html" title="class in org.apache.sysds.runtime.transform.encode">MultiColumnEncoder</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">EncoderFactory.</span><code><span class="memberNameLink"><a href="../../../transform/encode/EncoderFactory.html#createEncoder(java.lang.String,java.lang.String%5B%5D,org.apache.sysds.common.Types.ValueType%5B%5D,int,org.apache.sysds.runtime.frame.data.FrameBlock)">createEncoder</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;spec,
              <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>[]&nbsp;colnames,
              <a href="../../../../common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>[]&nbsp;schema,
              int&nbsp;clen,
              <a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;meta)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>static <a href="../../../transform/encode/MultiColumnEncoder.html" title="class in org.apache.sysds.runtime.transform.encode">MultiColumnEncoder</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">EncoderFactory.</span><code><span class="memberNameLink"><a href="../../../transform/encode/EncoderFactory.html#createEncoder(java.lang.String,java.lang.String%5B%5D,org.apache.sysds.common.Types.ValueType%5B%5D,int,org.apache.sysds.runtime.frame.data.FrameBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock)">createEncoder</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;spec,
+             <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>[]&nbsp;colnames,
+             <a href="../../../../common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>[]&nbsp;schema,
+             int&nbsp;clen,
+             <a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;meta,
+             <a href="../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;embeddings)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
@@ -2561,25 +2804,34 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
+<td class="colFirst"><code>static <a href="../../../transform/encode/MultiColumnEncoder.html" title="class in org.apache.sysds.runtime.transform.encode">MultiColumnEncoder</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">EncoderFactory.</span><code><span class="memberNameLink"><a href="../../../transform/encode/EncoderFactory.html#createEncoder(java.lang.String,java.lang.String%5B%5D,org.apache.sysds.common.Types.ValueType%5B%5D,org.apache.sysds.runtime.frame.data.FrameBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock)">createEncoder</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;spec,
+             <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>[]&nbsp;colnames,
+             <a href="../../../../common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>[]&nbsp;schema,
+             <a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;meta,
+             <a href="../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;embeddings)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
 <td class="colFirst"><code>static <a href="../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">CompressedEncode.</span><code><span class="memberNameLink"><a href="../../../transform/encode/CompressedEncode.html#encode(org.apache.sysds.runtime.transform.encode.MultiColumnEncoder,org.apache.sysds.runtime.frame.data.FrameBlock,int)">encode</a></span>&#8203;(<a href="../../../transform/encode/MultiColumnEncoder.html" title="class in org.apache.sysds.runtime.transform.encode">MultiColumnEncoder</a>&nbsp;enc,
       <a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;in,
       int&nbsp;k)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code><a href="../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">EncoderMVImpute.</span><code><span class="memberNameLink"><a href="../../../transform/encode/EncoderMVImpute.html#encode(org.apache.sysds.runtime.frame.data.FrameBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock)">encode</a></span>&#8203;(<a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;in,
       <a href="../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;out)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code><a href="../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">EncoderOmit.</span><code><span class="memberNameLink"><a href="../../../transform/encode/EncoderOmit.html#encode(org.apache.sysds.runtime.frame.data.FrameBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock)">encode</a></span>&#8203;(<a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;in,
       <a href="../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;out)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>abstract <a href="../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">LegacyEncoder.</span><code><span class="memberNameLink"><a href="../../../transform/encode/LegacyEncoder.html#encode(org.apache.sysds.runtime.frame.data.FrameBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock)">encode</a></span>&#8203;(<a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;in,
       <a href="../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;out)</code></th>
@@ -2587,14 +2839,14 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <div class="block">Block encode: build and apply (transform encode).</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code><a href="../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">ColumnEncoder.</span><code><span class="memberNameLink"><a href="../../../transform/encode/ColumnEncoder.html#getColMapping(org.apache.sysds.runtime.frame.data.FrameBlock)">getColMapping</a></span>&#8203;(<a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;meta)</code></th>
 <td class="colLast">
 <div class="block">Obtain the column mapping of encoded frames based on the passed meta data frame.</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code><a href="../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">LegacyEncoder.</span><code><span class="memberNameLink"><a href="../../../transform/encode/LegacyEncoder.html#getColMapping(org.apache.sysds.runtime.frame.data.FrameBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock)">getColMapping</a></span>&#8203;(<a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;meta,
              <a href="../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;out)</code></th>
@@ -2602,46 +2854,51 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <div class="block">Obtain the column mapping of encoded frames based on the passed meta data frame.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code><a href="../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">MultiColumnEncoder.</span><code><span class="memberNameLink"><a href="../../../transform/encode/MultiColumnEncoder.html#getColMapping(org.apache.sysds.runtime.frame.data.FrameBlock)">getColMapping</a></span>&#8203;(<a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;meta)</code></th>
 <td class="colLast">
 <div class="block">Obtain the column mapping of encoded frames based on the passed meta data frame.</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code><a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">ColumnEncoderBin.</span><code><span class="memberNameLink"><a href="../../../transform/encode/ColumnEncoderBin.html#getMetaData(org.apache.sysds.runtime.frame.data.FrameBlock)">getMetaData</a></span>&#8203;(<a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;meta)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code><a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">ColumnEncoderComposite.</span><code><span class="memberNameLink"><a href="../../../transform/encode/ColumnEncoderComposite.html#getMetaData(org.apache.sysds.runtime.frame.data.FrameBlock)">getMetaData</a></span>&#8203;(<a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;out)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code><a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">ColumnEncoderDummycode.</span><code><span class="memberNameLink"><a href="../../../transform/encode/ColumnEncoderDummycode.html#getMetaData(org.apache.sysds.runtime.frame.data.FrameBlock)">getMetaData</a></span>&#8203;(<a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;meta)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code><a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">ColumnEncoderFeatureHash.</span><code><span class="memberNameLink"><a href="../../../transform/encode/ColumnEncoderFeatureHash.html#getMetaData(org.apache.sysds.runtime.frame.data.FrameBlock)">getMetaData</a></span>&#8203;(<a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;meta)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code><a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">ColumnEncoderPassThrough.</span><code><span class="memberNameLink"><a href="../../../transform/encode/ColumnEncoderPassThrough.html#getMetaData(org.apache.sysds.runtime.frame.data.FrameBlock)">getMetaData</a></span>&#8203;(<a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;meta)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code><a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">ColumnEncoderRecode.</span><code><span class="memberNameLink"><a href="../../../transform/encode/ColumnEncoderRecode.html#getMetaData(org.apache.sysds.runtime.frame.data.FrameBlock)">getMetaData</a></span>&#8203;(<a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;meta)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code><a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">ColumnEncoderUDF.</span><code><span class="memberNameLink"><a href="../../../transform/encode/ColumnEncoderUDF.html#getMetaData(org.apache.sysds.runtime.frame.data.FrameBlock)">getMetaData</a></span>&#8203;(<a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;meta)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ColumnEncoderWordEmbedding.</span><code><span class="memberNameLink"><a href="../../../transform/encode/ColumnEncoderWordEmbedding.html#getMetaData(org.apache.sysds.runtime.frame.data.FrameBlock)">getMetaData</a></span>&#8203;(<a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;out)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
@@ -2718,34 +2975,39 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ColumnEncoderWordEmbedding.</span><code><span class="memberNameLink"><a href="../../../transform/encode/ColumnEncoderWordEmbedding.html#initMetaData(org.apache.sysds.runtime.frame.data.FrameBlock)">initMetaData</a></span>&#8203;(<a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;meta)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">Encoder.</span><code><span class="memberNameLink"><a href="../../../transform/encode/Encoder.html#initMetaData(org.apache.sysds.runtime.frame.data.FrameBlock)">initMetaData</a></span>&#8203;(<a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;meta)</code></th>
 <td class="colLast">
 <div class="block">Sets up the required meta data for a subsequent call to apply.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">EncoderMVImpute.</span><code><span class="memberNameLink"><a href="../../../transform/encode/EncoderMVImpute.html#initMetaData(org.apache.sysds.runtime.frame.data.FrameBlock)">initMetaData</a></span>&#8203;(<a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;meta)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">EncoderOmit.</span><code><span class="memberNameLink"><a href="../../../transform/encode/EncoderOmit.html#initMetaData(org.apache.sysds.runtime.frame.data.FrameBlock)">initMetaData</a></span>&#8203;(<a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;meta)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>abstract void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">LegacyEncoder.</span><code><span class="memberNameLink"><a href="../../../transform/encode/LegacyEncoder.html#initMetaData(org.apache.sysds.runtime.frame.data.FrameBlock)">initMetaData</a></span>&#8203;(<a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;meta)</code></th>
 <td class="colLast">
 <div class="block">Sets up the required meta data for a subsequent call to apply.</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">MultiColumnEncoder.</span><code><span class="memberNameLink"><a href="../../../transform/encode/MultiColumnEncoder.html#initMetaData(org.apache.sysds.runtime.frame.data.FrameBlock)">initMetaData</a></span>&#8203;(<a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;meta)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">MultiColumnEncoder.</span><code><span class="memberNameLink"><a href="../../../transform/encode/MultiColumnEncoder.html#legacyBuild(org.apache.sysds.runtime.frame.data.FrameBlock)">legacyBuild</a></span>&#8203;(<a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.frame.data">FrameBlock</a>&nbsp;in)</code></th>
 <td class="colLast">&nbsp;</td>

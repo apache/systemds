@@ -41,12 +41,14 @@ public class LineageCacheStatistics {
 	private static final LongAdder _ctimeFSWrite    = new LongAdder();
 	private static final LongAdder _ctimeSaved      = new LongAdder();
 	private static final LongAdder _ctimeMissed     = new LongAdder();
+	private static final LongAdder _ctimeProbe      = new LongAdder();
 	// Bellow entries are specific to gpu lineage cache
 	private static final LongAdder _numHitsGpu      = new LongAdder();
-	private static final LongAdder _numAsyncEvictGpu= new LongAdder();
+	private static final LongAdder _numPrefetchGpu= new LongAdder();
 	private static final LongAdder _numSyncEvictGpu = new LongAdder();
 	private static final LongAdder _numRecycleGpu   = new LongAdder();
 	private static final LongAdder _numDelGpu       = new LongAdder();
+	private static final LongAdder _numHitsDelGpu   = new LongAdder();
 	private static final LongAdder _evtimeGpu       = new LongAdder();
 	// Below entries are specific to Spark instructions
 	private static final LongAdder _numHitsRdd      = new LongAdder();
@@ -70,12 +72,14 @@ public class LineageCacheStatistics {
 		_ctimeFSWrite.reset();
 		_ctimeSaved.reset();
 		_ctimeMissed.reset();
+		_ctimeProbe.reset();
 		_evtimeGpu.reset();
 		_numHitsGpu.reset();
-		_numAsyncEvictGpu.reset();
+		_numPrefetchGpu.reset();
 		_numSyncEvictGpu.reset();
 		_numRecycleGpu.reset();
 		_numDelGpu.reset();
+		_numHitsDelGpu.reset();
 		_numHitsRdd.reset();
 		_numHitsSparkActions.reset();
 		_numHitsRddPersist.reset();
@@ -191,6 +195,10 @@ public class LineageCacheStatistics {
 		_ctimeMissed.add(delta);
 	}
 
+	public static void incrementProbeTime(long delta) {
+		_ctimeProbe.add(delta);
+	}
+
 	public static long getMultiLevelFnHits() {
 		return _numHitsFunc.longValue();
 	}
@@ -204,9 +212,9 @@ public class LineageCacheStatistics {
 		_numHitsGpu.increment();
 	}
 
-	public static void incrementGpuAsyncEvicts() {
-		// Number of gpu cache entries moved to cpu cache via the background thread
-		_numAsyncEvictGpu.increment();
+	public static void incrementGpuPrefetch() {
+		// Number of reuse of GPU to host prefetches (asynchronous)
+		_numPrefetchGpu.increment();
 	}
 
 	public static void incrementGpuSyncEvicts() {
@@ -222,6 +230,11 @@ public class LineageCacheStatistics {
 	public static void incrementGpuDel() {
 		// Number of gpu cached pointers deleted to make space
 		_numDelGpu.increment();
+	}
+
+	public static void incrementDelHitsGpu() {
+		// Number of hits on pointers that are deleted/recycled before
+		_numHitsDelGpu.increment();
 	}
 
 	public static void incrementEvictTimeGpu(long delta) {
@@ -303,6 +316,8 @@ public class LineageCacheStatistics {
 		sb.append(String.format("%.3f", ((double)_ctimeSaved.longValue())/1000000000)); //in sec
 		sb.append("/");
 		sb.append(String.format("%.3f", ((double)_ctimeMissed.longValue())/1000000000)); //in sec
+		sb.append("/");
+		sb.append(String.format("%.3f", ((double)_ctimeProbe.longValue())/1000000000)); //in sec
 		return sb.toString();
 	}
 
@@ -310,9 +325,7 @@ public class LineageCacheStatistics {
 		StringBuilder sb = new StringBuilder();
 		sb.append(_numHitsGpu.longValue());
 		sb.append("/");
-		sb.append(_numAsyncEvictGpu.longValue());
-		sb.append("/");
-		sb.append(_numSyncEvictGpu.longValue());
+		sb.append(_numPrefetchGpu.longValue());
 		return sb.toString();
 	}
 
@@ -321,6 +334,8 @@ public class LineageCacheStatistics {
 		sb.append(_numRecycleGpu.longValue());
 		sb.append("/");
 		sb.append(_numDelGpu.longValue());
+		sb.append("/");
+		sb.append(_numHitsDelGpu.longValue());
 		return sb.toString();
 	}
 
@@ -331,7 +346,7 @@ public class LineageCacheStatistics {
 	}
 
 	public static boolean ifGpuStats() {
-		return (_numHitsGpu.longValue() + _numAsyncEvictGpu.longValue()
+		return (_numHitsGpu.longValue() + _numPrefetchGpu.longValue()
 			+ _numSyncEvictGpu.longValue() + _numRecycleGpu.longValue()
 			+ _numDelGpu.longValue() + _evtimeGpu.longValue()) != 0;
 	}
@@ -356,6 +371,6 @@ public class LineageCacheStatistics {
 
 	public static boolean ifSparkStats() {
 		return (_numHitsSparkActions.longValue() + _numHitsRdd.longValue()
-		+ _numHitsRddPersist.longValue() + _numRddUnpersist.longValue()) != 0;
+		+ _numHitsRddPersist.longValue() + _numRddPersist.longValue()) != 0;
 	}
 }

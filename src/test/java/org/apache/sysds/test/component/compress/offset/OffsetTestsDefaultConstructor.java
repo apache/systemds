@@ -26,6 +26,7 @@ import java.util.Collection;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.colgroup.offset.AOffset;
 import org.apache.sysds.runtime.compress.colgroup.offset.OffsetFactory;
 import org.junit.Test;
@@ -39,6 +40,10 @@ public class OffsetTestsDefaultConstructor {
 
 	private static final long sizeTolerance = 100;
 
+	static {
+		CompressedMatrixBlock.debug = true;
+	}
+	
 	public int[] data;
 	private AOffset o;
 
@@ -106,11 +111,11 @@ public class OffsetTestsDefaultConstructor {
 	}
 
 	@Test
-	public void testMemoryEstimate(){
-		final long est = OffsetFactory.estimateInMemorySize(data.length, data[data.length -1]);
+	public void testMemoryEstimate() {
+		final long est = OffsetFactory.estimateInMemorySize(data.length, data[data.length - 1]);
 		final long act = o.getInMemorySize();
 
-		if(!( act <= est + sizeTolerance))
+		if(!(act <= est + sizeTolerance))
 			fail("In memory is not smaller than estimate " + est + " " + act);
 	}
 }

@@ -80,7 +80,14 @@ public class LongArray extends Array<Long> {
 
 	@Override
 	public void set(int rl, int ru, Array<Long> value, int rlSrc) {
-		System.arraycopy((long[]) value.get(), rlSrc, _data, rl, ru - rl + 1);
+		try {
+			// try system array copy.
+			// but if it does not work, default to get.
+			System.arraycopy(value.get(), rlSrc, _data, rl, ru - rl + 1);
+		}
+		catch(Exception e) {
+			super.set(rl, ru, value, rlSrc);
+		}
 	}
 
 	@Override
@@ -118,7 +125,7 @@ public class LongArray extends Array<Long> {
 		final int endSize = this._size + other.size();
 		final long[] ret = new long[endSize];
 		System.arraycopy(_data, 0, ret, 0, this._size);
-		System.arraycopy((long[]) other.get(), 0, ret, this._size, other.size());
+		System.arraycopy(other.get(), 0, ret, this._size, other.size());
 		if(other instanceof OptionalArray)
 			return OptionalArray.appendOther((OptionalArray<Long>) other, new LongArray(ret));
 		else
@@ -175,7 +182,7 @@ public class LongArray extends Array<Long> {
 
 	@Override
 	public Pair<ValueType, Boolean> analyzeValueType() {
-		return new Pair<ValueType, Boolean>(ValueType.INT64, false);
+		return new Pair<>(ValueType.INT64, false);
 	}
 
 	@Override
@@ -223,7 +230,7 @@ public class LongArray extends Array<Long> {
 	protected Array<Double> changeTypeDouble() {
 		double[] ret = new double[size()];
 		for(int i = 0; i < size(); i++)
-			ret[i] = (double) _data[i];
+			ret[i] = _data[i];
 		return new DoubleArray(ret);
 	}
 
@@ -231,7 +238,7 @@ public class LongArray extends Array<Long> {
 	protected Array<Float> changeTypeFloat() {
 		float[] ret = new float[size()];
 		for(int i = 0; i < size(); i++)
-			ret[i] = (float) _data[i];
+			ret[i] = _data[i];
 		return new FloatArray(ret);
 	}
 
@@ -239,7 +246,7 @@ public class LongArray extends Array<Long> {
 	protected Array<Integer> changeTypeInteger() {
 		int[] ret = new int[size()];
 		for(int i = 0; i < size(); i++) {
-			if(_data[i] != (long) (int) _data[i])
+			if(Math.abs(_data[i]) > Integer.MAX_VALUE )
 				throw new DMLRuntimeException("Unable to change to integer from long array because of value:" + _data[i]);
 			ret[i] = (int) _data[i];
 		}
@@ -249,6 +256,11 @@ public class LongArray extends Array<Long> {
 	@Override
 	protected Array<Long> changeTypeLong() {
 		return this;
+	}
+
+	@Override
+	protected Array<Object> changeTypeHash64() {
+		return new HashLongArray(_data);
 	}
 
 	@Override
@@ -333,10 +345,22 @@ public class LongArray extends Array<Long> {
 		return _data[i] != 0;
 	}
 
+	@Override
+	public double hashDouble(int idx) {
+		return Long.hashCode(_data[idx]);
+	}
 
 	@Override
-	public double hashDouble(int idx){
-		return Long.hashCode(_data[idx]);
+	public boolean equals(Array<Long> other) {
+		if(other instanceof LongArray)
+			return Arrays.equals(_data, ((LongArray) other)._data);
+		else
+			return false;
+	}
+
+	@Override
+	public boolean possiblyContainsNaN(){
+		return false;
 	}
 
 	@Override

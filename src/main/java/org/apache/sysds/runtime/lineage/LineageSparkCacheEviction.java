@@ -19,23 +19,30 @@
 
 package org.apache.sysds.runtime.lineage;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.TreeSet;
+
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
+import org.apache.sysds.runtime.instructions.spark.data.LineageObject;
+import org.apache.sysds.runtime.instructions.spark.data.RDDObject;
 import org.apache.sysds.runtime.lineage.LineageCacheConfig.LineageCacheStatus;
-
-import java.util.Map;
-import java.util.TreeSet;
+import org.apache.sysds.runtime.util.CommonThreadPool;
 
 public class LineageSparkCacheEviction
 {
 	private static long SPARK_STORAGE_LIMIT = 0; //60% (upper limit of Spark unified memory)
 	private static long _sparkStorageSize = 0; //current size
 	private static TreeSet<LineageCacheEntry> weightedQueue = new TreeSet<>(LineageCacheConfig.LineageCacheComparator);
+	protected static final Map<LineageItem, Integer> RDDHitCountLocal = new HashMap<>();
 
 	protected static void resetEviction() {
 		_sparkStorageSize = 0;
 		weightedQueue.clear();
+		RDDHitCountLocal.clear();
+		//TODO: Cleanup the RDDs and BC variables
 	}
 
 	//--------------- CACHE MAINTENANCE & LOOKUP FUNCTIONS --------------//
@@ -117,8 +124,11 @@ public class LineageSparkCacheEviction
 
 	private static void setSparkStorageLimit() {
 		// Set the limit only during the first RDD caching to avoid context creation
-		if (SPARK_STORAGE_LIMIT == 0)
-			SPARK_STORAGE_LIMIT = (long) SparkExecutionContext.getDataMemoryBudget(false, true); //FIXME
+		// Cache size = 70% of unified Spark memory = 0.7 * 0.6 = 42%.
+		if (SPARK_STORAGE_LIMIT == 0) {
+			long unifiedSparkMem = (long) SparkExecutionContext.getDataMemoryBudget(false, true);
+			SPARK_STORAGE_LIMIT = (long)(unifiedSparkMem * 0.7d);
+		}
 	}
 
 	protected static double getSparkStorageLimit() {
@@ -150,6 +160,73 @@ public class LineageSparkCacheEviction
 				break;
 
 			removeEntry(cache, e);
+		}
+	}
+
+	//---------------- LOCAL CLEANUP METHODS -----------------//
+
+	protected static void cleanupChildRDDs(LineageCacheEntry e) {
+		if (e.getCacheStatus() == LineageCacheStatus.PERSISTEDRDD) {
+			// Persisted at Spark. Cleanup the child RDDs and broadcast vars
+			for( LineageObject c : e.getRDDObject().getLineageChilds() ){
+				c.decrementNumReferences();
+				rCleanupChildRDDs(c);
+			}
+			// Also detach the child RDDs to be GCed
+			e.getRDDObject().removeAllChild();
+		}
+		// TODO: Cleanup the child RDDs of the persisted RDDs
+		//  which are never reused after the second hit.
+	}
+
+	protected static void rCleanupChildRDDs(LineageObject lob) {
+		// Abort recursive cleanup if still consumers
+		if( lob.getNumReferences() > 0 )
+			return;
+
+		// Abort if still reachable through live matrix object
+		if( lob.hasBackReference() )
+			return;
+
+		// Abort if the RDD is yet to be persisted
+		if (lob instanceof RDDObject && lob.isInLineageCache()
+			&& SparkExecutionContext.isRDDCached(((RDDObject)lob).getRDD().id()))
+			return;
+
+		// Cleanup current lineage object (from driver/executors)
+		SparkExecutionContext.cleanupSingleLineageObject(lob);
+
+		//recursively process lineage children
+		for (LineageObject c : lob.getLineageChilds()) {
+			c.decrementNumReferences();
+			rCleanupChildRDDs(c);
+		}
+	}
+
+	// RDDs that are marked for persistence, reused more than three times,
+	// but never actually persisted in the executors. Asynchronously move
+	// them to Spark by triggering a Spark job. The next reuse will clean up
+	// the child RDDs and broadcast variables.
+	protected static void moveToSpark(LineageCacheEntry e) {
+		RDDHitCountLocal.merge(e._key, 1, Integer::sum);
+		int localHitCount = RDDHitCountLocal.get(e._key);
+		if (localHitCount > 3) {
+			RDDHitCountLocal.remove(e._key);
+			CommonThreadPool.getDynamicPool().submit(new TriggerRemoteTask(e.getRDDObject().getRDD()));
+		}
+	}
+
+	private static class TriggerRemoteTask implements Runnable {
+		JavaPairRDD<?, ?> rdd;
+
+		public TriggerRemoteTask(JavaPairRDD<?,?> persistRDD) {
+			rdd = persistRDD;
+		}
+
+		@Override
+		public void run() {
+			// Trigger a Spark job
+			rdd.count();
 		}
 	}
 }

@@ -48,8 +48,7 @@ public class CoCodePriorityQue extends AColumnCoCoder {
 
 	private static final int COL_COMBINE_THRESHOLD = 1024;
 
-	protected CoCodePriorityQue(AComEst sizeEstimator, ACostEstimate costEstimator,
-		CompressionSettings cs) {
+	protected CoCodePriorityQue(AComEst sizeEstimator, ACostEstimate costEstimator, CompressionSettings cs) {
 		super(sizeEstimator, costEstimator, cs);
 	}
 
@@ -59,8 +58,8 @@ public class CoCodePriorityQue extends AColumnCoCoder {
 		return colInfos;
 	}
 
-	protected static List<CompressedSizeInfoColGroup> join(List<CompressedSizeInfoColGroup> groups,
-		AComEst sEst, ACostEstimate cEst, int minNumGroups, int k) {
+	protected static List<CompressedSizeInfoColGroup> join(List<CompressedSizeInfoColGroup> groups, AComEst sEst,
+		ACostEstimate cEst, int minNumGroups, int k) {
 
 		if(groups.size() > COL_COMBINE_THRESHOLD && k > 1)
 			return combineMultiThreaded(groups, sEst, cEst, minNumGroups, k);
@@ -111,16 +110,19 @@ public class CoCodePriorityQue extends AColumnCoCoder {
 		return combineBlock(que, sEst, cEst, minNumGroups);
 	}
 
-	private static List<CompressedSizeInfoColGroup> combineBlock(Queue<CompressedSizeInfoColGroup> que,
-		AComEst sEst, ACostEstimate cEst, int minNumGroups) {
+	private static List<CompressedSizeInfoColGroup> combineBlock(Queue<CompressedSizeInfoColGroup> que, AComEst sEst,
+		ACostEstimate cEst, int minNumGroups) {
 
 		List<CompressedSizeInfoColGroup> ret = new ArrayList<>();
 		CompressedSizeInfoColGroup l = null;
 		l = que.poll();
 		int groupNr = ret.size() + que.size();
-		while(que.peek() != null && groupNr >= minNumGroups) {
+		int lastCombine = 0; // if we have not combined in the last 5 tries abort cocoding.
+
+		while(que.peek() != null && groupNr >= minNumGroups && lastCombine < 5) {
 			CompressedSizeInfoColGroup r = que.peek();
 			CompressedSizeInfoColGroup g = sEst.combine(l, r);
+
 			if(g != null) {
 				double costOfJoin = cEst.getCost(g);
 				double costIndividual = cEst.getCost(l) + cEst.getCost(r);
@@ -128,19 +130,32 @@ public class CoCodePriorityQue extends AColumnCoCoder {
 				if(costOfJoin < costIndividual) {
 					que.poll();
 					int numColumns = g.getColumns().size();
-					if(numColumns > 128)
+					if(numColumns > 128){
+						lastCombine++;
 						ret.add(g);
-					else
+					}
+					else{
+						lastCombine = 0;
 						que.add(g);
+					}
 				}
-				else
+				else{
+					lastCombine++;
 					ret.add(l);
+				}
 			}
-			else
+			else{
+				lastCombine++;
 				ret.add(l);
+			}
 
 			l = que.poll();
 			groupNr = ret.size() + que.size();
+		}
+		while(que.peek() != null){
+			// empty que
+			ret.add(l);
+			l = que.poll();
 		}
 
 		if(l != null)
@@ -153,9 +168,13 @@ public class CoCodePriorityQue extends AColumnCoCoder {
 	}
 
 	private static Queue<CompressedSizeInfoColGroup> getQue(int size, ACostEstimate cEst) {
-		Comparator<CompressedSizeInfoColGroup> comp = Comparator.comparing(x -> cEst.getCost(x));
+		Comparator<CompressedSizeInfoColGroup> comp = Comparator.comparing(x -> getCost(x, cEst));
 		Queue<CompressedSizeInfoColGroup> que = new PriorityQueue<>(size, comp);
 		return que;
+	}
+
+	private static double getCost(CompressedSizeInfoColGroup x, ACostEstimate cEst) {
+		return cEst.getCost(x) + x.getColumns().avgOfIndex() / 100000;
 	}
 
 	protected static class PQTask implements Callable<List<CompressedSizeInfoColGroup>> {
@@ -167,8 +186,8 @@ public class CoCodePriorityQue extends AColumnCoCoder {
 		private final ACostEstimate _cEst;
 		private final int _minNumGroups;
 
-		protected PQTask(List<CompressedSizeInfoColGroup> groups, int start, int end, AComEst sEst,
-			ACostEstimate cEst, int minNumGroups) {
+		protected PQTask(List<CompressedSizeInfoColGroup> groups, int start, int end, AComEst sEst, ACostEstimate cEst,
+			int minNumGroups) {
 			_groups = groups;
 			_start = start;
 			_end = end;

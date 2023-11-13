@@ -85,8 +85,12 @@ public class MatrixLineagePair extends MutablePair<MatrixObject, LineageItem> {
 		return left.getNumColumns();
 	}
 
-	public long getBlocksize() {
+	public int getBlocksize() {
 		return left.getBlocksize();
+	}
+
+	public long getNnz() {
+		return left.getNnz();
 	}
 
 	public DataType getDataType() {

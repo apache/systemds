@@ -25,6 +25,7 @@ import java.util.Iterator;
 
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.Text;
+import org.apache.sysds.runtime.data.DenseBlockFP64DEDUP;
 import org.apache.sysds.runtime.util.UtilFunctions;
 
 
@@ -74,7 +75,17 @@ Converter<MatrixIndexes, MatrixBlock, NullWritable, Text>
 		{
 			if(v1.getDenseBlock()==null)
 				return;
-			denseArray=v1.getDenseBlockValues();
+			if(v1.getDenseBlock() instanceof DenseBlockFP64DEDUP){
+				DenseBlockFP64DEDUP db = (DenseBlockFP64DEDUP) v1.getDenseBlock();
+				denseArray = new double[v1.rlen*v1.clen];
+				for (int i = 0; i < v1.rlen; i++) {
+					double[] row = db.values(i);
+					for (int j = 0; j < v1.clen; j++) {
+						denseArray[i*v1.clen + j] = row[j];
+					}
+				}
+			} else
+				denseArray=v1.getDenseBlockValues();
 			nextInDenseArray=0;
 			denseArraySize=v1.getNumRows()*v1.getNumColumns();
 		}
@@ -113,25 +124,18 @@ Converter<MatrixIndexes, MatrixBlock, NullWritable, Text>
 		{
 			if(sparseIterator==null)
 				return null;
-			else
-			{
-				IJV cell = sparseIterator.next();
-				i = cell.getI() + startIndexes.getRowIndex();
-				j = cell.getJ() + startIndexes.getColumnIndex();
-				v = cell.getV();
-			}
-				
-		}else
-		{
+			IJV cell = sparseIterator.next();
+			i = cell.getI() + startIndexes.getRowIndex();
+			j = cell.getJ() + startIndexes.getColumnIndex();
+			v = cell.getV();
+		}
+		else {
 			if(denseArray==null)
 				return null;
-			else
-			{
-				i=startIndexes.getRowIndex() + nextInDenseArray/thisBlockWidth;
-				j=startIndexes.getColumnIndex() + nextInDenseArray%thisBlockWidth;
-				v=denseArray[nextInDenseArray];
-				nextInDenseArray++;
-			}
+			i=startIndexes.getRowIndex() + nextInDenseArray/thisBlockWidth;
+			j=startIndexes.getColumnIndex() + nextInDenseArray%thisBlockWidth;
+			v=denseArray[nextInDenseArray];
+			nextInDenseArray++;
 		}
 		value.set(i+" "+j+" "+v);
 		return pair;

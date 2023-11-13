@@ -14,7 +14,7 @@
 <!--[if IE]>
 <script type="text/javascript" src="../../../../../../jquery/jszip-utils/dist/jszip-utils-ie.min.js"></script>
 <![endif]-->
-<script type="text/javascript" src="../../../../../../jquery/jquery-3.6.0.min.js"></script>
+<script type="text/javascript" src="../../../../../../jquery/jquery-3.6.1.min.js"></script>
 <script type="text/javascript" src="../../../../../../jquery/jquery-ui.min.js"></script>
 </head>
 <body>
@@ -27,8 +27,8 @@
     catch(err) {
     }
 //-->
-var data = {"i0":10};
-var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
+var data = {"i0":10,"i1":6,"i2":10,"i3":6,"i4":6,"i5":6,"i6":6,"i7":10,"i8":10};
+var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],4:["t3","Abstract Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
 var tableTab = "tableTab";
@@ -117,14 +117,14 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <main role="main">
 <div class="header">
 <div class="subTitle"><span class="packageLabelInType">Package</span>&nbsp;<a href="package-summary.html">org.apache.sysds.runtime.compress.utils</a></div>
-<h2 title="Class ACount" class="title">Class ACount</h2>
+<h2 title="Class ACount" class="title">Class ACount&lt;T&gt;</h2>
 </div>
 <div class="contentContainer">
 <ul class="inheritance">
 <li><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">java.lang.Object</a></li>
 <li>
 <ul class="inheritance">
-<li>org.apache.sysds.runtime.compress.utils.ACount</li>
+<li>org.apache.sysds.runtime.compress.utils.ACount&lt;T&gt;</li>
 </ul>
 </li>
 </ul>
@@ -136,7 +136,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <dd><code><a href="ACount.DArrCounts.html" title="class in org.apache.sysds.runtime.compress.utils">ACount.DArrCounts</a></code>, <code><a href="ACount.DCounts.html" title="class in org.apache.sysds.runtime.compress.utils">ACount.DCounts</a></code></dd>
 </dl>
 <hr>
-<pre>public abstract class <span class="typeNameLabel">ACount</span>
+<pre>public abstract class <span class="typeNameLabel">ACount&lt;T&gt;</span>
 extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a></pre>
 </li>
 </ul>
@@ -189,12 +189,16 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <tr class="altColor">
 <td class="colFirst"><code>int</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#count">count</a></span></code></th>
-<td class="colLast">&nbsp;</td>
+<td class="colLast">
+<div class="block">The current count of this element</div>
+</td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>int</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#id">id</a></span></code></th>
-<td class="colLast">&nbsp;</td>
+<td class="colLast">
+<div class="block">The current ID of this element should be unique for the user.</div>
+</td>
 </tr>
 </table>
 </li>
@@ -229,13 +233,57 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 </a>
 <h3>Method Summary</h3>
 <table class="memberSummary">
-<caption><span id="t0" class="activeTableTab"><span>All Methods</span><span class="tabEnd">&nbsp;</span></span><span id="t2" class="tableTab"><span><a href="javascript:show(2);">Instance Methods</a></span><span class="tabEnd">&nbsp;</span></span><span id="t4" class="tableTab"><span><a href="javascript:show(8);">Concrete Methods</a></span><span class="tabEnd">&nbsp;</span></span></caption>
+<caption><span id="t0" class="activeTableTab"><span>All Methods</span><span class="tabEnd">&nbsp;</span></span><span id="t2" class="tableTab"><span><a href="javascript:show(2);">Instance Methods</a></span><span class="tabEnd">&nbsp;</span></span><span id="t3" class="tableTab"><span><a href="javascript:show(4);">Abstract Methods</a></span><span class="tabEnd">&nbsp;</span></span><span id="t4" class="tableTab"><span><a href="javascript:show(8);">Concrete Methods</a></span><span class="tabEnd">&nbsp;</span></span></caption>
 <tr>
 <th class="colFirst" scope="col">Modifier and Type</th>
 <th class="colSecond" scope="col">Method</th>
 <th class="colLast" scope="col">Description</th>
 </tr>
 <tr id="i0" class="altColor">
+<td class="colFirst"><code><a href="ACount.html" title="class in org.apache.sysds.runtime.compress.utils">ACount</a>&lt;<a href="ACount.html" title="type parameter in ACount">T</a>&gt;</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#get(double)">get</a></span>&#8203;(double&nbsp;key)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i1" class="rowColor">
+<td class="colFirst"><code>abstract <a href="ACount.html" title="class in org.apache.sysds.runtime.compress.utils">ACount</a>&lt;<a href="ACount.html" title="type parameter in ACount">T</a>&gt;</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#get(T)">get</a></span>&#8203;(<a href="ACount.html" title="type parameter in ACount">T</a>&nbsp;key)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i2" class="altColor">
+<td class="colFirst"><code><a href="ACount.html" title="class in org.apache.sysds.runtime.compress.utils">ACount</a>&lt;<a href="ACount.html" title="type parameter in ACount">T</a>&gt;</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#inc(double,int,int)">inc</a></span>&#8203;(double&nbsp;key,
+   int&nbsp;c,
+   int&nbsp;id)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i3" class="rowColor">
+<td class="colFirst"><code>abstract <a href="ACount.html" title="class in org.apache.sysds.runtime.compress.utils">ACount</a>&lt;<a href="ACount.html" title="type parameter in ACount">T</a>&gt;</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#inc(T,int,int)">inc</a></span>&#8203;(<a href="ACount.html" title="type parameter in ACount">T</a>&nbsp;key,
+   int&nbsp;c,
+   int&nbsp;id)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i4" class="altColor">
+<td class="colFirst"><code>abstract <a href="ACount.html" title="type parameter in ACount">T</a></code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#key()">key</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i5" class="rowColor">
+<td class="colFirst"><code>abstract <a href="ACount.html" title="class in org.apache.sysds.runtime.compress.utils">ACount</a>&lt;<a href="ACount.html" title="type parameter in ACount">T</a>&gt;</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#next()">next</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i6" class="altColor">
+<td class="colFirst"><code>abstract void</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#setNext(org.apache.sysds.runtime.compress.utils.ACount)">setNext</a></span>&#8203;(<a href="ACount.html" title="class in org.apache.sysds.runtime.compress.utils">ACount</a>&lt;<a href="ACount.html" title="type parameter in ACount">T</a>&gt;&nbsp;e)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i7" class="rowColor">
+<td class="colFirst"><code><a href="ACount.html" title="class in org.apache.sysds.runtime.compress.utils">ACount</a>&lt;<a href="ACount.html" title="type parameter in ACount">T</a>&gt;</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#sort()">sort</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i8" class="altColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#toString()">toString</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
@@ -271,6 +319,7 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <li class="blockList">
 <h4>count</h4>
 <pre>public&nbsp;int count</pre>
+<div class="block">The current count of this element</div>
 </li>
 </ul>
 <a id="id">
@@ -280,6 +329,7 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <li class="blockList">
 <h4>id</h4>
 <pre>public&nbsp;int id</pre>
+<div class="block">The current ID of this element should be unique for the user.</div>
 </li>
 </ul>
 </li>
@@ -311,13 +361,93 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <!--   -->
 </a>
 <h3>Method Detail</h3>
+<a id="next()">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>next</h4>
+<pre class="methodSignature">public abstract&nbsp;<a href="ACount.html" title="class in org.apache.sysds.runtime.compress.utils">ACount</a>&lt;<a href="ACount.html" title="type parameter in ACount">T</a>&gt;&nbsp;next()</pre>
+</li>
+</ul>
+<a id="setNext(org.apache.sysds.runtime.compress.utils.ACount)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>setNext</h4>
+<pre class="methodSignature">public abstract&nbsp;void&nbsp;setNext&#8203;(<a href="ACount.html" title="class in org.apache.sysds.runtime.compress.utils">ACount</a>&lt;<a href="ACount.html" title="type parameter in ACount">T</a>&gt;&nbsp;e)</pre>
+</li>
+</ul>
+<a id="key()">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>key</h4>
+<pre class="methodSignature">public abstract&nbsp;<a href="ACount.html" title="type parameter in ACount">T</a>&nbsp;key()</pre>
+</li>
+</ul>
+<a id="get(java.lang.Object)">
+<!--   -->
+</a><a id="get(T)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>get</h4>
+<pre class="methodSignature">public abstract&nbsp;<a href="ACount.html" title="class in org.apache.sysds.runtime.compress.utils">ACount</a>&lt;<a href="ACount.html" title="type parameter in ACount">T</a>&gt;&nbsp;get&#8203;(<a href="ACount.html" title="type parameter in ACount">T</a>&nbsp;key)</pre>
+</li>
+</ul>
+<a id="inc(java.lang.Object,int,int)">
+<!--   -->
+</a><a id="inc(T,int,int)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>inc</h4>
+<pre class="methodSignature">public abstract&nbsp;<a href="ACount.html" title="class in org.apache.sysds.runtime.compress.utils">ACount</a>&lt;<a href="ACount.html" title="type parameter in ACount">T</a>&gt;&nbsp;inc&#8203;(<a href="ACount.html" title="type parameter in ACount">T</a>&nbsp;key,
+                              int&nbsp;c,
+                              int&nbsp;id)</pre>
+</li>
+</ul>
+<a id="get(double)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>get</h4>
+<pre class="methodSignature">public&nbsp;<a href="ACount.html" title="class in org.apache.sysds.runtime.compress.utils">ACount</a>&lt;<a href="ACount.html" title="type parameter in ACount">T</a>&gt;&nbsp;get&#8203;(double&nbsp;key)</pre>
+</li>
+</ul>
+<a id="inc(double,int,int)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>inc</h4>
+<pre class="methodSignature">public&nbsp;<a href="ACount.html" title="class in org.apache.sysds.runtime.compress.utils">ACount</a>&lt;<a href="ACount.html" title="type parameter in ACount">T</a>&gt;&nbsp;inc&#8203;(double&nbsp;key,
+                     int&nbsp;c,
+                     int&nbsp;id)</pre>
+</li>
+</ul>
+<a id="sort()">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>sort</h4>
+<pre class="methodSignature">public&nbsp;<a href="ACount.html" title="class in org.apache.sysds.runtime.compress.utils">ACount</a>&lt;<a href="ACount.html" title="type parameter in ACount">T</a>&gt;&nbsp;sort()</pre>
+</li>
+</ul>
 <a id="toString()">
 <!--   -->
 </a>
 <ul class="blockListLast">
 <li class="blockList">
 <h4>toString</h4>
-<pre class="methodSignature">public final&nbsp;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;toString()</pre>
+<pre class="methodSignature">public&nbsp;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;toString()</pre>
 <dl>
 <dt><span class="overrideSpecifyLabel">Overrides:</span></dt>
 <dd><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#toString()" title="class or interface in java.lang" class="externalLink">toString</a></code>&nbsp;in class&nbsp;<code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a></code></dd>

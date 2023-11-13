@@ -19,64 +19,67 @@
 #
 #-------------------------------------------------------------
 
-# Implements the DBSCAN clustering algorithm using Euclidian distance matrix
+# Implements the DBSCAN clustering algorithm using an Euclidean
+# distance matrix.
 #
 # INPUT:
-# -------------------------------------------------
+# ------------------------------------------------------------
 # X          The input Matrix to do DBSCAN on.
-# eps        Maximum distance between two points for one to be considered reachable for the other.
-# minPts     Number of points in a neighborhood for a point to be considered as a core point
+# eps        Maximum distance between two points for one to
+#            be considered reachable for the other.
+# minPts     Number of points in a neighborhood for a point to
+#            be considered as a core point
 #            (includes the point itself).
-# -------------------------------------------------------------------------------------------
+# ------------------------------------------------------------
 #
 # OUTPUT:
-# ------------------------------------------------------------------------------------------------
-# clusterMembers  clustering Matrix
-# ------------------------------------------------------------------------------------------------
+# ------------------------------------------------------------
+# clusterMembers  The clustering matrix             
+# clusterMembers  The cluster model
+# ------------------------------------------------------------
 
 m_dbscan = function (Matrix[Double] X, Double eps = 0.5, Integer minPts = 5)
-    return (Matrix[Double] X, Matrix[Double] clusterModel, Double eps)
+    return (Matrix[Double] clusterMembers, Matrix[Double] clusterModel)
 {
   #check input parameter assertions
-  if(minPts < 0) { stop("DBSCAN: Stopping due to invalid inputs: minPts should be greater than 0"); }
-  if(eps < 0) 
-  { 
-    print("DBSCAN: Epsilon (eps) should be greater than 0. Setting eps = 0.5");
+  if(minPts < 0){
+    stop("DBSCAN: Stopping due to invalid inputs: minPts should be greater than 0")
+  }
+  if(eps < 0){ 
+    print("DBSCAN: Epsilon (eps) should be greater than 0. Setting eps = 0.5")
     eps = 0.5
   }
 
-  UNASSIGNED = 0;
+  num_records = nrow(X)
+  num_features = ncol(X)
 
-  num_records = nrow(X);
-  num_features = ncol(X);
-
-  neighbors = dist(X);
+  # Construct the full all to all distance matrix.
+  neighbors = dist(X)
 
   #find same pts and set their distance to the smallest double representation
   neighbors = replace(target = neighbors, pattern = 0, replacement = 2.225e-307)
-  neighbors = neighbors - diag(diag(neighbors));
+  neighbors = neighbors - diag(diag(neighbors))
 
   # neighbors within eps
-  withinEps = ((neighbors <= eps) * (0 < neighbors));
-  corePts = rowSums(withinEps) + 1 >= minPts;
+  withinEps = ((neighbors <= eps) * (0 < neighbors))
+  corePts = rowSums(withinEps) + 1 >= minPts
 
-  clusterMembers = matrix(UNASSIGNED, num_records, 1);
-  clusterModel = matrix(UNASSIGNED, 0, num_features);
-
-  if (sum(corePts) != 0) {
-    # leave only density reachable pts
-    neighbors = (neighbors * corePts * withinEps) > 0;
-    # border pts of multiple clusters
-    border = neighbors * (t(corePts) == 0 & colSums(neighbors) > 1) * seq(num_records, 1);
-    border = (border - colMaxs(border)) == 0;
-    neighbors = neighbors * border;
-
-    adjacency = (neighbors + t(neighbors)) > 0;
-
-    clusterMembers = components(G=adjacency, verbose=FALSE);
-    # noise to 0
-    clusterMembers = clusterMembers * (rowSums(adjacency) > 0);
-    clusterModel = removeEmpty(target=X, margin="rows", select = (clusterMembers > 0))
-    X = clusterMembers
+  if (sum(corePts) <= 0) {
+    stop("Invalid DBScan there was no neighbors within epsilon")
   }
+
+  # leave only density reachable pts
+  neighbors = (neighbors * corePts * withinEps) > 0
+  # border pts of multiple clusters
+  border = neighbors * (t(corePts) == 0 & colSums(neighbors) > 1) * seq(num_records, 1)
+  border = (border - colMaxs(border)) == 0
+  neighbors = neighbors * border
+
+  adjacency = (neighbors + t(neighbors)) > 0
+
+  clusterMembers = components(G=adjacency, verbose=FALSE)
+  # noise to 0
+  clusterMembers = clusterMembers * (rowSums(adjacency) > 0)
+  clusterModel = removeEmpty(target=X, margin="rows", select = (clusterMembers > 0))
+  
 }

@@ -22,6 +22,7 @@ package org.apache.sysds.runtime.lineage;
 import java.util.Map;
 
 import jcuda.Pointer;
+import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
@@ -208,6 +209,8 @@ public class LineageCacheEntry {
 		_status = isNullVal() ? LineageCacheStatus.EMPTY : LineageCacheStatus.CACHED;
 		//resume all threads waiting for val
 		notifyAll();
+		if (DMLScript.STATISTICS && val != null)
+			LineageCacheStatistics.incrementMemWrites();
 	}
 	
 	public synchronized void setValue(MatrixBlock val) {
@@ -221,6 +224,8 @@ public class LineageCacheEntry {
 		_status = isNullVal() ? LineageCacheStatus.EMPTY : LineageCacheStatus.CACHED;
 		//resume all threads waiting for val
 		notifyAll();
+		if (DMLScript.STATISTICS && val != null)
+			LineageCacheStatistics.incrementMemWrites();
 	}
 	
 	public synchronized void setGPUValue(Pointer ptr, long size, MetaData md, long computetime) {
@@ -229,6 +234,8 @@ public class LineageCacheEntry {
 		_status = isNullVal() ? LineageCacheStatus.EMPTY : LineageCacheStatus.GPUCACHED;
 		//resume all threads waiting for val
 		notifyAll();
+		if (DMLScript.STATISTICS && ptr != null)
+			LineageCacheStatistics.incrementMemWrites();
 	}
 
 	public synchronized void setRDDValue(RDDObject rdd, long computetime) {
@@ -238,6 +245,17 @@ public class LineageCacheEntry {
 		_status = isNullVal() ? LineageCacheStatus.EMPTY : LineageCacheStatus.TOPERSISTRDD;
 		//resume all threads waiting for val
 		notifyAll();
+		if (DMLScript.STATISTICS && rdd != null)
+			LineageCacheStatistics.incrementMemWrites();
+	}
+
+	public synchronized void setRDDValue(RDDObject rdd) {
+		_rddObject = rdd;
+		_status = isNullVal() ? LineageCacheStatus.EMPTY : LineageCacheStatus.TOPERSISTRDD;
+		//resume all threads waiting for val
+		notifyAll();
+		if (DMLScript.STATISTICS && rdd != null)
+			LineageCacheStatistics.incrementMemWrites();
 	}
 
 	public synchronized void setValue(byte[] serialBytes, long computetime) {
@@ -246,6 +264,8 @@ public class LineageCacheEntry {
 		_status = isNullVal() ? LineageCacheStatus.EMPTY : LineageCacheStatus.CACHED;
 		// resume all threads waiting for val
 		notifyAll();
+		if (DMLScript.STATISTICS && serialBytes != null)
+			LineageCacheStatistics.incrementMemWrites();
 	}
 
 	public synchronized void copyValueFrom(LineageCacheEntry src, long computetime) {
@@ -254,7 +274,7 @@ public class LineageCacheEntry {
 		_gpuPointer = src._gpuPointer;
 		_rddObject = src._rddObject;
 		_computeTime = src._computeTime;
-		_status = isNullVal() ? LineageCacheStatus.EMPTY : LineageCacheStatus.CACHED;
+		_status = src._status; //requires for multi-level reuse of RDDs
 		// resume all threads waiting for val
 		notifyAll();
 	}
@@ -322,6 +342,37 @@ public class LineageCacheEntry {
 		int computeGroup = LineageCacheConfig.getComputeGroup(_key.getOpcode());
 		int refCount = Math.max(_rddObject.getMaxReferenceCount(), 1);
 		score = w1*(((double)computeGroup*refCount)/estimatedSize) + w2*getTimestamp() + w3*(((double)1)/getDagHeight());
+		// Update score to emulate computeTime scaling by #misses
+		if (removeList.containsKey(_key) && LineageCacheConfig.isCostNsize()) {
+			int missCount = 1 + removeList.get(_key);
+			score = score + (w1*(((double) computeGroup * refCount) / estimatedSize) * missCount);
+		}
+	}
+
+	protected synchronized void initiateScoreGPU(Map<LineageItem, Integer> removeList) {
+		// Set timestamp
+		_timestamp =  System.currentTimeMillis() - LineageCacheEviction.getStartTimestamp();
+		if (_timestamp < 0)
+			throw new DMLRuntimeException ("Execution timestamp shouldn't be -ve. Key: "+_key);
+		// Weights for scoring components in GPU
+		// TODO: Multiple eviction policies.
+		double w1 = 1;
+		double w2 = 1;
+		double w3 = 1;
+		// Generate initial score
+		int computeGroup = LineageCacheConfig.getComputeGroup(_key.getOpcode());
+		//score = w2*getTimestamp() + w3*(((double)1)/getDagHeight());
+		score = w1*computeGroup + w2*getTimestamp() + w3*(((double)1)/getDagHeight());
+		// TODO: timestamp >> DAg_height. Normalize timestamp and DAG height.
+		// Update score to emulate computeTime scaling by #misses
+		if (removeList.containsKey(_key) && w2 != 1) {
+			// For LRU, artificially scaling the score may lead to a scenario where, the
+			// most recent entries have lower score than the least recent (w/ scaled score)
+			// scores, leading to eviction of the most recent entries.
+			int missCount = 1 + removeList.get(_key);
+			//score = score + ((w2*getTimestamp() + w3*(((double)1)/getDagHeight())) * missCount);
+			score = score + ((w1*computeGroup + w2*getTimestamp() + w3*(((double)1)/getDagHeight())) * missCount);
+		}
 	}
 	
 	protected synchronized void updateScore(boolean add) {
@@ -329,11 +380,15 @@ public class LineageCacheEntry {
 		double w1 = LineageCacheConfig.WEIGHTS[0];
 		long size = getSize();
 		int sign = add ? 1: -1;
-		 if(isLocalObject())
+		 if (isLocalObject())
 			 score = score + sign * w1 * (((double) _computeTime) / size);
-		 if(isRDDPersist() && size != 0) {  //size == 0 means not persisted yet
+		 if (isRDDPersist() && size != 0) {  //size == 0 means not persisted yet
 			 int computeGroup = LineageCacheConfig.getComputeGroup(_key.getOpcode());
 			 score = score + sign * w1 * (((double) computeGroup) / size);
+		 }
+		 if (isGPUObject()) {
+			 int computeGroup = LineageCacheConfig.getComputeGroup(_key.getOpcode());
+			 score = score + sign * (computeGroup + getTimestamp() + ((double) 1) / getDagHeight());
 		 }
 	}
 	
@@ -362,6 +417,11 @@ public class LineageCacheEntry {
 			int computeGroup = LineageCacheConfig.getComputeGroup(_key.getOpcode());
 			int refCount = Math.max(_rddObject.getMaxReferenceCount(), 1);
 			score = w1*(((double)computeGroup*refCount)/size) + w2*getTimestamp() + w3*(((double)1)/getDagHeight());
+		}
+		if (isGPUObject()) {
+			int computeGroup = LineageCacheConfig.getComputeGroup(_key.getOpcode());
+			score = computeGroup + getTimestamp() + (((double) 1) / getDagHeight());
+			//score = getTimestamp() + (((double) 1) / getDagHeight());
 		}
 	}
 

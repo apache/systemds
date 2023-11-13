@@ -55,7 +55,7 @@ public class SampleDistinctNegativeTest {
 		return tests;
 	}
 
-	@Test(expected = ArrayIndexOutOfBoundsException.class)
+	@Test(expected = Exception.class)
 	public void testDistinctCountIsCorrectIfSampleIs100Percent() {
 		SampleEstimatorFactory.distinctCount(frequencies, 100, 2, EstimationType.HassAndStokes);
 	}

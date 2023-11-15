@@ -24,6 +24,7 @@ import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.hops.estim.EstimatorBasicAvg;
 import org.apache.sysds.hops.estim.EstimatorBasicWorst;
 import org.apache.sysds.hops.estim.EstimatorBitsetMM;
+import org.apache.sysds.hops.estim.EstimatorLayeredGraph;
 import org.apache.sysds.hops.estim.SparsityEstimator;
 import org.apache.sysds.hops.estim.SparsityEstimator.OpCode;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -39,7 +40,7 @@ public class OpSingleTest extends AutomatedTestBase
 	private final static int k = 300;
 	private final static double sparsity = 0.2;
 //	private final static OpCode eqzero = OpCode.EQZERO;
-//	private final static OpCode diag = OpCode.DIAG;
+	private final static OpCode diag = OpCode.DIAG;
 	private final static OpCode neqzero = OpCode.NEQZERO;
 	private final static OpCode trans = OpCode.TRANS;
 	private final static OpCode reshape = OpCode.RESHAPE;
@@ -185,21 +186,21 @@ public class OpSingleTest extends AutomatedTestBase
 //		runSparsityEstimateTest(new EstimatorLayeredGraph(), m, k, sparsity, eqzero);
 //	}
 //	
-//	@Test
-//	public void testLGCasediag() {
-//		runSparsityEstimateTest(new EstimatorLayeredGraph(), m, k, sparsity, diag);
-//	}
+	@Test
+	public void testLGCasediag() {
+		runSparsityEstimateTest(new EstimatorLayeredGraph(), m, k, sparsity, diag);
+	}
 //	
 //	@Test
 //	public void testLGCaseneqzero() {
 //		runSparsityEstimateTest(new EstimatorLayeredGraph(), m, k, sparsity, neqzero);
 //	}
 //	
-//	@Test
-//	public void testLGCasetans() {
-//		runSparsityEstimateTest(new EstimatorLayeredGraph(), m, k, sparsity, trans);
-//	}
-//	
+	@Test
+	public void testLGCasetrans() {
+		runSparsityEstimateTest(new EstimatorLayeredGraph(), m, k, sparsity, trans);
+	}
+
 //	@Test
 //	public void testLGCasereshape() {
 //		runSparsityEstimateTest(new EstimatorLayeredGraph(), m, k, sparsity, reshape);
@@ -239,6 +240,9 @@ public class OpSingleTest extends AutomatedTestBase
 			case EQZERO:
 				//TODO find out how to do eqzero
 			case DIAG:
+				m2 = m1;
+				est = estim.estim(m1, op);
+				break;
 			case NEQZERO:
 				m2 = m1;
 				est = estim.estim(m1, op);

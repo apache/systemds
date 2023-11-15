@@ -66,12 +66,19 @@ public class EstimatorLayeredGraph extends SparsityEstimator {
 	public double estim(MatrixBlock m1, MatrixBlock m2, OpCode op) {
 		if( op == OpCode.MM )
 			return estim(m1, m2);
-		throw new NotImplementedException();
+		LayeredGraph lg1 = new LayeredGraph(m1, _rounds);
+		LayeredGraph lg2 = new LayeredGraph(m2, _rounds);
+		LayeredGraph output = estimInternal(lg1, lg2, op);
+		return OptimizerUtils.getSparsity(
+			output._nodes.get(0).length, output._nodes.get(1).length, output.estimateNnz());
 	}
 
 	@Override
 	public double estim(MatrixBlock m, OpCode op) {
-		throw new NotImplementedException();
+		LayeredGraph lg1 = new LayeredGraph(m, _rounds);
+		LayeredGraph output = estimInternal(lg1, null, op);
+		return OptimizerUtils.getSparsity(
+			output._nodes.get(0).length, output._nodes.get(1).length, output.estimateNnz());
 	}
 	
 	@Override
@@ -79,6 +86,23 @@ public class EstimatorLayeredGraph extends SparsityEstimator {
 		LayeredGraph graph = new LayeredGraph(Arrays.asList(m1,m2), _rounds);
 		return OptimizerUtils.getSparsity(
 			m1.getNumRows(), m2.getNumColumns(), graph.estimateNnz());
+	}
+
+	private static LayeredGraph estimInternal(LayeredGraph lg1, LayeredGraph lg2, OpCode op) {
+		switch(op) {
+//			case MM:
+//			case MULT:
+//			case PLUS:
+			case RBIND:	  return lg1.rbind(lg2);
+			case CBIND:	  return lg1.cbind(lg2);
+//			case NEQZERO:
+//			case EQZERO:
+			case TRANS:   return lg1.transpose();
+			case DIAG:	  return lg1.diag();
+//			case RESHAPE:
+			default:
+				throw new NotImplementedException();
+		}
 	}
 	
 	private List<MatrixBlock> getMatrices(MMNode node, List<MatrixBlock> leafs) {
@@ -100,6 +124,12 @@ public class EstimatorLayeredGraph extends SparsityEstimator {
 			_nodes = new ArrayList<>();
 			_rounds = r;
 			chain.forEach(i -> buildNext(i));
+		}
+
+		public LayeredGraph(MatrixBlock m, int r) {
+			_nodes = new ArrayList<>();
+			_rounds = r;
+			buildNext(m);
 		}
 		
 		public void buildNext(MatrixBlock mb) {
@@ -168,7 +198,103 @@ public class EstimatorLayeredGraph extends SparsityEstimator {
 			return (inpvec != null && inpvec.length > 0) ?
 				(rounds - 1) / Arrays.stream(inpvec).sum() : 0;
 		}
-		
+
+		public LayeredGraph rbind(LayeredGraph lg) {
+			LayeredGraph ret = new LayeredGraph(List.of(), _rounds);
+
+			Node[] rows = new Node[_nodes.get(0).length + lg._nodes.get(0).length];
+			Node[] columns = _nodes.get(1).clone();
+
+			System.arraycopy(_nodes.get(0), 0, rows, 0, _nodes.get(0).length);
+
+			for (int i = _nodes.get(0).length; i < rows.length; i++)
+				rows[i] = new Node();
+
+			for(int i = 0; i < lg._nodes.get(0).length; i++) {
+				for(int j = 0; j < columns.length; j++) {
+					List<Node> edges = lg._nodes.get(1)[j].getInput();
+					if(edges.contains(lg._nodes.get(0)[i])) {
+						columns[j].addInput(rows[i + _nodes.get(0).length]);
+					}
+				}
+			}
+			ret._nodes.add(rows);
+			ret._nodes.add(columns);
+			return ret;
+		}
+
+		public LayeredGraph cbind(LayeredGraph lg) {
+			LayeredGraph ret = new LayeredGraph(List.of(), _rounds);
+			int colLength = _nodes.get(1).length + lg._nodes.get(1).length;
+
+			Node[] rows = _nodes.get(0).clone();
+			Node[] columns = new Node[colLength];
+
+			System.arraycopy(_nodes.get(1), 0, columns, 0, _nodes.get(1).length);
+
+			for (int i = _nodes.get(1).length; i < columns.length; i++)
+				columns[i] = new Node();
+
+			for(int i = 0; i < rows.length; i++) {
+				for(int j = 0; j < lg._nodes.get(1).length; j++) {
+					List<Node> edges = lg._nodes.get(1)[j].getInput();
+					if(edges.contains(lg._nodes.get(0)[i])) {
+						columns[j + _nodes.get(1).length].addInput(rows[i]);
+					}
+				}
+			}
+			ret._nodes.add(rows);
+			ret._nodes.add(columns);
+			return ret;
+		}
+
+		public LayeredGraph transpose() {
+			LayeredGraph ret = new LayeredGraph(List.of(), _rounds);
+			Node[] rowsOld = _nodes.get(0);
+			Node[] columnsOld = _nodes.get(1);
+			Node[] rows = new Node[columnsOld.length];
+			Node[] columns = new Node[rowsOld.length];
+			for (int i = 0; i < columnsOld.length; i++)
+				rows[i] = new Node();
+			for (int i = 0; i < rowsOld.length; i++)
+				columns[i] = new Node();
+			for(int i = 0; i < rowsOld.length; i++) {
+				for(int j = 0; j < columnsOld.length; j++) {
+					List<Node> edges = columnsOld[j].getInput();
+					if(edges.contains(rowsOld[i])) {
+						columns[i].addInput(rows[j]);
+					}
+				}
+			}
+			ret._nodes.add(rows);
+			ret._nodes.add(columns);
+			return ret;
+		}
+
+		public LayeredGraph diag() {
+			LayeredGraph ret = new LayeredGraph(List.of(), _rounds);
+			Node[] rowsOld = _nodes.get(0);
+			Node[] columnsOld = _nodes.get(1);
+			Node[] rows = new Node[rowsOld.length];
+			Node[] columns = new Node[columnsOld.length];
+			for (int i = 0; i < rowsOld.length; i++)
+				rows[i] = new Node();
+			for (int i = 0; i < columnsOld.length; i++)
+				columns[i] = new Node();
+			for(int i = 0; i < rowsOld.length; i++) {
+				for(int j = 0; j < columnsOld.length; j++) {
+					List<Node> edges = columnsOld[j].getInput();
+					if(edges.contains(rowsOld[i]) && i == j) {
+						columns[j].addInput(rows[i]);
+					}
+				}
+			}
+			ret._nodes.add(rows);
+			ret._nodes.add(columns);
+			return ret;
+		}
+
+
 		private static class Node {
 			private List<Node> _input = new ArrayList<>();
 			private double[] _rvect;

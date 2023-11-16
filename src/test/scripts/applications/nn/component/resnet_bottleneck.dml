@@ -742,6 +742,34 @@ values_test_bottleneck_forward_2 = function() {
     test_util::check_all_close(out, out_expected, 0.00001)
 }
 
+
+/*
+ * **** Bottleneck Block Value Testing ****
+ * In these test cases, we compare the forward pass
+ * computation of a basic residual block against the
+ * PyTorch implementation. We calculate the PyTorch
+ * values with the NN module
+ * torchvision.models.resnet.Bottleneck and then
+ * hard-code the randomly initialized weights and
+ * biases and the expected output computed by PyTorch
+ * into this file.
+ */
+
+/*
+ * Test case 1:
+ * A forward pass of the bottleneck block with same
+ * input and output dimensions, i.e. stride 1 but
+ * with the default block expansion, i.e. different
+ * number of input and output channels thus requiring
+ * downsampling, in train mode.
+ */
 values_test_bottleneck_forward_1()
 
+/*
+ * Test case 2:
+ * A forward pass of the bottleneck block with different
+ * input and output dimensions with stride of 2 and
+ * with the default block expansion, i.e. downsampling,
+ * in train mode.
+ */
 values_test_bottleneck_forward_2()

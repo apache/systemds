@@ -1556,9 +1556,10 @@ values_test_residual_layer_forward = function() {
     blocks_weights = list(weights_block1, weights_block2)
     ema_means_vars = list(emas_block1, emas_block2)
     C_in = 2
-    [out, Hout, Wout, ema_means_vars_upd] = resnet::bottleneck_reslayer_forward(X, Hin, Win, blocks,
-                                                              strideh, stridew, C_in, C_base,
-                                                              blocks_weights, mode, ema_means_vars)
+    block_type = "bottleneck"
+    [out, Hout, Wout, ema_means_vars_upd] = resnet::reslayer_forward(X, Hin, Win, block_type,
+                                                     blocks, strideh, stridew, C_in, C_base,
+                                                     blocks_weights, mode, ema_means_vars)
 
     test_util::check_all_close(out, expected_out, 0.0001)
 }

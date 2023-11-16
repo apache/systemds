@@ -431,6 +431,77 @@ bottleneck_reslayer_forward = function(matrix[double] X, int Hin, int Win, int b
     }
 }
 
+reslayer_forward = function(matrix[double] X, int Hin, int Win,
+                            string block_type, int blocks, int strideh,
+                            int stridew, int C_in, int C_base,
+                            list[unknown] blocks_weights, string mode,
+                            list[unknown] ema_means_vars)
+    return (matrix[double] out, int Hout, int Wout,
+            list[unknown] ema_means_vars_upd) {
+    /*
+     * Executes the forward pass for a sequence of bottleneck
+     * residual blocks with the same number of base channels,
+     * i.e. residual layer.
+     *
+     * Inputs:
+     * - X: Inputs, of shape (N, C_in*Hin*Win)
+     * - Hin: Input height.
+     * - Win: Input width.
+     * - blocks: Number of residual blocks (bigger than 0).
+     * - strideh: Stride height for first conv layer of first block.
+     * - stridew: Stride width for first conv layer of first block.
+     * - C_in: Number of input channels.
+     * - C_base: Number of base channels of res layer.
+     * - blocks_weights: List of weights of each block.
+     *     -> i: List of weights of block i with the content
+     *           defined in the docs of basic_block_forward().
+     *     -> length == blocks
+     * - mode: 'train' or 'test' to indicate if the model is currently
+     *     being trained or tested for badge normalization layers.
+     *     See badge_norm2d.dml docs for more info.
+     * - ema_means_vars: List of exponential moving averages for mean
+     *     and variance for badge normalization layers of each block.
+     *     -> i: List of EMAs of block i with the content defined
+     *           in the docs of basic_block_forward().
+     *     -> length == blocks
+     */
+    # default values
+    mu_bn = 0.1
+    epsilon_bn = 1e-05
+
+    # first block with provided stride
+    if (block_type == "basic") {
+        [out, Hout, Wout, emas1_upd] = basic_block_forward(X,
+                                as.list(blocks_weights[1]),
+                                C_in, C_base, Hin, Win, strideh, stridew,
+                                mode, as.list(ema_means_vars[1]))
+    } else {
+        [out, Hout, Wout, emas1_upd] = bottleneck_block_forward(X,
+                                as.list(blocks_weights[1]),
+                                C_in, C_base, Hin, Win, strideh, stridew,
+                                mode, as.list(ema_means_vars[1]))
+    }
+    ema_means_vars_upd = list(emas1_upd)
+
+    # other blocks
+    for (i in 2:blocks) {
+        current_weights = as.list(blocks_weights[i])
+        current_emas = as.list(ema_means_vars[i])
+        if (block_type == "basic") {
+            [out, Hout, Wout, current_emas_upd] = basic_block_forward(X=out,
+                         weights=current_weights, C_in=C_base, C_base=C_base,
+                         Hin=Hout, Win=Wout, strideh=1, stridew=1, mode=mode,
+                         ema_means_vars=current_emas)
+        } else {
+            [out, Hout, Wout, current_emas_upd] = bottleneck_block_forward(X=out,
+                         weights=current_weights, C_in=C_base*4,
+                         C_base=C_base, Hin=Hout, Win=Wout, strideh=1,
+                         stridew=1, mode=mode, ema_means_vars=current_emas)
+        }
+        ema_means_vars_upd = append(ema_means_vars_upd, current_emas_upd)
+    }
+}
+
 resnet_basic_forward = function(matrix[double] X, int Hin, int Win,
                                 list[unknown] layer_sizes,
                                 list[unknown] model, string mode,
@@ -505,6 +576,8 @@ resnet_basic_forward = function(matrix[double] X, int Hin, int Win,
     mu_bn = 0.1
     epsilon_bn = 1e-05
 
+    block_type = "basic"
+
     # extract model params
     W_conv1 = as.matrix(model[1])
     gamma_bn1 = as.matrix(model[2]); beta_bn1 = as.matrix(model[3])
@@ -540,32 +613,36 @@ resnet_basic_forward = function(matrix[double] X, int Hin, int Win,
 
     # residual layer 1
     block_count = as.integer(as.scalar(layer_sizes[1]))
-    [out, Hout, Wout, emas1_upd] = basic_reslayer_forward(X=out, Hin=Hout,
-                               Win=Wout, blocks=block_count, strideh=1,
+    [out, Hout, Wout, emas1_upd] = reslayer_forward(X=out, Hin=Hout,
+                               Win=Wout, block_type=block_type,
+                               blocks=block_count, strideh=1,
                                stridew=1, C_in=C, C_base=64,
                                blocks_weights=weights_reslayer1, mode=mode,
                                ema_means_vars=emas_reslayer1)
     C = 64
     # residual layer 2
     block_count = as.integer(as.scalar(layer_sizes[2]))
-    [out, Hout, Wout, emas2_upd] = basic_reslayer_forward(X=out, Hin=Hout,
-                               Win=Wout, blocks=block_count, strideh=2,
+    [out, Hout, Wout, emas2_upd] = reslayer_forward(X=out, Hin=Hout,
+                               Win=Wout, block_type=block_type,
+                               blocks=block_count, strideh=2,
                                stridew=2, C_in=C, C_base=128,
                                blocks_weights=weights_reslayer2, mode=mode,
                                ema_means_vars=emas_reslayer2)
     C = 128
     # residual layer 3
     block_count = as.integer(as.scalar(layer_sizes[3]))
-    [out, Hout, Wout, emas3_upd] = basic_reslayer_forward(X=out, Hin=Hout,
-                               Win=Wout, blocks=block_count, strideh=2,
+    [out, Hout, Wout, emas3_upd] = reslayer_forward(X=out, Hin=Hout,
+                               Win=Wout, block_type=block_type,
+                               blocks=block_count, strideh=2,
                                stridew=2, C_in=C, C_base=256,
                                blocks_weights=weights_reslayer3, mode=mode,
                                ema_means_vars=emas_reslayer3)
     C = 256
     # residual layer 4
     block_count = as.integer(as.scalar(layer_sizes[4]))
-    [out, Hout, Wout, emas4_upd] = basic_reslayer_forward(X=out, Hin=Hout,
-                               Win=Wout, blocks=block_count, strideh=2,
+    [out, Hout, Wout, emas4_upd] = reslayer_forward(X=out, Hin=Hout,
+                               Win=Wout, block_type=block_type,
+                               blocks=block_count, strideh=2,
                                stridew=2, C_in=C, C_base=512,
                                blocks_weights=weights_reslayer4, mode=mode,
                                ema_means_vars=emas_reslayer4)

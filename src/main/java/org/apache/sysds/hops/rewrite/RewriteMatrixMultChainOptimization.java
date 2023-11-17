@@ -30,12 +30,11 @@ import org.apache.sysds.runtime.util.CollectionUtils;
 import org.apache.sysds.utils.Explain;
 
 /**
- * Rule: Determine the optimal order of execution for a chain of
- * matrix multiplications 
- * 
- * Solution: Classic Dynamic Programming
- * Approach: Currently, the approach based only on matrix dimensions
- * Goal: To reduce the number of computations in the run-time
+ * <strong>Rule</strong>: Determine the optimal order of execution for a chain of
+ * matrix multiplications <br>
+ * <strong>Solution</strong>: Classic Dynamic Programming <br>
+ * <strong>Approach</strong>: Currently, the approach based only on matrix dimensions <br>
+ * <strong>Goal</strong>: To reduce the number of computations in the run-time
  * (map-reduce) layer
  */
 public class RewriteMatrixMultChainOptimization extends HopRewriteRule
@@ -67,7 +66,7 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 	}
 	
 	/**
-	 * rule_OptimizeMMChains(): This method recurses through all Hops in the DAG
+	 * rule_OptimizeMMChains(): This method goes through all Hops in the DAG
 	 * to find chains that need to be optimized.
 	 * 
 	 * @param hop high-level operator
@@ -94,7 +93,7 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 	
 	/**
 	 * optimizeMMChain(): It optimizes the matrix multiplication chain in which
-	 * the last Hop is "this". Step-1) Identify the chain (mmChain). (Step-2) clear all
+	 * the last Hop is "this". (Step-1) Identify the chain (mmChain). (Step-2) clear all
 	 * links among the Hops that are involved in mmChain. (Step-3) Find the
 	 * optimal ordering (dynamic programming) (Step-4) Relink the hops in
 	 * mmChain.
@@ -107,9 +106,8 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 			LOG.trace("MM Chain Optimization for HOP: (" + hop.getClass().getSimpleName()
 				+ ", " + hop.getHopID() + ", " + hop.getName() + ")");
 		}
-		
-		ArrayList<Hop> mmChain = new ArrayList<>();
-		ArrayList<Hop> mmOperators = new ArrayList<>();
+
+        ArrayList<Hop> mmOperators = new ArrayList<>();
 		ArrayList<Hop> tempList;
 
 		// Step 1: Identify the chain (mmChain) & clear all links among the Hops
@@ -117,8 +115,7 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 
 		// Initialize mmChain with my inputs
 		mmOperators.add(hop);
-		for( Hop hi : hop.getInput() )
-			mmChain.add(hi);
+        ArrayList<Hop> mmChain = new ArrayList<>(hop.getInput());
 
 		// expand each Hop in mmChain to find the entire matrix multiplication
 		// chain
@@ -175,9 +172,7 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 		}
 
 		//core mmchain optimization (potentially overridden)
-		if( mmChain.size() == 2 ) 
-			return; //nothing to optimize
-		else
+		if( mmChain.size() != 2 )
 			optimizeMMChain(hop, mmChain, mmOperators, state);
 	}
 	
@@ -204,8 +199,8 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 	
 	/**
 	 * mmChainDP(): Core method to perform dynamic programming on a given array
-	 * of matrix dimensions.
-	 * 
+	 * of matrix dimensions. <br>
+	 *
 	 * Thomas H. Cormen, Charles E. Leiserson, Ronald L. Rivest, Clifford Stein
 	 * Introduction to Algorithms, Third Edition, MIT Press, page 395.
 	 */
@@ -252,8 +247,8 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 	 * mmChainRelinkHops(): This method gets invoked after finding the optimal
 	 * order (split[][]) from dynamic programming. It relinks the Hops that are
 	 * part of the mmChain.
-	 * @param mmChain : basic operands in the entire matrix multiplication chain.
-	 * @param mmOperators : Hops that store the intermediate results in the chain.
+	 * @param mmChain basic operands in the entire matrix multiplication chain.
+	 * @param mmOperators Hops that store the intermediate results in the chain.
 	 *                      For example: A = B %*% (C %*% D) there will be three
 	 *                      Hops in mmChain (B,C,D), and two Hops in mmOperators
 	 *                     (one for each * %*%).
@@ -338,7 +333,7 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 
 	/**
 	 * Obtains all dimension information of the chain and constructs the dimArray.
-	 * If all dimensions are known it returns true; othrewise the mmchain rewrite
+	 * If all dimensions are known it returns true; otherwise the mmchain rewrite
 	 * should be ended without modifications.
 	 * 
 	 * @param hop high-level operator
@@ -352,9 +347,9 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 		
 		// Build the array containing dimensions from all matrices in the chain		
 		// check the dimensions in the matrix chain to insure all dimensions are known
-		for( int i=0; i< chain.size(); i++ )
-			if( chain.get(i).getDim1() <= 0 || chain.get(i).getDim2() <= 0 )
-				dimsKnown = false;
+        for (Hop value : chain)
+            if (value.getDim1() <= 0 || value.getDim2() <= 0)
+                dimsKnown = false;
 		
 		if( dimsKnown ) { //populate dims array if all dims known
 			for( int i = 0; i < chain.size(); i++ ) {

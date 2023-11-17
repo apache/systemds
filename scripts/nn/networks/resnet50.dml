@@ -26,15 +26,21 @@ forward = function(matrix[double] X, int Hin, int Win,
                             list[unknown] ema_means_vars)
     return (matrix[double] out, list[unknown] ema_means_vars_upd) {
     /*
-     * Forward pass of the ResNet 18 model as introduced in
+     * Forward pass of the ResNet50 as introduced in
      * "Deep Residual Learning for Image Recognition" by
-     * Kaiming He et. al. and inspired by PyTorch.
+     * Kaiming He et. al. and inspired by the PyTorch
+     * implementation.
      *
      * Inputs:
      * - X: Inputs, of shape (N, C_in*Hin*Win).
      *     C_in = 3 is expected.
      * - Hin: Input height.
      * - Win: Input width.
+     * - layer_sizes: List of the sizes of each of
+     *     the 4 residual layers.
+     *     For ResNet18: [2, 2, 2, 2], RN34: [3, 4, 6, 3],
+     *     RN50: [3, 4, 6, 3], RN101: [3, 4, 23, 3],
+     *     RN152: [3, 8, 36, 3]
      * - model: Weights and bias matrices of the model
      *     with the following order/content:
      *   -> 1: Weights of conv 1 7x7, of shape (64, 3*7*7)
@@ -50,14 +56,14 @@ forward = function(matrix[double] X, int Hin, int Win,
      *         with 512 base channels.
      *      List of residual layers 1, 2, 3 & 4 have
      *      the content/order:
-     *      -> 1: List of weights for first residual
-     *            block.
-     *      -> 2: List of weights for second residual
-     *            block.
+     *      -> i: List of weights for residual block i.
+     *            with i in {1, ..., layer_sizes[layer]}
      *         Each list of weights for a residual block
      *         must follow the same order as defined in
-     *         the documentation of basic_block_forward().
-     *   -> 8: Weights of fully connected layer, of shape (512, 1000)
+     *         the documentation of bottleneck_block_forward().
+     *   -> 8: Weights of fully connected layer, of shape (C_out, 1000)
+     *         where C_out = 512 for basic block type and C_out = 2048
+     *         for bottleneck block type.
      *   -> 9: Bias of fully connected layer, of shape (1, 1000)
      * - mode: 'train' or 'test' to indicate if the model is currently
      *     being trained or tested for badge normalization layers.
@@ -72,11 +78,11 @@ forward = function(matrix[double] X, int Hin, int Win,
      *   -> 6: List of EMA means and vars for residual layer 4.
      *      Lists for EMAs of layer 1, 2, 3 & 4 must have the
      *      following order:
-     *      -> 1: List of EMA means and vars for residual block 1.
-     *      -> 2: List of EMA means and vars for residual block 2.
+     *      -> i: List of EMA means and vars for residual block i.
+     *            with i in {1, ..., layer_sizes[layer]}
      *         Each list of EMAs for a residual block
      *         must follow the same order as defined in
-     *         the documentation of basic_block_forward().
+     *         the documentation bottleneck_block_forward().
      * - NOTICE: The lists of the first blocks for layer 2, 3 and 4
      *           must include weights and EMAs for 1 extra conv layer
      *           and a batch norm layer for the downsampling on the
@@ -88,8 +94,8 @@ forward = function(matrix[double] X, int Hin, int Win,
      *     for mean and variance of badge normalization layers. It follows
      *     the same exact structure as the input EMAs list.
      */
-    layer_sizes = list(2, 2, 2, 2)
-    block_type = "basic"
+    layer_sizes = list(3, 4, 6, 3)
+    block_type = "bottleneck"
     [out, ema_means_vars_upd] = resnet::resnet_forward(X, Hin, Win, block_type,
                                       layer_sizes, model, mode, ema_means_vars)
 }

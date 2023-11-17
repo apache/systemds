@@ -39,7 +39,7 @@ import org.apache.sysds.utils.Explain;
  */
 public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 {
-	
+
 	@Override
 	public ArrayList<Hop> rewriteHopDAGs(ArrayList<Hop> roots, ProgramRewriteStatus state) 
 	{
@@ -61,10 +61,10 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 
 		// Find the optimal order for the chain whose result is the current HOP
 		rule_OptimizeMMChains(root, state);
-		
+
 		return root;
 	}
-	
+
 	/**
 	 * rule_OptimizeMMChains(): This method goes through all Hops in the DAG
 	 * to find chains that need to be optimized.
@@ -73,31 +73,29 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 	 */
 	private void rule_OptimizeMMChains(Hop hop, ProgramRewriteStatus state) 
 	{
-		if( hop.isVisited() )
-			return;
-		
-		if( HopRewriteUtils.isMatrixMultiply(hop)
-			&& !((AggBinaryOp)hop).hasLeftPMInput() && !hop.isVisited() ) 
-		{
-			// Try to find and optimize the chain in which current Hop is the
-			// last operator
-			prepAndOptimizeMMChain(hop, state);
-		}
-		
-		for( Hop hi : hop.getInput() )
-			rule_OptimizeMMChains(hi, state);
+		if( !hop.isVisited() ) {
 
-		hop.setVisited();
+			if (HopRewriteUtils.isMatrixMultiply(hop) && !((AggBinaryOp) hop).hasLeftPMInput()) {
+				// Try to find and optimize the chain in which current Hop is the
+				// last operator
+				prepAndOptimizeMMChain(hop, state);
+			}
+
+			for (Hop hi : hop.getInput())
+				rule_OptimizeMMChains(hi, state);
+
+			hop.setVisited();
+		}
 	}
 
-	
+
 	/**
 	 * optimizeMMChain(): It optimizes the matrix multiplication chain in which
-	 * the last Hop is "this". (Step-1) Identify the chain (mmChain). (Step-2) clear all
-	 * links among the Hops that are involved in mmChain. (Step-3) Find the
-	 * optimal ordering (dynamic programming) (Step-4) Relink the hops in
-	 * mmChain.
-	 * 
+	 * the last Hop is "this".
+	 * <ul><li>Step 1: Identify the chain (mmChain).</li>
+	 * <li>Step 2: Clear all links among the Hops that are involved in mmChain.</li>
+	 * <li>Step 3: Find the optimal ordering via dynamic programming.</li>
+	 * <li>Step 4: Relink the hops in mmChain.</li></ul>
 	 * @param hop high-level operator
 	 */
 	private void prepAndOptimizeMMChain( Hop hop, ProgramRewriteStatus state )
@@ -117,8 +115,7 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 		mmOperators.add(hop);
         ArrayList<Hop> mmChain = new ArrayList<>(hop.getInput());
 
-		// expand each Hop in mmChain to find the entire matrix multiplication
-		// chain
+		// Expand each Hop in mmChain to find the entire matrix multiplication chain
 		int i = 0;
 		while( i < mmChain.size() )
 		{
@@ -182,7 +179,7 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 		boolean dimsKnown = getDimsArray( hop, mmChain, dimsArray );
 		
 		if( dimsKnown ) {
-			// Step 3: clear the links among Hops within the identified chain
+			// Step 3: Clear the links among Hops within the identified chain
 			clearLinksWithinChain ( hop, mmOperators );
 			
 			// Step 4: Find the optimal ordering via dynamic programming.
@@ -247,7 +244,7 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 	 * mmChainRelinkHops(): This method gets invoked after finding the optimal
 	 * order (split[][]) from dynamic programming. It relinks the Hops that are
 	 * part of the mmChain.
-	 * @param mmChain basic operands in the entire matrix multiplication chain.
+	 * @param mmChain basic operands in the entire matrix multiplication chain
 	 * @param mmOperators Hops that store the intermediate results in the chain.
 	 *                      For example: A = B %*% (C %*% D) there will be three
 	 *                      Hops in mmChain (B,C,D), and two Hops in mmOperators
@@ -265,7 +262,7 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 		//NOTE: the opIndex is a MutableInt in order to get the correct positions
 		//in ragged chains like ((((a, b), c), (D, E), f), e) that might be given
 		//like that by the original scripts variable assignments
-		
+
 		//single matrix - end of recursion
 		if( i == j ) {
 			logTraceHop(h, level);
@@ -276,7 +273,7 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 			String offset = Explain.getIdentation(level);
 			LOG.trace(offset + "(");
 		}
-		
+
 		// Set Input1 for current Hop h
 		if( i == split[i][j] ) {
 			h.getInput().add(mmChain.get(i));
@@ -307,7 +304,7 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 
 		// Propagate properties of input hops to current hop h
 		h.refreshSizeInformation();
-		
+
 		if( LOG.isTraceEnabled() ){
 			String offset = Explain.getIdentation(level);
 			LOG.trace(offset + ")");
@@ -324,7 +321,7 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 			}
 			Hop input1 = op.getInput().get(0);
 			Hop input2 = op.getInput().get(1);
-			
+
 			op.getInput().clear();
 			input1.getParent().remove(op);
 			input2.getParent().remove(op);

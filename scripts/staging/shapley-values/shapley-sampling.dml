@@ -1,0 +1,123 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+
+# Shapley values using shapley sampling for different modeltypes.
+#
+# INPUT:
+# ---------------------------------------------------------------------------------------
+# x               Single sample for whith to compute the shapley values.
+# feature_idx     The index of the feature of interest.
+# M               The model created at xgboost.
+# learning_rate   The learning rate used in the model.
+# X_bg            The background dataset from which to pull the random samples to form coalitions.
+# iterations      The number of iterations i.e. the number of random coalitions from which the shapley value will be estimated.
+# seed            A seed, in case the sampling has to be deterministic.
+# ---------------------------------------------------------------------------------------
+#
+# OUTPUT:
+# -----------------------------------------------------------------------------
+# S     The shapley value of the feature for the given sample. As a Matrix, so adding the option to return this for all features is easier.
+# -----------------------------------------------------------------------------
+
+
+# Imports
+source("builtin/xgboostPredictRegression.dml") as xgboost_regression
+
+shapley_sampling_xgboost_regression_loop = function(Matrix[Double] x, Integer feature_idx = 0, Matrix[Double] M, Double learning_rate = 0.3, Matrix[Double] X_bg, Integer iterations = 1000, Integer seed = -1 )
+  return ( Matrix[Double]  S)
+{
+  number_of_features = ncol(x)
+  marginal_contributions_sum = 0
+
+  random_samples_indices = sample(nrow(X_bg), iterations, seed=seed)
+  random_replace_vectors = round(rand(rows=iterations, cols=ncol(x), min=0, max=1, seed=seed))
+
+  print("Sampling shapley value for feature at index "+feature_idx+" with "+iterations+" iterations...")
+
+  for (iter in 1:iterations) {
+    #pick sample
+    z_sample = X_bg[as.scalar(random_samples_indices[iter]),]
+    #get random replacement vector
+    x_idx = random_replace_vectors[iter,]
+    # set feature at index to 1 because we want to keep it
+    x_idx[1,feature_idx] = 1
+
+    # use features from x where replace vector x_idx has a one and use from z_sample where it has a 0
+    x_with = (x * x_idx) + (z_sample * !x_idx)
+
+    # use same instance, but replace feature of interest with feature from sample
+    x_without = x_with
+    x_without[1,feature_idx]=z_sample[1,feature_idx]
+
+    # combine into one dataset
+    x_test = rbind(x_with, x_without)
+
+    # call run prediction
+    Y = xgboost_regression::m_xgboostPredictRegression(X=x_test, M=M, learning_rate=learning_rate)
+    marginal_contributions_sum += as.scalar(Y[1] - Y[2])
+  }
+
+  phi_j_x = marginal_contributions_sum / iterations
+
+  S = as.matrix(phi_j_x)
+
+}
+
+
+shapley_sampling_xgboost_regression_matrix = function(Matrix[Double] x, Integer feature_idx = 0, Matrix[Double] M, Double learning_rate = 0.3, Matrix[Double] X_bg, Integer iterations = 1000, Integer seed = -1 )
+return ( Matrix[Double]  S)
+{
+  number_of_features = ncol(x)
+  marginal_contributions_sum = 0
+
+  # pick samples
+  random_samples_indices = sample(nrow(X_bg), iterations, seed)
+  X_sample = matrix(0, rows = iterations, cols = number_of_features)
+  for (i in 1:nrow(X_sample)) {
+    X_sample[i,] = X_bg[as.scalar(random_samples_indices[i]),]
+  }
+
+
+  # mask to replace random features
+  random_replace_mask = round(rand(rows=iterations, cols=number_of_features, min=0, max=1, seed=seed))
+
+  # set mask at column of feature_idx to 1 because we want to keep it
+  random_replace_mask[,feature_idx] = matrix(1, rows=iterations, cols=1)
+
+  X_with    = (random_replace_mask * x) + (X_sample * !random_replace_mask)
+  X_without = X_with
+  X_without[,feature_idx] = X_sample[,feature_idx]
+
+  #concat for call to model
+  X_test = rbind(X_with, X_without)
+
+  #call model
+  Y = xgboost_regression::m_xgboostPredictRegression(X=X_test, M=M, learning_rate=learning_rate)
+
+  # compute marginals
+  marginal_contributions = Y[1:iterations] - Y[iterations+1:2*iterations]
+
+  phi_j_x = sum(marginal_contributions) / iterations
+
+  S = as.matrix(phi_j_x)
+
+}

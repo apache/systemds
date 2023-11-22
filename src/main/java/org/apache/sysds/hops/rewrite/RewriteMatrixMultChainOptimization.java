@@ -88,7 +88,6 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 		}
 	}
 
-
 	/**
 	 * optimizeMMChain(): It optimizes the matrix multiplication chain in which
 	 * the last Hop is "this".
@@ -315,7 +314,7 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 	{
 		for( int i=0; i < operators.size(); i++ ) {
 			Hop op = operators.get(i);
-			if( op.getInput().size() != 2 || (i != 0 && op.getParent().size() > 1 ) ) {
+			if( op.getInput().size() != 2 || (i > 0 && op.getParent().size() > 1 ) ) {
 				throw new HopsException(hop.printErrorLocation() + 
 					"Unexpected error while applying optimization on matrix-mult chain. \n");
 			}

@@ -140,12 +140,12 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 		}
 
 		// Expand each Hop in mmChain to find the entire matrix multiplication chain
-		int i = 0;
-		while( i < mmChain.size() )
+		mmChainIndex = 0;
+		while( mmChainIndex < mmChain.size() )
 		{
 			boolean expandable = false;
 
-			Hop h = mmChain.get(i);
+			Hop h = mmChain.get(mmChainIndex);
 			/*
 			 * Check if mmChain[i] is expandable: 
 			 * 1) It must be MATMULT 
@@ -169,18 +169,18 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 			h.setVisited();
 
 			if( !expandable ) {
-				i = i + 1;
+				mmChainIndex++;
 			}
 			else {
-				ArrayList<Hop> tempList = mmChain.get(i).getInput();
+				ArrayList<Hop> tempList = mmChain.get(mmChainIndex).getInput();
 				if( tempList.size() != 2 ) {
 					throw new HopsException(hop.printErrorLocation() + "Hops::rule_OptimizeMMChain(): AggBinary must have exactly two inputs.");
 				}
 
 				// add current operator to mmOperators, and its input nodes to mmChain
-				mmOperators.add(mmChain.get(i));
-				mmChain.set(i, tempList.get(0));
-				mmChain.add(i + 1, tempList.get(1));
+				mmOperators.add(mmChain.get(mmChainIndex));
+				mmChain.set(mmChainIndex, tempList.get(0));
+				mmChain.add(mmChainIndex + 1, tempList.get(1));
 			}
 		}
 

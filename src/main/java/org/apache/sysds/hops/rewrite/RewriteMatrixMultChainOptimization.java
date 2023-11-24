@@ -113,11 +113,30 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 		mmOperators.add(hop);
         ArrayList<Hop> mmChain = new ArrayList<>(hop.getInput());
 
-		for (Hop h: mmChain) {
-			if (HopRewriteUtils.isReorg(h, Types.ReOrgOp.TRANS) && !h.isVisited()
-					&& HopRewriteUtils.isMatrixMultiply(h.getInput(0))) {
-				rewriteChainForTransposeOperation(hop, mmChain, h);
+		int mmChainIndex = 0;
+		while (mmChainIndex < mmChain.size())
+		{
+			Hop mmChainHop = mmChain.get(mmChainIndex);
+
+			// Check if current hop is a transpose operator,
+			// if it is visited,
+			// and if it contains matrixmult operator as input
+			if (HopRewriteUtils.isReorg(mmChainHop, Types.ReOrgOp.TRANS) && !mmChainHop.isVisited()
+					&& HopRewriteUtils.isMatrixMultiply(mmChainHop.getInput(0)))
+			{
+				int indexInParentInput = hop.getInput().indexOf(mmChainHop);
+
+				// Set transpose operator's parent as new one for matrix multiplication operator
+				Hop matrixMultHop = rewriteChainOnTransposeOperator(mmChainHop);
+				updateParentOfHop(matrixMultHop, hop);
+
+				// Update input of transpose operator's parent
+				hop.getInput().set(indexInParentInput, matrixMultHop);
+
+				// Replace transpose operator with the matrixmult one in the mmchain
+				mmChain.set(mmChainIndex, matrixMultHop);
 			}
+			mmChainIndex++;
 		}
 
 		// Expand each Hop in mmChain to find the entire matrix multiplication chain
@@ -251,7 +270,7 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 	 * part of the mmChain.
 	 * @param mmChain basic operands in the entire matrix multiplication chain
 	 * @param mmOperators Hops that store the intermediate results in the chain.
-	 *                      For example: A = B %*% (C %*% D) there will be three
+	 *                      <strong>For example:</strong> A = B %*% (C %*% D) there will be three
 	 *                      Hops in mmChain (B,C,D), and two Hops in mmOperators
 	 *                     (one for each * %*%).
 	 * @param h high level operator
@@ -379,70 +398,92 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 		return dimsKnown;
 	}
 
-	protected static void rewriteChainForTransposeOperation(Hop transposeOpParent, ArrayList<Hop> mmChain, Hop transposeOp) {
-		Hop matrixMultOp = transposeOp.getInput(0);
-		Hop firstMatrix = matrixMultOp.getInput(0);
-		Hop secondMatrix = matrixMultOp.getInput(1);
-		Hop secondTransposeOp = null;
+	/**
+	 * Transforms a transpose operator into matrixmult and adjusts
+	 * all the respective attributes of the other operators, also creates a second transpose operator.
+	 * Thus, we can achieve larger optimization space for the transformed chain.<br>
+	 * <strong>Idea:</strong> t(A %*% B) -> t(B) %*% t(A)
+	 *
+	 * @param transposeHop the transpose operator, which contains all useful data for the transformation
+	 * @return the new matrixmult operator
+	 */
+	protected static Hop rewriteChainOnTransposeOperator(Hop transposeHop) {
+		Hop matrixMultHop = transposeHop.getInput(0);
+		Hop firstMatrix = matrixMultHop.getInput(0);
+		Hop secondMatrix = matrixMultHop.getInput(1);
+
+		// Clone transpose operator for the overwritten chain
+		Hop secondTransposeHop = null;
 		try {
-			secondTransposeOp = (Hop) transposeOp.clone();
+			secondTransposeHop = (Hop) transposeHop.clone();
 		} catch (CloneNotSupportedException ex) {
 			System.err.println("Error on cloning transpose operator: " + ex.getMessage());
 		}
+		assert secondTransposeHop!= null;
 
-		transposeOpParent.getInput().set(transposeOpParent.getInput().indexOf(transposeOp), matrixMultOp);
+		// Set parent to the other operators accordingly
+		updateParentOfHop(firstMatrix, transposeHop);
+		updateParentOfHop(secondMatrix, secondTransposeHop);
+		updateParentOfHop(transposeHop, matrixMultHop);
+        updateParentOfHop(secondTransposeHop, matrixMultHop);
 
-		// Set transpose operator's parent as new one for matrix multiplication operator
-		matrixMultOp.getParent().clear();
-		matrixMultOp.getParent().add(transposeOpParent);
+		// Set input to all operators and update attributes accordingly
+		ArrayList<Hop> inputList = new ArrayList<>();
+		inputList.add(firstMatrix);
+		updateAttributesOfHop(transposeHop, inputList, firstMatrix.getName());
 
-		// Set parents to all other operators accordingly
-		firstMatrix.getParent().clear();
-		firstMatrix.getParent().add(transposeOp);
+		inputList.set(0, secondMatrix);
+		updateAttributesOfHop(secondTransposeHop, inputList, secondMatrix.getName());
+		secondTransposeHop.setFilename(transposeHop.getFilename());
 
-		secondMatrix.getParent().clear();
-		secondMatrix.getParent().add(secondTransposeOp);
+		inputList.set(0, secondTransposeHop);
+		inputList.add(transposeHop);
+		updateAttributesOfHop(matrixMultHop, inputList, firstMatrix.getName());
 
-		transposeOp.getParent().clear();
-		transposeOp.getParent().add(matrixMultOp);
-
-		secondTransposeOp.getParent().clear();
-		secondTransposeOp.getParent().add(matrixMultOp);
-
-		// Set input to all operators accordingly
-		transposeOp.getInput().clear();
-		transposeOp.getInput().add(firstMatrix);
-		transposeOp.setDim1(firstMatrix.getDim2());
-		transposeOp.setDim2(firstMatrix.getDim1());
-		transposeOp.setText(String.format("t(%s)", firstMatrix.getName()));
-
-		secondTransposeOp.getInput().clear();
-		secondTransposeOp.getInput().add(secondMatrix);
-		secondTransposeOp.setDim1(secondMatrix.getDim2());
-		secondTransposeOp.setDim2(secondMatrix.getDim1());
-		secondTransposeOp.setText(String.format("t(%s)", secondMatrix.getName()));
-		secondTransposeOp.setFilename(transposeOp.getFilename());
-
-		matrixMultOp.getInput().clear();
-		matrixMultOp.getInput().add(secondTransposeOp);
-		matrixMultOp.getInput().add(transposeOp);
-		matrixMultOp.setDim1(secondTransposeOp.getDim1());
-		matrixMultOp.setDim2(transposeOp.getDim2());
-		matrixMultOp.setText(transposeOp.getText());
-
-		// Replace transpose operator with the matrixmult one in the mmchain
-		mmChain.set(mmChain.indexOf(transposeOp), matrixMultOp);
+		return matrixMultHop;
 	}
 
 	private static int inputCount( Hop p, Hop h ) {
 		return CollectionUtils.cardinality(h, p.getInput());
 	}
-	
+
 	private static void logTraceHop( Hop hop, int level ) {
 		if( LOG.isTraceEnabled() ) {
 			String offset = Explain.getIdentation(level);
 			LOG.trace(offset+ "Hop " + hop.getName() + "(" + hop.getClass().getSimpleName() 
 				+ ", " + hop.getHopID() + ")" + " " + hop.getDim1() + "x" + hop.getDim2());
 		}
+	}
+
+	private static void updateParentOfHop(Hop hopToUpdate, Hop parentToSet) {
+		hopToUpdate.getParent().clear();
+		hopToUpdate.getParent().add(parentToSet);
+	}
+
+	/**
+	 * Updates input list, dimensions of matrix and text of a given Hop.
+	 *
+	 * @param hopToUpdate the hop that will be updated
+	 * @param inputList new input list that will be set
+	 * @param text new text of the operator
+	 */
+	private static void updateAttributesOfHop(Hop hopToUpdate, ArrayList<Hop> inputList, String text) {
+		hopToUpdate.getInput().clear();
+
+		for (Hop input : inputList) {
+			hopToUpdate.getInput().add(input);
+		}
+
+		if (inputList.size() > 1) {
+			// Here we add matrices of a matrixmult operator
+			hopToUpdate.setDim1(inputList.get(0).getDim1());
+			hopToUpdate.setDim2(inputList.get(1).getDim2());
+		} else {
+			// Here we add dimensions of a transpose operator
+			hopToUpdate.setDim1(inputList.get(0).getDim2());
+			hopToUpdate.setDim2(inputList.get(0).getDim1());
+		}
+
+		hopToUpdate.setText(String.format("t(%s)", text));
 	}
 }

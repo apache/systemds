@@ -175,7 +175,7 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 				mmChainIndex++;
 			}
 			else {
-				ArrayList<Hop> tempList = mmChain.get(i).getInput();
+				ArrayList<Hop> tempList = mmChain.get(mmChainIndex).getInput();
 				if( tempList.size() != 2 ) {
 					throw new HopsException(hop.printErrorLocation() + "Hops::rule_OptimizeMMChain(): AggBinary must have exactly two inputs.");
 				}

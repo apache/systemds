@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 
 import org.apache.commons.lang3.mutable.MutableInt;
+import org.apache.sysds.common.Types;
 import org.apache.sysds.hops.AggBinaryOp;
 import org.apache.sysds.hops.Hop;
 import org.apache.sysds.hops.HopsException;
@@ -47,7 +48,7 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 			return null;
 
 		// Find the optimal order for the chain whose result is the current HOP
-		for( Hop h : roots ) 
+		for( Hop h : roots )
 			rule_OptimizeMMChains(h, state);
 		
 		return roots;
@@ -71,7 +72,7 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 	 * 
 	 * @param hop high-level operator
 	 */
-	private void rule_OptimizeMMChains(Hop hop, ProgramRewriteStatus state) 
+	private void rule_OptimizeMMChains(Hop hop, ProgramRewriteStatus state)
 	{
 		if( !hop.isVisited() ) {
 
@@ -104,13 +105,11 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 				+ ", " + hop.getHopID() + ", " + hop.getName() + ")");
 		}
 
-        ArrayList<Hop> mmOperators = new ArrayList<>();
-		ArrayList<Hop> tempList;
-
 		// Step 1: Identify the chain (mmChain) & clear all links among the Hops
 		// that are involved in mmChain.
 
-		// Initialize mmChain with my inputs
+		// Initialize mmChain with current hop's inputs
+		ArrayList<Hop> mmOperators = new ArrayList<>();
 		mmOperators.add(hop);
         ArrayList<Hop> mmChain = new ArrayList<>(hop.getInput());
 
@@ -147,7 +146,7 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 				i = i + 1;
 			}
 			else {
-				tempList = mmChain.get(i).getInput();
+				ArrayList<Hop> tempList = mmChain.get(i).getInput();
 				if( tempList.size() != 2 ) {
 					throw new HopsException(hop.printErrorLocation() + "Hops::rule_OptimizeMMChain(): AggBinary must have exactly two inputs.");
 				}
@@ -298,8 +297,8 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 		}
 
 		// Find children for both the inputs
-		mmChainRelinkHops(h.getInput().get(0), i, split[i][j], mmChain, mmOperators, opIndex, split, level+1);
-		mmChainRelinkHops(h.getInput().get(1), split[i][j] + 1, j, mmChain, mmOperators, opIndex, split, level+1);
+		mmChainRelinkHops(h.getInput(0), i, split[i][j], mmChain, mmOperators, opIndex, split, level+1);
+		mmChainRelinkHops(h.getInput(1), split[i][j] + 1, j, mmChain, mmOperators, opIndex, split, level+1);
 
 		// Propagate properties of input hops to current hop h
 		h.refreshSizeInformation();
@@ -318,8 +317,8 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 				throw new HopsException(hop.printErrorLocation() + 
 					"Unexpected error while applying optimization on matrix-mult chain. \n");
 			}
-			Hop input1 = op.getInput().get(0);
-			Hop input2 = op.getInput().get(1);
+			Hop input1 = op.getInput(0);
+			Hop input2 = op.getInput(1);
 
 			op.getInput().clear();
 			input1.getParent().remove(op);

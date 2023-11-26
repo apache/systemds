@@ -22,14 +22,15 @@ package org.apache.sysds.runtime.matrix.data;
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.common.Types;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
 
 public class LibMatrixSketch {
 
 	public static MatrixBlock getUniqueValues(MatrixBlock blkIn, Types.Direction dir) {
-		//similar to R's unique, this operation takes a matrix and computes the
-		//unique values (or rows in case of multiple column inputs)
+		// similar to R's unique, this operation takes a matrix and computes the unique values
+		// (or rows in case of multiple column inputs)
 		
 		int rlen = blkIn.getNumRows();
 		int clen = blkIn.getNumColumns();
@@ -57,6 +58,63 @@ public class LibMatrixSketch {
 				break;
 
 			case Row:
+				ArrayList<double[]> retainedRows = new ArrayList<>();
+
+				for (int i=0; i<rlen; ++i) {
+
+					// BitSet will not work because we need 2 pieces of info:
+					// 1. the index and
+					// 2. the value
+					// A BitSet gives us only whether there is a value at a particular index, but not what that
+					// specific value is.
+
+					double[] currentRow = new double[clen];
+					for (int j=0; j<clen; ++j) {
+						double rawValue = blkIn.getValue(i, j);
+						currentRow[j] = rawValue;
+					}
+
+					// no need to check for duplicates for the first row
+					if (i == 0) {
+						retainedRows.add(currentRow);
+						continue;
+					}
+
+					// ensure we are not adding duplicate rows to retainedRows array
+					int uniqueRowCount = 0;
+					for (int m=0; m<retainedRows.size(); ++m) {
+
+						double[] prevRow = retainedRows.get(m);
+
+						int n = 0;
+						while (n < clen) {
+							if (prevRow[n] != currentRow[n]) {
+								break;
+							}
+							n++;
+						}
+
+						// column check terminates early only if there is a column-level mismatch, ie rows are different
+						if (n != clen) {
+							uniqueRowCount++;
+						}
+					}
+
+					// add current row to retainedRows iff it is unique from all prev retained rows
+					if (uniqueRowCount == retainedRows.size()) {
+						retainedRows.add(currentRow);
+					}
+				}
+
+				blkOut = new MatrixBlock(retainedRows.size(), blkIn.getNumColumns(), false);
+				for (int i=0; i<retainedRows.size(); ++i) {
+					for (int j=0; j<blkIn.getNumColumns(); ++j) {
+						blkOut.quickSetValue(i, j, retainedRows.get(i)[j]);
+					}
+				}
+
+				break;
+
 			case Col:
 				throw new NotImplementedException("Unique Row/Col has not been implemented yet");
 

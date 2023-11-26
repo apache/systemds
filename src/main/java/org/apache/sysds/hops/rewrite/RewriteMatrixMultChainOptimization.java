@@ -119,29 +119,9 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 		}
 
 		int mmChainIndex = 0;
-		while (mmChainIndex < mmChain.size())
-		{
-			Hop mmChainHop = mmChain.get(mmChainIndex);
 
-			// Check if current hop is a transpose operator,
-			// if it is visited,
-			// and if it contains matrixmult operator as input
-			if (HopRewriteUtils.isReorg(mmChainHop, Types.ReOrgOp.TRANS) && !mmChainHop.isVisited()
-					&& HopRewriteUtils.isMatrixMultiply(mmChainHop.getInput(0)))
-			{
-				int indexInParentInput = hop.getInput().indexOf(mmChainHop);
-
-				// Set transpose operator's parent as new one for matrix multiplication operator
-				Hop matrixMultHop = rewriteChainOnTransposeOperator(mmChainHop);
-				updateParentOfHop(matrixMultHop, hop);
-
-				// Update input of transpose operator's parent
-				hop.getInput().set(indexInParentInput, matrixMultHop);
-
-				// Replace transpose operator with the matrixmult one in the mmchain
-				mmChain.set(mmChainIndex, matrixMultHop);
-			}
-			mmChainIndex++;
+		if (PUSH_DOWN_TRANSPOSE) {
+			checkChainForTransposeAndRewrite(mmChainIndex, mmChain, hop);
 		}
 
 		// Expand each Hop in mmChain to find the entire matrix multiplication chain
@@ -401,6 +381,18 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 		return dimsKnown;
 	}
 
+	private static int inputCount( Hop p, Hop h ) {
+		return CollectionUtils.cardinality(h, p.getInput());
+	}
+
+	private static void logTraceHop( Hop hop, int level ) {
+		if( LOG.isTraceEnabled() ) {
+			String offset = Explain.getIdentation(level);
+			LOG.trace(offset+ "Hop " + hop.getName() + "(" + hop.getClass().getSimpleName() 
+				+ ", " + hop.getHopID() + ")" + " " + hop.getDim1() + "x" + hop.getDim2());
+		}
+	}
+
 	/**
 	 * Transforms a transpose operator into matrixmult and adjusts
 	 * all the respective attributes of the other operators, also creates a second transpose operator.
@@ -410,7 +402,7 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 	 * @param transposeHop the transpose operator, which contains all useful data for the transformation
 	 * @return the new matrixmult operator
 	 */
-	protected static Hop rewriteChainOnTransposeOperator(Hop transposeHop) {
+	private Hop rewriteChainOnTransposeOperator(Hop transposeHop) {
 		Hop matrixMultHop = transposeHop.getInput(0);
 		Hop firstMatrix = matrixMultHop.getInput(0);
 		Hop secondMatrix = matrixMultHop.getInput(1);
@@ -428,7 +420,7 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 		updateParentOfHop(firstMatrix, transposeHop);
 		updateParentOfHop(secondMatrix, secondTransposeHop);
 		updateParentOfHop(transposeHop, matrixMultHop);
-        updateParentOfHop(secondTransposeHop, matrixMultHop);
+		updateParentOfHop(secondTransposeHop, matrixMultHop);
 
 		// Set input to all operators and update attributes accordingly
 		ArrayList<Hop> inputList = new ArrayList<>();
@@ -446,15 +438,30 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 		return matrixMultHop;
 	}
 
-	private static int inputCount( Hop p, Hop h ) {
-		return CollectionUtils.cardinality(h, p.getInput());
-	}
+	private void checkChainForTransposeAndRewrite(int mmChainIndex, ArrayList<Hop> mmChain, Hop hop) {
+		while (mmChainIndex < mmChain.size())
+		{
+			Hop mmChainHop = mmChain.get(mmChainIndex);
 
-	private static void logTraceHop( Hop hop, int level ) {
-		if( LOG.isTraceEnabled() ) {
-			String offset = Explain.getIdentation(level);
-			LOG.trace(offset+ "Hop " + hop.getName() + "(" + hop.getClass().getSimpleName() 
-				+ ", " + hop.getHopID() + ")" + " " + hop.getDim1() + "x" + hop.getDim2());
+			// Check if current hop is a transpose operator,
+			// if it is visited,
+			// and if it contains matrixmult operator as input
+			if (HopRewriteUtils.isReorg(mmChainHop, Types.ReOrgOp.TRANS) && !mmChainHop.isVisited()
+				&& HopRewriteUtils.isMatrixMultiply(mmChainHop.getInput(0)))
+			{
+				int indexInParentInput = hop.getInput().indexOf(mmChainHop);
+
+				// Set transpose operator's parent as new one for matrix multiplication operator
+				Hop matrixMultHop = rewriteChainOnTransposeOperator(mmChainHop);
+				updateParentOfHop(matrixMultHop, hop);
+
+				// Update input of transpose operator's parent
+				hop.getInput().set(indexInParentInput, matrixMultHop);
+
+				// Replace transpose operator with the matrixmult one in the mmchain
+				mmChain.set(mmChainIndex, matrixMultHop);
+			}
+			mmChainIndex++;
 		}
 	}
 

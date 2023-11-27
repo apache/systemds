@@ -4,13 +4,16 @@ public class LibMatrixFourier {
 
     /**
      * Function to perform Fast Fourier Transformation on a given array.
+     * Its length has to be a power of two.
      *
      * @param in array of ComplexDoubles
      * @return array of ComplexDoubles
      */
     public static ComplexDouble[] fft(ComplexDouble[] in){
 
-        in = fillToPowerOfTwo(in);
+        // TODO: how to invert fillToPowerOfTwo after calculation
+        //  in = fillToPowerOfTwo(in);
+
         int n = in.length;
         if(n == 1){
             return in;
@@ -38,6 +41,7 @@ public class LibMatrixFourier {
 
     /**
      * Function to perform Fast Fourier Transformation on a given array.
+     * Its length has to be a power of two.
      *
      * @param in array of doubles
      * @return array of ComplexDoubles

@@ -29,4 +29,23 @@ public class FourierTest {
         assertTrue(Arrays.equals(expected, res));
     }
 
+    @Test
+    public void notPowerOfTwoTest() {
+        double[] in = {1, 2, 3, 4, 5};
+
+        // see https://de.mathworks.com/help/matlab/ref/ifft.html
+        ComplexDouble[] expected = new ComplexDouble[5];
+        expected[0] = new ComplexDouble(15,0);
+        expected[1] = new ComplexDouble(-2.5000,3.4410);
+        expected[2] = new ComplexDouble(-2.5000,0.8123);
+        expected[3] = new ComplexDouble(-2.5000, - 0.8123);
+        expected[4] = new ComplexDouble(-2.5000, - 3.4410);
+
+        ComplexDouble[] res = fft(in);
+        for(ComplexDouble elem : res){
+            System.out.println(elem);
+        }
+        assertTrue(Arrays.equals(expected, res));
+    }
+
 }

@@ -135,7 +135,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 	public static final double ULTRA_SPARSITY_TURN_POINT2 = 0.0004;
 	public static final int ULTRA_SPARSE_BLOCK_NNZ = 40;
 	//default sparse block type: modified compressed sparse rows, for efficient incremental construction
-	public static final SparseBlock.Type DEFAULT_SPARSEBLOCK = SparseBlock.Type.MCSR;
+	public static final SparseBlock.Type DEFAULT_SPARSEBLOCK = SparseBlock.Type.MCSR; //TODO: Change to DCSR temporarily
 	//default sparse block type for update in place: compressed sparse rows, to prevent serialization
 	public static final SparseBlock.Type DEFAULT_INPLACE_SPARSEBLOCK = SparseBlock.Type.CSR;
 	//allowed overhead for shallow serialize in terms of in-memory-size/x <= serialized-size 

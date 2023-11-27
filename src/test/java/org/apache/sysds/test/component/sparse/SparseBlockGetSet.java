@@ -19,6 +19,7 @@
 
 package org.apache.sysds.test.component.sparse;
 
+import org.apache.sysds.runtime.data.SparseBlockDCSR;
 import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysds.runtime.data.SparseBlock;
@@ -193,6 +194,51 @@ public class SparseBlockGetSet extends AutomatedTestBase
 	public void testSparseBlockCOO3Rand()  {
 		runSparseBlockGetSetTest(SparseBlock.Type.COO, sparsity3, InitType.RAND_SET);
 	}
+
+	@Test
+	public void testSparseBlockDCSR1Bulk()  {
+		runSparseBlockGetSetTest(SparseBlock.Type.DCSR, sparsity1, InitType.BULK);
+	}
+
+	@Test
+	public void testSparseBlockDCSR2Bulk()  {
+		runSparseBlockGetSetTest(SparseBlock.Type.DCSR, sparsity2, InitType.BULK);
+	}
+
+	@Test
+	public void testSparseBlockDCSR3Bulk()  {
+		runSparseBlockGetSetTest(SparseBlock.Type.DCSR, sparsity3, InitType.BULK);
+	}
+
+	@Test
+	public void testSparseBlockDCSR1Seq()  {
+		runSparseBlockGetSetTest(SparseBlock.Type.DCSR, sparsity1, InitType.SEQ_SET);
+	}
+
+	@Test
+	public void testSparseBlockDCSR2Seq()  {
+		runSparseBlockGetSetTest(SparseBlock.Type.DCSR, sparsity2, InitType.SEQ_SET);
+	}
+
+	@Test
+	public void testSparseBlockDCSR3Seq()  {
+		runSparseBlockGetSetTest(SparseBlock.Type.DCSR, sparsity3, InitType.SEQ_SET);
+	}
+
+	@Test
+	public void testSparseBlockDCSR1Rand()  {
+		runSparseBlockGetSetTest(SparseBlock.Type.DCSR, sparsity1, InitType.RAND_SET);
+	}
+
+	@Test
+	public void testSparseBlockDCSR2Rand()  {
+		runSparseBlockGetSetTest(SparseBlock.Type.DCSR, sparsity2, InitType.RAND_SET);
+	}
+
+	@Test
+	public void testSparseBlockDCSR3Rand()  {
+		runSparseBlockGetSetTest(SparseBlock.Type.DCSR, sparsity3, InitType.RAND_SET);
+	}
 	
 	private void runSparseBlockGetSetTest( SparseBlock.Type btype, double sparsity, InitType itype)
 	{
@@ -210,6 +256,7 @@ public class SparseBlockGetSet extends AutomatedTestBase
 					case MCSR: sblock = new SparseBlockMCSR(srtmp); break;
 					case CSR: sblock = new SparseBlockCSR(srtmp); break;
 					case COO: sblock = new SparseBlockCOO(srtmp); break;
+					case DCSR: sblock = new SparseBlockDCSR(srtmp); break;
 				}
 			}
 			else if( itype == InitType.SEQ_SET || itype == InitType.RAND_SET ) {
@@ -217,6 +264,7 @@ public class SparseBlockGetSet extends AutomatedTestBase
 					case MCSR: sblock = new SparseBlockMCSR(rows, cols); break;
 					case CSR: sblock = new SparseBlockCSR(rows, cols); break;
 					case COO: sblock = new SparseBlockCOO(rows, cols); break;
+					case DCSR: sblock = new SparseBlockDCSR(rows, cols); break;
 				}
 				
 				if(itype == InitType.SEQ_SET) {

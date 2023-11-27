@@ -49,6 +49,7 @@ public abstract class SparseBlock implements Serializable, Block
 		MCSR,
 		CSR,
 		COO,
+		DCSR,
 	}
 	
 	

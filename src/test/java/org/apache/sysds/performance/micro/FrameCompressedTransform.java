@@ -27,7 +27,7 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.transform.encode.EncoderFactory;
 import org.apache.sysds.runtime.transform.encode.MultiColumnEncoder;
 
-public class FrameCompressedTransform {
+public class FrameCompressedTransform { //TODO: Aggregation (full sum), convert to other matrix block (.sum()) -> plot time (avg, multiple runs) -> when break even points?
 
 	static int specCols = 5;
 	static String spec = "{ids:true,dummycode:[1,2,3,4,5]}";

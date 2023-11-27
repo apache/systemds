@@ -429,7 +429,6 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 
 		inputList.set(0, secondMatrix);
 		updateAttributesOfHop(secondTransposeHop, inputList, secondMatrix.getName());
-		secondTransposeHop.setFilename(transposeHop.getFilename());
 
 		inputList.set(0, secondTransposeHop);
 		inputList.add(transposeHop);
@@ -442,25 +441,32 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 		int mmChainIndex = 0;
 		while (mmChainIndex < mmChain.size())
 		{
-			Hop mmChainHop = mmChain.get(mmChainIndex);
+			Hop currentChainHop = mmChain.get(mmChainIndex);
 
 			// Check if current hop is a transpose operator,
 			// if it is visited,
-			// and if it contains matrixmult operator as input
-			if (HopRewriteUtils.isReorg(mmChainHop, Types.ReOrgOp.TRANS) && !mmChainHop.isVisited()
-				&& HopRewriteUtils.isMatrixMultiply(mmChainHop.getInput(0)))
+			// and if it contains only a matrixmult operator as input
+			boolean isTransposeOperator = HopRewriteUtils.isReorg(currentChainHop, Types.ReOrgOp.TRANS);
+			boolean hasOnlyOneChild = currentChainHop.getInput().size() == 1;
+
+			if (isTransposeOperator && !currentChainHop.isVisited() && hasOnlyOneChild)
 			{
-				int indexInParentInput = hop.getInput().indexOf(mmChainHop);
+				Hop transposeOperatorChild = currentChainHop.getInput(0);
+				if (HopRewriteUtils.isMatrixMultiply(transposeOperatorChild)
+					&& hasOnlyTwoReadsAsInput(transposeOperatorChild))
+				{
+					int indexInParentInput = parentOfChain.getInput().indexOf(currentChainHop);
 
-				// Set transpose operator's parent as new one for matrix multiplication operator
-				Hop matrixMultHop = rewriteChainOnTransposeOperator(mmChainHop);
-				updateParentOfHop(matrixMultHop, hop);
+					// Set transpose operator's parent as new one for matrix multiplication operator
+					Hop matrixMultHop = rewriteChainOnTransposeOperator(currentChainHop);
+					updateParentOfHop(matrixMultHop, parentOfChain);
 
-				// Update input of transpose operator's parent
-				hop.getInput().set(indexInParentInput, matrixMultHop);
+					// Update input of transpose operator's parent
+					parentOfChain.getInput().set(indexInParentInput, matrixMultHop);
 
-				// Replace transpose operator with the matrixmult one in the mmchain
-				mmChain.set(mmChainIndex, matrixMultHop);
+					// Replace transpose operator with the matrixmult one in the mmchain
+					mmChain.set(mmChainIndex, matrixMultHop);
+				}
 			}
 			mmChainIndex++;
 		}

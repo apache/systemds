@@ -1,4 +1,4 @@
-package org.apache.sysds.runtime.matrix.data.sketch;
+package org.apache.sysds.runtime.matrix.data;
 
 public class ComplexDouble {
     double re;
@@ -34,6 +34,21 @@ public class ComplexDouble {
 
         // de moivre’s theorem
         return new ComplexDouble(Math.pow(dist,n) * Math.cos(n*angle),Math.pow(dist,n) * Math.sin(n*angle));
+    }
+
+    @Override
+    public String toString() {
+        return this.re + " + " + this.im + "i";
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        ComplexDouble that = (ComplexDouble) o;
+
+        double epsilon = 0.000001d;
+        return Math.abs(this.re - that.re) < epsilon && Math.abs(this.im - that.im) < epsilon;
     }
 
 }

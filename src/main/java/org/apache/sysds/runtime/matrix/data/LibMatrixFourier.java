@@ -1,7 +1,5 @@
 package org.apache.sysds.runtime.matrix.data;
 
-import org.apache.sysds.runtime.matrix.data.sketch.ComplexDouble;
-
 public class LibMatrixFourier {
 
     /**
@@ -10,7 +8,7 @@ public class LibMatrixFourier {
      * @param in array of ComplexDoubles
      * @return array of ComplexDoubles
      */
-    public ComplexDouble[] fft(ComplexDouble[] in){
+    public static ComplexDouble[] fft(ComplexDouble[] in){
 
         in = fillToPowerOfTwo(in);
         int n = in.length;
@@ -18,8 +16,8 @@ public class LibMatrixFourier {
             return in;
         }
 
-        double alpha = 2*Math.PI/n;
-        ComplexDouble omega = new ComplexDouble(Math.cos(alpha), Math.sin(alpha));
+        double angle = 2*Math.PI/n;
+        ComplexDouble omega = new ComplexDouble(Math.cos(angle), Math.sin(angle));
 
         ComplexDouble[] even = new ComplexDouble[n/2];
         ComplexDouble[] odd = new ComplexDouble[n/2];
@@ -44,7 +42,7 @@ public class LibMatrixFourier {
      * @param in array of doubles
      * @return array of ComplexDoubles
      */
-    public ComplexDouble[] fft(double[] in){
+    public static ComplexDouble[] fft(double[] in){
         ComplexDouble[] complex = new ComplexDouble[in.length];
         for(int i=0; i<in.length; i++){
             complex[i] = new ComplexDouble(in[i],0);
@@ -59,8 +57,8 @@ public class LibMatrixFourier {
      * @param in array of ComplexDoubles
      * @return array of ComplexDoubles
      */
-    private ComplexDouble[] fillToPowerOfTwo(ComplexDouble[] in){
-        int missing = nextPowerOfTwo(in.length);
+    private static ComplexDouble[] fillToPowerOfTwo(ComplexDouble[] in){
+        int missing = nextPowerOfTwo(in.length)- in.length;
         ComplexDouble[] res = new ComplexDouble[in.length+missing];
         for(int i=0; i<in.length; i++){
             res[i] = in[i];
@@ -77,7 +75,7 @@ public class LibMatrixFourier {
      * @param n integer
      * @return next larger int which is a power of two
      */
-    private int nextPowerOfTwo(int n){
+    private static int nextPowerOfTwo(int n){
         int res = 1;
         while (res < n){
             res = res << 1;

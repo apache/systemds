@@ -40,10 +40,10 @@ import org.apache.sysds.utils.Explain;
  */
 public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 {
-	public static final Boolean PUSH_DOWN_TRANSPOSE = true;
+	private static final Boolean PUSH_DOWN_TRANSPOSE = true;
 
 	@Override
-	public ArrayList<Hop> rewriteHopDAGs(ArrayList<Hop> roots, ProgramRewriteStatus state) 
+	public ArrayList<Hop> rewriteHopDAGs(ArrayList<Hop> roots, ProgramRewriteStatus state)
 	{
 		if( roots == null )
 			return null;
@@ -114,13 +114,12 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 		mmOperators.add(hop);
 		ArrayList<Hop> mmChain = new ArrayList<>(hop.getInput());
 
-		int mmChainIndex = 0;
-
 		if (PUSH_DOWN_TRANSPOSE) {
-			checkChainForTransposeAndRewrite(mmChainIndex, mmChain, hop);
+			checkChainForTransposeAndRewrite(mmChain, hop);
 		}
 
 		// Expand each Hop in mmChain to find the entire matrix multiplication chain
+		int mmChainIndex = 0;
 		while( mmChainIndex < mmChain.size() )
 		{
 			boolean expandable = false;
@@ -435,7 +434,8 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 		return matrixMultHop;
 	}
 
-	private void checkChainForTransposeAndRewrite(int mmChainIndex, ArrayList<Hop> mmChain, Hop hop) {
+	private void checkChainForTransposeAndRewrite(ArrayList<Hop> mmChain, Hop parentOfChain) {
+		int mmChainIndex = 0;
 		while (mmChainIndex < mmChain.size())
 		{
 			Hop mmChainHop = mmChain.get(mmChainIndex);
@@ -491,6 +491,6 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 			hopToUpdate.setDim2(inputList.get(0).getDim1());
 		}
 
-		hopToUpdate.setText(String.format("t(%s)", text));
+		//hopToUpdate.setText(String.format("t(%s)", text));
 	}
 }

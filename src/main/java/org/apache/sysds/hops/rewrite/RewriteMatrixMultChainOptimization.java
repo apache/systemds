@@ -121,7 +121,7 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 		int mmChainIndex = 0;
 
 		if (PUSH_DOWN_TRANSPOSE) {
-			checkChainForTransposeAndRewrite(mmChainIndex, mmChain, hop);
+			checkChainForTransposeAndRewrite(mmChain, hop);
 		}
 
 		// Expand each Hop in mmChain to find the entire matrix multiplication chain
@@ -438,7 +438,8 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 		return matrixMultHop;
 	}
 
-	private void checkChainForTransposeAndRewrite(int mmChainIndex, ArrayList<Hop> mmChain, Hop hop) {
+	private void checkChainForTransposeAndRewrite(ArrayList<Hop> mmChain, Hop parentOfChain) {
+		int mmChainIndex = 0;
 		while (mmChainIndex < mmChain.size())
 		{
 			Hop mmChainHop = mmChain.get(mmChainIndex);

@@ -34,13 +34,14 @@ import org.apache.sysds.runtime.instructions.CPInstructionParser;
 import org.apache.sysds.runtime.instructions.Instruction;
 import org.apache.sysds.runtime.instructions.fed.FEDInstructionUtils;
 import org.apache.sysds.runtime.matrix.operators.Operator;
+import org.apache.sysds.runtime.privacy.propagation.PrivacyPropagator;
 
 public abstract class CPInstruction extends Instruction {
 	protected static final Log LOG = LogFactory.getLog(CPInstruction.class.getName());
 	public enum CPType {
 		AggregateUnary, AggregateBinary, AggregateTernary,
 		Unary, Binary, Ternary, Quaternary, BuiltinNary, Ctable,
-		MultiReturnParameterizedBuiltin, ParameterizedBuiltin, MultiReturnBuiltin,
+		MultiReturnParameterizedBuiltin, ParameterizedBuiltin, MultiReturnBuiltin, MultiReturnComplexMatrixBuiltin,
 		Builtin, Reorg, Variable, FCall, Append, Rand, QSort, QPick, Local,
 		MatrixIndexing, MMTSJ, PMMJ, MMChain, Reshape, Partition, Compression, DeCompression, SpoofFused,
 		StringInit, CentralMoment, Covariance, UaggOuterChain, Dnn, Sql, Prefetch, Broadcast, TrigRemote,
@@ -106,6 +107,7 @@ public abstract class CPInstruction extends Instruction {
 			//is same for an instruction and its FED version.
 		}
 		
+		tmp = PrivacyPropagator.preprocessInstruction(tmp, ec);
 		return tmp;
 	}
 

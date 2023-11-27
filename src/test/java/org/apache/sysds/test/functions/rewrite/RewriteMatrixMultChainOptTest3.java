@@ -50,20 +50,20 @@ public class RewriteMatrixMultChainOptTest3 extends AutomatedTestBase
 
 	@Test
 	public void testMMChain1Singlenode() {
-		testMMChain(TEST_NAME1, ExecMode.SINGLE_NODE);
+		testMMChainWithTransposeOperator(TEST_NAME1, ExecMode.SINGLE_NODE);
 	}
 	
 	@Test
 	public void testMMChain1Hybrid() {
-		testMMChain(TEST_NAME1, ExecMode.HYBRID);
+		testMMChainWithTransposeOperator(TEST_NAME1, ExecMode.HYBRID);
 	}
 	
 	@Test
 	public void testMMChain1Spark() {
-		testMMChain(TEST_NAME1, ExecMode.HYBRID);
+		testMMChainWithTransposeOperator(TEST_NAME1, ExecMode.HYBRID);
 	}
 
-	private void testMMChain(String testname, ExecMode et)
+	private void testMMChainWithTransposeOperator(String testname, ExecMode et)
 	{
 		ExecMode etOld = setExecMode(et);
 		

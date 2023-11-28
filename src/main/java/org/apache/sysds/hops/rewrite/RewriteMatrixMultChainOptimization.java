@@ -439,15 +439,14 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 
 			// Check if current hop is a transpose operator,
 			// if it is visited,
-			// and if it contains only a matrixmult operator as input
+			// and if it has only a one input, which is a matrixmult operator
 			boolean isTransposeOperator = HopRewriteUtils.isReorg(currentChainHop, Types.ReOrgOp.TRANS);
-			boolean hasOnlyOneChild = currentChainHop.getInput().size() == 1;
 
-			if (isTransposeOperator && !currentChainHop.isVisited() && hasOnlyOneChild)
+			if (isTransposeOperator && !currentChainHop.isVisited() && currentChainHop.getInput().size() == 1)
 			{
 				Hop transposeOperatorChild = currentChainHop.getInput(0);
 				if (HopRewriteUtils.isMatrixMultiply(transposeOperatorChild)
-					&& hasOnlyTwoReadsAsInput(transposeOperatorChild))
+					&& hasOnlyTwoReadsAsInput(transposeOperatorChild) && transposeOperatorChild.getParent().size() == 1)
 				{
 					int indexInParentInput = parentOfChain.getInput().indexOf(currentChainHop);
 
@@ -499,7 +498,13 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 	}
 
 	private boolean hasOnlyTwoReadsAsInput(Hop transposeOperatorChild) {
-		return transposeOperatorChild.getInput().stream().filter(hop -> HopRewriteUtils
-				.isData(hop, Types.OpOpData.TRANSIENTREAD, Types.OpOpData.PERSISTENTREAD)).count() == 2;
+		if (transposeOperatorChild.getInput().size() == 2) {
+			for(Hop hop: transposeOperatorChild.getInput()) {
+				if (!HopRewriteUtils.isData(hop, Types.OpOpData.TRANSIENTREAD, Types.OpOpData.PERSISTENTREAD))
+					return false;
+			}
+			return true;
+		}
+		return false;
 	}
 }

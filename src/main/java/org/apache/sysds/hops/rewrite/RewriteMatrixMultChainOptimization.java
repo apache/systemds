@@ -134,13 +134,11 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 			 *    (either within chain or outside the chain)
 			 */
 			
-			if ( HopRewriteUtils.isMatrixMultiply(h)
-				&& !((AggBinaryOp)hop).hasLeftPMInput() && !h.isVisited() ) 
+			if ( HopRewriteUtils.isMatrixMultiply(h) && !h.isVisited() )
 			{
 				// check if the output of "h" is used at multiple places. If yes, it can
 				// not be expanded.
-				expandable = !(h.getParent().size() > 1 
-					|| inputCount(h.getParent().get(0), h) > 1);
+				expandable = !(h.getParent().size() > 1 || inputCount(h.getParent().get(0), h) > 1);
 				if( !expandable )
 					break;
 			}

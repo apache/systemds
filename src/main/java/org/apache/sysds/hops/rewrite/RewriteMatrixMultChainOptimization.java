@@ -484,8 +484,8 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 			hopToUpdate.getInput().add(input);
 		}
 
-		if (inputList.size() > 1) {
-			// Here we add matrices of a matrixmult operator
+		if (HopRewriteUtils.isMatrixMultiply(hopToUpdate)) {
+			// Here we add dimensions of a matrixmult operator
 			hopToUpdate.setDim1(inputList.get(0).getDim1());
 			hopToUpdate.setDim2(inputList.get(1).getDim2());
 		} else {

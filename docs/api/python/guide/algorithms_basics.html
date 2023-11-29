@@ -11,11 +11,11 @@
     <script src="../static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-        <script src="../static/jquery.js"></script>
-        <script src="../static/_sphinx_javascript_frameworks_compat.js"></script>
-        <script data-url_root="../" id="documentation_options" src="../static/documentation_options.js"></script>
-        <script src="../static/doctools.js"></script>
-        <script src="../static/sphinx_highlight.js"></script>
+        <script src="../static/jquery.js?v=5d32c60e"></script>
+        <script src="../static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../static/documentation_options.js?v=596fb6d1"></script>
+        <script src="../static/doctools.js?v=888ff710"></script>
+        <script src="../static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
@@ -105,7 +105,7 @@
            <div itemprop="articleBody">
              
   <section id="built-in-algorithms">
-<h1>Built-in Algorithms<a class="headerlink" href="#built-in-algorithms" title="Permalink to this heading"></a></h1>
+<h1>Built-in Algorithms<a class="headerlink" href="#built-in-algorithms" title="Link to this heading"></a></h1>
 <p>Prerequisite:</p>
 <ul class="simple">
 <li><p><a class="reference internal" href="../getting_started/install.html"><span class="doc">Install SystemDS</span></a></p></li>
@@ -115,7 +115,7 @@ For simplicity the dataset used for this is <a class="reference external" href="
 since it is commonly known and explored.</p>
 <p>If one wants to skip the explanation then the full script is available at the bottom of this page.</p>
 <section id="step-1-get-dataset">
-<h2>Step 1: Get Dataset<a class="headerlink" href="#step-1-get-dataset" title="Permalink to this heading"></a></h2>
+<h2>Step 1: Get Dataset<a class="headerlink" href="#step-1-get-dataset" title="Link to this heading"></a></h2>
 <p>SystemDS provides builtin for downloading and setup of the MNIST dataset.
 To setup this simply use</p>
 <div class="code python highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">systemds.context</span> <span class="kn">import</span> <span class="n">SystemDSContext</span>
@@ -131,7 +131,7 @@ To setup this simply use</p>
 <p>Here the DataManager contains the code for downloading and setting up numpy arrays containing the data.</p>
 </section>
 <section id="step-2-reshape-format">
-<h2>Step 2: Reshape &amp; Format<a class="headerlink" href="#step-2-reshape-format" title="Permalink to this heading"></a></h2>
+<h2>Step 2: Reshape &amp; Format<a class="headerlink" href="#step-2-reshape-format" title="Link to this heading"></a></h2>
 <p>Usually data does not come in formats that perfectly fits the algorithms, to make this tutorial more
 realistic some data preprocessing is required to change the input to fit.</p>
 <p>First the training data, X, has multiple dimensions resulting in a shape (60000, 28, 28).
@@ -156,7 +156,7 @@ unfortunately the algorithm require the labels to be distinct integers from 1 an
 <p>With these steps we are now ready to train a simple model.</p>
 </section>
 <section id="step-3-training">
-<h2>Step 3: Training<a class="headerlink" href="#step-3-training" title="Permalink to this heading"></a></h2>
+<h2>Step 3: Training<a class="headerlink" href="#step-3-training" title="Link to this heading"></a></h2>
 <p>To start with, we setup a SystemDS context and setup the data:</p>
 <div class="code python highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Yt</span> <span class="o">=</span> <span class="n">d</span><span class="o">.</span><span class="n">get_test_labels</span><span class="p">()</span>
 
@@ -184,7 +184,7 @@ to train on a smaller sample to start with</p>
 This is the matrix that could be saved and used for predicting labels later.</p>
 </section>
 <section id="step-3-validate">
-<h2>Step 3: Validate<a class="headerlink" href="#step-3-validate" title="Permalink to this heading"></a></h2>
+<h2>Step 3: Validate<a class="headerlink" href="#step-3-validate" title="Link to this heading"></a></h2>
 <p>To see what accuracy the model achieves, we have to load in the test dataset as well.</p>
 <p>this can also be extracted from our builtin MNIST loader, to keep the tutorial short the operations are combined</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">Xt</span> <span class="o">=</span> <span class="n">sds</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">d</span><span class="o">.</span><span class="n">get_test_data</span><span class="p">()</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="mi">10000</span><span class="p">,</span> <span class="mi">28</span><span class="o">*</span><span class="mi">28</span><span class="p">)))</span>
@@ -194,7 +194,7 @@ This is the matrix that could be saved and used for predicting labels later.</p>
 <p>The above loads the test data, and reshapes the X data the same way the training data was reshaped.</p>
 <p>Finally we verify the accuracy by calling</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">systemds.operator.algorithm</span> <span class="kn">import</span> <span class="n">multiLogRegPredict</span>
-<span class="p">[</span><span class="n">m</span><span class="p">,</span> <span class="n">y_pred</span><span class="p">,</span> <span class="n">acc</span><span class="p">]</span> <span class="o">=</span> <span class="n">multiLogRegPredict</span><span class="p">(</span><span class="n">Xt</span><span class="p">,</span> <span class="n">bias</span><span class="p">,</span> <span class="n">Yt</span><span class="p">)</span><span class="o">.</span><span class="n">compute</span><span class="p">()</span>
+<span class="p">[</span><span class="n">m</span><span class="p">,</span> <span class="n">y_pred</span><span class="p">,</span> <span class="n">acc</span><span class="p">]</span> <span class="o">=</span> <span class="n">multiLogRegPredict</span><span class="p">(</span><span class="n">Xt</span><span class="p">,</span> <span class="n">bias</span><span class="p">,</span> <span class="n">Y</span><span class="o">=</span><span class="n">Yt</span><span class="p">)</span><span class="o">.</span><span class="n">compute</span><span class="p">()</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">acc</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -208,12 +208,12 @@ This is the matrix that could be saved and used for predicting labels later.</p>
 using 1000 pictures of the training data.</p>
 </section>
 <section id="step-4-tuning">
-<h2>Step 4: Tuning<a class="headerlink" href="#step-4-tuning" title="Permalink to this heading"></a></h2>
+<h2>Step 4: Tuning<a class="headerlink" href="#step-4-tuning" title="Link to this heading"></a></h2>
 <p>Now that we have a working baseline we can start tuning parameters.</p>
 <p>But first it is valuable to know how much of a difference in performance there is on the training data, vs the test data.
 This gives an indication of if we have exhausted the learning potential of the training data.</p>
 <p>To see how our accuracy is on the training data we use the Predict function again, but with our training data</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">m</span><span class="p">,</span> <span class="n">y_pred</span><span class="p">,</span> <span class="n">acc</span><span class="p">]</span> <span class="o">=</span> <span class="n">multiLogRegPredict</span><span class="p">(</span><span class="n">X_ds</span><span class="p">,</span> <span class="n">bias</span><span class="p">,</span> <span class="n">Y_ds</span><span class="p">)</span><span class="o">.</span><span class="n">compute</span><span class="p">()</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">m</span><span class="p">,</span> <span class="n">y_pred</span><span class="p">,</span> <span class="n">acc</span><span class="p">]</span> <span class="o">=</span> <span class="n">multiLogRegPredict</span><span class="p">(</span><span class="n">X_ds</span><span class="p">,</span> <span class="n">bias</span><span class="p">,</span> <span class="n">Y</span><span class="o">=</span><span class="n">Y_ds</span><span class="p">)</span><span class="o">.</span><span class="n">compute</span><span class="p">()</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">acc</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -232,12 +232,12 @@ to again reduce training time</p>
 </span>    <span class="comment single"># Test data</span><span class="whitespace">
 </span>    <span class="name">Xt_ds</span> <span class="operator">=</span> <span class="name">sds</span><span class="operator">.</span><span class="name">from_numpy</span><span class="punctuation">(</span><span class="name">Xt</span><span class="punctuation">)</span><span class="whitespace">
 </span>    <span class="name">Yt_ds</span> <span class="operator">=</span> <span class="name">sds</span><span class="operator">.</span><span class="name">from_numpy</span><span class="punctuation">(</span><span class="name">Yt</span><span class="punctuation">)</span> <span class="operator">+</span> <span class="literal number float">1.0</span><span class="whitespace">
-</span>    <span class="punctuation">[</span><span class="name">m</span><span class="punctuation">,</span> <span class="name">y_pred</span><span class="punctuation">,</span> <span class="name">acc</span><span class="punctuation">]</span> <span class="operator">=</span> <span class="name">multiLogRegPredict</span><span class="punctuation">(</span><span class="name">Xt_ds</span><span class="punctuation">,</span> <span class="name">bias</span><span class="punctuation">,</span> <span class="name">Yt_ds</span><span class="punctuation">,</span> <span class="name">verbose</span><span class="operator">=</span><span class="keyword constant">False</span><span class="punctuation">)</span><span class="operator">.</span><span class="name">compute</span><span class="punctuation">()</span></code></pre>
+</span>    <span class="punctuation">[</span><span class="name">m</span><span class="punctuation">,</span> <span class="name">y_pred</span><span class="punctuation">,</span> <span class="name">acc</span><span class="punctuation">]</span> <span class="operator">=</span> <span class="name">multiLogRegPredict</span><span class="punctuation">(</span><span class="name">Xt_ds</span><span class="punctuation">,</span> <span class="name">bias</span><span class="punctuation">,</span> <span class="name">Y</span><span class="operator">=</span><span class="name">Yt_ds</span><span class="punctuation">,</span> <span class="name">verbose</span><span class="operator">=</span><span class="keyword constant">False</span><span class="punctuation">)</span><span class="operator">.</span><span class="name">compute</span><span class="punctuation">()</span></code></pre>
 <p>With this change the accuracy achieved changes from the previous value to 92%.
 But this is a basic implementation that can be replaced by a variety of algorithms and techniques.</p>
 </section>
 <section id="full-script">
-<h2>Full Script<a class="headerlink" href="#full-script" title="Permalink to this heading"></a></h2>
+<h2>Full Script<a class="headerlink" href="#full-script" title="Link to this heading"></a></h2>
 <p>The full script, some steps are combined to reduce the overall script.
 One noteworthy change is the + 1 is done on the matrix ready for SystemDS,
 this makes SystemDS responsible for adding the 1 to each value.</p>
@@ -262,7 +262,7 @@ this makes SystemDS responsible for adding the 1 to each value.</p>
     <span class="c1"># Test data</span>
     <span class="n">Xt_ds</span> <span class="o">=</span> <span class="n">sds</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">Xt</span><span class="p">)</span>
     <span class="n">Yt_ds</span> <span class="o">=</span> <span class="n">sds</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">Yt</span><span class="p">)</span> <span class="o">+</span> <span class="mf">1.0</span>
-    <span class="p">[</span><span class="n">m</span><span class="p">,</span> <span class="n">y_pred</span><span class="p">,</span> <span class="n">acc</span><span class="p">]</span> <span class="o">=</span> <span class="n">multiLogRegPredict</span><span class="p">(</span><span class="n">Xt_ds</span><span class="p">,</span> <span class="n">bias</span><span class="p">,</span> <span class="n">Yt_ds</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span><span class="o">.</span><span class="n">compute</span><span class="p">()</span>
+    <span class="p">[</span><span class="n">m</span><span class="p">,</span> <span class="n">y_pred</span><span class="p">,</span> <span class="n">acc</span><span class="p">]</span> <span class="o">=</span> <span class="n">multiLogRegPredict</span><span class="p">(</span><span class="n">Xt_ds</span><span class="p">,</span> <span class="n">bias</span><span class="p">,</span> <span class="n">Y</span><span class="o">=</span><span class="n">Yt_ds</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span><span class="o">.</span><span class="n">compute</span><span class="p">()</span>
 
 <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">acc</span><span class="p">)</span>
 </pre></div>

@@ -27,6 +27,7 @@ import java.util.Arrays;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.PlaceHolderDict;
+import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.DictionaryFactory;
 import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
@@ -40,6 +41,7 @@ import org.apache.sysds.runtime.compress.colgroup.offset.OffsetFactory;
 import org.apache.sysds.runtime.compress.cost.ComputationCostEstimator;
 import org.apache.sysds.runtime.compress.estim.encoding.EncodingFactory;
 import org.apache.sysds.runtime.compress.estim.encoding.IEncode;
+import org.apache.sysds.runtime.compress.utils.Util;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.instructions.cp.CM_COV_Object;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
@@ -73,7 +75,7 @@ public class ColGroupSDCSingle extends ASDC {
 		final boolean allZero = ColGroupUtils.allZero(defaultTuple);
 		if(dict == null && allZero)
 			return new ColGroupEmpty(colIndexes);
-		else if(dict == null && offsets.getSize() * 2 > numRows + 2 && !(dict instanceof PlaceHolderDict)) {
+		else if(dict == null && offsets.getSize() * 2 > numRows + 2) {
 			AOffset rev = AOffset.reverse(numRows, offsets);
 			return ColGroupSDCSingleZeros.create(colIndexes, numRows, Dictionary.create(defaultTuple), rev, cachedCounts);
 		}
@@ -422,7 +424,7 @@ public class ColGroupSDCSingle extends ASDC {
 		IDictionary replaced = _dict.replace(pattern, replace, _colIndexes.size());
 		double[] newDefaultTuple = new double[_defaultTuple.length];
 		for(int i = 0; i < _defaultTuple.length; i++)
-			newDefaultTuple[i] = _defaultTuple[i] == pattern ? replace : _defaultTuple[i];
+			newDefaultTuple[i] = Util.eq(_defaultTuple[i], pattern) ? replace : _defaultTuple[i];
 
 		return create(_colIndexes, _numRows, replaced, newDefaultTuple, _indexes, getCachedCounts());
 	}
@@ -556,28 +558,31 @@ public class ColGroupSDCSingle extends ASDC {
 	}
 
 	@Override
-	public AColGroup appendNInternal(AColGroup[] g) {
-		int sumRows = getNumRows();
+	public AColGroup appendNInternal(AColGroup[] g, int blen, int rlen) {
 		for(int i = 1; i < g.length; i++) {
-			if(!_colIndexes.equals(g[i]._colIndexes)) {
-				LOG.warn("Not same columns therefore not appending \n" + _colIndexes + "\n\n" + g[i]._colIndexes);
-				return null;
-			}
+			final AColGroup gs = g[i];
+			if(!_colIndexes.equals(gs._colIndexes))
+				throw new DMLCompressionException(
+					"Not same columns therefore not appending \n" + _colIndexes + "\n\n" + gs._colIndexes);
 
-			if(!(g[i] instanceof ColGroupSDCSingle)) {
-				LOG.warn("Not SDCFOR but " + g[i].getClass().getSimpleName());
-				return null;
-			}
+			if(!(gs instanceof AOffsetsGroup))
+				throw new DMLCompressionException("Not SDC but " + gs.getClass().getSimpleName());
 
-			final ColGroupSDCSingle gc = (ColGroupSDCSingle) g[i];
-			if(!gc._dict.equals(_dict)) {
-				LOG.warn("Not same Dictionaries therefore not appending \n" + _dict + "\n\n" + gc._dict);
-				return null;
+			if(gs instanceof ColGroupSDC) {
+				final ColGroupSDC gc = (ColGroupSDC) gs;
+				if(!gc._dict.equals(_dict))
+					throw new DMLCompressionException(
+						"Not same Dictionaries therefore not appending \n" + _dict + "\n\n" + gc._dict);
 			}
-			sumRows += gc.getNumRows();
+			else if(gs instanceof ColGroupConst) {
+				final ColGroupConst gc = (ColGroupConst) gs;
+				if(!(gc._dict instanceof PlaceHolderDict) && gc._dict.equals(_defaultTuple))
+					throw new DMLCompressionException("Not same default values therefore not appending:\n" + gc._dict
+						+ "\n\n" + Arrays.toString(_defaultTuple));
+			}
 		}
 		AOffset no = _indexes.appendN(Arrays.copyOf(g, g.length, AOffsetsGroup[].class), getNumRows());
-		return create(_colIndexes, sumRows, _dict, _defaultTuple, no, null);
+		return create(_colIndexes, rlen, _dict, _defaultTuple, no, null);
 	}
 
 	@Override

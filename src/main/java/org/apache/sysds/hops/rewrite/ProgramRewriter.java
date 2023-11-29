@@ -22,8 +22,6 @@ package org.apache.sysds.hops.rewrite;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.conf.CompilerConfig.ConfigType;
@@ -48,22 +46,12 @@ import org.apache.sysds.runtime.lineage.LineageCacheConfig;
  * program. 
  * 
  */
-public class ProgramRewriter
-{
-	private static final boolean LDEBUG = false; //internal local debug level
+public class ProgramRewriter{
 	private static final boolean CHECK = false;
 	
 	private ArrayList<HopRewriteRule> _dagRuleSet = null;
 	private ArrayList<StatementBlockRewriteRule> _sbRuleSet = null;
 
-	static {
-		// for internal debugging only
-		if( LDEBUG ) {
-			Logger.getLogger("org.apache.sysds.hops.rewrite")
-				.setLevel(Level.DEBUG);
-		}
-	}
-	
 	public ProgramRewriter() {
 		// by default which is used during initial compile 
 		// apply all (static and dynamic) rewrites

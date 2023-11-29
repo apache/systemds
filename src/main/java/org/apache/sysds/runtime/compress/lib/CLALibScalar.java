@@ -58,7 +58,7 @@ public final class CLALibScalar {
 
 	public static MatrixBlock scalarOperations(ScalarOperator sop, CompressedMatrixBlock m1, MatrixValue result) {
 		if(isInvalidForCompressedOutput(m1, sop)) {
-			LOG.warn("scalar overlapping not supported for op: " + sop.fn);
+			LOG.warn("scalar overlapping not supported for op: " + sop.fn.getClass().getSimpleName());
 			MatrixBlock m1d = m1.decompress(sop.getNumThreads());
 			return m1d.scalarOperations(sop, result);
 		}

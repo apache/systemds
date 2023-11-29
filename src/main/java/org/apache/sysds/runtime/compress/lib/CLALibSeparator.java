@@ -44,8 +44,8 @@ public interface CLALibSeparator {
 	 * @return A split of the groups and their dictionaries.
 	 */
 	public static SeparatedGroups split(List<AColGroup> gs) {
-		List<IDictionary> dicts = new ArrayList<>();
-		List<AColGroup> indexStructures = new ArrayList<>();
+		List<IDictionary> dicts = new ArrayList<>(gs.size());
+		List<AColGroup> indexStructures = new ArrayList<>(gs.size());
 		for(AColGroup g : gs) {
 			if(g instanceof ADictBasedColGroup) {
 				ADictBasedColGroup dg = (ADictBasedColGroup) g;
@@ -68,24 +68,25 @@ public interface CLALibSeparator {
 	 * @param gs   groups to combine with dictionaries
 	 * @param d    dictionaries to combine back into the groups.
 	 * @param blen The block size.
-	 * @return A combined list of columngroups.
+	 * @return A combined list of column groups.
 	 */
 	public static List<AColGroup> combine(List<AColGroup> gs, Map<Integer, List<IDictionary>> d, int blen) {
 		int gid = 0;
+		int s = 0;
+		for(List<IDictionary> e : d.values())
+			s += e.size();
+
+		if(gs.size() != s)
+			throw new RuntimeException(
+				"Invalid combine of of groups and dictionaries groups:" + gs.size() + " vs  dicts" + s);
 
 		for(int i = 0; i < d.size(); i++) {
 			List<IDictionary> dd = d.get(i);
 			for(int j = 0; j < dd.size(); j++) {
 				IDictionary ddd = dd.get(j);
-				if(!(ddd instanceof PlaceHolderDict)) {
-
-					AColGroup g = gs.get(gid);
-					while(!(g instanceof ADictBasedColGroup)) {
-						gid++;
-						g = gs.get(gid);
-					}
+				AColGroup g = gs.get(gid);
+				if(g instanceof ADictBasedColGroup) {
 					ADictBasedColGroup dg = (ADictBasedColGroup) g;
-
 					gs.set(gid, dg.copyAndSet(ddd));
 				}
 

@@ -24,18 +24,30 @@ import java.util.Arrays;
 import org.apache.sysds.runtime.util.SortUtils;
 import org.apache.sysds.runtime.util.UtilFunctions;
 
-public final class SparseRowVector extends SparseRow{
+/**
+ * A sparse row vector that is able to grow dynamically as values are appended to it.
+ */
+public final class SparseRowVector extends SparseRow {
 	private static final long serialVersionUID = 2971077474424464992L;
 
-	//initial capacity of any created sparse row
-	//WARNING: be aware that this affects the core memory estimates (incl. implicit assumptions)! 
+	/**
+	 * <p>Initial capacity of any created sparse row</p>
+	 * WARNING: be aware that this affects the core memory estimates (incl. implicit assumptions)! 
+	 */
 	public static final int initialCapacity = 4;
 	
+	/**
+	 * An estimate of the number of non zero values in this row.
+	 * The estimate is used to set a threshold on how much the array should grow at certain
+	 * lengths to not double the size at all times.
+	 */
 	private int estimatedNzs = initialCapacity;
-	private int maxNzs = Integer.MAX_VALUE;
-	private int size = 0;
-	private double[] values = null;
-	private int[] indexes = null;
+	/** The current size of the row vector */
+	private int size;
+	/** The values contained in the vector, can be allocated larger than needed */
+	private double[] values;
+	/** The column indexes of the values contained, can be allocated larger than needed */
+	private int[] indexes;
 	
 	public SparseRowVector() {
 		this(initialCapacity);
@@ -45,6 +57,7 @@ public final class SparseRowVector extends SparseRow{
 		estimatedNzs = capacity;
 		values = new double[capacity];
 		indexes = new int[capacity];
+		size = 0;
 	}
 	
 	public SparseRowVector(int nnz, double[] v, int vlen) {
@@ -57,6 +70,12 @@ public final class SparseRowVector extends SparseRow{
 				pos++;
 			}
 		size = nnz;
+	}
+
+	public SparseRowVector(double[] v, int[] i){
+		values = v;
+		indexes = i;
+		size = v.length;
 	}
 
 	/**
@@ -83,11 +102,10 @@ public final class SparseRowVector extends SparseRow{
 	public SparseRowVector(int estnnz, int maxnnz) {
 		if( estnnz > initialCapacity )
 			estimatedNzs = estnnz;
-		maxNzs = maxnnz;
-		int capacity = ((estnnz<initialCapacity && estnnz>0) ? 
-				estnnz : initialCapacity);
+		int capacity = initialCapacity;
 		values = new double[capacity];
 		indexes = new int[capacity];
+		size = 0;
 	}
 	
 	public SparseRowVector(SparseRow that) {
@@ -109,8 +127,8 @@ public final class SparseRowVector extends SparseRow{
 	}
 	
 	@Override
-	public boolean isEmpty() {
-		return (size == 0);
+	public final boolean isEmpty() {
+		return size == 0;
 	}
 	
 	@Override
@@ -157,8 +175,12 @@ public final class SparseRowVector extends SparseRow{
 	@Override
 	public void reset(int estnns, int maxnns) {
 		estimatedNzs = estnns;
-		maxNzs = maxnns;
+		// maxNzs = maxnns;
 		size = 0;
+	}
+
+	public void setEstimatedNzs(int estnnz){
+		estimatedNzs = estnnz;
 	}
 
 	private void recap(int newCap) {
@@ -179,11 +201,13 @@ public final class SparseRowVector extends SparseRow{
 	 */
 	private int newCapacity() {
 		final double currLen = values.length;
+		final boolean lessThanEstimate = currLen < estimatedNzs;
+		final double factor = lessThanEstimate ? 
+			SparseBlock.RESIZE_FACTOR1 : SparseBlock.RESIZE_FACTOR2;
 		//scale length exponentially based on estimated number of non-zeros
-		final int nextLen = (int)Math.ceil(currLen * ((currLen < estimatedNzs) ? 
-			SparseBlock.RESIZE_FACTOR1 : SparseBlock.RESIZE_FACTOR2));
+		final int nextLen = (int)Math.ceil(currLen * factor);
 		//cap at max number of non-zeros with robustness of initial zero
-		return Math.max(2, Math.min(maxNzs, nextLen));
+		return Math.max(2, nextLen);
 	}
 
 	@Override
@@ -391,26 +415,27 @@ public final class SparseRowVector extends SparseRow{
 		}
 	}
 	
-	private void resizeAndInsert(int index, int col, double v) {
-		//allocate new arrays
-		int newCap = newCapacity();
-		double[] oldvalues = values;
-		int[] oldindexes = indexes;
-		values = new double[newCap];
-		indexes = new int[newCap];
-		
-		//copy lhs values to new array
-		System.arraycopy(oldvalues, 0, values, 0, index);
-		System.arraycopy(oldindexes, 0, indexes, 0, index);
-		
-		//insert new value
-		indexes[index] = col;
-		values[index] = v;
-		
-		//copy rhs values to new array
-		System.arraycopy(oldvalues, index, values, index+1, size-index);
-		System.arraycopy(oldindexes, index, indexes, index+1, size-index);
+	private final void resizeAndInsert(int index, int col, double v) {
+		final int newCap = newCapacity();
+		resizeVals(newCap, index, v);
+		resizeIndex(newCap, index, col);
 		size++;
+	}
+
+	private final void resizeVals(int newCap, int index, double v){
+		double[] old = values;
+		values = new double[newCap];
+		System.arraycopy(old, 0, values, 0, index);
+		values[index] = v;
+		System.arraycopy(old, index, values, index+1, size-index);
+	}
+
+	private final void resizeIndex(int newCap, int index, int col){
+		int[] old = indexes;
+		indexes = new int[newCap];
+		System.arraycopy(old, 0, indexes, 0, index);
+		indexes[index] = col;
+		System.arraycopy(old, index, indexes, index+1, size-index);
 	}
 
 	private void shiftRightAndInsert(int index, int col, double v) {
@@ -466,5 +491,10 @@ public final class SparseRowVector extends SparseRow{
 				nnz++;
 			}
 		size = nnz; //adjust row size
+	}
+
+	@Override
+	public SparseRow copy(boolean deep){
+		return new SparseRowVector(this);
 	}
 }

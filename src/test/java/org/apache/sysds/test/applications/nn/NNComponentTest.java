@@ -113,6 +113,11 @@ public class NNComponentTest extends TestFolder {
 		run("logcosh.dml");
 	}
 
+	@Test
+	public void resnet() {
+		run("resnet.dml");
+	}
+
 	@Override
 	protected void run(String name) {
 		super.run("component/" + name);

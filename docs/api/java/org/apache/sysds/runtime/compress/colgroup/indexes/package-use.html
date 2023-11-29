@@ -14,7 +14,7 @@
 <!--[if IE]>
 <script type="text/javascript" src="../../../../../../../jquery/jszip-utils/dist/jszip-utils-ie.min.js"></script>
 <![endif]-->
-<script type="text/javascript" src="../../../../../../../jquery/jquery-3.6.0.min.js"></script>
+<script type="text/javascript" src="../../../../../../../jquery/jquery-3.6.1.min.js"></script>
 <script type="text/javascript" src="../../../../../../../jquery/jquery-ui.min.js"></script>
 </head>
 <body>
@@ -143,14 +143,18 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
-<th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.compress.plan">org.apache.sysds.runtime.compress.plan</a></th>
+<th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.compress.lib">org.apache.sysds.runtime.compress.lib</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
-<th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.compress.readers">org.apache.sysds.runtime.compress.readers</a></th>
+<th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.compress.plan">org.apache.sysds.runtime.compress.plan</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
+<th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.compress.readers">org.apache.sysds.runtime.compress.readers</a></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
 <th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.compress.utils">org.apache.sysds.runtime.compress.utils</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
@@ -294,7 +298,9 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tr class="altColor">
 <th class="colFirst" scope="row"><a href="class-use/RangeIndex.html#org.apache.sysds.runtime.compress.colgroup.indexes">RangeIndex</a></th>
-<td class="colLast">&nbsp;</td>
+<td class="colLast">
+<div class="block">A Range index that contain a lower and upper bound of the indexes that is symbolize.</div>
+</td>
 </tr>
 <tr class="rowColor">
 <th class="colFirst" scope="row"><a href="class-use/SingleIndex.html#org.apache.sysds.runtime.compress.colgroup.indexes">SingleIndex</a></th>
@@ -302,6 +308,10 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tr class="altColor">
 <th class="colFirst" scope="row"><a href="class-use/TwoIndex.html#org.apache.sysds.runtime.compress.colgroup.indexes">TwoIndex</a></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<th class="colFirst" scope="row"><a href="class-use/TwoRangesIndex.html#org.apache.sysds.runtime.compress.colgroup.indexes">TwoRangesIndex</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 </tbody>
@@ -357,6 +367,25 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <tbody>
 <tr class="altColor">
 <th class="colFirst" scope="row"><a href="class-use/IColIndex.html#org.apache.sysds.runtime.compress.estim.encoding">IColIndex</a></th>
+<td class="colLast">
+<div class="block">Class to contain column indexes for the compression column groups.</div>
+</td>
+</tr>
+</tbody>
+</table>
+</li>
+<li class="blockList"><a id="org.apache.sysds.runtime.compress.lib">
+<!--   -->
+</a>
+<table class="useSummary">
+<caption><span>Classes in <a href="package-summary.html">org.apache.sysds.runtime.compress.colgroup.indexes</a> used by <a href="../../lib/package-summary.html">org.apache.sysds.runtime.compress.lib</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Class</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<th class="colFirst" scope="row"><a href="class-use/IColIndex.html#org.apache.sysds.runtime.compress.lib">IColIndex</a></th>
 <td class="colLast">
 <div class="block">Class to contain column indexes for the compression column groups.</div>
 </td>

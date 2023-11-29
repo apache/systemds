@@ -24,12 +24,14 @@ import java.util.Arrays;
 import java.util.List;
 
 import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.lops.Compression;
 import org.apache.sysds.lops.FunctionCallCP;
 import org.apache.sysds.lops.Lop;
 import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.parser.DMLProgram;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.runtime.compress.SingletonLookupHashMap;
 import org.apache.sysds.runtime.controlprogram.Program;
 import org.apache.sysds.runtime.controlprogram.parfor.opt.CostEstimatorHops;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
@@ -295,18 +297,42 @@ public class FunctionOp extends Hop
 			tmp.add( in.constructLops() );
 		
 		//construct function call
-		Lop fcall = new FunctionCallCP(tmp, _fnamespace, _fname, _inputNames, _outputNames, _outputHops, _opt, et);
+		FunctionCallCP fcall = new FunctionCallCP(tmp, _fnamespace, _fname, _inputNames, _outputNames, _outputHops, _opt, et);
 		setLineNumbers(fcall);
 		setLops(fcall);
 		
 		//note: no reblock lop because outputs directly bound
+		constructAndSetCompressionLopFunctionalIfRequired(et);
 
 		return getLops();
 	}
 
+	protected void constructAndSetCompressionLopFunctionalIfRequired(ExecType et) {
+		if((requiresCompression()) && ((FunctionCallCP) getLops()).getFunctionName().equalsIgnoreCase("transformencode")){ // xor
+			
+			// Lop matrixOut = lop.getFunctionOutputs().get(0);
+			Lop compressionInstruction = null;
+		
+			if(_compressedWorkloadTree != null) {
+				SingletonLookupHashMap m = SingletonLookupHashMap.getMap();
+				int singletonID = m.put(_compressedWorkloadTree);
+				compressionInstruction = new Compression(getLops(), DataType.MATRIX, ValueType.FP64, et, singletonID);
+			}
+			else
+				compressionInstruction = new Compression(getLops(), DataType.MATRIX, ValueType.FP64, et, 0);
+			
+
+			setOutputDimensions( compressionInstruction );
+			setLineNumbers( compressionInstruction );
+			setLops( compressionInstruction );
+
+		}
+	}
+
+
 	@Override
 	public String getOpString() {
-		return OPCODE;
+		return OPCODE + " " + _fnamespace  + " " + _fname;
 	}
 
 	@Override
@@ -385,8 +411,4 @@ public class FunctionOp extends Hop
 		return false;
 	}
 
-	@Override
-	public String toString(){
-		return getOpString();
-	}
 }

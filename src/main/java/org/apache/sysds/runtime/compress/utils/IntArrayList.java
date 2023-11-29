@@ -52,12 +52,20 @@ public class IntArrayList {
 
 	public void appendValue(int value) {
 		// allocate or resize array if necessary
-		if(_size + 1 >= _data.length)
+		if(_size + 1 > _data.length)
 			resize();
 
 		// append value
 		_data[_size] = value;
 		_size++;
+	}
+
+	public void appendValue(IntArrayList value) {
+		// allocate or resize array if necessary
+		if(_size + value._size >= _data.length)
+			_data = Arrays.copyOf(_data, _size + value._size);
+		System.arraycopy(value._data, 0, _data, _size, value._size);
+		_size = _size + value._size;
 	}
 
 	/**
@@ -75,20 +83,22 @@ public class IntArrayList {
 	}
 
 	public int[] extractValues(boolean trim) {
-		int[] ret = extractValues();
-		return (trim && _size < ret.length) ? Arrays.copyOfRange(ret, 0, _size) : ret;
+		if(trim ){
+			if(_data.length == _size)
+				return _data;
+			return Arrays.copyOfRange(_data, 0, _size);
+		}
+		else
+			return _data;
 	}
 
 	private void resize() {
-		// check for integer overflow on resize
-		if(_data.length > Integer.MAX_VALUE / RESIZE_FACTOR)
-			throw new RuntimeException("IntArrayList resize leads to integer overflow: size=" + _size);
 
 		// resize data array and copy existing contents
 		_data = Arrays.copyOf(_data, _data.length * RESIZE_FACTOR);
 	}
 
-	public void reset(){
+	public void reset() {
 		_size = 0;
 	}
 

@@ -134,7 +134,7 @@ Finally we verify the accuracy by calling
 .. code-block:: python
 
     from systemds.operator.algorithm import multiLogRegPredict
-    [m, y_pred, acc] = multiLogRegPredict(Xt, bias, Yt).compute()
+    [m, y_pred, acc] = multiLogRegPredict(Xt, bias, Y=Yt).compute()
     print(acc)
 
 There are three outputs from the multiLogRegPredict call.
@@ -158,7 +158,7 @@ To see how our accuracy is on the training data we use the Predict function agai
 
 .. code-block:: python
 
-    [m, y_pred, acc] = multiLogRegPredict(X_ds, bias, Y_ds).compute()
+    [m, y_pred, acc] = multiLogRegPredict(X_ds, bias, Y=Y_ds).compute()
     print(acc)
 
 In this specific case we achieve 100% accuracy on the training data, indicating that we have fit the training data,

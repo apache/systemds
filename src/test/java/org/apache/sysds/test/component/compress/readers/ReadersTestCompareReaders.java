@@ -525,6 +525,7 @@ public class ReadersTestCompareReaders {
 		}
 	}
 
+	@SuppressWarnings("null")
 	private void compareReaders(ReaderColumnSelection a, ReaderColumnSelection b) {
 		try {
 
@@ -581,6 +582,7 @@ public class ReadersTestCompareReaders {
 
 	}
 
+	@SuppressWarnings("null")
 	private void compareReaders(final ReaderColumnSelection a, final ReaderColumnSelection b, final int start,
 		final int end) {
 		try {

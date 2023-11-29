@@ -14,7 +14,7 @@
 <!--[if IE]>
 <script type="text/javascript" src="jquery/jszip-utils/dist/jszip-utils-ie.min.js"></script>
 <![endif]-->
-<script type="text/javascript" src="jquery/jquery-3.6.0.min.js"></script>
+<script type="text/javascript" src="jquery/jquery-3.6.1.min.js"></script>
 <script type="text/javascript" src="jquery/jquery-ui.min.js"></script>
 </head>
 <body>
@@ -619,7 +619,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <ul class="blockList">
 <li class="blockListLast">
 <h4>_dict</h4>
-<pre><a href="org/apache/sysds/runtime/compress/colgroup/dictionary/ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a> _dict</pre>
+<pre><a href="org/apache/sysds/runtime/compress/colgroup/dictionary/IDictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary</a> _dict</pre>
 <div class="block">Distinct value tuples associated with individual bitmaps.</div>
 </li>
 </ul>
@@ -920,8 +920,8 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <li class="blockListLast">
 <h4>_data</h4>
 <pre><a href="org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a> _data</pre>
-<div class="block">We store the contents of the columns as a MatrixBlock to take advantage of high-performance routines available for
- this data structure.</div>
+<div class="block">We store the contents of the columns as a MatrixBlock to take advantage of high-performance routines available
+ for this data structure.</div>
 </li>
 </ul>
 </li>
@@ -998,10 +998,17 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <li class="blockList">
 <h4>cache</h4>
 <pre><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/ref/SoftReference.html?is-external=true" title="class or interface in java.lang.ref" class="externalLink">SoftReference</a>&lt;<a href="org/apache/sysds/runtime/compress/colgroup/dictionary/MatrixBlockDictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">MatrixBlockDictionary</a>&gt; cache</pre>
+<div class="block">A Cache to contain a materialized version of the identity matrix.</div>
 </li>
-<li class="blockListLast">
+<li class="blockList">
 <h4>nRowCol</h4>
 <pre>int nRowCol</pre>
+<div class="block">The number of rows or columns, rows can be +1 if withEmpty is set.</div>
+</li>
+<li class="blockListLast">
+<h4>withEmpty</h4>
+<pre>boolean withEmpty</pre>
+<div class="block">Specify if the Identity matrix should contain an empty row in the end.</div>
 </li>
 </ul>
 </li>
@@ -1046,6 +1053,27 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <li class="blockListLast">
 <h4>_data</h4>
 <pre><a href="org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a> _data</pre>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="blockList"><a id="org.apache.sysds.runtime.compress.colgroup.dictionary.PlaceHolderDict">
+<!--   -->
+</a>
+<h3>Class <a href="org/apache/sysds/runtime/compress/colgroup/dictionary/PlaceHolderDict.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">org.apache.sysds.runtime.compress.colgroup.dictionary.PlaceHolderDict</a> extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a> implements Serializable</h3>
+<dl class="nameValue">
+<dt>serialVersionUID:</dt>
+<dd>9176356558592L</dd>
+</dl>
+<ul class="blockList">
+<li class="blockList">
+<h3>Serialized Fields</h3>
+<ul class="blockList">
+<li class="blockListLast">
+<h4>nVal</h4>
+<pre>int nVal</pre>
+<div class="block">The number of values supposed to be contained in this dictionary</div>
 </li>
 </ul>
 </li>
@@ -1109,7 +1137,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <h3>Class <a href="org/apache/sysds/runtime/compress/colgroup/mapping/MapToBit.html" title="class in org.apache.sysds.runtime.compress.colgroup.mapping">org.apache.sysds.runtime.compress.colgroup.mapping.MapToBit</a> extends <a href="org/apache/sysds/runtime/compress/colgroup/mapping/AMapToData.html" title="class in org.apache.sysds.runtime.compress.colgroup.mapping">AMapToData</a> implements Serializable</h3>
 <dl class="nameValue">
 <dt>serialVersionUID:</dt>
-<dd>-8065234231282619923L</dd>
+<dd>-8065234231282619903L</dd>
 </dl>
 <ul class="blockList">
 <li class="blockList">
@@ -1117,7 +1145,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <ul class="blockList">
 <li class="blockList">
 <h4>_data</h4>
-<pre><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/BitSet.html?is-external=true" title="class or interface in java.util" class="externalLink">BitSet</a> _data</pre>
+<pre>long[] _data</pre>
 </li>
 <li class="blockListLast">
 <h4>_size</h4>
@@ -1273,10 +1301,10 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </li>
 </ul>
 </li>
-<li class="blockList"><a id="org.apache.sysds.runtime.compress.colgroup.offset.OffsetByte">
+<li class="blockList"><a id="org.apache.sysds.runtime.compress.colgroup.offset.AOffsetByte">
 <!--   -->
 </a>
-<h3>Class <a href="org/apache/sysds/runtime/compress/colgroup/offset/OffsetByte.html" title="class in org.apache.sysds.runtime.compress.colgroup.offset">org.apache.sysds.runtime.compress.colgroup.offset.OffsetByte</a> extends <a href="org/apache/sysds/runtime/compress/colgroup/offset/AOffset.html" title="class in org.apache.sysds.runtime.compress.colgroup.offset">AOffset</a> implements Serializable</h3>
+<h3>Class <a href="org/apache/sysds/runtime/compress/colgroup/offset/AOffsetByte.html" title="class in org.apache.sysds.runtime.compress.colgroup.offset">org.apache.sysds.runtime.compress.colgroup.offset.AOffsetByte</a> extends <a href="org/apache/sysds/runtime/compress/colgroup/offset/AOffset.html" title="class in org.apache.sysds.runtime.compress.colgroup.offset">AOffset</a> implements Serializable</h3>
 <dl class="nameValue">
 <dt>serialVersionUID:</dt>
 <dd>-4716104973912491790L</dd>
@@ -1286,14 +1314,6 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <h3>Serialized Fields</h3>
 <ul class="blockList">
 <li class="blockList">
-<h4>noOverHalf</h4>
-<pre>boolean noOverHalf</pre>
-</li>
-<li class="blockList">
-<h4>noZero</h4>
-<pre>boolean noZero</pre>
-</li>
-<li class="blockList">
 <h4>offsets</h4>
 <pre>byte[] offsets</pre>
 </li>
@@ -1301,10 +1321,26 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <h4>offsetToFirst</h4>
 <pre>int offsetToFirst</pre>
 </li>
-<li class="blockList">
+<li class="blockListLast">
 <h4>offsetToLast</h4>
 <pre>int offsetToLast</pre>
 </li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="blockList"><a id="org.apache.sysds.runtime.compress.colgroup.offset.OffsetByte">
+<!--   -->
+</a>
+<h3>Class <a href="org/apache/sysds/runtime/compress/colgroup/offset/OffsetByte.html" title="class in org.apache.sysds.runtime.compress.colgroup.offset">org.apache.sysds.runtime.compress.colgroup.offset.OffsetByte</a> extends <a href="org/apache/sysds/runtime/compress/colgroup/offset/AOffsetByte.html" title="class in org.apache.sysds.runtime.compress.colgroup.offset">AOffsetByte</a> implements Serializable</h3>
+<dl class="nameValue">
+<dt>serialVersionUID:</dt>
+<dd>-4716104973912491790L</dd>
+</dl>
+<ul class="blockList">
+<li class="blockList">
+<h3>Serialized Fields</h3>
+<ul class="blockList">
 <li class="blockListLast">
 <h4>size</h4>
 <pre>int size</pre>
@@ -1312,6 +1348,24 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </ul>
 </li>
 </ul>
+</li>
+<li class="blockList"><a id="org.apache.sysds.runtime.compress.colgroup.offset.OffsetByteNZ">
+<!--   -->
+</a>
+<h3>Class <a href="org/apache/sysds/runtime/compress/colgroup/offset/OffsetByteNZ.html" title="class in org.apache.sysds.runtime.compress.colgroup.offset">org.apache.sysds.runtime.compress.colgroup.offset.OffsetByteNZ</a> extends <a href="org/apache/sysds/runtime/compress/colgroup/offset/AOffsetByte.html" title="class in org.apache.sysds.runtime.compress.colgroup.offset">AOffsetByte</a> implements Serializable</h3>
+<dl class="nameValue">
+<dt>serialVersionUID:</dt>
+<dd>-4716104973912291890L</dd>
+</dl>
+</li>
+<li class="blockList"><a id="org.apache.sysds.runtime.compress.colgroup.offset.OffsetByteUNZ">
+<!--   -->
+</a>
+<h3>Class <a href="org/apache/sysds/runtime/compress/colgroup/offset/OffsetByteUNZ.html" title="class in org.apache.sysds.runtime.compress.colgroup.offset">org.apache.sysds.runtime.compress.colgroup.offset.OffsetByteUNZ</a> extends <a href="org/apache/sysds/runtime/compress/colgroup/offset/AOffsetByte.html" title="class in org.apache.sysds.runtime.compress.colgroup.offset">AOffsetByte</a> implements Serializable</h3>
+<dl class="nameValue">
+<dt>serialVersionUID:</dt>
+<dd>-4716104973912299990L</dd>
+</dl>
 </li>
 <li class="blockList"><a id="org.apache.sysds.runtime.compress.colgroup.offset.OffsetChar">
 <!--   -->
@@ -1575,6 +1629,26 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <section>
 <h2 title="Package">Package&nbsp;org.apache.sysds.runtime.compress.io</h2>
 <ul class="blockList">
+<li class="blockList"><a id="org.apache.sysds.runtime.compress.io.CompressedWriteBlock">
+<!--   -->
+</a>
+<h3>Class <a href="org/apache/sysds/runtime/compress/io/CompressedWriteBlock.html" title="class in org.apache.sysds.runtime.compress.io">org.apache.sysds.runtime.compress.io.CompressedWriteBlock</a> extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a> implements Serializable</h3>
+<dl class="nameValue">
+<dt>serialVersionUID:</dt>
+<dd>-587986086067463499L</dd>
+</dl>
+<ul class="blockList">
+<li class="blockList">
+<h3>Serialized Fields</h3>
+<ul class="blockList">
+<li class="blockListLast">
+<h4>mb</h4>
+<pre><a href="org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a> mb</pre>
+</li>
+</ul>
+</li>
+</ul>
+</li>
 <li class="blockList"><a id="org.apache.sysds.runtime.compress.io.CompressUnwrap">
 <!--   -->
 </a>
@@ -1592,6 +1666,46 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <dt>serialVersionUID:</dt>
 <dd>966405324406154236L</dd>
 </dl>
+</li>
+<li class="blockList"><a id="org.apache.sysds.runtime.compress.io.DictWritable">
+<!--   -->
+</a>
+<h3>Class <a href="org/apache/sysds/runtime/compress/io/DictWritable.html" title="class in org.apache.sysds.runtime.compress.io">org.apache.sysds.runtime.compress.io.DictWritable</a> extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a> implements Serializable</h3>
+<dl class="nameValue">
+<dt>serialVersionUID:</dt>
+<dd>731937201435558L</dd>
+</dl>
+<ul class="blockList">
+<li class="blockList">
+<h3>Serialized Fields</h3>
+<ul class="blockList">
+<li class="blockListLast">
+<h4>dicts</h4>
+<pre><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="org/apache/sysds/runtime/compress/colgroup/dictionary/IDictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary</a>&gt; dicts</pre>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="blockList"><a id="org.apache.sysds.runtime.compress.io.DictWritable.K">
+<!--   -->
+</a>
+<h3>Class <a href="org/apache/sysds/runtime/compress/io/DictWritable.K.html" title="class in org.apache.sysds.runtime.compress.io">org.apache.sysds.runtime.compress.io.DictWritable.K</a> extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a> implements Serializable</h3>
+<dl class="nameValue">
+<dt>serialVersionUID:</dt>
+<dd>733937201435558L</dd>
+</dl>
+<ul class="blockList">
+<li class="blockList">
+<h3>Serialized Fields</h3>
+<ul class="blockList">
+<li class="blockListLast">
+<h4>id</h4>
+<pre>int id</pre>
+</li>
+</ul>
+</li>
+</ul>
 </li>
 </ul>
 </section>
@@ -3675,6 +3789,30 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </li>
 </ul>
 </li>
+<li class="blockList"><a id="org.apache.sysds.runtime.data.DenseBlockFP64DEDUP">
+<!--   -->
+</a>
+<h3>Class <a href="org/apache/sysds/runtime/data/DenseBlockFP64DEDUP.html" title="class in org.apache.sysds.runtime.data">org.apache.sysds.runtime.data.DenseBlockFP64DEDUP</a> extends <a href="org/apache/sysds/runtime/data/DenseBlockDRB.html" title="class in org.apache.sysds.runtime.data">DenseBlockDRB</a> implements Serializable</h3>
+<dl class="nameValue">
+<dt>serialVersionUID:</dt>
+<dd>-4012376952006079198L</dd>
+</dl>
+<ul class="blockList">
+<li class="blockList">
+<h3>Serialized Fields</h3>
+<ul class="blockList">
+<li class="blockList">
+<h4>_data</h4>
+<pre>double[][] _data</pre>
+</li>
+<li class="blockListLast">
+<h4>_distinct</h4>
+<pre>int _distinct</pre>
+</li>
+</ul>
+</li>
+</ul>
+</li>
 <li class="blockList"><a id="org.apache.sysds.runtime.data.DenseBlockInt32">
 <!--   -->
 </a>
@@ -3790,6 +3928,26 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <li class="blockListLast">
 <h4>_blocks</h4>
 <pre>double[][] _blocks</pre>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="blockList"><a id="org.apache.sysds.runtime.data.DenseBlockLFP64DEDUP">
+<!--   -->
+</a>
+<h3>Class <a href="org/apache/sysds/runtime/data/DenseBlockLFP64DEDUP.html" title="class in org.apache.sysds.runtime.data">org.apache.sysds.runtime.data.DenseBlockLFP64DEDUP</a> extends <a href="org/apache/sysds/runtime/data/DenseBlockLDRB.html" title="class in org.apache.sysds.runtime.data">DenseBlockLDRB</a> implements Serializable</h3>
+<dl class="nameValue">
+<dt>serialVersionUID:</dt>
+<dd>-3437790596644064171L</dd>
+</dl>
+<ul class="blockList">
+<li class="blockList">
+<h3>Serialized Fields</h3>
+<ul class="blockList">
+<li class="blockListLast">
+<h4>_data</h4>
+<pre>double[][] _data</pre>
 </li>
 </ul>
 </li>
@@ -4044,22 +4202,24 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <li class="blockList">
 <h4>estimatedNzs</h4>
 <pre>int estimatedNzs</pre>
+<div class="block">An estimate of the number of non zero values in this row.
+ The estimate is used to set a threshold on how much the array should grow at certain
+ lengths to not double the size at all times.</div>
 </li>
 <li class="blockList">
 <h4>indexes</h4>
 <pre>int[] indexes</pre>
-</li>
-<li class="blockList">
-<h4>maxNzs</h4>
-<pre>int maxNzs</pre>
+<div class="block">The column indexes of the values contained, can be allocated larger than needed</div>
 </li>
 <li class="blockList">
 <h4>size</h4>
 <pre>int size</pre>
+<div class="block">The current size of the row vector</div>
 </li>
 <li class="blockListLast">
 <h4>values</h4>
 <pre>double[] values</pre>
+<div class="block">The values contained in the vector, can be allocated larger than needed</div>
 </li>
 </ul>
 </li>
@@ -4508,6 +4668,15 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <dd>-1211700634442163849L</dd>
 </dl>
 </li>
+<li class="blockList"><a id="org.apache.sysds.runtime.functionobjects.Max">
+<!--   -->
+</a>
+<h3>Class <a href="org/apache/sysds/runtime/functionobjects/Max.html" title="class in org.apache.sysds.runtime.functionobjects">org.apache.sysds.runtime.functionobjects.Max</a> extends <a href="org/apache/sysds/runtime/functionobjects/Builtin.html" title="class in org.apache.sysds.runtime.functionobjects">Builtin</a> implements Serializable</h3>
+<dl class="nameValue">
+<dt>serialVersionUID:</dt>
+<dd>6529946102263905602L</dd>
+</dl>
+</li>
 <li class="blockList"><a id="org.apache.sysds.runtime.functionobjects.Mean">
 <!--   -->
 </a>
@@ -4527,6 +4696,15 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </ul>
 </li>
 </ul>
+</li>
+<li class="blockList"><a id="org.apache.sysds.runtime.functionobjects.Min">
+<!--   -->
+</a>
+<h3>Class <a href="org/apache/sysds/runtime/functionobjects/Min.html" title="class in org.apache.sysds.runtime.functionobjects">org.apache.sysds.runtime.functionobjects.Min</a> extends <a href="org/apache/sysds/runtime/functionobjects/Builtin.html" title="class in org.apache.sysds.runtime.functionobjects">Builtin</a> implements Serializable</h3>
+<dl class="nameValue">
+<dt>serialVersionUID:</dt>
+<dd>6529946102263905602L</dd>
+</dl>
 </li>
 <li class="blockList"><a id="org.apache.sysds.runtime.functionobjects.Minus">
 <!--   -->
@@ -6045,6 +6223,30 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </li>
 </ul>
 </li>
+<li class="blockList"><a id="org.apache.sysds.runtime.instructions.spark.ParameterizedBuiltinSPInstruction.RDDTransformApplyFunction2">
+<!--   -->
+</a>
+<h3>Class <a href="org/apache/sysds/runtime/instructions/spark/ParameterizedBuiltinSPInstruction.RDDTransformApplyFunction2.html" title="class in org.apache.sysds.runtime.instructions.spark">org.apache.sysds.runtime.instructions.spark.ParameterizedBuiltinSPInstruction.RDDTransformApplyFunction2</a> extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a> implements Serializable</h3>
+<dl class="nameValue">
+<dt>serialVersionUID:</dt>
+<dd>5759813006068230916L</dd>
+</dl>
+<ul class="blockList">
+<li class="blockList">
+<h3>Serialized Fields</h3>
+<ul class="blockList">
+<li class="blockList">
+<h4>_bencoder</h4>
+<pre>org.apache.spark.broadcast.Broadcast&lt;<a href="org/apache/sysds/runtime/transform/encode/MultiColumnEncoder.html" title="class in org.apache.sysds.runtime.transform.encode">MultiColumnEncoder</a>&gt; _bencoder</pre>
+</li>
+<li class="blockListLast">
+<h4>_omap</h4>
+<pre>org.apache.spark.broadcast.Broadcast&lt;<a href="org/apache/sysds/runtime/transform/meta/TfOffsetMap.html" title="class in org.apache.sysds.runtime.transform.meta">TfOffsetMap</a>&gt; _omap</pre>
+</li>
+</ul>
+</li>
+</ul>
+</li>
 <li class="blockList"><a id="org.apache.sysds.runtime.instructions.spark.ParameterizedBuiltinSPInstruction.RDDTransformApplyOffsetFunction">
 <!--   -->
 </a>
@@ -7461,79 +7663,51 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <h3>Class <a href="org/apache/sysds/runtime/iogen/CustomProperties.html" title="class in org.apache.sysds.runtime.iogen">org.apache.sysds.runtime.iogen.CustomProperties</a> extends <a href="org/apache/sysds/runtime/io/FileFormatProperties.html" title="class in org.apache.sysds.runtime.io">FileFormatProperties</a> implements Serializable</h3>
 <dl class="nameValue">
 <dt>serialVersionUID:</dt>
-<dd>-4447926749068752721L</dd>
+<dd>-2877155313260718134L</dd>
 </dl>
 <ul class="blockList">
 <li class="blockList">
 <h3>Serialized Fields</h3>
 <ul class="blockList">
 <li class="blockList">
-<h4>colPattern</h4>
-<pre>org.apache.sysds.runtime.iogen.CustomProperties.GRPattern colPattern</pre>
+<h4>colIndexStructure</h4>
+<pre><a href="org/apache/sysds/runtime/iogen/ColIndexStructure.html" title="class in org.apache.sysds.runtime.iogen">ColIndexStructure</a> colIndexStructure</pre>
 </li>
 <li class="blockList">
-<h4>delim</h4>
-<pre><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a> delim</pre>
+<h4>colKeyPatterns</h4>
+<pre><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/ArrayList.html?is-external=true" title="class or interface in java.util" class="externalLink">ArrayList</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&gt;[] colKeyPatterns</pre>
 </li>
 <li class="blockList">
-<h4>firstColIndex</h4>
-<pre>int firstColIndex</pre>
+<h4>endWithValueStrings</h4>
+<pre><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/HashSet.html?is-external=true" title="class or interface in java.util" class="externalLink">HashSet</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&gt;[] endWithValueStrings</pre>
 </li>
 <li class="blockList">
-<h4>firstRowIndex</h4>
-<pre>int firstRowIndex</pre>
+<h4>mappingProperties</h4>
+<pre><a href="org/apache/sysds/runtime/iogen/MappingProperties.html" title="class in org.apache.sysds.runtime.iogen">MappingProperties</a> mappingProperties</pre>
 </li>
 <li class="blockList">
-<h4>grSymmetry</h4>
-<pre>org.apache.sysds.runtime.iogen.CustomProperties.GRSymmetry grSymmetry</pre>
+<h4>ncols</h4>
+<pre>int ncols</pre>
 </li>
 <li class="blockList">
-<h4>indexDelim</h4>
-<pre><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a> indexDelim</pre>
+<h4>parallel</h4>
+<pre>boolean parallel</pre>
 </li>
 <li class="blockList">
-<h4>naStrings</h4>
-<pre><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/HashSet.html?is-external=true" title="class or interface in java.util" class="externalLink">HashSet</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&gt; naStrings</pre>
+<h4>rowIndexStructure</h4>
+<pre><a href="org/apache/sysds/runtime/iogen/RowIndexStructure.html" title="class in org.apache.sysds.runtime.iogen">RowIndexStructure</a> rowIndexStructure</pre>
+</li>
+<li class="blockList">
+<h4>schema</h4>
+<pre><a href="org/apache/sysds/common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>[] schema</pre>
+</li>
+<li class="blockList">
+<h4>sparse</h4>
+<pre>boolean sparse</pre>
 </li>
 <li class="blockListLast">
-<h4>rowPattern</h4>
-<pre>org.apache.sysds.runtime.iogen.CustomProperties.GRPattern rowPattern</pre>
-</li>
-</ul>
-</li>
-</ul>
-</li>
-<li class="blockList"><a id="org.apache.sysds.runtime.iogen.FastStringTokenizer">
-<!--   -->
-</a>
-<h3>Class <a href="org/apache/sysds/runtime/iogen/FastStringTokenizer.html" title="class in org.apache.sysds.runtime.iogen">org.apache.sysds.runtime.iogen.FastStringTokenizer</a> extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a> implements Serializable</h3>
-<dl class="nameValue">
-<dt>serialVersionUID:</dt>
-<dd>-4698672725609750097L</dd>
-</dl>
-<ul class="blockList">
-<li class="blockList">
-<h3>Serialized Fields</h3>
-<ul class="blockList">
-<li class="blockList">
-<h4>_del</h4>
-<pre><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a> _del</pre>
-</li>
-<li class="blockList">
-<h4>_index</h4>
-<pre>int _index</pre>
-</li>
-<li class="blockList">
-<h4>_pos</h4>
-<pre>int _pos</pre>
-</li>
-<li class="blockList">
-<h4>_string</h4>
-<pre><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a> _string</pre>
-</li>
-<li class="blockListLast">
-<h4>naStrings</h4>
-<pre><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/HashSet.html?is-external=true" title="class or interface in java.util" class="externalLink">HashSet</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&gt; naStrings</pre>
+<h4>valueKeyPattern</h4>
+<pre><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/ArrayList.html?is-external=true" title="class or interface in java.util" class="externalLink">ArrayList</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&gt; valueKeyPattern</pre>
 </li>
 </ul>
 </li>
@@ -8310,18 +8484,22 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <li class="blockList">
 <h4>nonZero</h4>
 <pre>long nonZero</pre>
+<div class="block">Number of non zero values if -1 then unknown</div>
 </li>
 <li class="blockList">
 <h4>numColumns</h4>
 <pre>long numColumns</pre>
+<div class="block">Number of rows</div>
 </li>
 <li class="blockList">
 <h4>numRows</h4>
 <pre>long numRows</pre>
+<div class="block">Number of columns</div>
 </li>
 <li class="blockListLast">
 <h4>ubNnz</h4>
 <pre>boolean ubNnz</pre>
+<div class="block">Upper bound non zero value, indicate if the non zero value is an upper bound</div>
 </li>
 </ul>
 </li>
@@ -8917,6 +9095,36 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
                    throws <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></pre>
 <div class="block">Redirects the default java serialization via externalizable to our default hadoop writable serialization for
  efficient broadcast/rdd serialization.</div>
+<dl>
+<dt><span class="throwsLabel">Throws:</span></dt>
+<dd><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></code> - if IOException occurs</dd>
+</dl>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="blockList"><a id="org.apache.sysds.runtime.transform.encode.ColumnEncoderWordEmbedding">
+<!--   -->
+</a>
+<h3>Class <a href="org/apache/sysds/runtime/transform/encode/ColumnEncoderWordEmbedding.html" title="class in org.apache.sysds.runtime.transform.encode">org.apache.sysds.runtime.transform.encode.ColumnEncoderWordEmbedding</a> extends <a href="org/apache/sysds/runtime/transform/encode/ColumnEncoder.html" title="class in org.apache.sysds.runtime.transform.encode">ColumnEncoder</a> implements Serializable</h3>
+<ul class="blockList">
+<li class="blockList">
+<h3>Serialization Methods</h3>
+<ul class="blockList">
+<li class="blockList">
+<h4>readExternal</h4>
+<pre class="methodSignature">public&nbsp;void&nbsp;readExternal&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/ObjectInput.html?is-external=true" title="class or interface in java.io" class="externalLink">ObjectInput</a>&nbsp;in)
+                  throws <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></pre>
+<dl>
+<dt><span class="throwsLabel">Throws:</span></dt>
+<dd><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></code> - if IOException occur</dd>
+</dl>
+</li>
+<li class="blockListLast">
+<h4>writeExternal</h4>
+<pre class="methodSignature">public&nbsp;void&nbsp;writeExternal&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/ObjectOutput.html?is-external=true" title="class or interface in java.io" class="externalLink">ObjectOutput</a>&nbsp;out)
+                   throws <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></pre>
 <dl>
 <dt><span class="throwsLabel">Throws:</span></dt>
 <dd><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></code> - if IOException occurs</dd>

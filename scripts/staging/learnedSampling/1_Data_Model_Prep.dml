@@ -1,0 +1,45 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+
+# -- Train: Accuracy (%): 85.07940686145477
+# -- Test: Accuracy (%): 85.04146616156444
+# -- ~83% w/o intercept
+
+F = read("./data/Adult.csv", data_type="frame", format="csv", header=FALSE);
+
+jspec2= "{ ids:true, recode:[15], dummycode:[2,4,6,7,8,9,10,14]}"
+[X,M] = transformencode(target=F, spec=jspec2);
+y = X[,ncol(X)];
+X = X[,2:(ncol(X)-1)]
+X = scale(X=X)
+
+[Xtrain,Xtest,ytrain,ytest] = split(X=X,Y=y,f=0.7,cont=FALSE,seed=7)
+
+# learn model
+B = multiLogReg(X=Xtrain, Y=ytrain, maxii=50, icpt=2, reg=0.001, verbose=TRUE);
+[M,yhat,acc] = multiLogRegPredict(X=Xtrain, B=B, Y=ytrain, verbose=TRUE);
+[M,yhat,acc] = multiLogRegPredict(X=Xtest, B=B, Y=ytest, verbose=TRUE);
+
+write(X, "data/Adult_X.csv", format="csv")
+write(y, "data/Adult_y.csv", format="csv")
+write(B, "data/Adult_W.csv", format="csv")
+

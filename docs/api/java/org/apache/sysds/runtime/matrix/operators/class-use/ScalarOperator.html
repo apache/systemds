@@ -14,7 +14,7 @@
 <!--[if IE]>
 <script type="text/javascript" src="../../../../../../../jquery/jszip-utils/dist/jszip-utils-ie.min.js"></script>
 <![endif]-->
-<script type="text/javascript" src="../../../../../../../jquery/jquery-3.6.0.min.js"></script>
+<script type="text/javascript" src="../../../../../../../jquery/jquery-3.6.1.min.js"></script>
 <script type="text/javascript" src="../../../../../../../jquery/jquery-ui.min.js"></script>
 </head>
 <body>
@@ -270,40 +270,59 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tbody>
 <tr class="altColor">
-<td class="colFirst"><code>abstract <a href="../../../compress/colgroup/dictionary/ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">ADictionary.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/dictionary/ADictionary.html#applyScalarOp(org.apache.sysds.runtime.matrix.operators.ScalarOperator)">applyScalarOp</a></span>&#8203;(<a href="../ScalarOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">ScalarOperator</a>&nbsp;op)</code></th>
-<td class="colLast">
-<div class="block">Allocate a new dictionary and applies the scalar operation on each cell of to then return the new dictionary.</div>
-</td>
-</tr>
-<tr class="rowColor">
 <td class="colFirst"><code><a href="../../../compress/colgroup/dictionary/DeltaDictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">DeltaDictionary</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">DeltaDictionary.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/dictionary/DeltaDictionary.html#applyScalarOp(org.apache.sysds.runtime.matrix.operators.ScalarOperator)">applyScalarOp</a></span>&#8203;(<a href="../ScalarOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">ScalarOperator</a>&nbsp;op)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code><a href="../../../compress/colgroup/dictionary/Dictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">Dictionary</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">Dictionary.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/dictionary/Dictionary.html#applyScalarOp(org.apache.sysds.runtime.matrix.operators.ScalarOperator)">applyScalarOp</a></span>&#8203;(<a href="../ScalarOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">ScalarOperator</a>&nbsp;op)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
-<td class="colFirst"><code><a href="../../../compress/colgroup/dictionary/ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../../../compress/colgroup/dictionary/IDictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">IdentityDictionary.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/dictionary/IdentityDictionary.html#applyScalarOp(org.apache.sysds.runtime.matrix.operators.ScalarOperator)">applyScalarOp</a></span>&#8203;(<a href="../ScalarOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">ScalarOperator</a>&nbsp;op)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../../../compress/colgroup/dictionary/IDictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">IDictionary.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/dictionary/IDictionary.html#applyScalarOp(org.apache.sysds.runtime.matrix.operators.ScalarOperator)">applyScalarOp</a></span>&#8203;(<a href="../ScalarOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">ScalarOperator</a>&nbsp;op)</code></th>
+<td class="colLast">
+<div class="block">Allocate a new dictionary and applies the scalar operation on each cell of to then return the new dictionary.</div>
+</td>
+</tr>
 <tr class="altColor">
-<td class="colFirst"><code><a href="../../../compress/colgroup/dictionary/ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
+<td class="colFirst"><code><a href="../../../compress/colgroup/dictionary/IDictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">MatrixBlockDictionary.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/dictionary/MatrixBlockDictionary.html#applyScalarOp(org.apache.sysds.runtime.matrix.operators.ScalarOperator)">applyScalarOp</a></span>&#8203;(<a href="../ScalarOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">ScalarOperator</a>&nbsp;op)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
+<td class="colFirst"><code><a href="../../../compress/colgroup/dictionary/IDictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">PlaceHolderDict.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/dictionary/PlaceHolderDict.html#applyScalarOp(org.apache.sysds.runtime.matrix.operators.ScalarOperator)">applyScalarOp</a></span>&#8203;(<a href="../ScalarOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">ScalarOperator</a>&nbsp;op)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
 <td class="colFirst"><code><a href="../../../compress/colgroup/dictionary/QDictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">QDictionary</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">QDictionary.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/dictionary/QDictionary.html#applyScalarOp(org.apache.sysds.runtime.matrix.operators.ScalarOperator)">applyScalarOp</a></span>&#8203;(<a href="../ScalarOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">ScalarOperator</a>&nbsp;op)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../../../compress/colgroup/dictionary/IDictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">Dictionary.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/dictionary/Dictionary.html#applyScalarOpAndAppend(org.apache.sysds.runtime.matrix.operators.ScalarOperator,double,int)">applyScalarOpAndAppend</a></span>&#8203;(<a href="../ScalarOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">ScalarOperator</a>&nbsp;op,
+                      double&nbsp;v0,
+                      int&nbsp;nCol)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
 <tr class="altColor">
-<td class="colFirst"><code>abstract <a href="../../../compress/colgroup/dictionary/ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">ADictionary.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/dictionary/ADictionary.html#applyScalarOpAndAppend(org.apache.sysds.runtime.matrix.operators.ScalarOperator,double,int)">applyScalarOpAndAppend</a></span>&#8203;(<a href="../ScalarOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">ScalarOperator</a>&nbsp;op,
+<td class="colFirst"><code><a href="../../../compress/colgroup/dictionary/IDictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">IdentityDictionary.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/dictionary/IdentityDictionary.html#applyScalarOpAndAppend(org.apache.sysds.runtime.matrix.operators.ScalarOperator,double,int)">applyScalarOpAndAppend</a></span>&#8203;(<a href="../ScalarOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">ScalarOperator</a>&nbsp;op,
+                      double&nbsp;v0,
+                      int&nbsp;nCol)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../../../compress/colgroup/dictionary/IDictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">IDictionary.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/dictionary/IDictionary.html#applyScalarOpAndAppend(org.apache.sysds.runtime.matrix.operators.ScalarOperator,double,int)">applyScalarOpAndAppend</a></span>&#8203;(<a href="../ScalarOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">ScalarOperator</a>&nbsp;op,
                       double&nbsp;v0,
                       int&nbsp;nCol)</code></th>
 <td class="colLast">
@@ -311,37 +330,44 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
  new dictionary.</div>
 </td>
 </tr>
-<tr class="rowColor">
-<td class="colFirst"><code><a href="../../../compress/colgroup/dictionary/ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">Dictionary.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/dictionary/Dictionary.html#applyScalarOpAndAppend(org.apache.sysds.runtime.matrix.operators.ScalarOperator,double,int)">applyScalarOpAndAppend</a></span>&#8203;(<a href="../ScalarOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">ScalarOperator</a>&nbsp;op,
-                      double&nbsp;v0,
-                      int&nbsp;nCol)</code></th>
-<td class="colLast">&nbsp;</td>
-</tr>
 <tr class="altColor">
-<td class="colFirst"><code><a href="../../../compress/colgroup/dictionary/ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">IdentityDictionary.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/dictionary/IdentityDictionary.html#applyScalarOpAndAppend(org.apache.sysds.runtime.matrix.operators.ScalarOperator,double,int)">applyScalarOpAndAppend</a></span>&#8203;(<a href="../ScalarOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">ScalarOperator</a>&nbsp;op,
-                      double&nbsp;v0,
-                      int&nbsp;nCol)</code></th>
-<td class="colLast">&nbsp;</td>
-</tr>
-<tr class="rowColor">
-<td class="colFirst"><code><a href="../../../compress/colgroup/dictionary/ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
+<td class="colFirst"><code><a href="../../../compress/colgroup/dictionary/IDictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">MatrixBlockDictionary.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/dictionary/MatrixBlockDictionary.html#applyScalarOpAndAppend(org.apache.sysds.runtime.matrix.operators.ScalarOperator,double,int)">applyScalarOpAndAppend</a></span>&#8203;(<a href="../ScalarOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">ScalarOperator</a>&nbsp;op,
                       double&nbsp;v0,
                       int&nbsp;nCol)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../../../compress/colgroup/dictionary/IDictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">PlaceHolderDict.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/dictionary/PlaceHolderDict.html#applyScalarOpAndAppend(org.apache.sysds.runtime.matrix.operators.ScalarOperator,double,int)">applyScalarOpAndAppend</a></span>&#8203;(<a href="../ScalarOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">ScalarOperator</a>&nbsp;op,
+                      double&nbsp;v0,
+                      int&nbsp;nCol)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
 <tr class="altColor">
-<td class="colFirst"><code><a href="../../../compress/colgroup/dictionary/ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
+<td class="colFirst"><code><a href="../../../compress/colgroup/dictionary/IDictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">QDictionary.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/dictionary/QDictionary.html#applyScalarOpAndAppend(org.apache.sysds.runtime.matrix.operators.ScalarOperator,double,int)">applyScalarOpAndAppend</a></span>&#8203;(<a href="../ScalarOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">ScalarOperator</a>&nbsp;op,
                       double&nbsp;v0,
                       int&nbsp;nCol)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
-<td class="colFirst"><code>abstract <a href="../../../compress/colgroup/dictionary/ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">ADictionary.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/dictionary/ADictionary.html#applyScalarOpWithReference(org.apache.sysds.runtime.matrix.operators.ScalarOperator,double%5B%5D,double%5B%5D)">applyScalarOpWithReference</a></span>&#8203;(<a href="../ScalarOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">ScalarOperator</a>&nbsp;op,
+<td class="colFirst"><code><a href="../../../compress/colgroup/dictionary/Dictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">Dictionary</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">Dictionary.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/dictionary/Dictionary.html#applyScalarOpWithReference(org.apache.sysds.runtime.matrix.operators.ScalarOperator,double%5B%5D,double%5B%5D)">applyScalarOpWithReference</a></span>&#8203;(<a href="../ScalarOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">ScalarOperator</a>&nbsp;op,
+                          double[]&nbsp;reference,
+                          double[]&nbsp;newReference)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../../../compress/colgroup/dictionary/IDictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">IdentityDictionary.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/dictionary/IdentityDictionary.html#applyScalarOpWithReference(org.apache.sysds.runtime.matrix.operators.ScalarOperator,double%5B%5D,double%5B%5D)">applyScalarOpWithReference</a></span>&#8203;(<a href="../ScalarOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">ScalarOperator</a>&nbsp;op,
+                          double[]&nbsp;reference,
+                          double[]&nbsp;newReference)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../../../compress/colgroup/dictionary/IDictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">IDictionary.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/dictionary/IDictionary.html#applyScalarOpWithReference(org.apache.sysds.runtime.matrix.operators.ScalarOperator,double%5B%5D,double%5B%5D)">applyScalarOpWithReference</a></span>&#8203;(<a href="../ScalarOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">ScalarOperator</a>&nbsp;op,
                           double[]&nbsp;reference,
                           double[]&nbsp;newReference)</code></th>
 <td class="colLast">
@@ -349,28 +375,21 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </td>
 </tr>
 <tr class="altColor">
-<td class="colFirst"><code><a href="../../../compress/colgroup/dictionary/Dictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">Dictionary</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">Dictionary.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/dictionary/Dictionary.html#applyScalarOpWithReference(org.apache.sysds.runtime.matrix.operators.ScalarOperator,double%5B%5D,double%5B%5D)">applyScalarOpWithReference</a></span>&#8203;(<a href="../ScalarOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">ScalarOperator</a>&nbsp;op,
-                          double[]&nbsp;reference,
-                          double[]&nbsp;newReference)</code></th>
-<td class="colLast">&nbsp;</td>
-</tr>
-<tr class="rowColor">
-<td class="colFirst"><code><a href="../../../compress/colgroup/dictionary/ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">IdentityDictionary.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/dictionary/IdentityDictionary.html#applyScalarOpWithReference(org.apache.sysds.runtime.matrix.operators.ScalarOperator,double%5B%5D,double%5B%5D)">applyScalarOpWithReference</a></span>&#8203;(<a href="../ScalarOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">ScalarOperator</a>&nbsp;op,
-                          double[]&nbsp;reference,
-                          double[]&nbsp;newReference)</code></th>
-<td class="colLast">&nbsp;</td>
-</tr>
-<tr class="altColor">
-<td class="colFirst"><code><a href="../../../compress/colgroup/dictionary/ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
+<td class="colFirst"><code><a href="../../../compress/colgroup/dictionary/IDictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">MatrixBlockDictionary.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/dictionary/MatrixBlockDictionary.html#applyScalarOpWithReference(org.apache.sysds.runtime.matrix.operators.ScalarOperator,double%5B%5D,double%5B%5D)">applyScalarOpWithReference</a></span>&#8203;(<a href="../ScalarOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">ScalarOperator</a>&nbsp;op,
                           double[]&nbsp;reference,
                           double[]&nbsp;newReference)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
-<td class="colFirst"><code><a href="../../../compress/colgroup/dictionary/ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
+<td class="colFirst"><code><a href="../../../compress/colgroup/dictionary/IDictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">PlaceHolderDict.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/dictionary/PlaceHolderDict.html#applyScalarOpWithReference(org.apache.sysds.runtime.matrix.operators.ScalarOperator,double%5B%5D,double%5B%5D)">applyScalarOpWithReference</a></span>&#8203;(<a href="../ScalarOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">ScalarOperator</a>&nbsp;op,
+                          double[]&nbsp;reference,
+                          double[]&nbsp;newReference)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../../../compress/colgroup/dictionary/IDictionary.html" title="interface in org.apache.sysds.runtime.compress.colgroup.dictionary">IDictionary</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">QDictionary.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/dictionary/QDictionary.html#applyScalarOpWithReference(org.apache.sysds.runtime.matrix.operators.ScalarOperator,double%5B%5D,double%5B%5D)">applyScalarOpWithReference</a></span>&#8203;(<a href="../ScalarOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">ScalarOperator</a>&nbsp;op,
                           double[]&nbsp;reference,
                           double[]&nbsp;newReference)</code></th>

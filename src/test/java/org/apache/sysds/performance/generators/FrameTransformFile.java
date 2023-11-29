@@ -19,65 +19,51 @@
 
 package org.apache.sysds.performance.generators;
 
-import java.io.IOException;
-
-import org.apache.sysds.common.Types.FileFormat;
-import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.performance.PerfUtil;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
-import org.apache.sysds.runtime.io.FileFormatPropertiesCSV;
-import org.apache.sysds.runtime.io.FrameReader;
-import org.apache.sysds.runtime.io.FrameReaderFactory;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.transform.encode.EncoderFactory;
 import org.apache.sysds.runtime.transform.encode.MultiColumnEncoder;
 
 public class FrameTransformFile extends ConstMatrix {
 
-    final private String path;
-    final private String specPath;
+	final private String path;
+	final private String specPath;
 
-    private FrameTransformFile(String path, String specPath, MatrixBlock mb) throws IOException {
-        super(mb);
-        this.path = path;
-        this.specPath = specPath;
-    }
+	private FrameTransformFile(String path, String specPath, MatrixBlock mb) throws Exception {
+		super(mb);
+		this.path = path;
+		this.specPath = specPath;
+	}
 
-    // example:
-    // src/test/resources/datasets/titanic/tfspec.json
-    // src/test/resources/datasets/titanic/titanic.csv
-    public static FrameTransformFile create(String path, String specPath) throws IOException {
-        // read spec
-        final String spec = PerfUtil.readSpec(specPath);
+	// example:
+	// src/test/resources/datasets/titanic/tfspec.json
+	// src/test/resources/datasets/titanic/titanic.csv
+	public static FrameTransformFile create(String path, String specPath) throws Exception {
+		// read spec
+		final String spec = PerfUtil.readSpec(specPath);
+		final FrameFile fg = FrameFile.create(path);
 
-        // MetaDataAll mba = new MetaDataAll(path + ".mtd", false, true);
-        // DataCharacteristics ds = mba.getDataCharacteristics();
-        // FileFormat f = FileFormat.valueOf(mba.getFormatTypeString().toUpperCase());
+		FrameBlock fb = fg.take();
+		int k = InfrastructureAnalyzer.getLocalParallelism();
+		FrameBlock sc = fb.detectSchema(k);
+		fb = fb.applySchema(sc, k);
+		MultiColumnEncoder encoder = EncoderFactory.createEncoder(spec, fb.getColumnNames(), fb.getNumColumns(), null);
+		MatrixBlock mb = encoder.encode(fb, k);
 
-        FileFormatPropertiesCSV csvP = new FileFormatPropertiesCSV();
-        csvP.setHeader(true);
-        FrameReader r = FrameReaderFactory.createFrameReader(FileFormat.CSV, csvP);
-        FrameBlock fb = r.readFrameFromHDFS(path, new ValueType[] {ValueType.STRING}, -1, -1);
+		return new FrameTransformFile(path, specPath, mb);
+	}
 
-        int k = InfrastructureAnalyzer.getLocalParallelism();
-        FrameBlock sc = fb.detectSchema(k);
-        fb = fb.applySchema(sc, k);
-        MultiColumnEncoder encoder = EncoderFactory.createEncoder(spec, fb.getColumnNames(), fb.getNumColumns(), null);
-        MatrixBlock mb = encoder.encode(fb, k);
-
-        return new FrameTransformFile(path, specPath, mb);
-    }
-
-    @Override
-    public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append(this.getClass().getSimpleName());
-        sb.append(" From file: ");
-        sb.append(path);
-        sb.append(" -- Transformed with: ");
-        sb.append(specPath);
-        return sb.toString();
-    }
+	@Override
+	public String toString() {
+		StringBuilder sb = new StringBuilder();
+		sb.append(this.getClass().getSimpleName());
+		sb.append(" From file: ");
+		sb.append(path);
+		sb.append(" -- Transformed with: ");
+		sb.append(specPath);
+		return sb.toString();
+	}
 
 }

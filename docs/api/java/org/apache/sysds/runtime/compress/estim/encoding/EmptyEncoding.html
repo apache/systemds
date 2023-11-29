@@ -14,7 +14,7 @@
 <!--[if IE]>
 <script type="text/javascript" src="../../../../../../../jquery/jszip-utils/dist/jszip-utils-ie.min.js"></script>
 <![endif]-->
-<script type="text/javascript" src="../../../../../../../jquery/jquery-3.6.0.min.js"></script>
+<script type="text/javascript" src="../../../../../../../jquery/jquery-3.6.1.min.js"></script>
 <script type="text/javascript" src="../../../../../../../jquery/jquery-ui.min.js"></script>
 </head>
 <body>
@@ -27,7 +27,7 @@
     catch(err) {
     }
 //-->
-var data = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10};
+var data = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10};
 var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -124,7 +124,12 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <li><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">java.lang.Object</a></li>
 <li>
 <ul class="inheritance">
+<li><a href="AEncode.html" title="class in org.apache.sysds.runtime.compress.estim.encoding">org.apache.sysds.runtime.compress.estim.encoding.AEncode</a></li>
+<li>
+<ul class="inheritance">
 <li>org.apache.sysds.runtime.compress.estim.encoding.EmptyEncoding</li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>
@@ -137,8 +142,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </dl>
 <hr>
 <pre>public class <span class="typeNameLabel">EmptyEncoding</span>
-extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a>
-implements <a href="IEncode.html" title="interface in org.apache.sysds.runtime.compress.estim.encoding">IEncode</a></pre>
+extends <a href="AEncode.html" title="class in org.apache.sysds.runtime.compress.estim.encoding">AEncode</a></pre>
 <div class="block">Empty encoding for cases where the entire group of columns is zero</div>
 </li>
 </ul>
@@ -207,6 +211,20 @@ implements <a href="IEncode.html" title="interface in org.apache.sysds.runtime.c
 </td>
 </tr>
 <tr id="i1" class="rowColor">
+<td class="colFirst"><code>org.apache.commons.lang3.tuple.Pair&lt;<a href="IEncode.html" title="interface in org.apache.sysds.runtime.compress.estim.encoding">IEncode</a>,&#8203;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/Map.html?is-external=true" title="class or interface in java.util" class="externalLink">Map</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Integer.html?is-external=true" title="class or interface in java.lang" class="externalLink">Integer</a>,&#8203;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Integer.html?is-external=true" title="class or interface in java.lang" class="externalLink">Integer</a>&gt;&gt;</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#combineWithMap(org.apache.sysds.runtime.compress.estim.encoding.IEncode)">combineWithMap</a></span>&#8203;(<a href="IEncode.html" title="interface in org.apache.sysds.runtime.compress.estim.encoding">IEncode</a>&nbsp;e)</code></th>
+<td class="colLast">
+<div class="block">Combine two encodings without resizing the output.</div>
+</td>
+</tr>
+<tr id="i2" class="altColor">
+<td class="colFirst"><code>boolean</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#equals(org.apache.sysds.runtime.compress.estim.encoding.IEncode)">equals</a></span>&#8203;(<a href="IEncode.html" title="interface in org.apache.sysds.runtime.compress.estim.encoding">IEncode</a>&nbsp;e)</code></th>
+<td class="colLast">
+<div class="block">Indicate if the given encoding is equivalent to this encoding</div>
+</td>
+</tr>
+<tr id="i3" class="rowColor">
 <td class="colFirst"><code><a href="../EstimationFactors.html" title="class in org.apache.sysds.runtime.compress.estim">EstimationFactors</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#extractFacts(int,double,double,org.apache.sysds.runtime.compress.CompressionSettings)">extractFacts</a></span>&#8203;(int&nbsp;nRows,
             double&nbsp;tupleSparsity,
@@ -216,32 +234,39 @@ implements <a href="IEncode.html" title="interface in org.apache.sysds.runtime.c
 <div class="block">Extract the compression facts for this column group.</div>
 </td>
 </tr>
-<tr id="i2" class="altColor">
+<tr id="i4" class="altColor">
 <td class="colFirst"><code>int</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getUnique()">getUnique</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Get the number of unique values in this encoding</div>
 </td>
 </tr>
-<tr id="i3" class="rowColor">
+<tr id="i5" class="rowColor">
 <td class="colFirst"><code>boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#isDense()">isDense</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Signify if the counts are including zero or without zero.</div>
 </td>
 </tr>
-<tr id="i4" class="altColor">
+<tr id="i6" class="altColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#toString()">toString</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 </table>
 <ul class="blockList">
+<li class="blockList"><a id="methods.inherited.from.class.org.apache.sysds.runtime.compress.estim.encoding.AEncode">
+<!--   -->
+</a>
+<h3>Methods inherited from class&nbsp;org.apache.sysds.runtime.compress.estim.encoding.<a href="AEncode.html" title="class in org.apache.sysds.runtime.compress.estim.encoding">AEncode</a></h3>
+<code><a href="AEncode.html#equals(java.lang.Object)">equals</a></code></li>
+</ul>
+<ul class="blockList">
 <li class="blockList"><a id="methods.inherited.from.class.java.lang.Object">
 <!--   -->
 </a>
 <h3>Methods inherited from class&nbsp;java.lang.<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a></h3>
-<code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#equals(java.lang.Object)" title="class or interface in java.lang" class="externalLink">equals</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#getClass()" title="class or interface in java.lang" class="externalLink">getClass</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#hashCode()" title="class or interface in java.lang" class="externalLink">hashCode</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#notify()" title="class or interface in java.lang" class="externalLink">notify</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#notifyAll()" title="class or interface in java.lang" class="externalLink">notifyAll</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#wait()" title="class or interface in java.lang" class="externalLink">wait</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#wait(long)" title="class or interface in java.lang" class="externalLink">wait</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#wait(long,int)" title="class or interface in java.lang" class="externalLink">wait</a></code></li>
+<code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#getClass()" title="class or interface in java.lang" class="externalLink">getClass</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#hashCode()" title="class or interface in java.lang" class="externalLink">hashCode</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#notify()" title="class or interface in java.lang" class="externalLink">notify</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#notifyAll()" title="class or interface in java.lang" class="externalLink">notifyAll</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#wait()" title="class or interface in java.lang" class="externalLink">wait</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#wait(long)" title="class or interface in java.lang" class="externalLink">wait</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#wait(long,int)" title="class or interface in java.lang" class="externalLink">wait</a></code></li>
 </ul>
 </li>
 </ul>
@@ -289,8 +314,24 @@ implements <a href="IEncode.html" title="interface in org.apache.sysds.runtime.c
 <div class="block">Combine two encodings, note it should be guaranteed by the caller that the number of unique multiplied does not
  overflow Integer.</div>
 <dl>
-<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
-<dd><code><a href="IEncode.html#combine(org.apache.sysds.runtime.compress.estim.encoding.IEncode)">combine</a></code>&nbsp;in interface&nbsp;<code><a href="IEncode.html" title="interface in org.apache.sysds.runtime.compress.estim.encoding">IEncode</a></code></dd>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>e</code> - The other side to combine with</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>The combined encoding</dd>
+</dl>
+</li>
+</ul>
+<a id="combineWithMap(org.apache.sysds.runtime.compress.estim.encoding.IEncode)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>combineWithMap</h4>
+<pre class="methodSignature">public&nbsp;org.apache.commons.lang3.tuple.Pair&lt;<a href="IEncode.html" title="interface in org.apache.sysds.runtime.compress.estim.encoding">IEncode</a>,&#8203;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/Map.html?is-external=true" title="class or interface in java.util" class="externalLink">Map</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Integer.html?is-external=true" title="class or interface in java.lang" class="externalLink">Integer</a>,&#8203;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Integer.html?is-external=true" title="class or interface in java.lang" class="externalLink">Integer</a>&gt;&gt;&nbsp;combineWithMap&#8203;(<a href="IEncode.html" title="interface in org.apache.sysds.runtime.compress.estim.encoding">IEncode</a>&nbsp;e)</pre>
+<div class="block"><span class="descfrmTypeLabel">Description copied from interface:&nbsp;<code><a href="IEncode.html#combineWithMap(org.apache.sysds.runtime.compress.estim.encoding.IEncode)">IEncode</a></code></span></div>
+<div class="block">Combine two encodings without resizing the output. meaning the mapping of the indexes should be consistent with
+ left hand side Dictionary indexes and right hand side indexes.</div>
+<dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>e</code> - The other side to combine with</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
@@ -308,8 +349,6 @@ implements <a href="IEncode.html" title="interface in org.apache.sysds.runtime.c
 <div class="block"><span class="descfrmTypeLabel">Description copied from interface:&nbsp;<code><a href="IEncode.html#getUnique()">IEncode</a></code></span></div>
 <div class="block">Get the number of unique values in this encoding</div>
 <dl>
-<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
-<dd><code><a href="IEncode.html#getUnique()">getUnique</a></code>&nbsp;in interface&nbsp;<code><a href="IEncode.html" title="interface in org.apache.sysds.runtime.compress.estim.encoding">IEncode</a></code></dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>The number of unique values.</dd>
 </dl>
@@ -341,8 +380,6 @@ implements <a href="IEncode.html" title="interface in org.apache.sysds.runtime.c
 <div class="block"><span class="descfrmTypeLabel">Description copied from interface:&nbsp;<code><a href="IEncode.html#extractFacts(int,double,double,org.apache.sysds.runtime.compress.CompressionSettings)">IEncode</a></code></span></div>
 <div class="block">Extract the compression facts for this column group.</div>
 <dl>
-<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
-<dd><code><a href="IEncode.html#extractFacts(int,double,double,org.apache.sysds.runtime.compress.CompressionSettings)">extractFacts</a></code>&nbsp;in interface&nbsp;<code><a href="IEncode.html" title="interface in org.apache.sysds.runtime.compress.estim.encoding">IEncode</a></code></dd>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>nRows</code> - The total number of rows</dd>
 <dd><code>tupleSparsity</code> - The Sparsity of the unique tuples</dd>
@@ -356,17 +393,32 @@ implements <a href="IEncode.html" title="interface in org.apache.sysds.runtime.c
 <a id="isDense()">
 <!--   -->
 </a>
-<ul class="blockListLast">
+<ul class="blockList">
 <li class="blockList">
 <h4>isDense</h4>
 <pre class="methodSignature">public&nbsp;boolean&nbsp;isDense()</pre>
 <div class="block"><span class="descfrmTypeLabel">Description copied from interface:&nbsp;<code><a href="IEncode.html#isDense()">IEncode</a></code></span></div>
 <div class="block">Signify if the counts are including zero or without zero.</div>
 <dl>
-<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
-<dd><code><a href="IEncode.html#isDense()">isDense</a></code>&nbsp;in interface&nbsp;<code><a href="IEncode.html" title="interface in org.apache.sysds.runtime.compress.estim.encoding">IEncode</a></code></dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>is dense</dd>
+</dl>
+</li>
+</ul>
+<a id="equals(org.apache.sysds.runtime.compress.estim.encoding.IEncode)">
+<!--   -->
+</a>
+<ul class="blockListLast">
+<li class="blockList">
+<h4>equals</h4>
+<pre class="methodSignature">public&nbsp;boolean&nbsp;equals&#8203;(<a href="IEncode.html" title="interface in org.apache.sysds.runtime.compress.estim.encoding">IEncode</a>&nbsp;e)</pre>
+<div class="block"><span class="descfrmTypeLabel">Description copied from interface:&nbsp;<code><a href="IEncode.html#equals(org.apache.sysds.runtime.compress.estim.encoding.IEncode)">IEncode</a></code></span></div>
+<div class="block">Indicate if the given encoding is equivalent to this encoding</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>e</code> - The other encoding to be compared with this</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>If the encoding is equivalent</dd>
 </dl>
 </li>
 </ul>

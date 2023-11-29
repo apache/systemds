@@ -25,10 +25,10 @@ import java.io.InputStream;
 
 public interface PerfUtil {
 
-    public static String readSpec(String path) throws IOException {
-        InputStream in = new FileInputStream(path);
-        String spec = new String(in.readAllBytes());
-        in.close();
-        return spec;
-    }
+	public static String readSpec(String path) throws IOException {
+		InputStream in = new FileInputStream(path);
+		String spec = new String(in.readAllBytes());
+		in.close();
+		return spec;
+	}
 }

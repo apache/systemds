@@ -1,0 +1,78 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+# This function has  the same functionality with img_mirror but it handles multiple images at
+# the same time. Each row of the input and output matrix represents a linearized image/matrix
+# It flips an image on the X (horizontal) or Y (vertical) axis.
+# INPUT:
+# -----------------------------------------------------------------------------------------
+# img_matrix           Input matrix/image (every row represents a linearized matrix/image)
+# horizontal_axis      flip either in X or Y axis
+# original_rows        number of rows in the original 2-D images
+# original_cols        number of cols in the original 2-D images
+# -----------------------------------------------------------------------------------------
+#
+# OUTPUT:
+# -----------------------------------------------------------------------------------------
+# R            Output matrix/image  (every row represents a linearized matrix/image)
+# -----------------------------------------------------------------------------------------
+
+m_img_mirror_linearized = function(matrix[double] img_matrix, Boolean horizontal_axis,
+Integer original_rows, Integer original_cols) return (matrix[double] R) {
+  n = ncol(img_matrix);
+  R = matrix(0, rows=nrow(img_matrix), cols=n);
+  rows = original_rows;
+  cols = original_cols;
+
+  if (horizontal_axis) {
+    parfor (i in seq(1, (rows %/% 2) * cols, cols),check=0) {
+      start = i;
+      end = i + cols - 1;
+      mirrorStart = (n - end) + 1;
+      mirrorEnd = (n - start) + 1;
+      R[, start:end] = img_matrix[, mirrorStart:mirrorEnd];
+      R[, mirrorStart:mirrorEnd] = img_matrix[, start:end];
+    }
+    if (rows %% 2 == 1) {
+      midStart = ((rows %/% 2)) * cols + 1;
+      midEnd = midStart + cols - 1;
+      R[, midStart:midEnd] = img_matrix[, midStart:midEnd];
+    }
+  }
+  else {
+      offset = 1;
+      while (offset <= n) {
+        end = min(n, offset + cols - 1);
+        reversed_sub_matrix = matrix(0, rows=nrow(img_matrix), cols=cols);
+        idx = 1;
+        for (j in offset:end) {
+          reversed_sub_matrix[, cols - idx + 1] = img_matrix[, j];
+          idx = idx + 1;
+        }
+        R[, offset:end] = reversed_sub_matrix;
+        offset = end + 1;
+      }
+  }
+}
+
+
+
+

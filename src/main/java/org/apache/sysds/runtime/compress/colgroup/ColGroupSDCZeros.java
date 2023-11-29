@@ -766,30 +766,32 @@ public class ColGroupSDCZeros extends ASDCZero implements IMapToDataGroup {
 	}
 
 	@Override
-	public AColGroup appendNInternal(AColGroup[] g) {
-		int sumRows = getNumRows();
+	public AColGroup appendNInternal(AColGroup[] g, int blen, int rlen) {
+		
 		for(int i = 1; i < g.length; i++) {
-			if(!_colIndexes.equals(g[i]._colIndexes)) {
+			final AColGroup gs = g[i];
+			if(!_colIndexes.equals(gs._colIndexes)) {
 				LOG.warn("Not same columns therefore not appending \n" + _colIndexes + "\n\n" + g[i]._colIndexes);
 				return null;
 			}
 
-			if(!(g[i] instanceof ColGroupSDCZeros)) {
-				LOG.warn("Not SDCFOR but " + g[i].getClass().getSimpleName());
+			if(!(gs instanceof AOffsetsGroup )) {
+				LOG.warn("Not valid OffsetGroup but " + gs.getClass().getSimpleName());
 				return null;
 			}
 
-			final ColGroupSDCZeros gc = (ColGroupSDCZeros) g[i];
-			if(!gc._dict.equals(_dict)) {
-				LOG.warn("Not same Dictionaries therefore not appending \n" + _dict + "\n\n" + gc._dict);
-				return null;
+			if( gs instanceof ColGroupSDCZeros){
+				final ColGroupSDCZeros gc = (ColGroupSDCZeros) gs;
+				if(!gc._dict.equals(_dict)) {
+					LOG.warn("Not same Dictionaries therefore not appending \n" + _dict + "\n\n" + gc._dict);
+					return null;
+				}
 			}
-			sumRows += gc.getNumRows();
 		}
 		AMapToData nd = _data.appendN(Arrays.copyOf(g, g.length, IMapToDataGroup[].class));
-		AOffset no = _indexes.appendN(Arrays.copyOf(g, g.length, AOffsetsGroup[].class), getNumRows());
+		AOffset no = _indexes.appendN(Arrays.copyOf(g, g.length, AOffsetsGroup[].class), blen);
 
-		return create(_colIndexes, sumRows, _dict, no, nd, null);
+		return create(_colIndexes, rlen, _dict, no, nd, null);
 	}
 
 	@Override

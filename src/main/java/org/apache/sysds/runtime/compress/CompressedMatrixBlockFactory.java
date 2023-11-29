@@ -396,24 +396,28 @@ public class CompressedMatrixBlockFactory {
 				compSettings.transposed = false;
 				break;
 			default:
-				if(mb.isInSparseFormat()) {
-					if(mb.getNumColumns() > 10000)
-						// many sparse columns we have to...
-						compSettings.transposed = true;
-					else if(mb.getNonZeros() < 1000)
-						// low nnz trivial to transpose
-						compSettings.transposed = true;
-					else {
-						// is enough rows to make it usable
-						boolean isAboveRowNumbers = mb.getNumRows() > 500000;
-						// Make sure that it is not more efficient to extract the rows.
-						boolean isAboveThreadToColumnRatio = compressionGroups.getNumberColGroups() > mb.getNumColumns() / 30;
-						compSettings.transposed = isAboveRowNumbers && isAboveThreadToColumnRatio;
-					}
-				}
-				else
-					compSettings.transposed = false;
+				compSettings.transposed = transposeHeuristics(compressionGroups.getNumberColGroups() , mb);
 		}
+	}
+
+	public static boolean transposeHeuristics(int nGroups, MatrixBlock mb) {
+		if(mb.isInSparseFormat()) {
+			if(mb.getNumColumns() > 10000 || mb.getNumRows() > 10000)
+				// many sparse columns or rows we have to...
+				return true;
+			else if(mb.getNonZeros() < 1000)
+				// low nnz trivial to transpose
+				return true;
+			else {
+				// is enough rows to make it usable
+				boolean isAboveRowNumbers = mb.getNumRows() > 500000;
+				// Make sure that it is not more efficient to extract the rows.
+				boolean isAboveThreadToColumnRatio = nGroups > mb.getNumColumns() / 30;
+				return isAboveRowNumbers && isAboveThreadToColumnRatio;
+			}
+		}
+		else
+			return false;
 	}
 
 	private void compressPhase() {

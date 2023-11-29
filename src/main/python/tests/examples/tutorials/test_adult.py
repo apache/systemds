@@ -136,7 +136,7 @@ class TestAdultStandardML(unittest.TestCase):
         test_y = test_y_frame.transform_apply(spec=jspec_labels, meta=M2)
 
         betas = multiLogReg(train_x, train_y, verbose=False)
-        [_, y_pred, acc] = multiLogRegPredict(test_x, betas, test_y, verbose=False)
+        [_, y_pred, acc] = multiLogRegPredict(test_x, betas, Y=test_y, verbose=False)
 
         [_, conf_avg] = confusionMatrix(y_pred, test_y)
         confusion_numpy = conf_avg.compute()

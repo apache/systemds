@@ -805,6 +805,10 @@ public class DmlSyntacticValidator implements DmlListener {
 	@Override
 	public void exitIterablePredicateColonExpression(IterablePredicateColonExpressionContext ctx) {
 		ctx.info.from = ctx.from.info.expr;
+		if( ctx.to == null ) {
+			notifyErrorListeners("incorrect for/parfor loop bounds: \'" + ctx.info.from + " : "+ctx.info.to+"\'.", ctx.start);
+			return;
+		}
 		ctx.info.to = ctx.to.info.expr;
 		ctx.info.increment = null;
 	}

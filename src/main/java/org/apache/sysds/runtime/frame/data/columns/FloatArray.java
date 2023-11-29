@@ -80,7 +80,14 @@ public class FloatArray extends Array<Float> {
 
 	@Override
 	public void set(int rl, int ru, Array<Float> value, int rlSrc) {
-		System.arraycopy(((FloatArray) value)._data, rlSrc, _data, rl, ru - rl + 1);
+		try {
+			// try system array copy.
+			// but if it does not work, default to get.
+			System.arraycopy(value.get(), rlSrc, _data, rl, ru - rl + 1);
+		}
+		catch(Exception e) {
+			super.set(rl, ru, value, rlSrc);
+		}
 	}
 
 	@Override
@@ -247,6 +254,14 @@ public class FloatArray extends Array<Float> {
 	}
 
 	@Override
+	protected Array<Object> changeTypeHash64() {
+		long[] ret = new long[size()];
+		for(int i = 0; i < size(); i++)
+			ret[i] = (int) _data[i];
+		return new HashLongArray(ret);
+	}
+
+	@Override
 	protected Array<Float> changeTypeFloat() {
 		return this;
 	}
@@ -284,10 +299,20 @@ public class FloatArray extends Array<Float> {
 	}
 
 	public static float parseFloat(String value) {
-		if(value == null || value.isEmpty())
-			return 0.0f;
-		else
+		try {
+			if(value == null || value.isEmpty())
+				return 0.0f;
 			return Float.parseFloat(value);
+		}
+		catch(NumberFormatException e) {
+			final int len = value.length();
+			// check for common extra cases.
+			if(len == 3 && value.compareToIgnoreCase("Inf") == 0)
+				return Float.POSITIVE_INFINITY;
+			else if(len == 4 && value.compareToIgnoreCase("-Inf") == 0)
+				return Float.NEGATIVE_INFINITY;
+			throw new DMLRuntimeException(e);
+		}
 	}
 
 	@Override
@@ -340,7 +365,7 @@ public class FloatArray extends Array<Float> {
 	}
 
 	@Override
-	public boolean possiblyContainsNaN(){
+	public boolean possiblyContainsNaN() {
 		return true;
 	}
 

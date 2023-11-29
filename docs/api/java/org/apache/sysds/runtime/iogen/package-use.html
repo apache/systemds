@@ -14,7 +14,7 @@
 <!--[if IE]>
 <script type="text/javascript" src="../../../../../jquery/jszip-utils/dist/jszip-utils-ie.min.js"></script>
 <![endif]-->
-<script type="text/javascript" src="../../../../../jquery/jquery-3.6.0.min.js"></script>
+<script type="text/javascript" src="../../../../../jquery/jquery-3.6.1.min.js"></script>
 <script type="text/javascript" src="../../../../../jquery/jquery-ui.min.js"></script>
 </head>
 <body>
@@ -110,6 +110,14 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.iogen">org.apache.sysds.runtime.iogen</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
+<tr class="rowColor">
+<th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.iogen.codegen">org.apache.sysds.runtime.iogen.codegen</a></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.iogen.template">org.apache.sysds.runtime.iogen.template</a></th>
+<td class="colLast">&nbsp;</td>
+</tr>
 </tbody>
 </table>
 </li>
@@ -124,35 +132,105 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tbody>
 <tr class="altColor">
+<th class="colFirst" scope="row"><a href="class-use/ColIndexStructure.html#org.apache.sysds.runtime.iogen">ColIndexStructure</a></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<th class="colFirst" scope="row"><a href="class-use/ColIndexStructure.IndexProperties.html#org.apache.sysds.runtime.iogen">ColIndexStructure.IndexProperties</a></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
 <th class="colFirst" scope="row"><a href="class-use/CustomProperties.html#org.apache.sysds.runtime.iogen">CustomProperties</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
-<th class="colFirst" scope="row"><a href="class-use/FrameGenerateReader.html#org.apache.sysds.runtime.iogen">FrameGenerateReader</a></th>
-<td class="colLast">&nbsp;</td>
-</tr>
-<tr class="altColor">
 <th class="colFirst" scope="row"><a href="class-use/GenerateReader.html#org.apache.sysds.runtime.iogen">GenerateReader</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
-<th class="colFirst" scope="row"><a href="class-use/MatrixGenerateReader.html#org.apache.sysds.runtime.iogen">MatrixGenerateReader</a></th>
-<td class="colLast">&nbsp;</td>
-</tr>
 <tr class="altColor">
-<th class="colFirst" scope="row"><a href="class-use/RawRow.html#org.apache.sysds.runtime.iogen">RawRow</a></th>
+<th class="colFirst" scope="row"><a href="class-use/MappingProperties.html#org.apache.sysds.runtime.iogen">MappingProperties</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
-<th class="colFirst" scope="row"><a href="class-use/ReaderMapping.html#org.apache.sysds.runtime.iogen">ReaderMapping</a></th>
+<th class="colFirst" scope="row"><a href="class-use/MappingProperties.DataProperties.html#org.apache.sysds.runtime.iogen">MappingProperties.DataProperties</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
+<th class="colFirst" scope="row"><a href="class-use/MappingProperties.RecordProperties.html#org.apache.sysds.runtime.iogen">MappingProperties.RecordProperties</a></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<th class="colFirst" scope="row"><a href="class-use/MappingProperties.RepresentationProperties.html#org.apache.sysds.runtime.iogen">MappingProperties.RepresentationProperties</a></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<th class="colFirst" scope="row"><a href="class-use/MappingTrieNode.html#org.apache.sysds.runtime.iogen">MappingTrieNode</a></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<th class="colFirst" scope="row"><a href="class-use/MappingTrieNode.Type.html#org.apache.sysds.runtime.iogen">MappingTrieNode.Type</a></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<th class="colFirst" scope="row"><a href="class-use/RawIndex.html#org.apache.sysds.runtime.iogen">RawIndex</a></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<th class="colFirst" scope="row"><a href="class-use/RowIndexStructure.html#org.apache.sysds.runtime.iogen">RowIndexStructure</a></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<th class="colFirst" scope="row"><a href="class-use/RowIndexStructure.IndexProperties.html#org.apache.sysds.runtime.iogen">RowIndexStructure.IndexProperties</a></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
 <th class="colFirst" scope="row"><a href="class-use/SampleProperties.html#org.apache.sysds.runtime.iogen">SampleProperties</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
+<tr class="altColor">
+<th class="colFirst" scope="row"><a href="class-use/TextTrieNode.html#org.apache.sysds.runtime.iogen">TextTrieNode</a></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+</tbody>
+</table>
+</li>
+<li class="blockList"><a id="org.apache.sysds.runtime.iogen.codegen">
+<!--   -->
+</a>
+<table class="useSummary">
+<caption><span>Classes in <a href="package-summary.html">org.apache.sysds.runtime.iogen</a> used by <a href="codegen/package-summary.html">org.apache.sysds.runtime.iogen.codegen</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Class</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<th class="colFirst" scope="row"><a href="class-use/CustomProperties.html#org.apache.sysds.runtime.iogen.codegen">CustomProperties</a></th>
+<td class="colLast">&nbsp;</td>
+</tr>
 <tr class="rowColor">
-<th class="colFirst" scope="row"><a href="class-use/ValueTrimFormat.html#org.apache.sysds.runtime.iogen">ValueTrimFormat</a></th>
+<th class="colFirst" scope="row"><a href="class-use/FormatIdentifyer.html#org.apache.sysds.runtime.iogen.codegen">FormatIdentifyer</a></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+</tbody>
+</table>
+</li>
+<li class="blockList"><a id="org.apache.sysds.runtime.iogen.template">
+<!--   -->
+</a>
+<table class="useSummary">
+<caption><span>Classes in <a href="package-summary.html">org.apache.sysds.runtime.iogen</a> used by <a href="template/package-summary.html">org.apache.sysds.runtime.iogen.template</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Class</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<th class="colFirst" scope="row"><a href="class-use/CustomProperties.html#org.apache.sysds.runtime.iogen.template">CustomProperties</a></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<th class="colFirst" scope="row"><a href="class-use/FormatIdentifyer.html#org.apache.sysds.runtime.iogen.template">FormatIdentifyer</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 </tbody>

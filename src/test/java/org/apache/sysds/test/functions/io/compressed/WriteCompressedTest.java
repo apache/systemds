@@ -20,6 +20,7 @@
 package org.apache.sysds.test.functions.io.compressed;
 
 import org.apache.sysds.common.Types.ExecMode;
+import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
@@ -84,7 +85,7 @@ public class WriteCompressedTest extends AutomatedTestBase {
 		runTest(null);
 
 		double sumDML = TestUtils.readDMLScalar(output("sum.scalar"));
-		MatrixBlock mbr = IOCompressionTestUtils.read(output("out.cla"));
+		MatrixBlock mbr = IOCompressionTestUtils.read(output("out.cla"), rows, cols, OptimizerUtils.DEFAULT_BLOCKSIZE);
 		
 		TestUtils.compareScalars(sumDML, mbr.sum(), eps);
 

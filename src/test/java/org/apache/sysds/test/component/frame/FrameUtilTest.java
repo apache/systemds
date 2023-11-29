@@ -133,7 +133,7 @@ public class FrameUtilTest {
 
 	@Test
 	public void testIsIntLongString() {
-		assertEquals(ValueType.STRING, FrameUtil.isType("11111111111111111111111111111"));
+		assertEquals(ValueType.STRING, FrameUtil.isType("111111111111111111111111111111111"));
 	}
 
 	@Test
@@ -260,7 +260,7 @@ public class FrameUtilTest {
 		JavaSparkContext sc = new JavaSparkContext(sparkConf);
 
 		//Test1 (1000, 1000, 500)
-		List t1 =  Arrays.asList(new Tuple2<>(1L, f1),new Tuple2<>(1001L, f1),new Tuple2<>(2001L, f2));
+		List<Tuple2<Long, FrameBlock>> t1 =  Arrays.asList(new Tuple2<>(1L, f1),new Tuple2<>(1001L, f1),new Tuple2<>(2001L, f2));
 		JavaPairRDD<Long, FrameBlock> pairRDD = sc.parallelizePairs(t1);
 		Tuple2<Boolean, Integer> result = FrameRDDAggregateUtils.checkRowAlignment(pairRDD, -1);
 		assertTrue(result._1);
@@ -330,5 +330,7 @@ public class FrameUtilTest {
 		pairRDD = sc.parallelizePairs(t1).repartition(2);
 		result = FrameRDDAggregateUtils.checkRowAlignment(pairRDD, 500);
 		assertTrue(!result._1);
+		
+		sc.close();
 	}
 }

@@ -38,7 +38,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -50,8 +49,6 @@ import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.util.GenericOptionsParser;
 import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.SparkSession.Builder;
 import org.apache.sysds.api.DMLScript;
@@ -61,7 +58,6 @@ import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.common.Types.ValueType;
-import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.conf.DMLConfig;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.hops.fedplanner.FTypes.FType;
@@ -1570,9 +1566,7 @@ public abstract class AutomatedTestBase {
 	 * @throws IOException if an IOException occurs in the hadoop GenericOptionsParser
 	 */
 	public static void main(String[] args) throws IOException, ParseException, DMLScriptException {
-		Configuration conf = new Configuration(ConfigurationManager.getCachedJobConf());
-		String[] otherArgs = new GenericOptionsParser(conf, args).getRemainingArgs();
-		DMLScript.executeScript(conf, otherArgs);
+		DMLScript.executeScript(args);
 	}
 
 	private void addProgramIndependentArguments(ArrayList<String> args, String[] otherArgs) {
@@ -2237,6 +2231,55 @@ public abstract class AutomatedTestBase {
 		MatrixCharacteristics mc = new MatrixCharacteristics(data.length, data[0].length,
 			OptimizerUtils.DEFAULT_BLOCKSIZE, -1);
 		return writeInputFrameWithMTD(name, data, bIncludeR, mc, schema, fmt);
+	}
+
+	protected FrameBlock writeInputFrame(String name, FrameBlock data, boolean bIncludeR, ValueType[] schema,
+		FileFormat fmt) throws IOException {
+		String completePath = baseDirectory + INPUT_DIR + name;
+		String completeRPath = baseDirectory + INPUT_DIR + name + ".csv";
+
+		try {
+			cleanupExistingData(baseDirectory + INPUT_DIR + name, bIncludeR);
+		}
+		catch(IOException e) {
+			e.printStackTrace();
+			throw new RuntimeException(e);
+		}
+
+		TestUtils.writeTestFrame(completePath, data, schema, fmt);
+		if(bIncludeR) {
+			TestUtils.writeTestFrame(completeRPath, data, schema, FileFormat.CSV, true);
+			inputRFiles.add(completeRPath);
+		}
+		if(DEBUG)
+			TestUtils.writeTestFrame(DEBUG_TEMP_DIR + completePath, data, schema, fmt);
+		inputDirectories.add(baseDirectory + INPUT_DIR + name);
+
+		return data;
+	}
+
+	protected FrameBlock writeInputFrameWithMTD(String name, FrameBlock data, boolean bIncludeR, ValueType[] schema,
+		FileFormat fmt) throws IOException {
+		MatrixCharacteristics mc = new MatrixCharacteristics(data.getNumRows(), data.getNumColumns(),
+			OptimizerUtils.DEFAULT_BLOCKSIZE, -1);
+		return writeInputFrameWithMTD(name, data, bIncludeR, mc, schema, fmt);
+	}
+
+	protected FrameBlock writeInputFrameWithMTD(String name, FrameBlock data, boolean bIncludeR,
+		MatrixCharacteristics mc, ValueType[] schema, FileFormat fmt) throws IOException {
+		writeInputFrame(name, data, bIncludeR, schema, fmt);
+
+		// write metadata file
+		try {
+			String completeMTDPath = baseDirectory + INPUT_DIR + name + ".mtd";
+			HDFSTool.writeMetaDataFile(completeMTDPath, null, schema, DataType.FRAME, mc, fmt);
+		}
+		catch(IOException e) {
+			e.printStackTrace();
+			throw new RuntimeException(e);
+		}
+
+		return data;
 	}
 
 	protected double[][] writeInputFrameWithMTD(String name, double[][] data, boolean bIncludeR,

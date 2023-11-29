@@ -55,7 +55,8 @@ public class LineageCacheConfig
 		"^", "uamax", "uark+", "uacmean", "eigen","ctable", "ctableexpand", "replace",
 		"^2", "*2", "uack+", "tak+*", "uacsqk+", "uark+", "n+", "uarimax", "qsort",
 		"qpick", "transformapply", "uarmax", "n+", "-*", "castdtm", "lowertri", "1-*",
-		"prefetch", "mapmm", "contains", "mmchain", "mapmmchain", "+*", "==", "rmempty"
+		"prefetch", "mapmm", "contains", "mmchain", "mapmmchain", "+*", "==", "rmempty",
+		"conv2d_bias_add", "relu_maxpooling", "maxpooling", "softmax"
 		//TODO: Reuse everything.
 	};
 
@@ -72,6 +73,10 @@ public class LineageCacheConfig
 	// Relatively inexpensive instructions.
 	private static final String[] PERSIST_OPCODES2 = new String[] {
 		"mapmm", "isna", "leftIndex"
+	};
+
+	private static final String[] GPU_OPCODE_HEAVY = new String[] {
+		"conv2d_bias_add", "relu_maxpooling", "maxpooling"	 //DNN OPs
 	};
 
 	private static String[] REUSE_OPCODES  = new String[] {};
@@ -99,14 +104,23 @@ public class LineageCacheConfig
 	}
 
 	protected static final double CPU_CACHE_FRAC = 0.05; // 5% of JVM heap size
-	protected static final double GPU_CACHE_MAX = 0.30; // 30% of gpu memory
 	private static ReuseCacheType _cacheType = null;
+	@SuppressWarnings("unused")
 	private static CachedItemHead _itemH = null;
+	@SuppressWarnings("unused")
 	private static CachedItemTail _itemT = null;
 	private static boolean _compilerAssistedRW = false;
 	private static boolean _onlyEstimate = false;
 	private static boolean _reuseLineageTraces = true;
 	private static boolean DELAYED_CACHING = false;
+
+	// Delayed caching may lead to deletion and cache misses in GPU.
+	// Once the GPU memory is full, the non-reusable intermediates deallocates/deletes the cached
+	// entries from the free lists, leading to cache misses and high eviction overhead. Eager caching,
+	// however places every intermediate in a free list, increasing recycling and reducing deletion.
+	// Note, delayed caching helps in reducing lineage caching/probing overhead for use cases with
+	// no reusable instructions, but is anti-productive for use cases with repeating patterns (eg. scoring).
+	private static boolean DELAYED_CACHING_GPU = true;
 
 	//-------------DISK SPILLING RELATED CONFIGURATIONS--------------//
 
@@ -144,8 +158,6 @@ public class LineageCacheConfig
 	// Weights for scoring components (computeTime/size, LRU timestamp, DAG height)
 	protected static double[] WEIGHTS = {1, 0, 0};
 	public static boolean GPU2HOSTEVICTION = false;
-	public static boolean CONCURRENTGPUEVICTION = false;
-	public static volatile boolean STOPBACKGROUNDEVICTION = false;
 
 	protected enum LineageCacheStatus {
 		EMPTY,     //Placeholder with no data. Cannot be evicted.
@@ -209,6 +221,14 @@ public class LineageCacheConfig
 		return ret;
 	};
 
+	protected static Comparator<LineageCacheEntry> LineageGPUCacheComparator = (e1, e2) -> {
+		if (e1._key.getId() == e2._key.getId())
+			return 0;
+		if (e1.score == e2.score)
+			return Long.compare(e1._key.getId(), e2._key.getId());
+		else
+			return e1.score < e2.score ? -1 : 1;
+	};
 
 	//-------------SPARK OPERATION RELATED CONFIGURATIONS--------------//
 
@@ -309,8 +329,14 @@ public class LineageCacheConfig
 		return ArrayUtils.contains(PERSIST_OPCODES1, opcode);
 	}
 
+	protected static boolean isComputeGPUOps(String opcode) {
+		return ArrayUtils.contains(GPU_OPCODE_HEAVY, opcode);
+	}
+
 	protected static int getComputeGroup(String opcode) {
-		return ArrayUtils.contains(PERSIST_OPCODES1, opcode) ? 2 : 1;
+		boolean heavy_hitter = ArrayUtils.contains(PERSIST_OPCODES1, opcode)
+			|| ArrayUtils.contains(GPU_OPCODE_HEAVY, opcode);
+		return heavy_hitter ? 2 : 1;
 	}
 
 
@@ -362,14 +388,6 @@ public class LineageCacheConfig
 			&& _cacheType.isMultilevelReuse();
 	}
 
-	public static CachedItemHead getCachedItemHead() {
-		return _itemH;
-	}
-
-	public static CachedItemTail getCachedItemTail() {
-		return _itemT;
-	}
-	
 	public static boolean getCompAssRW() {
 		return _compilerAssistedRW;
 	}
@@ -384,6 +402,10 @@ public class LineageCacheConfig
 
 	public static boolean isDelayedCaching() {
 		return DELAYED_CACHING;
+	}
+
+	public static boolean isDelayedCachingGPU() {
+		return DELAYED_CACHING_GPU;
 	}
 
 	public static void setCachePolicy(LineageCachePolicy policy) {

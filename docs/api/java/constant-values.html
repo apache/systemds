@@ -14,7 +14,7 @@
 <!--[if IE]>
 <script type="text/javascript" src="jquery/jszip-utils/dist/jszip-utils-ie.min.js"></script>
 <![endif]-->
-<script type="text/javascript" src="jquery/jquery-3.6.0.min.js"></script>
+<script type="text/javascript" src="jquery/jquery-3.6.1.min.js"></script>
 <script type="text/javascript" src="jquery/jquery-ui.min.js"></script>
 </head>
 <body>
@@ -167,25 +167,25 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tbody>
 <tr class="altColor">
+<td class="colFirst"><a id="org.apache.sysds.conf.DMLConfig.ASYNC_PREFETCH">
+<!--   -->
+</a><code>public&nbsp;static&nbsp;final&nbsp;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a></code></td>
+<th class="colSecond" scope="row"><code><a href="org/apache/sysds/conf/DMLConfig.html#ASYNC_PREFETCH">ASYNC_PREFETCH</a></code></th>
+<td class="colLast"><code>"sysds.async.prefetch"</code></td>
+</tr>
+<tr class="rowColor">
 <td class="colFirst"><a id="org.apache.sysds.conf.DMLConfig.ASYNC_SPARK_BROADCAST">
 <!--   -->
 </a><code>public&nbsp;static&nbsp;final&nbsp;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a></code></td>
 <th class="colSecond" scope="row"><code><a href="org/apache/sysds/conf/DMLConfig.html#ASYNC_SPARK_BROADCAST">ASYNC_SPARK_BROADCAST</a></code></th>
 <td class="colLast"><code>"sysds.async.broadcast"</code></td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><a id="org.apache.sysds.conf.DMLConfig.ASYNC_SPARK_CHECKPOINT">
 <!--   -->
 </a><code>public&nbsp;static&nbsp;final&nbsp;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a></code></td>
 <th class="colSecond" scope="row"><code><a href="org/apache/sysds/conf/DMLConfig.html#ASYNC_SPARK_CHECKPOINT">ASYNC_SPARK_CHECKPOINT</a></code></th>
 <td class="colLast"><code>"sysds.async.checkpoint"</code></td>
-</tr>
-<tr class="altColor">
-<td class="colFirst"><a id="org.apache.sysds.conf.DMLConfig.ASYNC_SPARK_PREFETCH">
-<!--   -->
-</a><code>public&nbsp;static&nbsp;final&nbsp;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a></code></td>
-<th class="colSecond" scope="row"><code><a href="org/apache/sysds/conf/DMLConfig.html#ASYNC_SPARK_PREFETCH">ASYNC_SPARK_PREFETCH</a></code></th>
-<td class="colLast"><code>"sysds.async.prefetch"</code></td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><a id="org.apache.sysds.conf.DMLConfig.AVAILABLE_GPUS">
@@ -398,74 +398,88 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <td class="colLast"><code>"sysds.gpu.eviction.shadow.bufferSize"</code></td>
 </tr>
 <tr class="rowColor">
+<td class="colFirst"><a id="org.apache.sysds.conf.DMLConfig.FEDERATED_COMPRESSION">
+<!--   -->
+</a><code>public&nbsp;static&nbsp;final&nbsp;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a></code></td>
+<th class="colSecond" scope="row"><code><a href="org/apache/sysds/conf/DMLConfig.html#FEDERATED_COMPRESSION">FEDERATED_COMPRESSION</a></code></th>
+<td class="colLast"><code>"sysds.federated.compression"</code></td>
+</tr>
+<tr class="altColor">
 <td class="colFirst"><a id="org.apache.sysds.conf.DMLConfig.FEDERATED_MONITOR_FREQUENCY">
 <!--   -->
 </a><code>public&nbsp;static&nbsp;final&nbsp;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a></code></td>
 <th class="colSecond" scope="row"><code><a href="org/apache/sysds/conf/DMLConfig.html#FEDERATED_MONITOR_FREQUENCY">FEDERATED_MONITOR_FREQUENCY</a></code></th>
 <td class="colLast"><code>"sysds.federated.monitorFreq"</code></td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><a id="org.apache.sysds.conf.DMLConfig.FEDERATED_PAR_CONN">
 <!--   -->
 </a><code>public&nbsp;static&nbsp;final&nbsp;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a></code></td>
 <th class="colSecond" scope="row"><code><a href="org/apache/sysds/conf/DMLConfig.html#FEDERATED_PAR_CONN">FEDERATED_PAR_CONN</a></code></th>
 <td class="colLast"><code>"sysds.federated.par_conn"</code></td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><a id="org.apache.sysds.conf.DMLConfig.FEDERATED_PAR_INST">
 <!--   -->
 </a><code>public&nbsp;static&nbsp;final&nbsp;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a></code></td>
 <th class="colSecond" scope="row"><code><a href="org/apache/sysds/conf/DMLConfig.html#FEDERATED_PAR_INST">FEDERATED_PAR_INST</a></code></th>
 <td class="colLast"><code>"sysds.federated.par_inst"</code></td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><a id="org.apache.sysds.conf.DMLConfig.FEDERATED_PLANNER">
 <!--   -->
 </a><code>public&nbsp;static&nbsp;final&nbsp;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a></code></td>
 <th class="colSecond" scope="row"><code><a href="org/apache/sysds/conf/DMLConfig.html#FEDERATED_PLANNER">FEDERATED_PLANNER</a></code></th>
 <td class="colLast"><code>"sysds.federated.planner"</code></td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><a id="org.apache.sysds.conf.DMLConfig.FEDERATED_READCACHE">
 <!--   -->
 </a><code>public&nbsp;static&nbsp;final&nbsp;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a></code></td>
 <th class="colSecond" scope="row"><code><a href="org/apache/sysds/conf/DMLConfig.html#FEDERATED_READCACHE">FEDERATED_READCACHE</a></code></th>
 <td class="colLast"><code>"sysds.federated.readcache"</code></td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><a id="org.apache.sysds.conf.DMLConfig.FEDERATED_TIMEOUT">
 <!--   -->
 </a><code>public&nbsp;static&nbsp;final&nbsp;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a></code></td>
 <th class="colSecond" scope="row"><code><a href="org/apache/sysds/conf/DMLConfig.html#FEDERATED_TIMEOUT">FEDERATED_TIMEOUT</a></code></th>
 <td class="colLast"><code>"sysds.federated.timeout"</code></td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><a id="org.apache.sysds.conf.DMLConfig.FLOATING_POINT_PRECISION">
 <!--   -->
 </a><code>public&nbsp;static&nbsp;final&nbsp;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a></code></td>
 <th class="colSecond" scope="row"><code><a href="org/apache/sysds/conf/DMLConfig.html#FLOATING_POINT_PRECISION">FLOATING_POINT_PRECISION</a></code></th>
 <td class="colLast"><code>"sysds.floating.point.precision"</code></td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><a id="org.apache.sysds.conf.DMLConfig.GPU_EVICTION_POLICY">
 <!--   -->
 </a><code>public&nbsp;static&nbsp;final&nbsp;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a></code></td>
 <th class="colSecond" scope="row"><code><a href="org/apache/sysds/conf/DMLConfig.html#GPU_EVICTION_POLICY">GPU_EVICTION_POLICY</a></code></th>
 <td class="colLast"><code>"sysds.gpu.eviction.policy"</code></td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><a id="org.apache.sysds.conf.DMLConfig.GPU_MEMORY_ALLOCATOR">
 <!--   -->
 </a><code>public&nbsp;static&nbsp;final&nbsp;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a></code></td>
 <th class="colSecond" scope="row"><code><a href="org/apache/sysds/conf/DMLConfig.html#GPU_MEMORY_ALLOCATOR">GPU_MEMORY_ALLOCATOR</a></code></th>
 <td class="colLast"><code>"sysds.gpu.memory.allocator"</code></td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><a id="org.apache.sysds.conf.DMLConfig.GPU_MEMORY_UTILIZATION_FACTOR">
 <!--   -->
 </a><code>public&nbsp;static&nbsp;final&nbsp;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a></code></td>
 <th class="colSecond" scope="row"><code><a href="org/apache/sysds/conf/DMLConfig.html#GPU_MEMORY_UTILIZATION_FACTOR">GPU_MEMORY_UTILIZATION_FACTOR</a></code></th>
 <td class="colLast"><code>"sysds.gpu.memory.util.factor"</code></td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><a id="org.apache.sysds.conf.DMLConfig.GPU_RULE_BASED_PLACEMENT">
+<!--   -->
+</a><code>public&nbsp;static&nbsp;final&nbsp;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a></code></td>
+<th class="colSecond" scope="row"><code><a href="org/apache/sysds/conf/DMLConfig.html#GPU_RULE_BASED_PLACEMENT">GPU_RULE_BASED_PLACEMENT</a></code></th>
+<td class="colLast"><code>"sysds.gpu.place.rulebased"</code></td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><a id="org.apache.sysds.conf.DMLConfig.LINEAGECACHESPILL">
@@ -2291,20 +2305,27 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <td class="colLast"><code>"target"</code></td>
 </tr>
 <tr class="altColor">
+<td class="colFirst"><a id="org.apache.sysds.parser.ParameterizedBuiltinFunctionExpression.TF_FN_PARAM_EMBD">
+<!--   -->
+</a><code>public&nbsp;static&nbsp;final&nbsp;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a></code></td>
+<th class="colSecond" scope="row"><code><a href="org/apache/sysds/parser/ParameterizedBuiltinFunctionExpression.html#TF_FN_PARAM_EMBD">TF_FN_PARAM_EMBD</a></code></th>
+<td class="colLast"><code>"embedding"</code></td>
+</tr>
+<tr class="rowColor">
 <td class="colFirst"><a id="org.apache.sysds.parser.ParameterizedBuiltinFunctionExpression.TF_FN_PARAM_MTD">
 <!--   -->
 </a><code>public&nbsp;static&nbsp;final&nbsp;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a></code></td>
 <th class="colSecond" scope="row"><code><a href="org/apache/sysds/parser/ParameterizedBuiltinFunctionExpression.html#TF_FN_PARAM_MTD">TF_FN_PARAM_MTD</a></code></th>
 <td class="colLast"><code>"transformPath"</code></td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><a id="org.apache.sysds.parser.ParameterizedBuiltinFunctionExpression.TF_FN_PARAM_MTD2">
 <!--   -->
 </a><code>public&nbsp;static&nbsp;final&nbsp;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a></code></td>
 <th class="colSecond" scope="row"><code><a href="org/apache/sysds/parser/ParameterizedBuiltinFunctionExpression.html#TF_FN_PARAM_MTD2">TF_FN_PARAM_MTD2</a></code></th>
 <td class="colLast"><code>"meta"</code></td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><a id="org.apache.sysds.parser.ParameterizedBuiltinFunctionExpression.TF_FN_PARAM_SPEC">
 <!--   -->
 </a><code>public&nbsp;static&nbsp;final&nbsp;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a></code></td>
@@ -6438,11 +6459,25 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <td class="colLast"><code>"min"</code></td>
 </tr>
 <tr class="altColor">
+<td class="colFirst"><a id="org.apache.sysds.runtime.transform.encode.ColumnEncoderBin.MINIMUM_SAMPLE_SIZE">
+<!--   -->
+</a><code>public&nbsp;static&nbsp;final&nbsp;int</code></td>
+<th class="colSecond" scope="row"><code><a href="org/apache/sysds/runtime/transform/encode/ColumnEncoderBin.html#MINIMUM_SAMPLE_SIZE">MINIMUM_SAMPLE_SIZE</a></code></th>
+<td class="colLast"><code>1000</code></td>
+</tr>
+<tr class="rowColor">
 <td class="colFirst"><a id="org.apache.sysds.runtime.transform.encode.ColumnEncoderBin.NBINS_PREFIX">
 <!--   -->
 </a><code>public&nbsp;static&nbsp;final&nbsp;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a></code></td>
 <th class="colSecond" scope="row"><code><a href="org/apache/sysds/runtime/transform/encode/ColumnEncoderBin.html#NBINS_PREFIX">NBINS_PREFIX</a></code></th>
 <td class="colLast"><code>"nbins"</code></td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><a id="org.apache.sysds.runtime.transform.encode.ColumnEncoderBin.SAMPLE_FRACTION">
+<!--   -->
+</a><code>public&nbsp;static&nbsp;final&nbsp;double</code></td>
+<th class="colSecond" scope="row"><code><a href="org/apache/sysds/runtime/transform/encode/ColumnEncoderBin.html#SAMPLE_FRACTION">SAMPLE_FRACTION</a></code></th>
+<td class="colLast"><code>0.1</code></td>
 </tr>
 </tbody>
 </table>
@@ -6703,6 +6738,13 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </a><code>public&nbsp;static&nbsp;final&nbsp;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a></code></td>
 <th class="colSecond" scope="row"><code><a href="org/apache/sysds/runtime/util/LocalFileUtils.html#CATEGORY_WORK">CATEGORY_WORK</a></code></th>
 <td class="colLast"><code>"work"</code></td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><a id="org.apache.sysds.runtime.util.LocalFileUtils.DOUBLE_BUFFERING_MIN">
+<!--   -->
+</a><code>public&nbsp;static&nbsp;final&nbsp;int</code></td>
+<th class="colSecond" scope="row"><code><a href="org/apache/sysds/runtime/util/LocalFileUtils.html#DOUBLE_BUFFERING_MIN">DOUBLE_BUFFERING_MIN</a></code></th>
+<td class="colLast"><code>102400</code></td>
 </tr>
 </tbody>
 </table>

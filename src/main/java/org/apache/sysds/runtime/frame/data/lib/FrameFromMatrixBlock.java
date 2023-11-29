@@ -60,7 +60,6 @@ public class FrameFromMatrixBlock {
 		this.mb = mb;
 		m = mb.getNumRows();
 		n = mb.getNumColumns();
-
 		this.schema = schema == null ? getSchema(mb) : schema;
 		this.frame = new FrameBlock(this.schema);
 		this.k = k;
@@ -82,14 +81,21 @@ public class FrameFromMatrixBlock {
 		return new FrameFromMatrixBlock(mb, schema, k).apply();
 	}
 
-	private ValueType[] getSchema(MatrixBlock mb) {
+	private static ValueType[] getSchema(MatrixBlock mb) {
 		final int nCol = mb.getNumColumns();
 		final int nRow = mb.getNumRows();
-		ValueType[] schema = UtilFunctions.nCopies(nCol, ValueType.BOOLEAN);
-		for(int r = 0; r < nRow; r++)
-			for(int c = 0; c < nCol; c++)
-				schema[c] = FrameUtil.isType(mb.quickGetValue(r, c), schema[c]);
-
+		// default boolean if possible.
+		final ValueType[] schema = UtilFunctions.nCopies(nCol, ValueType.BOOLEAN);
+		for(int c = 0; c < nCol; c++){
+			for(int r = 0; r < nRow; r++){
+				switch(schema[c]){
+					case FP64:
+						break;
+					default:
+						schema[c] = FrameUtil.isType(mb.quickGetValue(r, c), schema[c]);
+				}
+			}
+		}
 		return schema;
 	}
 

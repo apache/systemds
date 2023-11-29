@@ -14,7 +14,7 @@
 <!--[if IE]>
 <script type="text/javascript" src="../../../../../../jquery/jszip-utils/dist/jszip-utils-ie.min.js"></script>
 <![endif]-->
-<script type="text/javascript" src="../../../../../../jquery/jquery-3.6.0.min.js"></script>
+<script type="text/javascript" src="../../../../../../jquery/jquery-3.6.1.min.js"></script>
 <script type="text/javascript" src="../../../../../../jquery/jquery-ui.min.js"></script>
 </head>
 <body>
@@ -141,8 +141,8 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <dd><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/Serializable.html?is-external=true" title="class or interface in java.io" class="externalLink">Serializable</a></code>, <code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Comparable.html?is-external=true" title="class or interface in java.lang" class="externalLink">Comparable</a>&lt;<a href="ILinearize.DagLinearization.html" title="enum in org.apache.sysds.lops.compile.linearization">ILinearize.DagLinearization</a>&gt;</code></dd>
 </dl>
 <dl>
-<dt>Enclosing interface:</dt>
-<dd><a href="ILinearize.html" title="interface in org.apache.sysds.lops.compile.linearization">ILinearize</a></dd>
+<dt>Enclosing class:</dt>
+<dd><a href="ILinearize.html" title="class in org.apache.sysds.lops.compile.linearization">ILinearize</a></dd>
 </dl>
 <hr>
 <pre>public static enum <span class="typeNameLabel">ILinearize.DagLinearization</span>
@@ -167,18 +167,22 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <th class="colLast" scope="col">Description</th>
 </tr>
 <tr class="altColor">
+<th class="colFirst" scope="row"><code><span class="memberNameLink"><a href="#AUTO">AUTO</a></span></code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
 <th class="colFirst" scope="row"><code><span class="memberNameLink"><a href="#BREADTH_FIRST">BREADTH_FIRST</a></span></code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <th class="colFirst" scope="row"><code><span class="memberNameLink"><a href="#DEPTH_FIRST">DEPTH_FIRST</a></span></code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <th class="colFirst" scope="row"><code><span class="memberNameLink"><a href="#MAX_PARALLELIZE">MAX_PARALLELIZE</a></span></code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <th class="colFirst" scope="row"><code><span class="memberNameLink"><a href="#MIN_INTERMEDIATE">MIN_INTERMEDIATE</a></span></code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
@@ -276,10 +280,19 @@ the order they are declared.</div>
 <a id="MAX_PARALLELIZE">
 <!--   -->
 </a>
-<ul class="blockListLast">
+<ul class="blockList">
 <li class="blockList">
 <h4>MAX_PARALLELIZE</h4>
 <pre>public static final&nbsp;<a href="ILinearize.DagLinearization.html" title="enum in org.apache.sysds.lops.compile.linearization">ILinearize.DagLinearization</a> MAX_PARALLELIZE</pre>
+</li>
+</ul>
+<a id="AUTO">
+<!--   -->
+</a>
+<ul class="blockListLast">
+<li class="blockList">
+<h4>AUTO</h4>
+<pre>public static final&nbsp;<a href="ILinearize.DagLinearization.html" title="enum in org.apache.sysds.lops.compile.linearization">ILinearize.DagLinearization</a> AUTO</pre>
 </li>
 </ul>
 </li>

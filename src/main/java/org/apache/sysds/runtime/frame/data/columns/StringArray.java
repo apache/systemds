@@ -26,6 +26,7 @@ import java.util.Arrays;
 import java.util.BitSet;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.common.Types.ValueType;
@@ -36,9 +37,6 @@ import org.apache.sysds.runtime.io.IOUtilFunctions;
 import org.apache.sysds.runtime.matrix.data.Pair;
 import org.apache.sysds.runtime.transform.encode.ColumnEncoderRecode;
 import org.apache.sysds.utils.MemoryEstimates;
-
-import ch.randelshofer.fastdoubleparser.JavaDoubleParser;
-import ch.randelshofer.fastdoubleparser.JavaFloatParser;
 
 public class StringArray extends Array<String> {
 	private String[] _data;
@@ -79,7 +77,6 @@ public class StringArray extends Array<String> {
 	@Override
 	public void set(int rl, int ru, Array<String> value) {
 		set(rl, ru, value, 0);
-		materializedSize = -1;
 	}
 
 	@Override
@@ -96,8 +93,17 @@ public class StringArray extends Array<String> {
 
 	@Override
 	public void set(int rl, int ru, Array<String> value, int rlSrc) {
-		System.arraycopy(((StringArray) value)._data, rlSrc, _data, rl, ru - rl + 1);
-		materializedSize = -1;
+		try {
+			// try system array copy.
+			// but if it does not work, default to get.
+			System.arraycopy(value.get(), rlSrc, _data, rl, ru - rl + 1);
+		}
+		catch(Exception e) {
+			super.set(rl, ru, value, rlSrc);
+		}
+		finally {
+			materializedSize = -1;
+		}
 	}
 
 	@Override
@@ -140,7 +146,21 @@ public class StringArray extends Array<String> {
 	public void write(DataOutput out) throws IOException {
 		out.writeByte(FrameArrayType.STRING.ordinal());
 		out.writeLong(getInMemorySize());
+
+		// final Charset cs = Charset.defaultCharset();
 		for(int i = 0; i < _size; i++)
+			// {
+			// if(_data[i] == null){
+			// out.writeInt(0);
+			// }
+			// else{
+			// // cs.encode(_data[i]);
+			// byte[] bs = _data[i].getBytes(cs);
+			// out.writeInt(bs.length);
+			// out.write(bs);
+			// }
+			// }
+
 			out.writeUTF((_data[i] != null) ? _data[i] : "");
 	}
 
@@ -148,9 +168,25 @@ public class StringArray extends Array<String> {
 	public void readFields(DataInput in) throws IOException {
 		_size = _data.length;
 		materializedSize = in.readLong();
+		// byte[] bs = new byte[16];
+		// final Charset cs = Charset.defaultCharset();
 		for(int i = 0; i < _size; i++) {
-			String tmp = in.readUTF();
-			_data[i] = (!tmp.isEmpty()) ? tmp : null;
+			// int l = in.readInt();
+			// if(l == 0){
+			// _data[i] = null;
+			// }
+			// else{
+			// if(l > bs.length)
+			// bs = new byte[l];
+			// in.readFully(bs, 0, l);
+			// String tmp = new String(bs, 0, l, cs);
+			// // String tmp = in.readUTF();
+			// _data[i] = tmp;
+			// }
+			{
+				String tmp = in.readUTF();
+				_data[i] = tmp.isEmpty() ? null : tmp;
+			}
 		}
 	}
 
@@ -199,11 +235,17 @@ public class StringArray extends Array<String> {
 	}
 
 	private static final ValueType getHighest(ValueType state, ValueType c) {
-
 		switch(state) {
+			case FP64:
+				switch(c) {
+					case HASH64:
+						return c;
+					default:
+				}
 			case FP32:
 				switch(c) {
 					case FP64:
+					case HASH64:
 						return c;
 					default:
 				}
@@ -212,6 +254,7 @@ public class StringArray extends Array<String> {
 				switch(c) {
 					case FP64:
 					case FP32:
+					case HASH64:
 						return c;
 					default:
 				}
@@ -221,6 +264,7 @@ public class StringArray extends Array<String> {
 					case FP64:
 					case FP32:
 					case INT64:
+					case HASH64:
 						return c;
 					default:
 				}
@@ -232,6 +276,7 @@ public class StringArray extends Array<String> {
 					case INT64:
 					case INT32:
 					case CHARACTER:
+					case HASH64:
 						return c;
 					default:
 				}
@@ -249,7 +294,7 @@ public class StringArray extends Array<String> {
 		boolean nulls = false;
 		for(int i = 0; i < _size; i++) {
 			final ValueType c = FrameUtil.isType(_data[i], state);
-			if(c == ValueType.STRING) // early termination
+			if(c == ValueType.STRING)
 				return new Pair<>(ValueType.STRING, false);
 			else if(c == ValueType.UNKNOWN)
 				nulls = true;
@@ -311,10 +356,10 @@ public class StringArray extends Array<String> {
 			return ArrayFactory.allocateBoolean(size());
 		else if(firstNN.toLowerCase().equals("true") || firstNN.toLowerCase().equals("false"))
 			return changeTypeBooleanStandard();
-		else if(firstNN.equals("0") || firstNN.equals("1"))
+		else if(firstNN.equals("0") || firstNN.equals("1") || firstNN.equals("1.0") || firstNN.equals("0.0"))
 			return changeTypeBooleanNumeric();
-		else if(firstNN.equals("0.0") || firstNN.equals("1.0"))
-			return changeTypeBooleanFloat();
+		// else if(firstNN.equals("0.0") || firstNN.equals("1.0"))
+		// return changeTypeBooleanFloat();
 		else if(firstNN.toLowerCase().equals("t") || firstNN.toLowerCase().equals("f"))
 			return changeTypeBooleanCharacter();
 		else
@@ -392,13 +437,23 @@ public class StringArray extends Array<String> {
 		for(int i = 0; i < size(); i++) {
 			final String s = _data[i];
 			if(s != null) {
+				if(s.length() > 1) {
+					final boolean zero = _data[i].equals("0.0");
+					final boolean one = _data[i].equals("1.0");
+					if(zero | one)
+						ret.set(i, one);
+					else
+						throw new DMLRuntimeException("Unable to change to Boolean from String array, value:" + _data[i]);
 
-				final boolean zero = _data[i].equals("0");
-				final boolean one = _data[i].equals("1");
-				if(zero | one)
-					ret.set(i, one);
-				else
-					throw new DMLRuntimeException("Unable to change to Boolean from String array, value:" + _data[i]);
+				}
+				else {
+					final boolean zero = _data[i].charAt(0) == '0';
+					final boolean one = _data[i].charAt(0) == '1';
+					if(zero | one)
+						ret.set(i, one);
+					else
+						throw new DMLRuntimeException("Unable to change to Boolean from String array, value:" + _data[i]);
+				}
 			}
 		}
 		return new BitSetArray(ret, size());
@@ -409,53 +464,23 @@ public class StringArray extends Array<String> {
 		for(int i = 0; i < size(); i++) {
 			final String s = _data[i];
 			if(s != null) {
-				final boolean zero = _data[i].equals("0");
-				final boolean one = _data[i].equals("1");
-				if(zero | one)
-					ret[i] = one;
-				else
-					throw new DMLRuntimeException("Unable to change to Boolean from String array, value:" + _data[i]);
-			}
+				if(s.length() > 1) {
+					final boolean zero = _data[i].equals("0.0");
+					final boolean one = _data[i].equals("1.0");
+					if(zero | one)
+						ret[i] = one;
+					else
+						throw new DMLRuntimeException("Unable to change to Boolean from String array, value:" + _data[i]);
 
-		}
-		return new BooleanArray(ret);
-	}
-
-	protected Array<Boolean> changeTypeBooleanFloat() {
-		if(size() > ArrayFactory.bitSetSwitchPoint)
-			return changeTypeBooleanFloatBitSet();
-		else
-			return changeTypeBooleanFloatArray();
-	}
-
-	protected Array<Boolean> changeTypeBooleanFloatBitSet() {
-		BitSet ret = new BitSet(size());
-		for(int i = 0; i < size(); i++) {
-			final String s = _data[i];
-			if(s != null) {
-
-				final boolean zero = _data[i].equals("0.0");
-				final boolean one = _data[i].equals("1.0");
-				if(zero | one)
-					ret.set(i, one);
-				else
-					throw new DMLRuntimeException("Unable to change to Boolean from String array, value:" + _data[i]);
-			}
-		}
-		return new BitSetArray(ret, size());
-	}
-
-	protected Array<Boolean> changeTypeBooleanFloatArray() {
-		boolean[] ret = new boolean[size()];
-		for(int i = 0; i < size(); i++) {
-			final String s = _data[i];
-			if(s != null) {
-				final boolean zero = _data[i].equals("0.0");
-				final boolean one = _data[i].equals("1.0");
-				if(zero | one)
-					ret[i] = one;
-				else
-					throw new DMLRuntimeException("Unable to change to Boolean from String array, value:" + _data[i]);
+				}
+				else {
+					final boolean zero = _data[i].charAt(0) == '0';
+					final boolean one = _data[i].charAt(0) == '1';
+					if(zero | one)
+						ret[i] = one;
+					else
+						throw new DMLRuntimeException("Unable to change to Boolean from String array, value:" + _data[i]);
+				}
 			}
 
 		}
@@ -464,50 +489,66 @@ public class StringArray extends Array<String> {
 
 	@Override
 	protected Array<Double> changeTypeDouble() {
-		try {
-			double[] ret = new double[size()];
-			for(int i = 0; i < size(); i++) {
-				final String s = _data[i];
-				if(s != null)
-					ret[i] = JavaDoubleParser.parseDouble(s);
-			}
-			return new DoubleArray(ret);
-		}
-		catch(NumberFormatException e) {
-			throw new DMLRuntimeException("Unable to change to Double from String array", e);
-		}
+		double[] ret = new double[size()];
+		for(int i = 0; i < size(); i++)
+			ret[i] = DoubleArray.parseDouble(_data[i]);
+		return new DoubleArray(ret);
 	}
 
 	@Override
 	protected Array<Float> changeTypeFloat() {
-		try {
-			float[] ret = new float[size()];
-			for(int i = 0; i < size(); i++) {
-				final String s = _data[i];
-				if(s != null)
-					ret[i] = JavaFloatParser.parseFloat(s);
-			}
-			return new FloatArray(ret);
-		}
-		catch(NumberFormatException e) {
-			throw new DMLRuntimeException("Unable to change to Float from String array", e);
-		}
+		float[] ret = new float[size()];
+		for(int i = 0; i < size(); i++)
+			ret[i] = FloatArray.parseFloat(_data[i]);
+		return new FloatArray(ret);
 	}
 
 	@Override
 	protected Array<Integer> changeTypeInteger() {
-		try {
-			int[] ret = new int[size()];
-			for(int i = 0; i < size(); i++) {
-				final String s = _data[i];
+		String firstNN = _data[0];
+		int i = 1;
+		while(firstNN == null && i < size()) {
+			firstNN = _data[i++];
+		}
+		if(firstNN == null)
+			throw new DMLRuntimeException("Invalid change to int on all null");
+		else if(firstNN.contains("."))
+			return changeTypeIntegerFloatString();
+		else
+			return changeTypeIntegerNormal();
+	}
+
+	protected Array<Integer> changeTypeIntegerFloatString() {
+		int[] ret = new int[size()];
+		Pattern p = Pattern.compile("\\.");
+		for(int i = 0; i < size(); i++) {
+			final String s = _data[i];
+			try {
+				if(s != null)
+					ret[i] = Integer.parseInt(p.split(s, 2)[0]);
+			}
+			catch(NumberFormatException e) {
+
+				throw new DMLRuntimeException("Unable to change to Integer from String array", e);
+
+			}
+		}
+		return new IntegerArray(ret);
+	}
+
+	protected Array<Integer> changeTypeIntegerNormal() {
+		int[] ret = new int[size()];
+		for(int i = 0; i < size(); i++) {
+			final String s = _data[i];
+			try {
 				if(s != null)
 					ret[i] = Integer.parseInt(s);
 			}
-			return new IntegerArray(ret);
+			catch(NumberFormatException e) {
+				throw new DMLRuntimeException("Unable to change to Integer from String array", e);
+			}
 		}
-		catch(NumberFormatException e) {
-			throw new DMLRuntimeException("Unable to change to Integer from String array", e);
-		}
+		return new IntegerArray(ret);
 	}
 
 	@Override
@@ -523,6 +564,22 @@ public class StringArray extends Array<String> {
 		}
 		catch(NumberFormatException e) {
 			throw new DMLRuntimeException("Unable to change to Long from String array", e);
+		}
+	}
+
+	@Override
+	protected Array<Object> changeTypeHash64() {
+		try {
+			long[] ret = new long[size()];
+			for(int i = 0; i < size(); i++) {
+				final String s = _data[i];
+				if(s != null)
+					ret[i] = Long.parseLong(s, 16);
+			}
+			return new HashLongArray(ret);
+		}
+		catch(NumberFormatException e) {
+			throw new DMLRuntimeException("Unable to change to Hash64 from String array", e);
 		}
 	}
 
@@ -655,8 +712,6 @@ public class StringArray extends Array<String> {
 					String[] tmp = ColumnEncoderRecode.splitRecodeMapEntry(val.toString());
 					map.put(tmp[0], Long.parseLong(tmp[1]));
 				}
-				else // once we hit null return.
-					break;
 			}
 			return map;
 		}
@@ -682,7 +737,7 @@ public class StringArray extends Array<String> {
 	}
 
 	@Override
-	public boolean possiblyContainsNaN(){
+	public boolean possiblyContainsNaN() {
 		return true;
 	}
 

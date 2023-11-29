@@ -835,9 +835,18 @@ public class SparseBlockCSR extends SparseBlock
 	}
 
 	@Override
-	public int posFIndexGTE(int r, int c) {
-		int index = internPosFIndexGTE(r, c);
-		return (index>=0) ? index-pos(r) : index;
+	public final int posFIndexGTE(int r, int c) {
+		final int pos = pos(r);
+		final int len = size(r);
+		final int end = pos + len;
+
+		// search for existing col index
+		int index = Arrays.binarySearch(_indexes, pos, end, c);
+		if(index < 0)
+			// search gt col index (see binary search)
+			index = Math.abs(index + 1);
+
+		return (index < end) ? index - pos : -1;
 	}
 	
 	private int internPosFIndexGTE(int r, int c) {

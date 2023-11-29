@@ -23,6 +23,7 @@ import java.io.DataInput;
 import java.io.IOException;
 import java.util.BitSet;
 
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.common.Types.ValueType;
@@ -35,12 +36,26 @@ public interface ArrayFactory {
 	public final static int bitSetSwitchPoint = 64;
 
 	public enum FrameArrayType {
-		STRING, BOOLEAN, BITSET, INT32, INT64, FP32, FP64, CHARACTER, RAGGED, OPTIONAL, DDC;
+		STRING, BOOLEAN, BITSET, INT32, INT64, FP32, FP64, 
+		CHARACTER, RAGGED, OPTIONAL, DDC,
+		HASH64;
 	}
 
 	public static StringArray create(String[] col) {
 		return new StringArray(col);
 	}
+
+	public static HashLongArray createHash64(String[] col){
+		return new HashLongArray(col);
+	} 
+
+	public static OptionalArray<Object> createHash64Opt(String[] col){
+		return new OptionalArray<Object>(col, ValueType.HASH64);
+	} 
+
+	public static HashLongArray createHash64(long[] col){
+		return new HashLongArray(col);
+	} 
 
 	public static BooleanArray create(boolean[] col) {
 		return new BooleanArray(col);
@@ -81,6 +96,8 @@ public interface ArrayFactory {
 	public static long getInMemorySize(ValueType type, int _numRows, boolean containsNull) {
 		if(containsNull) {
 			switch(type) {
+				case HASH64:
+					type = ValueType.INT64;
 				case BOOLEAN:
 				case INT64:
 				case FP64:
@@ -108,6 +125,7 @@ public interface ArrayFactory {
 					else
 						return BooleanArray.estimateInMemorySize(_numRows);
 				case INT64:
+				case HASH64:
 					return Array.baseMemoryCost() + (long) MemoryEstimates.longArrayCost(_numRows);
 				case FP64:
 					return Array.baseMemoryCost() + (long) MemoryEstimates.doubleArrayCost(_numRows);
@@ -154,15 +172,13 @@ public interface ArrayFactory {
 				return new OptionalArray<>(new DoubleArray(new double[nRow]), true);
 			case CHARACTER:
 				return new OptionalArray<>(new CharArray(new char[nRow]), true);
+			case HASH64:
+				return new OptionalArray<>(new HashLongArray(new long[nRow]), true);
 			case UNKNOWN:
 			case STRING:
 			default:
 				return new StringArray(new String[nRow]);
 		}
-	}
-
-	public static <T> DDCArray<T> allocateDDC(DDCArray<T> start, int nRow) {
-		return start.allocateLarger(nRow);
 	}
 
 	public static ABooleanArray allocateBoolean(int nRow) {
@@ -188,6 +204,8 @@ public interface ArrayFactory {
 				return new DoubleArray(new double[nRow]);
 			case CHARACTER:
 				return new CharArray(new char[nRow]);
+			case HASH64:
+				return new HashLongArray(new long[nRow]);
 			case UNKNOWN:
 			case STRING:
 			default:
@@ -226,9 +244,14 @@ public interface ArrayFactory {
 				return OptionalArray.readOpt(in, nRow);
 			case DDC:
 				return DDCArray.read(in);
-			default: // String
+			case STRING:
 				arr = new StringArray(new String[nRow]);
 				break;
+			case HASH64:
+				arr = new HashLongArray(new long[nRow]);
+				break;
+			default: 
+				throw new NotImplementedException(v + "");
 		}
 		arr.readFields(in);
 		return arr;
@@ -239,7 +262,7 @@ public interface ArrayFactory {
 	 * 
 	 * @param <C> The type to return, java automatically make this Object, and this is fine.
 	 * @param a   The first array to append to (potentially modifying this a if applicable)
-	 * @param b   THe array to append to a, (not getting modified).
+	 * @param b   The array to append to a, (not getting modified).
 	 * @return A array containing the concatenation of the two.
 	 */
 	@SuppressWarnings("unchecked")
@@ -260,52 +283,56 @@ public interface ArrayFactory {
 	 * Set the target array in the range of rl to ru with the src array. The type returned is the common or highest
 	 * common type of array.
 	 * 
-	 * @param <C>    THe highest common type to return.
-	 * @param target The target to pout the values into
+	 * @param <C>    The highest common type to return.
+	 * @param target The target to put the values into
 	 * @param src    The source to take the values from
 	 * @param rl     The index to start on
-	 * @param ru     The index to end on
+	 * @param ru     The index to end on (inclusive)
 	 * @param rlen   The length of the target (a parameter in case target is null)
 	 * @return A new or modified array.
 	 */
 	@SuppressWarnings("unchecked")
 	public static <C> Array<C> set(Array<?> target, Array<?> src, int rl, int ru, int rlen) {
-		try {
+	
+		if(rlen <= ru)
+			throw new DMLRuntimeException("Invalid range ru: " + ru + " should be less than rlen: " + rlen);
+		else if(rl < 0)
+			throw new DMLRuntimeException("Invalid rl is less than zero");
+		else if(src == null)
+			throw new NullPointerException("Invalid src, cannot be null");
+		else if(ru - rl > src.size())
+			throw new DMLRuntimeException("Invalid range length to big: " + src.size() + " vs range: " + (ru - rl));
+		else if(target != null && target.size() < rlen)
+			throw new DMLRuntimeException("Invalid allocated target is not large enough");
 
-			if(target == null) {
-
-				if(src.getFrameArrayType() == FrameArrayType.OPTIONAL)
+		if(target == null) { // if target is not specified. allocate one.
+			if(src.getFrameArrayType() == FrameArrayType.OPTIONAL)
+				target = allocateOptional(src.getValueType(), rlen);
+			else if(src.getFrameArrayType() == FrameArrayType.DDC) {
+				Array<?> ddcDict = ((DDCArray<?>) src).getDict();
+				if(ddcDict.getFrameArrayType() == FrameArrayType.OPTIONAL) {
 					target = allocateOptional(src.getValueType(), rlen);
-				else if(src.getFrameArrayType() == FrameArrayType.DDC)
-					target = allocateDDC((DDCArray<?>) src, rlen);
-				else
+				}
+				else {
 					target = allocate(src.getValueType(), rlen);
-
-				if(rlen == ru)
-					throw new DMLRuntimeException("Invalid length to set");
+				}
 			}
-			else if(target.getFrameArrayType() != FrameArrayType.OPTIONAL //
-				&& src.getFrameArrayType() == FrameArrayType.OPTIONAL) {
-				target = new OptionalArray<>(target, false);
-			}
-
-			if(target.size() < rlen) {
-				throw new DMLRuntimeException("Invalid allocated target is not large enough");
-			}
-
-			final ValueType ta = target.getValueType();
-			final ValueType tb = src.getValueType();
-			final ValueType tc = ValueType.getHighestCommonType(ta, tb);
-
-			Array<C> targetC = (Array<C>) (ta != tc ? target.changeType(tc) : target);
-			Array<C> srcC = (Array<C>) (tb != tc ? src.changeType(tc) : src);
-			targetC.set(rl, ru, srcC);
-			return targetC;
+			else
+				target = allocate(src.getValueType(), rlen);
 		}
-		catch(Exception e) {
-			throw new DMLRuntimeException(
-				"Failed to set subpart with: \n\n" + target + "\n\n" + src + " \n\n " + rl + " " + ru + " " + rlen, e);
+		else if(target.getFrameArrayType() != FrameArrayType.OPTIONAL //
+			&& src.getFrameArrayType() == FrameArrayType.OPTIONAL) {
+			target = new OptionalArray<>(target, false);
 		}
+
+		final ValueType ta = target.getValueType();
+		final ValueType tb = src.getValueType();
+		final ValueType tc = ValueType.getHighestCommonType(ta, tb);
+
+		Array<C> targetC = (Array<C>) (ta != tc ? target.changeType(tc) : target);
+		Array<C> srcC = (Array<C>) (tb != tc ? src.changeType(tc) : src);
+		targetC.set(rl, ru, srcC);
+		return targetC;
 
 	}
 
@@ -325,6 +352,8 @@ public interface ArrayFactory {
 				return IntegerArray.parseInt(s);
 			case INT64:
 				return LongArray.parseLong(s);
+			case HASH64:
+				return HashLongArray.parseHashLong(s);
 			case STRING:
 			case UNKNOWN:
 			default:

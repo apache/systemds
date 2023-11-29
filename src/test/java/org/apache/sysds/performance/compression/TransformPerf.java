@@ -33,98 +33,104 @@ import org.apache.sysds.runtime.transform.encode.MultiColumnEncoder;
 
 public class TransformPerf extends APerfTest<Serialize.InOut, FrameBlock> {
 
-    private final String file;
-    private final String spec;
-    private final String specPath;
-    private final int k;
+	private final String file;
+	private final String spec;
+	private final String specPath;
+	private final int k;
 
-    public TransformPerf(int n, int k, IGenerate<FrameBlock> gen, String specPath) throws Exception {
-        super(n, gen);
-        this.file = "tmp/perf-tmp.bin";
-        this.k = k;
-        this.spec = PerfUtil.readSpec(specPath);
-        this.specPath = specPath;
-    }
+	public TransformPerf(int n, int k, IGenerate<FrameBlock> gen, String specPath) throws Exception {
+		super(n, gen);
+		this.file = "tmp/perf-tmp.bin";
+		this.k = k;
+		this.spec = PerfUtil.readSpec(specPath);
+		this.specPath = specPath;
+	}
 
-    public void run() throws Exception {
-        System.out.println(this);
-        CompressedMatrixBlock.debug = true;
+	public void run() throws Exception {
+		System.out.println(this);
+		CompressedMatrixBlock.debug = true;
 
-        // execute(() -> detectSchema(k), "Detect Schema");
-        // execute(() -> detectAndApply(k), "Detect&Apply Frame Schema");
+		System.out.println(String.format("Unknown mem size: %30d", gen.take().getInMemorySize()));
 
-        updateGen();
+		execute(() -> detectSchema(k), "Detect Schema");
+		execute(() -> detectAndApply(k), "Detect&Apply Frame Schema");
+		execute(() -> transformEncode(k), "TransformEncode Def");
+		execute(() -> transformEncodeCompressed(k), "TransformEncode Comp");
 
-        // execute(() -> detectAndApply(k), "Detect&Apply Frame Schema Known");
+		updateGen();
 
-        // execute(() -> transformEncode(k), "TransformEncode Def");
-        execute(() -> transformEncodeCompressed(k), "TransformEncode Comp");
+		System.out.println(String.format("Known mem size:   %30d", gen.take().getInMemorySize()));
+		System.out.println(gen.take().slice(0, 10));
+		execute(() -> transformEncode(k), "TransformEncode Def");
+		execute(() -> transformEncodeCompressed(k), "TransformEncode Comp");
 
-    }
+	}
 
-    private void updateGen() {
-        if(gen instanceof ConstFrame) {
-            FrameBlock fb = gen.take();
-            FrameBlock r = FrameLibDetectSchema.detectSchema(fb, k);
-            FrameBlock out = FrameLibApplySchema.applySchema(fb, r, k);
-            ((ConstFrame) gen).change(out);
-        }
-    }
+	private void updateGen() {
+		if(gen instanceof ConstFrame) {
+			FrameBlock fb = gen.take();
+			FrameBlock r = FrameLibDetectSchema.detectSchema(fb, k);
+			FrameBlock out = FrameLibApplySchema.applySchema(fb, r, k);
+			((ConstFrame) gen).change(out);
+		}
+	}
 
-    private void detectSchema(int k) {
-        FrameBlock fb = gen.take();
-        long in = fb.getInMemorySize();
-        FrameBlock r = FrameLibDetectSchema.detectSchema(fb, k);
-        long out = r.getInMemorySize();
-        ret.add(new InOut(in, out));
-    }
+	@SuppressWarnings("unused")
+	private void detectSchema(int k) {
+		FrameBlock fb = gen.take();
+		long in = fb.getInMemorySize();
+		FrameBlock r = FrameLibDetectSchema.detectSchema(fb, k);
+		long out = r.getInMemorySize();
+		ret.add(new InOut(in, out));
+	}
 
-    private void detectAndApply(int k) {
-        FrameBlock fb = gen.take();
-        long in = fb.getInMemorySize();
-        FrameBlock r = FrameLibDetectSchema.detectSchema(fb, k);
-        FrameBlock out = FrameLibApplySchema.applySchema(fb, r, k);
-        long outS = out.getInMemorySize();
-        ret.add(new InOut(in, outS));
-    }
+	@SuppressWarnings("unused")
+	private void detectAndApply(int k) {
+		FrameBlock fb = gen.take();
+		long in = fb.getInMemorySize();
+		FrameBlock r = FrameLibDetectSchema.detectSchema(fb, k);
+		FrameBlock out = FrameLibApplySchema.applySchema(fb, r, k);
+		long outS = out.getInMemorySize();
+		ret.add(new InOut(in, outS));
+	}
 
-    private void transformEncode(int k) {
-        FrameBlock fb = gen.take();
-        long in = fb.getInMemorySize();
-        MultiColumnEncoder e = EncoderFactory.createEncoder(spec, fb.getNumColumns());
-        MatrixBlock r = e.encode(fb, k);
-        long out = r.getInMemorySize();
-        ret.add(new InOut(in, out));
-    }
+	@SuppressWarnings("unused")
+	private void transformEncode(int k) {
+		FrameBlock fb = gen.take();
+		long in = fb.getInMemorySize();
+		MultiColumnEncoder e = EncoderFactory.createEncoder(spec, fb.getNumColumns());
+		MatrixBlock r = e.encode(fb, k);
+		long out = r.getInMemorySize();
+		ret.add(new InOut(in, out));
+	}
 
-    private void transformEncodeCompressed(int k) {
-        FrameBlock fb = gen.take();
-        long in = fb.getInMemorySize();
-        MultiColumnEncoder e = EncoderFactory.createEncoder(spec, fb.getNumColumns());
-        MatrixBlock r = e.encode(fb, k, true);
-        long out = r.getInMemorySize();
-        ret.add(new InOut(in, out));
-    }
+	private void transformEncodeCompressed(int k) {
+		FrameBlock fb = gen.take();
+		long in = fb.getInMemorySize();
+		MultiColumnEncoder e = EncoderFactory.createEncoder(spec, fb.getNumColumns());
+		MatrixBlock r = e.encode(fb, k, true);
+		long out = r.getInMemorySize();
+		ret.add(new InOut(in, out));
+	}
 
-    @Override
-    protected String makeResString() {
-        throw new RuntimeException("Do not call");
-    }
+	@Override
+	protected String makeResString() {
+		throw new RuntimeException("Do not call");
+	}
 
-    @Override
-    protected String makeResString(double[] times) {
-        return Serialize.makeResString(ret, times);
-    }
+	@Override
+	protected String makeResString(double[] times) {
+		return Serialize.makeResString(ret, times);
+	}
 
-    @Override
-    public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append(super.toString());
-        sb.append(" File: ");
-        sb.append(file);
-        sb.append(" Spec: ");
-        sb.append(specPath);
-        return sb.toString();
-    }
-
+	@Override
+	public String toString() {
+		StringBuilder sb = new StringBuilder();
+		sb.append(super.toString());
+		sb.append(" File: ");
+		sb.append(file);
+		sb.append(" Spec: ");
+		sb.append(specPath);
+		return sb.toString();
+	}
 }

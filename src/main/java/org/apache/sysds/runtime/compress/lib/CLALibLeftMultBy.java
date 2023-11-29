@@ -32,11 +32,14 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
+import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup;
 import org.apache.sysds.runtime.compress.colgroup.APreAgg;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.functionobjects.Plus;
+import org.apache.sysds.runtime.matrix.data.LibMatrixBincell;
+import org.apache.sysds.runtime.matrix.data.LibMatrixMult;
 import org.apache.sysds.runtime.matrix.data.LibMatrixReorg;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
@@ -45,7 +48,7 @@ import org.apache.sysds.runtime.util.CommonThreadPool;
 public final class CLALibLeftMultBy {
 	private static final Log LOG = LogFactory.getLog(CLALibLeftMultBy.class.getName());
 
-	private CLALibLeftMultBy(){
+	private CLALibLeftMultBy() {
 		// private constructor
 	}
 
@@ -139,7 +142,15 @@ public final class CLALibLeftMultBy {
 	}
 
 	private static MatrixBlock leftMultByCompressedTransposedMatrix(CompressedMatrixBlock right,
-		CompressedMatrixBlock left, MatrixBlock ret, int k) {
+		CompressedMatrixBlock left, final MatrixBlock ret, int k) {
+		if(k > 1 && ret.getInMemorySize() < 1000000)
+			return leftMultByCompressedTransposedMatrixParallel(right, left, ret, k);
+		else
+			return leftMultByCompressedTransposedMatrixSingleThread(right, left, ret);
+	}
+
+	private static MatrixBlock leftMultByCompressedTransposedMatrixParallel(CompressedMatrixBlock right,
+		CompressedMatrixBlock left, final MatrixBlock ret, int k) {
 
 		final int sd = right.getNumRows(); // shared dim
 		final int cr = right.getNumColumns();
@@ -149,18 +160,89 @@ public final class CLALibLeftMultBy {
 		final List<AColGroup> leftCG = left.getColGroups();
 
 		final boolean containsRight = CLALibUtils.shouldPreFilter(rightCG);
-		double[] cR = containsRight ? new double[cr] : null;
+		final double[] cR = containsRight ? new double[cr] : null;
 		final List<AColGroup> fRight = CLALibUtils.filterGroups(rightCG, cR);
 
 		final boolean containsLeft = CLALibUtils.shouldPreFilter(leftCG);
-		double[] cL = containsLeft ? new double[rl] : null;
+		final double[] cL = containsLeft ? new double[rl] : null;
 		final List<AColGroup> fLeft = CLALibUtils.filterGroups(leftCG, cL);
 
+		// Force dense output
+		ret.allocateDenseBlock();
+		ret.setNonZeros((long) ret.getNumRows() * ret.getNumColumns());
+
+		final ExecutorService ex = CommonThreadPool.get(k);
+		final List<Future<MatrixBlock>> t = new ArrayList<>();
+
+		for(int j = 0; j < fLeft.size(); j++) {
+			final int jj = j;
+			t.add(ex.submit(() -> {
+				MatrixBlock retT = new MatrixBlock(ret.getNumRows(), ret.getNumColumns(), false);
+				retT.allocateDenseBlock();
+				for(int i = 0; i < fRight.size(); i++) {
+					fRight.get(i).leftMultByAColGroup(fLeft.get(jj), retT, sd);
+				}
+				retT.examSparsity(true);
+				return retT;
+			}));
+		}
+
+		try {
+			final double[] retV = ret.getDenseBlockValues();
+			if(containsLeft && containsRight)
+				// if both -- multiply the left and right vectors scaling by number of shared dim
+				outerProductWithScaling(cL, cR, sd, retV);
+			if(containsLeft) // if left -- multiply left with right sum
+				outerProduct(cL, CLALibUtils.getColSum(fRight, cr, sd), retV);
+			if(containsRight)// if right -- multiply right with left sum
+				outerProduct(CLALibUtils.getColSum(fLeft, rl, sd), cR, retV);
+
+			for(Future<MatrixBlock> f : t) {
+				MatrixBlock mb = f.get();
+				if(!mb.isEmpty()) {
+					if(mb.isInSparseFormat())
+						LibMatrixBincell.bincellOpInPlaceRight(ret, mb, new BinaryOperator(Plus.getPlusFnObject()));
+					else if(mb.getDenseBlock().isContiguous())
+						LibMatrixMult.vectAdd(mb.getDenseBlockValues(), retV, 0, 0, retV.length);
+					else
+						LibMatrixBincell.bincellOpInPlaceRight(ret, mb, new BinaryOperator(Plus.getPlusFnObject()));
+				}
+			}
+			ret.recomputeNonZeros(k);
+		}
+		catch(Exception e) {
+			throw new DMLCompressionException("Failed parallel Left Compressed Mult", e);
+		}
+		finally {
+			ex.shutdown();
+		}
+		return ret;
+	}
+
+	private static MatrixBlock leftMultByCompressedTransposedMatrixSingleThread(CompressedMatrixBlock right,
+		CompressedMatrixBlock left, final MatrixBlock ret) {
+		final int sd = right.getNumRows(); // shared dim
+		final int cr = right.getNumColumns();
+		final int rl = left.getNumColumns();
+
+		final List<AColGroup> rightCG = right.getColGroups();
+		final List<AColGroup> leftCG = left.getColGroups();
+
+		final boolean containsRight = CLALibUtils.shouldPreFilter(rightCG);
+		final double[] cR = containsRight ? new double[cr] : null;
+		final List<AColGroup> fRight = CLALibUtils.filterGroups(rightCG, cR);
+
+		final boolean containsLeft = CLALibUtils.shouldPreFilter(leftCG);
+		final double[] cL = containsLeft ? new double[rl] : null;
+		final List<AColGroup> fLeft = CLALibUtils.filterGroups(leftCG, cL);
+
+		// Force dense output
+		ret.setNonZeros((long) ret.getNumRows() * ret.getNumColumns());
+		ret.allocateDenseBlock();
 		for(int j = 0; j < fLeft.size(); j++)
 			for(int i = 0; i < fRight.size(); i++)
 				fRight.get(i).leftMultByAColGroup(fLeft.get(j), ret, sd);
-
-		double[] retV = ret.getDenseBlockValues();
+		final double[] retV = ret.getDenseBlockValues();
 		if(containsLeft && containsRight)
 			// if both -- multiply the left and right vectors scaling by number of shared dim
 			outerProductWithScaling(cL, cR, sd, retV);
@@ -169,7 +251,6 @@ public final class CLALibLeftMultBy {
 		if(containsRight)// if right -- multiply right with left sum
 			outerProduct(CLALibUtils.getColSum(fLeft, rl, sd), cR, retV);
 		ret.recomputeNonZeros();
-
 		return ret;
 	}
 
@@ -218,7 +299,7 @@ public final class CLALibLeftMultBy {
 				LMMParallel(noPreAggGroups, preAggGroups, that, ret, null, overlapping, k);
 		}
 
-		ret.recomputeNonZeros();
+		ret.recomputeNonZeros(k);
 		ret.examSparsity();
 		return ret;
 	}

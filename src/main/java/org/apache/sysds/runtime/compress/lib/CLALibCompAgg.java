@@ -568,7 +568,7 @@ public final class CLALibCompAgg {
 			_op = op;
 			_rl = rl;
 			_ru = ru;
-			_blklen = Math.max(65536 * 2 / ret.getNumColumns() / filteredGroups.size(), 64);
+			_blklen = Math.max(65536  / ret.getNumColumns() / filteredGroups.size(), 64);
 			_ret = ret;
 			_nCol = nCol;
 		}

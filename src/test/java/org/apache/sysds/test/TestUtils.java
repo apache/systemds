@@ -19,12 +19,6 @@
 
 package org.apache.sysds.test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.DataOutputStream;
@@ -50,6 +44,11 @@ import java.util.Random;
 import java.util.Set;
 import java.util.StringTokenizer;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.NotImplementedException;
@@ -1344,7 +1343,7 @@ public class TestUtils {
 			double avgDistance = sumPercentDistance / (rows * cols);
 			if(countErrors != 0)
 				fail(message + "\n" + countErrors + " values are not in equal of total: " + (rows * cols));
-			if(avgDistance <= maxAveragePercentDistance)
+			if(avgDistance < maxAveragePercentDistance)
 				fail(message + "\nThe avg distance: " + avgDistance + " was lower than threshold "
 					+ maxAveragePercentDistance);
 		}
@@ -1397,7 +1396,7 @@ public class TestUtils {
 			if(countErrors != 0)
 				fail(message + "\n" + countErrors + " values are not in equal");
 			if(avgDistance > maxAveragePercentDistance)
-				fail(message + "\nThe avg distance in bits: " + avgDistance + " was higher than max: " + maxAveragePercentDistance);
+				fail(message + "\nThe avg distance in percent: " + avgDistance + " was higher than max: " + maxAveragePercentDistance);
 		}
 	}
 
@@ -2045,6 +2044,17 @@ public class TestUtils {
 		return matrix;
 	}
 
+	public static double[] generateTestVector(int cols, double min, double max, double sparsity, long seed) {
+		double[] vector = new double[cols];
+		Random random = (seed == -1) ? TestUtils.random : new Random(seed);
+		for(int j = 0; j < cols; j++) {
+			if(random.nextDouble() > sparsity)
+				continue;
+			vector[j] = (random.nextDouble() * (max - min) + min);
+		}
+		return vector;
+	}
+
 	/**
 	 *
 	 * Generates a test matrix with the specified parameters as a MatrixBlock.
@@ -2550,6 +2560,7 @@ public class TestUtils {
 			case INT32:   return random.nextInt();
 			case INT64:   return random.nextLong();
 			case BOOLEAN: return random.nextBoolean();
+			case HASH64:  return Long.toHexString(random.nextLong());
 			case STRING:
 				return random.ints('a', 'z' + 1)
 						.limit(10)
@@ -2740,6 +2751,11 @@ public class TestUtils {
 		writer.writeFrameToHDFS(frame, file, data.length, schema.length);
 	}
 
+	public static void writeTestFrame(String file, FrameBlock data, ValueType[] schema, FileFormat fmt, boolean isR) throws IOException {
+		FrameWriter writer = FrameWriterFactory.createFrameWriter(fmt);
+		writer.writeFrameToHDFS(data, file, data.getNumRows(), schema.length);
+	}
+
 	/**
 	 * <p>
 	 * Writes a frame to a file using the text format.
@@ -2752,6 +2768,10 @@ public class TestUtils {
 	 * @throws IOException
 	 */
 	public static void writeTestFrame(String file, double[][] data, ValueType[] schema, FileFormat fmt) throws IOException {
+		writeTestFrame(file, data, schema, fmt, false);
+	}
+
+	public static void writeTestFrame(String file, FrameBlock data, ValueType[] schema, FileFormat fmt) throws IOException {
 		writeTestFrame(file, data, schema, fmt, false);
 	}
 

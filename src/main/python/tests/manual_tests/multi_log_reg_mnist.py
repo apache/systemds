@@ -35,6 +35,6 @@ with SystemDSContext() as sds:
     # Test data
     Xt = sds.from_numpy(d.get_test_data().reshape((10000, 28*28)))
     Yt = sds.from_numpy(d.get_test_labels()) + 1.0
-    [_, _, acc] = multiLogRegPredict(Xt, bias, Yt).compute()
+    [_, _, acc] = multiLogRegPredict(Xt, bias, Y=Yt).compute()
 
 logging.info(acc)

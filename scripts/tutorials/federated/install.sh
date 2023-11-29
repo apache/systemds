@@ -46,7 +46,7 @@ for index in ${!address[*]}; do
         cd github;
         if [[ ! -d 'systemds' ]]; then  git clone https://github.com/apache/systemds.git  > /dev/null 2>&1; fi;
         cd systemds;
-        git reset --hard origin/master > /dev/null 2>&1;
+        git reset --hard origin/main > /dev/null 2>&1;
         git pull > /dev/null 2>&1; 
         mvn clean package  -P distribution | grep -E 'BUILD';
         echo 'Installed Systemds on' \$HOSTNAME;

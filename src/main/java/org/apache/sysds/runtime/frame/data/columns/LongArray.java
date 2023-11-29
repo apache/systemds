@@ -80,7 +80,14 @@ public class LongArray extends Array<Long> {
 
 	@Override
 	public void set(int rl, int ru, Array<Long> value, int rlSrc) {
-		System.arraycopy(value.get(), rlSrc, _data, rl, ru - rl + 1);
+		try {
+			// try system array copy.
+			// but if it does not work, default to get.
+			System.arraycopy(value.get(), rlSrc, _data, rl, ru - rl + 1);
+		}
+		catch(Exception e) {
+			super.set(rl, ru, value, rlSrc);
+		}
 	}
 
 	@Override
@@ -249,6 +256,11 @@ public class LongArray extends Array<Long> {
 	@Override
 	protected Array<Long> changeTypeLong() {
 		return this;
+	}
+
+	@Override
+	protected Array<Object> changeTypeHash64() {
+		return new HashLongArray(_data);
 	}
 
 	@Override

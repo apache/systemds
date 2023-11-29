@@ -41,8 +41,8 @@ public final class SparseRowScalar extends SparseRow{
 	}
 	
 	@Override
-	public boolean isEmpty() {
-		return (index < 0);
+	public final boolean isEmpty() {
+		return index < 0;
 	}
 	
 	@Override
@@ -114,5 +114,10 @@ public final class SparseRowScalar extends SparseRow{
 
 	public double getValue(){
 		return value;
+	}
+
+	@Override
+	public SparseRow copy(boolean deep){
+		return new SparseRowScalar(index, value);
 	}
 }

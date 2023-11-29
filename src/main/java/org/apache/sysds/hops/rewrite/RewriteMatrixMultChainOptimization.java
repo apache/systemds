@@ -444,8 +444,8 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 			Hop currentChainHop = mmChain.get(mmChainIndex);
 
 			// Check if current hop is a transpose operator,
-			// if it is visited,
-			// and if it has only a one input, which is a matrixmult operator
+			// if it has been visited,
+			// and if it has only one input, which is a matrixmult operator
 			boolean isTransposeOperator = HopRewriteUtils.isReorg(currentChainHop, Types.ReOrgOp.TRANS);
 
 			if (isTransposeOperator && !currentChainHop.isVisited() && currentChainHop.getInput().size() == 1)

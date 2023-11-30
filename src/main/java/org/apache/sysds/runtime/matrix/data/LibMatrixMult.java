@@ -1903,8 +1903,10 @@ public class LibMatrixMult
 	private static void matrixMultUltraSparseSparseSparseLeftRowGeneric(int i, int apos, int alen, int[] aixs,
 		double[] avals, SparseBlock b, SparseBlockMCSR c, int m, int n) {
 		for(int k = apos; k < apos + alen; k++) {
-			final double aval = avals[k];
 			final int aix = aixs[k];
+			if(b.isEmpty(aix))
+				continue;
+			final double aval = avals[k];
 			final int bpos = b.pos(aix);
 			final int blen = b.size(aix) + bpos;
 			final int[] bix = b.indexes(aix);

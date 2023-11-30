@@ -1796,7 +1796,11 @@ public class LibMatrixMult
 		if(rightSparse)
 			matrixMultUltraSparseSparseSparseLeft( a, m2.sparseBlock, c, m, n , rl, ru);
 		else
-			matrixMultUltraSparseDenseSparseLeftRow(a, m2.denseBlock, c, m,n,rl,ru);
+			matrixMultUltraSparseDenseSparseLeftRow(a, m2.denseBlock, c, m, n, rl, ru);
+		
+		if( rl == 0 && ru == m ){
+			ret.recomputeNonZeros();
+		}
 	}
 
 	private static void matrixMultUltraSparseDenseSparseLeftRow(SparseBlock a, DenseBlock b, SparseBlockMCSR c, int m, int n,
@@ -1869,7 +1873,7 @@ public class LibMatrixMult
 		int n, int rl, int ru) {
 		for(int i = rl; i < ru; i++) {
 			if(a.isEmpty(i))
-				return;
+				continue;
 			final int apos = a.pos(i);
 			final int alen = a.size(i);
 			final int[] aixs = a.indexes(i);
@@ -1882,18 +1886,18 @@ public class LibMatrixMult
 	}
 
 	private static void matrixMultUltraSparseSparseSparseLeftRowOneNonZero(int i, int aix, double aval, SparseBlock b, SparseBlock c, int m, int n){
-		if(!b.isEmpty(aix)) 
+		if(!b.isEmpty(aix)) {
 			c.set(i, b.get(aix), (c instanceof SparseBlockMCSR));
-		// optional scaling if not pure selection
-		if(aval != 1){
-			if(c.get(i) instanceof SparseRowScalar) {
-				SparseRowScalar sv = (SparseRowScalar) c.get(i);
-				c.set(i, new SparseRowScalar(sv.getIndex(), sv.getValue() * aval), false);
+			// optional scaling if not pure selection
+			if(aval != 1) {
+				if(c.get(i) instanceof SparseRowScalar) {
+					SparseRowScalar sv = (SparseRowScalar) c.get(i);
+					c.set(i, new SparseRowScalar(sv.getIndex(), sv.getValue() * aval), false);
+				}
+				else
+					vectMultiplyInPlace(aval, c.values(i), c.pos(i), c.size(i));
 			}
-			else
-				vectMultiplyInPlace(aval, c.values(i), c.pos(i), c.size(i));
 		}
-
 	}
 
 	private static void matrixMultUltraSparseSparseSparseLeftRowGeneric(int i, int apos, int alen, int[] aixs,

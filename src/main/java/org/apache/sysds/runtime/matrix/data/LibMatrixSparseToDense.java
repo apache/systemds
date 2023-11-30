@@ -24,162 +24,100 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
-import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.data.DenseBlock;
-import org.apache.sysds.runtime.data.SparseBlockCSR;
-import org.apache.sysds.runtime.data.SparseBlockMCSR;
-import org.apache.sysds.runtime.data.SparseRowVector;
+import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.util.CommonThreadPool;
-import org.apache.sysds.runtime.util.UtilFunctions;
 
 public interface LibMatrixSparseToDense {
-	/**
-	 * Convert the given matrix block to a sparse allocation.
-	 * 
-	 * @param r        The matrix block to modify, and return the sparse block in.
-	 * @param allowCSR If CSR is allowed.
-	 */
-	public static void denseToSparse(MatrixBlock r, boolean allowCSR) {
-		final DenseBlock a = r.getDenseBlock();
+	public static final Log LOG = LogFactory.getLog(LibMatrixSparseToDense.class.getName());
 
+	/**
+	 * Convert the given matrix block to a Dense allocation.
+	 * 
+	 * @param r The matrix block to modify, to dense.
+	 * @param k allowed.
+	 */
+	public static void sparseToDense(MatrixBlock r, int k) {
 		// set target representation, early abort on empty blocks
-		r.sparse = true;
+		final SparseBlock a = r.sparseBlock;
+		final int m = r.rlen;
+		r.sparse = false;
 		if(a == null)
 			return;
 
-		int k = InfrastructureAnalyzer.getLocalParallelism();
+		// allocate dense target block, but keep nnz (no need to maintain)
+		if(!r.allocateDenseBlock(false))
+			r.denseBlock.reset();
 
-		if(k > 1) 
-			denseToSparseParallel(r, k, allowCSR);
-		else if(allowCSR && r.nonZeros <= Integer.MAX_VALUE)
-			denseToSparseCSR(r);
+		final DenseBlock c = r.denseBlock;
+
+		if(k > 1 && r.getNonZeros() > 1000000 && r.getNumRows() > 1)
+			multiThreadedToDense(a, c, m, k);
 		else
-			denseToSparseMCSR(r);
+			singleThreadedToDense(a, c, m);
 
-		// cleanup dense block
-		r.denseBlock = null;
+		// cleanup sparse block
+		r.sparseBlock = null;
 	}
 
-	private static void denseToSparseCSR(MatrixBlock r) {
-		final DenseBlock a = r.getDenseBlock();
-		final int m = r.rlen;
-		final int n = r.clen;
-		try {
-			// allocate target in memory-efficient CSR format
-			int lnnz = (int) r.nonZeros;
-			int[] rptr = new int[m + 1];
-			int[] indexes = new int[lnnz];
-			double[] values = new double[lnnz];
-			for(int i = 0, pos = 0; i < m; i++) {
-				double[] avals = a.values(i);
-				int aix = a.pos(i);
-				for(int j = 0; j < n; j++) {
-					double aval = avals[aix + j];
-					if(aval != 0) {
-						indexes[pos] = j;
-						values[pos] = aval;
-						pos++;
-					}
-				}
-				rptr[i + 1] = pos;
-			}
-			r.sparseBlock = new SparseBlockCSR(rptr, indexes, values, lnnz);
-		}
-		catch(ArrayIndexOutOfBoundsException ioobe) {
-			r.sparse = false;
-			// this means something was wrong with the sparse count.
-			final long nnzBefore = r.nonZeros;
-			final long nnzNew = r.recomputeNonZeros();
-
-			// try again.
-			if(nnzBefore != nnzNew)
-				denseToSparse(r, true);
-			else
-				denseToSparse(r, false);
-
-		}
+	private static void singleThreadedToDense(SparseBlock a, DenseBlock c, int m) {
+		for(int i = 0; i < m; i++)
+			processRow(a, c, i);
 	}
 
-	private static void denseToSparseMCSR(MatrixBlock r) {
-		final DenseBlock a = r.getDenseBlock();
-
-		final int m = r.rlen;
-		final int n = r.clen;
-		// remember number non zeros.
-		long nnzTemp = r.getNonZeros();
-		// fallback to less-memory efficient MCSR format,
-		// which however allows much larger sparse matrices
-		if(!r.allocateSparseRowsBlock())
-			r.reset(); // reset if not allocated
-		SparseBlockMCSR sblock = (SparseBlockMCSR) r.sparseBlock;
-		toSparseMCSRRange(a, sblock, n, 0, m);
-		r.nonZeros = nnzTemp;
-	}
-
-	private static void toSparseMCSRRange(DenseBlock a, SparseBlockMCSR b, int n, int rl, int ru) {
-		for(int i = rl; i < ru; i++)
-			toSparseMCSRRow(a, b, n, i);
-	}
-
-	private static void toSparseMCSRRow(DenseBlock a, SparseBlockMCSR b, int n, int i) {
-		final double[] avals = a.values(i);
-		final int aix = a.pos(i);
-		// compute nnz per row (not via recomputeNonZeros as sparse allocated)
-		final int lnnz = UtilFunctions.computeNnz(avals, aix, n);
-		if(lnnz <= 0)
-			return;
-
-		final double[] vals = new double[lnnz];
-		final int[] idx = new int[lnnz];
-		// allocate sparse row and append non-zero values
-		// b.allocate(i, lnnz);
-
-		for(int j = 0, o = 0; j < n; j++) {
-			double v = avals[aix + j];
-			if(v != 0.0) {
-				vals[o] = v;
-				idx[o] = j;
-				o++;
-			}
-		}
-		b.set(i, new SparseRowVector(vals, idx), false);
-	}
-
-	private static void denseToSparseParallel(MatrixBlock r, int k, boolean allowCSR) {
-		final DenseBlock a = r.getDenseBlock();
-
-		final int m = r.rlen;
-		final int n = r.clen;
-		// remember number non zeros.
-		final long nnzTemp = r.getNonZeros();
-		// fallback to less-memory efficient MCSR format,
-		// which however allows much larger sparse matrices
-		if(!r.allocateSparseRowsBlock())
-			r.reset(); // reset if not allocated
-		final SparseBlockMCSR b = (SparseBlockMCSR) r.sparseBlock;
-		final int blockSize = Math.max(250, m / k);
-
+	private static void multiThreadedToDense(SparseBlock a, DenseBlock c, int m, int k) {
 		ExecutorService pool = CommonThreadPool.get(k);
+
 		try {
 
 			List<Future<?>> tasks = new ArrayList<>();
-			for(int i = 0; i < m; i += blockSize) {
+			final int blkz = Math.max(1, m / k);
+			for(int i = 0; i < m; i += blkz) {
 				final int start = i;
-				final int end = Math.min(m, i + blockSize);
-				tasks.add(pool.submit(() -> toSparseMCSRRange(a, b, n, start, end)));
+				final int end = Math.min(m, i + blkz);
+				tasks.add(pool.submit(() -> processRange(a, c, start, end)));
 			}
 
-			for(Future<?> t : tasks)
-				t.get();
+			for(Future<?> f : tasks) {
+				f.get();
+			}
 		}
 		catch(Exception e) {
-			throw new RuntimeException(e);
+			throw new DMLRuntimeException("Failed parallel to dense", e);
 		}
 		finally {
 			pool.shutdown();
 		}
 
-		r.nonZeros = nnzTemp;
+	}
+
+	private static void processRange(SparseBlock a, DenseBlock c, int rl, int ru) {
+		for(int i = rl; i < ru; i++)
+			processRow(a, c, i);
+	}
+
+	/**
+	 * Process row i
+	 * 
+	 * @param a Input Sparse
+	 * @param c Output Dense
+	 * @param i Row to process
+	 */
+	private static void processRow(SparseBlock a, DenseBlock c, int i) {
+		if(!a.isEmpty(i)) {
+			final int apos = a.pos(i);
+			final int alen = a.size(i);
+			final int[] aix = a.indexes(i);
+			final double[] avals = a.values(i);
+			final double[] cvals = c.values(i);
+			final int cix = c.pos(i);
+			for(int j = apos; j < apos + alen; j++)
+				cvals[cix + aix[j]] = avals[j];
+		}
 
 	}
+
 }

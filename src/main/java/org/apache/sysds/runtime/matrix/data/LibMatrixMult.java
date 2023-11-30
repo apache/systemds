@@ -300,7 +300,7 @@ public class LibMatrixMult
 				ret.nonZeros = nnzCount;
 
 			// post-processing (nnz maintained in parallel)
-			ret.examSparsity();
+			ret.examSparsity(k);
 		}
 		catch(Exception ex) {
 			throw new DMLRuntimeException(ex);
@@ -1869,7 +1869,7 @@ public class LibMatrixMult
 				}
 		}
 
-	private static void matrixMultUltraSparseSparseSparseLeft(SparseBlock a, SparseBlock b, SparseBlock c, int m,
+	private static void matrixMultUltraSparseSparseSparseLeft(SparseBlock a, SparseBlock b, SparseBlockMCSR c, int m,
 		int n, int rl, int ru) {
 		for(int i = rl; i < ru; i++) {
 			if(a.isEmpty(i))
@@ -1885,9 +1885,9 @@ public class LibMatrixMult
 		}
 	}
 
-	private static void matrixMultUltraSparseSparseSparseLeftRowOneNonZero(int i, int aix, double aval, SparseBlock b, SparseBlock c, int m, int n){
+	private static void matrixMultUltraSparseSparseSparseLeftRowOneNonZero(int i, int aix, double aval, SparseBlock b, SparseBlockMCSR c, int m, int n){
 		if(!b.isEmpty(aix)) {
-			c.set(i, b.get(aix), (c instanceof SparseBlockMCSR));
+			c.set(i, b.get(aix), true);
 			// optional scaling if not pure selection
 			if(aval != 1) {
 				if(c.get(i) instanceof SparseRowScalar) {

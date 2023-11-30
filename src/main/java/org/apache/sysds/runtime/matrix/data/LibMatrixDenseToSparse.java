@@ -207,20 +207,21 @@ public interface LibMatrixDenseToSparse {
 			final int n = r.clen;
 			// remember number non zeros.
 			final long nnzTemp = r.getNonZeros();
+			final double sp = r.getSparsity();
 			r.reset(r.getNumRows(), r.getNumColumns(), nnzTemp);
 			// fallback to less-memory efficient MCSR format, for efficient parallel conversion.
 			r.sparseBlock = new SparseBlockMCSR(r.getNumRows());
 			r.sparse = true;
 			final SparseBlockMCSR b = (SparseBlockMCSR) r.sparseBlock;
 			final int blockSize = Math.max(1, m / k);
-			double sp = r.getSparsity();
 			final int est = Math.max(1, (int) (n * sp));
-
+			// LOG.error(nnzTemp + "   " + m + " " + n);
+			// LOG.error(sp);
 			List<Future<?>> tasks = new ArrayList<>();
 			for(int i = 0; i < m; i += blockSize) {
 				final int start = i;
 				final int end = Math.min(m, i + blockSize);
-				if(sp < 0.1)
+				if(sp < 0.03)
 					tasks.add(pool.submit(() -> toSparseMCSRRangeNoScan(a, b, n, start, end, est)));
 				else
 					tasks.add(pool.submit(() -> toSparseMCSRRangeScan(a, b, n, start, end)));

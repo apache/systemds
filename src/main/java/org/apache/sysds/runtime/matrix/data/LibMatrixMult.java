@@ -580,10 +580,10 @@ public class LibMatrixMult
 		}
 		
 		//post-processing
-		ret1.recomputeNonZeros();
+		ret1.recomputeNonZeros(k);
 		ret1.examSparsity();
 		if( ret2 != null ) { //optional second output
-			ret2.recomputeNonZeros();
+			ret2.recomputeNonZeros(k);
 			ret2.examSparsity();
 		}
 		
@@ -1901,7 +1901,7 @@ public class LibMatrixMult
 	}
 
 	private static void matrixMultUltraSparseSparseSparseLeftRowGeneric(int i, int apos, int alen, int[] aixs,
-		double[] avals, SparseBlock b, SparseBlock c, int m, int n) {
+		double[] avals, SparseBlock b, SparseBlockMCSR c, int m, int n) {
 		for(int k = apos; k < apos + alen; k++) {
 			final double aval = avals[k];
 			final int aix = aixs[k];
@@ -1909,8 +1909,18 @@ public class LibMatrixMult
 			final int blen = b.size(aix) + bpos;
 			final int[] bix = b.indexes(aix);
 			final double[] bvals = b.values(aix);
-			for(int bo = bpos; bo < blen; bo++) 
-				c.add(i, bix[bo], aval * bvals[bo]);
+			if(!c.isAllocated(i))
+				c.allocate(i, Math.max(blen - bpos, 2)); // guarantee a vector for efficiency
+			final SparseRowVector v = (SparseRowVector) c.get(i);
+			if(v.size() == n){ // If output row is dense already
+				final double[] vvals = v.values();
+				for(int bo = bpos; bo < blen; bo++) 
+					vvals[bix[bo]] += aval * bvals[bo];
+			}
+			else
+				for(int bo = bpos; bo < blen; bo++) 
+					v.add(bix[bo], aval * bvals[bo]);
+			
 		}
 	}
 

@@ -1998,7 +1998,7 @@ public class LibMatrixMult
 		final int cd = m1.clen;
 		final DenseBlock  a = m1.denseBlock;
 		final SparseBlock b = m2.sparseBlock;
-		final SparseBlock c = ret.sparseBlock;
+		final SparseBlockMCSR c = (SparseBlockMCSR) ret.sparseBlock;
 
 		for(int k = 0; k < cd; k++){
 			if(b.isEmpty(k))
@@ -2007,24 +2007,24 @@ public class LibMatrixMult
 			final int blen = b.size(k);
 			final int[] bixs = b.indexes(k);
 			final double[] bvals = b.values(k);
-			mmDenseMatrixSparseRow(bpos, blen, bixs, bvals, k, rl, ru, a , c);
+			for(int i = rl; i < ru; i++) 
+				mmDenseMatrixSparseRow(bpos, blen, bixs, bvals, k, i, a, c);
 		}
 	}
 
-	private static void mmDenseMatrixSparseRow(int bpos, int blen, int[] bixs, double[] bvals, int k, int rl, int ru,
-		DenseBlock a, SparseBlock c) {
-		for(int i = rl; i < ru; i++) {
-			final double[] aval = a.values(i);
-			final int apos = a.pos(i);
-			if(!c.isAllocated(i))
-				c.allocate(i, Math.max(blen, 2));
-			final SparseRowVector srv = (SparseRowVector) c.get(i); // guaranteed
-			for(int j = bpos; j < bpos + blen; j++) { // right side columns
-				final int bix = bixs[j];
-				final double bval = bvals[j];
-				srv.add(bix, bval * aval[apos + k]);
-			}
+	private static void mmDenseMatrixSparseRow(int bpos, int blen, int[] bixs, double[] bvals, int k, int i,
+		DenseBlock a, SparseBlockMCSR c) {
+		final double[] aval = a.values(i);
+		final int apos = a.pos(i);
+		if(!c.isAllocated(i))
+			c.allocate(i, Math.max(blen, 2));
+		final SparseRowVector srv = (SparseRowVector) c.get(i); // guaranteed
+		for(int j = bpos; j < bpos + blen; j++) { // right side columns
+			final int bix = bixs[j];
+			final double bval = bvals[j];
+			srv.add(bix, bval * aval[apos + k]);
 		}
+
 	}
 
 	private static void matrixMultUltraSparseRightGeneric(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, int rl, int ru) {

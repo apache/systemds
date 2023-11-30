@@ -49,6 +49,7 @@ import org.apache.sysds.runtime.data.SparseBlock.Type;
 import org.apache.sysds.runtime.data.SparseBlockCSR;
 import org.apache.sysds.runtime.data.SparseBlockFactory;
 import org.apache.sysds.runtime.data.SparseBlockMCSR;
+import org.apache.sysds.runtime.data.SparseRow;
 import org.apache.sysds.runtime.data.SparseRowScalar;
 import org.apache.sysds.runtime.data.SparseRowVector;
 import org.apache.sysds.runtime.functionobjects.SwapIndex;
@@ -1925,7 +1926,6 @@ public class LibMatrixMult
 
 	
 	private static void matrixMultUltraSparseRight(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, int rl, int ru) {
-		LOG.error(ret.isAllocated() + " "+  ret.isInSparseFormat());
 		if(ret.isInSparseFormat()){
 			if(m1.isInSparseFormat())
 				matrixMultUltraSparseRightSparseMCSRLeftSparseOut(m1, m2, ret, rl, ru);
@@ -2013,16 +2013,15 @@ public class LibMatrixMult
 
 	private static void mmDenseMatrixSparseRow(int bpos, int blen, int[] bixs, double[] bvals, int k, int rl, int ru,
 		DenseBlock a, SparseBlock c) {
-		for(int j = bpos; j < bpos + blen; j++) { // right side columns
-			final int bix = bixs[j];
-			final double bval = bvals[j];
-			for(int i = rl; i < ru; i++) {
-				final double[] aval = a.values(i);
-				final int apos = a.pos(i);
-				if(!c.isAllocated(i))
-					c.allocate(i, 4);
-
-				SparseRowVector srv = (SparseRowVector) c.get(i);
+		for(int i = rl; i < ru; i++) {
+			final double[] aval = a.values(i);
+			final int apos = a.pos(i);
+			if(!c.isAllocated(i))
+				c.allocate(i, Math.max(blen, 2));
+			final SparseRowVector srv = (SparseRowVector) c.get(i); // guaranteed
+			for(int j = bpos; j < bpos + blen; j++) { // right side columns
+				final int bix = bixs[j];
+				final double bval = bvals[j];
 				srv.add(bix, bval * aval[apos + k]);
 			}
 		}

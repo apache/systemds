@@ -117,7 +117,5 @@ public interface LibMatrixSparseToDense {
 			for(int j = apos; j < apos + alen; j++)
 				cvals[cix + aix[j]] = avals[j];
 		}
-
 	}
-
 }

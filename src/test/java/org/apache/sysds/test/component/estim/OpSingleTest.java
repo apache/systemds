@@ -19,6 +19,7 @@
 
 package org.apache.sysds.test.component.estim;
 
+import org.apache.sysds.runtime.matrix.data.LibMatrixReorg;
 import org.junit.Test;
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.hops.estim.EstimatorBasicAvg;
@@ -58,7 +59,7 @@ public class OpSingleTest extends AutomatedTestBase
 	
 //	@Test
 //	public void testAvgDiag() {
-//		runSparsityEstimateTest(new EstimatorBasicAvg(), m, k, sparsity, diag);
+//		runSparsityEstimateTest(new EstimatorBasicAvg(), m, m, sparsity, diag);
 //	}
 	
 	@Test
@@ -84,7 +85,7 @@ public class OpSingleTest extends AutomatedTestBase
 	
 //	@Test
 //	public void testWCasediag() {
-//		runSparsityEstimateTest(new EstimatorBasicWorst(), m, k, sparsity, diag);
+//		runSparsityEstimateTest(new EstimatorBasicWorst(), m, m, sparsity, diag);
 //	}
 	
 	@Test
@@ -110,7 +111,7 @@ public class OpSingleTest extends AutomatedTestBase
 //	
 //	@Test
 //	public void testDMCasediag() {
-//		runSparsityEstimateTest(new EstimatorDensityMap(), m, k, sparsity, diag);
+//		runSparsityEstimateTest(new EstimatorDensityMap(), m, m, sparsity, diag);
 //	}
 //	
 //	@Test
@@ -136,7 +137,7 @@ public class OpSingleTest extends AutomatedTestBase
 //	
 //	@Test
 //	public void testMNCCasediag() {
-//		runSparsityEstimateTest(new EstimatorDensityMap(), m, k, sparsity, diag);
+//		runSparsityEstimateTest(new EstimatorDensityMap(), m, m, sparsity, diag);
 //	}
 //	
 //	@Test
@@ -162,7 +163,7 @@ public class OpSingleTest extends AutomatedTestBase
 	
 //	@Test
 //	public void testBitsetCasediag() {
-//		runSparsityEstimateTest(new EstimatorBitsetMM(), m, k, sparsity, diag);
+//		runSparsityEstimateTest(new EstimatorBitsetMM(), m, m, sparsity, diag);
 //	}
 	
 	@Test
@@ -188,7 +189,7 @@ public class OpSingleTest extends AutomatedTestBase
 //	
 	@Test
 	public void testLGCasediag() {
-		runSparsityEstimateTest(new EstimatorLayeredGraph(), m, k, sparsity, diag);
+		runSparsityEstimateTest(new EstimatorLayeredGraph(), m, m, sparsity, diag);
 	}
 //	
 //	@Test
@@ -214,7 +215,7 @@ public class OpSingleTest extends AutomatedTestBase
 //	
 //	@Test
 //	public void testSampleCasediag() {
-//		runSparsityEstimateTest(new EstimatorSample(), m, k, sparsity, diag);
+//		runSparsityEstimateTest(new EstimatorSample(), m, m, sparsity, diag);
 //	}
 //	
 //	@Test
@@ -240,7 +241,7 @@ public class OpSingleTest extends AutomatedTestBase
 			case EQZERO:
 				//TODO find out how to do eqzero
 			case DIAG:
-				m2 = m1;
+				m2 = LibMatrixReorg.diag(m1, new MatrixBlock(m1.getNumRows(), 1, false));
 				est = estim.estim(m1, op);
 				break;
 			case NEQZERO:

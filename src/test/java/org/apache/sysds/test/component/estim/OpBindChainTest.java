@@ -103,6 +103,7 @@ public class OpBindChainTest extends AutomatedTestBase
 	}
 
 	//Bitset
+	@Test
 	public void testBitsetCaserbind() {
 		runSparsityEstimateTest(new EstimatorBitsetMM(), m, k, n, sparsity, rbind);
 	}

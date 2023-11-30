@@ -200,16 +200,22 @@ public class LibMatrixMult
 			ret = new MatrixBlock(m1.rlen, m2.clen, ultraSparse | sparse);
 		else 
 			ret.reset(m1.rlen, m2.clen, ultraSparse | sparse);
-		if(ret.isInSparseFormat() && ret.getSparseBlock() instanceof SparseBlockMCSR){
+
+		if(ret.isInSparseFormat() && ret.getSparseBlock() instanceof SparseBlockMCSR) {
 			// we set the estimated number of non zeros per row to number of columns
 			// to make the allocation of cells more aggressive.
-			((SparseBlockMCSR)ret.getSparseBlock()).setNnzEstimatePerRow(m2.clen, m2.clen);
+			((SparseBlockMCSR) ret.getSparseBlock()).setNnzEstimatePerRow(m2.clen, m2.clen);
 		}
+		
 		if(m1.denseBlock instanceof DenseBlockFP64DEDUP)
 			ret.allocateDenseBlock(true, true);
 		else
 			ret.allocateBlock();
 		
+		if(ret.isInSparseFormat() && !( ret.getSparseBlock() instanceof SparseBlockMCSR)){
+			throw new DMLRuntimeException("Matrix Multiplication Sparse output must be MCSR");
+		}
+
 		// Detect if we should transpose skinny right side.
 		boolean tm2 = !fixedRet && checkPrepMatrixMultRightInput(m1,m2);
 		m2 = prepMatrixMultRightInput(m1, m2, tm2);
@@ -294,7 +300,7 @@ public class LibMatrixMult
 				ret.nonZeros = nnzCount;
 
 			// post-processing (nnz maintained in parallel)
-			ret.examSparsity();
+			ret.examSparsity(k);
 		}
 		catch(Exception ex) {
 			throw new DMLRuntimeException(ex);
@@ -574,10 +580,10 @@ public class LibMatrixMult
 		}
 		
 		//post-processing
-		ret1.recomputeNonZeros();
+		ret1.recomputeNonZeros(k);
 		ret1.examSparsity();
 		if( ret2 != null ) { //optional second output
-			ret2.recomputeNonZeros();
+			ret2.recomputeNonZeros(k);
 			ret2.examSparsity();
 		}
 		
@@ -1770,68 +1776,154 @@ public class LibMatrixMult
 		}
 	}
 	
+	/**
+	 * Ultra sparse kernel with guaranteed sparse output.
+	 * 
+	 * @param m1 Left side ultra sparse matrix
+	 * @param m2 Right side Matrix Sparse or Dense
+	 * @param ret Sparse output matrix
+	 * @param rl Row start
+	 * @param ru Row end
+	 */
 	private static void matrixMultUltraSparseLeft(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, int rl, int ru) {
 		final int m  = m1.rlen;
 		final int n  = m2.clen;
-		//left is ultra-sparse (IKJ)
-		SparseBlock a = m1.sparseBlock;
-		SparseBlock c = ret.sparseBlock;
-		boolean rightSparse = m2.sparse;
-		
-		for( int i=rl; i<ru; i++ ) {
-			if( a.isEmpty(i) ) continue; 
-			int apos = a.pos(i);
-			int alen = a.size(i);
-			int[] aixs = a.indexes(i);
-			double[] avals = a.values(i);
-			if( alen==1 ) {
-				//row selection (now aggregation) with potential scaling
-				int aix = aixs[apos];
-				int lnnz = 0;
-				if( rightSparse ) { //sparse right matrix (full row copy)
-					if( !m2.sparseBlock.isEmpty(aix) ) {
-						ret.rlen=m;
-						ret.allocateSparseRowsBlock(false); //allocation on demand
-						boolean ldeep = (m2.sparseBlock instanceof SparseBlockMCSR);
-						ret.sparseBlock.set(i, m2.sparseBlock.get(aix), ldeep);
-						ret.nonZeros += (lnnz = ret.sparseBlock.size(i));
-					}
-				}
-				else { //dense right matrix (append all values)
-					lnnz = (int)m2.recomputeNonZeros(aix, aix, 0, n-1);
-					if( lnnz > 0 ) {
-						c.allocate(i, lnnz); //allocate once
-						double[] bvals = m2.getDenseBlock().values(aix);
-						for( int j=0, bix=m2.getDenseBlock().pos(aix); j<n; j++ )
-							c.append(i, j, bvals[bix+j]);
-						ret.nonZeros += lnnz;
-					}
-				}
 
-				//optional scaling if not pure selection
-				if( avals[apos] != 1 && lnnz > 0 )
-					if(c.get(i) instanceof SparseRowScalar){
-						SparseRowScalar sv = (SparseRowScalar) c.get(i);
-						c.set(i, new SparseRowScalar(sv.getIndex(), sv.getValue() * avals[apos]), false);
-					}
-					else
-						vectMultiplyInPlace(avals[apos], c.values(i), c.pos(i), c.size(i));
-					
-			}
-			else { //GENERAL CASE
-				for( int k=apos; k<apos+alen; k++ ) {
-					double aval = avals[k];
-					int aix = aixs[k];
-					for( int j=0; j<n; j++ ) {
-						double cval = ret.quickGetValue(i, j);
-						double cvald = aval*m2.quickGetValue(aix, j);
-						if( cvald != 0 )
-							ret.quickSetValue(i, j, cval+cvald);
-					}
+		SparseBlock a = m1.sparseBlock;
+		SparseBlockMCSR c = (SparseBlockMCSR) ret.sparseBlock;
+		boolean rightSparse = m2.sparse;
+
+		if(rightSparse)
+			matrixMultUltraSparseSparseSparseLeft( a, m2.sparseBlock, c, m, n , rl, ru);
+		else
+			matrixMultUltraSparseDenseSparseLeftRow(a, m2.denseBlock, c, m, n, rl, ru);
+		
+		if( rl == 0 && ru == m ){
+			ret.recomputeNonZeros();
+		}
+	}
+
+	private static void matrixMultUltraSparseDenseSparseLeftRow(SparseBlock a, DenseBlock b, SparseBlockMCSR c, int m, int n,
+		int rl, int ru) {
+		for(int i = rl; i < ru; i++) {
+			if(a.isEmpty(i))
+				continue;
+			final int apos = a.pos(i);
+			final int alen = a.size(i);
+			final int[] aixs = a.indexes(i);
+			final double[] avals = a.values(i);
+			if(alen == 1) 
+				matrixMultUltraSparseDenseSparseLeftRowOneNonZero(i, aixs[apos], avals[apos], b, c, m, n);
+			else  
+				matrixMultUltraSparseDenseSparseLeftRowGeneric(i, apos, alen, aixs, avals, b, c, m, n);
+		}
+	}
+
+	private static void matrixMultUltraSparseDenseSparseLeftRowOneNonZero(int i, int aix, double aval, DenseBlock b,
+		SparseBlockMCSR c, int m, int n) {
+		final double[] bvals = b.values(aix);
+		final int  bix = b.pos(aix);
+		final int lnnz = UtilFunctions.computeNnz(bvals, bix, n);
+		if(lnnz == 0)
+			return;
+		else if(lnnz == 1) {
+			for(int j = 0; j < n; j++) {
+				final double bv = bvals[bix + j];
+				if(bv != 0) {
+					SparseRowScalar s = new SparseRowScalar(j, bv * aval);
+					c.set(i, s, false);
+					break;
 				}
 			}
 		}
+		else {
+			setSparseRowVector(lnnz, aval, bvals, bix, n, i, c);
+		}
 	}
+
+	private static void setSparseRowVector(int lnnz, double aval, double[] bvals, int bix, int n, int i, SparseBlockMCSR c) {
+		final double[] vals = new double[lnnz];
+		final int[] idx = new int[lnnz];
+		for(int j = 0, o = 0; j < n; j++) {
+			final double bv = bvals[bix + j];
+			if(bv != 0) {
+				vals[o] = bv * aval;
+				idx[o] = j;
+				o++;
+			}
+		}
+		SparseRowVector v = new SparseRowVector(vals, idx);
+		c.set(i, v, false);
+	}
+
+	private static void matrixMultUltraSparseDenseSparseLeftRowGeneric(int i, int apos, int alen, int[] aixs,
+		double[] avals, DenseBlock b, SparseBlock c, int m, int n){
+			for(int k = apos; k < apos + alen; k++) {
+					final double aval = avals[k];
+					final int aix = aixs[k];
+					for(int j = 0; j < n; j++) {
+						double cvald = aval * b.get(aix, j);
+						if(cvald != 0)
+							c.add(i, j,  cvald);
+					}
+				}
+		}
+
+	private static void matrixMultUltraSparseSparseSparseLeft(SparseBlock a, SparseBlock b, SparseBlockMCSR c, int m,
+		int n, int rl, int ru) {
+		for(int i = rl; i < ru; i++) {
+			if(a.isEmpty(i))
+				continue;
+			final int apos = a.pos(i);
+			final int alen = a.size(i);
+			final int[] aixs = a.indexes(i);
+			final double[] avals = a.values(i);
+			if(alen == 1)
+				matrixMultUltraSparseSparseSparseLeftRowOneNonZero(i, aixs[apos], avals[apos], b, c, m, n);
+			else // GENERAL CASE
+				matrixMultUltraSparseSparseSparseLeftRowGeneric(i, apos, alen, aixs, avals, b, c, m, n);
+		}
+	}
+
+	private static void matrixMultUltraSparseSparseSparseLeftRowOneNonZero(int i, int aix, double aval, SparseBlock b, SparseBlockMCSR c, int m, int n){
+		if(!b.isEmpty(aix)) {
+			c.set(i, b.get(aix), true);
+			// optional scaling if not pure selection
+			if(aval != 1) {
+				if(c.get(i) instanceof SparseRowScalar) {
+					SparseRowScalar sv = (SparseRowScalar) c.get(i);
+					c.set(i, new SparseRowScalar(sv.getIndex(), sv.getValue() * aval), false);
+				}
+				else
+					vectMultiplyInPlace(aval, c.values(i), c.pos(i), c.size(i));
+			}
+		}
+	}
+
+	private static void matrixMultUltraSparseSparseSparseLeftRowGeneric(int i, int apos, int alen, int[] aixs,
+		double[] avals, SparseBlock b, SparseBlockMCSR c, int m, int n) {
+		for(int k = apos; k < apos + alen; k++) {
+			final double aval = avals[k];
+			final int aix = aixs[k];
+			final int bpos = b.pos(aix);
+			final int blen = b.size(aix) + bpos;
+			final int[] bix = b.indexes(aix);
+			final double[] bvals = b.values(aix);
+			if(!c.isAllocated(i))
+				c.allocate(i, Math.max(blen - bpos, 2)); // guarantee a vector for efficiency
+			final SparseRowVector v = (SparseRowVector) c.get(i);
+			if(v.size() == n){ // If output row is dense already
+				final double[] vvals = v.values();
+				for(int bo = bpos; bo < blen; bo++) 
+					vvals[bix[bo]] += aval * bvals[bo];
+			}
+			else
+				for(int bo = bpos; bo < blen; bo++) 
+					v.add(bix[bo], aval * bvals[bo]);
+			
+		}
+	}
+
 	
 	private static void matrixMultUltraSparseRight(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, int rl, int ru) {
 		if(!ret.isInSparseFormat() && ret.getDenseBlock().isContiguous())

@@ -56,10 +56,26 @@ public class EstimatorLayeredGraph extends SparsityEstimator {
 	
 	@Override
 	public DataCharacteristics estim(MMNode root) {
-		List<MatrixBlock> leafs = getMatrices(root, new ArrayList<>());
-		long nnz = new LayeredGraph(leafs, _rounds).estimateNnz();
+		List<LayeredGraph> LGs = new ArrayList<>();
+		traverse(root, LGs);
+		LayeredGraph ret = LGs.get(0);
+		long nnz = ret.estimateNnz();
 		return root.setDataCharacteristics(new MatrixCharacteristics(
-			leafs.get(0).getNumRows(), leafs.get(leafs.size()-1).getNumColumns(), nnz));
+			ret._nodes.get(0).length, ret._nodes.get(1).length, nnz));
+	}
+
+	public void traverse(MMNode node, List<LayeredGraph> LGs) {
+		if(node.getLeft() == null || node.getRight() == null) return;
+		traverse(node.getLeft(), LGs);
+		traverse(node.getRight(), LGs);
+		LayeredGraph ret;
+		LayeredGraph left = (node.getLeft().getData() == null && !LGs.isEmpty())
+			? LGs.get(0) : new LayeredGraph(node.getLeft().getData(), _rounds);
+		LayeredGraph right = (node.getRight().getData() == null && !LGs.isEmpty())
+			? LGs.get(0) : new LayeredGraph(node.getRight().getData(), _rounds);
+		if(!LGs.isEmpty()) LGs.clear();
+		ret = estimInternal(left, right, node.getOp());
+		LGs.add(ret);
 	}
 
 	@Override
@@ -90,9 +106,9 @@ public class EstimatorLayeredGraph extends SparsityEstimator {
 
 	private static LayeredGraph estimInternal(LayeredGraph lg1, LayeredGraph lg2, OpCode op) {
 		switch(op) {
-//			case MM:
-//			case MULT:
-//			case PLUS:
+			case MM:	  return lg1.matMult(lg2);
+			case MULT:	  return lg1.and(lg2);
+			case PLUS:	  return lg1.or(lg2);
 			case RBIND:	  return lg1.rbind(lg2);
 			case CBIND:	  return lg1.cbind(lg2);
 //			case NEQZERO:
@@ -248,6 +264,84 @@ public class EstimatorLayeredGraph extends SparsityEstimator {
 			return ret;
 		}
 
+		public LayeredGraph matMult(LayeredGraph lg) {
+			LayeredGraph ret = new LayeredGraph(List.of(), _rounds);
+			Node[] rows = new Node[_nodes.get(0).length];
+			Node[] columns = new Node[lg._nodes.get(1).length];
+
+			for (int i = 0; i < _nodes.get(0).length; i++)
+				rows[i] = new Node();
+			for (int i = 0; i < lg._nodes.get(1).length; i++)
+				columns[i] = new Node();
+
+			for(int i = 0; i < _nodes.get(0).length; i++) {
+				for(int j = 0; j < lg._nodes.get(1).length; j++) {
+					for(int k = 0; k < lg._nodes.get(0).length; k++) {
+						List<Node> edges1 = _nodes.get(1)[k].getInput();
+						List<Node> edges2 = lg._nodes.get(1)[j].getInput();
+						if(edges1.contains(_nodes.get(0)[i]) && edges2.contains(lg._nodes.get(0)[k]))
+						{
+							columns[j].addInput(rows[i]);
+						}
+					}
+
+				}
+			}
+			ret._nodes.add(rows);
+			ret._nodes.add(columns);
+			return ret;
+		}
+
+		public LayeredGraph or(LayeredGraph lg) {
+			LayeredGraph ret = new LayeredGraph(List.of(), _rounds);
+			Node[] rows = new Node[_nodes.get(0).length];
+			Node[] columns = new Node[_nodes.get(1).length];
+
+			for (int i = 0; i < _nodes.get(0).length; i++)
+				rows[i] = new Node();
+			for (int i = 0; i < _nodes.get(1).length; i++)
+				columns[i] = new Node();
+
+			for(int i = 0; i < _nodes.get(0).length; i++) {
+				for(int j = 0; j < _nodes.get(1).length; j++) {
+					List<Node> edges1 = _nodes.get(1)[j].getInput();
+					List<Node> edges2 = lg._nodes.get(1)[j].getInput();
+					if(edges1.contains(_nodes.get(0)[i]) || edges2.contains(lg._nodes.get(0)[i]))
+					{
+						columns[j].addInput(rows[i]);
+					}
+				}
+			}
+			ret._nodes.add(rows);
+			ret._nodes.add(columns);
+			return ret;
+		}
+
+		public LayeredGraph and(LayeredGraph lg) {
+			LayeredGraph ret = new LayeredGraph(List.of(), _rounds);
+			Node[] rows = new Node[_nodes.get(0).length];
+			Node[] columns = new Node[_nodes.get(1).length];
+
+			for (int i = 0; i < _nodes.get(0).length; i++)
+				rows[i] = new Node();
+			for (int i = 0; i < _nodes.get(1).length; i++)
+				columns[i] = new Node();
+
+			for(int i = 0; i < _nodes.get(0).length; i++) {
+				for(int j = 0; j < _nodes.get(1).length; j++) {
+					List<Node> edges1 = _nodes.get(1)[j].getInput();
+					List<Node> edges2 = lg._nodes.get(1)[j].getInput();
+					if(edges1.contains(_nodes.get(0)[i]) && edges2.contains(lg._nodes.get(0)[i]))
+					{
+						columns[j].addInput(rows[i]);
+					}
+				}
+			}
+			ret._nodes.add(rows);
+			ret._nodes.add(columns);
+			return ret;
+		}
+
 		public LayeredGraph transpose() {
 			LayeredGraph ret = new LayeredGraph(List.of(), _rounds);
 			Node[] rowsOld = _nodes.get(0);
@@ -275,25 +369,91 @@ public class EstimatorLayeredGraph extends SparsityEstimator {
 			LayeredGraph ret = new LayeredGraph(List.of(), _rounds);
 			Node[] rowsOld = _nodes.get(0);
 			Node[] columnsOld = _nodes.get(1);
-			Node[] rows = new Node[rowsOld.length];
-			Node[] columns = new Node[columnsOld.length];
-			for (int i = 0; i < rowsOld.length; i++)
-				rows[i] = new Node();
-			for (int i = 0; i < columnsOld.length; i++)
-				columns[i] = new Node();
-			for(int i = 0; i < rowsOld.length; i++) {
-				for(int j = 0; j < columnsOld.length; j++) {
-					List<Node> edges = columnsOld[j].getInput();
-					if(edges.contains(rowsOld[i]) && i == j) {
-						columns[j].addInput(rows[i]);
+
+			if(_nodes.get(1).length == 1) {
+				Node[] rows = new Node[rowsOld.length];
+				Node[] columns = new Node[rowsOld.length];
+
+				for (int i = 0; i < rowsOld.length; i++)
+					rows[i] = new Node();
+				for (int i = 0; i < rowsOld.length; i++)
+					columns[i] = new Node();
+
+				List<Node> edges = columnsOld[0].getInput();
+				for(int i = 0; i < rowsOld.length; i++) {
+					for(int j = 0; j < rowsOld.length; j++) {
+						if(edges.contains(rowsOld[i]) && i == j) {
+							columns[j].addInput(rows[i]);
+						}
+					}
+				}
+				ret._nodes.add(rows);
+				ret._nodes.add(columns);
+				return ret;
+			}
+			else if(_nodes.get(0).length == 1){
+				Node[] rows = new Node[columnsOld.length];
+				Node[] columns = new Node[columnsOld.length];
+
+				for (int i = 0; i < columnsOld.length; i++)
+					rows[i] = new Node();
+				for (int i = 0; i < columnsOld.length; i++)
+					columns[i] = new Node();
+
+				for(int i = 0; i < columnsOld.length; i++) {
+					for(int j = 0; j < columnsOld.length; j++) {
+						List<Node> edges = columnsOld[j].getInput();
+						if(edges.contains(rowsOld[0]) && i == j) {
+							columns[j].addInput(rows[i]);
+						}
+					}
+				}
+				ret._nodes.add(rows);
+				ret._nodes.add(columns);
+				return ret;
+			}
+			else {
+				Node[] rows = new Node[rowsOld.length];
+				Node[] columns = new Node[1];
+				for (int i = 0; i < rowsOld.length; i++)
+					rows[i] = new Node();
+				for (int i = 0; i < 1; i++)
+					columns[i] = new Node();
+				for(int i = 0; i < rowsOld.length; i++) {
+					for(int j = 0; j < columnsOld.length; j++) {
+						List<Node> edges = columnsOld[j].getInput();
+						if(edges.contains(rowsOld[i]) && i == j) {
+							columns[0].addInput(rows[i]);
+						}
+					}
+				}
+				ret._nodes.add(rows);
+				ret._nodes.add(columns);
+				return ret;
+			}
+		}
+
+		public MatrixBlock toMatrixBlock() {
+			List<Double> a = new ArrayList<>();
+			int rows = _nodes.get(0).length;
+			int cols = _nodes.get(1).length;
+			for(int i = 0; i < rows * cols; i++) {
+				a.add(0.);
+			}
+			for(int i = 0; i < rows; i++) {
+				for(int j = 0; j < cols; j++) {
+					List<Node> edges = _nodes.get(1)[j].getInput();
+					if(edges.contains(_nodes.get(0)[i])) {
+						a.set(i * cols + j, 1. + a.get(i * cols + j));
+					}
+					else {
+						a.set(i * cols + j, 0.);
 					}
 				}
 			}
-			ret._nodes.add(rows);
-			ret._nodes.add(columns);
-			return ret;
+			double[] arr = a.stream().mapToDouble(d -> d).toArray();
+			return new MatrixBlock(rows, cols, arr);
 		}
-
 
 		private static class Node {
 			private List<Node> _input = new ArrayList<>();

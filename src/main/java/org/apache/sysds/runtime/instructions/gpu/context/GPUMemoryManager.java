@@ -476,6 +476,7 @@ public class GPUMemoryManager {
 	 * Note: This method should not be called from an iterator as it removes entries from allocatedGPUPointers and rmvarGPUPointers
 	 * 
 	 * @param toFree pointer to call cudaFree method on
+	 * @param noStats do not collect statistics
 	 */
 	public void guardedCudaFree(Pointer toFree, boolean noStats) {
 		long t0 = (!noStats && DMLScript.STATISTICS) ? System.nanoTime() : 0;

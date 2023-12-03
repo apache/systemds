@@ -188,8 +188,13 @@ public class OpSingleTest extends AutomatedTestBase
 //	}
 //	
 	@Test
-	public void testLGCasediag() {
+	public void testLGCasediagM() {
 		runSparsityEstimateTest(new EstimatorLayeredGraph(), m, m, sparsity, diag);
+	}
+
+	@Test
+	public void testLGCasediagV() {
+		runSparsityEstimateTest(new EstimatorLayeredGraph(), m, 1, sparsity, diag);
 	}
 //	
 //	@Test
@@ -241,7 +246,9 @@ public class OpSingleTest extends AutomatedTestBase
 			case EQZERO:
 				//TODO find out how to do eqzero
 			case DIAG:
-				m2 = LibMatrixReorg.diag(m1, new MatrixBlock(m1.getNumRows(), 1, false));
+				m2 = m1.getNumColumns() == 1
+						? LibMatrixReorg.diag(m1, new MatrixBlock(m1.getNumRows(), m1.getNumRows(), false))
+						: LibMatrixReorg.diag(m1, new MatrixBlock(m1.getNumRows(), 1, false));
 				est = estim.estim(m1, op);
 				break;
 			case NEQZERO:

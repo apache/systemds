@@ -25,6 +25,7 @@ import org.apache.sysds.hops.estim.EstimatorBasicWorst;
 import org.apache.sysds.hops.estim.EstimatorBitsetMM;
 import org.apache.sysds.hops.estim.EstimatorDensityMap;
 import org.apache.sysds.hops.estim.EstimatorMatrixHistogram;
+import org.apache.sysds.hops.estim.EstimatorLayeredGraph;
 import org.apache.sysds.hops.estim.EstimatorSample;
 import org.apache.sysds.hops.estim.SparsityEstimator;
 import org.apache.sysds.hops.estim.SparsityEstimator.OpCode;
@@ -105,17 +106,17 @@ public class OpElemWTest extends AutomatedTestBase
 	public void testBitsetPlus() {
 		runSparsityEstimateTest(new EstimatorBitsetMM(), m, n, sparsity, plus);
 	}
-	/*
+
 	//Layered Graph
 	@Test
 	public void testLGCasemult() {
-		runSparsityEstimateTest(new EstimatorLayeredGraph(), m, k, n, sparsity, mult);
+		runSparsityEstimateTest(new EstimatorLayeredGraph(), m, n, sparsity, mult);
 	}
 	
 	@Test
 	public void testLGCaseplus() {
-		runSparsityEstimateTest(new EstimatorLayeredGraph(), m, k, n, sparsity, plus);
-	}*/
+		runSparsityEstimateTest(new EstimatorLayeredGraph(), m, n, sparsity, plus);
+	}
 	
 	//Sample
 	@Test
@@ -153,6 +154,7 @@ public class OpElemWTest extends AutomatedTestBase
 				throw new NotImplementedException();
 		}
 		//compare estimated and real sparsity
-		TestUtils.compareScalars(est, m3.getSparsity(), (estim instanceof EstimatorBasicWorst) ? 5e-1 : 5e-3);
+		TestUtils.compareScalars(est, m3.getSparsity(), (estim instanceof EstimatorBasicWorst) ? 5e-1 :
+			(estim instanceof EstimatorLayeredGraph) ? 3e-2 : 5e-3);
 	}
 }

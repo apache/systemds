@@ -25,6 +25,7 @@ import org.apache.sysds.hops.estim.EstimatorBasicWorst;
 import org.apache.sysds.hops.estim.EstimatorBitsetMM;
 import org.apache.sysds.hops.estim.EstimatorDensityMap;
 import org.apache.sysds.hops.estim.EstimatorMatrixHistogram;
+import org.apache.sysds.hops.estim.EstimatorLayeredGraph;
 import org.apache.sysds.hops.estim.EstimatorSample;
 import org.apache.sysds.hops.estim.SparsityEstimator;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
@@ -138,7 +139,17 @@ public class OuterProductTest extends AutomatedTestBase
 	public void testSampling20Case2() {
 		runSparsityEstimateTest(new EstimatorSample(0.2), m, k, n, case2);
 	}
-	
+
+	@Test
+	public void testLayeredGraphCase1() {
+		runSparsityEstimateTest(new EstimatorLayeredGraph(), m, k, n, case1);
+	}
+
+	@Test
+	public void testLayeredGraphCase2() {
+		runSparsityEstimateTest(new EstimatorLayeredGraph(), m, k, n, case2);
+	}
+
 	private static void runSparsityEstimateTest(SparsityEstimator estim, int m, int k, int n, double[] sp) {
 		MatrixBlock m1 = MatrixBlock.randOperations(m, k, sp[0], 1, 1, "uniform", 3);
 		MatrixBlock m2 = MatrixBlock.randOperations(k, n, sp[1], 1, 1, "uniform", 3);

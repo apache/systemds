@@ -3339,8 +3339,10 @@ public class TestUtils {
 	}
 
 	public static void shutdownThreads(Process... ts) {
-		for( Process t : ts )
-			shutdownThread(t);
+		for( Process t : ts ){
+			if (t != null)
+				shutdownThread(t);
+		}
 	}
 
 	public static void shutdownThread(Thread t) {

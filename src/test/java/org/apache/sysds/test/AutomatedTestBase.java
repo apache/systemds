@@ -125,10 +125,13 @@ public abstract class AutomatedTestBase {
 	public static final double GPU_TOLERANCE = 1e-9;
 
 	// ms wait time 
-	public static final int FED_WORKER_WAIT = 1000; 
+	public static final int FED_WORKER_WAIT = 3000; 
 	public static final int FED_MONITOR_WAIT = 10000; 
 	public static final int FED_WORKER_WAIT_S = 50;
 	
+
+	// The timeout for a test to fail. all tests must execute in less than this time.
+	public static final int TEST_TIMEOUT = 1000;
 
 	// With OpenJDK 8u242 on Windows, the new changes in JDK are not allowing
 	// to set the native library paths internally thus breaking the code.
@@ -232,8 +235,8 @@ public abstract class AutomatedTestBase {
 	static {
 		// Load configuration from setting file build by maven.
 		// If maven is not used as test setup, (as default in intellij for instance) default values are used.
-		// If one wants to use custom configurations, setup the IDE to build using maven, and set execution flags
-		// accordingly.
+		// If one wants to use custom configurations, setup the IDE to build using maven,
+		// and set execution flags accordingly.
 		// Settings available can be found in the properties inside pom.xml.
 		// The custom configuration is required to run tests using GPU backend.
 		java.io.InputStream inputStream = Thread.currentThread().getContextClassLoader()
@@ -1442,13 +1445,12 @@ public abstract class AutomatedTestBase {
 		try{
 			return executor.submit(() -> 
 				runTestWithTimeout(newWay,exceptionExpected,expectedException,errMessage, maxSparkInst))//
-				.get(1000, TimeUnit.SECONDS);
+				.get(TEST_TIMEOUT, TimeUnit.SECONDS);
 		}
 		catch(TimeoutException e){
 			throw new RuntimeException("Our tests should run faster than 1000 sec each",e);
 		}
 		catch(Exception e){
-			fail(e.getMessage());
 			throw new RuntimeException(e);
 		}
 		finally{
@@ -1651,24 +1653,59 @@ public abstract class AutomatedTestBase {
 		}
 	}
 
+
+	/**
+	 * Start a new JVM for a federated worker at the port.
+	 * 
+	 * @param port Port to use for the JVM
+	 * @return The process containing the worker
+	 */
+	protected Process startLocalFedWorker(int port){
+		return startLocalFedWorker(port, null, FED_WORKER_WAIT);
+	}
+
+	/**
+	 * Start a new JVM for a federated worker at the port.
+	 * 
+	 * @param port Port to use for the JVM
+	 * @param sleep The sleep time to wait for the worker to start
+	 * @return The process containing the worker
+	 */
+	protected Process startLocalFedWorker(int port, int sleep){
+		return startLocalFedWorker(port, null, sleep);
+	}
+
 	/**
 	 * Start new JVM for a federated worker at the port.
 	 * 
 	 * @param port Port to use for the JVM
+	 * @param addArgs The arguments to add.
 	 * @return the process associated with the worker.
 	 */
 	protected Process startLocalFedWorker(int port, String[] addArgs) {
 		return startLocalFedWorker(port, addArgs, FED_WORKER_WAIT);
 	}
 
+
+	/**
+	 * Start new JVM for a federated worker at the port.
+	 * 
+	 * @param port Port to use for the JVM
+	 * @param addArgs The arguments to add
+	 * @param sleep The time to wait for the process to start
+	 * @return the process associated with the worker.
+	 */
 	protected static Process startLocalFedWorker(int port, String[] addArgs, int sleep) {
 		Process process = null;
 		String separator = System.getProperty("file.separator");
 		String classpath = System.getProperty("java.class.path");
 		String path = System.getProperty("java.home") + separator + "bin" + separator + "java";
-		String[] args = ArrayUtils.addAll(new String[]{path, "-cp", classpath, DMLScript.class.getName(),
-			"-w", Integer.toString(port), "-stats"}, addArgs);
-		ProcessBuilder processBuilder = new ProcessBuilder(args);
+		String[] args = new String[] {path, "-Xmx1000m", "-Xms1000m", "-Xmn100m", "-cp", classpath,
+				DMLScript.class.getName(), "-w", Integer.toString(port), "-stats"};
+		if(addArgs != null)
+			args = ArrayUtils.addAll(args, addArgs);
+		
+		ProcessBuilder processBuilder = new ProcessBuilder(args).inheritIO();
 
 		try {
 			process = processBuilder.start();
@@ -1678,6 +1715,7 @@ public abstract class AutomatedTestBase {
 		catch(IOException | InterruptedException e) {
 			e.printStackTrace();
 		}
+		isAlive(process);
 		return process;
 	}
 
@@ -1752,7 +1790,7 @@ public abstract class AutomatedTestBase {
 	 * Also when using the local Fed Worker thread the statistics printing, and clearing from the worker is disabled.
 	 * 
 	 * @param port      Port to use
-	 * @param otherArgs The commandline arguments to start the worker with
+	 * @param otherArgs The command line arguments to start the worker with
 	 * @param sleep     The amount of time to wait for the worker startup. in Milliseconds
 	 * @return The thread associated with the worker.
 	 */
@@ -1781,6 +1819,8 @@ public abstract class AutomatedTestBase {
 			});
 			t.start();
 			java.util.concurrent.TimeUnit.MILLISECONDS.sleep(sleep);
+			if(!t.isAlive())
+				throw new RuntimeException("Failed starting federated worker");
 			return t;
 		}
 		catch(InterruptedException e) {
@@ -1789,6 +1829,22 @@ public abstract class AutomatedTestBase {
 			// should never happen
 			return null;
 		}
+	}
+
+	public static boolean isAlive(Thread... threads){
+		for(Thread t : threads){
+			if(!t.isAlive())
+				return false;
+		}
+		return true;
+	}
+
+	public static boolean isAlive(Process... processes) {
+		for(Process t : processes) {
+			if(!t.isAlive())
+				return false;
+		}
+		return true;
 	}
 
 	/**

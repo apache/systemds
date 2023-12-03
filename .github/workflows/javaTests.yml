@@ -44,7 +44,7 @@ on:
 jobs:
   java_tests:
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 90
+    timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
@@ -61,7 +61,12 @@ jobs:
           "**.functions.compress.**,**.functions.data.tensor.**,**.functions.codegenalg.parttwo.**,**.functions.codegen.**,**.functions.caching.**",
           "**.functions.binary.matrix_full_cellwise.**,**.functions.binary.matrix_full_other.**",
           "**.functions.federated.algorithms.**,**.functions.federated.io.**,**.functions.federated.paramserv.**",
-          "**.functions.federated.primitives.**,**.functions.federated.transform.**",
+          "**.functions.federated.transform.**",
+          "**.functions.federated.primitives.part1.** -Dtest-threadCount=1 -Dtest-forkCount=1",
+          "**.functions.federated.primitives.part2.** -Dtest-threadCount=1 -Dtest-forkCount=1",
+          "**.functions.federated.primitives.part3.** -Dtest-threadCount=1 -Dtest-forkCount=1",
+          "**.functions.federated.primitives.part4.** -Dtest-threadCount=1 -Dtest-forkCount=1",
+          "**.functions.federated.primitives.part5.** -Dtest-threadCount=1 -Dtest-forkCount=1",
           "**.functions.federated.monitoring.**,**.functions.federated.multitenant.**",
           "**.functions.federated.codegen.**,**.functions.federated.FederatedTestObjectConstructor",
           "**.functions.codegenalg.partone.**",
@@ -79,11 +84,11 @@ jobs:
           "**.functions.reorg.**,**.functions.rewrite.**,**.functions.ternary.**,**.functions.transform.**",
           "**.functions.unary.matrix.**,**.functions.linearization.**,**.functions.jmlc.**"
         ]
+        java: [11]
     name: ${{ matrix.tests }}
     steps:
     - name: Checkout Repository
       uses: actions/checkout@v4
-
 
     - name: ${{ matrix.tests }}
       uses: ./.github/action/
@@ -96,7 +101,6 @@ jobs:
         ARTIFACT_NAME="transient_jacoco"
         ARTIFACT_NAME+="-${{ matrix.os }}"
         ARTIFACT_NAME+="-java-${{ matrix.java }}"
-        ARTIFACT_NAME+="-${{ matrix.javadist }}"
         ARTIFACT_NAME+="-${{ matrix.tests }}"
         ARTIFACT_NAME=${ARTIFACT_NAME//\*/x} # replace * with x
         echo "ARTIFACT_NAME=$ARTIFACT_NAME" >> $GITHUB_ENV

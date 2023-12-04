@@ -19,11 +19,14 @@
 
 package org.apache.sysds.test.functions.rewrite;
 
+import org.apache.sysds.common.Types;
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
+import org.apache.sysds.utils.Statistics;
+import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.HashMap;
@@ -34,12 +37,6 @@ public class RewriteMatrixMultChainOptTest3 extends AutomatedTestBase
 	private static final String TEST_DIR = "functions/rewrite/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + RewriteMatrixMultChainOptTest3.class.getSimpleName() + "/";
 
-	private static final int rowsA = 5;
-	private static final int colsA = 3;
-	private static final int colsB = 7;
-	private static final int rowsX = 9;
-	private static final int colsX = 4;
-	private static final int colsY = 5;
 	private static final double eps = Math.pow(10, -10);
 
 	@Override
@@ -75,18 +72,9 @@ public class RewriteMatrixMultChainOptTest3 extends AutomatedTestBase
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + testname + ".dml";
 			programArgs = new String[]{ "-explain", "hops", "-stats",
-				"-args", input("A"), input("B"), input("X"), input("Y"), output("R") };
+				"-args", output("R") };
 			fullRScriptName = HOME + testname + ".R";
 			rCmd = getRCmd(inputDir(), expectedDir());
-
-			double[][] A = getRandomMatrix(rowsA, colsA, -1, 1, 0.97d, 7);
-			double[][] B = getRandomMatrix(colsA, colsB, -1, 1, 0.9d, 3);
-			double[][] X = getRandomMatrix(rowsX, colsX, -1, 1, 0.97d, 7);
-			double[][] Y = getRandomMatrix(colsX, colsY, -1, 1, 0.9d, 3);
-			writeInputMatrixWithMTD("A", A, true);
-			writeInputMatrixWithMTD("B", B, true);
-			writeInputMatrixWithMTD("X", X, true);
-			writeInputMatrixWithMTD("Y", Y, true);
 
 			//execute tests
 			runTest(true, false, null, -1);
@@ -96,6 +84,8 @@ public class RewriteMatrixMultChainOptTest3 extends AutomatedTestBase
 			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir("R");
 			HashMap<CellIndex, Double> rfile  = readRMatrixFromExpectedDir("R");
 			TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
+
+			Assert.assertEquals(4, Statistics.getCPHeavyHitterCount(Types.ReOrgOp.TRANS.toString()));
 		}
 		finally {
 			resetExecMode(etOld);

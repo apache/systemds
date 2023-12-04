@@ -291,7 +291,7 @@ public class SparseBlockMCSR extends SparseBlock
 
 	@Override
 	public final boolean isEmpty(int r) {
-		return !isAllocated(r) || _rows[r].isEmpty();
+		return _rows[r] == null || _rows[r].isEmpty();
 	}
 	
 	@Override

@@ -24,12 +24,12 @@ args <- commandArgs(TRUE)
 options(digits=22)
 library("Matrix")
 
-A = as.matrix(readMM(paste(args[1], "A.mtx", sep="")))
-B = as.matrix(readMM(paste(args[1], "B.mtx", sep="")))
-X = as.matrix(readMM(paste(args[1], "X.mtx", sep="")))
-Y = as.matrix(readMM(paste(args[1], "Y.mtx", sep="")))
+a = matrix(1.0, 5, 3)
+b = matrix(2.0, 3, 7)
+x = matrix(3.0, 9, 4)
+y = matrix(2.0, 4, 5)
 
-R = t(A %*% B) %*% t(X %*% Y);
-# R = t(B) %*% t(A) %*% t(Y) %*% t(X);
+m1 = t(a %*% b) %*% t(y)
+R = t(b) %*% b %*% m1 %*% t(x)
 
-writeMM(as(R, "CsparseMatrix"), paste(args[2], "R", sep="")); 
+writeMM(as(R, "CsparseMatrix"), paste(args[2], "R", sep=""));

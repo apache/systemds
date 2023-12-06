@@ -31,6 +31,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
+import java.util.Queue;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -652,7 +653,7 @@ public class ParForProgramBlock extends ForProgramBlock {
 		
 		//preserve shared input/result variables of cleanup
 		ArrayList<String> varList = ec.getVarList();
-		boolean[] varState = ec.pinVariables(varList);
+		Queue<Boolean> varState = ec.pinVariables(varList);
 		
 		try 
 		{
@@ -677,7 +678,7 @@ public class ParForProgramBlock extends ForProgramBlock {
 		catch(Exception ex) {
 			throw new DMLRuntimeException("PARFOR: Failed to execute loop in parallel.",ex);
 		}
-		
+
 		//reset state of shared input/result variables 
 		ec.unpinVariables(varList, varState);
 		
@@ -1198,7 +1199,7 @@ public class ParForProgramBlock extends ForProgramBlock {
 		}
 	}
 
-	private void cleanupSharedVariables( ExecutionContext ec, boolean[] varState ) {
+	private void cleanupSharedVariables( ExecutionContext ec, Queue<Boolean> varState ) {
 		//TODO needs as precondition a systematic treatment of persistent read information.
 	}
 	

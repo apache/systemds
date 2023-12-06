@@ -65,12 +65,14 @@ import org.apache.sysds.runtime.util.HDFSTool;
 import org.apache.sysds.utils.Statistics;
 
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
+import java.util.Queue;
 
 public class ExecutionContext {
 	protected static final Log LOG = LogFactory.getLog(ExecutionContext.class.getName());
@@ -753,45 +755,28 @@ public class ExecutionContext {
 	 * @param varList variable list
 	 * @return indicator vector of old cleanup state of matrix objects
 	 */
-	public boolean[] pinVariables(List<String> varList)
+	public Queue<Boolean> pinVariables(List<String> varList)
 	{
-		//analyze list variables
-		int nlist = 0;
-		int nlistItems = 0;
-		for( int i=0; i<varList.size(); i++ ) {
-			Data dat = _variables.get(varList.get(i));
-			if( dat instanceof ListObject ) {
-				nlistItems += ((ListObject)dat).getNumCacheableData();
-				nlist++;
-			}
+		// step 1) get current cleanupFlag status information
+		Queue<Boolean> varsStates = new LinkedList<>();
+		for (String varName : varList) {
+			Data dat = _variables.get(varName);
+			if (dat instanceof CacheableData<?>)
+				varsStates.add(((CacheableData<?>)dat).isCleanupEnabled());
+			else if (dat instanceof ListObject)
+				varsStates.addAll(((ListObject)dat).getCleanupStates());
 		}
-		
-		//2-pass approach since multiple vars might refer to same matrix object
-		boolean[] varsState = new boolean[varList.size()-nlist+nlistItems];
-		
-		//step 1) get current information
-		for( int i=0, pos=0; i<varList.size(); i++ ) {
-			Data dat = _variables.get(varList.get(i));
-			if( dat instanceof CacheableData<?>  )
-				varsState[pos++] = ((CacheableData<?>)dat).isCleanupEnabled();
-			else if( dat instanceof ListObject )
-				for( Data dat2 : ((ListObject)dat).getData() )
-					if( dat2 instanceof CacheableData<?> )
-						varsState[pos++] = ((CacheableData<?>)dat2).isCleanupEnabled();
-		}
-		
-		//step 2) pin variables
-		for( int i=0; i<varList.size(); i++ ) {
-			Data dat = _variables.get(varList.get(i));
-			if( dat instanceof CacheableData<?> )
+
+		// step 2) pin variables
+		for (String varName : varList) {
+			Data dat = _variables.get(varName);
+			if (dat instanceof CacheableData<?>)
 				((CacheableData<?>)dat).enableCleanup(false);
-			else if( dat instanceof ListObject )
-				for( Data dat2 : ((ListObject)dat).getData() )
-					if( dat2 instanceof CacheableData<?> )
-						((CacheableData<?>)dat2).enableCleanup(false);
+			else if (dat instanceof ListObject)
+				((ListObject)dat).enableCleanup(false);
 		}
 		
-		return varsState;
+		return varsStates;
 	}
 	
 	/**
@@ -810,15 +795,13 @@ public class ExecutionContext {
 	 * @param varList variable list
 	 * @param varsState variable state
 	 */
-	public void unpinVariables(List<String> varList, boolean[] varsState) {
-		for( int i=0, pos=0; i<varList.size(); i++ ) {
-			Data dat = _variables.get(varList.get(i));
-			if( dat instanceof CacheableData<?> )
-				((CacheableData<?>)dat).enableCleanup(varsState[pos++]);
-			else if( dat instanceof ListObject )
-				for( Data dat2 : ((ListObject)dat).getData() )
-					if( dat2 instanceof CacheableData<?> )
-						((CacheableData<?>)dat2).enableCleanup(varsState[pos++]);
+	public void unpinVariables(List<String> varList, Queue<Boolean> varsState) {
+		for (String varName : varList) {
+			Data dat = _variables.get(varName);
+			if (dat instanceof CacheableData<?>)
+				((CacheableData<?>)dat).enableCleanup(varsState.poll());
+			else if (dat instanceof ListObject)
+				((ListObject)dat).enableCleanup(varsState);
 		}
 	}
 	

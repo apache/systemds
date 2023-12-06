@@ -24,6 +24,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.Queue;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -182,7 +183,7 @@ public class FunctionCallCPInstruction extends CPInstruction {
 		
 		// Pin the input variables so that they do not get deleted 
 		// from pb's symbol table at the end of execution of function
-		boolean[] pinStatus = ec.pinVariables(_boundInputNames);
+		Queue<Boolean> pinStatus = ec.pinVariables(_boundInputNames);
 		
 		// Create a symbol table under a new execution context for the function invocation,
 		// and copy the function arguments into the created table. 

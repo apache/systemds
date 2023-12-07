@@ -123,7 +123,12 @@ public class FullMatrixMultiplicationTransposeSelfTest extends AutomatedTestBase
 	public void testVVRightSparseCP() {
 		runTransposeSelfVectorMultiplicationTest(MMTSJType.RIGHT, ExecType.CP, true);
 	}
-	
+
+	@Test
+	public void testLeftUltraSparseCP() {
+		runTransposeSelfUltraSparseTest(MMTSJType.LEFT);
+	}
+
 	@Test
 	public void testRightUltraSparseCP() {
 		runTransposeSelfUltraSparseTest(MMTSJType.RIGHT);
@@ -282,15 +287,27 @@ public class FullMatrixMultiplicationTransposeSelfTest extends AutomatedTestBase
 		TestUtils.compareMatrices(G, Gtt, 1e-16);
 		
 		//single-threaded core operations
-		MatrixBlock R11 = G.transposeSelfMatrixMultOperations(new MatrixBlock(), MMTSJType.RIGHT);
-		MatrixBlock R12 = LibMatrixMult.matrixMult(G, Gt);
+		MatrixBlock R11 = G.transposeSelfMatrixMultOperations(new MatrixBlock(), type);
+		MatrixBlock R12;
+		if (type.isLeft()) {
+			R12 = LibMatrixMult.matrixMult(Gt, G);
+		}
+		else {
+			R12 = LibMatrixMult.matrixMult(G, Gt);
+		}
 		Assert.assertEquals(R11.getNonZeros(), R12.getNonZeros());
 		TestUtils.compareMatrices(R11, R12, 1e-8);
 		
 		//multi-threaded core operations
 		int k = InfrastructureAnalyzer.getLocalParallelism();
-		MatrixBlock R21 = G.transposeSelfMatrixMultOperations(new MatrixBlock(), MMTSJType.RIGHT, k);
-		MatrixBlock R22 = LibMatrixMult.matrixMult(G, Gt, k);
+		MatrixBlock R21 = G.transposeSelfMatrixMultOperations(new MatrixBlock(), type, k);
+		MatrixBlock R22;
+		if (type.isLeft()) {
+			R22 = LibMatrixMult.matrixMult(Gt, G, k);
+		}
+		else {
+			R22 = LibMatrixMult.matrixMult(G, Gt, k);
+		}
 		Assert.assertEquals(R21.getNonZeros(), R22.getNonZeros());
 		TestUtils.compareMatrices(R21, R22, 1e-8);
 	}

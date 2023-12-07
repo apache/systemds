@@ -442,9 +442,9 @@ public class LibMatrixMult
 		//Timing time = new Timing(true);
 		
 		//pre-processing
-		ret.sparse = isSparseOutputTSMM(m1, leftTranspose);
+		ret.sparse = isSparseOutputTSMM(m1);
 		ret.allocateBlock();
-		MatrixBlock m1t = isSparseOutputTSMM(m1, leftTranspose, true) ?
+		MatrixBlock m1t = isSparseOutputTSMM(m1, true) ?
 			LibMatrixReorg.transpose(m1) : null;
 		
 		//core tsmm operation
@@ -484,9 +484,9 @@ public class LibMatrixMult
 		//Timing time = new Timing(true);
 		
 		//pre-processing (no need to check isThreadSafe)
-		ret.sparse = isSparseOutputTSMM(m1, leftTranspose);
+		ret.sparse = isSparseOutputTSMM(m1);
 		ret.allocateBlock();
-		MatrixBlock m1t = isSparseOutputTSMM(m1, leftTranspose, true) ?
+		MatrixBlock m1t = isSparseOutputTSMM(m1, true) ?
 			LibMatrixReorg.transpose(m1, k) : null;
 		
 		//core multi-threaded matrix mult computation
@@ -2506,39 +2506,60 @@ public class LibMatrixMult
 	}
 	
 	private static void matrixMultTransposeSelfUltraSparse( MatrixBlock m1, MatrixBlock ret, boolean leftTranspose, int rl, int ru ) {
-		if( leftTranspose )
-			throw new DMLRuntimeException("Left tsmm with sparse output not supported");
-
-		// Operation X%*%t(X), sparse input and output
-		SparseBlock a = m1.sparseBlock;
-		SparseBlock c = ret.sparseBlock;
+        SparseBlock a = m1.sparseBlock;
+        SparseBlock c = ret.sparseBlock;
 		int m = m1.rlen;
-		
-		final int blocksize = 256;
-		for(int bi=rl; bi<ru; bi+=blocksize) { //blocking rows in X
-			int bimin = Math.min(bi+blocksize, ru);
-			for(int i=bi; i<bimin; i++) //preallocation
-				if( !a.isEmpty(i) )
-					c.allocate(i, 8*SparseRowVector.initialCapacity); //heuristic
-			for(int bj=bi; bj<m; bj+=blocksize ) { //blocking cols in t(X) 
-				int bjmin = Math.min(bj+blocksize, m);
-				for(int i=bi; i<bimin; i++) { //rows in X
-					if( a.isEmpty(i) ) continue;
-					int apos = a.pos(i);
-					int alen = a.size(i);
-					int[] aix = a.indexes(i);
-					double[] avals = a.values(i);
-					for(int j=Math.max(bj,i); j<bjmin; j++) { //cols in t(X)
-						if( a.isEmpty(j) ) continue;
-						int bpos = a.pos(j);
-						int blen = a.size(j);
-						int[] bix = a.indexes(j);
-						double[] bvals = a.values(j);
-						
-						//compute sparse dot product and append
-						double v = dotProduct(avals, aix, apos, alen, bvals, bix, bpos, blen);
-						if( v != 0 )
-							c.append(i, j, v);
+
+		if(leftTranspose) {
+			// Operation t(X)%*%X, sparse input and output
+			for(int i=0; i<m; i++)
+				c.allocate(i, 8*SparseRowVector.initialCapacity);
+			SparseRow[] sr = ((SparseBlockMCSR) c).getRows();
+			for( int r=0; r<a.numRows(); r++ ) {
+				if( a.isEmpty(r) ) continue;
+				final int alen = a.size(r);
+				final double[] avals = a.values(r);
+				final int apos = a.pos(r);
+				int[] aix = a.indexes(r);
+				int rlix = (rl==0) ? 0 : a.posFIndexGTE(r, rl);
+				if(rlix>=0) {
+					int len = apos + alen;
+					for(int i = rlix; i < len && aix[i] < ru; i++) {
+						for (int k = a.posFIndexGTE(r, aix[i]); k < len; k++) {
+							sr[aix[i]].add(c.pos(k) + aix[k], avals[i] * avals[k]);
+						}
+					}
+				}
+			}
+		}
+		else {
+			// Operation X%*%t(X), sparse input and output
+			final int blocksize = 256;
+			for(int bi=rl; bi<ru; bi+=blocksize) { //blocking rows in X
+				int bimin = Math.min(bi+blocksize, ru);
+				for(int i=bi; i<bimin; i++) //preallocation
+					if( !a.isEmpty(i) )
+						c.allocate(i, 8*SparseRowVector.initialCapacity); //heuristic
+				for(int bj=bi; bj<m; bj+=blocksize ) { //blocking cols in t(X)
+					int bjmin = Math.min(bj+blocksize, m);
+					for(int i=bi; i<bimin; i++) { //rows in X
+						if( a.isEmpty(i) ) continue;
+						int apos = a.pos(i);
+						int alen = a.size(i);
+						int[] aix = a.indexes(i);
+						double[] avals = a.values(i);
+						for(int j=Math.max(bj,i); j<bjmin; j++) { //cols in t(X)
+							if( a.isEmpty(j) ) continue;
+							int bpos = a.pos(j);
+							int blen = a.size(j);
+							int[] bix = a.indexes(j);
+							double[] bvals = a.values(j);
+
+							//compute sparse dot product and append
+							double v = dotProduct(avals, aix, apos, alen, bvals, bix, bpos, blen);
+							if( v != 0 )
+								c.append(i, j, v);
+						}
 					}
 				}
 			}
@@ -2547,12 +2568,18 @@ public class LibMatrixMult
 	
 	//alternative matrixMultTransposeSelfUltraSparse2 w/ IKJ iteration order and sparse updates
 	private static void matrixMultTransposeSelfUltraSparse2( MatrixBlock m1, MatrixBlock m1t, MatrixBlock ret, boolean leftTranspose, int rl, int ru ) {
-		if( leftTranspose )
-			throw new DMLRuntimeException("Left tsmm with sparse output not supported");
+		SparseBlock a;
+		SparseBlock b;
+		if( leftTranspose ) {
+			a = m1t.sparseBlock;
+			b = m1.sparseBlock;
+		}
+		else {
+			a = m1.sparseBlock;
+			b = m1t.sparseBlock;
+		}
 
 		// Operation X%*%t(X), sparse input and output
-		SparseBlock a = m1.sparseBlock;
-		SparseBlock b = m1t.sparseBlock;
 		SparseBlock c = ret.sparseBlock;
 		for(int i=rl; i<ru; i++) { //rows in X
 			if( a.isEmpty(i) ) continue;
@@ -4370,7 +4397,7 @@ public class LibMatrixMult
 		MatrixBlock ret = m1;
 		final int rlen = m1.rlen;
 		final int clen = m1.clen;
-		boolean retSparse = isSparseOutputTSMM(m1, leftTranspose);
+		boolean retSparse = isSparseOutputTSMM(m1);
 		
 		if( !leftTranspose && !retSparse && m1.sparse && rlen > 1) { //X%*%t(X) SPARSE MATRIX
 			//directly via LibMatrixReorg in order to prevent sparsity change
@@ -4489,16 +4516,16 @@ public class LibMatrixMult
 		return m2.clen < 4*1024 && sparseOut;
 	}
 	
-	public static boolean isSparseOutputTSMM(MatrixBlock m1, boolean leftTranspose) {
-		return isSparseOutputTSMM(m1, leftTranspose, false);
+	public static boolean isSparseOutputTSMM(MatrixBlock m1) {
+		return isSparseOutputTSMM(m1, false);
 	}
 	
-	public static boolean isSparseOutputTSMM(MatrixBlock m1, boolean leftTranspose, boolean ultraSparse) {
+	public static boolean isSparseOutputTSMM(MatrixBlock m1, boolean ultraSparse) {
 		double sp = m1.getSparsity();
 		double osp = OptimizerUtils.getMatMultSparsity(sp, sp, m1.rlen, m1.clen, m1.rlen, false);
 		double sp_threshold = ultraSparse ?
 			MatrixBlock.ULTRA_SPARSITY_TURN_POINT : MatrixBlock.ULTRA_SPARSITY_TURN_POINT2;
-		return !leftTranspose && m1.sparse && osp < sp_threshold;
+		return m1.sparse && osp < sp_threshold;
 	}
 
 	public static boolean isOuterProductTSMM(int rlen, int clen, boolean left) {

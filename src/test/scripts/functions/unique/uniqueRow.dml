@@ -19,49 +19,6 @@
 #
 #-------------------------------------------------------------
 
-name: LicenseCheck
-
-on:
-  push:
-    paths-ignore:
-      - 'docs/**'
-      - '*.md'
-      - '*.html'
-      - 'src/main/python/docs/**'
-      - 'dev/**'
-    branches:
-      - main
-  pull_request:
-    paths-ignore:
-      - 'docs/**'
-      - '*.md'
-      - '*.html'
-      - 'src/main/python/docs/**'
-      - 'dev/**'
-    branches:
-      - main
-
-jobs:
-  build:
-    name: ${{ matrix.os }}
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest]
-        java: ['11']
-        javadist: ['adopt']
-
-    steps:
-    - name: Checkout Repository
-      uses: actions/checkout@v4
-
-    - name: Setup Java ${{ matrix.java }} ${{ matrix.javadist }}
-      uses: actions/setup-java@v4
-      with:
-        distribution: ${{ matrix.javadist }}
-        java-version: ${{ matrix.java }}
-        cache: 'maven'
-
-    - name: Build
-      run: mvn package -P rat -B
+input = read($1);
+res = unique(input, dir="r");
+write(res, $2, format="text");

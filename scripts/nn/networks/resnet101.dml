@@ -28,7 +28,8 @@ forward = function(matrix[double] X, int Hin, int Win,
     /*
      * Forward pass of the ResNet101 as introduced in
      * "Deep Residual Learning for Image Recognition" by
-     * Kaiming He et. al. and inspired by the PyTorch
+     * Kaiming He et. al., refined in "ResNet v1.5 for
+     * PyTorch" by NVIDIA and inspired by the PyTorch
      * implementation.
      *
      * Inputs:

@@ -1,0 +1,101 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+source("scripts/nn/networks/resnet.dml") as resnet
+
+forward = function(matrix[double] X, int Hin, int Win,
+                            list[unknown] model, string mode,
+                            list[unknown] ema_means_vars)
+    return (matrix[double] out, list[unknown] ema_means_vars_upd) {
+    /*
+     * Forward pass of the ResNet50 as introduced in
+     * "Deep Residual Learning for Image Recognition" by
+     * Kaiming He et. al. and inspired by the PyTorch
+     * implementation.
+     *
+     * Inputs:
+     * - X: Inputs, of shape (N, C_in*Hin*Win).
+     *     C_in = 3 is expected.
+     * - Hin: Input height.
+     * - Win: Input width.
+     * - layer_sizes: List of the sizes of each of
+     *     the 4 residual layers.
+     *     For ResNet18: [2, 2, 2, 2], RN34: [3, 4, 6, 3],
+     *     RN50: [3, 4, 6, 3], RN101: [3, 4, 23, 3],
+     *     RN152: [3, 8, 36, 3]
+     * - model: Weights and bias matrices of the model
+     *     with the following order/content:
+     *   -> 1: Weights of conv 1 7x7, of shape (64, 3*7*7)
+     *   -> 2: Weights of batch norm 1, of shape (64, 1).
+     *   -> 3: Bias of batch norm 1, of shape (64, 1).
+     *   -> 4: List of weights for first residual layer
+     *         with 64 base channels.
+     *   -> 5: List of weights for second residual layer
+     *         with 128 base channels.
+     *   -> 6: List of weights for third residual layer
+     *         with 256 base channels.
+     *   -> 7: List of weights for fourth residual layer
+     *         with 512 base channels.
+     *      List of residual layers 1, 2, 3 & 4 have
+     *      the content/order:
+     *      -> i: List of weights for residual block i.
+     *            with i in {1, ..., layer_sizes[layer]}
+     *         Each list of weights for a residual block
+     *         must follow the same order as defined in
+     *         the documentation of bottleneck_block_forward().
+     *   -> 8: Weights of fully connected layer, of shape (C_out, 1000)
+     *         where C_out = 512 for basic block type and C_out = 2048
+     *         for bottleneck block type.
+     *   -> 9: Bias of fully connected layer, of shape (1, 1000)
+     * - mode: 'train' or 'test' to indicate if the model is currently
+     *     being trained or tested for badge normalization layers.
+     *     See badge_norm2d.dml docs for more info.
+     * - ema_means_vars: List of exponential moving averages for mean
+     *     and variance for badge normalization layers.
+     *   -> 1: EMA for mean of badge norm 1, of shape (64, 1).
+     *   -> 2: EMA for variance of badge norm 1, of shape (64, 1).
+     *   -> 3: List of EMA means and vars for residual layer 1.
+     *   -> 4: List of EMA means and vars for residual layer 2.
+     *   -> 5: List of EMA means and vars for residual layer 3.
+     *   -> 6: List of EMA means and vars for residual layer 4.
+     *      Lists for EMAs of layer 1, 2, 3 & 4 must have the
+     *      following order:
+     *      -> i: List of EMA means and vars for residual block i.
+     *            with i in {1, ..., layer_sizes[layer]}
+     *         Each list of EMAs for a residual block
+     *         must follow the same order as defined in
+     *         the documentation bottleneck_block_forward().
+     * - NOTICE: The lists of the first blocks for layer 2, 3 and 4
+     *           must include weights and EMAs for 1 extra conv layer
+     *           and a batch norm layer for the downsampling on the
+     *           identity path.
+     *
+     * Outputs:
+     * - out: Outputs, of shape (N, 1000)
+     * - ema_means_vars_upd: List of updated exponential moving averages
+     *     for mean and variance of badge normalization layers. It follows
+     *     the same exact structure as the input EMAs list.
+     */
+    layer_sizes = list(3, 8, 36, 3)
+    block_type = "bottleneck"
+    [out, ema_means_vars_upd] = resnet::resnet_forward(X, Hin, Win, block_type,
+                                      layer_sizes, model, mode, ema_means_vars)
+}

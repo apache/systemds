@@ -1152,12 +1152,17 @@ public class CompressedMatrixBlock extends MatrixBlock {
 	}
 
 	@Override
-	public void examSparsity(boolean allowCSR) {
+	public void examSparsity(boolean allowCSR, int k) {
 		// do nothing
 	}
 
 	@Override
-	public void sparseToDense() {
+	public void sparseToDense(int k) {
+		// do nothing
+	}
+
+	@Override
+	public void denseToSparse(boolean allowCSR, int k){
 		// do nothing
 	}
 

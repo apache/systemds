@@ -23,6 +23,7 @@ import java.util.ArrayList;
 
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.common.Types;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
@@ -323,7 +324,7 @@ public class DnnGPUInstruction extends GPUInstruction {
 			CPOperand in6 = new CPOperand(parts[6]); // mode
 			CPOperand in7 = new CPOperand(parts[7]); // epsilon
 			CPOperand in8 = new CPOperand(parts[8]); // exponentialAverageFactor
-			CPOperand out = new CPOperand(parts[9]);  // ret
+			CPOperand out = new CPOperand(parts[9], Types.ValueType.FP64, Types.DataType.MATRIX);  // ret
 			CPOperand out2 = new CPOperand(parts[10]); // retRunningMean
 			CPOperand out3 = new CPOperand(parts[11]); // retRunningVar
 			CPOperand out4 = new CPOperand(parts[12]); // resultSaveMean
@@ -902,10 +903,14 @@ public class DnnGPUInstruction extends GPUInstruction {
 		inputs.add(_input6);
 		inputs.add(_input7);
 		inputs.add(_input8);
-		inputs.addAll(_input_shape);
-		inputs.addAll(_filter_shape);
-		inputs.addAll(_stride);
-		inputs.addAll(_padding);
+		if (_input_shape != null && !_input_shape.isEmpty())
+			inputs.addAll(_input_shape);
+		if (_filter_shape != null && !_filter_shape.isEmpty())
+			inputs.addAll(_filter_shape);
+		if (_stride != null && !_stride.isEmpty())
+			inputs.addAll(_stride);
+		if (_padding!= null && !_padding.isEmpty())
+			inputs.addAll(_padding);
 		return Pair.of(_output.getName(),
 			new LineageItem(getOpcode(), LineageItemUtils.getLineage(ec, inputs.toArray(new CPOperand[0]))));
 	}

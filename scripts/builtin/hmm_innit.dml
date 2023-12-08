@@ -29,39 +29,38 @@
 #
 # INPUT:
 # --------------------------------------------------------------------------------------------
-# observation_count         Number of Distinct Observations
-# hiddenstates_count        Number of Distict Hidden States
+# observations_count         Number of Distinct Observations
+# hiddenstates_count        Number of Distinct Hidden States
 # ----------------------------------------------------------------------------------------
 #
 # OUTPUT:
 # --------------------------------------------------------------------------------------------
-# observation_count         Number of Distinct Observations
-# hiddenstates_count        Number of Distict Hidden States
 # start_prob                Start probabilities
 # transition_prob           Transition probabilities
 # emission_prob             Emission probabilities
 # --------------------------------------------------------------------------------------------
 
-s_hmm_innit = function(Integer observation_count, Integer hiddenstates_count, Boolean print_mode = FALSE)
+s_hmm_innit = function(Integer observations_count, Integer hiddenstates_count, Boolean print_mode = FALSE)
     return (matrix[Double] start_prob, matrix[Double] transition_prob,
             matrix[Double] emission_prob)
     {
         start_prob = matrix((1 / hiddenstates_count), rows = hiddenstates_count, cols = 1)
         transition_prob = matrix((1 / hiddenstates_count), rows = hiddenstates_count, cols = hiddenstates_count)
-        emission_prob = matrix((1 / observation_count), rows = hiddenstates_count, cols = observation_count)
+        emission_prob = matrix((1 / observations_count), rows = hiddenstates_count, cols = observations_count)
 
         if(print_mode)
-            print_model(observation_count, hiddenstates_count, start_prob, transition_prob, emission_prob)
+            print_model(observations_count, hiddenstates_count, start_prob, transition_prob, emission_prob)
     }
 
 
-print_model = function(Integer observation_count, Integer hiddenstates_count,
+print_model = function(Integer observations_count, Integer hiddenstates_count,
             matrix[Double] start_prob, matrix[Double] transition_prob,
             matrix[Double] emission_prob)
     {
-        print("Number of possible Observations: \n" + toString(observation_count) + "\n")
+        print("Number of possible Observations: \n" + toString(observations_count) + "\n")
         print("Number of possible Hidden States: \n" + toString(hiddenstates_count) + "\n")
         print("Starting Probabilities of hidden states: \n" + toString(start_prob))
         print("Hidden State Transition Probability Matrix: \n" + toString(transition_prob))
         print("Observation Emission Probability Matrix: \n" + toString(emission_prob))
     }
+

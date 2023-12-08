@@ -2522,16 +2522,12 @@ public class LibMatrixMult
 				final int apos = a.pos(r);
 				int[] aix = a.indexes(r);
 				int rlix = (rl==0) ? 0 : a.posFIndexGTE(r, rl);
-
-				if(rlix>=0)
-					rlix = apos+rlix;
-				else
-					rlix = apos+alen;
-
-				int len = apos + alen;
-				for(int i = rlix; i < len && aix[i] < ru; i++) {
-					for (int k = a.posFIndexGTE(r, aix[i]); k < len; k++) {
-						sr[aix[i]].add(c.pos(k) + aix[k], avals[i] * avals[k]);
+				if(rlix>=0) {
+					int len = apos + alen;
+					for(int i = rlix; i < len && aix[i] < ru; i++) {
+						for (int k = a.posFIndexGTE(r, aix[i]); k < len; k++) {
+							sr[aix[i]].add(c.pos(k) + aix[k], avals[i] * avals[k]);
+						}
 					}
 				}
 			}

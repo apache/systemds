@@ -2510,8 +2510,11 @@ public class LibMatrixMult
         SparseBlock c = ret.sparseBlock;
 		int m = m1.rlen;
 
-        if(leftTranspose) {
+		if(leftTranspose) {
 			// Operation t(X)%*%X, sparse input and output
+			for(int i=0; i<m; i++)
+				c.allocate(i, 8*SparseRowVector.initialCapacity);
+			SparseRow[] sr = ((SparseBlockMCSR) c).getRows();
 			for( int r=0; r<a.numRows(); r++ ) {
 				if( a.isEmpty(r) ) continue;
 				final int alen = a.size(r);
@@ -2519,13 +2522,17 @@ public class LibMatrixMult
 				final int apos = a.pos(r);
 				int[] aix = a.indexes(r);
 				int rlix = (rl==0) ? 0 : a.posFIndexGTE(r, rl);
-				rlix = (rlix>=0) ? apos+rlix : apos+alen;
+
+				if(rlix>=0)
+					rlix = apos+rlix;
+				else
+					rlix = apos+alen;
+
 				int len = apos + alen;
 				for(int i = rlix; i < len && aix[i] < ru; i++) {
-					if(!c.isAllocated(i))
-						c.allocate(i, 8*SparseRowVector.initialCapacity);
-					for (int k = a.posFIndexGTE(r, aix[i]); k < len; k++)
-						c.add(aix[i], c.pos(k) + aix[k], avals[i] * avals[k]);
+					for (int k = a.posFIndexGTE(r, aix[i]); k < len; k++) {
+						sr[aix[i]].add(c.pos(k) + aix[k], avals[i] * avals[k]);
+					}
 				}
 			}
 		}

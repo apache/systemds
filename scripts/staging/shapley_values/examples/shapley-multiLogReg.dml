@@ -1,0 +1,66 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+
+
+# run the script staging/learnedSampling/1_Data_Model_Prep.dml to prepare the model
+
+source("../shapley-sampling.dml") as shapleySampling
+
+X_bg = read("../data/Adult_X.csv")
+y = read("../data/Adult_y.csv")
+B = read("../data/Adult_W.csv")
+
+#select instance to compute shapley values for
+x = X_bg[2,]
+
+print("Sample: \n"+toString(x))
+
+#set the number of samples
+samples = 10000
+#set the indices of the features
+indices = seq(1,ncol(x))
+
+#compute shapley values
+[S, expected] = shapleySampling::shapley_sampling(
+  model_function="shap_multiLogRegPredict_custom",
+  model_args=list(B=B),
+  x=x,
+  feature_indices=indices,
+  X_bg=X_bg,
+  samples=samples,
+  seed=1337,
+  verbose=1
+)
+
+print("Expected probability for class 1: "+expected)
+
+# write values to csv
+write(S, "../data/Adult_shap-values_"+samples+"smpl.csv", format="csv")
+
+
+# function to wrap multiLogRegPredict to make sure its outputs are compatible
+shap_multiLogRegPredict_custom = function(Matrix[Double] X, Matrix[Double] B)
+return( Matrix[Double] P){
+  [M,yhat,acc] = multiLogRegPredict(X=X, B=B,Y=matrix(0,0,0), verbose=FALSE)
+  # we are only interested in the predicted class
+  P = yhat
+}

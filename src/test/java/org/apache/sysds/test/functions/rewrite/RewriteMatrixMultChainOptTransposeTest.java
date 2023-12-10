@@ -31,39 +31,46 @@ import org.junit.Test;
 
 import java.util.HashMap;
 
-public class RewriteMatrixMultChainOptTest3 extends AutomatedTestBase
+public class RewriteMatrixMultChainOptTransposeTest extends AutomatedTestBase
 {
-	private static final String TEST_NAME1 = "RewriteMMChainTest2";
+	private static final String TEST_NAME = "RewriteMMChainTestTranspose";
+	protected static final int TEST_VARIANTS = 4;
 	private static final String TEST_DIR = "functions/rewrite/";
-	private static final String TEST_CLASS_DIR = TEST_DIR + RewriteMatrixMultChainOptTest3.class.getSimpleName() + "/";
+	private static final String TEST_CLASS_DIR = TEST_DIR + RewriteMatrixMultChainOptTransposeTest.class.getSimpleName() + "/";
 
 	private static final double eps = Math.pow(10, -10);
 
 	@Override
 	public void setUp() {
 		TestUtils.clearAssertionInformation();
-		addTestConfiguration( TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] {"R"}));
+		for( int i=1; i<=TEST_VARIANTS; i++ )
+			addTestConfiguration(TEST_NAME+i, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME+i, new String[] {"R"}));
 	}
 
 	@Test
-	public void testMMChain1Singlenode() {
-		testMMChainWithTransposeOperator(TEST_NAME1, ExecMode.SINGLE_NODE);
-	}
-	
-	@Test
-	public void testMMChain1Hybrid() {
-		testMMChainWithTransposeOperator(TEST_NAME1, ExecMode.HYBRID);
-	}
-	
-	@Test
-	public void testMMChain1Spark() {
-		testMMChainWithTransposeOperator(TEST_NAME1, ExecMode.HYBRID);
+	public void testSameInputUsedMultipleTimes() {
+		testMMChainWithTransposeOperator(TEST_NAME + "1", 4);
 	}
 
-	private void testMMChainWithTransposeOperator(String testname, ExecMode et)
+	@Test
+	public void testTwoMultiplicationsInTransposeOperator() {
+		testMMChainWithTransposeOperator(TEST_NAME + "2", 2);
+	}
+
+	@Test
+	public void testTransposeInTranspose() {
+		testMMChainWithTransposeOperator(TEST_NAME + "3", 4);
+	}
+
+	@Test
+	public void testMMChainFour() {
+		testMMChainWithTransposeOperator(TEST_NAME + "4", 2);
+	}
+
+	private void testMMChainWithTransposeOperator(String testname, int numberOfTransposeOperators)
 	{
-		ExecMode etOld = setExecMode(et);
-		
+		ExecMode etOld = setExecMode(ExecMode.SINGLE_NODE);
+
 		try
 		{
 			TestConfiguration config = getTestConfiguration(testname);
@@ -85,7 +92,7 @@ public class RewriteMatrixMultChainOptTest3 extends AutomatedTestBase
 			HashMap<CellIndex, Double> rfile  = readRMatrixFromExpectedDir("R");
 			TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
 
-			Assert.assertEquals(4, Statistics.getCPHeavyHitterCount(Types.ReOrgOp.TRANS.toString()));
+			Assert.assertEquals(numberOfTransposeOperators, Statistics.getCPHeavyHitterCount(Types.ReOrgOp.TRANS.toString()));
 		}
 		finally {
 			resetExecMode(etOld);

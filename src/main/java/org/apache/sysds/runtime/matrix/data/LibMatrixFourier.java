@@ -97,7 +97,6 @@ public class LibMatrixFourier {
      */
     public static ComplexDouble[][] fft2d(ComplexDouble[][] in) {
 
-        // TODO: Is it sufficient to use only real parts of the result for further computations?
         int rows = in.length;
         int cols = in[0].length;
 
@@ -105,12 +104,7 @@ public class LibMatrixFourier {
 
         for(int i = 0; i < rows; i++){
             // use fft on row
-            ComplexDouble[] resRow = fft(in[i]);
-            // only use real part of result for further computations
-            for(int j = 0; j < cols; j++){
-                out[i][j] = resRow[j];
-                //out[i][j] = new ComplexDouble(resRow[j].re, 0);
-            }
+            out[i] = fft(in[i]);
         }
 
         for(int j = 0; j < cols; j++){
@@ -123,7 +117,6 @@ public class LibMatrixFourier {
             ComplexDouble[] resCol = fft(inCol);
             for (int i = 0; i < rows; i++) {
                 out[i][j] = resCol[i];
-                //out[i][j] = new ComplexDouble(resCol[i].re, 0);
             }
         }
 

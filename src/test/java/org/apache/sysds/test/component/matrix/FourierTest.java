@@ -52,12 +52,36 @@ public class FourierTest {
 
     @Test
     public void simple2dTest() {
+        // tested with matlab
         double[][] in = {{0, 18}, {-15, 3}};
         ComplexDouble[][] expected = new ComplexDouble[2][2];
         expected[0][0] = new ComplexDouble(6, 0);
         expected[0][1] = new ComplexDouble(-36, 0);
         expected[1][0] =  new ComplexDouble(30, 0);
         expected[1][1] =  new ComplexDouble(0, 0);
+
+        ComplexDouble[][] res = fft2d(in);
+        for(ComplexDouble[] row : res){
+            for(ComplexDouble elem : row){
+                System.out.println(elem);
+            }
+        }
+
+        assertArrayEquals(expected, res);
+    }
+
+    @Test
+    public void simple2dTest2() {
+        double[][] in = {{0, 18, -15, 3}, {0, 18, -15, 3}};
+        ComplexDouble[][] expected = new ComplexDouble[2][4];
+        expected[0][0] = new ComplexDouble(12, 0);
+        expected[0][1] = new ComplexDouble(30, -30);
+        expected[0][2] = new ComplexDouble(-72, 0);
+        expected[0][3] = new ComplexDouble(30, 30);
+        expected[1][0] =  new ComplexDouble(0, 0);
+        expected[1][1] =  new ComplexDouble(0, 0);
+        expected[1][2] = new ComplexDouble(0, 0);
+        expected[1][3] = new ComplexDouble(0, 0);
 
         ComplexDouble[][] res = fft2d(in);
         for(ComplexDouble[] row : res){

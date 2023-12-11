@@ -87,4 +87,69 @@ public class LibMatrixFourier {
         return res;
     }
 
+    /**
+     * Function to perform Fast Fourier Transformation in a 2-dimensional array.
+     * Both dimensions have to be a power of two.
+     * First fft is applied to each row, then fft is applied to each column of the previous result.
+     *
+     * @param in 2-dimensional array of ComplexDoubles
+     * @return 2-dimensional array of ComplexDoubles
+     */
+    public static ComplexDouble[][] fft2d(ComplexDouble[][] in) {
+
+        // TODO: Is it sufficient to use only real parts of the result for further computations?
+        int rows = in.length;
+        int cols = in[0].length;
+
+        ComplexDouble[][] out = new ComplexDouble[rows][cols];
+
+        for(int i = 0; i < rows; i++){
+            // use fft on row
+            ComplexDouble[] resRow = fft(in[i]);
+            // only use real part of result for further computations
+            for(int j = 0; j < cols; j++){
+                out[i][j] = resRow[j];
+                //out[i][j] = new ComplexDouble(resRow[j].re, 0);
+            }
+        }
+
+        for(int j = 0; j < cols; j++){
+            // get col as array
+            ComplexDouble[] inCol = new ComplexDouble[rows];
+            for(int i = 0; i < rows; i++){
+                inCol[i] = out[i][j];
+            }
+            // use fft on col
+            ComplexDouble[] resCol = fft(inCol);
+            for (int i = 0; i < rows; i++) {
+                out[i][j] = resCol[i];
+                //out[i][j] = new ComplexDouble(resCol[i].re, 0);
+            }
+        }
+
+        return out;
+    }
+
+    /**
+     * Function to perform Fast Fourier Transformation in a 2-dimensional array.
+     * Both dimensions have to be a power of two.
+     * First fft is applied to each row, then fft is applied to each column of the previous result.
+     *
+     * @param in 2-dimensional array of doubles
+     * @return 2-dimensional array of ComplexDoubles
+     */
+    public static ComplexDouble[][] fft2d(double[][] in){
+        int rows = in.length;
+        int cols = in[0].length;
+
+        ComplexDouble[][] complex = new ComplexDouble[rows][cols];
+        for(int i=0; i<rows; i++){
+            for(int j=0; j<cols; j++){
+                complex[i][j] = new ComplexDouble(in[i][j],0);
+            }
+        }
+        return fft2d(complex);
+    }
+
+
 }

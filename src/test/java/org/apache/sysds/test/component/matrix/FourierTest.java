@@ -3,11 +3,13 @@ package org.apache.sysds.test.component.matrix;
 import org.apache.sysds.runtime.matrix.data.ComplexDouble;
 import org.apache.sysds.runtime.matrix.data.LibMatrixFourier;
 import static org.apache.sysds.runtime.matrix.data.LibMatrixFourier.fft;
+import static org.apache.sysds.runtime.matrix.data.LibMatrixFourier.fft2d;
 
 import org.junit.Test;
 
 import java.util.Arrays;
 
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertTrue;
 
 public class FourierTest {
@@ -26,7 +28,7 @@ public class FourierTest {
             System.out.println(elem);
         }
 
-        assertTrue(Arrays.equals(expected, res));
+        assertArrayEquals(expected, res);
     }
 
     @Test
@@ -45,7 +47,26 @@ public class FourierTest {
         for(ComplexDouble elem : res){
             System.out.println(elem);
         }
-        assertTrue(Arrays.equals(expected, res));
+        assertArrayEquals(expected, res);
+    }
+
+    @Test
+    public void simple2dTest() {
+        double[][] in = {{0, 18}, {-15, 3}};
+        ComplexDouble[][] expected = new ComplexDouble[2][2];
+        expected[0][0] = new ComplexDouble(6, 0);
+        expected[0][1] = new ComplexDouble(-36, 0);
+        expected[1][0] =  new ComplexDouble(30, 0);
+        expected[1][1] =  new ComplexDouble(0, 0);
+
+        ComplexDouble[][] res = fft2d(in);
+        for(ComplexDouble[] row : res){
+            for(ComplexDouble elem : row){
+                System.out.println(elem);
+            }
+        }
+
+        assertArrayEquals(expected, res);
     }
 
 }

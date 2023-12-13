@@ -21,7 +21,7 @@ package org.apache.sysds.hops;
 
 import java.util.ArrayList;
 
-import org.apache.commons.lang.NotImplementedException;
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.AggOp;
 import org.apache.sysds.common.Types.DataType;

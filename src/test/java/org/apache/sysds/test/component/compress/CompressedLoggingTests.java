@@ -40,8 +40,8 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 public class CompressedLoggingTests {
-	protected static final Log LOG = LogFactory.getLog(CompressedLoggingTests.class.getName());
-
+	protected static final Log 	LOG = LogFactory.getLog(CompressedLoggingTests.class.getName());
+	
 	@Test
 	public void compressedLoggingTest_Trace() {
 		final TestAppender appender = LoggingUtils.overwrite();
@@ -346,14 +346,16 @@ public class CompressedLoggingTests {
 
 	@Test
 	public void compressedLoggingTest_recompress() {
-		final TestAppender appender = LoggingUtils.overwrite();
-
+		TestAppender appender = null;
+		
 		try {
+			appender = LoggingUtils.overwrite();
 			Logger.getLogger(CompressedMatrixBlockFactory.class).setLevel(Level.DEBUG);
 			MatrixBlock mb = TestUtils.generateTestMatrixBlock(100, 3, 1, 1, 0.5, 235);
 			MatrixBlock m2 = CompressedMatrixBlockFactory.compress(mb).getLeft();
 			CompressedMatrixBlockFactory.compress(m2).getLeft();
 			final List<LoggingEvent> log = LoggingUtils.reinsert(appender);
+		
 			for(LoggingEvent l : log) {
 				if(l.getMessage().toString().contains("Recompressing"))
 					return;

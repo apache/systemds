@@ -21,7 +21,7 @@ package org.apache.sysds.runtime.compress.colgroup.scheme;
 
 import java.lang.ref.SoftReference;
 
-import org.apache.commons.lang.NotImplementedException;
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup;
 import org.apache.sysds.runtime.compress.colgroup.ASDC;
 import org.apache.sysds.runtime.compress.colgroup.ASDCZero;

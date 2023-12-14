@@ -19,6 +19,10 @@
 
 package org.apache.sysds.runtime.data;
 
+import jdk.jshell.spi.ExecutionControl;
+import org.apache.commons.lang.NotImplementedException;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.util.SortUtils;
 import org.apache.sysds.runtime.util.UtilFunctions;
 import org.apache.sysds.utils.MemoryEstimates;
@@ -27,37 +31,61 @@ import java.io.DataInput;
 import java.io.IOException;
 import java.util.Arrays;
 
+import static java.util.stream.IntStream.range;
+
 public class SparseBlockDCSR extends SparseBlock
 {
     private static final long serialVersionUID = 1922673753466164244L; // TODO: Generate properly
+    private static final Log LOG = LogFactory.getLog(SparseBlockDCSR.class.getName());
 
-    private int[] _ptr = null;       //row pointer array (size: rlen+1)
-    private int[] _indexes = null;   //column index array (size: >=nnz)
+    private int[] _rowidx = null;
+    private int[] _rowptr = null;
+    private int[] _colidx = null;
+
+    //private int[] _ptr = null;       //row pointer array (size: rlen+1)
+    //private int[] _indexes = null;   //column index array (size: >=nnz)
     private double[] _values = null; //value array (size: >=nnz)
     private int _size = 0;           //actual number of nnz
+    private int _rlen = 0;           //number of rows
 
     public SparseBlockDCSR(int rlen) {
         this(rlen, INIT_CAPACITY);
     }
 
     public SparseBlockDCSR(int rlen, int capacity) {
-        _ptr = new int[rlen+1]; //ix0=0
-        _indexes = new int[capacity];
+        //TODO: This allocates too much space (we care about number of non-empty rows)
+        LOG.warn("Allocating a DCSR-block using row-length. This will lead to significant overhead!");
+        LOG.warn("If you want to initialize a sparse block using rlen, choose SparseBlockCSR instead!");
+
+        // _ptr = new int[rlen+1]; //ix0=0
+        _rowidx = new int[rlen]; // TODO
+        _rowptr = new int[rlen + 1]; // TODO
+        _colidx = new int[capacity];
         _values = new double[capacity];
+        _rlen = rlen;
         _size = 0;
     }
 
     public SparseBlockDCSR(int rlen, int capacity, int size){
-        _ptr = new int[rlen+1]; //ix0=0
-        _indexes = new int[capacity];
+        //TODO: This allocates too much space (we care about number of non-empty rows)
+        LOG.warn("Allocating a DCSR-block using row-length. This will lead to significant overhead!");
+        LOG.warn("If you want to initialize a sparse block using rlen, choose SparseBlockCSR instead!");
+
+        // _ptr = new int[rlen+1]; //ix0=0
+        _rowidx = new int[rlen]; // TODO
+        _rowptr = new int[rlen + 1]; // TODO
+        _colidx = new int[capacity];
         _values = new double[capacity];
+        _rlen = rlen;
         _size = size;
     }
 
-    public SparseBlockDCSR(int[] rowPtr, int[] colInd, double[] values, int nnz){
-        _ptr = rowPtr;
-        _indexes = colInd;
+    public SparseBlockDCSR(int[] rowIdx, int[] rowPtr, int[] colIdx, double[] values, int rlen, int nnz){
+        _rowidx = rowIdx;
+        _rowptr = rowPtr;
+        _colidx = colIdx;
         _values = values;
+        _rlen = rlen;
         _size = nnz;
     }
 
@@ -70,28 +98,69 @@ public class SparseBlockDCSR extends SparseBlock
     {
         long size = sblock.size();
         if( size > Integer.MAX_VALUE )
-            throw new RuntimeException("SparseBlockCSR supports nnz<=Integer.MAX_VALUE but got "+size);
+            throw new RuntimeException("SparseBlockDCSR supports nnz<=Integer.MAX_VALUE but got "+size);
 
         //special case SparseBlockDCSR
         // TODO: Handle differently
         if( sblock instanceof SparseBlockDCSR ) {
             SparseBlockDCSR ocsr = (SparseBlockDCSR)sblock;
-            _ptr = Arrays.copyOf(ocsr._ptr, ocsr.numRows()+1);
+            _rowidx = Arrays.copyOf(ocsr._rowidx, ocsr._rowidx.length); // TODO: Shorten array if necessary
+            _rowptr = Arrays.copyOf(ocsr._rowptr, ocsr._rowptr.length); // TODO: Shorten array if necessary
+            _colidx = Arrays.copyOf(ocsr._colidx, ocsr._size);
+            _values = Arrays.copyOf(ocsr._values, ocsr._size);
+            _rlen = ocsr._rlen;
+            _size = ocsr._size;
+            /*_ptr = Arrays.copyOf(ocsr._ptr, ocsr.numRows()+1);
             _indexes = Arrays.copyOf(ocsr._indexes, ocsr._size);
             _values = Arrays.copyOf(ocsr._values, ocsr._size);
-            _size = ocsr._size;
+            _size = ocsr._size;*/
+        }
+        else if( sblock instanceof SparseBlockCSR ) {
+            // More efficient conversion from CSR to DCSR
+            int rlen = sblock.numRows();
+
+            SparseBlockCSR ocsr = (SparseBlockCSR)sblock;
+            _rowidx = range(0, rlen).filter(rowIdx -> !sblock.isEmpty(rowIdx)).toArray();
+            _rowptr = new int[_rowidx.length + 1];
+            _colidx = Arrays.copyOf(ocsr.indexes(), (int)ocsr.size());
+            _values = Arrays.copyOf(ocsr.values(), (int)ocsr.size());
+
+            int pos = 0;
+
+            for (int rowIdx : _rowidx) {
+                pos += sblock.size(rowIdx);
+                _rowptr[rowIdx+1] = pos;
+            }
         }
         //general case SparseBlock
         else {
             int rlen = sblock.numRows();
 
-            _ptr = new int[rlen+1];
-            _indexes = new int[(int)size];
+            _rowidx = range(0, rlen).filter(rowIdx -> !sblock.isEmpty(rowIdx)).toArray();
+            _rowptr = new int[_rowidx.length + 1];
+            _colidx = new int[(int)size];
             _values = new double[(int)size];
+
+            //_ptr = new int[rlen+1];
+            //_indexes = new int[(int)size];
+            //_values = new double[(int)size];
             _size = (int)size;
 
-            for( int i=0, pos=0; i<rlen; i++ ) {
-                if( !sblock.isEmpty(i) ) {
+            int pos = 0;
+
+            for ( int rowIdx : _rowidx ) {
+                int apos = sblock.pos(rowIdx);
+                int alen = sblock.size(rowIdx);
+                int[] aix = sblock.indexes(rowIdx);
+                double[] avals = sblock.values(rowIdx);
+                System.arraycopy(aix, apos, _colidx, pos, alen);
+                System.arraycopy(avals, apos, _values, pos, alen);
+                pos += alen;
+                _rowptr[rowIdx+1] = pos;
+            }
+
+            /*for( int i=0, pos=0; i<_rowidx.length; i++ ) {
+                //if( !sblock.isEmpty(i) ) {
                     int apos = sblock.pos(i);
                     int alen = sblock.size(i);
                     int[] aix = sblock.indexes(i);
@@ -99,9 +168,9 @@ public class SparseBlockDCSR extends SparseBlock
                     System.arraycopy(aix, apos, _indexes, pos, alen);
                     System.arraycopy(avals, apos, _values, pos, alen);
                     pos += alen;
-                }
-                _ptr[i+1]=pos;
-            }
+                //}
+                //_ptr[i+1]=pos;
+            }*/
         }
     }
 
@@ -110,7 +179,7 @@ public class SparseBlockDCSR extends SparseBlock
      * @param rows array of sparse rows
      * @param nnz number of non-zeroes
      */
-    public SparseBlockDCSR(SparseRow[] rows, int nnz)
+    /*public SparseBlockDCSR(SparseRow[] rows, int nnz)
     {
         int rlen = rows.length;
 
@@ -130,7 +199,7 @@ public class SparseBlockDCSR extends SparseBlock
             }
             _ptr[i+1]=pos;
         }
-    }
+    }*/
 
     /**
      * Copy constructor for COO representation
@@ -140,7 +209,7 @@ public class SparseBlockDCSR extends SparseBlock
      * @param colInd	column indices
      * @param values	non zero values
      */
-    public SparseBlockDCSR(int rows, int[] rowInd, int[] colInd, double[] values) {
+    /*public SparseBlockDCSR(int rows, int[] rowInd, int[] colInd, double[] values) {
         int nnz = values.length;
         _ptr = new int[rows+1];
         _indexes = Arrays.copyOf(colInd, colInd.length);
@@ -156,7 +225,7 @@ public class SparseBlockDCSR extends SparseBlock
             rlast = r;
         }
         Arrays.fill(_ptr, rlast+1, numRows()+1, nnz);
-    }
+    }*/
 
     /**
      * Copy constructor for given array of column indexes, which
@@ -166,7 +235,7 @@ public class SparseBlockDCSR extends SparseBlock
      * @param nnz number of non-zeros
      * @param colInd column indexes
      */
-    public SparseBlockDCSR(int rows, int nnz, int[] colInd) {
+    /*public SparseBlockDCSR(int rows, int nnz, int[] colInd) {
         _ptr = new int[rows+1];
         _indexes = (rows==nnz) ? colInd : new int[nnz];
         _values = new double[nnz];
@@ -183,7 +252,7 @@ public class SparseBlockDCSR extends SparseBlock
             }
             _ptr[i+1] = pos;
         }
-    }
+    }*/
 
     /**
      * Initializes the CSR sparse block from an ordered input
@@ -193,7 +262,7 @@ public class SparseBlockDCSR extends SparseBlock
      * @param in data input stream of ijv triples, ordered by ij
      * @throws IOException if deserialization error occurs
      */
-    public void initUltraSparse(int nnz, DataInput in)
+    /*public void initUltraSparse(int nnz, DataInput in)
             throws IOException
     {
         //allocate space if necessary
@@ -214,7 +283,7 @@ public class SparseBlockDCSR extends SparseBlock
 
         //update meta data
         _size = nnz;
-    }
+    }*/
 
     /**
      * Initializes the CSR sparse block from an ordered input
@@ -225,7 +294,7 @@ public class SparseBlockDCSR extends SparseBlock
      * @param in data input stream of sparse rows, ordered by i
      * @throws IOException if deserialization error occurs
      */
-    public void initSparse(int rlen, int nnz, DataInput in)
+    /*public void initSparse(int rlen, int nnz, DataInput in)
             throws IOException
     {
         //allocate space if necessary
@@ -245,7 +314,7 @@ public class SparseBlockDCSR extends SparseBlock
 
         //update meta data
         _size = nnz;
-    }
+    }*/
 
     /**
      * Get the estimated in-memory size of the sparse block in CSR
@@ -260,10 +329,12 @@ public class SparseBlockDCSR extends SparseBlock
         double lnnz = Math.max(INIT_CAPACITY, Math.ceil(sparsity*nrows*ncols));
 
         //32B overhead per array, int arr in nrows, int/double arr in nnz
-        double size = 16 + 4 + 4;                            //object + int field + padding
-        size += MemoryEstimates.intArrayCost(nrows+1);       //ptr array (row pointers)
-        size += MemoryEstimates.intArrayCost((long) lnnz);   //indexes array (column indexes)
-        size += MemoryEstimates.doubleArrayCost((long) lnnz);//values array (non-zero values)
+        double size = 16;                                    // Memory overhead of the object
+        size += 4 + 4;                                  // 2x int field + 0 (padding not necessary)
+        size += MemoryEstimates.intArrayCost(nrows);         // rowidx array (row indices)
+        size += MemoryEstimates.intArrayCost(nrows+1); // rowptr array (row pointers)
+        size += MemoryEstimates.intArrayCost((long) lnnz);   // colidx array (column indexes)
+        size += MemoryEstimates.doubleArrayCost((long) lnnz);// values array (non-zero values)
 
         //robustness for long overflows
         return (long) Math.min(size, Long.MAX_VALUE);
@@ -275,27 +346,27 @@ public class SparseBlockDCSR extends SparseBlock
      * For use in GPU code
      * @return array of row pointers
      */
-    public int[] rowPointers() {
+    /*public int[] rowPointers() {
         return _ptr;
-    }
+    }*/
 
     /**
      * Get raw access to underlying array of column indices
      * For use in GPU code
      * @return array of column indexes
      */
-    public int[] indexes() {
+    /*public int[] indexes() {
         return indexes(0);
-    }
+    }*/
 
     /**
      * Get raw access to underlying array of values
      * For use in GPU code
      * @return array of values
      */
-    public double[] values() {
+    /*public double[] values() {
         return values(0);
-    }
+    }*/
 
     ///////////////////
     //SparseBlock implementation
@@ -320,7 +391,7 @@ public class SparseBlockDCSR extends SparseBlock
         //do nothing everything preallocated
     }
 
-    public void compact() {
+    /*public void compact() {
         int pos = 0;
         for(int i=0; i<numRows(); i++) {
             int apos = pos(i);
@@ -336,11 +407,11 @@ public class SparseBlockDCSR extends SparseBlock
         }
         _ptr[numRows()] = pos;
         _size = pos; //adjust logical size
-    }
+    }*/
 
     @Override
     public int numRows() {
-        return _ptr.length-1;
+        return _rlen;
     }
 
     @Override
@@ -361,7 +432,8 @@ public class SparseBlockDCSR extends SparseBlock
     @Override
     public void reset() {
         if( _size > 0 ) {
-            Arrays.fill(_ptr, 0);
+            // TODO: Check for correct reset behavior
+            Arrays.fill(_rowptr, 0);
             _size = 0;
         }
     }
@@ -369,14 +441,17 @@ public class SparseBlockDCSR extends SparseBlock
     @Override
     public void reset(int ennz, int maxnnz) {
         if( _size > 0 ) {
-            Arrays.fill(_ptr, 0);
+            Arrays.fill(_rowptr, 0);
             _size = 0;
         }
     }
 
     @Override
     public void reset(int r, int ennz, int maxnnz) {
-        int pos = pos(r);
+        // TODO: Implement
+        throw new NotImplementedException();
+
+        /*int pos = pos(r);
         int len = size(r);
 
         if( len > 0 ) {
@@ -385,7 +460,7 @@ public class SparseBlockDCSR extends SparseBlock
             System.arraycopy(_values, pos+len, _values, pos, _size-(pos+len));
             _size -= len;
             decrPtr(r+1, len);
-        }
+        }*/
     }
 
     @Override
@@ -395,34 +470,55 @@ public class SparseBlockDCSR extends SparseBlock
 
     @Override
     public int size(int r) {
-        return _ptr[r+1] - _ptr[r];
+        // TODO: Maybe there are better guesses
+        int idx = Arrays.binarySearch(_rowidx, r);
+
+        if (_rowidx[idx] != r)
+            return 0;
+
+        return _rowptr[idx+1] - _rowptr[idx];
     }
 
     @Override
     public long size(int rl, int ru) {
-        return _ptr[ru] - _ptr[rl];
+        // TODO: Maybe there are better guesses
+        int lowerIdx = Arrays.binarySearch(_rowidx, rl);
+
+        if (_rowidx[lowerIdx] != rl)
+            lowerIdx++;
+
+        int upperIdx = Arrays.binarySearch(_rowidx, ru);
+
+        if (lowerIdx >= upperIdx)
+            return 0;
+
+        return _rowptr[upperIdx] - _rowptr[lowerIdx];
     }
 
     @Override
     public long size(int rl, int ru, int cl, int cu) {
-        long nnz = 0;
+        // TODO: Implement
+        throw new NotImplementedException();
+        /*long nnz = 0;
         for(int i=rl; i<ru; i++)
             if( !isEmpty(i) ) {
                 int start = internPosFIndexGTE(i, cl);
                 int end = internPosFIndexGTE(i, cu);
                 nnz += (start!=-1) ? (end-start) : 0;
             }
-        return nnz;
+        return nnz;*/
     }
 
     @Override
     public boolean isEmpty(int r) {
-        return (_ptr[r+1] - _ptr[r] == 0);
+        return size(r) == 0;
     }
 
     @Override
     public int[] indexes(int r) {
-        return _indexes;
+        // TODO: Implement
+        throw new NotImplementedException();
+        // return _indexes;
     }
 
     @Override
@@ -432,12 +528,17 @@ public class SparseBlockDCSR extends SparseBlock
 
     @Override
     public int pos(int r) {
-        return _ptr[r];
+        // TODO: Implement
+        throw new NotImplementedException();
+        // return _ptr[r];
     }
 
     @Override
     public boolean set(int r, int c, double v) {
-        int pos = pos(r);
+        // TODO: Implement
+        throw new NotImplementedException();
+
+        /*int pos = pos(r);
         int len = size(r);
 
         //search for existing col index
@@ -466,12 +567,15 @@ public class SparseBlockDCSR extends SparseBlock
         else
             shiftRightAndInsert(index, c, v);
         incrPtr(r+1);
-        return true; // nnz++
+        return true; // nnz++*/
     }
 
     @Override
     public boolean add(int r, int c, double v) {
-        //early abort on zero
+        // TODO: Implement
+        throw new NotImplementedException();
+
+        /*//early abort on zero
         if( v==0 ) return false;
 
         int pos = pos(r);
@@ -492,12 +596,15 @@ public class SparseBlockDCSR extends SparseBlock
         else
             shiftRightAndInsert(index, c, v);
         incrPtr(r+1);
-        return true; // nnz++
+        return true; // nnz++*/
     }
 
     @Override
     public void set(int r, SparseRow row, boolean deep) {
-        int pos = pos(r);
+        // TODO: Implement
+        throw new NotImplementedException();
+
+        /*int pos = pos(r);
         int len = size(r);
         int alen = row.size();
         int[] aix = row.indexes();
@@ -516,12 +623,15 @@ public class SparseBlockDCSR extends SparseBlock
 
         //copy input row into internal representation
         System.arraycopy(aix, 0, _indexes, pos, alen);
-        System.arraycopy(avals, 0, _values, pos, alen);
+        System.arraycopy(avals, 0, _values, pos, alen);*/
     }
 
     @Override
     public void append(int r, int c, double v) {
-        //early abort on zero
+        // TODO: Implement
+        throw new NotImplementedException();
+
+        /*//early abort on zero
         if( v==0 ) return;
 
         int pos = pos(r);
@@ -539,12 +649,15 @@ public class SparseBlockDCSR extends SparseBlock
             else
                 shiftRightAndInsert(pos+len, c, v);
         }
-        incrPtr(r+1);
+        incrPtr(r+1);*/
     }
 
     @Override
     public void setIndexRange(int r, int cl, int cu, double[] v, int vix, int vlen) {
-        //delete existing values in range if necessary
+        // TODO: Implement
+        throw new NotImplementedException();
+
+        /*//delete existing values in range if necessary
         if( !isEmpty(r) )
             deleteIndexRange(r, cl, cu);
 
@@ -566,12 +679,15 @@ public class SparseBlockDCSR extends SparseBlock
                 _values[ index2 ] = v[i];
                 index2++;
             }
-        incrPtr(r+1, lnnz);
+        incrPtr(r+1, lnnz);*/
     }
 
     @Override
     public void setIndexRange(int r, int cl, int cu, double[] v, int[] vix, int vpos, int vlen) {
-        //delete existing values in range if necessary
+        // TODO: Implement
+        throw new NotImplementedException();
+
+        /*//delete existing values in range if necessary
         if( !isEmpty(r) )
             deleteIndexRange(r, cl, cu);
 
@@ -589,7 +705,7 @@ public class SparseBlockDCSR extends SparseBlock
             _values[ index2 ] = v[i];
             index2++;
         }
-        incrPtr(r+1, vlen);
+        incrPtr(r+1, vlen);*/
     }
 
     /**
@@ -606,7 +722,10 @@ public class SparseBlockDCSR extends SparseBlock
      * @param vlen right-hand-side dense block value length
      */
     public void setIndexRange(int rl, int ru, int cl, int cu, double[] v, int vix, int vlen) {
-        //step 1: determine output nnz
+        // TODO: Implement
+        throw new NotImplementedException();
+
+        /*//step 1: determine output nnz
         int nnz = _size - (int)size(rl, ru, cl, cu);
         if( v != null )
             nnz += UtilFunctions.computeNnz(v, vix, vlen);
@@ -664,7 +783,7 @@ public class SparseBlockDCSR extends SparseBlock
                 _values[pos--] = _values[k];
             }
             _ptr[r] = pos+1;
-        }
+        }*/
     }
 
     /**
@@ -679,7 +798,10 @@ public class SparseBlockDCSR extends SparseBlock
      * @param sb  right-hand-side sparse block
      */
     public void setIndexRange(int rl, int ru, int cl, int cu, SparseBlock sb) {
-        //step 1: determine output nnz
+        // TODO: Implement
+        throw new NotImplementedException();
+
+        /*//step 1: determine output nnz
         int nnz = (int) (_size - size(rl, ru, cl, cu)
                 + ((sb!=null) ? sb.size() : 0));
 
@@ -735,12 +857,15 @@ public class SparseBlockDCSR extends SparseBlock
                 _values[pos--] = _values[k];
             }
             _ptr[r] = pos+1;
-        }
+        }*/
     }
 
     @Override
     public void deleteIndexRange(int r, int cl, int cu) {
-        int start = internPosFIndexGTE(r,cl);
+        // TODO: Implement
+        throw new NotImplementedException();
+
+        /*int start = internPosFIndexGTE(r,cl);
         if( start < 0 ) //nothing to delete
             return;
 
@@ -754,7 +879,7 @@ public class SparseBlockDCSR extends SparseBlock
         System.arraycopy(_values, end, _values, start, _size-end);
         _size -= (end-start);
 
-        decrPtr(r+1, end-start);
+        decrPtr(r+1, end-start);*/
     }
 
     @Override
@@ -766,28 +891,37 @@ public class SparseBlockDCSR extends SparseBlock
 
     @Override
     public void sort(int r) {
-        int pos = pos(r);
+        // TODO: Implement
+        throw new NotImplementedException();
+
+        /*int pos = pos(r);
         int len = size(r);
 
         if( len<=100 || !SortUtils.isSorted(pos, pos+len, _indexes) )
-            SortUtils.sortByIndex(pos, pos+len, _indexes, _values);
+            SortUtils.sortByIndex(pos, pos+len, _indexes, _values);*/
     }
 
     @Override
     public double get(int r, int c) {
-        if( isEmpty(r) )
+        // TODO: Implement
+        throw new NotImplementedException();
+
+        /*if( isEmpty(r) )
             return 0;
         int pos = pos(r);
         int len = size(r);
 
         //search for existing col index in [pos,pos+len)
         int index = Arrays.binarySearch(_indexes, pos, pos+len, c);
-        return (index >= 0) ? _values[index] : 0;
+        return (index >= 0) ? _values[index] : 0;*/
     }
 
     @Override
     public SparseRow get(int r) {
-        if( isEmpty(r) )
+        // TODO: Implement
+        throw new NotImplementedException();
+
+        /*if( isEmpty(r) )
             return new SparseRowScalar();
         int pos = pos(r);
         int len = size(r);
@@ -796,7 +930,7 @@ public class SparseBlockDCSR extends SparseBlock
         System.arraycopy(_indexes, pos, row.indexes(), 0, len);
         System.arraycopy(_values, pos, row.values(), 0, len);
         row.setSize(len);
-        return row;
+        return row;*/
     }
 
     @Override
@@ -806,7 +940,10 @@ public class SparseBlockDCSR extends SparseBlock
     }
 
     private int internPosFIndexLTE(int r, int c) {
-        int pos = pos(r);
+        // TODO: Implement
+        throw new NotImplementedException();
+
+        /*int pos = pos(r);
         int len = size(r);
 
         //search for existing col index in [pos,pos+len)
@@ -816,12 +953,15 @@ public class SparseBlockDCSR extends SparseBlock
 
         //search lt col index (see binary search)
         index = Math.abs( index+1 );
-        return (index-1 >= pos) ? index-1 : -1;
+        return (index-1 >= pos) ? index-1 : -1;*/
     }
 
     @Override
     public final int posFIndexGTE(int r, int c) {
-        final int pos = pos(r);
+        // TODO: Implement
+        throw new NotImplementedException();
+
+        /*final int pos = pos(r);
         final int len = size(r);
         final int end = pos + len;
 
@@ -831,11 +971,14 @@ public class SparseBlockDCSR extends SparseBlock
             // search gt col index (see binary search)
             index = Math.abs(index + 1);
 
-        return (index < end) ? index - pos : -1;
+        return (index < end) ? index - pos : -1;*/
     }
 
     private int internPosFIndexGTE(int r, int c) {
-        int pos = pos(r);
+        // TODO: Implement
+        throw new NotImplementedException();
+
+        /*int pos = pos(r);
         int len = size(r);
 
         //search for existing col index
@@ -845,7 +988,7 @@ public class SparseBlockDCSR extends SparseBlock
 
         //search gt col index (see binary search)
         index = Math.abs( index+1 );
-        return (index < pos+len) ? index : -1;
+        return (index < pos+len) ? index : -1;*/
     }
 
     @Override
@@ -855,7 +998,10 @@ public class SparseBlockDCSR extends SparseBlock
     }
 
     private int internPosFIndexGT(int r, int c) {
-        int pos = pos(r);
+        // TODO: Implement
+        throw new NotImplementedException();
+
+        /*int pos = pos(r);
         int len = size(r);
 
         //search for existing col index
@@ -865,12 +1011,15 @@ public class SparseBlockDCSR extends SparseBlock
 
         //search gt col index (see binary search)
         index = Math.abs( index+1 );
-        return (index < pos+len) ? index : -1;
+        return (index < pos+len) ? index : -1;*/
     }
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder();
+        // TODO: Implement
+        throw new NotImplementedException();
+
+        /*StringBuilder sb = new StringBuilder();
         sb.append("SparseBlockCSR: rlen=");
         sb.append(numRows());
         sb.append(", nnz=");
@@ -895,12 +1044,15 @@ public class SparseBlockDCSR extends SparseBlock
             }
         }
 
-        return sb.toString();
+        return sb.toString();*/
     }
 
     @Override
     public boolean checkValidity(int rlen, int clen, long nnz, boolean strict) {
-        //1. correct meta data
+        // TODO: Implement
+        throw new NotImplementedException();
+
+        /*//1. correct meta data
         if( rlen < 0 || clen < 0 ) {
             throw new RuntimeException("Invalid block dimensions: "+rlen+" "+clen);
         }
@@ -946,7 +1098,7 @@ public class SparseBlockDCSR extends SparseBlock
                     + " Current size: "+capacity+ ", while Expected size:"+nnz*RESIZE_FACTOR1);
         }
 
-        return true;
+        return true;*/
     }
 
     @Override //specialized for CSR
@@ -985,13 +1137,19 @@ public class SparseBlockDCSR extends SparseBlock
     }
 
     private void resizeCopy(int capacity) {
-        //reallocate arrays and copy old values
+        // TODO: Implement
+        throw new NotImplementedException();
+
+        /*//reallocate arrays and copy old values
         _indexes = Arrays.copyOf(_indexes, capacity);
-        _values = Arrays.copyOf(_values, capacity);
+        _values = Arrays.copyOf(_values, capacity);*/
     }
 
     private void resizeAndInsert(int ix, int c, double v) {
-        //compute new size
+        // TODO: Implement
+        throw new NotImplementedException();
+
+        /*//compute new size
         int newCap = newCapacity(_values.length+1);
 
         int[] oldindexes = _indexes;
@@ -1008,46 +1166,61 @@ public class SparseBlockDCSR extends SparseBlock
         System.arraycopy(oldvalues, ix, _values, ix+1, _size-ix);
 
         //insert new value
-        insert(ix, c, v);
+        insert(ix, c, v);*/
     }
 
     private void shiftRightAndInsert(int ix, int c, double v)  {
-        //overlapping array copy (shift rhs values right by 1)
+        // TODO: Implement
+        throw new NotImplementedException();
+
+        /*//overlapping array copy (shift rhs values right by 1)
         System.arraycopy(_indexes, ix, _indexes, ix+1, _size-ix);
         System.arraycopy(_values, ix, _values, ix+1, _size-ix);
 
         //insert new value
-        insert(ix, c, v);
+        insert(ix, c, v);*/
     }
 
     private void shiftLeftAndDelete(int ix)
     {
-        //overlapping array copy (shift rhs values left by 1)
+        // TODO: Implement
+        throw new NotImplementedException();
+
+        /*//overlapping array copy (shift rhs values left by 1)
         System.arraycopy(_indexes, ix+1, _indexes, ix, _size-ix-1);
         System.arraycopy(_values, ix+1, _values, ix, _size-ix-1);
-        _size--;
+        _size--;*/
     }
 
     private void shiftRightByN(int ix, int n)
     {
-        //overlapping array copy (shift rhs values right by 1)
+        // TODO: Implement
+        throw new NotImplementedException();
+
+        /*//overlapping array copy (shift rhs values right by 1)
         System.arraycopy(_indexes, ix, _indexes, ix+n, _size-ix);
         System.arraycopy(_values, ix, _values, ix+n, _size-ix);
-        _size += n;
+        _size += n;*/
     }
 
     private void shiftLeftByN(int ix, int n)
     {
-        //overlapping array copy (shift rhs values left by n)
+        // TODO: Implement
+        throw new NotImplementedException();
+
+        /*//overlapping array copy (shift rhs values left by n)
         System.arraycopy(_indexes, ix, _indexes, ix-n, _size-ix);
         System.arraycopy(_values, ix, _values, ix-n, _size-ix);
-        _size -= n;
+        _size -= n;*/
     }
 
     private void insert(int ix, int c, double v) {
-        _indexes[ix] = c;
+        // TODO: Implement
+        throw new NotImplementedException();
+
+        /*_indexes[ix] = c;
         _values[ix] = v;
-        _size++;
+        _size++;*/
     }
 
     private void incrPtr(int rl) {
@@ -1055,9 +1228,12 @@ public class SparseBlockDCSR extends SparseBlock
     }
 
     private void incrPtr(int rl, int cnt) {
-        int rlen = numRows();
+        // TODO: Implement
+        throw new NotImplementedException();
+
+        /*int rlen = numRows();
         for( int i=rl; i<rlen+1; i++ )
-            _ptr[i]+=cnt;
+            _ptr[i]+=cnt;*/
     }
 
     private void decrPtr(int rl) {
@@ -1065,8 +1241,11 @@ public class SparseBlockDCSR extends SparseBlock
     }
 
     private void decrPtr(int rl, int cnt) {
-        int rlen = numRows();
+        // TODO: Implement
+        throw new NotImplementedException();
+
+        /*int rlen = numRows();
         for( int i=rl; i<rlen+1; i++ )
-            _ptr[i]-=cnt;
+            _ptr[i]-=cnt;*/
     }
 }

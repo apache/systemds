@@ -24,7 +24,8 @@ source("scripts/nn/networks/resnet.dml") as resnet
 forward = function(matrix[double] X, int Hin, int Win,
                             list[unknown] model, string mode,
                             list[unknown] ema_means_vars)
-    return (matrix[double] out, list[unknown] ema_means_vars_upd) {
+    return (matrix[double] out, list[unknown] ema_means_vars_upd,
+            list[unknown] cached_means_vars) {
     /*
      * Forward pass of the ResNet 18 model as introduced in
      * "Deep Residual Learning for Image Recognition" by
@@ -87,9 +88,12 @@ forward = function(matrix[double] X, int Hin, int Win,
      * - ema_means_vars_upd: List of updated exponential moving averages
      *     for mean and variance of badge normalization layers. It follows
      *     the same exact structure as the input EMAs list.
+     * - cached_means_vars: List of cached means and vars returned from
+     *     each batch normalization layer. This is required for the
+     *     backward pass of the network.
      */
     layer_sizes = list(2, 2, 2, 2)
     block_type = "basic"
-    [out, ema_means_vars_upd] = resnet::resnet_forward(X, Hin, Win, block_type,
-                                      layer_sizes, model, mode, ema_means_vars)
+    [out, ema_means_vars_upd, cached_means_vars] = resnet::resnet_forward(X, Hin, Win, block_type, layer_sizes, model,
+        mode, ema_means_vars)
 }

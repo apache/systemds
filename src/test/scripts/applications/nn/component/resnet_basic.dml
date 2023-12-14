@@ -59,8 +59,8 @@ basic_test_basic_block_forward = function(int C_in, int C_base, int strideh, int
         ema_means_vars = append(ema_means_vars, ema_var_bn3)
     }
 
-    [out, Hout, Wout, ema_means_vars_up] = resnet::basic_block_forward(X, weights, C_in, C_base, Hin, Win,
-                                                                    strideh, stridew, mode, ema_means_vars)
+    [out, Hout, Wout, ema_means_vars_up, cached_means_vars] = resnet::basic_block_forward(X, weights, C_in, C_base, Hin,
+        Win, strideh, stridew, mode, ema_means_vars)
     Hout_expected = Hin / strideh; Wout_expected = Win / strideh
     out_cols_expected = C_base * Hout_expected * Wout_expected
     if (Hout_expected != Hout | Wout_expected != Wout | out_cols_expected != ncol(out)) {
@@ -98,8 +98,8 @@ values_test_basic_block_forward_1 = function() {
     ema_var_bn2 = matrix(0, rows=C_base, cols=1)
     ema_means_vars = list(ema_mean_bn1, ema_var_bn1, ema_mean_bn2, ema_var_bn2)
 
-    [out, Hout, Wout, ema_means_vars_up] = resnet::basic_block_forward(X, weights, C_in, C_base, Hin, Win,
-                                                                strideh, stridew, mode, ema_means_vars)
+    [out, Hout, Wout, ema_means_vars_up, cached_means_vars] = resnet::basic_block_forward(X, weights, C_in, C_base, Hin,
+        Win, strideh, stridew, mode, ema_means_vars)
 
     out_expected = matrix("1.1192019  0.13680267 0.3965159  0.09488004 1.5221035  0.60268176 0.870202   0.3568437 0.19053036 2.023053   2.810772   2.7142973 1.4163418  2.2421117  0.22204155 0.         0.31268513 0.14521259 0.57843214 0.65275586 0.         0.02211368 0.4826215  0.65296173 1.2726448  0.6964331  1.6637247  1.2155424 2.3015604  3.9708042  1.6967016  0.40145046
                            1.1192019  0.13680267 0.3965159  0.09488004 1.5221035  0.60268176 0.870202   0.3568437 0.19053036 2.023053   2.810772   2.7142973 1.4163418  2.2421117  0.22204155 0.         0.31268513 0.14521259 0.57843214 0.65275586 0.         0.02211368 0.4826215  0.65296173 1.2726448  0.6964331  1.6637247  1.2155424 2.3015604  3.9708042  1.6967016  0.40145046",
@@ -147,8 +147,8 @@ values_test_basic_block_forward_2 = function() {
     ema_var_bn3 = matrix(0, rows=C_base, cols=1)
     ema_means_vars = list(ema_mean_bn1, ema_var_bn1, ema_mean_bn2, ema_var_bn2, ema_mean_bn3, ema_var_bn3)
 
-    [out, Hout, Wout, ema_means_vars_up] = resnet::basic_block_forward(X, weights, C_in, C_base, Hin, Win,
-                                                                strideh, stridew, mode, ema_means_vars)
+    [out, Hout, Wout, ema_means_vars_up, cached_means_vars] = resnet::basic_block_forward(X, weights, C_in, C_base, Hin,
+        Win, strideh, stridew, mode, ema_means_vars)
 
     out_expected = matrix("0.         0.         0.33147347 1.4695541  0.         0.9726007  0.         0.9382379
                            0.         0.         0.33147347 1.4695541  0.         0.9726007  0.         0.9382379 ",
@@ -202,8 +202,8 @@ values_test_basic_block_forward_3 = function() {
     ema_var_bn3 = matrix(0, rows=C_base, cols=1)
     ema_means_vars = list(ema_mean_bn1, ema_var_bn1, ema_mean_bn2, ema_var_bn2, ema_mean_bn3, ema_var_bn3)
 
-    [out, Hout, Wout, ema_means_vars_up] = resnet::basic_block_forward(X, weights, C_in, C_base, Hin, Win,
-                                                                strideh, stridew, mode, ema_means_vars)
+    [out, Hout, Wout, ema_means_vars_up, cached_means_vars] = resnet::basic_block_forward(X, weights, C_in, C_base, Hin,
+        Win, strideh, stridew, mode, ema_means_vars)
 
     out_expected = matrix("0.         1.576729   0.         0.14989257  0.         0.         1.5978024  0.         1.6740767  0.         0.         0.         0.89626473 1.0869961  0.         0.
                            0.         1.576729   0.         0.14989257  0.         0.         1.5978024  0.         1.6740767  0.         0.         0.         0.89626473 1.0869961  0.         0.        ",
@@ -535,9 +535,8 @@ values_test_residual_layer_forward = function() {
     blocks_weights = list(block1_weights, block2_weights)
     ema_means_vars = list(block1_EMAs, block2_EMAs)
     block_type = "basic"
-    [out, Hout, Wout, ema_means_vars_upd] = resnet::reslayer_forward(X, Hin, Win, block_type,
-                                                      blocks, strideh, stridew, C_in, C_base,
-                                                      blocks_weights, mode, ema_means_vars)
+    [out, Hout, Wout, ema_means_vars_upd, cached_means_vars] = resnet::reslayer_forward(X, Hin, Win, block_type, blocks,
+        strideh, stridew, C_in, C_base, blocks_weights, mode, ema_means_vars)
 
     test_util::check_all_close(out, expected_out, 0.0001)
 }

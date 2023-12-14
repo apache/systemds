@@ -26,20 +26,31 @@ source("scripts/nn/layers/max_pool2d_builtin.dml") as mp2d
 source("scripts/nn/layers/global_avg_pool2d.dml") as ap2d
 source("scripts/nn/layers/affine.dml") as fc
 
-conv3x3_forward = function(matrix[double] X, matrix[double] filter,
+conv3x3_forward = function(matrix[double] X, matrix[double] W,
                            int C_in, int C_out, int Hin, int Win,
                            int strideh, int stridew)
-    return(matrix[double] out, int Hout, int Wout) {
+    return (matrix[double] out, int Hout, int Wout) {
     /*
      * Simple 2D conv layer with 3x3 filter
      */
     # bias should not be applied
     bias = matrix(0, C_out, 1)
-    [out, Hout, Wout] = conv2d::forward(X, filter, bias, C_in, Hin, Win,
-                                        3, 3, strideh, stridew, 1, 1)
+    [out, Hout, Wout] = conv2d::forward(X, W, bias, C_in, Hin, Win, 3, 3, strideh, stridew, 1, 1)
 }
 
-conv1x1_forward = function(matrix[double] X, matrix[double] filter,
+conv3x3_backward = function(matrix[double] dOut, int Hout, int Wout,
+                            matrix[double] X, matrix[double] W,
+                            int C_in, int C_out, int Hin, int Win,
+                            int strideh, int stridew)
+    return (matrix[double] dX, matrix[double] dW) {
+    /*
+     * Simple 2D conv layer with 3x3 filter
+     */
+    bias = matrix(0, C_out, 1)
+    [dX, dW, db] = conv2d::backward(dOut, Hout, Wout, X, W, bias, C_in, Hin, Win, 3, 3, strideh, stridew, 1, 1)
+}
+
+conv1x1_forward = function(matrix[double] X, matrix[double] W,
                            int C_in, int C_out, int Hin, int Win,
                            int strideh, int stridew)
     return(matrix[double] out, int Hout, int Wout) {
@@ -48,8 +59,19 @@ conv1x1_forward = function(matrix[double] X, matrix[double] filter,
      */
     # bias should not be applied
     bias = matrix(0, C_out, 1)
-    [out, Hout, Wout] = conv2d::forward(X, filter, bias, C_in, Hin, Win,
-                                        1, 1, strideh, stridew, 0, 0)
+    [out, Hout, Wout] = conv2d::forward(X, W, bias, C_in, Hin, Win, 1, 1, strideh, stridew, 0, 0)
+}
+
+conv1x1_backward = function(matrix[double] dOut, int Hout, int Wout,
+                           matrix[double] X, matrix[double] W,
+                           int C_in, int C_out, int Hin, int Win,
+                           int strideh, int stridew)
+    return(matrix[double] dX, matrix[double] dW) {
+    /*
+     * Simple 2D conv layer with 1x1 filter
+     */
+    bias = matrix(0, C_out, 1)
+    [dX, dW, db] = conv2d::backward(dOut, Hout, Wout, X, W, bias, C_in, Hin, Win, 1, 1, strideh, stridew, 0, 0)
 }
 
 basic_block_forward = function(matrix[double] X, list[unknown] weights,
@@ -58,6 +80,7 @@ basic_block_forward = function(matrix[double] X, list[unknown] weights,
                              list[unknown] ema_means_vars)
     return (matrix[double] out, int Hout, int Wout,
             list[unknown] ema_means_vars_upd,
+            list[unknown] cached_out,
             list[unknown] cached_means_vars) {
     /*
      * Computes the forward pass for a basic residual block.
@@ -104,6 +127,8 @@ basic_block_forward = function(matrix[double] X, list[unknown] weights,
      * - Wout: Output width.
      * - ema_means_vars_upd: List of updated exponential moving averages
      *     for mean and variance of badge normalization layers.
+     * - cached_out: Outputs of each layer for computation of backward
+     *     pass. Refer to the code for the order of elements.
      * - cached_means_vars: List of cached means and vars returned from
      *     each batch normalization layer. This is required for the
      *     backward pass of the network.
@@ -127,7 +152,7 @@ basic_block_forward = function(matrix[double] X, list[unknown] weights,
     ema_var_bn2 = as.matrix(ema_means_vars[4])
 
     if (downsample) {
-        # gather params for donwsampling
+        # gather params for downsampling
         W_conv3 = as.matrix(weights[7])
         gamma_bn3 = as.matrix(weights[8])
         beta_bn3 = as.matrix(weights[9])
@@ -137,37 +162,83 @@ basic_block_forward = function(matrix[double] X, list[unknown] weights,
 
     # RESIDUAL PATH
     # First convolutional layer
-    [out, Hout, Wout] = conv3x3_forward(X, W_conv1, C_in, C_base, Hin, Win,
-                                        strideh, stridew)
-    [out, ema_mean_bn1_upd, ema_var_bn1_upd, c_m_bn1, c_v_bn1] = bn2d::forward(out, gamma_bn1, beta_bn1, C_base, Hout,
+    [out_conv1, Hout, Wout] = conv3x3_forward(X, W_conv1, C_in, C_base, Hin, Win,
+                                              strideh, stridew)
+    [out_bn1, ema_mean_bn1_upd, ema_var_bn1_upd, c_m_bn1, c_v_bn1] = bn2d::forward(out_conv1, gamma_bn1, beta_bn1, C_base, Hout,
                                                              Wout, mode, ema_mean_bn1, ema_var_bn1, mu_bn, epsilon_bn)
-    out = relu::forward(out)
+    out_re1 = relu::forward(out_bn1)
 
     # Second convolutional layer
-    [out, Hout, Wout] = conv3x3_forward(out, W_conv2, C_base, C_base, Hout, Wout, 1, 1)
-    [out, ema_mean_bn2_upd, ema_var_bn2_upd, c_m_bn2, c_v_bn2] = bn2d::forward(out, gamma_bn2, beta_bn2, C_base, Hout,
+    [out_conv2, Hout, Wout] = conv3x3_forward(out_re1, W_conv2, C_base, C_base, Hout, Wout, 1, 1)
+    [out_bn2, ema_mean_bn2_upd, ema_var_bn2_upd, c_m_bn2, c_v_bn2] = bn2d::forward(out_conv2, gamma_bn2, beta_bn2, C_base, Hout,
                                                              Wout, mode, ema_mean_bn2, ema_var_bn2, mu_bn, epsilon_bn)
 
     # IDENTITY PATH
-    identity = X
     if (downsample) {
         # downsample input
-        [identity, Hout, Wout] = conv1x1_forward(X, W_conv3, C_in, C_base, Hin, Win, strideh, stridew)
-        [identity, ema_mean_bn3_upd, ema_var_bn3_upd, c_m_bn3, c_v_bn3] = bn2d::forward(identity, gamma_bn3, beta_bn3,
+        [out_conv3, Hout, Wout] = conv1x1_forward(X, W_conv3, C_in, C_base, Hin, Win, strideh, stridew)
+        [out_bn3, ema_mean_bn3_upd, ema_var_bn3_upd, c_m_bn3, c_v_bn3] = bn2d::forward(out_conv3, gamma_bn3, beta_bn3,
                                                C_base, Hout, Wout, mode, ema_mean_bn3, ema_var_bn3, mu_bn, epsilon_bn)
+        identity = out_bn3
+    } else {
+        identity = X
     }
 
-    out = relu::forward(out + identity)
+    out_re2 = relu::forward(out_bn2 + identity)
 
     ema_means_vars_upd = list(ema_mean_bn1_upd, ema_var_bn1_upd, ema_mean_bn2_upd, ema_var_bn2_upd)
+    cached_out = list(out_conv1, out_bn1, out_re1, out_conv2, out_bn2, out_re2)
     cached_means_vars = list(c_m_bn1, c_v_bn1, c_m_bn2, c_v_bn2)
     if (downsample) {
         ema_means_vars_upd = append(ema_means_vars_upd, ema_mean_bn3_upd)
         ema_means_vars_upd = append(ema_means_vars_upd, ema_var_bn3_upd)
+        cached_out = append(cached_out, out_conv3)
+        cached_out = append(cached_out, out_bn3)
         cached_means_vars = append(cached_means_vars, c_m_bn3)
         cached_means_vars = append(cached_means_vars, c_v_bn3)
     }
+
+    out = out_re2
 }
+
+/*
+basic_block_backward = function(matrix[double] dOut, int Hout, int Wout,
+                                matrix[double] X, list[unknown] weights,
+                                int C_in, int C_base, int Hin, int Win,
+                                int strideh, int stridew, string mode,
+                                list[unknown] cached_means_vars)
+    return (list[unknown] dweights) {
+    downsample = strideh > 1 | stridew > 1 | C_in != C_base
+    # default values
+    mu_bn = 0.1
+    epsilon_bn = 1e-05
+
+    # get all params
+    W_conv1 = as.matrix(weights[1])
+    gamma_bn1 = as.matrix(weights[2])
+    beta_bn1 = as.matrix(weights[3])
+    W_conv2 = as.matrix(weights[4])
+    gamma_bn2 = as.matrix(weights[5])
+    beta_bn2 = as.matrix(weights[6])
+
+    ema_mean_bn1 = as.matrix(ema_means_vars[1])
+    ema_var_bn1 = as.matrix(ema_means_vars[2])
+    ema_mean_bn2 = as.matrix(ema_means_vars[3])
+    ema_var_bn2 = as.matrix(ema_means_vars[4])
+
+    if (downsample) {
+        # gather params for downsampling
+        W_conv3 = as.matrix(weights[7])
+        gamma_bn3 = as.matrix(weights[8])
+        beta_bn3 = as.matrix(weights[9])
+        ema_mean_bn3 = as.matrix(ema_means_vars[5])
+        ema_var_bn3 = as.matrix(ema_means_vars[6])
+    }
+
+    dOut = relu::backward(dOut
+}
+*/
+
 
 bottleneck_block_forward = function(matrix[double] X,
         list[unknown] weights, int C_in, int C_base, int Hin,
@@ -175,6 +246,7 @@ bottleneck_block_forward = function(matrix[double] X,
         list[unknown] ema_means_vars)
     return (matrix[double] out, int Hout, int Wout,
             list[unknown] ema_means_vars_upd,
+            list[unknown] cached_out,
             list[unknown] cached_means_vars) {
     /*
      * Computes the forward pass for a bottleneck residual
@@ -237,6 +309,8 @@ bottleneck_block_forward = function(matrix[double] X,
      * - Wout: Output width.
      * - ema_means_vars_upd: List of updated exponential moving averages
      *     for mean and variance of badge normalization layers.
+     * - cached_out: Outputs of each layer for computation of backward
+     *     pass. Refer to the code for the order of elements.
      * - cached_means_vars: List of cached means and vars returned from
      *     each batch normalization layer. This is required for the
      *     backward pass of the network.
@@ -275,44 +349,51 @@ bottleneck_block_forward = function(matrix[double] X,
 
     # RESIDUAL PATH
     # First convolutional layer
-    [out, Hout, Wout] = conv1x1_forward(X, W_conv1, C_in, C_base, Hin, Win,
+    [out_conv1, Hout, Wout] = conv1x1_forward(X, W_conv1, C_in, C_base, Hin, Win,
                                         1, 1)
-    [out, ema_mean_bn1_upd, ema_var_bn1_upd, c_m_bn1, c_v_bn1] = bn2d::forward(out, gamma_bn1, beta_bn1, C_base, Hout,
+    [out_bn1, ema_mean_bn1_upd, ema_var_bn1_upd, c_m_bn1, c_v_bn1] = bn2d::forward(out_conv1, gamma_bn1, beta_bn1, C_base, Hout,
                                                              Wout, mode, ema_mean_bn1, ema_var_bn1, mu_bn, epsilon_bn)
-    out = relu::forward(out)
+    out_re1 = relu::forward(out_bn1)
 
     # Second convolutional layer
-    [out, Hout, Wout] = conv3x3_forward(out, W_conv2, C_base, C_base, Hout, Wout, strideh, stridew)
-    [out, ema_mean_bn2_upd, ema_var_bn2_upd, c_m_bn2, c_v_bn2] = bn2d::forward(out, gamma_bn2, beta_bn2, C_base, Hout,
+    [out_conv2, Hout, Wout] = conv3x3_forward(out_re1, W_conv2, C_base, C_base, Hout, Wout, strideh, stridew)
+    [out_bn2, ema_mean_bn2_upd, ema_var_bn2_upd, c_m_bn2, c_v_bn2] = bn2d::forward(out_conv2, gamma_bn2, beta_bn2, C_base, Hout,
                                                              Wout, mode, ema_mean_bn2, ema_var_bn2, mu_bn, epsilon_bn)
-    out = relu::forward(out)
+    out_re2 = relu::forward(out_bn2)
 
     # Third convolutional layer
-    [out, Hout, Wout] = conv1x1_forward(out, W_conv3, C_base, 4*C_base, Hout, Wout, 1, 1)
-    [out, ema_mean_bn3_upd, ema_var_bn3_upd, c_m_bn3, c_v_bn3] = bn2d::forward(out, gamma_bn3, beta_bn3, 4*C_base, Hout,
+    [out_conv3, Hout, Wout] = conv1x1_forward(out_re2, W_conv3, C_base, 4*C_base, Hout, Wout, 1, 1)
+    [out_bn3, ema_mean_bn3_upd, ema_var_bn3_upd, c_m_bn3, c_v_bn3] = bn2d::forward(out_conv3, gamma_bn3, beta_bn3, 4*C_base, Hout,
                                                                Wout, mode, ema_mean_bn3, ema_var_bn3, mu_bn, epsilon_bn)
 
     # IDENTITY PATH
-    identity = X
     if (downsample) {
         # downsample input
-        [identity, Hout, Wout] = conv1x1_forward(X, W_conv4, C_in, 4*C_base,
+        [out_conv4, Hout, Wout] = conv1x1_forward(X, W_conv4, C_in, 4*C_base,
                                                  Hin, Win, strideh, stridew)
-        [identity, ema_mean_bn4_upd, ema_var_bn4_upd, c_m_bn4, c_v_bn4] = bn2d::forward(identity, gamma_bn4, beta_bn4,
+        [out_bn4, ema_mean_bn4_upd, ema_var_bn4_upd, c_m_bn4, c_v_bn4] = bn2d::forward(out_conv4, gamma_bn4, beta_bn4,
                                              4*C_base, Hout, Wout, mode, ema_mean_bn4, ema_var_bn4, mu_bn, epsilon_bn)
+        identity = out_bn4
+    } else {
+        identity = X
     }
 
-    out = relu::forward(out + identity)
+    out_re3 = relu::forward(out_bn3 + identity)
 
     ema_means_vars_upd = list(ema_mean_bn1_upd, ema_var_bn1_upd, ema_mean_bn2_upd, ema_var_bn2_upd, ema_mean_bn3_upd,
                               ema_var_bn3_upd)
+    cached_out = list(out_conv1, out_bn1, out_re1, out_conv2, out_bn2, out_re2, out_conv3, out_bn3, out_re3)
     cached_means_vars = list(c_m_bn1, c_v_bn1, c_m_bn2, c_v_bn2, c_m_bn3, c_v_bn3)
     if (downsample) {
         ema_means_vars_upd = append(ema_means_vars_upd, ema_mean_bn3_upd)
         ema_means_vars_upd = append(ema_means_vars_upd, ema_var_bn3_upd)
+        cached_out = append(cached_out, out_conv4)
+        cached_out = append(cached_out, out_bn4)
         cached_means_vars = append(cached_means_vars, c_m_bn4)
         cached_means_vars = append(cached_means_vars, c_v_bn4)
     }
+
+    out = out_re3
 }
 
 reslayer_forward = function(matrix[double] X, int Hin, int Win,
@@ -322,6 +403,7 @@ reslayer_forward = function(matrix[double] X, int Hin, int Win,
                             list[unknown] ema_means_vars)
     return (matrix[double] out, int Hout, int Wout,
             list[unknown] ema_means_vars_upd,
+            list[unknown] cached_out,
             list[unknown] cached_means_vars) {
     /*
      * Executes the forward pass for a sequence of residual
@@ -355,6 +437,8 @@ reslayer_forward = function(matrix[double] X, int Hin, int Win,
      *           in the docs of basic_block_forward() or
      *           bottleneck_block_forward() depending on the block type.
      *     -> length == blocks
+     * - cached_out: Outputs of each layer for computation of backward
+     *     pass. Refer to the code for the order of elements.
      * - cached_means_vars: List of cached means and vars returned from
      *     each batch normalization layer. This is required for the
      *     backward pass of the network.
@@ -365,13 +449,14 @@ reslayer_forward = function(matrix[double] X, int Hin, int Win,
 
     # first block with provided stride
     if (block_type == "basic") {
-        [out, Hout, Wout, emas1_upd, cached_mv_b1] = basic_block_forward(X, as.list(blocks_weights[1]), C_in, C_base,
+        [out, Hout, Wout, emas1_upd, cached_out_b1, cached_mv_b1] = basic_block_forward(X, as.list(blocks_weights[1]), C_in, C_base,
                                                         Hin, Win, strideh, stridew, mode, as.list(ema_means_vars[1]))
     } else {
-        [out, Hout, Wout, emas1_upd, cached_mv_b1] = bottleneck_block_forward(X, as.list(blocks_weights[1]), C_in,
+        [out, Hout, Wout, emas1_upd, cached_out_b1, cached_mv_b1] = bottleneck_block_forward(X, as.list(blocks_weights[1]), C_in,
                                              C_base, Hin, Win, strideh, stridew, mode, as.list(ema_means_vars[1]))
     }
     ema_means_vars_upd = list(emas1_upd)
+    cached_out = list(cached_out_b1)
     cached_means_vars = list(cached_mv_b1)
 
     # other blocks
@@ -379,15 +464,16 @@ reslayer_forward = function(matrix[double] X, int Hin, int Win,
         current_weights = as.list(blocks_weights[i])
         current_emas = as.list(ema_means_vars[i])
         if (block_type == "basic") {
-            [out, Hout, Wout, current_emas_upd, current_cached_mv] = basic_block_forward(X=out, weights=current_weights,
+            [out, Hout, Wout, current_emas_upd, current_cached_out, current_cached_mv] = basic_block_forward(X=out, weights=current_weights,
                                         C_in=C_base, C_base=C_base, Hin=Hout, Win=Wout, strideh=1, stridew=1, mode=mode,
                                         ema_means_vars=current_emas)
         } else {
-            [out, Hout, Wout, current_emas_upd, current_cached_mv] = bottleneck_block_forward(X=out,
+            [out, Hout, Wout, current_emas_upd, current_cached_out, current_cached_mv] = bottleneck_block_forward(X=out,
                                         weights=current_weights, C_in=C_base*4, C_base=C_base, Hin=Hout, Win=Wout,
                                         strideh=1, stridew=1, mode=mode, ema_means_vars=current_emas)
         }
         ema_means_vars_upd = append(ema_means_vars_upd, current_emas_upd)
+        cached_out = append(cached_out, current_cached_out)
         cached_means_vars = append(cached_means_vars, current_cached_mv)
     }
 }
@@ -397,7 +483,7 @@ resnet_forward = function(matrix[double] X, int Hin, int Win,
                           list[unknown] model, string mode,
                           list[unknown] ema_means_vars)
     return (matrix[double] out, list[unknown] ema_means_vars_upd,
-            list[unknown] cached_means_vars) {
+            list[unknown] cached_out, list[unknown] cached_means_vars) {
     /*
      * Forward pass of the ResNet as introduced in
      * "Deep Residual Learning for Image Recognition" by
@@ -472,6 +558,8 @@ resnet_forward = function(matrix[double] X, int Hin, int Win,
      * - ema_means_vars_upd: List of updated exponential moving averages
      *     for mean and variance of badge normalization layers. It follows
      *     the same exact structure as the input EMAs list.
+     * - cached_out: Outputs of each layer for computation of backward
+     *     pass. Refer to the code for the order of elements.
      * - cached_means_vars: List of cached means and vars returned from
      *     each batch normalization layer. This is required for the
      *     backward pass of the network.
@@ -504,46 +592,49 @@ resnet_forward = function(matrix[double] X, int Hin, int Win,
     # Convolutional 7x7 layer
     C = 64
     b_conv1 = matrix(0, rows=C, cols=1)
-    [out, Hout, Wout] = conv2d::forward(X=X, W=W_conv1, b=b_conv1, C=3, Hin=Hin, Win=Win, Hf=7, Wf=7, strideh=2,
+    [out_conv1, Hout, Wout] = conv2d::forward(X=X, W=W_conv1, b=b_conv1, C=3, Hin=Hin, Win=Win, Hf=7, Wf=7, strideh=2,
                                         stridew=2, padh=3, padw=3)
     # Batch Normalization
-    [out, ema_mean_bn1_upd, ema_var_bn1_upd, cached_m, cached_v] = bn2d::forward(X=out, gamma=gamma_bn1, beta=beta_bn1,
+    [out_bn1, ema_mean_bn1_upd, ema_var_bn1_upd, cached_m, cached_v] = bn2d::forward(X=out_conv1, gamma=gamma_bn1, beta=beta_bn1,
         C=C, Hin=Hout, Win=Wout, mode=mode, ema_mean=ema_mean_bn1, ema_var=ema_var_bn1, mu=mu_bn, epsilon=epsilon_bn)
     # ReLU
-    out = relu::forward(X=out)
+    out_re1 = relu::forward(X=out_bn1)
     # Max Pooling 3x3
-    [out, Hout, Wout] = mp2d::forward(X=out, C=C, Hin=Hout, Win=Wout, Hf=3, Wf=3, strideh=2, stridew=2, padh=1, padw=1)
+    [out_mp, Hout, Wout] = mp2d::forward(X=out_re1, C=C, Hin=Hout, Win=Wout, Hf=3, Wf=3, strideh=2, stridew=2, padh=1, padw=1)
 
     # residual layer 1
     block_count = as.integer(as.scalar(layer_sizes[1]))
-    [out, Hout, Wout, emas1_upd, cached_mv_l1] = reslayer_forward(X=out, Hin=Hout, Win=Wout, block_type=block_type,
+    [out, Hout, Wout, emas1_upd, cached_out_l1, cached_mv_l1] = reslayer_forward(X=out_mp, Hin=Hout, Win=Wout, block_type=block_type,
         blocks=block_count, strideh=1, stridew=1, C_in=C, C_base=64, blocks_weights=weights_reslayer1, mode=mode,
         ema_means_vars=emas_reslayer1)
     C = 64 * block_expansion
     # residual layer 2
     block_count = as.integer(as.scalar(layer_sizes[2]))
-    [out, Hout, Wout, emas2_upd, cached_mv_l2] = reslayer_forward(X=out, Hin=Hout, Win=Wout, block_type=block_type,
+    [out, Hout, Wout, emas2_upd, cached_out_l2, cached_mv_l2] = reslayer_forward(X=out, Hin=Hout, Win=Wout, block_type=block_type,
         blocks=block_count, strideh=2, stridew=2, C_in=C, C_base=128, blocks_weights=weights_reslayer2, mode=mode,
         ema_means_vars=emas_reslayer2)
     C = 128 * block_expansion
     # residual layer 3
     block_count = as.integer(as.scalar(layer_sizes[3]))
-    [out, Hout, Wout, emas3_upd, cached_mv_l3] = reslayer_forward(X=out, Hin=Hout, Win=Wout, block_type=block_type,
+    [out, Hout, Wout, emas3_upd, cached_out_l3, cached_mv_l3] = reslayer_forward(X=out, Hin=Hout, Win=Wout, block_type=block_type,
         blocks=block_count, strideh=2, stridew=2, C_in=C, C_base=256, blocks_weights=weights_reslayer3, mode=mode,
         ema_means_vars=emas_reslayer3)
     C = 256 * block_expansion
     # residual layer 4
     block_count = as.integer(as.scalar(layer_sizes[4]))
-    [out, Hout, Wout, emas4_upd, cached_mv_l4] = reslayer_forward(X=out, Hin=Hout, Win=Wout, block_type=block_type,
+    [out, Hout, Wout, emas4_upd, cached_out_l4, cached_mv_l4] = reslayer_forward(X=out, Hin=Hout, Win=Wout, block_type=block_type,
         blocks=block_count, strideh=2, stridew=2, C_in=C, C_base=512, blocks_weights=weights_reslayer4, mode=mode,
         ema_means_vars=emas_reslayer4)
     C = 512 * block_expansion
 
     # Global Average Pooling
-    [out, Hout, Wout] = ap2d::forward(X=out, C=C, Hin=Hout, Win=Wout)
+    [out_ap, Hout, Wout] = ap2d::forward(X=out, C=C, Hin=Hout, Win=Wout)
     # Affine
-    out = fc::forward(X=out, W=W_fc, b=b_fc)
+    out_fc = fc::forward(X=out_ap, W=W_fc, b=b_fc)
 
     ema_means_vars_upd = list(ema_mean_bn1_upd, ema_var_bn1_upd, emas1_upd, emas2_upd, emas3_upd, emas4_upd)
+    cached_out = list(out_conv1, out_bn1, out_re1, out_mp, cached_out_l1, cached_out_l2, cached_out_l3, cached_out_l4, out_ap, out_fc)
     cached_means_vars = list(cached_m, cached_v, cached_mv_l1, cached_mv_l2, cached_mv_l3, cached_mv_l4)
+
+    out = out_fc
 }

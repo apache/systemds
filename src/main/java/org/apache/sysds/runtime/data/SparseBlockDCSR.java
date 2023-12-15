@@ -101,7 +101,6 @@ public class SparseBlockDCSR extends SparseBlock
             throw new RuntimeException("SparseBlockDCSR supports nnz<=Integer.MAX_VALUE but got "+size);
 
         //special case SparseBlockDCSR
-        // TODO: Handle differently
         if( sblock instanceof SparseBlockDCSR ) {
             SparseBlockDCSR ocsr = (SparseBlockDCSR)sblock;
             _rowidx = Arrays.copyOf(ocsr._rowidx, ocsr._rowidx.length); // TODO: Shorten array if necessary
@@ -124,6 +123,8 @@ public class SparseBlockDCSR extends SparseBlock
             _rowptr = new int[_rowidx.length + 1];
             _colidx = Arrays.copyOf(ocsr.indexes(), (int)ocsr.size());
             _values = Arrays.copyOf(ocsr.values(), (int)ocsr.size());
+            _rlen = rlen;
+            _size = (int)ocsr.size();
 
             int pos = 0;
 
@@ -140,6 +141,7 @@ public class SparseBlockDCSR extends SparseBlock
             _rowptr = new int[_rowidx.length + 1];
             _colidx = new int[(int)size];
             _values = new double[(int)size];
+            _rlen = rlen;
 
             //_ptr = new int[rlen+1];
             //_indexes = new int[(int)size];
@@ -441,6 +443,7 @@ public class SparseBlockDCSR extends SparseBlock
     @Override
     public void reset(int ennz, int maxnnz) {
         if( _size > 0 ) {
+            // TODO: Check for correct reset behavior
             Arrays.fill(_rowptr, 0);
             _size = 0;
         }
@@ -470,10 +473,10 @@ public class SparseBlockDCSR extends SparseBlock
 
     @Override
     public int size(int r) {
-        // TODO: Maybe there are better guesses
+        // TODO: Maybe there are better guesses (min, max values known, each value appears once at maximum)
         int idx = Arrays.binarySearch(_rowidx, r);
 
-        if (_rowidx[idx] != r)
+        if (idx == -1 || _rowidx[idx] != r)
             return 0;
 
         return _rowptr[idx+1] - _rowptr[idx];
@@ -481,10 +484,10 @@ public class SparseBlockDCSR extends SparseBlock
 
     @Override
     public long size(int rl, int ru) {
-        // TODO: Maybe there are better guesses
+        // TODO: Maybe there are better guesses (min, max values known, each value appears once at maximum)
         int lowerIdx = Arrays.binarySearch(_rowidx, rl);
 
-        if (_rowidx[lowerIdx] != rl)
+        if (lowerIdx == -1 || _rowidx[lowerIdx] != rl)
             lowerIdx++;
 
         int upperIdx = Arrays.binarySearch(_rowidx, ru);
@@ -497,17 +500,74 @@ public class SparseBlockDCSR extends SparseBlock
 
     @Override
     public long size(int rl, int ru, int cl, int cu) {
-        // TODO: Implement
-        throw new NotImplementedException();
-        /*long nnz = 0;
-        for(int i=rl; i<ru; i++)
+        // TODO: Validate correctness
+        long nnz = 0;
+
+        int lRowIdx = internRowInBoundsIndex(rl, true);
+        int uRowIdx = internRowInBoundsIndex(ru, false);
+
+        for (int rowIdx = lRowIdx; rowIdx <= uRowIdx; rowIdx++) {
+            int clIdx = internColIndex(rowIdx, cl, true);
+            int cuIdx = internColIndex(rowIdx, cl, false);
+            nnz += cuIdx - clIdx;
+        }
+
+        /*for(int i=rl; i<ru; i++)
             if( !isEmpty(i) ) {
                 int start = internPosFIndexGTE(i, cl);
                 int end = internPosFIndexGTE(i, cu);
                 nnz += (start!=-1) ? (end-start) : 0;
-            }
-        return nnz;*/
+            }*/
+        return nnz;
     }
+
+    private int internRowInBoundsIndex(int r, boolean incrementIfNotFound) {
+        // TODO: Undefined behavior on _rowidx.length == 0
+        int idx = Arrays.binarySearch(_rowidx, r);
+
+        if (idx == -1)
+            idx = 0;
+
+        if (incrementIfNotFound && _rowidx[idx] != r && idx + 1 < _rowidx.length)
+            idx++;
+
+        return idx;
+    }
+
+    /**
+     *
+     * @param r
+     * @return the index of the row in _rowidx or -1 if it does not exist
+     */
+    private int internRowPosIndex(int r) {
+        int idx = Arrays.binarySearch(_rowidx, r);
+
+        if (idx == -1 || _rowidx[idx] != r)
+            return -1;
+
+        return idx;
+    }
+
+    private int internColIndex(int rowIdx, int col, boolean incrementIfNotFound) {
+        // TODO: Undefined behavior on _rowidx.length == 0
+        int idx = Arrays.binarySearch(_colidx, _rowptr[rowIdx], _rowptr[rowIdx+1], col);
+
+        if (incrementIfNotFound && _colidx[idx] != col)
+            idx++;
+
+        return idx;
+    }
+
+    /*private int internColPosIndexInBounds(int r, int c, boolean higher) {
+        // TODO: Undefined behavior on _rowidx.length == 0
+        int idx = Arrays.binarySearch(_rowidx, r);
+
+        if (idx == -1)
+            return 0;
+
+        if (_rowidx[idx] != r)
+            return idx + 1 < _rowidx.length ? _rowidx
+    }*/
 
     @Override
     public boolean isEmpty(int r) {
@@ -516,9 +576,7 @@ public class SparseBlockDCSR extends SparseBlock
 
     @Override
     public int[] indexes(int r) {
-        // TODO: Implement
-        throw new NotImplementedException();
-        // return _indexes;
+        return _colidx;
     }
 
     @Override
@@ -528,9 +586,12 @@ public class SparseBlockDCSR extends SparseBlock
 
     @Override
     public int pos(int r) {
-        // TODO: Implement
-        throw new NotImplementedException();
-        // return _ptr[r];
+        int idx = Arrays.binarySearch(_rowidx, r);
+
+        if (idx == -1)
+            idx = 0;
+
+        return _rowptr[idx];
     }
 
     @Override
@@ -903,184 +964,152 @@ public class SparseBlockDCSR extends SparseBlock
 
     @Override
     public double get(int r, int c) {
-        // TODO: Implement
-        throw new NotImplementedException();
-
-        /*if( isEmpty(r) )
+        if( isEmpty(r) )
             return 0;
         int pos = pos(r);
         int len = size(r);
 
         //search for existing col index in [pos,pos+len)
-        int index = Arrays.binarySearch(_indexes, pos, pos+len, c);
-        return (index >= 0) ? _values[index] : 0;*/
+        int index = Arrays.binarySearch(_colidx, pos, pos+len, c);
+        return (index >= 0) ? _values[index] : 0;
     }
 
     @Override
     public SparseRow get(int r) {
-        // TODO: Implement
-        throw new NotImplementedException();
-
-        /*if( isEmpty(r) )
+        if( isEmpty(r) )
             return new SparseRowScalar();
         int pos = pos(r);
         int len = size(r);
 
         SparseRowVector row = new SparseRowVector(len);
-        System.arraycopy(_indexes, pos, row.indexes(), 0, len);
+        System.arraycopy(_colidx, pos, row.indexes(), 0, len);
         System.arraycopy(_values, pos, row.values(), 0, len);
         row.setSize(len);
-        return row;*/
+        return row;
     }
 
     @Override
     public int posFIndexLTE(int r, int c) {
-        int index = internPosFIndexLTE(r, c);
-        return (index>=0) ? index-pos(r) : index;
-    }
+        int rowIdx = internRowPosIndex(r);
 
-    private int internPosFIndexLTE(int r, int c) {
-        // TODO: Implement
-        throw new NotImplementedException();
+        if (rowIdx == -1)
+            return -1;
 
-        /*int pos = pos(r);
-        int len = size(r);
+        int colIdx = Arrays.binarySearch(_colidx, _rowptr[rowIdx], _rowptr[rowIdx+1], c);
 
-        //search for existing col index in [pos,pos+len)
-        int index = Arrays.binarySearch(_indexes, pos, pos+len, c);
-        if( index >= 0  )
-            return (index < pos+len) ? index : -1;
+        // There is no element smaller or equal in this row
+        if (colIdx < _rowptr[rowIdx])
+            return -1;
 
-        //search lt col index (see binary search)
-        index = Math.abs( index+1 );
-        return (index-1 >= pos) ? index-1 : -1;*/
+        return colIdx;
     }
 
     @Override
     public final int posFIndexGTE(int r, int c) {
-        // TODO: Implement
-        throw new NotImplementedException();
+        int rowIdx = internRowPosIndex(r);
 
-        /*final int pos = pos(r);
-        final int len = size(r);
-        final int end = pos + len;
+        if (rowIdx == -1)
+            return -1;
 
-        // search for existing col index
-        int index = Arrays.binarySearch(_indexes, pos, end, c);
-        if(index < 0)
-            // search gt col index (see binary search)
-            index = Math.abs(index + 1);
+        int colIdx = Arrays.binarySearch(_colidx, _rowptr[rowIdx], _rowptr[rowIdx+1], c);
 
-        return (index < end) ? index - pos : -1;*/
-    }
+        if (colIdx == -1 || _colidx[colIdx] != c)
+            colIdx++;
 
-    private int internPosFIndexGTE(int r, int c) {
-        // TODO: Implement
-        throw new NotImplementedException();
+        // There is no element greater or equal in this row
+        if (colIdx >= _rowptr[rowIdx+1])
+            return -1;
 
-        /*int pos = pos(r);
-        int len = size(r);
-
-        //search for existing col index
-        int index = Arrays.binarySearch(_indexes, pos, pos+len, c);
-        if( index >= 0  )
-            return (index < pos+len) ? index : -1;
-
-        //search gt col index (see binary search)
-        index = Math.abs( index+1 );
-        return (index < pos+len) ? index : -1;*/
+        return colIdx;
     }
 
     @Override
     public int posFIndexGT(int r, int c) {
-        int index = internPosFIndexGT(r, c);
-        return (index>=0) ? index-pos(r) : index;
-    }
+        int rowIdx = internRowPosIndex(r);
 
-    private int internPosFIndexGT(int r, int c) {
-        // TODO: Implement
-        throw new NotImplementedException();
+        if (rowIdx == -1)
+            return -1;
 
-        /*int pos = pos(r);
-        int len = size(r);
+        int colIdx = Arrays.binarySearch(_colidx, _rowptr[rowIdx], _rowptr[rowIdx+1], c) + 1;
 
-        //search for existing col index
-        int index = Arrays.binarySearch(_indexes, pos, pos+len, c);
-        if( index >= 0  )
-            return (index+1 < pos+len) ? index+1 : -1;
+        // There is no element greater or equal in this row
+        if (colIdx >= _rowptr[rowIdx+1])
+            return -1;
 
-        //search gt col index (see binary search)
-        index = Math.abs( index+1 );
-        return (index < pos+len) ? index : -1;*/
+        return colIdx;
     }
 
     @Override
     public String toString() {
-        // TODO: Implement
-        throw new NotImplementedException();
-
-        /*StringBuilder sb = new StringBuilder();
+        StringBuilder sb = new StringBuilder();
         sb.append("SparseBlockCSR: rlen=");
         sb.append(numRows());
         sb.append(", nnz=");
         sb.append(size());
         sb.append("\n");
         final int rowDigits = (int)Math.max(Math.ceil(Math.log10(numRows())),1) ;
-        for(int i = 0; i < numRows(); i++) {
+        for(int rowIdx = 0; rowIdx < _rowidx.length; rowIdx++) {
             // append row
-            final int pos = pos(i);
-            final int len = size(i);
-            if(pos < pos + len) {
-                sb.append(String.format("%0"+rowDigits+"d ", i));
-                for(int j = pos; j < pos + len; j++) {
-                    if(_values[j] == (long) _values[j])
-                        sb.append(String.format("%"+rowDigits+"d:%d", _indexes[j], (long)_values[j]));
-                    else
-                        sb.append(String.format("%"+rowDigits+"d:%s", _indexes[j], Double.toString(_values[j])));
-                    if(j + 1 < pos + len)
-                        sb.append(" ");
-                }
-                sb.append("\n");
+            final int row = _rowidx[rowIdx];
+            final int pos = _rowptr[rowIdx];
+            final int len = _rowptr[rowIdx+1] - pos;
+
+            sb.append(String.format("%0"+rowDigits+"d ", row));
+            for(int j = pos; j < pos + len; j++) {
+                if(_values[j] == (long) _values[j])
+                    sb.append(String.format("%"+rowDigits+"d:%d", _colidx[j], (long)_values[j]));
+                else
+                    sb.append(String.format("%"+rowDigits+"d:%s", _colidx[j], Double.toString(_values[j])));
+                if(j + 1 < pos + len)
+                    sb.append(" ");
             }
+            sb.append("\n");
         }
 
-        return sb.toString();*/
+        return sb.toString();
     }
 
     @Override
     public boolean checkValidity(int rlen, int clen, long nnz, boolean strict) {
-        // TODO: Implement
-        throw new NotImplementedException();
-
-        /*//1. correct meta data
-        if( rlen < 0 || clen < 0 ) {
+        //1. correct meta data
+        if ( rlen < 0 || clen < 0 ) {
             throw new RuntimeException("Invalid block dimensions: "+rlen+" "+clen);
         }
 
         //2. correct array lengths
-        if(_size != nnz && _ptr.length < rlen+1 && _values.length < nnz && _indexes.length < nnz ) {
+        if (_size != nnz && _rowptr.length != _rowidx.length + 1 && _values.length < nnz && _colidx.length < nnz ) {
             throw new RuntimeException("Incorrect array lengths.");
         }
 
         //3. non-decreasing row pointers
-        for( int i=1; i<rlen; i++ ) {
-            if(_ptr[i-1] > _ptr[i] && strict)
-                throw new RuntimeException("Row pointers are decreasing at row: "+i
-                        + ", with pointers "+_ptr[i-1]+" > "+_ptr[i]);
+        // TODO: Check if only if strict check applies here (I don't think so)
+        for ( int i=1; i <_rowidx.length; i++ ) {
+            if (_rowidx[i-1] > _rowidx[i])
+                throw new RuntimeException("Row indices are decreasing at row: " + i
+                        + ", with indices " + _rowidx[i-1] + " > " +_rowidx[i]);
+        }
+
+        for (int i = 1; i < _rowptr.length; i++ ) {
+            if (_rowptr[i - 1] > _rowptr[i]) {
+                throw new RuntimeException("Row pointers are decreasing at row: " + i
+                        + ", with pointers " + _rowptr[i-1] + " > " +_rowptr[i]);
+            }
         }
 
         //4. sorted column indexes per row
-        for( int i=0; i<rlen; i++ ) {
-            int apos = pos(i);
-            int alen = size(i);
-            for( int k=apos+1; k<apos+alen; k++)
-                if( _indexes[k-1] >= _indexes[k] )
+        for ( int rowIdx = 0; rowIdx < _rowidx.length; rowIdx++ ) {
+            int apos = _rowidx[rowIdx];
+            int alen = _rowidx[rowIdx+1] - apos;
+
+            for( int k = apos + 1; k < apos + alen; k++)
+                if( _colidx[k-1] >= _colidx[k] )
                     throw new RuntimeException("Wrong sparse row ordering: "
-                            + k + " "+_indexes[k-1]+" "+_indexes[k]);
+                            + k + " " + _colidx[k-1] + " " + _colidx[k]);
+
             for( int k=apos; k<apos+alen; k++ )
                 if( _values[k] == 0 )
                     throw new RuntimeException("Wrong sparse row: zero at "
-                            + k + " at col index " + _indexes[k]);
+                            + k + " at col index " + _colidx[k]);
         }
 
         //5. non-existing zero values
@@ -1098,7 +1127,7 @@ public class SparseBlockDCSR extends SparseBlock
                     + " Current size: "+capacity+ ", while Expected size:"+nnz*RESIZE_FACTOR1);
         }
 
-        return true;*/
+        return true;
     }
 
     @Override //specialized for CSR

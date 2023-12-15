@@ -203,11 +203,11 @@ basic_block_forward = function(matrix[double] X, list[unknown] weights,
 
 /*
 basic_block_backward = function(matrix[double] dOut, int Hout, int Wout,
-                                matrix[double] X, list[unknown] weights,
-                                int C_in, int C_base, int Hin, int Win,
-                                int strideh, int stridew, string mode,
-                                list[unknown] cached_means_vars)
-    return (list[unknown] dweights) {
+                                list[unknown] cached_out, matrix[double] X,
+                                list[unknown] weights, int C_in, int C_base,
+                                int Hin, int Win, int strideh, int stridew,
+                                string mode, list[unknown] cached_means_vars)
+    return (list[unknown] gradients) {
     downsample = strideh > 1 | stridew > 1 | C_in != C_base
     # default values
     mu_bn = 0.1
@@ -221,24 +221,45 @@ basic_block_backward = function(matrix[double] dOut, int Hout, int Wout,
     gamma_bn2 = as.matrix(weights[5])
     beta_bn2 = as.matrix(weights[6])
 
-    ema_mean_bn1 = as.matrix(ema_means_vars[1])
-    ema_var_bn1 = as.matrix(ema_means_vars[2])
-    ema_mean_bn2 = as.matrix(ema_means_vars[3])
-    ema_var_bn2 = as.matrix(ema_means_vars[4])
+    out_conv1 = as.matrix(cached_out[1])
+    out_bn1 = as.matrix(cached_out[2])
+    out_re1 = as.matrix(cached_out[3])
+    out_conv2 = as.matrix(cached_out[4])
+    out_bn2 = as.matrix(cached_out[5])
+    out_re2 = as.matrix(cached_out[6])
+
+    mean_bn1 = as.matrix(cached_means_vars[1])
+    var_bn1 = as.matrix(cached_means_vars[2])
+    mean_bn2 = as.matrix(cached_means_vars[3])
+    var_bn2 = as.matrix(cached_means_vars[4])
 
     if (downsample) {
         # gather params for downsampling
         W_conv3 = as.matrix(weights[7])
         gamma_bn3 = as.matrix(weights[8])
         beta_bn3 = as.matrix(weights[9])
-        ema_mean_bn3 = as.matrix(ema_means_vars[5])
-        ema_var_bn3 = as.matrix(ema_means_vars[6])
+
+        out_conv3 = as.matrix(cached_out[7])
+        out_bn3 = as.matrix(cached_out[8])
+        identity = out_bn3
+
+        mean_bn3 = as.matrix(cached_means_vars[5])
+        var_bn3 = as.matrix(cached_means_vars[6])
+    } else {
+        identity = X
     }
 
-    dOut = relu::backward(dOut
-}
-*/
+    dX = relu::backward(dOut, identity + out_bn2)
 
+    # IDENTITY PATH
+    if (downsample) {
+        [dX_id, dgamma_bn3, dbeta_bn3] = bn2d::backward(dX, mean_bn3, var_bn3, out_conv3, gamma_bn3, C_base, Hout, Wout,
+            epsilon_bn)
+        [dX_id, dW_conv3, db_conv3] = conv3x3_backward(dX_id, Hout, Wout, X, W_conv3,
+    }
+
+}
+ */
 
 bottleneck_block_forward = function(matrix[double] X,
         list[unknown] weights, int C_in, int C_base, int Hin,

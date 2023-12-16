@@ -631,7 +631,7 @@ public class SparseBlockDCSR extends SparseBlock
         // remove the column
         incrRowPtr(rowIndex+1, -1);
         deleteCol(index);
-
+        return true;
 
         /*if (rowExists) {
             if( v == 0 ) {

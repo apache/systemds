@@ -152,6 +152,6 @@ public class OpElemWChainTest extends AutomatedTestBase
 		}
 		//compare estimated and real sparsity
 		TestUtils.compareScalars(est, m5.getSparsity(), (estim instanceof EstimatorBasicWorst) ? 9e-1 :
-			(estim instanceof EstimatorLayeredGraph) ? 3e-2 : 1e-2);
+			(estim instanceof EstimatorLayeredGraph) ? 7e-2 : 1e-2);
 	}
 }

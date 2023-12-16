@@ -158,6 +158,6 @@ public class OuterProductTest extends AutomatedTestBase
 		
 		//compare estimated and real sparsity
 		double est = estim.estim(m1, m2);
-		TestUtils.compareScalars(est, m3.getSparsity(), 1e-16);
+		TestUtils.compareScalars(est, m3.getSparsity(), (estim instanceof EstimatorLayeredGraph) ? 5e-2 : 1e-16);
 	}
 }

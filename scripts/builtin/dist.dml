@@ -33,7 +33,7 @@
 
 m_dist = function(Matrix[Double] X) return (Matrix[Double] Y) {
   n = nrow(X)
-  s = rowSums(X * X)
-  Y = - 2*X %*% t(X) + s + t(s)
+  s = rowSums(X^2)
+  Y = sqrt(-2 * X %*% t(X) + s + t(s))
   Y = replace(target = Y, pattern=NaN, replacement = 0);
 }

@@ -16,7 +16,7 @@ import java.io.FileReader;
 import java.io.IOException;
 
 public class FourierTest {
-
+    
     @Test
     public void testFftWithNumpyData() throws IOException {
         String filename = "fft_data.csv"; // path to your CSV file
@@ -53,6 +53,47 @@ public class FourierTest {
         reader.close();
         System.out.println("Finished processing " + lineNumber + " lines.");
     }    
+
+
+    @Test
+    public void testFftExecutionTime() throws IOException {
+        String filename = "fft_data.csv"; // path to your CSV file
+        BufferedReader reader = new BufferedReader(new FileReader(filename));
+        String line;
+        int lineNumber = 0;
+        long totalTime = 0; // Total time for all FFT computations
+        int numCalculations = 0; // Number of FFT computations
+    
+        while ((line = reader.readLine()) != null) {
+            lineNumber++;
+            String[] values = line.split(",");
+            int n = values.length / 3;
+            double[] input = new double[n];
+            ComplexDouble[] expected = new ComplexDouble[n];
+    
+            for (int i = 0; i < n; i++) {
+                input[i] = Double.parseDouble(values[i]);
+                double real = Double.parseDouble(values[n + i]);
+                double imag = Double.parseDouble(values[n * 2 + i]);
+                expected[i] = new ComplexDouble(real, imag);
+            }
+    
+            long startTime = System.nanoTime();
+            fft(input);
+            long endTime = System.nanoTime();
+            totalTime += (endTime - startTime);
+            numCalculations++;
+    
+    
+            if (numCalculations % 1000 == 0) {
+                double averageTime = (totalTime / 1e6) / numCalculations; // Average time in milliseconds
+                System.out.println("\n\n\n\n\n\n\n\nAverage execution time after " + numCalculations + " calculations: " + averageTime + " ms \n\n\n\n\n\n\n\n");
+            }
+        }
+    
+        reader.close();
+        System.out.println("Finished processing " + lineNumber + " lines.");
+    }
 
     private void assertComplexEquals(String message, ComplexDouble expected, ComplexDouble actual) {
         final double EPSILON = 0.000001;

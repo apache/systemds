@@ -36,7 +36,8 @@ public class LibMatrixFourier {
             res[j] = resEven[j].add(omega.pow(j).mul(resOdd[j]));
             res[j+n/2] = resEven[j].sub(omega.pow(j).mul(resOdd[j]));
         }
-        return res.conjugate();
+        
+        return res;
     }
 
     /**

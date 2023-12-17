@@ -36,7 +36,7 @@ public class LibMatrixFourier {
             res[j] = resEven[j].add(omega.pow(j).mul(resOdd[j]));
             res[j+n/2] = resEven[j].sub(omega.pow(j).mul(resOdd[j]));
         }
-        return res;
+        return res.conjugate();
     }
 
     /**
@@ -52,6 +52,38 @@ public class LibMatrixFourier {
             complex[i] = new ComplexDouble(in[i],0);
         }
         return fft(complex);
+    }
+
+
+    /**
+     * Function to perform Inverse Fast Fourier Transformation on a given array.
+     * Its length has to be a power of two.
+     *
+     * @param in array of ComplexDoubles
+     * @return array of ComplexDoubles
+     */
+    public static ComplexDouble[] ifft(ComplexDouble[] in) {
+        int n = in.length;
+
+        // Take conjugate
+        for (int i = 0; i < n; i++) {
+            in[i] = in[i].conjugate();
+        }
+
+        // Compute forward FFT
+        ComplexDouble[] out = fft(in);
+
+        // Take conjugate again
+        for (int i = 0; i < n; i++) {
+            out[i] = out[i].conjugate();
+        }
+
+        // Scale by n
+        for (int i = 0; i < n; i++) {
+            out[i] = new ComplexDouble(out[i].re / n, out[i].im / n);
+        }
+
+        return out;
     }
 
     /**
@@ -142,6 +174,41 @@ public class LibMatrixFourier {
             }
         }
         return fft2d(complex);
+    }
+
+       /**
+     * Function to perform Inverse Fast Fourier Transformation in a 2-dimensional array.
+     * Both dimensions have to be a power of two.
+     * First ifft is applied to each row, then ifft is applied to each column of the previous result.
+     *
+     * @param in 2-dimensional array of ComplexDoubles
+     * @return 2-dimensional array of ComplexDoubles
+     */
+    public static ComplexDouble[][] ifft2d(ComplexDouble[][] in) {
+        int rows = in.length;
+        int cols = in[0].length;
+
+        ComplexDouble[][] out = new ComplexDouble[rows][cols];
+
+        // Apply IFFT to each row
+        for (int i = 0; i < rows; i++) {
+            out[i] = ifft(in[i]);
+        }
+
+        // Apply IFFT to each column
+        for (int j = 0; j < cols; j++) {
+            ComplexDouble[] col = new ComplexDouble[rows];
+            for (int i = 0; i < rows; i++) {
+                col[i] = out[i][j];
+            }
+
+            ComplexDouble[] resCol = ifft(col);
+            for (int i = 0; i < rows; i++) {
+                out[i][j] = resCol[i];
+            }
+        }
+
+        return out;
     }
 
 

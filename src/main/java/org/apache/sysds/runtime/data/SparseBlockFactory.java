@@ -87,6 +87,7 @@ public abstract class SparseBlockFactory{
 			case MCSR: return SparseBlockMCSR.estimateSizeInMemory(nrows, ncols, sparsity);
 			case CSR: return SparseBlockCSR.estimateSizeInMemory(nrows, ncols, sparsity);
 			case COO: return SparseBlockCOO.estimateSizeInMemory(nrows, ncols, sparsity);
+			case DCSR: return SparseBlockDCSR.estimateSizeInMemory(nrows, ncols, sparsity);
 			default:
 				throw new RuntimeException("Unexpected sparse block type: "+type.toString());
 		}

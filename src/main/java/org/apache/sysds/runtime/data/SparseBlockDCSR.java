@@ -1079,7 +1079,7 @@ public class SparseBlockDCSR extends SparseBlock
         if (colIdx >= _rowptr[rowIdx+1])
             return -1;
 
-        return colIdx;
+        return colIdx - _rowptr[rowIdx];
     }
 
     @Override

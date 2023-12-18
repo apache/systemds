@@ -114,6 +114,7 @@ public class SparseBlockDCSR extends SparseBlock
             _rlen = ocsr._rlen;
             _nnzr = ocsr._nnzr;
             _size = ocsr._size;
+
             /*_ptr = Arrays.copyOf(ocsr._ptr, ocsr.numRows()+1);
             _indexes = Arrays.copyOf(ocsr._indexes, ocsr._size);
             _values = Arrays.copyOf(ocsr._values, ocsr._size);
@@ -523,7 +524,7 @@ public class SparseBlockDCSR extends SparseBlock
             if (clIdx < 0)
                 clIdx = -clIdx - 1;
 
-            int cuIdx = Arrays.binarySearch(_colidx, clIdx, _rowptr[rowIdx+1], cl); //internColIndex(rowIdx, cl, false);
+            int cuIdx = Arrays.binarySearch(_colidx, clIdx, _rowptr[rowIdx+1], cu); //internColIndex(rowIdx, cl, false);
             if (cuIdx < 0)
                 cuIdx = -cuIdx - 1;
 

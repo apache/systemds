@@ -6,6 +6,89 @@ public class LibMatrixFourier {
      * Function to perform Fast Fourier Transformation on a given array.
      * Its length has to be a power of two.
      *
+     * @param in array of doubles
+     * @return array of ComplexDoubles
+     */
+    public static MatrixBlock[] fft_new(double[] in){
+
+        int cols = in.length;
+        MatrixBlock re = new MatrixBlock(1, cols, false);
+        re.init(in, 1, cols);
+
+        return fft(re);
+    }
+
+    public static MatrixBlock[] fft(MatrixBlock re){
+
+        int rows = re.getNumRows();
+        int cols = re.getNumColumns();
+        if(!isPowerOfTwo(cols)) throw new RuntimeException("dimension is not power of two");
+        if(rows != 1) throw new RuntimeException("not yet implemented for more dimensions");
+
+        if(cols == 1){
+            // generate new MatrixBlock of same dimensions with 0s
+            MatrixBlock im = new MatrixBlock(1, cols, new double[cols]);
+            return new MatrixBlock[]{re, im};
+        }
+
+        // get values of first row
+        double[] values = re.getDenseBlockValues();
+
+        // split values depending on index
+        double[] even = new double[cols/2];
+        double[] odd = new double[cols/2];
+        for(int i = 0; i < cols/2; i++){
+            even[i] = values[i*2];
+            odd[i] = values[i*2+1];
+        }
+
+        MatrixBlock[] res_even = fft(new MatrixBlock(1, cols/2, even));
+        MatrixBlock[] res_odd = fft(new MatrixBlock(1, cols/2, odd));
+
+        double[][] res_even_values = new double[][]{
+                res_even[0].getDenseBlockValues(),
+                res_even[1].getDenseBlockValues()};
+
+        double[][] res_odd_values = new double[][]{
+                res_odd[0].getDenseBlockValues(),
+                res_odd[1].getDenseBlockValues()};
+
+        double angle = -2*Math.PI/cols;
+        double[][] res = new double[2][cols];
+
+        for(int j=0; j < cols/2; j++){
+
+            double[] omega_pow = new double[]{ Math.cos(j*angle), Math.sin(j*angle)};
+
+            // m = omega * res_odd[j]
+            double[] m = new double[]{
+                    omega_pow[0] * res_odd_values[0][j] - omega_pow[1] * res_odd_values[1][j],
+                    omega_pow[0] * res_odd_values[1][j] + omega_pow[1] * res_odd_values[0][j]};
+
+            // res[j] = res_even + m;
+            res[0][j] = res_even_values[0][j] + m[0];
+            res[1][j] = res_even_values[1][j] + m[1];
+
+            // res[j+cols/2] = res_even - m;
+            res[0][j+cols/2] = res_even_values[0][j] - m[0];
+            res[1][j+cols/2] = res_even_values[1][j] - m[1];
+
+        }
+
+        MatrixBlock res_re = new MatrixBlock(rows, cols, res[0]);
+        MatrixBlock res_im = new MatrixBlock(rows, cols, res[1]);
+
+        return new MatrixBlock[]{res_re, res_im};
+    }
+
+    private static boolean isPowerOfTwo(int n){
+        return (n != 0) && ((n & (n - 1)) == 0);
+    }
+
+    /**
+     * Function to perform Fast Fourier Transformation on a given array.
+     * Its length has to be a power of two.
+     *
      * @param in array of ComplexDoubles
      * @return array of ComplexDoubles
      */

@@ -1,13 +1,11 @@
 package org.apache.sysds.test.component.matrix;
 
 import org.apache.sysds.runtime.matrix.data.ComplexDouble;
-import static org.apache.sysds.runtime.matrix.data.LibMatrixFourier.fft;
-import static org.apache.sysds.runtime.matrix.data.LibMatrixFourier.fft2d;
-import static org.apache.sysds.runtime.matrix.data.LibMatrixFourier.ifft;
-import static org.apache.sysds.runtime.matrix.data.LibMatrixFourier.ifft2d;
 
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.junit.Test;
 
+import static org.apache.sysds.runtime.matrix.data.LibMatrixFourier.*;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -135,6 +133,31 @@ public class FourierTest {
 
         assertArrayEquals(expected, res);
     }
+
+    @Test
+    public void new_test(){
+
+        double[] in = {0, 18, -15, 3};
+
+        double[] expected_re = {6,15,-36,15};
+        double[] expected_im = {0,-15,0,15};
+
+        MatrixBlock[] res = fft_new(in);
+        double[] res_re = res[0].getDenseBlockValues();
+        double[] res_im = res[1].getDenseBlockValues();
+
+        for(double elem : res_re){
+            System.out.print(elem+" ");
+        }
+        System.out.println();
+        for(double elem : res_im){
+            System.out.print(elem+" ");
+        }
+
+        assertArrayEquals(expected_re, res_re, 0.0001);
+        assertArrayEquals(expected_im, res_im, 0.0001);
+    }
+
 
     @Test
     public void notPowerOfTwoTest() {

@@ -81,10 +81,10 @@ public class EstimatorLayeredGraph extends SparsityEstimator {
 		LayeredGraph ret, left, right;
 
 		left = (node.getLeft().getData() == null && !LGs.isEmpty())
-			? LGs.get(0) : (node.getOp() == OpCode.MM) ? null :
+			? LGs.get(LGs.size() - 1) : (node.getOp() == OpCode.MM) ? null :
 			new LayeredGraph(node.getLeft().getData(), _rounds);
 		right = (node.getRight().getData() == null && !LGs.isEmpty())
-			? LGs.get(0) : (node.getOp() == OpCode.MM) ? null :
+			? LGs.get(LGs.size() - 1) : (node.getOp() == OpCode.MM) ? null :
 			new LayeredGraph(node.getRight().getData(), _rounds);
 
 		if(node.getOp() == OpCode.MM) {

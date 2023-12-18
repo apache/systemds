@@ -761,28 +761,8 @@ public class SparseBlockDCSR extends SparseBlock
 
     @Override
     public void append(int r, int c, double v) {
-        // TODO: Implement
-        throw new NotImplementedException();
-
-        /*//early abort on zero
-        if( v==0 ) return;
-
-        int pos = pos(r);
-        int len = size(r);
-        if( pos+len == _size ) {
-            //resize and append
-            if( _size==_values.length )
-                resize();
-            insert(_size, c, v);
-        }
-        else {
-            //resize, shift and insert
-            if( _size==_values.length )
-                resizeAndInsert(pos+len, c, v);
-            else
-                shiftRightAndInsert(pos+len, c, v);
-        }
-        incrPtr(r+1);*/
+        // TODO: Maybe more efficient implementation? We could save two binary searches (row and column)
+        set(r, c, v);
     }
 
     @Override

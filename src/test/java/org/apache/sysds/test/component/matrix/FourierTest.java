@@ -16,12 +16,13 @@ public class FourierTest {
 
     @Test
     public void simpleTest() {
+        // tested with numpy
         double[] in = {0, 18, -15, 3};
         ComplexDouble[] expected = new ComplexDouble[4];
         expected[0] = new ComplexDouble(6, 0);
-        expected[1] =  new ComplexDouble(15, 15);
+        expected[1] =  new ComplexDouble(15, -15);
         expected[2] = new ComplexDouble(-36, 0);
-        expected[3] = new ComplexDouble(15, -15);
+        expected[3] = new ComplexDouble(15, 15);
 
         ComplexDouble[] res = fft(in);
         for(ComplexDouble elem : res){
@@ -88,6 +89,27 @@ public class FourierTest {
             for(ComplexDouble elem : row){
                 System.out.println(elem);
             }
+        }
+
+        assertArrayEquals(expected, res);
+    }
+
+    @Test
+    public void simple2dTest2SecondPart() {
+        // ComplexDouble(15, -15) is the second (expected[1]) entry of simpleTest
+        // this tests the col computation in fft2d for simple2dTest2
+
+        ComplexDouble[] in = new ComplexDouble[2];
+        in[0] = new ComplexDouble(15, -15);
+        in[1] =  new ComplexDouble(15, -15);
+
+        ComplexDouble[] expected = new ComplexDouble[2];
+        expected[0] = new ComplexDouble(30, -30);
+        expected[1] =  new ComplexDouble(0, 0);
+
+        ComplexDouble[] res = fft(in);
+        for(ComplexDouble elem : res){
+            System.out.println(elem);
         }
 
         assertArrayEquals(expected, res);

@@ -19,8 +19,7 @@ public class LibMatrixFourier {
             return in;
         }
 
-        double angle = 2*Math.PI/n;
-        ComplexDouble omega = new ComplexDouble(Math.cos(angle), Math.sin(angle));
+        double angle = -2*Math.PI/n;
 
         ComplexDouble[] even = new ComplexDouble[n/2];
         ComplexDouble[] odd = new ComplexDouble[n/2];
@@ -33,8 +32,10 @@ public class LibMatrixFourier {
 
         ComplexDouble[] res = new ComplexDouble[n];
         for(int j=0; j < n/2; j++){
-            res[j] = resEven[j].add(omega.pow(j).mul(resOdd[j]));
-            res[j+n/2] = resEven[j].sub(omega.pow(j).mul(resOdd[j]));
+            ComplexDouble omegaPow = new ComplexDouble(Math.cos(j*angle), Math.sin(j*angle));
+
+            res[j] = resEven[j].add(omegaPow.mul(resOdd[j]));
+            res[j+n/2] = resEven[j].sub(omegaPow.mul(resOdd[j]));
         }
         return res;
     }

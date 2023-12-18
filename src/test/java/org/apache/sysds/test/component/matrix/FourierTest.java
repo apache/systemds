@@ -419,7 +419,63 @@ public class FourierTest {
         assertTrue(message + " - Expected: " + expected + ", Actual: " + actual, Math.abs(expected - actual) <= tolerance);
     }
 
-        @Test
+    @Test
+    public void testFft2dWithNumpyData() throws IOException {
+        String filename = "complex_fft_2d_data.csv"; // path to your 2D FFT data file
+        BufferedReader reader = new BufferedReader(new FileReader(filename));
+        String line;
+        int lineNumber = 0;
+        long totalTime = 0; // Total time for all FFT 2D computations
+        int numCalculations = 0; // Number of FFT 2D computations
+        int progressInterval = 1000; // Print progress every 1000 lines
+
+        while ((line = reader.readLine()) != null) {
+            lineNumber++;
+            String[] values = line.split(",");
+            int halfLength = values.length / 4;
+            int sideLength = (int) Math.sqrt(halfLength); // Assuming square matrix
+
+            ComplexDouble[][] originalInput = new ComplexDouble[sideLength][sideLength];
+            ComplexDouble[][] numpyFftResult = new ComplexDouble[sideLength][sideLength];
+
+            for (int i = 0; i < halfLength; i++) {
+                int row = i / sideLength;
+                int col = i % sideLength;
+                double realPartOriginal = Double.parseDouble(values[i]);
+                double imagPartOriginal = Double.parseDouble(values[i + halfLength]);
+                originalInput[row][col] = new ComplexDouble(realPartOriginal, imagPartOriginal);
+
+                double realPartFft = Double.parseDouble(values[i + 2 * halfLength]);
+                double imagPartFft = Double.parseDouble(values[i + 3 * halfLength]);
+                numpyFftResult[row][col] = new ComplexDouble(realPartFft, imagPartFft);
+            }
+
+            long startTime = System.nanoTime();
+            ComplexDouble[][] javaFftResult = fft2d(originalInput);
+            long endTime = System.nanoTime();
+            totalTime += (endTime - startTime);
+            numCalculations++;
+
+            for (int i = 0; i < sideLength; i++) {
+                for (int j = 0; j < sideLength; j++) {
+                    assertComplexEquals("Mismatch at [" + i + "][" + j + "] in line " + lineNumber, numpyFftResult[i][j], javaFftResult[i][j]);
+                }
+            }
+
+            if (lineNumber % progressInterval == 0) { // Print progress
+                System.out.println("Processing line: " + lineNumber);
+                if (numCalculations > 0) {
+                    double averageTime = (totalTime / 1e6) / numCalculations; // Average time in milliseconds
+                    System.out.println("Average execution time after " + numCalculations + " calculations: " + String.format("%.8f", averageTime/1000) + " s");
+                }
+            }
+        }
+
+        reader.close();
+        System.out.println("Finished processing " + lineNumber + " lines. Average execution time: " + String.format("%.8f", (totalTime / 1e6 / numCalculations)/1000) + " s");
+    }
+
+    @Test
     public void testIfft2dWithNumpyData() throws IOException {
         String filename = "complex_ifft_2d_data.csv"; // path to your 2D IFFT data file
         BufferedReader reader = new BufferedReader(new FileReader(filename));

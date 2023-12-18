@@ -590,7 +590,7 @@ public class SparseBlockDCSR extends SparseBlock
 
     @Override
     public int pos(int r) {
-        int idx = Arrays.binarySearch(_rowidx, r);
+        int idx = Arrays.binarySearch(_rowidx, 0, _nnzr, r);
 
         if (idx < 0)
             idx = Math.max(-idx - 2, 0);
@@ -610,7 +610,9 @@ public class SparseBlockDCSR extends SparseBlock
         LOG.error("MDEBUG: ===== SET =====");
         LOG.error("MDEBUG: ROW: " + r);
         LOG.error("MDEBUG: COL: " + c);
-        LOG.error("MDEBUG: VAL: " + v);*/
+        LOG.error("MDEBUG: VAL: " + v);
+        LOG.error("MDEBUG: ===== END =====");*/
+        int initialSize = size(r);
         int rowIndex = Arrays.binarySearch(_rowidx, 0, _nnzr, r);
         boolean rowExists = rowIndex >= 0;
 
@@ -619,12 +621,12 @@ public class SparseBlockDCSR extends SparseBlock
             if (v == 0)
                 return false;
 
-            LOG.error("MDEBUG: INSERT_ROW");
             int rowInsertionIndex = -rowIndex - 1;
             insertRow(rowInsertionIndex, r, _rowptr[rowInsertionIndex]);
             incrRowPtr(rowInsertionIndex+1);
             insertCol(_rowptr[rowInsertionIndex], c, v);
-            //incrColPtr(_rowptr[rowInsertionIndex+1]);
+            /*if (size(r) - initialSize != 1)
+                LOG.error("MDEBUG: Error INSERT ROW: " + (size(r) - initialSize));*/
             return true;
         }
 
@@ -640,9 +642,11 @@ public class SparseBlockDCSR extends SparseBlock
             }
 
             // Insert a new column into an existing row
-            LOG.error("MDEBUG: INSERT_COL");
             insertCol(-index-1, c, v);
-            incrColPtr(-index);
+            incrRowPtr(rowIndex+1);
+
+            /*if (size(r) - initialSize != 1)
+                LOG.error("MDEBUG: Error INSERT COL: " + (size(r) - initialSize));*/
             return true;
         }
 
@@ -658,6 +662,10 @@ public class SparseBlockDCSR extends SparseBlock
         // remove the column
         incrRowPtr(rowIndex+1, -1);
         deleteCol(index);
+
+        /*if (size(r) - initialSize != -1)
+            LOG.error("MDEBUG: Error DELETE COL");*/
+
         return true;
 
         /*if (rowExists) {
@@ -1028,10 +1036,13 @@ public class SparseBlockDCSR extends SparseBlock
 
     @Override
     public double get(int r, int c) {
-        if( isEmpty(r) )
+        int rowIndex = Arrays.binarySearch(_rowidx, 0, _nnzr, r);
+
+        if (rowIndex < 0)
             return 0;
-        int pos = pos(r);
-        int len = size(r);
+
+        int pos = _rowptr[rowIndex];
+        int len = _rowptr[rowIndex+1] - pos;
 
         //search for existing col index in [pos,pos+len)
         int index = Arrays.binarySearch(_colidx, pos, pos+len, c);
@@ -1328,7 +1339,7 @@ public class SparseBlockDCSR extends SparseBlock
         // Without removing row
         //overlapping array copy (shift rhs values left by 1)
 
-        LOG.error("IDX:" + ix + "; SIZE: " + _size + "; LEN: " + (_size-ix-1));
+        //LOG.error("IDX:" + ix + "; SIZE: " + _size + "; LEN: " + (_size-ix-1));
         System.arraycopy(_colidx, ix+1, _colidx, ix, _size-ix-1);
         System.arraycopy(_values, ix+1, _values, ix, _size-ix-1);
         _size--;
@@ -1411,17 +1422,8 @@ public class SparseBlockDCSR extends SparseBlock
     private void incrRowPtr(int rowIndex, int cnt) {
 
         for( int i = rowIndex; i < _nnzr + 1; i++ ) {
-            LOG.error("MDEBUG: INCREMENT INDEX " + (i) + " FROM " + (_rowptr[i]) + " TO " + (_rowptr[i] + cnt));
+            //LOG.error("MDEBUG: INCREMENT INDEX " + (i) + " FROM " + (_rowptr[i]) + " TO " + (_rowptr[i] + cnt));
             _rowptr[i] += cnt;
         }
-    }
-
-    private void incrColPtr(int colIndex) {
-        incrColPtr(colIndex, 1);
-    }
-
-    private void incrColPtr(int colIndex, int cnt) {
-        for ( int i = colIndex; i < _size; i++ )
-            _colidx[i] += cnt;
     }
 }

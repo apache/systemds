@@ -12,7 +12,7 @@ public class LibMatrixFourier {
     public static ComplexDouble[] fft(ComplexDouble[] in){
 
         // TODO: how to invert fillToPowerOfTwo after calculation
-        //  in = fillToPowerOfTwo(in);
+        // in = fillToPowerOfTwo(in);
 
         int n = in.length;
         if(n == 1){

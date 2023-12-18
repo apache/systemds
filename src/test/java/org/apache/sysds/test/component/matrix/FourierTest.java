@@ -92,7 +92,7 @@ public class FourierTest {
     
                 if (numCalculations % 5000 == 0) {
                     double averageTime = (totalTime / 1e6) / numCalculations; // Average time in milliseconds
-                    System.out.println("\n\n\n\n\n\n\n\nAverage execution time after " + numCalculations + " calculations: " + averageTime + " ms \n\n\n\n\n\n\n\n");
+                    System.out.println("\nAverage execution time after " + numCalculations + " calculations: " + String.format("%.8f", averageTime/1000) + " s \n");
                 }
             }
         }
@@ -274,7 +274,7 @@ public class FourierTest {
     
             if (numCalculations % 5000 == 0) {
                 double averageTime = (totalTime / 1e6) / numCalculations; // Average time in milliseconds
-                System.out.println("Average execution time after " + numCalculations + " calculations: " + averageTime + " ms");
+                System.out.println("Average execution time after " + numCalculations + " calculations: " + String.format("%.8f", averageTime/1000)  + " s");
                 // System.out.println("input: ");
                 // for(int i = 0; i < originalInput.length; i++ ){
                 //     System.out.println(originalInput[i].toString());
@@ -331,7 +331,7 @@ public class FourierTest {
 
             if (numCalculations % 5000 == 0) {
                 double averageTime = (totalTime / 1e6) / numCalculations; // Average time in milliseconds
-                System.out.println("Average execution time after " + numCalculations + " calculations: " + averageTime + " ms");
+                System.out.println("Average execution time after " + numCalculations + " calculations: " + String.format("%.8f", averageTime/1000)  + " s");
                 // System.out.println("input: ");
                 //     for(int i = 0; i < originalInput.length; i++ ){
                 //         System.out.println(originalInput[i].toString());
@@ -383,7 +383,7 @@ public class FourierTest {
 
                 if (numCalculations % 1000 == 0) {
                     double averageTime = (totalTime / 1e6) / numCalculations; // Average time in milliseconds
-                    System.out.println("Average execution time after " + numCalculations + " calculations: " + averageTime + " ms");
+                    System.out.println("Average execution time after " + numCalculations + " calculations: " + String.format("%.8f", averageTime/1000)  + " s");
                 }
             }
         }
@@ -418,5 +418,64 @@ public class FourierTest {
     private static void assertEquals(String message, double expected, double actual, double tolerance) {
         assertTrue(message + " - Expected: " + expected + ", Actual: " + actual, Math.abs(expected - actual) <= tolerance);
     }
+
+        @Test
+    public void testIfft2dWithNumpyData() throws IOException {
+        String filename = "complex_ifft_2d_data.csv"; // path to your 2D IFFT data file
+        BufferedReader reader = new BufferedReader(new FileReader(filename));
+        String line;
+        int lineNumber = 0;
+        long totalTime = 0; // Total time for all IFFT 2D computations
+        int numCalculations = 0; // Number of IFFT 2D computations
+        int progressInterval = 10000; // Print progress every 1000 lines
+
+        while ((line = reader.readLine()) != null) {
+            lineNumber++;
+            String[] values = line.split(",");
+            int halfLength = values.length / 4;
+            int sideLength = (int) Math.sqrt(halfLength); // Assuming square matrix
+
+            ComplexDouble[][] originalInput = new ComplexDouble[sideLength][sideLength];
+            ComplexDouble[][] numpyIfftResult = new ComplexDouble[sideLength][sideLength];
+
+            for (int i = 0; i < halfLength; i++) {
+                int row = i / sideLength;
+                int col = i % sideLength;
+                double realPartOriginal = Double.parseDouble(values[i]);
+                double imagPartOriginal = Double.parseDouble(values[i + halfLength]);
+                originalInput[row][col] = new ComplexDouble(realPartOriginal, imagPartOriginal);
+
+                double realPartIfft = Double.parseDouble(values[i + 2 * halfLength]);
+                double imagPartIfft = Double.parseDouble(values[i + 3 * halfLength]);
+                numpyIfftResult[row][col] = new ComplexDouble(realPartIfft, imagPartIfft);
+            }
+
+            long startTime = System.nanoTime();
+            ComplexDouble[][] javaIfftResult = ifft2d(originalInput);
+            long endTime = System.nanoTime();
+            if(lineNumber > 1000){
+                totalTime += (endTime - startTime);
+                numCalculations++;
+            }
+
+            for (int i = 0; i < sideLength; i++) {
+                for (int j = 0; j < sideLength; j++) {
+                    assertComplexEquals("Mismatch at [" + i + "][" + j + "] in line " + lineNumber, numpyIfftResult[i][j], javaIfftResult[i][j]);
+                }
+            }
+
+            if (lineNumber % progressInterval == 0) { // Print progress
+                System.out.println("Processing line: " + lineNumber);
+                if (numCalculations > 0) {
+                    double averageTime = (totalTime / 1e6) / numCalculations; // Average time in milliseconds
+                    System.out.println("Average execution time after " + numCalculations + " calculations: " + String.format("%.8f", averageTime/1000)  + " s");
+                }
+            }
+        }
+
+        reader.close();
+        System.out.println("Finished processing " + lineNumber + " lines. Average execution time: " + String.format("%.8f", (totalTime / 1e6 / numCalculations)/1000) + " ms");
+    }
+
 
 }

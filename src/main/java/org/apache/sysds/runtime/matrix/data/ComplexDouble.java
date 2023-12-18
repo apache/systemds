@@ -1,8 +1,8 @@
 package org.apache.sysds.runtime.matrix.data;
 
 public class ComplexDouble {
-    double re;
-    double im;
+    public double re;
+    public double im;
 
     public ComplexDouble(double re, double im){
         this.re = re;
@@ -28,13 +28,40 @@ public class ComplexDouble {
      * @return the n-th power of the complex double
      */
     public ComplexDouble pow(int n){
-        // compute polar form
-        double dist = Math.sqrt(Math.pow(this.re,2) + Math.pow(this.im,2));
-        double angle = Math.acos(this.re/dist);
-
-        // de moivre’s theorem
-        return new ComplexDouble(Math.pow(dist,n) * Math.cos(n*angle),Math.pow(dist,n) * Math.sin(n*angle));
+        double dist = Math.sqrt(this.re * this.re + this.im * this.im);
+        double angle = Math.atan2(this.im, this.re);
+    
+        return new ComplexDouble(Math.pow(dist, n) * Math.cos(n * angle),
+                                 Math.pow(dist, n) * Math.sin(n * angle));
     }
+
+    // Division
+    public ComplexDouble div(ComplexDouble other) {
+        double denominator = other.re * other.re + other.im * other.im;
+        return new ComplexDouble((this.re * other.re + this.im * other.im) / denominator,
+                                    (this.im * other.re - this.re * other.im) / denominator);
+    }
+
+    // Conjugate
+    public ComplexDouble conjugate() {
+        return new ComplexDouble(this.re, -this.im);
+    }
+
+    // Absolute Value
+    public double abs() {
+        return Math.sqrt(this.re * this.re + this.im * this.im);
+    }
+
+    // Argument (Phase)
+    public double arg() {
+        return Math.atan2(this.im, this.re);
+    }
+
+    // Polar Form Conversion
+    public static ComplexDouble fromPolar(double magnitude, double angle) {
+        return new ComplexDouble(magnitude * Math.cos(angle), magnitude * Math.sin(angle));
+    }
+
 
     @Override
     public String toString() {

@@ -57,35 +57,38 @@ public class LibMatrixFourier {
     }
 
 
-    /**
-     * Function to perform Inverse Fast Fourier Transformation on a given array.
-     * Its length has to be a power of two.
-     *
-     * @param in array of ComplexDoubles
-     * @return array of ComplexDoubles
-     */
     public static ComplexDouble[] ifft(ComplexDouble[] in) {
         int n = in.length;
-
-        // Take conjugate
+    
+        // Conjugate the input array
+        ComplexDouble[] conjugatedInput = new ComplexDouble[n];
         for (int i = 0; i < n; i++) {
-            in[i] = in[i].conjugate();
+            conjugatedInput[i] = in[i].conjugate();
         }
-
-        // Compute forward FFT
-        ComplexDouble[] out = fft(in);
-
-        // Take conjugate again
+    
+        // Apply FFT to conjugated input
+        ComplexDouble[] fftResult = fft(conjugatedInput);
+    
+        // Conjugate the result of FFT and scale by n
+        ComplexDouble[] ifftResult = new ComplexDouble[n];
         for (int i = 0; i < n; i++) {
-            out[i] = out[i].conjugate();
+            ifftResult[i] = new ComplexDouble(fftResult[i].re / n, -fftResult[i].im / n);
         }
-
-        // Scale by n
-        for (int i = 0; i < n; i++) {
-            out[i] = new ComplexDouble(out[i].re / n, out[i].im / n);
+    
+        return ifftResult;
+    }
+    
+    /**
+     * IFFT for real-valued input.
+     * @param in array of doubles
+     * @return array of ComplexDoubles representing the IFFT
+     */
+    public static ComplexDouble[] ifft(double[] in) {
+        ComplexDouble[] complexIn = new ComplexDouble[in.length];
+        for (int i = 0; i < in.length; i++) {
+            complexIn[i] = new ComplexDouble(in[i], 0);
         }
-
-        return out;
+        return ifft(complexIn);
     }
 
     /**

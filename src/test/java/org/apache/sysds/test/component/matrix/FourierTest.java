@@ -17,6 +17,8 @@ import java.io.IOException;
 
 public class FourierTest {
     
+    
+    // prior to executing this test it is necessary to run the Numpy Script in FourierTestData.py and add the generated file to the root of the project.    
     @Test
     public void testFftWithNumpyData() throws IOException {
         String filename = "fft_data.csv"; // path to your CSV file
@@ -55,6 +57,7 @@ public class FourierTest {
     }    
 
 
+    // prior to executing this test it is necessary to run the Numpy Script in FourierTestData.py and add the generated file to the root of the project.
     @Test
     public void testFftExecutionTime() throws IOException {
         String filename = "fft_data.csv"; // path to your CSV file
@@ -81,13 +84,16 @@ public class FourierTest {
             long startTime = System.nanoTime();
             fft(input);
             long endTime = System.nanoTime();
-            totalTime += (endTime - startTime);
-            numCalculations++;
+            if(lineNumber > 1000){
+                totalTime += (endTime - startTime);
+                numCalculations++;
+            
     
     
-            if (numCalculations % 1000 == 0) {
-                double averageTime = (totalTime / 1e6) / numCalculations; // Average time in milliseconds
-                System.out.println("\n\n\n\n\n\n\n\nAverage execution time after " + numCalculations + " calculations: " + averageTime + " ms \n\n\n\n\n\n\n\n");
+                if (numCalculations % 5000 == 0) {
+                    double averageTime = (totalTime / 1e6) / numCalculations; // Average time in milliseconds
+                    System.out.println("\n\n\n\n\n\n\n\nAverage execution time after " + numCalculations + " calculations: " + averageTime + " ms \n\n\n\n\n\n\n\n");
+                }
             }
         }
     
@@ -229,6 +235,163 @@ public class FourierTest {
             assertEquals("Non-zero imaginary part at index " + i, 0, ifftResult[i].im, 0.000001);
         }
     }
+
+    // prior to executing this test it is necessary to run the Numpy Script in FourierTestData.py and add the generated file to the root of the project.
+    @Test
+    public void testIfftWithRealNumpyData() throws IOException {
+        String filename = "ifft_data.csv"; // path to your IFFT data file
+        BufferedReader reader = new BufferedReader(new FileReader(filename));
+        String line;
+        int lineNumber = 0;
+        long totalTime = 0; // Total time for all IFFT computations
+        int numCalculations = 0; // Number of IFFT computations
+    
+        while ((line = reader.readLine()) != null) {
+            lineNumber++;
+            String[] values = line.split(",");
+            int n = values.length / 3;
+            ComplexDouble[] originalInput = new ComplexDouble[n];
+            ComplexDouble[] numpyIfftResult = new ComplexDouble[n];
+            ComplexDouble[] javaIfftResult;
+    
+            for (int i = 0; i < n; i++) {
+                originalInput[i] = new ComplexDouble(Double.parseDouble(values[i]), 0); // Original data
+                double realPart = Double.parseDouble(values[n + i]);
+                double imagPart = Double.parseDouble(values[n * 2 + i]);
+                numpyIfftResult[i] = new ComplexDouble(realPart, imagPart); // NumPy IFFT result
+            }
+    
+            long startTime = System.nanoTime();
+            javaIfftResult = ifft(originalInput);
+            long endTime = System.nanoTime();
+            if(lineNumber > 1000){
+                totalTime += (endTime - startTime);
+                numCalculations++;
+            }
+            for (int i = 0; i < n; i++) {
+                assertComplexEquals("Mismatch at index " + i + " in line " + lineNumber, numpyIfftResult[i], javaIfftResult[i]);
+            }
+    
+            if (numCalculations % 5000 == 0) {
+                double averageTime = (totalTime / 1e6) / numCalculations; // Average time in milliseconds
+                System.out.println("Average execution time after " + numCalculations + " calculations: " + averageTime + " ms");
+                // System.out.println("input: ");
+                // for(int i = 0; i < originalInput.length; i++ ){
+                //     System.out.println(originalInput[i].toString());
+                // }
+                // System.out.println("output: " );
+                // for(int i = 0; i < javaIfftResult.length; i++ ){
+                //     System.out.println(javaIfftResult[i].toString());
+                // }
+            }
+        }
+    
+        reader.close();
+        System.out.println("Finished processing " + lineNumber + " lines.");
+    }
+
+    @Test
+    public void testIfftWithComplexNumpyData() throws IOException {
+        String filename = "complex_ifft_data.csv"; // Adjusted path to your IFFT data file with complex inputs
+        BufferedReader reader = new BufferedReader(new FileReader(filename));
+        String line;
+        int lineNumber = 0;
+        long totalTime = 0; // Total time for all IFFT computations
+        int numCalculations = 0; // Number of IFFT computations
+
+        while ((line = reader.readLine()) != null) {
+            lineNumber++;
+            String[] values = line.split(",");
+            int n = values.length / 4; // Adjusted for complex numbers
+            ComplexDouble[] originalInput = new ComplexDouble[n];
+            ComplexDouble[] numpyIfftResult = new ComplexDouble[n];
+            ComplexDouble[] javaIfftResult;
+
+            for (int i = 0; i < n; i++) {
+                double realPartOriginal = Double.parseDouble(values[i]);
+                double imagPartOriginal = Double.parseDouble(values[i + n]);
+                originalInput[i] = new ComplexDouble(realPartOriginal, imagPartOriginal); // Original complex data
+
+                double realPartIfft = Double.parseDouble(values[i + 2 * n]);
+                double imagPartIfft = Double.parseDouble(values[i + 3 * n]);
+                numpyIfftResult[i] = new ComplexDouble(realPartIfft, imagPartIfft); // NumPy IFFT result
+            }
+
+            long startTime = System.nanoTime();
+            javaIfftResult = ifft(originalInput);
+            long endTime = System.nanoTime();
+
+            if(lineNumber > 1000){
+                totalTime += (endTime - startTime);
+                numCalculations++;
+            }
+            for (int i = 0; i < n; i++) {
+                assertComplexEquals("Mismatch at index " + i + " in line " + lineNumber, numpyIfftResult[i], javaIfftResult[i]);
+            }
+
+            if (numCalculations % 5000 == 0) {
+                double averageTime = (totalTime / 1e6) / numCalculations; // Average time in milliseconds
+                System.out.println("Average execution time after " + numCalculations + " calculations: " + averageTime + " ms");
+                // System.out.println("input: ");
+                //     for(int i = 0; i < originalInput.length; i++ ){
+                //         System.out.println(originalInput[i].toString());
+                //     }
+                //     System.out.println("output: " );
+                //     for(int i = 0; i < javaIfftResult.length; i++ ){
+                //         System.out.println(javaIfftResult[i].toString());
+                //     }
+
+            }
+        }
+
+        reader.close();
+        System.out.println("Finished processing " + lineNumber + " lines.");
+    }
+
+    
+    // prior to executing this test it is necessary to run the Numpy Script in FourierTestData.py and add the generated file to the root of the project.
+    @Test
+    public void testIfftExecutionTime() throws IOException {
+        String filename = "ifft_data.csv"; // path to your IFFT data file
+        BufferedReader reader = new BufferedReader(new FileReader(filename));
+        String line;
+        int lineNumber = 0;
+        long totalTime = 0; // Total time for all IFFT computations
+        int numCalculations = 0; // Number of IFFT computations
+
+        while ((line = reader.readLine()) != null) {
+            lineNumber++;
+            String[] values = line.split(",");
+            int n = values.length / 3;
+            ComplexDouble[] original = new ComplexDouble[n];
+            ComplexDouble[] numpyResult = new ComplexDouble[n];
+
+            for (int i = 0; i < n; i++) {
+                original[i] = new ComplexDouble(Double.parseDouble(values[i]), 0);
+                double realPart = Double.parseDouble(values[n + i]);
+                double imagPart = Double.parseDouble(values[n * 2 + i]);
+                numpyResult[i] = new ComplexDouble(realPart, imagPart);
+            }
+
+            long startTime = System.nanoTime();
+            ifft(numpyResult);
+            long endTime = System.nanoTime();
+            if(lineNumber > 5000){
+                totalTime += (endTime - startTime);
+                numCalculations++;
+
+
+                if (numCalculations % 1000 == 0) {
+                    double averageTime = (totalTime / 1e6) / numCalculations; // Average time in milliseconds
+                    System.out.println("Average execution time after " + numCalculations + " calculations: " + averageTime + " ms");
+                }
+            }
+        }
+
+        reader.close();
+        System.out.println("Finished processing " + lineNumber + " lines.");
+    }
+
 
     @Test
     public void testSimpleIfft2d() {

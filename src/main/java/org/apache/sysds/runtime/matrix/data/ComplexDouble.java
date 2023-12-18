@@ -20,21 +20,6 @@ public class ComplexDouble {
         return new ComplexDouble(this.re * other.re - this.im * other.im, this.im * other.re + this.re * other.im);
     }
 
-    /**
-     * Powering of a complex double.
-     * First, the polar form is calculated and then De Moivre's theorem is applied.
-     *
-     * @param n exponent
-     * @return the n-th power of the complex double
-     */
-    public ComplexDouble pow(int n){
-        double dist = Math.sqrt(this.re * this.re + this.im * this.im);
-        double angle = Math.atan2(this.im, this.re);
-    
-        return new ComplexDouble(Math.pow(dist, n) * Math.cos(n * angle),
-                                 Math.pow(dist, n) * Math.sin(n * angle));
-    }
-
     // Division
     public ComplexDouble div(ComplexDouble other) {
         double denominator = other.re * other.re + other.im * other.im;

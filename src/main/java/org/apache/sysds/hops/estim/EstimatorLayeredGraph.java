@@ -77,26 +77,15 @@ public class EstimatorLayeredGraph extends SparsityEstimator {
 		if(node.getLeft() == null || node.getRight() == null) return;
 		traverse(node.getLeft(), LGs);
 		traverse(node.getRight(), LGs);
-		MatrixBlock l, r;
 		LayeredGraph ret, left, right;
 
 		left = (node.getLeft().getData() == null && !LGs.isEmpty())
-			? LGs.get(LGs.size() - 1) : (node.getOp() == OpCode.MM) ? null :
-			new LayeredGraph(node.getLeft().getData(), _rounds);
+			? LGs.get(LGs.size() - 1) :	new LayeredGraph(node.getLeft().getData(), _rounds);
 		right = (node.getRight().getData() == null && !LGs.isEmpty())
-			? LGs.get(LGs.size() - 1) : (node.getOp() == OpCode.MM) ? null :
-			new LayeredGraph(node.getRight().getData(), _rounds);
+			? LGs.get(LGs.size() - 1) : new LayeredGraph(node.getRight().getData(), _rounds);
 
-		if(node.getOp() == OpCode.MM) {
-			l = (node.getRight().getData() == null) ?
-				node.getLeft().getData() : LGs.get(LGs.size() - 1).toMatrixBlock();
-			r = (node.getLeft().getData() == null) ?
-				node.getRight().getData() : LGs.get(LGs.size() - 1).toMatrixBlock();
-			ret = new LayeredGraph(List.of(l, r), _rounds);
-		}
-		else {
-			ret = estimInternal(left, right, node.getOp());
-		}
+		ret = estimInternal(left, right, node.getOp());
+
 		LGs.add(ret);
 	}
 

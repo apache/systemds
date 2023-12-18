@@ -133,6 +133,7 @@ public enum Builtins {
 	FIT_PIPELINE("fit_pipeline", true),
 	FIX_INVALID_LENGTHS("fixInvalidLengths", true),
 	FIX_INVALID_LENGTHS_APPLY("fixInvalidLengthsApply", true),
+	FFT("fft", false, ReturnType.MULTI_RETURN),
 	FF_TRAIN("ffTrain", true),
 	FF_PREDICT("ffPredict", true),
 	FLOOR("floor", false),

@@ -355,6 +355,34 @@ public class BuiltinFunctionExpression extends DataIdentifier {
 			
 			break;
 		}
+		case FFT: 
+		{
+			checkNumParameters(1);
+			checkMatrixParam(getFirstExpr());
+
+			// setup output properties
+			DataIdentifier fftOut1 = (DataIdentifier) getOutputs()[0];
+			DataIdentifier fftOut2 = (DataIdentifier) getOutputs()[1];
+			
+			// if (getFirstExpr().getOutput().getDim2() != 1 ||  getFirstExpr().getOutput().getDim2() != 2) {
+			// 	raiseValidateError("Eigen Decomposition can only be done on a square matrix. Input matrix is rectangular (rows=" + getFirstExpr().getOutput().getDim1() + ", cols="+ getFirstExpr().getOutput().getDim2() +")", conditional);
+			// }
+			
+			// Output1 - FFT Values
+			fftOut1.setDataType(DataType.MATRIX);
+			fftOut1.setValueType(ValueType.FP64);
+			fftOut1.setDimensions(getFirstExpr().getOutput().getDim1(), getFirstExpr().getOutput().getDim2());
+			fftOut1.setBlocksize(getFirstExpr().getOutput().getBlocksize());
+			
+			// Output2 - FFT Vectors
+			fftOut2.setDataType(DataType.MATRIX);
+			fftOut2.setValueType(ValueType.FP64);
+			fftOut2.setDimensions(getFirstExpr().getOutput().getDim1(), getFirstExpr().getOutput().getDim2());
+			fftOut2.setBlocksize(getFirstExpr().getOutput().getBlocksize());
+			
+			break;
+
+		}
 		case REMOVE: {
 			checkNumParameters(2);
 			checkListParam(getFirstExpr());

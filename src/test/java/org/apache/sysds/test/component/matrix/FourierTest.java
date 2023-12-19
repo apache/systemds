@@ -43,7 +43,7 @@ public class FourierTest {
                 expected[i] = new ComplexDouble(real, imag);
             }
     
-            actual = fft(input);
+            actual = fft_old(input);
     
             for (int i = 0; i < n; i++) {
                 assertComplexEquals("Mismatch at index " + i + " in line " + lineNumber, expected[i], actual[i]);
@@ -80,7 +80,7 @@ public class FourierTest {
             }
     
             long startTime = System.nanoTime();
-            fft(input);
+            fft_old(input);
             long endTime = System.nanoTime();
             if(lineNumber > 1000){
                 totalTime += (endTime - startTime);
@@ -126,7 +126,7 @@ public class FourierTest {
         expected[2] = new ComplexDouble(-36, 0);
         expected[3] = new ComplexDouble(15, 15);
 
-        ComplexDouble[] res = fft(in);
+        ComplexDouble[] res = fft_old(in);
         for(ComplexDouble elem : res){
             System.out.println(elem);
         }
@@ -135,14 +135,14 @@ public class FourierTest {
     }
 
     @Test
-    public void new_test(){
+    public void matrix_block_one_dim_test(){
 
         double[] in = {0, 18, -15, 3};
 
         double[] expected_re = {6,15,-36,15};
         double[] expected_im = {0,-15,0,15};
 
-        MatrixBlock[] res = fft_new(in);
+        MatrixBlock[] res = fft(in);
         double[] res_re = res[0].getDenseBlockValues();
         double[] res_im = res[1].getDenseBlockValues();
 
@@ -158,6 +158,54 @@ public class FourierTest {
         assertArrayEquals(expected_im, res_im, 0.0001);
     }
 
+    @Test
+    public void matrix_block_one_dim_as_two_dim_test(){
+
+        double[][] in = {{0, 18, -15, 3}};
+
+        double[] expected_re = {6,15,-36,15};
+        double[] expected_im = {0,-15,0,15};
+
+        MatrixBlock[] res = fft(in);
+        double[] res_re = res[0].getDenseBlockValues();
+        double[] res_im = res[1].getDenseBlockValues();
+
+        for(double elem : res_re){
+            System.out.print(elem+" ");
+        }
+        System.out.println();
+        for(double elem : res_im){
+            System.out.print(elem+" ");
+        }
+
+        assertArrayEquals(expected_re, res_re, 0.0001);
+        assertArrayEquals(expected_im, res_im, 0.0001);
+    }
+
+    @Test
+    public void matrix_block_two_dim_test(){
+
+        double[][] in = {{0, 18}, {-15, 3}};
+
+        double[] flattened_expected_re = {6,-36, 30,0};
+        double[] flattened_expected_im = {0,0,0,0};
+
+        MatrixBlock[] res = fft(in);
+        double[] res_re = res[0].getDenseBlockValues();
+        double[] res_im = res[1].getDenseBlockValues();
+
+        for(double elem : res_re){
+            System.out.print(elem+" ");
+        }
+        System.out.println();
+        for(double elem : res_im){
+            System.out.print(elem+" ");
+        }
+
+        assertArrayEquals(flattened_expected_re, res_re, 0.0001);
+        assertArrayEquals(flattened_expected_im, res_im, 0.0001);
+    }
+
 
     @Test
     public void notPowerOfTwoTest() {
@@ -171,7 +219,7 @@ public class FourierTest {
         expected[3] = new ComplexDouble(-2.5000, - 0.8123);
         expected[4] = new ComplexDouble(-2.5000, - 3.4410);
 
-        ComplexDouble[] res = fft(in);
+        ComplexDouble[] res = fft_old(in);
         for(ComplexDouble elem : res){
             System.out.println(elem);
         }

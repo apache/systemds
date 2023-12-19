@@ -1,5 +1,7 @@
 package org.apache.sysds.runtime.matrix.data;
 
+import java.util.Arrays;
+
 public class LibMatrixFourier {
 
     /**
@@ -9,11 +11,22 @@ public class LibMatrixFourier {
      * @param in array of doubles
      * @return array of ComplexDoubles
      */
-    public static MatrixBlock[] fft_new(double[] in){
+    public static MatrixBlock[] fft(double[] in){
 
         int cols = in.length;
-        MatrixBlock re = new MatrixBlock(1, cols, false);
-        re.init(in, 1, cols);
+        MatrixBlock re = new MatrixBlock(1, cols, in);
+        MatrixBlock im = new MatrixBlock(1, cols, new double[cols]);
+
+        return fft_one_dim(re, im);
+    }
+
+    public static MatrixBlock[] fft(double[][] in){
+
+        int cols = in[0].length;
+        int rows = in.length;
+
+        double[] flattened = Arrays.stream(in).flatMapToDouble(Arrays::stream).toArray();
+        MatrixBlock re = new MatrixBlock(rows, cols, flattened);
 
         return fft(re);
     }
@@ -22,28 +35,75 @@ public class LibMatrixFourier {
 
         int rows = re.getNumRows();
         int cols = re.getNumColumns();
+
         if(!isPowerOfTwo(cols)) throw new RuntimeException("dimension is not power of two");
-        if(rows != 1) throw new RuntimeException("not yet implemented for more dimensions");
+
+        MatrixBlock[][] res_rows = new MatrixBlock[rows][2];
+
+        for(int i = 0; i < rows; i++){
+            // use fft on each row
+            double[] row_values = Arrays.copyOfRange(re.getDenseBlockValues(), i * cols, (i+1) * cols);
+            res_rows[i] = fft_one_dim(new MatrixBlock(1, cols, row_values), new MatrixBlock(1, cols, new double[cols]));
+        }
+
+        if(rows == 1) return res_rows[0];
+
+        double[][] res = new double[2][rows*cols];
+
+        // flatten res_row
+        for(int i = 0; i < rows; i++){
+            double[] res_rows_re = res_rows[i][0].getDenseBlockValues();
+            double[] res_rows_im = res_rows[i][1].getDenseBlockValues();
+            for(int j = 0; j < cols; j++){
+                res[0][i*cols+j] = res_rows_re[j];
+                res[1][i*cols+j] = res_rows_im[j];
+            }
+        }
+
+        for(int j = 0; j < cols; j++) {
+            // double[re/im][] col_values
+            double[][] col_values = new double[2][rows];
+            for (int i = 0; i < rows; i++) {
+                col_values[0][i] = res[0][i*cols+j];
+                col_values[1][i] = res[1][i*cols+j];
+            }
+
+            MatrixBlock[] res_col = fft_one_dim(new MatrixBlock(1, rows, col_values[0]), new MatrixBlock(1, rows, col_values[1]));
+            for (int i = 0; i < rows; i++) {
+                res[0][i*cols+j] = res_col[0].getDenseBlockValues()[i];
+                res[1][i*cols+j] = res_col[1].getDenseBlockValues()[i];
+            }
+        }
+
+        return new MatrixBlock[]{new MatrixBlock(rows, cols, res[0]), new MatrixBlock(rows, cols, res[1])};
+
+    }
+
+    private static MatrixBlock[] fft_one_dim(MatrixBlock re, MatrixBlock im){
+
+        int rows = re.getNumRows();
+        int cols = re.getNumColumns();
+        if(rows != 1) throw new RuntimeException("only for one dimension");
 
         if(cols == 1){
-            // generate new MatrixBlock of same dimensions with 0s
-            MatrixBlock im = new MatrixBlock(1, cols, new double[cols]);
             return new MatrixBlock[]{re, im};
         }
 
-        // get values of first row
-        double[] values = re.getDenseBlockValues();
+        // 1st row real part, 2nd row imaginary part
+        double[][] values = {re.getDenseBlockValues(), im.getDenseBlockValues()};
 
         // split values depending on index
-        double[] even = new double[cols/2];
-        double[] odd = new double[cols/2];
-        for(int i = 0; i < cols/2; i++){
-            even[i] = values[i*2];
-            odd[i] = values[i*2+1];
+        double[][] even = new double[2][cols/2];
+        double[][] odd = new double[2][cols/2];
+        for(int j = 0; j < cols/2; j++){
+            for(int i = 0; i < 2; i++){
+                even[i][j] = values[i][j*2];
+                odd[i][j] = values[i][j*2+1];
+            }
         }
 
-        MatrixBlock[] res_even = fft(new MatrixBlock(1, cols/2, even));
-        MatrixBlock[] res_odd = fft(new MatrixBlock(1, cols/2, odd));
+        MatrixBlock[] res_even = fft_one_dim(new MatrixBlock(1, cols/2, even[0]), new MatrixBlock(1, cols/2, even[1]));
+        MatrixBlock[] res_odd = fft_one_dim(new MatrixBlock(1, cols/2, odd[0]), new MatrixBlock(1, cols/2, odd[1]));
 
         double[][] res_even_values = new double[][]{
                 res_even[0].getDenseBlockValues(),
@@ -56,9 +116,9 @@ public class LibMatrixFourier {
         double angle = -2*Math.PI/cols;
         double[][] res = new double[2][cols];
 
-        for(int j=0; j < cols/2; j++){
+        for(int j = 0; j < cols/2; j++){
 
-            double[] omega_pow = new double[]{ Math.cos(j*angle), Math.sin(j*angle)};
+            double[] omega_pow = new double[]{Math.cos(j*angle), Math.sin(j*angle)};
 
             // m = omega * res_odd[j]
             double[] m = new double[]{
@@ -66,23 +126,18 @@ public class LibMatrixFourier {
                     omega_pow[0] * res_odd_values[1][j] + omega_pow[1] * res_odd_values[0][j]};
 
             // res[j] = res_even + m;
-            res[0][j] = res_even_values[0][j] + m[0];
-            res[1][j] = res_even_values[1][j] + m[1];
-
             // res[j+cols/2] = res_even - m;
-            res[0][j+cols/2] = res_even_values[0][j] - m[0];
-            res[1][j+cols/2] = res_even_values[1][j] - m[1];
-
+            for(int i = 0; i < 2; i++){
+                res[i][j] = res_even_values[i][j] + m[i];
+                res[i][j+cols/2] = res_even_values[i][j] - m[i];
+            }
         }
 
-        MatrixBlock res_re = new MatrixBlock(rows, cols, res[0]);
-        MatrixBlock res_im = new MatrixBlock(rows, cols, res[1]);
-
-        return new MatrixBlock[]{res_re, res_im};
+        return new MatrixBlock[]{new MatrixBlock(rows, cols, res[0]), new MatrixBlock(rows, cols, res[1])};
     }
 
     private static boolean isPowerOfTwo(int n){
-        return (n != 0) && ((n & (n - 1)) == 0);
+        return ((n != 0) && ((n & (n - 1)) == 0)) || n == 1;
     }
 
     /**
@@ -131,7 +186,7 @@ public class LibMatrixFourier {
      * @param in array of doubles
      * @return array of ComplexDoubles
      */
-    public static ComplexDouble[] fft(double[] in){
+    public static ComplexDouble[] fft_old(double[] in){
         ComplexDouble[] complex = new ComplexDouble[in.length];
         for(int i=0; i<in.length; i++){
             complex[i] = new ComplexDouble(in[i],0);

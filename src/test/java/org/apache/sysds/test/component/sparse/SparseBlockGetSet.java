@@ -19,6 +19,8 @@
 
 package org.apache.sysds.test.component.sparse;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.data.SparseBlockDCSR;
 import org.junit.Assert;
 import org.junit.Test;
@@ -44,10 +46,11 @@ import java.util.Iterator;
 public class SparseBlockGetSet extends AutomatedTestBase 
 {
 	private final static int rows = 132;
-	private final static int cols = 60;	
+	private final static int cols = 60;
 	private final static double sparsity1 = 0.1;
 	private final static double sparsity2 = 0.2;
 	private final static double sparsity3 = 0.3;
+	private static final Log LOG = LogFactory.getLog(SparseBlockGetSet.class.getName());
 	
 	private enum InitType {
 		BULK,
@@ -280,7 +283,28 @@ public class SparseBlockGetSet extends AutomatedTestBase
 					Iterator<ADoubleEntry> iter = map.getIterator();
 					while( iter.hasNext() ) { //random hash order
 						ADoubleEntry e = iter.next();
+						int oldnnz = (int)sblock.size();
+						int initialRowSize = sblock.size((int)e.getKey1());
+						int r = (int)e.getKey1();
+						int c = (int)e.getKey2();
+						sblock.set(r, c, e.value);
+						if (sblock.get(r, c) != e.value)
+							LOG.error("MDEBUG: ERR1: " + sblock.get(r, c) + " <-> " + e.value + "(r: " + r + ", c: " + c+ ")");
+						sblock.set((int)e.getKey1(), (int)e.getKey2(), 0);
+						if (sblock.get((int)e.getKey1(), (int)e.getKey2()) != 0)
+							LOG.error("MDEBUG: ERR2: " + sblock.get((int)e.getKey1(), (int)e.getKey2()) + " <-> " + 0);
 						sblock.set((int)e.getKey1(), (int)e.getKey2(), e.value);
+						if (sblock.get((int)e.getKey1(), (int)e.getKey2()) != e.value)
+							LOG.error("MDEBUG: ERR3: " + sblock.get((int)e.getKey1(), (int)e.getKey2()) + " <-> " + e.value);
+						if (sblock instanceof SparseBlockDCSR) {
+							int delta = (int)sblock.size() - oldnnz;
+							if (e.value != 0) {
+								if (delta != 1)
+									LOG.error("MDEBUG: Invalid delta " + delta + " at row = " + ((int)e.getKey1()) + ", col = " + ((int)e.getKey2()) + "; Should be 1; Initial row size " + initialRowSize);
+							} else if (delta != 0) {
+								LOG.error("MDEBUG: Invalid delta " + delta + " at row = " + ((int)e.getKey1()) + ", col = " + ((int)e.getKey2()) + "; Should be 0; Initial row size " + initialRowSize);
+							}
+						}
 					}
 				}	
 			}
@@ -302,7 +326,7 @@ public class SparseBlockGetSet extends AutomatedTestBase
 			//check correct isEmpty return
 			for( int i=0; i<rows; i++ )
 				if( sblock.isEmpty(i) != (rnnz[i]==0) )
-					Assert.fail("Wrong isEmpty(row) result for row nnz: "+rnnz[i]);
+					Assert.fail("Wrong isEmpty(row) result for row nnz: "+rnnz[i] + "(row: " + i + ")");
 		
 			//check correct values			
 			for( int i=0; i<rows; i++ ) 

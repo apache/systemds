@@ -19,6 +19,9 @@
 
 package org.apache.sysds.test.component.sparse;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.sysds.runtime.data.SparseBlockDCSR;
 import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysds.runtime.data.SparseBlock;
@@ -48,6 +51,7 @@ public class SparseBlockSize extends AutomatedTestBase
 	private final static double sparsity1 = 0.12;
 	private final static double sparsity2 = 0.22;
 	private final static double sparsity3 = 0.32;
+	private static final Log LOG = LogFactory.getLog(SparseBlockSize.class.getName());
 	
 	@Override
 	public void setUp() {
@@ -98,6 +102,21 @@ public class SparseBlockSize extends AutomatedTestBase
 	public void testSparseBlockCOO3()  {
 		runSparseBlockSizeTest(SparseBlock.Type.COO, sparsity3);
 	}
+
+	@Test
+	public void testSparseBlockDCSR1()  {
+		runSparseBlockSizeTest(SparseBlock.Type.DCSR, sparsity1);
+	}
+
+	@Test
+	public void testSparseBlockDCSR2()  {
+		runSparseBlockSizeTest(SparseBlock.Type.DCSR, sparsity2);
+	}
+
+	@Test
+	public void testSparseBlockDCSR3()  {
+		runSparseBlockSizeTest(SparseBlock.Type.DCSR, sparsity3);
+	}
 	
 	private void runSparseBlockSizeTest( SparseBlock.Type btype, double sparsity)
 	{
@@ -114,6 +133,7 @@ public class SparseBlockSize extends AutomatedTestBase
 				case MCSR: sblock = new SparseBlockMCSR(srtmp); break;
 				case CSR: sblock = new SparseBlockCSR(srtmp); break;
 				case COO: sblock = new SparseBlockCOO(srtmp); break;
+				case DCSR: sblock = new SparseBlockDCSR(srtmp); break;
 			}
 			
 			//prepare summary statistics nnz

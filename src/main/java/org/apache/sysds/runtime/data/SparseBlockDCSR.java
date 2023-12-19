@@ -23,6 +23,7 @@ import jdk.jshell.spi.ExecutionControl;
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.sysds.runtime.matrix.data.IJV;
 import org.apache.sysds.runtime.util.SortUtils;
 import org.apache.sysds.runtime.util.UtilFunctions;
 import org.apache.sysds.utils.MemoryEstimates;
@@ -30,6 +31,7 @@ import org.apache.sysds.utils.MemoryEstimates;
 import java.io.DataInput;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Iterator;
 
 import static java.util.stream.IntStream.range;
 
@@ -1066,6 +1068,12 @@ public class SparseBlockDCSR extends SparseBlock
         System.arraycopy(_values, pos, row.values(), 0, len);
         row.setSize(len);
         return row;
+    }
+
+    @Override
+    public Iterator<IJV> getIterator() {
+        // TODO: Should be implemented for efficiency
+        return super.getIterator();
     }
 
     @Override

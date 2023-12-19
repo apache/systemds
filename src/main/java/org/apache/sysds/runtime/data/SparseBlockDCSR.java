@@ -135,9 +135,9 @@ public class SparseBlockDCSR extends SparseBlock
 
             int pos = 0;
 
-            for (int rowIdx : _rowidx) {
-                pos += sblock.size(rowIdx);
-                _rowptr[rowIdx+1] = pos;
+            for (int rowptr = 0; rowptr < _rowidx.length; rowptr++) {
+                pos += sblock.size(_rowidx[rowptr]);
+                _rowptr[rowptr+1] = pos;
             }
         }
         //general case SparseBlock
@@ -613,7 +613,6 @@ public class SparseBlockDCSR extends SparseBlock
         LOG.error("MDEBUG: COL: " + c);
         LOG.error("MDEBUG: VAL: " + v);
         LOG.error("MDEBUG: ===== END =====");*/
-        int initialSize = size(r);
         int rowIndex = Arrays.binarySearch(_rowidx, 0, _nnzr, r);
         boolean rowExists = rowIndex >= 0;
 
@@ -735,29 +734,46 @@ public class SparseBlockDCSR extends SparseBlock
 
     @Override
     public void set(int r, SparseRow row, boolean deep) {
-        // TODO: Implement
-        throw new NotImplementedException();
+        /*LOG.error("MDEBUG: ===== SET =====");
+        LOG.error("MDEBUG: ROW: " + r);
+        LOG.error("MDEBUG: COLS: " + Arrays.toString(row.indexes()));
+        LOG.error("MDEBUG: VALS: " + Arrays.toString(row.values()));
+        LOG.error("MDEBUG: ===== END =====");*/
+        int newRowSize = row.size();
 
-        /*int pos = pos(r);
-        int len = size(r);
-        int alen = row.size();
-        int[] aix = row.indexes();
-        double[] avals = row.values();
+        int rowIndex = Arrays.binarySearch(_rowidx, 0, _nnzr, r);
+        boolean rowExists = rowIndex >= 0;
 
-        //delete existing values if necessary
-        if( len > 0 ) //incl size update
-            deleteIndexRange(r, aix[pos], aix[pos+len-1]+1);
+        if (!rowExists) {
+            // Nothing to do
+            if (newRowSize == 0)
+                return;
 
-        //prepare free space (allocate and shift)
-        int lsize = _size+alen;
-        if( _values.length < lsize )
-            resize(lsize);
-        shiftRightByN(pos, alen); //incl size update
-        incrPtr(r+1, alen);
+            int rowInsertionIndex = -rowIndex - 1;
+            insertRow(rowInsertionIndex, r, _rowptr[rowInsertionIndex]);
+            incrRowPtr(rowInsertionIndex+1, newRowSize);
+            insertCols(_rowptr[rowInsertionIndex], row.indexes(), row.values());
+            /*if (size(r) - initialSize != 1)
+                LOG.error("MDEBUG: Error INSERT ROW: " + (size(r) - initialSize));*/
+            //debugData();
+            return;
+        }
 
-        //copy input row into internal representation
-        System.arraycopy(aix, 0, _indexes, pos, alen);
-        System.arraycopy(avals, 0, _values, pos, alen);*/
+        int pos = _rowptr[rowIndex];
+        int oldRowSize = _rowptr[rowIndex+1] - pos;
+
+        if (newRowSize == 0) {
+            // Delete row
+            deleteRow(rowIndex);
+            incrRowPtr(rowIndex, -oldRowSize);
+            deleteCols(pos, oldRowSize);
+            //debugData();
+            return;
+        }
+
+        incrRowPtr(rowIndex+1, newRowSize-oldRowSize);
+        insertCols(pos, row.indexes(), row.values(), oldRowSize);
+        //debugData();
     }
 
     @Override
@@ -998,21 +1014,29 @@ public class SparseBlockDCSR extends SparseBlock
 
     @Override
     public void sort() {
-        int rlen = numRows();
-        for( int i=0; i<rlen && pos(i)<_size; i++ )
-            sort(i);
+        for( int i=0; i < _rowidx.length; i++ )
+            sortFromRowIndex(i);
     }
 
     @Override
     public void sort(int r) {
-        // TODO: Implement
-        throw new NotImplementedException();
+        int rowIdx = Arrays.binarySearch(_rowidx, 0, _nnzr, r);
+
+        if (rowIdx >= 0)
+            sortFromRowIndex(rowIdx);
 
         /*int pos = pos(r);
         int len = size(r);
 
-        if( len<=100 || !SortUtils.isSorted(pos, pos+len, _indexes) )
-            SortUtils.sortByIndex(pos, pos+len, _indexes, _values);*/
+        if( len<=100 || !SortUtils.isSorted(pos, pos+len, _colidx) )
+            SortUtils.sortByIndex(pos, pos+len, _colidx, _values);*/
+    }
+
+    private void sortFromRowIndex(int rowIndex) {
+        int pos = _rowptr[rowIndex];
+        int len = _rowptr[rowIndex+1] - pos;
+        if( !SortUtils.isSorted(pos, pos+len, _colidx) )
+            SortUtils.sortByIndex(pos, pos+len, _colidx, _values);
     }
 
     @Override
@@ -1130,7 +1154,17 @@ public class SparseBlockDCSR extends SparseBlock
             sb.append("\n");
         }
 
-        return sb.toString();
+        return ""; //sb.toString();
+    }
+
+    private void debugData() {
+        LOG.error("MDEBUG: ===== NEXT =====");
+        LOG.error("MDEBUG: ROWIDX: " + Arrays.toString(_rowidx));
+        LOG.error("MDEBUG: ROWPTR: " + Arrays.toString(_rowptr));
+        LOG.error("MDEBUG: COLIDX: " + Arrays.toString(_colidx));
+        LOG.error("MDEBUG: VALS: " + Arrays.toString(_values));
+        LOG.error("MDEBUG: NNZR: " + _nnzr);
+        LOG.error("MDEBUG: NNZ: " + _size);
     }
 
     @Override
@@ -1300,15 +1334,15 @@ public class SparseBlockDCSR extends SparseBlock
         int[] oldrowidx = _rowidx;
         int[] oldrowptr = _rowptr;
         _rowidx = new int[newCap];
-        _rowidx = new int[newCap+1];
+        _rowptr = new int[newCap+1];
 
         //copy lhs values to new array
         System.arraycopy(oldrowidx, 0, _rowidx, 0, ix);
         System.arraycopy(oldrowptr, 0, _rowptr, 0, ix);
 
         //copy rhs values to new array
-        System.arraycopy(oldrowidx, ix, _rowidx, ix+1, _size-ix);
-        System.arraycopy(oldrowptr, ix, _rowptr, ix+1, _size-ix);
+        System.arraycopy(oldrowidx, ix, _rowidx, ix+1, _nnzr-ix);
+        System.arraycopy(oldrowptr, ix, _rowptr, ix+1, _nnzr-ix+1);
 
         _rowidx[ix] = row;
         _rowptr[ix] = rowPtr;
@@ -1339,6 +1373,55 @@ public class SparseBlockDCSR extends SparseBlock
         _colidx[ix] = c;
         _values[ix] = v;
         _size++;
+    }
+
+    private void deleteCols(int ix, int len) {
+        insertCols(ix, new int[0], new double[0], len);
+    }
+
+    private void insertCols(int ix, int[] cols, double[] vals) {
+        insertCols(ix, cols, vals, 0);
+    }
+
+    private void insertCols(int ix, int[] cols, double[] vals, int overwriteNum) {
+        // Without inserting row
+        if (_size + cols.length - overwriteNum > _colidx.length) {
+            resizeAndInsertCols(ix, cols, vals, overwriteNum);
+            return;
+        }
+
+        if (overwriteNum != cols.length) {
+            System.arraycopy(_colidx, ix+overwriteNum, _colidx, ix+cols.length, _size-ix-overwriteNum);
+            System.arraycopy(_values, ix+overwriteNum, _values, ix+cols.length, _size-ix-overwriteNum);
+        }
+
+        System.arraycopy(cols, 0, _colidx, ix, cols.length);
+        System.arraycopy(vals, 0, _values, ix, cols.length);
+        _size += cols.length - overwriteNum;
+    }
+
+    private void resizeAndInsertCols(int ix, int[] cols, double[] vals, int overwriteNum) {
+        //compute new size
+        int newCap = newCapacity(_size + cols.length - overwriteNum);
+
+        int[] oldcolidx = _colidx;
+        double[] oldvalues = _values;
+        _colidx = new int[newCap];
+        _values = new double[newCap];
+
+        //copy lhs values to new array
+        System.arraycopy(oldcolidx, 0, _colidx, 0, ix);
+        System.arraycopy(oldvalues, 0, _values, 0, ix);
+
+        //copy new vals into row
+        System.arraycopy(cols, 0, _colidx, ix, cols.length);
+        System.arraycopy(vals, 0, _values, ix, vals.length);
+
+        //copy rhs values to new array
+        System.arraycopy(oldcolidx, ix + overwriteNum, _colidx, ix+1, _size-ix-overwriteNum);
+        System.arraycopy(oldvalues, ix + overwriteNum, _values, ix+1, _size-ix-overwriteNum);
+
+        _size += cols.length - overwriteNum;
     }
 
     private void resizeAndInsertCol(int ix, int c, double v) {

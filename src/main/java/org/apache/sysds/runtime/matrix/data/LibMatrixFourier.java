@@ -194,6 +194,23 @@ public class LibMatrixFourier {
         return fft(complex);
     }
 
+    public static MatrixBlock[] ifft_one_dim(MatrixBlock re, MatrixBlock im){
+
+        int rows = re.getNumRows();
+        int cols = re.getNumColumns();
+
+        if(rows != 1) throw new RuntimeException("only for one dimension");
+
+        double[] im_values = im.getDenseBlockValues();
+        MatrixBlock conj = new MatrixBlock(rows, cols, Arrays.stream(im_values).map(i -> -i).toArray());
+
+        MatrixBlock[] res = fft_one_dim(re, conj);
+
+        double[] res_re = Arrays.stream(res[0].getDenseBlockValues()).map(i -> i/cols).toArray();
+        double[] res_im = Arrays.stream(res[0].getDenseBlockValues()).map(i -> -i/cols).toArray();
+
+        return new MatrixBlock[]{ new MatrixBlock(rows, cols, res_re), new MatrixBlock(rows, cols, res_im)};
+    }
 
     public static ComplexDouble[] ifft(ComplexDouble[] in) {
         int n = in.length;

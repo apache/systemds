@@ -60,33 +60,26 @@ public class EstimatorLayeredGraph extends SparsityEstimator {
 		List<MatrixBlock> leafs = getMatrices(root, new ArrayList<>());
 		List<OpCode> ops = getOps(root, new ArrayList<>());
 		List<LayeredGraph> LGs = new ArrayList<>();
-		LayeredGraph ret;
-		if(ops.stream().allMatch(op -> op.equals(OpCode.MM))) {
-			ret = new LayeredGraph(leafs, _rounds);
-		}
-		else {
-			traverse(root, LGs);
-			ret = LGs.get(LGs.size() - 1);
-		}
+		LayeredGraph ret = traverse(root);
 		long nnz = ret.estimateNnz();
 		return root.setDataCharacteristics(new MatrixCharacteristics(
 			ret._nodes.get(0).length, ret._nodes.get(ret._nodes.size() - 1).length, nnz));
 	}
 
-	public void traverse(MMNode node, List<LayeredGraph> LGs) {
-		if(node.getLeft() == null || node.getRight() == null) return;
-		traverse(node.getLeft(), LGs);
-		traverse(node.getRight(), LGs);
+	public LayeredGraph traverse(MMNode node) {
+		if(node.getLeft() == null || node.getRight() == null) return null;
+		LayeredGraph retL = traverse(node.getLeft());
+		LayeredGraph retR = traverse(node.getRight());
 		LayeredGraph ret, left, right;
 
-		left = (node.getLeft().getData() == null && !LGs.isEmpty())
-			? LGs.get(LGs.size() - 1) :	new LayeredGraph(node.getLeft().getData(), _rounds);
-		right = (node.getRight().getData() == null && !LGs.isEmpty())
-			? LGs.get(LGs.size() - 1) : new LayeredGraph(node.getRight().getData(), _rounds);
+		left = (node.getLeft().getData() == null)
+			? retL : new LayeredGraph(node.getLeft().getData(), _rounds);
+		right = (node.getRight().getData() == null)
+			? retR : new LayeredGraph(node.getRight().getData(), _rounds);
 
 		ret = estimInternal(left, right, node.getOp());
 
-		LGs.add(ret);
+		return ret;
 	}
 
 	@Override

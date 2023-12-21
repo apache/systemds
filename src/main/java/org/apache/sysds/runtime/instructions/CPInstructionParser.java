@@ -330,6 +330,7 @@ public class CPInstructionParser extends InstructionParser {
 		String2CPInstructionType.put( "qr",    CPType.MultiReturnBuiltin);
 		String2CPInstructionType.put( "lu",    CPType.MultiReturnBuiltin);
 		String2CPInstructionType.put( "eigen", CPType.MultiReturnBuiltin);
+		String2CPInstructionType.put( "fft", CPType.MultiReturnBuiltin);
 		String2CPInstructionType.put( "svd",   CPType.MultiReturnBuiltin);
 
 		String2CPInstructionType.put( "partition", CPType.Partition);

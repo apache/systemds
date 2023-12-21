@@ -49,6 +49,8 @@ import org.apache.sysds.runtime.matrix.operators.AggregateBinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.util.DataConverter;
 
+import static org.apache.sysds.runtime.matrix.data.LibMatrixFourier.fft;
+
 /**
  * Library for matrix operations that need invocation of 
  * Apache Commons Math library. 
@@ -71,7 +73,7 @@ public class LibCommonsMath
 	}
 	
 	public static boolean isSupportedMultiReturnOperation( String opcode ) {
-		return ( opcode.equals("qr") || opcode.equals("lu") || opcode.equals("eigen") || opcode.equals("svd") );
+		return ( opcode.equals("qr") || opcode.equals("lu") || opcode.equals("eigen") || opcode.equals("fft") || opcode.equals("svd") );
 	}
 	
 	public static boolean isSupportedMatrixMatrixOperation( String opcode ) {
@@ -111,6 +113,8 @@ public class LibCommonsMath
 			return computeEigenLanczos(in, threads, seed);
 		else if (opcode.equals("eigen_qr"))
 			return computeEigenQR(in, threads);
+		else if (opcode.equals("fft"))
+			return computeFFT(in);
 		else if (opcode.equals("svd"))
 			return computeSvd(in);
 		return null;
@@ -250,6 +254,14 @@ public class LibCommonsMath
 		//run eigen decomposition
 		return new EigenDecomposition(
 			DataConverter.convertToArray2DRowRealMatrix(in2));
+	}
+
+	private static MatrixBlock[] computeFFT(MatrixBlock in) {
+		if( in == null || in.isEmptyBlock(false) )
+			throw new DMLRuntimeException("Invalid empty block");
+
+		//run fft
+		return fft(in);
 	}
 
 	/**

@@ -88,7 +88,7 @@ public class LibMatrixFourier {
         int cols = in[0].length;
         if(cols == 1) return in;
 
-        double angle = -2*Math.PI/cols;
+        double angle = -2*FastMath.PI/cols;
 
         // split values depending on index
         double[][] even = new double[2][cols/2];

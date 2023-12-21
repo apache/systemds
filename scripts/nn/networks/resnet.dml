@@ -162,8 +162,7 @@ basic_block_forward = function(matrix[double] X, list[unknown] weights,
 
     # RESIDUAL PATH
     # First convolutional layer
-    [out_conv1, Hout_conv1, Wout_conv1] = conv3x3_forward(X, W_conv1, C_in, C_base, Hin, Win,
-                                              strideh, stridew)
+    [out_conv1, Hout_conv1, Wout_conv1] = conv3x3_forward(X, W_conv1, C_in, C_base, Hin, Win, strideh, stridew)
     [out_bn1, ema_mean_bn1_upd, ema_var_bn1_upd, c_m_bn1, c_v_bn1] = bn2d::forward(out_conv1, gamma_bn1, beta_bn1,
         C_base, Hout_conv1, Wout_conv1, mode, ema_mean_bn1, ema_var_bn1, mu_bn, epsilon_bn)
     out_re1 = relu::forward(out_bn1)
@@ -207,13 +206,11 @@ basic_block_forward = function(matrix[double] X, list[unknown] weights,
     Wout = Wout_conv2
 }
 
-/*
 basic_block_backward = function(matrix[double] dOut, int Hout, int Wout,
-                                list[unknown] cached_out, matrix[double] X,
-                                list[unknown] weights, int C_in, int C_base,
-                                int Hin, int Win, int strideh, int stridew,
+                                list[unknown] cached_out, list[unknown] weights,
+                                int C_in, int C_base, int strideh, int stridew,
                                 string mode, list[unknown] cached_means_vars)
-    return (list[unknown] gradients) {
+    return (matrix[double] dX, list[unknown] gradients) {
     downsample = strideh > 1 | stridew > 1 | C_in != C_base
     # default values
     mu_bn = 0.1
@@ -227,13 +224,22 @@ basic_block_backward = function(matrix[double] dOut, int Hout, int Wout,
     gamma_bn2 = as.matrix(weights[5])
     beta_bn2 = as.matrix(weights[6])
 
-    out_conv1 = as.matrix(cached_out[1])
-    out_bn1 = as.matrix(cached_out[2])
-    out_re1 = as.matrix(cached_out[3])
-    out_conv2 = as.matrix(cached_out[4])
-    out_bn2 = as.matrix(cached_out[5])
-    out_re2 = as.matrix(cached_out[6])
+    # cached outputs
+    X = as.matrix(cached_out[1])
+    Hin = as.integer(as.scalar(cached_out[2]))
+    Win = as.integer(as.scalar(cached_out[3]))
+    out_conv1 = as.matrix(cached_out[4])
+    Hout_conv1 = as.integer(as.scalar(cached_out[5]))
+    Wout_conv1 = as.integer(as.scalar(cached_out[6]))
+    out_bn1 = as.matrix(cached_out[7])
+    out_re1 = as.matrix(cached_out[8])
+    out_conv2 = as.matrix(cached_out[9])
+    Hout_conv2 = as.integer(as.scalar(cached_out[10]))
+    Wout_conv2 = as.integer(as.scalar(cached_out[11]))
+    out_bn2 = as.matrix(cached_out[12])
+    out_re2 = as.matrix(cached_out[13])
 
+    # cached means and vars
     mean_bn1 = as.matrix(cached_means_vars[1])
     var_bn1 = as.matrix(cached_means_vars[2])
     mean_bn2 = as.matrix(cached_means_vars[3])
@@ -245,8 +251,10 @@ basic_block_backward = function(matrix[double] dOut, int Hout, int Wout,
         gamma_bn3 = as.matrix(weights[8])
         beta_bn3 = as.matrix(weights[9])
 
-        out_conv3 = as.matrix(cached_out[7])
-        out_bn3 = as.matrix(cached_out[8])
+        out_conv3 = as.matrix(cached_out[14])
+        Hout_conv3 = as.integer(as.scalar(cached_out[15]))
+        Wout_conv3 = as.integer(as.scalar(cached_out[16]))
+        out_bn3 = as.matrix(cached_out[17])
         identity = out_bn3
 
         mean_bn3 = as.matrix(cached_means_vars[5])
@@ -259,13 +267,42 @@ basic_block_backward = function(matrix[double] dOut, int Hout, int Wout,
 
     # IDENTITY PATH
     if (downsample) {
-        [dX_id, dgamma_bn3, dbeta_bn3] = bn2d::backward(dX, mean_bn3, var_bn3, out_conv3, gamma_bn3, C_base, Hout, Wout,
-            epsilon_bn)
-        [dX_id, dW_conv3, db_conv3] = conv3x3_backward(dX_id, Hout, Wout, X, W_conv3,
+        [dX_id, dgamma_bn3, dbeta_bn3] = bn2d::backward(dX, mean_bn3, var_bn3, out_conv3, gamma_bn3, C_base, Hout_conv3,
+            Wout_conv3, epsilon_bn)
+        [dX_id, dW_conv3] = conv1x1_backward(dX_id, Hout_conv3, Wout_conv3, X, W_conv3, C_in, C_base, Hin,
+            Win, strideh, stridew)
+    } else {
+        dX_id = dX
     }
 
+    # RESIDUAL PATH
+    # Second convolutional layer
+    [dX_res, dgamma_bn2, dbeta_bn2] = bn2d::backward(dX, mean_bn2, var_bn2, out_conv2, gamma_bn2, C_base, Hout_conv2,
+        Wout_conv2, epsilon_bn)
+
+    print("dout for conv2")
+    print(toString(dX_res))
+
+    [dX_res, dW_conv2] = conv3x3_backward(dX_res, Hout_conv2, Wout_conv2, out_re1, W_conv2, C_base, C_base,
+        Hout_conv1, Wout_conv1, 1, 1)
+
+    # First convoluational layer
+    dX_res = relu::backward(dX_res, out_bn1)
+    [dX_res, dgamma_bn1, dbeta_bn1] = bn2d::backward(dX_res, mean_bn1, var_bn1, out_conv1, gamma_bn1, C_base,
+        Hout_conv1, Wout_conv1, epsilon_bn)
+    [dX_res, dW_conv1] = conv3x3_backward(dX_res, Hout_conv1, Wout_conv1, X, W_conv1, C_in, C_base, Hin, Win,
+        strideh, stridew)
+
+    gradients = list(dW_conv1, dgamma_bn1, dbeta_bn1, dW_conv2, dgamma_bn2, dbeta_bn2)
+    if (downsample) {
+        gradients = append(gradients, dW_conv3)
+        gradients = append(gradients, dgamma_bn3)
+        gradients = append(gradients, dbeta_bn3)
+    }
+
+    # Combine res path and id path
+    dX = dX_res + dX_id
 }
- */
 
 bottleneck_block_forward = function(matrix[double] X,
         list[unknown] weights, int C_in, int C_base, int Hin,

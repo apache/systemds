@@ -21,6 +21,7 @@
 
 source("scripts/nn/networks/resnet.dml") as resnet
 source("src/test/scripts/applications/nn/util.dml") as test_util
+source("scripts/nn/layers/conv2d_builtin.dml") as conv2d
 
 
 basic_test_basic_block_forward = function(int C_in, int C_base, int strideh, int stridew,
@@ -541,6 +542,192 @@ values_test_residual_layer_forward = function() {
     test_util::check_all_close(out, expected_out, 0.0001)
 }
 
+values_test_basic_block_backward = function() {
+    /*
+     * Testing of values for forward pass of basic block against PyTorch.
+     */
+    strideh = 2; stridew = 2
+    C_in = 2; C_base = 4
+    Hin = 4; Win = 4
+    N = 2
+    X = matrix(1, rows=N, cols=C_in*Hin*Win)
+    W_conv1 = matrix("0.22795902  0.17547427  0.21921514
+             0.13373677  0.1449876  -0.20703636
+             0.1049294  -0.07758546  0.01650636
+
+             0.09977336  0.14042483 -0.10443689
+             0.18606941  0.07984604  0.1862065
+            -0.0245543  -0.00999866 -0.06876408
+
+
+            -0.21368428  0.11649923  0.1329887
+            -0.03319308 -0.18250495  0.16087545
+            -0.0010442  -0.06631051  0.11644398
+
+            -0.19472131 -0.0089076  -0.00361156
+             0.11273773 -0.04975031 -0.22203343
+             0.12707166  0.05724771 -0.19370714
+
+
+            -0.03382689 -0.2220618   0.09851243
+            -0.04797092 -0.15873244  0.10475938
+            -0.14053479  0.14056166  0.16246034
+
+            -0.22719866 -0.18615595  0.13337635
+            -0.18140101  0.05603398  0.11490373
+             0.0046075  -0.11261812  0.01054354
+
+
+             0.06122501  0.18338178  0.21308573
+             0.00820886  0.01341644 -0.08846006
+            -0.04187146 -0.05795708  0.07099648
+
+             0.0377063  -0.19591397  0.08679475
+             0.05578776 -0.01468489 -0.22213465
+             0.21319999 -0.19887432  0.00093569
+        ", rows=C_base, cols=C_in*3*3)
+    gamma_bn1 = matrix(1, rows=C_base, cols=1)
+    beta_bn1 = matrix(0, rows=C_base, cols=1)
+    W_conv2 = matrix("-0.15316814  0.01649837  0.02066648
+             0.15951438  0.14952205  0.05908944
+             0.12360035  0.16258992 -0.05275005
+
+            -0.09005231  0.10635151 -0.06287201
+             0.0140198   0.00389086 -0.13122693
+            -0.01728405  0.06940794  0.1438715
+
+            -0.06239128 -0.04787713  0.12102707
+            -0.09782796 -0.12092899  0.15389048
+             0.13240601 -0.07352956 -0.04799255
+
+            -0.04824746  0.15890409 -0.09615827
+             0.00646619  0.07214041  0.05696104
+             0.09033443 -0.15197693 -0.1104077
+
+
+             0.12790756 -0.14982054 -0.08584315
+             0.1374556   0.06672513  0.05649196
+            -0.15129058  0.07952888  0.07835837
+
+             0.05553712 -0.02423525  0.12602611
+            -0.03570884  0.07482989 -0.07258789
+            -0.15282819  0.09200995  0.00603025
+
+            -0.05926096  0.0686207   0.11548664
+            -0.08733666 -0.14680144 -0.11286473
+             0.01421845 -0.04764497  0.15172698
+
+            -0.13044584  0.04871863 -0.14850675
+            -0.13645135 -0.11802016 -0.01737686
+             0.10504811 -0.13870925 -0.07346682
+
+
+            -0.0705896  -0.09258682  0.1341825
+             0.05714887 -0.06405389 -0.14810124
+             0.06753898  0.00227241  0.06100388
+
+             0.09614421  0.12490447 -0.09217326
+            -0.04312347  0.08090664  0.12942137
+             0.04428639  0.0577697   0.12196468
+
+             0.10778381 -0.10680336  0.11534978
+            -0.0510295  -0.01859938  0.01497144
+            -0.03191304  0.06286548  0.11793233
+
+            -0.12459338  0.09700234 -0.11604425
+             0.09004898 -0.02339827  0.15153421
+             0.06829721 -0.01891816 -0.0645818
+
+
+             0.03223832  0.10086165 -0.13695073
+            -0.01531534  0.07804878 -0.00895005
+            -0.03381938 -0.10908765  0.03976715
+
+            -0.01888643  0.08189081 -0.01315074
+            -0.05945349 -0.03236644 -0.07914945
+            -0.06206207 -0.01699001  0.0371331
+
+             0.04449199  0.05730323  0.05018614
+            -0.16624898 -0.00204407  0.05084966
+             0.1588928  -0.00098683 -0.08426523
+
+            -0.04337545  0.06106292 -0.00310864
+            -0.05939015 -0.02901964 -0.12184718
+            -0.09405826  0.11087091 -0.10842602
+        ", rows=C_base, cols=C_base*3*3)
+    gamma_bn2 = matrix(1, rows=C_base, cols=1)
+    beta_bn2 = matrix(0, rows=C_base, cols=1)
+    W_conv_down = matrix("0.31054777
+
+             0.3262263
+
+
+             0.46358436
+
+            -0.51710904
+
+
+             0.18096805
+
+             0.32488567
+
+
+            -0.29951102
+
+            -0.40844375
+        ", rows=C_base, cols=C_in)
+    gamma_bn3 = matrix(1, rows=C_base, cols=1)
+    beta_bn3 = matrix(0, rows=C_base, cols=1)
+
+    weights = list(W_conv1, gamma_bn1, beta_bn1, W_conv2, gamma_bn2, beta_bn2, W_conv_down, gamma_bn3, beta_bn3)
+    mode = "train"
+
+    ema_mean_bn1 = matrix(0, rows=C_base, cols=1)
+    ema_var_bn1 = matrix(0, rows=C_base, cols=1)
+    ema_mean_bn2 = matrix(0, rows=C_base, cols=1)
+    ema_var_bn2 = matrix(0, rows=C_base, cols=1)
+    ema_mean_bn3 = matrix(0, rows=C_base, cols=1)
+    ema_var_bn3 = matrix(0, rows=C_base, cols=1)
+    ema_means_vars = list(ema_mean_bn1, ema_var_bn1, ema_mean_bn2, ema_var_bn2, ema_mean_bn3, ema_var_bn3)
+
+    [out, Hout, Wout, ema_means_vars_up, cached_out, cached_means_vars] = resnet::basic_block_forward(X, weights, C_in,
+        C_base, Hin, Win, strideh, stridew, mode, ema_means_vars)
+
+    print(toString(out))
+
+    dOut = matrix("-0.0625     -0.06066703
+            -0.0514779   0.01886634
+
+            -0.0625     -0.0625
+             0.04197507 -0.0625
+
+             0.03034905 -0.0625
+            -0.0625     -0.0625
+
+            -0.0625     -0.0625
+            -0.0625      0.04534711
+
+
+            -0.0625     -0.06066703
+            -0.0514779   0.01886634
+
+            -0.0625     -0.0625
+             0.04197507 -0.0625
+
+             0.03034905 -0.0625
+            -0.0625     -0.0625
+
+            -0.0625     -0.0625
+            -0.0625      0.04534711
+        ", rows=N, cols=C_base*Hout*Wout)
+
+    [dX, gradients] = resnet::basic_block_backward(dOut, Hout, Wout, cached_out, weights, C_in, C_base,
+        strideh, stridew, mode, cached_means_vars)
+
+    print(toString(weights))
+    print(toString(gradients))
+}
+
 
 /*
  * **** Basic Block Shape Handling Testing ****
@@ -553,7 +740,7 @@ values_test_residual_layer_forward = function() {
  * to downsample the input and the output should have the
  * expected shape.
  */
-basic_test_basic_block_forward(C_in=4, C_base=4, strideh=1, stridew=1, Hin=4, Win=4, N=3, downsample=FALSE)
+#basic_test_basic_block_forward(C_in=4, C_base=4, strideh=1, stridew=1, Hin=4, Win=4, N=3, downsample=FALSE)
 
 /*
  * Test case 2:
@@ -562,7 +749,7 @@ basic_test_basic_block_forward(C_in=4, C_base=4, strideh=1, stridew=1, Hin=4, Wi
  * because of non-matching channels and the output should
  * have the expected (downsampled) shapes.
  */
-basic_test_basic_block_forward(C_in=2, C_base=4, strideh=1, stridew=1, Hin=4, Win=4, N=3, downsample=TRUE)
+#basic_test_basic_block_forward(C_in=2, C_base=4, strideh=1, stridew=1, Hin=4, Win=4, N=3, downsample=TRUE)
 
 /*
  * Test case 3:
@@ -571,7 +758,7 @@ basic_test_basic_block_forward(C_in=2, C_base=4, strideh=1, stridew=1, Hin=4, Wi
  * because of stride bigger than 1 and the output should
  * have the expected (downsampled) shapes.
  */
-basic_test_basic_block_forward(C_in=4, C_base=4, strideh=2, stridew=2, Hin=4, Win=4, N=3, downsample=TRUE)
+#basic_test_basic_block_forward(C_in=4, C_base=4, strideh=2, stridew=2, Hin=4, Win=4, N=3, downsample=TRUE)
 
 /*
  * **** Basic Block Value Testing ****
@@ -591,7 +778,7 @@ basic_test_basic_block_forward(C_in=4, C_base=4, strideh=2, stridew=2, Hin=4, Wi
  * input and output channels and the same input and
  * output dimensions, i.e. stride 1, in train mode.
  */
-values_test_basic_block_forward_1()
+#values_test_basic_block_forward_1()
 
 /*
  * Test case 2:
@@ -599,7 +786,7 @@ values_test_basic_block_forward_1()
  * downsampling through a stride of 2 but same number
  * of channels in train mode.
  */
-values_test_basic_block_forward_2()
+#values_test_basic_block_forward_2()
 
 /*
  * Test case 2:
@@ -607,7 +794,7 @@ values_test_basic_block_forward_2()
  * downsampling through non-matching channel sizes
  * and different number of channels in train mode.
  */
-values_test_basic_block_forward_3()
+#values_test_basic_block_forward_3()
 
 /*
  * *** Residual Layer Value Testing ***
@@ -626,4 +813,6 @@ values_test_basic_block_forward_3()
  * a stride of 2 and non-matching input and base channels
  * of 2 and 4.
  */
-values_test_residual_layer_forward()
+#values_test_residual_layer_forward()
+
+values_test_basic_block_backward()

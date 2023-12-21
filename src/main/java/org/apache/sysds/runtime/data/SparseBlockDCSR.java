@@ -123,6 +123,7 @@ public class SparseBlockDCSR extends SparseBlock
             _size = ocsr._size;*/
         }
         else if( sblock instanceof SparseBlockCSR ) {
+            // TODO: Is CSR always sorted (confused by strict check and sorting functionality)
             // More efficient conversion from CSR to DCSR
             int rlen = sblock.numRows();
 
@@ -994,24 +995,34 @@ public class SparseBlockDCSR extends SparseBlock
 
     @Override
     public void deleteIndexRange(int r, int cl, int cu) {
-        // TODO: Implement
-        throw new NotImplementedException();
-
-        /*int start = internPosFIndexGTE(r,cl);
-        if( start < 0 ) //nothing to delete
+        int rowIdx = Arrays.binarySearch(_rowidx, 0, _nnzr, r);
+        if( rowIdx < 0 ) //nothing to delete
             return;
 
-        int len = size(r);
-        int end = internPosFIndexGTE(r, cu);
+        int nnz = _rowptr[rowIdx+1] - _rowptr[rowIdx];
+
+        int start = Arrays.binarySearch(_colidx, _rowptr[rowIdx], _rowptr[rowIdx+1], cl);
+        if (start < 0)
+            start = -start-1;
+
+        int end = Arrays.binarySearch(_colidx, start, _rowptr[rowIdx+1], cu);
         if( end < 0 ) //delete all remaining
-            end = start+len;
+            end = -end-1;
+
+        if (end-start <= 0) // Nothing to delete
+            return;
+
+        if (nnz == end-start) {
+            deleteRow(rowIdx);
+            rowIdx--;
+        }
 
         //overlapping array copy (shift rhs values left)
-        System.arraycopy(_indexes, end, _indexes, start, _size-end);
+        System.arraycopy(_colidx, end, _colidx, start, _size-end);
         System.arraycopy(_values, end, _values, start, _size-end);
         _size -= (end-start);
 
-        decrPtr(r+1, end-start);*/
+        incrRowPtr(rowIdx+1, start-end);
     }
 
     @Override
@@ -1165,12 +1176,15 @@ public class SparseBlockDCSR extends SparseBlock
         return ""; //sb.toString();
     }
 
-    private void debugData() {
+    private void debugData(boolean debugArrays) {
         LOG.error("MDEBUG: ===== NEXT =====");
-        LOG.error("MDEBUG: ROWIDX: " + Arrays.toString(_rowidx));
-        LOG.error("MDEBUG: ROWPTR: " + Arrays.toString(_rowptr));
-        LOG.error("MDEBUG: COLIDX: " + Arrays.toString(_colidx));
-        LOG.error("MDEBUG: VALS: " + Arrays.toString(_values));
+        if (debugArrays) {
+            LOG.error("MDEBUG: ROWIDX: " + Arrays.toString(_rowidx));
+            LOG.error("MDEBUG: ROWPTR: " + Arrays.toString(_rowptr));
+            LOG.error("MDEBUG: COLIDX: " + Arrays.toString(_colidx));
+            LOG.error("MDEBUG: VALS: " + Arrays.toString(_values));
+        }
+        LOG.error("MDEBUG: NUM_ROWS: " + _rlen);
         LOG.error("MDEBUG: NNZR: " + _nnzr);
         LOG.error("MDEBUG: NNZ: " + _size);
     }

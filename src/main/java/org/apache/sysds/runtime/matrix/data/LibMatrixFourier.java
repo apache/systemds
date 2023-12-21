@@ -1,5 +1,6 @@
 package org.apache.sysds.runtime.matrix.data;
 
+import org.apache.commons.math3.util.FastMath;
 import java.util.Arrays;
 
 public class LibMatrixFourier {
@@ -105,7 +106,7 @@ public class LibMatrixFourier {
         double[][] res = new double[2][cols];
 
         for(int j=0; j < cols/2; j++){
-            double[] omega_pow = new double[]{Math.cos(j*angle), Math.sin(j*angle)};
+            double[] omega_pow = new double[]{FastMath.cos(j*angle), FastMath.sin(j*angle)};
 
             // m = omega * res_odd[j]
             double[] m = new double[]{

@@ -1,17 +1,9 @@
 package org.apache.sysds.test.component.matrix;
 
-import org.apache.sysds.runtime.matrix.data.ComplexDouble;
-
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.junit.Test;
-
 import static org.apache.sysds.runtime.matrix.data.LibMatrixFourier.*;
 import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertTrue;
-
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.IOException;
 
 public class FourierTest {
 

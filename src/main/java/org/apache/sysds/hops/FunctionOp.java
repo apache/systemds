@@ -255,7 +255,7 @@ public class FunctionOp extends Hop
 				return OptimizerUtils.estimateSizeExactSparsity(getInput().get(0).getDim1(), getInput().get(0).getDim2(), 1.0) 
 						+ 3*OptimizerUtils.estimateSizeExactSparsity(getInput().get(0).getDim1(), 1, 1.0); 
 			}
-			if ( getFunctionName().equalsIgnoreCase("fft") ) {
+			else if ( getFunctionName().equalsIgnoreCase("fft") ) {
 				// 2 matrices of size same as the input
 				return 2*OptimizerUtils.estimateSizeExactSparsity(getInput().get(0).getDim1(), getInput().get(0).getDim2(), 1.0);
 			}

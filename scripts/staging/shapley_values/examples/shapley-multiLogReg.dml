@@ -29,13 +29,14 @@ X_bg = read("../data/Adult_X.csv")
 y = read("../data/Adult_y.csv")
 B = read("../data/Adult_W.csv")
 
+# you set the total number of samples from the commandline using `-nvargs samples_per_feature=2000`
+samples = ifdef($samples_per_feature, 10000)
+print("Computing shapley values with "+samples+" samples per feature.")
 #select instance to compute shapley values for
 x = X_bg[2,]
 
 print("Sample: \n"+toString(x))
 
-#set the number of samples
-samples = 10000
 #set the indices of the features
 indices = seq(1,ncol(x))
 
@@ -51,8 +52,10 @@ indices = seq(1,ncol(x))
   verbose=1
 )
 
-print("Expected probability for class 1: "+expected)
+print("Expected class: "+expected)
 
+#transpose it to make it fit the representation of values in the SHAP python package
+S = t(S)
 # write values to csv
 write(S, "../data/Adult_shap-values_"+samples+"smpl.csv", format="csv")
 

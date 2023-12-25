@@ -122,6 +122,7 @@ public class LineageCacheConfig
 	// Note, delayed caching helps in reducing lineage caching/probing overhead for use cases with
 	// no reusable instructions, but is anti-productive for use cases with repeating patterns (eg. scoring).
 	private static boolean DELAYED_CACHING_GPU = true;
+	private static boolean DELAYED_CACHING_RDD = true;
 
 	//-------------DISK SPILLING RELATED CONFIGURATIONS--------------//
 
@@ -407,6 +408,10 @@ public class LineageCacheConfig
 
 	public static boolean isDelayedCachingGPU() {
 		return DELAYED_CACHING_GPU;
+	}
+
+	public static boolean isDelayedCachingRDD() {
+		return DELAYED_CACHING_RDD;
 	}
 
 	public static void setCachePolicy(LineageCachePolicy policy) {

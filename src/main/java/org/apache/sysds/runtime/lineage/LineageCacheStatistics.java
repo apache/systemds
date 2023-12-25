@@ -56,6 +56,7 @@ public class LineageCacheStatistics {
 	private static final LongAdder _numHitsRddPersist   = new LongAdder();
 	private static final LongAdder _numRddPersist   = new LongAdder();
 	private static final LongAdder _numRddUnpersist   = new LongAdder();
+	private static final LongAdder _numHitsDelRdd   = new LongAdder();
 
 	public static void reset() {
 		_numHitsMem.reset();
@@ -85,6 +86,7 @@ public class LineageCacheStatistics {
 		_numHitsRddPersist.reset();
 		_numRddPersist.reset();
 		_numRddUnpersist.reset();
+		_numHitsDelRdd.reset();
 	}
 	
 	public static void incrementMemHits() {
@@ -233,7 +235,7 @@ public class LineageCacheStatistics {
 	}
 
 	public static void incrementDelHitsGpu() {
-		// Number of hits on pointers that are deleted/recycled before
+		// Number of hits on pointers that are delayed for caching or deleted/recycled before
 		_numHitsDelGpu.increment();
 	}
 
@@ -266,6 +268,11 @@ public class LineageCacheStatistics {
 	public static void incrementRDDUnpersists() {
 		// Number of RDDs unpersisted due the due to memory pressure
 		_numRddUnpersist.increment();
+	}
+
+	public static void incrementDelHitsRdd() {
+		// Number of hits on RDDs that are delayed for caching or evicted
+		_numHitsDelRdd.increment();
 	}
 
 	public static String displayHits() {
@@ -366,6 +373,8 @@ public class LineageCacheStatistics {
 		sb.append(_numRddPersist.longValue());
 		sb.append("/");
 		sb.append(_numRddUnpersist.longValue());
+		sb.append("/");
+		sb.append(_numHitsDelRdd.longValue());
 		return sb.toString();
 	}
 

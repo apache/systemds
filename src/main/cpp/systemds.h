@@ -114,6 +114,47 @@ JNIEXPORT jboolean JNICALL Java_org_apache_sysds_utils_NativeHelper_conv2dSparse
 JNIEXPORT void JNICALL Java_org_apache_sysds_utils_NativeHelper_setMaxNumThreads
   (JNIEnv *, jclass, jint);
 
+/*
+ * Class:     org_apache_sysds_utils_NativeHelper
+ * Method:    imageRotate
+ * Signature: ([DIIIDD[D)V
+ */
+JNIEXPORT void JNICALL Java_org_apache_sysds_utils_ImgNativeHelper_imageRotate
+    (JNIEnv *, jclass, jdoubleArray, jint, jint, jdouble, jdouble, jdoubleArray);
+
+/*
+ * Class:     org_apache_sysds_utils_NativeHelper
+ * Method:    imageCutout
+ * Signature: ([DIIIIIDD)[D
+ */
+JNIEXPORT jdoubleArray JNICALL Java_org_apache_sysds_utils_ImgNativeHelper_imageCutout
+  (JNIEnv *, jclass, jdoubleArray, jint, jint, jint, jint, jint, jint, jdouble);
+
+/*
+ * Class:     org_apache_sysds_utils_NativeHelper
+ * Method:    cropImage
+ * Signature: ([DIIIIII)[D
+ */
+JNIEXPORT jdoubleArray JNICALL Java_org_apache_sysds_utils_ImgNativeHelper_cropImage(JNIEnv *, jclass,
+    jdoubleArray, jint, jint, jint, jint, jint, jint);
+
+/*
+ * Class:     org_apache_sysds_utils_NativeHelper
+ * Method:    shearImage
+ * Signature: ([DIIIIII)[D
+ */
+JNIEXPORT jdoubleArray JNICALL Java_org_apache_sysds_utils_ImgNativeHelper_shearImage(JNIEnv *env, jclass,
+        jdoubleArray img_in, jint width, jint height, jdouble shear_x, jdouble shear_y, jdouble fill_value);
+
+/*
+ * Class:     org_apache_sysds_utils_NativeHelper
+ * Method:    imgTranslate
+ * Signature: ([DDBIIIIID[D)V
+ */
+JNIEXPORT void JNICALL Java_org_apache_sysds_utils_ImgNativeHelper_imgTranslate(JNIEnv *env, jclass cls,
+                                                          jdoubleArray img_in, jdouble offset_x, jdouble offset_y,
+                                                          jint in_w, jint in_h, jint out_w, jint out_h,
+                                                          jdouble fill_value, jdoubleArray img_out);
 #ifdef __cplusplus
 }
 #endif

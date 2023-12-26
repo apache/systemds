@@ -31,8 +31,8 @@ option(USE_OPEN_BLAS "Whether to use OpenBLAS (Defaults to compiling with Intel 
 option(USE_INTEL_MKL "Whether to use Intel MKL (Defaults to compiling with Intel MKL)" OFF)
 
 # Build a shared libraray
-set(HEADER_FILES libmatrixdnn.h libmatrixmult.h systemds.h common.h)
-set(SOURCE_FILES libmatrixdnn.cpp libmatrixmult.cpp systemds.cpp)
+set(HEADER_FILES imgUtils.h libmatrixdnn.h libmatrixmult.h systemds.h common.h)
+set(SOURCE_FILES imgUtils.cpp libmatrixdnn.cpp libmatrixmult.cpp systemds_img.cpp systemds.cpp)
 
 # Build a shared libraray
 add_library(systemds SHARED ${SOURCE_FILES} ${HEADER_FILES})
@@ -96,4 +96,3 @@ if (USE_OPEN_BLAS)
 elseif(USE_INTEL_MKL)
   set_target_properties(systemds PROPERTIES LINK_FLAGS "${MATH_LIBRARIES}")
 endif()
-

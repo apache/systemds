@@ -35,6 +35,7 @@ intel_mkl="libmkl_rt.so"
 # GCC __float128 shared support library: libquadmath.so.0
 openblas="libopenblas.so\|libgfortran.so\|libquadmath.so"
 
+export DEBIAN_FRONTEND=noninteractive
 
 if ! [ -x "$(command -v cmake)" ]; then
   echo 'Error: cmake is not installed.' >&2
@@ -44,6 +45,14 @@ fi
 if ! [ -x "$(command -v patchelf)" ]; then
   echo 'Error: patchelf is not installed.' >&2
   exit 1
+fi
+
+# Check if OpenBLAS is installed
+if ! ldconfig -p | grep -q libopenblas; then
+  echo "OpenBLAS not found. Installing OpenBLAS..."
+
+  apt-get update
+  apt-get install libopenblas-dev -y
 fi
 
 # configure and compile INTEL MKL

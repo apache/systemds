@@ -32,7 +32,7 @@ import java.util.Iterator;
 
 import static java.util.stream.IntStream.range;
 
-// TODO: Handle completely empty matrix
+// TODO: Do we need to be able to handle completely empty matrices? This will cause errors right now
 // TODO: Maybe add a custom constructor because it does not make sense to initialize with rlen
 public class SparseBlockDCSR extends SparseBlock
 {

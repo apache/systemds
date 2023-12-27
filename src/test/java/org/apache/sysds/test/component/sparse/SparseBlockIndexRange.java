@@ -165,6 +165,21 @@ public class SparseBlockIndexRange extends AutomatedTestBase
 	public void testSparseBlockDCSR3Delete()  {
 		runSparseBlockIndexRangeTest(SparseBlock.Type.DCSR, sparsity3, UpdateType.DELETE);
 	}
+
+	@Test
+	public void testSparseBlockDCSR1Insert()  {
+		runSparseBlockIndexRangeTest(SparseBlock.Type.DCSR, sparsity1, UpdateType.INSERT);
+	}
+
+	@Test
+	public void testSparseBlockDCSR2Insert()  {
+		runSparseBlockIndexRangeTest(SparseBlock.Type.DCSR, sparsity2, UpdateType.INSERT);
+	}
+
+	@Test
+	public void testSparseBlockDCSR3Insert()  {
+		runSparseBlockIndexRangeTest(SparseBlock.Type.DCSR, sparsity3, UpdateType.INSERT);
+	}
 	
 	private void runSparseBlockIndexRangeTest( SparseBlock.Type btype, double sparsity, UpdateType utype)
 	{

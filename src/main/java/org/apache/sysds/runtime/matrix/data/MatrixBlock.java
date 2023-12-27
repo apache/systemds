@@ -1208,8 +1208,23 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 	 * Allowing CSR format is default for this operation.
 	 * 
 	 */
-	public void examSparsity() {
-		examSparsity(true);
+	public final void examSparsity() {
+		examSparsity(true, 1);
+	}
+	
+	/**
+	 * Evaluates if this matrix block should be in sparse format in
+	 * memory. Depending on the current representation, the state of the
+	 * matrix block is changed to the right representation if necessary. 
+	 * Note that this consumes for the time of execution memory for both 
+	 * representations.
+	 * 
+	 * Allowing CSR format is default for this operation.
+	 * 
+	 * @param k parallelization degree
+	 */
+	public final void examSparsity(int k ) {
+		examSparsity(true, k);
 	}
 	
 	/**
@@ -1221,7 +1236,21 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 	 * 
 	 * @param allowCSR allow CSR format on dense to sparse conversion
 	 */
-	public void examSparsity(boolean allowCSR) {
+	public final void examSparsity(boolean allowCSR) {
+		examSparsity(allowCSR, 1);
+	}
+
+	/**
+	 * Evaluates if this matrix block should be in sparse format in
+	 * memory. Depending on the current representation, the state of the
+	 * matrix block is changed to the right representation if necessary. 
+	 * Note that this consumes for the time of execution memory for both 
+	 * representations.
+	 * 
+	 * @param allowCSR allow CSR format on dense to sparse conversion
+	 * @param k parallelization degree
+	 */
+	public void examSparsity(boolean allowCSR, int k) {
 		//determine target representation
 		boolean sparseDst = evalSparseFormatInMemory(allowCSR); 
 		
@@ -1233,9 +1262,9 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 		//change representation if required (also done for 
 		//empty blocks in order to set representation flags)
 		if( sparse && !sparseDst)
-			sparseToDense();
+			sparseToDense(k);
 		else if( !sparse && sparseDst )
-			denseToSparse(allowCSR);
+			denseToSparse(allowCSR, k);
 	}
 	
 	public static boolean evalSparseFormatInMemory(DataCharacteristics dc) {
@@ -1297,48 +1326,24 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 	////////
 	// basic block handling functions
 	
-	private void denseToSparse() {
-		denseToSparse(true);
+	private final void denseToSparse() {
+		denseToSparse(true, 1);
 	}
 	
-	public void denseToSparse(boolean allowCSR){
-		LibMatrixDenseToSparse.denseToSparse(this, allowCSR);
+	public final void denseToSparse(boolean allowCSR){
+		denseToSparse(allowCSR, 1);
 	}
-	
-	public void sparseToDense() {
-		//set target representation, early abort on empty blocks
-		sparse = false;
-		if(sparseBlock==null)
-			return;
-		
-		int limit=rlen*clen;
-		if ( limit < 0 ) {
-			throw new DMLRuntimeException("Unexpected error in sparseToDense().. limit < 0: " + rlen + ", " + clen + ", " + limit);
-		}
-		
-		//allocate dense target block, but keep nnz (no need to maintain)
-		if( !allocateDenseBlock(false) )
-			denseBlock.reset();
-		
-		//copy sparse to dense
-		SparseBlock a = sparseBlock;
-		DenseBlock c = getDenseBlock();
-		
-		for( int i=0; i<rlen; i++ ) {
-			if( a.isEmpty(i) ) continue;
-			int apos = a.pos(i);
-			int alen = a.size(i);
-			int[] aix = a.indexes(i);
-			double[] avals = a.values(i);
-			double[] cvals = c.values(i);
-			int cix = c.pos(i);
-			for( int j=apos; j<apos+alen; j++ )
-				if( avals[j] != 0 )
-					cvals[cix+aix[j]] = avals[j];
-		}
-		
-		//cleanup sparse rows
-		sparseBlock = null;
+
+	public void denseToSparse(boolean allowCSR, int k){
+		LibMatrixDenseToSparse.denseToSparse(this, allowCSR, k);
+	}
+
+	public final void sparseToDense() {
+		sparseToDense(1);
+	}
+
+	public void sparseToDense(int k) {
+		LibMatrixSparseToDense.sparseToDense(this, k);
 	}
 
 	/**

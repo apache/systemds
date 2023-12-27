@@ -261,35 +261,13 @@ public class GPUMemoryManager {
 
 		Pointer tmpA = (A == null) ? new Pointer() : null;
 		// Step 2: Allocate a new pointer in the GPU memory (since memory is available)
-		// Step 3 has potential to create holes as well as limit future reuse, hence perform this step before step 3.
+		// Step 4 has potential to create holes as well as limit future reuse, hence perform this step before step 3.
 		if(A == null && allocator.canAllocate(size)) {
 			// This can fail in case of fragmented memory, so don't issue any warning
 			A = cudaMallocNoWarn(tmpA, size, "allocate a new pointer");
 		}
-		
-		// Step 3: Try reusing non-exact match entry of rmvarGPUPointers
-		if(A == null) {
-			A = lazyCudaFreeMemoryManager.getRmvarPointerMinSize(opcode, size);
-			if(A != null) {
-				guardedCudaFree(A);
-				A = cudaMallocNoWarn(tmpA, size, "reuse non-exact match of rmvarGPUPointers"); 
-				if(A == null)
-					LOG.warn("cudaMalloc failed after clearing one of rmvarGPUPointers.");
-			}
-		}
-		
-		// Step 4: Eagerly free-up rmvarGPUPointers and check if memory is available on GPU
-		// Evictions of matrix blocks are expensive (as they might lead them to be written to disk in case of smaller CPU budget) 
-		// than doing cuda free/malloc/memset. So, rmvar-ing every blocks (step 4) is preferred over eviction (step 6, 7, 8).
-		if(A == null) {
-			lazyCudaFreeMemoryManager.clearAll();
-			if(allocator.canAllocate(size)) {
-				// This can fail in case of fragmented memory, so don't issue any warning
-				A = cudaMallocNoWarn(tmpA, size, "allocate a new pointer after eager free");
-			}
-		}
-		
-		// Step 5.1: Recycle, delete or evict gpu intermediates from lineage cache
+
+		// Step 3: Recycle gpu intermediates from lineage cache
 		if (A == null && !LineageCacheConfig.ReuseCacheType.isNone()) {
 			long t0 =  DMLScript.STATISTICS ? System.nanoTime() : 0;
 			// Recycle a cached pointer if exactly matches the required size
@@ -316,8 +294,30 @@ public class GPUMemoryManager {
 			if (DMLScript.STATISTICS)
 				LineageCacheStatistics.incrementEvictTimeGpu(System.nanoTime() - t0);
 		}
-
-		// Step 5.2: Use a non-exact sized pointer
+		
+		// Step 4: Try reusing non-exact match entry of rmvarGPUPointers
+		if(A == null) {
+			A = lazyCudaFreeMemoryManager.getRmvarPointerMinSize(opcode, size);
+			if(A != null) {
+				guardedCudaFree(A);
+				A = cudaMallocNoWarn(tmpA, size, "reuse non-exact match of rmvarGPUPointers");
+				if(A == null)
+					LOG.warn("cudaMalloc failed after clearing one of rmvarGPUPointers.");
+			}
+		}
+		
+		// Step 5: Eagerly free-up rmvarGPUPointers and check if memory is available on GPU
+		// Evictions of matrix blocks are expensive (as they might lead them to be written to disk in case of smaller CPU budget) 
+		// than doing cuda free/malloc/memset. So, rmvar-ing every blocks (step 4) is preferred over eviction (step 6, 7, 8).
+		if(A == null) {
+			lazyCudaFreeMemoryManager.clearAll();
+			if(allocator.canAllocate(size)) {
+				// This can fail in case of fragmented memory, so don't issue any warning
+				A = cudaMallocNoWarn(tmpA, size, "allocate a new pointer after eager free");
+			}
+		}
+		
+		// Step 6: Free gpu intermediates from lineage cache
 		if (A == null && !LineageCacheConfig.ReuseCacheType.isNone()) {
 			long t0 =  DMLScript.STATISTICS ? System.nanoTime() : 0;
 			long freedSize = 0;
@@ -340,7 +340,7 @@ public class GPUMemoryManager {
 						if(DMLScript.STATISTICS)
 							LineageCacheStatistics.incrementGpuSyncEvicts();
 					}
-					if (freedSize > size)
+					if (freedSize >= size)
 						A = cudaMallocNoWarn(tmpA, size, "recycle non-exact match of lineage cache");
 					// Else, deallocate another free pointer. We are calling pollFistFreeNotExact with
 					// the same size (not with freedSize-size) to reduce potentials for creating holes
@@ -353,7 +353,7 @@ public class GPUMemoryManager {
 				LOG.warn("cudaMalloc failed after Lineage GPU cache eviction.");
 		}
 
-		// Step 6: Try eviction/clearing exactly one with size restriction
+		// Step 7: Try eviction/clearing exactly one with size restriction
 		if(A == null) {
 			long t0 =  DMLScript.STATISTICS ? System.nanoTime() : 0;
 			synchronized (matrixMemoryManager.gpuObjects) {
@@ -377,7 +377,7 @@ public class GPUMemoryManager {
 			}
 		}
 		
-		// Step 7: Try eviction/clearing one-by-one based on the given policy without size restriction
+		// Step 8: Try eviction/clearing one-by-one based on the given policy without size restriction
 		if(A == null) {
 			long t0 =  DMLScript.STATISTICS ? System.nanoTime() : 0;
 			long currentAvailableMemory = allocator.getAvailableMemory();
@@ -411,7 +411,7 @@ public class GPUMemoryManager {
 			}
 		}
 		
-		// Step 8: Handle defragmentation
+		// Step 9: Handle defragmentation
 		if(A == null) {
 			LOG.warn("Potential fragmentation of the GPU memory. Forcibly evicting all ...");
 			LOG.info("Before clearAllUnlocked, GPU Memory info:" + toString());
@@ -476,8 +476,10 @@ public class GPUMemoryManager {
 	 * Note: This method should not be called from an iterator as it removes entries from allocatedGPUPointers and rmvarGPUPointers
 	 * 
 	 * @param toFree pointer to call cudaFree method on
+	 * @param noStats do not collect statistics
 	 */
-	public void guardedCudaFree(Pointer toFree) {
+	public void guardedCudaFree(Pointer toFree, boolean noStats) {
+		long t0 = (!noStats && DMLScript.STATISTICS) ? System.nanoTime() : 0;
 		synchronized(allPointers) {
 			if(allPointers.containsKey(toFree)) {
 				long size = allPointers.get(toFree).getSizeInBytes();
@@ -495,9 +497,16 @@ public class GPUMemoryManager {
 				throw new RuntimeException("Attempting to free an unaccounted pointer:" + toFree);
 			}
 		}
-
+		if(DMLScript.STATISTICS && !noStats) {
+			GPUStatistics.cudaDeAllocTime.add(System.nanoTime() - t0);
+			GPUStatistics.cudaDeAllocCount.add(1);
+		}
 	}
-	
+
+	public void guardedCudaFree(Pointer toFree) {
+		guardedCudaFree(toFree, false);
+	}
+
 	/**
 	 * Deallocate the pointer
 	 * 
@@ -517,9 +526,9 @@ public class GPUMemoryManager {
 		if(LOG.isTraceEnabled())
 			LOG.trace("Free-ing the pointer with eager=" + eager);
 		if (eager) {
-			long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
+			//long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 			guardedCudaFree(toFree);
-			addMiscTime(opcode, GPUStatistics.cudaDeAllocTime, GPUStatistics.cudaDeAllocCount, GPUInstruction.MISC_TIMER_CUDA_FREE, t0);
+			//addMiscTime(opcode, GPUStatistics.cudaDeAllocTime, GPUStatistics.cudaDeAllocCount, GPUInstruction.MISC_TIMER_CUDA_FREE, t0);
 		}
 		else {
 			long size = 0;
@@ -602,7 +611,7 @@ public class GPUMemoryManager {
 		Set<Pointer> unlockedDirtyOrCachedPointers = matrixMemoryManager.getPointers(false, true);
 		Set<Pointer> temporaryPointers = nonIn(allPointers.keySet(), unlockedDirtyOrCachedPointers);
 		for(Pointer tmpPtr : temporaryPointers) {
-			guardedCudaFree(tmpPtr);
+			guardedCudaFree(tmpPtr, true);
 		}
 	}
 	

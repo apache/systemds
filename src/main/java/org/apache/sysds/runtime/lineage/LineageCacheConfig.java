@@ -56,7 +56,8 @@ public class LineageCacheConfig
 		"^2", "*2", "uack+", "tak+*", "uacsqk+", "uark+", "n+", "uarimax", "qsort",
 		"qpick", "transformapply", "uarmax", "n+", "-*", "castdtm", "lowertri", "1-*",
 		"prefetch", "mapmm", "contains", "mmchain", "mapmmchain", "+*", "==", "rmempty",
-		"conv2d_bias_add", "relu_maxpooling", "maxpooling", "softmax"
+		"conv2d_bias_add", "relu_maxpooling", "maxpooling", "batch_norm2d", "avgpooling",
+		"softmax"
 		//TODO: Reuse everything.
 	};
 
@@ -76,7 +77,7 @@ public class LineageCacheConfig
 	};
 
 	private static final String[] GPU_OPCODE_HEAVY = new String[] {
-		"conv2d_bias_add", "relu_maxpooling", "maxpooling"	 //DNN OPs
+		"conv2d_bias_add", "relu_maxpooling", "maxpooling", "batch_norm2d", "avgpooling"  //DNN OPs
 	};
 
 	private static String[] REUSE_OPCODES  = new String[] {};
@@ -121,6 +122,7 @@ public class LineageCacheConfig
 	// Note, delayed caching helps in reducing lineage caching/probing overhead for use cases with
 	// no reusable instructions, but is anti-productive for use cases with repeating patterns (eg. scoring).
 	private static boolean DELAYED_CACHING_GPU = true;
+	private static boolean DELAYED_CACHING_RDD = true;
 
 	//-------------DISK SPILLING RELATED CONFIGURATIONS--------------//
 
@@ -406,6 +408,10 @@ public class LineageCacheConfig
 
 	public static boolean isDelayedCachingGPU() {
 		return DELAYED_CACHING_GPU;
+	}
+
+	public static boolean isDelayedCachingRDD() {
+		return DELAYED_CACHING_RDD;
 	}
 
 	public static void setCachePolicy(LineageCachePolicy policy) {

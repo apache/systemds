@@ -787,11 +787,60 @@ public class SparseBlockDCSR extends SparseBlock
 
     @Override
     public void setIndexRange(int r, int cl, int cu, double[] v, int vix, int vlen) {
-        // TODO: Implement
         throw new NotImplementedException();
+        /*// TODO: Isn't lnnz always vlen? Or isn't this guaranteed (according to docs)? Otherwise remove this computation
+        int lnnz = vlen; // UtilFunctions.computeNnz(v, vix, vlen);
 
-        /*//delete existing values in range if necessary
+        if (lnnz == 0) {
+            deleteIndexRange(r, cl, cu);
+            return;
+        }
+
+        int rowIdx = Arrays.binarySearch(_rowidx, 0, _nnzr, r);
+
+        if (rowIdx < 0) {
+            rowIdx = -rowIdx - 1;
+            insertRow(rowIdx, r, _rowptr[rowIdx]);
+        }
+
+        int rowStart = _rowptr[rowIdx];
+        int rowEnd = _rowptr[rowIdx+1];
+
+        int clIdx = Arrays.binarySearch(_colidx, rowStart, rowEnd, cl);
+        if (clIdx < 0)
+            clIdx = -clIdx - 1;
+
+        int cuIdx = Arrays.binarySearch(_colidx, clIdx, rowEnd, cu);
+        if (cuIdx < 0)
+            cuIdx = -cuIdx - 1;
+
+        int oldnnz = cuIdx - clIdx;*/
+        /*insertCols();
+
+        // TODO
+
         if( !isEmpty(r) )
+            deleteIndexRange(r, cl, cu);
+
+        //prepare free space (allocate and shift)
+        int lsize = _size+lnnz;
+        if( _values.length < lsize )
+            resize(lsize);
+        int index = internPosFIndexGT(r, cl);
+        int index2 = (index>0)?index:pos(r+1);
+        shiftRightByN(index2, lnnz);
+
+        //insert values
+        for( int i=vix; i<vix+vlen; i++ )
+            if( v[i] != 0 ) {
+                _indexes[ index2 ] = cl+i-vix;
+                _values[ index2 ] = v[i];
+                index2++;
+            }
+        incrPtr(r+1, lnnz);*/
+
+        //delete existing values in range if necessary
+        /*if( !isEmpty(r) )
             deleteIndexRange(r, cl, cu);
 
         //determine input nnz
@@ -1398,33 +1447,78 @@ public class SparseBlockDCSR extends SparseBlock
     }
 
     private void deleteCols(int ix, int len) {
-        insertCols(ix, new int[0], new double[0], len);
+        insertCols(ix, new int[0], new double[0], len, 0, 0);
     }
 
     private void insertCols(int ix, int[] cols, double[] vals) {
-        insertCols(ix, cols, vals, 0);
+        insertCols(ix, cols, vals, 0, 0, vals.length);
     }
 
     private void insertCols(int ix, int[] cols, double[] vals, int overwriteNum) {
+        insertCols(ix, cols, vals, overwriteNum, 0, vals.length);
+    }
+
+    private void insertCols(int ix, int[] cols, double[] vals, int overwriteNum, int vix, int vlen) {
         // Without inserting row
-        if (_size + cols.length - overwriteNum > _colidx.length) {
-            resizeAndInsertCols(ix, cols, vals, overwriteNum);
+        if (_size + vlen - overwriteNum > _colidx.length) {
+            resizeAndInsertCols(ix, cols, vals, overwriteNum, vix, vlen);
             return;
         }
 
-        if (overwriteNum != cols.length) {
-            System.arraycopy(_colidx, ix+overwriteNum, _colidx, ix+cols.length, _size-ix-overwriteNum);
-            System.arraycopy(_values, ix+overwriteNum, _values, ix+cols.length, _size-ix-overwriteNum);
-        }
+        allocateCols(ix, vlen, overwriteNum);
 
-        System.arraycopy(cols, 0, _colidx, ix, cols.length);
-        System.arraycopy(vals, 0, _values, ix, cols.length);
+        /*if (overwriteNum != cols.length) {
+            System.arraycopy(_colidx, ix+overwriteNum, _colidx, ix+vlen, _size-ix-overwriteNum);
+            System.arraycopy(_values, ix+overwriteNum, _values, ix+vlen, _size-ix-overwriteNum);
+        }*/
+
+        System.arraycopy(cols, vix, _colidx, ix, vlen);
+        System.arraycopy(vals, vix, _values, ix, vlen);
         _size += cols.length - overwriteNum;
     }
 
-    private void resizeAndInsertCols(int ix, int[] cols, double[] vals, int overwriteNum) {
+    private void resizeAndInsertCols(int ix, int[] cols, double[] vals, int overwriteNum, int vix, int vlen) {
+        /*//compute new size
+        int newCap = newCapacity(_size + vlen - overwriteNum);
+
+        int[] oldcolidx = _colidx;
+        double[] oldvalues = _values;
+        _colidx = new int[newCap];
+        _values = new double[newCap];
+
+        //copy lhs values to new array
+        System.arraycopy(oldcolidx, 0, _colidx, 0, ix);
+        System.arraycopy(oldvalues, 0, _values, 0, ix);*/
+
+        resizeAndAllocateCols(ix, vlen, overwriteNum);
+
+        //copy new vals into row
+        System.arraycopy(cols, vix, _colidx, ix, vlen);
+        System.arraycopy(vals, vix, _values, ix, vlen);
+
+        /*//copy rhs values to new array
+        System.arraycopy(oldcolidx, ix + overwriteNum, _colidx, ix+1, _size-ix-overwriteNum);
+        System.arraycopy(oldvalues, ix + overwriteNum, _values, ix+1, _size-ix-overwriteNum);*/
+
+        _size += vlen - overwriteNum;
+    }
+
+    private void allocateCols(int ix, int numCols, int overwriteNum) {
+        if (numCols == 0)
+            return;
+
+        if (_size + numCols - overwriteNum > _colidx.length) {
+            resizeAndAllocateCols(ix, numCols, overwriteNum);
+            return;
+        }
+
+        System.arraycopy(_colidx, ix+overwriteNum, _colidx, ix+numCols, _size-ix-overwriteNum);
+        System.arraycopy(_values, ix+overwriteNum, _values, ix+numCols, _size-ix-overwriteNum);
+    }
+
+    private void resizeAndAllocateCols(int ix, int numCols, int overwriteNum) {
         //compute new size
-        int newCap = newCapacity(_size + cols.length - overwriteNum);
+        int newCap = newCapacity(_size + numCols - overwriteNum);
 
         int[] oldcolidx = _colidx;
         double[] oldvalues = _values;
@@ -1436,14 +1530,14 @@ public class SparseBlockDCSR extends SparseBlock
         System.arraycopy(oldvalues, 0, _values, 0, ix);
 
         //copy new vals into row
-        System.arraycopy(cols, 0, _colidx, ix, cols.length);
-        System.arraycopy(vals, 0, _values, ix, vals.length);
+        /*System.arraycopy(cols, vix, _colidx, ix, vlen);
+        System.arraycopy(vals, vix, _values, ix, vlen);*/
 
         //copy rhs values to new array
         System.arraycopy(oldcolidx, ix + overwriteNum, _colidx, ix+1, _size-ix-overwriteNum);
         System.arraycopy(oldvalues, ix + overwriteNum, _values, ix+1, _size-ix-overwriteNum);
 
-        _size += cols.length - overwriteNum;
+        _size += numCols - overwriteNum;
     }
 
     private void resizeAndInsertCol(int ix, int c, double v) {

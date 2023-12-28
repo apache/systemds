@@ -1353,13 +1353,14 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 	 * @return number of non-zeros
 	 */
 	public long recomputeNonZeros() {
-		if( sparse && sparseBlock!=null ) { //SPARSE
+		if( sparse && sparseBlock!=null )  //SPARSE
 			//note: rlen might be <= sparseBlock.numRows()
 			nonZeros = sparseBlock.size(0, sparseBlock.numRows());
-		}
-		else if( !sparse && denseBlock!=null ) { //DENSE
+		else if( !sparse && denseBlock!=null )  //DENSE
 			nonZeros = denseBlock.countNonZeros();
-		}
+		else // both blocks not allocated.
+			nonZeros = 0;
+		
 		return nonZeros;
 	}
 
@@ -1370,10 +1371,9 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 	 * @return the number of non zeros
 	 */
 	public long recomputeNonZeros(int k) {
-		if(isInSparseFormat()) {
+		if(sparse && sparseBlock!=null)
 			return recomputeNonZeros();
-		}
-		else {
+		else if(!sparse && denseBlock!=null){
 			if((long) rlen * clen < 10000)
 				return recomputeNonZeros();
 			final ExecutorService pool = CommonThreadPool.get(k);
@@ -1392,17 +1392,20 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 				for(Future<Long> e : f)
 					nnz += e.get();
 				nonZeros = nnz;
-				return nonZeros;
 
 			}
 			catch(Exception e) {
-				// LOG.warn("Failed Parallel non zero count fallback to singlethread");
+				LOG.warn("Failed Parallel non zero count fallback to singlethread");
 				return recomputeNonZeros();
 			}
 			finally {
 				pool.shutdown();
 			}
 		}
+		else{
+			nonZeros = 0;
+		} 
+		return nonZeros;
 	}
 	
 	public long recomputeNonZeros(int rl, int ru) {

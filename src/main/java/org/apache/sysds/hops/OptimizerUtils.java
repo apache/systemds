@@ -310,6 +310,12 @@ public class OptimizerUtils
 	 */
 	public static boolean RULE_BASED_GPU_EXEC = false;
 
+	/**
+	 * Automatic placement of GPU lineage cache eviction
+	 */
+
+	public static boolean AUTO_GPU_CACHE_EVICTION = true;
+
 	//////////////////////
 	// Optimizer levels //
 	//////////////////////

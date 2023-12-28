@@ -294,6 +294,10 @@ public class ConfigurationManager{
 			|| OptimizerUtils.RULE_BASED_GPU_EXEC));
 	}
 
+	public static boolean isAutoEvictionEnabled() {
+		return OptimizerUtils.AUTO_GPU_CACHE_EVICTION;
+	}
+
 	public static ILinearize.DagLinearization getLinearizationOrder() {
 		if (OptimizerUtils.COST_BASED_ORDERING)
 			return ILinearize.DagLinearization.AUTO;

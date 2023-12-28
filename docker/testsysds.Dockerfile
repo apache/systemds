@@ -73,8 +73,7 @@ RUN apt-get install -y --no-install-recommends \
 		libssl-dev \
 		r-base \
 		r-base-dev \
-		r-base-core\
-    
+		r-base-core \
 	&& Rscript installDependencies.R \
 	&& rm -rf installDependencies.R \
 	&& rm -rf /var/lib/apt/lists/*

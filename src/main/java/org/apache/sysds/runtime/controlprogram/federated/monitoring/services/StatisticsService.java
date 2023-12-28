@@ -26,11 +26,13 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedData;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest;
@@ -131,10 +133,16 @@ public class StatisticsService {
 		try {
 			FederatedResponse statisticsResponse = null;
 
-			var statisticsResponseFuture = sendStatisticsRequest(address);
-
+			Future<FederatedResponse> statisticsResponseFuture = sendStatisticsRequest(address);
+			final int timeout = ConfigurationManager.getFederatedTimeout();
+		
 			if (statisticsResponseFuture != null) {
-				statisticsResponse = statisticsResponseFuture.get();
+				if(timeout > 0){
+					statisticsResponse = statisticsResponseFuture.get(timeout, TimeUnit.SECONDS);
+				}
+				else{
+					statisticsResponse = statisticsResponseFuture.get();
+				}
 			}
 
 			if (statisticsResponse != null && statisticsResponse.isSuccessful()) {

@@ -130,6 +130,8 @@ public class SparkExecutionContext extends ExecutionContext
 	private static boolean[] _poolBuff = FAIR_SCHEDULER_MODE ?
 		new boolean[InfrastructureAnalyzer.getLocalParallelism()] : null;
 	
+	private static boolean localSparkWarning = false;
+
 	protected SparkExecutionContext(boolean allocateVars, boolean allocateLineage, Program prog) {
 		//protected constructor to force use of ExecutionContextFactory
 		super( allocateVars, allocateLineage, prog );
@@ -276,7 +278,10 @@ public class SparkExecutionContext extends ExecutionContext
 		} 
 		catch(Exception e){
 			if(e.getMessage().contains("A master URL must be set in your configuration")){
-				LOG.error("Error constructing Spark Context, falling back to local Spark context creation");
+				if(!localSparkWarning){
+					LOG.warn("Error constructing Spark Context, falling back to local Spark context creation");
+					localSparkWarning = true;
+				}
 				setLocalConfSettings(conf);
 				return createContext(conf);
 			}

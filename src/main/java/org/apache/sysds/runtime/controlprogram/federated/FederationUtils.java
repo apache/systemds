@@ -24,6 +24,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelOutboundHandlerAdapter;
@@ -450,8 +451,15 @@ public class FederationUtils {
 
 	public static void waitFor(List<Future<FederatedResponse>> responses) {
 		try {
-			for(Future<FederatedResponse> fr : responses)
-				fr.get();
+			final int timeout = ConfigurationManager.getFederatedTimeout();
+			if(timeout > 0){
+				for(Future<FederatedResponse> fr : responses)
+					fr.get(timeout, TimeUnit.SECONDS);
+			}
+			else {
+				for(Future<FederatedResponse> fr : responses)
+					fr.get();
+			}
 		}
 		catch(Exception ex) {
 			throw new DMLRuntimeException(ex);

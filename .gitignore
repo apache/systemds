@@ -32,6 +32,7 @@
 .externalToolBuilders/
 maven-eclipse.xml
 /src/main/cpp/kernels/.cproject
+/src/main/cpp/log
 
 # Intellij
 .idea/

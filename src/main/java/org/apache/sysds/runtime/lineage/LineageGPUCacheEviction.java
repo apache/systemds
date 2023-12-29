@@ -131,10 +131,13 @@ public class LineageGPUCacheEviction
 		}
 	}
 
-	public static void removeAllEntries() {
+	// Speculative eviction
+	public static void removeAllEntries(double evictFrac) {
 		List<Long> sizes = new ArrayList<>(freeQueues.keySet());
 		for (Long size : sizes) {
 			TreeSet<LineageCacheEntry> freeList = freeQueues.get(size);
+			int evictLim = (int) (freeList.size() * evictFrac);
+			int evictCount = 1;
 			LineageCacheEntry le = pollFirstFreeEntry(size);
 			while (le != null) {
 				// Free the pointer
@@ -142,6 +145,9 @@ public class LineageGPUCacheEviction
 				if (DMLScript.STATISTICS)
 					LineageCacheStatistics.incrementGpuDel();
 				le = pollFirstFreeEntry(size);
+				if (evictCount > evictLim)
+					break;
+				evictCount++;
 			}
 		}
 	}

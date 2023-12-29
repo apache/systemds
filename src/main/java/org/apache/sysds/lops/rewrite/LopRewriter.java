@@ -45,6 +45,7 @@ public class LopRewriter
 		_lopSBRuleSet.add(new RewriteAddBroadcastLop());
 		_lopSBRuleSet.add(new RewriteAddChkpointLop());
 		_lopSBRuleSet.add(new RewriteAddChkpointInLoop());
+		_lopSBRuleSet.add(new RewriteAddGPUEvictLop());
 		// TODO: A rewrite pass to remove less effective chkpoints
 		// Last rewrite to reset Lop IDs in a depth-first manner
 		_lopSBRuleSet.add(new RewriteFixIDs());

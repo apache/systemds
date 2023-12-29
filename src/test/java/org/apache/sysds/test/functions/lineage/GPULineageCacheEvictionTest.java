@@ -29,6 +29,8 @@ import org.apache.sysds.runtime.matrix.data.MatrixValue;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
+import org.apache.sysds.utils.Statistics;
+import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -39,7 +41,7 @@ public class GPULineageCacheEvictionTest extends AutomatedTestBase{
 	
 	protected static final String TEST_DIR = "functions/lineage/";
 	protected static final String TEST_NAME = "GPUCacheEviction";
-	protected static final int TEST_VARIANTS = 5;
+	protected static final int TEST_VARIANTS = 6;
 	protected String TEST_CLASS_DIR = TEST_DIR + GPULineageCacheEvictionTest.class.getSimpleName() + "/";
 	
 	@BeforeClass
@@ -80,6 +82,11 @@ public class GPULineageCacheEvictionTest extends AutomatedTestBase{
 		testLineageTraceExec(TEST_NAME+"5");
 	}
 
+	@Test
+	public void TransferLearning3Models() {  //transfer learning and reuse (AlexNet,VGG,ResNet)
+		testLineageTraceExec(TEST_NAME+"6");
+	}
+
 
 	private void testLineageTraceExec(String testname) {
 		System.out.println("------------ BEGIN " + testname + "------------");
@@ -117,6 +124,13 @@ public class GPULineageCacheEvictionTest extends AutomatedTestBase{
 
 		//compare results 
 		TestUtils.compareMatrices(R_orig, R_reused, 1e-6, "Origin", "Reused");
+
+		//Match _evict count
+		if (testname.equalsIgnoreCase(TEST_NAME+"6")) {
+			long exp_numev = 3;
+			long numev = Statistics.getCPHeavyHitterCount("_evict");
+			Assert.assertTrue("Violated Prefetch instruction count: "+numev, numev == exp_numev);
+		}
 	}
 }
 

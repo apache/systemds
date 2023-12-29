@@ -50,6 +50,7 @@ import org.apache.sysds.runtime.instructions.cp.CtableCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.DataGenCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.DeCompressionCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.DnnCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.EvictCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.FunctionCallCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.IndexingCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.LocalCPInstruction;
@@ -337,6 +338,7 @@ public class CPInstructionParser extends InstructionParser {
 		String2CPInstructionType.put( DeCompression.OPCODE, CPType.DeCompression);
 		String2CPInstructionType.put( "spoof",     CPType.SpoofFused);
 		String2CPInstructionType.put( "prefetch",  CPType.Prefetch);
+		String2CPInstructionType.put( "_evict",  CPType.EvictLineageCache);
 		String2CPInstructionType.put( "broadcast",  CPType.Broadcast);
 		String2CPInstructionType.put( "trigremote",  CPType.TrigRemote);
 		String2CPInstructionType.put( Local.OPCODE, CPType.Local);
@@ -483,6 +485,9 @@ public class CPInstructionParser extends InstructionParser {
 				
 			case Broadcast:
 				return BroadcastCPInstruction.parseInstruction(str);
+
+			case EvictLineageCache:
+				return EvictCPInstruction.parseInstruction(str);
 			
 			default:
 				throw new DMLRuntimeException("Invalid CP Instruction Type: " + cptype );

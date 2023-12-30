@@ -134,26 +134,7 @@ public class IOTest {
 	}
 
 	protected static void writeAndReadR(MatrixBlock mb, int rep) throws Exception {
-		try {
-
-			String filename = getName();
-			WriterCompressed.writeCompressedMatrixToHDFS(mb, filename);
-			File f = new File(filename);
-			assertTrue(f.isFile() || f.isDirectory());
-			MatrixBlock mbr = IOCompressionTestUtils.read(filename, mb.getNumRows(), mb.getNumColumns(),
-				OptimizerUtils.DEFAULT_BLOCKSIZE);
-			IOCompressionTestUtils.verifyEquivalence(mb, mbr);
-		}
-		catch(Exception e) {
-			if(rep < 3) {
-				Thread.sleep(1000);
-				writeAndReadR(mb, rep + 1);
-				return;
-			}
-			e.printStackTrace();
-			fail("Failed to write file");
-		}
-
+		writeAndReadR(mb, OptimizerUtils.DEFAULT_BLOCKSIZE, rep);
 	}
 
 	protected static void write(MatrixBlock src, String path) throws Exception {
@@ -177,11 +158,12 @@ public class IOTest {
 
 	protected static void writeAndReadR(MatrixBlock mb, int blen, int rep) throws Exception {
 		try {
-
 			String filename = getName();
-			WriterCompressed.writeCompressedMatrixToHDFS(mb, filename, blen);
 			File f = new File(filename);
-			assertTrue(f.isFile() || f.isDirectory());
+			f.delete();
+			WriterCompressed.writeCompressedMatrixToHDFS(mb, filename, blen);
+			File f2 = new File(filename);
+			assertTrue(f2.isFile() || f2.isDirectory());
 			MatrixBlock mbr = IOCompressionTestUtils.read(filename, mb.getNumRows(), mb.getNumColumns(), blen);
 			IOCompressionTestUtils.verifyEquivalence(mb, mbr);
 		}

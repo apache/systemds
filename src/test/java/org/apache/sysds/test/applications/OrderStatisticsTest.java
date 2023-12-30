@@ -88,71 +88,69 @@ public class OrderStatisticsTest extends AutomatedTestBase
 	public void testSimpleQuantile()
 	{
 		int rows = 10;
-		
-        TestConfiguration config = getTestConfiguration("SimpleQuantileTest");
-        config.addVariable("rows", rows);
 
-        loadTestConfiguration(config);
+		TestConfiguration config = getTestConfiguration("SimpleQuantileTest");
+		config.addVariable("rows", rows);
 
-        createHelperMatrix();
-        double[][] vector = getRandomMatrix(rows, 1, 0, 1, 1, System.currentTimeMillis());
-        double[][] weight = getRandomMatrix(rows, 1, 1, 10, 1, System.currentTimeMillis());
-        round(weight);
-        
-        double[] sorted=sort(vector);
-        double median = quantile(sorted, 0.5);
-        
-        writeInputMatrix("vector", vector);
-        writeExpectedHelperMatrix("median", median);
-        
-        
-        double[] fullsorted=sort(blowUp(vector, weight));
-        double weightedmedian=quantile(fullsorted, 0.5);
-        writeInputMatrix("weight", weight);
-        writeExpectedHelperMatrix("weighted_median", weightedmedian);
-        
-        runTest();
+		loadTestConfiguration(config);
 
-        compareResults(5e-14);
+		createHelperMatrix();
+		double[][] vector = getRandomMatrix(rows, 1, 0, 1, 1, System.currentTimeMillis());
+		double[][] weight = getRandomMatrix(rows, 1, 1, 10, 1, System.currentTimeMillis());
+		round(weight);
+
+		double[] sorted = sort(vector);
+		double median = quantile(sorted, 0.5);
+
+		writeInputMatrix("vector", vector);
+		writeExpectedHelperMatrix("median", median);
+
+		double[] fullsorted = sort(blowUp(vector, weight));
+		double weightedmedian = quantile(fullsorted, 0.5);
+		writeInputMatrix("weight", weight);
+		writeExpectedHelperMatrix("weighted_median", weightedmedian);
+
+		runTest();
+
+		compareResults(5e-14);
 	}
-	
+
 	@Test
-	public void testQuantile()
-	{
+	public void testQuantile() {
 		int rows1 = 10;
 		int rows2 = 5;
 
-        TestConfiguration config = getTestConfiguration("QuantileTest");
-        config.addVariable("rows1", rows1);
-        config.addVariable("rows2", rows2);
+		TestConfiguration config = getTestConfiguration("QuantileTest");
+		config.addVariable("rows1", rows1);
+		config.addVariable("rows2", rows2);
 
-        loadTestConfiguration(config);
+		loadTestConfiguration(config);
 
-        createHelperMatrix();
-        double[][] vector = getRandomMatrix(rows1, 1, 0, 1, 1, System.currentTimeMillis());
-        double[][] weight = getRandomMatrix(rows1, 1, 1, 10, 1, System.currentTimeMillis());
-        round(weight);
-        double[][] prob = getRandomMatrix(rows2, 1, 0, 1, 1, System.currentTimeMillis());
-        
-        double[][] q=new double[prob.length][1];
-        double[] sorted=sort(vector);
-        for(int i=0; i<prob.length; i++)
-        	q[i][0]= quantile(sorted, prob[i][0]);
-        
-        writeInputMatrix("vector", vector);
-        writeInputMatrix("prob", prob);
-        writeExpectedMatrix("quantile", q);
-        
-        double[][] wq=new double[prob.length][1];
-        double[] fullsorted=sort(blowUp(vector, weight));
-        for(int i=0; i<prob.length; i++)
-        	wq[i][0]=quantile(fullsorted, prob[i][0]);
-        writeInputMatrix("weight", weight);
-        writeExpectedMatrix("weighted_quantile", wq);
-        
-        runTest();
+		createHelperMatrix();
+		double[][] vector = getRandomMatrix(rows1, 1, 0, 1, 1, System.currentTimeMillis());
+		double[][] weight = getRandomMatrix(rows1, 1, 1, 10, 1, System.currentTimeMillis());
+		round(weight);
+		double[][] prob = getRandomMatrix(rows2, 1, 0, 1, 1, System.currentTimeMillis());
 
-        compareResults(5e-14);
+		double[][] q = new double[prob.length][1];
+		double[] sorted = sort(vector);
+		for(int i = 0; i < prob.length; i++)
+			q[i][0] = quantile(sorted, prob[i][0]);
+
+		writeInputMatrix("vector", vector);
+		writeInputMatrix("prob", prob);
+		writeExpectedMatrix("quantile", q);
+
+		double[][] wq = new double[prob.length][1];
+		double[] fullsorted = sort(blowUp(vector, weight));
+		for(int i = 0; i < prob.length; i++)
+			wq[i][0] = quantile(fullsorted, prob[i][0]);
+		writeInputMatrix("weight", weight);
+		writeExpectedMatrix("weighted_quantile", wq);
+
+		runTest();
+
+		compareResults(5e-14);
 	}
-	
+
 }

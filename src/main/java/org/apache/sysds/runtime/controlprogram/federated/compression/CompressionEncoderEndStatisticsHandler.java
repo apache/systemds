@@ -28,16 +28,16 @@ import org.apache.sysds.utils.stats.FederatedCompressionStatistics;
 
 public class CompressionEncoderEndStatisticsHandler extends ChannelOutboundHandlerAdapter {
 
-    @Override
-    public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
-        long startTime = ctx.channel().attr(AttributeKey.<Long>valueOf("compressionEncoderStartTime")).get();
-        long elapsedTime = System.currentTimeMillis() - startTime;
+	@Override
+	public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
+		long startTime = ctx.channel().attr(AttributeKey.<Long>valueOf("compressionEncoderStartTime")).get();
+		long elapsedTime = System.currentTimeMillis() - startTime;
 
-        ByteBuf byteBuf = (ByteBuf) msg;
-        long finalSize = byteBuf.readableBytes();
-        long initialSize = ctx.channel().attr(AttributeKey.<Integer>valueOf("initialSize")).get();
+		ByteBuf byteBuf = (ByteBuf) msg;
+		long finalSize = byteBuf.readableBytes();
+		long initialSize = ctx.channel().attr(AttributeKey.<Integer>valueOf("initialSize")).get();
 
-        FederatedCompressionStatistics.encodingStep(elapsedTime, initialSize, finalSize);
-        super.write(ctx, msg, promise);
-    }
+		FederatedCompressionStatistics.encodingStep(elapsedTime, initialSize, finalSize);
+		super.write(ctx, msg, promise);
+	}
 }

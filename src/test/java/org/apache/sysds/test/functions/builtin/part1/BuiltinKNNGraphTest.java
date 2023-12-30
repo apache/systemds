@@ -29,58 +29,52 @@ import org.apache.sysds.runtime.matrix.data.MatrixValue;
 import java.util.HashMap;
 
 public class BuiltinKNNGraphTest extends AutomatedTestBase {
-    private final static String TEST_NAME = "knnGraph";
-    private final static String TEST_DIR = "functions/builtin/";
-    private final static String TEST_CLASS_DIR = TEST_DIR + BuiltinKNNGraphTest.class.getSimpleName() + "/";
+	private final static String TEST_NAME = "knnGraph";
+	private final static String TEST_DIR = "functions/builtin/";
+	private final static String TEST_CLASS_DIR = TEST_DIR + BuiltinKNNGraphTest.class.getSimpleName() + "/";
 
-    private final static String OUTPUT_NAME_KNN_GRAPH = "KNN_GRAPH";
+	private final static String OUTPUT_NAME_KNN_GRAPH = "KNN_GRAPH";
 
-    @Override
-    public void setUp() {
-        addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME));
-    }
+	@Override
+	public void setUp() {
+		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME));
+	}
 
-    @Test
-    public void basicTest() {
-        double[][] X = { { 1, 0 }, { 2, 2 }, { 2, 2.5 }, { 10, 10 }, { 15, 15 } };
-        double[][] refMatrix = {
-                { 0., 1., 1., 0., 0. },
-                { 1., 0., 1., 0., 0. },
-                { 1., 1., 0., 0., 0. },
-                { 0., 0., 1., 0., 1. },
-                { 0., 0., 1., 1., 0. }
-        };
-        HashMap<MatrixValue.CellIndex, Double> refHMMatrix = TestUtils
-                .convert2DDoubleArrayToHashMap(refMatrix);
+	@Test
+	public void basicTest() {
+		double[][] X = {{1, 0}, {2, 2}, {2, 2.5}, {10, 10}, {15, 15}};
+		double[][] refMatrix = {{0., 1., 1., 0., 0.}, {1., 0., 1., 0., 0.}, {1., 1., 0., 0., 0.}, {0., 0., 1., 0., 1.},
+			{0., 0., 1., 1., 0.}};
+		HashMap<MatrixValue.CellIndex, Double> refHMMatrix = TestUtils.convert2DDoubleArrayToHashMap(refMatrix);
 
-        runKNNGraphTest(ExecMode.SINGLE_NODE, 2, X, refHMMatrix);
-    }
+		runKNNGraphTest(ExecMode.SINGLE_NODE, 2, X, refHMMatrix);
+	}
 
-    private void runKNNGraphTest(ExecMode exec_mode, Integer k, double[][] X,
-            HashMap<MatrixValue.CellIndex, Double> refHMMatrix) {
-        ExecMode platform_old = setExecMode(exec_mode);
+	private void runKNNGraphTest(ExecMode exec_mode, Integer k, double[][] X,
+		HashMap<MatrixValue.CellIndex, Double> refHMMatrix) {
+		ExecMode platform_old = setExecMode(exec_mode);
 
-        getAndLoadTestConfiguration(TEST_NAME);
-        String HOME = SCRIPT_DIR + TEST_DIR;
+		getAndLoadTestConfiguration(TEST_NAME);
+		String HOME = SCRIPT_DIR + TEST_DIR;
 
-        // create Test Input
-        writeInputMatrixWithMTD("X", X, true);
+		// create Test Input
+		writeInputMatrixWithMTD("X", X, true);
 
-        fullDMLScriptName = HOME + TEST_NAME + ".dml";
-        programArgs = new String[] { "-stats", "-nvargs",
-                "in_X=" + input("X"), "in_k=" + Integer.toString(k), "out_G=" + output(OUTPUT_NAME_KNN_GRAPH) };
+		fullDMLScriptName = HOME + TEST_NAME + ".dml";
+		programArgs = new String[] {"-stats", "-nvargs", "in_X=" + input("X"), "in_k=" + Integer.toString(k),
+			"out_G=" + output(OUTPUT_NAME_KNN_GRAPH)};
 
-        // execute tests
-        runTest(true, false, null, -1);
+		// execute tests
+		runTest(true, false, null, -1);
 
-        // read result
-        HashMap<MatrixValue.CellIndex, Double> resultGraph = readDMLMatrixFromOutputDir(OUTPUT_NAME_KNN_GRAPH);
+		// read result
+		HashMap<MatrixValue.CellIndex, Double> resultGraph = readDMLMatrixFromOutputDir(OUTPUT_NAME_KNN_GRAPH);
 
-        // compare result with reference
-        TestUtils.compareMatrices(resultGraph, refHMMatrix, 0, "ResGraph", "RefGraph");
+		// compare result with reference
+		TestUtils.compareMatrices(resultGraph, refHMMatrix, 0, "ResGraph", "RefGraph");
 
-        // restore execution mode
-        setExecMode(platform_old);
-    }
+		// restore execution mode
+		setExecMode(platform_old);
+	}
 
 }

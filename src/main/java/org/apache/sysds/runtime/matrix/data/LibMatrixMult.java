@@ -2505,9 +2505,10 @@ public class LibMatrixMult
 		}
 	}
 	
-	private static void matrixMultTransposeSelfUltraSparse( MatrixBlock m1, MatrixBlock ret, boolean leftTranspose, int rl, int ru ) {
-        SparseBlock a = m1.sparseBlock;
-        SparseBlock c = ret.sparseBlock;
+	private static void matrixMultTransposeSelfUltraSparse(MatrixBlock m1, MatrixBlock ret, boolean leftTranspose,
+		int rl, int ru) {
+		SparseBlock a = m1.sparseBlock;
+		SparseBlock c = ret.sparseBlock;
 		int m = m1.rlen;
 
 		if(leftTranspose) {
@@ -3786,7 +3787,7 @@ public class LibMatrixMult
 		}
 	}
 
-    private static void vectMultiplyAdd2( final double aval1, final double aval2, double[] b, double[] c, int bi1, int bi2, int ci, final int len )
+	private static void vectMultiplyAdd2( final double aval1, final double aval2, double[] b, double[] c, int bi1, int bi2, int ci, final int len )
 	{
 		final int bn = len%8;	
 		

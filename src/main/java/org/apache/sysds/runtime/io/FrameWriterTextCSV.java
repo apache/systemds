@@ -84,9 +84,9 @@ public class FrameWriterTextCSV extends FrameWriter
 	protected static void writeCSVFrameToFile( Path path, JobConf job, FileSystem fs, FrameBlock src, int rl, int ru, FileFormatPropertiesCSV props )
 		throws IOException
 	{
-    	//create buffered writer
-		BufferedWriter br=new BufferedWriter(new OutputStreamWriter(fs.create(path,true)));		
-    	int cols = src.getNumColumns();
+		// create buffered writer
+		BufferedWriter br = new BufferedWriter(new OutputStreamWriter(fs.create(path, true)));
+		int cols = src.getNumColumns();
 	
 		try
 		{

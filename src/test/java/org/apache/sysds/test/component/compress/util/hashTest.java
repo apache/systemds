@@ -27,54 +27,54 @@ import org.junit.Test;
 
 public class hashTest {
 
-    @Test
-    public void t1() {
-        int a = DCounts.hashIndex(Double.NaN);
-        assertTrue(a >= 0);
-    }
+	@Test
+	public void t1() {
+		int a = DCounts.hashIndex(Double.NaN);
+		assertTrue(a >= 0);
+	}
 
-    @Test
-    public void t2() {
-        int a = DCounts.hashIndex(Double.POSITIVE_INFINITY);
-        assertTrue(a >= 0);
-    }
+	@Test
+	public void t2() {
+		int a = DCounts.hashIndex(Double.POSITIVE_INFINITY);
+		assertTrue(a >= 0);
+	}
 
-    @Test
-    public void t3() {
-        int a = DCounts.hashIndex(Double.NEGATIVE_INFINITY);
-        assertTrue(a >= 0);
-    }
+	@Test
+	public void t3() {
+		int a = DCounts.hashIndex(Double.NEGATIVE_INFINITY);
+		assertTrue(a >= 0);
+	}
 
-    @Test
-    public void t4() {
-        int a = DCounts.hashIndex(Double.MIN_NORMAL);
-        assertTrue(a >= 0);
-    }
+	@Test
+	public void t4() {
+		int a = DCounts.hashIndex(Double.MIN_NORMAL);
+		assertTrue(a >= 0);
+	}
 
-    @Test
-    public void t5() {
-        int a = DCounts.hashIndex(-Double.MIN_NORMAL);
-        assertTrue(a >= 0);
-    }
+	@Test
+	public void t5() {
+		int a = DCounts.hashIndex(-Double.MIN_NORMAL);
+		assertTrue(a >= 0);
+	}
 
-    @Test
-    public void t6() {
-        int a = DCounts.hashIndex(-1);
-        assertTrue(a >= 0);
-    }
+	@Test
+	public void t6() {
+		int a = DCounts.hashIndex(-1);
+		assertTrue(a >= 0);
+	}
 
-    @Test
-    public void t7() {
-        int a = DCounts.hashIndex(-0.000000000000000000000000000001);
-        assertTrue(a >= 0);
-    }
+	@Test
+	public void t7() {
+		int a = DCounts.hashIndex(-0.000000000000000000000000000001);
+		assertTrue(a >= 0);
+	}
 
-    @Test
-    public void t8() {
-        int a = DCounts.hashIndex(-0.0);
-        // this iss.... annoying see.
-        // https://stackoverflow.com/questions/18565485/why-is-absolute-of-integer-min-value-equivalent-to-integer-min-value
-        assertFalse(a + " should be greater or equal to zero", a >= 0);
-    }
+	@Test
+	public void t8() {
+		int a = DCounts.hashIndex(-0.0);
+		// this iss.... annoying see.
+		// https://stackoverflow.com/questions/18565485/why-is-absolute-of-integer-min-value-equivalent-to-integer-min-value
+		assertFalse(a + " should be greater or equal to zero", a >= 0);
+	}
 
 }

@@ -89,10 +89,10 @@ public class FrameWriterTextCell extends FrameWriter
 		throws IOException
 	{
 		boolean entriesWritten = false;
-    	int cols = src.getNumColumns();
+		int cols = src.getNumColumns();
 
-    	//create buffered writer 
-    	BufferedWriter br = new BufferedWriter(new OutputStreamWriter(fs.create(path,true)));		
+		// create buffered writer
+		BufferedWriter br = new BufferedWriter(new OutputStreamWriter(fs.create(path,true)));		
 
 		try
 		{

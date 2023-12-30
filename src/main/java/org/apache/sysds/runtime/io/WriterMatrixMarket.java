@@ -114,7 +114,7 @@ public class WriterMatrixMarket extends MatrixWriter
 				sb.setLength(0);
 			}
 			 
-            // output matrix cell
+			// output matrix cell
 			if( sparse ) //SPARSE
 			{			   
 				Iterator<IJV> iter = src.getSparseBlockIterator(rl, ru);

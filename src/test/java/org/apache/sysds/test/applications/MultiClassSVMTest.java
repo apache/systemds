@@ -46,16 +46,16 @@ public class MultiClassSVMTest  extends AutomatedTestBase
 	protected int _numClasses;
 	protected double _sparsity;
 	protected boolean _intercept;
-    
-    public MultiClassSVMTest(int rows, int cols, int nc, boolean intercept, double sp) {
+
+	public MultiClassSVMTest(int rows, int cols, int nc, boolean intercept, double sp) {
 		_numRecords = rows;
 		_numFeatures = cols;
 		_numClasses = nc;
 		_intercept = intercept;
 		_sparsity = sp;
 	}
-    
-    @Parameters
+
+	@Parameters
 	 public static Collection<Object[]> data() {
 	   Object[][] data = new Object[][] { 
 			   //sparse tests (sparsity=0.01)

@@ -157,7 +157,7 @@ public class BivariateCategoricalCategoricallTest extends AutomatedTestBase
 		//int expectedNumberOfJobs = 5;
 		//runTest(exceptionExpected, null, expectedNumberOfJobs);
 		
-        runTest(true, false, null, -1);
+		runTest(true, false, null, -1);
 		runRScript(true);
 		
 		for(String file: config.getOutputFiles())

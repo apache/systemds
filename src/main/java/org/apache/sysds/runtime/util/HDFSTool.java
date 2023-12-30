@@ -286,11 +286,11 @@ public class HDFSTool
 		return ret;
 	}
 	
-	private static BufferedReader setupInputFile ( String filename ) throws IOException {
-        Path path = new Path(filename);
-        FileSystem fs = IOUtilFunctions.getFileSystem(path);
-		BufferedReader br=new BufferedReader(new InputStreamReader(fs.open(path)));		
-        return br;
+	private static BufferedReader setupInputFile(String filename) throws IOException {
+		Path path = new Path(filename);
+		FileSystem fs = IOUtilFunctions.getFileSystem(path);
+		BufferedReader br = new BufferedReader(new InputStreamReader(fs.open(path)));
+		return br;
 	}
 	
 	public static double readDoubleFromHDFSFile(String filename) throws IOException {

@@ -26,33 +26,33 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
 public class UncompressedScheme extends ACLAScheme {
 
-    public UncompressedScheme(IColIndex cols) {
-        super(cols);
-    }
+	public UncompressedScheme(IColIndex cols) {
+		super(cols);
+	}
 
-    @Override
-    protected AColGroup encodeV(MatrixBlock data, IColIndex columns) {
-        return ColGroupUncompressed.create(columns, data, false);
-    }
+	@Override
+	protected AColGroup encodeV(MatrixBlock data, IColIndex columns) {
+		return ColGroupUncompressed.create(columns, data, false);
+	}
 
-    @Override
-    protected AColGroup encodeVT(MatrixBlock data, IColIndex columns) {
-        return ColGroupUncompressed.create(columns, data, true);
-    }
+	@Override
+	protected AColGroup encodeVT(MatrixBlock data, IColIndex columns) {
+		return ColGroupUncompressed.create(columns, data, true);
+	}
 
-    @Override
-    protected ICLAScheme updateV(MatrixBlock data, IColIndex columns) {
-        return this;
-    }
+	@Override
+	protected ICLAScheme updateV(MatrixBlock data, IColIndex columns) {
+		return this;
+	}
 
-    @Override
-    protected ICLAScheme updateVT(MatrixBlock data, IColIndex columns) {
-        return this;
-    }
+	@Override
+	protected ICLAScheme updateVT(MatrixBlock data, IColIndex columns) {
+		return this;
+	}
 
-    @Override
-    public UncompressedScheme clone() {
-        return new UncompressedScheme(cols);
-    }
+	@Override
+	public UncompressedScheme clone() {
+		return new UncompressedScheme(cols);
+	}
 
 }

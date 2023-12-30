@@ -39,7 +39,7 @@ import org.apache.hadoop.mapred.FileSplit;
  */
 public class BinaryBlockInputFormat extends SequenceFileInputFormat<MatrixIndexes,MatrixBlock>
 {
-    @Override
+	@Override
 	public RecordReader<MatrixIndexes, MatrixBlock> getRecordReader(InputSplit split, JobConf job, Reporter reporter)
 		throws IOException 
 	{

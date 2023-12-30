@@ -23,48 +23,50 @@ import java.util.concurrent.atomic.LongAdder;
 
 public class FederatedCompressionStatistics {
 
-    private static final LongAdder totalEncodingMillis = new LongAdder();
-    private static final LongAdder totalDecodingMillis = new LongAdder();
-    private static final LongAdder totalEncodingBeforeSize= new LongAdder();
-    private static final LongAdder totalEncodingAfterSize = new LongAdder();
-    private static final LongAdder totalDecodingBeforeSize= new LongAdder();
-    private static final LongAdder totalDecodingAfterSize = new LongAdder();
+	private static final LongAdder totalEncodingMillis = new LongAdder();
+	private static final LongAdder totalDecodingMillis = new LongAdder();
+	private static final LongAdder totalEncodingBeforeSize = new LongAdder();
+	private static final LongAdder totalEncodingAfterSize = new LongAdder();
+	private static final LongAdder totalDecodingBeforeSize = new LongAdder();
+	private static final LongAdder totalDecodingAfterSize = new LongAdder();
 
-    public static void encodingStep(long encodingMillis, long beforeSize, long afterSize) {
-        totalEncodingMillis.add(encodingMillis);
-        totalEncodingBeforeSize.add(beforeSize);
-        totalEncodingAfterSize.add(afterSize);
-    }
+	public static void encodingStep(long encodingMillis, long beforeSize, long afterSize) {
+		totalEncodingMillis.add(encodingMillis);
+		totalEncodingBeforeSize.add(beforeSize);
+		totalEncodingAfterSize.add(afterSize);
+	}
 
-    public static void decodingStep(long decodingMillis, long beforeSize, long afterSize) {
-        totalDecodingMillis.add(decodingMillis);
-        totalDecodingBeforeSize.add(beforeSize);
-        totalDecodingAfterSize.add(afterSize);
-    }
+	public static void decodingStep(long decodingMillis, long beforeSize, long afterSize) {
+		totalDecodingMillis.add(decodingMillis);
+		totalDecodingBeforeSize.add(beforeSize);
+		totalDecodingAfterSize.add(afterSize);
+	}
 
-    public static void reset() {
-        totalEncodingMillis.reset();
-        totalDecodingMillis.reset();
-        totalEncodingBeforeSize.reset();
-        totalEncodingAfterSize.reset();
-        totalDecodingBeforeSize.reset();
-        totalDecodingAfterSize.reset();
-    }
+	public static void reset() {
+		totalEncodingMillis.reset();
+		totalDecodingMillis.reset();
+		totalEncodingBeforeSize.reset();
+		totalEncodingAfterSize.reset();
+		totalDecodingBeforeSize.reset();
+		totalDecodingAfterSize.reset();
+	}
 
-    public static String statistics() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("Federated Compression Statistics (Worker):\n");
-        sb.append("Encoding:\n");
-        sb.append(" Total encoding millis: " + totalEncodingMillis.longValue() + "\n");
-        sb.append(" Total pre-encoding size: " + totalEncodingBeforeSize.longValue() + "\n");
-        sb.append(" Total post-encoding size: " + totalEncodingAfterSize.longValue() + "\n");
-        sb.append(" Compression ratio: " + (double)(totalEncodingAfterSize.longValue())/((double)totalEncodingBeforeSize.longValue()) + "\n");
-        sb.append("Decoding:\n");
-        sb.append(" Total decoding millis: " + totalDecodingMillis.longValue() + "\n");
-        sb.append(" Total pre-decoding size: " + totalDecodingBeforeSize.longValue() + "\n");
-        sb.append(" Total post-decoding size: " + totalDecodingAfterSize.longValue() + "\n");
-        sb.append(" Compression ratio: " + (double)(totalDecodingBeforeSize.longValue())/((double)totalDecodingAfterSize.longValue()) + "\n");
-        return sb.toString();
-    }
+	public static String statistics() {
+		StringBuilder sb = new StringBuilder();
+		sb.append("Federated Compression Statistics (Worker):\n");
+		sb.append("Encoding:\n");
+		sb.append(" Total encoding millis: " + totalEncodingMillis.longValue() + "\n");
+		sb.append(" Total pre-encoding size: " + totalEncodingBeforeSize.longValue() + "\n");
+		sb.append(" Total post-encoding size: " + totalEncodingAfterSize.longValue() + "\n");
+		sb.append(" Compression ratio: "
+			+ (double) (totalEncodingAfterSize.longValue()) / ((double) totalEncodingBeforeSize.longValue()) + "\n");
+		sb.append("Decoding:\n");
+		sb.append(" Total decoding millis: " + totalDecodingMillis.longValue() + "\n");
+		sb.append(" Total pre-decoding size: " + totalDecodingBeforeSize.longValue() + "\n");
+		sb.append(" Total post-decoding size: " + totalDecodingAfterSize.longValue() + "\n");
+		sb.append(" Compression ratio: "
+			+ (double) (totalDecodingBeforeSize.longValue()) / ((double) totalDecodingAfterSize.longValue()) + "\n");
+		return sb.toString();
+	}
 
 }

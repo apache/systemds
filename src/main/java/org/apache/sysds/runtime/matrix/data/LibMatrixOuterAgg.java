@@ -1209,22 +1209,24 @@ public class LibMatrixOuterAgg
 	 * @param vmb ?
 	 * @param bOp binary operator
 	 */
-	public static void adjustRowIndicesMax(int[] vix, double[] vmb,BinaryOperator bOp)
-    {
-    	if (bOp.fn instanceof LessThan) {
-        	shiftLeft(vix, vmb);
-    	} else if ((bOp.fn instanceof GreaterThanEquals) || (bOp.fn instanceof Equals)) {
-    		setMaxIndexInPartition(vix,vmb);
-    	} else if(bOp.fn instanceof NotEquals) {
-    		double dLastValue = vmb[vmb.length-1];
-    		int i=vmb.length-1;
-    		while(i>0 && dLastValue == vmb[i-1]) --i;
-    		if (i > 0) 
-    			vix[0] = i-1;
-    		else	
-    			vix[0] = vix.length-1;
-    	}
-    }
+	public static void adjustRowIndicesMax(int[] vix, double[] vmb, BinaryOperator bOp) {
+		if(bOp.fn instanceof LessThan) {
+			shiftLeft(vix, vmb);
+		}
+		else if((bOp.fn instanceof GreaterThanEquals) || (bOp.fn instanceof Equals)) {
+			setMaxIndexInPartition(vix, vmb);
+		}
+		else if(bOp.fn instanceof NotEquals) {
+			double dLastValue = vmb[vmb.length - 1];
+			int i = vmb.length - 1;
+			while(i > 0 && dLastValue == vmb[i - 1])
+				--i;
+			if(i > 0)
+				vix[0] = i - 1;
+			else
+				vix[0] = vix.length - 1;
+		}
+	}
 
 	/**
 	 * This function adjusts indices to be leveraged in uariminXX functions.
@@ -1236,35 +1238,37 @@ public class LibMatrixOuterAgg
 	 * @param vmb ?
 	 * @param bOp binary operator
 	 */
-	public static void adjustRowIndicesMin(int[] vix, double[] vmb,BinaryOperator bOp)
-    {
-		if (bOp.fn instanceof GreaterThan) {
+	public static void adjustRowIndicesMin(int[] vix, double[] vmb, BinaryOperator bOp) {
+		if(bOp.fn instanceof GreaterThan) {
 			setMinIndexInPartition(vix, vmb);
 		}
-		else if (bOp.fn instanceof GreaterThanEquals) {
-        	shiftLeft(vix, vmb);
-    	}
-        else if (bOp.fn instanceof LessThanEquals) {
-        	shiftRight(vix, vmb);
-    	} else if(bOp.fn instanceof Equals) {
-    		double dFirstValue = vmb[0];
-    		int i=0;
-    		while(i<vmb.length-1 && dFirstValue == vmb[i+1]) i++;
-    		if (i < vmb.length-1) 
-    			vix[0] = i+1;
-    		else	
-    			vix[0] = 0;
-    	} else if(bOp.fn instanceof NotEquals) {
-    		double dFirstValue = vmb[0];
-    		int i=0;
-    		while(i<vmb.length-1 && dFirstValue == vmb[i+1]) i++;
-    		if (i < vmb.length-1) 
-    			vix[0] = i-1;
-    		else	
-    			vix[0] = 0;
-    	}
-    }
-	
+		else if(bOp.fn instanceof GreaterThanEquals) {
+			shiftLeft(vix, vmb);
+		}
+		else if(bOp.fn instanceof LessThanEquals) {
+			shiftRight(vix, vmb);
+		}
+		else if(bOp.fn instanceof Equals) {
+			double dFirstValue = vmb[0];
+			int i = 0;
+			while(i < vmb.length - 1 && dFirstValue == vmb[i + 1])
+				i++;
+			if(i < vmb.length - 1)
+				vix[0] = i + 1;
+			else
+				vix[0] = 0;
+		}
+		else if(bOp.fn instanceof NotEquals) {
+			double dFirstValue = vmb[0];
+			int i = 0;
+			while(i < vmb.length - 1 && dFirstValue == vmb[i + 1])
+				i++;
+			if(i < vmb.length - 1)
+				vix[0] = i - 1;
+			else
+				vix[0] = 0;
+		}
+	}
 
 	/**
 	 * This function will shift indices from one partition to next in right direction.
@@ -1284,21 +1288,19 @@ public class LibMatrixOuterAgg
 	 * @param vmb ?
 	 */
 	
-	public static void shiftRight(int[] vix, double[] vmb)
-	{
-    	for (int i = vix.length-1; i>0;)
-    	{
-    		int iPrevInd = i;
-    		double dPrevVal = vmb[iPrevInd];
-			while(i>=0 && dPrevVal == vmb[i]) --i;
-			
+	public static void shiftRight(int[] vix, double[] vmb) {
+		for(int i = vix.length - 1; i > 0;) {
+			int iPrevInd = i;
+			double dPrevVal = vmb[iPrevInd];
+			while(i >= 0 && dPrevVal == vmb[i])
+				--i;
+
 			if(i >= 0) {
-				for (int j = i+1; j<= iPrevInd; ++j)
+				for(int j = i + 1; j <= iPrevInd; ++j)
 					vix[j] = vix[i];
 			}
-    	}
+		}
 	}
-
 	
 	/**
 	 * This function will shift indices from one partition to next in left direction.
@@ -1318,22 +1320,21 @@ public class LibMatrixOuterAgg
 	 * @param vmb ?
 	 */
 	
-	public static void shiftLeft(int[] vix, double[] vmb)
-	{
-    	int iCurInd = 0;
-		
-    	for (int i = 0; i < vix.length;i++)
-    	{
-    		double dPrevVal = vmb[iCurInd];
-			while(i<vix.length && dPrevVal == vmb[i]) i++;
-			
+	public static void shiftLeft(int[] vix, double[] vmb) {
+		int iCurInd = 0;
+
+		for(int i = 0; i < vix.length; i++) {
+			double dPrevVal = vmb[iCurInd];
+			while(i < vix.length && dPrevVal == vmb[i])
+				i++;
+
 			if(i < vix.length) {
-				for(int j=iCurInd; j<i; ++j) vix[j] = vix[i];
+				for(int j = iCurInd; j < i; ++j)
+					vix[j] = vix[i];
 				iCurInd = i;
 			}
-    	}
+		}
 	}
-
 	
 	/**
 	 * This function will set minimum index in the partition to all cells in partition.
@@ -1357,16 +1358,16 @@ public class LibMatrixOuterAgg
 		int iLastIndex = 0;
 		double dLastVal = vix[iLastIndex];
 
-    	for (int i = 0; i < vix.length-1; i++)
-    	{
-    		while(i<vmb.length-1 && dLastVal == vmb[i+1]) i++;
-    		for (int j=iLastIndex+1; j<=i; ++j) 
-    			vix[j] = vix[iLastIndex];
-    		if (i < vix.length-1) {
-        		iLastIndex = i+1;
-        		dLastVal = vmb[i+1];
-    		}
-    	}
+		for(int i = 0; i < vix.length - 1; i++) {
+			while(i < vmb.length - 1 && dLastVal == vmb[i + 1])
+				i++;
+			for(int j = iLastIndex + 1; j <= i; ++j)
+				vix[j] = vix[iLastIndex];
+			if(i < vix.length - 1) {
+				iLastIndex = i + 1;
+				dLastVal = vmb[i + 1];
+			}
+		}
 	}
 
 	/**
@@ -1391,16 +1392,16 @@ public class LibMatrixOuterAgg
 		int iLastIndex = vix.length-1;
 		double dLastVal = vix[iLastIndex];
 
-    	for (int i = vix.length-1; i > 0;)
-    	{
-    		while(i>0 && dLastVal == vmb[i]) --i;
-    		for (int j=i+1; j<iLastIndex; ++j) 
-    			vix[j] = vix[iLastIndex];
-    		if (i > 0) {
-        		iLastIndex = i;
-        		dLastVal = vmb[i];
-    		}
-    	}
+		for(int i = vix.length - 1; i > 0;) {
+			while(i > 0 && dLastVal == vmb[i])
+				--i;
+			for(int j = i + 1; j < iLastIndex; ++j)
+				vix[j] = vix[iLastIndex];
+			if(i > 0) {
+				iLastIndex = i;
+				dLastVal = vmb[i];
+			}
+		}
 	}
 
 }

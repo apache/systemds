@@ -156,7 +156,7 @@ public class FullVectorVectorCellwiseCompareOperationTest extends AutomatedTestB
 		runMatrixVectorCellwiseOperationTest(OpType.NOT_EQUALS, SparsityType.EMPTY, SparsityType.DENSE, ExecType.CP);
 	}
 	
-    //-------------------------------------
+	 //-------------------------------------
 	
 	/**
 	 * 

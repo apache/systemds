@@ -23,34 +23,29 @@ import org.junit.Test;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 
+public class CastAsScalarTest extends AutomatedTestBase {
 
+	private final static String TEST_DIR = "functions/unary/matrix/";
+	private static final String TEST_CLASS_DIR = TEST_DIR + CastAsScalarTest.class.getSimpleName() + "/";
+	private final static String TEST_GENERAL = "General";
 
+	@Override
+	public void setUp() {
+		addTestConfiguration(TEST_GENERAL, new TestConfiguration(TEST_CLASS_DIR, "CastAsScalarTest", new String[] {"b"}));
+	}
 
-public class CastAsScalarTest extends AutomatedTestBase 
-{
-	    
-    private final static String TEST_DIR = "functions/unary/matrix/";
-    private static final String TEST_CLASS_DIR = TEST_DIR + CastAsScalarTest.class.getSimpleName() + "/";
-    private final static String TEST_GENERAL = "General";
-    
+	@Test
+	public void testGeneral() {
+		TestConfiguration config = getTestConfiguration(TEST_GENERAL);
+		loadTestConfiguration(config);
 
-    @Override
-    public void setUp() {
-        addTestConfiguration(TEST_GENERAL, new TestConfiguration(TEST_CLASS_DIR, "CastAsScalarTest", new String[] { "b" }));
-    }
-    
-    @Test
-    public void testGeneral() {
-    	TestConfiguration config = getTestConfiguration(TEST_GENERAL);
-        loadTestConfiguration(config);
-        
-        createHelperMatrix();
-        writeInputMatrix("a", new double[][] { { 2 } });
-        writeExpectedHelperMatrix("b", 2);
-        
-        runTest();
-        
-        compareResults();
-    }
+		createHelperMatrix();
+		writeInputMatrix("a", new double[][] {{2}});
+		writeExpectedHelperMatrix("b", 2);
+
+		runTest();
+
+		compareResults();
+	}
 
 }

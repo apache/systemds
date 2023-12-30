@@ -21,11 +21,11 @@ package org.apache.sysds.test.applications.nn;
 
 public class TestFolder extends BaseTest {
 
-    private static final String BASE_FILEPATH = "src/test/scripts/applications/nn/";
+	private static final String BASE_FILEPATH = "src/test/scripts/applications/nn/";
 
-    @Override
-    protected String getBaseFilePath() {
-        return BASE_FILEPATH;
-    }
+	@Override
+	protected String getBaseFilePath() {
+		return BASE_FILEPATH;
+	}
 
 }

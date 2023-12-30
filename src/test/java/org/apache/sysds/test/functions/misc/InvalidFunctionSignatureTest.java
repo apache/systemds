@@ -33,7 +33,7 @@ public class InvalidFunctionSignatureTest extends AutomatedTestBase
 	private final static String TEST_NAME1 = "InvalidFunctionSignatureTest1";
 	private final static String TEST_NAME2 = "InvalidFunctionSignatureTest2";
 	private final static String TEST_CLASS_DIR = TEST_DIR + InvalidFunctionSignatureTest.class.getSimpleName() + "/";
-    
+
 	@Override
 	public void setUp() {
 		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] {}));
@@ -46,10 +46,10 @@ public class InvalidFunctionSignatureTest extends AutomatedTestBase
 	}
 	
 	@Test
-    public void testInvalidFunctionSignature() { 
-        runTest( TEST_NAME2, true ); 
-    }
-	
+	public void testInvalidFunctionSignature() {
+		runTest(TEST_NAME2, true);
+	}
+
 	/**
 	 * 
 	 * @param testName
@@ -63,7 +63,7 @@ public class InvalidFunctionSignatureTest extends AutomatedTestBase
 		fullDMLScriptName = HOME + testName + ".dml";
 		programArgs = new String[]{};
 		
-		//run tests
-        runTest(true, exceptionExpected, LanguageException.class, -1);
+		// run tests
+		runTest(true, exceptionExpected, LanguageException.class, -1);
 	}
 }

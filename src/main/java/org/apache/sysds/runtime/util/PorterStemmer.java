@@ -34,16 +34,12 @@ import java.util.Map.Entry;
 
 public class PorterStemmer
 {
-   /* m() measures the number of consonant sequences between 0 and j. if c is
-      a consonant sequence and v a vowel sequence, and <..> indicates arbitrary
-      presence,
-
-         <c><v>       gives 0
-         <c>vc<v>     gives 1
-         <c>vcvc<v>   gives 2
-         <c>vcvcvc<v> gives 3
-         ....
-   */
+	/*
+	 * m() measures the number of consonant sequences between 0 and j. if c is a consonant sequence and v a vowel
+	 * sequence, and <..> indicates arbitrary presence,
+	 * 
+	 * <c><v> gives 0 <c>vc<v> gives 1 <c>vcvc<v> gives 2 <c>vcvcvc<v> gives 3 ....
+	 */
 
 	private static int calcM(String word)
 	{
@@ -74,13 +70,12 @@ public class PorterStemmer
 		return cons(word, len);
 	}
 
-   /* cvc(i) is true <=> i-2,i-1,i has the form consonant - vowel - consonant
-      and also if the second c is not w,x or y. this is used when trying to
-      restore an e at the end of a short word. e.g.
-
-         cav(e), lov(e), hop(e), crim(e), but
-         snow, box, tray.
-*	*/
+	/*
+	 * cvc(i) is true <=> i-2,i-1,i has the form consonant - vowel - consonant and also if the second c is not w,x or y.
+	 * this is used when trying to restore an e at the end of a short word. e.g.
+	 * 
+	 * cav(e), lov(e), hop(e), crim(e), but snow, box, tray.
+	 */
 	private static boolean cvc(String word)
 	{
 		int len = word.length();

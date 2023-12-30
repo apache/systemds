@@ -35,25 +35,25 @@ import org.junit.runners.Parameterized.Parameters;
 
 @RunWith(value = Parameterized.class)
 public class UncompressedSchemeTest extends SchemeTestBase {
-    @Parameters
-    public static Collection<Object[]> data() {
-        ArrayList<Object[]> tests = new ArrayList<>();
-        try {
-            tests.add(new Object[] {new MatrixBlock(100, 1, 0)});
-            tests.add(new Object[] {new MatrixBlock(100, 3, 0)});
-        }
-        catch(Exception e) {
-            e.printStackTrace();
-            fail("failed constructing tests");
-        }
+	@Parameters
+	public static Collection<Object[]> data() {
+		ArrayList<Object[]> tests = new ArrayList<>();
+		try {
+			tests.add(new Object[] {new MatrixBlock(100, 1, 0)});
+			tests.add(new Object[] {new MatrixBlock(100, 3, 0)});
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail("failed constructing tests");
+		}
 
-        return tests;
-    }
+		return tests;
+	}
 
-    public UncompressedSchemeTest(MatrixBlock mb) {
-        this.src = mb;
-        this.distinct = 100;
-        this.sh = SchemeFactory.create(ColIndexFactory.create(mb.getNumColumns()), CompressionType.UNCOMPRESSED);
-    }
+	public UncompressedSchemeTest(MatrixBlock mb) {
+		this.src = mb;
+		this.distinct = 100;
+		this.sh = SchemeFactory.create(ColIndexFactory.create(mb.getNumColumns()), CompressionType.UNCOMPRESSED);
+	}
 
 }

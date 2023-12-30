@@ -26,11 +26,9 @@ import org.apache.sysds.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
 
-
 /** Tests of univariate statistics functions over categorical data. */
-public class UnivariateCategoricalTest extends UnivariateStatsBase
-{
-	
+public class UnivariateCategoricalTest extends UnivariateStatsBase {
+
 	public UnivariateCategoricalTest() {
 		super();
 		TEST_CLASS_DIR = TEST_DIR + UnivariateCategoricalTest.class.getSimpleName() + "/";
@@ -38,44 +36,40 @@ public class UnivariateCategoricalTest extends UnivariateStatsBase
 
 	@Test
 	public void testCategoricalWithR() {
-	
-        TestConfiguration config = getTestConfiguration("Categorical");
-        config.addVariable("rows1", rows1);
+
+		TestConfiguration config = getTestConfiguration("Categorical");
+		config.addVariable("rows1", rows1);
 		loadTestConfiguration(config);
-        
+
 		/* This is for running the junit test the new way, i.e., construct the arguments directly */
-		String C_HOME = SCRIPT_DIR + TEST_DIR;	
+		String C_HOME = SCRIPT_DIR + TEST_DIR;
 		fullDMLScriptName = C_HOME + "Categorical" + ".dml";
-		programArgs = new String[]{"-args",  input("vector"), Integer.toString(rows1),
-			output("Nc"), output("R"), output("Pc"), output("C"), output("Mode") };
-		
+		programArgs = new String[] {"-args", input("vector"), Integer.toString(rows1), output("Nc"), output("R"),
+			output("Pc"), output("C"), output("Mode")};
+
 		fullRScriptName = C_HOME + "Categorical" + ".R";
 		rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + expectedDir();
 
-        double[][] vector = getRandomMatrix(rows1, 1, 1, 10, 1, System.currentTimeMillis());
-        OrderStatisticsTest.round(vector);
-        
-        writeInputMatrix("vector", vector, true);
+		double[][] vector = getRandomMatrix(rows1, 1, 1, 10, 1, System.currentTimeMillis());
+		OrderStatisticsTest.round(vector);
+
+		writeInputMatrix("vector", vector, true);
 
 		/*
-		 * Expected number of jobs:
-		 * Reblock - 1 job 
-		 * While loop iteration - 10 jobs
-		 * Final output write - 1 job
+		 * Expected number of jobs: Reblock - 1 job While loop iteration - 10 jobs Final output write - 1 job
 		 */
-        boolean exceptionExpected = false;
+		boolean exceptionExpected = false;
 		int expectedNumberOfJobs = 12;
 		runTest(true, exceptionExpected, null, expectedNumberOfJobs);
-		
+
 		runRScript(true);
-		//disableOutAndExpectedDeletion();
-	
-		for(String file: config.getOutputFiles())
-		{
+		// disableOutAndExpectedDeletion();
+
+		for(String file : config.getOutputFiles()) {
 			/* NOte that some files do not contain matrix, but just a single scalar value inside */
 			HashMap<CellIndex, Double> dmlfile;
 			HashMap<CellIndex, Double> rfile;
-			if (file.endsWith(".scalar")) {
+			if(file.endsWith(".scalar")) {
 				file = file.replace(".scalar", "");
 				dmlfile = readDMLScalarFromOutputDir(file);
 				rfile = readRScalarFromExpectedDir(file);
@@ -84,47 +78,45 @@ public class UnivariateCategoricalTest extends UnivariateStatsBase
 				dmlfile = readDMLMatrixFromOutputDir(file);
 				rfile = readRMatrixFromExpectedDir(file);
 			}
-			TestUtils.compareMatrices(dmlfile, rfile, epsilon, file+"-DML", file+"-R");
+			TestUtils.compareMatrices(dmlfile, rfile, epsilon, file + "-DML", file + "-R");
 		}
 	}
-	
+
 	@Test
 	public void testWeightedCategoricalWithR() {
-	
-        TestConfiguration config = getTestConfiguration("WeightedCategoricalTest");
-        config.addVariable("rows1", rows1);
+
+		TestConfiguration config = getTestConfiguration("WeightedCategoricalTest");
+		config.addVariable("rows1", rows1);
 		loadTestConfiguration(config);
 
 		// This is for running the junit test the new way, i.e., construct the arguments directly
-		String C_HOME = SCRIPT_DIR + TEST_DIR;	
+		String C_HOME = SCRIPT_DIR + TEST_DIR;
 		fullDMLScriptName = C_HOME + "WeightedCategoricalTest" + ".dml";
-		programArgs = new String[]{"-args",  
-			input("vector"), Integer.toString(rows1), input("weight"),
-			output("Nc"), output("R"), output("Pc"), output("C"), output("Mode") };
-		
+		programArgs = new String[] {"-args", input("vector"), Integer.toString(rows1), input("weight"), output("Nc"),
+			output("R"), output("Pc"), output("C"), output("Mode")};
+
 		fullRScriptName = C_HOME + "WeightedCategoricalTest" + ".R";
 		rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + expectedDir();
 
 		createHelperMatrix();
-        double[][] vector = getRandomMatrix(rows1, 1, 1, 10, 1, System.currentTimeMillis());
-        OrderStatisticsTest.round(vector);
-        double[][] weight = getRandomMatrix(rows1, 1, 1, 10, 1, System.currentTimeMillis());
-        OrderStatisticsTest.round(weight);
+		double[][] vector = getRandomMatrix(rows1, 1, 1, 10, 1, System.currentTimeMillis());
+		OrderStatisticsTest.round(vector);
+		double[][] weight = getRandomMatrix(rows1, 1, 1, 10, 1, System.currentTimeMillis());
+		OrderStatisticsTest.round(weight);
 
-        writeInputMatrix("vector", vector, true);
-        writeInputMatrix("weight", weight, true);
-  
-        boolean exceptionExpected = false;
+		writeInputMatrix("vector", vector, true);
+		writeInputMatrix("weight", weight, true);
+
+		boolean exceptionExpected = false;
 		runTest(true, exceptionExpected, null, -1);
 		runRScript(true);
-		//disableOutAndExpectedDeletion();
-	
-		for(String file: config.getOutputFiles())
-		{
+		// disableOutAndExpectedDeletion();
+
+		for(String file : config.getOutputFiles()) {
 			// NOte that some files do not contain matrix, but just a single scalar value inside
 			HashMap<CellIndex, Double> dmlfile;
 			HashMap<CellIndex, Double> rfile;
-			if (file.endsWith(".scalar")) {
+			if(file.endsWith(".scalar")) {
 				file = file.replace(".scalar", "");
 				dmlfile = readDMLScalarFromOutputDir(file);
 				rfile = readRScalarFromExpectedDir(file);
@@ -133,7 +125,7 @@ public class UnivariateCategoricalTest extends UnivariateStatsBase
 				dmlfile = readDMLMatrixFromOutputDir(file);
 				rfile = readRMatrixFromExpectedDir(file);
 			}
-			TestUtils.compareMatrices(dmlfile, rfile, epsilon, file+"-DML", file+"-R");
+			TestUtils.compareMatrices(dmlfile, rfile, epsilon, file + "-DML", file + "-R");
 		}
 	}
 }

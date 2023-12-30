@@ -35,7 +35,6 @@ import org.junit.runners.Parameterized;
 
 @RunWith(Parameterized.class)
 @net.jcip.annotations.NotThreadSafe
-
 public class BuiltinImageTransformLinTest extends AutomatedTestBase {
 	private final static String TEST_NAME = "image_transform_linearized";
 	private final static String TEST_DIR = "functions/builtin/";

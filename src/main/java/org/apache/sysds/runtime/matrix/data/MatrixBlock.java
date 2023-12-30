@@ -5489,7 +5489,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 	 *  this &lt;- A; scalar_that &lt;- v2; scalar_that2 &lt;- w; result &lt;- D
 	 *  
 	 * (i1,j1,v1) from input1 (this)
-     * (v2) from sclar_input2 (scalarThat)
+	 * (v2) from sclar_input2 (scalarThat)
 	 * (w)  from scalar_input3 (scalarThat2)
 	 */
 	@Override

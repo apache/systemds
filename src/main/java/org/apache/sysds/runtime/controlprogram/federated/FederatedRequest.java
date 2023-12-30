@@ -19,14 +19,15 @@
 
 package org.apache.sysds.runtime.controlprogram.federated;
 
-import java.io.*;
+import java.io.DataOutput;
+import java.io.IOException;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.zip.Adler32;
 import java.util.zip.Checksum;
 
-import org.apache.log4j.Logger;
 import org.apache.sysds.api.DMLException;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;

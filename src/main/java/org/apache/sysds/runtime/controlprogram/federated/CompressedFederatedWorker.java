@@ -177,12 +177,12 @@ public class CompressedFederatedWorker {
                     cp.addLast("ObjectDecoder",
                             new ObjectDecoder(Integer.MAX_VALUE,
                                     ClassResolvers.weakCachingResolver(ClassLoader.getSystemClassLoader())));
-                    cp.addLast("ZlibEncoder", new CompressionEncoder());
                     cp.addLast("ObjectEncoder", new ObjectEncoder());
                     // This line adds the compression
                     // cp.addLast("CompressionHandler", new CompressionHandler());
                     // What does this line do???
                     cp.addLast(FederationUtils.decoder(), new FederatedWorker.FederatedResponseEncoder());
+                    cp.addLast("ZlibEncoder", new CompressionEncoder());
                     cp.addLast(new FederatedWorkerHandler(_flt, _frc, _fan, networkTimer));
                 }
             };

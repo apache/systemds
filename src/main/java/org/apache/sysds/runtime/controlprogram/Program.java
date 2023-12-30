@@ -23,7 +23,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map.Entry;
 
-import org.apache.commons.lang3.NotImplementedException;
+import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.parser.DMLProgram;
 import org.apache.sysds.parser.FunctionDictionary;
 import org.apache.sysds.runtime.DMLRuntimeException;

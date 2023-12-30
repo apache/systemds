@@ -1480,11 +1480,11 @@ public class LibMatrixReorg {
 		int b = n/c;
 
 		double[] tmp = memPool.get();
-        if(tmp == null) {
-            memPool.set(new double[Math.max(m,n)]);
-            tmp = memPool.get();
-        }
-		
+		if(tmp == null) {
+			memPool.set(new double[Math.max(m, n)]);
+			tmp = memPool.get();
+		}
+
 		ExecutorService pool = CommonThreadPool.get(k);
 		ArrayList<Callable<Object>> tasks = new ArrayList<>();
 
@@ -1704,10 +1704,10 @@ public class LibMatrixReorg {
 		int a_inv = modInverse(a,b);
 
 		double[] tmp = memPool.get();
-        if(tmp == null) {
-            memPool.set(new double[Math.max(m,n)]);
-            tmp = memPool.get();
-        }
+		if(tmp == null) {
+			memPool.set(new double[Math.max(m, n)]);
+			tmp = memPool.get();
+		}
 
 		ExecutorService pool = CommonThreadPool.get(k);
 		ArrayList<Callable<Object>> tasks = new ArrayList<>();
@@ -1949,10 +1949,10 @@ public class LibMatrixReorg {
 
 	private static int modInverse(int a , int m){
 		a = a % m; 
-        for (int x = 1; x < m; x++) 
-            if ((a * x) % m == 1) 
-                return x; 
-		return 1; 
+		for(int x = 1; x < m; x++)
+			if((a * x) % m == 1)
+				return x;
+		return 1;
 		// TODO use optimized mod inverse operation.
 		// This makes little differnece on overall algorithm performance
 		// performance of algorithm.

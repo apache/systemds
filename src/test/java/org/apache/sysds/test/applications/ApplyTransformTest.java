@@ -43,7 +43,7 @@ public class ApplyTransformTest extends AutomatedTestBase{
 	protected String TEST_CLASS_DIR = TEST_DIR + ApplyTransformTest.class.getSimpleName() + "/";
 	
 	protected String X, missing_value_maps, binning_maps, dummy_coding_maps, normalization_maps;
-    
+
 	public ApplyTransformTest(String X, String missing_value_maps, String binning_maps,
 		String dummy_coding_maps, String normalization_maps)
 	{

@@ -44,264 +44,224 @@ import org.apache.sysds.utils.Statistics;
  * 
  * 
  */
-public class WeightedSquaredLossTest extends AutomatedTestBase 
-{
+public class WeightedSquaredLossTest extends AutomatedTestBase {
 	private final static String TEST_NAME1 = "WeightedSquaredLossPost";
 	private final static String TEST_NAME2 = "WeightedSquaredLossPre";
 	private final static String TEST_NAME3 = "WeightedSquaredLossNo";
-    private final static String TEST_NAME4 = "WeightedSquaredLossPost2";
-    private final static String TEST_NAME5 = "WeightedSquaredLossPre2";
-    private final static String TEST_NAME6 = "WeightedSquaredLossNo2";
+	private final static String TEST_NAME4 = "WeightedSquaredLossPost2";
+	private final static String TEST_NAME5 = "WeightedSquaredLossPre2";
+	private final static String TEST_NAME6 = "WeightedSquaredLossNo2";
 	private final static String TEST_NAME7 = "WeightedSquaredLossPostNz";
-	
+
 	private final static String TEST_DIR = "functions/quaternary/";
 	private final static String TEST_CLASS_DIR = TEST_DIR + WeightedSquaredLossTest.class.getSimpleName() + "/";
-	
+
 	private final static double eps = 1e-6;
-	
+
 	private final static int rows = 1201;
 	private final static int cols = 1103;
 	private final static int rank = 10;
 	private final static double spSparse = 0.001;
 	private final static double spDense = 0.6;
-	
-	@Override
-	public void setUp() 
-	{
-		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[]{"R"}));
-		addTestConfiguration(TEST_NAME2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[]{"R"}));
-		addTestConfiguration(TEST_NAME3, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME3, new String[]{"R"}));
-		addTestConfiguration(TEST_NAME4, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME4, new String[]{"R"}));
-        addTestConfiguration(TEST_NAME5, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME5, new String[]{"R"}));
-        addTestConfiguration(TEST_NAME6, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME6, new String[]{"R"}));
-        addTestConfiguration(TEST_NAME7, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME7, new String[]{"R"}));
 
-		if (TEST_CACHE_ENABLED) {
+	@Override
+	public void setUp() {
+		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] {"R"}));
+		addTestConfiguration(TEST_NAME2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[] {"R"}));
+		addTestConfiguration(TEST_NAME3, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME3, new String[] {"R"}));
+		addTestConfiguration(TEST_NAME4, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME4, new String[] {"R"}));
+		addTestConfiguration(TEST_NAME5, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME5, new String[] {"R"}));
+		addTestConfiguration(TEST_NAME6, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME6, new String[] {"R"}));
+		addTestConfiguration(TEST_NAME7, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME7, new String[] {"R"}));
+
+		if(TEST_CACHE_ENABLED) {
 			setOutAndExpectedDeletionDisabled(true);
 		}
 	}
 
 	@BeforeClass
-	public static void init()
-	{
+	public static void init() {
 		TestUtils.clearDirectory(TEST_DATA_DIR + TEST_CLASS_DIR);
 	}
 
 	@AfterClass
-	public static void cleanUp()
-	{
-		if (TEST_CACHE_ENABLED) {
+	public static void cleanUp() {
+		if(TEST_CACHE_ENABLED) {
 			TestUtils.clearDirectory(TEST_DATA_DIR + TEST_CLASS_DIR);
 		}
 	}
-	
+
 	@Test
-	public void testSquaredLossDensePostWeightsNoRewritesCP() 
-	{
+	public void testSquaredLossDensePostWeightsNoRewritesCP() {
 		runMLUnaryBuiltinTest(TEST_NAME1, false, false, ExecType.CP);
 	}
-	
+
 	@Test
-	public void testSquaredLossDensePreWeightsNoRewritesCP() 
-	{
+	public void testSquaredLossDensePreWeightsNoRewritesCP() {
 		runMLUnaryBuiltinTest(TEST_NAME2, false, false, ExecType.CP);
 	}
-	
+
 	@Test
-	public void testSquaredLossDenseNoWeightsNoRewritesCP() 
-	{
+	public void testSquaredLossDenseNoWeightsNoRewritesCP() {
 		runMLUnaryBuiltinTest(TEST_NAME3, false, false, ExecType.CP);
 	}
-	
+
 	@Test
-	public void testSquaredLossSparsePostWeightsNoRewritesCP() 
-	{
+	public void testSquaredLossSparsePostWeightsNoRewritesCP() {
 		runMLUnaryBuiltinTest(TEST_NAME1, true, false, ExecType.CP);
 	}
-	
+
 	@Test
-	public void testSquaredLossSparsePreWeightsNoRewritesCP() 
-	{
+	public void testSquaredLossSparsePreWeightsNoRewritesCP() {
 		runMLUnaryBuiltinTest(TEST_NAME2, true, false, ExecType.CP);
 	}
-	
+
 	@Test
-	public void testSquaredLossSparseNoWeightsNoRewritesCP() 
-	{
+	public void testSquaredLossSparseNoWeightsNoRewritesCP() {
 		runMLUnaryBuiltinTest(TEST_NAME3, true, false, ExecType.CP);
 	}
-	
+
 	@Test
-	public void testSquaredLossDensePostWeightsRewritesCP() 
-	{
+	public void testSquaredLossDensePostWeightsRewritesCP() {
 		runMLUnaryBuiltinTest(TEST_NAME1, false, true, ExecType.CP);
 	}
-	
+
 	@Test
-	public void testSquaredLossDensePreWeightsRewritesCP() 
-	{
+	public void testSquaredLossDensePreWeightsRewritesCP() {
 		runMLUnaryBuiltinTest(TEST_NAME2, false, true, ExecType.CP);
 	}
-	
+
 	@Test
-	public void testSquaredLossDenseNoWeightsRewritesCP() 
-	{
+	public void testSquaredLossDenseNoWeightsRewritesCP() {
 		runMLUnaryBuiltinTest(TEST_NAME3, false, true, ExecType.CP);
 	}
-	
+
 	@Test
-	public void testSquaredLossSparsePostWeightsRewritesCP() 
-	{
+	public void testSquaredLossSparsePostWeightsRewritesCP() {
 		runMLUnaryBuiltinTest(TEST_NAME1, true, true, ExecType.CP);
 	}
-	
+
 	@Test
-	public void testSquaredLossSparsePreWeightsRewritesCP() 
-	{
+	public void testSquaredLossSparsePreWeightsRewritesCP() {
 		runMLUnaryBuiltinTest(TEST_NAME2, true, true, ExecType.CP);
 	}
-	
+
 	@Test
-	public void testSquaredLossSparseNoWeightsRewritesCP() 
-	{
+	public void testSquaredLossSparseNoWeightsRewritesCP() {
 		runMLUnaryBuiltinTest(TEST_NAME3, true, true, ExecType.CP);
 	}
 
-	
 	@Test
-	public void testSquaredLossDensePostWeightsRewritesSP() 
-	{
+	public void testSquaredLossDensePostWeightsRewritesSP() {
 		runMLUnaryBuiltinTest(TEST_NAME1, false, true, ExecType.SPARK);
 	}
-	
+
 	@Test
-	public void testSquaredLossDensePreWeightsRewritesSP() 
-	{
+	public void testSquaredLossDensePreWeightsRewritesSP() {
 		runMLUnaryBuiltinTest(TEST_NAME2, false, true, ExecType.SPARK);
 	}
-	
+
 	@Test
-	public void testSquaredLossDenseNoWeightsRewritesSP() 
-	{
+	public void testSquaredLossDenseNoWeightsRewritesSP() {
 		runMLUnaryBuiltinTest(TEST_NAME3, false, true, ExecType.SPARK);
 	}
-	
+
 	@Test
-	public void testSquaredLossSparsePostWeightsRewritesSP() 
-	{
+	public void testSquaredLossSparsePostWeightsRewritesSP() {
 		runMLUnaryBuiltinTest(TEST_NAME1, true, true, ExecType.SPARK);
 	}
-	
+
 	@Test
-	public void testSquaredLossSparsePreWeightsRewritesSP() 
-	{
+	public void testSquaredLossSparsePreWeightsRewritesSP() {
 		runMLUnaryBuiltinTest(TEST_NAME2, true, true, ExecType.SPARK);
 	}
-	
+
 	@Test
-	public void testSquaredLossSparseNoWeightsRewritesSP() 
-	{
+	public void testSquaredLossSparseNoWeightsRewritesSP() {
 		runMLUnaryBuiltinTest(TEST_NAME3, true, true, ExecType.SPARK);
 	}
-	
+
 	@Test
-	public void testSquaredLossDensePostNzWeightsRewritesCP() 
-	{
+	public void testSquaredLossDensePostNzWeightsRewritesCP() {
 		runMLUnaryBuiltinTest(TEST_NAME7, false, true, ExecType.CP);
 	}
-	
+
 	@Test
-	public void testSquaredLossSparsePostNzWeightsRewritesCP() 
-	{
+	public void testSquaredLossSparsePostNzWeightsRewritesCP() {
 		runMLUnaryBuiltinTest(TEST_NAME7, true, true, ExecType.CP);
 	}
-	
+
 	@Test
-	public void testSquaredLossDensePostNzWeightsRewritesSP() 
-	{
+	public void testSquaredLossDensePostNzWeightsRewritesSP() {
 		runMLUnaryBuiltinTest(TEST_NAME7, false, true, ExecType.SPARK);
 	}
-	
+
 	@Test
-	public void testSquaredLossSparsePostNzWeightsRewritesSP() 
-	{
+	public void testSquaredLossSparsePostNzWeightsRewritesSP() {
 		runMLUnaryBuiltinTest(TEST_NAME7, true, true, ExecType.SPARK);
 	}
-	
-	
-	//the following tests force the replication based mr operator because
-	//otherwise we would always choose broadcasts for this small input data
-	
+
+	// the following tests force the replication based mr operator because
+	// otherwise we would always choose broadcasts for this small input data
+
 	@Test
-	public void testSquaredLossSparsePostWeightsRewritesRepSP() 
-	{
+	public void testSquaredLossSparsePostWeightsRewritesRepSP() {
 		runMLUnaryBuiltinTest(TEST_NAME1, true, true, true, ExecType.SPARK);
 	}
-	
+
 	@Test
-	public void testSquaredLossSparsePreWeightsRewritesRepSP() 
-	{
+	public void testSquaredLossSparsePreWeightsRewritesRepSP() {
 		runMLUnaryBuiltinTest(TEST_NAME2, true, true, true, ExecType.SPARK);
 	}
-	
+
 	@Test
-	public void testSquaredLossSparseNoWeightsRewritesRepSP() 
-	{
+	public void testSquaredLossSparseNoWeightsRewritesRepSP() {
 		runMLUnaryBuiltinTest(TEST_NAME3, true, true, true, ExecType.SPARK);
 	}
-	
+
 	@Test
-	public void testSquaredLossDensePostWeightsRewritesRepSP() 
-	{
+	public void testSquaredLossDensePostWeightsRewritesRepSP() {
 		runMLUnaryBuiltinTest(TEST_NAME1, false, true, true, ExecType.SPARK);
 	}
-	
+
 	@Test
-	public void testSquaredLossDensePreWeightsRewritesRepSP() 
-	{
+	public void testSquaredLossDensePreWeightsRewritesRepSP() {
 		runMLUnaryBuiltinTest(TEST_NAME2, false, true, true, ExecType.SPARK);
 	}
-	
+
 	@Test
-	public void testSquaredLossDenseNoWeightsRewritesRepSP() 
-	{
+	public void testSquaredLossDenseNoWeightsRewritesRepSP() {
 		runMLUnaryBuiltinTest(TEST_NAME3, false, true, true, ExecType.SPARK);
 	}
-	
+
 	@Test
-	public void testSquaredLossSparsePostNzWeightsRewritesRepSP() 
-	{
+	public void testSquaredLossSparsePostNzWeightsRewritesRepSP() {
 		runMLUnaryBuiltinTest(TEST_NAME7, true, true, true, ExecType.SPARK);
 	}
-	
+
 	@Test
-	public void testSquaredLossDensePostNzWeightsRewritesRepSP() 
-	{
+	public void testSquaredLossDensePostNzWeightsRewritesRepSP() {
 		runMLUnaryBuiltinTest(TEST_NAME7, false, true, true, ExecType.SPARK);
 	}
-	
-	
+
 	// the following tests use a sightly different pattern of U%*%t(V)-X
 	// which applies as well due to the subsequent squaring.
-	
-    @Test
-    public void testSquaredLossDensePostWeightsRewrites2CP() 
-    {
-        runMLUnaryBuiltinTest(TEST_NAME4, false, true, ExecType.CP);
-    }
-    
-    @Test
-    public void testSquaredLossDensePreWeightsRewrites2CP() 
-    {
-        runMLUnaryBuiltinTest(TEST_NAME5, false, true, ExecType.CP);
-    }
-    
-    @Test
-    public void testSquaredLossDenseNoWeightsRewrites2CP() 
-    {
-        runMLUnaryBuiltinTest(TEST_NAME6, false, true, ExecType.CP);
-    }
-    
+
+	@Test
+	public void testSquaredLossDensePostWeightsRewrites2CP() {
+		runMLUnaryBuiltinTest(TEST_NAME4, false, true, ExecType.CP);
+	}
+
+	@Test
+	public void testSquaredLossDensePreWeightsRewrites2CP() {
+		runMLUnaryBuiltinTest(TEST_NAME5, false, true, ExecType.CP);
+	}
+
+	@Test
+	public void testSquaredLossDenseNoWeightsRewrites2CP() {
+		runMLUnaryBuiltinTest(TEST_NAME6, false, true, ExecType.CP);
+	}
+
 	/**
 	 * 
 	 * @param testname
@@ -309,21 +269,24 @@ public class WeightedSquaredLossTest extends AutomatedTestBase
 	 * @param rewrites
 	 * @param instType
 	 */
-	private void runMLUnaryBuiltinTest( String testname, boolean sparse, boolean rewrites, ExecType instType)
-	{
+	private void runMLUnaryBuiltinTest(String testname, boolean sparse, boolean rewrites, ExecType instType) {
 		runMLUnaryBuiltinTest(testname, sparse, rewrites, false, instType);
 	}
-	
-	private void runMLUnaryBuiltinTest( String testname, boolean sparse, boolean rewrites, boolean rep, ExecType instType)
-	{		
+
+	private void runMLUnaryBuiltinTest(String testname, boolean sparse, boolean rewrites, boolean rep,
+		ExecType instType) {
 		ExecMode platformOld = rtplatform;
-		switch( instType ){
-			case SPARK: rtplatform = ExecMode.SPARK; break;
-			default: rtplatform = ExecMode.HYBRID; break;
+		switch(instType) {
+			case SPARK:
+				rtplatform = ExecMode.SPARK;
+				break;
+			default:
+				rtplatform = ExecMode.HYBRID;
+				break;
 		}
-	
+
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-		if( rtplatform == ExecMode.SPARK )
+		if(rtplatform == ExecMode.SPARK)
 			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 
 		boolean rewritesOld = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
@@ -331,67 +294,67 @@ public class WeightedSquaredLossTest extends AutomatedTestBase
 
 		OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = rewrites;
 		QuaternaryOp.FORCE_REPLICATION = rep;
-	    
-		try
-		{
+
+		try {
 			double sparsity = (sparse) ? spSparse : spDense;
 			String TEST_NAME = testname;
-			
+
 			TestConfiguration config = getTestConfiguration(TEST_NAME);
 
 			String TEST_CACHE_DIR = "";
-			if (TEST_CACHE_ENABLED)
-			{
+			if(TEST_CACHE_ENABLED) {
 				TEST_CACHE_DIR = TEST_NAME + "_" + sparsity + "/";
 			}
-			
+
 			loadTestConfiguration(config, TEST_CACHE_DIR);
-			
+
 			// This is for running the junit test the new way, i.e., construct the arguments directly
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[]{"-stats", "-explain", "runtime", "-args", 
-				input("X"), input("U"), input("V"), input("W"), output("R") };
-			
+			programArgs = new String[] {"-stats", "-explain", "runtime", "-args", input("X"), input("U"), input("V"),
+				input("W"), output("R")};
+
 			fullRScriptName = HOME + TEST_NAME + ".R";
 			rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + expectedDir();
-	
-			//generate actual dataset 
-			double[][] X = getRandomMatrix(rows, cols, 0, 1, sparsity, 7); 
+
+			// generate actual dataset
+			double[][] X = getRandomMatrix(rows, cols, 0, 1, sparsity, 7);
 			writeInputMatrixWithMTD("X", X, true);
-			double[][] U = getRandomMatrix(rows, rank, 0, 1, 1.0, 213); 
+			double[][] U = getRandomMatrix(rows, rank, 0, 1, 1.0, 213);
 			writeInputMatrixWithMTD("U", U, true);
-			double[][] V = getRandomMatrix(cols, rank, 0, 1, 1.0, 312); 
+			double[][] V = getRandomMatrix(cols, rank, 0, 1, 1.0, 312);
 			writeInputMatrixWithMTD("V", V, true);
-			if( !TEST_NAME.equals(TEST_NAME3) ) {
-				double[][] W = getRandomMatrix(rows, cols, 0, 1, sparsity, 1467); 
+			if(!TEST_NAME.equals(TEST_NAME3)) {
+				double[][] W = getRandomMatrix(rows, cols, 0, 1, sparsity, 1467);
 				writeInputMatrixWithMTD("W", W, true);
 			}
-			
-			runTest(true, false, null, -1); 
-			runRScript(true); 
-		
-			//compare matrices 
-			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir("R");
-			HashMap<CellIndex, Double> rfile  = readRMatrixFromExpectedDir("R");
-			TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
-			checkDMLMetaDataFile("R", new MatrixCharacteristics(1,1,1,1));
 
-			//check statistics for right operator in cp
-			if( instType == ExecType.CP && rewrites )
-				Assert.assertTrue("Rewrite not applied.",Statistics.getCPHeavyHitterOpCodes().contains(WeightedSquaredLoss.OPCODE_CP));
-			else if( instType == ExecType.SPARK && rewrites ){
-			    boolean noWeights = testname.equals(TEST_NAME3) || testname.equals(TEST_NAME6) || testname.equals(TEST_NAME7);
- 			    String opcode = Instruction.SP_INST_PREFIX+((rep || !noWeights)?WeightedSquaredLossR.OPCODE : WeightedSquaredLoss.OPCODE);	            
-			    Assert.assertTrue("Rewrite not applied.",Statistics.getCPHeavyHitterOpCodes().contains(opcode));
+			runTest(true, false, null, -1);
+			runRScript(true);
+
+			// compare matrices
+			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir("R");
+			HashMap<CellIndex, Double> rfile = readRMatrixFromExpectedDir("R");
+			TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
+			checkDMLMetaDataFile("R", new MatrixCharacteristics(1, 1, 1, 1));
+
+			// check statistics for right operator in cp
+			if(instType == ExecType.CP && rewrites)
+				Assert.assertTrue("Rewrite not applied.",
+					Statistics.getCPHeavyHitterOpCodes().contains(WeightedSquaredLoss.OPCODE_CP));
+			else if(instType == ExecType.SPARK && rewrites) {
+				boolean noWeights = testname.equals(TEST_NAME3) || testname.equals(TEST_NAME6) ||
+					testname.equals(TEST_NAME7);
+				String opcode = Instruction.SP_INST_PREFIX +
+					((rep || !noWeights) ? WeightedSquaredLossR.OPCODE : WeightedSquaredLoss.OPCODE);
+				Assert.assertTrue("Rewrite not applied.", Statistics.getCPHeavyHitterOpCodes().contains(opcode));
 			}
 		}
-		finally
-		{
+		finally {
 			rtplatform = platformOld;
 			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = rewritesOld;
 			QuaternaryOp.FORCE_REPLICATION = forceOld;
 		}
-	}	
+	}
 }

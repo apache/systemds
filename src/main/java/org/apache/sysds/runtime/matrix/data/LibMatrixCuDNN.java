@@ -275,9 +275,8 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 		ec.allocateGPUMatrixObject(outputName, in1.getNumRows(), in1.getNumColumns());
 		out.getGPUObject(gCtx).allocateAndFillDense(0);
 		Pointer dstPointer = getDensePointerForCuDNN(gCtx, out, instName);
-		JCudnn.cudnnSoftmaxForward(gCtx.getCudnnHandle(), CUDNN_SOFTMAX_ACCURATE, CUDNN_SOFTMAX_MODE_CHANNEL, 
-                one(), tensorDesc, srcPointer,
-                zero(), tensorDesc, dstPointer);
+		JCudnn.cudnnSoftmaxForward(gCtx.getCudnnHandle(), CUDNN_SOFTMAX_ACCURATE, CUDNN_SOFTMAX_MODE_CHANNEL, one(),
+			tensorDesc, srcPointer, zero(), tensorDesc, dstPointer);
 		cudnnDestroyTensorDescriptor(tensorDesc);
 	}
 	

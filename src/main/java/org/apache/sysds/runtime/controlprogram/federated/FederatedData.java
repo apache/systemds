@@ -148,7 +148,7 @@ public class FederatedData {
 			throw new DMLRuntimeException("Federated datatype \"" + _dataType.toString() + "\" is not supported.");
 		_varID = id;
 		FederatedRequest request = (mtd != null) ? new FederatedRequest(RequestType.READ_VAR, id,
-				mtd) : new FederatedRequest(RequestType.READ_VAR, id);
+			mtd) : new FederatedRequest(RequestType.READ_VAR, id);
 		request.appendParam(_filepath);
 		request.appendParam(_dataType.name());
 		return executeFederatedOperation(request);
@@ -179,7 +179,7 @@ public class FederatedData {
 	 * @return the response
 	 */
 	public static Future<FederatedResponse> executeFederatedOperation(InetSocketAddress address,
-																	  FederatedRequest... request) {
+		FederatedRequest... request) {
 		return executeFederatedOperation(address, 1, request);
 	}
 
@@ -233,7 +233,7 @@ public class FederatedData {
 	}
 
 	private static ChannelInitializer<SocketChannel> createChannel(InetSocketAddress address,
-																   DataRequestHandler handler) {
+		DataRequestHandler handler) {
 		final int timeout = ConfigurationManager.getFederatedTimeout();
 		final boolean ssl = ConfigurationManager.isFederatedSSL();
 
@@ -353,7 +353,7 @@ public class FederatedData {
 	public static class FederatedRequestEncoder extends ObjectEncoder {
 		@Override
 		protected ByteBuf allocateBuffer(ChannelHandlerContext ctx, Serializable msg, boolean preferDirect)
-				throws Exception {
+			throws Exception {
 			int initCapacity = 256; // default initial capacity
 			if(msg instanceof FederatedRequest[]) {
 				initCapacity = 0;

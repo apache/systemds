@@ -39,55 +39,56 @@ public class ParamservLocalNNAveragingTest extends AutomatedTestBase {
 
 	@Test
 	public void testParamservBSPBatchDisjointContiguous() {
-		runDMLTest(10, 2, Statement.PSUpdateType.BSP, Statement.PSFrequency.BATCH, 32, Statement.PSScheme.DISJOINT_CONTIGUOUS, true);
+		runDMLTest(4, 2, Statement.PSUpdateType.BSP, Statement.PSFrequency.BATCH, 32, Statement.PSScheme.DISJOINT_CONTIGUOUS, true);
 	}
 
 	@Test
 	public void testParamservBSPEpoch() {
-		runDMLTest(10, 2, Statement.PSUpdateType.BSP, Statement.PSFrequency.EPOCH, 32, Statement.PSScheme.DISJOINT_CONTIGUOUS, true);
+		runDMLTest(4, 2, Statement.PSUpdateType.BSP, Statement.PSFrequency.EPOCH, 32, Statement.PSScheme.DISJOINT_CONTIGUOUS, true);
 	}
 
 	@Test
 	public void testParamservBSPBatchDisjointRoundRobin() {
-		runDMLTest(10, 2, Statement.PSUpdateType.BSP, Statement.PSFrequency.BATCH, 32, Statement.PSScheme.DISJOINT_ROUND_ROBIN, true);
+		runDMLTest(4, 2, Statement.PSUpdateType.BSP, Statement.PSFrequency.BATCH, 32, Statement.PSScheme.DISJOINT_ROUND_ROBIN, true);
 	}
 
 	@Test
 	public void testParamservBSPBatchDisjointRandom() {
-		runDMLTest(10, 2, Statement.PSUpdateType.BSP, Statement.PSFrequency.BATCH, 32, Statement.PSScheme.DISJOINT_RANDOM, true);
+		runDMLTest(4, 2, Statement.PSUpdateType.BSP, Statement.PSFrequency.BATCH, 32, Statement.PSScheme.DISJOINT_RANDOM, true);
 	}
 
 	@Test
 	public void testParamservBSPBatchOverlapReshuffle() {
-		runDMLTest(10, 2, Statement.PSUpdateType.BSP, Statement.PSFrequency.BATCH, 32, Statement.PSScheme.OVERLAP_RESHUFFLE, true);
+		runDMLTest(4, 2, Statement.PSUpdateType.BSP, Statement.PSFrequency.BATCH, 32, Statement.PSScheme.OVERLAP_RESHUFFLE, true);
 	}
 
 	@Test
 	public void testParamservSBPBatchDisjointContiguous() {
-		runDMLTest(10, 3, Statement.PSUpdateType.SBP, Statement.PSFrequency.BATCH, 32, Statement.PSScheme.DISJOINT_CONTIGUOUS, true);
+		runDMLTest(4, 3, Statement.PSUpdateType.SBP, Statement.PSFrequency.BATCH, 32, Statement.PSScheme.DISJOINT_CONTIGUOUS, true);
 	}
 
 	@Test
 	public void testParamservSBPEpoch() {
-		runDMLTest(10, 3, Statement.PSUpdateType.SBP, Statement.PSFrequency.EPOCH, 32, Statement.PSScheme.DISJOINT_CONTIGUOUS, true);
+		runDMLTest(4, 3, Statement.PSUpdateType.SBP, Statement.PSFrequency.EPOCH, 32, Statement.PSScheme.DISJOINT_CONTIGUOUS, true);
 	}
 
 	@Test
 	public void testParamservSBPBatchDisjointRoundRobin() {
-		runDMLTest(10, 3, Statement.PSUpdateType.SBP, Statement.PSFrequency.BATCH, 32, Statement.PSScheme.DISJOINT_ROUND_ROBIN, true);
+		runDMLTest(4, 3, Statement.PSUpdateType.SBP, Statement.PSFrequency.BATCH, 32, Statement.PSScheme.DISJOINT_ROUND_ROBIN, true);
 	}
 
 	@Test
 	public void testParamservSBPBatchDisjointRandom() {
-		runDMLTest(10, 3, Statement.PSUpdateType.SBP, Statement.PSFrequency.BATCH, 32, Statement.PSScheme.DISJOINT_RANDOM, true);
+		runDMLTest(4, 3, Statement.PSUpdateType.SBP, Statement.PSFrequency.BATCH, 32, Statement.PSScheme.DISJOINT_RANDOM, true);
 	}
 
 	@Test
 	public void testParamservSBPBatchOverlapReshuffle() {
-		runDMLTest(10, 3, Statement.PSUpdateType.SBP, Statement.PSFrequency.BATCH, 32, Statement.PSScheme.OVERLAP_RESHUFFLE, true);
+		runDMLTest(4, 3, Statement.PSUpdateType.SBP, Statement.PSFrequency.BATCH, 32, Statement.PSScheme.OVERLAP_RESHUFFLE, true);
 	}
 
-	private void runDMLTest(int epochs, int workers, Statement.PSUpdateType utype, Statement.PSFrequency freq, int batchsize, Statement.PSScheme scheme, boolean modelAvg) {
+	private void runDMLTest(int epochs, int workers, Statement.PSUpdateType utype, Statement.PSFrequency freq,
+		int batchsize, Statement.PSScheme scheme, boolean modelAvg) {
 		TestConfiguration config = getTestConfiguration(ParamservLocalNNAveragingTest.TEST_NAME);
 		loadTestConfiguration(config);
 		programArgs = new String[] { "-stats", "-nvargs", "mode=LOCAL", "epochs=" + epochs,

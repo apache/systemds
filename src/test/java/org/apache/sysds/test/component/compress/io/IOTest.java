@@ -177,11 +177,12 @@ public class IOTest {
 
 	protected static void writeAndReadR(MatrixBlock mb, int blen, int rep) throws Exception {
 		try {
-
 			String filename = getName();
-			WriterCompressed.writeCompressedMatrixToHDFS(mb, filename, blen);
 			File f = new File(filename);
-			assertTrue(f.isFile() || f.isDirectory());
+			f.delete();
+			WriterCompressed.writeCompressedMatrixToHDFS(mb, filename, blen);
+			File f2 = new File(filename);
+			assertTrue(f2.isFile() || f2.isDirectory());
 			MatrixBlock mbr = IOCompressionTestUtils.read(filename, mb.getNumRows(), mb.getNumColumns(), blen);
 			IOCompressionTestUtils.verifyEquivalence(mb, mbr);
 		}

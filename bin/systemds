@@ -244,20 +244,6 @@ if  echo "$1" | grep -q "jar"; then
     SCRIPT_FILE=$1
     shift
   fi
-elif echo "$1" | grep -q "CWORKER"; then
-  CWORKER=1
-  shift
-  if echo "$1" | grep -q "jar"; then
-    SYSTEMDS_JAR_FILE=$1
-    shift
-  fi
-  PORT=$1
-  re='^[0-9]+$'
-  if ! [[ $PORT =~ $re ]] ; then
-    echo "error: Port is not a number"
-    printUsage
-  fi
-  shift
 elif echo "$1" | grep -q "WORKER"; then
   WORKER=1
   shift
@@ -300,10 +286,6 @@ fi
 
 if [ -z "$WORKER" ] ; then
   WORKER=0
-fi
-
-if [ -z "$CWORKER" ] ; then
-  CWORKER=0
 fi
 
 if [ -z "$FEDMONITORING" ] ; then
@@ -454,21 +436,6 @@ if [ $WORKER == 1 ]; then
   $LOG4JPROPFULL \
   org.apache.sysds.api.DMLScript \
   -w $PORT \
-  $CONFIG_FILE \
-  $*"
-  print_out "Executing command: $CMD"
-  print_out  ""
-
-elif [ $CWORKER == 1 ]; then
-  print_out "#"
-  print_out "#  starting Compressed Federated worker on port $PORT"
-  print_out "###############################################################################"
-  CMD=" \
-  java $SYSTEMDS_STANDALONE_OPTS \
-  -cp $CLASSPATH \
-  $LOG4JPROPFULL \
-  org.apache.sysds.api.DMLScript \
-  -cw $PORT \
   $CONFIG_FILE \
   $*"
   print_out "Executing command: $CMD"

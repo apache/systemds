@@ -72,7 +72,6 @@ public class DMLOptions {
 	public boolean              lineage_estimate = false;         // whether estimate reuse benefits
 	public boolean              lineage_debugger = false;         // whether enable lineage debugger
 	public boolean              fedWorker     = false;
-	public boolean				fedCompressedWorker	= false;
 	public int                  fedWorkerPort = -1;
 	public boolean              fedMonitoring = false;
 	public int                  fedMonitoringPort = -1;
@@ -112,7 +111,6 @@ public class DMLOptions {
 			", help=" + help +
 			", lineage=" + lineage +
 			", w=" + fedWorker +
-			", cw=" + fedCompressedWorker +
 			", federatedCompilation=" + federatedCompilation +
 			", noFedRuntimeConversion=" + noFedRuntimeConversion +
 			", seed=" + seed + 
@@ -237,11 +235,6 @@ public class DMLOptions {
 		if (line.hasOption("w")){
 			dmlOptions.fedWorker = true;
 			dmlOptions.fedWorkerPort = Integer.parseInt(line.getOptionValue("w"));
-		}
-
-		if (line.hasOption("cw")){
-			dmlOptions.fedCompressedWorker = true;
-			dmlOptions.fedWorkerPort = Integer.parseInt(line.getOptionValue("cw"));
 		}
 
 		if (line.hasOption("fedMonitoring")) {
@@ -379,9 +372,6 @@ public class DMLOptions {
 		Option fedOpt = OptionBuilder
 			.withDescription("starts a federated worker with the given argument as the port.")
 			.hasOptionalArg().create("w");
-		Option compFedOpt = OptionBuilder
-				.withDescription("starts a compressed federated worker with the given argument as the port.")
-				.hasOptionalArg().create("cw");
 		Option monitorOpt = OptionBuilder
 			.withDescription("Starts a federated monitoring backend with the given argument as the port.")
 			.hasOptionalArg().create("fedMonitoring");
@@ -414,7 +404,6 @@ public class DMLOptions {
 		options.addOption(debugOpt);
 		options.addOption(lineageOpt);
 		options.addOption(fedOpt);
-		options.addOption(compFedOpt);
 		options.addOption(monitorOpt);
 		options.addOption(registerMonitorOpt);
 		options.addOption(monitorIdOpt);
@@ -430,7 +419,6 @@ public class DMLOptions {
 			.addOption(cleanOpt)
 			.addOption(helpOpt)
 			.addOption(fedOpt)
-			.addOption(compFedOpt)
 			.addOption(monitorOpt)
 			.addOption(pythonOpt);
 		fileOrScriptOpt.setRequired(true);

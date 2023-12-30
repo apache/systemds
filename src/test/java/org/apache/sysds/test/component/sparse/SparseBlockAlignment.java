@@ -167,7 +167,7 @@ public class SparseBlockAlignment extends AutomatedTestBase
 
 	@Test
 	public void testSparseBlockDCSR3Neg()  {
-		runSparseBlockScanTest(SparseBlock.Type.COO, sparsity3, false);
+		runSparseBlockScanTest(SparseBlock.Type.DCSR, sparsity3, false);
 	}
 	
 	private void runSparseBlockScanTest( SparseBlock.Type btype, double sparsity, boolean positive)

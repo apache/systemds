@@ -192,33 +192,48 @@ public class SparseBlockGetFirstIndex extends AutomatedTestBase
 	}
 
 	@Test
+	public void testSparseBlockDCSR1GT()  {
+		runSparseBlockGetFirstIndexTest(SparseBlock.Type.DCSR, sparsity1, IndexType.GT);
+	}
+
+	@Test
+	public void testSparseBlockDCSR2GT()  {
+		runSparseBlockGetFirstIndexTest(SparseBlock.Type.DCSR, sparsity2, IndexType.GT);
+	}
+
+	@Test
+	public void testSparseBlockDCSR3GT()  {
+		runSparseBlockGetFirstIndexTest(SparseBlock.Type.DCSR, sparsity3, IndexType.GT);
+	}
+
+	@Test
 	public void testSparseBlockDCSR1GTE()  {
 		runSparseBlockGetFirstIndexTest(SparseBlock.Type.DCSR, sparsity1, IndexType.GTE);
 	}
 
 	@Test
 	public void testSparseBlockDCSR2GTE()  {
-		runSparseBlockGetFirstIndexTest(SparseBlock.Type.COO, sparsity2, IndexType.GTE);
+		runSparseBlockGetFirstIndexTest(SparseBlock.Type.DCSR, sparsity2, IndexType.GTE);
 	}
 
 	@Test
 	public void testSparseBlockDCSR3GTE()  {
-		runSparseBlockGetFirstIndexTest(SparseBlock.Type.COO, sparsity3, IndexType.GTE);
+		runSparseBlockGetFirstIndexTest(SparseBlock.Type.DCSR, sparsity3, IndexType.GTE);
 	}
 
 	@Test
 	public void testSparseBlockDCSR1LTE()  {
-		runSparseBlockGetFirstIndexTest(SparseBlock.Type.COO, sparsity1, IndexType.LTE);
+		runSparseBlockGetFirstIndexTest(SparseBlock.Type.DCSR, sparsity1, IndexType.LTE);
 	}
 
 	@Test
 	public void testSparseBlockDCSR2LTE()  {
-		runSparseBlockGetFirstIndexTest(SparseBlock.Type.COO, sparsity2, IndexType.LTE);
+		runSparseBlockGetFirstIndexTest(SparseBlock.Type.DCSR, sparsity2, IndexType.LTE);
 	}
 
 	@Test
 	public void testSparseBlockDCSR3LTE()  {
-		runSparseBlockGetFirstIndexTest(SparseBlock.Type.COO, sparsity3, IndexType.LTE);
+		runSparseBlockGetFirstIndexTest(SparseBlock.Type.DCSR, sparsity3, IndexType.LTE);
 	}
 	
 	private void runSparseBlockGetFirstIndexTest( SparseBlock.Type btype, double sparsity, IndexType itype)

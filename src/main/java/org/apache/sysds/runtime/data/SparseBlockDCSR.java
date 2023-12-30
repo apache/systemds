@@ -931,7 +931,7 @@ public class SparseBlockDCSR extends SparseBlock
         if (colIdx < _rowptr[rowIdx])
             return -1;
 
-        return colIdx;
+        return colIdx - _rowptr[rowIdx];
     }
 
     @Override
@@ -960,18 +960,18 @@ public class SparseBlockDCSR extends SparseBlock
         if (rowIdx < 0)
             return -1;
 
-        int colIdx = Arrays.binarySearch(_colidx, _rowptr[rowIdx], _rowptr[rowIdx+1], c) + 1;
+        int colIdx = Arrays.binarySearch(_colidx, _rowptr[rowIdx], _rowptr[rowIdx+1], c);
 
         if (colIdx >= 0)
             colIdx++;
         else
             colIdx = -colIdx - 1;
 
-        // There is no element greater or equal in this row
+        // There is no element great in this row
         if (colIdx >= _rowptr[rowIdx+1])
             return -1;
 
-        return colIdx;
+        return colIdx - _rowptr[rowIdx];
     }
 
     @Override

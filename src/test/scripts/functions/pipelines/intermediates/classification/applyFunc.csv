@@ -1,3 +1,3 @@
-outlierBySdApply,forward_fill,fillDefaultApply,imputeByMedianApply,fillDefaultApply,fillDefaultApply,forward_fill,dummycodingApply,0,0,0,0,0,0,0,0,0,0
-outlierBySdApply,forward_fill,fillDefaultApply,imputeByMedianApply,fillDefaultApply,fillDefaultApply,forward_fill,dummycodingApply,0,0,0,0,0,0,0,0,0,0
-outlierBySdApply,forward_fill,fillDefaultApply,imputeByMedianApply,fillDefaultApply,fillDefaultApply,forward_fill,dummycodingApply,0,0,0,0,0,0,0,0,0,0
+forward_fill,imputeByMedianApply,winsorizeApply,NA,dummycodingApply,0,0,0,0,0,0,0,0,0,0,0,0,0
+forward_fill,imputeByMedianApply,NA,dummycodingApply,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+scaleApply,forward_fill,scaleApply,NA,NA,dummycodingApply,0,0,0,0,0,0,0,0,0,0,0,0

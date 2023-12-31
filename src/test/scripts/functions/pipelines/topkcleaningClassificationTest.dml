@@ -52,14 +52,12 @@ else {
 
 if(nrow(metaInfo) < 2)
   stop("incomplete meta info")
-
 metaInfo = metaInfo[, 2:ncol(metaInfo)]
 # # # split in train/test 70/30
-
 [topKPipelines, topKHyperParams, topKScores, baseLineScore, evalFunHp, applyFunc] = topk_cleaning(dataTrain=trainData, dataTest=testData, metaData=metaInfo, primitives=primitives, parameters=param, 
-  refSol = frame(["imputeByMean", "scale", "dummycoding"], rows=1, cols=3),
-  evaluationFunc=evalFunc, evalFunHp=as.matrix(NaN),topK=topK, resource_val=resources, enablePruning=TRUE,
-  expectedIncrease=expectedIncrease, seed = 23, max_iter=max_iter, cv=testCV, cvk=cvk, sample=sample, isLastLabel=TRUE, correctTypos=FALSE) 
+  refSol = frame(["imputeByMean", "scale"], rows=1, cols=2), tfspec="NA",
+  evaluationFunc=evalFunc, evalFunHp=as.matrix(NaN),topK=topK, resource_val=resources, enablePruning=TRUE, OHE=TRUE,
+  expectedIncrease=expectedIncrease, seed = 41, max_iter=max_iter, cv=testCV, cvk=cvk, sample=sample, isLastLabel=TRUE, correctTypos=FALSE) 
 
 write(topKPipelines, output+"/pip.csv", format="csv")
 write(topKHyperParams, output+"/hp.csv", format="csv")
@@ -74,7 +72,7 @@ write(result, $O)
 # UDF for evaluation  
 # choice of parameters provided by API, X, Y, clone_X, evalFunHp (hyper-param), trainML (boolean for optimizing hp internally or passed by externally )
 evalClassification = function(Matrix[Double] X, Matrix[Double] Y, Matrix[Double] Xtest, Matrix[Double] Ytest, Matrix[Double] Xorig=as.matrix(0),
-  Matrix[Double] evalFunHp)
+  Matrix[Double] evalFunHp, String tfspec="NA")
 return(Matrix[Double] output, Matrix[Double] error)
 {
   if(is.na(as.scalar(evalFunHp[1,1])))
@@ -144,9 +142,45 @@ return(Matrix[Double] output, Matrix[Double] error)
   }
   output = cbind(accuracy, evalFunHp)
 }
+
 accuracyMSVM = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] B) return (Matrix[Double] err) {
   yhat = msvmPredict(X=X, W=B);
   yhat = rowIndexMax(yhat)
   acc = mean(yhat == y)
   err = as.matrix(1-(acc));
+}
+
+
+evalClassificationDT = function(Matrix[Double] X, Matrix[Double] Y, Matrix[Double] Xtest, Matrix[Double] Ytest, Matrix[Double] Xorig=as.matrix(0),
+  Matrix[Double] evalFunHp, String tfspec)
+return(Matrix[Double] output)
+{
+  
+  [X, meta] = transformencode(target=as.frame(X), spec=tfspec);
+  Xtest = transformapply(target=as.frame(Xtest), spec = tfspec, meta=meta)
+  X = imputeByMode(X);
+  Xtest = imputeByMode(Xtest);
+  X = replace(target=X, pattern=0, replacement=1)
+  Xtest = replace(target=Xtest, pattern=0, replacement=1)
+  
+  print("column minimums \n"+toString(colMins(X)))
+  R = cbind(Xorig, as.matrix(1)) + 1
+  print(toString(R))
+  if(min(Y) == max(Y))
+  {
+    accuracy = as.matrix(0)
+    a = 0
+  }
+  else {
+    M = decisionTree(X = X, y = Y, ctypes = R,  max_features=1, min_split=4, min_leaf=2, verbose=FALSE);
+    [accuracy, err] = accuracyDT(X=Xtest, y=Ytest, M=M, R=R);
+  }
+  output = cbind(accuracy, evalFunHp)
+}
+
+accuracyDT = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] M, Matrix[Double] R) 
+  return (Matrix[Double] acc, Matrix[Double] err) {
+  yhat = decisionTreePredict(X=X, ctypes=R,  M=M)
+  acc = as.matrix(mean(yhat == y)) * 100
+  err = 1-(acc);
 }

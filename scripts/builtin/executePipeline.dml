@@ -101,7 +101,6 @@ s_executePipeline = function(Frame[String] pipeline, Matrix[Double] Xtrain,  Mat
     else {
       print("not applying operation executeFlag = 0")
     }
-    
     if(ncol(Xtest) == d & nrow(Xtest) == nrow(XtestClone) & ncol(hpForPruning) > 1) {
       changesSingle = sum(abs(replace(target=Xtest, pattern=NaN, replacement=0) - replace(target=XtestClone, pattern=NaN, replacement=0))  > 0.001 )
       changesAll  = sum(abs(replace(target=Xtest, pattern=NaN, replacement=0) - replace(target=Xorig, pattern=NaN, replacement=0))  > 0.001 )
@@ -204,7 +203,7 @@ return (Matrix[Double] X)
     # X without numerics
     Xcat = removeEmpty(target=originalX, margin="cols", select=mask)
     nanMask = is.na(Xcat)
-    Xcat = replace(target = Xcat, pattern = NaN, replacement = -1111)
+    Xcat = abs(round(replace(target = Xcat, pattern = NaN, replacement = 4444)))
     
     # reconstruct the original matrix
     p = table(seq(1, ncol(nX)), removeEmpty(target=seq(1, ncol(mask)), margin="rows", 
@@ -214,16 +213,16 @@ return (Matrix[Double] X)
     X = (nX %*% p) + (Xcat %*% q) 
 
     X = replace(target = X, pattern = maxDummy, replacement = NaN)
-    X = replace(target = X, pattern = -1111, replacement = NaN)
+    X = replace(target = X, pattern = 4444, replacement = NaN)
   }
   else if(dataFlag == 1 & (sum(mask) > 0) & (sum(mask) != ncol(originalX)))
   {
-    maxDummy = max(replace(target=nX, pattern=NaN, replacement=0)) + 1
-    nX = replace(target = nX, pattern = NaN, replacement = maxDummy)
+    maxDummy = abs(round(max(replace(target=nX, pattern=NaN, replacement=0)) + 1))
+    nX = abs(round(replace(target = nX, pattern = NaN, replacement = maxDummy)))
     # X without categorical
     Xnum = removeEmpty(target=originalX, margin="cols", select=(mask==0))
     nanMask = is.na(Xnum)
-    Xnum = replace(target = Xnum, pattern = NaN, replacement = -1111)
+    Xnum = replace(target = Xnum, pattern = NaN, replacement = 4444)
     # reconstruct the original matrix
     p = table(seq(1, ncol(Xnum)), removeEmpty(target=seq(1, ncol(mask)), margin="rows", 
     select=t(mask==0)), ncol(Xnum), ncol(originalX))
@@ -231,7 +230,7 @@ return (Matrix[Double] X)
     select=t(mask)), ncol(nX), ncol(originalX))
     X = (nX %*% q) + (Xnum %*% p) 
     X = replace(target = X, pattern = maxDummy, replacement = NaN)
-    X = replace(target = X, pattern = -1111, replacement = NaN)
+    X = replace(target = X, pattern = 4444, replacement = NaN)
   
   }
   else X = nX
@@ -247,14 +246,14 @@ return (Matrix[Double] X)
 #######################################################################
 
 dummycoding = function(Matrix[Double] X,  Matrix[Double] mask)
-return (Matrix[Double] X, String jspec, Frame[Unknown] meta) {
-
+return (Matrix[Double] X, String jspec, Frame[Unknown] meta) {  
+  
   meta = as.frame("NULL")
   jspec = ""
   if(sum(mask) > 0)
   {
     X = replace(target=X, pattern=NaN, replacement=0)
-    idx = vectorToCsv(mask)
+    idx = vectorToCsv(mask, ncol(X))
     # specifications for one-hot encoding of categorical features
     jspec = "{ids:true, dummycode:["+idx+"]}";
     # OHE of categorical features
@@ -268,6 +267,7 @@ return (Matrix[Double] Y) {
 
   if(jspec != "")
   {
+   X = replace(target=X, pattern=NaN, replacement=0)
    Y = transformapply(target=as.frame(X), spec=jspec, meta=meta);
   }
   else Y = X
@@ -286,6 +286,7 @@ return (Matrix[Double] X, Matrix[Double] fillMatrix)
   if(sum(fdMask) > 0)
   {
     t = replace(target=X, pattern=NaN, replacement=1)
+    t = replace(target=t, pattern=0, replacement=1)
     fdMask = removeEmpty(target=fdMask, margin="cols")
     FD = discoverFD(X=t, Mask=fdMask, threshold=threshold)
     FD = (diag(matrix(1, rows=nrow(FD), cols=1)) ==0) * FD 

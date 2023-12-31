@@ -168,7 +168,7 @@ public class SparseBlockDCSR extends SparseBlock
         }
     }
 
-    /**
+    /*
      * Copy constructor old sparse row representation.
      * @param rows array of sparse rows
      * @param nnz number of non-zeroes
@@ -195,7 +195,7 @@ public class SparseBlockDCSR extends SparseBlock
         }
     }*/
 
-    /**
+    /*
      * Copy constructor for COO representation
      *
      * @param rows number of rows
@@ -221,7 +221,7 @@ public class SparseBlockDCSR extends SparseBlock
         Arrays.fill(_ptr, rlast+1, numRows()+1, nnz);
     }*/
 
-    /**
+    /*
      * Copy constructor for given array of column indexes, which
      * identifies rows by position and implies values of 1.
      *
@@ -248,7 +248,7 @@ public class SparseBlockDCSR extends SparseBlock
         }
     }*/
 
-    /**
+    /*
      * Initializes the CSR sparse block from an ordered input
      * stream of ultra-sparse ijv triples.
      *
@@ -279,7 +279,7 @@ public class SparseBlockDCSR extends SparseBlock
         _size = nnz;
     }*/
 
-    /**
+    /*
      * Initializes the CSR sparse block from an ordered input
      * stream of sparse rows (rownnz, jv-pairs*).
      *
@@ -675,7 +675,7 @@ public class SparseBlockDCSR extends SparseBlock
     }
 
     // TODO: Is it OK if I leave this CSR-specific method out? Haven't looked at it
-    /**
+    /*
      * Inserts a sorted row-major array of non-zero values into the row and column
      * range [rl,ru) and [cl,cu). Note: that this is a CSR-specific method to address
      * performance issues due to repeated re-shifting on update-in-place.
@@ -753,7 +753,7 @@ public class SparseBlockDCSR extends SparseBlock
     }*/
 
     // TODO: Is it OK if I leave this CSR-specific method out? Haven't looked at it
-    /**
+    /*
      * Inserts a sparse block into the row and column range [rl,ru) and [cl,cu).
      * Note: that this is a CSR-specific method to address  performance issues
      * due to repeated re-shifting on update-in-place.

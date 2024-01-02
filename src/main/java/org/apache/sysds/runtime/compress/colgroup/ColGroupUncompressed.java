@@ -22,13 +22,12 @@ package org.apache.sysds.runtime.compress.colgroup;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.runtime.DMLRuntimeException;
-import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
-import org.apache.sysds.runtime.compress.CompressedMatrixBlockFactory;
 import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.compress.CompressionSettingsBuilder;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
@@ -40,6 +39,7 @@ import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.compress.colgroup.scheme.ICLAScheme;
 import org.apache.sysds.runtime.compress.colgroup.scheme.SchemeFactory;
 import org.apache.sysds.runtime.compress.cost.ComputationCostEstimator;
+import org.apache.sysds.runtime.compress.estim.CompressedSizeInfo;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
 import org.apache.sysds.runtime.compress.estim.EstimationFactors;
 import org.apache.sysds.runtime.compress.estim.encoding.EncodingFactory;
@@ -208,6 +208,27 @@ public class ColGroupUncompressed extends AColGroup {
 	}
 
 	private void decompressToDenseBlockDenseDataAllColumns(DenseBlock db, int rl, int ru, int offR) {
+		if(db.isContiguous() && _data.getDenseBlock().isContiguous())
+			decompressToDenseBlockDenseDataAllColumnsContiguous(db, rl, ru, offR);
+		else
+			decompressToDenseBlockDenseDataAllColumnsGeneric(db, rl, ru, offR);
+	}
+
+	private void decompressToDenseBlockDenseDataAllColumnsContiguous(DenseBlock db, int rl, int ru, int offR) {
+
+		final int nCol = _data.getNumColumns();
+		final double[] a = _data.getDenseBlockValues();
+		final double[] c = db.values(0);
+		final int as = rl * nCol;
+		final int cs = (rl + offR) * nCol;
+		final int sz = ru * nCol - rl * nCol;
+		for(int i = 0; i < sz; i += 64) {
+			LibMatrixMult.vectAdd(a, c, as + i, cs + i, Math.min(64, sz - i));
+		}
+
+	}
+
+	private void decompressToDenseBlockDenseDataAllColumnsGeneric(DenseBlock db, int rl, int ru, int offR) {
 		int offT = rl + offR;
 		final int nCol = _colIndexes.size();
 		DenseBlock tb = _data.getDenseBlock();
@@ -532,7 +553,7 @@ public class ColGroupUncompressed extends AColGroup {
 		// tsmm but only upper triangle.
 		LibMatrixMult.matrixMultTransposeSelf(_data, tmp, true, false);
 
-		if(tmp.isInSparseFormat()){
+		if(tmp.isInSparseFormat()) {
 			final int numColumns = ret.getNumColumns();
 			final double[] result = ret.getDenseBlockValues();
 			final SparseBlock sb = tmp.getSparseBlock();
@@ -546,10 +567,10 @@ public class ColGroupUncompressed extends AColGroup {
 				double[] aval = sb.values(row);
 				for(int j = apos; j < alen; j++)
 					result[offRet + _colIndexes.get(aix[j])] += aval[j];
-				
+
 			}
 		}
-		else{
+		else {
 			// copy that upper triangle part to ret
 			final int numColumns = ret.getNumColumns();
 			final double[] result = ret.getDenseBlockValues();
@@ -629,8 +650,8 @@ public class ColGroupUncompressed extends AColGroup {
 	private void leftMultByAColGroupUncompressed(ColGroupUncompressed lhs, MatrixBlock result) {
 		final MatrixBlock tmpRet = new MatrixBlock(lhs.getNumCols(), _colIndexes.size(), 0);
 		final int k = InfrastructureAnalyzer.getLocalParallelism();
-		
-		if(lhs._data.getNumColumns() != 1){
+
+		if(lhs._data.getNumColumns() != 1) {
 			LOG.warn("Inefficient Left Matrix Multiplication with transpose of left hand side : t(l) %*% r");
 		}
 		// multiply to temp
@@ -866,30 +887,43 @@ public class ColGroupUncompressed extends AColGroup {
 
 	@Override
 	public AColGroup recompress() {
-		MatrixBlock mb = CompressedMatrixBlockFactory.compress(_data).getLeft();
-		if(mb instanceof CompressedMatrixBlock) {
-			CompressedMatrixBlock cmb = (CompressedMatrixBlock) mb;
-			List<AColGroup> gs = cmb.getColGroups();
-			if(gs.size() > 1) {
-				LOG.error("The uncompressed column group did compress into multiple groups");
-				return this;
-			}
-			else {
-				return gs.get(0).copyAndSet(_colIndexes);
-			}
-		}
-		else
-			return this;
+
+		final List<CompressedSizeInfoColGroup> es = new ArrayList<>();
+		final CompressionSettings cs = new CompressionSettingsBuilder().create();
+		final EstimationFactors f = new EstimationFactors(_data.getNumRows(), _data.getNumRows(), _data.getSparsity());
+		es.add(new CompressedSizeInfoColGroup( //
+			ColIndexFactory.create(_data.getNumColumns()), f, 312152, CompressionType.DDC));
+		final CompressedSizeInfo csi = new CompressedSizeInfo(es);
+		final List<AColGroup> comp = ColGroupFactory.compressColGroups(_data, csi, cs);
+
+		return comp.get(0).copyAndSet(_colIndexes);
+
+		// MatrixBlock mb = CompressedMatrixBlockFactory.compress(_data).getLeft();
+		// if(mb instanceof CompressedMatrixBlock) {
+		// CompressedMatrixBlock cmb = (CompressedMatrixBlock) mb;
+		// List<AColGroup> gs = cmb.getColGroups();
+		// if(gs.size() > 1) {
+		// LOG.error("The uncompressed column group did compress into multiple groups");
+		// return this;
+		// }
+		// else {
+		// return gs.get(0).copyAndSet(_colIndexes);
+		// }
+		// }
+		// else
+		// return this;
 	}
 
 	@Override
 	public CompressedSizeInfoColGroup getCompressionInfo(int nRow) {
-		final IEncode map = EncodingFactory.createFromMatrixBlock(_data, false,
-			ColIndexFactory.create(_data.getNumColumns()));
+		// final IEncode map = EncodingFactory.createFromMatrixBlock(_data, false,
+		// 	ColIndexFactory.create(_data.getNumColumns()));
 		final int _numRows = _data.getNumRows();
 		final CompressionSettings _cs = new CompressionSettingsBuilder().create();// default settings
-		final EstimationFactors em = map.extractFacts(_numRows, _data.getSparsity(), _data.getSparsity(), _cs);
-		return new CompressedSizeInfoColGroup(_colIndexes, em, _cs.validCompressions, map);
+		final EstimationFactors em =
+			new EstimationFactors(_numRows, _numRows, 1, null, _numRows, _numRows, _numRows, false, false, (double) _numRows / _data.getNonZeros(), (double) _numRows / _data.getNonZeros());
+		// map.extractFacts(_numRows, _data.getSparsity(), _data.getSparsity(), _cs);
+		return new CompressedSizeInfoColGroup(_colIndexes, em, _cs.validCompressions, null);
 	}
 
 	@Override
@@ -905,6 +939,95 @@ public class ColGroupUncompressed extends AColGroup {
 			for(int c = 0; c < _data.getNumColumns(); c++)
 				ret.quickSetValue(r, c, _data.quickGetValue(r, reordering[c]));
 		return create(newColIndex, ret, false);
+	}
+
+	@Override
+	public double getSparsity() {
+		return _data.getSparsity();
+	}
+
+	@Override
+	public AColGroup morph(CompressionType ct, int nRow) {
+		if(ct == getCompType())
+			return this;
+
+		final List<CompressedSizeInfoColGroup> es = new ArrayList<>();
+		final CompressionSettings cs = new CompressionSettingsBuilder().create();
+		final EstimationFactors f = new EstimationFactors(_data.getNumRows(), _data.getNumRows(), _data.getSparsity());
+		es.add(new CompressedSizeInfoColGroup(ColIndexFactory.create(_data.getNumColumns()), f, 312152, ct));
+		final CompressedSizeInfo csi = new CompressedSizeInfo(es);
+		final List<AColGroup> comp = ColGroupFactory.compressColGroups(_data, csi, cs);
+
+		return comp.get(0).copyAndSet(_colIndexes);
+	}
+
+	@Override
+	public void sparseSelection(MatrixBlock selection, MatrixBlock ret, int rl, int ru) {
+		if(_data.isEmpty())
+			return;
+		else if(_data.isInSparseFormat())
+			sparseSelectionSparseColumnGroup(selection, ret, rl, ru);
+		else
+			sparseSelectionDenseColumnGroup(selection, ret, rl, ru);
+	}
+
+	private void sparseSelectionSparseColumnGroup(MatrixBlock selection, MatrixBlock ret, int rl, int ru) {
+
+		final SparseBlock sb = selection.getSparseBlock();
+		final SparseBlock retB = ret.getSparseBlock();
+		final SparseBlock tb = _data.getSparseBlock();
+		for(int r = rl; r < ru; r++) {
+			if(sb.isEmpty(r))
+				continue;
+
+			final int sPos = sb.pos(r);
+			final int rowCompressed = sb.indexes(r)[sPos];
+			if(tb.isEmpty(rowCompressed))
+				continue;
+			final int tPos = tb.pos(rowCompressed);
+			final int tEnd = tb.size(rowCompressed) + tPos;
+			final int[] tIx = tb.indexes(rowCompressed);
+			final double[] tVal = tb.values(rowCompressed);
+			for(int j = tPos; j < tEnd; j++)
+				retB.append(r, _colIndexes.get(tIx[j]), tVal[j]);
+		}
+
+	}
+
+	private void sparseSelectionDenseColumnGroup(MatrixBlock selection, MatrixBlock ret, int rl, int ru) {
+		final SparseBlock sb = selection.getSparseBlock();
+		final SparseBlock retB = ret.getSparseBlock();
+		final DenseBlock tb = _data.getDenseBlock();
+		final int nCol = _colIndexes.size();
+		for(int r = rl; r < ru; r++) {
+			if(sb.isEmpty(r))
+				continue;
+
+			final int sPos = sb.pos(r);
+			final int rowCompressed = sb.indexes(r)[sPos];
+
+			double[] tVal = tb.values(rowCompressed);
+			int tPos = tb.pos(rowCompressed);
+			for(int j = 0; j < nCol; j++)
+				retB.append(r, _colIndexes.get(j), tVal[tPos + j]);
+		}
+	}
+
+	@Override
+	public void decompressToDenseBlockTransposed(DenseBlock db, int rl, int ru) {
+		if(_data.isInSparseFormat())
+			decompressToDenseBlockTransposedSparse(db, rl, ru);
+		else
+			decompressToDenseBlockTransposedDense(db, rl, ru);
+
+	}
+
+	private void decompressToDenseBlockTransposedSparse(DenseBlock db, int rl, int ru) {
+		throw new NotImplementedException();
+	}
+
+	private void decompressToDenseBlockTransposedDense(DenseBlock db, int rl, int ru) {
+		throw new NotImplementedException();
 	}
 
 	@Override

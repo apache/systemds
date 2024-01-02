@@ -65,10 +65,12 @@ public class ColGroupSDCSingleZeros extends ASDCZero {
 	private ColGroupSDCSingleZeros(IColIndex colIndices, int numRows, IDictionary dict, AOffset offsets,
 		int[] cachedCounts) {
 		super(colIndices, numRows, dict, offsets, cachedCounts);
-		if(CompressedMatrixBlock.debug)
+		if(CompressedMatrixBlock.debug) {
 			if(offsets.getSize() * 2 > numRows + 2 && !(dict instanceof PlaceHolderDict))
 				throw new DMLCompressionException("Wrong direction of SDCSingleZero compression should be other way "
 					+ numRows + " vs " + _indexes + "\n" + this);
+			_indexes.verify(_indexes.getSize());
+		}
 	}
 
 	public static AColGroup create(IColIndex colIndices, int numRows, IDictionary dict, AOffset offsets,
@@ -357,8 +359,62 @@ public class ColGroupSDCSingleZeros extends ASDCZero {
 
 	@Override
 	public void preAggregateDense(MatrixBlock m, double[] preAgg, int rl, int ru, int cl, int cu) {
-		if(!m.getDenseBlock().isContiguous())
-			throw new NotImplementedException("Not implemented support for preAggregate non contiguous dense matrix");
+		if(m.getDenseBlock().isContiguous())
+			preAggregateDenseContiguous(m, preAgg, rl, ru, cl, cu);
+		else
+			preAggregateDenseGeneric(m, preAgg, rl, ru, cl, cu);
+	}
+
+	private void preAggregateDenseGeneric(MatrixBlock m, double[] preAgg, int rl, int ru, int cl, int cu) {
+		final AIterator it = _indexes.getIterator(cl);
+		final DenseBlock db = m.getDenseBlock();
+		final int nCol = m.getNumColumns();
+		if(it == null)
+			return;
+		else if(it.value() > cu)
+			_indexes.cacheIterator(it, cu);
+		else if(cu < _indexes.getOffsetToLast() + 1) {
+			if(db.isContiguous(rl, ru)) {
+				while(it.value() < cu) {
+					final double[] vals = db.values(rl);
+					final int start = it.value() + db.pos(rl);
+					final int end = it.value() + db.pos(ru);
+					for(int offOut = 0, off = start; off < end; offOut++, off += nCol)
+						preAgg[offOut] += vals[off];
+					it.next();
+				}
+			}
+			else {
+				throw new NotImplementedException();
+			}
+			_indexes.cacheIterator(it, cu);
+		}
+		else {
+			if(db.isContiguous(rl, ru)) {
+				final double[] vals = db.values(rl);
+				final int rlPos = db.pos(rl);
+				final int ruPos = db.pos(ru);
+				int of = it.value();
+				int start = of + rlPos;
+				int end = of + ruPos;
+				for(int offOut = 0, off = start; off < end; offOut++, off += nCol)
+					preAgg[offOut] += vals[off];
+				while(of < _indexes.getOffsetToLast()) {
+					it.next();
+					of = it.value();
+					start = of + rlPos;
+					end = of + ruPos;
+					for(int offOut = 0, off = start; off < end; offOut++, off += nCol)
+						preAgg[offOut] += vals[off];
+				}
+			}
+			else {
+				throw new NotImplementedException();
+			}
+		}
+	}
+
+	private void preAggregateDenseContiguous(MatrixBlock m, double[] preAgg, int rl, int ru, int cl, int cu) {
 		final AIterator it = _indexes.getIterator(cl);
 		final double[] vals = m.getDenseBlockValues();
 		final int nCol = m.getNumColumns();
@@ -826,8 +882,8 @@ public class ColGroupSDCSingleZeros extends ASDCZero {
 		OffsetSliceInfo off = _indexes.slice(rl, ru);
 		if(off.lIndex == -1)
 			return null;
-		if(CompressedMatrixBlock.debug){
-			if(off.offsetSlice.getOffsetToFirst() < 0 || off.offsetSlice.getOffsetToLast() > ru-rl)
+		if(CompressedMatrixBlock.debug) {
+			if(off.offsetSlice.getOffsetToFirst() < 0 || off.offsetSlice.getOffsetToLast() > ru - rl)
 				throw new DMLCompressionException("Failed to slice : " + rl + "  " + ru + " in: " + this);
 		}
 		return create(_colIndexes, ru - rl, _dict, off.offsetSlice, null);
@@ -853,12 +909,12 @@ public class ColGroupSDCSingleZeros extends ASDCZero {
 				return null;
 			}
 
-			if(!(gs instanceof AOffsetsGroup )) {
+			if(!(gs instanceof AOffsetsGroup)) {
 				LOG.warn("Not SDCFOR but " + gs.getClass().getSimpleName());
 				return null;
 			}
 
-			if( gs instanceof ColGroupSDCSingleZeros){
+			if(gs instanceof ColGroupSDCSingleZeros) {
 				final ColGroupSDCSingleZeros gc = (ColGroupSDCSingleZeros) gs;
 				if(!gc._dict.equals(_dict)) {
 					LOG.warn("Not same Dictionaries therefore not appending \n" + _dict + "\n\n" + gc._dict);
@@ -884,6 +940,23 @@ public class ColGroupSDCSingleZeros extends ASDCZero {
 	public int getNumberOffsets() {
 		return getCounts()[0];
 	}
+
+	@Override
+	public void sparseSelection(MatrixBlock selection, MatrixBlock ret, int rl, int ru) {
+		throw new NotImplementedException();
+	}
+
+	@Override
+	protected void decompressToDenseBlockTransposedSparseDictionary(DenseBlock db, int rl, int ru, SparseBlock sb) {
+		throw new NotImplementedException();
+	}
+
+	@Override
+	protected void decompressToDenseBlockTransposedDenseDictionary(DenseBlock db, int rl, int ru, double[] dict) {
+		throw new NotImplementedException();
+	}
+
+
 
 	@Override
 	public String toString() {

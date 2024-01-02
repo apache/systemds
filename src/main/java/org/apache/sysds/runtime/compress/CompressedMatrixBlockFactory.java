@@ -283,7 +283,7 @@ public class CompressedMatrixBlockFactory {
 			return createEmpty();
 
 		res = new CompressedMatrixBlock(mb); // copy metadata and allocate soft reference
-
+		logInit();
 		classifyPhase();
 		if(compressionGroups == null)
 			return abortCompression();
@@ -396,7 +396,7 @@ public class CompressedMatrixBlockFactory {
 				compSettings.transposed = false;
 				break;
 			default:
-				compSettings.transposed = transposeHeuristics(compressionGroups.getNumberColGroups() , mb);
+				compSettings.transposed = transposeHeuristics(compressionGroups.getNumberColGroups(), mb);
 		}
 	}
 
@@ -465,6 +465,16 @@ public class CompressedMatrixBlockFactory {
 		return new ImmutablePair<>(mb, _stats);
 	}
 
+	private void logInit() {
+		if(LOG.isDebugEnabled()) {
+			LOG.debug("--Seed used for comp : " + compSettings.seed);
+			LOG.debug(String.format("--number columns to compress: %10d", mb.getNumColumns()));
+			LOG.debug(String.format("--number rows to compress   : %10d", mb.getNumRows()));
+			LOG.debug(String.format("--sparsity                  : %10.5f", mb.getSparsity()));
+			LOG.debug(String.format("--nonZeros                  : %10d", mb.getNonZeros()));
+		}
+	}
+
 	private void logPhase() {
 		setNextTimePhase(time.stop());
 		DMLCompressionStatistics.addCompressionTime(getLastTimePhase(), phase);
@@ -476,7 +486,6 @@ public class CompressedMatrixBlockFactory {
 			else {
 				switch(phase) {
 					case 0:
-						LOG.debug("--Seed used for comp : " + compSettings.seed);
 						LOG.debug("--compression phase " + phase + " Classify  : " + getLastTimePhase());
 						LOG.debug("--Individual Columns Estimated Compression: " + _stats.estimatedSizeCols);
 						if(mb instanceof CompressedMatrixBlock) {

@@ -23,7 +23,6 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.BitSet;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -64,6 +63,10 @@ public class HashLongArray extends Array<Object> {
 
 	public long getLong(int index) {
 		return _data[index];
+	}
+
+	protected long[] getLongs(){
+		return _data;
 	}
 
 	@Override
@@ -269,59 +272,57 @@ public class HashLongArray extends Array<Object> {
 	}
 
 	@Override
-	protected Array<Boolean> changeTypeBitSet() {
-		BitSet ret = new BitSet(size());
-		for(int i = 0; i < size(); i++) {
+	protected Array<Boolean> changeTypeBitSet(Array<Boolean> ret, int l, int u){
+		for(int i = l; i < u; i++) {
 			if(_data[i] != 0 && _data[i] != 1)
 				throw new DMLRuntimeException(
-					"Unable to change to Boolean from Integer array because of value:" + _data[i]);
+					"Unable to change to Boolean from Hash array because of value:" + _data[i]);
 			ret.set(i, _data[i] == 0 ? false : true);
 		}
-		return new BitSetArray(ret, size());
+		return ret;
 	}
 
 	@Override
-	protected Array<Boolean> changeTypeBoolean() {
-		boolean[] ret = new boolean[size()];
-		for(int i = 0; i < size(); i++) {
-			if(_data[i] < 0 || _data[i] > 1)
+	protected Array<Boolean> changeTypeBoolean(Array<Boolean> retA, int l, int u) {
+		boolean[] ret = (boolean[]) retA.get();
+		for(int i = l; i < u; i++) {
+			if(_data[i] != 0 && _data[i] != 1)
 				throw new DMLRuntimeException(
-					"Unable to change to Boolean from Integer array because of value:" + _data[i]);
+					"Unable to change to Boolean from Hash array because of value:" + _data[i]);
 			ret[i] = _data[i] == 0 ? false : true;
 		}
-		return new BooleanArray(ret);
+		return retA;
 	}
-
 	@Override
-	protected Array<Double> changeTypeDouble() {
-		double[] ret = new double[size()];
-		for(int i = 0; i < size(); i++)
+	protected Array<Double> changeTypeDouble(Array<Double> retA, int l, int u) {
+		double[] ret = (double[]) retA.get();
+		for(int i = l; i < u; i++)
 			ret[i] = _data[i];
-		return new DoubleArray(ret);
+		return retA;
 	}
 
 	@Override
-	protected Array<Float> changeTypeFloat() {
-		float[] ret = new float[size()];
-		for(int i = 0; i < size(); i++)
+	protected Array<Float> changeTypeFloat(Array<Float> retA, int l, int u) {
+		float[] ret = (float[]) retA.get();
+		for(int i = l; i < u; i++)
 			ret[i] = _data[i];
-		return new FloatArray(ret);
+		return retA;
 	}
 
 	@Override
-	protected Array<Integer> changeTypeInteger() {
-		int[] ret = new int[size()];
-		for(int i = 0; i < size(); i++) {
-			if(Math.abs(_data[i]) > Integer.MAX_VALUE)
-				throw new DMLRuntimeException("Unable to change to integer from long array because of value:" + _data[i]);
-			ret[i] = (int) _data[i];
-		}
-		return new IntegerArray(ret);
+	protected Array<Integer> changeTypeInteger(Array<Integer> retA, int l, int u) {
+		int[] ret = (int[]) retA.get();
+		for(int i = l; i < u; i++)
+			ret[i] = (int)_data[i];
+		return retA;
 	}
 
 	@Override
-	protected Array<Long> changeTypeLong() {
-		return new LongArray(_data);
+	protected Array<Long> changeTypeLong(Array<Long> retA, int l, int u) {
+		long[] ret = (long[]) retA.get();
+		for(int i = l; i < u; i++)
+			ret[i] = _data[i];
+		return retA;
 	}
 
 	@Override
@@ -330,11 +331,27 @@ public class HashLongArray extends Array<Object> {
 	}
 
 	@Override
-	protected Array<String> changeTypeString() {
-		String[] ret = new String[size()];
-		for(int i = 0; i < size(); i++)
+	protected Array<Object> changeTypeHash64(Array<Object> retA, int l, int u) {
+		long[] ret = ((HashLongArray) retA).getLongs();
+		for(int i = l; i < u; i++)
+			ret[i] = _data[i];
+		return retA;
+	}
+
+	@Override
+	protected Array<String> changeTypeString(Array<String> retA, int l, int u) {
+		String[] ret = (String[]) retA.get();
+		for(int i = l; i < u; i++)
 			ret[i] = get(i).toString();
-		return new StringArray(ret);
+		return retA;
+	}
+
+	@Override
+	public Array<Character> changeTypeCharacter(Array<Character> retA, int l, int u) {
+		char[] ret = (char[]) retA.get();
+		for(int i = l; i < u; i++)
+			ret[i] = get(i).toString().charAt(0);
+		return retA;
 	}
 
 	@Override
@@ -371,14 +388,6 @@ public class HashLongArray extends Array<Object> {
 		if(s == null || s.isEmpty())
 			return 0L;
 		return Long.parseUnsignedLong(s, 16);
-	}
-
-	@Override
-	public Array<Character> changeTypeCharacter() {
-		char[] ret = new char[size()];
-		for(int i = 0; i < size(); i++)
-			ret[i] = get(i).toString().charAt(0);
-		return new CharArray(ret);
 	}
 
 	@Override

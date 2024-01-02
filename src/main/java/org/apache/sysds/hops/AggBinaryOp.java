@@ -446,8 +446,7 @@ public class AggBinaryOp extends MultiThreadedHop {
 				|| (left && !isLeftTransposeRewriteApplicable(true)))
 			&& getInput(index).getParent().size()==1 //bagg is only parent
 			&& !getInput(index).areDimsBelowThreshold() 
-			&& (getInput(index).optFindExecType() == ExecType.SPARK
-				|| (getInput(index) instanceof DataOp && ((DataOp)getInput(index)).hasOnlyRDD()))
+			&& getInput(index).hasSparkOutput()
 			&& getInput(index).getOutputMemEstimate()>getOutputMemEstimate();
 	}
 	

@@ -569,8 +569,25 @@ public class OffsetTests {
 	}
 
 	@Test
+	public void verify(){
+		o.verify(o.getSize());
+	}
+
+	@Test
 	public void slice1to4() {
 		slice(1, 4);
+	}
+
+	@Test
+	public void slice() {
+		if(data.length > 1) {
+			int n = data[data.length - 1];
+			for(int i = 0; i < n && i < 100; i++) {
+				for(int j = i; j < n + 1 && j < 100; j++) {
+					slice(i, j, false);
+				}
+			}
+		}
 	}
 
 	@Test
@@ -580,13 +597,19 @@ public class OffsetTests {
 	}
 
 	private void slice(int l, int u) {
+		slice(l, u, false);
+	}
+
+	private void slice(int l, int u, boolean str){
 		try {
 
 			OffsetSliceInfo a = o.slice(l, u);
-			a.offsetSlice.toString();
+			if(str)
+				a.offsetSlice.toString();
 			if(data.length > 0 && data[data.length - 1] > u) {
 
 				AIterator it = a.offsetSlice.getIterator();
+				a.offsetSlice.verify(a.uIndex - a.lIndex);
 				int i = 0;
 				while(i < data.length && data[i] < l)
 					i++;
@@ -601,7 +624,7 @@ public class OffsetTests {
 		}
 		catch(Exception e) {
 			e.printStackTrace();
-			fail("Failed to slice first 100");
+			fail("Failed to slice range: " + l + " -> " + u + " in:\n" + o);
 		}
 
 	}

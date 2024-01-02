@@ -22,26 +22,44 @@ package org.apache.sysds.runtime.compress.lib;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlockFactory;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup;
+import org.apache.sysds.runtime.compress.colgroup.AColGroupCompressed;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupEmpty;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupUncompressed;
 import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
-public final class CLALibAppend {
+public final class CLALibCBind {
 
-	private CLALibAppend(){
+	private CLALibCBind() {
 		// private constructor.
 	}
 
-	private static final Log LOG = LogFactory.getLog(CLALibAppend.class.getName());
+	private static final Log LOG = LogFactory.getLog(CLALibCBind.class.getName());
 
-	public static MatrixBlock append(MatrixBlock left, MatrixBlock right, int k) {
+	public static MatrixBlock cbind(MatrixBlock left, MatrixBlock[] right, int k) {
+		if(right.length == 1) {
+			return cbind(left, right[0], k);
+		}
+		else {
+			boolean allCompressed = true;
+			for(int i = 0; i < right.length && allCompressed; i++)
+				allCompressed = right[i] instanceof CompressedMatrixBlock;
+			if(allCompressed) {
+				return cbindAllCompressed((CompressedMatrixBlock) left, right, k);
+			}
+
+		}
+		throw new NotImplementedException();
+	}
+
+	public static MatrixBlock cbind(MatrixBlock left, MatrixBlock right, int k) {
 
 		final int m = left.getNumRows();
 		final int n = left.getNumColumns() + right.getNumColumns();
@@ -75,6 +93,48 @@ public final class CLALibAppend {
 		}
 
 		return append((CompressedMatrixBlock) left, (CompressedMatrixBlock) right, m, n);
+	}
+
+	private static CompressedMatrixBlock cbindAllCompressed(CompressedMatrixBlock left, MatrixBlock[] right, int k) {
+		boolean allSameColumnGroupIndex = true;
+		List<AColGroup> gl = left.getColGroups();
+		final int nCol = left.getNumColumns();
+		for(int i = 0; i < right.length && allSameColumnGroupIndex; i++) {
+			allSameColumnGroupIndex = nCol == right[i].getNumColumns();
+			List<AColGroup> gr = ((CompressedMatrixBlock) right[i]).getColGroups();
+			for(int j = 0; j < gl.size() && allSameColumnGroupIndex; j++) {
+				allSameColumnGroupIndex = gl.get(i).sameIndexStructure(gr.get(i));
+			}
+		}
+
+		if(allSameColumnGroupIndex)
+			return cbindAllCompressedAligned(left, right, k);
+
+		throw new NotImplementedException();
+	}
+
+	private static CompressedMatrixBlock cbindAllCompressedAligned(CompressedMatrixBlock left, MatrixBlock[] right,
+		int k) {
+
+		List<AColGroup> gl = left.getColGroups();
+		List<List<AColGroup>> gr = new ArrayList<>(right.length);
+
+		List<AColGroup> rg = new ArrayList<>(gl.size());
+		for(int i = 0; i < right.length; i++) {
+			gr.add(((CompressedMatrixBlock) right[i]).getColGroups());
+		}
+		final int nCol = left.getNumColumns();
+
+		for(int j = 0; j < gl.size(); j++) {
+			rg.add(combine((AColGroupCompressed) gl.get(j), j, nCol, gr));
+		}
+
+		return new CompressedMatrixBlock(left.getNumRows(), nCol * right.length + nCol, -1, left.isOverlapping(), rg);
+
+	}
+
+	private static AColGroup combine(AColGroupCompressed cg, int index, int nCol, List<List<AColGroup>> right) {
+		return cg.combineWithSameIndex(index, nCol, right);
 	}
 
 	private static MatrixBlock appendLeftUncompressed(MatrixBlock left, CompressedMatrixBlock right, final int m,

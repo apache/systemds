@@ -91,7 +91,7 @@ public interface CoCoderFactory {
 
 			// overwrite groups.
 			colInfos.compressionInfo = groups;
-			
+
 			// cocode remaining groups
 			if(!groups.isEmpty()) {
 				colInfos = co.coCodeColumns(colInfos, k);
@@ -135,7 +135,7 @@ public interface CoCoderFactory {
 			case PRIORITY_QUE:
 				return new CoCodePriorityQue(est, costEstimator, cs);
 			default:
-				throw new RuntimeException("Unsupported column group partitioner: " + type.toString());
+				throw new RuntimeException("Unsupported column group partition technique: " + type.toString());
 		}
 	}
 }

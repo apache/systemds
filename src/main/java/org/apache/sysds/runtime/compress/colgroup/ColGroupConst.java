@@ -647,4 +647,44 @@ public class ColGroupConst extends ADictBasedColGroup implements IContainDefault
 		return MapToFactory.create(0, 0);
 	}
 
+	@Override
+	public double getSparsity(){
+		return 1.0;
+	}
+
+	@Override
+	public void sparseSelection(MatrixBlock selection, MatrixBlock ret, int rl, int ru){
+		throw new NotImplementedException();
+	}
+
+	@Override
+	protected void decompressToDenseBlockTransposedSparseDictionary(DenseBlock db, int rl, int ru, SparseBlock sb) {
+		// guaranteed to be containing some values therefore no check for empty.
+		final int apos = sb.pos(0);
+		final int alen = sb.size(0);
+		final int[] aix = sb.indexes(0);
+		final double[] avals = sb.values(0);
+
+		for(int j = apos; j < alen; j++){
+			final int rowOut = _colIndexes.get(aix[j]);
+			final double[] c = db.values(rowOut);
+			final int off = db.pos(rowOut); // row offset out.
+			final double v = avals[j];
+			for(int i = rl; i < ru; i++) 
+				c[off + i] += v;
+		}
+	}
+
+	@Override
+	protected void decompressToDenseBlockTransposedDenseDictionary(DenseBlock db, int rl, int ru, double[] dict) {
+		for(int j = 0; j < _colIndexes.size(); j++){
+			final int rowOut = _colIndexes.get(j);
+			final double[] c = db.values(rowOut);
+			final int off = db.pos(rowOut);
+			double v = dict[j];
+			for(int i = rl; i < ru; i++) {
+				c[off + i] += v;
+			}
+		}
+	}
 }

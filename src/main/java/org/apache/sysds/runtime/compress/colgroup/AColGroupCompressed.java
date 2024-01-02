@@ -19,6 +19,9 @@
 
 package org.apache.sysds.runtime.compress.colgroup;
 
+import java.util.List;
+
+import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.DMLScriptException;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary;
@@ -85,6 +88,14 @@ public abstract class AColGroupCompressed extends AColGroup {
 	protected abstract double[] preAggProductRows();
 
 	protected abstract double[] preAggBuiltinRows(Builtin builtin);
+
+	@Override
+	public boolean sameIndexStructure(AColGroup that) {
+		if(that instanceof AColGroupCompressed)
+			return sameIndexStructure((AColGroupCompressed) that);
+		else
+			return false;
+	}
 
 	public abstract boolean sameIndexStructure(AColGroupCompressed that);
 
@@ -215,7 +226,8 @@ public abstract class AColGroupCompressed extends AColGroup {
 
 	}
 
-	protected static void tsmmDense(double[] result, int numColumns, double[] values, int[] counts, IColIndex colIndexes) {
+	protected static void tsmmDense(double[] result, int numColumns, double[] values, int[] counts,
+		IColIndex colIndexes) {
 		final int nCol = colIndexes.size();
 		final int nRow = counts.length;
 		for(int k = 0; k < nRow; k++) {
@@ -231,7 +243,8 @@ public abstract class AColGroupCompressed extends AColGroup {
 		}
 	}
 
-	protected static void tsmmSparse(double[] result, int numColumns, SparseBlock sb, int[] counts, IColIndex colIndexes) {
+	protected static void tsmmSparse(double[] result, int numColumns, SparseBlock sb, int[] counts,
+		IColIndex colIndexes) {
 		for(int row = 0; row < counts.length; row++) {
 			if(sb.isEmpty(row))
 				continue;
@@ -252,5 +265,21 @@ public abstract class AColGroupCompressed extends AColGroup {
 	@Override
 	public boolean isEmpty() {
 		return false;
+	}
+
+	/**
+	 * C bind the list of column groups with this column group. the list of elements provided in the index of each list
+	 * is guaranteed to have the same index structures
+	 * 
+	 * @param index The index to look up in each list of the right argument to find the correct column groups to combine.
+	 * @param nCol  The number of columns to shift the right hand side column groups over when combining, this should
+	 *              only effect the column indexes
+	 * @param right The right hand side column groups to combine. NOTE only the index offset of the second nested list
+	 *              should be used. The reason for providing this nested list is to avoid redundant allocations in
+	 *              calling methods.
+	 * @return A combined compressed column group of the same type as this!.
+	 */
+	public AColGroupCompressed combineWithSameIndex(int index, int nCol, List<List<AColGroup>> right) {
+		throw new NotImplementedException();
 	}
 }

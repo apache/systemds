@@ -37,26 +37,24 @@ public interface ArrayFactory {
 	public final static int bitSetSwitchPoint = 64;
 
 	public enum FrameArrayType {
-		STRING, BOOLEAN, BITSET, INT32, INT64, FP32, FP64, 
-		CHARACTER, RAGGED, OPTIONAL, DDC,
-		HASH64;
+		STRING, BOOLEAN, BITSET, INT32, INT64, FP32, FP64, CHARACTER, RAGGED, OPTIONAL, DDC, HASH64;
 	}
 
 	public static StringArray create(String[] col) {
 		return new StringArray(col);
 	}
 
-	public static HashLongArray createHash64(String[] col){
+	public static HashLongArray createHash64(String[] col) {
 		return new HashLongArray(col);
-	} 
+	}
 
-	public static OptionalArray<Object> createHash64Opt(String[] col){
+	public static OptionalArray<Object> createHash64Opt(String[] col) {
 		return new OptionalArray<>(col, ValueType.HASH64);
-	} 
+	}
 
-	public static HashLongArray createHash64(long[] col){
+	public static HashLongArray createHash64(long[] col) {
 		return new HashLongArray(col);
-	} 
+	}
 
 	public static BooleanArray create(boolean[] col) {
 		return new BooleanArray(col);
@@ -157,24 +155,15 @@ public interface ArrayFactory {
 	public static Array<?> allocateOptional(ValueType v, int nRow) {
 		switch(v) {
 			case BOOLEAN:
-				if(nRow > bitSetSwitchPoint)
-					return new OptionalArray<>(new BitSetArray(nRow), true);
-				else
-					return new OptionalArray<>(new BooleanArray(new boolean[nRow]), true);
 			case UINT4:
 			case UINT8:
 			case INT32:
-				return new OptionalArray<>(new IntegerArray(new int[nRow]), true);
 			case INT64:
-				return new OptionalArray<>(new LongArray(new long[nRow]), true);
 			case FP32:
-				return new OptionalArray<>(new FloatArray(new float[nRow]), true);
 			case FP64:
-				return new OptionalArray<>(new DoubleArray(new double[nRow]), true);
 			case CHARACTER:
-				return new OptionalArray<>(new CharArray(new char[nRow]), true);
 			case HASH64:
-				return new OptionalArray<>(new HashLongArray(new long[nRow]), true);
+				return new OptionalArray<>(allocate(v, nRow), true);
 			case UNKNOWN:
 			case STRING:
 			default:
@@ -195,6 +184,7 @@ public interface ArrayFactory {
 				return allocateBoolean(nRow);
 			case UINT4:
 			case UINT8:
+				LOG.warn("Not supported allocation of UInt 4 or 8 array: defaulting to Int32");
 			case INT32:
 				return new IntegerArray(new int[nRow]);
 			case INT64:
@@ -251,7 +241,7 @@ public interface ArrayFactory {
 			case HASH64:
 				arr = new HashLongArray(new long[nRow]);
 				break;
-			default: 
+			default:
 				throw new NotImplementedException(v + "");
 		}
 		arr.readFields(in);
@@ -294,7 +284,7 @@ public interface ArrayFactory {
 	 */
 	@SuppressWarnings("unchecked")
 	public static <C> Array<C> set(Array<?> target, Array<?> src, int rl, int ru, int rlen) {
-	
+
 		if(rlen <= ru)
 			throw new DMLRuntimeException("Invalid range ru: " + ru + " should be less than rlen: " + rlen);
 		else if(rl < 0)
@@ -312,7 +302,7 @@ public interface ArrayFactory {
 			else if(src.getFrameArrayType() == FrameArrayType.DDC) {
 				final DDCArray<?> ddcA = ((DDCArray<?>) src);
 				final Array<?> ddcDict = ddcA.getDict();
-				if(ddcDict == null){ // read empty dict.
+				if(ddcDict == null) { // read empty dict.
 					target = new DDCArray<>(null, MapToFactory.create(rlen, ddcA.getMap().getUnique()));
 				}
 				else if(ddcDict.getFrameArrayType() == FrameArrayType.OPTIONAL) {

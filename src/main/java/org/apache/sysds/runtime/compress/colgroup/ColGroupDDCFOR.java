@@ -40,6 +40,7 @@ import org.apache.sysds.runtime.compress.estim.EstimationFactors;
 import org.apache.sysds.runtime.compress.estim.encoding.EncodingFactory;
 import org.apache.sysds.runtime.compress.estim.encoding.IEncode;
 import org.apache.sysds.runtime.compress.utils.Util;
+import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.functionobjects.Divide;
 import org.apache.sysds.runtime.functionobjects.Minus;
@@ -252,7 +253,7 @@ public class ColGroupDDCFOR extends AMorphingMMColGroup implements IFrameOfRefer
 		if(patternInReference) {
 			double[] nRef = new double[_reference.length];
 			for(int i = 0; i < _reference.length; i++)
-				if(Util.eq(pattern ,_reference[i]))
+				if(Util.eq(pattern, _reference[i]))
 					nRef[i] = replace;
 				else
 					nRef[i] = _reference[i];
@@ -487,6 +488,20 @@ public class ColGroupDDCFOR extends AMorphingMMColGroup implements IFrameOfRefer
 	@Override
 	protected AColGroup fixColIndexes(IColIndex newColIndex, int[] reordering) {
 		throw new NotImplementedException();
+	}
+
+	@Override
+	public void sparseSelection(MatrixBlock selection, MatrixBlock ret, int rl, int ru) {
+		final SparseBlock sb = selection.getSparseBlock();
+		final SparseBlock retB = ret.getSparseBlock();
+		for(int r = rl; r < ru; r++) {
+			if(sb.isEmpty(r))
+				continue;
+
+			final int sPos = sb.pos(r);
+			final int rowCompressed = sb.indexes(r)[sPos];
+			decompressToSparseBlock(retB, rowCompressed, rowCompressed + 1, r - rowCompressed, 0);
+		}
 	}
 
 	@Override

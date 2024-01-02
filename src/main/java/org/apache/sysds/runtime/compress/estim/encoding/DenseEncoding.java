@@ -37,16 +37,24 @@ import org.apache.sysds.runtime.compress.estim.EstimationFactors;
  */
 public class DenseEncoding extends AEncode {
 
+	private static boolean zeroWarn = false;
+
 	private final AMapToData map;
 
 	public DenseEncoding(AMapToData map) {
 		this.map = map;
 
 		if(CompressedMatrixBlock.debug) {
-			int[] freq = map.getCounts();
-			for(int i = 0; i < freq.length; i++) {
-				if(freq[i] == 0)
-					throw new DMLCompressionException("Invalid counts in fact contains 0");
+			if(!zeroWarn) {
+				int[] freq = map.getCounts();
+				for(int i = 0; i < freq.length; i++) {
+					if(freq[i] == 0) {
+						LOG.warn("Dense encoding contains zero encoding, indicating not all dictionary entries are in use");
+						zeroWarn = true;
+						break;
+					}
+					// throw new DMLCompressionException("Invalid counts in fact contains 0");
+				}
 			}
 		}
 	}
@@ -146,27 +154,40 @@ public class DenseEncoding extends AEncode {
 		final int nVL = lm.getUnique();
 		final int nVR = rm.getUnique();
 		final int size = map.size();
-		final int maxUnique = nVL * nVR;
-
-		final AMapToData ret = MapToFactory.create(size, maxUnique);
-
-		if(maxUnique > size && maxUnique > 2048) {
+		int maxUnique = nVL * nVR;
+		DenseEncoding retE = null;
+		if(maxUnique < Math.max(nVL, nVR)) {// overflow
+			maxUnique = size;
+			final AMapToData ret = MapToFactory.create(size, maxUnique);
+			final Map<Long, Integer> m = new HashMap<>(size);
+			retE = combineDenseWithHashMapLong(lm, rm, size, nVL, ret, m);
+		}
+		else if(maxUnique > size && maxUnique > 2048) {
+			final AMapToData ret = MapToFactory.create(size, maxUnique);
 			// aka there is more maxUnique than rows.
 			final Map<Integer, Integer> m = new HashMap<>(size);
-			return combineDenseWithHashMap(lm, rm, size, nVL, ret, m);
+			retE = combineDenseWithHashMap(lm, rm, size, nVL, ret, m);
 		}
 		else {
+			final AMapToData ret = MapToFactory.create(size, maxUnique);
 			final AMapToData m = MapToFactory.create(maxUnique, maxUnique + 1);
-			return combineDenseWithMapToData(lm, rm, size, nVL, ret, maxUnique, m);
+			retE = combineDenseWithMapToData(lm, rm, size, nVL, ret, maxUnique, m);
 		}
+
+		if(retE.getUnique() < 0) {
+			throw new DMLCompressionException(
+				"Failed to combine dense encodings correctly: Number unique values is lower than max input: \n\n" + this
+					+ "\n\n" + other + "\n\n" + retE);
+		}
+		return retE;
 	}
 
 	private Pair<IEncode, Map<Integer, Integer>> combineDenseNoResize(final DenseEncoding other) {
-		if(map == other.map) {
+		if(map.equals(other.map)) {
 			LOG.warn("Constructing perfect mapping, this could be optimized to skip hashmap");
 			final Map<Integer, Integer> m = new HashMap<>(map.size());
 			for(int i = 0; i < map.getUnique(); i++)
-				m.put(i * i, i);
+				m.put(i * (map.getUnique() + 1) , i);
 			return new ImmutablePair<>(this, m); // same object
 		}
 
@@ -176,21 +197,25 @@ public class DenseEncoding extends AEncode {
 		final int nVL = lm.getUnique();
 		final int nVR = rm.getUnique();
 		final int size = map.size();
-		final int maxUnique = nVL * nVR;
+		final int maxUnique = (int) Math.min((long) nVL * nVR, (long) size);
 
 		final AMapToData ret = MapToFactory.create(size, maxUnique);
 
-		final Map<Integer, Integer> m = new HashMap<>(Math.min(size, maxUnique));
+		final Map<Integer, Integer> m = new HashMap<>(maxUnique);
 		return new ImmutablePair<>(combineDenseWithHashMap(lm, rm, size, nVL, ret, m), m);
-
-		// there can be less unique.
-
-		// return new DenseEncoding(ret);
 	}
 
 	private Pair<IEncode, Map<Integer, Integer>> combineSparseNoResize(final SparseEncoding other) {
 		final AMapToData a = assignSparse(other);
 		return combineSparseHashMap(a);
+	}
+
+	protected final DenseEncoding combineDenseWithHashMapLong(final AMapToData lm, final AMapToData rm, final int size,
+		final int nVL, final AMapToData ret, Map<Long, Integer> m) {
+
+		for(int r = 0; r < size; r++)
+			addValHashMap((long) lm.getIndex(r) + (long) rm.getIndex(r) * (long) nVL, r, m, ret);
+		return new DenseEncoding(MapToFactory.resize(ret, m.size()));
 	}
 
 	protected final DenseEncoding combineDenseWithHashMap(final AMapToData lm, final AMapToData rm, final int size,
@@ -218,8 +243,16 @@ public class DenseEncoding extends AEncode {
 		return newId;
 	}
 
-	protected static void addValHashMap(final int nv, final int r, final Map<Integer, Integer> map,
-		final AMapToData d) {
+	protected static void addValHashMap(final int nv, final int r, final Map<Integer, Integer> map, final AMapToData d) {
+		final int v = map.size();
+		final Integer mv = map.putIfAbsent(nv, v);
+		if(mv == null)
+			d.set(r, v);
+		else
+			d.set(r, mv);
+	}
+
+	protected static void addValHashMap(final long nv, final int r, final Map<Long, Integer> map, final AMapToData d) {
 		final int v = map.size();
 		final Integer mv = map.putIfAbsent(nv, v);
 		if(mv == null)

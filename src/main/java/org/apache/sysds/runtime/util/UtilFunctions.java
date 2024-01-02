@@ -842,10 +842,10 @@ public class UtilFunctions {
 		}
 	}
 	
-	public static int computeNnz(double[] a, int ai, int len) {
+	public static final int computeNnz(final double[] a,final int ai,final int len) {
 		int lnnz = 0;
 		for( int i=ai; i<ai+len; i++ )
-			lnnz += (a[i] != 0) ? 1 : 0;
+			lnnz += (a[i] != 0.0) ? 1 : 0;
 		return lnnz;
 	}
 

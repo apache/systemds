@@ -31,6 +31,7 @@ import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.runtime.frame.data.columns.Array;
+import org.apache.sysds.runtime.frame.data.columns.ArrayFactory;
 import org.apache.sysds.runtime.frame.data.columns.ColumnMetadata;
 import org.apache.sysds.runtime.util.CommonThreadPool;
 
@@ -38,10 +39,13 @@ public class FrameLibApplySchema {
 
 	protected static final Log LOG = LogFactory.getLog(FrameLibApplySchema.class.getName());
 
+	public static int PAR_ROW_THRESHOLD = 1024;
+
 	private final FrameBlock fb;
 	private final ValueType[] schema;
 	private final boolean[] nulls;
 	private final int nCol;
+	private final int nRow;
 	private final Array<?>[] columnsIn;
 	private final Array<?>[] columnsOut;
 
@@ -102,6 +106,7 @@ public class FrameLibApplySchema {
 		this.k = k;
 		verifySize();
 		nCol = fb.getNumColumns();
+		nRow = fb.getNumRows();
 		columnsIn = fb.getColumns();
 		columnsOut = new Array<?>[nCol];
 	}
@@ -123,14 +128,14 @@ public class FrameLibApplySchema {
 		final String[] colNames = fb.getColumnNames(false);
 		final ColumnMetadata[] meta = fb.getColumnMetadata();
 
-		FrameBlock out =  new FrameBlock(schema, colNames, meta, columnsOut);
-		if(LOG.isDebugEnabled()){
+		FrameBlock out = new FrameBlock(schema, colNames, meta, columnsOut);
+		if(LOG.isDebugEnabled()) {
 
 			long inMem = fb.getInMemorySize();
 			long outMem = out.getInMemorySize();
-			LOG.debug(String.format("Schema Apply Input Size: %16d" , inMem));
-			LOG.debug(String.format("            Output Size: %16d" , outMem));
-			LOG.debug(String.format("            Ratio      : %4.3f" , ((double) inMem  / outMem)));
+			LOG.debug(String.format("Schema Apply Input Size: %16d", inMem));
+			LOG.debug(String.format("            Output Size: %16d", outMem));
+			LOG.debug(String.format("            Ratio      : %4.3f", ((double) inMem / outMem)));
 		}
 		return out;
 	}
@@ -152,19 +157,42 @@ public class FrameLibApplySchema {
 	private void applyMultiThread() {
 		final ExecutorService pool = CommonThreadPool.get(k);
 		try {
-			List<Future<?>> f = new ArrayList<>(nCol ); 
-			for(int i = 0; i < nCol ; i ++){
-				final int j = i;
-				f.add(pool.submit(() -> apply(j)));
+			List<Future<?>> f = new ArrayList<>(nCol);
+
+			final int rowThreads = Math.max(1, (k * 2) / nCol);
+			final int block = Math.max(((nRow / rowThreads) / 64) * 64, PAR_ROW_THRESHOLD);
+			for(int i = 0; i < nCol; i++) {
+				final int j = i; // final col variable for task
+				if(schema[i] == columnsIn[i].getValueType()) {
+					apply(i);
+				}
+				else {
+
+					if(nulls != null && nulls[i]) {
+						columnsOut[j] = ArrayFactory.allocateOptional(schema[i], nRow);
+						for(int r = 0; r < nRow; r += block) {
+							final int start = r;
+							final int end = Math.min(nRow, r + block);
+							f.add(pool.submit(() -> columnsIn[j].changeTypeWithNulls(columnsOut[j], start, end)));
+						}
+					}
+					else {
+						columnsOut[j] = ArrayFactory.allocate(schema[i], nRow);
+						for(int r = 0; r < nRow; r += block) {
+							final int start = r;
+							final int end = Math.min(nRow, r + block);
+							f.add(pool.submit(() -> columnsIn[j].changeType(columnsOut[j], start, end)));
+						}
+					} //
+				}
 			}
-			
-			for( Future<?> e : f)
+			for(Future<?> e : f)
 				e.get();
 		}
 		catch(InterruptedException | ExecutionException e) {
 			throw new DMLRuntimeException("Failed to combine column groups", e);
 		}
-		finally{
+		finally {
 			pool.shutdown();
 
 		}

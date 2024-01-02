@@ -444,53 +444,50 @@ public abstract class Array<T> implements Writable {
 
 	public abstract boolean possiblyContainsNaN();
 
-	public Array<?> safeChangeType(ValueType t, boolean containsNull){
-		try{
-			return changeType(t, containsNull);
-		}
-		catch(Exception e){
-			Pair<ValueType, Boolean> ct = analyzeValueType(); // full analysis
-			return changeType(ct.getKey(), ct.getValue());
-		}
-	}
+	// public Array<?> safeChangeType(ValueType t, boolean containsNull) {
+	// try {
+	// return changeType(t, containsNull);
+	// }
+	// catch(Exception e) {
+	// Pair<ValueType, Boolean> ct = analyzeValueType(); // full analysis
+	// return changeType(ct.getKey(), ct.getValue());
+	// }
+	// }
 
 	public Array<?> changeType(ValueType t, boolean containsNull) {
 		return containsNull ? changeTypeWithNulls(t) : changeType(t);
 	}
 
 	public Array<?> changeTypeWithNulls(ValueType t) {
-
+		if(t == getValueType())
+			return this;
 		final ABooleanArray nulls = getNulls();
-		if(nulls == null)
+
+		if(nulls == null || t == ValueType.STRING) // String can contain null.
 			return changeType(t);
+		return changeTypeWithNulls(ArrayFactory.allocateOptional(t, size()));
+	}
 
-		switch(t) {
-			case BOOLEAN:
-				if(size() > ArrayFactory.bitSetSwitchPoint)
-					return new OptionalArray<>(changeTypeBitSet(), nulls);
-				else
-					return new OptionalArray<>(changeTypeBoolean(), nulls);
-			case FP32:
-				return new OptionalArray<>(changeTypeFloat(), nulls);
-			case FP64:
-				return new OptionalArray<>(changeTypeDouble(), nulls);
-			case UINT4:
-			case UINT8:
-				throw new NotImplementedException();
-			case HASH64:
-				return new OptionalArray<>(changeTypeHash64(), nulls);
-			case INT32:
-				return new OptionalArray<>(changeTypeInteger(), nulls);
-			case INT64:
-				return new OptionalArray<>(changeTypeLong(), nulls);
-			case CHARACTER:
-				return new OptionalArray<>(changeTypeCharacter(), nulls);
-			case STRING:
-			case UNKNOWN:
-			default:
-				return changeTypeString(); // String can contain null
-		}
+	public Array<?> changeTypeWithNulls(Array<?> ret) {
+		return changeTypeWithNulls((OptionalArray<?>) ret, 0, ret.size());
+	}
 
+	public Array<?> changeTypeWithNulls(Array<?> ret, int l, int u) {
+		if(ret instanceof OptionalArray)
+			return changeTypeWithNulls((OptionalArray<?>) ret, l, u);
+		else
+			return changeType(ret, l, u);
+	}
+
+	@SuppressWarnings("unchecked")
+	private OptionalArray<?> changeTypeWithNulls(OptionalArray<?> ret, int l, int u) {
+		if(this.getValueType() == ValueType.STRING)
+			ret._n.setNullsFromString(l, u - 1, (Array<String>) this);
+		else
+			ret._n.set(l, u - 1, getNulls());
+
+		changeType(ret._a, l, u);
+		return ret;
 	}
 
 	/**
@@ -499,98 +496,310 @@ public abstract class Array<T> implements Writable {
 	 * @param t The type to change to
 	 * @return A new column array.
 	 */
-	public final Array<?> changeType(ValueType t) {
-		switch(t) {
+	public Array<?> changeType(ValueType t) {
+		if(t == getValueType())
+			return this;
+		else
+			return changeType(ArrayFactory.allocate(t, size()));
+	}
+
+	public final Array<?> changeType(Array<?> ret) {
+		return changeType(ret, 0, ret.size());
+	}
+
+	@SuppressWarnings("unchecked")
+	public final Array<?> changeType(Array<?> ret, int rl, int ru) {
+		switch(ret.getValueType()) {
 			case BOOLEAN:
-				if(size() > ArrayFactory.bitSetSwitchPoint)
-					return changeTypeBitSet();
+				if(ret instanceof BitSetArray || //
+					(ret instanceof OptionalArray && ((OptionalArray<?>) ret)._a instanceof BitSetArray))
+					return changeTypeBitSet((Array<Boolean>) ret, rl, ru);
 				else
-					return changeTypeBoolean();
+					return changeTypeBoolean((Array<Boolean>) ret, rl, ru);
 			case FP32:
-				return changeTypeFloat();
+				return changeTypeFloat((Array<Float>) ret, rl, ru);
 			case FP64:
-				return changeTypeDouble();
+				return changeTypeDouble((Array<Double>) ret, rl, ru);
 			case UINT4:
 			case UINT8:
 				throw new NotImplementedException();
 			case HASH64:
-				return changeTypeHash64();
+				return changeTypeHash64((Array<Object>) ret, rl, ru);
 			case INT32:
-				return changeTypeInteger();
+				return changeTypeInteger((Array<Integer>) ret, rl, ru);
 			case INT64:
-				return changeTypeLong();
-			case STRING:
-				return changeTypeString();
+				return changeTypeLong((Array<Long>) ret, rl, ru);
 			case CHARACTER:
-				return changeTypeCharacter();
+				return changeTypeCharacter((Array<Character>) ret, rl, ru);
 			case UNKNOWN:
+			case STRING:
 			default:
-				return changeTypeString();
+				return changeTypeString((Array<String>) ret, rl, ru);
 		}
+	}
+
+	/**
+	 * Change type to a bitSet, of underlying longs to store the individual values.
+	 * 
+	 * This method should be overwritten by subclasses if no change is needed.
+	 * 
+	 * @return A Boolean type of array
+	 */
+	protected Array<Boolean> changeTypeBitSet() {
+		return changeTypeBitSet(new BitSetArray(size()));
 	}
 
 	/**
 	 * Change type to a bitSet, of underlying longs to store the individual values
 	 * 
-	 * @return A Boolean type of array
+	 * @param ret The array to insert the result into
+	 * @return A Boolean type of array that is pointing the ret argument
 	 */
-	protected abstract Array<Boolean> changeTypeBitSet();
+	protected final Array<Boolean> changeTypeBitSet(Array<Boolean> ret) {
+		return changeTypeBitSet(ret, 0, size());
+	}
+
+	/**
+	 * Change type to a bitSet, of underlying longs to store the individual values
+	 * 
+	 * @param ret The array to insert the result into
+	 * @param l   lower index to convert from (inclusive)
+	 * @param u   upper index to convert to (exclusive)
+	 * @return A Boolean type of array that is pointing the ret argument
+	 */
+	protected abstract Array<Boolean> changeTypeBitSet(Array<Boolean> ret, int l, int u);
 
 	/**
 	 * Change type to a boolean array
 	 * 
 	 * @returnA Boolean type of array
 	 */
-	protected abstract Array<Boolean> changeTypeBoolean();
+	protected Array<Boolean> changeTypeBoolean() {
+		return changeTypeBoolean(new BooleanArray(new boolean[size()]));
+	}
+
+	/**
+	 * Change type to a boolean array, of underlying longs to store the individual values
+	 * 
+	 * @param ret The array to insert the result into
+	 * @return A Boolean type of array that is pointing the ret argument
+	 */
+	protected Array<Boolean> changeTypeBoolean(Array<Boolean> ret) {
+		return changeTypeBoolean(ret, 0, size());
+	}
+
+	/**
+	 * Change type to a boolean array, of underlying longs to store the individual values
+	 * 
+	 * @param ret The array to insert the result into
+	 * @param l   lower index to convert from (inclusive)
+	 * @param u   upper index to convert to (exclusive)
+	 * @return A Boolean type of array that is pointing the ret argument
+	 */
+	protected abstract Array<Boolean> changeTypeBoolean(Array<Boolean> ret, int l, int u);
 
 	/**
 	 * Change type to a Double array type
 	 * 
 	 * @return Double type of array
 	 */
-	protected abstract Array<Double> changeTypeDouble();
+	protected Array<Double> changeTypeDouble() {
+		return changeTypeDouble(new DoubleArray(new double[size()]));
+	}
+
+	/**
+	 * Change type to a Double array, of underlying longs to store the individual values
+	 * 
+	 * @param ret The array to insert the result into
+	 * @return A Double type of array that is pointing the ret argument
+	 */
+	protected Array<Double> changeTypeDouble(Array<Double> ret) {
+		return changeTypeDouble(ret, 0, size());
+	}
+
+	/**
+	 * Change type to a Double array, of underlying longs to store the individual values
+	 * 
+	 * @param ret The array to insert the result into
+	 * @param l   lower index to convert from (inclusive)
+	 * @param u   upper index to convert to (exclusive)
+	 * @return A Double type of array that is pointing the ret argument
+	 */
+	protected abstract Array<Double> changeTypeDouble(Array<Double> ret, int l, int u);
 
 	/**
 	 * Change type to a Float array type
 	 * 
 	 * @return Float type of array
 	 */
-	protected abstract Array<Float> changeTypeFloat();
+	protected Array<Float> changeTypeFloat() {
+		return changeTypeFloat(new FloatArray(new float[size()]));
+	}
+
+	/**
+	 * Change type to a Float array, of underlying longs to store the individual values
+	 * 
+	 * @param ret The array to insert the result into
+	 * @return A Float type of array that is pointing the ret argument
+	 */
+	protected Array<Float> changeTypeFloat(Array<Float> ret) {
+		return changeTypeFloat(ret, 0, size());
+	}
+
+	/**
+	 * Change type to a Float array, of underlying longs to store the individual values
+	 * 
+	 * @param ret The array to insert the result into
+	 * @param l   lower index to convert from (inclusive)
+	 * @param u   upper index to convert to (exclusive)
+	 * @return A Float type of array that is pointing the ret argument
+	 */
+	protected abstract Array<Float> changeTypeFloat(Array<Float> ret, int l, int u);
 
 	/**
 	 * Change type to a Integer array type
 	 * 
 	 * @return Integer type of array
 	 */
-	protected abstract Array<Integer> changeTypeInteger();
+	protected Array<Integer> changeTypeInteger() {
+		return changeTypeInteger(new IntegerArray(new int[size()]));
+	}
+
+	/**
+	 * Change type to a Integer array, of underlying longs to store the individual values
+	 * 
+	 * @param ret The array to insert the result into
+	 * @return A Integer type of array that is pointing the ret argument
+	 */
+	protected Array<Integer> changeTypeInteger(Array<Integer> ret) {
+		return changeTypeInteger(ret, 0, size());
+	}
+
+	/**
+	 * Change type to a Integer array, of underlying longs to store the individual values
+	 * 
+	 * @param ret The array to insert the result into
+	 * @param l   lower index to convert from (inclusive)
+	 * @param u   upper index to convert to (exclusive)
+	 * @return A Integer type of array that is pointing the ret argument
+	 */
+	protected abstract Array<Integer> changeTypeInteger(Array<Integer> ret, int l, int u);
 
 	/**
 	 * Change type to a Long array type
 	 * 
 	 * @return Long type of array
 	 */
-	protected abstract Array<Long> changeTypeLong();
+	protected Array<Long> changeTypeLong() {
+		return changeTypeLong(new LongArray(new long[size()]));
+	}
+
+	/**
+	 * Change type to a Long array, of underlying longs to store the individual values
+	 * 
+	 * @param ret The array to insert the result into
+	 * @return A Long type of array that is pointing the ret argument
+	 */
+	protected Array<Long> changeTypeLong(Array<Long> ret) {
+		return changeTypeLong(ret, 0, size());
+	}
+
+	/**
+	 * Change type to a Long array, of underlying longs to store the individual values
+	 * 
+	 * @param ret The array to insert the result into
+	 * @param l   lower index to convert from (inclusive)
+	 * @param u   upper index to convert to (exclusive)
+	 * @return A Long type of array that is pointing the ret argument
+	 */
+	protected abstract Array<Long> changeTypeLong(Array<Long> ret, int l, int u);
 
 	/**
 	 * Change type to a Hash46 array type
 	 * 
 	 * @return A Hash64 array
 	 */
-	protected abstract Array<Object> changeTypeHash64();
+	protected Array<Object> changeTypeHash64() {
+		return changeTypeHash64(new HashLongArray(new long[size()]));
+	}
+
+	/**
+	 * Change type to a Hash64 array, of underlying longs to store the individual values
+	 * 
+	 * @param ret The array to insert the result into
+	 * @return A Hash64 type of array that is pointing the ret argument
+	 */
+	protected Array<Object> changeTypeHash64(Array<Object> ret) {
+		return changeTypeHash64(ret, 0, size());
+	}
+
+	/**
+	 * Change type to a Hash64 array, of underlying longs to store the individual values
+	 * 
+	 * @param ret The array to insert the result into
+	 * @param l   lower index to convert from (inclusive)
+	 * @param u   upper index to convert to (exclusive)
+	 * @return A Hash64 type of array that is pointing the ret argument
+	 */
+	protected abstract Array<Object> changeTypeHash64(Array<Object> ret, int l, int u);
 
 	/**
 	 * Change type to a String array type
 	 * 
 	 * @return String type of array
 	 */
-	protected abstract Array<String> changeTypeString();
+	protected Array<String> changeTypeString() {
+		return changeTypeString(new StringArray(new String[size()]));
+	}
+
+	/**
+	 * Change type to a String array, of underlying longs to store the individual values
+	 * 
+	 * @param ret The array to insert the result into
+	 * @return A String type of array that is pointing the ret argument
+	 */
+	protected Array<String> changeTypeString(Array<String> ret) {
+		return changeTypeString(ret, 0, size());
+	}
+
+	/**
+	 * Change type to a String array, of underlying longs to store the individual values
+	 * 
+	 * @param ret The array to insert the result into
+	 * @param l   lower index to convert from (inclusive)
+	 * @param u   upper index to convert to (exclusive)
+	 * @return A String type of array that is pointing the ret argument
+	 */
+	protected abstract Array<String> changeTypeString(Array<String> ret, int l, int u);
 
 	/**
 	 * Change type to a Character array type
 	 * 
 	 * @return Character type of array
 	 */
-	protected abstract Array<Character> changeTypeCharacter();
+	protected Array<Character> changeTypeCharacter() {
+		return changeTypeCharacter(new CharArray(new char[size()]));
+	}
+
+	/**
+	 * Change type to a Character array, of underlying longs to store the individual values
+	 * 
+	 * @param ret The array to insert the result into
+	 * @return A Character type of array that is pointing the ret argument
+	 */
+	protected Array<Character> changeTypeCharacter(Array<Character> ret) {
+		return changeTypeCharacter(ret, 0, size());
+	}
+
+	/**
+	 * Change type to a Character array, of underlying longs to store the individual values
+	 * 
+	 * @param ret The array to insert the result into
+	 * @param l   lower index to convert from (inclusive)
+	 * @param u   upper index to convert to (exclusive)
+	 * @return A Character type of array that is pointing the ret argument
+	 */
+	protected abstract Array<Character> changeTypeCharacter(Array<Character> ret, int l, int u);
 
 	/**
 	 * Get the minimum and maximum length of the contained values as string type.
@@ -774,7 +983,7 @@ public abstract class Array<T> implements Writable {
 		if(ddcSize < memSize)
 			return new ArrayCompressionStatistics(memSizePerElement, //
 				estDistinct, true, vt.getKey(), vt.getValue(), FrameArrayType.DDC, getInMemorySize(), ddcSize);
-		else if(vt.getKey() != getValueType() )
+		else if(vt.getKey() != getValueType())
 			return new ArrayCompressionStatistics(memSizePerElement, //
 				estDistinct, true, vt.getKey(), vt.getValue(), null, getInMemorySize(), memSize);
 		return null;

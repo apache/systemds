@@ -37,8 +37,8 @@ import org.apache.sysds.runtime.compress.colgroup.ColGroupFactory;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupRLE;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupSDCSingleZeros;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupSDCZeros;
-import org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary;
 import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.compress.colgroup.scheme.ICLAScheme;
@@ -393,6 +393,23 @@ public class ColGroupNegativeTests {
 			// TODO Auto-generated method stub
 			throw new UnsupportedOperationException("Unimplemented method 'fixColIndexes'");
 		}
+
+		@Override
+		public void sparseSelection(MatrixBlock selection, MatrixBlock ret, int rl, int ru) {
+			throw new UnsupportedOperationException("Unimplemented method 'sparseSelection'");
+		}
+
+		@Override
+		protected void decompressToDenseBlockTransposedSparseDictionary(DenseBlock db, int rl, int ru, SparseBlock dict) {
+			// TODO Auto-generated method stub
+			throw new UnsupportedOperationException("Unimplemented method 'decompressToDenseBlockTransposedSparseDictionary'");
+		}
+
+		@Override
+		protected void decompressToDenseBlockTransposedDenseDictionary(DenseBlock db, int rl, int ru, double[] dict) {
+			// TODO Auto-generated method stub
+			throw new UnsupportedOperationException("Unimplemented method 'decompressToDenseBlockTransposedDenseDictionary'");
+		}
 	}
 
 	private class FakeDictBasedColGroup extends ADictBasedColGroup {
@@ -642,6 +659,23 @@ public class ColGroupNegativeTests {
 		protected AColGroup fixColIndexes(IColIndex newColIndex, int[] reordering) {
 			// TODO Auto-generated method stub
 			throw new UnsupportedOperationException("Unimplemented method 'fixColIndexes'");
+		}
+
+		@Override
+		public void sparseSelection(MatrixBlock selection, MatrixBlock ret, int rl, int ru) {
+			throw new UnsupportedOperationException("Unimplemented method 'sparseSelection'");
+		}
+
+		@Override
+		protected void decompressToDenseBlockTransposedSparseDictionary(DenseBlock db, int rl, int ru, SparseBlock dict) {
+			// TODO Auto-generated method stub
+			throw new UnsupportedOperationException("Unimplemented method 'decompressToDenseBlockTransposedSparseDictionary'");
+		}
+
+		@Override
+		protected void decompressToDenseBlockTransposedDenseDictionary(DenseBlock db, int rl, int ru, double[] dict) {
+			// TODO Auto-generated method stub
+			throw new UnsupportedOperationException("Unimplemented method 'decompressToDenseBlockTransposedDenseDictionary'");
 		}
 	}
 }

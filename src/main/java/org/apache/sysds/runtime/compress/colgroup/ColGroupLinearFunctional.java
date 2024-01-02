@@ -703,4 +703,18 @@ public class ColGroupLinearFunctional extends AColGroupCompressed {
 		throw new NotImplementedException();
 	}
 
+	@Override
+	public double getSparsity() {
+		return 1.0;
+	}
+
+	@Override
+	public void sparseSelection(MatrixBlock selection, MatrixBlock ret, int rl, int ru) {
+		throw new NotImplementedException();
+	}
+
+	@Override
+	public void decompressToDenseBlockTransposed(DenseBlock db, int rl, int ru) {
+		throw new NotImplementedException();
+	}
 }

@@ -19,6 +19,8 @@
 
 package org.apache.sysds.runtime.compress.colgroup;
 
+import java.util.Arrays;
+
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.compress.utils.DoubleCountHashMap;
 import org.apache.sysds.runtime.data.SparseBlock;
@@ -305,11 +307,51 @@ public interface ColGroupUtils {
 		}
 	}
 
-	public static double[] reorderDefault(double[] vals, int[] reordering){
+	public static double[] reorderDefault(double[] vals, int[] reordering) {
 		double[] ret = new double[vals.length];
 		for(int i = 0; i < vals.length; i++)
 			ret[i] = vals[reordering[i]];
-		return ret; 
+		return ret;
+	}
+
+	public static P[] getSortedSelection(SparseBlock sb, int rl, int ru) {
+
+		int c = 0;
+		// count loop
+		for(int i = rl; i < ru; i++) {
+			if(sb.isEmpty(i))
+				continue;
+			c++;
+		}
+
+		P[] points = new P[c];
+		c = 0;
+		for(int i = rl; i < ru; i++) {
+			if(sb.isEmpty(i))
+				continue;
+			final int sPos = sb.pos(i);
+			points[c++] = new P(i, sb.indexes(i)[sPos]);
+		}
+
+		Arrays.sort(points, (a, b) -> {
+			return a.o < b.o ? -1 : 1;
+		});
+		return points;
+	}
+
+	public static class P {
+		public final int r;
+		public final int o;
+
+		private P(int r, int o) {
+			this.r = r;
+			this.o = o;
+		}
+
+		@Override
+		public String toString() {
+			return "P(" + r + "," + o + ")";
+		}
 	}
 
 }

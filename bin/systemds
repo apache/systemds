@@ -402,28 +402,22 @@ NATIVE_LIBS="$SYSTEMDS_ROOT${DIR_SEP}target${DIR_SEP}classes${DIR_SEP}lib"
 export PATH=${HADOOP_REL}${DIR_SEP}bin${PATH_SEP}${PATH}${PATH_SEP}$NATIVE_LIBS
 export LD_LIBRARY_PATH=${HADOOP_REL}${DIR_SEP}bin${PATH_SEP}${LD_LIBRARY_PATH}
 
-# set java class path
-CLASSPATH="${SYSTEMDS_JAR_FILE}${PATH_SEP} \
-          ${SYSTEMDS_ROOT}${DIR_SEP}lib${DIR_SEP}*${PATH_SEP} \
-          ${SYSTEMDS_ROOT}${DIR_SEP}target${DIR_SEP}lib${DIR_SEP}*"
-# trim whitespace (introduced by the line breaks above)
-CLASSPATH=$(echo "${CLASSPATH}" | tr -d '[:space:]')
-
 if [ $PRINT_SYSDS_HELP == 1 ]; then
   echo "----------------------------------------------------------------------"
   echo "Further help on SystemDS arguments:"
-  java -cp "$CLASSPATH" org.apache.sysds.api.DMLScript -help
+  java -jar $SYSTEMDS_JAR_FILE -help
   exit 1
 fi
 
-print_out "###############################################################################"
-print_out "#  SYSTEMDS_ROOT= $SYSTEMDS_ROOT"
-print_out "#  SYSTEMDS_JAR_FILE= $SYSTEMDS_JAR_FILE"
-print_out "#  SYSDS_EXEC_MODE= $SYSDS_EXEC_MODE"
-print_out "#  CONFIG_FILE= $CONFIG_FILE"
-print_out "#  LOG4JPROP= $LOG4JPROP"
-print_out "#  CLASSPATH= $CLASSPATH"
-print_out "#  HADOOP_HOME= $HADOOP_HOME"
+if [ $SYSDS_QUIET == 0 ]; then
+  print_out "###############################################################################"
+  print_out "#  SYSTEMDS_ROOT= $SYSTEMDS_ROOT"
+  print_out "#  SYSTEMDS_JAR_FILE= $SYSTEMDS_JAR_FILE"
+  print_out "#  SYSDS_EXEC_MODE= $SYSDS_EXEC_MODE"
+  print_out "#  CONFIG_FILE= $CONFIG_FILE"
+  print_out "#  LOG4JPROP= $LOG4JPROP"
+  print_out "#  HADOOP_HOME= $HADOOP_HOME"
+fi
 
 #build the command to run
 if [ $WORKER == 1 ]; then
@@ -432,7 +426,7 @@ if [ $WORKER == 1 ]; then
   print_out "###############################################################################"
   CMD=" \
   java $SYSTEMDS_STANDALONE_OPTS \
-  -cp $CLASSPATH \
+  -jar $SYSTEMDS_JAR_FILE \
   $LOG4JPROPFULL \
   org.apache.sysds.api.DMLScript \
   -w $PORT \
@@ -447,9 +441,8 @@ elif [ "$FEDMONITORING" == 1 ]; then
   print_out "###############################################################################"
   CMD=" \
   java $SYSTEMDS_STANDALONE_OPTS \
-  -cp $CLASSPATH \
   $LOG4JPROPFULL \
-  org.apache.sysds.api.DMLScript \
+  -jar $SYSTEMDS_JAR_FILE \
   -fedMonitoring $PORT \
   $CONFIG_FILE \
   $*"
@@ -462,9 +455,8 @@ elif [ $SYSDS_DISTRIBUTED == 0 ]; then
   print_out "###############################################################################"
   CMD=" \
   java $SYSTEMDS_STANDALONE_OPTS \
-  -cp $CLASSPATH \
   $LOG4JPROPFULL \
-  org.apache.sysds.api.DMLScript \
+  -jar $SYSTEMDS_JAR_FILE \
   -f $SCRIPT_FILE \
   -exec $SYSDS_EXEC_MODE \
   $CONFIG_FILE \

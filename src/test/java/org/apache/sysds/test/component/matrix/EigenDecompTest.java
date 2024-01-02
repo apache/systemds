@@ -23,6 +23,7 @@ import static org.junit.Assert.fail;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.matrix.data.LibCommonsMath;
 import org.apache.sysds.runtime.matrix.data.LibMatrixMult;
 import org.apache.sysds.runtime.matrix.data.LibMatrixReorg;
@@ -120,6 +121,8 @@ public class EigenDecompTest {
 				case QR:
 					m = LibCommonsMath.multiReturnOperations(in, "eigen_qr", threads, 1);
 					break;
+				default:
+					throw new DMLRuntimeException("Fail");
 			}
 
 			isValidDecomposition(in, m[1], m[0], tol, t.toString());

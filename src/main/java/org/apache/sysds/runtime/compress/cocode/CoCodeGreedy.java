@@ -92,16 +92,22 @@ public class CoCodeGreedy extends AColumnCoCoder {
 				for(int j = i + 1; j < workSet.size(); j++) {
 					final ColIndexes c1 = workSet.get(i);
 					final ColIndexes c2 = workSet.get(j);
-					final double costC1 = _cest.getCost(mem.get(c1));
-					final double costC2 = _cest.getCost(mem.get(c2));
+					final CompressedSizeInfoColGroup c1i = mem.get(c1);
+					final CompressedSizeInfoColGroup c2i = mem.get(c2);
+
+					final double costC1 = _cest.getCost(c1i);
+					final double costC2 = _cest.getCost(c2i);
 
 					mem.incst1();
+					final int maxCombined = c1i.getNumVals() * c2i.getNumVals();
 
 					// Pruning filter : skip dominated candidates
 					// Since even if the entire size of one of the column lists is removed,
 					// it still does not improve compression.
 					// In the case of workload we relax the requirement for the filter.
-					if(-Math.min(costC1, costC2) > changeInCost)
+					if(-Math.min(costC1, costC2) > changeInCost // change in cost cannot possibly be better.
+						|| (maxCombined < 0) // int overflow
+						|| (maxCombined > c1i.getNumRows() * 2)) // higher combined number of rows.
 						continue;
 
 					// Combine the two column groups.
@@ -202,10 +208,20 @@ public class CoCodeGreedy extends AColumnCoCoder {
 		}
 
 		@Override
-		public Object call() {
-			final IColIndex c = _c1._indexes.combine(_c2._indexes);
-			final ColIndexes cI = new ColIndexes(c);
-			mem.getOrCreate(cI, _c1, _c2);
+		public Object call() throws Exception {
+			final CompressedSizeInfoColGroup c1i = mem.get(_c1);
+			final CompressedSizeInfoColGroup c2i = mem.get(_c2);
+			if(c1i != null && c2i != null) {
+				final int maxCombined = c1i.getNumVals() * c2i.getNumVals();
+
+				if(maxCombined < 0 // int overflow
+					|| maxCombined > c1i.getNumRows() * 2) // higher combined than number of rows.
+					return null;
+
+				final IColIndex c = _c1._indexes.combine(_c2._indexes);
+				final ColIndexes cI = new ColIndexes(c);
+				mem.getOrCreate(cI, _c1, _c2);
+			}
 			return null;
 		}
 	}

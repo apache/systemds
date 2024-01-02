@@ -27,6 +27,8 @@ import java.util.BitSet;
 
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.runtime.compress.colgroup.IMapToDataGroup;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary;
+import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory.MAP_TYPE;
 import org.apache.sysds.utils.MemoryEstimates;
 
@@ -291,7 +293,14 @@ public class MapToCharPByte extends AMapToData {
 	}
 
 	@Override
-	protected void preAggregateDenseToRowVec8(double[] mV, double[] preAV, int rc, int off){
+	public void lmSparseMatrixRow(final int apos, final int alen, final int[] aix, final double[] aval, final int r,
+		final int offR, final double[] retV, final IColIndex colIndexes, final IDictionary dict) {
+		for(int i = apos; i < alen; i++)
+			dict.multiplyScalar(aval[i], retV, offR, getIndex(aix[i]), colIndexes);
+	}
+
+	@Override
+	protected void preAggregateDenseToRowVec8(double[] mV, double[] preAV, int rc, int off) {
 		preAV[getIndex(rc)] += mV[off];
 		preAV[getIndex(rc + 1)] += mV[off + 1];
 		preAV[getIndex(rc + 2)] += mV[off + 2];

@@ -387,8 +387,8 @@ public class DataOp extends Hop {
 	protected double computeOutputMemEstimate( long dim1, long dim2, long nnz )
 	{		
 		double ret = 0;
-		
-		if ( getDataType() == DataType.SCALAR ) 
+		final DataType dt = getDataType();
+		if ( dt == DataType.SCALAR ) 
 		{
 			switch( getValueType() ) 
 			{
@@ -405,6 +405,11 @@ public class DataOp extends Hop {
 					ret = OptimizerUtils.DEFAULT_SIZE; break;
 				default:
 					ret = 0;
+			}
+		}
+		else if(dt == DataType.FRAME) {
+			if(_op == OpOpData.PERSISTENTREAD || _op == OpOpData.TRANSIENTREAD) {
+				ret = OptimizerUtils.estimateSizeExactFrame(dim1, dim2);
 			}
 		}
 		else //MATRIX / FRAME

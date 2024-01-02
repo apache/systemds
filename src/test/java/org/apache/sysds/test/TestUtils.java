@@ -851,12 +851,37 @@ public class TestUtils {
 		final int cols = expected.getNumColumns();
 		if(checkMeta)
 			checkMetadata(expected, actual);
+		if(expected.getNumRows() == 0){
+			if (expected.getColumns() != null)
+				fail();
+			if (actual.getColumns() != null) 
+				fail();
+		}
+		else{
+			for(int j = 0; j < cols; j++) {
+				Array<?> ec = expected.getColumn(j);
+				Array<?> ac = actual.getColumn(j);
+				if(ec.containsNull()) {
+					if(!ac.containsNull()) {
+						fail("Expected both columns to be containing null if one null:\n\nExpected containing null:\n"
+							+ ec.toString().substring(0, 1000) + "\n\nActual:\n" + ac.toString().substring(0, 1000));
+					}
+				}
+				else if(ac.containsNull()) {
+					fail("Expected both columns to be containing null if one null:\n\nExpected:\n"
+						+ ec.toString().substring(0, 1000) + "\n\nActual containing null:\n" + ac.toString().substring(0, 1000));
+				}
+			}
+		}
 
 		for(int i = 0; i < rows; i++) {
 			for(int j = 0; j < cols; j++) {
 				final Object a = expected.get(i, j);
 				final Object b = actual.get(i, j);
-				if(!(a == null && b == null)) {
+				if(a == null){
+					assertTrue(a == b);
+				}
+				else if(!(a == null && b == null)) {
 					try{
 						final String as = a.toString();
 						final String bs = b.toString();
@@ -2405,6 +2430,7 @@ public class TestUtils {
 	}
 
 	public static FrameBlock generateRandomFrameBlockWithSchemaOfStrings(int rows, int cols, long seed){
+		FrameLibApplySchema.PAR_ROW_THRESHOLD = 10;
 		ValueType[] schema = generateRandomSchema(cols, seed);
 		FrameBlock f =  generateRandomFrameBlock(rows, schema, seed);
 		ValueType[] schemaString = UtilFunctions.nCopies(cols, ValueType.STRING);
@@ -3299,6 +3325,12 @@ public class TestUtils {
 		for(int i=0; i<data.length; i++)
 			for(int j=0; j<data[i].length; j++)
 				data[i][j]=Math.ceil(data[i][j]);
+		return data;
+	}
+
+	public static double[] ceil(double[] data) {
+		for(int i = 0; i < data.length; i++)
+			data[i] = Math.ceil(data[i]);
 		return data;
 	}
 

@@ -160,18 +160,8 @@ public class DDCArray<T> extends ACompressedArray<T> {
 	 * @param containsNull If the array contains null.
 	 * @return a compressed column group.
 	 */
-	public static <T> Array<?> compressToDDC(Array<T> arr, ValueType vt, boolean containsNull) {
-		Array<?> arrT;
-		try {
-			arrT = containsNull ? arr.changeTypeWithNulls(vt) : arr.changeType(vt);
-		}
-		catch(Exception e) {
-			// fall back to full analysis.
-			Pair<ValueType, Boolean> ct = arr.analyzeValueType();
-			arrT = ct.getValue() ? arr.changeTypeWithNulls(ct.getKey()) : arr.changeType(ct.getKey());
-		}
-
-		return compressToDDC(arrT);
+	public static <T> Array<?> compressToDDC(Array<T> arr, boolean containsNull) {
+		return compressToDDC(arr);
 	}
 
 	@Override
@@ -291,6 +281,11 @@ public class DDCArray<T> extends ACompressedArray<T> {
 	@Override
 	public long getExactSerializedSize() {
 		return 1L +1L+ map.getExactSizeOnDisk() + dict.getExactSerializedSize();
+	}
+
+	@Override
+	public Array<?> changeType(ValueType t){
+		return new DDCArray<>(dict.changeType(t), map);
 	}
 
 	@Override

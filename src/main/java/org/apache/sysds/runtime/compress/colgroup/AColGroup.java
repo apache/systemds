@@ -163,13 +163,22 @@ public abstract class AColGroup implements Serializable {
 	/**
 	 * Decompress a range of rows into a dense block
 	 * 
-	 * @param db Sparse Target block
+	 * @param db Dense target block
 	 * @param rl Row to start at
 	 * @param ru Row to end at
 	 */
 	public final void decompressToDenseBlock(DenseBlock db, int rl, int ru) {
 		decompressToDenseBlock(db, rl, ru, 0, 0);
 	}
+
+	/**
+	 * Decopress a range of rows into a dense transposed block.
+	 * 
+	 * @param db Dense target block
+	 * @param rl Row in this column group to start at.
+	 * @param ru Row in this column group to end at.
+	 */
+	public abstract void decompressToDenseBlockTransposed(DenseBlock db, int rl, int ru);
 
 	/**
 	 * Serializes column group to data output.
@@ -606,8 +615,8 @@ public abstract class AColGroup implements Serializable {
 	public abstract boolean isEmpty();
 
 	/**
-	 * Append the other column group to this column group. This method tries to combine them to return a new column
-	 * group containing both. In some cases it is possible in reasonable time, in others it is not.
+	 * Append the other column group to this column group. This method tries to combine them to return a new column group
+	 * containing both. In some cases it is possible in reasonable time, in others it is not.
 	 * 
 	 * The result is first this column group followed by the other column group in higher row values.
 	 * 
@@ -670,11 +679,18 @@ public abstract class AColGroup implements Serializable {
 	/**
 	 * Recompress this column group into a new column group of the given type.
 	 * 
-	 * @param ct The compressionType that the column group should morph into
+	 * @param ct   The compressionType that the column group should morph into
+	 * @param nRow The number of rows in this columngroup.
 	 * @return A new column group
 	 */
-	public AColGroup morph(CompressionType ct) {
-		throw new NotImplementedException();
+	public AColGroup morph(CompressionType ct, int nRow) {
+		if(ct == getCompType())
+			return this;
+		else if (ct == CompressionType.DDCFOR)
+			return this; // it does not make sense to change to FOR.
+		else{
+			throw new NotImplementedException("Morphing from : " + getCompType() + " to " + ct + " is not implemented");
+		}
 	}
 
 	/**
@@ -715,6 +731,34 @@ public abstract class AColGroup implements Serializable {
 	}
 
 	protected abstract AColGroup fixColIndexes(IColIndex newColIndex, int[] reordering);
+
+	/**
+	 * Get an approximate sparsity of this column group
+	 * 
+	 * @return the approximate sparsity of this columngroup
+	 */
+	public abstract double getSparsity();
+
+	/**
+	 * Sparse selection (left matrix multiply)
+	 * 
+	 * @param selection A sparse matrix with "max" a single one in each row all other values are zero.
+	 * @param ret       The Sparse MatrixBlock to decompress the selected rows into
+	 * @param rl        The row to start at in the selection matrix
+	 * @param ru        the row to end at in the selection matrix (not inclusive)
+	 */
+	public abstract void sparseSelection(MatrixBlock selection, MatrixBlock ret, int rl, int ru);
+
+	/**
+	 * Method to determine if the columnGroup have the same index structure as another. Note that the column indexes and
+	 * dictionaries are allowed to be different.
+	 * 
+	 * @param that the other column group
+	 * @return if the index is the same.
+	 */
+	public boolean sameIndexStructure(AColGroup that) {
+		return false;
+	}
 
 	@Override
 	public String toString() {

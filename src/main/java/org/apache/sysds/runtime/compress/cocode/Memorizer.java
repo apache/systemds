@@ -24,6 +24,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.estim.AComEst;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
 
@@ -60,7 +61,7 @@ public class Memorizer {
 		}
 	}
 
-	public CompressedSizeInfoColGroup getOrCreate(ColIndexes cI, ColIndexes c1, ColIndexes c2){
+	public CompressedSizeInfoColGroup getOrCreate(ColIndexes cI, ColIndexes c1, ColIndexes c2) {
 		CompressedSizeInfoColGroup g = mem.get(cI);
 		st2++;
 		if(g == null) {
@@ -69,7 +70,11 @@ public class Memorizer {
 			if(left != null && right != null) {
 				st3++;
 				g = _sEst.combine(cI._indexes, left, right);
-
+				if(g != null) {
+					if(g.getNumVals() < 0)
+						throw new DMLCompressionException(
+							"Combination returned less distinct values on: \n" + left + "\nand\n" + right + "\nEq\n" + g);
+				}
 				synchronized(this) {
 					mem.put(cI, g);
 				}
@@ -88,7 +93,7 @@ public class Memorizer {
 	}
 
 	public String stats() {
-		return " possible: " + st1 + " requests: " + st2 + " combined: " + st3  + " outSecond: "+ st4;
+		return " possible: " + st1 + " requests: " + st2 + " combined: " + st3 + " outSecond: " + st4;
 	}
 
 	public void resetStats() {

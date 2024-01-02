@@ -35,10 +35,7 @@ import org.apache.sysds.runtime.compress.estim.sample.SampleEstimatorFactory.Est
  */
 public class CompressionSettingsBuilder {
 	private double samplingRatio;
-	// private double samplePower = 0.6;
 	private double samplePower = 0.65;
-	// private double samplePower = 0.68;
-	// private double samplePower = 0.7;
 	private boolean allowSharedDictionary = false;
 	private String transposeInput;
 	private int seed = -1;

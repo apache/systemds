@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Random;
 
+import org.apache.commons.lang.NotImplementedException;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.hadoop.io.LongWritable;
@@ -352,16 +353,13 @@ public class WriteSPInstruction extends SPInstruction implements LineageTraceabl
 				}
 
 				rdd.saveAsTextFile(randFName);
-				HDFSTool.mergeIntoSingleFile(randFName, fname); // Faster version :)
-
-				// rdd.coalesce(1, true).saveAsTextFile(randFName);
-				// MapReduceTool.copyFileOnHDFS(randFName + "/part-00000", fname);
+				HDFSTool.mergeIntoSingleFile(randFName, fname);
 			} catch (IOException e) {
 				throw new DMLRuntimeException("Cannot merge the output into single file: " + e.getMessage());
 			}
 			finally {
 				try {
-					// This is to make sure that we donot create random files on HDFS
+					// This is to make sure that we do not create random files on HDFS
 					HDFSTool.deleteFileIfExistOnHDFS( randFName );
 				} catch (IOException e) {
 					throw new DMLRuntimeException("Cannot merge the output into single file: " + e.getMessage());

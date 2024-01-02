@@ -313,7 +313,7 @@ public abstract class APreAgg extends AColGroupValue {
 		final MatrixBlock preAggCopy = new MatrixBlock();
 		preAggCopy.copy(preAgg);
 		final MatrixBlock tmpResCopy = new MatrixBlock();
-		tmpResCopy.copy(tmpRes);
+		tmpResCopy.copyShallow(tmpRes);
 		// Get dictionary matrixBlock
 		final MatrixBlock dict = getDictionary().getMBDict(_colIndexes.size()).getMatrixBlock();
 		if(dict != null) {

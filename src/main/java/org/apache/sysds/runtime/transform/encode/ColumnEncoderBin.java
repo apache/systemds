@@ -19,6 +19,8 @@
 
 package org.apache.sysds.runtime.transform.encode;
 
+import static org.apache.sysds.runtime.util.UtilFunctions.getEndIndex;
+
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
@@ -28,7 +30,6 @@ import java.util.PriorityQueue;
 import java.util.Random;
 import java.util.concurrent.Callable;
 
-import static org.apache.sysds.runtime.util.UtilFunctions.getEndIndex;
 import org.apache.commons.lang3.tuple.MutableTriple;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.lops.Lop;
@@ -274,17 +275,12 @@ public class ColumnEncoderBin extends ColumnEncoder {
 
 	private static double[] extractDoubleColumn(CacheBlock<?> in, int colID, int startRow, int blockSize) {
 		int endRow = getEndIndex(in.getNumRows(), startRow, blockSize);
-		double[] vals = new double[endRow - startRow];
 		final int cid = colID -1;
+		double[] vals = new double[endRow - startRow];
 		if(in instanceof FrameBlock) {
 			// FrameBlock optimization
 			Array<?> a = ((FrameBlock) in).getColumn(cid);
-			for(int i = startRow; i < endRow; i++) {
-				double inVal = a.getAsNaNDouble(i);
-				if(Double.isNaN(inVal))
-					continue;
-				vals[i - startRow] = inVal;
-			}
+			return a.extractDouble(vals, startRow, endRow);
 		}
 		else {
 			for(int i = startRow; i < endRow; i++) {

@@ -158,6 +158,7 @@ public class CompressedEncode {
 		Array<?> a = in.getColumn(colId - 1);
 		boolean containsNull = a.containsNull();
 		Map<?, Long> map = a.getRecodeMap();
+
 		List<ColumnEncoder> r = c.getEncoders();
 		r.set(0, new ColumnEncoderRecode(colId, (HashMap<Object, Long>) map));
 		int domain = map.size();
@@ -169,6 +170,7 @@ public class CompressedEncode {
 
 		ADictionary d = new IdentityDictionary(colIndexes.size(), containsNull);
 		AMapToData m = createMappingAMapToData(a, map, containsNull);
+
 		return ColGroupDDC.create(colIndexes, d, m, null);
 	}
 
@@ -291,7 +293,7 @@ public class CompressedEncode {
 		IColIndex colIndexes = ColIndexFactory.create(1);
 		int colId = c._colID;
 		Array<?> a = in.getColumn(colId - 1);
-		if(a instanceof ACompressedArray){
+		if(a instanceof ACompressedArray) {
 			switch(a.getFrameArrayType()) {
 				case DDC:
 					DDCArray<?> aDDC = (DDCArray<?>) a;
@@ -322,7 +324,7 @@ public class CompressedEncode {
 			if(containsNull)
 				vals[map.size()] = Double.NaN;
 			ValueType t = a.getValueType();
-			map.forEach((k, v) -> vals[v.intValue()-1] = UtilFunctions.objectToDouble(t, k));
+			map.forEach((k, v) -> vals[v.intValue() - 1] = UtilFunctions.objectToDouble(t, k));
 			ADictionary d = Dictionary.create(vals);
 			AMapToData m = createMappingAMapToData(a, map, containsNull);
 			return ColGroupDDC.create(colIndexes, d, m, null);
@@ -337,30 +339,29 @@ public class CompressedEncode {
 			AMapToData m = MapToFactory.create(in.getNumRows(), si + (containsNull ? 1 : 0));
 			Array<?>.ArrayIterator it = a.getIterator();
 			if(containsNull) {
-
 				while(it.hasNext()) {
 					Object v = it.next();
-					try{
+					try {
 						if(v != null)
-							m.set(it.getIndex(), map.get(v).intValue() -1);
+							m.set(it.getIndex(), map.get(v).intValue() - 1);
 						else
 							m.set(it.getIndex(), si);
 					}
-					catch(Exception e){
-						throw new RuntimeException("failed on " + v +" " + a.getValueType(), e);
+					catch(Exception e) {
+						throw new RuntimeException("failed on " + v + " " + a.getValueType(), e);
 					}
 				}
 			}
 			else {
 				while(it.hasNext()) {
 					Object v = it.next();
-					m.set(it.getIndex(), map.get(v).intValue() -1);
+					m.set(it.getIndex(), map.get(v).intValue() - 1);
 				}
 			}
 			return m;
 		}
 		catch(Exception e) {
-			throw new RuntimeException("failed constructing map: " + map,  e);
+			throw new RuntimeException("failed constructing map: " + map, e);
 		}
 	}
 
@@ -368,19 +369,17 @@ public class CompressedEncode {
 		AMapToData m = MapToFactory.create(a.size(), k + (nulls ? 1 : 0));
 		if(nulls) {
 			for(int i = 0; i < a.size(); i++) {
-				double h = Math.abs(a.hashDouble(i));
-				if(Double.isNaN(h)) {
+				double h = Math.abs(a.hashDouble(i)) % k;
+				if(Double.isNaN(h))
 					m.set(i, k);
-				}
-				else {
-					m.set(i, (int) h % k);
-				}
+				else 
+					m.set(i, (int)h);
 			}
 		}
 		else {
 			for(int i = 0; i < a.size(); i++) {
-				double h = Math.abs(a.hashDouble(i));
-				m.set(i, (int) h % k);
+				double h = Math.abs(a.hashDouble(i)) % k;
+				m.set(i, (int)h);
 			}
 		}
 		return m;

@@ -43,8 +43,32 @@ public abstract class ABooleanArray extends Array<Boolean> {
 	public abstract ABooleanArray select(boolean[] select, int nTrue);
 
 	@Override
-	public boolean possiblyContainsNaN(){
+	public boolean possiblyContainsNaN() {
 		return false;
+	}
+
+	public void setNullsFromString(int rl, int ru, Array<String> value) {
+
+		final int remainder = rl % 64;
+		if(remainder == 0) {
+			final int ru64 = (ru  / 64) * 64;
+			for(int i = rl; i < ru64; i++) {
+				unsafeSet(i, value.get(i) != null);
+			}
+			for(int i = ru64 ; i <= ru ; i++) {
+				set(i, value.get(i) != null);
+			}
+		}
+		else {
+			for(int i = rl; i <= ru; i++) {
+				set(i, value.get(i) != null);
+			}
+		}
+
+	}
+
+	protected void unsafeSet(int index, boolean value) {
+		set(index, value);
 	}
 
 	@Override

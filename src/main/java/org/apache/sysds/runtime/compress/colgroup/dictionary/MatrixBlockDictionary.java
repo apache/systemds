@@ -38,11 +38,13 @@ import org.apache.sysds.runtime.data.SparseBlockFactory;
 import org.apache.sysds.runtime.data.SparseBlockMCSR;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.functionobjects.Builtin.BuiltinCode;
+import org.apache.sysds.runtime.functionobjects.Divide;
 import org.apache.sysds.runtime.functionobjects.Minus;
 import org.apache.sysds.runtime.functionobjects.Plus;
 import org.apache.sysds.runtime.functionobjects.ValueFunction;
 import org.apache.sysds.runtime.instructions.cp.CM_COV_Object;
 import org.apache.sysds.runtime.matrix.data.LibMatrixAgg;
+import org.apache.sysds.runtime.matrix.data.LibMatrixBincell;
 import org.apache.sysds.runtime.matrix.data.LibMatrixReorg;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
@@ -63,6 +65,7 @@ public class MatrixBlockDictionary extends ADictionary {
 	 */
 	protected MatrixBlockDictionary(MatrixBlock data) {
 		_data = data;
+		_data.examSparsity();
 	}
 
 	public static MatrixBlockDictionary create(MatrixBlock mb) {
@@ -420,7 +423,7 @@ public class MatrixBlockDictionary extends ADictionary {
 
 	@Override
 	public IDictionary applyScalarOp(ScalarOperator op) {
-		MatrixBlock res = _data.scalarOperations(op, new MatrixBlock());
+		MatrixBlock res = LibMatrixBincell.bincellOpScalar(_data, null, op, 1);
 		return MatrixBlockDictionary.create(res);
 	}
 
@@ -732,7 +735,16 @@ public class MatrixBlockDictionary extends ADictionary {
 
 	@Override
 	public MatrixBlockDictionary binOpRight(BinaryOperator op, double[] v, IColIndex colIndexes) {
+		if(op.fn instanceof Divide) {
+			boolean all1 = true;
+			for(int i = 0; i < colIndexes.size() && all1; i++) {
+				all1 = v[colIndexes.get(i)] == 1;
+			}
+			if(all1)
+				return this;
+		}
 		final MatrixBlock rowVector = Util.extractValues(v, colIndexes);
+		rowVector.examSparsity();
 		final MatrixBlock ret = _data.binaryOperations(op, rowVector, null);
 		return MatrixBlockDictionary.create(ret);
 	}
@@ -2015,7 +2027,9 @@ public class MatrixBlockDictionary extends ADictionary {
 
 	@Override
 	public void multiplyScalar(double v, double[] ret, int off, int dictIdx, IColIndex cols) {
-		if(_data.isInSparseFormat())
+		if(v == 0)
+			return;
+		else if(_data.isInSparseFormat())
 			multiplyScalarSparse(v, ret, off, dictIdx, cols);
 		else
 			multiplyScalarDense(v, ret, off, dictIdx, cols);
@@ -2077,9 +2091,11 @@ public class MatrixBlockDictionary extends ADictionary {
 	public void MMDictScalingDense(double[] left, IColIndex rowsLeft, IColIndex colsRight, MatrixBlock result,
 		int[] scaling) {
 		if(_data.isInSparseFormat())
-			DictLibMatrixMult.MMDictsScalingDenseSparse(left, _data.getSparseBlock(), rowsLeft, colsRight, result, scaling);
+			DictLibMatrixMult.MMDictsScalingDenseSparse(left, _data.getSparseBlock(), rowsLeft, colsRight, result,
+				scaling);
 		else
-			DictLibMatrixMult.MMDictsScalingDenseDense(left, _data.getDenseBlockValues(), rowsLeft, colsRight, result,scaling);
+			DictLibMatrixMult.MMDictsScalingDenseDense(left, _data.getDenseBlockValues(), rowsLeft, colsRight, result,
+				scaling);
 	}
 
 	@Override
@@ -2095,9 +2111,11 @@ public class MatrixBlockDictionary extends ADictionary {
 	public void MMDictScalingSparse(SparseBlock left, IColIndex rowsLeft, IColIndex colsRight, MatrixBlock result,
 		int[] scaling) {
 		if(_data.isInSparseFormat())
-			DictLibMatrixMult.MMDictsScalingSparseSparse(left, _data.getSparseBlock(), rowsLeft, colsRight, result, scaling);
+			DictLibMatrixMult.MMDictsScalingSparseSparse(left, _data.getSparseBlock(), rowsLeft, colsRight, result,
+				scaling);
 		else
-			DictLibMatrixMult.MMDictsScalingSparseDense(left, _data.getDenseBlockValues(), rowsLeft, colsRight, result, scaling);
+			DictLibMatrixMult.MMDictsScalingSparseDense(left, _data.getDenseBlockValues(), rowsLeft, colsRight, result,
+				scaling);
 	}
 
 	@Override
@@ -2160,11 +2178,22 @@ public class MatrixBlockDictionary extends ADictionary {
 	public boolean equals(IDictionary o) {
 		if(o instanceof MatrixBlockDictionary)
 			return _data.equals(((MatrixBlockDictionary) o)._data);
+
+		else if(o instanceof IdentityDictionary)
+			return ((IdentityDictionary) o).equals(this);
 		else if(o instanceof Dictionary) {
-			if(_data.isInSparseFormat())
-				return _data.getSparseBlock().equals(((Dictionary) o)._values, _data.getNumColumns());
+			double[] dVals = ((Dictionary) o)._values;
+			if(_data.isEmpty()) {
+				for(int i = 0; i < dVals.length; i++) {
+					if(dVals[i] != 0)
+						return false;
+				}
+				return true;
+			}
+			else if(_data.isInSparseFormat())
+				return _data.getSparseBlock().equals(dVals, _data.getNumColumns());
 			final double[] dv = _data.getDenseBlockValues();
-			return Arrays.equals(dv, ((Dictionary) o)._values);
+			return Arrays.equals(dv, dVals);
 		}
 
 		return false;
@@ -2189,5 +2218,45 @@ public class MatrixBlockDictionary extends ADictionary {
 				ret.quickSetValue(r, c, _data.quickGetValue(r, reorder[c]));
 
 		return create(ret, false);
+	}
+
+	@Override
+	public IDictionary append(double[] row) {
+		if(_data.isEmpty()) {
+			throw new NotImplementedException();
+		}
+		else if(_data.isInSparseFormat()) {
+			final int nRow = _data.getNumRows();
+			if(_data.getSparseBlock() instanceof SparseBlockMCSR) {
+				MatrixBlock mb = new MatrixBlock(_data.getNumRows() + 1, _data.getNumColumns(), true);
+				mb.allocateBlock();
+				SparseBlock sb = mb.getSparseBlock();
+				SparseBlockMCSR s = (SparseBlockMCSR) _data.getSparseBlock();
+
+				for(int i = 0; i < _data.getNumRows(); i++)
+					sb.set(i, s.get(i), false);
+
+				for(int i = 0; i < row.length; i++)
+					sb.set(nRow, i, row[i]);
+
+				mb.examSparsity();
+				return new MatrixBlockDictionary(mb);
+
+			}
+			else {
+				throw new NotImplementedException("Not implemented append for CSR");
+			}
+
+		}
+		else {
+			// dense
+			double[] _values = _data.getDenseBlockValues();
+			double[] retV = new double[_values.length + row.length];
+			System.arraycopy(_values, 0, retV, 0, _values.length);
+			System.arraycopy(row, 0, retV, _values.length, row.length);
+
+			MatrixBlock mb = new MatrixBlock(_data.getNumRows() + 1, _data.getNumColumns(), retV);
+			return new MatrixBlockDictionary(mb);
+		}
 	}
 }

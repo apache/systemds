@@ -31,7 +31,6 @@ import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.runtime.frame.data.iterators.IteratorFactory;
-import org.apache.sysds.runtime.transform.TfUtils;
 import org.apache.sysds.runtime.util.HDFSTool;
 
 /**
@@ -107,17 +106,7 @@ public class FrameWriterTextCSV extends FrameWriter
 					}
 					sb.append('\n');
 				}
-				//append meta data
-				if( !src.isColumnMetadataDefault() ) {
-					sb.append(TfUtils.TXMTD_MVPREFIX + delim);
-					for( int j=0; j<cols; j++ )
-						sb.append(src.getColumnMetadata(j).getMvValue() + ((j<cols-1)?delim:""));
-					sb.append("\n");
-					sb.append(TfUtils.TXMTD_NDPREFIX + delim);
-					for( int j=0; j<cols; j++ )
-						sb.append(src.getColumnMetadata(j).getNumDistinct() + ((j<cols-1)?delim:""));
-					sb.append("\n");
-				}
+
 				br.write( sb.toString() );
 	            sb.setLength(0);
 			}

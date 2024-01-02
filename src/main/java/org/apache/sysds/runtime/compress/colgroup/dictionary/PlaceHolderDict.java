@@ -195,7 +195,7 @@ public class PlaceHolderDict implements IDictionary, Serializable {
 	}
 
 	@Override
-	public int getNumberOfValues(int ncol) {
+	public int getNumberOfValues(int nCol) {
 		return nVal;
 	}
 
@@ -525,4 +525,24 @@ public class PlaceHolderDict implements IDictionary, Serializable {
 		throw new RuntimeException(errMessage);
 	}
 
+	@Override
+	public IDictionary rightMMPreAggSparse(int numVals, SparseBlock b, IColIndex thisCols, IColIndex aggregateColumns,
+		int nColRight) {
+		throw new RuntimeException(errMessage);
+	}
+
+	@Override
+	public void put(SparseBlock sb, int idx, int rowOut, int nCol, IColIndex columns) {
+		throw new RuntimeException(errMessage);
+	}
+
+	@Override
+	public IDictionary append(double[] row) {
+		throw new RuntimeException(errMessage);
+	}
+
+	@Override
+	public double[] getRow(int i, int nCol) {
+		throw new RuntimeException(errMessage);
+	}
 }

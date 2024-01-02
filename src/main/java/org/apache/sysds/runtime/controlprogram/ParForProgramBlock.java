@@ -635,7 +635,7 @@ public class ParForProgramBlock extends ForProgramBlock {
 		if( _monitor ) 
 			StatisticMonitor.putPFStat(_ID, Stat.PARFOR_INIT_DATA_T, time.stop());
 		
-		// initialize iter var to form value
+		// initialize iter var to from value
 		IntObject iterVar = new IntObject(from.getLongValue());
 		
 		///////

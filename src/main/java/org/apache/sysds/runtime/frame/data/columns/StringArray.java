@@ -23,10 +23,8 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.BitSet;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.regex.Pattern;
 
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.common.Types.ValueType;
@@ -309,208 +307,221 @@ public class StringArray extends Array<String> {
 	}
 
 	@Override
-	protected Array<Boolean> changeTypeBitSet() {
-		return changeTypeBoolean();
+	public Array<?> changeTypeWithNulls(ValueType t) {
+		if(t == getValueType())
+			return this;
+		ABooleanArray nulls = getNulls();
+		Array<?> a = changeType(t);
+		if(a instanceof StringArray)
+			return a;
+
+		return new OptionalArray<>(a, nulls);
 	}
 
 	@Override
-	protected Array<Boolean> changeTypeBoolean() {
-		String firstNN = _data[0];
-		int i = 1;
-		while(firstNN == null && i < size()) {
+	protected Array<Boolean> changeTypeBitSet(Array<Boolean> ret, int rl, int ru) {
+		String firstNN = _data[rl];
+		int i = rl + 1;
+		while(firstNN == null && i < ru) {
 			firstNN = _data[i++];
 		}
 
 		if(firstNN == null)
-			// this check is similar to saying i == size();
-			// this means all values were null. therefore we have an easy time retuning an empty boolean array.
-			return ArrayFactory.allocateBoolean(size());
+			return ret;// all values were null. therefore we have an easy time retuning an empty boolean array.
 		else if(firstNN.toLowerCase().equals("true") || firstNN.toLowerCase().equals("false"))
-			return changeTypeBooleanStandard();
+			return changeTypeBooleanStandardBitSet(ret, rl, ru);
 		else if(firstNN.equals("0") || firstNN.equals("1") || firstNN.equals("1.0") || firstNN.equals("0.0"))
-			return changeTypeBooleanNumeric();
-		// else if(firstNN.equals("0.0") || firstNN.equals("1.0"))
-		// return changeTypeBooleanFloat();
+			return changeTypeBooleanNumericBitSet(ret, rl, ru);
 		else if(firstNN.toLowerCase().equals("t") || firstNN.toLowerCase().equals("f"))
-			return changeTypeBooleanCharacter();
+			return changeTypeBooleanCharacterBitSet(ret, rl, ru);
 		else
 			throw new DMLRuntimeException("Not supported type of Strings to change to Booleans value: " + firstNN);
 	}
 
-	protected Array<Boolean> changeTypeBooleanStandard() {
-		if(size() > ArrayFactory.bitSetSwitchPoint)
-			return changeTypeBooleanStandardBitSet();
+	@Override
+	protected Array<Boolean> changeTypeBoolean(Array<Boolean> ret, int rl, int ru) {
+		String firstNN = _data[rl];
+		int i = rl + 1;
+		while(firstNN == null && i < ru) {
+			firstNN = _data[i++];
+		}
+
+		if(firstNN == null)
+			return ret;// all values were null. therefore we have an easy time retuning an empty boolean array.
+		else if(firstNN.toLowerCase().equals("true") || firstNN.toLowerCase().equals("false"))
+			return changeTypeBooleanStandardArray(ret, rl, ru);
+		else if(firstNN.equals("0") || firstNN.equals("1") || firstNN.equals("1.0") || firstNN.equals("0.0"))
+			return changeTypeBooleanNumericArray(ret, rl, ru);
+		else if(firstNN.toLowerCase().equals("t") || firstNN.toLowerCase().equals("f"))
+			return changeTypeBooleanCharacterArray(ret, rl, ru);
 		else
-			return changeTypeBooleanStandardArray();
+			throw new DMLRuntimeException("Not supported type of Strings to change to Booleans value: " + firstNN);
 	}
 
-	protected Array<Boolean> changeTypeBooleanStandardBitSet() {
-		BitSet ret = new BitSet(size());
-		for(int i = 0; i < size(); i++) {
+	protected Array<Boolean> changeTypeBooleanStandardBitSet(Array<Boolean> ret, int rl, int ru) {
+		for(int i = rl; i < ru; i++) {
 			final String s = _data[i];
 			if(s != null)
-				ret.set(i, Boolean.parseBoolean(_data[i]));
+				ret.set(i, Boolean.parseBoolean(s));
 		}
-
-		return new BitSetArray(ret, size());
+		return ret;
 	}
 
-	protected Array<Boolean> changeTypeBooleanStandardArray() {
-		boolean[] ret = new boolean[size()];
-		for(int i = 0; i < size(); i++) {
+	protected Array<Boolean> changeTypeBooleanStandardArray(Array<Boolean> retA, int rl, int ru) {
+		boolean[] ret = (boolean[]) retA.get();
+		for(int i = rl; i < ru; i++) {
 			final String s = _data[i];
 			if(s != null)
-				ret[i] = Boolean.parseBoolean(_data[i]);
+				ret[i] = Boolean.parseBoolean(s);
 		}
-		return new BooleanArray(ret);
+		return retA;
 	}
 
-	protected Array<Boolean> changeTypeBooleanCharacter() {
-		if(size() > ArrayFactory.bitSetSwitchPoint)
-			return changeTypeBooleanCharacterBitSet();
-		else
-			return changeTypeBooleanCharacterArray();
-	}
-
-	protected Array<Boolean> changeTypeBooleanCharacterBitSet() {
-		BitSet ret = new BitSet(size());
-		for(int i = 0; i < size(); i++) {
+	protected Array<Boolean> changeTypeBooleanCharacterBitSet(Array<Boolean> ret, int rl, int ru) {
+		for(int i = rl; i < ru; i++) {
 			final String s = _data[i];
 			if(s != null)
-				ret.set(i, isTrueCharacter(_data[i].charAt(0)));
+				ret.set(i, isTrueCharacter(s.charAt(0)));
 		}
-		return new BitSetArray(ret, size());
+		return ret;
 	}
 
-	protected Array<Boolean> changeTypeBooleanCharacterArray() {
-		boolean[] ret = new boolean[size()];
-		for(int i = 0; i < size(); i++) {
+	protected Array<Boolean> changeTypeBooleanCharacterArray(Array<Boolean> retA, int rl, int ru) {
+		boolean[] ret = (boolean[]) retA.get();
+		for(int i = rl; i < ru; i++) {
 			final String s = _data[i];
 			if(s != null)
-				ret[i] = isTrueCharacter(_data[i].charAt(0));
+				ret[i] = isTrueCharacter(s.charAt(0));
 		}
-		return new BooleanArray(ret);
+		return retA;
 	}
 
 	private boolean isTrueCharacter(char a) {
 		return a == 'T' || a == 't';
 	}
 
-	protected Array<Boolean> changeTypeBooleanNumeric() {
-		if(size() > ArrayFactory.bitSetSwitchPoint)
-			return changeTypeBooleanNumericBitSet();
-		else
-			return changeTypeBooleanNumericArray();
-	}
-
-	protected Array<Boolean> changeTypeBooleanNumericBitSet() {
-		BitSet ret = new BitSet(size());
-		for(int i = 0; i < size(); i++) {
+	protected Array<Boolean> changeTypeBooleanNumericBitSet(Array<Boolean> ret, int rl, int ru) {
+		for(int i = rl; i < ru; i++) {
 			final String s = _data[i];
 			if(s != null) {
 				if(s.length() > 1) {
-					final boolean zero = _data[i].equals("0.0");
-					final boolean one = _data[i].equals("1.0");
+					final boolean zero = s.equals("0.0");
+					final boolean one = s.equals("1.0");
 					if(zero | one)
 						ret.set(i, one);
 					else
-						throw new DMLRuntimeException("Unable to change to Boolean from String array, value:" + _data[i]);
+						throw new DMLRuntimeException("Unable to change to Boolean from String array, value: " + s);
 
 				}
 				else {
-					final boolean zero = _data[i].charAt(0) == '0';
-					final boolean one = _data[i].charAt(0) == '1';
+					final boolean zero = s.charAt(0) == '0';
+					final boolean one = s.charAt(0) == '1';
 					if(zero | one)
 						ret.set(i, one);
 					else
-						throw new DMLRuntimeException("Unable to change to Boolean from String array, value:" + _data[i]);
+						throw new DMLRuntimeException("Unable to change to Boolean from String array, value: " + s);
 				}
 			}
 		}
-		return new BitSetArray(ret, size());
+		return ret;
 	}
 
-	protected Array<Boolean> changeTypeBooleanNumericArray() {
-		boolean[] ret = new boolean[size()];
-		for(int i = 0; i < size(); i++) {
+	protected Array<Boolean> changeTypeBooleanNumericArray(Array<Boolean> retA, int rl, int ru) {
+		boolean[] ret = (boolean[]) retA.get();
+		for(int i = rl; i < ru; i++) {
 			final String s = _data[i];
 			if(s != null) {
 				if(s.length() > 1) {
-					final boolean zero = _data[i].equals("0.0");
-					final boolean one = _data[i].equals("1.0");
+					final boolean zero = s.equals("0.0");
+					final boolean one = s.equals("1.0");
 					if(zero | one)
 						ret[i] = one;
 					else
-						throw new DMLRuntimeException("Unable to change to Boolean from String array, value:" + _data[i]);
+						throw new DMLRuntimeException("Unable to change to Boolean from String array, value: " + s);
 
 				}
 				else {
-					final boolean zero = _data[i].charAt(0) == '0';
-					final boolean one = _data[i].charAt(0) == '1';
+					final boolean zero = s.charAt(0) == '0';
+					final boolean one = s.charAt(0) == '1';
 					if(zero | one)
 						ret[i] = one;
 					else
-						throw new DMLRuntimeException("Unable to change to Boolean from String array, value:" + _data[i]);
+						throw new DMLRuntimeException("Unable to change to Boolean from String array, value: " + s);
 				}
 			}
 
 		}
-		return new BooleanArray(ret);
+		return retA;
 	}
 
 	@Override
-	protected Array<Double> changeTypeDouble() {
-		double[] ret = new double[size()];
-		for(int i = 0; i < size(); i++)
+	protected Array<Double> changeTypeDouble(Array<Double> retA, int l, int u) {
+		final double[] ret = (double[]) retA.get();
+		for(int i = l; i < u; i++)
 			ret[i] = DoubleArray.parseDouble(_data[i]);
-		return new DoubleArray(ret);
+		return retA;
 	}
 
 	@Override
-	protected Array<Float> changeTypeFloat() {
-		float[] ret = new float[size()];
-		for(int i = 0; i < size(); i++)
+	protected Array<Float> changeTypeFloat(Array<Float> retA, int l, int u) {
+		final float[] ret = (float[]) retA.get();
+		for(int i = l; i < u; i++)
 			ret[i] = FloatArray.parseFloat(_data[i]);
-		return new FloatArray(ret);
+		return retA;
 	}
 
 	@Override
-	protected Array<Integer> changeTypeInteger() {
-		String firstNN = _data[0];
-		int i = 1;
-		while(firstNN == null && i < size()) {
+	protected Array<Integer> changeTypeInteger(Array<Integer> retA, int l, int u) {
+		String firstNN = _data[l];
+		int i = l + 1;
+		while(firstNN == null && i < u) {
 			firstNN = _data[i++];
 		}
+
 		if(firstNN == null)
-			throw new DMLRuntimeException("Invalid change to int on all null");
-		else if(firstNN.contains("."))
-			return changeTypeIntegerFloatString();
+			return retA; // no non zero values.
+		final int[] ret = (int[]) retA.get();
+		if(firstNN.contains("."))
+			return changeTypeIntegerFloatString(ret, l, u);
 		else
-			return changeTypeIntegerNormal();
+			return changeTypeIntegerNormal(ret, l, u);
 	}
 
-	protected Array<Integer> changeTypeIntegerFloatString() {
-		int[] ret = new int[size()];
-		Pattern p = Pattern.compile("\\.");
-		for(int i = 0; i < size(); i++) {
+	protected Array<Integer> changeTypeIntegerFloatString(int[] ret, int l, int u) {
+		for(int i = l; i < u; i++) {
 			final String s = _data[i];
-			try {
-				if(s != null)
-					ret[i] = Integer.parseInt(p.split(s, 2)[0]);
-			}
-			catch(NumberFormatException e) {
-
-				throw new DMLRuntimeException("Unable to change to Integer from String array", e);
-
-			}
+			// we do this to avoid allocating substrings.
+			ret[i] = parseSignificant(s);
 		}
 		return new IntegerArray(ret);
 	}
 
-	protected Array<Integer> changeTypeIntegerNormal() {
+	protected int parseSignificant(String s) {
+		final int len = s.length();
+		int v = 0;
+		int c = 0;
+		for(; c < len; c++) {
+			char ch = s.charAt(c);
+			if(c == ',')
+				break;
+			else if((ch - '0') < 10) {
+				v = 10 * v + ch - '0';
+			}
+			else
+				throw new NumberFormatException(s);
+		}
+		c++;
+		for(; c < len; c++) {
+			char ch = s.charAt(c);
+			if((ch - '0') > 10)
+				throw new NumberFormatException(s);
+		}
+		return v;
+	}
+
+	protected Array<Integer> changeTypeIntegerNormal(int[] ret, int l, int u) {
 		try {
-			int[] ret = new int[size()];
-			for(int i = 0; i < size(); i++) {
+			for(int i = l; i < u; i++) {
 				final String s = _data[i];
 				if(s != null)
 					ret[i] = Integer.parseInt(s);
@@ -520,15 +531,14 @@ public class StringArray extends Array<String> {
 		catch(NumberFormatException e) {
 			if(e.getMessage().contains("For input string: \"\"")) {
 				LOG.warn("inefficient safe cast");
-				return changeTypeIntegerSafe();
+				return changeTypeIntegerSafe(ret, l, u);
 			}
 			throw new DMLRuntimeException("Unable to change to Integer from String array", e);
 		}
 	}
 
-	protected Array<Integer> changeTypeIntegerSafe() {
-		int[] ret = new int[size()];
-		for(int i = 0; i < size(); i++) {
+	protected Array<Integer> changeTypeIntegerSafe(int[] ret, int l, int u) {
+		for(int i = l; i < u; i++) {
 			final String s = _data[i];
 			if(s != null && s.length() > 0)
 				ret[i] = Integer.parseInt(s);
@@ -537,60 +547,30 @@ public class StringArray extends Array<String> {
 	}
 
 	@Override
-	protected Array<Long> changeTypeLong() {
-		try {
-			long[] ret = new long[size()];
-			for(int i = 0; i < size(); i++) {
-				final String s = _data[i];
-				if(s != null)
-					ret[i] = Long.parseLong(s);
-			}
-			return new LongArray(ret);
-		}
-		catch(NumberFormatException e) {
-			throw new DMLRuntimeException("Unable to change to Long from String array", e);
-		}
-	}
-
-	@Override
-	protected Array<Object> changeTypeHash64() {
-		try {
-			long[] ret = new long[size()];
-			for(int i = 0; i < size(); i++) {
-				final String s = _data[i];
-				if(s != null)
-					ret[i] = HashLongArray.parseHashLong(s);
-			}
-			return new HashLongArray(ret);
-		}
-		catch(NumberFormatException e) {
-			if(e.getMessage().contains("For input string: \"\"")) {
-				LOG.warn("inefficient safe cast");
-				return changeTypeHash64Safe();
-			}
-			throw new DMLRuntimeException("Unable to change to Hash64 from String array", e);
-		}
-	}
-
-	protected Array<Object> changeTypeHash64Safe() {
-
-		long[] ret = new long[size()];
-		for(int i = 0; i < size(); i++) {
+	protected Array<Long> changeTypeLong(Array<Long> retA, int l, int u) {
+		long[] ret = (long[]) retA.get();
+		for(int i = l; i < u; i++) {
 			final String s = _data[i];
-			if(s != null && s.length() > 0)
-				ret[i] = HashLongArray.parseHashLong(s);
+			if(s != null)
+				ret[i] = Long.parseLong(s);
 		}
-		return new HashLongArray(ret);
-
+		return new LongArray(ret);
 	}
 
 	@Override
-	public Array<Character> changeTypeCharacter() {
-		char[] ret = new char[size()];
-		for(int i = 0; i < size(); i++) {
-			if(_data[i] == null)
-				continue;
-			ret[i] = _data[i].charAt(0);
+	protected Array<Object> changeTypeHash64(Array<Object> retA, int l, int u) {
+		for(int i = l; i < u; i++)
+			retA.set(i, _data[i]);
+		return retA;
+	}
+
+	@Override
+	public Array<Character> changeTypeCharacter(Array<Character> retA, int l, int u) {
+		final char[] ret = (char[]) retA.get();
+		for(int i = l; i < u; i++) {
+			final String s = _data[i];
+			if(s != null)
+				ret[i] = s.charAt(0);
 		}
 		return new CharArray(ret);
 	}
@@ -598,6 +578,14 @@ public class StringArray extends Array<String> {
 	@Override
 	public Array<String> changeTypeString() {
 		return this;
+	}
+
+	@Override
+	public Array<String> changeTypeString(Array<String> retA, int l, int u) {
+		String[] ret = (String[]) retA.get();
+		for(int i = l; i < u; i++)
+			ret[i] = _data[i];
+		return retA;
 	}
 
 	@Override

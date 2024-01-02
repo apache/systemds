@@ -50,6 +50,8 @@ public abstract class AOffset implements Serializable {
 
 	protected static final Log LOG = LogFactory.getLog(AOffset.class.getName());
 
+	protected static final OffsetSliceInfo emptySlice = new OffsetSliceInfo(-1, -1, new OffsetEmpty());
+
 	/** The skip list stride size, aka how many indexes skipped for each index. */
 	protected static final int skipStride = 1000;
 
@@ -104,7 +106,13 @@ public abstract class AOffset implements Serializable {
 			return getIteratorLargeOffset(row);
 	}
 
-	private AIterator getIteratorSkipCache(int row){
+	/**
+	 * Get an iterator that is pointing to a specific offset, this method skips looking at our cache of iterators.
+	 * 
+	 * @param row The row to look at
+	 * @return The iterator associated with the row.
+	 */
+	private AIterator getIteratorSkipCache(int row) {
 		if(row <= getOffsetToFirst())
 			return getIterator();
 		else if(row > getOffsetToLast())
@@ -478,37 +486,46 @@ public abstract class AOffset implements Serializable {
 	public abstract int getLength();
 
 	public OffsetSliceInfo slice(int l, int u) {
-		AIterator it = getIteratorSkipCache(l);
-		if(it == null || it.value() >= u)
-			return new OffsetSliceInfo(-1, -1, new OffsetEmpty());
-		else if(l <= getOffsetToFirst() && u > getOffsetToLast()) {
+		final int first = getOffsetToFirst();
+		final int last = getOffsetToLast();
+		final int s = getSize();
+
+		if(l <= first && u > last) {
 			if(l == 0)
-				return new OffsetSliceInfo(0, getSize(), this);
+				return new OffsetSliceInfo(0, s, this);
 			else
-				return new OffsetSliceInfo(0, getSize(), moveIndex(l));
+				return new OffsetSliceInfo(0, s, moveIndex(l));
 		}
+		
+		final AIterator it = getIteratorSkipCache(l);
+		if(it == null || it.value() >= u)
+			return emptySlice;
+
+		if(u >= last) // If including the last do not iterate.
+			return constructSliceReturn(l, it.getDataIndex(), s - 1, it.getOffsetsIndex(), getLength(), it.value(), last);
+		else // Have to iterate through until we find last.
+			return genericSlice(l, u, it);
+	}
+
+	protected OffsetSliceInfo genericSlice(int l, int u, AIterator it) {
 		final int low = it.getDataIndex();
 		final int lowOff = it.getOffsetsIndex();
 		final int lowValue = it.value();
-
 		int high = low;
 		int highOff = lowOff;
 		int highValue = lowValue;
-		if(u >= getOffsetToLast()) { // If including the last do not iterate.
-			high = getSize() - 1;
-			highOff = getLength();
-			highValue = getOffsetToLast();
+		while(it.value() < u) {
+			// TODO add previous command that would allow us to simplify this loop.
+			high = it.getDataIndex();
+			highOff = it.getOffsetsIndex();
+			highValue = it.value();
+			it.next();
 		}
-		else { // Have to iterate through until we find last.
-			while(it.value() < u) {
-				// TODO add previous command that would allow us to simplify this loop.
-				high = it.getDataIndex();
-				highOff = it.getOffsetsIndex();
-				highValue = it.value();
-				it.next();
-			}
-		}
-		
+		return constructSliceReturn(l, low, high, lowOff, highOff, lowValue, highValue);
+	}
+
+	protected final OffsetSliceInfo constructSliceReturn(int l, int low, int high, int lowOff, int highOff, int lowValue,
+		int highValue) {
 		if(low == high)
 			return new OffsetSliceInfo(low, high + 1, new OffsetSingle(lowValue - l));
 		else if(low + 1 == high)
@@ -579,6 +596,24 @@ public abstract class AOffset implements Serializable {
 		}
 		catch(Exception e) {
 			throw new DMLCompressionException("failed to combine" + Arrays.toString(g) + " with S sizes: " + s);
+		}
+	}
+
+	public void verify(int size) {
+		AIterator it = getIterator();
+		if(it != null) {
+			final int last = getOffsetToLast();
+			while(it.value() < last) {
+				it.next();
+				if(it.getDataIndex() > size)
+					throw new DMLCompressionException("Invalid index");
+			}
+			if(it.getDataIndex() > size)
+				throw new DMLCompressionException("Invalid index");
+		}
+		else {
+			if(size != 0)
+				throw new DMLCompressionException("Invalid index");
 		}
 	}
 

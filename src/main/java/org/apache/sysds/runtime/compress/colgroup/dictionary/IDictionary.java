@@ -809,9 +809,8 @@ public interface IDictionary {
 	public void TSMMWithScaling(int[] counts, IColIndex rows, IColIndex cols, MatrixBlock ret);
 
 	/**
-	 * Matrix multiplication of dictionaries
-	 * 
-	 * Note the left is this, and it is transposed
+	 * Matrix multiplication of dictionaries note the left is this, and it is supposed to be treated as if it is
+	 * transposed while it is not physically transposed.
 	 * 
 	 * @param right     Right hand side of multiplication
 	 * @param rowsLeft  Offset rows on the left
@@ -821,11 +820,10 @@ public interface IDictionary {
 	public void MMDict(IDictionary right, IColIndex rowsLeft, IColIndex colsRight, MatrixBlock result);
 
 	/**
-	 * Matrix multiplication of dictionaries
+	 * Matrix multiplication of dictionaries, note the left is this, and it is supposed to be treated as if it is
+	 * transposed while it is not physically transposed.
 	 * 
-	 * Note the left is this, and it is transposed
-	 * 
-	 * @param right     Right hand side of multiplication
+	 * @param right     Right hand side of multiplication (not transposed)
 	 * @param rowsLeft  Offset rows on the left
 	 * @param colsRight Offset cols on the right
 	 * @param result    The output matrix block
@@ -835,9 +833,9 @@ public interface IDictionary {
 		int[] scaling);
 
 	/**
-	 * Matrix multiplication of dictionaries left side dense and transposed right side is this.
+	 * Matrix multiplication of dictionaries left side dense and transposed. The right side is this.
 	 * 
-	 * @param left      Dense left side
+	 * @param left      Dense left side (treat as if it is transposed but it is physically not)
 	 * @param rowsLeft  Offset rows on the left
 	 * @param colsRight Offset cols on the right
 	 * @param result    The output matrix block
@@ -845,13 +843,14 @@ public interface IDictionary {
 	public void MMDictDense(double[] left, IColIndex rowsLeft, IColIndex colsRight, MatrixBlock result);
 
 	/**
-	 * Matrix multiplication of dictionaries left side dense and transposed right side is this.
+	 * Matrix multiplication of dictionaries left side dense and transposed. The Right side is this, the scaling factor
+	 * is used to multiply each element with.
 	 * 
-	 * @param left      Dense left side
-	 * @param rowsLeft  Offset rows on the left
-	 * @param colsRight Offset cols on the right
-	 * @param result    The output matrix block
-	 * @param scaling   The scaling
+	 * @param left      Dense left side (Dense dictionary)
+	 * @param rowsLeft  Offset rows on the left (That dictionaries column indexes)
+	 * @param colsRight Offset cols on the right (This dictionaries column indexes)
+	 * @param result    The output matrix block, guaranteed to be allocated as dense.
+	 * @param scaling   The scaling factor to multiply each entry with.
 	 */
 	public void MMDictScalingDense(double[] left, IColIndex rowsLeft, IColIndex colsRight, MatrixBlock result,
 		int[] scaling);
@@ -865,8 +864,8 @@ public interface IDictionary {
 	 * @param result    The output matrix block
 	 */
 	public void MMDictSparse(SparseBlock left, IColIndex rowsLeft, IColIndex colsRight, MatrixBlock result);
-	
-/**
+
+	/**
 	 * Matrix multiplication of dictionaries left side sparse and transposed right side is this.
 	 * 
 	 * @param left      Sparse left side
@@ -985,4 +984,48 @@ public interface IDictionary {
 	 */
 	public IDictionary reorder(int[] reorder);
 
+	/**
+	 * Pre-aggregate the given sparse block for right multiplication. The returned dictionary is the new column groups
+	 * dictionary.
+	 * 
+	 * @param numVals          The number of values in this dictionary and in the output dictionary.
+	 * @param b                The sparse block to pre aggregate, note this contains the entire right side matrix, not a
+	 *                         reduced or sliced version.
+	 * @param thisCols         The column indexes of this dictionary, these correspond to the rows to extract from the
+	 *                         right side matrix
+	 * @param aggregateColumns The reduced column indexes of the right side, these are the number of columns in the
+	 *                         output dictionary, and the columns to multiply this dictionary with.
+	 * @param nColRight        The number of columns in the b sparse matrix.
+	 * @return The pre-aggregate dictionary that can be used as the output dictionary for the right matrix multiplication
+	 */
+	public IDictionary rightMMPreAggSparse(int numVals, SparseBlock b, IColIndex thisCols, IColIndex aggregateColumns,
+		int nColRight);
+
+	/**
+	 * Put the row specified into the sparse block, via append calls.
+	 * 
+	 * @param sb      The sparse block to put into
+	 * @param idx     The dictionary index to put in.
+	 * @param rowOut  The row in the sparse block to put it into
+	 * @param nCol    The number of columns in the dictionary
+	 * @param columns The columns to output into.
+	 */
+	public void put(SparseBlock sb, int idx, int rowOut, int nCol, IColIndex columns);
+
+	/**
+	 * Return a new dictionary with the given row appended. If possible reuse as much of the old dictionary as possible.
+	 * 
+	 * @param row The new row to append.
+	 * @return A new dictionary with the appended row
+	 */
+	public IDictionary append(double[] row);
+
+	/**
+	 * Extract the values on a given row as a dense double array.
+	 * 
+	 * @param i    The row index to extract
+	 * @param nCol The number of columns in this columngroup
+	 * @return The row extracted
+	 */
+	public double[] getRow(int i, int nCol);
 }

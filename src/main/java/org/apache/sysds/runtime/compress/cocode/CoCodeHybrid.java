@@ -40,13 +40,13 @@ public class CoCodeHybrid extends AColumnCoCoder {
 		if(startSize == 1)
 			return colInfos; // nothing to join when there only is one column
 		else if(startSize <= 16) {// Greedy all compare all if small number of columns
-			LOG.debug("Hybrid chose to do greedy cocode because of few columns");
+			LOG.debug("Hybrid chose to do greedy CoCode because of few columns");
 			CoCodeGreedy gd = new CoCodeGreedy(_sest, _cest, _cs);
 			return colInfos.setInfo(gd.combine(colInfos.getInfo(), k));
 		}
 		else if(startSize > 1000)
 			return colInfos.setInfo(CoCodePriorityQue.join(colInfos.getInfo(), _sest, _cest, 1, k));
-		LOG.debug("Using Hybrid Cocode Strategy: ");
+		LOG.debug("Using Hybrid CoCode Strategy: ");
 
 		final int PriorityQueGoal = startSize / 5;
 		if(PriorityQueGoal > 30) { // hybrid if there is a large number of columns to begin with
@@ -62,8 +62,11 @@ public class CoCodeHybrid extends AColumnCoCoder {
 			}
 			return colInfos;
 		}
-		else // If somewhere in between use the que based approach only.
-			return colInfos.setInfo(CoCodePriorityQue.join(colInfos.getInfo(), _sest, _cest, 1, k));
-
+		else {
+			LOG.debug("Using only Greedy based since Nr Column groups: " + startSize + " is not large enough");
+			CoCodeGreedy gd = new CoCodeGreedy(_sest, _cest, _cs);
+			colInfos.setInfo(gd.combine(colInfos.getInfo(), k));
+			return colInfos;
+		}
 	}
 }

@@ -206,6 +206,10 @@ public class CompressedSizeInfoColGroup {
 		return _map;
 	}
 
+	public void setMap(IEncode map){
+		_map = map;
+	}
+
 	public boolean containsZeros() {
 		return _facts.numOffs < _facts.numRows;
 	}

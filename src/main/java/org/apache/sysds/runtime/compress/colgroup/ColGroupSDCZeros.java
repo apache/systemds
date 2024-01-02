@@ -24,11 +24,14 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.util.Arrays;
 
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
-import org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary;
+import org.apache.sysds.runtime.compress.colgroup.ColGroupUtils.P;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.DictionaryFactory;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.MatrixBlockDictionary;
 import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
@@ -70,10 +73,14 @@ public class ColGroupSDCZeros extends ASDCZero implements IMapToDataGroup {
 	private ColGroupSDCZeros(IColIndex colIndices, int numRows, IDictionary dict, AOffset indexes, AMapToData data,
 		int[] cachedCounts) {
 		super(colIndices, numRows, dict, indexes, cachedCounts);
-		if(data.getUnique() != dict.getNumberOfValues(colIndices.size()))
-			throw new DMLCompressionException("Invalid construction of SDCZero group: number uniques: " + data.getUnique()
-				+ " vs." + dict.getNumberOfValues(colIndices.size()));
 		_data = data;
+		if(CompressedMatrixBlock.debug) {
+			if(data.getUnique() != dict.getNumberOfValues(colIndices.size()))
+				throw new DMLCompressionException("Invalid construction of SDCZero group: number uniques: "
+					+ data.getUnique() + " vs." + dict.getNumberOfValues(colIndices.size()));
+			_data.verify();
+			_indexes.verify(_data.size());
+		}
 	}
 
 	public static AColGroup create(IColIndex colIndices, int numRows, IDictionary dict, AOffset offsets, AMapToData data,
@@ -227,19 +234,23 @@ public class ColGroupSDCZeros extends ASDCZero implements IMapToDataGroup {
 		it.setOff(it.value() - offR);
 	}
 
-	private void decompressToDenseBlockDenseDictionaryPreGeneric(DenseBlock db, int rl, int ru, int offR, int offC,
+	private final void decompressToDenseBlockDenseDictionaryPreGeneric(DenseBlock db, int rl, int ru, int offR, int offC,
 		double[] values, AIterator it) {
 		final int nCol = _colIndexes.size();
 		while(it.isNotOver(ru)) {
-			final int idx = offR + it.value();
-			final double[] c = db.values(idx);
-			final int off = db.pos(idx) + offC;
-			final int offDict = _data.getIndex(it.getDataIndex()) * nCol;
-			for(int j = 0; j < nCol; j++)
-				c[off + _colIndexes.get(j)] += values[offDict + j];
-
+			decompressRowDenseDictionaryPreGeneric(db, nCol, offR, offC, values, it);
 			it.next();
 		}
+	}
+
+	private final void decompressRowDenseDictionaryPreGeneric(DenseBlock db, int nCol, int offR, int offC,
+		double[] values, AIterator it) {
+		final int idx = offR + it.value();
+		final double[] c = db.values(idx);
+		final int off = db.pos(idx) + offC;
+		final int offDict = _data.getIndex(it.getDataIndex()) * nCol;
+		for(int j = 0; j < nCol; j++)
+			c[off + _colIndexes.get(j)] += values[offDict + j];
 	}
 
 	private void decompressToDenseBlockDenseDictionaryPreAllCols(DenseBlock db, int rl, int ru, int offR, int offC,
@@ -767,7 +778,7 @@ public class ColGroupSDCZeros extends ASDCZero implements IMapToDataGroup {
 
 	@Override
 	public AColGroup appendNInternal(AColGroup[] g, int blen, int rlen) {
-		
+
 		for(int i = 1; i < g.length; i++) {
 			final AColGroup gs = g[i];
 			if(!_colIndexes.equals(gs._colIndexes)) {
@@ -775,12 +786,12 @@ public class ColGroupSDCZeros extends ASDCZero implements IMapToDataGroup {
 				return null;
 			}
 
-			if(!(gs instanceof AOffsetsGroup )) {
+			if(!(gs instanceof AOffsetsGroup)) {
 				LOG.warn("Not valid OffsetGroup but " + gs.getClass().getSimpleName());
 				return null;
 			}
 
-			if( gs instanceof ColGroupSDCZeros){
+			if(gs instanceof ColGroupSDCZeros) {
 				final ColGroupSDCZeros gc = (ColGroupSDCZeros) gs;
 				if(!gc._dict.equals(_dict)) {
 					LOG.warn("Not same Dictionaries therefore not appending \n" + _dict + "\n\n" + gc._dict);
@@ -813,6 +824,59 @@ public class ColGroupSDCZeros extends ASDCZero implements IMapToDataGroup {
 	protected AColGroup fixColIndexes(IColIndex newColIndex, int[] reordering) {
 		return ColGroupSDCZeros.create(newColIndex, getNumRows(), _dict.reorder(reordering), _indexes, _data,
 			getCachedCounts());
+	}
+
+	@Override
+	public void sparseSelection(MatrixBlock selection, MatrixBlock ret, int rl, int ru) {
+		final SparseBlock sb = selection.getSparseBlock();
+		final SparseBlock sr = ret.getSparseBlock();
+		final int nCol = _colIndexes.size();
+		final AIterator it = _indexes.getIterator(rl);
+		if(it == null)
+			throw new NotImplementedException("Not Implemented fill with default");
+
+		P[] points = ColGroupUtils.getSortedSelection(sb, rl, ru);
+
+		_data.verify();
+
+		// LOG.error(this);
+		final int last = Math.min(_indexes.getOffsetToLast(), ru);
+		int c = 0;
+		while(it.value() < last && c < points.length) {
+			while(it.value() < last && it.value() < points[c].o) {
+				it.next();
+			}
+			if(it.value() >= last) {
+				break;
+			}
+			final int of = it.value();
+			if(points[c].o == of) {
+				try {
+
+					_dict.put(sr, _data.getIndex(it.getDataIndex()), points[c].r, nCol, _colIndexes);
+					it.next();
+				}
+				catch(Exception e) {
+					throw new DMLCompressionException(it + " " + points[c] + " fail", e);
+				}
+			}
+			c++;
+		}
+		if(it.value() == ru) {
+			_dict.put(sr, _data.getIndex(it.getDataIndex()), points[c].r, nCol, _colIndexes);
+			c++;
+		}
+
+	}
+
+	@Override
+	protected void decompressToDenseBlockTransposedSparseDictionary(DenseBlock db, int rl, int ru, SparseBlock sb) {
+		throw new NotImplementedException();
+	}
+
+	@Override
+	protected void decompressToDenseBlockTransposedDenseDictionary(DenseBlock db, int rl, int ru, double[] dict) {
+		throw new NotImplementedException();
 	}
 
 	public String toString() {

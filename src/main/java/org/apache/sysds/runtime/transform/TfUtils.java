@@ -55,8 +55,8 @@ public class TfUtils implements Serializable
 	}
 	
 	//transform meta data constants (frame-based transform)
-	public static final String TXMTD_MVPREFIX = "#Meta"+Lop.DATATYPE_PREFIX+"MV";
-	public static final String TXMTD_NDPREFIX = "#Meta"+Lop.DATATYPE_PREFIX+"ND";
+	// public static final String TXMTD_MVPREFIX = "#Meta"+Lop.DATATYPE_PREFIX+"MV";
+	// public static final String TXMTD_NDPREFIX = "#Meta"+Lop.DATATYPE_PREFIX+"ND";
 	
 	//transform meta data constants (old file-based transform)
 	public static final String TXMTD_SEP         = ",";

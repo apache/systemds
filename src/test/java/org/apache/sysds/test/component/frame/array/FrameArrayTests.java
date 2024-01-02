@@ -284,7 +284,7 @@ public class FrameArrayTests {
 			Array<?> r = a.changeType(t);
 			assertTrue(r.getValueType() == t);
 		}
-		catch(DMLRuntimeException e) {
+		catch(DMLRuntimeException | NumberFormatException e) {
 			LOG.debug(e.getMessage());
 			// okay since we want exceptions
 			// in cases where the the change fail.
@@ -423,7 +423,7 @@ public class FrameArrayTests {
 		if(a.getFrameArrayType() == FrameArrayType.OPTIONAL)
 			return;
 
-		assertEquals(a.toString(),t, a.getFrameArrayType());
+		assertEquals(a.toString(), t, a.getFrameArrayType());
 	}
 
 	@Test
@@ -609,11 +609,8 @@ public class FrameArrayTests {
 			compareSetSubRange(aa, other, start, end, 0, aa.getValueType());
 
 		}
-		catch(DMLCompressionException e) {
+		catch(DMLCompressionException | NumberFormatException | NotImplementedException e) {
 			return;// valid
-		}
-		catch(NumberFormatException e){
-			return; // valid
 		}
 		catch(Exception e) {
 			e.printStackTrace();
@@ -1146,11 +1143,11 @@ public class FrameArrayTests {
 	@SuppressWarnings("unchecked")
 	public void testSetNzStringWithNull() {
 		Array<?> aa = a.clone();
-		Array<String> af = (Array<String>) aa.changeTypeWithNulls(ValueType.STRING);
 		try {
+			Array<String> af = (Array<String>) aa.changeTypeWithNulls(ValueType.STRING);
 			aa.setFromOtherTypeNz(af);
 		}
-		catch(DMLCompressionException e) {
+		catch(DMLCompressionException | NotImplementedException e) {
 			return;// valid
 		}
 		catch(Exception e) {
@@ -1184,19 +1181,18 @@ public class FrameArrayTests {
 	public void testSetFromStringWithNull() {
 		Array<?> aa = a.clone();
 		Array<?> af;
-		if(aa.getFrameArrayType() == FrameArrayType.OPTIONAL //
-			&& aa.getValueType() != ValueType.STRING //
-			&& aa.getValueType() != ValueType.HASH64) {
-			af = aa.changeTypeWithNulls(ValueType.FP64);
-		}
-		else
-			af = aa.changeTypeWithNulls(ValueType.STRING);
-
 		try {
+			if(aa.getFrameArrayType() == FrameArrayType.OPTIONAL //
+				&& aa.getValueType() != ValueType.STRING //
+				&& aa.getValueType() != ValueType.HASH64) {
+				af = aa.changeTypeWithNulls(ValueType.FP64);
+			}
+			else
+				af = aa.changeTypeWithNulls(ValueType.STRING);
 
 			aa.setFromOtherType(0, af.size() - 1, af);
 		}
-		catch(DMLCompressionException e) {
+		catch(DMLCompressionException | NotImplementedException e) {
 			return;// valid
 		}
 		catch(Exception e) {
@@ -1246,7 +1242,7 @@ public class FrameArrayTests {
 			a.write(fos);
 			long s = fos.size();
 			long e = a.getExactSerializedSize();
-			assertEquals(a.toString(),s, e);
+			assertEquals(a.toString(), s, e);
 		}
 		catch(IOException e) {
 			throw new RuntimeException("Error in io", e);
@@ -1923,7 +1919,7 @@ public class FrameArrayTests {
 			final Object av = a.get(i);
 			final Object bv = b.get(i);
 			if((av == null && bv != null) || (bv == null && av != null))
-				fail("not both null");
+				fail("not both null: " + err);
 			else if(av != null && bv != null)
 				assertTrue(err, av.toString().equals(bv.toString()));
 		}

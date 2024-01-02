@@ -207,6 +207,11 @@ public class IdentityDictionarySlice extends IdentityDictionary {
 	}
 
 	@Override
+	public int getNumberOfValues(int ncol) {
+		return nRowCol + (withEmpty ? 1 : 0);
+	}
+
+	@Override
 	public MatrixBlockDictionary getMBDict(int nCol) {
 		if(cache != null) {
 			MatrixBlockDictionary r = cache.get();
@@ -314,6 +319,11 @@ public class IdentityDictionarySlice extends IdentityDictionary {
 		}
 
 		return false;
+	}
+
+	@Override
+	public void multiplyScalar(double v, double[] ret, int off, int dictIdx, IColIndex cols) {
+		getMBDict().multiplyScalar(v, ret, off, dictIdx, cols);
 	}
 
 }

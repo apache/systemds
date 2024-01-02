@@ -254,19 +254,27 @@ public final class CLALibDecompress {
 		}
 	}
 
-	protected static void decompressDenseMultiThread(MatrixBlock ret, List<AColGroup> groups, double[] constV, int k,
-		boolean overlapping) {
-		final int nRows = ret.getNumRows();
-		final double eps = getEps(constV);
-		final int blklen = Math.max(nRows / k, 512);
-		decompressDenseMultiThread(ret, groups, nRows, blklen, constV, eps, k, overlapping);
-	}
+	// private static void decompressDenseMultiThread(MatrixBlock ret, List<AColGroup> groups, double[] constV, int k,
+	// 	boolean overlapping) {
+	// 	final int nRows = ret.getNumRows();
+	// 	final double eps = getEps(constV);
+	// 	final int blklen = Math.max(nRows / k, 512);
+	// 	decompressDenseMultiThread(ret, groups, nRows, blklen, constV, eps, k, overlapping);
+	// }
 
 	protected static void decompressDenseMultiThread(MatrixBlock ret, List<AColGroup> groups, double[] constV,
 		double eps, int k, boolean overlapping) {
+
+		Timing time = new Timing(true);
 		final int nRows = ret.getNumRows();
 		final int blklen = Math.max(nRows / k, 512);
 		decompressDenseMultiThread(ret, groups, nRows, blklen, constV, eps, k, overlapping);
+		if(DMLScript.STATISTICS) {
+			final double t = time.stop();
+			DMLCompressionStatistics.addDecompressTime(t, k);
+			if(LOG.isTraceEnabled())
+				LOG.trace("decompressed block w/ k=" + k + " in " + t + "ms.");
+		}
 	}
 
 	private static void decompressDenseMultiThread(MatrixBlock ret, List<AColGroup> filteredGroups, int rlen, int blklen,

@@ -23,6 +23,7 @@ import java.util.Arrays;
 import java.util.Random;
 
 import org.apache.sysds.runtime.compress.CompressionSettings;
+import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.compress.estim.encoding.EncodingFactory;
@@ -42,13 +43,22 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 public class ComEstSample extends AComEst {
 
 	/** Sample extracted from the input data */
-	private final MatrixBlock _sample;
+	protected final MatrixBlock _sample;
 	/** Parallelization degree */
-	private final int _k;
+	protected final int _k;
 	/** Sample size */
-	private final int _sampleSize;
+	protected final int _sampleSize;
 	/** Boolean specifying if the sample is in transposed format. */
-	private boolean _transposed;
+	protected boolean _transposed;
+
+	public ComEstSample(MatrixBlock sample, CompressionSettings cs, MatrixBlock full, int k){
+		super(full, cs);
+		_k = k;
+		_transposed = cs.transposed;
+		_sample = sample;
+		_sampleSize = sample.getNumRows();
+
+	}
 
 	/**
 	 * CompressedSizeEstimatorSample, samples from the input data and estimates the size of the compressed matrix.
@@ -95,7 +105,7 @@ public class ComEstSample extends AComEst {
 	@Override
 	protected int worstCaseUpperBound(IColIndex columns) {
 		if(getNumColumns() == columns.size())
-			return Math.min(getNumRows(), (int) _data.getNonZeros());
+			return Math.min(getNumRows(), (int) Math.min(_data.getNonZeros(),Integer.MAX_VALUE));
 		return getNumRows();
 	}
 
@@ -107,10 +117,15 @@ public class ComEstSample extends AComEst {
 	}
 
 	private CompressedSizeInfoColGroup extractInfo(IEncode map, IColIndex colIndexes, int maxDistinct) {
-		final double spar = _data.getSparsity();
-		final EstimationFactors sampleFacts = map.extractFacts(_sampleSize, spar, spar, _cs);
-		final EstimationFactors em = scaleFactors(sampleFacts, colIndexes, maxDistinct, map.isDense());
-		return new CompressedSizeInfoColGroup(colIndexes, em, _cs.validCompressions, map);
+		try{
+			final double spar = _data.getSparsity();
+			final EstimationFactors sampleFacts = map.extractFacts(_sampleSize, spar, spar, _cs);
+			final EstimationFactors em = scaleFactors(sampleFacts, colIndexes, maxDistinct, map.isDense());
+			return new CompressedSizeInfoColGroup(colIndexes, em, _cs.validCompressions, map);
+		}
+		catch(Exception e){
+			throw new DMLCompressionException(map + "", e);
+		}
 	}
 
 	private EstimationFactors scaleFactors(EstimationFactors sampleFacts, IColIndex colIndexes, int maxDistinct,
@@ -125,6 +140,8 @@ public class ComEstSample extends AComEst {
 			final long nnz = calculateNNZ(colIndexes, scalingFactor);
 			final int numOffs = calculateOffs(sampleFacts, numRows, scalingFactor, colIndexes, (int) nnz);
 			final int estDistinct = distinctCountScale(sampleFacts, numOffs, numRows, maxDistinct, dense, nCol);
+			if(estDistinct < sampleFacts.numVals)
+				throw new DMLCompressionException("Failed estimating distinct: " + estDistinct );
 
 			// calculate the largest instance count.
 			final int maxLargestInstanceCount = numRows - estDistinct + 1;
@@ -137,7 +154,6 @@ public class ComEstSample extends AComEst {
 				sampleFacts.overAllSparsity);
 			// For robustness safety add 10 percent more tuple sparsity
 			final double tupleSparsity = Math.min(overallSparsity * 1.3, 1.0); // increase sparsity by 30%.
-
 			if(_cs.isRLEAllowed()) {
 				final int scaledRuns = Math.max(estDistinct,
 					calculateRuns(sampleFacts, scalingFactor, numOffs, estDistinct));
@@ -161,6 +177,7 @@ public class ComEstSample extends AComEst {
 		final int[] freq = sampleFacts.frequencies;
 		if(freq == null || freq.length == 0)
 			return numOffs; // very aggressive number of distinct
+		
 		// sampled size is smaller than actual if there was empty rows.
 		// and the more we can reduce this value the more accurate the estimation will become.
 		final int sampledSize = sampleFacts.numOffs;

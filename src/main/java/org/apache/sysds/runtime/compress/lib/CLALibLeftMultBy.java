@@ -37,6 +37,7 @@ import org.apache.sysds.runtime.compress.colgroup.AColGroup;
 import org.apache.sysds.runtime.compress.colgroup.APreAgg;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
+import org.apache.sysds.runtime.data.SparseBlockCSR;
 import org.apache.sysds.runtime.functionobjects.Plus;
 import org.apache.sysds.runtime.matrix.data.LibMatrixBincell;
 import org.apache.sysds.runtime.matrix.data.LibMatrixMult;
@@ -111,11 +112,52 @@ public final class CLALibLeftMultBy {
 	 * @return The result of the matrix multiplication
 	 */
 	public static MatrixBlock leftMultByMatrix(CompressedMatrixBlock right, MatrixBlock left, MatrixBlock ret, int k) {
-		if(left.isEmpty() || right.isEmpty())
-			return prepareEmptyReturnMatrix(right, left, ret, false);
-		ret = prepareReturnMatrix(right, left, ret, false);
-		ret = LMM(right.getColGroups(), left, ret, k, right.isOverlapping());
-		return ret;
+		try {
+			if(left.isEmpty() || right.isEmpty())
+				return prepareEmptyReturnMatrix(right, left, ret, false);
+
+			if(isSelectionMatrix(left))
+				return ret = CLALibSelectionMult.leftSelection(right, left, ret, k);
+
+			ret = prepareReturnMatrix(right, left, ret, false);
+			ret = LMM(right.getColGroups(), left, ret, k, right.isOverlapping());
+
+			return ret;
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			throw new DMLCompressionException("Failed CLA LLM", e);
+		}
+	}
+
+	private static boolean isSelectionMatrix(MatrixBlock mb) {
+		if(mb.getNonZeros() <= mb.getNumRows() && mb.isInSparseFormat()) {// good start.
+			SparseBlock sb = mb.getSparseBlock();
+			for(int i = 0; i < mb.getNumRows(); i++) {
+				if(sb.isEmpty(i))
+					continue;
+				else if(sb.size(i) != 1)
+					return false;
+				else if(!(sb instanceof SparseBlockCSR)) {
+					double[] values = sb.values(i);
+					final int spos = sb.pos(i);
+					final int sEnd = spos + sb.size(i);
+					for(int j = spos; j < sEnd; j++) {
+						if(values[j] != 1) {
+							return false;
+						}
+					}
+				}
+			}
+			if(sb instanceof SparseBlockCSR) {
+				for(double d : sb.values(0))
+					if(d != 1)
+						return false;
+			}
+
+			return true;
+		}
+		return false;
 	}
 
 	private static MatrixBlock prepareEmptyReturnMatrix(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret,
@@ -188,22 +230,26 @@ public final class CLALibLeftMultBy {
 		}
 
 		try {
-			final double[] retV = ret.getDenseBlockValues();
 			if(containsLeft && containsRight)
 				// if both -- multiply the left and right vectors scaling by number of shared dim
-				outerProductWithScaling(cL, cR, sd, retV);
+				outerProductWithScaling(cL, cR, sd, ret);
 			if(containsLeft) // if left -- multiply left with right sum
-				outerProduct(cL, CLALibUtils.getColSum(fRight, cr, sd), retV);
+				for(Future<?> f : outerProductParallelTasks(cL, CLALibUtils.getColSum(fRight, cr, sd), ret, ex))
+					f.get();
+
 			if(containsRight)// if right -- multiply right with left sum
-				outerProduct(CLALibUtils.getColSum(fLeft, rl, sd), cR, retV);
+				for(Future<?> f : outerProductParallelTasks(CLALibUtils.getColSum(fLeft, rl, sd), cR, ret, ex))
+					f.get();
 
 			for(Future<MatrixBlock> f : t) {
 				MatrixBlock mb = f.get();
 				if(!mb.isEmpty()) {
 					if(mb.isInSparseFormat())
 						LibMatrixBincell.bincellOpInPlaceRight(ret, mb, new BinaryOperator(Plus.getPlusFnObject()));
-					else if(mb.getDenseBlock().isContiguous())
+					else if(mb.getDenseBlock().isContiguous()) {
+						final double[] retV = ret.getDenseBlockValues();
 						LibMatrixMult.vectAdd(mb.getDenseBlockValues(), retV, 0, 0, retV.length);
+					}
 					else
 						LibMatrixBincell.bincellOpInPlaceRight(ret, mb, new BinaryOperator(Plus.getPlusFnObject()));
 				}
@@ -242,20 +288,20 @@ public final class CLALibLeftMultBy {
 		for(int j = 0; j < fLeft.size(); j++)
 			for(int i = 0; i < fRight.size(); i++)
 				fRight.get(i).leftMultByAColGroup(fLeft.get(j), ret, sd);
-		final double[] retV = ret.getDenseBlockValues();
+
 		if(containsLeft && containsRight)
 			// if both -- multiply the left and right vectors scaling by number of shared dim
-			outerProductWithScaling(cL, cR, sd, retV);
+			outerProductWithScaling(cL, cR, sd, ret);
 		if(containsLeft) // if left -- multiply left with right sum
-			outerProduct(cL, CLALibUtils.getColSum(fRight, cr, sd), retV);
+			outerProduct(cL, CLALibUtils.getColSum(fRight, cr, sd), ret);
 		if(containsRight)// if right -- multiply right with left sum
-			outerProduct(CLALibUtils.getColSum(fLeft, rl, sd), cR, retV);
+			outerProduct(CLALibUtils.getColSum(fLeft, rl, sd), cR, ret);
 		ret.recomputeNonZeros();
 		return ret;
 	}
 
 	private static MatrixBlock LMM(List<AColGroup> colGroups, MatrixBlock that, MatrixBlock ret, int k,
-		boolean overlapping) {
+		boolean overlapping) throws Exception {
 		final int numColumnsOut = ret.getNumColumns();
 		final int lr = that.getNumRows();
 		final boolean shouldFilter = CLALibUtils.shouldPreFilter(colGroups);
@@ -286,7 +332,8 @@ public final class CLALibLeftMultBy {
 				else
 					ret.sparseToDense();
 
-				outerProduct(rowSums, constV, ret.getDenseBlockValues());
+				outerProductParallel(rowSums, constV, ret, k);
+
 			}
 		}
 		else {
@@ -300,7 +347,7 @@ public final class CLALibLeftMultBy {
 		}
 
 		ret.recomputeNonZeros(k);
-		ret.examSparsity();
+		ret.examSparsity(k);
 		return ret;
 	}
 
@@ -331,10 +378,8 @@ public final class CLALibLeftMultBy {
 						else
 							tasks.add(new LMMPreAggTask(pa, that, ret, blo, end, off, s, null, 1));
 					}
-
 					if(pa.isEmpty() && rowSums != null) // row sums task
 						tasks.add(new LMMRowSums(that, blo, end, rowSums));
-
 				}
 
 				for(Future<MatrixBlock> future : pool.invokeAll(tasks))
@@ -379,7 +424,7 @@ public final class CLALibLeftMultBy {
 	}
 
 	private static void LMMTaskExec(List<AColGroup> npa, List<APreAgg> pa, MatrixBlock that, MatrixBlock ret, int rl,
-		int ru, double[] rowSums, int k) {
+		int ru, double[] rowSums, int k) throws Exception {
 		if(npa.isEmpty() && pa.isEmpty()) {
 			rowSum(that, rowSums, rl, ru, 0, that.getNumColumns());
 			return;
@@ -395,20 +440,104 @@ public final class CLALibLeftMultBy {
 		}
 	}
 
-	private static void outerProduct(final double[] leftRowSum, final double[] rightColumnSum, final double[] result) {
-		for(int row = 0; row < leftRowSum.length; row++) {
+	private static void outerProductParallel(final double[] leftRowSum, final double[] rightColumnSum,
+		final MatrixBlock result, int k) {
+		ExecutorService pool = CommonThreadPool.get(k);
+		try {
+			for(Future<?> t : outerProductParallelTasks(leftRowSum, rightColumnSum, result, pool)) {
+				t.get();
+			}
+		}
+		catch(Exception e) {
+			throw new RuntimeException();
+		}
+		finally {
+			pool.shutdown();
+		}
+	}
+
+	private static void outerProduct(final double[] leftRowSum, final double[] rightColumnSum, MatrixBlock result) {
+		outerProductRange(leftRowSum, rightColumnSum, result, 0, leftRowSum.length, 0, rightColumnSum.length);
+	}
+
+	private static void outerProductRange(final double[] leftRowSum, final double[] rightColumnSum,
+		final MatrixBlock result, int rl, int ru, int cl, int cu) {
+		if(result.getDenseBlock().isContiguous())
+			outerProductRangeContiguous(leftRowSum, rightColumnSum, result.getDenseBlockValues(), rl, ru, cl, cu);
+		else
+			outerProductRangeGeneric(leftRowSum, rightColumnSum, result.getDenseBlock(), rl, ru, cl, cu);
+	}
+
+	private static void outerProductRangeContiguous(final double[] leftRowSum, final double[] rightColumnSum,
+		final double[] result, int rl, int ru, int cl, int cu) {
+		for(int row = rl; row < ru; row++) {
 			final int offOut = rightColumnSum.length * row;
 			final double vLeft = leftRowSum[row];
+			if(vLeft != 0) {
+				for(int col = cl; col < cu; col++) {
+					result[offOut + col] += vLeft * rightColumnSum[col];
+				}
+			}
+		}
+	}
+
+	private static void outerProductRangeGeneric(final double[] leftRowSum, final double[] rightColumnSum,
+		final DenseBlock res, int rl, int ru, int cl, int cu) {
+		for(int row = rl; row < ru; row++) {
+			final int offOut = res.pos(row);
+			final double[] result = res.values(row);
+			final double vLeft = leftRowSum[row];
+			if(vLeft != 0) {
+				for(int col = cl; col < cu; col++) {
+					result[offOut + col] += vLeft * rightColumnSum[col];
+				}
+			}
+		}
+	}
+
+	private static List<Future<?>> outerProductParallelTasks(final double[] leftRowSum, final double[] rightColumnSum,
+		final MatrixBlock result, ExecutorService pool) {
+		// windows of 1024 each
+		final int blkz = 1024;
+		List<Future<?>> tasks = new ArrayList<>();
+		for(int row = 0; row < leftRowSum.length; row += blkz) {
+			final int rl = row;
+			final int ru = Math.min(leftRowSum.length, row + blkz);
+			for(int col = 0; col < rightColumnSum.length; col += blkz) {
+				final int cl = col;
+				final int cu = Math.min(rightColumnSum.length, col + blkz);
+				tasks.add(pool.submit(() -> {
+					outerProductRange(leftRowSum, rightColumnSum, result, rl, ru, cl, cu);
+				}));
+			}
+		}
+		return tasks;
+	}
+
+	private static void outerProductWithScaling(final double[] leftRowSum, final double[] rightColumnSum,
+		final int scaling, final MatrixBlock result) {
+		if(result.getDenseBlock().isContiguous())
+			outerProductWithScalingContiguous(leftRowSum, rightColumnSum, scaling, result.getDenseBlockValues());
+		else
+			outerProductWithScalingGeneric(leftRowSum, rightColumnSum, scaling, result.getDenseBlock());
+	}
+
+	private static void outerProductWithScalingContiguous(final double[] leftRowSum, final double[] rightColumnSum,
+		final int scaling, final double[] result) {
+		for(int row = 0; row < leftRowSum.length; row++) {
+			final int offOut = rightColumnSum.length * row;
+			final double vLeft = leftRowSum[row] * scaling;
 			for(int col = 0; col < rightColumnSum.length; col++) {
 				result[offOut + col] += vLeft * rightColumnSum[col];
 			}
 		}
 	}
 
-	private static void outerProductWithScaling(final double[] leftRowSum, final double[] rightColumnSum,
-		final int scaling, final double[] result) {
+	private static void outerProductWithScalingGeneric(final double[] leftRowSum, final double[] rightColumnSum,
+		final int scaling, final DenseBlock res) {
 		for(int row = 0; row < leftRowSum.length; row++) {
-			final int offOut = rightColumnSum.length * row;
+			final int offOut = res.pos(row);
+			final double[] result = res.values(row);
 			final double vLeft = leftRowSum[row] * scaling;
 			for(int col = 0; col < rightColumnSum.length; col++) {
 				result[offOut + col] += vLeft * rightColumnSum[col];
@@ -421,7 +550,7 @@ public final class CLALibLeftMultBy {
 	}
 
 	private static void LMMWithPreAgg(List<APreAgg> preAggCGs, MatrixBlock that, MatrixBlock ret, int rl, int ru,
-		int off, int skip, double[] rowSums, int k) {
+		int off, int skip, double[] rowSums, int k) throws Exception {
 		if(!that.isInSparseFormat())
 			LMMWithPreAggDense(preAggCGs, that, ret, rl, ru, off, skip, rowSums);
 		else
@@ -429,31 +558,38 @@ public final class CLALibLeftMultBy {
 	}
 
 	private static void LMMWithPreAggSparse(List<APreAgg> preAggCGs, MatrixBlock that, MatrixBlock ret, int rl, int ru,
-		int off, int skip, double[] rowSum) {
+		int off, int skip, double[] rowSum) throws Exception {
 		// row multiplication
-		final MatrixBlock tmpRes = new MatrixBlock(1, ret.getNumColumns(), false);
-		final int maxV = preAggCGs.get(off).getNumValues();
-		final MatrixBlock preA = new MatrixBlock(1, maxV, false);
-		// final DenseBlock db = preA.getDenseBlock();
-		preA.allocateDenseBlock();
-		final double[] preAV = preA.getDenseBlockValues();
-		tmpRes.allocateDenseBlock();
+		// allocate the preAggregate on demand;
+		MatrixBlock preA = null;
+		MatrixBlock fTmp = null;
 		final SparseBlock sb = that.getSparseBlock();
+		final int nGroupsToMultiply = preAggCGs.size() / skip;
 
-		for(int j = off; j < preAggCGs.size(); j += skip) {
+		for(int j = off; j < preAggCGs.size(); j += skip) { // selected column groups for this thread.
+			final int nCol = preAggCGs.get(j).getNumCols();
+			final int nVal = preAggCGs.get(j).getNumValues();
 			for(int r = rl; r < ru; r++) {
 				if(sb.isEmpty(r))
 					continue;
 				final int rcu = r + 1;
-				final int nCol = preAggCGs.get(j).getNumCols();
-				final int nVal = preAggCGs.get(j).getNumValues();
-				if(nCol == 1 || (sb.size(r) * nCol < sb.size(r) + nCol * nVal))
+				if(nCol == 1 || (sb.size(r) * nCol < sb.size(r) + (long) nCol * nVal) || nGroupsToMultiply <= 1)
 					LMMNoPreAgg(preAggCGs.get(j), that, ret, r, rcu);
 				else {
+					if(preA == null) {
+						// only allocate if we use this path.
+						// also only allocate the size needed.
+						preA = new MatrixBlock(1, nVal, false);
+						fTmp = new MatrixBlock(1, ret.getNumColumns(), false);
+						fTmp.allocateDenseBlock();
+						preA.allocateDenseBlock();
+					}
+
+					final double[] preAV = preA.getDenseBlockValues();
 					final APreAgg g = preAggCGs.get(j);
 					preA.reset(1, g.getPreAggregateSize(), false);
 					g.preAggregateSparse(sb, preAV, r, rcu);
-					g.mmWithDictionary(preA, tmpRes, ret, 1, r, rcu);
+					g.mmWithDictionary(preA, fTmp, ret, 1, r, rcu);
 				}
 			}
 		}

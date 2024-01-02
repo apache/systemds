@@ -23,6 +23,7 @@ import java.io.DataInput;
 import java.io.IOException;
 import java.util.Arrays;
 
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
@@ -53,7 +54,7 @@ import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
 import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
 
 public class ColGroupEmpty extends AColGroupCompressed
-	implements IContainADictionary, IContainDefaultTuple, AOffsetsGroup ,IMapToDataGroup{
+	implements IContainADictionary, IContainDefaultTuple, AOffsetsGroup, IMapToDataGroup {
 	private static final long serialVersionUID = -2307677253622099958L;
 
 	/**
@@ -86,6 +87,11 @@ public class ColGroupEmpty extends AColGroupCompressed
 
 	@Override
 	public void decompressToSparseBlock(SparseBlock sb, int rl, int ru, int offR, int offC) {
+		// do nothing.
+	}
+
+	@Override
+	public void decompressToDenseBlockTransposed(DenseBlock db, int rl, int ru) {
 		// do nothing.
 	}
 
@@ -403,4 +409,13 @@ public class ColGroupEmpty extends AColGroupCompressed
 		return MapToFactory.create(0, 0);
 	}
 
+	@Override
+	public double getSparsity() {
+		return 0.0;
+	}
+
+	@Override
+	public void sparseSelection(MatrixBlock selection, MatrixBlock ret, int rl, int ru) {
+		throw new NotImplementedException();
+	}
 }

@@ -44,14 +44,15 @@ import org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupEmpty;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupIO;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupUncompressed;
-import org.apache.sysds.runtime.compress.lib.CLALibAppend;
 import org.apache.sysds.runtime.compress.lib.CLALibBinaryCellOp;
+import org.apache.sysds.runtime.compress.lib.CLALibCBind;
 import org.apache.sysds.runtime.compress.lib.CLALibCMOps;
 import org.apache.sysds.runtime.compress.lib.CLALibCompAgg;
 import org.apache.sysds.runtime.compress.lib.CLALibDecompress;
 import org.apache.sysds.runtime.compress.lib.CLALibMMChain;
 import org.apache.sysds.runtime.compress.lib.CLALibMatrixMult;
 import org.apache.sysds.runtime.compress.lib.CLALibMerge;
+import org.apache.sysds.runtime.compress.lib.CLALibReorg;
 import org.apache.sysds.runtime.compress.lib.CLALibRexpand;
 import org.apache.sysds.runtime.compress.lib.CLALibScalar;
 import org.apache.sysds.runtime.compress.lib.CLALibSlice;
@@ -65,7 +66,6 @@ import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyze
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.data.SparseRow;
-import org.apache.sysds.runtime.functionobjects.SwapIndex;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.CM_COV_Object;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
@@ -166,7 +166,9 @@ public class CompressedMatrixBlock extends MatrixBlock {
 		clen = uncompressedMatrixBlock.getNumColumns();
 		sparse = false;
 		nonZeros = uncompressedMatrixBlock.getNonZeros();
-		decompressedVersion = new SoftReference<>(uncompressedMatrixBlock);
+		if(!(uncompressedMatrixBlock instanceof CompressedMatrixBlock)) {
+			decompressedVersion = new SoftReference<>(uncompressedMatrixBlock);
+		}
 	}
 
 	/**
@@ -267,6 +269,9 @@ public class CompressedMatrixBlock extends MatrixBlock {
 
 		ret = CLALibDecompress.decompress(this, k);
 
+		ret.recomputeNonZeros(k);
+		ret.examSparsity(k);
+
 		// Set soft reference to the decompressed version
 		decompressedVersion = new SoftReference<>(ret);
 
@@ -317,6 +322,11 @@ public class CompressedMatrixBlock extends MatrixBlock {
 			allocateColGroup(ColGroupEmpty.create(getNumColumns()));
 
 		return nonZeros;
+	}
+
+	@Override
+	public long recomputeNonZeros(int k) {
+		return recomputeNonZeros();
 	}
 
 	@Override
@@ -491,8 +501,8 @@ public class CompressedMatrixBlock extends MatrixBlock {
 
 	@Override
 	public MatrixBlock append(MatrixBlock[] that, MatrixBlock ret, boolean cbind) {
-		if(cbind && that.length == 1)
-			return CLALibAppend.append(this, that[0], InfrastructureAnalyzer.getLocalParallelism());
+		if(cbind)
+			return CLALibCBind.cbind(this, that, InfrastructureAnalyzer.getLocalParallelism());
 		else {
 			MatrixBlock left = getUncompressed("append list or r-bind not supported in compressed");
 			MatrixBlock[] thatUC = new MatrixBlock[that.length];
@@ -511,8 +521,7 @@ public class CompressedMatrixBlock extends MatrixBlock {
 	}
 
 	@Override
-	public MatrixBlock chainMatrixMultOperations(MatrixBlock v, MatrixBlock w, MatrixBlock out, ChainType ctype,
-		int k) {
+	public MatrixBlock chainMatrixMultOperations(MatrixBlock v, MatrixBlock w, MatrixBlock out, ChainType ctype, int k) {
 
 		checkMMChain(ctype, v, w);
 		// multi-threaded MMChain of single uncompressed ColGroup
@@ -589,21 +598,7 @@ public class CompressedMatrixBlock extends MatrixBlock {
 
 	@Override
 	public MatrixBlock reorgOperations(ReorgOperator op, MatrixValue ret, int startRow, int startColumn, int length) {
-		if(op.fn instanceof SwapIndex && this.getNumColumns() == 1) {
-			MatrixBlock tmp = decompress(op.getNumThreads());
-			long nz = tmp.setNonZeros(tmp.getNonZeros());
-			tmp = new MatrixBlock(tmp.getNumColumns(), tmp.getNumRows(), tmp.getDenseBlockValues());
-			tmp.setNonZeros(nz);
-			return tmp;
-		}
-		else {
-			// Allow transpose to be compressed output. In general we need to have a transposed flag on
-			// the compressed matrix. https://issues.apache.org/jira/browse/SYSTEMDS-3025
-			String message = op.getClass().getSimpleName() + " -- " + op.fn.getClass().getSimpleName();
-			MatrixBlock tmp = getUncompressed(message, op.getNumThreads());
-			return tmp.reorgOperations(op, ret, startRow, startColumn, length);
-		}
-
+		return CLALibReorg.reorg(this, op, (MatrixBlock) ret, startRow, startColumn, length);
 	}
 
 	public boolean isOverlapping() {
@@ -1101,8 +1096,7 @@ public class CompressedMatrixBlock extends MatrixBlock {
 	}
 
 	@Override
-	public void appendRowToSparse(SparseBlock dest, MatrixBlock src, int i, int rowoffset, int coloffset,
-		boolean deep) {
+	public void appendRowToSparse(SparseBlock dest, MatrixBlock src, int i, int rowoffset, int coloffset, boolean deep) {
 		throw new DMLCompressionException("Can't append row to compressed Matrix");
 	}
 
@@ -1157,12 +1151,12 @@ public class CompressedMatrixBlock extends MatrixBlock {
 	}
 
 	@Override
-	public void sparseToDense(int k) {
-		// do nothing
+	public MatrixBlock sparseToDense(int k) {
+		return this; // do nothing
 	}
 
 	@Override
-	public void denseToSparse(boolean allowCSR, int k){
+	public void denseToSparse(boolean allowCSR, int k) {
 		// do nothing
 	}
 

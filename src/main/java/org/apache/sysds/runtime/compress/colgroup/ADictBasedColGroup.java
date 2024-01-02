@@ -24,7 +24,6 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.IdentityDictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.MatrixBlockDictionary;
@@ -58,9 +57,38 @@ public abstract class ADictBasedColGroup extends AColGroupCompressed implements 
 	}
 
 	@Override
+	public final void decompressToDenseBlockTransposed(DenseBlock db, int rl, int ru) {
+		if(_dict instanceof IdentityDictionary) {
+			final MatrixBlockDictionary md = ((IdentityDictionary) _dict).getMBDict();
+			final MatrixBlock mb = md.getMatrixBlock();
+			// The dictionary is never empty.
+			if(mb.isInSparseFormat())
+				decompressToDenseBlockTransposedSparseDictionary(db, rl, ru, mb.getSparseBlock());
+			else
+				decompressToDenseBlockTransposedDenseDictionary(db, rl, ru, mb.getDenseBlockValues());
+		}
+		else if(_dict instanceof MatrixBlockDictionary) {
+			final MatrixBlockDictionary md = (MatrixBlockDictionary) _dict;
+			final MatrixBlock mb = md.getMatrixBlock();
+			// The dictionary is never empty.
+			if(mb.isInSparseFormat())
+				decompressToDenseBlockTransposedSparseDictionary(db, rl, ru, mb.getSparseBlock());
+			else
+				decompressToDenseBlockTransposedDenseDictionary(db, rl, ru, mb.getDenseBlockValues());
+		}
+		else
+			decompressToDenseBlockTransposedDenseDictionary(db, rl, ru, _dict.getValues());
+	}
+
+	protected abstract void decompressToDenseBlockTransposedSparseDictionary(DenseBlock db, int rl, int ru,
+		SparseBlock dict);
+
+	protected abstract void decompressToDenseBlockTransposedDenseDictionary(DenseBlock db, int rl, int ru,
+		double[] dict);
+
+	@Override
 	public final void decompressToDenseBlock(DenseBlock db, int rl, int ru, int offR, int offC) {
 		if(_dict instanceof IdentityDictionary) {
-
 			final MatrixBlockDictionary md = ((IdentityDictionary) _dict).getMBDict();
 			final MatrixBlock mb = md.getMatrixBlock();
 			// The dictionary is never empty.
@@ -198,7 +226,7 @@ public abstract class ADictBasedColGroup extends AColGroupCompressed implements 
 
 		final int nVals = getNumValues();
 		final IDictionary preAgg = (right.isInSparseFormat()) ? // Chose Sparse or Dense
-			rightMMPreAggSparse(nVals, right.getSparseBlock(), agCols, 0, nCol) : // sparse
+			rightMMPreAggSparse(nVals, right.getSparseBlock(), agCols, nCol) : // sparse
 			_dict.preaggValuesFromDense(nVals, _colIndexes, agCols, right.getDenseBlockValues(), nCol); // dense
 		return allocateRightMultiplication(right, agCols, preAgg);
 	}
@@ -269,30 +297,8 @@ public abstract class ADictBasedColGroup extends AColGroupCompressed implements 
 		return ColIndexFactory.create(aggregateColumns);
 	}
 
-	private IDictionary rightMMPreAggSparse(int numVals, SparseBlock b, IColIndex aggregateColumns, int cl, int cu) {
-		final double[] ret = new double[numVals * aggregateColumns.size()];
-		for(int h = 0; h < _colIndexes.size(); h++) {
-			final int colIdx = _colIndexes.get(h);
-			if(b.isEmpty(colIdx))
-				continue;
-
-			final double[] sValues = b.values(colIdx);
-			final int[] sIndexes = b.indexes(colIdx);
-			int retIdx = 0;
-			for(int i = b.pos(colIdx); i < b.size(colIdx) + b.pos(colIdx); i++) {
-				while(aggregateColumns.get(retIdx) < sIndexes[i])
-					retIdx++;
-				// It is known in this case that the sIndex always correspond to the aggregateColumns.
-				// if(sIndexes[i] == aggregateColumns[retIdx])
-				for(int j = 0, offOrg = h;
-					j < numVals * aggregateColumns.size();
-					j += aggregateColumns.size(), offOrg += _colIndexes.size()) {
-					ret[j + retIdx] += _dict.getValue(offOrg) * sValues[i];
-				}
-			}
-
-		}
-		return Dictionary.create(ret);
+	private IDictionary rightMMPreAggSparse(int numVals, SparseBlock b, IColIndex aggregateColumns, int nColRight) {
+		return _dict.rightMMPreAggSparse(numVals, b, this._colIndexes, aggregateColumns, nColRight);
 	}
 
 	@Override
@@ -315,4 +321,8 @@ public abstract class ADictBasedColGroup extends AColGroupCompressed implements 
 
 	protected abstract AColGroup copyAndSet(IColIndex colIndexes, IDictionary newDictionary);
 
+	@Override
+	public double getSparsity() {
+		return _dict.getSparsity();
+	}
 }

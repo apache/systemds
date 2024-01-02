@@ -245,7 +245,7 @@ public final class OffsetFactory {
 				final int nv = indexes[i];
 				final int offsetSize = nv - ov;
 				if(offsetSize <= 0)
-					throw new DMLCompressionException("invalid offset construction with negative sequences");
+					throw new DMLCompressionException("invalid offset construction with negative sequences Byte");
 				final byte mod = (byte) (offsetSize % mp1);
 				offsets[p++] = mod;
 				ov = nv;
@@ -304,7 +304,7 @@ public final class OffsetFactory {
 				final int nv = indexes[i];
 				final int offsetSize = (nv - ov);
 				if(offsetSize <= 0)
-					throw new DMLCompressionException("invalid offset construction with negative sequences");
+					throw new DMLCompressionException("invalid offset construction with negative sequences Char");
 				final int mod = offsetSize % mp1;
 				offsets[p++] = (char) (mod);
 				ov = nv;

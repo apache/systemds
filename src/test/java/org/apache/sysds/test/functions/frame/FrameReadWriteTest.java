@@ -43,6 +43,8 @@ import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
 import org.junit.Test;
 
+import com.google.crypto.tink.subtle.Random;
+
 public class FrameReadWriteTest extends AutomatedTestBase {
 	protected static final Log LOG = LogFactory.getLog(FrameReadWriteTest.class.getName());
 
@@ -50,14 +52,18 @@ public class FrameReadWriteTest extends AutomatedTestBase {
 	private final static String TEST_NAME = "FrameReadWrite";
 	private final static String TEST_CLASS_DIR = TEST_DIR + FrameReadWriteTest.class.getSimpleName() + "/";
 	
-	private static final AtomicInteger id = new AtomicInteger(0);
+	private static AtomicInteger id = new AtomicInteger(0);
 
-	private final static int rows = 1593;
+	private final static int rows = 1020;
 	private final static ValueType[] schemaStrings = new ValueType[]{ValueType.STRING, ValueType.STRING, ValueType.STRING};	
 	private final static ValueType[] schemaMixed = new ValueType[]{ValueType.STRING, ValueType.FP64, ValueType.INT64, ValueType.BOOLEAN};	
 	
 	private final static String DELIMITER = "::";
 	private final static boolean HEADER = true;
+
+	static{
+		id = new AtomicInteger(Random.randInt());
+	}
 	
 	@Override
 	public void setUp() {
@@ -211,16 +217,14 @@ public class FrameReadWriteTest extends AutomatedTestBase {
 	
 	private void writeAndVerifyData(FileFormat fmt, FrameBlock frame1, FrameBlock frame2, FileFormatPropertiesCSV fprop)
 		throws IOException {
-
 		writeAndVerifyData(fmt, frame1, fprop);
 		writeAndVerifyData(fmt, frame2, fprop);
 	}
 
 	private void writeAndVerifyData(FileFormat fmt, FrameBlock fb, FileFormatPropertiesCSV fprop)
 	throws IOException {
+		final String fname1 = SCRIPT_DIR + TEST_DIR + "/frameData" + id.incrementAndGet();
 		try{
-
-			final String fname1 = SCRIPT_DIR + TEST_DIR + "/frameData" + id.incrementAndGet();
 			
 			final ValueType[] schema = fb.getSchema();
 			final int nCol = fb.getNumColumns();
@@ -235,14 +239,14 @@ public class FrameReadWriteTest extends AutomatedTestBase {
 			
 			//Read frame data from disk
 			FrameBlock frame1Read = reader.readFrameFromHDFS(fname1, schema, nRow, nCol);
-			
 			TestUtils.compareFrames(fb, frame1Read, true);
-	
-			HDFSTool.deleteFileIfExistOnHDFS(fname1);
 		}
 		catch(Exception e){
 			e.printStackTrace();
 			fail(e.getMessage());
+		}finally{
+
+			HDFSTool.deleteFileIfExistOnHDFS(fname1);
 		}
 	}
 

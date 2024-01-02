@@ -631,4 +631,9 @@ public class QDictionary extends ADictionary {
 		int[] scaling) {
 		throw new NotImplementedException();
 	}
+
+	@Override
+	public IDictionary append(double[] row) {
+		throw new NotImplementedException();
+	}
 }

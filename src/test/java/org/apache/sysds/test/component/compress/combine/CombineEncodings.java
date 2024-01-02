@@ -76,8 +76,8 @@ public class CombineEncodings {
 
 	@Test
 	public void combineCustom4() {
-		IEncode ae = new DenseEncoding(MapToFactory.create(10, new int[] {0, 1, 2, 3, 4, 5, 6, 7, 7, 0}, 10));
-		IEncode be = new DenseEncoding(MapToFactory.create(10, new int[] {0, 1, 2, 3, 4, 5, 6, 7, 7, 0}, 10));
+		IEncode ae = new DenseEncoding(MapToFactory.create(10, new int[] {0, 1, 2, 3, 4, 5, 6, 7, 7, 0}, 8));
+		IEncode be = new DenseEncoding(MapToFactory.create(10, new int[] {0, 1, 2, 3, 4, 5, 6, 7, 7, 0}, 8));
 		Pair<IEncode, Map<Integer, Integer>> cec = ae.combineWithMap(be);
 		IEncode ce = cec.getLeft();
 		Map<Integer, Integer> cem = cec.getRight();

@@ -34,9 +34,11 @@ import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.compress.utils.Util;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.functionobjects.Builtin;
+import org.apache.sysds.runtime.functionobjects.Multiply;
 import org.apache.sysds.runtime.functionobjects.Plus;
 import org.apache.sysds.runtime.functionobjects.ValueFunction;
 import org.apache.sysds.runtime.instructions.cp.CM_COV_Object;
+import org.apache.sysds.runtime.matrix.data.LibMatrixMult;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.LeftScalarOperator;
@@ -181,10 +183,23 @@ public class Dictionary extends ADictionary {
 	}
 
 	@Override
-	public Dictionary applyScalarOp(ScalarOperator op) {
+	public IDictionary applyScalarOp(ScalarOperator op) {
+		if(op.fn instanceof Multiply)
+			return applyScalarMultOp(op.getConstant());
+		else
+			return applyScalarGeneric(op);
+	}
+
+	private IDictionary applyScalarGeneric(ScalarOperator op) {
 		final double[] retV = new double[_values.length];
 		for(int i = 0; i < _values.length; i++)
 			retV[i] = op.executeScalar(_values[i]);
+		return create(retV);
+	}
+
+	private IDictionary applyScalarMultOp(double v) {
+		final double[] retV = new double[_values.length];
+		LibMatrixMult.vectMultiplyAdd(v, _values, retV, 0, 0, _values.length);
 		return create(retV);
 	}
 
@@ -601,10 +616,12 @@ public class Dictionary extends ADictionary {
 		double out = 0;
 		int valOff = 0;
 		for(int k = 0; k < counts.length; k++) {
+			double rowSum = 0;
 			int countK = counts[k];
 			for(int j = 0; j < nCol; j++) {
-				out += _values[valOff++] * countK;
+				rowSum += _values[valOff++] * countK;
 			}
+			out += rowSum;
 		}
 		return out;
 	}
@@ -649,10 +666,12 @@ public class Dictionary extends ADictionary {
 
 	private static void stringArray(StringBuilder sb, double[] val) {
 		sb.append("[");
-		sb.append(doubleToString(val[0]));
-		for(int i = 1; i < val.length; i++) {
-			sb.append(", ");
-			sb.append(doubleToString(val[i]));
+		if(val.length > 0) {
+			sb.append(doubleToString(val[0]));
+			for(int i = 1; i < val.length; i++) {
+				sb.append(", ");
+				sb.append(doubleToString(val[i]));
+			}
 		}
 		sb.append("]");
 	}
@@ -729,6 +748,22 @@ public class Dictionary extends ADictionary {
 			nnz += rowCount * counts[i];
 		}
 		return nnz;
+	}
+
+	@Override
+	public int[] countNNZZeroColumns(int[] counts){
+		final int nRow = counts.length;
+		final int nCol = _values.length / nRow;
+
+		final int[] ret = new int[nCol];
+		for(int i = 0; i < nRow; i++) {
+			for(int j = 0; j < nCol; j++) {
+				final int off = i * nCol + j;
+				if(_values[off] != 0)
+					ret[j] +=  counts[i];
+			}
+		}
+		return ret;
 	}
 
 	@Override
@@ -1120,12 +1155,20 @@ public class Dictionary extends ADictionary {
 
 	@Override
 	public boolean equals(IDictionary o) {
-		if(o instanceof Dictionary) {
+		if(o instanceof Dictionary)
 			return Arrays.equals(_values, ((Dictionary) o)._values);
-		}
+		else if(o instanceof IdentityDictionary)
+			return ((IdentityDictionary) o).equals(this);
 		else if(o instanceof MatrixBlockDictionary) {
 			final MatrixBlock mb = ((MatrixBlockDictionary) o).getMatrixBlock();
-			if(mb.isInSparseFormat())
+			if(mb.isEmpty()) {
+				for(int i = 0; i < _values.length; i++) {
+					if(_values[i] != 0)
+						return false;
+				}
+				return true;
+			}
+			else if(mb.isInSparseFormat())
 				return mb.getSparseBlock().equals(_values, mb.getNumColumns());
 			final double[] dv = mb.getDenseBlockValues();
 			return Arrays.equals(_values, dv);
@@ -1153,5 +1196,13 @@ public class Dictionary extends ADictionary {
 				retV[off + c] = _values[off + reorder[c]];
 		}
 		return ret;
+	}
+
+	@Override
+	public IDictionary append(double[] row) {
+		double[] retV = new double[_values.length + row.length];
+		System.arraycopy(_values, 0, retV, 0, _values.length);
+		System.arraycopy(row, 0, retV, _values.length, row.length);
+		return new Dictionary(retV);
 	}
 }

@@ -45,6 +45,7 @@ import org.apache.sysds.runtime.compress.estim.encoding.IEncode;
 import org.apache.sysds.runtime.compress.lib.CLALibLeftMultBy;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
+import org.apache.sysds.runtime.data.SparseBlockMCSR;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.instructions.cp.CM_COV_Object;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -636,7 +637,7 @@ public class ColGroupConst extends ADictBasedColGroup implements IContainDefault
 		sb.append(_dict.getString(_colIndexes.size()));
 		return sb.toString();
 	}
-	
+
 	@Override
 	public AOffset getOffsets() {
 		return new OffsetEmpty();
@@ -645,6 +646,57 @@ public class ColGroupConst extends ADictBasedColGroup implements IContainDefault
 	@Override
 	public AMapToData getMapToData() {
 		return MapToFactory.create(0, 0);
+	}
+
+	@Override
+	public double getSparsity() {
+		return 1.0;
+	}
+
+	@Override
+	public void sparseSelection(MatrixBlock selection, MatrixBlock ret, int rl, int ru) {
+		throw new NotImplementedException();
+	}
+
+	@Override
+	protected void decompressToDenseBlockTransposedSparseDictionary(DenseBlock db, int rl, int ru, SparseBlock sb) {
+		// guaranteed to be containing some values therefore no check for empty.
+		final int apos = sb.pos(0);
+		final int alen = sb.size(0);
+		final int[] aix = sb.indexes(0);
+		final double[] avals = sb.values(0);
+
+		for(int j = apos; j < alen; j++) {
+			final int rowOut = _colIndexes.get(aix[j]);
+			final double[] c = db.values(rowOut);
+			final int off = db.pos(rowOut); // row offset out.
+			final double v = avals[j];
+			for(int i = rl; i < ru; i++)
+				c[off + i] += v;
+		}
+	}
+
+	@Override
+	protected void decompressToDenseBlockTransposedDenseDictionary(DenseBlock db, int rl, int ru, double[] dict) {
+		for(int j = 0; j < _colIndexes.size(); j++) {
+			final int rowOut = _colIndexes.get(j);
+			final double[] c = db.values(rowOut);
+			final int off = db.pos(rowOut);
+			double v = dict[j];
+			for(int i = rl; i < ru; i++) {
+				c[off + i] += v;
+			}
+		}
+	}
+
+	@Override
+	protected void decompressToSparseBlockTransposedSparseDictionary(SparseBlockMCSR db, SparseBlock sb, int nColOut) {
+		throw new NotImplementedException();
+	}
+
+	@Override
+	protected void decompressToSparseBlockTransposedDenseDictionary(SparseBlockMCSR db, double[] dict, int nColOut) {
+		throw new NotImplementedException();
 	}
 
 }

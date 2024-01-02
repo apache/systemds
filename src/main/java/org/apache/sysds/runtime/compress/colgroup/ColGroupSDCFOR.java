@@ -25,10 +25,11 @@ import java.io.IOException;
 import java.util.Arrays;
 
 import org.apache.commons.lang3.NotImplementedException;
+import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
-import org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.DictionaryFactory;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary;
 import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
@@ -48,6 +49,7 @@ import org.apache.sysds.runtime.functionobjects.Minus;
 import org.apache.sysds.runtime.functionobjects.Multiply;
 import org.apache.sysds.runtime.functionobjects.Plus;
 import org.apache.sysds.runtime.instructions.cp.CM_COV_Object;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.CMOperator;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
@@ -77,12 +79,19 @@ public class ColGroupSDCFOR extends ASDC implements IMapToDataGroup, IFrameOfRef
 		int[] cachedCounts, double[] reference) {
 		super(colIndices, numRows, dict, indexes, cachedCounts);
 		// allow for now 1 data unique.
-		if(data.getUnique() == 1)
-			LOG.warn("SDCFor unique is 1, indicate it should have been SDCSingle please add support");
-		else if(data.getUnique() != dict.getNumberOfValues(colIndices.size()))
-			throw new DMLCompressionException("Invalid construction of SDCZero group");
 		_data = data;
 		_reference = reference;
+		if(CompressedMatrixBlock.debug) {
+
+			if(data.getUnique() == 1)
+				LOG.warn("SDCFor unique is 1, indicate it should have been SDCSingle please add support");
+			else if(data.getUnique() != dict.getNumberOfValues(colIndices.size()))
+				throw new DMLCompressionException("Invalid construction of SDCZero group");
+
+			_data.verify();
+			_indexes.verify(_data.size());
+		}
+
 	}
 
 	public static AColGroup create(IColIndex colIndexes, int numRows, IDictionary dict, AOffset offsets, AMapToData data,
@@ -517,6 +526,11 @@ public class ColGroupSDCFOR extends ASDC implements IMapToDataGroup, IFrameOfRef
 
 	@Override
 	public ICLAScheme getCompressionScheme() {
+		throw new NotImplementedException();
+	}
+
+	@Override
+	public void sparseSelection(MatrixBlock selection, MatrixBlock ret, int rl, int ru) {
 		throw new NotImplementedException();
 	}
 

@@ -63,11 +63,11 @@ public abstract class AComEst {
 		_cs = cs;
 	}
 
-	protected int getNumRows() {
+	public int getNumRows() {
 		return _cs.transposed ? _data.getNumColumns() : _data.getNumRows();
 	}
 
-	protected int getNumColumns() {
+	public int getNumColumns() {
 		return _cs.transposed ? _data.getNumRows() : _data.getNumColumns();
 	}
 

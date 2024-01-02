@@ -108,6 +108,10 @@ public class CompressionStatistics {
 		return compressedSize == 0.0 ? Double.POSITIVE_INFINITY : (double) originalSize / compressedSize;
 	}
 
+	public double getCostRatio() {
+		return compressedSize == 0.0 ? Double.POSITIVE_INFINITY : (double) originalCost / compressedCost;
+	}
+
 	public double getDenseRatio() {
 		return compressedSize == 0.0 ? Double.POSITIVE_INFINITY : (double) denseSize / compressedSize;
 	}
@@ -121,7 +125,7 @@ public class CompressionStatistics {
 		sb.append("\nCompressed Size       : " + compressedSize);
 		sb.append("\nCompressionRatio      : " + getRatio());
 		sb.append("\nDenseCompressionRatio : " + getDenseRatio());
-	
+
 		if(colGroupCounts != null) {
 			sb.append("\nCompressionTypes      : " + getGroupsTypesString());
 			sb.append("\nCompressionGroupSizes : " + getGroupsSizesString());

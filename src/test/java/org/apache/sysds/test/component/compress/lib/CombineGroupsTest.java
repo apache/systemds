@@ -161,7 +161,7 @@ public class CombineGroupsTest {
 			List<AColGroup> groups = ccc.getColGroups();
 			if(groups.size() > 1) {
 
-				AColGroup cg = CLALibCombineGroups.combine(groups.get(0), groups.get(1));
+				AColGroup cg = CLALibCombineGroups.combine(groups.get(0), groups.get(1), c.getNumRows());
 				ccc.allocateColGroup(cg);
 				TestUtils.compareMatricesBitAvgDistance(c, ccc, 0, 0, "Not the same combined");
 			}
@@ -188,7 +188,7 @@ public class CombineGroupsTest {
 			List<AColGroup> groups = ccc.getColGroups();
 			if(groups.size() > 1) {
 
-				AColGroup cg = CLALibCombineGroups.combine(groups.get(1), groups.get(2));
+				AColGroup cg = CLALibCombineGroups.combine(groups.get(1), groups.get(2), c.getNumRows());
 				ccc.allocateColGroup(cg);
 				TestUtils.compareMatricesBitAvgDistance(c, ccc, 0, 0, "Not the same combined");
 			}
@@ -214,7 +214,7 @@ public class CombineGroupsTest {
 			List<AColGroup> groups = ccc.getColGroups();
 			if(groups.size() > 1) {
 
-				AColGroup cg = CLALibCombineGroups.combine(groups.get(1), groups.get(2));
+				AColGroup cg = CLALibCombineGroups.combine(groups.get(1), groups.get(2), c.getNumRows());
 				ccc.allocateColGroup(cg);
 				TestUtils.compareMatricesBitAvgDistance(c, ccc, 0, 0, "Not the same combined");
 			}
@@ -240,7 +240,7 @@ public class CombineGroupsTest {
 			List<AColGroup> groups = ccc.getColGroups();
 			if(groups.size() > 1) {
 
-				AColGroup cg = CLALibCombineGroups.combine(groups.get(0), groups.get(2));
+				AColGroup cg = CLALibCombineGroups.combine(groups.get(0), groups.get(2), c.getNumRows());
 				ccc.allocateColGroup(cg);
 				TestUtils.compareMatricesBitAvgDistance(c, ccc, 0, 0, "Not the same combined");
 			}
@@ -265,7 +265,7 @@ public class CombineGroupsTest {
 			List<AColGroup> groups = ccc.getColGroups();
 			if(groups.size() > 1) {
 
-				AColGroup cg = CLALibCombineGroups.combine(groups.get(0), groups.get(1));
+				AColGroup cg = CLALibCombineGroups.combine(groups.get(0), groups.get(1), c.getNumRows());
 				ccc.allocateColGroup(cg);
 				TestUtils.compareMatricesBitAvgDistance(c, ccc, 0, 0, "Not the same combined");
 			}
@@ -300,7 +300,7 @@ public class CombineGroupsTest {
 			List<AColGroup> groups = ccc.getColGroups();
 			if(groups.size() > 1) {
 
-				AColGroup cg = CLALibCombineGroups.combine(groups.get(0), groups.get(1));
+				AColGroup cg = CLALibCombineGroups.combine(groups.get(0), groups.get(1), c.getNumRows());
 				assertTrue(cg.getColIndices().isSorted());
 
 				ccc.allocateColGroup(cg);

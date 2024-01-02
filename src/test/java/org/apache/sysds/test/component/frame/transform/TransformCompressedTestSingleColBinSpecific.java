@@ -148,8 +148,12 @@ public class TransformCompressedTestSingleColBinSpecific {
 				data.getNumColumns(), meta);
 			MatrixBlock outNormal = encoderNormal.encode(data, k);
 			FrameBlock outNormalMD = encoderNormal.getMetaData(null);
-			TestUtils.compareMatrices(outNormal, outCompressed, 0, "Not Equal after apply");
+			// LOG.error(outCompressedMD);
+			// LOG.error()
 			TestUtils.compareFrames(outNormalMD, outCompressedMD, true);
+			// LOG.error(outNormal);
+			// LOG.error(outCompressed);
+			TestUtils.compareMatrices(outNormal, outCompressed, 0, "Not Equal after apply");
 
 			if(EQ){
 				// Assert that each bucket has the same number of elements

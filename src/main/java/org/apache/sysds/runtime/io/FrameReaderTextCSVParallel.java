@@ -147,7 +147,6 @@ public class FrameReaderTextCSVParallel extends FrameReaderTextCSV
 		@Override
 		public Integer call() throws Exception {
 			return countLinesInReader(_split, _informat, _job, _nCol, _hasHeader);
-
 		}
 	}
 

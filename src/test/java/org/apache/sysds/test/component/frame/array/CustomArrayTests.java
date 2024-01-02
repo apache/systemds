@@ -45,6 +45,7 @@ import org.apache.sysds.runtime.frame.data.columns.CharArray;
 import org.apache.sysds.runtime.frame.data.columns.DDCArray;
 import org.apache.sysds.runtime.frame.data.columns.DoubleArray;
 import org.apache.sysds.runtime.frame.data.columns.FloatArray;
+import org.apache.sysds.runtime.frame.data.columns.HashIntegerArray;
 import org.apache.sysds.runtime.frame.data.columns.HashLongArray;
 import org.apache.sysds.runtime.frame.data.columns.IntegerArray;
 import org.apache.sysds.runtime.frame.data.columns.LongArray;
@@ -721,13 +722,13 @@ public class CustomArrayTests {
 		assertEquals(a.get(0), Character.valueOf((char) 1));
 	}
 
-	@Test(expected = DMLRuntimeException.class)
+	@Test(expected = NumberFormatException.class)
 	public void charSet_invalid() {
 		CharArray a = ArrayFactory.create(new char[2]);
 		a.set(0, "1.01");
 	}
 
-	@Test(expected = DMLRuntimeException.class)
+	@Test(expected = NumberFormatException.class)
 	public void charSet_invalid_2() {
 		CharArray a = ArrayFactory.create(new char[2]);
 		a.set(0, "aa");
@@ -1407,6 +1408,17 @@ public class CustomArrayTests {
 	@Test
 	public void parseHash_ffffffff_ffffffff() {
 		assertEquals(-1, HashLongArray.parseHashLong("ffffffffffffffff"));
+	}
+
+	@Test
+	public void parseHash_failCase_62770d79(){
+		assertEquals("62770d79",Integer.toHexString(HashIntegerArray.parseHashInt("62770d79")));
+		assertEquals("62770d79",Integer.toHexString(HashIntegerArray.parseHashInt("62770d79")));
+	}
+
+	@Test
+	public void parseHash_failCase_62770d7962770d79(){
+		assertEquals("62770d7962770d79",Long.toHexString(HashLongArray.parseHashLong("62770d7962770d79")));
 	}
 
 	@Test

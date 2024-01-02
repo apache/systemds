@@ -1463,8 +1463,6 @@ public abstract class AutomatedTestBase {
 				errorMessage.append("\nStandard Out:");
 				if(outputBuffering)
 					errorMessage.append("\n" + buff);
-				// errorMessage.append("\nStackTrace:");
-				// errorMessage.append(getStackTraceString(e, 0));
 				LOG.error(errorMessage);
 				e.printStackTrace();
 				fail(base);

@@ -549,13 +549,22 @@ public class LibMatrixReorg {
 		if( !ixret ) {
 			out.allocateBlock();
 			//copy input data in sorted order into result
-			ExecutorService pool = CommonThreadPool.get(k);
-			ArrayList<CopyTask> tasks = new ArrayList<>();
-			ArrayList<Integer> blklen = UtilFunctions
+			if(k > 1){
+
+				ExecutorService pool = CommonThreadPool.get(k);
+				ArrayList<CopyTask> tasks = new ArrayList<>();
+				ArrayList<Integer> blklen = UtilFunctions
+					.getBalancedBlockSizesDefault(rlen, k, false);
+				for( int i=0, lb=0; i<blklen.size(); lb+=blklen.get(i), i++ )
+					tasks.add( new CopyTask(in, out, vix, lb, lb+blklen.get(i)));
+				CommonThreadPool.invokeAndShutdown(pool, tasks);
+			}
+			else{
+				ArrayList<Integer> blklen = UtilFunctions
 				.getBalancedBlockSizesDefault(rlen, k, false);
-			for( int i=0, lb=0; i<blklen.size(); lb+=blklen.get(i), i++ )
-				tasks.add( new CopyTask(in, out, vix, lb, lb+blklen.get(i)));
-			CommonThreadPool.invokeAndShutdown(pool, tasks);
+				for( int i=0, lb=0; i<blklen.size(); lb+=blklen.get(i), i++ )
+					new CopyTask(in, out, vix, lb, lb+blklen.get(i)).call();
+			}
 		}
 		else {
 			//copy sorted index vector into result

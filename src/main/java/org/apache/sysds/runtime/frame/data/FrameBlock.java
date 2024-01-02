@@ -878,7 +878,8 @@ public class FrameBlock implements CacheBlock<FrameBlock>, Externalizable {
 					}
 				}
 				catch(InterruptedException | ExecutionException e) {
-					LOG.error(e);
+					//	default to single threaded.
+					LOG.warn("Failed parallel size calculation fallback to single thread");
 					size = 0;
 					for(Array<?> aa : _coldata)
 						size += aa.getInMemorySize();

@@ -211,6 +211,7 @@ public interface LibMatrixDenseToSparse {
 			final SparseBlockMCSR b = (SparseBlockMCSR) r.sparseBlock;
 			final int blockSize = Math.max(1, m / k);
 			final int est = Math.max(1, (int) (n * sp));
+
 			List<Future<?>> tasks = new ArrayList<>();
 			for(int i = 0; i < m; i += blockSize) {
 				final int start = i;

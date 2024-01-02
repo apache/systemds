@@ -129,7 +129,7 @@ public interface EncoderFactory {
 			//rcIDs = unionDistinct(rcIDs, weIDs);
 			// Error out if the first level encoders have overlaps
 			if (intersect(rcIDs, binIDs, haIDs, weIDs))
-				throw new DMLRuntimeException("More than one encoders (recode, binning, hashing, word_embedding) on one column is not allowed");
+				throw new DMLRuntimeException("More than one encoders (recode, binning, hashing, word_embedding) on one column is not allowed:\n" + spec);
 
 			List<Integer> ptIDs = except(except(except(UtilFunctions.getSeqList(1, clen, 1), unionDistinct(rcIDs, haIDs)),
 				binIDs), weIDs);

@@ -1294,7 +1294,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 		else if( !sparse && sparseDst )
 			denseToSparse(allowCSR, k);
 	}
-	
+
 	public static boolean evalSparseFormatInMemory(DataCharacteristics dc) {
 		return evalSparseFormatInMemory(dc.getRows(), dc.getCols(), dc.getNonZeros());
 	}
@@ -1366,12 +1366,13 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 		LibMatrixDenseToSparse.denseToSparse(this, allowCSR, k);
 	}
 
-	public final void sparseToDense() {
-		sparseToDense(1);
+	public final MatrixBlock sparseToDense() {
+		return sparseToDense(1);
 	}
 
-	public void sparseToDense(int k) {
+	public MatrixBlock sparseToDense(int k) {
 		LibMatrixSparseToDense.sparseToDense(this, k);
+		return this;
 	}
 
 	/**
@@ -1402,7 +1403,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 		if(sparse && sparseBlock!=null)
 			return recomputeNonZeros();
 		else if(!sparse && denseBlock!=null){
-			if((long) rlen * clen < 10000)
+			if((long) rlen * clen < 10000 || k == 1)
 				return recomputeNonZeros();
 			final ExecutorService pool = CommonThreadPool.get(k);
 			try {
@@ -1431,6 +1432,10 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 					nnz += e.get();
 				nonZeros = nnz;
 
+				if(nonZeros < 0)
+					throw new DMLRuntimeException("Invalid count of non zero values: " + nonZeros);
+				return nonZeros;
+
 			}
 			catch(Exception e) {
 				LOG.warn("Failed Parallel non zero count fallback to singlethread");
@@ -1446,6 +1451,12 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 		return nonZeros;
 	}
 	
+	/**
+	 * Recompute the number of non-zero values 
+	 * @param rl 	row lower index, 0-based, inclusive
+	 * @param ru 	row upper index, 0-based, inclusive
+	 * @return the number of non-zero values
+	 */
 	public long recomputeNonZeros(int rl, int ru) {
 		return recomputeNonZeros(rl, ru, 0, clen-1);
 	}
@@ -2874,6 +2885,10 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 			est.sparse = false;
 			return est;
 		}
+		else if(op.fn instanceof Divide && m2.getSparsity() == 1.0){
+			est.sparse = m1.sparse;
+			return est;
+		}
 		
 		BinaryAccessType atype = LibMatrixBincell.getBinaryAccessType(m1, m2);
 		boolean outer = (atype == BinaryAccessType.OUTER_VECTOR_VECTOR);
@@ -2882,6 +2897,11 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 		long nz1 = m1.getNonZeros();
 		long nz2 = m2.getNonZeros();
 		
+		if(nz1 <= 0)
+			nz1 = m1.recomputeNonZeros();
+		if(nz2 <= 0)
+			nz2 = m2.recomputeNonZeros();
+
 		//account for matrix vector and vector/vector
 		long estnnz = 0;
 		if( atype == BinaryAccessType.OUTER_VECTOR_VECTOR )
@@ -2969,13 +2989,14 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 		boolean sparseDst = evalSparseFormatOnDisk();
 		return !sparse || !sparseDst
 			|| (sparse && sparseBlock instanceof SparseBlockCSR)
-			|| (sparse && sparseBlock instanceof SparseBlockMCSR
-				&& getInMemorySize() / MAX_SHALLOW_SERIALIZE_OVERHEAD 
-				<= getExactSerializedSize())
-			|| (sparse && sparseBlock instanceof SparseBlockMCSR
-				&& nonZeros < Integer.MAX_VALUE //CSR constraint
-				&& inclConvert && CONVERT_MCSR_TO_CSR_ON_DEEP_SERIALIZE
-				&& !isUltraSparseSerialize(sparseDst));
+			|| (sparse && sparseBlock instanceof SparseBlockMCSR);
+			// || (sparse && sparseBlock instanceof SparseBlockMCSR
+			// 	&& getInMemorySize() / MAX_SHALLOW_SERIALIZE_OVERHEAD 
+			// 	<= getExactSerializedSize())
+			// || (sparse && sparseBlock instanceof SparseBlockMCSR
+			// 	&& nonZeros < Integer.MAX_VALUE //CSR constraint
+			// 	&& inclConvert && CONVERT_MCSR_TO_CSR_ON_DEEP_SERIALIZE
+			// 	&& !isUltraSparseSerialize(sparseDst));
 	}
 	
 	@Override 
@@ -2997,26 +3018,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 
 	@Override
 	public MatrixBlock scalarOperations(ScalarOperator op, MatrixValue result) {
-		MatrixBlock ret = checkType(result);
-		
-		// estimate the sparsity structure of result matrix
-		boolean sp = this.sparse; // by default, we guess result.sparsity=input.sparsity
-		if (!op.sparseSafe)
-			sp = false; // if the operation is not sparse safe, then result will be in dense format
-		
-		//allocate the output matrix block
-		if( ret==null )
-			ret = new MatrixBlock(rlen, clen, sp, this.nonZeros);
-		else
-			ret.reset(rlen, clen, sp, this.nonZeros);
-		
-		//core scalar operations
-		if( op.getNumThreads() > 1 )
-			LibMatrixBincell.bincellOp(this, ret, op, op.getNumThreads());
-		else
-			LibMatrixBincell.bincellOp(this, ret, op);
-		
-		return ret;
+		return LibMatrixBincell.bincellOpScalar(this, checkType(result), op, op.getNumThreads());
 	}
 
 	public final MatrixBlock unaryOperations(UnaryOperator op){
@@ -3088,12 +3090,8 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 		else
 			ret.reset(rows, cols, resultSparse.sparse, resultSparse.estimatedNonZeros);
 		
-		//core binary cell operation
-		if( op.getNumThreads() > 1 )
-			LibMatrixBincell.bincellOp( this, that, ret, op, op.getNumThreads() );
-		else
-			LibMatrixBincell.bincellOp( this, that, ret, op );
-		
+		LibMatrixBincell.bincellOp( this, that, ret, op, op.getNumThreads() );
+
 		return ret;
 	}
 
@@ -3111,6 +3109,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 		
 		//core binary cell operation
 		LibMatrixBincell.bincellOpInPlace(this, that, op);
+		
 		return this;
 	}
 	
@@ -3183,10 +3182,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 			if (s2 != s3 && (op.fn instanceof PlusMultiply || op.fn instanceof MinusMultiply) ) {
 				//SPECIAL CASE for sparse-dense combinations of common +* and -*
 				BinaryOperator bop = ((ValueFunctionWithConstant)op.fn).setOp2Constant(s2 ? d2 : d3);
-				if( op.getNumThreads() > 1 )
-					LibMatrixBincell.bincellOp(this, s2 ? m3 : m2, ret, bop, op.getNumThreads());
-				else
-					LibMatrixBincell.bincellOp(this, s2 ? m3 : m2, ret, bop);
+				LibMatrixBincell.bincellOp(this, s2 ? m3 : m2, ret, bop, op.getNumThreads());
 			}
 			else {
 				//DEFAULT CASE
@@ -3836,80 +3832,90 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 		else
 			result.reset(m, n, sp, nnz);
 		
-		//core append operation
-		//copy left and right input into output
-		if( !result.sparse && nnz!=0 ) //DENSE
-		{
-			if( cbind ) {
-				DenseBlock resd = result.allocateBlock().getDenseBlock();
-				MatrixBlock[] in = ArrayUtils.addAll(new MatrixBlock[]{this}, that);
-				
-				for( int i=0; i<m; i++ ) {
-					for( int k=0, off=0; k<in.length; off+=in[k].clen, k++ ) {
-						if( in[k].isEmptyBlock(false) )
+		if( !result.sparse && nnz!=0 ) 
+			return appendDense(that, result, cbind, nnz, shallowCopy, m, n);
+		else if(nnz != 0) 
+			return appendSparse(that, result, cbind, nnz, shallowCopy);
+		
+		
+		//update meta data
+		result.nonZeros = nnz;
+		return result;
+	}
+
+	private MatrixBlock appendDense(MatrixBlock[] that, MatrixBlock result, boolean cbind, long nnz, boolean shallowCopy,
+		int m, int n) {
+		if(cbind) {
+			DenseBlock resd = result.allocateBlock().getDenseBlock();
+			MatrixBlock[] in = ArrayUtils.addAll(new MatrixBlock[] {this}, that);
+
+			for(int i = 0; i < m; i++) {
+				for(int k = 0, off = 0; k < in.length; off += in[k].clen, k++) {
+					if(in[k].isEmptyBlock(false))
+						continue;
+					if(in[k].sparse) {
+						SparseBlock src = in[k].sparseBlock;
+						if(src.isEmpty(i))
 							continue;
-						if( in[k].sparse ) {
-							SparseBlock src = in[k].sparseBlock;
-							if( src.isEmpty(i) )
-								continue;
-							int srcpos = src.pos(i);
-							int srclen = src.size(i);
-							int[] srcix = src.indexes(i);
-							double[] srcval = src.values(i);
-							double[] resval = resd.values(i);
-							int resix = resd.pos(i, off);
-							for (int j=srcpos; j<srcpos+srclen; j++)
-								resval[resix+srcix[j]] = srcval[j];
-						}
-						else {
-							DenseBlock src = in[k].getDenseBlock();
-							double[] srcval = src.values(i);
-							double[] resval = resd.values(i);
-							System.arraycopy(srcval, src.pos(i),
-								resval, resd.pos(i, off), in[k].clen);
-						}
+						int srcpos = src.pos(i);
+						int srclen = src.size(i);
+						int[] srcix = src.indexes(i);
+						double[] srcval = src.values(i);
+						double[] resval = resd.values(i);
+						int resix = resd.pos(i, off);
+						for(int j = srcpos; j < srcpos + srclen; j++)
+							resval[resix + srcix[j]] = srcval[j];
+					}
+					else {
+						DenseBlock src = in[k].getDenseBlock();
+						double[] srcval = src.values(i);
+						double[] resval = resd.values(i);
+						System.arraycopy(srcval, src.pos(i), resval, resd.pos(i, off), in[k].clen);
 					}
 				}
 			}
-			else { //rbind
-				result.copy(0, rlen-1, 0, n-1, this, false);
-				for(int i=0, off=rlen; i<that.length; i++) {
-					result.copy(off, off+that[i].rlen-1, 0, n-1, that[i], false);
-					off += that[i].rlen;
-				}
+		}
+		else { // rbind
+			result.copy(0, rlen - 1, 0, n - 1, this, false);
+			for(int i = 0, off = rlen; i < that.length; i++) {
+				result.copy(off, off + that[i].rlen - 1, 0, n - 1, that[i], false);
+				off += that[i].rlen;
 			}
 		}
-		//SPARSE
-		else if(nnz != 0) {
-			//adjust sparse rows if required
-			result.allocateSparseRowsBlock();
-			//allocate sparse rows once for cbind
-			if( cbind && nnz > rlen && !shallowCopy && result.getSparseBlock() instanceof SparseBlockMCSR ) {
-				final SparseBlock sblock = result.getSparseBlock();
-				// for each row calculate how many non zeros are pressent.
-				for( int i=0; i<result.rlen; i++ ) 
-					sblock.allocate(i, computeNNzRow(that, i));
-				
-			}
-			
-			//core append operation
-			// we can always append this directly to offset 0.0 in both cbind and rbind.
-			result.appendToSparse(this, 0, 0, !shallowCopy);
-			if( cbind ) {
-				for(int i=0, off=clen; i<that.length; i++) {
-					result.appendToSparse(that[i], 0, off);
-					off += that[i].clen;
-				}
-			}
-			else { //rbind
-				for(int i=0, off=rlen; i<that.length; i++) {
-					result.appendToSparse(that[i], off, 0);
-					off += that[i].rlen;
-				}
+
+		result.nonZeros = nnz;
+		return result;
+	}
+
+	private MatrixBlock appendSparse(MatrixBlock[] that, MatrixBlock result, boolean cbind, long nnz,
+		boolean shallowCopy) {
+		// adjust sparse rows if required
+		result.allocateSparseRowsBlock();
+		// allocate sparse rows once for cbind
+		if(cbind && nnz > rlen && !shallowCopy && result.getSparseBlock() instanceof SparseBlockMCSR) {
+			final SparseBlock sblock = result.getSparseBlock();
+			// for each row calculate how many non zeros are pressent.
+			for(int i = 0; i < result.rlen; i++)
+				sblock.allocate(i, computeNNzRow(that, i));
+
+		}
+
+		// core append operation
+		// we can always append this directly to offset 0.0 in both cbind and rbind.
+		result.appendToSparse(this, 0, 0, !shallowCopy);
+		if(cbind) {
+			for(int i = 0, off = clen; i < that.length; i++) {
+				result.appendToSparse(that[i], 0, off);
+				off += that[i].clen;
 			}
 		}
-		
-		//update meta data
+		else { // rbind
+			for(int i = 0, off = rlen; i < that.length; i++) {
+				result.appendToSparse(that[i], off, 0);
+				off += that[i].rlen;
+			}
+		}
+
 		result.nonZeros = nnz;
 		return result;
 	}

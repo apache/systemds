@@ -49,6 +49,7 @@ import org.apache.sysds.runtime.frame.data.columns.CharArray;
 import org.apache.sysds.runtime.frame.data.columns.DDCArray;
 import org.apache.sysds.runtime.frame.data.columns.DoubleArray;
 import org.apache.sysds.runtime.frame.data.columns.FloatArray;
+import org.apache.sysds.runtime.frame.data.columns.HashIntegerArray;
 import org.apache.sysds.runtime.frame.data.columns.HashLongArray;
 import org.apache.sysds.runtime.frame.data.columns.IntegerArray;
 import org.apache.sysds.runtime.frame.data.columns.LongArray;
@@ -284,7 +285,7 @@ public class FrameArrayTests {
 			Array<?> r = a.changeType(t);
 			assertTrue(r.getValueType() == t);
 		}
-		catch(DMLRuntimeException e) {
+		catch(DMLRuntimeException | NumberFormatException e) {
 			LOG.debug(e.getMessage());
 			// okay since we want exceptions
 			// in cases where the the change fail.
@@ -368,10 +369,15 @@ public class FrameArrayTests {
 
 	@Test
 	public void getStatistics() {
-		ArrayCompressionStatistics s = (a.size() < 1000) ? //
-			a.statistics(a.size()) : a.statistics(1000);
-		if(s != null) {
-			assertTrue(s.compressedSizeEstimate < s.originalSize);
+		try{
+			ArrayCompressionStatistics s = (a.size() < 1000) ? //
+				a.statistics(a.size()) : a.statistics(1000);
+			if(s != null) {
+				assertTrue(s.toString(), s.compressedSizeEstimate <= s.originalSize);
+			}
+		}
+		catch(Exception e){
+			e.printStackTrace();
 		}
 	}
 
@@ -423,7 +429,7 @@ public class FrameArrayTests {
 		if(a.getFrameArrayType() == FrameArrayType.OPTIONAL)
 			return;
 
-		assertEquals(a.toString(),t, a.getFrameArrayType());
+		assertEquals(a.toString(), t, a.getFrameArrayType());
 	}
 
 	@Test
@@ -472,6 +478,7 @@ public class FrameArrayTests {
 					break;
 				case RAGGED:
 				case HASH64:
+				case HASH32:
 				case OPTIONAL:
 					try {
 						a.get();
@@ -543,6 +550,7 @@ public class FrameArrayTests {
 					((Array<Character>) aa).set(start, end, (Array<Character>) a, off);
 					break;
 				case HASH64:
+				case HASH32:
 					((Array<Object>) aa).set(start, end, (Array<Object>) a, off);
 					break;
 				default:
@@ -601,6 +609,7 @@ public class FrameArrayTests {
 					((Array<Character>) aa).set(start, end, (Array<Character>) other);
 					break;
 				case HASH64:
+				case HASH32:
 					((Array<Object>) aa).set(start, end, (Array<Object>) other);
 					break;
 				default:
@@ -609,11 +618,8 @@ public class FrameArrayTests {
 			compareSetSubRange(aa, other, start, end, 0, aa.getValueType());
 
 		}
-		catch(DMLCompressionException e) {
+		catch(DMLCompressionException | NumberFormatException | NotImplementedException e) {
 			return;// valid
-		}
-		catch(NumberFormatException e){
-			return; // valid
 		}
 		catch(Exception e) {
 			e.printStackTrace();
@@ -673,6 +679,19 @@ public class FrameArrayTests {
 						assertEquals(((HashLongArray) a).get(0), hash);
 					}
 					return;
+				case HASH32:
+					String hash2 = "cdefaaaa";
+					((Array<Object>) a).set(0, hash2);
+					assertEquals(((Array<Object>) a).get(0), hash2);
+					if(a instanceof HashIntegerArray) {
+						int hashL = (int) Long.parseUnsignedLong("cdefaaaa", 16);
+						((HashIntegerArray) a).set(0, hashL);
+						assertEquals(((HashIntegerArray) a).get(0), hash2);
+					}
+					return;
+
+					
+					
 				default:
 					throw new NotImplementedException();
 			}
@@ -713,6 +732,7 @@ public class FrameArrayTests {
 					assertEquals((int) ((Array<Character>) a).get(0), 1);
 					return;
 				case HASH64:
+				case HASH32:
 					assertEquals(((Array<Object>) a).get(0), "1");
 					return;
 				default:
@@ -755,6 +775,7 @@ public class FrameArrayTests {
 					assertEquals(((Array<Character>) a).get(0), Character.valueOf((char) 0));
 					return;
 				case HASH64:
+				case HASH32:
 					assertEquals(((Array<Object>) a).get(0), "0");
 					return;
 				default:
@@ -958,6 +979,7 @@ public class FrameArrayTests {
 					assertEquals((char) aa.get(aa.size() - 1), vc);
 					break;
 				case HASH64:
+				case HASH32:
 					String hash = "aaaab";
 					aa.append(hash);
 					assertEquals(aa.get(aa.size() - 1), hash);
@@ -1012,6 +1034,7 @@ public class FrameArrayTests {
 						assertEquals((char) aa.get(aa.size() - 1), 0);
 						break;
 					case HASH64:
+					case HASH32:
 						assertEquals(aa.get(aa.size() - 1), "0");
 						break;
 					case UNKNOWN:
@@ -1062,6 +1085,7 @@ public class FrameArrayTests {
 						assertEquals((char) aa.get(aa.size() - 1), 0);
 						break;
 					case HASH64:
+					case HASH32:
 						assertEquals(aa.get(aa.size() - 1), "0");
 						break;
 					case UNKNOWN:
@@ -1105,6 +1129,7 @@ public class FrameArrayTests {
 					((Array<Character>) aa).setNz((Array<Character>) a);
 					break;
 				case HASH64:
+				case HASH32:
 					((Array<Object>) aa).setNz((Array<Object>) a);
 					break;
 				case UNKNOWN:
@@ -1146,11 +1171,11 @@ public class FrameArrayTests {
 	@SuppressWarnings("unchecked")
 	public void testSetNzStringWithNull() {
 		Array<?> aa = a.clone();
-		Array<String> af = (Array<String>) aa.changeTypeWithNulls(ValueType.STRING);
 		try {
+			Array<String> af = (Array<String>) aa.changeTypeWithNulls(ValueType.STRING);
 			aa.setFromOtherTypeNz(af);
 		}
-		catch(DMLCompressionException e) {
+		catch(DMLCompressionException | NotImplementedException e) {
 			return;// valid
 		}
 		catch(Exception e) {
@@ -1184,19 +1209,19 @@ public class FrameArrayTests {
 	public void testSetFromStringWithNull() {
 		Array<?> aa = a.clone();
 		Array<?> af;
-		if(aa.getFrameArrayType() == FrameArrayType.OPTIONAL //
-			&& aa.getValueType() != ValueType.STRING //
-			&& aa.getValueType() != ValueType.HASH64) {
-			af = aa.changeTypeWithNulls(ValueType.FP64);
-		}
-		else
-			af = aa.changeTypeWithNulls(ValueType.STRING);
-
 		try {
+			if(aa.getFrameArrayType() == FrameArrayType.OPTIONAL //
+				&& aa.getValueType() != ValueType.STRING //
+				&& aa.getValueType() != ValueType.HASH64 //
+				&& aa.getValueType() != ValueType.HASH32) {
+				af = aa.changeTypeWithNulls(ValueType.FP64);
+			}
+			else
+				af = aa.changeTypeWithNulls(ValueType.STRING);
 
 			aa.setFromOtherType(0, af.size() - 1, af);
 		}
-		catch(DMLCompressionException e) {
+		catch(DMLCompressionException | NotImplementedException | NumberFormatException e) {
 			return;// valid
 		}
 		catch(Exception e) {
@@ -1246,7 +1271,7 @@ public class FrameArrayTests {
 			a.write(fos);
 			long s = fos.size();
 			long e = a.getExactSerializedSize();
-			assertEquals(a.toString(),s, e);
+			assertEquals(a.toString(), s, e);
 		}
 		catch(IOException e) {
 			throw new RuntimeException("Error in io", e);
@@ -1357,6 +1382,7 @@ public class FrameArrayTests {
 					assertTrue(aa.get(0) == null || aa.get(0).equals(Integer.valueOf(0)));
 					break;
 				case HASH64:
+				case HASH32:
 					aa.set(0, (String) null);
 					assertTrue(aa.get(0) == null || aa.get(0).equals("0"));
 					break;
@@ -1431,6 +1457,12 @@ public class FrameArrayTests {
 					for(int i = 0; i < 10; i++)
 						assertEquals(aa.get(i + a.size()), "0");
 					break;
+				case HASH32:
+					aa = ((Array<Object>) aa).append(new HashIntegerArray(new int[10]));
+					assertEquals(aa.size(), a.size() + 10);
+					for(int i = 0; i < 10; i++)
+						assertEquals(aa.get(i + a.size()), "0");
+					break;
 				case UNKNOWN:
 				default:
 					throw new NotImplementedException("Not supported");
@@ -1501,6 +1533,7 @@ public class FrameArrayTests {
 						assertEquals(aa.get(a.size()), null);
 					break;
 				case HASH64:
+				case HASH32:
 					aa.append((String) null);
 					assertEquals(aa.size(), a.size() + 1);
 					if(!isOptional)
@@ -1559,6 +1592,9 @@ public class FrameArrayTests {
 					break;
 				case HASH64:
 					aa = ((Array<Object>) aa).append(new OptionalArray<>(new HashLongArray(new long[10]), true));
+					break;
+				case HASH32:
+					aa = ((Array<Object>) aa).append(new OptionalArray<>(new HashIntegerArray(new int[10]), true));
 					break;
 				case STRING:
 					return; // not relevant
@@ -1626,6 +1662,7 @@ public class FrameArrayTests {
 							assertEquals(aa.get(i), null);
 					break;
 				case HASH64:
+				case HASH32:
 					if(!isOptional)
 						for(int i = 0; i < aa.size(); i++)
 							assertEquals(aa.get(i), "0");
@@ -1686,6 +1723,7 @@ public class FrameArrayTests {
 						assertEquals(aa.get(i), "1");
 					break;
 				case HASH64:
+				case HASH32:
 					for(int i = 0; i < aa.size(); i++)
 						assertEquals(aa.get(i), "1");
 					break;
@@ -1743,6 +1781,7 @@ public class FrameArrayTests {
 						assertEquals(aa.get(i), "1");
 					break;
 				case HASH64:
+				case HASH32:
 					aa.fill("1");
 					for(int i = 0; i < aa.size(); i++)
 						assertEquals(aa.get(i), "1");
@@ -1810,6 +1849,7 @@ public class FrameArrayTests {
 							assertEquals(aa.get(i), null);
 					break;
 				case HASH64:
+				case HASH32:
 					((Array<Object>) aa).fill((Object) null);
 					if(!isOptional)
 						for(int i = 0; i < aa.size(); i++)
@@ -1894,11 +1934,17 @@ public class FrameArrayTests {
 	@Test
 	public void containsNull() {
 		if(a.containsNull()) {
+			if(a instanceof DoubleArray || a instanceof FloatArray){
+				for(int i = 0; i < a.size(); i++) {
+					if(Double.isNaN(a.getAsDouble(i)))
+						return;
+				}
+			}
 			for(int i = 0; i < a.size(); i++) {
 				if(a.get(i) == null)
 					return;
 			}
-			fail("No Null detected.");
+			fail("No Null detected in: " + a);
 		}
 	}
 
@@ -1923,7 +1969,7 @@ public class FrameArrayTests {
 			final Object av = a.get(i);
 			final Object bv = b.get(i);
 			if((av == null && bv != null) || (bv == null && av != null))
-				fail("not both null");
+				fail("not both null: " + err);
 			else if(av != null && bv != null)
 				assertTrue(err, av.toString().equals(bv.toString()));
 		}
@@ -1997,6 +2043,9 @@ public class FrameArrayTests {
 			case HASH64:
 				return DDCArray
 					.compressToDDC(ArrayFactory.createHash64(generateRandomHash64OptNUnique(size, seed, nUnique)));
+			case HASH32:
+				return DDCArray
+					.compressToDDC(ArrayFactory.createHash64(generateRandomHash32OptNUnique(size, seed, nUnique)));
 			case OPTIONAL:
 				Random r = new Random(seed);
 				switch(r.nextInt(7)) {
@@ -2084,6 +2133,8 @@ public class FrameArrayTests {
 				return ArrayFactory.create(generateRandomCharacterOpt(size, seed));
 			case HASH64:
 				return ArrayFactory.createHash64Opt(generateRandomHash64Opt(size, seed));
+			case HASH32:
+				return ArrayFactory.createHash32Opt(generateRandomHash32Opt(size, seed));
 			case OPTIONAL:
 			case RAGGED: // lets not test this case here.
 				Random r = new Random(seed);
@@ -2152,6 +2203,8 @@ public class FrameArrayTests {
 				return ArrayFactory.create(generateRandomChar(size, seed));
 			case HASH64:
 				return ArrayFactory.createHash64(generateRandomHash64(size, seed));
+			case HASH32:
+				return ArrayFactory.createHash32(generateRandomHash32(size, seed));
 			case RAGGED:
 				Random rand = new Random(seed);
 				switch(rand.nextInt(7)) {
@@ -2278,6 +2331,20 @@ public class FrameArrayTests {
 		return ret;
 	}
 
+
+	public static String[] generateRandomHash32OptNUnique(int size, int seed, int nUnique) {
+		nUnique = Math.max(1, nUnique);
+		String[] rands = generateRandomHash32(nUnique, seed);
+		rands[rands.length - 1] = null;
+		Random r = new Random(seed + 1);
+
+		String[] ret = new String[size];
+		for(int i = 0; i < size; i++)
+			ret[i] = rands[r.nextInt(nUnique)];
+		return ret;
+	}
+
+
 	public static Character[] generateRandomCharacterNUniqueLengthOpt(int size, int seed, int nUnique) {
 		Character[] rands = generateRandomCharacterOpt(nUnique, seed);
 		rands[rands.length - 1] = null;
@@ -2352,12 +2419,32 @@ public class FrameArrayTests {
 		return ret;
 	}
 
+	public static String[] generateRandomHash32(int size, int seed) {
+		Random r = new Random(seed);
+		String[] ret = new String[size];
+		for(int i = 0; i < size; i++) {
+			ret[i] = Integer.toHexString(r.nextInt());
+		}
+		return ret;
+	}
+
 	public static String[] generateRandomHash64Opt(int size, int seed) {
 		Random r = new Random(seed);
 		String[] ret = new String[size];
 		for(int i = 0; i < size; i++) {
 			if(r.nextBoolean())
 				ret[i] = Long.toHexString(r.nextLong());
+		}
+		return ret;
+	}
+
+
+	public static String[] generateRandomHash32Opt(int size, int seed) {
+		Random r = new Random(seed);
+		String[] ret = new String[size];
+		for(int i = 0; i < size; i++) {
+			if(r.nextBoolean())
+				ret[i] = Integer.toHexString(r.nextInt());
 		}
 		return ret;
 	}

@@ -161,6 +161,7 @@ public class BinaryOperationInPlaceTestParameterized {
 			assertEquals(lcb, left.getNumColumns());
 			assertEquals(rrb, right.getNumRows());
 			assertEquals(rcb, right.getNumColumns());
+
 			TestUtils.compareMatricesBitAvgDistance(ret1, left, 0, 0, "Result is incorrect for inplace \n" + op + "  "
 				+ lspb + " " + rspb + " (" + lrb + "," + lcb + ")" + " (" + rrb + "," + rcb + ")");
 		}

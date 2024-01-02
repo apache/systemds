@@ -23,11 +23,11 @@ import org.apache.sysds.runtime.compress.workload.WTreeRoot;
 
 public class FrameCompressionSettings {
 
-	public final float sampleRatio;
+	public final double sampleRatio;
 	public final int k;
 	public final WTreeRoot wt;
 
-	protected FrameCompressionSettings(float sampleRatio, int k, WTreeRoot wt) {
+	protected FrameCompressionSettings(double sampleRatio, int k, WTreeRoot wt) {
 		this.sampleRatio = sampleRatio;
 		this.k = k;
 		this.wt = wt;

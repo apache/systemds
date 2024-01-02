@@ -57,6 +57,7 @@ public final class CLALibScalar {
 	}
 
 	public static MatrixBlock scalarOperations(ScalarOperator sop, CompressedMatrixBlock m1, MatrixValue result) {
+		// Timing time = new Timing(true);
 		if(isInvalidForCompressedOutput(m1, sop)) {
 			LOG.warn("scalar overlapping not supported for op: " + sop.fn.getClass().getSimpleName());
 			MatrixBlock m1d = m1.decompress(sop.getNumThreads());
@@ -78,7 +79,7 @@ public final class CLALibScalar {
 			int threadsAvailable = (sop.getNumThreads() > 1) ? sop.getNumThreads() : OptimizerUtils
 				.getConstrainedNumThreads(-1);
 			if(threadsAvailable > 1)
-				parallelScalarOperations(sop, colGroups, ret, threadsAvailable);
+				parallelScalarOperations(sop, colGroups, ret, threadsAvailable );
 			else {
 				// Apply the operation to each of the column groups.
 				// Most implementations will only modify metadata.
@@ -90,8 +91,15 @@ public final class CLALibScalar {
 			ret.setOverlapping(m1.isOverlapping());
 		}
 
-		ret.recomputeNonZeros();
+		if(sop.fn instanceof Divide){
+			ret.setNonZeros(m1.getNonZeros());
+		}
+		else{
+			ret.recomputeNonZeros();
+		}
 
+		// System.out.println("CLA Scalar: " + sop + " " + m1.getNumRows() + ", " + m1.getNumColumns() + ", " + m1.getColGroups().size()
+		// 	+ " -- " + "\t\t" + time.stop());
 		return ret;
 	}
 

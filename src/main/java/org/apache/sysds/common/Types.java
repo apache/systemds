@@ -77,7 +77,7 @@ public class Types
 	public enum ValueType {
 		UINT4, UINT8, // Used for parsing in UINT values from numpy.
 		FP32, FP64, INT32, INT64, BOOLEAN, STRING, UNKNOWN,
-		HASH64, // Indicate that the value is a hash of 64 bit.
+		HASH64, HASH32, // Indicate that the value is a hash of 64 bit.
 		CHARACTER;
 		
 		public boolean isNumeric() {
@@ -112,19 +112,20 @@ public class Types
 				throw new DMLRuntimeException("Unknown null value type");
 			final String lValue = value.toUpperCase();
 			switch(lValue) {
-				case "FP32":     return FP32;
+				case "FP32":      return FP32;
 				case "FP64":
-				case "DOUBLE":   return FP64;
-				case "UINT4":	  return UINT4;
-				case "UINT8":    return UINT8;
-				case "INT32":    return INT32;
+				case "DOUBLE":    return FP64;
+				case "UINT4":	   return UINT4;
+				case "UINT8":     return UINT8;
+				case "INT32":     return INT32;
 				case "INT64":
-				case "INT":      return INT64;
-				case "BOOLEAN":  return BOOLEAN;
-				case "STRING":   return STRING;
+				case "INT":       return INT64;
+				case "BOOLEAN":   return BOOLEAN;
+				case "STRING":    return STRING;
 				case "CHARACTER": return CHARACTER;
-				case "UNKNOWN":  return UNKNOWN;
-				case "HASH64": return HASH64;
+				case "UNKNOWN":   return UNKNOWN;
+				case "HASH64":    return HASH64;
+				case "HASH32":    return HASH32;
 				default:
 					throw new DMLRuntimeException("Unknown value type: "+value);
 			}
@@ -151,6 +152,14 @@ public class Types
 			switch(a){
 				case CHARACTER:
 					return STRING;
+				case HASH32:
+					switch(b) {
+						case HASH64:
+						case STRING:
+							return b;
+						default:
+							return a;
+					}
 				case HASH64:
 					switch(b){
 						case STRING: 

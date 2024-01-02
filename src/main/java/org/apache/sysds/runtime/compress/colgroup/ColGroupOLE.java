@@ -36,6 +36,7 @@ import org.apache.sysds.runtime.compress.cost.ComputationCostEstimator;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
+import org.apache.sysds.runtime.data.SparseBlockMCSR;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
@@ -601,7 +602,12 @@ public class ColGroupOLE extends AColGroupOffset {
 	}
 
 	@Override
-	public void preAggregateSparse(SparseBlock sb, double[] preAgg, int rl, int ru) {
+	public void leftMMIdentityPreAggregateDense(MatrixBlock that, MatrixBlock ret, int rl, int ru, int cl, int cu) {
+		throw new NotImplementedException();
+	}
+
+	@Override
+	public void preAggregateSparse(SparseBlock sb, double[] preAgg, int rl, int ru, int cl, int cu) {
 		throw new NotImplementedException();
 	}
 
@@ -686,6 +692,31 @@ public class ColGroupOLE extends AColGroupOffset {
 
 	@Override
 	protected AColGroup fixColIndexes(IColIndex newColIndex, int[] reordering) {
+		throw new NotImplementedException();
+	}
+
+	@Override
+	public void sparseSelection(MatrixBlock selection, MatrixBlock ret, int rl, int ru) {
+		throw new NotImplementedException();
+	}
+
+	@Override
+	protected void decompressToDenseBlockTransposedSparseDictionary(DenseBlock db, int rl, int ru, SparseBlock sb) {
+		throw new NotImplementedException();
+	}
+
+	@Override
+	protected void decompressToDenseBlockTransposedDenseDictionary(DenseBlock db, int rl, int ru, double[] dict) {
+		throw new NotImplementedException();
+	}
+
+	@Override
+	protected void decompressToSparseBlockTransposedSparseDictionary(SparseBlockMCSR db, SparseBlock sb, int nColOut) {
+		throw new NotImplementedException();
+	}
+
+	@Override
+	protected void decompressToSparseBlockTransposedDenseDictionary(SparseBlockMCSR db, double[] dict, int nColOut) {
 		throw new NotImplementedException();
 	}
 

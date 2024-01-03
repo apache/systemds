@@ -20,8 +20,10 @@
 package org.apache.sysds.runtime.data;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
+import java.util.List;
 
 import org.apache.sysds.runtime.matrix.data.IJV;
 
@@ -489,6 +491,26 @@ public abstract class SparseBlock implements Serializable, Block
 					return true;
 		}
 		return false;
+	}
+	
+	public List<Integer> contains(double[] pattern, boolean earlyAbort) {
+		List<Integer> ret = new ArrayList<>();
+		int rlen = numRows();
+		for( int i=0; i<rlen; i++ ) {
+			int apos = pos(i);
+			int alen = size(i);
+			int[] aix = indexes(i);
+			double[] avals = values(i);
+			boolean lret = true;
+			//safe comparison on long representations, incl NaN
+			for(int k=apos; k<apos+alen & !lret; k++)
+				lret &= Double.compare(avals[k], pattern[aix[k]]) == 0;
+			if( lret )
+				ret.add(i);
+			if(earlyAbort && ret.size()>0)
+				return ret;
+		}
+		return ret;
 	}
 	
 	////////////////////////

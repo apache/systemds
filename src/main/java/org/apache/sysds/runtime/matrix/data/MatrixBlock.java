@@ -760,6 +760,23 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 			getDenseBlock().contains(pattern);
 	}
 	
+	public List<Integer> containsVector(MatrixBlock pattern, boolean earlyAbort) {
+		//note: in contract to containsValue, we return the row index where a match 
+		//was found in order to reuse these block operations for Spark ops as well
+		
+		//basic error handling
+		if( clen != pattern.clen || pattern.rlen != 1 )
+			throw new DMLRuntimeException("contains only supports pattern row vectors of matching "
+				+ "number of columns: " + getDataCharacteristics()+" vs "+pattern.getDataCharacteristics());
+		
+		//make a pass over the data to determine if it includes the
+		//pattern, with early abort as soon as the pattern is found
+		double[] dpattern = DataConverter.convertToDoubleVector(pattern, false, false);
+		return isInSparseFormat() ?
+			getSparseBlock().contains(dpattern, earlyAbort) :
+			getDenseBlock().contains(dpattern, earlyAbort);
+	}
+	
 	/**
 	 * <p>Append value is only used when values are appended at the end of each row for the sparse representation</p>
 	 * 

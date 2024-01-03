@@ -20,7 +20,9 @@
 package org.apache.sysds.runtime.data;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
@@ -675,6 +677,19 @@ public abstract class DenseBlock implements Serializable, Block
 					return true;
 		}
 		return false;
+	}
+	
+	public List<Integer> contains(double[] pattern, boolean earlyAbort) {
+		List<Integer> ret = new ArrayList<>();
+		int clen = _odims[0];
+		for( int i=0; i<_rlen; i++ ) {
+			//safe comparison on long representations, incl NaN
+			if(Arrays.equals(values(i), pos(i), pos(i)+clen, pattern, 0, clen))
+				ret.add(i);
+			if(earlyAbort && ret.size()>0)
+				return ret;
+		}
+		return ret;
 	}
 	
 	@Override

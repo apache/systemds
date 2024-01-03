@@ -737,8 +737,15 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 		//check existence and correctness of arguments
 		Expression target = getVarParam("target");
 		checkTargetParam(target, conditional);
-		checkScalarParam("contains", "pattern", conditional);
 		
+		Expression pattern = getVarParam("pattern");
+		if(pattern == null)
+			raiseValidateError("Named parameter 'pattern' missing. Please specify the input matrix.",
+				conditional, LanguageErrorCodes.INVALID_PARAMETERS);
+		if(!(pattern.getOutput().getDataType().isScalar()
+			||pattern.getOutput().getDataType().isMatrix()) )
+			raiseValidateError("Named parameter 'pattern' must be a scalar or matrix.",
+				conditional, LanguageErrorCodes.INVALID_PARAMETERS);
 		//set boolean scalar 
 		output.setBooleanProperties();
 	}

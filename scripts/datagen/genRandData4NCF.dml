@@ -1,0 +1,84 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+#
+# Generates random Gaussian-mixture data to test k-Means clustering algorithms
+#
+# INPUT PARAMETERS:
+# ----------------------------------------------------------------------------
+# NAME  TYPE   DEFAULT  MEANING
+# ----------------------------------------------------------------------------
+# file_xyz  String            ---     Respective output files name/path
+# ktrain    Int               1000    Number of training samples
+# kval      Int               100     Number of validation samples
+# nitems    Int               50      Number of items
+# nusers    Int               60      Number of users
+# fmt       Format specifier  csv     Format of output data
+# ----------------------------------------------------------------------------
+#
+# Example:
+# hadoop jar SystemDS.jar -f genRandData4Kmeans.dml -nvargs nr=1024 nf=100 nt=1
+
+print ("BEGIN NCF GENERATOR SCRIPT");
+
+file_users_train      = ifdef ($users_train, "users_train");
+file_items_train      = ifdef ($items_train, "items_train");
+file_targets_train    = ifdef ($targets_train, "targets_train");
+file_users_val        = ifdef ($users_val, "users_val");
+file_items_val        = ifdef ($items_val, "items_val");
+file_targets_val      = ifdef ($targets_val, "targets_val");
+fmt                   = ifdef ($fmt, "csv");
+
+# Generate input data
+K_train = ifdef($ktrain, 1000); # number of training samples
+K_val = ifdef($kval, 100); # number of validation samples
+
+N = ifdef($nitems, 50); # number items
+M = ifdef($nusers, 60); # number users
+
+# targets
+targets_train = round(rand(rows=K_train, cols=1));
+targets_val = round(rand(rows=K_val, cols=1));
+
+# user/items integer-encoded vectors
+items_train_int_encoded = round(rand(rows=K_train, cols=1, min=1, max=N));
+users_train_int_encoded = round(rand(rows=K_train, cols=1, min=1, max=M));
+items_val_int_encoded = round(rand(rows=K_val, cols=1, min=1, max=N));
+users_val_int_encoded = round(rand(rows=K_val, cols=1, min=1, max=M));
+
+# user/items matrices by applying one-hot-encoding
+items_train = toOneHot(items_train_int_encoded, N);
+items_val = toOneHot(items_val_int_encoded, N);
+users_train = toOneHot(users_train_int_encoded, M);
+users_val = toOneHot(users_val_int_encoded, M);
+
+
+print ("Writing out the resulting dataset...");
+
+write (users_train, file_users_train, format=fmt);
+write (items_train, file_items_train, format=fmt);
+write (targets_train, file_targets_train, format=fmt);
+write (users_val, file_users_val, format=fmt);
+write (items_val, file_items_val, format=fmt);
+write (targets_val, file_targets_val, format=fmt);
+
+print ("DONE: NCF GENERATOR SCRIPT");
+

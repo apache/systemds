@@ -1,0 +1,70 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+# Imports
+source("../../nn/layers/affine.dml") as affine
+source("../../nn/layers/cross_entropy_loss.dml") as cross_entropy_loss
+source("../../nn/layers/dropout.dml") as dropout
+source("../../nn/layers/relu.dml") as relu
+source("../../nn/layers/softmax.dml") as softmax
+source("../../nn/optim/sgd_nesterov.dml") as sgd_nesterov
+
+X = read($X)
+Y = read($Y)
+
+W1 = read(""+$B+"/w1_nesterov_classify")
+W2 = read(""+$B+"/w2_nesterov_classify")
+W3 = read(""+$B+"/w3_nesterov_classify")
+b1 = read(""+$B+"/b1_nesterov_classify")
+b2 = read(""+$B+"/b2_nesterov_classify")
+b3 = read(""+$B+"/b3_nesterov_classify")
+p = read(""+$B+"/p_nesterov_classify")
+
+# Compute forward pass with dropout
+## layer 1:
+out1 = affine::forward(X, W1, b1)
+outr1 = relu::forward(out1)
+[outd1, maskd1] = dropout::forward(outr1, p, -1)
+## layer 2:
+out2 = affine::forward(outd1, W2, b2)
+outr2 = relu::forward(out2)
+[outd2, maskd2] = dropout::forward(outr2, p, -1)
+## layer 3:
+out3 = affine::forward(outd2, W3, b3)
+probs = softmax::forward(out3)
+
+# Compute loss
+loss = cross_entropy_loss::forward(probs, Y)
+print("Cross entropy loss with dropout: " + loss)
+
+# repeat without dropout
+## layer 1:
+out1 = affine::forward(X, W1, b1)
+outr1 = relu::forward(out1)
+## layer 2:
+out2 = affine::forward(outr1, W2, b2)
+outr2 = relu::forward(out2)
+## layer 3:
+out3 = affine::forward(outr2, W3, b3)
+probs = softmax::forward(out3)
+
+# Compute loss
+loss = cross_entropy_loss::forward(probs, Y)
+print("Cross entropy loss without dropout: " + loss)

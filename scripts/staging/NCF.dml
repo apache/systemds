@@ -24,12 +24,12 @@
 #
 
 # Imports
-source("nn/optim/adam.dml") as adam
-source("nn/layers/relu.dml") as relu
-source("nn/layers/sigmoid.dml") as sigmoid
-source("nn/layers/affine.dml") as affine
-source("nn/layers/log_loss.dml") as log_loss
-source("nn/layers/l2_reg.dml") as l2_reg
+source("../nn/optim/adam.dml") as adam
+source("../nn/layers/relu.dml") as relu
+source("../nn/layers/sigmoid.dml") as sigmoid
+source("../nn/layers/affine.dml") as affine
+source("../nn/layers/log_loss.dml") as log_loss
+source("../nn/layers/l2_reg.dml") as l2_reg
 
 train = function( matrix[double] users_train, 
                   matrix[double] items_train, 

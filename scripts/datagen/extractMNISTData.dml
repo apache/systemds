@@ -1,0 +1,69 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+#
+# Generates random Gaussian-mixture data to test k-Means clustering algorithms
+#
+# INPUT PARAMETERS:
+# ----------------------------------------------------------------------------
+# NAME  TYPE   DEFAULT  MEANING
+# ----------------------------------------------------------------------------
+# file_xyz  String            ---     Respective output files name/path
+# ktrain    Int               1000    Number of training samples
+# kval      Int               100     Number of validation samples
+# nitems    Int               50      Number of items
+# nusers    Int               60      Number of users
+# fmt       Format specifier  csv     Format of output data
+# ----------------------------------------------------------------------------
+#
+# Example:
+# hadoop jar SystemDS.jar -f genRandData4Kmeans.dml -nvargs nr=1024 nf=100 nt=1
+
+print ("BEGIN MNIST EXTRACTOR SCRIPT");
+
+file_mnist_train      = $mnist_train;
+file_mnist_test       = $mnist_test;
+file_out_train        = $out_train;
+file_out_test         = $out_test;
+num_train             = ifdef ($num_train, 60000);
+num_test              = ifdef ($num_test, 10000);
+fmt                   = ifdef ($fmt, "csv");
+
+mnist_train = read(file_mnist_train);
+mnist_test  = read(file_mnist_test);
+
+# stay in bounds
+num_train = min(num_train, nrow(mnist_train));
+num_test  = min(num_test, nrow(mnist_test));
+
+# targets
+# todo add shuffle?
+out_train = mnist_train[1:num_train,];
+out_test  = mnist_test[1:num_test,];
+
+
+print ("Writing out the resulting dataset...");
+
+write (out_train, file_out_train, format=fmt);
+write (out_test, file_out_test, format=fmt);
+
+print ("DONE: MNIST EXTRACTOR SCRIPT");
+

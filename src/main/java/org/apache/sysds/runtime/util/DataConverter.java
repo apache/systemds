@@ -1095,9 +1095,7 @@ public class DataConverter {
 			case BOOLEAN:
 				sb.append(((Boolean) tb.get(ix)).toString().toUpperCase());
 				break;
-			case STRING:
-			case UNKNOWN:
-			case CHARACTER:
+			default:
 				sb.append("\"").append(tb.get(ix)).append("\"");
 				break;
 		}

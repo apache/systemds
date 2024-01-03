@@ -19,7 +19,6 @@
 
 package org.apache.sysds.test.functions.caching;
 
-import org.apache.oro.util.Cache;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.runtime.controlprogram.LocalVariableMap;
 import org.apache.sysds.runtime.controlprogram.caching.CacheableData;

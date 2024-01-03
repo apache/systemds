@@ -80,7 +80,7 @@ public interface MapToFactory {
 			return new MapToUByte(numTuples, size);
 		else if(numTuples <= 256)
 			return new MapToByte(numTuples, size);
-		else if(numTuples <= ((int) Character.MAX_VALUE) + 1)
+		else if(numTuples <= Character.MAX_VALUE + 1)
 			return new MapToChar(numTuples, size);
 		else if(numTuples <= MapToCharPByte.max)
 			return new MapToCharPByte(numTuples, size);
@@ -170,7 +170,7 @@ public interface MapToFactory {
 			return MapToBit.getInMemorySize(size);
 		else if(numTuples <= 256)
 			return MapToByte.getInMemorySize(size);
-		else if(numTuples <= ((int) Character.MAX_VALUE) + 1)
+		else if(numTuples <= Character.MAX_VALUE + 1)
 			return MapToChar.getInMemorySize(size);
 		else if(numTuples <= MapToCharPByte.max)
 			return MapToCharPByte.getInMemorySize(size);

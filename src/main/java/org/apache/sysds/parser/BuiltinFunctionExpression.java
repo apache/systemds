@@ -633,18 +633,19 @@ public class BuiltinFunctionExpression extends DataIdentifier {
 			output.setDimensions(0, 0);
 			output.setBlocksize(0);
 			switch (id.getValueType()) {
-				case STRING: // TODO think about what we want to get when we sum tensor of strings
-				case CHARACTER: // TODO here also for Characters.
-				case FP64:
-				case FP32:
-					output.setValueType(ValueType.FP64);
-					break;
 				case INT64:
 				case INT32:
 				case UINT8:
 				case UINT4:
 				case BOOLEAN:
 					output.setValueType(ValueType.INT64);
+					break;
+				case STRING:
+				case CHARACTER:
+				case FP64:
+				case FP32:
+				case HASH64: //default
+					output.setValueType(ValueType.FP64);
 					break;
 				case UNKNOWN:
 					throw new NotImplementedException();

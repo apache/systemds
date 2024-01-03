@@ -76,7 +76,7 @@ public class HashLongArray extends Array<Object> {
 
 	@Override
 	public void set(int index, String value) {
-		_data[index] = parseHashLong((String) value);
+		_data[index] = parseHashLong(value);
 	}
 
 	@Override
@@ -156,7 +156,7 @@ public class HashLongArray extends Array<Object> {
 
 			OptionalArray<Object> ot = (OptionalArray<Object>) other;
 			if(ot._a instanceof HashLongArray) {
-				Array<Object> a = this.append((HashLongArray) ot._a);
+				Array<Object> a = this.append(ot._a);
 				return OptionalArray.appendOther(ot, a);
 			}
 			else {

@@ -261,8 +261,7 @@ public class LibTensorAgg {
 				out.set(new int[out.getNumDims()], sum);
 				break;
 			}
-			case CHARACTER:
-			case UNKNOWN:
+			default:
 				throw new NotImplementedException();
 		}
 	}

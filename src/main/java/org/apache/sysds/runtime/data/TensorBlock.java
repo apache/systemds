@@ -668,8 +668,7 @@ public class TensorBlock implements CacheBlock<TensorBlock>, Externalizable {
 						getNextIndexes(bt.getDims(), ix);
 					}
 					break;
-				case CHARACTER:
-				case UNKNOWN:
+				default:
 					throw new NotImplementedException();
 			}
 		}

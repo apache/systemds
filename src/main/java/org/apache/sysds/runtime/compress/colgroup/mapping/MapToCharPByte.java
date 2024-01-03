@@ -269,7 +269,7 @@ public class MapToCharPByte extends AMapToData {
 
 	@Override
 	public int getMaxPossible() {
-		return (int) Character.MAX_VALUE * 256;
+		return Character.MAX_VALUE * 256;
 	}
 
 	@Override

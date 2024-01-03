@@ -50,7 +50,7 @@ public interface ArrayFactory {
 	} 
 
 	public static OptionalArray<Object> createHash64Opt(String[] col){
-		return new OptionalArray<Object>(col, ValueType.HASH64);
+		return new OptionalArray<>(col, ValueType.HASH64);
 	} 
 
 	public static HashLongArray createHash64(long[] col){

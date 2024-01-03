@@ -18,7 +18,6 @@
  */
 package org.apache.sysds.test.functions.builtin.part1;
 
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;

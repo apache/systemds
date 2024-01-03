@@ -1437,6 +1437,7 @@ public class LineageCache
 		return outName;
 	}
 
+	@SuppressWarnings("unused")
 	private static boolean allInputsSpark(Instruction inst, ExecutionContext ec) {
 		CPOperand in1 = ((ComputationSPInstruction)inst).input1;
 		CPOperand in2 = ((ComputationSPInstruction)inst).input2;

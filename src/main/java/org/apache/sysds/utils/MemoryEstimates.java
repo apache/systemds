@@ -189,10 +189,32 @@ public class MemoryEstimates {
 	 * @return The array memory cost
 	 */
 	public static final double stringArrayCost(String[] strings) {
-		long size = 0;
-		for(int i = 0; i < strings.length; i++)
+		double size = 0;
+		int i = 0;
+		int by8 = strings.length - strings.length %8 ;
+		for(;i < by8; i+= 8)
+			size += stringArrayCostVec8(strings, i);
+		for(; i < strings.length; i++)
 			size += stringCost(strings[i]);
 		return size;
+	}
+
+	private static final double stringArrayCostVec8(String[] strings, int r){
+		long size = 0;
+		size += stringCost(strings[r]);
+		size += stringCost(strings[r+1]);
+		size += stringCost(strings[r+2]);
+		size += stringCost(strings[r+3]);
+		size += stringCost(strings[r+4]);
+		size += stringCost(strings[r+5]);
+		size += stringCost(strings[r+6]);
+		size += stringCost(strings[r+7]);
+		return size;
+	}
+
+	public static final double stringArrayCost(int length, int avgStringLength){
+		// if null 16 object + 8 array ref
+		return  stringCost(avgStringLength) * length + 24.0d;
 	}
 
 	/**

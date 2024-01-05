@@ -244,8 +244,8 @@ public class RaggedArray<T> extends Array<T> {
 	}
 
 	@Override
-	public Pair<ValueType, Boolean> analyzeValueType() {
-		return _a.analyzeValueType();
+	public Pair<ValueType, Boolean> analyzeValueType(int maxCells) {
+		return _a.analyzeValueType(maxCells);
 	}
 
 	@Override

@@ -3732,7 +3732,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 	 * @param ret the output matrix to modify, (is also returned)
 	 * @return the ret MatrixBlock object with the appended result
 	 */
-	public final MatrixBlock append( MatrixBlock that, MatrixBlock ret ) {
+	public final MatrixBlock append(MatrixBlock that, MatrixBlock ret ) {
 		return append(that, ret, true); //default cbind
 	}
 

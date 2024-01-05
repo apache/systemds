@@ -46,7 +46,7 @@ public interface FrameUtil {
 	public static final Pattern booleanPattern = Pattern
 		.compile("([tT]((rue)|(RUE))?|[fF]((alse)|(ALSE))?|0\\.0+|1\\.0+|0|1)");
 	public static final Pattern integerFloatPattern = Pattern.compile("[-+]?\\d+(\\.0+)?");
-	public static final Pattern floatPattern = Pattern.compile("[-+]?[0-9]*\\.?[0-9]*([eE][-+]?[0-9]+)?");
+	public static final Pattern floatPattern = Pattern.compile("[-+]?[0-9][0-9]*\\.?[0-9]*([eE][-+]?[0-9]+)?");
 
 	public static final Pattern dotSplitPattern = Pattern.compile("\\.");
 
@@ -123,7 +123,7 @@ public interface FrameUtil {
 	}
 
 	public static ValueType isHash(final String val, final int len) {
-		if(len == 8) {
+		if(len == 8 || len == 16) {
 			for(int i = 0; i < 8; i++) {
 				char v = val.charAt(i);
 				if(v < '0' || v > 'f')

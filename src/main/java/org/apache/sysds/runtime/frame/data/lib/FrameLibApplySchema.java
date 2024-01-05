@@ -107,6 +107,7 @@ public class FrameLibApplySchema {
 	}
 
 	private FrameBlock apply() {
+
 		if(k <= 1 || nCol == 1)
 			applySingleThread();
 		else
@@ -121,7 +122,17 @@ public class FrameLibApplySchema {
 
 		final String[] colNames = fb.getColumnNames(false);
 		final ColumnMetadata[] meta = fb.getColumnMetadata();
-		return new FrameBlock(schema, colNames, meta, columnsOut);
+
+		FrameBlock out =  new FrameBlock(schema, colNames, meta, columnsOut);
+		if(LOG.isDebugEnabled()){
+
+			long inMem = fb.getInMemorySize();
+			long outMem = out.getInMemorySize();
+			LOG.debug(String.format("Schema Apply Input Size: %16d" , inMem));
+			LOG.debug(String.format("            Output Size: %16d" , outMem));
+			LOG.debug(String.format("            Ratio      : %4.3f" , ((double) inMem  / outMem)));
+		}
+		return out;
 	}
 
 	private void applySingleThread() {
@@ -136,7 +147,6 @@ public class FrameLibApplySchema {
 				columnsIn[i].changeType(schema[i]);
 		else
 			columnsOut[i] = columnsIn[i].changeType(schema[i]);
-
 	}
 
 	private void applyMultiThread() {

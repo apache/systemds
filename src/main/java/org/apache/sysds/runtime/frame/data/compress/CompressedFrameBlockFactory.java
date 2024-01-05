@@ -48,9 +48,7 @@ public class CompressedFrameBlockFactory {
 		this.cs = cs;
 		this.stats = new ArrayCompressionStatistics[in.getNumColumns()];
 		this.compressedColumns = new Array<?>[in.getNumColumns()];
-
 		this.nSamples = Math.min(in.getNumRows(), (int) Math.ceil(in.getNumRows() * cs.sampleRatio));
-
 	}
 
 	public static FrameBlock compress(FrameBlock fb) {
@@ -116,15 +114,23 @@ public class CompressedFrameBlockFactory {
 	private void compressCol(int i) {
 		stats[i] = in.getColumn(i).statistics(nSamples);
 		if(stats[i] != null) {
-			// commented out because no other encodings are supported yet
-			// switch(stats[i].bestType) {
-			// case DDC:
-			compressedColumns[i] = DDCArray.compressToDDC(in.getColumn(i));
-			// break;
-			// default:
-			// compressedColumns[i] = in.getColumn(i);
-			// break;
-			// }
+			if(stats[i].bestType == null){
+				// just cast to other value type.
+				compressedColumns[i] = in.getColumn(i).safeChangeType(stats[i].valueType, stats[i].containsNull);
+			}
+			else{
+				// commented out because no other encodings are supported yet
+				switch(stats[i].bestType) {
+					case DDC:
+						compressedColumns[i] = DDCArray.compressToDDC(in.getColumn(i), stats[i].valueType,
+							stats[i].containsNull);
+						break;
+					default:
+						LOG.error("Unsupported encoding default to do nothing: " + stats[i].bestType);
+						compressedColumns[i] = in.getColumn(i);
+						break;
+				}
+			}
 		}
 		else
 			compressedColumns[i] = in.getColumn(i);

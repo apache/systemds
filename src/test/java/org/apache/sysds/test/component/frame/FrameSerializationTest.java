@@ -32,6 +32,8 @@ import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.Collection;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.test.TestUtils;
@@ -44,6 +46,7 @@ import org.junit.runners.Parameterized.Parameters;
 
 @RunWith(value = Parameterized.class)
 public class FrameSerializationTest {
+	protected static final Log LOG = LogFactory.getLog(FrameSerializationTest.class.getName());
 
 	private enum SerType {
 		WRITABLE_SER, JAVA_SER,
@@ -93,10 +96,12 @@ public class FrameSerializationTest {
 			// init data frame
 			FrameBlock back;
 			// core serialization and deserialization
+
 			if(type == SerType.WRITABLE_SER)
 				back = writableSerialize(frame);
 			else // if(stype == SerType.JAVA_SER)
 				back = javaSerialize(frame);
+
 			TestUtils.compareFrames(frame, back, true);
 		}
 		catch(Exception ex) {

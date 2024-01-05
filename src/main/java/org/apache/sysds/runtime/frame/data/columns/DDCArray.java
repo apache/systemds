@@ -55,12 +55,51 @@ public class DDCArray<T> extends ACompressedArray<T> {
 		}
 	}
 
-	public Array<T> getDict(){
+	public Array<T> getDict() {
 		return dict;
 	}
 
-	public AMapToData getMap(){
+	public AMapToData getMap() {
 		return map;
+	}
+
+	public <J> DDCArray<J> setDict(Array<J> dict) {
+		return new DDCArray<J>(dict, map);
+	}
+
+	public DDCArray<T> nullDict() {
+		return new DDCArray<T>(null, map);
+	}
+
+	private static int getTryThreshold(ValueType t, int allRows, long inMemSize) {
+		switch(t) {
+			case BOOLEAN:
+				return 1; // booleans do not compress well unless all constant.
+			case UINT4:
+			case UINT8:
+				return 2;
+			case CHARACTER:
+				return 256;
+			case FP32:
+			case INT32:
+				return 65536; // char distinct
+			case HASH64:
+			case FP64:
+			case INT64:
+			case STRING:
+			case UNKNOWN:
+			default:
+				long MapSize = MapToFactory.estimateInMemorySize(allRows, allRows);
+				int i = 2;
+				
+				while(allRows/i >= 1 && inMemSize - MapSize < ArrayFactory.getInMemorySize(t, allRows/i, false)){
+					i = i*2;
+				}
+
+				int d  =  Math.max(0, allRows/i);
+				return d;
+
+		}
 	}
 
 	/**
@@ -78,10 +117,13 @@ public class DDCArray<T> extends ACompressedArray<T> {
 		// or if the instance if RaggedArray where all values typically are unique.
 		if(s <= 10 || arr instanceof RaggedArray)
 			return arr;
+		final int t = getTryThreshold(arr.getValueType(), s, arr.getInMemorySize());
 
 		// Two pass algorithm
 		// 1.full iteration: Get unique
-		Map<T, Integer> rcd = arr.getDictionary();
+		Map<T, Integer> rcd = arr.tryGetDictionary(t);
+		if(rcd == null)
+			return arr;
 
 		// Abort if there are to many unique values.
 		if(rcd.size() > s / 2)
@@ -99,18 +141,49 @@ public class DDCArray<T> extends ACompressedArray<T> {
 			ar.set(e.getValue(), e.getKey());
 
 		// 2. full iteration: Make map
-		final AMapToData m = MapToFactory.create(s, rcd.size());
-		for(int i = 0; i < s; i++)
-			m.set(i, rcd.get(arr.get(i)));
+		final AMapToData m = arr.createMapping(rcd);
 
 		return new DDCArray<>(ar, m);
+	}
+
+	@Override
+	protected Map<T, Long> createRecodeMap() {
+		return dict.createRecodeMap();
+	}
+
+	/**
+	 * compress and change value.
+	 * 
+	 * @param <T>          The type of the array.
+	 * @param arr          The array to compress
+	 * @param vt           The value type to target
+	 * @param containsNull If the array contains null.
+	 * @return a compressed column group.
+	 */
+	public static <T> Array<?> compressToDDC(Array<T> arr, ValueType vt, boolean containsNull) {
+		Array<?> arrT;
+		try {
+			arrT = containsNull ? arr.changeTypeWithNulls(vt) : arr.changeType(vt);
+		}
+		catch(Exception e) {
+			// fall back to full analysis.
+			Pair<ValueType, Boolean> ct = arr.analyzeValueType();
+			arrT = ct.getValue() ? arr.changeTypeWithNulls(ct.getKey()) : arr.changeType(ct.getKey());
+		}
+
+		return compressToDDC(arrT);
 	}
 
 	@Override
 	public void write(DataOutput out) throws IOException {
 		out.writeByte(FrameArrayType.DDC.ordinal());
 		map.write(out);
-		dict.write(out);
+		if(dict == null)
+			out.writeBoolean(false);
+		else{
+			out.writeBoolean(true);
+			dict.write(out);
+		}
 	}
 
 	@Override
@@ -121,31 +194,44 @@ public class DDCArray<T> extends ACompressedArray<T> {
 	@SuppressWarnings("unchecked")
 	public static DDCArray<?> read(DataInput in) throws IOException {
 		AMapToData map = MapToFactory.readIn(in);
-		Array<?> dict = ArrayFactory.read(in, map.getUnique());
-		switch(dict.getValueType()) {
-			case BOOLEAN:
-				// Interesting case, that does not make much sense.
-				return new DDCArray<>((Array<Boolean>) dict, map);
-			case FP32:
-				return new DDCArray<>((Array<Float>) dict, map);
-			case FP64:
-				return new DDCArray<>((Array<Double>) dict, map);
-			case UINT8:
-			case INT32:
-				return new DDCArray<>((Array<Integer>) dict, map);
-			case INT64:
-				return new DDCArray<>((Array<Long>) dict, map);
-			case CHARACTER:
-				return new DDCArray<>((Array<Character>) dict, map);
-			case STRING:
-			default:
-				return new DDCArray<>((Array<String>) dict, map);
+		if(in.readBoolean()) {
+			Array<?> dict = ArrayFactory.read(in, map.getUnique());
+			switch(dict.getValueType()) {
+				case BOOLEAN:
+					// Interesting case, that does not make much sense.
+					return new DDCArray<>((Array<Boolean>) dict, map);
+				case FP32:
+					return new DDCArray<>((Array<Float>) dict, map);
+				case FP64:
+					return new DDCArray<>((Array<Double>) dict, map);
+				case UINT8:
+				case INT32:
+					return new DDCArray<>((Array<Integer>) dict, map);
+				case INT64:
+					return new DDCArray<>((Array<Long>) dict, map);
+				case CHARACTER:
+					return new DDCArray<>((Array<Character>) dict, map);
+				case STRING:
+				default:
+					return new DDCArray<>((Array<String>) dict, map);
+			}
+		}
+		else {
+			return new DDCArray<>((Array<String>) null, map);
 		}
 	}
 
 	@Override
 	public T get(int index) {
 		return dict.get(map.getIndex(index));
+	}
+
+	@Override
+	public double[] extractDouble(double[] ret, int rl, int ru) {
+		// overridden to allow GIT compile
+		for(int i = rl; i < ru; i++)
+			ret[i - rl] = getAsDouble(i);
+		return ret;
 	}
 
 	@Override
@@ -176,22 +262,24 @@ public class DDCArray<T> extends ACompressedArray<T> {
 
 	@Override
 	public ValueType getValueType() {
-		return dict.getValueType();
+		return dict == null ? ValueType.STRING : dict.getValueType();
 	}
 
 	@Override
-	public Pair<ValueType, Boolean> analyzeValueType() {
-		return dict.analyzeValueType();
+	public Pair<ValueType, Boolean> analyzeValueType(int maxCells) {
+		return dict.analyzeValueType(maxCells);
 	}
 
 	@Override
 	protected void set(int rl, int ru, DDCArray<T> value) {
-		if(value.dict.size() != dict.size() || (FrameBlock.debug && !value.dict.equals(dict)))
+		if((dict != null && value.dict != null)
+		   &&( value.dict.size() != dict.size() //
+			|| (FrameBlock.debug && !value.dict.equals(dict))))
 			throw new DMLCompressionException("Invalid setting of DDC Array, of incompatible instance.");
 
 		final AMapToData tm = value.map;
 		for(int i = rl; i <= ru; i++) {
-			map.set(i, tm.getIndex(i-rl));
+			map.set(i, tm.getIndex(i - rl));
 		}
 	}
 
@@ -202,7 +290,7 @@ public class DDCArray<T> extends ACompressedArray<T> {
 
 	@Override
 	public long getExactSerializedSize() {
-		return 1L + map.getExactSizeOnDisk() + dict.getExactSerializedSize();
+		return 1L +1L+ map.getExactSizeOnDisk() + dict.getExactSerializedSize();
 	}
 
 	@Override
@@ -236,7 +324,7 @@ public class DDCArray<T> extends ACompressedArray<T> {
 	}
 
 	@Override
-	protected Array<Object> changeTypeHash64(){
+	protected Array<Object> changeTypeHash64() {
 		return new DDCArray<>(dict.changeTypeHash64(), map);
 	}
 
@@ -248,6 +336,12 @@ public class DDCArray<T> extends ACompressedArray<T> {
 	@Override
 	protected Array<Character> changeTypeCharacter() {
 		return new DDCArray<>(dict.changeTypeCharacter(), map);
+	}
+
+	@Override
+	public Array<?> changeTypeWithNulls(ValueType t) {
+		Array<?> d2 = dict.changeTypeWithNulls(t);
+		return new DDCArray<>(d2, map);
 	}
 
 	@Override
@@ -306,7 +400,7 @@ public class DDCArray<T> extends ACompressedArray<T> {
 	}
 
 	public static long estimateInMemorySize(int memSizeBitPerElement, int estDistinct, int nRow) {
-		return (estDistinct * memSizeBitPerElement) / 8 + MapToFactory.estimateInMemorySize(nRow, estDistinct);
+		return (long)estDistinct * memSizeBitPerElement + MapToFactory.estimateInMemorySize(nRow, estDistinct);
 	}
 
 	protected DDCArray<T> allocateLarger(int nRow) {
@@ -330,10 +424,9 @@ public class DDCArray<T> extends ACompressedArray<T> {
 	}
 
 	@Override
-	public boolean possiblyContainsNaN(){
+	public boolean possiblyContainsNaN() {
 		return dict.possiblyContainsNaN();
 	}
-
 
 	@Override
 	public String toString() {

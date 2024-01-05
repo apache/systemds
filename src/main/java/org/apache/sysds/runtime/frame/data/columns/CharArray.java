@@ -181,7 +181,7 @@ public class CharArray extends Array<Character> {
 	}
 
 	@Override
-	public Pair<ValueType, Boolean> analyzeValueType() {
+	public Pair<ValueType, Boolean> analyzeValueType(int maxCells) {
 		return new Pair<>(ValueType.CHARACTER, false);
 	}
 
@@ -308,7 +308,7 @@ public class CharArray extends Array<Character> {
 
 	@Override
 	public boolean isEmpty() {
-		for(int i = 0; i < _data.length; i++)
+		for(int i = 0; i < _size; i++)
 			if(_data[i] != 0)
 				return false;
 		return true;
@@ -357,7 +357,7 @@ public class CharArray extends Array<Character> {
 
 	@Override
 	public String toString() {
-		StringBuilder sb = new StringBuilder(_data.length * 2 + 15);
+		StringBuilder sb = new StringBuilder(_size * 2 + 15);
 		sb.append(super.toString());
 		sb.append(":[");
 		for(int i = 0; i < _size - 1; i++) {

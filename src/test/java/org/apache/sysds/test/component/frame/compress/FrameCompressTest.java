@@ -28,6 +28,7 @@ import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.runtime.frame.data.compress.CompressedFrameBlockFactory;
 import org.apache.sysds.runtime.frame.data.compress.FrameCompressionSettings;
 import org.apache.sysds.runtime.frame.data.lib.FrameLibCompress;
+import org.apache.sysds.runtime.frame.data.lib.FrameLibDetectSchema;
 import org.apache.sysds.test.TestUtils;
 import org.junit.Test;
 
@@ -43,6 +44,22 @@ public class FrameCompressTest {
 	@Test
 	public void testParallel() {
 		FrameBlock a = FrameCompressTestUtils.generateCompressableBlock(200, 5, 1232, ValueType.STRING);
+		runTest(a, 4);
+	}
+
+	@Test
+	public void testParallelWithSchema() {
+		FrameBlock a = FrameCompressTestUtils.generateCompressableBlock(200, 5, 1232, ValueType.STRING);
+		FrameBlock sc = FrameLibDetectSchema.detectSchema(a, 4);
+		a.applySchema(sc);
+		runTest(a, 4);
+	}
+
+	@Test
+	public void testParallelWithRandom() {
+		FrameBlock a = FrameCompressTestUtils.generateCompressableBlockRandomTypes(200, 5, 1232);
+		FrameBlock sc = FrameLibDetectSchema.detectSchema(a, 4);
+		a = a.applySchema(sc);
 		runTest(a, 4);
 	}
 

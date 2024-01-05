@@ -147,20 +147,7 @@ public class StringArray extends Array<String> {
 		out.writeByte(FrameArrayType.STRING.ordinal());
 		out.writeLong(getInMemorySize());
 
-		// final Charset cs = Charset.defaultCharset();
 		for(int i = 0; i < _size; i++)
-			// {
-			// if(_data[i] == null){
-			// out.writeInt(0);
-			// }
-			// else{
-			// // cs.encode(_data[i]);
-			// byte[] bs = _data[i].getBytes(cs);
-			// out.writeInt(bs.length);
-			// out.write(bs);
-			// }
-			// }
-
 			out.writeUTF((_data[i] != null) ? _data[i] : "");
 	}
 
@@ -168,25 +155,9 @@ public class StringArray extends Array<String> {
 	public void readFields(DataInput in) throws IOException {
 		_size = _data.length;
 		materializedSize = in.readLong();
-		// byte[] bs = new byte[16];
-		// final Charset cs = Charset.defaultCharset();
 		for(int i = 0; i < _size; i++) {
-			// int l = in.readInt();
-			// if(l == 0){
-			// _data[i] = null;
-			// }
-			// else{
-			// if(l > bs.length)
-			// bs = new byte[l];
-			// in.readFully(bs, 0, l);
-			// String tmp = new String(bs, 0, l, cs);
-			// // String tmp = in.readUTF();
-			// _data[i] = tmp;
-			// }
-			{
-				String tmp = in.readUTF();
-				_data[i] = tmp.isEmpty() ? null : tmp;
-			}
+			String tmp = in.readUTF();
+			_data[i] = tmp.isEmpty() ? null : tmp;
 		}
 	}
 
@@ -289,10 +260,10 @@ public class StringArray extends Array<String> {
 	}
 
 	@Override
-	public Pair<ValueType, Boolean> analyzeValueType() {
+	public Pair<ValueType, Boolean> analyzeValueType(int maxCells) {
 		ValueType state = ValueType.UNKNOWN;
 		boolean nulls = false;
-		for(int i = 0; i < _size; i++) {
+		for(int i = 0; i < Math.min(maxCells, _size); i++) {
 			final ValueType c = FrameUtil.isType(_data[i], state);
 			if(c == ValueType.STRING)
 				return new Pair<>(ValueType.STRING, false);
@@ -537,16 +508,30 @@ public class StringArray extends Array<String> {
 	}
 
 	protected Array<Integer> changeTypeIntegerNormal() {
-		int[] ret = new int[size()];
-		for(int i = 0; i < size(); i++) {
-			final String s = _data[i];
-			try {
+		try {
+			int[] ret = new int[size()];
+			for(int i = 0; i < size(); i++) {
+				final String s = _data[i];
 				if(s != null)
 					ret[i] = Integer.parseInt(s);
 			}
-			catch(NumberFormatException e) {
-				throw new DMLRuntimeException("Unable to change to Integer from String array", e);
+			return new IntegerArray(ret);
+		}
+		catch(NumberFormatException e) {
+			if(e.getMessage().contains("For input string: \"\"")) {
+				LOG.warn("inefficient safe cast");
+				return changeTypeIntegerSafe();
 			}
+			throw new DMLRuntimeException("Unable to change to Integer from String array", e);
+		}
+	}
+
+	protected Array<Integer> changeTypeIntegerSafe() {
+		int[] ret = new int[size()];
+		for(int i = 0; i < size(); i++) {
+			final String s = _data[i];
+			if(s != null && s.length() > 0)
+				ret[i] = Integer.parseInt(s);
 		}
 		return new IntegerArray(ret);
 	}
@@ -574,13 +559,29 @@ public class StringArray extends Array<String> {
 			for(int i = 0; i < size(); i++) {
 				final String s = _data[i];
 				if(s != null)
-					ret[i] = Long.parseLong(s, 16);
+					ret[i] = HashLongArray.parseHashLong(s);
 			}
 			return new HashLongArray(ret);
 		}
 		catch(NumberFormatException e) {
+			if(e.getMessage().contains("For input string: \"\"")) {
+				LOG.warn("inefficient safe cast");
+				return changeTypeHash64Safe();
+			}
 			throw new DMLRuntimeException("Unable to change to Hash64 from String array", e);
 		}
+	}
+
+	protected Array<Object> changeTypeHash64Safe() {
+
+		long[] ret = new long[size()];
+		for(int i = 0; i < size(); i++) {
+			final String s = _data[i];
+			if(s != null && s.length() > 0)
+				ret[i] = HashLongArray.parseHashLong(s);
+		}
+		return new HashLongArray(ret);
+
 	}
 
 	@Override
@@ -658,13 +659,13 @@ public class StringArray extends Array<String> {
 
 	@Override
 	public boolean isShallowSerialize() {
-		long s = getInMemorySize();
+		final long s = getInMemorySize();
 		return _size < 100 || s / _size < 100;
 	}
 
 	@Override
 	public boolean isEmpty() {
-		for(int i = 0; i < _data.length; i++)
+		for(int i = 0; i < _size; i++)
 			if(_data[i] != null && !_data[i].equals("0"))
 				return false;
 		return true;
@@ -672,7 +673,7 @@ public class StringArray extends Array<String> {
 
 	@Override
 	public boolean containsNull() {
-		for(int i = 0; i < _data.length; i++)
+		for(int i = 0; i < _size; i++)
 			if(_data[i] == null)
 				return true;
 		return false;

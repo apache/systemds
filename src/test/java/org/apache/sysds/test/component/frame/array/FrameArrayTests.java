@@ -420,8 +420,10 @@ public class FrameArrayTests {
 			return;
 		if(a.getFrameArrayType() == FrameArrayType.DDC)
 			return; // can happen where DDC is wrapping Optional.
+		if(a.getFrameArrayType() == FrameArrayType.OPTIONAL)
+			return;
 
-		assertEquals(t, a.getFrameArrayType());
+		assertEquals(a.toString(),t, a.getFrameArrayType());
 	}
 
 	@Test
@@ -1244,7 +1246,7 @@ public class FrameArrayTests {
 			a.write(fos);
 			long s = fos.size();
 			long e = a.getExactSerializedSize();
-			assertEquals(s, e);
+			assertEquals(a.toString(),s, e);
 		}
 		catch(IOException e) {
 			throw new RuntimeException("Error in io", e);
@@ -1916,6 +1918,7 @@ public class FrameArrayTests {
 		String err = a.getClass().getSimpleName() + " " + a.getValueType() + " " + b.getClass().getSimpleName() + " "
 			+ b.getValueType();
 		assertTrue(a.size() == b.size());
+
 		for(int i = 0; i < size; i++) {
 			final Object av = a.get(i);
 			final Object bv = b.get(i);

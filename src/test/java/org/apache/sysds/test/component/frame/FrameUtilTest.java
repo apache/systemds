@@ -22,6 +22,9 @@ package org.apache.sysds.test.component.frame;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+import java.util.Arrays;
+import java.util.List;
+
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaSparkContext;
@@ -30,9 +33,8 @@ import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.runtime.frame.data.lib.FrameUtil;
 import org.apache.sysds.runtime.instructions.spark.utils.FrameRDDAggregateUtils;
 import org.junit.Test;
+
 import scala.Tuple2;
-import java.util.Arrays;
-import java.util.List;
 
 public class FrameUtilTest {
 
@@ -157,6 +159,36 @@ public class FrameUtilTest {
 	}
 
 	@Test
+	public void testEHash() {
+		assertEquals(ValueType.HASH64, FrameUtil.isType("e1232142"));
+	}
+
+	@Test
+	public void testEHash2() {
+		assertEquals(ValueType.HASH64, FrameUtil.isType("e6138002"));
+	}
+
+	@Test
+	public void testEHash3() {
+		assertEquals(ValueType.FP64, FrameUtil.isType("32e68002"));
+	}
+
+	@Test
+	public void testEHash4() {
+		assertEquals(ValueType.HASH64, FrameUtil.isType("3268002e"));
+	}
+
+	@Test
+	public void testEHash5() {
+		assertEquals(ValueType.FP64, FrameUtil.isType("3e268002"));
+	}
+
+	@Test
+	public void testEHash6() {
+		assertEquals(ValueType.FP64, FrameUtil.isType("3268000e2"));
+	}
+
+	@Test
 	public void testMinType() {
 		for(ValueType v : ValueType.values())
 			assertEquals(ValueType.STRING, FrameUtil.isType("asbdapjuawijpasu2139591asd", v));
@@ -187,7 +219,6 @@ public class FrameUtilTest {
 	public void testIntegerMin() {
 		assertEquals(ValueType.INT32, FrameUtil.isType(Integer.MIN_VALUE + ""));
 	}
-
 
 	@Test
 	public void testIntegerMinComma() {
@@ -250,7 +281,7 @@ public class FrameUtilTest {
 	}
 
 	@Test
-	public void testSparkFrameBlockALignment(){
+	public void testSparkFrameBlockALignment() {
 		ValueType[] schema = new ValueType[0];
 		FrameBlock f1 = new FrameBlock(schema, 1000);
 		FrameBlock f2 = new FrameBlock(schema, 500);
@@ -259,78 +290,85 @@ public class FrameUtilTest {
 		SparkConf sparkConf = new SparkConf().setAppName("DirectPairRDDExample").setMaster("local");
 		JavaSparkContext sc = new JavaSparkContext(sparkConf);
 
-		//Test1 (1000, 1000, 500)
-		List<Tuple2<Long, FrameBlock>> t1 =  Arrays.asList(new Tuple2<>(1L, f1),new Tuple2<>(1001L, f1),new Tuple2<>(2001L, f2));
+		// Test1 (1000, 1000, 500)
+		List<Tuple2<Long, FrameBlock>> t1 = Arrays.asList(new Tuple2<>(1L, f1), new Tuple2<>(1001L, f1),
+			new Tuple2<>(2001L, f2));
 		JavaPairRDD<Long, FrameBlock> pairRDD = sc.parallelizePairs(t1);
 		Tuple2<Boolean, Integer> result = FrameRDDAggregateUtils.checkRowAlignment(pairRDD, -1);
 		assertTrue(result._1);
 		assertEquals(1000L, (long) result._2);
 
-		//Test2 (1000, 500, 1000)
-		t1 =  Arrays.asList(new Tuple2<>(1L, f1),new Tuple2<>(1001L, f2),new Tuple2<>(1501L, f1));
+		// Test2 (1000, 500, 1000)
+		t1 = Arrays.asList(new Tuple2<>(1L, f1), new Tuple2<>(1001L, f2), new Tuple2<>(1501L, f1));
 		pairRDD = sc.parallelizePairs(t1);
 		result = FrameRDDAggregateUtils.checkRowAlignment(pairRDD, -1);
 		assertTrue(!result._1);
 
-		//Test3 (1000, 500, 1000, 250)
-		t1 =  Arrays.asList(new Tuple2<>(1L, f1), new Tuple2<>(1001L, f2), new Tuple2<>(1501L, f1), new Tuple2<>(2501L, f3));
+		// Test3 (1000, 500, 1000, 250)
+		t1 = Arrays.asList(new Tuple2<>(1L, f1), new Tuple2<>(1001L, f2), new Tuple2<>(1501L, f1),
+			new Tuple2<>(2501L, f3));
 		pairRDD = sc.parallelizePairs(t1);
 		result = FrameRDDAggregateUtils.checkRowAlignment(pairRDD, -1);
 		assertTrue(!result._1);
 
-		//Test4 (500, 500, 250)
-		t1 =  Arrays.asList(new Tuple2<>(1L, f2), new Tuple2<>(501L, f2), new Tuple2<>(1001L, f3));
+		// Test4 (500, 500, 250)
+		t1 = Arrays.asList(new Tuple2<>(1L, f2), new Tuple2<>(501L, f2), new Tuple2<>(1001L, f3));
 		pairRDD = sc.parallelizePairs(t1);
 		result = FrameRDDAggregateUtils.checkRowAlignment(pairRDD, -1);
 		assertTrue(result._1);
 		assertEquals(500L, (long) result._2);
 
-		//Test5 (1000, 500, 1000, 250)
-		t1 =  Arrays.asList(new Tuple2<>(1L, f1), new Tuple2<>(1001L, f2), new Tuple2<>(1501L, f1), new Tuple2<>(2501L, f3));
+		// Test5 (1000, 500, 1000, 250)
+		t1 = Arrays.asList(new Tuple2<>(1L, f1), new Tuple2<>(1001L, f2), new Tuple2<>(1501L, f1),
+			new Tuple2<>(2501L, f3));
 		pairRDD = sc.parallelizePairs(t1);
 		result = FrameRDDAggregateUtils.checkRowAlignment(pairRDD, -1);
 		assertTrue(!result._1);
 
-		//Test6 (1000, 1000, 500, 500)
-		t1 =  Arrays.asList(new Tuple2<>(1L, f1), new Tuple2<>(1001L, f1), new Tuple2<>(2001L, f2), new Tuple2<>(2501L, f2));
+		// Test6 (1000, 1000, 500, 500)
+		t1 = Arrays.asList(new Tuple2<>(1L, f1), new Tuple2<>(1001L, f1), new Tuple2<>(2001L, f2),
+			new Tuple2<>(2501L, f2));
 		pairRDD = sc.parallelizePairs(t1);
 		result = FrameRDDAggregateUtils.checkRowAlignment(pairRDD, -1);
 		assertTrue(!result._1);
 
-		//Test7 (500, 500, 250)
-		t1 =  Arrays.asList(new Tuple2<>(501L, f2), new Tuple2<>(1001L, f3), new Tuple2<>(1L, f2));
+		// Test7 (500, 500, 250)
+		t1 = Arrays.asList(new Tuple2<>(501L, f2), new Tuple2<>(1001L, f3), new Tuple2<>(1L, f2));
 		pairRDD = sc.parallelizePairs(t1);
 		result = FrameRDDAggregateUtils.checkRowAlignment(pairRDD, -1);
 		assertTrue(result._1);
 		assertEquals(500L, (long) result._2);
 
-		//Test8 (500, 500, 250)
-		t1 =  Arrays.asList( new Tuple2<>(1001L, f3), new Tuple2<>(501L, f2), new Tuple2<>(1L, f2));
+		// Test8 (500, 500, 250)
+		t1 = Arrays.asList(new Tuple2<>(1001L, f3), new Tuple2<>(501L, f2), new Tuple2<>(1L, f2));
 		pairRDD = sc.parallelizePairs(t1);
 		result = FrameRDDAggregateUtils.checkRowAlignment(pairRDD, -1);
 		assertTrue(result._1);
 		assertEquals(500L, (long) result._2);
 
-		//Test9 (1000, 1000, 1000, 500)
-		t1 =  Arrays.asList(new Tuple2<>(1L, f1),  new Tuple2<>(1001L, f1), new Tuple2<>(2001L, f1), new Tuple2<>(3001L, f2));
+		// Test9 (1000, 1000, 1000, 500)
+		t1 = Arrays.asList(new Tuple2<>(1L, f1), new Tuple2<>(1001L, f1), new Tuple2<>(2001L, f1),
+			new Tuple2<>(3001L, f2));
 		pairRDD = sc.parallelizePairs(t1).repartition(2);
 		result = FrameRDDAggregateUtils.checkRowAlignment(pairRDD, -1);
 		assertTrue(result._1);
 		assertEquals(1000L, (long) result._2);
 
-		//Test10 (1000, 1000, 1000, 500)
-		t1 =  Arrays.asList(new Tuple2<>(1L, f1),  new Tuple2<>(1001L, f1), new Tuple2<>(2001L, f1), new Tuple2<>(3001L, f2));
+		// Test10 (1000, 1000, 1000, 500)
+		t1 = Arrays.asList(new Tuple2<>(1L, f1), new Tuple2<>(1001L, f1), new Tuple2<>(2001L, f1),
+			new Tuple2<>(3001L, f2));
 		pairRDD = sc.parallelizePairs(t1).repartition(2);
 		result = FrameRDDAggregateUtils.checkRowAlignment(pairRDD, 1000);
 		assertTrue(result._1);
 		assertEquals(1000L, (long) result._2);
 
-		//Test11 (1000, 1000, 1000, 500)
-		t1 =  Arrays.asList(new Tuple2<>(1L, f1),  new Tuple2<>(1001L, f1), new Tuple2<>(2001L, f1), new Tuple2<>(3001L, f2));
+		// Test11 (1000, 1000, 1000, 500)
+		t1 = Arrays.asList(new Tuple2<>(1L, f1), new Tuple2<>(1001L, f1), new Tuple2<>(2001L, f1),
+			new Tuple2<>(3001L, f2));
 		pairRDD = sc.parallelizePairs(t1).repartition(2);
 		result = FrameRDDAggregateUtils.checkRowAlignment(pairRDD, 500);
 		assertTrue(!result._1);
-		
+
 		sc.close();
 	}
 }

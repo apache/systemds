@@ -22,10 +22,14 @@ package org.apache.sysds.runtime.frame.data.columns;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
+import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
 import org.apache.sysds.runtime.frame.data.columns.ArrayFactory.FrameArrayType;
 import org.apache.sysds.runtime.matrix.data.Pair;
 import org.apache.sysds.runtime.util.UtilFunctions;
@@ -64,7 +68,7 @@ public class OptionalArray<T> extends Array<T> {
 	}
 
 	@SuppressWarnings("unchecked")
-	public OptionalArray(T[] a, ValueType vt){
+	public OptionalArray(T[] a, ValueType vt) {
 		super(a.length);
 		_a = (Array<T>) ArrayFactory.allocate(vt, a.length);
 		_n = ArrayFactory.allocateBoolean(a.length);
@@ -308,7 +312,7 @@ public class OptionalArray<T> extends Array<T> {
 	}
 
 	@Override
-	public Pair<ValueType, Boolean> analyzeValueType() {
+	public Pair<ValueType, Boolean> analyzeValueType(int maxCells) {
 		return new Pair<>(getValueType(), true);
 	}
 
@@ -474,8 +478,93 @@ public class OptionalArray<T> extends Array<T> {
 	}
 
 	@Override
-	public boolean possiblyContainsNaN(){
+	public boolean possiblyContainsNaN() {
 		return true;
+	}
+
+	@SuppressWarnings("unchecked")
+	@Override
+	public AMapToData createMapping(Map<T, Integer> d) {
+		if(_a instanceof HashLongArray) {
+			Map<Long, Integer> dl = (Map<Long, Integer>) d;
+			HashLongArray ha = (HashLongArray) _a;
+			// assuming the dictionary is correctly constructed.
+			final int s = size();
+			final AMapToData m = MapToFactory.create(s, d.size());
+
+			final int n = dl.get(null);
+			for(int i = 0; i < s; i++) {
+				if(_n.get(i)) {
+					m.set(i, dl.get(ha.getLong(i)));
+				}
+				else {
+					m.set(i, n);
+				}
+			}
+			return m;
+		}
+		else {
+			return super.createMapping(d);
+		}
+	}
+
+	@SuppressWarnings("unchecked")
+	@Override
+	protected Map<T, Integer> getDictionary() {
+		if(_a instanceof HashLongArray) {
+			final Map<Long, Integer> dict = new HashMap<>();
+			HashLongArray ha = (HashLongArray) _a;
+			Integer id = 0;
+			boolean nullFound = false;
+			for(int i = 0; i < size(); i++) {
+				if(_n.get(i)) {
+					final long l = ha.getLong(i);
+					final Integer v = dict.get(ha.getLong(i));
+					if(v == null)
+						dict.put(l, id++);
+				}
+				else if(!nullFound && !dict.keySet().contains(null)) {
+					dict.put(null, id++);
+					nullFound = true;
+				}
+			}
+			return (Map<T, Integer>) dict;
+		}
+		else {
+			return super.getDictionary();
+		}
+	}
+
+	@SuppressWarnings("unchecked")
+	@Override
+	protected Map<T, Integer> tryGetDictionary(int threshold) {
+		if(_a instanceof HashLongArray) {
+			final Map<Long, Integer> dict = new HashMap<>();
+			HashLongArray ha = (HashLongArray) _a;
+			Integer id = 0;
+			boolean nullFound = false;
+			final int s = size();
+			for(int i = 0; i < s && id < threshold; i++) {
+				if(_n.get(i)) {
+					final long l = ha.getLong(i);
+					final Integer v = dict.get(ha.getLong(i));
+					if(v == null)
+						dict.put(l, id++);
+				}
+				else if(!nullFound && !dict.keySet().contains(null)) {
+					dict.put(null, id++);
+					nullFound = true;
+				}
+			}
+			if(id >= threshold)
+				return null;
+
+			else
+				return (Map<T, Integer>) dict;
+		}
+		else {
+			return super.tryGetDictionary(threshold);
+		}
 	}
 
 	@Override

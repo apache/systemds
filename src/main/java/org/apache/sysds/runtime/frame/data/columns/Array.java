@@ -31,6 +31,8 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.io.Writable;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
+import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
 import org.apache.sysds.runtime.compress.estim.sample.SampleEstimatorFactory;
 import org.apache.sysds.runtime.frame.data.columns.ArrayFactory.FrameArrayType;
 import org.apache.sysds.runtime.frame.data.compress.ArrayCompressionStatistics;
@@ -79,7 +81,8 @@ public abstract class Array<T> implements Writable {
 
 	/**
 	 * Get a recode map that maps each unique value in the array, to a long ID. Null values are ignored, and not included
-	 * in the mapping. The resulting recode map in stored in a soft reference to speed up repeated calls to the same column.
+	 * in the mapping. The resulting recode map in stored in a soft reference to speed up repeated calls to the same
+	 * column.
 	 * 
 	 * @return A recode map
 	 */
@@ -128,7 +131,8 @@ public abstract class Array<T> implements Writable {
 	protected Map<T, Integer> getDictionary() {
 		final Map<T, Integer> dict = new HashMap<>();
 		Integer id = 0;
-		for(int i = 0; i < size(); i++) {
+		final int s = size();
+		for(int i = 0; i < s; i++) {
 			final T val = get(i);
 			final Integer v = dict.get(val);
 			if(v == null)
@@ -136,6 +140,30 @@ public abstract class Array<T> implements Writable {
 		}
 
 		return dict;
+	}
+
+	/**
+	 * Get the dictionary of contained values, including null with threshold.
+	 * 
+	 * If the number of distinct values are found to be above the threshold value, then abort constructing the
+	 * dictionary.
+	 * 
+	 * @return a dictionary containing all unique values or null if threshold of distinct is exceeded.
+	 */
+	protected Map<T, Integer> tryGetDictionary(int threshold) {
+		final Map<T, Integer> dict = new HashMap<>();
+		Integer id = 0;
+		final int s = size();
+		for(int i = 0; i < s && id < threshold; i++) {
+			final T val = get(i);
+			final Integer v = dict.get(val);
+			if(v == null)
+				dict.put(val, id++);
+		}
+		if(id >= threshold)
+			return null;
+		else
+			return dict;
 	}
 
 	/**
@@ -233,7 +261,7 @@ public abstract class Array<T> implements Writable {
 	 * @param ru    row upper (inclusive)
 	 * @param value value array to take values from (same type)
 	 */
-	public void set(int rl, int ru, Array<T> value){
+	public void set(int rl, int ru, Array<T> value) {
 		for(int i = rl; i <= ru; i++)
 			set(i, value.get(i));
 	}
@@ -246,7 +274,7 @@ public abstract class Array<T> implements Writable {
 	 * @param value value array to take values from
 	 * @param rlSrc the offset into the value array to take values from
 	 */
-	public void set(int rl, int ru, Array<T> value, int rlSrc){
+	public void set(int rl, int ru, Array<T> value, int rlSrc) {
 		for(int i = rl, off = rlSrc; i <= ru; i++, off++)
 			set(i, value.get(off));
 	}
@@ -354,7 +382,18 @@ public abstract class Array<T> implements Writable {
 	 * 
 	 * @return A better or equivalent value type to represent the column, including null information.
 	 */
-	public abstract Pair<ValueType, Boolean> analyzeValueType();
+	public final Pair<ValueType, Boolean> analyzeValueType() {
+		return analyzeValueType(size());
+	}
+
+	/**
+	 * Analyze the column to figure out if the value type can be refined to a better type. The return is in two parts,
+	 * first the type it can be, second if it contains nulls.
+	 * 
+	 * @param maxCells maximum number of cells to analyze
+	 * @return A better or equivalent value type to represent the column, including null information.
+	 */
+	public abstract Pair<ValueType, Boolean> analyzeValueType(int maxCells);
 
 	/**
 	 * Get the internal FrameArrayType, to specify the encoding of the Types, note there are more Frame Array Types than
@@ -405,7 +444,22 @@ public abstract class Array<T> implements Writable {
 
 	public abstract boolean possiblyContainsNaN();
 
+	public Array<?> safeChangeType(ValueType t, boolean containsNull){
+		try{
+			return changeType(t, containsNull);
+		}
+		catch(Exception e){
+			Pair<ValueType, Boolean> ct = analyzeValueType(); // full analysis
+			return changeType(ct.getKey(), ct.getValue());
+		}
+	}
+
+	public Array<?> changeType(ValueType t, boolean containsNull) {
+		return containsNull ? changeTypeWithNulls(t) : changeType(t);
+	}
+
 	public Array<?> changeTypeWithNulls(ValueType t) {
+
 		final ABooleanArray nulls = getNulls();
 		if(nulls == null)
 			return changeType(t);
@@ -520,7 +574,7 @@ public abstract class Array<T> implements Writable {
 	/**
 	 * Change type to a Hash46 array type
 	 * 
-	 * @return A Hash64 array 
+	 * @return A Hash64 array
 	 */
 	protected abstract Array<Object> changeTypeHash64();
 
@@ -653,6 +707,12 @@ public abstract class Array<T> implements Writable {
 
 	}
 
+	public double[] extractDouble(double[] ret, int rl, int ru) {
+		for(int i = rl; i < ru; i++)
+			ret[i - rl] = getAsDouble(i);
+		return ret;
+	}
+
 	public abstract boolean equals(Array<T> other);
 
 	public ArrayCompressionStatistics statistics(int nSamples) {
@@ -666,6 +726,12 @@ public abstract class Array<T> implements Writable {
 			else
 				d.put(key, 1);
 		}
+		Pair<ValueType, Boolean> vt = analyzeValueType(nSamples);
+		if(vt.getKey() == ValueType.UNKNOWN)
+			vt = analyzeValueType();
+
+		if(vt.getKey() == ValueType.UNKNOWN)
+			vt = new Pair<>(ValueType.STRING, false);
 
 		final int[] freq = new int[d.size()];
 		int id = 0;
@@ -673,16 +739,54 @@ public abstract class Array<T> implements Writable {
 			freq[id++] = e.getValue();
 
 		int estDistinct = SampleEstimatorFactory.distinctCount(freq, size(), nSamples);
-		long memSize = getInMemorySize(); // uncompressed size
-		int memSizePerElement = (int) ((memSize * 8L) / size());
+
+		// memory size is different depending on valuetype.
+		long memSize = vt.getKey() != getValueType() ? //
+			ArrayFactory.getInMemorySize(vt.getKey(), size(), containsNull()) : //
+			getInMemorySize(); // uncompressed size
+
+		int memSizePerElement;
+		switch(vt.getKey()) {
+			case UINT4:
+			case UINT8:
+			case INT32:
+			case FP32:
+				memSizePerElement = 4;
+				break;
+			case INT64:
+			case FP64:
+			case HASH64:
+				memSizePerElement = 8;
+				break;
+			case CHARACTER:
+				memSizePerElement = 2;
+				break;
+			case BOOLEAN:
+				memSizePerElement = 1;
+			case UNKNOWN:
+			case STRING:
+			default:
+				memSizePerElement = (int) (memSize / size());
+		}
 
 		long ddcSize = DDCArray.estimateInMemorySize(memSizePerElement, estDistinct, size());
 
 		if(ddcSize < memSize)
 			return new ArrayCompressionStatistics(memSizePerElement, //
-				estDistinct, true, getValueType(), FrameArrayType.DDC, memSize, ddcSize);
-
+				estDistinct, true, vt.getKey(), vt.getValue(), FrameArrayType.DDC, getInMemorySize(), ddcSize);
+		else if(vt.getKey() != getValueType() )
+			return new ArrayCompressionStatistics(memSizePerElement, //
+				estDistinct, true, vt.getKey(), vt.getValue(), null, getInMemorySize(), memSize);
 		return null;
+	}
+
+	public AMapToData createMapping(Map<T, Integer> d) {
+		final int s = size();
+		final AMapToData m = MapToFactory.create(s, d.size());
+
+		for(int i = 0; i < s; i++)
+			m.set(i, d.get(get(i)));
+		return m;
 	}
 
 	public class ArrayIterator implements Iterator<T> {

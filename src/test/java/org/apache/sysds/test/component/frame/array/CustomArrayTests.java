@@ -1384,7 +1384,6 @@ public class CustomArrayTests {
 		assertEquals(65535, HashLongArray.parseHashLong("ffff"));
 	}
 
-
 	@Test
 	public void parseHash_fffff() {
 		assertEquals(1048575, HashLongArray.parseHashLong("fffff"));
@@ -1400,7 +1399,6 @@ public class CustomArrayTests {
 		assertEquals(268435455L, HashLongArray.parseHashLong("fffffff"));
 	}
 
-
 	@Test
 	public void parseHash_ffffffff() {
 		assertEquals(4294967295L, HashLongArray.parseHashLong("ffffffff"));
@@ -1409,6 +1407,24 @@ public class CustomArrayTests {
 	@Test
 	public void parseHash_ffffffff_ffffffff() {
 		assertEquals(-1, HashLongArray.parseHashLong("ffffffffffffffff"));
+	}
+
+	@Test
+	public void compressWithNull() {
+		Array<Double> a = ArrayFactory
+			.create(new Double[] {0.02, null, null, 0.03, null, null, null, null, null, null, null, null});
+		Array<Double> c = DDCArray.compressToDDC(a);
+		FrameArrayTests.compare(a, c);
+	}
+
+	@Test
+	@SuppressWarnings("unchecked")
+	public void compressHashColumn() {
+		Array<String> a = ArrayFactory
+			.create(new String[] {"aaaaaaaa", null, null, "ffffffff", null, null, null, null, null, null, null, null});
+		Array<Object> b = (Array<Object>)a.changeTypeWithNulls(ValueType.HASH64);
+		Array<Object> c = DDCArray.compressToDDC(b);
+		FrameArrayTests.compare(b, c);
 	}
 
 }

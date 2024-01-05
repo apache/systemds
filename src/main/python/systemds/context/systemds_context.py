@@ -183,7 +183,7 @@ class SystemDSContext(object):
 
         command.append(classpath)
 
-        if os.environ.get("LOG4JPROP") != None:
+        if os.environ.get("LOG4JPROP") == None:
             files = glob(os.path.join(root, "conf", "log4j*.properties"))
             if len(files) > 1:
                 self._log.warning(
@@ -195,6 +195,7 @@ class SystemDSContext(object):
             else:
                 command.append("-Dlog4j.configuration=file:" + files[0])
         else:
+            print(os.environ.get("LOG4JPROP"))
             command.append("-Dlog4j.configuration=file:" +os.environ.get("LOG4JPROP"))
 
         command.append("org.apache.sysds.api.PythonDMLScript")

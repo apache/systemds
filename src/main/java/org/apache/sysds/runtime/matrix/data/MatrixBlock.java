@@ -3732,8 +3732,15 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 	 * @param ret the output matrix to modify, (is also returned)
 	 * @return the ret MatrixBlock object with the appended result
 	 */
-	public final MatrixBlock append( MatrixBlock that, MatrixBlock ret ) {
+	public final MatrixBlock append(MatrixBlock that, MatrixBlock ret ) {
 		return append(that, ret, true); //default cbind
+	}
+
+	public static  MatrixBlock append(List<MatrixBlock> that,MatrixBlock ret, boolean cbind, int k ){
+		MatrixBlock[] th = new MatrixBlock[that.size() -1];
+		for(int i = 0; i < that.size() -1; i++)
+			th[i] = that.get(i+1);
+		return that.get(0).append(th, ret, cbind);
 	}
 
 	/**

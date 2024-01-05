@@ -46,6 +46,7 @@ import org.apache.sysds.runtime.data.DenseBlockFactory;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.data.SparseBlockCSR;
 import org.apache.sysds.runtime.data.SparseBlockMCSR;
+import org.apache.sysds.runtime.data.SparseRow;
 import org.apache.sysds.runtime.data.SparseRowVector;
 import org.apache.sysds.runtime.functionobjects.DiagIndex;
 import org.apache.sysds.runtime.functionobjects.RevIndex;
@@ -246,8 +247,8 @@ public class LibMatrixReorg {
 		allowCSR = allowCSR && (in.clen <= 4096 || out.nonZeros < 10000000);
 		
 		int[] cnt = null;
+		final ExecutorService pool = CommonThreadPool.get(k);
 		try {
-			final ExecutorService pool = CommonThreadPool.get(k);
 			if(out.sparse && allowCSR) {
 				final int size = (int) out.nonZeros;
 				final Future<int[]> f = countNNZColumns(in, k, pool);
@@ -273,25 +274,40 @@ public class LibMatrixReorg {
 
 			// compute actual transpose and check for errors
 			ArrayList<TransposeTask> tasks = new ArrayList<>();
-			boolean row = (in.sparse || in.rlen >= in.clen) && !out.sparse;
+			boolean allowReturnBlock = out.sparse && in.sparse && in.rlen >= in.clen && cnt == null;
+			boolean row = (in.sparse || in.rlen >= in.clen) && (!out.sparse || allowReturnBlock);
 			int len = row ? in.rlen : in.clen;
 			int blklen = (int) (Math.ceil((double) len / k));
 			blklen += (!out.sparse && (blklen % 8) != 0) ? 8 - blklen % 8 : 0;
 			blklen = (in.sparse) ? Math.max(blklen, 32) : blklen;
+
 			for(int i = 0; i < k & i * blklen < len; i++)
-				tasks.add(new TransposeTask(in, out, row, i * blklen, Math.min((i + 1) * blklen, len), cnt));
-			List<Future<Object>> taskret = pool.invokeAll(tasks);
-			pool.shutdown();
-			for(Future<Object> task : taskret)
-				task.get();
+				tasks.add(new TransposeTask(in, out, row, i * blklen, Math.min((i + 1) * blklen, len), cnt, allowReturnBlock));
+			List<MatrixBlock> blocks =  allowReturnBlock ? new ArrayList<>(): null;
+				// List<Future<Object>> taskret = pool.invokeAll(tasks);
+			for(Future<MatrixBlock> task : pool.invokeAll(tasks)){
+				MatrixBlock m = task.get();
+				if(allowReturnBlock && m != null)
+					blocks.add(m);
+			}
+
+			if(allowReturnBlock)
+				combine(blocks, out, row, k);
 		}
 		catch(Exception ex) {
 			throw new DMLRuntimeException(ex);
+		}
+		finally{
+			pool.shutdown();
 		}
 
 		// System.out.println("r' k="+k+" ("+in.rlen+", "+in.clen+", "+in.sparse+", "+out.sparse+") in "+time.stop()+" ms.");
 		
 		return out;
+	}
+
+	private static void combine(List<MatrixBlock> blocks, MatrixBlock out, boolean row, int k){
+		MatrixBlock.append(blocks, out, row, k);
 	}
 
 	public static Future<int[]> countNNZColumns(MatrixBlock in, int k, ExecutorService pool)
@@ -1054,82 +1070,168 @@ public class LibMatrixReorg {
 		out.setNonZeros(in.getNonZeros());
 	}
 	
-	private static void transposeSparseToSparse(MatrixBlock in, MatrixBlock out, int rl, int ru, int cl, int cu, int[] cnt)
-	{
-		//NOTE: called only in sequential or column-wise parallel execution
-		if( rl > 0 || ru < in.rlen )
-			throw new RuntimeException("Unsupported row-parallel transposeSparseToSparse: "+rl+", "+ru);
+	private static void transposeSparseToSparse(MatrixBlock in, MatrixBlock out, int rl, int ru, int cl, int cu,
+		int[] cnt) {
+		// NOTE: called only in sequential or column-wise parallel execution
+		if(rl > 0 || ru < in.rlen)
+			throw new RuntimeException("Unsupported row-parallel transposeSparseToSparse: " + rl + ", " + ru);
+		else if(cu - cl == 1) // SINGLE TARGET ROW
+			transposeSparseToSparseRow(in, out, rl, ru, cl, cnt);
+		else
+			transposeSparseToSparseBlock(in, out, rl, ru, cl, cu, cnt);
+	}
+
+	private static void transposeSparseToSparseRow(MatrixBlock in, MatrixBlock out, int rl, int ru, int cl, int[] cnt){
 		
+		final SparseBlock a = in.getSparseBlock();
+		final SparseBlock c = out.getSparseBlock();
+
+		//number of columns <= num cores, use sequential scan over input
+		//and avoid cache blocking and temporary position maintenance
+		if( cnt[cl] > 0 )
+			c.allocate(cl, cnt[cl]);
+		
+		for( int i=rl; i<ru; i++ ) {
+			if( a.isEmpty(i) ) continue;
+			int apos = a.pos(i);
+			int alen = a.size(i);
+			int[] aix = a.indexes(i);
+			double[] avals = a.values(i);
+			for( int j=apos; j<apos+alen && aix[j]<=cl; j++ )
+				if( aix[j] == cl )
+					c.append(cl, i, avals[j]);
+		}
+	}
+
+
+	private static void transposeSparseToSparseBlock(MatrixBlock in, MatrixBlock out, int rl, int ru, int cl, int cu, int[] cnt){
 		final int m2 = out.rlen;
 		final int n2 = out.clen;
-		final int ennz2 = (int) (in.nonZeros/m2); 
+		final int ennz2 = (int) (in.nonZeros / m2); 
 		
-		SparseBlock a = in.getSparseBlock();
-		SparseBlock c = out.getSparseBlock();
+		final SparseBlock a = in.getSparseBlock();
+		final SparseBlock c = out.getSparseBlock();
 
-		if( cu-cl == 1 ) { // SINGLE TARGET ROW
-			//number of columns <= num cores, use sequential scan over input
-			//and avoid cache blocking and temporary position maintenance
-			if( cnt[cl] > 0 )
-				c.allocate(cl, cnt[cl]);
-			
-			for( int i=rl; i<ru; i++ ) {
-				if( a.isEmpty(i) ) continue;
-				int apos = a.pos(i);
-				int alen = a.size(i);
-				int[] aix = a.indexes(i);
-				double[] avals = a.values(i);
-				for( int j=apos; j<apos+alen && aix[j]<=cl; j++ )
-					if( aix[j] == cl )
-						c.append(cl, i, avals[j]);
+		// allocate output sparse rows
+		if(cnt != null){
+			for(int i = cl; i < cu; i++){
+				if(cnt[i] > 0)
+					c.allocate(i, cnt[i]);
 			}
 		}
-		else { //GENERAL CASE
-			//allocate output sparse rows
-			if( cnt != null ) {
-				for( int i=cl; i<cu; i++ )
-					if( cnt[i] > 0 )
-						c.allocate(i, cnt[i]);
-			}
-			
-			//blocking according to typical L2 cache sizes w/ awareness of sparsity
-			final long xsp = (long)in.rlen*in.clen/in.nonZeros;
-			final int blocksizeI = Math.max(128, (int) (8*xsp));
-			final int blocksizeJ = Math.max(128, (int) (8*xsp));
+		else {
+			for(int i = cl; i < cu; i++)
+				c.allocate(i, Math.max(ennz2, 2), n2);
+		}
 		
-			//temporary array for block boundaries (for preventing binary search) 
-			int[] ix = new int[Math.min(blocksizeI, ru-rl)];
-			
-			//blocked execution
-			for( int bi=rl; bi<ru; bi+=blocksizeI )
-			{
-				Arrays.fill(ix, 0);
-				//find column starting positions
-				int bimin = Math.min(bi+blocksizeI, ru);
-				if( cl > 0 ) {
-					for( int i=bi; i<bimin; i++ ) {
-						if( a.isEmpty(i) ) continue;
-						int j = a.posFIndexGTE(i, cl);
-						ix[i-bi] = (j>=0) ? j : a.size(i);
-					}
+		//blocking according to typical L2 cache sizes w/ awareness of sparsity
+		final long xsp = (long)in.rlen * in.clen / in.nonZeros;
+		final int blocksizeI = Math.max(128, (int) (8*xsp));
+		final int blocksizeJ = Math.max(128, (int) (8*xsp));
+
+		if(blocksizeJ * 2 > m2 && c instanceof SparseBlockMCSR)
+			transposeSparseToSparseBlockTallSkinny(a, (SparseBlockMCSR)c, blocksizeI, rl, ru, cl, cu);
+		else if(c instanceof SparseBlockMCSR)
+			transposeSparseToSparseBlockMCSR(a, (SparseBlockMCSR) c, blocksizeI, blocksizeJ, rl, ru, cl, cu);
+		else 
+			transposeSparseToSparseBlockGeneric(a, c, blocksizeI, blocksizeJ, rl, ru, cl, cu);
+		
+	}
+
+	private static void transposeSparseToSparseBlockTallSkinny(final SparseBlock a, final SparseBlockMCSR c,
+		final int blocksizeI, final int rl, final int ru, final int cl, final int cu) {
+
+		final SparseRow[] sr = c.getRows();
+		for(int i = rl; i < ru; i++) {
+			if(a.isEmpty(i))
+				continue;
+			int j = a.posFIndexGTE(i, cl); // last block boundary
+			if(j >= 0) {
+				final int apos = a.pos(i);
+				final int alen = a.size(i);
+				final int[] aix = a.indexes(i);
+				final double[] avals = a.values(i);
+				for(j = j + apos; j < apos + alen && aix[j] < cu; j++) {
+					sr[aix[j]].append(i, avals[j]);
 				}
-				
-				for( int bj=cl; bj<cu; bj+=blocksizeJ ) {
-					int bjmin = Math.min(bj+blocksizeJ, cu);
-					//core block transpose operation
-					for( int i=bi; i<bimin; i++ ) {
-						if( a.isEmpty(i) ) continue;
-						int apos = a.pos(i);
-						int alen = a.size(i);
-						int[] aix = a.indexes(i);
-						double[] avals = a.values(i);
-						int j = ix[i-bi] + apos; //last block boundary
-						for( ; j<apos+alen && aix[j]<bjmin; j++ ) {
-							c.allocate(aix[j], ennz2, n2);
-							c.append(aix[j], i, avals[j]);
-						}
-						ix[i-bi] = j - apos; //keep block boundary
-					}
+			}
+		}
+	}
+
+
+	private static void transposeSparseToSparseBlockMCSR(SparseBlock a, SparseBlockMCSR c, final int blocksizeI,
+		final int blocksizeJ, int rl, int ru, int cl, int cu) {
+		// temporary array for block boundaries (for preventing binary search)
+		final int[] ix = new int[Math.min(blocksizeI, ru - rl)];
+
+		final SparseRow[] sr = c.getRows();
+		// blocked execution
+		for(int bi = rl; bi < ru; bi += blocksizeI) {
+			Arrays.fill(ix, 0);
+			// find column starting positions
+			int bimin = Math.min(bi + blocksizeI, ru);
+			if(cl > 0) {
+				for(int i = bi; i < bimin; i++) {
+					if(a.isEmpty(i))
+						continue;
+					int j = a.posFIndexGTE(i, cl);
+					ix[i - bi] = (j >= 0) ? j : a.size(i);
+				}
+			}
+
+			for(int bj = cl; bj < cu; bj += blocksizeJ) {
+				int bjmin = Math.min(bj + blocksizeJ, cu);
+				// core block transpose operation
+				for(int i = bi; i < bimin; i++) {
+					if(a.isEmpty(i))
+						continue;
+					final int apos = a.pos(i);
+					final int alen = a.size(i);
+					final int[] aix = a.indexes(i);
+					final double[] avals = a.values(i);
+					int j = ix[i - bi] + apos; // last block boundary
+					for(; j < apos + alen && aix[j] < bjmin; j++)
+						sr[aix[j]] = sr[aix[j]].append(i, avals[j]);
+					ix[i - bi] = j - apos; // keep block boundary
+				}
+			}
+		}
+	}
+
+	private static void transposeSparseToSparseBlockGeneric(SparseBlock a, SparseBlock c, final int blocksizeI,
+		final int blocksizeJ, int rl, int ru, int cl, int cu) {
+		// temporary array for block boundaries (for preventing binary search)
+		final int[] ix = new int[Math.min(blocksizeI, ru - rl)];
+
+		// blocked execution
+		for(int bi = rl; bi < ru; bi += blocksizeI) {
+			Arrays.fill(ix, 0);
+			// find column starting positions
+			int bimin = Math.min(bi + blocksizeI, ru);
+			if(cl > 0) {
+				for(int i = bi; i < bimin; i++) {
+					if(a.isEmpty(i))
+						continue;
+					int j = a.posFIndexGTE(i, cl);
+					ix[i - bi] = (j >= 0) ? j : a.size(i);
+				}
+			}
+
+			for(int bj = cl; bj < cu; bj += blocksizeJ) {
+				int bjmin = Math.min(bj + blocksizeJ, cu);
+				// core block transpose operation
+				for(int i = bi; i < bimin; i++) {
+					if(a.isEmpty(i))
+						continue;
+					final int apos = a.pos(i);
+					final int alen = a.size(i);
+					final int[] aix = a.indexes(i);
+					final double[] avals = a.values(i);
+					int j = ix[i - bi] + apos; // last block boundary
+					for(; j < apos + alen && aix[j] < bjmin; j++)
+						c.append(aix[j], i, avals[j]);
+
+					ix[i - bi] = j - apos; // keep block boundary
 				}
 			}
 		}
@@ -3378,6 +3480,37 @@ public class LibMatrixReorg {
 		}		
 	}
 
+
+	private static MatrixBlock transposeSparseToSparseBlock(MatrixBlock in, int rl, int ru){
+		final int nRow = in.getNumRows();
+		final int nCol = in.getNumColumns();
+		final SparseBlock a = in.getSparseBlock();
+		final MatrixBlock ret = new MatrixBlock(nCol, ru - rl, true);
+		final SparseBlockMCSR c = new SparseBlockMCSR(nCol, ru - rl);
+		final SparseRow[] cs = c.getRows();
+		final double sp = ((double) in.nonZeros) / nRow / nCol;
+		final int est = (int)(sp * (ru - rl));
+		for(int i = 0; i < nCol; i++)
+			c.allocate(i, Math.max(2, est), ru - rl);
+		
+		for(int r = rl; r < ru; r++){
+			if(a.isEmpty(r))
+				continue;
+
+			final int apos = a.pos(r);
+			final int alen = a.size(r);
+			final int[] aix = a.indexes(r);
+			final double[] aval = a.values(r);
+			final int off = r - rl;
+			for(int j = apos; j < apos + alen; j++)
+				cs[aix[j]] = cs[aix[j]].append(off, aval[j]);
+			
+		}
+		ret.setSparseBlock(c);
+		ret.recomputeNonZeros();
+		return ret;
+	}
+
 	@SuppressWarnings("unused")
 	private static class DescRowComparator implements Comparator<Integer> 
 	{
@@ -3399,7 +3532,7 @@ public class LibMatrixReorg {
 		}		
 	}
 
-	private static class TransposeTask implements Callable<Object>
+	private static class TransposeTask implements Callable<MatrixBlock>
 	{
 		private MatrixBlock _in = null;
 		private MatrixBlock _out = null;
@@ -3407,18 +3540,20 @@ public class LibMatrixReorg {
 		private int _rl = -1;
 		private int _ru = -1;
 		private int[] _cnt = null;
+		private boolean allowReturnBlock;
 
-		protected TransposeTask(MatrixBlock in, MatrixBlock out, boolean row, int rl, int ru, int[] cnt) {
+		protected TransposeTask(MatrixBlock in, MatrixBlock out, boolean row, int rl, int ru, int[] cnt, boolean returnBlock) {
 			_in = in;
 			_out = out;
 			_row = row;
 			_rl = rl;
 			_ru = ru;
 			_cnt = cnt;
+			allowReturnBlock = returnBlock;
 		}
 		
 		@Override
-		public Object call() {
+		public MatrixBlock call() {
 			int rl = _row ? _rl : 0;
 			int ru = _row ? _ru : _in.rlen;
 			int cl = _row ? 0 : _rl;
@@ -3429,8 +3564,12 @@ public class LibMatrixReorg {
 				transposeDenseToDense( _in, _out, rl, ru, cl, cu );
 			else if( _in.sparse && _out.sparse && _out.sparseBlock instanceof SparseBlockCSR)
 				transposeSparseToSparseCSR(_in, _out, rl, ru, cl, cu, _cnt);
-			else if( _in.sparse && _out.sparse )
+			else if( _in.sparse && _out.sparse ){
+				if(allowReturnBlock)
+					return transposeSparseToSparseBlock(_in, rl, ru);
+				
 				transposeSparseToSparse( _in, _out, rl, ru, cl, cu, _cnt );
+			}
 			else if( _in.sparse )
 				transposeSparseToDense( _in, _out, rl, ru, cl, cu );
 			else

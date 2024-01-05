@@ -40,13 +40,24 @@
 # emission_prob             Emission probabilities
 # --------------------------------------------------------------------------------------------
 
-s_hmm_innit = function(Integer observations_count, Integer hiddenstates_count, Boolean print_mode = FALSE)
+s_hmm_innit = function(Integer observations_count, Integer hiddenstates_count, Boolean print_mode = FALSE, Boolean random_mode = FALSE)
     return (matrix[Double] start_prob, matrix[Double] transition_prob,
             matrix[Double] emission_prob)
     {
-        start_prob = matrix((1 / hiddenstates_count), rows = hiddenstates_count, cols = 1)
-        transition_prob = matrix((1 / hiddenstates_count), rows = hiddenstates_count, cols = hiddenstates_count)
-        emission_prob = matrix((1 / observations_count), rows = hiddenstates_count, cols = observations_count)
+        if(random_mode) {
+            transition_prob = rand(rows = hiddenstates_count, cols = hiddenstates_count)
+            transition_prob = transition_prob / rowSums(transition_prob)
+
+            emission_prob = rand(rows = hiddenstates_count, cols = observations_count)
+            emission_prob = emission_prob / rowSums(emission_prob)
+
+            start_prob = rand(rows = hiddenstates_count, cols = 1)
+            start_prob = start_prob / colSums(start_prob)
+        } else {
+            start_prob = matrix((1 / hiddenstates_count), rows = hiddenstates_count, cols = 1)
+            transition_prob = matrix((0.7 / hiddenstates_count), rows = hiddenstates_count, cols = hiddenstates_count) + diag(matrix(0.3, rows = hiddenstates_count, cols = 1))
+            emission_prob = matrix((1 / observations_count), rows = hiddenstates_count, cols = observations_count)    
+        }
 
         if(print_mode)
             print_model(observations_count, hiddenstates_count, start_prob, transition_prob, emission_prob)
@@ -63,4 +74,5 @@ print_model = function(Integer observations_count, Integer hiddenstates_count,
         print("Hidden State Transition Probability Matrix: \n" + toString(transition_prob))
         print("Observation Emission Probability Matrix: \n" + toString(emission_prob))
     }
+
 

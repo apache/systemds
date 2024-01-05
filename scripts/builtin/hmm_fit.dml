@@ -34,7 +34,7 @@ m_hmm_fit = function(matrix[Double] observations_sequences, Integer iterations_c
             # Expectation Step (Expected Transitions and Emissions)
             forward_prob = forward(observations_sequences, start_prob, transition_prob, emission_prob)
             backward_prob = backward(observations_sequences, transition_prob, emission_prob)
-            observation_prob = sum(forward_prob[,sequence_length])
+            observation_prob = logSumExp(forward_prob[,sequence_length])
 
 
 
@@ -44,9 +44,6 @@ m_hmm_fit = function(matrix[Double] observations_sequences, Integer iterations_c
     }
 
 
-# TODO: Save probabilities of forward_prob as log to achieve numerical stability
-# Until numerical stability is achieved max sequence_length is bounded by 382 with evenly distibuted trans_prob & emission_prob and observation_count = 7, hiddenstates_count = 4
-# Double Precision: 2.0E-323
 forward = function(matrix[Double] observations_sequences, matrix[Double] start_prob, 
                    matrix[Double] transition_prob, matrix[Double] emission_prob)
     return(matrix[double] forward_prob)
@@ -56,15 +53,15 @@ forward = function(matrix[Double] observations_sequences, matrix[Double] start_p
         forward_prob = matrix(0, rows = hiddenstates_count, cols = observations_count)
 
         observation = as.scalar(observations_sequences[1,1])
-        forward_prob[,1] = start_prob * emission_prob[,observation] #Outer vector product
+        forward_prob[,1] = log(start_prob * emission_prob[,observation])
 
         for (k in 2:observations_count) {
             observation = as.scalar(observations_sequences[1,k])
-            forward_prob[,k] = (transition_prob %*% forward_prob[,k-1]) * emission_prob[,observation]
+            forward_prob[,k] = log(transition_prob %*% emission_prob[,observation]) + forward_prob[,k-1]
         }
     }
 
-# TODO: Save probabilities of forward_prob as log to achieve numerical stability
+
 backward = function(matrix[Double] observations_sequences, matrix[Double] transition_prob, 
                     matrix[Double] emission_prob)
     return(matrix[double] backward_prob)
@@ -73,10 +70,8 @@ backward = function(matrix[Double] observations_sequences, matrix[Double] transi
         observations_count = ncol(observations_sequences)
         backward_prob = matrix(0, rows = hiddenstates_count, cols = observations_count)
 
-        backward_prob[,observations_count] = matrix(1,rows = hiddenstates_count, cols = 1)
-
         for (k in (observations_count-1):1) {
             observation = as.scalar(observations_sequences[1,k])
-            backward_prob[,k] = (transition_prob %*% backward_prob[,k+1]) * emission_prob[,observation]
+            backward_prob[,k] = log(transition_prob %*% emission_prob[,observation]) + backward_prob[,k+1]
         }
     }

@@ -424,9 +424,6 @@ public abstract class SparseBlock implements Serializable, Block
 	/**
 	 * Get values of row r in the format of a sparse row. 
 	 * 
-	 * NOTE: This method exists for incremental runtime integration and might
-	 * be deleted in the future.
-	 * 
 	 * @param r  row index starting at 0
 	 * @return values of row r as a sparse row
 	 */

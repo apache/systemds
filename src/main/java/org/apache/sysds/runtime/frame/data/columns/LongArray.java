@@ -181,7 +181,7 @@ public class LongArray extends Array<Long> {
 	}
 
 	@Override
-	public Pair<ValueType, Boolean> analyzeValueType() {
+	public Pair<ValueType, Boolean> analyzeValueType(int maxCells) {
 		return new Pair<>(ValueType.INT64, false);
 	}
 
@@ -199,7 +199,7 @@ public class LongArray extends Array<Long> {
 
 	@Override
 	public long getExactSerializedSize() {
-		return 1 + 8 * _data.length;
+		return 1 + 8 * _size;
 	}
 
 	@Override
@@ -316,7 +316,7 @@ public class LongArray extends Array<Long> {
 
 	@Override
 	public boolean isEmpty() {
-		for(int i = 0; i < _data.length; i++)
+		for(int i = 0; i < _size; i++)
 			if(_data[i] != 0L)
 				return false;
 		return true;
@@ -365,7 +365,7 @@ public class LongArray extends Array<Long> {
 
 	@Override
 	public String toString() {
-		StringBuilder sb = new StringBuilder(_data.length * 5 + 2);
+		StringBuilder sb = new StringBuilder(_size * 5 + 2);
 		sb.append(super.toString() + ":[");
 		for(int i = 0; i < _size - 1; i++)
 			sb.append(_data[i] + ",");

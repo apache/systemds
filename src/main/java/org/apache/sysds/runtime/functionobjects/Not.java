@@ -44,4 +44,9 @@ public class Not extends ValueFunction
 	public double execute(double in) {
 		return (in == 0) ? 1 : 0;
 	}
+
+	@Override
+	public boolean isBinary(){
+		return true;
+	}
 }

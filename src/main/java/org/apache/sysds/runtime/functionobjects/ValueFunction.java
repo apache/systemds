@@ -19,11 +19,19 @@
 
 package org.apache.sysds.runtime.functionobjects;
 
-public abstract class ValueFunction extends FunctionObject
-{
+public abstract class ValueFunction extends FunctionObject {
 	private static final long serialVersionUID = -4985988545393861058L;
-	
+
 	public boolean requiresCorrection() {
 		return false;
+	}
+
+	public boolean isBinary(){
+		return false;
+	}
+
+	@Override
+	public String toString() {
+		return this.getClass().getSimpleName();
 	}
 }

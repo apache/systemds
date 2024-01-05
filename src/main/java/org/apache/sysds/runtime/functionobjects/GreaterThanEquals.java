@@ -74,4 +74,10 @@ public class GreaterThanEquals extends ValueComparisonFunction
 	public boolean compare(String in1, String in2) {
 		return (in1!=null && in1.compareTo(in2)>=0 );
 	}
+
+	@Override
+	public boolean isBinary(){
+		return true;
+	}
+
 }

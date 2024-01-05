@@ -1,0 +1,52 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+max_mem = $max_mem
+num_rows = $num_rows
+method = $method
+num_nan = num_rows * 0.1
+
+print("Testing method " + method + " with " + num_rows + " rows and " + num_nan + " rows containing missing values.")
+
+# Prepare the data
+X = Rand (rows = num_rows, cols = 10, min = 0.0, max = 1.0, pdf = "uniform");
+
+sample_fraction = 100
+exp = 2
+while ((sample_fraction / 10^exp * num_rows * 0.9 * num_rows * 0.1 * 8 / 10^6) > max_mem) {
+  sample_fraction = (sample_fraction - 1)
+
+  if (sample_fraction == 0) {
+    sample_fraction = 100
+    exp = exp + 1
+  }
+}
+
+
+sample_fraction = sample_fraction / 10^exp
+
+
+for (i in 1:num_nan) {
+  X[i, 1] = 'NaN';
+}
+
+#Perform the KNN imputation
+result = imputeByKNN(X = X, method = method, seed = 42, sample_frac = sample_fraction)

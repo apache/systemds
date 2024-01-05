@@ -126,6 +126,7 @@ echo -e "\n\n" >> results/times.txt
 ./runAllClustering.sh ${CMD} ${TEMPFOLDER} ${MAXMEM}
 ./runAllDimensionReduction.sh ${CMD} ${TEMPFOLDER} ${MAXMEM}
 ./runAllALS.sh ${CMD} ${TEMPFOLDER} ${MAXMEM}
+./KnnMissingValueImputation.sh ${CMD} ${MAXMEM}
 
 ### IO Benchmarks:
 ./runAllIO.sh ${CMD} ${TEMPFOLDER} ${MAXMEM}

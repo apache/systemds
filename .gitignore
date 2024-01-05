@@ -78,8 +78,10 @@ docs/_site
 # Test Artifacts
 src/test/scripts/**/*.dmlt
 src/test/scripts/functions/mlcontextin/
+src/test/scripts/functions/frame/io/
 src/test/java/org/apache/sysds/test/component/compress/io/files
 src/test/java/org/apache/sysds/test/component/compress/io/filesIOSpark/*
+src/test/java/org/apache/sysds/test/component/compress/io/filesIOTest
 .factorypath
 
 # Excluded sources

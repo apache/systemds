@@ -24,14 +24,9 @@ import java.util.ArrayList;
 import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.runtime.controlprogram.parfor.util.IDSequence;
 
-public class LopProperties 
-{
-	// static variable to assign an unique ID to every lop that is created
-	private static IDSequence UniqueLopID = null;
-	
-	static {
-		UniqueLopID = new IDSequence();
-	}
+public class LopProperties {
+	/** static variable to assign an unique ID to every lop that is created */
+	private static IDSequence UniqueLopID =  new IDSequence();
 	
 	/** 
 	 * Execution properties for each lop.
@@ -42,10 +37,13 @@ public class LopProperties
 	 * isAligner = is this lop mainly used to reorder/sort/align the keys
 	 *   
 	 */
-	long ID;
-	int level;
-	ExecType execType;
-	boolean producesIntermediateOutput;
+	protected long ID;
+	/** The level in the dag. Specifying when this instruction can be executed. */
+	protected int level;
+	/** The execution type of this lop node, CP, Spark, GPU, Federated, etc*/
+	protected ExecType execType;
+	/** If this Lop produce some intermediate that have to be considered in the memory estimations */
+	protected boolean producesIntermediateOutput;
 	
 	public LopProperties() {
 		ID = UniqueLopID.getNextID();
@@ -98,5 +96,20 @@ public class LopProperties
 	public void setProperties ( ArrayList<Lop> inputs, ExecType et) {
 		execType = et;
 		setLevel(inputs);
+	}
+
+	@Override
+	public String toString(){
+		StringBuilder sb = new StringBuilder();
+		sb.append(this.getClass().getSimpleName());
+		sb.append(" ID: ");
+		sb.append(ID);
+		sb.append(" Level: ");
+		sb.append(level);
+		sb.append(" ExecType: ");
+		sb.append(execType);
+		sb.append(" Intermediate: ");
+		sb.append(producesIntermediateOutput);
+		return sb.toString();
 	}
 }

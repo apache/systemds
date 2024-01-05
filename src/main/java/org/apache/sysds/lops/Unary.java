@@ -112,10 +112,12 @@ public class Unary extends Lop
 		if (valInput != null)
 			return "Operation: " + operation + " " + "Label: "
 					+ valInput.getOutputParameters().getLabel()
-					+ " input types " + this.getInputs().get(0).toString()
-					+ " " + this.getInputs().get(1).toString();
+					+ " input types " + getInput(0).toString()
+					+ " " + getInput(1).toString();
+		else if(getInput(0) != null)
+			return "Operation: " + operation + " In: " + getInput(0) + " " + lps;
 		else
-			return "Operation: " + operation + " " + "Label: N/A";
+			return "Operation: " + operation + " Label: N/A";
 	}
 
 	private String getOpcode() {

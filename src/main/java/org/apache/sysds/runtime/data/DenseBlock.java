@@ -734,6 +734,10 @@ public abstract class DenseBlock implements Serializable, Block
 		return true;
 	}
 
+	public void fill(double value){
+		reset(_odims, value);
+	}
+
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();

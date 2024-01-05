@@ -95,8 +95,9 @@ public abstract class SparseRow implements Serializable
 	 * 
 	 * @param col column index, zero-based
 	 * @param v value
+	 * @return the row with an appended element
 	 */
-	public abstract void append(int col, double v);
+	public abstract SparseRow append(int col, double v);
 	
 	/**
 	 * Gets the value of a specified column. If the column
@@ -139,6 +140,16 @@ public abstract class SparseRow implements Serializable
 	 * @return A copy
 	 */
 	public abstract SparseRow copy(boolean deep);
+
+	/**
+	 * Get first index greater than equal column index.
+	 * @param col column to be greater than
+	 * @return index
+	 */
+	public abstract int searchIndexesFirstGTE(int col);
+
+
+	public abstract int searchIndexesFirstGT(int col);
 	
 	@Override
 	public String toString() {

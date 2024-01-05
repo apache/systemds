@@ -165,8 +165,8 @@ public class MetaDataAll extends DataIdentifier {
 	private void parseMetaDataParam(Object key, Object val)
 	{
 		switch(key.toString()) {
-			case DataExpression.READROWPARAM: _dim1 = (Integer) val; break;
-			case DataExpression.READCOLPARAM: _dim2 = (Integer) val; break;
+			case DataExpression.READROWPARAM: _dim1 = val instanceof Long ? (Long) val : (Integer) val; break;
+			case DataExpression.READCOLPARAM: _dim2 = val instanceof Long ? (Long) val : (Integer) val; break;
 			case DataExpression.ROWBLOCKCOUNTPARAM: setBlocksize((Integer) val); break;
 			case DataExpression.READNNZPARAM: setNnz(val instanceof Long ? (Long) val : (Integer) val); break;
 			case DataExpression.FORMAT_TYPE: setFormatTypeString((String) val); break;
@@ -238,6 +238,8 @@ public class MetaDataAll extends DataIdentifier {
 	}
 
 	public void setDelim(String delim) {
+		if(delim.length() == 0)
+			throw new RuntimeException("Invalid metadata delim, cannot be empty string");
 		_delim = delim;
 	}
 

@@ -539,13 +539,13 @@ public class SpoofCompiler {
 					}
 
 					//explain debug output cplans or generated source code
-					if( LOG.isTraceEnabled() || DMLScript.EXPLAIN.isHopsType(recompile) ) {
+					if( LOG.isInfoEnabled() || DMLScript.EXPLAIN.isHopsType(recompile) ) {
 						LOG.info("Codegen EXPLAIN (generated cplan for HopID: " + cplan.getKey() + 
 							", line "+tmp.getValue().getBeginLine() + ", hash="+tmp.getValue().hashCode()+"):");
 						LOG.info(tmp.getValue().getClassname()
 							+ Explain.explainCPlan(cplan.getValue().getValue()));
 					}
-					if( LOG.isTraceEnabled() || DMLScript.EXPLAIN.isRuntimeType(recompile) ) {
+					if( LOG.isInfoEnabled() || DMLScript.EXPLAIN.isRuntimeType(recompile) ) {
 						LOG.info("JAVA Codegen EXPLAIN (generated code for HopID: " + cplan.getKey() +
 							", line "+tmp.getValue().getBeginLine() + ", hash="+tmp.getValue().hashCode()+"):");
 						LOG.info(CodegenUtils.printWithLineNumber(src));

@@ -279,10 +279,6 @@ basic_block_backward = function(matrix[double] dOut, int Hout, int Wout,
     # Second convolutional layer
     [dX_res, dgamma_bn2, dbeta_bn2] = bn2d::backward(dX, mean_bn2, var_bn2, out_conv2, gamma_bn2, C_base, Hout_conv2,
         Wout_conv2, epsilon_bn)
-
-    print("dout for conv2")
-    print(toString(dX_res))
-
     [dX_res, dW_conv2] = conv3x3_backward(dX_res, Hout_conv2, Wout_conv2, out_re1, W_conv2, C_base, C_base,
         Hout_conv1, Wout_conv1, 1, 1)
 

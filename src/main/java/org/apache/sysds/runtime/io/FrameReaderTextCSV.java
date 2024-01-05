@@ -21,7 +21,11 @@ package org.apache.sysds.runtime.io;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -36,10 +40,11 @@ import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.mapred.TextInputFormat;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.conf.ConfigurationManager;
+import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.Pair;
-import org.apache.sysds.runtime.transform.TfUtils;
+import org.apache.sysds.runtime.util.CommonThreadPool;
 import org.apache.sysds.runtime.util.InputStreamInputFormat;
 
 /**
@@ -131,7 +136,6 @@ public class FrameReaderTextCSV extends FrameReader {
 		LongWritable key = new LongWritable();
 		Text value = new Text();
 		int row = rl;
-		final int nCol = dest.getNumColumns();
 
 		// handle header if existing
 		if(first && hasHeader) {
@@ -139,38 +143,26 @@ public class FrameReaderTextCSV extends FrameReader {
 			dest.setColumnNames(value.toString().split(delim));
 		}
 
+		int k = 1;
+		if(this instanceof FrameReaderTextCSVParallel)
+			k = OptimizerUtils.getParallelTextReadParallelism();
+
+		ExecutorService pool = k > 1 ? CommonThreadPool.get(k) : null;
+		List<Future<?>> tasks = new ArrayList<>();
+
 		// Read the data
 		try {
-			String[] parts = null; // cache array for line reading.
 			while(reader.next(key, value)) // foreach line
 			{
-				boolean emptyValuesFound = false;
 				String cellStr = IOUtilFunctions.trim(value.toString());
-				parts = IOUtilFunctions.splitCSV(cellStr, delim, parts);
-				// sanity checks for empty values and number of columns
-
-				final boolean mtdP = parts[0].equals(TfUtils.TXMTD_MVPREFIX);
-				final boolean mtdx = parts[0].equals(TfUtils.TXMTD_NDPREFIX);
-				// parse frame meta data (missing values / num distinct)
-				if(mtdP || mtdx) {
-					if(parts.length != dest.getNumColumns() + 1){
-						LOG.warn("Invalid metadata ");
-						parts = null;
-						continue;
-					}
-					else if(mtdP)
-						for(int j = 0; j < dest.getNumColumns(); j++)
-							dest.getColumnMetadata(j).setMvValue(parts[j + 1]);
-					else if(mtdx)
-						for(int j = 0; j < dest.getNumColumns(); j++)
-							dest.getColumnMetadata(j).setNumDistinct(Long.parseLong(parts[j + 1]));
-					parts = null;
-					continue;
+				if(pool != null){
+					final int r = row;
+					tasks.add(pool.submit( () -> parseLine(cellStr, delim, dest, schema, names, r, rlen, clen, rl, first, dfillValue, sfillValue, isFill, naValues)));
 				}
-				assignColumns(row, nCol, dest, parts, naValues, isFill, dfillValue, sfillValue);
+				else{
+					parseLine(cellStr, delim, dest, schema, names, row, rlen, clen, rl, first, dfillValue, sfillValue, isFill, naValues);
+				}
 				
-				IOUtilFunctions.checkAndRaiseErrorCSVEmptyField(cellStr, isFill, emptyValuesFound);
-				IOUtilFunctions.checkAndRaiseErrorCSVNumColumns("", cellStr, parts, clen);
 				row++;
 			}
 		}
@@ -178,10 +170,29 @@ public class FrameReaderTextCSV extends FrameReader {
 			throw new DMLRuntimeException("Failed parsing string: \"" + value +"\"", e);
 		}
 		finally {
+			if(pool != null)
+				pool.shutdown();
 			IOUtilFunctions.closeSilently(reader);
 		}
 
 		return row;
+	}
+
+	private void parseLine(String cellStr, String delim, FrameBlock dest, ValueType[] schema, String[] names, int row,
+		long rlen, long clen, int rl, boolean first, double dfillValue, String sfillValue, boolean isFill,
+		Set<String> naValues) {
+			try{
+
+				final int nCol = dest.getNumColumns();
+				String[] parts = IOUtilFunctions.splitCSV(cellStr, delim);
+		
+				assignColumns(row, nCol, dest, parts, naValues, isFill, dfillValue, sfillValue);
+		
+				IOUtilFunctions.checkAndRaiseErrorCSVNumColumns("", cellStr, parts, clen);
+			}
+			catch(Exception e){
+				throw new RuntimeException(e);
+			}
 	}
 
 	private boolean assignColumns(int row, int nCol, FrameBlock dest, String[] parts, Set<String> naValues,
@@ -255,32 +266,18 @@ public class FrameReaderTextCSV extends FrameReader {
 		}
 	}
 
-	protected static int countLinesInReader(RecordReader<LongWritable, Text> reader, long ncol, boolean header)
+	private static int countLinesInReader(RecordReader<LongWritable, Text> reader, long ncol, boolean header)
 		throws IOException {
 		final LongWritable key = new LongWritable();
 		final Text value = new Text();
 
 		int nrow = 0;
-		try {
-			// ignore header of first split
-			if(header)
-				reader.next(key, value);
-			while(reader.next(key, value)) {
-				// note the metadata can be located at any row when spark.
-				nrow += containsMetaTag(value) ? 0 : 1;
-			}
-			return nrow;
+		// ignore header of first split
+		if(header)
+			reader.next(key, value);
+		while(reader.next(key, value)) {
+			nrow ++;
 		}
-		finally {
-			IOUtilFunctions.closeSilently(reader);
-		}
-	}
-
-	private final static boolean containsMetaTag(Text val) {
-		if(val.charAt(0) == '#')
-			return val.find(TfUtils.TXMTD_MVPREFIX) > -1//
-				|| val.find(TfUtils.TXMTD_NDPREFIX) > -1;
-		else 
-			return false;
+		return nrow;
 	}
 }

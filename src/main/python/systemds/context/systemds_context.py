@@ -195,7 +195,6 @@ class SystemDSContext(object):
             else:
                 command.append("-Dlog4j.configuration=file:" + files[0])
         else:
-            print(os.environ.get("LOG4JPROP"))
             command.append("-Dlog4j.configuration=file:" +os.environ.get("LOG4JPROP"))
 
         command.append("org.apache.sysds.api.PythonDMLScript")

@@ -206,10 +206,10 @@ basic_block_forward = function(matrix[double] X, list[unknown] weights,
     Wout = Wout_conv2
 }
 
-basic_block_backward = function(matrix[double] dOut, int Hout, int Wout,
-                                list[unknown] cached_out, list[unknown] weights,
-                                int C_in, int C_base, int strideh, int stridew,
-                                string mode, list[unknown] cached_means_vars)
+basic_block_backward = function(matrix[double] dOut, list[unknown] cached_out,
+                                list[unknown] weights, int C_in, int C_base,
+                                int strideh, int stridew,
+                                list[unknown] cached_means_vars)
     return (matrix[double] dX, list[unknown] gradients) {
     downsample = strideh > 1 | stridew > 1 | C_in != C_base
     # default values
@@ -461,10 +461,10 @@ bottleneck_block_forward = function(matrix[double] X,
     Wout = Wout_conv3
 }
 
-bottleneck_block_backward = function(matrix[double] dOut, int Hout, int Wout,
-                                list[unknown] cached_out, list[unknown] weights,
-                                int C_in, int C_base, int strideh, int stridew,
-                                string mode, list[unknown] cached_means_vars)
+bottleneck_block_backward = function(matrix[double] dOut, list[unknown] cached_out,
+                                     list[unknown] weights, int C_in, int C_base,
+                                     int strideh, int stridew,
+                                     list[unknown] cached_means_vars)
     return (matrix[double] dX, list[unknown] gradients) {
     downsample = strideh > 1 | stridew > 1 | C_in != C_base
     # default values
@@ -532,8 +532,8 @@ bottleneck_block_backward = function(matrix[double] dOut, int Hout, int Wout,
 
     # IDENTITY PATH
     if (downsample) {
-        [dX_id, dgamma_bn4, dbeta_bn4] = bn2d::backward(dX, mean_bn4, var_bn4, out_conv4, gamma_bn4, 4*C_base, Hout_conv4,
-            Wout_conv4, epsilon_bn)
+        [dX_id, dgamma_bn4, dbeta_bn4] = bn2d::backward(dX, mean_bn4, var_bn4, out_conv4, gamma_bn4, 4*C_base,
+            Hout_conv4, Wout_conv4, epsilon_bn)
         [dX_id, dW_conv4] = conv1x1_backward(dX_id, Hout_conv4, Wout_conv4, X, W_conv4, C_in, 4*C_base, Hin,
             Win, strideh, stridew)
     } else {
@@ -619,38 +619,80 @@ reslayer_forward = function(matrix[double] X, int Hin, int Win,
      *     each batch normalization layer. This is required for the
      *     backward pass of the network.
      */
-    # default values
-    mu_bn = 0.1
-    epsilon_bn = 1e-05
-
     # first block with provided stride
     if (block_type == "basic") {
-        [out, Hout, Wout, emas1_upd, cached_out_b1, cached_mv_b1] = basic_block_forward(X, as.list(blocks_weights[1]), C_in, C_base,
-                                                        Hin, Win, strideh, stridew, mode, as.list(ema_means_vars[1]))
+        [out, Hout, Wout, emas1_upd, cached_out_b1, cached_mv_b1] = basic_block_forward(X, as.list(blocks_weights[1]),
+            C_in, C_base, Hin, Win, strideh, stridew, mode, as.list(ema_means_vars[1]))
     } else {
-        [out, Hout, Wout, emas1_upd, cached_out_b1, cached_mv_b1] = bottleneck_block_forward(X, as.list(blocks_weights[1]), C_in,
-                                             C_base, Hin, Win, strideh, stridew, mode, as.list(ema_means_vars[1]))
+        [out, Hout, Wout, emas1_upd, cached_out_b1, cached_mv_b1] = bottleneck_block_forward(X,
+            as.list(blocks_weights[1]), C_in, C_base, Hin, Win, strideh, stridew, mode, as.list(ema_means_vars[1]))
     }
     ema_means_vars_upd = list(emas1_upd)
     cached_out = list(cached_out_b1)
     cached_means_vars = list(cached_mv_b1)
 
     # other blocks
-    for (i in 2:blocks) {
-        current_weights = as.list(blocks_weights[i])
-        current_emas = as.list(ema_means_vars[i])
-        if (block_type == "basic") {
-            [out, Hout, Wout, current_emas_upd, current_cached_out, current_cached_mv] = basic_block_forward(X=out, weights=current_weights,
-                                        C_in=C_base, C_base=C_base, Hin=Hout, Win=Wout, strideh=1, stridew=1, mode=mode,
-                                        ema_means_vars=current_emas)
-        } else {
-            [out, Hout, Wout, current_emas_upd, current_cached_out, current_cached_mv] = bottleneck_block_forward(X=out,
-                                        weights=current_weights, C_in=C_base*4, C_base=C_base, Hin=Hout, Win=Wout,
-                                        strideh=1, stridew=1, mode=mode, ema_means_vars=current_emas)
+    if (blocks > 1) {
+        for (i in 2:blocks) {
+            current_weights = as.list(blocks_weights[i])
+            current_emas = as.list(ema_means_vars[i])
+
+            if (block_type == "basic") {
+                [out, Hout, Wout, current_emas_upd, current_cached_out, current_cached_mv] = basic_block_forward(X=out,
+                    weights=current_weights, C_in=C_base, C_base=C_base, Hin=Hout, Win=Wout, strideh=1, stridew=1,
+                    mode=mode, ema_means_vars=current_emas)
+            } else {
+                [out, Hout, Wout, current_emas_upd, current_cached_out, current_cached_mv] = bottleneck_block_forward(X=out,
+                    weights=current_weights, C_in=C_base*4, C_base=C_base, Hin=Hout, Win=Wout, strideh=1, stridew=1,
+                    mode=mode, ema_means_vars=current_emas)
+            }
+
+            ema_means_vars_upd = append(ema_means_vars_upd, current_emas_upd)
+            cached_out = append(cached_out, current_cached_out)
+            cached_means_vars = append(cached_means_vars, current_cached_mv)
         }
-        ema_means_vars_upd = append(ema_means_vars_upd, current_emas_upd)
-        cached_out = append(cached_out, current_cached_out)
-        cached_means_vars = append(cached_means_vars, current_cached_mv)
+    }
+}
+
+reslayer_backward = function(matrix[double] dOut, list[unknown] cached_out,
+                             string block_type, int blocks, int strideh,
+                             int stridew, int C_in, int C_base,
+                             list[unknown] blocks_weights,
+                             list[unknown] blocks_cached_means_vars)
+    return (matrix[double] dX, list[unknown] gradients) {
+    gradients = list()
+    dX = dOut
+
+    # second to last blocks
+    if (blocks > 1) {
+        for (i in blocks:2) {
+            current_cached_out = as.list(cached_out[i])
+            current_weights = as.list(blocks_weights[i])
+            current_cached_means_vars = as.list(blocks_cached_means_vars[i])
+
+            if (block_type == "basic") {
+                [dX, current_gradients] = basic_block_backward(dOut=dX, cached_out=current_cached_out,
+                    weights=current_weights, C_in=C_base, C_base=C_base, strideh=1, stridew=1,
+                    cached_means_vars=current_cached_means_vars)
+            } else {
+                [dX, current_gradients] = bottleneck_block_backward(dOut=dX, cached_out=current_cached_out,
+                    weights=current_weights, C_in=4*C_base, C_base=C_base, strideh=1, stridew=1,
+                    cached_means_vars=current_cached_means_vars)
+            }
+
+            gradients = append(gradients, current_gradients)
+        }
+    }
+
+    # first block
+    if (block_type == "basic") {
+        [dX, current_gradients] = basic_block_backward(dOut=dX, cached_out=as.list(cached_out[1]),
+            weights=as.list(blocks_weights[1]), C_in=C_in, C_base=C_base, strideh=strideh, stridew=stridew,
+            cached_means_vars=as.list(blocks_cached_means_vars[1]))
+    } else {
+        [dX, current_gradients] = bottleneck_block_backward(dOut=dX, cached_out=as.list(cached_out[1]),
+            weights=as.list(blocks_weights[1]), C_in=C_in, C_base=C_base, strideh=strideh, stridew=stridew,
+            cached_means_vars=as.list(blocks_cached_means_vars[1]))
     }
 }
 

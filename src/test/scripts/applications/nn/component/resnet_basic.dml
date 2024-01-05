@@ -719,8 +719,8 @@ values_test_basic_block_backward = function() {
                    -0.0625     -0.03729285",
                    rows=N, cols=C_base*Hout*Wout)
 
-    [dX, gradients] = resnet::basic_block_backward(dOut, Hout, Wout, cached_out, weights, C_in, C_base,
-        strideh, stridew, mode, cached_means_vars)
+    [dX, gradients] = resnet::basic_block_backward(dOut, cached_out, weights, C_in, C_base,
+        strideh, stridew, cached_means_vars)
 
     dW_conv1_exp = matrix("-0.02246146  0.10423277  0.1029001
                            -0.05089705  0.10958684  0.10958683

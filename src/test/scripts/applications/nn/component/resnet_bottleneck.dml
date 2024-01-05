@@ -1966,8 +1966,8 @@ values_test_bottleneck_block_backward = function() {
                    -0.02083333 -0.02083333",
                    rows=N, cols=4*C_base*Hout*Wout)
 
-    [dX, gradients] = resnet::bottleneck_block_backward(dOut, Hout, Wout, cached_out, weights, C_in, C_base,
-        strideh, stridew, mode, cached_means_vars)
+    [dX, gradients] = resnet::bottleneck_block_backward(dOut, cached_out, weights, C_in, C_base,
+        strideh, stridew, cached_means_vars)
 
     dW_conv1_exp = matrix("-0.41785866
 
@@ -2316,3 +2316,7 @@ values_test_residual_layer_forward()
  */
 
 values_test_bottleneck_block_backward()
+
+for (i in 2:1) {
+    print(i)
+}

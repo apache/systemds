@@ -624,7 +624,7 @@ public final class CLALibCompAgg {
 					final int rbu = Math.min(r + _blklen, _ru);
 					tmp.reset(rbu - r, tmp.getNumColumns(), false);
 					decompressToTemp(tmp, r, rbu, its);
-					final MatrixBlock tmpR = tmp.prepareAggregateUnaryOutput(_op, null, 1000);
+					final MatrixBlock tmpR = LibMatrixAgg.prepareAggregateUnaryOutput(tmp, _op, null, 1000);
 					LibMatrixAgg.aggregateUnaryMatrix(tmp, tmpR, _op);
 
 					tmpR.dropLastRowsOrColumns(_op.aggOp.correction);
@@ -654,14 +654,14 @@ public final class CLALibCompAgg {
 			}
 			else if(_op.indexFn instanceof ReduceAll) {
 				decompressToTemp(tmp, _rl, _ru, its);
-				MatrixBlock outputBlock = tmp.prepareAggregateUnaryOutput(_op, null, 1000);
+				MatrixBlock outputBlock = LibMatrixAgg.prepareAggregateUnaryOutput(tmp, _op, null, 1000);
 				LibMatrixAgg.aggregateUnaryMatrix(tmp, outputBlock, _op);
 				outputBlock.dropLastRowsOrColumns(_op.aggOp.correction);
 				return outputBlock;
 			}
 			else { // reduce to rows.
 				decompressToTemp(tmp, _rl, _ru, its);
-				MatrixBlock outputBlock = tmp.prepareAggregateUnaryOutput(_op, null, 1000);
+				MatrixBlock outputBlock = LibMatrixAgg.prepareAggregateUnaryOutput(tmp, _op, null, 1000);
 				LibMatrixAgg.aggregateUnaryMatrix(tmp, outputBlock, _op);
 				outputBlock.dropLastRowsOrColumns(_op.aggOp.correction);
 				return outputBlock;

@@ -586,16 +586,19 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 	public final boolean isEmptyBlock() {
 		return isEmptyBlock(true);
 	}
-	
-	public boolean isEmptyBlock(boolean safe)
-	{
-		boolean ret = ( sparse && sparseBlock==null ) || ( !sparse && denseBlock==null );
-		if( nonZeros==0 )
-		{
-			//prevent under-estimation
-			if(safe)
+	/**
+	 * Get if this MatrixBlock is an empty block. The call can potentially tricker a recomputation of non zeros if the
+	 * non-zero count is unknown.
+	 * 
+	 * @param safe True if we want to ensure the count non zeros if the nnz is unknown.
+	 * @return If the block is empty.
+	 */
+	public boolean isEmptyBlock(boolean safe) {
+		boolean ret = (sparse && sparseBlock == null) || (!sparse && denseBlock == null);
+		if(nonZeros <= 0) { // estimate non zeros if unknown or 0.
+			if(safe) // only allow the recompute if safe flag is false.
 				recomputeNonZeros();
-			ret = (nonZeros==0);
+			ret = (nonZeros == 0);
 		}
 		return ret;
 	}

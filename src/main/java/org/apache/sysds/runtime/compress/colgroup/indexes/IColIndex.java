@@ -22,13 +22,16 @@ package org.apache.sysds.runtime.compress.colgroup.indexes;
 import java.io.DataOutput;
 import java.io.IOException;
 
+import org.apache.sysds.runtime.data.SparseBlock;
+import org.apache.sysds.runtime.matrix.data.Pair;
+
 /**
  * Class to contain column indexes for the compression column groups.
  */
 public interface IColIndex {
 
 	public static enum ColIndexType {
-		SINGLE, TWO, ARRAY, RANGE, TWORANGE, UNKNOWN;
+		SINGLE, TWO, ARRAY, RANGE, TWORANGE, COMBINED, UNKNOWN;
 	}
 
 	/**
@@ -212,6 +215,76 @@ public interface IColIndex {
 	 */
 	public double avgOfIndex();
 
+	/**
+	 * Decompress this
+	 */
+	/**
+	 * Decompress this column index into the dense c array.
+	 * 
+	 * @param sb  A sparse block to extract values out of and insert into c
+	 * @param vr  The row to extract from the sparse block
+	 * @param off The offset that the row starts at in c.
+	 * @param c   The dense output to decompress into
+	 */
+	public void decompressToDenseFromSparse(SparseBlock sb, int vr, int off, double[] c);
+
+	/**
+	 * Decompress into c using the values provided. The offset to start into c is off and then row index is similarly the
+	 * offset of values. nCol specify the number of values to add over.
+	 * 
+	 * @param nCol   The number of columns to copy.
+	 * @param c      The output to add into
+	 * @param off    The offset to start in c
+	 * @param values the values to copy from
+	 * @param rowIdx The offset to start in values
+	 */
+	public void decompressVec(int nCol, double[] c, int off, double[] values, int rowIdx);
+
+	/**
+	 * Indicate if the two given column indexes are in order such that the first set of indexes all are of lower value
+	 * than the second.
+	 * 
+	 * @param a the first column index
+	 * @param b the second column index
+	 * @return If the first all is lower than the second.
+	 */
+	public static boolean inOrder(IColIndex a, IColIndex b) {
+		return a.get(a.size() - 1) < b.get(0);
+	}
+
+	public static Pair<int[], int[]> reorderingIndexes(IColIndex a, IColIndex b){
+		final int[] ar = new int[a.size()];
+		final int[] br = new int[b.size()];
+		final IIterate ai = a.iterator();
+		final IIterate bi = b.iterator();
+
+		int ia = 0;
+		int ib = 0;
+		int i = 0;
+		while(ai.hasNext() && bi.hasNext()){
+			if(ai.v()< bi.v()){
+				ar[ia++] = i++;
+				ai.next();
+			}
+			else{
+				br[ib++] = i++;
+				bi.next();
+			}
+		}
+
+		while(ai.hasNext()){
+				ar[ia++] = i++;
+			ai.next();
+		}
+
+		while(bi.hasNext()){
+				br[ib++] = i++;
+			bi.next();
+		}
+
+		return new Pair<int[],int[]>(ar, br);
+	}
+
 	/** A Class for slice results containing indexes for the slicing of dictionaries, and the resulting column index */
 	public static class SliceResult {
 		/** Start index to slice inside the dictionary */
@@ -223,9 +296,10 @@ public interface IColIndex {
 
 		/**
 		 * The slice result
+		 * 
 		 * @param idStart The starting index
-		 * @param idEnd The ending index (not inclusive)
-		 * @param ret The resulting IColIndex
+		 * @param idEnd   The ending index (not inclusive)
+		 * @param ret     The resulting IColIndex
 		 */
 		protected SliceResult(int idStart, int idEnd, IColIndex ret) {
 			this.idStart = idStart;

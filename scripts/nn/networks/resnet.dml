@@ -958,4 +958,3 @@ resnet_backward = function(matrix[double] dOut, list[unknown] cached_out,
         db_fc)
     dX = dX_conv1
 }
-

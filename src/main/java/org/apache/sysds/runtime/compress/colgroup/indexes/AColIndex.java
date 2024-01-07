@@ -21,6 +21,8 @@ package org.apache.sysds.runtime.compress.colgroup.indexes;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.sysds.runtime.data.SparseBlock;
+import org.apache.sysds.runtime.data.SparseBlockCSR;
 
 public abstract class AColIndex implements IColIndex {
 
@@ -69,11 +71,55 @@ public abstract class AColIndex implements IColIndex {
 
 	@Override
 	public boolean containsAny(IColIndex idx) {
-		final IIterate it = idx.iterator();
-		while(it.hasNext())
-			if(contains(it.next()))
-				return true;
+		if(idx instanceof TwoRangesIndex){
+			TwoRangesIndex o = (TwoRangesIndex) idx;
+			return this.containsAny(o.idx1) || this.containsAny(o.idx2);
+		}
+		else if(idx instanceof CombinedIndex){
+			CombinedIndex ci = (CombinedIndex) idx;
+			return containsAny(ci.l) || containsAny(ci.r);
+		}
+		else{
+			final IIterate it = idx.iterator();
+			while(it.hasNext())
+				if(contains(it.next()))
+					return true;
+	
+			return false;
+		}
+	}
 
-		return false;
+	@Override
+	public void decompressToDenseFromSparse(SparseBlock sb, int vr, int off, double[] c) {
+		if(sb instanceof SparseBlockCSR)
+			decompressToDenseFromSparseCSR((SparseBlockCSR)sb, vr, off, c);
+		else
+			decompressToDenseFromSparseGeneric(sb, vr, off, c);
+	}
+
+	private void decompressToDenseFromSparseGeneric(SparseBlock sb, int vr, int off, double[] c) {
+		if(sb.isEmpty(vr))
+			return;
+		final int apos = sb.pos(vr);
+		final int alen = sb.size(vr) + apos;
+		final int[] aix = sb.indexes(vr);
+		final double[] aval = sb.values(vr);
+		for(int j = apos; j < alen; j++)
+			c[off + get(aix[j])] += aval[j];
+	}
+
+	private void decompressToDenseFromSparseCSR(SparseBlockCSR sb, int vr, int off, double[] c) {
+		final int apos = sb.pos(vr);
+		final int alen = sb.size(vr) + apos;
+		final int[] aix = sb.indexes(vr);
+		final double[] aval = sb.values(vr);
+		for(int j = apos; j < alen; j++)
+			c[off + get(aix[j])] += aval[j];
+	}
+
+	@Override
+	public void decompressVec(int nCol, double[] c, int off, double[] values, int rowIdx) {
+		for(int j = 0; j < nCol; j++)
+			c[off + get(j)] += values[rowIdx + j];
 	}
 }

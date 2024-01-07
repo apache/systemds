@@ -45,12 +45,6 @@ public class CM_N_COVCell extends MatrixValue
 	public String toString() {
 		return cm.toString();
 	}
-	
-	@Override
-	public MatrixValue aggregateUnaryOperations(AggregateUnaryOperator op,
-			MatrixValue result, int blen, MatrixIndexes indexesIn) {
-		throw new DMLRuntimeException("operation not supported for CM_N_COVCell");
-	}
 
 	@Override
 	public MatrixValue binaryOperations(BinaryOperator op,

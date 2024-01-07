@@ -116,11 +116,10 @@ public class WeightedCell extends MatrixCell
 	}
 	
 	@Override
-	public MatrixValue aggregateUnaryOperations(AggregateUnaryOperator op,
-			MatrixValue result, int blen,
-			MatrixIndexes indexesIn) {
-		super.aggregateUnaryOperations(op, result, blen, indexesIn);
-		WeightedCell c3=checkType(result);
+	public MatrixValue aggregateUnaryOperations(AggregateUnaryOperator op, MatrixValue result, int blen,
+		MatrixIndexes indexesIn, boolean inCP) {
+		super.aggregateUnaryOperations(op, result, blen, indexesIn, inCP);
+		WeightedCell c3 = checkType(result);
 		c3.setWeight(weight);
 		return c3;
 	}

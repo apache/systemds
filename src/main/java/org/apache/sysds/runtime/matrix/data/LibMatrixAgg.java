@@ -61,6 +61,7 @@ import org.apache.sysds.runtime.functionobjects.ValueFunction;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.CM_COV_Object;
 import org.apache.sysds.runtime.instructions.cp.KahanObject;
+import org.apache.sysds.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysds.runtime.matrix.operators.AggregateOperator;
 import org.apache.sysds.runtime.matrix.operators.AggregateTernaryOperator;
 import org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator;
@@ -204,6 +205,24 @@ public class LibMatrixAgg {
 		else //if( in.sparse && lastColCorr )
 			aggregateBinaryMatrixLastColSparseGeneric(in, aggVal);
 
+	}
+
+	public static MatrixBlock aggregateUnaryMatrix(AggregateUnaryOperator op,MatrixBlock in, MatrixValue result,
+	int blen, MatrixIndexes indexesIn, boolean inCP){
+
+		MatrixBlock ret = LibMatrixAgg.prepareAggregateUnaryOutput(in, op, result, blen);
+		
+		if( LibMatrixAgg.isSupportedUnaryAggregateOperator(op) ) {
+			LibMatrixAgg.aggregateUnaryMatrix(in, ret, op, op.getNumThreads());
+			LibMatrixAgg.recomputeIndexes(ret, op, blen, indexesIn);
+		}
+		else
+			LibMatrixAggUnarySpecialization.aggregateUnary(in, op, ret, blen, indexesIn);
+		
+		if(op.aggOp.existsCorrection() && inCP)
+			ret.dropLastRowsOrColumns(op.aggOp.correction);
+		
+		return ret;
 	}
 
 	public static void aggregateUnaryMatrix(MatrixBlock in, MatrixBlock out, AggregateUnaryOperator uaop) {
@@ -3669,6 +3688,47 @@ public class LibMatrixAgg {
 				out_corr[pos1 + i] = ((sum[i] - tmp_sum) + out_sum[pos0 + i]) + out_corr[pos1 + i] + corr[i];
 			out_sum[pos0 + i] = tmp_sum + out_corr[pos1 + i];
 		}
+	}
+
+
+	public static MatrixBlock prepareAggregateUnaryOutput(MatrixBlock in, AggregateUnaryOperator op, MatrixValue result, int blen){
+		CellIndex tempCellIndex = new CellIndex(-1,-1);
+		final int rlen = in.getNumRows();
+		final int clen = in.getNumColumns();
+		op.indexFn.computeDimension(rlen, clen, tempCellIndex);
+		if(op.aggOp.existsCorrection())
+		{
+			switch(op.aggOp.correction)
+			{
+				case LASTROW: 
+					tempCellIndex.row++;
+					break;
+				case LASTCOLUMN: 
+					tempCellIndex.column++;
+					break;
+				case LASTTWOROWS: 
+					tempCellIndex.row+=2;
+					break;
+				case LASTTWOCOLUMNS: 
+					tempCellIndex.column+=2;
+					break;
+				case LASTFOURROWS:
+					tempCellIndex.row+=4;
+					break;
+				case LASTFOURCOLUMNS:
+					tempCellIndex.column+=4;
+					break;
+				default:
+					throw new DMLRuntimeException("unrecognized correctionLocation: "+op.aggOp.correction);
+			}
+		}
+		
+		//prepare result matrix block
+		if(result==null)
+			result=new MatrixBlock(tempCellIndex.row, tempCellIndex.column, false);
+		else
+			result.reset(tempCellIndex.row, tempCellIndex.column, false);
+		return (MatrixBlock)result;
 	}
 
 

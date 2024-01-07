@@ -163,26 +163,6 @@ public class MatrixCell extends MatrixValue implements Serializable
 		out.writeDouble(value);
 	}
 
-	@Override
-	public MatrixValue aggregateUnaryOperations(AggregateUnaryOperator op,
-			MatrixValue result, int blen,
-			MatrixIndexes indexesIn) {
-		
-		MatrixCell c3=checkType(result);
-		if(c3==null)
-			c3=new MatrixCell();
-		
-		if(op.indexFn instanceof ReduceDiag)
-		{
-			if(indexesIn.getRowIndex()==indexesIn.getColumnIndex())
-				c3.setValue(getValue());
-			else
-				c3.setValue(0);
-		}
-		else
-			c3.setValue(getValue());
-		return c3;
-	}
 
 	@Override
 	public MatrixValue binaryOperations(BinaryOperator op,
@@ -364,10 +344,21 @@ public class MatrixCell extends MatrixValue implements Serializable
 	}
 
 	@Override
-	public MatrixValue aggregateUnaryOperations(AggregateUnaryOperator op,
-			MatrixValue result, int blen,
-			MatrixIndexes indexesIn, boolean inCP) {
-		return aggregateUnaryOperations(op,	result, blen,indexesIn);
+	public MatrixValue aggregateUnaryOperations(AggregateUnaryOperator op, MatrixValue result, int blen,
+		MatrixIndexes indexesIn, boolean inCP) {
+		MatrixCell c3 = checkType(result);
+		if(c3 == null)
+			c3 = new MatrixCell();
+
+		if(op.indexFn instanceof ReduceDiag) {
+			if(indexesIn.getRowIndex() == indexesIn.getColumnIndex())
+				c3.setValue(getValue());
+			else
+				c3.setValue(0);
+		}
+		else
+			c3.setValue(getValue());
+		return c3;
 	}
 
 	@Override

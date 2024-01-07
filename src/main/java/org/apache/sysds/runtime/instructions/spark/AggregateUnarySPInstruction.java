@@ -279,7 +279,7 @@ public class AggregateUnarySPInstruction extends UnarySPInstruction {
 			throws Exception 
 		{
 			//unary aggregate operation (always keep the correction)
-			return arg0._2.aggregateUnaryOperations(
+			return (MatrixBlock) arg0._2.aggregateUnaryOperations(
 					_op, new MatrixBlock(), _blen, arg0._1());
 		}
 	}

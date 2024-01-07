@@ -133,8 +133,10 @@ public abstract class MatrixValue implements WritableComparable
 
 	public abstract void ctableOperations(Operator op, double scalarThat, MatrixValue that2, CTableMap ctableResult, MatrixBlock ctableResultBlock);
 	
-	public abstract MatrixValue aggregateUnaryOperations(AggregateUnaryOperator op, MatrixValue result, 
-		int blen, MatrixIndexes indexesIn);
+	public final  MatrixValue aggregateUnaryOperations(AggregateUnaryOperator op, MatrixValue result, 
+		int blen, MatrixIndexes indexesIn){
+		return aggregateUnaryOperations(op, result, blen, indexesIn, false);
+	}
 	
 	public abstract MatrixValue aggregateUnaryOperations(AggregateUnaryOperator op, MatrixValue result, 
 		int blen, MatrixIndexes indexesIn, boolean inCP);

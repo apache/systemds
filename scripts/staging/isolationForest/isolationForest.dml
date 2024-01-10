@@ -46,24 +46,8 @@
 # fmt     	    String   "text"       The output format of the model (matrix M), such as "text" or "csv"
 # ---------------------------------------------------------------------------------------------
 # OUTPUT: 
-# Matrix M where each column corresponds to a node in the learned tree and each row contains the following information:
-#	 M[1,j]: id of node j (in a complete binary tree)
-#	 M[2,j]: Offset (no. of columns) to left child of j if j is an internal node, otherwise 0
-#	 M[3,j]: Feature index of the feature (scale feature id if the feature is scale or categorical feature id if the feature is categorical) 
-#			 that node j looks at if j is an internal node, otherwise 0
-#	 M[4,j]: Type of the feature that node j looks at if j is an internal node: 1 for scale and 2 for categorical features, 
-#		     otherwise the label that leaf node j is supposed to predict
-#	 M[5,j]: If j is an internal node: 1 if the feature chosen for j is scale, otherwise the size of the subset of values 
-#			 stored in rows 6,7,... if j is categorical 
-#			 If j is a leaf node: number of misclassified samples reaching at node j 
-#	 M[6:,j]: If j is an internal node: Threshold the example's feature value is compared to is stored at M[6,j] if the feature chosen for j is scale,
-#			  otherwise if the feature chosen for j is categorical rows 6,7,... depict the value subset chosen for j
-#	          If j is a leaf node 1 if j is impure and the number of samples at j > threshold, otherwise 0  
+# M
 # -------------------------------------------------------------------------------------------
-# HOW TO INVOKE THIS SCRIPT - EXAMPLE:
-# hadoop jar SystemDS.jar -f decision-tree.dml -nvargs X=INPUT_DIR/X Y=INPUT_DIR/Y R=INPUT_DIR/R M=OUTPUT_DIR/model
-#     				                 				   bins=20 depth=25 num_leaf=10 num_samples=3000 impurity=Gini fmt=csv
-
 outlierByIsolationForest = function(Matrix[Double] X, 
   Int n_trees, Int subsampling_size) 
   return(Matrix[Double] M)
@@ -76,11 +60,71 @@ outlierByIsolationForestApply = function(Matrix[Double] X, Matrix[Double] M)
   Y = matrix(0, cols=1, rows=1)
 }
 
-m_iForest = function(Matrix[Double] X, Int n_trees, 
-  Int subsampling_size) 
+# This function implements isolation forest for numerical input features as 
+# described in TODO
+#
+# .. code-block::
+#
+#   For example, give a feature matrix with features [a,b,c,d]
+#   and the following trees, M would look as follows:
+#
+#   Level              Tree 1                  Tree 2        Node Depth
+#   -------------------------------------------------------------------                    
+#   (L1)               |d<=5|                  |b<=6|           0
+#                     /     \                 /      \  
+#   (L2)           P1:2    |a<=7|          P1:2      P2:5       1 
+#                          /   \
+#   (L3)                 P2:2 P3:1                              2 
+#
+#   --> M :=
+#   [[4, 5, 0, 2, 1, 7, -1, -1, -1, -1, 0, 2, 0, 1, 2, 6, 0, 2, 0, 5],  (Tree Models)
+#    [1, 1, 1, 1, 1, 1,  1,  1,  1,  1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2]]  (Tree IDs) 
+#    |(L1)| |  (L2)   | |          (L3)          | |(L1)| |  (L2)  |
+#    |               Tree 1                      | |    Tree 2     | 
+#
+#
+#
+# INPUT PARAMETERS:
+# ---------------------------------------------------------------------------------------------
+# NAME              TYPE             DEFAULT      MEANING
+# ---------------------------------------------------------------------------------------------
+# X                 Matrix[Double]                Numerical feature matrix
+# n_trees   	      Int               		        Number of iTrees to build
+# subsampling_size  Int                           Size of the subsample to build iTrees with 
+# bootstrap         Boolean                       Indicator if subsampling should be done with 
+#                                                 replacement or not 
+# seed              Int              -1           Seed for calls to `sample` and `rand`.
+#                                                 -1 corresponds to a random seed
+# ---------------------------------------------------------------------------------------------
+# OUTPUT PARAMETERS: 
+# ---------------------------------------------------------------------------------------------
+# M    Matrix containing the learned iForest in linearized form
+# ---------------------------------------------------------------------------------------------
+m_iForest = function(Matrix[Double] X, Int n_trees, Int subsampling_size, Int seed = -1) 
   return(Matrix[Double] M)
 {
-  M = matrix(0, cols=1, rows=1)
+  # check assumptions
+  if (n_trees < 1)
+    stop("iForest: Requirement n_trees > 1 not satisfied! ntrees: "+toString(n_trees))
+  if (subsampling_size < 1 | subsampling_size > nrow(X))
+    stop("iForest: Requirement 0 < subsampling_size <= nrow(X) not satisfied! subsampling_size: "+toString(subsampling_size)+"; nrow(X): "+toString(nrow(X)))
+  
+  # initialize the model
+  M = matrix(0, cols=0, rows=2)
+
+  height_limit = ceil(log(subsampling_size, 2))
+  for (i_iTree in 1:n_trees) {
+    # subsample rows
+    seed = ifelse(seed == -1, -1, i_iTree*seed)
+    X_subsample = s_sampleRows(X, subsampling_size, seed)
+
+    # Build iTree
+    seed = ifelse(seed == -1, -1, seed+42)
+    M_tree = m_iTree(X, height_limit, seed)
+
+    # Add iTree to the model
+    M = s_addITree(M_tree, M)
+  }
 }
 
 # This function implements isolation trees for numerical input features as 
@@ -89,8 +133,9 @@ m_iForest = function(Matrix[Double] X, Int n_trees,
 # .. code-block::
 #
 #   For example, give a feature matrix with features [a,b,c,d]
-#   and the following trees, M would look as follows:
-#                                           Node Depth 
+#   and the following tree, M would look as follows:
+#   Level              Tree                Node Depth
+#   ------------------------------------------------- 
 #   (L1)               |d<5|                   0
 #                     /     \
 #   (L2)           P1:2    |a<7|               1 
@@ -99,7 +144,7 @@ m_iForest = function(Matrix[Double] X, Int n_trees,
 #
 #   --> M :=
 #   [[4, 5, 0, 2, 1, 7, -1, -1, -1, -1, 0, 2, 0, 1]]
-#    |(L1)| |  (L2)   | |        (L3)         |
+#    |(L1)| |  (L2)   | |         (L3)           |
 #
 #
 #
@@ -112,21 +157,19 @@ m_iForest = function(Matrix[Double] X, Int n_trees,
 #                                               maximum number of edges from root to a leaf note
 # seed            Int              -1           Seed for calls to `sample` and `rand`.
 #                                               -1 corresponds to a random seed
-# verbose         Boolean          FALSE        Flag that controls debug output
-#
 # ---------------------------------------------------------------------------------------------
 # OUTPUT PARAMETERS: 
 # ---------------------------------------------------------------------------------------------
-# M    Matrix M containing the learned trees, in linearized form
+# M    Matrix M containing the learned tree in linearized form
 # ---------------------------------------------------------------------------------------------
-m_iTree = function(Matrix[Double] X, Int max_depth, Int seed = -1, Boolean verbose = FALSE)
+m_iTree = function(Matrix[Double] X, Int max_depth, Int seed = -1)
   return(Matrix[Double] M) 
 {
   # check assumptions
   if (max_depth < 1 | max_depth > 32)
-    stop("iTree: Requirement 0 < max_depth < " + 32 + " not satisfied! max_depth: " + max_depth)
-  if (nrow(X) == 0)
-    stop("iTree: feature matrix X has no rows!")
+    stop("iTree: Requirement 0 < max_depth < 32 not satisfied! max_depth: " + max_depth)
+  if (nrow(X) < 2)
+    stop("iTree: Feature matrix X has no less than 2 rows!")
 
 
   # Initialize M to largest possible matrix given max_depth 
@@ -156,7 +199,8 @@ m_iTree = function(Matrix[Double] X, Int max_depth, Int seed = -1, Boolean verbo
     }
     else {
       # Internal Node: Draw split criterion, add node to model and queue child nodes
-      [split_feature, split_value] = s_drawSplitPoint(X_node, node_id*seed)
+      seed = ifelse(seed == -1, -1, node_id*seed)
+      [split_feature, split_value] = s_drawSplitPoint(X_node, seed)
       M = s_addInternalINode(node_id, split_feature, split_value, M)
       [left_id, X_left, right_id, X_right] = s_splitINode(X_node, node_id, split_feature, split_value)
       
@@ -325,6 +369,87 @@ s_splitINode = function(Matrix[Double] X_node, Int node_id, Int split_feature, D
   X_right = removeEmpty(target=X_node, margin="rows", select=!left_rows_mask, empty.return=FALSE)
 }
 
+# Randomly samples `size` rows from a matrix X
+#
+# INPUT PARAMETERS:
+# ---------------------------------------------------------------------------------------------
+# NAME            TYPE             DEFAULT      MEANING
+# ---------------------------------------------------------------------------------------------
+# X             Matrix[Double]                  Matrix to sample rows from
+# sample_size   Int                             Number of rows to sample
+# seed          Int              -1             Seed for calls to `sample`
+#                                               -1 corresponds to a random seed
+#
+# ---------------------------------------------------------------------------------------------
+# OUTPUT PARAMETERS: 
+# ---------------------------------------------------------------------------------------------
+# X_sampled    Sampled rows from X
+# ---------------------------------------------------------------------------------------------
+s_sampleRows = function(Matrix[Double] X, Int size, Int seed = -1)
+  return(Matrix[Double] X_extracted)
+{
+  assert(size > 0 & nrow(X) >= size)
+  random_vector = rand(rows=nrow(X), cols=1, seed=seed)
+  X_rand = cbind(X, random_vector)
+
+  # order by random vector and return `size` nr of rows`
+  X_rand = order(target=X_rand, by=ncol(X_rand))
+  X_extracted = X_rand[1:size, 1:ncol(X)]
+}
+
+# Adds an iTree model to an iForest model
+#
+# INPUT PARAMETERS:
+# ---------------------------------------------------------------------------------------------
+# NAME          TYPE             DEFAULT      MEANING
+# ---------------------------------------------------------------------------------------------
+# M_tree        Matrix[Double]                iTree model to add to the iForest
+# M             Matrix[Double]                The iForest model to add the iTree to
+#
+# ---------------------------------------------------------------------------------------------
+# OUTPUT PARAMETERS: 
+# ---------------------------------------------------------------------------------------------
+# M    The updated iForest model
+# ---------------------------------------------------------------------------------------------
+s_addITree = function(Matrix[Double] M_tree, Matrix[Double] M)
+  return(Matrix[Double] M)
+{
+  if (length(M) > 0) 
+    next_tree_id = max(M[2,]) + 1
+  else 
+    next_tree_id = 1
+
+  new_id_row = matrix(next_tree_id, cols=ncol(M_tree), rows=1)
+  M_tree = rbind(M_tree, new_id_row)
+
+  if (length(M) == 0)
+    M = M_tree
+  else
+    M = cbind(M, M_tree)
+}
+
+# Retrives an iTree model from an iForest model given an index
+#
+# INPUT PARAMETERS:
+# ---------------------------------------------------------------------------------------------
+# NAME          TYPE             DEFAULT      MEANING
+# ---------------------------------------------------------------------------------------------
+# M             Matrix[Double]                The iForest model extract the iTree from
+# tree_index    Int                           Index of the iTree to extract  
+#
+# ---------------------------------------------------------------------------------------------
+# OUTPUT PARAMETERS: 
+# ---------------------------------------------------------------------------------------------
+# M_tree    The extracted iTree model
+# ---------------------------------------------------------------------------------------------
+s_getITree = function(Matrix[Double] M, Int tree_index) 
+  return(Matrix[Double] M_tree)
+{
+  assert(contains(target=M[2,], pattern=tree_index))
+  
+  col_mask = M[2,] == tree_index
+  M_tree = removeEmpty(target=M[1,], margin="cols", select=col_mask, empty.return=FALSE)
+}
 
 
 s_pathLength = function(Matrix[Double] x, Matrix[Double] T)
@@ -332,4 +457,3 @@ s_pathLength = function(Matrix[Double] x, Matrix[Double] T)
 {
   PathLength = 0
 }
-

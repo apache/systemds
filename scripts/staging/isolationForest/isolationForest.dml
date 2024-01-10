@@ -1,0 +1,335 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+
+#  
+# THIS SCRIPT IMPLEMENTS ANOMALY DETECTION VIA ISOLATION FOREST
+#
+# INPUT PARAMETERS:
+# ---------------------------------------------------------------------------------------------
+# NAME          TYPE     DEFAULT      MEANING
+# ---------------------------------------------------------------------------------------------
+# X             String   ---          Location to read feature matrix X; note that X needs to be both recoded and dummy coded 
+# Y 			String   ---		  Location to read label matrix Y; note that Y needs to be both recoded and dummy coded
+# R   	  		String   " "	      Location to read the matrix R which for each feature in X contains the following information 
+#										- R[,1]: column ids
+#										- R[,2]: start indices 
+#										- R[,3]: end indices
+#									  If R is not provided by default all variables are assumed to be scale
+# bins          Int 	 20			  Number of equiheight bins per scale feature to choose thresholds
+# depth         Int 	 25			  Maximum depth of the learned tree
+# num_leaf      Int      10           Number of samples when splitting stops and a leaf node is added
+# num_samples   Int 	 3000		  Number of samples at which point we switch to in-memory subtree building
+# impurity      String   "Gini"    	  Impurity measure: entropy or Gini (the default)
+# M             String 	 ---	   	  Location to write matrix M containing the learned tree
+# O     		String   " "          Location to write the training accuracy; by default is standard output
+# S_map			String   " "		  Location to write the mappings from scale feature ids to global feature ids
+# C_map			String   " "		  Location to write the mappings from categorical feature ids to global feature ids
+# fmt     	    String   "text"       The output format of the model (matrix M), such as "text" or "csv"
+# ---------------------------------------------------------------------------------------------
+# OUTPUT: 
+# Matrix M where each column corresponds to a node in the learned tree and each row contains the following information:
+#	 M[1,j]: id of node j (in a complete binary tree)
+#	 M[2,j]: Offset (no. of columns) to left child of j if j is an internal node, otherwise 0
+#	 M[3,j]: Feature index of the feature (scale feature id if the feature is scale or categorical feature id if the feature is categorical) 
+#			 that node j looks at if j is an internal node, otherwise 0
+#	 M[4,j]: Type of the feature that node j looks at if j is an internal node: 1 for scale and 2 for categorical features, 
+#		     otherwise the label that leaf node j is supposed to predict
+#	 M[5,j]: If j is an internal node: 1 if the feature chosen for j is scale, otherwise the size of the subset of values 
+#			 stored in rows 6,7,... if j is categorical 
+#			 If j is a leaf node: number of misclassified samples reaching at node j 
+#	 M[6:,j]: If j is an internal node: Threshold the example's feature value is compared to is stored at M[6,j] if the feature chosen for j is scale,
+#			  otherwise if the feature chosen for j is categorical rows 6,7,... depict the value subset chosen for j
+#	          If j is a leaf node 1 if j is impure and the number of samples at j > threshold, otherwise 0  
+# -------------------------------------------------------------------------------------------
+# HOW TO INVOKE THIS SCRIPT - EXAMPLE:
+# hadoop jar SystemDS.jar -f decision-tree.dml -nvargs X=INPUT_DIR/X Y=INPUT_DIR/Y R=INPUT_DIR/R M=OUTPUT_DIR/model
+#     				                 				   bins=20 depth=25 num_leaf=10 num_samples=3000 impurity=Gini fmt=csv
+
+outlierByIsolationForest = function(Matrix[Double] X, 
+  Int n_trees, Int subsampling_size) 
+  return(Matrix[Double] M)
+{
+  M = matrix(0, cols=1, rows=1)
+}
+outlierByIsolationForestApply = function(Matrix[Double] X, Matrix[Double] M)
+  return(Matrix[Double] Y)
+{
+  Y = matrix(0, cols=1, rows=1)
+}
+
+m_iForest = function(Matrix[Double] X, Int n_trees, 
+  Int subsampling_size) 
+  return(Matrix[Double] M)
+{
+  M = matrix(0, cols=1, rows=1)
+}
+
+# This function implements isolation trees for numerical input features as 
+# described in TODO
+#
+# .. code-block::
+#
+#   For example, give a feature matrix with features [a,b,c,d]
+#   and the following trees, M would look as follows:
+#                                           Node Depth 
+#   (L1)               |d<5|                   0
+#                     /     \
+#   (L2)           P1:2    |a<7|               1 
+#                          /   \
+#   (L3)                 P2:2 P3:1             2 
+#
+#   --> M :=
+#   [[4, 5, 0, 2, 1, 7, -1, -1, -1, -1, 0, 2, 0, 1]]
+#    |(L1)| |  (L2)   | |        (L3)         |
+#
+#
+#
+# INPUT PARAMETERS:
+# ---------------------------------------------------------------------------------------------
+# NAME            TYPE             DEFAULT      MEANING
+# ---------------------------------------------------------------------------------------------
+# X               Matrix[Double]                Numerical feature matrix
+# max_depth   	  Int               		        Maximum depth of the learned tree where depth is the 
+#                                               maximum number of edges from root to a leaf note
+# seed            Int              -1           Seed for calls to `sample` and `rand`.
+#                                               -1 corresponds to a random seed
+# verbose         Boolean          FALSE        Flag that controls debug output
+#
+# ---------------------------------------------------------------------------------------------
+# OUTPUT PARAMETERS: 
+# ---------------------------------------------------------------------------------------------
+# M    Matrix M containing the learned trees, in linearized form
+# ---------------------------------------------------------------------------------------------
+m_iTree = function(Matrix[Double] X, Int max_depth, Int seed = -1, Boolean verbose = FALSE)
+  return(Matrix[Double] M) 
+{
+  # check assumptions
+  if (max_depth < 1 | max_depth > 32)
+    stop("iTree: Requirement 0 < max_depth < " + 32 + " not satisfied! max_depth: " + max_depth)
+  if (nrow(X) == 0)
+    stop("iTree: feature matrix X has no rows!")
+
+
+  # Initialize M to largest possible matrix given max_depth 
+  # Note that each node takes exactly 2 indices in M and the root node has depth 0
+  M = matrix(-1, rows=1, cols=2*(2^(max_depth+1)-1))
+  
+  # Queue for implementing recursion in the original algorithm.
+  # Each entry in the queue corresponds to a node that in the tree to be added to the model 
+  # M and, in case of internal nodes, split further.
+  # Nodes in this queue are represented by an ID (first index) and the data corrseponding to the node (second index)
+  node_queue = list(list(1, X));
+  # variable tracking the maximum ID of in the tree
+  max_id = 1;
+  while (length(node_queue) > 0) {
+    # pop next node from queue for splitting
+    [node_queue, queue_entry] = remove(node_queue, 1);
+    node = as.list(queue_entry);
+    node_id = as.scalar(node[1]);
+    X_node = as.matrix(node[2]);
+
+    max_id = max(max_id, node_id)
+
+    is_external_leaf = s_isExternalINode(X_node, node_id, max_depth)
+    if (is_external_leaf) {
+      # External Node: Add node to model
+      M = s_addExternalINode(X_node, node_id, M)
+    }
+    else {
+      # Internal Node: Draw split criterion, add node to model and queue child nodes
+      [split_feature, split_value] = s_drawSplitPoint(X_node, node_id*seed)
+      M = s_addInternalINode(node_id, split_feature, split_value, M)
+      [left_id, X_left, right_id, X_right] = s_splitINode(X_node, node_id, split_feature, split_value)
+      
+      node_queue = append(node_queue, list(left_id, X_left))
+      node_queue = append(node_queue, list(right_id, X_right))
+    }    
+  }
+
+  # Prune the model to the actual tree depth
+  tree_depth = floor(log(max_id, 2))
+  M = M[1, 1:2*(2^(tree_depth+1) - 1)];
+}
+
+
+# Randomly draws a split point i.e. a feature and corresponding value to split a node by.
+#
+# INPUT PARAMETERS:
+# ---------------------------------------------------------------------------------------------
+# NAME          TYPE             DEFAULT      MEANING
+# ---------------------------------------------------------------------------------------------
+# X             Matrix[Double]                Numerical feature matrix
+# seed          Int              -1           Seed for calls to `sample` and `rand`  
+#                                             -1 corresponds to a random seed
+# 
+# ---------------------------------------------------------------------------------------------
+# OUTPUT PARAMETERS: 
+# ---------------------------------------------------------------------------------------------
+# split_feature   Index of the feature used for splitting the node
+# split_value     Feature value used for splitting the node 
+# ---------------------------------------------------------------------------------------------
+s_drawSplitPoint = function(Matrix[Double] X, Int seed = -1) 
+  return(Int split_feature, Double split_value)
+{
+  # find random feature and a value between the min and max values of that feature to split the node by
+  split_feature = as.integer(as.scalar(sample(ncol(X), 1, FALSE, seed)))
+  split_value = as.scalar(rand(
+    rows=1, cols=1,
+    min=min(X[, split_feature]),
+    max=max(X[, split_feature]),
+    seed=seed
+  ))
+}
+
+# Adds a external (leaf) node to the linearized iTree model `M`. In the linerized form, 
+# each node is assigned two neighboring indices. For external nodes the value at the first 
+# index in M is always set to 0 while the value at the second index is set to the number of
+# rows in the feature matrix corresponding to the node.
+#
+# INPUT PARAMETERS:
+# ---------------------------------------------------------------------------------------------
+# NAME          TYPE             DEFAULT      MEANING
+# ---------------------------------------------------------------------------------------------
+# X_node        Matrix[Double]                Numerical feature matrix corresponding to the node
+# node_id       Int                           ID of the node
+# M             Matrix[Double]                Linerized model to add the node to
+# ---------------------------------------------------------------------------------------------
+# OUTPUT PARAMETERS: 
+# ---------------------------------------------------------------------------------------------
+# M   The updated model
+# ---------------------------------------------------------------------------------------------
+s_addExternalINode = function(Matrix[Double] X_node, Int node_id, Matrix[Double] M) 
+  return(Matrix[Double] M)
+{
+  assert(node_id > 0)
+  
+  node_start_index = 2*node_id-1
+  M[, node_start_index] = 0
+  M[, node_start_index + 1] = nrow(X_node)
+}
+
+# Adds a internal node to the linearized iTree model `M`. In the linerized form, 
+# each node is assigned two neighboring indices. For internal nodes the value at the first 
+# index in M is set to index of the feature to split by while the value at the second index 
+# is set to the value to split the node by.
+#
+# INPUT PARAMETERS:
+# ---------------------------------------------------------------------------------------------
+# NAME           TYPE             DEFAULT      MEANING
+# ---------------------------------------------------------------------------------------------
+# node_id        Int                           ID of the node
+# split_feature  Int                           Index of the feature to split the node by
+# split_value    Int                           Value to split the node by
+# M              Matrix[Double]                Linerized model to add the node to
+# ---------------------------------------------------------------------------------------------
+# OUTPUT PARAMETERS: 
+# ---------------------------------------------------------------------------------------------
+# M   The updated model
+# ---------------------------------------------------------------------------------------------
+s_addInternalINode = function(Int node_id, Int split_feature, Double split_value, Matrix[Double] M)
+  return(Matrix[Double] M)
+{
+  assert(node_id > 0)
+  assert(split_feature > 0)
+
+  node_start_index = 2*node_id-1
+  M[, node_start_index] = split_feature
+  M[, node_start_index + 1] = split_value
+}
+
+# This function determines if a iTree node is an external node based on it's node_id and the data corresponding to the node   
+#
+# INPUT PARAMETERS:
+# ---------------------------------------------------------------------------------------------
+# NAME            TYPE             DEFAULT      MEANING
+# ---------------------------------------------------------------------------------------------
+# X_node        Matrix[Double]                  Numerical feature matrix corresponding to the node
+# node_id   	  Int               		          ID belonging to the node
+# max_depth   	  Int               		        Maximum depth of the learned tree where depth is the 
+#                                               maximum number of edges from root to a leaf note
+# ---------------------------------------------------------------------------------------------
+# OUTPUT PARAMETERS: 
+# ---------------------------------------------------------------------------------------------
+# isExternalNote   true if the node is an external (leaf) node, false otherwise.
+#                  This is the case when a max depth is reached or the number of rows 
+#                  in the feature matrix corresponding to the node <= 1
+# ---------------------------------------------------------------------------------------------
+s_isExternalINode = function(Matrix[Double] X_node, Int node_id, Int max_depth) 
+  return(Boolean isExternalNode)
+{
+  assert(max_depth > 0)
+  assert(node_id > 0)
+
+  node_depth = floor(log(node_id, 2))
+  isExternalNode = node_depth >= max_depth | nrow(X_node) <= 1
+}
+
+
+# This function splits a node based on a given feature and value and returns the sub-matrices 
+# and IDs corresponding to the nodes resulting from the split.
+#
+# INPUT PARAMETERS:
+# ---------------------------------------------------------------------------------------------
+# NAME            TYPE             DEFAULT      MEANING
+# ---------------------------------------------------------------------------------------------
+# X_node        Matrix[Double]                  Numerical feature matrix corresponding
+# node_id       Int                             ID of the node to split   
+# split_feature Int                             Index of the feature to split the input matrix by 
+# split_value   Int                             Value of the feature to split the input matrix by 
+#
+# ---------------------------------------------------------------------------------------------
+# OUTPUT PARAMETERS: 
+# ---------------------------------------------------------------------------------------------
+# left_id    ID of the resulting left node
+# X_left     Matrix corresponding to the left node resulting from the split with rows where 
+#            value for feature `split_feature` <= value `split_value`
+# right_id   ID of the resulting right node
+# X_right    Matrix corresponding to the left node resulting from the split with rows where 
+#            value for feature `split_feature` > value `split_value`
+# ---------------------------------------------------------------------------------------------
+s_splitINode = function(Matrix[Double] X_node, Int node_id, Int split_feature, Double split_value) 
+  return(Int left_id, Matrix[Double] X_left, Int right_id, Matrix[Double] X_right)
+{
+  assert(nrow(X_node) > 0)
+  assert(node_id > 0)
+  assert(split_feature > 0)
+
+  left_rows_mask = X_node[, split_feature] <= split_value 
+
+  # In the lineraized form of the iTree model, nodes need to be ordered by depth
+  # Since iTrees are binary trees we can use 2*node_id/2*node_id+1 for left/right child ids 
+  # to insure that IDs are chosen accordingly.
+  left_id = 2 * node_id
+  X_left = removeEmpty(target=X_node, margin="rows", select=left_rows_mask, empty.return=FALSE)
+
+  right_id = 2 * node_id + 1
+  X_right = removeEmpty(target=X_node, margin="rows", select=!left_rows_mask, empty.return=FALSE)
+}
+
+
+
+s_pathLength = function(Matrix[Double] x, Matrix[Double] T)
+  return(Int PathLength)
+{
+  PathLength = 0
+}
+

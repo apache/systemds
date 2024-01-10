@@ -1,0 +1,339 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+source("./scripts/staging/isolationForest/isolationForest.dml") as iForest;
+
+# This scripts tests the isolationForest implementation in isolationForest.dml.
+# In particular functions `outlierByIsolationForest` and `outlierByIsolationForestApply`
+# as well as sub-routines are tested here.
+# ---------------------------------------------------------------------------------------------
+
+# Utility function for printing test results
+record_test_result = function(String testname, Boolean success, Int t_cnt, List[String] fails) 
+  return(Int t_cnt, List[String] fails)
+{
+  t_cnt = t_cnt + 1
+
+  if (success) {
+    print("- Test '"+testname+"' was successful!")
+  }
+  else {
+    print("- Test '"+testname+"' failed!")
+    fails = append(fails, testname)
+  }
+}
+
+matrices_equal = function(Matrix[Double] m1, Matrix[Double] m2) 
+  return(Boolean equal)
+{
+  inequality_mat = (m1 - m2) > 1e-14
+  equal = sum(inequality_mat) == 0
+}
+
+is_itree_consistent = function(Matrix[Double] X, Int max_depth, Matrix[Double] M) 
+  return(Boolean consistent)
+{
+  consistent = TRUE
+  n_nodes = length(M) / 2
+  tree_depth = floor(log(n_nodes + 1, 2)) - 1
+
+  # check if the model crresponds to a full binary tree of depth tree_depth
+  check_full_tree = n_nodes > 1 & tree_depth == floor(log(n_nodes, 2)) & tree_depth < floor(log(n_nodes + 2, 2))
+  if (!check_full_tree) print("Inconsistency: Model is no full binary tree!")
+  consistent = consistent & check_full_tree
+
+  # check tree depth
+  check_max_depth = tree_depth <= max_depth
+  if (!check_max_depth) print("Inconsistency: Tree depth exeeds max_depth!")
+  consistent = consistent & check_max_depth
+  
+  # root node has to be a valid internal node
+  root_node_split_feature = as.scalar(M[1, 1])
+  root_node_split_value = as.scalar(M[1, 2])
+  check_first_node = root_node_split_feature > 0 & root_node_split_feature <= ncol(X) & 
+    min(X[,root_node_split_feature]) <= root_node_split_value & max(X[,root_node_split_feature]) >= root_node_split_value
+  if (!check_first_node) print("Inconsistency: Root node is not a valid internal node!")
+  consistent = consistent & check_first_node
+
+  sum_external_node_sizes = 0
+  for (node_start_idx in seq(3, length(M), 2)) {
+    node_entry_1 = as.integer(as.scalar(M[1, node_start_idx]))
+    node_entry_2 = as.double(as.scalar(M[1, node_start_idx + 1]))
+    node_id = (node_start_idx + 1) / 2
+    node_depth = floor(log(node_id, 2))
+    parent_node_id = floor(node_id / 2)
+    parent_node_entry_1 = as.integer(as.scalar(M[1, (parent_node_id * 2)-1]))
+
+    if (node_entry_1 > 0) {
+      # internal node
+      if (node_depth == tree_depth) {
+        print("Inconsistency: Node in last level is not a external node!")
+        consistent = FALSE
+      }
+
+      check_split_feature_exists = node_entry_1 <= ncol(X)
+      if (!check_split_feature_exists) print("Inconsistency: Split-Feature index "+node_entry_1+" exceeds number of features!")
+
+      consistent = consistent & check_split_feature_exists
+
+      feature = X[,node_entry_1]
+      check_value_in_range = min(feature) <= node_entry_2 & max(feature) >= node_entry_2
+      if (!check_value_in_range) print("Inconsistency: Split-Value " + node_entry_2 + " is not in range of the feature "+node_entry_1+"!")
+      consistent = consistent & check_value_in_range
+
+      check_parent_node = parent_node_entry_1 > 0
+      if (!check_parent_node) print("The parent of an internal node has to be an internal node!")
+      consistent = consistent & check_parent_node
+    }
+    else if (node_entry_1 == 0) {
+      # external node
+      sum_external_node_sizes = as.integer(sum_external_node_sizes + node_entry_2)
+
+      check_parent_node = parent_node_entry_1 > 0
+      if (!check_parent_node) print("The parent of an external node has to be an internal node!")
+      consistent = consistent & check_parent_node
+    }
+    else if (node_entry_1 == -1) {
+      # non-node (empty node entry)
+      check_empty_node = node_entry_2 == -1
+      if (!check_empty_node) print("A non-node can only have -1 as entries!")
+      consistent = consistent & check_empty_node
+
+      check_parent_node = parent_node_entry_1 <= 0
+      if (!check_parent_node) print("The parent of a non-node can only be another non-node or an external!")
+      consistent = consistent & check_parent_node
+    }
+    else {
+      print("Inconsistency: First node-entry invalid!")
+      consistent = FALSE
+    }
+
+  }
+
+  # The summed sizes of leaf nodes needs to be the original number of rows
+  check_sum_externals = sum_external_node_sizes == nrow(X)
+  if (!check_sum_externals) print("Sizes in external notes do not sum to the number of rows in X!")
+  consistent = consistent & check_sum_externals
+}
+
+# We need to initialize test_counter using a multiple return statement, otherwise we have scoping problems!
+# TODO: This is most likely a bug in which case an issue should be created for it
+init_tests = function() return(Int cnt, List[String] fails) {cnt=0; fails=list();}
+[test_cnt, fails] = init_tests()
+
+# Test data
+X_5x3_allequal = matrix(1.0, cols=5, rows=3)
+X_3x4_equalrows = matrix("1 2 3 1 2 3 1 2 3 1 2 3", cols=3, rows=4)
+X_3x4_equalcols = matrix("1 1 1 2 2 2 3 3 3 4 4 4", cols=3, rows=4)
+X_3x3 = matrix("1 2 3 4 5 6 7 8 9 10 11 12 13 14 15", cols=3, rows=3)
+X_1x1 =  matrix(42.0, rows=1, cols=1)
+X_singlerow = matrix("1 2 3 4", cols=4, rows=1)
+X_empty = matrix(0.0, rows=0, cols=0)
+
+# empty unpruned linearized model with 4 levels 
+# => max_depth = 3; 30 entries (IDs 1-15);  
+M_4level_empty = matrix(0.0, rows=1, cols=2*(2^4-1))
+
+print("Starting Tests")
+print("===============================================================")
+
+# =============================================================================================
+# Testing sub-routines
+# =============================================================================================
+print("\nTesting Subroutines")
+print("---------------------------------------------------------------")
+
+
+# s_isExternalINode
+# ---------------------------------------------------------------------------------------------
+print("\ns_isExternalINode")
+
+testname = "isExternalINode: Empty X"
+isexternal = iForest::s_isExternalINode(X_empty, 1, 3)
+[test_cnt, fails] = record_test_result(testname, isexternal, test_cnt, fails)
+
+testname = "isExternalINode: Single Row"
+isexternal = iForest::s_isExternalINode(X_singlerow, 1, 3)
+[test_cnt, fails] = record_test_result(testname, isexternal, test_cnt, fails)
+
+testname = "isExternalINode: First ID with depth(node_id) > max_depth"
+isexternal1 = iForest::s_isExternalINode(X_5x3_allequal, 2^2, 1)
+isexternal2 = iForest::s_isExternalINode(X_5x3_allequal, 2^4, 3)
+isexternal3 = iForest::s_isExternalINode(X_5x3_allequal, 2^6, 5)
+all_external = isexternal1 & isexternal2 & isexternal3
+[test_cnt, fails] = record_test_result(testname, all_external, test_cnt, fails)
+
+testname = "isExternalINode: IDs with depth(node_id) = max_depth"
+isexternal1 = iForest::s_isExternalINode(X_5x3_allequal, 2^2 - 1, 1)
+isexternal2 = iForest::s_isExternalINode(X_5x3_allequal, 2^2 - 2, 1)
+isexternal3 = iForest::s_isExternalINode(X_5x3_allequal, 2^4 - 1, 3)
+isexternal4 = iForest::s_isExternalINode(X_5x3_allequal, 2^4 - 8, 3)
+isexternal5 = iForest::s_isExternalINode(X_5x3_allequal, 2^6 - 1, 5)
+isexternal6 = iForest::s_isExternalINode(X_5x3_allequal, 2^6 - 12, 5)
+all_external = isexternal1 & isexternal2 & isexternal3 & isexternal4 & isexternal5 & isexternal6
+[test_cnt, fails] = record_test_result(testname, all_external, test_cnt, fails)
+
+testname = "isExternalINode: IDs with depth(node_id) < max_depth"
+isexternal1 = iForest::s_isExternalINode(X_5x3_allequal, 1, 1)
+isexternal2 = iForest::s_isExternalINode(X_5x3_allequal, 2^2, 3)
+isexternal3 = iForest::s_isExternalINode(X_5x3_allequal, 2^3 - 1, 3)
+isexternal4 = iForest::s_isExternalINode(X_5x3_allequal, 2^4, 5)
+isexternal5 = iForest::s_isExternalINode(X_5x3_allequal, 2^5 - 1, 5)
+all_external = isexternal1 & isexternal2 & isexternal3 & isexternal4 & isexternal5
+[test_cnt, fails] = record_test_result(testname, all_external == FALSE, test_cnt, fails)
+
+
+
+# s_addExternalINode
+# ---------------------------------------------------------------------------------------------
+print("\ns_addExternalINode")
+
+testname = "s_addExternalINode: Empty X_node"
+M_res = iForest::s_addExternalINode(X_empty, 8, M_4level_empty)
+M_res = iForest::s_addExternalINode(X_empty, 12, M_res)
+M_res = iForest::s_addExternalINode(X_empty, 15, M_res)
+[test_cnt, fails] = record_test_result(testname, as.scalar(rowSums(M_res)) == 0, test_cnt, fails)
+
+testname = "s_addExternalINode: Different sizes for X_node"
+M_expected = M_4level_empty
+M_res = iForest::s_addExternalINode(X_1x1, 8, M_4level_empty)
+M_expected[, 16] = nrow(X_1x1)
+M_res = iForest::s_addExternalINode(X_1x1, 10, M_res)
+M_expected[, 20] = nrow(X_1x1)
+M_res = iForest::s_addExternalINode(X_3x3, 12, M_res)
+M_expected[, 24] = nrow(X_3x3)
+M_res = iForest::s_addExternalINode(X_5x3_allequal, 14, M_res)
+M_expected[, 28] = nrow(X_5x3_allequal)
+M_res = iForest::s_addExternalINode(X_singlerow, 15, M_res)
+M_expected[, 30] = nrow(X_singlerow)
+# TODO: This doesn't work without t(), although this should actually be equal. 
+# Without the transpose the "!="-Relation in matrices_equal results in a scalar value.
+# In further tests there is no such Problem! Bug?
+[test_cnt, fails] = record_test_result(testname, matrices_equal(t(M_res), t(M_expected)), test_cnt, fails)
+
+# s_addInternalINode
+# ---------------------------------------------------------------------------------------------
+print("\ns_addInternalINode")
+
+testname = "s_addInternalINode"
+M_expected = M_4level_empty
+M_res = iForest::s_addInternalINode(1, 2, 3.1, M_4level_empty)
+M_expected[, 1] = 2
+M_expected[, 2] = 3.1
+M_res = iForest::s_addInternalINode(4, 3, -5, M_res)
+M_expected[, 7] = 3
+M_expected[, 8] = -5
+M_res = iForest::s_addInternalINode(5, 7, -1.2, M_res)
+M_expected[, 9] = 7
+M_expected[, 10] = -1.2
+M_res = iForest::s_addInternalINode(7, 1, 0, M_res)
+M_expected[, 13] = 1
+M_expected[, 14] = 0
+[test_cnt, fails] = record_test_result(testname, matrices_equal(M_res, M_expected), test_cnt, fails)
+
+
+# s_splitINode
+# ---------------------------------------------------------------------------------------------
+print("\ns_splitINode")
+
+testname = "s_splitINode: Equal rows"
+[l_id, x_l, r_id, x_r] = iForest::s_splitINode(X_3x4_equalrows, 1, 1, 1)
+test_res1 = l_id == 2 & r_id == 3 & matrices_equal(x_l, X_3x4_equalrows) & nrow(x_r) == 0
+[l_id, x_l, r_id, x_r] = iForest::s_splitINode(X_3x4_equalrows, 2, 2, 2)
+test_res2 = l_id == 4 & r_id == 5 & matrices_equal(x_l, X_3x4_equalrows) & nrow(x_r) == 0
+[l_id, x_l, r_id, x_r] = iForest::s_splitINode(X_3x4_equalrows, 4, 3, 3)
+test_res3 = l_id == 8 & r_id == 9 & matrices_equal(x_l, X_3x4_equalrows) & nrow(x_r) == 0
+[test_cnt, fails] = record_test_result(testname, test_res1 & test_res2 & test_res3, test_cnt, fails)
+
+
+testname = "s_splitINode: Split in halfs"
+Xl_expected = X_3x4_equalcols[1:2]
+Xr_expected = X_3x4_equalcols[3:4]
+
+[l_id, x_l, r_id, x_r] = iForest::s_splitINode(X_3x4_equalcols, 1, 1, 2)
+test_res1 = l_id == 2 & r_id == 3 & matrices_equal(x_l, Xl_expected) & matrices_equal(x_r, Xr_expected)
+[l_id, x_l, r_id, x_r] = iForest::s_splitINode(X_3x4_equalcols, 2, 2, 2)
+test_res2 = l_id == 4 & r_id == 5 & matrices_equal(x_l, Xl_expected) & matrices_equal(x_r, Xr_expected)
+[l_id, x_l, r_id, x_r] = iForest::s_splitINode(X_3x4_equalcols, 4, 3, 2)
+test_res3 = l_id == 8 & r_id == 9 & matrices_equal(x_l, Xl_expected) & matrices_equal(x_r, Xr_expected)
+[test_cnt, fails] = record_test_result(testname, test_res1 & test_res2 & test_res3, test_cnt, fails)
+
+
+# s_pathLength
+# ---------------------------------------------------------------------------------------------
+
+
+# =============================================================================================
+# Testing main functions
+# =============================================================================================
+print("\nTesting Main Functions")
+print("---------------------------------------------------------------")
+
+# m_iTree
+# ---------------------------------------------------------------------------------------------
+print("\nm_iTree")
+testname = "m_iTree: Equal rows"
+M_res = iForest::m_iTree(X=X_3x4_equalrows, max_depth=3)
+# Since all rows are equal, this tree will grow exclusively to the left. With a max_depth=3 the linearized 
+# models will hence only have entries for IDs 1, 2, 4 and 8.
+# Since in X_3x4_equalrows the feature index is always equal to the only value for the feature,
+# internal nodes (1,2,4) will have the same entry for split feature and split values and the external node 8
+# will have a 0 for the first entry (indicating a leaf node) and the number of rows as the second entry
+check_id1 = as.scalar(M_res[1, 1] == M_res[1, 2])
+check_id2 = as.scalar(M_res[1, 3] == M_res[1, 4])
+check_id4 = as.scalar(M_res[1, 7] == M_res[1, 8])
+check_id8 = as.scalar(M_res[1, 15] == 0 & M_res[1, 16] == nrow(X_3x4_equalrows))
+check_consistent = is_itree_consistent(X_3x4_equalrows, 3, M_res)
+test_res = check_id1 & check_id2 & check_id4 & check_id8 & check_consistent
+[test_cnt, fails] = record_test_result(testname, test_res, test_cnt, fails)
+
+testname = "m_iTree: Consistency"
+# create 100 random iTrees and check their consistency
+check_consistent = TRUE
+for (i in 1:100) {
+  rand_max_depth = as.integer(as.scalar(rand(rows=1, cols=1, min=1, max=10)))
+  rand_ncols = as.integer(as.scalar(rand(rows=1, cols=1, min=1, max=100)))
+  rand_nrows = as.integer(as.scalar(rand(rows=1, cols=1, min=1, max=100)))
+  rand_X = rand(rows=rand_nrows, cols=rand_ncols, min=-100, max=100)
+
+  M = iForest::m_iTree(X=rand_X, max_depth=rand_max_depth)
+
+  tree_consistent = is_itree_consistent(rand_X, rand_max_depth, M)
+  if (!tree_consistent) {
+    print("Consistency check failed!")
+    print("X: "+toString(rand_X))
+    print("M: "+toString(M))
+  }
+  check_consistent = check_consistent & tree_consistent  
+}
+[test_cnt, fails] = record_test_result(testname, check_consistent, test_cnt, fails)
+
+# =============================================================================================
+# Summary
+# =============================================================================================
+print("\n===============================================================")
+succ_test_cnt = test_cnt - length(fails) 
+print(toString(succ_test_cnt) + "/" + toString(test_cnt) + " tests succeded!")
+if (length(fails) > 0) {
+  print("Tests that failed:")
+  print(toString(fails))
+}
+

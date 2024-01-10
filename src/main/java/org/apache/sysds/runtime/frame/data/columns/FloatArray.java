@@ -34,6 +34,8 @@ import org.apache.sysds.runtime.matrix.data.Pair;
 import org.apache.sysds.runtime.util.UtilFunctions;
 import org.apache.sysds.utils.MemoryEstimates;
 
+import ch.randelshofer.fastdoubleparser.JavaFloatParser;
+
 public class FloatArray extends Array<Float> {
 	private float[] _data;
 
@@ -181,7 +183,7 @@ public class FloatArray extends Array<Float> {
 	}
 
 	@Override
-	public Pair<ValueType, Boolean> analyzeValueType() {
+	public Pair<ValueType, Boolean> analyzeValueType(int maxCells) {
 		return new Pair<>(ValueType.FP32, false);
 	}
 
@@ -199,7 +201,7 @@ public class FloatArray extends Array<Float> {
 
 	@Override
 	public long getExactSerializedSize() {
-		return 1 + 4 * _data.length;
+		return 1 + 4 * _size;
 	}
 
 	@Override
@@ -299,13 +301,16 @@ public class FloatArray extends Array<Float> {
 	}
 
 	public static float parseFloat(String value) {
+		if(value == null)
+			return 0.0f;
+		
+		final int len = value.length();
+		if(len == 0)
+			return 0.0f;
 		try {
-			if(value == null || value.isEmpty())
-				return 0.0f;
-			return Float.parseFloat(value);
+			return JavaFloatParser.parseFloat(value, 0, len);
 		}
 		catch(NumberFormatException e) {
-			final int len = value.length();
 			// check for common extra cases.
 			if(len == 3 && value.compareToIgnoreCase("Inf") == 0)
 				return Float.POSITIVE_INFINITY;
@@ -322,7 +327,7 @@ public class FloatArray extends Array<Float> {
 
 	@Override
 	public boolean isEmpty() {
-		for(int i = 0; i < _data.length; i++)
+		for(int i = 0; i < _size; i++)
 			if(isNotEmpty(i))
 				return false;
 		return true;
@@ -371,7 +376,7 @@ public class FloatArray extends Array<Float> {
 
 	@Override
 	public String toString() {
-		StringBuilder sb = new StringBuilder(_data.length * 5 + 2);
+		StringBuilder sb = new StringBuilder(_size * 5 + 2);
 		sb.append(super.toString() + ":[");
 		for(int i = 0; i < _size - 1; i++)
 			sb.append(_data[i] + ",");

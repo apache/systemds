@@ -94,7 +94,7 @@ public class ParForMultipleDataPartitioningTest extends AutomatedTestBase
 			inputDir() + " " + expectedDir() + " " + scriptNum;
 
 		long seed = System.nanoTime();
-        double[][] V = getRandomMatrix(rows, cols, 0, 1, sparsity, seed);
+		double[][] V = getRandomMatrix(rows, cols, 0, 1, sparsity, seed);
 		writeInputMatrix("V", V, true);
 
 		boolean exceptionExpected = false;

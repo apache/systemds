@@ -26,6 +26,8 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
@@ -35,16 +37,22 @@ import org.apache.sysds.runtime.util.CommonThreadPool;
 import org.apache.sysds.runtime.util.UtilFunctions;
 
 public final class FrameLibDetectSchema {
-	// private static final Log LOG = LogFactory.getLog(FrameLibDetectSchema.class.getName());
+	protected static final Log LOG = LogFactory.getLog(FrameLibDetectSchema.class.getName());
+	/** Default minium sample size */
+	private static final int DEFAULT_MIN_CELLS = 100000;
 
+	/** Frame block to sample from */
 	private final FrameBlock in;
-	// private final double sampleFraction;
+	/** parallelization degree */
 	private final int k;
+	/** Sample size in case above nCells */
+	private final int sampleSize;
 
 	private FrameLibDetectSchema(FrameBlock in, double sampleFraction, int k) {
 		this.in = in;
-		// this.sampleFraction = sampleFraction;
 		this.k = k;
+		final int inRows = in.getNumRows();
+		this.sampleSize = Math.min(inRows, Math.max((int) (inRows * sampleFraction), DEFAULT_MIN_CELLS));
 	}
 
 	public static FrameBlock detectSchema(FrameBlock in, int k) {
@@ -66,8 +74,9 @@ public final class FrameLibDetectSchema {
 	private String[] singleThreadApply() {
 		final int cols = in.getNumColumns();
 		final String[] schemaInfo = new String[cols];
+
 		for(int i = 0; i < cols; i++)
-			assign(schemaInfo, in.getColumn(i).analyzeValueType(), i);
+			assign(schemaInfo, in.getColumn(i).analyzeValueType(sampleSize), i);
 
 		return schemaInfo;
 	}
@@ -78,7 +87,7 @@ public final class FrameLibDetectSchema {
 			final int cols = in.getNumColumns();
 			final ArrayList<DetectValueTypeTask> tasks = new ArrayList<>(cols);
 			for(int i = 0; i < cols; i++)
-				tasks.add(new DetectValueTypeTask(in.getColumn(i)));
+				tasks.add(new DetectValueTypeTask(in.getColumn(i), sampleSize));
 			final List<Future<Pair<ValueType, Boolean>>> ret = pool.invokeAll(tasks);
 			final String[] schemaInfo = new String[cols];
 			pool.shutdown();
@@ -103,14 +112,16 @@ public final class FrameLibDetectSchema {
 
 	private static class DetectValueTypeTask implements Callable<Pair<ValueType, Boolean>> {
 		private final Array<?> _obj;
+		final int _nCells;
 
-		protected DetectValueTypeTask(Array<?> obj) {
+		protected DetectValueTypeTask(Array<?> obj, int nCells) {
 			_obj = obj;
+			_nCells = nCells;
 		}
 
 		@Override
 		public Pair<ValueType, Boolean> call() {
-			return _obj.analyzeValueType();
+			return _obj.analyzeValueType(_nCells);
 		}
 	}
 

@@ -94,7 +94,7 @@ public class MDABivariateStatsTest extends AutomatedTestBase
 		proArgs.add(output("feature_means"));
 		proArgs.add(output("feature_standard_deviations"));
 		programArgs = proArgs.toArray(new String[proArgs.size()]);
-        
+
 		fullDMLScriptName = getScript();
 		
 		rCmd = getRCmd(inputDir(), Integer.toString(label_index), Integer.toString(label_measurement_level), expectedDir());

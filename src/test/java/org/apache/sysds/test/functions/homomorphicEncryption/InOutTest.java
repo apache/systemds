@@ -36,76 +36,76 @@ import org.apache.sysds.test.TestUtils;
 import org.junit.Test;
 
 public class InOutTest extends AutomatedTestBase {
-    private final static String TEST_NAME = "InOutTest";
-    private final static String TEST_DIR = "functions/data/";
-    private final static String TEST_CLASS_DIR = TEST_DIR + InOutTest.class.getSimpleName() + "/";
+	private final static String TEST_NAME = "InOutTest";
+	private final static String TEST_DIR = "functions/data/";
+	private final static String TEST_CLASS_DIR = TEST_DIR + InOutTest.class.getSimpleName() + "/";
 
-    private final int num_clients = 3;
+	private final int num_clients = 3;
 
-    private final int rows = 100;
-    private final int cols = 200;
-    private final long seed = 42;
+	private final int rows = 100;
+	private final int cols = 200;
+	private final long seed = 42;
 
-    @Override
-    public void setUp() {
-        NativeHEHelper.initialize();
-        TestUtils.clearAssertionInformation();
-        addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] { "C" }) );
-    }
+	@Override
+	public void setUp() {
+		NativeHEHelper.initialize();
+		TestUtils.clearAssertionInformation();
+		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] {"C"}));
+	}
 
-    @Test
-    public void endToEndTest() {
-        SEALServer server = new SEALServer();
+	@Test
+	public void endToEndTest() {
+		SEALServer server = new SEALServer();
 
-        SEALClient[] clients = new SEALClient[num_clients];
-        PublicKey[] partial_pub_keys = new PublicKey[num_clients];
-        for (int i = 0; i < num_clients; i++) {
-            clients[i] = new SEALClient(server.generateA());
-            partial_pub_keys[i] = clients[i].generatePartialPublicKey();
-        }
+		SEALClient[] clients = new SEALClient[num_clients];
+		PublicKey[] partial_pub_keys = new PublicKey[num_clients];
+		for(int i = 0; i < num_clients; i++) {
+			clients[i] = new SEALClient(server.generateA());
+			partial_pub_keys[i] = clients[i].generatePartialPublicKey();
+		}
 
-        PublicKey public_key = server.aggregatePartialPublicKeys(partial_pub_keys);
+		PublicKey public_key = server.aggregatePartialPublicKeys(partial_pub_keys);
 
-        MatrixObject[] plaintexts = new MatrixObject[num_clients];
-        CiphertextMatrix[] ciphertexts = new CiphertextMatrix[num_clients];
-        for (int i = 0; i < num_clients; i++) {
-            MatrixBlock mb = TestUtils.generateTestMatrixBlock(rows, cols, -100, 100, 1.0, seed+i);
-            MatrixObject mo = new MatrixObject(Types.ValueType.FP64, null);
-            mo.setMetaData(new MetaDataFormat(new MatrixCharacteristics(rows, cols), Types.FileFormat.BINARY));
-            mo.acquireModify(mb);
-            mo.release();
-            plaintexts[i] = mo;
+		MatrixObject[] plaintexts = new MatrixObject[num_clients];
+		CiphertextMatrix[] ciphertexts = new CiphertextMatrix[num_clients];
+		for(int i = 0; i < num_clients; i++) {
+			MatrixBlock mb = TestUtils.generateTestMatrixBlock(rows, cols, -100, 100, 1.0, seed + i);
+			MatrixObject mo = new MatrixObject(Types.ValueType.FP64, null);
+			mo.setMetaData(new MetaDataFormat(new MatrixCharacteristics(rows, cols), Types.FileFormat.BINARY));
+			mo.acquireModify(mb);
+			mo.release();
+			plaintexts[i] = mo;
 
-            clients[i].setPublicKey(public_key);
-            ciphertexts[i] = clients[i].encrypt(plaintexts[i]);
-        }
+			clients[i].setPublicKey(public_key);
+			ciphertexts[i] = clients[i].encrypt(plaintexts[i]);
+		}
 
-        CiphertextMatrix encrypted_sum = server.accumulateCiphertexts(ciphertexts);
+		CiphertextMatrix encrypted_sum = server.accumulateCiphertexts(ciphertexts);
 
-        PlaintextMatrix[] partial_decryptions = new PlaintextMatrix[num_clients];
-        for (int i = 0; i < num_clients; i++) {
-            partial_decryptions[i] = clients[i].partiallyDecrypt(encrypted_sum);
-        }
+		PlaintextMatrix[] partial_decryptions = new PlaintextMatrix[num_clients];
+		for(int i = 0; i < num_clients; i++) {
+			partial_decryptions[i] = clients[i].partiallyDecrypt(encrypted_sum);
+		}
 
-        MatrixObject result = server.average(encrypted_sum, partial_decryptions);
+		MatrixObject result = server.average(encrypted_sum, partial_decryptions);
 
-        double[] expected_raw_result = new double[rows*cols];
-        double[][] plaintexts_raw = new double[num_clients][];
-        for (int i = 0; i < num_clients; i++) {
-            plaintexts_raw[i] = plaintexts[i].acquireReadAndRelease().getDenseBlockValues();
-        }
-        for (int x = 0; x < rows * cols; x++) {
-            double sum = 0.0;
-            for (int i = 0; i < num_clients; i++) {
-                sum += plaintexts_raw[i][x];
-            }
-            expected_raw_result[x] = sum / num_clients;
-        }
+		double[] expected_raw_result = new double[rows * cols];
+		double[][] plaintexts_raw = new double[num_clients][];
+		for(int i = 0; i < num_clients; i++) {
+			plaintexts_raw[i] = plaintexts[i].acquireReadAndRelease().getDenseBlockValues();
+		}
+		for(int x = 0; x < rows * cols; x++) {
+			double sum = 0.0;
+			for(int i = 0; i < num_clients; i++) {
+				sum += plaintexts_raw[i][x];
+			}
+			expected_raw_result[x] = sum / num_clients;
+		}
 
-        double[] raw_result = result.acquireReadAndRelease().getDenseBlockValues();
-        assert result.getNumRows() == rows;
-        assert result.getNumColumns() == cols;
-        assert raw_result.length == rows*cols;
-        TestUtils.compareMatrices(raw_result, expected_raw_result, 5e-8);
-    }
+		double[] raw_result = result.acquireReadAndRelease().getDenseBlockValues();
+		assert result.getNumRows() == rows;
+		assert result.getNumColumns() == cols;
+		assert raw_result.length == rows * cols;
+		TestUtils.compareMatrices(raw_result, expected_raw_result, 5e-8);
+	}
 }

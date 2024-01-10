@@ -45,120 +45,122 @@ import java.util.Random;
 @net.jcip.annotations.NotThreadSafe
 public class FederatedCompressionTest extends AutomatedTestBase {
 
-    private static final Log LOG = LogFactory.getLog(FederatedCompressionTest.class.getName());
-    private final static String TEST_DIR = "functions/federated/io/";
-    private final static String TEST_NAME = "FederatedCompressionTest";
-    private final static String TEST_CLASS_DIR = TEST_DIR + FederatedCompressionTest.class.getSimpleName() + "/";
-    private final static int blocksize = 1024;
-    private final static String OUTPUT_NAME = "Z";
-    private final static String TEST_CONF_FOLDER = SCRIPT_DIR + TEST_DIR + "config/";
+	private static final Log LOG = LogFactory.getLog(FederatedCompressionTest.class.getName());
+	private final static String TEST_DIR = "functions/federated/io/";
+	private final static String TEST_NAME = "FederatedCompressionTest";
+	private final static String TEST_CLASS_DIR = TEST_DIR + FederatedCompressionTest.class.getSimpleName() + "/";
+	private final static int blocksize = 1024;
+	private final static String OUTPUT_NAME = "Z";
+	private final static String TEST_CONF_FOLDER = SCRIPT_DIR + TEST_DIR + "config/";
 
-    @Parameterized.Parameter()
-    public String compressionStrategy;
-    @Parameterized.Parameter(1)
-    public int dim;
-    @Parameterized.Parameter(2)
-    public long[][] begins;
-    @Parameterized.Parameter(3)
-    public long[][] ends;
+	@Parameterized.Parameter()
+	public String compressionStrategy;
+	@Parameterized.Parameter(1)
+	public int dim;
+	@Parameterized.Parameter(2)
+	public long[][] begins;
+	@Parameterized.Parameter(3)
+	public long[][] ends;
 
-    protected String getTestDir() {
-        return "functions/federated/io/";
-    }
+	protected String getTestDir() {
+		return "functions/federated/io/";
+	}
 
-    @Override
-    public void setUp() {
-        TestUtils.clearAssertionInformation();
-        addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] {OUTPUT_NAME}));
-    }
+	@Override
+	public void setUp() {
+		TestUtils.clearAssertionInformation();
+		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] {OUTPUT_NAME}));
+	}
 
-    @Parameterized.Parameters
-    public static Collection<Object[]> data() {
-        return Arrays.asList(new Object[][] {
+	@Parameterized.Parameters
+	public static Collection<Object[]> data() {
+		return Arrays.asList(new Object[][] {
 
-                // {compressionStrategy, dim, begins, ends}
-                {"None", 3, new long[][] {new long[] {0, 0}}, new long[][] {new long[] {3, 3}}},
-                {"Zlib", 3, new long[][] {new long[] {0, 0}}, new long[][] {new long[] {3, 3}}},
-                {"Snappy", 3, new long[][] {new long[] {0, 0}}, new long[][] {new long[] {3, 3}}},
-                {"FastLZ", 3, new long[][] {new long[] {0, 0}}, new long[][] {new long[] {3, 3}}},
-                {"LZ4", 3, new long[][] {new long[] {0, 0}}, new long[][] {new long[] {3, 3}}},
-                {"LZF", 3, new long[][] {new long[] {0, 0}}, new long[][] {new long[] {3, 3}}},
-        });
-    }
+			// {compressionStrategy, dim, begins, ends}
+			{"None", 3, new long[][] {new long[] {0, 0}}, new long[][] {new long[] {3, 3}}},
+			{"Zlib", 3, new long[][] {new long[] {0, 0}}, new long[][] {new long[] {3, 3}}},
+			{"Snappy", 3, new long[][] {new long[] {0, 0}}, new long[][] {new long[] {3, 3}}},
+			{"FastLZ", 3, new long[][] {new long[] {0, 0}}, new long[][] {new long[] {3, 3}}},
+			{"LZ4", 3, new long[][] {new long[] {0, 0}}, new long[][] {new long[] {3, 3}}},
+			{"LZF", 3, new long[][] {new long[] {0, 0}}, new long[][] {new long[] {3, 3}}},});
+	}
 
-    @Test
-    public void testFederatedReadWriteCompressionStrategies() {
-        federatedReadWriteCompression();
-    }
+	@Test
+	public void testFederatedReadWriteCompressionStrategies() {
+		federatedReadWriteCompression();
+	}
 
-    public void federatedReadWriteCompression() {
-        Types.ExecMode oldPlatform = setExecMode(Types.ExecType.CP);
-        getAndLoadTestConfiguration(TEST_NAME);
+	public void federatedReadWriteCompression() {
+		Types.ExecMode oldPlatform = setExecMode(Types.ExecType.CP);
+		getAndLoadTestConfiguration(TEST_NAME);
 
-        LOG.debug("Current test configuration: compressionStrategy = " + compressionStrategy + ", dim = " + dim);
+		LOG.debug("Current test configuration: compressionStrategy = " + compressionStrategy + ", dim = " + dim);
 
-        // empty script name because we don't execute any script, just start the worker
+		// empty script name because we don't execute any script, just start the worker
 
-        fullDMLScriptName = "";
-        int port1 = getRandomAvailablePort();
-        Thread t1 = startLocalFedWorkerThread(port1);
-        String host = "localhost";
+		fullDMLScriptName = "";
+		int port1 = getRandomAvailablePort();
+		Thread t1 = startLocalFedWorkerThread(port1);
+		String host = "localhost";
 
-        FederatedCompressionStatistics.reset();
+		FederatedCompressionStatistics.reset();
 
-        try {
-            double[][] X1 = createRandomMatrix(dim, dim);
-            MatrixCharacteristics mc = new MatrixCharacteristics(dim, dim, blocksize, dim * dim);
-            writeCSVMatrix("X1", X1, false, mc);
+		try {
+			double[][] X1 = createRandomMatrix(dim, dim);
+			MatrixCharacteristics mc = new MatrixCharacteristics(dim, dim, blocksize, dim * dim);
+			writeCSVMatrix("X1", X1, false, mc);
 
-            MatrixObject fed = FederatedTestObjectConstructor.constructFederatedInput(dim, dim, blocksize, host, begins,
-                    ends, new int[] {port1}, new String[] {input("X1")}, input("X.json"));
-            writeInputFederatedWithMTD("X.json", fed, null);
+			MatrixObject fed = FederatedTestObjectConstructor.constructFederatedInput(dim, dim, blocksize, host, begins,
+				ends, new int[] {port1}, new String[] {input("X1")}, input("X.json"));
+			writeInputFederatedWithMTD("X.json", fed, null);
 
-            // Run reference dml script with normal matrix
-            fullDMLScriptName = SCRIPT_DIR + "functions/federated/io/" + TEST_NAME + "1Reference.dml";
-            programArgs = new String[] {"-nvargs", "fedmatrix=" + input("X1"), "out=" + expected(OUTPUT_NAME)};
+			// Run reference dml script with normal matrix
+			fullDMLScriptName = SCRIPT_DIR + "functions/federated/io/" + TEST_NAME + "1Reference.dml";
+			programArgs = new String[] {"-nvargs", "fedmatrix=" + input("X1"), "out=" + expected(OUTPUT_NAME)};
 
-            runTest(null);
+			runTest(null);
 
-            // Run federated
-            fullDMLScriptName = SCRIPT_DIR + "functions/federated/io/" + TEST_NAME + ".dml";
-            programArgs = new String[] {"-nvargs", "fedmatrix=" + input("X.json"), "out=" + output(OUTPUT_NAME)};
-            runTest(null);
-            LOG.debug(FederatedCompressionStatistics.statistics());
+			// Run federated
+			fullDMLScriptName = SCRIPT_DIR + "functions/federated/io/" + TEST_NAME + ".dml";
+			programArgs = new String[] {"-nvargs", "fedmatrix=" + input("X.json"), "out=" + output(OUTPUT_NAME)};
+			runTest(null);
+			LOG.debug(FederatedCompressionStatistics.statistics());
 
-            HashMap<MatrixValue.CellIndex, Double> refResults = readDMLMatrixFromExpectedDir(OUTPUT_NAME);
-            HashMap<MatrixValue.CellIndex, Double> fedResults = readDMLMatrixFromOutputDir(OUTPUT_NAME);
-            TestUtils.compareMatrices(fedResults, refResults, 0, "Fed", "Ref");
-        } catch (Exception e) {
-            LOG.warn("Failed to run test with properties compressionStrategy = " + compressionStrategy + ", dim = " + dim);
-            e.printStackTrace();
-            Assert.assertTrue(false);
-        } finally {
-            resetExecMode(oldPlatform);
-        }
+			HashMap<MatrixValue.CellIndex, Double> refResults = readDMLMatrixFromExpectedDir(OUTPUT_NAME);
+			HashMap<MatrixValue.CellIndex, Double> fedResults = readDMLMatrixFromOutputDir(OUTPUT_NAME);
+			TestUtils.compareMatrices(fedResults, refResults, 0, "Fed", "Ref");
+		}
+		catch(Exception e) {
+			LOG.warn("Failed to run test with properties compressionStrategy = " + compressionStrategy + ", dim = " + dim);
+			e.printStackTrace();
+			Assert.assertTrue(false);
+		}
+		finally {
+			resetExecMode(oldPlatform);
+		}
 
-        TestUtils.shutdownThreads(t1);
-    }
+		TestUtils.shutdownThreads(t1);
+	}
 
-    public double[][] createRandomMatrix(int width, int height) {
-        Random rd = new Random();
-        double[][] matrix = new double[height][];
+	public double[][] createRandomMatrix(int width, int height) {
+		Random rd = new Random();
+		double[][] matrix = new double[height][];
 
-        for (int i = 0; i < height; i++)
-            matrix[i] = rd.doubles(width).toArray();
+		for(int i = 0; i < height; i++)
+			matrix[i] = rd.doubles(width).toArray();
 
-        return matrix;
-    }
+		return matrix;
+	}
 
-    /**
-     * Override default configuration with custom test configuration to ensure
-     * scratch space and local temporary directory locations are also updated.
-     */
-    @Override
-    protected File getConfigTemplateFile() {
-        // Instrumentation in this test's output log to show custom configuration file used for template.
-        LOG.debug("This test case overrides default configuration with " + new File(TEST_CONF_FOLDER + compressionStrategy + "CompressionConfig.xml").getPath());
-        return new File(TEST_CONF_FOLDER + compressionStrategy + "CompressionConfig.xml");
-    }
+	/**
+	 * Override default configuration with custom test configuration to ensure scratch space and local temporary
+	 * directory locations are also updated.
+	 */
+	@Override
+	protected File getConfigTemplateFile() {
+		// Instrumentation in this test's output log to show custom configuration file used for template.
+		LOG.debug("This test case overrides default configuration with "
+			+ new File(TEST_CONF_FOLDER + compressionStrategy + "CompressionConfig.xml").getPath());
+		return new File(TEST_CONF_FOLDER + compressionStrategy + "CompressionConfig.xml");
+	}
 }

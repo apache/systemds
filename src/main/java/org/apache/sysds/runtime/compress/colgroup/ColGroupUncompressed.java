@@ -532,14 +532,33 @@ public class ColGroupUncompressed extends AColGroup {
 		// tsmm but only upper triangle.
 		LibMatrixMult.matrixMultTransposeSelf(_data, tmp, true, false);
 
-		// copy that upper triangle part to ret
-		final int numColumns = ret.getNumColumns();
-		final double[] result = ret.getDenseBlockValues();
-		final double[] tmpV = tmp.getDenseBlockValues();
-		for(int row = 0, offTmp = 0; row < tCol; row++, offTmp += tCol) {
-			final int offRet = _colIndexes.get(row) * numColumns;
-			for(int col = row; col < tCol; col++)
-				result[offRet + _colIndexes.get(col)] += tmpV[offTmp + col];
+		if(tmp.isInSparseFormat()){
+			final int numColumns = ret.getNumColumns();
+			final double[] result = ret.getDenseBlockValues();
+			final SparseBlock sb = tmp.getSparseBlock();
+			for(int row = 0; row < tCol; row++) {
+				final int offRet = _colIndexes.get(row) * numColumns;
+				if(sb.isEmpty(row))
+					continue;
+				int apos = sb.pos(row);
+				int alen = sb.size(row) + apos;
+				int[] aix = sb.indexes(row);
+				double[] aval = sb.values(row);
+				for(int j = apos; j < alen; j++)
+					result[offRet + _colIndexes.get(aix[j])] += aval[j];
+				
+			}
+		}
+		else{
+			// copy that upper triangle part to ret
+			final int numColumns = ret.getNumColumns();
+			final double[] result = ret.getDenseBlockValues();
+			final double[] tmpV = tmp.getDenseBlockValues();
+			for(int row = 0, offTmp = 0; row < tCol; row++, offTmp += tCol) {
+				final int offRet = _colIndexes.get(row) * numColumns;
+				for(int col = row; col < tCol; col++)
+					result[offRet + _colIndexes.get(col)] += tmpV[offTmp + col];
+			}
 		}
 	}
 

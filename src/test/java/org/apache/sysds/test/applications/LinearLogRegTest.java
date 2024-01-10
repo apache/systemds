@@ -35,51 +35,49 @@ import org.apache.sysds.test.TestUtils;
 
 @RunWith(value = Parameterized.class)
 @net.jcip.annotations.NotThreadSafe
-public class LinearLogRegTest extends AutomatedTestBase
-{
-	
-    protected final static String TEST_DIR = "applications/linearLogReg/";
-    protected final static String TEST_NAME = "LinearLogReg";
-    protected String TEST_CLASS_DIR = TEST_DIR + LinearLogRegTest.class.getSimpleName() + "/";
+public class LinearLogRegTest extends AutomatedTestBase {
 
-    protected int numRecords, numFeatures, numTestRecords;
-    protected double sparsity;
-    
+	protected final static String TEST_DIR = "applications/linearLogReg/";
+	protected final static String TEST_NAME = "LinearLogReg";
+	protected String TEST_CLASS_DIR = TEST_DIR + LinearLogRegTest.class.getSimpleName() + "/";
+
+	protected int numRecords, numFeatures, numTestRecords;
+	protected double sparsity;
+
 	public LinearLogRegTest(int numRecords, int numFeatures, int numTestRecords, double sparsity) {
 		this.numRecords = numRecords;
 		this.numFeatures = numFeatures;
 		this.numTestRecords = numTestRecords;
 		this.sparsity = sparsity;
 	}
-	
-	@Parameters
-	 public static Collection<Object[]> data() {
-	   Object[][] data = new Object[][] { 
-			 //sparse tests (sparsity=0.01)
-			 {100, 50, 25, 0.01}, {1000, 500, 200, 0.01}, {10000, 750, 1500, 0.01}, {100000, 1000, 1500, 0.01},
-			 //dense tests (sparsity=0.7)
-			 {100, 50, 25, 0.7}, {1000, 500, 200, 0.7}, {10000, 750, 1500, 0.7}};
-	   return Arrays.asList(data);
-	 }
- 
-    @Override
-    public void setUp()
-    {
-    	addTestConfiguration(TEST_CLASS_DIR, TEST_NAME);
-    }
-    
-    @Test
-    public void testLinearLogReg() {
-		System.out.println("------------ BEGIN " + TEST_NAME + " TEST WITH {" + numRecords + ", " + numFeatures
-				+ ", " + numTestRecords + ", " + sparsity + "} ------------");
-		
-    	int rows = numRecords;			// # of rows in the training data 
-        int cols = numFeatures;
-        int rows_test = numTestRecords; // # of rows in the test data 
-        int cols_test = cols;
 
-        getAndLoadTestConfiguration(TEST_NAME);
-           
+	@Parameters
+	public static Collection<Object[]> data() {
+		Object[][] data = new Object[][] {
+			// sparse tests (sparsity=0.01)
+			{100, 50, 25, 0.01}, {1000, 500, 200, 0.01}, {10000, 750, 1500, 0.01}, {100000, 1000, 1500, 0.01},
+			// dense tests (sparsity=0.7)
+			{100, 50, 25, 0.7}, {1000, 500, 200, 0.7}, {10000, 750, 1500, 0.7}};
+		return Arrays.asList(data);
+	}
+
+	@Override
+	public void setUp() {
+		addTestConfiguration(TEST_CLASS_DIR, TEST_NAME);
+	}
+
+	@Test
+	public void testLinearLogReg() {
+		System.out.println("------------ BEGIN " + TEST_NAME + " TEST WITH {" + numRecords + ", " + numFeatures + ", "
+			+ numTestRecords + ", " + sparsity + "} ------------");
+
+		int rows = numRecords; // # of rows in the training data
+		int cols = numFeatures;
+		int rows_test = numTestRecords; // # of rows in the test data
+		int cols_test = cols;
+
+		getAndLoadTestConfiguration(TEST_NAME);
+
 		List<String> proArgs = new ArrayList<>();
 		proArgs.add("-stats");
 		proArgs.add("-args");
@@ -89,30 +87,30 @@ public class LinearLogRegTest extends AutomatedTestBase
 		proArgs.add(input("yt"));
 		proArgs.add(output("w"));
 		programArgs = proArgs.toArray(new String[proArgs.size()]);
-        
-		fullDMLScriptName = getScript();
-		
-		rCmd = getRCmd(inputDir(), expectedDir());
-		
-        // prepare training data set
-        double[][] X = getRandomMatrix(rows, cols, 1, 10, sparsity, 100);
-        double[][] y = getRandomMatrix(rows, 1, 0.01, 1, 1, 100);
-        writeInputMatrixWithMTD("X", X, true);
-        writeInputMatrixWithMTD("y", y, true);
 
-        // prepare test data set
-        double[][] Xt = getRandomMatrix(rows_test, cols_test, 1, 10, sparsity, 100);
-        double[][] yt = getRandomMatrix(rows_test, 1, 0.01, 1, 1, 100);
-        writeInputMatrixWithMTD("Xt", Xt, true);
-        writeInputMatrixWithMTD("yt", yt, true);
-        
+		fullDMLScriptName = getScript();
+
+		rCmd = getRCmd(inputDir(), expectedDir());
+
+		// prepare training data set
+		double[][] X = getRandomMatrix(rows, cols, 1, 10, sparsity, 100);
+		double[][] y = getRandomMatrix(rows, 1, 0.01, 1, 1, 100);
+		writeInputMatrixWithMTD("X", X, true);
+		writeInputMatrixWithMTD("y", y, true);
+
+		// prepare test data set
+		double[][] Xt = getRandomMatrix(rows_test, cols_test, 1, 10, sparsity, 100);
+		double[][] yt = getRandomMatrix(rows_test, 1, 0.01, 1, 1, 100);
+		writeInputMatrixWithMTD("Xt", Xt, true);
+		writeInputMatrixWithMTD("yt", yt, true);
+
 		int expectedNumberOfJobs = 31;
 		runTest(true, EXCEPTION_NOT_EXPECTED, null, expectedNumberOfJobs);
-        
+
 		runRScript(true);
 
-        HashMap<CellIndex, Double> wR = readRMatrixFromExpectedDir("w");
-        HashMap<CellIndex, Double> wSYSTEMDS= readDMLMatrixFromOutputDir("w");
-        TestUtils.compareMatrices(wR, wSYSTEMDS, Math.pow(10, -14), "wR", "wSYSTEMDS");
-    }
+		HashMap<CellIndex, Double> wR = readRMatrixFromExpectedDir("w");
+		HashMap<CellIndex, Double> wSYSTEMDS = readDMLMatrixFromOutputDir("w");
+		TestUtils.compareMatrices(wR, wSYSTEMDS, Math.pow(10, -14), "wR", "wSYSTEMDS");
+	}
 }

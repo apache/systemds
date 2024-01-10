@@ -24,6 +24,7 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.sysds.api.DMLException;
 import org.apache.sysds.common.Types;
+import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.hops.FunctionOp;
 import org.apache.sysds.hops.Hop;
 import org.apache.sysds.hops.LiteralOp;
@@ -71,6 +72,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 public class PrivacyConstraintLoader {
 
@@ -245,8 +247,16 @@ public class PrivacyConstraintLoader {
 	private static PrivacyConstraint unwrapPrivConstraint(Future<FederatedResponse> privConstraintFuture)
 	{
 		try {
-			FederatedResponse privConstraintResponse = privConstraintFuture.get();
-			return (PrivacyConstraint) privConstraintResponse.getData()[0];
+
+			final int timeout = ConfigurationManager.getFederatedTimeout();
+			if(timeout > 0){
+				FederatedResponse privConstraintResponse = privConstraintFuture.get(timeout , TimeUnit.SECONDS);
+				return (PrivacyConstraint) privConstraintResponse.getData()[0];
+			}
+			else{
+				FederatedResponse privConstraintResponse = privConstraintFuture.get();
+				return (PrivacyConstraint) privConstraintResponse.getData()[0];
+			}
 		} catch(Exception ex){
 			throw new DMLException(ex);
 		}

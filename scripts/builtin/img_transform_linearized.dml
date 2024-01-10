@@ -68,9 +68,6 @@ m_img_transform_linearized = function(Matrix[Double] img_in, Integer out_w, Inte
     # compute sampling pixel indices
     coords = floor(T_inv %*% coords) + 1
 
-    # fill output image
-    img_out = matrix(fill_value, rows=nrow(img_in), cols=out_w*out_h)
-
     inx = t(coords[1,])
     iny = t(coords[2,])
 

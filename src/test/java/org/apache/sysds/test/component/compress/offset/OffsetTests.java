@@ -82,13 +82,13 @@ public class OffsetTests {
 			tests.add(new Object[] {new int[] {0}, t});
 			tests.add(new Object[] {new int[] {500}, t});
 			tests.add(new Object[] {new int[] {1442}, t});
-			tests.add(new Object[] {new int[] {Character.MAX_VALUE, ((int) Character.MAX_VALUE) + 1}, t});
+			tests.add(new Object[] {new int[] {Character.MAX_VALUE, Character.MAX_VALUE + 1}, t});
 			tests.add(new Object[] {new int[] {0, 256}, t});
 			tests.add(new Object[] {new int[] {0, 254}, t});
 			tests.add(new Object[] {new int[] {0, Character.MAX_VALUE}, t});
 			tests.add(new Object[] {new int[] {2, Character.MAX_VALUE + 2}, t});
-			tests.add(new Object[] {new int[] {0, ((int) Character.MAX_VALUE) + 1}, t});
-			tests.add(new Object[] {new int[] {0, ((int) Character.MAX_VALUE) - 1}, t});
+			tests.add(new Object[] {new int[] {0, Character.MAX_VALUE + 1}, t});
+			tests.add(new Object[] {new int[] {0, Character.MAX_VALUE - 1}, t});
 			tests.add(new Object[] {new int[] {0, 256 * 2}, t});
 			tests.add(new Object[] {new int[] {0, 255 * 2}, t});
 			tests.add(new Object[] {new int[] {0, 254 * 2}, t});
@@ -122,10 +122,10 @@ public class OffsetTests {
 
 			}
 		}
-		tests.add(new Object[] {new int[] {Character.MAX_VALUE, ((int) Character.MAX_VALUE) * 2}, OFF_TYPE.CHAR});
-		tests.add(new Object[] {new int[] {0, Character.MAX_VALUE, ((int) Character.MAX_VALUE) * 2}, OFF_TYPE.CHAR});
-		tests.add(new Object[] {new int[] {1, (int) Character.MAX_VALUE * 2 + 3, (int) Character.MAX_VALUE * 4 + 4,
-			(int) Character.MAX_VALUE * 16 + 4}, OFF_TYPE.CHAR});
+		tests.add(new Object[] {new int[] {Character.MAX_VALUE, Character.MAX_VALUE * 2}, OFF_TYPE.CHAR});
+		tests.add(new Object[] {new int[] {0, Character.MAX_VALUE, Character.MAX_VALUE * 2}, OFF_TYPE.CHAR});
+		tests.add(new Object[] {new int[] {1, Character.MAX_VALUE * 2 + 3, Character.MAX_VALUE * 4 + 4,
+			Character.MAX_VALUE * 16 + 4}, OFF_TYPE.CHAR});
 		return tests;
 	}
 

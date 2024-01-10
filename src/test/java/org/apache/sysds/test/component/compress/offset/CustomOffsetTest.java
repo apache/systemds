@@ -28,12 +28,12 @@ import org.junit.Test;
 
 public class CustomOffsetTest {
 
-    @Test
-    public void sliceE() {
-        AOffset a = OffsetFactory.createOffset(new int[] {441, 1299, 14612, 16110, 18033, 18643, 18768, 25798, 32315});
+	@Test
+	public void sliceE() {
+		AOffset a = OffsetFactory.createOffset(new int[] {441, 1299, 14612, 16110, 18033, 18643, 18768, 25798, 32315});
 
-        OffsetSliceInfo i = a.slice(1000, 2000);
-        System.out.println(a);
-        assertEquals(OffsetFactory.createOffset(new int[] {299}), i.offsetSlice);
-    }
+		OffsetSliceInfo i = a.slice(1000, 2000);
+		System.out.println(a);
+		assertEquals(OffsetFactory.createOffset(new int[] {299}), i.offsetSlice);
+	}
 }

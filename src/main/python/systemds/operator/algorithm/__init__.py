@@ -90,8 +90,11 @@ from .builtin.img_mirror_linearized import img_mirror_linearized
 from .builtin.img_posterize import img_posterize 
 from .builtin.img_posterize_linearized import img_posterize_linearized 
 from .builtin.img_rotate import img_rotate 
+from .builtin.img_rotate_linearized import img_rotate_linearized 
 from .builtin.img_sample_pairing import img_sample_pairing 
+from .builtin.img_sample_pairing_linearized import img_sample_pairing_linearized 
 from .builtin.img_shear import img_shear 
+from .builtin.img_shear_linearized import img_shear_linearized 
 from .builtin.img_transform import img_transform 
 from .builtin.img_transform_linearized import img_transform_linearized 
 from .builtin.img_translate import img_translate 
@@ -263,8 +266,11 @@ __all__ = ['WoE',
  'img_posterize',
  'img_posterize_linearized',
  'img_rotate',
+ 'img_rotate_linearized',
  'img_sample_pairing',
+ 'img_sample_pairing_linearized',
  'img_shear',
+ 'img_shear_linearized',
  'img_transform',
  'img_transform_linearized',
  'img_translate',

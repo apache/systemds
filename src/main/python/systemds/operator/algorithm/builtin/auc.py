@@ -32,7 +32,7 @@ from systemds.utils.consts import VALID_INPUT_TYPES
 def auc(Y: Matrix,
         P: Matrix):
     """
-     This builting function computes the area under the ROC curve (AUC)
+     This builtin function computes the area under the ROC curve (AUC)
      for binary classifiers.
     
     

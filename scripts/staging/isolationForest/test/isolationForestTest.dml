@@ -144,18 +144,11 @@ is_itree_consistent = function(Matrix[Double] M, Matrix[Double] X, Int max_depth
 is_iforest_consistent = function(Matrix[Double] M, Matrix[Double] X, Int subsampling_size) 
   return(Boolean consistent)
 {
-  check_forest_size = ncol(M) > 2 & nrow(M) == 2
-  if (!check_forest_size) print("iForest has wrong format!")
-  consistent = check_forest_size
-
+  consistent = TRUE
+  
   height_limit = ceil(log(subsampling_size, 2))
-  max_tree_id = max(M[2,])
-  for (tree_id in 1:max_tree_id) {
-    check_tree_id = contains(target=M[2, ], pattern=tree_id)
-    if (!check_tree_id) print("iForest does not contain an ID <= max_id")
-    consistent = consistent & check_tree_id
-
-    M_tree = iForest::s_getITree(M, tree_id)
+  for (tree_id in 1:nrow(M)) {
+    M_tree = M[tree_id,]
     check_tree_consistent = is_itree_consistent(M_tree, X, height_limit, TRUE)
     if (!check_tree_consistent) print("iTree at index "+tree_id+" in iForest is inconsistent!")
     consistent = consistent & check_tree_consistent
@@ -341,43 +334,57 @@ check_reordered = matrices_equal(X_6x6_ordered, X_res)
 test_res = check_shuffeled & check_reordered
 [test_cnt, fails] = record_test_result(testname, test_res, test_cnt, fails)
 
-# s_addITree
+
+# s_traverseITree
 # ---------------------------------------------------------------------------------------------
-print("\ns_addITree")
-testname = "addITree"
-M_tree1 = iForest::m_iTree(X=X_4x4, max_depth=3) 
-M_res = matrix(0, cols=0, rows=0)
-M_res = iForest::s_addITree(M_tree1, M_res)
-check_first_tree = matrices_equal(M_tree1, M_res[1,])
-id_row = matrix(1, rows=1, cols=ncol(M_tree1))
-check_first_tree = check_first_tree & matrices_equal(id_row, M_res[2,])
-if (!check_first_tree) print("check_first_tree")
+print("\ns_traverseITree")
 
-M_tree2 = iForest::m_iTree(X=X_4x4, max_depth=3) 
-M_res = iForest::s_addITree(M_tree2, M_res)
-M_res_tree2_part = M_res[, ncol(M_tree1)+1:ncol(M_res)]
-id_row = matrix(2, rows=1, cols=ncol(M_tree2))
-check_second_tree = matrices_equal(M_tree2, M_res_tree2_part[1,]) & matrices_equal(id_row, M_res_tree2_part[2,])
-[test_cnt, fails] = record_test_result(testname, check_first_tree & check_second_tree, test_cnt, fails)
+testname = "traverseITree: Equal training rows"
+M_tree1 = iForest::m_iTree(X=X_3x8_equalrows, max_depth=3)
+M_tree2 = iForest::m_iTree(X=X_3x8_equalrows, max_depth=5)
 
+x_1 = X_3x8_equalrows[1, ]
+[pathlength1, externalNodeSize1] = iForest::s_traverseITree(M_tree1, x_1)
+[pathlength2, externalNodeSize2] = iForest::s_traverseITree(M_tree2, x_1)
+check_equal_x_1 = pathlength1 == 3 & externalNodeSize1 == nrow(X_3x8_equalrows)
+check_equal_x_2 = pathlength2 == 5 & externalNodeSize2 == nrow(X_3x8_equalrows)
+check_equal = check_equal_x_1 & check_equal_x_2
 
-# s_getITree
+x_1 = X_3x8_equalrows[1, ] - 0.1
+[pathlength1, externalNodeSize1] = iForest::s_traverseITree(M_tree1, x_1)
+[pathlength2, externalNodeSize2] = iForest::s_traverseITree(M_tree2, x_1)
+check_smaller_x_1 = pathlength1 == 3 & externalNodeSize1 == nrow(X_3x8_equalrows)
+check_smaller_x_2 = pathlength2 == 5 & externalNodeSize2 == nrow(X_3x8_equalrows)
+check_smaller = check_smaller_x_1 & check_smaller_x_2
+
+x_1 = X_3x8_equalrows[1, ] + 0.1
+[pathlength1, externalNodeSize1] = iForest::s_traverseITree(M_tree1, x_1)
+[pathlength2, externalNodeSize2] = iForest::s_traverseITree(M_tree2, x_1)
+check_larger_x_1 = pathlength1 == 1 & externalNodeSize1 == 0
+check_larger_x_2 = pathlength2 == 1 & externalNodeSize2 == 0
+check_larger = check_larger_x_1 & check_larger_x_2
+
+[test_cnt, fails] = record_test_result(testname, check_equal & check_smaller & check_larger, test_cnt, fails)
+
+# s_cn
 # ---------------------------------------------------------------------------------------------
-print("\ns_getITree")
-testname = "getITree"
-M_tree1 = iForest::m_iTree(X=X_4x4, max_depth=3) 
-M_res = iForest::s_addITree(M_tree1, matrix(0, cols=0, rows=0))
-M_tree2 = iForest::m_iTree(X=X_4x4, max_depth=3) 
-M_res = iForest::s_addITree(M_tree2, M_res)
-check_first_tree = matrices_equal(M_tree1, iForest::s_getITree(M_res, 1))
-check_second_tree = matrices_equal(M_tree2, iForest::s_getITree(M_res, 2))
+print("\ns_cn")
+testname = "s_cn"
+error_tolerance = 1e3
+test_res = (iForest::s_cn(2) - 1) < error_tolerance
+test_res = (test_res & iForest::s_cn(3) - 5/3) < error_tolerance
+test_res = test_res & (iForest::s_cn(4) - 13/6) < error_tolerance
+test_res = test_res & (iForest::s_cn(5) - 77/30) < error_tolerance
+test_res = test_res & (iForest::s_cn(10) - 4861/1260) < error_tolerance
+test_res = test_res & (iForest::s_cn(50) - 6.99841) < error_tolerance
+test_res = test_res & (iForest::s_cn(100) - 8.3747550) < error_tolerance
+test_res = test_res & (iForest::s_cn(500) - 11.5856468) < error_tolerance
+test_res = test_res & (iForest::s_cn(1000) - 12.970941) < error_tolerance
+test_res = test_res & (iForest::s_cn(5000) - 16.1890177) < error_tolerance
+test_res = test_res & (iForest::s_cn(10000) - 17.5752120) < error_tolerance
+test_res = test_res & (iForest::s_cn(50000) - 20.7940078) < error_tolerance
 
-[test_cnt, fails] = record_test_result(testname, check_first_tree & check_second_tree, test_cnt, fails)
-
-
-# s_pathLength
-# ---------------------------------------------------------------------------------------------
-
+[test_cnt, fails] = record_test_result(testname, test_res, test_cnt, fails)
 
 # =============================================================================================
 # Testing main functions
@@ -458,7 +465,7 @@ check_consistent = is_iforest_consistent(M=M_res, X=X_3x8_equalrows, subsampling
 
 check_trees = TRUE
 for (i in 1:n_trees) {
-  M_tree = iForest::s_getITree(M_res, i)
+  M_tree = M_res[i,]
   check_id1 = as.scalar(M_res[1, 1] == M_res[1, 2])
   check_id2 = as.scalar(M_res[1, 3] == M_res[1, 4])
   check_id4 = as.scalar(M_res[1, 7] == M_res[1, 8])
@@ -501,6 +508,31 @@ for (i in 1:10) {
 }
 check_random_seed_random_model = !all_equal
 test_res = check_same_seed_same_model & check_different_seed_different_model & check_random_seed_random_model 
+[test_cnt, fails] = record_test_result(testname, test_res, test_cnt, fails)
+
+
+# m_PathLength
+# ---------------------------------------------------------------------------------------------
+print("\nm_PathLength")
+testname = "Equal Rows"
+M_tree1 = iForest::m_iTree(X=X_3x8_equalrows, max_depth=3)
+M_tree2 = iForest::m_iTree(X=X_3x8_equalrows, max_depth=5)
+M_tree3 = iForest::m_iTree(X=X_3x8_equalrows, max_depth=10)
+# c(8) calculated by hand
+cn_8 = 3.43571428
+
+# Results in pathlength max_depth and leafnode-size length(Tree)
+x_equal = X_3x8_equalrows[1, ]
+# Results in pathlength 1 with leafnode-size 0
+x_larger = X_3x8_equalrows[1, ] + 0.1
+
+test_res = iForest::m_PathLength(M_tree1, x_equal) == 3 + cn_8
+test_res = iForest::m_PathLength(M_tree2, x_equal) == 5 + cn_8
+test_res = iForest::m_PathLength(M_tree3, x_equal) == 10 + cn_8
+test_res = iForest::m_PathLength(M_tree1, x_larger) == 1
+test_res = iForest::m_PathLength(M_tree2, x_larger) == 1
+test_res = iForest::m_PathLength(M_tree3, x_larger) == 1
+
 [test_cnt, fails] = record_test_result(testname, test_res, test_cnt, fails)
 
 # =============================================================================================

@@ -19,10 +19,15 @@
 #
 #-------------------------------------------------------------
 
-
-#  
+#==============================================================
 # THIS SCRIPT IMPLEMENTS ANOMALY DETECTION VIA ISOLATION FOREST
-#
+# AS DESCRIBED IN 
+# [Liu2008] Liu, F. T., Ting, K. M., & Zhou, Z. H. (2008, December). 
+#           Isolation forest. In 2008 eighth ieee international 
+#           conference on data mining (pp. 413-422). IEEE.     
+#==============================================================
+
+
 # INPUT PARAMETERS:
 # ---------------------------------------------------------------------------------------------
 # NAME          TYPE     DEFAULT      MEANING
@@ -54,6 +59,7 @@ outlierByIsolationForest = function(Matrix[Double] X,
 {
   M = matrix(0, cols=1, rows=1)
 }
+
 outlierByIsolationForestApply = function(Matrix[Double] X, Matrix[Double] M)
   return(Matrix[Double] Y)
 {
@@ -61,7 +67,7 @@ outlierByIsolationForestApply = function(Matrix[Double] X, Matrix[Double] M)
 }
 
 # This function implements isolation forest for numerical input features as 
-# described in TODO
+# described in [Liu2008]
 #
 # .. code-block::
 #
@@ -77,11 +83,9 @@ outlierByIsolationForestApply = function(Matrix[Double] X, Matrix[Double] M)
 #   (L3)                 P2:2 P3:1                              2 
 #
 #   --> M :=
-#   [[4, 5, 0, 2, 1, 7, -1, -1, -1, -1, 0, 2, 0, 1, 2, 6, 0, 2, 0, 5],  (Tree Models)
-#    [1, 1, 1, 1, 1, 1,  1,  1,  1,  1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2]]  (Tree IDs) 
-#    |(L1)| |  (L2)   | |          (L3)          | |(L1)| |  (L2)  |
-#    |               Tree 1                      | |    Tree 2     | 
-#
+#   [[ 4, 5,  0,  2,  1,  7, -1, -1, -1, -1,  0,  2,  0],  (Tree 1)
+#    [ 1, 2,  6,  0,  2,  0,  5, -1, -1, -1, -1, -1, -1]]  (Tree 2)
+#    | (L1) | |     (L2)      | |          (L3)         | 
 #
 #
 # INPUT PARAMETERS:
@@ -104,15 +108,15 @@ m_iForest = function(Matrix[Double] X, Int n_trees, Int subsampling_size, Int se
   return(Matrix[Double] M)
 {
   # check assumptions
-  if (n_trees < 1)
-    stop("iForest: Requirement n_trees > 1 not satisfied! ntrees: "+toString(n_trees))
-  if (subsampling_size < 1 | subsampling_size > nrow(X))
-    stop("iForest: Requirement 0 < subsampling_size <= nrow(X) not satisfied! subsampling_size: "+toString(subsampling_size)+"; nrow(X): "+toString(nrow(X)))
-  
-  # initialize the model
-  M = matrix(0, cols=0, rows=2)
+  s_warning_assert(n_trees > 0, "iForest: Requirement n_trees > 1 not satisfied! ntrees: "+toString(n_trees))
+  s_warning_assert(subsampling_size > 1 & subsampling_size <= nrow(X), "iForest: Requirement 0 < subsampling_size <= nrow(X) not satisfied! subsampling_size: "+toString(subsampling_size)+"; nrow(X): "+toString(nrow(X)))
 
-  height_limit = ceil(log(subsampling_size, 2))
+  height_limit = ceil(log(subsampling_size, 2))  
+  tree_size = 2*(2^(height_limit+1)-1)
+
+  # initialize the model
+  M = matrix(-1, cols=tree_size, rows=n_trees)
+
   for (i_iTree in 1:n_trees) {
     # subsample rows
     seed = ifelse(seed == -1, -1, i_iTree*seed)
@@ -123,12 +127,13 @@ m_iForest = function(Matrix[Double] X, Int n_trees, Int subsampling_size, Int se
     M_tree = m_iTree(X, height_limit, seed)
 
     # Add iTree to the model
-    M = s_addITree(M_tree, M)
+    M[i_iTree, 1:ncol(M_tree)] = M_tree
   }
 }
 
 # This function implements isolation trees for numerical input features as 
-# described in TODO
+# described in [Liu2008] 
+# TODO describe the structure
 #
 # .. code-block::
 #
@@ -166,10 +171,8 @@ m_iTree = function(Matrix[Double] X, Int max_depth, Int seed = -1)
   return(Matrix[Double] M) 
 {
   # check assumptions
-  if (max_depth < 1 | max_depth > 32)
-    stop("iTree: Requirement 0 < max_depth < 32 not satisfied! max_depth: " + max_depth)
-  if (nrow(X) < 2)
-    stop("iTree: Feature matrix X has no less than 2 rows!")
+  s_warning_assert(max_depth > 0 & max_depth <= 32, "iTree: Requirement 0 < max_depth < 32 not satisfied! max_depth: " + max_depth)
+  s_warning_assert(nrow(X) > 0, "iTree: Feature matrix X has no less than 2 rows!")
 
 
   # Initialize M to largest possible matrix given max_depth 
@@ -264,7 +267,7 @@ s_drawSplitPoint = function(Matrix[Double] X, Int seed = -1)
 s_addExternalINode = function(Matrix[Double] X_node, Int node_id, Matrix[Double] M) 
   return(Matrix[Double] M)
 {
-  assert(node_id > 0)
+  s_warning_assert(node_id > 0, "s_addExternalINode: node_id > 0")
   
   node_start_index = 2*node_id-1
   M[, node_start_index] = 0
@@ -292,8 +295,8 @@ s_addExternalINode = function(Matrix[Double] X_node, Int node_id, Matrix[Double]
 s_addInternalINode = function(Int node_id, Int split_feature, Double split_value, Matrix[Double] M)
   return(Matrix[Double] M)
 {
-  assert(node_id > 0)
-  assert(split_feature > 0)
+  s_warning_assert(node_id > 0, "s_addInternalINode: node_id > 0")
+  s_warning_assert(split_feature > 0, "s_addInternalINode: split_feature > 0")
 
   node_start_index = 2*node_id-1
   M[, node_start_index] = split_feature
@@ -320,8 +323,8 @@ s_addInternalINode = function(Int node_id, Int split_feature, Double split_value
 s_isExternalINode = function(Matrix[Double] X_node, Int node_id, Int max_depth) 
   return(Boolean isExternalNode)
 {
-  assert(max_depth > 0)
-  assert(node_id > 0)
+  s_warning_assert(max_depth > 0, "s_isExternalINode: max_depth > 0")
+  s_warning_assert(node_id > 0, "s_isExternalINode: node_id > 0")
 
   node_depth = floor(log(node_id, 2))
   isExternalNode = node_depth >= max_depth | nrow(X_node) <= 1
@@ -353,9 +356,9 @@ s_isExternalINode = function(Matrix[Double] X_node, Int node_id, Int max_depth)
 s_splitINode = function(Matrix[Double] X_node, Int node_id, Int split_feature, Double split_value) 
   return(Int left_id, Matrix[Double] X_left, Int right_id, Matrix[Double] X_right)
 {
-  assert(nrow(X_node) > 0)
-  assert(node_id > 0)
-  assert(split_feature > 0)
+  s_warning_assert(nrow(X_node) > 0, "s_splitINode: nrow(X_node) > 0")
+  s_warning_assert(node_id > 0, "s_splitINode: nrow(X_node) > 0")
+  s_warning_assert(split_feature > 0, "s_splitINode: split_feature > 0")
 
   left_rows_mask = X_node[, split_feature] <= split_value 
 
@@ -388,7 +391,7 @@ s_splitINode = function(Matrix[Double] X_node, Int node_id, Int split_feature, D
 s_sampleRows = function(Matrix[Double] X, Int size, Int seed = -1)
   return(Matrix[Double] X_extracted)
 {
-  assert(size > 0 & nrow(X) >= size)
+  s_warning_assert(size > 0 & nrow(X) >= size, "s_sampleRows: size > 0 & nrow(X) >= size")
   random_vector = rand(rows=nrow(X), cols=1, seed=seed)
   X_rand = cbind(X, random_vector)
 
@@ -397,63 +400,148 @@ s_sampleRows = function(Matrix[Double] X, Int size, Int seed = -1)
   X_extracted = X_rand[1:size, 1:ncol(X)]
 }
 
-# Adds an iTree model to an iForest model
+# Calculates the PathLength as defined in [Liu2008] based on a sample x
 #
 # INPUT PARAMETERS:
 # ---------------------------------------------------------------------------------------------
 # NAME          TYPE             DEFAULT      MEANING
 # ---------------------------------------------------------------------------------------------
-# M_tree        Matrix[Double]                iTree model to add to the iForest
-# M             Matrix[Double]                The iForest model to add the iTree to
+# M             Matrix[Double]                The linearized iTree model
+# x             Matrix[Double]                The sample to calculate the PathLength
 #
 # ---------------------------------------------------------------------------------------------
 # OUTPUT PARAMETERS: 
 # ---------------------------------------------------------------------------------------------
-# M    The updated iForest model
+# PathLength  The PathLength for the sample
 # ---------------------------------------------------------------------------------------------
-s_addITree = function(Matrix[Double] M_tree, Matrix[Double] M)
-  return(Matrix[Double] M)
+m_PathLength = function(Matrix[Double] M, Matrix[Double] x)
+  return(Double PathLength)
 {
-  if (length(M) > 0) 
-    next_tree_id = max(M[2,]) + 1
-  else 
-    next_tree_id = 1
-
-  new_id_row = matrix(next_tree_id, cols=ncol(M_tree), rows=1)
-  M_tree = rbind(M_tree, new_id_row)
-
-  if (length(M) == 0)
-    M = M_tree
-  else
-    M = cbind(M, M_tree)
-}
-
-# Retrives an iTree model from an iForest model given an index
-#
-# INPUT PARAMETERS:
-# ---------------------------------------------------------------------------------------------
-# NAME          TYPE             DEFAULT      MEANING
-# ---------------------------------------------------------------------------------------------
-# M             Matrix[Double]                The iForest model extract the iTree from
-# tree_index    Int                           Index of the iTree to extract  
-#
-# ---------------------------------------------------------------------------------------------
-# OUTPUT PARAMETERS: 
-# ---------------------------------------------------------------------------------------------
-# M_tree    The extracted iTree model
-# ---------------------------------------------------------------------------------------------
-s_getITree = function(Matrix[Double] M, Int tree_index) 
-  return(Matrix[Double] M_tree)
-{
-  assert(contains(target=M[2,], pattern=tree_index))
+  [nrEdgesTraversed, externalNodeSize] = s_traverseITree(M, x)
   
-  col_mask = M[2,] == tree_index
-  M_tree = removeEmpty(target=M[1,], margin="cols", select=col_mask, empty.return=FALSE)
+  if (externalNodeSize <= 1) {
+    PathLength = nrEdgesTraversed   
+  }
+  else {
+    PathLength = nrEdgesTraversed + s_cn(externalNodeSize)
+  }
 }
 
 
-s_pathLength = function(Matrix[Double] x, Matrix[Double] T)
-  return(Int PathLength)
+# Traverses an iTree based on a sample x
+#
+# INPUT PARAMETERS:
+# ---------------------------------------------------------------------------------------------
+# NAME          TYPE             DEFAULT      MEANING
+# ---------------------------------------------------------------------------------------------
+# M             Matrix[Double]                The linearized iTree model to traverse
+# x             Matrix[Double]                The sample to traverse the iTree with
+#
+# ---------------------------------------------------------------------------------------------
+# OUTPUT PARAMETERS: 
+# ---------------------------------------------------------------------------------------------
+# nrEdgesTraversed         The number of edges traversed until an external node was reached
+# externalNodeSize   The size of of the external node assigned to during training
+# ---------------------------------------------------------------------------------------------
+s_traverseITree = function(Matrix[Double] M, Matrix[Double] x)
+  return(Int nrEdgesTraversed, Int externalNodeSize)
 {
-  PathLength = 0
+  s_warning_assert(nrow(x) == 1, "s_traverseITree: nrow(x) == 1")
+
+  nrEdgesTraversed = 0
+  is_external_node = FALSE
+  node_id = 1
+  while (!is_external_node)
+  {
+    node_start_idx = (node_id*2) - 1
+    split_feature = as.integer(as.scalar(M[1,node_start_idx]))
+    node_value = as.scalar(M[1,node_start_idx + 1])
+
+    if (split_feature > 0) {
+      # internal node - node_value = split_value
+      nrEdgesTraversed = nrEdgesTraversed + 1
+      x_val = as.scalar(x[1, split_feature])
+      if (x_val <= node_value) {
+        # go down left
+        node_id = (node_id * 2)
+      }
+      else {
+        # go down right
+        node_id = (node_id * 2) + 1
+      }
+    }
+    else if (split_feature == 0) {
+      # External node - node_value = node size
+      externalNodeSize = as.integer(node_value)
+      is_external_node = TRUE
+    }
+    else {
+      s_warning_assert(FALSE, "iTree is not valid!")
+    }
+  } 
+}
+
+
+# This function gives the average path length of unsuccessful search in BST `c(n)`
+# for `n` nodes as given in [Liu2008]. This function is used to normalize the path length
+#
+# INPUT PARAMETERS:
+# ---------------------------------------------------------------------------------------------
+# NAME          TYPE             DEFAULT      MEANING
+# ---------------------------------------------------------------------------------------------
+# n             Int                           Number of samples that corresponding to an external
+#                                             node for which c(n) should be calculated
+# ---------------------------------------------------------------------------------------------
+# OUTPUT PARAMETERS: 
+# ---------------------------------------------------------------------------------------------
+# cn   Value for c(n)
+# ---------------------------------------------------------------------------------------------
+s_cn = function(Int n)
+  return(Double cn)
+{
+  s_warning_assert(n > 1, "s_cn: n > 1")
+  
+  # Calculate H(n-1)
+  # The approximation of the Harmonic Number H using `log(n) + eulergamma` has a higher error
+  # for low n. We hence calculate it directly for the first 1000 values
+  # TODO: Discuss a good value for n --> use e.g. HarmonicNumber(1000) - (ln(1000) + 0.5772156649) in WA
+  if (n < 1000) {
+    H_nminus1 = 0
+    for (i in 1:n-1) 
+      H_nminus1 = H_nminus1 + 1/i;
+  }
+  else{
+    # Euler–Mascheroni's constant
+    eulergamma = 0.57721566490153
+    # Approximation harmonic number H(n - 1)
+    H_nminus1 = log(n-1) + eulergamma
+  }
+
+  cn = 2*H_nminus1 - 2*(n-1)/n
+}
+
+m_score = function(Matrix[Double] M, Matrix[Double] x, Int n)
+  return(Double score)
+{
+  score = 3
+}
+
+# Function that gives a warning if a assertion is violated. This is used instead of `assert` and
+# `stop` since these function can not be used in parfor .
+#
+# INPUT PARAMETERS:
+# ---------------------------------------------------------------------------------------------
+# NAME          TYPE             DEFAULT      MEANING
+# ---------------------------------------------------------------------------------------------
+# n             Int                           Number of samples that corresponding to an external
+#                                             node for which c(n) should be calculated
+# ---------------------------------------------------------------------------------------------
+# OUTPUT PARAMETERS: 
+# ---------------------------------------------------------------------------------------------
+# cn   Value for c(n)
+# ---------------------------------------------------------------------------------------------
+s_warning_assert = function(Boolean assertion, String warning) 
+{
+  if (!assertion)
+    print("WARNING! "+warning)
 }

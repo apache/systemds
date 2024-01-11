@@ -23,7 +23,6 @@
 # This is a simple example for the use of the ResNets. Here,
 # ResNet18 is used. Random data is used to only showcase the
 # usage of the ResNets.
-#
 #-------------------------------------------------------------
 
 source("scripts/nn/networks/resnet.dml") as resnet

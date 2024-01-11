@@ -961,7 +961,6 @@ resnet_backward = function(matrix[double] dOut, list[unknown] cached_out,
 
 init = function(string block_type, list[unknown] layer_sizes, int seed)
     return (list[unknown] model, list[unknown] ema_means_vars) {
-
     C_in = 3
     # Conv 7x7
     [W_conv1, b_conv1] = conv2d::init(F=64, C=C_in, Hf=7, Wf=7, seed=seed)
@@ -974,12 +973,245 @@ init = function(string block_type, list[unknown] layer_sizes, int seed)
 
     # residual layers
     C_bases = list(64, 128, 256, 512)
+    strides = list(1, 2, 2, 2)
     for (layer in 1:4) {
         layer_size = as.integer(as.scalar(layer_sizes[layer]))
         C_base = as.integer(as.scalar(C_bases[layer]))
+        stride = as.integer(as.scalar(strides[layer]))
 
         weights_layer = list()
         emas_layer = list()
+
+        if (block_type == "basic") {
+            # basic blocks
+            for (block in 1:layer_size) {
+                [_W_conv1, _b_conv1] = conv2d::init(F=C_base, C=C_in, Hf=3, Wf=3, seed=seed)
+                [_gamma_bn1, _beta_bn1, _ema_m_bn1, _ema_v_bn1] = bn2d::init(C_base)
+                [_W_conv2, _b_conv2] = conv2d::init(F=C_base, C=C_base, Hf=3, Wf=3, seed=seed)
+                [_gamma_bn2, _beta_bn2, _ema_m_bn2, _ema_v_bn2] = bn2d::init(C_base)
+                weights_block = list(_W_conv1, _gamma_bn1, _beta_bn1, _W_conv2, _gamma_bn2, _beta_bn2)
+                emas_block = list(_ema_m_bn1, _ema_v_bn1, _ema_m_bn2, _ema_v_bn2)
+
+                if (block == 1 & stride > 1) {
+                    # downsample params
+                    [_W_conv3, _b_conv3] = conv2d::init(F=C_base, C=C_in, Hf=1, Wf=1, seed=seed)
+                    [_gamma_bn3, _beta_bn3, _ema_m_bn3, _ema_v_bn3] = bn2d::init(C_base)
+                    weights_block = append(weights_block, _W_conv3)
+                    weights_block = append(weights_block, _gamma_bn3)
+                    weights_block = append(weights_block, _beta_bn3)
+                    emas_block = append(emas_block, _ema_m_bn3)
+                    emas_block = append(emas_block, _ema_v_bn3)
+                }
+
+                C_in = C_base
+
+                weights_layer = append(weights_layer, weights_block)
+                emas_layer = append(emas_layer, emas_block)
+            }
+        } else {
+            # bottleneck blocks
+            for (block in 1:layer_size) {
+                [_W_conv1, _b_conv1] = conv2d::init(F=C_base, C=C_in, Hf=1, Wf=1, seed=seed)
+                [_gamma_bn1, _beta_bn1, _ema_m_bn1, _ema_v_bn1] = bn2d::init(C_base)
+                [_W_conv2, _b_conv2] = conv2d::init(F=C_base, C=C_base, Hf=3, Wf=3, seed=seed)
+                [_gamma_bn2, _beta_bn2, _ema_m_bn2, _ema_v_bn2] = bn2d::init(C_base)
+                [_W_conv3, _b_conv3] = conv2d::init(F=4*C_base, C=C_base, Hf=1, Wf=1, seed=seed)
+                [_gamma_bn3, _beta_bn3, _ema_m_bn3, _ema_v_bn3] = bn2d::init(4*C_base)
+                weights_block = list(_W_conv1, _gamma_bn1, _beta_bn1, _W_conv2, _gamma_bn2, _beta_bn2, _W_conv3,
+                    _gamma_bn3, _beta_bn3)
+                emas_block = list(_ema_m_bn1, _ema_v_bn1, _ema_m_bn2, _ema_v_bn2, _ema_m_bn3, _ema_v_bn3)
+
+                if (block == 1) {
+                    # downsample params
+                    [_W_conv4, _b_conv4] = conv2d::init(F=4*C_base, C=C_in, Hf=1, Wf=1, seed=seed)
+                    [_gamma_bn4, _beta_bn4, _ema_m_bn4, _ema_v_bn4] = bn2d::init(4*C_base)
+                    weights_block = append(weights_block, _W_conv4)
+                    weights_block = append(weights_block, _gamma_bn4)
+                    weights_block = append(weights_block, _beta_bn4)
+                    emas_block = append(emas_block, _ema_m_bn4)
+                    emas_block = append(emas_block, _ema_v_bn4)
+                }
+
+                C_in = 4*C_base
+
+                weights_layer = append(weights_layer, weights_block)
+                emas_layer = append(emas_layer, emas_block)
+            }
+        }
+
+        model = append(model, weights_layer)
+        emas = append(emas, emas_layer)
+    }
+
+    # affine
+    if (block_type == "basic")
+        C_in = 512
+    else
+        C_in = 512 * 4
+    [W_fc, b_fc] = fc::init(D=C_in, M=1000)
+    model = append(model, W_fc)
+    model = append(model, b_fc)
+}
+
+init_optim_adam_basic_block = function(int C_in, int C_base, boolean downsample)
+    return (list[unknown] block_params) {
+    # Conv 1
+    m_W_conv1 = matrix(0, rows=C_base, cols=C_in*3*3); v_W_conv1 = matrix(0, rows=C_base, cols=C_in*3*3)
+    # BN 1
+    m_W_bn1 = matrix(0, rows=C_base, cols=1); v_W_bn1 = matrix(0, rows=C_base, cols=1)
+    m_b_bn1 = matrix(0, rows=C_base, cols=1); v_b_bn1 = matrix(0, rows=C_base, cols=1)
+    # Conv 2
+    m_W_conv2 = matrix(0, rows=C_base, cols=C_base*3*3); v_W_conv2 = matrix(0, rows=C_base, cols=C_base*3*3)
+    # BN 2
+    m_W_bn2 = matrix(0, rows=C_base, cols=1); v_W_bn2 = matrix(0, rows=C_base, cols=1)
+    m_b_bn2 = matrix(0, rows=C_base, cols=1); v_b_bn2 = matrix(0, rows=C_base, cols=1)
+
+    block_params = list(list(m_W_conv1, v_W_conv1), list(m_W_bn1, v_W_bn1), list(m_b_bn1, v_b_bn1),
+        list(m_W_conv2, v_W_conv2), list(m_W_bn2, v_W_bn2), list(m_b_bn2, v_b_bn2))
+
+    if (downsample) {
+        # Conv 3
+        m_W_conv3 = matrix(0, rows=C_base, cols=C_in*3*3); v_W_conv3 = matrix(0, rows=C_base, cols=C_in*3*3)
+        # BN 3
+        m_W_bn3 = matrix(0, rows=C_base, cols=1); v_W_bn3 = matrix(0, rows=C_base, cols=1)
+        m_b_bn3 = matrix(0, rows=C_base, cols=1); v_b_bn3 = matrix(0, rows=C_base, cols=1)
+        block_params = append(block_params, list(m_W_conv3, v_W_conv3))
+        block_params = append(block_params, list(m_W_bn3, v_W_bn3))
+        block_params = append(block_params, list(m_b_bn3, v_b_bn3))
+    }
+}
+
+init_optim_other_basic_block = function(int C_in, int C_base, boolean downsample)
+    return (list[unknown] block_params) {
+    # Conv 1
+    s_W_conv1 = matrix(0, rows=C_base, cols=C_in*3*3)
+    # BN 1
+    s_W_bn1 = matrix(0, rows=C_base, cols=1)
+    s_b_bn1 = matrix(0, rows=C_base, cols=1)
+    # Conv 2
+    s_W_conv2 = matrix(0, rows=C_base, cols=C_base*3*3)
+    # BN 2
+    s_W_bn2 = matrix(0, rows=C_base, cols=1)
+    s_b_bn2 = matrix(0, rows=C_base, cols=1)
+
+    block_params = list(s_W_conv1, s_W_bn1, s_b_bn1, s_W_conv2, s_W_bn2, s_b_bn2)
+
+    if (downsample) {
+        # Conv 3
+        s_W_conv3 = matrix(0, rows=C_base, cols=C_in*3*3)
+        # BN 3
+        s_W_bn3 = matrix(0, rows=C_base, cols=1)
+        s_b_bn3 = matrix(0, rows=C_base, cols=1)
+        block_params = append(block_params, s_W_conv3)
+        block_params = append(block_params, s_W_bn3)
+        block_params = append(block_params, s_b_bn3)
+    }
+}
+
+init_optim_other_bottleneck_block = function(int C_in, int C_base, boolean downsample)
+    return (list[unknown] block_params) {
+    # Conv 1
+    s_W_conv1 = matrix(0, rows=C_base, cols=C_in)
+    # BN 1
+    s_W_bn1 = matrix(0, rows=C_base, cols=1)
+    s_b_bn1 = matrix(0, rows=C_base, cols=1)
+    # Conv 2
+    s_W_conv2 = matrix(0, rows=C_base, cols=C_base*3*3)
+    # BN 2
+    s_W_bn2 = matrix(0, rows=C_base, cols=1)
+    s_b_bn2 = matrix(0, rows=C_base, cols=1)
+    # Conv 3
+    s_W_conv3 = matrix(0, rows=4*C_base, cols=C_base)
+    # BN 3
+    s_W_bn3 = matrix(0, rows=4*C_base, cols=1)
+    s_b_bn3 = matrix(0, rows=4*C_base, cols=1)
+
+    block_params = list(s_W_conv1, s_W_bn1, s_b_bn1, s_W_conv2, s_W_bn2, s_b_bn2, s_W_conv3, s_W_bn3, s_b_bn3)
+
+    if (downsample) {
+        # Conv 4
+        s_W_conv3 = matrix(0, rows=4*C_base, cols=C_in)
+        # BN 4
+        s_W_bn3 = matrix(0, rows=4*C_base, cols=1)
+        s_b_bn3 = matrix(0, rows=4*C_base, cols=1)
+        block_params = append(block_params, s_W_conv4)
+        block_params = append(block_params, s_W_bn4)
+        block_params = append(block_params, s_b_bn4)
+    }
+}
+
+init_optim_adam_bottleneck_block = function(int C_in, int C_base, boolean downsample)
+    return (list[unknown] block_params) {
+    # Conv 1
+    m_W_conv1 = matrix(0, rows=C_base, cols=C_in); v_W_conv1 = matrix(0, rows=C_base, cols=C_in)
+    # BN 1
+    m_W_bn1 = matrix(0, rows=C_base, cols=1); v_W_bn1 = matrix(0, rows=C_base, cols=1)
+    m_b_bn1 = matrix(0, rows=C_base, cols=1); v_b_bn1 = matrix(0, rows=C_base, cols=1)
+    # Conv 2
+    m_W_conv2 = matrix(0, rows=C_base, cols=C_base*3*3); v_W_conv2 = matrix(0, rows=C_base, cols=C_base*3*3)
+    # BN 2
+    m_W_bn2 = matrix(0, rows=C_base, cols=1); v_W_bn2 = matrix(0, rows=C_base, cols=1)
+    m_b_bn2 = matrix(0, rows=C_base, cols=1); v_b_bn2 = matrix(0, rows=C_base, cols=1)
+    # Conv 3
+    m_W_conv3 = matrix(0, rows=4*C_base, cols=C_base); v_W_conv3 = matrix(0, rows=4*C_base, cols=C_base)
+    # BN 3
+    m_W_bn3 = matrix(0, rows=4*C_base, cols=1); v_W_bn3 = matrix(0, rows=4*C_base, cols=1)
+    m_b_bn3 = matrix(0, rows=4*C_base, cols=1); v_b_bn3 = matrix(0, rows=4*C_base, cols=1)
+
+    block_params = list(list(m_W_conv1, v_W_conv1), list(m_W_bn1, v_W_bn1), list(m_b_bn1, v_b_bn1),
+            list(m_W_conv2, v_W_conv2), list(m_W_bn2, v_W_bn2), list(m_b_bn2, v_b_bn2), list(m_W_conv3, v_W_conv3),
+            list(m_W_bn3, v_W_bn3), list(m_b_bn3, v_b_bn3))
+
+    if (downsample) {
+        # Conv 4
+        m_W_conv3 = matrix(0, rows=4*C_base, cols=C_in); v_W_conv3 = matrix(0, rows=4*C_base, cols=C_in)
+        # BN 4
+        m_W_bn3 = matrix(0, rows=4*C_base, cols=1); v_W_bn3 = matrix(0, rows=4*C_base, cols=1)
+        m_b_bn3 = matrix(0, rows=4*C_base, cols=1); v_b_bn3 = matrix(0, rows=4*C_base, cols=1)
+        block_params = append(block_params, list(m_W_conv4, v_W_conv4))
+        block_params = append(block_params, list(m_W_bn4, v_W_bn4))
+        block_params = append(block_params, list(m_b_bn4, v_b_bn4))
+    }
+}
+
+init_optim = function(string optimizer, string block_type, list[unknown] layer_sizes)
+    return (list[unknown] optim) {
+    optim = list()
+
+    C_in = 3
+    # Conv 7x7
+    if (optim == "adam") {
+        m_W_conv1 = matrix(0, rows=64, cols=C_in*7*7)
+        v_W_conv1 = matrix(0, rows=64, cols=C_in*7*7)
+        param_W_conv1 = list(m_W_conv1, v_W_conv1)
+    } else {
+        param_W_conv1 = matrix(0, rows=64, cols=C_in*7*7)
+    }
+    optim = append(optim, param_W_conv1)
+    C_in = 64
+    # Batch norm
+    if (optim == "adam") {
+        m_W_bn1 = matrix(0, rows=C_in, cols=1)
+        v_W_bn1 = matrix(0, rows=C_in, cols=1)
+        m_b_bn1 = matrix(0, rows=C_in, cols=1)
+        v_b_bn1 = matrix(0, rows=C_in, cols=1)
+        param_W_bn1 = list(m_W_bn1, v_W_bn1)
+        param_b_bn1 = list(m_b_bn1, v_b_bn1)
+    } else {
+        param_W_bn1 = matrix(0, rows=C_in, cols=1)
+        param_b_bn1 = matrix(0, rows=C_in, cols=1)
+    }
+    optim = append(optim, param_W_bn1)
+    optim = append(optim, param_b_bn1)
+
+    # residual layers
+    C_bases = list(64, 128, 256, 512)
+    strides = list(1, 2, 2, 2)
+    for (layer in 1:4) {
+        layer_size = as.integer(as.scalar(layer_sizes[layer]))
+        C_base = as.integer(as.scalar(C_bases[layer]))
+        stride = as.integer(as.scalar(strides[layer]))
+        optim_layer = list()
 
         if (block_type == "basic") {
             # basic blocks

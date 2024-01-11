@@ -22,8 +22,8 @@
 source("scripts/nn/networks/resnet.dml") as resnet
 
 forward = function(matrix[double] X, int Hin, int Win,
-                            list[unknown] model, string mode,
-                            list[unknown] ema_means_vars)
+                   list[unknown] model, string mode,
+                   list[unknown] ema_means_vars)
     return (matrix[double] out, list[unknown] ema_means_vars_upd,
             list[unknown] cached_out, list[unknown] cached_means_vars) {
     /*
@@ -98,4 +98,12 @@ forward = function(matrix[double] X, int Hin, int Win,
     block_type = "basic"
     [out, ema_means_vars_upd, cached_out, cached_means_vars] = resnet::resnet_forward(X, Hin, Win, block_type,
         layer_sizes, model, mode, ema_means_vars)
+}
+
+backward = function(matrix[double] dOut, list[unknown] cached_out,
+                    list[unknown] model, list[unknown] cached_means_vars)
+    return (matrix[double] dX, list[unknown] gradients) {
+    layer_sizes = list(2, 2, 2, 2)
+    block_type = "basic"
+    [dX, gradients] = resnet::resnet_backward(dOut, cached_out, block_type, layer_sizes, model, cached_means_vars)
 }

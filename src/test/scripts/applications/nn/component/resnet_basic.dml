@@ -550,7 +550,7 @@ values_test_basic_block_backward = function() {
     C_in = 2; C_base = 4
     Hin = 4; Win = 4
     N = 2
-    X = matrix(1, rows=N, cols=C_in*Hin*Win)
+    X = matrix(seq(1, N*C_in*Hin*Win), rows=N, cols=C_in*Hin*Win)
     W_conv1 = matrix("0.22795902  0.17547427  0.21921514
              0.13373677  0.1449876  -0.20703636
              0.1049294  -0.07758546  0.01650636
@@ -693,39 +693,178 @@ values_test_basic_block_backward = function() {
     [out, Hout, Wout, ema_means_vars_up, cached_out, cached_means_vars] = resnet::basic_block_forward(X, weights, C_in,
         C_base, Hin, Win, strideh, stridew, mode, ema_means_vars)
 
-    print(toString(out))
+    dOut = matrix("-0.0625     -0.0625
+                   -0.0625     -0.05511813
 
-    dOut = matrix("-0.0625     -0.06066703
-            -0.0514779   0.01886634
+                   -0.03883262 -0.05729559
+                    0.04194808 -0.03308601
 
-            -0.0625     -0.0625
-             0.04197507 -0.0625
+                   -0.04001789 -0.0625
+                   -0.0625     -0.03310877
 
-             0.03034905 -0.0625
-            -0.0625     -0.0625
-
-            -0.0625     -0.0625
-            -0.0625      0.04534711
+                   -0.0625      0.02698019
+                   -0.00352125  0.04049902
 
 
-            -0.0625     -0.06066703
-            -0.0514779   0.01886634
+                   -0.0625      0.04098879
+                    0.02273786  0.10461447
 
-            -0.0625     -0.0625
-             0.04197507 -0.0625
+                   -0.0625     -0.0625
+                    0.00151762 -0.0625
 
-             0.03034905 -0.0625
-            -0.0625     -0.0625
+                   -0.00950899 -0.05501665
+                   -0.0625     -0.0141529
 
-            -0.0625     -0.0625
-            -0.0625      0.04534711
-        ", rows=N, cols=C_base*Hout*Wout)
+                   -0.0625     -0.0625
+                   -0.0625     -0.03729285",
+                   rows=N, cols=C_base*Hout*Wout)
 
-    [dX, gradients] = resnet::basic_block_backward(dOut, Hout, Wout, cached_out, weights, C_in, C_base,
-        strideh, stridew, mode, cached_means_vars)
+    [dX, gradients] = resnet::basic_block_backward(dOut, cached_out, weights, C_in, C_base,
+        strideh, stridew, cached_means_vars)
 
-    print(toString(weights))
-    print(toString(gradients))
+    dW_conv1_exp = matrix("-0.02246146  0.10423277  0.1029001
+                           -0.05089705  0.10958684  0.10958683
+                           -0.07130328  0.10958684  0.10958684
+
+                           -0.10713803  0.08291006  0.08157738
+                           -0.13252197  0.10958683  0.10958685
+                           -0.1529282   0.10958683  0.10958683
+
+
+                           -0.02584631  0.06710234  0.06838104
+                           -0.34364033 -0.17614923 -0.17614923
+                           -0.3919655  -0.17614925 -0.17614923
+
+                           -0.1790472   0.0875615   0.08884021
+                           -0.53694105 -0.17614923 -0.17614923
+                           -0.58526623 -0.17614922 -0.17614925
+
+
+                           -0.13346207 -0.03711003 -0.04283796
+                           -0.17548679 -0.3563866  -0.35638663
+                           -0.1589087  -0.3563866  -0.35638663
+
+                           -0.21392906 -0.12875691 -0.13448483
+                           -0.1091744  -0.35638666 -0.35638663
+                           -0.09259631 -0.3563867  -0.3563866
+
+
+                           -0.10748374 -0.15856032 -0.15569028
+                           -0.15130743 -0.26214042 -0.2621404
+                           -0.18142992 -0.2621404  -0.26214042
+
+                           -0.01991791 -0.1126398  -0.10976979
+                           -0.27179736 -0.26214045 -0.26214042
+                           -0.30191985 -0.26214045 -0.2621404 ",
+                           rows=C_base, cols=C_in*3*3)
+    test_util::check_all_close(as.matrix(gradients[1]), dW_conv1_exp, 0.0001)
+
+    dW_bn1_exp = matrix(" 0.11060466 -0.02107318 -0.0812627  -0.00814073", rows=C_base, cols=1)
+    test_util::check_all_close(as.matrix(gradients[2]), dW_bn1_exp, 0.0001)
+
+    db_bn1_exp = matrix(" 0.01407476 -0.07577097  0.09522599  0.07362167", rows=C_base, cols=1)
+    test_util::check_all_close(as.matrix(gradients[3]), db_bn1_exp, 0.0001)
+
+    dW_conv2_exp = matrix(" 0.00000000e+00  6.27728775e-02  4.55777068e-03
+                            7.02145845e-02  5.98357618e-01  6.22697920e-02
+                            1.20493323e-02  1.22186027e-01  1.86003119e-01
+
+                           -2.30462596e-01 -3.63258511e-01 -1.50781767e-02
+                           -1.57529697e-01 -2.15406895e-01  2.45092548e-02
+                           -1.97134074e-02 -2.55168434e-02 -7.79616646e-04
+
+                            2.15687096e-01  1.35737220e-02 -2.27542143e-04
+                            1.13740548e-01  1.09955356e-01 -2.35504449e-05
+                            1.39786359e-02  6.76771551e-02  0.00000000e+00
+
+                           -9.22712237e-02 -2.82834589e-01 -1.38832042e-02
+                           -1.52194882e-02  2.60263085e-02  9.82659869e-03
+                            0.00000000e+00  1.41863674e-02  1.05086461e-01
+
+
+                            0.00000000e+00  5.18248565e-02 -6.42012283e-02
+                            5.79686798e-02  4.33321059e-01 -5.52755892e-01
+                            2.53020395e-02  2.54378200e-01  3.95552069e-01
+
+                           -1.31259233e-01  8.39732587e-02  4.01174039e-01
+                           -2.59595156e-01 -3.81430775e-01  7.20100850e-02
+                           -9.93236750e-02 -1.69444025e-01 -5.55632524e-02
+
+                            2.05957323e-01 -2.13401914e-01  5.07378485e-03
+                            1.25175878e-01  1.10367373e-01 -1.67843944e-03
+                           -3.87407765e-02  9.45824534e-02  0.00000000e+00
+
+                           -5.25527745e-02 -5.58004305e-02  3.09570760e-01
+                           -7.66815916e-02 -1.37685180e-01 -1.52672842e-01
+                            0.00000000e+00 -9.84215960e-02  1.30307078e-01
+
+
+                            0.00000000e+00  1.21219526e-03  5.99100720e-03
+                            1.35590055e-03 -3.04231290e-02  7.05613419e-02
+                           -5.36800846e-02 -4.34169441e-01  1.18018150e-01
+
+                           -1.83993857e-02  2.74298918e-02  1.34550676e-01
+                            5.64235747e-02  3.97945419e-02  4.81129810e-03
+                            3.42092514e-02  2.82005444e-02 -1.89568941e-02
+
+                           -2.42714863e-03  5.99674359e-02  1.22890016e-03
+                           -2.24024475e-01  1.11650631e-01 -5.72644640e-04
+                           -1.25298709e-01  2.60425620e-02  0.00000000e+00
+
+                           -7.36663491e-03  2.65299832e-03  7.49798343e-02
+                            2.64108200e-02  5.34383431e-02  6.85021579e-02
+                            0.00000000e+00 -1.81864589e-01  3.47672515e-02
+
+
+                            0.00000000e+00 -7.43892491e-02 -7.71372812e-03
+                           -8.32080767e-02 -7.09796607e-01 -8.08604732e-02
+                           -1.06588183e-02 -9.39640850e-02 -7.12726489e-02
+
+                            2.23416343e-01  2.80079544e-01 -8.82177129e-02
+                            2.54184335e-01  3.47144812e-01 -1.16981082e-01
+                            7.17329308e-02  6.99866414e-02 -2.60418989e-02
+
+                           -2.79086232e-01 -5.31585366e-02 -7.40691903e-04
+                           -1.04264751e-01 -1.04167528e-01 -7.86666467e-04
+                            5.14573716e-02 -5.00418246e-02  0.00000000e+00
+
+                            8.94500837e-02  2.54736274e-01 -4.51924093e-02
+                            5.53805046e-02  8.24335217e-03 -1.32365167e-01
+                            0.00000000e+00  1.07619762e-01 -8.57934728e-02",
+                            rows=C_base, cols=C_base*3*3)
+    test_util::check_all_close(as.matrix(gradients[4]), dW_conv2_exp, 0.0001)
+
+    dW_bn2_exp = matrix(" 0.1440372   0.14261805 -0.06086085 -0.01561027", rows=C_base, cols=1)
+    test_util::check_all_close(as.matrix(gradients[5]), dW_bn2_exp, 0.0001)
+
+    db_bn2_exp = matrix(" 0.11322299 -0.08574851 -0.15180519  0.02666511", rows=C_base, cols=1)
+    test_util::check_all_close(as.matrix(gradients[6]), db_bn2_exp, 0.0001)
+
+    dW_conv3_exp = matrix(" 8.9406967e-08
+
+                           1.1920929e-07
+
+
+                           2.5063753e-05
+
+                           2.4765730e-05
+
+
+                          -1.1175871e-08
+
+                          -2.9802322e-08
+
+
+                          -2.2351742e-08
+
+                          -2.9802322e-08", rows=C_base, cols=C_in)
+    test_util::check_all_close(as.matrix(gradients[7]), dW_conv3_exp, 0.0001)
+
+    dW_bn3_exp = matrix(" 0.22805437 -0.10600837  0.00529851  0.10261551", rows=C_base, cols=1)
+    test_util::check_all_close(as.matrix(gradients[8]), dW_bn3_exp, 0.0001)
+
+    db_bn3_exp = matrix(" 0.11322299 -0.08574851 -0.15180519  0.02666511", rows=C_base, cols=1)
+    test_util::check_all_close(as.matrix(gradients[9]), db_bn3_exp, 0.0001)
 }
 
 
@@ -740,7 +879,7 @@ values_test_basic_block_backward = function() {
  * to downsample the input and the output should have the
  * expected shape.
  */
-#basic_test_basic_block_forward(C_in=4, C_base=4, strideh=1, stridew=1, Hin=4, Win=4, N=3, downsample=FALSE)
+basic_test_basic_block_forward(C_in=4, C_base=4, strideh=1, stridew=1, Hin=4, Win=4, N=3, downsample=FALSE)
 
 /*
  * Test case 2:
@@ -749,7 +888,7 @@ values_test_basic_block_backward = function() {
  * because of non-matching channels and the output should
  * have the expected (downsampled) shapes.
  */
-#basic_test_basic_block_forward(C_in=2, C_base=4, strideh=1, stridew=1, Hin=4, Win=4, N=3, downsample=TRUE)
+basic_test_basic_block_forward(C_in=2, C_base=4, strideh=1, stridew=1, Hin=4, Win=4, N=3, downsample=TRUE)
 
 /*
  * Test case 3:
@@ -758,7 +897,7 @@ values_test_basic_block_backward = function() {
  * because of stride bigger than 1 and the output should
  * have the expected (downsampled) shapes.
  */
-#basic_test_basic_block_forward(C_in=4, C_base=4, strideh=2, stridew=2, Hin=4, Win=4, N=3, downsample=TRUE)
+basic_test_basic_block_forward(C_in=4, C_base=4, strideh=2, stridew=2, Hin=4, Win=4, N=3, downsample=TRUE)
 
 /*
  * **** Basic Block Value Testing ****
@@ -778,7 +917,7 @@ values_test_basic_block_backward = function() {
  * input and output channels and the same input and
  * output dimensions, i.e. stride 1, in train mode.
  */
-#values_test_basic_block_forward_1()
+values_test_basic_block_forward_1()
 
 /*
  * Test case 2:
@@ -786,7 +925,7 @@ values_test_basic_block_backward = function() {
  * downsampling through a stride of 2 but same number
  * of channels in train mode.
  */
-#values_test_basic_block_forward_2()
+values_test_basic_block_forward_2()
 
 /*
  * Test case 2:
@@ -794,7 +933,7 @@ values_test_basic_block_backward = function() {
  * downsampling through non-matching channel sizes
  * and different number of channels in train mode.
  */
-#values_test_basic_block_forward_3()
+values_test_basic_block_forward_3()
 
 /*
  * *** Residual Layer Value Testing ***
@@ -813,6 +952,10 @@ values_test_basic_block_backward = function() {
  * a stride of 2 and non-matching input and base channels
  * of 2 and 4.
  */
-#values_test_residual_layer_forward()
+values_test_residual_layer_forward()
+
+/*
+ * *** Residual Layer Backward Pass Testing ***
+ */
 
 values_test_basic_block_backward()

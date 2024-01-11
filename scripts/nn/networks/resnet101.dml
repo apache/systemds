@@ -106,3 +106,11 @@ forward = function(matrix[double] X, int Hin, int Win,
     [out, ema_means_vars_upd, cached_out, cached_means_vars] = resnet::resnet_forward(X, Hin, Win, block_type,
         layer_sizes, model, mode, ema_means_vars)
 }
+
+backward = function(matrix[double] dOut, list[unknown] cached_out,
+                    list[unknown] model, list[unknown] cached_means_vars)
+    return (matrix[double] dX, list[unknown] gradients) {
+    layer_sizes = list(3, 4, 23, 3)
+    block_type = "bottleneck"
+    [dX, gradients] = resnet::resnet_backward(dOut, cached_out, block_type, layer_sizes, model, cached_means_vars)
+}

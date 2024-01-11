@@ -206,10 +206,10 @@ basic_block_forward = function(matrix[double] X, list[unknown] weights,
     Wout = Wout_conv2
 }
 
-basic_block_backward = function(matrix[double] dOut, int Hout, int Wout,
-                                list[unknown] cached_out, list[unknown] weights,
-                                int C_in, int C_base, int strideh, int stridew,
-                                string mode, list[unknown] cached_means_vars)
+basic_block_backward = function(matrix[double] dOut, list[unknown] cached_out,
+                                list[unknown] weights, int C_in, int C_base,
+                                int strideh, int stridew,
+                                list[unknown] cached_means_vars)
     return (matrix[double] dX, list[unknown] gradients) {
     downsample = strideh > 1 | stridew > 1 | C_in != C_base
     # default values
@@ -279,10 +279,6 @@ basic_block_backward = function(matrix[double] dOut, int Hout, int Wout,
     # Second convolutional layer
     [dX_res, dgamma_bn2, dbeta_bn2] = bn2d::backward(dX, mean_bn2, var_bn2, out_conv2, gamma_bn2, C_base, Hout_conv2,
         Wout_conv2, epsilon_bn)
-
-    print("dout for conv2")
-    print(toString(dX_res))
-
     [dX_res, dW_conv2] = conv3x3_backward(dX_res, Hout_conv2, Wout_conv2, out_re1, W_conv2, C_base, C_base,
         Hout_conv1, Wout_conv1, 1, 1)
 
@@ -465,6 +461,117 @@ bottleneck_block_forward = function(matrix[double] X,
     Wout = Wout_conv3
 }
 
+bottleneck_block_backward = function(matrix[double] dOut, list[unknown] cached_out,
+                                     list[unknown] weights, int C_in, int C_base,
+                                     int strideh, int stridew,
+                                     list[unknown] cached_means_vars)
+    return (matrix[double] dX, list[unknown] gradients) {
+    downsample = strideh > 1 | stridew > 1 | C_in != C_base
+    # default values
+    mu_bn = 0.1
+    epsilon_bn = 1e-05
+
+    # get all params
+    W_conv1 = as.matrix(weights[1])
+    gamma_bn1 = as.matrix(weights[2])
+    beta_bn1 = as.matrix(weights[3])
+    W_conv2 = as.matrix(weights[4])
+    gamma_bn2 = as.matrix(weights[5])
+    beta_bn2 = as.matrix(weights[6])
+    W_conv3 = as.matrix(weights[7])
+    gamma_bn3 = as.matrix(weights[8])
+    beta_bn3 = as.matrix(weights[9])
+
+    # cached outputs
+    X = as.matrix(cached_out[1])
+    Hin = as.integer(as.scalar(cached_out[2]))
+    Win = as.integer(as.scalar(cached_out[3]))
+    out_conv1 = as.matrix(cached_out[4])
+    Hout_conv1 = as.integer(as.scalar(cached_out[5]))
+    Wout_conv1 = as.integer(as.scalar(cached_out[6]))
+    out_bn1 = as.matrix(cached_out[7])
+    out_re1 = as.matrix(cached_out[8])
+    out_conv2 = as.matrix(cached_out[9])
+    Hout_conv2 = as.integer(as.scalar(cached_out[10]))
+    Wout_conv2 = as.integer(as.scalar(cached_out[11]))
+    out_bn2 = as.matrix(cached_out[12])
+    out_re2 = as.matrix(cached_out[13])
+    out_conv3 = as.matrix(cached_out[14])
+    Hout_conv3 = as.integer(as.scalar(cached_out[15]))
+    Wout_conv3 = as.integer(as.scalar(cached_out[16]))
+    out_bn3 = as.matrix(cached_out[17])
+    out_re3 = as.matrix(cached_out[18])
+
+    # cached means and vars
+    mean_bn1 = as.matrix(cached_means_vars[1])
+    var_bn1 = as.matrix(cached_means_vars[2])
+    mean_bn2 = as.matrix(cached_means_vars[3])
+    var_bn2 = as.matrix(cached_means_vars[4])
+    mean_bn3 = as.matrix(cached_means_vars[5])
+    var_bn3 = as.matrix(cached_means_vars[6])
+
+    if (downsample) {
+        # gather params for downsampling
+        W_conv4 = as.matrix(weights[10])
+        gamma_bn4 = as.matrix(weights[11])
+        beta_bn4 = as.matrix(weights[12])
+
+        out_conv4 = as.matrix(cached_out[19])
+        Hout_conv4 = as.integer(as.scalar(cached_out[20]))
+        Wout_conv4 = as.integer(as.scalar(cached_out[21]))
+        out_bn4 = as.matrix(cached_out[22])
+        identity = out_bn4
+
+        mean_bn4 = as.matrix(cached_means_vars[7])
+        var_bn4 = as.matrix(cached_means_vars[8])
+    } else {
+        identity = X
+    }
+
+    dX = relu::backward(dOut, identity + out_bn3)
+
+    # IDENTITY PATH
+    if (downsample) {
+        [dX_id, dgamma_bn4, dbeta_bn4] = bn2d::backward(dX, mean_bn4, var_bn4, out_conv4, gamma_bn4, 4*C_base,
+            Hout_conv4, Wout_conv4, epsilon_bn)
+        [dX_id, dW_conv4] = conv1x1_backward(dX_id, Hout_conv4, Wout_conv4, X, W_conv4, C_in, 4*C_base, Hin,
+            Win, strideh, stridew)
+    } else {
+        dX_id = dX
+    }
+
+    # RESIDUAL PATH
+    # Third convolutional layer
+    [dX_res, dgamma_bn3, dbeta_bn3] = bn2d::backward(dX, mean_bn3, var_bn3, out_conv3, gamma_bn3, 4*C_base, Hout_conv3,
+        Wout_conv3, epsilon_bn)
+    [dX_res, dW_conv3] = conv1x1_backward(dX_res, Hout_conv3, Wout_conv3, out_re2, W_conv3, C_base, 4*C_base,
+        Hout_conv2, Wout_conv2, 1, 1)
+
+    # Second convolutional layer
+    dX_res = relu::backward(dX_res, out_bn2)
+    [dX_res, dgamma_bn2, dbeta_bn2] = bn2d::backward(dX_res, mean_bn2, var_bn2, out_conv2, gamma_bn2, C_base,
+        Hout_conv2, Wout_conv2, epsilon_bn)
+    [dX_res, dW_conv2] = conv3x3_backward(dX_res, Hout_conv2, Wout_conv2, out_re1, W_conv2, C_base, C_base,
+        Hout_conv1, Wout_conv1, strideh, stridew)
+
+    # First convoluational layer
+    dX_res = relu::backward(dX_res, out_bn1)
+    [dX_res, dgamma_bn1, dbeta_bn1] = bn2d::backward(dX_res, mean_bn1, var_bn1, out_conv1, gamma_bn1, C_base,
+        Hout_conv1, Wout_conv1, epsilon_bn)
+    [dX_res, dW_conv1] = conv1x1_backward(dX_res, Hout_conv1, Wout_conv1, X, W_conv1, C_in, C_base, Hin, Win,
+        1, 1)
+
+    gradients = list(dW_conv1, dgamma_bn1, dbeta_bn1, dW_conv2, dgamma_bn2, dbeta_bn2, dW_conv3, dgamma_bn3, dbeta_bn3)
+    if (downsample) {
+        gradients = append(gradients, dW_conv4)
+        gradients = append(gradients, dgamma_bn4)
+        gradients = append(gradients, dbeta_bn4)
+    }
+
+    # Combine res path and id path
+    dX = dX_res + dX_id
+}
+
 reslayer_forward = function(matrix[double] X, int Hin, int Win,
                             string block_type, int blocks, int strideh,
                             int stridew, int C_in, int C_base,
@@ -512,38 +619,80 @@ reslayer_forward = function(matrix[double] X, int Hin, int Win,
      *     each batch normalization layer. This is required for the
      *     backward pass of the network.
      */
-    # default values
-    mu_bn = 0.1
-    epsilon_bn = 1e-05
-
     # first block with provided stride
     if (block_type == "basic") {
-        [out, Hout, Wout, emas1_upd, cached_out_b1, cached_mv_b1] = basic_block_forward(X, as.list(blocks_weights[1]), C_in, C_base,
-                                                        Hin, Win, strideh, stridew, mode, as.list(ema_means_vars[1]))
+        [out, Hout, Wout, emas1_upd, cached_out_b1, cached_mv_b1] = basic_block_forward(X, as.list(blocks_weights[1]),
+            C_in, C_base, Hin, Win, strideh, stridew, mode, as.list(ema_means_vars[1]))
     } else {
-        [out, Hout, Wout, emas1_upd, cached_out_b1, cached_mv_b1] = bottleneck_block_forward(X, as.list(blocks_weights[1]), C_in,
-                                             C_base, Hin, Win, strideh, stridew, mode, as.list(ema_means_vars[1]))
+        [out, Hout, Wout, emas1_upd, cached_out_b1, cached_mv_b1] = bottleneck_block_forward(X,
+            as.list(blocks_weights[1]), C_in, C_base, Hin, Win, strideh, stridew, mode, as.list(ema_means_vars[1]))
     }
     ema_means_vars_upd = list(emas1_upd)
     cached_out = list(cached_out_b1)
     cached_means_vars = list(cached_mv_b1)
 
     # other blocks
-    for (i in 2:blocks) {
-        current_weights = as.list(blocks_weights[i])
-        current_emas = as.list(ema_means_vars[i])
-        if (block_type == "basic") {
-            [out, Hout, Wout, current_emas_upd, current_cached_out, current_cached_mv] = basic_block_forward(X=out, weights=current_weights,
-                                        C_in=C_base, C_base=C_base, Hin=Hout, Win=Wout, strideh=1, stridew=1, mode=mode,
-                                        ema_means_vars=current_emas)
-        } else {
-            [out, Hout, Wout, current_emas_upd, current_cached_out, current_cached_mv] = bottleneck_block_forward(X=out,
-                                        weights=current_weights, C_in=C_base*4, C_base=C_base, Hin=Hout, Win=Wout,
-                                        strideh=1, stridew=1, mode=mode, ema_means_vars=current_emas)
+    if (blocks > 1) {
+        for (i in 2:blocks) {
+            current_weights = as.list(blocks_weights[i])
+            current_emas = as.list(ema_means_vars[i])
+
+            if (block_type == "basic") {
+                [out, Hout, Wout, current_emas_upd, current_cached_out, current_cached_mv] = basic_block_forward(X=out,
+                    weights=current_weights, C_in=C_base, C_base=C_base, Hin=Hout, Win=Wout, strideh=1, stridew=1,
+                    mode=mode, ema_means_vars=current_emas)
+            } else {
+                [out, Hout, Wout, current_emas_upd, current_cached_out, current_cached_mv] = bottleneck_block_forward(X=out,
+                    weights=current_weights, C_in=C_base*4, C_base=C_base, Hin=Hout, Win=Wout, strideh=1, stridew=1,
+                    mode=mode, ema_means_vars=current_emas)
+            }
+
+            ema_means_vars_upd = append(ema_means_vars_upd, current_emas_upd)
+            cached_out = append(cached_out, current_cached_out)
+            cached_means_vars = append(cached_means_vars, current_cached_mv)
         }
-        ema_means_vars_upd = append(ema_means_vars_upd, current_emas_upd)
-        cached_out = append(cached_out, current_cached_out)
-        cached_means_vars = append(cached_means_vars, current_cached_mv)
+    }
+}
+
+reslayer_backward = function(matrix[double] dOut, list[unknown] cached_out,
+                             string block_type, int blocks, int strideh,
+                             int stridew, int C_in, int C_base,
+                             list[unknown] blocks_weights,
+                             list[unknown] blocks_cached_means_vars)
+    return (matrix[double] dX, list[unknown] gradients) {
+    gradients = list()
+    dX = dOut
+
+    # second to last blocks
+    if (blocks > 1) {
+        for (i in blocks:2) {
+            current_cached_out = as.list(cached_out[i])
+            current_weights = as.list(blocks_weights[i])
+            current_cached_means_vars = as.list(blocks_cached_means_vars[i])
+
+            if (block_type == "basic") {
+                [dX, current_gradients] = basic_block_backward(dOut=dX, cached_out=current_cached_out,
+                    weights=current_weights, C_in=C_base, C_base=C_base, strideh=1, stridew=1,
+                    cached_means_vars=current_cached_means_vars)
+            } else {
+                [dX, current_gradients] = bottleneck_block_backward(dOut=dX, cached_out=current_cached_out,
+                    weights=current_weights, C_in=4*C_base, C_base=C_base, strideh=1, stridew=1,
+                    cached_means_vars=current_cached_means_vars)
+            }
+
+            gradients = append(gradients, current_gradients)
+        }
+    }
+
+    # first block
+    if (block_type == "basic") {
+        [dX, current_gradients] = basic_block_backward(dOut=dX, cached_out=as.list(cached_out[1]),
+            weights=as.list(blocks_weights[1]), C_in=C_in, C_base=C_base, strideh=strideh, stridew=stridew,
+            cached_means_vars=as.list(blocks_cached_means_vars[1]))
+    } else {
+        [dX, current_gradients] = bottleneck_block_backward(dOut=dX, cached_out=as.list(cached_out[1]),
+            weights=as.list(blocks_weights[1]), C_in=C_in, C_base=C_base, strideh=strideh, stridew=stridew,
+            cached_means_vars=as.list(blocks_cached_means_vars[1]))
     }
 }
 
@@ -693,20 +842,444 @@ resnet_forward = function(matrix[double] X, int Hin, int Win,
     C = 256 * block_expansion
     # residual layer 4
     block_count = as.integer(as.scalar(layer_sizes[4]))
-    [out, Hout, Wout, emas4_upd, cached_out_l4, cached_mv_l4] = reslayer_forward(X=out, Hin=Hout, Win=Wout,
+    [out_res, Hout_res, Wout_res, emas4_upd, cached_out_l4, cached_mv_l4] = reslayer_forward(X=out, Hin=Hout, Win=Wout,
         block_type=block_type, blocks=block_count, strideh=2, stridew=2, C_in=C, C_base=512,
         blocks_weights=weights_reslayer4, mode=mode, ema_means_vars=emas_reslayer4)
     C = 512 * block_expansion
 
     # Global Average Pooling
-    [out_ap, Hout_ap, Wout_ap] = ap2d::forward(X=out, C=C, Hin=Hout, Win=Wout)
+    [out_ap, Hout_ap, Wout_ap] = ap2d::forward(X=out_res, C=C, Hin=Hout_res, Win=Wout_res)
     # Affine
     out_fc = fc::forward(X=out_ap, W=W_fc, b=b_fc)
 
     ema_means_vars_upd = list(ema_mean_bn1_upd, ema_var_bn1_upd, emas1_upd, emas2_upd, emas3_upd, emas4_upd)
     cached_out = list(X, Hin, Win, out_conv1, Hout_conv1, Wout_conv1, out_bn1, out_re1, out_mp, Hout_mp, Wout_mp,
-        cached_out_l1, cached_out_l2, cached_out_l3, cached_out_l4, out_ap, Hout_ap, Wout_ap, out_fc)
+        cached_out_l1, cached_out_l2, cached_out_l3, cached_out_l4, out_res, Hout_res, Wout_res, out_ap, Hout_ap,
+        Wout_ap)
     cached_means_vars = list(cached_m, cached_v, cached_mv_l1, cached_mv_l2, cached_mv_l3, cached_mv_l4)
 
     out = out_fc
+}
+
+resnet_backward = function(matrix[double] dOut, list[unknown] cached_out,
+                           string block_type, list[unknown] layer_sizes,
+                           list[unknown] model, list[unknown] cached_means_vars)
+    return (matrix[double] dX, list[unknown] gradients) {
+    # default values
+    epsilon_bn = 1e-05
+
+    if (block_type == "basic") {
+        block_expansion = 1
+    } else {
+        block_expansion = 4
+    }
+
+    # extract model params
+    W_conv1 = as.matrix(model[1])
+    gamma_bn1 = as.matrix(model[2]); beta_bn1 = as.matrix(model[3])
+    weights_reslayer1 = as.list(model[4])
+    weights_reslayer2 = as.list(model[5])
+    weights_reslayer3 = as.list(model[6])
+    weights_reslayer4 = as.list(model[7])
+    W_fc = as.matrix(model[8])
+    b_fc = as.matrix(model[9])
+
+    # extract cached output
+    X = as.matrix(cached_out[1])
+    Hin = as.integer(as.scalar(cached_out[2]))
+    Win = as.integer(as.scalar(cached_out[3]))
+    out_conv1 = as.matrix(cached_out[4])
+    Hout_conv1 = as.integer(as.scalar(cached_out[5]))
+    Wout_conv1 = as.integer(as.scalar(cached_out[6]))
+    out_bn1 = as.matrix(cached_out[7])
+    out_re1 = as.matrix(cached_out[8])
+    out_mp = as.matrix(cached_out[9])
+    Hout_mp = as.integer(as.scalar(cached_out[10]))
+    Wout_mp = as.integer(as.scalar(cached_out[11]))
+    cached_out_l1 = as.list(cached_out[12])
+    cached_out_l2 = as.list(cached_out[13])
+    cached_out_l3 = as.list(cached_out[14])
+    cached_out_l4 = as.list(cached_out[15])
+    out_res = as.matrix(cached_out[16])
+    Hout_res = as.integer(as.scalar(cached_out[17]))
+    Wout_res = as.integer(as.scalar(cached_out[18]))
+    out_ap = as.matrix(cached_out[19])
+    Hout_ap = as.integer(as.scalar(cached_out[20]))
+    Wout_ap = as.integer(as.scalar(cached_out[21]))
+
+    # extract cached means and vars for bn layers
+    cached_m_bn1 = as.matrix(cached_means_vars[1])
+    cached_v_bn1 = as.matrix(cached_means_vars[2])
+    cached_mv_l1 = as.matrix(cached_means_vars[3])
+    cached_mv_l2 = as.matrix(cached_means_vars[4])
+    cached_mv_l3 = as.matrix(cached_means_vars[5])
+    cached_mv_l4 = as.matrix(cached_means_vars[6])
+
+    # Affine
+    [dX_fc, dW_fc, db_fc] = fc::backward(dout=dOut, X=out_ap, W=W_fc, b=b_fc)
+    # Global Average Pooling
+    dX_ap = ap2d::backward(dout=dX_fc, X=out_res, C=512*block_expansion, Hin=Hout_res, Win=Wout_res)
+
+    # residual layer 4
+    block_count = as.integer(as.scalar(layer_sizes[4]))
+    [dX_l4, gradients_l4] = reslayer_backward(dOut=dX_ap, cached_out=cached_out_l4, block_type=block_type,
+        blocks=block_count, strideh=2, stridew=2, C_in=256*block_expansion, C_base=512,
+        blocks_weights=weights_reslayer4, blocks_cached_means_vars=cached_mv_l4)
+    # residual layer 3
+    block_count = as.integer(as.scalar(layer_sizes[3]))
+    [dX_l3, gradients_l3] = reslayer_backward(dOut=dX_l4, cached_out=cached_out_l3, block_type=block_type,
+        blocks=block_count, strideh=2, stridew=2, C_in=128*block_expansion, C_base=256,
+        blocks_weights=weights_reslayer3, block_cached_means_vars=cached_mv_l3)
+    # residual layer 2
+    block_count = as.integer(as.scalar(layer_sizes[2]))
+    [dX_l2, gradients_l2] = reslayer_backward(dOut=dX_l3, cached_out=cached_out_l2, block_type=block_type,
+        blocks=block_count, strideh=2, stridew=2, C_in=64*block_expansion, C_base=128, blocks_weights=weights_reslayer2,
+        block_cached_means_vars=cached_mv_l2)
+    # residual layer 1
+    block_count = as.integer(as.scalar(layer_sizes[1]))
+    [dX_l1, gradients_l1] = reslayer_backward(dOut=dX_l2, cached_out=cached_out_l1, block_type=block_type,
+        blocks=block_count, strideh=1, stridew=1, C_in=64, C_base=64, blocks_weights=weights_reslayer1,
+        block_cached_means_vars=cached_mv_l1)
+
+    # Max Pooling 3x3
+    dX_mp = mp2d::backward(dout=dX_l1, Hout=Hout_mp, Wout=Wout_mp, X=out_re1, C=64, Hin=Hout_conv1, Win=Wout_conv1,
+        Hf=3, Wf=3, strideh=2, stridew=2, padh=1, padw=1)
+    # ReLU
+    dX_re1 = relu:backward(dout=dX_mp, X=out_bn1)
+    # Batch Norm
+    [dX_bn1, dgamma_bn1, dbeta_bn1] = bn2d::backward(dout=dX_re1, cache_mean=cached_m_bn1, cache_inv_var=cached_v_bn1,
+        X=out_conv1, gamma=gamma_bn1, C=64, Hin=Hout_conv1, Win=Wout_conv1, epsilon=epsilon_bn)
+    # Convolutional 7x7
+    b_conv1 = matrix(0, rows=64, cols=1)
+    [dX_conv1, dW_conv1, db_conv1] = conv2d::backward(dout=dX_bn1, Hout=Hout_conv1, Wout=Wout_conv1, X=X, W=W_conv1,
+        b=b_conv1, C=3, Hin=Hin, Win=Win, Hf=7, Wf=7, strideh=2, stridew=2, padh=3, padw=3)
+
+    gradients = list(dW_conv1, dgamma_bn1, dbeta_bn1, gradients_l1, gradients_l2, gradients_l3, gradients_l4, dW_fc,
+        db_fc)
+    dX = dX_conv1
+}
+
+init = function(string block_type, list[unknown] layer_sizes, int seed)
+    return (list[unknown] model, list[unknown] ema_means_vars) {
+    C_in = 3
+    # Conv 7x7
+    [W_conv1, b_conv1] = conv2d::init(F=64, C=C_in, Hf=7, Wf=7, seed=seed)
+    C_in = 64
+    # Batch norm
+    [gamma_bn1, beta_bn1, ema_m_bn1, ema_v_bn1] = bn2d::init(C_in)
+
+    model = list(W_conv1, gamma_bn1, beta_bn1)
+    emas = list(ema_m_bn1, ema_v_bn1)
+
+    # residual layers
+    C_bases = list(64, 128, 256, 512)
+    strides = list(1, 2, 2, 2)
+    for (layer in 1:4) {
+        layer_size = as.integer(as.scalar(layer_sizes[layer]))
+        C_base = as.integer(as.scalar(C_bases[layer]))
+        stride = as.integer(as.scalar(strides[layer]))
+
+        weights_layer = list()
+        emas_layer = list()
+
+        if (block_type == "basic") {
+            # basic blocks
+            for (block in 1:layer_size) {
+                [_W_conv1, _b_conv1] = conv2d::init(F=C_base, C=C_in, Hf=3, Wf=3, seed=seed)
+                [_gamma_bn1, _beta_bn1, _ema_m_bn1, _ema_v_bn1] = bn2d::init(C_base)
+                [_W_conv2, _b_conv2] = conv2d::init(F=C_base, C=C_base, Hf=3, Wf=3, seed=seed)
+                [_gamma_bn2, _beta_bn2, _ema_m_bn2, _ema_v_bn2] = bn2d::init(C_base)
+                weights_block = list(_W_conv1, _gamma_bn1, _beta_bn1, _W_conv2, _gamma_bn2, _beta_bn2)
+                emas_block = list(_ema_m_bn1, _ema_v_bn1, _ema_m_bn2, _ema_v_bn2)
+
+                if (block == 1 & stride > 1) {
+                    # downsample params
+                    [_W_conv3, _b_conv3] = conv2d::init(F=C_base, C=C_in, Hf=1, Wf=1, seed=seed)
+                    [_gamma_bn3, _beta_bn3, _ema_m_bn3, _ema_v_bn3] = bn2d::init(C_base)
+                    weights_block = append(weights_block, _W_conv3)
+                    weights_block = append(weights_block, _gamma_bn3)
+                    weights_block = append(weights_block, _beta_bn3)
+                    emas_block = append(emas_block, _ema_m_bn3)
+                    emas_block = append(emas_block, _ema_v_bn3)
+                }
+
+                C_in = C_base
+
+                weights_layer = append(weights_layer, weights_block)
+                emas_layer = append(emas_layer, emas_block)
+            }
+        } else {
+            # bottleneck blocks
+            for (block in 1:layer_size) {
+                [_W_conv1, _b_conv1] = conv2d::init(F=C_base, C=C_in, Hf=1, Wf=1, seed=seed)
+                [_gamma_bn1, _beta_bn1, _ema_m_bn1, _ema_v_bn1] = bn2d::init(C_base)
+                [_W_conv2, _b_conv2] = conv2d::init(F=C_base, C=C_base, Hf=3, Wf=3, seed=seed)
+                [_gamma_bn2, _beta_bn2, _ema_m_bn2, _ema_v_bn2] = bn2d::init(C_base)
+                [_W_conv3, _b_conv3] = conv2d::init(F=4*C_base, C=C_base, Hf=1, Wf=1, seed=seed)
+                [_gamma_bn3, _beta_bn3, _ema_m_bn3, _ema_v_bn3] = bn2d::init(4*C_base)
+                weights_block = list(_W_conv1, _gamma_bn1, _beta_bn1, _W_conv2, _gamma_bn2, _beta_bn2, _W_conv3,
+                    _gamma_bn3, _beta_bn3)
+                emas_block = list(_ema_m_bn1, _ema_v_bn1, _ema_m_bn2, _ema_v_bn2, _ema_m_bn3, _ema_v_bn3)
+
+                if (block == 1) {
+                    # downsample params
+                    [_W_conv4, _b_conv4] = conv2d::init(F=4*C_base, C=C_in, Hf=1, Wf=1, seed=seed)
+                    [_gamma_bn4, _beta_bn4, _ema_m_bn4, _ema_v_bn4] = bn2d::init(4*C_base)
+                    weights_block = append(weights_block, _W_conv4)
+                    weights_block = append(weights_block, _gamma_bn4)
+                    weights_block = append(weights_block, _beta_bn4)
+                    emas_block = append(emas_block, _ema_m_bn4)
+                    emas_block = append(emas_block, _ema_v_bn4)
+                }
+
+                C_in = 4*C_base
+
+                weights_layer = append(weights_layer, weights_block)
+                emas_layer = append(emas_layer, emas_block)
+            }
+        }
+
+        model = append(model, weights_layer)
+        emas = append(emas, emas_layer)
+    }
+
+    # affine
+    if (block_type == "basic")
+        C_in = 512
+    else
+        C_in = 512 * 4
+    [W_fc, b_fc] = fc::init(D=C_in, M=1000)
+    model = append(model, W_fc)
+    model = append(model, b_fc)
+}
+
+init_optim_adam_basic_block = function(int C_in, int C_base, boolean downsample)
+    return (list[unknown] block_params) {
+    # Conv 1
+    m_W_conv1 = matrix(0, rows=C_base, cols=C_in*3*3); v_W_conv1 = matrix(0, rows=C_base, cols=C_in*3*3)
+    # BN 1
+    m_W_bn1 = matrix(0, rows=C_base, cols=1); v_W_bn1 = matrix(0, rows=C_base, cols=1)
+    m_b_bn1 = matrix(0, rows=C_base, cols=1); v_b_bn1 = matrix(0, rows=C_base, cols=1)
+    # Conv 2
+    m_W_conv2 = matrix(0, rows=C_base, cols=C_base*3*3); v_W_conv2 = matrix(0, rows=C_base, cols=C_base*3*3)
+    # BN 2
+    m_W_bn2 = matrix(0, rows=C_base, cols=1); v_W_bn2 = matrix(0, rows=C_base, cols=1)
+    m_b_bn2 = matrix(0, rows=C_base, cols=1); v_b_bn2 = matrix(0, rows=C_base, cols=1)
+
+    block_params = list(list(m_W_conv1, v_W_conv1), list(m_W_bn1, v_W_bn1), list(m_b_bn1, v_b_bn1),
+        list(m_W_conv2, v_W_conv2), list(m_W_bn2, v_W_bn2), list(m_b_bn2, v_b_bn2))
+
+    if (downsample) {
+        # Conv 3
+        m_W_conv3 = matrix(0, rows=C_base, cols=C_in*3*3); v_W_conv3 = matrix(0, rows=C_base, cols=C_in*3*3)
+        # BN 3
+        m_W_bn3 = matrix(0, rows=C_base, cols=1); v_W_bn3 = matrix(0, rows=C_base, cols=1)
+        m_b_bn3 = matrix(0, rows=C_base, cols=1); v_b_bn3 = matrix(0, rows=C_base, cols=1)
+        block_params = append(block_params, list(m_W_conv3, v_W_conv3))
+        block_params = append(block_params, list(m_W_bn3, v_W_bn3))
+        block_params = append(block_params, list(m_b_bn3, v_b_bn3))
+    }
+}
+
+init_optim_other_basic_block = function(int C_in, int C_base, boolean downsample)
+    return (list[unknown] block_params) {
+    # Conv 1
+    s_W_conv1 = matrix(0, rows=C_base, cols=C_in*3*3)
+    # BN 1
+    s_W_bn1 = matrix(0, rows=C_base, cols=1)
+    s_b_bn1 = matrix(0, rows=C_base, cols=1)
+    # Conv 2
+    s_W_conv2 = matrix(0, rows=C_base, cols=C_base*3*3)
+    # BN 2
+    s_W_bn2 = matrix(0, rows=C_base, cols=1)
+    s_b_bn2 = matrix(0, rows=C_base, cols=1)
+
+    block_params = list(s_W_conv1, s_W_bn1, s_b_bn1, s_W_conv2, s_W_bn2, s_b_bn2)
+
+    if (downsample) {
+        # Conv 3
+        s_W_conv3 = matrix(0, rows=C_base, cols=C_in*3*3)
+        # BN 3
+        s_W_bn3 = matrix(0, rows=C_base, cols=1)
+        s_b_bn3 = matrix(0, rows=C_base, cols=1)
+        block_params = append(block_params, s_W_conv3)
+        block_params = append(block_params, s_W_bn3)
+        block_params = append(block_params, s_b_bn3)
+    }
+}
+
+init_optim_other_bottleneck_block = function(int C_in, int C_base, boolean downsample)
+    return (list[unknown] block_params) {
+    # Conv 1
+    s_W_conv1 = matrix(0, rows=C_base, cols=C_in)
+    # BN 1
+    s_W_bn1 = matrix(0, rows=C_base, cols=1)
+    s_b_bn1 = matrix(0, rows=C_base, cols=1)
+    # Conv 2
+    s_W_conv2 = matrix(0, rows=C_base, cols=C_base*3*3)
+    # BN 2
+    s_W_bn2 = matrix(0, rows=C_base, cols=1)
+    s_b_bn2 = matrix(0, rows=C_base, cols=1)
+    # Conv 3
+    s_W_conv3 = matrix(0, rows=4*C_base, cols=C_base)
+    # BN 3
+    s_W_bn3 = matrix(0, rows=4*C_base, cols=1)
+    s_b_bn3 = matrix(0, rows=4*C_base, cols=1)
+
+    block_params = list(s_W_conv1, s_W_bn1, s_b_bn1, s_W_conv2, s_W_bn2, s_b_bn2, s_W_conv3, s_W_bn3, s_b_bn3)
+
+    if (downsample) {
+        # Conv 4
+        s_W_conv3 = matrix(0, rows=4*C_base, cols=C_in)
+        # BN 4
+        s_W_bn3 = matrix(0, rows=4*C_base, cols=1)
+        s_b_bn3 = matrix(0, rows=4*C_base, cols=1)
+        block_params = append(block_params, s_W_conv4)
+        block_params = append(block_params, s_W_bn4)
+        block_params = append(block_params, s_b_bn4)
+    }
+}
+
+init_optim_adam_bottleneck_block = function(int C_in, int C_base, boolean downsample)
+    return (list[unknown] block_params) {
+    # Conv 1
+    m_W_conv1 = matrix(0, rows=C_base, cols=C_in); v_W_conv1 = matrix(0, rows=C_base, cols=C_in)
+    # BN 1
+    m_W_bn1 = matrix(0, rows=C_base, cols=1); v_W_bn1 = matrix(0, rows=C_base, cols=1)
+    m_b_bn1 = matrix(0, rows=C_base, cols=1); v_b_bn1 = matrix(0, rows=C_base, cols=1)
+    # Conv 2
+    m_W_conv2 = matrix(0, rows=C_base, cols=C_base*3*3); v_W_conv2 = matrix(0, rows=C_base, cols=C_base*3*3)
+    # BN 2
+    m_W_bn2 = matrix(0, rows=C_base, cols=1); v_W_bn2 = matrix(0, rows=C_base, cols=1)
+    m_b_bn2 = matrix(0, rows=C_base, cols=1); v_b_bn2 = matrix(0, rows=C_base, cols=1)
+    # Conv 3
+    m_W_conv3 = matrix(0, rows=4*C_base, cols=C_base); v_W_conv3 = matrix(0, rows=4*C_base, cols=C_base)
+    # BN 3
+    m_W_bn3 = matrix(0, rows=4*C_base, cols=1); v_W_bn3 = matrix(0, rows=4*C_base, cols=1)
+    m_b_bn3 = matrix(0, rows=4*C_base, cols=1); v_b_bn3 = matrix(0, rows=4*C_base, cols=1)
+
+    block_params = list(list(m_W_conv1, v_W_conv1), list(m_W_bn1, v_W_bn1), list(m_b_bn1, v_b_bn1),
+            list(m_W_conv2, v_W_conv2), list(m_W_bn2, v_W_bn2), list(m_b_bn2, v_b_bn2), list(m_W_conv3, v_W_conv3),
+            list(m_W_bn3, v_W_bn3), list(m_b_bn3, v_b_bn3))
+
+    if (downsample) {
+        # Conv 4
+        m_W_conv3 = matrix(0, rows=4*C_base, cols=C_in); v_W_conv3 = matrix(0, rows=4*C_base, cols=C_in)
+        # BN 4
+        m_W_bn3 = matrix(0, rows=4*C_base, cols=1); v_W_bn3 = matrix(0, rows=4*C_base, cols=1)
+        m_b_bn3 = matrix(0, rows=4*C_base, cols=1); v_b_bn3 = matrix(0, rows=4*C_base, cols=1)
+        block_params = append(block_params, list(m_W_conv4, v_W_conv4))
+        block_params = append(block_params, list(m_W_bn4, v_W_bn4))
+        block_params = append(block_params, list(m_b_bn4, v_b_bn4))
+    }
+}
+
+init_optim = function(string optimizer, string block_type, list[unknown] layer_sizes)
+    return (list[unknown] optim) {
+    optim = list()
+
+    C_in = 3
+    # Conv 7x7
+    if (optim == "adam") {
+        m_W_conv1 = matrix(0, rows=64, cols=C_in*7*7)
+        v_W_conv1 = matrix(0, rows=64, cols=C_in*7*7)
+        param_W_conv1 = list(m_W_conv1, v_W_conv1)
+    } else {
+        param_W_conv1 = matrix(0, rows=64, cols=C_in*7*7)
+    }
+    optim = append(optim, param_W_conv1)
+    C_in = 64
+    # Batch norm
+    if (optim == "adam") {
+        m_W_bn1 = matrix(0, rows=C_in, cols=1)
+        v_W_bn1 = matrix(0, rows=C_in, cols=1)
+        m_b_bn1 = matrix(0, rows=C_in, cols=1)
+        v_b_bn1 = matrix(0, rows=C_in, cols=1)
+        param_W_bn1 = list(m_W_bn1, v_W_bn1)
+        param_b_bn1 = list(m_b_bn1, v_b_bn1)
+    } else {
+        param_W_bn1 = matrix(0, rows=C_in, cols=1)
+        param_b_bn1 = matrix(0, rows=C_in, cols=1)
+    }
+    optim = append(optim, param_W_bn1)
+    optim = append(optim, param_b_bn1)
+
+    # residual layers
+    C_bases = list(64, 128, 256, 512)
+    strides = list(1, 2, 2, 2)
+    for (layer in 1:4) {
+        layer_size = as.integer(as.scalar(layer_sizes[layer]))
+        C_base = as.integer(as.scalar(C_bases[layer]))
+        stride = as.integer(as.scalar(strides[layer]))
+        optim_layer = list()
+
+        if (block_type == "basic") {
+            # basic blocks
+            for (block in 1:layer_size) {
+                [_W_conv1, _b_conv1] = conv2d::init(F=C_base, C=C_in, Hf=3, Wf=3, seed=seed)
+                [_gamma_bn1, _beta_bn1, _ema_m_bn1, _ema_v_bn1] = bn2d::init(C_base)
+                [_W_conv2, _b_conv2] = conv2d::init(F=C_base, C=C_base, Hf=3, Wf=3, seed=seed)
+                [_gamma_bn2, _beta_bn2, _ema_m_bn2, _ema_v_bn2] = bn2d::init(C_base)
+                weights_block = list(_W_conv1, _gamma_bn1, _beta_bn1, _W_conv2, _gamma_bn2, _beta_bn2)
+                emas_block = list(_ema_m_bn1, _ema_v_bn1, _ema_m_bn2, _ema_v_bn2)
+
+                if (block == 1 & stride > 1) {
+                    # downsample params
+                    [_W_conv3, _b_conv3] = conv2d::init(F=C_base, C=C_in, Hf=1, Wf=1, seed=seed)
+                    [_gamma_bn3, _beta_bn3, _ema_m_bn3, _ema_v_bn3] = bn2d::init(C_base)
+                    weights_block = append(weights_block, _W_conv3)
+                    weights_block = append(weights_block, _gamma_bn3)
+                    weights_block = append(weights_block, _beta_bn3)
+                    emas_block = append(emas_block, _ema_m_bn3)
+                    emas_block = append(emas_block, _ema_v_bn3)
+                }
+
+                C_in = C_base
+
+                weights_layer = append(weights_layer, weights_block)
+                emas_layer = append(emas_layer, emas_block)
+            }
+        } else {
+            # bottleneck blocks
+            for (block in 1:layer_size) {
+                [_W_conv1, _b_conv1] = conv2d::init(F=C_base, C=C_in, Hf=1, Wf=1, seed=seed)
+                [_gamma_bn1, _beta_bn1, _ema_m_bn1, _ema_v_bn1] = bn2d::init(C_base)
+                [_W_conv2, _b_conv2] = conv2d::init(F=C_base, C=C_base, Hf=3, Wf=3, seed=seed)
+                [_gamma_bn2, _beta_bn2, _ema_m_bn2, _ema_v_bn2] = bn2d::init(C_base)
+                [_W_conv3, _b_conv3] = conv2d::init(F=4*C_base, C=C_base, Hf=1, Wf=1, seed=seed)
+                [_gamma_bn3, _beta_bn3, _ema_m_bn3, _ema_v_bn3] = bn2d::init(4*C_base)
+                weights_block = list(_W_conv1, _gamma_bn1, _beta_bn1, _W_conv2, _gamma_bn2, _beta_bn2, _W_conv3,
+                    _gamma_bn3, _beta_bn3)
+                emas_block = list(_ema_m_bn1, _ema_v_bn1, _ema_m_bn2, _ema_v_bn2, _ema_m_bn3, _ema_v_bn3)
+
+                if (block == 1) {
+                    # downsample params
+                    [_W_conv4, _b_conv4] = conv2d::init(F=4*C_base, C=C_in, Hf=1, Wf=1, seed=seed)
+                    [_gamma_bn4, _beta_bn4, _ema_m_bn4, _ema_v_bn4] = bn2d::init(4*C_base)
+                    weights_block = append(weights_block, _W_conv4)
+                    weights_block = append(weights_block, _gamma_bn4)
+                    weights_block = append(weights_block, _beta_bn4)
+                    emas_block = append(emas_block, _ema_m_bn4)
+                    emas_block = append(emas_block, _ema_v_bn4)
+                }
+
+                C_in = 4*C_base
+
+                weights_layer = append(weights_layer, weights_block)
+                emas_layer = append(emas_layer, emas_block)
+            }
+        }
+
+        model = append(model, weights_layer)
+        emas = append(emas, emas_layer)
+    }
+
+    # affine
+    if (block_type == "basic")
+        C_in = 512
+    else
+        C_in = 512 * 4
+    [W_fc, b_fc] = fc::init(D=C_in, M=1000)
+    model = append(model, W_fc)
+    model = append(model, b_fc)
 }

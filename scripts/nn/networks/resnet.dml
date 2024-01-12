@@ -910,10 +910,10 @@ resnet_backward = function(matrix[double] dOut, list[unknown] cached_out,
     # extract cached means and vars for bn layers
     cached_m_bn1 = as.matrix(cached_means_vars[1])
     cached_v_bn1 = as.matrix(cached_means_vars[2])
-    cached_mv_l1 = as.matrix(cached_means_vars[3])
-    cached_mv_l2 = as.matrix(cached_means_vars[4])
-    cached_mv_l3 = as.matrix(cached_means_vars[5])
-    cached_mv_l4 = as.matrix(cached_means_vars[6])
+    cached_mv_l1 = as.list(cached_means_vars[3])
+    cached_mv_l2 = as.list(cached_means_vars[4])
+    cached_mv_l3 = as.list(cached_means_vars[5])
+    cached_mv_l4 = as.list(cached_means_vars[6])
 
     # Affine
     [dX_fc, dW_fc, db_fc] = fc::backward(dout=dOut, X=out_ap, W=W_fc, b=b_fc)

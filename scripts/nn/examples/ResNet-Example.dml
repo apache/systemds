@@ -79,6 +79,7 @@ train = function(matrix[double] X, matrix[double] Y, list[unknown] model, list[u
         print("Start epoch: " + epoch)
 
         for (i in 1:iterations) {
+            print("Iteration: " + i)
             start = (i - 1) * batch_size + 1
             end = min(samples, i * batch_size)
             X_batch = X[start:end,]
@@ -97,6 +98,8 @@ train = function(matrix[double] X, matrix[double] Y, list[unknown] model, list[u
             dprobs = cross_entropy::backward(probs, Y_batch)
             dOut = softmax::backward(dprobs, out)
             [dX, gradiends] = resnet18::backward(dOut, cached_out, model, cached_means_vars)
+
+            # update parameters
         }
 
         print("Loss: " + loss_avg)

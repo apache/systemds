@@ -366,7 +366,7 @@ update_bottleneck_block_params = function(string optimizer, list[unknown] optim_
 }
 
 update_params = function(string optimizer, list[unknown] optim_params, list[unknown] optim_hyper_params,
-    list[unknown] gradients, list[unknown] model, string block_type, list[unknown] layer_size)
+    list[unknown] gradients, list[unknown] model, string block_type, list[unknown] layer_sizes)
     return (list[unknown] optim_params_upd, list[unknown] model_upd) {
 
     optim_params_upd = list()
@@ -385,6 +385,40 @@ update_params = function(string optimizer, list[unknown] optim_params, list[unkn
     strides = list(1, 2, 2, 2)
     for (layer in 1:4) {
         stride = as.integer(as.scalar(strides[layer]))
-        (
+        layer_size = as.integer(as.scalar(layer_sizes[layer]))
+        layer_params = as.list(model[layer + 3])
+        layer_grads = as.list(gradients[layer + 3])
+        layer_optim_params = as.list(optim_params[layer + 3])
+
+        layer_optim_params_upd = list()
+        layer_params_upd = list()
+
+        for (block in 1:layer_size) {
+            block_params = as.list(layer_params[block])
+            block_grads = as.list(layer_grads[block])
+            block_optim_params = as.list(layer_optim_params[block])
+            downsample = block == 1 & stride > 1
+
+            if (block_type == "basic") {
+                [block_optim_params_upd, block_params_upd] = update_basic_block_params(optimizer, block_optim_params,
+                    optim_hyper_params, block_grads, block_params, downsample)
+            } else {
+                # bottleneck blocks
+                [block_optim_params_upd, block_params_upd] = update_bottleneck_block_params(optimizer,
+                    block_optim_params, optim_hyper_params, block_grads, block_params, downsample)
+            }
+
+            layer_optim_params_upd = append(layer_optim_params_upd, block_optim_params_upd)
+            layer_params_upd = append(layer_params_upd, block_params_upd)
+        }
+
+        optim_params_upd = append(optim_params_upd, layer_optim_params_upd)
+        model_upd = append(model_upd, layer_params_upd)
     }
+
+    # Affine
+    [optim_params_upd, model_upd] = update_param(8, optimizer, optim_params, optim_hyper_params, gradients, model,
+        optim_params_upd, model_upd)
+    [optim_params_upd, model_upd] = update_param(9, optimizer, optim_params, optim_hyper_params, gradients, model,
+        optim_params_upd, model_upd)
 }

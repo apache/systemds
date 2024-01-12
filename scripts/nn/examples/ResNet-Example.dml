@@ -26,6 +26,7 @@
 #-------------------------------------------------------------
 
 source("scripts/nn/networks/resnet.dml") as resnet
+source("scripts/nn/networks/resnet_util.dml") as resnet_util
 source("scripts/nn/networks/resnet18.dml") as resnet18
 source("scripts/nn/layers/softmax.dml") as softmax
 source("scripts/nn/layers/cross_entropy_loss.dml") as cross_entropy
@@ -40,7 +41,7 @@ block_type = "basic"
 
 # get initial optimizer parameters
 optimizer = "adam"
-optimizer_params = resnet::init_optim(optimizer, block_type, reslayer_sizes)
+optimizer_params = resnet_util::init_optim(optimizer, block_type, reslayer_sizes)
 
 # create random data
 N = 100
@@ -80,6 +81,8 @@ train = function(matrix[double] X, matrix[double] Y, list[unknown] model, list[u
 
         for (i in 1:iterations) {
             print("Iteration: " + i)
+
+            # get batch
             start = (i - 1) * batch_size + 1
             end = min(samples, i * batch_size)
             X_batch = X[start:end,]

@@ -1,4 +1,4 @@
-#-------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------
 #
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
@@ -17,53 +17,73 @@
 # specific language governing permissions and limitations
 # under the License.
 #
-#-------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------
 
-#==============================================================
-# THIS SCRIPT IMPLEMENTS ANOMALY DETECTION VIA ISOLATION FOREST
-# AS DESCRIBED IN 
-# [Liu2008] Liu, F. T., Ting, K. M., & Zhou, Z. H. (2008, December). 
-#           Isolation forest. In 2008 eighth ieee international 
-#           conference on data mining (pp. 413-422). IEEE.     
-#==============================================================
+#==============================================================================================
+# THIS SCRIPT IMPLEMENTS ANOMALY DETECTION VIA ISOLATION FOREST AS DESCRIBED IN 
+# [Liu2008]:
+#   Liu, F. T., Ting, K. M., & Zhou, Z. H. 
+#   (2008, December). 
+#   Isolation forest. 
+#   In 2008 eighth ieee international conference on data mining (pp. 413-422). 
+#   IEEE.     
+#==============================================================================================
 
 
 # INPUT PARAMETERS:
 # ---------------------------------------------------------------------------------------------
 # NAME          TYPE     DEFAULT      MEANING
 # ---------------------------------------------------------------------------------------------
-# X             String   ---          Location to read feature matrix X; note that X needs to be both recoded and dummy coded 
-# Y 			String   ---		  Location to read label matrix Y; note that Y needs to be both recoded and dummy coded
-# R   	  		String   " "	      Location to read the matrix R which for each feature in X contains the following information 
-#										- R[,1]: column ids
-#										- R[,2]: start indices 
-#										- R[,3]: end indices
-#									  If R is not provided by default all variables are assumed to be scale
-# bins          Int 	 20			  Number of equiheight bins per scale feature to choose thresholds
-# depth         Int 	 25			  Maximum depth of the learned tree
-# num_leaf      Int      10           Number of samples when splitting stops and a leaf node is added
-# num_samples   Int 	 3000		  Number of samples at which point we switch to in-memory subtree building
-# impurity      String   "Gini"    	  Impurity measure: entropy or Gini (the default)
-# M             String 	 ---	   	  Location to write matrix M containing the learned tree
-# O     		String   " "          Location to write the training accuracy; by default is standard output
-# S_map			String   " "		  Location to write the mappings from scale feature ids to global feature ids
-# C_map			String   " "		  Location to write the mappings from categorical feature ids to global feature ids
-# fmt     	    String   "text"       The output format of the model (matrix M), such as "text" or "csv"
+# X                 Matrix[Double]                Numerical feature matrix
+# n_trees   	      Int               		        Number of iTrees to build
+# subsampling_size  Int                           Size of the subsample to build iTrees with 
+# seed              Int              -1           Seed for calls to `sample` and `rand`.
+#                                                 -1 corresponds to a random seed
 # ---------------------------------------------------------------------------------------------
 # OUTPUT: 
-# M
+# M 
 # -------------------------------------------------------------------------------------------
-outlierByIsolationForest = function(Matrix[Double] X, 
-  Int n_trees, Int subsampling_size) 
-  return(Matrix[Double] M)
+outlierByIsolationForest = function(Matrix[Double] X, Int n_trees, Int subsampling_size, Int seed = -1) 
+  return(List[Unknown] iForestModel)
 {
-  M = matrix(0, cols=1, rows=1)
+  M = m_iForest(X, n_trees, subsampling_size, seed)
+  iForestModel = list(model=M, subsampling_size=subsampling_size)
 }
 
-outlierByIsolationForestApply = function(Matrix[Double] X, Matrix[Double] M)
-  return(Matrix[Double] Y)
+
+# INPUT PARAMETERS:
+# ---------------------------------------------------------------------------------------------
+# NAME              TYPE               DEFAULT      MEANING
+# ---------------------------------------------------------------------------------------------
+# iForestModel   	  List[Unknown                  The trained iForest mode packaged as a list 
+#                                                 with entries 
+#                                                 - model (Type Matrix[Double]) 
+# X                 Matrix[Double]                Samples to calculate the anomaly score by
+# subsampling_size  Int                           Size of the subsample to build iTrees with 
+# seed              Int                -1         Seed for calls to `sample` and `rand`.
+#                                                 -1 corresponds to a random seed
+# ---------------------------------------------------------------------------------------------
+# OUTPUT: 
+# anomaly_scores   Column vector of anomaly scores corresponding to the samples in X. 
+#                  Samples with an anomaly score > 0.5 are generally considered to be outliers
+# -------------------------------------------------------------------------------------------
+outlierByIsolationForestApply = function(List[Unknown] iForestModel, Matrix[Double] X, Int seed = -1)
+  return(Matrix[Double] anomaly_scores)
 {
-  Y = matrix(0, cols=1, rows=1)
+  assert(nrow(X) > 1)
+
+  M = as.matrix(iForestModel['model'])
+  subsampling_size = as.integer(as.scalar(iForestModel['subsampling_size']))
+  assert(subsampling_size > 1)
+
+  height_limit = ceil(log(subsampling_size, 2))  
+  tree_size = 2*(2^(height_limit+1)-1)
+  assert(ncol(M) == tree_size & nrow(M) > 1)
+
+  anomaly_scores = matrix(0, rows=nrow(X), cols=1)
+  parfor (i_x in 1:nrow(X)) {
+    anomaly_scores[i_x, 1] = m_score(M, X[i_x,], subsampling_size)
+  }
 }
 
 # This function implements isolation forest for numerical input features as 
@@ -95,8 +115,6 @@ outlierByIsolationForestApply = function(Matrix[Double] X, Matrix[Double] M)
 # X                 Matrix[Double]                Numerical feature matrix
 # n_trees   	      Int               		        Number of iTrees to build
 # subsampling_size  Int                           Size of the subsample to build iTrees with 
-# bootstrap         Boolean                       Indicator if subsampling should be done with 
-#                                                 replacement or not 
 # seed              Int              -1           Seed for calls to `sample` and `rand`.
 #                                                 -1 corresponds to a random seed
 # ---------------------------------------------------------------------------------------------
@@ -108,23 +126,24 @@ m_iForest = function(Matrix[Double] X, Int n_trees, Int subsampling_size, Int se
   return(Matrix[Double] M)
 {
   # check assumptions
-  s_warning_assert(n_trees > 0, "iForest: Requirement n_trees > 1 not satisfied! ntrees: "+toString(n_trees))
+  s_warning_assert(n_trees > 0, "iForest: Requirement n_trees > 0 not satisfied! ntrees: "+toString(n_trees))
   s_warning_assert(subsampling_size > 1 & subsampling_size <= nrow(X), "iForest: Requirement 0 < subsampling_size <= nrow(X) not satisfied! subsampling_size: "+toString(subsampling_size)+"; nrow(X): "+toString(nrow(X)))
 
-  height_limit = ceil(log(subsampling_size, 2))  
+  height_limit = ceil(log(subsampling_size, 2))
   tree_size = 2*(2^(height_limit+1)-1)
 
   # initialize the model
   M = matrix(-1, cols=tree_size, rows=n_trees)
+  seeds = matrix(seq(1, n_trees), cols=n_trees, rows=1)*seed
 
-  for (i_iTree in 1:n_trees) {
+  parfor (i_iTree in 1:n_trees) {
     # subsample rows
-    seed = ifelse(seed == -1, -1, i_iTree*seed)
-    X_subsample = s_sampleRows(X, subsampling_size, seed)
+    tree_seed = ifelse(seed == -1, -1, as.scalar(seeds[1, i_iTree]))
+    X_subsample = s_sampleRows(X, subsampling_size, tree_seed)
 
     # Build iTree
-    seed = ifelse(seed == -1, -1, seed+42)
-    M_tree = m_iTree(X, height_limit, seed)
+    tree_seed = ifelse(seed == -1, -1, tree_seed+42)
+    M_tree = m_iTree(X_subsample, height_limit, tree_seed)
 
     # Add iTree to the model
     M[i_iTree, 1:ncol(M_tree)] = M_tree
@@ -267,7 +286,7 @@ s_drawSplitPoint = function(Matrix[Double] X, Int seed = -1)
 s_addExternalINode = function(Matrix[Double] X_node, Int node_id, Matrix[Double] M) 
   return(Matrix[Double] M)
 {
-  s_warning_assert(node_id > 0, "s_addExternalINode: node_id > 0")
+  s_warning_assert(node_id > 0, "s_addExternalINode: Requirement `node_id > 0` not satisfied!")
   
   node_start_index = 2*node_id-1
   M[, node_start_index] = 0
@@ -295,8 +314,8 @@ s_addExternalINode = function(Matrix[Double] X_node, Int node_id, Matrix[Double]
 s_addInternalINode = function(Int node_id, Int split_feature, Double split_value, Matrix[Double] M)
   return(Matrix[Double] M)
 {
-  s_warning_assert(node_id > 0, "s_addInternalINode: node_id > 0")
-  s_warning_assert(split_feature > 0, "s_addInternalINode: split_feature > 0")
+  s_warning_assert(node_id > 0, "s_addInternalINode: Requirement `node_id > 0` not satisfied!")
+  s_warning_assert(split_feature > 0, "s_addInternalINode: Requirement `split_feature > 0` not satisfied!")
 
   node_start_index = 2*node_id-1
   M[, node_start_index] = split_feature
@@ -323,8 +342,8 @@ s_addInternalINode = function(Int node_id, Int split_feature, Double split_value
 s_isExternalINode = function(Matrix[Double] X_node, Int node_id, Int max_depth) 
   return(Boolean isExternalNode)
 {
-  s_warning_assert(max_depth > 0, "s_isExternalINode: max_depth > 0")
-  s_warning_assert(node_id > 0, "s_isExternalINode: node_id > 0")
+  s_warning_assert(max_depth > 0, "s_isExternalINode: Requirement `max_depth > 0` not satisfied!")
+  s_warning_assert(node_id > 0, "s_isExternalINode: Requirement `node_id > 0` not satisfied!")
 
   node_depth = floor(log(node_id, 2))
   isExternalNode = node_depth >= max_depth | nrow(X_node) <= 1
@@ -356,9 +375,9 @@ s_isExternalINode = function(Matrix[Double] X_node, Int node_id, Int max_depth)
 s_splitINode = function(Matrix[Double] X_node, Int node_id, Int split_feature, Double split_value) 
   return(Int left_id, Matrix[Double] X_left, Int right_id, Matrix[Double] X_right)
 {
-  s_warning_assert(nrow(X_node) > 0, "s_splitINode: nrow(X_node) > 0")
-  s_warning_assert(node_id > 0, "s_splitINode: nrow(X_node) > 0")
-  s_warning_assert(split_feature > 0, "s_splitINode: split_feature > 0")
+  s_warning_assert(nrow(X_node) > 0, "s_splitINode: Requirement `nrow(X_node) > 0` not satisfied!")
+  s_warning_assert(node_id > 0, "s_splitINode: Requirement `nrow(X_node) > 0` not satisfied!")
+  s_warning_assert(split_feature > 0, "s_splitINode: Requirement `split_feature > 0` not satisfied!")
 
   left_rows_mask = X_node[, split_feature] <= split_value 
 
@@ -391,7 +410,7 @@ s_splitINode = function(Matrix[Double] X_node, Int node_id, Int split_feature, D
 s_sampleRows = function(Matrix[Double] X, Int size, Int seed = -1)
   return(Matrix[Double] X_extracted)
 {
-  s_warning_assert(size > 0 & nrow(X) >= size, "s_sampleRows: size > 0 & nrow(X) >= size")
+  s_warning_assert(size > 0 & nrow(X) >= size, "s_sampleRows: Requirements `size > 0 & nrow(X) >= size` not satisfied")
   random_vector = rand(rows=nrow(X), cols=1, seed=seed)
   X_rand = cbind(X, random_vector)
 
@@ -446,7 +465,7 @@ m_PathLength = function(Matrix[Double] M, Matrix[Double] x)
 s_traverseITree = function(Matrix[Double] M, Matrix[Double] x)
   return(Int nrEdgesTraversed, Int externalNodeSize)
 {
-  s_warning_assert(nrow(x) == 1, "s_traverseITree: nrow(x) == 1")
+  s_warning_assert(nrow(x) == 1, "s_traverseITree: Requirement `nrow(x) == 1` not satisfied!")
 
   nrEdgesTraversed = 0
   is_external_node = FALSE
@@ -499,7 +518,7 @@ s_traverseITree = function(Matrix[Double] M, Matrix[Double] x)
 s_cn = function(Int n)
   return(Double cn)
 {
-  s_warning_assert(n > 1, "s_cn: n > 1")
+  s_warning_assert(n > 1, "s_cn: Requirement `n > 1` not satisfied!")
   
   # Calculate H(n-1)
   # The approximation of the Harmonic Number H using `log(n) + eulergamma` has a higher error
@@ -520,10 +539,33 @@ s_cn = function(Int n)
   cn = 2*H_nminus1 - 2*(n-1)/n
 }
 
+# Scors a sample `x` according to score function `s(x, n)` for a sample x and a testset-size n, as described in [Liu2008].
+#
+# INPUT PARAMETERS:
+# ---------------------------------------------------------------------------------------------
+# NAME          TYPE             DEFAULT      MEANING
+# ---------------------------------------------------------------------------------------------
+# M             Matrix[Double]                 iForest model used to score
+# x             Matrix[Double]                 Sample to be scored 
+# n             Int                            Subsample size the iTrees were built from
+# ---------------------------------------------------------------------------------------------
+# OUTPUT PARAMETERS: 
+# ---------------------------------------------------------------------------------------------
+# score   The score for 
+# ---------------------------------------------------------------------------------------------
 m_score = function(Matrix[Double] M, Matrix[Double] x, Int n)
   return(Double score)
 {
-  score = 3
+  s_warning_assert(n > 1, "m_score: Requirement `n > 1` not satisfied!")
+  s_warning_assert(nrow(x) == 1, "m_score: sample has the wrong dimension!")
+  s_warning_assert(nrow(M) > 1, "m_score: invalid iForest Model!")
+
+  h = matrix(0, cols=nrow(M), rows=1)
+  parfor (i_iTree in 1:nrow(M)) {
+    h[1, i_iTree] = m_PathLength(M[i_iTree,], x)
+  }
+
+  score = 2^-(mean(h)/s_cn(n))
 }
 
 # Function that gives a warning if a assertion is violated. This is used instead of `assert` and

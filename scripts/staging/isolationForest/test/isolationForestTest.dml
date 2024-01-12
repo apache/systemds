@@ -26,6 +26,11 @@ source("./scripts/staging/isolationForest/isolationForest.dml") as iForest;
 # as well as sub-routines are tested here.
 # ---------------------------------------------------------------------------------------------
 
+
+# U N I T   T E S T S
+# ---------------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------
+
 # Utility function for printing test results
 record_test_result = function(String testname, Boolean success, Int t_cnt, List[String] fails) 
   return(Int t_cnt, List[String] fails)
@@ -145,10 +150,15 @@ is_iforest_consistent = function(Matrix[Double] M, Matrix[Double] X, Int subsamp
   return(Boolean consistent)
 {
   consistent = TRUE
-  
+
   height_limit = ceil(log(subsampling_size, 2))
+  tree_size = 2*(2^(height_limit+1)-1)
   for (tree_id in 1:nrow(M)) {
     M_tree = M[tree_id,]
+    check_tree_size = ncol(M_tree) == tree_size
+    if (!check_tree_size) print("iTree in iForest is does not have the expected size!")
+    consistent = consistent & check_tree_size
+
     check_tree_consistent = is_itree_consistent(M_tree, X, height_limit, TRUE)
     if (!check_tree_consistent) print("iTree at index "+tree_id+" in iForest is inconsistent!")
     consistent = consistent & check_tree_consistent
@@ -162,8 +172,8 @@ init_tests = function() return(Int cnt, List[String] fails) {cnt=0; fails=list()
 
 # Test data
 X_3x5_allequal = matrix(1.0, rows=3, cols=5)
-X_3x8_equalrows = matrix("1 2 3 1 2 3 1 2 3 1 2 3 1 2 3 1 2 3 1 2 3 1 2 3", cols=3, rows=8)
-X_3x4_equalcols = matrix("1 1 1 2 2 2 3 3 3 4 4 4", cols=3, rows=4)
+X_8x3_equalrows = matrix("1 2 3 1 2 3 1 2 3 1 2 3 1 2 3 1 2 3 1 2 3 1 2 3", cols=3, rows=8)
+X_4x3_equalcols = matrix("1 1 1 2 2 2 3 3 3 4 4 4", cols=3, rows=4)
 X_4x4 = matrix("1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16", cols=4, rows=4)
 X_6x6_ordered = matrix(seq(1,36), rows=6, cols=6)
 X_1x1 =  matrix(42.0, rows=1, cols=1)
@@ -174,7 +184,7 @@ X_empty = matrix(0.0, rows=0, cols=0)
 # => max_depth = 3; 30 entries (IDs 1-15);  
 M_itree_4lvl_empty = matrix(0.0, rows=1, cols=2*(2^4-1))
 
-print("Starting Tests")
+print("Starting Unit Tests")
 print("===============================================================")
 
 # =============================================================================================
@@ -277,24 +287,24 @@ M_expected[, 14] = 0
 print("\ns_splitINode")
 
 testname = "splitINode: Equal rows"
-[l_id, x_l, r_id, x_r] = iForest::s_splitINode(X_3x8_equalrows, 1, 1, 1)
-test_res1 = l_id == 2 & r_id == 3 & matrices_equal(x_l, X_3x8_equalrows) & nrow(x_r) == 0
-[l_id, x_l, r_id, x_r] = iForest::s_splitINode(X_3x8_equalrows, 2, 2, 2)
-test_res2 = l_id == 4 & r_id == 5 & matrices_equal(x_l, X_3x8_equalrows) & nrow(x_r) == 0
-[l_id, x_l, r_id, x_r] = iForest::s_splitINode(X_3x8_equalrows, 4, 3, 3)
-test_res3 = l_id == 8 & r_id == 9 & matrices_equal(x_l, X_3x8_equalrows) & nrow(x_r) == 0
+[l_id, x_l, r_id, x_r] = iForest::s_splitINode(X_8x3_equalrows, 1, 1, 1)
+test_res1 = l_id == 2 & r_id == 3 & matrices_equal(x_l, X_8x3_equalrows) & nrow(x_r) == 0
+[l_id, x_l, r_id, x_r] = iForest::s_splitINode(X_8x3_equalrows, 2, 2, 2)
+test_res2 = l_id == 4 & r_id == 5 & matrices_equal(x_l, X_8x3_equalrows) & nrow(x_r) == 0
+[l_id, x_l, r_id, x_r] = iForest::s_splitINode(X_8x3_equalrows, 4, 3, 3)
+test_res3 = l_id == 8 & r_id == 9 & matrices_equal(x_l, X_8x3_equalrows) & nrow(x_r) == 0
 [test_cnt, fails] = record_test_result(testname, test_res1 & test_res2 & test_res3, test_cnt, fails)
 
 
 testname = "splitINode: Split in halfs"
-Xl_expected = X_3x4_equalcols[1:2]
-Xr_expected = X_3x4_equalcols[3:4]
+Xl_expected = X_4x3_equalcols[1:2]
+Xr_expected = X_4x3_equalcols[3:4]
 
-[l_id, x_l, r_id, x_r] = iForest::s_splitINode(X_3x4_equalcols, 1, 1, 2)
+[l_id, x_l, r_id, x_r] = iForest::s_splitINode(X_4x3_equalcols, 1, 1, 2)
 test_res1 = l_id == 2 & r_id == 3 & matrices_equal(x_l, Xl_expected) & matrices_equal(x_r, Xr_expected)
-[l_id, x_l, r_id, x_r] = iForest::s_splitINode(X_3x4_equalcols, 2, 2, 2)
+[l_id, x_l, r_id, x_r] = iForest::s_splitINode(X_4x3_equalcols, 2, 2, 2)
 test_res2 = l_id == 4 & r_id == 5 & matrices_equal(x_l, Xl_expected) & matrices_equal(x_r, Xr_expected)
-[l_id, x_l, r_id, x_r] = iForest::s_splitINode(X_3x4_equalcols, 4, 3, 2)
+[l_id, x_l, r_id, x_r] = iForest::s_splitINode(X_4x3_equalcols, 4, 3, 2)
 test_res3 = l_id == 8 & r_id == 9 & matrices_equal(x_l, Xl_expected) & matrices_equal(x_r, Xr_expected)
 [test_cnt, fails] = record_test_result(testname, test_res1 & test_res2 & test_res3, test_cnt, fails)
 
@@ -302,8 +312,8 @@ test_res3 = l_id == 8 & r_id == 9 & matrices_equal(x_l, Xl_expected) & matrices_
 # ---------------------------------------------------------------------------------------------
 print("\ns_sampleRows")
 testname = "sampleRows: Equal Rows"
-X_res = iForest::s_sampleRows(X_3x8_equalrows, 2, -1)
-X_expected = X_3x8_equalrows[1:2,]
+X_res = iForest::s_sampleRows(X_8x3_equalrows, 2, -1)
+X_expected = X_8x3_equalrows[1:2,]
 [test_cnt, fails] = record_test_result(testname, matrices_equal(X_res, X_expected), test_cnt, fails)
 
 testname = "sampleRows: Random Seed"
@@ -340,24 +350,24 @@ test_res = check_shuffeled & check_reordered
 print("\ns_traverseITree")
 
 testname = "traverseITree: Equal training rows"
-M_tree1 = iForest::m_iTree(X=X_3x8_equalrows, max_depth=3)
-M_tree2 = iForest::m_iTree(X=X_3x8_equalrows, max_depth=5)
+M_tree1 = iForest::m_iTree(X=X_8x3_equalrows, max_depth=3)
+M_tree2 = iForest::m_iTree(X=X_8x3_equalrows, max_depth=5)
 
-x_1 = X_3x8_equalrows[1, ]
+x_1 = X_8x3_equalrows[1, ]
 [pathlength1, externalNodeSize1] = iForest::s_traverseITree(M_tree1, x_1)
 [pathlength2, externalNodeSize2] = iForest::s_traverseITree(M_tree2, x_1)
-check_equal_x_1 = pathlength1 == 3 & externalNodeSize1 == nrow(X_3x8_equalrows)
-check_equal_x_2 = pathlength2 == 5 & externalNodeSize2 == nrow(X_3x8_equalrows)
+check_equal_x_1 = pathlength1 == 3 & externalNodeSize1 == nrow(X_8x3_equalrows)
+check_equal_x_2 = pathlength2 == 5 & externalNodeSize2 == nrow(X_8x3_equalrows)
 check_equal = check_equal_x_1 & check_equal_x_2
 
-x_1 = X_3x8_equalrows[1, ] - 0.1
+x_1 = X_8x3_equalrows[1, ] - 0.1
 [pathlength1, externalNodeSize1] = iForest::s_traverseITree(M_tree1, x_1)
 [pathlength2, externalNodeSize2] = iForest::s_traverseITree(M_tree2, x_1)
-check_smaller_x_1 = pathlength1 == 3 & externalNodeSize1 == nrow(X_3x8_equalrows)
-check_smaller_x_2 = pathlength2 == 5 & externalNodeSize2 == nrow(X_3x8_equalrows)
+check_smaller_x_1 = pathlength1 == 3 & externalNodeSize1 == nrow(X_8x3_equalrows)
+check_smaller_x_2 = pathlength2 == 5 & externalNodeSize2 == nrow(X_8x3_equalrows)
 check_smaller = check_smaller_x_1 & check_smaller_x_2
 
-x_1 = X_3x8_equalrows[1, ] + 0.1
+x_1 = X_8x3_equalrows[1, ] + 0.1
 [pathlength1, externalNodeSize1] = iForest::s_traverseITree(M_tree1, x_1)
 [pathlength2, externalNodeSize2] = iForest::s_traverseITree(M_tree2, x_1)
 check_larger_x_1 = pathlength1 == 1 & externalNodeSize1 == 0
@@ -371,18 +381,18 @@ check_larger = check_larger_x_1 & check_larger_x_2
 print("\ns_cn")
 testname = "s_cn"
 error_tolerance = 1e3
-test_res = (iForest::s_cn(2) - 1) < error_tolerance
-test_res = (test_res & iForest::s_cn(3) - 5/3) < error_tolerance
-test_res = test_res & (iForest::s_cn(4) - 13/6) < error_tolerance
-test_res = test_res & (iForest::s_cn(5) - 77/30) < error_tolerance
-test_res = test_res & (iForest::s_cn(10) - 4861/1260) < error_tolerance
-test_res = test_res & (iForest::s_cn(50) - 6.99841) < error_tolerance
-test_res = test_res & (iForest::s_cn(100) - 8.3747550) < error_tolerance
-test_res = test_res & (iForest::s_cn(500) - 11.5856468) < error_tolerance
-test_res = test_res & (iForest::s_cn(1000) - 12.970941) < error_tolerance
-test_res = test_res & (iForest::s_cn(5000) - 16.1890177) < error_tolerance
-test_res = test_res & (iForest::s_cn(10000) - 17.5752120) < error_tolerance
-test_res = test_res & (iForest::s_cn(50000) - 20.7940078) < error_tolerance
+test_res = abs(iForest::s_cn(2) - 1) < error_tolerance
+test_res = test_res & abs(iForest::s_cn(3) - 5/3) < error_tolerance
+test_res = test_res & abs(iForest::s_cn(4) - 13/6) < error_tolerance
+test_res = test_res & abs(iForest::s_cn(5) - 77/30) < error_tolerance
+test_res = test_res & abs(iForest::s_cn(10) - 4861/1260) < error_tolerance
+test_res = test_res & abs(iForest::s_cn(50) - 6.99841) < error_tolerance
+test_res = test_res & abs(iForest::s_cn(100) - 8.3747550) < error_tolerance
+test_res = test_res & abs(iForest::s_cn(500) - 11.5856468) < error_tolerance
+test_res = test_res & abs(iForest::s_cn(1000) - 12.970941) < error_tolerance
+test_res = test_res & abs(iForest::s_cn(5000) - 16.1890177) < error_tolerance
+test_res = test_res & abs(iForest::s_cn(10000) - 17.5752120) < error_tolerance
+test_res = test_res & abs(iForest::s_cn(50000) - 20.7940078) < error_tolerance
 
 [test_cnt, fails] = record_test_result(testname, test_res, test_cnt, fails)
 
@@ -396,17 +406,17 @@ print("---------------------------------------------------------------")
 # ---------------------------------------------------------------------------------------------
 print("\nm_iTree")
 testname = "iTree: Equal rows"
-M_res = iForest::m_iTree(X=X_3x8_equalrows, max_depth=3)
+M_res = iForest::m_iTree(X=X_8x3_equalrows, max_depth=3)
 # Since all rows are equal, this tree will grow exclusively to the left. With a max_depth=3 the linearized 
 # models will hence only have entries for IDs 1, 2, 4 and 8.
-# Since in X_3x8_equalrows the feature index is always equal to the only value for the feature,
+# Since in X_8x3_equalrows the feature index is always equal to the only value for the feature,
 # internal nodes (1,2,4) will have the same entry for split feature and split values and the external node 8
 # will have a 0 for the first entry (indicating a leaf node) and the number of rows as the second entry
 check_id1 = as.scalar(M_res[1, 1] == M_res[1, 2])
 check_id2 = as.scalar(M_res[1, 3] == M_res[1, 4])
 check_id4 = as.scalar(M_res[1, 7] == M_res[1, 8])
-check_id8 = as.scalar(M_res[1, 15] == 0 & M_res[1, 16] == nrow(X_3x8_equalrows))
-check_consistent = is_itree_consistent(M=M_res, X=X_3x8_equalrows, max_depth=3)
+check_id8 = as.scalar(M_res[1, 15] == 0 & M_res[1, 16] == nrow(X_8x3_equalrows))
+check_consistent = is_itree_consistent(M=M_res, X=X_8x3_equalrows, max_depth=3)
 test_res = check_id1 & check_id2 & check_id4 & check_id8 & check_consistent
 [test_cnt, fails] = record_test_result(testname, test_res, test_cnt, fails)
 
@@ -456,12 +466,15 @@ test_res = check_same_seed_same_model & check_different_seed_different_model & c
 # ---------------------------------------------------------------------------------------------
 print("\nm_iForest")
 testname = "iForest: Equal rows"
+# Since all rows are equal, all trees will grow exclusively to the left. 
+# For each tree, here we do the same checks as with test "iTree: Equal rows".
+# Addidiontally we we check the resulting forest for consistency
 subsampling_size = 5
 height_limit = ceil(log(subsampling_size, 2))
 n_trees = 2
 
-M_res = iForest::m_iForest(X=X_3x8_equalrows, n_trees=n_trees, subsampling_size=subsampling_size)
-check_consistent = is_iforest_consistent(M=M_res, X=X_3x8_equalrows, subsampling_size=subsampling_size)
+M_res = iForest::m_iForest(X=X_8x3_equalrows, n_trees=n_trees, subsampling_size=subsampling_size)
+check_consistent = is_iforest_consistent(M=M_res, X=X_8x3_equalrows, subsampling_size=subsampling_size)
 
 check_trees = TRUE
 for (i in 1:n_trees) {
@@ -469,7 +482,7 @@ for (i in 1:n_trees) {
   check_id1 = as.scalar(M_res[1, 1] == M_res[1, 2])
   check_id2 = as.scalar(M_res[1, 3] == M_res[1, 4])
   check_id4 = as.scalar(M_res[1, 7] == M_res[1, 8])
-  check_id8 = as.scalar(M_res[1, 15] == 0 & M_res[1, 16] == nrow(X_3x8_equalrows))
+  check_id8 = as.scalar(M_res[1, 15] == 0 & M_res[1, 16] == subsampling_size)
   check_trees = check_trees & check_id1 & check_id2 & check_id4 & check_id8
 }
 [test_cnt, fails] = record_test_result(testname, check_consistent & check_trees, test_cnt, fails)
@@ -514,17 +527,17 @@ test_res = check_same_seed_same_model & check_different_seed_different_model & c
 # m_PathLength
 # ---------------------------------------------------------------------------------------------
 print("\nm_PathLength")
-testname = "Equal Rows"
-M_tree1 = iForest::m_iTree(X=X_3x8_equalrows, max_depth=3)
-M_tree2 = iForest::m_iTree(X=X_3x8_equalrows, max_depth=5)
-M_tree3 = iForest::m_iTree(X=X_3x8_equalrows, max_depth=10)
+testname = "PathLength"
+M_tree1 = iForest::m_iTree(X=X_8x3_equalrows, max_depth=3)
+M_tree2 = iForest::m_iTree(X=X_8x3_equalrows, max_depth=5)
+M_tree3 = iForest::m_iTree(X=X_8x3_equalrows, max_depth=10)
 # c(8) calculated by hand
 cn_8 = 3.43571428
 
 # Results in pathlength max_depth and leafnode-size length(Tree)
-x_equal = X_3x8_equalrows[1, ]
+x_equal = X_8x3_equalrows[1, ]
 # Results in pathlength 1 with leafnode-size 0
-x_larger = X_3x8_equalrows[1, ] + 0.1
+x_larger = X_8x3_equalrows[1, ] + 0.1
 
 test_res = iForest::m_PathLength(M_tree1, x_equal) == 3 + cn_8
 test_res = iForest::m_PathLength(M_tree2, x_equal) == 5 + cn_8
@@ -532,8 +545,56 @@ test_res = iForest::m_PathLength(M_tree3, x_equal) == 10 + cn_8
 test_res = iForest::m_PathLength(M_tree1, x_larger) == 1
 test_res = iForest::m_PathLength(M_tree2, x_larger) == 1
 test_res = iForest::m_PathLength(M_tree3, x_larger) == 1
-
 [test_cnt, fails] = record_test_result(testname, test_res, test_cnt, fails)
+
+# m_PathLength
+# ---------------------------------------------------------------------------------------------
+print("\nm_score")
+testname = "score"
+# As in test "iForest: Equal Rows", the iTrees built here will grow to the left exclusively.
+# => the leftmost external node will have the size `subsampling_size` and all other external 
+# nodes will have size 0. c(n) for the leaf nodes will hence be c(subsampling_size) and 1 respectively. 
+# => The score for a sample landing in the leftmost node will hence be 
+# 2^-(max_PathLength/c(subsampling_size)) where max_PathLength = max_depth + c(subsampling_size)
+# and max_path = ceil(log(subsampling_size, 2))
+# For the rightmost node the score will be 2^-(1/c(subsampling_size)).
+# (Note: Recall that c(n) for the leaf nodes is not the normalization constant of the score, the normalization constant is always c(subsampling_size))
+
+# Sample that will always end in the leftmost leaf node
+x_equal = X_8x3_equalrows[1,]
+# Sample that will always end in the rightmost leaf node
+x_larger = X_8x3_equalrows[1,] + 0.1
+error_tolerance = 1e-5
+
+# Subsampling_size 2
+M_forest = iForest::m_iForest(X=X_8x3_equalrows, n_trees=10, subsampling_size=2)
+res_score_l = iForest::m_score(M_forest, x_equal, 2)
+res_score_r = iForest::m_score(M_forest, x_larger, 2)
+check_subsample2 = abs(res_score_l - 0.25) < error_tolerance & abs(res_score_r - 0.5) < error_tolerance
+
+
+# Subsampling_size 3
+M_forest = iForest::m_iForest(X=X_8x3_equalrows, n_trees=10, subsampling_size=3)
+res_score_l = iForest::m_score(M_forest, x_equal, 3)
+res_score_r = iForest::m_score(M_forest, x_larger, 3)
+check_subsample3 = abs(res_score_l - 0.217637) < error_tolerance & abs(res_score_r - 0.65975) < error_tolerance
+
+# Subsampling_size 4
+M_forest = iForest::m_iForest(X=X_8x3_equalrows, n_trees=10, subsampling_size=4)
+res_score_l = iForest::m_score(M_forest, x_equal, 4)
+res_score_r = iForest::m_score(M_forest, x_larger, 4)
+check_subsample4 = abs(res_score_l - 0.263691) < error_tolerance & abs(res_score_r - 0.726211) < error_tolerance
+
+# Subsampling_size 8
+M_forest = iForest::m_iForest(X=X_8x3_equalrows, n_trees=10, subsampling_size=8)
+res_score_l = iForest::m_score(M_forest, x_equal, 8)
+res_score_r = iForest::m_score(M_forest, x_larger, 8)
+check_subsample8 = abs(res_score_l - 0.27297) < error_tolerance & abs(res_score_r - 0.81730) < error_tolerance
+
+
+test_res = check_subsample2 & check_subsample3 & check_subsample4 & check_subsample8
+[test_cnt, fails] = record_test_result(testname, test_res, test_cnt, fails)
+
 
 # =============================================================================================
 # Summary
@@ -545,3 +606,105 @@ if (length(fails) > 0) {
   print("Tests that failed:")
   print(toString(fails))
 }
+
+print("\n\n")
+
+
+# F U N C T I O N A L   T E S T S
+# ---------------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------
+
+print("Starting Functional Tests ")
+print("===============================================================")
+
+print("No outliers")
+print("--------------------------")
+nr_runs = 20
+nr_samples = 1000
+nr_features = 10
+print(toString(nr_runs) + " runs with "+toString(nr_samples)+" uniformally distributed samples consisting of " + toString(nr_features)+ " features.")
+print("No outliers.")
+print("When there are no anomalies in X, we expect all samples to have an anomaly score of ~0.5")
+print("Hence, this test reports scores < 0.4 or scores > 0.6.")
+print("\n")
+
+nr_unexpected_scores = matrix(0, rows=1, cols=nr_runs)
+parfor (i in 1:nr_runs) {
+  X = rand(rows=nr_samples, cols=nr_features, min=-100, max=100)
+  model = iForest::outlierByIsolationForest(X=X, n_trees=20, subsampling_size=100)
+  scores = iForest::outlierByIsolationForestApply(iForestModel=model, X=X)
+  
+  unexpected_scores_indicator = scores < 0.4 | scores > 0.6
+  if (sum(unexpected_scores_indicator > 0)) {
+    print("- Run "+i+": Unexpected scores found: ")
+    unexpected = removeEmpty(target=scores, margin="rows", select=unexpected_scores_indicator)
+    print(toString(unexpected))
+  }
+
+  nr_unexpected_scores[1, i] = sum(unexpected_scores_indicator)
+}
+
+print("Result: "+toString(as.integer(sum(nr_unexpected_scores)))+ "/"+toString(as.integer(nr_runs*nr_samples))+" scores found to be unexpected!")
+print("\n\n")
+
+print("Training with 1% outliers")
+print("--------------------------")
+nr_runs = 10
+nr_samples = 10000
+nr_features = 5
+max_outlier_features = 5
+print(toString(nr_runs) + " runs with "+toString(nr_samples)+" normaly distributed samples (mean=0, std=1) consisting of "+nr_features+" features.")
+print("Training set contains 1% outliers.")
+print("Outliers are created by randomly picking up to " + toString(max_outlier_features) + " feature and adding/substracting the a value between 10 and 100.\n")
+print("To test the algorithm the test set contains 12 random samples in groups of 3:")
+print("- Samples 1-3: No outliers.")
+print("- Samples 4-6: Outliers with randomly added deviation between 5 and 10.")
+print("- Samples 7-9: Outliers with randomly added deviation between 50 and 100.")
+print("- Samples 10-12: Outliers with randomly added deviation between 500 and 1000.")
+
+
+create_rand_outliers = function(Int rows, Int cols, Int max_outlier_features, Double min_dev, Double max_dev) 
+  return(Matrix[Double] outliers) {
+  outliers = rand(rows=rows, cols=cols, pdf="normal")
+  for (r_idx in 1:rows) {
+    n_outlier_feats = as.scalar(sample(max_outlier_features, 1))
+    outlier_feats = sample(cols, n_outlier_feats)
+    for (i_feat in 1:n_outlier_feats) {
+      f_idx = as.scalar(outlier_feats[i_feat])
+      dev = as.scalar(rand(rows=1, cols=1, min=min_dev, max=max_dev))
+      if (r_idx < as.integer(rows/2))
+        outliers[r_idx, f_idx] = outliers[r_idx, f_idx] - dev
+      else
+        outliers[r_idx, f_idx] = outliers[r_idx, f_idx] + dev
+    }
+  }
+}
+
+parfor (i_run in 1:nr_runs) {
+  X_train = rand(rows=nr_samples, cols=nr_features, pdf="normal")
+  n_train_outliers = as.integer(nr_samples/100)
+  X_train[1:n_train_outliers,] = create_rand_outliers(n_train_outliers, nr_features, max_outlier_features, 10, 100)
+
+
+  iF_model = iForest::outlierByIsolationForest(X=X_train, n_trees=100, subsampling_size=250)
+
+  X_test = rbind(
+    rand(rows=3, cols=nr_features, pdf="normal"),
+    create_rand_outliers(3, nr_features, max_outlier_features, 5, 10),
+    create_rand_outliers(3, nr_features, max_outlier_features, 50, 100),
+    create_rand_outliers(3, nr_features, max_outlier_features, 500, 1000)
+  )
+
+  test_scores = iForest::outlierByIsolationForestApply(iForestModel=iF_model, X=X_test)
+  
+  print("Run "+i_run+":")
+  print("- Scores:")
+  print(toString(t(test_scores)))
+  print("- Is Outlier?: ")
+  print(toString(t(test_scores) > 0.5))
+  print("\n")
+}
+
+
+print("===============================================================")
+print("TESTING FINISHED!")

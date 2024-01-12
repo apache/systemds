@@ -145,6 +145,9 @@ public class UnaryOp extends MultiThreadedHop
 				case LOCAL:
 					ret = new Local(input.constructLops(), getDataType(), getValueType());
 					break;
+				case _EVICT:
+					ret = new UnaryCP(input.constructLops(), _op, getDataType(), getValueType());
+					break;
 				default:
 					final boolean isScalarIn = getInput().get(0).getDataType() == DataType.SCALAR;
 					if(getDataType() == DataType.SCALAR // value type casts or matrix to scalar

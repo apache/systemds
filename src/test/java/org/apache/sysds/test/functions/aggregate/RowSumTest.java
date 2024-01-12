@@ -24,81 +24,82 @@ import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.junit.Test;
 
-
 /**
- * <p><b>Positive tests:</b></p>
+ * <p>
+ * <b>Positive tests:</b>
+ * </p>
  * <ul>
- *  <li>general test</li>
+ * <li>general test</li>
  * </ul>
- * <p><b>Negative tests:</b></p>
+ * <p>
+ * <b>Negative tests:</b>
+ * </p>
  * <ul>
- *  <li>scalar test</li>
+ * <li>scalar test</li>
  * </ul>
  * 
  * 
  */
-public class RowSumTest extends AutomatedTestBase 
-{
-	
-    private final static String TEST_DIR = "functions/aggregate/";
-    private static final String TEST_CLASS_DIR = TEST_DIR + RowSumTest.class.getSimpleName() + "/";
-    private final static String TEST_GENERAL = "General";
-    private final static String TEST_SCALAR = "Scalar";
+public class RowSumTest extends AutomatedTestBase {
 
+	private final static String TEST_DIR = "functions/aggregate/";
+	private static final String TEST_CLASS_DIR = TEST_DIR + RowSumTest.class.getSimpleName() + "/";
+	private final static String TEST_GENERAL = "General";
+	private final static String TEST_SCALAR = "Scalar";
 
-    @Override
-    public void setUp() {
-        // positive tests
-        addTestConfiguration(TEST_GENERAL, new TestConfiguration(TEST_CLASS_DIR, "RowSumTest", new String[] {
-                "vector_rowsum", "matrix_rowsum" }));
-        
-        // negative tests
-        addTestConfiguration(TEST_SCALAR, new TestConfiguration(TEST_CLASS_DIR, "RowSumScalarTest", new String[] {
-                "vector_rowsum", "matrix_rowsum" }));
-    }
+	@Override
+	public void setUp() {
+		// positive tests
+		addTestConfiguration(TEST_GENERAL,
+			new TestConfiguration(TEST_CLASS_DIR, "RowSumTest", new String[] {"vector_rowsum", "matrix_rowsum"}));
 
-    @Test
-    public void testGeneral() {
-        int rows = 10;
-        int cols = 10;
+		// negative tests
+		addTestConfiguration(TEST_SCALAR,
+			new TestConfiguration(TEST_CLASS_DIR, "RowSumScalarTest", new String[] {"vector_rowsum", "matrix_rowsum"}));
+	}
 
-        TestConfiguration config = getTestConfiguration(TEST_GENERAL);
-        config.addVariable("rows", rows);
-        config.addVariable("cols", cols);
+	@Test
+	public void testGeneral() {
+		int rows = 10;
+		int cols = 10;
 
-        loadTestConfiguration(config);
+		TestConfiguration config = getTestConfiguration(TEST_GENERAL);
+		config.addVariable("rows", rows);
+		config.addVariable("cols", cols);
 
-        double[][] vector = getRandomMatrix(rows, 1, 0, 1, 1, -1);
-        writeInputMatrix("vector", vector);
-        writeExpectedMatrix("vector_rowsum", vector);
+		loadTestConfiguration(config);
 
-        double[][] matrix = getRandomMatrix(rows, cols, 0, 1, 1, -1);
-        double[][] matrixRowSum = new double[rows][1];
-        for (int i = 0; i < rows; i++) {
-            for (int j = 0; j < cols; j++) {
-                matrixRowSum[i][0] += matrix[i][j];
-            }
-        }
-        writeInputMatrix("matrix", matrix);
-        writeExpectedMatrix("matrix_rowsum", matrixRowSum);
+		double[][] vector = getRandomMatrix(rows, 1, 0, 1, 1, -1);
+		writeInputMatrix("vector", vector);
+		writeExpectedMatrix("vector_rowsum", vector);
 
-        runTest();
+		double[][] matrix = getRandomMatrix(rows, cols, 0, 1, 1, -1);
+		double[][] matrixRowSum = new double[rows][1];
+		for(int i = 0; i < rows; i++) {
+			for(int j = 0; j < cols; j++) {
+				matrixRowSum[i][0] += matrix[i][j];
+			}
+		}
+		writeInputMatrix("matrix", matrix);
+		writeExpectedMatrix("matrix_rowsum", matrixRowSum);
 
-        compareResults(1e-14);
-    }
+		runTest();
 
-    @Test
-    public void testScalar() {
-        int scalar = 12;
+		compareResults(1e-14);
+	}
 
-        TestConfiguration config = getTestConfiguration(TEST_SCALAR);
-        config.addVariable("scalar", scalar);
+	@Test
+	public void testScalar() {
+		int scalar = 12;
 
-        createHelperMatrix();
+		TestConfiguration config = getTestConfiguration(TEST_SCALAR);
+		config.addVariable("scalar", scalar);
 
-        loadTestConfiguration(config);
+		createHelperMatrix();
 
-        runTest(true, LanguageException.class);
-    }
+		loadTestConfiguration(config);
+
+		runTest(true, LanguageException.class);
+	}
 
 }

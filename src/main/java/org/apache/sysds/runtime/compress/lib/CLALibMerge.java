@@ -24,17 +24,17 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
 public class CLALibMerge {
 
-    /**
-     * Merge b into a, if possible otherwise
-     * 
-     * @param a          MatrixBlock a to merge into if possible
-     * @param b          MatrixBlock b to take elements from
-     * @param appendOnly If the appending can be done into a sparse block without sorted indexes
-     * @param par        If parallelism is allowed
-     * @param deep       If the copy should be deep most common is true
-     * @return The merged MatrixBlock
-     */
-    public static MatrixBlock merge(MatrixBlock a, MatrixBlock b, boolean appendOnly, boolean par, boolean deep) {
-        throw new NotImplementedException();
-    }
+	/**
+	 * Merge b into a, if possible otherwise
+	 * 
+	 * @param a          MatrixBlock a to merge into if possible
+	 * @param b          MatrixBlock b to take elements from
+	 * @param appendOnly If the appending can be done into a sparse block without sorted indexes
+	 * @param par        If parallelism is allowed
+	 * @param deep       If the copy should be deep most common is true
+	 * @return The merged MatrixBlock
+	 */
+	public static MatrixBlock merge(MatrixBlock a, MatrixBlock b, boolean appendOnly, boolean par, boolean deep) {
+		throw new NotImplementedException();
+	}
 }

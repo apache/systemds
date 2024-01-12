@@ -49,12 +49,15 @@ public interface LibMatrixDenseToSparse {
 	public static void denseToSparse(MatrixBlock r, boolean allowCSR, int k) {
 		final DenseBlock a = r.getDenseBlock();
 
+		if(r.nonZeros < 0)
+			r.recomputeNonZeros(k);
+
 		// set target representation, early abort on empty blocks
 		r.sparse = true;
 		if(a == null)
 			return;
 
-		if(k > 1 && r.getSparsity() > 0.01 && (r.rlen > 100 || ((long) r.rlen * r.clen > 100000)))
+		if(k > 1 && ((long) r.rlen * r.clen > 100000) && r.nonZeros > 1000)
 			denseToSparseParallel(r, k, allowCSR);
 		else if(allowCSR && r.nonZeros <= Integer.MAX_VALUE)
 			denseToSparseCSRSafe(r);
@@ -73,17 +76,10 @@ public interface LibMatrixDenseToSparse {
 				denseToSparseCSR(r);
 		}
 		catch(ArrayIndexOutOfBoundsException ioobe) {
+			LOG.warn("Incorrect nnz count in matrix therefore recounting in denseToSparse");
 			r.sparse = false;
-			// this means something was wrong with the sparse count.
-			final long nnzBefore = r.nonZeros;
-			final long nnzNew = r.recomputeNonZeros();
-
-			// try again.
-			if(nnzBefore != nnzNew)
-				denseToSparse(r, true);
-			else
-				denseToSparse(r, false);
-
+			r.recomputeNonZeros();
+			denseToSparse(r, true);
 		}
 	}
 
@@ -215,8 +211,6 @@ public interface LibMatrixDenseToSparse {
 			final SparseBlockMCSR b = (SparseBlockMCSR) r.sparseBlock;
 			final int blockSize = Math.max(1, m / k);
 			final int est = Math.max(1, (int) (n * sp));
-			// LOG.error(nnzTemp + "   " + m + " " + n);
-			// LOG.error(sp);
 			List<Future<?>> tasks = new ArrayList<>();
 			for(int i = 0; i < m; i += blockSize) {
 				final int start = i;

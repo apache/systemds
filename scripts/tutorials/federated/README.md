@@ -174,7 +174,7 @@ that port forward the list of ports from your local machine to the remote machin
 Note this only works if all the federated machines are remote machines, aka the address list contain no localhost.
 
 ```sh
-portforward.sh
+./portforward.sh
 ```
 
 Note these process will just continue running in the background so have to be manually terminated.

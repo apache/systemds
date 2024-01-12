@@ -61,7 +61,7 @@ public class PrintTest extends AutomatedTestBase
 		programArgs = new String[]{"-args", input("X"), String.valueOf(rows), String.valueOf(cols) };
 		
 		double[][] X = getRandomMatrix(rows, cols, 0, 1, 1.0, 7);
-        writeInputMatrix("X", X, true);
-        runTest(true, false, null, -1);
-	}	
+		writeInputMatrix("X", X, true);
+		runTest(true, false, null, -1);
+	}
 }

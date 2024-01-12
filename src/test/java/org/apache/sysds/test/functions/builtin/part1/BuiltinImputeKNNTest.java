@@ -33,47 +33,48 @@ import java.io.IOException;
 
 public class BuiltinImputeKNNTest extends AutomatedTestBase {
 
-    private final static String TEST_NAME = "imputeByKNN";
-    private final static String TEST_DIR = "functions/builtin/";
-    private static final String TEST_CLASS_DIR = TEST_DIR + BuiltinImputeKNNTest.class.getSimpleName() + "/";
+	private final static String TEST_NAME = "imputeByKNN";
+	private final static String TEST_DIR = "functions/builtin/";
+	private static final String TEST_CLASS_DIR = TEST_DIR + BuiltinImputeKNNTest.class.getSimpleName() + "/";
 
-    private double eps = 10;
-    @Override
-    public void setUp() {
-        TestUtils.clearAssertionInformation();
-        addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] {"B","B2","B3"}));
-    }
+	private double eps = 10;
 
-    @Test
-    public void testDefaultCP()throws IOException{
-        runImputeKNN(Types.ExecType.CP);
-    }
+	@Override
+	public void setUp() {
+		TestUtils.clearAssertionInformation();
+		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] {"B", "B2", "B3"}));
+	}
 
-    @Test
-    public void testDefaultSpark()throws IOException{
-        runImputeKNN(Types.ExecType.SPARK);
-    }
+	@Test
+	public void testDefaultCP() throws IOException {
+		runImputeKNN(Types.ExecType.CP);
+	}
 
-    private void runImputeKNN(ExecType instType) throws IOException {
-        ExecMode platform_old = setExecMode(instType);
-        try {
-            loadTestConfiguration(getTestConfiguration(TEST_NAME));
-            String HOME = SCRIPT_DIR + TEST_DIR;
-            fullDMLScriptName = HOME + TEST_NAME + ".dml";
-            programArgs = new String[] {"-args", DATASET_DIR+"Salaries.csv", 
-            	"dist", "dist_missing", "dist_sample", "42", "0.9", output("B"), output("B2"), output("B3")};
+	@Test
+	public void testDefaultSpark() throws IOException {
+		runImputeKNN(Types.ExecType.SPARK);
+	}
 
-            runTest(true, false, null, -1);
+	private void runImputeKNN(ExecType instType) throws IOException {
+		ExecMode platform_old = setExecMode(instType);
+		try {
+			loadTestConfiguration(getTestConfiguration(TEST_NAME));
+			String HOME = SCRIPT_DIR + TEST_DIR;
+			fullDMLScriptName = HOME + TEST_NAME + ".dml";
+			programArgs = new String[] {"-args", DATASET_DIR + "Salaries.csv", "dist", "dist_missing", "dist_sample", "42",
+				"0.9", output("B"), output("B2"), output("B3")};
 
-            //Compare matrices, check if the sum of the imputed value is roughly the same
-            double sum1 = readDMLMatrixFromOutputDir("B").get(new CellIndex(1,1));
-            double sum2 = readDMLMatrixFromOutputDir("B2").get(new CellIndex(1,1));
-            double sum3 = readDMLMatrixFromOutputDir("B3").get(new CellIndex(1,1));
-            Assert.assertEquals(sum1, sum2, eps);
-            Assert.assertEquals(sum2, sum3, eps);
-        }
-        finally {
-            rtplatform = platform_old;
-        }
-    }
+			runTest(true, false, null, -1);
+
+			// Compare matrices, check if the sum of the imputed value is roughly the same
+			double sum1 = readDMLMatrixFromOutputDir("B").get(new CellIndex(1, 1));
+			double sum2 = readDMLMatrixFromOutputDir("B2").get(new CellIndex(1, 1));
+			double sum3 = readDMLMatrixFromOutputDir("B3").get(new CellIndex(1, 1));
+			Assert.assertEquals(sum1, sum2, eps);
+			Assert.assertEquals(sum2, sum3, eps);
+		}
+		finally {
+			rtplatform = platform_old;
+		}
+	}
 }

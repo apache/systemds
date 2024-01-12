@@ -24,10 +24,14 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.BitSet;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
+import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
 import org.apache.sysds.runtime.frame.data.columns.ArrayFactory.FrameArrayType;
 import org.apache.sysds.runtime.matrix.data.Pair;
 import org.apache.sysds.utils.MemoryEstimates;
@@ -76,7 +80,7 @@ public class HashLongArray extends Array<Object> {
 
 	@Override
 	public void set(int index, String value) {
-		_data[index] = parseHashLong((String) value);
+		_data[index] = parseHashLong(value);
 	}
 
 	@Override
@@ -156,7 +160,7 @@ public class HashLongArray extends Array<Object> {
 
 			OptionalArray<Object> ot = (OptionalArray<Object>) other;
 			if(ot._a instanceof HashLongArray) {
-				Array<Object> a = this.append((HashLongArray) ot._a);
+				Array<Object> a = this.append(ot._a);
 				return OptionalArray.appendOther(ot, a);
 			}
 			else {
@@ -212,8 +216,38 @@ public class HashLongArray extends Array<Object> {
 		return ValueType.HASH64;
 	}
 
+	@Override 
+	protected Map<Object, Integer> getDictionary() {
+		final Map<Object, Integer> dict = new HashMap<>();
+		Integer id = 0;
+		for(int i = 0; i < size(); i++) {
+			final Integer v = dict.get(_data[i]);
+			if(v == null)
+				dict.put(_data[i], id++);
+		}
+
+		return dict;
+	}
+
+	@Override 
+	protected Map<Object, Integer> tryGetDictionary(int threshold) {
+		final Map<Object, Integer> dict = new HashMap<>();
+		Integer id = 0;
+		final int s = size();
+		for(int i = 0; i < s  && id < threshold; i++) {
+			final Integer v = dict.get(_data[i]);
+			if(v == null)
+				dict.put(_data[i], id++);
+		}
+
+		if (id >= threshold) 
+			return null;
+		else 
+			return dict;
+	}
+
 	@Override
-	public Pair<ValueType, Boolean> analyzeValueType() {
+	public Pair<ValueType, Boolean> analyzeValueType(int maxCells) {
 		return new Pair<>(ValueType.HASH64, false);
 	}
 
@@ -231,7 +265,7 @@ public class HashLongArray extends Array<Object> {
 
 	@Override
 	public long getExactSerializedSize() {
-		return 1 + 8 * _data.length;
+		return 1 + 8 * _size;
 	}
 
 	@Override
@@ -354,7 +388,7 @@ public class HashLongArray extends Array<Object> {
 
 	@Override
 	public boolean isEmpty() {
-		for(int i = 0; i < _data.length; i++)
+		for(int i = 0; i < _size; i++)
 			if(_data[i] != 0L)
 				return false;
 		return true;
@@ -402,8 +436,19 @@ public class HashLongArray extends Array<Object> {
 	}
 
 	@Override
+	public AMapToData createMapping(Map<Object, Integer> d) {
+		// assuming the dictionary is correctly constructed.
+		final int s = size();
+		final AMapToData m = MapToFactory.create(s, d.size());
+
+		for(int i = 0; i < s; i++)
+			m.set(i, d.get(_data[i]));
+		return m;
+	}
+
+	@Override
 	public String toString() {
-		StringBuilder sb = new StringBuilder(_data.length * 5 + 2);
+		StringBuilder sb = new StringBuilder(_size * 5 + 2);
 		sb.append(super.toString() + ":[");
 		for(int i = 0; i < _size - 1; i++)
 			sb.append(_data[i] + ",");

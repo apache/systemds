@@ -28,9 +28,9 @@ import org.apache.sysds.runtime.compress.DMLCompressionException;
 public class TwoRangesIndex extends AColIndex {
 
 	/** The lower index range */
-	private final RangeIndex idx1;
+	protected final RangeIndex idx1;
 	/** The upper index range */
-	private final RangeIndex idx2;
+	protected final RangeIndex idx2;
 
 	public TwoRangesIndex(RangeIndex lower, RangeIndex higher) {
 		this.idx1 = lower;

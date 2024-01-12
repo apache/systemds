@@ -28,3 +28,13 @@
 source("scripts/nn/networks/resnet.dml") as resnet
 source("nn/optim/adam.dml") as adam
 
+# resnet18
+reslayer_sizes = list(2, 2, 2, 2)
+block_type = "basic"
+[model, ema_means_vars] = resnet::init(block_type, reslayer_sizes, -1)
+optimizer = "adam"
+optimizer_params = resnet::init_optim(optimizer, block_type, reslayer_sizes)
+
+print(toString(optimizer_params))
+print(toString(model))
+print(toString(ema_means_vars))

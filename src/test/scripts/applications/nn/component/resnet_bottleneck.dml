@@ -2316,7 +2316,3 @@ values_test_residual_layer_forward()
  */
 
 values_test_bottleneck_block_backward()
-
-for (i in 2:1) {
-    print(i)
-}

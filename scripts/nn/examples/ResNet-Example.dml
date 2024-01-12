@@ -26,15 +26,82 @@
 #-------------------------------------------------------------
 
 source("scripts/nn/networks/resnet.dml") as resnet
+source("scripts/nn/networks/resnet18.dml") as resnet18
+source("scripts/nn/layers/softmax.dml") as softmax
+source("scripts/nn/layers/cross_entropy_loss.dml") as cross_entropy
 source("nn/optim/adam.dml") as adam
 
 # resnet18
 reslayer_sizes = list(2, 2, 2, 2)
 block_type = "basic"
+
+# get initial model parameters
 [model, ema_means_vars] = resnet::init(block_type, reslayer_sizes, -1)
+
+# get initial optimizer parameters
 optimizer = "adam"
 optimizer_params = resnet::init_optim(optimizer, block_type, reslayer_sizes)
 
-print(toString(optimizer_params))
-print(toString(model))
-print(toString(ema_means_vars))
+# create random data
+N = 100
+Hin = 32
+Win = 32
+C = 3  # input channels
+F = 1000  # output classes
+X = rand(rows=N, cols=Hin*Win*C)
+Y = rand(rows=N, cols=F, min=0, max=1, pdf="normal")
+
+# train ResNet
+epochs = 1
+batch_size = 16
+# adam optimizer params
+lr = 0.001
+beta1 = 0.9
+beta2 = 0.999
+epsilon = 1e-8
+t = 0
+
+[learned_model, learned_emas] = train(X, Y, model, ema_means_vars, N, Hin, Win, epochs, batch_size, optimizer_params,
+    lr, beta1, beta2, epsilon, t)
+
+
+train = function(matrix[double] X, matrix[double] Y, list[unknown] model, list[unknown] emas, int samples, int Hin,
+    int Win, int epochs, int batch_size, list[unknown] optim_params, double lr, double beta1, double beta2,
+    double epsilon, int t)
+    return (list[unknown] learned_model, list[unknown] learned_emas) {
+
+    iterations = ceil(samples/batch_size)
+    mode = "train"
+
+    for (epoch in 1:epochs) {
+        loss_avg = 0.0
+
+        print("Start epoch: " + epoch)
+
+        for (i in 1:iterations) {
+            start = (i - 1) * batch_size + 1
+            end = min(samples, i * batch_size)
+            X_batch = X[start:end,]
+            Y_batch = Y[start:end,]
+
+            # forward pass
+            [out, emas, cached_out, cached_means_vars] = resnet18::forward(X_batch, Hin, Win, model, mode, emas)
+            # apply softmax to compute probabilities for cross entropy loss
+            probs = softmax::forward(out)
+
+            # loss
+            loss = cross_entropy::forward(probs, Y_batch)
+            loss_avg = (loss_avg * (i - 1) + loss) / i
+
+            # backward
+            dprobs = cross_entropy::backward(probs, Y_batch)
+            dOut = softmax::backward(dprobs, out)
+            [dX, gradiends] = resnet18::backward(dOut, cached_out, model, cached_means_vars)
+        }
+
+        print("Loss: " + loss_avg)
+    }
+
+    learned_model = list()
+    learned_emas = list()
+}

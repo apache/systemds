@@ -39,6 +39,7 @@ record_test_result = function(String testname, Boolean success, Int t_cnt, List[
 
   if (success) {
     print("- Test '"+testname+"' was successful!")
+    fails = fails
   }
   else {
     print("- Test '"+testname+"' failed!")
@@ -121,7 +122,7 @@ is_itree_consistent = function(Matrix[Double] M, Matrix[Double] X, Int max_depth
       consistent = consistent & check_parent_node
     }
     else if (node_entry_1 == -1) {
-      # non-node (empty node entry)
+      # placeholder node (empty node entry)
       check_empty_node = node_entry_2 == -1
       if (!check_empty_node) print("A non-node can only have -1 as entries!")
       consistent = consistent & check_empty_node
@@ -169,7 +170,6 @@ is_iforest_consistent = function(Matrix[Double] M, Matrix[Double] X, Int subsamp
 # TODO: This is most likely a bug in which case an issue should be created for it
 init_tests = function() return(Int cnt, List[String] fails) {cnt=0; fails=list();}
 [test_cnt, fails] = init_tests()
-
 # Test data
 X_3x5_allequal = matrix(1.0, rows=3, cols=5)
 X_8x3_equalrows = matrix("1 2 3 1 2 3 1 2 3 1 2 3 1 2 3 1 2 3 1 2 3 1 2 3", cols=3, rows=8)
@@ -247,19 +247,16 @@ M_res = iForest::s_addExternalINode(X_empty, 15, M_res)
 testname = "addExternalINode: Different sizes for X_node"
 M_expected = M_itree_4lvl_empty
 M_res = iForest::s_addExternalINode(X_1x1, 8, M_itree_4lvl_empty)
-M_expected[, 16] = nrow(X_1x1)
+M_expected[1,16] = 1
 M_res = iForest::s_addExternalINode(X_1x1, 10, M_res)
-M_expected[, 20] = nrow(X_1x1)
+M_expected[1,20] = 1
 M_res = iForest::s_addExternalINode(X_4x4, 12, M_res)
-M_expected[, 24] = nrow(X_4x4)
+M_expected[1,24] = 4
 M_res = iForest::s_addExternalINode(X_3x5_allequal, 14, M_res)
-M_expected[, 28] = nrow(X_3x5_allequal)
+M_expected[1,28] = 3
 M_res = iForest::s_addExternalINode(X_singlerow, 15, M_res)
-M_expected[, 30] = nrow(X_singlerow)
-# TODO: This doesn't work without t(), although this should actually be equal. 
-# Without the transpose the "!="-Relation in matrices_equal results in a scalar value.
-# In further tests there is no such Problem! Bug?
-[test_cnt, fails] = record_test_result(testname, matrices_equal(t(M_res), t(M_expected)), test_cnt, fails)
+M_expected[1,30] = 1
+[test_cnt, fails] = record_test_result(testname, matrices_equal(M_res, M_expected), test_cnt, fails)
 
 # s_addInternalINode
 # ---------------------------------------------------------------------------------------------
@@ -268,17 +265,17 @@ print("\ns_addInternalINode")
 testname = "addInternalINode"
 M_expected = M_itree_4lvl_empty
 M_res = iForest::s_addInternalINode(1, 2, 3.1, M_itree_4lvl_empty)
-M_expected[, 1] = 2
-M_expected[, 2] = 3.1
+M_expected[1, 1] = 2
+M_expected[1, 2] = 3.1
 M_res = iForest::s_addInternalINode(4, 3, -5, M_res)
-M_expected[, 7] = 3
-M_expected[, 8] = -5
+M_expected[1, 7] = 3
+M_expected[1, 8] = -5
 M_res = iForest::s_addInternalINode(5, 7, -1.2, M_res)
-M_expected[, 9] = 7
-M_expected[, 10] = -1.2
+M_expected[1, 9] = 7
+M_expected[1, 10] = -1.2
 M_res = iForest::s_addInternalINode(7, 1, 0, M_res)
-M_expected[, 13] = 1
-M_expected[, 14] = 0
+M_expected[1, 13] = 1
+M_expected[1, 14] = 0
 [test_cnt, fails] = record_test_result(testname, matrices_equal(M_res, M_expected), test_cnt, fails)
 
 

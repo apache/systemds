@@ -30,6 +30,8 @@
 #==============================================================================================
 
 
+# This function creates an iForest model as described in [Liu2008]
+#
 # INPUT PARAMETERS:
 # ---------------------------------------------------------------------------------------------
 # NAME          TYPE     DEFAULT      MEANING
@@ -41,7 +43,10 @@
 #                                                 -1 corresponds to a random seed
 # ---------------------------------------------------------------------------------------------
 # OUTPUT: 
-# M 
+# iForestModel  The trained iForest model to be used in outlierByIsolationForestApply.
+#               The model is represented as a list with two entries:
+#               Entry 'model' (Matrix[Double]) - The iForest Model in linearized form (see m_iForest)
+#               Entry 'subsampling_size' (Double) - The subsampling size used to build the model.
 # -------------------------------------------------------------------------------------------
 outlierByIsolationForest = function(Matrix[Double] X, Int n_trees, Int subsampling_size, Int seed = -1) 
   return(List[Unknown] iForestModel)
@@ -50,24 +55,22 @@ outlierByIsolationForest = function(Matrix[Double] X, Int n_trees, Int subsampli
   iForestModel = list(model=M, subsampling_size=subsampling_size)
 }
 
-
+# Calculates the anomaly score as described in [Liu2008] for a set of samples `X` based 
+# on an iForest model.
+#
 # INPUT PARAMETERS:
 # ---------------------------------------------------------------------------------------------
 # NAME              TYPE               DEFAULT      MEANING
 # ---------------------------------------------------------------------------------------------
-# iForestModel   	  List[Unknown                  The trained iForest mode packaged as a list 
-#                                                 with entries 
-#                                                 - model (Type Matrix[Double]) 
-# X                 Matrix[Double]                Samples to calculate the anomaly score by
-# subsampling_size  Int                           Size of the subsample to build iTrees with 
-# seed              Int                -1         Seed for calls to `sample` and `rand`.
-#                                                 -1 corresponds to a random seed
+# iForestModel   	  List[Unknown]                 The trained iForest model as returned by 
+#                                                 outlierByIsolationForest
+# X                 Matrix[Double]                Samples to calculate the anomaly score for
 # ---------------------------------------------------------------------------------------------
 # OUTPUT: 
 # anomaly_scores   Column vector of anomaly scores corresponding to the samples in X. 
 #                  Samples with an anomaly score > 0.5 are generally considered to be outliers
 # -------------------------------------------------------------------------------------------
-outlierByIsolationForestApply = function(List[Unknown] iForestModel, Matrix[Double] X, Int seed = -1)
+outlierByIsolationForestApply = function(List[Unknown] iForestModel, Matrix[Double] X)
   return(Matrix[Double] anomaly_scores)
 {
   assert(nrow(X) > 1)
@@ -87,25 +90,29 @@ outlierByIsolationForestApply = function(List[Unknown] iForestModel, Matrix[Doub
 }
 
 # This function implements isolation forest for numerical input features as 
-# described in [Liu2008]
+# described in [Liu2008]. 
 #
+# The returned 'linearized' model is of type Matrix[Double] where each row 
+# corresponds to a linearized iTree (see m_iTree). Note that each tree in the 
+# model is padded with placeholder nodes such that each iTree has the same maximum depth.
+# 
 # .. code-block::
 #
 #   For example, give a feature matrix with features [a,b,c,d]
-#   and the following trees, M would look as follows:
+#   and the following iForest, M would look as follows:
 #
 #   Level              Tree 1                  Tree 2        Node Depth
 #   -------------------------------------------------------------------                    
 #   (L1)               |d<=5|                  |b<=6|           0
 #                     /     \                 /      \  
-#   (L2)           P1:2    |a<=7|          P1:2      P2:5       1 
+#   (L2)             2    |a<=7|             20       0         1 
 #                          /   \
-#   (L3)                 P2:2 P3:1                              2 
+#   (L3)                  10    8                               2 
 #
 #   --> M :=
-#   [[ 4, 5,  0,  2,  1,  7, -1, -1, -1, -1,  0,  2,  0],  (Tree 1)
-#    [ 1, 2,  6,  0,  2,  0,  5, -1, -1, -1, -1, -1, -1]]  (Tree 2)
-#    | (L1) | |     (L2)      | |          (L3)         | 
+#   [[ 4,  5,  0,  2,  1,  7, -1, -1, -1, -1,  0, 10,  0,  8],  (Tree 1)
+#    [ 2,  6,  0, 20,  0,  0, -1, -1, -1, -1, -1, -1, -1, -1]]  (Tree 2)
+#    | (L1) | |    (L2)     | |            (L3)             | 
 #
 #
 # INPUT PARAMETERS:
@@ -151,9 +158,38 @@ m_iForest = function(Matrix[Double] X, Int n_trees, Int subsampling_size, Int se
 }
 
 # This function implements isolation trees for numerical input features as 
-# described in [Liu2008] 
-# TODO describe the structure
+# described in [Liu2008].
 #
+# The returned 'linearized' model is of type Matrix[Double] with exactly one row.
+# Here, each node is represented by two consecutive entries in this row vector. 
+# Traversing the row vector from left to right corresponds to traversing the tree
+# level-wise from top to bottom and left to right. If a node does not exist 
+# (e.g. because the parent node is already a leaf node), the node is still stored
+# using placeholder values.
+# Recall that for a binary tree with maximum depth `d`, the maximum number of nodes 
+# `can be calculated by `2^(maximum depth + 1) - 1`. Hence, for a given maximum depth 
+# of an iTree, the row vector will have exactly `2*2^(maximum depth + 1) - 1` entries.
+#
+# There are three types of nodes that are represented in this model:
+# - Internal Node
+#  A node a that based on a "split feature" and corresponding "split value" 
+#  devides the data into two parts, one of which can potentially be an empty set.
+#  The node is lineraized in the following way:
+#    - Entry 1: Represents the index of the splitting feature in the feature matrix `X`
+#    - Entry 2: Represents splitting value
+#
+# - External Node
+#  A leaf node of the tree, It contains the "size" of the node. That is the 
+#  number of remaining samples after splitting the feature matrix X by traversing 
+#  the tree to this node.
+#  The node is lineraized in the following way:
+#  - Entry 1: Always 0 - indicating an external node
+#  - Entry 2: The "size" of the node
+#
+# - Placeholder Node
+#  A node that is not present in the actual iTree and is used for "padding".
+#  Both entries are set to -1
+# 
 # .. code-block::
 #
 #   For example, give a feature matrix with features [a,b,c,d]
@@ -162,13 +198,13 @@ m_iForest = function(Matrix[Double] X, Int n_trees, Int subsampling_size, Int se
 #   ------------------------------------------------- 
 #   (L1)               |d<5|                   0
 #                     /     \
-#   (L2)           P1:2    |a<7|               1 
+#   (L2)             1    |a<7|                1 
 #                          /   \
-#   (L3)                 P2:2 P3:1             2 
+#   (L3)                  10    0              2 
 #
 #   --> M :=
-#   [[4, 5, 0, 2, 1, 7, -1, -1, -1, -1, 0, 2, 0, 1]]
-#    |(L1)| |  (L2)   | |         (L3)           |
+#   [[4, 5, 0, 1, 1, 7, -1, -1, -1, -1, 0, 10, 0, 0]]
+#    |(L1)| |  (L2)  | |          (L3)            |
 #
 #
 #

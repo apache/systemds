@@ -21,6 +21,7 @@ package org.apache.sysds.test.component.sparse;
 
 import java.util.Iterator;
 
+import org.apache.sysds.runtime.data.SparseBlockDCSR;
 import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysds.runtime.data.SparseBlock;
@@ -142,6 +143,36 @@ public class SparseBlockIterator extends AutomatedTestBase
 	public void testSparseBlockCOO3Partial()  {
 		runSparseBlockIteratorTest(SparseBlock.Type.COO, sparsity3, true);
 	}
+
+	@Test
+	public void testSparseBlockDCSR1Full()  {
+		runSparseBlockIteratorTest(SparseBlock.Type.DCSR, sparsity1, false);
+	}
+
+	@Test
+	public void testSparseBlockDCSR2Full()  {
+		runSparseBlockIteratorTest(SparseBlock.Type.DCSR, sparsity2, false);
+	}
+
+	@Test
+	public void testSparseBlockDCSR3Full()  {
+		runSparseBlockIteratorTest(SparseBlock.Type.DCSR, sparsity3, false);
+	}
+
+	@Test
+	public void testSparseBlockDCSR1Partial()  {
+		runSparseBlockIteratorTest(SparseBlock.Type.DCSR, sparsity1, true);
+	}
+
+	@Test
+	public void testSparseBlockDCSR2Partial()  {
+		runSparseBlockIteratorTest(SparseBlock.Type.DCSR, sparsity2, true);
+	}
+
+	@Test
+	public void testSparseBlockDCSR3Partial()  {
+		runSparseBlockIteratorTest(SparseBlock.Type.DCSR, sparsity3, true);
+	}
 	
 	private void runSparseBlockIteratorTest( SparseBlock.Type btype, double sparsity, boolean partial)
 	{
@@ -158,6 +189,7 @@ public class SparseBlockIterator extends AutomatedTestBase
 				case MCSR: sblock = new SparseBlockMCSR(srtmp); break;
 				case CSR: sblock = new SparseBlockCSR(srtmp); break;
 				case COO: sblock = new SparseBlockCOO(srtmp); break;
+				case DCSR: sblock = new SparseBlockDCSR(srtmp); break;
 			}
 			
 			//check for correct number of non-zeros

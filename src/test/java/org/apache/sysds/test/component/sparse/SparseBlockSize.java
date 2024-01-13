@@ -19,6 +19,7 @@
 
 package org.apache.sysds.test.component.sparse;
 
+import org.apache.sysds.runtime.data.SparseBlockDCSR;
 import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysds.runtime.data.SparseBlock;
@@ -98,6 +99,21 @@ public class SparseBlockSize extends AutomatedTestBase
 	public void testSparseBlockCOO3()  {
 		runSparseBlockSizeTest(SparseBlock.Type.COO, sparsity3);
 	}
+
+	@Test
+	public void testSparseBlockDCSR1()  {
+		runSparseBlockSizeTest(SparseBlock.Type.DCSR, sparsity1);
+	}
+
+	@Test
+	public void testSparseBlockDCSR2()  {
+		runSparseBlockSizeTest(SparseBlock.Type.DCSR, sparsity2);
+	}
+
+	@Test
+	public void testSparseBlockDCSR3()  {
+		runSparseBlockSizeTest(SparseBlock.Type.DCSR, sparsity3);
+	}
 	
 	private void runSparseBlockSizeTest( SparseBlock.Type btype, double sparsity)
 	{
@@ -109,11 +125,12 @@ public class SparseBlockSize extends AutomatedTestBase
 			//init sparse block
 			SparseBlock sblock = null;
 			MatrixBlock mbtmp = DataConverter.convertToMatrixBlock(A);
-			SparseBlock srtmp = mbtmp.getSparseBlock();			
+			SparseBlock srtmp = mbtmp.getSparseBlock();
 			switch( btype ) {
 				case MCSR: sblock = new SparseBlockMCSR(srtmp); break;
 				case CSR: sblock = new SparseBlockCSR(srtmp); break;
 				case COO: sblock = new SparseBlockCOO(srtmp); break;
+				case DCSR: sblock = new SparseBlockDCSR(srtmp); break;
 			}
 			
 			//prepare summary statistics nnz
@@ -149,7 +166,7 @@ public class SparseBlockSize extends AutomatedTestBase
 			//check index range nnz
 			if( sblock.size(rl, ru, cl, cu) != nnz2 )
 				Assert.fail("Wrong number of range non-zeros: " +
-						sblock.size(rl, ru, cl, cu)+", expected: "+nnz2);		
+						sblock.size(rl, ru, cl, cu)+", expected: "+nnz2);
 		}
 		catch(Exception ex) {
 			ex.printStackTrace();

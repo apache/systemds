@@ -19,6 +19,7 @@
 
 package org.apache.sysds.test.component.sparse;
 
+import org.apache.sysds.runtime.data.SparseBlockDCSR;
 import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysds.runtime.data.SparseBlock;
@@ -145,6 +146,36 @@ public class SparseBlockAppendSort extends AutomatedTestBase
 	public void testSparseBlockCOO3Rand()  {
 		runSparseBlockAppendSortTest(SparseBlock.Type.COO, sparsity3, InitType.RAND_SET);
 	}
+
+	@Test
+	public void testSparseBlockDCSR1Seq()  {
+		runSparseBlockAppendSortTest(SparseBlock.Type.DCSR, sparsity1, InitType.SEQ_SET);
+	}
+
+	@Test
+	public void testSparseBlockDCSR2Seq()  {
+		runSparseBlockAppendSortTest(SparseBlock.Type.DCSR, sparsity2, InitType.SEQ_SET);
+	}
+
+	@Test
+	public void testSparseBlockDCSR3Seq()  {
+		runSparseBlockAppendSortTest(SparseBlock.Type.DCSR, sparsity3, InitType.SEQ_SET);
+	}
+
+	@Test
+	public void testSparseBlockDCSR1Rand()  {
+		runSparseBlockAppendSortTest(SparseBlock.Type.DCSR, sparsity1, InitType.RAND_SET);
+	}
+
+	@Test
+	public void testSparseBlockDCSR2Rand()  {
+		runSparseBlockAppendSortTest(SparseBlock.Type.DCSR, sparsity2, InitType.RAND_SET);
+	}
+
+	@Test
+	public void testSparseBlockDCSR3Rand()  {
+		runSparseBlockAppendSortTest(SparseBlock.Type.DCSR, sparsity3, InitType.RAND_SET);
+	}
 	
 	private void runSparseBlockAppendSortTest( SparseBlock.Type btype, double sparsity, InitType itype)
 	{
@@ -159,6 +190,7 @@ public class SparseBlockAppendSort extends AutomatedTestBase
 				case MCSR: sblock = new SparseBlockMCSR(rows, cols); break;
 				case CSR: sblock = new SparseBlockCSR(rows, cols); break;
 				case COO: sblock = new SparseBlockCOO(rows, cols); break;
+				case DCSR: sblock = new SparseBlockDCSR(rows, cols); break;
 			}
 			
 			if(itype == InitType.SEQ_SET) {

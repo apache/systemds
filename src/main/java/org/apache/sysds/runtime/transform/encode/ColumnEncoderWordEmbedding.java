@@ -32,7 +32,6 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
-import java.util.concurrent.ConcurrentHashMap;
 
 public class ColumnEncoderWordEmbedding extends ColumnEncoder {
 	private MatrixBlock _wordEmbeddings;
@@ -45,6 +44,7 @@ public class ColumnEncoderWordEmbedding extends ColumnEncoder {
 		_wordEmbeddings = new MatrixBlock();
 	}
 
+	@SuppressWarnings("unused")
 	private long lookupRCDMap(Object key) {
 		return _rcdMap.getOrDefault(key, -1L);
 	}

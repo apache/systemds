@@ -59,6 +59,7 @@ public class SparseBlockMemEstimate extends AutomatedTestBase
 		double memMCSR = SparseBlockFactory.estimateSizeSparseInMemory(SparseBlock.Type.MCSR, rows, cols, sparsity);
 		double memCSR = SparseBlockFactory.estimateSizeSparseInMemory(SparseBlock.Type.CSR, rows, cols, sparsity);
 		double memCOO = SparseBlockFactory.estimateSizeSparseInMemory(SparseBlock.Type.COO, rows, cols, sparsity);
+		double memDCSR = SparseBlockFactory.estimateSizeSparseInMemory(SparseBlock.Type.DCSR, rows, cols, sparsity);
 		double memDense = MatrixBlock.estimateSizeDenseInMemory(rows, cols);
 		
 		//check negative estimate
@@ -68,6 +69,8 @@ public class SparseBlockMemEstimate extends AutomatedTestBase
 			Assert.fail("SparseBlockCSR memory estimate <= 0.");
 		if( memCOO  <= 0 )
 			Assert.fail("SparseBlockCOO memory estimate <= 0.");
+		if( memDCSR  <= 0 )
+			Assert.fail("SparseBlockDCSR memory estimate <= 0.");
 		
 		//check dense estimate
 		if( memMCSR > memDense )
@@ -76,6 +79,8 @@ public class SparseBlockMemEstimate extends AutomatedTestBase
 			Assert.fail("SparseBlockCSR memory estimate larger than dense estimate.");
 		if( memCOO > memDense )
 			Assert.fail("SparseBlockCOO memory estimate larger than dense estimate.");
+		if( memDCSR > memDense )
+			Assert.fail("SparseBlockDCSR memory estimate larger than dense estimate.");
 		
 		//check sparse estimates relations
 		if( sparsity == sparsity1 ) { //sparse (pref CSR)

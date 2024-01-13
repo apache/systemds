@@ -28,15 +28,15 @@ Data = read($2, data_type="frame", format="csv");
 # Read the recode map for the distinct tokens
 Meta = read($3, data_type="frame", format="csv");
 
-jspec = "{ids: true, recode: [1]}";
+jspec = "{ids: true, dummycode: [1]}";
 #[Data_enc2, Meta2] = transformencode(target=Data, spec=jspec);
 
 Data_enc = transformapply(target=Data, spec=jspec, meta=Meta);
-print(nrow(Data_enc) + " x " + ncol(Data_enc))
-print(toString(Data_enc[1,1]))
+#print(nrow(Data_enc) + " x " + ncol(Data_enc))
+#print(toString(Data_enc[1,1]))
 
 # Apply the embeddings on all tokens (1K x 100)
-#R = Data_enc %*% E;
+R = Data_enc %*% E;
 
-#write(R, $4, format="text");
+write(R, $4, format="text");
 

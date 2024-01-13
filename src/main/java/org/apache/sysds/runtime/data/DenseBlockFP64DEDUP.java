@@ -31,8 +31,12 @@ public class DenseBlockFP64DEDUP extends DenseBlockDRB
 {
 	private static final long serialVersionUID = -4012376952006079198L;
 	private double[][] _data;
+	//TODO: implement estimator for nr of distinct
 	private int _distinct = 0;
 
+	public void setDistinct(int d){
+		_distinct = d;
+	}
 	protected DenseBlockFP64DEDUP(int[] dims) {
 		super(dims);
 		reset(_rlen, _odims, 0);
@@ -317,10 +321,19 @@ public class DenseBlockFP64DEDUP extends DenseBlockDRB
 		return UtilFunctions.toLong(get(ix[0], pos(ix)));
 	}
 
-	public double estimateMemory(){
-		if( (double)_rlen + this._odims[0] > Long.MAX_VALUE )
+	public long estimateMemory(){
+		if( (double)_rlen * _odims[0] > Long.MAX_VALUE )
 			return Long.MAX_VALUE;
-		return DenseBlock.estimateMemory(_rlen, _odims[0])
-				+ MemoryEstimates.doubleArrayCost(_odims[0])*_distinct + MemoryEstimates.objectArrayCost(_rlen);
+		return estimateMemory(_rlen, _odims[0], _distinct);
+	}
+
+	public static long estimateMemory(int rows, int cols, int duplicates){
+		return estimateMemory((long) rows, (long)cols, (long) duplicates);
+	}
+
+	public static long estimateMemory(long rows, long cols, long duplicates){
+		return ((long) (DenseBlock.estimateMemory(rows, cols)))
+				+ ((long) MemoryEstimates.doubleArrayCost(cols)*duplicates) 
+				+ ((long) MemoryEstimates.objectArrayCost(rows));
 	}
 }

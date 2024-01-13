@@ -64,6 +64,11 @@ public class TransformFrameEncodeWordEmbedding2Test extends AutomatedTestBase
 		runTransformTest(TEST_NAME1, ExecMode.SPARK);
 	}
 
+	@Test
+	public void testTransformToWordEmbeddingsAuto() {
+		runTransformTest(TEST_NAME1, ExecMode.HYBRID);
+	}
+
 	private void runTransformTest(String testname, ExecMode rt)
 	{
 		//set runtime platform

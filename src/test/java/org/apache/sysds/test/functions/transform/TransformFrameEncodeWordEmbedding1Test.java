@@ -21,6 +21,7 @@ package org.apache.sysds.test.functions.transform;
 
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.lops.Lop;
+import org.apache.sysds.runtime.matrix.data.MatrixValue;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
@@ -90,8 +91,8 @@ public class TransformFrameEncodeWordEmbedding1Test extends AutomatedTestBase
 			}
 
 			// Compare results
-			//HashMap<MatrixValue.CellIndex, Double> res_actual = readDMLMatrixFromOutputDir("result");
-			//TestUtils.compareMatrices(TestUtils.convertHashMapToDoubleArray(res_actual), res_expected, 1e-6);
+			HashMap<MatrixValue.CellIndex, Double> res_actual = readDMLMatrixFromOutputDir("result");
+			TestUtils.compareMatrices(TestUtils.convertHashMapToDoubleArray(res_actual), res_expected, 1e-6);
 		}
 		catch(Exception ex) {
 			throw new RuntimeException(ex);

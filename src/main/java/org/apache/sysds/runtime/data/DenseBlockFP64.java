@@ -83,7 +83,7 @@ public class DenseBlockFP64 extends DenseBlockDRB
 	}
 	
 	public static double estimateMemory(long nrows, long ncols) {
-		if( (double)nrows + ncols > Long.MAX_VALUE )
+		if( (double)nrows * ncols > Long.MAX_VALUE )
 			return Long.MAX_VALUE;
 		return DenseBlock.estimateMemory(nrows, ncols)
 			+ MemoryEstimates.doubleArrayCost(nrows * ncols);

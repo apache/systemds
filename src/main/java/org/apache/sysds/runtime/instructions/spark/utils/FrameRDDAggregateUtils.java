@@ -43,8 +43,10 @@ public class FrameRDDAggregateUtils
 				return in2;
 			if (in2 == null)
 				return in1;
-			if (!in1._1() || !in2._1())
-				return new Tuple5<>(false, null, null, null, null);
+			if (!in1._1() )
+				return in1;
+			if (!in2._1() )
+				return in2;
 
 			//default evaluation
 			int in1_max = in1._3();

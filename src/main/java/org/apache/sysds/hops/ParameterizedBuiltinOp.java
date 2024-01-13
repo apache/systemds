@@ -47,6 +47,7 @@ import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.lops.ParameterizedBuiltin;
 import org.apache.sysds.parser.DMLProgram;
 import org.apache.sysds.parser.Statement;
+import org.apache.sysds.runtime.data.DenseBlockFP64DEDUP;
 import org.apache.sysds.runtime.instructions.cp.ParamservBuiltinCPInstruction;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
@@ -693,6 +694,34 @@ public class ParameterizedBuiltinOp extends MultiThreadedHop {
 		}
 		
 		return ret;
+	}
+	@Override
+	public void computeMemEstimate(MemoTable memo){
+		if( _op == ParamBuiltinOp.TRANSFORMAPPLY){
+			Hop spec = getParameterHop("spec");
+			if(spec instanceof LiteralOp && ((LiteralOp) spec).getStringValue().contains("word_embedding")
+				&& memo.hasInputStatistics(this)){
+				//Special case for WordEmbedding Operator
+				//Step 1) Compute hop output memory estimate (incl size inference)
+				DataCharacteristics idc = memo.getAllInputStats(getTargetHop());
+				DataCharacteristics edc = memo.getAllInputStats(getParameterHop("embedding"));
+				if (idc != null && edc != null && edc.dimsKnown() && idc.dimsKnown()) {
+					DataCharacteristics wdc = new MatrixCharacteristics(
+						idc.getRows(), edc.getCols(), -1, idc.getRows()*edc.getCols());
+					_outputMemEstimate = DenseBlockFP64DEDUP.estimateMemory(
+						wdc.getRows(), edc.getCols(), edc.getRows());
+
+					//propagate worst-case estimate
+					memo.memoizeStatistics(getHopID(), wdc);
+
+					//Step 2) Compute hop intermediate memory estimate
+					_processingMemEstimate = 3*_outputMemEstimate; //Note Elias: factor needs to be adjusted
+					_memEstimate = getInputOutputSize();
+					return;
+				}
+			}
+		}
+		super.computeMemEstimate(memo);
 	}
 	
 	@Override 

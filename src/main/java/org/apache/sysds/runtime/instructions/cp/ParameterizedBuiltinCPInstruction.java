@@ -336,6 +336,8 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 			ec.setMatrixOutput(output.getName(), mbout);
 			ec.releaseFrameInput(params.get("target"));
 			ec.releaseFrameInput(params.get("meta"));
+			if(params.get("embedding") != null)
+				ec.releaseMatrixInput(params.get("embedding"));
 		}
 		else if(opcode.equalsIgnoreCase("transformdecode")) {
 			// acquire locks

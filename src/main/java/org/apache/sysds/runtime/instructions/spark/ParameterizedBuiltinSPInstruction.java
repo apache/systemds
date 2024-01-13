@@ -32,6 +32,7 @@ import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
 import org.apache.spark.api.java.function.PairFunction;
 import org.apache.spark.broadcast.Broadcast;
+import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.common.Types.CorrectionLocationType;
 import org.apache.sysds.common.Types.FileFormat;
@@ -96,6 +97,7 @@ import org.apache.sysds.runtime.transform.tokenize.TokenizerFactory;
 import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.runtime.util.UtilFunctions;
 
+import org.apache.sysds.utils.stats.SparkStatistics;
 import scala.Tuple2;
 
 public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction {
@@ -545,15 +547,22 @@ public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
 				.createEncoder(params.get("spec"), colnames, fo.getSchema(), (int) fo.getNumColumns(), meta, embeddings);
 			encoder.updateAllDCEncoders();
 			mcOut.setDimension(mcIn.getRows() - ((omap != null) ? omap.getNumRmRows() : 0), encoder.getNumOutCols());
+
+			long t0 = System.nanoTime();
 			Broadcast<MultiColumnEncoder> bmeta = sec.getSparkContext().broadcast(encoder);
 			Broadcast<TfOffsetMap> bomap = (omap != null) ? sec.getSparkContext().broadcast(omap) : null;
+			if (DMLScript.STATISTICS) {
+				SparkStatistics.accBroadCastTime(System.nanoTime() - t0);
+				SparkStatistics.incBroadcastCount(1);
+			}
 
 			// execute transform apply
 			JavaPairRDD<MatrixIndexes, MatrixBlock> out;
 			Tuple2<Boolean, Integer> aligned = FrameRDDAggregateUtils.checkRowAlignment(in, -1);
 			// NOTE: currently disabled for LegacyEncoders, because OMIT probably results in not aligned
 			// blocks and for IMPUTE was an inaccuracy for the "testHomesImputeColnamesSparkCSV" test case.
-			// Expected: 8.150349617004395 vs actual: 8.15035 at 0 8 (expected is calculated from transform encode,
+
+			// Error in test case: Expected: 8.150349617004395 vs actual: 8.15035 at 0 8 (expected is calculated from transform encode,
 			// which currently always uses the else branch: either inaccuracy must come from serialisation of
 			// matrixblock or from binaryBlockToBinaryBlock reblock
 			if(aligned._1 && mcOut.getCols() <= aligned._2 && !encoder.hasLegacyEncoder() /*&& containsWE*/) {

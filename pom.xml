@@ -41,17 +41,17 @@
 	<properties>
 		<hadoop.version>3.3.6</hadoop.version>
 		<antlr.version>4.8</antlr.version>
-		<protobuf.version>3.20.3</protobuf.version>
+		<protobuf.version>3.23.4</protobuf.version>
 		<spark.version>3.5.0</spark.version>
-		<scala.version>2.12.0</scala.version>
+		<scala.version>2.12.18</scala.version>
 		<scala.binary.version>2.12</scala.binary.version>
 		<maven.build.timestamp.format>yyyy-MM-dd HH:mm:ss z</maven.build.timestamp.format>
 		<project.build.outputTimestamp>1</project.build.outputTimestamp>
 		<enableGPU>false</enableGPU>
 		<jcuda.scope>provided</jcuda.scope>
 		<jcuda.version>10.2.0</jcuda.version>
-		<slf4j.version>1.7.36</slf4j.version>
-		<log4j.version>2.17.2</log4j.version>
+		<slf4j.version>2.0.7</slf4j.version>
+		<log4j.version>2.20.0</log4j.version>
 		<maven-clean-plugin.version>3.2.0</maven-clean-plugin.version>
 		<maven-surefire-plugin.version>3.0.0</maven-surefire-plugin.version>
 		<maven-remote-resources-plugin.version>3.0.0</maven-remote-resources-plugin.version>
@@ -1369,7 +1369,7 @@
 		<dependency>
 			<groupId>com.fasterxml.jackson.core</groupId>
 			<artifactId>jackson-databind</artifactId>
-			<version>2.13.4.2</version>
+			<version>2.15.2</version>
 		</dependency>
 
 		<dependency>
@@ -1405,7 +1405,7 @@
 		<dependency>
 			<groupId>org.codehaus.janino</groupId>
 			<artifactId>janino</artifactId>
-			<version>3.0.16</version>
+			<version>3.1.9</version>
 			<scope>provided</scope>
 		</dependency>
 
@@ -1438,7 +1438,7 @@
 		<dependency>
 			<groupId>io.netty</groupId>
 			<artifactId>netty-all</artifactId>
-			<version>4.1.68.Final</version>
+			<version>4.1.96.Final</version>
 			<!-- <scope>provided</scope> -->
 			<exclusions>
 				<exclusion>

@@ -46,12 +46,8 @@ public class LibMatrixFourier {
 
         for(int i = 0; i < rows; i++){
             // use fft or ifft on each row
-            double[][] res_row;
-            if(calcInv){
-                res_row = ifft_one_dim(get_complex_row(in, i));
-            } else {
-                res_row = fft_one_dim(get_complex_row(in, i));
-            }
+            double[][] res_row = calcInv? ifft_one_dim(get_complex_row(in, i)) : fft_one_dim(get_complex_row(in, i));
+
             // set res row
             for (int j = 0; j < cols; j++){
                 for( int k = 0; k < 2; k++){
@@ -64,12 +60,8 @@ public class LibMatrixFourier {
 
         for(int j = 0; j < cols; j++){
             // use fft on each col
-            double[][] res_col;
-            if(calcInv){
-                res_col = ifft_one_dim(get_complex_col(res, j));
-            } else {
-                res_col = fft_one_dim(get_complex_col(res, j));
-            }
+            double[][] res_col = calcInv? ifft_one_dim(get_complex_col(res, j)) : fft_one_dim(get_complex_col(res, j));
+
             // set res col
             for (int i = 0; i < rows; i++){
                 for( int k = 0; k < 2; k++){

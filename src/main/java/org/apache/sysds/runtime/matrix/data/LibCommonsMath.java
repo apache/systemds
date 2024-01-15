@@ -93,10 +93,6 @@ public class LibCommonsMath
 		return multiReturnOperations(in, opcode, 1, 1);
 	}
 
-	public static MatrixBlock[] multiReturnOperations(MatrixBlock inRe, MatrixBlock inIm, String opcode) {
-		return multiReturnOperations(inRe, inIm, opcode, 1, 1);
-	}
-
 	public static MatrixBlock[] multiReturnOperations(MatrixBlock in, String opcode, int threads, int num_iterations, double tol) {
 		if(opcode.equals("eigen_qr"))
 			return computeEigenQR(in, num_iterations, tol, threads);
@@ -119,14 +115,10 @@ public class LibCommonsMath
 			return computeEigenQR(in, threads);
 		else if (opcode.equals("fft"))
 			return computeFFT(in);
+		else if (opcode.equals("ifft"))
+			return computeIFFT(in);
 		else if (opcode.equals("svd"))
 			return computeSvd(in);
-		return null;
-	}
-
-	public static MatrixBlock[] multiReturnOperations(MatrixBlock inRe, MatrixBlock inIm, String opcode, int threads, long seed) {
-		if (opcode.equals("ifft"))
-			return computeIFFT(inRe, inIm);
 		return null;
 	}
 	
@@ -274,12 +266,15 @@ public class LibCommonsMath
 		return fft(in);
 	}
 
-	private static MatrixBlock[] computeIFFT(MatrixBlock inRe, MatrixBlock inIm) {
-		if( inRe == null || inRe.isEmptyBlock(false) || inIm == null || inIm.isEmptyBlock(false) )
+	private static MatrixBlock[] computeIFFT(MatrixBlock in) {
+		if( in == null || in.isEmptyBlock(false))
 			throw new DMLRuntimeException("Invalid empty block");
+		int rows = in.getNumRows();
+		int cols = in.getNumColumns();
 
+		MatrixBlock inIm = new MatrixBlock(rows, cols, new double[cols*rows]);
 		//run ifft
-		return ifft(inRe, inIm);
+		return ifft(in, inIm);
 	}
 
 	/**

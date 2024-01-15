@@ -49,7 +49,7 @@ import org.apache.sysds.runtime.matrix.operators.AggregateBinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.util.DataConverter;
 
-import static org.apache.sysds.runtime.matrix.data.LibMatrixFourier.fft;
+import static org.apache.sysds.runtime.matrix.data.LibMatrixFourier.*;
 
 /**
  * Library for matrix operations that need invocation of 
@@ -73,7 +73,7 @@ public class LibCommonsMath
 	}
 	
 	public static boolean isSupportedMultiReturnOperation( String opcode ) {
-		return ( opcode.equals("qr") || opcode.equals("lu") || opcode.equals("eigen") || opcode.equals("fft") || opcode.equals("svd") );
+		return ( opcode.equals("qr") || opcode.equals("lu") || opcode.equals("eigen") || opcode.equals("fft") || opcode.equals("ifft") || opcode.equals("svd") );
 	}
 	
 	public static boolean isSupportedMatrixMatrixOperation( String opcode ) {
@@ -91,6 +91,10 @@ public class LibCommonsMath
 
 	public static MatrixBlock[] multiReturnOperations(MatrixBlock in, String opcode) {
 		return multiReturnOperations(in, opcode, 1, 1);
+	}
+
+	public static MatrixBlock[] multiReturnOperations(MatrixBlock inRe, MatrixBlock inIm, String opcode) {
+		return multiReturnOperations(inRe, inIm, opcode, 1, 1);
 	}
 
 	public static MatrixBlock[] multiReturnOperations(MatrixBlock in, String opcode, int threads, int num_iterations, double tol) {
@@ -117,6 +121,12 @@ public class LibCommonsMath
 			return computeFFT(in);
 		else if (opcode.equals("svd"))
 			return computeSvd(in);
+		return null;
+	}
+
+	public static MatrixBlock[] multiReturnOperations(MatrixBlock inRe, MatrixBlock inIm, String opcode, int threads, long seed) {
+		if (opcode.equals("ifft"))
+			return computeIFFT(inRe, inIm);
 		return null;
 	}
 	
@@ -262,6 +272,14 @@ public class LibCommonsMath
 
 		//run fft
 		return fft(in);
+	}
+
+	private static MatrixBlock[] computeIFFT(MatrixBlock inRe, MatrixBlock inIm) {
+		if( inRe == null || inRe.isEmptyBlock(false) || inIm == null || inIm.isEmptyBlock(false) )
+			throw new DMLRuntimeException("Invalid empty block");
+
+		//run ifft
+		return ifft(inRe, inIm);
 	}
 
 	/**

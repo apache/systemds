@@ -155,6 +155,7 @@ public enum Builtins {
 	HOSPITAL_RESIDENCY_MATCH("hospitalResidencyMatch", true),
 	HYPERBAND("hyperband", true),
 	IFELSE("ifelse", false),
+	IFFT("fft", false, ReturnType.MULTI_RETURN),
 	IMG_MIRROR("img_mirror", true),
 	IMG_MIRROR_LINEARIZED("img_mirror_linearized", true),
 	IMG_BRIGHTNESS("img_brightness", true),

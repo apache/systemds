@@ -2238,6 +2238,7 @@ public class DMLTranslator
 			case LU:
 			case EIGEN:
 			case FFT:
+			case IFFT:
 			case LSTM:
 			case LSTM_BACKWARD:
 			case BATCH_NORM2D:

@@ -11,10 +11,10 @@ import static org.apache.sysds.runtime.matrix.data.LibMatrixFourier.*;
 import static org.junit.Assert.assertTrue;
 
 public class FourierTestWithFiles {
-    int progressInterval = 100000;
+    int progressInterval = 5000;
 
-    // prior to executing this test it is necessary to run the Numpy Script in FourierTestData.py and add the generated file to the root of the project.
-
+    // prior to executing the following tests it is necessary to run the Numpy Script in FourierTestData.py 
+    // and add the generated files to the root of the project.
     @Test
     public void testFftWithNumpyData() throws IOException {
         String filename = "fft_data.csv"; // Path to your CSV file
@@ -193,7 +193,6 @@ public class FourierTestWithFiles {
         }
         
     }
-    
     
 
 

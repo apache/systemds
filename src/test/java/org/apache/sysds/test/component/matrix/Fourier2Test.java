@@ -1,18 +1,10 @@
 package org.apache.sysds.test.component.matrix;
 
 import org.apache.sysds.runtime.matrix.data.ComplexDouble;
-import org.apache.sysds.runtime.matrix.data.LibMatrixFourier;
-import org.apache.sysds.runtime.matrix.data.LibMatrixFourier2;
-
 import static org.apache.sysds.runtime.matrix.data.LibMatrixFourier2.fft;
-import static org.apache.sysds.runtime.matrix.data.LibMatrixFourier2.transform;
-
 import org.junit.Test;
 
-import java.util.Arrays;
-
 import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertTrue;
 
 
 public class Fourier2Test {

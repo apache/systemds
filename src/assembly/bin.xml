@@ -117,7 +117,7 @@
 				<include>*:reload4j*</include>
 				<include>*:slf4j-api*</include>
 				<include>*:spark-core*</include>
-				<include>*:spark-api*</include>
+				<include>*:spark-common-utils*</include>
 				<include>*:stax2-api*</include>
 				<include>*:woodstox*</include>
 			</includes>

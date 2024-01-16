@@ -85,7 +85,6 @@ public class LibMatrixKeywordSpotting {
                 readWavFilesDirectory(zipData, dir);
             }
 
-
         } catch (IOException e) {
             e.printStackTrace();
         }

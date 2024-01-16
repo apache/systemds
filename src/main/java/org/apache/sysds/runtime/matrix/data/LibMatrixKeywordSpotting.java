@@ -27,9 +27,8 @@ public class LibMatrixKeywordSpotting {
         // uses stft
         for (int i = 0; i < samples.size(); i++){
             double[] wave = samples.get(i);
-            /** double[] magnitudes = convertWaveToMagnitudesSpectrogram(wave);
-             * samples.set(i, magnitudes);
-             * */
+            double[] magnitudes = convertWaveToMagnitudesSpectrogram(wave);
+            samples.set(i, magnitudes);
         }
 
         // TODO:
@@ -40,10 +39,10 @@ public class LibMatrixKeywordSpotting {
         // use global variables for classifier
     }
 
-    /**
+
     private double[] convertWaveToMagnitudesSpectrogram(double[] wave){
         // length=255, overlap=128
-        double[][] spectrogram = stft(wave, 255, 128);
+        double[][] spectrogram = LibMatrixSTFT.one_dim_stft(wave, 255, 128);
 
         int cols = spectrogram[0].length;
         double[] magnitudes = new double[cols];
@@ -52,15 +51,14 @@ public class LibMatrixKeywordSpotting {
         }
         return magnitudes;
     }
-     */
 
     public String getCommandForFile(String filePath){
 
         // read wave file
-        double[] data = ReaderWavFile.readMonoFromWavFile(filePath);
+        double[] wave = ReaderWavFile.readMonoFromWavFile(filePath);
 
         // convert waveforms to spectrogram
-        /** double[] magnitudes = convertWaveToMagnitudesSpectrogram(wave); */
+        double[] magnitudes = convertWaveToMagnitudesSpectrogram(wave);
 
         // use global variables for classifier
         // TODO

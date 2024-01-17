@@ -876,12 +876,6 @@
 
 	<dependencies>
 		<dependency>
-			<groupId>org.json</groupId>
-				<artifactId>json</artifactId>
-			<version>20210307</version>
-		</dependency>
-
-		<dependency>
 			<groupId>org.jcuda</groupId>
 			<artifactId>jcuda</artifactId>
 			<version>${jcuda.version}</version>

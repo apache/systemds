@@ -322,8 +322,8 @@
 				<version>${maven-compiler-plugin.version}</version>
 				<configuration>
 					<compilerArgument>-Xlint:unchecked</compilerArgument>
-					<source>14</source>
-					<target>14</target>
+					<source>${java.level}</source>
+					<target>${java.level}</target>
 					<release>${java.level}</release>
 				</configuration>
 			</plugin>

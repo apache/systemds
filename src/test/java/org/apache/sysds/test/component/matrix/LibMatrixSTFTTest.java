@@ -2,9 +2,10 @@ package org.apache.sysds.test.component.matrix;
 
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.junit.Test;
-//import static org.apache.sysds.runtime.matrix.data.LibMatrixFourier.*;
+
 import static org.junit.Assert.assertArrayEquals;
-import static org.apache.sysds.runtime.matrix.data.LibMatrixSTFT.*;
+import static org.apache.sysds.runtime.matrix.data.LibMatrixSTFT.stft;
+import static org.apache.sysds.runtime.matrix.data.LibMatrixSTFT.one_dim_stft;
 
 
 public class LibMatrixSTFTTest {

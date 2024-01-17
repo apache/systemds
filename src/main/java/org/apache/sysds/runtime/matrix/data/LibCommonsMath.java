@@ -49,7 +49,8 @@ import org.apache.sysds.runtime.matrix.operators.AggregateBinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.util.DataConverter;
 
-import static org.apache.sysds.runtime.matrix.data.LibMatrixFourierOld.*;
+import static org.apache.sysds.runtime.matrix.data.LibMatrixFourier.fft;
+import static org.apache.sysds.runtime.matrix.data.LibMatrixFourier.ifft;
 
 /**
  * Library for matrix operations that need invocation of 
@@ -263,7 +264,7 @@ public class LibCommonsMath
 			throw new DMLRuntimeException("Invalid empty block");
 
 		//run fft
-		return fft_old(in);
+		return fft(in);
 	}
 
 	private static MatrixBlock[] computeIFFT(MatrixBlock in) {
@@ -274,7 +275,7 @@ public class LibCommonsMath
 
 		MatrixBlock inIm = new MatrixBlock(rows, cols, new double[cols*rows]);
 		//run ifft
-		return ifft_old(in, inIm);
+		return ifft(in, inIm);
 	}
 
 	/**

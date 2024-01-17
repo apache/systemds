@@ -2,9 +2,7 @@ package org.apache.sysds.runtime.matrix.data;
 
 import java.util.Arrays;
 
-import static org.apache.sysds.runtime.matrix.data.LibMatrixFourierOld.fft_old;
-import static org.apache.sysds.runtime.matrix.data.LibMatrixFourierOld.fft_one_dim_old;
-
+import static org.apache.sysds.runtime.matrix.data.LibMatrixFourier.fft;
 
 public class LibMatrixSTFT {
 
@@ -54,19 +52,22 @@ public class LibMatrixSTFT {
 
             // Perform FFT on windowed signal
             int l = windowedSignal.length;
-            double[][] tmp = new double[2][l];
+
+            double[] tmp_re = new double[l];
+            double[] tmp_im = new double[l];
 
             for (int i = 0; i < l; i++) {
-                tmp[0][i] = windowedSignal[i];
-                tmp[1][i] = 0;
+                tmp_re[i] = windowedSignal[i];
+                tmp_im[i] = 0;
             }
-            double[][] fftResult = fft_one_dim_old(tmp);
+
+            fft(tmp_re, tmp_im, 1, l);
 
             // Store the FFT result in the output array
             int startIndex = windowSize * frame;
             for (int i = 0; i < l; i++) {
-                stftOutput[0][startIndex + i] = fftResult[0][i];
-                stftOutput[1][startIndex + i] = fftResult[1][i];
+                stftOutput[0][startIndex + i] = tmp_re[i];
+                stftOutput[1][startIndex + i] = tmp_im[i];
             }
             //stftOutput[frame] = fftResult;
         }

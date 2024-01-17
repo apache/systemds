@@ -1,7 +1,6 @@
 package org.apache.sysds.runtime.matrix.data;
 
 import org.apache.commons.math3.util.FastMath;
-import java.util.Arrays;
 
 public class LibMatrixFourier {
 
@@ -58,6 +57,7 @@ public class LibMatrixFourier {
         for(int i = 0; i < rows; i++){
             ifft_one_dim(re, im, re_inter, im_inter, i*cols, 1, cols, cols);
         }
+
     }
 
     public static void fft_one_dim(double[] re, double[] im, double[] re_inter, double[] im_inter, int start, int step, int num, int subArraySize) {
@@ -94,6 +94,7 @@ public class LibMatrixFourier {
             re_inter[j] = 0;
             im_inter[j] = 0;
         }
+
     }
 
     public static void ifft_one_dim(double[] re, double[] im, double[] re_inter, double[] im_inter, int start, int step, int num, int subArraySize) {
@@ -111,6 +112,7 @@ public class LibMatrixFourier {
             re[i] = re[i]/num;
             im[i] = -im[i]/num;
         }
+
     }
 
     private static boolean isPowerOfTwo(int n){

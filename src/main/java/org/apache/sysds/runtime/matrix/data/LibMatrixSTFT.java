@@ -1,24 +1,11 @@
 package org.apache.sysds.runtime.matrix.data;
 
-import java.util.Arrays;
-
 import static org.apache.sysds.runtime.matrix.data.LibMatrixFourier.fft;
 
 public class LibMatrixSTFT {
 
     public static MatrixBlock[] stft(MatrixBlock re, MatrixBlock im, int windowSize, int overlap) {
-        /*
-        int dim = re.getNumRows();
 
-        double[][] in = new double[2][dim];
-        in[0] = convertToArray(re);
-        //in[1] = convertToArray(im);
-
-        double[][] res = one_dim_stft(in[0], windowSize, overlap);
-
-        return convertToMatrixBlocks(res);
-        */
-        int rows = re.getNumRows();
         int cols = re.getNumColumns();
 
         double[][] in = new double[2][cols];
@@ -31,6 +18,7 @@ public class LibMatrixSTFT {
     }
 
     public static double[][] one_dim_stft(double[] signal, int windowSize, int overlap) {
+
         if (windowSize < 1 || (windowSize & (windowSize - 1)) != 0) {
             throw new IllegalArgumentException("frameSize is not a power of two");
         }
@@ -42,7 +30,6 @@ public class LibMatrixSTFT {
 
         for (int frame = 0; frame < totalFrames; frame++) {
             double[] windowedSignal = new double[windowSize];
-
 
             // Apply window function (rectangular in this case)
             for (int i = 0; i < windowSize; i++) {
@@ -75,9 +62,7 @@ public class LibMatrixSTFT {
         return stftOutput;
     }
 
-
     private static MatrixBlock[] convertToMatrixBlocks(double[][] in){
-
 
         int cols = in[0].length;
 
@@ -86,7 +71,6 @@ public class LibMatrixSTFT {
 
         return new MatrixBlock[]{re, im};
     }
-
 
     private static double[] convertToArray(MatrixBlock in){
         return in.getDenseBlockValues();

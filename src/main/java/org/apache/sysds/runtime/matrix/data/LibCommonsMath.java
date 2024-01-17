@@ -264,18 +264,17 @@ public class LibCommonsMath
 			throw new DMLRuntimeException("Invalid empty block");
 
 		//run fft
+		in.sparseToDense();
 		return fft(in);
 	}
 
 	private static MatrixBlock[] computeIFFT(MatrixBlock in) {
 		if( in == null || in.isEmptyBlock(false))
 			throw new DMLRuntimeException("Invalid empty block");
-		int rows = in.getNumRows();
-		int cols = in.getNumColumns();
 
-		MatrixBlock inIm = new MatrixBlock(rows, cols, new double[cols*rows]);
 		//run ifft
-		return ifft(in, inIm);
+		in.sparseToDense();
+		return ifft(in);
 	}
 
 	/**

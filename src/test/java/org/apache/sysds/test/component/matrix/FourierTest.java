@@ -30,6 +30,7 @@ public class FourierTest {
 
         assertArrayEquals(expected_re, re, 0.0001);
         assertArrayEquals(expected_im, im, 0.0001);
+
     }
 
     @Test
@@ -82,6 +83,7 @@ public class FourierTest {
 
         assertArrayEquals(in_re, res[0].getDenseBlockValues(), 0.0001);
         assertArrayEquals(in_im, res[1].getDenseBlockValues(), 0.0001);
+
     }
 
     @Test
@@ -131,6 +133,7 @@ public class FourierTest {
         assertArrayEquals(expected_im, res[1].getDenseBlockValues(), 0.0001);
 
     }
+
     @Test
     public void test_fft_two_dim_matrixBlock_row_2() {
 

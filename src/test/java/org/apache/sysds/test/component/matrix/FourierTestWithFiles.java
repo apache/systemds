@@ -1,14 +1,13 @@
 package org.apache.sysds.test.component.matrix;
 
-import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.junit.Test;
-
-import java.io.*;
-
-import static org.apache.sysds.runtime.matrix.data.LibMatrixFourier.fft;
-import static org.apache.sysds.runtime.matrix.data.LibMatrixFourier.ifft;
+import java.io.IOException;
+import java.io.BufferedReader;
+import java.io.FileReader;
 
 import static org.junit.Assert.assertTrue;
+import static org.apache.sysds.runtime.matrix.data.LibMatrixFourier.fft;
+import static org.apache.sysds.runtime.matrix.data.LibMatrixFourier.ifft;
 
 public class FourierTestWithFiles {
     int progressInterval = 5000;
@@ -17,6 +16,7 @@ public class FourierTestWithFiles {
     // and add the generated files to the root of the project.
     @Test
     public void testFftWithNumpyData() throws IOException {
+
         String filename = "fft_data.csv"; // Path to your CSV file
         String path = "./src/test/java/org/apache/sysds/test/component/matrix/";
 
@@ -64,17 +64,19 @@ public class FourierTestWithFiles {
         }
 
         reader.close();
-        
     }
 
     private void validateFftResults(double[][] expected, double[][] actual, int lineNumber) {
+
         int length = expected[0].length;
+
         for (int i = 0; i < length; i++) {
             double realActual = actual[0][i];
             double imagActual = actual[1][i];
             assertEquals("Mismatch in real part at index " + i + " in line " + lineNumber, expected[0][i], realActual, 1e-9);
             assertEquals("Mismatch in imaginary part at index " + i + " in line " + lineNumber, expected[1][i], imagActual, 1e-9);
         }
+
         if(lineNumber % progressInterval == 0){
             System.out.println("fft(double[][][] in): Finished processing line " + lineNumber);
         }
@@ -83,6 +85,7 @@ public class FourierTestWithFiles {
 
     @Test
     public void testFftExecutionTime() throws IOException {
+
         String filename = "fft_data.csv"; // Path to your CSV file
         String path = "./src/test/java/org/apache/sysds/test/component/matrix/";
 
@@ -93,6 +96,7 @@ public class FourierTestWithFiles {
         int numCalculations = 0; // Number of FFT computations
 
         while ((line = reader.readLine()) != null) {
+
             lineNumber++;
             String[] values = line.split(",");
             int n = values.length / 3;
@@ -110,6 +114,7 @@ public class FourierTestWithFiles {
             fft(re, im, 1, n);
 
             long endTime = System.nanoTime();
+
             if(lineNumber > 1000){
                 totalTime += (endTime - startTime);
                 numCalculations++;
@@ -126,6 +131,7 @@ public class FourierTestWithFiles {
 
     @Test
     public void testFftExecutionTimeOfOneDimFFT() throws IOException {
+
         String filename = "fft_data.csv"; // Path to your CSV file
         String path = "./src/test/java/org/apache/sysds/test/component/matrix/";
 
@@ -136,6 +142,7 @@ public class FourierTestWithFiles {
         int numCalculations = 0; // Number of FFT computations
 
         while ((line = reader.readLine()) != null) {
+
             lineNumber++;
             String[] values = line.split(",");
             int n = values.length / 2;
@@ -153,6 +160,7 @@ public class FourierTestWithFiles {
             fft(re, im, 1, n);
 
             long endTime = System.nanoTime();
+
             if(lineNumber > 1000){
                 totalTime += (endTime - startTime);
                 numCalculations++;
@@ -167,10 +175,10 @@ public class FourierTestWithFiles {
         reader.close();
     }
 
-
     // prior to executing this test it is necessary to run the Numpy Script in FourierTestData.py and add the generated file to the root of the project.
     @Test
     public void testIfftWithRealNumpyData() throws IOException {
+
         String filename = "ifft_data.csv"; // Path to your CSV file
         String path = "./src/test/java/org/apache/sysds/test/component/matrix/";
 
@@ -179,6 +187,7 @@ public class FourierTestWithFiles {
         int lineNumber = 0;
     
         while ((line = reader.readLine()) != null) {
+
             lineNumber++;
             String[] values = line.split(",");
             int n = values.length / 3;
@@ -203,11 +212,12 @@ public class FourierTestWithFiles {
         }
     
         reader.close();
-    }
 
+    }
 
     @Test
     public void testIfftWithComplexNumpyData() throws IOException {
+
         String filename = "complex_ifft_data.csv"; // Adjusted path to your IFFT data file with complex inputs
         String path = "./src/test/java/org/apache/sysds/test/component/matrix/";
 
@@ -260,21 +270,25 @@ public class FourierTestWithFiles {
     }
 
     private void validateComplexIFftResults(double[][] expected, double[][] actual, int lineNumber) {
+
         int length = expected[0].length;
+
         for (int i = 0; i < length; i++) {
             double realActual = actual[0][i];
             double imagActual = actual[1][i];
             assertEquals("Mismatch in real part at index " + i + " in line " + lineNumber, expected[0][i], realActual, 1e-9);
             assertEquals("Mismatch in imaginary part at index " + i + " in line " + lineNumber, expected[1][i], imagActual, 1e-9);
         }
-        if (lineNumber % progressInterval == 0) {
-        System.out.println("ifft(complex input): Finished processing line " + lineNumber);
-        }
-    }
 
+        if (lineNumber % progressInterval == 0) {
+            System.out.println("ifft(complex input): Finished processing line " + lineNumber);
+        }
+
+    }
 
     @Test
     public void testFft2dWithNumpyData() throws IOException {
+
         String filename = "complex_fft_2d_data.csv"; // path to your 2D FFT data file
         String path = "./src/test/java/org/apache/sysds/test/component/matrix/";
 
@@ -331,11 +345,13 @@ public class FourierTestWithFiles {
 
         reader.close();
         System.out.println("fft2d: Finished processing " + lineNumber + " lines.\n Average execution time: " + String.format("%.8f", (totalTime / 1e6 / numCalculations)/1000) + " s");
+
     }
 
 
     @Test
     public void testIfft2dWithNumpyData() throws IOException {
+
         String filename = "complex_ifft_2d_data.csv"; // path to your 2D IFFT data file
         String path = "./src/test/java/org/apache/sysds/test/component/matrix/";
 
@@ -346,6 +362,7 @@ public class FourierTestWithFiles {
         int numCalculations = 0; // Number of IFFT 2D computations
 
         while ((line = reader.readLine()) != null) {
+
             lineNumber++;
             String[] values = line.split(",");
             int halfLength = values.length / 4;
@@ -396,6 +413,7 @@ public class FourierTestWithFiles {
 
         reader.close();
         System.out.println("ifft2d: Finished processing " + lineNumber + " lines.\n Average execution time: " + String.format("%.8f", (totalTime / 1e6 / numCalculations)/1000) + " ms");
+
     }
 
     // Helper method for asserting equality with a tolerance
@@ -404,12 +422,13 @@ public class FourierTestWithFiles {
     }
 
     private void assertComplexEquals(String message, double expectedReal, double expectedImag, double actualReal, double actualImag) {
+
         final double EPSILON = 1e-9;
         assertTrue(message + " - Mismatch in real part. Expected: " + expectedReal + ", Actual: " + actualReal, 
                    Math.abs(expectedReal - actualReal) <= EPSILON);
         assertTrue(message + " - Mismatch in imaginary part. Expected: " + expectedImag + ", Actual: " + actualImag, 
                    Math.abs(expectedImag - actualImag) <= EPSILON);
+
     }
-    
 
 }

@@ -7,7 +7,6 @@ import static org.junit.Assert.assertArrayEquals;
 import static org.apache.sysds.runtime.matrix.data.LibMatrixSTFT.stft;
 import static org.apache.sysds.runtime.matrix.data.LibMatrixSTFT.one_dim_stft;
 
-
 public class LibMatrixSTFTTest {
 
     @Test
@@ -27,8 +26,10 @@ public class LibMatrixSTFTTest {
             }
             System.out.println();
         }
+
         assertArrayEquals(expected[0], stftResult[0], 0.0001);
         assertArrayEquals(expected[1], stftResult[1], 0.0001);
+
     }
 
     @Test
@@ -53,6 +54,7 @@ public class LibMatrixSTFTTest {
 
         assertArrayEquals(expected_re, res_re, 0.0001);
         assertArrayEquals(expected_im, res_im, 0.0001);
+
     }
 
     @Test
@@ -77,32 +79,7 @@ public class LibMatrixSTFTTest {
 
         assertArrayEquals(expected_re, res_re, 0.0001);
         assertArrayEquals(expected_im, res_im, 0.0001);
+
     }
 
-    /*
-    public static void main(String[] args) {
-
-
-        // Generate the sinusoidal signal
-        //double[] signal = {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15};
-        double[] signal = {10, 5, -3, 8, 15, -6, 2, 0};
-
-
-        // Define STFT parameters
-        int frameSize = 4;
-        int overlap = 2;
-
-        // Perform the STFT
-        double[][] stftResult = one_dim_stft(signal, frameSize, overlap);
-
-        // tensorflow change arguments names it is calles step
-        // Output some results for verification
-        // also for 2d array
-        System.out.println("STFT Result (a few samples):");
-        int l = stftResult[0].length;
-        for (int i = 0; i < l; i++) {
-            System.out.println("Real = " + stftResult[0][i] + ", Imaginary = " + stftResult[1][i]);
-        }
-    }
-     */
 }

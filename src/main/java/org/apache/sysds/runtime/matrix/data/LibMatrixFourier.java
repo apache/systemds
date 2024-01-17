@@ -13,224 +13,116 @@ public class LibMatrixFourier {
 
         int rows = re.getNumRows();
         int cols = re.getNumColumns();
+        if(!isPowerOfTwo(rows) || !isPowerOfTwo(cols)) throw new RuntimeException("false dimensions");
 
-        double[][][] in = new double[2][rows][cols];
-        in[0] = convertToArray(re);
-        in[1] = convertToArray(im);
+        fft(re.getDenseBlockValues(), im.getDenseBlockValues(), rows, cols);
 
-        double[][][] res = fft(in, false);
-
-        return convertToMatrixBlocks(res);
+        return new MatrixBlock[]{re, im};
     }
 
     public static MatrixBlock[] ifft(MatrixBlock re, MatrixBlock im){
 
         int rows = re.getNumRows();
         int cols = re.getNumColumns();
+        if(!isPowerOfTwo(rows) || !isPowerOfTwo(cols)) throw new RuntimeException("false dimensions");
 
-        double[][][] in = new double[2][rows][cols];
-        in[0] = convertToArray(re);
-        in[1] = convertToArray(im);
-
-        double[][][] res = fft(in, true);
-
-        return convertToMatrixBlocks(res);
-    }
-
-    public static double[][][] fft(double[][][] in, boolean calcInv){
-
-        int rows = in[0].length;
-        int cols = in[0][0].length;
-
-        double[][][] res = new double[2][rows][cols];
-
-        for(int i = 0; i < rows; i++){
-            // use fft or ifft on each row
-            double[][] res_row = calcInv? ifft_one_dim(get_complex_row(in, i)) : fft_one_dim(get_complex_row(in, i));
-
-            // set res row
-            for (int j = 0; j < cols; j++){
-                for( int k = 0; k < 2; k++){
-                    res[k][i][j] = res_row[k][j];
-                }
-            }
-        }
-
-        if(rows == 1) return res;
-
-        for(int j = 0; j < cols; j++){
-            // use fft on each col
-            double[][] res_col = calcInv? ifft_one_dim(get_complex_col(res, j)) : fft_one_dim(get_complex_col(res, j));
-
-            // set res col
-            for (int i = 0; i < rows; i++){
-                for( int k = 0; k < 2; k++){
-                    res[k][i][j] = res_col[k][i];
-                }
-            }
-        }
-
-        return res;
-    }
-
-    public static double[][] fft_one_dim(double[][] in){
-        // 1st row real part, 2nd row imaginary part
-        if(in == null || in.length != 2 || in[0].length != in[1].length) throw new RuntimeException("in false dimensions");
-
-        int cols = in[0].length;
-        if(cols == 1) return in;
-
-        double angle = -2*FastMath.PI/cols;
-
-        // split values depending on index
-        double[][] even = new double[2][cols/2];
-        double[][] odd = new double[2][cols/2];
-
-        for(int i = 0; i < 2; i++){
-            for (int j = 0; j < cols/2; j++){
-                even[i][j] = in[i][j*2];
-                odd[i][j] = in[i][j*2+1];
-            }
-        }
-        double[][] res_even = fft_one_dim(even);
-        double[][] res_odd = fft_one_dim(odd);
-
-        double[][] res = new double[2][cols];
-
-        for(int j=0; j < cols/2; j++){
-            double[] omega_pow = new double[]{FastMath.cos(j*angle), FastMath.sin(j*angle)};
-
-            // m = omega * res_odd[j]
-            double[] m = new double[]{
-                    omega_pow[0] * res_odd[0][j] - omega_pow[1] * res_odd[1][j],
-                    omega_pow[0] * res_odd[1][j] + omega_pow[1] * res_odd[0][j]};
-
-            // res[j] = res_even + m;
-            // res[j+cols/2] = res_even - m;
-            for(int i = 0; i < 2; i++){
-                res[i][j] = res_even[i][j] + m[i];
-                res[i][j+cols/2] = res_even[i][j] - m[i];
-            }
-        }
-
-        return res;
-
-    }
-
-    public static double[][] ifft_one_dim(double[][] in) {
-
-        // cols[0] is real part, cols[1] is imaginary part
-        int cols = in[0].length;
-
-        // conjugate input
-        in[1] = Arrays.stream(in[1]).map(i -> -i).toArray();
-
-        // apply fft
-        double[][] res = fft_one_dim(in);
-
-        // conjugate and scale result
-        res[0] = Arrays.stream(res[0]).map(i -> i/cols).toArray();
-        res[1] = Arrays.stream(res[1]).map(i -> -i/cols).toArray();
-
-        return res;
-    }
-
-    private static MatrixBlock[] convertToMatrixBlocks(double[][][] in){
-
-        int cols = in[0][0].length;
-        int rows = in[0].length;
-
-        double[] flattened_re = Arrays.stream(in[0]).flatMapToDouble(Arrays::stream).toArray();
-        double[] flattened_im = new double[rows*cols];
-        if(in.length > 1){
-            flattened_im = Arrays.stream(in[1]).flatMapToDouble(Arrays::stream).toArray();
-        }
-
-        MatrixBlock re = new MatrixBlock(rows, cols, flattened_re);
-        MatrixBlock im = new MatrixBlock(rows, cols, flattened_im);
+        ifft(re.getDenseBlockValues(), im.getDenseBlockValues(), rows, cols);
 
         return new MatrixBlock[]{re, im};
     }
 
-    private static MatrixBlock getZeroMatrixBlock(int rows, int cols){
+    public static void fft(double[] re, double[] im, int rows, int cols) {
 
-        return new MatrixBlock(rows, cols, new double[cols*rows]);
+        double[] re_inter = new double[rows*cols];
+        double[] im_inter = new double[rows*cols];
 
-    }
-
-    private static double[][] convertToArray(MatrixBlock in){
-
-        int rows = in.getNumRows();
-        int cols = in.getNumColumns();
-
-        double[][] out = new double[rows][cols];
         for(int i = 0; i < rows; i++){
-            out[i] = Arrays.copyOfRange(in.getDenseBlockValues(), i * cols, (i+1) * cols);
+            fft_one_dim(re, im, re_inter, im_inter, i*cols, 1, cols, cols);
         }
 
-        return out;
-    }
-    private static double[][][] convertToArray(MatrixBlock[] in){
-
-        int rows = in[0].getNumRows();
-        int cols = in[0].getNumColumns();
-
-        double[][][] out = new double[2][rows][cols];
-        for(int k = 0; k < 2; k++){
-            for(int i = 0; i < rows; i++){
-                out[k][i] = Arrays.copyOfRange(in[k].getDenseBlockValues(), i * cols, (i+1) * cols);
-            }
+        for(int j = 0; j < cols; j++){
+            fft_one_dim(re, im, re_inter, im_inter, j, cols, rows, rows*cols);
         }
 
-        return out;
     }
 
-    public static double[][] get_complex_row(double[][][] in, int i){
+    public static void ifft(double[] re, double[] im, int rows, int cols) {
 
-        int cols = in[0][0].length;
+        double[] re_inter = new double[rows*cols];
+        double[] im_inter = new double[rows*cols];
 
-        double[][] row = new double[2][cols];
-        // get row
-        for (int j = 0; j < cols; j++){
-            for( int k = 0; k < 2; k++){
-                row[k][j] = in[k][i][j];
-            }
+        for(int j = 0; j < cols; j++){
+            ifft_one_dim(re, im, re_inter, im_inter, j, cols, rows, rows*cols);
         }
-        return row;
+
+        for(int i = 0; i < rows; i++){
+            ifft_one_dim(re, im, re_inter, im_inter, i*cols, 1, cols, cols);
+        }
     }
-    public static double[][] get_complex_col(double[][][] in, int j){
 
-        int rows = in[0].length;
+    public static void fft_one_dim(double[] re, double[] im, double[] re_inter, double[] im_inter, int start, int step, int num, int subArraySize) {
 
-        double[][] col = new double[2][rows];
-        // get row
-        for (int i = 0; i < rows; i++){
-            for( int k = 0; k < 2; k++){
-                col[k][i] = in[k][i][j];
-            }
+        if(num == 1) return;
+        double angle = -2*FastMath.PI/num;
+
+        // fft for even indices
+        fft_one_dim(re, im, re_inter, im_inter, start, step*2, num/2, subArraySize);
+        // fft for odd indices
+        fft_one_dim(re, im, re_inter, im_inter,start+step, step*2, num/2, subArraySize);
+
+        // iterates over even indices
+        for(int j = start, cnt = 0; cnt < num/2; j+=(2*step), cnt++){
+
+            double omega_pow_re = FastMath.cos(cnt*angle);
+            double omega_pow_im = FastMath.sin(cnt*angle);
+
+            // calculate m using the result of odd index
+            double m_re = omega_pow_re * re[j+step] - omega_pow_im * im[j+step];
+            double m_im = omega_pow_re * im[j+step] + omega_pow_im * re[j+step];
+
+            int index = start+cnt*step;
+            re_inter[index] = re[j] + m_re;
+            re_inter[index+subArraySize/2] = re[j] - m_re;
+
+            im_inter[index] = im[j] + m_im;
+            im_inter[index+subArraySize/2] = im[j] - m_im;
         }
-        return col;
+
+        for(int j = start; j < start+subArraySize; j+=step){
+            re[j] = re_inter[j];
+            im[j] = im_inter[j];
+            re_inter[j] = 0;
+            im_inter[j] = 0;
+        }
+    }
+
+    public static void ifft_one_dim(double[] re, double[] im, double[] re_inter, double[] im_inter, int start, int step, int num, int subArraySize) {
+
+        // conjugate input
+        for (int i = start; i < start+num*step; i+=step){
+            im[i] = -im[i];
+        }
+
+        // apply fft
+        fft_one_dim(re, im, re_inter, im_inter, start, step, num, subArraySize);
+
+        // conjugate and scale result
+        for (int i = start; i < start+num*step; i+=step){
+            re[i] = re[i]/num;
+            im[i] = -im[i]/num;
+        }
     }
 
     private static boolean isPowerOfTwo(int n){
-        return ((n != 0) && ((n & (n - 1)) == 0)) || n == 1;
-    }
-
-    public static MatrixBlock[] fft(double[] in){
-        double[][][] arr = new double[2][1][in.length];
-        arr[0][0] = in;
-        return fft(convertToMatrixBlocks(arr));
-    }
-
-    public static MatrixBlock[] fft(double[][][] in){
-        return fft(convertToMatrixBlocks(in));
-    }
-
-    public static MatrixBlock[] fft(MatrixBlock[] in){
-        return fft(in[0], in[1]);
+        return (n != 0) && ((n & (n - 1)) == 0);
     }
 
     public static MatrixBlock[] fft(MatrixBlock re){
-        return fft(re, getZeroMatrixBlock(re.getNumRows(), re.getNumColumns()));
+        return fft(re, new MatrixBlock(re.getNumRows(),re.getNumColumns(), new double[re.getNumRows()*re.getNumColumns()]));
     }
+
+    public static MatrixBlock[] ifft(MatrixBlock re){
+        return ifft(re, new MatrixBlock(re.getNumRows(),re.getNumColumns(), new double[re.getNumRows()*re.getNumColumns()]));
+    }
+
 }

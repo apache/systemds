@@ -2,8 +2,8 @@ package org.apache.sysds.runtime.matrix.data;
 
 import java.util.Arrays;
 
-import static org.apache.sysds.runtime.matrix.data.LibMatrixFourier.fft;
-import static org.apache.sysds.runtime.matrix.data.LibMatrixFourier.fft_one_dim;
+import static org.apache.sysds.runtime.matrix.data.LibMatrixFourierOld.fft_old;
+import static org.apache.sysds.runtime.matrix.data.LibMatrixFourierOld.fft_one_dim_old;
 
 
 public class LibMatrixSTFT {
@@ -60,7 +60,7 @@ public class LibMatrixSTFT {
                 tmp[0][i] = windowedSignal[i];
                 tmp[1][i] = 0;
             }
-            double[][] fftResult = fft_one_dim(tmp);
+            double[][] fftResult = fft_one_dim_old(tmp);
 
             // Store the FFT result in the output array
             int startIndex = windowSize * frame;

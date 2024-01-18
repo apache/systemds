@@ -264,6 +264,12 @@ public class LibCommonsMath
 			DataConverter.convertToArray2DRowRealMatrix(in2));
 	}
 
+	/**
+	 * Function to perform FFT on a given matrix.
+	 *
+	 * @param in matrix object
+	 * @return array of matrix blocks
+	 */
 	private static MatrixBlock[] computeFFT(MatrixBlock in) {
 		if( in == null || in.isEmptyBlock(false) )
 			throw new DMLRuntimeException("Invalid empty block");
@@ -273,6 +279,12 @@ public class LibCommonsMath
 		return fft(in);
 	}
 
+	/**
+	 * Function to perform IFFT on a given matrix.
+	 *
+	 * @param in matrix object
+	 * @return array of matrix blocks
+	 */
 	private static MatrixBlock[] computeIFFT(MatrixBlock in) {
 		if( in == null || in.isEmptyBlock(false))
 			throw new DMLRuntimeException("Invalid empty block");

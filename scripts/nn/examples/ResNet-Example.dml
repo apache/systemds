@@ -40,8 +40,7 @@ block_type = "basic"
 [model, ema_means_vars] = resnet::init(block_type, reslayer_sizes, -1)
 
 # get initial optimizer parameters
-optimizer = "adam"
-optimizer_params = resnet_util::init_optim(optimizer, block_type, reslayer_sizes)
+optimizer_params = resnet_util::init_optim("adam", block_type, reslayer_sizes)
 
 # create random data
 N = 100
@@ -100,9 +99,14 @@ train = function(matrix[double] X, matrix[double] Y, list[unknown] model, list[u
             # backward
             dprobs = cross_entropy::backward(probs, Y_batch)
             dOut = softmax::backward(dprobs, out)
-            [dX, gradiends] = resnet18::backward(dOut, cached_out, model, cached_means_vars)
+            [dX, gradients] = resnet18::backward(dOut, cached_out, model, cached_means_vars)
 
             # update parameters
+            optim_hyper_params = list(lr, beta1, beta2, epsilon, t)
+            [optim_params, model] = resnet_util::update_params("adam", optim_params, optim_hyper_params, gradients,
+                model, "basic", list(2, 2, 2, 2))
+
+            t = t + 1
         }
 
         print("Loss: " + loss_avg)

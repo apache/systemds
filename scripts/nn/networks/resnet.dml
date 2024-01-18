@@ -660,11 +660,11 @@ reslayer_backward = function(matrix[double] dOut, list[unknown] cached_out,
                              list[unknown] weights,
                              list[unknown] cached_means_vars)
     return (matrix[double] dX, list[unknown] gradients) {
-    gradients = list()
     dX = dOut
 
     # second to last blocks
     if (blocks > 1) {
+        gradients_reverse = list()
         for (i in blocks:2) {
             current_cached_out = as.list(cached_out[i])
             current_weights = as.list(weights[i])
@@ -680,7 +680,7 @@ reslayer_backward = function(matrix[double] dOut, list[unknown] cached_out,
                     cached_means_vars=current_cached_means_vars)
             }
 
-            gradients = append(gradients, current_gradients)
+            gradients_reverse = append(gradients_reverse, current_gradients)
         }
     }
 
@@ -693,6 +693,14 @@ reslayer_backward = function(matrix[double] dOut, list[unknown] cached_out,
         [dX, current_gradients] = bottleneck_block_backward(dOut=dX, cached_out=as.list(cached_out[1]),
             weights=as.list(weights[1]), C_in=C_in, C_base=C_base, strideh=strideh, stridew=stridew,
             cached_means_vars=as.list(cached_means_vars[1]))
+    }
+
+    # sort gradient lists of blocks in correct order
+    gradients = list(current_gradients)
+    if (blocks > 1) {
+        for (i in blocks:2) {
+            gradients = append(gradients, as.list(gradients_reverse[i - 1]))
+        }
     }
 }
 

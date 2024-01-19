@@ -497,6 +497,8 @@ public class StringArray extends Array<String> {
 	}
 
 	protected int parseSignificant(String s) {
+		if(s == null)
+			return 0;
 		final int len = s.length();
 		int v = 0;
 		int c = 0;

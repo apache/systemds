@@ -19,7 +19,6 @@
 
 package org.apache.sysds.runtime.instructions.spark;
 
-import org.apache.commons.lang.NotImplementedException;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.function.Function;
 import org.apache.spark.broadcast.Broadcast;

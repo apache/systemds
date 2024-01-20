@@ -1168,16 +1168,16 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 	private static Hop simplifyMatrixFactorization(Hop parent, Hop hi, int pos) {
 		// Check for Hop being Binary
 		if(hi instanceof BinaryOp) {
-			Hop left = hi.getInput().get(0);
-			Hop right = hi.getInput().get(1);
+			Hop left = hi.getInput(0);
+			Hop right = hi.getInput(1);
 			//Check if both terms are MatrixMultiplies
 			if(HopRewriteUtils.isMatrixMultiply(left) && HopRewriteUtils.isMatrixMultiply(right)) {
-				Hop leftChildA = left.getInput().get(0);
-				Hop rightChildA = right.getInput().get(0);
+				Hop leftChildA = left.getInput(0);
+				Hop rightChildA = right.getInput(0);
 				//Check that matrix A appears in both terms
 				if(leftChildA == rightChildA) {
-					Hop B = left.getInput().get(1);
-					Hop C = right.getInput().get(1);
+					Hop B = left.getInput(1);
+					Hop C = right.getInput(1);
 					// Check that A,B, and C are dense and implicitly that the NNZ is known
 					if(HopRewriteUtils.isDense(leftChildA) && HopRewriteUtils.isDense(B) &&
 						HopRewriteUtils.isDense(C)) {

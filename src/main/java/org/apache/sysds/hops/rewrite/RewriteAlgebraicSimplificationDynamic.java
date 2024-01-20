@@ -176,7 +176,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 			hi = simplifyScalarMatrixMult(hop, hi, i);        //e.g., X%*%y -> X*as.scalar(y), if y is a 1-1 matrix
 			hi = simplifyMatrixMultDiag(hop, hi, i);          //e.g., diag(X)%*%Y -> X*Y, if ncol(Y)==1 / -> Y*X if ncol(Y)>1 
 			hi = simplifyDiagMatrixMult(hop, hi, i);          //e.g., diag(X%*%Y)->rowSums(X*t(Y)); if col vector
-			hi = simplifyMatrixFactorization(hop, hi, i);      //e.g., (A%*%B)+(A%*%C) -> A%*%(B+C)
+			hi = simplifyDistributiveMatrixMult(hop, hi, i);  //e.g., (A%*%B)+(A%*%C) -> A%*%(B+C)
 			hi = simplifySumDiagToTrace(hi);                  //e.g., sum(diag(X)) -> trace(X); if col vector
 			hi = simplifyLowerTriExtraction(hop, hi, i);      //e.g., X * cumsum(diag(matrix(1,nrow(X),1))) -> lower.tri
 			hi = simplifyConstantCumsum(hop, hi, i);          //e.g., cumsum(matrix(1/n,n,1)) -> seq(1/n, 1, 1/n)
@@ -1165,7 +1165,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 		return hi;
 	}
 
-	private static Hop simplifyMatrixFactorization(Hop parent, Hop hi, int pos) {
+	private static Hop simplifyDistributiveMatrixMult(Hop parent, Hop hi, int pos) {
 		// Check for Hop being Binary
 		if(hi instanceof BinaryOp) {
 			Hop left = hi.getInput(0);
@@ -1199,7 +1199,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 								HopRewriteUtils.replaceChildReference(parent, hi, newHop, pos);
 								HopRewriteUtils.cleanupUnreferenced(hi);
 								hi = newHop;
-								LOG.debug("Applied simplifyMatrixFactorization");
+								LOG.debug("Applied simplifyDistributiveMatrixMult");
 							}
 						}
 					}

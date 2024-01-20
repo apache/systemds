@@ -30,8 +30,8 @@ import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
 import org.apache.sysds.utils.Statistics;
 
-public class RewriteMatrixFactorizationTest extends AutomatedTestBase {
-	private static final String TEST_NAME1 = "RewriteMatrixFactorization";
+public class RewriteDistributiveMatrixMultTest extends AutomatedTestBase {
+	private static final String TEST_NAME1 = "RewriteDistributiveMatrixMult";
 	private static final String TEST_DIR = "functions/rewrite/";
 	private static final String TEST_CLASS_DIR =
 		TEST_DIR + RewriteSimplifyRowColSumMVMultTest.class.getSimpleName() + "/";
@@ -48,16 +48,16 @@ public class RewriteMatrixFactorizationTest extends AutomatedTestBase {
 	}
 
 	@Test
-	public void testMatrixFactorizationNoRewrite() {
-		testRewriteMatrixFactorization(TEST_NAME1, false);
+	public void testDistributiveMatrixMultNoRewrite() {
+		testRewriteDistributiveMatrixMult(TEST_NAME1, false);
 	}
 
 	@Test
-	public void testMatrixFactorizationRewrite() {
-		testRewriteMatrixFactorization(TEST_NAME1, true);
+	public void testDistributiveMatrixMultRewrite() {
+		testRewriteDistributiveMatrixMult(TEST_NAME1, true);
 	}
 
-	private void testRewriteMatrixFactorization(String testname, boolean rewrites) {
+	private void testRewriteDistributiveMatrixMult(String testname, boolean rewrites) {
 		boolean oldFlag = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
 		try {
 			TestConfiguration config = getTestConfiguration(testname);

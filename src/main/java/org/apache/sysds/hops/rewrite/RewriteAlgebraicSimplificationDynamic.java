@@ -176,6 +176,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 			hi = simplifyScalarMatrixMult(hop, hi, i);        //e.g., X%*%y -> X*as.scalar(y), if y is a 1-1 matrix
 			hi = simplifyMatrixMultDiag(hop, hi, i);          //e.g., diag(X)%*%Y -> X*Y, if ncol(Y)==1 / -> Y*X if ncol(Y)>1 
 			hi = simplifyDiagMatrixMult(hop, hi, i);          //e.g., diag(X%*%Y)->rowSums(X*t(Y)); if col vector
+			hi = simplifyMatrixFactorization(hop, hi, i);      //e.g., (A%*%B)+(A%*%C) -> A%*%(B+C)
 			hi = simplifySumDiagToTrace(hi);                  //e.g., sum(diag(X)) -> trace(X); if col vector
 			hi = simplifyLowerTriExtraction(hop, hi, i);      //e.g., X * cumsum(diag(matrix(1,nrow(X),1))) -> lower.tri
 			hi = simplifyConstantCumsum(hop, hi, i);          //e.g., cumsum(matrix(1/n,n,1)) -> seq(1/n, 1, 1/n)
@@ -1137,46 +1138,88 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 		
 		return hi;
 	}
-	
-	private static Hop simplifyDiagMatrixMult(Hop parent, Hop hi, int pos)
-	{
-		if( hi instanceof ReorgOp && ((ReorgOp)hi).getOp()==ReOrgOp.DIAG && hi.getDim2()==1 ) //diagM2V
+
+	private static Hop simplifyDiagMatrixMult(Hop parent, Hop hi, int pos) {
+		if(hi instanceof ReorgOp && ((ReorgOp) hi).getOp() == ReOrgOp.DIAG && hi.getDim2() == 1) //diagM2V
 		{
 			Hop hi2 = hi.getInput().get(0);
-			if( HopRewriteUtils.isMatrixMultiply(hi2) ) //X%*%Y
+			if(HopRewriteUtils.isMatrixMultiply(hi2)) //X%*%Y
 			{
 				Hop left = hi2.getInput().get(0);
 				Hop right = hi2.getInput().get(1);
-				
+
 				//create new operators (incl refresh size inside for transpose)
 				ReorgOp trans = HopRewriteUtils.createTranspose(right);
 				BinaryOp mult = HopRewriteUtils.createBinary(left, trans, OpOp2.MULT);
 				AggUnaryOp rowSum = HopRewriteUtils.createAggUnaryOp(mult, AggOp.SUM, Direction.Row);
-				
+
 				//rehang new subdag under parent node
 				HopRewriteUtils.replaceChildReference(parent, hi, rowSum, pos);
 				HopRewriteUtils.cleanupUnreferenced(hi, hi2);
-				
+
 				hi = rowSum;
 				LOG.debug("Applied simplifyDiagMatrixMult");
-			}	
+			}
 		}
-		
+
 		return hi;
 	}
-	
-	private static Hop simplifySumDiagToTrace(Hop hi)
-	{
-		if( hi instanceof AggUnaryOp ) 
-		{
+
+	private static Hop simplifyMatrixFactorization(Hop parent, Hop hi, int pos) {
+		// Check for Hop being Binary
+		if(hi instanceof BinaryOp) {
+			Hop left = hi.getInput().get(0);
+			Hop right = hi.getInput().get(1);
+			//Check if both terms are MatrixMultiplies
+			if(HopRewriteUtils.isMatrixMultiply(left) && HopRewriteUtils.isMatrixMultiply(right)) {
+				Hop leftChildA = left.getInput().get(0);
+				Hop rightChildA = right.getInput().get(0);
+				//Check that matrix A appears in both terms
+				if(leftChildA == rightChildA) {
+					Hop B = left.getInput().get(1);
+					Hop C = right.getInput().get(1);
+					// Check that A,B, and C are dense and implicitly that the NNZ is known
+					if(HopRewriteUtils.isDense(leftChildA) && HopRewriteUtils.isDense(B) &&
+						HopRewriteUtils.isDense(C)) {
+
+						long rowsA = leftChildA.getDim1();
+						long colsA = leftChildA.getDim2();
+						long rowsB = B.getDim1(); // Assuming dimensions of B and C identical
+						long colsB = B.getDim2(); // Assuming colsB = colsC
+
+						// Calculate FLOPs
+						long flopsOriginal = 2 * ((2 * colsA - 1) * rowsA * colsB) + rowsA * colsB;
+						long flopsRewrite = (2 * colsA - 1) * rowsA * colsB + rowsB * colsB;
+						//Check that rewrite reduces FLOPs
+						if(flopsRewrite < flopsOriginal) {
+							Hop BplusC = HopRewriteUtils.createBinary(B, C, OpOp2.PLUS);
+							Hop newHop = HopRewriteUtils.createMatrixMultiply(leftChildA, BplusC);
+
+							if(parent != null) {
+								HopRewriteUtils.replaceChildReference(parent, hi, newHop, pos);
+								HopRewriteUtils.cleanupUnreferenced(hi);
+								hi = newHop;
+								LOG.debug("Applied simplifyMatrixFactorization");
+							}
+						}
+					}
+
+				}
+			}
+		}
+		return hi;
+	}
+
+	private static Hop simplifySumDiagToTrace(Hop hi) {
+		if(hi instanceof AggUnaryOp) {
 			AggUnaryOp au = (AggUnaryOp) hi;
-			if( au.getOp()==AggOp.SUM && au.getDirection()==Direction.RowCol )	//sum
+			if(au.getOp() == AggOp.SUM && au.getDirection() == Direction.RowCol)    //sum
 			{
 				Hop hi2 = au.getInput().get(0);
-				if( hi2 instanceof ReorgOp && ((ReorgOp)hi2).getOp()==ReOrgOp.DIAG && hi2.getDim2()==1 ) //diagM2V
+				if(hi2 instanceof ReorgOp && ((ReorgOp) hi2).getOp() == ReOrgOp.DIAG && hi2.getDim2() == 1) //diagM2V
 				{
 					Hop hi3 = hi2.getInput().get(0);
-					
+
 					//remove diag operator
 					HopRewriteUtils.replaceChildReference(au, hi2, hi3, 0);
 					HopRewriteUtils.cleanupUnreferenced(hi2);

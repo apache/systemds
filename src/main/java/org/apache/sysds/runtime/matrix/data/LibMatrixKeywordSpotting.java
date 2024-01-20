@@ -100,7 +100,7 @@ public class LibMatrixKeywordSpotting {
 		// String url = "http://storage.googleapis.com/download.tensorflow.org/data/mini_speech_commands.zip";
 		// Set<String> dirs = Set.of("yes", "no");
 
-		String zipFilePath = "/Users/jessica/desktop/mini_speech_commands.zip";
+		String zipFilePath = "./src/main/java/org/apache/sysds/runtime/matrix/data/mini_speech_commands_slimmed.zip";
 
 		try {
 			// get zip data

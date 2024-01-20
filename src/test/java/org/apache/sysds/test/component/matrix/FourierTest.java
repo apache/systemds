@@ -195,8 +195,6 @@ public class FourierTest {
 	@Test
 	public void failed_test_ifft_2d_with_generated_data() {
 
-		// TODO:
-
 		MatrixBlock re = new MatrixBlock(2, 2,  new double[]{
 				0.6749989259154331, 0.6278845555308362, 0.995916990652601, 0.511472971081564
 		});
@@ -205,12 +203,13 @@ public class FourierTest {
 				0.8330832079105173, 0.09857986129294982, 0.6808883894146879, 0.28353782431047303
 		});
 
+		// adjusted the expected output
 		double[] expected_re = {
-				2.81027344, 0.53155839, -0.20450648, -0.43732965
+				0.70256836, 0.1328896, -0.05112662, -0.10933241
 		};
 
 		double[] expected_im = {
-				1.89608928, 1.13185391, -0.03276314, 0.33715278
+				0.47402232, 0.28296348, -0.00819079, 0.0842882
 		};
 
 		MatrixBlock[] res = ifft(re, im);

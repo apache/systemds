@@ -76,7 +76,7 @@ public class LibMatrixSTFT {
 
 		for (int frame = 0; frame < totalFrames; frame++) {
 			// Perform FFT on windowed signal
-			fft_one_dim(stftOutput_re, stftOutput_im, re_inter, im_inter, frame * windowSize, 1, windowSize, windowSize);
+			fft_one_dim(stftOutput_re, stftOutput_im, re_inter, im_inter, frame * windowSize, (frame+1) * windowSize, windowSize, 1);
 		}
 
 		return new MatrixBlock[]{new MatrixBlock(1, out_len, stftOutput_re), new MatrixBlock(1, out_len, stftOutput_im)};

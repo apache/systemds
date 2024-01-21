@@ -343,6 +343,21 @@ class Matrix(OperationNode):
         """
         return Matrix(self.sds_context, 'cholesky', [self])
 
+    def fft(self):
+        """
+        Performs the Fast Fourier Transform (FFT) on this matrix.
+        Returns a Matrix object representing the FFT (complex numbers represented as two matrices).
+        """
+        return Matrix(self.sds_context, 'fft', [self])
+
+    def ifft(self):
+        """
+        Performs the Inverse Fast Fourier Transform (IFFT) on this matrix.
+        Returns a Matrix object representing the IFFT.
+        """
+        return Matrix(self.sds_context, 'ifft', [self])
+
+
     def to_one_hot(self, num_classes: int) -> 'Matrix':
         """ OneHot encode the matrix.
 

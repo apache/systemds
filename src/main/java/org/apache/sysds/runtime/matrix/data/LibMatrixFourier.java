@@ -79,11 +79,11 @@ public class LibMatrixFourier {
 		double[] im_inter = new double[rows*cols];
 
 		for(int i = 0; i < rows; i++){
-			fft_one_dim(re, im, re_inter, im_inter, i*cols, 1, cols, cols);
+			fft_one_dim(re, im, re_inter, im_inter, i*cols, (i+1)*cols, cols, 1);
 		}
 
 		for(int j = 0; j < cols; j++){
-			fft_one_dim(re, im, re_inter, im_inter, j, cols, rows, rows*cols);
+			fft_one_dim(re, im, re_inter, im_inter, j, j+rows*cols, rows, cols);
 		}
 
 	}
@@ -104,64 +104,82 @@ public class LibMatrixFourier {
 		double[] im_inter = new double[rows*cols];
 
 		for(int j = 0; j < cols; j++){
-			ifft_one_dim(re, im, re_inter, im_inter, j, cols, rows, rows*cols);
+			ifft_one_dim(re, im, re_inter, im_inter, j, j+rows*cols, rows, cols);
+
 		}
 
 		for(int i = 0; i < rows; i++){
-			ifft_one_dim(re, im, re_inter, im_inter, i*cols, 1, cols, cols);
+			ifft_one_dim(re, im, re_inter, im_inter, i*cols, (i+1)*cols, cols, 1);
 		}
 
 	}
 
-	private static void fft_one_dim(double[] re, double[] im, double[] re_inter, double[] im_inter, int start, int step, int num, int subArraySize) {
+	public static void fft_one_dim(double[] re, double[] im, double[] re_inter, double[] im_inter, int start, int stop, int num, int minStep) {
 
+		// start inclusive, stop exclusive
 		if(num == 1) return;
-		double angle = -2*FastMath.PI/num;
 
-		// fft for even indices
-		fft_one_dim(re, im, re_inter, im_inter, start, step*2, num/2, subArraySize);
-		// fft for odd indices
-		fft_one_dim(re, im, re_inter, im_inter,start+step, step*2, num/2, subArraySize);
+		// even indices
+		for(int step = minStep*(num/2), subNum = 2; subNum <= num; step/=2, subNum*=2){
 
-		// iterates over even indices
-		for(int j = start, cnt = 0; cnt < num/2; j+=(2*step), cnt++){
+			double angle = -2*FastMath.PI/subNum;
 
-			double omega_pow_re = FastMath.cos(cnt*angle);
-			double omega_pow_im = FastMath.sin(cnt*angle);
+			// use ceil for the main (sub)array
+			for(int sub = 0; sub < FastMath.ceil(num/(2*(double)subNum)); sub++){
 
-			// calculate m using the result of odd index
-			double m_re = omega_pow_re * re[j+step] - omega_pow_im * im[j+step];
-			double m_im = omega_pow_re * im[j+step] + omega_pow_im * re[j+step];
+				for(int isOdd = 0; isOdd < 2; isOdd++) {
 
-			int index = start+cnt*step;
-			re_inter[index] = re[j] + m_re;
-			re_inter[index+subArraySize/2] = re[j] - m_re;
+					// no odd values for main (sub)array
+					if (isOdd == 1 && subNum == num) return;
 
-			im_inter[index] = im[j] + m_im;
-			im_inter[index+subArraySize/2] = im[j] - m_im;
-		}
+					int startSub = start + sub*minStep + isOdd*(step/2);
 
-		for(int j = start; j < start+subArraySize; j+=step){
-			re[j] = re_inter[j];
-			im[j] = im_inter[j];
-			re_inter[j] = 0;
-			im_inter[j] = 0;
+					// first iterates over even indices, then over odd indices
+					for (int j = startSub, cnt = 0; cnt < subNum / 2; j += 2*step, cnt++) {
+
+						double omega_pow_re = FastMath.cos(cnt * angle);
+						double omega_pow_im = FastMath.sin(cnt * angle);
+
+						// calculate m using the result of odd index
+						double m_re = omega_pow_re * re[j + step] - omega_pow_im * im[j + step];
+						double m_im = omega_pow_re * im[j + step] + omega_pow_im * re[j + step];
+
+						int index = startSub + cnt * step;
+						re_inter[index] = re[j] + m_re;
+						re_inter[index + (stop-start)/2] = re[j] - m_re;
+
+						im_inter[index] = im[j] + m_im;
+						im_inter[index + (stop-start)/2] = im[j] - m_im;
+					}
+
+					for (int j = startSub; j < startSub + (stop-start); j += step) {
+						re[j] = re_inter[j];
+						im[j] = im_inter[j];
+						re_inter[j] = 0;
+						im_inter[j] = 0;
+					}
+
+				}
+
+			}
+
 		}
 
 	}
 
-	private static void ifft_one_dim(double[] re, double[] im, double[] re_inter, double[] im_inter, int start, int step, int num, int subArraySize) {
+	private static void ifft_one_dim(double[] re, double[] im, double[] re_inter, double[] im_inter, int start, int stop, int num, int minStep) {
 
 		// conjugate input
-		for (int i = start; i < start+num*step; i+=step){
+		for (int i = start; i < start+num*minStep; i+=minStep){
 			im[i] = -im[i];
 		}
 
 		// apply fft
-		fft_one_dim(re, im, re_inter, im_inter, start, step, num, subArraySize);
+		//fft_one_dim_recursive(re, im, re_inter, im_inter, start, step, num, subArraySize);
+		fft_one_dim(re, im, re_inter, im_inter, start, stop, num, minStep);
 
 		// conjugate and scale result
-		for (int i = start; i < start+num*step; i+=step){
+		for (int i = start; i < start+num*minStep; i+=minStep){
 			re[i] = re[i]/num;
 			im[i] = -im[i]/num;
 		}

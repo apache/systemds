@@ -104,8 +104,13 @@ public class LibCommonsMath
 		return multiReturnOperations(in, opcode, 1, 1);
 	}
 
-	public static MatrixBlock[] multiReturnOperations(MatrixBlock in, String opcode, int threads, int num_iterations, double tol) {
-		if(opcode.equals("eigen_qr"))
+	public static MatrixBlock[] multiReturnOperations(MatrixBlock in1, MatrixBlock in2, String opcode) {
+		return multiReturnOperations(in1, in2, opcode, 1, 1);
+	}
+
+	public static MatrixBlock[] multiReturnOperations(MatrixBlock in, String opcode, int threads, int num_iterations,
+			double tol) {
+		if (opcode.equals("eigen_qr"))
 			return computeEigenQR(in, num_iterations, tol, threads);
 		else
 			return multiReturnOperations(in, opcode, threads, 1);
@@ -114,29 +119,53 @@ public class LibCommonsMath
 	public static MatrixBlock[] multiReturnOperations(MatrixBlock in, String opcode, int threads, long seed) {
 
 		switch (opcode) {
-			case "qr": return computeQR(in);
-			case "qr2": return computeQR2(in, threads);
-			case "lu": return computeLU(in);
-			case "eigen": return computeEigen(in);
-			case "eigen_lanczos": return computeEigenLanczos(in, threads, seed);
-			case "eigen_qr": return computeEigenQR(in, threads);
-			case "fft": return computeFFT(in);
-			case "ifft": return computeIFFT(in);
-			case "svd": return computeSvd(in);
-			default: return null;
+			case "qr":
+				return computeQR(in);
+			case "qr2":
+				return computeQR2(in, threads);
+			case "lu":
+				return computeLU(in);
+			case "eigen":
+				return computeEigen(in);
+			case "eigen_lanczos":
+				return computeEigenLanczos(in, threads, seed);
+			case "eigen_qr":
+				return computeEigenQR(in, threads);
+			case "fft":
+				return computeFFT(in);
+			// TODO: add ifft for only one input
+			// case "ifft":
+			// return computeIFFT(in);
+			case "svd":
+				return computeSvd(in);
+			default:
+				return null;
 		}
 
 	}
-	
+
+	public static MatrixBlock[] multiReturnOperations(MatrixBlock in1, MatrixBlock in2, String opcode, int threads,
+			long seed) {
+
+		switch (opcode) {
+			case "ifft":
+				return computeIFFT(in1, in2);
+			default:
+				return null;
+		}
+
+	}
+
 	public static MatrixBlock matrixMatrixOperations(MatrixBlock in1, MatrixBlock in2, String opcode) {
-		if(opcode.equals("solve")) {
+		if (opcode.equals("solve")) {
 			if (in1.getNumRows() != in1.getNumColumns())
 				throw new DMLRuntimeException("The A matrix, in solve(A,b) should have squared dimensions.");
 			return computeSolve(in1, in2);
 		}
+
 		return null;
 	}
-	
+
 	/**
 	 * Function to solve a given system of equations.
 	 * 
@@ -271,11 +300,12 @@ public class LibCommonsMath
 	 * @return array of matrix blocks
 	 */
 	private static MatrixBlock[] computeFFT(MatrixBlock in) {
-		if( in == null || in.isEmptyBlock(false) )
+		if (in == null || in.isEmptyBlock(false))
 			throw new DMLRuntimeException("Invalid empty block");
 
-		//run fft
+		// run fft
 		in.sparseToDense();
+		System.out.println("calling fft now");
 		return fft(in);
 	}
 
@@ -286,20 +316,37 @@ public class LibCommonsMath
 	 * @return array of matrix blocks
 	 */
 	private static MatrixBlock[] computeIFFT(MatrixBlock in) {
-		if( in == null || in.isEmptyBlock(false))
+		if (in == null || in.isEmptyBlock(false))
 			throw new DMLRuntimeException("Invalid empty block");
 
-		//run ifft
+		// run ifft
 		in.sparseToDense();
 		return ifft(in);
 	}
 
 	/**
+	 * Function to perform IFFT on a given matrix.
+	 *
+	 * @param in matrix object
+	 * @return array of matrix blocks
+	 */
+	private static MatrixBlock[] computeIFFT(MatrixBlock in1, MatrixBlock in2) {
+		if (in1 == null || in1.isEmptyBlock(false) || in2 == null || in2.isEmptyBlock(false))
+			throw new DMLRuntimeException("Invalid empty block");
+
+		// run ifft
+		in1.sparseToDense();
+		in2.sparseToDense();
+		return ifft(in1, in2);
+	}
+
+	/**
 	 * Performs Singular Value Decomposition. Calls Apache Commons Math SVD.
 	 * X = U * Sigma * Vt, where X is the input matrix,
-	 * U is the left singular matrix, Sigma is the singular values matrix returned as a
+	 * U is the left singular matrix, Sigma is the singular values matrix returned
+	 * as a
 	 * column matrix and Vt is the transpose of the right singular matrix V.
-	 * However, the returned array has  { U, Sigma, V}
+	 * However, the returned array has { U, Sigma, V}
 	 * 
 	 * @param in Input matrix
 	 * @return An array containing U, Sigma & V

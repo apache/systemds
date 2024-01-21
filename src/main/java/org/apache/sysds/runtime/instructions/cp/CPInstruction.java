@@ -19,7 +19,6 @@
 
 package org.apache.sysds.runtime.instructions.cp;
 
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.api.DMLScript;
@@ -38,15 +37,16 @@ import org.apache.sysds.runtime.privacy.propagation.PrivacyPropagator;
 
 public abstract class CPInstruction extends Instruction {
 	protected static final Log LOG = LogFactory.getLog(CPInstruction.class.getName());
+
 	public enum CPType {
 		AggregateUnary, AggregateBinary, AggregateTernary,
 		Unary, Binary, Ternary, Quaternary, BuiltinNary, Ctable,
-		MultiReturnParameterizedBuiltin, ParameterizedBuiltin, MultiReturnBuiltin,
+		MultiReturnParameterizedBuiltin, ParameterizedBuiltin, MultiReturnBuiltin, MultiReturnMatrixMatrixBuiltin,
 		Builtin, Reorg, Variable, FCall, Append, Rand, QSort, QPick, Local,
 		MatrixIndexing, MMTSJ, PMMJ, MMChain, Reshape, Partition, Compression, DeCompression, SpoofFused,
 		StringInit, CentralMoment, Covariance, UaggOuterChain, Dnn, Sql, Prefetch, Broadcast, TrigRemote,
 		NoOp,
-	 }
+	}
 
 	protected final CPType _cptype;
 	protected final boolean _requiresLabelUpdate;
@@ -64,7 +64,7 @@ public abstract class CPInstruction extends Instruction {
 		instOpcode = opcode;
 		_requiresLabelUpdate = super.requiresLabelUpdate();
 	}
-	
+
 	@Override
 	public IType getType() {
 		return IType.CONTROL_PROGRAM;
@@ -73,7 +73,7 @@ public abstract class CPInstruction extends Instruction {
 	public CPType getCPInstructionType() {
 		return _cptype;
 	}
-	
+
 	@Override
 	public boolean requiresLabelUpdate() {
 		return _requiresLabelUpdate;
@@ -86,31 +86,32 @@ public abstract class CPInstruction extends Instruction {
 
 	@Override
 	public Instruction preprocessInstruction(ExecutionContext ec) {
-		//default preprocess behavior (e.g., debug state, lineage)
+		// default preprocess behavior (e.g., debug state, lineage)
 		Instruction tmp = super.preprocessInstruction(ec);
 
-		//instruction patching
-		if( tmp.requiresLabelUpdate() ) { //update labels only if required
-			//note: no exchange of updated instruction as labels might change in the general case
+		// instruction patching
+		if (tmp.requiresLabelUpdate()) { // update labels only if required
+			// note: no exchange of updated instruction as labels might change in the
+			// general case
 			String updInst = updateLabels(tmp.toString(), ec.getVariables());
 			tmp = CPInstructionParser.parseSingleInstruction(updInst);
 			// Corrected lineage trace for patched instructions
 			if (DMLScript.LINEAGE)
 				ec.traceLineage(tmp);
 		}
-		
-		//robustness federated instructions (runtime assignment)
-		if( ConfigurationManager.isFederatedRuntimePlanner() ) {
+
+		// robustness federated instructions (runtime assignment)
+		if (ConfigurationManager.isFederatedRuntimePlanner()) {
 			tmp = FEDInstructionUtils.checkAndReplaceCP(tmp, ec);
-			//NOTE: Retracing of lineage is not needed as the lineage trace
-			//is same for an instruction and its FED version.
+			// NOTE: Retracing of lineage is not needed as the lineage trace
+			// is same for an instruction and its FED version.
 		}
-		
+
 		tmp = PrivacyPropagator.preprocessInstruction(tmp, ec);
 		return tmp;
 	}
 
-	@Override 
+	@Override
 	public abstract void processInstruction(ExecutionContext ec);
 
 	@Override
@@ -118,60 +119,63 @@ public abstract class CPInstruction extends Instruction {
 		if (DMLScript.LINEAGE_DEBUGGER)
 			ec.maintainLineageDebuggerInfo(this);
 	}
-	
+
 	/**
-	 * Takes a delimited string of instructions, and replaces ALL placeholder labels 
+	 * Takes a delimited string of instructions, and replaces ALL placeholder labels
 	 * (such as ##mVar2## and ##Var5##) in ALL instructions.
-	 *  
-	 * @param instList instruction list as string
+	 * 
+	 * @param instList          instruction list as string
 	 * @param labelValueMapping local variable map
 	 * @return instruction list after replacement
 	 */
-	public static String updateLabels (String instList, LocalVariableMap labelValueMapping) {
+	public static String updateLabels(String instList, LocalVariableMap labelValueMapping) {
 
-		if ( !instList.contains(Lop.VARIABLE_NAME_PLACEHOLDER) )
+		if (!instList.contains(Lop.VARIABLE_NAME_PLACEHOLDER))
 			return instList;
-		
+
 		StringBuilder updateInstList = new StringBuilder();
-		String[] ilist = instList.split(Lop.INSTRUCTION_DELIMITOR); 
-		
-		for ( int i=0; i < ilist.length; i++ ) {
-			if ( i > 0 )
+		String[] ilist = instList.split(Lop.INSTRUCTION_DELIMITOR);
+
+		for (int i = 0; i < ilist.length; i++) {
+			if (i > 0)
 				updateInstList.append(Lop.INSTRUCTION_DELIMITOR);
-			
-			updateInstList.append( updateInstLabels(ilist[i], labelValueMapping));
+
+			updateInstList.append(updateInstLabels(ilist[i], labelValueMapping));
 		}
 		return updateInstList.toString();
 	}
 
-	/** 
-	 * Replaces ALL placeholder strings (such as ##mVar2## and ##Var5##) in a single instruction.
-	 *  
+	/**
+	 * Replaces ALL placeholder strings (such as ##mVar2## and ##Var5##) in a single
+	 * instruction.
+	 * 
 	 * @param inst string instruction
-	 * @param map local variable map
+	 * @param map  local variable map
 	 * @return string instruction after replacement
 	 */
 	private static String updateInstLabels(String inst, LocalVariableMap map) {
-		if ( inst.contains(Lop.VARIABLE_NAME_PLACEHOLDER) ) {
+		if (inst.contains(Lop.VARIABLE_NAME_PLACEHOLDER)) {
 			int skip = Lop.VARIABLE_NAME_PLACEHOLDER.length();
-			while ( inst.contains(Lop.VARIABLE_NAME_PLACEHOLDER) ) {
-				int startLoc = inst.indexOf(Lop.VARIABLE_NAME_PLACEHOLDER)+skip;
+			while (inst.contains(Lop.VARIABLE_NAME_PLACEHOLDER)) {
+				int startLoc = inst.indexOf(Lop.VARIABLE_NAME_PLACEHOLDER) + skip;
 				String varName = inst.substring(startLoc, inst.indexOf(Lop.VARIABLE_NAME_PLACEHOLDER, startLoc));
 				String replacement = getVarNameReplacement(inst, varName, map);
-				inst = inst.replaceAll(Lop.VARIABLE_NAME_PLACEHOLDER + varName + Lop.VARIABLE_NAME_PLACEHOLDER, replacement);
+				inst = inst.replaceAll(Lop.VARIABLE_NAME_PLACEHOLDER + varName + Lop.VARIABLE_NAME_PLACEHOLDER,
+						replacement);
 			}
 		}
 		return inst;
 	}
-	
+
 	/**
-	 * Computes the replacement string for a given variable name placeholder string 
-	 * (e.g., ##mVar2## or ##Var5##). The replacement is a HDFS filename for matrix 
-	 * variables, and is the actual value (stored in symbol table) for scalar variables.
+	 * Computes the replacement string for a given variable name placeholder string
+	 * (e.g., ##mVar2## or ##Var5##). The replacement is a HDFS filename for matrix
+	 * variables, and is the actual value (stored in symbol table) for scalar
+	 * variables.
 	 * 
-	 * @param inst instruction
+	 * @param inst    instruction
 	 * @param varName variable name
-	 * @param map local variable map
+	 * @param map     local variable map
 	 * @return string variable name
 	 */
 	private static String getVarNameReplacement(String inst, String varName, LocalVariableMap map) {
@@ -186,7 +190,8 @@ public abstract class CPInstruction extends Instruction {
 				replacement = "" + ((ScalarObject) val).getStringValue();
 			return replacement;
 		} else {
-			throw new DMLRuntimeException("Variable (" + varName + ") in Instruction (" + inst + ") is not found in the variablemap.");
+			throw new DMLRuntimeException(
+					"Variable (" + varName + ") in Instruction (" + inst + ") is not found in the variablemap.");
 		}
 	}
 }

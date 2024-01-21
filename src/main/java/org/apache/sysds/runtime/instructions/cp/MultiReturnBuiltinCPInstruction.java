@@ -43,119 +43,114 @@ public class MultiReturnBuiltinCPInstruction extends ComputationCPInstruction {
 		super(CPType.MultiReturnBuiltin, op, input1, null, outputs.get(0), opcode, istr);
 		_outputs = outputs;
 	}
-	
+
 	public CPOperand getOutput(int i) {
 		return _outputs.get(i);
 	}
 
-	public List<CPOperand> getOutputs(){
+	public List<CPOperand> getOutputs() {
 		return _outputs;
 	}
 
-	public String[] getOutputNames(){
+	public String[] getOutputNames() {
 		return _outputs.parallelStream().map(output -> output.getName()).toArray(String[]::new);
 	}
-	
-	public static MultiReturnBuiltinCPInstruction parseInstruction ( String str ) {
+
+	public static MultiReturnBuiltinCPInstruction parseInstruction(String str) {
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		ArrayList<CPOperand> outputs = new ArrayList<>();
 		// first part is always the opcode
 		String opcode = parts[0];
-		
-		if ( opcode.equalsIgnoreCase("qr") ) {
+
+		if (opcode.equalsIgnoreCase("qr")) {
 			// one input and two ouputs
 			CPOperand in1 = new CPOperand(parts[1]);
-			outputs.add ( new CPOperand(parts[2], ValueType.FP64, DataType.MATRIX) );
-			outputs.add ( new CPOperand(parts[3], ValueType.FP64, DataType.MATRIX) );
-			
-			return new MultiReturnBuiltinCPInstruction(null, in1, outputs, opcode, str);
-		}
-		else if ( opcode.equalsIgnoreCase("lu") ) {
-			CPOperand in1 = new CPOperand(parts[1]);
-			
-			// one input and three outputs
-			outputs.add ( new CPOperand(parts[2], ValueType.FP64, DataType.MATRIX) );
-			outputs.add ( new CPOperand(parts[3], ValueType.FP64, DataType.MATRIX) );
-			outputs.add ( new CPOperand(parts[4], ValueType.FP64, DataType.MATRIX) );
-			
-			return new MultiReturnBuiltinCPInstruction(null, in1, outputs, opcode, str);
-			
-		}
-		else if ( opcode.equalsIgnoreCase("eigen") ) {
-			// one input and two outputs
-			CPOperand in1 = new CPOperand(parts[1]);
-			outputs.add ( new CPOperand(parts[2], ValueType.FP64, DataType.MATRIX) );
-			outputs.add ( new CPOperand(parts[3], ValueType.FP64, DataType.MATRIX) );
-			
-			return new MultiReturnBuiltinCPInstruction(null, in1, outputs, opcode, str);
-			
-		}
-		else if ( opcode.equalsIgnoreCase("fft") ) {
-			// one input and two outputs
-			CPOperand in1 = new CPOperand(parts[1]);
-			outputs.add ( new CPOperand(parts[2], ValueType.FP64, DataType.MATRIX) );
-			outputs.add ( new CPOperand(parts[3], ValueType.FP64, DataType.MATRIX) );
+			outputs.add(new CPOperand(parts[2], ValueType.FP64, DataType.MATRIX));
+			outputs.add(new CPOperand(parts[3], ValueType.FP64, DataType.MATRIX));
 
 			return new MultiReturnBuiltinCPInstruction(null, in1, outputs, opcode, str);
-
-		}		
-		else if ( opcode.equalsIgnoreCase("ifft") ) {
-			// one input and two outputs
-			CPOperand in1 = new CPOperand(parts[1]);
-			outputs.add ( new CPOperand(parts[2], ValueType.FP64, DataType.MATRIX) );
-			outputs.add ( new CPOperand(parts[3], ValueType.FP64, DataType.MATRIX) );
-
-			return new MultiReturnBuiltinCPInstruction(null, in1, outputs, opcode, str);
-		}
-		else if ( opcode.equalsIgnoreCase("svd") ) {
+		} else if (opcode.equalsIgnoreCase("lu")) {
 			CPOperand in1 = new CPOperand(parts[1]);
 
 			// one input and three outputs
-			outputs.add ( new CPOperand(parts[2], ValueType.FP64, DataType.MATRIX) );
-			outputs.add ( new CPOperand(parts[3], ValueType.FP64, DataType.MATRIX) );
-			outputs.add ( new CPOperand(parts[4], ValueType.FP64, DataType.MATRIX) );
-			
+			outputs.add(new CPOperand(parts[2], ValueType.FP64, DataType.MATRIX));
+			outputs.add(new CPOperand(parts[3], ValueType.FP64, DataType.MATRIX));
+			outputs.add(new CPOperand(parts[4], ValueType.FP64, DataType.MATRIX));
+
 			return new MultiReturnBuiltinCPInstruction(null, in1, outputs, opcode, str);
 
-		}
-		else {
+		} else if (opcode.equalsIgnoreCase("eigen")) {
+			// one input and two outputs
+			CPOperand in1 = new CPOperand(parts[1]);
+			outputs.add(new CPOperand(parts[2], ValueType.FP64, DataType.MATRIX));
+			outputs.add(new CPOperand(parts[3], ValueType.FP64, DataType.MATRIX));
+
+			return new MultiReturnBuiltinCPInstruction(null, in1, outputs, opcode, str);
+
+		} else if (opcode.equalsIgnoreCase("fft")) {
+			// one input and two outputs
+			CPOperand in1 = new CPOperand(parts[1]);
+			outputs.add(new CPOperand(parts[2], ValueType.FP64, DataType.MATRIX));
+			outputs.add(new CPOperand(parts[3], ValueType.FP64, DataType.MATRIX));
+
+			return new MultiReturnBuiltinCPInstruction(null, in1, outputs, opcode, str);
+
+			// } else if (opcode.equalsIgnoreCase("ifft")) {
+			// // one input and two outputs
+			// CPOperand in1 = new CPOperand(parts[1]);
+			// CPOperand in2 = new CPOperand(parts[2]);
+			// outputs.add(new CPOperand(parts[3], ValueType.FP64, DataType.MATRIX));
+			// outputs.add(new CPOperand(parts[4], ValueType.FP64, DataType.MATRIX));
+
+			// return new MultiReturnBuiltinCPInstruction(null, in1, in2, outputs, opcode,
+			// str);
+		} else if (opcode.equalsIgnoreCase("svd")) {
+			CPOperand in1 = new CPOperand(parts[1]);
+
+			// one input and three outputs
+			outputs.add(new CPOperand(parts[2], ValueType.FP64, DataType.MATRIX));
+			outputs.add(new CPOperand(parts[3], ValueType.FP64, DataType.MATRIX));
+			outputs.add(new CPOperand(parts[4], ValueType.FP64, DataType.MATRIX));
+
+			return new MultiReturnBuiltinCPInstruction(null, in1, outputs, opcode, str);
+
+		} else {
 			throw new DMLRuntimeException("Invalid opcode in MultiReturnBuiltin instruction: " + opcode);
 		}
 
 	}
-	
+
 	public int getNumOutputs() {
 		return _outputs.size();
 	}
 
-	@Override 
+	@Override
 	public void processInstruction(ExecutionContext ec) {
-		if(!LibCommonsMath.isSupportedMultiReturnOperation(getOpcode()))
+		if (!LibCommonsMath.isSupportedMultiReturnOperation(getOpcode()))
 			throw new DMLRuntimeException("Invalid opcode in MultiReturnBuiltin instruction: " + getOpcode());
-		
+
 		MatrixBlock in = ec.getMatrixInput(input1.getName());
 		MatrixBlock[] out = LibCommonsMath.multiReturnOperations(in, getOpcode());
 		ec.releaseMatrixInput(input1.getName());
-		for(int i=0; i < _outputs.size(); i++) {
+		for (int i = 0; i < _outputs.size(); i++) {
 			ec.setMatrixOutput(_outputs.get(i).getName(), out[i]);
 		}
 	}
-	
+
 	@Override
 	public boolean hasSingleLineage() {
 		return false;
 	}
-	
 
 	@Override
 	@SuppressWarnings("unchecked")
 	public Pair<String, LineageItem>[] getLineageItems(ExecutionContext ec) {
 		LineageItem[] inputLineage = LineageItemUtils.getLineage(ec, input1, input2, input3);
-		final Pair<String,LineageItem>[] ret = new Pair[_outputs.size()];
-		for(int i = 0; i < _outputs.size(); i++){
+		final Pair<String, LineageItem>[] ret = new Pair[_outputs.size()];
+		for (int i = 0; i < _outputs.size(); i++) {
 			CPOperand out = _outputs.get(i);
 			ret[i] = Pair.of(out.getName(), new LineageItem(getOpcode(), inputLineage));
 		}
-		return ret; 
+		return ret;
 	}
 }

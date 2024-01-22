@@ -58,6 +58,10 @@ public class LibMatrixSTFT {
 			throw new IllegalArgumentException("windowSize is not a power of two");
 		}
 
+		if (signal_re.length != signal_im.length) {
+			throw new IllegalArgumentException("different number of real and imaginary values");
+		}
+
 		int stepSize = windowSize - overlap;
 		int totalFrames = (signal_re.length - overlap + stepSize - 1) / stepSize;
 		int out_len = totalFrames * windowSize;

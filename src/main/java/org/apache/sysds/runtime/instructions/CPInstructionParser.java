@@ -56,7 +56,7 @@ import org.apache.sysds.runtime.instructions.cp.LocalCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.MMChainCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.MMTSJCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.MultiReturnBuiltinCPInstruction;
-import org.apache.sysds.runtime.instructions.cp.MultiReturnMatrixMatrixBuiltinCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.MultiReturnComplexMatrixBuiltinCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.MultiReturnParameterizedBuiltinCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.PMMJCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.ParameterizedBuiltinCPInstruction;
@@ -331,7 +331,7 @@ public class CPInstructionParser extends InstructionParser {
 		String2CPInstructionType.put("lu", CPType.MultiReturnBuiltin);
 		String2CPInstructionType.put("eigen", CPType.MultiReturnBuiltin);
 		String2CPInstructionType.put("fft", CPType.MultiReturnBuiltin);
-		String2CPInstructionType.put("ifft", CPType.MultiReturnMatrixMatrixBuiltin);
+		String2CPInstructionType.put("ifft", CPType.MultiReturnComplexMatrixBuiltin);
 		String2CPInstructionType.put("svd", CPType.MultiReturnBuiltin);
 
 		String2CPInstructionType.put("partition", CPType.Partition);
@@ -423,8 +423,8 @@ public class CPInstructionParser extends InstructionParser {
 			case MultiReturnParameterizedBuiltin:
 				return MultiReturnParameterizedBuiltinCPInstruction.parseInstruction(str);
 
-			case MultiReturnMatrixMatrixBuiltin:
-				return MultiReturnMatrixMatrixBuiltinCPInstruction.parseInstruction(str);
+			case MultiReturnComplexMatrixBuiltin:
+				return MultiReturnComplexMatrixBuiltinCPInstruction.parseInstruction(str);
 
 			case MultiReturnBuiltin:
 				return MultiReturnBuiltinCPInstruction.parseInstruction(str);

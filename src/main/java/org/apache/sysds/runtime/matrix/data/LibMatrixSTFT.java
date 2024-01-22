@@ -37,28 +37,29 @@ public class LibMatrixSTFT {
 	 * @return array of two matrix blocks
 	 */
 	public static MatrixBlock[] stft(MatrixBlock re, MatrixBlock im, int windowSize, int overlap) {
-		return stft(re.getDenseBlockValues(), windowSize, overlap);
+		return stft(re.getDenseBlockValues(), im.getDenseBlockValues(), windowSize, overlap);
 	}
 
 	/**
-	 * Function to perform STFT on two given matrices with windowSize and overlap.
+	 * Function to perform STFT on two given double arrays with windowSize and overlap.
 	 * The first one represents the real values and the second one the imaginary values.
 	 * The output also contains one matrix for the real and one for the imaginary values.
 	 * The results of the fourier transformations are appended to each other in the output.
 	 *
-	 * @param signal array representing the signal
+	 * @param signal_re array representing the real part of the signal
+	 * @param signal_im array representing the imaginary part of the signal
 	 * @param windowSize size of window
 	 * @param overlap size of overlap
 	 * @return array of two matrix blocks
 	 */
-	public static MatrixBlock[] stft(double[] signal, int windowSize, int overlap) {
+	public static MatrixBlock[] stft(double[] signal_re, double[] signal_im, int windowSize, int overlap) {
 
 		if (!isPowerOfTwo(windowSize)) {
 			throw new IllegalArgumentException("windowSize is not a power of two");
 		}
 
 		int stepSize = windowSize - overlap;
-		int totalFrames = (signal.length - overlap + stepSize - 1) / stepSize;
+		int totalFrames = (signal_re.length - overlap + stepSize - 1) / stepSize;
 		int out_len = totalFrames * windowSize;
 
 		// Initialize the STFT output array: [time frame][frequency bin][real & imaginary parts]
@@ -70,7 +71,8 @@ public class LibMatrixSTFT {
 
 		for (int i = 0; i < totalFrames; i++) {
 			for (int j = 0; j < windowSize; j++) {
-				stftOutput_re[i * windowSize + j] = ((i * stepSize + j) < signal.length) ? signal[i * stepSize + j] : 0;
+				stftOutput_re[i * windowSize + j] = ((i * stepSize + j) < signal_re.length) ? signal_re[i * stepSize + j] : 0;
+				stftOutput_im[i * windowSize + j] = ((i * stepSize + j) < signal_im.length) ? signal_im[i * stepSize + j] : 0;
 			}
 		}
 
@@ -83,18 +85,18 @@ public class LibMatrixSTFT {
 	}
 
 	/**
-	 * Function to perform STFT on two given matrices with windowSize and overlap.
-	 * The first one represents the real values and the second one the imaginary values.
-	 * The output also contains one matrix for the real and one for the imaginary values.
+	 * Function to perform STFT on a given matrices with windowSize and overlap.
+	 * The matrix represents the real values.
+	 * The output contains one matrix for the real and one for the imaginary values.
 	 * The results of the fourier transformations are appended to each other in the output.
 	 *
-	 * @param in matrix object representing the real values
+	 * @param re matrix object representing the real values
 	 * @param windowSize size of window
 	 * @param overlap size of overlap
 	 * @return array of two matrix blocks
 	 */
-	public static MatrixBlock[] stft(MatrixBlock[] in, int windowSize, int overlap){
-		return stft(in[0].getDenseBlockValues(), windowSize, overlap);
+	public static MatrixBlock[] stft(MatrixBlock re, int windowSize, int overlap){
+		return stft(re.getDenseBlockValues(), new double[re.getDenseBlockValues().length], windowSize, overlap);
 	}
 
 }

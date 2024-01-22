@@ -26,189 +26,184 @@ import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
 import org.junit.Test;
 
+public class TokenizeTest extends AutomatedTestBase {
+	private static final String TEST_DIR = "functions/transform/";
+	private static final String TEST_CLASS_DIR = TEST_DIR + TokenizeTest.class.getSimpleName() + "/";
 
-public class TokenizeTest extends AutomatedTestBase  {
-    private static final String TEST_DIR = "functions/transform/";
-    private static final String TEST_CLASS_DIR = TEST_DIR + TokenizeTest.class.getSimpleName() + "/";
+	private static final String TEST_SPLIT_COUNT_LONG = "tokenize/TokenizeSplitCountLong";
+	private static final String TEST_NGRAM_POS_LONG = "tokenize/TokenizeNgramPosLong";
+	private static final String TEST_NGRAM_POS_WIDE = "tokenize/TokenizeNgramPosWide";
+	private static final String TEST_UNI_HASH_WIDE = "tokenize/TokenizeUniHashWide";
 
-    private static final String TEST_SPLIT_COUNT_LONG = "tokenize/TokenizeSplitCountLong";
-    private static final String TEST_NGRAM_POS_LONG = "tokenize/TokenizeNgramPosLong";
-    private static final String TEST_NGRAM_POS_WIDE = "tokenize/TokenizeNgramPosWide";
-    private static final String TEST_UNI_HASH_WIDE = "tokenize/TokenizeUniHashWide";
+	// dataset and transform tasks without missing values
+	private final static String DATASET = "20news/20news_subset_untokenized.csv";
 
-    //dataset and transform tasks without missing values
-    private final static String DATASET 	= "20news/20news_subset_untokenized.csv";
+	@Override
+	public void setUp() {
+		TestUtils.clearAssertionInformation();
+		addTestConfiguration(TEST_SPLIT_COUNT_LONG,
+			new TestConfiguration(TEST_CLASS_DIR, TEST_SPLIT_COUNT_LONG, new String[] {"R"}));
+		addTestConfiguration(TEST_NGRAM_POS_LONG,
+			new TestConfiguration(TEST_CLASS_DIR, TEST_NGRAM_POS_LONG, new String[] {"R"}));
+		addTestConfiguration(TEST_NGRAM_POS_WIDE,
+			new TestConfiguration(TEST_CLASS_DIR, TEST_NGRAM_POS_WIDE, new String[] {"R"}));
+		addTestConfiguration(TEST_UNI_HASH_WIDE,
+			new TestConfiguration(TEST_CLASS_DIR, TEST_UNI_HASH_WIDE, new String[] {"R"}));
+	}
 
-    @Override
-    public void setUp()  {
-        TestUtils.clearAssertionInformation();
-        addTestConfiguration(TEST_SPLIT_COUNT_LONG,
-                new TestConfiguration(TEST_CLASS_DIR, TEST_SPLIT_COUNT_LONG, new String[] { "R" }) );
-        addTestConfiguration(TEST_NGRAM_POS_LONG,
-                new TestConfiguration(TEST_CLASS_DIR, TEST_NGRAM_POS_LONG, new String[] { "R" }) );
-        addTestConfiguration(TEST_NGRAM_POS_WIDE,
-                new TestConfiguration(TEST_CLASS_DIR, TEST_NGRAM_POS_WIDE, new String[] { "R" }) );
-        addTestConfiguration(TEST_UNI_HASH_WIDE,
-                new TestConfiguration(TEST_CLASS_DIR, TEST_UNI_HASH_WIDE, new String[] { "R" }) );
-    }
+	@Test
+	public void testTokenizeSingleNodeSplitCountLong() {
+		runTokenizeTest(ExecMode.SINGLE_NODE, TEST_SPLIT_COUNT_LONG, false);
+	}
 
-    @Test
-    public void testTokenizeSingleNodeSplitCountLong() {
-        runTokenizeTest(ExecMode.SINGLE_NODE, TEST_SPLIT_COUNT_LONG,false);
-    }
+	@Test
+	public void testTokenizeSparkSplitCountLong() {
 
-    @Test
-    public void testTokenizeSparkSplitCountLong() {
+		runTokenizeTest(ExecMode.SPARK, TEST_SPLIT_COUNT_LONG, false);
+	}
 
-        runTokenizeTest(ExecMode.SPARK, TEST_SPLIT_COUNT_LONG, false);
-    }
+	@Test
+	public void testTokenizeHybridSplitCountLong() {
 
-    @Test
-    public void testTokenizeHybridSplitCountLong() {
+		runTokenizeTest(ExecMode.HYBRID, TEST_SPLIT_COUNT_LONG, false);
+	}
 
+	@Test
+	public void testTokenizeParReadSingleNodeSplitCountLong() {
+		runTokenizeTest(ExecMode.SINGLE_NODE, TEST_SPLIT_COUNT_LONG, true);
+	}
 
-        runTokenizeTest(ExecMode.HYBRID, TEST_SPLIT_COUNT_LONG, false);
-    }
+	@Test
+	public void testTokenizeParReadSparkSplitCountLong() {
+		runTokenizeTest(ExecMode.SPARK, TEST_SPLIT_COUNT_LONG, true);
+	}
 
-    @Test
-    public void testTokenizeParReadSingleNodeSplitCountLong() {
-        runTokenizeTest(ExecMode.SINGLE_NODE, TEST_SPLIT_COUNT_LONG, true);
-    }
+	@Test
+	public void testTokenizeParReadHybridSplitCountLong() {
+		runTokenizeTest(ExecMode.HYBRID, TEST_SPLIT_COUNT_LONG, true);
+	}
 
-    @Test
-    public void testTokenizeParReadSparkSplitCountLong() {
-        runTokenizeTest(ExecMode.SPARK, TEST_SPLIT_COUNT_LONG, true);
-    }
+	@Test
+	public void testTokenizeSingleNodeNgramPosLong() {
+		runTokenizeTest(ExecMode.SINGLE_NODE, TEST_NGRAM_POS_LONG, false);
+	}
 
-    @Test
-    public void testTokenizeParReadHybridSplitCountLong() {
-        runTokenizeTest(ExecMode.HYBRID, TEST_SPLIT_COUNT_LONG, true);
-    }
+	@Test
+	public void testTokenizeSparkNgramPosLong() {
+		runTokenizeTest(ExecMode.SPARK, TEST_NGRAM_POS_LONG, false);
+	}
 
-    @Test
-    public void testTokenizeSingleNodeNgramPosLong() {
-        runTokenizeTest(ExecMode.SINGLE_NODE, TEST_NGRAM_POS_LONG,false);
-    }
+	@Test
+	public void testTokenizeHybridNgramPosLong() {
+		runTokenizeTest(ExecMode.HYBRID, TEST_NGRAM_POS_LONG, false);
+	}
 
-    @Test
-    public void testTokenizeSparkNgramPosLong() {
-        runTokenizeTest(ExecMode.SPARK, TEST_NGRAM_POS_LONG, false);
-    }
+	@Test
+	public void testTokenizeParReadSingleNodeNgramPosLong() {
+		runTokenizeTest(ExecMode.SINGLE_NODE, TEST_NGRAM_POS_LONG, true);
+	}
 
-    @Test
-    public void testTokenizeHybridNgramPosLong() {
-        runTokenizeTest(ExecMode.HYBRID, TEST_NGRAM_POS_LONG, false);
-    }
+	@Test
+	public void testTokenizeParReadSparkNgramPosLong() {
+		runTokenizeTest(ExecMode.SPARK, TEST_NGRAM_POS_LONG, true);
+	}
 
-    @Test
-    public void testTokenizeParReadSingleNodeNgramPosLong() {
-        runTokenizeTest(ExecMode.SINGLE_NODE, TEST_NGRAM_POS_LONG, true);
-    }
+	@Test
+	public void testTokenizeParReadHybridNgramPosLong() {
+		runTokenizeTest(ExecMode.HYBRID, TEST_NGRAM_POS_LONG, true);
+	}
 
-    @Test
-    public void testTokenizeParReadSparkNgramPosLong() {
-        runTokenizeTest(ExecMode.SPARK, TEST_NGRAM_POS_LONG, true);
-    }
+	@Test
+	public void testTokenizeSingleNodeNgramPosWide() {
+		runTokenizeTest(ExecMode.SINGLE_NODE, TEST_NGRAM_POS_WIDE, false);
+	}
 
-    @Test
-    public void testTokenizeParReadHybridNgramPosLong() {
-        runTokenizeTest(ExecMode.HYBRID, TEST_NGRAM_POS_LONG, true);
-    }
+	@Test
+	public void testTokenizeSparkNgramPosWide() {
+		runTokenizeTest(ExecMode.SPARK, TEST_NGRAM_POS_WIDE, false);
+	}
 
-    @Test
-    public void testTokenizeSingleNodeNgramPosWide() {
-        runTokenizeTest(ExecMode.SINGLE_NODE, TEST_NGRAM_POS_WIDE,false);
-    }
+	@Test
+	public void testTokenizeHybridNgramPosWide() {
+		runTokenizeTest(ExecMode.HYBRID, TEST_NGRAM_POS_WIDE, false);
+	}
 
-    @Test
-    public void testTokenizeSparkNgramPosWide() {
-        runTokenizeTest(ExecMode.SPARK, TEST_NGRAM_POS_WIDE, false);
-    }
+	@Test
+	public void testTokenizeParReadSingleNodeNgramPosWide() {
+		runTokenizeTest(ExecMode.SINGLE_NODE, TEST_NGRAM_POS_WIDE, true);
+	}
 
-    @Test
-    public void testTokenizeHybridNgramPosWide() {
-        runTokenizeTest(ExecMode.HYBRID, TEST_NGRAM_POS_WIDE, false);
-    }
+	@Test
+	public void testTokenizeParReadSparkNgramPosWide() {
+		runTokenizeTest(ExecMode.SPARK, TEST_NGRAM_POS_WIDE, true);
+	}
 
-    @Test
-    public void testTokenizeParReadSingleNodeNgramPosWide() {
-        runTokenizeTest(ExecMode.SINGLE_NODE, TEST_NGRAM_POS_WIDE, true);
-    }
+	@Test
+	public void testTokenizeParReadHybridNgramPosWide() {
+		runTokenizeTest(ExecMode.HYBRID, TEST_NGRAM_POS_WIDE, true);
+	}
 
-    @Test
-    public void testTokenizeParReadSparkNgramPosWide() {
-        runTokenizeTest(ExecMode.SPARK, TEST_NGRAM_POS_WIDE, true);
-    }
+	@Test
+	public void testTokenizeSingleNodeUniHasWide() {
+		runTokenizeTest(ExecMode.SINGLE_NODE, TEST_UNI_HASH_WIDE, false);
+	}
 
-    @Test
-    public void testTokenizeParReadHybridNgramPosWide() {
-        runTokenizeTest(ExecMode.HYBRID, TEST_NGRAM_POS_WIDE, true);
-    }
+	@Test
+	public void testTokenizeSparkUniHasWide() {
+		runTokenizeTest(ExecMode.SPARK, TEST_UNI_HASH_WIDE, false);
+	}
 
-    @Test
-    public void testTokenizeSingleNodeUniHasWide() {
-        runTokenizeTest(ExecMode.SINGLE_NODE, TEST_UNI_HASH_WIDE,false);
-    }
+	@Test
+	public void testTokenizeHybridUniHasWide() {
+		runTokenizeTest(ExecMode.HYBRID, TEST_UNI_HASH_WIDE, false);
+	}
 
-    @Test
-    public void testTokenizeSparkUniHasWide() {
-        runTokenizeTest(ExecMode.SPARK, TEST_UNI_HASH_WIDE, false);
-    }
+	@Test
+	public void testTokenizeParReadSingleNodeUniHasWide() {
+		runTokenizeTest(ExecMode.SINGLE_NODE, TEST_UNI_HASH_WIDE, true);
+	}
 
-    @Test
-    public void testTokenizeHybridUniHasWide() {
-        runTokenizeTest(ExecMode.HYBRID, TEST_UNI_HASH_WIDE, false);
-    }
+	@Test
+	public void testTokenizeParReadSparkUniHasWide() {
+		runTokenizeTest(ExecMode.SPARK, TEST_UNI_HASH_WIDE, true);
+	}
 
-    @Test
-    public void testTokenizeParReadSingleNodeUniHasWide() {
-        runTokenizeTest(ExecMode.SINGLE_NODE, TEST_UNI_HASH_WIDE, true);
-    }
+	@Test
+	public void testTokenizeParReadHybridUniHasWide() {
+		runTokenizeTest(ExecMode.HYBRID, TEST_UNI_HASH_WIDE, true);
+	}
 
-    @Test
-    public void testTokenizeParReadSparkUniHasWide() {
-        runTokenizeTest(ExecMode.SPARK, TEST_UNI_HASH_WIDE, true);
-    }
+	private void runTokenizeTest(ExecMode rt, String test_name, boolean parRead) {
+		// set runtime platform
+		ExecMode rtold = rtplatform;
+		rtplatform = rt;
 
-    @Test
-    public void testTokenizeParReadHybridUniHasWide() {
-        runTokenizeTest(ExecMode.HYBRID, TEST_UNI_HASH_WIDE, true);
-    }
+		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
+		if(rtplatform == ExecMode.SPARK || rtplatform == ExecMode.HYBRID)
+			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 
-    private void runTokenizeTest(ExecMode rt, String test_name, boolean parRead )
-    {
-        //set runtime platform
-        ExecMode rtold = rtplatform;
-        rtplatform = rt;
+		try {
+			getAndLoadTestConfiguration(test_name);
 
-        boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-        if( rtplatform == ExecMode.SPARK || rtplatform == ExecMode.HYBRID)
-            DMLScript.USE_LOCAL_SPARK_CONFIG = true;
+			String HOME = SCRIPT_DIR + TEST_DIR;
+			fullDMLScriptName = HOME + test_name + ".dml";
+			programArgs = new String[] {"-stats", "-args", DATASET_DIR + DATASET, HOME + test_name + ".json", output("R")};
 
-        try
-        {
-            getAndLoadTestConfiguration(test_name);
+			runTest(true, false, null, -1);
+			// TODO add assertion tests
+			// read input/output and compare
+			// FrameReader reader2 = parRead ?
+			// new FrameReaderTextCSVParallel( new FileFormatPropertiesCSV() ) :
+			// new FrameReaderTextCSV( new FileFormatPropertiesCSV() );
+			// FrameBlock fb2 = reader2.readFrameFromHDFS(output("R"), -1L, -1L);
 
-            String HOME = SCRIPT_DIR + TEST_DIR;
-            fullDMLScriptName = HOME + test_name + ".dml";
-            programArgs = new String[]{"-stats","-args",
-                    DATASET_DIR + DATASET, HOME + test_name + ".json", output("R") };
-
-            runTest(true, false, null, -1);
-//          TODO add assertion tests
-            //read input/output and compare
-//            FrameReader reader2 = parRead ?
-//                    new FrameReaderTextCSVParallel( new FileFormatPropertiesCSV() ) :
-//                    new FrameReaderTextCSV( new FileFormatPropertiesCSV()  );
-//            FrameBlock fb2 = reader2.readFrameFromHDFS(output("R"), -1L, -1L);
-
-        }
-        catch(Exception ex) {
-            throw new RuntimeException(ex);
-        }
-        finally {
-            rtplatform = rtold;
-            DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
-        }
-    }
+		}
+		catch(Exception ex) {
+			throw new RuntimeException(ex);
+		}
+		finally {
+			rtplatform = rtold;
+			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
+		}
+	}
 }

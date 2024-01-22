@@ -390,7 +390,7 @@ public class BitSetArray extends ABooleanArray {
 	}
 
 	@Override
-	public Pair<ValueType, Boolean> analyzeValueType() {
+	public Pair<ValueType, Boolean> analyzeValueType(int maxCells) {
 		return new Pair<>(ValueType.BOOLEAN, false);
 	}
 
@@ -512,7 +512,7 @@ public class BitSetArray extends ABooleanArray {
 
 	@Override
 	public boolean isEmpty() {
-		for(int i = 0; i < _data.length; i++)
+		for(int i = 0; i < _size / 64 + 1; i++)
 			if(_data[i] != 0L)
 				return false;
 		return true;

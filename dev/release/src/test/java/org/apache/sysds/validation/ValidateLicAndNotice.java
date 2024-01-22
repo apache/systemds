@@ -88,7 +88,7 @@ public class ValidateLicAndNotice
 	}
 
 	public String getDistroDir() {
-       		return strDistroDir;
+		return strDistroDir;
 	}
 
 	public void setDistroDir(String strDistroDir) {
@@ -286,7 +286,7 @@ public class ValidateLicAndNotice
 			while(e.hasMoreElements()) {
 				entry = (ZipEntry) e.nextElement();
 				if(! entry.getName().startsWith(Constants.SYSTEMDS_PACKAGE) &&
-				     entry.getName().endsWith("." + Constants.CLASS)) {
+					entry.getName().endsWith("." + Constants.CLASS)) {
 					int iPos = entry.getName().lastIndexOf("/");
 					if (iPos > 0) {
 						String strPackageName = entry.getName().substring(0, iPos);
@@ -422,7 +422,7 @@ public class ValidateLicAndNotice
 	 */
 	private static String readFile(File file) throws java.io.IOException {
 		StringBuffer fileData = new StringBuffer();
-	        BufferedReader reader = new BufferedReader(new FileReader(file));
+		BufferedReader reader = new BufferedReader(new FileReader(file));
 		char[] buf = new char[1024];
 		int numRead = 0;
 		while ((numRead = reader.read(buf)) != -1) {
@@ -544,7 +544,7 @@ public class ValidateLicAndNotice
 				bufOut = new BufferedOutputStream(fos, Constants.BUFFER);
 				while ((count = bufIn.read(data, 0, Constants.BUFFER)) != -1) {
 					bufOut.write(data, 0, count);
-            			}
+				}
 				bufOut.flush();
 				bufOut.close();
 				bufIn.close();
@@ -589,7 +589,7 @@ public class ValidateLicAndNotice
 				if(entry.getName().endsWith("." + fileExt)) {
 					int iPos = entry.getName().lastIndexOf("/");
 					if (iPos == 0)
-					    --iPos;
+						--iPos;
 					String strFileName = entry.getName().substring(iPos+1);
 					files.add(strFileName);
 				}

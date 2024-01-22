@@ -210,6 +210,15 @@ public class LineageCacheEviction
 			_cachesize -= space;
 	}
 
+	public static void removeAll(Map<LineageItem, LineageCacheEntry> cache) {
+		while (!weightedQueue.isEmpty()) {
+			LineageCacheEntry e = weightedQueue.pollFirst();
+			if (e == null)
+				continue;
+			removeOrSpillEntry(cache, e, false);
+		}
+	}
+
 	protected static boolean isBelowThreshold(long spaceNeeded) {
 		return ((spaceNeeded + _cachesize) <= CACHE_LIMIT);
 	}

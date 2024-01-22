@@ -34,12 +34,14 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.LongAdder;
 
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.log4j.Logger;
 import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
 import org.apache.sysds.runtime.controlprogram.caching.CacheStatistics;
@@ -441,9 +443,13 @@ public class FederatedStatistics {
 	private static FedStatsCollection collectFedStats() {
 		Future<FederatedResponse>[] responses = getFederatedResponses();
 		FedStatsCollection aggFedStats = new FedStatsCollection();
+		final int timeout = ConfigurationManager.getFederatedTimeout();
+		
 		for(Future<FederatedResponse> res : responses) {
 			try {
-				Object[] tmp = res.get().getData();
+				Object[] tmp = timeout > 0 ? //
+					res.get(timeout, TimeUnit.SECONDS).getData() : //
+					res.get().getData();
 				if(tmp[0] instanceof FedStatsCollection)
 					aggFedStats.aggregate((FedStatsCollection)tmp[0]);
 			} catch(Exception e) {

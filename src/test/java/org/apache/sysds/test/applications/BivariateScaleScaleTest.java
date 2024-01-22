@@ -69,9 +69,9 @@ public class BivariateScaleScaleTest extends AutomatedTestBase
 		rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + expectedDir();
 
 		long seed = System.currentTimeMillis();
-		//System.out.println("Seed = " + seed);
-        double[][] X = getRandomMatrix(rows, 1, minVal, maxVal, 0.1, seed);
-        double[][] Y = getRandomMatrix(rows, 1, minVal, maxVal, 0.1, seed+1);
+		// System.out.println("Seed = " + seed);
+		double[][] X = getRandomMatrix(rows, 1, minVal, maxVal, 0.1, seed);
+		double[][] Y = getRandomMatrix(rows, 1, minVal, maxVal, 0.1, seed + 1);
 
 		writeInputMatrix("X", X, true);
 		writeInputMatrix("Y", Y, true);

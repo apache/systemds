@@ -54,6 +54,7 @@ public final class SparseRowVector extends SparseRow {
 	}
 	
 	public SparseRowVector(int capacity) {
+		capacity = Math.max(initialCapacity, capacity);
 		estimatedNzs = capacity;
 		values = new double[capacity];
 		indexes = new int[capacity];
@@ -76,6 +77,12 @@ public final class SparseRowVector extends SparseRow {
 		values = v;
 		indexes = i;
 		size = v.length;
+	}
+
+	public SparseRowVector(double[] v, int[] i, int nnz){
+		values = v;
+		indexes = i;
+		size = nnz;
 	}
 
 	/**
@@ -268,19 +275,20 @@ public final class SparseRowVector extends SparseRow {
 	}
 
 	@Override
-	public void append(int col, double v) {
-		//early abort on zero 
-		if( v==0.0 )
-			return;
+	public SparseRowVector append(int col, double v) {
+		// early abort on zero 
+		if(v == 0.0)
+			return this;
 		
-		//resize if required
-		if( size==values.length )
+		// resize if required
+		if( size == values.length )
 			recap(newCapacity());
 		
-		//append value at end
+		// append value at end
 		values[size] = v;
 		indexes[size] = col;
 		size++;
+		return this;
 	}
 
 	@Override
@@ -309,8 +317,9 @@ public final class SparseRowVector extends SparseRow {
 		return (index-1 < size) ? index-1 : -1;
 	}
 
+	@Override
 	public int searchIndexesFirstGTE(int col) {
-		if( size == 0 ) return -1;
+		// assumed that empty check is made.
 		
 		//search for existing col index
 		int index = Arrays.binarySearch(indexes, 0, size, col);
@@ -322,9 +331,10 @@ public final class SparseRowVector extends SparseRow {
 		return (index < size) ? index : -1;
 	}
 
+	@Override
 	public int searchIndexesFirstGT(int col) {
-		if( size == 0 ) return -1;
-		
+		// assumed that empty check is made.
+
 		//search for existing col index
 		int index = Arrays.binarySearch(indexes, 0, size, col);
 		if( index >= 0 )

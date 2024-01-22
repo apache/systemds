@@ -44,7 +44,7 @@ on:
 jobs:
   java_tests:
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 90
+    timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
@@ -55,13 +55,19 @@ jobs:
           "**.component.c**.**",
           "**.component.e**.**,**.component.f**.**,**.component.m**.**",
           "**.component.p**.**,**.component.t**.**",
-          "**.functions.a**.**,**.functions.binary.frame.**,**.functions.binary.matrix.**,**.functions.binary.scalar.**,**.functions.binary.tensor.**",
+          "**.functions.a**.**,**.functions.binary.matrix.**,**.functions.binary.scalar.**,**.functions.binary.tensor.**",
           "**.functions.blocks.**,**.functions.data.rand.**,",
-          "**.functions.countDistinct.**,**.functions.countDistinctApprox.**,**.functions.data.misc.**,**.functions.lineage.**",
+          "**.functions.countDistinct.**,**.functions.countDistinctApprox.**",
+          "**.functions.data.misc.**,**.functions.lineage.**",
           "**.functions.compress.**,**.functions.data.tensor.**,**.functions.codegenalg.parttwo.**,**.functions.codegen.**,**.functions.caching.**",
           "**.functions.binary.matrix_full_cellwise.**,**.functions.binary.matrix_full_other.**",
           "**.functions.federated.algorithms.**,**.functions.federated.io.**,**.functions.federated.paramserv.**",
-          "**.functions.federated.primitives.**,**.functions.federated.transform.**",
+          "**.functions.federated.transform.**",
+          "**.functions.federated.primitives.part1.** -Dtest-threadCount=1 -Dtest-forkCount=1",
+          "**.functions.federated.primitives.part2.** -Dtest-threadCount=1 -Dtest-forkCount=1",
+          "**.functions.federated.primitives.part3.** -Dtest-threadCount=1 -Dtest-forkCount=1",
+          "**.functions.federated.primitives.part4.** -Dtest-threadCount=1 -Dtest-forkCount=1",
+          "**.functions.federated.primitives.part5.** -Dtest-threadCount=1 -Dtest-forkCount=1",
           "**.functions.federated.monitoring.**,**.functions.federated.multitenant.**",
           "**.functions.federated.codegen.**,**.functions.federated.FederatedTestObjectConstructor",
           "**.functions.codegenalg.partone.**",
@@ -79,11 +85,11 @@ jobs:
           "**.functions.reorg.**,**.functions.rewrite.**,**.functions.ternary.**,**.functions.transform.**",
           "**.functions.unary.matrix.**,**.functions.linearization.**,**.functions.jmlc.**"
         ]
+        java: [11]
     name: ${{ matrix.tests }}
     steps:
     - name: Checkout Repository
       uses: actions/checkout@v4
-
 
     - name: ${{ matrix.tests }}
       uses: ./.github/action/
@@ -96,13 +102,12 @@ jobs:
         ARTIFACT_NAME="transient_jacoco"
         ARTIFACT_NAME+="-${{ matrix.os }}"
         ARTIFACT_NAME+="-java-${{ matrix.java }}"
-        ARTIFACT_NAME+="-${{ matrix.javadist }}"
         ARTIFACT_NAME+="-${{ matrix.tests }}"
         ARTIFACT_NAME=${ARTIFACT_NAME//\*/x} # replace * with x
         echo "ARTIFACT_NAME=$ARTIFACT_NAME" >> $GITHUB_ENV
 
     - name: Save Java Test Coverage as Artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: ${{ env.ARTIFACT_NAME }}
         path: target/jacoco.exec
@@ -119,7 +124,7 @@ jobs:
       uses: actions/checkout@v4
 
     - name: Cache Maven Dependencies
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: ~/.m2/repository
         key: ${{ runner.os }}-maven-test-${{ hashFiles('**/pom.xml') }}
@@ -127,7 +132,7 @@ jobs:
           ${{ runner.os }}-maven-test-
 
     - name: Download all Jacoco Artifacts
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
         path: target
 
@@ -142,7 +147,7 @@ jobs:
 
     - name: Upload Jacoco Report Artifact PR
       if: (github.repository_owner == 'apache') && (github.ref_name != 'main')
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: Java Code Coverage (Jacoco)
         path: target/site/jacoco
@@ -150,7 +155,7 @@ jobs:
 
     - name: Upload Jacoco Report Artifact Main
       if: (github.repository_owner == 'apache') && (github.ref_name == 'main')
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: Java Code Coverage (Jacoco)
         path: target/site/jacoco
@@ -158,7 +163,7 @@ jobs:
 
     - name: Upload Jacoco Report Artifact Fork
       if: (github.repository_owner != 'apache')
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: Java Code Coverage (Jacoco)
         path: target/site/jacoco

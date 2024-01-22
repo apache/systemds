@@ -630,13 +630,13 @@ public class RewriteGPUSpecificOps extends HopRewriteRule {
 					
 					Hop varPlusEps = null;
 					boolean isFirstBinaryAddOp = isAnyBinaryAdd(var.getParent().get(0).getParent());
-                    boolean isSecondBinaryAddOp = isAnyBinaryAdd(var.getParent().get(1).getParent());
-                    if(isFirstBinaryAddOp && !isSecondBinaryAddOp) {
-                            varPlusEps = var.getParent().get(1);
-                    }
-                    else if(!isFirstBinaryAddOp && isSecondBinaryAddOp) {
-                            varPlusEps = var.getParent().get(0);
-                    }
+					boolean isSecondBinaryAddOp = isAnyBinaryAdd(var.getParent().get(1).getParent());
+					if(isFirstBinaryAddOp && !isSecondBinaryAddOp) {
+						varPlusEps = var.getParent().get(1);
+					}
+					else if(!isFirstBinaryAddOp && isSecondBinaryAddOp) {
+						varPlusEps = var.getParent().get(0);
+					}
 					if(varPlusEps != null && isBinaryMSAdd(varPlusEps, eps) && isOneBySqrt(varPlusEps)) {
 						
 						Hop cache_var = varPlusEps.getParent().get(0).getParent().get(0);

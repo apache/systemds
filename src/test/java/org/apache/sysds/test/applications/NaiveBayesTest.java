@@ -42,16 +42,16 @@ public class NaiveBayesTest  extends AutomatedTestBase{
 	protected String TEST_CLASS_DIR = TEST_DIR + NaiveBayesTest.class.getSimpleName() + "/";
 
 	protected int numRecords, numFeatures, numClasses;
-    protected double sparsity;
-    
-    public NaiveBayesTest(int rows, int cols, int nc, double sp) {
+	protected double sparsity;
+
+	public NaiveBayesTest(int rows, int cols, int nc, double sp) {
 		numRecords = rows;
 		numFeatures = cols;
 		numClasses = nc;
 		sparsity = sp;
 	}
-    
-    @Parameters
+
+	@Parameters
 	 public static Collection<Object[]> data() {
 	   Object[][] data = new Object[][] { 
 			   //sparse tests (sparsity=0.01)

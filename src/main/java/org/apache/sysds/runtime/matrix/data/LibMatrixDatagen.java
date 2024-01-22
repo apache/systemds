@@ -162,24 +162,20 @@ public class LibMatrixDatagen
 	}
 	
 	/**
-	 * Function to generate a matrix of random numbers. This is invoked both
-	 * from CP as well as from MR. In case of CP, it generates an entire matrix
-	 * block-by-block. A <code>bigrand</code> is passed so that block-level
-	 * seeds are generated internally. In case of MR, it generates a single
-	 * block for given block-level seed <code>bSeed</code>.
+	 * Function to generate a matrix of random numbers. This is invoked both from CP as well as from MR. In case of CP,
+	 * it generates an entire matrix block-by-block. A <code>bigrand</code> is passed so that block-level seeds are
+	 * generated internally. In case of MR, it generates a single block for given block-level seed <code>bSeed</code>.
 	 * 
-	 * When pdf="uniform", cell values are drawn from uniform distribution in
-	 * range <code>[min,max]</code>.
+	 * When pdf="uniform", cell values are drawn from uniform distribution in range <code>[min,max]</code>.
 	 * 
-	 * When pdf="normal", cell values are drawn from standard normal
-	 * distribution N(0,1). The range of generated values will always be
-	 * (-Inf,+Inf).
+	 * When pdf="normal", cell values are drawn from standard normal distribution N(0,1). The range of generated values
+	 * will always be (-Inf,+Inf).
 	 * 
-     * @param out output matrix block
-     * @param rgen random matrix generator
-     * @param bigrand Well1024a pseudo-random number generator
-     * @param bSeed seed for random generator
-     */
+	 * @param out     output matrix block
+	 * @param rgen    random matrix generator
+	 * @param bigrand Well1024a pseudo-random number generator
+	 * @param bSeed   seed for random generator
+	 */
 	public static void generateRandomMatrix( MatrixBlock out, RandomMatrixGenerator rgen, Well1024a bigrand, long bSeed ) {
 		boolean invokedFromCP = (bigrand != null);
 		int rows = rgen._rows;
@@ -381,14 +377,14 @@ public class LibMatrixDatagen
 	}
 
 	/**
-     * Generates a sample of size <code>size</code> from a range of values [1,range].
-     * <code>replace</code> defines if sampling is done with or without replacement.
+	 * Generates a sample of size <code>size</code> from a range of values [1,range]. <code>replace</code> defines if
+	 * sampling is done with or without replacement.
 	 * 
-	 * @param out output matrix block
-	 * @param range range upper bound
-	 * @param size sample size
+	 * @param out     output matrix block
+	 * @param range   range upper bound
+	 * @param size    sample size
 	 * @param replace if true, sample with replacement
-	 * @param seed seed for random generator
+	 * @param seed    seed for random generator
 	 */
 	public static void generateSample(MatrixBlock out, long range, int size, boolean replace, long seed) {
 		//set meta data and allocate dense block

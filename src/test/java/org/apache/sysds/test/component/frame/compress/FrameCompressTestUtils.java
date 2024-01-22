@@ -21,6 +21,7 @@ package org.apache.sysds.test.component.frame.compress;
 
 import java.util.Random;
 
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.common.Types.ValueType;
@@ -55,6 +56,8 @@ public class FrameCompressTestUtils {
 		switch(vt) {
 			case BOOLEAN:
 				return ArrayFactory.create(FrameArrayTests.generateRandomBooleanOpt(size, seed));
+			case UINT8:
+			case UINT4:
 			case INT32:
 				return ArrayFactory.create(FrameArrayTests.generateRandomIntegerNUniqueLengthOpt(size, seed, nUnique));
 			case INT64:
@@ -65,9 +68,12 @@ public class FrameCompressTestUtils {
 				return ArrayFactory.create(FrameArrayTests.generateRandomDoubleNUniqueLengthOpt(size, seed, nUnique));
 			case CHARACTER:
 				return ArrayFactory.create(FrameArrayTests.generateRandomCharacterNUniqueLengthOpt(size, seed, nUnique));
+			case HASH64:
+				return ArrayFactory.create(FrameArrayTests.generateRandomHash64OptNUnique(size, seed, nUnique));
 			case STRING:
-			default:
 				return ArrayFactory.create(FrameArrayTests.generateRandomStringNUniqueLengthOpt(size, seed, nUnique, 132));
+			default:
+				throw new NotImplementedException(vt + "");
 		}
 	}
 }

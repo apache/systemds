@@ -177,6 +177,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 			hi = simplifyMatrixMultDiag(hop, hi, i);          //e.g., diag(X)%*%Y -> X*Y, if ncol(Y)==1 / -> Y*X if ncol(Y)>1 
 			hi = simplifyDiagMatrixMult(hop, hi, i);          //e.g., diag(X%*%Y)->rowSums(X*t(Y)); if col vector
 			hi = simplifyDistributiveMatrixMult(hop, hi, i);  //e.g., (A%*%B)+(A%*%C) -> A%*%(B+C)
+			hi = simplifyNotOverComparisons(hop, hi, i);	  //e.g., !(A>B) -> (A<=B)
 			hi = simplifySumDiagToTrace(hi);                  //e.g., sum(diag(X)) -> trace(X); if col vector
 			hi = simplifyLowerTriExtraction(hop, hi, i);      //e.g., X * cumsum(diag(matrix(1,nrow(X),1))) -> lower.tri
 			hi = simplifyConstantCumsum(hop, hi, i);          //e.g., cumsum(matrix(1/n,n,1)) -> seq(1/n, 1, 1/n)
@@ -1198,6 +1199,10 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 				}
 			}
 		}
+		return hi;
+	}
+
+	private static Hop simplifyNotOverComparisons(Hop parent, Hop hi, int pos){
 		return hi;
 	}
 

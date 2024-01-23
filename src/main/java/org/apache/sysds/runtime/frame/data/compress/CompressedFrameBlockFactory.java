@@ -27,11 +27,13 @@ import java.util.concurrent.Future;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.compress.workload.WTreeRoot;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.runtime.frame.data.columns.Array;
 import org.apache.sysds.runtime.frame.data.columns.ArrayFactory;
 import org.apache.sysds.runtime.frame.data.columns.DDCArray;
+import org.apache.sysds.runtime.matrix.data.Pair;
 import org.apache.sysds.runtime.util.CommonThreadPool;
 
 public class CompressedFrameBlockFactory {
@@ -159,6 +161,16 @@ public class CompressedFrameBlockFactory {
 			return a;
 	}
 
+	private boolean tryChange(Array<?> a, Array<?> tmp, int start, int end) {
+		try {
+			a.changeTypeWithNulls(tmp, start, end);
+			return true;
+		}
+		catch(Exception e) {
+			return false;
+		}
+	}
+
 	private Future<Array<?>> changeTypeFuture(int i, Future<Array<?>> f, ExecutorService pool, int k) {
 		try {
 			final Array<?> tmp = f.get();
@@ -169,18 +181,32 @@ public class CompressedFrameBlockFactory {
 				final int nRow = in.getNumRows();
 				final int block = Math.max(((nRow / k) / 64) * 64, 1024);
 
-				final List<Future<?>> t = new ArrayList<>();
+				final List<Future<Boolean>> t = new ArrayList<>();
 				for(int r = 0; r < nRow; r += block) {
 
 					final int start = r;
 					final int end = Math.min(r + block, nRow);
-					t.add(pool.submit(() -> (a.changeTypeWithNulls(tmp, start, end))));
+					t.add(pool.submit(() -> tryChange(a, tmp, start, end)));
 				}
 
 				return pool.submit(() -> {
 					try {
-						for(Future<?> tt : t)
-							tt.get();
+						for(Future<Boolean> tt : t) {
+							if(!tt.get()) {
+								// failed transformation
+								// full analysis of value type... expensive.
+								Pair<ValueType, Boolean> sc = a.analyzeValueType();
+								LOG.warn("Failed to change type of column: " + i + " sample said value type: "
+									+ tmp.getValueType() + " Full analysis says: " + sc.getKey());
+								final Array<?> tmp2;
+								if(sc.getValue())
+									tmp2 = ArrayFactory.allocateOptional(sc.getKey(), nRow);
+								else
+									tmp2 = ArrayFactory.allocate(sc.getKey(), nRow);
+								a.changeType(tmp2);
+								return tmp2;
+							}
+						}
 						return tmp;
 					}
 					catch(Exception e) {

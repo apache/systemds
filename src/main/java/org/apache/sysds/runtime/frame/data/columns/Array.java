@@ -445,13 +445,13 @@ public abstract class Array<T> implements Writable {
 	public abstract boolean possiblyContainsNaN();
 
 	// public Array<?> safeChangeType(ValueType t, boolean containsNull) {
-	// try {
-	// return changeType(t, containsNull);
-	// }
-	// catch(Exception e) {
-	// Pair<ValueType, Boolean> ct = analyzeValueType(); // full analysis
-	// return changeType(ct.getKey(), ct.getValue());
-	// }
+	// 	try {
+	// 		return changeType(t, containsNull);
+	// 	}
+	// 	catch(Exception e) {
+	// 		Pair<ValueType, Boolean> ct = analyzeValueType(); // full analysis
+	// 		return changeType(ct.getKey(), ct.getValue());
+	// 	}
 	// }
 
 	public Array<?> changeType(ValueType t, boolean containsNull) {

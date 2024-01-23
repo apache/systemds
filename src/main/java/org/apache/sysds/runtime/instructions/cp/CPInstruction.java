@@ -39,13 +39,11 @@ public abstract class CPInstruction extends Instruction {
 	protected static final Log LOG = LogFactory.getLog(CPInstruction.class.getName());
 
 	public enum CPType {
-		AggregateUnary, AggregateBinary, AggregateTernary,
-		Unary, Binary, Ternary, Quaternary, BuiltinNary, Ctable,
+		AggregateUnary, AggregateBinary, AggregateTernary, Unary, Binary, Ternary, Quaternary, BuiltinNary, Ctable,
 		MultiReturnParameterizedBuiltin, ParameterizedBuiltin, MultiReturnBuiltin, MultiReturnComplexMatrixBuiltin,
-		Builtin, Reorg, Variable, FCall, Append, Rand, QSort, QPick, Local,
-		MatrixIndexing, MMTSJ, PMMJ, MMChain, Reshape, Partition, Compression, DeCompression, SpoofFused,
-		StringInit, CentralMoment, Covariance, UaggOuterChain, Dnn, Sql, Prefetch, Broadcast, TrigRemote,
-		NoOp,
+		Builtin, Reorg, Variable, FCall, Append, Rand, QSort, QPick, Local, MatrixIndexing, MMTSJ, PMMJ, MMChain,
+		Reshape, Partition, Compression, DeCompression, SpoofFused, StringInit, CentralMoment, Covariance,
+		UaggOuterChain, Dnn, Sql, Prefetch, Broadcast, TrigRemote, NoOp,
 	}
 
 	protected final CPType _cptype;
@@ -90,18 +88,18 @@ public abstract class CPInstruction extends Instruction {
 		Instruction tmp = super.preprocessInstruction(ec);
 
 		// instruction patching
-		if (tmp.requiresLabelUpdate()) { // update labels only if required
+		if(tmp.requiresLabelUpdate()) { // update labels only if required
 			// note: no exchange of updated instruction as labels might change in the
 			// general case
 			String updInst = updateLabels(tmp.toString(), ec.getVariables());
 			tmp = CPInstructionParser.parseSingleInstruction(updInst);
 			// Corrected lineage trace for patched instructions
-			if (DMLScript.LINEAGE)
+			if(DMLScript.LINEAGE)
 				ec.traceLineage(tmp);
 		}
 
 		// robustness federated instructions (runtime assignment)
-		if (ConfigurationManager.isFederatedRuntimePlanner()) {
+		if(ConfigurationManager.isFederatedRuntimePlanner()) {
 			tmp = FEDInstructionUtils.checkAndReplaceCP(tmp, ec);
 			// NOTE: Retracing of lineage is not needed as the lineage trace
 			// is same for an instruction and its FED version.
@@ -116,28 +114,28 @@ public abstract class CPInstruction extends Instruction {
 
 	@Override
 	public void postprocessInstruction(ExecutionContext ec) {
-		if (DMLScript.LINEAGE_DEBUGGER)
+		if(DMLScript.LINEAGE_DEBUGGER)
 			ec.maintainLineageDebuggerInfo(this);
 	}
 
 	/**
-	 * Takes a delimited string of instructions, and replaces ALL placeholder labels
-	 * (such as ##mVar2## and ##Var5##) in ALL instructions.
-	 * 
+	 * Takes a delimited string of instructions, and replaces ALL placeholder labels (such as ##mVar2## and ##Var5##) in
+	 * ALL instructions.
+	 *
 	 * @param instList          instruction list as string
 	 * @param labelValueMapping local variable map
 	 * @return instruction list after replacement
 	 */
 	public static String updateLabels(String instList, LocalVariableMap labelValueMapping) {
 
-		if (!instList.contains(Lop.VARIABLE_NAME_PLACEHOLDER))
+		if(!instList.contains(Lop.VARIABLE_NAME_PLACEHOLDER))
 			return instList;
 
 		StringBuilder updateInstList = new StringBuilder();
 		String[] ilist = instList.split(Lop.INSTRUCTION_DELIMITOR);
 
-		for (int i = 0; i < ilist.length; i++) {
-			if (i > 0)
+		for(int i = 0; i < ilist.length; i++) {
+			if(i > 0)
 				updateInstList.append(Lop.INSTRUCTION_DELIMITOR);
 
 			updateInstList.append(updateInstLabels(ilist[i], labelValueMapping));
@@ -146,33 +144,31 @@ public abstract class CPInstruction extends Instruction {
 	}
 
 	/**
-	 * Replaces ALL placeholder strings (such as ##mVar2## and ##Var5##) in a single
-	 * instruction.
-	 * 
+	 * Replaces ALL placeholder strings (such as ##mVar2## and ##Var5##) in a single instruction.
+	 *
 	 * @param inst string instruction
 	 * @param map  local variable map
 	 * @return string instruction after replacement
 	 */
 	private static String updateInstLabels(String inst, LocalVariableMap map) {
-		if (inst.contains(Lop.VARIABLE_NAME_PLACEHOLDER)) {
+		if(inst.contains(Lop.VARIABLE_NAME_PLACEHOLDER)) {
 			int skip = Lop.VARIABLE_NAME_PLACEHOLDER.length();
-			while (inst.contains(Lop.VARIABLE_NAME_PLACEHOLDER)) {
+			while(inst.contains(Lop.VARIABLE_NAME_PLACEHOLDER)) {
 				int startLoc = inst.indexOf(Lop.VARIABLE_NAME_PLACEHOLDER) + skip;
 				String varName = inst.substring(startLoc, inst.indexOf(Lop.VARIABLE_NAME_PLACEHOLDER, startLoc));
 				String replacement = getVarNameReplacement(inst, varName, map);
 				inst = inst.replaceAll(Lop.VARIABLE_NAME_PLACEHOLDER + varName + Lop.VARIABLE_NAME_PLACEHOLDER,
-						replacement);
+					replacement);
 			}
 		}
 		return inst;
 	}
 
 	/**
-	 * Computes the replacement string for a given variable name placeholder string
-	 * (e.g., ##mVar2## or ##Var5##). The replacement is a HDFS filename for matrix
-	 * variables, and is the actual value (stored in symbol table) for scalar
+	 * Computes the replacement string for a given variable name placeholder string (e.g., ##mVar2## or ##Var5##). The
+	 * replacement is a HDFS filename for matrix variables, and is the actual value (stored in symbol table) for scalar
 	 * variables.
-	 * 
+	 *
 	 * @param inst    instruction
 	 * @param varName variable name
 	 * @param map     local variable map
@@ -180,18 +176,19 @@ public abstract class CPInstruction extends Instruction {
 	 */
 	private static String getVarNameReplacement(String inst, String varName, LocalVariableMap map) {
 		Data val = map.get(varName);
-		if (val != null) {
+		if(val != null) {
 			String replacement = null;
-			if (val.getDataType() == DataType.MATRIX) {
+			if(val.getDataType() == DataType.MATRIX) {
 				replacement = ((MatrixObject) val).getFileName();
 			}
 
-			if (val.getDataType() == DataType.SCALAR)
+			if(val.getDataType() == DataType.SCALAR)
 				replacement = "" + ((ScalarObject) val).getStringValue();
 			return replacement;
-		} else {
+		}
+		else {
 			throw new DMLRuntimeException(
-					"Variable (" + varName + ") in Instruction (" + inst + ") is not found in the variablemap.");
+				"Variable (" + varName + ") in Instruction (" + inst + ") is not found in the variablemap.");
 		}
 	}
 }

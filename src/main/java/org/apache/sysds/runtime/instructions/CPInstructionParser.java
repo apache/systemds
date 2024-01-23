@@ -347,22 +347,22 @@ public class CPInstructionParser extends InstructionParser {
 	}
 
 	public static CPInstruction parseSingleInstruction(String str) {
-		if (str == null || str.isEmpty())
+		if(str == null || str.isEmpty())
 			return null;
 		CPType cptype = InstructionUtils.getCPType(str);
-		if (cptype == null)
+		if(cptype == null)
 			throw new DMLRuntimeException("Unable derive cptype for instruction: " + str);
 		CPInstruction cpinst = parseSingleInstruction(cptype, str);
-		if (cpinst == null)
+		if(cpinst == null)
 			throw new DMLRuntimeException("Unable to parse instruction: " + str);
 		return cpinst;
 	}
 
 	public static CPInstruction parseSingleInstruction(CPType cptype, String str) {
 		ExecType execType;
-		if (str == null || str.isEmpty())
+		if(str == null || str.isEmpty())
 			return null;
-		switch (cptype) {
+		switch(cptype) {
 			case AggregateUnary:
 				return AggregateUnaryCPInstruction.parseInstruction(str);
 
@@ -437,15 +437,15 @@ public class CPInstructionParser extends InstructionParser {
 
 			case MatrixIndexing:
 				execType = ExecType.valueOf(str.split(Instruction.OPERAND_DELIM)[0]);
-				if (execType == ExecType.CP)
+				if(execType == ExecType.CP)
 					return IndexingCPInstruction.parseInstruction(str);
 				else // exectype CP_FILE
 					return MatrixIndexingCPFileInstruction.parseInstruction(str);
 
 			case Builtin:
 				String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
-				if (parts[0].equals("log") || parts[0].equals("log_nz")) {
-					if (InstructionUtils.isInteger(parts[3])) // B=log(A), y=log(x)
+				if(parts[0].equals("log") || parts[0].equals("log_nz")) {
+					if(InstructionUtils.isInteger(parts[3])) // B=log(A), y=log(x)
 						// We exploit the fact the number of threads is specified as an integer at parts
 						// 3.
 						return UnaryCPInstruction.parseInstruction(str);

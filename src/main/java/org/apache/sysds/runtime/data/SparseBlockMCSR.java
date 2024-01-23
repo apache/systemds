@@ -124,11 +124,38 @@ public class SparseBlockMCSR extends SparseBlock
 		double size = 16; //object
 		size += MemoryEstimates.objectArrayCost(nrows); //references
 		long sparseRowSize = 16; // object
-		sparseRowSize += 4*4; // 3 integers + padding
+		sparseRowSize += 2*4; // 2 integers + padding
 		sparseRowSize += MemoryEstimates.intArrayCost(0);
 		sparseRowSize += MemoryEstimates.doubleArrayCost(0);
 		sparseRowSize += 12*Math.max(1, cnnz); //avoid bias by down cast for ultra-sparse
 		size += rlen * sparseRowSize; //sparse rows
+
+		// robustness for long overflows
+		return (long) Math.min(size, Long.MAX_VALUE);
+	}
+
+	/**
+	 * Computes the exact size in memory of the materialized block
+	 * @return the exact size in memory
+	 */
+	public long getExactSizeInMemory() {
+		double size = 16; //object
+		size += MemoryEstimates.objectArrayCost(_rows.length); //references
+
+		for (SparseRow sr : _rows) {
+			if (sr == null)
+				continue;
+			long sparseRowSize = 16; // object
+			if( sr instanceof SparseRowScalar )
+				sparseRowSize += 12;
+			else { //SparseRowVector
+				sparseRowSize += 2*4; // 2 integers
+				sparseRowSize += MemoryEstimates.intArrayCost(0);
+				sparseRowSize += MemoryEstimates.doubleArrayCost(0);
+				sparseRowSize += 12*((SparseRowVector)sr).capacity();
+			}
+			size += sparseRowSize; //sparse rows
+		}
 
 		// robustness for long overflows
 		return (long) Math.min(size, Long.MAX_VALUE);

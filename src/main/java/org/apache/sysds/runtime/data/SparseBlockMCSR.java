@@ -134,6 +134,34 @@ public class SparseBlockMCSR extends SparseBlock
 		return (long) Math.min(size, Long.MAX_VALUE);
 	}
 
+	public long getExactSizeInMemory() {
+		//double nnz = Math.ceil(sparsity*nrows*ncols);
+		//double rlen = Math.min(nrows, nnz); // num sparse row objects
+		//double cnnz = Math.max(SparseRowVector.initialCapacity, nnz/rlen);
+
+		//Each sparse row has a fixed overhead of 16B (object) + 12B (3 ints),
+		//24B (int array), 24B (double array), i.e., in total 76B
+		//Each non-zero value requires 12B for the column-index/value pair.
+		//Overheads for arrays, objects, and references refer to 64bit JVMs
+		//If nnz < rows we have guaranteed also empty rows.
+		double size = 16; //object
+		size += MemoryEstimates.objectArrayCost(_rows.length); //references
+
+		for (SparseRow sr : _rows) {
+			if (sr == null)
+				continue;
+			long sparseRowSize = 16; // object
+			sparseRowSize += 4*4; // 3 integers + padding
+			sparseRowSize += MemoryEstimates.intArrayCost(0);
+			sparseRowSize += MemoryEstimates.doubleArrayCost(0);
+			sparseRowSize += 12*Math.max(SparseRowVector.initialCapacity, sr.size());
+			size += sparseRowSize; //sparse rows
+		}
+
+		// robustness for long overflows
+		return (long) Math.min(size, Long.MAX_VALUE);
+	}
+
 	///////////////////
 	//SparseBlock implementation
 

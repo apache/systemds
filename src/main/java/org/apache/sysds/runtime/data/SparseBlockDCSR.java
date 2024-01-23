@@ -180,8 +180,8 @@ public class SparseBlockDCSR extends SparseBlock
 	}
 
 	/**
-	 * A more accurate memory estimation for an initialized instance
-	 * @return memory estimate in bytes
+	 * Computes the exact size in memory of the materialized block
+	 * @return the exact size in memory
 	 */
 	public long getExactSizeInMemory() {
 		double size = 16;

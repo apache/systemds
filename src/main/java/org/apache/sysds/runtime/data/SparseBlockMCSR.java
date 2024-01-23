@@ -134,16 +134,11 @@ public class SparseBlockMCSR extends SparseBlock
 		return (long) Math.min(size, Long.MAX_VALUE);
 	}
 
+	/**
+	 * Computes the exact size in memory of the materialized block
+	 * @return the exact size in memory
+	 */
 	public long getExactSizeInMemory() {
-		//double nnz = Math.ceil(sparsity*nrows*ncols);
-		//double rlen = Math.min(nrows, nnz); // num sparse row objects
-		//double cnnz = Math.max(SparseRowVector.initialCapacity, nnz/rlen);
-
-		//Each sparse row has a fixed overhead of 16B (object) + 12B (3 ints),
-		//24B (int array), 24B (double array), i.e., in total 76B
-		//Each non-zero value requires 12B for the column-index/value pair.
-		//Overheads for arrays, objects, and references refer to 64bit JVMs
-		//If nnz < rows we have guaranteed also empty rows.
 		double size = 16; //object
 		size += MemoryEstimates.objectArrayCost(_rows.length); //references
 

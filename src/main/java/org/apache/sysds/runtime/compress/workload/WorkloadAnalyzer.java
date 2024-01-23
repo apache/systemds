@@ -537,7 +537,7 @@ public class WorkloadAnalyzer {
 					o = new OpNormal(hop, true);
 				}
 				else {
-					LOG.warn("Unknown Hop:" + hop.getClass().getSimpleName() + "\n" + Explain.explain(hop));
+					LOG.warn("Unknown ParameterizedBuiltinOp Hop:" + hop.getClass().getSimpleName() + "\n" + Explain.explain(hop));
 					setDecompressionOnAllInputs(hop, parent);
 					return;
 				}
@@ -547,7 +547,7 @@ public class WorkloadAnalyzer {
 				return;
 			}
 			else {
-				LOG.warn("Unknown Hop:" + hop.getClass().getSimpleName() + "\n" + Explain.explain(hop));
+				LOG.warn("Unknown Matrix Hop:" + hop.getClass().getSimpleName() + "\n" + Explain.explain(hop));
 				setDecompressionOnAllInputs(hop, parent);
 				return;
 			}
@@ -580,7 +580,7 @@ public class WorkloadAnalyzer {
 				o = new OpNormal(hop, false);
 			}
 			else {
-				LOG.warn("Unknown Hop:" + hop.getClass().getSimpleName() + "\n" + Explain.explain(hop));
+				LOG.warn("Unknown Frame Hop:" + hop.getClass().getSimpleName() + "\n" + Explain.explain(hop));
 				setDecompressionOnAllInputs(hop, parent);
 				return;
 			}
@@ -600,9 +600,21 @@ public class WorkloadAnalyzer {
 		else if(hop instanceof FunctionOp && ((FunctionOp) hop).getFunctionNamespace().equals(".builtinNS")) {
 			parent.addOp(new OpNormal(hop, false));
 		}
+		else if(hop instanceof AggUnaryOp) {
+			if((isOverlapping(hop.getInput().get(0)) && !HopRewriteUtils.isAggUnaryOp(hop, AggOp.SUM, AggOp.MEAN)) ||
+					HopRewriteUtils.isAggUnaryOp(hop, AggOp.TRACE)) {
+					setDecompressionOnAllInputs(hop, parent);
+					return;
+				}
+				else {
+					Op o  = new OpNormal(hop, false);
+					treeLookup.put(hop.getHopID(), o);
+					parent.addOp(o);
+				}
+		}
 		else {
 			LOG.warn(
-				"Unknown Hop:" + hop.getClass().getSimpleName() + "\n" + hop.getDataType() + "\n" + Explain.explain(hop));
+				"Unknown Matrix or Frame Hop:" + hop.getClass().getSimpleName() + "\n" + hop.getDataType() + "\n" + Explain.explain(hop));
 			parent.addOp(new OpNormal(hop, false));
 		}
 	}

@@ -321,10 +321,28 @@ public class MapToChar extends AMapToData {
 	}
 
 	@Override
-	public final void lmSparseMatrixRow(final int apos, final int alen, final int[] aix, final double[] aval, final int r,
-		final int offR, final double[] retV, final IColIndex colIndexes, final IDictionary dict) {
+	public final void lmSparseMatrixRow(final int apos, final int alen, final int[] aix, final double[] aval,
+		final int r, final int offR, final double[] retV, final IColIndex colIndexes, final IDictionary dict) {
 		for(int i = apos; i < alen; i++)
 			dict.multiplyScalar(aval[i], retV, offR, getIndex(aix[i]), colIndexes);
+	}
+
+	@Override
+	public void decompressToRangeOff(double[] c, int rl, int ru, int offR, double[] values) {
+		for(int i = rl, offT = rl + offR; i < ru; i++, offT++)
+			c[offT] += values[getIndex(i)];
+	}
+
+	@Override
+	protected void decompressToRangeNoOffBy8(double[] c, int r, double[] values) {
+		c[r] += values[getIndex(r)];
+		c[r + 1] += values[getIndex(r + 1)];
+		c[r + 2] += values[getIndex(r + 2)];
+		c[r + 3] += values[getIndex(r + 3)];
+		c[r + 4] += values[getIndex(r + 4)];
+		c[r + 5] += values[getIndex(r + 5)];
+		c[r + 6] += values[getIndex(r + 6)];
+		c[r + 7] += values[getIndex(r + 7)];
 	}
 
 	protected final void preAggregateDDC_DDCSingleCol_vecChar(MapToChar tm, double[] td, double[] v, int r) {

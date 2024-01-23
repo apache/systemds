@@ -439,6 +439,18 @@ public class MapToBit extends AMapToData {
 	}
 
 	@Override
+	public void decompressToRangeOff(double[] c, int rl, int ru, int offR, double[] values) {
+		for(int i = rl, offT = rl + offR; i < ru; i++, offT++)
+			c[offT] += values[getIndex(i)];
+	}
+
+	@Override
+	public void decompressToRangeNoOff(double[] c, int rl, int ru, double[] values) {
+		for(int i = rl; i < ru; i++)
+			c[i] += values[getIndex(i)];
+	}
+
+	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		sb.append(super.toString());

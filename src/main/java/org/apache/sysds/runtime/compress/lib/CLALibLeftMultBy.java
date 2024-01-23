@@ -126,7 +126,7 @@ public final class CLALibLeftMultBy {
 		}
 		catch(Exception e) {
 			e.printStackTrace();
-			throw new DMLCompressionException("Failed CLA LLM", e);
+			throw new DMLCompressionException("Failed CLA LMM", e);
 		}
 	}
 
@@ -311,7 +311,7 @@ public final class CLALibLeftMultBy {
 			final double[] constV = new double[numColumnsOut];
 			CLALibUtils.filterGroupsAndSplitPreAgg(colGroups, constV, noPreAggGroups, preAggGroups);
 			// Sort so that the big expensive preAgg groups are first.
-			Collections.sort(preAggGroups, Comparator.comparing(AColGroup::getNumValues).reversed());
+			// Collections.sort(preAggGroups, Comparator.comparing(AColGroup::getNumValues).reversed());
 
 			double[] rowSums;
 			if(!noPreAggGroups.isEmpty() || !preAggGroups.isEmpty()) {

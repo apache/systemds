@@ -907,6 +907,37 @@ public abstract class AMapToData implements Serializable {
 			dict.multiplyScalar(aval[i], retV, offR, getIndex(aix[i]), colIndexes);
 	}
 
+	public final void decompressToRange(double[] c, int rl, int ru, int offR, double[] values) {
+		if(offR == 0)
+			decompressToRangeNoOff(c, rl, ru, values);
+		else
+			decompressToRangeOff(c, rl, ru, offR, values);
+	}
+
+	public void decompressToRangeOff(double[] c, int rl, int ru, int offR, double[] values) {
+		for(int i = rl, offT = rl + offR; i < ru; i++, offT++)
+			c[offT] += values[getIndex(i)];
+	}
+
+	protected void decompressToRangeNoOffBy8(double[] c, int r, double[] values) {
+		c[r] += values[getIndex(r)];
+		c[r+1] += values[getIndex(r+1)];
+		c[r+2] += values[getIndex(r+2)];
+		c[r+3] += values[getIndex(r+3)];
+		c[r+4] += values[getIndex(r+4)];
+		c[r+5] += values[getIndex(r+5)];
+		c[r+6] += values[getIndex(r+6)];
+		c[r+7] += values[getIndex(r+7)];
+	}
+
+	public void decompressToRangeNoOff(double[] c, int rl, int ru, double[] values) {
+		final int h = (ru - rl) % 8;
+		for(int rc = rl; rc < rl + h; rc++)
+			c[rc] += values[getIndex(rc)];
+		for(int rc = rl + h; rc < ru; rc += 8)
+			decompressToRangeNoOffBy8(c, rc,  values);
+	}
+
 	@Override
 	public String toString() {
 		final int sz = size();

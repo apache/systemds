@@ -37,8 +37,6 @@ import org.apache.sysds.runtime.compress.colgroup.dictionary.MatrixBlockDictiona
 import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
-import org.apache.sysds.runtime.compress.colgroup.mapping.MapToByte;
-import org.apache.sysds.runtime.compress.colgroup.mapping.MapToChar;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
 import org.apache.sysds.runtime.compress.colgroup.offset.AOffsetIterator;
 import org.apache.sysds.runtime.compress.colgroup.offset.OffsetFactory;
@@ -165,31 +163,8 @@ public class ColGroupDDC extends APreAgg implements IMapToDataGroup {
 
 	private final static void decompressToDenseBlockDenseDictSingleColOutContiguous(double[] c, int rl, int ru, int offR,
 		double[] values, AMapToData data) {
-
-		if(data instanceof MapToByte)
-			decompressToDenseBlockDenseDictSingleColOutContiguousByteM(c, rl, ru, offR, values, (MapToByte) data);
-		else if(data instanceof MapToChar)
-			decompressToDenseBlockDenseDictSingleColOutContiguousCharM(c, rl, ru, offR, values, (MapToChar) data);
-		else
-			decompressToDenseBlockDenseDictSingleColOutContiguousGenM(c, rl, ru, offR, values, data);
-	}
-
-	private final static void decompressToDenseBlockDenseDictSingleColOutContiguousByteM(double[] c, int rl, int ru,
-		int offR, double[] values, MapToByte data) {
-		for(int i = rl, offT = rl + offR; i < ru; i++, offT++)
-			c[offT] += values[data.getIndex(i)];
-	}
-
-	private final static void decompressToDenseBlockDenseDictSingleColOutContiguousCharM(double[] c, int rl, int ru,
-		int offR, double[] values, MapToChar data) {
-		for(int i = rl, offT = rl + offR; i < ru; i++, offT++)
-			c[offT] += values[data.getIndex(i)];
-	}
-
-	private final static void decompressToDenseBlockDenseDictSingleColOutContiguousGenM(double[] c, int rl, int ru,
-		int offR, double[] values, AMapToData data) {
-		for(int i = rl, offT = rl + offR; i < ru; i++, offT++)
-			c[offT] += values[data.getIndex(i)];
+		data.decompressToRange(c, rl, ru, offR, values);
+	
 	}
 
 	private final void decompressToDenseBlockDenseDictAllColumnsContiguous(DenseBlock db, int rl, int ru, int offR,
@@ -264,7 +239,6 @@ public class ColGroupDDC extends APreAgg implements IMapToDataGroup {
 		}
 	}
 
-
 	@Override
 	protected void decompressToDenseBlockTransposedSparseDictionary(DenseBlock db, int rl, int ru, SparseBlock sb) {
 		throw new NotImplementedException();
@@ -273,12 +247,12 @@ public class ColGroupDDC extends APreAgg implements IMapToDataGroup {
 	@Override
 	protected void decompressToDenseBlockTransposedDenseDictionary(DenseBlock db, int rl, int ru, double[] dict) {
 		final int nCol = _colIndexes.size();
-		for(int j = 0; j < nCol; j++){
+		for(int j = 0; j < nCol; j++) {
 			final int rowOut = _colIndexes.get(j);
 			final double[] c = db.values(rowOut);
 			final int off = db.pos(rowOut);
 			for(int i = rl; i < ru; i++) {
-				final double v = dict[_data.getIndex(i) *  nCol + j];
+				final double v = dict[_data.getIndex(i) * nCol + j];
 				c[off + i] += v;
 			}
 		}
@@ -817,7 +791,7 @@ public class ColGroupDDC extends APreAgg implements IMapToDataGroup {
 			return this;
 			// }
 		}
-		else if (ct == CompressionType.DDCFOR)
+		else if(ct == CompressionType.DDCFOR)
 			return this; // it does not make sense to change to FOR.
 		else
 			return super.morph(ct, nRow);
@@ -835,17 +809,16 @@ public class ColGroupDDC extends APreAgg implements IMapToDataGroup {
 
 	@Override
 	public AColGroupCompressed combineWithSameIndex(int index, int nCol, List<List<AColGroup>> right) {
-		List<Pair<Integer, IDictionary>> dicts = new ArrayList<>(right.size() +1);
+		List<Pair<Integer, IDictionary>> dicts = new ArrayList<>(right.size() + 1);
 		dicts.add(new Pair<>(_colIndexes.size(), getDictionary()));
-		for(int i = 0; i < right.size(); i++){
-			ColGroupDDC a = ((ColGroupDDC)right.get(i).get(index));
-			dicts.add(new Pair<>(a._colIndexes.size(),a.getDictionary()));
+		for(int i = 0; i < right.size(); i++) {
+			ColGroupDDC a = ((ColGroupDDC) right.get(i).get(index));
+			dicts.add(new Pair<>(a._colIndexes.size(), a.getDictionary()));
 		}
 		IDictionary combined = DictionaryFactory.cBindDictionaries(dicts);
-		
-		
+
 		IColIndex combinedColIndex = _colIndexes;
-		for(int i = 0; i < right.size(); i++){
+		for(int i = 0; i < right.size(); i++) {
 			int off = nCol * i + nCol;
 			combinedColIndex = combinedColIndex.combine(right.get(i).get(index).getColIndices().shift(off));
 		}

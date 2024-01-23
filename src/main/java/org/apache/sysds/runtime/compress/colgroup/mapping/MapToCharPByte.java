@@ -310,4 +310,16 @@ public class MapToCharPByte extends AMapToData {
 		preAV[getIndex(rc + 6)] += mV[off + 6];
 		preAV[getIndex(rc + 7)] += mV[off + 7];
 	}
+
+	@Override
+	protected void decompressToRangeNoOffBy8(double[] c, int r, double[] values) {
+		c[r] += values[getIndex(r)];
+		c[r + 1] += values[getIndex(r + 1)];
+		c[r + 2] += values[getIndex(r + 2)];
+		c[r + 3] += values[getIndex(r + 3)];
+		c[r + 4] += values[getIndex(r + 4)];
+		c[r + 5] += values[getIndex(r + 5)];
+		c[r + 6] += values[getIndex(r + 6)];
+		c[r + 7] += values[getIndex(r + 7)];
+	}
 }

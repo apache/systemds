@@ -11,10 +11,11 @@ public class MatrixStorage extends AutomatedTestBase {
 
     private static final int resolution = 18;
     private static final float resolutionDivisor = 2f;
+    private static final float maxSparsity = .4f;
 
     static float[] sparsityProvider() {
         float[] sparsities = new float[resolution];
-        float currentValue = 0.4f;
+        float currentValue = maxSparsity;
 
         for (int i = 0; i < resolution; i++) {
             sparsities[i] = currentValue;
@@ -96,6 +97,10 @@ public class MatrixStorage extends AutomatedTestBase {
                 return ((long)(A.length))*A[0].length*8;
 
             MatrixBlock mbtmp = DataConverter.convertToMatrixBlock(A);
+
+            if (!mbtmp.isInSparseFormat())
+                mbtmp.denseToSparse(true);
+
             SparseBlock srtmp = mbtmp.getSparseBlock();
             switch (btype) {
                 case MCSR:

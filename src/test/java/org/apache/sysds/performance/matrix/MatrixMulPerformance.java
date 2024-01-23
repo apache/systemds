@@ -19,6 +19,7 @@ public class MatrixMulPerformance extends AutomatedTestBase {
     private static final int repetitions = 50;
     private static final int resolution = 18;
     private static final float resolutionDivisor = 2f;
+    private static final float maxSparsity = .4f;
 
     @Override
     public void setUp() {
@@ -27,7 +28,7 @@ public class MatrixMulPerformance extends AutomatedTestBase {
 
     static float[] sparsityProvider() {
         float[] sparsities = new float[resolution];
-        float currentValue = 0.2f;
+        float currentValue = maxSparsity;
 
         for (int i = 0; i < resolution; i++) {
             sparsities[i] = currentValue;
@@ -111,6 +112,13 @@ public class MatrixMulPerformance extends AutomatedTestBase {
 
         MatrixBlock mbtmp1 = DataConverter.convertToMatrixBlock(A);
         MatrixBlock mbtmp2 = DataConverter.convertToMatrixBlock(B);
+
+        // Ensure that these are sparse blocks
+        if (!mbtmp1.isInSparseFormat())
+            mbtmp1.denseToSparse(true);
+        if (!mbtmp2.isInSparseFormat())
+            mbtmp2.denseToSparse(true);
+
         SparseBlock srtmp1 = mbtmp1.getSparseBlock();
         SparseBlock srtmp2 = mbtmp2.getSparseBlock();
         SparseBlock sblock1;

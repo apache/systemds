@@ -153,7 +153,7 @@ public class CompressedFrameBlockFactory {
 	private Array<?> allocateCorrectedType(int i) {
 		final ArrayCompressionStatistics s = stats[i];
 		final Array<?> a = in.getColumn(i);
-		if(s.valueType != null && s.valueType != a.getValueType())
+		if(s != null && s.valueType != null && s.valueType != a.getValueType())
 			return s.containsNull ? //
 				ArrayFactory.allocateOptional(s.valueType, a.size()) : //
 				ArrayFactory.allocate(s.valueType, a.size());//
@@ -176,7 +176,7 @@ public class CompressedFrameBlockFactory {
 			final Array<?> tmp = f.get();
 			final Array<?> a = in.getColumn(i);
 			final ArrayCompressionStatistics s = stats[i];
-			if(s.valueType != null && s.valueType != a.getValueType()) {
+			if(s != null && s.valueType != null && s.valueType != a.getValueType()) {
 
 				final int nRow = in.getNumRows();
 				final int block = Math.max(((nRow / k) / 64) * 64, 1024);
@@ -239,7 +239,7 @@ public class CompressedFrameBlockFactory {
 
 	private void compressColFinally(int i, final Array<?> a, final ArrayCompressionStatistics s) {
 
-		if(s.bestType != null) {
+		if(s != null && s.bestType != null) {
 			switch(s.bestType) {
 				case DDC:
 					compressedColumns[i] = DDCArray.compressToDDC(a, s.containsNull);

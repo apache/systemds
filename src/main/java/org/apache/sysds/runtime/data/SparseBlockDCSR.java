@@ -168,14 +168,29 @@ public class SparseBlockDCSR extends SparseBlock
 		double lnnz = Math.max(INIT_CAPACITY, Math.ceil(sparsity*nrows*ncols));
 
 		//32B overhead per array, int arr in nrows, int/double arr in nnz
-		double size = 16;									// Memory overhead of the object
-		size += 4 + 4 + 4 + 4;								  // 3x int field + 0 (padding not necessary)
-		size += MemoryEstimates.intArrayCost(nrows);		 // rowidx array (row indices)
-		size += MemoryEstimates.intArrayCost(nrows+1); // rowptr array (row pointers)
+		double size = 16;                                    // Memory overhead of the object
+		size += 4 + 4 + 4 + 4;                               // 3x int field + 0 (padding not necessary)
+		size += MemoryEstimates.intArrayCost(nrows);         // rowidx array (row indices)
+		size += MemoryEstimates.intArrayCost(nrows+1);       // rowptr array (row pointers)
 		size += MemoryEstimates.intArrayCost((long) lnnz);   // colidx array (column indexes)
 		size += MemoryEstimates.doubleArrayCost((long) lnnz);// values array (non-zero values)
 
 		//robustness for long overflows
+		return (long) Math.min(size, Long.MAX_VALUE);
+	}
+
+	/**
+	 * Computes the exact size in memory of the materialized block
+	 * @return the exact size in memory
+	 */
+	public long getExactSizeInMemory() {
+		double size = 16;
+		size += 4 + 4 + 4 + 4;
+		size += MemoryEstimates.intArrayCost(_rowidx.length);
+		size += MemoryEstimates.intArrayCost(_rowptr.length);
+		size += MemoryEstimates.intArrayCost(_colidx.length);
+		size += MemoryEstimates.doubleArrayCost(_values.length);
+
 		return (long) Math.min(size, Long.MAX_VALUE);
 	}
 

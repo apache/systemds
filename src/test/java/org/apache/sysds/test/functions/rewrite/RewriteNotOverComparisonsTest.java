@@ -30,54 +30,79 @@ import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
 import org.apache.sysds.utils.Statistics;
 
-public class RewriteDistributiveMatrixMultTest extends AutomatedTestBase {
-	private static final String TEST_NAME1 = "RewriteDistributiveMatrixMult";
+public class RewriteNotOverComparisonsTest extends AutomatedTestBase{
+
+	private static final String TEST_NAME1 = "RewriteNotOverComparisons1";
+	private static final String TEST_NAME2 = "RewriteNotOverComparisons2";
+	private static final String TEST_NAME3 = "RewriteNotOverComparisons3";
 	private static final String TEST_DIR = "functions/rewrite/";
 	private static final String TEST_CLASS_DIR =
-		TEST_DIR + RewriteDistributiveMatrixMultTest.class.getSimpleName() + "/";
+		TEST_DIR + RewriteNotOverComparisonsTest.class.getSimpleName() + "/";
 
-	private static final int rows = 500;
-	private static final int cols = 500;
+	private static final int rows = 10;
+	private static final int cols = 10;
 	private static final double eps = Math.pow(10, -10);
 
 	@Override
 	public void setUp() {
 		TestUtils.clearAssertionInformation();
 		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] {"R"}));
-
+		addTestConfiguration(TEST_NAME2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[] {"R"}));
+		addTestConfiguration(TEST_NAME3, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME3, new String[] {"R"}));
 	}
 
 	@Test
-	public void testDistributiveMatrixMultNoRewrite() {
-		testRewriteDistributiveMatrixMult(TEST_NAME1, false);
+	public void testNotOverComparisonsGreaterNoRewrite(){
+		testRewriteNotOverComparisons(TEST_NAME1, false);
 	}
 
 	@Test
-	public void testDistributiveMatrixMultRewrite() {
-		testRewriteDistributiveMatrixMult(TEST_NAME1, true);
+	public void testNotOverComparisonsGreaterRewrite(){
+		testRewriteNotOverComparisons(TEST_NAME1, true);
 	}
 
-	private void testRewriteDistributiveMatrixMult(String testname, boolean rewrites) {
+	@Test
+	public void testNotOverComparisonsSmallerNoRewrite(){
+		testRewriteNotOverComparisons(TEST_NAME2, false);
+	}
+
+	@Test
+	public void testNotOverComparisonsSmallerRewrite(){
+		testRewriteNotOverComparisons(TEST_NAME2, true);
+	}
+
+	@Test
+	public void testNotOverComparisonsEqualNoRewrite(){
+		testRewriteNotOverComparisons(TEST_NAME3, false);
+	}
+
+	@Test
+	public void testNotOverComparisonsEqualRewrite(){
+		testRewriteNotOverComparisons(TEST_NAME3, true);
+	}
+
+
+
+	private void testRewriteNotOverComparisons(String testname, boolean rewrites){
 		boolean oldFlag = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
-		try {
+		try{
 			TestConfiguration config = getTestConfiguration(testname);
 			loadTestConfiguration(config);
 
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + testname + ".dml";
-			programArgs = new String[] {"-stats", "-args", input("A"), input("B"), input("C"), output("R")};
+			programArgs = new String[] {"-stats", "-args", input("A"), input("B"), output("R")};
 
 			fullRScriptName = HOME + testname + ".R";
 			rCmd = getRCmd(inputDir(), expectedDir());
 
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = rewrites;
-			//create dense matrices so that rewrites are possible
+
 			double[][] A = getRandomMatrix(rows, cols, -1, 1, 0.70d, 7);
 			double[][] B = getRandomMatrix(rows, cols, -1, 1, 0.70d, 6);
-			double[][] C = getRandomMatrix(rows, cols, -1, 1, 0.70d, 3);
-			writeInputMatrixWithMTD("A", A, 174522, true);
-			writeInputMatrixWithMTD("B", B, 174935, true);
-			writeInputMatrixWithMTD("C", C, 174848, true);
+
+			writeInputMatrixWithMTD("A", A, 65,true);
+			writeInputMatrixWithMTD("B", B, 74,true);
 
 			runTest(true, false, null, -1);
 			runRScript(true);
@@ -87,21 +112,20 @@ public class RewriteDistributiveMatrixMultTest extends AutomatedTestBase {
 			HashMap<CellIndex, Double> rfile = readRMatrixFromExpectedDir("R");
 			TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
 
-			//check matrix mult existence
-			String ba = "ba+*";
-			long numMatMul = Statistics.getCPHeavyHitterCount(ba);
+			String exclamationMark = "!";
+			long numExclamationMark = Statistics.getCPHeavyHitterCount(exclamationMark);
 
-			if(rewrites == true) {
-				Assert.assertTrue(numMatMul == 1);
-			}
-			else {
-				Assert.assertTrue(numMatMul == 2);
+
+			if(rewrites==true){
+				Assert.assertTrue(numExclamationMark == 0);
+			}else{
+				Assert.assertTrue(numExclamationMark == 1);
 			}
 
-		}
-		finally {
+		}finally {
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = oldFlag;
 		}
 
 	}
+
 }

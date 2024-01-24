@@ -451,10 +451,13 @@ public class LibMatrixMult
 		matrixMultTransposeSelf(m1, m1t, ret, leftTranspose, 0, ret.rlen);
 
 		//post-processing
-		if(copyToLowerTriangle){
+		if(copyToLowerTriangle) {
 			long nnz = copyUpperToLowerTriangle(ret);
 			ret.setNonZeros(nnz);
 			ret.examSparsity();
+		}
+		else {
+			ret.recomputeNonZeros();
 		}
 		
 		//System.out.println("TSMM ("+m1.isInSparseFormat()+","+m1.getNumRows()+","+m1.getNumColumns()+","+m1.getNonZeros()+","+leftTranspose+") in "+time.stop());
@@ -2600,8 +2603,9 @@ public class LibMatrixMult
 				int[] bix = b.indexes(aixk);
 				double[] bvals = b.values(aixk);
 				//sparse updates for ultra-sparse output
-				for(int k2 = bpos2; k2<bpos+blen; k2++)
+				for(int k2 = bpos+bpos2; k2<bpos+blen; k2++) {
 					c.add(i, bix[k2], aval*bvals[k2]);
+				}
 			}
 		}
 	}

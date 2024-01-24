@@ -66,14 +66,12 @@ public class ILinearize {
 	public static Log LOG = LogFactory.getLog(ILinearize.class.getName());
 
 	public enum DagLinearization {
-		DEPTH_FIRST, BREADTH_FIRST, MIN_INTERMEDIATE, MAX_PARALLELIZE, AUTO, NA_PIPELINE;
+		DEPTH_FIRST, BREADTH_FIRST, MIN_INTERMEDIATE, MAX_PARALLELIZE, AUTO, PIPELINE_DEPTH_FIRST;
 	}
 
 	public static List<Lop> linearize(List<Lop> v) {
 		try {
 			DagLinearization linearization = ConfigurationManager.getLinearizationOrder();
-
-			System.out.println("Linearization: " + linearization);
 
 			switch(linearization) {
 				case MAX_PARALLELIZE:
@@ -84,8 +82,8 @@ public class ILinearize {
 					return doMinIntermediateSort(v);
 				case BREADTH_FIRST:
 					return doBreadthFirstSort(v);
-				case NA_PIPELINE:
-					return pipelineSort_depth(v); 
+				case PIPELINE_DEPTH_FIRST:
+					return PipelineAwareLinearize.pipelineDepthFirst(v);
 				case DEPTH_FIRST:
 				default:
 					return depthFirst(v);
@@ -98,144 +96,6 @@ public class ILinearize {
 	}
 
 	/**
-	 * Sort lops depth-first while assigning the nodes to pipelines
-	 * 
-	 * @param v List of lops to sort
-	 * @return Sorted list of lops with set _pipelineID on the Lop Object
-	 */
-	private static List<Lop> pipelineSort_depth(List<Lop> v) {
-
-		System.out.println("-PIPELINE START-");
-		System.out.println("Nodes size: " + v.size());
-
-		// Find all root nodes (nodes with no outputs)
-		List<Lop> roots = v.stream()
-			.filter(OperatorOrderingUtils::isLopRoot)
-			.collect(Collectors.toList());
-
-		// Initialize necessary data objects
-		Integer pipelineId = 0;
-		// Stores a resulting depth first sorted list of lops (same as in depthFirst())
-		ArrayList<Lop> opList = new ArrayList<>();
-		// Stores the pipeline ids and the corresponding lops 
-		// for further refinement of pipeline assignements
-		Map<Integer, List<Lop>> pipelineList = new HashMap<>();
-
-		// Step 1: (Trival) assignment of pipeline ids to the roots
-		// TODO: maybe write as stream?
-		for (Lop r : roots) {
-			pipelineId = depthFirst(r, pipelineId, opList, pipelineList) + 1;
-		}
-
-		// DEV: printing dag after initial assignment of pipeline ids
-		DEVPrintDAG.asGraphviz("Step1", v);
-
-		// Step 2: Merge pipelines with only one node to another (connected) pipeline
-		// No heuristic is used to merge the pipelines (e.g. to the smallest connected pipeline)
-		// Just merge them to one of the connected pipelines, beginning with the outputs of the node
-
-		// TODO: better way to do this?
-		// It looks like we need to materialize the stream to a map,
-		// as we cannot modify the pipelineList while iterating over a stream of it???
-		Map<Integer, List<Lop>> pipelinesWithOneNode = pipelineList.entrySet().stream()
-			.filter(e -> e.getValue().size() == 1)
-			.collect(Collectors.toMap( e-> e.getKey(), e -> e.getValue()));
-
-		pipelinesWithOneNode.entrySet().stream().forEach(e -> {
-			Lop lop = e.getValue().get(0);
-			
-			// Merge to an existing output node
-			if (lop.getOutputs().size() > 0) {
-				lop.setPipelineID(lop.getOutputs().get(0).getPipelineID());
-			// If no outputs are present, merge to an existing input node
-			} else if (lop.getInputs().size() > 0) {
-				lop.setPipelineID(lop.getInputs().get(0).getPipelineID());
-			}
-			// else (no inputs and no outputs): do nothing (unreachable node?)
-			// Remove the pipeline from the list of pipelines
-			if (lop.getOutputs().size() > 0 || lop.getInputs().size() > 0) {
-				System.out.println("Merging " + e.getKey() + " to " + lop.getPipelineID());
-				pipelineList.get(lop.getPipelineID()).add(lop);
-				pipelineList.remove(e.getKey());
-			}
-		});
-
-		// DEV: printing dag after merging single node pipelines
-		
-		DEVPrintDAG.asGraphviz("Step2", v);
-
-		// TODO:
-		// Step 3: Merge small pipelines to bigger ones
-		// Over the list of sorted pipelines, find the best merge candidate, filtered according to connection
-		// Maybe use Two Pointer Algorithm to find the best merge candidate
-		// https://www.geeksforgeeks.org/two-pointers-technique/
-		
-
-		// TODO: doesnt reset everything?
-		roots.forEach(Lop::resetVisitStatus);
-
-		System.out.println("-PIPELINE END-");
-
-		return opList;
-	}
-
-	// 
-	/**
-	 * Initial assignment of pipeline Ids to the individual lops
-	 * 
-	 * @param v List of lops to sort
-	 * @return Depth-first sorted list of lops with preliminary _pipelineID on the Lop Object
-	 */
-	private static int depthFirst(Lop root, int pipelineId, ArrayList<Lop> opList, Map<Integer, List<Lop>> pipelineList) {
-
-		// Abort if the node was already visited
-		if (root.isVisited()) {
-			return root.getPipelineID();
-		}
-
-		// Assign pipeline id to the node, given by the parent
-		// Set the root node as visited
-		root.setPipelineID(pipelineId);
-		root.setVisited();
-
-		// Add the root node to the pipeline list
-		if(pipelineList.containsKey(pipelineId)) {
-			pipelineList.get(pipelineId).add(root);
-		} else {
-			ArrayList<Lop> lopList = new ArrayList<>();
-			lopList.add(root);
-			pipelineList.put(pipelineId, lopList);
-		}
-
-		// Children as inputs, as we are traversing the lops bottom up
-		List<Lop> children = root.getInputs();
-		// If root node has only one child, use the same pipeline id as root node
-		if (children.size() == 1) {
-			Lop child = children.get(0);
-			// We need to find the max pipeline id of the child, because the child could branch out
-			pipelineId = Math.max(pipelineId, depthFirst(child, pipelineId, opList, pipelineList));
-		} else {
-			// Iteration over all children
-			for (int i = 0; i < children.size(); i++) {
-				Lop child = children.get(i);
-				
-				// If the child has only one output, or all outputs are the root node, use the same pipeline id as parent
-				if(child.getOutputs().size() == 1 || 
-				  (child.getOutputs().size() > 1 && child.getOutputs().stream().allMatch(o -> o == root))) {
-					// No need for max, because the child can only have one output
-					depthFirst(child, root.getPipelineID(), opList, pipelineList);
-				} else {
-					// We need to find the max pipeline id of the child, because the child could branch out
-					pipelineId = Math.max(pipelineId, depthFirst(child, pipelineId + 1, opList, pipelineList));
-				}
-			}
-		}
-
-		opList.add(root);
-		return pipelineId;
-	}
-
-	/**
 	 * Sort lops depth-first
 	 * 
 	 * previously called doTopologicalSortTwoLevelOrder
@@ -243,7 +103,7 @@ public class ILinearize {
 	 * @param v List of lops to sort
 	 * @return Sorted list of lops
 	 */
-	private static List<Lop> depthFirst(List<Lop> v) {
+	protected static List<Lop> depthFirst(List<Lop> v) {
 		// partition nodes into leaf/inner nodes and dag root nodes,
 		// + sort leaf/inner nodes by ID to force depth-first scheduling
 		// + append root nodes in order of their original definition

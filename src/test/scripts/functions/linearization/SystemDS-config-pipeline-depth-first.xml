@@ -18,5 +18,5 @@
 -->
 
 <root>
-    <sysds.compile.linearization>na_pipeline</sysds.compile.linearization>
+    <sysds.compile.linearization>pipeline_depth_first</sysds.compile.linearization>
 </root>

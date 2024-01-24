@@ -112,6 +112,19 @@ public class LibMatrixFourier {
 
 	}
 
+	/**
+	 * Function to perform one-dimensional FFT on two given double arrays. The first one represents the real values and
+	 * the second one the imaginary values. Both arrays get updated and contain the result.
+	 *
+	 * @param re       array representing the real values
+	 * @param im       array representing the imaginary values
+	 * @param re_inter array for the real values of intermediate results
+	 * @param im_inter array for the imaginary values of intermediate results
+	 * @param start    start index (incl.)
+	 * @param stop     stop index (excl.)
+	 * @param num      number of values used for fft
+	 * @param minStep  step size between values used for fft
+	 */
 	public static void fft_one_dim(double[] re, double[] im, double[] re_inter, double[] im_inter, int start, int stop,
 		int num, int minStep) {
 

@@ -68,6 +68,11 @@ public class MatrixMulPerformance extends AutomatedTestBase {
     }
 
     @Test
+    public void testDense2Dense() {
+        testSparseFormat(null, null);
+    }
+
+    @Test
     public void testCSR2CSR() {
         testSparseFormat(SparseBlock.Type.CSR, SparseBlock.Type.CSR);
     }
@@ -102,8 +107,8 @@ public class MatrixMulPerformance extends AutomatedTestBase {
             avgNanosPerSparsity[sparsityIndex] = Arrays.stream(results).average().getAsDouble();
         }
 
-        System.out.println("sparsities" + btype1.name() + " = " + printAsPythonList(sparsities));
-        System.out.println("avgNanos" + btype2.name() + " =  " + printAsPythonList(avgNanosPerSparsity));
+        System.out.println("sparsities" + (btype1 == null ? "Dense" : btype1.name()) + " = " + printAsPythonList(sparsities));
+        System.out.println("avgNanos" + (btype2 == null ? "Dense" : btype2.name()) + " =  " + printAsPythonList(avgNanosPerSparsity));
     }
 
     private long runSparsityEstimateTest(SparseBlock.Type btype1, SparseBlock.Type btype2, float sparsity) {
@@ -113,53 +118,66 @@ public class MatrixMulPerformance extends AutomatedTestBase {
         MatrixBlock mbtmp1 = DataConverter.convertToMatrixBlock(A);
         MatrixBlock mbtmp2 = DataConverter.convertToMatrixBlock(B);
 
-        // Ensure that these are sparse blocks
-        if (!mbtmp1.isInSparseFormat())
-            mbtmp1.denseToSparse(true);
-        if (!mbtmp2.isInSparseFormat())
-            mbtmp2.denseToSparse(true);
+        MatrixBlock m1;
+        MatrixBlock m2;
 
-        SparseBlock srtmp1 = mbtmp1.getSparseBlock();
-        SparseBlock srtmp2 = mbtmp2.getSparseBlock();
-        SparseBlock sblock1;
-        SparseBlock sblock2;
+        if (btype1 == null && btype2 == null) {
+            if (mbtmp1.isInSparseFormat())
+                mbtmp1.sparseToDense();
+            if (mbtmp2.isInSparseFormat())
+                mbtmp2.sparseToDense();
 
-        switch (btype1) {
-            case MCSR:
-                sblock1 = new SparseBlockMCSR(srtmp1);
-                break;
-            case CSR:
-                sblock1 = new SparseBlockCSR(srtmp1);
-                break;
-            case COO:
-                sblock1 = new SparseBlockCOO(srtmp1);
-                break;
-            case DCSR:
-                sblock1 = new SparseBlockDCSR(srtmp1);
-                break;
-            default:
-                throw new IllegalArgumentException("Unknown sparse block type");
+            m1 = mbtmp1;
+            m2 = mbtmp2;
+        } else {
+            // Ensure that these are sparse blocks
+            if (!mbtmp1.isInSparseFormat())
+                mbtmp1.denseToSparse(true);
+            if (!mbtmp2.isInSparseFormat())
+                mbtmp2.denseToSparse(true);
+
+            SparseBlock srtmp1 = mbtmp1.getSparseBlock();
+            SparseBlock srtmp2 = mbtmp2.getSparseBlock();
+            SparseBlock sblock1;
+            SparseBlock sblock2;
+
+            switch (btype1) {
+                case MCSR:
+                    sblock1 = new SparseBlockMCSR(srtmp1);
+                    break;
+                case CSR:
+                    sblock1 = new SparseBlockCSR(srtmp1);
+                    break;
+                case COO:
+                    sblock1 = new SparseBlockCOO(srtmp1);
+                    break;
+                case DCSR:
+                    sblock1 = new SparseBlockDCSR(srtmp1);
+                    break;
+                default:
+                    throw new IllegalArgumentException("Unknown sparse block type");
+            }
+
+            switch (btype2) {
+                case MCSR:
+                    sblock2 = new SparseBlockMCSR(srtmp2);
+                    break;
+                case CSR:
+                    sblock2 = new SparseBlockCSR(srtmp2);
+                    break;
+                case COO:
+                    sblock2 = new SparseBlockCOO(srtmp2);
+                    break;
+                case DCSR:
+                    sblock2 = new SparseBlockDCSR(srtmp2);
+                    break;
+                default:
+                    throw new IllegalArgumentException("Unknown sparse block type");
+            }
+
+            m1 = new MatrixBlock(_rl, _cl, sblock1.size(), sblock1);
+            m2 = new MatrixBlock(_rl, _cl, sblock2.size(), sblock2);
         }
-
-        switch (btype2) {
-            case MCSR:
-                sblock2 = new SparseBlockMCSR(srtmp2);
-                break;
-            case CSR:
-                sblock2 = new SparseBlockCSR(srtmp2);
-                break;
-            case COO:
-                sblock2 = new SparseBlockCOO(srtmp2);
-                break;
-            case DCSR:
-                sblock2 = new SparseBlockDCSR(srtmp2);
-                break;
-            default:
-                throw new IllegalArgumentException("Unknown sparse block type");
-        }
-
-        MatrixBlock m1 = new MatrixBlock(_rl, _cl, sblock1.size(), sblock1);
-        MatrixBlock m2 = new MatrixBlock(_rl, _cl, sblock2.size(), sblock2);
 
         long nanos = System.nanoTime();
 

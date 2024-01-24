@@ -1204,22 +1204,37 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 
 	private static Hop simplifyNotOverComparisons(Hop parent, Hop hi, int pos){
 
-		if(HopRewriteUtils.isUnary(hi, OpOp1.NOT) && hi.getInput(0) instanceof BinaryOp){
+		if( (HopRewriteUtils.isUnary(hi, OpOp1.NOT)) &&
+			(HopRewriteUtils.isBinary(hi.getInput(0), OpOp2.GREATER) ||
+				HopRewriteUtils.isBinary(hi.getInput(0), OpOp2.LESS) ||
+				HopRewriteUtils.isBinary(hi.getInput(0), OpOp2.EQUAL))){
 
 			Hop binaryOperator = hi.getInput(0);
 			Hop A = hi.getInput(0).getInput(0);
 			Hop B = hi.getInput(0).getInput(1);
+			Hop newHop = null;
 			// !(A>B) -> (A<=B)
 			if(HopRewriteUtils.isBinary(binaryOperator, OpOp2.GREATER)){
-				System.out.println("greater");
+				//System.out.println("greater");
+				newHop = HopRewriteUtils.createBinary(A, B, OpOp2.LESSEQUAL);
 			}
 			// !(A<B) -> (A>=B)
 			if(HopRewriteUtils.isBinary(binaryOperator, OpOp2.LESS)){
-				System.out.println("less");
+				//System.out.println("less");
+				newHop = HopRewriteUtils.createBinary(A, B, OpOp2.GREATEREQUAL);
+
 			}
 			// !(A==B) -> (A!=B)
 			if(HopRewriteUtils.isBinary(binaryOperator, OpOp2.EQUAL)){
-				System.out.println("equal");
+				//System.out.println("equal");
+				newHop = HopRewriteUtils.createBinary(A, B, OpOp2.NOTEQUAL);
+
+			}
+			if(parent != null) {
+				HopRewriteUtils.replaceChildReference(parent, hi, newHop, pos);
+				HopRewriteUtils.cleanupUnreferenced(hi);
+				hi = newHop;
+				LOG.debug("Applied simplifyNotOverComparisons (line " + hi.getBeginLine() + ")");
 			}
 		}
 

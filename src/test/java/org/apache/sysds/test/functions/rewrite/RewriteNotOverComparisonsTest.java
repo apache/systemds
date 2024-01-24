@@ -62,12 +62,12 @@ public class RewriteNotOverComparisonsTest extends AutomatedTestBase{
 	}
 
 	@Test
-	public void testNotOverComparisonsSmallerNoRewrite(){
+	public void testNotOverComparisonsLessNoRewrite(){
 		testRewriteNotOverComparisons(TEST_NAME2, false);
 	}
 
 	@Test
-	public void testNotOverComparisonsSmallerRewrite(){
+	public void testNotOverComparisonsLessRewrite(){
 		testRewriteNotOverComparisons(TEST_NAME2, true);
 	}
 

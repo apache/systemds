@@ -28,10 +28,9 @@ options(digits=22)
 library("Matrix")
 library("matrixStats")
 
-# Read matrices A, B, and C from Matrix Market format files
+# Read matrix A
 A = as.matrix(readMM(paste(args[1], "A.mtx", sep="")))
-B = as.matrix(readMM(paste(args[1], "B.mtx", sep="")))
 
-R = !(A == B)
+R = !(A == 0)
 
 writeMM(as(R, "CsparseMatrix"), paste(args[2], "R", sep=""))

@@ -30,14 +30,13 @@ import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
 import org.apache.sysds.utils.Statistics;
 
-public class RewriteNotOverComparisonsTest extends AutomatedTestBase{
+public class RewriteNotOverComparisonsTest extends AutomatedTestBase {
 
 	private static final String TEST_NAME1 = "RewriteNotOverComparisons1";
 	private static final String TEST_NAME2 = "RewriteNotOverComparisons2";
 	private static final String TEST_NAME3 = "RewriteNotOverComparisons3";
 	private static final String TEST_DIR = "functions/rewrite/";
-	private static final String TEST_CLASS_DIR =
-		TEST_DIR + RewriteNotOverComparisonsTest.class.getSimpleName() + "/";
+	private static final String TEST_CLASS_DIR = TEST_DIR + RewriteNotOverComparisonsTest.class.getSimpleName() + "/";
 
 	private static final int rows = 10;
 	private static final int cols = 10;
@@ -52,40 +51,38 @@ public class RewriteNotOverComparisonsTest extends AutomatedTestBase{
 	}
 
 	@Test
-	public void testNotOverComparisonsGreaterNoRewrite(){
+	public void testNotOverComparisonsGreaterNoRewrite() {
 		testRewriteNotOverComparisons(TEST_NAME1, false);
 	}
 
 	@Test
-	public void testNotOverComparisonsGreaterRewrite(){
+	public void testNotOverComparisonsGreaterRewrite() {
 		testRewriteNotOverComparisons(TEST_NAME1, true);
 	}
 
 	@Test
-	public void testNotOverComparisonsLessNoRewrite(){
+	public void testNotOverComparisonsLessNoRewrite() {
 		testRewriteNotOverComparisons(TEST_NAME2, false);
 	}
 
 	@Test
-	public void testNotOverComparisonsLessRewrite(){
+	public void testNotOverComparisonsLessRewrite() {
 		testRewriteNotOverComparisons(TEST_NAME2, true);
 	}
 
 	@Test
-	public void testNotOverComparisonsEqualNoRewrite(){
+	public void testNotOverComparisonsEqualNoRewrite() {
 		testRewriteNotOverComparisons(TEST_NAME3, false);
 	}
 
 	@Test
-	public void testNotOverComparisonsEqualRewrite(){
+	public void testNotOverComparisonsEqualRewrite() {
 		testRewriteNotOverComparisons(TEST_NAME3, true);
 	}
 
-
-
-	private void testRewriteNotOverComparisons(String testname, boolean rewrites){
+	private void testRewriteNotOverComparisons(String testname, boolean rewrites) {
 		boolean oldFlag = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
-		try{
+		try {
 			TestConfiguration config = getTestConfiguration(testname);
 			loadTestConfiguration(config);
 
@@ -99,10 +96,11 @@ public class RewriteNotOverComparisonsTest extends AutomatedTestBase{
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = rewrites;
 
 			double[][] A = getRandomMatrix(rows, cols, -1, 1, 0.70d, 7);
-			double[][] B = getRandomMatrix(rows, cols, -1, 1, 0.70d, 6);
-
-			writeInputMatrixWithMTD("A", A, 65,true);
-			writeInputMatrixWithMTD("B", B, 74,true);
+			writeInputMatrixWithMTD("A", A, 65, true);
+			if(testname != TEST_NAME3) {
+				double[][] B = getRandomMatrix(rows, cols, -1, 1, 0.70d, 6);
+				writeInputMatrixWithMTD("B", B, 74, true);
+			}
 
 			runTest(true, false, null, -1);
 			runRScript(true);
@@ -115,14 +113,15 @@ public class RewriteNotOverComparisonsTest extends AutomatedTestBase{
 			String exclamationMark = "!";
 			long numExclamationMark = Statistics.getCPHeavyHitterCount(exclamationMark);
 
-
-			if(rewrites==true){
+			if(rewrites == true) {
 				Assert.assertTrue(numExclamationMark == 0);
-			}else{
+			}
+			else {
 				Assert.assertTrue(numExclamationMark == 1);
 			}
 
-		}finally {
+		}
+		finally {
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = oldFlag;
 		}
 

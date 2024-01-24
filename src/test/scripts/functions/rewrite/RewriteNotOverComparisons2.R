@@ -28,7 +28,7 @@ options(digits=22)
 library("Matrix")
 library("matrixStats")
 
-# Read matrices A, B, and C from Matrix Market format files
+# Read matrices A, and B from Matrix Market format files
 A = as.matrix(readMM(paste(args[1], "A.mtx", sep="")))
 B = as.matrix(readMM(paste(args[1], "B.mtx", sep="")))
 

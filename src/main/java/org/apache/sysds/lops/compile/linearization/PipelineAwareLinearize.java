@@ -1,21 +1,21 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
- * specific language governing permissions and limitations
- * under the License.
- */
+* Licensed to the Apache Software Foundation (ASF) under one
+* or more contributor license agreements.  See the NOTICE file
+* distributed with this work for additional information
+* regarding copyright ownership.  The ASF licenses this file
+* to you under the Apache License, Version 2.0 (the
+* "License"); you may not use this file except in compliance
+* with the License.  You may obtain a copy of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing,
+* software distributed under the License is distributed on an
+* "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+* KIND, either express or implied.  See the License for the
+* specific language governing permissions and limitations
+* under the License.
+*/
 
 package org.apache.sysds.lops.compile.linearization;
 
@@ -39,12 +39,12 @@ public class PipelineAwareLinearize {
 	// Merges two pipelines if p1.size() + p2.size() < UPPER_BOUND
 	private final static int UPPER_BOUND = 10;
 
-    /**
+	/**
 	 * Sort lops depth-first while assigning the nodes to pipelines
-	 * 
-	 * @param v List of lops to sort
-	 * @return Sorted list of lops with set _pipelineID on the Lop Object
-	 */
+	* 
+	* @param v List of lops to sort
+	* @return Sorted list of lops with set _pipelineID on the Lop Object
+	*/
 	public static List<Lop> pipelineDepthFirst(List<Lop> v) {
 
 		// If size of DAG is smaller than IGNORE_LIMIT, give all nodes the same pipeline id
@@ -125,7 +125,7 @@ public class PipelineAwareLinearize {
 				
 				// If the child has only one output, or all outputs are the root node, use the same pipeline id as parent
 				if(child.getOutputs().size() == 1 || 
-				  (child.getOutputs().size() > 1 && child.getOutputs().stream().allMatch(o -> o == root))) {
+				(child.getOutputs().size() > 1 && child.getOutputs().stream().allMatch(o -> o == root))) {
 					// No need for max, because the child can only have one output
 					depthFirst(child, root.getPipelineID(), opList, pipelineMap);
 				} else {
@@ -195,8 +195,8 @@ public class PipelineAwareLinearize {
 		Map.Entry<Integer, Integer> sm1 = sortedPipelineSizes.get(1);
 
 		while((sm0 != null && sm1 != null) &&
-  			  (sm0.getValue() < HARD_LIMIT ||
-			   sm0.getValue() + sm1.getValue() < UPPER_BOUND)
+				(sm0.getValue() < HARD_LIMIT ||
+			sm0.getValue() + sm1.getValue() < UPPER_BOUND)
 		) {
 
 			// Merge pipelines as they satifiy the conditions

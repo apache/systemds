@@ -112,41 +112,49 @@ public class DDCArray<T> extends ACompressedArray<T> {
 	 */
 	@SuppressWarnings("unchecked")
 	public static <T> Array<T> compressToDDC(Array<T> arr) {
-		final int s = arr.size();
-		// Early aborts
-		// if the size is small do not consider
-		// or if the instance if RaggedArray where all values typically are unique.
-		if(s <= 10 || arr instanceof RaggedArray)
-			return arr;
-		final int t = getTryThreshold(arr.getValueType(), s, arr.getInMemorySize());
+		try{
 
-		// Two pass algorithm
-		// 1.full iteration: Get unique
-		Map<T, Integer> rcd = arr.tryGetDictionary(t);
-		if(rcd == null)
-			return arr;
-
-		// Abort if there are to many unique values.
-		if(rcd.size() > s / 2)
-			return arr;
-
-		// Allocate the correct dictionary output
-		Array<T> ar;
-		if(rcd.keySet().contains(null))
-			ar = (Array<T>) ArrayFactory.allocateOptional(arr.getValueType(), rcd.size());
-		else
-			ar = (Array<T>) ArrayFactory.allocate(arr.getValueType(), rcd.size());
-
-		// Set elements in the Dictionary array --- much smaller.
-		// This inverts the mapping such that the value
-		// is the index in the dictionary
-		for(Entry<T, Integer> e : rcd.entrySet())
-			ar.set(e.getValue(), e.getKey());
-
-		// 2. full iteration: Make map
-		final AMapToData m = arr.createMapping(rcd);
-
-		return new DDCArray<>(ar, m);
+			final int s = arr.size();
+			// Early aborts
+			// if the size is small do not consider
+			// or if the instance if RaggedArray where all values typically are unique.
+			if(s <= 10 || arr instanceof RaggedArray)
+				return arr;
+			final int t = getTryThreshold(arr.getValueType(), s, arr.getInMemorySize());
+	
+			// Two pass algorithm
+			// 1.full iteration: Get unique
+			Map<T, Integer> rcd = arr.tryGetDictionary(t);
+			if(rcd == null)
+				return arr;
+	
+			// Abort if there are to many unique values.
+			if(rcd.size() > s / 2)
+				return arr;
+	
+			// Allocate the correct dictionary output
+			Array<T> ar;
+			if(rcd.keySet().contains(null))
+				ar = (Array<T>) ArrayFactory.allocateOptional(arr.getValueType(), rcd.size());
+			else
+				ar = (Array<T>) ArrayFactory.allocate(arr.getValueType(), rcd.size());
+	
+			// Set elements in the Dictionary array --- much smaller.
+			// This inverts the mapping such that the value
+			// is the index in the dictionary
+			for(Entry<T, Integer> e : rcd.entrySet())
+				ar.set(e.getValue(), e.getKey());
+	
+			// 2. full iteration: Make map
+			final AMapToData m = arr.createMapping(rcd);
+	
+			return new DDCArray<>(ar, m);
+		}
+		catch (Exception e){
+			String arrS = arr.toString();
+			arrS = arrS.substring(0, Math.min(10000, arrS.length()));
+			throw new DMLCompressionException("Failed to compress:\n" + arrS,e);
+		}
 	}
 
 	@Override

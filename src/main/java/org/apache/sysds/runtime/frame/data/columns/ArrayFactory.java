@@ -37,7 +37,8 @@ public interface ArrayFactory {
 	public final static int bitSetSwitchPoint = 64;
 
 	public enum FrameArrayType {
-		STRING, BOOLEAN, BITSET, INT32, INT64, FP32, FP64, CHARACTER, RAGGED, OPTIONAL, DDC, HASH64;
+		STRING, BOOLEAN, BITSET, INT32, INT64, FP32, FP64, //
+		CHARACTER, RAGGED, OPTIONAL, DDC, HASH64, HASH32;
 	}
 
 	public static StringArray create(String[] col) {
@@ -46,6 +47,10 @@ public interface ArrayFactory {
 
 	public static HashLongArray createHash64(String[] col) {
 		return new HashLongArray(col);
+	}
+
+	public static HashIntegerArray createHash32(String[] col) {
+		return new HashIntegerArray(col);
 	}
 
 	public static OptionalArray<Object> createHash64Opt(String[] col) {
@@ -95,6 +100,8 @@ public interface ArrayFactory {
 	public static long getInMemorySize(ValueType type, int _numRows, boolean containsNull) {
 		if(containsNull) {
 			switch(type) {
+				case HASH32: 
+					type = ValueType.INT32;
 				case HASH64:
 					type = ValueType.INT64;
 				case BOOLEAN:
@@ -131,6 +138,7 @@ public interface ArrayFactory {
 				case UINT4:
 				case UINT8:
 				case INT32:
+				case HASH32:
 					return Array.baseMemoryCost() + (long) MemoryEstimates.intArrayCost(_numRows);
 				case FP32:
 					return Array.baseMemoryCost() + (long) MemoryEstimates.floatArrayCost(_numRows);
@@ -163,6 +171,7 @@ public interface ArrayFactory {
 			case FP64:
 			case CHARACTER:
 			case HASH64:
+			case HASH32:
 				return new OptionalArray<>(allocate(v, nRow), true);
 			case UNKNOWN:
 			case STRING:
@@ -197,6 +206,8 @@ public interface ArrayFactory {
 				return new CharArray(new char[nRow]);
 			case HASH64:
 				return new HashLongArray(new long[nRow]);
+			case HASH32: 
+				return new HashIntegerArray(new int[nRow]);
 			case UNKNOWN:
 			case STRING:
 			default:
@@ -240,6 +251,9 @@ public interface ArrayFactory {
 				break;
 			case HASH64:
 				arr = new HashLongArray(new long[nRow]);
+				break;
+			case HASH32: 
+				arr = new HashIntegerArray(new int[nRow]);
 				break;
 			default:
 				throw new NotImplementedException(v + "");
@@ -349,6 +363,8 @@ public interface ArrayFactory {
 				return LongArray.parseLong(s);
 			case HASH64:
 				return HashLongArray.parseHashLong(s);
+			case HASH32:
+			 	return HashIntegerArray.parseHashInt(s);
 			case STRING:
 			case UNKNOWN:
 			default:

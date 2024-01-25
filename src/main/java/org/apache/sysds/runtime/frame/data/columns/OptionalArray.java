@@ -362,6 +362,11 @@ public class OptionalArray<T> extends Array<T> {
 	}
 
 	@Override
+	protected Array<Object> changeTypeHash32(Array<Object> retA, int l, int u) {
+		return _a.changeTypeHash32(retA, l, u);
+	}
+	
+	@Override
 	protected Array<Character> changeTypeCharacter(Array<Character> retA, int l, int u) {
 		return _a.changeTypeCharacter(retA, l, u);
 	}

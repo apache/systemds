@@ -329,6 +329,16 @@ public class RaggedArray<T> extends Array<T> {
 	}
 
 	@Override
+	protected Array<Object> changeTypeHash32() {
+		return _a.changeTypeHash32();
+	}
+
+	@Override
+	protected Array<Object> changeTypeHash32(Array<Object> retA, int l, int u) {
+		return _a.changeTypeHash32(retA, l, u);
+	}
+
+	@Override
 	protected Array<String> changeTypeString() {
 		return _a.changeTypeString();
 	}

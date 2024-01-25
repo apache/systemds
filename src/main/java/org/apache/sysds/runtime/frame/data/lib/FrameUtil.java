@@ -129,7 +129,7 @@ public interface FrameUtil {
 				if(v < '0' || v > 'f')
 					return null;
 			}
-			return ValueType.HASH64;
+			return len == 8 ? ValueType.HASH32 : ValueType.HASH64;
 		}
 		return null;
 	}
@@ -238,6 +238,7 @@ public interface FrameUtil {
 			case CHARACTER:
 				if(len == 1)
 					return ValueType.CHARACTER;
+			case HASH32:
 			case HASH64:
 				r = isHash(val, len);
 				if(r != null)

@@ -195,7 +195,7 @@ public class CharArray extends Array<Character> {
 	}
 
 	@Override
-	protected Array<Boolean> changeTypeBitSet(Array<Boolean> ret, int l, int u){
+	protected Array<Boolean> changeTypeBitSet(Array<Boolean> ret, int l, int u) {
 		for(int i = l; i < u; i++) {
 			final int di = _data[i];
 			if(di != 0 && di != 1)
@@ -260,10 +260,18 @@ public class CharArray extends Array<Character> {
 	}
 
 	@Override
+	protected Array<Object> changeTypeHash32(Array<Object> retA, int l, int u) {
+		int[] ret = ((HashIntegerArray) retA).getInts();
+		for(int i = l; i < u; i++)
+			ret[i] = _data[i];
+		return retA;
+	}
+
+	@Override
 	protected Array<String> changeTypeString(Array<String> retA, int l, int u) {
 		String[] ret = (String[]) retA.get();
 		for(int i = l; i < u; i++)
-			ret[i] = ""+_data[i];
+			ret[i] = "" + _data[i];
 		return retA;
 	}
 
@@ -339,20 +347,20 @@ public class CharArray extends Array<Character> {
 	}
 
 	@Override
-	public double hashDouble(int idx){
+	public double hashDouble(int idx) {
 		return Character.hashCode(_data[idx]);
 	}
 
 	@Override
-	public boolean equals(Array<Character> other){
+	public boolean equals(Array<Character> other) {
 		if(other instanceof CharArray)
-			return Arrays.equals(_data, ((CharArray)other)._data);
-		else 
+			return Arrays.equals(_data, ((CharArray) other)._data);
+		else
 			return false;
 	}
 
 	@Override
-	public boolean possiblyContainsNaN(){
+	public boolean possiblyContainsNaN() {
 		return false;
 	}
 

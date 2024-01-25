@@ -321,6 +321,14 @@ public class DoubleArray extends Array<Double> {
 	}
 
 	@Override
+	protected Array<Object> changeTypeHash32(Array<Object> retA, int l, int u) {
+		int[] ret = ((HashIntegerArray) retA).getInts();
+		for(int i = l; i < u; i++)
+			ret[i] = (int)_data[i];
+		return retA;
+	}
+
+	@Override
 	protected Array<String> changeTypeString(Array<String> retA, int l, int u) {
 		String[] ret = (String[]) retA.get();
 		for(int i = l; i < u; i++)

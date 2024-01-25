@@ -202,7 +202,7 @@ public class IntegerArray extends Array<Integer> {
 	}
 
 	@Override
-	protected Array<Boolean> changeTypeBitSet(Array<Boolean> ret, int l, int u){
+	protected Array<Boolean> changeTypeBitSet(Array<Boolean> ret, int l, int u) {
 		for(int i = l; i < u; i++) {
 			if(_data[i] != 0 && _data[i] != 1)
 				throw new DMLRuntimeException(
@@ -211,6 +211,7 @@ public class IntegerArray extends Array<Integer> {
 		}
 		return ret;
 	}
+
 	@Override
 	protected Array<Boolean> changeTypeBoolean(Array<Boolean> retA, int l, int u) {
 		boolean[] ret = (boolean[]) retA.get();
@@ -263,6 +264,19 @@ public class IntegerArray extends Array<Integer> {
 	@Override
 	protected Array<Object> changeTypeHash64(Array<Object> retA, int l, int u) {
 		long[] ret = ((HashLongArray) retA).getLongs();
+		for(int i = l; i < u; i++)
+			ret[i] = _data[i];
+		return retA;
+	}
+
+	@Override
+	protected Array<Object> changeTypeHash64() {
+		return new HashIntegerArray(_data);
+	}
+
+	@Override
+	protected Array<Object> changeTypeHash32(Array<Object> retA, int l, int u) {
+		int[] ret = ((HashIntegerArray) retA).getInts();
 		for(int i = l; i < u; i++)
 			ret[i] = _data[i];
 		return retA;
@@ -365,7 +379,7 @@ public class IntegerArray extends Array<Integer> {
 	}
 
 	@Override
-	public boolean possiblyContainsNaN(){
+	public boolean possiblyContainsNaN() {
 		return false;
 	}
 

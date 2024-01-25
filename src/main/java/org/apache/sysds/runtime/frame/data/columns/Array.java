@@ -715,7 +715,7 @@ public abstract class Array<T> implements Writable {
 	protected abstract Array<Long> changeTypeLong(Array<Long> ret, int l, int u);
 
 	/**
-	 * Change type to a Hash46 array type
+	 * Change type to a Hash64 array type
 	 * 
 	 * @return A Hash64 array
 	 */
@@ -742,6 +742,36 @@ public abstract class Array<T> implements Writable {
 	 * @return A Hash64 type of array that is pointing the ret argument
 	 */
 	protected abstract Array<Object> changeTypeHash64(Array<Object> ret, int l, int u);
+
+	/**
+	 * Change type to a Hash32 array type
+	 * 
+	 * @return A Hash64 array
+	 */
+	protected Array<Object> changeTypeHash32() {
+		return changeTypeHash32(new HashIntegerArray(new int[size()]));
+	}
+
+	/**
+	 * Change type to a Hash32 array, of underlying longs to store the individual values
+	 * 
+	 * @param ret The array to insert the result into
+	 * @return A Hash64 type of array that is pointing the ret argument
+	 */
+	protected Array<Object> changeTypeHash32(Array<Object> ret) {
+		return changeTypeHash32(ret, 0, size());
+	}
+
+	/**
+	 * Change type to a Hash32 array, of underlying longs to store the individual values
+	 * 
+	 * @param ret The array to insert the result into
+	 * @param l   lower index to convert from (inclusive)
+	 * @param u   upper index to convert to (exclusive)
+	 * @return A Hash64 type of array that is pointing the ret argument
+	 */
+	protected abstract Array<Object> changeTypeHash32(Array<Object> ret, int l, int u);
+
 
 	/**
 	 * Change type to a String array type

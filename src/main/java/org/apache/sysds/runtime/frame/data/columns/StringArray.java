@@ -567,6 +567,13 @@ public class StringArray extends Array<String> {
 	}
 
 	@Override
+	protected Array<Object> changeTypeHash32(Array<Object> retA, int l, int u) {
+		for(int i = l; i < u; i++)
+			retA.set(i, _data[i]);
+		return retA;
+	}
+
+	@Override
 	public Array<Character> changeTypeCharacter(Array<Character> retA, int l, int u) {
 		final char[] ret = (char[]) retA.get();
 		for(int i = l; i < u; i++) {

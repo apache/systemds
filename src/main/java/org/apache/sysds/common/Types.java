@@ -77,7 +77,7 @@ public class Types
 	public enum ValueType {
 		UINT4, UINT8, // Used for parsing in UINT values from numpy.
 		FP32, FP64, INT32, INT64, BOOLEAN, STRING, UNKNOWN,
-		HASH64, // Indicate that the value is a hash of 64 bit.
+		HASH64, HASH32, // Indicate that the value is a hash of 64 bit.
 		CHARACTER;
 		
 		public boolean isNumeric() {

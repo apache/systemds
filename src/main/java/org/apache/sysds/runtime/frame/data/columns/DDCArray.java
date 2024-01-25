@@ -137,6 +137,8 @@ public class DDCArray<T> extends ACompressedArray<T> {
 			ar = (Array<T>) ArrayFactory.allocate(arr.getValueType(), rcd.size());
 
 		// Set elements in the Dictionary array --- much smaller.
+		// This inverts the mapping such that the value
+		// is the index in the dictionary
 		for(Entry<T, Integer> e : rcd.entrySet())
 			ar.set(e.getValue(), e.getKey());
 
@@ -322,6 +324,12 @@ public class DDCArray<T> extends ACompressedArray<T> {
 	protected Array<Object> changeTypeHash64() {
 		return new DDCArray<>(dict.changeTypeHash64(), map);
 	}
+
+	@Override
+	protected Array<Object> changeTypeHash32(Array<Object> retA, int l, int u) {
+		return new DDCArray<>(dict.changeTypeHash32(), map);
+	}
+
 
 	@Override
 	protected Array<String> changeTypeString() {

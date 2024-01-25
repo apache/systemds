@@ -486,11 +486,17 @@ public class BitSetArray extends ABooleanArray {
 	@Override
 	protected Array<Object> changeTypeHash64(Array<Object> retA, int l, int u) {
 		long[] ret = ((HashLongArray) retA).getLongs();
-
 		for(int i = l; i < u; i++)
 			ret[i] = get(i) ? 1L : 0L;
 		return retA;
+	}
 
+	@Override
+	protected Array<Object> changeTypeHash32(Array<Object> retA, int l, int u) {
+		int[] ret = ((HashIntegerArray) retA).getInts();
+		for(int i = l; i < u; i++)
+			ret[i] = get(i) ? 1 : 0;
+		return retA;
 	}
 
 	@Override

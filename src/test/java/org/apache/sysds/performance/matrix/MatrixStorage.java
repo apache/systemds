@@ -8,12 +8,15 @@ import org.apache.sysds.test.TestUtils;
 import org.apache.sysds.utils.MemoryEstimates;
 import org.junit.Test;
 
+import java.util.Arrays;
+import java.util.stream.IntStream;
+
 public class MatrixStorage extends AutomatedTestBase {
 
     private static final int resolution = 18;
     private static final float resolutionDivisor = 2f;
-    private static final float maxSparsity = .4f;
-    private static final float dimTestSparsity = .1f;
+    private static final float maxSparsity = .2f;
+    private static final float dimTestSparsity = .0001f;
 
     static float[] sparsityProvider() {
         float[] sparsities = new float[resolution];
@@ -32,6 +35,29 @@ public class MatrixStorage extends AutomatedTestBase {
         for (int i = 0; i < resolution; i++) {
             dims[0][i] = rl;
             dims[1][i] = (int)(minCl + i * ((maxCl-minCl)/((float)resolution)));
+        }
+
+        return dims;
+    }
+
+    static int[][] balancedDimsProvider(int numEntries, float[] ratio, float qMax) {
+        int resolution = ratio.length;
+        int[][] dims = new int[2][resolution];
+
+        for (int i = 0; i < resolution; i++) {
+            ratio[i] = -qMax + 2 * qMax * (i / ((float)resolution));
+            if (ratio[i] < 0) {
+                // Then columns are bigger than rows
+                // r * c = numEntries
+                // r = (1 + abs(ratio[i])) * c
+                // => numEntries = (1 + abs(ratio[i])) * c^2
+                // => c = sqrt(numEntries / (1 + abs(ratio[i])))
+                dims[1][i] = Math.round((float)Math.sqrt(numEntries / (1 - ratio[i])));
+                dims[0][i] = Math.round(numEntries / (float)dims[1][i]);
+            } else {
+                dims[0][i] = Math.round((float)Math.sqrt(numEntries / (1 + ratio[i])));
+                dims[1][i] = Math.round(numEntries / (float)dims[0][i]);
+            }
         }
 
         return dims;
@@ -109,7 +135,7 @@ public class MatrixStorage extends AutomatedTestBase {
         testSparseFormat(SparseBlock.Type.DCSR, 1024, 1024);
     }*/
 
-    @Test
+    /*@Test
     public void testChangingDimsDense() {
         testChangingDims(null, dimTestSparsity, 1024, 10, 3000, 30);
     }
@@ -132,26 +158,84 @@ public class MatrixStorage extends AutomatedTestBase {
     @Test
     public void testChangingDimsDCSR() {
         testChangingDims(SparseBlock.Type.DCSR, dimTestSparsity, 1024, 10, 3000, 30);
+    }*/
+
+    @Test
+    public void testBalancedDimsDense() {
+        testBalancedDims(null, dimTestSparsity, 1024*1024, 30, 10, 10);
     }
 
-    private void testSparseFormat(SparseBlock.Type btype, int rl, int cl) {
+    @Test
+    public void testBalancedDimsMCSR() {
+        testBalancedDims(SparseBlock.Type.MCSR, dimTestSparsity, 1024*1024, 30, 10, 10);
+    }
+
+    @Test
+    public void testBalancedDimsCSR() {
+        testBalancedDims(SparseBlock.Type.CSR, dimTestSparsity, 1024*1024, 30, 10, 10);
+    }
+
+    @Test
+    public void testBalancedDimsCOO() {
+        testBalancedDims(SparseBlock.Type.COO, dimTestSparsity, 1024*1024, 30, 10, 10);
+    }
+
+    @Test
+    public void testBalancedDimsDCSR() {
+        testBalancedDims(SparseBlock.Type.DCSR, dimTestSparsity, 1024*1024, 30, 10, 10);
+    }
+
+    private void testSparseFormat(SparseBlock.Type btype, int rl, int cl, int repetitions) {
         float[] sparsities = MatrixStorage.sparsityProvider();
-        long[] results = new long[sparsities.length];
-        for (int sparsityIndex = 0; sparsityIndex < sparsities.length; sparsityIndex++)
-            results[sparsityIndex] = evaluateMemoryConsumption(btype, sparsities[sparsityIndex], rl, cl);
+        long[][] results = new long[repetitions][sparsities.length];
+
+        for (int repetition = 0; repetition < repetitions; repetition++)
+            for (int sparsityIndex = 0; sparsityIndex < sparsities.length; sparsityIndex++)
+                results[repetition][sparsityIndex] = evaluateMemoryConsumption(btype, sparsities[sparsityIndex], rl, cl);
+
 
         System.out.println("sparsities" + (btype == null ? "Dense" : btype.name()) + " = " + printAsPythonList(sparsities));
-        System.out.println("memory" + (btype == null ? "Dense" : btype.name()) + " =  " + printAsPythonList(results));
+        System.out.println("memory" + (btype == null ? "Dense" : btype.name()) + " =  " + printAsPythonList(buildAverage(results)));
     }
 
-    private void testChangingDims(SparseBlock.Type btype, double sparsity, int rl, int minCl, int maxCl, int resolution) {
+    private void testChangingDims(SparseBlock.Type btype, double sparsity, int rl, int minCl, int maxCl, int resolution, int repetitions) {
         int[][] dims = MatrixStorage.dimsProvider(rl, minCl, maxCl, resolution);
-        long[] results = new long[resolution];
-        for (int dimIndex = 0; dimIndex < resolution; dimIndex++)
-            results[dimIndex] = evaluateMemoryConsumption(btype, sparsity, dims[0][dimIndex], dims[1][dimIndex]);
+        long[][] results = new long[repetitions][resolution];
+
+        for (int repetition = 0; repetition < repetitions; repetition++)
+            for (int dimIndex = 0; dimIndex < resolution; dimIndex++)
+                results[repetition][dimIndex] = evaluateMemoryConsumption(btype, sparsity, dims[0][dimIndex], dims[1][dimIndex]);
+
 
         System.out.println("dims" + (btype == null ? "Dense" : btype.name()) + " = " + printAsPythonList(dims[1]));
-        System.out.println("dimMemory" + (btype == null ? "Dense" : btype.name()) + " =  " + printAsPythonList(results));
+        System.out.println("dimMemory" + (btype == null ? "Dense" : btype.name()) + " =  " + printAsPythonList(buildAverage(results)));
+    }
+
+    private void testBalancedDims(SparseBlock.Type btype, double sparsity, int numEntries, int resolution, float qMax, int repetitions) {
+        float[] ratios = new float[resolution];
+        int[][] dims = MatrixStorage.balancedDimsProvider(numEntries, ratios, qMax);
+        long[][] results = new long[repetitions][resolution];
+
+        for (int repetition = 0; repetition < repetitions; repetition++)
+            for (int ratioIndex = 0; ratioIndex < resolution; ratioIndex++)
+                results[repetition][ratioIndex] = evaluateMemoryConsumption(btype, sparsity, dims[0][ratioIndex], dims[1][ratioIndex]);
+
+        //System.out.println("cols: " + printAsPythonList(dims[1]));
+        //System.out.println("actualNumEntries: " + printAsPythonList(actualNumEntries));
+        System.out.println("ratio" + (btype == null ? "Dense" : btype.name()) + " = " + printAsPythonList(ratios) + "");
+        System.out.println("ratioMemory" + (btype == null ? "Dense" : btype.name()) + " =  " + printAsPythonList(buildAverage(results)) + "");
+        //System.out.println("})");
+    }
+
+    private long[] buildAverage(long[][] results) {
+        long[] mResults = new long[results[0].length];
+        for (int i = 0; i < results[0].length; i++) {
+            for (int j = 0; j < results.length; j++)
+                mResults[i] += results[j][i];
+            mResults[i] /= results.length;
+        }
+
+        return mResults;
     }
 
     private long evaluateMemoryConsumption(SparseBlock.Type btype, double sparsity, int rl, int cl) {

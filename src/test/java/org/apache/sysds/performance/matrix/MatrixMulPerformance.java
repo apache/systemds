@@ -181,8 +181,7 @@ public class MatrixMulPerformance extends AutomatedTestBase {
 
         long nanos = System.nanoTime();
 
-        MatrixBlock m3 = m1.aggregateBinaryOperations(m1, m2,
-                new MatrixBlock(), InstructionUtils.getMatMultOperator(1));
+        MatrixBlock m3 = m1.aggregateBinaryOperations(m1, m2, InstructionUtils.getMatMultOperator(1));
 
         return System.nanoTime() - nanos;
     }

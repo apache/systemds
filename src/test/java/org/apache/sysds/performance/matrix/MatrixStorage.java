@@ -29,13 +29,14 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestUtils;
+import org.junit.Test;
 
 public class MatrixStorage extends AutomatedTestBase {
 
 	private static final int resolution = 18;
 	private static final float resolutionDivisor = 2f;
 	private static final float maxSparsity = .2f;
-	private static final float dimTestSparsity = .0001f;
+	private static final float dimTestSparsity = .4f;
 
 	static float[] sparsityProvider() {
 		float[] sparsities = new float[resolution];

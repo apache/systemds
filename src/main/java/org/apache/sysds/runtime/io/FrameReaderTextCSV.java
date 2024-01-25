@@ -144,12 +144,12 @@ public class FrameReaderTextCSV extends FrameReader {
 			dest.setColumnNames(value.toString().split(delim));
 		}
 
-		int k = 1;
-		if(this instanceof FrameReaderTextCSVParallel)
-			k = OptimizerUtils.getParallelTextReadParallelism();
+		// int k = 1;
+		// if(this instanceof FrameReaderTextCSVParallel)
+		// 	k = OptimizerUtils.getParallelTextReadParallelism();
 
-		ExecutorService pool = k > 1 ? CommonThreadPool.get(k) : null;
-		List<Future<?>> tasks = new ArrayList<>();
+		// ExecutorService pool = k > 1 ? CommonThreadPool.get(k) : null;
+		// List<Future<?>> tasks = new ArrayList<>();
 
 		// Read the data
 		try {
@@ -157,27 +157,27 @@ public class FrameReaderTextCSV extends FrameReader {
 			while(reader.next(key, value)) // foreach line
 			{
 				String cellStr = IOUtilFunctions.trim(value.toString());
-				if(pool != null){
-					final int r = row;
-					tasks.add(pool.submit( () -> 
-						parseLine(cellStr, delim, destA, r, (int) clen, dfillValue, sfillValue, isFill, naValues)));
-				}
-				else{
+				// if(pool != null){
+				// 	final int r = row;
+				// 	tasks.add(pool.submit( () -> 
+				// 		parseLine(cellStr, delim, destA, r, (int) clen, dfillValue, sfillValue, isFill, naValues)));
+				// }
+				// else{
 					parseLine(cellStr, delim, destA, row, (int) clen, dfillValue, sfillValue, isFill, naValues);
-				}
+				// }
 				
 				row++;
 			}
 
-			for(Future<?> f : tasks)
-				f.get();
+			// for(Future<?> f : tasks)
+			// 	f.get();
 		}
 		catch(Exception e){
 			throw new DMLRuntimeException("Failed parsing string: \"" + value +"\"", e);
 		}
 		finally {
-			if(pool != null)
-				pool.shutdown();
+			// if(pool != null)
+			// 	pool.shutdown();
 			IOUtilFunctions.closeSilently(reader);
 		}
 

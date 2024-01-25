@@ -168,6 +168,9 @@ public class FrameReaderTextCSV extends FrameReader {
 				
 				row++;
 			}
+
+			for(Future<?> f : tasks)
+				f.get();
 		}
 		catch(Exception e){
 			throw new DMLRuntimeException("Failed parsing string: \"" + value +"\"", e);

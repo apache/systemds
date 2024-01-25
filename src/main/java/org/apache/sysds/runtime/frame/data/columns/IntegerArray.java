@@ -270,7 +270,7 @@ public class IntegerArray extends Array<Integer> {
 	}
 
 	@Override
-	protected Array<Object> changeTypeHash64() {
+	protected Array<Object> changeTypeHash32() {
 		return new HashIntegerArray(_data);
 	}
 

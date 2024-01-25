@@ -180,7 +180,7 @@ public class HashIntegerArray extends Array<Object> {
 
 	@Override
 	public void write(DataOutput out) throws IOException {
-		out.writeByte(FrameArrayType.HASH64.ordinal());
+		out.writeByte(FrameArrayType.HASH32.ordinal());
 		for(int i = 0; i < _size; i++)
 			out.writeInt(_data[i]);
 	}
@@ -219,7 +219,7 @@ public class HashIntegerArray extends Array<Object> {
 
 	@Override
 	public ValueType getValueType() {
-		return ValueType.HASH64;
+		return ValueType.HASH32;
 	}
 
 	@Override
@@ -254,12 +254,12 @@ public class HashIntegerArray extends Array<Object> {
 
 	@Override
 	public Pair<ValueType, Boolean> analyzeValueType(int maxCells) {
-		return new Pair<>(ValueType.HASH64, false);
+		return new Pair<>(ValueType.HASH32, false);
 	}
 
 	@Override
 	public FrameArrayType getFrameArrayType() {
-		return FrameArrayType.HASH64;
+		return FrameArrayType.HASH32;
 	}
 
 	@Override

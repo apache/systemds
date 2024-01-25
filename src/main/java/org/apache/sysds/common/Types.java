@@ -151,6 +151,14 @@ public class Types
 			switch(a){
 				case CHARACTER:
 					return STRING;
+				case HASH32:
+					switch(b) {
+						case HASH64:
+						case STRING:
+							return b;
+						default:
+							return a;
+					}
 				case HASH64:
 					switch(b){
 						case STRING: 

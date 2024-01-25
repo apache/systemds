@@ -523,6 +523,8 @@ public abstract class Array<T> implements Writable {
 			case UINT4:
 			case UINT8:
 				throw new NotImplementedException();
+			case HASH32:
+				return changeTypeHash32((Array<Object>) ret, rl, ru);
 			case HASH64:
 				return changeTypeHash64((Array<Object>) ret, rl, ru);
 			case INT32:
@@ -989,6 +991,7 @@ public abstract class Array<T> implements Writable {
 			case UINT4:
 			case UINT8:
 			case INT32:
+			case HASH32:
 			case FP32:
 				memSizePerElement = 4;
 				break;

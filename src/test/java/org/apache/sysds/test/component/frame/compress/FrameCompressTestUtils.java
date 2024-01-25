@@ -70,6 +70,8 @@ public class FrameCompressTestUtils {
 				return ArrayFactory.create(FrameArrayTests.generateRandomCharacterNUniqueLengthOpt(size, seed, nUnique));
 			case HASH64:
 				return ArrayFactory.create(FrameArrayTests.generateRandomHash64OptNUnique(size, seed, nUnique));
+			case HASH32:
+				throw new NotImplementedException();
 			case STRING:
 				return ArrayFactory.create(FrameArrayTests.generateRandomStringNUniqueLengthOpt(size, seed, nUnique, 132));
 			default:

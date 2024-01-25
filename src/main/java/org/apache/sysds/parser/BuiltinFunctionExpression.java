@@ -644,6 +644,7 @@ public class BuiltinFunctionExpression extends DataIdentifier {
 				case CHARACTER:
 				case FP64:
 				case FP32:
+				case HASH32:
 				case HASH64: //default
 					output.setValueType(ValueType.FP64);
 					break;

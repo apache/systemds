@@ -207,6 +207,7 @@ public class StringArray extends Array<String> {
 		switch(state) {
 			case FP64:
 				switch(c) {
+					case HASH32:
 					case HASH64:
 						return c;
 					default:
@@ -214,6 +215,7 @@ public class StringArray extends Array<String> {
 			case FP32:
 				switch(c) {
 					case FP64:
+					case HASH32:
 					case HASH64:
 						return c;
 					default:
@@ -223,6 +225,7 @@ public class StringArray extends Array<String> {
 				switch(c) {
 					case FP64:
 					case FP32:
+					case HASH32:
 					case HASH64:
 						return c;
 					default:
@@ -233,6 +236,7 @@ public class StringArray extends Array<String> {
 					case FP64:
 					case FP32:
 					case INT64:
+					case HASH32:
 					case HASH64:
 						return c;
 					default:
@@ -245,6 +249,7 @@ public class StringArray extends Array<String> {
 					case INT64:
 					case INT32:
 					case CHARACTER:
+					case HASH32:
 					case HASH64:
 						return c;
 					default:

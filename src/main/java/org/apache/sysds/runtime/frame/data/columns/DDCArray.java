@@ -82,6 +82,7 @@ public class DDCArray<T> extends ACompressedArray<T> {
 				return 256;
 			case FP32:
 			case INT32:
+			case HASH32:
 				return 65536; // char distinct
 			case HASH64:
 			case FP64:

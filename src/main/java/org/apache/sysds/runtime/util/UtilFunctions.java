@@ -679,7 +679,7 @@ public class UtilFunctions {
 		if( in instanceof Double && vt == ValueType.FP64
 			|| in instanceof Float && vt == ValueType.FP32
 			|| in instanceof Long && (vt == ValueType.INT64 || vt == ValueType.HASH64)
-			|| in instanceof Integer && vt == ValueType.INT32
+			|| in instanceof Integer && (vt == ValueType.INT32 || vt == ValueType.HASH32)
 			|| in instanceof Boolean && vt == ValueType.BOOLEAN
 			|| in instanceof String && vt == ValueType.STRING )
 			return in; //quick path to avoid double parsing

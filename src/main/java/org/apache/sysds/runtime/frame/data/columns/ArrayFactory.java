@@ -57,8 +57,16 @@ public interface ArrayFactory {
 		return new OptionalArray<>(col, ValueType.HASH64);
 	}
 
+	public static OptionalArray<Object> createHash32Opt(String[] col) {
+		return new OptionalArray<>(col, ValueType.HASH32);
+	}
+
 	public static HashLongArray createHash64(long[] col) {
 		return new HashLongArray(col);
+	}
+
+	public static HashIntegerArray createHash32(int[] col) {
+		return new HashIntegerArray(col);
 	}
 
 	public static BooleanArray create(boolean[] col) {

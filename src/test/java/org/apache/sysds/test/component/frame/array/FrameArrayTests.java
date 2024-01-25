@@ -472,6 +472,7 @@ public class FrameArrayTests {
 					break;
 				case RAGGED:
 				case HASH64:
+				case HASH32:
 				case OPTIONAL:
 					try {
 						a.get();
@@ -543,6 +544,7 @@ public class FrameArrayTests {
 					((Array<Character>) aa).set(start, end, (Array<Character>) a, off);
 					break;
 				case HASH64:
+				case HASH32:
 					((Array<Object>) aa).set(start, end, (Array<Object>) a, off);
 					break;
 				default:
@@ -601,6 +603,7 @@ public class FrameArrayTests {
 					((Array<Character>) aa).set(start, end, (Array<Character>) other);
 					break;
 				case HASH64:
+				case HASH32:
 					((Array<Object>) aa).set(start, end, (Array<Object>) other);
 					break;
 				default:
@@ -661,6 +664,7 @@ public class FrameArrayTests {
 					assertEquals(((Array<Character>) a).get(0), c);
 					return;
 				case HASH64:
+				case HASH32:
 					String hash = "abcdefaaaa";
 					((Array<Object>) a).set(0, hash);
 					assertEquals(((Array<Object>) a).get(0), hash);
@@ -710,6 +714,7 @@ public class FrameArrayTests {
 					assertEquals((int) ((Array<Character>) a).get(0), 1);
 					return;
 				case HASH64:
+				case HASH32:
 					assertEquals(((Array<Object>) a).get(0), "1");
 					return;
 				default:
@@ -752,6 +757,7 @@ public class FrameArrayTests {
 					assertEquals(((Array<Character>) a).get(0), Character.valueOf((char) 0));
 					return;
 				case HASH64:
+				case HASH32:
 					assertEquals(((Array<Object>) a).get(0), "0");
 					return;
 				default:
@@ -955,6 +961,7 @@ public class FrameArrayTests {
 					assertEquals((char) aa.get(aa.size() - 1), vc);
 					break;
 				case HASH64:
+				case HASH32:
 					String hash = "aaaab";
 					aa.append(hash);
 					assertEquals(aa.get(aa.size() - 1), hash);
@@ -1009,6 +1016,7 @@ public class FrameArrayTests {
 						assertEquals((char) aa.get(aa.size() - 1), 0);
 						break;
 					case HASH64:
+					case HASH32:
 						assertEquals(aa.get(aa.size() - 1), "0");
 						break;
 					case UNKNOWN:
@@ -1059,6 +1067,7 @@ public class FrameArrayTests {
 						assertEquals((char) aa.get(aa.size() - 1), 0);
 						break;
 					case HASH64:
+					case HASH32:
 						assertEquals(aa.get(aa.size() - 1), "0");
 						break;
 					case UNKNOWN:
@@ -1102,6 +1111,7 @@ public class FrameArrayTests {
 					((Array<Character>) aa).setNz((Array<Character>) a);
 					break;
 				case HASH64:
+				case HASH32:
 					((Array<Object>) aa).setNz((Array<Object>) a);
 					break;
 				case UNKNOWN:
@@ -1184,7 +1194,8 @@ public class FrameArrayTests {
 		try {
 			if(aa.getFrameArrayType() == FrameArrayType.OPTIONAL //
 				&& aa.getValueType() != ValueType.STRING //
-				&& aa.getValueType() != ValueType.HASH64) {
+				&& aa.getValueType() != ValueType.HASH64 //
+				&& aa.getValueType() != ValueType.HASH32) {
 				af = aa.changeTypeWithNulls(ValueType.FP64);
 			}
 			else
@@ -1353,6 +1364,7 @@ public class FrameArrayTests {
 					assertTrue(aa.get(0) == null || aa.get(0).equals(Integer.valueOf(0)));
 					break;
 				case HASH64:
+				case HASH32:
 					aa.set(0, (String) null);
 					assertTrue(aa.get(0) == null || aa.get(0).equals("0"));
 					break;
@@ -1422,6 +1434,7 @@ public class FrameArrayTests {
 						assertEquals(aa.get(i + a.size()), null);
 					break;
 				case HASH64:
+				case HASH32:
 					aa = ((Array<Object>) aa).append(new HashLongArray(new long[10]));
 					assertEquals(aa.size(), a.size() + 10);
 					for(int i = 0; i < 10; i++)
@@ -1497,6 +1510,7 @@ public class FrameArrayTests {
 						assertEquals(aa.get(a.size()), null);
 					break;
 				case HASH64:
+				case HASH32:
 					aa.append((String) null);
 					assertEquals(aa.size(), a.size() + 1);
 					if(!isOptional)
@@ -1554,6 +1568,7 @@ public class FrameArrayTests {
 					aa = ((Array<Long>) aa).append(new OptionalArray<>(new Long[10]));
 					break;
 				case HASH64:
+				case HASH32:
 					aa = ((Array<Object>) aa).append(new OptionalArray<>(new HashLongArray(new long[10]), true));
 					break;
 				case STRING:
@@ -1622,6 +1637,7 @@ public class FrameArrayTests {
 							assertEquals(aa.get(i), null);
 					break;
 				case HASH64:
+				case HASH32:
 					if(!isOptional)
 						for(int i = 0; i < aa.size(); i++)
 							assertEquals(aa.get(i), "0");
@@ -1682,6 +1698,7 @@ public class FrameArrayTests {
 						assertEquals(aa.get(i), "1");
 					break;
 				case HASH64:
+				case HASH32:
 					for(int i = 0; i < aa.size(); i++)
 						assertEquals(aa.get(i), "1");
 					break;
@@ -1739,6 +1756,7 @@ public class FrameArrayTests {
 						assertEquals(aa.get(i), "1");
 					break;
 				case HASH64:
+				case HASH32:
 					aa.fill("1");
 					for(int i = 0; i < aa.size(); i++)
 						assertEquals(aa.get(i), "1");
@@ -1806,6 +1824,7 @@ public class FrameArrayTests {
 							assertEquals(aa.get(i), null);
 					break;
 				case HASH64:
+				case HASH32:
 					((Array<Object>) aa).fill((Object) null);
 					if(!isOptional)
 						for(int i = 0; i < aa.size(); i++)
@@ -1993,6 +2012,8 @@ public class FrameArrayTests {
 			case HASH64:
 				return DDCArray
 					.compressToDDC(ArrayFactory.createHash64(generateRandomHash64OptNUnique(size, seed, nUnique)));
+			case HASH32:
+				throw new NotImplementedException();
 			case OPTIONAL:
 				Random r = new Random(seed);
 				switch(r.nextInt(7)) {
@@ -2080,6 +2101,8 @@ public class FrameArrayTests {
 				return ArrayFactory.create(generateRandomCharacterOpt(size, seed));
 			case HASH64:
 				return ArrayFactory.createHash64Opt(generateRandomHash64Opt(size, seed));
+			case HASH32:
+				throw new NotImplementedException();
 			case OPTIONAL:
 			case RAGGED: // lets not test this case here.
 				Random r = new Random(seed);
@@ -2148,6 +2171,8 @@ public class FrameArrayTests {
 				return ArrayFactory.create(generateRandomChar(size, seed));
 			case HASH64:
 				return ArrayFactory.createHash64(generateRandomHash64(size, seed));
+			case HASH32:
+				throw new NotImplementedException();
 			case RAGGED:
 				Random rand = new Random(seed);
 				switch(rand.nextInt(7)) {

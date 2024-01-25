@@ -36,7 +36,7 @@ These tests were repeated for different sparsities.
 ![](./img/MemCols0001.png)
 
 To get more meaningful results, the next evaluation fixes the number of entries in a matrix to `1024x1024` and adapts the column-to-row `ratio` (and vice versa) accordingly.
-We define the ratio as `cl = (1 + ratio) * rl` if `ratio >= 0`, otherwise as `rl = (1 + ratio) * cl`. 
+We define the ratio as `cl = (1 + ratio) * rl` if `ratio >= 0`, otherwise as `rl = (1 - ratio) * cl`. 
 If we have for example a `ratio=1`, this means that there are twice as many columns as rows. If the `ratio=-1`, this means that there are twice as many rows as columns.
 Each test with a specific `ratio` was repeated `10` times with different random matrices and we took the average memory consumption.
 The images below show our results for different sparsties.

@@ -397,7 +397,9 @@ public class HashIntegerArray extends Array<Object> {
 	public static int parseHashInt(String s) {
 		if(s == null || s.isEmpty())
 			return 0;
-		return Integer.parseUnsignedInt(s, 8);
+		// edge case handling, makes it safer to use the long unsigned passing, and
+		// then casting to int.
+		return (int)Long.parseUnsignedLong(s, 8);
 	}
 
 	@Override

@@ -1,15 +1,15 @@
 package org.apache.sysds.performance.matrix;
 
-import org.apache.sysds.runtime.data.*;
+import org.apache.sysds.runtime.data.DenseBlockFP64;
+import org.apache.sysds.runtime.data.SparseBlock;
+import org.apache.sysds.runtime.data.SparseBlockCOO;
+import org.apache.sysds.runtime.data.SparseBlockCSR;
+import org.apache.sysds.runtime.data.SparseBlockDCSR;
+import org.apache.sysds.runtime.data.SparseBlockMCSR;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestUtils;
-import org.apache.sysds.utils.MemoryEstimates;
-import org.junit.Test;
-
-import java.util.Arrays;
-import java.util.stream.IntStream;
 
 public class MatrixStorage extends AutomatedTestBase {
 
@@ -239,7 +239,7 @@ public class MatrixStorage extends AutomatedTestBase {
 		try
 		{
 			if (btype == null)
-				return Math.min(Long.MAX_VALUE, (long)DenseBlockFP64.estimateMemory(rl, cl));
+				return Math.min(Long.MAX_VALUE, (long) DenseBlockFP64.estimateMemory(rl, cl));
 
 			double[][] A = getRandomMatrix(rl, cl, -10, 10, sparsity, 7654321);
 

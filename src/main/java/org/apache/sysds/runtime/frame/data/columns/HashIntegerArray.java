@@ -415,20 +415,20 @@ public class HashIntegerArray extends Array<Object> {
 
 	@Override
 	public Array<Object> select(int[] indices) {
-		final long[] ret = new long[indices.length];
+		final int[] ret = new int[indices.length];
 		for(int i = 0; i < indices.length; i++)
 			ret[i] = _data[indices[i]];
-		return new HashLongArray(ret);
+		return new HashIntegerArray(ret);
 	}
 
 	@Override
 	public Array<Object> select(boolean[] select, int nTrue) {
-		final long[] ret = new long[nTrue];
+		final int[] ret = new int[nTrue];
 		int k = 0;
 		for(int i = 0; i < select.length; i++)
 			if(select[i])
 				ret[k++] = _data[i];
-		return new HashLongArray(ret);
+		return new HashIntegerArray(ret);
 	}
 
 	@Override

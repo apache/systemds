@@ -481,6 +481,27 @@ public class OptionalArray<T> extends Array<T> {
 			}
 			return m;
 		}
+		else if(_a instanceof HashIntegerArray) {
+			Map<Integer, Integer> dl = (Map<Integer, Integer>) d;
+			HashIntegerArray ha = (HashIntegerArray) _a;
+			// assuming the dictionary is correctly constructed.
+			final int s = size();
+			final AMapToData m = MapToFactory.create(s, d.size());
+			if(dl.containsKey(null)){
+				final int n = dl.get(null);
+				for(int i = 0; i < s; i++) {
+					if(_n.get(i)) 
+						m.set(i, dl.get(ha.getInt(i)));
+					else 
+						m.set(i, n);
+				}
+			}
+			else{
+				for(int i = 0; i < s; i++)
+					m.set(i, dl.get(ha.getInt(i)));
+			}
+			return m;
+		}
 		else {
 			return super.createMapping(d);
 		}
@@ -498,6 +519,25 @@ public class OptionalArray<T> extends Array<T> {
 				if(_n.get(i)) {
 					final long l = ha.getLong(i);
 					final Integer v = dict.get(ha.getLong(i));
+					if(v == null)
+						dict.put(l, id++);
+				}
+				else if(!nullFound && !dict.keySet().contains(null)) {
+					dict.put(null, id++);
+					nullFound = true;
+				}
+			}
+			return (Map<T, Integer>) dict;
+		}
+		else if(_a instanceof HashIntegerArray) {
+			final Map<Integer, Integer> dict = new HashMap<>();
+			HashIntegerArray ha = (HashIntegerArray) _a;
+			Integer id = 0;
+			boolean nullFound = false;
+			for(int i = 0; i < size(); i++) {
+				if(_n.get(i)) {
+					final int l = ha.getInt(i);
+					final Integer v = dict.get(ha.getInt(i));
 					if(v == null)
 						dict.put(l, id++);
 				}
@@ -526,6 +566,30 @@ public class OptionalArray<T> extends Array<T> {
 				if(_n.get(i)) {
 					final long l = ha.getLong(i);
 					final Integer v = dict.get(ha.getLong(i));
+					if(v == null)
+						dict.put(l, id++);
+				}
+				else if(!nullFound && !dict.keySet().contains(null)) {
+					dict.put(null, id++);
+					nullFound = true;
+				}
+			}
+			if(id >= threshold)
+				return null;
+
+			else
+				return (Map<T, Integer>) dict;
+		}
+		else if(_a instanceof HashIntegerArray) {
+			final Map<Integer, Integer> dict = new HashMap<>();
+			HashIntegerArray ha = (HashIntegerArray) _a;
+			Integer id = 0;
+			boolean nullFound = false;
+			final int s = size();
+			for(int i = 0; i < s && id < threshold; i++) {
+				if(_n.get(i)) {
+					final int l = ha.getInt(i);
+					final Integer v = dict.get(ha.getInt(i));
 					if(v == null)
 						dict.put(l, id++);
 				}

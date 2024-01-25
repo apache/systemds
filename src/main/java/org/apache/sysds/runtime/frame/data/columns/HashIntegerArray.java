@@ -399,7 +399,7 @@ public class HashIntegerArray extends Array<Object> {
 			return 0;
 		// edge case handling, makes it safer to use the long unsigned passing, and
 		// then casting to int.
-		return (int)Long.parseUnsignedLong(s, 8);
+		return (int)Long.parseUnsignedLong(s, 16);
 	}
 
 	@Override

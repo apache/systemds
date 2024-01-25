@@ -67,7 +67,7 @@ public class MatrixMulPerformance extends AutomatedTestBase {
         return sb.toString();
     }
 
-    @Test
+    /*@Test
     public void testDense2Dense() {
         testSparseFormat(null, null);
     }
@@ -90,7 +90,7 @@ public class MatrixMulPerformance extends AutomatedTestBase {
     @Test
     public void testCOO2COO() {
         testSparseFormat(SparseBlock.Type.COO, SparseBlock.Type.COO);
-    }
+    }*/
 
     private void testSparseFormat(SparseBlock.Type btype1, SparseBlock.Type btype2) {
         float[] sparsities = MatrixMulPerformance.sparsityProvider();

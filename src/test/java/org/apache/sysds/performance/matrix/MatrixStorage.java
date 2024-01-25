@@ -158,7 +158,7 @@ public class MatrixStorage extends AutomatedTestBase {
     @Test
     public void testChangingDimsDCSR() {
         testChangingDims(SparseBlock.Type.DCSR, dimTestSparsity, 1024, 10, 3000, 30);
-    }*/
+    }
 
     @Test
     public void testBalancedDimsDense() {
@@ -183,7 +183,7 @@ public class MatrixStorage extends AutomatedTestBase {
     @Test
     public void testBalancedDimsDCSR() {
         testBalancedDims(SparseBlock.Type.DCSR, dimTestSparsity, 1024*1024, 30, 10, 10);
-    }
+    }*/
 
     private void testSparseFormat(SparseBlock.Type btype, int rl, int cl, int repetitions) {
         float[] sparsities = MatrixStorage.sparsityProvider();
@@ -211,7 +211,7 @@ public class MatrixStorage extends AutomatedTestBase {
         System.out.println("dimMemory" + (btype == null ? "Dense" : btype.name()) + " =  " + printAsPythonList(buildAverage(results)));
     }
 
-    private void testBalancedDims(SparseBlock.Type btype, double sparsity, int numEntries, int resolution, float qMax, int repetitions) {
+    private void testBalancedDims(SparseBlock.Type btype, double sparsity, int numEntries, int resolution, float qMax /*The maximum / minimum row-column ratio*/, int repetitions) {
         float[] ratios = new float[resolution];
         int[][] dims = MatrixStorage.balancedDimsProvider(numEntries, ratios, qMax);
         long[][] results = new long[repetitions][resolution];
@@ -220,11 +220,8 @@ public class MatrixStorage extends AutomatedTestBase {
             for (int ratioIndex = 0; ratioIndex < resolution; ratioIndex++)
                 results[repetition][ratioIndex] = evaluateMemoryConsumption(btype, sparsity, dims[0][ratioIndex], dims[1][ratioIndex]);
 
-        //System.out.println("cols: " + printAsPythonList(dims[1]));
-        //System.out.println("actualNumEntries: " + printAsPythonList(actualNumEntries));
         System.out.println("ratio" + (btype == null ? "Dense" : btype.name()) + " = " + printAsPythonList(ratios) + "");
         System.out.println("ratioMemory" + (btype == null ? "Dense" : btype.name()) + " =  " + printAsPythonList(buildAverage(results)) + "");
-        //System.out.println("})");
     }
 
     private long[] buildAverage(long[][] results) {

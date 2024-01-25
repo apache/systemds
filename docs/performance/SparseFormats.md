@@ -3,7 +3,7 @@
 This file contains a short evaluation of different sparse blocks. We included one dense block (DenseBlockFP64) as a baseline.
 
 ## Execution time
-All tests regarding the execution time was implemented via tests.
+All tests regarding the execution time was implemented via maven tests (no dedicated benchmarking tools).
 Because of that, results may not be very accurate. We measured the performance of two matrices being multiplied, both of the corresponding block type.
 Before each measurement, we performed `15` warmup runs (performing `15` matrix multiplications to random matrices without measuring).
 Then, we measured the delta nanos of the operation below `50` times and took the average.

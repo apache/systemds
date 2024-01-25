@@ -461,15 +461,18 @@ public class OptionalArray<T> extends Array<T> {
 			// assuming the dictionary is correctly constructed.
 			final int s = size();
 			final AMapToData m = MapToFactory.create(s, d.size());
-
-			final int n = dl.get(null);
-			for(int i = 0; i < s; i++) {
-				if(_n.get(i)) {
+			if(dl.containsKey(null)){
+				final int n = dl.get(null);
+				for(int i = 0; i < s; i++) {
+					if(_n.get(i)) 
+						m.set(i, dl.get(ha.getLong(i)));
+					else 
+						m.set(i, n);
+				}
+			}
+			else{
+				for(int i = 0; i < s; i++)
 					m.set(i, dl.get(ha.getLong(i)));
-				}
-				else {
-					m.set(i, n);
-				}
 			}
 			return m;
 		}

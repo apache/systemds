@@ -3,7 +3,7 @@
 This file contains a short evaluation of different sparse blocks. We included one dense block (DenseBlockFP64) as a baseline.
 
 ## Execution time
-All tests regarding the execution time was implemented via maven tests (no dedicated benchmarking tools).
+The test regarding the execution time was implemented via maven tests (no dedicated benchmarking tools).
 Because of that, results may not be very accurate. We measured the performance of two matrices being multiplied, both of the corresponding block type.
 Before each measurement, we performed `15` warmup runs (performing `15` matrix multiplications to random matrices without measuring).
 Then, we measured the delta nanos of the operation below `50` times and took the average.
@@ -39,7 +39,7 @@ To get more meaningful results, the next evaluation fixes the number of entries 
 We define the ratio as `cl = (1 + ratio) * rl` if `ratio >= 0`, otherwise as `rl = (1 - ratio) * cl`. 
 If we have for example a `ratio=1`, this means that there are twice as many columns as rows. If the `ratio=-1`, this means that there are twice as many rows as columns.
 Each test with a specific `ratio` was repeated `10` times with different random matrices and we took the average memory consumption.
-The images below show our results for different sparsties.
+The images below show our results for different sparsities.
 
 ![](./img/MemBalanced041.png)
 ![](./img/MemBalanced042.png)

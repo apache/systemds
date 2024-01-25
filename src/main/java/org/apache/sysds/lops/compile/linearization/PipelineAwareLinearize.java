@@ -71,15 +71,15 @@ public class PipelineAwareLinearize {
 		for (Lop r : roots) {
 			pipelineId = depthFirst(r, pipelineId, opList, pipelineMap) + 1;
 		}
-		DEVPrintDAG.asGraphviz("Step1", v);
+		//DEVPrintDAG.asGraphviz("Step1", v);
 
 		// Step 2: Merge pipelines with only one node to another (connected) pipeline
 		PipelineAwareLinearize.mergeSingleNodePipelines(pipelineMap);
-		DEVPrintDAG.asGraphviz("Step2", v);
+		//DEVPrintDAG.asGraphviz("Step2", v);
 
 		// Step 3: Merge small pipelines into bigger ones
 		PipelineAwareLinearize.mergeSmallPipelines(pipelineMap);
-		DEVPrintDAG.asGraphviz("Step3", v);
+		//DEVPrintDAG.asGraphviz("Step3", v);
 
 		// Reset the visited status of all nodes
 		roots.forEach(Lop::resetVisitStatus);

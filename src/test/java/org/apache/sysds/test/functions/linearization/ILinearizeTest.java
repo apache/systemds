@@ -25,7 +25,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.stream.Collectors;
 import java.util.Arrays;
 
 import org.apache.sysds.test.AutomatedTestBase;
@@ -94,7 +93,8 @@ public class ILinearizeTest extends AutomatedTestBase {
         //         y6
         
         List<Lop> lops = new ArrayList<>();
-        // Necessary for the binary scalar lops
+        // Dummy inputs for filling the inputs of the lops
+        // Needed for the constructors
         Lop d1 = Data.createLiteralLop(org.apache.sysds.common.Types.ValueType.INT32, "1");
         Lop d2 = Data.createLiteralLop(org.apache.sysds.common.Types.ValueType.INT32, "1");
 
@@ -127,7 +127,6 @@ public class ILinearizeTest extends AutomatedTestBase {
         Lop y4 = new BinaryScalar(y1, d2, org.apache.sysds.common.Types.OpOp2.PLUS, org.apache.sysds.common.Types.DataType.SCALAR, org.apache.sysds.common.Types.ValueType.INT32);
         Lop y5 = new BinaryScalar(y3, y4, org.apache.sysds.common.Types.OpOp2.PLUS, org.apache.sysds.common.Types.DataType.SCALAR, org.apache.sysds.common.Types.ValueType.INT32);
 
-
         // add all lops to the list
         lops.add(o1);
         lops.add(o2);
@@ -142,6 +141,7 @@ public class ILinearizeTest extends AutomatedTestBase {
         lops.add(y4);
         lops.add(y5);
 
+        // Remove dummy inputs
         lops.forEach(l -> {l.getInputs().remove(d1); l.getInputs().remove(d2);});
 
         // RUN LINEARIZATION

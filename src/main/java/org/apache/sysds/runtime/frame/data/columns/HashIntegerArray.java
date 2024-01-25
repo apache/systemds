@@ -265,13 +265,13 @@ public class HashIntegerArray extends Array<Object> {
 	@Override
 	public long getInMemorySize() {
 		long size = super.getInMemorySize(); // object header + object reference
-		size += MemoryEstimates.longArrayCost(_data.length);
+		size += MemoryEstimates.intArrayCost(_data.length);
 		return size;
 	}
 
 	@Override
 	public long getExactSerializedSize() {
-		return 1 + 8 * _size;
+		return 1 + 4 * _size;
 	}
 
 	@Override
@@ -314,8 +314,9 @@ public class HashIntegerArray extends Array<Object> {
 	@Override
 	protected Array<Integer> changeTypeInteger(Array<Integer> retA, int l, int u) {
 		int[] ret = (int[]) retA.get();
+		// TODO use Array Copy for improved speed.
 		for(int i = l; i < u; i++)
-			ret[i] = (int) _data[i];
+			ret[i] = _data[i];
 		return retA;
 	}
 

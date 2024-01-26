@@ -4,7 +4,7 @@
 
 #systemds shapley-multiLogReg.dml -stats 1 -nvargs samples_per_feature=200 2>/dev/null | grep "Total elapsed time" | awk '{print $4}'
 
-multiplicator=500
+multiplicator=5000
 data_file="../data/systemds_runtimes.csv"
 
 echo "Outputfile: $data_file"

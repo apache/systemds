@@ -349,10 +349,8 @@ public class SparseBlockMCSR extends SparseBlock
 	
 	@Override
 	public final void append(final int r, final int c, final double v) {
-		if(v == 0)
-			return;
-		else if(_rows[r] == null)
-			_rows[r] = new SparseRowScalar().append(c, v);
+		if(_rows[r] == null)
+			_rows[r] = new SparseRowScalar(c, v);
 		else 
 			_rows[r] = _rows[r].append(c, v); 
 	}

@@ -300,6 +300,11 @@ public class PlaceHolderDict implements IDictionary, Serializable {
 	}
 
 	@Override
+	public int[] countNNZZeroColumns(int[] counts) {
+		throw new RuntimeException(errMessage);
+	}
+
+	@Override
 	public long getNumberNonZerosWithReference(int[] counts, double[] reference, int nRows) {
 		throw new RuntimeException(errMessage);
 	}

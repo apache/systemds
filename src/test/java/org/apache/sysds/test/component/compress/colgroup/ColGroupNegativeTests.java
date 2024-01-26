@@ -47,6 +47,7 @@ import org.apache.sysds.runtime.compress.estim.CompressedSizeInfo;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
+import org.apache.sysds.runtime.data.SparseBlockMCSR;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.functionobjects.Builtin.BuiltinCode;
 import org.apache.sysds.runtime.functionobjects.IndexFunction;
@@ -402,13 +403,29 @@ public class ColGroupNegativeTests {
 		@Override
 		protected void decompressToDenseBlockTransposedSparseDictionary(DenseBlock db, int rl, int ru, SparseBlock dict) {
 			// TODO Auto-generated method stub
-			throw new UnsupportedOperationException("Unimplemented method 'decompressToDenseBlockTransposedSparseDictionary'");
+			throw new UnsupportedOperationException(
+				"Unimplemented method 'decompressToDenseBlockTransposedSparseDictionary'");
 		}
 
 		@Override
 		protected void decompressToDenseBlockTransposedDenseDictionary(DenseBlock db, int rl, int ru, double[] dict) {
 			// TODO Auto-generated method stub
-			throw new UnsupportedOperationException("Unimplemented method 'decompressToDenseBlockTransposedDenseDictionary'");
+			throw new UnsupportedOperationException(
+				"Unimplemented method 'decompressToDenseBlockTransposedDenseDictionary'");
+		}
+
+		@Override
+		protected void decompressToSparseBlockTransposedSparseDictionary(SparseBlockMCSR db, SparseBlock dict) {
+			// TODO Auto-generated method stub
+			throw new UnsupportedOperationException(
+				"Unimplemented method 'decompressToSparseBlockTransposedSparseDictionary'");
+		}
+
+		@Override
+		protected void decompressToSparseBlockTransposedDenseDictionary(SparseBlockMCSR db, double[] dict) {
+			// TODO Auto-generated method stub
+			throw new UnsupportedOperationException(
+				"Unimplemented method 'decompressToSparseBlockTransposedDenseDictionary'");
 		}
 	}
 
@@ -669,13 +686,29 @@ public class ColGroupNegativeTests {
 		@Override
 		protected void decompressToDenseBlockTransposedSparseDictionary(DenseBlock db, int rl, int ru, SparseBlock dict) {
 			// TODO Auto-generated method stub
-			throw new UnsupportedOperationException("Unimplemented method 'decompressToDenseBlockTransposedSparseDictionary'");
+			throw new UnsupportedOperationException(
+				"Unimplemented method 'decompressToDenseBlockTransposedSparseDictionary'");
 		}
 
 		@Override
 		protected void decompressToDenseBlockTransposedDenseDictionary(DenseBlock db, int rl, int ru, double[] dict) {
 			// TODO Auto-generated method stub
-			throw new UnsupportedOperationException("Unimplemented method 'decompressToDenseBlockTransposedDenseDictionary'");
+			throw new UnsupportedOperationException(
+				"Unimplemented method 'decompressToDenseBlockTransposedDenseDictionary'");
+		}
+
+		@Override
+		protected void decompressToSparseBlockTransposedSparseDictionary(SparseBlockMCSR db, SparseBlock dict) {
+			// TODO Auto-generated method stub
+			throw new UnsupportedOperationException(
+				"Unimplemented method 'decompressToSparseBlockTransposedSparseDictionary'");
+		}
+
+		@Override
+		protected void decompressToSparseBlockTransposedDenseDictionary(SparseBlockMCSR db, double[] dict) {
+			// TODO Auto-generated method stub
+			throw new UnsupportedOperationException(
+				"Unimplemented method 'decompressToSparseBlockTransposedDenseDictionary'");
 		}
 	}
 }

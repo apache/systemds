@@ -46,6 +46,7 @@ import org.apache.sysds.runtime.compress.utils.Util;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
+import org.apache.sysds.runtime.data.SparseBlockMCSR;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.functionobjects.Builtin.BuiltinCode;
 import org.apache.sysds.runtime.functionobjects.CM;
@@ -1017,7 +1018,11 @@ public class ColGroupUncompressed extends AColGroup {
 			decompressToDenseBlockTransposedSparse(db, rl, ru);
 		else
 			decompressToDenseBlockTransposedDense(db, rl, ru);
+	}
 
+	@Override
+	public void decompressToSparseBlockTransposed(SparseBlockMCSR sb){
+		throw new NotImplementedException();
 	}
 
 	private void decompressToDenseBlockTransposedSparse(DenseBlock db, int rl, int ru) {

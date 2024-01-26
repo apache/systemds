@@ -1543,6 +1543,41 @@ public class MatrixBlockDictionary extends ADictionary {
 	}
 
 	@Override
+	public int[] countNNZZeroColumns(int[] counts) {
+		final int nRow = counts.length;
+		final int nCol = _data.getNumColumns();
+		final int[] ret = new int[nCol];
+
+		if(_data.isInSparseFormat()) {
+			SparseBlock sb = _data.getSparseBlock();
+			for(int i = 0; i < counts.length; i++) {
+
+				if(sb.isEmpty(i))
+					continue;
+
+				final int apos = sb.pos(i);
+				final int alen = apos + sb.size(i);
+				final int aix[] = sb.indexes(i);
+				for(int j = apos; j < alen; j++) {
+
+					ret[aix[i]] += counts[i];
+				}
+			}
+		}
+		else {
+			double[] values = _data.getDenseBlockValues();
+			for(int i = 0; i < nRow; i++) {
+				for(int j = 0; j < nCol; j++) {
+					final int off = i * nCol + j;
+					if(values[off] != 0)
+						ret[j] += counts[i];
+				}
+			}
+		}
+		return ret;
+	}
+
+	@Override
 	public long getNumberNonZerosWithReference(int[] counts, double[] reference, int nRows) {
 		long nnz = 0;
 		if(_data.isInSparseFormat()) {

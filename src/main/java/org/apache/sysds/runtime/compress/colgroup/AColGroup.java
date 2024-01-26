@@ -36,6 +36,7 @@ import org.apache.sysds.runtime.compress.estim.encoding.IEncode;
 import org.apache.sysds.runtime.compress.lib.CLALibCombineGroups;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
+import org.apache.sysds.runtime.data.SparseBlockMCSR;
 import org.apache.sysds.runtime.functionobjects.Plus;
 import org.apache.sysds.runtime.instructions.cp.CM_COV_Object;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -172,13 +173,21 @@ public abstract class AColGroup implements Serializable {
 	}
 
 	/**
-	 * Decopress a range of rows into a dense transposed block.
+	 * Decompress a range of rows into a dense transposed block.
 	 * 
 	 * @param db Dense target block
 	 * @param rl Row in this column group to start at.
 	 * @param ru Row in this column group to end at.
 	 */
 	public abstract void decompressToDenseBlockTransposed(DenseBlock db, int rl, int ru);
+
+	/**
+	 * Decompress the column group to the sparse transposed block. Note that the column groups would only need to
+	 * decompress into specific sub rows of the Sparse block
+	 * 
+	 * @param sb Sparse target block
+	 */
+	public abstract void decompressToSparseBlockTransposed(SparseBlockMCSR sb);
 
 	/**
 	 * Serializes column group to data output.
@@ -686,9 +695,9 @@ public abstract class AColGroup implements Serializable {
 	public AColGroup morph(CompressionType ct, int nRow) {
 		if(ct == getCompType())
 			return this;
-		else if (ct == CompressionType.DDCFOR)
+		else if(ct == CompressionType.DDCFOR)
 			return this; // it does not make sense to change to FOR.
-		else{
+		else {
 			throw new NotImplementedException("Morphing from : " + getCompType() + " to " + ct + " is not implemented");
 		}
 	}

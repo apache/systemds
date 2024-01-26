@@ -424,6 +424,12 @@ public class IdentityDictionary extends ADictionary {
 		return (long) sum(counts, nCol);
 	}
 
+	
+	@Override
+	public int[] countNNZZeroColumns(int[] counts){
+		return counts; // interesting ... but true.
+	}
+
 	@Override
 	public long getNumberNonZerosWithReference(int[] counts, double[] reference, int nRows) {
 		return getMBDict().getNumberNonZerosWithReference(counts, reference, nRows);

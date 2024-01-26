@@ -19,16 +19,23 @@
 
 package org.apache.sysds.runtime.compress.lib;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 
-import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
+import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup;
+import org.apache.sysds.runtime.data.DenseBlock;
+import org.apache.sysds.runtime.data.SparseBlock;
+import org.apache.sysds.runtime.data.SparseBlockMCSR;
 import org.apache.sysds.runtime.functionobjects.SwapIndex;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.ReorgOperator;
+import org.apache.sysds.runtime.util.CommonThreadPool;
 
 public class CLALibReorg {
 
@@ -66,13 +73,26 @@ public class CLALibReorg {
 		final int nCol = cmb.getNumColumns();
 		final boolean sparseOut = MatrixBlock.evalSparseFormatInMemory(nRow, nCol, nnz);
 		if(sparseOut)
-			return transposeSparse(cmb, ret, k);
+			return transposeSparse(cmb, ret, k, nRow, nCol, nnz);
 		else
 			return transposeDense(cmb, ret, k, nRow, nCol, nnz);
 	}
 
-	private static MatrixBlock transposeSparse(CompressedMatrixBlock cmb, MatrixBlock ret, int k) {
-		throw new NotImplementedException();
+	private static MatrixBlock transposeSparse(CompressedMatrixBlock cmb, MatrixBlock ret, int k, int nRow, int nCol,
+		long nnz) {
+		if(ret == null)
+			ret = new MatrixBlock(nCol, nRow, true, nnz);
+		else
+			ret.reset(nCol, nRow, true, nnz);
+
+		ret.allocateAndResetSparseBlock(true, SparseBlock.Type.MCSR);
+
+		if(k > 1) 
+			decompressToTransposedSparseParallel((SparseBlockMCSR) ret.getSparseBlock(), cmb.getColGroups(), k);
+		else 
+			decompressToTransposedSparseSingleThread((SparseBlockMCSR) ret.getSparseBlock(), cmb.getColGroups());
+
+		return ret;
 	}
 
 	private static MatrixBlock transposeDense(CompressedMatrixBlock cmb, MatrixBlock ret, int k, int nRow, int nCol,
@@ -82,16 +102,46 @@ public class CLALibReorg {
 		else
 			ret.reset(nCol, nRow, false, nnz);
 
+		// TODO: parallelize
 		ret.allocateDenseBlock();
 
-		decompressToTransposedDense(ret, cmb.getColGroups(), nRow, 0, nRow);
+		decompressToTransposedDense(ret.getDenseBlock(), cmb.getColGroups(), nRow, 0, nRow);
 		return ret;
 	}
 
-	private static void decompressToTransposedDense(MatrixBlock ret, List<AColGroup> groups, int rlen, int rl, int ru) {
+	private static void decompressToTransposedDense(DenseBlock ret, List<AColGroup> groups, int rlen, int rl, int ru) {
 		for(int i = 0; i < groups.size(); i++) {
 			AColGroup g = groups.get(i);
-			g.decompressToDenseBlockTransposed(ret.getDenseBlock(), rl, ru);
+			g.decompressToDenseBlockTransposed(ret, rl, ru);
+		}
+	}
+
+	private static void decompressToTransposedSparseSingleThread(SparseBlockMCSR ret, List<AColGroup> groups) {
+		for(int i = 0; i < groups.size(); i++) {
+			AColGroup g = groups.get(i);
+			g.decompressToSparseBlockTransposed(ret);
+		}
+	}
+
+	private static void decompressToTransposedSparseParallel(SparseBlockMCSR ret, List<AColGroup> groups, int k) {
+		final ExecutorService pool = CommonThreadPool.get(k);
+		try {
+			final List<Future<?>> tasks = new ArrayList<>(groups.size());
+
+			for(int i = 0; i < groups.size(); i++) {
+				final AColGroup g = groups.get(i);
+				tasks.add(pool.submit(() -> g.decompressToSparseBlockTransposed(ret)));
+			}
+
+			for(Future<?> f : tasks)
+				f.get();
+
+		}
+		catch(Exception e) {
+			throw new DMLCompressionException("Failed to parallel decompress transpose sparse", e);
+		}
+		finally {
+			pool.shutdown();
 		}
 	}
 }

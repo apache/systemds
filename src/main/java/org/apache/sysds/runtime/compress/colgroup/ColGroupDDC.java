@@ -49,6 +49,8 @@ import org.apache.sysds.runtime.compress.estim.encoding.EncodingFactory;
 import org.apache.sysds.runtime.compress.estim.encoding.IEncode;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
+import org.apache.sysds.runtime.data.SparseBlockMCSR;
+import org.apache.sysds.runtime.data.SparseRow;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.functionobjects.Minus;
 import org.apache.sysds.runtime.functionobjects.Plus;
@@ -164,7 +166,7 @@ public class ColGroupDDC extends APreAgg implements IMapToDataGroup {
 	private final static void decompressToDenseBlockDenseDictSingleColOutContiguous(double[] c, int rl, int ru, int offR,
 		double[] values, AMapToData data) {
 		data.decompressToRange(c, rl, ru, offR, values);
-	
+
 	}
 
 	private final void decompressToDenseBlockDenseDictAllColumnsContiguous(DenseBlock db, int rl, int ru, int offR,
@@ -255,6 +257,49 @@ public class ColGroupDDC extends APreAgg implements IMapToDataGroup {
 				final double v = dict[_data.getIndex(i) * nCol + j];
 				c[off + i] += v;
 			}
+		}
+	}
+
+	@Override
+	protected void decompressToSparseBlockTransposedSparseDictionary(SparseBlockMCSR sbr, SparseBlock sb) {
+ 		
+		int[] colCounts = _dict.countNNZZeroColumns(getCounts());
+		for( int j = 0; j < _colIndexes.size(); j++)
+			sbr.allocate(_colIndexes.get(j), colCounts[j]);
+		
+		for(int i = 0; i < _data.size(); i++) {
+			int di = _data.getIndex(i);
+			if(sb.isEmpty(di))
+				continue;
+
+			final int apos = sb.pos(di);
+			final int alen = sb.size(di) + apos;
+			final int[] aix = sb.indexes(di);
+			final double[] aval = sb.values(di);
+
+			for(int j = apos; j < alen; j++) {
+				sbr.append(_colIndexes.get(aix[j]), i, aval[apos]);
+			}
+		}
+
+	}
+
+	@Override
+	protected void decompressToSparseBlockTransposedDenseDictionary(SparseBlockMCSR sbr, double[] dict) {
+		int[] colCounts = _dict.countNNZZeroColumns(getCounts());
+		for( int j = 0; j < _colIndexes.size(); j++)
+			sbr.allocate(_colIndexes.get(j), colCounts[j]);
+
+		final int nCol = _colIndexes.size();
+		for(int j = 0; j < nCol; j++) {
+			final int rowOut = _colIndexes.get(j);
+			SparseRow r = sbr.get(rowOut);
+
+			for(int i = 0; i < _data.size(); i++) {
+				final double v = dict[_data.getIndex(i) * nCol + j];
+				r = r.append(i, v);
+			}
+			sbr.set(rowOut, r, false);
 		}
 	}
 

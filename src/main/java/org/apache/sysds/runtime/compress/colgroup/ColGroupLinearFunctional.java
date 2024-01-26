@@ -34,6 +34,7 @@ import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
+import org.apache.sysds.runtime.data.SparseBlockMCSR;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.functionobjects.Divide;
 import org.apache.sysds.runtime.functionobjects.Minus;
@@ -715,6 +716,11 @@ public class ColGroupLinearFunctional extends AColGroupCompressed {
 
 	@Override
 	public void decompressToDenseBlockTransposed(DenseBlock db, int rl, int ru) {
+		throw new NotImplementedException();
+	}
+
+	@Override
+	public void decompressToSparseBlockTransposed(SparseBlockMCSR sb){
 		throw new NotImplementedException();
 	}
 }

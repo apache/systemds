@@ -46,6 +46,7 @@ import org.apache.sysds.runtime.compress.estim.encoding.EncodingFactory;
 import org.apache.sysds.runtime.compress.estim.encoding.IEncode;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
+import org.apache.sysds.runtime.data.SparseBlockMCSR;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.functionobjects.Minus;
 import org.apache.sysds.runtime.functionobjects.Plus;
@@ -876,6 +877,16 @@ public class ColGroupSDCZeros extends ASDCZero implements IMapToDataGroup {
 
 	@Override
 	protected void decompressToDenseBlockTransposedDenseDictionary(DenseBlock db, int rl, int ru, double[] dict) {
+		throw new NotImplementedException();
+	}
+
+	@Override
+	protected void decompressToSparseBlockTransposedSparseDictionary(SparseBlockMCSR db, SparseBlock sb) {
+		throw new NotImplementedException();
+	}
+
+	@Override
+	protected void decompressToSparseBlockTransposedDenseDictionary(SparseBlockMCSR db, double[] dict) {
 		throw new NotImplementedException();
 	}
 

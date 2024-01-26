@@ -44,6 +44,7 @@ import org.apache.sysds.runtime.compress.estim.encoding.EncodingFactory;
 import org.apache.sysds.runtime.compress.estim.encoding.IEncode;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
+import org.apache.sysds.runtime.data.SparseBlockMCSR;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.functionobjects.ValueFunction;
 import org.apache.sysds.runtime.instructions.cp.CM_COV_Object;
@@ -92,6 +93,11 @@ public class ColGroupEmpty extends AColGroupCompressed
 
 	@Override
 	public void decompressToDenseBlockTransposed(DenseBlock db, int rl, int ru) {
+		// do nothing.
+	}
+
+	@Override
+	public void decompressToSparseBlockTransposed(SparseBlockMCSR sb) {
 		// do nothing.
 	}
 

@@ -1028,4 +1028,12 @@ public interface IDictionary {
 	 * @return The row extracted
 	 */
 	public double[] getRow(int i, int nCol);
+
+	/**
+	 * Count the number of non zero values in each column of the dictionary, multiplied with the counts
+	 * 
+	 * @param counts The counts to multiply with.
+	 * @return The nonzero count of each column in the dictionary.
+	 */
+	public int[] countNNZZeroColumns(int[] counts);
 }

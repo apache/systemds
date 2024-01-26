@@ -36,6 +36,7 @@ import org.apache.sysds.runtime.compress.cost.ComputationCostEstimator;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
+import org.apache.sysds.runtime.data.SparseBlockMCSR;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
@@ -701,6 +702,16 @@ public class ColGroupOLE extends AColGroupOffset {
 
 	@Override
 	protected void decompressToDenseBlockTransposedDenseDictionary(DenseBlock db, int rl, int ru, double[] dict) {
+		throw new NotImplementedException();
+	}
+
+	@Override
+	protected void decompressToSparseBlockTransposedSparseDictionary(SparseBlockMCSR db, SparseBlock sb) {
+		throw new NotImplementedException();
+	}
+
+	@Override
+	protected void decompressToSparseBlockTransposedDenseDictionary(SparseBlockMCSR db, double[] dict) {
 		throw new NotImplementedException();
 	}
 

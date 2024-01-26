@@ -19,6 +19,7 @@
 
 package org.apache.sysds.runtime.compress.colgroup;
 
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
@@ -26,6 +27,7 @@ import org.apache.sysds.runtime.compress.lib.CLALibLeftMultBy;
 import org.apache.sysds.runtime.compress.lib.CLALibTSMM;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
+import org.apache.sysds.runtime.data.SparseBlockMCSR;
 import org.apache.sysds.runtime.data.SparseRow;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
@@ -84,6 +86,16 @@ public abstract class AMorphingMMColGroup extends AColGroupValue {
 		AColGroup b = extractCommon(cv);
 		b.decompressToDenseBlockTransposed(db, rl, ru);
 		decompressToDenseBlockTransposedCommonVector(db, rl, ru, cv);
+	}
+
+	@Override
+	protected void decompressToSparseBlockTransposedSparseDictionary(SparseBlockMCSR db, SparseBlock sb) {
+		throw new NotImplementedException();
+	}
+
+	@Override
+	protected void decompressToSparseBlockTransposedDenseDictionary(SparseBlockMCSR db, double[] dict) {
+		throw new NotImplementedException();
 	}
 
 	private final void decompressToDenseBlockCommonVector(DenseBlock db, int rl, int ru, int offR, int offC,

@@ -31,6 +31,7 @@
 # lr             Learning rate
 # momentum       Momentum Parameter
 # max_iter       Number of iterations
+# tol            Tolerance for early stopping in gradient descent
 # seed           The seed used for initial values.
 #                If set to -1 random seeds are selected.
 # is_verbose     Print debug information
@@ -42,7 +43,7 @@
 # -------------------------------------------------------------------------------------------
 
 m_tSNE = function(Matrix[Double] X, Integer reduced_dims = 2, Integer perplexity = 30,
-  Double lr = 300., Double momentum = 0.9, Integer max_iter = 1000, Integer seed = -1, Boolean is_verbose = FALSE)
+  Double lr = 300., Double momentum = 0.9, Integer max_iter = 1000, Double tol = 1e-5, Integer seed = -1, Boolean is_verbose = FALSE)
   return(Matrix[Double] Y)
 {
   d = reduced_dims
@@ -63,7 +64,40 @@ m_tSNE = function(Matrix[Double] X, Integer reduced_dims = 2, Integer perplexity
   if(is_verbose)
     print("starting loop....")
 
-  for (itr in 1:max_iter) {
+  itr = 1
+
+  # Start first iteration out of loop as benchmark for early stopping
+  D = distance_matrix(Y)
+  Z = 1/(D + 1)
+  Z = Z * ZERODIAG
+  Q = Z/sum(Z)
+  W = (P - Q)*Z
+  sumW = rowSums(W)
+  g = Y * sumW - W %*% Y
+  dY = momentum*dY - lr*g
+  	
+  norm = sum(dY^2)
+  norm_initial = norm
+  norm_target = norm_initial * tol
+
+  if(is_verbose){
+    print("L1 Norm initial : " + norm_initial)
+    print("L1 Norm target  : " + norm_target)
+  }
+
+  Y = Y + dY
+  Y = Y - colMeans(Y)
+
+  if (itr%%100 == 0) {
+    C[itr/100,] = sum(P * log(pmax(P, 1e-12) / pmax(Q, 1e-12)))
+  }
+  if (itr == 100) {
+    P = P/4
+  }
+  itr = itr + 1
+  # End of first iteration
+
+  while (itr <= max_iter & norm > norm_target) {
     D = distance_matrix(Y)
     Z = 1/(D + 1)
     Z = Z * ZERODIAG
@@ -72,6 +106,13 @@ m_tSNE = function(Matrix[Double] X, Integer reduced_dims = 2, Integer perplexity
     sumW = rowSums(W)
     g = Y * sumW - W %*% Y
     dY = momentum*dY - lr*g
+
+    norm = sum(dY^2)
+    if(is_verbose & itr %%10 ==0){
+      print("Iteration: " + itr)
+      print("L1 Norm: " + norm)
+    }
+
     Y = Y + dY
     Y = Y - colMeans(Y)
 
@@ -81,6 +122,7 @@ m_tSNE = function(Matrix[Double] X, Integer reduced_dims = 2, Integer perplexity
     if (itr == 100) {
       P = P/4
     }
+    itr = itr + 1
   }
 }
 
@@ -119,7 +161,7 @@ return(matrix[double] P)
   while (mean(abs(Hdiff)) > tol & itr < 50) {
     P = exp(-D * beta)
     P = P * ZERODIAG
-    sum_Pi = rowSums(P)
+    sum_Pi = rowSums(P) = 1e-12
     W = rowSums(P * D)
     Ws = W/sum_Pi
     H = log(sum_Pi) + beta * Ws

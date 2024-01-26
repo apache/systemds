@@ -92,7 +92,6 @@
 				<include>*:commons-compress*</include>
 				<include>*:commons-compiler*</include>
 				<include>*:commons-io*</include>
-				<include>*:commons-lang</include>
 				<include>*:commons-lang3</include>
 				<include>*:commons-logging*</include>
 				<include>*:commons-math3*</include>
@@ -107,7 +106,6 @@
 				<include>*:hadoop-yarn*</include>
 				<include>*:hadoop-shaded-guava*</include>
 				<include>*:jackson-core*</include>
-				<include>*:jackson-mapper*</include>
 				<include>*:janino*</include>
 				<include>*:log4j*</include>
 				<include>*:netty*</include>
@@ -117,6 +115,7 @@
 				<include>*:reload4j*</include>
 				<include>*:slf4j-api*</include>
 				<include>*:spark-core*</include>
+				<include>*:spark-common-utils*</include>
 				<include>*:stax2-api*</include>
 				<include>*:woodstox*</include>
 			</includes>

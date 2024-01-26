@@ -19,24 +19,33 @@
 #
 #-------------------------------------------------------------
 
-# Read the pre-trained word embeddings
-E = read($1, rows=100, cols=300, format="text");
+/*
+ * This script tests the correct memory management with function
+ * calls that have lists as input and output where the output 
+ * list object overwrites the input list object since they are
+ * bound to the same variable name and contain mutual 
+ * elements.
+ */
 
-# Read the token sequence (1K) w/ 100 distinct tokens
-Data = read($2, data_type="frame", format="csv");
+# initialize some variables
+some_matrix = matrix(112, rows=2, cols=2)
+some_list = list(some_matrix)
 
-# Read the recode map for the distinct tokens
-Meta = read($3, data_type="frame", format="csv");
+# update the list
+some_list = some_function(some_list, 3)
 
-jspec = "{ids: true, dummycode: [1]}";
-#[Data_enc2, Meta2] = transformencode(target=Data, spec=jspec);
+# try to access matrix of list
+print(toString(as.matrix(some_list[1])))
 
-Data_enc = transformapply(target=Data, spec=jspec, meta=Meta);
-#print(nrow(Data_enc) + " x " + ncol(Data_enc))
-#print(toString(Data_enc[1,1]))
 
-# Apply the embeddings on all tokens (1K x 100)
-R = Data_enc %*% E;
+some_function = function(list[unknown] just_a_list, int l)
+    return (list[unknown] also_a_list) {
+    # add an element to list
+    count = 0
+    for (i in 1:l) {
+        count += 1
+    }
+    other_matrix = matrix(count, rows=1, cols=3)
 
-write(R, $4, format="text");
-
+    also_a_list = append(just_a_list, other_matrix)
+}

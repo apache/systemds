@@ -19,6 +19,7 @@
 
 package org.apache.sysds.test.component.sparse;
 
+import org.apache.sysds.runtime.data.SparseBlockDCSR;
 import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysds.runtime.data.SparseBlock;
@@ -43,7 +44,7 @@ import java.util.Iterator;
 public class SparseBlockGetSet extends AutomatedTestBase 
 {
 	private final static int rows = 132;
-	private final static int cols = 60;	
+	private final static int cols = 60;
 	private final static double sparsity1 = 0.1;
 	private final static double sparsity2 = 0.2;
 	private final static double sparsity3 = 0.3;
@@ -193,23 +194,69 @@ public class SparseBlockGetSet extends AutomatedTestBase
 	public void testSparseBlockCOO3Rand()  {
 		runSparseBlockGetSetTest(SparseBlock.Type.COO, sparsity3, InitType.RAND_SET);
 	}
+
+	@Test
+	public void testSparseBlockDCSR1Bulk()  {
+		runSparseBlockGetSetTest(SparseBlock.Type.DCSR, sparsity1, InitType.BULK);
+	}
+
+	@Test
+	public void testSparseBlockDCSR2Bulk()  {
+		runSparseBlockGetSetTest(SparseBlock.Type.DCSR, sparsity2, InitType.BULK);
+	}
+
+	@Test
+	public void testSparseBlockDCSR3Bulk()  {
+		runSparseBlockGetSetTest(SparseBlock.Type.DCSR, sparsity3, InitType.BULK);
+	}
+
+	@Test
+	public void testSparseBlockDCSR1Seq()  {
+		runSparseBlockGetSetTest(SparseBlock.Type.DCSR, sparsity1, InitType.SEQ_SET);
+	}
+
+	@Test
+	public void testSparseBlockDCSR2Seq()  {
+		runSparseBlockGetSetTest(SparseBlock.Type.DCSR, sparsity2, InitType.SEQ_SET);
+	}
+
+	@Test
+	public void testSparseBlockDCSR3Seq()  {
+		runSparseBlockGetSetTest(SparseBlock.Type.DCSR, sparsity3, InitType.SEQ_SET);
+	}
+
+	@Test
+	public void testSparseBlockDCSR1Rand()  {
+		runSparseBlockGetSetTest(SparseBlock.Type.DCSR, sparsity1, InitType.RAND_SET);
+	}
+
+	@Test
+	public void testSparseBlockDCSR2Rand()  {
+		runSparseBlockGetSetTest(SparseBlock.Type.DCSR, sparsity2, InitType.RAND_SET);
+	}
+
+	@Test
+	public void testSparseBlockDCSR3Rand()  {
+		runSparseBlockGetSetTest(SparseBlock.Type.DCSR, sparsity3, InitType.RAND_SET);
+	}
 	
 	private void runSparseBlockGetSetTest( SparseBlock.Type btype, double sparsity, InitType itype)
 	{
 		try
 		{
 			//data generation
-			double[][] A = getRandomMatrix(rows, cols, -10, 10, sparsity, 7654321); 
+			double[][] A = getRandomMatrix(rows, cols, -10, 10, sparsity, 7654321);
 			
 			//init sparse block
 			SparseBlock sblock = null;
 			if( itype == InitType.BULK ) {
 				MatrixBlock mbtmp = DataConverter.convertToMatrixBlock(A);
-				SparseBlock srtmp = mbtmp.getSparseBlock();			
+				SparseBlock srtmp = mbtmp.getSparseBlock();
 				switch( btype ) {
 					case MCSR: sblock = new SparseBlockMCSR(srtmp); break;
 					case CSR: sblock = new SparseBlockCSR(srtmp); break;
 					case COO: sblock = new SparseBlockCOO(srtmp); break;
+					case DCSR: sblock = new SparseBlockDCSR(srtmp); break;
 				}
 			}
 			else if( itype == InitType.SEQ_SET || itype == InitType.RAND_SET ) {
@@ -217,6 +264,7 @@ public class SparseBlockGetSet extends AutomatedTestBase
 					case MCSR: sblock = new SparseBlockMCSR(rows, cols); break;
 					case CSR: sblock = new SparseBlockCSR(rows, cols); break;
 					case COO: sblock = new SparseBlockCOO(rows, cols); break;
+					case DCSR: sblock = new SparseBlockDCSR(rows, cols); break;
 				}
 				
 				if(itype == InitType.SEQ_SET) {
@@ -232,7 +280,9 @@ public class SparseBlockGetSet extends AutomatedTestBase
 					Iterator<ADoubleEntry> iter = map.getIterator();
 					while( iter.hasNext() ) { //random hash order
 						ADoubleEntry e = iter.next();
-						sblock.set((int)e.getKey1(), (int)e.getKey2(), e.value);
+						int r = (int)e.getKey1();
+						int c = (int)e.getKey2();
+						sblock.set(r, c, e.value);
 					}
 				}	
 			}
@@ -254,12 +304,12 @@ public class SparseBlockGetSet extends AutomatedTestBase
 			//check correct isEmpty return
 			for( int i=0; i<rows; i++ )
 				if( sblock.isEmpty(i) != (rnnz[i]==0) )
-					Assert.fail("Wrong isEmpty(row) result for row nnz: "+rnnz[i]);
+					Assert.fail("Wrong isEmpty(row) result for row nnz: "+rnnz[i] + "(row: " + i + ")");
 		
-			//check correct values			
-			for( int i=0; i<rows; i++ ) 
-				if( !sblock.isEmpty(i) )	
-					for( int j=0; j<cols; j++ )	{
+			//check correct values
+			for( int i=0; i<rows; i++ )
+				if( !sblock.isEmpty(i) )
+					for( int j=0; j<cols; j++ ) {
 						double tmp = sblock.get(i, j);
 						if( tmp != A[i][j] )
 							Assert.fail("Wrong get value for cell ("+i+","+j+"): "+tmp+", expected: "+A[i][j]);

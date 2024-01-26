@@ -19,7 +19,7 @@
 
 package org.apache.sysds.runtime.compress.lib;
 
-import org.apache.commons.lang.NotImplementedException;
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
 public class CLALibMerge {

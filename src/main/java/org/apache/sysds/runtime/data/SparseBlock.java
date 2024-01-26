@@ -48,9 +48,10 @@ public abstract class SparseBlock implements Serializable, Block
 	protected static final double RESIZE_FACTOR2 = 1.1; //factor after reaching est nnz
 	
 	public enum Type {
-		MCSR,
-		CSR,
-		COO,
+		COO,  // coordinate
+		CSR,  // compressed sparse rows
+		DCSR, // double compressed sparse rows
+		MCSR, // modified compressed sparse rows (update-friendly)
 	}
 	
 	

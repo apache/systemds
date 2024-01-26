@@ -112,19 +112,20 @@ public class Types
 				throw new DMLRuntimeException("Unknown null value type");
 			final String lValue = value.toUpperCase();
 			switch(lValue) {
-				case "FP32":     return FP32;
+				case "FP32":      return FP32;
 				case "FP64":
-				case "DOUBLE":   return FP64;
-				case "UINT4":	  return UINT4;
-				case "UINT8":    return UINT8;
-				case "INT32":    return INT32;
+				case "DOUBLE":    return FP64;
+				case "UINT4":	   return UINT4;
+				case "UINT8":     return UINT8;
+				case "INT32":     return INT32;
 				case "INT64":
-				case "INT":      return INT64;
-				case "BOOLEAN":  return BOOLEAN;
-				case "STRING":   return STRING;
+				case "INT":       return INT64;
+				case "BOOLEAN":   return BOOLEAN;
+				case "STRING":    return STRING;
 				case "CHARACTER": return CHARACTER;
-				case "UNKNOWN":  return UNKNOWN;
-				case "HASH64": return HASH64;
+				case "UNKNOWN":   return UNKNOWN;
+				case "HASH64":    return HASH64;
+				case "HASH32":    return HASH32;
 				default:
 					throw new DMLRuntimeException("Unknown value type: "+value);
 			}

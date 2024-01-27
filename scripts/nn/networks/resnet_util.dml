@@ -148,7 +148,7 @@ init_optim_adam_bottleneck_block = function(int C_in, int C_base, boolean downsa
     }
 }
 
-init_optim = function(string optimizer, string block_type, list[unknown] layer_sizes)
+init_optim = function(string optimizer, int classes, string block_type, list[unknown] layer_sizes)
     return (list[unknown] params) {
     params = list()
 
@@ -216,13 +216,13 @@ init_optim = function(string optimizer, string block_type, list[unknown] layer_s
 
     # affine
     if (optimizer == "adam") {
-        m_W_fc = matrix(0, rows=C_in, cols=1000); v_W_fc = matrix(0, rows=C_in, cols=1000)
-        m_b_fc = matrix(0, rows=1, cols=1000); v_b_fc = matrix(0, rows=1, cols=1000)
+        m_W_fc = matrix(0, rows=C_in, cols=classes); v_W_fc = matrix(0, rows=C_in, cols=classes)
+        m_b_fc = matrix(0, rows=1, cols=classes); v_b_fc = matrix(0, rows=1, cols=classes)
         params = append(params, list(m_W_fc, v_W_fc))
         params = append(params, list(m_b_fc, v_b_fc))
     } else {
-        s_W_fc = matrix(0, rows=C_in, cols=1000)
-        s_b_fc = matrix(0, rows=1, cols=1000)
+        s_W_fc = matrix(0, rows=C_in, cols=classes)
+        s_b_fc = matrix(0, rows=1, cols=classes)
         params = append(params, s_W_fc)
         params = append(params, s_b_fc)
     }

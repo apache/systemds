@@ -751,10 +751,10 @@ resnet_forward = function(matrix[double] X, int Hin, int Win,
      *         the documentation of basic_block_forward()
      *         or bottleneck_block_forward() depending
      *         on the block type.
-     *   -> 8: Weights of fully connected layer, of shape (C_out, 1000)
+     *   -> 8: Weights of fully connected layer, of shape (C_out, classes)
      *         where C_out = 512 for basic block type and C_out = 2048
      *         for bottleneck block type.
-     *   -> 9: Bias of fully connected layer, of shape (1, 1000)
+     *   -> 9: Bias of fully connected layer, of shape (1, classes)
      * - mode: 'train' or 'test' to indicate if the model is currently
      *     being trained or tested for badge normalization layers.
      *     See badge_norm2d.dml docs for more info.
@@ -780,7 +780,7 @@ resnet_forward = function(matrix[double] X, int Hin, int Win,
      *           identity path.
      *
      * Outputs:
-     * - out: Outputs, of shape (N, 1000)
+     * - out: Outputs, of shape (N, classes)
      * - ema_means_vars_upd: List of updated exponential moving averages
      *     for mean and variance of badge normalization layers. It follows
      *     the same exact structure as the input EMAs list.
@@ -967,7 +967,7 @@ resnet_backward = function(matrix[double] dOut, list[unknown] cached_out,
     dX = dX_conv1
 }
 
-init = function(string block_type, list[unknown] layer_sizes, int seed)
+init = function(int classes, string block_type, list[unknown] layer_sizes, int seed)
     return (list[unknown] model, list[unknown] emas) {
     C_in = 3
     # Conv 7x7
@@ -1052,7 +1052,7 @@ init = function(string block_type, list[unknown] layer_sizes, int seed)
     }
 
     # affine
-    [W_fc, b_fc] = fc::init(D=C_in, M=1000, seed)
+    [W_fc, b_fc] = fc::init(D=C_in, M=classes, seed)
     model = append(model, W_fc)
     model = append(model, b_fc)
 }

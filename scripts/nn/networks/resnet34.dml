@@ -56,8 +56,8 @@ forward = function(matrix[double] X, int Hin, int Win,
      *      Each list of weights for a residual block
      *      must follow the same order as defined in
      *      the documentation of basic_block_forward().
-     *   -> 8: Weights of fully connected layer, of shape (512, 1000)
-     *   -> 9: Bias of fully connected layer, of shape (1, 1000)
+     *   -> 8: Weights of fully connected layer, of shape (512, classes)
+     *   -> 9: Bias of fully connected layer, of shape (1, classes)
      * - mode: 'train' or 'test' to indicate if the model is currently
      *     being trained or tested for badge normalization layers.
      *     See badge_norm2d.dml docs for more info.
@@ -82,7 +82,7 @@ forward = function(matrix[double] X, int Hin, int Win,
      *           on the identity path.
      *
      * Outputs:
-     * - out: Outputs, of shape (N, 1000)
+     * - out: Outputs, of shape (N, classes)
      * - ema_means_vars_upd: List of updated exponential moving averages
      *     for mean and variance of badge normalization layers. It follows
      *     the same exact structure as the input EMAs list.
@@ -108,7 +108,7 @@ backward = function(matrix[double] dOut, list[unknown] cached_out,
      *
      * Inputs:
      * - dOut: Partial derivative of the loss w.r.t. the
-     *     outputs, of shape (N, 1000).
+     *     outputs, of shape (N, classes).
      * - cashed_out: List of cashed outputs from the forward
      *     pass for each layer output with dimensions.
      * -> NOTICE: Use the exact list returned by the forward
@@ -143,7 +143,7 @@ backward = function(matrix[double] dOut, list[unknown] cached_out,
  * Model initialization.
  */
 
-init = function(int seed)
+init = function(int classes, int seed)
     return(list[unknown] model, list[unknown] emas) {
     /*
      * Initializes all parameters of the model according to the
@@ -153,6 +153,7 @@ init = function(int seed)
      *         model list structure.
      *
      * Inputs:
+     * - classes: Number of network output classes.
      * - seed: Seed for randomizer function.
      *
      * Outputs:
@@ -164,18 +165,21 @@ init = function(int seed)
      *     documentation.
      */
     layer_sizes = list(3, 4, 6, 3)
-    [model, emas] = resnet::init("basic", layer_sizes, seed)
+    [model, emas] = resnet::init(classes, "basic", layer_sizes, seed)
 }
 
 /*
- * Parameter initialization.
+ * Utility functions for optimizers.
  */
 
-init_adagrad_optim_params = function()
+init_adagrad_optim_params = function(classes)
     return(list[unknown] params) {
     /*
      * Initializes the state of the adagrad optimizer for every
      * learnable parameter of ResNet 34.
+     *
+     * Inputs:
+     * - classes: Number of network output classes.
      *
      * Outputs:
      * - params: List of state parameters with the same structure
@@ -183,12 +187,8 @@ init_adagrad_optim_params = function()
      *     directly passed to the update parameter function.
      */
     layer_sizes = list(3, 4, 6, 3)
-    params = util::init_optim("adagrad", "basic", layer_sizes)
+    params = util::init_optim("adagrad", classes, "basic", layer_sizes)
 }
-
-/*
- * Utility functions for optimizers.
- */
 
 update_params_with_adagrad = function(list[unknown] model, list[unknown] gradients,
                                       double lr, double epsilon,
@@ -216,11 +216,14 @@ update_params_with_adagrad = function(list[unknown] model, list[unknown] gradien
         layer_sizes)
 }
 
-init_adam_optim_params = function()
+init_adam_optim_params = function(classes)
     return(list[unknown] params) {
     /*
      * Initializes the state of the adam optimizer for every
      * learnable parameter of ResNet 34.
+     *
+     * Inputs:
+     * - classes: Number of network output classes.
      *
      * Outputs:
      * - params: List of state parameters with the same structure
@@ -228,7 +231,7 @@ init_adam_optim_params = function()
      *     directly passed to the update parameter function.
      */
     layer_sizes = list(3, 4, 6, 3)
-    params = util::init_optim("adam", "basic", layer_sizes)
+    params = util::init_optim("adam", classes, "basic", layer_sizes)
 }
 
 update_params_with_adam = function(list[unknown] model, list[unknown] gradients,
@@ -263,11 +266,14 @@ update_params_with_adam = function(list[unknown] model, list[unknown] gradients,
         layer_sizes)
 }
 
-init_rmsprop_optim_params = function()
+init_rmsprop_optim_params = function(classes)
     return(list[unknown] params) {
     /*
      * Initializes the state of the rmsprop optimizer for every
      * learnable parameter of ResNet 34.
+     *
+     * Inputs:
+     * - classes: Number of network output classes.
      *
      * Outputs:
      * - params: List of state parameters with the same structure
@@ -275,7 +281,7 @@ init_rmsprop_optim_params = function()
      *     directly passed to the update parameter function.
      */
     layer_sizes = list(3, 4, 6, 3)
-    params = util::init_optim("rmsprop", "basic", layer_sizes)
+    params = util::init_optim("rmsprop", classes, "basic", layer_sizes)
 }
 
 update_params_with_rmsprop = function(list[unknown] model, list[unknown] gradients,
@@ -330,11 +336,14 @@ update_params_with_sgd= function(list[unknown] model,
         layer_sizes)
 }
 
-init_sgd_momentum_optim_params = function()
+init_sgd_momentum_optim_params = function(classes)
     return(list[unknown] params) {
     /*
      * Initializes the state of the sgd momentum optimizer for
      * every learnable parameter of ResNet 34.
+     *
+     * Inputs:
+     * - classes: Number of network output classes.
      *
      * Outputs:
      * - params: List of state parameters with the same structure
@@ -342,7 +351,7 @@ init_sgd_momentum_optim_params = function()
      *     directly passed to the update parameter function.
      */
     layer_sizes = list(3, 4, 6, 3)
-    params = util::init_optim("sgd_momentum", "basic", layer_sizes)
+    params = util::init_optim("sgd_momentum", classes, "basic", layer_sizes)
 }
 
 update_params_with_sgd_momentum = function(list[unknown] model,
@@ -373,11 +382,14 @@ update_params_with_sgd_momentum = function(list[unknown] model,
         layer_sizes)
 }
 
-init_sgd_nesterov_optim_params = function()
+init_sgd_nesterov_optim_params = function(classes)
     return(list[unknown] params) {
     /*
      * Initializes the state of the nesterov optimizer for every
      * learnable parameter of ResNet 34.
+     *
+     * Inputs:
+     * - classes: Number of network output classes.
      *
      * Outputs:
      * - params: List of state parameters with the same structure
@@ -385,7 +397,7 @@ init_sgd_nesterov_optim_params = function()
      *     directly passed to the update parameter function.
      */
     layer_sizes = list(3, 4, 6, 3)
-    params = util::init_optim("nesterov", "basic", layer_sizes)
+    params = util::init_optim("nesterov", classes, "basic", layer_sizes)
 }
 
 update_params_with_sgd_nesterov = function(list[unknown] model,

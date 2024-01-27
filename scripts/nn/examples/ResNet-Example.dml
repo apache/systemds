@@ -30,7 +30,6 @@
 # and training sections.
 #-------------------------------------------------------------
 
-source("scripts/nn/networks/resnet.dml") as resnet
 source("scripts/nn/networks/resnet_util.dml") as resnet_util
 source("scripts/nn/networks/resnet18.dml") as resnet18
 source("scripts/nn/layers/softmax.dml") as softmax
@@ -38,36 +37,34 @@ source("scripts/nn/layers/cross_entropy_loss.dml") as cross_entropy
 source("scripts/nn/layers/logcosh_loss.dml") as logcosh
 source("nn/optim/adam.dml") as adam
 
-# resnet18
-reslayer_sizes = list(2, 2, 2, 2)
-block_type = "basic"
+# model
+classes = 1000
 
 # get initial model parameters
-[model, ema_means_vars] = resnet18::init(-1)
+[model, ema_means_vars] = resnet18::init(classes, -1)
 
 # get initial optimizer parameters
 # choose your optimizer:
 # *** adagrad
-# optimizer_params = resnet18::init_adagrad_optim_params()
+# optimizer_params = resnet18::init_adagrad_optim_params(classes)
 # *** adam
-optimizer_params = resnet18::init_adam_optim_params()
+optimizer_params = resnet18::init_adam_optim_params(classes)
 # *** rmsprop
-# optimizer_params = resnet18::init_rmsprop_optim_params()
+# optimizer_params = resnet18::init_rmsprop_optim_params(classes)
 # *** sgd
 # optimizer_params = list()
 # *** sgd momenutum
-# optimizer_params = resnet18::init_sgd_momentumg_optim_params()
+# optimizer_params = resnet18::init_sgd_momentumg_optim_params(classes)
 # *** sgd nesterov
-# optimizer_params = resnet18::init_sgd_nesterov_optim_params()
+# optimizer_params = resnet18::init_sgd_nesterov_optim_params(classes)
 
 # create random data
 N = 100
 Hin = 32
 Win = 32
 C = 3  # input channels
-F = 1000  # output classes
 X = rand(rows=N, cols=Hin*Win*C)
-Y = rand(rows=N, cols=F, min=0, max=1, pdf="normal")
+Y = rand(rows=N, cols=classes, min=0, max=1, pdf="normal")
 
 # train ResNet
 epochs = 20

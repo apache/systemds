@@ -234,9 +234,9 @@ init_adam_optim_params = function()
 }
 
 update_params_with_adam = function(list[unknown] model, list[unknown] gradients,
-                                      double lr, double beta1, double beta2,
-                                      double epsilon, int t,
-                                      list[unknown] optim_state)
+                                   double lr, double beta1, double beta2,
+                                   double epsilon, int t,
+                                   list[unknown] optim_state)
     return (list[unknown] model_upd, list[unknown] optim_state_upd) {
     /*
      * Updates all learnable parameters with the adam optimizer.
@@ -246,12 +246,12 @@ update_params_with_adam = function(list[unknown] model, list[unknown] gradients,
      *     backward pass.
      * - gradients: Gradients, returned from the backward pass.
      * - lr: Learning rate. Recommended: 0.001
-     *  - beta1: Exponential decay rate for the 1st moment estimates.
-     *      Recommended value is 0.9.
-     *  - beta2: Exponential decay rate for the 2nd moment estimates.
-     *      Recommended value is 0.999.
-     *  - epsilon: Smoothing term to avoid divide by zero errors.
-     *      Recommended value is 1e-8.
+     * - beta1: Exponential decay rate for the 1st moment estimates.
+     *     Recommended value is 0.9.
+     * - beta2: Exponential decay rate for the 2nd moment estimates.
+     *     Recommended value is 0.999.
+     * - epsilon: Smoothing term to avoid divide by zero errors.
+     *     Recommended value is 1e-8.
      *  - t: Timestep, starting at 0.
      * - optim_state: Optimizer states for all model parameters.
      *
@@ -280,6 +280,58 @@ init_rmsprop_optim_params = function()
     params = util::init_optim("rmsprop", "basic", layer_sizes)
 }
 
+update_params_with_rmsprop = function(list[unknown] model, list[unknown] gradients,
+                                      double lr, double decay_rate,
+                                      double epsilon, list[unknown] optim_state)
+    return (list[unknown] model_upd, list[unknown] optim_state_upd) {
+    /*
+     * Updates all learnable parameters with the rmsprop optimizer.
+     *
+     * Inputs:
+     * - model: Model parameters, same as for forward and
+     *     backward pass.
+     * - gradients: Gradients, returned from the backward pass.
+     * - lr: Learning rate.
+     * - decay_rate: Term controlling the rate of the moving average.
+     *     Typical values are in the range of [0.9, 0.999].
+     * - epsilon: Smoothing term to avoid divide by zero errors.
+     *     Typical values are in the range of [1e-8, 1e-4].
+     * - optim_state: Optimizer states for all model parameters.
+     *
+     * Outputs:
+     * - model_upd: Updated model parameters.
+     * - optim_state_upd: Updated model states for all parameters.
+     */
+    layer_sizes = list(2, 2, 2, 2)
+    hyper_params = list(lr, decay_rate, epsilon)
+    [optim_state_upd, model_upd] = util::update_params("rmsprop", optim_state, hyper_params, gradients, model, "basic",
+        layer_sizes)
+}
+
+update_params_with_sgd= function(list[unknown] model,
+                                 list[unknown] gradients,
+                                 double lr)
+    return (list[unknown] model_upd, list[unknown] optim_state_upd) {
+    /*
+     * Updates all learnable parameters with the sgd optimizer.
+     *
+     * Inputs:
+     * - model: Model parameters, same as for forward and
+     *     backward pass.
+     * - gradients: Gradients, returned from the backward pass.
+     * - lr: Learning rate.
+     *
+     * Outputs:
+     * - model_upd: Updated model parameters.
+     * - optim_state_upd: Updated model states for all parameters.
+     */
+    layer_sizes = list(2, 2, 2, 2)
+    hyper_params = list(lr)
+    optim_state = list()
+    [optim_state_upd, model_upd] = util::update_params("sgd", optim_state, hyper_params, gradients, model, "basic",
+        layer_sizes)
+}
+
 init_sgd_momentum_optim_params = function()
     return(list[unknown] params) {
     /*
@@ -295,6 +347,34 @@ init_sgd_momentum_optim_params = function()
     params = util::init_optim("sgd_momentum", "basic", layer_sizes)
 }
 
+update_params_with_sgd_momentum = function(list[unknown] model,
+                                           list[unknown] gradients,
+                                           double lr, double mu,
+                                           list[unknown] optim_state)
+    return (list[unknown] model_upd, list[unknown] optim_state_upd) {
+    /*
+     * Updates all learnable parameters with the sgd momentum optimizer.
+     *
+     * Inputs:
+     * - model: Model parameters, same as for forward and
+     *     backward pass.
+     * - gradients: Gradients, returned from the backward pass.
+     * - lr: Learning rate.
+     * - mu: Momentum value.
+     *     Typical values are in the range of [0.5, 0.99], usually
+     *     started at the lower end and annealed towards the higher end.
+     * - optim_state: Optimizer states for all model parameters.
+     *
+     * Outputs:
+     * - model_upd: Updated model parameters.
+     * - optim_state_upd: Updated model states for all parameters.
+     */
+    layer_sizes = list(2, 2, 2, 2)
+    hyper_params = list(lr, mu)
+    [optim_state_upd, model_upd] = util::update_params("sgd_momentum", optim_state, hyper_params, gradients, model, "basic",
+        layer_sizes)
+}
+
 init_sgd_nesterov_optim_params = function()
     return(list[unknown] params) {
     /*
@@ -308,4 +388,32 @@ init_sgd_nesterov_optim_params = function()
      */
     layer_sizes = list(2, 2, 2, 2)
     params = util::init_optim("nesterov", "basic", layer_sizes)
+}
+
+update_params_with_sgd_nesterov = function(list[unknown] model,
+                                           list[unknown] gradients,
+                                           double lr, double mu,
+                                           list[unknown] optim_state)
+    return (list[unknown] model_upd, list[unknown] optim_state_upd) {
+    /*
+     * Updates all learnable parameters with the sgd nesterov optimizer.
+     *
+     * Inputs:
+     * - model: Model parameters, same as for forward and
+     *     backward pass.
+     * - gradients: Gradients, returned from the backward pass.
+     * - lr: Learning rate.
+     * - mu: Momentum value.
+     *     Typical values are in the range of [0.5, 0.99], usually
+     *     started at the lower end and annealed towards the higher end.
+     * - optim_state: Optimizer states for all model parameters.
+     *
+     * Outputs:
+     * - model_upd: Updated model parameters.
+     * - optim_state_upd: Updated model states for all parameters.
+     */
+    layer_sizes = list(2, 2, 2, 2)
+    hyper_params = list(lr, mu)
+    [optim_state_upd, model_upd] = util::update_params("sgd_nesterov", optim_state, hyper_params, gradients, model, "basic",
+        layer_sizes)
 }

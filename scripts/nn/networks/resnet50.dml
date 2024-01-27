@@ -105,6 +105,39 @@ forward = function(matrix[double] X, int Hin, int Win,
 backward = function(matrix[double] dOut, list[unknown] cached_out,
                     list[unknown] model, list[unknown] cached_means_vars)
     return (matrix[double] dX, list[unknown] gradients) {
+    /*
+     * Backward pass of the ResNet 50 model as introduced in
+     * "Deep Residual Learning for Image Recognition" by
+     * Kaiming He et. al. and inspired by PyTorch.
+     *
+     * Inputs:
+     * - dOut: Partial derivative of the loss w.r.t. the
+     *     outputs, of shape (N, 1000).
+     * - cashed_out: List of cashed outputs from the forward
+     *     pass for each layer output with dimensions.
+     * -> NOTICE: Use the exact list returned by the forward
+     *            pass without modification.
+     * - model: Weights and bias matrices of the model
+     *     with the same order as for the forward pass.
+     * -> NOTICE: The lists of the first blocks for layer 2, 3 and 4
+     *            must include weights and EMAs for 1 extra conv layer
+     *            and a batch norm layer for the downsampling on the
+     *            identity path.
+     * - cached_means_vars: List of cached means and vars returned
+     *     by the forward pass. It has the same structure as the
+     *     ema_means_vars for the forward pass.
+     * -> NOTICE: Use the exact list returned by the forward
+     *            pass without modification.
+     *
+     * Outputs:
+     * - dX: Derivative of the loss w.r.t. the inputs, of
+     *     shape (N, C_in*Hin*Win).
+     * - gradients: Gradients of each learnable parameters of
+     *     every layer in the network with the same structure
+     *     as the input weights.
+     * -> NOTICE: To update the parameters of the model, use
+     *            one of the provided utility functions.
+     */
     layer_sizes = list(3, 4, 6, 3)
     block_type = "bottleneck"
     [dX, gradients] = resnet::resnet_backward(dOut, cached_out, block_type, layer_sizes, model, cached_means_vars)

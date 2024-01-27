@@ -131,6 +131,7 @@ backward = function(matrix[double] dOut, list[unknown] cached_out,
      *     ema_means_vars for the forward pass.
      * -> NOTICE: Use the exact list returned by the forward
      *            pass without modification.
+     *
      * Outputs:
      * - dX: Derivative of the loss w.r.t. the inputs, of
      *     shape (N, C_in*Hin*Win).

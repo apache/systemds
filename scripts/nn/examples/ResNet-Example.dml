@@ -22,7 +22,12 @@
 #-------------------------------------------------------------
 # This is a simple example for the use of the ResNets. Here,
 # ResNet18 is used. Random data is used to only showcase the
-# usage of the ResNets.
+# usage of the ResNets and their implemented utility
+# functions.
+# There are utility functions for different optimizers. To
+# swtich the used optimizer, comment and uncomment the
+# corresponding lines marked with '***' in the initialization
+# and training sections.
 #-------------------------------------------------------------
 
 source("scripts/nn/networks/resnet.dml") as resnet
@@ -38,10 +43,22 @@ reslayer_sizes = list(2, 2, 2, 2)
 block_type = "basic"
 
 # get initial model parameters
-[model, ema_means_vars] = resnet::init(block_type, reslayer_sizes, -1)
+[model, ema_means_vars] = resnet18::init(-1)
 
 # get initial optimizer parameters
-optimizer_params = resnet_util::init_optim("adam", block_type, reslayer_sizes)
+# chose your optimizer:
+# *** adagrad
+# optimizer_params = resnet18::init_adagrad_optim_params()
+# *** adam
+optimizer_params = resnet18::init_adam_optim_params()
+# *** rmsprop
+# optimizer_params = resnet18::init_rmsprop_optim_params()
+# *** sgd
+# optimizer_params = list()
+# *** sgd momenutum
+# optimizer_params = resnet18::init_sgd_momentumg_optim_params()
+# *** sgd nesterov
+# optimizer_params = resnet18::init_sgd_nesterov_optim_params()
 
 # create random data
 N = 100
@@ -55,21 +72,30 @@ Y = rand(rows=N, cols=F, min=0, max=1, pdf="normal")
 # train ResNet
 epochs = 20
 batch_size = 16
-# adam optimizer params
-lr = 0.001
-beta1 = 0.9
-beta2 = 0.999
-epsilon = 1e-8
-t = 0
 
-[learned_model, learned_emas] = train(X, Y, model, ema_means_vars, N, Hin, Win, epochs, batch_size, optimizer_params,
-    lr, beta1, beta2, epsilon, t)
+[learned_model, learned_emas] = train(X, Y, model, ema_means_vars, N, Hin, Win, epochs, batch_size, optimizer_params)
 
 
 train = function(matrix[double] X, matrix[double] Y, list[unknown] model, list[unknown] emas, int samples, int Hin,
-    int Win, int epochs, int batch_size, list[unknown] optim_params, double lr, double beta1, double beta2,
-    double epsilon, int t)
+    int Win, int epochs, int batch_size, list[unknown] optim_params)
     return (list[unknown] learned_model, list[unknown] learned_emas) {
+    /*
+     * Trains the model and returns the learned parameters.
+     */
+    # optimizer hyper parameters
+    lr = 0.001
+    epsilon = 1e-8
+    # *** adam
+    beta1 = 0.9
+    beta2 = 0.999
+    t = 0
+    # *** rmsprop
+    decay_rate = 0.99
+    # sgd momentum & nesterov
+    momentum = 0.8
+
+    learned_model = list()
+    learned_emas = list()
 
     iterations = ceil(samples/batch_size)
     mode = "train"
@@ -100,17 +126,24 @@ train = function(matrix[double] X, matrix[double] Y, list[unknown] model, list[u
             [dX, gradients] = resnet18::backward(dOut, cached_out, model, cached_means_vars)
 
             # update parameters
-            optim_hyper_params = list(lr, beta1, beta2, epsilon, t)
-            # optim_hyper_params = list(lr, epsilon)
-            # optim_hyper_params = list(lr, 0.99, epsilon)
-            # sgd nesterov & momentum
-            # optim_hyper_params = list(lr, 0.8)
-            # sgd
-            # optim_hyper_params = list(lr)
-            [optim_params, model] = resnet_util::update_params("adam", optim_params, optim_hyper_params, gradients,
-                model, "basic", list(2, 2, 2, 2))
-
+            # chose your optimizer
+            # *** adagrad
+            # [model, optim_params] = resnet18::update_params_with_adagrad(model, gradients, lr, epsilon, optim_params)
+            # *** adam
+            [model, optim_params] = resnet18::update_params_with_adam(model, gradients, lr, beta1, beta2, epsilon,
+                t, optim_params)
             t = t + 1
+            # *** rmsprop
+            # [model, optim_params] = resnet18::update_params_with_rmsprop(model, gradients, lr, decay_rate, epsilon,
+            #     optim_params)
+            # *** sgd
+            # [model, optim_params] = resnet18::update_params_with_sgd(model, gradients, lr)
+            # *** sgd momentum
+            # [model, optim_params] = resnet18::update_params_with_sgd_momentum(model, gradients, lr, momentum,
+            #     optim_params)
+            # *** sgd nesterov
+            # [model, optim_params] = resnet18::update_params_with_sgd_nesterov(model, gradients, lr, momentum,
+            #     optim_params)
         }
 
         # reshuffle mini batches
@@ -120,9 +153,9 @@ train = function(matrix[double] X, matrix[double] Y, list[unknown] model, list[u
         X = X_tmp[,2:ncol(X_tmp)]
         Y = Y_tmp[,2:ncol(Y_tmp)]
 
-        print("Loss: " + loss_avg)
+        print("Epoch Avg. Loss: " + loss_avg)
     }
 
-    learned_model = list()
-    learned_emas = list()
+    learned_model = model
+    learned_emas = emas
 }

@@ -145,6 +145,10 @@ backward = function(matrix[double] dOut, list[unknown] cached_out,
     [dX, gradients] = resnet::resnet_backward(dOut, cached_out, block_type, layer_sizes, model, cached_means_vars)
 }
 
+/*
+ * Model initialization.
+ */
+
 init = function(int seed)
     return(list[unknown] model, list[unknown] emas) {
     /*

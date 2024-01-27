@@ -27,7 +27,7 @@ forward = function(matrix[double] X, int Hin, int Win,
     return (matrix[double] out, list[unknown] ema_means_vars_upd,
             list[unknown] cached_out, list[unknown] cached_means_vars) {
     /*
-     * Forward pass of the ResNet101 as introduced in
+     * Forward pass of the ResNet152 as introduced in
      * "Deep Residual Learning for Image Recognition" by
      * Kaiming He et. al., refined in "ResNet v1.5 for
      * PyTorch" by NVIDIA and inspired by the PyTorch
@@ -38,11 +38,6 @@ forward = function(matrix[double] X, int Hin, int Win,
      *     C_in = 3 is expected.
      * - Hin: Input height.
      * - Win: Input width.
-     * - layer_sizes: List of the sizes of each of
-     *     the 4 residual layers.
-     *     For ResNet18: [2, 2, 2, 2], RN34: [3, 4, 6, 3],
-     *     RN50: [3, 4, 6, 3], RN101: [3, 4, 23, 3],
-     *     RN152: [3, 8, 36, 3]
      * - model: Weights and bias matrices of the model
      *     with the following order/content:
      *   -> 1: Weights of conv 1 7x7, of shape (64, 3*7*7)
@@ -113,4 +108,281 @@ backward = function(matrix[double] dOut, list[unknown] cached_out,
     layer_sizes = list(3, 8, 36, 3)
     block_type = "bottleneck"
     [dX, gradients] = resnet::resnet_backward(dOut, cached_out, block_type, layer_sizes, model, cached_means_vars)
+}
+
+/*
+ * Model initialization.
+ */
+
+init = function(int seed)
+    return(list[unknown] model, list[unknown] emas) {
+    /*
+     * Initializes all parameters of the model according to the
+     * respective initializer functions of each layer.
+     * NOTICE: It is recommended to use this function for
+     *         initialization to directly have the correct
+     *         model list structure.
+     *
+     * Inputs:
+     * - seed: Seed for randomizer function.
+     *
+     * Outputs:
+     * - model: List of weights and biases with the structure
+     *     described in the forward pass documentation.
+     * - emas: List of exponential moving averages of the mean
+     *     and variance for each batch normalization layer.
+     *     The structure is described in the forward pass
+     *     documentation.
+     */
+    layer_sizes = list(3, 8, 36, 3)
+    [model, emas] = resnet::init("bottleneck", layer_sizes, seed)
+}
+
+/*
+ * Parameter initialization.
+ */
+
+init_adagrad_optim_params = function()
+    return(list[unknown] params) {
+    /*
+     * Initializes the state of the adagrad optimizer for every
+     * learnable parameter of ResNet 152.
+     *
+     * Outputs:
+     * - params: List of state parameters with the same structure
+     *     as weights of the forward and backward pass. It can be
+     *     directly passed to the update parameter function.
+     */
+    layer_sizes = list(3, 8, 36, 3)
+    params = util::init_optim("adagrad", "bottleneck", layer_sizes)
+}
+
+/*
+ * Utility functions for optimizers.
+ */
+
+update_params_with_adagrad = function(list[unknown] model, list[unknown] gradients,
+                                      double lr, double epsilon,
+                                      list[unknown] optim_state)
+    return (list[unknown] model_upd, list[unknown] optim_state_upd) {
+    /*
+     * Updates all learnable parameters with the adagrad optimizer.
+     *
+     * Inputs:
+     * - model: Model parameters, same as for forward and
+     *     backward pass.
+     * - gradients: Gradients, returned from the backward pass.
+     * - lr: Learning rate.
+     * - epsilon: Smoothing term to avoid divide by zero errors.
+     *     Typical values are in the range of [1e-8, 1e-4].
+     * - optim_state: Optimizer states for all model parameters.
+     *
+     * Outputs:
+     * - model_upd: Updated model parameters.
+     * - optim_state_upd: Updated model states for all parameters.
+     */
+    layer_sizes = list(3, 8, 36, 3)
+    hyper_params = list(lr, epsilon)
+    [optim_state_upd, model_upd] = util::update_params("adagrad", optim_state, hyper_params, gradients, model,
+        "bottleneck", layer_sizes)
+}
+
+init_adam_optim_params = function()
+    return(list[unknown] params) {
+    /*
+     * Initializes the state of the adam optimizer for every
+     * learnable parameter of ResNet 152.
+     *
+     * Outputs:
+     * - params: List of state parameters with the same structure
+     *     as weights of the forward and backward pass. It can be
+     *     directly passed to the update parameter function.
+     */
+    layer_sizes = list(3, 8, 36, 3)
+    params = util::init_optim("adam", "bottleneck", layer_sizes)
+}
+
+update_params_with_adam = function(list[unknown] model, list[unknown] gradients,
+                                   double lr, double beta1, double beta2,
+                                   double epsilon, int t,
+                                   list[unknown] optim_state)
+    return (list[unknown] model_upd, list[unknown] optim_state_upd) {
+    /*
+     * Updates all learnable parameters with the adam optimizer.
+     *
+     * Inputs:
+     * - model: Model parameters, same as for forward and
+     *     backward pass.
+     * - gradients: Gradients, returned from the backward pass.
+     * - lr: Learning rate. Recommended: 0.001
+     * - beta1: Exponential decay rate for the 1st moment estimates.
+     *     Recommended value is 0.9.
+     * - beta2: Exponential decay rate for the 2nd moment estimates.
+     *     Recommended value is 0.999.
+     * - epsilon: Smoothing term to avoid divide by zero errors.
+     *     Recommended value is 1e-8.
+     *  - t: Timestep, starting at 0.
+     * - optim_state: Optimizer states for all model parameters.
+     *
+     * Outputs:
+     * - model_upd: Updated model parameters.
+     * - optim_state_upd: Updated model states for all parameters.
+     */
+    layer_sizes = list(3, 8, 36, 3)
+    hyper_params = list(lr, beta1, beta2, epsilon, t)
+    [optim_state_upd, model_upd] = util::update_params("adam", optim_state, hyper_params, gradients, model,
+        "bottleneck", layer_sizes)
+}
+
+init_rmsprop_optim_params = function()
+    return(list[unknown] params) {
+    /*
+     * Initializes the state of the rmsprop optimizer for every
+     * learnable parameter of ResNet 152.
+     *
+     * Outputs:
+     * - params: List of state parameters with the same structure
+     *     as weights of the forward and backward pass. It can be
+     *     directly passed to the update parameter function.
+     */
+    layer_sizes = list(3, 8, 36, 3)
+    params = util::init_optim("rmsprop", "bottleneck", layer_sizes)
+}
+
+update_params_with_rmsprop = function(list[unknown] model, list[unknown] gradients,
+                                      double lr, double decay_rate,
+                                      double epsilon, list[unknown] optim_state)
+    return (list[unknown] model_upd, list[unknown] optim_state_upd) {
+    /*
+     * Updates all learnable parameters with the rmsprop optimizer.
+     *
+     * Inputs:
+     * - model: Model parameters, same as for forward and
+     *     backward pass.
+     * - gradients: Gradients, returned from the backward pass.
+     * - lr: Learning rate.
+     * - decay_rate: Term controlling the rate of the moving average.
+     *     Typical values are in the range of [0.9, 0.999].
+     * - epsilon: Smoothing term to avoid divide by zero errors.
+     *     Typical values are in the range of [1e-8, 1e-4].
+     * - optim_state: Optimizer states for all model parameters.
+     *
+     * Outputs:
+     * - model_upd: Updated model parameters.
+     * - optim_state_upd: Updated model states for all parameters.
+     */
+    layer_sizes = list(3, 8, 36, 3)
+    hyper_params = list(lr, decay_rate, epsilon)
+    [optim_state_upd, model_upd] = util::update_params("rmsprop", optim_state, hyper_params, gradients, model,
+        "bottleneck", layer_sizes)
+}
+
+update_params_with_sgd= function(list[unknown] model,
+                                 list[unknown] gradients,
+                                 double lr)
+    return (list[unknown] model_upd, list[unknown] optim_state_upd) {
+    /*
+     * Updates all learnable parameters with the sgd optimizer.
+     *
+     * Inputs:
+     * - model: Model parameters, same as for forward and
+     *     backward pass.
+     * - gradients: Gradients, returned from the backward pass.
+     * - lr: Learning rate.
+     *
+     * Outputs:
+     * - model_upd: Updated model parameters.
+     * - optim_state_upd: Updated model states for all parameters.
+     */
+    layer_sizes = list(3, 8, 36, 3)
+    hyper_params = list(lr)
+    optim_state = list()
+    [optim_state_upd, model_upd] = util::update_params("sgd", optim_state, hyper_params, gradients, model, "bottleneck",
+        layer_sizes)
+}
+
+init_sgd_momentum_optim_params = function()
+    return(list[unknown] params) {
+    /*
+     * Initializes the state of the sgd momentum optimizer for
+     * every learnable parameter of ResNet 152.
+     *
+     * Outputs:
+     * - params: List of state parameters with the same structure
+     *     as weights of the forward and backward pass. It can be
+     *     directly passed to the update parameter function.
+     */
+    layer_sizes = list(3, 8, 36, 3)
+    params = util::init_optim("sgd_momentum", "bottleneck", layer_sizes)
+}
+
+update_params_with_sgd_momentum = function(list[unknown] model,
+                                           list[unknown] gradients,
+                                           double lr, double mu,
+                                           list[unknown] optim_state)
+    return (list[unknown] model_upd, list[unknown] optim_state_upd) {
+    /*
+     * Updates all learnable parameters with the sgd momentum optimizer.
+     *
+     * Inputs:
+     * - model: Model parameters, same as for forward and
+     *     backward pass.
+     * - gradients: Gradients, returned from the backward pass.
+     * - lr: Learning rate.
+     * - mu: Momentum value.
+     *     Typical values are in the range of [0.5, 0.99], usually
+     *     started at the lower end and annealed towards the higher end.
+     * - optim_state: Optimizer states for all model parameters.
+     *
+     * Outputs:
+     * - model_upd: Updated model parameters.
+     * - optim_state_upd: Updated model states for all parameters.
+     */
+    layer_sizes = list(3, 8, 36, 3)
+    hyper_params = list(lr, mu)
+    [optim_state_upd, model_upd] = util::update_params("sgd_momentum", optim_state, hyper_params, gradients, model,
+        "bottleneck", layer_sizes)
+}
+
+init_sgd_nesterov_optim_params = function()
+    return(list[unknown] params) {
+    /*
+     * Initializes the state of the nesterov optimizer for every
+     * learnable parameter of ResNet 152.
+     *
+     * Outputs:
+     * - params: List of state parameters with the same structure
+     *     as weights of the forward and backward pass. It can be
+     *     directly passed to the update parameter function.
+     */
+    layer_sizes = list(3, 8, 36, 3)
+    params = util::init_optim("nesterov", "bottleneck", layer_sizes)
+}
+
+update_params_with_sgd_nesterov = function(list[unknown] model,
+                                           list[unknown] gradients,
+                                           double lr, double mu,
+                                           list[unknown] optim_state)
+    return (list[unknown] model_upd, list[unknown] optim_state_upd) {
+    /*
+     * Updates all learnable parameters with the sgd nesterov optimizer.
+     *
+     * Inputs:
+     * - model: Model parameters, same as for forward and
+     *     backward pass.
+     * - gradients: Gradients, returned from the backward pass.
+     * - lr: Learning rate.
+     * - mu: Momentum value.
+     *     Typical values are in the range of [0.5, 0.99], usually
+     *     started at the lower end and annealed towards the higher end.
+     * - optim_state: Optimizer states for all model parameters.
+     *
+     * Outputs:
+     * - model_upd: Updated model parameters.
+     * - optim_state_upd: Updated model states for all parameters.
+     */
+    layer_sizes = list(3, 8, 36, 3)
+    hyper_params = list(lr, mu)
+    [optim_state_upd, model_upd] = util::update_params("sgd_nesterov", optim_state, hyper_params, gradients, model,
+        "bottleneck", layer_sizes)
 }

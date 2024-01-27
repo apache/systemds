@@ -46,7 +46,7 @@ block_type = "basic"
 [model, ema_means_vars] = resnet18::init(-1)
 
 # get initial optimizer parameters
-# chose your optimizer:
+# choose your optimizer:
 # *** adagrad
 # optimizer_params = resnet18::init_adagrad_optim_params()
 # *** adam
@@ -126,7 +126,7 @@ train = function(matrix[double] X, matrix[double] Y, list[unknown] model, list[u
             [dX, gradients] = resnet18::backward(dOut, cached_out, model, cached_means_vars)
 
             # update parameters
-            # chose your optimizer
+            # choose your optimizer
             # *** adagrad
             # [model, optim_params] = resnet18::update_params_with_adagrad(model, gradients, lr, epsilon, optim_params)
             # *** adam

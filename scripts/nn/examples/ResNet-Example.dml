@@ -30,6 +30,7 @@ source("scripts/nn/networks/resnet_util.dml") as resnet_util
 source("scripts/nn/networks/resnet18.dml") as resnet18
 source("scripts/nn/layers/softmax.dml") as softmax
 source("scripts/nn/layers/cross_entropy_loss.dml") as cross_entropy
+source("scripts/nn/layers/logcosh_loss.dml") as logcosh
 source("nn/optim/adam.dml") as adam
 
 # resnet18
@@ -52,7 +53,7 @@ X = rand(rows=N, cols=Hin*Win*C)
 Y = rand(rows=N, cols=F, min=0, max=1, pdf="normal")
 
 # train ResNet
-epochs = 1
+epochs = 20
 batch_size = 16
 # adam optimizer params
 lr = 0.001
@@ -79,7 +80,7 @@ train = function(matrix[double] X, matrix[double] Y, list[unknown] model, list[u
         print("Start epoch: " + epoch)
 
         for (i in 1:iterations) {
-            print("Iteration: " + i)
+            print(" - Iteration: " + i)
 
             # get batch
             start = (i - 1) * batch_size + 1
@@ -89,25 +90,35 @@ train = function(matrix[double] X, matrix[double] Y, list[unknown] model, list[u
 
             # forward pass
             [out, emas, cached_out, cached_means_vars] = resnet18::forward(X_batch, Hin, Win, model, mode, emas)
-            # apply softmax to compute probabilities for cross entropy loss
-            probs = softmax::forward(out)
 
             # loss
-            loss = cross_entropy::forward(probs, Y_batch)
+            loss = logcosh::forward(out, Y_batch)
             loss_avg = (loss_avg * (i - 1) + loss) / i
 
             # backward
-            dprobs = cross_entropy::backward(probs, Y_batch)
-            dOut = softmax::backward(dprobs, out)
+            dOut = logcosh::backward(out, Y_batch)
             [dX, gradients] = resnet18::backward(dOut, cached_out, model, cached_means_vars)
 
             # update parameters
             optim_hyper_params = list(lr, beta1, beta2, epsilon, t)
+            # optim_hyper_params = list(lr, epsilon)
+            # optim_hyper_params = list(lr, 0.99, epsilon)
+            # sgd nesterov & momentum
+            # optim_hyper_params = list(lr, 0.8)
+            # sgd
+            # optim_hyper_params = list(lr)
             [optim_params, model] = resnet_util::update_params("adam", optim_params, optim_hyper_params, gradients,
                 model, "basic", list(2, 2, 2, 2))
 
             t = t + 1
         }
+
+        # reshuffle mini batches
+        r = rand(rows=nrow(Y), cols=1, min=0, max=1, pdf="uniform")
+        X_tmp = order(target=cbind(r, X), by=1)
+        Y_tmp = order(target=cbind(r, Y), by=1)
+        X = X_tmp[,2:ncol(X_tmp)]
+        Y = Y_tmp[,2:ncol(Y_tmp)]
 
         print("Loss: " + loss_avg)
     }

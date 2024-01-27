@@ -369,7 +369,6 @@ update_bottleneck_block_params = function(string optimizer, list[unknown] optim_
 update_params = function(string optimizer, list[unknown] optim_params, list[unknown] optim_hyper_params,
     list[unknown] gradients, list[unknown] model, string block_type, list[unknown] layer_sizes)
     return (list[unknown] optim_params_upd, list[unknown] model_upd) {
-    print("Blubblub")
 
     optim_params_upd = list()
     model_upd = list()
@@ -390,7 +389,9 @@ update_params = function(string optimizer, list[unknown] optim_params, list[unkn
         layer_size = as.integer(as.scalar(layer_sizes[layer]))
         layer_params = as.list(model[layer + 3])
         layer_grads = as.list(gradients[layer + 3])
-        layer_optim_params = as.list(optim_params[layer + 3])
+        if (optimizer != "sgd") {
+            layer_optim_params = as.list(optim_params[layer + 3])
+        }
 
         layer_optim_params_upd = list()
         layer_params_upd = list()
@@ -398,7 +399,11 @@ update_params = function(string optimizer, list[unknown] optim_params, list[unkn
         for (block in 1:layer_size) {
             block_params = as.list(layer_params[block])
             block_grads = as.list(layer_grads[block])
-            block_optim_params = as.list(layer_optim_params[block])
+            if (optimizer != "sgd") {
+                block_optim_params = as.list(layer_optim_params[block])
+            } else {
+                block_optim_params = list()
+            }
             downsample = block == 1 & stride > 1
 
             if (block_type == "basic") {
@@ -410,11 +415,15 @@ update_params = function(string optimizer, list[unknown] optim_params, list[unkn
                     block_optim_params, optim_hyper_params, block_grads, block_params, downsample)
             }
 
-            layer_optim_params_upd = append(layer_optim_params_upd, block_optim_params_upd)
+            if (optimizer != "sgd") {
+                layer_optim_params_upd = append(layer_optim_params_upd, block_optim_params_upd)
+            }
             layer_params_upd = append(layer_params_upd, block_params_upd)
         }
 
-        optim_params_upd = append(optim_params_upd, layer_optim_params_upd)
+        if (optimizer != "sgd") {
+            optim_params_upd = append(optim_params_upd, layer_optim_params_upd)
+        }
         model_upd = append(model_upd, layer_params_upd)
     }
 
@@ -423,6 +432,4 @@ update_params = function(string optimizer, list[unknown] optim_params, list[unkn
         optim_params_upd, model_upd)
     [optim_params_upd, model_upd] = update_param(9, optimizer, optim_params, optim_hyper_params, gradients, model,
         optim_params_upd, model_upd)
-
-    print("Params updated")
 }

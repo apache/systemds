@@ -70,7 +70,7 @@ m_tSNE = function(Matrix[Double] X, Integer reduced_dims = 2, Integer perplexity
   itr = 1
 
   # Start first iteration out of loop as benchmark for early stopping
-  D = distance_matrix(Y)
+  D = dist(Y)
   Z = 1/(D + 1)
   Z = Z * ZERODIAG
   Q = Z/sum(Z)
@@ -101,7 +101,7 @@ m_tSNE = function(Matrix[Double] X, Integer reduced_dims = 2, Integer perplexity
   # End of first iteration
 
   while (itr <= max_iter & norm > norm_target) {
-    D = distance_matrix(Y)
+    D = dist(Y)
     Z = 1/(D + 1)
     Z = Z * ZERODIAG
     Q = Z/sum(Z)
@@ -129,17 +129,6 @@ m_tSNE = function(Matrix[Double] X, Integer reduced_dims = 2, Integer perplexity
   }
 }
 
-distance_matrix = function(matrix[double] X)
-  return (matrix[double] out)
-{
-  # TODO consolidate with dist() builtin, but with
-  # better way of obtaining the diag from 
-  n = nrow(X)
-  s = rowSums(X * X)
-  out = - 2*X %*% t(X) + s + t(s)
-}
-
-
 x2p = function(matrix[double] X, double perplexity, Boolean is_verbose = FALSE)
 return(matrix[double] P)
 {
@@ -150,7 +139,7 @@ return(matrix[double] P)
   n = nrow(X)
   if(is_verbose)
     print(n)
-  D = distance_matrix(X)
+  D = dist(X)
 
   P = matrix(0, rows=n, cols=n)
   beta = matrix(1, rows=n, cols=1)

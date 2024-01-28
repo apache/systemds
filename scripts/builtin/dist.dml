@@ -32,8 +32,7 @@
 # -----------------------------------------------------------------------------------------------
 
 m_dist = function(Matrix[Double] X) return (Matrix[Double] Y) {
-  n = nrow(X)
-  s = rowSums(X^2)
-  Y = sqrt(-2 * X %*% t(X) + s + t(s))
+  G = X %*% t(X);
+  Y = sqrt(-2 * G + outer(diag(G), t(diag(G)), "+"));
   Y = replace(target = Y, pattern=NaN, replacement = 0);
 }

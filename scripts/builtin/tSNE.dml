@@ -161,7 +161,7 @@ return(matrix[double] P)
   while (mean(abs(Hdiff)) > tol & itr < 50) {
     P = exp(-D * beta)
     P = P * ZERODIAG
-    sum_Pi = rowSums(P) = 1e-12
+    sum_Pi = rowSums(P) + 1e-12
     W = rowSums(P * D)
     Ws = W/sum_Pi
     H = log(sum_Pi) + beta * Ws

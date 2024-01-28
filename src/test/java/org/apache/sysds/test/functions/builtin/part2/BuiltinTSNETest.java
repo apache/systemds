@@ -24,10 +24,11 @@ import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.junit.Test;
+import static org.junit.Assert.assertTrue;
+
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
-import java.io.UnsupportedEncodingException;
 import java.io.IOException;
 
 public class BuiltinTSNETest extends AutomatedTestBase

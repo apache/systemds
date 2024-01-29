@@ -466,7 +466,7 @@ bottleneck_block_backward = function(matrix[double] dOut, list[unknown] cached_o
                                      int strideh, int stridew,
                                      list[unknown] cached_means_vars)
     return (matrix[double] dX, list[unknown] gradients) {
-    downsample = strideh > 1 | stridew > 1 | C_in != C_base
+    downsample = strideh > 1 | stridew > 1 | C_in != 4*C_base
     # default values
     mu_bn = 0.1
     epsilon_bn = 1e-05

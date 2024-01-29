@@ -20,6 +20,7 @@
 #-------------------------------------------------------------
 
 source("scripts/nn/networks/resnet.dml") as resnet
+source("scripts/nn/networks/resnet_util.dml") as util
 
 forward = function(matrix[double] X, int Hin, int Win,
                             list[unknown] model, string mode,
@@ -172,7 +173,7 @@ init = function(int classes, int seed)
  * Utility functions for optimizers.
  */
 
-init_adagrad_optim_params = function(classes)
+init_adagrad_optim_params = function(int classes)
     return(list[unknown] params) {
     /*
      * Initializes the state of the adagrad optimizer for every
@@ -216,7 +217,7 @@ update_params_with_adagrad = function(list[unknown] model, list[unknown] gradien
         layer_sizes)
 }
 
-init_adam_optim_params = function(classes)
+init_adam_optim_params = function(int classes)
     return(list[unknown] params) {
     /*
      * Initializes the state of the adam optimizer for every
@@ -266,7 +267,7 @@ update_params_with_adam = function(list[unknown] model, list[unknown] gradients,
         layer_sizes)
 }
 
-init_rmsprop_optim_params = function(classes)
+init_rmsprop_optim_params = function(int classes)
     return(list[unknown] params) {
     /*
      * Initializes the state of the rmsprop optimizer for every
@@ -336,7 +337,7 @@ update_params_with_sgd= function(list[unknown] model,
         layer_sizes)
 }
 
-init_sgd_momentum_optim_params = function(classes)
+init_sgd_momentum_optim_params = function(int classes)
     return(list[unknown] params) {
     /*
      * Initializes the state of the sgd momentum optimizer for
@@ -382,7 +383,7 @@ update_params_with_sgd_momentum = function(list[unknown] model,
         layer_sizes)
 }
 
-init_sgd_nesterov_optim_params = function(classes)
+init_sgd_nesterov_optim_params = function(int classes)
     return(list[unknown] params) {
     /*
      * Initializes the state of the nesterov optimizer for every

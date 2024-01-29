@@ -404,13 +404,14 @@ update_params = function(string optimizer, list[unknown] optim_params, list[unkn
             } else {
                 block_optim_params = list()
             }
-            downsample = block == 1 & stride > 1
 
             if (block_type == "basic") {
+                downsample = block == 1 & stride > 1
                 [block_optim_params_upd, block_params_upd] = update_basic_block_params(optimizer, block_optim_params,
                     optim_hyper_params, block_grads, block_params, downsample)
             } else {
                 # bottleneck blocks
+                downsample = block == 1
                 [block_optim_params_upd, block_params_upd] = update_bottleneck_block_params(optimizer,
                     block_optim_params, optim_hyper_params, block_grads, block_params, downsample)
             }

@@ -20,6 +20,7 @@
 #-------------------------------------------------------------
 
 source("scripts/nn/networks/resnet.dml") as resnet
+source("scripts/nn/networks/resnet_util.dml") as util
 
 forward = function(matrix[double] X, int Hin, int Win,
                             list[unknown] model, string mode,

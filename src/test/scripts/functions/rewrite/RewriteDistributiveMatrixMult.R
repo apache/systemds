@@ -19,33 +19,23 @@
 #
 #-------------------------------------------------------------
 
-/*
- * This script tests the correct memory management with function
- * calls that have lists as input and output where the output 
- * list object overwrites the input list object since they are
- * bound to the same variable name and contain mutual 
- * elements.
- */
+# Read command line arguments
+args <- commandArgs(TRUE)
 
-# initialize some variables
-some_matrix = matrix(112, rows=2, cols=2)
-some_list = list(some_matrix)
+# Set options for numeric precision
+options(digits=22)
 
-# update the list
-some_list = some_function(some_list, 3)
+# Load required libraries
+library("Matrix")
+library("matrixStats")
 
-# try to access matrix of list
-print(toString(as.matrix(some_list[1])))
+# Read matrices A, B, and C from Matrix Market format files
+A = as.matrix(readMM(paste(args[1], "A.mtx", sep="")))
+B = as.matrix(readMM(paste(args[1], "B.mtx", sep="")))
+C = as.matrix(readMM(paste(args[1], "C.mtx", sep="")))
 
+# Perform the matrix operation
+R = (A %*% B) + (A %*% C)
 
-some_function = function(list[unknown] just_a_list, int l)
-  return (list[unknown] also_a_list) {
-  # add an element to list
-  count = 0
-  for (i in 1:l) {
-      count += 1
-  }
-  other_matrix = matrix(count, rows=1, cols=3)
-
-  also_a_list = append(just_a_list, other_matrix)
-}
+# Write the result matrix R in Matrix Market format
+writeMM(as(R, "CsparseMatrix"), paste(args[2], "R", sep=""))

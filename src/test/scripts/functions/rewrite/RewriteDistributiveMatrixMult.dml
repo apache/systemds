@@ -19,33 +19,14 @@
 #
 #-------------------------------------------------------------
 
-/*
- * This script tests the correct memory management with function
- * calls that have lists as input and output where the output 
- * list object overwrites the input list object since they are
- * bound to the same variable name and contain mutual 
- * elements.
- */
 
-# initialize some variables
-some_matrix = matrix(112, rows=2, cols=2)
-some_list = list(some_matrix)
+# Load matrices A, B, and C
+A = read($1)
+B = read($2)
+C = read($3)
 
-# update the list
-some_list = some_function(some_list, 3)
+# Perform the operation
+R = (A %*% B) + (A %*% C)
 
-# try to access matrix of list
-print(toString(as.matrix(some_list[1])))
-
-
-some_function = function(list[unknown] just_a_list, int l)
-  return (list[unknown] also_a_list) {
-  # add an element to list
-  count = 0
-  for (i in 1:l) {
-      count += 1
-  }
-  other_matrix = matrix(count, rows=1, cols=3)
-
-  also_a_list = append(just_a_list, other_matrix)
-}
+# Write the result matrix R
+write(R, $4)

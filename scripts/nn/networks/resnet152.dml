@@ -317,10 +317,10 @@ update_params_with_rmsprop = function(list[unknown] model, list[unknown] gradien
         "bottleneck", layer_sizes)
 }
 
-update_params_with_sgd= function(list[unknown] model,
+update_params_with_sgd = function(list[unknown] model,
                                  list[unknown] gradients,
                                  double lr)
-    return (list[unknown] model_upd, list[unknown] optim_state_upd) {
+    return (list[unknown] model_upd) {
     /*
      * Updates all learnable parameters with the sgd optimizer.
      *
@@ -332,7 +332,6 @@ update_params_with_sgd= function(list[unknown] model,
      *
      * Outputs:
      * - model_upd: Updated model parameters.
-     * - optim_state_upd: Updated model states for all parameters.
      */
     layer_sizes = list(3, 8, 36, 3)
     hyper_params = list(lr)

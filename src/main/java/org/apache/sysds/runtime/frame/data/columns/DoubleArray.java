@@ -293,33 +293,24 @@ public class DoubleArray extends Array<Double> {
 	@Override
 	protected Array<Integer> changeTypeInteger() {
 		int[] ret = new int[size()];
-		for(int i = 0; i < size(); i++) {
-			if(_data[i] != (int) _data[i])
-				throw new DMLRuntimeException("Unable to change to Integer from Double array because of value:" + _data[i]);
+		for(int i = 0; i < size(); i++)
 			ret[i] = (int) _data[i];
-		}
 		return new IntegerArray(ret);
 	}
 
 	@Override
 	protected Array<Long> changeTypeLong() {
 		long[] ret = new long[size()];
-		for(int i = 0; i < size(); i++) {
-			if(_data[i] != (long) _data[i])
-				throw new DMLRuntimeException("Unable to change to Long from Double array because of value:" + _data[i]);
+		for(int i = 0; i < size(); i++)
 			ret[i] = (long) _data[i];
-		}
 		return new LongArray(ret);
 	}
 
 	@Override
 	protected Array<Object> changeTypeHash64() {
 		long[] ret = new long[size()];
-		for(int i = 0; i < size(); i++) {
-			if(_data[i] != (long) _data[i])
-				throw new DMLRuntimeException("Unable to change to Long from Double array because of value:" + _data[i]);
+		for(int i = 0; i < size(); i++) 
 			ret[i] = (long) _data[i];
-		}
 		return new HashLongArray(ret);
 	}
 

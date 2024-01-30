@@ -19,7 +19,6 @@
 
 package org.apache.sysds.performance;
 
-import org.antlr.v4.runtime.atn.StarLoopEntryState;
 import org.apache.sysds.performance.compression.IOBandwidth;
 import org.apache.sysds.performance.compression.SchemaTest;
 import org.apache.sysds.performance.compression.Serialize;
@@ -34,7 +33,6 @@ import org.apache.sysds.performance.generators.MatrixFile;
 import org.apache.sysds.performance.matrix.MatrixMulPerformance;
 import org.apache.sysds.performance.matrix.MatrixStorage;
 import org.apache.sysds.runtime.data.SparseBlock;
-import org.apache.sysds.runtime.data.SparseBlockMCSR;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.CommonThreadPool;

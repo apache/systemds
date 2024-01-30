@@ -22,6 +22,16 @@
 # This function performs dimensionality reduction using tSNE algorithm based on
 # the paper: Visualizing Data using t-SNE, Maaten et. al.
 #
+# There exists a variant of t-SNE, implemented in sklearn, that first reduces the
+# dimenisonality of the data using PCA to reduce noise and then applies t-SNE for
+# further dimensionality reduction. A script of this can be found in the tutorials
+# folder: scripts/tutorials/tsne/pca-tsne.dml
+#
+# For direct reference and tips on choosing the dimension for the PCA pre-processing,
+# you can visit:
+# https://github.com/scikit-learn/scikit-learn/blob/main/sklearn/manifold/_t_sne.py
+# https://lvdmaaten.github.io/tsne/
+#
 # INPUT:
 # -------------------------------------------------------------------------------------------
 # X              Data Matrix of shape

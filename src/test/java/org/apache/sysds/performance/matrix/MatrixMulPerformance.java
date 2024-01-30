@@ -27,28 +27,36 @@ import org.apache.sysds.runtime.data.SparseBlockMCSR;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.DataConverter;
-import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestUtils;
 
 import java.util.Arrays;
 
-public class MatrixMulPerformance extends AutomatedTestBase {
+public class MatrixMulPerformance {
 
-	private static final int _rl = 1024;
-	private static final int _cl = 1024;
+	private final int _rl;
+	private final int _cl;
 
-	private static final int warmupRuns = 15;
-	private static final int repetitions = 50;
-	private static final int resolution = 18;
-	private static final float resolutionDivisor = 2f;
-	private static final float maxSparsity = .4f;
+	private final int warmupRuns;
+	private final int repetitions;
+	private final int resolution;
+	private final float resolutionDivisor;
+	private final float maxSparsity;
 
-	@Override
-	public void setUp() {
-		TestUtils.clearAssertionInformation();
+	public MatrixMulPerformance() {
+		this(1024, 1024, 15, 50, 18, .4f, 2f);
 	}
 
-	static float[] sparsityProvider() {
+	public MatrixMulPerformance(int rl, int cl, int warmupRuns, int repetitions, int resolution, float maxSparsity, float stepDivisor) {
+		_rl = rl;
+		_cl = cl;
+		this.warmupRuns = warmupRuns;
+		this.repetitions = repetitions;
+		this.resolution = resolution;
+		this.resolutionDivisor = stepDivisor;
+		this.maxSparsity = maxSparsity;
+	}
+
+	float[] sparsityProvider() {
 		float[] sparsities = new float[resolution];
 		float currentValue = maxSparsity;
 
@@ -89,33 +97,29 @@ public class MatrixMulPerformance extends AutomatedTestBase {
 		return sb.toString();
 	}
 
-	/*@Test
-	public void testDense2Dense() {
+	/*public void testDense2Dense() {
 		testSparseFormat(null, null);
 	}
 
-	@Test
 	public void testCSR2CSR() {
 		testSparseFormat(SparseBlock.Type.CSR, SparseBlock.Type.CSR);
 	}
 
-	@Test
 	public void testDCSR2DCSR() {
 		testSparseFormat(SparseBlock.Type.DCSR, SparseBlock.Type.DCSR);
 	}
 
-	@Test
 	public void testMCSR2MCSR() {
 		testSparseFormat(SparseBlock.Type.MCSR, SparseBlock.Type.MCSR);
 	}
 
-	@Test
+
 	public void testCOO2COO() {
 		testSparseFormat(SparseBlock.Type.COO, SparseBlock.Type.COO);
 	}*/
 
-	private void testSparseFormat(SparseBlock.Type btype1, SparseBlock.Type btype2) {
-		float[] sparsities = MatrixMulPerformance.sparsityProvider();
+	public void testSparseFormat(SparseBlock.Type btype1, SparseBlock.Type btype2) {
+		float[] sparsities = this.sparsityProvider();
 		double[] avgNanosPerSparsity = new double[sparsities.length];
 		long[] results = new long[repetitions];
 		for (int sparsityIndex = 0; sparsityIndex < sparsities.length; sparsityIndex++) {
@@ -134,8 +138,8 @@ public class MatrixMulPerformance extends AutomatedTestBase {
 	}
 
 	private long runSparsityEstimateTest(SparseBlock.Type btype1, SparseBlock.Type btype2, float sparsity) {
-		double[][] A = getRandomMatrix(_rl, _cl, -10, 10, sparsity, 7654321);
-		double[][] B = getRandomMatrix(_rl, _cl, -10, 10, sparsity, 7654322);
+		double[][] A = TestUtils.generateTestMatrix(_rl, _cl, -10, 10, sparsity, 7654321);
+		double[][] B = TestUtils.generateTestMatrix(_rl, _cl, -10, 10, sparsity, 7654322);
 
 		MatrixBlock mbtmp1 = DataConverter.convertToMatrixBlock(A);
 		MatrixBlock mbtmp2 = DataConverter.convertToMatrixBlock(B);

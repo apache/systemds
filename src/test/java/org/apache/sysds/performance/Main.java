@@ -19,6 +19,7 @@
 
 package org.apache.sysds.performance;
 
+import org.antlr.v4.runtime.atn.StarLoopEntryState;
 import org.apache.sysds.performance.compression.IOBandwidth;
 import org.apache.sysds.performance.compression.SchemaTest;
 import org.apache.sysds.performance.compression.Serialize;
@@ -30,6 +31,10 @@ import org.apache.sysds.performance.generators.FrameTransformFile;
 import org.apache.sysds.performance.generators.GenMatrices;
 import org.apache.sysds.performance.generators.IGenerate;
 import org.apache.sysds.performance.generators.MatrixFile;
+import org.apache.sysds.performance.matrix.MatrixMulPerformance;
+import org.apache.sysds.performance.matrix.MatrixStorage;
+import org.apache.sysds.runtime.data.SparseBlock;
+import org.apache.sysds.runtime.data.SparseBlockMCSR;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.CommonThreadPool;
@@ -99,6 +104,18 @@ public class Main {
 				break;
 			case 16:
 				run16(args);
+				break;
+			case 1000:
+				run1000(args);
+				break;
+			case 1001:
+				run1001(args);
+				break;
+			case 1002:
+				run1002(args);
+				break;
+			case 1003:
+				run1003(args);
 				break;
 			default:
 				break;
@@ -183,6 +200,125 @@ public class Main {
 		int len = Integer.parseInt(args[1]);
 		MatrixBlock mb = TestUtils.ceil(TestUtils.generateTestMatrixBlock(len, len, 0, 100, 0.01, len + 1));
 		System.out.println(mb);
+	}
+
+	private static void run1000(String[] args) {
+		MatrixMulPerformance perf;
+		if (args.length < 3) {
+			perf = new MatrixMulPerformance();
+		} else {
+			// ... <rl> <cl> [resolution] [maxSparsity] [resolution] [warmupRuns] [repetitions]
+			int rl = Integer.parseInt(args[1]);
+			int cl = Integer.parseInt(args[2]);
+			int resolution = 18;
+			float maxSparsity = .4f;
+			int warmupRuns = 30;
+			int repetitions = 100;
+
+			if (args.length > 3)
+				resolution = Integer.parseInt(args[3]);
+			if (args.length > 4)
+				maxSparsity = Float.parseFloat(args[4]);
+			if (args.length > 5)
+				warmupRuns = Integer.parseInt(args[5]);
+			if (args.length > 6)
+				repetitions = Integer.parseInt(args[6]);
+
+			perf = new MatrixMulPerformance(rl, cl, warmupRuns, repetitions, resolution, maxSparsity, 2f);
+		}
+
+		perf.testSparseFormat(null, null);
+		perf.testSparseFormat(SparseBlock.Type.MCSR, SparseBlock.Type.MCSR);
+		perf.testSparseFormat(SparseBlock.Type.CSR, SparseBlock.Type.CSR);
+		perf.testSparseFormat(SparseBlock.Type.COO, SparseBlock.Type.COO);
+		perf.testSparseFormat(SparseBlock.Type.DCSR, SparseBlock.Type.DCSR);
+	}
+
+	private static void run1001(String[] args) {
+		// ... [rl] [cl] [repetitions] [resolution] [maxSparsity]
+		MatrixStorage ms;
+		int rl = 1024;
+		int cl = 1024;
+		int repetitions = 10;
+		int resolution = 18;
+		float maxSparsity = 0.4f;
+
+		if (args.length > 1)
+			rl = Integer.parseInt(args[1]);
+		if (args.length > 2)
+			cl = Integer.parseInt(args[2]);
+		if (args.length > 3)
+			repetitions = Integer.parseInt(args[3]);
+		if (args.length > 4)
+			resolution = Integer.parseInt(args[4]);
+		if (args.length > 5)
+			maxSparsity = Float.parseFloat(args[5]);
+
+		ms = new MatrixStorage(resolution, 2f, maxSparsity);
+
+		ms.testSparseFormat(null, rl, cl, repetitions);
+		ms.testSparseFormat(SparseBlock.Type.MCSR, rl, cl, repetitions);
+		ms.testSparseFormat(SparseBlock.Type.CSR, rl, cl, repetitions);
+		ms.testSparseFormat(SparseBlock.Type.COO, rl, cl, repetitions);
+		ms.testSparseFormat(SparseBlock.Type.DCSR, rl, cl, repetitions);
+	}
+
+	private static void run1002(String[] args) {
+		// ... [sparsity] [rl] [minCl] [maxCl] [resolution] [repetitions]
+		MatrixStorage ms = new MatrixStorage();
+		float sparsity = 0.1f;
+		int rl = 1024;
+		int minCl = 50;
+		int maxCl = 2048;
+		int resolution = 21;
+		int repetitions = 10;
+
+		if (args.length > 1)
+			sparsity = Float.parseFloat(args[1]);
+		if (args.length > 2)
+			rl = Integer.parseInt(args[2]);
+		if (args.length > 3)
+			minCl = Integer.parseInt(args[3]);
+		if (args.length > 4)
+			maxCl = Integer.parseInt(args[4]);
+		if (args.length > 5)
+			resolution = Integer.parseInt(args[5]);
+		if (args.length > 6)
+			repetitions = Integer.parseInt(args[6]);
+
+		ms.testChangingDims(null, sparsity, rl, minCl, maxCl, resolution, repetitions);
+		ms.testChangingDims(SparseBlock.Type.MCSR, sparsity, rl, minCl, maxCl, resolution, repetitions);
+		ms.testChangingDims(SparseBlock.Type.CSR, sparsity, rl, minCl, maxCl, resolution, repetitions);
+		ms.testChangingDims(SparseBlock.Type.COO, sparsity, rl, minCl, maxCl, resolution, repetitions);
+		ms.testChangingDims(SparseBlock.Type.DCSR, sparsity, rl, minCl, maxCl, resolution, repetitions);
+	}
+
+	private static void run1003(String[] args) {
+		// ... [sparsity] [resolution] [repetitions] [maxRowColRatio] [numMatrixEntries]
+		MatrixStorage ms = new MatrixStorage();
+
+		float sparsity = 0.1f;
+		int resolution = 21;
+		int repetitions = 10;
+		float maxRowColRatio = 10f;
+		int numEntries = 1024 * 1024;
+
+		if (args.length > 1)
+			sparsity = Float.parseFloat(args[1]);
+		if (args.length > 2)
+			resolution = Integer.parseInt(args[2]);
+		if (args.length > 3)
+			repetitions = Integer.parseInt(args[3]);
+		if (args.length > 4)
+			maxRowColRatio = Float.parseFloat(args[4]);
+		if (args.length > 5)
+			numEntries = Integer.parseInt(args[5]);
+
+		ms.testBalancedDims(null, sparsity, numEntries, resolution, maxRowColRatio, repetitions);
+		ms.testBalancedDims(SparseBlock.Type.MCSR, sparsity, numEntries, resolution, maxRowColRatio, repetitions);
+		ms.testBalancedDims(SparseBlock.Type.CSR, sparsity, numEntries, resolution, maxRowColRatio, repetitions);
+		ms.testBalancedDims(SparseBlock.Type.COO, sparsity, numEntries, resolution, maxRowColRatio, repetitions);
+		ms.testBalancedDims(SparseBlock.Type.DCSR, sparsity, numEntries, resolution, maxRowColRatio, repetitions);
 	}
 
 	public static void main(String[] args) {

@@ -27,18 +27,25 @@ import org.apache.sysds.runtime.data.SparseBlockDCSR;
 import org.apache.sysds.runtime.data.SparseBlockMCSR;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.DataConverter;
-import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestUtils;
-import org.junit.Test;
 
-public class MatrixStorage extends AutomatedTestBase {
+public class MatrixStorage {
 
-	private static final int resolution = 18;
-	private static final float resolutionDivisor = 2f;
-	private static final float maxSparsity = .2f;
-	private static final float dimTestSparsity = .4f;
+	private final int resolution;
+	private final float resolutionDivisor;
+	private final float maxSparsity;
 
-	static float[] sparsityProvider() {
+	public MatrixStorage() {
+		this(18, 2f, .2f);
+	}
+
+	public MatrixStorage(int resolution, float resolutionDivisor, float maxSparsity) {
+		this.resolution = resolution;
+		this.resolutionDivisor = resolutionDivisor;
+		this.maxSparsity = maxSparsity;
+	}
+
+	float[] sparsityProvider() {
 		float[] sparsities = new float[resolution];
 		float currentValue = maxSparsity;
 
@@ -50,22 +57,22 @@ public class MatrixStorage extends AutomatedTestBase {
 		return sparsities;
 	}
 
-	static int[][] dimsProvider(int rl, int maxCl, int minCl, int resolution) {
+	int[][] dimsProvider(int rl, int maxCl, int minCl, int resolution) {
 		int[][] dims = new int[2][resolution];
 		for (int i = 0; i < resolution; i++) {
 			dims[0][i] = rl;
-			dims[1][i] = (int)(minCl + i * ((maxCl-minCl)/((float)resolution)));
+			dims[1][i] = (int)(minCl + i * ((maxCl-minCl)/((float)resolution-1)));
 		}
 
 		return dims;
 	}
 
-	static int[][] balancedDimsProvider(int numEntries, float[] ratio, float qMax) {
+	int[][] balancedDimsProvider(int numEntries, float[] ratio, float qMax) {
 		int resolution = ratio.length;
 		int[][] dims = new int[2][resolution];
 
 		for (int i = 0; i < resolution; i++) {
-			ratio[i] = -qMax + 2 * qMax * (i / ((float)resolution));
+			ratio[i] = -qMax + 2 * qMax * (i / ((float)resolution-1));
 			if (ratio[i] < 0) {
 				// Then columns are bigger than rows
 				// r * c = numEntries
@@ -123,11 +130,6 @@ public class MatrixStorage extends AutomatedTestBase {
 
 		sb.append("]");
 		return sb.toString();
-	}
-
-	@Override
-	public void setUp() {
-		TestUtils.clearAssertionInformation();
 	}
 
 	/*@Test
@@ -205,8 +207,8 @@ public class MatrixStorage extends AutomatedTestBase {
 		testBalancedDims(SparseBlock.Type.DCSR, dimTestSparsity, 1024*1024, 30, 10, 10);
 	}*/
 
-	private void testSparseFormat(SparseBlock.Type btype, int rl, int cl, int repetitions) {
-		float[] sparsities = MatrixStorage.sparsityProvider();
+	public void testSparseFormat(SparseBlock.Type btype, int rl, int cl, int repetitions) {
+		float[] sparsities = sparsityProvider();
 		long[][] results = new long[repetitions][sparsities.length];
 
 		for (int repetition = 0; repetition < repetitions; repetition++)
@@ -218,8 +220,8 @@ public class MatrixStorage extends AutomatedTestBase {
 		System.out.println("memory" + (btype == null ? "Dense" : btype.name()) + " =  " + printAsPythonList(buildAverage(results)));
 	}
 
-	private void testChangingDims(SparseBlock.Type btype, double sparsity, int rl, int minCl, int maxCl, int resolution, int repetitions) {
-		int[][] dims = MatrixStorage.dimsProvider(rl, minCl, maxCl, resolution);
+	public void testChangingDims(SparseBlock.Type btype, double sparsity, int rl, int minCl, int maxCl, int resolution, int repetitions) {
+		int[][] dims = dimsProvider(rl, minCl, maxCl, resolution);
 		long[][] results = new long[repetitions][resolution];
 
 		for (int repetition = 0; repetition < repetitions; repetition++)
@@ -231,9 +233,9 @@ public class MatrixStorage extends AutomatedTestBase {
 		System.out.println("dimMemory" + (btype == null ? "Dense" : btype.name()) + " =  " + printAsPythonList(buildAverage(results)));
 	}
 
-	private void testBalancedDims(SparseBlock.Type btype, double sparsity, int numEntries, int resolution, float qMax /*The maximum / minimum row-column ratio*/, int repetitions) {
+	public void testBalancedDims(SparseBlock.Type btype, double sparsity, int numEntries, int resolution, float qMax /*The maximum / minimum row-column ratio*/, int repetitions) {
 		float[] ratios = new float[resolution];
-		int[][] dims = MatrixStorage.balancedDimsProvider(numEntries, ratios, qMax);
+		int[][] dims = balancedDimsProvider(numEntries, ratios, qMax);
 		long[][] results = new long[repetitions][resolution];
 
 		for (int repetition = 0; repetition < repetitions; repetition++)
@@ -261,7 +263,7 @@ public class MatrixStorage extends AutomatedTestBase {
 			if (btype == null)
 				return Math.min(Long.MAX_VALUE, (long) DenseBlockFP64.estimateMemory(rl, cl));
 
-			double[][] A = getRandomMatrix(rl, cl, -10, 10, sparsity, 7654321);
+			double[][] A = TestUtils.generateTestMatrix(rl, cl, -10, 10, sparsity, 7654321);
 
 			MatrixBlock mbtmp = DataConverter.convertToMatrixBlock(A);
 

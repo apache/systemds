@@ -89,10 +89,16 @@ public class FrameFromMatrixBlock {
 		for(int c = 0; c < nCol; c++){
 			for(int r = 0; r < nRow; r++){
 				switch(schema[c]){
+					case INT64:
+						// keep the type as FP64 if long is detected
+						schema[c] = ValueType.FP64; 
 					case FP64:
 						break;
 					default:
-						schema[c] = FrameUtil.isType(mb.quickGetValue(r, c), schema[c]);
+						final double v =  mb.quickGetValue(r, c);
+						if(v > Integer.MAX_VALUE)
+							schema[c] = ValueType.FP64; // handle Integer overflow.
+						schema[c] = FrameUtil.isType(v, schema[c]);
 				}
 			}
 		}

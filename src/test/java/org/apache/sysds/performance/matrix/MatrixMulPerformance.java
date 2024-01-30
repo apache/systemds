@@ -97,27 +97,6 @@ public class MatrixMulPerformance {
 		return sb.toString();
 	}
 
-	/*public void testDense2Dense() {
-		testSparseFormat(null, null);
-	}
-
-	public void testCSR2CSR() {
-		testSparseFormat(SparseBlock.Type.CSR, SparseBlock.Type.CSR);
-	}
-
-	public void testDCSR2DCSR() {
-		testSparseFormat(SparseBlock.Type.DCSR, SparseBlock.Type.DCSR);
-	}
-
-	public void testMCSR2MCSR() {
-		testSparseFormat(SparseBlock.Type.MCSR, SparseBlock.Type.MCSR);
-	}
-
-
-	public void testCOO2COO() {
-		testSparseFormat(SparseBlock.Type.COO, SparseBlock.Type.COO);
-	}*/
-
 	public void testSparseFormat(SparseBlock.Type btype1, SparseBlock.Type btype2) {
 		float[] sparsities = this.sparsityProvider();
 		double[] avgNanosPerSparsity = new double[sparsities.length];

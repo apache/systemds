@@ -39,7 +39,7 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 public class TransformFederatedEncodeDecodeTest extends AutomatedTestBase {
-	private static final Log LOG = LogFactory.getLog(TransformFederatedEncodeDecodeTest.class.getName());
+	protected static final Log LOG = LogFactory.getLog(TransformFederatedEncodeDecodeTest.class.getName());
 
 	private static final String TEST_NAME_RECODE = "TransformRecodeFederatedEncodeDecode";
 	private static final String TEST_NAME_DUMMY = "TransformDummyFederatedEncodeDecode";
@@ -61,30 +61,30 @@ public class TransformFederatedEncodeDecodeTest extends AutomatedTestBase {
 			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME_RECODE, new String[] {"FO1", "FO2"}));
 	}
 
-	// @Test
-	// public void runComplexRecodeTestCSVDenseCP() {
-	// 	runTransformEncodeDecodeTest(true, false, Types.FileFormat.CSV);
-	// }
+	@Test
+	public void runComplexRecodeTestCSVDenseCP() {
+		runTransformEncodeDecodeTest(true, false, Types.FileFormat.CSV);
+	}
 
-	// @Test
-	// public void runComplexRecodeTestCSVSparseCP() {
-	// 	runTransformEncodeDecodeTest(true, true, Types.FileFormat.CSV);
-	// }
+	@Test
+	public void runComplexRecodeTestCSVSparseCP() {
+		runTransformEncodeDecodeTest(true, true, Types.FileFormat.CSV);
+	}
 
-	// @Test
-	// public void runComplexRecodeTestTextcellDenseCP() {
-	// 	runTransformEncodeDecodeTest(true, false, Types.FileFormat.TEXT);
-	// }
+	@Test
+	public void runComplexRecodeTestTextcellDenseCP() {
+		runTransformEncodeDecodeTest(true, false, Types.FileFormat.TEXT);
+	}
 
-	// @Test
-	// public void runComplexRecodeTestTextcellSparseCP() {
-	// 	runTransformEncodeDecodeTest(true, true, Types.FileFormat.TEXT);
-	// }
+	@Test
+	public void runComplexRecodeTestTextcellSparseCP() {
+		runTransformEncodeDecodeTest(true, true, Types.FileFormat.TEXT);
+	}
 
-	// @Test
-	// public void runComplexRecodeTestBinaryDenseCP() {
-	// 	runTransformEncodeDecodeTest(true, false, Types.FileFormat.BINARY);
-	// }
+	@Test
+	public void runComplexRecodeTestBinaryDenseCP() {
+		runTransformEncodeDecodeTest(true, false, Types.FileFormat.BINARY);
+	}
 
 	@Test
 	@Ignore
@@ -94,35 +94,35 @@ public class TransformFederatedEncodeDecodeTest extends AutomatedTestBase {
 		runTransformEncodeDecodeTest(true, true, Types.FileFormat.BINARY);
 	}
 	
-	// @Test
-	// public void runSimpleDummycodeTestCSVDenseCP() {
-	// 	runTransformEncodeDecodeTest(false, false, Types.FileFormat.CSV);
-	// }
+	@Test
+	public void runSimpleDummycodeTestCSVDenseCP() {
+		runTransformEncodeDecodeTest(false, false, Types.FileFormat.CSV);
+	}
 	
-	// @Test
-	// public void runSimpleDummycodeTestCSVSparseCP() {
-	// 	runTransformEncodeDecodeTest(false, true, Types.FileFormat.CSV);
-	// }
+	@Test
+	public void runSimpleDummycodeTestCSVSparseCP() {
+		runTransformEncodeDecodeTest(false, true, Types.FileFormat.CSV);
+	}
 	
-	// @Test
-	// public void runSimpleDummycodeTestTextDenseCP() {
-	// 	runTransformEncodeDecodeTest(false, false, Types.FileFormat.TEXT);
-	// }
+	@Test
+	public void runSimpleDummycodeTestTextDenseCP() {
+		runTransformEncodeDecodeTest(false, false, Types.FileFormat.TEXT);
+	}
 	
-	// @Test
-	// public void runSimpleDummycodeTestTextSparseCP() {
-	// 	runTransformEncodeDecodeTest(false, true, Types.FileFormat.TEXT);
-	// }
+	@Test
+	public void runSimpleDummycodeTestTextSparseCP() {
+		runTransformEncodeDecodeTest(false, true, Types.FileFormat.TEXT);
+	}
 	
-	// @Test
-	// public void runSimpleDummycodeTestBinaryDenseCP() {
-	// 	runTransformEncodeDecodeTest(false, false, Types.FileFormat.BINARY);
-	// }
+	@Test
+	public void runSimpleDummycodeTestBinaryDenseCP() {
+		runTransformEncodeDecodeTest(false, false, Types.FileFormat.BINARY);
+	}
 	
-	// @Test
-	// public void runSimpleDummycodeTestBinarySparseCP() {
-	// 	runTransformEncodeDecodeTest(false, true, Types.FileFormat.BINARY);
-	// }
+	@Test
+	public void runSimpleDummycodeTestBinarySparseCP() {
+		runTransformEncodeDecodeTest(false, true, Types.FileFormat.BINARY);
+	}
 
 	private void runTransformEncodeDecodeTest(boolean recode, boolean sparse, Types.FileFormat format) {
 		ExecMode rtold = setExecMode(ExecMode.SINGLE_NODE);
@@ -172,8 +172,7 @@ public class TransformFederatedEncodeDecodeTest extends AutomatedTestBase {
 				"format=" + format.toString()};
 
 			// run test
-			// runTest(null);
-			LOG.error("\n" + runTest(null));
+			runTest(null);
 
 			// compare frame before and after encode and decode
 			FrameReader reader = FrameReaderFactory.createFrameReader(format);

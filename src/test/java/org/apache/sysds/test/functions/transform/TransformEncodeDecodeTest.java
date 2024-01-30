@@ -114,7 +114,7 @@ public class TransformEncodeDecodeTest extends AutomatedTestBase {
 				SCRIPT_DIR + TEST_DIR + SPEC, output("FO")};
 
 			// run test
-			LOG.error(runTest(null));
+			runTest(null);
 
 			// compare matrices (values recoded to identical codes)
 			FrameReader reader = FrameReaderFactory.createFrameReader(FileFormat.safeValueOf(fmt));

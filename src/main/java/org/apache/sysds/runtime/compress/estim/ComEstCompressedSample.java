@@ -30,6 +30,9 @@ import org.apache.sysds.runtime.compress.lib.CLALibCombineGroups;
 
 public class ComEstCompressedSample extends ComEstSample {
 
+	private static boolean loggedWarning = false;
+
+
 	public ComEstCompressedSample(CompressedMatrixBlock sample, CompressionSettings cs, CompressedMatrixBlock full,
 		int k) {
 		super(sample, cs, full, k);
@@ -54,12 +57,17 @@ public class ComEstCompressedSample extends ComEstSample {
 
 	@Override
 	public CompressedSizeInfoColGroup getColGroupInfo(IColIndex colIndexes, int estimate, int nrUniqueUpperBound) {
-		throw new UnsupportedOperationException("Unimplemented method 'getColGroupInfo'");
+		if(!loggedWarning)
+			LOG.warn("Compressed input cannot fallback to resampling " + colIndexes);
+		loggedWarning = true;
+		return null;
 	}
 
 	@Override
 	public CompressedSizeInfoColGroup getDeltaColGroupInfo(IColIndex colIndexes, int estimate, int nrUniqueUpperBound) {
-		throw new UnsupportedOperationException("Unimplemented method 'getDeltaColGroupInfo'");
+		if(!loggedWarning)
+			LOG.warn("Compressed input cannot fallback to resampling " + colIndexes);
+		return null;
 	}
 
 	@Override

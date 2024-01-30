@@ -32,6 +32,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
+import org.apache.sysds.runtime.frame.data.columns.ACompressedArray;
 import org.apache.sysds.runtime.frame.data.columns.Array;
 import org.apache.sysds.runtime.frame.data.columns.ArrayFactory;
 import org.apache.sysds.runtime.frame.data.columns.ColumnMetadata;
@@ -116,7 +117,7 @@ public class FrameLibApplySchema {
 
 	private FrameBlock apply() {
 
-		if(k <= 1 || nCol == 1)
+		if(k <= 1 || nCol == 1 || containsCompressed())
 			applySingleThread();
 		else
 			applyMultiThread();
@@ -141,6 +142,14 @@ public class FrameLibApplySchema {
 			LOG.debug(String.format("            Ratio      : %4.3f", ((double) inMem / outMem)));
 		}
 		return out;
+	}
+
+	private boolean containsCompressed(){
+		for(Array<?> col : fb.getColumns())
+			if(col instanceof ACompressedArray)
+				return true;
+		
+		return false;
 	}
 
 	private void applySingleThread() {

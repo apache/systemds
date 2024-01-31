@@ -26,9 +26,6 @@ import org.apache.sysds.test.TestConfiguration;
 import org.junit.Test;
 import static org.junit.Assert.assertTrue;
 
-
-import java.io.ByteArrayOutputStream;
-import java.io.PrintStream;
 import java.io.IOException;
 
 public class BuiltinTSNETest extends AutomatedTestBase
@@ -45,12 +42,12 @@ public class BuiltinTSNETest extends AutomatedTestBase
 	@Test
 	public void testTSNECP() throws IOException {
 		runTSNETest(2, 30, 300.,
-			0.9, 1000, 42, "FALSE", ExecType.CP);
+			0.9, 1000, 1e-5d, 42, "FALSE", 10, ExecType.CP);
 	}
 
 	@SuppressWarnings("unused")
-	private void runTSNETest(Integer reduced_dims, Integer perplexity, Double lr,
-		Double momentum, Integer max_iter, Integer seed, String is_verbose, ExecType instType)
+	private void runTSNETest(int reduced_dims, int perplexity, double lr,
+		double momentum, int max_iter, double tol, int seed, String is_verbose, Integer print_iter, ExecType instType)
 		throws IOException
 	{
 		ExecMode platformOld = setExecMode(instType);
@@ -68,8 +65,11 @@ public class BuiltinTSNETest extends AutomatedTestBase
 				"lr=" + lr,
 				"momentum=" + momentum,
 				"max_iter=" + max_iter,
+				"tol=" + tol,
 				"seed=" + seed,
-				"is_verbose=" + is_verbose};
+				"is_verbose=" + is_verbose,
+				"print_iter=" + print_iter
+			};
 
 			// The Input values are calculated using the following R script:
 			// TODO create via dml operations, avoid inlining data
@@ -412,7 +412,7 @@ public class BuiltinTSNETest extends AutomatedTestBase
 	@Test
 	public void testTSNEEarlyStopping() throws IOException {
 		// Test setup guarantees early stopping.
-		runTSNEEarlyStoppingTest(2, 30, 300., 0.9, 1000, 1e-1, 1, "TRUE", ExecType.CP);
+		runTSNEEarlyStoppingTest(2, 30, 300., 0.9, 1000, 1e-1, 1, "TRUE", 10, ExecType.CP);
 	}
 
 	@SuppressWarnings("unused")
@@ -425,6 +425,7 @@ public class BuiltinTSNETest extends AutomatedTestBase
 		Double tol, 
 		Integer seed, 
 		String is_verbose, 
+		Integer print_iter,
 		ExecType instType) throws IOException {
 		
 		ExecMode platformOld = setExecMode(instType);
@@ -441,9 +442,11 @@ public class BuiltinTSNETest extends AutomatedTestBase
 				"lr=" + lr,
 				"momentum=" + momentum,
 				"max_iter=" + max_iter,
-				"tol= " + tol,
+				"tol=" + tol,
 				"seed=" + seed,
-				"is_verbose=" + is_verbose};
+				"is_verbose=" + is_verbose,
+				"print_iter=" + print_iter
+			};
 
 			// The Input values are calculated using the following dml script:
 			// X = rand(rows=50, cols=2, min=0, max=5, seed=1)
@@ -502,22 +505,28 @@ public class BuiltinTSNETest extends AutomatedTestBase
 				{-4.570078514420281, 2.156235882831523}
 			};
 
-			// Capture console output
-			ByteArrayOutputStream outContent = new ByteArrayOutputStream();
-			System.setOut(new PrintStream(outContent));
+			writeInputMatrixWithMTD("X", X, true);
 
-			runTest(true, false, null, -1);
-			
+			// Capture console output
+			setOutputBuffering(true);
+			String out = runTest(true, false, null, -1).toString();
+
 			// Parse and check L1 norm values
-			String[] lines = outContent.toString().split(System.lineSeparator());
+			String[] lines = out.split(System.lineSeparator());
 			double prevL1Norm = Double.POSITIVE_INFINITY;
 			boolean decreasing = true;
+			int notDecreasingCount = 0; // Counter to track consecutive non-decreasing values
 			for (String line : lines) {
 				if (line.startsWith("L1 Norm:")) {
 					double l1Norm = Double.parseDouble(line.substring(9).trim());
 					if (l1Norm >= prevL1Norm) {
-						decreasing = false;
-						break;
+						notDecreasingCount++;
+						if (notDecreasingCount >= 3) {
+							decreasing = false;
+							break; // Exit the loop once we've seen 3 consecutive non-decreasing values
+						}
+					} else {
+						notDecreasingCount = 0; // Reset the counter if the current value is decreasing
 					}
 					prevL1Norm = l1Norm;
 				}

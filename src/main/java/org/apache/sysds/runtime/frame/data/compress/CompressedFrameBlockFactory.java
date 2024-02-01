@@ -85,7 +85,7 @@ public class CompressedFrameBlockFactory {
 		final FrameBlock ret = new FrameBlock(compressedColumns, in.getColumnNames(false));
 		logStatistics();
 		logRet(ret);
-		LOG.debug("Frame Compression time : " + time);
+		LOG.debug("Frame Compression time : " + time.stop());
 		return ret;
 	}
 

@@ -28,6 +28,7 @@ import java.util.concurrent.Future;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.runtime.compress.estim.ComEstFactory;
 import org.apache.sysds.runtime.compress.workload.WTreeRoot;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.runtime.frame.data.columns.Array;
@@ -39,6 +40,8 @@ import org.apache.sysds.runtime.util.CommonThreadPool;
 public class CompressedFrameBlockFactory {
 
 	private static final Log LOG = LogFactory.getLog(CompressedFrameBlockFactory.class.getName());
+	private static final int DEFAULT_MIN_CELLS = 10000;
+	private static final int DEFAULT_MAX_CELLS = 1000000;
 
 	private final FrameBlock in;
 	private final FrameCompressionSettings cs;
@@ -52,7 +55,8 @@ public class CompressedFrameBlockFactory {
 		this.cs = cs;
 		this.stats = new ArrayCompressionStatistics[in.getNumColumns()];
 		this.compressedColumns = new Array<?>[in.getNumColumns()];
-		this.nSamples = Math.min(in.getNumRows(), Math.max(1000, (int) Math.ceil(in.getNumRows() * cs.sampleRatio)));
+		this.nSamples = Math.min(Math.max((int) (in.getNumRows() * cs.sampleRatio), DEFAULT_MIN_CELLS), ComEstFactory
+			.getSampleSize(0.65, in.getNumRows(), in.getNumColumns(), 1.0, DEFAULT_MIN_CELLS, DEFAULT_MAX_CELLS));
 	}
 
 	public static FrameBlock compress(FrameBlock fb) {

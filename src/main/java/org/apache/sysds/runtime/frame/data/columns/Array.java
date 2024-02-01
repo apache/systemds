@@ -445,13 +445,13 @@ public abstract class Array<T> implements Writable {
 	public abstract boolean possiblyContainsNaN();
 
 	// public Array<?> safeChangeType(ValueType t, boolean containsNull) {
-	// 	try {
-	// 		return changeType(t, containsNull);
-	// 	}
-	// 	catch(Exception e) {
-	// 		Pair<ValueType, Boolean> ct = analyzeValueType(); // full analysis
-	// 		return changeType(ct.getKey(), ct.getValue());
-	// 	}
+	// try {
+	// return changeType(t, containsNull);
+	// }
+	// catch(Exception e) {
+	// Pair<ValueType, Boolean> ct = analyzeValueType(); // full analysis
+	// return changeType(ct.getKey(), ct.getValue());
+	// }
 	// }
 
 	public Array<?> changeType(ValueType t, boolean containsNull) {
@@ -774,7 +774,6 @@ public abstract class Array<T> implements Writable {
 	 */
 	protected abstract Array<Object> changeTypeHash32(Array<Object> ret, int l, int u);
 
-
 	/**
 	 * Change type to a String array type
 	 * 
@@ -958,6 +957,12 @@ public abstract class Array<T> implements Writable {
 
 	public ArrayCompressionStatistics statistics(int nSamples) {
 
+		Pair<ValueType, Boolean> vt = analyzeValueType(nSamples);
+		if(vt.getKey() == ValueType.UNKNOWN)
+			vt = analyzeValueType(); // full analysis if unknown
+		if(vt.getKey() == ValueType.UNKNOWN)
+			vt = new Pair<>(ValueType.STRING, false); // if still unknown String.
+
 		Map<T, Integer> d = new HashMap<>();
 		for(int i = 0; i < nSamples; i++) {
 			// super inefficient, but startup
@@ -967,13 +972,6 @@ public abstract class Array<T> implements Writable {
 			else
 				d.put(key, 1);
 		}
-		Pair<ValueType, Boolean> vt = analyzeValueType(nSamples);
-		if(vt.getKey() == ValueType.UNKNOWN)
-			vt = analyzeValueType();
-
-		if(vt.getKey() == ValueType.UNKNOWN)
-			vt = new Pair<>(ValueType.STRING, false);
-
 		final int[] freq = new int[d.size()];
 		int id = 0;
 		for(Entry<T, Integer> e : d.entrySet())

@@ -254,9 +254,17 @@ public class ColumnEncoderBin extends ColumnEncoder {
 
 	private static double[] getMinMaxOfCol(CacheBlock<?> in, int colID, int startRow, int blockSize) {
 		// derive bin boundaries from min/max per column
+		final int end = getEndIndex(in.getNumRows(), startRow, blockSize);
+		if(in instanceof FrameBlock){
+			FrameBlock inf = (FrameBlock) in;
+			if(startRow == 0 && blockSize == -1)
+				return inf.getColumn(colID -1).minMax();
+			else
+				return inf.getColumn(colID - 1).minMax(startRow, end);
+		}
+
 		double min = Double.POSITIVE_INFINITY;
 		double max = Double.NEGATIVE_INFINITY;
-		final int end = getEndIndex(in.getNumRows(), startRow, blockSize);
 		for(int i = startRow; i < end; i++) {
 			final double inVal = in.getDoubleNaN(i, colID - 1);
 			if(!Double.isNaN(inVal)){

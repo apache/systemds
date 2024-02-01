@@ -431,6 +431,21 @@ public class DoubleArray extends Array<Double> {
 		return true;
 	}
 
+
+	@Override
+	public double[] minMax(int l, int u){
+		double min = Double.POSITIVE_INFINITY;
+		double max = Double.NEGATIVE_INFINITY;
+		for(int i = l; i < u; i++) {
+			final double inVal = _data[i];
+			if(!Double.isNaN(inVal)){
+				min = Math.min(min, inVal);
+				max = Math.max(max, inVal);
+			}
+		}
+		return new double[] {min, max};
+	}
+
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder(_size * 5 + 2);
@@ -441,4 +456,6 @@ public class DoubleArray extends Array<Double> {
 		sb.append("]");
 		return sb.toString();
 	}
+
+	
 }

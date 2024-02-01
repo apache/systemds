@@ -92,12 +92,12 @@ public class DDCArray<T> extends ACompressedArray<T> {
 			default:
 				long MapSize = MapToFactory.estimateInMemorySize(allRows, allRows);
 				int i = 2;
-				
-				while(allRows/i >= 1 && inMemSize - MapSize < ArrayFactory.getInMemorySize(t, allRows/i, false)){
-					i = i*2;
+
+				while(allRows / i >= 1 && inMemSize - MapSize < ArrayFactory.getInMemorySize(t, allRows / i, false)) {
+					i = i * 2;
 				}
 
-				int d  =  Math.max(0, allRows/i);
+				int d = Math.max(0, allRows / i);
 				return d;
 
 		}
@@ -112,7 +112,7 @@ public class DDCArray<T> extends ACompressedArray<T> {
 	 */
 	@SuppressWarnings("unchecked")
 	public static <T> Array<T> compressToDDC(Array<T> arr) {
-		try{
+		try {
 
 			final int s = arr.size();
 			// Early aborts
@@ -121,39 +121,39 @@ public class DDCArray<T> extends ACompressedArray<T> {
 			if(s <= 10 || arr instanceof RaggedArray)
 				return arr;
 			final int t = getTryThreshold(arr.getValueType(), s, arr.getInMemorySize());
-	
+
 			// Two pass algorithm
 			// 1.full iteration: Get unique
 			Map<T, Integer> rcd = arr.tryGetDictionary(t);
 			if(rcd == null)
 				return arr;
-	
+
 			// Abort if there are to many unique values.
 			if(rcd.size() > s / 2)
 				return arr;
-	
+
 			// Allocate the correct dictionary output
 			Array<T> ar;
 			if(rcd.keySet().contains(null))
 				ar = (Array<T>) ArrayFactory.allocateOptional(arr.getValueType(), rcd.size());
 			else
 				ar = (Array<T>) ArrayFactory.allocate(arr.getValueType(), rcd.size());
-	
+
 			// Set elements in the Dictionary array --- much smaller.
 			// This inverts the mapping such that the value
 			// is the index in the dictionary
 			for(Entry<T, Integer> e : rcd.entrySet())
 				ar.set(e.getValue(), e.getKey());
-	
+
 			// 2. full iteration: Make map
 			final AMapToData m = arr.createMapping(rcd);
-	
+
 			return new DDCArray<>(ar, m);
 		}
-		catch (Exception e){
+		catch(Exception e) {
 			String arrS = arr.toString();
 			arrS = arrS.substring(0, Math.min(10000, arrS.length()));
-			throw new DMLCompressionException("Failed to compress:\n" + arrS,e);
+			throw new DMLCompressionException("Failed to compress:\n" + arrS, e);
 		}
 	}
 
@@ -181,7 +181,7 @@ public class DDCArray<T> extends ACompressedArray<T> {
 		map.write(out);
 		if(dict == null)
 			out.writeBoolean(false);
-		else{
+		else {
 			out.writeBoolean(true);
 			dict.write(out);
 		}
@@ -273,8 +273,7 @@ public class DDCArray<T> extends ACompressedArray<T> {
 
 	@Override
 	protected void set(int rl, int ru, DDCArray<T> value) {
-		if((dict != null && value.dict != null)
-		   &&( value.dict.size() != dict.size() //
+		if((dict != null && value.dict != null) && (value.dict.size() != dict.size() //
 			|| (FrameBlock.debug && !value.dict.equals(dict))))
 			throw new DMLCompressionException("Invalid setting of DDC Array, of incompatible instance.");
 
@@ -291,11 +290,11 @@ public class DDCArray<T> extends ACompressedArray<T> {
 
 	@Override
 	public long getExactSerializedSize() {
-		return 1L +1L+ map.getExactSizeOnDisk() + dict.getExactSerializedSize();
+		return 1L + 1L + map.getExactSizeOnDisk() + dict.getExactSerializedSize();
 	}
 
 	@Override
-	public Array<?> changeType(ValueType t){
+	public Array<?> changeType(ValueType t) {
 		return new DDCArray<>(dict.changeType(t), map);
 	}
 
@@ -338,7 +337,6 @@ public class DDCArray<T> extends ACompressedArray<T> {
 	protected Array<Object> changeTypeHash32(Array<Object> retA, int l, int u) {
 		return new DDCArray<>(dict.changeTypeHash32(), map);
 	}
-
 
 	@Override
 	protected Array<String> changeTypeString() {
@@ -412,7 +410,7 @@ public class DDCArray<T> extends ACompressedArray<T> {
 	}
 
 	public static long estimateInMemorySize(int memSizeBitPerElement, int estDistinct, int nRow) {
-		return (long)estDistinct * memSizeBitPerElement + MapToFactory.estimateInMemorySize(nRow, estDistinct);
+		return (long) estDistinct * memSizeBitPerElement + MapToFactory.estimateInMemorySize(nRow, estDistinct);
 	}
 
 	protected DDCArray<T> allocateLarger(int nRow) {
@@ -438,6 +436,19 @@ public class DDCArray<T> extends ACompressedArray<T> {
 	@Override
 	public boolean possiblyContainsNaN() {
 		return dict.possiblyContainsNaN();
+	}
+
+	@Override
+	public double[] minMax() {
+		return dict.minMax();
+	}
+
+	@Override
+	public double[] minMax(int l, int u) {
+		if(u < dict.size())
+			return dict.minMax(l, u);
+		else // just return something.
+			return dict.minMax(0, Math.min(dict.size(), 1));
 	}
 
 	@Override

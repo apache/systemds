@@ -210,7 +210,7 @@ public class ColumnEncoderBin extends ColumnEncoder {
 			return getCodeIndexEQHeight(inVal);
 	}
 
-	private final double getEqWidth(double inVal, double min, double max) {
+	protected final double getEqWidth(double inVal, double min, double max) {
 		if(max == min)
 			return 1;
 		if(_numBin <= 0)
@@ -218,6 +218,18 @@ public class ColumnEncoderBin extends ColumnEncoder {
 		final int code = (int)(Math.ceil((inVal - min) / (max - min) * _numBin) );
 		return code > _numBin ? _numBin : code < 1 ? 1 : code;
 	}
+
+	protected final int getEqWidthUnsafe(double inVal){
+		final double min = _binMins[0];
+		final double max = _binMaxs[_binMaxs.length - 1];
+		return getEqWidthUnsafe(inVal, min, max);
+	}
+
+	protected final int getEqWidthUnsafe(double inVal, double min, double max){
+		final int code =  (int)(Math.ceil((inVal - min) / (max - min) * _numBin));
+		return code > _numBin ? _numBin : code < 1 ? 1 : code;
+	}
+
 
 	private final double getCodeIndexEQHeight(double inVal){
 		if(_binMaxs.length <= 10) 

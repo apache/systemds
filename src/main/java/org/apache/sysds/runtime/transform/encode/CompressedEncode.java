@@ -32,8 +32,6 @@ import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.common.Types.ValueType;
-import org.apache.sysds.conf.ConfigurationManager;
-import org.apache.sysds.conf.DMLConfig;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupConst;
@@ -54,6 +52,7 @@ import org.apache.sysds.runtime.frame.data.columns.Array;
 import org.apache.sysds.runtime.frame.data.columns.DDCArray;
 import org.apache.sysds.runtime.frame.data.compress.ArrayCompressionStatistics;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.transform.encode.ColumnEncoderBin.BinMethod;
 import org.apache.sysds.runtime.util.CommonThreadPool;
 import org.apache.sysds.runtime.util.UtilFunctions;
 
@@ -245,7 +244,7 @@ public class CompressedEncode {
 	}
 
 	private AMapToData binEncodeNoNull(Array<?> a, ColumnEncoderBin b) throws InterruptedException, ExecutionException {
-		AMapToData m = MapToFactory.create(a.size(), b._numBin + 0);
+		final AMapToData m = MapToFactory.create(a.size(), b._numBin + 0);
 		if(pool != null) {
 			List<Future<?>> tasks = new ArrayList<>();
 			final int rlen = a.size();
@@ -266,18 +265,25 @@ public class CompressedEncode {
 
 	private void binEncodeNoNull(Array<?> a, ColumnEncoderBin b, AMapToData m, int l, int u) {
 
-		for(int i = l; i < u; i++) {
-			try {
-
-				int idx = (int) b.getCodeIndex(a.getAsDouble(i)) - 1;
-				if(idx < 0)
-					idx = 0;
-				m.set(i, idx);
+		if(b.getBinMethod() == BinMethod.EQUI_WIDTH){
+			double min = b.getBinMins()[0];
+			double max = b.getBinMaxs()[b.getNumBin()-1];
+			for(int i = l; i < u; i++) {
+				m.set(i, b.getEqWidthUnsafe(a.getAsDouble(i), min, max));
 			}
-			catch(Exception e) {
-
-				int idx = (int) b.getCodeIndex(a.getAsDouble(i) - 0.00001) - 1;
-				m.set(i, idx);
+		}
+		else{
+			for(int i = l; i < u; i++) {
+				try {
+					int idx = (int) b.getCodeIndex(a.getAsDouble(i)) - 1;
+					if(idx < 0)
+						idx = 0;
+					m.set(i, idx);
+				}
+				catch(Exception e) {
+					int idx = (int) b.getCodeIndex(a.getAsDouble(i) - 0.00001) - 1;
+					m.set(i, idx);
+				}
 			}
 		}
 	}

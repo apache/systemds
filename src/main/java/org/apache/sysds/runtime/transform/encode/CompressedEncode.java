@@ -66,10 +66,14 @@ public class CompressedEncode {
 	/** The thread count of the instruction */
 	private final int k;
 
+	/** the Executor pool for parallel tasks of this encoder. */
+	private final ExecutorService pool;
+
 	private CompressedEncode(MultiColumnEncoder enc, FrameBlock in, int k) {
 		this.enc = enc;
 		this.in = in;
 		this.k = k;
+		this.pool = k > 1 ? CommonThreadPool.get(k) : null;
 	}
 
 	public static MatrixBlock encode(MultiColumnEncoder enc, FrameBlock in, int k)
@@ -78,17 +82,23 @@ public class CompressedEncode {
 	}
 
 	private MatrixBlock apply() throws InterruptedException, ExecutionException {
-		final List<ColumnEncoderComposite> encoders = enc.getColumnEncoders();
-		final List<AColGroup> groups = isParallel() ? multiThread(encoders) : singleThread(encoders);
-		final int cols = shiftGroups(groups);
-		final MatrixBlock mb = new CompressedMatrixBlock(in.getNumRows(), cols, -1, false, groups);
-		mb.recomputeNonZeros(k);
-		logging(mb);
-		return mb;
+		try {
+			final List<ColumnEncoderComposite> encoders = enc.getColumnEncoders();
+			final List<AColGroup> groups = isParallel() ? multiThread(encoders) : singleThread(encoders);
+			final int cols = shiftGroups(groups);
+			final MatrixBlock mb = new CompressedMatrixBlock(in.getNumRows(), cols, -1, false, groups);
+			mb.recomputeNonZeros(k);
+			logging(mb);
+			return mb;
+		}
+		finally {
+			if(pool != null)
+				pool.shutdown();
+		}
 	}
 
 	private boolean isParallel() {
-		return k > 1 && enc.getEncoders().size() > 1;
+		return pool != null;
 	}
 
 	private List<AColGroup> singleThread(List<ColumnEncoderComposite> encoders) {
@@ -101,7 +111,6 @@ public class CompressedEncode {
 	private List<AColGroup> multiThread(List<ColumnEncoderComposite> encoders)
 		throws InterruptedException, ExecutionException {
 
-		final ExecutorService pool = CommonThreadPool.get(k);
 		try {
 			List<EncodeTask> tasks = new ArrayList<>(encoders.size());
 
@@ -184,53 +193,67 @@ public class CompressedEncode {
 		final IColIndex colIndexes = ColIndexFactory.create(1);
 
 		ADictionary d = createIncrementingVector(b._numBin, containsNull);
-		AMapToData m = binEncode(a, b, containsNull);
+		final AMapToData m;
+		if(a instanceof DDCArray)
+			m = ((DDCArray) a).getMap();
+		else
+			m = binEncode(a, b, containsNull);
 
 		AColGroup ret = ColGroupDDC.create(colIndexes, d, m, null);
 		return ret;
 	}
 
-	private AMapToData binEncode(Array<?> a, ColumnEncoderBin b, boolean containsNull) {
-		AMapToData m = MapToFactory.create(a.size(), b._numBin + (containsNull ? 1 : 0));
-		if(containsNull) {
-			for(int i = 0; i < a.size(); i++) {
-				final double v = a.getAsNaNDouble(i);
-				try {
+	private AMapToData binEncode(Array<?> a, ColumnEncoderBin b, boolean nulls) {
+		return nulls ? binEncodeWithNulls(a, b) : binEncodeNoNull(a, b);
+	}
 
-					if(Double.isNaN(v))
-						m.set(i, b._numBin);
-					else {
-						int idx = (int) b.getCodeIndex(v) - 1;
-						if(idx < 0)
-							idx = 0;
-						m.set(i, idx);
-					}
-				}
-				catch(Exception e) {
+	private AMapToData binEncodeWithNulls(Array<?> a, ColumnEncoderBin b) {
+		AMapToData m = MapToFactory.create(a.size(), b._numBin + 1);
+		binEncodeWithNulls(a, b, m, 0, a.size());
+		return m;
+	}
 
-					m.set(i, (int) b.getCodeIndex(v - 0.00001) - 1);
-				}
-			}
-		}
-		else {
-
-			for(int i = 0; i < a.size(); i++) {
-				try {
-
-					int idx = (int) b.getCodeIndex(a.getAsDouble(i)) - 1;
+	private void binEncodeWithNulls(Array<?> a, ColumnEncoderBin b, AMapToData m, int l, int u) {
+		for(int i = l; i < u; i++) {
+			final double v = a.getAsNaNDouble(i);
+			try {
+				if(Double.isNaN(v))
+					m.set(i, b._numBin);
+				else {
+					int idx = (int) b.getCodeIndex(v) - 1;
 					if(idx < 0)
 						idx = 0;
-					// throw new RuntimeException(a.getAsDouble(i) + " is invalid value for " + b + "\n" + idx);
-					m.set(i, idx);
-				}
-				catch(Exception e) {
-
-					int idx = (int) b.getCodeIndex(a.getAsDouble(i) - 0.00001) - 1;
 					m.set(i, idx);
 				}
 			}
+			catch(Exception e) {
+				m.set(i, (int) b.getCodeIndex(v - 0.00001) - 1);
+			}
 		}
+	}
+
+	private AMapToData binEncodeNoNull(Array<?> a, ColumnEncoderBin b) {
+		AMapToData m = MapToFactory.create(a.size(), b._numBin + 0);
+		binEncodeNoNull(a, b, m, 0, a.size());
 		return m;
+	}
+
+	private void binEncodeNoNull(Array<?> a, ColumnEncoderBin b, AMapToData m, int l, int u) {
+
+		for(int i = l; i < u; i++) {
+			try {
+
+				int idx = (int) b.getCodeIndex(a.getAsDouble(i)) - 1;
+				if(idx < 0)
+					idx = 0;
+				m.set(i, idx);
+			}
+			catch(Exception e) {
+
+				int idx = (int) b.getCodeIndex(a.getAsDouble(i) - 0.00001) - 1;
+				m.set(i, idx);
+			}
+		}
 	}
 
 	private MatrixBlockDictionary createIncrementingVector(int nVals, boolean NaN) {
@@ -372,14 +395,14 @@ public class CompressedEncode {
 				double h = Math.abs(a.hashDouble(i)) % k;
 				if(Double.isNaN(h))
 					m.set(i, k);
-				else 
-					m.set(i, (int)h);
+				else
+					m.set(i, (int) h);
 			}
 		}
 		else {
 			for(int i = 0; i < a.size(); i++) {
 				double h = Math.abs(a.hashDouble(i)) % k;
-				m.set(i, (int)h);
+				m.set(i, (int) h);
 			}
 		}
 		return m;

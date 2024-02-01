@@ -995,7 +995,7 @@ public abstract class Array<T> implements Writable {
 		}
 
 		Map<T, Integer> d = new HashMap<>();
-		for(int i = 0; i < nSamples || d.size() > nSamples / 2; i++) {
+		for(int i = 0; i < nSamples && d.size() > nSamples / 2; i++) {
 			// super inefficient, but startup
 			T key = get(i);
 			if(d.containsKey(key))

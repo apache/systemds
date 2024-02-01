@@ -88,7 +88,7 @@ public class IdentityDictionary extends ADictionary {
 	public double[] getValues() {
 		if(nRowCol < 3) {
 			// lets live with it if we call it on 3 columns.
-			double[] ret = new double[nRowCol * nRowCol];
+			double[] ret = new double[nRowCol * nRowCol +(withEmpty ? nRowCol : 0)];
 			for(int i = 0; i < nRowCol; i++) {
 				ret[(i * nRowCol) + i] = 1;
 			}

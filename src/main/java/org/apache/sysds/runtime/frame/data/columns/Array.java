@@ -987,8 +987,8 @@ public abstract class Array<T> implements Writable {
 
 		Map<T, Integer> d = new HashMap<>();
 		int nSamplesTaken = 0;
-		for(; nSamplesTaken < nSamples && d.size() > nSamples / 2; nSamplesTaken++) {
-			// super inefficient, but startup
+		for(; nSamplesTaken < nSamples && d.size() < nSamples / 2; nSamplesTaken++) {
+			// super inefficient, but good enough for now.
 			T key = get(nSamplesTaken);
 			if(d.containsKey(key))
 				d.put(key, d.get(key) + 1);
@@ -997,6 +997,7 @@ public abstract class Array<T> implements Writable {
 		}
 
 		if(nSamplesTaken < nSamples) {
+			LOG.error("early abort stats and compress : " + nSamplesTaken + " " + nSamples);
 			return new ArrayCompressionStatistics(memSizePerElement, //
 				size(), false, vt.getKey(), vt.getValue(), null, getInMemorySize(), memSize);
 		}

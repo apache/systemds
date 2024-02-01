@@ -60,6 +60,7 @@ import org.apache.sysds.runtime.matrix.data.Pair;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
 import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
+import org.jboss.netty.handler.codec.compression.CompressionException;
 
 /**
  * Class to encapsulate information about a column group that is encoded with dense dictionary encoding (DDC).
@@ -561,7 +562,13 @@ public class ColGroupDDC extends APreAgg implements IMapToDataGroup {
 
 	@Override
 	public void preAggregateThatDDCStructure(ColGroupDDC that, Dictionary ret) {
-		_data.preAggregateDDC_DDC(that._data, that._dict, ret, that._colIndexes.size());
+		try{
+
+			_data.preAggregateDDC_DDC(that._data, that._dict, ret, that._colIndexes.size());
+		}
+		catch(Exception e){
+			throw new CompressionException(that.toString(), e);
+		}
 	}
 
 	@Override

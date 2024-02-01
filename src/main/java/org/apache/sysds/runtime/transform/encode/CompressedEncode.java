@@ -194,10 +194,7 @@ public class CompressedEncode {
 
 		ADictionary d = createIncrementingVector(b._numBin, containsNull);
 		final AMapToData m;
-		if(a instanceof DDCArray)
-			m = ((DDCArray<?>) a).getMap();
-		else
-			m = binEncode(a, b, containsNull);
+		m = binEncode(a, b, containsNull);
 
 		AColGroup ret = ColGroupDDC.create(colIndexes, d, m, null);
 		return ret;
@@ -278,10 +275,7 @@ public class CompressedEncode {
 		IColIndex colIndexes = ColIndexFactory.create(0, b._numBin);
 		ADictionary d = new IdentityDictionary(colIndexes.size(), containsNull);
 		final AMapToData m;
-		if(a instanceof DDCArray)
-			m = ((DDCArray<?>) a).getMap();
-		else
-			m = binEncode(a, b, containsNull);
+		m = binEncode(a, b, containsNull);
 		AColGroup ret = ColGroupDDC.create(colIndexes, d, m, null);
 		return ret;
 	}

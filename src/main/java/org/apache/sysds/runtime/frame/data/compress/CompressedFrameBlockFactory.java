@@ -87,6 +87,8 @@ public class CompressedFrameBlockFactory {
 	}
 
 	private void encodeColumns() {
+		if(cs.k <= 1)
+		throw new RuntimeException("Not parallel frame compress");
 		if(cs.k > 1)
 			encodeParallel();
 		else

@@ -102,7 +102,8 @@ public class CompressedEncode {
 		return pool != null;
 	}
 
-	private List<AColGroup> singleThread(List<ColumnEncoderComposite> encoders) throws InterruptedException, ExecutionException {
+	private List<AColGroup> singleThread(List<ColumnEncoderComposite> encoders)
+		throws InterruptedException, ExecutionException {
 		List<AColGroup> groups = new ArrayList<>(encoders.size());
 		for(ColumnEncoderComposite c : encoders)
 			groups.add(encode(c));
@@ -201,11 +202,13 @@ public class CompressedEncode {
 		return ret;
 	}
 
-	private AMapToData binEncode(Array<?> a, ColumnEncoderBin b, boolean nulls) throws InterruptedException, ExecutionException {
+	private AMapToData binEncode(Array<?> a, ColumnEncoderBin b, boolean nulls)
+		throws InterruptedException, ExecutionException {
 		return nulls ? binEncodeWithNulls(a, b) : binEncodeNoNull(a, b);
 	}
 
-	private AMapToData binEncodeWithNulls(Array<?> a, ColumnEncoderBin b) throws InterruptedException, ExecutionException {
+	private AMapToData binEncodeWithNulls(Array<?> a, ColumnEncoderBin b)
+		throws InterruptedException, ExecutionException {
 		AMapToData m = MapToFactory.create(a.size(), b._numBin + 1);
 		if(pool != null) {
 			List<Future<?>> tasks = new ArrayList<>();
@@ -247,14 +250,12 @@ public class CompressedEncode {
 	private AMapToData binEncodeNoNull(Array<?> a, ColumnEncoderBin b) throws InterruptedException, ExecutionException {
 		final AMapToData m = MapToFactory.create(a.size(), b._numBin + 0);
 
-		if(b.getBinMethod() == BinMethod.EQUI_WIDTH){
-
+		if(b.getBinMethod() == BinMethod.EQUI_WIDTH) {
 			final double min = b.getBinMins()[0];
-			final double max = b.getBinMaxs()[b.getNumBin()-1];
-			
-			if(Util.eq(max, min)){
-				 m.fill(0);
-				 return m;
+			final double max = b.getBinMaxs()[b.getNumBin() - 1];
+			if(Util.eq(max, min)) {
+				m.fill(0);
+				return m;
 			}
 			if(b._numBin <= 0)
 				throw new RuntimeException("Invalid num bins");
@@ -263,7 +264,7 @@ public class CompressedEncode {
 		if(pool != null) {
 			List<Future<?>> tasks = new ArrayList<>();
 			final int rlen = a.size();
-			final int blockSize = Math.max(1000, rlen / k);
+			final int blockSize = Math.max(1000, rlen * in.getNumColumns() / k / 2);
 			for(int i = 0; i < rlen; i += blockSize) {
 				final int start = i;
 				final int end = Math.min(rlen, i + blockSize);
@@ -278,30 +279,26 @@ public class CompressedEncode {
 		return m;
 	}
 
-	private void binEncodeNoNull(Array<?> a, ColumnEncoderBin b, AMapToData m, int l, int u) {
+	private final void binEncodeNoNull(Array<?> a, ColumnEncoderBin b, AMapToData m, int l, int u) {
+		if(b.getBinMethod() == BinMethod.EQUI_WIDTH)
+			binEncodeNoNullEqWidth(a, b, m, l, u);
+		else
+			binEncodeNoNullGeneric(a, b, m, l, u);
+	}
 
-		if(b.getBinMethod() == BinMethod.EQUI_WIDTH){
-
-			final double min = b.getBinMins()[0];
-			final double max = b.getBinMaxs()[b.getNumBin()-1];
-	
-			for(int i = l; i < u; i++) {
-				m.set(i, b.getEqWidthUnsafe(a.getAsDouble(i), min, max) -1);
-			}
+	private final void binEncodeNoNullEqWidth(Array<?> a, ColumnEncoderBin b, AMapToData m, int l, int u) {
+		final double min = b.getBinMins()[0];
+		final double max = b.getBinMaxs()[b.getNumBin() - 1];
+		for(int i = l; i < u; i++) {
+			m.set(i, b.getEqWidthUnsafe(a.getAsDouble(i), min, max) - 1);
 		}
-		else{
-			for(int i = l; i < u; i++) {
-				try {
-					int idx = (int) b.getCodeIndex(a.getAsDouble(i)) - 1;
-					if(idx < 0)
-						idx = 0;
-					m.set(i, idx);
-				}
-				catch(Exception e) {
-					int idx = (int) b.getCodeIndex(a.getAsDouble(i) - 0.00001) - 1;
-					m.set(i, idx);
-				}
-			}
+	}
+
+	private final void binEncodeNoNullGeneric(Array<?> a, ColumnEncoderBin b, AMapToData m, int l, int u) {
+		final double min = b.getBinMins()[0];
+		final double max = b.getBinMaxs()[b.getNumBin() - 1];
+		for(int i = l; i < u; i++) {
+			m.set(i, b.getEqWidthUnsafe(a.getAsDouble(i), min, max) - 1);
 		}
 	}
 
@@ -384,11 +381,11 @@ public class CompressedEncode {
 		}
 
 		ArrayCompressionStatistics stats = a.statistics(Math.min(1000, a.size())); // Take a small sample
-		LOG.error("encode Stats passthrough: "  + stats);
+		LOG.error("encode Stats passthrough: " + stats);
 		if(stats.shouldCompress) {
 			double[] vals = (double[]) a.changeType(ValueType.FP64).get();
 			MatrixBlock col = new MatrixBlock(a.size(), 1, vals);
-			col.recomputeNonZeros(k); 
+			col.recomputeNonZeros(k);
 			// lets make it an uncompressed column group.
 			return ColGroupUncompressed.create(colIndexes, col, false);
 		}

@@ -101,7 +101,7 @@ public class CompressedEncode {
 		return pool != null;
 	}
 
-	private List<AColGroup> singleThread(List<ColumnEncoderComposite> encoders) {
+	private List<AColGroup> singleThread(List<ColumnEncoderComposite> encoders) throws InterruptedException, ExecutionException {
 		List<AColGroup> groups = new ArrayList<>(encoders.size());
 		for(ColumnEncoderComposite c : encoders)
 			groups.add(encode(c));
@@ -142,7 +142,7 @@ public class CompressedEncode {
 		return cols;
 	}
 
-	private AColGroup encode(ColumnEncoderComposite c) {
+	private AColGroup encode(ColumnEncoderComposite c) throws InterruptedException, ExecutionException {
 		if(c.isRecodeToDummy())
 			return recodeToDummy(c);
 		else if(c.isRecode())
@@ -183,7 +183,7 @@ public class CompressedEncode {
 		return ColGroupDDC.create(colIndexes, d, m, null);
 	}
 
-	private AColGroup bin(ColumnEncoderComposite c) {
+	private AColGroup bin(ColumnEncoderComposite c) throws InterruptedException, ExecutionException {
 		final int colId = c._colID;
 		final Array<?> a = in.getColumn(colId - 1);
 		final boolean containsNull = a.containsNull();
@@ -200,13 +200,27 @@ public class CompressedEncode {
 		return ret;
 	}
 
-	private AMapToData binEncode(Array<?> a, ColumnEncoderBin b, boolean nulls) {
+	private AMapToData binEncode(Array<?> a, ColumnEncoderBin b, boolean nulls) throws InterruptedException, ExecutionException {
 		return nulls ? binEncodeWithNulls(a, b) : binEncodeNoNull(a, b);
 	}
 
-	private AMapToData binEncodeWithNulls(Array<?> a, ColumnEncoderBin b) {
+	private AMapToData binEncodeWithNulls(Array<?> a, ColumnEncoderBin b) throws InterruptedException, ExecutionException {
 		AMapToData m = MapToFactory.create(a.size(), b._numBin + 1);
-		binEncodeWithNulls(a, b, m, 0, a.size());
+		if(pool != null) {
+			List<Future<?>> tasks = new ArrayList<>();
+			final int blockSize = 10000;
+			final int rlen = a.size();
+			for(int i = 0; i < rlen; i += blockSize) {
+				final int start = i;
+				final int end = Math.min(rlen, i + blockSize);
+				tasks.add(pool.submit(() -> binEncodeWithNulls(a, b, m, start, end)));
+			}
+			for(Future<?> t : tasks)
+				t.get();
+		}
+		else {
+			binEncodeWithNulls(a, b, m, 0, a.size());
+		}
 		return m;
 	}
 
@@ -229,9 +243,23 @@ public class CompressedEncode {
 		}
 	}
 
-	private AMapToData binEncodeNoNull(Array<?> a, ColumnEncoderBin b) {
+	private AMapToData binEncodeNoNull(Array<?> a, ColumnEncoderBin b) throws InterruptedException, ExecutionException {
 		AMapToData m = MapToFactory.create(a.size(), b._numBin + 0);
-		binEncodeNoNull(a, b, m, 0, a.size());
+		if(pool != null) {
+			List<Future<?>> tasks = new ArrayList<>();
+			final int blockSize = 10000;
+			final int rlen = a.size();
+			for(int i = 0; i < rlen; i += blockSize) {
+				final int start = i;
+				final int end = Math.min(rlen, i + blockSize);
+				tasks.add(pool.submit(() -> binEncodeNoNull(a, b, m, start, end)));
+			}
+			for(Future<?> t : tasks)
+				t.get();
+		}
+		else {
+			binEncodeNoNull(a, b, m, 0, a.size());
+		}
 		return m;
 	}
 
@@ -265,7 +293,7 @@ public class CompressedEncode {
 
 	}
 
-	private AColGroup binToDummy(ColumnEncoderComposite c) {
+	private AColGroup binToDummy(ColumnEncoderComposite c) throws InterruptedException, ExecutionException {
 		final int colId = c._colID;
 		final Array<?> a = in.getColumn(colId - 1);
 		final boolean containsNull = a.containsNull();

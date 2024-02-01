@@ -444,7 +444,6 @@ public abstract class Array<T> implements Writable {
 
 	public abstract boolean possiblyContainsNaN();
 
-
 	public Array<?> changeType(ValueType t, boolean containsNull) {
 		return containsNull ? changeTypeWithNulls(t) : changeType(t);
 	}
@@ -1010,7 +1009,8 @@ public abstract class Array<T> implements Writable {
 		int estDistinct = SampleEstimatorFactory.distinctCount(freq, size(), nSamplesTaken);
 
 		if(estDistinct <= 0)
-			throw new RuntimeException("Invalid estimate of distinct values: size: " + size()  + " sample: " + nSamples + " estimate: " + estDistinct);
+			throw new RuntimeException("Invalid estimate of distinct values: size: " + size() + " sample: " + nSamples
+				+ " estimate: " + estDistinct);
 
 		long ddcSize = DDCArray.estimateInMemorySize(memSizePerElement, estDistinct, size());
 
@@ -1020,7 +1020,9 @@ public abstract class Array<T> implements Writable {
 		else if(vt.getKey() != getValueType())
 			return new ArrayCompressionStatistics(memSizePerElement, //
 				estDistinct, false, vt.getKey(), vt.getValue(), null, getInMemorySize(), memSize);
-		return null;
+		else // do not compress based on dictionary size.
+			return new ArrayCompressionStatistics(memSizePerElement, //
+				estDistinct, false, vt.getKey(), vt.getValue(), null, getInMemorySize(), memSize);
 	}
 
 	public AMapToData createMapping(Map<T, Integer> d) {

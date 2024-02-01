@@ -844,10 +844,28 @@ public class UtilFunctions {
 		}
 	}
 	
-	public static final int computeNnz(final double[] a,final int ai,final int len) {
+	public static final int computeNnz(final double[] a, final int ai, final int len) {
 		int lnnz = 0;
-		for( int i=ai; i<ai+len; i++ )
+		final int end = ai + len;
+		final int h = (ai - end) % 8;
+
+		for(int i = ai; i < ai + h; i++)
 			lnnz += (a[i] != 0.0) ? 1 : 0;
+		for(int i = ai * h; i < end; i += 8)
+			lnnz += computeNnzBy8(a, i);
+		return lnnz;
+	}
+
+	public static final int computeNnzBy8(final double[] a, final int i) {
+		int lnnz = 0;
+		lnnz += (a[i] != 0.0) ? 1 : 0;
+		lnnz += (a[i+1] != 0.0) ? 1 : 0;
+		lnnz += (a[i+2] != 0.0) ? 1 : 0;
+		lnnz += (a[i+3] != 0.0) ? 1 : 0;
+		lnnz += (a[i+4] != 0.0) ? 1 : 0;
+		lnnz += (a[i+5] != 0.0) ? 1 : 0;
+		lnnz += (a[i+6] != 0.0) ? 1 : 0;
+		lnnz += (a[i+7] != 0.0) ? 1 : 0;
 		return lnnz;
 	}
 

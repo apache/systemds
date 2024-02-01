@@ -46,6 +46,7 @@ import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
+import org.apache.sysds.runtime.compress.utils.Util;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.runtime.frame.data.columns.ACompressedArray;
 import org.apache.sysds.runtime.frame.data.columns.Array;
@@ -251,8 +252,8 @@ public class CompressedEncode {
 			final double min = b.getBinMins()[0];
 			final double max = b.getBinMaxs()[b.getNumBin()-1];
 			
-			if(max == min){
-				 m.fill(1);
+			if(Util.eq(max, min)){
+				 m.fill(0);
 				 return m;
 			}
 			if(b._numBin <= 0)
@@ -285,7 +286,7 @@ public class CompressedEncode {
 			final double max = b.getBinMaxs()[b.getNumBin()-1];
 	
 			for(int i = l; i < u; i++) {
-				m.set(i, b.getEqWidthUnsafe(a.getAsDouble(i), min, max));
+				m.set(i, b.getEqWidthUnsafe(a.getAsDouble(i), min, max) -1);
 			}
 		}
 		else{

@@ -1006,7 +1006,7 @@ public abstract class Array<T> implements Writable {
 
 		if(d.size() > nSamples / 2) {
 			return new ArrayCompressionStatistics(memSizePerElement, //
-				size(), true, vt.getKey(), vt.getValue(), null, getInMemorySize(), memSize);
+				size(), false, vt.getKey(), vt.getValue(), null, getInMemorySize(), memSize);
 		}
 
 		final int[] freq = new int[d.size()];

@@ -995,16 +995,17 @@ public abstract class Array<T> implements Writable {
 		}
 
 		Map<T, Integer> d = new HashMap<>();
-		for(int i = 0; i < nSamples && d.size() > nSamples / 2; i++) {
+		int nSamplesTaken = 0;
+		for(; nSamplesTaken < nSamples && d.size() > nSamples / 2; nSamplesTaken++) {
 			// super inefficient, but startup
-			T key = get(i);
+			T key = get(nSamplesTaken);
 			if(d.containsKey(key))
 				d.put(key, d.get(key) + 1);
 			else
 				d.put(key, 1);
 		}
 
-		if(d.size() > nSamples / 2) {
+		if(nSamplesTaken < nSamples) {
 			return new ArrayCompressionStatistics(memSizePerElement, //
 				size(), false, vt.getKey(), vt.getValue(), null, getInMemorySize(), memSize);
 		}
@@ -1014,11 +1015,11 @@ public abstract class Array<T> implements Writable {
 		for(Entry<T, Integer> e : d.entrySet())
 			freq[id++] = e.getValue();
 
-		int estDistinct = SampleEstimatorFactory.distinctCount(freq, size(), nSamples);
+		int estDistinct = SampleEstimatorFactory.distinctCount(freq, size(), nSamplesTaken);
 
 		if(estDistinct <= 0)
 			throw new RuntimeException("Invalid estimate of distinct values: size: " + size()  + " sample: " + nSamples + " estimate: " + estDistinct);
-			
+
 		long ddcSize = DDCArray.estimateInMemorySize(memSizePerElement, estDistinct, size());
 
 		if(ddcSize < memSize)

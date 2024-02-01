@@ -47,6 +47,7 @@ import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyze
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.data.SparseBlockMCSR;
+import org.apache.sysds.runtime.data.SparseRow;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.functionobjects.Builtin.BuiltinCode;
 import org.apache.sysds.runtime.functionobjects.CM;
@@ -916,11 +917,11 @@ public class ColGroupUncompressed extends AColGroup {
 	@Override
 	public CompressedSizeInfoColGroup getCompressionInfo(int nRow) {
 		// final IEncode map = EncodingFactory.createFromMatrixBlock(_data, false,
-		// 	ColIndexFactory.create(_data.getNumColumns()));
+		// ColIndexFactory.create(_data.getNumColumns()));
 		final int _numRows = _data.getNumRows();
 		final CompressionSettings _cs = new CompressionSettingsBuilder().create();// default settings
-		final EstimationFactors em =
-			new EstimationFactors(_numRows, _numRows, 1, null, _numRows, _numRows, _numRows, false, false, (double) _numRows / _data.getNonZeros(), (double) _numRows / _data.getNonZeros());
+		final EstimationFactors em = new EstimationFactors(_numRows, _numRows, 1, null, _numRows, _numRows, _numRows,
+			false, false, (double) _numRows / _data.getNonZeros(), (double) _numRows / _data.getNonZeros());
 		// map.extractFacts(_numRows, _data.getSparsity(), _data.getSparsity(), _cs);
 		return new CompressedSizeInfoColGroup(_colIndexes, em, _cs.validCompressions, null);
 	}
@@ -1021,8 +1022,46 @@ public class ColGroupUncompressed extends AColGroup {
 	}
 
 	@Override
-	public void decompressToSparseBlockTransposed(SparseBlockMCSR sb){
+	public void decompressToSparseBlockTransposed(SparseBlockMCSR sb) {
+
+		if(_data.isInSparseFormat())
+			decompressToSparseBlockTransposedSparse(sb);
+		else
+			decompressToSparseBlockTransposedDense(sb);
+
 		throw new NotImplementedException();
+	}
+
+	private void decompressToSparseBlockTransposedSparse(SparseBlock sb) {
+		// SparseBlock sbThis = _data.getSparseBlock();
+		throw new NotImplementedException(
+			"Not implemented the decompression of a sparse Uncompressed block into a sparse Transposed block");
+	}
+
+	private void decompressToSparseBlockTransposedDense(SparseBlockMCSR sb) {
+		DenseBlock dbThis = _data.getDenseBlock();
+		if(!dbThis.isContiguous())
+			throw new NotImplementedException("Not Implemented transposed decompress on non contiguous matrix");
+		final int colsThis = _colIndexes.size();
+		final int rowsThis = _data.getNumRows();
+		double[]  valsThis = dbThis.valuesAt(0);
+		if(colsThis == 1){
+			sb.allocate(_colIndexes.get(0), (int)_data.getNonZeros());
+		}
+		else{
+			for(int c = 0 ; c < colsThis; c++ ){
+				sb.allocate(_colIndexes.get(0), Math.max(2,(int)(_data.getNonZeros() / colsThis)));
+			}
+		}
+
+
+		for(int c = 0 ; c < colsThis; c++ ){
+			final int rowOut = _colIndexes.get(c);
+			final SparseRow sbr = sb.get(rowOut);
+			for(int r = 0; r < rowsThis; r++){
+				sbr.append(rowOut, valsThis[colsThis * r + c]);
+			}
+		}
 	}
 
 	private void decompressToDenseBlockTransposedSparse(DenseBlock db, int rl, int ru) {

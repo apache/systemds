@@ -61,6 +61,9 @@ public class ColumnEncoderBin extends ColumnEncoder {
 	private double _colMins = -1f;
 	private double _colMaxs = -1f;
 
+
+	protected boolean containsNull = false;
+
 	public ColumnEncoderBin() {
 		super(-1);
 	}
@@ -132,6 +135,13 @@ public class ColumnEncoderBin extends ColumnEncoder {
 			computeEqualHeightBins(vals, false);
 		}
 
+		if(in instanceof FrameBlock){
+			final Array<?> c = ((FrameBlock )in).getColumn(_colID - 1);
+
+			containsNull = c.containsNull();
+	
+		}
+
 		if(DMLScript.STATISTICS)
 			TransformStatistics.incBinningBuildTime(System.nanoTime()-t0);
 	}
@@ -189,7 +199,7 @@ public class ColumnEncoderBin extends ColumnEncoder {
 		final Array<?> c = in.getColumn(_colID - 1);
 		final double mi = _binMins[0];
 		final double mx = _binMaxs[_binMaxs.length-1];
-		if(!(c instanceof StringArray) && !c.containsNull())
+		if(!(c instanceof StringArray) && containsNull)
 			for(int i = startInd; i < endInd; i++)
 				codes[i - startInd] = getCodeIndex(c.getAsDouble(i), mi, mx);
 		else 

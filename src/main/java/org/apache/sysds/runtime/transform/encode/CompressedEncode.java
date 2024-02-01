@@ -187,9 +187,9 @@ public class CompressedEncode {
 	private AColGroup bin(ColumnEncoderComposite c) throws InterruptedException, ExecutionException {
 		final int colId = c._colID;
 		final Array<?> a = in.getColumn(colId - 1);
-		final boolean containsNull = a.containsNull();
 		final List<ColumnEncoder> r = c.getEncoders();
 		final ColumnEncoderBin b = (ColumnEncoderBin) r.get(0);
+		final boolean containsNull = b.containsNull;
 		b.build(in);
 		final IColIndex colIndexes = ColIndexFactory.create(1);
 
@@ -320,9 +320,9 @@ public class CompressedEncode {
 	private AColGroup binToDummy(ColumnEncoderComposite c) throws InterruptedException, ExecutionException {
 		final int colId = c._colID;
 		final Array<?> a = in.getColumn(colId - 1);
-		final boolean containsNull = a.containsNull();
 		final List<ColumnEncoder> r = c.getEncoders();
 		final ColumnEncoderBin b = (ColumnEncoderBin) r.get(0);
+		final boolean containsNull = b.containsNull;
 		b.build(in);
 		IColIndex colIndexes = ColIndexFactory.create(0, b._numBin);
 		ADictionary d = new IdentityDictionary(colIndexes.size(), containsNull);

@@ -1016,6 +1016,8 @@ public abstract class Array<T> implements Writable {
 
 		int estDistinct = SampleEstimatorFactory.distinctCount(freq, size(), nSamples);
 
+		if(estDistinct <= 0)
+			throw new RuntimeException("Invalid estimate of distinct values");
 		long ddcSize = DDCArray.estimateInMemorySize(memSizePerElement, estDistinct, size());
 
 		if(ddcSize < memSize)
@@ -1054,16 +1056,16 @@ public abstract class Array<T> implements Writable {
 		}
 	}
 
-	public double[] minMax(){
+	public double[] minMax() {
 		return minMax(0, size());
 	}
 
-	public double[] minMax(int l, int u){
+	public double[] minMax(int l, int u) {
 		double min = Double.POSITIVE_INFINITY;
 		double max = Double.NEGATIVE_INFINITY;
 		for(int i = l; i < u; i++) {
 			final double inVal = getAsDouble(i);
-			if(!Double.isNaN(inVal)){
+			if(!Double.isNaN(inVal)) {
 				min = Math.min(min, inVal);
 				max = Math.max(max, inVal);
 			}

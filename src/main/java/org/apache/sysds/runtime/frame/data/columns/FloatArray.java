@@ -371,6 +371,14 @@ public class FloatArray extends Array<Float> {
 	}
 
 	@Override
+	public boolean containsNull() {
+		for(int i = 0; i < _size; i++)
+			if(Float.isNaN(_data[i]))
+				return true;
+		return false;
+	}
+
+	@Override
 	public boolean equals(Array<Float> other) {
 		if(other instanceof FloatArray)
 			return Arrays.equals(_data, ((FloatArray) other)._data);

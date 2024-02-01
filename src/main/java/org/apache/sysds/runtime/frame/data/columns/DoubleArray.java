@@ -431,6 +431,13 @@ public class DoubleArray extends Array<Double> {
 		return true;
 	}
 
+	@Override
+	public boolean containsNull() {
+		for(int i = 0; i < _size; i++)
+			if(Double.isNaN(_data[i]))
+				return true;
+		return false;
+	}
 
 	@Override
 	public double[] minMax(int l, int u){

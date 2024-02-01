@@ -281,6 +281,8 @@ public class CompressedEncode {
 
 		if(b.getBinMethod() == BinMethod.EQUI_WIDTH){
 
+			final double min = b.getBinMins()[0];
+			final double max = b.getBinMaxs()[b.getNumBin()-1];
 	
 			for(int i = l; i < u; i++) {
 				m.set(i, b.getEqWidthUnsafe(a.getAsDouble(i), min, max));

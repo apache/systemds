@@ -209,8 +209,8 @@ public class CompressedEncode {
 		AMapToData m = MapToFactory.create(a.size(), b._numBin + 1);
 		if(pool != null) {
 			List<Future<?>> tasks = new ArrayList<>();
-			final int blockSize = 10000;
 			final int rlen = a.size();
+			final int blockSize = Math.max(1000, rlen / k);
 			for(int i = 0; i < rlen; i += blockSize) {
 				final int start = i;
 				final int end = Math.min(rlen, i + blockSize);
@@ -248,8 +248,8 @@ public class CompressedEncode {
 		AMapToData m = MapToFactory.create(a.size(), b._numBin + 0);
 		if(pool != null) {
 			List<Future<?>> tasks = new ArrayList<>();
-			final int blockSize = 10000;
 			final int rlen = a.size();
+			final int blockSize = Math.max(1000, rlen / k);
 			for(int i = 0; i < rlen; i += blockSize) {
 				final int start = i;
 				final int end = Math.min(rlen, i + blockSize);
@@ -359,7 +359,7 @@ public class CompressedEncode {
 					throw new NotImplementedException();
 			}
 		}
-		
+
 		ArrayCompressionStatistics stats = a.statistics(Math.min(1000, a.size())); // Take a small sample
 		final int blockSz = ConfigurationManager.getDMLConfig().getIntValue(DMLConfig.DEFAULT_BLOCK_SIZE);
 		if(stats.nUnique>= blockSz) {

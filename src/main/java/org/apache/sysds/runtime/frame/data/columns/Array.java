@@ -1017,7 +1017,8 @@ public abstract class Array<T> implements Writable {
 		int estDistinct = SampleEstimatorFactory.distinctCount(freq, size(), nSamples);
 
 		if(estDistinct <= 0)
-			throw new RuntimeException("Invalid estimate of distinct values");
+			throw new RuntimeException("Invalid estimate of distinct values: size: " + size()  + " sample: " + nSamples + " estimate: " + estDistinct);
+			
 		long ddcSize = DDCArray.estimateInMemorySize(memSizePerElement, estDistinct, size());
 
 		if(ddcSize < memSize)

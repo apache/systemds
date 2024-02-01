@@ -1057,10 +1057,10 @@ public class ColGroupUncompressed extends AColGroup {
 
 		for(int c = 0 ; c < colsThis; c++ ){
 			final int rowOut = _colIndexes.get(c);
-			final SparseRow sbr = sb.get(rowOut);
-			for(int r = 0; r < rowsThis; r++){
-				sbr.append(rowOut, valsThis[colsThis * r + c]);
-			}
+			SparseRow sbr = sb.get(rowOut);
+			for(int r = 0; r < rowsThis; r++)
+				sbr = sbr.append(rowOut, valsThis[colsThis * r + c]);
+			sb.set(c, sbr, false);
 		}
 	}
 

@@ -245,6 +245,20 @@ public class CompressedEncode {
 
 	private AMapToData binEncodeNoNull(Array<?> a, ColumnEncoderBin b) throws InterruptedException, ExecutionException {
 		final AMapToData m = MapToFactory.create(a.size(), b._numBin + 0);
+
+		if(b.getBinMethod() == BinMethod.EQUI_WIDTH){
+
+			final double min = b.getBinMins()[0];
+			final double max = b.getBinMaxs()[b.getNumBin()-1];
+			
+			if(max == min){
+				 m.fill(1);
+				 return m;
+			}
+			if(b._numBin <= 0)
+				throw new RuntimeException("Invalid num bins");
+		}
+
 		if(pool != null) {
 			List<Future<?>> tasks = new ArrayList<>();
 			final int rlen = a.size();
@@ -266,8 +280,8 @@ public class CompressedEncode {
 	private void binEncodeNoNull(Array<?> a, ColumnEncoderBin b, AMapToData m, int l, int u) {
 
 		if(b.getBinMethod() == BinMethod.EQUI_WIDTH){
-			double min = b.getBinMins()[0];
-			double max = b.getBinMaxs()[b.getNumBin()-1];
+
+	
 			for(int i = l; i < u; i++) {
 				m.set(i, b.getEqWidthUnsafe(a.getAsDouble(i), min, max));
 			}

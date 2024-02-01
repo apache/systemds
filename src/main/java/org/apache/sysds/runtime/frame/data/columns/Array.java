@@ -1018,7 +1018,7 @@ public abstract class Array<T> implements Writable {
 				estDistinct, true, vt.getKey(), vt.getValue(), FrameArrayType.DDC, getInMemorySize(), ddcSize);
 		else if(vt.getKey() != getValueType())
 			return new ArrayCompressionStatistics(memSizePerElement, //
-				estDistinct, true, vt.getKey(), vt.getValue(), null, getInMemorySize(), memSize);
+				estDistinct, false, vt.getKey(), vt.getValue(), null, getInMemorySize(), memSize);
 		return null;
 	}
 

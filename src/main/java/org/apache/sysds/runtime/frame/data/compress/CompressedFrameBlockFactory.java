@@ -248,7 +248,7 @@ public class CompressedFrameBlockFactory {
 
 	private void compressColFinally(int i, final Array<?> a, final ArrayCompressionStatistics s) {
 
-		if(s != null && s.bestType != null) {
+		if(s != null && s.bestType != null && s.shouldCompress) {
 			switch(s.bestType) {
 				case DDC:
 					compressedColumns[i] = DDCArray.compressToDDC(a, s.containsNull);

@@ -28,6 +28,7 @@ import java.lang.ref.SoftReference;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
 import org.apache.commons.lang3.NotImplementedException;
@@ -89,6 +90,7 @@ import org.apache.sysds.runtime.matrix.operators.ReorgOperator;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
 import org.apache.sysds.runtime.matrix.operators.TernaryOperator;
 import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
+import org.apache.sysds.runtime.util.CommonThreadPool;
 import org.apache.sysds.runtime.util.IndexRange;
 import org.apache.sysds.utils.DMLCompressionStatistics;
 
@@ -326,7 +328,32 @@ public class CompressedMatrixBlock extends MatrixBlock {
 
 	@Override
 	public long recomputeNonZeros(int k) {
-		return recomputeNonZeros();
+		if ( k <= 1 || isOverlapping() || _colGroups.size() <= 1)
+			return recomputeNonZeros();
+		
+		ExecutorService pool = CommonThreadPool.get(k);
+		try{
+			long nnz = 0;
+			List<Future<Long>> tasks = new ArrayList<>();
+			for(AColGroup g : _colGroups)
+				tasks.add(pool.submit(() -> g.getNumberNonZeros(rlen)));
+				// nnz += g.getNumberNonZeros(rlen);
+			for( Future<Long> t : tasks){
+				nnz += t.get();
+			}
+			nonZeros = nnz;
+
+		} catch(Exception e){
+			throw new DMLRuntimeException("Failed to count non zeros", e);
+		} finally{
+			pool.shutdown();
+		}
+		
+		
+		if(nonZeros == 0) // If there is no nonzeros then reallocate into single empty column group.
+			allocateColGroup(ColGroupEmpty.create(getNumColumns()));
+
+		return nonZeros;
 	}
 
 	@Override

@@ -82,7 +82,7 @@ public class CompressedEncode {
 		final List<AColGroup> groups = isParallel() ? multiThread(encoders) : singleThread(encoders);
 		final int cols = shiftGroups(groups);
 		final MatrixBlock mb = new CompressedMatrixBlock(in.getNumRows(), cols, -1, false, groups);
-		mb.recomputeNonZeros();
+		mb.recomputeNonZeros(k);
 		logging(mb);
 		return mb;
 	}

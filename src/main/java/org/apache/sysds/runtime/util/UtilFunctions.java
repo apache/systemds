@@ -851,12 +851,12 @@ public class UtilFunctions {
 
 		for(int i = ai; i < ai + h; i++)
 			lnnz += (a[i] != 0.0) ? 1 : 0;
-		for(int i = ai * h; i < end; i += 8)
+		for(int i = ai + h; i < end; i += 8)
 			lnnz += computeNnzBy8(a, i);
 		return lnnz;
 	}
 
-	public static final int computeNnzBy8(final double[] a, final int i) {
+	private static final int computeNnzBy8(final double[] a, final int i) {
 		int lnnz = 0;
 		lnnz += (a[i] != 0.0) ? 1 : 0;
 		lnnz += (a[i+1] != 0.0) ? 1 : 0;

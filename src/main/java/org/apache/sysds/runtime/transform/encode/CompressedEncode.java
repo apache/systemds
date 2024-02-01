@@ -261,21 +261,21 @@ public class CompressedEncode {
 				throw new RuntimeException("Invalid num bins");
 		}
 
-		if(pool != null) {
-			List<Future<?>> tasks = new ArrayList<>();
-			final int rlen = a.size();
-			final int blockSize = Math.max(1000, rlen * in.getNumColumns() / k / 2);
-			for(int i = 0; i < rlen; i += blockSize) {
-				final int start = i;
-				final int end = Math.min(rlen, i + blockSize);
-				tasks.add(pool.submit(() -> binEncodeNoNull(a, b, m, start, end)));
-			}
-			for(Future<?> t : tasks)
-				t.get();
-		}
-		else {
+		// if(pool != null) {
+		// 	List<Future<?>> tasks = new ArrayList<>();
+		// 	final int rlen = a.size();
+		// 	final int blockSize = Math.max(1000, rlen * in.getNumColumns() / k / 2);
+		// 	for(int i = 0; i < rlen; i += blockSize) {
+		// 		final int start = i;
+		// 		final int end = Math.min(rlen, i + blockSize);
+		// 		tasks.add(pool.submit(() -> binEncodeNoNull(a, b, m, start, end)));
+		// 	}
+		// 	for(Future<?> t : tasks)
+		// 		t.get();
+		// }
+		// else {
 			binEncodeNoNull(a, b, m, 0, a.size());
-		}
+		// }
 		return m;
 	}
 

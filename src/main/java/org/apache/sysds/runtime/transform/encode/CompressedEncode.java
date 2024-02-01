@@ -52,6 +52,7 @@ import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.runtime.frame.data.columns.ACompressedArray;
 import org.apache.sysds.runtime.frame.data.columns.Array;
 import org.apache.sysds.runtime.frame.data.columns.DDCArray;
+import org.apache.sysds.runtime.frame.data.compress.ArrayCompressionStatistics;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.CommonThreadPool;
 import org.apache.sysds.runtime.util.UtilFunctions;
@@ -342,7 +343,7 @@ public class CompressedEncode {
 		IColIndex colIndexes = ColIndexFactory.create(1);
 		int colId = c._colID;
 		Array<?> a = in.getColumn(colId - 1);
-		if(a instanceof ACompressedArray) {
+		if(a instanceof ACompressedArray) { // already compressed great!
 			switch(a.getFrameArrayType()) {
 				case DDC:
 					DDCArray<?> aDDC = (DDCArray<?>) a;
@@ -358,17 +359,19 @@ public class CompressedEncode {
 					throw new NotImplementedException();
 			}
 		}
-		boolean containsNull = a.containsNull();
-		HashMap<Object, Long> map = (HashMap<Object, Long>) a.getRecodeMap();
+		
+		ArrayCompressionStatistics stats = a.statistics(Math.min(1000, a.size())); // Take a small sample
 		final int blockSz = ConfigurationManager.getDMLConfig().getIntValue(DMLConfig.DEFAULT_BLOCK_SIZE);
-		if(map.size() >= blockSz) {
+		if(stats.nUnique>= blockSz) {
 			double[] vals = (double[]) a.changeType(ValueType.FP64).get();
 			MatrixBlock col = new MatrixBlock(a.size(), 1, vals);
-			col.recomputeNonZeros();
+			col.recomputeNonZeros(k); 
 			// lets make it an uncompressed column group.
 			return ColGroupUncompressed.create(colIndexes, col, false);
 		}
 		else {
+			boolean containsNull = a.containsNull();
+			HashMap<Object, Long> map = (HashMap<Object, Long>) a.getRecodeMap();
 			double[] vals = new double[map.size() + (containsNull ? 1 : 0)];
 			if(containsNull)
 				vals[map.size()] = Double.NaN;

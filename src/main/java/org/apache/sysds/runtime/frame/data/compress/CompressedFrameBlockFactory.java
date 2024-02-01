@@ -30,6 +30,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.compress.estim.ComEstFactory;
 import org.apache.sysds.runtime.compress.workload.WTreeRoot;
+import org.apache.sysds.runtime.controlprogram.parfor.stat.Timing;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.runtime.frame.data.columns.Array;
 import org.apache.sysds.runtime.frame.data.columns.ArrayFactory;
@@ -79,16 +80,18 @@ public class CompressedFrameBlockFactory {
 	}
 
 	private FrameBlock compressFrame() {
+		Timing time = new Timing(true);
 		encodeColumns();
 		final FrameBlock ret = new FrameBlock(compressedColumns, in.getColumnNames(false));
 		logStatistics();
 		logRet(ret);
+		LOG.debug("Frame Compression time : " + time);
 		return ret;
 	}
 
 	private void encodeColumns() {
 		if(cs.k <= 1)
-		throw new RuntimeException("Not parallel frame compress");
+			throw new RuntimeException("Not parallel frame compress");
 		if(cs.k > 1)
 			encodeParallel();
 		else

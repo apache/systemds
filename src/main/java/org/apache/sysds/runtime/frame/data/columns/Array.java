@@ -963,28 +963,12 @@ public abstract class Array<T> implements Writable {
 		if(vt.getKey() == ValueType.UNKNOWN)
 			vt = new Pair<>(ValueType.STRING, false); // if still unknown String.
 
-		Map<T, Integer> d = new HashMap<>();
-		for(int i = 0; i < nSamples; i++) {
-			// super inefficient, but startup
-			T key = get(i);
-			if(d.containsKey(key))
-				d.put(key, d.get(key) + 1);
-			else
-				d.put(key, 1);
-		}
-		final int[] freq = new int[d.size()];
-		int id = 0;
-		for(Entry<T, Integer> e : d.entrySet())
-			freq[id++] = e.getValue();
-
-		int estDistinct = SampleEstimatorFactory.distinctCount(freq, size(), nSamples);
-
 		// memory size is different depending on valuetype.
-		long memSize = vt.getKey() != getValueType() ? //
+		final long memSize = vt.getKey() != getValueType() ? //
 			ArrayFactory.getInMemorySize(vt.getKey(), size(), containsNull()) : //
 			getInMemorySize(); // uncompressed size
 
-		int memSizePerElement;
+		final int memSizePerElement;
 		switch(vt.getKey()) {
 			case UINT4:
 			case UINT8:
@@ -1003,11 +987,34 @@ public abstract class Array<T> implements Writable {
 				break;
 			case BOOLEAN:
 				memSizePerElement = 1;
+				break;
 			case UNKNOWN:
 			case STRING:
 			default:
 				memSizePerElement = (int) (memSize / size());
 		}
+
+		Map<T, Integer> d = new HashMap<>();
+		for(int i = 0; i < nSamples || d.size() > nSamples / 2; i++) {
+			// super inefficient, but startup
+			T key = get(i);
+			if(d.containsKey(key))
+				d.put(key, d.get(key) + 1);
+			else
+				d.put(key, 1);
+		}
+
+		if(d.size() > nSamples / 2) {
+			return new ArrayCompressionStatistics(memSizePerElement, //
+				size(), true, vt.getKey(), vt.getValue(), null, getInMemorySize(), memSize);
+		}
+
+		final int[] freq = new int[d.size()];
+		int id = 0;
+		for(Entry<T, Integer> e : d.entrySet())
+			freq[id++] = e.getValue();
+
+		int estDistinct = SampleEstimatorFactory.distinctCount(freq, size(), nSamples);
 
 		long ddcSize = DDCArray.estimateInMemorySize(memSizePerElement, estDistinct, size());
 

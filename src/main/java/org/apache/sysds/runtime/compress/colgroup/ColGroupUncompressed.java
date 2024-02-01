@@ -1023,13 +1023,10 @@ public class ColGroupUncompressed extends AColGroup {
 
 	@Override
 	public void decompressToSparseBlockTransposed(SparseBlockMCSR sb) {
-
 		if(_data.isInSparseFormat())
 			decompressToSparseBlockTransposedSparse(sb);
 		else
 			decompressToSparseBlockTransposedDense(sb);
-
-		throw new NotImplementedException();
 	}
 
 	private void decompressToSparseBlockTransposedSparse(SparseBlock sb) {

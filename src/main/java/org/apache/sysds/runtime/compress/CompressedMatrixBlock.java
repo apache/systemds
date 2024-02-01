@@ -271,7 +271,9 @@ public class CompressedMatrixBlock extends MatrixBlock {
 
 		ret = CLALibDecompress.decompress(this, k);
 
-		ret.recomputeNonZeros(k);
+		if(ret.getNonZeros() <= 0){
+			ret.recomputeNonZeros(k);
+		}
 		ret.examSparsity(k);
 
 		// Set soft reference to the decompressed version

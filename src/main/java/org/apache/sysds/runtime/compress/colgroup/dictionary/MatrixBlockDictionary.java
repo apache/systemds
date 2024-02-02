@@ -1830,8 +1830,7 @@ public class MatrixBlockDictionary extends ADictionary {
 			preaggValuesFromDenseDictDense(numVals, colIndexes, aggregateColumns, b, cut, ret);
 
 		final MatrixBlock r = new MatrixBlock(numVals, aggregateColumns.size(), ret);
-		// r.recomputeNonZeros();
-		// r.examSparsity();
+
 		return MatrixBlockDictionary.create(r);
 
 	}

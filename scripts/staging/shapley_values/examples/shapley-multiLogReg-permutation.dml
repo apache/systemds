@@ -23,47 +23,45 @@
 
 # run the script staging/learnedSampling/1_Data_Model_Prep.dml to prepare the model
 
-source("../shapley-sampling.dml") as shapleySampling
+source("../shapley-permutation.dml") as shapleyPermutation
 
 X_bg = read("../data/Adult_X.csv")
 y = read("../data/Adult_y.csv")
 B = read("../data/Adult_W.csv")
 
 # you set the total number of samples from the commandline using `-nvargs samples_per_feature=2000`
-samples = ifdef($samples_per_feature, 10000)
-print("Computing shapley values with "+samples+" samples per feature.")
+n_permutations = ifdef($n_permutations, 10)
+integration_samples = ifdef($integration_samples, 10)
+print("Computing shapley values with "+n_permutations+" samples per feature.")
 #select instance to compute shapley values for
 x = X_bg[2,]
 
 print("Sample: \n"+toString(x))
 
-#set the indices of the features
-indices = seq(1,ncol(x))
-
 #compute shapley values
-[S, expected] = shapleySampling::shapley_sampling(
+[S, expected] = shapleyPermutation::shapley_permutations(
   model_function="shap_multiLogRegPredict_custom",
   model_args=list(B=B),
   x=x,
-  feature_indices=indices,
   X_bg=X_bg,
-  samples=samples,
-  seed=1337,
+  n_permutations=n_permutations,
+  integration_samples=integration_samples,
+  seed=-1,
   verbose=1
 )
-
-print("Expected class: "+expected)
+print("Expected: "+toString(expected))
+print("Resulting phis:\n"+toString(S))
 
 #transpose it to make it fit the representation of values in the SHAP python package
 S = t(S)
 # write values to csv
-write(S, "../data/Adult_shap-values_"+samples+"smpl_parfor.csv", format="csv")
+write(S, "../data/Adult_shap-values_permutation_"+n_permutations+"perm_"+integration_samples+"samples.csv", format="csv")
+
 
 
 # function to wrap multiLogRegPredict to make sure its outputs are compatible
 shap_multiLogRegPredict_custom = function(Matrix[Double] X, Matrix[Double] B)
 return( Matrix[Double] P){
   [M,yhat,acc] = multiLogRegPredict(X=X, B=B,Y=matrix(0,0,0), verbose=FALSE)
-  # we are only interested in the predicted class
-  P = yhat
+  P = M[,2]
 }

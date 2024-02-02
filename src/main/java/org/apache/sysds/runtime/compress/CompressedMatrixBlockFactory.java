@@ -432,20 +432,20 @@ public class CompressedMatrixBlockFactory {
 
 		_stats.compressedSize = res.getInMemorySize();
 		_stats.compressedCost = costEstimator.getCost(res.getColGroups(), res.getNumRows());
-
-		final double ratio = _stats.getRatio();
-		final double denseRatio = _stats.getDenseRatio();
-
 		_stats.setColGroupsCounts(res.getColGroups());
-		if(ratio < 1 && denseRatio < 100.0) {
+
+		if(_stats.compressedCost > _stats.originalCost) {
 			LOG.info("--dense size:        " + _stats.denseSize);
 			LOG.info("--original size:     " + _stats.originalSize);
 			LOG.info("--compressed size:   " + _stats.compressedSize);
-			LOG.info("--compression ratio: " + ratio);
+			LOG.info("--compression ratio: " + _stats.getRatio());
+			LOG.info("--original Cost:     " + _stats.originalCost);
+			LOG.info("--Compressed Cost:   " + _stats.compressedCost);
+			LOG.info("--Cost Ratio:        " + _stats.getCostRatio());
 			LOG.debug("--col groups types   " + _stats.getGroupsTypesString());
 			LOG.debug("--col groups sizes   " + _stats.getGroupsSizesString());
 			logLengths();
-			LOG.info("Abort block compression because compression ratio is less than 1.");
+			LOG.info("Abort block compression because cost ratio is less than 1. ");
 			res = null;
 			setNextTimePhase(time.stop());
 			DMLCompressionStatistics.addCompressionTime(getLastTimePhase(), phase);

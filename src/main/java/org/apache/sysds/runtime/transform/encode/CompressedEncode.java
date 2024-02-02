@@ -262,19 +262,19 @@ public class CompressedEncode {
 		}
 
 		// if(pool != null) {
-		// 	List<Future<?>> tasks = new ArrayList<>();
-		// 	final int rlen = a.size();
-		// 	final int blockSize = Math.max(1000, rlen * in.getNumColumns() / k / 2);
-		// 	for(int i = 0; i < rlen; i += blockSize) {
-		// 		final int start = i;
-		// 		final int end = Math.min(rlen, i + blockSize);
-		// 		tasks.add(pool.submit(() -> binEncodeNoNull(a, b, m, start, end)));
-		// 	}
-		// 	for(Future<?> t : tasks)
-		// 		t.get();
+		// List<Future<?>> tasks = new ArrayList<>();
+		// final int rlen = a.size();
+		// final int blockSize = Math.max(1000, rlen * in.getNumColumns() / k / 2);
+		// for(int i = 0; i < rlen; i += blockSize) {
+		// final int start = i;
+		// final int end = Math.min(rlen, i + blockSize);
+		// tasks.add(pool.submit(() -> binEncodeNoNull(a, b, m, start, end)));
+		// }
+		// for(Future<?> t : tasks)
+		// t.get();
 		// }
 		// else {
-			binEncodeNoNull(a, b, m, 0, a.size());
+		binEncodeNoNull(a, b, m, 0, a.size());
 		// }
 		return m;
 	}
@@ -405,36 +405,32 @@ public class CompressedEncode {
 	}
 
 	private AMapToData createMappingAMapToData(Array<?> a, Map<?, Long> map, boolean containsNull) {
-		try {
+		final int si = map.size();
+		final int nRow = in.getNumRows();
+		final AMapToData m = MapToFactory.create(nRow, si + (containsNull ? 1 : 0));
+		if(containsNull)
+			return createMappingAMapToDataWithNull(a, map, si, nRow, m);
+		else
+			return createMappingAMapToDataNoNull(a, map, si, nRow, m);
+	}
 
-			final int si = map.size();
-			AMapToData m = MapToFactory.create(in.getNumRows(), si + (containsNull ? 1 : 0));
-			Array<?>.ArrayIterator it = a.getIterator();
-			if(containsNull) {
-				while(it.hasNext()) {
-					Object v = it.next();
-					try {
-						if(v != null)
-							m.set(it.getIndex(), map.get(v).intValue() - 1);
-						else
-							m.set(it.getIndex(), si);
-					}
-					catch(Exception e) {
-						throw new RuntimeException("failed on " + v + " " + a.getValueType(), e);
-					}
-				}
-			}
-			else {
-				while(it.hasNext()) {
-					Object v = it.next();
-					m.set(it.getIndex(), map.get(v).intValue() - 1);
-				}
-			}
-			return m;
+	private AMapToData createMappingAMapToDataNoNull(Array<?> a, Map<?, Long> map, int si, int nRow, AMapToData m) {
+		// TODO push down to underlying array if critical performance to allow JIT compilation.
+		for(int i = 0; i < nRow; i++)
+			m.set(i, map.get(a.get(i)).intValue() - 1);
+		return m;
+	}
+
+	private AMapToData createMappingAMapToDataWithNull(Array<?> a, Map<?, Long> map, int si, int nRow, AMapToData m) {
+		// TODO push down to underlying array if critical performance to allow JIT compilation.
+		for(int i = 0; i < nRow; i++) {
+			final Object v = a.get(i);
+			if(v != null)
+				m.set(i, map.get(v).intValue() - 1);
+			else
+				m.set(i, si);
 		}
-		catch(Exception e) {
-			throw new RuntimeException("failed constructing map: " + map, e);
-		}
+		return m;
 	}
 
 	private AMapToData createHashMappingAMapToData(Array<?> a, int k, boolean nulls) {

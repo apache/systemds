@@ -56,8 +56,11 @@ public class CompressedFrameBlockFactory {
 		this.cs = cs;
 		this.stats = new ArrayCompressionStatistics[in.getNumColumns()];
 		this.compressedColumns = new Array<?>[in.getNumColumns()];
-		this.nSamples = Math.min(Math.max((int) (in.getNumRows() * cs.sampleRatio), DEFAULT_MIN_CELLS), ComEstFactory
-			.getSampleSize(0.65, in.getNumRows(), in.getNumColumns(), 1.0, DEFAULT_MIN_CELLS, DEFAULT_MAX_CELLS));
+
+		int maxPercentage = Math.max((int) (in.getNumRows() * cs.sampleRatio), DEFAULT_MIN_CELLS);
+		int maxExponentialDecrease = ComEstFactory.getSampleSize(0.65, in.getNumRows(), in.getNumColumns(), 1.0,
+			DEFAULT_MIN_CELLS, DEFAULT_MAX_CELLS);
+		this.nSamples = Math.min(maxPercentage, maxExponentialDecrease);
 	}
 
 	public static FrameBlock compress(FrameBlock fb) {
@@ -266,8 +269,10 @@ public class CompressedFrameBlockFactory {
 	private void logStatistics() {
 		if(LOG.isDebugEnabled()) {
 			for(int i = 0; i < compressedColumns.length; i++) {
-				if(stats[i] != null)
-					LOG.debug(String.format("Col: %3d, %s", i, stats[i]));
+				if(stats[i] != null){
+					if(stats[i].shouldCompress)
+						LOG.debug(String.format("Col: %3d, %s", i, stats[i]));
+				}
 				else
 					LOG.debug(
 						String.format("Col: %3d, No Compress, Type: %s", i, in.getColumn(i).getClass().getSimpleName()));

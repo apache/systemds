@@ -144,6 +144,9 @@ public interface ComEstFactory {
 		// adhere to maximum sample size.
 		sampleSize = Math.max(minSampleSize, Math.min(sampleSize, maxSampleSize));
 
+		// cap at number of rows.
+		sampleSize = Math.min(nRows, sampleSize);
+
 		return sampleSize;
 	}
 }

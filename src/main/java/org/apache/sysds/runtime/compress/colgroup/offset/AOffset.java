@@ -31,11 +31,13 @@ import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.AOffsetsGroup;
 import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
+import org.apache.sysds.runtime.compress.colgroup.mapping.MapToByte;
+import org.apache.sysds.runtime.compress.colgroup.mapping.MapToChar;
+import org.apache.sysds.runtime.compress.colgroup.mapping.MapToUByte;
 import org.apache.sysds.runtime.compress.utils.IntArrayList;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.jboss.netty.handler.codec.compression.CompressionException;
 
 /**
  * Offset list encoder interface.
@@ -266,26 +268,73 @@ public abstract class AOffset implements Serializable {
 		AIterator it) {
 		final int last = getOffsetToLast();
 		if(cu <= last)
-			preAggregateDenseMapRowBellowEnd(mV, off, preAV, cu, nVal, data, it);
+			preAggregateDenseMapRowBellowEnd(mV, off, preAV, cu, data, it);
 		else
-			preAggregateDenseMapRowEnd(mV, off, preAV, last, nVal, data, it);
+			preAggregateDenseMapRowEnd(mV, off, preAV, last, data, it);
 	}
 
 	protected final void preAggregateDenseMapRowBellowEnd(final double[] mV, final int off, final double[] preAV, int cu,
-		final int nVal, final AMapToData data, final AIterator it) {
+		final AMapToData data, final AIterator it) {
+		// Increment and prepare iterator.
 		it.offset += off;
 		cu += off;
-		while(it.offset < cu) {
-			preAV[data.getIndex(it.getDataIndex())] += mV[it.offset];
-			it.next();
-		}
+		preAggDenseMapRowBLE(mV, preAV, cu, data, it);
+		// Decrement iterator for next call.
 		it.offset -= off;
 		cu -= off;
 		cacheIterator(it, cu);
 	}
 
+	protected final void preAggDenseMapRowBLE(final double[] mV, final double[] preAV, int cu, AMapToData data,
+		AIterator it) {
+		if(data instanceof MapToUByte)
+			preAggDenseMapRowBLEUByte(mV, preAV, cu, (MapToUByte) data, it);
+		else if(data instanceof MapToByte)
+			preAggDenseMapRowBLEByte(mV, preAV, cu, (MapToByte) data, it);
+		else if(data instanceof MapToChar)
+			preAggDenseMapRowBLEChar(mV, preAV, cu, (MapToChar) data, it);
+		else
+			preAggDenseMapRowBLEGeneric(mV, preAV, cu, data, it);
+	}
+
+	protected final void preAggDenseMapRowBLEUByte(final double[] mV, final double[] preAV, int cu, MapToUByte data,
+		AIterator it) {
+		// for JIT Compilation
+		while(it.offset < cu) {
+			preAV[data.getIndex(it.getDataIndex())] += mV[it.offset];
+			it.next();
+		}
+	}
+
+	protected final void preAggDenseMapRowBLEByte(final double[] mV, final double[] preAV, int cu, MapToByte data,
+		AIterator it) {
+		// for JIT Compilation
+		while(it.offset < cu) {
+			preAV[data.getIndex(it.getDataIndex())] += mV[it.offset];
+			it.next();
+		}
+	}
+
+	protected final void preAggDenseMapRowBLEChar(final double[] mV, final double[] preAV, int cu, MapToChar data,
+		AIterator it) {
+		// for JIT Compilation
+		while(it.offset < cu) {
+			preAV[data.getIndex(it.getDataIndex())] += mV[it.offset];
+			it.next();
+		}
+	}
+
+	protected final void preAggDenseMapRowBLEGeneric(final double[] mV, final double[] preAV, int cu, AMapToData data,
+		AIterator it) {
+		// for JIT Compilation
+		while(it.offset < cu) {
+			preAV[data.getIndex(it.getDataIndex())] += mV[it.offset];
+			it.next();
+		}
+	}
+
 	protected final void preAggregateDenseMapRowEnd(final double[] mV, final int off, final double[] preAV,
-		final int last, final int nVal, final AMapToData data, final AIterator it) {
+		final int last, final AMapToData data, final AIterator it) {
 
 		while(it.offset < last) {
 			final int dx = it.getDataIndex();

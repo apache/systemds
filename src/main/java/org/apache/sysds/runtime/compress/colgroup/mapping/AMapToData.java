@@ -907,7 +907,7 @@ public abstract class AMapToData implements Serializable {
 			dict.multiplyScalar(aval[i], retV, offR, getIndex(aix[i]), colIndexes);
 	}
 
-	public final void decompressToRange(double[] c, int rl, int ru, int offR, double[] values) {
+	public void decompressToRange(double[] c, int rl, int ru, int offR, double[] values) {
 		if(offR == 0)
 			decompressToRangeNoOff(c, rl, ru, values);
 		else

@@ -45,6 +45,16 @@ public class ArrayIndex extends AColIndex {
 		return cols[i];
 	}
 
+	/**
+	 * For performance reasons we can extract the array. Be careful when you do.
+	 * 
+	 * @return The internal array.
+	 */
+	public int[] getArray() {
+		// For performance reasons available
+		return cols;
+	}
+
 	@Override
 	public IColIndex shift(int i) {
 		int[] ret = new int[cols.length];

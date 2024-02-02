@@ -28,7 +28,10 @@ import java.util.Arrays;
 
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
+import org.apache.sysds.runtime.compress.colgroup.indexes.ArrayIndex;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
+import org.apache.sysds.runtime.compress.colgroup.indexes.SingleIndex;
+import org.apache.sysds.runtime.compress.colgroup.indexes.TwoIndex;
 import org.apache.sysds.runtime.compress.utils.Util;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.DenseBlockFP64;
@@ -1821,45 +1824,157 @@ public class MatrixBlockDictionary extends ADictionary {
 		final IColIndex aggregateColumns, final double[] b, final int cut) {
 
 		double[] ret = new double[numVals * aggregateColumns.size()];
-		if(_data.isInSparseFormat()) {
-			SparseBlock sb = _data.getSparseBlock();
-			for(int i = 0; i < _data.getNumRows(); i++) {
-				if(sb.isEmpty(i))
-					continue;
-				final int off = aggregateColumns.size() * i;
-				final int apos = sb.pos(i);
-				final int alen = sb.size(i) + apos;
-				final double[] avals = sb.values(i);
-				final int[] aix = sb.indexes(i);
-				for(int j = apos; j < alen; j++) {
-					final int idb = colIndexes.get(aix[j]) * cut;
-					final double v = avals[j];
-					for(int h = 0; h < aggregateColumns.size(); h++)
-						ret[off + h] += v * b[idb + aggregateColumns.get(h)];
-				}
-			}
-		}
-		else {
-			final int cz = colIndexes.size();
-			final int az = aggregateColumns.size();
-			final double[] values = _data.getDenseBlockValues();
-			for(int k = 0, off = 0; k < numVals * cz; k += cz, off += az) {
-				for(int h = 0; h < cz; h++) {
-					final int idb = colIndexes.get(h) * cut;
-					double v = values[k + h];
-					if(v != 0)
-						for(int i = 0; i < az; i++)
-							ret[off + i] += v * b[idb + aggregateColumns.get(i)];
-				}
-			}
-		}
+		if(_data.isInSparseFormat())
+			preaggValuesFromDenseDictSparse(numVals, colIndexes, aggregateColumns, b, cut, ret);
+		else
+			preaggValuesFromDenseDictDense(numVals, colIndexes, aggregateColumns, b, cut, ret);
 
-		DenseBlock dictV = new DenseBlockFP64(new int[] {numVals, aggregateColumns.size()}, ret);
-		MatrixBlock r = new MatrixBlock(numVals, aggregateColumns.size(), dictV);
+		final DenseBlock dictV = new DenseBlockFP64(new int[] {numVals, aggregateColumns.size()}, ret);
+		final MatrixBlock r = new MatrixBlock(numVals, aggregateColumns.size(), dictV);
 		r.recomputeNonZeros();
 		r.examSparsity();
 		return MatrixBlockDictionary.create(r);
 
+	}
+
+	public void preaggValuesFromDenseDictSparse(final int numVals, final IColIndex colIndexes,
+		final IColIndex aggregateColumns, final double[] b, final int cut, double[] ret) {
+		final SparseBlock sb = _data.getSparseBlock();
+		for(int i = 0; i < _data.getNumRows(); i++) {
+			if(sb.isEmpty(i))
+				continue;
+			final int off = aggregateColumns.size() * i;
+			final int apos = sb.pos(i);
+			final int alen = sb.size(i) + apos;
+			final double[] avals = sb.values(i);
+			final int[] aix = sb.indexes(i);
+			for(int j = apos; j < alen; j++) {
+				final int idb = colIndexes.get(aix[j]) * cut;
+				final double v = avals[j];
+				for(int h = 0; h < aggregateColumns.size(); h++)
+					ret[off + h] += v * b[idb + aggregateColumns.get(h)];
+			}
+		}
+	}
+
+	public void preaggValuesFromDenseDictDense(final int numVals, final IColIndex colIndexes,
+		final IColIndex aggregateColumns, final double[] b, final int cut, double[] ret) {
+		// JIT Compile tricks
+		if(aggregateColumns instanceof SingleIndex)
+			preaggValuesFromDenseDictDenseAggSingle(numVals, colIndexes, aggregateColumns.get(0), b, cut, ret);
+		else if(aggregateColumns instanceof TwoIndex)
+			preaggValuesFromDenseDictDenseAggTwo(numVals, colIndexes, ((TwoIndex) aggregateColumns), b, cut, ret);
+		else if(aggregateColumns instanceof ArrayIndex)
+			preaggValuesFromDenseDictDenseAggArray(numVals, colIndexes, ((ArrayIndex) aggregateColumns).getArray(), b, cut,
+				ret);
+		else
+			preaggValuesFromDenseDictDenseGeneric(numVals, colIndexes, aggregateColumns, b, cut, ret);
+	}
+
+	private void preaggValuesFromDenseDictDenseAggSingle(final int numVals, final IColIndex colIndexes, final int out,
+		final double[] b, final int cut, double[] ret) {
+		if(colIndexes instanceof TwoIndex)
+			preaggValuesFromDenseDictDenseAggSingleInTwo(numVals, colIndexes, out, b, cut, ret);
+		else if(colIndexes instanceof ArrayIndex)
+			preaggValuesFromDenseDictDenseAggSingleInArray(numVals, ((ArrayIndex) colIndexes).getArray(), out, b, cut,
+				ret);
+		else
+			preaggValuesFromDenseDictDenseAggGeneric(numVals, colIndexes, out, b, cut, ret);
+	}
+
+	private void preaggValuesFromDenseDictDenseAggSingleInTwo(final int numVals, final IColIndex colIndexes,
+		final int out, final double[] b, final int cut, double[] ret) {
+		final double[] values = _data.getDenseBlockValues();
+		final int c1 = colIndexes.get(0) * cut;
+		final int c2 = colIndexes.get(1) * cut;
+		for(int k = 0, off = 0; k < numVals * 2; k += 2, off++) {
+			ret[off] += values[k] * b[c1 + out];
+			ret[off] += values[k + 1] * b[c2 + out];
+		}
+	}
+
+	private void preaggValuesFromDenseDictDenseAggSingleInArray(final int numVals, final int[] colIndexes, final int out,
+		final double[] b, final int cut, double[] ret) {
+		final int cz = colIndexes.length;
+		final double[] values = _data.getDenseBlockValues();
+
+		for(int k = 0, off = 0; k < numVals * cz; k += cz, off++) {
+			for(int h = 0; h < cz; h++) {
+				final int idb = colIndexes[h] * cut;
+				final double v = values[k + h];
+				ret[off] += v * b[idb + out];
+			}
+		}
+
+	}
+
+	private void preaggValuesFromDenseDictDenseAggGeneric(final int numVals, final IColIndex colIndexes, final int out,
+		final double[] b, final int cut, double[] ret) {
+		final int cz = colIndexes.size();
+		final double[] values = _data.getDenseBlockValues();
+
+		for(int k = 0, off = 0; k < numVals * cz; k += cz, off++) {
+			for(int h = 0; h < cz; h++) {
+				final int idb = colIndexes.get(h) * cut;
+				final double v = values[k + h];
+				ret[off] += v * b[idb + out];
+			}
+		}
+
+	}
+
+	private void preaggValuesFromDenseDictDenseAggTwo(final int numVals, final IColIndex colIndexes, final TwoIndex two,
+		final double[] b, final int cut, double[] ret) {
+		final int cz = colIndexes.size();
+		final int az = 2;
+		final double[] values = _data.getDenseBlockValues();
+
+		for(int k = 0, off = 0; k < numVals * cz; k += cz, off += az) {
+			for(int h = 0; h < cz; h++) {
+				final int idb = colIndexes.get(h) * cut;
+				final double v = values[k + h];
+				if(v != 0) {
+					ret[off] += v * b[idb + two.get(0)];
+					ret[off + 1] += v * b[idb + two.get(1)];
+				}
+			}
+		}
+	}
+
+	private void preaggValuesFromDenseDictDenseAggArray(final int numVals, final IColIndex colIndexes,
+		final int[] aggregateColumns, final double[] b, final int cut, double[] ret) {
+		final int cz = colIndexes.size();
+		final int az = aggregateColumns.length;
+		final double[] values = _data.getDenseBlockValues();
+
+		for(int k = 0, off = 0; k < numVals * cz; k += cz, off += az) {
+			for(int h = 0; h < cz; h++) {
+				final int idb = colIndexes.get(h) * cut;
+				final double v = values[k + h];
+				if(v != 0) {
+					for(int i = 0; i < az; i++)
+						ret[off + i] += v * b[idb + aggregateColumns[i]];
+				}
+			}
+		}
+	}
+
+	private void preaggValuesFromDenseDictDenseGeneric(final int numVals, final IColIndex colIndexes,
+		final IColIndex aggregateColumns, final double[] b, final int cut, double[] ret) {
+		final int cz = colIndexes.size();
+		final int az = aggregateColumns.size();
+		final double[] values = _data.getDenseBlockValues();
+
+		for(int k = 0, off = 0; k < numVals * cz; k += cz, off += az) {
+			for(int h = 0; h < cz; h++) {
+				final int idb = colIndexes.get(h) * cut;
+				final double v = values[k + h];
+				if(v != 0) {
+					for(int i = 0; i < az; i++)
+						ret[off + i] += v * b[idb + aggregateColumns.get(i)];
+				}
+			}
+		}
 	}
 
 	@Override

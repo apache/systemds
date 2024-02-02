@@ -143,7 +143,7 @@ public class ComputationCostEstimator extends ACostEstimate {
 
 	private double leftMultCost(double nRowsScanned, double nRows, double nCols, double nVals, double sparsity) {
 		// Plus nVals * 2 because of allocation of nVals array and scan of that
-		final double preScalingCost = Math.max(nRowsScanned, nRows / 10) + nVals * 2;
+		final double preScalingCost = Math.max(nRowsScanned, nRows ) + nVals * 2;
 		final double postScalingCost = sparsity * nVals * nCols;
 		return leftMultCost(preScalingCost, postScalingCost);
 	}

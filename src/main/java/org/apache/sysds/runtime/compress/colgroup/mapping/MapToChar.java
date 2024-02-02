@@ -328,9 +328,27 @@ public class MapToChar extends AMapToData {
 	}
 
 	@Override
+	public void decompressToRange(double[] c, int rl, int ru, int offR, double[] values) {
+		if(offR == 0)
+			decompressToRangeNoOff(c, rl, ru, values);
+		else
+			decompressToRangeOff(c, rl, ru, offR, values);
+	}
+
+	@Override
 	public void decompressToRangeOff(double[] c, int rl, int ru, int offR, double[] values) {
 		for(int i = rl, offT = rl + offR; i < ru; i++, offT++)
 			c[offT] += values[getIndex(i)];
+	}
+
+	@Override
+	public void decompressToRangeNoOff(double[] c, int rl, int ru, double[] values) {
+		// OVERWRITTEN FOR JIT COMPILE!
+		final int h = (ru - rl) % 8;
+		for(int rc = rl; rc < rl + h; rc++)
+			c[rc] += values[getIndex(rc)];
+		for(int rc = rl + h; rc < ru; rc += 8)
+			decompressToRangeNoOffBy8(c, rc, values);
 	}
 
 	@Override

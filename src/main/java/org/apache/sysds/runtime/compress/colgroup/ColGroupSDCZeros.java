@@ -36,7 +36,10 @@ import org.apache.sysds.runtime.compress.colgroup.dictionary.MatrixBlockDictiona
 import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
+import org.apache.sysds.runtime.compress.colgroup.mapping.MapToByte;
+import org.apache.sysds.runtime.compress.colgroup.mapping.MapToChar;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
+import org.apache.sysds.runtime.compress.colgroup.mapping.MapToUByte;
 import org.apache.sysds.runtime.compress.colgroup.offset.AIterator;
 import org.apache.sysds.runtime.compress.colgroup.offset.AOffset;
 import org.apache.sysds.runtime.compress.colgroup.offset.AOffset.OffsetSliceInfo;
@@ -213,11 +216,48 @@ public class ColGroupSDCZeros extends ASDCZero implements IMapToDataGroup {
 		final int of = offR + offC;
 		final int last = ru + of;
 		it.setOff(it.value() + of);
+		decToDBDDSC(c, values, it, m, last);
+		it.setOff(it.value() - of);
+	}
+
+	private static void decToDBDDSC(double[] c, double[] values, AIterator it, AMapToData m, int last) {
+		// JIT compile trick
+		if(m instanceof MapToUByte)
+			decToDBDDSC_UByte(c, values, it, (MapToUByte) m, last);
+		else if(m instanceof MapToByte)
+			decToDBDDSC_Byte(c, values, it, (MapToByte) m, last);
+		else if(m instanceof MapToChar)
+			decToDBDDSC_Char(c, values, it, (MapToChar) m, last);
+		else
+			decToDBDDSC_Generic(c, values, it, m, last);
+	}
+
+	private static void decToDBDDSC_Generic(double[] c, double[] values, AIterator it, AMapToData m, int last) {
 		while(it.isNotOver(last)) {
 			c[it.value()] += values[m.getIndex(it.getDataIndex())];
 			it.next();
 		}
-		it.setOff(it.value() - of);
+	}
+
+	private static void decToDBDDSC_UByte(double[] c, double[] values, AIterator it, MapToUByte m, int last) {
+		while(it.isNotOver(last)) {
+			c[it.value()] += values[m.getIndex(it.getDataIndex())];
+			it.next();
+		}
+	}
+
+	private static void decToDBDDSC_Byte(double[] c, double[] values, AIterator it, MapToByte m, int last) {
+		while(it.isNotOver(last)) {
+			c[it.value()] += values[m.getIndex(it.getDataIndex())];
+			it.next();
+		}
+	}
+
+	private static void decToDBDDSC_Char(double[] c, double[] values, AIterator it, MapToChar m, int last) {
+		while(it.isNotOver(last)) {
+			c[it.value()] += values[m.getIndex(it.getDataIndex())];
+			it.next();
+		}
 	}
 
 	private void decompressToDenseBlockDenseDictionaryPreSingleColContiguous(DenseBlock db, int rl, int ru, int offR,

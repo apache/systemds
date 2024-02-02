@@ -308,17 +308,13 @@ public abstract class APreAgg extends AColGroupValue {
 	}
 
 	public void mmWithDictionary(MatrixBlock preAgg, MatrixBlock tmpRes, MatrixBlock ret, int k, int rl, int ru) {
-		// Shallow copy the preAgg to allow sparse PreAgg multiplication but do not remove the original dense allocation
-		// since the dense allocation is reused.
-		final MatrixBlock preAggCopy = new MatrixBlock();
-		preAggCopy.copy(preAgg);
 		final MatrixBlock tmpResCopy = new MatrixBlock();
 		tmpResCopy.copyShallow(tmpRes);
 		// Get dictionary matrixBlock
 		final MatrixBlock dict = getDictionary().getMBDict(_colIndexes.size()).getMatrixBlock();
 		if(dict != null) {
 			// Multiply
-			LibMatrixMult.matrixMult(preAggCopy, dict, tmpResCopy, k);
+			LibMatrixMult.matrixMult(preAgg, dict, tmpResCopy, k);
 			ColGroupUtils.addMatrixToResult(tmpResCopy, ret, _colIndexes, rl, ru);
 		}
 	}

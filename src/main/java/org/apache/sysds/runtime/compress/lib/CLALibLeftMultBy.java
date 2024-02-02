@@ -20,6 +20,7 @@
 package org.apache.sysds.runtime.compress.lib;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -608,19 +609,20 @@ public final class CLALibLeftMultBy {
 		int off, int skip, double[] rowSum) {
 
 		/** The column block size for preAggregating column groups */
-		final int colBZ = 1024;
+		// final int colBZ = 1024;
+		final int colBZ = 4096;
 		// The number of rows to process together
 		final int rowBlockSize = 4;
 		// The number of column groups to process together
 		// the value should ideally be set so that the colGroups fits into cache together with a row block.
 		// currently we only try to avoid having a dangling small number of column groups in the last block.
-		// final int colGroupBlocking = preAggCGs.size() ;// % 16 < 4 ? 20 : 16;
-		final int colGroupBlocking = 8;
+		final int colGroupBlocking = preAggCGs.size() ;// % 16 < 4 ? 20 : 16;
+		// final int colGroupBlocking = 8;
 		// final int colGroupBlocking = 4;
 		final int nColGroups = preAggCGs.size();
 
 		// Allocate pre Aggregate Array List
-		final MatrixBlock[] preAgg = populatePreAggregate(colGroupBlocking);
+		final double[][] preAgg = new double[colGroupBlocking][];
 
 		// Allocate temporary Result matrix
 		// guaranteed to be large enough for all groups
@@ -633,17 +635,22 @@ public final class CLALibLeftMultBy {
 			// For each column group block
 			for(int gl = off; gl < nColGroups; gl += colGroupBlocking * skip) {
 				final int gu = Math.min(gl + (colGroupBlocking * skip), nColGroups);
-				// For each column group in the current block allocate the preaggregate array.
+				// For each column group in the current block allocate the pre aggregate array.
+				// or reset the pre aggregate.
 				for(int j = gl, p = 0; j < gu; j += skip, p++) {
 					final int preAggNCol = preAggCGs.get(j).getPreAggregateSize();
-					preAgg[p].reset(rut - rlt, preAggNCol, false);
+					final int len = (rut - rlt) * preAggNCol;
+					if(preAgg[p] == null || preAgg[p].length < len)
+						preAgg[p] = new double[len];
+					else 
+						Arrays.fill(preAgg[p], 0, (rut - rlt) * preAggNCol, 0);
 				}
 
 				// PreAggregate current block of column groups
 				for(int cl = 0; cl < lc; cl += colBZ) {
 					final int cu = Math.min(cl + colBZ, lc);
 					for(int j = gl, p = 0; j < gu; j += skip, p++)
-						preAggCGs.get(j).preAggregateDense(that, preAgg[p].getDenseBlockValues(), rlt, rut, cl, cu);
+						preAggCGs.get(j).preAggregateDense(that, preAgg[p], rlt, rut, cl, cu);
 					if(gu == nColGroups)
 						rowSum(that, rowSum, rlt, rut, cl, cu);
 				}
@@ -651,7 +658,8 @@ public final class CLALibLeftMultBy {
 				// Multiply out the PreAggregate to the output matrix.
 				for(int j = gl, p = 0; j < gu; j += skip, p++) {
 					final APreAgg cg = preAggCGs.get(j);
-					final MatrixBlock preAggThis = preAgg[p];
+					final int preAggNCol = cg.getPreAggregateSize();
+					final MatrixBlock preAggThis = new MatrixBlock((rut - rlt), preAggNCol,preAgg[p]);
 					cg.mmWithDictionary(preAggThis, tmpRes, ret, 1, rlt, rut);
 				}
 			}
@@ -704,17 +712,6 @@ public final class CLALibLeftMultBy {
 					rowSum[r] += thatV[c];
 			}
 		}
-	}
-
-	private static MatrixBlock[] populatePreAggregate(int colGroupBlocking) {
-		final MatrixBlock[] preAgg = new MatrixBlock[colGroupBlocking];
-		// populate the preAgg array.
-		for(int j = 0; j < colGroupBlocking; j++) {
-			final MatrixBlock m = new MatrixBlock(1, 1, false);
-			m.allocateDenseBlock();
-			preAgg[j] = m;
-		}
-		return preAgg;
 	}
 
 	private static class LMMPreAggTask implements Callable<MatrixBlock> {

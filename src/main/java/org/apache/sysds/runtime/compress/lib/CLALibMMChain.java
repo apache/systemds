@@ -90,7 +90,7 @@ public final class CLALibMMChain {
 		if(x.isEmpty())
 			return returnEmpty(x, out);
 
-		// Morph the columns to effecient types for the operation.
+		// Morph the columns to efficient types for the operation.
 		x = filterColGroups(x);
 
 		// Allow overlapping intermediate if the intermediate is guaranteed not to be overlapping.
@@ -146,6 +146,8 @@ public final class CLALibMMChain {
 		final List<AColGroup> groups = x.getColGroups();
 		final boolean shouldFilter = CLALibUtils.shouldPreFilter(groups);
 		if(shouldFilter) {
+			if(CLALibUtils.alreadyPreFiltered(groups))
+				return x;
 			final int nCol = x.getNumColumns();
 			final double[] constV = new double[nCol];
 			final List<AColGroup> filteredGroups = CLALibUtils.filterGroups(groups, constV);

@@ -308,12 +308,19 @@ public final class CLALibLeftMultBy {
 		final List<AColGroup> noPreAggGroups = new ArrayList<>();
 		final List<APreAgg> preAggGroups = new ArrayList<>();
 		if(shouldFilter) {
-			final double[] constV = new double[numColumnsOut];
-			CLALibUtils.filterGroupsAndSplitPreAgg(colGroups, constV, noPreAggGroups, preAggGroups);
+			final double[] constV;
+			// if(CLALibUtils.alreadyPreFiltered(colGroups)){
+			// 	constV = CLALibUtils.filterGroupsAndSplitPreAggOneConst(noPreAggGroups, noPreAggGroups, preAggGroups);
+			// }
+			// else{
+				constV = new double[numColumnsOut];
+				CLALibUtils.filterGroupsAndSplitPreAgg(colGroups, constV, noPreAggGroups, preAggGroups);
+			// }
+
 			// Sort so that the big expensive preAgg groups are first.
 			// Collections.sort(preAggGroups, Comparator.comparing(AColGroup::getNumValues).reversed());
 
-			double[] rowSums;
+			final double[] rowSums;
 			if(!noPreAggGroups.isEmpty() || !preAggGroups.isEmpty()) {
 				final int sizeSum = preAggGroups.size() + noPreAggGroups.size();
 				rowSums = new double[lr];
@@ -449,7 +456,7 @@ public final class CLALibLeftMultBy {
 			}
 		}
 		catch(Exception e) {
-			throw new RuntimeException();
+			throw new RuntimeException(e);
 		}
 		finally {
 			pool.shutdown();

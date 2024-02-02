@@ -32,6 +32,7 @@ import org.apache.sysds.runtime.compress.estim.ComEstFactory;
 import org.apache.sysds.runtime.compress.workload.WTreeRoot;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.Timing;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
+import org.apache.sysds.runtime.frame.data.columns.ACompressedArray;
 import org.apache.sysds.runtime.frame.data.columns.Array;
 import org.apache.sysds.runtime.frame.data.columns.ArrayFactory;
 import org.apache.sysds.runtime.frame.data.columns.DDCArray;
@@ -268,15 +269,21 @@ public class CompressedFrameBlockFactory {
 
 	private void logStatistics() {
 		if(LOG.isDebugEnabled()) {
+			StringBuilder sb = new StringBuilder(1000);
+			sb.append("\n");
 			for(int i = 0; i < compressedColumns.length; i++) {
-				if(stats[i] != null){
+				if(stats[i] != null) {
 					if(stats[i].shouldCompress)
-						LOG.debug(String.format("Col: %3d, %s", i, stats[i]));
+						sb.append(String.format("Col: %3d, %s\n", i, stats[i]));
+				}
+				else if(in.getColumn(i) instanceof ACompressedArray) {
+					// do nothing
 				}
 				else
-					LOG.debug(
-						String.format("Col: %3d, No Compress, Type: %s", i, in.getColumn(i).getClass().getSimpleName()));
+					sb.append(String.format("Col: %3d, No Compress, Type: %s", //
+						i, in.getColumn(i).getClass().getSimpleName()));
 			}
+			LOG.debug(sb);
 		}
 	}
 

@@ -106,11 +106,23 @@ public final class CLALibRightMultBy {
 		final CompressedMatrixBlock ret = new CompressedMatrixBlock(rl, cr);
 
 		final boolean shouldFilter = CLALibUtils.shouldPreFilter(colGroups);
+		final double[] constV;
+		final List<AColGroup> filteredGroups;
 
-		double[] constV = shouldFilter ? new double[rr] : null;
-		final List<AColGroup> filteredGroups = CLALibUtils.filterGroups(colGroups, constV);
-		if(colGroups == filteredGroups)
+		if(shouldFilter) {
+			if(CLALibUtils.alreadyPreFiltered(colGroups)){
+				filteredGroups = new ArrayList<>(colGroups.size() -1);
+				constV = CLALibUtils.filterGroupsAndSplitPreAggOneConst(colGroups, filteredGroups);
+			}
+			else{
+				constV = new double[rr];
+				filteredGroups = CLALibUtils.filterGroups(colGroups, constV);
+			}
+		}
+		else {
+			filteredGroups = colGroups;
 			constV = null;
+		}
 
 		if(k == 1)
 			RMMSingle(filteredGroups, that, retCg);
@@ -164,7 +176,6 @@ public final class CLALibRightMultBy {
 		final int cr = that.getNumColumns();
 		final int rr = that.getNumRows(); // shared dim
 		final List<AColGroup> colGroups = m1.getColGroups();
-		final List<AColGroup> retCg = new ArrayList<>();
 
 		final boolean shouldFilter = CLALibUtils.shouldPreFilter(colGroups);
 
@@ -172,11 +183,25 @@ public final class CLALibRightMultBy {
 		MatrixBlock ret = new MatrixBlock(rl, cr, false);
 		final Future<MatrixBlock> f = ret.allocateBlockAsync();
 
-		double[] constV = shouldFilter ? new double[rr] : null;
-		final List<AColGroup> filteredGroups = CLALibUtils.filterGroups(colGroups, constV);
-		if(colGroups == filteredGroups)
-			constV = null;
+		double[] constV;
+		final List<AColGroup> filteredGroups;
 
+		if(shouldFilter) {
+			if(CLALibUtils.alreadyPreFiltered(colGroups)){
+				filteredGroups = new ArrayList<>(colGroups.size() -1);
+				constV = CLALibUtils.filterGroupsAndSplitPreAggOneConst(colGroups, filteredGroups);
+			}
+			else{
+				constV = new double[rr];
+				filteredGroups = CLALibUtils.filterGroups(colGroups, constV);
+			}
+		}
+		else {
+			filteredGroups = colGroups;
+			constV = null;
+		}
+
+		final List<AColGroup> retCg = new ArrayList<>(filteredGroups.size());
 		if(k == 1)
 			RMMSingle(filteredGroups, that, retCg);
 		else
@@ -196,7 +221,7 @@ public final class CLALibRightMultBy {
 
 		if(DMLScript.STATISTICS) {
 			final double t = time.stop();
-			DMLCompressionStatistics.addDecompressTime(t, k);
+			DMLCompressionStatistics.addDecompressTime(time.stop(), k);
 		}
 
 		return ret;

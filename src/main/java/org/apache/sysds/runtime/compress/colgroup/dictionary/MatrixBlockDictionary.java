@@ -1829,10 +1829,9 @@ public class MatrixBlockDictionary extends ADictionary {
 		else
 			preaggValuesFromDenseDictDense(numVals, colIndexes, aggregateColumns, b, cut, ret);
 
-		final DenseBlock dictV = new DenseBlockFP64(new int[] {numVals, aggregateColumns.size()}, ret);
-		final MatrixBlock r = new MatrixBlock(numVals, aggregateColumns.size(), dictV);
-		r.recomputeNonZeros();
-		r.examSparsity();
+		final MatrixBlock r = new MatrixBlock(numVals, aggregateColumns.size(), ret);
+		// r.recomputeNonZeros();
+		// r.examSparsity();
 		return MatrixBlockDictionary.create(r);
 
 	}

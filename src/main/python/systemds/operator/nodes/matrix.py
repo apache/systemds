@@ -25,6 +25,7 @@ from typing import TYPE_CHECKING, Dict, Iterable, Sequence, Union
 
 import numpy as np
 from py4j.java_gateway import JavaObject
+from systemds.operator.nodes.multi_return import MultiReturn
 from systemds.operator import OperationNode, Scalar
 from systemds.script_building.dag import OutputType
 from systemds.utils.consts import (BINARY_OPERATIONS, VALID_ARITHMETIC_TYPES,
@@ -67,6 +68,7 @@ class Matrix(OperationNode):
         return code_line
 
     def compute(self, verbose: bool = False, lineage: bool = False) -> np.array:
+        print("arrived at compute in matrix.py with self: ")
         if self._is_numpy():
             self.sds_context._log.info('Numpy Array - No Compilation necessary')
             return self._np_array
@@ -348,15 +350,26 @@ class Matrix(OperationNode):
         Performs the Fast Fourier Transform (FFT) on this matrix.
         Returns a Matrix object representing the FFT (complex numbers represented as two matrices).
         """
-        return Matrix(self.sds_context, 'fft', [self])
+        fft_node = MultiReturn(self.sds_context, 'fft', unnamed_input_nodes=self._np_array)
 
-    def ifft(self):
-        """
-        Performs the Inverse Fast Fourier Transform (IFFT) on this matrix.
-        Returns a Matrix object representing the IFFT.
-        """
-        return Matrix(self.sds_context, 'ifft', [self])
+        return fft_node
 
+
+    def ifft(self, im: 'Matrix' = None) -> 'MultiReturn':
+        """
+        Performs the Inverse Fast Fourier Transform (IFFT) on the matrix.
+        
+        :param im: Optional. The imaginary part of the complex input. If not provided, 
+                            it defaults to a matrix of zeros with the same dimensions as self.
+        :return: A Matrix representing the IFFT of the input.
+        """
+        if im is None:
+            # Create a matrix of zeros with the same dimensions as self
+            im = self.sds_context.full(self.shape, 0)
+
+        ifft_node = MultiReturn(self.sds_context, 'ifft', [self, im])
+
+        return ifft_node
 
     def to_one_hot(self, num_classes: int) -> 'Matrix':
         """ OneHot encode the matrix.

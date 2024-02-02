@@ -786,7 +786,7 @@ public class ColGroupUncompressed extends AColGroup {
 			subBlockRight.setNonZeros(_data.getNumColumns() * nColR);
 		}
 		MatrixBlock out = new MatrixBlock(_data.getNumRows(), nColR, false);
-		LibMatrixMult.matrixMult(_data, subBlockRight, out, InfrastructureAnalyzer.getLocalParallelism());
+		LibMatrixMult.matrixMult(_data, subBlockRight, out);
 		return create(out, outputCols);
 
 	}

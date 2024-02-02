@@ -1,4 +1,4 @@
-#-------------------------------------------------------------
+ #-------------------------------------------------------------
 #
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
@@ -59,18 +59,14 @@ return (Matrix[Double] S, Double expected)
   num_indices = nrow(feature_indices)
   u_vprint("Constructing instances for "+num_indices+" features with "+samples+" samples each...", verbose)
 
-  #prepare list to track prepared instances
-  instances_list = list()
-  for (i in 1:num_indices) {
+  #prepare matrix for samples
+  X_test = matrix(0, rows=num_indices*samples*2, cols=ncol(x))
+  parfor (i in 1:num_indices, check=0) {
     index = as.scalar(feature_indices[i,1])
-    X = shapley_sampling_prepare(x=x, feature_index=index, X_bg=X_bg, samples=samples, seed=seed)
-
-    # add to prepared instances
-    instances_list = append(instances_list, X)
+    lower = (i-1)*(2*samples) + 1
+    upper = lower + (2*samples) - 1
+    X_test[lower:upper,] = shapley_sampling_prepare(x=x, feature_index=index, X_bg=X_bg, samples=samples, seed=seed)
   }
-
-  # rbind list in one call into matrix
-  X_test = rbind(instances_list)
 
   # generate args for call to model
   X_arg = append(list(X=X_test), model_args)

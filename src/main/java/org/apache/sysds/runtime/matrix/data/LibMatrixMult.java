@@ -29,6 +29,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.stream.IntStream;
 
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.commons.math3.util.FastMath;
@@ -208,8 +209,17 @@ public class LibMatrixMult
 			((SparseBlockMCSR) ret.getSparseBlock()).setNnzEstimatePerRow(m2.clen, m2.clen);
 		}
 		
-		if(m1.denseBlock instanceof DenseBlockFP64DEDUP)
+		if(m1.denseBlock instanceof DenseBlockFP64DEDUP){
+			DenseBlockFP64DEDUP tmp = (DenseBlockFP64DEDUP) m1.denseBlock;
+			if(tmp.getNrEmbsPerRow() != 1){
+				//TODO: currently impossible case, since Dedup reshape is not supported yet, once it is, this method needs
+				// to be implemented
+				throw new NotImplementedException("Check TODO");
+			}
 			ret.allocateDenseBlock(true, true);
+			tmp = (DenseBlockFP64DEDUP) ret.denseBlock;
+			tmp.setEmbeddingSize(ret.clen);
+		}
 		else
 			ret.allocateBlock();
 		
@@ -1164,11 +1174,16 @@ public class LibMatrixMult
 		}
 	}
 
-	public static void matrixMultDenseDenseMMDedup(DenseBlock a, DenseBlock b, DenseBlock c, int n, int cd, int rl, int ru, ConcurrentHashMap<double[], double[]> cache) {
+	public static void matrixMultDenseDenseMMDedup(DenseBlockFP64DEDUP a, DenseBlock b, DenseBlockFP64DEDUP c, int n, int cd, int rl, int ru, ConcurrentHashMap<double[], double[]> cache) {
 		//n = m2.clen;
 		//cd = m1.clen;
+		if(a.getNrEmbsPerRow() != 1){
+			//TODO: currently impossible case, since Dedup reshape is not supported yet, once it is, this method needs
+			// to be implemented
+			throw new NotImplementedException("Check TODO");
+		}
 		for (int i = rl; i < ru; i++) {
-			double[] a_row = a.values(i);
+			double[] a_row = a.getDedupDirectly(i);
 			double[] c_row = cache.getOrDefault(a_row, null);
 			if (c_row == null) {
 				c_row = new double[n];
@@ -1180,10 +1195,11 @@ public class LibMatrixMult
 						c_row[j] += a_row[k] * b_column[b.pos(k, j)];
 					}
 				}
-				//the following requires
 				cache.put(a_row, c_row);
 			}
-			c.set(i, c_row);
+			if(c_row == null)
+				System.out.println("error");
+			c.setDedupDirectly(i, c_row);
 		}
 	}
 
@@ -4688,7 +4704,7 @@ public class LibMatrixMult
 				matrixMultUltraSparse(_m1, _m2, _ret, _m1Perm, rl, ru);
 			else if(!_m1.sparse && !_m2.sparse)
 				if(_m1.denseBlock instanceof DenseBlockFP64DEDUP && _m2.denseBlock.isContiguous(0,_m1.clen) && cl == 0 && cu == _m2.clen)
-					matrixMultDenseDenseMMDedup(_m1.denseBlock, _m2.denseBlock, _ret.denseBlock, _m2.clen, _m1.clen, rl, ru, _cache);
+					matrixMultDenseDenseMMDedup((DenseBlockFP64DEDUP) _m1.denseBlock, _m2.denseBlock, (DenseBlockFP64DEDUP) _ret.denseBlock, _m2.clen, _m1.clen, rl, ru, _cache);
 				else
 					matrixMultDenseDense(_m1, _m2, _ret, _tm2, _pm2r, rl, ru, cl, cu);
 

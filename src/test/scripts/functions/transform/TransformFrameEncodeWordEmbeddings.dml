@@ -21,18 +21,7 @@
 
 # Read the pre-trained word embeddings
 E = read($1, rows=100, cols=300, format="text");
-source("scripts/nn/layers/lstm.dml") as lstm
-batch_size = 10
-seq_length = 20
-num_features = 5
-hidden_size = 15
 
-[W,b,out0, c0] = lstm::init(batch_size, num_features, hidden_size)
-lstmIn = matrix(1, rows=batch_size, cols=seq_length*num_features)
-[out, c, cache_out, cache_c, cache_ifog] = lstm::forward(lstmIn, W,b,seq_length,num_features,FALSE,out0, c0)
-
-print(nrow(out) + " x " + ncol(out))
-print(toString(out[1,1]))
 # Read the token sequence (1K) w/ 100 distinct tokens
 Data = read($2, data_type="frame", format="csv");
 

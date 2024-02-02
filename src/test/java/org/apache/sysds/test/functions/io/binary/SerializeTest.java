@@ -21,6 +21,7 @@ package org.apache.sysds.test.functions.io.binary;
 
 import com.google.crypto.tink.subtle.Random;
 import org.apache.sysds.lops.Lop;
+import org.apache.sysds.runtime.data.DenseBlockFP64DEDUP;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.runtime.transform.encode.EncoderFactory;
 import org.apache.sysds.runtime.transform.encode.MultiColumnEncoder;
@@ -196,6 +197,8 @@ public class SerializeTest extends AutomatedTestBase
 			double[][] X_duplicated = new double[rows*10][];
 			MatrixBlock mb = new MatrixBlock(rows*10, cols, false, 0, true);
 			mb.allocateDenseBlock(true, true);
+			DenseBlockFP64DEDUP dedup = (DenseBlockFP64DEDUP) mb.getDenseBlock();
+			dedup.setEmbeddingSize(cols);
 			HashMap<double[], Integer > seen = new HashMap<>();
 			for (int i = 0; i < rows*10; i++) {
 				int row = Random.randInt(rows);
@@ -205,7 +208,7 @@ public class SerializeTest extends AutomatedTestBase
 					seen.put(X[row], tmpPos);
 				}
 				X_duplicated[i] = X[row];
-				mb.quickSetRow(i, X[row]);
+				dedup.setDedupDirectly(i, X[row]);
 			}
 
 			String fname = SCRIPT_DIR + TEST_DIR + "dedupSerializedBlock.out";
@@ -222,15 +225,16 @@ public class SerializeTest extends AutomatedTestBase
 				}
 
 			//compare matrices - values
+			DenseBlockFP64DEDUP dedup2 = (DenseBlockFP64DEDUP) mb2.getDenseBlock();
 			HashMap<double[], Integer > seen2 = new HashMap<>();
-			for( int i=0; i<mb.getNumRows(); i++ ){
-				double[] row = mb2.getDenseBlock().values(i);
+			for( int i=0; i<mb.getNumRows()*dedup2.getNrEmbsPerRow(); i++ ){
+				double[] row = dedup2.getDedupDirectly(i);
 				Integer tmpPos = seen2.get(row);
 				if(tmpPos == null) {
 					tmpPos = seen2.size();
 					seen2.put(row, tmpPos);
 				}
-				Integer posMb1 = seen.get(mb.getDenseBlock().values(i));
+				Integer posMb1 = seen.get(dedup.getDedupDirectly(i));
 				Assert.assertEquals( (long) tmpPos, (long) posMb1);
 			}
 		}

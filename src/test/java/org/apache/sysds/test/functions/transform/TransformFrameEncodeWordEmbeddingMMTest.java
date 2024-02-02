@@ -59,8 +59,8 @@ public class TransformFrameEncodeWordEmbeddingMMTest extends AutomatedTestBase {
 		Types.ExecMode rtold = setExecMode(rt);
 		try
 		{
-			int rows = 100;
-			int cols = 300;
+			int rows = 10;
+			int cols = 30;
 			getAndLoadTestConfiguration(testname);
 			fullDMLScriptName = getScript();
 
@@ -75,7 +75,7 @@ public class TransformFrameEncodeWordEmbeddingMMTest extends AutomatedTestBase {
 			Map<String,Integer> map = writeDictToCsvFile(strings, baseDirectory + INPUT_DIR + "dict");
 
 			// Create the dataset by repeating and shuffling the distinct tokens
-			int factor = 320;
+			int factor = 32;
 			rows *= factor;
 			List<String> stringsColumn = shuffleAndMultiplyStrings(strings, factor);
 			writeStringsToCsvFile(stringsColumn, baseDirectory + INPUT_DIR + "data");

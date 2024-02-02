@@ -2145,18 +2145,21 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 
 	private void readDedupDenseBlock(DataInput in) throws IOException, DMLRuntimeException {
 		allocateDenseBlock(true,true);
-		DenseBlock a = getDenseBlock();
+		DenseBlockFP64DEDUP a = (DenseBlockFP64DEDUP) getDenseBlock();
+		int embPerRow = in.readInt();
+		int embSize= in.readInt();
+		a.setEmbeddingSize(embSize);
 		if(a.getDim(0) != rlen || a.getDim(1) != clen)
-			a.resetNoFill(rlen, clen); // reset the dimensions of a if incorrect.
+			a.resetNoFillDedup(rlen,embPerRow); // reset the dimensions of a if incorrect.
 		HashMap<Integer, double[]> mapping = new HashMap<>();
-		for( int i=0; i<rlen; i++ ) {
+		for( int i=0; i<rlen*embPerRow; i++ ) {
 			Integer pos = in.readInt();
 			double[] row = mapping.get(pos);
 			if( row == null){
-				row = new double[clen];
+				row = new double[embSize];
 				mapping.put(pos, row);
 			}
-			a.set(i, row);
+			a.setDedupDirectly(i, row);
 		}
 		for (int i = 0; i < mapping.size(); i++) {
 			double[] row = mapping.get(i);
@@ -2349,19 +2352,20 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 		out.writeByte( BlockType.DEDUP_BLOCK.ordinal() );
 
 		DenseBlockFP64DEDUP a = (DenseBlockFP64DEDUP) getDenseBlock();
-		if (rlen > a.numBlocks())
-			throw new DMLRuntimeException("Serialize DedupDenseblock: block does not contain enough rows ["+a.numBlocks() +" < " + rlen + "]");
-
+		//if (rlen > a.numBlocks())
+		//	throw new DMLRuntimeException("Serialize DedupDenseblock: block does not contain enough rows ["+a.numBlocks() +" < " + rlen + "]");
+		out.writeInt(a.getNrEmbsPerRow());
+		out.writeInt(a.getEmbSize());
 		HashMap<double[], Integer> mapping = new HashMap<>((int) (a.getNrDistinctRows()*1.1));
 		ArrayList<double[]> unique_rows = new ArrayList<>((int) (a.getNrDistinctRows()*1.1));
-
-		for(int i=0; i<rlen; i++) {
-			double[] avals = a.values(i); //equals 1 row
-			Integer pos = mapping.get(avals);
+		int embsPerRow = a.getNrEmbsPerRow();
+		for(int i=0; i<rlen*embsPerRow; i++) {
+			double[] vals = a.getDedupDirectly(i); //equals 1 row
+			Integer pos = mapping.get(vals);
 			if (pos == null) {
 				pos = mapping.size();
-				unique_rows.add(avals);
-				mapping.put(avals, pos);
+				unique_rows.add(vals);
+				mapping.put(vals, pos);
 			}
 			out.writeInt(pos);
 		}

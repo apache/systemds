@@ -69,10 +69,14 @@ public class TransformFrameEncodeWordEmbedding2Test extends AutomatedTestBase
 
 	@Test
 	public void testTransformToWordEmbeddingsWithReshape() {
-		runTransformTest(TEST_NAME2, ExecMode.SINGLE_NODE);
+		runTransformTest(TEST_NAME2, ExecMode.SINGLE_NODE,10);
 	}
 
-	private void runTransformTest(String testname, ExecMode rt)
+	private void runTransformTest(String testname, ExecMode rt){
+		runTransformTest(testname, rt, 1);
+	}
+
+	private void runTransformTest(String testname, ExecMode rt, int reshape)
 	{
 		//set runtime platform
 		ExecMode rtold = setExecMode(rt);
@@ -93,7 +97,6 @@ public class TransformFrameEncodeWordEmbedding2Test extends AutomatedTestBase
 			Map<String,Integer> map = writeDictToCsvFile(strings, baseDirectory + INPUT_DIR + "dict");
 
 			int multiplier = 320/32;
-			int reshape = 10/10;
 			// Create the dataset by repeating and shuffling the distinct tokens
 			List<String> stringsColumn = shuffleAndMultiplyStrings(strings, multiplier);
 			writeStringsToCsvFile(stringsColumn, baseDirectory + INPUT_DIR + "data");
@@ -108,7 +111,7 @@ public class TransformFrameEncodeWordEmbedding2Test extends AutomatedTestBase
 
 			// Compare results
 			HashMap<MatrixValue.CellIndex, Double> res_actual = readDMLMatrixFromOutputDir("result");
-			double[][] resultActualDouble = testname.equals(TEST_NAME2) ? TestUtils.convertHashMapToDoubleArray(res_actual, rows*multiplier / reshape, cols*reshape) : TestUtils.convertHashMapToDoubleArray(res_actual, rows*multiplier / 10, cols);
+			double[][] resultActualDouble = testname.equals(TEST_NAME2) ? TestUtils.convertHashMapToDoubleArray(res_actual, rows*multiplier / reshape, cols*reshape) : TestUtils.convertHashMapToDoubleArray(res_actual, rows*multiplier, cols);
 			TestUtils.compareMatrices(res_expected, resultActualDouble, 1e-6);
 		}
 		catch(Exception ex) {

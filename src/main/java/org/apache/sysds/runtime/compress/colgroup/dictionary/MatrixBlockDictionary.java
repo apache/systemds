@@ -1985,8 +1985,13 @@ public class MatrixBlockDictionary extends ADictionary {
 
 	@Override
 	public IDictionary replaceWithReference(double pattern, double replace, double[] reference) {
-		if(Util.eq(pattern, Double.NaN))
-			throw new NotImplementedException();
+		if(Util.eq(pattern, Double.NaN)) {
+			for(int i = 0; i < reference.length; i++) {
+				if(Util.eq(reference[i], Double.NaN))
+					throw new NotImplementedException();
+			}
+			return replaceWithReferenceNan(replace, reference);
+		}
 
 		final int nRow = _data.getNumRows();
 		final int nCol = _data.getNumColumns();
@@ -2022,6 +2027,47 @@ public class MatrixBlockDictionary extends ADictionary {
 				for(int j = 0; j < nCol; j++) {
 					final double v = values[off];
 					retV[off++] = Math.abs(v + reference[j] - pattern) < 0.00001 ? replace - reference[j] : v;
+				}
+			}
+		}
+
+		ret.recomputeNonZeros();
+		ret.examSparsity();
+		return MatrixBlockDictionary.create(ret);
+
+	}
+
+	private IDictionary replaceWithReferenceNan(double replace, double[] reference) {
+
+		final int nRow = _data.getNumRows();
+		final int nCol = _data.getNumColumns();
+		final MatrixBlock ret = new MatrixBlock(nRow, nCol, false);
+		ret.allocateDenseBlock();
+
+		final double[] retV = ret.getDenseBlockValues();
+		int off = 0;
+		if(_data.isInSparseFormat()) {
+			final SparseBlock sb = _data.getSparseBlock();
+			for(int i = 0; i < nRow; i++) {
+				if(sb.isEmpty(i))
+					continue;
+
+				final int apos = sb.pos(i);
+				final int alen = sb.size(i) + apos;
+				final double[] avals = sb.values(i);
+				int j = 0;
+				for(int k = apos; k < alen; k++) {
+					final double v = avals[k];
+					retV[off++] = Util.eq(Double.NaN, v) ? -reference[j] : v;
+				}
+			}
+		}
+		else {
+			final double[] values = _data.getDenseBlockValues();
+			for(int i = 0; i < nRow; i++) {
+				for(int j = 0; j < nCol; j++) {
+					final double v = values[off];
+					retV[off++] = Util.eq(Double.NaN, v) ? -reference[j] : v;
 				}
 			}
 		}

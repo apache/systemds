@@ -118,6 +118,9 @@ public class CompressedMatrixBlock extends MatrixBlock {
 	 */
 	protected transient SoftReference<MatrixBlock> decompressedVersion;
 
+	/** Cached Memory size */
+	protected transient long cachedMemorySize = -1;
+
 	public CompressedMatrixBlock() {
 		super(true);
 		sparse = false;
@@ -190,6 +193,8 @@ public class CompressedMatrixBlock extends MatrixBlock {
 		this.nonZeros = nnz;
 		this.overlappingColGroups = overlapping;
 		this._colGroups = groups;
+
+		getInMemorySize(); // cache memory size
 	}
 
 	@Override
@@ -205,6 +210,7 @@ public class CompressedMatrixBlock extends MatrixBlock {
 	 * @param cg The column group to use after.
 	 */
 	public void allocateColGroup(AColGroup cg) {
+		cachedMemorySize  = -1;
 		_colGroups = new ArrayList<>(1);
 		_colGroups.add(cg);
 	}
@@ -215,6 +221,7 @@ public class CompressedMatrixBlock extends MatrixBlock {
 	 * @param colGroups new ColGroups in the MatrixBlock
 	 */
 	public void allocateColGroupList(List<AColGroup> colGroups) {
+		cachedMemorySize = -1;
 		_colGroups = colGroups;
 	}
 
@@ -271,7 +278,7 @@ public class CompressedMatrixBlock extends MatrixBlock {
 
 		ret = CLALibDecompress.decompress(this, k);
 
-		if(ret.getNonZeros() <= 0){
+		if(ret.getNonZeros() <= 0) {
 			ret.recomputeNonZeros(k);
 		}
 		ret.examSparsity(k);
@@ -308,6 +315,7 @@ public class CompressedMatrixBlock extends MatrixBlock {
 	}
 
 	public CompressedMatrixBlock squash(int k) {
+		cachedMemorySize = -1;
 		return CLALibSquash.squash(this, k);
 	}
 
@@ -330,28 +338,29 @@ public class CompressedMatrixBlock extends MatrixBlock {
 
 	@Override
 	public long recomputeNonZeros(int k) {
-		if ( k <= 1 || isOverlapping() || _colGroups.size() <= 1)
+		if(k <= 1 || isOverlapping() || _colGroups.size() <= 1)
 			return recomputeNonZeros();
-		
+
 		ExecutorService pool = CommonThreadPool.get(k);
-		try{
+		try {
 			long nnz = 0;
 			List<Future<Long>> tasks = new ArrayList<>();
 			for(AColGroup g : _colGroups)
 				tasks.add(pool.submit(() -> g.getNumberNonZeros(rlen)));
-				// nnz += g.getNumberNonZeros(rlen);
-			for( Future<Long> t : tasks){
+			// nnz += g.getNumberNonZeros(rlen);
+			for(Future<Long> t : tasks) {
 				nnz += t.get();
 			}
 			nonZeros = nnz;
 
-		} catch(Exception e){
+		}
+		catch(Exception e) {
 			throw new DMLRuntimeException("Failed to count non zeros", e);
-		} finally{
+		}
+		finally {
 			pool.shutdown();
 		}
-		
-		
+
 		if(nonZeros == 0) // If there is no nonzeros then reallocate into single empty column group.
 			allocateColGroup(ColGroupEmpty.create(getNumColumns()));
 
@@ -384,12 +393,19 @@ public class CompressedMatrixBlock extends MatrixBlock {
 	 * @return an upper bound on the memory used to store this compressed block considering class overhead.
 	 */
 	public long estimateCompressedSizeInMemory() {
-		long total = baseSizeInMemory();
 
-		for(AColGroup grp : _colGroups)
-			total += grp.estimateInMemorySize();
+		if(cachedMemorySize <= -1L) {
 
-		return total;
+			long total = baseSizeInMemory();
+
+			for(AColGroup grp : _colGroups)
+				total += grp.estimateInMemorySize();
+			cachedMemorySize = total;
+			return total;
+		}
+		else
+			return cachedMemorySize;
+
 	}
 
 	public static long baseSizeInMemory() {
@@ -399,6 +415,7 @@ public class CompressedMatrixBlock extends MatrixBlock {
 		total += 8; // Col Group Ref
 		total += 8; // v reference
 		total += 8; // soft reference to decompressed version
+		total += 8; // long cached memory size
 		total += 1 + 7; // Booleans plus padding
 
 		total += 40; // Col Group Array List
@@ -438,6 +455,7 @@ public class CompressedMatrixBlock extends MatrixBlock {
 
 	@Override
 	public void readFields(DataInput in) throws IOException {
+		cachedMemorySize = -1;
 		// deserialize compressed block
 		rlen = in.readInt();
 		clen = in.readInt();
@@ -1033,6 +1051,7 @@ public class CompressedMatrixBlock extends MatrixBlock {
 	}
 
 	private void copyCompressedMatrix(CompressedMatrixBlock that) {
+		cachedMemorySize = -1;
 		this.rlen = that.getNumRows();
 		this.clen = that.getNumColumns();
 		this.sparseBlock = null;

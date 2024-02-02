@@ -28,6 +28,8 @@ import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
+import org.apache.sysds.runtime.compress.colgroup.mapping.MapToChar;
+import org.apache.sysds.runtime.compress.colgroup.mapping.MapToCharPByte;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
 import org.apache.sysds.runtime.compress.colgroup.offset.AIterator;
 import org.apache.sysds.runtime.compress.estim.EstimationFactors;
@@ -187,7 +189,7 @@ public class DenseEncoding extends AEncode {
 			LOG.warn("Constructing perfect mapping, this could be optimized to skip hashmap");
 			final Map<Integer, Integer> m = new HashMap<>(map.size());
 			for(int i = 0; i < map.getUnique(); i++)
-				m.put(i * (map.getUnique() + 1) , i);
+				m.put(i * (map.getUnique() + 1), i);
 			return new ImmutablePair<>(this, m); // same object
 		}
 
@@ -211,19 +213,45 @@ public class DenseEncoding extends AEncode {
 	}
 
 	protected final DenseEncoding combineDenseWithHashMapLong(final AMapToData lm, final AMapToData rm, final int size,
-		final int nVL, final AMapToData ret, Map<Long, Integer> m) {
-
-		for(int r = 0; r < size; r++)
-			addValHashMap((long) lm.getIndex(r) + (long) rm.getIndex(r) * (long) nVL, r, m, ret);
+		final long nVL, final AMapToData ret, Map<Long, Integer> m) {
+		if(m instanceof MapToChar)
+			for(int r = 0; r < size; r++)
+				addValHashMapChar((long) lm.getIndex(r) + rm.getIndex(r) * nVL, r, m, (MapToChar) ret);
+		else
+			for(int r = 0; r < size; r++)
+				addValHashMap((long) lm.getIndex(r) + rm.getIndex(r) * nVL, r, m, ret);
 		return new DenseEncoding(MapToFactory.resize(ret, m.size()));
 	}
 
 	protected final DenseEncoding combineDenseWithHashMap(final AMapToData lm, final AMapToData rm, final int size,
 		final int nVL, final AMapToData ret, Map<Integer, Integer> m) {
+		// JIT compile instance checks.
+		if(ret instanceof MapToChar) {
+			if(lm instanceof MapToChar && rm instanceof MapToChar) {
+				final MapToChar lmC = (MapToChar) lm;
+				final MapToChar rmC = (MapToChar) rm;
+				for(int r = 0; r < size; r++)
+					addValHashMapChar(lmC.getIndex(r) + rmC.getIndex(r) * nVL, r, m, (MapToChar) ret);
+			}
+			else {
 
+				for(int r = 0; r < size; r++)
+					addValHashMapChar(lm.getIndex(r) + rm.getIndex(r) * nVL, r, m, (MapToChar) ret);
+			}
+		}
+		else if(ret instanceof MapToCharPByte)
+			for(int r = 0; r < size; r++)
+				addValHashMapCharByte(lm.getIndex(r) + rm.getIndex(r) * nVL, r, m, (MapToCharPByte) ret);
+		else {
+			combineDenseWithHashMapGeneric(lm, rm, size, nVL, ret, m);
+		}
+		return new DenseEncoding(MapToFactory.resize(ret, m.size()));
+	}
+
+	protected final void combineDenseWithHashMapGeneric(final AMapToData lm, final AMapToData rm, final int size,
+		final int nVL, final AMapToData ret, Map<Integer, Integer> m) {
 		for(int r = 0; r < size; r++)
 			addValHashMap(lm.getIndex(r) + rm.getIndex(r) * nVL, r, m, ret);
-		return new DenseEncoding(MapToFactory.resize(ret, m.size()));
 	}
 
 	protected final DenseEncoding combineDenseWithMapToData(final AMapToData lm, final AMapToData rm, final int size,
@@ -244,6 +272,36 @@ public class DenseEncoding extends AEncode {
 	}
 
 	protected static void addValHashMap(final int nv, final int r, final Map<Integer, Integer> map, final AMapToData d) {
+		final int v = map.size();
+		final Integer mv = map.putIfAbsent(nv, v);
+		if(mv == null)
+			d.set(r, v);
+		else
+			d.set(r, mv);
+	}
+
+	protected static void addValHashMapChar(final int nv, final int r, final Map<Integer, Integer> map,
+		final MapToChar d) {
+		final int v = map.size();
+		final Integer mv = map.putIfAbsent(nv, v);
+		if(mv == null)
+			d.set(r, v);
+		else
+			d.set(r, mv);
+	}
+
+	protected static void addValHashMapCharByte(final int nv, final int r, final Map<Integer, Integer> map,
+		final MapToCharPByte d) {
+		final int v = map.size();
+		final Integer mv = map.putIfAbsent(nv, v);
+		if(mv == null)
+			d.set(r, v);
+		else
+			d.set(r, mv);
+	}
+
+	protected static void addValHashMapChar(final long nv, final int r, final Map<Long, Integer> map,
+		final MapToChar d) {
 		final int v = map.size();
 		final Integer mv = map.putIfAbsent(nv, v);
 		if(mv == null)

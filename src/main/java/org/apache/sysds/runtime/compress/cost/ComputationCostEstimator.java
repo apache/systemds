@@ -142,8 +142,38 @@ public class ComputationCostEstimator extends ACostEstimate {
 	}
 
 	private double leftMultCost(double nRowsScanned, double nRows, double nCols, double nVals, double sparsity) {
-		// Plus nVals * 2 because of allocation of nVals array and scan of that
-		final double preScalingCost = Math.max(nRowsScanned, nRows ) + nVals * 2;
+		// left multiplication want more co-coding.
+		// therefore, increase the cost if we have few columns
+		double preScalingCost = Math.max(nRowsScanned, nRows);
+		if(nCols == 1){
+			nCols *= 4;
+			preScalingCost *=5.0;
+		}
+		else if(nCols == 2){
+
+			nCols *= 3;
+			preScalingCost *=3.3;
+		
+		}else if(nCols == 3){
+			nCols *= 2;
+
+			preScalingCost *=1.6;
+		}
+		else if(nCols == 4){
+			nCols *= 1.5;
+			preScalingCost *=1.4;
+		}
+		else if(nCols > 5)
+			nCols *= 0.7; // scale down cost of columns.
+
+		// if the number of unique values is low increase the cost.
+		if(nVals < 10)
+			nVals *= 10;
+		else if(nVals < 256)
+			nVals *= 5;
+		else if(nVals < 1024)
+			nVals *= 2;
+
 		final double postScalingCost = sparsity * nVals * nCols;
 		return leftMultCost(preScalingCost, postScalingCost);
 	}

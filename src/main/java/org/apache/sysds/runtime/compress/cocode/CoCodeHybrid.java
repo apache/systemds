@@ -54,8 +54,7 @@ public class CoCodeHybrid extends AColumnCoCoder {
 			colInfos.setInfo(CoCodePriorityQue.join(colInfos.getInfo(), _sest, _cest, PriorityQueGoal, k));
 			LOG.debug("Que based time: " + time.stop());
 			final int pqSize = colInfos.getInfo().size();
-			if(pqSize <= PriorityQueGoal * 2) {
-				time = new Timing(true);
+			if(pqSize < startSize) {
 				CoCodeGreedy gd = new CoCodeGreedy(_sest, _cest, _cs);
 				colInfos.setInfo(gd.combine(colInfos.getInfo(), k));
 				LOG.debug("Greedy time:     " + time.stop());

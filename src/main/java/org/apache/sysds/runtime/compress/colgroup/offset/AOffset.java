@@ -35,6 +35,7 @@ import org.apache.sysds.runtime.compress.utils.IntArrayList;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.jboss.netty.handler.codec.compression.CompressionException;
 
 /**
  * Offset list encoder interface.
@@ -496,42 +497,75 @@ public abstract class AOffset implements Serializable {
 			else
 				return new OffsetSliceInfo(0, s, moveIndex(l));
 		}
-		
+
 		final AIterator it = getIteratorSkipCache(l);
+		// if(l == 112000)
+		// LOG.error(it);
+		// LOG.error(it);
+		// try{
+
 		if(it == null || it.value() >= u)
 			return emptySlice;
 
 		if(u >= last) // If including the last do not iterate.
-			return constructSliceReturn(l, it.getDataIndex(), s - 1, it.getOffsetsIndex(), getLength(), it.value(), last);
+			return constructSliceReturn(l, u, it.getDataIndex(), s - 1, it.getOffsetsIndex(), getLength(), it.value(),
+				last);
 		else // Have to iterate through until we find last.
 			return genericSlice(l, u, it);
+		// }
+		// catch(Exception e ){
+		// throw new CompressionException(getIteratorSkipCache(l) + "", e);
+		// }
 	}
 
 	protected OffsetSliceInfo genericSlice(int l, int u, AIterator it) {
+		// point at current one should be guaranteed inside the range.
 		final int low = it.getDataIndex();
 		final int lowOff = it.getOffsetsIndex();
 		final int lowValue = it.value();
+		// set c
 		int high = low;
 		int highOff = lowOff;
 		int highValue = lowValue;
 		while(it.value() < u) {
 			// TODO add previous command that would allow us to simplify this loop.
+			// if(it.value() < u){
+			highValue = it.value();
 			high = it.getDataIndex();
 			highOff = it.getOffsetsIndex();
-			highValue = it.value();
+			// }
 			it.next();
 		}
-		return constructSliceReturn(l, low, high, lowOff, highOff, lowValue, highValue);
+		// try{
+
+		return constructSliceReturn(l, u, low, high, lowOff, highOff, lowValue, highValue);
+		// }
+		// catch(Exception e){
+		// throw new DMLCompressionException(it.value() + "",e);
+		// }
 	}
 
-	protected final OffsetSliceInfo constructSliceReturn(int l, int low, int high, int lowOff, int highOff, int lowValue,
-		int highValue) {
+	protected final OffsetSliceInfo constructSliceReturn(int l, int u, int low, int high, int lowOff, int highOff,
+		int lowValue, int highValue) {
+		// try {
+		// TODO there is something going on here that does not make sense .... fix the logic.
 		if(low == high)
 			return new OffsetSliceInfo(low, high + 1, new OffsetSingle(lowValue - l));
-		else if(low + 1 == high)
-			return new OffsetSliceInfo(low, high + 1, new OffsetTwo(lowValue - l, highValue - l));
+		else if(low + 1 == high) {
+			if(lowValue == highValue)
+				return new OffsetSliceInfo(low, high, new OffsetSingle(lowValue - l));
+			else
+				return new OffsetSliceInfo(low, high + 1, new OffsetTwo(lowValue - l, highValue - l));
+		}
 		else
 			return ((ISliceOffset) this).slice(lowOff, highOff, lowValue - l, highValue - l, low, high);
+		// }
+		// catch(Exception e) {
+		// throw new DMLRuntimeException(
+		// this + "\nFailed constructing Slice Return with arguments: "
+		// + String.format("\n%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d", l, u, low, high, lowOff, highOff, lowValue, highValue),
+		// e);
+		// }
 	}
 
 	/**

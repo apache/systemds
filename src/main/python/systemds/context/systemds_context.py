@@ -421,25 +421,26 @@ class SystemDSContext(object):
         return fft_node
 
 
-    def ifft(self, real_input: 'Matrix', imaginary_input: 'Matrix' = None) -> 'MultiReturn':
+    def ifft(self, real_input: 'Matrix', imag_input: 'Matrix' = None) -> 'MultiReturn':
         """
-        Performs the Inverse Fast Fourier Transform (IFFT) on the matrix.
-
+        Performs the Inverse Fast Fourier Transform (IFFT) on a complex matrix.
+        
         :param real_input: The real part of the input matrix.
-        :param imaginary_input: The imaginary part of the input matrix. If not provided,
-                                it defaults to a matrix of zeros with the same dimensions as real_input.
-        :return: An OperationNode representing the IFFT of the input.
+        :param imag_input: The imaginary part of the input matrix (optional).
+        :return: A MultiReturn object representing the real and imaginary parts of the IFFT output.
         """
-        if imaginary_input is None:
-            imaginary_input = self.full(real_input.shape, 0)
 
-        ifft_node = MultiReturn(self, 'ifft', [real_input, imaginary_input])
-
-        # Assuming ifft method in DML now returns a list of two items (real and imaginary parts)
-        ifft_node.output_type = OutputType.MULTI_RETURN  # Update this to match your output handling strategy
-
+        real_output = OperationNode(self, '', output_type=OutputType.MATRIX, is_python_local_data=False)
+        imag_output = OperationNode(self, '', output_type=OutputType.MATRIX, is_python_local_data=False)
+        
+        # Assuming the IFFT DML script requires two inputs (real and imaginary parts) and returns two outputs
+            # Check if imaginary input exists
+        if imag_input is not None:
+            ifft_node = MultiReturn(self, 'ifft', [real_output, imag_output], [real_input, imag_input])
+        else:
+            ifft_node = MultiReturn(self, 'ifft', [real_output, imag_output], [real_input])
+        
         return ifft_node
-
 
 
     def seq(self, start: Union[float, int], stop: Union[float, int] = None,

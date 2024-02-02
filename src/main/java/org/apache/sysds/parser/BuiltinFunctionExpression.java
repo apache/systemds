@@ -385,13 +385,13 @@ public class BuiltinFunctionExpression extends DataIdentifier {
 
 			break;
 
-		}
-		case IFFT: {
-			Expression expressionTwo = getSecondExpr();
-			checkNumParameters(getSecondExpr() != null ? 2 : 1);
-			checkMatrixParam(getFirstExpr());
-			if (expressionTwo != null)
-				checkMatrixParam(getSecondExpr());
+			}
+			case IFFT: {
+				Expression expressionTwo = getSecondExpr();
+				checkNumParameters(expressionTwo != null ? 2 : 1);
+				checkMatrixParam(getFirstExpr());
+				if(expressionTwo != null)
+					checkMatrixParam(expressionTwo);
 
 			// setup output properties
 			DataIdentifier ifftOut1 = (DataIdentifier) getOutputs()[0];

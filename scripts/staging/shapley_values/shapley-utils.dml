@@ -1,0 +1,120 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+# Samples from the background data X_bg.
+# The function first uses all background samples without replacement, but if more samples are requested than
+# available in X_bg, it shuffles X_bg and pulls more samples from it, making it sampling with replacement.
+#
+# INPUT:
+# ---------------------------------------------------------------------------------------
+# X_bg            Matrix of background data
+# samples         Number of total samples
+# always_shuffle  Boolean to enable reshuffleing of X_bg, defaults to false.
+# seed            A seed for the shuffleing etc.
+# ---------------------------------------------------------------------------------------
+#
+# OUTPUT:
+# -----------------------------------------------------------------------------
+# X_sample        New Matrix containing #samples, from X_bg, potentially with replacement.
+# -----------------------------------------------------------------------------
+sample_with_potential_replace = function(Matrix[Double] X_bg, Integer samples, Boolean always_shuffle = 0, Integer seed)
+return (Matrix[Double] X_sample){
+number_of_bg_samples = nrow(X_bg)
+
+# expect to not use all from background and subsample from it
+num_of_full_X_bg = 0
+num_of_remainder_samples = samples
+
+# shuffle background if desired
+if(always_shuffle) {
+X_bg = u_shuffle(X_bg)
+}
+
+# list to store references to generated matrices so we can rbind them in one call
+samples_list = list()
+
+# in case we need more than in the background data, use it multiple times with replacement
+if(samples >= number_of_bg_samples)  {
+  u_vprint("WARN: More samples ("+toString(samples)+") are requested than available in the background dataset ("+toString(number_of_bg_samples)+"). Using replacement", 1)
+
+  # get number of full sets of background by integer division
+  num_of_full_X_bg = samples %/% number_of_bg_samples
+  # get remaining samples using modulo
+  num_of_remainder_samples = samples %% number_of_bg_samples
+
+  #use background data once
+  samples_list = append(samples_list, X_bg)
+
+  if(num_of_full_X_bg > 1){
+    # add shuffled versions of background data
+    for (i in 1:num_of_full_X_bg-1){
+    samples_list = append(samples_list, u_shuffle(X_bg))
+    }
+  }
+}
+
+# sample from background dataset for remaining samples
+if (num_of_remainder_samples > 0){
+  # pick remaining samples
+  random_samples_indices = sample(number_of_bg_samples, num_of_remainder_samples, seed)
+
+  #contingency table to pick rows by multiplication
+  R_cont = table(random_samples_indices, random_samples_indices, number_of_bg_samples, number_of_bg_samples)
+
+  #pick samples by multiplication with contingency table of indices and removing empty rows
+  samples_list = append(samples_list, removeEmpty(target=t(t(X_bg) %*% R_cont), margin="rows"))
+}
+
+
+if ( length(samples_list) == 1){
+  #dont copy if only one matrix is in list, since this is a heavy hitter
+  X_sample = as.matrix(samples_list[1])
+} else {
+  #single call to bind all generated samples into one large matrix
+  X_sample = rbind(samples_list)
+}
+}
+
+# Simple utility function to shuffle (from shuffle.dml, but without storing to file)
+#
+# INPUT:
+# ---------------------------------------------------------------------------------------
+# X               Matrix to be shuffled
+# ---------------------------------------------------------------------------------------
+#
+# OUTPUT:
+# -----------------------------------------------------------------------------
+# X_shuffled      Matrix like X but ... shuffled...
+# -----------------------------------------------------------------------------
+u_shuffle = function(Matrix[Double] X)
+return (Matrix[Double] X_shuffled){
+  num_col = ncol(X)
+  # Random vector used to shuffle the dataset
+  y = rand(rows=nrow(X), cols=1, min=0, max=1, pdf="uniform")
+  X = order(target = cbind(X, y), by = num_col + 1)
+  X_shuffled = X[,1:num_col]
+}
+
+u_vprint = function(String message, Boolean verbose){
+  if(verbose){
+    print("shapley-sampling::"+message)
+  }
+}

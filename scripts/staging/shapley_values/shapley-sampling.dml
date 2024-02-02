@@ -1,4 +1,4 @@
- #-------------------------------------------------------------
+#-------------------------------------------------------------
 #
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
@@ -18,6 +18,8 @@
 # under the License.
 #
 #-------------------------------------------------------------
+
+source("./shapley-utils.dml") as shapleyUtils
 
 # Computes shapley values by running the basic shapley sampling approach for each desired feature.
 # The resulting matrix S holds the shapley values for each feature in the row given by the index of the feature in the sample.
@@ -51,13 +53,13 @@ return (Matrix[Double] S, Double expected)
   }
 
   if (samples < 1000*ncol(x)) {
-    u_vprint("WARN: Number of samples is low, consider increasing it to reduce variance in results, if possible. A good start is 1000*number of features.", verbose)
+    shapleyUtils::u_vprint("WARN: Number of samples is low, consider increasing it to reduce variance in results, if possible. A good start is 1000*number of features.", verbose)
   }
 
   # sample with replacement from background data once, so we don't have to do it for every sample
-  X_bg = sample_with_potential_replace(X_bg=X_bg, samples=samples, seed=seed, always_shuffle=1)
+  X_bg = shapleyUtils::sample_with_potential_replace(X_bg=X_bg, samples=samples, seed=seed, always_shuffle=1)
   num_indices = nrow(feature_indices)
-  u_vprint("Constructing instances for "+num_indices+" features with "+samples+" samples each...", verbose)
+  shapleyUtils::u_vprint("Constructing instances for "+num_indices+" features with "+samples+" samples each...", verbose)
 
   #prepare matrix for samples
   X_test = matrix(0, rows=num_indices*samples*2, cols=ncol(x))
@@ -71,12 +73,12 @@ return (Matrix[Double] S, Double expected)
   # generate args for call to model
   X_arg = append(list(X=X_test), model_args)
 
-  u_vprint("Calling model for "+nrow(X_test)+" predictions...", verbose)
+  shapleyUtils::u_vprint("Calling model for "+nrow(X_test)+" predictions...", verbose)
 
   # call model
   P = eval(model_function, X_arg)
 
-  u_vprint("Got predictions, calculating expected value and shapley values...", verbose)
+  shapleyUtils::u_vprint("Got predictions, calculating expected value and shapley values...", verbose)
 
   S = matrix(0, cols=ncol(x), rows=1)
   for (i in 1:num_indices) {
@@ -123,7 +125,7 @@ return (Matrix[Double] X_test)
   if (samples==number_of_bg_samples){
     X_sample = X_bg
   } else {
-    X_sample = sample_with_potential_replace(X_bg=X_bg, samples=samples, seed=seed )
+    X_sample = shapleyUtils::sample_with_potential_replace(X_bg=X_bg, samples=samples, seed=seed )
   }
 
 
@@ -163,103 +165,7 @@ return (Double phi_j_x)
   phi_j_x = sum(marginal_contributions) / samples
 }
 
-u_vprint = function(String message, Boolean verbose){
-  if(verbose){
-    print("shapley-sampling::"+message)
-  }
-}
 
 
-# Samples from the background data X_bg.
-# The function first uses all background samples without replacement, but if more samples are requested than
-# available in X_bg, it shuffles X_bg and pulls more samples from it, making it sampling with replacement.
-#
-# INPUT:
-# ---------------------------------------------------------------------------------------
-# X_bg            Matrix of background data
-# samples         Number of total samples
-# always_shuffle  Boolean to enable reshuffleing of X_bg, defaults to false.
-# seed            A seed for the shuffleing etc.
-# ---------------------------------------------------------------------------------------
-#
-# OUTPUT:
-# -----------------------------------------------------------------------------
-# X_sample        New Matrix containing #samples, from X_bg, potentially with replacement.
-# -----------------------------------------------------------------------------
-sample_with_potential_replace = function(Matrix[Double] X_bg, Integer samples, Boolean always_shuffle = 0, Integer seed)
-return (Matrix[Double] X_sample){
-  number_of_bg_samples = nrow(X_bg)
-
-  # expect to not use all from background and subsample from it
-  num_of_full_X_bg = 0
-  num_of_remainder_samples = samples
-
-  # shuffle background if desired
-  if(always_shuffle) {
-    X_bg = u_shuffle(X_bg)
-  }
-
-  # list to stroe references to generated matrices so we can rbind them in one call
-  samples_list = list()
-
-  # in case we need more than in the background data, use it multiple times with replacement
-  if(samples >= number_of_bg_samples)  {
-    u_vprint("WARN: More samples ("+toString(samples)+") are requested than available in the background dataset ("+toString(number_of_bg_samples)+"). Using replacement", 1)
-
-    # get number of full sets of background by integer division
-    num_of_full_X_bg = samples %/% number_of_bg_samples
-    # get remaining samples using modulo
-    num_of_remainder_samples = samples %% number_of_bg_samples
-
-    #use background data once
-    samples_list = append(samples_list, X_bg)
-
-    if(num_of_full_X_bg > 1){
-      # add shuffled versions of background data
-      for (i in 1:num_of_full_X_bg-1){
-        samples_list = append(samples_list, u_shuffle(X_bg))
-      }
-    }
-  }
-
-  # sample from background dataset for remaining samples
-  if (num_of_remainder_samples > 0){
-    # pick remaining samples
-    random_samples_indices = sample(number_of_bg_samples, num_of_remainder_samples, seed)
-
-    #contingency table to pick rows by multiplication
-    R_cont = table(random_samples_indices, random_samples_indices, number_of_bg_samples, number_of_bg_samples)
-
-    #pick samples by multiplication with contingency table of indices and removing empty rows
-    samples_list = append(samples_list, removeEmpty(target=t(t(X_bg) %*% R_cont), margin="rows"))
-  }
 
 
-  if ( length(samples_list) == 1){
-    #dont copy if only one matrix is in list, since this is a heavy hitter
-    X_sample = as.matrix(samples_list[1])
-  } else {
-    #single call to bind all generated samples into one large matrix
-    X_sample = rbind(samples_list)
-  }
-}
-
-# Simple utility function to shuffle (from shuffle.dml, but without storing to file)
-#
-# INPUT:
-# ---------------------------------------------------------------------------------------
-# X               Matrix to be shuffled
-# ---------------------------------------------------------------------------------------
-#
-# OUTPUT:
-# -----------------------------------------------------------------------------
-# X_shuffled      Matrix like X but ... shuffled...
-# -----------------------------------------------------------------------------
-u_shuffle = function(Matrix[Double] X)
-return (Matrix[Double] X_shuffled){
-  num_col = ncol(X)
-  # Random vector used to shuffle the dataset
-  y = rand(rows=nrow(X), cols=1, min=0, max=1, pdf="uniform")
-  X = order(target = cbind(X, y), by = num_col + 1)
-  X_shuffled = X[,1:num_col]
-}

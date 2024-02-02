@@ -50,12 +50,12 @@ public class ComEstCompressed extends AComEst {
 
 	@Override
 	public CompressedSizeInfoColGroup getColGroupInfo(IColIndex colIndexes, int estimate, int nrUniqueUpperBound) {
-		throw new UnsupportedOperationException("Unimplemented method 'getColGroupInfo'");
+		return null;
 	}
 
 	@Override
 	public CompressedSizeInfoColGroup getDeltaColGroupInfo(IColIndex colIndexes, int estimate, int nrUniqueUpperBound) {
-		throw new UnsupportedOperationException("Unimplemented method 'getDeltaColGroupInfo'");
+		return null;
 	}
 
 	@Override

@@ -54,6 +54,7 @@ import org.apache.sysds.runtime.compress.lib.CLALibMMChain;
 import org.apache.sysds.runtime.compress.lib.CLALibMatrixMult;
 import org.apache.sysds.runtime.compress.lib.CLALibMerge;
 import org.apache.sysds.runtime.compress.lib.CLALibReorg;
+import org.apache.sysds.runtime.compress.lib.CLALibReplace;
 import org.apache.sysds.runtime.compress.lib.CLALibRexpand;
 import org.apache.sysds.runtime.compress.lib.CLALibScalar;
 import org.apache.sysds.runtime.compress.lib.CLALibSlice;
@@ -210,7 +211,7 @@ public class CompressedMatrixBlock extends MatrixBlock {
 	 * @param cg The column group to use after.
 	 */
 	public void allocateColGroup(AColGroup cg) {
-		cachedMemorySize  = -1;
+		cachedMemorySize = -1;
 		_colGroups = new ArrayList<>(1);
 		_colGroups.add(cg);
 	}
@@ -621,26 +622,7 @@ public class CompressedMatrixBlock extends MatrixBlock {
 
 	@Override
 	public MatrixBlock replaceOperations(MatrixValue result, double pattern, double replacement) {
-		if(Double.isInfinite(pattern)) {
-			LOG.info("Ignoring replace infinite in compression since it does not contain this value");
-			return this;
-		}
-		else if(isOverlapping()) {
-			final String message = "replaceOperations " + pattern + " -> " + replacement;
-			return getUncompressed(message).replaceOperations(result, pattern, replacement);
-		}
-		else {
-
-			CompressedMatrixBlock ret = new CompressedMatrixBlock(getNumRows(), getNumColumns());
-			final List<AColGroup> prev = getColGroups();
-			final int colGroupsLength = prev.size();
-			final List<AColGroup> retList = new ArrayList<>(colGroupsLength);
-			for(int i = 0; i < colGroupsLength; i++)
-				retList.add(prev.get(i).replace(pattern, replacement));
-			ret.allocateColGroupList(retList);
-			ret.recomputeNonZeros();
-			return ret;
-		}
+		return CLALibReplace.replace(this, (MatrixBlock) result, pattern, replacement, InfrastructureAnalyzer.getLocalParallelism());
 	}
 
 	@Override

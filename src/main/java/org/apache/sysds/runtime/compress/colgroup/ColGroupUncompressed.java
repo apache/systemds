@@ -798,6 +798,9 @@ public class ColGroupUncompressed extends AColGroup {
 
 	@Override
 	public AColGroup replace(double pattern, double replace) {
+		if(Util.eq(pattern, Double.NaN) && !_data.containsValue(pattern)){
+			return this; // return this.
+		}
 		MatrixBlock replaced = _data.replaceOperations(new MatrixBlock(), pattern, replace);
 		return create(replaced, _colIndexes);
 	}

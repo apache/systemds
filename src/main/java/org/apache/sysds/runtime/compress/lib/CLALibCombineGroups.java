@@ -68,10 +68,10 @@ public final class CLALibCombineGroups {
 	}
 
 	public static List<AColGroup> combine(CompressedMatrixBlock cmb, CompressedSizeInfo csi, ExecutorService pool) {
-		// if(pool == null)
+		if(pool == null || csi.getInfo().size() == 1)
 			return combineSingleThread(cmb, csi);
-		// else
-			// return combineParallel(cmb, csi, pool);
+		else
+			return combineParallel(cmb, csi, pool);
 	}
 
 	private static List<AColGroup> combineSingleThread(CompressedMatrixBlock cmb, CompressedSizeInfo csi) {
@@ -83,7 +83,7 @@ public final class CLALibCombineGroups {
 			input = CLALibUtils.filterFOR(input, c);
 
 		final List<CompressedSizeInfoColGroup> csiI = csi.getInfo();
-		csiI.sort((a,b) -> a.getNumVals() < b.getNumVals() ? -1 :a.getNumVals() ==  b.getNumVals() ? 0 : 1 );
+		csiI.sort((a, b) -> a.getNumVals() < b.getNumVals() ? -1 : a.getNumVals() == b.getNumVals() ? 0 : 1);
 		final List<AColGroup> ret = new ArrayList<>(csiI.size());
 		for(CompressedSizeInfoColGroup gi : csiI) {
 			List<AColGroup> groupsToCombine = findGroupsInIndex(gi.getColumns(), input);

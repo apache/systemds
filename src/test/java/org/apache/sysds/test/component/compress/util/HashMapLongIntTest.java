@@ -20,6 +20,7 @@
 package org.apache.sysds.test.component.compress.util;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -71,10 +72,11 @@ public class HashMapLongIntTest {
 		for(KV k : a) {
 			s.add(k.k);
 			v.add(k.v);
-
 		}
-		System.out.println(s);
-		System.out.println(v);
+		for(int i = 1; i < 10; i++){
+			assertTrue(s.contains(Long.valueOf(i)));
+			assertTrue(v.contains(Integer.valueOf(i)));
+		}
 		assertEquals(9, s.size());
 		assertEquals(4, a.get(4));
 		assertEquals(-1, a.get(13));

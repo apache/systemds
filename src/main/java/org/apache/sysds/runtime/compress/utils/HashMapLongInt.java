@@ -51,10 +51,14 @@ public class HashMapLongInt implements Iterable<KV> {
 	 */
 	public int putIfAbsent(long key, int value) {
 		final int ix = hash(key);
+
+		if(size < 10)
+			LOG.error(this);
 		if(keys[ix] == null) {
 			createBucket(ix);
 			keys[ix][0] = key;
 			values[ix][0] = value;
+			size++;
 			return -1;
 		}
 		else {
@@ -72,6 +76,7 @@ public class HashMapLongInt implements Iterable<KV> {
 			int[] newBucketValues = new int[bucketKeys.length * 2];
 			System.arraycopy(values[ix], 0, newBucketValues, 0, bucketKeys.length);
 			newBucketKeys[bucketKeys.length] = value;
+			size++;
 			return -1;
 		}
 	}

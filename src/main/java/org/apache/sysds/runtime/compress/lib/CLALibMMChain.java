@@ -146,7 +146,7 @@ public final class CLALibMMChain {
 		final List<AColGroup> groups = x.getColGroups();
 		final boolean shouldFilter = CLALibUtils.shouldPreFilter(groups);
 		if(shouldFilter) {
-			if(CLALibUtils.alreadyPreFiltered(groups))
+			if(CLALibUtils.alreadyPreFiltered(groups, x.getNumColumns()))
 				return x;
 			final int nCol = x.getNumColumns();
 			final double[] constV = new double[nCol];

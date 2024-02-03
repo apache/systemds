@@ -310,13 +310,13 @@ public final class CLALibLeftMultBy {
 		final List<APreAgg> preAggGroups = new ArrayList<>();
 		if(shouldFilter) {
 			final double[] constV;
-			// if(CLALibUtils.alreadyPreFiltered(colGroups)){
-			// 	constV = CLALibUtils.filterGroupsAndSplitPreAggOneConst(noPreAggGroups, noPreAggGroups, preAggGroups);
-			// }
-			// else{
+			if(CLALibUtils.alreadyPreFiltered(colGroups, ret.getNumColumns())){
+				constV = CLALibUtils.filterGroupsAndSplitPreAggOneConst(colGroups, noPreAggGroups, preAggGroups);
+			}
+			else{
 				constV = new double[numColumnsOut];
 				CLALibUtils.filterGroupsAndSplitPreAgg(colGroups, constV, noPreAggGroups, preAggGroups);
-			// }
+			}
 
 			// Sort so that the big expensive preAgg groups are first.
 			// Collections.sort(preAggGroups, Comparator.comparing(AColGroup::getNumValues).reversed());

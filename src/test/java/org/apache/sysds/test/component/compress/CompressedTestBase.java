@@ -493,6 +493,8 @@ public abstract class CompressedTestBase extends TestBase {
 			// matrix-vector compressed
 			MatrixBlock ret2 = cmb.chainMatrixMultOperations(vector1, vector2, new MatrixBlock(), ctype, _k);
 
+			LOG.error(cmb);
+
 			// compare result with input
 			compareResultMatricesPercentDistance(ucRet, ret2, 0.99, 0.99);
 		}

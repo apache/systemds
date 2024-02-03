@@ -1132,8 +1132,10 @@ public class TestUtils {
 		int countErrors = 0;
 		long sumDistance = 0;
 		for(int i = 0; i < rows && countErrors < 20; i++){
-			if( sbe.isEmpty(i) !=  sba.isEmpty(i))
-				fail(message +"\nBoth matrices are not equally empty on row : " + i);
+			if( sbe.isEmpty(i) !=  sba.isEmpty(i)){
+
+				fail(message +"\nBoth matrices are not equally empty on row : " + i + " :\n" + sbe.get(i) + " vs " + sba.get(i));
+			}
 			
 			if(sbe.isEmpty(i))
 				continue;

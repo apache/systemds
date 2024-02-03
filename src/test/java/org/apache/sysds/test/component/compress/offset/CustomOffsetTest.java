@@ -42,17 +42,13 @@ public class CustomOffsetTest {
 	@Test
 	public void catOffset() {
 		// test case for BWARE
-
 		int[] in = new int[] {17689, 37830, 44395, 57282, 67605, 72565, 77890, 104114, 127762, 208612, 211534, 216942,
 			223576, 239395, 245210, 265202, 269410, 301734, 302389, 302679, 302769, 303286, 303331, 303920, 304125, 304365,
 			304743, 306244, 306260, 306745, 307624, 307651, 309715, 310232, 310270, 311177};
 
-
 		AOffset off = OffsetFactory.createOffset(in);
-		LOG.error(off);
 		OffsetTests.compare(off, in);
 	}
-
 
 	@Test
 	public void catOffsetSlice() {
@@ -62,13 +58,8 @@ public class CustomOffsetTest {
 			223576, 239395, 245210, 265202, 269410, 301734, 302389, 302679, 302769, 303286, 303331, 303920, 304125, 304365,
 			304743, 306244, 306260, 306745, 307624, 307651, 309715, 310232, 310270, 311177};
 
-
-		
 		AOffset off = OffsetFactory.createOffset(in);
-		OffsetSliceInfo ofs = off.slice(112000,128000);
-		
-		LOG.error(off);
-		LOG.error(ofs);
-		OffsetTests.compare(off, in);
+		off.slice(112000, 128000); // check for no crash
+
 	}
 }

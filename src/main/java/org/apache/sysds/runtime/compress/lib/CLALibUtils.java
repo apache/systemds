@@ -94,14 +94,18 @@ public final class CLALibUtils {
 		return false;
 	}
 
-	protected static boolean alreadyPreFiltered(List<AColGroup> groups) {
+	protected static boolean alreadyPreFiltered(List<AColGroup> groups, int nCol) {
 		boolean constFound = false;
 		for(AColGroup g : groups) {
 			if(g instanceof AMorphingMMColGroup || g instanceof ColGroupEmpty || g.isEmpty() ||
 				(constFound && g instanceof ColGroupConst))
 				return false;
-			else if(g instanceof ColGroupConst)
+			else if(g instanceof ColGroupConst){
+				if(g.getNumCols() != nCol)
+					return false;
+				
 				constFound = true;
+			}
 		}
 
 		return true;
@@ -111,13 +115,14 @@ public final class CLALibUtils {
 		List<APreAgg> preAggGroups) {
 		double[] consts = null;
 		for(AColGroup g : groups) {
-			if(g instanceof APreAgg)
+			if(g instanceof ColGroupConst)
+			  consts = ((ColGroupConst) g).getValues();
+			else if(g instanceof APreAgg)
 				preAggGroups.add((APreAgg) g);
-			else if(g instanceof ColGroupConst)
-				consts = ((ColGroupConst) g).getValues();
 			else
 				noPreAggGroups.add(g);
 		}
+
 		return consts;
 	}
 

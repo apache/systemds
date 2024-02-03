@@ -67,9 +67,16 @@ public class HashMapLongIntTest {
 		assertEquals(9, a.size());
 		assertEquals(9, a.putIfAbsent(9, 9));
 		Set<Long> s = new HashSet<>();
+		Set<Integer> v = new HashSet<>();
 		for(KV k : a) {
 			s.add(k.k);
+			v.add(k.v);
+
 		}
+		System.out.println(s);
+		System.out.println(v);
 		assertEquals(9, s.size());
+		assertEquals(4, a.get(4));
+		assertEquals(-1, a.get(13));
 	}
 }

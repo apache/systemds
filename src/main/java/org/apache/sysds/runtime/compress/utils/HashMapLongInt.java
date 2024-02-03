@@ -53,18 +53,15 @@ public class HashMapLongInt implements Iterable<KV> {
 		final int ix = hash(key);
 		final long[] bucketKeys = keys[ix];
 		if(bucketKeys == null) {
-			createBucket(ix);
-			keys[ix][0] = key;
-			values[ix][0] = value;
-			size++;
-			return -1;
+			return createBucket(ix, key, value);
+
 		}
 		else {
 			for(int i = 0; i < bucketKeys.length; i++) {
 				if(bucketKeys[i] == key)
 					return values[ix][i];
-				else if (bucketKeys[i] == -1){
-					bucketKeys[i]= key;
+				else if(bucketKeys[i] == -1) {
+					bucketKeys[i] = key;
 					values[ix][i] = value;
 					size++;
 					return -1;
@@ -101,12 +98,16 @@ public class HashMapLongInt implements Iterable<KV> {
 		return -1;
 	}
 
-	private void createBucket(int ix) {
+	private int createBucket(int ix, long key, int value) {
 		keys[ix] = new long[4];
 		values[ix] = new int[4];
+		keys[ix][0] = key;
+		values[ix][0] = value;
 		keys[ix][1] = -1;
 		keys[ix][2] = -1;
 		keys[ix][3] = -1;
+		size++;
+		return -1;
 	}
 
 	protected long[][] createKeys(int size) {
@@ -169,7 +170,10 @@ public class HashMapLongInt implements Iterable<KV> {
 			while((bucket = keys[bucketId]) == null) {
 				bucket = keys[bucketId++];
 			}
-			return tmp.set(bucket[bucketCell], values[bucketId][bucketCell++]);
+			
+			tmp.set(bucket[bucketCell], values[bucketId][bucketCell]);
+			bucketCell++;
+			return tmp;
 		}
 
 	}
@@ -204,7 +208,7 @@ public class HashMapLongInt implements Iterable<KV> {
 				}
 			}
 		}
-		return sb.delete(sb.length()-2, sb.length()).toString();
+		return sb.delete(sb.length() - 2, sb.length()).toString();
 	}
 
 }

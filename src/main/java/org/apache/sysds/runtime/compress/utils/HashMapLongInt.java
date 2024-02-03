@@ -188,7 +188,7 @@ public class HashMapLongInt implements Iterable<KV> {
 		sb.append(this.getClass().getSimpleName());
 		for(int i = 0; i < keys.length; i++) {
 			if(keys[i] != null) {
-				for(int j = 0; i < keys[i].length; j++) {
+				for(int j = 0; j < keys[i].length; j++) {
 					if(keys[i][j] != -1)
 						sb.append(String.format("%d->%d", keys[i][j], values[i][j]));
 				}

@@ -83,6 +83,7 @@ public final class CLALibCombineGroups {
 			input = CLALibUtils.filterFOR(input, c);
 
 		final List<CompressedSizeInfoColGroup> csiI = csi.getInfo();
+		csiI.sort((a,b) -> a.getNumVals() < b.getNumVals() ? -1 :a.getNumVals() ==  b.getNumVals() ? 0 : 1 );
 		final List<AColGroup> ret = new ArrayList<>(csiI.size());
 		for(CompressedSizeInfoColGroup gi : csiI) {
 			List<AColGroup> groupsToCombine = findGroupsInIndex(gi.getColumns(), input);

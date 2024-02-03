@@ -145,6 +145,7 @@ m_lmCG = function(Matrix[Double] X, Matrix[Double] y, Integer icpt = 0,
     if(verbose){
       print("Iteration " + i + ":  ||r|| / ||r init|| = "
         + sqrt(norm_r2 / norm_r2_initial))
+      print(sum(q) + " " + sum(a) + " " + sum(r))
     }
   }
 

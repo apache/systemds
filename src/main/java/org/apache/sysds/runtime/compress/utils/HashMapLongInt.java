@@ -52,8 +52,6 @@ public class HashMapLongInt implements Iterable<KV> {
 	public int putIfAbsent(long key, int value) {
 		final int ix = hash(key);
 
-		if(size < 10)
-			LOG.error(this);
 		if(keys[ix] == null) {
 			createBucket(ix);
 			keys[ix][0] = key;

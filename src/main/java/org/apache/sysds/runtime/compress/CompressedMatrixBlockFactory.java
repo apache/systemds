@@ -299,6 +299,7 @@ public class CompressedMatrixBlockFactory {
 		if(res == null)
 			return abortCompression();
 
+		
 		return new ImmutablePair<>(res, _stats);
 	}
 

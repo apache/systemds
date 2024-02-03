@@ -95,7 +95,7 @@ m_lmCG = function(Matrix[Double] X, Matrix[Double] y, Integer icpt = 0,
   lambda = scale_lambda * regularization
   beta_unscaled = matrix(0, rows = m_ext, cols = 1)
 
-  if(max_iteration == 0){
+  if(max_iteration == 0 || max_iterator > m_ext){
     max_iteration = m_ext
   }
   i = 0
@@ -116,7 +116,9 @@ m_lmCG = function(Matrix[Double] X, Matrix[Double] y, Integer icpt = 0,
   if(verbose){
     print("||r|| initial value = " + sqrt(norm_r2_initial) +
       ", target value = " + sqrt(norm_r2_target))
+    print("Max Iteraton: " max_iteration)
   }
+
 
   while(i < max_iteration & norm_r2 > norm_r2_target){
     if(intercept_status == 2){

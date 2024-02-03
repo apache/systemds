@@ -668,12 +668,26 @@ public abstract class DenseBlock implements Serializable, Block
 	 * @return true if pattern appears at least once, otherwise false
 	 */
 	public boolean contains(double pattern) {
-		boolean NaNpattern = Double.isNaN(pattern);
-		for(int i=0; i<numBlocks(); i++) {
+		if(Double.isNaN(pattern))
+			return containsNan();
+
+		for(int i = 0; i < numBlocks(); i++) {
 			double[] vals = valuesAt(i);
 			int len = size(i);
-			for(int j=0; j<len; j++)
-				if(vals[j]==pattern || (NaNpattern && Double.isNaN(vals[j])))
+			for(int j = 0; j < len; j++)
+				if(vals[j] == pattern)
+					return true;
+		}
+		return false;
+	}
+
+	private boolean containsNan() {
+		for(int i = 0; i < numBlocks(); i++) {
+			final double[] vals = valuesAt(i);
+			final int len = size(i);
+			for(int j = 0; j < len; j++)
+				// nan Check is v != v
+				if(vals[j] != vals[j])
 					return true;
 		}
 		return false;

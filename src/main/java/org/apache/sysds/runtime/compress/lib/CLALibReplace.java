@@ -68,9 +68,9 @@ public class CLALibReplace {
 					final int j = i;
 					tasks.add(pool.submit(() -> prev.get(j).replace(pattern, replacement)));
 				}
-
-				for(Future<AColGroup> t : tasks)
-					retList.add(t.get());
+				for(int i = 0; i < colGroupsLength; i++) {
+					retList.add(tasks.get(i).get());
+				}
 			}
 			catch(Exception e) {
 				throw new RuntimeException("Failed parallel replace", e);
@@ -81,7 +81,10 @@ public class CLALibReplace {
 		}
 
 		ret.allocateColGroupList(retList);
-		ret.recomputeNonZeros();
+		if(replacement == 0)
+			ret.recomputeNonZeros();
+		else
+			ret.setNonZeros(in.getNonZeros());
 		return ret;
 	}
 }

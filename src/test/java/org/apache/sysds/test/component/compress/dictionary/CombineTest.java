@@ -402,10 +402,10 @@ public class CombineTest {
 
 			double[] bd = new double[] {0, 2};
 
-			ColGroupDDC a = mockDDC(ad, ColIndexFactory.createI(0,1));
-			AColGroupCompressed b = (AColGroupCompressed)ColGroupConst.create(ColIndexFactory.createI(2,3), bd);
+			ColGroupDDC a = mockDDC(ad, ColIndexFactory.createI(0, 1));
+			AColGroupCompressed b = (AColGroupCompressed) ColGroupConst.create(ColIndexFactory.createI(2, 3), bd);
 
-			IDictionary c = DictionaryFactory.combineDictionaries(a,b);
+			IDictionary c = DictionaryFactory.combineDictionaries(a, b);
 			MatrixBlock ret = c.getMBDict(2).getMatrixBlock();
 
 			MatrixBlock exp = new MatrixBlock(2, 4, new double[] {//
@@ -427,9 +427,9 @@ public class CombineTest {
 			double[] bd = new double[] {0, 2};
 
 			ColGroupDDC a = mockDDC(ad, ColIndexFactory.createI(0));
-			AColGroupCompressed b = (AColGroupCompressed)ColGroupConst.create(ColIndexFactory.createI(2,3), bd);
+			AColGroupCompressed b = (AColGroupCompressed) ColGroupConst.create(ColIndexFactory.createI(2, 3), bd);
 
-			IDictionary c = DictionaryFactory.combineDictionaries(a,b);
+			IDictionary c = DictionaryFactory.combineDictionaries(a, b);
 			MatrixBlock ret = c.getMBDict(2).getMatrixBlock();
 
 			MatrixBlock exp = new MatrixBlock(2, 3, new double[] {//
@@ -604,7 +604,6 @@ public class CombineTest {
 		m.putIfAbsent(1, 0);
 		m.putIfAbsent(0, 1);
 		m.putIfAbsent(10, 2);
-		LOG.error(m);
 		IDictionary red = DictionaryFactory.combineDictionaries(a, b, m);
 
 		assertEquals(red.getNumberOfValues(2), 3);
@@ -891,12 +890,12 @@ public class CombineTest {
 	}
 
 	// private ColGroupDDC mockDDC(IDictionary ad, int nCol) {
-	// 	ColGroupDDC a = mock(ColGroupDDC.class);
-	// 	when(a.getCompType()).thenReturn(CompressionType.DDC);
-	// 	when(a.getDictionary()).thenReturn(ad);
-	// 	when(a.getNumCols()).thenReturn(nCol);
-	// 	when(a.getColIndices()).thenReturn(ColIndexFactory.create(nCol));
-	// 	return a;
+	// ColGroupDDC a = mock(ColGroupDDC.class);
+	// when(a.getCompType()).thenReturn(CompressionType.DDC);
+	// when(a.getDictionary()).thenReturn(ad);
+	// when(a.getNumCols()).thenReturn(nCol);
+	// when(a.getColIndices()).thenReturn(ColIndexFactory.create(nCol));
+	// return a;
 	// }
 
 	private ColGroupDDC mockDDC(IDictionary ad, IColIndex c) {

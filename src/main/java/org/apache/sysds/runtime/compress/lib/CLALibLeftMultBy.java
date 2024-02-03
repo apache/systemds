@@ -310,16 +310,17 @@ public final class CLALibLeftMultBy {
 		final List<APreAgg> preAggGroups = new ArrayList<>();
 		if(shouldFilter) {
 			final double[] constV;
-			if(CLALibUtils.alreadyPreFiltered(colGroups, ret.getNumColumns())){
+			if(CLALibUtils.alreadyPreFiltered(colGroups, ret.getNumColumns())) {
 				constV = CLALibUtils.filterGroupsAndSplitPreAggOneConst(colGroups, noPreAggGroups, preAggGroups);
 			}
-			else{
+			else {
 				constV = new double[numColumnsOut];
 				CLALibUtils.filterGroupsAndSplitPreAgg(colGroups, constV, noPreAggGroups, preAggGroups);
 			}
 
-			// Sort so that the big expensive preAgg groups are first.
-			// Collections.sort(preAggGroups, Comparator.comparing(AColGroup::getNumValues).reversed());
+			// Sort so that the big expensive preAgg groups are first to balance threads
+			if(k * 2 < colGroups.size())
+				Collections.sort(preAggGroups, Comparator.comparing(AColGroup::getNumValues).reversed());
 
 			final double[] rowSums;
 			if(!noPreAggGroups.isEmpty() || !preAggGroups.isEmpty()) {
@@ -616,7 +617,7 @@ public final class CLALibLeftMultBy {
 		// The number of column groups to process together
 		// the value should ideally be set so that the colGroups fits into cache together with a row block.
 		// currently we only try to avoid having a dangling small number of column groups in the last block.
-		final int colGroupBlocking = preAggCGs.size() ;// % 16 < 4 ? 20 : 16;
+		final int colGroupBlocking = preAggCGs.size();// % 16 < 4 ? 20 : 16;
 		// final int colGroupBlocking = 8;
 		// final int colGroupBlocking = 4;
 		final int nColGroups = preAggCGs.size();
@@ -642,7 +643,7 @@ public final class CLALibLeftMultBy {
 					final int len = (rut - rlt) * preAggNCol;
 					if(preAgg[p] == null || preAgg[p].length < len)
 						preAgg[p] = new double[len];
-					else 
+					else
 						Arrays.fill(preAgg[p], 0, (rut - rlt) * preAggNCol, 0);
 				}
 
@@ -659,7 +660,7 @@ public final class CLALibLeftMultBy {
 				for(int j = gl, p = 0; j < gu; j += skip, p++) {
 					final APreAgg cg = preAggCGs.get(j);
 					final int preAggNCol = cg.getPreAggregateSize();
-					final MatrixBlock preAggThis = new MatrixBlock((rut - rlt), preAggNCol,preAgg[p]);
+					final MatrixBlock preAggThis = new MatrixBlock((rut - rlt), preAggNCol, preAgg[p]);
 					cg.mmWithDictionary(preAggThis, tmpRes, ret, 1, rlt, rut);
 				}
 			}
@@ -705,11 +706,25 @@ public final class CLALibLeftMultBy {
 	private static void rowSumDense(MatrixBlock that, double[] rowSum, int rl, int ru, int cl, int cu) {
 		if(rowSum != null) {
 			final DenseBlock db = that.getDenseBlock();
-			for(int r = rl; r < ru; r++) {
-				final double[] thatV = db.values(r);
-				final int rowOff = db.pos(r);
-				for(int c = rowOff + cl; c < rowOff + cu; c++)
-					rowSum[r] += thatV[c];
+			if(db.isContiguous()) {
+				final double[] thatV = db.values(0);
+				for(int r = rl; r < ru; r++) {
+					final int rowOff = db.pos(r);
+					double tmp = 0;
+					for(int c = rowOff + cl; c < rowOff + cu; c++)
+						tmp += thatV[c];
+					rowSum[r] = tmp;
+				}
+			}
+			else {
+				for(int r = rl; r < ru; r++) {
+					final double[] thatV = db.values(r);
+					final int rowOff = db.pos(r);
+					double tmp = 0;
+					for(int c = rowOff + cl; c < rowOff + cu; c++)
+						tmp += thatV[c];
+					rowSum[r] = tmp;
+				}
 			}
 		}
 	}

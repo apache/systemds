@@ -159,11 +159,11 @@ public class DenseEncoding extends AEncode {
 		if(maxUnique < Math.max(nVL, nVR)) {// overflow
 			maxUnique = size;
 			final AMapToData ret = MapToFactory.create(size, maxUnique);
-			final HashMapLongInt m = new HashMapLongInt(Math.max(100, maxUnique / 100 ));
+			final HashMapLongInt m = new HashMapLongInt(Math.max(100, maxUnique / 100));
 			retE = combineDenseWithHashMapLong(lm, rm, size, nVL, ret, m);
 		}
 		else if(maxUnique > size && maxUnique > 2048) {
-			final AMapToData ret = MapToFactory.create(size, Math.max(100, maxUnique / 100 ));
+			final AMapToData ret = MapToFactory.create(size, Math.max(100, maxUnique / 100));
 			// aka there is more maxUnique than rows.
 			final HashMapLongInt m = new HashMapLongInt(size);
 			retE = combineDenseWithHashMap(lm, rm, size, nVL, ret, m);
@@ -175,9 +175,19 @@ public class DenseEncoding extends AEncode {
 		}
 
 		if(retE.getUnique() < 0) {
+			String th = this.toString();
+			String ot = other.toString();
+			String cm = retE.toString();
+
+			if(th.length() > 1000)
+				th = th.substring(0, 1000);
+			if(ot.length() > 1000)
+				ot = ot.substring(0, 1000);
+			if(cm.length() > 1000)
+				cm = cm.substring(0, 1000);
 			throw new DMLCompressionException(
-				"Failed to combine dense encodings correctly: Number unique values is lower than max input: \n\n" + this
-					+ "\n\n" + other + "\n\n" + retE);
+				"Failed to combine dense encodings correctly: Number unique values is lower than max input: \n\n" + th
+					+ "\n\n" + ot + "\n\n" + cm);
 		}
 		return retE;
 	}
@@ -185,7 +195,7 @@ public class DenseEncoding extends AEncode {
 	private Pair<IEncode, HashMapLongInt> combineDenseNoResize(final DenseEncoding other) {
 		if(map.equals(other.map)) {
 			LOG.warn("Constructing perfect mapping, this could be optimized to skip hashmap");
-			final HashMapLongInt m = new HashMapLongInt(Math.max(100, map.size() / 100 ));
+			final HashMapLongInt m = new HashMapLongInt(Math.max(100, map.size() / 100));
 			for(int i = 0; i < map.getUnique(); i++)
 				m.putIfAbsent(i * (map.getUnique() + 1), i);
 			return new ImmutablePair<>(this, m); // same object
@@ -201,7 +211,7 @@ public class DenseEncoding extends AEncode {
 
 		final AMapToData ret = MapToFactory.create(size, maxUnique);
 
-		final HashMapLongInt m = new HashMapLongInt(Math.max(100, maxUnique / 100 ));
+		final HashMapLongInt m = new HashMapLongInt(Math.max(100, maxUnique / 100));
 		return new ImmutablePair<>(combineDenseWithHashMap(lm, rm, size, nVL, ret, m), m);
 	}
 

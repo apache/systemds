@@ -68,10 +68,10 @@ public final class CLALibCombineGroups {
 	}
 
 	public static List<AColGroup> combine(CompressedMatrixBlock cmb, CompressedSizeInfo csi, ExecutorService pool) {
-		if(pool == null)
+		// if(pool == null)
 			return combineSingleThread(cmb, csi);
-		else
-			return combineParallel(cmb, csi, pool);
+		// else
+			// return combineParallel(cmb, csi, pool);
 	}
 
 	private static List<AColGroup> combineSingleThread(CompressedMatrixBlock cmb, CompressedSizeInfo csi) {

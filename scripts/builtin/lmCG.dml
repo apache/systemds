@@ -116,7 +116,7 @@ m_lmCG = function(Matrix[Double] X, Matrix[Double] y, Integer icpt = 0,
   if(verbose){
     print("||r|| initial value = " + sqrt(norm_r2_initial) +
       ", target value = " + sqrt(norm_r2_target))
-    print("Max Iteraton: " max_iteration)
+    print("Max Iteraton: " +max_iteration)
   }
 
 

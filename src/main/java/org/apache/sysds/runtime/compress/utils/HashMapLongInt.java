@@ -162,7 +162,7 @@ public class HashMapLongInt implements Iterable<KV> {
 		@Override
 		public KV next() {
 			long[] bucket = keys[bucketId];
-			if(bucket != null && (bucketCell > bucket.length || bucket[bucketCell] == -1)) {
+			if(bucket != null && (bucketCell >= bucket.length || bucket[bucketCell] == -1)) {
 				bucketId++;
 				bucketCell = 0;
 			}

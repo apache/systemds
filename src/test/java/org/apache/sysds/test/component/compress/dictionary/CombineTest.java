@@ -25,9 +25,6 @@ import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -607,6 +604,7 @@ public class CombineTest {
 		m.putIfAbsent(1, 0);
 		m.putIfAbsent(0, 1);
 		m.putIfAbsent(10, 2);
+		LOG.error(m);
 		IDictionary red = DictionaryFactory.combineDictionaries(a, b, m);
 
 		assertEquals(red.getNumberOfValues(2), 3);

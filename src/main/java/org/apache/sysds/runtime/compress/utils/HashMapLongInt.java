@@ -66,7 +66,15 @@ public class HashMapLongInt implements Iterable<KV> {
 			for(int i = 0; i < bucketKeys.length; i++) {
 				if(bucketKeys[i] == key)
 					return values[ix][i];
+				else if (bucketKeys[i] == -1){
+					bucketKeys[i]= key;
+					values[ix][i] = value;
+					size++;
+					return -1;
+				}
+
 			}
+
 			// there was no match in the bucket
 			// reallocate bucket.
 			long[] newBucketKeys = new long[bucketKeys.length * 2];
@@ -186,15 +194,17 @@ public class HashMapLongInt implements Iterable<KV> {
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		sb.append(this.getClass().getSimpleName());
+		sb.append(" ");
 		for(int i = 0; i < keys.length; i++) {
 			if(keys[i] != null) {
+				sb.append(String.format("\nB:%d: ", i));
 				for(int j = 0; j < keys[i].length; j++) {
 					if(keys[i][j] != -1)
-						sb.append(String.format("%d->%d", keys[i][j], values[i][j]));
+						sb.append(String.format("%d->%d, ", keys[i][j], values[i][j]));
 				}
 			}
 		}
-		return sb.toString();
+		return sb.delete(sb.length()-2, sb.length()).toString();
 	}
 
 }

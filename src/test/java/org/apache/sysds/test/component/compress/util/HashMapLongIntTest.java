@@ -21,7 +21,11 @@ package org.apache.sysds.test.component.compress.util;
 
 import static org.junit.Assert.assertEquals;
 
+import java.util.HashSet;
+import java.util.Set;
+
 import org.apache.sysds.runtime.compress.utils.HashMapLongInt;
+import org.apache.sysds.runtime.compress.utils.HashMapLongInt.KV;
 import org.junit.Test;
 
 public class HashMapLongIntTest {
@@ -56,11 +60,16 @@ public class HashMapLongIntTest {
 		assertEquals(-1, r);
 		int r2 = a.putIfAbsent(1, 1);
 		assertEquals(1, r2);
-		for(int i = 2; i < 10; i ++){
+		for(int i = 2; i < 10; i++) {
 
 			a.putIfAbsent(i, i);
 		}
 		assertEquals(9, a.size());
 		assertEquals(9, a.putIfAbsent(9, 9));
+		Set<Long> s = new HashSet<>();
+		for(KV k : a) {
+			s.add(k.k);
+		}
+		assertEquals(9, s.size());
 	}
 }

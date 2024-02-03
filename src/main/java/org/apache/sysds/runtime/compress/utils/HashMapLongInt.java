@@ -71,7 +71,6 @@ public class HashMapLongInt implements Iterable<KV> {
 				}
 			}
 
-			// LOG.error(this);
 			// there was no match in the bucket
 			// reallocate bucket.
 			long[] newBucketKeys = new long[bucketKeys.length * 2];
@@ -85,7 +84,6 @@ public class HashMapLongInt implements Iterable<KV> {
 			keys[ix] = newBucketKeys;
 			values[ix] = newBucketValues;
 
-			// LOG.error(this);
 			size++;
 			return -1;
 		}
@@ -158,7 +156,7 @@ public class HashMapLongInt implements Iterable<KV> {
 
 		@Override
 		public boolean hasNext() {
-			return bucketId < lastBucket || (bucketId == lastBucket && bucketCell < lastCell);
+			return bucketId < lastBucket || (bucketId == lastBucket && bucketCell <= lastCell);
 		}
 
 		@Override

@@ -105,7 +105,7 @@ public class HashMapLongInt implements Iterable<KV> {
 	}
 
 	protected int hash(long key) {
-		return Long.hashCode(key);
+		return Long.hashCode(key) % keys.length;
 	}
 
 	@Override

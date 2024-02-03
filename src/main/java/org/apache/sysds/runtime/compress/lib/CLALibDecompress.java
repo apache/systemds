@@ -244,22 +244,25 @@ public final class CLALibDecompress {
 
 	private static void decompressDenseSingleThread(MatrixBlock ret, List<AColGroup> filteredGroups, int rlen,
 		int blklen, double[] constV, double eps, long nonZeros, boolean overlapping) {
+
+		final DenseBlock db = ret.getDenseBlock();
+		final int nCol = ret.getNumColumns();
 		for(int i = 0; i < rlen; i += blklen) {
 			final int rl = i;
 			final int ru = Math.min(i + blklen, rlen);
 			for(AColGroup grp : filteredGroups)
-				grp.decompressToDenseBlock(ret.getDenseBlock(), rl, ru);
+				grp.decompressToDenseBlock(db, rl, ru);
 			if(constV != null && !ret.isInSparseFormat())
-				addVector(ret, constV, eps, rl, ru);
+				addVector(db, nCol, constV, eps, rl, ru);
 		}
 	}
 
 	// private static void decompressDenseMultiThread(MatrixBlock ret, List<AColGroup> groups, double[] constV, int k,
-	// 	boolean overlapping) {
-	// 	final int nRows = ret.getNumRows();
-	// 	final double eps = getEps(constV);
-	// 	final int blklen = Math.max(nRows / k, 512);
-	// 	decompressDenseMultiThread(ret, groups, nRows, blklen, constV, eps, k, overlapping);
+	// boolean overlapping) {
+	// final int nRows = ret.getNumRows();
+	// final double eps = getEps(constV);
+	// final int blklen = Math.max(nRows / k, 512);
+	// decompressDenseMultiThread(ret, groups, nRows, blklen, constV, eps, k, overlapping);
 	// }
 
 	protected static void decompressDenseMultiThread(MatrixBlock ret, List<AColGroup> groups, double[] constV,
@@ -367,15 +370,16 @@ public final class CLALibDecompress {
 		@Override
 		public Long call() {
 			try {
-
+				final DenseBlock db = _ret.getDenseBlock();
+				final int nCol = _ret.getNumColumns();
 				long nnz = 0;
 				for(int b = _rl; b < _ru; b += _blklen) {
 					final int e = Math.min(b + _blklen, _ru);
 					for(AColGroup grp : _colGroups)
-						grp.decompressToDenseBlock(_ret.getDenseBlock(), b, e);
+						grp.decompressToDenseBlock(db, b, e);
 
 					if(_constV != null)
-						addVector(_ret, _constV, _eps, b, e);
+						addVector(db, nCol, _constV, _eps, b, e);
 					nnz += _ret.recomputeNonZeros(b, e - 1);
 				}
 
@@ -411,15 +415,16 @@ public final class CLALibDecompress {
 		@Override
 		public Long call() {
 			try {
-
+				final DenseBlock db = _ret.getDenseBlock();
+				final int nCol = _ret.getNumColumns();
 				long nnz = 0;
 				for(int b = _rl; b < _ru; b += _blklen) {
 					final int e = Math.min(b + _blklen, _ru);
 					// for(AColGroup grp : _colGroups)
-					_grp.decompressToDenseBlock(_ret.getDenseBlock(), b, e);
+					_grp.decompressToDenseBlock(db, b, e);
 
 					if(_constV != null)
-						addVector(_ret, _constV, _eps, b, e);
+						addVector(db, nCol, _constV, _eps, b, e);
 					// nnz += _ret.recomputeNonZeros(b, e - 1);
 				}
 
@@ -467,28 +472,32 @@ public final class CLALibDecompress {
 	 * @param rl   The row to start at
 	 * @param ru   The row to end at
 	 */
-	private static void addVector(final MatrixBlock ret, final double[] rowV, final double eps, final int rl,
-		final int ru) {
-		final int nCols = ret.getNumColumns();
-		final DenseBlock db = ret.getDenseBlock();
+	private static final void addVector(final DenseBlock db, final int nCols, final double[] rowV, final double eps,
+		final int rl, final int ru) {
+		if(eps == 0)
+			addVectorEps(db, nCols, rowV, eps, rl, ru);
+		else
+			addVectorNoEps(db, nCols, rowV, eps, rl, ru);
+	}
 
-		if(nCols == 1) {
-			if(eps == 0)
-				addValue(db.values(0), rowV[0], rl, ru);
-			else
-				addValueEps(db.values(0), rowV[0], eps, rl, ru);
-		}
-		else if(db.isContiguous()) {
-			if(eps == 0)
-				addVectorContiguousNoEps(db.values(0), rowV, nCols, rl, ru);
-			else
-				addVectorContiguousEps(db.values(0), rowV, nCols, eps, rl, ru);
-		}
-		else if(eps == 0)
+	private static final void addVectorEps(final DenseBlock db, final int nCols, final double[] rowV, final double eps,
+		final int rl, final int ru) {
+		if(nCols == 1)
+			addValue(db.values(0), rowV[0], rl, ru);
+		else if(db.isContiguous())
+			addVectorContiguousNoEps(db.values(0), rowV, nCols, rl, ru);
+		else
 			addVectorNoEps(db, rowV, nCols, rl, ru);
+	}
+
+	private static final void addVectorNoEps(final DenseBlock db, final int nCols, final double[] rowV, final double eps,
+		final int rl, final int ru) {
+		if(nCols == 1)
+			addValueEps(db.values(0), rowV[0], eps, rl, ru);
+		else if(db.isContiguous())
+			addVectorContiguousEps(db.values(0), rowV, nCols, eps, rl, ru);
 		else
 			addVectorEps(db, rowV, nCols, eps, rl, ru);
-
 	}
 
 	private static void addValue(final double[] retV, final double v, final int rl, final int ru) {

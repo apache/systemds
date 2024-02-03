@@ -19,9 +19,6 @@
 
 package org.apache.sysds.runtime.compress.estim.encoding;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
@@ -33,6 +30,7 @@ import org.apache.sysds.runtime.compress.colgroup.mapping.MapToCharPByte;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
 import org.apache.sysds.runtime.compress.colgroup.offset.AIterator;
 import org.apache.sysds.runtime.compress.estim.EstimationFactors;
+import org.apache.sysds.runtime.compress.utils.HashMapLongInt;
 
 /**
  * An Encoding that contains a value on each row of the input.
@@ -72,7 +70,7 @@ public class DenseEncoding extends AEncode {
 	}
 
 	@Override
-	public Pair<IEncode, Map<Integer, Integer>> combineWithMap(IEncode e) {
+	public Pair<IEncode, HashMapLongInt> combineWithMap(IEncode e) {
 		if(e instanceof EmptyEncoding || e instanceof ConstEncoding)
 			return new ImmutablePair<>(this, null);
 		else if(e instanceof SparseEncoding)
@@ -116,14 +114,14 @@ public class DenseEncoding extends AEncode {
 		return ret;
 	}
 
-	private final Pair<IEncode, Map<Integer, Integer>> combineSparseHashMap(final AMapToData ret) {
+	private final Pair<IEncode, HashMapLongInt> combineSparseHashMap(final AMapToData ret) {
 		final int size = ret.size();
-		final Map<Integer, Integer> m = new HashMap<>(size);
+		final HashMapLongInt m = new HashMapLongInt(size);
 		for(int r = 0; r < size; r++) {
 			final int prev = ret.getIndex(r);
 			final int v = m.size();
-			final Integer mv = m.putIfAbsent(prev, v);
-			if(mv == null)
+			final int mv = m.putIfAbsent(prev, v);
+			if(mv == -1)
 				ret.set(r, v);
 			else
 				ret.set(r, mv);
@@ -161,13 +159,13 @@ public class DenseEncoding extends AEncode {
 		if(maxUnique < Math.max(nVL, nVR)) {// overflow
 			maxUnique = size;
 			final AMapToData ret = MapToFactory.create(size, maxUnique);
-			final Map<Long, Integer> m = new HashMap<>(size);
+			final HashMapLongInt m = new HashMapLongInt(size);
 			retE = combineDenseWithHashMapLong(lm, rm, size, nVL, ret, m);
 		}
 		else if(maxUnique > size && maxUnique > 2048) {
 			final AMapToData ret = MapToFactory.create(size, maxUnique);
 			// aka there is more maxUnique than rows.
-			final Map<Integer, Integer> m = new HashMap<>(size);
+			final HashMapLongInt m = new HashMapLongInt(size);
 			retE = combineDenseWithHashMap(lm, rm, size, nVL, ret, m);
 		}
 		else {
@@ -184,12 +182,12 @@ public class DenseEncoding extends AEncode {
 		return retE;
 	}
 
-	private Pair<IEncode, Map<Integer, Integer>> combineDenseNoResize(final DenseEncoding other) {
+	private Pair<IEncode, HashMapLongInt> combineDenseNoResize(final DenseEncoding other) {
 		if(map.equals(other.map)) {
 			LOG.warn("Constructing perfect mapping, this could be optimized to skip hashmap");
-			final Map<Integer, Integer> m = new HashMap<>(map.size());
+			final HashMapLongInt m = new HashMapLongInt(map.size());
 			for(int i = 0; i < map.getUnique(); i++)
-				m.put(i * (map.getUnique() + 1), i);
+				m.putIfAbsent(i * (map.getUnique() + 1), i);
 			return new ImmutablePair<>(this, m); // same object
 		}
 
@@ -203,18 +201,18 @@ public class DenseEncoding extends AEncode {
 
 		final AMapToData ret = MapToFactory.create(size, maxUnique);
 
-		final Map<Integer, Integer> m = new HashMap<>(maxUnique);
+		final HashMapLongInt m = new HashMapLongInt(maxUnique);
 		return new ImmutablePair<>(combineDenseWithHashMap(lm, rm, size, nVL, ret, m), m);
 	}
 
-	private Pair<IEncode, Map<Integer, Integer>> combineSparseNoResize(final SparseEncoding other) {
+	private Pair<IEncode, HashMapLongInt> combineSparseNoResize(final SparseEncoding other) {
 		final AMapToData a = assignSparse(other);
 		return combineSparseHashMap(a);
 	}
 
 	protected final DenseEncoding combineDenseWithHashMapLong(final AMapToData lm, final AMapToData rm, final int size,
-		final long nVL, final AMapToData ret, Map<Long, Integer> m) {
-		if(m instanceof MapToChar)
+		final long nVL, final AMapToData ret, HashMapLongInt m) {
+		if(ret instanceof MapToChar)
 			for(int r = 0; r < size; r++)
 				addValHashMapChar((long) lm.getIndex(r) + rm.getIndex(r) * nVL, r, m, (MapToChar) ret);
 		else
@@ -224,7 +222,7 @@ public class DenseEncoding extends AEncode {
 	}
 
 	protected final DenseEncoding combineDenseWithHashMap(final AMapToData lm, final AMapToData rm, final int size,
-		final int nVL, final AMapToData ret, Map<Integer, Integer> m) {
+		final int nVL, final AMapToData ret, HashMapLongInt m) {
 		// JIT compile instance checks.
 		if(ret instanceof MapToChar) {
 			if(lm instanceof MapToChar && rm instanceof MapToChar) {
@@ -249,7 +247,7 @@ public class DenseEncoding extends AEncode {
 	}
 
 	protected final void combineDenseWithHashMapGeneric(final AMapToData lm, final AMapToData rm, final int size,
-		final int nVL, final AMapToData ret, Map<Integer, Integer> m) {
+		final int nVL, final AMapToData ret, HashMapLongInt m) {
 		for(int r = 0; r < size; r++)
 			addValHashMap(lm.getIndex(r) + rm.getIndex(r) * nVL, r, m, ret);
 	}
@@ -271,49 +269,47 @@ public class DenseEncoding extends AEncode {
 		return newId;
 	}
 
-	protected static void addValHashMap(final int nv, final int r, final Map<Integer, Integer> map, final AMapToData d) {
+	protected static void addValHashMap(final int nv, final int r, final HashMapLongInt map, final AMapToData d) {
 		final int v = map.size();
-		final Integer mv = map.putIfAbsent(nv, v);
-		if(mv == null)
+		final int mv = map.putIfAbsent(nv, v);
+		if(mv == -1)
 			d.set(r, v);
 		else
 			d.set(r, mv);
 	}
 
-	protected static void addValHashMapChar(final int nv, final int r, final Map<Integer, Integer> map,
-		final MapToChar d) {
+	protected static void addValHashMapChar(final int nv, final int r, final HashMapLongInt map, final MapToChar d) {
 		final int v = map.size();
-		final Integer mv = map.putIfAbsent(nv, v);
-		if(mv == null)
+		final int mv = map.putIfAbsent(nv, v);
+		if(mv == -1)
 			d.set(r, v);
 		else
 			d.set(r, mv);
 	}
 
-	protected static void addValHashMapCharByte(final int nv, final int r, final Map<Integer, Integer> map,
+	protected static void addValHashMapCharByte(final int nv, final int r, final HashMapLongInt map,
 		final MapToCharPByte d) {
 		final int v = map.size();
-		final Integer mv = map.putIfAbsent(nv, v);
-		if(mv == null)
+		final int mv = map.putIfAbsent(nv, v);
+		if(mv == -1)
 			d.set(r, v);
 		else
 			d.set(r, mv);
 	}
 
-	protected static void addValHashMapChar(final long nv, final int r, final Map<Long, Integer> map,
-		final MapToChar d) {
+	protected static void addValHashMapChar(final long nv, final int r, final HashMapLongInt map, final MapToChar d) {
 		final int v = map.size();
-		final Integer mv = map.putIfAbsent(nv, v);
-		if(mv == null)
+		final int mv = map.putIfAbsent(nv, v);
+		if(mv == -1)
 			d.set(r, v);
 		else
 			d.set(r, mv);
 	}
 
-	protected static void addValHashMap(final long nv, final int r, final Map<Long, Integer> map, final AMapToData d) {
+	protected static void addValHashMap(final long nv, final int r, final HashMapLongInt map, final AMapToData d) {
 		final int v = map.size();
-		final Integer mv = map.putIfAbsent(nv, v);
-		if(mv == null)
+		final int mv = map.putIfAbsent(nv, v);
+		if(mv == -1)
 			d.set(r, v);
 		else
 			d.set(r, mv);

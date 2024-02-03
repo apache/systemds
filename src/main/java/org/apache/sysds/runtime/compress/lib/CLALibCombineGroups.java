@@ -21,7 +21,6 @@ package org.apache.sysds.runtime.compress.lib;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
@@ -53,6 +52,7 @@ import org.apache.sysds.runtime.compress.estim.encoding.DenseEncoding;
 import org.apache.sysds.runtime.compress.estim.encoding.EmptyEncoding;
 import org.apache.sysds.runtime.compress.estim.encoding.IEncode;
 import org.apache.sysds.runtime.compress.estim.encoding.SparseEncoding;
+import org.apache.sysds.runtime.compress.utils.HashMapLongInt;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -226,9 +226,9 @@ public final class CLALibCombineGroups {
 		}
 
 		// add if encodings are equal make shortcut.
-		final Pair<IEncode, Map<Integer, Integer>> cec = ae.combineWithMap(be);
+		final Pair<IEncode, HashMapLongInt> cec = ae.combineWithMap(be);
 		final IEncode ce = cec.getLeft();
-		final Map<Integer, Integer> filter = cec.getRight();
+		final HashMapLongInt filter = cec.getRight();
 
 		if(ce instanceof EmptyEncoding) {
 			return new ColGroupEmpty(combinedColumns);

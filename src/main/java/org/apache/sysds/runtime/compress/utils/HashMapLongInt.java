@@ -51,8 +51,8 @@ public class HashMapLongInt implements Iterable<KV> {
 	 */
 	public int putIfAbsent(long key, int value) {
 		final int ix = hash(key);
-
-		if(keys[ix] == null) {
+		final long[] bucketKeys = keys[ix];
+		if(bucketKeys == null) {
 			createBucket(ix);
 			keys[ix][0] = key;
 			values[ix][0] = value;
@@ -60,7 +60,6 @@ public class HashMapLongInt implements Iterable<KV> {
 			return -1;
 		}
 		else {
-			long[] bucketKeys = keys[ix];
 			for(int i = 0; i < bucketKeys.length; i++) {
 				if(bucketKeys[i] == key)
 					return values[ix][i];
@@ -70,18 +69,23 @@ public class HashMapLongInt implements Iterable<KV> {
 					size++;
 					return -1;
 				}
-
 			}
 
+			// LOG.error(this);
 			// there was no match in the bucket
 			// reallocate bucket.
 			long[] newBucketKeys = new long[bucketKeys.length * 2];
-			System.arraycopy(bucketKeys, 0, newBucketKeys, 0, bucketKeys.length);
-			newBucketKeys[bucketKeys.length] = key;
-			Arrays.fill(newBucketKeys, bucketKeys.length + 1, newBucketKeys.length, -1L);
 			int[] newBucketValues = new int[bucketKeys.length * 2];
+			System.arraycopy(bucketKeys, 0, newBucketKeys, 0, bucketKeys.length);
 			System.arraycopy(values[ix], 0, newBucketValues, 0, bucketKeys.length);
-			newBucketKeys[bucketKeys.length] = value;
+			Arrays.fill(newBucketKeys, bucketKeys.length + 1, newBucketKeys.length, -1L);
+			newBucketKeys[bucketKeys.length] = key;
+			newBucketValues[bucketKeys.length] = value;
+
+			keys[ix] = newBucketKeys;
+			values[ix] = newBucketValues;
+
+			// LOG.error(this);
 			size++;
 			return -1;
 		}

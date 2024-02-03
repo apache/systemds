@@ -116,7 +116,7 @@ public class DenseEncoding extends AEncode {
 
 	private final Pair<IEncode, HashMapLongInt> combineSparseHashMap(final AMapToData ret) {
 		final int size = ret.size();
-		final HashMapLongInt m = new HashMapLongInt(size);
+		final HashMapLongInt m = new HashMapLongInt(100);
 		for(int r = 0; r < size; r++) {
 			final int prev = ret.getIndex(r);
 			final int v = m.size();
@@ -159,11 +159,11 @@ public class DenseEncoding extends AEncode {
 		if(maxUnique < Math.max(nVL, nVR)) {// overflow
 			maxUnique = size;
 			final AMapToData ret = MapToFactory.create(size, maxUnique);
-			final HashMapLongInt m = new HashMapLongInt(size);
+			final HashMapLongInt m = new HashMapLongInt(Math.max(100, maxUnique / 100 ));
 			retE = combineDenseWithHashMapLong(lm, rm, size, nVL, ret, m);
 		}
 		else if(maxUnique > size && maxUnique > 2048) {
-			final AMapToData ret = MapToFactory.create(size, maxUnique);
+			final AMapToData ret = MapToFactory.create(size, Math.max(100, maxUnique / 100 ));
 			// aka there is more maxUnique than rows.
 			final HashMapLongInt m = new HashMapLongInt(size);
 			retE = combineDenseWithHashMap(lm, rm, size, nVL, ret, m);
@@ -185,7 +185,7 @@ public class DenseEncoding extends AEncode {
 	private Pair<IEncode, HashMapLongInt> combineDenseNoResize(final DenseEncoding other) {
 		if(map.equals(other.map)) {
 			LOG.warn("Constructing perfect mapping, this could be optimized to skip hashmap");
-			final HashMapLongInt m = new HashMapLongInt(map.size());
+			final HashMapLongInt m = new HashMapLongInt(Math.max(100, map.size() / 100 ));
 			for(int i = 0; i < map.getUnique(); i++)
 				m.putIfAbsent(i * (map.getUnique() + 1), i);
 			return new ImmutablePair<>(this, m); // same object
@@ -201,7 +201,7 @@ public class DenseEncoding extends AEncode {
 
 		final AMapToData ret = MapToFactory.create(size, maxUnique);
 
-		final HashMapLongInt m = new HashMapLongInt(maxUnique);
+		final HashMapLongInt m = new HashMapLongInt(Math.max(100, maxUnique / 100 ));
 		return new ImmutablePair<>(combineDenseWithHashMap(lm, rm, size, nVL, ret, m), m);
 	}
 

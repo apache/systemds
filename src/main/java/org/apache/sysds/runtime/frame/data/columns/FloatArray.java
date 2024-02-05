@@ -25,6 +25,8 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
@@ -389,6 +391,22 @@ public class FloatArray extends Array<Float> {
 	@Override
 	public boolean possiblyContainsNaN() {
 		return true;
+	}
+
+	@Override
+	protected Map<Float, Integer> tryGetDictionary(int threshold) {
+		final Map<Float, Integer> dict = new HashMap<>();
+		Integer id = 0;
+		final int s = size();
+		for(int i = 0; i < s && id < threshold; i++) {
+			final Integer v = dict.get(_data[i]);
+			if(v == null)
+				dict.put(_data[i], id++);
+		}
+		if(id >= threshold)
+			return null;
+		else
+			return dict;
 	}
 
 	@Override

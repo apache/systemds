@@ -31,6 +31,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.io.Writable;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
 import org.apache.sysds.runtime.compress.estim.sample.SampleEstimatorFactory;
 import org.apache.sysds.runtime.frame.data.columns.ArrayFactory.FrameArrayType;
 import org.apache.sysds.runtime.frame.data.compress.ArrayCompressionStatistics;
@@ -1053,14 +1054,17 @@ public abstract class Array<T> implements Writable {
 			&& distinctFound * 100 >= samplesTaken * 60; // More than 60 % distinct
 	}
 
-	// public AMapToData createMapping(Map<T, Integer> d) {
-	// final int s = size();
-	// final AMapToData m = MapToFactory.create(s, d.size());
-
-	// for(int i = 0; i < s; i++)
-	// m.set(i, d.get(get(i)));
-	// return m;
-	// }
+	protected int setAndAddToDict(Map<T, Integer> rcd, AMapToData m, int i, Integer id) {
+		final T val = getInternal(i);
+		final Integer v = rcd.get(val);
+		if(v == null) {
+			m.set(i, id);
+			rcd.put(val, id++);
+		}
+		else
+			m.set(i, v);
+		return id;
+	}
 
 	public class ArrayIterator implements Iterator<T> {
 		int index = -1;

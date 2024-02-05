@@ -87,10 +87,12 @@ public class CLALibReorg {
 
 		ret.allocateAndResetSparseBlock(true, SparseBlock.Type.MCSR);
 
-		if(k > 1) 
-			decompressToTransposedSparseParallel((SparseBlockMCSR) ret.getSparseBlock(), cmb.getColGroups(), k);
-		else 
-			decompressToTransposedSparseSingleThread((SparseBlockMCSR) ret.getSparseBlock(), cmb.getColGroups());
+		final int nColOut = ret.getNumColumns();
+
+		if(k > 1)
+			decompressToTransposedSparseParallel((SparseBlockMCSR) ret.getSparseBlock(), cmb.getColGroups(), nColOut, k);
+		else
+			decompressToTransposedSparseSingleThread((SparseBlockMCSR) ret.getSparseBlock(), cmb.getColGroups(), nColOut);
 
 		return ret;
 	}
@@ -116,21 +118,23 @@ public class CLALibReorg {
 		}
 	}
 
-	private static void decompressToTransposedSparseSingleThread(SparseBlockMCSR ret, List<AColGroup> groups) {
+	private static void decompressToTransposedSparseSingleThread(SparseBlockMCSR ret, List<AColGroup> groups,
+		int nColOut) {
 		for(int i = 0; i < groups.size(); i++) {
 			AColGroup g = groups.get(i);
-			g.decompressToSparseBlockTransposed(ret);
+			g.decompressToSparseBlockTransposed(ret, nColOut);
 		}
 	}
 
-	private static void decompressToTransposedSparseParallel(SparseBlockMCSR ret, List<AColGroup> groups, int k) {
+	private static void decompressToTransposedSparseParallel(SparseBlockMCSR ret, List<AColGroup> groups, int nColOut,
+		int k) {
 		final ExecutorService pool = CommonThreadPool.get(k);
 		try {
 			final List<Future<?>> tasks = new ArrayList<>(groups.size());
 
 			for(int i = 0; i < groups.size(); i++) {
 				final AColGroup g = groups.get(i);
-				tasks.add(pool.submit(() -> g.decompressToSparseBlockTransposed(ret)));
+				tasks.add(pool.submit(() -> g.decompressToSparseBlockTransposed(ret, nColOut)));
 			}
 
 			for(Future<?> f : tasks)

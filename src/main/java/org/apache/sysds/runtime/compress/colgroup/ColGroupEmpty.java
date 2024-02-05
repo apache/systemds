@@ -97,7 +97,7 @@ public class ColGroupEmpty extends AColGroupCompressed
 	}
 
 	@Override
-	public void decompressToSparseBlockTransposed(SparseBlockMCSR sb) {
+	public void decompressToSparseBlockTransposed(SparseBlockMCSR sb, int nColOut) {
 		// do nothing.
 	}
 

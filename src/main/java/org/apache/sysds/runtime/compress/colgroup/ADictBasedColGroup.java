@@ -82,27 +82,27 @@ public abstract class ADictBasedColGroup extends AColGroupCompressed implements 
 	}
 
 	@Override
-	public void decompressToSparseBlockTransposed(SparseBlockMCSR sb) {
+	public void decompressToSparseBlockTransposed(SparseBlockMCSR sb, int nColOut) {
 		if(_dict instanceof IdentityDictionary) {
 			final MatrixBlockDictionary md = ((IdentityDictionary) _dict).getMBDict();
 			final MatrixBlock mb = md.getMatrixBlock();
 			// The dictionary is never empty.
 			if(mb.isInSparseFormat())
-				decompressToSparseBlockTransposedSparseDictionary(sb, mb.getSparseBlock());
+				decompressToSparseBlockTransposedSparseDictionary(sb, mb.getSparseBlock(), nColOut);
 			else
-				decompressToSparseBlockTransposedDenseDictionary(sb, mb.getDenseBlockValues());
+				decompressToSparseBlockTransposedDenseDictionary(sb, mb.getDenseBlockValues(),nColOut);
 		}
 		else if(_dict instanceof MatrixBlockDictionary) {
 			final MatrixBlockDictionary md = (MatrixBlockDictionary) _dict;
 			final MatrixBlock mb = md.getMatrixBlock();
 			// The dictionary is never empty.
 			if(mb.isInSparseFormat())
-				decompressToSparseBlockTransposedSparseDictionary(sb, mb.getSparseBlock());
+				decompressToSparseBlockTransposedSparseDictionary(sb, mb.getSparseBlock(),nColOut);
 			else
-				decompressToSparseBlockTransposedDenseDictionary(sb, mb.getDenseBlockValues());
+				decompressToSparseBlockTransposedDenseDictionary(sb, mb.getDenseBlockValues(),nColOut);
 		}
 		else
-			decompressToSparseBlockTransposedDenseDictionary(sb, _dict.getValues());
+			decompressToSparseBlockTransposedDenseDictionary(sb, _dict.getValues(),nColOut);
 	}
 
 	protected abstract void decompressToDenseBlockTransposedSparseDictionary(DenseBlock db, int rl, int ru,
@@ -111,9 +111,9 @@ public abstract class ADictBasedColGroup extends AColGroupCompressed implements 
 	protected abstract void decompressToDenseBlockTransposedDenseDictionary(DenseBlock db, int rl, int ru,
 		double[] dict);
 
-	protected abstract void decompressToSparseBlockTransposedSparseDictionary(SparseBlockMCSR db, SparseBlock dict);
+	protected abstract void decompressToSparseBlockTransposedSparseDictionary(SparseBlockMCSR db, SparseBlock dict, int nColOut);
 
-	protected abstract void decompressToSparseBlockTransposedDenseDictionary(SparseBlockMCSR db, double[] dict);
+	protected abstract void decompressToSparseBlockTransposedDenseDictionary(SparseBlockMCSR db, double[] dict, int nColOut);
 
 	@Override
 	public final void decompressToDenseBlock(DenseBlock db, int rl, int ru, int offR, int offC) {

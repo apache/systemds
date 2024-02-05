@@ -186,8 +186,9 @@ public abstract class AColGroup implements Serializable {
 	 * decompress into specific sub rows of the Sparse block
 	 * 
 	 * @param sb Sparse target block
+	 * @param nColOut The number of columns in the sb.
 	 */
-	public abstract void decompressToSparseBlockTransposed(SparseBlockMCSR sb);
+	public abstract void decompressToSparseBlockTransposed(SparseBlockMCSR sb, int nColOut);
 
 	/**
 	 * Serializes column group to data output.

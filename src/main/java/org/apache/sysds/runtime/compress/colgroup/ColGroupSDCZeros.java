@@ -921,12 +921,12 @@ public class ColGroupSDCZeros extends ASDCZero implements IMapToDataGroup {
 	}
 
 	@Override
-	protected void decompressToSparseBlockTransposedSparseDictionary(SparseBlockMCSR db, SparseBlock sb) {
+	protected void decompressToSparseBlockTransposedSparseDictionary(SparseBlockMCSR db, SparseBlock sb, int nColOut) {
 		throw new NotImplementedException();
 	}
 
 	@Override
-	protected void decompressToSparseBlockTransposedDenseDictionary(SparseBlockMCSR db, double[] dict) {
+	protected void decompressToSparseBlockTransposedDenseDictionary(SparseBlockMCSR db, double[] dict, int nColOut) {
 		throw new NotImplementedException();
 	}
 

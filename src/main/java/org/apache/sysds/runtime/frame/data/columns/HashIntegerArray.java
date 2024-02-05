@@ -61,7 +61,7 @@ public class HashIntegerArray extends Array<Object> {
 
 	@Override
 	public Object getInternal(int index) {
-		return Long.valueOf(_data[index]);
+		return Integer.valueOf(_data[index]);
 	}
 
 	public long getLong(int index) {

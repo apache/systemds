@@ -262,7 +262,7 @@ public class ColGroupDDC extends APreAgg implements IMapToDataGroup {
 	}
 
 	@Override
-	protected void decompressToSparseBlockTransposedSparseDictionary(SparseBlockMCSR sbr, SparseBlock sb) {
+	protected void decompressToSparseBlockTransposedSparseDictionary(SparseBlockMCSR sbr, SparseBlock sb, int nColOut) {
 
 		int[] colCounts = _dict.countNNZZeroColumns(getCounts());
 		for(int j = 0; j < _colIndexes.size(); j++)
@@ -286,7 +286,7 @@ public class ColGroupDDC extends APreAgg implements IMapToDataGroup {
 	}
 
 	@Override
-	protected void decompressToSparseBlockTransposedDenseDictionary(SparseBlockMCSR sbr, double[] dict) {
+	protected void decompressToSparseBlockTransposedDenseDictionary(SparseBlockMCSR sbr, double[] dict, int nColOut) {
 		int[] colCounts = _dict.countNNZZeroColumns(getCounts());
 		for(int j = 0; j < _colIndexes.size(); j++)
 			sbr.allocate(_colIndexes.get(j), colCounts[j]);

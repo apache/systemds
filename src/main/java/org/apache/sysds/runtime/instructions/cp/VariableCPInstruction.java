@@ -867,7 +867,7 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 			case MATRIX: {
 				MatrixBlock mBlock = ec.getMatrixInput(getInput1().getName());
 				if( mBlock.getNumRows()!=1 || mBlock.getNumColumns()!=1 )
-					throw new DMLRuntimeException("Dimension mismatch - unable to cast matrix '"+getInput1().getName()+"' of dimension ("+mBlock.getNumRows()+" x "+mBlock.getNumColumns()+") to scalar. " + mBlock);
+					throw new DMLRuntimeException("Dimension mismatch - unable to cast matrix '"+getInput1().getName()+"' of dimension ("+mBlock.getNumRows()+" x "+mBlock.getNumColumns()+") to scalar. ");
 				double value = mBlock.getValue(0,0);
 				ec.releaseMatrixInput(getInput1().getName());
 				ec.setScalarOutput(output.getName(), new DoubleObject(value));

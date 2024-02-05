@@ -984,7 +984,7 @@ public abstract class Array<T> implements Writable {
 				memSizePerElement = (int) (memSize / size());
 		}
 
-		Map<T, Integer> d = new HashMap<>();
+		Map<T, Integer> d = new HashMap<>(nSamples / 2);
 		int nSamplesTaken = 0;
 		for(; nSamplesTaken < nSamples && d.size() < nSamples / 2; nSamplesTaken++) {
 			// super inefficient, but good enough for now.

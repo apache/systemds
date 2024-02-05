@@ -25,8 +25,6 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
 
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
@@ -251,7 +249,7 @@ public class FloatArray extends Array<Float> {
 	protected Array<Integer> changeTypeInteger(Array<Integer> retA, int l, int u) {
 		int[] ret = (int[]) retA.get();
 		for(int i = l; i < u; i++)
-			ret[i] = (int)_data[i];
+			ret[i] = (int) _data[i];
 		return retA;
 	}
 
@@ -259,7 +257,7 @@ public class FloatArray extends Array<Float> {
 	protected Array<Long> changeTypeLong(Array<Long> retA, int l, int u) {
 		long[] ret = (long[]) retA.get();
 		for(int i = l; i < u; i++)
-			ret[i] = (long)_data[i];
+			ret[i] = (long) _data[i];
 		return retA;
 	}
 
@@ -267,7 +265,7 @@ public class FloatArray extends Array<Float> {
 	protected Array<Object> changeTypeHash64(Array<Object> retA, int l, int u) {
 		long[] ret = ((HashLongArray) retA).getLongs();
 		for(int i = l; i < u; i++)
-			ret[i] = (long)_data[i];
+			ret[i] = (long) _data[i];
 		return retA;
 	}
 
@@ -275,7 +273,7 @@ public class FloatArray extends Array<Float> {
 	protected Array<Object> changeTypeHash32(Array<Object> retA, int l, int u) {
 		int[] ret = ((HashIntegerArray) retA).getInts();
 		for(int i = l; i < u; i++)
-			ret[i] = (int)_data[i];
+			ret[i] = (int) _data[i];
 		return retA;
 	}
 
@@ -392,22 +390,6 @@ public class FloatArray extends Array<Float> {
 	public boolean possiblyContainsNaN() {
 		return true;
 	}
-
-	// @Override
-	// protected Map<Float, Integer> tryGetDictionary(int threshold) {
-	// 	final Map<Float, Integer> dict = new HashMap<>();
-	// 	Integer id = 0;
-	// 	final int s = size();
-	// 	for(int i = 0; i < s && id < threshold; i++) {
-	// 		final Integer v = dict.get(_data[i]);
-	// 		if(v == null)
-	// 			dict.put(_data[i], id++);
-	// 	}
-	// 	if(id >= threshold)
-	// 		return null;
-	// 	else
-	// 		return dict;
-	// }
 
 	@Override
 	public String toString() {

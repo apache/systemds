@@ -31,8 +31,6 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.io.Writable;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
-import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
-import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
 import org.apache.sysds.runtime.compress.estim.sample.SampleEstimatorFactory;
 import org.apache.sysds.runtime.frame.data.columns.ArrayFactory.FrameArrayType;
 import org.apache.sysds.runtime.frame.data.compress.ArrayCompressionStatistics;
@@ -143,27 +141,27 @@ public abstract class Array<T> implements Writable {
 	}
 
 	// /**
-	//  * Get the dictionary of contained values, including null with threshold.
-	//  * 
-	//  * If the number of distinct values are found to be above the threshold value, then abort constructing the
-	//  * dictionary.
-	//  * 
-	//  * @return a dictionary containing all unique values or null if threshold of distinct is exceeded.
-	//  */
+	// * Get the dictionary of contained values, including null with threshold.
+	// *
+	// * If the number of distinct values are found to be above the threshold value, then abort constructing the
+	// * dictionary.
+	// *
+	// * @return a dictionary containing all unique values or null if threshold of distinct is exceeded.
+	// */
 	// protected Map<T, Integer> tryGetDictionary(int threshold) {
-	// 	final Map<T, Integer> dict = new HashMap<>();
-	// 	Integer id = 0;
-	// 	final int s = size();
-	// 	for(int i = 0; i < s && id < threshold; i++) {
-	// 		final T val = get(i);
-	// 		final Integer v = dict.get(val);
-	// 		if(v == null)
-	// 			dict.put(val, id++);
-	// 	}
-	// 	if(id >= threshold)
-	// 		return null;
-	// 	else
-	// 		return dict;
+	// final Map<T, Integer> dict = new HashMap<>();
+	// Integer id = 0;
+	// final int s = size();
+	// for(int i = 0; i < s && id < threshold; i++) {
+	// final T val = get(i);
+	// final Integer v = dict.get(val);
+	// if(v == null)
+	// dict.put(val, id++);
+	// }
+	// if(id >= threshold)
+	// return null;
+	// else
+	// return dict;
 	// }
 
 	/**
@@ -185,6 +183,17 @@ public abstract class Array<T> implements Writable {
 	 * @return The value returned as an object
 	 */
 	public abstract T get(int index);
+
+	/**
+	 * Get the internal value at a given index. For instance HashIntegerArray would return the underlying long not a
+	 * string.
+	 * 
+	 * @param index the index to get
+	 * @return The value to get
+	 */
+	public T getInternal(int index) {
+		return get(index);
+	}
 
 	/**
 	 * Get the underlying array out of the column Group,
@@ -1045,12 +1054,12 @@ public abstract class Array<T> implements Writable {
 	}
 
 	// public AMapToData createMapping(Map<T, Integer> d) {
-	// 	final int s = size();
-	// 	final AMapToData m = MapToFactory.create(s, d.size());
+	// final int s = size();
+	// final AMapToData m = MapToFactory.create(s, d.size());
 
-	// 	for(int i = 0; i < s; i++)
-	// 		m.set(i, d.get(get(i)));
-	// 	return m;
+	// for(int i = 0; i < s; i++)
+	// m.set(i, d.get(get(i)));
+	// return m;
 	// }
 
 	public class ArrayIterator implements Iterator<T> {

@@ -28,8 +28,6 @@ import java.util.Map;
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
-import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
-import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
 import org.apache.sysds.runtime.frame.data.columns.ArrayFactory.FrameArrayType;
 import org.apache.sysds.runtime.matrix.data.Pair;
 import org.apache.sysds.runtime.util.UtilFunctions;
@@ -153,6 +151,11 @@ public class OptionalArray<T> extends Array<T> {
 	@Override
 	public T get(int index) {
 		return _n.get(index) ? _a.get(index) : null;
+	}
+
+	@Override
+	public T getInternal(int index) {
+		return _n.get(index) ? _a.getInternal(index) : null;
 	}
 
 	@Override
@@ -311,7 +314,7 @@ public class OptionalArray<T> extends Array<T> {
 
 	@Override
 	public Array<?> changeType(ValueType t) {
-		if (t == ValueType.STRING) // String can contain null.
+		if(t == ValueType.STRING) // String can contain null.
 			return changeType(ArrayFactory.allocate(t, size()));
 		return changeTypeWithNulls(t);
 	}
@@ -353,7 +356,7 @@ public class OptionalArray<T> extends Array<T> {
 
 	@Override
 	protected Array<Long> changeTypeLong(Array<Long> retA, int l, int u) {
-		
+
 		return _a.changeTypeLong(retA, l, u);
 	}
 
@@ -366,7 +369,7 @@ public class OptionalArray<T> extends Array<T> {
 	protected Array<Object> changeTypeHash32(Array<Object> retA, int l, int u) {
 		return _a.changeTypeHash32(retA, l, u);
 	}
-	
+
 	@Override
 	protected Array<Character> changeTypeCharacter(Array<Character> retA, int l, int u) {
 		return _a.changeTypeCharacter(retA, l, u);
@@ -461,51 +464,51 @@ public class OptionalArray<T> extends Array<T> {
 	// @SuppressWarnings("unchecked")
 	// @Override
 	// public AMapToData createMapping(Map<T, Integer> d) {
-	// 	if(_a instanceof HashLongArray) {
-	// 		Map<Long, Integer> dl = (Map<Long, Integer>) d;
-	// 		HashLongArray ha = (HashLongArray) _a;
-	// 		// assuming the dictionary is correctly constructed.
-	// 		final int s = size();
-	// 		final AMapToData m = MapToFactory.create(s, d.size());
-	// 		if(dl.containsKey(null)){
-	// 			final int n = dl.get(null);
-	// 			for(int i = 0; i < s; i++) {
-	// 				if(_n.get(i)) 
-	// 					m.set(i, dl.get(ha.getLong(i)));
-	// 				else 
-	// 					m.set(i, n);
-	// 			}
-	// 		}
-	// 		else{
-	// 			for(int i = 0; i < s; i++)
-	// 				m.set(i, dl.get(ha.getLong(i)));
-	// 		}
-	// 		return m;
-	// 	}
-	// 	else if(_a instanceof HashIntegerArray) {
-	// 		Map<Integer, Integer> dl = (Map<Integer, Integer>) d;
-	// 		HashIntegerArray ha = (HashIntegerArray) _a;
-	// 		// assuming the dictionary is correctly constructed.
-	// 		final int s = size();
-	// 		final AMapToData m = MapToFactory.create(s, d.size());
-	// 		if(dl.containsKey(null)){
-	// 			final int n = dl.get(null);
-	// 			for(int i = 0; i < s; i++) {
-	// 				if(_n.get(i)) 
-	// 					m.set(i, dl.get(ha.getInt(i)));
-	// 				else 
-	// 					m.set(i, n);
-	// 			}
-	// 		}
-	// 		else{
-	// 			for(int i = 0; i < s; i++)
-	// 				m.set(i, dl.get(ha.getInt(i)));
-	// 		}
-	// 		return m;
-	// 	}
-	// 	else {
-	// 		return super.createMapping(d);
-	// 	}
+	// if(_a instanceof HashLongArray) {
+	// Map<Long, Integer> dl = (Map<Long, Integer>) d;
+	// HashLongArray ha = (HashLongArray) _a;
+	// // assuming the dictionary is correctly constructed.
+	// final int s = size();
+	// final AMapToData m = MapToFactory.create(s, d.size());
+	// if(dl.containsKey(null)){
+	// final int n = dl.get(null);
+	// for(int i = 0; i < s; i++) {
+	// if(_n.get(i))
+	// m.set(i, dl.get(ha.getLong(i)));
+	// else
+	// m.set(i, n);
+	// }
+	// }
+	// else{
+	// for(int i = 0; i < s; i++)
+	// m.set(i, dl.get(ha.getLong(i)));
+	// }
+	// return m;
+	// }
+	// else if(_a instanceof HashIntegerArray) {
+	// Map<Integer, Integer> dl = (Map<Integer, Integer>) d;
+	// HashIntegerArray ha = (HashIntegerArray) _a;
+	// // assuming the dictionary is correctly constructed.
+	// final int s = size();
+	// final AMapToData m = MapToFactory.create(s, d.size());
+	// if(dl.containsKey(null)){
+	// final int n = dl.get(null);
+	// for(int i = 0; i < s; i++) {
+	// if(_n.get(i))
+	// m.set(i, dl.get(ha.getInt(i)));
+	// else
+	// m.set(i, n);
+	// }
+	// }
+	// else{
+	// for(int i = 0; i < s; i++)
+	// m.set(i, dl.get(ha.getInt(i)));
+	// }
+	// return m;
+	// }
+	// else {
+	// return super.createMapping(d);
+	// }
 	// }
 
 	@SuppressWarnings("unchecked")

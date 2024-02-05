@@ -29,8 +29,6 @@ import java.util.Map;
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
-import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
-import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
 import org.apache.sysds.runtime.frame.data.columns.ArrayFactory.FrameArrayType;
 import org.apache.sysds.runtime.matrix.data.Pair;
 import org.apache.sysds.utils.MemoryEstimates;
@@ -61,11 +59,16 @@ public class HashLongArray extends Array<Object> {
 		return Long.toHexString(_data[index]);
 	}
 
+	@Override
+	public Object getInternal(int index) {
+		return Long.valueOf(_data[index]);
+	}
+
 	public long getLong(int index) {
 		return _data[index];
 	}
 
-	protected long[] getLongs(){
+	protected long[] getLongs() {
 		return _data;
 	}
 
@@ -75,9 +78,9 @@ public class HashLongArray extends Array<Object> {
 			_data[index] = parseHashLong((String) value);
 		else if(value instanceof Long)
 			_data[index] = (Long) value;
-		else if (value == null)
+		else if(value == null)
 			_data[index] = 0L;
-		else 
+		else
 			throw new NotImplementedException("not supported : " + value);
 	}
 
@@ -219,7 +222,7 @@ public class HashLongArray extends Array<Object> {
 		return ValueType.HASH64;
 	}
 
-	@Override 
+	@Override
 	protected Map<Object, Integer> getDictionary() {
 		final Map<Object, Integer> dict = new HashMap<>();
 		Integer id = 0;
@@ -230,22 +233,6 @@ public class HashLongArray extends Array<Object> {
 		}
 
 		return dict;
-	}
-
-	protected Map<Object, Integer> tryGetDictionary(int threshold) {
-		final Map<Object, Integer> dict = new HashMap<>();
-		Integer id = 0;
-		final int s = size();
-		for(int i = 0; i < s  && id < threshold; i++) {
-			final Integer v = dict.get(_data[i]);
-			if(v == null)
-				dict.put(_data[i], id++);
-		}
-
-		if (id >= threshold) 
-			return null;
-		else 
-			return dict;
 	}
 
 	@Override
@@ -271,11 +258,10 @@ public class HashLongArray extends Array<Object> {
 	}
 
 	@Override
-	protected Array<Boolean> changeTypeBitSet(Array<Boolean> ret, int l, int u){
+	protected Array<Boolean> changeTypeBitSet(Array<Boolean> ret, int l, int u) {
 		for(int i = l; i < u; i++) {
 			if(_data[i] != 0 && _data[i] != 1)
-				throw new DMLRuntimeException(
-					"Unable to change to Boolean from Hash array because of value:" + _data[i]);
+				throw new DMLRuntimeException("Unable to change to Boolean from Hash array because of value:" + _data[i]);
 			ret.set(i, _data[i] == 0 ? false : true);
 		}
 		return ret;
@@ -286,12 +272,12 @@ public class HashLongArray extends Array<Object> {
 		boolean[] ret = (boolean[]) retA.get();
 		for(int i = l; i < u; i++) {
 			if(_data[i] != 0 && _data[i] != 1)
-				throw new DMLRuntimeException(
-					"Unable to change to Boolean from Hash array because of value:" + _data[i]);
+				throw new DMLRuntimeException("Unable to change to Boolean from Hash array because of value:" + _data[i]);
 			ret[i] = _data[i] == 0 ? false : true;
 		}
 		return retA;
 	}
+
 	@Override
 	protected Array<Double> changeTypeDouble(Array<Double> retA, int l, int u) {
 		double[] ret = (double[]) retA.get();
@@ -312,7 +298,7 @@ public class HashLongArray extends Array<Object> {
 	protected Array<Integer> changeTypeInteger(Array<Integer> retA, int l, int u) {
 		int[] ret = (int[]) retA.get();
 		for(int i = l; i < u; i++)
-			ret[i] = (int)_data[i];
+			ret[i] = (int) _data[i];
 		return retA;
 	}
 
@@ -341,10 +327,9 @@ public class HashLongArray extends Array<Object> {
 	protected Array<Object> changeTypeHash32(Array<Object> retA, int l, int u) {
 		int[] ret = ((HashIntegerArray) retA).getInts();
 		for(int i = l; i < u; i++)
-			ret[i] = (int)_data[i];
+			ret[i] = (int) _data[i];
 		return retA;
 	}
-
 
 	@Override
 	protected Array<String> changeTypeString(Array<String> retA, int l, int u) {
@@ -451,17 +436,6 @@ public class HashLongArray extends Array<Object> {
 	public boolean possiblyContainsNaN() {
 		return false;
 	}
-
-	// @Override
-	// public AMapToData createMapping(Map<Object, Integer> d) {
-	// 	// assuming the dictionary is correctly constructed.
-	// 	final int s = size();
-	// 	final AMapToData m = MapToFactory.create(s, d.size());
-
-	// 	for(int i = 0; i < s; i++)
-	// 		m.set(i, d.get(_data[i]));
-	// 	return m;
-	// }
 
 	@Override
 	public String toString() {

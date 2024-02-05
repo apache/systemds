@@ -129,26 +129,18 @@ public class DDCArray<T> extends ACompressedArray<T> {
 
 			// One pass algorithm...
 			final Map<T, Integer> rcd = new HashMap<>();
-			final AMapToData m = MapToFactory.create(s, estimateUnique);
+			// map should guarantee to be able to hold the distinct values.
+			final AMapToData m = MapToFactory.create(s, Math.min(t, estimateUnique));
 			Integer id = 0;
-			for(int i = 0; i < s && id < t; i++) {
-				final T val = arr.get(i);
-				final Integer v = rcd.get(val);
-				if(v == null) {
-					m.set(i, id);
-					rcd.put(val, id++);
-				}
-				else
-					m.set(i, v);
-
-			}
-			// Two pass algorithm
-			// 1.full iteration: Get unique
+			for(int i = 0; i < s && id < t; i++) 
+				id = setAndAddToDict(arr, rcd, m, i , id);
+			
+			
 			// Abort if there are to many unique values.
 			if(rcd.size() >= t || rcd.size() > s / 2)
 				return arr;
-		
-		
+
+			// resize the final map.
 			final AMapToData md = m.resize(rcd.size());
 
 			// Allocate the correct dictionary output
@@ -171,6 +163,18 @@ public class DDCArray<T> extends ACompressedArray<T> {
 			arrS = arrS.substring(0, Math.min(10000, arrS.length()));
 			throw new DMLCompressionException("Failed to compress:\n" + arrS, e);
 		}
+	}
+
+	protected static <T> int setAndAddToDict(Array<T> arr, Map<T, Integer> rcd, AMapToData m, int i, Integer id) {
+		final T val = arr.get(i);
+		final Integer v = rcd.get(val);
+		if(v == null) {
+			m.set(i, id);
+			rcd.put(val, id++);
+		}
+		else
+			m.set(i, v);
+		return id;
 	}
 
 	@Override

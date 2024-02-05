@@ -91,6 +91,7 @@ public class BitSetArray extends ABooleanArray {
 		return (_data[wIdx] & (1L << index)) != 0;
 	}
 
+
 	@Override
 	public void set(int index, Boolean value) {
 		set(index, value != null && value);

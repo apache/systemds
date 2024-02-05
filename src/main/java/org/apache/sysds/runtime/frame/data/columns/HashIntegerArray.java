@@ -29,8 +29,6 @@ import java.util.Map;
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
-import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
-import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
 import org.apache.sysds.runtime.frame.data.columns.ArrayFactory.FrameArrayType;
 import org.apache.sysds.runtime.matrix.data.Pair;
 import org.apache.sysds.utils.MemoryEstimates;
@@ -59,6 +57,11 @@ public class HashIntegerArray extends Array<Object> {
 	@Override
 	public Object get(int index) {
 		return Long.toHexString(_data[index]);
+	}
+
+	@Override
+	public Object getInternal(int index) {
+		return Long.valueOf(_data[index]);
 	}
 
 	public long getLong(int index) {
@@ -235,22 +238,6 @@ public class HashIntegerArray extends Array<Object> {
 		return dict;
 	}
 
-	protected Map<Object, Integer> tryGetDictionary(int threshold) {
-		final Map<Object, Integer> dict = new HashMap<>();
-		Integer id = 0;
-		final int s = size();
-		for(int i = 0; i < s && id < threshold; i++) {
-			final Integer v = dict.get(_data[i]);
-			if(v == null)
-				dict.put(_data[i], id++);
-		}
-
-		if(id >= threshold)
-			return null;
-		else
-			return dict;
-	}
-
 	@Override
 	public Pair<ValueType, Boolean> analyzeValueType(int maxCells) {
 		return new Pair<>(ValueType.HASH32, false);
@@ -399,7 +386,7 @@ public class HashIntegerArray extends Array<Object> {
 			return 0;
 		// edge case handling, makes it safer to use the long unsigned passing, and
 		// then casting to int.
-		return (int)Long.parseUnsignedLong(s, 16);
+		return (int) Long.parseUnsignedLong(s, 16);
 	}
 
 	@Override
@@ -455,17 +442,6 @@ public class HashIntegerArray extends Array<Object> {
 	public boolean possiblyContainsNaN() {
 		return false;
 	}
-
-	// @Override
-	// public AMapToData createMapping(Map<Object, Integer> d) {
-	// 	// assuming the dictionary is correctly constructed.
-	// 	final int s = size();
-	// 	final AMapToData m = MapToFactory.create(s, d.size());
-
-	// 	for(int i = 0; i < s; i++)
-	// 		m.set(i, d.get(_data[i]));
-	// 	return m;
-	// }
 
 	@Override
 	public String toString() {

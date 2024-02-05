@@ -713,7 +713,7 @@ public final class CLALibLeftMultBy {
 					double tmp = 0;
 					for(int c = rowOff + cl; c < rowOff + cu; c++)
 						tmp += thatV[c];
-					rowSum[r] = tmp;
+					rowSum[r] += tmp;
 				}
 			}
 			else {
@@ -723,7 +723,7 @@ public final class CLALibLeftMultBy {
 					double tmp = 0;
 					for(int c = rowOff + cl; c < rowOff + cu; c++)
 						tmp += thatV[c];
-					rowSum[r] = tmp;
+					rowSum[r] += tmp;
 				}
 			}
 		}

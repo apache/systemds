@@ -113,7 +113,7 @@ public class CompressedFrameBlockFactory {
 			List<Future<?>> tasks = new ArrayList<>();
 			for(int j = 0; j < compressedColumns.length; j++) {
 				final int i = j;
-				final Future<?> stats = pool.submit(() -> (getStatistics(i)));
+				final Future<?> stats = pool.submit(() -> getStatistics(i));
 				final Future<Array<?>> tmp = pool.submit(() -> allocateCorrectedType(i, stats));
 				final Future<Array<?>> tmp2 = pool.submit(() -> changeTypeFuture(i, tmp, pool, cs.k));
 				tasks.add(pool.submit(() -> compressColFinally(i, tmp2)));

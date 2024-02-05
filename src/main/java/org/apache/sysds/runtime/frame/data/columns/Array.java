@@ -34,8 +34,11 @@ import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
 import org.apache.sysds.runtime.compress.estim.sample.SampleEstimatorFactory;
+import org.apache.sysds.runtime.compress.utils.ACount;
+import org.apache.sysds.runtime.compress.utils.DblArray;
 import org.apache.sysds.runtime.frame.data.columns.ArrayFactory.FrameArrayType;
 import org.apache.sysds.runtime.frame.data.compress.ArrayCompressionStatistics;
+import org.apache.sysds.runtime.frame.data.compress.CountHashMap;
 import org.apache.sysds.runtime.matrix.data.Pair;
 
 /**
@@ -984,15 +987,16 @@ public abstract class Array<T> implements Writable {
 				memSizePerElement = (int) (memSize / size());
 		}
 
-		Map<T, Integer> d = new HashMap<>(nSamples / 2);
+		final CountHashMap<T> d = new CountHashMap<>(nSamples / 2);
 		int nSamplesTaken = 0;
 		for(; nSamplesTaken < nSamples && d.size() < nSamples / 2; nSamplesTaken++) {
+			d.increment(get(nSamplesTaken));
 			// super inefficient, but good enough for now.
-			T key = get(nSamplesTaken);
-			if(d.containsKey(key))
-				d.put(key, d.get(key) + 1);
-			else
-				d.put(key, 1);
+			// T key = get(nSamplesTaken);
+			// if(d.containsKey(key))
+			// 	d.put(key, d.get(key) + 1);
+			// else
+			// 	d.put(key, 1);
 		}
 
 		if(nSamplesTaken < nSamples) {
@@ -1003,8 +1007,9 @@ public abstract class Array<T> implements Writable {
 
 		final int[] freq = new int[d.size()];
 		int id = 0;
-		for(Entry<T, Integer> e : d.entrySet())
-			freq[id++] = e.getValue();
+		for(ACount<T> e : d.extractValues()){
+			freq[id++] = e.count;
+		}
 
 		int estDistinct = SampleEstimatorFactory.distinctCount(freq, size(), nSamplesTaken);
 

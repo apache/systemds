@@ -167,11 +167,6 @@ public abstract class ACount<T> {
 		}
 
 		@Override
-		public DCounts sort() {
-			return (DCounts) super.sort();
-		}
-
-		@Override
 		public ACount<Double> get(Double key) {
 			return get((double) key);
 		}

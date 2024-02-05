@@ -23,7 +23,6 @@ import java.lang.ref.SoftReference;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.Map.Entry;
 
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.logging.Log;
@@ -35,7 +34,7 @@ import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
 import org.apache.sysds.runtime.compress.estim.sample.SampleEstimatorFactory;
 import org.apache.sysds.runtime.compress.utils.ACount;
-import org.apache.sysds.runtime.compress.utils.DblArray;
+import org.apache.sysds.runtime.compress.utils.ACountHashMap;
 import org.apache.sysds.runtime.frame.data.columns.ArrayFactory.FrameArrayType;
 import org.apache.sysds.runtime.frame.data.compress.ArrayCompressionStatistics;
 import org.apache.sysds.runtime.frame.data.compress.CountHashMap;
@@ -948,21 +947,10 @@ public abstract class Array<T> implements Writable {
 
 	public abstract boolean equals(Array<T> other);
 
-	public ArrayCompressionStatistics statistics(int nSamples) {
-
-		Pair<ValueType, Boolean> vt = analyzeValueType(nSamples);
-		if(vt.getKey() == ValueType.UNKNOWN)
-			vt = analyzeValueType(); // full analysis if unknown
-		if(vt.getKey() == ValueType.UNKNOWN)
-			vt = new Pair<>(ValueType.STRING, false); // if still unknown String.
-
-		// memory size is different depending on valuetype.
-		final long memSize = vt.getKey() != getValueType() ? //
-			ArrayFactory.getInMemorySize(vt.getKey(), size(), containsNull()) : //
-			getInMemorySize(); // uncompressed size
+	private int estMemSizePerElement(ValueType vt, long memSize) {
 
 		final int memSizePerElement;
-		switch(vt.getKey()) {
+		switch(vt) {
 			case UINT4:
 			case UINT8:
 			case INT32:
@@ -986,32 +974,24 @@ public abstract class Array<T> implements Writable {
 			default:
 				memSizePerElement = (int) (memSize / size());
 		}
+		return memSizePerElement;
+	}
 
-		final CountHashMap<T> d = new CountHashMap<>(nSamples / 2);
-		int nSamplesTaken = 0;
-		for(; nSamplesTaken < nSamples && d.size() < nSamples / 2; nSamplesTaken++) {
-			d.increment(get(nSamplesTaken));
-			// super inefficient, but good enough for now.
-			// T key = get(nSamplesTaken);
-			// if(d.containsKey(key))
-			// 	d.put(key, d.get(key) + 1);
-			// else
-			// 	d.put(key, 1);
-		}
+	public ArrayCompressionStatistics statistics(int nSamples) {
 
-		if(nSamplesTaken < nSamples) {
-			LOG.error("early abort stats and compress : " + nSamplesTaken + " " + nSamples);
-			return new ArrayCompressionStatistics(memSizePerElement, //
-				size(), false, vt.getKey(), vt.getValue(), null, getInMemorySize(), memSize);
-		}
+		Pair<ValueType, Boolean> vt = analyzeValueType(nSamples);
+		if(vt.getKey() == ValueType.UNKNOWN)
+			vt = analyzeValueType(); // full analysis if unknown
+		if(vt.getKey() == ValueType.UNKNOWN)
+			vt = new Pair<>(ValueType.STRING, false); // if still unknown String.
 
-		final int[] freq = new int[d.size()];
-		int id = 0;
-		for(ACount<T> e : d.extractValues()){
-			freq[id++] = e.count;
-		}
+		// memory size is different depending on valuetype.
+		final long memSize = vt.getKey() != getValueType() ? //
+			ArrayFactory.getInMemorySize(vt.getKey(), size(), containsNull()) : //
+			getInMemorySize(); // uncompressed size
 
-		int estDistinct = SampleEstimatorFactory.distinctCount(freq, size(), nSamplesTaken);
+		final int memSizePerElement = estMemSizePerElement(vt.getKey(), memSize);
+		final int estDistinct = estimateDistinct(nSamples);
 
 		if(estDistinct <= 0)
 			throw new RuntimeException("Invalid estimate of distinct values: size: " + size() + " sample: " + nSamples
@@ -1028,6 +1008,30 @@ public abstract class Array<T> implements Writable {
 		else // do not compress based on dictionary size.
 			return new ArrayCompressionStatistics(memSizePerElement, //
 				estDistinct, false, vt.getKey(), vt.getValue(), null, getInMemorySize(), memSize);
+	}
+
+	protected int estimateDistinct(int nSamples){
+		final ACountHashMap<T> d = new CountHashMap<T>(nSamples / 10);
+		int nSamplesTaken = 0;
+		for(; nSamplesTaken < nSamples && !earlyAbortEstimateDistinct(d.size(), nSamplesTaken, nSamples); nSamplesTaken++)
+			d.increment(get(nSamplesTaken));
+
+		if(earlyAbortEstimateDistinct(d.size(), nSamplesTaken, nSamples)) {
+			LOG.error("Early abort stats and compress : " + nSamplesTaken + " " + nSamples);
+			return size();
+		}
+
+		final int[] freq = new int[d.size()];
+		int id = 0;
+		for(ACount<T> e : d.extractValues())
+			freq[id++] = e.count;
+		
+		return SampleEstimatorFactory.distinctCount(freq, size(), nSamplesTaken);
+	}
+
+	protected boolean earlyAbortEstimateDistinct(int distinctFound, int samplesTaken, int maxSamples){
+		return samplesTaken * 100 >= maxSamples * 10 // More than 10 % sampled.
+			 && distinctFound * 100 >= samplesTaken * 60; // More than 60 % distinct
 	}
 
 	public AMapToData createMapping(Map<T, Integer> d) {

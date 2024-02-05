@@ -339,7 +339,7 @@ public class DenseEncoding extends AEncode {
 			if(counts[i] > largestOffs)
 				largestOffs = counts[i];
 			else if(counts[i] == 0)
-				throw new DMLCompressionException("Invalid count of 0 all values should have at least one instance");
+				throw new DMLCompressionException("Invalid count of 0 all values should have at least one instance index: " + i + " of " + counts.length );
 
 		if(cs.isRLEAllowed())
 			return new EstimationFactors(map.getUnique(), nRows, largestOffs, counts, 0, nRows, map.countRuns(), false,

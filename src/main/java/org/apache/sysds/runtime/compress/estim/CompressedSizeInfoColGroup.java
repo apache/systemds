@@ -206,7 +206,7 @@ public class CompressedSizeInfoColGroup {
 		return _map;
 	}
 
-	public void setMap(IEncode map){
+	public void setMap(IEncode map) {
 		_map = map;
 	}
 
@@ -288,6 +288,15 @@ public class CompressedSizeInfoColGroup {
 		sb.append(" Sizes: " + _sizes);
 		sb.append(" facts: " + _facts);
 		sb.append(" mapIsNull: " + (_map == null));
+		if(_map != null) {
+			String s = _map.toString();
+			if(s.length() > 1000) {
+				sb.append(s, 0, 1000);
+			}
+			else {
+				sb.append(s);
+			}
+		}
 		return sb.toString();
 	}
 

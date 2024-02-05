@@ -927,7 +927,27 @@ public class ColGroupSDCZeros extends ASDCZero implements IMapToDataGroup {
 
 	@Override
 	protected void decompressToSparseBlockTransposedDenseDictionary(SparseBlockMCSR db, double[] dict, int nColOut) {
-		throw new NotImplementedException();
+		AIterator it = _indexes.getIterator();
+
+		final int rowOut = _colIndexes.size();
+		final int last = _indexes.getOffsetToLast();
+
+		int v = it.value();
+		while(v < last) {
+			final int di = _data.getIndex(it.getDataIndex());
+			for(int c = 0; c < rowOut; c++) {
+				db.append(_colIndexes.get(c), v, dict[di * rowOut + c]);
+			}
+			v = it.next();
+		}
+
+		// take last element.
+
+		final int di = _data.getIndex(it.getDataIndex());
+		for(int c = 0; c < rowOut; c++) {
+			db.append(_colIndexes.get(c), v, dict[di * rowOut + c]);
+		}
+
 	}
 
 	public String toString() {

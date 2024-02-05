@@ -45,15 +45,13 @@ public class DenseEncoding extends AEncode {
 		this.map = map;
 
 		if(CompressedMatrixBlock.debug) {
-			if(!zeroWarn) {
-				int[] freq = map.getCounts();
-				for(int i = 0; i < freq.length; i++) {
-					if(freq[i] == 0) {
-						LOG.warn("Dense encoding contains zero encoding, indicating not all dictionary entries are in use");
-						zeroWarn = true;
-						break;
-					}
-					// throw new DMLCompressionException("Invalid counts in fact contains 0");
+			// if(!zeroWarn) {
+			int[] freq = map.getCounts();
+			for(int i = 0; i < freq.length && !zeroWarn; i++) {
+				if(freq[i] == 0) {
+					LOG.warn("Dense encoding contains zero encoding, indicating not all dictionary entries are in use");
+					zeroWarn = true;
+
 				}
 			}
 		}
@@ -338,9 +336,14 @@ public class DenseEncoding extends AEncode {
 		for(int i = 0; i < counts.length; i++)
 			if(counts[i] > largestOffs)
 				largestOffs = counts[i];
-			else if(counts[i] == 0)
-				throw new DMLCompressionException(
-					"Invalid count of 0 all values should have at least one instance index: " + i + " of " + counts.length);
+			else if(counts[i] == 0) {
+				if(!zeroWarn) {
+					LOG.warn("Invalid count of 0 all values should have at least one instance index: " + i + " of "
+						+ counts.length);
+					zeroWarn = true;
+				}
+				counts[i] = 1;
+			}
 
 		if(cs.isRLEAllowed())
 			return new EstimationFactors(map.getUnique(), nRows, largestOffs, counts, 0, nRows, map.countRuns(), false,

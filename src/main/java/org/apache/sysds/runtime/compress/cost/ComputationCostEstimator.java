@@ -173,7 +173,10 @@ public class ComputationCostEstimator extends ACostEstimate {
 			nVals *= 5;
 		else if(nVals < 1024)
 			nVals *= 2;
-
+		else if(nVals > 100000)// increase the cost if the number of distinct values is high.
+				nVals *= 4;
+		else if(nVals > 60000)// increase the cost if the number of distinct values is high.
+			nVals *= 2;
 		final double postScalingCost = sparsity * nVals * nCols;
 		return leftMultCost(preScalingCost, postScalingCost);
 	}

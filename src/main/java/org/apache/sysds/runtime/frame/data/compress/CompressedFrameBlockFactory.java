@@ -249,7 +249,7 @@ public class CompressedFrameBlockFactory {
 	}
 
 	private void compressColFinally(int i, final Array<?> a, final ArrayCompressionStatistics s) {
-
+		Timing time = new Timing(true);
 		if(s != null && s.bestType != null && s.shouldCompress) {
 			switch(s.bestType) {
 				case DDC:
@@ -263,6 +263,8 @@ public class CompressedFrameBlockFactory {
 		}
 		else
 			compressedColumns[i] = a;
+
+		LOG.debug("Timing Compression : " + i + " " + a.getValueType() + " " + time.stop());
 	}
 
 	private void logStatistics() {

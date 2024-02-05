@@ -40,7 +40,7 @@ public class CountHashMap<T> extends ACountHashMap<T> {
 
 	@Override
 	protected int hash(T key) {
-		return key.hashCode();
+		return key == null ? 0 : key.hashCode();
 	}
 
 	@Override

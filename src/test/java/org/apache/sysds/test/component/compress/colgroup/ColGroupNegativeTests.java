@@ -415,14 +415,14 @@ public class ColGroupNegativeTests {
 		}
 
 		@Override
-		protected void decompressToSparseBlockTransposedSparseDictionary(SparseBlockMCSR db, SparseBlock dict) {
+		protected void decompressToSparseBlockTransposedSparseDictionary(SparseBlockMCSR db, SparseBlock dict, int nColOut) {
 			// TODO Auto-generated method stub
 			throw new UnsupportedOperationException(
 				"Unimplemented method 'decompressToSparseBlockTransposedSparseDictionary'");
 		}
 
 		@Override
-		protected void decompressToSparseBlockTransposedDenseDictionary(SparseBlockMCSR db, double[] dict) {
+		protected void decompressToSparseBlockTransposedDenseDictionary(SparseBlockMCSR db, double[] dict, int nColOut) {
 			// TODO Auto-generated method stub
 			throw new UnsupportedOperationException(
 				"Unimplemented method 'decompressToSparseBlockTransposedDenseDictionary'");
@@ -698,14 +698,14 @@ public class ColGroupNegativeTests {
 		}
 
 		@Override
-		protected void decompressToSparseBlockTransposedSparseDictionary(SparseBlockMCSR db, SparseBlock dict) {
+		protected void decompressToSparseBlockTransposedSparseDictionary(SparseBlockMCSR db, SparseBlock dict, int nColOut) {
 			// TODO Auto-generated method stub
 			throw new UnsupportedOperationException(
 				"Unimplemented method 'decompressToSparseBlockTransposedSparseDictionary'");
 		}
 
 		@Override
-		protected void decompressToSparseBlockTransposedDenseDictionary(SparseBlockMCSR db, double[] dict) {
+		protected void decompressToSparseBlockTransposedDenseDictionary(SparseBlockMCSR db, double[] dict, int nColOut) {
 			// TODO Auto-generated method stub
 			throw new UnsupportedOperationException(
 				"Unimplemented method 'decompressToSparseBlockTransposedDenseDictionary'");

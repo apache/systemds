@@ -115,7 +115,7 @@ public class CompressedFrameBlockFactory {
 				final int i = j;
 				final Future<?> stats = pool.submit(() -> (getStatistics(i)));
 				final Future<Array<?>> tmp = pool.submit(() -> allocateCorrectedType(i, stats));
-				final Future<Array<?>> tmp2 = changeTypeFuture(i, tmp, pool, cs.k);
+				final Future<Array<?>> tmp2 = pool.submit(() -> changeTypeFuture(i, tmp, pool, cs.k));
 				tasks.add(pool.submit(() -> compressColFinally(i, tmp2)));
 			}
 
@@ -184,7 +184,7 @@ public class CompressedFrameBlockFactory {
 		}
 	}
 
-	private Future<Array<?>> changeTypeFuture(int i, Future<Array<?>> f, ExecutorService pool, int k) {
+	private Array<?> changeTypeFuture(int i, Future<Array<?>> f, ExecutorService pool, int k) {
 		try {
 			final Array<?> tmp = f.get();
 			final Array<?> a = in.getColumn(i);
@@ -202,34 +202,32 @@ public class CompressedFrameBlockFactory {
 					t.add(pool.submit(() -> tryChange(a, tmp, start, end)));
 				}
 
-				return pool.submit(() -> {
-					try {
-						for(Future<Boolean> tt : t) {
-							if(!tt.get()) {
-								// failed transformation
-								// full analysis of value type... expensive.
-								Pair<ValueType, Boolean> sc = a.analyzeValueType();
-								LOG.warn("Failed to change type of column: " + i + " sample said value type: "
-									+ tmp.getValueType() + " Full analysis says: " + sc.getKey());
-								final Array<?> tmp2;
-								if(sc.getValue())
-									tmp2 = ArrayFactory.allocateOptional(sc.getKey(), nRow);
-								else
-									tmp2 = ArrayFactory.allocate(sc.getKey(), nRow);
-								a.changeType(tmp2);
-								return tmp2;
-							}
+				try {
+					for(Future<Boolean> tt : t) {
+						if(!tt.get()) {
+							// failed transformation
+							// full analysis of value type... expensive.
+							Pair<ValueType, Boolean> sc = a.analyzeValueType();
+							LOG.warn("Failed to change type of column: " + i + " sample said value type: " + tmp.getValueType()
+								+ " Full analysis says: " + sc.getKey());
+							final Array<?> tmp2;
+							if(sc.getValue())
+								tmp2 = ArrayFactory.allocateOptional(sc.getKey(), nRow);
+							else
+								tmp2 = ArrayFactory.allocate(sc.getKey(), nRow);
+							a.changeType(tmp2);
+							return tmp2;
 						}
-						return tmp;
 					}
-					catch(Exception e) {
+					return tmp;
+				}
+				catch(Exception e) {
 
-						throw new RuntimeException(e);
-					}
-				});
+					throw new RuntimeException(e);
+				}
 			}
 			else
-				return pool.submit(() -> tmp);
+				return tmp;
 
 		}
 

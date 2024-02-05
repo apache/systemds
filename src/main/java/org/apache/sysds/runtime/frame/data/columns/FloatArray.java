@@ -393,21 +393,21 @@ public class FloatArray extends Array<Float> {
 		return true;
 	}
 
-	@Override
-	protected Map<Float, Integer> tryGetDictionary(int threshold) {
-		final Map<Float, Integer> dict = new HashMap<>();
-		Integer id = 0;
-		final int s = size();
-		for(int i = 0; i < s && id < threshold; i++) {
-			final Integer v = dict.get(_data[i]);
-			if(v == null)
-				dict.put(_data[i], id++);
-		}
-		if(id >= threshold)
-			return null;
-		else
-			return dict;
-	}
+	// @Override
+	// protected Map<Float, Integer> tryGetDictionary(int threshold) {
+	// 	final Map<Float, Integer> dict = new HashMap<>();
+	// 	Integer id = 0;
+	// 	final int s = size();
+	// 	for(int i = 0; i < s && id < threshold; i++) {
+	// 		final Integer v = dict.get(_data[i]);
+	// 		if(v == null)
+	// 			dict.put(_data[i], id++);
+	// 	}
+	// 	if(id >= threshold)
+	// 		return null;
+	// 	else
+	// 		return dict;
+	// }
 
 	@Override
 	public String toString() {

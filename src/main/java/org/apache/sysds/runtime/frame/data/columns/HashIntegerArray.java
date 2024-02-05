@@ -235,7 +235,6 @@ public class HashIntegerArray extends Array<Object> {
 		return dict;
 	}
 
-	@Override
 	protected Map<Object, Integer> tryGetDictionary(int threshold) {
 		final Map<Object, Integer> dict = new HashMap<>();
 		Integer id = 0;
@@ -457,16 +456,16 @@ public class HashIntegerArray extends Array<Object> {
 		return false;
 	}
 
-	@Override
-	public AMapToData createMapping(Map<Object, Integer> d) {
-		// assuming the dictionary is correctly constructed.
-		final int s = size();
-		final AMapToData m = MapToFactory.create(s, d.size());
+	// @Override
+	// public AMapToData createMapping(Map<Object, Integer> d) {
+	// 	// assuming the dictionary is correctly constructed.
+	// 	final int s = size();
+	// 	final AMapToData m = MapToFactory.create(s, d.size());
 
-		for(int i = 0; i < s; i++)
-			m.set(i, d.get(_data[i]));
-		return m;
-	}
+	// 	for(int i = 0; i < s; i++)
+	// 		m.set(i, d.get(_data[i]));
+	// 	return m;
+	// }
 
 	@Override
 	public String toString() {

@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
@@ -457,55 +458,55 @@ public class OptionalArray<T> extends Array<T> {
 		return true;
 	}
 
-	@SuppressWarnings("unchecked")
-	@Override
-	public AMapToData createMapping(Map<T, Integer> d) {
-		if(_a instanceof HashLongArray) {
-			Map<Long, Integer> dl = (Map<Long, Integer>) d;
-			HashLongArray ha = (HashLongArray) _a;
-			// assuming the dictionary is correctly constructed.
-			final int s = size();
-			final AMapToData m = MapToFactory.create(s, d.size());
-			if(dl.containsKey(null)){
-				final int n = dl.get(null);
-				for(int i = 0; i < s; i++) {
-					if(_n.get(i)) 
-						m.set(i, dl.get(ha.getLong(i)));
-					else 
-						m.set(i, n);
-				}
-			}
-			else{
-				for(int i = 0; i < s; i++)
-					m.set(i, dl.get(ha.getLong(i)));
-			}
-			return m;
-		}
-		else if(_a instanceof HashIntegerArray) {
-			Map<Integer, Integer> dl = (Map<Integer, Integer>) d;
-			HashIntegerArray ha = (HashIntegerArray) _a;
-			// assuming the dictionary is correctly constructed.
-			final int s = size();
-			final AMapToData m = MapToFactory.create(s, d.size());
-			if(dl.containsKey(null)){
-				final int n = dl.get(null);
-				for(int i = 0; i < s; i++) {
-					if(_n.get(i)) 
-						m.set(i, dl.get(ha.getInt(i)));
-					else 
-						m.set(i, n);
-				}
-			}
-			else{
-				for(int i = 0; i < s; i++)
-					m.set(i, dl.get(ha.getInt(i)));
-			}
-			return m;
-		}
-		else {
-			return super.createMapping(d);
-		}
-	}
+	// @SuppressWarnings("unchecked")
+	// @Override
+	// public AMapToData createMapping(Map<T, Integer> d) {
+	// 	if(_a instanceof HashLongArray) {
+	// 		Map<Long, Integer> dl = (Map<Long, Integer>) d;
+	// 		HashLongArray ha = (HashLongArray) _a;
+	// 		// assuming the dictionary is correctly constructed.
+	// 		final int s = size();
+	// 		final AMapToData m = MapToFactory.create(s, d.size());
+	// 		if(dl.containsKey(null)){
+	// 			final int n = dl.get(null);
+	// 			for(int i = 0; i < s; i++) {
+	// 				if(_n.get(i)) 
+	// 					m.set(i, dl.get(ha.getLong(i)));
+	// 				else 
+	// 					m.set(i, n);
+	// 			}
+	// 		}
+	// 		else{
+	// 			for(int i = 0; i < s; i++)
+	// 				m.set(i, dl.get(ha.getLong(i)));
+	// 		}
+	// 		return m;
+	// 	}
+	// 	else if(_a instanceof HashIntegerArray) {
+	// 		Map<Integer, Integer> dl = (Map<Integer, Integer>) d;
+	// 		HashIntegerArray ha = (HashIntegerArray) _a;
+	// 		// assuming the dictionary is correctly constructed.
+	// 		final int s = size();
+	// 		final AMapToData m = MapToFactory.create(s, d.size());
+	// 		if(dl.containsKey(null)){
+	// 			final int n = dl.get(null);
+	// 			for(int i = 0; i < s; i++) {
+	// 				if(_n.get(i)) 
+	// 					m.set(i, dl.get(ha.getInt(i)));
+	// 				else 
+	// 					m.set(i, n);
+	// 			}
+	// 		}
+	// 		else{
+	// 			for(int i = 0; i < s; i++)
+	// 				m.set(i, dl.get(ha.getInt(i)));
+	// 		}
+	// 		return m;
+	// 	}
+	// 	else {
+	// 		return super.createMapping(d);
+	// 	}
+	// }
 
 	@SuppressWarnings("unchecked")
 	@Override
@@ -554,7 +555,7 @@ public class OptionalArray<T> extends Array<T> {
 	}
 
 	@SuppressWarnings("unchecked")
-	@Override
+	// @Override
 	protected Map<T, Integer> tryGetDictionary(int threshold) {
 		if(_a instanceof HashLongArray) {
 			final Map<Long, Integer> dict = new HashMap<>();
@@ -605,7 +606,8 @@ public class OptionalArray<T> extends Array<T> {
 				return (Map<T, Integer>) dict;
 		}
 		else {
-			return super.tryGetDictionary(threshold);
+			throw new NotImplementedException();
+			// return super.tryGetDictionary(threshold);
 		}
 	}
 

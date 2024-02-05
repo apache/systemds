@@ -142,29 +142,29 @@ public abstract class Array<T> implements Writable {
 		return dict;
 	}
 
-	/**
-	 * Get the dictionary of contained values, including null with threshold.
-	 * 
-	 * If the number of distinct values are found to be above the threshold value, then abort constructing the
-	 * dictionary.
-	 * 
-	 * @return a dictionary containing all unique values or null if threshold of distinct is exceeded.
-	 */
-	protected Map<T, Integer> tryGetDictionary(int threshold) {
-		final Map<T, Integer> dict = new HashMap<>();
-		Integer id = 0;
-		final int s = size();
-		for(int i = 0; i < s && id < threshold; i++) {
-			final T val = get(i);
-			final Integer v = dict.get(val);
-			if(v == null)
-				dict.put(val, id++);
-		}
-		if(id >= threshold)
-			return null;
-		else
-			return dict;
-	}
+	// /**
+	//  * Get the dictionary of contained values, including null with threshold.
+	//  * 
+	//  * If the number of distinct values are found to be above the threshold value, then abort constructing the
+	//  * dictionary.
+	//  * 
+	//  * @return a dictionary containing all unique values or null if threshold of distinct is exceeded.
+	//  */
+	// protected Map<T, Integer> tryGetDictionary(int threshold) {
+	// 	final Map<T, Integer> dict = new HashMap<>();
+	// 	Integer id = 0;
+	// 	final int s = size();
+	// 	for(int i = 0; i < s && id < threshold; i++) {
+	// 		final T val = get(i);
+	// 		final Integer v = dict.get(val);
+	// 		if(v == null)
+	// 			dict.put(val, id++);
+	// 	}
+	// 	if(id >= threshold)
+	// 		return null;
+	// 	else
+	// 		return dict;
+	// }
 
 	/**
 	 * Get the number of elements in the array, this does not necessarily reflect the current allocated size.
@@ -1044,14 +1044,14 @@ public abstract class Array<T> implements Writable {
 			&& distinctFound * 100 >= samplesTaken * 60; // More than 60 % distinct
 	}
 
-	public AMapToData createMapping(Map<T, Integer> d) {
-		final int s = size();
-		final AMapToData m = MapToFactory.create(s, d.size());
+	// public AMapToData createMapping(Map<T, Integer> d) {
+	// 	final int s = size();
+	// 	final AMapToData m = MapToFactory.create(s, d.size());
 
-		for(int i = 0; i < s; i++)
-			m.set(i, d.get(get(i)));
-		return m;
-	}
+	// 	for(int i = 0; i < s; i++)
+	// 		m.set(i, d.get(get(i)));
+	// 	return m;
+	// }
 
 	public class ArrayIterator implements Iterator<T> {
 		int index = -1;

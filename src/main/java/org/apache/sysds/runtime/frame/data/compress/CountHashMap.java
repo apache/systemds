@@ -82,7 +82,7 @@ public class CountHashMap<T> extends ACountHashMap<T> {
 		@Override
 		public ACount<T> get(T key) {
 			TCount e = this;
-			while(e != null && !key.equals(e.key))
+			while(e != null && !keyEq(key, e.key))
 				e = e.next;
 			return e;
 		}
@@ -90,11 +90,11 @@ public class CountHashMap<T> extends ACountHashMap<T> {
 		@Override
 		public ACount<T> inc(T key, int c, int id) {
 			TCount e = this;
-			while(e.next != null && !key.equals(e.key)) {
+			while(e.next != null && !keyEq(key, e.key)) {
 				e = e.next;
 			}
 
-			if(key.equals(e.key)) {
+			if(keyEq(key, e.key)) {
 				e.count += c;
 				return e;
 			}
@@ -102,6 +102,11 @@ public class CountHashMap<T> extends ACountHashMap<T> {
 				e.next = new TCount(key, id, c);
 				return e.next;
 			}
+		}
+
+		private boolean keyEq(T k, T v) {
+			return (k != null && k.equals(v)) || //
+				(k == null && v == null);
 		}
 
 	}

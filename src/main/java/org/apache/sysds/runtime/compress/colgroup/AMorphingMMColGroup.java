@@ -19,9 +19,12 @@
 
 package org.apache.sysds.runtime.compress.colgroup;
 
+import java.util.Arrays;
+
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary;
+import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.compress.lib.CLALibLeftMultBy;
 import org.apache.sysds.runtime.compress.lib.CLALibTSMM;
@@ -93,9 +96,33 @@ public abstract class AMorphingMMColGroup extends AColGroupValue {
 		LOG.warn("Should never call decompress on morphing group instead extract common values and combine all commons");
 		double[] cv = new double[db.getRows().length];
 		AColGroup b = extractCommon(cv);
-		b.decompressToSparseBlockTransposed(db, nColOut);
-		decompressToSparseBlockTransposedCommonVector(db, nColOut, cv);
-		throw new NotImplementedException();
+		final int thisNCol = this._colIndexes.size();
+		AColGroup tmpB = b.copyAndSet(ColIndexFactory.create(this._colIndexes.size()));
+		final int blockSize = 1000;
+		double[] tmp = new double[thisNCol * blockSize];
+		for(int i = 0; i < nColOut; i += blockSize) {
+			final int start = i;
+			final int end = Math.min(nColOut, i + blockSize);
+			MatrixBlock tmpBlock = new MatrixBlock(end - start, thisNCol, tmp);
+			DenseBlock tmpDB = tmpBlock.getDenseBlock();
+			if(i != 0) {
+				// reset the tmp block
+				Arrays.fill(tmp, 0, (end - start) * thisNCol, 0.0);
+			}
+			tmpB.decompressToDenseBlock(tmpDB, start, end, -start, 0);
+
+			// copy into the output block while adding tmp
+			for(int k = 0; k < thisNCol; k++) {// row in output
+				for(int j = i; j < end; j++) { // col in output
+					db.append(k, j, tmp[(i - start) * thisNCol + k] + cv[_colIndexes.get(k)]);
+				}
+			}
+		}
+		// b.decompressToSparseBlockTransposed(db, nColOut);
+		// decompressToSparseBlockTransposedCommonVector(db, nColOut, cv);
+
+		// decompressToDenseBlock(null, 0, 0, 0, 0);
+		// throw new NotImplementedException();
 	}
 
 	@Override

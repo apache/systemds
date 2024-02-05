@@ -23,6 +23,7 @@ import java.lang.ref.SoftReference;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.logging.Log;
@@ -33,11 +34,8 @@ import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
 import org.apache.sysds.runtime.compress.estim.sample.SampleEstimatorFactory;
-import org.apache.sysds.runtime.compress.utils.ACount;
-import org.apache.sysds.runtime.compress.utils.ACountHashMap;
 import org.apache.sysds.runtime.frame.data.columns.ArrayFactory.FrameArrayType;
 import org.apache.sysds.runtime.frame.data.compress.ArrayCompressionStatistics;
-import org.apache.sysds.runtime.frame.data.compress.CountHashMap;
 import org.apache.sysds.runtime.matrix.data.Pair;
 
 /**
@@ -1010,11 +1008,20 @@ public abstract class Array<T> implements Writable {
 				estDistinct, false, vt.getKey(), vt.getValue(), null, getInMemorySize(), memSize);
 	}
 
-	protected int estimateDistinct(int nSamples){
-		final ACountHashMap<T> d = new CountHashMap<T>(nSamples / 10);
+	protected int estimateDistinct(int nSamples) {
+
+		final HashMap<T, Integer> d = new HashMap<>(nSamples / 10);
+		// final ACountHashMap<T> d = new CountHashMap<T>(nSamples / 10);
 		int nSamplesTaken = 0;
-		for(; nSamplesTaken < nSamples && !earlyAbortEstimateDistinct(d.size(), nSamplesTaken, nSamples); nSamplesTaken++)
-			d.increment(get(nSamplesTaken));
+		for(; nSamplesTaken < nSamples && !earlyAbortEstimateDistinct(d.size(), nSamplesTaken, nSamples);
+			nSamplesTaken++) {
+			// d.get(d);
+			T key = get(nSamplesTaken);
+			if(d.containsKey(key))
+				d.put(key, d.get(key) + 1);
+			else
+				d.put(key, 1);
+		}
 
 		if(earlyAbortEstimateDistinct(d.size(), nSamplesTaken, nSamples)) {
 			LOG.error("Early abort stats and compress : " + nSamplesTaken + " " + nSamples);
@@ -1023,15 +1030,18 @@ public abstract class Array<T> implements Writable {
 
 		final int[] freq = new int[d.size()];
 		int id = 0;
-		for(ACount<T> e : d.extractValues())
-			freq[id++] = e.count;
-		
+		// for(ACount<T> e : d.extractValues())
+		// freq[id++] = e.count;
+
+		for(Entry<T, Integer> e : d.entrySet())
+			freq[id++] = e.getValue();
+
 		return SampleEstimatorFactory.distinctCount(freq, size(), nSamplesTaken);
 	}
 
-	protected boolean earlyAbortEstimateDistinct(int distinctFound, int samplesTaken, int maxSamples){
+	protected boolean earlyAbortEstimateDistinct(int distinctFound, int samplesTaken, int maxSamples) {
 		return samplesTaken * 100 >= maxSamples * 10 // More than 10 % sampled.
-			 && distinctFound * 100 >= samplesTaken * 60; // More than 60 % distinct
+			&& distinctFound * 100 >= samplesTaken * 60; // More than 60 % distinct
 	}
 
 	public AMapToData createMapping(Map<T, Integer> d) {

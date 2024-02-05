@@ -334,7 +334,6 @@ public class DenseEncoding extends AEncode {
 	public EstimationFactors extractFacts(int nRows, double tupleSparsity, double matrixSparsity,
 		CompressionSettings cs) {
 		int largestOffs = 0;
-
 		int[] counts = map.getCounts();
 		for(int i = 0; i < counts.length; i++)
 			if(counts[i] > largestOffs)

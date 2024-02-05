@@ -124,7 +124,10 @@ public class ComEstSample extends AComEst {
 			return new CompressedSizeInfoColGroup(colIndexes, em, _cs.validCompressions, map);
 		}
 		catch(Exception e) {
-			throw new DMLCompressionException(map + "", e);
+			String ms = map.toString();
+			if(ms.length() > 1000)
+				ms = ms.substring(0, 1000);
+			throw new DMLCompressionException("Failed to extract info: \n" + ms, e);
 		}
 	}
 
@@ -141,8 +144,8 @@ public class ComEstSample extends AComEst {
 			final int numOffs = calculateOffs(sampleFacts, numRows, scalingFactor, colIndexes, (int) nnz);
 			final int estDistinct = distinctCountScale(sampleFacts, numOffs, numRows, maxDistinct, dense, nCol);
 			// if(estDistinct < sampleFacts.numVals)
-			// 	throw new DMLCompressionException("Failed estimating distinct: " + estDistinct + " should have been above "
-			// 		+ sampleFacts.numVals + "\n" + Arrays.toString(sampleFacts.frequencies));
+			// throw new DMLCompressionException("Failed estimating distinct: " + estDistinct + " should have been above "
+			// + sampleFacts.numVals + "\n" + Arrays.toString(sampleFacts.frequencies));
 
 			// calculate the largest instance count.
 			final int maxLargestInstanceCount = numRows - estDistinct + 1;

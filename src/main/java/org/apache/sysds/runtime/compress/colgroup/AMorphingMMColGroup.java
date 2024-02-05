@@ -113,8 +113,9 @@ public abstract class AMorphingMMColGroup extends AColGroupValue {
 
 			// copy into the output block while adding tmp
 			for(int k = 0; k < thisNCol; k++) {// row in output
+				final int outOff = _colIndexes.get(k);
 				for(int j = i; j < end; j++) { // col in output
-					db.append(k, j, tmp[(i - start) * thisNCol + k] + cv[_colIndexes.get(k)]);
+					db.append(outOff, j, tmp[(j - start) * thisNCol + k] + cv[outOff]);
 				}
 			}
 		}

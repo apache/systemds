@@ -166,7 +166,7 @@ public class DDCArray<T> extends ACompressedArray<T> {
 	}
 
 	protected static <T> int setAndAddToDict(Array<T> arr, Map<T, Integer> rcd, AMapToData m, int i, Integer id) {
-		final T val = arr.get(i);
+		final T val = arr.getInternal(i);
 		final Integer v = rcd.get(val);
 		if(v == null) {
 			m.set(i, id);

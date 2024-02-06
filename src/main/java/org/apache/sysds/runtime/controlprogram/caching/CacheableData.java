@@ -684,6 +684,8 @@ public abstract class CacheableData<T extends CacheBlock<?>> extends Data
 	public void release() {
 		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 		
+		LOG.error("Is below Caching threshold: " + isBelowCachingThreshold());
+
 		//update thread-local status (before unpin but outside
 		//the critical section of accessing a shared object)
 		if( !isBelowCachingThreshold() )
@@ -879,7 +881,7 @@ public abstract class CacheableData<T extends CacheBlock<?>> extends Data
 		boolean eqFormat = isEqualOutputFormat(outputFormat);
 		boolean eqBlksize = (getBlocksize() != blen)
 			&& (outputFormat == null || outputFormat.equals("binary"));
-		
+		LOG.error("is Dirty : " + isDirty() + " Same scheme: "+ eqScheme + "  Format: " + (pWrite && (!eqFormat | !eqBlksize) ));
 		//actual export (note: no direct transfer of local copy in order to ensure blocking (and hence, parallelism))
 		if( isDirty() || !eqScheme || isFederated() ||
 			(pWrite && (!eqFormat | !eqBlksize)) )

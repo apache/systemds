@@ -112,21 +112,21 @@ public class ComEstSample extends AComEst {
 	@Override
 	protected CompressedSizeInfoColGroup combine(IColIndex combinedColumns, CompressedSizeInfoColGroup g1,
 		CompressedSizeInfoColGroup g2, int maxDistinct) {
-		try{
-		final IEncode map = g1.getMap().combine(g2.getMap());
-		return extractInfo(map, combinedColumns, maxDistinct);
+		try {
+			final IEncode map = g1.getMap().combine(g2.getMap());
+			return extractInfo(map, combinedColumns, maxDistinct);
 		}
-		catch(Exception e){
+		catch(Exception e) {
 
 			String s1 = g1.toString();
 			if(s1.length() > 1000)
-			s1 = s1.substring(0, 1000);
+				s1 = s1.substring(0, 1000);
 
-				String s2 = g2.toString();
-				if(s2.length() > 1000)
+			String s2 = g2.toString();
+			if(s2.length() > 1000)
 				s2 = s2.substring(0, 1000);
 
-			throw new DMLCompressionException("Failed to combine :\n"+ s1 + "\n\n"+ s2, e);
+			throw new DMLCompressionException("Failed to combine :\n" + s1 + "\n\n" + s2, e);
 		}
 	}
 

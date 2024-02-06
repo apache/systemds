@@ -166,7 +166,8 @@ public class ByteBuffer
 	 */
 	public static boolean isValidCapacity( long size, CacheBlock<?> cb )
 	{
-		if( !cb.isShallowSerialize(true) ) { //SPARSE matrix blocks
+		if( !cb.isShallowSerialize(true) ) { //SPARSE matrix blocks // Frame Block
+			// Also hits here if frameblock has a scheme and String does not dominate size
 			// since cache blocks are serialized into a byte representation
 			// the buffer buffer can hold at most 2GB in size 
 			return ( size <= DenseBlockLDRB.MAX_ALLOC || cb instanceof Frame );

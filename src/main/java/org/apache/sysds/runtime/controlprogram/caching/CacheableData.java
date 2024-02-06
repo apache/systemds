@@ -718,8 +718,6 @@ public abstract class CacheableData<T extends CacheBlock<?>> extends Data
 
 		//cache status maintenance (pass cacheNoWrite flag)
 		release(_isAcquireFromEmpty && !_requiresLocalWrite);
-		
-		LOG.error("Caching active: " + isCachingActive()  + "  Is cached: " + isCached(true)  + " " + (!isBelowCachingThreshold()) );
 
 		if( isCachingActive() //only if caching is enabled (otherwise keep everything in mem)
 			&& isCached(true) //not empty and not read/modify

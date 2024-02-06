@@ -658,6 +658,7 @@ public class ExecutionContext {
 		fo.setSchema(outputData.getSchema());
 		fo.acquireModify(outputData);
 		fo.release();
+		LOG.error(fo.isCached(true) + "  " + fo.getStatus());
 		setVariable(varName, fo);
 	}
 

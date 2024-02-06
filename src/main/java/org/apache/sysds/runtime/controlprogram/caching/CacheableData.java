@@ -745,6 +745,7 @@ public abstract class CacheableData<T extends CacheBlock<?>> extends Data
 			
 			//create cache
 			createCache();
+			
 			_data = null;
 		}
 	}
@@ -1289,7 +1290,6 @@ public abstract class CacheableData<T extends CacheBlock<?>> extends Data
 
 	protected void setEmpty() {
 		_cacheStatus = CacheStatus.EMPTY;
-		throw new RuntimeException("Not allowed to set empty");
 	}
 	
 	protected void setModify() {

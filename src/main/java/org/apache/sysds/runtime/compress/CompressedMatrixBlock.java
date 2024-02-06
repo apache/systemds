@@ -99,9 +99,7 @@ public class CompressedMatrixBlock extends MatrixBlock {
 	private static final Log LOG = LogFactory.getLog(CompressedMatrixBlock.class.getName());
 	private static final long serialVersionUID = 73193720143154058L;
 
-	/**
-	 * Debugging flag for Compressed Matrices
-	 */
+	/** Debugging flag for Compressed Matrices */
 	public static boolean debug = false;
 
 	/**

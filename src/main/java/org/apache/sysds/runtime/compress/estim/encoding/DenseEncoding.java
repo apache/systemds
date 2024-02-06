@@ -21,6 +21,7 @@ package org.apache.sysds.runtime.compress.estim.encoding;
 
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
@@ -153,21 +154,18 @@ public class DenseEncoding extends AEncode {
 		final int nVR = rm.getUnique();
 		final int size = map.size();
 		int maxUnique = nVL * nVR;
-		DenseEncoding retE = null;
+		final DenseEncoding retE;
+		final AMapToData ret = MapToFactory.create(size, maxUnique);
 		if(maxUnique < Math.max(nVL, nVR)) {// overflow
-			maxUnique = size;
-			final AMapToData ret = MapToFactory.create(size, maxUnique);
-			final HashMapLongInt m = new HashMapLongInt(Math.max(100, maxUnique / 100));
+			final HashMapLongInt m = new HashMapLongInt(Math.max(100, size / 100));
 			retE = combineDenseWithHashMapLong(lm, rm, size, nVL, ret, m);
 		}
 		else if(maxUnique > size && maxUnique > 2048) {
-			final AMapToData ret = MapToFactory.create(size, Math.max(100, maxUnique / 100));
 			// aka there is more maxUnique than rows.
-			final HashMapLongInt m = new HashMapLongInt(size);
+			final HashMapLongInt m = new HashMapLongInt(Math.max(100, maxUnique / 100));
 			retE = combineDenseWithHashMap(lm, rm, size, nVL, ret, m);
 		}
 		else {
-			final AMapToData ret = MapToFactory.create(size, maxUnique);
 			final AMapToData m = MapToFactory.create(maxUnique, maxUnique + 1);
 			retE = combineDenseWithMapToData(lm, rm, size, nVL, ret, maxUnique, m);
 		}
@@ -209,7 +207,7 @@ public class DenseEncoding extends AEncode {
 
 		final AMapToData ret = MapToFactory.create(size, maxUnique);
 
-		final HashMapLongInt m = new HashMapLongInt(Math.max(100, maxUnique / 100));
+		final HashMapLongInt m = new HashMapLongInt(Math.max(100, maxUnique / 1000));
 		return new ImmutablePair<>(combineDenseWithHashMap(lm, rm, size, nVL, ret, m), m);
 	}
 
@@ -239,11 +237,9 @@ public class DenseEncoding extends AEncode {
 				for(int r = 0; r < size; r++)
 					addValHashMapChar(lmC.getIndex(r) + rmC.getIndex(r) * nVL, r, m, (MapToChar) ret);
 			}
-			else {
-
+			else 
 				for(int r = 0; r < size; r++)
 					addValHashMapChar(lm.getIndex(r) + rm.getIndex(r) * nVL, r, m, (MapToChar) ret);
-			}
 		}
 		else if(ret instanceof MapToCharPByte)
 			for(int r = 0; r < size; r++)
@@ -252,6 +248,7 @@ public class DenseEncoding extends AEncode {
 			combineDenseWithHashMapGeneric(lm, rm, size, nVL, ret, m);
 		}
 		return new DenseEncoding(MapToFactory.resize(ret, m.size()));
+
 	}
 
 	protected final void combineDenseWithHashMapGeneric(final AMapToData lm, final AMapToData rm, final int size,

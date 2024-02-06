@@ -21,6 +21,7 @@ package org.apache.sysds.runtime.compress.cocode;
 
 import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.compress.cost.ACostEstimate;
+import org.apache.sysds.runtime.compress.cost.ComputationCostEstimator;
 import org.apache.sysds.runtime.compress.estim.AComEst;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfo;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.Timing;
@@ -54,7 +55,7 @@ public class CoCodeHybrid extends AColumnCoCoder {
 			colInfos.setInfo(CoCodePriorityQue.join(colInfos.getInfo(), _sest, _cest, PriorityQueGoal, k));
 			LOG.debug("Que based time: " + time.stop());
 			final int pqSize = colInfos.getInfo().size();
-			if(pqSize < startSize) {
+			if(pqSize < PriorityQueGoal || (pqSize < startSize && _cest instanceof ComputationCostEstimator)) {
 				CoCodeGreedy gd = new CoCodeGreedy(_sest, _cest, _cs);
 				colInfos.setInfo(gd.combine(colInfos.getInfo(), k));
 				LOG.debug("Greedy time:     " + time.stop());

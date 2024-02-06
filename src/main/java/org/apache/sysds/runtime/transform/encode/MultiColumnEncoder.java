@@ -155,8 +155,6 @@ public class MultiColumnEncoder implements Encoder {
 				LOG.debug(String.format("Transform Encode output cols     : %10d", out.getNumColumns()));
 				LOG.debug(String.format("Transform Encode output sparsity : %10.5f", out.getSparsity()));
 				LOG.debug(String.format("Transform Encode output nnz      : %10d", out.getNonZeros()));
-				LOG.error(out.slice(0, 10));
-
 			}
 
 			if(out.getNonZeros() > (long)in.getNumRows() * in.getNumColumns()){

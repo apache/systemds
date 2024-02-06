@@ -88,7 +88,6 @@ public final class FrameLibDetectSchema {
 		final ExecutorService pool = CommonThreadPool.get(k);
 		try {
 			final int cols = in.getNumColumns();
-			LOG.error(sampleSize + " " + in.getNumRows());
 			final ArrayList<DetectValueTypeTask> tasks = new ArrayList<>(cols);
 			for(int i = 0; i < cols; i++)
 				tasks.add(new DetectValueTypeTask(in.getColumn(i), sampleSize));

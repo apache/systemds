@@ -25,6 +25,7 @@ import java.io.DataInputStream;
 import java.io.DataOutput;
 import java.io.IOException;
 
+import org.apache.sysds.api.mlcontext.Frame;
 import org.apache.sysds.runtime.data.DenseBlockLDRB;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -168,7 +169,7 @@ public class ByteBuffer
 		if( !cb.isShallowSerialize(true) ) { //SPARSE matrix blocks
 			// since cache blocks are serialized into a byte representation
 			// the buffer buffer can hold at most 2GB in size 
-			return ( size <= DenseBlockLDRB.MAX_ALLOC );
+			return ( size <= DenseBlockLDRB.MAX_ALLOC || cb instanceof Frame );
 		}
 		else {//DENSE/SPARSE matrix / frame blocks
 			// for dense and under special conditions also sparse matrix blocks 

@@ -888,7 +888,7 @@ public abstract class CacheableData<T extends CacheBlock<?>> extends Data
 			// a) get the matrix
 			boolean federatedWrite = (outputFormat != null ) &&  outputFormat.contains("federated");
 
-			if(isDirty() && isEmpty(true) && !federatedWrite)
+			if(isEmpty(true) && !federatedWrite)
 			{
 				//read data from HDFS if required (never read before), this applies only to pWrite w/ different output formats
 				//note: for large rdd outputs, we compile dedicated writespinstructions (no need to handle this here) 
@@ -1289,6 +1289,7 @@ public abstract class CacheableData<T extends CacheBlock<?>> extends Data
 
 	protected void setEmpty() {
 		_cacheStatus = CacheStatus.EMPTY;
+		throw new RuntimeException("Not allowed to set empty");
 	}
 	
 	protected void setModify() {

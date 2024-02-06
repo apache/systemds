@@ -884,9 +884,6 @@ public abstract class CacheableData<T extends CacheBlock<?>> extends Data
 			//actual export (note: no direct transfer of local copy in order to ensure blocking (and hence, parallelism))
 		if( isDirty() || !eqScheme || isFederated() || (pWrite && (!eqFormat | !eqBlksize))) {
 
-			LOG.error("is Dirty : " + isDirty() + " Same scheme: " + eqScheme + "  Format: "
-				+ (pWrite && (!eqFormat | !eqBlksize)) + "  " + isEmpty(true) + "  " + (_cacheStatus));
-
 			// CASE 1: dirty in-mem matrix or pWrite w/ different format (write matrix to fname; load into memory if evicted)
 			// a) get the matrix
 			boolean federatedWrite = (outputFormat != null ) &&  outputFormat.contains("federated");

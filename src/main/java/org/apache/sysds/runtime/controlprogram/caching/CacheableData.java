@@ -889,30 +889,34 @@ public abstract class CacheableData<T extends CacheBlock<?>> extends Data
 			// a) get the matrix
 			boolean federatedWrite = (outputFormat != null ) &&  outputFormat.contains("federated");
 
-			if(isEmpty(true) && !federatedWrite)
-			{
-				//read data from HDFS if required (never read before), this applies only to pWrite w/ different output formats
-				//note: for large rdd outputs, we compile dedicated writespinstructions (no need to handle this here) 
-				try {
-					if( getRDDHandle()==null || getRDDHandle().allowsShortCircuitRead() )
-						_data = readBlobFromHDFS( _hdfsFileName );
-					else if( getRDDHandle() != null )
-						_data = readBlobFromRDD( getRDDHandle(), new MutableBoolean() );
-					else if(!federatedWrite)
-						_data = readBlobFromFederated( getFedMapping() );
-					setDirty(false);
-					refreshMetaData(); //e.g., after unknown csv read
-				}
-				catch (IOException e) {
-					throw new DMLRuntimeException("Reading of " + _hdfsFileName + " ("+hashCode()+") failed.", e);
-				}
-			}
+			if(!federatedWrite){
 
-			//get object from cache
-			if(!federatedWrite) {
+
+				//get object from cache
 				if( _data == null )
 					getCache();
+
+				if(_data == null && isEmpty(false)){ 
+					// read data from HDFS if required (never read before),
+					// this applies only to pWrite w/ different output formats
+					// note: for large rdd outputs, we compile dedicated writespinstructions (no need to handle this here) 
+					try {
+						if( getRDDHandle()==null || getRDDHandle().allowsShortCircuitRead() )
+							_data = readBlobFromHDFS( _hdfsFileName );
+						else if( getRDDHandle() != null )
+							_data = readBlobFromRDD( getRDDHandle(), new MutableBoolean() );
+						else if(!federatedWrite) // pull back from federated site.
+							_data = readBlobFromFederated( getFedMapping() );
+						setDirty(false);
+						refreshMetaData(); //e.g., after unknown csv read
+					}
+					catch (IOException e) {
+						throw new DMLRuntimeException("Reading of " + _hdfsFileName + " ("+hashCode()+") failed.", e);
+					}
+				}
+	
 				acquire( false, _data==null ); //incl. read matrix if evicted
+				
 			}
 
 			// b) write the matrix 
@@ -932,7 +936,7 @@ public abstract class CacheableData<T extends CacheBlock<?>> extends Data
 		}
 		else if( pWrite ) // pwrite with same output format
 		{
-			//CASE 2: matrix already in same format but different file on hdfs (copy matrix to fname)
+			//CASE 2: matrix already in same format but different file on hdfs (copy to fname)
 			try
 			{
 				HDFSTool.deleteFileIfExistOnHDFS(fName);

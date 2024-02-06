@@ -927,6 +927,8 @@ public class FrameBlock implements CacheBlock<FrameBlock>, Externalizable {
 		for(int j = 0; j < _schema.length; j++)
 			if(!_coldata[j].isShallowSerialize())
 				return false;
+
+		LOG.error("Frame is shallow serialize");
 		return true;
 	}
 

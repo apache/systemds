@@ -662,7 +662,7 @@ public class StringArray extends Array<String> {
 	@Override
 	public boolean isShallowSerialize() {
 		final long s = getInMemorySize();
-		return _size < 100 || s / _size < 100;
+		return _size < 100 || s / _size < 256;
 	}
 
 	@Override

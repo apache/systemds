@@ -410,12 +410,10 @@ class SystemDSContext(object):
         :param real_input: The real part of the input matrix.
         :return: A MultiReturn object representing the real and imaginary parts of the FFT output.
         """
-        # Assuming the FFT DML script returns two outputs: real and imaginary parts
-        # and requires a single input matrix (real part of the data)
+
         real_output = OperationNode(self, '', output_type=OutputType.MATRIX, is_python_local_data=False)
         imag_output = OperationNode(self, '', output_type=OutputType.MATRIX, is_python_local_data=False)
         
-        # Create the MultiReturn object with the specified outputs
         fft_node = MultiReturn(self, 'fft', [real_output, imag_output], [real_input])
 
         return fft_node
@@ -433,8 +431,6 @@ class SystemDSContext(object):
         real_output = OperationNode(self, '', output_type=OutputType.MATRIX, is_python_local_data=False)
         imag_output = OperationNode(self, '', output_type=OutputType.MATRIX, is_python_local_data=False)
         
-        # Assuming the IFFT DML script requires two inputs (real and imaginary parts) and returns two outputs
-            # Check if imaginary input exists
         if imag_input is not None:
             ifft_node = MultiReturn(self, 'ifft', [real_output, imag_output], [real_input, imag_input], None)
         else:

@@ -41,8 +41,7 @@
 # --------------------------------------------------------------------------------------------
 
 s_hmm_innit = function(Integer observations_count, Integer hiddenstates_count, Boolean print_mode = FALSE, Boolean random_mode = FALSE)
-    return (matrix[Double] start_prob, matrix[Double] transition_prob,
-            matrix[Double] emission_prob)
+    return (matrix[Double] start_prob, matrix[Double] transition_prob, matrix[Double] emission_prob)
     {
         if(random_mode) {
             transition_prob = rand(rows = hiddenstates_count, cols = hiddenstates_count)
@@ -64,9 +63,8 @@ s_hmm_innit = function(Integer observations_count, Integer hiddenstates_count, B
     }
 
 
-print_model = function(Integer observations_count, Integer hiddenstates_count,
-            matrix[Double] start_prob, matrix[Double] transition_prob,
-            matrix[Double] emission_prob)
+print_model = function(Integer observations_count, Integer hiddenstates_count, matrix[Double] start_prob, 
+                       matrix[Double] transition_prob, matrix[Double] emission_prob)
     {
         print("Number of possible Observations: \n" + toString(observations_count) + "\n")
         print("Number of possible Hidden States: \n" + toString(hiddenstates_count) + "\n")

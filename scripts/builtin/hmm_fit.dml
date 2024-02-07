@@ -100,18 +100,25 @@ forward = function(matrix[Double] observations_sequences, matrix[Double] start_p
     }
 
 
-backward = function(matrix[Double] observations_sequences, matrix[Double] transition_prob, 
-                    matrix[Double] emission_prob)
+backward = function(matrix[Double] observation_sequence, matrix[Double] transition_prob, 
+                    matrix[Double] emission_prob, Integer hiddenstates_count,
+                    Integer sequence_length)
     return(matrix[double] backward_prob)
     {   
-        hiddenstates_count = ncol(transition_prob)
-        observations_count = ncol(observations_sequences)
-        backward_prob = matrix(0, rows = hiddenstates_count, cols = observations_count)
+        backward_prob = matrix(log(1), rows = hiddenstates_count, cols = sequence_length)
 
-        for (k in (observations_count-1):1) {
-            observation = as.scalar(observations_sequences[1,k])
-            backward_prob[,k] = log(transition_prob %*% emission_prob[,observation]) + backward_prob[,k+1]
-        }
+        for(k in (sequence_length-1):1) {
+            for(state in 1:hiddenstates_count){
+                logsum = -Inf
+                for(nextState in 1:hiddenstates_count) {
+                    temp = as.scalar(backward_prob[nextState,k+1] + log(transition_prob[state,nextState]*emission_prob[nextState,as.scalar(observation_sequence[1,k+1])]))
+                    if(temp > - Inf) {
+                        logsum = temp + log(1 + exp(logsum-temp))
+                    }
+                    }
+                backward_prob[state,k] = logsum
+                }
+            }
     }
 
 expected_transition = function(matrix[Double] observation_sequence, matrix[Double] transition_prob, 
@@ -140,28 +147,40 @@ expected_transition = function(matrix[Double] observation_sequence, matrix[Doubl
     }
 
 expected_emission = function(matrix[Double] observation_sequence, matrix[Double] transition_prob, 
-                             matrix[Double] emission_prob, matrix[Double] forward_prob,
-                             matrix[Double] backward_prob, Double observations_prob_forward,
-                             Integer hiddenstates_count, Integer sequence_length,
-                             Integer observation_count)
+                                matrix[Double] emission_prob, matrix[Double] forward_prob,
+                                matrix[Double] backward_prob, Double observations_prob_forward,
+                                Integer hiddenstates_count, Integer sequence_length,
+                                Integer observation_count)
     return(matrix[double] expected_emission_prob)
     {
+        print("forward " + "\n")
+        print(toString(forward_prob))
+        #print("forward - backward at step " + 1 + 1 + ": \n" + toString(as.scalar(forward_prob[1,1])) + " " + toString(as.scalar(backward_prob[1,1])) + "\n")
+
+        print("backward " + "\n")
+        print(toString(backward_prob))
+
         expected_emission_prob = matrix(0, rows = hiddenstates_count, cols = observation_count)
-        for (y in 1:observation_count) {
-            sequence_emission_prob = matrix(0, rows = hiddenstates_count, cols = sequence_length)
-            i = 0
-            for (k in 1:sequence_length) {
-                    observation = as.scalar(observation_sequence[1,k])
-                    if(observation == y) {
-                        i += 1
-                        sequence_emission_prob[,i] = forward_prob[,k] + backward_prob[,k]
+        for(x in 1:hiddenstates_count) {
+            for(o in 1:observation_count) {
+                temp = -Inf
+                for(i in 1:sequence_length){
+                    if (o == as.scalar(observation_sequence[1,i])){
+                        j = as.scalar(forward_prob[x,i] + backward_prob[x,i])
+                        if (j > -Inf){
+                            temp = j + log(1+exp(temp-j))
+                        }
                     }
+                    #print("temp at step " + x + o + i + ": \n" + toString(temp) + " " + toString(j) + "\n")
+                    #print("forward - backward at step " + x + o + i + ": \n" + toString(as.scalar(forward_prob[x,i])) + " " + toString(as.scalar(backward_prob[x,i])) + "\n")
                 }
-            if (i == 0){
-                expected_emission_prob[,y] = matrix(0, rows = hiddenstates_count, cols = 1)
-            } else {
-                expected_emission_prob[,y] = exp(logSumExp(M = sequence_emission_prob[,1:i], margin = "rows") - observations_prob_forward)
+                #print(temp)
+                temp = exp(temp - observations_prob_forward)
+                #print(observations_prob_forward)
+                #print(temp)
+                expected_emission_prob[x,o] = temp
             }
         }
+        print("expected_emission_prob at step " + ": \n" + toString(expected_emission_prob) + "\n")
         expected_emission_prob = expected_emission_prob / rowSums(expected_emission_prob)
     }

@@ -182,14 +182,14 @@ class TestFFT2(unittest.TestCase):
         input_matrix = np.array([])
         sds_input = self.sds.from_numpy(input_matrix)
         
-        with self.assertRaises(RuntimeError):
+        with self.assertRaisesRegex(RuntimeError, "The first argument to FFT cannot be an empty matrix."):
             _ = self.sds.fft(sds_input).compute()
 
     def test_ifft_empty_matrix(self):
         input_matrix = np.array([])
         sds_input = self.sds.from_numpy(input_matrix)
         
-        with self.assertRaises(RuntimeError):
+        with self.assertRaisesRegex(RuntimeError, "The first argument to IFFT cannot be an empty matrix."):
             _ = self.sds.ifft(sds_input).compute()
 
     def test_fft_single_element(self):
@@ -227,6 +227,18 @@ class TestFFT2(unittest.TestCase):
         real_part, imag_part = ifft_result
         np.testing.assert_array_almost_equal(real_part, np.zeros((4, 4)), decimal=5)
         np.testing.assert_array_almost_equal(imag_part, np.zeros((4, 4)), decimal=5)
+
+    def test_ifft_real_and_imaginary_dimensions_check(self):
+        real_part = np.random.rand(1, 16) 
+        imag_part = np.random.rand(1, 14) 
+
+        sds_real_input = self.sds.from_numpy(real_part)
+        sds_imag_input = self.sds.from_numpy(imag_part)
+
+        with self.assertRaisesRegex(RuntimeError, "The real and imaginary part of the provided matrix are of different dimensions."):
+            self.sds.ifft(sds_real_input, sds_imag_input).compute()
+
+    
 
 
 if __name__ == '__main__':

@@ -63,19 +63,24 @@ class TestFFT2(unittest.TestCase):
         np.testing.assert_array_almost_equal(imag_part.flatten(), expected_imag, decimal=5)
     
     def test_ifft_basic(self):
+        print("starting test_ifft_basic")
         # Example input matrices for real and imaginary parts
         real_input_matrix = np.array([[1, 2, 3, 4],
                                        [5, 6, 7, 8],
                                        [9, 10, 11, 12],
                                        [13, 14, 15, 16]])
-        imag_input_matrix = np.zeros_like(real_input_matrix)  # Example, assuming no imaginary part
+                                       
+        imag_input_matrix = np.array([[1, 2, 3, 4],
+                                       [5, 6, 7, 8],
+                                       [9, 10, 11, 12],
+                                       [13, 14, 15, 16]]) 
         
         # Transfer input matrices to SystemDS
         sds_real_input = self.sds.from_numpy(real_input_matrix)
         sds_imag_input = self.sds.from_numpy(imag_input_matrix)
         
         # Perform IFFT
-        ifft_result = self.sds.ifft(sds_real_input, sds_imag_input).compute()
+        ifft_result = self.sds.ifft(sds_real_input, sds_imag_input).compute(verbose=True)
 
         # Extract real and imaginary parts
         real_part, imag_part = ifft_result
@@ -91,6 +96,7 @@ class TestFFT2(unittest.TestCase):
         np.testing.assert_array_almost_equal(imag_part, expected_imag, decimal=5)
 
     def test_ifft_random_1d(self):
+        print("starting test_ifft_random_1d")
         # Generate a random complex 1D input matrix
         np.random.seed(123)  # For reproducibility
         real_part = np.random.rand(1, 16)  # Real part of the complex data
@@ -126,6 +132,7 @@ class TestFFT2(unittest.TestCase):
 
 
     def test_ifft_real_only(self):
+        print("starting test_ifft_real_only")
         # Generate a random real 1D input matrix
         np.random.seed(123)  # For reproducibility
         real_part = np.random.rand(1, 16)  # Real part of the data

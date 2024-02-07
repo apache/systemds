@@ -436,9 +436,9 @@ class SystemDSContext(object):
         # Assuming the IFFT DML script requires two inputs (real and imaginary parts) and returns two outputs
             # Check if imaginary input exists
         if imag_input is not None:
-            ifft_node = MultiReturn(self, 'ifft', [real_output, imag_output], [real_input, imag_input])
+            ifft_node = MultiReturn(self, 'ifft', [real_output, imag_output], [real_input, imag_input], None)
         else:
-            ifft_node = MultiReturn(self, 'ifft', [real_output, imag_output], [real_input])
+            ifft_node = MultiReturn(self, 'ifft', [real_output, imag_output], [real_input],None)
         
         return ifft_node
 
@@ -731,3 +731,4 @@ class SystemDSContext(object):
         # Reset all handlers to only this new handler.
         self._log.handlers = [f_handler]
         self._log.debug("Logging setup done")
+

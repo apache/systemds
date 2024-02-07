@@ -33,7 +33,7 @@
 # hiddenstates_count        Number of Distinct Hidden States
 # verbose                   Boolean that states wether the hmm parameters will be printed
 # random_mode               Boolean that states wether the model parameters will be initiallizes randomly,
-#                           if FALSE the parameters will be initiallized evenly
+#                           if false the parameters will be initiallized evenly
 # ----------------------------------------------------------------------------------------
 #
 # OUTPUT:
@@ -61,8 +61,9 @@ s_hmm_innit = function(Integer observations_count, Integer hiddenstates_count, B
             emission_prob = matrix((1 / observations_count), rows = hiddenstates_count, cols = observations_count)    
         }
 
-        if(verbose)
+        if(verbose) {
             print_model(observations_count, hiddenstates_count, start_prob, transition_prob, emission_prob)
+        }
     }
 
 

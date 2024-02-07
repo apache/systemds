@@ -153,7 +153,6 @@ public enum Builtins {
 	TOPK_CLEANING("topk_cleaning", true),
 	HMM_INNIT("hmm_innit", true),
 	HMM_FIT("hmm_fit", true),
-	HMM_PREDICT("hmm_predict", true),
 	HOSPITAL_RESIDENCY_MATCH("hospitalResidencyMatch", true),
 	HYPERBAND("hyperband", true),
 	IFELSE("ifelse", false),

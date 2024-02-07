@@ -43,9 +43,9 @@
 # emission_prob             Optimized Emission probabilities
 # --------------------------------------------------------------------------------------------
 
-m_hmm_fit = function(matrix[Double] observations_sequences, Integer iterations_count,
-                     matrix[Double] start_prob, matrix[Double] transition_prob,
-                     matrix[Double] emission_prob, Boolean verbose = FALSE)
+m_hmm_fit = function(matrix[Double] observation_sequence, matrix[Double] start_prob, 
+                     matrix[Double] transition_prob, matrix[Double] emission_prob,
+                     Integer iterations_count, Boolean verbose = FALSE)
     return(matrix[Double] start_prob, matrix[Double] transition_prob,
            matrix[Double] emission_prob)
     {
@@ -56,8 +56,8 @@ m_hmm_fit = function(matrix[Double] observations_sequences, Integer iterations_c
         diff_tracker[1,] = matrix(seq(1,iterations_count), rows=1,cols=iterations_count)
 
         for (iteration in 1:iterations_count) {
-            forward_prob = forward(observation_sequence, start_prob, transition_prob, emission_prob, hiddenstates_count, sequence_length)
-            backward_prob = backward(observation_sequence, transition_prob, emission_prob, hiddenstates_count, sequence_length)
+            forward_prob = forward(observation_sequence, start_prob, transition_prob, emission_prob)
+            backward_prob = backward(observation_sequence, transition_prob, emission_prob)
 
             observations_prob_forward = as.scalar(logSumExp(M = forward_prob[2:hiddenstates_count,sequence_length]))
 
@@ -75,46 +75,45 @@ m_hmm_fit = function(matrix[Double] observations_sequences, Integer iterations_c
             }
         }
         if(verbose) {
-            print("After " + toString(iterations_count) + " Iterations these differences could be observed:\n" + diff_tracker)
+            print("After " + toString(iterations_count) + " Iterations these differences could be observed:\n" + toString(diff_tracker))
         }
     }
 
-print_iteration = function(Integer iteration) 
+print_iteration = function(Integer iteration, matrix[Double] transition_prob,
+                           matrix[Double] emission_prob, Double difference) 
     {
         print("\n###########################################################################################################")
-        print("Iteration " + toString(iteration) "of the hmm_fit function:")
-        print("Transition Probabilities after step " + toString(iteration) + ":\n" + toString(expected_transition_prob))
-        print("Emission Probabilities after step " + toString(iteration) + ":\n" + toString(expected_emission_prob))
+        print("Iteration " + toString(iteration) + "of the hmm_fit function:")
+        print("Transition Probabilities after step " + toString(iteration) + ":\n" + toString(transition_prob))
+        print("Emission Probabilities after step " + toString(iteration) + ":\n" + toString(emission_prob))
         print("Difference between step " + toString(iteration - 1) + " and step " + toString(iteration) + " is: " + difference)
         print("###########################################################################################################")
     }
 
-
-
-
-forward = function(matrix[Double] observations_sequences, matrix[Double] start_prob, 
+forward = function(matrix[Double] observation_sequence, matrix[Double] start_prob, 
                    matrix[Double] transition_prob, matrix[Double] emission_prob)
     return(matrix[double] forward_prob)
     {   
         hiddenstates_count = ncol(transition_prob)
-        observations_count = ncol(observations_sequences)
+        observations_count = ncol(observation_sequence)
         forward_prob = matrix(0, rows = hiddenstates_count, cols = observations_count)
 
-        observation = as.scalar(observations_sequences[1,1])
+        observation = as.scalar(observation_sequence[1,1])
         forward_prob[,1] = log(start_prob * emission_prob[,observation])
 
         for (k in 2:observations_count) {
-            observation = as.scalar(observations_sequences[1,k])
+            observation = as.scalar(observation_sequence[1,k])
             forward_prob[,k] = log(transition_prob %*% emission_prob[,observation]) + forward_prob[,k-1]
         }
     }
 
-
 backward = function(matrix[Double] observation_sequence, matrix[Double] transition_prob, 
-                    matrix[Double] emission_prob, Integer hiddenstates_count,
-                    Integer sequence_length)
+                    matrix[Double] emission_prob)
     return(matrix[double] backward_prob)
     {   
+        hiddenstates_count = ncol(transition_prob)
+        observations_count = ncol(observation_sequence)
+        sequence_length = ncol(observation_sequence)
         backward_prob = matrix(log(1), rows = hiddenstates_count, cols = sequence_length)
 
         for(k in (sequence_length-1):1) {

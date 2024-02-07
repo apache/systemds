@@ -303,9 +303,9 @@ public class LibCommonsMath
 	 * @return array of matrix blocks
 	 */
 	private static MatrixBlock[] computeFFT(MatrixBlock re, int threads) {
-		if (re == null || re.isEmptyBlock(false))
+		if(re == null)
 			throw new DMLRuntimeException("Invalid empty block");
-		if (isMatrixAllZeros(re)) {
+		if (re.isEmptyBlock(false)) {
 			// Return the original matrix as the result
 			return new MatrixBlock[]{re, new MatrixBlock(re.getNumRows(), re.getNumColumns(), true)}; // Assuming you need to return two matrices: the real part and an imaginary part initialized to 0.
 		}
@@ -333,7 +333,7 @@ public class LibCommonsMath
 	 * @return array of matrix blocks
 	 */
 	private static MatrixBlock[] computeIFFT(MatrixBlock re, MatrixBlock im, int threads) {
-		if (re == null || re.isEmptyBlock(false))
+		if(re == null )
 			throw new DMLRuntimeException("Invalid empty block");
 
 		// run ifft
@@ -342,7 +342,7 @@ public class LibCommonsMath
 			im.sparseToDense();
 			return ifft(re, im, threads);
 		} else {
-			if (isMatrixAllZeros(re)) {
+			if (re.isEmptyBlock(false)) {
 				// Return the original matrix as the result
 				return new MatrixBlock[]{re, new MatrixBlock(re.getNumRows(), re.getNumColumns(), true)}; // Assuming you need to return two matrices: the real part and an imaginary part initialized to 0.
 			}
@@ -399,7 +399,7 @@ public class LibCommonsMath
 			im.sparseToDense();
 			return ifft_linearized(re, im, threads);
 		} else {
-			if (isMatrixAllZeros(re)) {
+			if (re.isEmptyBlock(false)) {
 				// Return the original matrix as the result
 				return new MatrixBlock[]{re, new MatrixBlock(re.getNumRows(), re.getNumColumns(), true)}; // Assuming you need to return two matrices: the real part and an imaginary part initialized to 0.
 			}

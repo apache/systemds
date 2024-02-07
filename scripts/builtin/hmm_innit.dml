@@ -20,24 +20,24 @@
 #
 # DESCRIPTION:
 # ------------------------------------------------------------
-# This script builds initial parameters for an hmm. model from given numbers of bot distinct states.
+# This script builds initial parameters for an hmm model from given numbers of distinct states.
 # It takes as input the number of distinct hidden states the model has and
 # also the number of distinct observations the model can emit.
-# Observations will then be refferenced with an Integer ID between 0 and (observation_count - 1).
-# Hidden States will then be refferenced with an Integer ID between 0 and (hiddenstates_count - 1).
+# Observations will then be refferenced with an Integer ID between 1 and (observation_count).
+# Hidden States will then be refferenced with an Integer ID between 1 and (hiddenstates_count).
 # --------------------------------------------------------------------------------------------
 #
 # INPUT:
 # --------------------------------------------------------------------------------------------
-# observations_count         Number of Distinct Observations
+# observations_count        Number of Distinct Observations
 # hiddenstates_count        Number of Distinct Hidden States
 # ----------------------------------------------------------------------------------------
 #
 # OUTPUT:
 # --------------------------------------------------------------------------------------------
-# start_prob                Start probabilities
-# transition_prob           Transition probabilities
-# emission_prob             Emission probabilities
+# start_prob                Start probabilities of initial hmm model
+# transition_prob           Transition probabilities of initial hmm model
+# emission_prob             Emission probabilities of initial hmm model
 # --------------------------------------------------------------------------------------------
 
 s_hmm_innit = function(Integer observations_count, Integer hiddenstates_count, Boolean print_mode = FALSE, Boolean random_mode = FALSE)

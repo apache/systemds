@@ -20,7 +20,7 @@
 #
 # DESCRIPTION:
 # ------------------------------------------------------------
-# This script optimizes the parameters for an hmm model given Observation Sequences
+# This script optimizes the parameters of an hmm model given Observation Sequences.
 # It does this by maximizing the Likelihood of the Observation Sequences occuring.
 # It therefore uses the Baum Welch Algorithm.
 # Basing on an Expectation Maximization strategy the Algorithm updates the hmm model parameters iteratively.
@@ -30,9 +30,9 @@
 # --------------------------------------------------------------------------------------------
 # observations_sequences    Observation Sequences to train the model on
 # iterations_count          Number of Iterations the Probabilities should be updated
-# start_prob                Start probabilities
-# transition_prob           Transition probabilities
-# emission_prob             Emission probabilities
+# start_prob                Start probabilities of initial hmm model
+# transition_prob           Transition probabilities of initial hmm model
+# emission_prob             Emission probabilities of initial hmm model
 # ----------------------------------------------------------------------------------------
 #
 # OUTPUT:

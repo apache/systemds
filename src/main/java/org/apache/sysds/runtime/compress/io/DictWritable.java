@@ -31,64 +31,64 @@ import org.apache.sysds.runtime.compress.colgroup.dictionary.DictionaryFactory;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary;
 
 public class DictWritable implements Writable, Serializable {
-    private static final long serialVersionUID = 731937201435558L;
-    public List<IDictionary> dicts;
+	private static final long serialVersionUID = 731937201435558L;
+	public List<IDictionary> dicts;
 
-    public DictWritable() {
+	public DictWritable() {
 
-    }
+	}
 
-    protected DictWritable(List<IDictionary> dicts) {
-        this.dicts = dicts;
-    }
+	protected DictWritable(List<IDictionary> dicts) {
+		this.dicts = dicts;
+	}
 
-    @Override
-    public void write(DataOutput out) throws IOException {
-        out.writeInt(dicts.size());
-        for(int i = 0; i < dicts.size(); i++)
-            dicts.get(i).write(out);
-    }
+	@Override
+	public void write(DataOutput out) throws IOException {
+		out.writeInt(dicts.size());
+		for(int i = 0; i < dicts.size(); i++)
+			dicts.get(i).write(out);
+	}
 
-    @Override
-    public void readFields(DataInput in) throws IOException {
-        int s = in.readInt();
-        dicts = new ArrayList<>(s);
-        for(int i = 0; i < s; i++)
-            dicts.add(DictionaryFactory.read(in));
-    }
+	@Override
+	public void readFields(DataInput in) throws IOException {
+		int s = in.readInt();
+		dicts = new ArrayList<>(s);
+		for(int i = 0; i < s; i++)
+			dicts.add(DictionaryFactory.read(in));
+	}
 
-    @Override
-    public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("Written dictionaries:\n");
-        for(IDictionary d : dicts) {
-            sb.append(d);
-            sb.append("\n");
-        }
-        return sb.toString();
-    }
+	@Override
+	public String toString() {
+		StringBuilder sb = new StringBuilder();
+		sb.append("Written dictionaries:\n");
+		for(IDictionary d : dicts) {
+			sb.append(d);
+			sb.append("\n");
+		}
+		return sb.toString();
+	}
 
-    public static class K implements Writable, Serializable {
-        private static final long serialVersionUID = 733937201435558L;
-        public int id;
+	public static class K implements Writable, Serializable {
+		private static final long serialVersionUID = 733937201435558L;
+		public int id;
 
-        public K() {
+		public K() {
 
-        }
+		}
 
-        public K(int id) {
-            this.id = id;
-        }
+		public K(int id) {
+			this.id = id;
+		}
 
-        @Override
-        public void write(DataOutput out) throws IOException {
-            out.writeInt(id);
-        }
+		@Override
+		public void write(DataOutput out) throws IOException {
+			out.writeInt(id);
+		}
 
-        @Override
-        public void readFields(DataInput in) throws IOException {
-            id = in.readInt();
-        }
+		@Override
+		public void readFields(DataInput in) throws IOException {
+			id = in.readInt();
+		}
 
-    }
+	}
 }

@@ -48,6 +48,8 @@ public interface ColIndexFactory {
 				return RangeIndex.read(in);
 			case TWORANGE: 
 				return TwoRangesIndex.read(in);
+			case COMBINED:
+				return CombinedIndex.read(in);
 			default:
 				throw new DMLCompressionException("Failed reading column index of type: " + t);
 		}

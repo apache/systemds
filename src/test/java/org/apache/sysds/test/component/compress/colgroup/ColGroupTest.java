@@ -1118,13 +1118,20 @@ public class ColGroupTest extends ColGroupBase {
 
 	@Test
 	public void tsmm() {
-		final MatrixBlock bt = new MatrixBlock(maxCol, maxCol, false);
-		final MatrixBlock ot = new MatrixBlock(maxCol, maxCol, false);
-		ot.allocateDenseBlock();
-		bt.allocateDenseBlock();
-		base.tsmm(bt, nRow);
-		other.tsmm(ot, nRow);
-		compare(ot, bt);
+		try{
+
+			final MatrixBlock bt = new MatrixBlock(maxCol, maxCol, false);
+			final MatrixBlock ot = new MatrixBlock(maxCol, maxCol, false);
+			ot.allocateDenseBlock();
+			bt.allocateDenseBlock();
+			base.tsmm(bt, nRow);
+			other.tsmm(ot, nRow);
+			compare(ot, bt);
+		}
+		catch(Exception e){
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
 	}
 
 	@Test

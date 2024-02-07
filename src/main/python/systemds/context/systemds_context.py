@@ -183,16 +183,19 @@ class SystemDSContext(object):
 
         command.append(classpath)
 
-        files = glob(os.path.join(root, "conf", "log4j*.properties"))
-        if len(files) > 1:
-            self._log.warning(
-                "Multiple logging files found selecting: " + files[0])
-        if len(files) == 0:
-            self._log.warning("No log4j file found at: "
-                              + os.path.join(root, "conf")
-                              + " therefore using default settings")
+        if os.environ.get("LOG4JPROP") == None:
+            files = glob(os.path.join(root, "conf", "log4j*.properties"))
+            if len(files) > 1:
+                self._log.warning(
+                    "Multiple logging files found selecting: " + files[0])
+            if len(files) == 0:
+                self._log.warning("No log4j file found at: "
+                                  + os.path.join(root, "conf")
+                                  + " therefore using default settings")
+            else:
+                command.append("-Dlog4j.configuration=file:" + files[0])
         else:
-            command.append("-Dlog4j.configuration=file:" + files[0])
+            command.append("-Dlog4j.configuration=file:" +os.environ.get("LOG4JPROP"))
 
         command.append("org.apache.sysds.api.PythonDMLScript")
 

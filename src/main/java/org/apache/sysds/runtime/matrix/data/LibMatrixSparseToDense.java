@@ -31,8 +31,14 @@ import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.util.CommonThreadPool;
 
-public interface LibMatrixSparseToDense {
+public abstract class LibMatrixSparseToDense {
 	public static final Log LOG = LogFactory.getLog(LibMatrixSparseToDense.class.getName());
+
+	public static long PAR_THRESHOLD = 1000000;
+
+	private LibMatrixSparseToDense(){
+		// private instance do not call. here because we want to set PAR_THRESHOLD.
+	}
 
 	/**
 	 * Convert the given matrix block to a Dense allocation.
@@ -54,7 +60,7 @@ public interface LibMatrixSparseToDense {
 
 		final DenseBlock c = r.denseBlock;
 
-		if(k > 1 && r.getNonZeros() > 1000000 && r.getNumRows() > 1)
+		if(k > 1 && r.getNonZeros() > PAR_THRESHOLD && r.getNumRows() > 1)
 			multiThreadedToDense(a, c, m, k);
 		else
 			singleThreadedToDense(a, c, m);

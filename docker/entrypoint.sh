@@ -26,7 +26,7 @@ cd /github/workspace/src/main/cpp
 ./build.sh
 cd /github/workspace
 
-export MAVEN_OPTS="-Xmx512m -XX:MaxPermSize=128m"
+export MAVEN_OPTS="-Xmx512m"
 
 log="/tmp/sysdstest.log"
 mvn -ntp -B test-compile 2>&1 | grep -E "BUILD|Total time:|---|Building SystemDS"

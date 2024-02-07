@@ -30,8 +30,9 @@ import org.apache.sysds.utils.Statistics;
 
 public class ContainsTest extends AutomatedTestBase 
 {
-	private final static String TEST_NAME = "Contains";
-
+	private final static String TEST_NAME1 = "ContainsVal";
+	private final static String TEST_NAME2 = "ContainsVect";
+	
 	private final static String TEST_DIR = "functions/aggregate/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + AggregateInfTest.class.getSimpleName() + "/";
 	
@@ -42,8 +43,10 @@ public class ContainsTest extends AutomatedTestBase
 	
 	@Override
 	public void setUp() {
-		addTestConfiguration(TEST_NAME,
-			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[]{"B"})); 
+		addTestConfiguration(TEST_NAME1,
+			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[]{"B"}));
+		addTestConfiguration(TEST_NAME2,
+			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[]{"B"}));
 	}
 
 	
@@ -107,6 +110,86 @@ public class ContainsTest extends AutomatedTestBase
 		runContainsTest(Double.NaN, false, true, ExecType.SPARK);
 	}
 	
+	@Test
+	public void testVectTrueDenseDenseCP() {
+		runContainsVectorTest(true, false, false, ExecType.CP);
+	}
+	
+	@Test
+	public void testVectFalseDenseDenseCP() {
+		runContainsVectorTest(false, false, false, ExecType.CP);
+	}
+	
+	@Test
+	public void testVectTrueDenseSparseCP() {
+		runContainsVectorTest(true, false, true, ExecType.CP);
+	}
+	
+	@Test
+	public void testVectFalseDenseSparseCP() {
+		runContainsVectorTest(false, false, true, ExecType.CP);
+	}
+	
+	@Test
+	public void testVectTrueSparseDenseCP() {
+		runContainsVectorTest(true, false, false, ExecType.CP);
+	}
+	
+	@Test
+	public void testVectFalseSparseDenseCP() {
+		runContainsVectorTest(false, false, false, ExecType.CP);
+	}
+	
+	@Test
+	public void testVectTrueSparseSparseCP() {
+		runContainsVectorTest(true, false, true, ExecType.CP);
+	}
+	
+	@Test
+	public void testVectFalseSparseSparseCP() {
+		runContainsVectorTest(false, false, true, ExecType.CP);
+	}
+	
+	@Test
+	public void testVectTrueDenseDenseSpark() {
+		runContainsVectorTest(true, false, false, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testVectFalseDenseDenseSpark() {
+		runContainsVectorTest(false, false, false, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testVectTrueDenseSparseSpark() {
+		runContainsVectorTest(true, false, true, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testVectFalseDenseSparseSpark() {
+		runContainsVectorTest(false, false, true, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testVectTrueSparseDenseSpark() {
+		runContainsVectorTest(true, false, false, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testVectFalseSparseDenseSpark() {
+		runContainsVectorTest(false, false, false, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testVectTrueSparseSparseSpark() {
+		runContainsVectorTest(true, false, true, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testVectFalseSparseSparseSpark() {
+		runContainsVectorTest(false, false, true, ExecType.SPARK);
+	}
+	
 	private void runContainsTest( double check, boolean expected, boolean sparse, ExecType instType)
 	{
 		ExecMode oldMode = setExecMode(instType);
@@ -114,16 +197,48 @@ public class ContainsTest extends AutomatedTestBase
 		try
 		{
 			double sparsity = (sparse) ? sparsity1 : sparsity2;
-			getAndLoadTestConfiguration(TEST_NAME);
+			getAndLoadTestConfiguration(TEST_NAME1);
 			
 			String HOME = SCRIPT_DIR + TEST_DIR;
-			fullDMLScriptName = HOME + TEST_NAME + ".dml";
+			fullDMLScriptName = HOME + TEST_NAME1 + ".dml";
 			programArgs = new String[]{"-args",
 				input("A"), String.valueOf(check), output("B") };
 			
 			//generate actual dataset 
 			double[][] A = getRandomMatrix(rows, cols, -0.05, 1, sparsity, 7); 
 			A[7][7] = expected ? check : 7;
+			writeInputMatrixWithMTD("A", A, false);
+	
+			//run test
+			runTest(true, false, null, -1); 
+			boolean ret = TestUtils.readDMLBoolean(output("B"));
+			Assert.assertEquals(expected, ret);
+			if( instType == ExecType.CP ) {
+				Assert.assertEquals(Statistics.getNoOfCompiledSPInst(), 1); //reblock
+				Assert.assertEquals(Statistics.getNoOfExecutedSPInst(), 0);
+			}
+		}
+		finally {
+			resetExecMode(oldMode);
+		}
+	}
+	
+	private void runContainsVectorTest( boolean expected, boolean sparse1, boolean sparse2, ExecType instType)
+	{
+		ExecMode oldMode = setExecMode(instType);
+	
+		try
+		{
+			double sparsity = (sparse1) ? sparsity1 : sparsity2;
+			getAndLoadTestConfiguration(TEST_NAME2);
+			
+			String HOME = SCRIPT_DIR + TEST_DIR;
+			fullDMLScriptName = HOME + TEST_NAME2 + ".dml";
+			programArgs = new String[]{"-args", input("A"),
+				String.valueOf(expected).toUpperCase(), String.valueOf(sparse2).toUpperCase(), output("B") };
+			
+			//generate actual dataset 
+			double[][] A = getRandomMatrix(rows, cols, -0.05, 1, sparsity, 7); 
 			writeInputMatrixWithMTD("A", A, false);
 	
 			//run test

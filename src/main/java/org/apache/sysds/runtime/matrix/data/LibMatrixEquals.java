@@ -25,7 +25,7 @@ import org.apache.commons.logging.LogFactory;
 /**
  * 
  * <p>
- * Equals library for MatrixBLocks:
+ * Equals library for MatrixBlocks:
  * </p>
  * 
  * <p>
@@ -39,6 +39,10 @@ import org.apache.commons.logging.LogFactory;
  * <li>Consistent</li>
  * </ul>
  * 
+ * <p>
+ * The equals also is valid if the metadata of number of non zeros are unknown in either input. An unknown number of non
+ * zero values is indicated by a negative nonzero count in the input matrices.
+ * </p>
  */
 public class LibMatrixEquals {
 
@@ -49,7 +53,7 @@ public class LibMatrixEquals {
 	private final MatrixBlock a;
 	/** second block */
 	private final MatrixBlock b;
-	/** Epsilon */
+	/** Epsilon allowed between the blocks */
 	private final double eps;
 
 	/**
@@ -140,19 +144,20 @@ public class LibMatrixEquals {
 	 * @return if the blocks are equivalent
 	 */
 	private boolean exec() {
+
 		if(isMetadataDifferent())
 			return false;
-		Boolean empty = isEmpty();
-		if(empty != null)
-			return empty;
-
-		if(a.denseBlock != null && b.denseBlock != null)
+		else if(a.isEmpty() && b.nonZeros != -1)
+			return b.isEmpty();
+		else if(b.isEmpty() && a.nonZeros != -1)
+			return false;
+		else if(a.denseBlock != null && b.denseBlock != null)
 			return a.denseBlock.equals(b.denseBlock, eps);
-		if(a.sparseBlock != null && b.sparseBlock != null)
+		else if(a.sparseBlock != null && b.sparseBlock != null)
 			return a.sparseBlock.equals(b.sparseBlock, eps);
-		if(a.sparseBlock != null && b.denseBlock != null && b.denseBlock.isContiguous())
+		else if(a.sparseBlock != null && b.denseBlock != null && b.denseBlock.isContiguous())
 			return a.sparseBlock.equals(b.denseBlock.values(0), b.getNumColumns(), eps);
-		if(b.sparseBlock != null && a.denseBlock != null && a.denseBlock.isContiguous())
+		else if(b.sparseBlock != null && a.denseBlock != null && a.denseBlock.isContiguous())
 			return b.sparseBlock.equals(a.denseBlock.values(0), a.getNumColumns(), eps);
 
 		return genericEquals();
@@ -175,22 +180,6 @@ public class LibMatrixEquals {
 		diff |= nnzA != -1 && nnzB != -1 && nnzA != nnzB;
 
 		return diff;
-	}
-
-	/**
-	 * Empty metadata check. to verify if the content is empty and such.
-	 * 
-	 * @return Boolean that is not null if something was found otherwise null.
-	 */
-	private Boolean isEmpty() {
-		final boolean emptyA = a.isEmpty();
-		final boolean emptyB = b.isEmpty();
-		// empty cases!
-		if(emptyA != emptyB)
-			return false;
-		else if(emptyA)
-			return true;
-		return null;
 	}
 
 	/**

@@ -198,7 +198,7 @@ public class BooleanArray extends ABooleanArray {
 	}
 
 	@Override
-	public Pair<ValueType, Boolean> analyzeValueType() {
+	public Pair<ValueType, Boolean> analyzeValueType(int maxCells) {
 		return new Pair<>(ValueType.BOOLEAN, false);
 	}
 
@@ -312,7 +312,7 @@ public class BooleanArray extends ABooleanArray {
 
 	@Override
 	public boolean isEmpty() {
-		for(int i = 0; i < _data.length; i++)
+		for(int i = 0; i < _size; i++)
 			if(_data[i])
 				return false;
 		return true;
@@ -320,7 +320,7 @@ public class BooleanArray extends ABooleanArray {
 
 	@Override
 	public boolean isAllTrue() {
-		for(int i = 0; i < _data.length; i++)
+		for(int i = 0; i < _size; i++)
 			if(!_data[i])
 				return false;
 		return true;
@@ -375,7 +375,7 @@ public class BooleanArray extends ABooleanArray {
 
 	@Override
 	public String toString() {
-		StringBuilder sb = new StringBuilder(_data.length * 2 + 10);
+		StringBuilder sb = new StringBuilder(_size * 2 + 10);
 		sb.append(super.toString() + ":[");
 		for(int i = 0; i < _size - 1; i++)
 			sb.append((_data[i] ? 1 : 0) + ",");

@@ -184,9 +184,9 @@ public class DoubleArray extends Array<Double> {
 	}
 
 	@Override
-	public Pair<ValueType, Boolean> analyzeValueType() {
+	public Pair<ValueType, Boolean> analyzeValueType(int maxCells) {
 		ValueType state = FrameUtil.isType(_data[0]);
-		for(int i = 0; i < _size; i++) {
+		for(int i = 0; i < Math.min(maxCells,_size); i++) {
 			ValueType c = FrameUtil.isType(_data[i], state);
 			if(state == ValueType.FP64)
 				return new Pair<>(ValueType.FP64, false);
@@ -250,7 +250,7 @@ public class DoubleArray extends Array<Double> {
 
 	@Override
 	public long getExactSerializedSize() {
-		return 1 + 8 * _data.length;
+		return 1 + 8 * _size;
 	}
 
 	@Override
@@ -379,7 +379,7 @@ public class DoubleArray extends Array<Double> {
 
 	@Override
 	public boolean isEmpty() {
-		for(int i = 0; i < _data.length; i++)
+		for(int i = 0; i < _size; i++)
 			if(isNotEmpty(i))
 				return false;
 		return true;
@@ -428,7 +428,7 @@ public class DoubleArray extends Array<Double> {
 
 	@Override
 	public String toString() {
-		StringBuilder sb = new StringBuilder(_data.length * 5 + 2);
+		StringBuilder sb = new StringBuilder(_size * 5 + 2);
 		sb.append(super.toString() + ":[");
 		for(int i = 0; i < _size - 1; i++)
 			sb.append(_data[i] + ",");

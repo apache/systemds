@@ -90,6 +90,17 @@ public class MatrixMultiplyTest {
 					}
 				}
 			}
+
+			tests.add(new Object[]{1000, 100, 1000, 0.3, 0.0001, 6});
+			tests.add(new Object[]{1000, 100, 1000, 0.01, 0.3, 6});
+			tests.add(new Object[]{1000, 100, 1000, 0.3, 0.0005, 6});
+			tests.add(new Object[]{1000, 100, 1000, 0.005, 0.3, 6});
+
+			tests.add(new Object[]{1000, 100, 1000, 0.6, 0.0001, 6});
+			tests.add(new Object[]{1000, 100, 1000, 0.01, 0.6, 6});
+			tests.add(new Object[]{1000, 100, 1000, 0.6, 0.0005, 6});
+			tests.add(new Object[]{1000, 100, 1000, 0.005, 0.6, 6});
+
 		}
 		catch(Exception e) {
 			e.printStackTrace();
@@ -106,40 +117,120 @@ public class MatrixMultiplyTest {
 
 	@Test
 	public void testLeftForceDense() {
-		left.sparseToDense();
-		test(left, right);
+		if(left.isInSparseFormat()) {
+			MatrixBlock lhs = new MatrixBlock();
+			lhs.copy(left, false);
+			test(lhs, right);
+		}
+		else {
+			// already tested
+		}
+	}
+
+	@Test
+	public void testLeftNonContiguous() {
+		MatrixBlock lhs = new MatrixBlock();
+		lhs.copy(left, false);
+		MatrixBlock nc = TestUtils.mockNonContiguousMatrix(lhs);
+		test(nc, right);
 	}
 
 	@Test
 	public void testRightForceDense() {
-		right.sparseToDense();
-		test(left, right);
+		if(right.isInSparseFormat()) {
+
+			MatrixBlock rhs = new MatrixBlock();
+			rhs.copy(right, false);
+			test(left, rhs);
+		}
+		else {
+			// already tested
+		}
+	}
+
+	@Test
+	public void testRightNonContiguous() {
+		MatrixBlock rhs = new MatrixBlock();
+		rhs.copy(right, false);
+		MatrixBlock nc = TestUtils.mockNonContiguousMatrix(rhs);
+		test(left, nc);
 	}
 
 	@Test
 	public void testBothForceDense() {
-		left.sparseToDense();
-		right.sparseToDense();
-		test(left, right);
+		if(left.isInSparseFormat() && right.isInSparseFormat()) {
+			MatrixBlock rhs = new MatrixBlock();
+			rhs.copy(right, false);
+			MatrixBlock lhs = new MatrixBlock();
+			lhs.copy(left, false);
+			test(lhs, rhs);
+		}
+		else if(left.isInSparseFormat()) {
+			// already tested
+		}
+		else if(right.isInSparseFormat()) {
+			// already tested
+		}
+		else {
+			// already tested
+		}
 	}
 
 	@Test
+	public void testBothNonContiguous() {
+		MatrixBlock lhs = new MatrixBlock();
+		lhs.copy(left, false);
+		MatrixBlock ncl = TestUtils.mockNonContiguousMatrix(lhs);
+		MatrixBlock rhs = new MatrixBlock();
+		rhs.copy(right, false);
+		MatrixBlock ncr = TestUtils.mockNonContiguousMatrix(rhs);
+		test(ncl, ncr);
+	}
+
+
+	@Test
 	public void testLeftForceSparse() {
-		left.denseToSparse(true);
-		test(left, right);
+		if(!left.isInSparseFormat()) {
+
+			MatrixBlock lhs = new MatrixBlock();
+			lhs.copy(left, true);
+			test(lhs, right);
+		}
+		else {
+			// already tested
+		}
 	}
 
 	@Test
 	public void testRightForceSparse() {
-		right.denseToSparse(true);
-		test(left, right);
+		if(!right.isInSparseFormat()) {
+			MatrixBlock rhs = new MatrixBlock();
+			rhs.copy(right, true);
+			test(left, rhs);
+		}
+		else {
+			// already tested
+		}
 	}
 
 	@Test
 	public void testBothForceSparse() {
-		left.denseToSparse(true);
-		right.denseToSparse(true);
-		test(left, right);
+		if(!left.isInSparseFormat() && !right.isInSparseFormat()) {
+			MatrixBlock rhs = new MatrixBlock();
+			rhs.copy(right, true);
+			MatrixBlock lhs = new MatrixBlock();
+			lhs.copy(left, true);
+			test(lhs, rhs);
+		}
+		else if(!left.isInSparseFormat()) {
+			// already tested
+		}
+		else if(!right.isInSparseFormat()) {
+			// already tested
+		}
+		else {
+			// already tested
+		}
 	}
 
 	private void test(MatrixBlock a, MatrixBlock b) {
@@ -160,7 +251,7 @@ public class MatrixMultiplyTest {
 				totalMessage += "\n\nAct" + ret;
 			}
 
-			assertEquals(totalMessage,exp.getNonZeros(), ret.getNonZeros());
+			assertEquals(totalMessage, exp.getNonZeros(), ret.getNonZeros());
 			TestUtils.compareMatricesPercentageDistance(exp, ret, 0.999, 0.99999, totalMessage, false);
 		}
 		catch(Exception e) {
@@ -178,4 +269,5 @@ public class MatrixMultiplyTest {
 		AggregateBinaryOperator mult = new AggregateBinaryOperator(Multiply.getMultiplyFnObject(), agg, k);
 		return a.aggregateBinaryOperations(a, b, mult);
 	}
+
 }

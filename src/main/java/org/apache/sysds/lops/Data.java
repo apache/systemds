@@ -128,16 +128,6 @@ public class Data extends Lop
 	}
 
 	/**
-	 * Data-Lop-specific method to set the execution type for persistent write.
-	 * TODO: split lops into MR/CP lop.
-	 *
-	 * @param et execution type
-	 */
-	public void setExecType( ExecType et ) {
-		lps.execType = et;
-	}
-
-	/**
 	 * method to get format type for input, output files.
 	 * @return file format
 	 */

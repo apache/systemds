@@ -25,7 +25,9 @@ import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Queue;
 
 import org.apache.sysds.common.Types;
 import org.apache.sysds.common.Types.DataType;
@@ -96,7 +98,7 @@ public class ListObject extends Data implements Externalizable {
 		for(int i=0; i<_data.size(); i++) {
 			Data dat = _data.get(i);
 			if( dat instanceof CacheableData<?> )
-			_dataState[i] = ((CacheableData<?>) dat).isCleanupEnabled();
+				_dataState[i] = ((CacheableData<?>) dat).isCleanupEnabled();
 		}
 	}
 	
@@ -495,6 +497,60 @@ public class ListObject extends Data implements Externalizable {
 			}
 			d.setPrivacyConstraints(privacyConstraint);
 			_data.add(d);
+		}
+	}
+
+	/**
+	 * Gets list of current cleanupFlag values recursively for every element
+	 * in the list and in its sublists of type CacheableData. The order is
+	 * as CacheableData elements are discovered during DFS. Elements that
+	 * are not of type CacheableData are skipped.
+	 *
+	 * @return list of booleans containing the _cleanupFlag values.
+	 */
+	public List<Boolean> getCleanupStates() {
+		List<Boolean> varsState = new LinkedList<>();
+		for (Data dat : this.getData()) {
+			if (dat instanceof CacheableData<?>)
+				varsState.add(((CacheableData<?>)dat).isCleanupEnabled());
+			else if (dat instanceof ListObject)
+				varsState.addAll(((ListObject)dat).getCleanupStates());
+		}
+		return varsState;
+	}
+
+	/**
+	 * Sets the cleanupFlag values recursively for every element of type
+	 * CacheableData in the list and in its sublists to the provided flag
+	 * value.
+	 *
+	 * @param flag New value for every CacheableData element.
+	 */
+	public void enableCleanup(boolean flag) {
+		for (Data dat : this.getData()) {
+			if (dat instanceof CacheableData<?>)
+				((CacheableData<?>)dat).enableCleanup(flag);
+			if (dat instanceof ListObject)
+				((ListObject)dat).enableCleanup(flag);
+		}
+	}
+
+	/**
+	 * Sets the cleanupFlag values recursively for every element of type
+	 * CacheableData in the list and in its sublists to the provided values
+	 * in flags. The cleanupFlag value of the i-th CacheableData element
+	 * in the list (counted in the order of DFS) is set to the i-th value
+	 * in flags.
+	 *
+	 * @param flags Queue of values in the same order as its corresponding
+	 *              elements occur in DFS.
+	 */
+	public void enableCleanup(Queue<Boolean> flags) {
+		for (Data dat : this.getData()) {
+			if (dat instanceof CacheableData<?>)
+				((CacheableData<?>)dat).enableCleanup(flags.poll());
+			else if (dat instanceof ListObject)
+				((ListObject)dat).enableCleanup(flags);
 		}
 	}
 }

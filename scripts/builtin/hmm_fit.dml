@@ -33,6 +33,7 @@
 # start_prob                Start probabilities of initial hmm model
 # transition_prob           Transition probabilities of initial hmm model
 # emission_prob             Emission probabilities of initial hmm model
+# verbose                   Boolean that states wether each iteration of the algorithm will be printed
 # ----------------------------------------------------------------------------------------
 #
 # OUTPUT:
@@ -44,7 +45,7 @@
 
 m_hmm_fit = function(matrix[Double] observations_sequences, Integer iterations_count,
                      matrix[Double] start_prob, matrix[Double] transition_prob,
-                     matrix[Double] emission_prob)
+                     matrix[Double] emission_prob, Boolean verbose = FALSE)
     return(matrix[Double] start_prob, matrix[Double] transition_prob,
            matrix[Double] emission_prob)
     {
@@ -63,23 +64,32 @@ m_hmm_fit = function(matrix[Double] observations_sequences, Integer iterations_c
             expected_transition_prob = expected_transition(observation_sequence, transition_prob, emission_prob, forward_prob, backward_prob, observations_prob_forward, hiddenstates_count, sequence_length, observation_count)
             expected_emission_prob = expected_emission(observation_sequence, transition_prob, emission_prob, forward_prob, backward_prob, observations_prob_forward, hiddenstates_count, sequence_length, observation_count)
 
-
-
-            print("emission_prob at step " + toString(iteration) + ": \n" + toString(emission_prob) + "\n")
-            print("expected_emission_prob at step " + toString(iteration) + ": \n" + toString(expected_emission_prob) + "\n")
-
-            print("transition_prob at step " + toString(iteration) + ": \n" + toString(transition_prob) + "\n")
-            print("expected_transition_probsion_prob at step " + toString(iteration) + ": \n" + toString(expected_transition_prob) + "\n")
-
             difference = sqrt(sum((emission_prob - expected_emission_prob)^2)) + sqrt(sum((transition_prob - expected_transition_prob)^2))
             diff_tracker[2,iteration] = difference
 
-            print("difference at step " + toString(iteration) + ": \n" + toString(difference) + "\n")
-
             transition_prob = expected_transition_prob
             emission_prob = expected_emission_prob
+
+            if(verbose) {
+                print_iteration(iteration, transition_prob, emission_prob, difference)
+            }
+        }
+        if(verbose) {
+            print("After " + toString(iterations_count) + " Iterations these differences could be observed:\n" + diff_tracker)
         }
     }
+
+print_iteration = function(Integer iteration) 
+    {
+        print("\n###########################################################################################################")
+        print("Iteration " + toString(iteration) "of the hmm_fit function:")
+        print("Transition Probabilities after step " + toString(iteration) + ":\n" + toString(expected_transition_prob))
+        print("Emission Probabilities after step " + toString(iteration) + ":\n" + toString(expected_emission_prob))
+        print("Difference between step " + toString(iteration - 1) + " and step " + toString(iteration) + " is: " + difference)
+        print("###########################################################################################################")
+    }
+
+
 
 
 forward = function(matrix[Double] observations_sequences, matrix[Double] start_prob, 
@@ -137,11 +147,8 @@ expected_transition = function(matrix[Double] observation_sequence, matrix[Doubl
                     sequence_emission_prob[1,k] = log(emission_prob[y,observation])
                 }
                 tmp_transition_prob = forward_prob[x,1:sequence_length-1] + backward_prob[y,2:sequence_length] + log(transition_prob[x,y]) + sequence_emission_prob[1,2:sequence_length]
-                #tmp_transition_prob = forward_prob[x,] + backward_prob[y,] + log(transition_prob[x,y]) + sequence_emission_prob
                 expected_transition_prob[x,y] = exp(logSumExp(M = tmp_transition_prob) - observations_prob_forward)
             }
-            # This line is not in the R implementation
-            # expected_transition_prob[x,] = expected_transition_prob[x,] / colSums(expected_transition_prob)
         }
         expected_transition_prob = expected_transition_prob / rowSums(expected_transition_prob)
     }
@@ -153,12 +160,6 @@ expected_emission = function(matrix[Double] observation_sequence, matrix[Double]
                                 Integer observation_count)
     return(matrix[double] expected_emission_prob)
     {
-        print("forward " + "\n")
-        print(toString(forward_prob))
-        #print("forward - backward at step " + 1 + 1 + ": \n" + toString(as.scalar(forward_prob[1,1])) + " " + toString(as.scalar(backward_prob[1,1])) + "\n")
-
-        print("backward " + "\n")
-        print(toString(backward_prob))
 
         expected_emission_prob = matrix(0, rows = hiddenstates_count, cols = observation_count)
         for(x in 1:hiddenstates_count) {
@@ -171,16 +172,10 @@ expected_emission = function(matrix[Double] observation_sequence, matrix[Double]
                             temp = j + log(1+exp(temp-j))
                         }
                     }
-                    #print("temp at step " + x + o + i + ": \n" + toString(temp) + " " + toString(j) + "\n")
-                    #print("forward - backward at step " + x + o + i + ": \n" + toString(as.scalar(forward_prob[x,i])) + " " + toString(as.scalar(backward_prob[x,i])) + "\n")
                 }
-                #print(temp)
                 temp = exp(temp - observations_prob_forward)
-                #print(observations_prob_forward)
-                #print(temp)
                 expected_emission_prob[x,o] = temp
             }
         }
-        print("expected_emission_prob at step " + ": \n" + toString(expected_emission_prob) + "\n")
         expected_emission_prob = expected_emission_prob / rowSums(expected_emission_prob)
     }

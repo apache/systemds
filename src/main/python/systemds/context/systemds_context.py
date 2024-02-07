@@ -432,9 +432,9 @@ class SystemDSContext(object):
         imag_output = OperationNode(self, '', output_type=OutputType.MATRIX, is_python_local_data=False)
         
         if imag_input is not None:
-            ifft_node = MultiReturn(self, 'ifft', [real_output, imag_output], [real_input, imag_input], None)
+            ifft_node = MultiReturn(self, 'ifft', [real_output, imag_output], [real_input, imag_input])
         else:
-            ifft_node = MultiReturn(self, 'ifft', [real_output, imag_output], [real_input],None)
+            ifft_node = MultiReturn(self, 'ifft', [real_output, imag_output], [real_input])
         
         return ifft_node
 

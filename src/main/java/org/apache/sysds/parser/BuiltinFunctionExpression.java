@@ -356,8 +356,18 @@ public class BuiltinFunctionExpression extends DataIdentifier {
 			break;
 		}
 		case FFT: {
+
+				Expression expressionOne = getFirstExpr();
+				
+				if (expressionOne == null) {
+					raiseValidateError("The first argument to " + _opcode + " cannot be null.", false, LanguageErrorCodes.INVALID_PARAMETERS);
+				}
+				
+				else if (expressionOne.getOutput() == null || expressionOne.getOutput().getDim1() == 0 || expressionOne.getOutput().getDim2() == 0) {
+					raiseValidateError("The first argument to " + _opcode + " cannot be an empty matrix.", false, LanguageErrorCodes.INVALID_PARAMETERS);
+				}
 			checkNumParameters(1);
-			checkMatrixParam(getFirstExpr());
+			checkMatrixParam(expressionOne);
 
 			// setup output properties
 			DataIdentifier fftOut1 = (DataIdentifier) getOutputs()[0];
@@ -388,10 +398,22 @@ public class BuiltinFunctionExpression extends DataIdentifier {
 			}
 			case IFFT: {
 				Expression expressionTwo = getSecondExpr();
+				Expression expressionOne = getFirstExpr();
+
+				if (expressionOne == null) {
+					raiseValidateError("The first argument to " + _opcode + " cannot be null.", false, LanguageErrorCodes.INVALID_PARAMETERS);
+				}
+				
+				else if (expressionOne.getOutput() == null || expressionOne.getOutput().getDim1() == 0 || expressionOne.getOutput().getDim2() == 0) {
+					raiseValidateError("The first argument to " + _opcode + " cannot be an empty matrix.", false, LanguageErrorCodes.INVALID_PARAMETERS);
+				}
+
 				checkNumParameters(expressionTwo != null ? 2 : 1);
-				checkMatrixParam(getFirstExpr());
+				checkMatrixParam(expressionOne);
 				if(expressionTwo != null)
 					checkMatrixParam(expressionTwo);
+				
+				
 
 			// setup output properties
 			DataIdentifier ifftOut1 = (DataIdentifier) getOutputs()[0];

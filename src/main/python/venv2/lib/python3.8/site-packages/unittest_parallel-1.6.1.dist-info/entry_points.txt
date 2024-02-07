@@ -1,0 +1,2 @@
+[console_scripts]
+unittest-parallel = unittest_parallel.main:main

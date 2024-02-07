@@ -358,7 +358,7 @@ public class BuiltinFunctionExpression extends DataIdentifier {
 		case FFT: {
 
 				Expression expressionOne = getFirstExpr();
-				
+
 				if (expressionOne == null) {
 					raiseValidateError("The first argument to " + _opcode + " cannot be null.", false, LanguageErrorCodes.INVALID_PARAMETERS);
 				}
@@ -410,8 +410,11 @@ public class BuiltinFunctionExpression extends DataIdentifier {
 
 				checkNumParameters(expressionTwo != null ? 2 : 1);
 				checkMatrixParam(expressionOne);
-				if(expressionTwo != null)
+				if(expressionTwo != null){
 					checkMatrixParam(expressionTwo);
+					if(expressionOne.getOutput().getDim1() != expressionTwo.getOutput().getDim1() || expressionOne.getOutput().getDim2() != expressionTwo.getOutput().getDim2())
+						raiseValidateError("The real and imaginary part of the provided matrix are of different dimensions.", false);
+				}
 				
 				
 

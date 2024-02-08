@@ -21,6 +21,7 @@ package org.apache.sysds.test.component.sparse;
 
 import java.util.Iterator;
 
+import org.apache.sysds.runtime.data.SparseBlockDCSR;
 import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysds.runtime.data.SparseBlock;
@@ -98,6 +99,21 @@ public class SparseBlockDelete extends AutomatedTestBase
 	public void testSparseBlockCOO3()  {
 		runSparseBlockDeleteTest(SparseBlock.Type.COO, sparsity3);
 	}
+
+	@Test
+	public void testSparseBlockDCSR1()  {
+		runSparseBlockDeleteTest(SparseBlock.Type.DCSR, sparsity1);
+	}
+
+	@Test
+	public void testSparseBlockDCSR2()  {
+		runSparseBlockDeleteTest(SparseBlock.Type.DCSR, sparsity2);
+	}
+
+	@Test
+	public void testSparseBlockDCSR3()  {
+		runSparseBlockDeleteTest(SparseBlock.Type.DCSR, sparsity3);
+	}
 	
 	private void runSparseBlockDeleteTest( SparseBlock.Type btype, double sparsity)
 	{
@@ -114,6 +130,7 @@ public class SparseBlockDelete extends AutomatedTestBase
 				case MCSR: sblock = new SparseBlockMCSR(srtmp); break;
 				case CSR: sblock = new SparseBlockCSR(srtmp); break;
 				case COO: sblock = new SparseBlockCOO(srtmp); break;
+				case DCSR: sblock = new SparseBlockDCSR(srtmp); break;
 			}
 			
 			//delete range per row via set

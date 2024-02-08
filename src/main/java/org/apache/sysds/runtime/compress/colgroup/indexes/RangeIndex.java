@@ -24,6 +24,7 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.util.Arrays;
 
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.utils.IntArrayList;
 
@@ -133,7 +134,7 @@ public class RangeIndex extends AColIndex {
 			int minU = Math.min(u, this.u);
 			int offL = maxL - this.l;
 			int offR = minU - this.l;
-			return new SliceResult(offL, offR, new RangeIndex(maxL - l, minU - l ));
+			return new SliceResult(offL, offR, new RangeIndex(maxL - l, minU - l));
 		}
 	}
 
@@ -148,15 +149,39 @@ public class RangeIndex extends AColIndex {
 	}
 
 	@Override
+	public boolean containsAny(IColIndex idx) {
+		if(idx instanceof RangeIndex) {
+			RangeIndex o = (RangeIndex) idx;
+			if(o.l >= u)
+				return false;
+			else if(o.u <= l)
+				return false;
+			else if(o.l <= l && o.u > l)
+				return true;
+			else if(o.l < u && o.u > u)
+				return true;
+			else
+				throw new NotImplementedException(idx + " " + this);
+		}
+		else
+			return super.containsAny(idx);
+	}
+
+	@Override
 	public IColIndex combine(IColIndex other) {
+		final int sr = other.size();
 		if(other.size() == 1) {
 			int v = other.get(0);
 			if(v + 1 == l)
 				return new RangeIndex(l - 1, u);
 			else if(v == u)
 				return new RangeIndex(l, u + 1);
+			else if(v < l)
+				return new CombinedIndex(other, this);
+			else
+				return new CombinedIndex(this, other);
 		}
-		if(other instanceof RangeIndex) {
+		else if(other instanceof RangeIndex) {
 			if(other.get(0) == u)
 				return new RangeIndex(l, other.get(other.size() - 1) + 1);
 			else if(other.get(other.size() - 1) == l - 1)
@@ -166,31 +191,40 @@ public class RangeIndex extends AColIndex {
 			else
 				return new TwoRangesIndex(this, (RangeIndex) other);
 		}
-
-		final int sr = other.size();
-		final int sl = size();
-		final int[] ret = new int[sr + sl];
-
-		int pl = 0;
-		int pr = 0;
-		int i = 0;
-		while(pl < sl && pr < sr) {
-			final int vl = get(pl);
-			final int vr = other.get(pr);
-			if(vl < vr) {
-				ret[i++] = vl;
-				pl++;
-			}
-			else {
-				ret[i++] = vr;
-				pr++;
-			}
+		else if(other.get(sr - 1) < l) {
+			return new CombinedIndex(other, this);
 		}
-		while(pl < sl)
-			ret[i++] = get(pl++);
-		while(pr < sr)
-			ret[i++] = other.get(pr++);
-		return ColIndexFactory.create(ret);
+		else if(other.get(0) > u) {
+			return new CombinedIndex(this, other);
+		}
+		else {
+			// final int sr = other.size();
+			final int sl = size();
+			final int[] ret = new int[sr + sl];
+
+			int pl = 0;
+			int pr = 0;
+			int i = 0;
+			while(pl < sl && pr < sr) {
+				final int vl = get(pl);
+				final int vr = other.get(pr);
+				if(vl < vr) {
+					ret[i++] = vl;
+					pl++;
+				}
+				else {
+					ret[i++] = vr;
+					pr++;
+				}
+			}
+			while(pl < sl)
+				ret[i++] = get(pl++);
+			while(pr < sr)
+				ret[i++] = other.get(pr++);
+			return ColIndexFactory.create(ret);
+
+		}
+
 	}
 
 	@Override

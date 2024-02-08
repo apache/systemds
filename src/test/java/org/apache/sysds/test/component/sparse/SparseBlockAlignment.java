@@ -19,6 +19,7 @@
 
 package org.apache.sysds.test.component.sparse;
 
+import org.apache.sysds.runtime.data.SparseBlockDCSR;
 import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysds.runtime.data.SparseBlock;
@@ -95,6 +96,21 @@ public class SparseBlockAlignment extends AutomatedTestBase
 	}
 
 	@Test
+	public void testSparseBlockDCSR1Pos()  {
+		runSparseBlockScanTest(SparseBlock.Type.DCSR, sparsity1, true);
+	}
+
+	@Test
+	public void testSparseBlockDCSR2Pos()  {
+		runSparseBlockScanTest(SparseBlock.Type.DCSR, sparsity2, true);
+	}
+
+	@Test
+	public void testSparseBlockDCSR3Pos()  {
+		runSparseBlockScanTest(SparseBlock.Type.DCSR, sparsity3, true);
+	}
+
+	@Test
 	public void testSparseBlockMCSR1Neg()  {
 		runSparseBlockScanTest(SparseBlock.Type.MCSR, sparsity1, false);
 	}
@@ -138,6 +154,21 @@ public class SparseBlockAlignment extends AutomatedTestBase
 	public void testSparseBlockCOO3Neg()  {
 		runSparseBlockScanTest(SparseBlock.Type.COO, sparsity3, false);
 	}
+
+	@Test
+	public void testSparseBlockDCSR1Neg()  {
+		runSparseBlockScanTest(SparseBlock.Type.DCSR, sparsity1, false);
+	}
+
+	@Test
+	public void testSparseBlockDCSR2Neg()  {
+		runSparseBlockScanTest(SparseBlock.Type.DCSR, sparsity2, false);
+	}
+
+	@Test
+	public void testSparseBlockDCSR3Neg()  {
+		runSparseBlockScanTest(SparseBlock.Type.DCSR, sparsity3, false);
+	}
 	
 	private void runSparseBlockScanTest( SparseBlock.Type btype, double sparsity, boolean positive)
 	{
@@ -154,6 +185,7 @@ public class SparseBlockAlignment extends AutomatedTestBase
 				case MCSR: sblock = new SparseBlockMCSR(srtmp); break;
 				case CSR: sblock = new SparseBlockCSR(srtmp); break;
 				case COO: sblock = new SparseBlockCOO(srtmp); break;
+				case DCSR: sblock = new SparseBlockDCSR(srtmp); break;
 			}
 			
 			//init second sparse block and deep copy
@@ -162,6 +194,7 @@ public class SparseBlockAlignment extends AutomatedTestBase
 				case MCSR: sblock2 = new SparseBlockMCSR(sblock); break;
 				case CSR: sblock2 = new SparseBlockCSR(sblock); break;
 				case COO: sblock2 = new SparseBlockCOO(sblock); break;
+				case DCSR: sblock2 = new SparseBlockDCSR(sblock); break;
 			}
 			
 			//modify second block if necessary
@@ -181,8 +214,12 @@ public class SparseBlockAlignment extends AutomatedTestBase
 			for( int i=0; i<rows; i++ ) {
 				if( i==37 || i==38 )
 					rowsAligned37 &= sblock.isAligned(i, sblock2);
-				else if( i<37 ) //CSR/COO different after update pos
+				else if( i<37 ) {//CSR/COO different after update pos
 					rowsAlignedRest &= sblock.isAligned(i, sblock2);
+					if (!sblock.isAligned(i, sblock2)) {
+						Assert.fail("Alignment problem at row: " + i + " (" + sblock.size(i) + " vs " + sblock2.size(i) + ")");
+					}
+				}
 			}
 			if( rowsAligned37 != positive )
 				Assert.fail("Wrong row alignment indicated: "+rowsAligned37+", expected: "+positive);

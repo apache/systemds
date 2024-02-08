@@ -271,7 +271,7 @@ public class SparseBlockMCSR extends SparseBlock
 	
 	@Override
 	public long size(int rl, int ru) {
-		int ret = 0;
+		long ret = 0;
 		for( int i=rl; i<ru; i++ )
 			ret += isAllocated(i) ? _rows[i].size() : 0;
 		return ret;
@@ -291,7 +291,7 @@ public class SparseBlockMCSR extends SparseBlock
 
 	@Override
 	public final boolean isEmpty(int r) {
-		return !isAllocated(r) || _rows[r].isEmpty();
+		return _rows[r] == null || _rows[r].isEmpty();
 	}
 	
 	@Override
@@ -348,12 +348,13 @@ public class SparseBlockMCSR extends SparseBlock
 	}
 	
 	@Override
-	public void append(int r, int c, double v) {
-		if( !isAllocated(r) )
-			_rows[r] = new SparseRowScalar();
-		else if( _rows[r] instanceof SparseRowScalar && !_rows[r].isEmpty() )
-			_rows[r] = new SparseRowVector(_rows[r]);
-		_rows[r].append(c, v);
+	public final void append(final int r, final int c, final double v) {
+		if(v == 0)
+			return;
+		else if(_rows[r] == null)
+			_rows[r] = new SparseRowScalar().append(c, v);
+		else 
+			_rows[r] = _rows[r].append(c, v); 
 	}
 
 	@Override
@@ -420,18 +421,12 @@ public class SparseBlockMCSR extends SparseBlock
 
 	@Override
 	public int posFIndexGTE(int r, int c) {
-		//prior check with isEmpty(r) expected
-		if( _rows[r] instanceof SparseRowScalar )
-			_rows[r] = new SparseRowVector(_rows[r]);
-		return ((SparseRowVector)_rows[r]).searchIndexesFirstGTE(c);
+		return _rows[r].searchIndexesFirstGTE(c);
 	}
 
 	@Override
 	public int posFIndexGT(int r, int c) {
-		//prior check with isEmpty(r) expected
-		if( _rows[r] instanceof SparseRowScalar )
-			_rows[r] = new SparseRowVector(_rows[r]);
-		return ((SparseRowVector)_rows[r]).searchIndexesFirstGT(c);
+		return _rows[r].searchIndexesFirstGT(c);
 	}
 
 	public void setNnzEstimatePerRow(int nnzPerCol, int nCol){

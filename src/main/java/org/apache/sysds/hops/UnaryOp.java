@@ -21,7 +21,7 @@ package org.apache.sysds.hops;
 
 import java.util.ArrayList;
 
-import org.apache.commons.lang.NotImplementedException;
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.AggOp;
 import org.apache.sysds.common.Types.DataType;
@@ -144,6 +144,9 @@ public class UnaryOp extends MultiThreadedHop
 					break;
 				case LOCAL:
 					ret = new Local(input.constructLops(), getDataType(), getValueType());
+					break;
+				case _EVICT:
+					ret = new UnaryCP(input.constructLops(), _op, getDataType(), getValueType());
 					break;
 				default:
 					final boolean isScalarIn = getInput().get(0).getDataType() == DataType.SCALAR;

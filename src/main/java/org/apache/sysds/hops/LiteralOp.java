@@ -255,6 +255,7 @@ public class LiteralOp extends Hop
 			case FP64:
 				return String.valueOf(value_double);
 			case STRING:
+			case HASH64:
 				return value_string;
 			case CHARACTER:
 				return value_string;

@@ -184,9 +184,9 @@ public class DoubleArray extends Array<Double> {
 	}
 
 	@Override
-	public Pair<ValueType, Boolean> analyzeValueType() {
+	public Pair<ValueType, Boolean> analyzeValueType(int maxCells) {
 		ValueType state = FrameUtil.isType(_data[0]);
-		for(int i = 0; i < _size; i++) {
+		for(int i = 0; i < Math.min(maxCells,_size); i++) {
 			ValueType c = FrameUtil.isType(_data[i], state);
 			if(state == ValueType.FP64)
 				return new Pair<>(ValueType.FP64, false);
@@ -250,7 +250,7 @@ public class DoubleArray extends Array<Double> {
 
 	@Override
 	public long getExactSerializedSize() {
-		return 1 + 8 * _data.length;
+		return 1 + 8 * _size;
 	}
 
 	@Override
@@ -293,33 +293,24 @@ public class DoubleArray extends Array<Double> {
 	@Override
 	protected Array<Integer> changeTypeInteger() {
 		int[] ret = new int[size()];
-		for(int i = 0; i < size(); i++) {
-			if(_data[i] != (int) _data[i])
-				throw new DMLRuntimeException("Unable to change to Integer from Double array because of value:" + _data[i]);
+		for(int i = 0; i < size(); i++)
 			ret[i] = (int) _data[i];
-		}
 		return new IntegerArray(ret);
 	}
 
 	@Override
 	protected Array<Long> changeTypeLong() {
 		long[] ret = new long[size()];
-		for(int i = 0; i < size(); i++) {
-			if(_data[i] != (long) _data[i])
-				throw new DMLRuntimeException("Unable to change to Long from Double array because of value:" + _data[i]);
+		for(int i = 0; i < size(); i++)
 			ret[i] = (long) _data[i];
-		}
 		return new LongArray(ret);
 	}
 
 	@Override
 	protected Array<Object> changeTypeHash64() {
 		long[] ret = new long[size()];
-		for(int i = 0; i < size(); i++) {
-			if(_data[i] != (long) _data[i])
-				throw new DMLRuntimeException("Unable to change to Long from Double array because of value:" + _data[i]);
+		for(int i = 0; i < size(); i++) 
 			ret[i] = (long) _data[i];
-		}
 		return new HashLongArray(ret);
 	}
 
@@ -379,7 +370,7 @@ public class DoubleArray extends Array<Double> {
 
 	@Override
 	public boolean isEmpty() {
-		for(int i = 0; i < _data.length; i++)
+		for(int i = 0; i < _size; i++)
 			if(isNotEmpty(i))
 				return false;
 		return true;
@@ -428,7 +419,7 @@ public class DoubleArray extends Array<Double> {
 
 	@Override
 	public String toString() {
-		StringBuilder sb = new StringBuilder(_data.length * 5 + 2);
+		StringBuilder sb = new StringBuilder(_size * 5 + 2);
 		sb.append(super.toString() + ":[");
 		for(int i = 0; i < _size - 1; i++)
 			sb.append(_data[i] + ",");

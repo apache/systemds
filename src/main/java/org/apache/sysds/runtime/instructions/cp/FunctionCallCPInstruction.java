@@ -24,6 +24,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.Queue;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -182,7 +183,7 @@ public class FunctionCallCPInstruction extends CPInstruction {
 		
 		// Pin the input variables so that they do not get deleted 
 		// from pb's symbol table at the end of execution of function
-		boolean[] pinStatus = ec.pinVariables(_boundInputNames);
+		Queue<Boolean> pinStatus = ec.pinVariables(_boundInputNames);
 		
 		// Create a symbol table under a new execution context for the function invocation,
 		// and copy the function arguments into the created table. 
@@ -228,6 +229,7 @@ public class FunctionCallCPInstruction extends CPInstruction {
 		// add the updated binding for each return variable to the variables in original symbol table
 		// (with robustness for unbound outputs, i.e., function calls without assignment)
 		int numOutputs = Math.min(_boundOutputNames.size(), fpb.getOutputParams().size());
+		List<Data> toBeCleanedUp = new ArrayList<>();
 		for (int i=0; i< numOutputs; i++) {
 			String boundVarName = _boundOutputNames.get(i);
 			String retVarName = fpb.getOutputParams().get(i).getName();
@@ -236,19 +238,25 @@ public class FunctionCallCPInstruction extends CPInstruction {
 				throw new DMLRuntimeException("fcall "+_functionName+": "
 					+boundVarName + " was not assigned a return value");
 
-			//cleanup existing data bound to output variable name
+			// remove existing data bound to output variable name
 			Data exdata = ec.removeVariable(boundVarName);
-			if( exdata != boundValue && !retVars.hasReferences(exdata) )
-				ec.cleanupDataObject(exdata);
+			// save old data for cleanup later
+			if (exdata != boundValue && !retVars.hasReferences(exdata))
+				toBeCleanedUp.add(exdata);
 				//FIXME: interferes with reuse. Removes broadcasts before materialization
 
 			//add/replace data in symbol table
 			ec.setVariable(boundVarName, boundValue);
-			
+
 			//map lineage of function returns back to calling site
 			if( lineage != null ) //unchanged ref
 				ec.getLineage().set(boundVarName, lineage.get(retVarName));
 		}
+
+		// cleanup old data bound to output variable names
+		// needs to be done after return variables are added to ec
+		for (Data dat : toBeCleanedUp)
+			ec.cleanupDataObject(dat);
 
 		//update lineage cache with the functions outputs
 		if ((DMLScript.LINEAGE && LineageCacheConfig.isMultiLevelReuse() && !fpb.isNondeterministic())

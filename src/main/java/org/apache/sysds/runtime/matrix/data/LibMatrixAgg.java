@@ -28,6 +28,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.common.Types.CorrectionLocationType;
@@ -51,6 +52,7 @@ import org.apache.sysds.runtime.functionobjects.KahanPlus;
 import org.apache.sysds.runtime.functionobjects.KahanPlusSq;
 import org.apache.sysds.runtime.functionobjects.Mean;
 import org.apache.sysds.runtime.functionobjects.Multiply;
+import org.apache.sysds.runtime.functionobjects.Plus;
 import org.apache.sysds.runtime.functionobjects.ReduceAll;
 import org.apache.sysds.runtime.functionobjects.ReduceCol;
 import org.apache.sysds.runtime.functionobjects.ReduceDiag;
@@ -59,6 +61,7 @@ import org.apache.sysds.runtime.functionobjects.ValueFunction;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.CM_COV_Object;
 import org.apache.sysds.runtime.instructions.cp.KahanObject;
+import org.apache.sysds.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysds.runtime.matrix.operators.AggregateOperator;
 import org.apache.sysds.runtime.matrix.operators.AggregateTernaryOperator;
 import org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator;
@@ -106,6 +109,8 @@ public class LibMatrixAgg {
 	private enum AggType {
 		KAHAN_SUM,
 		KAHAN_SUM_SQ,
+		SUM, 
+		SUM_SQ,
 		CUM_KAHAN_SUM,
 		CUM_MIN,
 		CUM_MAX,
@@ -200,6 +205,24 @@ public class LibMatrixAgg {
 		else //if( in.sparse && lastColCorr )
 			aggregateBinaryMatrixLastColSparseGeneric(in, aggVal);
 
+	}
+
+	public static MatrixBlock aggregateUnaryMatrix(AggregateUnaryOperator op,MatrixBlock in, MatrixValue result,
+	int blen, MatrixIndexes indexesIn, boolean inCP){
+
+		MatrixBlock ret = LibMatrixAgg.prepareAggregateUnaryOutput(in, op, result, blen);
+		
+		if( LibMatrixAgg.isSupportedUnaryAggregateOperator(op) ) {
+			LibMatrixAgg.aggregateUnaryMatrix(in, ret, op, op.getNumThreads());
+			LibMatrixAgg.recomputeIndexes(ret, op, blen, indexesIn);
+		}
+		else
+			LibMatrixAggUnarySpecialization.aggregateUnary(in, op, ret, blen, indexesIn);
+		
+		if(op.aggOp.existsCorrection() && inCP)
+			ret.dropLastRowsOrColumns(op.aggOp.correction);
+		
+		return ret;
 	}
 
 	public static void aggregateUnaryMatrix(MatrixBlock in, MatrixBlock out, AggregateUnaryOperator uaop) {
@@ -686,10 +709,12 @@ public class LibMatrixAgg {
 				return AggType.KAHAN_SUM_SQ;
 		}
 
+		final boolean rAll_rCol_rRow = ifn instanceof ReduceAll || ifn instanceof ReduceCol || ifn instanceof ReduceRow;
+
 		//mean
 		if( vfn instanceof Mean 
 			&& (op.aggOp.correction == CorrectionLocationType.LASTTWOCOLUMNS || op.aggOp.correction == CorrectionLocationType.LASTTWOROWS)
-			&& (ifn instanceof ReduceAll || ifn instanceof ReduceCol || ifn instanceof ReduceRow) )
+			&& rAll_rCol_rRow )
 		{
 			return AggType.MEAN;
 		}
@@ -699,22 +724,20 @@ public class LibMatrixAgg {
 				&& ((CM) vfn).getAggOpType() == AggregateOperationTypes.VARIANCE
 				&& (op.aggOp.correction == CorrectionLocationType.LASTFOURCOLUMNS ||
 					op.aggOp.correction == CorrectionLocationType.LASTFOURROWS)
-				&& (ifn instanceof ReduceAll || ifn instanceof ReduceCol || ifn instanceof ReduceRow) )
+				&& rAll_rCol_rRow )
 		{
 			return AggType.VAR;
 		}
 
 		//prod
-		if( vfn instanceof Multiply 
-			&& (ifn instanceof ReduceAll || ifn instanceof ReduceCol || ifn instanceof ReduceRow))
-		{
+		if(vfn instanceof Multiply && rAll_rCol_rRow)
 			return AggType.PROD;
-		}
 
-		//min / max
-		if( vfn instanceof Builtin &&
-		    (ifn instanceof ReduceAll || ifn instanceof ReduceCol || ifn instanceof ReduceRow) )
-		{
+		if(vfn instanceof Plus && rAll_rCol_rRow)
+			return AggType.SUM;
+
+		// min / max
+		if(vfn instanceof Builtin && rAll_rCol_rRow) {
 			BuiltinCode bfcode = ((Builtin)vfn).bFunc;
 			switch( bfcode ){
 				case MAX: return AggType.MAX;
@@ -1470,6 +1493,19 @@ public class LibMatrixAgg {
 					d_uakptrace(a, c, n, kbuff, (KahanPlus)vFn, rl, ru);
 				break;
 			}
+			case SUM:{
+				if(a instanceof DenseBlockFP64DEDUP)
+					throw new NotImplementedException();
+				else if(ixFn instanceof ReduceAll) // SUM
+					d_uap(a, c, n, rl, ru);
+				else if(ixFn instanceof ReduceCol) // ROWSUM
+					d_uarp(a, c, n, rl, ru);
+				else if(ixFn instanceof ReduceRow) // COLSUM
+					d_uacp(a, c, n, rl, ru);
+				else if(ixFn instanceof ReduceDiag) // TRACE
+					throw new NotImplementedException();
+				break;
+			}
 			case KAHAN_SUM_SQ: { //SUM_SQ via k+,
 				KahanObject kbuff = new KahanObject(0, 0);
 				if( ixFn instanceof ReduceAll ) //SUM_SQ
@@ -1577,6 +1613,17 @@ public class LibMatrixAgg {
 					s_uakptrace(a, c, n, kbuff, (KahanPlus)vFn, rl, ru);
 				break;
 			}
+			case SUM:{
+				if( ixFn instanceof ReduceAll ) // SUM
+					s_uap(a, c, n, rl, ru);
+				else if( ixFn instanceof ReduceCol ) //ROWSUM
+					s_uarp(a, c, n, rl, ru);
+				else if( ixFn instanceof ReduceRow ) //COLSUM
+					s_uacp(a, c, n, rl, ru);
+				else if( ixFn instanceof ReduceDiag ) //TRACE
+					throw new NotImplementedException();
+				break;
+			}
 			case KAHAN_SUM_SQ: { //SUM_SQ via k+
 				KahanObject kbuff = new KahanObject(0, 0);
 				if( ixFn instanceof ReduceAll ) //SUM_SQ
@@ -1666,8 +1713,6 @@ public class LibMatrixAgg {
 		
 		DenseBlock da = in.getDenseBlock();
 		DenseBlock dc = out.getDenseBlock();
-		double[] a = in.getDenseBlockValues();
-		double[] c = out.getDenseBlockValues();
 		
 		switch( optype ) {
 			case CUM_KAHAN_SUM: { //CUMSUM
@@ -1683,11 +1728,19 @@ public class LibMatrixAgg {
 				break;
 			}
 			case CUM_PROD: { //CUMPROD
+				if(!da.isContiguous())
+					throw new NotImplementedException("Not implemented large block Cum Prod : " + optype);
+				double[] a = in.getDenseBlockValues();
+				double[] c = out.getDenseBlockValues();
 				d_ucumm(a, agg, c, n, rl, ru);
 				break;
 			}
 			case CUM_MIN:
 			case CUM_MAX: {
+				if(!da.isContiguous())
+					throw new NotImplementedException("Not implemented large block Cum min or max " + optype);
+				double[] a = in.getDenseBlockValues();
+				double[] c = out.getDenseBlockValues();
 				double init = (optype==AggType.CUM_MAX)? Double.NEGATIVE_INFINITY:Double.POSITIVE_INFINITY;
 				d_ucummxx(a, agg, c, n, init, (Builtin)vFn, rl, ru);
 				break;
@@ -1739,6 +1792,8 @@ public class LibMatrixAgg {
 			double val = Double.NaN;
 			switch( optype ) {
 				case PROD:         val = 1; break;
+				case SUM: 
+				case SUM_SQ:
 				case KAHAN_SUM:
 				case KAHAN_SUM_SQ: val = 0; break;
 				case MIN:          val = Double.POSITIVE_INFINITY; break;
@@ -1754,8 +1809,9 @@ public class LibMatrixAgg {
 		}
 		
 		//handle pseudo sparse-safe operations over empty inputs 
-		if(optype==AggType.KAHAN_SUM || optype==AggType.KAHAN_SUM_SQ
-				|| optype==AggType.MIN || optype==AggType.MAX || optype==AggType.PROD
+		if(optype == AggType.KAHAN_SUM || optype == AggType.KAHAN_SUM_SQ
+				|| optype == AggType.SUM || optype == AggType.SUM_SQ 
+				|| optype == AggType.MIN || optype == AggType.MAX || optype == AggType.PROD
 				|| optype == AggType.CUM_KAHAN_SUM || optype == AggType.CUM_PROD
 				|| optype == AggType.CUM_MIN || optype == AggType.CUM_MAX)
 		{
@@ -1821,11 +1877,11 @@ public class LibMatrixAgg {
 	/**
 	 * SUM, opcode: uak+, dense input. 
 	 * 
-	 * @param a ?
-	 * @param c ?
-	 * @param n ?
-	 * @param kbuff ?
-	 * @param kplus ?
+	 * @param a Input block
+	 * @param c Output block
+	 * @param n Input block number of columns
+	 * @param kbuff Kahn addition buffer
+	 * @param kplus Kahn plus operator
 	 * @param rl row lower index
 	 * @param ru row upper index
 	 */
@@ -1843,15 +1899,29 @@ public class LibMatrixAgg {
 		}
 		c.set(kbuff);
 	}
+
+	private static void d_uap(DenseBlock a, DenseBlock c, int n, int rl, int ru) {
+		final int bil = a.index(rl);
+		final int biu = a.index(ru - 1);
+		double runningSum = 0.0;
+		for(int bi = bil; bi <= biu; bi++) { // for each block
+			final int lpos = (bi == bil) ? a.pos(rl) : 0;
+			final int len = (bi == biu) ? a.pos(ru - 1) - lpos + n : a.blockSize(bi) * n;
+			final double[] aVals = a.valuesAt(bi); // get all the values
+			for(int i = lpos; i < lpos + len; i++) // all values in the block
+				runningSum += aVals[i];
+		}
+		c.set(runningSum);
+	}
 	
 	/**
 	 * ROWSUM, opcode: uark+, dense input.
 	 * 
-	 * @param a ?
-	 * @param c ?
-	 * @param n ?
-	 * @param kbuff ?
-	 * @param kplus ?
+	 * @param a Input matrix to rowSum
+	 * @param c Output matrix to set the row sums into
+	 * @param n The number of columns in the output
+	 * @param kbuff kahn buffer
+	 * @param kplus Kahn plus operator
 	 * @param rl row lower index
 	 * @param ru row upper index
 	 */
@@ -1867,17 +1937,28 @@ public class LibMatrixAgg {
 			}
 		}
 	}
-	
+
+	private static void d_uarp(DenseBlock a, DenseBlock c, int n, int rl, int ru) {
+		for(int i = rl; i < ru; i++) {
+			final int off = a.pos(i);
+			final double[] aVals = a.values(i);
+			double tmp = 0.0;
+			for(int col = off; col< off + n; col++)
+				tmp += aVals[col];
+			c.set(i, 0, tmp);
+		}
+	}
+
 	/**
 	 * COLSUM, opcode: uack+, dense input.
 	 * 
-	 * @param a ?
-	 * @param c ?
-	 * @param n ?
-	 * @param kbuff ?
-	 * @param kplus ?
-	 * @param rl row lower index
-	 * @param ru row upper index
+	 * @param a     Input block
+	 * @param c     Output block
+	 * @param n     number of column in the input
+	 * @param kbuff Kahn buffer
+	 * @param kplus Kahn plus operator
+	 * @param rl    row lower index
+	 * @param ru    row upper index
 	 */
 	private static void d_uackp( DenseBlock a, DenseBlock c, int n, KahanObject kbuff, KahanPlus kplus, int rl, int ru ) {
 		if(a instanceof DenseBlockFP64DEDUP)
@@ -1885,6 +1966,18 @@ public class LibMatrixAgg {
 		else {
 			for( int i=rl; i<ru; i++ )
 				sumAgg( a.values(i), c, a.pos(i), n, kbuff, kplus );
+		}
+	}
+
+	private static void d_uacp( DenseBlock a, DenseBlock c, int n, int rl, int ru ) {
+		// Output always a vector.
+		double[] cVals = c.values(0);
+		for(int r = rl; r < ru; r++){
+			int apos = a.pos(r);
+			double[] avals = a.values(r);
+			for(int i = 0; i < n; i++){
+				cVals[i] += avals[apos + i];
+			}
 		}
 	}
 
@@ -2407,7 +2500,7 @@ public class LibMatrixAgg {
 	/**
 	 * SUM, opcode: uak+, sparse input. 
 	 * 
-	 * @param a dense input block
+	 * @param a Sparse input block
 	 * @param c dense output block
 	 * @param n number columns in input
 	 * @param kbuff Kahn buffer
@@ -2429,16 +2522,33 @@ public class LibMatrixAgg {
 		c.set(kbuff);
 	}
 	
+
+	private static void s_uap(SparseBlock a, DenseBlock c, int n, int rl, int ru) {
+		double tmp = 0.0;
+		if(a.isContiguous()) {
+			final double[] aVal = a.values(rl);
+			final int s = a.pos(rl);
+			final long e = a.size(rl, ru);
+			for(int i = s; i < e; i++)
+				tmp += aVal[i];
+		}
+		else {
+			for(int i = rl; i < ru; i++)
+				tmp  += s_sumRow(a, i);
+		}
+		c.set(tmp);
+	}
+
 	/**
 	 * ROWSUM, opcode: uark+, sparse input.
 	 * 
-	 * @param a ?
-	 * @param c ?
-	 * @param n ?
-	 * @param kbuff ?
-	 * @param kplus ?
-	 * @param rl row lower index
-	 * @param ru row upper index
+	 * @param a     Spasrse block to row sum on
+	 * @param c     Dense output block
+	 * @param n     Number of column in the input block
+	 * @param kbuff Kahan buffer
+	 * @param kplus Kahan plus operator
+	 * @param rl    Row lower index
+	 * @param ru    Row upper index
 	 */
 	private static void s_uarkp( SparseBlock a, DenseBlock c, int n, KahanObject kbuff, KahanPlus kplus, int rl, int ru ) {
 		//compute row aggregates
@@ -2449,6 +2559,25 @@ public class LibMatrixAgg {
 			c.set(i, kbuff);
 		}
 	}
+
+	private static void s_uarp(SparseBlock a, DenseBlock c, int n, int rl, int ru) {
+		// compute row aggregates
+		for(int i = rl; i < ru; i++)
+			c.set(i, 0, s_sumRow(a, i));
+	}
+
+	private static double s_sumRow(SparseBlock a, int r) {
+			if(a.isEmpty(r))
+				return 0.0;
+		double tmp = 0.0;
+		final double[] aVal = a.values(r);
+		final int aPos = a.pos(r);
+		final int aEnd = aPos + a.size(r);
+		for(int j = aPos; j < aEnd; j++)
+			tmp += aVal[j];
+		return tmp;
+	}
+
 	
 	/**
 	 * COLSUM, opcode: uack+, sparse input.
@@ -2473,6 +2602,16 @@ public class LibMatrixAgg {
 					sumAgg( a.values(i), c, a.indexes(i), a.pos(i), a.size(i), n, kbuff, kplus );
 			}
 		}
+	}
+
+	private static void s_uacp(SparseBlock a, DenseBlock c, int n, int rl, int ru) {
+		final double[] cVal = c.values(0);
+		if(a.isContiguous())
+			sumAgg(a.values(rl), cVal, a.indexes(rl), a.pos(rl), (int) a.size(rl, ru), n);
+		else
+			for(int i = rl; i < ru; i++)
+				if(!a.isEmpty(i))
+					sumAgg(a.values(i), cVal, a.indexes(i), a.pos(i), a.size(i), n);
 	}
 
 	/**
@@ -3248,6 +3387,11 @@ public class LibMatrixAgg {
 			corr[pos1+ix] = kbuff._correction;
 		}
 	}
+
+	private static void sumAgg(double[] a, double[] c, int[] aix, int ai, final int len, final int n) {
+		for(int i = ai; i < ai + len; i++)
+			c[aix[i]] += a[i];
+	}
 	
 	private static double product( double[] a, int ai, final int len ) {
 		double val = 1;
@@ -3544,6 +3688,47 @@ public class LibMatrixAgg {
 				out_corr[pos1 + i] = ((sum[i] - tmp_sum) + out_sum[pos0 + i]) + out_corr[pos1 + i] + corr[i];
 			out_sum[pos0 + i] = tmp_sum + out_corr[pos1 + i];
 		}
+	}
+
+
+	public static MatrixBlock prepareAggregateUnaryOutput(MatrixBlock in, AggregateUnaryOperator op, MatrixValue result, int blen){
+		CellIndex tempCellIndex = new CellIndex(-1,-1);
+		final int rlen = in.getNumRows();
+		final int clen = in.getNumColumns();
+		op.indexFn.computeDimension(rlen, clen, tempCellIndex);
+		if(op.aggOp.existsCorrection())
+		{
+			switch(op.aggOp.correction)
+			{
+				case LASTROW: 
+					tempCellIndex.row++;
+					break;
+				case LASTCOLUMN: 
+					tempCellIndex.column++;
+					break;
+				case LASTTWOROWS: 
+					tempCellIndex.row+=2;
+					break;
+				case LASTTWOCOLUMNS: 
+					tempCellIndex.column+=2;
+					break;
+				case LASTFOURROWS:
+					tempCellIndex.row+=4;
+					break;
+				case LASTFOURCOLUMNS:
+					tempCellIndex.column+=4;
+					break;
+				default:
+					throw new DMLRuntimeException("unrecognized correctionLocation: "+op.aggOp.correction);
+			}
+		}
+		
+		//prepare result matrix block
+		if(result==null)
+			result=new MatrixBlock(tempCellIndex.row, tempCellIndex.column, false);
+		else
+			result.reset(tempCellIndex.row, tempCellIndex.column, false);
+		return (MatrixBlock)result;
 	}
 
 

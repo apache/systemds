@@ -647,82 +647,82 @@ public class BuiltinFunctionExpression extends DataIdentifier {
 			output.setProperties(this.getFirstExpr().getOutput());
 		output.setNnz(-1); // conservatively, cannot use input nnz!
 		setOutput(output);
-
-		switch(getOpCode()) {
-			case EVAL:
-			case EVALLIST:
-				if(_args.length == 0)
-					raiseValidateError("Function eval should provide at least one argument, i.e., the function name.",
-						false);
-				checkValueTypeParam(_args[0], ValueType.STRING);
-				boolean listReturn = (getOpCode() == Builtins.EVALLIST);
-				output.setDataType(listReturn ? DataType.LIST : DataType.MATRIX);
-				output.setValueType(listReturn ? ValueType.UNKNOWN : ValueType.FP64);
-				output.setDimensions(-1, -1);
-				output.setBlocksize(ConfigurationManager.getBlocksize());
-				break;
-			case COLSUM:
-			case COLMAX:
-			case COLMIN:
-			case COLMEAN:
-			case COLPROD:
-			case COLSD:
-			case COLVAR:
-				// colSums(X);
-				checkNumParameters(1);
-				checkMatrixParam(getFirstExpr());
-				output.setDataType(DataType.MATRIX);
-				output.setDimensions(1, id.getDim2());
-				output.setBlocksize(id.getBlocksize());
-				output.setValueType(id.getValueType());
-				break;
-			case ROWSUM:
-			case ROWMAX:
-			case ROWINDEXMAX:
-			case ROWMIN:
-			case ROWINDEXMIN:
-			case ROWMEAN:
-			case ROWPROD:
-			case ROWSD:
-			case ROWVAR:
-				// rowSums(X);
-				checkNumParameters(1);
-				checkMatrixParam(getFirstExpr());
-				output.setDataType(DataType.MATRIX);
-				output.setDimensions(id.getDim1(), 1);
-				output.setBlocksize(id.getBlocksize());
-				output.setValueType(id.getValueType());
-				break;
-			case SUM:
-			case PROD:
-			case TRACE:
-			case SD:
-			case VAR:
-				// sum(X);
-				checkNumParameters(1);
-				checkMatrixTensorParam(getFirstExpr());
-				output.setDataType(DataType.SCALAR);
-				output.setDimensions(0, 0);
-				output.setBlocksize(0);
-				switch(id.getValueType()) {
-					case STRING: // TODO think about what we want to get when we sum tensor of strings
-					case CHARACTER: // TODO here also for Characters.
-					case FP64:
-					case FP32:
-						output.setValueType(ValueType.FP64);
-						break;
-					case INT64:
-					case INT32:
-					case UINT8:
-					case UINT4:
-					case BOOLEAN:
-						output.setValueType(ValueType.INT64);
-						break;
-					case UNKNOWN:
-						throw new NotImplementedException();
-				}
-				break;
-
+		
+      switch (getOpCode()) {
+      case EVAL:
+      case EVALLIST:
+        if (_args.length == 0)
+          raiseValidateError("Function eval should provide at least one argument, i.e., the function name.", false);
+        checkValueTypeParam(_args[0], ValueType.STRING);
+        boolean listReturn = (getOpCode()==Builtins.EVALLIST);
+        output.setDataType(listReturn ? DataType.LIST : DataType.MATRIX);
+        output.setValueType(listReturn ? ValueType.UNKNOWN : ValueType.FP64);
+        output.setDimensions(-1, -1);
+        output.setBlocksize(ConfigurationManager.getBlocksize());
+        break;
+      case COLSUM:
+      case COLMAX:
+      case COLMIN:
+      case COLMEAN:
+      case COLPROD:
+      case COLSD:
+      case COLVAR:
+        // colSums(X);
+        checkNumParameters(1);
+        checkMatrixParam(getFirstExpr());
+        output.setDataType(DataType.MATRIX);
+        output.setDimensions(1, id.getDim2());
+        output.setBlocksize (id.getBlocksize());
+        output.setValueType(id.getValueType());
+        break;
+      case ROWSUM:
+      case ROWMAX:
+      case ROWINDEXMAX:
+      case ROWMIN:
+      case ROWINDEXMIN:
+      case ROWMEAN:
+      case ROWPROD:
+      case ROWSD:
+      case ROWVAR:
+        //rowSums(X);
+        checkNumParameters(1);
+        checkMatrixParam(getFirstExpr());
+        output.setDataType(DataType.MATRIX);
+        output.setDimensions(id.getDim1(), 1);
+        output.setBlocksize (id.getBlocksize());
+        output.setValueType(id.getValueType());
+        break;
+      case SUM:
+      case PROD:
+      case TRACE:
+      case SD:
+      case VAR:
+        // sum(X);
+        checkNumParameters(1);
+        checkMatrixTensorParam(getFirstExpr());
+        output.setDataType(DataType.SCALAR);
+        output.setDimensions(0, 0);
+        output.setBlocksize(0);
+        switch (id.getValueType()) {
+          case INT64:
+          case INT32:
+          case UINT8:
+          case UINT4:
+          case BOOLEAN:
+            output.setValueType(ValueType.INT64);
+            break;
+          case STRING:
+          case CHARACTER:
+          case FP64:
+          case FP32:
+          case HASH64: //default
+            output.setValueType(ValueType.FP64);
+            break;
+          case UNKNOWN:
+            throw new NotImplementedException();
+        }
+        break;
+		
 			case MEAN:
 				// checkNumParameters(2, false); // mean(Y) or mean(Y,W)
 				if(getSecondExpr() != null) {

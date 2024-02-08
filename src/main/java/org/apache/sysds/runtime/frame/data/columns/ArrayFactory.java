@@ -28,6 +28,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
 import org.apache.sysds.utils.MemoryEstimates;
 
 public interface ArrayFactory {
@@ -50,7 +51,7 @@ public interface ArrayFactory {
 	} 
 
 	public static OptionalArray<Object> createHash64Opt(String[] col){
-		return new OptionalArray<Object>(col, ValueType.HASH64);
+		return new OptionalArray<>(col, ValueType.HASH64);
 	} 
 
 	public static HashLongArray createHash64(long[] col){
@@ -309,8 +310,12 @@ public interface ArrayFactory {
 			if(src.getFrameArrayType() == FrameArrayType.OPTIONAL)
 				target = allocateOptional(src.getValueType(), rlen);
 			else if(src.getFrameArrayType() == FrameArrayType.DDC) {
-				Array<?> ddcDict = ((DDCArray<?>) src).getDict();
-				if(ddcDict.getFrameArrayType() == FrameArrayType.OPTIONAL) {
+				final DDCArray<?> ddcA = ((DDCArray<?>) src);
+				final Array<?> ddcDict = ddcA.getDict();
+				if(ddcDict == null){ // read empty dict.
+					target = new DDCArray<>(null, MapToFactory.create(rlen, ddcA.getMap().getUnique()));
+				}
+				else if(ddcDict.getFrameArrayType() == FrameArrayType.OPTIONAL) {
 					target = allocateOptional(src.getValueType(), rlen);
 				}
 				else {

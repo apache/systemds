@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.spark.api.java.JavaPairRDD;
@@ -31,6 +32,7 @@ import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
 import org.apache.spark.api.java.function.PairFunction;
 import org.apache.spark.broadcast.Broadcast;
+import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.common.Types.CorrectionLocationType;
 import org.apache.sysds.common.Types.FileFormat;
@@ -51,6 +53,9 @@ import org.apache.sysds.runtime.functionobjects.ValueFunction;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.BooleanObject;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
+import org.apache.sysds.runtime.instructions.cp.Data;
+import org.apache.sysds.runtime.instructions.cp.ScalarObjectFactory;
+import org.apache.sysds.runtime.instructions.cp.ScalarObject;
 import org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue;
 import org.apache.sysds.runtime.instructions.spark.data.LazyIterableIterator;
 import org.apache.sysds.runtime.instructions.spark.data.PartitionedBroadcast;
@@ -92,6 +97,7 @@ import org.apache.sysds.runtime.transform.tokenize.TokenizerFactory;
 import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.runtime.util.UtilFunctions;
 
+import org.apache.sysds.utils.stats.SparkStatistics;
 import scala.Tuple2;
 
 public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction {
@@ -374,15 +380,31 @@ public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
 			}
 		}
 		else if(opcode.equalsIgnoreCase("contains")) {
+			
 			JavaPairRDD<MatrixIndexes, MatrixBlock> in1 = sec
 				.getBinaryMatrixBlockRDDHandleForVariable(params.get("target"));
 			
+			Data pattern = ec.getVariable(params.get("pattern"));
+			if( pattern == null ) //literal
+				pattern = ScalarObjectFactory.createScalarObject(ValueType.FP64, params.get("pattern"));
+			
+			boolean ret = false;
+			if( pattern.getDataType().isScalar() ) {
+				double dpattern = ((ScalarObject)pattern).getDoubleValue();
+				ret = in1.values() //num blocks containing pattern
+					.map(new RDDContainsFunction(dpattern))
+					.reduce((a,b) -> a+b) > 0;
+			}
+			else {
+				PartitionedBroadcast<MatrixBlock> bc = sec.getBroadcastForVariable(params.get("pattern"));
+				DataCharacteristics dc = sec.getDataCharacteristics(params.get("target"));
+				ret = in1.flatMapToPair(new RDDContainsVectFunction(bc, dc.getBlocksize()))
+					.reduceByKey((a,b) -> a+b)
+					.values().reduce((a,b) -> Math.max(a,b)) == dc.getNumColBlocks();
+			}
+			
 			// execute contains operation 
-			double pattern = Double.parseDouble(params.get("pattern"));
-			Double ret = in1.values() //num blocks containing pattern
-				.map(new RDDContainsFunction(pattern))
-				.reduce((a,b) -> a+b);
-			ec.setScalarOutput(output.getName(), new BooleanObject(ret>0));
+			ec.setScalarOutput(output.getName(), new BooleanObject(ret));
 		}
 		else if(opcode.equalsIgnoreCase("replace")) {
 			if(sec.isFrameObject(params.get("target"))){
@@ -525,15 +547,22 @@ public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
 				.createEncoder(params.get("spec"), colnames, fo.getSchema(), (int) fo.getNumColumns(), meta, embeddings);
 			encoder.updateAllDCEncoders();
 			mcOut.setDimension(mcIn.getRows() - ((omap != null) ? omap.getNumRmRows() : 0), encoder.getNumOutCols());
+
+			long t0 = System.nanoTime();
 			Broadcast<MultiColumnEncoder> bmeta = sec.getSparkContext().broadcast(encoder);
 			Broadcast<TfOffsetMap> bomap = (omap != null) ? sec.getSparkContext().broadcast(omap) : null;
+			if (DMLScript.STATISTICS) {
+				SparkStatistics.accBroadCastTime(System.nanoTime() - t0);
+				SparkStatistics.incBroadcastCount(1);
+			}
 
 			// execute transform apply
 			JavaPairRDD<MatrixIndexes, MatrixBlock> out;
 			Tuple2<Boolean, Integer> aligned = FrameRDDAggregateUtils.checkRowAlignment(in, -1);
 			// NOTE: currently disabled for LegacyEncoders, because OMIT probably results in not aligned
 			// blocks and for IMPUTE was an inaccuracy for the "testHomesImputeColnamesSparkCSV" test case.
-			// Expected: 8.150349617004395 vs actual: 8.15035 at 0 8 (expected is calculated from transform encode,
+
+			// Error in test case: Expected: 8.150349617004395 vs actual: 8.15035 at 0 8 (expected is calculated from transform encode,
 			// which currently always uses the else branch: either inaccuracy must come from serialisation of
 			// matrixblock or from binaryBlockToBinaryBlock reblock
 			if(aligned._1 && mcOut.getCols() <= aligned._2 && !encoder.hasLegacyEncoder() /*&& containsWE*/) {
@@ -686,6 +715,31 @@ public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
 		@Override
 		public Double call(MatrixBlock arg0) {
 			return arg0.containsValue(_pattern) ? 1d : 0d;
+		}
+	}
+	
+	public static class RDDContainsVectFunction implements PairFlatMapFunction<Tuple2<MatrixIndexes,MatrixBlock>, Long, Integer>
+	{
+		private static final long serialVersionUID = 2228503788469700742L;
+		private final PartitionedBroadcast<MatrixBlock> _pbcPattern;
+		private final int _blocksize;
+		
+		public RDDContainsVectFunction(PartitionedBroadcast<MatrixBlock> bc, int blocksize) {
+			_pbcPattern = bc;
+			_blocksize = blocksize;
+		}
+
+		@Override
+		public Iterator<Tuple2<Long, Integer>> call(Tuple2<MatrixIndexes, MatrixBlock> input) throws Exception {
+			MatrixIndexes ix = input._1();
+			MatrixBlock pattern = _pbcPattern.getBlock(1, (int)ix.getColumnIndex());
+			List<Integer> tmp = input._2().containsVector(pattern, false);
+			
+			List<Tuple2<Long,Integer>> ret = new ArrayList<>(); 
+			ret.add(new Tuple2<>(ix.getRowIndex()*_blocksize, 0)); //ensure non-empty RDD
+			for(int rix : tmp)
+				ret.add(new Tuple2<>(UtilFunctions.computeCellIndex(ix.getRowIndex(), _blocksize, rix), 1));
+			return ret.iterator();
 		}
 	}
 

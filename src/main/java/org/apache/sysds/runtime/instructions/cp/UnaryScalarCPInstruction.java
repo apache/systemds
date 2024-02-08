@@ -44,7 +44,7 @@ public class UnaryScalarCPInstruction extends UnaryCPInstruction {
 		//core execution
 		if ( opcode.equalsIgnoreCase("print") ) {
 			String outString = so.getLanguageSpecificStringValue();
-			
+
 			// print to stdout only when suppress flag in DMLScript is not set.
 			// The flag will be set, for example, when SystemDS is invoked in fenced mode from Jaql.
 			if (!DMLScript.suppressPrint2Stdout())

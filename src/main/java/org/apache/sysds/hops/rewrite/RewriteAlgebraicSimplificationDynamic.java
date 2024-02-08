@@ -176,6 +176,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 			hi = simplifyScalarMatrixMult(hop, hi, i);        //e.g., X%*%y -> X*as.scalar(y), if y is a 1-1 matrix
 			hi = simplifyMatrixMultDiag(hop, hi, i);          //e.g., diag(X)%*%Y -> X*Y, if ncol(Y)==1 / -> Y*X if ncol(Y)>1 
 			hi = simplifyDiagMatrixMult(hop, hi, i);          //e.g., diag(X%*%Y)->rowSums(X*t(Y)); if col vector
+			hi = simplifyDistributiveMatrixMult(hop, hi, i);  //e.g., (A%*%B)+(A%*%C) -> A%*%(B+C)
 			hi = simplifySumDiagToTrace(hi);                  //e.g., sum(diag(X)) -> trace(X); if col vector
 			hi = simplifyLowerTriExtraction(hop, hi, i);      //e.g., X * cumsum(diag(matrix(1,nrow(X),1))) -> lower.tri
 			hi = simplifyConstantCumsum(hop, hi, i);          //e.g., cumsum(matrix(1/n,n,1)) -> seq(1/n, 1, 1/n)
@@ -1137,46 +1138,79 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 		
 		return hi;
 	}
-	
-	private static Hop simplifyDiagMatrixMult(Hop parent, Hop hi, int pos)
-	{
-		if( hi instanceof ReorgOp && ((ReorgOp)hi).getOp()==ReOrgOp.DIAG && hi.getDim2()==1 ) //diagM2V
+
+	private static Hop simplifyDiagMatrixMult(Hop parent, Hop hi, int pos) {
+		if(hi instanceof ReorgOp && ((ReorgOp) hi).getOp() == ReOrgOp.DIAG && hi.getDim2() == 1) //diagM2V
 		{
 			Hop hi2 = hi.getInput().get(0);
-			if( HopRewriteUtils.isMatrixMultiply(hi2) ) //X%*%Y
+			if(HopRewriteUtils.isMatrixMultiply(hi2)) //X%*%Y
 			{
 				Hop left = hi2.getInput().get(0);
 				Hop right = hi2.getInput().get(1);
-				
+
 				//create new operators (incl refresh size inside for transpose)
 				ReorgOp trans = HopRewriteUtils.createTranspose(right);
 				BinaryOp mult = HopRewriteUtils.createBinary(left, trans, OpOp2.MULT);
 				AggUnaryOp rowSum = HopRewriteUtils.createAggUnaryOp(mult, AggOp.SUM, Direction.Row);
-				
+
 				//rehang new subdag under parent node
 				HopRewriteUtils.replaceChildReference(parent, hi, rowSum, pos);
 				HopRewriteUtils.cleanupUnreferenced(hi, hi2);
-				
+
 				hi = rowSum;
 				LOG.debug("Applied simplifyDiagMatrixMult");
-			}	
+			}
 		}
-		
+
 		return hi;
 	}
-	
-	private static Hop simplifySumDiagToTrace(Hop hi)
-	{
-		if( hi instanceof AggUnaryOp ) 
+
+	private static Hop simplifyDistributiveMatrixMult(Hop parent, Hop hi, int pos) {
+		// A%*%B + A%*%C -> A%*%(B+C)
+		if(HopRewriteUtils.isBinary(hi, OpOp2.PLUS) 
+			&& HopRewriteUtils.isMatrixMultiply(hi.getInput(0))
+			&& HopRewriteUtils.isMatrixMultiply(hi.getInput(1))
+			&& hi.getInput(0).getParent().size() == 1 //single consumer
+			&& hi.getInput(1).getParent().size() == 1 //single consumer
+			&& hi.getInput(0).getInput(0) == hi.getInput(1).getInput(0)) //common A
 		{
+			Hop A = hi.getInput(0).getInput(0);
+			Hop B = hi.getInput(0).getInput(1);
+			Hop C = hi.getInput(1).getInput(1);
+			boolean dense = HopRewriteUtils.isDense(A) 
+				&& HopRewriteUtils.isDense(B) && HopRewriteUtils.isDense(C);
+			//compute floating point and mem bandwidth requirements and 
+			//according for special cases where C might be a column vector
+			long m = A.getDim1(), n = A.getDim2(), l = B.getDim2(), o = C.getDim2();
+			long costOriginal = m * n * l + m * n * o + m * l //FLOP
+						+ m*n + n*l + n*o + m*l + m*o + m*l;  //I/O ABC+intermediates
+			long costRewrite = n * l + m * n * l              //FLOP
+						+ m*n + n*l + n*o + n*l + m*l;        //I/O ABC+intermediates
+			//Check that rewrite reduces FLOPs
+			if(dense && costRewrite < costOriginal) {
+				Hop BplusC = HopRewriteUtils.createBinary(B, C, OpOp2.PLUS);
+				Hop newHop = HopRewriteUtils.createMatrixMultiply(A, BplusC);
+				if(parent != null) {
+					HopRewriteUtils.replaceChildReference(parent, hi, newHop, pos);
+					HopRewriteUtils.cleanupUnreferenced(hi);
+					hi = newHop;
+					LOG.debug("Applied simplifyDistributiveMatrixMult (line " + hi.getBeginLine() + ")");
+				}
+			}
+		}
+		return hi;
+	}
+
+	private static Hop simplifySumDiagToTrace(Hop hi) {
+		if(hi instanceof AggUnaryOp) {
 			AggUnaryOp au = (AggUnaryOp) hi;
-			if( au.getOp()==AggOp.SUM && au.getDirection()==Direction.RowCol )	//sum
+			if(au.getOp() == AggOp.SUM && au.getDirection() == Direction.RowCol)    //sum
 			{
 				Hop hi2 = au.getInput().get(0);
-				if( hi2 instanceof ReorgOp && ((ReorgOp)hi2).getOp()==ReOrgOp.DIAG && hi2.getDim2()==1 ) //diagM2V
+				if(hi2 instanceof ReorgOp && ((ReorgOp) hi2).getOp() == ReOrgOp.DIAG && hi2.getDim2() == 1) //diagM2V
 				{
 					Hop hi3 = hi2.getInput().get(0);
-					
+
 					//remove diag operator
 					HopRewriteUtils.replaceChildReference(au, hi2, hi3, 0);
 					HopRewriteUtils.cleanupUnreferenced(hi2);

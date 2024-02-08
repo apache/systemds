@@ -501,12 +501,12 @@ public abstract class Lop
 
 	/**
 	 * Set the execution type of LOP.
+	 * 
 	 * @param newExecType new execution type
 	 */
-	public void setExecType(ExecType newExecType){
- 		lps.setExecType(newExecType);
+	public void setExecType(ExecType newExecType) {
+		lps.setExecType(newExecType);
 	}
-
 
 	public boolean isExecSpark () {
 		return (lps.getExecType() == ExecType.SPARK);

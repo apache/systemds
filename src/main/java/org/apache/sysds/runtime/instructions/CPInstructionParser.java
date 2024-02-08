@@ -50,6 +50,7 @@ import org.apache.sysds.runtime.instructions.cp.CtableCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.DataGenCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.DeCompressionCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.DnnCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.EvictCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.FunctionCallCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.IndexingCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.LocalCPInstruction;
@@ -304,46 +305,48 @@ public class CPInstructionParser extends InstructionParser {
 		String2CPInstructionType.put("remove", CPType.Append);
 
 		// data generation opcodes
-		String2CPInstructionType.put(DataGen.RAND_OPCODE, CPType.Rand);
-		String2CPInstructionType.put(DataGen.SEQ_OPCODE, CPType.Rand);
-		String2CPInstructionType.put(DataGen.SINIT_OPCODE, CPType.StringInit);
-		String2CPInstructionType.put(DataGen.SAMPLE_OPCODE, CPType.Rand);
-		String2CPInstructionType.put(DataGen.TIME_OPCODE, CPType.Rand);
-		String2CPInstructionType.put(DataGen.FRAME_OPCODE, CPType.Rand);
+		String2CPInstructionType.put( DataGen.RAND_OPCODE   , CPType.Rand);
+		String2CPInstructionType.put( DataGen.SEQ_OPCODE    , CPType.Rand);
+		String2CPInstructionType.put( DataGen.SINIT_OPCODE  , CPType.StringInit);
+		String2CPInstructionType.put( DataGen.SAMPLE_OPCODE , CPType.Rand);
+		String2CPInstructionType.put( DataGen.TIME_OPCODE   , CPType.Rand);
+		String2CPInstructionType.put( DataGen.FRAME_OPCODE   , CPType.Rand);
 
-		String2CPInstructionType.put("ctable", CPType.Ctable);
-		String2CPInstructionType.put("ctableexpand", CPType.Ctable);
-
-		// central moment, covariance, quantiles (sort/pick)
-		String2CPInstructionType.put("cm", CPType.CentralMoment);
-		String2CPInstructionType.put("cov", CPType.Covariance);
-		String2CPInstructionType.put("qsort", CPType.QSort);
-		String2CPInstructionType.put("qpick", CPType.QPick);
-
-		String2CPInstructionType.put(RightIndex.OPCODE, CPType.MatrixIndexing);
-		String2CPInstructionType.put(LeftIndex.OPCODE, CPType.MatrixIndexing);
-
-		String2CPInstructionType.put("tsmm", CPType.MMTSJ);
-		String2CPInstructionType.put("pmm", CPType.PMMJ);
-		String2CPInstructionType.put("mmchain", CPType.MMChain);
-
-		String2CPInstructionType.put("qr", CPType.MultiReturnBuiltin);
-		String2CPInstructionType.put("lu", CPType.MultiReturnBuiltin);
-		String2CPInstructionType.put("eigen", CPType.MultiReturnBuiltin);
-		String2CPInstructionType.put("fft", CPType.MultiReturnBuiltin);
+		String2CPInstructionType.put( "ctable",       CPType.Ctable);
+		String2CPInstructionType.put( "ctableexpand", CPType.Ctable);
+		
+		//central moment, covariance, quantiles (sort/pick)
+		String2CPInstructionType.put( "cm",    CPType.CentralMoment);
+		String2CPInstructionType.put( "cov",   CPType.Covariance);
+		String2CPInstructionType.put( "qsort", CPType.QSort);
+		String2CPInstructionType.put( "qpick", CPType.QPick);
+		
+		
+		String2CPInstructionType.put( RightIndex.OPCODE, CPType.MatrixIndexing);
+		String2CPInstructionType.put( LeftIndex.OPCODE, CPType.MatrixIndexing);
+	
+		String2CPInstructionType.put( "tsmm",    CPType.MMTSJ);
+		String2CPInstructionType.put( "pmm",     CPType.PMMJ);
+		String2CPInstructionType.put( "mmchain", CPType.MMChain);
+		
+		String2CPInstructionType.put( "qr",    CPType.MultiReturnBuiltin);
+		String2CPInstructionType.put( "lu",    CPType.MultiReturnBuiltin);
+		String2CPInstructionType.put( "eigen", CPType.MultiReturnBuiltin);
+    String2CPInstructionType.put("fft", CPType.MultiReturnBuiltin);
 		String2CPInstructionType.put("ifft", CPType.MultiReturnComplexMatrixBuiltin);
-		String2CPInstructionType.put("svd", CPType.MultiReturnBuiltin);
+		String2CPInstructionType.put( "svd",   CPType.MultiReturnBuiltin);
 
-		String2CPInstructionType.put("partition", CPType.Partition);
-		String2CPInstructionType.put(Compression.OPCODE, CPType.Compression);
-		String2CPInstructionType.put(DeCompression.OPCODE, CPType.DeCompression);
-		String2CPInstructionType.put("spoof", CPType.SpoofFused);
-		String2CPInstructionType.put("prefetch", CPType.Prefetch);
-		String2CPInstructionType.put("broadcast", CPType.Broadcast);
-		String2CPInstructionType.put("trigremote", CPType.TrigRemote);
-		String2CPInstructionType.put(Local.OPCODE, CPType.Local);
-
-		String2CPInstructionType.put("sql", CPType.Sql);
+		String2CPInstructionType.put( "partition", CPType.Partition);
+		String2CPInstructionType.put( Compression.OPCODE,  CPType.Compression);
+		String2CPInstructionType.put( DeCompression.OPCODE, CPType.DeCompression);
+		String2CPInstructionType.put( "spoof",     CPType.SpoofFused);
+		String2CPInstructionType.put( "prefetch",  CPType.Prefetch);
+		String2CPInstructionType.put( "_evict",  CPType.EvictLineageCache);
+		String2CPInstructionType.put( "broadcast",  CPType.Broadcast);
+		String2CPInstructionType.put( "trigremote",  CPType.TrigRemote);
+		String2CPInstructionType.put( Local.OPCODE, CPType.Local);
+		
+		String2CPInstructionType.put( "sql", CPType.Sql);
 	}
 
 	public static CPInstruction parseSingleInstruction(String str) {
@@ -490,6 +493,9 @@ public class CPInstructionParser extends InstructionParser {
 			case Broadcast:
 				return BroadcastCPInstruction.parseInstruction(str);
 
+			case EvictLineageCache:
+				return EvictCPInstruction.parseInstruction(str);
+			
 			default:
 				throw new DMLRuntimeException("Invalid CP Instruction Type: " + cptype);
 		}

@@ -181,7 +181,7 @@ public class IntegerArray extends Array<Integer> {
 	}
 
 	@Override
-	public Pair<ValueType, Boolean> analyzeValueType() {
+	public Pair<ValueType, Boolean> analyzeValueType(int maxCells) {
 		return new Pair<>(ValueType.INT32, false);
 	}
 
@@ -199,7 +199,7 @@ public class IntegerArray extends Array<Integer> {
 
 	@Override
 	public long getExactSerializedSize() {
-		return 1 + 4 * _data.length;
+		return 1 + 4 * _size;
 	}
 
 	@Override
@@ -317,7 +317,7 @@ public class IntegerArray extends Array<Integer> {
 
 	@Override
 	public boolean isEmpty() {
-		for(int i = 0; i < _data.length; i++)
+		for(int i = 0; i < _size; i++)
 			if(_data[i] != 0)
 				return false;
 		return true;
@@ -366,7 +366,7 @@ public class IntegerArray extends Array<Integer> {
 
 	@Override
 	public String toString() {
-		StringBuilder sb = new StringBuilder(_data.length * 5 + 2);
+		StringBuilder sb = new StringBuilder(_size * 5 + 2);
 		sb.append(super.toString() + ":[");
 		for(int i = 0; i < _size - 1; i++)
 			sb.append(_data[i] + ",");

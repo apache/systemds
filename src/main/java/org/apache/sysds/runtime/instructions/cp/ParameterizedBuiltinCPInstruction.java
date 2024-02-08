@@ -250,9 +250,15 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 		else if(opcode.equalsIgnoreCase("contains")) {
 			String varName = params.get("target");
 			MatrixBlock target = ec.getMatrixInput(varName);
-			double pattern = Double.parseDouble(params.get("pattern"));
-			boolean ret = target.containsValue(pattern);
+			Data pattern = ec.getVariable(params.get("pattern"));
+			if( pattern == null ) //literal
+				pattern = ScalarObjectFactory.createScalarObject(ValueType.FP64, params.get("pattern"));
+			boolean ret = pattern.getDataType().isScalar() ?
+				target.containsValue(((ScalarObject)pattern).getDoubleValue()) : 
+				(target.containsVector(((MatrixObject)pattern).acquireRead(), true).size()>0);
 			ec.releaseMatrixInput(varName);
+			if(!pattern.getDataType().isScalar())
+				ec.releaseMatrixInput(params.get("pattern"));
 			ec.setScalarOutput(output.getName(), new BooleanObject(ret));
 		}
 		else if(opcode.equalsIgnoreCase("replace")) {
@@ -330,6 +336,8 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 			ec.setMatrixOutput(output.getName(), mbout);
 			ec.releaseFrameInput(params.get("target"));
 			ec.releaseFrameInput(params.get("meta"));
+			if(params.get("embedding") != null)
+				ec.releaseMatrixInput(params.get("embedding"));
 		}
 		else if(opcode.equalsIgnoreCase("transformdecode")) {
 			// acquire locks

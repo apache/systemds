@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #-------------------------------------------------------------
 #
 # Licensed to the Apache Software Foundation (ASF) under one
@@ -35,6 +35,7 @@ intel_mkl="libmkl_rt.so"
 # GCC __float128 shared support library: libquadmath.so.0
 openblas="libopenblas.so\|libgfortran.so\|libquadmath.so"
 
+date
 
 if ! [ -x "$(command -v cmake)" ]; then
   echo 'Error: cmake is not installed.' >&2
@@ -46,28 +47,42 @@ if ! [ -x "$(command -v patchelf)" ]; then
   exit 1
 fi
 
-# configure and compile INTEL MKL
-cmake . -B INTEL -DUSE_INTEL_MKL=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER=g++ -DCMAKE_CXX_FLAGS="-DUSE_GNU_THREADING -m64"
-cmake --build INTEL --target install --config Release
-patchelf --add-needed libmkl_rt.so lib/libsystemds_mkl-Linux-x86_64.so
-rm -R INTEL
+mkdir -p log
 
-# configure and compile OPENBLAS
-cmake . -B OPENBLAS -DUSE_OPEN_BLAS=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER=g++ -DCMAKE_CXX_FLAGS="-m64"
-cmake --build OPENBLAS --target install --config Release
-patchelf --add-needed libopenblas.so.0 lib/libsystemds_openblas-Linux-x86_64.so
-rm -R OPENBLAS
+./build_mkl.sh > log/mkl_build.log  2>&1 & 
+./build_BLAS.sh > log/BLAS_build.log 2>&1 &
+./build_HE.sh > log/HE_build.log 2>&1 &
+wait
 
-# check dependencies linux x86_64
-echo "-----------------------------------------------------------------------"
-echo "Check for unexpected dependencies added after code change or new setup:"
-echo "Non-standard dependencies for libsystemds_mkl-linux-x86_64.so"
-ldd lib/libsystemds_mkl-Linux-x86_64.so | grep -v $gcc_toolkit"\|$linux_loader\|"$intel_mkl
-echo "Non-standard dependencies for libsystemds_openblas-linux-x86_64.so"
-ldd lib/libsystemds_openblas-Linux-x86_64.so | grep -v $gcc_toolkit"\|$linux_loader\|"$openblas
-echo "-----------------------------------------------------------------------"
+if grep -q "Could NOT find MKL" log/mkl_build.log; then 
+  echo "WARN: Missing MKL"
+elif grep -q "Sucessfull install of MKL" log/mkl_build.log; then 
+  echo "INFO: Sucessfull install of MKL"
+else 
+  cat log/mkl_build.log
+fi
 
-# compile HE
-cmake he/ -B HE -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER=g++
-cmake --build HE --target install --config Release
-rm -R HE
+if grep -q "Could not find OpenBLAS lib" log/BLAS_build.log; then 
+  echo "WARN: Missing OpenBLAS"
+elif grep -q "Sucessfull install of OpenBLAS" log/BLAS_build.log; then 
+  echo "INFO: Sucessfull install of OpenBLAS"
+else 
+  echo "ERROR: OpenBLAS install failed:"
+  cat log/BLAS_build.log
+fi
+
+if grep -q 'Could not find a package configuration file provided by "SEAL"' log/HE_build.log; then
+  echo "WARN: Missing SEAL install"
+  echo "\
+wget -qO- https://github.com/microsoft/SEAL/archive/refs/tags/v3.7.0.tar.gz | tar xzf - \
+&& cd SEAL-3.7.0 \
+&& cmake -S . -B build -DBUILD_SHARED_LIBS=ON \
+&& cmake --build build \
+&& cmake --install build"
+elif grep -q "Sucessfull install of Homomorphic Encryption Liberary SEAL" log/HE_build.log; then 
+  echo "INFO: Sucessfull install of HE SEAL"
+else 
+  cat log/HE_build.log
+fi 
+
+date

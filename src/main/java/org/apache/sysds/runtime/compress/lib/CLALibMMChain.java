@@ -148,12 +148,12 @@ public final class CLALibMMChain {
 		}
 		else{
 			double[] cachedArr = cacheIntermediate.get();
-			if(cachedArr.length >= nCells)
-				tmpArr = cachedArr;
-			else{
+			if( cachedArr == null || cachedArr.length < nCells){
 				tmpArr = new double[nCells];
-				cacheIntermediate = new ThreadLocal<>();
 				cacheIntermediate.set(tmpArr);
+			}
+			else{
+				tmpArr = cachedArr;
 			}
 		}
 

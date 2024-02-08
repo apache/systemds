@@ -794,7 +794,10 @@ public class ColGroupRLE extends AColGroupOffset {
 	}
 
 	@Override
-	public void preAggregateSparse(SparseBlock sb, double[] preAgg, int rl, int ru) {
+	public void preAggregateSparse(SparseBlock sb, double[] preAgg, int rl, int ru, int cl, int cu) {
+		if( cl != 0 || cu != _numRows){
+			throw new NotImplementedException();
+		}
 		final int nv = getNumValues();
 
 		for(int r = rl; r < ru; r++) { // for each row

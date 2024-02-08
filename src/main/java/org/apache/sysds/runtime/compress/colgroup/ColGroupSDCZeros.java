@@ -541,7 +541,10 @@ public class ColGroupSDCZeros extends ASDCZero implements IMapToDataGroup {
 	}
 
 	@Override
-	public void preAggregateSparse(SparseBlock sb, double[] preAgg, int rl, int ru) {
+	public void preAggregateSparse(SparseBlock sb, double[] preAgg, int rl, int ru, int cl, int cu) {
+		if(cl != 0 || cu < _indexes.getOffsetToLast()){
+			throw new NotImplementedException();
+		}
 		_data.preAggregateSparse(sb, preAgg, rl, ru, _indexes);
 	}
 

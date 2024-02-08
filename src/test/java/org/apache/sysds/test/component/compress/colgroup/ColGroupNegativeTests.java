@@ -199,7 +199,7 @@ public class ColGroupNegativeTests {
 		}
 
 		@Override
-		public void preAggregateSparse(SparseBlock sb, double[] preAgg, int rl, int ru) {
+		public void preAggregateSparse(SparseBlock sb, double[] preAgg, int rl, int ru, int cl, int cu) {
 
 		}
 

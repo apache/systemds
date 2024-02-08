@@ -556,7 +556,10 @@ public class ColGroupDDC extends APreAgg implements IMapToDataGroup {
 	}
 
 	@Override
-	public void preAggregateSparse(SparseBlock sb, double[] preAgg, int rl, int ru) {
+	public void preAggregateSparse(SparseBlock sb, double[] preAgg, int rl, int ru, int cl, int cu) {
+		if( cl != 0 || cu != _data.size()){
+			throw new NotImplementedException();
+		}
 		_data.preAggregateSparse(sb, preAgg, rl, ru);
 	}
 

@@ -451,7 +451,11 @@ public class ColGroupSDCSingleZeros extends ASDCZero {
 	}
 
 	@Override
-	public void preAggregateSparse(SparseBlock sb, double[] preAgg, int rl, int ru) {
+	public void preAggregateSparse(SparseBlock sb, double[] preAgg, int rl, int ru, int cl, int cu) {
+		if(cl != 0 || cu < _indexes.getOffsetToLast()){
+			throw new NotImplementedException();
+		}
+
 		final AOffsetIterator it = _indexes.getOffsetIterator();
 		if(rl == ru - 1)
 			preAggregateSparseSingleRow(sb, preAgg, rl, _indexes.getOffsetToLast(), it);

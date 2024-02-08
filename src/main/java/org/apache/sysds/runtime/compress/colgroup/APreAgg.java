@@ -119,7 +119,7 @@ public abstract class APreAgg extends AColGroupValue {
 	 */
 	public final void preAggregate(MatrixBlock m, double[] preAgg, int rl, int ru) {
 		if(m.isInSparseFormat())
-			preAggregateSparse(m.getSparseBlock(), preAgg, rl, ru);
+			preAggregateSparse(m.getSparseBlock(), preAgg, rl, ru, 0, m.getNumColumns());
 		else
 			preAggregateDense(m, preAgg, rl, ru, 0, m.getNumColumns());
 	}
@@ -136,7 +136,7 @@ public abstract class APreAgg extends AColGroupValue {
 	 */
 	public abstract void preAggregateDense(MatrixBlock m, double[] preAgg, int rl, int ru, int cl, int cu);
 
-	public abstract void preAggregateSparse(SparseBlock sb, double[] preAgg, int rl, int ru);
+	public abstract void preAggregateSparse(SparseBlock sb, double[] preAgg, int rl, int ru, int cl, int cu);
 
 	protected abstract void preAggregateThatDDCStructure(ColGroupDDC that, Dictionary ret);
 

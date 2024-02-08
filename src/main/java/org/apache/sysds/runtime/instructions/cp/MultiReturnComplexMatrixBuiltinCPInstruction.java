@@ -36,116 +36,117 @@ import org.apache.sysds.runtime.matrix.operators.Operator;
 
 public class MultiReturnComplexMatrixBuiltinCPInstruction extends ComputationCPInstruction {
 
-	protected ArrayList<CPOperand> _outputs;
+    protected ArrayList<CPOperand> _outputs;
 
-	private MultiReturnComplexMatrixBuiltinCPInstruction(Operator op, CPOperand input1, CPOperand input2,
-		ArrayList<CPOperand> outputs, String opcode, String istr) {
-		super(CPType.MultiReturnBuiltin, op, input1, input2, outputs.get(0), opcode, istr);
-		_outputs = outputs;
-	}
+    private MultiReturnComplexMatrixBuiltinCPInstruction(Operator op, CPOperand input1, CPOperand input2,
+            ArrayList<CPOperand> outputs, String opcode,
+            String istr) {
+        super(CPType.MultiReturnBuiltin, op, input1, input2, outputs.get(0), opcode, istr);
+        _outputs = outputs;
+    }
 
-	private MultiReturnComplexMatrixBuiltinCPInstruction(Operator op, CPOperand input1, ArrayList<CPOperand> outputs,
-		String opcode, String istr) {
-		super(CPType.MultiReturnBuiltin, op, input1, null, outputs.get(0), opcode, istr);
-		_outputs = outputs;
-	}
+    private MultiReturnComplexMatrixBuiltinCPInstruction(Operator op, CPOperand input1, ArrayList<CPOperand> outputs,
+            String opcode,
+            String istr) {
+        super(CPType.MultiReturnBuiltin, op, input1, null, outputs.get(0), opcode, istr);
+        _outputs = outputs;
+    }
 
-	public CPOperand getOutput(int i) {
-		return _outputs.get(i);
-	}
+    public CPOperand getOutput(int i) {
+        return _outputs.get(i);
+    }
 
-	public List<CPOperand> getOutputs() {
-		return _outputs;
-	}
+    public List<CPOperand> getOutputs() {
+        return _outputs;
+    }
 
-	public String[] getOutputNames() {
-		return _outputs.parallelStream().map(output -> output.getName()).toArray(String[]::new);
-	}
+    public String[] getOutputNames() {
+        return _outputs.parallelStream().map(output -> output.getName()).toArray(String[]::new);
+    }
 
-	public static MultiReturnComplexMatrixBuiltinCPInstruction parseInstruction(String str) {
-		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
-		ArrayList<CPOperand> outputs = new ArrayList<>();
-		// first part is always the opcode
-		String opcode = parts[0];
+    public static MultiReturnComplexMatrixBuiltinCPInstruction parseInstruction(String str) {
+        String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
+        ArrayList<CPOperand> outputs = new ArrayList<>();
+        // first part is always the opcode
+        String opcode = parts[0];
 
-		if(parts.length == 5 && opcode.equalsIgnoreCase("ifft")) {
-			// one input and two outputs
-			CPOperand in1 = new CPOperand(parts[1]);
-			CPOperand in2 = new CPOperand(parts[2]);
-			outputs.add(new CPOperand(parts[3], ValueType.FP64, DataType.MATRIX));
-			outputs.add(new CPOperand(parts[4], ValueType.FP64, DataType.MATRIX));
+        if (parts.length == 5 && opcode.equalsIgnoreCase("ifft")) {
+            // one input and two outputs
+            CPOperand in1 = new CPOperand(parts[1]);
+            CPOperand in2 = new CPOperand(parts[2]);
+            outputs.add(new CPOperand(parts[3], ValueType.FP64, DataType.MATRIX));
+            outputs.add(new CPOperand(parts[4], ValueType.FP64, DataType.MATRIX));
 
-			return new MultiReturnComplexMatrixBuiltinCPInstruction(null, in1, in2, outputs, opcode, str);
-		}
-		else if(parts.length == 4 && opcode.equalsIgnoreCase("ifft")) {
-			// one input and two outputs
-			CPOperand in1 = new CPOperand(parts[1]);
-			outputs.add(new CPOperand(parts[2], ValueType.FP64, DataType.MATRIX));
-			outputs.add(new CPOperand(parts[3], ValueType.FP64, DataType.MATRIX));
+            return new MultiReturnComplexMatrixBuiltinCPInstruction(null, in1, in2, outputs, opcode, str);
+        } else if (parts.length == 4 && opcode.equalsIgnoreCase("ifft")) {
+            // one input and two outputs
+            CPOperand in1 = new CPOperand(parts[1]);
+            outputs.add(new CPOperand(parts[2], ValueType.FP64, DataType.MATRIX));
+            outputs.add(new CPOperand(parts[3], ValueType.FP64, DataType.MATRIX));
 
-			return new MultiReturnComplexMatrixBuiltinCPInstruction(null, in1, outputs, opcode, str);
-		}
+            return new MultiReturnComplexMatrixBuiltinCPInstruction(null, in1, outputs, opcode, str);
+        }
 
-		{
-			throw new DMLRuntimeException("Invalid opcode in MultiReturnBuiltin instruction: " + opcode);
-		}
+        {
+            throw new DMLRuntimeException("Invalid opcode in MultiReturnBuiltin instruction: " + opcode);
+        }
 
-	}
+    }
 
-	public int getNumOutputs() {
-		return _outputs.size();
-	}
+    public int getNumOutputs() {
+        return _outputs.size();
+    }
 
-	@Override
-	public void processInstruction(ExecutionContext ec) {
-		if(input2 == null)
-			processOneInputInstruction(ec);
-		else
-			processTwoInputInstruction(ec);
-	}
+    @Override
+    public void processInstruction(ExecutionContext ec) {
+        if (input2 == null)
+            processOneInputInstruction(ec);
+        else
+            processTwoInputInstruction(ec);
+    }
 
-	private void processOneInputInstruction(ExecutionContext ec) {
-		if(!LibCommonsMath.isSupportedMultiReturnOperation(getOpcode()))
-			throw new DMLRuntimeException("Invalid opcode in MultiReturnBuiltin instruction: " + getOpcode());
+    private void processOneInputInstruction(ExecutionContext ec) {
+        if (!LibCommonsMath.isSupportedMultiReturnOperation(getOpcode()))
+            throw new DMLRuntimeException("Invalid opcode in MultiReturnBuiltin instruction: " + getOpcode());
 
-		MatrixBlock in = ec.getMatrixInput(input1.getName());
-		MatrixBlock[] out = LibCommonsMath.multiReturnOperations(in, getOpcode());
+        MatrixBlock in = ec.getMatrixInput(input1.getName());
+        MatrixBlock[] out = LibCommonsMath.multiReturnOperations(in, getOpcode());
 
-		ec.releaseMatrixInput(input1.getName());
+        ec.releaseMatrixInput(input1.getName());
 
-		for(int i = 0; i < _outputs.size(); i++) {
-			ec.setMatrixOutput(_outputs.get(i).getName(), out[i]);
-		}
-	}
+        for (int i = 0; i < _outputs.size(); i++) {
+            ec.setMatrixOutput(_outputs.get(i).getName(), out[i]);
+        }
+    }
 
-	private void processTwoInputInstruction(ExecutionContext ec) {
-		if(!LibCommonsMath.isSupportedMultiReturnOperation(getOpcode()))
-			throw new DMLRuntimeException("Invalid opcode in MultiReturnBuiltin instruction: " + getOpcode());
+    private void processTwoInputInstruction(ExecutionContext ec) {
+        if (!LibCommonsMath.isSupportedMultiReturnOperation(getOpcode()))
+            throw new DMLRuntimeException("Invalid opcode in MultiReturnBuiltin instruction: " + getOpcode());
 
-		MatrixBlock in1 = ec.getMatrixInput(input1.getName());
-		MatrixBlock in2 = ec.getMatrixInput(input2.getName());
-		MatrixBlock[] out = LibCommonsMath.multiReturnOperations(in1, in2, getOpcode());
-		ec.releaseMatrixInput(input1.getName(), input2.getName());
+        MatrixBlock in1 = ec.getMatrixInput(input1.getName());
+        MatrixBlock in2 = ec.getMatrixInput(input2.getName());
+        MatrixBlock[] out = LibCommonsMath.multiReturnOperations(in1, in2, getOpcode());
+        ec.releaseMatrixInput(input1.getName(), input2.getName());
 
-		for(int i = 0; i < _outputs.size(); i++) {
-			ec.setMatrixOutput(_outputs.get(i).getName(), out[i]);
-		}
-	}
+        for (int i = 0; i < _outputs.size(); i++) {
+            ec.setMatrixOutput(_outputs.get(i).getName(), out[i]);
+        }
+    }
 
-	@Override
-	public boolean hasSingleLineage() {
-		return false;
-	}
+    @Override
+    public boolean hasSingleLineage() {
+        return false;
+    }
 
-	@Override
-	@SuppressWarnings("unchecked")
-	public Pair<String, LineageItem>[] getLineageItems(ExecutionContext ec) {
-		LineageItem[] inputLineage = LineageItemUtils.getLineage(ec, input1, input2, input3);
-		final Pair<String, LineageItem>[] ret = new Pair[_outputs.size()];
-		for(int i = 0; i < _outputs.size(); i++) {
-			CPOperand out = _outputs.get(i);
-			ret[i] = Pair.of(out.getName(), new LineageItem(getOpcode(), inputLineage));
-		}
-		return ret;
-	}
+    @Override
+    @SuppressWarnings("unchecked")
+    public Pair<String, LineageItem>[] getLineageItems(ExecutionContext ec) {
+        LineageItem[] inputLineage = LineageItemUtils.getLineage(ec, input1, input2, input3);
+        final Pair<String, LineageItem>[] ret = new Pair[_outputs.size()];
+        for (int i = 0; i < _outputs.size(); i++) {
+            CPOperand out = _outputs.get(i);
+            ret[i] = Pair.of(out.getName(), new LineageItem(getOpcode(), inputLineage));
+        }
+        return ret;
+    }
 }

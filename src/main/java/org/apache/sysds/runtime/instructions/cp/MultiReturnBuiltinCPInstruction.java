@@ -39,7 +39,7 @@ public class MultiReturnBuiltinCPInstruction extends ComputationCPInstruction {
 	protected ArrayList<CPOperand> _outputs;
 
 	private MultiReturnBuiltinCPInstruction(Operator op, CPOperand input1, ArrayList<CPOperand> outputs, String opcode,
-		String istr) {
+			String istr) {
 		super(CPType.MultiReturnBuiltin, op, input1, null, outputs.get(0), opcode, istr);
 		_outputs = outputs;
 	}
@@ -62,15 +62,14 @@ public class MultiReturnBuiltinCPInstruction extends ComputationCPInstruction {
 		// first part is always the opcode
 		String opcode = parts[0];
 
-		if(opcode.equalsIgnoreCase("qr")) {
+		if (opcode.equalsIgnoreCase("qr")) {
 			// one input and two ouputs
 			CPOperand in1 = new CPOperand(parts[1]);
 			outputs.add(new CPOperand(parts[2], ValueType.FP64, DataType.MATRIX));
 			outputs.add(new CPOperand(parts[3], ValueType.FP64, DataType.MATRIX));
 
 			return new MultiReturnBuiltinCPInstruction(null, in1, outputs, opcode, str);
-		}
-		else if(opcode.equalsIgnoreCase("lu")) {
+		} else if (opcode.equalsIgnoreCase("lu")) {
 			CPOperand in1 = new CPOperand(parts[1]);
 
 			// one input and three outputs
@@ -80,8 +79,7 @@ public class MultiReturnBuiltinCPInstruction extends ComputationCPInstruction {
 
 			return new MultiReturnBuiltinCPInstruction(null, in1, outputs, opcode, str);
 
-		}
-		else if(opcode.equalsIgnoreCase("eigen")) {
+		} else if (opcode.equalsIgnoreCase("eigen")) {
 			// one input and two outputs
 			CPOperand in1 = new CPOperand(parts[1]);
 			outputs.add(new CPOperand(parts[2], ValueType.FP64, DataType.MATRIX));
@@ -89,8 +87,7 @@ public class MultiReturnBuiltinCPInstruction extends ComputationCPInstruction {
 
 			return new MultiReturnBuiltinCPInstruction(null, in1, outputs, opcode, str);
 
-		}
-		else if(opcode.equalsIgnoreCase("fft")) {
+		} else if (opcode.equalsIgnoreCase("fft")) {
 			// one input and two outputs
 			CPOperand in1 = new CPOperand(parts[1]);
 			outputs.add(new CPOperand(parts[2], ValueType.FP64, DataType.MATRIX));
@@ -98,8 +95,7 @@ public class MultiReturnBuiltinCPInstruction extends ComputationCPInstruction {
 
 			return new MultiReturnBuiltinCPInstruction(null, in1, outputs, opcode, str);
 
-		}
-		else if(opcode.equalsIgnoreCase("svd")) {
+		} else if (opcode.equalsIgnoreCase("svd")) {
 			CPOperand in1 = new CPOperand(parts[1]);
 
 			// one input and three outputs
@@ -109,8 +105,7 @@ public class MultiReturnBuiltinCPInstruction extends ComputationCPInstruction {
 
 			return new MultiReturnBuiltinCPInstruction(null, in1, outputs, opcode, str);
 
-		}
-		else {
+		} else {
 			throw new DMLRuntimeException("Invalid opcode in MultiReturnBuiltin instruction: " + opcode);
 		}
 
@@ -122,13 +117,13 @@ public class MultiReturnBuiltinCPInstruction extends ComputationCPInstruction {
 
 	@Override
 	public void processInstruction(ExecutionContext ec) {
-		if(!LibCommonsMath.isSupportedMultiReturnOperation(getOpcode()))
+		if (!LibCommonsMath.isSupportedMultiReturnOperation(getOpcode()))
 			throw new DMLRuntimeException("Invalid opcode in MultiReturnBuiltin instruction: " + getOpcode());
 
 		MatrixBlock in = ec.getMatrixInput(input1.getName());
 		MatrixBlock[] out = LibCommonsMath.multiReturnOperations(in, getOpcode());
 		ec.releaseMatrixInput(input1.getName());
-		for(int i = 0; i < _outputs.size(); i++) {
+		for (int i = 0; i < _outputs.size(); i++) {
 			ec.setMatrixOutput(_outputs.get(i).getName(), out[i]);
 		}
 	}
@@ -143,7 +138,7 @@ public class MultiReturnBuiltinCPInstruction extends ComputationCPInstruction {
 	public Pair<String, LineageItem>[] getLineageItems(ExecutionContext ec) {
 		LineageItem[] inputLineage = LineageItemUtils.getLineage(ec, input1, input2, input3);
 		final Pair<String, LineageItem>[] ret = new Pair[_outputs.size()];
-		for(int i = 0; i < _outputs.size(); i++) {
+		for (int i = 0; i < _outputs.size(); i++) {
 			CPOperand out = _outputs.get(i);
 			ret[i] = Pair.of(out.getName(), new LineageItem(getOpcode(), inputLineage));
 		}

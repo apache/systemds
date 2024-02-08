@@ -471,10 +471,23 @@ public final class CLALibLeftMultBy {
 		for(Future<MatrixBlock> future : pool.invokeAll(tasks)) {
 			MatrixBlock mb = future.get();
 			if(mb != null) {
-				mb.examSparsity();
-				ret.binaryOperationsInPlace(op, mb);
+				addInPlace(mb, ret);
 			}
 
+		}
+	}
+
+	private static void addInPlace(MatrixBlock a, MatrixBlock b) {
+		final DenseBlock dba = a.getDenseBlock();
+		final DenseBlock dbb = b.getDenseBlock();
+		final int blocks = dba.numBlocks();
+		for(int b = 0; b < blocks; b++) {
+			double[] av = dba.valuesAt(b);
+			double[] bv = dbb.valuesAt(b);
+			final int len = av.length;
+			for(int i = 0; i < len; i++){
+				bv[i] += av[i];
+			}
 		}
 	}
 

@@ -107,14 +107,8 @@ public final class CLALibRightMultBy {
 		final List<AColGroup> filteredGroups;
 
 		if(shouldFilter) {
-			if(CLALibUtils.alreadyPreFiltered(colGroups, cr)){
-				filteredGroups = new ArrayList<>(colGroups.size() -1);
-				constV = CLALibUtils.filterGroupsAndSplitPreAggOneConst(colGroups, filteredGroups);
-			}
-			else{
-				constV = new double[rr];
-				filteredGroups = CLALibUtils.filterGroups(colGroups, constV);
-			}
+			constV = new double[rr];
+			filteredGroups = CLALibUtils.filterGroups(colGroups, constV);
 		}
 		else {
 			filteredGroups = colGroups;

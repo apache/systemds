@@ -30,6 +30,8 @@ import org.apache.sysds.runtime.compress.colgroup.IMapToDataGroup;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory.MAP_TYPE;
+import org.apache.sysds.runtime.data.DenseBlock;
+import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.io.IOUtilFunctions;
 import org.apache.sysds.utils.MemoryEstimates;
 
@@ -321,12 +323,24 @@ public class MapToChar extends AMapToData {
 	}
 
 	@Override
-	public final void lmSparseMatrixRow(final int apos, final int alen, final int[] aix, final double[] aval,
-		final int r, final int offR, final double[] retV, final IColIndex colIndexes, final IDictionary dict) {
-		for(int i = apos; i < alen; i++)
-			dict.multiplyScalar(aval[i], retV, offR, getIndex(aix[i]), colIndexes);
-	}
+	public void lmSparseMatrixRow(SparseBlock sb, final int r, DenseBlock db, final IColIndex colIndexes,
+		final IDictionary dict) {
 
+		if(sb.isEmpty(r))
+			return;
+		// dense output blocks locations
+		final int pos = db.pos(r);
+		final double[] retV = db.values(r);
+
+		// sparse left block locations
+		final int apos = sb.pos(r);
+		final int alen = sb.size(r) + apos;
+		final int[] aix = sb.indexes(r);
+		final double[] aval = sb.values(r);
+
+		for(int i = apos; i < alen; i++)
+			dict.multiplyScalar(aval[i], retV, pos, getIndex(aix[i]), colIndexes);
+	}
 	@Override
 	public void decompressToRange(double[] c, int rl, int ru, int offR, double[] values) {
 		if(offR == 0)

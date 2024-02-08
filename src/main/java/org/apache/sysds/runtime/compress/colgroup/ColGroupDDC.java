@@ -346,7 +346,6 @@ public class ColGroupDDC extends APreAgg implements IMapToDataGroup {
 		final int nColM = matrix.getNumColumns();
 		final int nColRet = result.getNumColumns();
 		final double[] dictVals = _dict.getValues(); // guaranteed dense double since we only have one column.
-
 		if(matrix.isEmpty())
 			return;
 		else if(matrix.isInSparseFormat()) {
@@ -486,6 +485,7 @@ public class ColGroupDDC extends APreAgg implements IMapToDataGroup {
 	}
 
 	private void lmMatrixNoPreAggMultiCol(MatrixBlock matrix, MatrixBlock result, int rl, int ru, int cl, int cu) {
+
 		if(matrix.isInSparseFormat())
 			lmSparseMatrixNoPreAggMultiCol(matrix, result, rl, ru, cl, cu);
 		else
@@ -497,6 +497,7 @@ public class ColGroupDDC extends APreAgg implements IMapToDataGroup {
 		final SparseBlock sb = matrix.getSparseBlock();
 
 		if(cl != 0 || cu != _data.size()) {
+			// sub part
 			for(int r = rl; r < ru; r++) {
 				if(sb.isEmpty(r))
 					continue;
@@ -506,13 +507,8 @@ public class ColGroupDDC extends APreAgg implements IMapToDataGroup {
 			}
 		}
 		else {
-			for(int r = rl; r < ru; r++) {
-				if(sb.isEmpty(r))
-					continue;
-				final double[] retV = db.values(r);
-				final int pos = db.pos(r);
-				lmSparseMatrixRow(sb, r, pos, retV);
-			}
+			for(int r = rl; r < ru; r++)
+				_data.lmSparseMatrixRow(sb, r, db, _colIndexes, _dict);
 		}
 	}
 
@@ -526,15 +522,6 @@ public class ColGroupDDC extends APreAgg implements IMapToDataGroup {
 		final double[] aval = sb.values(r);
 		for(int i = apos + aposSkip; i < alen && aix[i] < cu; i++)
 			_dict.multiplyScalar(aval[i], retV, offR, _data.getIndex(aix[i]), _colIndexes);
-	}
-
-	private final void lmSparseMatrixRow(SparseBlock sb, int r, int offR, double[] retV) {
-		final int apos = sb.pos(r);
-		final int alen = sb.size(r) + apos;
-		final int[] aix = sb.indexes(r);
-		final double[] aval = sb.values(r);
-
-		_data.lmSparseMatrixRow(apos, alen, aix, aval, r, offR, retV, _colIndexes, _dict);
 	}
 
 	private void lmDenseMatrixNoPreAggMultiCol(MatrixBlock matrix, MatrixBlock result, int rl, int ru, int cl, int cu) {
@@ -557,7 +544,7 @@ public class ColGroupDDC extends APreAgg implements IMapToDataGroup {
 
 	@Override
 	public void preAggregateSparse(SparseBlock sb, double[] preAgg, int rl, int ru, int cl, int cu) {
-		if( cl != 0 || cu != _data.size()){
+		if(cl != 0 || cu != _data.size()) {
 			throw new NotImplementedException();
 		}
 		_data.preAggregateSparse(sb, preAgg, rl, ru);

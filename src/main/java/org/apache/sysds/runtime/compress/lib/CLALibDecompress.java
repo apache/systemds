@@ -42,8 +42,6 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.CommonThreadPool;
 import org.apache.sysds.utils.DMLCompressionStatistics;
 
-import scala.NotImplementedError;
-
 /**
  * Library to decompress a list of column groups into a matrix.
  */

@@ -307,7 +307,8 @@ public abstract class CompressedTestBase extends TestBase {
 					}
 					else if(ov == OverLapping.PLUS_ROW_VECTOR) {
 
-						MatrixBlock v = TestUtils.generateTestMatrixBlock(1, cols, -1, 1, 1.0, 4);
+						MatrixBlock v = TestUtils.generateTestMatrixBlock(1, cols, 0, 4, 1.0, 4);
+						v = TestUtils.ceil(v);
 						BinaryOperator bop = new BinaryOperator(Plus.getPlusFnObject(), _k);
 						mb = mb.binaryOperations(bop, v, null);
 						cmb = cmb.binaryOperations(bop, v, null);
@@ -506,13 +507,15 @@ public abstract class CompressedTestBase extends TestBase {
 
 	@Test
 	public void testVectorMatrixMult() {
-		MatrixBlock vector = TestUtils.generateTestMatrixBlock(1, rows, 0.9, 1.5, 1.0, 3);
+		MatrixBlock vector = TestUtils.generateTestMatrixBlock(1, rows, 0, 5, 1.0, 3);
+		vector = TestUtils.ceil(vector);
 		testLeftMatrixMatrix(vector);
 	}
 
 	@Test
 	public void testLeftMatrixMatrixMultSmall() {
-		MatrixBlock matrix = TestUtils.generateTestMatrixBlock(3, rows, 0.9, 1.5, 1.0, 3);
+		MatrixBlock matrix = TestUtils.generateTestMatrixBlock(3, rows, 0, 5, 1.0, 3);
+		matrix = TestUtils.ceil(matrix);
 		testLeftMatrixMatrix(matrix);
 	}
 
@@ -524,7 +527,8 @@ public abstract class CompressedTestBase extends TestBase {
 
 	@Test
 	public void testLeftMatrixMatrixMultSparse() {
-		MatrixBlock matrix = TestUtils.generateTestMatrixBlock(2, rows, 0.9, 1.5, .1, 3);
+		MatrixBlock matrix = TestUtils.generateTestMatrixBlock(2, rows, 0, 5, .1, 3);
+		matrix = TestUtils.ceil(matrix);
 		testLeftMatrixMatrix(matrix);
 	}
 

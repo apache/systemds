@@ -19,7 +19,6 @@
 
 package org.apache.sysds.runtime.compress.lib;
 
-import java.util.Arrays;
 import java.util.List;
 
 import org.apache.commons.logging.Log;
@@ -98,39 +97,48 @@ public final class CLALibMMChain {
 
 		// Morph the columns to efficient types for the operation.
 		x = filterColGroups(x);
-		LOG.debug("Chain Pre-filter: " + t.stop());
-
+		double preFilterTime = t.stop();
+		
 		// Allow overlapping intermediate if the intermediate is guaranteed not to be overlapping.
 		final boolean allowOverlap = x.getColGroups().size() == 1 && isOverlappingAllowed();
-
+		
 		// Right hand side multiplication
 		MatrixBlock tmp = CLALibRightMultBy.rightMultByMatrix(x, v, null, k, true);
 
-		LOG.debug("Chain RMM: " + t.stop());
-
+		double rmmTime =  t.stop();
+		
 		if(ctype == ChainType.XtwXv) { // Multiply intermediate with vector if needed
 			tmp = binaryMultW(tmp, w, k);
-			LOG.debug("XtwXv intermediate Multiply: " + t.stop());
 		}
 
 		if(!allowOverlap && tmp instanceof CompressedMatrixBlock) {
 			tmp = decompressIntermediate((CompressedMatrixBlock) tmp, k);
-			LOG.debug("Chain RMM Decompress: " + t.stop());
+			
 		}
-
+		
+		double decompressTime = t.stop();
+		
 		if(tmp instanceof CompressedMatrixBlock) {
 			// Compressed Compressed Matrix Multiplication
 			CLALibLeftMultBy.leftMultByMatrixTransposed(x, (CompressedMatrixBlock) tmp, out, k);
 		}
 		else
-			// LMM with Compressed - uncompressed multiplication.
-			CLALibLeftMultBy.leftMultByMatrixTransposed(x, tmp, out, k);
-
-		LOG.debug("Chain LMM: " + t.stop());
+		// LMM with Compressed - uncompressed multiplication.
+		CLALibLeftMultBy.leftMultByMatrixTransposed(x, tmp, out, k);
+		
+		double lmmTime =t.stop();
 		if(out.getNumColumns() != 1) // transpose the output to make it a row output if needed
-			out = LibMatrixReorg.transposeInPlace(out, k);
-
-		LOG.debug("Chain T: " + t.stop());
+		out = LibMatrixReorg.transposeInPlace(out, k);
+		
+		if(LOG.isDebugEnabled()){
+			StringBuilder sb = new StringBuilder("\n");
+			sb.append("\nPreFilter Time      : " + preFilterTime);
+			sb.append("\nChain RMM           : " + rmmTime);
+			sb.append("\nChain RMM Decompress: " + decompressTime);
+			sb.append("\nChain LMM           : " + lmmTime);
+			sb.append("\nChain Transpose     : " + t.stop());
+			LOG.debug(sb.toString());
+		}
 
 		return out;
 	}

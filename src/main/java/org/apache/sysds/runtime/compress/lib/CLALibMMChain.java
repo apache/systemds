@@ -19,6 +19,7 @@
 
 package org.apache.sysds.runtime.compress.lib;
 
+import java.util.Arrays;
 import java.util.List;
 
 import org.apache.commons.logging.Log;
@@ -29,6 +30,7 @@ import org.apache.sysds.lops.MapMultChain.ChainType;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupConst;
+import org.apache.sysds.runtime.controlprogram.parfor.stat.Timing;
 import org.apache.sysds.runtime.functionobjects.Multiply;
 import org.apache.sysds.runtime.matrix.data.LibMatrixBincell;
 import org.apache.sysds.runtime.matrix.data.LibMatrixReorg;
@@ -52,6 +54,9 @@ import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
  */
 public final class CLALibMMChain {
 	static final Log LOG = LogFactory.getLog(CLALibMMChain.class.getName());
+
+	/** Reusable cache intermediate double array for temporary decompression */
+	private static ThreadLocal<double[]> cacheIntermediate = null;
 
 	private CLALibMMChain() {
 		// private constructor
@@ -87,32 +92,74 @@ public final class CLALibMMChain {
 	public static MatrixBlock mmChain(CompressedMatrixBlock x, MatrixBlock v, MatrixBlock w, MatrixBlock out,
 		ChainType ctype, int k) {
 
+		Timing t = new Timing();
 		if(x.isEmpty())
 			return returnEmpty(x, out);
 
 		// Morph the columns to efficient types for the operation.
 		x = filterColGroups(x);
+		LOG.debug("Chain Pre-filter: " + t.stop());
 
 		// Allow overlapping intermediate if the intermediate is guaranteed not to be overlapping.
 		final boolean allowOverlap = x.getColGroups().size() == 1 && isOverlappingAllowed();
 
 		// Right hand side multiplication
-		MatrixBlock tmp = CLALibRightMultBy.rightMultByMatrix(x, v, null, k, allowOverlap);
+		MatrixBlock tmp = CLALibRightMultBy.rightMultByMatrix(x, v, null, k, true);
 
-		if(ctype == ChainType.XtwXv) // Multiply intermediate with vector if needed
+		LOG.debug("Chain RMM: " + t.stop());
+
+		if(ctype == ChainType.XtwXv) { // Multiply intermediate with vector if needed
 			tmp = binaryMultW(tmp, w, k);
+			LOG.debug("XtwXv intermediate Multiply: " + t.stop());
+		}
 
-		if(tmp instanceof CompressedMatrixBlock)
+		if(!allowOverlap && tmp instanceof CompressedMatrixBlock) {
+			tmp = decompressIntermediate((CompressedMatrixBlock) tmp, k);
+			LOG.debug("Chain RMM Decompress: " + t.stop());
+		}
+
+		if(tmp instanceof CompressedMatrixBlock) {
 			// Compressed Compressed Matrix Multiplication
 			CLALibLeftMultBy.leftMultByMatrixTransposed(x, (CompressedMatrixBlock) tmp, out, k);
+		}
 		else
 			// LMM with Compressed - uncompressed multiplication.
 			CLALibLeftMultBy.leftMultByMatrixTransposed(x, tmp, out, k);
 
+		LOG.debug("Chain LMM: " + t.stop());
 		if(out.getNumColumns() != 1) // transpose the output to make it a row output if needed
 			out = LibMatrixReorg.transposeInPlace(out, k);
 
+		LOG.debug("Chain T: " + t.stop());
+
 		return out;
+	}
+
+	private static MatrixBlock decompressIntermediate(CompressedMatrixBlock tmp, int k) {
+		// cacheIntermediate
+		final int rows = tmp.getNumRows();
+		final int cols = tmp.getNumColumns();
+		final int nCells = rows * cols;
+		final double[] tmpArr;
+		if(cacheIntermediate == null){
+			tmpArr = new double[nCells];
+			cacheIntermediate = new ThreadLocal<>();
+			cacheIntermediate.set(tmpArr);
+		}
+		else{
+			double[] cachedArr = cacheIntermediate.get();
+			if(cachedArr.length >= nCells)
+				tmpArr = cachedArr;
+			else{
+				tmpArr = new double[nCells];
+				cacheIntermediate = new ThreadLocal<>();
+				cacheIntermediate.set(tmpArr);
+			}
+		}
+
+		final MatrixBlock tmpV = new MatrixBlock(tmp.getNumRows(), tmp.getNumColumns(), tmpArr);
+		CLALibDecompress.decompressTo((CompressedMatrixBlock) tmp, tmpV, 0, 0, k, false, true);
+		return tmpV;
 	}
 
 	private static boolean isOverlappingAllowed() {

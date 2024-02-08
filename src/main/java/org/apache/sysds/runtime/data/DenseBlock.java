@@ -67,6 +67,8 @@ public abstract class DenseBlock implements Serializable, Block
 
 	/**
 	 * Get the ith dimensions size of the dense block.
+	 * 
+	 * 0 is rows , 1 is cols, etc.
 	 *
 	 * @param i the number of dimension to get
 	 * @return the size of the dimension
@@ -414,7 +416,7 @@ public abstract class DenseBlock implements Serializable, Block
 	 * @param toIndex   ending index in block (exclusive)
 	 * @param v         value
 	 */
-	protected abstract void fillBlock(int bix, int fromIndex, int toIndex, double v);
+	public abstract void fillBlock(int bix, int fromIndex, int toIndex, double v);
 
 	/**
 	 * Set a value at a position given by block index and index in that block.

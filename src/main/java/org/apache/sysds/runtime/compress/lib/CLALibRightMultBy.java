@@ -35,14 +35,11 @@ import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupConst;
-import org.apache.sysds.runtime.compress.colgroup.ColGroupDDC;
 import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.Timing;
-import org.apache.sysds.runtime.functionobjects.Plus;
 import org.apache.sysds.runtime.matrix.data.LibMatrixMult;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.util.CommonThreadPool;
 import org.apache.sysds.utils.DMLCompressionStatistics;
 
@@ -132,7 +129,7 @@ public final class CLALibRightMultBy {
 		if(constV != null) {
 			final MatrixBlock cb = new MatrixBlock(1, constV.length, constV);
 			final MatrixBlock cbRet = new MatrixBlock(1, that.getNumColumns(), false);
-			LibMatrixMult.matrixMult(cb, that, cbRet);
+			LibMatrixMult.matrixMult(cb, that, cbRet); // mm on row vector left.
 			if(!cbRet.isEmpty())
 				addConstant(cbRet, retCg);
 		}
@@ -148,29 +145,34 @@ public final class CLALibRightMultBy {
 	}
 
 	private static void addConstant(MatrixBlock constantRow, List<AColGroup> out) {
-		final int nCol = constantRow.getNumColumns();
-		int bestCandidate = -1;
-		int bestCandidateValuesSize = Integer.MAX_VALUE;
-		for(int i = 0; i < out.size(); i++) {
-			AColGroup g = out.get(i);
-			if(g instanceof ColGroupDDC && g.getNumCols() == nCol && g.getNumValues() < bestCandidateValuesSize)
-				bestCandidate = i;
-		}
+		// it is fairly safe to add the constant row to a column group.
+		// but it is not necessary the fastest.
+
+		// final int nCol = constantRow.getNumColumns();
+		// int bestCandidate = -1;
+		// int bestCandidateValuesSize = Integer.MAX_VALUE;
+		// for(int i = 0; i < out.size(); i++) {
+		// 	AColGroup g = out.get(i);
+		// 	if(g instanceof ColGroupDDC && g.getNumCols() == nCol && g.getNumValues() < bestCandidateValuesSize)
+		// 		bestCandidate = i;
+		// }
 
 		constantRow.sparseToDense();
 
-		if(bestCandidate != -1) {
-			AColGroup bc = out.get(bestCandidate);
-			out.remove(bestCandidate);
-			AColGroup ng = bc.binaryRowOpRight(new BinaryOperator(Plus.getPlusFnObject(), 1),
-				constantRow.getDenseBlockValues(), true);
-			out.add(ng);
-		}
-		else
+		// if(bestCandidate != -1) {
+		// 	AColGroup bc = out.get(bestCandidate);
+		// 	out.remove(bestCandidate);
+		// 	AColGroup ng = bc.binaryRowOpRight(new BinaryOperator(Plus.getPlusFnObject(), 1),
+		// 		constantRow.getDenseBlockValues(), true);
+		// 	out.add(ng);
+		// }
+		// else
 			out.add(ColGroupConst.create(constantRow.getDenseBlockValues()));
 	}
 
 	private static MatrixBlock RMM(CompressedMatrixBlock m1, MatrixBlock that, int k) {
+
+		Timing t = new Timing();
 		// this version returns a decompressed result.
 		final int rl = m1.getNumRows();
 		final int cr = that.getNumColumns();
@@ -182,6 +184,13 @@ public final class CLALibRightMultBy {
 		// start allocation of output.
 		MatrixBlock ret = new MatrixBlock(rl, cr, false);
 		final Future<MatrixBlock> f = ret.allocateBlockAsync();
+		try {
+			f.get();
+		}
+		catch(InterruptedException | ExecutionException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 
 		double[] constV;
 		final List<AColGroup> filteredGroups;
@@ -201,11 +210,16 @@ public final class CLALibRightMultBy {
 			constV = null;
 		}
 
+		LOG.debug("RMM Filtered : " + t.stop());
+
 		final List<AColGroup> retCg = new ArrayList<>(filteredGroups.size());
 		if(k == 1)
 			RMMSingle(filteredGroups, that, retCg);
 		else
 			RMMParallel(filteredGroups, that, retCg, k);
+
+		
+		LOG.debug("RMM Groups done : " + t.stop());
 
 		if(constV != null) {
 			MatrixBlock constVMB = new MatrixBlock(1, constV.length, constV);
@@ -213,6 +227,9 @@ public final class CLALibRightMultBy {
 			LibMatrixMult.matrixMult(constVMB, that, mmTemp);
 			constV = mmTemp.isEmpty() ? null : mmTemp.getDenseBlockValues();
 		}
+
+
+		LOG.debug("RMM Const done: " + t.stop());
 
 		final Timing time = new Timing(true);
 
@@ -222,6 +239,7 @@ public final class CLALibRightMultBy {
 		if(DMLScript.STATISTICS) 
 			DMLCompressionStatistics.addDecompressTime(time.stop(), k);
 		
+		LOG.debug("RMM Decompress done: " + t.stop());
 		return ret;
 	}
 

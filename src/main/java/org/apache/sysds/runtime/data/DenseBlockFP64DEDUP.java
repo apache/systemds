@@ -231,7 +231,7 @@ public class DenseBlockFP64DEDUP extends DenseBlockDRB
 	}
 
 	@Override
-	protected void fillBlock(int bix, int fromIndex, int toIndex, double v) {
+	public void fillBlock(int bix, int fromIndex, int toIndex, double v) {
 		if(_data[bix] == null)
 			allocateBlock(bix, _odims[0]);
 		Arrays.fill(_data[bix], fromIndex, toIndex, v);

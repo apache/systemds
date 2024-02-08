@@ -26,6 +26,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.api.DMLScript;
@@ -40,6 +41,8 @@ import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.CommonThreadPool;
 import org.apache.sysds.utils.DMLCompressionStatistics;
+
+import scala.NotImplementedError;
 
 /**
  * Library to decompress a list of column groups into a matrix.
@@ -65,6 +68,11 @@ public final class CLALibDecompress {
 
 	public static void decompressTo(CompressedMatrixBlock cmb, MatrixBlock ret, int rowOffset, int colOffset, int k,
 		boolean countNNz) {
+		decompressTo(cmb, ret, rowOffset, colOffset, k, countNNz, false);
+	}
+
+	public static void decompressTo(CompressedMatrixBlock cmb, MatrixBlock ret, int rowOffset, int colOffset, int k,
+		boolean countNNz, boolean reset) {
 		Timing time = new Timing(true);
 		if(cmb.getNumColumns() + colOffset > ret.getNumColumns() || cmb.getNumRows() + rowOffset > ret.getNumRows()) {
 			LOG.warn(
@@ -78,12 +86,12 @@ public final class CLALibDecompress {
 
 		final boolean outSparse = ret.isInSparseFormat();
 		if(!cmb.isEmpty()) {
-			if(outSparse && cmb.isOverlapping())
+			if(outSparse && (cmb.isOverlapping() || reset))
 				throw new DMLCompressionException("Not supported decompression into sparse block from overlapping state");
 			else if(outSparse)
 				decompressToSparseBlock(cmb, ret, rowOffset, colOffset);
 			else
-				decompressToDenseBlock(cmb, ret.getDenseBlock(), rowOffset, colOffset);
+				decompressToDenseBlock(cmb, ret.getDenseBlock(), rowOffset, colOffset, k, reset);
 		}
 
 		if(DMLScript.STATISTICS) {
@@ -115,23 +123,67 @@ public final class CLALibDecompress {
 		ret.checkSparseRows();
 	}
 
-	private static void decompressToDenseBlock(CompressedMatrixBlock cmb, DenseBlock ret, int rowOffset, int colOffset) {
-		final List<AColGroup> groups = cmb.getColGroups();
+	private static void decompressToDenseBlock(CompressedMatrixBlock cmb, DenseBlock ret, int rowOffset, int colOffset,
+		int k, boolean reset) {
+		List<AColGroup> groups = cmb.getColGroups();
 		// final int nCols = cmb.getNumColumns();
 		final int nRows = cmb.getNumRows();
 
 		final boolean shouldFilter = CLALibUtils.shouldPreFilter(groups);
-		if(shouldFilter) {
+		if(shouldFilter && !CLALibUtils.alreadyPreFiltered(groups, cmb.getNumColumns())) {
 			final double[] constV = new double[cmb.getNumColumns()];
-			final List<AColGroup> filteredGroups = CLALibUtils.filterGroups(groups, constV);
-			for(AColGroup g : filteredGroups)
-				g.decompressToDenseBlock(ret, 0, nRows, rowOffset, colOffset);
+			groups = CLALibUtils.filterGroups(groups, constV);
 			AColGroup cRet = ColGroupConst.create(constV);
-			cRet.decompressToDenseBlock(ret, 0, nRows, rowOffset, colOffset);
+			groups.add(cRet);
 		}
-		else {
-			for(AColGroup g : groups)
-				g.decompressToDenseBlock(ret, 0, nRows, rowOffset, colOffset);
+
+		if(k > 1 && nRows > 1000)
+			decompressToDenseBlockParallel(ret, groups, rowOffset, colOffset, nRows, k, reset);
+		else
+			decompressToDenseBlockSingleThread(ret, groups, rowOffset, colOffset, nRows, reset);
+	}
+
+	private static void decompressToDenseBlockSingleThread(DenseBlock ret, List<AColGroup> groups, int rowOffset,
+		int colOffset, int nRows, boolean reset) {
+		decompressToDenseBlockBlock(ret, groups, rowOffset, colOffset, 0, nRows, reset);
+	}
+
+	private static void decompressToDenseBlockBlock(DenseBlock ret, List<AColGroup> groups, int rowOffset, int colOffset,
+		int rl, int ru, boolean reset) {
+		if(reset) {
+			if(ret.isContiguous()) {
+				final int nCol = ret.getDim(1);
+				ret.fillBlock(0, rl * nCol, ru * nCol, 0.0);
+			}
+			else
+				throw new NotImplementedException();
+		}
+		for(AColGroup g : groups)
+			g.decompressToDenseBlock(ret, rl, ru, rowOffset, colOffset);
+	}
+
+	private static void decompressToDenseBlockParallel(DenseBlock ret, List<AColGroup> groups, int rowOffset,
+		int colOffset, int nRows, int k, boolean reset) {
+
+		final int blklen = Math.max(nRows / k, 512);
+		ExecutorService pool = CommonThreadPool.get(k);
+		try {
+			List<Future<?>> tasks = new ArrayList<>(nRows / blklen);
+			for(int r = 0; r < nRows; r += blklen) {
+				final int start = r;
+				final int end = Math.min(nRows, r + blklen);
+				tasks.add(
+					pool.submit(() -> decompressToDenseBlockBlock(ret, groups, rowOffset, colOffset, start, end, reset)));
+			}
+
+			for(Future<?> t : tasks)
+				t.get();
+		}
+		catch(Exception e) {
+			throw new DMLCompressionException("Failed parallel decompress to");
+		}
+		finally {
+			pool.shutdown();
 		}
 	}
 
@@ -420,12 +472,10 @@ public final class CLALibDecompress {
 				long nnz = 0;
 				for(int b = _rl; b < _ru; b += _blklen) {
 					final int e = Math.min(b + _blklen, _ru);
-					// for(AColGroup grp : _colGroups)
 					_grp.decompressToDenseBlock(db, b, e);
 
 					if(_constV != null)
 						addVector(db, nCol, _constV, _eps, b, e);
-					// nnz += _ret.recomputeNonZeros(b, e - 1);
 				}
 
 				return nnz;

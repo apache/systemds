@@ -424,12 +424,12 @@ public final class CLALibLeftMultBy {
 		final int ct = that.getNumColumns();
 		// perfect parallel over rows left.
 		final int rowBlockSize = Math.max(rt / k, 1);
-		final int threadsUsedOnRows = rt / rowBlockSize;
-		 k = k /threadsUsedOnRows;
+		final int threadsUsedOnRows = (int) Math.ceil((double) rt / rowBlockSize);
+		k = k / threadsUsedOnRows;
 		// parallel over column blocks ... should be bigger than largest distinct.
 		// We set it to minimum 4k
 		final int colBlockSize = Math.max(ct / k, 64000);
-		final int threadsUsedOnColBlocks = ct / colBlockSize;
+		final int threadsUsedOnColBlocks = (int) Math.ceil((double) ct / colBlockSize);
 		k = k / threadsUsedOnColBlocks;
 		// final int colBlockSize = Math.max(ct, 1);
 		final int s = k;
@@ -790,7 +790,8 @@ public final class CLALibLeftMultBy {
 	private static class LMMPreAggTask implements Callable<MatrixBlock> {
 		private final List<APreAgg> _pa;
 		private final MatrixBlock _that;
-		private final MatrixBlock _ret;
+		private final int _retR;
+		private final int _retC;
 		private final int _rl;
 		private final int _ru;
 		private final int _cl;
@@ -804,9 +805,8 @@ public final class CLALibLeftMultBy {
 			int off, int skip, double[] rowSums, int k) {
 			_pa = pa;
 			_that = that;
-			_ret = new MatrixBlock(retR, retC, false);
-			_ret.allocateDenseBlock();
-			_ret.setNonZeros(retR * retC);
+			_retR = retR;
+			_retC = retC;
 			_rl = rl;
 			_ru = ru;
 			_cl = cl;
@@ -820,13 +820,17 @@ public final class CLALibLeftMultBy {
 		@Override
 		public MatrixBlock call() {
 			try {
+
+				MatrixBlock _ret = new MatrixBlock(_retR, _retC, false);
+				_ret.allocateDenseBlock();
+				_ret.setNonZeros(_retR * _retC);
 				LMMWithPreAgg(_pa, _that, _ret, _rl, _ru, _cl, _cu, _off, _skip, _rowSums, _k);
+				return _ret;
 			}
 			catch(Exception e) {
 				e.printStackTrace();
 				throw new DMLRuntimeException(e);
 			}
-			return _ret;
 		}
 	}
 
@@ -845,14 +849,6 @@ public final class CLALibLeftMultBy {
 			_rl = rl;
 			_ru = ru;
 		}
-
-		// protected LMMNoPreAggTask(AColGroup cg, MatrixBlock that, MatrixBlock ret, int rl, int ru) {
-		// _cg = cg;
-		// _that = that;
-		// _ret = ret;
-		// _rl = rl;
-		// _ru = ru;
-		// }
 
 		@Override
 		public MatrixBlock call() {

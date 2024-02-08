@@ -477,15 +477,15 @@ public final class CLALibLeftMultBy {
 		}
 	}
 
-	private static void addInPlace(MatrixBlock a, MatrixBlock b) {
+	private static void addInPlace(MatrixBlock a, MatrixBlock out) {
 		final DenseBlock dba = a.getDenseBlock();
-		final DenseBlock dbb = b.getDenseBlock();
+		final DenseBlock dbb = out.getDenseBlock();
 		final int blocks = dba.numBlocks();
 		for(int b = 0; b < blocks; b++) {
-			double[] av = dba.valuesAt(b);
-			double[] bv = dbb.valuesAt(b);
+			final double[] av = dba.valuesAt(b);
+			final double[] bv = dbb.valuesAt(b);
 			final int len = av.length;
-			for(int i = 0; i < len; i++){
+			for(int i = 0; i < len; i++) {
 				bv[i] += av[i];
 			}
 		}

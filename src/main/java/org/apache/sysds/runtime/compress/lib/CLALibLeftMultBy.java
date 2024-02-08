@@ -435,7 +435,7 @@ public final class CLALibLeftMultBy {
 		final int s = k;
 		LOG.error("LMM threading: " + threadsUsedOnRows + " " + threadsUsedOnColBlocks + " " + s);
 
-		final ArrayList<Callable<MatrixBlock>> tasks = new ArrayList<>();
+		final ArrayList<Future<MatrixBlock>> tasks = new ArrayList<>();
 		// allocate temp
 		final int retCols = ret.getNumColumns();
 		final int retRows = ret.getNumRows();
@@ -444,31 +444,29 @@ public final class CLALibLeftMultBy {
 			final int end = Math.min(blo + rowBlockSize, rt);
 
 			for(AColGroup g : npa) // all groups get their own task
-				tasks.add(new LMMNoPreAggTask(g, that, retRows, retCols, start, end));
+				tasks.add(pool.submit(new LMMNoPreAggTask(g, that, retRows, retCols, start, end)));
 
 			for(int off = 0; off < s; off++) { // only allocate k tasks at max
 				final int offT = off;
 
 				if(that.isInSparseFormat()) {
-					tasks.add(new LMMPreAggTask(pa, that, retRows, retCols, start, end, 0, ct, offT, s, null, k));
+					tasks.add(pool.submit(new LMMPreAggTask(pa, that, retRows, retCols, start, end, 0, ct, offT, s, null, k)));
 				}
 				else {
 					for(int bloC = 0; bloC < ct; bloC += colBlockSize) {
 						final int startC = bloC;
 						final int endC = Math.min(startC + colBlockSize, ct);
-						tasks.add(new LMMPreAggTask(pa, that, retRows, retCols, start, end, startC, endC, offT, s, null, k));
+						tasks.add(pool.submit(new LMMPreAggTask(pa, that, retRows, retCols, start, end, startC, endC, offT, s, null, k)));
 					}
 				}
 			}
 
 			if(rowSums != null) // row sums task
-				tasks.add(new LMMRowSums(that, start, end, rowSums));
-
+				tasks.add(pool.submit(new LMMRowSums(that, start, end, rowSums)));
 		}
 
-		final BinaryOperator op = new BinaryOperator(Plus.getPlusFnObject());
 
-		for(Future<MatrixBlock> future : pool.invokeAll(tasks)) {
+		for(Future<MatrixBlock> future : tasks) {
 			MatrixBlock mb = future.get();
 			if(mb != null) {
 				addInPlace(mb, ret);

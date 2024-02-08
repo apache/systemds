@@ -425,7 +425,7 @@ public final class CLALibLeftMultBy {
 		// perfect parallel over rows left.
 		final int rowBlockSize = Math.max(rt / k, 1);
 		// parallel over column blocks ... should be bigger than largest distinct.
-		final int colBlockSize = Math.max(ct / k, 1024);
+		final int colBlockSize = Math.max(ct / k, 64000);
 		// final int colBlockSize = Math.max(ct, 1);
 		final int s = 2;
 

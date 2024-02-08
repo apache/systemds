@@ -358,6 +358,7 @@ public class BuiltinFunctionExpression extends DataIdentifier {
 		case FFT: {
 
 				Expression expressionOne = getFirstExpr();
+				Expression expressionTwo = getSecondExpr();
 
 				if (expressionOne == null) {
 					raiseValidateError("The first argument to " + _opcode + " cannot be null.", false, LanguageErrorCodes.INVALID_PARAMETERS);
@@ -366,32 +367,30 @@ public class BuiltinFunctionExpression extends DataIdentifier {
 				else if (expressionOne.getOutput() == null || expressionOne.getOutput().getDim1() == 0 || expressionOne.getOutput().getDim2() == 0) {
 					raiseValidateError("The first argument to " + _opcode + " cannot be an empty matrix.", false, LanguageErrorCodes.INVALID_PARAMETERS);
 				}
-			checkNumParameters(1);
-			checkMatrixParam(expressionOne);
 
-			// setup output properties
-			DataIdentifier fftOut1 = (DataIdentifier) getOutputs()[0];
-			DataIdentifier fftOut2 = (DataIdentifier) getOutputs()[1];
+				else if (expressionTwo != null) {
+					raiseValidateError("Too many arguments. This FFT implementation is only defined for real inputs.", false, LanguageErrorCodes.INVALID_PARAMETERS);
+				}
 
-			// TODO: Add Validation
-			// if (getFirstExpr().getOutput().getDim2() != 1 ||
-			// getFirstExpr().getOutput().getDim2() != 2) {
-			// raiseValidateError("Eigen Decomposition can only be done on a square matrix.
-			// Input matrix is rectangular (rows=" + getFirstExpr().getOutput().getDim1() +
-			// ", cols="+ getFirstExpr().getOutput().getDim2() +")", conditional);
-			// }
+				else if (!isPowerOfTwo(expressionOne.getOutput().getDim1()) || !isPowerOfTwo(expressionOne.getOutput().getDim2())) {
+    				raiseValidateError("This FFT implementation is only defined for matrices with dimensions that are powers of 2.", false, LanguageErrorCodes.INVALID_PARAMETERS);
+				}
 
-			// Output1 - FFT Values
-			fftOut1.setDataType(DataType.MATRIX);
-			fftOut1.setValueType(ValueType.FP64);
-			fftOut1.setDimensions(getFirstExpr().getOutput().getDim1(), getFirstExpr().getOutput().getDim2());
-			fftOut1.setBlocksize(getFirstExpr().getOutput().getBlocksize());
+				checkNumParameters(1);
+				checkMatrixParam(expressionOne);
 
-			// Output2 - FFT Vectors
-			fftOut2.setDataType(DataType.MATRIX);
-			fftOut2.setValueType(ValueType.FP64);
-			fftOut2.setDimensions(getFirstExpr().getOutput().getDim1(), getFirstExpr().getOutput().getDim2());
-			fftOut2.setBlocksize(getFirstExpr().getOutput().getBlocksize());
+				DataIdentifier fftOut1 = (DataIdentifier) getOutputs()[0];
+				DataIdentifier fftOut2 = (DataIdentifier) getOutputs()[1];
+
+				fftOut1.setDataType(DataType.MATRIX);
+				fftOut1.setValueType(ValueType.FP64);
+				fftOut1.setDimensions(getFirstExpr().getOutput().getDim1(), getFirstExpr().getOutput().getDim2());
+				fftOut1.setBlocksize(getFirstExpr().getOutput().getBlocksize());
+
+				fftOut2.setDataType(DataType.MATRIX);
+				fftOut2.setValueType(ValueType.FP64);
+				fftOut2.setDimensions(getFirstExpr().getOutput().getDim1(), getFirstExpr().getOutput().getDim2());
+				fftOut2.setBlocksize(getFirstExpr().getOutput().getBlocksize());
 
 			break;
 
@@ -408,33 +407,34 @@ public class BuiltinFunctionExpression extends DataIdentifier {
 					raiseValidateError("The first argument to " + _opcode + " cannot be an empty matrix.", false, LanguageErrorCodes.INVALID_PARAMETERS);
 				}
 
+				else if (expressionTwo != null){
+					if(expressionTwo.getOutput() == null || expressionTwo.getOutput().getDim1() == 0 || expressionTwo.getOutput().getDim2() == 0) {
+						raiseValidateError("The second argument to " + _opcode + " cannot be an empty matrix. Provide either only a real matrix or a filled real and imaginary one.", false, LanguageErrorCodes.INVALID_PARAMETERS);
+					}
+				}
+					
 				checkNumParameters(expressionTwo != null ? 2 : 1);
 				checkMatrixParam(expressionOne);
 				if(expressionTwo != null){
 					checkMatrixParam(expressionTwo);
 					if(expressionOne.getOutput().getDim1() != expressionTwo.getOutput().getDim1() || expressionOne.getOutput().getDim2() != expressionTwo.getOutput().getDim2())
 						raiseValidateError("The real and imaginary part of the provided matrix are of different dimensions.", false);
+					else if (!isPowerOfTwo(expressionTwo.getOutput().getDim1()) || !isPowerOfTwo(expressionTwo.getOutput().getDim2())) {
+    					raiseValidateError("This IFFT implementation is only defined for matrices with dimensions that are powers of 2.", false, LanguageErrorCodes.INVALID_PARAMETERS);
+					}
+				}
+
+				else if (!isPowerOfTwo(expressionOne.getOutput().getDim1()) || !isPowerOfTwo(expressionOne.getOutput().getDim2())) {
+    				raiseValidateError("This IFFT implementation is only defined for matrices with dimensions that are powers of 2.", false, LanguageErrorCodes.INVALID_PARAMETERS);
 				}
 				
-				
+				DataIdentifier ifftOut1 = (DataIdentifier) getOutputs()[0];
+				DataIdentifier ifftOut2 = (DataIdentifier) getOutputs()[1];
 
-			// setup output properties
-			DataIdentifier ifftOut1 = (DataIdentifier) getOutputs()[0];
-			DataIdentifier ifftOut2 = (DataIdentifier) getOutputs()[1];
-
-			// TODO: Add Validation
-			// if (getFirstExpr().getOutput().getDim2() != 1 ||
-			// getFirstExpr().getOutput().getDim2() != 2) {
-			// raiseValidateError("Eigen Decomposition can only be done on a square matrix.
-			// Input matrix is rectangular (rows=" + getFirstExpr().getOutput().getDim1() +
-			// ", cols="+ getFirstExpr().getOutput().getDim2() +")", conditional);
-			// }
-
-			// Output1 - ifft Values
-			ifftOut1.setDataType(DataType.MATRIX);
-			ifftOut1.setValueType(ValueType.FP64);
-			ifftOut1.setDimensions(getFirstExpr().getOutput().getDim1(), getFirstExpr().getOutput().getDim2());
-			ifftOut1.setBlocksize(getFirstExpr().getOutput().getBlocksize());
+				ifftOut1.setDataType(DataType.MATRIX);
+				ifftOut1.setValueType(ValueType.FP64);
+				ifftOut1.setDimensions(getFirstExpr().getOutput().getDim1(), getFirstExpr().getOutput().getDim2());
+				ifftOut1.setBlocksize(getFirstExpr().getOutput().getBlocksize());
 
 			// Output2 - ifft Vectors
 			ifftOut2.setDataType(DataType.MATRIX);

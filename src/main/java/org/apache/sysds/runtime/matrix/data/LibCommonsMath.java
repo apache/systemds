@@ -337,7 +337,7 @@ public class LibCommonsMath
 			throw new DMLRuntimeException("Invalid empty block");
 
 		// run ifft
-		if (im != null && !im.isEmptyBlock(false)) {
+		if(im != null && !im.isEmptyBlock(false)) {
 			re.sparseToDense();
 			im.sparseToDense();
 			return ifft(re, im, threads);

@@ -678,7 +678,8 @@ public final class CLALibLeftMultBy {
 
 		// ExecutorService pool = CommonThreadPool.get(k);
 		/** The column block size for preAggregating column groups */
-		final int colBZ = 1024;
+		// final int colBZ = 1024;
+		final int colBZ = 2048;
 		// final int colBZ = Math.max(1024, lc/2);
 		// The number of rows to process together
 		final int rowBlockSize = 4;

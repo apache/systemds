@@ -382,7 +382,7 @@ public class CompressedEncode {
 
 		ArrayCompressionStatistics stats = a.statistics(Math.min(10000, a.size())); // Take a small sample
 		
-		if(stats == null || !stats.shouldCompress) {
+		if(stats == null || !stats.shouldCompress || stats.valueType != a.getValueType()) {
 			LOG.error("encode stats passthrough -> No Compress: " + stats);
 			double[] vals = (double[]) a.changeType(ValueType.FP64).get();
 			MatrixBlock col = new MatrixBlock(a.size(), 1, vals);

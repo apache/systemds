@@ -396,7 +396,8 @@ public class CompressedEncode {
 		ArrayCompressionStatistics stats = !inputContainsCompressed ? //
 			a.statistics(Math.min(1000, a.size())) : null;
 
-		if(stats == null || !stats.shouldCompress || stats.valueType != a.getValueType()) {
+		if(a.getValueType() != ValueType.BOOLEAN // if not booleans
+			&& (stats == null || !stats.shouldCompress || stats.valueType != a.getValueType() )) {
 			LOG.error("encode stats passthrough -> No Compress: " + stats);
 			double[] vals = (double[]) a.changeType(ValueType.FP64).get();
 			MatrixBlock col = new MatrixBlock(a.size(), 1, vals);

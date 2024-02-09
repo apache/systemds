@@ -27,6 +27,7 @@ import java.util.Collection;
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex.SliceResult;
 import org.apache.sysds.runtime.compress.colgroup.scheme.ICLAScheme;
@@ -185,7 +186,7 @@ public abstract class AColGroup implements Serializable {
 	 * Decompress the column group to the sparse transposed block. Note that the column groups would only need to
 	 * decompress into specific sub rows of the Sparse block
 	 * 
-	 * @param sb Sparse target block
+	 * @param sb      Sparse target block
 	 * @param nColOut The number of columns in the sb.
 	 */
 	public abstract void decompressToSparseBlockTransposed(SparseBlockMCSR sb, int nColOut);
@@ -698,6 +699,21 @@ public abstract class AColGroup implements Serializable {
 			return this;
 		else if(ct == CompressionType.DDCFOR)
 			return this; // it does not make sense to change to FOR.
+		else if(ct == CompressionType.UNCOMPRESSED) {
+			AColGroup cgMoved = this.copyAndSet(ColIndexFactory.create(_colIndexes.size()));
+			final long nnz = getNumberNonZeros(nRow);
+			MatrixBlock newDict = new MatrixBlock(nRow, _colIndexes.size(), nnz);
+			newDict.allocateBlock();
+			if(newDict.isInSparseFormat())
+				cgMoved.decompressToSparseBlock(newDict.getSparseBlock(), 0, nRow);
+			else
+				cgMoved.decompressToDenseBlock(newDict.getDenseBlock(), 0, nRow);
+			newDict.setNonZeros(nnz);
+			AColGroup cgUC = ColGroupUncompressed.create(newDict);
+			LOG.error(newDict);
+			cgUC.copyAndSet(_colIndexes);
+			return cgUC;
+		}
 		else {
 			throw new NotImplementedException("Morphing from : " + getCompType() + " to " + ct + " is not implemented");
 		}

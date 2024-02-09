@@ -798,7 +798,7 @@ public class ColGroupUncompressed extends AColGroup {
 
 	@Override
 	public AColGroup replace(double pattern, double replace) {
-		if(Util.eq(pattern, Double.NaN) && !_data.containsValue(pattern)){
+		if(Util.eq(pattern, Double.NaN) && !_data.containsValue(pattern)) {
 			return this; // return this.
 		}
 		MatrixBlock replaced = _data.replaceOperations(new MatrixBlock(), pattern, replace);
@@ -1033,9 +1033,16 @@ public class ColGroupUncompressed extends AColGroup {
 	}
 
 	private void decompressToSparseBlockTransposedSparse(SparseBlock sb) {
-		// SparseBlock sbThis = _data.getSparseBlock();
-		throw new NotImplementedException(
-			"Not implemented the decompression of a sparse Uncompressed block into a sparse Transposed block");
+		MatrixBlock transposedDict = LibMatrixReorg.transpose(_data);
+		if(transposedDict.isInSparseFormat()) {
+			SparseBlock sbThis = transposedDict.getSparseBlock();
+			for(int i = 0; i < _colIndexes.size(); i++){
+				sb.set(_colIndexes.get(i), sbThis.get(i), false);
+			}
+		}
+		else{
+			throw new NotImplementedException();
+		}
 	}
 
 	private void decompressToSparseBlockTransposedDense(SparseBlockMCSR sb) {
@@ -1044,18 +1051,17 @@ public class ColGroupUncompressed extends AColGroup {
 			throw new NotImplementedException("Not Implemented transposed decompress on non contiguous matrix");
 		final int colsThis = _colIndexes.size();
 		final int rowsThis = _data.getNumRows();
-		double[]  valsThis = dbThis.valuesAt(0);
-		if(colsThis == 1){
-			sb.allocate(_colIndexes.get(0), (int)_data.getNonZeros());
+		double[] valsThis = dbThis.valuesAt(0);
+		if(colsThis == 1) {
+			sb.allocate(_colIndexes.get(0), (int) _data.getNonZeros());
 		}
-		else{
-			for(int c = 0 ; c < colsThis; c++ ){
-				sb.allocate(_colIndexes.get(0), Math.max(2,(int)(_data.getNonZeros() / colsThis)));
+		else {
+			for(int c = 0; c < colsThis; c++) {
+				sb.allocate(_colIndexes.get(0), Math.max(2, (int) (_data.getNonZeros() / colsThis)));
 			}
 		}
 
-
-		for(int c = 0 ; c < colsThis; c++ ){
+		for(int c = 0; c < colsThis; c++) {
 			final int rowOut = _colIndexes.get(c);
 			SparseRow sbr = sb.get(rowOut);
 			for(int r = 0; r < rowsThis; r++)

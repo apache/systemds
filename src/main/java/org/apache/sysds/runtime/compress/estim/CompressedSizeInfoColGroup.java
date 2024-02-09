@@ -129,6 +129,10 @@ public class CompressedSizeInfoColGroup {
 				_sizes.put(ct,
 					(double) ColGroupSizes.estimateInMemorySizeCONST(columns.size(), columns.isContiguous(), 1.0, false));
 				break;
+			case UNCOMPRESSED:
+				_sizes.put(ct, (double) ColGroupSizes.estimateInMemorySizeUncompressed(nRows, columns.isContiguous(),
+					columns.size(), 1.0));
+				break;
 			default:
 				throw new DMLCompressionException("Invalid instantiation of const Cost");
 		}
@@ -231,6 +235,11 @@ public class CompressedSizeInfoColGroup {
 
 	public boolean isConst() {
 		return _bestCompressionType == CompressionType.CONST || _sizes.containsKey(CompressionType.CONST);
+	}
+
+	public boolean isIncompressable() {
+		return _bestCompressionType == CompressionType.UNCOMPRESSED;
+
 	}
 
 	private static double getCompressionSize(IColIndex cols, CompressionType ct, EstimationFactors fact) {

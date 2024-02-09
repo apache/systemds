@@ -381,8 +381,9 @@ public class CompressedEncode {
 		}
 
 		ArrayCompressionStatistics stats = a.statistics(Math.min(1000, a.size())); // Take a small sample
-		LOG.error("encode Stats passthrough: " + stats);
+		
 		if(stats == null || !stats.shouldCompress) {
+			LOG.error("encode stats passthrough -> No Compress: " + stats);
 			double[] vals = (double[]) a.changeType(ValueType.FP64).get();
 			MatrixBlock col = new MatrixBlock(a.size(), 1, vals);
 			col.recomputeNonZeros(k);
@@ -390,6 +391,7 @@ public class CompressedEncode {
 			return ColGroupUncompressed.create(colIndexes, col, false);
 		}
 		else {
+			LOG.error("encode stats passthrough -> Compress: " + stats);
 			boolean containsNull = a.containsNull();
 			HashMap<Object, Long> map = (HashMap<Object, Long>) a.getRecodeMap();
 			double[] vals = new double[map.size() + (containsNull ? 1 : 0)];

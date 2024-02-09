@@ -137,6 +137,7 @@ public class CompressionCPInstruction extends ComputationCPInstruction {
 		if(LOG.isTraceEnabled())
 			LOG.trace(compResult.getRight());
 		MatrixBlock out = compResult.getLeft();
+		LOG.error("Compression output class: " + out.getClass().getSimpleName());
 		// Set output and release input
 		ec.releaseMatrixInput(input1.getName());
 		ec.setMatrixOutput(output.getName(), out);

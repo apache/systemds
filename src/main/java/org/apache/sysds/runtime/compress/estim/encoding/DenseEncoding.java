@@ -230,25 +230,38 @@ public class DenseEncoding extends AEncode {
 	protected final DenseEncoding combineDenseWithHashMap(final AMapToData lm, final AMapToData rm, final int size,
 		final int nVL, final AMapToData ret, HashMapLongInt m) {
 		// JIT compile instance checks.
-		if(ret instanceof MapToChar) {
-			if(lm instanceof MapToChar && rm instanceof MapToChar) {
-				final MapToChar lmC = (MapToChar) lm;
-				final MapToChar rmC = (MapToChar) rm;
-				for(int r = 0; r < size; r++)
-					addValHashMapChar(lmC.getIndex(r) + rmC.getIndex(r) * nVL, r, m, (MapToChar) ret);
-			}
-			else
-				for(int r = 0; r < size; r++)
-					addValHashMapChar(lm.getIndex(r) + rm.getIndex(r) * nVL, r, m, (MapToChar) ret);
-		}
+		if(ret instanceof MapToChar)
+			combineDenseWIthHashMapCharOut(lm, rm, size, nVL, (MapToChar) ret, m);
 		else if(ret instanceof MapToCharPByte)
-			for(int r = 0; r < size; r++)
-				addValHashMapCharByte(lm.getIndex(r) + rm.getIndex(r) * nVL, r, m, (MapToCharPByte) ret);
-		else {
+			combineDenseWIthHashMapPByteOut(lm, rm, size, nVL, (MapToCharPByte) ret, m);
+		else
 			combineDenseWithHashMapGeneric(lm, rm, size, nVL, ret, m);
-		}
 		ret.setUnique(m.size());
 		return new DenseEncoding(ret);
+
+	}
+
+	private final void combineDenseWIthHashMapPByteOut(final AMapToData lm, final AMapToData rm, final int size,
+		final int nVL, final MapToCharPByte ret, HashMapLongInt m) {
+		for(int r = 0; r < size; r++)
+			addValHashMapCharByte(lm.getIndex(r) + rm.getIndex(r) * nVL, r, m, ret);
+	}
+
+	private final void combineDenseWIthHashMapCharOut(final AMapToData lm, final AMapToData rm, final int size,
+		final int nVL, final MapToChar ret, HashMapLongInt m) {
+		if(lm instanceof MapToChar && rm instanceof MapToChar)
+			combineDenseWIthHashMapAllChar(lm, rm, size, nVL, ret, m);
+		else// some other combination
+			for(int r = 0; r < size; r++)
+				addValHashMapChar(lm.getIndex(r) + rm.getIndex(r) * nVL, r, m, ret);
+	}
+
+	private final void combineDenseWIthHashMapAllChar(final AMapToData lm, final AMapToData rm, final int size,
+		final int nVL, final MapToChar ret, HashMapLongInt m) {
+		final MapToChar lmC = (MapToChar) lm;
+		final MapToChar rmC = (MapToChar) rm;
+		for(int r = 0; r < size; r++)
+			addValHashMapChar(lmC.getIndex(r) + rmC.getIndex(r) * nVL, r, m, ret);
 
 	}
 

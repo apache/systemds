@@ -50,6 +50,10 @@ import org.apache.sysds.runtime.util.CommonThreadPool;
 public final class CLALibLeftMultBy {
 	private static final Log LOG = LogFactory.getLog(CLALibLeftMultBy.class.getName());
 
+	/** Reusable cache intermediate double array for temporary lmm */
+	private static ThreadLocal<double[]> cacheIntermediate = null;
+
+
 	private CLALibLeftMultBy() {
 		// private constructor
 	}
@@ -835,10 +839,25 @@ public final class CLALibLeftMultBy {
 		@Override
 		public MatrixBlock call() {
 			try {
-
-				MatrixBlock _ret = new MatrixBlock(_retR, _retC, false);
-				_ret.allocateDenseBlock();
-				_ret.setNonZeros(_retR * _retC);
+				final int nCells = _retR * _retC;
+				final double[] tmpArr;
+				if(cacheIntermediate == null){
+					tmpArr = new double[nCells];
+					cacheIntermediate = new ThreadLocal<>();
+					cacheIntermediate.set(tmpArr);
+				}
+				else{
+					double[] cachedArr = cacheIntermediate.get();
+					if( cachedArr == null || cachedArr.length < nCells){
+						tmpArr = new double[nCells];
+						cacheIntermediate.set(tmpArr);
+					}
+					else{
+						tmpArr = cachedArr;
+					}
+				}
+				MatrixBlock _ret = new MatrixBlock(_retR, _retC, tmpArr);
+			
 				LMMWithPreAgg(_pa, _that, _ret, _rl, _ru, _cl, _cu, _off, _skip, _rowSums, _k);
 				return _ret;
 			}

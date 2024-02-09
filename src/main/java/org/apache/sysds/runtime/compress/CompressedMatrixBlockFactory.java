@@ -464,7 +464,7 @@ public class CompressedMatrixBlockFactory {
 	private Pair<MatrixBlock, CompressionStatistics> abortCompression() {
 		LOG.warn("Compression aborted at phase: " + phase);
 		if(mb instanceof CompressedMatrixBlock){
-			MatrixBlock ucmb = ((CompressedMatrixBlock)mb ).getUncompressed("Decompressing for abort: ", k);
+			MatrixBlock ucmb = ((CompressedMatrixBlock)mb).getUncompressed("Decompressing for abort: ", k);
 			return new ImmutablePair<>(ucmb, _stats);
 		}
 		return new ImmutablePair<>(mb, _stats);
